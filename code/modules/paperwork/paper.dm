@@ -19,8 +19,8 @@
 	slot_flags = SLOT_HEAD
 	body_parts_covered = HEAD
 	attack_verb = list("bapped")
-	drop_sound = 'sound/items/drop/paper.ogg'
-	pickup_sound = 'sound/items/pickup/paper.ogg'
+	drop_sound = SFX_ITEMS_DROP_PAPER
+	pickup_sound = SFX_ITEMS_PICKUP_PAPER
 
 	var/info		//What's actually written on the paper.
 	var/tmp/info_links	//A different version of the paper which includes html links at fields and EOF
@@ -302,7 +302,7 @@
 	update_space(t)
 	if(contains_signature)
 		on_signature(user, get_signature(i, user))
-	playsound(src, pick('sound/bureaucracy/pen1.ogg', 'sound/bureaucracy/pen2.ogg'), 10)
+	play_sfx(src, SFX_BUREAUCRACY_PEN, 0.5)
 	update_icon()
 
 /obj/item/paper/proc/on_signature(mob/living/user, signature)
@@ -341,14 +341,14 @@
 		//crumple dat paper
 		info = stars(info,85)
 		user.visible_message("\The [user] crumples \the [src] into a ball!")
-		playsound(src, 'sound/bureaucracy/papercrumple.ogg', 50, 1)
+		play_sfx(src, SFX_BUREAUCRACY_PAPERCRUMPLE)
 		icon_state = "scrap"
 		return
 	user.examinate(src)
 	if(rigged && (GLOB.Holiday == "April Fool's Day"))
 		if(COOLDOWN_FINISHED(src, honk_cooldown))
 			COOLDOWN_START(src, honk_cooldown, 2 SECONDS)
-			playsound(src, 'sound/items/bikehorn.ogg', 50, 1)
+			play_sfx(src, SFX_ITEMS_BIKEHORN)
 	return
 
 // AI/cyborg viewer routes through the same TGUI paper window.
@@ -549,7 +549,7 @@
 
 		user.visible_message("<span class='[class]'>[user] holds \the [P] up to \the [src], it looks like [user.p_theyre()] trying to burn it!</span>", \
 		"<span class='[class]'>You hold \the [P] up to \the [src], burning it slowly.</span>")
-		playsound(src, 'sound/bureaucracy/paperburn.ogg', 50, 1)
+		play_sfx(src, SFX_BUREAUCRACY_PAPERBURN)
 
 		om_after(src, 2 SECONDS, PROC_REF(burn_through), user, P, class)
 
@@ -699,7 +699,7 @@ DECLARE_INTERACTIONS(/obj/item/paper, \
 		stamped += P.type
 		add_overlay(stampoverlay)
 
-		playsound(src, 'sound/bureaucracy/stamp.ogg', 50, 1)
+		play_sfx(src, SFX_BUREAUCRACY_STAMP)
 		to_chat(user, span_notice("You stamp the paper with your rubber stamp."))
 
 	else if(istype(P, /obj/item/flame))

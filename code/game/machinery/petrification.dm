@@ -168,7 +168,7 @@
 	return data
 
 /obj/machinery/petrification/proc/set_input(option, mob/user)
-	var/list/only_these = list("tint","material","identifier","adjective","able_to_unpetrify","discard_clothes","target")
+	var/static/list/only_these = list("tint","material","identifier","adjective","able_to_unpetrify","discard_clothes","target")
 	if (!(option in only_these))
 		return
 	switch(option)

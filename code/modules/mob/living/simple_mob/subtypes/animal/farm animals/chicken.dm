@@ -56,7 +56,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/chicken, INTERACT_ITEM
 		var/obj/item/reagent_containers/food/snacks/grown/G = O
 		if(G.seed() && G.seed().kitchen_tag == PLANT_WHEAT)
 			if(!stat && eggsleft < 8)
-				user.visible_message(span_blue("[user] feeds [O] to [name]! It clucks happily."),span_blue("You feed [O] to [name]! It clucks happily."))
+				act_message(user, O, MSG_SELF(span_blue("You feed %T% to [name]! It clucks happily.")), MSG_OTHERS(span_blue("%U% feeds %T% to [name]! It clucks happily.")))
 				user.drop_item()
 				consume(O, user)
 				eggsleft += rand(1, 4)
@@ -75,7 +75,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/chicken, INTERACT_ITEM
 	if(!ctx.fact("alive"))
 		return
 	if(!self.stat && prob(3) && self.eggsleft > 0)
-		self.visible_message("[self] [pick("lays an egg.","squats down and croons.","begins making a huge racket.","begins clucking raucously.")]")
+		act_message(self, null, null, MSG_OTHERS("%U% [pick("lays an egg.","squats down and croons.","begins making a huge racket.","begins clucking raucously.")]"))
 		self.eggsleft--
 		var/obj/item/reagent_containers/food/snacks/egg/E = new(get_turf(self))
 		E.pixel_x = rand(-6,6)
@@ -157,4 +157,4 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/chicken, INTERACT_ITEM
 	emote_see = list("pecks at the ground","flaps its tiny wings")
 
 /datum/decl/mob_organ_names/chicken
-	hit_zones = list("head", "body", "left wing", "right wing", "left leg", "right leg", "tendies")
+TYPE_TABLE(/datum/decl/mob_organ_names/chicken, mob_organ_hit_zones, list("head", "body", "left wing", "right wing", "left leg", "right leg", "tendies"))

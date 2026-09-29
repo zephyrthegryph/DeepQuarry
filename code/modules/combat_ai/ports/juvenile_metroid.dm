@@ -30,27 +30,23 @@
 	/// admins / events can still force "always permastun" metroids.
 	var/always_stun = FALSE
 
-/mob/living/simple_mob/metroid/juvenile/get_ai_behaviors()
-	var/static/list/L = list(
-		/datum/ai_behavior/metroid_evolve,
-		/datum/ai_behavior/metroid_smart_attack,
-		/datum/ai_behavior/ranged_attack,
-		/datum/ai_behavior/approach_threat,
-		// NOTE: no generic maul_unconscious — metroid_smart_attack's GRAB branch
-		// already eats downed prey with the correct (consume) intent. The generic
-		// maul would attack with the wrong stance and skip consumption.
-		/datum/ai_behavior/retaliate_to_attacker,
-		/datum/ai_behavior/follow_leader,
-		/datum/ai_behavior/idle_wander,
-	)
-	return L
+// NOTE: no generic maul_unconscious — metroid_smart_attack's GRAB branch
+// already eats downed prey with the correct (consume) intent. The generic
+// maul would attack with the wrong stance and skip consumption.
+TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile, get_ai_behaviors, list( \
+	/datum/ai_behavior/metroid_evolve, \
+	/datum/ai_behavior/metroid_smart_attack, \
+	/datum/ai_behavior/ranged_attack, \
+	/datum/ai_behavior/approach_threat, \
+	/datum/ai_behavior/retaliate_to_attacker, \
+	/datum/ai_behavior/follow_leader, \
+	/datum/ai_behavior/idle_wander, \
+))
 
-/mob/living/simple_mob/metroid/juvenile/get_ai_target_selectors()
-	var/static/list/L = list(
-		/datum/target_selector/metroid_prefer_monkey,
-		/datum/target_selector/closest,
-	)
-	return L
+TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile, get_ai_target_selectors, list( \
+		/datum/target_selector/metroid_prefer_monkey, \
+		/datum/target_selector/closest, \
+	))
 
 // ---------------------------------------------------------------------------
 // Monkey-preferring target selector. Monkeys (incl. alien monkeys via istype)
@@ -112,7 +108,7 @@
 	else
 		MJ.set_use_stance(I_HURT)             // Otherwise just hurt it.
 	MJ.attack_target(L, MJ.input_stance())
-	brain.last_attack_at = world.time
+	EXPIRY_STAMP(brain, last_attack_at, CLOCK_WORLD)
 	return DQ_BEHAVIOR_DONE
 
 // ---------------------------------------------------------------------------

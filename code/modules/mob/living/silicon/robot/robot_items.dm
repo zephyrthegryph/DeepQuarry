@@ -147,7 +147,7 @@ EXTEND_INTERACTIONS(/obj/item/pen/robopen, INTERACT_USE("Change colour or mode",
 	if(choice == "Cancel")
 		return
 
-	playsound(src, 'sound/effects/pop.ogg', 50, 0)
+	play_sfx(src, SFX_EFFECTS_POP)
 
 	switch(choice)
 		if("Colour")
@@ -568,7 +568,7 @@ DECLARE_INTERACTIONS(/obj/item/inflatable_dispenser, INTERACT_USE(null, PROC_REF
 			new /obj/structure/inflatable(T)
 			stored_walls--
 
-	playsound(T, 'sound/items/zip.ogg', 75, 1)
+	play_sfx(T, SFX_ITEMS_ZIP)
 	to_chat(user, span_filter_notice("You deploy the inflatable [mode ? "door" : "wall"]!"))
 
 /obj/item/inflatable_dispenser/proc/pick_up(obj/A, mob/living/user)
@@ -585,7 +585,7 @@ DECLARE_INTERACTIONS(/obj/item/inflatable_dispenser, INTERACT_USE(null, PROC_REF
 				return
 			stored_doors++
 			qdel(A)
-		playsound(src, 'sound/machines/hiss.ogg', 75, 1)
+		play_sfx(src, SFX_MACHINES_HISS, 1.5, vary = TRUE)
 		visible_message(span_filter_notice("\The [user] deflates \the [A] with \the [src]!"))
 		return
 	if(istype(A, /obj/item/inflatable))
@@ -669,7 +669,7 @@ DECLARE_INTERACTIONS(/obj/item/robo_dice, INTERACT_USE(null, PROC_REF(interactio
 		span_notice("You roll a virtual [sides]-sided die. The result is [result]."),
 		span_notice("You hear synthesized audio of clattering plastic with a soft ping."))
 	user.balloon_alert_visible("rolled: [result]", blind_message = "*clatter, ping!*")
-	playsound(user, 'sound/effects/diceroll_robotic.ogg', 75, 0)
+	play_sfx(user, SFX_EFFECTS_DICEROLL_ROBOTIC)
 
 /obj/item/form_printer/proc/dispense_paper()
 	var/turf/T = get_turf(src)

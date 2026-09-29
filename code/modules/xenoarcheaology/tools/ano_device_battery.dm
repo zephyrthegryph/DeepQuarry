@@ -52,9 +52,11 @@
 	var/activated = 0
 	var/duration = 0
 	var/interval = 0
-	TIMESTAMP_VAR(time_end)
-	var/last_activation = 0
-	var/last_process = 0
+	EXPIRY_DECLARE(time_end)
+	/// om_after() timer that ends the emission at time_end, or 0.
+	var/tmp/emission_timer = 0
+	EXPIRY_DECLARE(last_activation)
+	EXPIRY_DECLARE(last_process)
 	var/tmp/obj/item/anobattery/inserted_battery
 	var/tmp/turf/archived_loc
 	var/energy_consumed_on_touch = 100
@@ -127,7 +129,7 @@ DECLARE_INTERACTIONS(/obj/item/anodevice, \
 		if("changeduration")
 			duration = clamp(text2num(params["duration"]), 0, 300)
 			if(activated)
-				time_end = world.time + duration
+				arm_emission_timer()
 			return TRUE
 		if("changeinterval")
 			interval = clamp(text2num(params["interval"]), 0, 100)
@@ -139,8 +141,8 @@ DECLARE_INTERACTIONS(/obj/item/anodevice, \
 				visible_message(span_blue("[icon2html(src,viewers(src))] [src] whirrs."), span_blue("[icon2html(src,viewers(src))]You hear something whirr."))
 				if(!inserted_battery().battery_effect.activated)
 					inserted_battery().battery_effect.ToggleActivate(1)
-				time_end = world.time + duration
-				last_process = world.time
+				arm_emission_timer()
+				EXPIRY_STAMP(src, last_process, CLOCK_WORLD)
 			else
 				to_chat(ui.user, span_warning("[src] is unable to start due to no anomolous power source inserted/remaining."))
 			return TRUE
@@ -177,7 +179,7 @@ DECLARE_INTERACTIONS(/obj/item/anodevice, \
 				holder = src.loc
 
 			//handle charge
-			if(world.time - last_activation > interval)
+			if(ELAPSED(src, last_activation, CLOCK_WORLD) > interval)
 				if(inserted_battery().battery_effect.effect == EFFECT_TOUCH)
 					if(interval > 0)
 						//apply the touch effect to the holder
@@ -204,7 +206,7 @@ DECLARE_INTERACTIONS(/obj/item/anodevice, \
 					//consume power equal to time passed
 					inserted_battery().use_power(world.time - last_process)
 
-				last_activation = world.time
+				EXPIRY_STAMP(src, last_activation, CLOCK_WORLD)
 
 			//process the effect
 			inserted_battery().battery_effect.periodic_step()
@@ -213,15 +215,30 @@ DECLARE_INTERACTIONS(/obj/item/anodevice, \
 			if(inserted_battery().stored_charge <= 0)
 				src.loc.visible_message(span_blue("[icon2html(src,viewers(src))] [src] buzzes."), span_blue("[icon2html(src,viewers(src))] You hear something buzz."))
 				shutdown_emission()
-			else if(world.time > time_end)
-				src.loc.visible_message(span_blue("[icon2html(src,viewers(src))] [src] chimes."), span_blue("[icon2html(src,viewers(src))] You hear something chime."))
-				shutdown_emission()
 		else
 			src.visible_message(span_blue("[icon2html(src,viewers(src))] [src] buzzes."), span_blue("[icon2html(src,viewers(src))] You hear something buzz."))
 			shutdown_emission()
-		last_process = world.time
+		EXPIRY_STAMP(src, last_process, CLOCK_WORLD)
+
+/// (Re)starts the emission's run: it ends `duration` from now (emission_timer_fired()).
+/obj/item/anodevice/proc/arm_emission_timer()
+	EXPIRY_SET(src, time_end, duration, CLOCK_WORLD)
+	if(emission_timer)
+		om_cancel_timer(src, emission_timer)
+	emission_timer = om_after(src, duration + 1, PROC_REF(emission_timer_fired))
+
+/// om_after() callback: the set duration has run out.
+/obj/item/anodevice/proc/emission_timer_fired()
+	emission_timer = 0
+	if(!activated)
+		return
+	src.loc.visible_message(span_blue("[icon2html(src,viewers(src))] [src] chimes."), span_blue("[icon2html(src,viewers(src))] You hear something chime."))
+	shutdown_emission()
 
 /obj/item/anodevice/proc/shutdown_emission()
+	if(emission_timer)
+		om_cancel_timer(src, emission_timer)
+		emission_timer = 0
 	if(activated)
 		activated = 0
 		if(inserted_battery()?.battery_effect?.activated)

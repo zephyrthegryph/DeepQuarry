@@ -5,8 +5,8 @@
  * Utensils
  */
 /obj/item/material/kitchen/utensil
-	drop_sound = 'sound/items/drop/knife.ogg'
-	pickup_sound = 'sound/items/pickup/knife.ogg'
+	drop_sound = SFX_ITEMS_DROP_KNIFE
+	pickup_sound = SFX_ITEMS_PICKUP_KNIFE
 	w_class = ITEMSIZE_TINY
 	thrown_force_divisor = 1
 	attack_verb = list("attacked", "stabbed", "poked")
@@ -45,10 +45,8 @@ DECLARE_REAGENTS(/obj/item/material/kitchen/utensil, "scoop_volume", null)
 		return
 
 	loaded = "\the [loading]"
-	user.visible_message( \
-		span_infoplain(span_bold("\The [user]") + " scoops up some of [loaded] with \the [src]!"),
-		span_notice("You scoop up some of [loaded] with \the [src]!")
-	)
+	act_message(user, src, MSG_SELF(span_notice("You scoop up some of [loaded] with %T%!")), \
+		MSG_OTHERS(span_infoplain(span_bold("%U%") + " scoops up some of [loaded] with %T%!")))
 	loading.bitecount++
 	loading.reagents.trans_to_obj(src, min(loading.reagents.total_volume, scoop_volume))
 	loaded_color = loading.filling_color
@@ -78,8 +76,8 @@ DECLARE_REAGENTS(/obj/item/material/kitchen/utensil, "scoop_volume", null)
 /obj/item/material/kitchen/utensil/proc/force_feed_done(mob/living/carbon/M, mob/living/user)
 	if(!loaded)
 		return
-	M.visible_message(span_bold("\The [user]") + " feeds some of [loaded] to \the [M] with \the [src].")
-	playsound(src,'sound/items/eatfood.ogg', rand(10,40), 1)
+	act_message(user, M, others = span_bold("%U%") + " feeds some of [loaded] to %T% with \the [src].")
+	play_sfx(src, SFX_ITEMS_EATFOOD, volume = rand(10,40))
 	loaded = null
 	update_icon()
 
@@ -107,14 +105,14 @@ DECLARE_REAGENTS(/obj/item/material/kitchen/utensil, "scoop_volume", null)
 		if(M == user)
 			if(!M.can_eat(loaded))
 				return ITEM_INTERACT_FAILURE
-			M.visible_message(span_bold("\The [user]") + " eats some of [loaded] with \the [src].")
+			act_message(user, M, others = span_bold("%U%") + " eats some of [loaded] with \the [src].")
 		else
-			user.visible_message(span_warning("\The [user] begins to feed \the [M]!"))
+			act_message(user, M, others = span_warning("%U% begins to feed %T%!"))
 			if(!M.can_force_feed(user, loaded))
 				return ITEM_INTERACT_FAILURE
 			om_task_timed(user, 5 SECONDS, target = M, receiver = src, on_done = PROC_REF(force_feed_done), done_args = list(M, user))
 			return ITEM_INTERACT_SUCCESS
-		playsound(src,'sound/items/eatfood.ogg', rand(10,40), 1)
+		play_sfx(src, SFX_ITEMS_EATFOOD, volume = rand(10,40))
 		loaded = null
 		update_icon()
 		return ITEM_INTERACT_SUCCESS
@@ -212,8 +210,8 @@ DECLARE_REAGENTS(/obj/item/material/kitchen/utensil, "scoop_volume", null)
 	force_divisor = 0.7 // 10 when wielded with weight 15 (wood)
 	dulled_divisor = 0.75	// Still a club
 	thrown_force_divisor = 1 // as above
-	drop_sound = 'sound/items/drop/wooden.ogg'
-	pickup_sound = 'sound/items/pickup/wooden.ogg'
+	drop_sound = SFX_ITEMS_DROP_WOODEN
+	pickup_sound = SFX_ITEMS_PICKUP_WOODEN
 
 /obj/item/material/kitchen/rollingpin/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(CLUMSY_HARM_CHANCE(user))

@@ -8,7 +8,7 @@
 	movement_cooldown = 3
 	melee_damage_lower = 3
 	melee_damage_upper = 3
-	attack_sound = 'sound/weapons/egloves.ogg'
+	attack_sound = SFX_WEAPONS_EGLOVES
 	organ_names = /datum/decl/mob_organ_names/hivebottank
 
 
@@ -77,8 +77,9 @@
 	if(istype(P, /obj/item/projectile/energy) || istype(P, /obj/item/projectile/beam))
 		var/reflect_prob = reflect_chance - round(P.damage/3)
 		if(prob(reflect_prob))
-			visible_message(span_danger("The [P.name] gets reflected by [src]'s armor!"), \
-							span_userdanger("The [P.name] gets reflected by [src]'s armor!"))
+			act_message(src, null, \
+				MSG_SELF(span_userdanger("The [P.name] gets reflected by %U%'s armor!")), \
+				MSG_OTHERS(span_danger("The [P.name] gets reflected by %U%'s armor!")))
 
 			// Find a turf near or on the original location to bounce to
 			if(P.starting)
@@ -95,7 +96,7 @@
 	return (..(P))
 
 /datum/decl/mob_organ_names/hivebottank
-	hit_zones = list("central chassis", "armor plating", "component shielding", "positioning servo", "head", "sensor suite", "heavy manipulator arm", "shoulder weapon mount", "weapons array", "front right leg", "front left leg", "rear left leg", "rear right leg")
+TYPE_TABLE(/datum/decl/mob_organ_names/hivebottank, mob_organ_hit_zones, list("central chassis", "armor plating", "component shielding", "positioning servo", "head", "sensor suite", "heavy manipulator arm", "shoulder weapon mount", "weapons array", "front right leg", "front left leg", "rear left leg", "rear right leg"))
 
 
 // === merged from tank_chomp.dm during hard-fork de-suffix (manually verified) ===

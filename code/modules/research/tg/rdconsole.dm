@@ -30,7 +30,7 @@ Nothing else in the console has ID requirements.
 	/// The stored design disk, if present
 	var/obj/item/disk/design_disk/d_disk
 	/// Determines if the console is locked, and consequently if actions can be performed with it
-	var/locked = FALSE
+	locked = FALSE
 	/// Used for compressing data sent to the UI via static_data as payload size is of concern
 	var/id_cache = list()
 	/// Sequence var for the id cache
@@ -160,7 +160,7 @@ OWN(/obj/machinery/computer/rdconsole_tg, d_disk, OWN_SPILL)
 	effect = /obj/machinery/computer/rdconsole_tg/proc/interaction_open_ui_impl
 
 /obj/machinery/computer/rdconsole_tg/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return TRUE
 
 	tgui_interact(user)
@@ -335,7 +335,7 @@ OWN(/obj/machinery/computer/rdconsole_tg, d_disk, OWN_SPILL)
 	switch (action)
 		if ("toggleLock")
 			if(allowed(usr))
-				locked = !locked
+				set_locked(!locked)
 			else
 				to_chat(usr, span_boldwarning("Unauthorized Access."))
 			return TRUE

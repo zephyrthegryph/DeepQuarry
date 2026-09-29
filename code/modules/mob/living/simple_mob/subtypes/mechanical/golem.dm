@@ -20,7 +20,7 @@
 	melee_damage_lower = 30 // It has a built in esword.
 	melee_damage_upper = 30
 	attack_armor_pen = 20
-	attack_sound = 'sound/weapons/blade1.ogg'
+	attack_sound = SFX_WEAPONS_BLADE1
 	attacktext = list("slashed")
 	melee_attack_delay = 0.5 SECONDS // Even has custom attack animations.
 	ranged_attack_delay = 0.5 SECONDS
@@ -62,11 +62,9 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/mechanical/technomancer_golem, "cor
 
 /mob/living/simple_mob/mechanical/technomancer_golem/on_death(gibbed)
 	..()
-	visible_message("\The [src] disintegrates!")
+	act_message(src, null, null, MSG_OTHERS("%U% disintegrates!"))
 	new /obj/effect/decal/cleanable/blood/gibs/robot(src.loc)
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-	s.set_up(3, 1, src)
-	s.start()
+	fx_sparks(src, 3)
 
 /mob/living/simple_mob/mechanical/technomancer_golem/place_spell_in_hand(path)
 	if(!path || !ispath(path))
@@ -145,7 +143,7 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/mechanical/technomancer_golem, "cor
 	ranged_post_animation(A)
 
 /datum/decl/mob_organ_names/golem
-	hit_zones = list("helmet", "cuirass", "left tasset", "right tasset", "left gauntlet", "right gauntlet", "weapon")
+TYPE_TABLE(/datum/decl/mob_organ_names/golem, mob_organ_hit_zones, list("helmet", "cuirass", "left tasset", "right tasset", "left gauntlet", "right gauntlet", "weapon"))
 
 // === merged from golem_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 // Cataloguer data below - strange we can catalogue space golem wizards

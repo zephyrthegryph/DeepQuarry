@@ -9,7 +9,7 @@
 	light_color = "#0099ff"
 
 	var/temp_access = list() //to prevent agent cards stealing access as permanent
-	TIMESTAMP_VAR(expiration_time)
+	EXPIRY_DECLARE(expiration_time)
 	var/expired = 0
 	var/reason = "NOT SPECIFIED"
 	special_handling = TRUE
@@ -18,14 +18,14 @@
 	return
 
 /obj/item/card/id/guest/GetAccess()
-	if(world.time > expiration_time)
+	if(EXPIRY_EXPIRED(src, expiration_time, CLOCK_WORLD))
 		return access
 	else
 		return temp_access
 
 /obj/item/card/id/guest/examine(mob/user)
 	. = ..()
-	if(world.time < expiration_time)
+	if(EXPIRY_ACTIVE(src, expiration_time, CLOCK_WORLD))
 		. += span_notice("This pass expires at [worldtime2stationtime(expiration_time)].")
 	else
 		. += span_warning("It expired at [worldtime2stationtime(expiration_time)].")
@@ -33,7 +33,7 @@
 /obj/item/card/id/guest/id_read_effect(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!Adjacent(user))
 		return //Too far to read
-	if(world.time > expiration_time)
+	if(EXPIRY_EXPIRED(src, expiration_time, CLOCK_WORLD))
 		to_chat(user, span_notice("This pass expired at [worldtime2stationtime(expiration_time)]."))
 	else
 		to_chat(user, span_notice("This pass expires at [worldtime2stationtime(expiration_time)]."))
@@ -69,23 +69,23 @@ EXTEND_INTERACTIONS(/obj/item/card/id/guest, INTERACT_USE_AS(I_HELP, "Show", PRO
 		user.visible_message(span_infoplain(span_bold("\The [user]") + "deactivates \the [src]."))
 		icon_state = "guest-invalid"
 		update_icon()
-		expiration_time = world.time
+		EXPIRY_STAMP(src, expiration_time, CLOCK_WORLD)
 		expired = 1
 
 /obj/item/card/id/guest/Initialize(mapload)
 	. = ..()
 	update_icon()
 
-/// Expiry ticking is world registration (L3): it runs while the pass is live.
-DECLARE_PERIODIC(/obj/item/card/id/guest, PERIODIC_SLOW)
+/// The pass turns red when its expiry lapses, however it was made (terminal, admin spawn, map).
+EXPIRY_ON_LAPSE(/obj/item/card/id/guest, expiration_time, CLOCK_WORLD, PROC_REF(pass_lapsed))
 
-/obj/item/card/id/guest/periodic_step()
-	if(expired == 0 && world.time >= expiration_time)
-		visible_message(span_warning("\The [src] flashes a few times before turning red."))
-		icon_state = "guest-invalid"
-		update_icon()
-		expired = 1
+/obj/item/card/id/guest/proc/pass_lapsed()
+	if(expired)
 		return
+	visible_message(span_warning("\The [src] flashes a few times before turning red."))
+	icon_state = "guest-invalid"
+	update_icon()
+	expired = 1
 
 /////////////////////////////////////////////
 //Guest pass terminal////////////////////////
@@ -110,7 +110,7 @@ DECLARE_PERIODIC(/obj/item/card/id/guest, PERIODIC_SLOW)
 	var/duration = 5
 
 	var/list/internal_log
-	var/mode = 0  // 0 - making pass, 1 - viewing logs
+	mode = 0  // 0 - making pass, 1 - viewing logs
 
 /obj/machinery/computer/guestpass/Initialize(mapload)
 	. = ..()
@@ -145,7 +145,7 @@ DECLARE_PERIODIC(/obj/item/card/id/guest, PERIODIC_SLOW)
 	effect = /obj/machinery/computer/guestpass/proc/interaction_insert_id
 
 /obj/machinery/computer/guestpass/proc/interaction_insert_id(mob/user, obj/item/held, datum/interaction/interaction)
-	if(stat & NOPOWER) //checking for power in here so crowbar and screwdriver and stuff still works.
+	if(has_stat(NOPOWER)) //checking for power in here so crowbar and screwdriver and stuff still works.
 		to_chat(user, span_warning("The terminal refuses your I.D as it is unpowered!"))
 		return TRUE
 	if(!giver && user.unEquip(held))
@@ -213,7 +213,7 @@ DECLARE_PERIODIC(/obj/item/card/id/guest, PERIODIC_SLOW)
 
 	switch(action)
 		if("mode")
-			mode = params["mode"]
+			set_mode(params["mode"])
 
 		if("giv_name")
 			om_ask(ui.user, /datum/om/prompt/text, PROC_REF(pass_name_entered), title = "Name", message = "Person pass is issued to", default = giv_name, requires = PROMPT_USABLE)
@@ -271,7 +271,7 @@ DECLARE_PERIODIC(/obj/item/card/id/guest, PERIODIC_SLOW)
 				var/obj/item/card/id/guest/pass = new(src.loc)
 				pass.temp_access = LAZYCOPY(accesses)
 				pass.registered_name = giv_name
-				pass.expiration_time = world.time + duration*10*60
+				EXPIRY_SET(pass, expiration_time, duration MINUTES, CLOCK_WORLD)
 				pass.reason = reason
 				pass.name = "guest pass #[number]"
 			else

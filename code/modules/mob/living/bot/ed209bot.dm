@@ -7,7 +7,7 @@
 	endurance = 200
 
 	is_ranged = 1
-	preparing_arrest_sounds = new()
+	preparing_arrest_sounds = null
 
 	combat_mode = TRUE
 	mob_bump_flag = HEAVY
@@ -43,9 +43,7 @@
 		else
 			new /obj/item/clothing/suit/storage/vest(Tsec)
 
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-	s.set_up(3, 1, src)
-	s.start()
+	fx_sparks(src, 3)
 
 	new /obj/effect/decal/cleanable/blood/oil(Tsec)
 	return ..()
@@ -64,7 +62,7 @@
 	if(emagged)
 		projectile = /obj/item/projectile/beam
 
-	playsound(src, emagged ? 'sound/weapons/Laser.ogg' : 'sound/weapons/taser.ogg', 50, 1)
+	play_sfx(src, emagged ? SFX_WEAPONS_LASER : SFX_WEAPONS_TASER, volume = 50)
 	var/obj/item/projectile/P = new projectile(loc)
 
 	rel_set(P, "firer", src)
@@ -191,6 +189,7 @@
 	return TRUE
 
 /datum/interaction/construction/secbot/ed209/wire
+	start_feedback = /datum/msg/start/interaction/construction/secbot/ed209/wire
 	from_state = 6
 	to_state = 7
 	step_text = "wire it"
@@ -199,7 +198,9 @@
 	item_use = CONSTRUCTION_ITEM_USE
 	duration = 4 SECONDS
 	tool_scaled = FALSE
-	start_self = "You start to wire %TARGET%."
+
+/datum/msg/start/interaction/construction/secbot/ed209/wire
+	self = "You start to wire %T%."
 
 /datum/interaction/construction/secbot/ed209/wire/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
 	var/obj/item/secbot_assembly/ed209_assembly/assembly = target
@@ -248,6 +249,7 @@
 	return TRUE
 
 /datum/interaction/construction/secbot/ed209/attach_gun
+	start_feedback = /datum/msg/start/interaction/construction/secbot/ed209/attach_gun
 	from_state = 8
 	to_state = 9
 	step_text = "attach the gun to the frame"
@@ -255,7 +257,9 @@
 	tool_volume = 100
 	duration = 4 SECONDS
 	tool_scaled = FALSE
-	start_self = "Now attaching the gun to the frame..."
+
+/datum/msg/start/interaction/construction/secbot/ed209/attach_gun
+	self = "Now attaching the gun to the frame..."
 
 /datum/interaction/construction/secbot/ed209/attach_gun/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
 	var/obj/item/secbot_assembly/ed209_assembly/assembly = target

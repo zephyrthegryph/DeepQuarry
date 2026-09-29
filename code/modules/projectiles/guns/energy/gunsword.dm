@@ -11,7 +11,7 @@
 
 	w_class = ITEMSIZE_NORMAL
 	projectile_type = /obj/item/projectile/beam/stun
-	fire_sound = 'sound/weapons/taser.ogg'
+	fire_sound = SFX_WEAPONS_TASER
 	charge_meter = 1
 
 	cell_type = /obj/item/cell/device/weapon/gunsword
@@ -19,8 +19,8 @@
 	modifystate = "gbuster"
 
 	firemodes = list(
-	list(mode_name="stun", charge_cost=240,projectile_type=/obj/item/projectile/beam/stun, modifystate="gbuster", fire_sound='sound/weapons/taser.ogg'),
-	list(mode_name="lethal", charge_cost=480,projectile_type=/obj/item/projectile/beam/imperial, modifystate="gbuster", fire_sound='sound/weapons/mandalorian.ogg'),
+	list(mode_name="stun", charge_cost=240,projectile_type=/obj/item/projectile/beam/stun, modifystate="gbuster", fire_sound=SFX_WEAPONS_TASER),
+	list(mode_name="lethal", charge_cost=480,projectile_type=/obj/item/projectile/beam/imperial, modifystate="gbuster", fire_sound=SFX_WEAPONS_MANDALORIAN),
 	)
 
 // -----------------gunsword battery--------------------------
@@ -67,7 +67,7 @@
 	sharp = TRUE
 	edge = TRUE
 	w_class = active_w_class
-	playsound(src, 'sound/weapons/saberon.ogg', 50, 1)
+	play_sfx(src, SFX_WEAPONS_SABERON)
 	set_light(lrange, lpower, lcolor)
 	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
 
@@ -76,7 +76,7 @@
 /obj/item/cell/device/weapon/gunsword/proc/deactivate(mob/living/user)
 	if(!active)
 		return
-	playsound(src, 'sound/weapons/saberoff.ogg', 50, 1)
+	play_sfx(src, SFX_WEAPONS_SABEROFF)
 	icon_state = "gsaberoff"
 	item_state = "gsaberoff"
 	active = 0

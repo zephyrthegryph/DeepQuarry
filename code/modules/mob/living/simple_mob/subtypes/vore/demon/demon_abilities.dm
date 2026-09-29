@@ -46,7 +46,7 @@
 		invisibility = initial(invisibility)
 		see_invisible = initial(see_invisible)
 		incorporeal_move = initial(incorporeal_move)
-		density = initial(density)
+		set_density(initial(density))
 		force_max_speed = initial(force_max_speed)
 
 		//Cosmetics mostly
@@ -87,7 +87,7 @@
 		to_chat(src,span_warning("You can't return to the physical world yet!"))
 		return FALSE
 
-	if(world.time - last_shift < 600)
+	if(ELAPSED_SINCE(src, last_shift, CLOCK_WORLD) < 600)
 		to_chat(src,span_warning("You can't temporarily shift so soon! You need to wait [round(((last_shift+600)-world.time)/10)] second\s!"))
 		return FALSE
 
@@ -131,7 +131,7 @@
 	invisibility = initial(invisibility)
 	see_invisible = initial(see_invisible)
 	incorporeal_move = initial(incorporeal_move)
-	density = initial(density)
+	set_density(initial(density))
 	force_max_speed = initial(force_max_speed)
 	var/original_canmove = canmove
 	canmove = FALSE
@@ -151,7 +151,7 @@
 	is_shifting = FALSE
 	canmove = original_canmove
 	incorporeal_move = TRUE
-	density = FALSE
+	set_density(FALSE)
 	force_max_speed = TRUE
 
 	om_after(src, 30 SECONDS, PROC_REF(phase_shift_wears_off))
@@ -184,7 +184,7 @@
 
 	shift_state = AB_SHIFT_NONE
 	if(from_temporary)
-		last_shift = world.time
+		EXPIRY_STAMP(src, last_shift, CLOCK_WORLD)
 
 
 /mob/living/simple_mob/vore/demon/verb/blood_burst()
@@ -198,16 +198,16 @@
 		to_chat(src,span_warning("You must be in the physical world to create blood!"))
 		return FALSE
 
-	if(world.time - blood_spawn < 1500)
+	if(ELAPSED_SINCE(src, blood_spawn, CLOCK_WORLD) < 1500)
 		to_chat(src,span_warning("You can't create blood so soon! You need to wait [round(((blood_spawn+1500)-world.time)/10)] second\s!"))
 		return FALSE
 
 
 	new /obj/effect/gibspawner/generic(T)
 
-	playsound(src.loc, 'sound/effects/blobattack.ogg', 50, 1)
+	play_sfx(src.loc, SFX_EFFECTS_BLOBATTACK, volume = 50)
 
-	blood_spawn = world.time
+	EXPIRY_STAMP(src, blood_spawn, CLOCK_WORLD)
 
 	return
 
@@ -260,7 +260,7 @@
 
 	setClickCooldown(8)
 	T.resize(size_amount)
-	visible_message(span_warning("[src] shrinks [T]!"),span_notice("You shrink [T]."))
+	act_message(src, T, MSG_SELF(span_notice("You shrink %T%.")), MSG_OTHERS(span_warning("%U% shrinks %T%!")))
 
 /mob/living/simple_mob/vore/demon
 	var/size_amount = RESIZE_TINY //Adding a var to keep track of sizespell setting
@@ -305,7 +305,7 @@
 
 	setClickCooldown(8)
 	T.reagents.add_reagent(poison_type, poison_per_bite)
-	visible_message(span_warning("[src] bites [T]!"),span_notice("You bite [T]."))
+	act_message(src, T, MSG_SELF(span_notice("You bite %T%.")), MSG_OTHERS(span_warning("%U% bites %T%!")))
 
 /mob/living/simple_mob/vore/demon/proc/phase_shift_wears_off()
 	shifted_out = FALSE
@@ -318,7 +318,7 @@
 	invisibility = initial(invisibility)
 	see_invisible = initial(see_invisible)
 	incorporeal_move = initial(incorporeal_move)
-	density = initial(density)
+	set_density(initial(density))
 	force_max_speed = initial(force_max_speed)
 	var/original_canmove = canmove
 	canmove = FALSE
@@ -357,4 +357,4 @@
 	update_icon()
 
 	shift_state = AB_SHIFT_NONE
-	last_shift = world.time
+	EXPIRY_STAMP(src, last_shift, CLOCK_WORLD)

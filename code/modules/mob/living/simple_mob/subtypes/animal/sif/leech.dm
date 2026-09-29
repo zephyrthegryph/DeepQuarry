@@ -481,7 +481,7 @@
 		mend(TREAT_BURN_CARE, rand(10,60))
 
 /datum/decl/mob_organ_names/leech
-	hit_zones = list("mouthparts", "central segment", "tail segment")
+TYPE_TABLE(/datum/decl/mob_organ_names/leech, mob_organ_hit_zones, list("mouthparts", "central segment", "tail segment"))
 
 #undef LEECH_TREAT_URGENCY
 

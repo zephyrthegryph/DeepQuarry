@@ -35,7 +35,7 @@
 	opacity = 0
 	var/list/item_list
 
-	clicksound = "button"
+	clicksound = SFX_BUTTON
 	var/vending_sound = "machines/vending/vending_drop.ogg"
 
 	// Power
@@ -230,11 +230,11 @@
 	)
 
 /obj/machinery/casino_prize_dispenser/power_change()
-	..()
-	if(stat & BROKEN)
+	. = ..()
+	if(has_stat(BROKEN))
 		icon_state = "[initial(icon_state)]-broken"
 	else
-		if(!(stat & NOPOWER))
+		if(!has_stat(NOPOWER))
 			icon_state = initial(icon_state)
 		else
 			om_after(src, rand(0, 15), TYPE_PROC_REF(/atom, set_icon_state), "[initial(icon_state)]-off")
@@ -271,7 +271,7 @@
 	effect = /obj/machinery/casino_prize_dispenser/proc/interaction_use
 
 /obj/machinery/casino_prize_dispenser/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return TRUE
 	tgui_interact(user)
 	return TRUE
@@ -317,7 +317,7 @@
 		ui.open()
 
 /obj/machinery/casino_prize_dispenser/tgui_act(action, params, datum/tgui/ui)
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return
 	if(ui.user.stat || ui.user.restrained())
 		return
@@ -394,7 +394,7 @@
 
 	if(ispath(bi.equipment_path, /obj/item/stack))
 		new bi.equipment_path(loc, bi.equipment_amt)
-		playsound(src, 'sound/machines/vending/vending_drop.ogg', 100, 1)
+		play_sfx(src, SFX_MACHINES_VENDING_VENDING_DROP)
 		rel_clear(src, "currently_vending")
 		use_power(vend_power_usage)	//actuators and stuff
 		flick("[icon_state]-vend",src)
@@ -402,7 +402,7 @@
 
 	for(var/i in 1 to bi.equipment_amt)
 		new bi.equipment_path(loc)
-		playsound(src, 'sound/machines/vending/vending_drop.ogg', 100, 1)
+		play_sfx(src, SFX_MACHINES_VENDING_VENDING_DROP)
 
 	rel_clear(src, "currently_vending")
 	use_power(vend_power_usage)	//actuators and stuff
@@ -415,7 +415,7 @@
 	//Currently doesnt have an ingame way to show. Can only be viewed through View-Variables, to ensure theres no chance of players ckeys exposed - Jack
 
 /obj/machinery/casino_prize_dispenser/proc/speak(message)
-	if(stat & NOPOWER)
+	if(has_stat(NOPOWER))
 		return
 
 	if(!message)

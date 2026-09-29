@@ -30,26 +30,24 @@ SUBSYSTEM_DEF(access)
 
 	return SS_INIT_SUCCESS
 
+/// CentCom job title -> its access list (shared; get_centcom_access() hands out copies).
+GLOBAL_LIST_INIT(centcom_job_access, list(
+	"VIP Guest" = list(ACCESS_CENT_GENERAL),
+	"Custodian" = list(ACCESS_CENT_GENERAL, ACCESS_CENT_LIVING, ACCESS_CENT_STORAGE),
+	"Thunderdome Overseer" = list(ACCESS_CENT_GENERAL, ACCESS_CENT_THUNDER),
+	"Intel Officer" = list(ACCESS_CENT_GENERAL, ACCESS_CENT_LIVING),
+	"Medical Officer" = list(ACCESS_CENT_GENERAL, ACCESS_CENT_LIVING, ACCESS_CENT_MEDICAL),
+	"Death Commando" = list(ACCESS_CENT_GENERAL, ACCESS_CENT_SPECOPS, ACCESS_CENT_LIVING, ACCESS_CENT_STORAGE),
+	"Research Officer" = list(ACCESS_CENT_GENERAL, ACCESS_CENT_SPECOPS, ACCESS_CENT_MEDICAL, ACCESS_CENT_TELEPORTER, ACCESS_CENT_STORAGE),
+	"BlackOps Commander" = list(ACCESS_CENT_GENERAL, ACCESS_CENT_THUNDER, ACCESS_CENT_SPECOPS, ACCESS_CENT_LIVING, ACCESS_CENT_STORAGE, ACCESS_CENT_CREED),
+))
+
+/// A fresh copy of `job`'s CentCom access (callers assign it to a card, which edits it).
 /datum/controller/subsystem/access/proc/get_centcom_access(job)
-	switch(job)
-		if("VIP Guest")
-			return list(ACCESS_CENT_GENERAL)
-		if("Custodian")
-			return list(ACCESS_CENT_GENERAL, ACCESS_CENT_LIVING, ACCESS_CENT_STORAGE)
-		if("Thunderdome Overseer")
-			return list(ACCESS_CENT_GENERAL, ACCESS_CENT_THUNDER)
-		if("Intel Officer")
-			return list(ACCESS_CENT_GENERAL, ACCESS_CENT_LIVING)
-		if("Medical Officer")
-			return list(ACCESS_CENT_GENERAL, ACCESS_CENT_LIVING, ACCESS_CENT_MEDICAL)
-		if("Death Commando")
-			return list(ACCESS_CENT_GENERAL, ACCESS_CENT_SPECOPS, ACCESS_CENT_LIVING, ACCESS_CENT_STORAGE)
-		if("Research Officer")
-			return list(ACCESS_CENT_GENERAL, ACCESS_CENT_SPECOPS, ACCESS_CENT_MEDICAL, ACCESS_CENT_TELEPORTER, ACCESS_CENT_STORAGE)
-		if("BlackOps Commander")
-			return list(ACCESS_CENT_GENERAL, ACCESS_CENT_THUNDER, ACCESS_CENT_SPECOPS, ACCESS_CENT_LIVING, ACCESS_CENT_STORAGE, ACCESS_CENT_CREED)
-		if("Supreme Commander")
-			return get_all_centcom_access()
+	if(job == "Supreme Commander")
+		return get_all_centcom_access()
+	var/list/access = GLOB.centcom_job_access[job]
+	return access?.Copy()
 
 /datum/controller/subsystem/access/proc/get_all_access_datums()
 	return priv_all_access_datums

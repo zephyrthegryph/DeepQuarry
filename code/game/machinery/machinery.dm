@@ -86,6 +86,8 @@ Class Procs:
 	Compiled by Aygar
 */
 
+OWN_TIMER(/obj/machinery, first_wake)
+
 /obj/machinery
 	material_template = /datum/material_template/machine_part
 	material_total = 5 * SHEET_MATERIAL_AMOUNT
@@ -95,8 +97,6 @@ Class Procs:
 	w_class = ITEMSIZE_NO_CONTAINER
 	layer = UNDER_JUNK_LAYER
 
-	var/stat = 0
-	var/emagged = 0
 	var/use_power = USE_POWER_IDLE
 		//0 = dont run the auto
 		//1 = run auto, use idle
@@ -134,10 +134,8 @@ Class Procs:
 	var/tmp/gas_dependency_wake_count = 0
 	/// Monotonic diagnostic counter: MACHINE_WAKE() calls on this machine.
 	var/tmp/machine_wake_count = 0
-	/// The pending materialize_wakes() timer, or 0.
-	var/tmp/materialize_timer = 0
-	/// Set when the machine is told what to do (MACHINE_WAKE(), sleep_until_keys()) while its
-	/// materialize_wakes() is still pending: that direction replaces the declared start condition.
+	/// Set when the machine is told what to do (MACHINE_WAKE(), sleep_until_keys()) while its first
+	/// wake is still pending (first_wake_pending()): that direction replaces the declared start condition.
 	var/tmp/materialize_directed = FALSE
 	/// TRUE for a type whose machine_step() reconciles its state with its power: every power or
 	/// break change (power_change(), atom_break(), atom_fix()) runs one step.
@@ -217,7 +215,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 /// om_after() from joining): arm the watches that will wake it (arm_wakes()), then wake it if its
 /// declared start condition holds. Nothing else runs a machine at spawn.
 /obj/machinery/proc/materialize_wakes()
-	materialize_timer = 0
+	// Running now: it leaves the boot bulk queue (a timer-slot run has already left its slot).
+	rel_remove(om_global_owner(), "machine_first_wakes", src)
 	var/directed = materialize_directed
 	materialize_directed = FALSE
 	if(QDELETED(src))
@@ -228,6 +227,12 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 	// a spurious wake of a machine whose input held steady.
 	if(!directed && step_start_condition())
 		MACHINE_WAKE(src)
+
+/// TRUE while this machine's first wake (materialize_wakes()) has not run yet: it waits in the
+/// boot bulk queue, or in its `first_wake` timer slot. Derived, never stored: firing, cancelling
+/// and deletion all end it on their own (a deleted machine's handle stops resolving).
+/obj/machinery/proc/first_wake_pending()
+	return om_timer_slot_pending(src, "first_wake") || (src in om_global_owner().machine_first_wakes)
 
 /// Arms what wakes this machine later (gas watches, change watches). Default: nothing to arm.
 /obj/machinery/proc/arm_wakes()
@@ -256,7 +261,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 		var/datum/om/frame/S = om_pipe_state(M, /datum/om/pipeline/machine)
 		if(S)
 			om_pipe_set_all(S, FALSE, 0)
-	if(M.materialize_timer)
+	if(M.first_wake_pending())
 		M.materialize_directed = TRUE
 	om_wake(M, /datum/om/pipeline/machine)
 
@@ -295,20 +300,20 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 	. = ..()
 	if (. & EMP_PROTECT_SELF)
 		return
-	if(use_power && stat == 0)
+	if(use_power && !has_stat(MACHINE_STAT_ANY))
 		use_power(7500/severity)
 
 		var/obj/effect/overlay/pulse2 = new /obj/effect/overlay(src.loc)
 		pulse2.icon = 'icons/effects/effects.dmi'
 		pulse2.icon_state = "empdisable"
 		pulse2.name = "emp sparks"
-		pulse2.anchored = TRUE
+		pulse2.set_anchored(TRUE)
 		pulse2.set_dir(pick(GLOB.cardinal))
 		pulse2.expire(1 SECOND)
 
 /obj/machinery/vv_edit_var(var_name, new_value)
 	if(var_name == NAMEOF(src, use_power))
-		update_use_power(new_value)
+		set_use_power(new_value)
 		return TRUE
 	else if(var_name == NAMEOF(src, power_channel))
 		update_power_channel(new_value)
@@ -408,21 +413,15 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 		else
 			own_add(src, "component_parts", I)
 
-/obj/machinery/proc/operable(additional_flags = 0)
-	return !inoperable(additional_flags)
-
-/obj/machinery/proc/inoperable(additional_flags = 0)
-	return (stat & (NOPOWER | BROKEN | additional_flags))
-
 // Duplicate of below because we don't want to fuck around with CanUseTopic in TGUI
 // TODO: Replace this with can_interact from /tg/
 /obj/machinery/tgui_status(mob/user)
-	if(!interact_offline && (stat & (NOPOWER | BROKEN)))
+	if(!interact_offline && (!operable()))
 		return STATUS_CLOSE
 	return ..()
 
 /obj/machinery/CanUseTopic(mob/user)
-	if(!interact_offline && (stat & (NOPOWER | BROKEN)))
+	if(!interact_offline && (!operable()))
 		return STATUS_CLOSE
 	return ..()
 
@@ -440,7 +439,7 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 /// The checks every machine's hand interactions pass behind (see machine_use_blocker() for the Menu's version).
 /obj/machinery/hand_gate(mob/user as mob)
 
-	if(inoperable(MAINT))
+	if(!operable(MAINT))
 		return 1
 	if(user.lying || user.stat)
 		return 1
@@ -509,16 +508,14 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 		text = "\The [src] pings."
 
 	state(text, "blue")
-	playsound(src, 'sound/machines/ping.ogg', 50, 0)
+	play_sfx(src, SFX_MACHINES_PING)
 
 /obj/machinery/proc/shock(mob/user, prb)
-	if(inoperable())
+	if(!operable())
 		return 0
 	if(!prob(prb))
 		return 0
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-	s.set_up(5, 1, src)
-	s.start()
+	fx_sparks(src, 5)
 	if(electrocute_mob(user, get_area(src), src, 0.7))
 		var/area/temp_area = get_area(src)
 		if(temp_area)
@@ -596,11 +593,11 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 /obj/machinery/proc/deconstruct_display(mob/user, obj/item/tool)
 	if(!circuit)
 		return ITEM_INTERACT_BLOCKING
-	use_tool(user, tool, src, delay = 2 SECONDS, volume = 50, message_self = "You start disconnecting the monitor.", receiver = src, on_done = PROC_REF(deconstruct_display_tool_done), done_args = list(user))
+	use_tool(user, tool, src, delay = 2 SECONDS, volume = 50, start_self = "You start disconnecting the monitor.", receiver = src, on_done = PROC_REF(deconstruct_display_tool_done), done_args = list(user))
 	return TRUE
 
 /obj/machinery/proc/deconstruct_display_tool_done(mob/user)
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		to_chat(user, span_notice("The broken glass falls out."))
 		new /obj/item/material/shard(loc)
 	else
@@ -609,7 +606,7 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 
 /obj/machinery/proc/dismantle()
 	OM_EMIT(src, /datum/om/event/obj_deconstruct, FALSE)
-	playsound(src, 'sound/items/Crowbar.ogg', 50, 1)
+	play_sfx(src, SFX_ITEMS_CROWBAR)
 	latent_materialize_all() // a walk needs real things (C5)
 	for(var/obj/I in contents) // ALLOW(latent): materialized above
 		if(istype(I,/obj/item/card/id))
@@ -623,15 +620,15 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 	var/obj/item/circuitboard/M = circuit
 	M.forceMove(A)
 	own_move(M, A, "circuit") // the board moves from the machine to the frame (CONTAINED there)
-	A.anchored = TRUE
+	A.set_anchored(TRUE)
 	own_set(A, "frame_type", frame_type_copy(M.board_type)) // the board keeps its own
 	if(A.frame_type.circuit)
 		A.need_circuit = 0
 
 	if(A.frame_type.frame_class == FRAME_CLASS_ALARM || A.frame_type.frame_class == FRAME_CLASS_DISPLAY)
-		A.density = FALSE
+		A.set_density(FALSE)
 	else
-		A.density = TRUE
+		A.set_density(TRUE)
 
 	if(A.frame_type.frame_class == FRAME_CLASS_MACHINE)
 		for(var/obj/D in component_parts)
@@ -646,7 +643,7 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 	if(A.frame_type.frame_class == FRAME_CLASS_ALARM)
 		A.state = FRAME_FASTENED
 	else if(A.frame_type.frame_class == FRAME_CLASS_COMPUTER || A.frame_type.frame_class == FRAME_CLASS_DISPLAY)
-		if(stat & BROKEN)
+		if(has_stat(BROKEN))
 			A.state = FRAME_WIRED
 		else
 			A.state = FRAME_PANELED
@@ -679,11 +676,8 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 
 /obj/machinery/atom_destruction(damage_flag)
 	if(dq_destroy_effects_once(src)) // one per turf per blast (lifecycle/batch.dm)
-		playsound(src, 'sound/machines/machine_die_short.ogg', 50, TRUE)
-		var/datum/effect/effect/system/spark_spread/sparks = new
-		sparks.set_up(5, 0, src)
-		sparks.start()
-		qdel(sparks)
+		play_sfx(src, SFX_MACHINES_MACHINE_DIE_SHORT)
+		fx_sparks(src, 5, FALSE)
 	return ..()
 
 /**
@@ -694,10 +688,8 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
  */
 /obj/machinery/atom_break(damage_flag)
 	. = ..()
-	if(stat & BROKEN)
+	if(!stat_add(BROKEN)) // raises CHANGE_MACHINE_BROKEN
 		return FALSE
-	stat |= BROKEN
-	OM_CHANGED(src, CHANGE_MACHINE_BROKEN)
 	OM_EMIT(src, /datum/om/event/machinery_broken, damage_flag)
 	update_icon()
 	return TRUE
@@ -705,10 +697,8 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 /// The inverse of atom_break(). Returns TRUE if the machine was broken.
 /obj/machinery/atom_fix()
 	. = ..()
-	if(!(stat & BROKEN))
+	if(!stat_remove(BROKEN)) // raises CHANGE_MACHINE_BROKEN
 		return FALSE
-	stat &= ~BROKEN
-	OM_CHANGED(src, CHANGE_MACHINE_BROKEN)
 	update_icon()
 	return TRUE
 
@@ -730,7 +720,7 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 		return FALSE
 	if(!om_attached(src, /datum/om/pipeline/machine))
 		om_attach(src, /datum/om/pipeline/machine)
-	if(materialize_timer)
+	if(first_wake_pending())
 		materialize_directed = TRUE
 	react_sleep_tokens = watches.Copy()
 	for(var/i = 1; i <= length(watches); i += 2)

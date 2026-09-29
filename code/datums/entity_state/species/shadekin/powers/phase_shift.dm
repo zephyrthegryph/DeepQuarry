@@ -187,7 +187,7 @@
 		invisibility = initial(invisibility)
 		see_invisible = initial(see_invisible)
 		incorporeal_move = initial(incorporeal_move)
-		density = initial(density)
+		set_density(initial(density))
 		can_pull_size = initial(can_pull_size)
 		can_pull_mobs = initial(can_pull_mobs)
 		dq_clear_hovering(src) // reset to type-default
@@ -320,7 +320,7 @@
 
 	canmove = original_canmove
 	incorporeal_move = TRUE
-	density = FALSE
+	set_density(FALSE)
 	SK.doing_phase = FALSE
 
 /datum/body_effect/shadekin_phase_vision

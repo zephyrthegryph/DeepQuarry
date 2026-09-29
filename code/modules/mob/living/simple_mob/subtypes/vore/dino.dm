@@ -17,7 +17,7 @@
 	melee_damage_lower = 5
 	melee_damage_upper = 12
 	attacktext = list("bitten")
-	attack_sound = 'sound/weapons/bite.ogg'
+	attack_sound = SFX_WEAPONS_BITE
 	minbodytemp = 200
 	maxbodytemp = 370
 	heat_damage_per_tick = 15

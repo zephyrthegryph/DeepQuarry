@@ -1,97 +1,133 @@
-//Not using datum.vv_do_topic for very basic/low level debug things, incase the datum's vv_do_topic is runtiming/whatnot.
-/client/proc/vv_do_basic(datum/target, href_list)
-	var/target_var = GET_VV_VAR_TARGET
-	if(check_rights(R_VAREDIT))
-		if(target_var)
-			if(href_list[VV_HK_BASIC_EDIT])
-				if(!modify_variables(target, target_var, 1))
-					return
-				switch(target_var)
-					if("name")
-						vv_update_display(target, "name", "[target]")
-					if("dir")
-						var/atom/A = target
-						if(istype(A))
-							vv_update_display(target, "dir", dir2text(A.dir) || A.dir)
-					if("ckey")
-						var/mob/living/L = target
-						if(istype(L))
-							vv_update_display(target, "ckey", L.ckey || "No ckey")
-					if("real_name")
-						var/mob/living/L = target
-						if(istype(L))
-							vv_update_display(target, "real_name", L.real_name || "No real name")
+// Basic VV actions on any datum or client, handled by the admin's client (not the target's type)
+// so they keep working when the target's own code is broken.
 
-			if(href_list[VV_HK_BASIC_CHANGE])
-				modify_variables(target, target_var, 0)
-			if(href_list[VV_HK_BASIC_MASSEDIT])
-				cmd_mass_modify_object_variables(target, target_var)
-	if(check_rights(R_ADMIN, FALSE))
-		if(href_list[VV_HK_EXPOSE])
-			var/value = vv_get_value(VV_CLIENT, key = "expose")
-			if (value["class"] != VV_CLIENT)
-				return
-			var/client/C = value["value"]
-			if (!C)
-				return
-			if(!target)
-				to_chat(usr, span_warning("The object you tried to expose to [C] no longer exists (nulled or hard-deled)"), confidential = TRUE)
-				return
-			message_admins("[key_name_admin(usr)] Showed [key_name_admin(C)] a <a href='byond://?_src_=vars;datumrefresh=[REF(target)]'>VV window</a>")
-			log_admin("Admin [key_name(usr)] Showed [key_name(C)] a VV window of a [target]")
-			to_chat(C, "[holder.fakekey ? "an Administrator" : "[usr.client.key]"] has granted you access to view a View Variables window", confidential = TRUE)
-			C.debug_variables(target)
-	if(check_rights(R_DEBUG))
-		if(href_list[VV_HK_DELETE])
-			usr.client.admin_delete(target)
-			if (isturf(target)) // show the turf that took its place
-				usr.client.debug_variables(target)
-				return
+#define VV_BASIC_TARGET TOPIC_REF(VV_HK_TARGET, list(/datum, /client), TOPIC_ANY)
 
-	if(href_list[VV_HK_MARK])
-		usr.client.mark_datum(target)
-	if(href_list[VV_HK_TAG])
-		usr.client.tag_datum(target)
-	if(href_list[VV_HK_ADDCOMPONENT])
-		if(!check_rights(R_DEBUG))
-			return
-		var/list/names = sortList(subtypesof(/datum/om/behaviour), GLOBAL_PROC_REF(cmp_typepaths_asc))
-		var/result = flow_ask(mob, "behaviour:add", /datum/om/prompt/choice, message = "Choose an OM behaviour to attach", title = "Attach Behaviour", choices = names)
-		if(isnull(result) || !usr)
-			return
-		if(QDELETED(target))
-			to_chat(usr, "That thing doesn't exist anymore!", confidential = TRUE)
-			return
-		om_attach(target, result)
-		log_admin("[key_name(usr)] has attached behaviour [result] to [key_name(target)].")
-		message_admins(span_notice("[key_name_admin(usr)] has attached behaviour [result] to [key_name_admin(target)]."))
-	if(href_list[VV_HK_REMOVECOMPONENT] || href_list[VV_HK_MASS_REMOVECOMPONENT])
-		if(!check_rights(R_DEBUG))
-			return
-		var/mass_remove = href_list[VV_HK_MASS_REMOVECOMPONENT]
-		var/list/names = list()
-		for(var/datum/om/behaviour/B as anything in target.om_rec?.att)
-			names += B.type
-		if(!length(names))
-			to_chat(usr, "[target] has no OM behaviours attached.")
-			return
-		var/path = flow_ask(mob, "behaviour:remove", /datum/om/prompt/choice, message = "Choose an OM behaviour to detach", title = "Detach Behaviour", choices = names)
-		if(isnull(path) || !usr)
-			return
-		if(QDELETED(target))
-			to_chat(usr, "That thing doesn't exist anymore!")
-			return
-		var/list/targets_to_remove_from = list(target)
-		if(mass_remove)
-			var/method = vv_subtype_prompt(target.type, "behaviour")
-			if(isnull(method))
-				return
-			if(flow_ask(mob, "behaviour:mass", /datum/om/prompt/choice/alert, message = "Are you sure you want to mass-detach [path] on [target.type]?", title = "Mass Detach Confirmation", choices = list("Yes", "No")) != "Yes")
-				return
-			targets_to_remove_from = get_all_of_type(target.type, method)
-		for(var/datum/target_to_remove_from as anything in targets_to_remove_from)
-			om_detach(target_to_remove_from, path)
-		message_admins(span_notice("[key_name_admin(usr)] has [mass_remove? "mass " : ""]detached behaviour [path] from [mass_remove? target.type : key_name_admin(target)]."))
+VV_ADMIN_TOPIC_ACTION(VV_HK_BASIC_EDIT, PROC_REF(vv_topic_basic_edit), VV_BASIC_TARGET, TOPIC_TEXT(VV_HK_VARNAME))
+VV_ADMIN_TOPIC_ACTION(VV_HK_BASIC_CHANGE, PROC_REF(vv_topic_basic_change), VV_BASIC_TARGET, TOPIC_TEXT(VV_HK_VARNAME))
+VV_ADMIN_TOPIC_ACTION(VV_HK_BASIC_MASSEDIT, PROC_REF(vv_topic_basic_massedit), VV_BASIC_TARGET, TOPIC_TEXT(VV_HK_VARNAME))
+VV_ADMIN_TOPIC_ACTION(VV_HK_EXPOSE, PROC_REF(vv_topic_expose), VV_BASIC_TARGET, TOPIC_RIGHTS(R_ADMIN))
+VV_ADMIN_TOPIC_ACTION(VV_HK_DELETE, PROC_REF(vv_topic_delete), VV_BASIC_TARGET, TOPIC_RIGHTS(R_DEBUG))
+VV_ADMIN_TOPIC_ACTION(VV_HK_MARK, PROC_REF(vv_topic_mark), VV_BASIC_TARGET)
+VV_ADMIN_TOPIC_ACTION(VV_HK_TAG, PROC_REF(vv_topic_tag), VV_BASIC_TARGET)
+VV_ADMIN_TOPIC_ACTION(VV_HK_ADDCOMPONENT, PROC_REF(vv_topic_add_behaviour), VV_BASIC_TARGET, TOPIC_RIGHTS(R_DEBUG))
+VV_ADMIN_TOPIC_ACTION(VV_HK_REMOVECOMPONENT, PROC_REF(vv_topic_remove_behaviour), VV_BASIC_TARGET, TOPIC_RIGHTS(R_DEBUG))
+VV_ADMIN_TOPIC_ACTION(VV_HK_MASS_REMOVECOMPONENT, PROC_REF(vv_topic_mass_remove_behaviour), VV_BASIC_TARGET, TOPIC_RIGHTS(R_DEBUG))
+VV_ADMIN_TOPIC_ACTION(VV_HK_CALLPROC, PROC_REF(vv_topic_call_proc), VV_BASIC_TARGET)
 
-	if(href_list[VV_HK_CALLPROC])
-		return SSadmin_verbs.dynamic_invoke_verb(usr, /datum/admin_verb/call_proc_datum, target)
+#undef VV_BASIC_TARGET
+
+/client/proc/vv_topic_basic_edit(mob/user, list/args)
+	var/datum/target = args[VV_HK_TARGET]
+	var/target_var = args[VV_HK_VARNAME]
+	if(!target_var || !modify_variables(target, target_var, 1))
+		return
+	switch(target_var)
+		if("name")
+			vv_update_display(target, "name", "[target]")
+		if("dir")
+			var/atom/A = target
+			if(istype(A))
+				vv_update_display(target, "dir", dir2text(A.dir) || A.dir)
+		if("ckey")
+			var/mob/living/L = target
+			if(istype(L))
+				vv_update_display(target, "ckey", L.ckey || "No ckey")
+		if("real_name")
+			var/mob/living/L = target
+			if(istype(L))
+				vv_update_display(target, "real_name", L.real_name || "No real name")
+	return TRUE
+
+/client/proc/vv_topic_basic_change(mob/user, list/args)
+	if(!args[VV_HK_VARNAME])
+		return
+	modify_variables(args[VV_HK_TARGET], args[VV_HK_VARNAME], 0)
+	return TRUE
+
+/client/proc/vv_topic_basic_massedit(mob/user, list/args)
+	if(!args[VV_HK_VARNAME])
+		return
+	cmd_mass_modify_object_variables(args[VV_HK_TARGET], args[VV_HK_VARNAME])
+	return TRUE
+
+/client/proc/vv_topic_expose(mob/user, list/args)
+	var/datum/target = args[VV_HK_TARGET]
+	var/value = vv_get_value(VV_CLIENT, key = "expose")
+	if (value["class"] != VV_CLIENT)
+		return
+	var/client/C = value["value"]
+	if (!C)
+		return
+	if(!target)
+		to_chat(user, span_warning("The object you tried to expose to [C] no longer exists (nulled or hard-deled)"), confidential = TRUE)
+		return
+	message_admins("[key_name_admin(user)] Showed [key_name_admin(C)] a <a href='byond://?_src_=vars;[HrefToken(TRUE)];Vars=[REF(target)]'>VV window</a>")
+	log_admin("Admin [key_name(user)] Showed [key_name(C)] a VV window of a [target]")
+	to_chat(C, "[holder.fakekey ? "an Administrator" : "[key]"] has granted you access to view a View Variables window", confidential = TRUE)
+	C.debug_variables(target)
+	return TRUE
+
+/client/proc/vv_topic_delete(mob/user, list/args)
+	var/datum/target = args[VV_HK_TARGET]
+	admin_delete(target)
+	if (isturf(target)) // show the turf that took its place
+		debug_variables(target)
+	return TRUE
+
+/client/proc/vv_topic_mark(mob/user, list/args)
+	mark_datum(args[VV_HK_TARGET])
+	return TRUE
+
+/client/proc/vv_topic_tag(mob/user, list/args)
+	tag_datum(args[VV_HK_TARGET])
+	return TRUE
+
+/client/proc/vv_topic_add_behaviour(mob/user, list/args)
+	var/datum/target = args[VV_HK_TARGET]
+	var/list/names = sortList(subtypesof(/datum/om/behaviour), GLOBAL_PROC_REF(cmp_typepaths_asc))
+	var/result = flow_ask(mob, "behaviour:add", /datum/om/prompt/choice, message = "Choose an OM behaviour to attach", title = "Attach Behaviour", choices = names)
+	if(isnull(result) || !user)
+		return
+	if(QDELETED(target))
+		to_chat(user, "That thing doesn't exist anymore!", confidential = TRUE)
+		return
+	om_attach(target, result)
+	log_admin("[key_name(user)] has attached behaviour [result] to [key_name(target)].")
+	message_admins(span_notice("[key_name_admin(user)] has attached behaviour [result] to [key_name_admin(target)]."))
+	return TRUE
+
+/client/proc/vv_topic_remove_behaviour(mob/user, list/args)
+	return vv_remove_behaviour(user, args[VV_HK_TARGET], FALSE)
+
+/client/proc/vv_topic_mass_remove_behaviour(mob/user, list/args)
+	return vv_remove_behaviour(user, args[VV_HK_TARGET], TRUE)
+
+/client/proc/vv_remove_behaviour(mob/user, datum/target, mass_remove)
+	var/list/names = list()
+	for(var/datum/om/behaviour/B as anything in target.om_rec?.att)
+		names += B.type
+	if(!length(names))
+		to_chat(user, "[target] has no OM behaviours attached.")
+		return
+	var/path = flow_ask(mob, "behaviour:remove", /datum/om/prompt/choice, message = "Choose an OM behaviour to detach", title = "Detach Behaviour", choices = names)
+	if(isnull(path) || !user)
+		return
+	if(QDELETED(target))
+		to_chat(user, "That thing doesn't exist anymore!")
+		return
+	var/list/targets_to_remove_from = list(target)
+	if(mass_remove)
+		var/method = vv_subtype_prompt(target.type, "behaviour")
+		if(isnull(method))
+			return
+		if(flow_ask(mob, "behaviour:mass", /datum/om/prompt/choice/alert, message = "Are you sure you want to mass-detach [path] on [target.type]?", title = "Mass Detach Confirmation", choices = list("Yes", "No")) != "Yes")
+			return
+		targets_to_remove_from = get_all_of_type(target.type, method)
+	for(var/datum/target_to_remove_from as anything in targets_to_remove_from)
+		om_detach(target_to_remove_from, path)
+	message_admins(span_notice("[key_name_admin(user)] has [mass_remove ? "mass " : ""]detached behaviour [path] from [mass_remove ? target.type : key_name_admin(target)]."))
+	return TRUE
+
+/client/proc/vv_topic_call_proc(mob/user, list/args)
+	return SSadmin_verbs.dynamic_invoke_verb(user, /datum/admin_verb/call_proc_datum, args[VV_HK_TARGET])

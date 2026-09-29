@@ -7,6 +7,8 @@
 // may be used in PDAs or similar applications. Second proc, return_reading_data will return list containing needed data.
 // This is used in NanoUI, for example.
 
+OWN_TIMER(/obj/machinery/power/sensor, record_timer)
+
 /obj/machinery/power/sensor
 	name = "Powernet Sensor"
 	desc = "Small machine which transmits data about specific powernet"
@@ -23,7 +25,6 @@
 	var/record_size = 60
 	var/record_interval = 50
 	var/next_record = 0
-	var/record_timer
 	var/is_secret_monitor = FALSE
 
 // Proc: Initialize(mapload)
@@ -46,13 +47,12 @@
 /obj/machinery/power/sensor/proc/auto_set_name()
 	name = "[name_tag] - Powernet Sensor"
 
-// power monitors refresh their sensor lists once it is gone.
+// A dying sensor leaves every monitor's grid_sensors view by itself (a relation view); the
+// monitors only need a wake to redraw without it.
 /obj/machinery/power/sensor/on_destroy(force)
 	..()
-	// TODO - Switch power_monitor to register deletion events instead of this.
 	for(var/obj/machinery/computer/power_monitor/PM in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(PM.power_monitor)
-			PM.power_monitor.refresh_sensors()
 			MACHINE_WAKE(PM)
 
 // Proc: check_grid_warning()
@@ -70,18 +70,17 @@
 // Description: This tracks historical usage, for TGUI power monitors
 /obj/machinery/power/sensor/machine_step()
 	if(!power_region)
-		use_power = USE_POWER_IDLE
+		set_use_power(USE_POWER_IDLE)
 		connect_to_network()
 	else
-		use_power = USE_POWER_ACTIVE
+		set_use_power(USE_POWER_ACTIVE)
 		record()
-	if(!record_timer)
+	if(!om_timer_slot_pending(src, "record_timer"))
 		var/delay = power_region ? max(1, next_record - world.time) : record_interval
-		record_timer = om_after(src, delay, PROC_REF(wake_for_record))
+		om_after_slot(src, "record_timer", delay, PROC_REF(wake_for_record))
 	return PROCESS_KILL
 
 /obj/machinery/power/sensor/proc/wake_for_record()
-	record_timer = null
 	// Sampling is already timer-driven and does not sleep. Do it directly rather
 	// than enrolling every sensor for a one-call wake-and-kill machinery pass.
 	machine_step()
@@ -196,8 +195,8 @@
 		out += "<table><tr><th>Name<th>EQUIP<th>LIGHT<th>ENVIRON<th>CELL<th>LOAD"
 
 		// These lists are used as replacement for number based APC settings
-		var/list/S = list("M-OFF","A-OFF","M-ON", "A-ON")
-		var/list/chg = list("N","C","F")
+		var/static/list/S = list("M-OFF","A-OFF","M-ON", "A-ON")
+		var/static/list/chg = list("N","C","F")
 
 		// Split to multiple lines to make it more readable
 		for(var/obj/machinery/power/apc/A in L)
@@ -240,8 +239,8 @@
 	var/list/APC_data = list()
 	if(L.len > 0)
 		// These lists are used as replacement for number based APC settings
-		var/list/S = list("M-OFF","A-OFF","M-ON", "A-ON")
-		var/list/chg = list("N","C","F")
+		var/static/list/S = list("M-OFF","A-OFF","M-ON", "A-ON")
+		var/static/list/chg = list("N","C","F")
 
 		for(var/obj/machinery/power/apc/A in L)
 			var/list/APC_entry = list()

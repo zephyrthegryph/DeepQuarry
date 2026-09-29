@@ -29,7 +29,7 @@
 	dropped.plane = 1
 	dropped.pixel_x = rand(-150, 150)
 	dropped.pixel_y = 500 // When you think that pixel_z is height but you are wrong
-	dropped.density = FALSE
+	dropped.set_density(FALSE)
 	dropped.opacity = FALSE
 	if(admin_spawned)
 		dropped.flags |= ADMIN_SPAWNED
@@ -43,7 +43,7 @@
 		for(var/mob/living/P in contents_of(loc))
 			if(can_drop_vore(L, P))
 				L.feed_grabbed_to_self_falling_nom(L,P)
-				L.visible_message(span_vdanger("\The [L] falls right onto \the [P]!"))
+				act_message(L, null, others = span_vdanger("%U% falls right onto \the [P]!"))
 
 	if(crushing)
 		for(var/atom/movable/AM in contents_of(loc))
@@ -53,8 +53,8 @@
 	for(var/mob/living/M in oviewers(3, src))
 		shake_camera(M, 2, 2)
 
-	playsound(src, 'sound/effects/meteorimpact.ogg', 50, 1)
-	density = initial(density)
+	play_sfx(src, SFX_EFFECTS_METEORIMPACT, 1.25)
+	set_density(initial(density))
 	opacity = initial(opacity)
 	plane = initial(plane)
 

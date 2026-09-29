@@ -8,7 +8,7 @@
 	var/icon_state = "" //icon state of the main segments of the beam
 	var/beam_color = null // Color of the beam segments
 	var/max_distance = 0
-	TIMESTAMP_VAR(endtime)
+	EXPIRY_DECLARE(endtime)
 	var/sleep_time = 3
 	var/finished = 0
 	var/target_oldloc = null
@@ -17,7 +17,7 @@
 	var/beam_type = /obj/effect/ebeam //must be subtype
 
 /datum/beam/New(beam_origin,beam_target,beam_icon='icons/effects/beam.dmi',beam_icon_state="b_beam",time=50,maxdistance=10,btype = /obj/effect/ebeam,beam_sleep_time=3,new_beam_color = null)
-	endtime = world.time+time
+	EXPIRY_SET(src, endtime, time, CLOCK_WORLD)
 	rel_set(src, "origin", beam_origin)
 	origin_oldloc =	get_turf(origin())
 	rel_set(src, "target", beam_target)
@@ -39,7 +39,7 @@
 
 /// Every `sleep_time`: redraw if an end moved; ends the beam when it runs out or breaks.
 /datum/beam/proc/beam_tick()
-	if(finished || !origin() || !target() || world.time >= endtime || get_dist(origin(),target()) >= max_distance || origin().z != target().z)
+	if(finished || !origin() || !target() || EXPIRY_EXPIRED(src, endtime, CLOCK_WORLD) || get_dist(origin(),target()) >= max_distance || origin().z != target().z)
 		qdel(src)
 		return
 	var/origin_turf = get_turf(origin())

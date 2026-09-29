@@ -20,7 +20,7 @@
 	var/magnetic_field = 1 // the range of magnetic attraction
 	var/code = 0 // frequency code, they should be different unless you have a group of magnets working together or something
 	var/turf/center // the center of magnetic attraction
-	var/on = 0
+	on = 0
 	var/magnet_active = 0
 
 	// x, y modifiers to the center turf; (0, 0) is centered on the magnet, whereas (1, -1) is one tile right, one tile down
@@ -113,7 +113,7 @@
 			if("set-code")
 				if(modifier)	code = modifier
 			if("toggle-power")
-				on = !on
+				set_on(!on)
 
 				if(on)
 					magnetic_process()
@@ -122,8 +122,8 @@
 /// Clamps its settings and reconciles its power draw and icon: after every command, and on
 /// every power or break change.
 /obj/machinery/magnetic_module/machine_step()
-	if(stat & NOPOWER)
-		on = 0
+	if(has_stat(NOPOWER))
+		set_on(0)
 
 	// Sanity checks:
 	if(electricity_level <= 0)
@@ -143,10 +143,10 @@
 
 	// Update power usage:
 	if(on)
-		update_use_power(USE_POWER_ACTIVE)
+		set_use_power(USE_POWER_ACTIVE)
 		update_active_power_usage(electricity_level * 15)
 	else
-		update_use_power(USE_POWER_OFF)
+		set_use_power(USE_POWER_OFF)
 
 	update_icon()
 	return PROCESS_KILL
@@ -235,65 +235,64 @@
 // structured TGUI MagneticConsole (see
 // code/modules/admin/magnetic_console_panel.dm).
 /obj/machinery/magnetic_controller/proc/interaction_open(mob/user, obj/item/held, datum/interaction/interaction)
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return TRUE
 	user.set_machine(src)
 	tgui_interact(user)
 	return TRUE
 
-/obj/machinery/magnetic_controller/Topic(href, href_list)
-	if(stat & (BROKEN|NOPOWER))
+/// Sends a radio command (`op`) to the magnets on this controller's frequency.
+/obj/machinery/magnetic_controller/proc/magnet_radio_op(mob/user, op)
+	if(!operable())
 		return
-	usr.set_machine(src)
-	add_fingerprint(usr)
+	// Prepare signal beforehand, because this is a radio operation
+	var/datum/signal/signal = new
+	signal.transmission_method = TRANSMISSION_RADIO // radio transmission
+	rel_set(signal, "source", src)
+	signal.frequency = frequency
+	signal.data["code"] = code
 
-	if(href_list["radio-op"])
+	// Apply any necessary commands
+	switch(op)
+		if("togglepower")
+			signal.data["command"] = "toggle-power"
 
-		// Prepare signal beforehand, because this is a radio operation
-		var/datum/signal/signal = new
-		signal.transmission_method = TRANSMISSION_RADIO // radio transmission
-		rel_set(signal, "source", src)
-		signal.frequency = frequency
-		signal.data["code"] = code
+		if("minuselec")
+			signal.data["command"] = "sub-elec"
+		if("pluselec")
+			signal.data["command"] = "add-elec"
 
-		// Apply any necessary commands
-		switch(href_list["radio-op"])
-			if("togglepower")
-				signal.data["command"] = "toggle-power"
+		if("minusmag")
+			signal.data["command"] = "sub-mag"
+		if("plusmag")
+			signal.data["command"] = "add-mag"
 
-			if("minuselec")
-				signal.data["command"] = "sub-elec"
-			if("pluselec")
-				signal.data["command"] = "add-elec"
+	// Broadcast the signal
+	radio_connection().post_signal(src, signal, radio_filter = RADIO_MAGNETS)
+	updateUsrDialog(user)
 
-			if("minusmag")
-				signal.data["command"] = "sub-mag"
-			if("plusmag")
-				signal.data["command"] = "add-mag"
+/// A local controller operation (`op`): speed, path and movement.
+/obj/machinery/magnetic_controller/proc/magnet_operation(mob/user, op)
+	if(!operable())
+		return
+	switch(op)
+		if("plusspeed")
+			speed ++
+			if(speed > 10)
+				speed = 10
+		if("minusspeed")
+			speed --
+			if(speed <= 0)
+				speed = 1
+		if("setpath")
+			om_ask(user, /datum/om/prompt/text, PROC_REF(magnet_path_entered), message = "Please define a new path!", default = path, max_length = MAX_MESSAGE_LEN, requires = PROMPT_USABLE)
 
-		// Broadcast the signal
+		if("togglemoving")
+			moving = !moving
+			if(moving)
+				MagnetMove()
 
-		radio_connection().post_signal(src, signal, radio_filter = RADIO_MAGNETS)
-
-	if(href_list["operation"])
-		switch(href_list["operation"])
-			if("plusspeed")
-				speed ++
-				if(speed > 10)
-					speed = 10
-			if("minusspeed")
-				speed --
-				if(speed <= 0)
-					speed = 1
-			if("setpath")
-				om_ask(usr, /datum/om/prompt/text, PROC_REF(magnet_path_entered), message = "Please define a new path!", default = path, max_length = MAX_MESSAGE_LEN, requires = PROMPT_USABLE)
-
-			if("togglemoving")
-				moving = !moving
-				if(moving)
-					MagnetMove()
-
-	updateUsrDialog(usr)
+	updateUsrDialog(user)
 
 /obj/machinery/magnetic_controller/proc/magnet_path_entered(datum/om/prompt/text/ask)
 	var/mob/user = ask.answerer
@@ -312,7 +311,7 @@
 
 /// One step of the magnet path: signal the next move, then wait by `speed`.
 /obj/machinery/magnetic_controller/proc/magnet_move_step()
-	if(!moving || length(rpath) < 1 || (stat & (BROKEN|NOPOWER)))
+	if(!moving || length(rpath) < 1 || (!operable()))
 		looping = 0
 		return
 

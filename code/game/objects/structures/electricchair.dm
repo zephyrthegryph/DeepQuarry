@@ -57,9 +57,7 @@
 	A.update_icon()
 
 	flick("echair1", src)
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-	s.set_up(12, 1, src)
-	s.start()
+	fx_sparks(src, 12)
 	if(has_buckled_mobs())
 		for(var/mob/living/L as anything in src?.buckled_mob_list())
 			L.burn_skin(85)

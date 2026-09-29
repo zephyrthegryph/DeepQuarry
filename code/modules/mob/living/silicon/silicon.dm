@@ -4,12 +4,12 @@
 	var/syndicate = 0
 	var/const/MAIN_CHANNEL = "Main Frequency"
 	var/lawchannel = MAIN_CHANNEL // Default channel on which to state laws
-	// ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	// ALLOW(instance_list): d: per-mob stating_laws, sized at creation and filled in place; mobs are few
 	var/list/stating_laws = list()// Channels laws are currently being stated on
 	var/obj/item/radio/common_radio
 
 	has_huds = TRUE
-	// ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	// ALLOW(instance_list): d: per-mob speech_synthesizer_langs, filled at runtime; mobs are few
 	var/list/speech_synthesizer_langs = list()	//which languages can be vocalized by the speech synthesizer
 
 	//Used in say.dm.
@@ -34,6 +34,8 @@
 	var/idcard_type = /obj/item/card/id/synthetic
 
 /mob/living/silicon/Initialize(mapload, is_decoy = FALSE)
+	if(silicon_subsystems)
+		silicon_subsystems = shared_type_list(type, "silicon_subsystems", silicon_subsystems)
 	. = ..()
 	if(!is_decoy)
 		init_id(idcard_type)
@@ -100,9 +102,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 
 /mob/living/silicon/electrocute_act(shock_damage, obj/source, siemens_coeff = 0.0, def_zone = null, stun = 1)
 	if(shock_damage > 0)
-		var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-		s.set_up(5, 1, loc)
-		s.start()
+		fx_sparks(loc, 5)
 
 		shock_damage *= siemens_coeff	//take reduced damage
 		receive_shock(shock_damage, source)
@@ -424,12 +424,6 @@ REL_LIST(/datum/silicon_alarm_queue, cleared)
 	return FALSE
 
 // === merged from silicon_vr.dm during hard-fork de-suffix (verified no override-order change) ===
-/mob/living/silicon/Topic(href, href_list) //For Robots and pAI's. And possibly AI's too.
-	if(href_list["ooc_notes"])
-		do_examine_ooc(usr)
-		return 1
-	return ..()
-
 // For handling any custom visibility in borgo sensor modes, like sleeve implants - not needed anymore but leaving anyways - Tank
 ///mob/living/silicon/toggle_sensor_mode()
 //	. = ..()

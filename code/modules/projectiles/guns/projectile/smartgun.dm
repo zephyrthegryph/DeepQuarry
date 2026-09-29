@@ -75,11 +75,11 @@ DECLARE_INTERACTIONS(/obj/item/gun/projectile/smartgun, INTERACT_ALT(null, PROC_
 
 		if(closed)
 			icon_state = "[initial(icon_state)]_open"
-			playsound(src, 'sound/weapons/smartgunopen.ogg', 75, 0)
+			play_sfx(src, SFX_WEAPONS_SMARTGUNOPEN)
 			to_chat(user, span_notice("You unready [src] so that it can be reloaded."))
 		else
 			icon_state = "[initial(icon_state)]_closed"
-			playsound(src, 'sound/weapons/smartgunclose.ogg', 75, 0)
+			play_sfx(src, SFX_WEAPONS_SMARTGUNCLOSE)
 			to_chat(user, span_notice("You ready [src] so that it can be fired."))
 		om_after_unique(src, 2 SECONDS, PROC_REF(toggle_real_state))
 	return TRUE
@@ -101,7 +101,7 @@ DECLARE_INTERACTIONS(/obj/item/gun/projectile/smartgun, INTERACT_ALT(null, PROC_
 	name = "smartgun rail"
 	icon_state = "smartgunproj"
 	icon = 'icons/obj/guns/projectile/smartgun_32.dmi'
-	fire_sound = 'sound/weapons/gunshot4.ogg' // hmm
+	fire_sound = SFX_WEAPONS_GUNSHOT4 // hmm
 
 	// Slight damage and big stun
 	damage = 10

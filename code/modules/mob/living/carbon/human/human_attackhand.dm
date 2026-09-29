@@ -66,8 +66,8 @@
 			var/hit_zone = get_zone_with_miss_chance(H.zone_sel.selecting, src, H.get_accuracy_penalty(), attacker = H)
 			if(!hit_zone)
 				H.do_attack_animation(src)
-				playsound(src, 'sound/weapons/punchmiss.ogg', 25, 1, -1)
-				visible_message(span_filter_combat("[span_red(span_bold("[H] reaches for [src], but misses!"))]"))
+				play_sfx(src, SFX_WEAPONS_PUNCHMISS)
+				act_message(src, H, others = span_filter_combat("[span_red(span_bold("%T% reaches for %U%, but misses!"))]"))
 				return FALSE
 
 		if(H != src && check_shields(0, null, H, H.zone_sel.selecting, H.name))
@@ -105,7 +105,7 @@
 
 ///Help Intent
 /mob/living/carbon/human/proc/cpr_done(mob/living/carbon/human/H)
-	H.visible_message(span_danger("\The [H] performs CPR on \the [src]!"))
+	act_message(H, src, others = span_danger("%U% performs CPR on %T%!"))
 	to_chat(H, span_warning("Repeat at least every 7 seconds."))
 	perform_cpr(H)
 
@@ -146,7 +146,7 @@
 
 		COOLDOWN_START(src, cpr_time, 3 SECONDS)
 
-		H.visible_message(span_danger("\The [H] is trying to perform CPR on \the [src]!"))
+		act_message(H, src, others = span_danger("%U% is trying to perform CPR on %T%!"))
 
 		om_task_timed(H, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(cpr_done), done_args = list(H))
 
@@ -171,7 +171,7 @@
 	if(M.lying && (M.loc == src.loc)) //If we are on the ground and they're on top of us, we don't have enough space to push them! Also antispam.
 		if(!COOLDOWN_FINISHED(src, push_lying_cooldown))
 			return
-		visible_message(span_warning("[M] struggles under [src]!"))
+		act_message(M, src, others = span_warning("%U% struggles under %T%!"))
 		COOLDOWN_START(src, push_lying_cooldown, 6 SECONDS)
 		COOLDOWN_START(src, disarm_cooldown, 3 SECONDS)
 		return
@@ -190,14 +190,14 @@
 				turfs += T
 			if(turfs.len)
 				var/turf/target = pick(turfs)
-				visible_message(span_danger("[src]'s [W] goes off during the struggle!"))
+				act_message(src, null, others = span_danger("%U%'s [W] goes off during the struggle!"))
 				return W.afterattack(target,src)
 
 	if(COOLDOWN_TIMELEFT(src, disarm_cooldown)) //The fact that we're repeatedly doing it doesn't lessen the severity of the action! Send it full blast!
 		if(M.lying)
-			visible_message(span_filter_combat("[span_red(span_bold("[M] attempted to sweep [src] to the floor!"))]"))
+			act_message(src, M, others = span_filter_combat("[span_red(span_bold("%T% attempted to sweep %U% to the floor!"))]"))
 		else
-			visible_message(span_filter_combat("[span_red(span_bold("[M] attempted to disarm [src]!"))]"))
+			act_message(src, M, others = span_filter_combat("[span_red(span_bold("%T% attempted to disarm %U%!"))]"))
 		return
 
 	var/randn = rand(1, 100)
@@ -209,37 +209,37 @@
 	if((get_equipped_item(SLOT_ID_SHOES) || !(species.flags & NO_SLIP)) && randn <= 25)
 		var/armor_check = armor_against(INJURY_BLUNT, affecting)
 		apply_effect(3, WEAKEN, armor_check)
-		playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
+		play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
 		if(armor_check < 60)
 			drop_both_hands()
 			if(M.lying)
-				visible_message(span_danger("[M] swept [src] down onto the floor!"))
+				act_message(M, src, others = span_danger("%U% swept %T% down onto the floor!"))
 			else
-				visible_message(span_danger("[M] has pushed [src]!"))
+				act_message(M, src, others = span_danger("%U% has pushed %T%!"))
 			break_all_grabs(M)
 		else
-			visible_message(span_warning("[M] attempted to push [src]!"))
+			act_message(M, src, others = span_warning("%U% attempted to push %T%!"))
 		return
 
 	if(randn <= 60)
 		//See about breaking grips or pulls
 		if(break_all_grabs(M))
-			playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
+			play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
 			return
 
 		//Actually disarm them
 		for(var/obj/item/I in holding)
 			if(I)
 				drop_from_inventory(I)
-				visible_message(span_danger("[M] has disarmed [src]!"))
-				playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
+				act_message(M, src, others = span_danger("%U% has disarmed %T%!"))
+				play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
 				return
 
-	playsound(src, 'sound/weapons/punchmiss.ogg', 25, 1, -1)
+	play_sfx(src, SFX_WEAPONS_PUNCHMISS)
 	if(M.lying)
-		visible_message(span_filter_combat("[span_red(span_bold("[M] attempted to sweep [src] to the floor!"))]"))
+		act_message(src, M, others = span_filter_combat("[span_red(span_bold("%T% attempted to sweep %U% to the floor!"))]"))
 	else
-		visible_message(span_filter_combat("[span_red(span_bold("[M] attempted to disarm [src]!"))]"))
+		act_message(src, M, others = span_filter_combat("[span_red(span_bold("%T% attempted to disarm %U%!"))]"))
 //Grab Intent
 /mob/living/carbon/human/proc/attack_hand_grab_intent(mob/living/carbon/human/H, mob/living/M as mob, has_hands)
 	PRIVATE_PROC(TRUE)
@@ -268,8 +268,8 @@
 	rel_set(src, "LAssailant", M)
 
 	M.do_attack_animation(src)
-	playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
-	visible_message(span_warning("[M] has grabbed [src] [(M.zone_sel.selecting == BP_L_HAND || M.zone_sel.selecting == BP_R_HAND)? "by [(gender==FEMALE)? "her" : ((gender==MALE)? "his": "their")] hands": "passively"]!"))
+	play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
+	act_message(M, src, others = span_warning("%U% has grabbed %T% [(M.zone_sel.selecting == BP_L_HAND || M.zone_sel.selecting == BP_R_HAND)? "by [(gender==FEMALE)? "her" : ((gender==MALE)? "his": "their")] hands": "passively"]!"))
 //Harm Intent
 /mob/living/carbon/human/proc/attack_hand_harm_intent(mob/living/carbon/human/H, mob/living/M as mob, has_hands)
 	PRIVATE_PROC(TRUE)
@@ -278,7 +278,7 @@
 	if(has_hands && M.zone_sel.selecting == "mouth" && get_equipped_item(SLOT_ID_MASK) && istype(get_equipped_item(SLOT_ID_MASK), /obj/item/grenade))
 		var/obj/item/grenade/G = get_equipped_item(SLOT_ID_MASK)
 		if(!G.active)
-			visible_message(span_danger("\The [M] pulls the pin from \the [src]'s [G.name]!"))
+			act_message(M, src, others = span_danger("%U% pulls the pin from %T%'s [G.name]!"))
 			G.activate(M)
 			update_inv_wear_mask()
 		else
@@ -378,7 +378,10 @@
 	else
 		H.visible_message(span_danger("[attack_message]"))
 
-	playsound(src, ((miss_type) ? (miss_type == 1 ? attack.miss_sound : 'sound/weapons/thudswoosh.ogg') : attack.attack_sound), 25, 1, -1)
+	if(miss_type && miss_type != 1)
+		play_sfx(src, SFX_WEAPONS_THUDSWOOSH, volume = 25)
+	else
+		playsound(src, miss_type ? attack.miss_sound : attack.attack_sound, 25, 1, -1)
 
 	add_attack_logs(H,src,"Melee attacked with fists (miss/block)")
 
@@ -430,15 +433,14 @@
 		if(touch_reaction_flags & SPECIES_TRAIT_THORNS)
 			if((src != L))
 				L.injure(INJURY_PIERCE, 3, L.hand ? BP_L_HAND : BP_R_HAND, src)
-				L.visible_message( \
-					span_warning("[L] is hurt by sharp body parts when touching [src]!"), \
-					span_warning("[src] is covered in sharp bits and it hurt when you touched them!"), )
+				act_message(L, src, MSG_SELF(span_warning("%T% is covered in sharp bits and it hurt when you touched them!")), \
+					MSG_OTHERS(span_warning("%U% is hurt by sharp body parts when touching %T%!")))
 
 	if(!damage)
 		return
 
 	add_attack_logs(user,src,"Melee attacked with fists (miss/block)",admin_notify = FALSE) //No admin notice since this is usually fighting simple animals
-	src.visible_message(span_danger("[user] has [attack_message] [src]!"))
+	act_message(user, src, others = span_danger("%U% has [attack_message] %T%!"))
 	user.do_attack_animation(src)
 
 	var/dam_zone = pick(organs_by_name)
@@ -465,13 +467,13 @@
 	if(!organ || organ.dislocated > 0 || organ.dislocated == -1) //don't use is_dislocated() here, that checks parent
 		return FALSE
 
-	user.visible_message(span_warning("[user] begins to dislocate [src]'s [organ.joint]!"))
+	act_message(user, src, others = span_warning("%U% begins to dislocate %T%'s [organ.joint]!"))
 	om_task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(grab_joint_human_done), done_args = list(organ))
 	return TRUE
 
 /mob/living/carbon/human/proc/grab_joint_human_done(obj/item/organ/external/organ)
 	organ.dislocate(1)
-	src.visible_message(span_danger("[src]'s [organ.joint] [pick("gives way","caves in","crumbles","collapses")]!"))
+	act_message(src, null, others = span_danger("%U%'s [organ.joint] [pick("gives way","caves in","crumbles","collapses")]!"))
 	return TRUE
 
 //Breaks all grips and pulls that the mob currently has.
@@ -479,20 +481,20 @@
 	var/success = FALSE
 	var/atom/movable/pulling = src?.pulling_target()
 	if(pulling)
-		visible_message(span_danger("[user] has broken [src]'s grip on [pulling]!"))
+		act_message(user, src, others = span_danger("%U% has broken %T%'s grip on [pulling]!"))
 		success = TRUE
 		stop_pulling()
 
 	if(istype(get_equipped_item(SLOT_ID_HAND_L), /obj/item/grab))
 		var/obj/item/grab/lgrab = get_equipped_item(SLOT_ID_HAND_L)
 		if(lgrab?.grab_target())
-			visible_message(span_danger("[user] has broken [src]'s grip on [lgrab?.grab_target()]!"))
+			act_message(user, src, others = span_danger("%U% has broken %T%'s grip on [lgrab?.grab_target()]!"))
 			success = TRUE
 		drop_from_inventory(lgrab)
 	if(istype(get_equipped_item(SLOT_ID_HAND_R), /obj/item/grab))
 		var/obj/item/grab/rgrab = get_equipped_item(SLOT_ID_HAND_R)
 		if(rgrab?.grab_target())
-			visible_message(span_danger("[user] has broken [src]'s grip on [rgrab?.grab_target()]!"))
+			act_message(user, src, others = span_danger("%U% has broken %T%'s grip on [rgrab?.grab_target()]!"))
 			success = TRUE
 		drop_from_inventory(rgrab)
 	return success
@@ -515,9 +517,10 @@
 		return FALSE
 
 	if(user == src)
-		user.visible_message(span_filter_notice("\The [user] starts applying pressure to [user.p_their()] [organ.name]!"), span_filter_notice("You start applying pressure to your [organ.name]!"))
+		act_message(user, null, MSG_SELF(span_filter_notice("You start applying pressure to your [organ.name]!")), \
+			MSG_OTHERS(span_filter_notice("%U% starts applying pressure to %THEIR% [organ.name]!")))
 	else
-		user.visible_message(span_filter_notice("\The [user] starts applying pressure to [src]'s [organ.name]!"), span_filter_notice("You start applying pressure to [src]'s [organ.name]!"))
+		act_message(user, src, MSG_SELF(span_filter_notice("You start applying pressure to %T%'s [organ.name]!")), 			MSG_OTHERS(span_filter_notice("%U% starts applying pressure to %T%'s [organ.name]!")))
 	rel_set(organ, "applied_pressure", user)
 
 	//apply pressure as long as they stay still and keep grabbing
@@ -543,24 +546,14 @@
 	if(!user)
 		return
 	if(user == src)
-		user.visible_message(span_filter_notice("\The [user] stops applying pressure to [user.p_their()] [organ.name]!"), span_filter_notice("You stop applying pressure to your [organ]!"))
+		act_message(user, null, MSG_SELF(span_filter_notice("You stop applying pressure to your [organ]!")), \
+			MSG_OTHERS(span_filter_notice("%U% stops applying pressure to %THEIR% [organ.name]!")))
 	else
-		user.visible_message(span_filter_notice("\The [user] stops applying pressure to [src]'s [organ.name]!"), span_filter_notice("You stop applying pressure to [src]'s [organ.name]!"))
+		act_message(user, src, MSG_SELF(span_filter_notice("You stop applying pressure to %T%'s [organ.name]!")), \
+			MSG_OTHERS(span_filter_notice("%U% stops applying pressure to %T%'s [organ.name]!")))
 
 // check_attacks verb body relocated to code/modules/mob/living/carbon/human/attacks_panel.dm (structured TGUI).
 
-/mob/living/carbon/human/Topic(href, href_list)
-	if(href_list["default_attk"])
-		if(href_list["default_attk"] == "reset_attk")
-			set_default_attack(null)
-		else
-			var/datum/unarmed_attack/u_attack = locate(href_list["default_attk"])
-			if(u_attack && (u_attack in species.unarmed_attacks))
-				set_default_attack(u_attack)
-		check_attacks()
-		return 1
-	else
-		return ..()
 
 /mob/living/carbon/human/proc/set_default_attack(datum/unarmed_attack/u_attack)
 	rel_set(src, "default_attack", u_attack) // an attack the species owns
@@ -599,20 +592,20 @@
 			to_chat(reviver, span_danger("You get the feeling [src] can't be revived by CPR alone."))
 			return // Handle no-defib species flag.
 		if(get_xenochimera_state())
-			visible_message(span_danger("\The [src]'s body twitches and gurgles a bit."))
+			act_message(src, null, others = span_danger("%U%'s body twitches and gurgles a bit."))
 			to_chat(reviver, span_danger("You get the feeling [src] can't be revived by CPR alone."))
 			return // Handle xenochim, can't cpr them back to life
 		if(has_mutation(HUSK))
-			visible_message(span_danger("\The [src]'s body crunches and snaps."))
+			act_message(src, null, others = span_danger("%U%'s body crunches and snaps."))
 			to_chat(reviver, span_danger("You get the feeling [src] is going to need surgical intervention to be revived."))
 			return // Handle husked, cure it before you can revive
 		if(!can_defib)
-			visible_message(span_danger("\The [src]'s neck shifts and cracks!"))
+			act_message(src, null, others = span_danger("%U%'s neck shifts and cracks!"))
 			to_chat(reviver, span_danger("You get the feeling [src] is going to need surgical intervention to be revived."))
 			return // Handle broken neck/no attached brain
 		var/bad_vital_organ = check_vital_organs()
 		if(bad_vital_organ)
-			visible_message(span_danger("\The [src]'s body lays completely limp and lifeless!"))
+			act_message(src, null, others = span_danger("%U%'s body lays completely limp and lifeless!"))
 			to_chat(reviver, span_danger("You get the feeling [src] is missing something vital."))
 			return // Handle vital organs being missing.
 
@@ -620,7 +613,7 @@
 		var/mob/observer/dead/ghost = get_ghost()
 		if(ghost)
 			ghost.notify_revive("Someone is trying to resuscitate you. Re-enter your body if you want to be revived!", 'sound/effects/genetics.ogg', source = src)
-		visible_message(span_warning("\The [src]'s body convulses a bit."))
+		act_message(src, null, others = span_warning("%U%'s body convulses a bit."))
 
 		// REVIVE TIME. Life() can bring them back to consciousness if it needs to.
 		if(return_from_death("CPR", reviver, REVIVE_UNCONSCIOUS) != TRUE)
@@ -650,7 +643,7 @@
 
 /// Abdominal thrusts to dislodge an airway obstruction.
 /mob/living/carbon/human/proc/perform_heimlich(mob/living/carbon/human/rescuer, datum/affliction/airway_obstruction/choke)
-	rescuer.visible_message(span_danger("\The [rescuer] wraps [rescuer.p_their()] arms around \the [src] and thrusts hard under the ribs!"))
+	act_message(rescuer, src, others = span_danger("%U% wraps %THEIR% arms around %T% and thrusts hard under the ribs!"))
 	om_task_timed(rescuer, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(perform_heimlich_human_done), done_args = list(choke))
 	return TRUE
 
@@ -659,7 +652,7 @@
 		return FALSE
 	choke.receive_tagged_treatment(TREAT_AIRWAY, rand(20, 45))
 	if(QDELETED(choke))
-		visible_message(span_notice("\The [src] coughs something up and gasps for air!"))
+		act_message(src, null, others = span_notice("%U% coughs something up and gasps for air!"))
 		emote("gasp")
 	else
 		emote("cough")

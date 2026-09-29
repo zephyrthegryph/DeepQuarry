@@ -22,14 +22,14 @@
 
 	var/breakout = 0 //if someone is currently breaking out. mutex
 	var/breakout_time = 2 //2 minutes by default
-	var/breakout_sound = 'sound/effects/grillehit.ogg'	//Sound that plays while breaking out
+	var/breakout_sound = SFX_EFFECTS_GRILLEHIT	//Sound that plays while breaking out
 
 	var/storage_capacity = 2 * MOB_MEDIUM //This is so that someone can't pack hundreds of items in a locker/crate
 							  //then open it in a populated area to crash clients.
 	var/storage_cost = 40	//How much space this closet takes up if it's stuffed in another closet
 
-	var/open_sound = 'sound/effects/closet_open.ogg'
-	var/close_sound = 'sound/effects/closet_close.ogg'
+	var/open_sound = SFX_EFFECTS_CLOSET_OPEN
+	var/close_sound = SFX_EFFECTS_CLOSET_CLOSE
 
 	var/store_misc = 1		//Chameleon item check
 	var/store_items = 1		//Will the closet store items?
@@ -44,7 +44,7 @@
 	var/is_animating_door = FALSE
 	/// Our visual object for the closet door, if we're animating
 	var/obj/effect/overlay/closet_door/door_obj
-	var/vore_sound = 'sound/effects/metalscrape2.ogg'
+	var/vore_sound = SFX_EFFECTS_METALSCRAPE2
 
 /obj/structure/closet/Initialize(mapload)
 	add_trait(src, TRAIT_ALT_CLICK_BLOCKER, ROUNDSTART_TRAIT)
@@ -206,7 +206,7 @@
 	opened = 1
 	playsound(src, open_sound, 50, 1, -3)
 	if(initial(density))
-		density = !density
+		set_density(!density)
 	animate_door()
 	return 1
 
@@ -230,7 +230,7 @@
 
 	playsound(src, close_sound, 50, 1, -3)
 	if(initial(density))
-		density = !density
+		set_density(!density)
 	animate_door(TRUE)
 	if(om_wants(src, /datum/om/event/closet_closed))
 		om_emit(src, new /datum/om/event/closet_closed)
@@ -358,7 +358,7 @@
 	return TRUE
 
 /obj/structure/closet/proc/wrench_act_tool_done(mob/user)
-	anchored = !anchored
+	set_anchored(!anchored)
 	to_chat(user, span_notice("You [anchored ? "secured" : "unsecured"] \the [src]!"))
 
 /obj/structure/closet/welder_act(mob/user, obj/item/W)

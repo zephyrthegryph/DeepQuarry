@@ -752,31 +752,29 @@ DECLARE_INTERACTIONS(/obj/item/paint_palette, INTERACT_ITEM(null, PROC_REF(inter
 	. = ..()
 	VV_DROPDOWN_OPTION("removepainting", "Remove Persistent Painting")
 
-/obj/structure/sign/painting/vv_do_topic(list/href_list)
-	. = ..()
-	if(href_list["removepainting"])
-		if(!check_rights(NONE))
-			return
-		var/mob/user = usr
-		if(!persistence_id || !current_canvas)
-			to_chat(user,span_warning("This is not a persistent painting."))
-			return
-		var/md5 = md5(lowertext(current_canvas.get_data_string()))
-		var/author = current_canvas.author_ckey
-		var/list/filenames_found = list()
-		for(var/list/entry in SSpersistence.all_paintings)
-			if(entry["md5"] == md5)
-				filenames_found += "data/persistent/paintings/[entry["persistence_id"]]/[entry["md5"]].png"
-				SSpersistence.all_paintings -= list(entry)
-		for(var/png in filenames_found)
-			if(fexists(png))
-				fdel(png)
-		for(var/obj/structure/sign/painting/P in SSpersistence.painting_frames)
-			if(P.current_canvas && md5(P.current_canvas.get_data_string()) == md5)
-				own_clear(P, "current_canvas", OWN_DELETE)
-				P.update_appearance()
-		loaded = FALSE
-		log_and_message_admins(span_notice("[key_name_admin(user)] has deleted persistent painting made by [author]."))
+VV_TOPIC_ACTION(/obj/structure/sign/painting, "removepainting", PROC_REF(vv_topic_remove_painting))
+
+/obj/structure/sign/painting/proc/vv_topic_remove_painting(mob/user, list/args)
+	if(!persistence_id || !current_canvas)
+		to_chat(user,span_warning("This is not a persistent painting."))
+		return
+	var/md5 = md5(lowertext(current_canvas.get_data_string()))
+	var/author = current_canvas.author_ckey
+	var/list/filenames_found = list()
+	for(var/list/entry in SSpersistence.all_paintings)
+		if(entry["md5"] == md5)
+			filenames_found += "data/persistent/paintings/[entry["persistence_id"]]/[entry["md5"]].png"
+			SSpersistence.all_paintings -= list(entry)
+	for(var/png in filenames_found)
+		if(fexists(png))
+			fdel(png)
+	for(var/obj/structure/sign/painting/P in SSpersistence.painting_frames)
+		if(P.current_canvas && md5(P.current_canvas.get_data_string()) == md5)
+			own_clear(P, "current_canvas", OWN_DELETE)
+			P.update_appearance()
+	loaded = FALSE
+	log_and_message_admins(span_notice("[key_name_admin(user)] has deleted persistent painting made by [author]."))
+	return TRUE
 
 // The easel's painting sits on its turf (one-sided REL view).
 OWN(/obj/structure/sign/painting, current_canvas, OWN_CONTAINED)

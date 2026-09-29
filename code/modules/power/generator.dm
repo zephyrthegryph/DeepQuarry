@@ -103,7 +103,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/generator, REGISTRY_TURBINES)
 		circ1().temperature_overlay = null
 	if (circ2())
 		circ2().temperature_overlay = null
-	if (stat & (NOPOWER|BROKEN))
+	if (!operable())
 		return 1
 	else
 		if (lastgenlev != 0)
@@ -123,7 +123,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/generator, REGISTRY_TURBINES)
 		stored_energy = 0
 		set_power_supply(0)
 		return PROCESS_KILL
-	if(!circ1() || !circ2() || stat & (BROKEN|NOPOWER))
+	if(!circ1() || !circ2() || !operable())
 		stored_energy = 0
 		set_power_supply(0)
 		return PROCESS_KILL
@@ -168,9 +168,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/generator, REGISTRY_TURBINES)
 
 	//Exceeding maximum power leads to some power loss
 	if(effective_gen > max_power && prob(5))
-		var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-		s.set_up(3, 1, src)
-		s.start()
+		fx_sparks(src, 3)
 		stored_energy *= 0.5
 
 	//Power
@@ -204,11 +202,11 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/generator, REGISTRY_TURBINES)
 
 /obj/machinery/power/generator/wrench_act(mob/user, obj/item/W)
 	playsound(src, W.usesound, 75, 1)
-	anchored = !anchored
+	set_anchored(!anchored)
 	user.visible_message("[user.name] [anchored ? "secures" : "unsecures"] the bolts holding [src.name] to the floor.", \
 					"You [anchored ? "secure" : "unsecure"] the bolts holding [src] to the floor.", \
 					"You hear a ratchet.")
-	update_use_power(anchored ? USE_POWER_IDLE : USE_POWER_ACTIVE)
+	set_use_power(anchored ? USE_POWER_IDLE : USE_POWER_ACTIVE)
 	if(anchored)
 		MACHINE_WAKE(src)
 	if(anchored)
@@ -235,7 +233,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/generator, REGISTRY_TURBINES)
 
 /obj/machinery/power/generator/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
-	if(stat & (BROKEN|NOPOWER) || !anchored)
+	if(!operable() || !anchored)
 		return TRUE
 	if(!circ1() || !circ2()) //Just incase the middle part of the TEG was not wrenched last.
 		reconnect()
@@ -286,7 +284,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/generator, REGISTRY_TURBINES)
 	return data
 
 /obj/machinery/power/generator/power_change()
-	..()
+	. = ..()
 	if(anchored)
 		clear_gas_dependencies()
 		MACHINE_WAKE(src)

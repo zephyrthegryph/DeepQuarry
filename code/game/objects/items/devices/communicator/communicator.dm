@@ -76,8 +76,8 @@ MATERIAL_MIX(/obj/item/communicator, list(MAT_STEEL = 30,MAT_GLASS = 10))
 
 	// Ringtones! (Based on the PDA ones)
 	var/ttone = "beep" //The ringtone!
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 // Proc: New()
 // Parameters: None
@@ -147,7 +147,7 @@ DECLARE_INTERACTIONS(/obj/item/communicator, \
 			var/mob/M = loc
 			M.put_in_hands(id)
 			to_chat(M, span_notice("You remove the ID from the [name].")) // usr --> M
-			playsound(src, 'sound/machines/id_swipe.ogg', 100, 1)
+			play_sfx(src, SFX_MACHINES_ID_SWIPE, 2)
 		else
 			id.forceMove(get_turf(src))
 		cut_overlay("pda-id")
@@ -219,7 +219,7 @@ DECLARE_INTERACTIONS(/obj/item/communicator, \
 /obj/item/communicator/examine(mob/user)
 	. = ..()
 
-	for(var/mob/living/voice/voice in contents)
+	FOR_REAL_CONTENTS(var/mob/living/voice/voice, src)
 		. += span_notice("On the screen, you can see a image feed of [voice].")
 
 		if(voice && voice.key)
@@ -349,7 +349,7 @@ DECLARE_INTERACTIONS(/obj/item/communicator, \
 
 /mob/observer/dead
 	var/datum/exonet_protocol/exonet = null
-	var/list/exonet_messages = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	var/list/exonet_messages = list() // ALLOW(instance_list): d: per-mob exonet_messages, filled at runtime; mobs are few
 
 // Proc: New()
 // Parameters: None

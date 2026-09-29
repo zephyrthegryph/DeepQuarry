@@ -6,8 +6,8 @@
 	no_variants = FALSE
 	pass_color = TRUE
 	strict_color_stacking = TRUE
-	drop_sound = 'sound/items/drop/leather.ogg'
-	pickup_sound = 'sound/items/pickup/leather.ogg'
+	drop_sound = SFX_ITEMS_DROP_LEATHER
+	pickup_sound = SFX_ITEMS_PICKUP_LEATHER
 	resistance_flags = FLAMMABLE
 
 /obj/item/stack/material/cloth
@@ -18,8 +18,8 @@
 	no_variants = FALSE
 	pass_color = TRUE
 	strict_color_stacking = TRUE
-	drop_sound = 'sound/items/drop/clothing.ogg'
-	pickup_sound = 'sound/items/pickup/clothing.ogg'
+	drop_sound = SFX_ITEMS_DROP_CLOTHING
+	pickup_sound = SFX_ITEMS_PICKUP_CLOTHING
 	resistance_flags = FLAMMABLE
 
 /obj/item/stack/material/cloth/diyaab
@@ -34,8 +34,8 @@
 	no_variants = FALSE
 	pass_color = TRUE
 	strict_color_stacking = TRUE
-	drop_sound = 'sound/items/drop/clothing.ogg'
-	pickup_sound = 'sound/items/pickup/clothing.ogg'
+	drop_sound = SFX_ITEMS_DROP_CLOTHING
+	pickup_sound = SFX_ITEMS_PICKUP_CLOTHING
 	resistance_flags = FLAMMABLE
 
 /obj/item/stack/material/fiber
@@ -45,6 +45,6 @@
 	default_type = MAT_FIBERS
 	pass_color = TRUE
 	apply_colour = TRUE
-	drop_sound = 'sound/items/drop/clothing.ogg'
-	pickup_sound = 'sound/items/pickup/clothing.ogg'
+	drop_sound = SFX_ITEMS_DROP_CLOTHING
+	pickup_sound = SFX_ITEMS_PICKUP_CLOTHING
 	resistance_flags = FLAMMABLE

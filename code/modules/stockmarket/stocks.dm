@@ -2,14 +2,14 @@
 	var/broker = ""
 	var/borrower = ""
 	var/tmp/datum/stock/stock
-	var/lease_expires = 0
+	EXPIRY_DECLARE(lease_expires)
 	var/lease_time = 0
 	var/grace_time = 0
-	var/grace_expires = 0
+	EXPIRY_DECLARE(grace_expires)
 	var/share_amount = 0
 	var/share_debt = 0
 	var/deposit = 0
-	var/offer_expires = 0
+	EXPIRY_DECLARE(offer_expires)
 
 /datum/stock
 	var/name = "Stock"
@@ -32,7 +32,7 @@
 
 	var/disp_value_change = 0
 	var/optimism = 0
-	var/last_unification = 0
+	EXPIRY_DECLARE(last_unification)
 	var/average_shares = 100
 	var/outside_shareholders = 10000		// The amount of offstation people holding shares in this company. The higher it is, the more fluctuation it causes.
 	var/available_shares = 500000
@@ -54,7 +54,7 @@
 /datum/stock/proc/addArticle(datum/article/A)
 	if (!(A in articles))
 		own_add(src, "articles", A) // appended: newest article is last
-	A.ticks = world.time
+	EXPIRY_STAMP(A, ticks, CLOCK_WORLD)
 
 /datum/stock/proc/generateEvents()
 	var/list/types = typesof(/datum/stockEvent) - /datum/stockEvent
@@ -180,12 +180,12 @@
 	average_shares /= 2
 	available_shares /= 2
 	current_value *= 2
-	last_unification = world.time
+	EXPIRY_STAMP(src, last_unification, CLOCK_WORLD)
 
 /datum/stock/proc/stock_tick(elapsed_steps = 1)
 	for (var/B in borrows)
 		var/datum/borrow/borrow = B
-		if (world.time > borrow.grace_expires)
+		if (ELAPSED(borrow, grace_expires, CLOCK_WORLD) > 0)
 			modifyAccount(borrow.borrower, -max(current_value * borrow.share_debt, 0), 1)
 			own_take_member(src, "borrows", borrow)
 			if (borrow.borrower in GLOB.FrozenAccounts)
@@ -193,7 +193,7 @@
 				if (length(GLOB.FrozenAccounts[borrow.borrower]) == 0)
 					GLOB.FrozenAccounts -= borrow.borrower
 			qdel(borrow)
-		else if (world.time > borrow.lease_expires)
+		else if (ELAPSED(borrow, lease_expires, CLOCK_WORLD) > 0)
 			if (borrow.borrower in shareholders)
 				var/amt = LAZYACCESS(shareholders, borrow.borrower)
 				if (amt > borrow.share_debt)
@@ -211,7 +211,7 @@
 		return
 	for (var/B in borrow_brokers)
 		var/datum/borrow/borrow = B
-		if (borrow.offer_expires < world.time)
+		if (ELAPSED(borrow, offer_expires, CLOCK_WORLD) > 0)
 			own_take_member(src, "borrow_brokers", borrow)
 			qdel(borrow)
 	if (prob(100 * (1 - (0.95 ** elapsed_steps))))
@@ -253,7 +253,7 @@
 /datum/stock/proc/borrow(datum/borrow/B, who)
 	if (B.lease_expires)
 		return 0
-	B.lease_expires = world.time + B.lease_time
+	EXPIRY_SET(B, lease_expires, B.lease_time, CLOCK_WORLD)
 	var/old_d = B.deposit
 	var/d_amt = B.deposit * current_value * B.share_amount
 	if (!modifyAccount(who, -d_amt))

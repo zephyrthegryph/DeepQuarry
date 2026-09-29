@@ -13,7 +13,7 @@
 
 /obj/structure/ghost_pod/manual/corgi/create_occupant(mob/M)
 	lightning_strike(get_turf(src), cosmetic = TRUE)
-	density = FALSE
+	set_density(FALSE)
 	var/mob/living/simple_mob/animal/passive/dog/corgi/R = new(get_turf(src))
 	// R.has_hands = TRUE // Downstream
 	if(M.mind)
@@ -38,7 +38,7 @@
 	..(user, span_warning("\The [user] attempts to pull out the sword!"), "is activating a cursed blade.")
 
 /obj/structure/ghost_pod/manual/cursedblade/create_occupant(mob/M)
-	density = FALSE
+	set_density(FALSE)
 	var/obj/item/melee/cursedblade/R = new(get_turf(src))
 	to_chat(M, span_notice("You are a " + span_bold("Cursed Sword") + ", discovered by a hapless explorer. \
 	You were once an explorer yourself, when one day you discovered a strange sword made from a red crystal. As soon as you touched it,\

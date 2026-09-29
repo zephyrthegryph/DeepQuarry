@@ -4,7 +4,7 @@
 		client.images += rune.blood_image
 	if(stat != DEAD)
 		for(var/obj/machinery/ai_status_display/O in REGISTRY_MEMBERS(REGISTRY_MACHINES)) //change status
-			O.mode = 1
+			O.set_mode(1)
 			O.emotion = "Neutral"
 	if(multicam_on)
 		end_multicam()

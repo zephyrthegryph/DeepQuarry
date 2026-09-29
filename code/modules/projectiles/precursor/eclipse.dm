@@ -65,7 +65,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/grenade/chem_grenade/frost, "detonator", /obj/it
 /obj/item/projectile/energy/frostsphere
 	name = "frost sphere"
 	icon_state = "ice_2"
-	fire_sound = 'sound/weapons/pulse3.ogg'
+	fire_sound = SFX_WEAPONS_PULSE3
 	damage = 20
 	modifier_type_to_apply = /datum/body_effect/cryogelled
 	modifier_duration = 0.25 MINUTE

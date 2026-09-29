@@ -27,18 +27,14 @@
 		to_chat(src, span_warning("The wounds on [H]'s [affecting.name] have already been treated."))
 		return
 	var/datum/affliction/wound/W = wounds[index]
-	visible_message(span_notice("\The [src] [pick("slathers \a [W.desc] on [H]'s [affecting.name] with their spit.",
-											"drags their tongue across \a [W.desc] on [H]'s [affecting.name].",
-											"drips saliva onto \a [W.desc] on [H]'s [affecting.name].",
-											"uses their tongue to disinfect \a [W.desc] on [H]'s [affecting.name].",
-											"licks \a [W.desc] on [H]'s [affecting.name], cleaning it.")]"), \
-						span_notice("You treat \a [W.desc] on [H]'s [affecting.name] with your antiseptic saliva.") )
+	act_message(src, H, MSG_SELF(span_notice("You treat \a [W.desc] on %T%'s [affecting.name] with your antiseptic saliva.")), \
+		MSG_OTHERS(span_notice("%U% [pick("slathers \a [W.desc] on %T%'s [affecting.name] with their spit.", "drags their tongue across \a [W.desc] on %T%'s [affecting.name].", "drips saliva onto \a [W.desc] on %T%'s [affecting.name].", "uses their tongue to disinfect \a [W.desc] on %T%'s [affecting.name].", "licks \a [W.desc] on %T%'s [affecting.name], cleaning it.")]")))
 	adjust_nutrition(-20)
 	W.salve()
 	W.bandage()
 	W.disinfect()
 	H.UpdateDamageIcon()
-	playsound(src, 'sound/effects/ointment.ogg', 25)
+	play_sfx(src, SFX_EFFECTS_OINTMENT, 0.5, vary = FALSE)
 	lick_step(H, affecting, wounds, index + 1)
 
 /mob/living/carbon/human/proc/lick_wounds(mob/living/carbon/M as mob in view(1)) // Allows the user to lick themselves. Given how rarely this trait is used, I don't see an issue with a slight buff.
@@ -105,7 +101,7 @@
 			return
 
 		else
-			visible_message(span_infoplain(span_bold("\The [src]") + " starts licking the wounds on [M]'s [affecting.name] clean."), \
-								span_notice("You start licking the wounds on [M]'s [affecting.name] clean.") )
+			act_message(src, M, MSG_SELF(span_notice("You start licking the wounds on %T%'s [affecting.name] clean.")), \
+				MSG_OTHERS(span_infoplain(span_bold("%U%") + " starts licking the wounds on %T%'s [affecting.name] clean.")))
 
 			lick_step(H, affecting, affecting.get_wounds().Copy(), 1)

@@ -17,7 +17,7 @@
 	var/datum/blob_type/blob_type = null
 	/// Relation list (REL_LIST): spores and other blob mobs this overmind spawned.
 	var/list/blob_mobs
-	var/list/resource_blobs = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	var/list/resource_blobs = list() // ALLOW(instance_list): d: per-mob resource_blobs, filled at runtime; mobs are few
 	var/placed = 0
 	var/base_point_rate = 2 //for blob core placement
 	var/ai_controlled = TRUE
@@ -25,11 +25,13 @@
 
 	universal_understand = TRUE
 
-	var/list/has_langs = list(LANGUAGE_ANIMAL) // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
 	var/tmp/datum/language/default_language_static
 
 /mob/observer/blob/get_default_language()
 	return default_language()
+
+/// The languages the overmind knows.
+TYPE_TABLE_DECLARE(/mob/observer/blob, blob_langs, list(LANGUAGE_ANIMAL))
 
 /mob/observer/blob/Initialize(mapload, pre_placed = 0, starting_points = 60, desired_blob_type = null)
 	blob_points = starting_points
@@ -48,7 +50,7 @@
 	if(blob_core())
 		blob_core().update_icon()
 
-	for(var/L in has_langs)
+	for(var/L in TYPE_TABLE_GET(src, blob_langs))
 		languages |= GLOB.all_languages[L]
 	if(languages.len)
 		default_language_static = languages[1]

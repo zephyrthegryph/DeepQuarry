@@ -69,7 +69,7 @@
 	injury_kind = INJURY_PIERCE
 
 /obj/item/projectile/icicle/on_impact(atom/A)
-	playsound(A, "shatter", 70, 1)
+	play_sfx(A, SFX_SHATTER)
 	return ..()
 
 /obj/item/projectile/icicle/get_structure_damage()

@@ -16,7 +16,7 @@
 	mob_bump_flag = SIMPLE_ANIMAL //This not existing was breaking vore bump for some reason.
 	parasitic = TRUE //Digestion immunity var
 
-	var/list/speak = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	var/list/speak = list() // ALLOW(instance_list): d: per-mob speak, filled at runtime; mobs are few
 	var/speak_chance = 0 //MAy have forgotten to readd that.
 	//Synx speech code overrides normal speech code but is still a x in 200 chance of triggereing, as all mobs do.
 	//VAR$ SETUP
@@ -29,14 +29,14 @@
 	var/stomach_distended_state = "synx_s"
 	var/transformed = FALSE
 	var/memorysize = 50 //Var for how many messages synxes remember if they know speechcode
-	var/list/voices = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	var/list/voices = list() // ALLOW(instance_list): d: per-mob voices, filled at runtime; mobs are few
 	var/acid_damage_lower = SYNX_LOWER_DAMAGE - 1 //Variables for a hacky way to change to burn damage when they vomit up their stomachs. Set to 1 less than melee damage because it takes a minimum of 1 brute damage for this to activate.
 	var/acid_damage_upper = SYNX_UPPER_DAMAGE - 1
 	var/stomach_distended = 0 //Check for whether or not the synx has vomitted up its stomach.
 	var/forcefeedchance = 20 //This needs to be defined in the parent because code.
 	// Recycling bigdragon code for modular system. Hope this works! -Azel
 		//Sprites are layered ontop of one-another in order of this list
-	var/list/overlay_colors = list( // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	var/list/overlay_colors = list( // ALLOW(instance_list): d: per-instance colours, rolled at spawn and repainted by the player
 		"Body" = "#FFFFFF",
 		"Horns" = "#FFFFFF",
 		"Marks" = "#FFFFFF",
@@ -55,13 +55,6 @@
 		"Capra",
 	)
 	var/horns
-	var/list/marking_styles = list( // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
-		"None",
-		"Basic",
-		"Star",
-		"Short",
-		"Long",
-	)
 	var/markings
 	var/static/list/eye_styles = list(
 		"Normal"
@@ -127,6 +120,9 @@
 	max_n2 = 0 //Maybe add a max
 	// TODO: Set a max temperature of about 20-30 above room temperatures. Synx don't like the heat.
 
+
+/// The marking styles a synx can roll or pick.
+TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list("None", "Basic", "Star", "Short", "Long"))
 
 /mob/living/simple_mob/animal/synx/get_available_emotes()
 	. = ..()
@@ -302,7 +298,7 @@
 
 /datum/reagent/inaprovaline/synxchem/clown/affect_blood(mob/living/carbon/M, alien, removed)
 	M.injure(INJURY_TOXIN, 0.01, flags = INJURE_SILENT)
-	playsound(M.loc, 'sound/items/bikehorn.ogg', 50, 1)
+	play_sfx(M.loc, SFX_ITEMS_BIKEHORN)
 	if(prob(1))
 		M.custom_pain("I have no horn but i must honk!",60)
 	if(prob(2))
@@ -564,7 +560,7 @@
 		for(var/belly in src.vore_organs) //Spit out all contents because our insides are now outsides
 			var/obj/belly/B = belly
 			for(var/atom/movable/A in B)
-				playsound(src, 'sound/effects/splat.ogg', 50, 1)
+				play_sfx(src, SFX_EFFECTS_SPLAT)
 				B.release_specific_contents(A)
 		update_icons()
 		return
@@ -613,7 +609,7 @@
 		var/list/horncolors = list("#FFE100","#A75A35","#1C4DFF","#FF0000","#404C6D","#2F2F2F","#55CE21","#711BFF","#DEDEE0")
 		overlay_colors["Horns"] = pick(horncolors)
 		var/list/markingcolors = list("#2F2F2F")
-		markings = pick(marking_styles)
+		markings = pick(TYPE_TABLE_GET(src, synx_marking_styles))
 		overlay_colors["Marks"] = pick(markingcolors)
 		var/list/eyecolors = list("#FFE100","#FF6A00","#1C4DFF","#FF0000","#3D5EBE","#FF006E","#55CE21","#711BFF","#939EFF")
 		eyes = pick(eye_styles)
@@ -673,7 +669,7 @@
 			options = horn_styles
 			state_prefix = "synx_horns"
 		if("Marks")
-			options = marking_styles
+			options = TYPE_TABLE_GET(src, synx_marking_styles)
 			state_prefix = "synx_markings"
 		if("Eyes")
 			options = eye_styles
@@ -750,10 +746,10 @@
 	set category = "Abilities.Synx"
 	icon_state = "synx_pet_rainbow"
 	icon_living = "synx_pet_rainbow"
-	playsound(src.loc, 'sound/items/bikehorn.ogg', 50, 1)
+	play_sfx(src.loc, SFX_ITEMS_BIKEHORN)
 */
 /mob/living/simple_mob/animal/synx/proc/bikehorn()
-	playsound(src.loc, 'sound/items/bikehorn.ogg', 50, 1)
+	play_sfx(src.loc, SFX_ITEMS_BIKEHORN)
 
 //HOLOSEEDSPAWNCODE
 /mob/living/simple_mob/animal/synx/ai/pet/holo
@@ -761,12 +757,12 @@
 
 /mob/living/simple_mob/animal/synx/ai/pet/holo/on_death(gibbed)
 	..()
-	visible_message(span_notice("\The [src] fades away!"))
+	act_message(src, null, null, MSG_OTHERS(span_notice("%U% fades away!")))
 	var/location = get_turf(src)
 	new /obj/item/seeds/hardlightseed/typesx(location)
 
 /mob/living/simple_mob/animal/synx/ai/pet/holo/gib()
-	visible_message(span_notice("\The [src] fades away!"))
+	act_message(src, null, null, MSG_OTHERS(span_notice("%U% fades away!")))
 	var/location = get_turf(src)
 	new /obj/item/seeds/hardlightseed/typesx(location)
 	qdel(src)

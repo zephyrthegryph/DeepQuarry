@@ -31,7 +31,7 @@
 	if(!SK)
 		return FALSE
 	SK.shadekin_adjust_energy(-25)
-	playsound(actor, 'sound/effects/bamf.ogg', 75, 1)
+	play_sfx(actor, SFX_EFFECTS_BAMF)
 	actor.apply_body_effect(/datum/body_effect/shadekin/create_shade, 20 SECONDS)
 	return TRUE
 

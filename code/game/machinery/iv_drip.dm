@@ -7,7 +7,7 @@
 
 
 /obj/machinery/iv_drip/var/mob/living/carbon/human/attached
-/obj/machinery/iv_drip/var/mode = 1 // 1 is injecting, 0 is taking blood.
+/obj/machinery/iv_drip/mode = 1 // 1 is injecting, 0 is taking blood.
 /obj/machinery/iv_drip/var/obj/item/reagent_containers/beaker = null
 
 /obj/machinery/iv_drip/update_icon()
@@ -178,7 +178,7 @@ EXTEND_INTERACTIONS(/obj/machinery/iv_drip, \
 	if(user.stat)
 		return
 
-	mode = !mode
+	set_mode(!mode)
 	to_chat(user, "The IV drip is now [mode ? "injecting" : "taking blood"].")
 
 /obj/machinery/iv_drip/examine(mob/user)

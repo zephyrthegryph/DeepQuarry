@@ -69,7 +69,7 @@ GLOBAL_DATUM_INIT(generic_pathfinding_actor, /atom/movable/pathfinding_predicate
 	//legacy .target reference removed (no equivalent on /datum/ai_brain).
 	src.max_path_length = max_path_length
 
-// LC-refs: the search's inputs are OM handles, so a search that yields (CHECK_TICK) never
+// The search's inputs are relation views, cleared when a target dies, so a search that yields (CHECK_TICK) never
 // holds its actor, turfs or context alive; each search() reads them once into locals.
 /datum/pathfinding/proc/search_actor() as /atom/movable
 	return actor

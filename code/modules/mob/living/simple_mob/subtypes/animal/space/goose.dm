@@ -18,7 +18,7 @@
 	melee_damage_lower = 5 //they're meant to be annoying, not threatening.
 	melee_damage_upper = 5 //unless there's like a dozen of them, then you're screwed.
 	attacktext = list("pecked")
-	attack_sound = 'sound/weapons/bite.ogg'
+	attack_sound = SFX_WEAPONS_BITE
 
 	organ_names = /datum/decl/mob_organ_names/goose
 
@@ -51,7 +51,7 @@
 	apply_body_effect(/datum/body_effect/berserk, 30 SECONDS)
 
 /datum/decl/mob_organ_names/goose
-	hit_zones = list("head", "chest", "left leg", "right leg", "left wing", "right wing", "neck")
+TYPE_TABLE(/datum/decl/mob_organ_names/goose, mob_organ_hit_zones, list("head", "chest", "left leg", "right leg", "left wing", "right wing", "neck"))
 
 /mob/living/simple_mob/animal/space/goose/white
 	icon = 'icons/mob/animal_vr.dmi'

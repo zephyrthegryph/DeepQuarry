@@ -53,7 +53,7 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 /mob/living/simple_mob/metroid/mine/on_death(gibbed)
 	..()
 	if(prob(20))
-		visible_message(span_notice("\The [src] dropped some toy!"))
+		act_message(src, null, null, MSG_OTHERS(span_notice("%U% dropped some toy!")))
 		new /obj/item/toy/figure/bounty_hunter(loc, src)
 
 
@@ -107,7 +107,7 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 
 /mob/living/simple_mob/metroid/juvenile/baby/Initialize(mapload)
 	. = ..()
-	playsound(src, 'sound/metroid/metroidsee.ogg', 100, 1)
+	play_sfx(src, SFX_METROID_METROIDSEE)
 
 
 
@@ -171,7 +171,7 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 
 /mob/living/simple_mob/metroid/juvenile/super/Initialize(mapload)
 	. = ..()
-	playsound(src, 'sound/metroid/metroidsee.ogg', 100, 1)
+	play_sfx(src, SFX_METROID_METROIDSEE)
 
 /mob/living/simple_mob/metroid/juvenile/super/on_death(gibbed)
 	..()
@@ -214,7 +214,7 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 
 /mob/living/simple_mob/metroid/juvenile/alpha/Initialize(mapload)
 	. = ..()
-	playsound(src, 'sound/metroid/metroidsee.ogg', 100, 1)
+	play_sfx(src, SFX_METROID_METROIDSEE)
 
 /mob/living/simple_mob/metroid/juvenile/alpha/on_death(gibbed)
 	..()
@@ -259,7 +259,7 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	max_nutrition = 2200
 	nutrition = 0
 	ranged_cooldown_time = 5 SECOND
-	projectilesound = 'sound/weapons/taser2.ogg'
+	projectilesound = SFX_WEAPONS_TASER2
 	projectiletype = /obj/item/projectile/energy/mob/electric_spider
 
 	//Not affected by atmos.
@@ -281,7 +281,7 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 
 /mob/living/simple_mob/metroid/juvenile/gamma/Initialize(mapload)
 	. = ..()
-	playsound(src, 'sound/metroid/metroidgamma.ogg', 100, 1)
+	play_sfx(src, SFX_METROID_METROIDGAMMA)
 
 /mob/living/simple_mob/metroid/juvenile/gamma/on_death(gibbed)
 	..()
@@ -344,7 +344,7 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	makes_dirt = TRUE
 
 	projectiletype	= /obj/item/projectile/energy/metroidacid	//The projectiles I shoot
-	projectilesound = 'sound/weapons/slashmiss.ogg' // The sound I make when I do it
+	projectilesound = SFX_WEAPONS_SLASHMISS // The sound I make when I do it
 
 
 	//Unaffected by atmos.
@@ -369,7 +369,7 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 
 /mob/living/simple_mob/metroid/juvenile/zeta/Initialize(mapload)
 	. = ..()
-	playsound(src, 'sound/metroid/metroidzeta.ogg', 100, 1)
+	play_sfx(src, SFX_METROID_METROIDZETA)
 
 /mob/living/simple_mob/metroid/juvenile/zeta/on_death(gibbed)
 	..()
@@ -429,7 +429,7 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	nutrition = 0
 	makes_dirt = TRUE
 	projectiletype	= /obj/item/projectile/energy/mob/smalllaser
-	projectilesound = 'sound/weapons/Flamer.ogg' // The sound I make when I do it
+	projectilesound = SFX_WEAPONS_FLAMER // The sound I make when I do it
 
 	//Unaffected by atmos.
 	minbodytemp = 0
@@ -454,11 +454,11 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	evo_limit = 2000
 	next = "/mob/living/simple_mob/metroid/juvenile/queen"
 
-	death_sound_override = list('sound/metroid/metroidomegadeath.ogg') // We override the death sound to play our custom here
+	death_sound_override = SFX_METROID_METROIDOMEGADEATH // We override the death sound to play our custom here
 
 /mob/living/simple_mob/metroid/juvenile/omega/Initialize(mapload)
 	. = ..()
-	playsound(src, 'sound/metroid/metroidomega.ogg', 100, 1)
+	play_sfx(src, SFX_METROID_METROIDOMEGA)
 
 /mob/living/simple_mob/metroid/juvenile/omega/on_death(gibbed)
 	..()
@@ -518,7 +518,7 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	makes_dirt = TRUE
 	ranged_cooldown_time = 1.5 SECOND
 	projectiletype	= /obj/item/projectile/energy/metroidacid	// The projectiles I shoot
-	projectilesound = 'sound/weapons/slashmiss.ogg' // The sound I make when I do it
+	projectilesound = SFX_WEAPONS_SLASHMISS // The sound I make when I do it
 
 	//Unaffected by atmos.
 	minbodytemp = 0
@@ -541,11 +541,11 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	next = null
 	is_queen = TRUE
 
-	death_sound_override = list('sound/metroid/metroidqueendeath.ogg') // We override the death sound to play our custom here
+	death_sound_override = SFX_METROID_METROIDQUEENDEATH // We override the death sound to play our custom here
 
 /mob/living/simple_mob/metroid/juvenile/queen/Initialize(mapload)
 	. = ..()
-	playsound(src, 'sound/metroid/metroidqueen.ogg', 100, 1)
+	play_sfx(src, SFX_METROID_METROIDQUEEN)
 	GLOB.queen_amount++
 
 /mob/living/simple_mob/metroid/juvenile/queen/on_death(gibbed)

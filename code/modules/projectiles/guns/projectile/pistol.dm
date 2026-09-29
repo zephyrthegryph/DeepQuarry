@@ -156,7 +156,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/colt/detective, \
 	item_state = "deagle"
 	force = 14.0
 	caliber = ".44"
-	fire_sound = 'sound/weapons/gunshot_deagle.ogg'
+	fire_sound = SFX_WEAPONS_GUNSHOT_DEAGLE
 	load_method = MAGAZINE
 	magazine_type = /obj/item/ammo_magazine/m44
 	allowed_magazines = list(/obj/item/ammo_magazine/m44)
@@ -187,13 +187,13 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/colt/detective, \
 	icon_state = "gyropistol"
 	max_shells = 8
 	caliber = ".75"
-	fire_sound = 'sound/weapons/railgun.ogg'
+	fire_sound = SFX_WEAPONS_RAILGUN
 	ammo_type = "/obj/item/ammo_casing/a75"
 	load_method = MAGAZINE
 	magazine_type = /obj/item/ammo_magazine/m75
 	allowed_magazines = list(/obj/item/ammo_magazine/m75)
 	auto_eject = 1
-	auto_eject_sound = 'sound/weapons/smg_empty_alarm.ogg'
+	auto_eject_sound = SFX_WEAPONS_SMG_EMPTY_ALARM
 	move_delay = 0 // Pistols have move_delay of 0
 
 /obj/item/gun/projectile/gyropistol/update_icon()
@@ -444,7 +444,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/colt/detective, \
 	allowed_magazines = list(/obj/item/ammo_magazine/m38)
 	load_method = MAGAZINE
 	w_class = ITEMSIZE_SMALL
-	fire_sound = 'sound/weapons/gunshot_pathetic.ogg'
+	fire_sound = SFX_WEAPONS_GUNSHOT_PATHETIC
 
 /obj/item/gun/projectile/giskard/update_icon()
 	..()
@@ -579,7 +579,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/colt/detective, \
 	allowed_magazines = list(/obj/item/ammo_magazine/m44,/obj/item/ammo_magazine/m44/rubber)
 	load_method = MAGAZINE
 	auto_eject = 1
-	auto_eject_sound = 'sound/weapons/smg_empty_alarm.ogg'
+	auto_eject_sound = SFX_WEAPONS_SMG_EMPTY_ALARM
 	move_delay = 0 // Pistols have move_delay of 0
 
 /obj/item/gun/projectile/lamia/update_icon()
@@ -599,7 +599,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/colt/detective, \
 	icon = 'icons/obj/gun_yw.dmi'
 	caliber = "9mm"
 	load_method = MAGAZINE
-	fire_sound = 'sound/weapons/45pistol_vr.ogg'
+	fire_sound = SFX_WEAPONS_45PISTOL_VR
 	magazine_type = /obj/item/ammo_magazine/m9mm
 	allowed_magazines = list(/obj/item/ammo_magazine/m9mm)
 
@@ -625,7 +625,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/colt/detective, \
 	icon = 'icons/obj/gun_yw.dmi'
 	caliber = "9mm"
 	load_method = MAGAZINE
-	fire_sound = 'sound/weapons/45pistol_vr.ogg'
+	fire_sound = SFX_WEAPONS_45PISTOL_VR
 	magazine_type = /obj/item/ammo_magazine/m9mm
 	allowed_magazines = list(/obj/item/ammo_magazine/m9mm)
 
@@ -646,7 +646,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/colt/detective, \
 	icon = 'icons/obj/gun_yw.dmi'
 	caliber = ".45"
 	load_method = MAGAZINE
-	fire_sound = 'sound/weapons/45pistol_vr.ogg'
+	fire_sound = SFX_WEAPONS_45PISTOL_VR
 	magazine_type = /obj/item/ammo_magazine/m2024
 	allowed_magazines = list(/obj/item/ammo_magazine/m2024,/obj/item/ammo_magazine/m45)
 
@@ -666,6 +666,6 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/colt/detective, \
 	icon = 'icons/obj/gun_yw.dmi'
 	caliber = ".45"
 	load_method = MAGAZINE
-	fire_sound = 'sound/weapons/45pistol_vr.ogg'
+	fire_sound = SFX_WEAPONS_45PISTOL_VR
 	magazine_type = /obj/item/ammo_magazine/m45
 	allowed_magazines = list(/obj/item/ammo_magazine/m45)

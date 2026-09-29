@@ -32,7 +32,7 @@
 	melee_damage_lower = 10
 	melee_damage_upper = 25
 	attacktext = list("punched", "kicked", "smacked")
-	attack_sound = "punch"
+	attack_sound = SFX_PUNCH
 	armor_spec = "melee=30;bullet=10;laser=20;energy=25;bomb=20;bio=100;rad=100" //This should be the same as the base RIG.
 
 	has_hands = 1
@@ -40,7 +40,7 @@
 
 	grab_resist = 100
 
-	movement_sound = 'sound/effects/footstep/floor1.ogg'
+	movement_sound = SFX_EFFECTS_FOOTSTEP_FLOOR1
 
 	//Simple mob merc so it stops, says something, then charges.
 	say_list_type = /datum/say_list/possessed //Set to Null on silenced.
@@ -78,7 +78,7 @@
 /mob/living/simple_mob/humanoid/possessed/Moved()
 	. = ..()
 	if(prob(5) && silenced == 0)
-		playsound(src, pick('sound/h_sounds/headcrab.ogg', 'sound/h_sounds/holla.ogg', 'sound/h_sounds/lynx.ogg', 'sound/h_sounds/mumble.ogg', 'sound/h_sounds/yell.ogg'), 50, 1)
+		play_sfx(src, SFX_H_SOUNDS_HEADCRAB_2)
 
 //Plays the sound every ~4 seconds.
 /datum/om/stage/life/type_post/simple_mob/humanoid/possessed
@@ -87,7 +87,7 @@
 /datum/om/stage/life/type_post/simple_mob/humanoid/possessed/perform(mob/living/simple_mob/humanoid/possessed/self, datum/om/frame/life/ctx)
 	..()
 	if(self.idle <= 0 && self.silenced == 0)
-		playsound(self, 'sound/h_sounds/breathing.ogg', 60, 1)
+		play_sfx(self, SFX_H_SOUNDS_BREATHING)
 		self.idle = 4
 	self.idle--
 
@@ -95,16 +95,16 @@
 // the possessed suit collapses into remains and miasma.
 /mob/living/simple_mob/humanoid/possessed/on_destroy(force)
 	var/droploc = get_turf(src)
-	playsound(src, 'sound/effects/blobattack.ogg', 40, 1) // ALLOW(decl): paired with the random death message
-	visible_message(span_critical(pick("The horrid screech of metal grating metal cuts through the air as the suit's interlocking joints grind and fold inwards upon itself. A putrid wash of decayed flesh spills forwards, staining the ground dark with the contents of the collapsing RIG's long expired pilot.", // ALLOW(decl): random message
-	"\The [src] shudders as some hurt living thing, reeling as screaming servos overcompensate beneath the weight of that debilitating strike - the horrid sounds of shattered metal resonate as the RIG rips itself apart. Limbs flung about in distinctly inhuman motions in a final failed effort at balance before buckling inwards at the joints, hydraulic fluid jettisoned as blood from a severed artery as the long liquidized contents of the suit's ex-pilot spill from its chassis in a thick slurry.",
+	play_sfx(src, SFX_EFFECTS_BLOBATTACK, volume = 40) // ALLOW(decl): paired with the random death message
+	act_message(src, null, null, MSG_OTHERS(span_critical(pick("The horrid screech of metal grating metal cuts through the air as the suit's interlocking joints grind and fold inwards upon itself. A putrid wash of decayed flesh spills forwards, staining the ground dark with the contents of the collapsing RIG's long expired pilot.", // ALLOW(decl): random message
+	"%U% shudders as some hurt living thing, reeling as screaming servos overcompensate beneath the weight of that debilitating strike - the horrid sounds of shattered metal resonate as the RIG rips itself apart. Limbs flung about in distinctly inhuman motions in a final failed effort at balance before buckling inwards at the joints, hydraulic fluid jettisoned as blood from a severed artery as the long liquidized contents of the suit's ex-pilot spill from its chassis in a thick slurry.",
 	"Hissing atmosphereic valves pop and snap, breaking the ageless seal as the putrid stench of rot and carrion assaults the senses in debilitating waves. The damaged RIG's visor alight with warnings of hazardous atmospheric conditions as a final distorted scream echos from within the damaged chassis. The fetid miasma that breeches through those wheezing seals overtaken by a wet burble and plop as the suit is bathed in the liquid contents of its passenger, blackened flesh fed through those narrow seals as rotten grounds.",
 	"The timeworn suit's seals finally crack open with a hiss - spilling forth a thick fungal mist. The control module ejects from the rig as it loses all control impulses - leaving behind but a pile of bones and the rotten sludge it had been swimming in for heaven knows how long.",
-	"\The [src]'s emergency protocols kick in, retracting around the former-person, who's now little more than a disgusting pile of parts not even a vulture would want. The control module appears to be intact, however.",
+	"%U%'s emergency protocols kick in, retracting around the former-person, who's now little more than a disgusting pile of parts not even a vulture would want. The control module appears to be intact, however.",
 	"The suit finally lets go of the prisoner it had held for so long. Unfortunately, this guy reminds you of that news report of someone who forgot that Ganymede rock lobster in a fridge for a year, the thick miasma of fungi and rotten gasses visibly pouring out, pushing out rancid bits of meat and slimy bones. The only salvageable bit appears to be the Control Module.",
 	"A few last desperate seals give out with a weary series of pops, and the suit contorts with the final pressure differentials resolved: the suit tangles and leaks, and finally compacts back into it's rightful shape.",
 	"Tightening, the suit re-attempts to remain it's current form, before it collapses under the stress, supporting mechanisms closing in on themselves like a noose with nothing left to catch on.",
-	"The suit makes a noise akin to clockwork binding, and shutters, before something imperceptible gives with an abysmal noise and the suit returns to it's default form.")))
+	"The suit makes a noise akin to clockwork binding, and shutters, before something imperceptible gives with an abysmal noise and the suit returns to it's default form."))))
 	gib()
 	/* Nah
 	if(rand(1,2) == 1)

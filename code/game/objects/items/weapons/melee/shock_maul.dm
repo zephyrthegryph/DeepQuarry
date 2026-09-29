@@ -33,8 +33,8 @@
 	throwforce = 25
 	flags = NOCONDUCT
 	w_class = ITEMSIZE_HUGE
-	drop_sound = 'sound/items/drop/metalweapon.ogg'
-	pickup_sound = 'sound/items/pickup/metalweapon.ogg'
+	drop_sound = SFX_ITEMS_DROP_METALWEAPON
+	pickup_sound = SFX_ITEMS_PICKUP_METALWEAPON
 	attack_verb = list("beaten","slammed","smashed","mauled","hammered","bludgeoned")
 	var/lightcolor = "#D3FDFD"
 	var/status = 0		//whether the thing is on or not
@@ -208,9 +208,9 @@ DECLARE_INTERACTIONS(/obj/item/melee/shock_maul, \
 		om_task_timed(user, charge_time, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user))
 	else if(status)
 		status = 0
-		user.visible_message(span_notice("[user] safely disengages \the [src]'s power field."),span_notice("\The [src] is now off."))
+		act_message(user, src, MSG_SELF(span_notice("%T% is now off.")), MSG_OTHERS(span_notice("%U% safely disengages %T%'s power field.")))
 		update_held_icon()
-		playsound(src, "sparks", 75, 1, -1)
+		play_sfx(src, SFX_SPARKS, 1.5, extrarange = -1)
 		if(!bcell)
 			to_chat(user, span_warning("\The [src] does not have a power source!"))
 	else
@@ -220,8 +220,8 @@ DECLARE_INTERACTIONS(/obj/item/melee/shock_maul, \
 
 /obj/item/melee/shock_maul/proc/attack_self_timed_done(mob/user)
 	status = 1
-	user.visible_message(span_warning("[user] charges \the [src]!"),span_warning("You charge \the [src]. <b>It's hammer time!</b>"))
-	playsound(src, "sparks", 75, 1, -1)
+	act_message(user, src, MSG_SELF(span_warning("You charge %T%. <b>It's hammer time!</b>")), MSG_OTHERS(span_warning("%U% charges %T%!")))
+	play_sfx(src, SFX_SPARKS, 1.5, extrarange = -1)
 	update_held_icon()
 
 /obj/item/melee/shock_maul/afterattack(atom/A as mob|obj|turf|area, mob/user as mob, proximity)
@@ -252,7 +252,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/shock_maul, \
 		deductcharge()
 		status = 0
 		user.visible_message(span_warning("\The [src] discharges with a thunderous, hair-raising crackle!"))
-		playsound(src, 'sound/weapons/resonator_blast.ogg', 100, 1, -1)
+		play_sfx(src, SFX_WEAPONS_RESONATOR_BLAST)
 		update_held_icon()
 		powercheck(hitcost)
 	// end
@@ -273,7 +273,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/shock_maul, \
 		deductcharge()
 		status = 0
 		user.visible_message(span_warning("\The [src] discharges with a thunderous, hair-raising crackle!"))
-		playsound(src, 'sound/weapons/resonator_blast.ogg', 100, 1, -1)
+		play_sfx(src, SFX_WEAPONS_RESONATOR_BLAST)
 		update_held_icon()
 	powercheck(hitcost)
 

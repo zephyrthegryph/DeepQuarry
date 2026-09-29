@@ -48,7 +48,7 @@ They're also cool, and Rykka/Nyria wrote this uwu
 	attack_injury_kind = INJURY_CUT
 	base_attack_cooldown = 2
 	attacktext = list("bit", "nipped", "chomped", "clawed", "scratched", "lewded")
-	attack_sound = 'sound/weapons/bite.ogg' // placeholder till I find a better bite
+	attack_sound = SFX_WEAPONS_BITE // placeholder till I find a better bite
 
 	vore_active = 1 // nom settings. <3
 	vore_capacity = 3 // yeens can eat something like 85% of their weight in meat. nom~
@@ -57,7 +57,7 @@ They're also cool, and Rykka/Nyria wrote this uwu
 	vore_pounce_chance = 35
 	vore_pounce_maxhealth = 90
 	vore_standing_too = 1 // nomf people while they're standing, yus.
-	swallowsound = 'sound/vore/sunesound/pred/insertion_01.ogg'
+	swallowsound = SFX_VORE_SUNESOUND_PRED_INSERTION_01
 
 	vore_default_mode = DM_HOLD // yeengut takes a sec to kick in :3
 	vore_digest_chance = 95 // you move, yeengut is gonna kick in~

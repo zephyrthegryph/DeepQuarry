@@ -27,7 +27,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/crew, "crew_monitor", /datum/tgui_
 
 /obj/machinery/computer/crew/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return TRUE
 	tgui_interact(user)
 	return TRUE

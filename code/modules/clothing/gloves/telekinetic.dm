@@ -19,9 +19,9 @@ DECLARE_DEFAULT_CHILD(/obj/item/clothing/gloves/telekinetic, "cell", /obj/item/c
 		if(play_sound)
 			if(cell.charge < use_power_amount)
 				to_chat(user,span_danger("\The [src] bwoop as it runs out of power."))
-				playsound(src,'sound/machines/synth_no.ogg')
+				play_sfx(src, SFX_MACHINES_SYNTH_NO, volume = 0)
 			else
-				playsound(src,'sound/machines/generator/generator_end.ogg',70,1)
+				play_sfx(src, SFX_MACHINES_GENERATOR_GENERATOR_END)
 
 EXTEND_INTERACTIONS(/obj/item/clothing/gloves/telekinetic, \
 	INTERACT_HAND_UNGATED(null, PROC_REF(telekinetic_remove_cell_hand)), \
@@ -36,7 +36,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/gloves/telekinetic, \
 			user.put_in_hands(cell)
 			own_take(src, "cell")
 			to_chat(user, span_notice("You remove the cell from the [src]."))
-			playsound(src, 'sound/machines/button.ogg', 30, 1, 0)
+			play_sfx(src, SFX_MACHINES_BUTTON)
 			return TRUE
 	return FALSE
 
@@ -48,7 +48,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/gloves/telekinetic, \
 			W.forceMove(src)
 			own_set(src, "cell", W)
 			to_chat(user, span_notice("You install a cell in \the [src]."))
-			playsound(src, 'sound/machines/button.ogg', 30, 1, 0)
+			play_sfx(src, SFX_MACHINES_BUTTON)
 		else
 			to_chat(user, span_warning("\The [src] already has a cell."))
 	else

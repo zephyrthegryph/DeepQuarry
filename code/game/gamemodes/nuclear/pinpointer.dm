@@ -16,8 +16,8 @@
 	var/nuclear = FALSE
 	var/shuttle = FALSE
 
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 DECLARE_INTERACTIONS(/obj/item/pinpointer, INTERACT_USE("Toggle", PROC_REF(interaction_self)))
 
@@ -234,7 +234,7 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer/nukeop, INTERACT_USE("Toggle", PROC_RE
 /obj/item/pinpointer/nukeop/proc/workdisk()
 	if(GLOB.bomb_set)	//If the bomb is set, lead to the shuttle
 		mode = 1	//Ensures worklocation() continues to work
-		playsound(src, 'sound/machines/twobeep.ogg', 50, 1)	//Plays a beep
+		play_sfx(src, SFX_MACHINES_TWOBEEP)	//Plays a beep
 		visible_message(span_notice("Shuttle Locator active."))			//Lets the mob holding it know that the mode has changed
 		return		//Get outta here
 
@@ -259,7 +259,7 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer/nukeop, INTERACT_USE("Toggle", PROC_RE
 /obj/item/pinpointer/nukeop/proc/worklocation()
 	if(!GLOB.bomb_set)
 		mode = 0
-		playsound(src, 'sound/machines/twobeep.ogg', 50, 1)
+		play_sfx(src, SFX_MACHINES_TWOBEEP)
 		visible_message(span_notice("Authentication Disk Locator active."))
 		return
 

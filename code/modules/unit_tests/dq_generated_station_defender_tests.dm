@@ -8,7 +8,7 @@
 			break
 	TEST_ASSERT_NOTNULL(core_turf, "No walkable turf exists for the defender spawn test")
 	var/obj/structure/core_blocker = new(core_turf)
-	core_blocker.density = TRUE
+	core_blocker.set_density(TRUE)
 	var/turf/spawn_turf = generated_station_defender_spawn_turf(core_turf)
 	TEST_ASSERT_NOTNULL(spawn_turf, "A dense department core had no adjacent defender spawn")
 	TEST_ASSERT(spawn_turf != core_turf, "Defender spawn selected the dense department core")

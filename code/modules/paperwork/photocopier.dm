@@ -80,7 +80,7 @@
 		if("ai_photo")
 			if(!issilicon(ui.user))
 				return
-			if(stat & (BROKEN|NOPOWER))
+			if(!operable())
 				return
 
 			if(toner >= 5)
@@ -183,13 +183,13 @@
 		user.drop_item()
 		to_chat(user, span_notice("You insert the toner cartridge into \the [src]."))
 		flick("photocopier_toner", src)
-		playsound(loc, 'sound/machines/click.ogg', 50, 1)
+		play_sfx(loc, SFX_MACHINES_CLICK)
 		toner += O.toner_amount
 		consume(O, user)
 	else
 		to_chat(user, span_notice("This cartridge is not yet ready for replacement! Use up the rest of the toner."))
 		flick("photocopier_notoner", src)
-		playsound(loc, 'sound/machines/buzz-two.ogg', 75, 1)
+		play_sfx(loc, SFX_MACHINES_BUZZ_TWO, 1.5, vary = TRUE)
 	return TRUE
 
 /// Old attackby never called ..(): any other item is silently swallowed.
@@ -207,7 +207,7 @@
 
 /obj/machinery/photocopier/wrench_act(mob/user, obj/item/tool)
 	playsound(src, tool.usesound, 50, TRUE)
-	anchored = !anchored
+	set_anchored(!anchored)
 	to_chat(user, span_notice("You [anchored ? "wrench" : "unwrench"] \the [src]."))
 	return ITEM_INTERACT_SUCCESS
 
@@ -404,7 +404,7 @@
 	icon = 'icons/obj/device.dmi'
 	icon_state = "tonercartridge"
 	var/toner_amount = 30
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 OWN(/obj/machinery/photocopier, copyitem, OWN_CONTAINED)

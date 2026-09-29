@@ -42,7 +42,7 @@
 	maxbodytemp = 900
 
 	attacktext = list("nipped", "chomped", "bullied", "gnaws on")
-	attack_sound = 'sound/voice/bork.ogg'
+	attack_sound = SFX_VOICE_BORK
 	friendly = list("snoofs", "nuzzles", "ruffs happily at", "smooshes on")
 
 	mob_size = MOB_SMALL
@@ -146,11 +146,11 @@
 /obj/item/projectile/awoo_missile
 	name = "awoo missile"
 	icon_state = "force_missile"
-	fire_sound = 'sound/voice/long_awoo.ogg'
+	fire_sound = SFX_VOICE_LONG_AWOO
 	damage = 1
 
 	impact_effect_type = /obj/effect/temp_visual/impact_effect/blue_laser
-	hitsound_wall = 'sound/voice/bork.ogg'
+	hitsound_wall = SFX_VOICE_BORK
 
 /mob/living/simple_mob/vore/woof/cass
 	name = "Cass"
@@ -173,7 +173,7 @@
 		var/mob/living/L = A
 		if(prob(knockdown_chance))
 			L.status_at_least(EFFECT_WEAKENED, 3)
-			L.visible_message(span_danger("\The [src] pounces on \the [L]!"))
+			act_message(src, L, null, MSG_OTHERS(span_danger("%U% pounces on %T%!")))
 
 /mob/living/simple_mob/vore/woof/hostile/melee
 
@@ -182,29 +182,29 @@
 /mob/living/simple_mob/vore/woof/hostile/ranged
 
 	projectiletype = /obj/item/projectile/awoo_missile
-	projectilesound = 'sound/voice/long_awoo.ogg'
+	projectilesound = SFX_VOICE_LONG_AWOO
 
 /mob/living/simple_mob/vore/woof/hostile/horrible
 
 	armor_spec = "melee=75;bullet=75;laser=75;energy=75;bomb=75;bio=75;rad=75"
 
 	projectiletype = /obj/item/projectile/awoo_missile/heavy
-	projectilesound = 'sound/voice/long_awoo.ogg'
+	projectilesound = SFX_VOICE_LONG_AWOO
 
 /obj/item/projectile/awoo_missile/heavy
 	damage = 50
 
 /obj/item/projectile/forcebolt/harmless/awoobolt
 	icon_state = "force_missile"
-	fire_sound = 'sound/voice/long_awoo.ogg'
+	fire_sound = SFX_VOICE_LONG_AWOO
 	damage = 0
 	impact_effect_type = /obj/effect/temp_visual/impact_effect/blue_laser
-	hitsound_wall = 'sound/voice/bork.ogg'
+	hitsound_wall = SFX_VOICE_BORK
 
 /mob/living/simple_mob/vore/woof/hostile/terrible
 
 	projectiletype = /obj/item/projectile/forcebolt/harmless/awoobolt
-	projectilesound = 'sound/voice/long_awoo.ogg'
+	projectilesound = SFX_VOICE_LONG_AWOO
 
 EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/woof/cass, \
 	INTERACT_HAND_UNGATED_AS(I_HELP, "Pet", PROC_REF(cass_interaction_hand)), \
@@ -217,7 +217,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/woof/cass, \
 	if(stat != DEAD)
 		return FALSE
 	if(interaction.stance == I_HELP)
-		M.visible_message("[M] pets [src].", runemessage = "pets [src]")
+		act_message(M, src, null, MSG_OTHERS("%U% pets %T%."), runemessage = "pets %T%")
 		om_task_timed(M, 30 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_cass_done), done_args = list(M), on_fail = PROC_REF(attack_hand_cass_failed), fail_args = list(M))
 	return TRUE
 
@@ -228,10 +228,10 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/woof/cass, \
 	see_in_dark = initial(see_in_dark)
 	see_invisible = initial(see_invisible)
 	update_icon()
-	visible_message("[src] stops playing dead.", runemessage = "[src] stops playing dead")
+	act_message(src, null, null, MSG_OTHERS("%U% stops playing dead."), runemessage = "%U% stops playing dead")
 
 /mob/living/simple_mob/vore/woof/cass/proc/attack_hand_cass_failed(mob/living/carbon/human/M)
-	M.visible_message("The petting was interrupted!!!", runemessage = "The petting was interrupted")
+	act_message(M, null, null, MSG_OTHERS("The petting was interrupted!!!"), runemessage = "The petting was interrupted")
 
 GLOBAL_VAR_INIT(woof_maximum, 0)
 GLOBAL_VAR_INIT(woof_current, 0)
@@ -259,14 +259,14 @@ GLOBAL_VAR_INIT(woof_current, 0)
 	. = ..()
 	var/thismany = rand(0,3)
 	if(!thismany || killswitch || GLOB.woof_maximum >= 20)
-		visible_message(span_notice("\The [src] evaporates into nothing..."))
+		act_message(src, null, null, MSG_OTHERS(span_notice("%U% evaporates into nothing...")))
 		return
 	var/list/possiblewoofs = list(/mob/living/simple_mob/vore/woof/hostile/aweful/melee, /mob/living/simple_mob/vore/woof/hostile/aweful/ranged)
 	for(var/i = 1 to thismany)
 		var/mob/living/simple_mob/vore/woof/hostile/aweful/woof = pick(possiblewoofs)
 		new woof(loc, src)
 		GLOB.woof_maximum++
-		visible_message(span_warning("Another [src] appears!"))
+		act_message(src, null, null, MSG_OTHERS(span_warning("Another %U% appears!")))
 
 /mob/living/simple_mob/vore/woof/hostile/aweful/melee
 
@@ -276,4 +276,4 @@ GLOBAL_VAR_INIT(woof_current, 0)
 	movement_cooldown = -2
 
 	projectiletype = /obj/item/projectile/awoo_missile
-	projectilesound = 'sound/voice/long_awoo.ogg'
+	projectilesound = SFX_VOICE_LONG_AWOO

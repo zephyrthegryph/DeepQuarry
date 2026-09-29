@@ -14,7 +14,7 @@
 	canmove = FALSE
 	blinded = FALSE
 	anchored = TRUE	//  don't get pushed around
-	var/list/visibleChunks = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	var/list/visibleChunks = list() // ALLOW(instance_list): d: per-mob visibleChunks, filled at runtime; mobs are few
 	var/datum/visualnet/ghost/visualnet
 	var/static_visibility_range = 16
 
@@ -112,14 +112,18 @@
 	if(visualnet && checkStatic())
 		visualnet.visibility(src, client)
 
-/mob/observer/dead/Topic(href, href_list)
-	if (href_list["track"])
-		var/mob/target = locate_in_list(REGISTRY_MEMBERS(REGISTRY_MOBS), href_list["track"])
-		if(target)
-			ManualFollow(target)
-	if(href_list["reenter"])
-		reenter_corpse()
-		return
+TOPIC_ACTION(/mob/observer/dead, "track", PROC_REF(topic_track), TOPIC_REF("track", /mob, TOPIC_IN_MOBS))
+TOPIC_ACTION(/mob/observer/dead, "reenter", PROC_REF(topic_reenter))
+
+/mob/observer/dead/proc/topic_track(mob/user, list/args)
+	var/mob/target = args["track"]
+	if(target)
+		ManualFollow(target)
+	return TRUE
+
+/mob/observer/dead/proc/topic_reenter(mob/user, list/args)
+	reenter_corpse()
+	return TRUE
 
 EXTEND_INTERACTIONS(/mob/observer/dead, INTERACT_INSERT(/obj/item/book/tome, PROC_REF(observer_tome_manifest), "Manifest"))
 
@@ -239,7 +243,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 		log_and_message_admins("has ghosted in cryo as [special_role]. (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[location.x];Y=[location.y];Z=[location.z]'>JMP</a>)",src)
 	var/mob/observer/dead/ghost = ghostize(0)	// 0 parameter is so we can never re-enter our body, "Charlie, you can never come baaaack~" :3
 	if(ghost)
-		ghost.timeofdeath = world.time 	// Because the living mob won't have a time of death and we want the respawn timer to work properly.
+		EXPIRY_STAMP(ghost, timeofdeath, CLOCK_WORLD) 	// Because the living mob won't have a time of death and we want the respawn timer to work properly.
 		ghost.set_respawn_timer()
 		announce_ghost_joinleave(ghost)
 
@@ -1095,18 +1099,18 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 	if(db)
 		var/datum/transhuman/mind_record/record = db.backed_up[src.mind.name]
 		if(!(record.dead_state == MR_DEAD))
-			if((world.time - timeofdeath ) > 5 MINUTES)	//Allows notify transcore to be used if you have an entry but for some reason weren't marked as dead
+			if(ELAPSED(src, timeofdeath, CLOCK_WORLD) > 5 MINUTES)	//Allows notify transcore to be used if you have an entry but for some reason weren't marked as dead
 				record.dead_state = MR_DEAD				//Such as if you got scanned but didn't take an implant. It's a little funky, but I mean, you got scanned
 				db.notify(record)						//So you probably will want to let someone know if you die.
-				record.last_notification = world.time
+				EXPIRY_STAMP(record, last_notification, CLOCK_WORLD)
 				to_chat(src, span_notice("New notification has been sent."))
 			else
 				to_chat(src, span_warning("Your backup is not past-due yet."))
-		else if((world.time - record.last_notification) < 5 MINUTES)
+		else if(ELAPSED(record, last_notification, CLOCK_WORLD) < 5 MINUTES)
 			to_chat(src, span_warning("Too little time has passed since your last notification."))
 		else
 			db.notify(record)
-			record.last_notification = world.time
+			EXPIRY_STAMP(record, last_notification, CLOCK_WORLD)
 			to_chat(src, span_notice("New notification has been sent."))
 	else
 		to_chat(src,span_warning("No backup record could be found, sorry."))

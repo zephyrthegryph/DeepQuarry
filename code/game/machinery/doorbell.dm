@@ -11,14 +11,14 @@
 	anchored = TRUE
 	flags = WALL_ITEM
 	var/id_tag = null
-	var/chime_sound = 'sound/machines/doorbell.ogg'
+	var/chime_sound = SFX_MACHINES_DOORBELL
 
 /obj/machinery/doorbell_chime/Initialize(mapload)
 	. = ..()
 	update_icon()
 
 /obj/machinery/doorbell_chime/proc/chime()
-	if(inoperable())
+	if(!operable())
 		return
 	use_power(active_power_usage)
 	playsound(src, chime_sound, 75)
@@ -32,14 +32,14 @@
 	update_icon()
 
 /obj/machinery/doorbell_chime/power_change()
-	..()
+	. = ..()
 	update_icon()
 
 /obj/machinery/doorbell_chime/update_icon()
 	cut_overlays()
 	if(panel_open)
 		add_overlay("dbchime-open")
-	if(inoperable())
+	if(!operable())
 		icon_state = "dbchime-off"
 	if(!id_tag)
 		icon_state = "dbchime-red"
@@ -113,11 +113,11 @@
 	update_icon()
 
 /obj/machinery/button/doorbell/power_change()
-	..()
+	. = ..()
 	update_icon()
 
 /obj/machinery/button/doorbell/update_icon()
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		icon_state = "doorbell-off"
 	else
 		icon_state = "doorbell-standby"
@@ -178,7 +178,7 @@ KEYED_TARGET(/obj/machinery/doorbell_chime, id_tag)
 
 /obj/machinery/button/doorbell/wrench_act(mob/user, obj/item/tool)
 	to_chat(user, span_notice("You start to unwrench \the [src]."))
-	playsound(src, 'sound/items/Ratchet.ogg', 50, TRUE)
+	play_sfx(src, SFX_ITEMS_RATCHET)
 	om_task_timed(user, 15, target = src, receiver = src, on_done = PROC_REF(wrench_act_timed_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
 

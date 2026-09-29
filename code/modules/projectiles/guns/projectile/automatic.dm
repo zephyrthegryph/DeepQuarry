@@ -175,7 +175,7 @@
 	allowed_magazines = list(/obj/item/ammo_magazine/m762)
 	projectile_type = /obj/item/projectile/bullet/rifle/a762
 	auto_eject = 1
-	auto_eject_sound = 'sound/weapons/smg_empty_alarm.ogg'
+	auto_eject_sound = SFX_WEAPONS_SMG_EMPTY_ALARM
 	fire_sound = "sound/weapons/ballistics/a762.ogg"
 
 	one_handed_penalty = 60
@@ -549,7 +549,7 @@
 	recoil = 0 // No screenshake on firing.
 	one_handed_penalty = 15 // Slight accuracy penalty when firing one-handed.
 	auto_eject = 1 // Auto-ejects magazine when it's empty.
-	auto_eject_sound = 'sound/weapons/smg_empty_alarm.ogg'
+	auto_eject_sound = SFX_WEAPONS_SMG_EMPTY_ALARM
 
 	caliber = "9mm" // The type of caliber the gun accepts. Will not accept magazines loaded with the wrong caliber, even if they're listed in allowed_magazines.
 	ammo_type = /obj/item/ammo_casing/a9mm // Should always be an ammo casing that uses the same caliber as the gun's listed for.
@@ -589,7 +589,7 @@
 	recoil = 0
 	one_handed_penalty = 30
 	auto_eject = 1
-	auto_eject_sound = 'sound/weapons/smg_empty_alarm.ogg'
+	auto_eject_sound = SFX_WEAPONS_SMG_EMPTY_ALARM
 
 	caliber = "10mm"
 	ammo_type = /obj/item/ammo_casing/a10mm
@@ -663,7 +663,7 @@
 	caliber = "9.5x40mm"
 	magazine_type = /obj/item/ammo_magazine/m95
 	allowed_magazines = list(/obj/item/ammo_magazine/m95)
-	fire_sound = 'sound/weapons/battlerifle.ogg'
+	fire_sound = SFX_WEAPONS_BATTLERIFLE
 	load_method = MAGAZINE
 	slot_flags = SLOT_BACK
 	one_handed_penalty = 60 // The weapon itself is heavy
@@ -798,7 +798,7 @@
 	max_shells = 75
 	caliber = "mauser"
 	ammo_type = "/obj/item/ammo_casing/a792x57m/lmg" // Is this really needed anymore?
-	fire_sound = 'sound/weapons/mg42.ogg'
+	fire_sound = SFX_WEAPONS_MG42
 	load_method = MAGAZINE
 	magazine_type = /obj/item/ammo_magazine/mg42
 	allowed_magazines = list(/obj/item/ammo_magazine/mg42)

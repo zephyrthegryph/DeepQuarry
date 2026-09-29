@@ -6,7 +6,7 @@
 	var/list/attack_verb = list("attack")	// Empty hand hurt intent verb.
 	var/list/attack_noun = list("fist") // ALLOW(instance_list): kept: interned with string_list() in New()
 	var/damage = 0						// Extra empty hand attack damage.
-	var/attack_sound = "punch"
+	var/attack_sound = SFX_PUNCH
 	var/miss_sound = 'sound/weapons/punchmiss.ogg'
 	var/shredding = FALSE // Calls the old attack_alien() behavior on objects/mobs when on harm intent.
 	var/sharp = FALSE
@@ -61,58 +61,58 @@
 		switch(zone) // strong punches can have effects depending on where they hit
 			if(BP_HEAD, O_EYES, O_MOUTH)
 				// Induce blurriness
-				target.visible_message(span_danger("[target] looks momentarily disoriented."), span_danger("You see stars."))
+				act_message(target, null, MSG_SELF(span_danger("You see stars.")), MSG_OTHERS(span_danger("%U% looks momentarily disoriented.")))
 				target.apply_effect(attack_damage*2, EYE_BLUR, armour)
 			if(BP_L_ARM, BP_L_HAND)
 				if (target.get_equipped_item(SLOT_ID_HAND_L))
 					// Disarm left hand
 					//Urist McAssistant dropped the macguffin with a scream just sounds odd.
-					target.visible_message(span_danger("\The [target.get_equipped_item(SLOT_ID_HAND_L)] was knocked right out of [target]'s grasp!"))
+					act_message(target, null, others = span_danger("\The [target.get_equipped_item(SLOT_ID_HAND_L)] was knocked right out of %U%'s grasp!"))
 					target.drop_l_hand()
 			if(BP_R_ARM, BP_R_HAND)
 				if (target.get_equipped_item(SLOT_ID_HAND_R))
 					// Disarm right hand
-					target.visible_message(span_danger("\The [target.get_equipped_item(SLOT_ID_HAND_R)] was knocked right out of [target]'s grasp!"))
+					act_message(target, null, others = span_danger("\The [target.get_equipped_item(SLOT_ID_HAND_R)] was knocked right out of %U%'s grasp!"))
 					target.drop_r_hand()
 			if(BP_TORSO)
 				if(!target.lying)
 					var/turf/T = get_step(get_turf(target), get_dir(get_turf(user), get_turf(target)))
 					if(T && !T.density)
 						step(target, get_dir(get_turf(user), get_turf(target)))
-						target.visible_message(span_danger("[pick("[target] was sent flying backward!", "[target] staggers back from the impact!")]"))
+						act_message(target, null, others = span_danger("[pick("%U% was sent flying backward!", "%U% staggers back from the impact!")]"))
 					else
-						target.visible_message(span_danger("[target] slams into [T]!"))
+						act_message(target, T, others = span_danger("%U% slams into %T%!"))
 					if(prob(50))
 						target.set_dir(GLOB.reverse_dir[target.dir])
 					target.apply_effect(attack_damage * 0.4, WEAKEN, armour)
 			if(BP_GROIN)
-				target.visible_message(span_warning("[target] looks like [target.p_theyre()] in pain!"), span_warning("Oh god that hurt!"))
+				act_message(target, null, MSG_SELF(span_warning("Oh god that hurt!")), MSG_OTHERS(span_warning("%U% looks like %THEYRE% in pain!")))
 				target.apply_effects(stutter = attack_damage * 2, agony = attack_damage* 3, blocked = armour)
 			if(BP_L_LEG, BP_L_FOOT, BP_R_LEG, BP_R_FOOT)
 				if(!target.lying)
-					target.visible_message(span_warning("[target] gives way slightly."))
+					act_message(target, null, others = span_warning("%U% gives way slightly."))
 					target.apply_effect(attack_damage*3, AGONY, armour)
 	else if(attack_damage >= 5 && !(target == user) && (stun_chance + attack_damage * 5 >= 100) && armour < 2) // Chance to get the usual throwdown as well (25% standard chance)
 		if(!target.lying)
-			target.visible_message(span_danger("[target] [pick("slumps", "falls", "drops")] down to the ground!"))
+			act_message(target, null, others = span_danger("%U% [pick("slumps", "falls", "drops")] down to the ground!"))
 		else
-			target.visible_message(span_danger("[target] has been weakened!"))
+			act_message(target, null, others = span_danger("%U% has been weakened!"))
 		target.apply_effect(3, WEAKEN, armour)
 
 /datum/unarmed_attack/proc/show_attack(mob/living/carbon/human/user, mob/living/carbon/human/target, zone, attack_damage)
 	var/obj/item/organ/external/affecting = target.get_organ(zone)
-	user.visible_message(span_warning("[user] [pick(attack_verb)] [target] in the [affecting.name]!"))
+	act_message(user, target, others = span_warning("%U% [pick(attack_verb)] %T% in the [affecting.name]!"))
 	playsound(user, attack_sound, 25, 1, -1)
 
 /datum/unarmed_attack/proc/handle_eye_attack(mob/living/carbon/human/user, mob/living/carbon/human/target)
 	var/obj/item/organ/internal/eyes/eyes = target.organ_in(O_EYES)
 	if(eyes)
 		target.injure(INJURY_BLUNT, rand(3,4), eyes, user, flags = INJURE_SILENT)
-		user.visible_message(span_danger("[user] presses [p_their()] [eye_attack_text] into [target]'s [eyes.name]!"))
+		act_message(user, target, others = span_danger("%U% presses [p_their()] [eye_attack_text] into %T%'s [eyes.name]!"))
 		var/eye_pain = eyes.organ_can_feel_pain()
 		to_chat(target, span_danger("You experience[(eye_pain) ? "" : " immense pain as you feel" ] [eye_attack_text_victim] being pressed into your [eyes.name][(eye_pain)? "." : "!"]"))
 		return
-	user.visible_message(span_danger("[user] attempts to press [p_their()] [eye_attack_text] into [target]'s eyes, but [target.p_they()] [target.p_do()]n't have any!"))
+	act_message(user, target, others = span_danger("%U% attempts to press [p_their()] [eye_attack_text] into %T%'s eyes, but [target.p_they()] [target.p_do()]n't have any!"))
 
 /datum/unarmed_attack/proc/unarmed_override(mob/living/carbon/human/user,mob/living/carbon/human/target,zone)
 	return FALSE //return true if the unarmed override prevents further attacks
@@ -120,7 +120,7 @@
 /datum/unarmed_attack/bite
 	attack_name = "bite"
 	attack_verb = list("bit")
-	attack_sound = 'sound/weapons/bite.ogg'
+	attack_sound = SFX_WEAPONS_BITE
 	damage = 0
 
 /datum/unarmed_attack/bite/event1
@@ -153,7 +153,7 @@
 	attack_damage = CLAMP(attack_damage, 1, 5) // We expect damage input of 1 to 5 for this proc. But we leave this check juuust in case.
 
 	if(target == user)
-		user.visible_message(span_danger("[user] [pick(attack_verb)] [p_themselves()] in the [organ]!"))
+		act_message(user, null, others = span_danger("%U% [pick(attack_verb)] [p_themselves()] in the [organ]!"))
 		return FALSE
 
 	if(!target.lying)
@@ -162,37 +162,26 @@
 				// ----- HEAD ----- //
 				switch(attack_damage)
 					if(1 to 2)
-						user.visible_message(span_danger("[user] slapped [target] across [p_their()] cheek!"))
+						act_message(user, target, others = span_danger("%U% slapped %T% across [p_their()] cheek!"))
 					if(3 to 4)
-						user.visible_message(pick(
-							40; span_danger("[user] [pick(attack_verb)] [target] in the head!"),
-							30; span_danger("[user] struck [target] in the head[pick("", " with a closed fist")]!"),
-							30; span_danger("[user] threw a hook against [target]'s head!")
-							))
+						act_message(user, target, others = pick( 40; span_danger("%U% [pick(attack_verb)] %T% in the head!"), 30; span_danger("%U% struck %T% in the head[pick("", " with a closed fist")]!"), 30; span_danger("%U% threw a hook against %T%'s head!") ))
 					if(5)
-						user.visible_message(pick(
-							30; span_danger("[user] gave [target] a resounding [pick("slap", "punch")] to the face!"),
-							40; span_danger("[user] smashed [p_their()] [pick(attack_noun)] into [target]'s face!"),
-							30; span_danger("[user] gave a strong blow against [target]'s jaw!")
-							))
+						act_message(user, target, others = pick( 30; span_danger("%U% gave %T% a resounding [pick("slap", "punch")] to the face!"), 40; span_danger("%U% smashed [p_their()] [pick(attack_noun)] into %T%'s face!"), 30; span_danger("%U% gave a strong blow against %T%'s jaw!") ))
 			else
 				// ----- BODY ----- //
 				switch(attack_damage)
-					if(1 to 2)	user.visible_message(span_danger("[user] threw a glancing punch at [target]'s [organ]!"))
-					if(1 to 4)	user.visible_message(span_danger("[user] [pick(attack_verb)] [target] in [target.p_their()] [organ]!"))
+					if(1 to 2)	act_message(user, target, others = span_danger("%U% threw a glancing punch at %T%'s [organ]!"))
+					if(1 to 4)	act_message(user, target, others = span_danger("%U% [pick(attack_verb)] %T% in [target.p_their()] [organ]!"))
 					if(5)
-						user.visible_message(pick(
-							50; span_danger("[user] smashed [p_their()] [pick(attack_noun)] into [target]'s [organ]!"),
-							50; span_danger("[user] landed a striking [pick(attack_noun)] on [target]'s [organ]!")
-							))
+						act_message(user, target, others = pick( 50; span_danger("%U% smashed [p_their()] [pick(attack_noun)] into %T%'s [organ]!"), 50; span_danger("%U% landed a striking [pick(attack_noun)] on %T%'s [organ]!") ))
 	else
-		user.visible_message(span_danger("[user] [pick("punched", "threw a punch against", "struck", "slammed [p_their()] [pick(attack_noun)] into")] [target]'s [organ]!")) //why do we have a separate set of verbs for lying targets?
+		act_message(user, target, others = span_danger("%U% [pick("punched", "threw a punch against", "struck", "slammed [p_their()] [pick(attack_noun)] into")] %T%'s [organ]!")) //why do we have a separate set of verbs for lying targets?
 
 /datum/unarmed_attack/kick
 	attack_name = "kick"
 	attack_verb = list("kicked", "kicked", "kicked", "kneed")
 	attack_noun = list("kick", "kick", "kick", "knee strike")
-	attack_sound = "swing_hit"
+	attack_sound = SFX_SWING_HIT
 	damage = 0
 
 /datum/unarmed_attack/kick/event1
@@ -229,15 +218,15 @@
 	attack_damage = CLAMP(attack_damage, 1, 5)
 
 	switch(attack_damage)
-		if(1 to 2)	user.visible_message(span_danger("[user] threw [target] a glancing [pick(attack_noun)] to the [organ]!")) //it's not that they're kicking lightly, it's that the kick didn't quite connect
-		if(3 to 4)	user.visible_message(span_danger("[user] [pick(attack_verb)] [target] in [target.p_their()] [organ]!"))
-		if(5)		user.visible_message(span_danger("[user] landed a strong [pick(attack_noun)] against [target]'s [organ]!"))
+		if(1 to 2)	act_message(user, target, others = span_danger("%U% threw %T% a glancing [pick(attack_noun)] to the [organ]!")) //it's not that they're kicking lightly, it's that the kick didn't quite connect
+		if(3 to 4)	act_message(user, target, others = span_danger("%U% [pick(attack_verb)] %T% in [target.p_their()] [organ]!"))
+		if(5)		act_message(user, target, others = span_danger("%U% landed a strong [pick(attack_noun)] against %T%'s [organ]!"))
 
 /datum/unarmed_attack/stomp
 	attack_name = "stomp"
 	attack_verb = null
 	attack_noun = list("stomp")
-	attack_sound = "swing_hit"
+	attack_sound = SFX_SWING_HIT
 	damage = 0
 
 /datum/unarmed_attack/stomp/event1
@@ -277,8 +266,8 @@
 	attack_damage = CLAMP(attack_damage, 1, 5)
 
 	switch(attack_damage)
-		if(1 to 4)	user.visible_message(span_danger("[pick("[user] stomped on", "[user] slammed [user.p_their()] [shoes ? copytext(shoes.name, 1, -1) : "foot"] down onto")] [target]'s [organ]!"))
-		if(5)		user.visible_message(span_danger("[pick("[user] landed a powerful stomp on", "[user] stomped down hard on", "[user] slammed [user.p_their()] [shoes ? copytext(shoes.name, 1, -1) : "foot"] down hard onto")] [target]'s [organ]!")) //Devastated lol. No. We want to say that the stomp was powerful or forceful, not that it /wrought devastation/
+		if(1 to 4)	act_message(user, target, others = span_danger("[pick("%U% stomped on", "%U% slammed %THEIR% [shoes ? copytext(shoes.name, 1, -1) : "foot"] down onto")] %T%'s [organ]!"))
+		if(5)		act_message(user, target, others = span_danger("[pick("%U% landed a powerful stomp on", "%U% stomped down hard on", "%U% slammed %THEIR% [shoes ? copytext(shoes.name, 1, -1) : "foot"] down hard onto")] %T%'s [organ]!")) //Devastated lol. No. We want to say that the stomp was powerful or forceful, not that it /wrought devastation/
 
 /datum/unarmed_attack/light_strike
 	attack_name = "light hit"

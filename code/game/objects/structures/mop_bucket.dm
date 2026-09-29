@@ -41,5 +41,5 @@ DECLARE_REAGENTS(/obj/structure/mopbucket, 300, null)
 		else
 			reagents.trans_to_obj(I, 5)
 			user.balloon_alert(user, "you wet \the [I] in \the [src].")
-			playsound(src, 'sound/effects/slosh.ogg', 25, 1)
+			play_sfx(src, SFX_EFFECTS_SLOSH)
 	return TRUE

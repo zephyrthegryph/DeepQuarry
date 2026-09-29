@@ -33,7 +33,7 @@
 	response_harm = "punches"
 
 	attacktext = list("nipped", "chomped", "bullied", "gnaws on")
-	attack_sound = 'sound/voice/bork.ogg'
+	attack_sound = SFX_VOICE_BORK
 	friendly = list("snoofs", "nuzzles", "ruffs happily at", "smooshes on")
 
 	has_langs = list(LANGUAGE_ANIMAL, LANGUAGE_CANILUNZT, LANGUAGE_GALCOM)
@@ -51,7 +51,7 @@
 	var/affinity = 0
 	var/obj/structure/control_pod/control_node = null
 	var/admin_override = FALSE	//If true, makes affinity and nutrition irrelevant.
-	// ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	// ALLOW(instance_list): d: per-mob weather_areas, sized at creation and filled in place; mobs are few
 	var/list/weather_areas = list()	//We'll call a proc on these areas when we eat, don't worry!
 
 /mob/living/simple_mob/vore/overmap/stardog/Login()
@@ -89,7 +89,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/overmap/stardog, INTERACT_HAND_U
 
 	if(!possible_targets.len)
 		return FALSE
-	user.visible_message(span_warning("\The [user] reaches for something in \the [src]'s fur..."),span_notice("You look through \the [src]'s fur..."))
+	act_message(user, src, MSG_SELF(span_notice("You look through %T%'s fur...")), MSG_OTHERS(span_warning("%U% reaches for something in %T%'s fur...")))
 	om_ask(user, /datum/om/prompt/choice/stardog_fur_pick, PROC_REF(fur_pick_chosen), choices = possible_targets)
 	return TRUE
 
@@ -322,11 +322,11 @@ REL_PAIR(/mob/living/simple_mob/vore/overmap/stardog, control_node, host)
 			a.spawn_treasure()
 
 /mob/living/simple_mob/vore/overmap/stardog/proc/transition_down_done(atom/our_dest)
-	visible_message(span_warning("\The [src] disappears!!!"))
+	act_message(src, null, null, MSG_OTHERS(span_warning("%U% disappears!!!")))
 	stop_pulling()
 	forceMove(get_turf(our_dest))
 	adjust_nutrition(-1000)
-	visible_message(span_warning("\The [src] steps into the area as if from nowhere!"))
+	act_message(src, null, null, MSG_OTHERS(span_warning("%U% steps into the area as if from nowhere!")))
 
 /mob/living/simple_mob/vore/overmap/stardog/verb/transition()	//Don't ask how it works. I don't know. I didn't think about it. I just thought it would be cool.
 	set name = "Transition"
@@ -380,7 +380,7 @@ REL_PAIR(/mob/living/simple_mob/vore/overmap/stardog, control_node, host)
 
 /mob/living/simple_mob/vore/overmap/stardog/proc/transition_stardog_done()
 
-	visible_message(span_warning("\The [src] disappears!!!"))
+	act_message(src, null, null, MSG_OTHERS(span_warning("%U% disappears!!!")))
 	stop_pulling()
 	forceMove(get_turf(get_overmap_sector(z)))
 	adjust_nutrition(-500)
@@ -466,14 +466,14 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/fur, \
 
 /// Old Pet Fur verb: Pet the fur!
 /turf/simulated/floor/outdoors/fur/proc/fur_verb_pet(mob/user, obj/item/held, datum/interaction/interaction)
-	user.visible_message(span_notice("\The [user] pets \the [src]."), span_notice("You pet \the [src]."), runemessage = "pet pat...")
+	act_message(user, src, MSG_SELF(span_notice("You pet %T%.")), MSG_OTHERS(span_notice("%U% pets %T%.")), runemessage = "pet pat...")
 	var/obj/effect/overmap/visitable/ship/simplemob/stardog/s = get_overmap_sector(z)
 
 	if(s && istype(s, /obj/effect/overmap/visitable/ship/simplemob/stardog))
 		var/mob/living/simple_mob/vore/overmap/stardog/m = s.parent
 		m.adjust_affinity(1)
 		if(m.affinity >= 10 && prob(5))
-			m.visible_message("\The [m]'s tail wags happily!")
+			act_message(m, null, null, MSG_OTHERS("%U%'s tail wags happily!"))
 
 /// Old Emote Beyond verb: Emote to those beyond the fur!
 /turf/simulated/floor/outdoors/fur/proc/fur_verb_emote_beyond(mob/user, obj/item/held, datum/interaction/interaction)
@@ -859,7 +859,7 @@ DECLARE_INTERACTIONS(/obj/structure/control_pod, INTERACT_HAND(null, PROC_REF(in
 	if(controller)	//busy
 		to_chat(user, span_warning("You can see \the [controller] inside! Tendrils of nerves seem to have attached themselves to \the [controller]! There's no room for you right now!"))
 		return
-	user.visible_message(span_notice("\The [user] reaches out to touch \the [src]..."),span_notice("You reach out to touch \the [src]..."))
+	act_message(user, src, MSG_SELF(span_notice("You reach out to touch %T%...")), MSG_OTHERS(span_notice("%U% reaches out to touch %T%...")))
 	om_task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(control_control_pod_done), done_args = list(user), on_fail = PROC_REF(control_control_pod_failed), fail_args = list(user))
 	return TRUE
 
@@ -878,7 +878,7 @@ DECLARE_INTERACTIONS(/obj/structure/control_pod, INTERACT_HAND(null, PROC_REF(in
 	set_light(5, 0.75, "#f94bff")
 
 /obj/structure/control_pod/proc/control_control_pod_failed(mob/living/user)
-	user.visible_message(span_warning("\The [user] pulls back from \the [src]."),span_warning("You pull back from \the [src]."))
+	act_message(user, src, MSG_SELF(span_warning("You pull back from %T%.")), MSG_OTHERS(span_warning("%U% pulls back from %T%.")))
 	return
 
 /obj/structure/control_pod/proc/eject()
@@ -894,7 +894,7 @@ DECLARE_INTERACTIONS(/obj/structure/control_pod, INTERACT_HAND(null, PROC_REF(in
 	var/our_y = rand(-5,5) + y
 
 	var/turf/throwtarg = locate(our_x, our_y, z)	//teehee
-	playsound(src, 'sound/vore/schlorp.ogg', vol = 100, vary = FALSE, volume_channel = VOLUME_CHANNEL_VORE)
+	play_sfx(src, SFX_VORE_SCHLORP, volume_channel = VOLUME_CHANNEL_VORE)
 	controller.throw_at(throwtarg, 10, 1)
 	rel_clear(src, "controller")
 
@@ -915,7 +915,7 @@ DECLARE_INTERACTIONS(/obj/structure/control_pod, INTERACT_HAND(null, PROC_REF(in
 	icon_state = "screen_eye"
 	pixel_x = -16
 	pixel_y = -16
-	clicksound = 'sound/vore/squish1.ogg'
+	clicksound = SFX_VORE_SQUISH1
 
 /obj/machinery/computer/ship/navigation/telescreen/dog_eye/declare_interactions(list/into)
 	into += list(
@@ -1048,7 +1048,7 @@ EXTEND_INTERACTIONS(/obj/effect/dog_nose, \
 
 /// Old attack_hand.
 /obj/effect/dog_nose/proc/interaction_boop_snoot(mob/living/user, obj/item/held, datum/interaction/interaction)
-	user.visible_message(span_notice("\The [user] boops the snoot."),span_notice("You boop the snoot."),runemessage = "boop")
+	act_message(user, src, MSG_SELF(span_notice("You boop the snoot.")), MSG_OTHERS(span_notice("%U% boops the snoot.")), runemessage = "boop")
 	return TRUE
 
 /obj/effect/dog_nose/Crossed(atom/movable/AM as mob|obj)
@@ -1080,7 +1080,7 @@ EXTEND_INTERACTIONS(/obj/effect/dog_nose, \
 	var/reciever = FALSE						//If true, doesn't teleport, only recieves
 	var/obj/effect/dog_teleporter/target		//Target for teleporting to, automatically set by id
 	var/throw_through = TRUE					//When moved the mob/obj will be thrown south
-	var/teleport_sound = 'sound/vore/schlorp.ogg'	//The sound that plays when we use the teleporter. Respects vore sound preferences.
+	var/teleport_sound = SFX_VORE_SCHLORP	//The sound that plays when we use the teleporter. Respects vore sound preferences.
 	var/teleport_message = ""
 	var/check_keys = FALSE
 	var/check_prefs = TRUE
@@ -1175,7 +1175,7 @@ EXTEND_INTERACTIONS(/obj/effect/dog_teleporter, \
 		AM.throw_at(throwtarg, 10, 1)	//reverbfart.ogg
 
 /obj/effect/dog_teleporter/food_gobbler
-	teleport_sound = 'sound/vore/gulp.ogg'
+	teleport_sound = SFX_VORE_GULP
 	teleport_message = span_notice("The thundering drum of the dog's heart beat throbs all around you, while the sweltering heat of its body soaks into you. It's soft and wet as a symphony of gurgles and glorps fills the steamy air!")
 
 /obj/effect/dog_teleporter/food_gobbler/Crossed(atom/movable/AM)
@@ -1398,7 +1398,7 @@ EXTEND_INTERACTIONS(/obj/effect/dog_teleporter, \
 	var/state = 0 //closed, 1 == open
 	var/isSwitchingStates = 0
 	var/countdown = 0
-	var/knock_sound = 'sound/effects/attackblob.ogg'
+	var/knock_sound = SFX_EFFECTS_ATTACKBLOB
 	var/static/list/open_sounds = list(
 		'sound/vore/sunesound/prey/squish_01.ogg',
 		'sound/vore/sunesound/prey/squish_02.ogg',
@@ -1436,11 +1436,11 @@ EXTEND_INTERACTIONS(/obj/effect/dog_teleporter, \
 	else if(user.faction == faction)
 		SwitchState()
 	else if(!user.combat_mode)
-		visible_message(span_warningplain("[user] knocks on \the [src]."), span_warningplain("Someone knocks on \the [src]."))
+		act_message(user, src, null, MSG_OTHERS(span_warningplain("%U% knocks on %T%.")), MSG_BLIND(span_warningplain("Someone knocks on %T%.")))
 		playsound(src, knock_sound, 50, 0, 3)
 		countdown -= 10
 	else
-		visible_message(span_warning("[user] hammers on \the [src]!"), span_warning("Someone hammers loudly on \the [src]!"))
+		act_message(user, src, null, MSG_OTHERS(span_warning("%U% hammers on %T%!")), MSG_BLIND(span_warning("Someone hammers loudly on %T%!")))
 		playsound(src, knock_sound, 50, 0, 3)
 		countdown -= 25
 
@@ -1454,11 +1454,11 @@ DECLARE_INTERACTIONS(/obj/structure/auto_flesh_door, 	INTERACT_HAND_AS(I_HELP, "
 	else if(user.faction == faction)
 		SwitchState()
 	else if(interaction.stance == I_HELP)
-		visible_message(span_warningplain("[user] knocks on \the [src]."), span_warningplain("Someone knocks on \the [src]."))
+		act_message(user, src, null, MSG_OTHERS(span_warningplain("%U% knocks on %T%.")), MSG_BLIND(span_warningplain("Someone knocks on %T%.")))
 		playsound(src, knock_sound, 50, 0, 3)
 		countdown -= 10
 	else
-		visible_message(span_warning("[user] hammers on \the [src]!"), span_warning("Someone hammers loudly on \the [src]!"))
+		act_message(user, src, null, MSG_OTHERS(span_warning("%U% hammers on %T%!")), MSG_BLIND(span_warning("Someone hammers loudly on %T%!")))
 		playsound(src, knock_sound, 50, 0, 3)
 		countdown -= 25
 	return TRUE
@@ -1480,7 +1480,7 @@ DECLARE_INTERACTIONS(/obj/structure/auto_flesh_door, 	INTERACT_HAND_AS(I_HELP, "
 	om_after(src, 8, PROC_REF(open_finish))
 
 /obj/structure/auto_flesh_door/proc/open_finish()
-	density = FALSE
+	set_density(FALSE)
 	set_opacity(0)
 	state = 1
 	update_icon()
@@ -1498,7 +1498,7 @@ DECLARE_INTERACTIONS(/obj/structure/auto_flesh_door, 	INTERACT_HAND_AS(I_HELP, "
 	om_after(src, 8, PROC_REF(close_finish))
 
 /obj/structure/auto_flesh_door/proc/close_finish()
-	density = TRUE
+	set_density(TRUE)
 	set_opacity(1)
 	state = 0
 	update_icon()
@@ -1510,7 +1510,7 @@ DECLARE_INTERACTIONS(/obj/structure/auto_flesh_door, 	INTERACT_HAND_AS(I_HELP, "
 	for(var/mob/living/L in contents_of(src.loc))
 		if(isliving(L))
 			L.status_at_least(EFFECT_WEAKENED, 3)
-			L.visible_message(span_danger("\The [src] closes up on \the [L]!"),span_danger("The weight of \the [src] closes in on you, squeezing you on all sides so tightly that you can hardly move! It throbs against you as the way is sealed, with you stuck in the middle!!!"))
+			act_message(L, src, MSG_SELF(span_danger("The weight of %T% closes in on you, squeezing you on all sides so tightly that you can hardly move! It throbs against you as the way is sealed, with you stuck in the middle!!!")), MSG_OTHERS(span_danger("%T% closes up on %U%!")))
 
 /obj/structure/auto_flesh_door/update_icon()
 	if(state)

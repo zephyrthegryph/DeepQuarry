@@ -20,7 +20,7 @@
 		user.visible_message("[user] removes \a casing from [src], the casing fizzling in the air before evaporating into dust.", span_notice("You remove \a casing from [src], the casing fizzling in the air before evaporating into dust"))
 		C.moveToNullspace() //Into the void!
 		qdel(C) //And begone!
-		playsound(src, 'sound/weapons/empty.ogg', 50, 1)
+		play_sfx(src, SFX_WEAPONS_EMPTY)
 		new /obj/effect/effect/sparks(src)
 		user.hud_used.update_ammo_hud(user, src)
 	else
@@ -31,8 +31,8 @@
 /obj/item/ammo_casing/artifact
 	name = "artifact bullet casing"
 	desc = "A MYSTERIOUS bullet casing!!! (You should not see this. If you do, blame adminbus or contact your nearest coder.)"
-	drop_sound = 'sound/items/drop/ring.ogg'
-	pickup_sound = 'sound/items/pickup/ring.ogg'
+	drop_sound = SFX_ITEMS_DROP_RING
+	pickup_sound = SFX_ITEMS_PICKUP_RING
 	projectile_type = /obj/item/projectile/bullet/cap //Just a placeholder. Doesn't actually matter what this is. All that matters is what the projecttile_type of our BB is.
 	caseless = TRUE
 

@@ -16,10 +16,11 @@ GLOBAL_LIST(ghost_traps)
 
 /datum/ghosttrap
 	var/object = "positronic brain"
-	var/list/ban_checks = list(JOB_AI,JOB_CYBORG) // ALLOW(instance_list): c: read-only per-subtype constant table (1 subtype overrides); a getter would share it, not worth it on a rare type
 	var/pref_check = BE_AI
 	var/ghost_trap_message = "They are occupying a positronic brain now."
 	var/ghost_trap_role = "Positronic Brain"
+
+TYPE_TABLE_DECLARE(/datum/ghosttrap, ghosttrap_ban_checks, list(JOB_AI,JOB_CYBORG))
 
 // Check for bans, proper atom types, etc.
 /datum/ghosttrap/proc/assess_candidate(mob/observer/dead/candidate)
@@ -28,8 +29,8 @@ GLOBAL_LIST(ghost_traps)
 	if(!candidate.MayRespawn())
 		to_chat(candidate, span_infoplain("You have made use of the AntagHUD and hence cannot enter play as \a [object]."))
 		return 0
-	if(islist(ban_checks))
-		for(var/bantype in ban_checks)
+	if(islist(TYPE_TABLE_GET(src, ghosttrap_ban_checks)))
+		for(var/bantype in TYPE_TABLE_GET(src, ghosttrap_ban_checks))
 			if(jobban_isbanned(candidate, "[bantype]"))
 				to_chat(candidate, span_infoplain("You are banned from one or more required roles and hence cannot enter play as \a [object]."))
 				return 0
@@ -42,8 +43,8 @@ GLOBAL_LIST(ghost_traps)
 	for(var/mob/observer/dead/O in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(!O.MayRespawn())
 			continue
-		if(islist(ban_checks))
-			for(var/bantype in ban_checks)
+		if(islist(TYPE_TABLE_GET(src, ghosttrap_ban_checks)))
+			for(var/bantype in TYPE_TABLE_GET(src, ghosttrap_ban_checks))
 				if(jobban_isbanned(O, "[bantype]"))
 					continue
 		if(pref_check && !(O.client.prefs.read_preference(/datum/preference/numeric/human/be_special) & pref_check)) // migrated
@@ -52,17 +53,16 @@ GLOBAL_LIST(ghost_traps)
 			to_chat(O, "[request_string]<a href='byond://?src=\ref[src];candidate=\ref[O];target=\ref[target]'>Click here</a> if you wish to play as this option.")
 
 // Handles a response to request_player().
-/datum/ghosttrap/Topic(href, href_list)
-	if(..())
-		return 1
-	if(href_list["candidate"] && href_list["target"])
-		var/mob/observer/dead/candidate = locate(href_list["candidate"]) // BYOND magic.
-		var/mob/target = locate(href_list["target"])                     // So much BYOND magic.
-		if(!target || !candidate)
-			return
-		if(candidate == usr && assess_candidate(candidate) && !target.ckey)
-			transfer_personality(candidate,target)
-		return 1
+TOPIC_ACTION(/datum/ghosttrap, "candidate", PROC_REF(topic_candidate), TOPIC_REF("candidate", /mob/observer/dead, TOPIC_IN_MOBS), TOPIC_REF("target", /mob, TOPIC_IN_MOBS))
+
+/datum/ghosttrap/proc/topic_candidate(mob/user, list/args)
+	var/mob/observer/dead/candidate = args["candidate"]
+	var/mob/target = args["target"]
+	if(!target || !candidate)
+		return
+	if(candidate == user && assess_candidate(candidate) && !target.ckey)
+		transfer_personality(candidate,target)
+	return TRUE
 
 // Shunts the ckey/mind into the target mob.
 /datum/ghosttrap/proc/transfer_personality(mob/candidate, mob/target)
@@ -104,10 +104,11 @@ GLOBAL_LIST(ghost_traps)
 // Doona pods and walking mushrooms.
 /datum/ghosttrap/plant
 	object = "living plant"
-	ban_checks = list(JOB_DIONAEA)
 	pref_check = BE_PLANT
 	ghost_trap_message = "They are occupying a living plant now."
 	ghost_trap_role = "Plant"
+
+TYPE_TABLE(/datum/ghosttrap/plant, ghosttrap_ban_checks, list(JOB_DIONAEA))
 
 /datum/ghosttrap/plant/welcome_candidate(mob/target)
 	to_chat(target, span_infoplain(span_alium(span_bold("You awaken slowly, stirring into sluggish motion as the air caresses you."))))

@@ -61,7 +61,7 @@
 		if(isliving(M) && M?.pulling_target())
 			var/atom/movable/pulled = M?.pulling_target()
 			M.stop_pulling()
-			playsound(src,'sound/effects/ominous-hum-2.ogg', 100,1)
+			play_sfx(src, SFX_EFFECTS_OMINOUS_HUM_2)
 			M.forceMove(ourturf)
 			if(is_type_in_list(pulled, exceptions))
 				for(var/mob/living/buckled_on in pulled?.buckled_mob_list())
@@ -72,7 +72,7 @@
 			else
 				to_chat(M, span_notice("The redgate refused your pulled item."))
 		else
-			playsound(src,'sound/effects/ominous-hum-2.ogg', 100,1)
+			play_sfx(src, SFX_EFFECTS_OMINOUS_HUM_2)
 			M.forceMove(ourturf)		//Let's just do forcemove, I don't really want people teleporting to weird places if they have bluespace stuff
 	else
 		to_chat(M, span_notice("Something blocks your way."))
@@ -88,12 +88,12 @@
 /obj/structure/redgate/proc/toggle_portal()
 	if(target())
 		icon_state = "on"
-		density = TRUE
+		set_density(TRUE)
 		plane = ABOVE_MOB_PLANE
 		set_light(5, 0.75, "#da5656")
 	else
 		icon_state = "off"
-		density = FALSE
+		set_density(FALSE)
 		plane = OBJ_PLANE
 		set_light(0)
 

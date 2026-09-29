@@ -83,8 +83,8 @@ GLOBAL_VAR_INIT(total_runtimes_skipped, 0)
 	var/cooldown = error_cooldown[erroruid] || 0
 
 	if(last_seen == null)
-		error_last_seen[erroruid] = world.time
-		last_seen = world.time
+		error_last_seen[erroruid] = EXPIRY_AT(null, CLOCK_WORLD, 0)
+		last_seen = EXPIRY_AT(null, CLOCK_WORLD, 0)
 
 	if(cooldown < 0)
 		error_cooldown[erroruid]-- //Used to keep track of skip count for this error
@@ -121,7 +121,7 @@ GLOBAL_VAR_INIT(total_runtimes_skipped, 0)
 		// (Lists pass through om_after() as they are: the exception rides in one.)
 		om_after(null, configured_error_silence_time, /proc/error_silence_ended, erroruid, error_cooldown, list(E))
 
-	error_last_seen[erroruid] = world.time
+	error_last_seen[erroruid] = EXPIRY_AT(null, CLOCK_WORLD, 0)
 	error_cooldown[erroruid] = cooldown
 
 	var/list/usrinfo = null

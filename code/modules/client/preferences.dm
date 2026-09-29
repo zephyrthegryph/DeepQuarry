@@ -248,62 +248,6 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 	dq_preview_generation++
 	character_preview_b64 = null
 
-/datum/preferences/proc/process_link(mob/user, list/href_list)
-	if(!user)	return
-
-	if(!isnewplayer(user))	return
-
-	if(href_list["preference"] == "open_whitelist_forum")
-		if(CONFIG_GET(string/forumurl))
-			user << link(CONFIG_GET(string/forumurl))
-		else
-			to_chat(user, span_danger("The forum URL is not set in the server configuration."))
-			return
-	ShowChoices(user)
-	return 1
-
-/datum/preferences/Topic(href, list/href_list)
-	if(..())
-		return 1
-
-	if(href_list["save"])
-		if(save_character())
-			to_chat(usr,span_notice("Character [read_preference(/datum/preference/name/real_name)] saved!")) // was player_setup.preferences.read_preference
-		save_preferences()
-	else if(href_list["reload"])
-		load_preferences(TRUE)
-		load_character()
-		client().prefs_vr.load_vore()
-		sanitize_preferences()
-	else if(href_list["load"])
-		if(!IsGuestKey(usr.key))
-			open_load_dialog(usr)
-			return 1
-	else if(href_list["resetslot"])
-		var/_answer_k290 = topic_ask(usr, href_list, "k290", /datum/om/prompt/choice/alert, message = "This will reset the current slot. Continue?", title = "Reset current slot?", choices = list("No", "Yes"))
-		if(isnull(_answer_k290))
-			return
-		if("Yes" != _answer_k290)
-			return 0
-		var/_answer_k292 = topic_ask(usr, href_list, "k292", /datum/om/prompt/choice/alert, message = "Are you completely sure that you want to reset this character slot?", title = "Reset current slot?", choices = list("No", "Yes"))
-		if(isnull(_answer_k292))
-			return
-		if("Yes" != _answer_k292)
-			return 0
-		reset_slot()
-		sanitize_preferences()
-	else if(href_list["copy"])
-		if(!IsGuestKey(usr.key))
-			open_copy_dialog(usr)
-			return 1
-	else if(href_list["close"])
-		// Keep preview assets warm for the next open.
-		return 1
-	else
-		return 0
-
-	ShowChoices(usr)
-	return 1
 
 /datum/preferences/proc/copy_to(mob/living/carbon/human/character, icon_updates = TRUE)
 	// sanitize via the new registry-walking sanitize_preferences() instead of the
@@ -521,7 +465,7 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 	// apply_hook is intentionally NOT called here — we don't want produceCopy()).
 	character.species?.blood_color = read_preference(/datum/preference/color/human/blood_color)
 
-	var/list/traits_to_copy = list(/datum/trait/neutral/tall,
+	var/static/list/traits_to_copy = list(/datum/trait/neutral/tall,
 									/datum/trait/neutral/taller,
 									/datum/trait/neutral/tallest,
 									/datum/trait/neutral/short,

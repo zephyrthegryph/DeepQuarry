@@ -20,50 +20,48 @@
 	// makes the encyclopedia surface it as the primary treatment.
 	treated_by = list(TREAT_ANTIRADIATION = 1.2)
 
-/datum/affliction/acute_radiation/get_stages()
-	var/static/list/S = list(
-		"Mild" = list(
-			"description" = "Early symptoms of radiation exposure — nausea and fatigue from a low-grade dose.",
-			"symptom_pool" = list(
-				/datum/affliction_symptom/nausea             = 80,
-				/datum/affliction_symptom/fatigue            = 80,
-				/datum/affliction_symptom/headache           = 50,
-				/datum/affliction_symptom/radiation_reading  = 95,
-			),
-			"min_symptoms" = 2,
-			"max_symptoms" = 3,
-		),
-		"Moderate" = list(
-			"description" = "Moderate radiation exposure — repeated vomiting, hair loss, and visible bruising as bone marrow function falters.",
-			"symptom_pool" = list(
-				/datum/affliction_symptom/nausea             = 95,
-				/datum/affliction_symptom/fatigue            = 90,
-				/datum/affliction_symptom/pallor             = 70,
-				/datum/affliction_symptom/headache           = 60,
-				/datum/affliction_symptom/dizziness          = 50,
-				/datum/affliction_symptom/skin_burns_minor   = 60,
-				/datum/affliction_symptom/radiation_reading  = 95,
-			),
-			"min_symptoms" = 3,
-			"max_symptoms" = 5,
-		),
-		"Severe" = list(
-			"description" = "Severe radiation exposure — multi-system failure approaches. Bone marrow function has effectively stopped; spontaneous bleeding follows.",
-			"symptom_pool" = list(
-				/datum/affliction_symptom/nausea             = 95,
-				/datum/affliction_symptom/fatigue            = 95,
-				/datum/affliction_symptom/pallor             = 90,
-				/datum/affliction_symptom/bleeding_visible   = 70,
-				/datum/affliction_symptom/confusion          = 60,
-				/datum/affliction_symptom/dizziness          = 60,
-				/datum/affliction_symptom/skin_burns_minor   = 80,
-				/datum/affliction_symptom/radiation_reading  = 95,
-			),
-			"min_symptoms" = 4,
-			"max_symptoms" = 6,
-		),
-	)
-	return S
+TYPE_TABLE(/datum/affliction/acute_radiation, affliction_stages, list( \
+	"Mild" = list( \
+		"description" = "Early symptoms of radiation exposure — nausea and fatigue from a low-grade dose.", \
+		"symptom_pool" = list( \
+			/datum/affliction_symptom/nausea             = 80, \
+			/datum/affliction_symptom/fatigue            = 80, \
+			/datum/affliction_symptom/headache           = 50, \
+			/datum/affliction_symptom/radiation_reading  = 95, \
+		), \
+		"min_symptoms" = 2, \
+		"max_symptoms" = 3, \
+	), \
+	"Moderate" = list( \
+		"description" = "Moderate radiation exposure — repeated vomiting, hair loss, and visible bruising as bone marrow function falters.", \
+		"symptom_pool" = list( \
+			/datum/affliction_symptom/nausea             = 95, \
+			/datum/affliction_symptom/fatigue            = 90, \
+			/datum/affliction_symptom/pallor             = 70, \
+			/datum/affliction_symptom/headache           = 60, \
+			/datum/affliction_symptom/dizziness          = 50, \
+			/datum/affliction_symptom/skin_burns_minor   = 60, \
+			/datum/affliction_symptom/radiation_reading  = 95, \
+		), \
+		"min_symptoms" = 3, \
+		"max_symptoms" = 5, \
+	), \
+	"Severe" = list( \
+		"description" = "Severe radiation exposure — multi-system failure approaches. Bone marrow function has effectively stopped; spontaneous bleeding follows.", \
+		"symptom_pool" = list( \
+			/datum/affliction_symptom/nausea             = 95, \
+			/datum/affliction_symptom/fatigue            = 95, \
+			/datum/affliction_symptom/pallor             = 90, \
+			/datum/affliction_symptom/bleeding_visible   = 70, \
+			/datum/affliction_symptom/confusion          = 60, \
+			/datum/affliction_symptom/dizziness          = 60, \
+			/datum/affliction_symptom/skin_burns_minor   = 80, \
+			/datum/affliction_symptom/radiation_reading  = 95, \
+		), \
+		"min_symptoms" = 4, \
+		"max_symptoms" = 6, \
+	), \
+))
 
 
 // --- Chronic radiation accumulation ------------------------------------

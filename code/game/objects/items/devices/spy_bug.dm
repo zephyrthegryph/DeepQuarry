@@ -15,8 +15,8 @@
 	var/obj/machinery/camera/bug/camera
 	var/camtype = /obj/machinery/camera/bug
 
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 
 /obj/item/camerabug/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
@@ -44,8 +44,8 @@
 	throw_range = 15
 	throw_speed = 3
 
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 /obj/item/brokenbug/spy
 	name = "broken bug"
@@ -120,7 +120,7 @@ DECLARE_INTERACTIONS(/obj/item/camerabug, \
 
 /// Wrenching it down (any stance but harm; a harmful swing falls through to the hit).
 /obj/item/camerabug/proc/interaction_wrench(mob/user, obj/item/tool, datum/interaction/interaction)
-	anchored = !anchored
+	set_anchored(!anchored)
 	to_chat(user, span_notice("You [anchored ? "" : "un"]secure \the [src]."))
 	update_icon()
 	return TRUE
@@ -154,8 +154,8 @@ DECLARE_INTERACTIONS(/obj/item/camerabug, \
 	/// Relation list view: the paired bug cameras (deleted ones leave it).
 	var/list/obj/machinery/camera/bug/paired
 
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 /*
 /obj/item/bug_monitor/Initialize(mapload)

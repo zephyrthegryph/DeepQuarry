@@ -62,12 +62,12 @@
 	if(LAZYLEN(req_access) || LAZYLEN(req_one_access))
 		req_access = null
 		req_one_access = null
-		playsound(src, "sparks", 100, 1)
+		play_sfx(src, SFX_SPARKS, 2)
 		return 1
 
 /obj/machinery/button/remote/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return TRUE
 
 	if(!allowed(user) && (wires_num & 1))
@@ -86,11 +86,11 @@
 	return
 
 /obj/machinery/button/remote/power_change()
-	..()
+	. = ..()
 	update_icon()
 
 /obj/machinery/button/remote/update_icon()
-	if(stat & NOPOWER)
+	if(has_stat(NOPOWER))
 		icon_state = "doorctrl-p"
 	else
 		icon_state = "doorctrl0"
@@ -192,7 +192,7 @@ REL_KEYED_LIST(/obj/machinery/button/remote/blast_door, controlled_doors, id, /o
 	icon_state = "stuffedbear"
 
 /obj/machinery/button/remote/blast_door/bear/update_icon()
-	if(stat & NOPOWER)
+	if(has_stat(NOPOWER))
 		icon_state = "stuffedbear"
 	else
 		icon_state = "stuffedbear"
@@ -229,7 +229,7 @@ REL_KEYED_LIST(/obj/machinery/button/remote/driver, controlled_drivers, id, /obj
 /obj/machinery/button/remote/driver/trigger(mob/user)
 	if(active)
 		return
-	active = TRUE
+	set_active(TRUE)
 	update_icon()
 
 	for(var/obj/machinery/door/blast/M as anything in controlled_doors)
@@ -248,7 +248,7 @@ REL_KEYED_LIST(/obj/machinery/button/remote/driver, controlled_drivers, id, /obj
 	for(var/obj/machinery/door/blast/M as anything in controlled_doors)
 		M.close()
 
-	active = FALSE
+	set_active(FALSE)
 	update_icon()
 
 /obj/machinery/button/remote/driver/declare_interactions(list/into)
@@ -276,7 +276,7 @@ REL_KEYED_LIST(/obj/machinery/button/remote/driver, controlled_drivers, id, /obj
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/button/remote/driver/update_icon()
-	if(!active || (stat & NOPOWER))
+	if(!active || (has_stat(NOPOWER)))
 		icon_state = "launcherbtt"
 	else
 		icon_state = "launcheract"

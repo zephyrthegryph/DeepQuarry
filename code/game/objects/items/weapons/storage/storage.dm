@@ -48,7 +48,7 @@
 	var/allow_quick_empty	//Set this variable to allow the object to have the 'empty' verb, which dumps all the contents on the floor.
 	var/allow_quick_gather	//Set this variable to allow the object to have the 'toggle mode' verb, which quickly collects all items from a tile.
 	var/collection_mode = 1;  //0 = pick one at a time, 1 = pick all on tile
-	var/use_sound = "rustle"	//sound played when used. null for no sound.
+	var/use_sound = SFX_RUSTLE	//sound played when used. null for no sound.
 	var/list/starts_with //Things to spawn on the box on spawn
 	var/empty //Mapper override to spawn an empty version of a container that usually has stuff
 	/// If you can use this storage while in a pocket
@@ -187,8 +187,7 @@
 
 /// What storage takes (constraints, rules.md section 3): pocket-sized things
 /// unless a type says otherwise. Types override this; see HOLD_ONLY and HOLD_MAX_SIZE.
-/obj/item/storage/hold_constraint()
-	return list(HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 /// Why `W` can't go in right now, or null if it can. One ledger check: the
 /// slot's acceptance and hold constraint, the count and space limits, and
@@ -1007,13 +1006,11 @@ DECLARE_SHARED_CACHE(type_storage_costs, GLOBAL_PROC_REF(build_type_storage_cost
 	var/closed_state
 	special_handling = TRUE
 
-/obj/item/storage/trinketbox/hold_constraint()
-	var/list/holds = list(
-		/obj/item/clothing/accessory/ring,
-		/obj/item/coin,
-		/obj/item/clothing/accessory/medal
-		)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage/trinketbox, hold_spec, list(HOLD_ONLY(list( \
+		/obj/item/clothing/accessory/ring, \
+		/obj/item/coin, \
+		/obj/item/clothing/accessory/medal \
+		)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 /obj/item/storage/trinketbox/update_icon()
 	cut_overlays()
@@ -1053,10 +1050,11 @@ EXTEND_INTERACTIONS(/obj/item/storage/trinketbox, INTERACT_USE("Open", PROC_REF(
 
 /obj/item/storage/trinketbox/examine(mob/user)
 	. = ..()
-	var/list/held = slot_contents(CONTAINER_SLOT_STORAGE)
-	if(open && length(held))
-		var/display_item = held[1]
+	if(!open)
+		return
+	FOR_REAL_CONTENTS(var/atom/movable/display_item as anything, src)
 		. += span_notice("\The [src] contains \the [display_item]!")
+		return
 
 /// Old object verbs.
 EXTEND_INTERACTIONS(/obj/item/storage, \

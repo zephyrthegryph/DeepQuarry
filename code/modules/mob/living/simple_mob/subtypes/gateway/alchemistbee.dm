@@ -107,31 +107,31 @@
 
 /mob/living/simple_mob/vr/alchemistbee/proc/chemblast(atom/target)
 	Beam(target, icon_state = "sat_beam", time = 1.5 SECONDS, maxdistance = INFINITY)
-	visible_message(span_warning("\The [src] prepares a pouch of vials!"))
+	act_message(src, null, null, MSG_OTHERS(span_warning("%U% prepares a pouch of vials!")))
 	om_after(src, 0.5 SECONDS, PROC_REF(chemblast_throw), target)
 
 /mob/living/simple_mob/vr/alchemistbee/proc/chemblast_throw(atom/target)
 
 	if(prob(25))
-		visible_message(span_warning("\The [src] throws a blue vial!"))
+		act_message(src, null, null, MSG_OTHERS(span_warning("%U% throws a blue vial!")))
 		var/obj/item/projectile/B = new /obj/item/projectile/arc/vial/frostvial(get_turf(src))
 		B.launch_projectile(target, BP_TORSO, src)
 
 	if(prob(25))
-		visible_message(span_warning("\The [src] throws a green vial!"))
+		act_message(src, null, null, MSG_OTHERS(span_warning("%U% throws a green vial!")))
 		var/obj/item/projectile/B = new /obj/item/projectile/arc/vial/poisonvial(get_turf(src))
 		B.launch_projectile(target, BP_TORSO, src)
 
 	if(prob(25))
-		visible_message(span_warning("\The [src] throws a red vial!"))
+		act_message(src, null, null, MSG_OTHERS(span_warning("%U% throws a red vial!")))
 		var/obj/item/projectile/B = new /obj/item/projectile/arc/vial/firevial(get_turf(src))
 		B.launch_projectile(target, BP_TORSO, src)
 	else
-		visible_message(span_warning("\The [src] throws a strange vial"))
+		act_message(src, null, null, MSG_OTHERS(span_warning("%U% throws a strange vial")))
 		var/obj/item/projectile/A = new /obj/item/projectile/arc/vial/lightingvial(get_turf(src))
 		A.launch_projectile(target, BP_TORSO, src)
 
-	visible_message(span_warning("\The [src] puts them pouch away."))
+	act_message(src, null, null, MSG_OTHERS(span_warning("%U% puts them pouch away.")))
 
 
 /mob/living/simple_mob/vr/alchemistbee/proc/homingcluster(atom/target)
@@ -139,7 +139,7 @@
 	A.launch_projectile(target, BP_TORSO, src)
 
 /mob/living/simple_mob/vr/alchemistbee/proc/dangerbolt(atom/target)
-	visible_message(span_warning("\The [src] prepares a powerful spell!"))
+	act_message(src, null, null, MSG_OTHERS(span_warning("%U% prepares a powerful spell!")))
 	Beam(target, icon_state = "sat_beam", time = 2.0 SECONDS, maxdistance = INFINITY)
 	om_after(src, 1.5 SECONDS, PROC_REF(dangerbolt_fire), target)
 
@@ -163,7 +163,7 @@
 	icon_state = "blue_vial"
 	var/splatter = FALSE			// Will this make a cloud of reagents?
 	var/splatter_volume = 5			// The volume of its chemical container, for said cloud of reagents.
-	var/list/my_chems = list(REAGENT_ID_MOLD) // ALLOW(instance_list): c: read-only per-subtype constant table (4 subtype overrides); a getter would share it, not worth it on a rare type
+TYPE_TABLE_DECLARE(/obj/item/projectile/arc/vial, vial_chems, list(REAGENT_ID_MOLD))
 
 /obj/item/projectile/arc/vial/Initialize(mapload)
 	. = ..()
@@ -177,14 +177,15 @@
 		var/datum/effect/effect/system/smoke_spread/chem/blob/S = new /datum/effect/effect/system/smoke_spread/chem/blob
 		S.attach(location)
 		S.set_up(reagents, rand(1, splatter_volume), 0, location)
-		playsound(location, 'sound/effects/slime_squish.ogg', 30, 1, -3)
+		play_sfx(location, SFX_EFFECTS_SLIME_SQUISH, 0.6, extrarange = -3)
 		S.start()
 	..()
 
 /obj/item/projectile/arc/vial/proc/ready_chemicals()
 	if(reagents)
-		var/reagent_vol = (round((splatter_volume / my_chems.len) * 100) / 100) //Cut it at the hundreds place, please.
-		for(var/reagent in my_chems)
+		var/list/chems = TYPE_TABLE_GET(src, vial_chems)
+		var/reagent_vol = (round((splatter_volume / chems.len) * 100) / 100) //Cut it at the hundreds place, please.
+		for(var/reagent in chems)
 			reagents.add_reagent(reagent, reagent_vol)
 
 /obj/item/projectile/arc/vial/frostvial
@@ -192,40 +193,40 @@
 	damage = 10
 	armor_penetration = 0
 	splatter_volume = 60
-	my_chems = list(REAGENT_ID_FROSTOIL)
 	modifier_type_to_apply = /datum/body_effect/wizpoison/frost
 	modifier_duration = 15 SECONDS
 	splatter = TRUE
+TYPE_TABLE(/obj/item/projectile/arc/vial/frostvial, vial_chems, list(REAGENT_ID_FROSTOIL))
 
 /obj/item/projectile/arc/vial/poisonvial
 	icon_state = "green_vial"
 	damage = 10
 	armor_penetration = 0
 	splatter_volume = 60
-	my_chems = list(REAGENT_ID_TOXIN)
 	modifier_type_to_apply = /datum/body_effect/wizpoison
 	modifier_duration = 15 SECONDS
 	splatter = TRUE
+TYPE_TABLE(/obj/item/projectile/arc/vial/poisonvial, vial_chems, list(REAGENT_ID_TOXIN))
 
 /obj/item/projectile/arc/vial/firevial
 	icon_state = "red_vial"
 	damage = 10
 	armor_penetration = 0
 	splatter_volume = 60
-	my_chems = list(REAGENT_ID_SACID)
 	modifier_type_to_apply = /datum/body_effect/wizfire
 	modifier_duration = 15 SECONDS
 	splatter = TRUE
+TYPE_TABLE(/obj/item/projectile/arc/vial/firevial, vial_chems, list(REAGENT_ID_SACID))
 
 /obj/item/projectile/arc/vial/lightingvial
 	icon_state = "orange_vial"
 	damage = 10
 	armor_penetration = 0
 	splatter_volume = 60
-	my_chems = list(REAGENT_ID_SHREDDINGNANITES)
 	modifier_type_to_apply = /datum/body_effect/wizfire/lighting
 	modifier_duration = 15 SECONDS
 	splatter = TRUE
+TYPE_TABLE(/obj/item/projectile/arc/vial/lightingvial, vial_chems, list(REAGENT_ID_SHREDDINGNANITES))
 
 /obj/item/projectile/energy/nuclearblast
 	name = "nuclear blast"

@@ -47,11 +47,11 @@
 	var/sound/prey_digest
 	var/sound/pred_digest
 	if(!fancy_vore)
-		prey_digest = sound(get_sfx("classic_digestion_sounds"))
-		pred_digest = sound(get_sfx("classic_digestion_sounds"))
+		prey_digest = sound(get_sfx(SFX_CLASSIC_DIGESTION_SOUNDS))
+		pred_digest = sound(get_sfx(SFX_CLASSIC_DIGESTION_SOUNDS))
 	else
-		prey_digest = sound(get_sfx("fancy_digest_prey"))
-		pred_digest = sound(get_sfx("fancy_digest_pred"))
+		prey_digest = sound(get_sfx(SFX_FANCY_DIGEST_PREY))
+		pred_digest = sound(get_sfx(SFX_FANCY_DIGEST_PRED))
 
 ///////////////////// Early Non-Mode Handling /////////////////////
 
@@ -293,7 +293,7 @@
 			M.stop_sound_channel(CHANNEL_PREYLOOP)
 			var/sound/preyloop = sound('sound/vore/sunesound/prey/loop.ogg')
 			M.playsound_local(get_turf(src), preyloop, 80, 0, channel = CHANNEL_PREYLOOP, frequency = noise_freq)
-			M.next_preyloop = (world.time + (52 SECONDS))
+			EXPIRY_SET(M, next_preyloop, (52 SECONDS), CLOCK_WORLD)
 
 /obj/belly/proc/handle_digesting_item(obj/item/I, touchable_amount, delta_factor = 1)
 	var/did_an_item = FALSE

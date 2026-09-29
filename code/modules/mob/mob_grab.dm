@@ -370,7 +370,7 @@ DECLARE_INTERACTIONS(/obj/item/grab, INTERACT_USE("Tighten grip", PROC_REF(inter
 		if(GRAB_NECK)
 			grab_name = "headlock"
 			//If the you move when grabbing someone then it's easier for them to break free. Same if the affected mob is immune to stun.
-			if(world.time - assailant.l_move_time < 30 || !affecting.has_status(EFFECT_STUNNED))
+			if(ELAPSED_SINCE(src, assailant.l_move_time, CLOCK_WORLD) < 30 || !affecting.has_status(EFFECT_STUNNED))
 				break_strength++
 			break_chance_table = list(3, 18, 45, 100)
 

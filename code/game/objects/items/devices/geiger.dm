@@ -95,7 +95,7 @@ DECLARE_INTERACTIONS(/obj/item/geiger, \
 	if(!CAN_IRRADIATE(interacting_with))
 		return NONE
 
-	user.visible_message(span_notice("[user] scans [interacting_with] with [src]."), span_notice("You scan [interacting_with]'s radiation levels with [src]..."))
+	act_message(user, src, MSG_SELF(span_notice("You scan [interacting_with]'s radiation levels with %T%...")), MSG_OTHERS(span_notice("%U% scans [interacting_with] with %T%.")))
 	om_after_unique(src, 20, PROC_REF(scan), interacting_with, user) // Let's not have spamming GetAllContents
 	return ITEM_INTERACT_SUCCESS
 

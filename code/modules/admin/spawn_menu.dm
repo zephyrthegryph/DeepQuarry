@@ -87,6 +87,6 @@
 			local_types[atom_type] = atom_type::name || ""
 		types_list = local_types
 	data["types"] = types_list
-	data["abstractTypes"] = get_abstract_types()
+	data["abstractTypes"] = GLOBAL_TABLE_GET(get_abstract_types)
 	data["fancyTypes"] = GLOB.fancy_type_replacements
 	return data

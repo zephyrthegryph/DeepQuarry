@@ -117,7 +117,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/station_map, "holomap_datum", /datum/statio
 	// EH JUST HACK IT FOR NOW SO WE CAN SEE HOW IT LOOKS! STOP OBSESSING, ITS BEEN AN HOUR NOW!
 
 	// TODO - This part!! ~Leshana
-	if(isliving(user) && anchored && !(stat & (NOPOWER|BROKEN)))
+	if(isliving(user) && anchored && operable())
 		if(user.client)
 			image_anchor(holomap_datum.station_map, GLOB.global_hud.holomap) // Put the image on the holomap hud
 			holomap_datum.station_map.alpha = 0 // Set to transparent so we can fade in
@@ -132,7 +132,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/station_map, "holomap_datum", /datum/statio
 			dq_add_recursive_move(watching_mob())
 			om_hook(watching_mob(), /datum/om/event/movable_attempted_move, src, PROC_REF(checkPosition))
 			om_hook(watching_mob(), /datum/om/event/qdeleting, src, PROC_REF(on_watcher_deleted))
-			update_use_power(USE_POWER_ACTIVE)
+			set_use_power(USE_POWER_ACTIVE)
 
 			if(bogus)
 				to_chat(user, span_warning("The holomap failed to initialize. This area of space cannot be mapped."))
@@ -143,7 +143,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/station_map, "holomap_datum", /datum/statio
 // user.station_holomap.toggleHolomap(user, isAI(user))
 
 /obj/machinery/station_map/machine_step()
-	if((stat & (NOPOWER|BROKEN)) || !anchored)
+	if((!operable()) || !anchored)
 		stopWatching()
 	if(!watching_mob())
 		return PROCESS_KILL
@@ -171,15 +171,15 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/station_map, "holomap_datum", /datum/statio
 				om_after(watcher, 5, /proc/remove_client_image, watcher, holomap_datum.station_map) //we give it time to fade out
 		om_unhook(watcher, list(/datum/om/event/movable_attempted_move, /datum/om/event/qdeleting), src)
 	rel_clear(src, "watching_mob")
-	update_use_power(USE_POWER_IDLE)
+	set_use_power(USE_POWER_IDLE)
 
 /obj/machinery/station_map/power_change()
 	. = ..()
-	if(stat & NOPOWER)
+	if(has_stat(NOPOWER))
 		stopWatching()
 	update_icon()
 	// TODO - Port use_auto_lights from /vg - For now implement it manually here
-	if(stat & NOPOWER)
+	if(has_stat(NOPOWER))
 		set_light(0)
 	else
 		set_light(light_range_on, light_power_on)
@@ -189,9 +189,9 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/station_map, "holomap_datum", /datum/statio
 		return //Not yet.
 
 	cut_overlays()
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		icon_state = "station_mapb"
-	else if((stat & NOPOWER) || !anchored)
+	else if((has_stat(NOPOWER)) || !anchored)
 		icon_state = "station_map0"
 	else
 		icon_state = "station_map"

@@ -14,7 +14,7 @@
 	var/tmp/obj/item/aiming_with	// What are we targeting with?
 	var/tmp/mob/owner	// Who do we belong to?
 	var/locked =    0          // Have we locked on?
-	TIMESTAMP_VAR(lock_time) // When -will- we lock on?
+	EXPIRY_DECLARE(lock_time) // When -will- we lock on?
 	var/active =    0          // Is our owner intending to take hostages?
 	var/target_permissions = 0 // Permission bitflags.
 
@@ -101,7 +101,7 @@ REL_PAIR_LIST(/mob/living, aimed, aiming_at)
 		cancel_aiming()
 		return
 
-	if(!locked && lock_time <= world.time)
+	if(!locked && EXPIRY_EXPIRED(src, lock_time, CLOCK_WORLD))
 		locked = 1
 		to_chat(owner(), span_notice("You are locked onto your target."))
 		to_chat(aiming_at, span_danger("The gun is trained on you!"))
@@ -168,7 +168,7 @@ REL_PAIR_LIST(/mob/living, aimed, aiming_at)
 	rel_set(src, "aiming_with", thing)
 	rel_set(src, "aiming_at", target)
 	if(istype(aiming_with(), /obj/item/gun))
-		playsound(owner(), 'sound/weapons/targeton.ogg', 50,1)
+		play_sfx(owner(), SFX_WEAPONS_TARGETON)
 	forceMove(get_turf(target))
 	om_task_periodic(src, PERIODIC_SLOW)
 
@@ -176,7 +176,7 @@ REL_PAIR_LIST(/mob/living, aimed, aiming_at)
 	toggle_active(1)
 	locked = 0
 	update_icon()
-	lock_time = world.time + 25
+	EXPIRY_SET(src, lock_time, 25, CLOCK_WORLD)
 
 /obj/aiming_overlay/update_icon()
 	if(locked)
@@ -208,7 +208,7 @@ REL_PAIR_LIST(/mob/living, aimed, aiming_at)
 	if(!aiming_with() || !aiming_at)
 		return
 	if(istype(aiming_with(), /obj/item/gun))
-		playsound(owner(), 'sound/weapons/targetoff.ogg', 50,1)
+		play_sfx(owner(), SFX_WEAPONS_TARGETOFF)
 	if(!no_message)
 		owner().visible_message(span_infoplain(span_bold("\The [owner()]") + " lowers \the [aiming_with()]."))
 

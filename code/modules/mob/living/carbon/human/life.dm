@@ -17,7 +17,7 @@
 	var/heartbeat = 0
 	var/chemical_darksight = 0
 	/// world.time of the next periodic full HUD refresh (hud refresh system).
-	var/hud_full_refresh_at = 0
+	EXPIRY_DECLARE(hud_full_refresh_at)
 
 // Human Life (doc/rewrite/life_on_om.md). The living core runs first; the human-only steps that
 // followed ..() in the old Life() are TAIL stages below, in their old order:
@@ -58,8 +58,8 @@
 /datum/om/stage/life/hud_refresh/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
 	// The periodic safety refresh is intentionally rare (once a minute); state-changing
 	// code continues to set its exact HUD dirty bits.
-	if(world.time >= self.hud_full_refresh_at)
-		self.hud_full_refresh_at = world.time + 1 MINUTES
+	if(!BEFORE(src, self.hud_full_refresh_at, CLOCK_WORLD))
+		EXPIRY_SET(self, hud_full_refresh_at, 1 MINUTES, CLOCK_WORLD)
 		self.hud_updateflag = (1 << TOTAL_HUDS) - 1
 
 /// Lazy: sleeps until the next refresh is due.
@@ -848,7 +848,7 @@
 	if(species.suit_inhale_sound)
 		suit_inhale_sound = species.suit_inhale_sound
 	else // Failsafe
-		suit_inhale_sound = 'sound/effects/mob_effects/suit_breathe_in.ogg'
+		suit_inhale_sound = SFX_EFFECTS_MOB_EFFECTS_SUIT_BREATHE_IN
 
 	playsound_local(get_turf(src), suit_inhale_sound, 100, pressure_affected = FALSE, volume_channel = VOLUME_CHANNEL_AMBIENCE)
 	if(!exhale) // Did we fail exhale? If no, play it after inhale finishes.
@@ -859,7 +859,7 @@
 	if(species.suit_exhale_sound)
 		suit_exhale_sound = species.suit_exhale_sound
 	else // Failsafe
-		suit_exhale_sound = 'sound/effects/mob_effects/suit_breathe_out.ogg'
+		suit_exhale_sound = SFX_EFFECTS_MOB_EFFECTS_SUIT_BREATHE_OUT
 
 	playsound_local(get_turf(src), suit_exhale_sound, 100, pressure_affected = FALSE, volume_channel = VOLUME_CHANNEL_AMBIENCE)
 
@@ -1234,7 +1234,7 @@
 		self.adjust_nutrition(-nutrition_reduction)
 
 	if(self.noisy == TRUE && self.nutrition < 250 && prob(10))
-		var/sound/growlsound = sound(get_sfx("hunger_sounds"))
+		var/sound/growlsound = sound(get_sfx(SFX_HUNGER_SOUNDS))
 		var/growlmultiplier = 100 - (self.nutrition / 250 * 100)
 		playsound(self, growlsound, vol = growlmultiplier, vary = 1, falloff = 0.1, ignore_walls = TRUE, preference = /datum/preference/toggle/digestion_noises)
 	if(self.nutrition > 500 && self.noisy_full == TRUE)
@@ -1387,7 +1387,8 @@
 		if(prob(1) && self.get_active_hand())
 			var/stuff_to_drop = self.get_active_hand()
 			self.drop_item()
-			self.visible_message(span_notice("\The [self] suddenly drops their [stuff_to_drop]."),span_warning("You drop your [stuff_to_drop]!"))
+			act_message(self, null, MSG_SELF(span_warning("You drop your [stuff_to_drop]!")), \
+				MSG_OTHERS(span_notice("%U% suddenly drops their [stuff_to_drop].")))
 		if(prob(5))
 			fear_emote(self)
 	else if(self.fear >= 30 && prob(2))
@@ -1396,7 +1397,7 @@
 /datum/om/stage/life/status/carbon/human/proc/fear_emote(mob/living/carbon/human/self)
 	var/fear_self = pick(self.fear_message_self)
 	var/fear_other = pick(self.fear_message_other)
-	self.visible_message(span_notice("\The [self][fear_other]"),span_warning("[fear_self]"))
+	act_message(self, null, MSG_SELF(span_warning("[fear_self]")), MSG_OTHERS(span_notice("%U%[fear_other]")))
 
 /// Asleep: unconscious, pain eases, dreams and snores. Otherwise (and not knocked out) conscious.
 /datum/om/stage/life/status/carbon/human/proc/update_sleep(mob/living/carbon/human/self, in_crit)
@@ -1873,7 +1874,7 @@
 			/* 
 			if(text2num(time2text(world.timeofday, "MM")) == 4)
 				if(text2num(time2text(world.timeofday, "DD")) == 1)
-					playsound_local(self,pick(GLOB.scawwysownds),50, 0)
+					playsound_local(self,SFX_VOICE_SCAWWYSOWNDS,50, 0)
 					return
 			*/
 			self.playsound_local(self,pick(GLOB.scarySounds),50, 1, -1)

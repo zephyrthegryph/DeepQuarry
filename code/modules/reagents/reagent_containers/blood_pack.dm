@@ -21,8 +21,8 @@
 	icon = 'icons/obj/bloodpack.dmi'
 	icon_state = "empty"
 	item_state = "bloodpack_empty"
-	drop_sound = 'sound/items/drop/food.ogg'
-	pickup_sound = 'sound/items/pickup/food.ogg'
+	drop_sound = SFX_ITEMS_DROP_FOOD
+	pickup_sound = SFX_ITEMS_PICKUP_FOOD
 	volume = 200
 	var/label_text = ""
 

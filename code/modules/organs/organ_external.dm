@@ -235,7 +235,7 @@
 /obj/item/organ/external/examine(mob/user)
 	. = ..()
 	if(in_range(user, src) || isobserver(user))
-		for(var/obj/item/I in contents)
+		FOR_REAL_CONTENTS(var/obj/item/I, src)
 
 			//Handling attached limbs, like the foot on a leg.
 			if(istype(I, /obj/item/organ/external))
@@ -977,7 +977,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 	var/wound_count = length(current_wounds)
 	for(var/datum/affliction/wound/W as anything in current_wounds)
 		// wounds can disappear after 10 minutes at the earliest
-		if(W.damage <= 0 && W.created + 10 MINUTES <= world.time)
+		if(W.damage <= 0 && ELAPSED(W, created, CLOCK_WORLD) >= 10 MINUTES)
 			remove_wound(W)
 			continue
 		// slow healing
@@ -1328,9 +1328,9 @@ Note that amputating the affected organ does in fact remove the infection from t
 		jostle_bone()
 
 	if(istype(owner.loc, /obj/belly)) // bone breaks in bellys should be whisper range to prevent bar wide blender prefbreak. This is a hacky passive hardcode, if a pref gets added, remove this if else
-		playsound(src, "fracture", 90, 1, -6.5)
+		play_sfx(src, SFX_FRACTURE, extrarange = -6.5)
 	else
-		playsound(src, "fracture", 90, 1, -2) // Much more audible bonebreaks.
+		play_sfx(src, SFX_FRACTURE) // Much more audible bonebreaks.
 	log_runtime("FRACTURE: [key_name(owner)] fractured their [name].")
 	broken_description = pick("broken","fracture","hairline fracture")
 
@@ -1430,8 +1430,8 @@ Note that amputating the affected organ does in fact remove the infection from t
 	remove_splint()
 	get_icon()
 	unmutate()
-	drop_sound = 'sound/items/drop/weldingtool.ogg'
-	pickup_sound = 'sound/items/pickup/weldingtool.ogg'
+	drop_sound = SFX_ITEMS_DROP_WELDINGTOOL
+	pickup_sound = SFX_ITEMS_PICKUP_WELDINGTOOL
 
 	for(var/obj/item/organ/external/T in children)
 		T.robotize(company, keep_organs = keep_organs)
@@ -1533,11 +1533,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 			span_danger("You hear an explosion!"))
 		// owner is already null here (the base removed() detached us): use victim (audit D4).
 		explosion(get_turf(victim),-1,-1,2,3)
-		var/datum/effect/effect/system/spark_spread/spark_system = new /datum/effect/effect/system/spark_spread()
-		spark_system.set_up(5, 0, victim)
-		spark_system.attach(victim)
-		spark_system.start()
-		om_qdel_after(spark_system, 1 SECOND)
+		fx_sparks(victim, 5, FALSE)
 		// droplimb() keeps using this limb after removed() returns; delete it once that unwinds.
 		om_qdel_after(src, 1)
 
@@ -1656,7 +1652,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 
 	if(wound_descriptors.len)
 		var/list/flavor_text = list()
-		var/list/no_exclude = list("gaping wound", "big gaping wound", "massive wound", "large bruise",\
+		var/static/list/no_exclude = list("gaping wound", "big gaping wound", "massive wound", "large bruise",\
 		"huge bruise", "massive bruise", "severe burn", "large burn", "deep burn", "carbonised area") //note to self make this more robust
 		for(var/wound in wound_descriptors)
 			switch(wound_descriptors[wound])

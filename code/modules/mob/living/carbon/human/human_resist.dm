@@ -42,30 +42,25 @@
 
 	switch(attack_type)
 		if(RESIST_ATTACK_DEFAULT)
-			visible_message(
-			span_danger("\The [src] struggles to remove \the [SJ]!"),
-			span_warning("You struggle to remove \the [SJ]. (This will take around [round(breakouttime / 600)] minutes and you need to stand still.)")
-			)
+			act_message(src, null, MSG_SELF(span_warning("You struggle to remove %I%. (This will take around [round(breakouttime / 600)] minutes and you need to stand still.)")), \
+				MSG_OTHERS(span_danger("%U% struggles to remove %I%!")), \
+				item = SJ)
 		if(RESIST_ATTACK_CLAWS)
-			visible_message(
-			span_danger("\The [src] starts clawing at \the [SJ]!"),
-			span_warning("You claw at \the [SJ]. (This will take around [round(breakouttime / 600)] minutes and you need to stand still.)")
-			)
+			act_message(src, null, MSG_SELF(span_warning("You claw at %I%. (This will take around [round(breakouttime / 600)] minutes and you need to stand still.)")), \
+				MSG_OTHERS(span_danger("%U% starts clawing at %I%!")), \
+				item = SJ)
 		if(RESIST_ATTACK_BITE)
-			visible_message(
-			span_danger("\The [src] starts gnawing on \the [SJ]!"),
-			span_warning("You gnaw on \the [SJ]. (This will take around [round(breakouttime / 600)] minutes and you need to stand still.)")
-			)
+			act_message(src, null, MSG_SELF(span_warning("You gnaw on %I%. (This will take around [round(breakouttime / 600)] minutes and you need to stand still.)")), \
+				MSG_OTHERS(span_danger("%U% starts gnawing on %I%!")), \
+				item = SJ)
 
 	om_task_timed(src, breakouttime, target = src, timed_action_flags = IGNORE_INCAPACITATED, receiver = src, on_done = PROC_REF(escape_straight_jacket_human_done), done_args = list())
 
 /mob/living/carbon/human/proc/escape_straight_jacket_human_done()
 	if(!get_equipped_item(SLOT_ID_SUIT))
 		return
-	visible_message(
-		span_danger("\The [src] manages to remove \the [get_equipped_item(SLOT_ID_SUIT)]!"),
-		span_notice("You successfully remove \the [get_equipped_item(SLOT_ID_SUIT)].")
-		)
+	act_message(src, null, MSG_SELF(span_notice("You successfully remove \the [get_equipped_item(SLOT_ID_SUIT)].")), \
+		MSG_OTHERS(span_danger("%U% manages to remove \the [get_equipped_item(SLOT_ID_SUIT)]!")))
 	drop_from_inventory(get_equipped_item(SLOT_ID_SUIT))
 
 #undef RESIST_ATTACK_DEFAULT
@@ -77,10 +72,8 @@
 		return 1
 
 /mob/living/carbon/human/proc/break_straight_jacket()
-	visible_message(
-		span_danger("[src] is trying to rip \the [get_equipped_item(SLOT_ID_SUIT)]!"),
-		span_warning("You attempt to rip your [get_equipped_item(SLOT_ID_SUIT).name] apart. (This will take around 5 seconds and you need to stand still)")
-		)
+	act_message(src, null, MSG_SELF(span_warning("You attempt to rip your [get_equipped_item(SLOT_ID_SUIT).name] apart. (This will take around 5 seconds and you need to stand still)")), \
+		MSG_OTHERS(span_danger("%U% is trying to rip \the [get_equipped_item(SLOT_ID_SUIT)]!")))
 
 	om_task_timed(src, 20 SECONDS, target = src, timed_action_flags = IGNORE_INCAPACITATED, receiver = src, on_done = PROC_REF(break_straight_jacket_human_done), done_args = list())
 
@@ -88,10 +81,8 @@
 	if(!get_equipped_item(SLOT_ID_SUIT) || src?.buckled_to())
 		return
 
-	visible_message(
-		span_danger("[src] manages to rip \the [get_equipped_item(SLOT_ID_SUIT)]!"),
-		span_warning("You successfully rip your [get_equipped_item(SLOT_ID_SUIT).name].")
-		)
+	act_message(src, null, MSG_SELF(span_warning("You successfully rip your [get_equipped_item(SLOT_ID_SUIT).name].")), \
+		MSG_OTHERS(span_danger("%U% manages to rip \the [get_equipped_item(SLOT_ID_SUIT)]!")))
 
 	if(has_mutation(HULK))
 		say(pick(";RAAAAAAAARGH!", ";HNNNNNNNNNGGGGGGH!", ";GWAAAAAAAARRRHHH!", "NNNNNNNNGGGGGGGGHH!", ";AAAAAAARRRGH!", "RAAAAAAAARGH!", "HNNNNNNNNNGGGGGGH!", "GWAAAAAAAARRRHHH!", "AAAAAAARRRGH!" ))

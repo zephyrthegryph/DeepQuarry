@@ -15,8 +15,8 @@
 	var/current_emotion = 1
 	COOLDOWN_DECLARE(notify_cooldown)
 	var/screen_msg
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 	// Parts and upgrades
 	var/panel_open = FALSE
@@ -412,8 +412,8 @@
 	if(I.has_tool_quality(TOOL_SCREWDRIVER))
 		if(panel_open)
 			panel_open = FALSE
-			user.visible_message(span_notice("\The [user] secured \the [src]'s maintenance panel."))
-			playsound(src, 'sound/items/Screwdriver.ogg', 50, 1)
+			act_message(user, src, others = span_notice("%U% secured %T%'s maintenance panel."))
+			play_sfx(src, SFX_ITEMS_SCREWDRIVER)
 		else if(pai)
 			om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
 	if(istype(I,/obj/item/robotanalyzer))
@@ -599,34 +599,34 @@
 
 /obj/item/paicard/proc/attackby_timed_done(mob/user)
 	panel_open = TRUE
-	user.visible_message(span_warning("\The [user] opened \the [src]'s maintenance panel."))
-	playsound(src, 'sound/items/Screwdriver.ogg', 50, 1)
+	act_message(user, src, others = span_warning("%U% opened %T%'s maintenance panel."))
+	play_sfx(src, SFX_ITEMS_SCREWDRIVER)
 /obj/item/paicard/proc/attackby_timed_done2(obj/item/I, mob/user)
-	user.visible_message(span_notice("\The [user] installs \the [I] into \the [src]."),span_notice("You install \the [I] into \the [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You install \the [I] into %T%.")), MSG_OTHERS(span_notice("%U% installs \the [I] into %T%.")))
 	cell = PP_FUNCTIONAL
 	consume(I, user)
 /obj/item/paicard/proc/attackby_timed_done3(obj/item/I, mob/user)
-	user.visible_message(span_notice("\The [user] installs \the [I] into \the [src]."),span_notice("You install \the [I] into \the [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You install \the [I] into %T%.")), MSG_OTHERS(span_notice("%U% installs \the [I] into %T%.")))
 	processor = PP_FUNCTIONAL
 	consume(I, user)
 /obj/item/paicard/proc/attackby_timed_done4(obj/item/I, mob/user)
-	user.visible_message(span_notice("\The [user] installs \the [I] into \the [src]."),span_notice("You install \the [I] into \the [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You install \the [I] into %T%.")), MSG_OTHERS(span_notice("%U% installs \the [I] into %T%.")))
 	board = PP_FUNCTIONAL
 	consume(I, user)
 /obj/item/paicard/proc/attackby_timed_done5(obj/item/I, mob/user)
-	user.visible_message(span_notice("\The [user] installs \the [I] into \the [src]."),span_notice("You install \the [I] into \the [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You install \the [I] into %T%.")), MSG_OTHERS(span_notice("%U% installs \the [I] into %T%.")))
 	capacitor = PP_FUNCTIONAL
 	consume(I, user)
 /obj/item/paicard/proc/attackby_timed_done6(obj/item/I, mob/user)
-	user.visible_message(span_notice("\The [user] installs \the [I] into \the [src]."),span_notice("You install \the [I] into \the [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You install \the [I] into %T%.")), MSG_OTHERS(span_notice("%U% installs \the [I] into %T%.")))
 	projector = PP_FUNCTIONAL
 	consume(I, user)
 /obj/item/paicard/proc/attackby_timed_done7(obj/item/I, mob/user)
-	user.visible_message(span_notice("\The [user] installs \the [I] into \the [src]."),span_notice("You install \the [I] into \the [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You install \the [I] into %T%.")), MSG_OTHERS(span_notice("%U% installs \the [I] into %T%.")))
 	emitter = PP_FUNCTIONAL
 	consume(I, user)
 /obj/item/paicard/proc/attackby_timed_done8(obj/item/I, mob/user)
-	user.visible_message(span_notice("\The [user] installs \the [I] into \the [src]."),span_notice("You install \the [I] into \the [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You install \the [I] into %T%.")), MSG_OTHERS(span_notice("%U% installs \the [I] into %T%.")))
 	speech_synthesizer = PP_FUNCTIONAL
 	consume(I, user)
 
@@ -667,7 +667,7 @@ DECLARE_INTERACTIONS(/obj/item/paicard, \
 	if(!panel_open)
 		return
 	var/mob/user = ask.answerer
-	playsound(src, 'sound/items/pickup/component.ogg', vary = TRUE)
+	play_sfx(src, SFX_ITEMS_PICKUP_COMPONENT, volume = 0)
 	om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user, ask.choice))
 
 /// Adding or removing an ID's access. Re-checked on the answer: the ID is still in hand, the pAI still accepts it.
@@ -702,14 +702,14 @@ DECLARE_INTERACTIONS(/obj/item/paicard, \
 				new /obj/item/paiparts/cell(get_turf(user))
 			else
 				new /obj/item/paiparts(get_turf(user))
-			user.visible_message(span_warning("\The [user] removes \the [choice] from \the [src]."),span_warning("You remove \the [choice] from \the [src]."))
+			act_message(user, src, MSG_SELF(span_warning("You remove \the [choice] from %T%.")), MSG_OTHERS(span_warning("%U% removes \the [choice] from %T%.")))
 			cell = PP_MISSING
 		if("processor")
 			if(processor == PP_FUNCTIONAL)
 				new /obj/item/paiparts/processor(get_turf(user))
 			else
 				new /obj/item/paiparts(get_turf(user))
-			user.visible_message(span_warning("\The [user] removes \the [choice] from \the [src]."),span_warning("You remove \the [choice] from \the [src]."))
+			act_message(user, src, MSG_SELF(span_warning("You remove \the [choice] from %T%.")), MSG_OTHERS(span_warning("%U% removes \the [choice] from %T%.")))
 			processor = PP_MISSING
 		if("board")
 			if(board == PP_FUNCTIONAL)
@@ -717,35 +717,35 @@ DECLARE_INTERACTIONS(/obj/item/paicard, \
 			else
 				new /obj/item/paiparts(get_turf(user))
 			board = PP_MISSING
-			user.visible_message(span_warning("\The [user] removes \the [choice] from \the [src]."),span_warning("You remove \the [choice] from \the [src]."))
+			act_message(user, src, MSG_SELF(span_warning("You remove \the [choice] from %T%.")), MSG_OTHERS(span_warning("%U% removes \the [choice] from %T%.")))
 
 		if("capacitor")
 			if(capacitor == PP_FUNCTIONAL)
 				new /obj/item/paiparts/capacitor(get_turf(user))
 			else
 				new /obj/item/paiparts(get_turf(user))
-			user.visible_message(span_warning("\The [user] removes \the [choice] from \the [src]."),span_warning("You remove \the [choice] from \the [src]."))
+			act_message(user, src, MSG_SELF(span_warning("You remove \the [choice] from %T%.")), MSG_OTHERS(span_warning("%U% removes \the [choice] from %T%.")))
 			capacitor = PP_MISSING
 		if("projector")
 			if(projector == PP_FUNCTIONAL)
 				new /obj/item/paiparts/projector(get_turf(user))
 			else
 				new /obj/item/paiparts(get_turf(user))
-			user.visible_message(span_warning("\The [user] removes \the [choice] from \the [src]."),span_warning("You remove \the [choice] from \the [src]."))
+			act_message(user, src, MSG_SELF(span_warning("You remove \the [choice] from %T%.")), MSG_OTHERS(span_warning("%U% removes \the [choice] from %T%.")))
 			projector = PP_MISSING
 		if("emitter")
 			if(emitter == PP_FUNCTIONAL)
 				new /obj/item/paiparts/emitter(get_turf(user))
 			else
 				new /obj/item/paiparts(get_turf(user))
-			user.visible_message(span_warning("\The [user] removes \the [choice] from \the [src]."),span_warning("You remove \the [choice] from \the [src]."))
+			act_message(user, src, MSG_SELF(span_warning("You remove \the [choice] from %T%.")), MSG_OTHERS(span_warning("%U% removes \the [choice] from %T%.")))
 			emitter = PP_MISSING
 		if("speech synthesizer")
 			if(speech_synthesizer == PP_FUNCTIONAL)
 				new /obj/item/paiparts/speech_synthesizer(get_turf(user))
 			else
 				new /obj/item/paiparts(get_turf(user))
-			user.visible_message(span_warning("\The [user] removes \the [choice] from \the [src]."),span_warning("You remove \the [choice] from \the [src]."))
+			act_message(user, src, MSG_SELF(span_warning("You remove \the [choice] from %T%.")), MSG_OTHERS(span_warning("%U% removes \the [choice] from %T%.")))
 			speech_synthesizer = PP_MISSING
 
 /obj/item/paicard/proc/death_damage()
@@ -763,9 +763,7 @@ DECLARE_INTERACTIONS(/obj/item/paicard, \
 				capacitor = PP_BROKEN
 
 /obj/item/paicard/proc/damage_random_component(nonfatal = FALSE)
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-	s.set_up(2, 1, src)
-	s.start()
+	fx_sparks(src, 2)
 	if(prob(80) || nonfatal)	//Way more likely to be non-fatal part damage
 		switch(rand(1,3))
 			if(1)
@@ -799,7 +797,7 @@ DECLARE_INTERACTIONS(/obj/item/paicard, \
 	if(!emagged)
 		if(user)
 			to_chat(user, span_notice("\The [src] buzzes and beeps."))
-			playsound(src, 'sound/machines/buzzbeep.ogg', 50, 0)
+			play_sfx(src, SFX_MACHINES_BUZZBEEP)
 		emagged = TRUE
 		// Add tools
 		if(has_emag_toolkit)
@@ -815,8 +813,8 @@ DECLARE_INTERACTIONS(/obj/item/paicard, \
 	desc = "It's broken scrap from a pAI card!"
 	icon = 'icons/obj/paicard.dmi'
 	icon_state = "broken"
-	pickup_sound = 'sound/items/pickup/card.ogg'
-	drop_sound = 'sound/items/drop/card.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_CARD
+	drop_sound = SFX_ITEMS_DROP_CARD
 
 /obj/item/paiparts/Initialize(mapload)
 	. = ..()

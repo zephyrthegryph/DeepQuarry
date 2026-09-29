@@ -24,27 +24,22 @@
 			return "operation proven"
 	return "clean"
 
+GLOBAL_LIST_INIT(agent_faction_departments, list(
+	REPUTATION_FACTION_NANOTRASEN = list(DEPARTMENT_COMMAND, DEPARTMENT_RESEARCH, DEPARTMENT_CARGO),
+	REPUTATION_FACTION_SOLGOV = list(DEPARTMENT_SECURITY, DEPARTMENT_MEDICAL, DEPARTMENT_COMMAND),
+	REPUTATION_FACTION_CHIMERA = list(DEPARTMENT_MEDICAL, DEPARTMENT_RESEARCH, DEPARTMENT_CARGO),
+	REPUTATION_FACTION_ECLIPSE = list(DEPARTMENT_RESEARCH, DEPARTMENT_ENGINEERING, DEPARTMENT_CARGO),
+	REPUTATION_FACTION_SYNDICATE = list(DEPARTMENT_CARGO, DEPARTMENT_RESEARCH, DEPARTMENT_ENGINEERING),
+	REPUTATION_FACTION_TRADERS_GUILD = list(DEPARTMENT_CARGO, DEPARTMENT_CIVILIAN, DEPARTMENT_COMMAND),
+	REPUTATION_FACTION_TALON = list(DEPARTMENT_ENGINEERING, DEPARTMENT_CARGO, DEPARTMENT_RESEARCH),
+	REPUTATION_FACTION_WORKERS_UNION = list(DEPARTMENT_ENGINEERING, DEPARTMENT_CIVILIAN, DEPARTMENT_CARGO),
+	REPUTATION_FACTION_VEYMED = list(DEPARTMENT_MEDICAL, DEPARTMENT_RESEARCH, DEPARTMENT_CARGO),
+))
+GLOBAL_LIST_INIT(agent_faction_departments_default, list(DEPARTMENT_CARGO))
+
+/// Shared table entry for `faction_id` (read-only; Copy() before editing).
 /proc/agent_faction_departments(faction_id) as /list
-	switch(faction_id)
-		if(REPUTATION_FACTION_NANOTRASEN)
-			return list(DEPARTMENT_COMMAND, DEPARTMENT_RESEARCH, DEPARTMENT_CARGO)
-		if(REPUTATION_FACTION_SOLGOV)
-			return list(DEPARTMENT_SECURITY, DEPARTMENT_MEDICAL, DEPARTMENT_COMMAND)
-		if(REPUTATION_FACTION_CHIMERA)
-			return list(DEPARTMENT_MEDICAL, DEPARTMENT_RESEARCH, DEPARTMENT_CARGO)
-		if(REPUTATION_FACTION_ECLIPSE)
-			return list(DEPARTMENT_RESEARCH, DEPARTMENT_ENGINEERING, DEPARTMENT_CARGO)
-		if(REPUTATION_FACTION_SYNDICATE)
-			return list(DEPARTMENT_CARGO, DEPARTMENT_RESEARCH, DEPARTMENT_ENGINEERING)
-		if(REPUTATION_FACTION_TRADERS_GUILD)
-			return list(DEPARTMENT_CARGO, DEPARTMENT_CIVILIAN, DEPARTMENT_COMMAND)
-		if(REPUTATION_FACTION_TALON)
-			return list(DEPARTMENT_ENGINEERING, DEPARTMENT_CARGO, DEPARTMENT_RESEARCH)
-		if(REPUTATION_FACTION_WORKERS_UNION)
-			return list(DEPARTMENT_ENGINEERING, DEPARTMENT_CIVILIAN, DEPARTMENT_CARGO)
-		if(REPUTATION_FACTION_VEYMED)
-			return list(DEPARTMENT_MEDICAL, DEPARTMENT_RESEARCH, DEPARTMENT_CARGO)
-	return list(DEPARTMENT_CARGO)
+	return GLOB.agent_faction_departments[faction_id] || GLOB.agent_faction_departments_default
 
 /proc/agent_faction_operation_brief(faction_id, operation_family)
 	var/objective = "a measurable station outcome"
@@ -82,7 +77,7 @@
 
 /datum/contract/faction_agent/proc/configure_operation(operation_family)
 	operation_kind = operation_family
-	stakeholder_departments = agent_faction_departments(agent_faction)
+	stakeholder_departments = agent_faction_departments(agent_faction).Copy()
 	department = stakeholder_departments[1]
 	contact_departments = stakeholder_departments.Copy()
 	var/profile_id = offer_context?["profile_id"] || agent_target_profile(agent_faction)
@@ -351,8 +346,7 @@
 	return finalize_operation("Authoritative operation evidence")
 
 /datum/contract/faction_agent/check_deadline()
-	deadline_timer = null
-	if(state == CONTRACT_ACTIVE && deadline && world.time >= deadline)
+	if(state == CONTRACT_ACTIVE && deadline && !BEFORE(src, deadline, CLOCK_WORLD))
 		if(current_operation_ratio() >= CONTRACT_GRADE_MINIMUM_RATIO)
 			finalize_operation()
 		else

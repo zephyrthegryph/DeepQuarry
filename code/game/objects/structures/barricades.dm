@@ -60,9 +60,9 @@
 		return TRUE
 
 	if(material == get_material_by_name(MAT_WOOD) || material == get_material_by_name(MAT_SIFWOOD))
-		playsound(src, 'sound/effects/woodcutting.ogg', 100, 1)
+		play_sfx(src, SFX_EFFECTS_WOODCUTTING)
 	else
-		playsound(src, 'sound/weapons/smash.ogg', 50, 1)
+		play_sfx(src, SFX_WEAPONS_SMASH)
 	switch(W.obj_damage_type())
 		if(BURN)
 			receive_weapon_hit(W, user, W.force, INJURY_BURN)
@@ -85,13 +85,13 @@
 /obj/structure/barricade/attack_generic(mob/user, damage, attack_verb)
 	visible_message(span_danger("[user] [attack_verb] the [src]!"))
 	if(material == get_material_by_name(MAT_RESIN))
-		playsound(src, 'sound/effects/attackblob.ogg', 100, 1)
+		play_sfx(src, SFX_EFFECTS_ATTACKBLOB, 2)
 	else if(material == get_material_by_name(MAT_CLOTH) || material == get_material_by_name(MAT_SYNCLOTH))
-		playsound(src, 'sound/items/drop/clothing.ogg', 100, 1)
+		play_sfx(src, SFX_ITEMS_DROP_CLOTHING)
 	else if(material == get_material_by_name(MAT_WOOD) || material == get_material_by_name(MAT_SIFWOOD))
-		playsound(src, 'sound/effects/woodcutting.ogg', 100, 1)
+		play_sfx(src, SFX_EFFECTS_WOODCUTTING)
 	else
-		playsound(src, 'sound/weapons/smash.ogg', 50, 1)
+		play_sfx(src, SFX_WEAPONS_SMASH)
 	user.do_attack_animation(src)
 	receive_generic_attack(user, damage)
 	return

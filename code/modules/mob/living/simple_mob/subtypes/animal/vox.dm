@@ -26,7 +26,7 @@
 	melee_damage_upper = 40
 	attacktext = "slammed its enormous claws into"
 	movement_cooldown = 2
-	attack_sound = 'sound/weapons/bladeslice.ogg'
+	attack_sound = SFX_WEAPONS_BLADESLICE
 	status_flags = 0
 	max_oxy = 0
 
@@ -41,7 +41,7 @@
 /mob/living/simple_mob/vox/armalis/on_death(gibbed)
 	. = ..()
 	var/turf/gloc = get_turf(loc)
-	visible_message(span_bolddanger("[src] shudders violently and explodes!"),span_warning("You feel your body rupture!"))
+	act_message(src, null, MSG_SELF(span_warning("You feel your body rupture!")), MSG_OTHERS(span_bolddanger("%U% shudders violently and explodes!")))
 	gib()
 	explosion(gloc, -1, -1, 3, 5)
 
@@ -127,13 +127,13 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vox/armalis, INTERACT_ITEM(null, PROC
 		armour = O
 		movement_cooldown = 4
 		endurance += 200
-		visible_message(span_notice("[src] is quickly outfitted in [O] by [user]."),span_notice("You quickly outfit [src] in [O]."))
+		act_message(src, O, MSG_SELF(span_notice("You quickly outfit %U% in %T%.")), MSG_OTHERS(span_notice("%U% is quickly outfitted in %T% by [user].")))
 		regenerate_icons()
 		return
 	if(istype(O,/obj/item/vox/armalis_amp))
 		user.drop_item(O)
 		amp = O
-		visible_message(span_notice("[src] is quickly outfitted in [O] by [user]."),span_notice("You quickly outfit [src] in [O]."))
+		act_message(src, O, MSG_SELF(span_notice("You quickly outfit %U% in %T%.")), MSG_OTHERS(span_notice("%U% is quickly outfitted in %T% by [user].")))
 		regenerate_icons()
 		return
 

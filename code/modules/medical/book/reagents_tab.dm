@@ -22,7 +22,7 @@
 	// is medically relevant; anything not reachable from the seed
 	// isn't and gets filtered out below.
 	var/list/datum/affliction/chem_caused = list()
-	for(var/T in dq_catalogued_affliction_types())
+	for(var/T in GLOBAL_TABLE_GET(dq_catalogued_affliction_types))
 		var/datum/affliction/proto = dq_proto(T)
 		// Tag-resolved: a reagent lists every condition any of its
 		// treatment tags reaches, not just hand-authored pairings.
@@ -207,9 +207,10 @@
 	entry["inhibitors"] = inhib
 	if(distilling)
 		var/datum/decl/chemical_reaction/distilling/D = CR
-		if(D.temp_range)
-			entry["temp_min"] = D.temp_range[1]
-			entry["temp_max"] = D.temp_range[2]
+		var/list/temp_range = TYPE_TABLE_GET(D, distilling_temp_range)
+		if(temp_range)
+			entry["temp_min"] = temp_range[1]
+			entry["temp_max"] = temp_range[2]
 	return entry
 
 
@@ -245,7 +246,7 @@
 		// What the overdose does to the body (its body factors), in plain
 		// text. Staged overdoses list their worst stage's table.
 		var/alist/od_factors = proto.factors
-		var/list/od_stages = proto.get_stages()
+		var/list/od_stages = TYPE_TABLE_GET(proto, affliction_stages)
 		if(length(od_stages))
 			var/list/last_stage = od_stages[od_stages[length(od_stages)]]
 			od_factors = last_stage["factors"] || od_factors

@@ -36,8 +36,8 @@
 	var/list/targets
 	/// Owned list of /datum/syringe_contamination: the contagion copies picked up from each target. Lazy.
 	var/list/viruses
-	drop_sound = 'sound/items/drop/glass.ogg'
-	pickup_sound = 'sound/items/pickup/glass.ogg'
+	drop_sound = SFX_ITEMS_DROP_GLASS
+	pickup_sound = SFX_ITEMS_PICKUP_GLASS
 
 /obj/item/reagent_containers/syringe/Initialize(mapload)
 	. = ..()

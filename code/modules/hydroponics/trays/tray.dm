@@ -1,5 +1,7 @@
 #define AGE_MOD_MAX 10 // Define for age_mod sanity check as a define to allow for easy tweaking.
 
+OWN_TIMER(/obj/machinery/portable_atmospherics/hydroponics, growth_timer)
+
 /obj/machinery/portable_atmospherics/hydroponics
 	name = "hydroponics tray"
 	desc = "A tray usually full of fluid for growing plants."
@@ -37,14 +39,13 @@
 	// Mechanical concerns.
 	var/health = 0             // Plant health.
 	var/lastproduce = 0        // Last time tray was harvested
-	TIMESTAMP_VAR(lastcycle) // Cycle timing/tracking var.
+	EXPIRY_DECLARE(lastcycle) // Cycle timing/tracking var.
 	var/cycledelay = 150       // Delay per cycle.
 	var/closed_system          // If set, the tray will attempt to take atmos from a pipe.
 	var/force_update           // Set this to bypass the cycle time check.
 	var/obj/temp_chem_holder   // Something to hold reagents during process_reagents()
 	var/labelled
 	var/frozen = 0				//Is the plant frozen? -1 is used to define trays that can't be frozen. 0 is unfrozen and 1 is frozen.
-	var/growth_timer
 
 	// Seed details/line data.
 	var/datum/seed/seed = null // The currently planted seed
@@ -224,12 +225,11 @@ DECLARE_REAGENTS(/obj/machinery/portable_atmospherics/hydroponics, 200, null)
 	MACHINE_WAKE(src)
 
 /obj/machinery/portable_atmospherics/hydroponics/proc/schedule_growth_wake()
-	if(growth_timer || frozen == 1)
+	if(om_timer_slot_pending(src, "growth_timer") || frozen == 1)
 		return
-	growth_timer = om_after(src, max(1, lastcycle + cycledelay - world.time), PROC_REF(wake_for_growth))
+	om_after_slot(src, "growth_timer", max(1, lastcycle + cycledelay - world.time), PROC_REF(wake_for_growth))
 
 /obj/machinery/portable_atmospherics/hydroponics/proc/wake_for_growth()
-	growth_timer = null
 	MACHINE_WAKE(src)
 
 // Give the seeds time to initialize itself
@@ -246,7 +246,7 @@ DECLARE_REAGENTS(/obj/machinery/portable_atmospherics/hydroponics, 200, null)
 	age = 1
 	//Snowflakey, maybe move this to the seed datum
 	health = (istype(S, /obj/item/seeds/cutting) ? round(seed.get_trait(TRAIT_ENDURANCE)/rand(2,5)) : seed.get_trait(TRAIT_ENDURANCE))
-	lastcycle = world.time
+	EXPIRY_STAMP(src, lastcycle, CLOCK_WORLD)
 	MACHINE_WAKE(src)
 
 	qdel(S)
@@ -454,7 +454,7 @@ DECLARE_REAGENTS(/obj/machinery/portable_atmospherics/hydroponics, 200, null)
 	age = 0
 	age_mod = 0
 	health = seed.get_trait(TRAIT_ENDURANCE)
-	lastcycle = world.time
+	EXPIRY_STAMP(src, lastcycle, CLOCK_WORLD)
 	harvest = 0
 	weedlevel = 0
 	pestlevel = 0
@@ -546,7 +546,7 @@ DECLARE_REAGENTS(/obj/machinery/portable_atmospherics/hydroponics, 200, null)
 	mutate(1)
 	age = 0
 	health = seed.get_trait(TRAIT_ENDURANCE)
-	lastcycle = world.time
+	EXPIRY_STAMP(src, lastcycle, CLOCK_WORLD)
 	harvest = 0
 	weedlevel = 0
 
@@ -637,7 +637,7 @@ DECLARE_REAGENTS(/obj/machinery/portable_atmospherics/hydroponics, 200, null)
 		pestlevel -= spray.pest_kill_str
 		weedlevel -= spray.weed_kill_str
 		to_chat(user, span_filter_notice("You spray [src] with [O]."))
-		playsound(src, 'sound/effects/spray3.ogg', 50, 1, -6)
+		play_sfx(src, SFX_EFFECTS_SPRAY3, extrarange = -6)
 		consume(O, user)
 		check_health()
 
@@ -679,7 +679,7 @@ DECLARE_REAGENTS(/obj/machinery/portable_atmospherics/hydroponics, 200, null)
 	if(locate_within(loc, /obj/machinery/atmospherics/portables_connector/))
 		return ..()
 	playsound(src, tool.usesound, 50, TRUE)
-	anchored = !anchored
+	set_anchored(!anchored)
 	to_chat(user, span_filter_notice("You [anchored ? "wrench" : "unwrench"] \the [src]."))
 	return ITEM_INTERACT_SUCCESS
 

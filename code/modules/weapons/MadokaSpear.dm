@@ -39,8 +39,7 @@
 	. = ..()
 	update_icon()
 
-/obj/item/oldtwohanded/equip_constraint()
-	return dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/oldtwohanded/proc/not_wielded, "unwield it first")))
+TYPE_TABLE(/obj/item/oldtwohanded, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/oldtwohanded/proc/not_wielded, "unwield it first"))))
 
 /obj/item/oldtwohanded/proc/not_wielded()
 	return !wielded
@@ -127,5 +126,5 @@ DECLARE_INTERACTIONS(/obj/item/oldtwohanded, INTERACT_USE(null, PROC_REF(interac
 	edge = 0
 	sharp = 1
 	injury_kind = INJURY_PIERCE
-	hitsound = 'sound/weapons/bladeslice.ogg'
+	hitsound = SFX_WEAPONS_BLADESLICE
 	attack_verb = list("attacked", "poked", "jabbed", "torn", "gored")

@@ -59,7 +59,7 @@ DECLARE_INTERACTIONS(/obj/item/implanter, INTERACT_SELF("Toggle", PROC_REF(impla
 	var/turf/T1 = task.start_turf
 	if(!(user && M && (get_turf(M) == T1) && src && src.imp))
 		return
-	M.visible_message(span_warning("[M] has been implanted by [user]."))
+	act_message(user, M, others = span_warning("%T% has been implanted by %U%."))
 
 	add_attack_logs(user,M,"Implanted with [imp.name] using [name]")
 
@@ -79,7 +79,7 @@ DECLARE_INTERACTIONS(/obj/item/implanter, INTERACT_SELF("Toggle", PROC_REF(impla
 		return ITEM_INTERACT_FAILURE
 	if(active)
 		if(imp)
-			M.visible_message(span_warning("[user] is attempting to implant [M]."))
+			act_message(user, M, others = span_warning("%U% is attempting to implant %T%."))
 
 			user.setClickCooldown(DEFAULT_QUICK_COOLDOWN)
 			user.do_attack_animation(M)

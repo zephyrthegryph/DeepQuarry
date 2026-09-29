@@ -118,25 +118,21 @@
 			return TRUE
 
 	if(!deployed && can_use(user))
-		user.visible_message(
-			span_danger("[user] starts to deploy \the [src]."),
-			span_danger("You begin deploying \the [src]!")
-			)
+		act_message(user, src, MSG_SELF(span_danger("You begin deploying %T%!")), \
+			MSG_OTHERS(span_danger("%U% starts to deploy %T%.")))
 
 		om_task_timed(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user))
 	return TRUE
 
 /obj/item/ghost_trap/proc/attack_self_timed_done(mob/user)
-	user.visible_message(
-		span_danger("[user] has deployed \the [src]."),
-		span_danger("You have deployed \the [src]!")
-		)
-	playsound(src, 'sound/machines/click.ogg', 70, 1)
+	act_message(user, src, MSG_SELF(span_danger("You have deployed %T%!")), \
+		MSG_OTHERS(span_danger("%U% has deployed %T%.")))
+	play_sfx(src, SFX_MACHINES_CLICK, 1.4)
 
 	deployed = TRUE
 	user.drop_from_inventory(src)
 	update_icon()
-	anchored = TRUE
+	set_anchored(TRUE)
 	log_and_message_admins("has set up a [name] at \the [get_area(loc)]", user)
 
 /obj/item/ghost_trap/container_resist(mob/living/escapee)
@@ -161,17 +157,13 @@ DECLARE_INTERACTIONS(/obj/item/ghost_trap, \
 /// Old attack_hand.
 /obj/item/ghost_trap/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(has_buckled_mobs() && can_use(user))
-		user.visible_message(
-			span_notice("[user] begins freeing something from \the [src]."),
-			span_notice("You carefully begin to free something from \the [src]."),
-			)
+		act_message(user, src, MSG_SELF(span_notice("You carefully begin to free something from %T%.")), \
+			MSG_OTHERS(span_notice("%U% begins freeing something from %T%.")))
 		om_task_timed(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user))
 	else if(deployed && can_use(user))
-		user.visible_message(
-			span_danger("[user] starts to deactivate \the [src]."),
-			span_notice("You begin deactivate \the [src]!")
-			)
-		playsound(src, 'sound/machines/click.ogg', 50, 1)
+		act_message(user, src, MSG_SELF(span_notice("You begin deactivate %T%!")), \
+			MSG_OTHERS(span_danger("%U% starts to deactivate %T%.")))
+		play_sfx(src, SFX_MACHINES_CLICK)
 
 		om_task_timed(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done2), done_args = list(user))
 	else
@@ -179,18 +171,16 @@ DECLARE_INTERACTIONS(/obj/item/ghost_trap, \
 	return TRUE
 
 /obj/item/ghost_trap/proc/attack_hand_timed_done(mob/user)
-	user.visible_message(span_notice("Something has been freed from \the [src] by [user]."))
+	act_message(user, src, others = span_notice("Something has been freed from %T% by %U%."))
 	for(var/A in src?.buckled_mob_list())
 		unbuckle_mob(A)
-	anchored = FALSE
+	set_anchored(FALSE)
 	deployed = FALSE
 /obj/item/ghost_trap/proc/attack_hand_timed_done2(mob/user)
-	user.visible_message(
-		span_danger("[user] has deactivated \the [src]."),
-		span_notice("You have deactivated \the [src]!")
-		)
+	act_message(user, src, MSG_SELF(span_notice("You have deactivated %T%!")), \
+		MSG_OTHERS(span_danger("%U% has deactivated %T%.")))
 	deployed = FALSE
-	anchored = FALSE
+	set_anchored(FALSE)
 	update_icon()
 
 /obj/item/ghost_trap/proc/catch_ghost(mob/passing_entity)
@@ -241,7 +231,7 @@ DECLARE_INTERACTIONS(/obj/item/ghost_trap, \
 		GLOB.motiontracker_service.ping(src,100) // Clunk!
 		catch_ghost(passing_entity)
 		deployed = FALSE
-		anchored = FALSE
+		set_anchored(FALSE)
 		update_icon()
 		log_and_message_admins("has been captured at \the [get_area(loc)] by the [name], last touched by [forensic_data?.get_lastprint()]", passing_entity)
 

@@ -6,7 +6,7 @@
 	density = TRUE
 	light_system = MOVABLE_LIGHT_DIRECTIONAL
 	light_cone_y_offset = 8
-	var/on = 0
+	on = 0
 	var/obj/item/cell/cell = null
 	var/use = 200 // 200W light
 	var/unlocked = 0
@@ -53,7 +53,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/floodlight, "cell", /obj/item/cell)
 	if(cell.charge < (use * CELLRATE))
 		return 0
 
-	on = 1
+	set_on(1)
 	MACHINE_WAKE(src)
 	set_light_range(brightness_on)
 	set_light_power(brightness_on/2)
@@ -64,7 +64,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/floodlight, "cell", /obj/item/cell)
 	return 1
 
 /obj/machinery/floodlight/proc/turn_off(loud = 0)
-	on = 0
+	set_on(0)
 	set_light_on(FALSE)
 	update_icon()
 	if(loud)
@@ -110,7 +110,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/floodlight, "cell", /obj/item/cell)
 		cell.update_icon()
 
 		own_take(src, "cell")
-		on = 0
+		set_on(0)
 		set_light(0)
 		to_chat(user, "You remove the power cell")
 		update_icon()

@@ -12,14 +12,8 @@
 	icon_state = "warp_strike"
 	cast_methods = CAST_RANGED
 	aspect = ASPECT_TELE
-	var/datum/effect/effect/system/spark_spread/sparks
-
-DECLARE_DEFAULT_CHILD(/obj/item/spell/warp_strike, "sparks", /datum/effect/effect/system/spark_spread)
-
 /obj/item/spell/warp_strike/Initialize(mapload)
 	. = ..()
-	sparks.set_up(5, 0, src)
-	sparks.attach(loc)
 
 /obj/item/spell/warp_strike/on_ranged_cast(atom/hit_atom, mob/user)
 	var/turf/T = get_turf(hit_atom)
@@ -53,7 +47,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/spell/warp_strike, "sparks", /datum/effect/effec
 		user.forceMove(tele_target)
 		var/new_dir = get_dir(user, chosen_target)
 		user.dir = new_dir
-		sparks.start()
+		fx_sparks(src, 5, FALSE)
 		adjust_instability(12)
 
 		//Finally, we handle striking the victim with whatever's in the user's offhand.

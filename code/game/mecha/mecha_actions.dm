@@ -205,7 +205,7 @@
 
 /datum/action/innate/mecha/mech_switch_damtype/Activate()
 	button_icon_state = "mech_damtype_[chassis.melee_damtype_icon()]"
-	playsound(src, 'sound/mecha/mechmove01.ogg', 50, 1)
+	play_sfx(src, SFX_MECHA_MECHMOVE01)
 	build_all_button_icons()
 	chassis.query_damtype(action_owner())
 
@@ -259,7 +259,7 @@
 /obj/mecha/proc/defence_mode(mob/user)
 	if(user!=src?.slot_item(MECHA_SLOT_PILOT))
 		return
-	playsound(src, 'sound/mecha/duranddefencemode.ogg', 50, 1)
+	play_sfx(src, SFX_MECHA_DURANDDEFENCEMODE)
 	defence_mode = !defence_mode
 	// The body plan adds the defence-mode deflection bonus (mech_body_plan().deflect_chance()).
 	if(defence_mode)
@@ -291,7 +291,7 @@
 		step_energy_drain = step_energy_drain*overload_coeff
 		src.occupant_message(span_red("You enable leg actuators overload."))
 	src.log_message("Toggled leg actuators overload.", LOG_GAME)
-	playsound(src, 'sound/mecha/mechanical_toggle.ogg', 50, 1)
+	play_sfx(src, SFX_MECHA_MECHANICAL_TOGGLE)
 	return
 
 /// Old verb "Activate Smoke".
@@ -314,7 +314,7 @@
 		smoke.attach(src)
 		smoke.set_up(10, 0, user.loc)
 		smoke.start()
-		playsound(src, 'sound/effects/smoke.ogg', 50, 1, -3)
+		play_sfx(src, SFX_EFFECTS_SMOKE)
 
 		COOLDOWN_START(src, smoke_cooldown_end, smoke_cooldown)
 	return

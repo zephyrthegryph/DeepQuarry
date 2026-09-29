@@ -11,8 +11,8 @@
 	store_mobs = 0
 	wall_mounted = 1
 
-	open_sound = 'sound/machines/click.ogg'
-	close_sound = 'sound/machines/click.ogg'
+	open_sound = SFX_MACHINES_CLICK
+	close_sound = SFX_MACHINES_CLICK
 
 //spawns 2 sets of breathmask, emergency oxy tank and crowbar
 
@@ -116,8 +116,8 @@
 	plane = TURF_PLANE
 	layer = ABOVE_TURF_LAYER
 
-	open_sound = 'sound/machines/click.ogg'
-	close_sound = 'sound/machines/click.ogg'
+	open_sound = SFX_MACHINES_CLICK
+	close_sound = SFX_MACHINES_CLICK
 
 /obj/structure/closet/walllocker_double/north
 	pixel_y = 32

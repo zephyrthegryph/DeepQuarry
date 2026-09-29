@@ -108,7 +108,7 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache) // ALLOW(cache): also read/written in co
 /turf/simulated/mineral/proc/make_floor()
 	if(!density && !opacity)
 		return FALSE
-	density = FALSE
+	set_density(FALSE)
 	opacity = 0
 	blocks_air = 0
 	can_build_into_floor = TRUE
@@ -127,7 +127,7 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache) // ALLOW(cache): also read/written in co
 /turf/simulated/mineral/proc/make_wall()
 	if(density && opacity)
 		return FALSE
-	density = TRUE
+	set_density(TRUE)
 	opacity = 1
 	blocks_air = 1
 	can_build_into_floor = FALSE
@@ -372,7 +372,7 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 				return INTERACTION_HANDLED_PASS
 
 			to_chat(user, span_notice("You start digging."))
-			playsound(user, 'sound/effects/rustle1.ogg', 50, 1)
+			play_sfx(user, SFX_EFFECTS_RUSTLE1)
 
 			om_task_timed(user, digspeed, src, src, PROC_REF(dig_hole_done), list(user))
 
@@ -387,7 +387,7 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 			var/obj/item/stack/tile/floor/S = W
 			if (S.get_amount() < 1)
 				return INTERACTION_HANDLED_PASS
-			playsound(src, 'sound/weapons/genhit.ogg', 50, 1)
+			play_sfx(src, SFX_WEAPONS_GENHIT)
 			ChangeTurf(/turf/simulated/floor)
 			S.use(1)
 			return INTERACTION_HANDLED_PASS
@@ -443,10 +443,10 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 			to_chat(user, span_notice("You smash through \the [src][fail_message]."))
 			if(S.status != 0) //We're on. This isn't just a == 1 in case someone adds some weird functionality in the future to give it multiple states.
 				user.visible_message(span_warning("\The [src] discharges with a thunderous, hair-raising crackle!"))
-				playsound(src, 'sound/weapons/resonator_blast.ogg', 100, 1, -1)
+				play_sfx(src, SFX_WEAPONS_RESONATOR_BLAST)
 			else
 				user.visible_message(span_warning("\The [src] plows into the rock with a thunk, smashing it to pieces."))
-				playsound(src, get_sfx("pickaxe"), 35, 1, -1) //Weak. Not on. Just as good as a normal pick.
+				playsound(src, get_sfx(SFX_PICKAXE), 35, 1, -1) //Weak. Not on. Just as good as a normal pick.
 
 			if(newDepth >= 200) // This means the rock is mined out fully
 				if(S.destroy_artefacts)

@@ -18,14 +18,14 @@
 // late or a turbo cycle changes nothing but granularity: the same totals over
 // the same time.
 
+OWN_TIMER(/obj/belly, liquid_timer)
+
 /obj/belly
 	/// TRUE while the belly's cycle clock runs (it is occupied), else null.
 	var/tmp/cycle_token
 	/// The period the clock runs at, and when it last ran a cycle.
 	var/tmp/cycle_period
-	var/tmp/cycle_last = 0
-	/// The om_after() timer id armed for the next liquid batch of an empty, generating belly.
-	var/tmp/liquid_timer
+	EXPIRY_TMP_DECLARE(cycle_last)
 
 /// An occupied belly's digestion cycle: a deadline re-armed every cycle_period.
 /datum/om/behaviour/belly_cycle
@@ -79,13 +79,12 @@
 	if(QDELETED(src))
 		return
 	if(belly_occupied())
-		if(liquid_timer)
-			om_cancel_timer(src, liquid_timer)
-			liquid_timer = null
+		if(om_timer_slot_pending(src, "liquid_timer"))
+			om_cancel_timer_slot(src, "liquid_timer")
 		var/period = belly_cycle_period()
 		if(!cycle_token || cycle_period != period)
 			if(!cycle_token)
-				cycle_last = world.time
+				EXPIRY_STAMP(src, cycle_last, CLOCK_WORLD)
 			cycle_token = TRUE
 			cycle_period = period
 			om_deadline(src, max(period - (world.time - cycle_last), 0), /datum/om/behaviour/belly_cycle)
@@ -96,20 +95,19 @@
 		cycle_period = null
 		belly_surrounding = null
 	if(belly_generates_liquid())
-		if(!liquid_timer)
+		if(!om_timer_slot_pending(src, "liquid_timer"))
 			var/cycles_left = max(gen_time + 1 - gen_interval, 1)
 			om_attach(src, /datum/om/behaviour/sleeper/timed)
-			liquid_timer = om_after(src, cycles_left * belly_cycle_period(), PROC_REF(liquid_batch_due))
-	else if(liquid_timer)
-		om_cancel_timer(src, liquid_timer)
-		liquid_timer = null
+			om_after_slot(src, "liquid_timer", cycles_left * belly_cycle_period(), PROC_REF(liquid_batch_due))
+	else if(om_timer_slot_pending(src, "liquid_timer"))
+		om_cancel_timer_slot(src, "liquid_timer")
 
 /// Occupied: one digestion cycle for the real time since the last one, then the next is armed.
 /obj/belly/proc/belly_cycle_due()
 	if(QDELETED(src) || !cycle_token)
 		return
 	var/seconds = (world.time - cycle_last) / (1 SECONDS)
-	cycle_last = world.time
+	EXPIRY_STAMP(src, cycle_last, CLOCK_WORLD)
 	om_deadline(src, cycle_period, /datum/om/behaviour/belly_cycle)
 	belly_cycle(seconds)
 	if(!QDELETED(src) && !belly_occupied())
@@ -117,9 +115,8 @@
 
 /// Empty and generating: the next liquid batch is due.
 /obj/belly/proc/liquid_batch_due()
-	if(!liquid_timer)
+	if(!om_timer_slot_pending(src, "liquid_timer"))
 		return
-	liquid_timer = null
 	if(belly_occupied())
 		belly_reschedule()
 		return

@@ -21,7 +21,7 @@
 	unacidable = TRUE
 	use_power = USE_POWER_OFF
 	circuit = /obj/item/circuitboard/smes
-	clicksound = "switch"
+	clicksound = SFX_SWITCH
 	max_integrity = 500
 
 	var/capacity = 5e6 // maximum charge
@@ -94,7 +94,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 	soundloop.extra_range = -6 // Doing this here bc we're reusing the generator hum, and can't directly edit that one
 	soundloop.falloff = 0.2 // Harsher falloff.
 	if(!check_terminals())
-		stat |= BROKEN
+		stat_add(BROKEN)
 		return
 	update_icon()
 	if(!power_region)
@@ -173,7 +173,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 /obj/machinery/power/smes/proc/power_sync()
 	if(QDELETED(src) || !vg_entity)
 		return
-	var/working = !(stat & BROKEN) && !grid_check
+	var/working = !has_stat(BROKEN) && !grid_check
 	set_input_enabled(working && input_attempt && !input_pulsed && !input_cut ? 1 : 0)
 	set_output_enabled(working && output_attempt && !output_pulsed && !output_cut ? 1 : 0)
 	set_capacity(capacity)
@@ -220,7 +220,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 
 /obj/machinery/power/smes/update_icon()
 	cut_overlays()
-	if(stat & BROKEN)	return
+	if(has_stat(BROKEN))	return
 
 	add_overlay("smes-op[outputting]")
 
@@ -266,7 +266,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 /// a wake (a settings change, damage, a new terminal) resends the settings once. Returns
 /// STAGE_IDLE when the unit has nothing more to do until the next wake.
 /obj/machinery/power/smes/proc/power_step()
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		soundloop.stop()
 		noisy = FALSE
 	power_sync()
@@ -336,7 +336,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 	user.visible_message(\
 			span_filter_notice(span_notice("[user.name] has added cables to the [src].")),\
 			span_filter_notice(span_notice("You added cables to the [src].")))
-	stat = 0
+	set_stat(0)
 	if(!power_region)
 		connect_to_network()
 
@@ -459,16 +459,14 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 	if(terminal_turf && !terminal_turf.is_plating())
 		to_chat(user, span_filter_notice(span_warning("You must remove the floor plating first.")))
 	else
-		playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
-		use_tool(user, tool, src, delay = 5 SECONDS, volume = 0, message_self = "You begin to cut the cables...", receiver = src, on_done = PROC_REF(wirecutter_act_tool_done), done_args = list(user, term))
+		play_sfx(src, SFX_ITEMS_DECONSTRUCT)
+		use_tool(user, tool, src, delay = 5 SECONDS, volume = 0, start_self = "You begin to cut the cables...", receiver = src, on_done = PROC_REF(wirecutter_act_tool_done), done_args = list(user, term))
 	building_terminal = FALSE
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/power/smes/proc/wirecutter_act_tool_done(mob/user, obj/machinery/power/terminal/term)
 	if(prob(50) && electrocute_mob(user, term.power_region, term))
-		var/datum/effect/effect/system/spark_spread/sparks = new
-		sparks.set_up(5, 1, src)
-		sparks.start()
+		fx_sparks(src, 5)
 		building_terminal = FALSE
 		if(user.has_status(EFFECT_STUNNED))
 			return ITEM_INTERACT_SUCCESS
@@ -519,9 +517,9 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 		if("tryoutput")
 			outputting(!output_attempt)
 			if(output_attempt)
-				playsound(loc, 'sound/effects/contactor_on.ogg', 50, FALSE)
+				play_sfx(loc, SFX_EFFECTS_CONTACTOR_ON)
 			else
-				playsound(loc, 'sound/effects/contactor_off.ogg', 50, FALSE)
+				play_sfx(loc, SFX_EFFECTS_CONTACTOR_OFF)
 			update_icon()
 			. = TRUE
 		if("input")
@@ -658,7 +656,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 
 /obj/machinery/power/smes/buildable/hybrid/update_icon()
 	cut_overlays()
-	if(stat & BROKEN)	return
+	if(has_stat(BROKEN))	return
 
 	add_overlay("smes-op[outputting]")
 

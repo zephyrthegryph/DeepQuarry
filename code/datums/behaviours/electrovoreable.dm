@@ -62,8 +62,6 @@
 		source_cell.use(totransfer)
 		source_cell.update_icon()
 
-		var/datum/effect/effect/system/spark_spread/spark_effect = new /datum/effect/effect/system/spark_spread
-		spark_effect.set_up(3, 0, source_cell)
-		spark_effect.start()
+		fx_sparks(source_cell, 3, FALSE)
 
 		return COMPONENT_CANCEL_ATTACK_CHAIN

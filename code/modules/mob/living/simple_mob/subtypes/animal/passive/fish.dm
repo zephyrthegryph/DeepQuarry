@@ -313,7 +313,7 @@
 	meat_type = /obj/item/reagent_containers/food/snacks/carpmeat/sif/murkfish
 
 /datum/decl/mob_organ_names/fish
-	hit_zones = list("head", "body", "dorsal fin", "left pectoral fin", "right pectoral fin", "tail fin")
+TYPE_TABLE(/datum/decl/mob_organ_names/fish, mob_organ_hit_zones, list("head", "body", "dorsal fin", "left pectoral fin", "right pectoral fin", "tail fin"))
 
 
 // === merged from fish_vr.dm during hard-fork de-suffix (verified no override-order change) ===
@@ -354,7 +354,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/fish/koi/poisonous, \
 	unarmed_touch(L, interaction.stance)
 	if(isliving(L) && Adjacent(L))
 		var/mob/living/M = L
-		visible_message(span_warning("\The [src][is_dead()?"'s corpse":""] flails at [M]!"))
+		act_message(src, M, null, MSG_OTHERS(span_warning("%U%[is_dead()?"'s corpse":""] flails at %T%!")))
 		SpinAnimation(7,1)
 		if(prob(75))
 			if(sting(M))
@@ -366,7 +366,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/fish/koi/poisonous, \
 /mob/living/simple_mob/animal/passive/fish/koi/poisonous/react_to_attack(atom/A)
 	if(isliving(A) && Adjacent(A))
 		var/mob/living/M = A
-		visible_message(span_warning("\The [src][is_dead()?"'s corpse":""] flails at [M]!"))
+		act_message(src, M, null, MSG_OTHERS(span_warning("%U%[is_dead()?"'s corpse":""] flails at %T%!")))
 		SpinAnimation(7,1)
 		if(prob(75))
 			if(sting(M))

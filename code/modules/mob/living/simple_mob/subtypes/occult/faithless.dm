@@ -22,7 +22,7 @@
 	attack_armor_pen = 5	//It's a horror from beyond, I ain't gotta explain 5 AP
 
 	attacktext = list("gripped")
-	attack_sound = 'sound/hallucinations/growl1.ogg'
+	attack_sound = SFX_HALLUCINATIONS_GROWL1
 
 	organ_names = /datum/decl/mob_organ_names/faithless
 
@@ -52,7 +52,7 @@
 		var/mob/living/L = A
 		if(prob(12))
 			L.status_at_least(EFFECT_WEAKENED, 3)
-			L.visible_message(span_danger("\The [src] knocks down \the [L]!"))
+			act_message(src, L, null, MSG_OTHERS(span_danger("%U% knocks down %T%!")))
 */
 
 // Strong Variant
@@ -80,4 +80,4 @@
 	melee_damage_upper = 28
 
 /datum/decl/mob_organ_names/faithless
-	hit_zones = list("body", "left appendage", "right appendage", "shadowy tendrils", "head", "right stump", "left stump", "infernal eye")
+TYPE_TABLE(/datum/decl/mob_organ_names/faithless, mob_organ_hit_zones, list("body", "left appendage", "right appendage", "shadowy tendrils", "head", "right stump", "left stump", "infernal eye"))

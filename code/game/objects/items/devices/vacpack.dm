@@ -10,26 +10,27 @@
 	var/vac_power = 0
 	/// Where sucked-up things go (a relation view: the belly, sleeper or trash bag we feed).
 	var/atom/movable/output_dest
-	var/list/vac_settings = list( // ALLOW(instance_list): c: read-only per-subtype constant table (1 subtype overrides); a getter would share it, not worth it on a rare type
-			"power off" = 0,
-			"dust and grime" = 1,
-			"tiny objects" = 2,
-			"pests and small objects" = 3,
-			"medium objects" = 4,
-			"large objects" = 5,
-			"large pests" = 6,
-			"auto-level" = 7,
-			"DANGEROUS" = 8,
-			"output destination" = 9
-			)
 	/// The mob this attachment is built into (a relation view; the mob owns the attachment through Vac).
 	var/tmp/mob/living/vac_owner
-	var/sucksound = 'sound/machines/kitchen/candymaker/candymaker-mid1.ogg'
+	var/sucksound = SFX_MACHINES_KITCHEN_CANDYMAKER_CANDYMAKER_MID1
 	var/suckverb = "vacuum"
 	var/suckanim = TRUE
 	var/pull_range = 1
 	var/max_items = 20
 	flags = NOBLUDGEON
+
+TYPE_TABLE_DECLARE(/obj/item/vac_attachment, vac_attachment_settings, list( \
+			"power off" = 0, \
+			"dust and grime" = 1, \
+			"tiny objects" = 2, \
+			"pests and small objects" = 3, \
+			"medium objects" = 4, \
+			"large objects" = 5, \
+			"large pests" = 6, \
+			"auto-level" = 7, \
+			"DANGEROUS" = 8, \
+			"output destination" = 9 \
+			))
 
 DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(interaction_self)))
 
@@ -37,7 +38,7 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 	if(!output_dest)
 		apply_setting(user, "output destination")
 		return
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(setting_chosen), title = "Vac Settings", message = "Set your [suckverb] attachment's power level or output mode.", choices = vac_settings, ask_flags = ASK_CARRIED | ASK_CAPABLE)
+	om_ask(user, /datum/om/prompt/choice, PROC_REF(setting_chosen), title = "Vac Settings", message = "Set your [suckverb] attachment's power level or output mode.", choices = TYPE_TABLE_GET(src, vac_attachment_settings), ask_flags = ASK_CARRIED | ASK_CAPABLE)
 
 /obj/item/vac_attachment/proc/setting_chosen(datum/om/prompt/choice/ask)
 	apply_setting(ask.answerer, ask.choice)
@@ -52,7 +53,7 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 			vac_options = list("Vore Belly", "Borg Belly", "Trash Bag")
 		om_ask(user, /datum/om/prompt/choice, PROC_REF(output_chosen), title = "Vac Settings", message = "Set your [suckverb] attachment's connection port", choices = vac_options, ask_flags = ASK_CARRIED | ASK_CAPABLE)
 		return
-	vac_power = vac_settings[set_input]
+	vac_power = TYPE_TABLE_GET(src, vac_attachment_settings)[set_input]
 	icon_state = "sucker-[vac_power]"
 
 /obj/item/vac_attachment/proc/output_chosen(datum/om/prompt/choice/ask)
@@ -137,10 +138,10 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 		user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN * 1.5)//this is a mop, cart, and trash bag in one. Halving its speed should keep it somewhat more in-line with other cleaning equipment.
 	var/auto_setting = 1
 	if(isturf(target))
-		user.visible_message(span_filter_notice("[user] begins [suckverb]ing the mess off \the [target.name]..."), span_notice("You begin [suckverb]ing the mess off \the [target.name]..."))
+		act_message(user, null, MSG_SELF(span_notice("You begin [suckverb]ing the mess off \the [target.name]...")), MSG_OTHERS(span_filter_notice("%U% begins [suckverb]ing the mess off \the [target.name]...")))
 		var/list/suckables = list()
 		if(vac_power == 8)
-			playsound(src, 'sound/machines/hiss.ogg', 100, 1, -1)
+			play_sfx(src, SFX_MACHINES_HISS, 2, vary = TRUE, extrarange = -1)
 			for(var/obj/item/I in oview(pull_range, target))
 				if(I.anchored || !is_allowed_suck(I, user, output_atom))
 					continue
@@ -239,7 +240,7 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 			else
 				auto_setting = vac_power
 			playsound(src, sucksound, auto_setting * 20, 1, -1)
-			user.visible_message(span_filter_notice("[user] [suckverb]s up \the [target.name]."), span_notice("You [suckverb] up \the [target.name]..."))
+			act_message(user, null, MSG_SELF(span_notice("You [suckverb] up \the [target.name]...")), MSG_OTHERS(span_filter_notice("%U% [suckverb]s up \the [target.name].")))
 			if(suckanim)
 				I.SpinAnimation(5,1)
 			om_after(src, 0.5 SECONDS, PROC_REF(handle_consumption), I, user, auto_setting)
@@ -247,7 +248,7 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 
 	if(istype(target,/obj/effect/decal/cleanable))
 		playsound(src, sucksound, auto_setting * 20, 1, -1)
-		user.visible_message(span_filter_notice("[user] [suckverb]s up \the [target.name]."), span_notice("You [suckverb] up \the [target.name]..."))
+		act_message(user, null, MSG_SELF(span_notice("You [suckverb] up \the [target.name]...")), MSG_OTHERS(span_filter_notice("%U% [suckverb]s up \the [target.name].")))
 		qdel(target)
 		return
 
@@ -265,7 +266,7 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 			auto_setting = 6
 		if(valid_to_suck && is_allowed_suck(target, user, output_atom))
 			playsound(src, sucksound, auto_setting * 20, 1, -1)
-			user.visible_message(span_filter_notice("[user] [suckverb]s up \the [target.name]."), span_notice("You [suckverb] up \the [target.name]..."))
+			act_message(user, null, MSG_SELF(span_notice("You [suckverb] up \the [target.name]...")), MSG_OTHERS(span_filter_notice("%U% [suckverb]s up \the [target.name].")))
 			if(suckanim)
 				L.SpinAnimation(5,1)
 			om_after(src, 0.5 SECONDS, PROC_REF(handle_consumption), L, user, auto_setting)
@@ -303,7 +304,7 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 		var/obj/item/target_item = target
 		if(target_item.drop_sound)
 			playsound(src, target_item.drop_sound, vac_power * 5, 1, -1)
-	playsound(src, 'sound/rakshasa/Corrosion3.ogg', auto_setting * 15, 1, -1)
+	play_sfx(src, SFX_RAKSHASA_CORROSION3, volume = auto_setting * 15)
 	if(isbelly(output_atom))
 		var/obj/belly/output_belly = output_atom
 		output_belly.nom_atom(target)
@@ -382,20 +383,21 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 /obj/item/vac_attachment/scoop
 	name = "\improper Scoop Hopper"
 	desc = "Useful for scooping clutter off the floors. Even things and stuff depending on settings. Can be connected to a trash bag or vore belly. On-mob sprites can be toggled via verb in Objects tab."
-	sucksound = 'sound/machines/hatchclose.ogg'
+	sucksound = SFX_MACHINES_HATCHCLOSE
 	suckverb = "scoop"
 	suckanim = FALSE
-	vac_settings = list(
-			"power off" = 0,
-			"dust and grime" = 1,
-			"tiny objects" = 2,
-			"pests and small objects" = 3,
-			"medium objects" = 4,
-			"large objects" = 5,
-			"large pests" = 6,
-			"auto-level" = 7,
-			"output destination" = 8
-			)
+
+TYPE_TABLE(/obj/item/vac_attachment/scoop, vac_attachment_settings, list( \
+			"power off" = 0, \
+			"dust and grime" = 1, \
+			"tiny objects" = 2, \
+			"pests and small objects" = 3, \
+			"medium objects" = 4, \
+			"large objects" = 5, \
+			"large pests" = 6, \
+			"auto-level" = 7, \
+			"output destination" = 8 \
+			))
 
 /obj/effect/vac_visual
 	icon = 'icons/effects/anomalies.dmi'

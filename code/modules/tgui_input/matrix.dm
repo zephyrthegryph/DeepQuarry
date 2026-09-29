@@ -73,7 +73,7 @@
 	/// our default list should not be edited as it might be a reference
 	var/list/color_matrix_last
 	/// The time at which the number input was created, for displaying timeout progress.
-	var/start_time
+	EXPIRY_DECLARE(start_time)
 	/// The lifespan of the color matrix input, after which the window will close and delete itself.
 	var/timeout
 	/// The title of the TGUI window
@@ -111,7 +111,7 @@
 		active_mode = COLORMATE_MATRIX
 	if (timeout)
 		src.timeout = timeout
-		start_time = world.time
+		EXPIRY_STAMP(src, start_time, CLOCK_WORLD)
 		om_qdel_after(src, timeout)
 	color_matrix_last = default.Copy()
 
@@ -201,7 +201,7 @@
 			return TRUE
 		if("clear")
 			target().remove_atom_colour(FIXED_COLOUR_PRIORITY)
-			playsound(src, 'sound/effects/spray3.ogg', 50, 1)
+			play_sfx(src, SFX_EFFECTS_SPRAY3)
 			temp = "Cleared Successfully!"
 			color_matrix_last = DEFAULT_COLORMATRIX
 			update_tgui_static_data(ui.user, ui)
@@ -263,7 +263,7 @@
 		return FALSE
 	if(apply)
 		target().add_atom_colour(color_to_use, FIXED_COLOUR_PRIORITY)
-		playsound(src, 'sound/effects/spray3.ogg', 50, 1)
+		play_sfx(src, SFX_EFFECTS_SPRAY3)
 		if(isanimal(target()))
 			var/mob/living/simple_mob/M = target()
 			M.has_recoloured = TRUE

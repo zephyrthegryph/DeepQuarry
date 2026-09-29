@@ -18,7 +18,7 @@
 	input_attempt = FALSE
 
 	var/max_transfer_rate = 0							// Maximal input/output rate. Determined by used capacitors when building the device.
-	var/mode = PSU_OFFLINE								// Current inputting/outputting mode
+	mode = PSU_OFFLINE								// Current inputting/outputting mode
 	var/list/internal_cells					// Cells stored in this PSU
 	var/max_cells = 3									// Maximal amount of stored cells at once. Capped at 9.
 	var/previous_charge = 0								// Charge previous tick.
@@ -75,7 +75,7 @@
 
 // Sets input/output depending on our "mode" var.
 /obj/machinery/power/smes/batteryrack/proc/update_io(newmode)
-	mode = newmode
+	set_mode(newmode)
 	switch(mode)
 		if(PSU_OFFLINE)
 			input_attempt = 0
@@ -337,7 +337,7 @@
 		insert_cell(newcell)
 
 /obj/item/module/power_control/multitool_act(mob/user, obj/item/I)
-	use_tool(user, I, src, delay = 5 SECONDS, message_self = "You begin tweaking the power control circuits to support a power cell rack.", receiver = src, on_done = PROC_REF(multitool_act_tool_done), done_args = list(user))
+	use_tool(user, I, src, delay = 5 SECONDS, start_self = "You begin tweaking the power control circuits to support a power cell rack.", receiver = src, on_done = PROC_REF(multitool_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/module/power_control/proc/multitool_act_tool_done(mob/user)

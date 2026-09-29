@@ -25,5 +25,5 @@
 		B.nom_atom(bigger, null)
 		qdel(src)
 	else
-		visible_message(span_warning("\The [src] suddenly evolves!"))
+		act_message(src, null, null, MSG_OTHERS(span_warning("%U% suddenly evolves!")))
 		qdel(src)

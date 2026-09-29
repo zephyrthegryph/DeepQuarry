@@ -315,10 +315,10 @@
 		var/obj/machinery/door/airlock/generated_station_exterior/test_door = locate_in_list(site.station_materialization.doors, /obj/machinery/door/airlock/generated_station_exterior)
 		TEST_ASSERT_NOTNULL(test_door, "Seed [seed] lacks an exterior airlock for seal falsifiability")
 		var/original_density = test_door.density
-		test_door.density = FALSE
+		test_door.set_density(FALSE)
 		var/list/open_door_findings = vacuum_findings(site)
 		TEST_ASSERT_NOTNULL(open_door_findings["reached_floor"], "Seed [seed] vacuum audit accepted a deliberately opened exterior airlock")
-		test_door.density = original_density
+		test_door.set_density(original_density)
 		GLOB.expedition_service.release_site(site, "generated station physical regression unit test")
 	qdel(seed_stream)
 
@@ -326,7 +326,7 @@
 /datum/unit_test/dq_expedition_threat_band_values
 
 /datum/unit_test/dq_expedition_threat_band_values/Run()
-	var/list/threat_bands = expedition_threat_bands()
+	var/list/threat_bands = GLOB.expedition_threat_bands
 	for(var/label in threat_bands)
 		var/difficulty = threat_bands[label]
 		TEST_ASSERT(isnum(difficulty), "Threat band '[label]' resolved to non-numeric value '[difficulty]'")

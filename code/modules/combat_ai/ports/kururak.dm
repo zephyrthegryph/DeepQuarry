@@ -24,21 +24,19 @@
 /mob/living/simple_mob/animal/sif/kururak
 	use_modern_ai = TRUE
 
-/mob/living/simple_mob/animal/sif/kururak/get_ai_behaviors()
-	var/static/list/L = list(
-		/datum/ai_behavior/kururak_pack_instinct,
-		/datum/ai_behavior/kururak_special,
-		/datum/ai_behavior/kururak_pack_rally,
-		/datum/ai_behavior/melee_attack,
-		/datum/ai_behavior/maul_unconscious,
-		/datum/ai_behavior/approach_threat,
-		/datum/ai_behavior/retaliate_to_attacker,
-		/datum/ai_behavior/follow_leader,
-		/datum/ai_behavior/flee_low_hp,
-		/datum/ai_behavior/idle_wander,
-		/datum/ai_behavior/idle_speak,
-	)
-	return L
+TYPE_TABLE(/mob/living/simple_mob/animal/sif/kururak, get_ai_behaviors, list( \
+	/datum/ai_behavior/kururak_pack_instinct, \
+	/datum/ai_behavior/kururak_special, \
+	/datum/ai_behavior/kururak_pack_rally, \
+	/datum/ai_behavior/melee_attack, \
+	/datum/ai_behavior/maul_unconscious, \
+	/datum/ai_behavior/approach_threat, \
+	/datum/ai_behavior/retaliate_to_attacker, \
+	/datum/ai_behavior/follow_leader, \
+	/datum/ai_behavior/flee_low_hp, \
+	/datum/ai_behavior/idle_wander, \
+	/datum/ai_behavior/idle_speak, \
+))
 
 // ---------------------------------------------------------------------------
 // Pack instinct — the strategic hierarchy tick. Background-priority (runs even
@@ -130,7 +128,7 @@
 	if(issilicon(L) && stance != I_GRAB)
 		stance = I_DISARM
 	K.special_attack_target(L, stance)
-	brain.last_attack_at = world.time
+	EXPIRY_STAMP(brain, last_attack_at, CLOCK_WORLD)
 	return DQ_BEHAVIOR_DONE
 
 // ---------------------------------------------------------------------------
@@ -159,7 +157,7 @@
 	if(!brain.model || !length(brain.model.visible_friendlies))
 		return null
 	// Only worth rallying once we're actually in a fight (recently swung).
-	if(world.time > brain.last_attack_at + 5 SECONDS)
+	if(ELAPSED_SINCE(src, brain.last_attack_at + 5 SECONDS, CLOCK_WORLD) > 0)
 		return null
 	return DQAI_RESULT(48, threat)
 

@@ -47,8 +47,8 @@
 
 	if(is_queen)
 		status_set(EFFECT_PARALYZED, 7998)
-		playsound(src, 'sound/metroid/metroidgrow.ogg', 50, 1)
-		src.visible_message(span_notice("\The [src] begins to lay an egg."))
+		play_sfx(src, SFX_METROID_METROIDGROW)
+		act_message(src, null, null, MSG_OTHERS(span_notice("%U% begins to lay an egg.")))
 		om_after(src, 5 SECONDS, PROC_REF(lay_egg))
 		return
 
@@ -56,7 +56,7 @@
 		if(next == "/mob/living/simple_mob/metroid/juvenile/queen" && GLOB.queen_amount > 0)
 			to_chat(src, span_warning("There is already a queen."))
 			return
-		playsound(src, 'sound/metroid/metroidgrow.ogg', 50, 1)
+		play_sfx(src, SFX_METROID_METROIDGROW)
 		status_set(EFFECT_PARALYZED, 7998)
 		om_after(src, 5 SECONDS, PROC_REF(expand_troid))
 
@@ -73,7 +73,7 @@
 	L = new next(get_turf(src)) //Next is a variable defined by metTypes.dm that just points to the next metroid in the evolutionary stage.
 	if(mind)
 		src.mind.transfer_to(L)
-	visible_message(span_warning("\The [src] suddenly evolves!"))
+	act_message(src, null, null, MSG_OTHERS(span_warning("%U% suddenly evolves!")))
 	qdel(src)
 
 // Code for metroids attacking other things.
@@ -93,11 +93,8 @@
 
 				if(prob(stun_power * 10)) // Try an electric shock.
 					power_charge = max(0, power_charge - 3)
-					L.visible_message(
-						span_danger("\The [src] has shocked \the [L]!"),
-						span_danger("\The [src] has shocked you!")
-						)
-					playsound(src, 'sound/weapons/egloves.ogg', 75, 1)
+					act_message(L, src, MSG_SELF(span_danger("%T% has shocked you!")), MSG_OTHERS(span_danger("%T% has shocked %U%!")))
+					play_sfx(src, SFX_WEAPONS_EGLOVES, 1.5, extrarange = 0)
 					L.status_at_least(EFFECT_WEAKENED, 4)
 					L.status_at_least(EFFECT_STUNNED, 4)
 					do_attack_animation(L)
@@ -106,20 +103,15 @@
 						_tmp_buck_23.unbuckle_mob() // To prevent an exploit where being src?.buckled_to() prevents metroids from jumping on you.
 					L.status_at_least(EFFECT_STUTTERING, stun_power)
 
-					var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-					s.set_up(5, 1, L)
-					s.start()
+					fx_sparks(L, 5)
 
 					if(prob(stun_power * 10) && stun_power >= 8)
 						L.injure(INJURY_ELECTRIC, power_charge * rand(1, 2), source = src)
 					return FALSE
 
 				else if(prob(20)) // Try to do a regular disarm attack.
-					L.visible_message(
-						span_danger("\The [src] has pounced at \the [L]!"),
-						span_danger("\The [src] has pounced at you!")
-						)
-					playsound(src, 'sound/weapons/thudswoosh.ogg', 75, 1)
+					act_message(L, src, MSG_SELF(span_danger("%T% has pounced at you!")), MSG_OTHERS(span_danger("%T% has pounced at %U%!")))
+					play_sfx(src, SFX_WEAPONS_THUDSWOOSH, 1.5, extrarange = 0)
 					L.status_at_least(EFFECT_WEAKENED, 2)
 					do_attack_animation(L)
 					if(L?.buckled_to())
@@ -128,11 +120,8 @@
 					return FALSE
 
 				else // Failed to do anything this time.
-					L.visible_message(
-						span_warning("\The [src] has tried to pounce at \the [L]!"),
-						span_warning("\The [src] has tried to pounce at you!")
-						)
-					playsound(src, 'sound/weapons/punchmiss.ogg', 75, 1)
+					act_message(L, src, MSG_SELF(span_warning("%T% has tried to pounce at you!")), MSG_OTHERS(span_warning("%T% has tried to pounce at %U%!")))
+					play_sfx(src, SFX_WEAPONS_PUNCHMISS, 3, extrarange = 0)
 					do_attack_animation(L)
 					return FALSE
 
@@ -163,11 +152,11 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/metroid/juvenile, INTERACT_HAND_UNGAT
 
 		if(prob(fail_odds))
 			visible_message(span_warning("\The [L] attempts to wrestle \the [name] off!"))
-			playsound(loc, 'sound/weapons/punchmiss.ogg', 25, 1, -1)
+			play_sfx(loc, SFX_WEAPONS_PUNCHMISS)
 
 		else
 			visible_message(span_warning("\The [L] manages to wrestle \the [name] off!"))
-			playsound(loc, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
+			play_sfx(loc, SFX_WEAPONS_THUDSWOOSH)
 			stop_consumption()
 			step_away(src, L)
 

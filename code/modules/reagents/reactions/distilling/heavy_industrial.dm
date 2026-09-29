@@ -6,11 +6,12 @@
 	required_reagents = list(REAGENT_ID_TITANIUMDIOX = 1, REAGENT_ID_CHLORINE = 4, REAGENT_ID_SODIUM = 1)
 	result_amount = 1
 
-	temp_range = list(T20C + 900, T20C + 1100)
 	temp_shift = -1
 
 	require_xgm_gas = GAS_N2
 	rejects_xgm_gas = GAS_O2
+
+TYPE_TABLE(/datum/decl/chemical_reaction/distilling/titanium_refine, distilling_temp_range, list(T20C + 900, T20C + 1100))
 
 /datum/decl/chemical_reaction/distilling/concentrate_radium
 	name = REAGENT_CONCENTRATEDRADIUM
@@ -20,11 +21,12 @@
 	catalysts = list(REAGENT_ID_URANIUM = 1)
 	result_amount = 1
 
-	temp_range = list(T20C + 1500, T20C + 2000)
 	temp_shift = -1
 
 	require_xgm_gas = GAS_PHORON
 	rejects_xgm_gas = GAS_N2
+
+TYPE_TABLE(/datum/decl/chemical_reaction/distilling/concentrate_radium, distilling_temp_range, list(T20C + 1500, T20C + 2000))
 
 /datum/decl/chemical_reaction/distilling/cyanide
 	name = REAGENT_CYANIDE
@@ -33,11 +35,12 @@
 	required_reagents = list(REAGENT_ID_CARBON = 1, REAGENT_ID_NITROGEN = 1, REAGENT_ID_WATER = 2)
 	result_amount = 1
 
-	temp_range = list(T0C + 150, T0C + 170)
 	temp_shift = 0
 
 	require_xgm_gas = GAS_N2
 	rejects_xgm_gas = GAS_O2
+
+TYPE_TABLE(/datum/decl/chemical_reaction/distilling/cyanide, distilling_temp_range, list(T0C + 150, T0C + 170))
 
 /datum/decl/chemical_reaction/distilling/sacid
 	name = REAGENT_SACID
@@ -46,11 +49,12 @@
 	required_reagents = list(REAGENT_ID_HYDROGEN = 2, REAGENT_ID_SULFUR = 1)
 	result_amount = 1
 
-	temp_range = list(T0C + 200, T0C + 300)
 	temp_shift = 5
 
 	require_xgm_gas = GAS_O2
 	rejects_xgm_gas = GAS_N2
+
+TYPE_TABLE(/datum/decl/chemical_reaction/distilling/sacid, distilling_temp_range, list(T0C + 200, T0C + 300))
 
 /datum/decl/chemical_reaction/distilling/toxin
 	name = REAGENT_TOXIN
@@ -59,11 +63,12 @@
 	required_reagents = list(REAGENT_ID_SACID = 2, REAGENT_ID_CYANIDE = 1)
 	result_amount = 1
 
-	temp_range = list(T0C + 120, T0C + 580)
 	temp_shift = 2
 
 	require_xgm_gas = GAS_PHORON
 	rejects_xgm_gas = GAS_N2
+
+TYPE_TABLE(/datum/decl/chemical_reaction/distilling/toxin, distilling_temp_range, list(T0C + 120, T0C + 580))
 
 
 // Marker ink for paint production
@@ -74,11 +79,12 @@
 	required_reagents = list(REAGENT_ID_LUBE = 1, REAGENT_ID_ETHANOL = 1, REAGENT_ID_CARBON = 1)
 	result_amount = 1
 
-	temp_range = list(T20C + 90, T20C + 160)
 	temp_shift = -1
 
 	require_xgm_gas = GAS_O2
 	rejects_xgm_gas = GAS_PHORON
+
+TYPE_TABLE(/datum/decl/chemical_reaction/distilling/marker_ink_black, distilling_temp_range, list(T20C + 90, T20C + 160))
 
 /datum/decl/chemical_reaction/distilling/marker_ink_red
 	name = REAGENT_MARKERINKRED
@@ -87,11 +93,12 @@
 	required_reagents = list(REAGENT_ID_LUBE = 1, REAGENT_ID_ETHANOL = 1, REAGENT_ID_IRON = 1)
 	result_amount = 1
 
-	temp_range = list(T20C + 90, T20C + 160)
 	temp_shift = -1
 
 	require_xgm_gas = GAS_O2
 	rejects_xgm_gas = GAS_PHORON
+
+TYPE_TABLE(/datum/decl/chemical_reaction/distilling/marker_ink_red, distilling_temp_range, list(T20C + 90, T20C + 160))
 
 /datum/decl/chemical_reaction/distilling/marker_ink_yellow
 	name = REAGENT_MARKERINKYELLOW
@@ -100,11 +107,12 @@
 	required_reagents = list(REAGENT_ID_LUBE = 1, REAGENT_ID_ETHANOL = 1, REAGENT_ID_SULFUR = 1)
 	result_amount = 1
 
-	temp_range = list(T20C + 90, T20C + 160)
 	temp_shift = -1
 
 	require_xgm_gas = GAS_O2
 	rejects_xgm_gas = GAS_PHORON
+
+TYPE_TABLE(/datum/decl/chemical_reaction/distilling/marker_ink_yellow, distilling_temp_range, list(T20C + 90, T20C + 160))
 
 /datum/decl/chemical_reaction/distilling/marker_ink_green
 	name = REAGENT_MARKERINKGREEN
@@ -113,11 +121,12 @@
 	required_reagents = list(REAGENT_ID_LUBE = 1, REAGENT_ID_ETHANOL = 1, REAGENT_ID_COPPER = 1)
 	result_amount = 1
 
-	temp_range = list(T20C + 90, T20C + 160)
 	temp_shift = -1
 
 	require_xgm_gas = GAS_O2
 	rejects_xgm_gas = GAS_PHORON
+
+TYPE_TABLE(/datum/decl/chemical_reaction/distilling/marker_ink_green, distilling_temp_range, list(T20C + 90, T20C + 160))
 
 /datum/decl/chemical_reaction/distilling/marker_ink_blue
 	name = REAGENT_MARKERINKBLUE
@@ -126,11 +135,12 @@
 	required_reagents = list(REAGENT_ID_LUBE = 1, REAGENT_ID_ETHANOL = 1, REAGENT_ID_PRUSSIANBLUE = 1)
 	result_amount = 1
 
-	temp_range = list(T20C + 90, T20C + 160)
 	temp_shift = -1
 
 	require_xgm_gas = GAS_O2
 	rejects_xgm_gas = GAS_PHORON
+
+TYPE_TABLE(/datum/decl/chemical_reaction/distilling/marker_ink_blue, distilling_temp_range, list(T20C + 90, T20C + 160))
 
 /datum/decl/chemical_reaction/distilling/marker_ink_grey
 	name = REAGENT_MARKERINKGREY
@@ -139,11 +149,12 @@
 	required_reagents = list(REAGENT_ID_LUBE = 1, REAGENT_ID_ETHANOL = 1, REAGENT_ID_TIN = 1)
 	result_amount = 1
 
-	temp_range = list(T20C + 90, T20C + 160)
 	temp_shift = -1
 
 	require_xgm_gas = GAS_O2
 	rejects_xgm_gas = GAS_PHORON
+
+TYPE_TABLE(/datum/decl/chemical_reaction/distilling/marker_ink_grey, distilling_temp_range, list(T20C + 90, T20C + 160))
 
 
 // Secondary distillation for markers
@@ -154,11 +165,12 @@
 	required_reagents = list(REAGENT_ID_MARKERINKRED = 1, REAGENT_ID_MARKERINKYELLOW = 1)
 	result_amount = 1
 
-	temp_range = list(T20C + 90, T20C + 160)
 	temp_shift = -1
 
 	require_xgm_gas = GAS_O2
 	rejects_xgm_gas = GAS_PHORON
+
+TYPE_TABLE(/datum/decl/chemical_reaction/distilling/marker_ink_orange, distilling_temp_range, list(T20C + 90, T20C + 160))
 
 /datum/decl/chemical_reaction/distilling/marker_ink_purple
 	name = REAGENT_MARKERINKPURPLE
@@ -167,11 +179,12 @@
 	required_reagents = list(REAGENT_ID_MARKERINKRED = 1, REAGENT_ID_MARKERINKBLUE = 1)
 	result_amount = 1
 
-	temp_range = list(T20C + 90, T20C + 160)
 	temp_shift = -1
 
 	require_xgm_gas = GAS_O2
 	rejects_xgm_gas = GAS_PHORON
+
+TYPE_TABLE(/datum/decl/chemical_reaction/distilling/marker_ink_purple, distilling_temp_range, list(T20C + 90, T20C + 160))
 
 /datum/decl/chemical_reaction/distilling/marker_ink_brown
 	name = REAGENT_MARKERINKBROWN
@@ -180,8 +193,9 @@
 	required_reagents = list(REAGENT_ID_MARKERINKRED = 1, REAGENT_ID_MARKERINKGREY = 1)
 	result_amount = 1
 
-	temp_range = list(T20C + 90, T20C + 160)
 	temp_shift = -1
 
 	require_xgm_gas = GAS_O2
 	rejects_xgm_gas = GAS_PHORON
+
+TYPE_TABLE(/datum/decl/chemical_reaction/distilling/marker_ink_brown, distilling_temp_range, list(T20C + 90, T20C + 160))

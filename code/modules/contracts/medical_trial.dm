@@ -174,7 +174,7 @@
 	participant.dose += amount
 	subject.record_clinical_exposure(id, profile.code_name, "coded trial medication", amount)
 	if(!participant.exposure_time)
-		participant.exposure_time = world.time
+		EXPIRY_STAMP(participant, exposure_time, CLOCK_WORLD)
 
 /datum/contract/medical_trial/proc/record_challenge(mob/living/carbon/human/subject, amount)
 	var/datum/contract_subject_identity/identity = SScontracts.subject_identity(subject)
@@ -262,7 +262,7 @@
 		"cohort" = profile.cohort,
 		"protocol" = profile.protocol_instructions(),
 		"indication" = profile.target_metric,
-		"adverse_choices" = medical_trial_adverse_choices(),
+		"adverse_choices" = GLOB.medical_trial_adverse_choices,
 		"subjects" = subjects,
 		"analysis_ready" = observation_requirement.state == CONTRACT_REQUIREMENT_COMPLETE && !analysis_attempted,
 		"resupplies_remaining" = MEDICAL_TRIAL_MAX_RESUPPLIES - resupplies_used,
@@ -328,7 +328,7 @@
 /datum/contract/medical_trial/proc/print_final_report(turf/location, adverse_metric)
 	if(state != CONTRACT_ACTIVE || observation_requirement.state != CONTRACT_REQUIREMENT_COMPLETE || analysis_attempted || !location)
 		return FALSE
-	if(!(adverse_metric in medical_trial_adverse_choices()))
+	if(!(adverse_metric in GLOB.medical_trial_adverse_choices))
 		return FALSE
 	var/document_info = "<h2>Final Clinical Interpretation</h2><b>Study:</b> [profile.code_name]<br><b>Declared indication:</b> [profile.target_metric]<br><b>Primary adverse syndrome:</b> [adverse_metric]<br><b>Identity handling:</b> [negotiated_effect("identity", "coded")]<br><b>Review:</b> [negotiated_effect("oversight", "internal")]<br><br>VeyMed Clinical Development will adjudicate efficacy from the submitted scanner evidence and reported adverse syndrome."
 	create_contract_document(location, "final clinical interpretation — [profile.code_name]", document_info, id, CONTRACT_DOCUMENT_FINAL_REPORT, CONTRACT_FAX_VEYMED, list("target_metric" = profile.target_metric, "adverse_metric" = adverse_metric))
@@ -339,7 +339,7 @@
 		return FALSE
 	if(profile.cohort == MEDICAL_TRIAL_COHORT_MIXED && !mixed_cohort_complete())
 		return FALSE
-	if(!(target_metric in medical_trial_target_choices()) || !(adverse_metric in medical_trial_adverse_choices()))
+	if(!(target_metric in GLOB.medical_trial_target_choices) || !(adverse_metric in GLOB.medical_trial_adverse_choices))
 		return FALSE
 	if(target_metric != profile.target_metric || adverse_metric != profile.adverse_metric)
 		analysis_corrections++
@@ -369,8 +369,8 @@
 	. = ..()
 	code_name = "VM-[rand(100, 999)]-[pick(GLOB.alphabet_upper)]"
 	cohort = requested_cohort || pick(MEDICAL_TRIAL_COHORT_HEALTHY, MEDICAL_TRIAL_COHORT_PREVENTATIVE)
-	target_metric = requested_target || pick(medical_trial_target_choices())
-	var/list/adverse_choices = medical_trial_adverse_choices()
+	target_metric = requested_target || pick(GLOB.medical_trial_target_choices)
+	var/list/adverse_choices = GLOB.medical_trial_adverse_choices.Copy()
 	adverse_choices -= target_metric
 	adverse_metric = pick(adverse_choices)
 	therapeutic_strength = rand(8, 16) / 10
@@ -413,8 +413,8 @@
 	var/corpse_contract_offered = FALSE
 	var/dose = 0
 	var/challenge_dose = 0
-	var/exposure_time = 0
-	var/consent_time = 0
+	EXPIRY_DECLARE(exposure_time)
+	EXPIRY_DECLARE(consent_time)
 	var/completed = FALSE
 	var/faxed = FALSE
 
@@ -431,8 +431,7 @@
 	var/mob/living/carbon/human/subject = SScontracts.resolve_subject(subject_id)
 	return istype(subject) ? subject : null
 
-/proc/medical_trial_target_choices()
-	return list("trauma", "infection", "respiratory", "neurological", "organ failure")
+GLOBAL_LIST_INIT(medical_trial_target_choices, list("trauma", "infection", "respiratory", "neurological", "organ failure"))
 
 /proc/medical_trial_qualifying_indications(list/candidates = REGISTRY_MEMBERS(REGISTRY_PLAYERS), require_station_crew = TRUE)
 	var/list/available = list()
@@ -441,13 +440,13 @@
 			continue
 		if(require_station_crew && !subject.mind?.assigned_role)
 			continue
-		for(var/family in medical_trial_target_choices())
+		for(var/family in GLOB.medical_trial_target_choices)
 			if(medical_trial_condition_burden(subject, medical_trial_target_types(family)) >= MEDICAL_TRIAL_MINIMUM_BASELINE)
 				available |= family
 	return available
 
 /proc/medical_trial_condition_family(datum/affliction/condition)
-	for(var/family in medical_trial_target_choices())
+	for(var/family in GLOB.medical_trial_target_choices)
 		for(var/condition_type in medical_trial_target_types(family))
 			if(istype(condition, condition_type))
 				return family
@@ -573,22 +572,20 @@
 			result += list(list("cohort" = MEDICAL_TRIAL_COHORT_THERAPEUTIC, "target_metric" = family))
 	return result
 
-/proc/medical_trial_adverse_choices()
-	return list("none", "respiratory failure", "heart damage", "concussion", "hepatic failure")
+GLOBAL_LIST_INIT(medical_trial_adverse_choices, list("none", "respiratory failure", "heart damage", "concussion", "hepatic failure"))
 
+GLOBAL_LIST_INIT(medical_trial_target_types, list(
+	"trauma" = list(/datum/affliction/deep_bruising, /datum/affliction/internal_hemorrhage, /datum/affliction/untreated_fracture, /datum/affliction/burn_shock),
+	"infection" = list(/datum/affliction/wound_infection, /datum/affliction/cellulitis, /datum/affliction/sepsis, /datum/affliction/septic_shock),
+	"respiratory" = list(/datum/affliction/pulmonary_contusion, /datum/affliction/pneumothorax, /datum/affliction/airway_burn, /datum/affliction/respiratory_failure),
+	"neurological" = list(/datum/affliction/concussion, /datum/affliction/subdural_hematoma, /datum/affliction/brain_damage),
+	"organ failure" = list(/datum/affliction/hepatic_failure, /datum/affliction/renal_failure, /datum/affliction/heart_damage),
+))
+GLOBAL_LIST_EMPTY(medical_trial_no_target_types)
+
+/// The affliction types for a target family (shared, read-only).
 /proc/medical_trial_target_types(family)
-	switch(family)
-		if("trauma")
-			return list(/datum/affliction/deep_bruising, /datum/affliction/internal_hemorrhage, /datum/affliction/untreated_fracture, /datum/affliction/burn_shock)
-		if("infection")
-			return list(/datum/affliction/wound_infection, /datum/affliction/cellulitis, /datum/affliction/sepsis, /datum/affliction/septic_shock)
-		if("respiratory")
-			return list(/datum/affliction/pulmonary_contusion, /datum/affliction/pneumothorax, /datum/affliction/airway_burn, /datum/affliction/respiratory_failure)
-		if("neurological")
-			return list(/datum/affliction/concussion, /datum/affliction/subdural_hematoma, /datum/affliction/brain_damage)
-		if("organ failure")
-			return list(/datum/affliction/hepatic_failure, /datum/affliction/renal_failure, /datum/affliction/heart_damage)
-	return list()
+	return (istext(family) && GLOB.medical_trial_target_types[family]) || GLOB.medical_trial_no_target_types
 
 /proc/medical_trial_condition_burden(mob/living/carbon/human/subject, list/allowed_types)
 	. = 0
@@ -653,13 +650,13 @@
 			"contract_id" = contract_id,
 			"study_code" = study_code,
 			"agent" = agent_name,
-			"first_exposure" = world.time,
+			"first_exposure" = EXPIRY_AT(null, CLOCK_WORLD, 0),
 			"dose" = 0,
 		)
 		LAZYINITLIST(clinical_exposure_history)
 		clinical_exposure_history += list(existing)
 	existing["dose"] += amount
-	existing["last_exposure"] = world.time
+	existing["last_exposure"] = EXPIRY_AT(null, CLOCK_WORLD, 0)
 
 /mob/living/carbon/human/proc/clinical_exposure_printout()
 	if(!length(clinical_exposure_history))

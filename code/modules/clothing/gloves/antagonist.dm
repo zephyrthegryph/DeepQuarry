@@ -155,7 +155,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/clothing/gloves/ring/buzzer, "battery", "battery
 
 			to_chat(L, span_warning("You feel a powerful shock!"))
 			if(!.)
-				playsound(L, 'sound/effects/sparks7.ogg', 40, 1)
+				play_sfx(L, SFX_EFFECTS_SPARKS7)
 				L.electrocute_act(battery.percent() * 0.25, src)
 				battery.emp_act(2)
 			return .

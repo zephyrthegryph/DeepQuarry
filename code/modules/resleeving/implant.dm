@@ -230,7 +230,7 @@ EXTEND_INTERACTIONS(/obj/structure/backup_implanter_ch, \
 
 /obj/structure/backup_implanter_ch/proc/wrench_done(mob/user, anchoring)
 	to_chat(user, span_notice(anchoring ? "You wrench the implanter into place." : "You unwrench the implanter."))
-	anchored = anchoring
+	set_anchored(anchoring)
 
 /// LC-refs: the transcore database this uses, looked up by db_key (the databases are a registry).
 /obj/item/implant/backup/proc/our_db() as /datum/transcore_db

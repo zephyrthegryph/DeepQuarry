@@ -78,17 +78,17 @@
 	if(target())
 		if(movetotarget)
 			if(!step_towards(src,target()) && !particle_force_step(get_step(src, get_dir(src,target()))))
-				return
+				movement_range = 0 // left the map: deleted below
 			if(get_dist(src,target()) < 1)
 				movetotarget = 0
 		else
 			// get_step_away() already answers the turf to go to.
 			var/turf/away = get_step_away(src, source())
 			if(!(away && Move(away)) && !particle_force_step(away))
-				return
+				movement_range = 0 // left the map: deleted below
 	else
 		if(!step(src,dir) && !particle_force_step(get_step(src,dir)))
-			return
+			movement_range = 0 // left the map: fall through to the deletion below
 	movement_range--
 	if(movement_range <= 0)
 		qdel(src)
@@ -97,10 +97,9 @@
 	om_after(src, lag, PROC_REF(move), lag)
 
 /// Pushes the particle onto `dest` when a normal step was blocked. At the map edge there is no
-/// turf to push onto: the particle leaves the map and is deleted (FALSE).
+/// turf to push onto: the particle leaves the map (FALSE) and move() deletes it.
 /obj/effect/accelerated_particle/proc/particle_force_step(turf/dest)
 	if(!dest)
-		qdel(src)
 		return FALSE
 	forceMove(dest)
 	return TRUE

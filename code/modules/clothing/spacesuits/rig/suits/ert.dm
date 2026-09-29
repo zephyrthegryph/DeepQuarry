@@ -21,9 +21,7 @@
 		/obj/item/rig_module/datajack,
 		)
 
-/obj/item/rig/ert/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_ENGINEERING, POCKET_CE, POCKET_SECURITY, POCKET_MEDICAL, POCKET_HEAVYTOOLS, POCKET_BAYSUIT)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/rig/ert, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_ENGINEERING, POCKET_CE, POCKET_SECURITY, POCKET_MEDICAL, POCKET_HEAVYTOOLS, POCKET_BAYSUIT))))
 
 /obj/item/rig/ert/engineer
 	name = "ERT-E suit control module"

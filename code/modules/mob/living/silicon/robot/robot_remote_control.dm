@@ -18,9 +18,9 @@
 /mob/living/silicon/robot/proc/post_mmi_setup()
 	if(istype(mmi, /obj/item/mmi/inert/ai_remote))
 		make_shell()
-		playsound(src, 'sound/machines/twobeep.ogg', 50, 0)
+		play_sfx(src, SFX_MACHINES_TWOBEEP, vary = FALSE)
 	else
-		playsound(src, 'sound/voice/liveagain.ogg', 75, 1)
+		play_sfx(src, SFX_VOICE_LIVEAGAIN)
 	return
 
 REGISTRY_MEMBERSHIP(/mob/living/silicon/robot, REGISTRY_AI_SHELLS)

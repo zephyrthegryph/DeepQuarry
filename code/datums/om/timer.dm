@@ -280,6 +280,94 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 		om_timers_arm(rec)
 	return id
 
+// ---------------------------------------------------------------- timer slots
+//
+// A named, framework-owned timer: at most one pending timer per (entity, slot). Nothing stores a
+// timer id in a var of its own. The slot lives in the owner's record, so:
+//   - fire, cancel and owner destroy leave it empty by construction (pending is derived from
+//     rec.timers, never a stored flag);
+//   - scheduling into an occupied slot replaces the pending timer;
+//   - only this file reads or writes rec.timer_slots.
+// Slots are the ownership model's owned timers (doc/rewrite/ownership.md): declare one on its type
+// with OWN_TIMER(/type/path, name) (code/__defines/ownership.dm); the name lands in the type's
+// ownership table, own_teardown() releases every pending slot, and test builds refuse an
+// undeclared slot name (a typo would otherwise be a silent second slot). A keyed family of slots
+// ("name:[key]", one timer per key) is declared once by its name.
+
+/// Slot name -> the timer id scheduled into it. May hold ids of timers that already fired or were
+/// cancelled: om_timer_slot_pending() checks rec.timers and prunes those.
+/datum/om/rec/var/list/timer_slots
+
+/proc/om_timer_slot_check(datum/E, slot)
+#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
+	// A keyed family ("name:key") is declared once, by its name.
+	var/colon = findtext(slot, ":")
+	var/declared = colon ? copytext(slot, 1, colon) : slot
+	if(!E || istype(E, /datum/om/global_owner))
+		return
+	if(!(declared in own_table_of(E).timer_slots))
+		stack_trace("timer slot '[slot]' is not declared on [E.type] (OWN_TIMER)")
+#endif
+
+/// Schedules `proc_ref` after `delay` (as om_after()) into E's timer slot `slot`, replacing any
+/// timer pending there. Returns TRUE if scheduled. E null: the global owner.
+/proc/om_after_slot(datum/E, slot, delay, proc_ref, ...)
+	if(isnull(E))
+		E = om_global_owner()
+	om_timer_slot_check(E, slot)
+	om_cancel_timer_slot(E, slot)
+	var/list/call_list = list(E, delay, proc_ref)
+	if(length(args) > 4)
+		call_list += args.Copy(5)
+	var/id = om_after(arglist(call_list))
+	if(!id)
+		return FALSE
+	var/datum/om/rec/rec = E.om_rec
+	LAZYSET(rec.timer_slots, slot, id)
+	return TRUE
+
+/// Cancels whatever is pending in E's timer slot `slot`. Returns TRUE if a timer was pending.
+/proc/om_cancel_timer_slot(datum/E, slot)
+	if(isnull(E))
+		E = om_global_owner()
+	var/datum/om/rec/rec = E.om_rec
+	var/id = rec?.timer_slots?[slot]
+	if(!id)
+		return FALSE
+	LAZYREMOVE(rec.timer_slots, slot)
+	return om_cancel_timer(E, id)
+
+/// TRUE while a timer is pending in E's timer slot `slot` (not yet fired or cancelled).
+/proc/om_timer_slot_pending(datum/E, slot)
+	if(isnull(E))
+		E = om_global_owner()
+	var/datum/om/rec/rec = E?.om_rec
+	var/id = rec?.timer_slots?[slot]
+	if(!id)
+		return FALSE
+	if(om_timer_index(rec, id))
+		return TRUE
+	LAZYREMOVE(rec.timer_slots, slot)
+	return FALSE
+
+/// Teardown (own_teardown()): cancels every timer E owns through a slot.
+/proc/om_release_timer_slots(datum/E)
+	var/datum/om/rec/rec = E?.om_rec
+	var/list/slots = rec?.timer_slots
+	if(!slots)
+		return
+	rec.timer_slots = null
+	for(var/slot in slots)
+		om_cancel_timer(E, slots[slot])
+
+/// Deciseconds of E's timer clock left on the timer in slot `slot`, or null when none is pending.
+/proc/om_timer_slot_left(datum/E, slot)
+	if(!om_timer_slot_pending(E, slot))
+		return null
+	if(isnull(E))
+		E = om_global_owner()
+	return om_timer_left(E, E.om_rec.timer_slots[slot])
+
 /// TRUE when `proc_ref` is a global proc (/proc/x), FALSE for a type proc. Decided once, when a
 /// deferred call is recorded, so firing never stringifies the proc.
 /proc/om_proc_is_global(proc_ref)

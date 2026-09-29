@@ -32,8 +32,8 @@ GLOBAL_LIST_INIT(bibleitemstates, list(
 	throw_range = 5
 	w_class = ITEMSIZE_NORMAL
 	var/deity_name = "Christ"
-	use_sound = 'sound/bureaucracy/bookopen.ogg'
-	drop_sound = 'sound/bureaucracy/bookclose.ogg'
+	use_sound = SFX_BUREAUCRACY_BOOKOPEN
+	drop_sound = SFX_BUREAUCRACY_BOOKCLOSE
 	special_handling = TRUE
 
 EXTEND_INTERACTIONS(/obj/item/storage/bible, \

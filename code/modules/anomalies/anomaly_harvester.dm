@@ -30,10 +30,10 @@
 
 /obj/machinery/anomaly_harvester/machine_step()
 	..()
-	if(stat & (NOPOWER|BROKEN) || !anchored)
-		update_use_power(USE_POWER_OFF)
+	if(!operable() || !anchored)
+		set_use_power(USE_POWER_OFF)
 	else
-		update_use_power(USE_POWER_IDLE)
+		set_use_power(USE_POWER_IDLE)
 		harvest_anomaly()
 		if(points && points >= points_to_create)
 			points -= points_to_create
@@ -56,9 +56,9 @@
 	var/datum/anomaly_stats/stats = anom.stats
 
 	if(stats.stability == ANOMALY_DECAYING)
-		playsound(src, 'sound/machines/2beephigh.ogg', 75)
+		play_sfx(src, SFX_MACHINES_2BEEPHIGH)
 	else if (stats.stability == ANOMALY_GROWING)
-		playsound(src, 'sound/machines/buzzbeep.ogg', 75)
+		play_sfx(src, SFX_MACHINES_BUZZBEEP, 1.5)
 
 /obj/machinery/anomaly_harvester/declare_interactions(list/into)
 	into += list(
@@ -119,12 +119,12 @@
 		rel_clear(stats, "attached_harvester")
 	rel_set(src, "harvested", anom)
 	rel_set(stats, "attached_harvester", src)
-	playsound(src, 'sound/machines/boobeebeep.ogg', 75, TRUE)
+	play_sfx(src, SFX_MACHINES_BOOBEEBEEP, 1.5, vary = TRUE)
 	return TRUE
 
 /obj/machinery/anomaly_harvester/proc/generate_sample()
-	update_use_power(USE_POWER_ACTIVE)
-	playsound(src, 'sound/machines/ping.ogg', 50, TRUE)
+	set_use_power(USE_POWER_ACTIVE)
+	play_sfx(src, SFX_MACHINES_PING, vary = TRUE)
 	switch(rand(1, 100))
 		if(1 to 50)
 			new /obj/item/research_sample/common(src)
@@ -139,7 +139,7 @@
 
 /obj/machinery/anomaly_harvester/update_icon()
 	cut_overlays()
-	if(stat & (NOPOWER|BROKEN) || !anchored)
+	if(!operable() || !anchored)
 		add_overlay("harvester_off")
 	else
 		add_overlay("harvester_on")
@@ -170,8 +170,7 @@
 
 /obj/machinery/anomaly_harvester/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/sample_data = list()
-	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/research_sample/sample in contents_of(src)) // ALLOW(latent): materialized above
+	FOR_REAL_CONTENTS(var/obj/item/research_sample/sample, src)
 		UNTYPED_LIST_ADD(sample_data, list(
 			"name" = sample.name,
 			"icon" = sample.icon,

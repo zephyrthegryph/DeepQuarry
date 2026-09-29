@@ -162,7 +162,7 @@ It is used to destroy hand-held objects and advance technological research. Used
 			continue
 		materials.insert_item(B, decon_mod, src)
 	// Feedback
-	playsound(get_turf(src), 'sound/machines/click.ogg', 50, 1)
+	play_sfx(get_turf(src), SFX_MACHINES_CLICK)
 	rped_recycler_ready = FALSE
 	om_after(src, 5 SECONDS, PROC_REF(rped_ready))
 	to_chat(user, span_notice("You deconstruct all the parts of rating [lowest_rating] in [replacer] with [src]."))
@@ -173,7 +173,7 @@ It is used to destroy hand-held objects and advance technological research. Used
 	SHOULD_NOT_OVERRIDE(TRUE)
 
 	rped_recycler_ready = TRUE
-	playsound(get_turf(src), 'sound/machines/chime.ogg', 50, 1)
+	play_sfx(get_turf(src), SFX_MACHINES_CHIME)
 
 /obj/machinery/rnd/destructive_analyzer/proc/get_silo_material_container_datum(verbose)
 	var/datum/material_container/materials = rmat.mat_container()
@@ -277,7 +277,7 @@ It is used to destroy hand-held objects and advance technological research. Used
 	for(var/atom/thing_destroying in destructing) // For all contents and itself
 		destroy_item_individual(thing_destroying, gain_research_points)
 	// feedback
-	playsound(src, 'sound/machines/destructive_analyzer.ogg', 50, 1)
+	play_sfx(src, SFX_MACHINES_DESTRUCTIVE_ANALYZER)
 	update_icon()
 	return TRUE
 

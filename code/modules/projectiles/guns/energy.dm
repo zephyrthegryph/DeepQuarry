@@ -136,7 +136,7 @@
 	rel_set(src, "power_supply", P)
 	P.forceMove(src)
 	user.visible_message("[user] inserts [P] into [src].", span_notice("You insert [P] into [src]."))
-	playsound(src, 'sound/weapons/flipblade.ogg', 50, 1)
+	play_sfx(src, SFX_WEAPONS_FLIPBLADE)
 	update_icon()
 	update_held_icon()
 	user.hud_used?.update_ammo_hud(user, src) // TGMC Ammo HUD
@@ -166,7 +166,7 @@
 		power_supply.update_icon()
 		user.visible_message("[user] removes [power_supply] from [src].", span_notice("You remove [power_supply] from [src]."))
 		rel_clear(src, "power_supply")
-		playsound(src, 'sound/weapons/empty.ogg', 50, 1)
+		play_sfx(src, SFX_WEAPONS_EMPTY)
 		update_icon()
 		update_held_icon()
 		user.hud_used?.update_ammo_hud(user, src) // TGMC Ammo HUD

@@ -295,7 +295,7 @@ REGISTRY_MEMBERSHIP(/datum/computer_file/data/waypoint, REGISTRY_WAYPOINTS)
 
 	add_fingerprint(ui.user)
 	if(. && !issilicon(ui.user))
-		playsound(src, "terminal_type", 50, 1)
+		play_sfx(src, SFX_TERMINAL_TYPE)
 
 /obj/machinery/computer/ship/navigation
 	name = "navigation console"
@@ -332,7 +332,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/ship/navigation, "nav_tgui", /datu
 	density = FALSE
 
 /obj/machinery/computer/ship/navigation/telescreen/update_icon()
-	if(stat & NOPOWER || stat & BROKEN)
+	if(has_stat(NOPOWER) || has_stat(BROKEN))
 		icon_state = "tele_off"
 		set_light(0)
 	else

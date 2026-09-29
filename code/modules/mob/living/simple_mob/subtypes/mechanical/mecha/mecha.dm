@@ -9,8 +9,8 @@
 
 	faction = FACTION_SYNDICATE
 	movement_cooldown = 1.5
-	movement_sound = "mechstep" // This gets fed into playsound(), which can also take strings as a 'group' of sound files.
-	turn_sound = 'sound/mecha/mechturn.ogg'
+	movement_sound = SFX_MECHSTEP // This gets fed into playsound(), which can also take strings as a 'group' of sound files.
+	turn_sound = SFX_MECHA_MECHTURN
 	endurance = 300
 	mob_size = MOB_LARGE
 	damage_threshold = 5 //Anything that's 5 or less damage will not do damage.
@@ -26,17 +26,12 @@
 
 	say_list_type = /datum/say_list/malf_drone
 
-	var/datum/effect/effect/system/spark_spread/sparks
 	var/wreckage = /obj/effect/decal/mecha_wreckage/gygax/dark
 	var/pilot_type = null // Set to spawn a pilot when destroyed. Setting this also makes the mecha vulnerable to things that affect sentient minds.
 	var/deflect_chance = 10 // Chance to outright stop an attack, just like a normal exosuit.
 	var/has_repair_droid = FALSE // If true, heals 2 damage every tick and gets a repair droid overlay.
 
 /mob/living/simple_mob/mechanical/mecha/Initialize(mapload)
-	own_set(src, "sparks", new /datum/effect/effect/system/spark_spread (src)) // ALLOW(decl): configured before parent init
-	sparks.set_up(3, 1, src)
-	sparks.attach(src)
-
 	if(!pilot_type)
 		name = "autonomous [initial(name)]"
 		desc = "[initial(desc)] It appears to be piloted by a drone intelligence."
@@ -59,7 +54,7 @@
 	..() // Do everything else first.
 
 	// Make the exploding more convincing with an actual explosion and some sparks.
-	sparks?.start()
+	fx_sparks(src, 3)
 	explosion(get_turf(src), 0, 0, 1, 3)
 
 	// 'Eject' our pilot, if one exists.
@@ -104,10 +99,10 @@
 
 /mob/living/simple_mob/mechanical/mecha/bullet_act(obj/item/projectile/P)
 	if(prob(deflect_chance))
-		visible_message(span_warning("\The [P] is deflected by \the [src]'s armor!"))
+		act_message(P, src, null, MSG_OTHERS(span_warning("%U% is deflected by %T%'s armor!")))
 		deflect_sprite()
 		return 0
-	sparks.start()
+	fx_sparks(src, 3)
 	return ..()
 
 /mob/living/simple_mob/mechanical/mecha/proc/deflect_sprite()
@@ -121,7 +116,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/mechanical/mecha, INTERACT_ITEM(null,
 /mob/living/simple_mob/mechanical/mecha/proc/mecha_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	. = TRUE
 	if(prob(deflect_chance))
-		visible_message(span_warning("\The [user]'s [I] bounces off \the [src]'s armor!"))
+		act_message(user, src, null, MSG_OTHERS(span_warning("%U%'s %I% bounces off %T%'s armor!")), item = I)
 		deflect_sprite()
 		user.setClickCooldown(user.get_attack_speed(I))
 		return
@@ -134,4 +129,4 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/mechanical/mecha, INTERACT_ITEM(null,
 	..(severity)
 
 /datum/decl/mob_organ_names/mecha
-	hit_zones = list("central chassis", "control module", "hydraulics", "left arm", "right arm", "left leg", "right leg", "sensor suite", "radiator", "power supply", "left equipment mount", "right equipment mount")
+TYPE_TABLE(/datum/decl/mob_organ_names/mecha, mob_organ_hit_zones, list("central chassis", "control module", "hydraulics", "left arm", "right arm", "left leg", "right leg", "sensor suite", "radiator", "power supply", "left equipment mount", "right equipment mount"))

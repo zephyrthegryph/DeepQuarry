@@ -49,8 +49,8 @@
 	age = rand(1, 999)
 
 	if(container.mineral())
-		if(islist(container.mineral().xarch_ages))
-			var/list/ages = container.mineral().xarch_ages
+		var/list/ages = TYPE_TABLE_GET(container.mineral(), ore_xarch_ages)
+		if(islist(ages))
 			if(ages["thousand"])
 				age_thousand = rand(1, ages["thousand"])
 			if(ages["million"])
@@ -108,8 +108,8 @@
 	var/sampled_turf = ""
 	var/num_stored_bags = 10
 	var/obj/item/evidencebag/filled_bag
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 /obj/item/core_sampler/examine(mob/user)
 	. = ..()

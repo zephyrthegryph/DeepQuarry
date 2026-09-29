@@ -23,7 +23,7 @@
 	var/digspeed = 36 //moving the delay to an item var so R&D can make improved picks. --NEO
 	var/sand_dig = FALSE // does this thing dig sand?
 	attack_verb = list("hit", "pierced", "sliced", "attacked")
-	var/drill_sound = "pickaxe"
+	var/drill_sound = SFX_PICKAXE
 	var/drill_verb = "picking"
 	sharp = TRUE
 	injury_kind = INJURY_PIERCE
@@ -116,7 +116,7 @@ MATERIAL_MIX(/obj/item/pickaxe/plasmacutter, list(MAT_STEEL = 3000, MAT_PLASTEEL
 	w_class = ITEMSIZE_NORMAL //it is smaller than the pickaxe
 	digspeed = 18 //Can slice though normal walls, all girders, or be used in reinforced wall deconstruction/light thermite on fire
 	drill_verb = "cutting"
-	drill_sound = 'sound/items/Welder.ogg'
+	drill_sound = SFX_ITEMS_WELDER
 	sharp = TRUE
 	edge = TRUE
 	injury_kind = INJURY_BURN
@@ -264,7 +264,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/flag, \
 		return FALSE
 	upright = 0
 	icon_state = base_state
-	anchored = FALSE
+	set_anchored(FALSE)
 	src.visible_message(span_infoplain(span_bold("[user]") + " knocks down [src]."))
 	return TRUE
 
@@ -284,7 +284,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/flag, \
 	var/obj/item/stack/flag/newflag = new src.type(T)
 	newflag.amount = 1
 	newflag.upright = 1
-	newflag.anchored = TRUE
+	newflag.set_anchored(TRUE)
 	newflag.name = newflag.singular_name
 	newflag.icon_state = "[newflag.base_state]_open"
 	newflag.visible_message(span_infoplain(span_bold("[user]") + " plants [newflag] firmly in the ground."))

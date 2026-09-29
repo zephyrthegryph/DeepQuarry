@@ -147,7 +147,7 @@ DECLARE_PERIODIC(/obj/item/modular_computer, PERIODIC_SLOW)
 		else
 			to_chat(user, "You press the power button and start up \the [src]")
 		enable_computer(user)
-		playsound(src, 'sound/machines/console_power_on.ogg', 60, 1, volume_channel = VOLUME_CHANNEL_MACHINERY)
+		play_sfx(src, SFX_MACHINES_CONSOLE_POWER_ON, volume_channel = VOLUME_CHANNEL_MACHINERY)
 
 	else // Unpowered
 		if(issynth)

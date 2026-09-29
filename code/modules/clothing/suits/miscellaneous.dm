@@ -115,9 +115,7 @@
 	body_parts_covered = CHEST|LEGS|ARMS
 	flags_inv = HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER
 
-/obj/item/clothing/suit/judgerobe/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/judgerobe, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
 
 /obj/item/clothing/suit/storage/apron/overalls
 	name = "coveralls"
@@ -133,9 +131,7 @@
 	flags_inv = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER
 	body_parts_covered = CHEST|ARMS|HANDS|LEGS|FEET
 
-/obj/item/clothing/suit/syndicatefake/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/syndicatefake, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
 
 /obj/item/clothing/suit/hastur
 	name = "Hastur's Robes"
@@ -370,9 +366,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/straight_jacket, INTERACT_HAND_UNGAT
 	item_state_slots = list(slot_r_hand_str = "leather_jacket", slot_l_hand_str = "leather_jacket")
 	flags_inv = HIDEHOLSTER
 
-/obj/item/clothing/suit/leathercoat/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/leathercoat, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
 
 /obj/item/clothing/suit/leathercoat/sec
 	name = "leather coat"
@@ -388,9 +382,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/straight_jacket, INTERACT_HAND_UNGAT
 	item_state_slots = list(slot_r_hand_str = "leather_jacket", slot_l_hand_str = "leather_jacket")
 	flags_inv = HIDEHOLSTER
 
-/obj/item/clothing/suit/neocoat/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/neocoat, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
 
 /obj/item/clothing/suit/customs
 	name = "customs jacket"
@@ -413,9 +405,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/straight_jacket, INTERACT_HAND_UNGAT
 	blood_overlay_type = "coat"
 	flags_inv = HIDEHOLSTER
 
-/obj/item/clothing/suit/storage/trench/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_EXPLO, POCKET_DETECTIVE)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/storage/trench, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_EXPLO, POCKET_DETECTIVE))))
 
 /obj/item/clothing/suit/storage/trench/grey
 	name = "grey trenchcoat"
@@ -438,9 +428,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/straight_jacket, INTERACT_HAND_UNGAT
 	blood_overlay_type = "coat"
 	flags_inv = HIDEHOLSTER
 
-/obj/item/clothing/suit/storage/duster/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_EXPLO)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/storage/duster, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_EXPLO))))
 
 /obj/item/clothing/suit/storage/duster/sleeveless
 	name = "sleeveless duster"
@@ -607,9 +595,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/straight_jacket, INTERACT_HAND_UNGAT
 	min_cold_protection_temperature = T0C - 20
 	siemens_coefficient = 0.7
 
-/obj/item/clothing/suit/storage/toggle/bomber/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/bomber, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
 
 /obj/item/clothing/suit/storage/toggle/bomber/retro
 	name = "retro bomber jacket"
@@ -634,9 +620,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/straight_jacket, INTERACT_HAND_UNGAT
 	body_parts_covered = UPPER_TORSO|ARMS
 	flags_inv = HIDEHOLSTER
 
-/obj/item/clothing/suit/storage/toggle/leather_jacket/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/leather_jacket, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
 
 /obj/item/clothing/suit/storage/toggle/leather_jacket/sleeveless
 	name = "leather vest"
@@ -673,9 +657,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/straight_jacket, INTERACT_HAND_UNGAT
 	body_parts_covered = UPPER_TORSO|ARMS
 	flags_inv = HIDEHOLSTER
 
-/obj/item/clothing/suit/storage/toggle/brown_jacket/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/brown_jacket, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
 
 /obj/item/clothing/suit/storage/toggle/brown_jacket/sleeveless
 	name = "brown vest"
@@ -704,9 +686,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/straight_jacket, INTERACT_HAND_UNGAT
 	body_parts_covered = UPPER_TORSO|ARMS
 	flags_inv = HIDEHOLSTER
 
-/obj/item/clothing/suit/storage/toggle/denim_jacket/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/denim_jacket, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
 
 /obj/item/clothing/suit/storage/toggle/denim_jacket/sleeveless
 	name = "denim vest"
@@ -817,9 +797,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/straight_jacket, INTERACT_HAND_UNGAT
 	item_state_slots = list(slot_r_hand_str = "suit_black", slot_l_hand_str = "suit_black")
 	flags_inv = HIDETIE|HIDEHOLSTER
 
-/obj/item/clothing/suit/varsity/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/varsity, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
 
 /obj/item/clothing/suit/varsity/red
 	name = "red varsity jacket"
@@ -852,9 +830,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/straight_jacket, INTERACT_HAND_UNGAT
  * Department Jackets
  */
 
-/obj/item/clothing/suit/runner/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/runner, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
 /obj/item/clothing/suit/storage/toggle/sec_dep_jacket
 	name = "department jacket, security"
 	desc = "A cozy jacket in security's colors. Show your department pride!"
@@ -912,9 +888,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/straight_jacket, INTERACT_HAND_UNGAT
 	icon_state = "trackjacket"
 	item_state_slots = list(slot_r_hand_str = "black_labcoat", slot_l_hand_str = "black_labcoat")
 
-/obj/item/clothing/suit/storage/toggle/track/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/track, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
 
 /obj/item/clothing/suit/storage/toggle/track/blue
 	name = "blue track jacket"
@@ -949,9 +923,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/straight_jacket, INTERACT_HAND_UNGAT
 	var/tucked = 0
 	var/buttoned = 0
 
-/obj/item/clothing/suit/storage/flannel/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/storage/flannel, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
 
 EXTEND_INTERACTIONS(/obj/item/clothing/suit/storage/flannel, \
 	INTERACT_VERB("Roll Sleeves", PROC_REF(flannel_roll_sleeves_verb), REQ_IN_INVENTORY), \
@@ -1057,16 +1029,14 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/storage/flannel, \
 	min_cold_protection_temperature = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE
 	armor_spec = "bio=10"
 
-/obj/item/clothing/suit/storage/snowsuit/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/storage/snowsuit, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
 
 /obj/item/clothing/suit/caution
 	name = "wet floor sign"
 	desc = "Caution! Wet Floor!"
 	description_fluff = "Used by the janitor to passive-aggressively point at when you eventually slip on one of their mopped floors."
 	icon_state = "caution"
-	drop_sound = 'sound/items/drop/shoes.ogg'
+	drop_sound = SFX_ITEMS_DROP_SHOES
 	force = 1
 	throwforce = 3
 	throw_speed = 2
@@ -1098,7 +1068,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/caution, \
 		icon_state = "caution_blinking"
 		item_state = "caution_blinking"
 		user.show_message("You turn the wet floor sign on.")
-		playsound(src.loc, 'sound/machines/button.ogg', 30, 1)
+		play_sfx(src.loc, SFX_MACHINES_BUTTON)
 	else
 		icon_state = "caution"
 		item_state = "caution"
@@ -1149,9 +1119,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/caution, \
 	icon_state = "motojacket"
 	body_parts_covered = UPPER_TORSO|ARMS
 
-/obj/item/clothing/suit/storage/toggle/moto_jacket/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/moto_jacket, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
 
 /obj/item/clothing/suit/storage/punkvest
 	name = "punk vest"
@@ -1173,9 +1141,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/caution, \
 	min_cold_protection_temperature = T0C - 20
 	siemens_coefficient = 0.7
 
-/obj/item/clothing/suit/storage/talonbomberjacket/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/storage/talonbomberjacket, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS))))
 
 /obj/item/clothing/suit/storage/talonbomberjacket/captain
 	name = "Talon captain's coat"
@@ -1221,8 +1187,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/caution, \
 	body_parts_covered = UPPER_TORSO|ARMS
 	pixel_x = -16
 
-/obj/item/clothing/suit/drake_cloak/equip_constraint()
-	return dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/suit/drake_cloak/proc/taur_fit, "you need a drake-taur half to wear this")))
+TYPE_TABLE(/obj/item/clothing/suit/drake_cloak, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/suit/drake_cloak/proc/taur_fit, "you need a drake-taur half to wear this"))))
 
 /obj/item/clothing/suit/drake_cloak/proc/taur_fit(mob/living/carbon/human/H)
 	return istype(H) && istype(H.tail_style, /datum/sprite_accessory/tail/taur/drake)
@@ -1238,8 +1203,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/caution, \
 	pixel_x = -16
 	armor_spec = "melee=5;bullet=5;laser=5;energy=5;bomb=5" //Minor armor for fluff.
 
-/obj/item/clothing/suit/barding/equip_constraint()
-	return dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/suit/barding/proc/taur_fit, "you need a horse-taur half to wear this")))
+TYPE_TABLE(/obj/item/clothing/suit/barding, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/suit/barding/proc/taur_fit, "you need a horse-taur half to wear this"))))
 
 /obj/item/clothing/suit/barding/proc/taur_fit(mob/living/carbon/human/H)
 	return istype(H) && istype(H.tail_style, /datum/sprite_accessory/tail/taur/horse)
@@ -1327,7 +1291,5 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/caution, \
 	desc = "A formal jacket worn by the bridge and command crew from the Altevian Hegemony. The material is of high quality silk, and provides maximum comfort and breathing room."
 	icon_state = "altevian-admiral"
 
-/obj/item/clothing/suit/captunic/capjacket/altevian_admiral/fit_constraint()
-	var/list/bodytypes = list(SPECIES_ALTEVIAN)
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/suit/captunic/capjacket/altevian_admiral, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_ALTEVIAN))))
 

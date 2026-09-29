@@ -5,8 +5,8 @@
 	icon = 'icons/obj/tools.dmi'
 	icon_state = "rcd"
 	item_state = "rcd"
-	drop_sound = 'sound/items/drop/gun.ogg'
-	pickup_sound = 'sound/items/pickup/gun.ogg'
+	drop_sound = SFX_ITEMS_DROP_GUN
+	pickup_sound = SFX_ITEMS_PICKUP_GUN
 	flags = NOBLUDGEON
 	force = 10
 	throwforce = 10
@@ -15,25 +15,18 @@
 	w_class = ITEMSIZE_NORMAL
 	MATERIAL_BULK(DEFAULT_WALL_MATERIAL, 50000)
 	preserve_item = TRUE // RCDs are pretty important.
-	var/datum/effect/effect/system/spark_spread/spark_system
 	var/stored_matter = 0
 	var/max_stored_matter = RCD_MAX_CAPACITY
 	var/ranged = FALSE
 	var/allow_concurrent_building = FALSE // If true, allows for multiple RCD builds at the same time.
 	var/mode_index = 1
-	var/list/modes = list(RCD_FLOORWALL, RCD_AIRLOCK, RCD_WINDOWGRILLE, RCD_DECONSTRUCT) // ALLOW(instance_list): c: read-only per-subtype constant table (1 subtype overrides); a getter would share it, not worth it on a rare type
 	var/can_remove_rwalls = FALSE
 	var/airlock_type = /obj/machinery/door/airlock
 	var/window_type = /obj/structure/window/reinforced/full
 	var/material_to_use = DEFAULT_WALL_MATERIAL // So badmins can make RCDs that print diamond walls.
 	var/make_rwalls = FALSE // If true, when building walls, they will be reinforced.
-/* Unused
-/obj/item/rcd/Initialize(mapload)
-	. = ..()
-	spark_system.set_up(5, 0, src)
-	spark_system.attach(src)
-*/
-DECLARE_DEFAULT_CHILD(/obj/item/rcd, "spark_system", /datum/effect/effect/system/spark_spread)
+
+TYPE_TABLE_DECLARE(/obj/item/rcd, rcd_modes, list(RCD_FLOORWALL, RCD_AIRLOCK, RCD_WINDOWGRILLE, RCD_DECONSTRUCT, RCD_WINDOOR, RCD_FIRELOCK, RCD_FRAME, RCD_WALLFRAME, RCD_CONVEYOR, RCD_TURRET))
 
 /obj/item/rcd/examine(mob/user)
 	. = ..()
@@ -72,7 +65,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/rcd, "spark_system", /datum/effect/effect/system
 		to_chat(user, span_warning("\The [src] is busy finishing its current operation, be patient."))
 		return FALSE
 
-	var/list/rcd_results = A.rcd_values(user, src, modes[mode_index])
+	var/list/rcd_results = A.rcd_values(user, src, TYPE_TABLE_GET(src, rcd_modes)[mode_index])
 	// start
 	if(rcd_results == 1)
 		return FALSE
@@ -85,7 +78,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/rcd, "spark_system", /datum/effect/effect/system
 		to_chat(user, span_warning("\The [src] lacks the required material to start."))
 		return FALSE
 
-	playsound(src, 'sound/machines/click.ogg', 50, 1)
+	play_sfx(src, SFX_MACHINES_CLICK)
 
 	var/output_envelope = power_output_envelope(rcd_results[RCD_VALUE_COST])
 	var/true_delay = rcd_results[RCD_VALUE_DELAY] * toolspeed / output_envelope
@@ -139,7 +132,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/rcd, "spark_system", /datum/effect/effect/system
 	if(A.rcd_act(user, src, rcd_results[RCD_VALUE_MODE]))
 		consume_resources(rcd_results[RCD_VALUE_COST] * output_envelope)
 		record_enhanced_output(rcd_results[RCD_VALUE_COST], output_envelope)
-		playsound(A, 'sound/items/Deconstruct.ogg', 50, 1)
+		play_sfx(A, SFX_ITEMS_DECONSTRUCT)
 		cleanup_effect(A)
 		return TRUE
 
@@ -365,7 +358,7 @@ MATERIAL_MIX(/obj/item/rcd_ammo/large, list(DEFAULT_WALL_MATERIAL = 45000,MAT_GL
 	add_overlay("[initial(icon_state)]_charge[nearest_ten]")
 
 /obj/item/rcd/proc/perform_effect(atom/A, time_taken)
-	own_put(src, "effects", A, new /obj/effect/constructing_effect(get_turf(A), time_taken, modes[mode_index]))
+	own_put(src, "effects", A, new /obj/effect/constructing_effect(get_turf(A), time_taken, TYPE_TABLE_GET(src, rcd_modes)[mode_index]))
 
 /obj/item/rcd/proc/cleanup_effect(atom/A)
 	if(A in effects)
@@ -449,3 +442,8 @@ MATERIAL_MIX(/obj/item/rcd_ammo/large, list(DEFAULT_WALL_MATERIAL = 45000,MAT_GL
 /obj/effect/constructing_effect/proc/end()
 	qdel(src)
 // end
+
+/// The index of `mode` in this RCD's modes, or 0 when it has no such mode.
+/obj/item/rcd/proc/rcd_mode_index(mode)
+	var/list/modes = TYPE_TABLE_GET(src, rcd_modes)
+	return modes.Find(mode)

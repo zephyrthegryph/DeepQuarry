@@ -49,9 +49,11 @@
 	var/duration = 0
 	/// Proc on the target, called as effect(actor, held, interaction). Returns TRUE when it did something.
 	var/effect
-	/// Feedback. Tokens: %ACTOR%, %TARGET%. Null means no message. messages() may vary them by state.
-	var/message_self
-	var/message_others
+	/// Feedback: a /datum/msg template (doc/rewrite/systems.md section 15), shown when the effect ran.
+	/// Tokens %U% (actor), %T% (target), %I% (held item). Null means no message. feedback_for() may vary it by state.
+	var/feedback
+	/// A /datum/msg template shown when a timed interaction starts, or null. start_feedback_for() may vary it.
+	var/start_feedback
 	/// INTERACTION_TAG_* for filtering.
 	var/list/tags
 	/// INTERACTION_ENTRY_*: the legacy input proc that dispatches it (I7), or null for resolver-native ones.
@@ -161,20 +163,13 @@
 /datum/interaction/proc/base_duration(mob/actor, atom/target)
 	return duration
 
-/// Messages as list(self, others), worked out before the effect changes the target's state.
-/datum/interaction/proc/messages(mob/actor, atom/target, obj/item/held)
-	return list(message_self, message_others)
+/// The feedback template (a /datum/msg type), picked before the effect changes the target's state.
+/datum/interaction/proc/feedback_for(mob/actor, atom/target, obj/item/held)
+	return feedback
 
-/// Messages shown when a timed interaction starts, as list(self, others), or null.
-/datum/interaction/proc/start_messages(mob/actor, atom/target, obj/item/held)
-	return null
-
-/// Replaces %ACTOR% and %TARGET% in a message template.
-/datum/interaction/proc/fill_message(template, mob/actor, atom/target)
-	if(!template)
-		return null
-	var/text = replacetext(template, "%ACTOR%", "\The [actor]")
-	return replacetext(text, "%TARGET%", "\the [target]")
+/// The template shown when a timed interaction starts, or null.
+/datum/interaction/proc/start_feedback_for(mob/actor, atom/target, obj/item/held)
+	return start_feedback
 
 /**
  * Pays the cost through the tool pipeline (use_tool(), tools.dm): quality and
@@ -246,19 +241,14 @@
 	if(reason)
 		tell_blocked(actor, target, reason)
 		return INTERACTION_TRY_BLOCKED
-	var/list/feedback = messages(actor, target, held)
+	var/msg_type = feedback_for(actor, target, held)
 	var/shown_name = display_name(actor, target)
 	if(!run_effect(actor, target, held))
 		return null
 	if(!QDELETED(target))
 		target.interaction_ran(actor, src)
 	log_input("Interaction: [key_name(actor)] did [id] ([shown_name]) on [target] ([target.type]).")
-	var/self_text = fill_message(feedback[1], actor, target)
-	var/others_text = fill_message(feedback[2], actor, target)
-	if(others_text)
-		actor.visible_message(span_notice(others_text), span_notice(self_text))
-	else if(self_text)
-		to_chat(actor, span_notice(self_text))
+	act_message_t(actor, target, msg_type, held)
 	return INTERACTION_TRY_RAN
 
 /**

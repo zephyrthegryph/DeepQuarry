@@ -71,17 +71,17 @@
 				break
 	return pow_chan
 
-/obj/item/mecha_parts/mecha_equipment/tesla_energy_relay/Topic(href, href_list)
-	..()
-	if(href_list["toggle_relay"])
-		if(datum_flags & DF_ISPROCESSING)
-			om_task_periodic_stop(src)
-			set_ready_state(TRUE)
-			src.mecha_log_message("Deactivated.")
-		else
-			om_task_periodic(src, PERIODIC_FAST)
-			set_ready_state(FALSE)
-			src.mecha_log_message("Activated.")
+TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tesla_energy_relay, "toggle_relay", PROC_REF(topic_toggle_relay))
+
+/obj/item/mecha_parts/mecha_equipment/tesla_energy_relay/proc/topic_toggle_relay(mob/user, list/args)
+	if(datum_flags & DF_ISPROCESSING)
+		om_task_periodic_stop(src)
+		set_ready_state(TRUE)
+		src.mecha_log_message("Deactivated.")
+	else
+		om_task_periodic(src, PERIODIC_FAST)
+		set_ready_state(FALSE)
+		src.mecha_log_message("Activated.")
 	return
 
 /obj/item/mecha_parts/mecha_equipment/tesla_energy_relay/get_equip_info()

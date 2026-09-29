@@ -62,7 +62,7 @@
 
 	var/list/datum/data_pda_msg/pda_msgs
 	var/list/datum/data_rc_msg/rc_msgs
-	var/active = 1
+	active = 1
 	var/decryptkey = "password"
 
 	//Spam filtering stuff
@@ -107,8 +107,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/message_server, REGISTRY_MESSAGE_SERVERS)
 	return newKey
 
 /obj/machinery/message_server/machine_step()
-	if(active && (stat & (BROKEN|NOPOWER)))
-		active = 0
+	if(active && (!operable()))
+		set_active(0)
 		soundloop.stop()
 		noisy = FALSE
 		return
@@ -136,7 +136,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/message_server, REGISTRY_MESSAGE_SERVERS)
 		authmsg += "([stamp])\n"
 	for (var/obj/machinery/requests_console/Console in REGISTRY_MEMBERS(REGISTRY_ALARM_CONSOLES))
 		if (ckey(Console.department) == ckey(recipient))
-			if(Console.inoperable())
+			if(!Console.operable())
 				LAZYADD(Console.message_log, list(list("Message lost due to console failure.","Please contact [station_name()] system adminsitrator or AI for technical assistance.")))
 				continue
 			if(Console.newmessagepriority < priority)
@@ -145,12 +145,12 @@ REGISTRY_MEMBERSHIP(/obj/machinery/message_server, REGISTRY_MESSAGE_SERVERS)
 			switch(priority)
 				if(2)
 					if(!Console.silent)
-						playsound(Console, 'sound/machines/twobeep.ogg', 50, 1)
+						play_sfx(Console, SFX_MACHINES_TWOBEEP)
 						Console.audible_message(text("[icon2html(Console,hearers(Console))] *The Requests Console beeps: 'PRIORITY Alert in [sender]'"),,5, runemessage = "beep! beep!")
 					LAZYADD(Console.message_log, list(list("High Priority message from [sender]", "[authmsg]")))
 				else
 					if(!Console.silent)
-						playsound(Console, 'sound/machines/twobeep.ogg', 50, 1)
+						play_sfx(Console, SFX_MACHINES_TWOBEEP)
 						Console.audible_message(text("[icon2html(Console,hearers(Console))] *The Requests Console beeps: 'Message from [sender]'"),,4, runemessage = "beep beep")
 					LAZYADD(Console.message_log, list(list("Message from [sender]", "[authmsg]")))
 			Console.set_light(2)
@@ -171,7 +171,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/message_server, REGISTRY_MESSAGE_SERVERS)
 
 /obj/machinery/message_server/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	to_chat(user, span_filter_notice("You toggle PDA message passing from [active ? "On" : "Off"] to [active ? "Off" : "On"]."))
-	active = !active
+	set_active(!active)
 	update_icon()
 	MACHINE_WAKE(src)
 	return TRUE
@@ -187,7 +187,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/message_server, REGISTRY_MESSAGE_SERVERS)
 
 /// No side effects: whether this server can currently take the upgrade board.
 /obj/machinery/message_server/proc/can_upgrade(mob/actor, atom/target, obj/item/held)
-	return active && !(stat & (BROKEN|NOPOWER)) && (spamfilter_limit < MESSAGE_SERVER_DEFAULT_SPAM_LIMIT*2)
+	return active && operable() && (spamfilter_limit < MESSAGE_SERVER_DEFAULT_SPAM_LIMIT*2)
 
 /obj/machinery/message_server/proc/interaction_upgrade(mob/user, obj/item/O, datum/interaction/interaction)
 	spamfilter_limit += round(MESSAGE_SERVER_DEFAULT_SPAM_LIMIT / 2)
@@ -197,7 +197,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/message_server, REGISTRY_MESSAGE_SERVERS)
 	return TRUE
 
 /obj/machinery/message_server/update_icon()
-	if((stat & (BROKEN|NOPOWER)))
+	if((!operable()))
 		icon_state = "server-nopower"
 	else if (!active)
 		icon_state = "server-off"

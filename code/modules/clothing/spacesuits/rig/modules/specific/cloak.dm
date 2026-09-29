@@ -50,4 +50,4 @@
 	H.alpha = initial(H.alpha)
 
 	H.visible_message("[H.name] appears from thin air!")
-	playsound(H, 'sound/effects/stealthoff.ogg', 75, 1)
+	play_sfx(H, SFX_EFFECTS_STEALTHOFF, 1.5, extrarange = 0)

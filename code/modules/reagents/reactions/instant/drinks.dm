@@ -1645,7 +1645,7 @@
 	result = REAGENT_ID_NARSOUR
 	required_reagents = list(REAGENT_ID_BLOOD = 1, REAGENT_ID_LEMONJUICE = 1, REAGENT_ID_DEMONSBLOOD = 1)
 	mix_message = "The mixture develops a sinister glow."
-	reaction_sound = 'sound/effects/singlebeat.ogg'
+	reaction_sound = SFX_EFFECTS_SINGLEBEAT
 	result_amount = 3
 
 /datum/decl/chemical_reaction/instant/drinks/cogchamp
@@ -1654,7 +1654,7 @@
 	result = REAGENT_ID_COGCHAMP
 	required_reagents = list(REAGENT_ID_COGNAC = 1, REAGENT_ID_FUEL = 1, REAGENT_ID_SCREWDRIVERCOCKTAIL = 1)
 	mix_message = "You hear faint sounds of gears turning as the mixture gives off virulent plumes of steam."
-	reaction_sound = 'sound/machines/clockcult/steam_whoosh.ogg'
+	reaction_sound = SFX_MACHINES_CLOCKCULT_STEAM_WHOOSH
 	result_amount = 3
 
 //thirteen loko possible to make now, so easier to make arachnid slammer - Jack

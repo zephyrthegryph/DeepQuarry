@@ -41,7 +41,7 @@
 	return ..()
 
 /datum/shuttle/autodock/ferry/escape_pod/can_force()
-	if (arming_controller().eject_time && world.time < arming_controller().eject_time + 50)
+	if (arming_controller().eject_time && ELAPSED(arming_controller(), eject_time, CLOCK_WORLD) < 5 SECONDS)
 		return 0	//dont allow force launching until 5 seconds after the arming controller has reached it's countdown
 	return ..()
 
@@ -108,7 +108,7 @@
 /obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod_berth/emag_act(remaining_charges, mob/user)
 	if (!emagged)
 		to_chat(user, span_notice("You emag the [src], arming the escape pod!"))
-		emagged = 1
+		set_emagged(1)
 		if (istype(program, /datum/embedded_program/docking/simple/escape_pod_berth))
 			var/datum/embedded_program/docking/simple/escape_pod_berth/P = program
 			if (!P.armed)
@@ -119,7 +119,7 @@
 /datum/embedded_program/docking/simple/escape_pod_berth
 	var/armed = 0
 	var/eject_delay = 10	//give latecomers some time to get out of the way if they don't make it onto the pod
-	TIMESTAMP_VAR(eject_time)
+	EXPIRY_DECLARE(eject_time)
 	var/closing = 0
 
 /datum/embedded_program/docking/simple/escape_pod_berth/proc/arm()
@@ -132,9 +132,9 @@
 		return TRUE // Eat all commands.
 	return ..(command)
 
-/datum/embedded_program/docking/simple/escape_pod_berth/periodic_step()
-	..()
-	if (eject_time && world.time >= eject_time && !closing)
+/// om_after() callback from prepare_for_undocking(): the latecomers' grace is over.
+/datum/embedded_program/docking/simple/escape_pod_berth/proc/eject_timer_fired()
+	if(!closing)
 		close_door()
 		closing = 1
 
@@ -148,7 +148,8 @@
 	return		//don't do anything - the doors only open when the pod is armed.
 
 /datum/embedded_program/docking/simple/escape_pod_berth/prepare_for_undocking()
-	eject_time = world.time + eject_delay*10
+	EXPIRY_SET(src, eject_time, eject_delay*10, CLOCK_WORLD)
+	om_after(src, eject_delay*10, PROC_REF(eject_timer_fired))
 
 /// Accessor for the arming_controller var.
 /datum/shuttle/autodock/ferry/escape_pod/proc/arming_controller() as /datum/embedded_program/docking/simple/escape_pod_berth

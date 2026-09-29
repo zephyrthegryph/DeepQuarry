@@ -116,7 +116,7 @@
 	var/list/poll_ids
 	var/list/poll_meta
 	var/selected_pollid
-	var/list/cached_detail
+	var/list/selected_detail
 
 /datum/poll_browser_dialog/New(mob/new_player/owner)
 	rel_set(src, "owner", owner)
@@ -170,7 +170,7 @@
 	for(var/id_str in poll_ids)
 		var/list/meta = poll_meta[id_str]
 		data["polls"] += list(list("id" = meta["id"], "question" = meta["question"]))
-	data["selected"] = (selected_pollid && cached_detail) ? cached_detail : null
+	data["selected"] = (selected_pollid && selected_detail) ? selected_detail : null
 	return data
 
 /// Loads the selected poll's detail as a prompt flow (flow_io.dm): build_poll_detail()'s reads
@@ -180,7 +180,7 @@
 		return prompt_flow(src, PROC_REF(load_poll_detail), args)
 	if(selected_pollid != pollid)
 		return
-	cached_detail = build_poll_detail(pollid)
+	selected_detail = build_poll_detail(pollid)
 	SStgui.update_uis(src)
 
 /// Runs inside load_poll_detail()'s flow.
@@ -351,13 +351,13 @@
 			if(!isnum(id))
 				return
 			selected_pollid = id
-			cached_detail = null
+			selected_detail = null
 			load_poll_detail(id)
 			return TRUE
 
 		if("back")
 			selected_pollid = null
-			cached_detail = null
+			selected_detail = null
 			return TRUE
 
 		if("vote_option")

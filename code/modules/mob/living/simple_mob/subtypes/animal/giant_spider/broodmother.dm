@@ -23,7 +23,7 @@
 	meat_amount = 20
 
 	projectiletype = /obj/item/projectile/energy/spidertoxin
-	projectilesound = 'sound/weapons/pierce.ogg'
+	projectilesound = SFX_WEAPONS_PIERCE
 
 	var/static/list/possible_brood_types = list(
 		/mob/living/simple_mob/animal/giant_spider/frost/broodling,
@@ -95,7 +95,7 @@
 		step_away(broodling, src)
 		count++
 
-	visible_message(span_danger("\The [src] releases brood from its birthing sack!"))
+	act_message(src, null, null, MSG_OTHERS(span_danger("%U% releases brood from its birthing sack!")))
 
 /mob/living/simple_mob/animal/giant_spider/broodmother/proc/launch_brood(atom/A)
 
@@ -108,7 +108,7 @@
 		broodling.throw_at(A, 10)
 		count++
 
-	visible_message(span_danger("\The [src] launches brood from the distance!"))
+	act_message(src, null, null, MSG_OTHERS(span_danger("%U% launches brood from the distance!")))
 
 /mob/living/simple_mob/animal/giant_spider/broodmother/proc/can_spawn_brood()
 	var/brood_amount = 0

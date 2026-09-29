@@ -1,4 +1,6 @@
 
+OWN_TIMER(/datum/pipeline, engineered_exposure_timer)
+
 /datum/pipeline
 	/// PROTO gas port: the pipe network's authoritative mixture (shared, the network owns it),
 	/// or a private detached share this line owns. Written only by atmos_air_set().
@@ -20,7 +22,6 @@
 	/// Every network whose line_members lists this line (two-sided).
 	var/list/datum/pipe_network/network_memberships
 	var/alert_pressure = 0
-	var/engineered_exposure_timer
 
 /datum/pipeline/proc/add_edge(obj/machinery/atmospherics/pipe/edge)
 	if(!edge || QDELETED(edge))
@@ -63,11 +64,10 @@
 			needs_followup = TRUE
 		if(!member.check_pressure(pressure))
 			break
-	if(needs_followup && !engineered_exposure_timer)
-		engineered_exposure_timer = om_after(src, 5 SECONDS, PROC_REF(wake_engineered_exposure))
+	if(needs_followup && !om_timer_slot_pending(src, "engineered_exposure_timer"))
+		om_after_slot(src, "engineered_exposure_timer", 5 SECONDS, PROC_REF(wake_engineered_exposure))
 
 /datum/pipeline/proc/wake_engineered_exposure()
-	engineered_exposure_timer = null
 	network?.mark_dirty()
 
 /datum/pipeline/proc/temporarily_store_air()

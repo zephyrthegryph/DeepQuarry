@@ -16,9 +16,7 @@
 	storage_slots = 50
 	max_storage_space = ITEMSIZE_COST_NORMAL * 50
 
-/obj/item/storage/bag/fossils/hold_constraint()
-	var/list/holds = list(/obj/item/fossil)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/bag/fossils, hold_spec, list(HOLD_ONLY(list(/obj/item/fossil)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 
 /obj/item/storage/box/samplebags
 	name = "sample bag box"
@@ -41,9 +39,9 @@ MATERIAL_MIX(/obj/item/ano_scanner, list(MAT_STEEL = 10000,MAT_GLASS = 5000))
 	w_class = ITEMSIZE_SMALL
 	slot_flags = SLOT_BELT
 
-	var/last_scan_time = 0
+	EXPIRY_DECLARE(last_scan_time)
 	var/scan_delay = 25
-	var/last_repopulation_time = 0
+	EXPIRY_DECLARE(last_repopulation_time)
 	var/repopulation_delay = 600 //Anti spam.
 
 DECLARE_INTERACTIONS(/obj/item/ano_scanner, INTERACT_USE(null, PROC_REF(interaction_self)))
@@ -54,8 +52,8 @@ DECLARE_INTERACTIONS(/obj/item/ano_scanner, INTERACT_USE(null, PROC_REF(interact
 	return TRUE
 
 /obj/item/ano_scanner/interact(mob/user)
-	if(world.time - last_scan_time >= scan_delay)
-		last_scan_time = world.time
+	if(ELAPSED(src, last_scan_time, CLOCK_WORLD) >= scan_delay)
+		EXPIRY_STAMP(src, last_scan_time, CLOCK_WORLD)
 
 		var/nearestTargetDist = -1
 		var/nearestTargetId
@@ -83,9 +81,9 @@ DECLARE_INTERACTIONS(/obj/item/ano_scanner, INTERACT_USE(null, PROC_REF(interact
 				else
 					rel_remove(GLOB.xenoarch_service, "digsite_spawning_turfs", T)
 
-		if(GLOB.xenoarch_service && ((nearestTargetDist == -1) || (nearestSimpleTargetDist == -1)) && user.z && (world.time - last_repopulation_time >= repopulation_delay))
+		if(GLOB.xenoarch_service && ((nearestTargetDist == -1) || (nearestSimpleTargetDist == -1)) && user.z && (ELAPSED(src, last_repopulation_time, CLOCK_WORLD) >= repopulation_delay))
 			if(!(user.z in using_map.xenoarch_exempt_levels)) //We found no artifacts and our Z level is not spawn exempt. Time for random generation.
-				last_repopulation_time = world.time
+				EXPIRY_STAMP(src, last_repopulation_time, CLOCK_WORLD)
 				to_chat(user, "The [src] beeps and buzzes, a warning popping up on screen stating 'No artifacts detected on current wavelength. Swapping to different wavelength. Please try scanning momentarily.'")
 				GLOB.xenoarch_service.continual_generation(user)
 

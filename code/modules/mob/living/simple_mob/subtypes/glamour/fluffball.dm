@@ -115,13 +115,13 @@
 	value = CATALOGUER_REWARD_HARD
 
 /mob/living/simple_mob/vore/fluffball/PounceTarget(mob/living/M, successrate = 100)
-	vore_pounce_cooldown = world.time + 20 SECONDS // don't attempt another pounce for a while
+	EXPIRY_SET(src, vore_pounce_cooldown, 20 SECONDS, CLOCK_WORLD) // don't attempt another pounce for a while
 	if(prob(successrate)) // pounce success!
 		M.status_at_least(EFFECT_WEAKENED, 5)
-		M.visible_message("<span class='danger'>\The [src] pounces on \the [M]!</span>!")
+		act_message(src, M, null, MSG_OTHERS("<span class='danger'>%U% pounces on %T%!</span>!"))
 	else // pounce misses!
-		M.visible_message("<span class='danger'>\The [src] attempts to pounce \the [M] but misses!</span>!")
-		playsound(src, 'sound/weapons/punchmiss.ogg', 25, 1, -1)
+		act_message(src, M, null, MSG_OTHERS("<span class='danger'>%U% attempts to pounce %T% but misses!</span>!"))
+		play_sfx(src, SFX_WEAPONS_PUNCHMISS)
 
 	if(will_eat(M) && (!M.canmove || vore_standing_too)) //if they're edible then eat them too
 		return EatTarget(M)
@@ -136,7 +136,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/fluffball, INTERACT_ITEM(null, P
 	hit_with_item(W, user)
 	if(istype(W,/obj/item/reagent_containers/food))
 		consume(W, user)
-		visible_message("<span class='notice'>\The [src] quickly steals \the [W] into its fluff, it seems to have become a little less shy!</span>!")
+		act_message(src, null, null, MSG_OTHERS("<span class='notice'>%U% quickly steals %I% into its fluff, it seems to have become a little less shy!</span>!"), item = W)
 		//friend_list lived on the deleted ai_holder; modern brain
 		// stores friendliness as personal entries via add_personal but the
 		// DQ_DISPOSITION_* defines live in code/modules/combat_ai/_defines.dm

@@ -42,7 +42,7 @@
 /obj/item/holder/examine(mob/user)
 	SHOULD_CALL_PARENT(FALSE)
 	. = list()
-	for(var/mob/living/M in contents)
+	FOR_REAL_CONTENTS(var/mob/living/M, src)
 		. += M.examine(user)
 
 /obj/item/holder/MouseDrop(mob/M)

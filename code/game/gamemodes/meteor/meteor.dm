@@ -8,12 +8,19 @@
 	required_players = 0
 	votable = 0
 	deny_respawn = 0
-	var/next_wave_at = METEOR_DELAY
 
+/datum/game_mode/meteor/post_setup()
+	. = ..()
+	om_after(src, max(METEOR_DELAY - world.time, 0), PROC_REF(meteor_wave))
+
+/// The mode's periodic work is the waves alone (no latespawn), on their own timer.
 /datum/game_mode/meteor/periodic_step()
-	if(world.time >= next_wave_at)
-		next_wave_at = world.time + GLOB.meteor_wave_delay
-		spawn_meteors(6, GLOB.meteors_normal)
+	return
+
+/// om_after() callback: one wave of meteors, then the next one is scheduled.
+/datum/game_mode/meteor/proc/meteor_wave()
+	om_after(src, GLOB.meteor_wave_delay, PROC_REF(meteor_wave))
+	spawn_meteors(6, GLOB.meteors_normal)
 
 /datum/game_mode/meteor/declare_completion()
 	var/text

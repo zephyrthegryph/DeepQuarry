@@ -183,7 +183,7 @@
 	tail_flash_now(isatom(A) ? A : null)
 
 /mob/living/simple_mob/animal/sif/kururak/proc/tail_flash_now(atom/A)
-	visible_message(span_alien("\The [src] flares its tails!"))
+	act_message(src, null, null, MSG_OTHERS(span_alien("%U% flares its tails!")))
 	if(isliving(A))
 		var/mob/living/L = A
 		if(iscarbon(L))
@@ -278,7 +278,7 @@
 
 	var/damage_to_apply = rand(melee_damage_lower, melee_damage_upper) + 10
 	if(isliving(A))
-		visible_message(span_danger("\The [src] rakes its claws across [A]."))
+		act_message(src, A, null, MSG_OTHERS(span_danger("%U% rakes its claws across %T%.")))
 		var/mob/living/L = A
 		if(ishuman(L))
 			var/mob/living/carbon/human/H = L
@@ -290,18 +290,18 @@
 		L.apply_body_effect(/datum/body_effect/grievous_wounds, 60 SECONDS)
 
 	else if(istype(A, /obj/mecha))
-		visible_message(span_danger("\The [src] rakes its claws against \the [A]."))
+		act_message(src, A, null, MSG_OTHERS(span_danger("%U% rakes its claws against %T%.")))
 		var/obj/mecha/M = A
 		M.take_damage(damage_to_apply)
 		if(prob(3))
-			visible_message(span_critical("\The [src] begins digging its claws into \the [M]'s hatch!"))
+			act_message(src, M, null, MSG_OTHERS(span_critical("%U% begins digging its claws into %T%'s hatch!")))
 			om_task_timed(src, 1 SECOND, target = M, receiver = src, on_done = PROC_REF(rending_strike_kururak_done), done_args = list(M))
 
 	else
 		A.attack_generic(src, damage_to_apply, "rakes its claws against")	// Well it's not a mob, and it's not a mech.
 
 /mob/living/simple_mob/animal/sif/kururak/proc/rending_strike_kururak_done(obj/mecha/M)
-	visible_message(span_critical("\The [src] rips \the [M]'s access hatch open, dragging [M?.slot_item(MECHA_SLOT_PILOT)] out!"))
+	act_message(src, M, null, MSG_OTHERS(span_critical("%U% rips %T%'s access hatch open, dragging [M?.slot_item(MECHA_SLOT_PILOT)] out!")))
 	M.go_out()
 
 /mob/living/simple_mob/animal/sif/kururak/verb/rally_pack()	// Mostly for telling other players to follow you. AI Kururaks will auto-follow, if set to.
@@ -369,4 +369,4 @@
 	factors = alist(BF_BLEEDING = 0.7, BF_EVASION = 20, BF_ATTACK_SPEED = 0.8, BF_MELEE_DAMAGE = 1.5, BF_INCOMING_ALL = 0.7, BF_DISABLE_DURATION = 0.8, BF_HEALING_RECEIVED = 1.5, BF_ENDURANCE_FLAT = 25, BF_ENDURANCE_MULT = 1.2)
 
 /datum/decl/mob_organ_names/kururak
-	hit_zones = list("head", "chest", "left foreleg", "right foreleg", "left hind leg", "right hind leg", "far left tail", "far right tail", "left middle tail", "right middle tail")
+TYPE_TABLE(/datum/decl/mob_organ_names/kururak, mob_organ_hit_zones, list("head", "chest", "left foreleg", "right foreleg", "left hind leg", "right hind leg", "far left tail", "far right tail", "left middle tail", "right middle tail"))

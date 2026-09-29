@@ -1677,7 +1677,7 @@ REL_PAIR(/obj/structure/sign/flag, linked_flag, linked_flag)
 /obj/structure/sign/flag/proc/rip_answered(datum/om/prompt/confirm/flag_rip/ask)
 	var/mob/user = ask.answerer
 	visible_message(span_warning("\The [user] rips \the [src] in a single, decisive motion!" ))
-	playsound(src.loc, 'sound/items/poster_ripped.ogg', 100, 1)
+	play_sfx(src.loc, SFX_ITEMS_POSTER_RIPPED)
 	add_fingerprint(user)
 	rip()
 	return TRUE
@@ -1707,7 +1707,7 @@ REL_PAIR(/obj/structure/sign/flag, linked_flag, linked_flag)
 
 /obj/structure/sign/flag/proc/attackby_timed_done(mob/user)
 	visible_message(span_warning("\The [user] burns \the [src] down!"))
-	playsound(src.loc, 'sound/items/cigs_lighters/cig_light.ogg', 100, 1)
+	play_sfx(src.loc, SFX_ITEMS_CIGS_LIGHTERS_CIG_LIGHT, volume = 100, extrarange = 0)
 	new /obj/effect/decal/cleanable/ash(src.loc)
 	if(linked_flag)
 		qdel(linked_flag)

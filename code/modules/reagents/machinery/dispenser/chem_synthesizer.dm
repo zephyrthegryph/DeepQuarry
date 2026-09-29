@@ -131,10 +131,10 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/chemical_synthesizer, "catalyst", /obj/item
 
 /obj/machinery/chemical_synthesizer/update_icon()
 	underlays.Cut()
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		icon_state = "synth_broken"
 		return
-	if(stat & NOPOWER)
+	if(has_stat(NOPOWER))
 		icon_state = "synth_off"
 		return
 	if(!busy)
@@ -228,7 +228,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/chemical_synthesizer, "catalyst", /obj/item
 	if(catalyst)
 		to_chat(user, span_warning("There is already \a [catalyst] in \the [src] catalyst slot!"))
 		return TRUE
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		to_chat(user, span_warning("The clamp will not secure the catalyst while the machine is down!"))
 		return TRUE
 
@@ -269,7 +269,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/chemical_synthesizer, "catalyst", /obj/item
 /obj/machinery/chemical_synthesizer/machine_step()
 	if(!_recharge_reagents)
 		return PROCESS_KILL
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return sleep_until_powered()
 	var/short = FALSE
 	for(var/label in cartridges)
@@ -507,7 +507,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/chemical_synthesizer, "catalyst", /obj/item
 
 /// Old attack_ghost: view the interface while it works. Never fell through.
 /obj/machinery/chemical_synthesizer/proc/chem_synthesizer_ghost_view(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!(stat & (BROKEN|NOPOWER)))
+	if(operable())
 		tgui_interact(user)
 	return TRUE
 
@@ -518,7 +518,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/chemical_synthesizer, "catalyst", /obj/item
 	effect = /obj/machinery/chemical_synthesizer/proc/interaction_use
 
 /obj/machinery/chemical_synthesizer/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return TRUE
 	tgui_interact(user)
 	return TRUE
@@ -624,7 +624,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/chemical_synthesizer, "catalyst", /obj/item
 	if(stalled) // Incase SOMEHOW this var is true when the machine isn't running.
 		stalled = FALSE
 
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return
 
 	if(!queue)
@@ -644,7 +644,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/chemical_synthesizer, "catalyst", /obj/item
 		return
 
 	busy = TRUE
-	use_power = USE_POWER_ACTIVE
+	set_use_power(USE_POWER_ACTIVE)
 	if(use_catalyst)
 		// Populate the list of catalyst chems. This is important when it's time to bottle_product().
 		for(var/datum/reagent/chem in catalyst.reagents.reagent_list)
@@ -665,7 +665,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/chemical_synthesizer, "catalyst", /obj/item
 		stall()
 		return
 
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		stall()
 		return
 
@@ -682,7 +682,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/chemical_synthesizer, "catalyst", /obj/item
 		stall()
 		return
 
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		stall()
 		return
 
@@ -693,13 +693,13 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/chemical_synthesizer, "catalyst", /obj/item
 	// If we're missing a cartridge somehow or lack space for the next step, stall. It's now up to the chemist to fix this.
 	if(!LAZYACCESS(cartridges, label))
 		visible_message(span_warning("The [src] beeps loudly, flashing a 'cartridge missing' error!"), "You hear loud beeping!")
-		playsound(src, 'sound/weapons/smg_empty_alarm.ogg', 40)
+		play_sfx(src, SFX_WEAPONS_SMG_EMPTY_ALARM)
 		stall()
 		return
 
 	if(quantity > reagents.get_free_space())
 		visible_message(span_warning("The [src] beeps loudly, flashing a 'maximum volume exceeded' error!"), "You hear loud beeping!")
-		playsound(src, 'sound/weapons/smg_empty_alarm.ogg', 40)
+		play_sfx(src, SFX_WEAPONS_SMG_EMPTY_ALARM)
 		stall()
 		return
 
@@ -714,7 +714,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/chemical_synthesizer, "catalyst", /obj/item
 	C.reagents.trans_to_holder(src.reagents, quantity)
 	MACHINE_WAKE(src) // a cartridge to refill
 	update_icon() // Update underlays.
-	playsound(src, 'sound/machines/HPLC_binary_pump.ogg', 15, 1)
+	play_sfx(src, SFX_MACHINES_HPLC_BINARY_PUMP)
 
 	// Advance to the next step in the recipe. If this is outside of the recipe's index, we're finished. Otherwise, proceed to next step.
 	step += 2
@@ -739,7 +739,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/chemical_synthesizer, "catalyst", /obj/item
 
 // Now that we're done, bottle up the product.
 /obj/machinery/chemical_synthesizer/proc/bottle_product(r_id)
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		stall()
 		return
 
@@ -797,7 +797,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/chemical_synthesizer, "catalyst", /obj/item
 
 	else
 		busy = FALSE
-		use_power = USE_POWER_IDLE
+		set_use_power(USE_POWER_IDLE)
 		queue = list()
 		update_icon()
 
@@ -805,7 +805,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/chemical_synthesizer, "catalyst", /obj/item
 // What happens to the synthesizer if it breaks or loses power in the middle of running. Chemists must fix things manually.
 /obj/machinery/chemical_synthesizer/proc/stall()
 	busy = FALSE
-	use_power = USE_POWER_IDLE
+	set_use_power(USE_POWER_IDLE)
 	queue = list()
 	catalyst_ids = list()
 	update_icon()

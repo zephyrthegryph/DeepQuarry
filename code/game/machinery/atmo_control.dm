@@ -19,12 +19,12 @@
 	desc = "Senses atmospheric conditions."
 
 	anchored = TRUE
-	var/state = 0
+	state = 0
 
 	var/id_tag
 	var/frequency = PUMPS_FREQ
 
-	var/on = 1
+	on = 1
 	var/output = 3
 	//Flags:
 	// 1 for pressure
@@ -79,7 +79,7 @@
 		var/datum/signal/signal = new
 		signal.transmission_method = TRANSMISSION_RADIO //radio signal
 		signal.data["tag"] = id_tag
-		signal.data["timestamp"] = world.time
+		signal.data["timestamp"] = EXPIRY_AT(src, CLOCK_WORLD, 0)
 		var/list/readings = sensor_readings(return_air())
 		for(var/key in readings)
 			signal.data[key] = readings[key]
@@ -135,7 +135,7 @@
 	gsensor.id_tag = id_tag
 	gsensor.output = output
 	replace_with(src, gsensor)
-	playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
+	play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 	return ITEM_INTERACT_SUCCESS
 
 #define ONOFF_TOGGLE(flag) "\[[(output & flag) ? "YES" : "NO"]]"
@@ -274,7 +274,7 @@
 	rel_set(src, "radio_connection", GLOB.radio_service.add_object(src, frequency, RADIO_ATMOSIA))
 
 /obj/machinery/computer/general_air_control/multitool_act(mob/user, obj/item/W)
-	var/list/options = list("Sensors", "Frequency", "Cancel")
+	var/static/list/options = list("Sensors", "Frequency", "Cancel")
 	om_ask(user, /datum/om/prompt/choice/air_control_menu, PROC_REF(control_option_chosen), title = "Options!", choices = options, tool = W)
 	return TRUE
 
@@ -502,7 +502,7 @@
 
 /obj/machinery/computer/general_air_control/large_tank_control/multitool_act(mob/user, obj/item/W)
 	. = ITEM_INTERACT_SUCCESS
-	var/list/options =  list("Inlet", "Outlet", "Sensors", "Frequency", "Cancel")
+	var/static/list/options =  list("Inlet", "Outlet", "Sensors", "Frequency", "Cancel")
 	om_ask(user, /datum/om/prompt/choice/air_control_menu, PROC_REF(control_option_chosen), choices = options, tool = W)
 	return TRUE
 
@@ -656,7 +656,7 @@
 
 /obj/machinery/computer/general_air_control/supermatter_core/multitool_act(mob/user, obj/item/W)
 	. = ITEM_INTERACT_SUCCESS
-	var/list/options =  list("Inlet", "Outlet", "Sensors", "Frequency")
+	var/static/list/options =  list("Inlet", "Outlet", "Sensors", "Frequency")
 	om_ask(user, /datum/om/prompt/choice/air_control_menu, PROC_REF(control_option_chosen), choices = options, tool = W)
 	return TRUE
 

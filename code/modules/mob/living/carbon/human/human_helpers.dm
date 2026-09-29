@@ -175,7 +175,7 @@
 
 	//These things are allowed to add vision flags.
 	//If you code some crazy item that goes on your feet that lets you see ghosts, you need to add a slot here.
-	var/list/slots = list(SLOT_ID_EYES,SLOT_ID_HEAD)
+	var/static/list/slots = list(SLOT_ID_EYES,SLOT_ID_HEAD)
 	var/list/compiled_vis = list()
 
 	if(factor(BF_DARKSIGHT)) //Putting this near the beginning so it can be overwritten by equipment

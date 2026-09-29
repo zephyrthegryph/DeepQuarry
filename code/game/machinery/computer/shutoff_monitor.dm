@@ -28,7 +28,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/shutoff_monitor, "monitor", /datum
 
 /obj/machinery/computer/shutoff_monitor/update_icon()
 	..()
-	if(!(stat & (NOPOWER|BROKEN)))
+	if(operable())
 		add_overlay("ai-fixer-empty")
 	else
 		cut_overlay("ai-fixer-empty")

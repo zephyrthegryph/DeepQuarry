@@ -15,13 +15,14 @@
 
 	encumbrance_gap = 1.5
 
-	starting_components = list(
-		/obj/item/mecha_parts/component/hull/durable,
-		/obj/item/mecha_parts/component/actuator,
-		/obj/item/mecha_parts/component/armor/reinforced,
-		/obj/item/mecha_parts/component/gas,
-		/obj/item/mecha_parts/component/electrical
-		)
+TYPE_TABLE(/obj/mecha/combat, mecha_starting_components, list( \
+		/obj/item/mecha_parts/component/hull/durable, \
+		/obj/item/mecha_parts/component/actuator, \
+		/obj/item/mecha_parts/component/armor/reinforced, \
+		/obj/item/mecha_parts/component/gas, \
+		/obj/item/mecha_parts/component/electrical \
+		))
+
 
 /*
 /obj/mecha/combat/range_action(target as obj|mob|turf)
@@ -40,7 +41,7 @@
 	if(isliving(T))
 		var/mob/living/M = T
 		if(pilot_is_harming() || istype(src?.slot_item(MECHA_SLOT_PILOT), /mob/living/carbon/brain)) //Brains cannot change intents; Exo-piloting brains lack any form of physical feedback for control, limiting the ability to 'play nice'.
-			playsound(src, 'sound/weapons/heavysmash.ogg', 50, 1)
+			play_sfx(src, SFX_WEAPONS_HEAVYSMASH, volume = 50)
 			if(melee_injury_kind == INJURY_BLUNT)
 				step_away(M,src,15)
 			var/hit_zone = ishuman(M) ? pick(BP_TORSO, BP_TORSO, BP_TORSO, BP_HEAD) : null
@@ -82,7 +83,7 @@
 			if(melee_injury_kind == INJURY_BLUNT)
 				src.occupant_message("You hit [T].")
 				src.visible_message(span_bolddanger("[src.name] hits [T]"))
-				playsound(src, 'sound/weapons/heavysmash.ogg', 50, 1)
+				play_sfx(src, SFX_WEAPONS_HEAVYSMASH, volume = 50)
 
 				if(istype(T, /obj/structure/girder))
 					T.take_damage(force * 3, BRUTE, MELEE) //Girders have 200 health by default. Steel, non-reinforced walls take four punches, girders take (with this value-mod) two, girders took five without.
@@ -119,12 +120,10 @@
 	..()
 	return
 
-/obj/mecha/combat/Topic(href,href_list)
-	..()
-	var/datum/topic_input/top_filter = new (href,href_list)
-	if(top_filter.get("close"))
-		am = null
-		return
+TOPIC_ACTION(/obj/mecha/combat, "close", PROC_REF(topic_close))
+
+/obj/mecha/combat/topic_close(mob/user, list/args)
+	am = null
 
 /obj/mecha/combat/proc/reset_melee()
 	melee_can_hit = 1

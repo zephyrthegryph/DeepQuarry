@@ -106,7 +106,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/greatwolf, \
 /// Old attackby: trade food for people!
 /mob/living/simple_mob/vore/greatwolf/proc/greatwolf_interaction_feed(mob/user, obj/item/O, datum/interaction/interaction)
 	consume(O, user)
-	playsound(src,'sound/vore/gulp.ogg', rand(10,50), 1)
+	play_sfx(src, SFX_VORE_GULP, volume = rand(10,50))
 	if(!(ai_brain != null))//No autobarf on player control.
 		return TRUE
 	if(istype(O, /obj/item/reagent_containers/food/snacks/donut) && istype(src, /mob/living/simple_mob/vore/greatwolf/black))

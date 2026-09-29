@@ -47,7 +47,7 @@
 /obj/machinery/gear_painter/update_icon()
 	if(panel_open)
 		icon_state = "colormate_open"
-	else if(inoperable())
+	else if(!operable())
 		icon_state = "colormate_off"
 	else if(inserted)
 		icon_state = "colormate_active"
@@ -80,7 +80,7 @@ OWN(/obj/machinery/gear_painter, inserted, OWN_SPILL)
 	effect = /obj/machinery/gear_painter/proc/interaction_insert
 
 /obj/machinery/gear_painter/proc/gear_painter_operable(mob/actor, atom/target, obj/item/held)
-	return !inoperable()
+	return operable()
 
 /obj/machinery/gear_painter/proc/gear_painter_empty(mob/actor, atom/target, obj/item/held)
 	return !inserted
@@ -202,7 +202,7 @@ OWN(/obj/machinery/gear_painter, inserted, OWN_SPILL)
 				return TRUE
 			if("clear")
 				inserted.remove_atom_colour(FIXED_COLOUR_PRIORITY)
-				playsound(src, 'sound/effects/spray3.ogg', 50, 1)
+				play_sfx(src, SFX_EFFECTS_SPRAY3)
 				temp = "Cleared Successfully!"
 				return TRUE
 			if("set_matrix_color")
@@ -255,7 +255,7 @@ OWN(/obj/machinery/gear_painter, inserted, OWN_SPILL)
 		temp = "Invalid color!"
 		return FALSE
 	inserted.add_atom_colour(color_to_use, FIXED_COLOUR_PRIORITY)
-	playsound(src, 'sound/effects/spray3.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_SPRAY3)
 	return TRUE
 
 /// Produces the preview image of the item, used in the UI, the way the color is not stacking is a sin.

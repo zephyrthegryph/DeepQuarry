@@ -112,6 +112,24 @@ dropped. A mob stays real (the serializer refuses mobs) and clones as a fresh in
 Test builds keep an index of every stamped entity and every rec, audit every 5 minutes and at the
 end of the run (a finding fails the run). Servers audit on demand (admin verb "Ownership Audit").
 
+### 1.6 Owned timers (`code/datums/om/timer.dm`)
+
+A timer an entity keeps by name is owned, like a child. It is declared in the same ownership table:
+`OWN_TIMER(/type/path, name)` (a keyed family `"name:key"` is declared once by `name`). The API:
+
+- `om_after_slot(E, "name", delay, proc_ref, args...)` schedules into the slot, replacing whatever
+  was pending there (at most one timer per entity and name);
+- `om_timer_slot_pending(E, "name")` / `om_timer_slot_left(E, "name")` read it. Pending is derived
+  from the entity's live timers, never a stored flag, so firing and cancelling empty it by
+  construction;
+- `om_cancel_timer_slot(E, "name")` cancels it;
+- `own_teardown()` releases every pending slot with the entity's other owned things
+  (`om_release_timer_slots()`), and phase 0 of the destroy transaction already refuses new timers.
+
+Test builds refuse a slot name missing from the table (a typo would otherwise be a silent second
+slot). Expiry hooks (`EXPIRY_ON_LAPSE`) arm their lapse timer in the keyed `expiry_lapse` slot.
+A timer id is never stored in a var or list; check_grep's "stored timer handles" rule enforces it.
+
 ## 2. Shared
 
 - `REGISTRY_TYPE(path, getter)` declares that `path` and its subtypes are registry types; the getter
@@ -257,4 +275,29 @@ A site kept on purpose carries `// ALLOW(ownership): <reason>`.
 | one kind per var, policy procs, matrix | `own_validate_table()` (first instance of a type), `own_validate_boot()` |
 | orphans and rec cycles | `own_audit()` (test builds, admin verb) |
 | DEF freeze | test builds |
+| undeclared timer slot names | `om_timer_slot_check()` (test builds) |
+| stored timer ids | `check_grep.sh` "stored timer handles" |
 | framework behaviour | `code/modules/unit_tests/dq_ownership_tests.dm` |
+
+## 9. The refs audit (items 1-13): where each is fixed
+
+| # | Finding | Fix | Commits |
+|---|---|---|---|
+| 1 | STATIC escape hatch: non-static types under STATIC, techweb disk leak, robot `sprite_datum`, AI `selected_sprite`, `cleanable.viruses`, leak check skipping STATIC, `om_static_type` never checked | STATIC is gone. Registry membership is proven by `REGISTRY_TYPE(path, getter)` (`registry_types.dm`); `shared_set` asserts it; the kind x type matrix runs in the lint and at boot. Only round webs are registered (`register_techweb`); disk webs are PROTO. `sprite_datum`/`selected_sprite` are PROTO; cleanable contagions are owned per decal. The leak check skips a held value only when it is proven registered. | 24d6e46889, bc274d88e9, 92666fa6bf, 68aac387dc, 3fd948e33c |
+| 2 | handle_kinds_lint forcing STATIC; geosample shared by turf and ores; plant analyzer `last_seed`; owned kinds on static types | The lint is deleted (ownership_lint replaces it). Each ore gets its own `geosample.copy()` (`own_set`); `last_seed` is PROTO (an analyzer snapshot); owned declarations on registry types are matrix errors. | dac8f82da8, f2479957ca, 68aac387dc |
+| 3 | Proto cases: species, seeds, contagions, gas mixtures, robot/AI sprites | `PROTO` with `proto_private`/`proto_set`/`proto_replace`. Species: the mob holds the registered species until a trait or per-mob change calls `proto_private`; the limb table is resolved before interning, so spawning never writes a registered species. Seeds diverge through `register_line`. Machine gas ports are PROTO and network air is owned by the network, with an arena slot leak test. | 8917247920, 14d56e5ae8, fd9a38d649, f2479957ca, 2201fe6a4b, 9fe498d6d0 |
+| 4 | Replace without qdel (243 sites), phase 8 silent nulling, `rec.owner` cycle | `own_set` disposes of the value it replaces by policy; the scripted conversion moved every owned write onto the accessors, and the lint fails on raw writes. Phase 8 (`own_scrub`) reports and deletes re-set values. `own_audit` finds entities kept alive only by their own rec and tears the rec down. | c374ee7dac, 77ef714568, 21c8e14995, f1cb158574, b9c945e4c9 |
+| 5 | HELD misuse; gas mixtures made by the holder; owned things deleted by hand in destroy hooks; foreign refs blocking GC | HELD is split: 179 relations, 192 `OWN_CONTAINED`, 41 `OWN`. `OWN_IF`/`OWN_POLICY` give conditional policy; gas mixtures follow the resource rule (PROTO or network-owned). Teardown disposes of owned values, so hand deletes in destroy hooks were removed. Foreign refs are relation views, cleared when their target dies. | 24d6e46889, a99bb2230b, 2201fe6a4b, 7da08b961e, b680fc5053 |
+| 6 | Two-sided kinds written directly; vars carrying two kinds | `REL_PAIR` keeps both sides through `rel_set`. `own_validate_table` reports a var declared with two kinds across the hierarchy, and the lint's `contradiction`/`kinds` checks do the same statically (modular computer hardware, mecha minihud, morgue tray, nif comm, fusion field fixed). | 24d6e46889, a99bb2230b, 68aac387dc, d824161a3f |
+| 7 | Invisible refs: shallow `om_capture_args`, CALLBACK in content, expedition mission held by a CALLBACK, blood `data["viruses"]` aliasing, `GLOB.x[key] = src` | Deferred arguments are captured deeply and a datum used as an assoc key is refused. `om_callable`/`om_run` replace CALLBACK in content (the lint bans it outside the core); the expedition descriptor owns its mission while the callable runs. Reagent data has a declared codec. Keyed registries replace the self-registrations, and `registry_lint` catches new ones. | bf5a4a00d3, 4f26485fc8, 22244825e7, 4a021ac94b, 88193384da |
+| 8 | Serializer duplicating ownership | Codecs derive from the ownership kind (`state_ownership_codec`); the owned codec reuses or disposes of the existing child; relation views re-link inside the subtree. `ALLOW(state_ref)` is gone (the master merge's new ones were stripped too). | 24d6e46889, 5928775320, this merge |
+| 9 | Identity: latent collapse, replace_with, turf handles, STATIC turf/area refs | Collapse parks the handle slot and re-materialization unparks into it; `om_handle_forward()` carries the handle and `FORWARD_STATE` vars; turf handles carry a z generation and `om_drop_z` releases per-z relation indexes. Turf and area refs are relation views. | a02c27e735, 47a587135b, 64431fd2e0 |
+| 10 | DuplicateObject shallow copy; manual ownership moves | `entity_clone()` serialises and re-materialises the owned subtree (the holodeck uses it); `DuplicateObject` is deleted. `own_transfer`/`own_move` do explicit moves (expedition mission, gifts, event drafts). | 24d6e46889, ceac183451, b9c945e4c9 |
+| 11 | Missing relation primitives | Views with reverse indexes, `linked()`, the shapes (`REL`, `REL_LIST`, `REL_PAIR[_LIST]`, `REL_SET`), exclusivity, `holds_while`, keyed auto-linking (`REL_KEYED`, `KEYED_TARGET`), list-undo hooks, derived views, owned-child release hooks, `om_drop_z`, typed views instead of `om_resolve`. | 24d6e46889, ceac183451, 47a587135b, 1216e81f58 |
+| 12 | DECLARE_DEFAULT_CHILD without an owning kind | The declaration requires an owning kind on the var (it reports and drops otherwise), adopts through `own_set`/`own_add`, and wires the child's back relation (`default_child_backref()`). | 24d6e46889, 5928775320 |
+| 13 | Kind inference | `ownership_lint.py` indexes every declaration and accessor write and fails on contradictions. Undeclared vars learn their kind from the first `own_*`/`rel_*` write, so declarations are needed only for exceptions (policy, relation shape, SHARED/PROTO). | dac8f82da8, a4af88a051, this merge |
+
+Gaps closed while writing this table (in the master merge commit):
+
+- master's new code (admin topic split, event panel, machine first-wake queue, dartgun, topic tests) brought handle vars and raw writes back; all of it now uses views and accessors;
+- the lint's fallbacks now honour SHARED, and it no longer counts a proc call's arguments as the written value (`EXPIRY_AT(src, ...)` writes a number).

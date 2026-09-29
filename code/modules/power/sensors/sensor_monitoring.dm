@@ -54,7 +54,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/power_monitor, "power_monitor", /d
 
 /obj/machinery/computer/power_monitor/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return TRUE
 	tgui_interact(user)
 	return TRUE

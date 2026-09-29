@@ -58,7 +58,7 @@
 	pain_emote_3p = list("yelps", "whines", "barks", "growls")
 
 	//This is copypastad from protean code, hope it isnt too painful lol
-	// ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	// ALLOW(instance_list): d: per-instance colours, rolled at spawn and repainted by the player
 	var/list/goia_overlays = list( //all 10 overlays, in order
 		"zorgoia_belly" = "#FFFFFF",
 		"zorgoia_main" = "#FFFFFF",
@@ -361,7 +361,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/zorgoia, \
 				if(M.zone_sel.selecting == BP_GROIN)
 					if(M.vore_bellyrub(src))
 						return TRUE
-				M.visible_message(span_notice("[M] [response_help] \the [src]."))
+				act_message(M, src, null, MSG_OTHERS(span_notice("%U% [response_help] %T%.")))
 				if(ai_brain)
 					var/datum/ai_brain/AI = ai_brain
 					AI.lose_target()  // sleep-style state — drop current target

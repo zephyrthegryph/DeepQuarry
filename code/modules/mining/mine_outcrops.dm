@@ -110,7 +110,7 @@ DECLARE_INTERACTIONS(/obj/structure/outcrop, INTERACT_ITEM(null, PROC_REF(intera
 		to_chat(user, span_notice("You pulverize \the [src]!"))
 		for(var/i=0;i<(rand(mindrop,upperdrop));i++)
 			new outcropdrop(get_turf(src))
-		playsound(src, 'sound/weapons/resonator_blast.ogg', 100, 1, -1)
+		play_sfx(src, SFX_WEAPONS_RESONATOR_BLAST)
 		user.visible_message(span_warning("\The [S] discharges with a thunderous, hair-raising crackle!"))
 		S.deductcharge()
 		S.status = 0

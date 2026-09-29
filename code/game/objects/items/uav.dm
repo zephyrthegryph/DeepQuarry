@@ -38,7 +38,7 @@
 	var/static/image/radial_pair = image(icon = 'icons/mob/radial.dmi', icon_state = "radial_pair")
 
 	// Movement cooldown
-	var/next_move = 0
+	EXPIRY_DECLARE(next_move)
 
 	// Idle shutdown time
 	var/no_masters_time = 0
@@ -104,7 +104,7 @@ DECLARE_INTERACTIONS(/obj/item/uav, \
 		// Can disasemble or reassemble from packed or off (and this one takes time)
 		if("(Dis)Assemble")
 			if(can_transition_to(state == UAV_PACKED ? UAV_OFF : UAV_PACKED, user))
-				user.visible_message(span_infoplain(span_bold("[user]") + " starts [state == UAV_PACKED ? "unpacking" : "packing"] [src]."), span_info("You start [state == UAV_PACKED ? "unpacking" : "packing"] [src]."))
+				act_message(user, src, MSG_SELF(span_info("You start [state == UAV_PACKED ? "unpacking" : "packing"] [src].")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " starts [state == UAV_PACKED ? "unpacking" : "packing"] [src].")))
 				om_task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user))
 		// Can toggle power from on and off
 		if("Toggle Power")
@@ -123,8 +123,8 @@ DECLARE_INTERACTIONS(/obj/item/uav, \
 	if(istype(I, /obj/item/modular_computer) && state == UAV_PAIRING)
 		var/obj/item/modular_computer/MC = I
 		rel_add(MC, "paired_uavs", src)
-		playsound(src, 'sound/machines/buttonbeep.ogg', 50, 1)
-		visible_message(span_notice("[user] pairs [I] to [nickname]"))
+		play_sfx(src, SFX_MACHINES_BUTTONBEEP)
+		act_message(user, src, others = span_notice("%U% pairs [I] to [nickname]"))
 		toggle_pairing()
 
 	else if(istype(I, /obj/item/cell) && !cell)
@@ -148,7 +148,7 @@ DECLARE_INTERACTIONS(/obj/item/uav, \
 
 /obj/item/uav/proc/attackby_timed_done(obj/item/I, mob/user)
 	to_chat(user, span_notice("You insert [I] into [nickname]."))
-	playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
+	play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 	power_down()
 	user.remove_from_mob(I)
 	I.forceMove(src)
@@ -205,7 +205,7 @@ DECLARE_INTERACTIONS(/obj/item/uav, \
 /obj/item/uav/periodic_step()
 	if(cell?.use(power_per_process) != power_per_process)
 		visible_message(span_warning("[src] sputters and thuds to the ground, inert."))
-		playsound(src, 'sound/items/drop/metalboots.ogg', 75, 1)
+		play_sfx(src, SFX_ITEMS_DROP_METALBOOTS)
 		power_down()
 		take_damage(max_integrity*0.25, sound_effect = FALSE) //Lose 25% of your original health
 
@@ -244,14 +244,14 @@ DECLARE_INTERACTIONS(/obj/item/uav, \
 			state = UAV_PACKED
 			w_class = ITEMSIZE_LARGE
 			slowdown = 0.5
-			density = FALSE
+			set_density(FALSE)
 			update_icon()
 			return TRUE
 		if(UAV_PACKED) //Unpacking
 			state = UAV_OFF
 			w_class = ITEMSIZE_HUGE
 			slowdown = 1.5
-			density = TRUE
+			set_density(TRUE)
 			update_icon()
 			return TRUE
 	return FALSE
@@ -290,7 +290,7 @@ DECLARE_INTERACTIONS(/obj/item/uav, \
 /obj/item/uav/relaymove(mob/user, direction, signal = 1)
 	if(signal && state == UAV_ON && (user in src?.uav_masters()))
 		if(COOLDOWN_FINISHED(src, next_move))
-			next_move = world.time + (1 SECOND/signal)
+			EXPIRY_SET(src, next_move, (1 SECOND/signal), CLOCK_WORLD)
 			step(src, direction)
 		return TRUE // Even if we couldn't step, we're taking credit for absorbing the move
 	return FALSE

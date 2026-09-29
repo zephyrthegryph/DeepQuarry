@@ -93,8 +93,8 @@ DECLARE_REAGENTS(/obj/machinery/smart_centrifuge, CARGOTANKER_VOLUME, null)
 		to_chat(user, "<span class='notice'>\The [src] is empty.</span>")
 		return
 	else
-		playsound(src, 'sound/machines/buttonbeep.ogg', 50, 1)
-		playsound(src, 'sound/machines/airpumpidle.ogg', 100, 1)
+		play_sfx(src, SFX_MACHINES_BUTTONBEEP)
+		play_sfx(src, SFX_MACHINES_AIRPUMPIDLE)
 		to_chat(user, "<span class='notice'>You activate \the [src].</span>")
 		working = TRUE
 		flags ^= OPENCONTAINER
@@ -103,8 +103,8 @@ DECLARE_REAGENTS(/obj/machinery/smart_centrifuge, CARGOTANKER_VOLUME, null)
 /obj/machinery/smart_centrifuge/proc/internal_reagent_seperate(force_canister,force_bottle)
 	if(reagents.reagent_list.len <= 0)
 		visible_message("\The [src] finishes processing.")
-		playsound(src, 'sound/machines/biogenerator_end.ogg', 50, 1)
-		playsound(src, 'sound/machines/buttonbeep.ogg', 50, 1)
+		play_sfx(src, SFX_MACHINES_BIOGENERATOR_END, 1.25)
+		play_sfx(src, SFX_MACHINES_BUTTONBEEP)
 		working = FALSE
 		flags |= OPENCONTAINER
 		return
@@ -124,7 +124,7 @@ DECLARE_REAGENTS(/obj/machinery/smart_centrifuge, CARGOTANKER_VOLUME, null)
 			CD.name = "[RL.name] bottle"
 			CD.icon_state = "bottle-1"
 		// Transfer if possible
-		playsound(src, 'sound/machines/reagent_dispense.ogg', 25, 1)
+		play_sfx(src, SFX_MACHINES_REAGENT_DISPENSE)
 		reagents.trans_id_to( CD, RL.id, min(RL.volume,CD.reagents.maximum_volume), TRUE)
 		CD.update_icon()
 		CD.forceMove(loc) // Drop it outside

@@ -108,8 +108,8 @@ DECLARE_INTERACTIONS(/obj/item/card/id, INTERACT_SELF("Show", PROC_REF(interacti
 /obj/item/card/id/proc/show_id_card(mob/user)
 	if(can_configure && !configured)
 		return FALSE
-	user.visible_message("\The [user] shows you: [icon2html(src,viewers(src))] [src.name]. The assignment on the card: [src.assignment]",\
-		"You flash your ID card: [icon2html(src, user.client)] [src.name]. The assignment on the card: [src.assignment]")
+	act_message(user, src, MSG_SELF("You flash your ID card: [icon2html(src, user.client)] [src.name]. The assignment on the card: [src.assignment]"), \
+		MSG_OTHERS("%U% shows you: [icon2html(src,viewers(src))] [src.name]. The assignment on the card: [src.assignment]"))
 
 	src.add_fingerprint(user)
 	return TRUE
@@ -360,7 +360,7 @@ EXTEND_INTERACTIONS(/obj/item/card/id/event, \
 		icon_state = user.job
 		base_icon_state = user.job
 	else if(polymorphic_type == 2)
-		var/list/jobs_to_icon = list( //ITG only has a few kinds of icons so we have to group them up!
+		var/static/list/jobs_to_icon = list( //ITG only has a few kinds of icons so we have to group them up!
 		JOB_PILOT = "itg",
 		JOB_ALT_VISITOR = "itg",
 		JOB_QUARTERMASTER = "itg",
@@ -597,7 +597,7 @@ EXTEND_INTERACTIONS(/obj/item/card/id/event/polymorphic/itg, INTERACT_ITEM("Copy
 /obj/item/card/id/event/polymorphic/itg/proc/interaction_itg_copy_access(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/card/id) && !accessset)
 		var/obj/item/card/id/O = I
-		var/list/itgdont = list(JOB_SITE_MANAGER, JOB_HEAD_OF_PERSONNEL, JOB_COMMAND_SECRETARY, JOB_HEAD_OF_SECURITY, JOB_CHIEF_ENGINEER, JOB_CHIEF_MEDICAL_OFFICER, JOB_RESEARCH_DIRECTOR, JOB_CLOWN, JOB_MIME, JOB_TALON_CAPTAIN) //If you're in as one of these you probably aren't representing ITG
+		var/static/list/itgdont = list(JOB_SITE_MANAGER, JOB_HEAD_OF_PERSONNEL, JOB_COMMAND_SECRETARY, JOB_HEAD_OF_SECURITY, JOB_CHIEF_ENGINEER, JOB_CHIEF_MEDICAL_OFFICER, JOB_RESEARCH_DIRECTOR, JOB_CLOWN, JOB_MIME, JOB_TALON_CAPTAIN) //If you're in as one of these you probably aren't representing ITG
 		if(O.rank in itgdont)
 			to_chat(user, span_notice("ITG Cards do not seem to be able to accept the access codes for your ID."))
 			return INTERACTION_HANDLED_PASS

@@ -224,7 +224,7 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 
 /obj/machinery/gear_dispenser/proc/can_use(mob/living/carbon/human/user)
 	var/list/used_by = GLOB.gear_distributed_to["[type]"]
-	if(needs_power && inoperable())
+	if(needs_power && !operable())
 		to_chat(user,span_warning("The machine does not respond to your prodding."))
 		return 0
 	if(!istype(user))
@@ -239,22 +239,22 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 	if (!emagged)
 		if ((dispenser_flags & GD_NOGREED) && (user.ckey in used_by))
 			to_chat(user,span_warning("You've already picked up your gear!"))
-			playsound(src, 'sound/machines/buzz-sigh.ogg', 50, 0)
+			play_sfx(src, SFX_MACHINES_BUZZ_SIGH)
 			return 0
 		if ((dispenser_flags & GD_UNIQUE) && (user.ckey in unique_dispense_list))
 			to_chat(user,span_warning("You've already picked up your gear!"))
-			playsound(src, 'sound/machines/buzz-sigh.ogg', 50, 0)
+			play_sfx(src, SFX_MACHINES_BUZZ_SIGH)
 			return 0
 	else
 		audible_message("!'^&YouVE alreaDY pIC&$!Ked UP yOU%r Ge^!ar.")
-		playsound(src, 'sound/machines/buzz-sigh.ogg', 100, 0)
+		play_sfx(src, SFX_MACHINES_BUZZ_SIGH, 2)
 		return 1
 	// And finally
 	if(allowed(user))
 		return 1
 	else
 		to_chat(user,span_warning("Your access is rejected!"))
-		playsound(src, 'sound/machines/buzz-sigh.ogg', 100, 0)
+		play_sfx(src, SFX_MACHINES_BUZZ_SIGH, 2)
 		return 0
 
 /obj/machinery/gear_dispenser/proc/get_gear_list(mob/living/carbon/human/user)
@@ -293,7 +293,7 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 	S.spawn_gear(T, user)
 
 	if(emagged)
-		emagged = FALSE
+		set_emagged(FALSE)
 	if(greet && user && !user.stat) // in case we got destroyed while we slept
 		to_chat(user,span_notice("[S.name] dispensing processed. Have a good day."))
 
@@ -312,7 +312,7 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 /obj/machinery/gear_dispenser/emag_act(remaining_charges, mob/user, emag_source)
 	. = ..()
 	if(!emagged)
-		emagged = TRUE
+		set_emagged(TRUE)
 		visible_message(span_warning("\The [user] slides a weird looking ID into \the [src]!"),span_warning("You temporarily short the safety mechanisms."))
 		return 1
 
@@ -353,7 +353,7 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 	if(special_frame)
 		add_overlay(special_frame)
 
-	if(needs_power && inoperable())
+	if(needs_power && !operable())
 		add_overlay("nopower")
 	else
 		add_overlay("light1")
@@ -409,7 +409,7 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 	dispenser_flags &= ~GD_BUSY
 
 	if(emagged)
-		emagged = FALSE
+		set_emagged(FALSE)
 	if(greet && user && !user.stat) // in case we got destroyed while we slept
 		to_chat(user,span_notice("[S.name] dispensing processed. Have a good day."))
 
@@ -691,11 +691,12 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 	VV_DROPDOWN_OPTION("", "---")
 	VV_DROPDOWN_OPTION("admin_add", "Add New Gear")
 
-/obj/machinery/gear_dispenser/vv_do_topic(list/href_list)
-	. = ..()
-	IF_VV_OPTION("admin_add")
-		admin_add()
-		href_list[VV_HK_DATUM_REFRESH] = "\ref[src]"
+VV_TOPIC_ACTION(/obj/machinery/gear_dispenser, "admin_add", PROC_REF(vv_topic_admin_add))
+
+/obj/machinery/gear_dispenser/proc/vv_topic_admin_add(mob/user, list/args)
+	admin_add()
+	user.client?.debug_variables(src)
+	return TRUE
 
 /obj/machinery/gear_dispenser/proc/admin_add()
 	if(!check_rights(R_DEBUG|R_FUN))

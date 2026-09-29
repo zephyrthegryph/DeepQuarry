@@ -428,7 +428,8 @@
 		var/list/row = rows[path]
 		var/scale = row[2] ? row[1] / row[2] : 0
 		var/header = ispath(path, /atom) ? 96 : 48
-		var/bytes = row[1] * header + scale * (row[3] * 12 + row[4] * 32 + row[5] * 12 + row[6] * 12)
+		// Overlay/vis entries: ~8 bytes per ref plus the list header when non-empty (approx 32).
+		var/bytes = row[1] * header + scale * (row[3] * 12 + row[4] * 32 + row[5] * 12 + row[6] * 12 + row[8] * 8 + row[9] * 8)
 		estimates[path] = bytes
 		total += bytes
 	estimates = sortTim(estimates, GLOBAL_PROC_REF(cmp_numeric_desc), associative = TRUE)
@@ -446,6 +447,8 @@
 			"changed_vars" = round(row[2] ? row[3] / row[2] : 0, 0.1),
 			"lists" = round(row[4] * scale),
 			"list_entries" = round(row[5] * scale),
+			"overlay_entries" = round(row[8] * scale),
+			"vis_contents_entries" = round(row[9] * scale),
 			"est_mb" = round(estimates[path] / 1048576, 0.01),
 			"top_list_vars" = by_var,
 		)
@@ -454,12 +457,20 @@
 /proc/benchmark_type_memory_visit(datum/thing, list/rows, list/skip, sample)
 	var/list/row = rows[thing.type]
 	if(!row)
-		row = list(0, 0, 0, 0, 0, 0, list())
+		row = list(0, 0, 0, 0, 0, 0, list(), 0, 0)
 		rows[thing.type] = row
 	row[1]++
 	if(row[2] >= sample)
 		return
 	row[2]++
+	if(isatom(thing))
+		var/atom/A = thing
+		// Appearance overhead: every overlay/underlay entry is a shared appearance
+		// ref, and a non-empty list is its own allocation on the atom.
+		row[8] += length(A.overlays) + length(A.underlays)
+		if(ismovable(A))
+			var/atom/movable/AM = A
+			row[9] += length(AM.vis_contents)
 	var/list/by_var = row[7]
 	for(var/name in thing.vars)
 		if(skip[name])

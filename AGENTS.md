@@ -71,6 +71,10 @@ no upstream to merge against, so there's no reason to keep a disabled include ar
   relative. (`disallow_relative_type_definitions` / `disallow_relative_proc_definitions`.)
 - **Use defined constants**, not string literals — job/faction/access/channel names,
   sounds. Defines live under `code/__defines/`.
+- **Sounds are sets, sparks are pooled.** Play `play_sfx(atom, SFX_ID)` with a `SOUND_SET` row
+  (ids in `code/__defines/sfx.dm`, rows in `code/game/sound_sets.dm`); sound vars and lists hold
+  `SFX_*` ids, never literal files. Sparks are `fx_sparks(atom, amount)`. `tools/ci/sys_rules/sfx.py`
+  enforces both.
 - **Avoid `usr`** outside verb procs — plumb `user` through args, or use `src`.
 - **Always chain `..()`** in lifecycle overrides (`Initialize`, `on_destroy`,
   `lifecycle_prerelease`, …) unless you specifically need to suppress the parent.
@@ -166,8 +170,11 @@ bans them). See `doc/rewrite/object_model_core.md` §10:
 - `#define` flag/ID/threshold constants.
 - Ask players with a typed prompt, `om_ask(answerer, /datum/om/prompt/<kind>/x,
   PROC_REF(cb), var = value...)`; its `requires`/`valid()` re-check state before `cb` runs
-  (raw `input()`/`alert()`/`tgui_input_*` are banned). Sanitize free text. Validate
-  `Topic()` hrefs (`locate(ref) in …`).
+  (raw `input()`/`alert()`/`tgui_input_*` are banned). Sanitize free text.
+- Never override `Topic()` or read `href_list` yourself: declare
+  `TOPIC_ACTION(type, "key", PROC_REF(handler), TOPIC_REF/TOPIC_NUM/TOPIC_TEXT/TOPIC_RIGHTS...)`
+  rows; the core dispatcher validates every ref against its declared source
+  (doc/rewrite/systems.md §20, lint `tools/ci/sys_rules/topic.py`).
 - Parameterized SQL only, through `om_io()` / `om_sql_write()` (nothing waits on I/O);
   `format_table_name()` for table names.
 
@@ -427,6 +434,13 @@ accident or assume they work:
   `damage`-var model (as upstream TG does). A few entities run self-contained damage backed by
   obj_integrity but with their own combat logic on top: `/obj/mecha` (component armor/deflect)
   and `/obj/item/uav`. Mob/plant/blob health is a separate system and untouched.
+- **Machine core state is declared fields.** `on`, `active`, `state`, `mode`, `locked`, `emagged`
+  and the `stat` bits are OM fields on `/obj/machinery` (`code/game/machinery/machinery_fields.dm`);
+  `anchored`, `density` and `use_power` are registered with their setters. Write through
+  `set_<field>()` (`stat_add()`/`stat_remove()` for bits, `set_use_power()` for power mode), read
+  "powered and working" with `operable()` and single bits with `has_stat()`; there is no
+  `inoperable()`/`update_use_power()`. `tools/ci/sys_rules/fields.py` rejects raw `stat` bit use and
+  direct field writes.
 - **Health model — body & afflictions, no health pools on ANY mob.** Read
   `doc/body_architecture.md`. Every `/mob/living` has a `/datum/body` (plans: humanoid,
   simple, simple/machine, simple/machine/robot) in `code/modules/body/`. There is no

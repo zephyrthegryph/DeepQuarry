@@ -36,7 +36,7 @@
 	response_disarm = "pushes"
 	response_harm = "hits"
 	attacktext = "glomped"
-	attack_sound = 'sound/effects/blobattack.ogg'
+	attack_sound = SFX_EFFECTS_BLOBATTACK
 
 	meat_amount = 0
 
@@ -103,7 +103,7 @@
 	morphed = TRUE
 	rel_set(src, "form", target)
 
-	visible_message(span_warning("[src] suddenly twists and changes shape, becoming a copy of [target]!"))
+	act_message(src, target, null, MSG_OTHERS(span_warning("%U% suddenly twists and changes shape, becoming a copy of %T%!")))
 	color = null
 	name = target.name
 	desc = target.desc
@@ -116,7 +116,7 @@
 	pixel_x = initial(target.pixel_x)
 	pixel_y = initial(target.pixel_y)
 
-	density = target.density
+	set_density(target.density)
 
 	if(isobj(target))
 		size_multiplier = 1
@@ -144,7 +144,7 @@
 	morphed = FALSE
 
 	if(!silent)
-		visible_message(span_warning("[src] suddenly collapses in on itself, dissolving into a pile of flesh!"))
+		act_message(src, null, null, MSG_OTHERS(span_warning("%U% suddenly collapses in on itself, dissolving into a pile of flesh!")))
 
 	rel_clear(src, "form")
 	name = initial(name)
@@ -166,7 +166,7 @@
 	icon_scale_x = initial(icon_scale_x)
 	icon_scale_y = initial(icon_scale_y)
 
-	density = initial(density)
+	set_density(initial(density))
 
 	cut_overlays(TRUE) //ALL of zem
 
@@ -184,7 +184,7 @@
 
 /mob/living/simple_mob/vore/morph/on_death(gibbed)
 	if(morphed)
-		visible_message(span_warning("[src] twists and dissolves into a pile of flesh!"))
+		act_message(src, null, null, MSG_OTHERS(span_warning("%U% twists and dissolves into a pile of flesh!")))
 		restore(TRUE)
 	..()
 

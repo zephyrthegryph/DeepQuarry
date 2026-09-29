@@ -2,11 +2,6 @@
 	var/name = "Industry"
 	var/list/tokens = list() // ALLOW(instance_list): d: stock market singleton state
 
-	// ALLOW(instance_list): c: read-only per-subtype constant table (1 subtype overrides); a getter would share it, not worth it on a rare type
-	var/list/title_templates = list("The brand new %product_name% by %company_name% will revolutionize %industry%", \
-									"%jobs% rejoice as %product_name% hits shelves", \
-									"Does %product_name% threaten to reorganize the %industrial% status quo?", \
-									"%company_name% headed toward corporate renaissance with %product_name%")
 
 	var/static/list/title_templates_neutral = list("%product_name%: as if nothing happened", \
 											"Nothing new but the name: %product_name% not quite exciting %jobs%", \
@@ -18,14 +13,19 @@
 										"Atrocious quality - %jobs% boycott %product_name%", \
 										"%product_name%: Inside the worst product launch in recent history")
 
-	// ALLOW(instance_list): c: read-only per-subtype constant table (1 subtype overrides); a getter would share it, not worth it on a rare type
-	var/list/title_templates_ooc = list("%company_name% is looking to enter the %industry% playing field with %product_name%", \
-										"%company_name% broadens spectrum, %product_name% is their latest and greatest")
 	var/static/list/subtitle_templates = list(	"%author% investigates whether or not you should invest!", \
 										"%outlet%'s very own %author% takes it to the magnifying glass", \
 										"%outlet% lets you know if you should use it", \
 										"Read our top tips for investors", \
 										"%author% wants you to know if it's a safe bet to buy")
+
+TYPE_TABLE_DECLARE(/datum/industry, industry_title_templates, list("The brand new %product_name% by %company_name% will revolutionize %industry%", \
+	"%jobs% rejoice as %product_name% hits shelves", \
+	"Does %product_name% threaten to reorganize the %industrial% status quo?", \
+"%company_name% headed toward corporate renaissance with %product_name%"))
+
+TYPE_TABLE_DECLARE(/datum/industry, industry_title_templates_ooc, list("%company_name% is looking to enter the %industry% playing field with %product_name%", \
+"%company_name% broadens spectrum, %product_name% is their latest and greatest"))
 
 /datum/industry/proc/generateProductName(company_name)
 	return
@@ -39,7 +39,7 @@
 	A.subtitle = A.detokenize(pick(subtitle_templates), tokens, add_tokens)
 	var/article = {"%company_name% %expand_influence% %industry%. [ucfirst(product_name)] %hit_shelves% %this_time% "}
 	if (A.opinion > 0)
-		A.headline = A.detokenize(pick(title_templates), tokens, add_tokens)
+		A.headline = A.detokenize(pick(TYPE_TABLE_GET(src, industry_title_templates)), tokens, add_tokens)
 		article += "but %positive_outcome%, %signifying% the %resounding% %success% the product is. The %stock_market% is %excited% over this %development%, and %stockholder% optimism is expected to %rise% as well as the stock value. Our advice: %buy%."
 	else if (A.opinion == 0)
 		A.headline = A.detokenize(pick(title_templates_neutral), tokens, add_tokens)
@@ -62,22 +62,24 @@
 		"industrial" = list("agricultural", "horticultural", "botanical"), \
 		"jobs" = list("farmers", "agricultural experts", "botanists", "assistant gardeners")
 	)
-	title_templates = list(	"The brand new %product_name% by %company_name% will revolutionize %industry%", \
-							"%jobs% rejoice as %product_name% hits shelves", \
-							"Does %product name% threaten to reorganize the %industrial% status quo?", \
-							"Took it for a field trip: our first %sneak_peek% of %product_name%.", \
-							"Reaping the fruits of %product_name% - %sneak_peek% by %author%", \
-							"Cultivating a new %industrial% future with %product_name%", \
-							"%company_name% grows and thrives: %product_name% now on the farmer's market", \
-							"It's almost harvest season: %product_name% promises to ease your life", \
-							"Become the best on the farmer's market with %product_name%", \
-							"%product_name%: a gene-modified reimagination of an age-old classic")
 
-	title_templates_ooc = list(	"%company_name% is looking to enter the %industry% playing field with %product_name%", \
-								"A questionable decision: %product_name% grown on the soil of %company_name%", \
-								"%company_name% broadens spectrum, %product_name% is their latest and greatest", \
-								"Will %company_name% grow on %industrial% wasteland? Owners of %product_name% may decide", \
-								"%company_name% looking to reap profits off the %industrial% sector with %product_name%")
+TYPE_TABLE(/datum/industry/agriculture, industry_title_templates, list(	"The brand new %product_name% by %company_name% will revolutionize %industry%", \
+	"%jobs% rejoice as %product_name% hits shelves", \
+	"Does %product name% threaten to reorganize the %industrial% status quo?", \
+	"Took it for a field trip: our first %sneak_peek% of %product_name%.", \
+	"Reaping the fruits of %product_name% - %sneak_peek% by %author%", \
+	"Cultivating a new %industrial% future with %product_name%", \
+	"%company_name% grows and thrives: %product_name% now on the farmer's market", \
+	"It's almost harvest season: %product_name% promises to ease your life", \
+	"Become the best on the farmer's market with %product_name%", \
+"%product_name%: a gene-modified reimagination of an age-old classic"))
+
+TYPE_TABLE(/datum/industry/agriculture, industry_title_templates_ooc, list(	"%company_name% is looking to enter the %industry% playing field with %product_name%", \
+	"A questionable decision: %product_name% grown on the soil of %company_name%", \
+	"%company_name% broadens spectrum, %product_name% is their latest and greatest", \
+	"Will %company_name% grow on %industrial% wasteland? Owners of %product_name% may decide", \
+"%company_name% looking to reap profits off the %industrial% sector with %product_name%"))
+
 
 /datum/industry/agriculture/generateProductName(company_name)
 	var/list/products = list("water tank", "cattle prod", "scythe", "plough", "sickle", "cultivator", "loy", "spade", "hoe", "daisy grubber", "cotton gin")

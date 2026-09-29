@@ -66,7 +66,7 @@
 	add_fingerprint(ui.user)
 
 	if(!touch_silent)
-		playsound(src, 'sound/machines/pda_click.ogg', 20)
+		play_sfx(src, SFX_MACHINES_PDA_CLICK)
 
 	. = TRUE
 	switch(action)
@@ -111,4 +111,4 @@
 
 	if((honkamt > 0) && (prob(60)))//For clown virus.
 		honkamt--
-		playsound(loc, 'sound/items/bikehorn.ogg', 30, 1)
+		play_sfx(loc, SFX_ITEMS_BIKEHORN, 0.6)

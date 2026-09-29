@@ -45,17 +45,17 @@ DECLARE_DEFAULT_CHILD(/obj/item/mecha_parts/mecha_equipment/generator, "fuel", "
 	..()
 	return
 
-/obj/item/mecha_parts/mecha_equipment/generator/Topic(href, href_list)
-	..()
-	if(href_list["toggle"])
-		if(datum_flags & DF_ISPROCESSING)
-			om_task_periodic_stop(src)
-			set_ready_state(TRUE)
-			src.mecha_log_message("Deactivated.")
-		else
-			om_task_periodic(src, PERIODIC_FAST)
-			set_ready_state(FALSE)
-			src.mecha_log_message("Activated.")
+TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/generator, "toggle", PROC_REF(topic_toggle))
+
+/obj/item/mecha_parts/mecha_equipment/generator/proc/topic_toggle(mob/user, list/args)
+	if(datum_flags & DF_ISPROCESSING)
+		om_task_periodic_stop(src)
+		set_ready_state(TRUE)
+		src.mecha_log_message("Deactivated.")
+	else
+		om_task_periodic(src, PERIODIC_FAST)
+		set_ready_state(FALSE)
+		src.mecha_log_message("Activated.")
 	return
 
 /obj/item/mecha_parts/mecha_equipment/generator/get_equip_info()

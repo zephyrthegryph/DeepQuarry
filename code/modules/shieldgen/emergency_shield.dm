@@ -41,7 +41,7 @@
 
 /obj/machinery/shield/on_destroy(force)
 	opacity = 0
-	density = FALSE
+	set_density(FALSE)
 	update_nearby_tiles()
 	..()
 
@@ -61,7 +61,7 @@
 
 /obj/machinery/shield/proc/interaction_hit(mob/user, obj/item/W, datum/interaction/interaction)
 	//Play a fitting sound
-	playsound(src, 'sound/effects/EMPulse.ogg', 75, 1)
+	play_sfx(src, SFX_EFFECTS_EMPULSE, 0.75)
 
 	//Calculate damage
 	if(W.obj_damage_type())
@@ -81,7 +81,7 @@
 	visible_message(span_danger("\The [src] was hit by [source]."))
 
 	//This seemed to be the best sound for hitting a force field.
-	playsound(src, 'sound/effects/EMPulse.ogg', 100, 1)
+	play_sfx(src, SFX_EFFECTS_EMPULSE)
 
 	//The shield becomes dense to absorb the blow.. purely asthetic.
 	set_opacity(1)
@@ -104,12 +104,12 @@
 	integrity_failure = 0.3 // starts malfunctioning at 30% integrity
 	var/obj/item/cell/cell
 	var/cell_type = /obj/item/cell/high
-	var/active = 0
+	active = 0
 	var/malfunction = 0 //Malfunction causes parts of the shield to slowly dissapate
 	var/list/deployed_shields
 	var/list/regenerating
 	var/is_open = 0 //Whether or not the wires are exposed
-	var/locked = 0
+	locked = 0
 	var/check_delay = 60	//periodically recheck if we need to rebuild a shield
 	var/power_efficiency = 1 //Inverse. The lower, the more power efficient we are.
 	use_power = USE_POWER_OFF
@@ -138,7 +138,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/shieldgen, "cell", "cell_type")
 /obj/machinery/shieldgen/proc/shields_up()
 	if(active) return 0 //If it's already turned on, how did this get called?
 
-	active = TRUE
+	set_active(TRUE)
 	MACHINE_WAKE(src)
 	update_icon()
 
@@ -151,7 +151,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/shieldgen, "cell", "cell_type")
 /obj/machinery/shieldgen/proc/shields_down()
 	if(!active) return 0 //If it's already off, how did this get called?
 
-	active = FALSE
+	set_active(FALSE)
 	MACHINE_SLEEP(src)
 	update_icon()
 
@@ -214,7 +214,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/shieldgen, "cell", "cell_type")
 		if(1)
 			. = deal_damage(DAMAGE_IONIC, get_integrity() / 2, flags = DAMAGE_PACKET_SILENT) //cut health in half
 			malfunction = 1
-			locked = pick(0,1)
+			set_locked(pick(0,1))
 		if(2)
 			if(prob(50))
 				. = deal_damage(DAMAGE_IONIC, get_integrity() * 0.7, flags = DAMAGE_PACKET_SILENT) //chop off a third of the health
@@ -297,7 +297,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/shieldgen, "cell", "cell_type")
 
 /obj/machinery/shieldgen/proc/interaction_toggle_lock(mob/user, obj/item/held, datum/interaction/interaction)
 	if(allowed(user))
-		locked = !locked
+		set_locked(!locked)
 		to_chat(user, "The controls are now [locked ? "locked." : "unlocked."]")
 	else
 		to_chat(user, span_red("Access denied."))
@@ -345,17 +345,17 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/shieldgen, "cell", "cell_type")
 		if(active)
 			to_chat(user, span_blue("The [src] shuts off!"))
 			shields_down()
-		anchored = FALSE
+		set_anchored(FALSE)
 	else
 		if(istype(get_turf(src), /turf/space))
 			return ITEM_INTERACT_BLOCKING
 		playsound(src, W.usesound, 100, 1)
 		to_chat(user, span_blue("You secure the [src] to the floor!"))
-		anchored = TRUE
+		set_anchored(TRUE)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/shieldgen/update_icon()
-	if(active && !(stat & NOPOWER))
+	if(active && !has_stat(NOPOWER))
 		src.icon_state = malfunction ? "shieldonbr":"shieldon"
 	else
 		src.icon_state = malfunction ? "shieldoffbr":"shieldoff"

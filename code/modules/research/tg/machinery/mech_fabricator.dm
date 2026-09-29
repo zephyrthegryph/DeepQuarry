@@ -22,10 +22,10 @@
 	var/process_queue = FALSE
 
 	/// World time when the build will finish.
-	TIMESTAMP_VAR(build_finish)
+	EXPIRY_DECLARE(build_finish)
 
 	/// World time when the build started.
-	var/build_start = 0
+	EXPIRY_DECLARE(build_start)
 
 	/// The job ID of the part currently being processed. This is used for ordering list items for the client UI.
 	var/top_job_id = 0
@@ -46,7 +46,7 @@
 	var/datum/remote_materials/rmat
 
 	/// All designs in the techweb that can be fabricated by this machine, since the last update.
-	var/list/datum/design_techweb/cached_designs
+	var/list/datum/design_techweb/available_designs
 
 	/// Looping sound for printing items
 	var/datum/looping_sound/lathe_print/print_sound
@@ -68,7 +68,7 @@
 		mat_container_events = list( \
 			(/datum/om/event/matcontainer_item_consumed) = TYPE_PROC_REF(/obj/machinery/mecha_part_fabricator_tg, on_material_insert) \
 		)))
-	cached_designs = list()
+	available_designs = list()
 	illegal_local_designs = list()
 	. = ..()
 	default_apply_parts()
@@ -121,7 +121,7 @@
 		var/new_const_time = get_construction_time_w_coeff(initial(being_built().construction_time))
 		var/const_time_left = build_finish - world.time
 		var/new_build_time = (new_const_time / last_const_time) * const_time_left
-		build_finish = world.time + new_build_time
+		EXPIRY_SET(src, build_finish, new_build_time, CLOCK_WORLD)
 
 	update_static_data_for_all_viewers()
 
@@ -150,23 +150,23 @@
  * Updates the `final_sets` and `buildable_parts` for the current mecha fabricator.
  */
 /obj/machinery/mecha_part_fabricator_tg/proc/update_menu_tech()
-	var/previous_design_count = cached_designs.len
+	var/previous_design_count = available_designs.len
 
-	cached_designs.Cut()
+	available_designs.Cut()
 	for(var/v in stored_research().researched_designs)
 		var/datum/design_techweb/design = GLOB.research_service.techweb_design_by_id(v)
 
 		if(design.build_type & fab_type)
-			cached_designs |= design
+			available_designs |= design
 
 	for(var/datum/design_techweb/illegal_disign in illegal_local_designs)
-		cached_designs |= illegal_disign
+		available_designs |= illegal_disign
 
-	var/design_delta = cached_designs.len - previous_design_count
+	var/design_delta = available_designs.len - previous_design_count
 
 	if(design_delta > 0)
 		atom_say("Received [design_delta] new design[design_delta == 1 ? "" : "s"].")
-		playsound(src, 'sound/machines/twobeep.ogg', 50, TRUE)
+		play_sfx(src, SFX_MACHINES_TWOBEEP)
 
 	update_static_data_for_all_viewers()
 
@@ -177,7 +177,7 @@
  */
 /obj/machinery/mecha_part_fabricator_tg/proc/on_start_printing()
 	add_overlay("fab-active")
-	update_use_power(USE_POWER_ACTIVE)
+	set_use_power(USE_POWER_ACTIVE)
 	print_sound.start()
 
 /**
@@ -187,7 +187,7 @@
  */
 /obj/machinery/mecha_part_fabricator_tg/proc/on_finish_printing()
 	cut_overlay("fab-active")
-	update_use_power(USE_POWER_IDLE)
+	set_use_power(USE_POWER_IDLE)
 	desc = initial(desc)
 	process_queue = FALSE
 	print_sound.stop()
@@ -245,8 +245,8 @@
 	rmat.use_materials(D.materials, component_coeff, 1, "built", "[D.name]")
 	being_built = D
 	current_producer_account = producer_account
-	build_finish = world.time + get_construction_time_w_coeff(initial(D.construction_time))
-	build_start = world.time
+	EXPIRY_SET(src, build_finish, get_construction_time_w_coeff(initial(D.construction_time)), CLOCK_WORLD)
+	EXPIRY_STAMP(src, build_start, CLOCK_WORLD)
 	desc = "It's building \a [D.name]."
 
 	return TRUE
@@ -281,7 +281,7 @@
 		on_start_printing()
 
 	// If there's an item being built, check if it is complete.
-	if(being_built() && (build_finish < world.time))
+	if(being_built() && (ELAPSED(src, build_finish, CLOCK_WORLD) > 0))
 		// Then attempt to dispense it and if appropriate build the next item.
 		dispense_built_part(being_built())
 		if(process_queue)
@@ -392,7 +392,7 @@
 	var/datum/asset/spritesheet_batched/research_designs/spritesheet = get_asset_datum(/datum/asset/spritesheet_batched/research_designs)
 	var/size32x32 = "[spritesheet.name]32x32"
 
-	for(var/datum/design_techweb/design in cached_designs)
+	for(var/datum/design_techweb/design in available_designs)
 		var/cost = list()
 		var/list/materials = design.materials
 		for(var/mat_id in materials)

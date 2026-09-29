@@ -80,7 +80,7 @@
 
 /obj/machinery/computer/arcade/emp_act(severity, recursive)
 	. = ..()
-	if (. & EMP_PROTECT_SELF || (stat & (NOPOWER|BROKEN)))
+	if (. & EMP_PROTECT_SELF || (!operable()))
 		return
 	var/empprize = null
 	var/num_of_prizes = 0
@@ -170,7 +170,7 @@
 				blocked = 1
 				var/attackamt = rand(2,6)
 				temp = "You attack for [attackamt] damage!"
-				playsound(src, 'sound/arcade/hit.ogg', 50, 1, extrarange = -3, falloff = 0.1, ignore_walls = FALSE)
+				play_sfx(src, SFX_ARCADE_HIT, ignore_walls = FALSE)
 				if(turtle > 0)
 					turtle--
 
@@ -181,7 +181,7 @@
 				var/pointamt = rand(1,3)
 				var/healamt = rand(6,8)
 				temp = "You use [pointamt] magic to heal for [healamt] damage!"
-				playsound(src, 'sound/arcade/heal.ogg', 50, 1, extrarange = -3, falloff = 0.1, ignore_walls = FALSE)
+				play_sfx(src, SFX_ARCADE_HEAL, ignore_walls = FALSE)
 				turtle++
 
 				om_after(src, 1 SECOND, PROC_REF(battle_resolve), ui.user, 0, pointamt, healamt)
@@ -190,7 +190,7 @@
 				blocked = 1
 				var/chargeamt = rand(4,7)
 				temp = "You regain [chargeamt] points"
-				playsound(src, 'sound/arcade/mana.ogg', 50, 1, extrarange = -3, falloff = 0.1, ignore_walls = FALSE)
+				play_sfx(src, SFX_ARCADE_MANA, ignore_walls = FALSE)
 				player_mp += chargeamt
 				if(turtle > 0)
 					turtle--
@@ -209,7 +209,7 @@
 
 		if(emagged)
 			randomize_characters()
-			emagged = 0
+			set_emagged(0)
 
 	add_fingerprint(ui.user)
 	return TRUE
@@ -226,7 +226,7 @@
 		if(!gameover)
 			gameover = 1
 			temp = "[enemy_name] has fallen! Rejoice!"
-			playsound(src, 'sound/arcade/win.ogg', 50, 1, extrarange = -3, falloff = 0.1, ignore_walls = FALSE)
+			play_sfx(src, SFX_ARCADE_WIN, ignore_walls = FALSE)
 
 			if(emagged)
 				feedback_inc("arcade_win_emagged")
@@ -235,7 +235,7 @@
 				message_admins("[key_name_admin(user)] has outbombed Cuban Pete and been awarded a bomb.")
 				log_game("[key_name_admin(user)] has outbombed Cuban Pete and been awarded a bomb.")
 				randomize_characters()
-				emagged = 0
+				set_emagged(0)
 			else if(!contents_count(src) && !has_latent()) // ALLOW(latent): latent entries checked
 				feedback_inc("arcade_win_normal")
 				prizevend(user)
@@ -247,13 +247,13 @@
 	else if (emagged && (turtle >= 4))
 		var/boomamt = rand(5,10)
 		enemy_action = "[enemy_name] throws a bomb, exploding you for [boomamt] damage!"
-		playsound(src, 'sound/arcade/boom.ogg', 50, 1, extrarange = -3, falloff = 0.1, ignore_walls = FALSE)
+		play_sfx(src, SFX_ARCADE_BOOM, ignore_walls = FALSE)
 		player_hp -= boomamt
 
 	else if ((enemy_mp <= 5) && (prob(70)))
 		var/stealamt = rand(2,3)
 		enemy_action = "[enemy_name] steals [stealamt] of your power!"
-		playsound(src, 'sound/arcade/steal.ogg', 50, 1, extrarange = -3, falloff = 0.1, ignore_walls = FALSE)
+		play_sfx(src, SFX_ARCADE_STEAL, ignore_walls = FALSE)
 		player_mp -= stealamt
 
 		if (player_mp <= 0)
@@ -267,20 +267,20 @@
 
 	else if ((enemy_hp <= 10) && (enemy_mp > 4))
 		enemy_action = "[enemy_name] heals for 4 health!"
-		playsound(src, 'sound/arcade/heal.ogg', 50, 1, extrarange = -3, falloff = 0.1, ignore_walls = FALSE)
+		play_sfx(src, SFX_ARCADE_HEAL, ignore_walls = FALSE)
 		enemy_hp += 4
 		enemy_mp -= 4
 
 	else
 		var/attackamt = rand(3,6)
 		enemy_action = "[enemy_name] attacks for [attackamt] damage!"
-		playsound(src, 'sound/arcade/hit.ogg', 50, 1, extrarange = -3, falloff = 0.1, ignore_walls = FALSE)
+		play_sfx(src, SFX_ARCADE_HIT, ignore_walls = FALSE)
 		player_hp -= attackamt
 
 	if ((player_mp <= 0) || (player_hp <= 0))
 		gameover = 1
 		temp = "You have been crushed! GAME OVER"
-		playsound(src, 'sound/arcade/lose.ogg', 50, 1, extrarange = -3, falloff = 0.1, ignore_walls = FALSE)
+		play_sfx(src, SFX_ARCADE_LOSE, ignore_walls = FALSE)
 		if(emagged)
 			feedback_inc("arcade_loss_hp_emagged")
 			user.gib()
@@ -302,7 +302,7 @@
 		enemy_mp = 20
 		gameover = 0
 		blocked = 0
-		emagged = 1
+		set_emagged(1)
 
 		enemy_name = "Cuban Pete"
 		name = "Outbomb Cuban Pete"
@@ -426,269 +426,314 @@
 	if(hits < 3)
 		om_after(src, 1 SECOND, PROC_REF(blackhole_hurt), L, hits + 1)
 
-/obj/machinery/computer/arcade/orion_trail/Topic(href, href_list)
-	if(..())
-		return
-	if(href_list["close"])
-		usr.unset_machine()
-		// close the TGUI panel instead of a browse() window.
-		SStgui.close_uis(src)
+// Event screens embed href links (event()); the tgui buttons call the orion_* procs directly.
+TOPIC_ACTION(/obj/machinery/computer/arcade/orion_trail, "close", PROC_REF(orion_close))
+TOPIC_ACTION(/obj/machinery/computer/arcade/orion_trail, "slow", PROC_REF(orion_slow))
+TOPIC_ACTION(/obj/machinery/computer/arcade/orion_trail, "useengine", PROC_REF(orion_useengine))
+TOPIC_ACTION(/obj/machinery/computer/arcade/orion_trail, "useelec", PROC_REF(orion_useelec))
+TOPIC_ACTION(/obj/machinery/computer/arcade/orion_trail, "usehull", PROC_REF(orion_usehull))
+TOPIC_ACTION(/obj/machinery/computer/arcade/orion_trail, "wait", PROC_REF(orion_wait))
+TOPIC_ACTION(/obj/machinery/computer/arcade/orion_trail, "keepspeed", PROC_REF(orion_keepspeed))
+TOPIC_ACTION(/obj/machinery/computer/arcade/orion_trail, "holedeath", PROC_REF(orion_holedeath))
+TOPIC_ACTION(/obj/machinery/computer/arcade/orion_trail, "eventclose", PROC_REF(orion_eventclose))
+TOPIC_ACTION(/obj/machinery/computer/arcade/orion_trail, "killcrew", PROC_REF(orion_killcrew))
+TOPIC_ACTION(/obj/machinery/computer/arcade/orion_trail, "buycrew", PROC_REF(orion_buycrew))
+TOPIC_ACTION(/obj/machinery/computer/arcade/orion_trail, "sellcrew", PROC_REF(orion_sellcrew))
+TOPIC_ACTION(/obj/machinery/computer/arcade/orion_trail, "leave_spaceport", PROC_REF(orion_leave_spaceport))
+TOPIC_ACTION(/obj/machinery/computer/arcade/orion_trail, "raid_spaceport", PROC_REF(orion_raid_spaceport))
+TOPIC_ACTION(/obj/machinery/computer/arcade/orion_trail, "buyparts", PROC_REF(orion_buyparts), TOPIC_NUM("buyparts"))
+TOPIC_ACTION(/obj/machinery/computer/arcade/orion_trail, "trade", PROC_REF(orion_trade), TOPIC_NUM("trade"))
 
-	if (href_list["continue"]) //Continue your travels
-		if(gameStatus == ORION_STATUS_NORMAL && !event && turns != 7)
-			if(turns >= ORION_TRAIL_WINTURN)
-				win(usr)
-			else
-				food -= (alive+traitors_aboard)*2
-				fuel -= 5
-				if(turns == 2 && prob(30))
-					event = ORION_TRAIL_COLLISION
-					event()
-				else if(prob(75))
-					event = pickweight(events)
-					if(traitors_aboard)
-						if(event == ORION_TRAIL_MUTINY || prob(55))
-							event = ORION_TRAIL_MUTINY_ATTACK
-					event()
-				turns += 1
-			if(emagged)
-				var/mob/living/carbon/M = usr //for some vars
-				switch(event)
-					if(ORION_TRAIL_RAIDERS)
-						if(prob(50))
-							to_chat(usr, span_warning("You hear battle shouts. The tramping of boots on cold metal. Screams of agony. The rush of venting air. Are you going insane?"))
-							M.status_adjust(EFFECT_HALLUCINATING, 30)
-						else
-							to_chat(usr, span_danger("Something strikes you from behind! It hurts like hell and feel like a blunt weapon, but nothing is there..."))
-							M.injure(INJURY_BLUNT, 25, null, src)
-					if(ORION_TRAIL_ILLNESS)
-						var/severity = rand(1,3) //pray to RNGesus. PRAY, PIGS
-						if(severity == 1)
-							to_chat(M, span_warning("You suddenly feel slightly nauseous.")) //got off lucky
-						if(severity == 2)
-							to_chat(usr, span_warning("You suddenly feel extremely nauseous and hunch over until it passes."))
-							M.status_at_least(EFFECT_STUNNED, 3)
-						if(severity >= 3) //you didn't pray hard enough
-							to_chat(M, span_warning("An overpowering wave of nausea consumes over you. You hunch over, your stomach's contents preparing for a spectacular exit."))
-							if(ishuman(M))
-								om_after(M, 3 SECONDS, TYPE_PROC_REF(/mob/living/carbon/human, vomit))
-					if(ORION_TRAIL_FLUX)
-						if(prob(75))
-							M.status_at_least(EFFECT_WEAKENED, 3)
-							src.visible_message("A sudden gust of powerful wind slams \the [M] into the floor!", "You hear a large fwooshing sound, followed by a bang.")
-							M.injure(INJURY_BLUNT, 15, null, src)
-						else
-							to_chat(M, span_warning("A violent gale blows past you, and you barely manage to stay standing!"))
-					if(ORION_TRAIL_COLLISION) //by far the most damaging event
-						if(prob(90) && !hull)
-							var/turf/simulated/floor/F = src.loc
-							F.ChangeTurf(/turf/space)
-							src.visible_message(span_danger("Something slams into the floor around \the [src], exposing it to space!"), "You hear something crack and break.")
-						else
-							src.visible_message("Something slams into the floor around \the [src] - luckily, it didn't get through!", "You hear something crack.")
-					if(ORION_TRAIL_MALFUNCTION)
-						src.visible_message("\The [src] buzzes and the screen goes blank for a moment before returning to the game.")
-						var/oldfood = food
-						var/oldfuel = fuel
-						food = rand(10,80) / rand(1,2)
-						fuel = rand(10,60) / rand(1,2)
-						if(electronics)
-							om_after(src, 1 SECOND, PROC_REF(malfunction_restore), oldfood, oldfuel)
+/// Work done after every game action.
+/obj/machinery/computer/arcade/orion_trail/proc/orion_refresh(mob/user)
+	add_fingerprint(user)
+	updateUsrDialog(user)
 
-	else if(href_list["newgame"]) //Reset everything
-		if(gameStatus == ORION_STATUS_START)
-			playsound(src, 'sound/arcade/ori_begin.ogg', 50, 1, extrarange = -3, falloff = 0.1, ignore_walls = FALSE)
-			newgame(usr)
-	else if(href_list["menu"]) //back to the main menu
-		if(gameStatus == ORION_STATUS_GAMEOVER)
-			gameStatus = ORION_STATUS_START
-			event = null
-			food = 80
-			fuel = 60
-			settlers = list("Harry","Larry","Bob")
-	else if(href_list["slow"]) //slow down
-		if(event == ORION_TRAIL_FLUX)
+/obj/machinery/computer/arcade/orion_trail/proc/orion_close(mob/user, list/args)
+	user.unset_machine()
+	// close the TGUI panel instead of a browse() window.
+	SStgui.close_uis(src)
+	orion_refresh(user)
+
+/obj/machinery/computer/arcade/orion_trail/proc/orion_continue(mob/user, list/args)
+	if(gameStatus == ORION_STATUS_NORMAL && !event && turns != 7)
+		if(turns >= ORION_TRAIL_WINTURN)
+			win(user)
+		else
 			food -= (alive+traitors_aboard)*2
 			fuel -= 5
-		event = null
-	else if(href_list["pastblack"]) //slow down
-		if(turns == 7)
-			food -= ((alive+traitors_aboard)*2)*3
-			fuel -= 15
+			if(turns == 2 && prob(30))
+				event = ORION_TRAIL_COLLISION
+				event()
+			else if(prob(75))
+				event = pickweight(events)
+				if(traitors_aboard)
+					if(event == ORION_TRAIL_MUTINY || prob(55))
+						event = ORION_TRAIL_MUTINY_ATTACK
+				event()
 			turns += 1
+		if(emagged)
+			var/mob/living/carbon/M = user //for some vars
+			switch(event)
+				if(ORION_TRAIL_RAIDERS)
+					if(prob(50))
+						to_chat(user, span_warning("You hear battle shouts. The tramping of boots on cold metal. Screams of agony. The rush of venting air. Are you going insane?"))
+						M.status_adjust(EFFECT_HALLUCINATING, 30)
+					else
+						to_chat(user, span_danger("Something strikes you from behind! It hurts like hell and feel like a blunt weapon, but nothing is there..."))
+						M.injure(INJURY_BLUNT, 25, null, src)
+				if(ORION_TRAIL_ILLNESS)
+					var/severity = rand(1,3) //pray to RNGesus. PRAY, PIGS
+					if(severity == 1)
+						to_chat(M, span_warning("You suddenly feel slightly nauseous.")) //got off lucky
+					if(severity == 2)
+						to_chat(user, span_warning("You suddenly feel extremely nauseous and hunch over until it passes."))
+						M.status_at_least(EFFECT_STUNNED, 3)
+					if(severity >= 3) //you didn't pray hard enough
+						to_chat(M, span_warning("An overpowering wave of nausea consumes over you. You hunch over, your stomach's contents preparing for a spectacular exit."))
+						if(ishuman(M))
+							om_after(M, 3 SECONDS, TYPE_PROC_REF(/mob/living/carbon/human, vomit))
+				if(ORION_TRAIL_FLUX)
+					if(prob(75))
+						M.status_at_least(EFFECT_WEAKENED, 3)
+						src.visible_message("A sudden gust of powerful wind slams \the [M] into the floor!", "You hear a large fwooshing sound, followed by a bang.")
+						M.injure(INJURY_BLUNT, 15, null, src)
+					else
+						to_chat(M, span_warning("A violent gale blows past you, and you barely manage to stay standing!"))
+				if(ORION_TRAIL_COLLISION) //by far the most damaging event
+					if(prob(90) && !hull)
+						var/turf/simulated/floor/F = src.loc
+						F.ChangeTurf(/turf/space)
+						src.visible_message(span_danger("Something slams into the floor around \the [src], exposing it to space!"), "You hear something crack and break.")
+					else
+						src.visible_message("Something slams into the floor around \the [src] - luckily, it didn't get through!", "You hear something crack.")
+				if(ORION_TRAIL_MALFUNCTION)
+					src.visible_message("\The [src] buzzes and the screen goes blank for a moment before returning to the game.")
+					var/oldfood = food
+					var/oldfuel = fuel
+					food = rand(10,80) / rand(1,2)
+					fuel = rand(10,60) / rand(1,2)
+					if(electronics)
+						om_after(src, 1 SECOND, PROC_REF(malfunction_restore), oldfood, oldfuel)
+	orion_refresh(user)
+
+/obj/machinery/computer/arcade/orion_trail/proc/orion_newgame(mob/user, list/args)
+	if(gameStatus == ORION_STATUS_START)
+		play_sfx(src, SFX_ARCADE_ORI_BEGIN, ignore_walls = FALSE)
+		newgame(user)
+	orion_refresh(user)
+
+/obj/machinery/computer/arcade/orion_trail/proc/orion_menu(mob/user, list/args)
+	if(gameStatus == ORION_STATUS_GAMEOVER)
+		gameStatus = ORION_STATUS_START
+		event = null
+		food = 80
+		fuel = 60
+		settlers = list("Harry","Larry","Bob")
+	orion_refresh(user)
+
+/obj/machinery/computer/arcade/orion_trail/proc/orion_slow(mob/user, list/args)
+	if(event == ORION_TRAIL_FLUX)
+		food -= (alive+traitors_aboard)*2
+		fuel -= 5
+	event = null
+	orion_refresh(user)
+
+/obj/machinery/computer/arcade/orion_trail/proc/orion_pastblack(mob/user, list/args)
+	if(turns == 7)
+		food -= ((alive+traitors_aboard)*2)*3
+		fuel -= 15
+		turns += 1
+		event = null
+	orion_refresh(user)
+
+/obj/machinery/computer/arcade/orion_trail/proc/orion_useengine(mob/user, list/args)
+	if(event == ORION_TRAIL_BREAKDOWN)
+		engine = max(0, --engine)
+		event = null
+	orion_refresh(user)
+
+/obj/machinery/computer/arcade/orion_trail/proc/orion_useelec(mob/user, list/args)
+	if(event == ORION_TRAIL_MALFUNCTION)
+		electronics = max(0, --electronics)
+		event = null
+	orion_refresh(user)
+
+/obj/machinery/computer/arcade/orion_trail/proc/orion_usehull(mob/user, list/args)
+	if(event == ORION_TRAIL_COLLISION)
+		hull = max(0, --hull)
+		event = null
+	orion_refresh(user)
+
+/obj/machinery/computer/arcade/orion_trail/proc/orion_wait(mob/user, list/args)
+	if(event == ORION_TRAIL_BREAKDOWN || event == ORION_TRAIL_MALFUNCTION || event == ORION_TRAIL_COLLISION)
+		food -= ((alive+traitors_aboard)*2)*3
+		event = null
+	orion_refresh(user)
+
+/obj/machinery/computer/arcade/orion_trail/proc/orion_keepspeed(mob/user, list/args)
+	if(event == ORION_TRAIL_FLUX)
+		if(prob(75))
+			event = "Breakdown"
+			event()
+		else
 			event = null
-	else if(href_list["useengine"]) //use parts
-		if(event == ORION_TRAIL_BREAKDOWN)
-			engine = max(0, --engine)
+	orion_refresh(user)
+
+/obj/machinery/computer/arcade/orion_trail/proc/orion_blackhole(mob/user, list/args)
+	if(turns == 7)
+		if(prob(75))
+			event = ORION_TRAIL_BLACKHOLE
+			event()
+			if(emagged) //has to be here because otherwise it doesn't work
+				src.show_message("\The [src] states, 'YOU ARE EXPERIENCING A BLACKHOLE. BE TERRIFIED.","You hear something say, 'YOU ARE EXPERIENCING A BLACKHOLE. BE TERRFIED'")
+				to_chat(user, span_warning("Something draws you closer and closer to the machine."))
+				//spawning a literal blackhole would be fun, but a bit disruptive.
+				om_after(src, 1 SECOND, PROC_REF(blackhole_hurt), user, 0)
+		else
 			event = null
-	else if(href_list["useelec"]) //use parts
-		if(event == ORION_TRAIL_MALFUNCTION)
-			electronics = max(0, --electronics)
-			event = null
-	else if(href_list["usehull"]) //use parts
-		if(event == ORION_TRAIL_COLLISION)
-			hull = max(0, --hull)
-			event = null
-	else if(href_list["wait"]) //wait 3 days
-		if(event == ORION_TRAIL_BREAKDOWN || event == ORION_TRAIL_MALFUNCTION || event == ORION_TRAIL_COLLISION)
-			food -= ((alive+traitors_aboard)*2)*3
-			event = null
-	else if(href_list["keepspeed"]) //keep speed
-		if(event == ORION_TRAIL_FLUX)
-			if(prob(75))
-				event = "Breakdown"
-				event()
-			else
-				event = null
-	else if(href_list["blackhole"]) //keep speed past a black hole
-		if(turns == 7)
-			if(prob(75))
-				event = ORION_TRAIL_BLACKHOLE
-				event()
-				if(emagged) //has to be here because otherwise it doesn't work
-					src.show_message("\The [src] states, 'YOU ARE EXPERIENCING A BLACKHOLE. BE TERRIFIED.","You hear something say, 'YOU ARE EXPERIENCING A BLACKHOLE. BE TERRFIED'")
-					to_chat(usr, span_warning("Something draws you closer and closer to the machine."))
-					//spawning a literal blackhole would be fun, but a bit disruptive.
-					om_after(src, 1 SECOND, PROC_REF(blackhole_hurt), usr, 0)
-			else
-				event = null
-				turns += 1
-	else if(href_list["holedeath"])
-		if(event == ORION_TRAIL_BLACKHOLE)
+			turns += 1
+	orion_refresh(user)
+
+/obj/machinery/computer/arcade/orion_trail/proc/orion_holedeath(mob/user, list/args)
+	if(event == ORION_TRAIL_BLACKHOLE)
+		gameStatus = ORION_STATUS_GAMEOVER
+		event = null
+	orion_refresh(user)
+
+/obj/machinery/computer/arcade/orion_trail/proc/orion_eventclose(mob/user, list/args)
+	if(canContinueEvent)
+		event = null
+	orion_refresh(user)
+
+/obj/machinery/computer/arcade/orion_trail/proc/orion_killcrew(mob/user, list/args)
+	if(gameStatus == ORION_STATUS_NORMAL || event == ORION_TRAIL_MUTINY)
+		play_sfx(src, SFX_ARCADE_KILL_CREW, ignore_walls = FALSE)
+		var/sheriff = remove_crewmember() //I shot the sheriff
+		var/mob/living/L = user
+		if(!istype(L))
+			return
+		if(settlers.len == 0 || alive == 0)
+			src.visible_message("\The [src] states, 'EVERYONE HAS DIED, GAMEOVER.'", "You hear something state, 'EVERYONE HAS DIED, GAMEOVER.'")
+			if(emagged)
+				src.visible_message("\The [src] produces a loud, gunlike sound.")
+				L.injure(INJURY_PIERCE, 30, null, src)
+				set_emagged(0)
 			gameStatus = ORION_STATUS_GAMEOVER
 			event = null
-	else if(href_list["eventclose"]) //end an event
-		if(canContinueEvent)
+		else if(emagged)
+			if(user.name == sheriff)
+				src.visible_message("\The [src] states, 'THE CREW HAS CHOSEN TO KILL [user]'. A gunshot can be heard coming from \the [src]", "You hear 'THE CREW HAS CHOSEN TO KILL [user]' followed by a gunshot")
+				L.injure(INJURY_PIERCE, 30, null, src)
+		if(event == ORION_TRAIL_MUTINY) //only ends the ORION_TRAIL_MUTINY event, since you can do this action in multiple places
 			event = null
+	orion_refresh(user)
 
-	else if(href_list["killcrew"]) //shoot a crewmember
-		if(gameStatus == ORION_STATUS_NORMAL || event == ORION_TRAIL_MUTINY)
-			playsound(src, 'sound/arcade/kill_crew.ogg', 50, 1, extrarange = -3, falloff = 0.1, ignore_walls = FALSE)
-			var/sheriff = remove_crewmember() //I shot the sheriff
-			var/mob/living/L = usr
-			if(!istype(L))
-				return
-			if(settlers.len == 0 || alive == 0)
-				src.visible_message("\The [src] states, 'EVERYONE HAS DIED, GAMEOVER.'", "You hear something state, 'EVERYONE HAS DIED, GAMEOVER.'")
-				if(emagged)
-					src.visible_message("\The [src] produces a loud, gunlike sound.")
-					L.injure(INJURY_PIERCE, 30, null, src)
-					emagged = 0
-				gameStatus = ORION_STATUS_GAMEOVER
-				event = null
-			else if(emagged)
-				if(usr.name == sheriff)
-					src.visible_message("\The [src] states, 'THE CREW HAS CHOSEN TO KILL [usr]'. A gunshot can be heard coming from \the [src]", "You hear 'THE CREW HAS CHOSEN TO KILL [usr]' followed by a gunshot")
-					L.injure(INJURY_PIERCE, 30, null, src)
-			if(event == ORION_TRAIL_MUTINY) //only ends the ORION_TRAIL_MUTINY event, since you can do this action in multiple places
-				event = null
+/obj/machinery/computer/arcade/orion_trail/proc/orion_buycrew(mob/user, list/args)
+	if(gameStatus == ORION_STATUS_MARKET)
+		if(!spaceport_raided && food >= 10 && fuel >= 10)
+			play_sfx(src, SFX_ARCADE_GET_FUEL, ignore_walls = FALSE)
+			var/bought = add_crewmember()
+			last_spaceport_action = "You hired [bought] as a new crewmember."
+			fuel -= 10
+			food -= 10
+			event()
+	orion_refresh(user)
 
-	//Spaceport specific interactions
-	//they get a header because most of them don't reset event (because it's a shop, you leave when you want to)
-	//they also call event() again, to regen the eventdata, which is kind of odd but necessary
-	else if(href_list["buycrew"]) //buy a crewmember
-		if(gameStatus == ORION_STATUS_MARKET)
-			if(!spaceport_raided && food >= 10 && fuel >= 10)
-				playsound(src, 'sound/arcade/get_fuel.ogg', 50, 1, extrarange = -3, falloff = 0.1, ignore_walls = FALSE)
-				var/bought = add_crewmember()
-				last_spaceport_action = "You hired [bought] as a new crewmember."
-				fuel -= 10
-				food -= 10
-				event()
+/obj/machinery/computer/arcade/orion_trail/proc/orion_sellcrew(mob/user, list/args)
+	if(gameStatus == ORION_STATUS_MARKET)
+		if(!spaceport_raided && settlers.len > 1)
+			play_sfx(src, SFX_ARCADE_LOSE_FUEL, ignore_walls = FALSE)
+			var/sold = remove_crewmember()
+			last_spaceport_action = "You sold your crewmember, [sold]!"
+			fuel += 7
+			food += 7
+			event()
+	orion_refresh(user)
 
-	else if(href_list["sellcrew"]) //sell a crewmember
-		if(gameStatus == ORION_STATUS_MARKET)
-			if(!spaceport_raided && settlers.len > 1)
-				playsound(src, 'sound/arcade/lose_fuel.ogg', 50, 1, extrarange = -3, falloff = 0.1, ignore_walls = FALSE)
-				var/sold = remove_crewmember()
-				last_spaceport_action = "You sold your crewmember, [sold]!"
-				fuel += 7
-				food += 7
-				event()
+/obj/machinery/computer/arcade/orion_trail/proc/orion_leave_spaceport(mob/user, list/args)
+	if(gameStatus == ORION_STATUS_MARKET)
+		event = null
+		gameStatus = ORION_STATUS_NORMAL
+		spaceport_raided = 0
+		spaceport_freebie = 0
+		last_spaceport_action = ""
+	orion_refresh(user)
 
-	else if(href_list["leave_spaceport"])
-		if(gameStatus == ORION_STATUS_MARKET)
-			event = null
-			gameStatus = ORION_STATUS_NORMAL
-			spaceport_raided = 0
-			spaceport_freebie = 0
-			last_spaceport_action = ""
+/obj/machinery/computer/arcade/orion_trail/proc/orion_raid_spaceport(mob/user, list/args)
+	if(gameStatus == ORION_STATUS_MARKET)
+		if(!spaceport_raided)
+			play_sfx(src, SFX_ARCADE_RAID, ignore_walls = FALSE)
+			var/success = min(15 * alive,100) //default crew (4) have a 60% chance
+			spaceport_raided = 1
 
-	else if(href_list["raid_spaceport"])
-		if(gameStatus == ORION_STATUS_MARKET)
-			if(!spaceport_raided)
-				playsound(src, 'sound/arcade/raid.ogg', 50, 1, extrarange = -3, falloff = 0.1, ignore_walls = FALSE)
-				var/success = min(15 * alive,100) //default crew (4) have a 60% chance
-				spaceport_raided = 1
+			var/FU = 0
+			var/FO = 0
+			if(prob(success))
+				FU = rand(5,15)
+				FO = rand(5,15)
+				last_spaceport_action = "You successfully raided the spaceport! You gained [FU] Fuel and [FO] Food! (+[FU]FU,+[FO]FO)"
+			else
+				FU = rand(-5,-15)
+				FO = rand(-5,-15)
+				last_spaceport_action = "You failed to raid the spaceport! You lost [FU*-1] Fuel and [FO*-1] Food in your scramble to escape! ([FU]FU,[FO]FO)"
 
-				var/FU = 0
-				var/FO = 0
-				if(prob(success))
-					FU = rand(5,15)
-					FO = rand(5,15)
-					last_spaceport_action = "You successfully raided the spaceport! You gained [FU] Fuel and [FO] Food! (+[FU]FU,+[FO]FO)"
-				else
-					FU = rand(-5,-15)
-					FO = rand(-5,-15)
-					last_spaceport_action = "You failed to raid the spaceport! You lost [FU*-1] Fuel and [FO*-1] Food in your scramble to escape! ([FU]FU,[FO]FO)"
-
-					//your chance of lose a crewmember is 1/2 your chance of success
-					//this makes higher % failures hurt more, don't get cocky space cowboy!
-					if(prob(success*5))
-						var/lost_crew = remove_crewmember()
-						last_spaceport_action = "You failed to raid the spaceport! You lost [FU*-1] Fuel and [FO*-1] Food, AND [lost_crew] in your scramble to escape! ([FU]FI,[FO]FO,-Crew)"
-						if(emagged)
-							src.visible_message("The machine states, 'YOU ARE UNDER ARREST, RAIDER!' and shoots handcuffs onto [usr]!", "You hear something say 'YOU ARE UNDER ARREST, RAIDER!' and a clinking sound")
-							var/obj/item/handcuffs/C = new(src.loc)
-							var/mob/living/carbon/human/H = usr
-							if(istype(H))
-								H.equip_to_slot(C, SLOT_ID_HANDCUFFED)
-							else
-								C.throw_at(usr,16,3,src)
+				//your chance of lose a crewmember is 1/2 your chance of success
+				//this makes higher % failures hurt more, don't get cocky space cowboy!
+				if(prob(success*5))
+					var/lost_crew = remove_crewmember()
+					last_spaceport_action = "You failed to raid the spaceport! You lost [FU*-1] Fuel and [FO*-1] Food, AND [lost_crew] in your scramble to escape! ([FU]FI,[FO]FO,-Crew)"
+					if(emagged)
+						src.visible_message("The machine states, 'YOU ARE UNDER ARREST, RAIDER!' and shoots handcuffs onto [user]!", "You hear something say 'YOU ARE UNDER ARREST, RAIDER!' and a clinking sound")
+						var/obj/item/handcuffs/C = new(src.loc)
+						var/mob/living/carbon/human/H = user
+						if(istype(H))
+							H.equip_to_slot(C, SLOT_ID_HANDCUFFED)
+						else
+							C.throw_at(user,16,3,src)
 
 
-				fuel += FU
-				food += FO
-				event()
+			fuel += FU
+			food += FO
+			event()
+	orion_refresh(user)
 
-	else if(href_list["buyparts"])
-		if(gameStatus == ORION_STATUS_MARKET)
-			if(!spaceport_raided && fuel > 5)
-				playsound(src, 'sound/arcade/get_fuel.ogg', 50, 1, extrarange = -3, falloff = 0.1, ignore_walls = FALSE)
-				switch(text2num(href_list["buyparts"]))
-					if(1) //Engine Parts
-						engine++
-						last_spaceport_action = "Bought Engine Parts"
-					if(2) //Hull Plates
-						hull++
-						last_spaceport_action = "Bought Hull Plates"
-					if(3) //Spare Electronics
-						electronics++
-						last_spaceport_action = "Bought Spare Electronics"
-				fuel -= 5 //they all cost 5
-				event()
+/obj/machinery/computer/arcade/orion_trail/proc/orion_buyparts(mob/user, list/args)
+	if(gameStatus == ORION_STATUS_MARKET)
+		if(!spaceport_raided && fuel > 5)
+			play_sfx(src, SFX_ARCADE_GET_FUEL, ignore_walls = FALSE)
+			switch(args["buyparts"])
+				if(1) //Engine Parts
+					engine++
+					last_spaceport_action = "Bought Engine Parts"
+				if(2) //Hull Plates
+					hull++
+					last_spaceport_action = "Bought Hull Plates"
+				if(3) //Spare Electronics
+					electronics++
+					last_spaceport_action = "Bought Spare Electronics"
+			fuel -= 5 //they all cost 5
+			event()
+	orion_refresh(user)
 
-	else if(href_list["trade"])
-		if(gameStatus == ORION_STATUS_MARKET)
-			if(!spaceport_raided)
-				playsound(src, 'sound/arcade/get_fuel.ogg', 50, 1, extrarange = -3, falloff = 0.1, ignore_walls = FALSE)
-				switch(text2num(href_list["trade"]))
-					if(1) //Fuel
-						if(fuel > 5)
-							fuel -= 5
-							food += 5
-							last_spaceport_action = "Traded Fuel for Food"
-							event()
-					if(2) //Food
-						if(food > 5)
-							fuel += 5
-							food -= 5
-							last_spaceport_action = "Traded Food for Fuel"
-							event()
-
-	src.add_fingerprint(usr)
-	src.updateUsrDialog(usr)
-	return
+/obj/machinery/computer/arcade/orion_trail/proc/orion_trade(mob/user, list/args)
+	if(gameStatus == ORION_STATUS_MARKET)
+		if(!spaceport_raided)
+			play_sfx(src, SFX_ARCADE_GET_FUEL, ignore_walls = FALSE)
+			switch(args["trade"])
+				if(1) //Fuel
+					if(fuel > 5)
+						fuel -= 5
+						food += 5
+						last_spaceport_action = "Traded Fuel for Food"
+						event()
+				if(2) //Food
+					if(food > 5)
+						fuel += 5
+						food -= 5
+						last_spaceport_action = "Traded Food for Fuel"
+						event()
+	orion_refresh(user)
 
 
 /obj/machinery/computer/arcade/orion_trail/proc/event()
@@ -713,7 +758,7 @@
 			canContinueEvent = 1
 
 		if(ORION_TRAIL_FLUX)
-			playsound(src, 'sound/arcade/explo.ogg', 50, 1, extrarange = -3, falloff = 0.1, ignore_walls = FALSE)
+			play_sfx(src, SFX_ARCADE_EXPLO, ignore_walls = FALSE)
 			eventdat += "This region of space is highly turbulent. <br>If we go slowly we may avoid more damage, but if we keep our speed we won't waste supplies."
 			eventdat += "<br>What will you do?"
 			eventdat += "<P ALIGN=Right><a href='byond://?src=\ref[src];slow=1'>Slow Down</a> <a href='byond://?src=\ref[src];keepspeed=1'>Continue</a></P>"
@@ -728,7 +773,7 @@
 			canContinueEvent = 1
 
 		if(ORION_TRAIL_BREAKDOWN)
-			playsound(src, 'sound/arcade/explo.ogg', 50, 1, extrarange = -3, falloff = 0.1, ignore_walls = FALSE)
+			play_sfx(src, SFX_ARCADE_EXPLO, ignore_walls = FALSE)
 			eventdat += "Oh no! The engine has broken down!"
 			eventdat += "<br>You can repair it with an engine part, or you can make repairs for 3 days."
 			if(engine >= 1)
@@ -747,7 +792,7 @@
 			eventdat += "<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"
 
 		if(ORION_TRAIL_COLLISION)
-			playsound(src, 'sound/arcade/explo.ogg', 50, 1, extrarange = -3, falloff = 0.1, ignore_walls = FALSE)
+			play_sfx(src, SFX_ARCADE_EXPLO, ignore_walls = FALSE)
 			eventdat += "Something hit us! Looks like there's some hull damage."
 			if(prob(25))
 				var/sfood = rand(5,15)
@@ -963,14 +1008,14 @@
 /obj/machinery/computer/arcade/orion_trail/proc/win(mob/user)
 	gameStatus = ORION_STATUS_START
 	src.visible_message("\The [src] plays a triumpant tune, stating 'CONGRATULATIONS, YOU HAVE MADE IT TO ORION.'")
-	playsound(src, 'sound/arcade/ori_win.ogg', 50, 1, extrarange = -3, falloff = 0.1, ignore_walls = FALSE)
+	play_sfx(src, SFX_ARCADE_ORI_WIN, ignore_walls = FALSE)
 	if(emagged)
 		new /obj/item/orion_ship(src.loc)
 		message_admins("[key_name_admin(user)] made it to Orion on an emagged machine and got an explosive toy ship.")
 		log_game("[key_name(user)] made it to Orion on an emagged machine and got an explosive toy ship.")
 	else
 		prizevend(user)
-	emagged = 0
+	set_emagged(0)
 	name = "The Orion Trail"
 	desc = "Learn how our ancestors got to Orion, and have fun in the process!"
 
@@ -980,7 +1025,7 @@
 		name = "The Orion Trail: Realism Edition"
 		desc = "Learn how our ancestors got to Orion, and try not to die in the process!"
 		newgame(user)
-		emagged = 1
+		set_emagged(1)
 		return 1
 
 /obj/item/orion_ship
@@ -1132,7 +1177,7 @@ DECLARE_INTERACTIONS(/obj/item/orion_ship, INTERACT_USE(null, PROC_REF(interacti
 		credit_purchase("(cash)")
 		return 1
 	if(emagged)
-		playsound(src, 'sound/arcade/steal.ogg', 50, 1, extrarange = -3, falloff = 0.1, ignore_walls = FALSE)
+		play_sfx(src, SFX_ARCADE_STEAL, ignore_walls = FALSE)
 		to_chat(user, span_info("It doesn't seem to accept that! Seem you'll need to swipe a valid ID."))
 
 
@@ -1140,7 +1185,7 @@ DECLARE_INTERACTIONS(/obj/item/orion_ship, INTERACT_USE(null, PROC_REF(interacti
 /obj/machinery/computer/arcade/clawmachine/proc/pay_with_ewallet(obj/item/spacecash/ewallet/wallet, mob/user)
 	if(!emagged)
 		visible_message(span_info("\The [user] swipes \the [wallet] through \the [src]."))
-		playsound(src, 'sound/machines/id_swipe.ogg', 50, 1)
+		play_sfx(src, SFX_MACHINES_ID_SWIPE)
 		if(gameprice > wallet.worth)
 			visible_message(span_info("Insufficient funds."))
 			return 0
@@ -1149,7 +1194,7 @@ DECLARE_INTERACTIONS(/obj/item/orion_ship, INTERACT_USE(null, PROC_REF(interacti
 			credit_purchase("[wallet.owner_name] (chargecard)")
 			return 1
 	if(emagged)
-		playsound(src, 'sound/arcade/steal.ogg', 50, 1, extrarange = -3, falloff = 0.1, ignore_walls = FALSE)
+		play_sfx(src, SFX_ARCADE_STEAL, ignore_walls = FALSE)
 		to_chat(user, span_info("It doesn't seem to accept that! Seem you'll need to swipe a valid ID."))
 
 ///// ID
@@ -1158,7 +1203,7 @@ DECLARE_INTERACTIONS(/obj/item/orion_ship, INTERACT_USE(null, PROC_REF(interacti
 		visible_message(span_info("\The [user] swipes \the [I] through \the [src]."))
 	else
 		visible_message(span_info("\The [user] swipes \the [ID_container] through \the [src]."))
-	playsound(src, 'sound/machines/id_swipe.ogg', 50, 1)
+	play_sfx(src, SFX_MACHINES_ID_SWIPE)
 	var/datum/money_account/customer_account = get_account(I.associated_account_number)
 	if(!customer_account)
 		visible_message(span_info("Error: Unable to access account. Please contact technical support if problem persists."))
@@ -1239,7 +1284,7 @@ DECLARE_INTERACTIONS(/obj/item/orion_ship, INTERACT_USE(null, PROC_REF(interacti
 		return
 
 	if(action == "newgame" && gamepaid == 0)
-		playsound(src, 'sound/arcade/steal.ogg', 50, 1, extrarange = -3, falloff = 0.1, ignore_walls = FALSE)
+		play_sfx(src, SFX_ARCADE_STEAL, ignore_walls = FALSE)
 
 	if(action == "newgame" && gamepaid == 1)
 		gameStatus = "CLAWMACHINE_ON"
@@ -1266,17 +1311,17 @@ DECLARE_INTERACTIONS(/obj/item/orion_ship, INTERACT_USE(null, PROC_REF(interacti
 			winscreen = "You won!"
 		else if(emagged)
 			gameprice = 1
-			emagged = 0
+			set_emagged(0)
 			winscreen = "You won...?"
 			var/obj/item/grenade/G = new /obj/item/grenade/explosive(get_turf(src)) /// YEAAAAAAAAAAAAAAAAAAH!!!!!!!!!!
 			G.activate()
 			G.throw_at(get_turf(user),10,10) /// Play stupid games, win stupid prizes.
 
-		playsound(src, 'sound/arcade/ori_win.ogg', 50, 1, extrarange = -3, falloff = 0.1, ignore_walls = FALSE)
+		play_sfx(src, SFX_ARCADE_ORI_WIN, ignore_walls = FALSE)
 		winprob = 0
 
 	else
-		playsound(src, 'sound/arcade/ori_fail.ogg', 50, 1, extrarange = -3, falloff = 0.1, ignore_walls = FALSE)
+		play_sfx(src, SFX_ARCADE_ORI_FAIL, ignore_walls = FALSE)
 		winscreen = "Aw, shucks. Try again!"
 	wintick = 0
 	gamepaid = 0
@@ -1293,7 +1338,7 @@ DECLARE_INTERACTIONS(/obj/item/orion_ship, INTERACT_USE(null, PROC_REF(interacti
 		gamepaid = 0
 		wintick = 0
 		gameStatus = "CLAWMACHINE_NEW"
-		emagged = 1
+		set_emagged(1)
 		return 1
 
 // === merged from arcade_vr.dm during hard-fork de-suffix (verified no override-order change) ===

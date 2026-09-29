@@ -91,7 +91,7 @@ GLOBAL_LIST_EMPTY(dq_edit_player_panels)
 	// DNA — only meaningful for carbons with a DNA struct.
 	if(target().dna && iscarbon(target()))
 		var/list/dna_cells = list()
-		var/list/gene_lookup = get_gene_lookup()
+		var/list/gene_lookup = GLOBAL_TABLE_GET(edit_player_gene_lookup)
 		for(var/block = 1; block <= DNA_SE_LENGTH; block++)
 			var/datum/gene/gene = gene_lookup["[block]"]
 			var/cell_state = "empty"
@@ -122,7 +122,7 @@ GLOBAL_LIST_EMPTY(dq_edit_player_panels)
 
 	// Language list.
 	var/list/langs = list()
-	for(var/k in get_non_innate_language_keys())
+	for(var/k in GLOBAL_TABLE_GET(non_innate_language_keys))
 		langs += list(list(
 			"key" = k,
 			"known" = (GLOB.all_languages[k] in target().languages),
@@ -131,28 +131,26 @@ GLOBAL_LIST_EMPTY(dq_edit_player_panels)
 
 	return data
 
-/datum/edit_player_panel/proc/get_gene_lookup()
-	var/static/list/lookup
-	if(lookup)
-		return lookup
-	lookup = list()
+/proc/build_edit_player_gene_lookup()
+	var/list/lookup = list()
 	for(var/setup_block = 1; setup_block <= DNA_SE_LENGTH; setup_block++)
 		lookup["[setup_block]"] = null
 	for(var/datum/gene/gene in GLOB.dna_genes)
 		lookup["[gene.block]"] = gene
 	return lookup
 
-/datum/edit_player_panel/proc/get_non_innate_language_keys()
-	var/static/list/keys
-	if(keys)
-		return keys
-	keys = list()
+GLOBAL_TABLE(edit_player_gene_lookup, GLOBAL_PROC_REF(build_edit_player_gene_lookup))
+
+/proc/build_non_innate_language_keys()
+	var/list/keys = list()
 	for(var/k in GLOB.all_languages)
 		var/datum/language/L = GLOB.all_languages[k]
 		if(L.flags & INNATE)
 			continue
 		keys += k
 	return keys
+
+GLOBAL_TABLE(non_innate_language_keys, GLOBAL_PROC_REF(build_non_innate_language_keys))
 
 /datum/edit_player_panel/proc/forward_topic(qs, list/extra_params = null)
 	forward_holder_topic(holder(), qs, extra_params)
@@ -176,7 +174,7 @@ GLOBAL_LIST_EMPTY(dq_edit_player_panels)
 			SStgui.update_uis(src)
 			return TRUE
 		if("vv")
-			holder().Topic("Vars=[tref]", list("_src_" = "vars", "Vars" = tref))
+			ui.user.client?.vv_topic(list("Vars" = tref), TRUE)
 			return TRUE
 		if("traitor")
 			forward_topic("traitor=[tref]")

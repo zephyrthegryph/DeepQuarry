@@ -27,7 +27,7 @@
 
 /obj/structure/ghost_pod/automatic/xenomorph_egg/atom_destruction(damage_flag)
 	visible_message(span_warning("\the [src] splatters everywhere as it cracks open!"))
-	playsound(src, 'sound/effects/slime_squish.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_SLIME_SQUISH)
 	return ..()
 
 /obj/structure/ghost_pod/automatic/xenomorph_egg/declare_interactions(list/into)
@@ -44,7 +44,7 @@
 
 /obj/structure/ghost_pod/automatic/xenomorph_egg/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	user.setClickCooldown(user.get_attack_speed(W))
-	playsound(src, 'sound/effects/attackblob.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_ATTACKBLOB)
 	switch(W.obj_damage_type())
 		if(BURN)
 			receive_weapon_hit(W, user, W.force * 1.25, INJURY_BURN) //It really doesn't like fire

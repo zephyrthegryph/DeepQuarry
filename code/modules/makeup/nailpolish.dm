@@ -10,8 +10,8 @@
 	var/image/top_underlay
 	var/image/color_underlay
 	var/open = FALSE
-	drop_sound = 'sound/items/drop/glass.ogg'
-	pickup_sound = 'sound/items/pickup/glass.ogg'
+	drop_sound = SFX_ITEMS_DROP_GLASS
+	pickup_sound = SFX_ITEMS_PICKUP_GLASS
 
 /obj/item/nailpolish/Initialize(mapload)
 	. = ..()
@@ -112,8 +112,8 @@ DECLARE_INTERACTIONS(/obj/item/nailpolish, INTERACT_USE(null, PROC_REF(interacti
 /obj/item/nailpolish_remover
 	name = "nail polish remover"
 	desc = "Paint thinner, acetone, nail polish remover; whatever you call it, it gets the job done."
-	drop_sound = 'sound/items/drop/helm.ogg'
-	pickup_sound = 'sound/items/pickup/helm.ogg'
+	drop_sound = SFX_ITEMS_DROP_HELM
+	pickup_sound = SFX_ITEMS_PICKUP_HELM
 	icon = 'icons/obj/nailpolish_vr.dmi'
 	icon_state = "nailpolishremover"
 	var/open = FALSE

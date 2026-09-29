@@ -2,7 +2,7 @@
 // This class of weapons takes force and appearance data from a material datum.
 // They are also fragile based on material data and many can break/smash apart.
 /obj/item/material
-	hitsound = 'sound/weapons/bladeslice.ogg'
+	hitsound = SFX_WEAPONS_BLADESLICE
 	gender = NEUTER
 	throw_speed = 3
 	throw_range = 7
@@ -124,14 +124,14 @@ EXTEND_INTERACTIONS(/obj/item/material, INTERACT_ITEM("Repair", PROC_REF(materia
 	if(isliving(loc))
 		var/mob/living/M = loc
 		M.drop_from_inventory(src)
-	playsound(src, "shatter", 70, 1)
+	play_sfx(src, SFX_SHATTER)
 	if(!consumed && drops_debris) material.place_shard(T)
 	qdel(src)
 
 /obj/item/material/proc/dull()
 	var/turf/T = get_turf(src)
 	T.visible_message(span_danger("\The [src] goes dull!"))
-	playsound(src, "shatter", 70, 1)
+	play_sfx(src, SFX_SHATTER)
 	dulled = 1
 	if(is_sharp(src) || has_edge(src))
 		sharp = FALSE
@@ -140,7 +140,7 @@ EXTEND_INTERACTIONS(/obj/item/material, INTERACT_ITEM("Repair", PROC_REF(materia
 /obj/item/material/proc/repair(repair_amount, repair_time, mob/living/user)
 	if(!fragile)
 		if(get_integrity() < max_integrity)
-			user.visible_message("[user] begins repairing \the [src].", "You begin repairing \the [src].")
+			act_message(user, src, MSG_SELF("You begin repairing %T%."), MSG_OTHERS("%U% begins repairing %T%."))
 			om_task_timed(user, repair_time, target = src, receiver = src, on_done = PROC_REF(repair_timed_done), done_args = list(repair_amount, user))
 		else
 			to_chat(user, span_notice("[src] doesn't need repairs."))
@@ -149,7 +149,7 @@ EXTEND_INTERACTIONS(/obj/item/material, INTERACT_ITEM("Repair", PROC_REF(materia
 		return
 
 /obj/item/material/proc/repair_timed_done(repair_amount, mob/living/user)
-	user.visible_message("[user] has finished repairing \the [src]", "You finish repairing \the [src].")
+	act_message(user, src, MSG_SELF("You finish repairing %T%."), MSG_OTHERS("%U% has finished repairing %T%"))
 	repair_damage(repair_amount * MATERIAL_WEAR_UNIT)
 	dulled = 0
 	sharp = initial(sharp)
@@ -160,7 +160,7 @@ EXTEND_INTERACTIONS(/obj/item/material, INTERACT_ITEM("Repair", PROC_REF(materia
 		if(get_integrity() < max_integrity)
 			to_chat(M, "You should repair [src] first. Try using [kit] on it.")
 			return FALSE
-		M.visible_message("[M] begins to replace parts of [src] with [kit].", "You begin to replace parts of [src] with [kit].")
+		act_message(M, src, MSG_SELF("You begin to replace parts of %T% with [kit]."), MSG_OTHERS("%U% begins to replace parts of %T% with [kit]."))
 		om_task_timed(M, sharpen_time, target = src, receiver = src, on_done = PROC_REF(sharpen_timed_done), done_args = list(material, M))
 		return TRUE
 	else
@@ -168,6 +168,6 @@ EXTEND_INTERACTIONS(/obj/item/material, INTERACT_ITEM("Repair", PROC_REF(materia
 		return FALSE
 
 /obj/item/material/proc/sharpen_timed_done(material, mob/living/M)
-	M.visible_message("[M] has finished replacing parts of [src].", "You finish replacing parts of [src].")
+	act_message(M, src, MSG_SELF("You finish replacing parts of %T%."), MSG_OTHERS("%U% has finished replacing parts of %T%."))
 	src.set_material(material)
 	return TRUE

@@ -22,7 +22,7 @@
 
 	var/obj/item/cell/cell
 	var/cell_type = /obj/item/cell/high
-	var/state = 0
+	state = 0
 	var/set_temperature = T0C + 20	//K
 	var/min_temperature = DEFAULT_MIN_TEMP
 	var/max_temperature = DEFAULT_MAX_TEMP
@@ -35,7 +35,7 @@
 	var/regulator_carnot_fraction = 0.4
 	/// Upper bound on the pump's COP.
 	var/regulator_max_cop = 25
-	clicksound = "switch"
+	clicksound = SFX_SWITCH
 	interact_offline = TRUE
 	bubble_icon = "engineering"
 	circuit = /obj/item/circuitboard/space_heater
@@ -161,7 +161,7 @@ DECLARE_APPEARANCE(/obj/machinery/space_heater, "panel_open", list("1" = list(AP
 	if(panel_open)
 		tgui_interact(user)
 	else
-		state = state ? SHEATER_OFF : SHEATER_STANDBY
+		set_state(state ? SHEATER_OFF : SHEATER_STANDBY)
 		if(state)
 			MACHINE_WAKE(src)
 		user.visible_message(span_notice("[user] switches [state ? "on" : "off"] the [src]."),span_notice("You switch [state ? "on" : "off"] the [src]."))
@@ -246,7 +246,7 @@ DECLARE_APPEARANCE(/obj/machinery/space_heater, "panel_open", list("1" = list(AP
 				var/heat_transfer = removed.get_thermal_energy_change(set_temperature)
 				if(heat_transfer > 0)	//heating air
 					if(state == SHEATER_STANDBY)
-						state = SHEATER_HEAT
+						set_state(SHEATER_HEAT)
 						update_icon()
 					heat_transfer = min(heat_transfer , heating_power) //limit by the power rating of the heater
 
@@ -254,7 +254,7 @@ DECLARE_APPEARANCE(/obj/machinery/space_heater, "panel_open", list("1" = list(AP
 					cell.use(heat_transfer*CELLRATE*power_efficiency)
 				else	//cooling air
 					if(state == SHEATER_STANDBY)
-						state = SHEATER_COOL
+						set_state(SHEATER_COOL)
 						update_icon()
 					heat_transfer = abs(heat_transfer)
 
@@ -268,7 +268,7 @@ DECLARE_APPEARANCE(/obj/machinery/space_heater, "panel_open", list("1" = list(AP
 
 			env.merge(removed)
 	else
-		state = SHEATER_OFF
+		set_state(SHEATER_OFF)
 		power_change()
 		update_icon()
 		return PROCESS_KILL

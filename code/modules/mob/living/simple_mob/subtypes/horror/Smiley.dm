@@ -1,5 +1,5 @@
 /mob/living/simple_mob/horror/Smiley
-	reaction_sound = 'sound/h_sounds/holla.ogg'
+	reaction_sound = SFX_H_SOUNDS_HOLLA
 	name = "???"
 	desc = "A giant hand, with a large, smiling head on top."
 
@@ -11,7 +11,7 @@
 	icon = 'icons/mob/horror_show/GHPS.dmi'
 	icon_gib = "generic_gib"
 
-	attack_sound = 'sound/h_sounds/holla.ogg'
+	attack_sound = SFX_H_SOUNDS_HOLLA
 
 	endurance = 175
 
@@ -29,11 +29,11 @@
 	say_list_type = /datum/say_list/Smiley
 
 /mob/living/simple_mob/horror/Smiley/on_death(gibbed)
-	playsound(src, 'sound/h_sounds/lynx.ogg', 50, 1)
+	play_sfx(src, SFX_H_SOUNDS_LYNX)
 	..()
 
 /mob/living/simple_mob/horror/Smiley/bullet_act()
-	playsound(src, 'sound/h_sounds/holla.ogg', 50, 1)
+	play_sfx(src, SFX_H_SOUNDS_HOLLA)
 	..()
 
 /datum/say_list/Smiley

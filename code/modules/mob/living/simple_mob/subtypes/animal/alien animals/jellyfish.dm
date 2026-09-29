@@ -40,7 +40,7 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 	harm_intent_damage = 1
 	melee_damage_lower = 1
 	melee_damage_upper = 2
-	attack_sound = 'sound/weapons/tap.ogg'
+	attack_sound = SFX_WEAPONS_TAP
 	attacktext = list("drained", "bludgeoned", "wraped", "tentacle whipped")
 
 	min_oxy = 0

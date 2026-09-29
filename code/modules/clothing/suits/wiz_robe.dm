@@ -66,9 +66,7 @@
 	siemens_coefficient = 0.8
 	wizard_garb = 1
 
-/obj/item/clothing/suit/wizrobe/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_WIZARD)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/wizrobe, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_WIZARD))))
 
 /obj/item/clothing/suit/wizrobe/red
 	name = "red wizard robe"

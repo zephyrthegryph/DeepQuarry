@@ -31,10 +31,10 @@
 		return
 	recharging = 1
 	update_icon()
-	playsound(src,'sound/weapons/clockwork/clockwork_cock.ogg',25,1)
+	play_sfx(src, SFX_WEAPONS_CLOCKWORK_CLOCKWORK_COCK)
 	user.visible_message(span_notice("[user] pulls the charging handle on \the [src] and it whirrs to life!"), \
 						span_notice("You pull the charging handle on \the [src] and begin the reloading sequence."))
-	playsound(src,'sound/weapons/clockwork/cwc_rifle_fabricate.ogg',25,5)
+	play_sfx(src, SFX_WEAPONS_CLOCKWORK_CWC_RIFLE_FABRICATE)
 	om_task_timed(user, 5 SECONDS, src, src, PROC_REF(recharge_cycle), list(user), on_fail = PROC_REF(recharge_end), fail_args = list(user))
 
 /// One charging cycle every 5 seconds (a timed action each) until full.
@@ -51,13 +51,13 @@
 	user?.hud_used?.update_ammo_hud(user, src) // Update one last time once we're finished!
 
 /obj/item/projectile/bullet/rifle/clockwork
-	fire_sound = 'sound/weapons/clockwork/cwc_rifle_fire.ogg'
+	fire_sound = SFX_WEAPONS_CLOCKWORK_CWC_RIFLE_FIRE
 	damage = 20 //Old 10
 	hud_state = "rifle_heavy"
 
 /obj/item/projectile/beam/shock/clockwork
 	name = "shock beam"
-	fire_sound = 'sound/weapons/clockwork/voltbeam_fire.ogg'
+	fire_sound = SFX_WEAPONS_CLOCKWORK_VOLTBEAM_FIRE
 	icon_state = "lightning"
 
 	muzzle_type = /obj/effect/projectile/muzzle/voltbeam
@@ -67,8 +67,8 @@
 	damage = 40 //Old 20
 	agony = 15
 	eyeblur = 2
-	hitsound = 'sound/effects/lightningshock.ogg'
-	hitsound_wall = 'sound/weapons/clockwork/voltbeamsearwall.ogg'
+	hitsound = SFX_EFFECTS_LIGHTNINGSHOCK
+	hitsound_wall = SFX_WEAPONS_CLOCKWORK_VOLTBEAMSEARWALL
 	hud_state = "taser"
 
 /obj/effect/projectile/muzzle/voltbeam

@@ -62,7 +62,7 @@
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
 	if(!occupant)
 		return PROCESS_KILL
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		if(occupant)
 			occupant.exit_vr(FALSE)
 			visible_message(span_infoplain(span_bold("\The [src]") + " emits a low droning sound, before the pod door clicks open."))
@@ -76,26 +76,11 @@
 	icon_state = "[base_state][occupant ? "1" : "0"]"
 
 /obj/machinery/vr_sleeper/examine(mob/user)
-	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
+	var/mob/living/carbon/human/occupant = slot_item_real(OCCUPANT_SLOT_VR_POD)
 	. = ..()
 	if(occupant)
 		. += span_notice("[occupant] is inside.")
 
-/obj/machinery/vr_sleeper/Topic(href, href_list)
-	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
-	if(..())
-		return 1
-
-	if(usr == occupant)
-		to_chat(usr, span_warning("You can't reach the controls from the inside."))
-		return
-
-	add_fingerprint(usr)
-
-	if(href_list["eject"])
-		go_out()
-
-	return 1
 
 /obj/machinery/vr_sleeper/declare_interactions(list/into)
 	into += list(
@@ -152,7 +137,7 @@
 /obj/machinery/vr_sleeper/emp_act(severity, recursive)
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
 	. = ..()
-	if (. & EMP_PROTECT_SELF || stat & (BROKEN|NOPOWER))
+	if (. & EMP_PROTECT_SELF || !operable())
 		return
 
 	if(occupant)
@@ -175,7 +160,7 @@
 
 /obj/machinery/vr_sleeper/proc/interaction_eject(mob/user, obj/item/held, datum/interaction/interaction)
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
-	if(stat & (BROKEN|NOPOWER) || occupant && occupant.stat == DEAD)
+	if(!operable() || occupant && occupant.stat == DEAD)
 		perform_exit()
 	else
 		go_out()
@@ -204,7 +189,7 @@
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
 	if(!M)
 		return
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return
 	if(!ishuman(M))
 		to_chat(user, span_warning("\The [src] rejects [M] with a sharp beep."))
@@ -236,7 +221,7 @@
 		to_chat(user, span_warning("\The [src] rejects [M] with a sharp beep."))
 		return
 
-	update_use_power(USE_POWER_ACTIVE)
+	set_use_power(USE_POWER_ACTIVE)
 	enter_vr()
 
 /obj/machinery/vr_sleeper/proc/go_out()
@@ -276,7 +261,7 @@
 	// slot (machine_internals) now, so the old "eject everything except a
 	// hand-kept exclude list" loop is gone.
 	slot_remove(occupant, get_turf(src))
-	update_use_power(USE_POWER_IDLE)
+	set_use_power(USE_POWER_IDLE)
 	update_icon()
 
 /obj/machinery/vr_sleeper/proc/enter_vr()

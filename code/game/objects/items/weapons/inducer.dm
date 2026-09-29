@@ -14,7 +14,6 @@
 	var/cell_type = /obj/item/cell/high //Type of cell to spawn in it
 	var/charge_guns = FALSE //Can it charge guns?
 
-	var/datum/effect/effect/system/spark_spread/spark_system
 	var/obj/item/cell/cell
 	var/recharging = FALSE
 	var/opened = FALSE
@@ -143,15 +142,11 @@
 			to_chat(user, span_notice("[A] is fully charged ([round(C.charge)] / [C.maxcharge])!"))
 			recharging = FALSE
 			return TRUE
-		user.visible_message(span_notice("[user] starts recharging [A] with [src]."), span_notice("You start recharging [A] with [src]."))
+		act_message(user, src, MSG_SELF(span_notice("You start recharging [A] with %T%.")), MSG_OTHERS(span_notice("%U% starts recharging [A] with %T%.")))
 
 		var/datum/beam/charge_beam = user.Beam(A, icon_state = "rped_upgrade", time = 20 SECONDS)
 		var/filter = filter(type = "outline", size = 1, color = "#22AAFF")
 		A.filters += filter
-
-		own_set(src, "spark_system", new /datum/effect/effect/system/spark_spread)
-		spark_system.set_up(5, 0, get_turf(A))
-		spark_system.attach(A)
 
 		om_task_start(/datum/om/task/timed/induce, user, null, duration = 2 SECONDS, receiver = src, charged = A, charging = C, device = O, coefficient = coefficient, beam = charge_beam, filter = filter)
 		return TRUE
@@ -181,7 +176,8 @@
 		return STEP_DONE
 	var/obj/item/cell/C = task.charging
 	induce(C, task.coefficient)
-	spark_system?.start()
+	if(task.charged)
+		fx_sparks(task.charged, 5, FALSE)
 	task.device?.update_icon()
 	task.done_any = TRUE
 	return C.charge < C.maxcharge ? STEP_REPEAT(2 SECONDS) : STEP_DONE
@@ -190,11 +186,10 @@
 	var/mob/user = task.actor
 	var/atom/A = task.charged
 	qdel(task.beam)
-	own_clear(src, "spark_system", OWN_DELETE)
 	if(A)
 		A.filters -= task.filter
 	if(task.done_any && user) // Only show a message if we succeeded at least once
-		user.visible_message(span_notice("[user] recharged [A]!"), span_notice("You recharged [A]!"))
+		act_message(user, null, MSG_SELF(span_notice("You recharged [A]!")), MSG_OTHERS(span_notice("%U% recharged [A]!")))
 	recharging = FALSE
 
 DECLARE_INTERACTIONS(/obj/item/inducer, \
@@ -205,7 +200,7 @@ DECLARE_INTERACTIONS(/obj/item/inducer, \
 /// Old attack_self.
 /obj/item/inducer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(opened && cell)
-		user.visible_message(span_notice("[user] removes [cell] from [src]!"), span_notice("You remove [cell]."))
+		act_message(user, src, MSG_SELF(span_notice("You remove [cell].")), MSG_OTHERS(span_notice("%U% removes [cell] from %T%!")))
 		cell.update_icon()
 		user.put_in_hands(cell)
 		own_take(src, "cell")

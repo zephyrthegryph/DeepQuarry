@@ -47,8 +47,8 @@
 	var/radio_filter_out
 	var/radio_filter_in
 
-	var/static/start_sound = 'sound/machines/air_pump/airpumpstart.ogg'
-	var/static/stop_sound = 'sound/machines/air_pump/airpumpshutdown.ogg'
+	var/static/start_sound = SFX_MACHINES_AIR_PUMP_AIRPUMPSTART
+	var/static/stop_sound = SFX_MACHINES_AIR_PUMP_AIRPUMPSHUTDOWN
 
 /obj/machinery/atmospherics/unary/vent_pump/on
 	use_power = USE_POWER_IDLE
@@ -214,7 +214,7 @@
 		vent_icon += "weld"
 		playsound(src, stop_sound, 25, ignore_walls = FALSE, preference = /datum/preference/toggle/air_pump_noise)
 
-	else if(!use_power || !node || (stat & (NOPOWER|BROKEN)))
+	else if(!use_power || !node || (!operable()))
 		vent_icon += "off"
 		playsound(src, stop_sound, 25, ignore_walls = FALSE, preference = /datum/preference/toggle/air_pump_noise)
 	else
@@ -242,7 +242,7 @@
 	update_underlays()
 
 /obj/machinery/atmospherics/unary/vent_pump/proc/can_pump()
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return 0
 	if(!use_power)
 		return 0
@@ -291,7 +291,7 @@
 		"checks" = pressure_checks,
 		"internal" = internal_pressure_bound,
 		"external" = external_pressure_bound,
-		"timestamp" = world.time,
+		"timestamp" = EXPIRY_AT(src, CLOCK_WORLD, 0),
 		"sigtype" = "status",
 		"power_draw" = last_power_draw,
 		"flow_rate" = last_flow_rate,
@@ -326,7 +326,7 @@
 	broadcast_status()
 
 /obj/machinery/atmospherics/unary/vent_pump/receive_signal(datum/signal/signal)
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return
 
 	if(!signal.data["tag"] || (signal.data["tag"] != id_tag) || (signal.data["sigtype"]!="command"))
@@ -341,10 +341,10 @@
 		pump_direction = 1
 
 	if(signal.data["power"] != null)
-		update_use_power(text2num(signal.data["power"]))
+		set_use_power(text2num(signal.data["power"]))
 
 	if(signal.data["power_toggle"] != null)
-		update_use_power(!use_power)
+		set_use_power(!use_power)
 
 	if(signal.data["checks"] != null)
 		if (signal.data["checks"] == "default")
@@ -397,7 +397,7 @@
 	return
 
 /obj/machinery/atmospherics/unary/vent_pump/welder_act(mob/user, obj/item/W)
-	use_tool(user, W, src, delay = 20, quality = TOOL_WELDER, volume = 0, message_self = "Now welding the vent.", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user, W))
+	use_tool(user, W, src, delay = 20, quality = TOOL_WELDER, volume = 0, start_self = "Now welding the vent.", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user, W))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/atmospherics/unary/vent_pump/proc/welder_act_tool_done(mob/user, obj/item/W)
@@ -416,7 +416,7 @@
 		update_icon()
 
 /obj/machinery/atmospherics/unary/vent_pump/wrench_act(mob/user, obj/item/W)
-	if (!(stat & NOPOWER) && use_power)
+	if (!has_stat(NOPOWER) && use_power)
 		to_chat(user, span_warning("You cannot unwrench \the [src], turn it off first."))
 		return ITEM_INTERACT_BLOCKING
 	var/turf/T = src.loc
@@ -427,7 +427,7 @@
 		to_chat(user, span_warning("You cannot unwrench \the [src], it is too exerted due to internal pressure."))
 		add_fingerprint(user)
 		return ITEM_INTERACT_BLOCKING
-	use_tool(user, W, src, delay = 40, volume = 50, message_self = "You begin to unfasten \the [src]...", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
+	use_tool(user, W, src, delay = 40, volume = 50, start_self = "You begin to unfasten \the [src]...", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/atmospherics/unary/vent_pump/proc/wrench_act_tool_done(mob/user)
@@ -447,14 +447,13 @@
 		. += "It seems welded shut."
 
 /obj/machinery/atmospherics/unary/vent_pump/power_change()
-	var/old_stat = stat
-	..()
-	if(old_stat != stat)
+	. = ..()
+	if(.)
 		invalidate_gas_dependencies()
 		update_icon()
 
 /obj/machinery/atmospherics/unary/vent_pump/multitool_act(mob/user, obj/item/W)
-	var/list/options = list(
+	var/static/list/options = list(
 		"ID Tag", "Frequency", "Direction", "-SAVE TO BUFFER-")
 	var/choice = rerun_ask(user, "k471", TYPE_PROC_REF(/atom, multitool_act), args, /datum/om/prompt/choice, message = "[src] has an ID of \"[id_tag]\" and a frequency of [frequency]. What would you like to change?", title = "[src] Config", choices = options)
 	if(isnull(choice))

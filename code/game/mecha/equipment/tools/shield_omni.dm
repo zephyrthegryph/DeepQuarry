@@ -46,10 +46,10 @@
 			step_delay = initial(step_delay)
 			src.mecha_log_message("Deactivated.")
 
-/obj/item/mecha_parts/mecha_equipment/omni_shield/Topic(href, href_list)
-	..()
-	if(href_list["toggle_omnishield"])
-		toggle_shield()
+TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/omni_shield, "toggle_omnishield", PROC_REF(topic_toggle_omnishield))
+
+/obj/item/mecha_parts/mecha_equipment/omni_shield/proc/topic_toggle_omnishield(mob/user, list/args)
+	toggle_shield()
 
 /obj/item/mecha_parts/mecha_equipment/omni_shield/get_equip_info()
 	if(!chassis) return

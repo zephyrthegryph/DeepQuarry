@@ -32,12 +32,12 @@
 
 /datum/ship_engine/gas_thruster/toggle()
 	if(nozzle().use_power)
-		nozzle().update_use_power(USE_POWER_OFF)
+		nozzle().set_use_power(USE_POWER_OFF)
 	else
 		if(nozzle().blockage)
 			if(nozzle().check_blockage())
 				return
-		nozzle().update_use_power(USE_POWER_IDLE)
+		nozzle().set_use_power(USE_POWER_IDLE)
 		if(nozzle().stat & NOPOWER)//try again
 			nozzle().power_change()
 		if(nozzle().is_on())//if everything is in working order, start booting!
@@ -94,11 +94,11 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/atmospherics/unary/engine, "controller", /d
 /obj/machinery/atmospherics/unary/engine/proc/get_status()
 	. = list()
 	.+= "Location: [get_area(src)]."
-	if(stat & NOPOWER)
+	if(has_stat(NOPOWER))
 		.+= list(list("Insufficient power to operate.", "bad"))
 	if(!check_fuel())
 		.+= list(list("Insufficient fuel for a burn.", "bad"))
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		.+= list(list("Inoperable engine configuration.", "bad"))
 	if(blockage)
 		.+= list(list("Obstruction of airflow detected.", "bad"))
@@ -109,8 +109,8 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/atmospherics/unary/engine, "controller", /d
 
 /obj/machinery/atmospherics/unary/engine/power_change()
 	. = ..()
-	if(stat & NOPOWER)
-		update_use_power(USE_POWER_OFF)
+	if(has_stat(NOPOWER))
+		set_use_power(USE_POWER_OFF)
 
 /obj/machinery/atmospherics/unary/engine/proc/is_on()
 	return use_power && operable() && (COOLDOWN_FINISHED(src, next_on))
@@ -143,14 +143,14 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/atmospherics/unary/engine, "controller", /d
 		return 0
 	if(!check_fuel() || (use_power_oneoff(charge_per_burn) < charge_per_burn) || check_blockage())
 		audible_message(src,span_warning("[src] coughs once and goes silent!"), runemessage = "sputtercough")
-		update_use_power(USE_POWER_OFF)
+		set_use_power(USE_POWER_OFF)
 		return 0
 
 	var/datum/gas_mixture/removed = air_contents.remove_ratio(volume_per_burn * thrust_limit / air_contents.return_volume())
 	if(!removed)
 		return 0
 	. = calculate_thrust(removed)
-	playsound(src, 'sound/machines/thruster.ogg', 100 * thrust_limit, 0, world.view * 4, 0.1)
+	play_sfx(src, SFX_MACHINES_THRUSTER, volume = 100 * thrust_limit, extrarange = world.view * 4)
 	if(network)
 		network.mark_dirty()
 

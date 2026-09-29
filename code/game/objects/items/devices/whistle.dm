@@ -11,8 +11,8 @@
 	COOLDOWN_DECLARE(spamcheck)
 	var/insults
 
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 /obj/item/hailer/proc/set_message_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
@@ -39,11 +39,11 @@ DECLARE_INTERACTIONS(/obj/item/hailer, INTERACT_USE(null, PROC_REF(interaction_s
 		return
 
 	if(isnull(insults))
-		playsound(src, 'sound/voice/halt.ogg', 100, 1, vary = 0)
+		play_sfx(src, SFX_VOICE_HALT)
 		user.audible_message(span_warning("[user]'s [name] rasps, \"[use_message]\""), span_warning("\The [user] holds up \the [name]."), runemessage = "\[TTS Voice\] [use_message]")
 	else
 		if(insults > 0)
-			playsound(src, 'sound/voice/binsult.ogg', 100, 1, vary = 0)
+			play_sfx(src, SFX_VOICE_BINSULT)
 			// Yes, it used to show the transcription of the sound clip. That was a) inaccurate b) immature as shit.
 			user.audible_message(span_warning("[user]'s [name] gurgles something indecipherable and deeply offensive."), span_warning("\The [user] holds up \the [name]."), runemessage = "\[TTS Voice\] #&@&^%(*")
 			insults--

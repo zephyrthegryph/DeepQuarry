@@ -49,7 +49,7 @@
 	melee_damage_upper = 10	//minor damage variance, since they should only be fighting carp
 	base_attack_cooldown = 18 // A bit slower than carp
 	attack_injury_kind = INJURY_PIERCE
-	attack_sound = 'sound/weapons/bite.ogg'
+	attack_sound = SFX_WEAPONS_BITE
 	attacktext = list("lanced","bitten","impaled","gored")
 
 	organ_names = /datum/decl/mob_organ_names/fish
@@ -68,9 +68,9 @@
 		var/mob/living/L = A
 		if(prob(knockdown_chance))
 			L.apply_body_effect(/datum/body_effect/entangled, 4 SECONDS) // replacing weaken/slowdown with slow down
-			L.visible_message(span_danger("\The [src] buffets \the [L]!"))
+			act_message(src, L, null, MSG_OTHERS(span_danger("%U% buffets %T%!")))
 			ai_brain?.lose_target()
-			L.visible_message(span_notice("\The [src] seems to lose interest in \the [L]..."))
+			act_message(src, L, null, MSG_OTHERS(span_notice("%U% seems to lose interest in %T%...")))
 
 /datum/say_list/space_ray
 	emote_see = list("swoops","dives","drifts on a solar current","glides elegantly through the void","briefly tumbles")

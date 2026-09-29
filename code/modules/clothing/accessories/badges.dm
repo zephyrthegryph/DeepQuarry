@@ -77,8 +77,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/badge, INTERACT_SELF("Display",
 	badge_string = "Corporate Reporter"
 	w_class = ITEMSIZE_TINY
 
-	drop_sound = 'sound/items/drop/rubber.ogg'
-	pickup_sound = 'sound/items/pickup/rubber.ogg'
+	drop_sound = SFX_ITEMS_DROP_RUBBER
+	pickup_sound = SFX_ITEMS_PICKUP_RUBBER
 
 /obj/item/clothing/accessory/badge/press/independent
 	name = "press pass"
@@ -355,8 +355,9 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/dosimeter, \
 			desc = "This seems like a dosimeter, but the film has turned black."
 
 /obj/item/clothing/accessory/dosimeter/proc/update_state(tostate)
-	if(current_film)
-		current_film.state = tostate
+	var/obj/item/dosimeter_film/film = current_film
+	if(film)
+		film.state = tostate
 		icon_state = "[initial(icon_state)][tostate]"
 		current_film.icon_state = "dosimeter_film[tostate]"
 	else
@@ -400,9 +401,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/dosimeter, \
 	max_storage_space = (ITEMSIZE_COST_SMALL * 4) + (ITEMSIZE_COST_TINY * 1)
 	w_class = ITEMSIZE_SMALL
 
-/obj/item/storage/box/dosimeter/hold_constraint()
-	var/list/holds = list(/obj/item/paper/dosimeter_manual, /obj/item/clothing/accessory/dosimeter, /obj/item/dosimeter_film)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage/box/dosimeter, hold_spec, list(HOLD_ONLY(list(/obj/item/paper/dosimeter_manual, /obj/item/clothing/accessory/dosimeter, /obj/item/dosimeter_film)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 /obj/item/storage/box/dosimeter/Initialize(mapload)
 	. = ..()

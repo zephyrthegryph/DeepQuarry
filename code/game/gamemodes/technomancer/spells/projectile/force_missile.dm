@@ -17,7 +17,7 @@
 	energy_cost_per_shot = 300
 	instability_per_shot = 2
 	cooldown = 5
-	fire_sound = 'sound/weapons/wave.ogg'
+	fire_sound = SFX_WEAPONS_WAVE
 
 /obj/item/projectile/force_missile
 	name = "force missile"
@@ -25,4 +25,4 @@
 	damage = 25
 
 	impact_effect_type = /obj/effect/temp_visual/impact_effect/blue_laser
-	hitsound_wall = 'sound/weapons/effects/searwall.ogg'
+	hitsound_wall = SFX_WEAPONS_EFFECTS_SEARWALL

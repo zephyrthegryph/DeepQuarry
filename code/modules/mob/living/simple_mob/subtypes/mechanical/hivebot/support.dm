@@ -87,7 +87,7 @@
 				break // Only one resupply per pulse.
 
 /datum/decl/mob_organ_names/hivebotsupport
-	hit_zones = list("central chassis", "positioning servo", "head", "sensor suite", "manipulator arm", "battle analytics mount", "weapons array", "front right leg", "front left leg", "rear left leg", "rear right leg")
+TYPE_TABLE(/datum/decl/mob_organ_names/hivebotsupport, mob_organ_hit_zones, list("central chassis", "positioning servo", "head", "sensor suite", "manipulator arm", "battle analytics mount", "weapons array", "front right leg", "front left leg", "rear left leg", "rear right leg"))
 
 /mob/living/simple_mob/mechanical/hivebot/support/harry
 	name = "Harry the hivelessbot"
@@ -104,11 +104,9 @@
 
 /mob/living/simple_mob/mechanical/hivebot/support/harry/on_death(gibbed)
 	..()
-	visible_message(span_warning("Connection... terminated... Sweet Release... obtained."),span_danger("\The [src] blows apart!"))
+	act_message(src, null, MSG_SELF(span_danger("%U% blows apart!")), MSG_OTHERS(span_warning("Connection... terminated... Sweet Release... obtained.")))
 	new /obj/effect/decal/cleanable/blood/gibs/robot(src.loc)
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-	s.set_up(3, 1, src)
-	s.start()
+	fx_sparks(src, 3)
 
 
 // === merged from support_vr.dm during hard-fork de-suffix (verified no override-order change) ===

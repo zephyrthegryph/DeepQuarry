@@ -41,7 +41,7 @@ DECLARE_INTERACTIONS(/obj/item/syringe_cartridge, \
 /obj/item/syringe_cartridge/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(syringe())
 		to_chat(user, span_notice("You remove [syringe()] from [src]."))
-		playsound(src, 'sound/weapons/empty.ogg', 50, 1)
+		play_sfx(src, SFX_WEAPONS_EMPTY)
 		user.put_in_hands(syringe())
 		rel_clear(src, "syringe")
 		sharp = initial(sharp)
@@ -85,7 +85,7 @@ DECLARE_INTERACTIONS(/obj/item/syringe_cartridge, \
 	MATERIAL_BULK(MAT_STEEL, 2000)
 	slot_flags = SLOT_BELT | SLOT_HOLSTER
 
-	fire_sound = 'sound/weapons/empty.ogg'
+	fire_sound = SFX_WEAPONS_EMPTY
 	fire_sound_text = "a metallic thunk"
 	recoil = 0
 	release_force = 10
@@ -120,7 +120,7 @@ OWN(/obj/item/gun/launcher/syringe, darts, OWN_CONTAINED)
 		user.visible_message("[user] unlatches and carefully relaxes the bolt on [src].", span_warning("You unlatch and carefully relax the bolt on [src], unloading the spring."))
 		rel_clear(src, "next")
 	else if(length(darts))
-		playsound(src, 'sound/weapons/flipblade.ogg', 50, 1)
+		play_sfx(src, SFX_WEAPONS_FLIPBLADE)
 		user.visible_message("[user] draws back the bolt on [src], clicking it into place.", span_warning("You draw back the bolt on the [src], loading the spring!"))
 		rel_set(src, "next", LAZYACCESS(darts, 1))
 	add_fingerprint(user)
@@ -140,7 +140,7 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/syringe, INTERACT_HAND(null, PROC_RE
 		own_take_member(src, "darts", C)
 		user.put_in_hands(C)
 		user.visible_message("[user] removes \a [C] from [src].", span_notice("You remove \a [C] from [src]."))
-		playsound(src, 'sound/weapons/empty.ogg', 50, 1)
+		play_sfx(src, SFX_WEAPONS_EMPTY)
 	else
 		return FALSE
 	return TRUE

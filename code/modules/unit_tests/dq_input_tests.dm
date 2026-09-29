@@ -240,7 +240,7 @@
 
 /// What a click produces with an adapter's click table: "use", "none", or the mob proc the old ladder called.
 /datum/unit_test/proc/dq_click_result(datum/input_adapter/adapter, params, right_click_binding)
-	var/action = GLOB.input_router.classify(params2list(params), adapter.click_table(), right_click_binding)
+	var/action = GLOB.input_router.classify(params2list(params), TYPE_TABLE_GET(adapter, adapter_click_table), right_click_binding)
 	if(action == INPUT_ACTION_USE)
 		return "use"
 	return adapter.handler_for(action) || "none"

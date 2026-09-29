@@ -11,10 +11,9 @@
 	//the reaction goes to completion. This is to prevent reactions from going on forever with tiny reagent amounts.
 
 	mix_message = "The solution churns."
-	reaction_sound = 'sound/effects/slosh.ogg'
+	reaction_sound = SFX_EFFECTS_SLOSH
 
 
-	var/list/temp_range = list(T0C, T20C) // ALLOW(instance_list): c: read-only per-subtype constant table (54 subtype overrides); a getter would share it, not worth it on a rare type
 	var/temp_shift = 0 // How much the temperature changes when the reaction occurs.
 
 	var/require_xgm_gas = null
@@ -22,6 +21,8 @@
 	var/maximum_xgm_pressure = null
 	var/minimum_xgm_pressure = null
 	var/consumes_xgm_gas = 0 // Mols of gas consumed during reaction
+
+TYPE_TABLE_DECLARE(/datum/decl/chemical_reaction/distilling, distilling_temp_range, list(T0C, T20C))
 
 /datum/decl/chemical_reaction/distilling/can_happen(datum/reagents/holder)
 	if(!istype(holder, /datum/reagents/distilling))
@@ -44,7 +45,7 @@
 
 	// The holder's temperature: the bunsen burner's or distillery's heat body (H3).
 	var/temperature = holder.get_temperature()
-	if(temperature < temp_range[1] || temperature > temp_range[2])
+	if(temperature < TYPE_TABLE_GET(src, distilling_temp_range)[1] || temperature > TYPE_TABLE_GET(src, distilling_temp_range)[2])
 		return FALSE
 
 	return ..()
@@ -76,8 +77,9 @@
 	required_reagents = list(REAGENT_ID_BLOOD = 1, REAGENT_ID_SUGAR = 1, REAGENT_ID_PHORON = 0.5)
 	result_amount = 6 // Buffed to 2400 units per sheet to be in line with the buffed instant reaction. Requires actually using the machine, and having blood to spare so this one should be more phoron-efficient.
 
-	temp_range = list(T20C + 80, T20C + 130)
 	temp_shift = -2
+
+TYPE_TABLE(/datum/decl/chemical_reaction/distilling/biomass, distilling_temp_range, list(T20C + 80, T20C + 130))
 
 // Medicinal
 /datum/decl/chemical_reaction/distilling/inaprovalaze
@@ -89,7 +91,8 @@
 
 	reaction_rate = HALF_LIFE(10)
 
-	temp_range = list(T0C + 100, T0C + 120)
+TYPE_TABLE(/datum/decl/chemical_reaction/distilling/inaprovalaze, distilling_temp_range, list(T0C + 100, T0C + 120))
+
 
 /datum/decl/chemical_reaction/distilling/bicaridaze
 	name = "Distilling Bicaridaze"
@@ -100,7 +103,8 @@
 
 	reaction_rate = HALF_LIFE(10)
 
-	temp_range = list(T0C + 110, T0C + 130)
+TYPE_TABLE(/datum/decl/chemical_reaction/distilling/bicaridaze, distilling_temp_range, list(T0C + 110, T0C + 130))
+
 
 /datum/decl/chemical_reaction/distilling/dermalaze
 	name = "Distilling Dermalaze"
@@ -111,7 +115,8 @@
 
 	reaction_rate = HALF_LIFE(10)
 
-	temp_range = list(T0C + 115, T0C + 130)
+TYPE_TABLE(/datum/decl/chemical_reaction/distilling/dermalaze, distilling_temp_range, list(T0C + 115, T0C + 130))
+
 
 /datum/decl/chemical_reaction/distilling/spacomycaze
 	name = "Distilling Spacomycaze"
@@ -122,7 +127,8 @@
 
 	reaction_rate = HALF_LIFE(10)
 
-	temp_range = list(T0C + 100, T0C + 120)
+TYPE_TABLE(/datum/decl/chemical_reaction/distilling/spacomycaze, distilling_temp_range, list(T0C + 100, T0C + 120))
+
 
 /datum/decl/chemical_reaction/distilling/tricorlidaze
 	name = "Distilling Tricorlidaze"
@@ -133,7 +139,8 @@
 
 	reaction_rate = HALF_LIFE(10)
 
-	temp_range = list(T0C + 100, T0C + 120)
+TYPE_TABLE(/datum/decl/chemical_reaction/distilling/tricorlidaze, distilling_temp_range, list(T0C + 100, T0C + 120))
+
 
 /datum/decl/chemical_reaction/distilling/synthplas
 	name = "Distilling Synthplas"
@@ -144,7 +151,8 @@
 
 	reaction_rate = HALF_LIFE(15)
 
-	temp_range = list(T0C + 110, T0C + 130)
+TYPE_TABLE(/datum/decl/chemical_reaction/distilling/synthplas, distilling_temp_range, list(T0C + 110, T0C + 130))
+
 
 // Alcohol
 /datum/decl/chemical_reaction/distilling/beer
@@ -156,7 +164,8 @@
 
 	reaction_rate = HALF_LIFE(30)
 
-	temp_range = list(T20C, T20C + 2)
+TYPE_TABLE(/datum/decl/chemical_reaction/distilling/beer, distilling_temp_range, list(T20C, T20C + 2))
+
 
 /datum/decl/chemical_reaction/distilling/ale
 	name = "Distilling Ale"
@@ -169,7 +178,8 @@
 	reaction_rate = HALF_LIFE(30)
 
 	temp_shift = 0.5
-	temp_range = list(T0C + 7, T0C + 13)
+
+TYPE_TABLE(/datum/decl/chemical_reaction/distilling/ale, distilling_temp_range, list(T0C + 7, T0C + 13))
 
 /datum/decl/chemical_reaction/distilling/ethanol
 	name = "Distilling Ethanol"
@@ -180,7 +190,8 @@
 
 	reaction_rate = HALF_LIFE(30)
 
-	temp_range = list(T20C+30, T20C + 40)
+TYPE_TABLE(/datum/decl/chemical_reaction/distilling/ethanol, distilling_temp_range, list(T20C+30, T20C + 40))
+
 
 // Unique
 /datum/decl/chemical_reaction/distilling/berserkjuice
@@ -190,8 +201,9 @@
 	required_reagents = list(REAGENT_ID_BIOMASS = 1, REAGENT_ID_HYPERZINE = 3, REAGENT_ID_SYNAPTIZINE = 2, REAGENT_ID_PHORON = 1)
 	result_amount = 3
 
-	temp_range = list(T0C + 600, T0C + 700)
 	temp_shift = 4
+
+TYPE_TABLE(/datum/decl/chemical_reaction/distilling/berserkjuice, distilling_temp_range, list(T0C + 600, T0C + 700))
 
 /datum/decl/chemical_reaction/distilling/berserkjuice/on_reaction(datum/reagents/holder, created_volume)
 	..()
@@ -209,8 +221,10 @@
 	inhibitors = list(REAGENT_ID_WATER = 5)
 	result_amount = 1
 
-	temp_range = list(T0C + 10, T20C + 15) // I know this doesn't make sense, and this is a baindaid fix but distiller code refuses to go this low, even with correct variables
 	temp_shift = 20
+
+// I know this doesn't make sense, and this is a baindaid fix but distiller code refuses to go this low, even with correct variables
+TYPE_TABLE(/datum/decl/chemical_reaction/distilling/cryogel, distilling_temp_range, list(T0C + 10, T20C + 15))
 
 /datum/decl/chemical_reaction/distilling/cryogel/on_reaction(datum/reagents/holder, created_volume)
 	..()
@@ -231,7 +245,8 @@
 
 	reaction_rate = HALF_LIFE(8)
 
-	temp_range = list(T0C + 100, T0C + 150)
+TYPE_TABLE(/datum/decl/chemical_reaction/distilling/lichpowder, distilling_temp_range, list(T0C + 100, T0C + 150))
+
 
 /datum/decl/chemical_reaction/distilling/necroxadone
 	name = "Distilling Necroxadone"
@@ -244,7 +259,8 @@
 
 	reaction_rate = HALF_LIFE(20)
 
-	temp_range = list(T0C + 90, T0C + 95)
+TYPE_TABLE(/datum/decl/chemical_reaction/distilling/necroxadone, distilling_temp_range, list(T0C + 90, T0C + 95))
+
 
 /datum/decl/chemical_reaction/distilling/hydrogen
 	name = "Distilling Hydrogen"
@@ -255,11 +271,12 @@
 	catalysts = list(REAGENT_ID_PLATINUM = 1)
 	result_amount = 2
 
-	temp_range = list(T20C + 110, T20C + 290)
 	temp_shift = 1
 
 	require_xgm_gas = GAS_N2
 	rejects_xgm_gas = GAS_O2
+
+TYPE_TABLE(/datum/decl/chemical_reaction/distilling/hydrogen, distilling_temp_range, list(T20C + 110, T20C + 290))
 
 /datum/decl/chemical_reaction/distilling/oxygen
 	name = "Distilling Oxygen"
@@ -270,11 +287,12 @@
 	catalysts = list(REAGENT_ID_PLATINUM = 1)
 	result_amount = 1
 
-	temp_range = list(T20C + 150, T20C + 320)
 	temp_shift = 3 // It's burning off phoron
 
 	require_xgm_gas = GAS_PHORON
 	rejects_xgm_gas = GAS_O2
+
+TYPE_TABLE(/datum/decl/chemical_reaction/distilling/oxygen, distilling_temp_range, list(T20C + 150, T20C + 320))
 
 /datum/decl/chemical_reaction/distilling/mineralized_sodium
 	name = "Distilling Sodium"
@@ -283,11 +301,12 @@
 	required_reagents = list(REAGENT_ID_MINERALIZEDFLUID = 1)
 	result_amount = 1
 
-	temp_range = list(T20C + 600, T20C + 800)
 	temp_shift = -1
 
 	require_xgm_gas = GAS_PHORON
 	rejects_xgm_gas = GAS_O2
+
+TYPE_TABLE(/datum/decl/chemical_reaction/distilling/mineralized_sodium, distilling_temp_range, list(T20C + 600, T20C + 800))
 
 /datum/decl/chemical_reaction/distilling/mineralized_carbon
 	name = "Distilling Carbon"
@@ -296,11 +315,12 @@
 	required_reagents = list(REAGENT_ID_MINERALIZEDFLUID = 1)
 	result_amount = 1
 
-	temp_range = list(T20C + 400, T20C + 800)
 	temp_shift = -1
 
 	require_xgm_gas = GAS_O2
 	rejects_xgm_gas = GAS_PHORON
+
+TYPE_TABLE(/datum/decl/chemical_reaction/distilling/mineralized_carbon, distilling_temp_range, list(T20C + 400, T20C + 800))
 
 /datum/decl/chemical_reaction/distilling/reduce_salt
 	name = "Distilling Sodium"
@@ -309,8 +329,9 @@
 	required_reagents = list(REAGENT_ID_SODIUMCHLORIDE = 1)
 	result_amount = 0.5
 
-	temp_range = list(T20C + 800, T20C + 1000)
 	temp_shift = -1
+
+TYPE_TABLE(/datum/decl/chemical_reaction/distilling/reduce_salt, distilling_temp_range, list(T20C + 800, T20C + 1000))
 
 
 //Grub
@@ -328,7 +349,8 @@
 
 	reaction_rate = HALF_LIFE(10)
 
-	temp_range = list(T0C + 180, T0C + 200)
+TYPE_TABLE(/datum/decl/chemical_reaction/distilling/energybooster, distilling_temp_range, list(T0C + 180, T0C + 200))
+
 
 /datum/decl/chemical_reaction/distilling/oceaniccure
 	name = "Distilling Oceanic Cure"
@@ -339,7 +361,8 @@
 
 	reaction_rate = HALF_LIFE(10)
 
-	temp_range = list(T0C + 130, T0C + 150)
+TYPE_TABLE(/datum/decl/chemical_reaction/distilling/oceaniccure, distilling_temp_range, list(T0C + 130, T0C + 150))
+
 
 /datum/decl/chemical_reaction/distilling/deathclawmutagen
 	name = "Distilling Deathclaw Mutagen"
@@ -350,7 +373,8 @@
 
 	reaction_rate = HALF_LIFE(10)
 
-	temp_range = list(T0C + 100, T0C + 120)
+TYPE_TABLE(/datum/decl/chemical_reaction/distilling/deathclawmutagen, distilling_temp_range, list(T0C + 100, T0C + 120))
+
 
 /datum/decl/chemical_reaction/distilling/senseenhancer
 	name = "Distilling Sense Enhancer"
@@ -361,7 +385,8 @@
 
 	reaction_rate = HALF_LIFE(10)
 
-	temp_range = list(T0C + 50, T0C + 70)
+TYPE_TABLE(/datum/decl/chemical_reaction/distilling/senseenhancer, distilling_temp_range, list(T0C + 50, T0C + 70))
+
 
 /datum/decl/chemical_reaction/distilling/heatnullifer
 	name = "Distilling heatnullifer"
@@ -372,7 +397,8 @@
 
 	reaction_rate = HALF_LIFE(10)
 
-	temp_range = list(T0C + 230, T0C + 250)
+TYPE_TABLE(/datum/decl/chemical_reaction/distilling/heatnullifer, distilling_temp_range, list(T0C + 230, T0C + 250))
+
 
 /datum/decl/chemical_reaction/distilling/juggernog
 	name = "juggernog"
@@ -383,7 +409,8 @@
 
 	reaction_rate = HALF_LIFE(10)
 
-	temp_range = list(T0C + 180, T0C + 200)
+TYPE_TABLE(/datum/decl/chemical_reaction/distilling/juggernog, distilling_temp_range, list(T0C + 180, T0C + 200))
+
 
 
 /datum/decl/chemical_reaction/distilling/phoenixbreath
@@ -393,4 +420,5 @@
 	required_reagents = list(REAGENT_ID_SHOCKCHEM = 1, REAGENT_ID_NEOTANE = 1, REAGENT_ID_BURNCARD = 1, REAGENT_ID_QUADCORD = 1, REAGENT_ID_MINDBREAKER = 1)
 	result_amount = 6
 
-	temp_range = list(T0C + 100, T0C + 120)
+TYPE_TABLE(/datum/decl/chemical_reaction/distilling/phoenixbreath, distilling_temp_range, list(T0C + 100, T0C + 120))
+

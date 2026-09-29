@@ -19,8 +19,8 @@
 
 	switch(action)
 		if("lose")
-			playsound(computer(), 'sound/arcade/lose.ogg', 50, TRUE, extrarange = -3, falloff = 0.1)
+			play_sfx(computer(), SFX_ARCADE_LOSE)
 			. = TRUE
 		if("win")
-			playsound(computer(), 'sound/arcade/win.ogg', 50, TRUE, extrarange = -3, falloff = 0.1)
+			play_sfx(computer(), SFX_ARCADE_WIN)
 			. = TRUE

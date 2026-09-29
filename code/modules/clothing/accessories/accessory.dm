@@ -19,8 +19,8 @@
 	var/concealed_holster = 0
 	var/list/on_rolled							// Lazylist. Used when jumpsuit sleeves are rolled ("rolled" entry) or it's rolled down ("down"). Set to "none" to hide in those states.
 	sprite_sheets = list(SPECIES_TESHARI = 'icons/inventory/accessory/mob_teshari.dmi') //Teshari can into webbing, too!
-	drop_sound = 'sound/items/drop/accessory.ogg'
-	pickup_sound = 'sound/items/pickup/accessory.ogg'
+	drop_sound = SFX_ITEMS_DROP_ACCESSORY
+	pickup_sound = SFX_ITEMS_PICKUP_ACCESSORY
 
 // an attached accessory is removed from its clothing.
 /obj/item/clothing/accessory/on_destroy(force)
@@ -318,8 +318,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory, INTERACT_HAND_UNGATED(null, PR
 	desc = "A bronze medal."
 	icon_state = "bronze"
 	slot = ACCESSORY_SLOT_MEDAL
-	drop_sound = 'sound/items/drop/accessory.ogg'
-	pickup_sound = 'sound/items/pickup/accessory.ogg'
+	drop_sound = SFX_ITEMS_DROP_ACCESSORY
+	pickup_sound = SFX_ITEMS_PICKUP_ACCESSORY
 
 /obj/item/clothing/accessory/medal/conduct
 	name = "distinguished conduct medal"
@@ -437,9 +437,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory, INTERACT_HAND_UNGATED(null, PR
 	desc = "a neckscarf that is too small for a human's neck"
 	icon_state = "tesh_neckscarf"
 
-/obj/item/clothing/accessory/scarf/teshari/neckscarf/fit_constraint()
-	var/list/bodytypes = list(SPECIES_TESHARI)
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/accessory/scarf/teshari/neckscarf, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_TESHARI))))
 
 /obj/item/clothing/accessory/halfcape
 	name = "half cape"
@@ -709,7 +707,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/bell, \
 
 	if(!jingled)
 		user.audible_message("[user] jingles the [src]'s bell.", runemessage = "jingle")
-		playsound(src, 'sound/items/pickup/ring.ogg', 50, 1)
+		play_sfx(src, SFX_ITEMS_PICKUP_RING)
 		jingled = 1
 		om_after(src, 50, PROC_REF(jingledreset))
 	return
@@ -820,9 +818,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/shock, INTERACT_USE(null
 		if(!M)
 			return
 		to_chat(M,span_danger("You feel a sharp shock!"))
-		var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-		s.set_up(3, 1, M)
-		s.start()
+		fx_sparks(M, 3)
 		M.status_at_least(EFFECT_WEAKENED, 10)
 
 /obj/item/clothing/accessory/collar/spike
@@ -964,7 +960,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar, \
 	/// undoes the collar's own contribution instead of clobbering whatever other
 	/// size sources (potions, sizeguns, etc.) did to the wearer in the meantime.
 	var/applied_ratio
-	var/last_activated
+	EXPIRY_DECLARE(last_activated)
 	var/target_size = 1
 	on = 1
 
@@ -1005,30 +1001,27 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar, \
 		var/mob/living/carbon/human/H = M
 		if(!istype(H))
 			return
-		var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
 		if(!H.resizable)
 			H.visible_message(span_warning("The space around [H] compresses for a moment but then nothing happens."),span_notice("The space around you distorts but nothing happens to you."))
 			return
 		if(applied_ratio == null)
-			if(!(world.time - last_activated > 10 SECONDS))
+			if(!(ELAPSED_SINCE(src, last_activated, CLOCK_WORLD) > 10 SECONDS))
 				to_chat(M, span_warning("\The [src] flickers. It seems to be recharging."))
 				return
-			last_activated = world.time
+			EXPIRY_STAMP(src, last_activated, CLOCK_WORLD)
 			applied_ratio = H.size_multiplier ? (target_size / H.size_multiplier) : 1
 			H.resize(target_size, ignore_prefs = FALSE, allow_stripping = TRUE)		//In case someone else tries to put it on you.
 			H.visible_message(span_warning("The space around [H] distorts as they change size!"),span_notice("The space around you distorts as you change size!"))
 			log_admin("Admin [key_name(M)]'s size was altered by a bluespace collar.")
-			s.set_up(3, 1, M)
-			s.start()
+			fx_sparks(M, 3)
 		else
-			last_activated = world.time
+			EXPIRY_STAMP(src, last_activated, CLOCK_WORLD)
 			H.resize(applied_ratio ? (H.size_multiplier / applied_ratio) : H.size_multiplier, ignore_prefs = FALSE, allow_stripping = TRUE)
 			applied_ratio = null
 			H.visible_message(span_warning("The space around [H] distorts as they return to their original size!"),span_notice("The space around you distorts as you return to your original size!"))
 			log_admin("Admin [key_name(M)]'s size was altered by a bluespace collar.")
 			to_chat(M, span_warning("\The [src] flickers. It is now recharging and will be ready again in ten seconds."))
-			s.set_up(3, 1, M)
-			s.start()
+			fx_sparks(M, 3)
 	return
 
 /obj/item/clothing/accessory/collar/shock/bluespace/relaymove(mob/living/user,direction)
@@ -1099,7 +1092,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/shock/bluespace/modified
 		var/mob/living/carbon/human/H = M
 		if(!istype(H))
 			return
-		var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
 		if(!H.resizable)
 			H.visible_message(span_warning("The space around [H] compresses for a moment but then nothing happens."),span_notice("The space around you distorts but nothing happens to you."))
 			return
@@ -1107,25 +1099,23 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/shock/bluespace/modified
 			H.visible_message(span_warning("The collar on [H] flickers, but fizzles out."),span_notice("Your collar flickers, but is not powerful enough to shrink you that small."))
 			return
 		if(applied_ratio == null)
-			if(!(world.time - last_activated > 10 SECONDS))
+			if(!(ELAPSED_SINCE(src, last_activated, CLOCK_WORLD) > 10 SECONDS))
 				to_chat(M, span_warning("\The [src] flickers. It seems to be recharging."))
 				return
-			last_activated = world.time
+			EXPIRY_STAMP(src, last_activated, CLOCK_WORLD)
 			applied_ratio = H.size_multiplier ? (target_size / H.size_multiplier) : 1
 			H.resize(target_size, ignore_prefs = FALSE, allow_stripping = TRUE)		//In case someone else tries to put it on you.
 			H.visible_message(span_warning("The space around [H] distorts as they change size!"),span_notice("The space around you distorts as you change size!"))
 			log_admin("Admin [key_name(M)]'s size was altered by a bluespace collar.")
-			s.set_up(3, 1, M)
-			s.start()
+			fx_sparks(M, 3)
 		else
-			last_activated = world.time
+			EXPIRY_STAMP(src, last_activated, CLOCK_WORLD)
 			H.resize(applied_ratio ? (H.size_multiplier / applied_ratio) : H.size_multiplier, ignore_prefs = FALSE, allow_stripping = TRUE)
 			applied_ratio = null
 			H.visible_message(span_warning("The space around [H] distorts as they return to their original size!"),span_notice("The space around you distorts as you return to your original size!"))
 			log_admin("Admin [key_name(M)]'s size was altered by a bluespace collar.")
 			to_chat(M, span_warning("\The [src] flickers. It is now recharging and will be ready again in ten seconds."))
-			s.set_up(3, 1, M)
-			s.start()
+			fx_sparks(M, 3)
 	return
 
 //bluespace collar malfunctioning (random size)
@@ -1170,7 +1160,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/shock/bluespace/malfunct
 		var/mob/living/carbon/human/H = M
 		if(!istype(H))
 			return
-		var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
 		if(!H.resizable)
 			H.visible_message(span_warning("The space around [H] compresses for a moment but then nothing happens."),span_notice("The space around you distorts but nothing happens to you."))
 			return
@@ -1178,30 +1167,28 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/shock/bluespace/malfunct
 			H.visible_message(span_warning("The collar on [H] flickers, but fizzles out."),span_notice("Your collar flickers, but is not powerful enough to shrink you that small."))
 			return
 		if(currently_shrinking == 0)
-			if(!(world.time - last_activated > 10 SECONDS))
+			if(!(ELAPSED_SINCE(src, last_activated, CLOCK_WORLD) > 10 SECONDS))
 				to_chat(M, span_warning("\The [src] flickers. It seems to be recharging."))
 				return
-			last_activated = world.time
+			EXPIRY_STAMP(src, last_activated, CLOCK_WORLD)
 			applied_ratio = H.size_multiplier ? (target_size / H.size_multiplier) : 1
 			currently_shrinking = 1
 			H.resize(target_size, ignore_prefs = FALSE, allow_stripping = TRUE)		//In case someone else tries to put it on you.
 			H.visible_message(span_warning("The space around [H] distorts as they change size!"),span_notice("The space around you distorts as you change size!"))
 			log_admin("Admin [key_name(M)]'s size was altered by a bluespace collar.")
-			s.set_up(3, 1, M)
-			s.start()
+			fx_sparks(M, 3)
 		else if(currently_shrinking == 1)
 			if(applied_ratio == null)
 				H.visible_message(span_warning("The space around [H] twists and turns for a moment but then nothing happens."),span_notice("The space around you distorts but stay the same size."))
 				return
-			last_activated = world.time
+			EXPIRY_STAMP(src, last_activated, CLOCK_WORLD)
 			H.resize(applied_ratio ? (H.size_multiplier / applied_ratio) : H.size_multiplier, ignore_prefs = FALSE, allow_stripping = TRUE)
 			applied_ratio = null
 			currently_shrinking = 0
 			H.visible_message(span_warning("The space around [H] distorts as they return to their original size!"),span_notice("The space around you distorts as you return to your original size!"))
 			log_admin("Admin [key_name(M)]'s size was altered by a bluespace collar.")
 			to_chat(M, span_warning("\The [src] flickers. It is now recharging and will be ready again in ten seconds."))
-			s.set_up(3, 1, M)
-			s.start()
+			fx_sparks(M, 3)
 	return
 
 //Machete Holsters
@@ -1214,9 +1201,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/shock/bluespace/malfunct
 
 //Medals
 
-/obj/item/clothing/accessory/holster/machete/hold_constraint()
-	var/list/holds = list(/obj/item/material/knife/machete, /obj/item/kinetic_crusher/machete)
-	return list(HOLD_ONLY(holds))
+TYPE_TABLE(/obj/item/clothing/accessory/holster/machete, hold_spec, list(HOLD_ONLY(list(/obj/item/material/knife/machete, /obj/item/kinetic_crusher/machete))))
 
 /obj/item/clothing/accessory/medal/silver/unity
 	name = "medal of unity"

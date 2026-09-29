@@ -18,8 +18,8 @@ GLOBAL_DATUM_INIT(vis_overlays_service, /datum/world_service/vis_overlays, new)
 		var/obj/effect/overlay/vis/overlay = current_run[key]
 		current_run.len--
 		if(!overlay.unused && !length(overlay.vis_locs))
-			overlay.unused = world.time
-		else if(overlay.unused && overlay.unused + overlay.cache_expiration < world.time)
+			EXPIRY_STAMP(overlay, unused, CLOCK_WORLD)
+		else if(overlay.unused && ELAPSED(overlay, unused, CLOCK_WORLD) > overlay.cache_expiration)
 			own_take_member(src, "vis_overlay_cache", key)
 			qdel(overlay)
 		if(TICK_CHECK)

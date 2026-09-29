@@ -23,7 +23,7 @@ DECLARE_INTERACTIONS(/obj/structure/AIcore, INTERACT_ITEM(null, PROC_REF(interac
 	switch(state)
 		if(1)
 			if(istype(P, /obj/item/circuitboard/aicore) && !circuit)
-				playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
+				play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 				to_chat(user, span_notice("You place the circuit board inside the frame."))
 				icon_state = "1"
 				own_set(src, "circuit", P)
@@ -36,7 +36,7 @@ DECLARE_INTERACTIONS(/obj/structure/AIcore, INTERACT_ITEM(null, PROC_REF(interac
 					to_chat(user, span_warning("You need five coils of wire to add them to the frame."))
 					return INTERACTION_HANDLED_PASS
 				to_chat(user, span_notice("You start to add cables to the frame."))
-				playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
+				play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 				om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, C))
 				return INTERACTION_HANDLED_PASS
 		if(3)
@@ -46,7 +46,7 @@ DECLARE_INTERACTIONS(/obj/structure/AIcore, INTERACT_ITEM(null, PROC_REF(interac
 					to_chat(user, span_warning("You need two sheets of glass to put in the glass panel."))
 					return INTERACTION_HANDLED_PASS
 				to_chat(user, span_notice("You start to put in the glass panel."))
-				playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
+				play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 				om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done2), done_args = list(user, RG))
 
 			if(istype(P, /obj/item/aiModule/asimov))
@@ -121,11 +121,11 @@ DECLARE_INTERACTIONS(/obj/structure/AIcore, INTERACT_ITEM(null, PROC_REF(interac
 
 /obj/structure/AIcore/proc/wrench_act_tool_done(mob/user)
 	to_chat(user, span_notice("You wrench the frame into place."))
-	anchored = TRUE
+	set_anchored(TRUE)
 	state = 1
 /obj/structure/AIcore/proc/wrench_act_tool_done2(mob/user)
 	to_chat(user, span_notice("You unfasten the frame."))
-	anchored = FALSE
+	set_anchored(FALSE)
 	state = 0
 
 /obj/structure/AIcore/welder_act(mob/user, obj/item/tool)
@@ -284,7 +284,7 @@ EXTEND_INTERACTIONS(/obj/structure/AIcore/deactivated, INTERACT_ITEM(null, PROC_
 
 /obj/structure/AIcore/deactivated/proc/wrench_act_tool_done3(mob/user)
 	user.visible_message(span_bold("\The [user]") + " finishes fastening down \the [src]!")
-	anchored = TRUE
+	set_anchored(TRUE)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/AIcore/deactivated/proc/wrench_act_tool_failed3(mob/user)
@@ -316,7 +316,7 @@ ADMIN_VERB(empty_ai_core_toggle_latejoin, R_ADMIN|R_SERVER|R_EVENT, "Toggle AI C
 
 /obj/structure/AIcore/deactivated/proc/unbolted(mob/user)
 	user.visible_message(span_bold("\The [user]") + " finishes unfastening \the [src]!")
-	anchored = FALSE
+	set_anchored(FALSE)
 
 /obj/structure/AIcore/deactivated/proc/unbolt_abandoned(mob/user)
 	user?.visible_message(span_bold("\The [user]") + " decides not to unbolt \the [src].")

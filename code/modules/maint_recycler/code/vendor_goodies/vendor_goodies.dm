@@ -10,7 +10,7 @@
 #define POOR_PERSON_THRESHOLD 1000 //below this and it's over.
 /obj/item/healthanalyzer/bling/scan_mob(mob/living/M, mob/living/user)
 	.=..()
-	playsound(src, 'code/modules/maint_recycler/sfx/goodies/kaching.ogg', 50, 1) //dolla dolla bills.
+	play_sfx(src, SFX_RECYCLER_KACHING) //dolla dolla bills.
 	if(ishuman(M))
 		var/mob/living/carbon/human/potentialpoor = M
 		var/obj/item/card/id/potentialPoorID = potentialpoor.GetIdCard()

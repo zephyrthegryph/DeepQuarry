@@ -49,7 +49,7 @@
 	if (isrobot(user) || locked)
 		if(O.has_tool_quality(TOOL_MULTITOOL))
 			to_chat(user, span_warning("Resetting circuitry..."))
-			playsound(src, 'sound/machines/lockreset.ogg', 50, 1)
+			play_sfx(src, SFX_MACHINES_LOCKRESET)
 			use_tool(user, O, src, delay = 2 SECONDS, quality = TOOL_MULTITOOL, volume = 0, receiver = src, on_done = PROC_REF(attackby_tool_done), done_args = list(user))
 			return TRUE
 		else if(istype(O, /obj/item))
@@ -59,13 +59,13 @@
 					toggle_close_open()
 				return TRUE
 			else
-				playsound(src, 'sound/effects/Glasshit.ogg', 100, 1) //We don't want this playing every time
+				play_sfx(src, SFX_EFFECTS_GLASSHIT, volume = 100) //We don't want this playing every time
 			if(W.force < 15)
 				to_chat(user, span_notice("The cabinet's protective glass glances off the hit."))
 			else
 				hitstaken++
 				if(hitstaken == 4)
-					playsound(src, 'sound/effects/Glassbr3.ogg', 100, 1) //Break cabinet, receive goodies. Cabinet's fucked for life after that.
+					play_sfx(src, SFX_EFFECTS_GLASSBR3) //Break cabinet, receive goodies. Cabinet's fucked for life after that.
 					smashed = 1
 					locked = 0
 					open= 1
@@ -97,7 +97,7 @@
 				return TRUE
 			else
 				to_chat(user, span_warning("Resetting circuitry..."))
-				playsound(src, 'sound/machines/lockenable.ogg', 50, 1)
+				play_sfx(src, SFX_MACHINES_LOCKENABLE)
 				use_tool(user, O, src, delay = 2 SECONDS, quality = TOOL_MULTITOOL, volume = 0, receiver = src, on_done = PROC_REF(attackby_tool_done2), done_args = list(user))
 				return TRUE
 		else

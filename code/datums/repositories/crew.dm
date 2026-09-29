@@ -17,7 +17,7 @@ GLOBAL_DATUM_INIT(crew_repository, /datum/repository/crew, new)
 		cache_entry = new/datum/cache_entry
 		own_put(src, "cache_data", z_level, cache_entry)
 
-	if(world.time < cache_entry.timestamp)
+	if(EXPIRY_ACTIVE(cache_entry, timestamp, CLOCK_WORLD))
 		return cache_entry.data
 
 	var/tracked = scan()
@@ -64,7 +64,7 @@ GLOBAL_DATUM_INIT(crew_repository, /datum/repository/crew, new)
 				crewmembers[++crewmembers.len] = crewmemberData
 
 	crewmembers = sortByKey(crewmembers, "name")
-	cache_entry.timestamp = world.time + 5 SECONDS
+	EXPIRY_SET(cache_entry, timestamp, 5 SECONDS, CLOCK_WORLD)
 	cache_entry.data = crewmembers
 
 	return crewmembers

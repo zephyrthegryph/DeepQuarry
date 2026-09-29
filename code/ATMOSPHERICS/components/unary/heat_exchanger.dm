@@ -109,7 +109,7 @@
 		to_chat(user, span_warning("You cannot unwrench \the [src], it is too exerted due to internal pressure."))
 		add_fingerprint(user)
 		return ITEM_INTERACT_BLOCKING
-	use_tool(user, W, src, delay = 40, volume = 50, message_self = "You begin to unfasten \the [src]...", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
+	use_tool(user, W, src, delay = 40, volume = 50, start_self = "You begin to unfasten \the [src]...", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/atmospherics/unary/heat_exchanger/proc/wrench_act_tool_done(mob/user)

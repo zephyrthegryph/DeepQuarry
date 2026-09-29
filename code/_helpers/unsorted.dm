@@ -298,7 +298,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 //Last modified by Carn
 /mob/proc/rename_self(role, allow_numbers=0, attempt = 1, started_at)
 	if(isnull(started_at))
-		started_at = world.time
+		started_at = EXPIRY_AT(src, CLOCK_WORLD, 0)
 	om_ask(src, /datum/om/prompt/text/rename_self, TYPE_PROC_REF(/mob, rename_self_entered), default = real_name, role = role, allow_numbers = allow_numbers, attempt = attempt, started_at = started_at)
 
 /// A mob picking its own name for a role (rename_self()).
@@ -308,7 +308,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 	var/role
 	var/allow_numbers
 	var/attempt
-	var/started_at
+	EXPIRY_DECLARE(started_at)
 
 /datum/om/prompt/text/rename_self/prepare()
 	message = "You are \a [role]. Would you like to change your name to something else?"
@@ -317,7 +317,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 /// We get 3 attempts to pick a suitable name, within five minutes; a cancel keeps the old one.
 /mob/proc/rename_self_entered(datum/om/prompt/text/rename_self/P)
 	var/role = P.role
-	if((world.time - P.started_at) > 5 MINUTES)
+	if(ELAPSED(P, started_at, CLOCK_WORLD) > 5 MINUTES)
 		return	//took too long
 	var/newname = sanitizeName(P.text, , P.allow_numbers)	//returns null if the name doesn't meet some basic requirements. Tidies up a few other things like bad-characters.
 	for(var/mob/living/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
@@ -1318,7 +1318,7 @@ GLOBAL_DATUM(dview_mob, /mob/dview)
 
 /// Asks for a type (typed filter, then a pick from the matches) inside a prompt flow
 /// (flow_ask()): null until answered. `key` keeps its answers apart.
-/proc/pick_closest_path(value, list/matches = get_fancy_list_of_atom_types(), key = "path")
+/proc/pick_closest_path(value, list/matches = GLOBAL_TABLE_GET(get_fancy_list_of_atom_types), key = "path")
 	if (value == FALSE) //nothing should be calling us with a number, so this is safe
 		value = flow_ask(usr, "[key]:filter", /datum/om/prompt/text, message = "Enter type to find (blank for all, cancel to cancel)", title = "Search for type")
 		if (isnull(value))
@@ -1340,16 +1340,18 @@ GLOBAL_DATUM(dview_mob, /mob/dview)
 	chosen = matches[chosen]
 	return chosen
 
-/proc/get_fancy_list_of_atom_types()
-	var/static/list/pre_generated_list
-	if (!pre_generated_list) //init
-		pre_generated_list = make_types_fancy(typesof(/atom))
+GLOBAL_TABLE(get_fancy_list_of_atom_types, GLOBAL_PROC_REF(build_get_fancy_list_of_atom_types))
+
+/proc/build_get_fancy_list_of_atom_types()
+	var/list/pre_generated_list
+	pre_generated_list = make_types_fancy(typesof(/atom))
 	return pre_generated_list
 
-/proc/get_fancy_list_of_datum_types()
-	var/static/list/pre_generated_list
-	if (!pre_generated_list) //init
-		pre_generated_list = make_types_fancy(sortList(typesof(/datum) - typesof(/atom)))
+GLOBAL_TABLE(get_fancy_list_of_datum_types, GLOBAL_PROC_REF(build_get_fancy_list_of_datum_types))
+
+/proc/build_get_fancy_list_of_datum_types()
+	var/list/pre_generated_list
+	pre_generated_list = make_types_fancy(sortList(typesof(/datum) - typesof(/atom)))
 	return pre_generated_list
 
 /proc/filter_fancy_list(list/L, filter as text)

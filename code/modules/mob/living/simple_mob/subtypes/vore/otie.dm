@@ -246,7 +246,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/otie, \
 /// Old attackby: trade donuts for bellybrig victims.
 /mob/living/simple_mob/vore/otie/proc/otie_interaction_feed(mob/user, obj/item/O, datum/interaction/interaction)
 	consume(O, user)
-	playsound(src,'sound/items/eatfood.ogg', rand(10,50), 1)
+	play_sfx(src, SFX_ITEMS_EATFOOD, volume = rand(10,50))
 	if(!(ai_brain != null))//No autobarf on player control.
 		return TRUE
 	if(istype(O, /obj/item/reagent_containers/food/snacks/donut) && istype(src, /mob/living/simple_mob/vore/otie/security))
@@ -287,7 +287,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/otie, \
 				if(M.zone_sel.selecting == BP_GROIN)
 					if(M.vore_bellyrub(src))
 						return TRUE
-				M.visible_message(span_notice("[M] [response_help] \the [src]."))
+				act_message(M, src, null, MSG_OTHERS(span_notice("%U% [response_help] %T%.")))
 				if(ai_brain)
 					var/datum/ai_brain/AI = ai_brain
 					AI.lose_target()

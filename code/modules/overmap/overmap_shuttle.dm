@@ -181,7 +181,7 @@ DECLARE_INTERACTIONS(/obj/structure/fuel_port, \
 /obj/structure/fuel_port/crowbar_act(mob/user, obj/item/tool)
 	opened = !opened
 	to_chat(user, span_notice("You [opened ? "open up" : "tightly shut"] \the [src] door."))
-	playsound(src, opened ? 'sound/effects/locker_open.ogg' : 'sound/effects/locker_close.ogg', opened ? 15 : 25, opened, -3)
+	play_sfx(src, opened ? SFX_EFFECTS_LOCKER_OPEN : SFX_EFFECTS_LOCKER_CLOSE)
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
 

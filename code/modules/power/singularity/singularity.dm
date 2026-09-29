@@ -27,7 +27,7 @@ REGISTRY_MEMBERSHIP(/obj/singularity, REGISTRY_SINGULARITIES)
 	var/event_chance = 15 //Prob for event each tick.
 	var/target = null //Its target. Moves towards the target if it has one.
 	var/last_failed_movement = 0 //Will not move in the same dir if it couldnt before, will help with the getting stuck on fields thing.
-	var/last_warning
+	EXPIRY_DECLARE(last_warning)
 
 	var/chained = 0//Adminbus chain-grab
 
@@ -87,7 +87,7 @@ DECLARE_INTERACTIONS(/obj/singularity, INTERACT_HAND_UNGATED(null, PROC_REF(inte
 			event()
 
 /obj/singularity/proc/admin_investigate_setup()
-	last_warning = world.time
+	EXPIRY_STAMP(src, last_warning, CLOCK_WORLD)
 	var/count = locate_in_list(orange(30, src), /obj/machinery/containment_field)
 
 	if (!count)

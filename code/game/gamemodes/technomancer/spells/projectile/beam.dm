@@ -17,7 +17,7 @@
 	energy_cost_per_shot = 400
 	instability_per_shot = 3
 	cooldown = 10
-	fire_sound = 'sound/weapons/Laser.ogg'
+	fire_sound = SFX_WEAPONS_LASER
 
 /obj/item/projectile/beam/blue
 	damage = 30

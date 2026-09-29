@@ -33,8 +33,16 @@ ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
 FIELD_RE = re.compile(r"^OM_FIELD\(\s*(/[\w/]+)\s*,\s*(\w+)\s*,")
 FIELD_TYPED_RE = re.compile(r"^OM_FIELD_TYPED\(\s*(/[\w/]+)\s*,\s*[\w/]+\s*,\s*(\w+)\s*,")
+# OM_FLAG_FIELD / OM_FLAG_FIELD_BITS (generated setters set_F, F_add, F_remove) and
+# OM_FIELD_SETTER (a hand-written set_F on T): same shape as OM_FIELD for this lint.
+FIELD_OTHER_RE = re.compile(r"^OM_(?:FLAG_FIELD(?:_BITS)?|FIELD_SETTER)\(\s*(/[\w/]+)\s*,\s*(\w+)\s*,")
+FLAG_FIELD_RE = re.compile(r"^OM_FLAG_FIELD(?:_BITS)?\(\s*(/[\w/]+)\s*,\s*(\w+)\s*,")
 PROC_DEF_RE = re.compile(r"^(/[\w/]+?)/(?:(?:proc|verb)/)?(\w+)\((.*)$")
 TYPED_NAME_RE = re.compile(r"(?:var/)?((?:/?\w+)(?:/\w+)+)/(\w+)\b")
+# An untyped proc parameter (`proc/f(on, state = 1)`) or local (`var/on`, `var/tmp/on`): it
+# shadows a field of the same name.
+UNTYPED_PARAM_RE = re.compile(r"(?:^|,)\s*(\w+)\s*(?==|,|\)|$)")
+UNTYPED_VAR_RE = re.compile(r"\bvar/(?:(?:tmp|static|global|const)/)?(\w+)\b(?!/)")
 WRITE_OPS = r"(?:=(?!=)|\+=|-=|\|=|&=|\^=|\*=|/=|\+\+|--)"
 
 
@@ -44,8 +52,22 @@ def dm_files():
         yield rel, path
 
 
+# DM's implicit parents: /obj and /mob are /atom/movable, /turf and /area are /atom, and /atom
+# is a /datum, although their paths don't say so.
+IMPLICIT = (("/obj", "/datum/atom/movable/obj"), ("/mob", "/datum/atom/movable/mob"),
+            ("/turf", "/datum/atom/turf"), ("/area", "/datum/atom/area"), ("/atom", "/datum/atom"))
+
+
+def canon(path):
+    for top, full in IMPLICIT:
+        if path == top or path.startswith(top + "/"):
+            return full + path[len(top):]
+    return path
+
+
 def related(a, b):
     """True when type path a is b, a subtype of b, or an ancestor of b."""
+    a, b = canon(a), canon(b)
     return a == b or a.startswith(b + "/") or b.startswith(a + "/")
 
 
@@ -55,7 +77,7 @@ def declared_fields():
     for _, path in dm_files():
         with open(path, encoding="utf-8", errors="replace") as handle:
             for line in handle:
-                m = FIELD_RE.match(line) or FIELD_TYPED_RE.match(line)
+                m = FIELD_RE.match(line) or FIELD_TYPED_RE.match(line) or FIELD_OTHER_RE.match(line)
                 if m:
                     fields.setdefault(m.group(2), []).append(m.group(1))
     return fields
@@ -128,11 +150,15 @@ def violations(fields, rel, text):
                 locals_ = {}
                 for tm in TYPED_NAME_RE.finditer(m.group(3)):
                     locals_[tm.group(2)] = norm(tm.group(1))
+                for pm in UNTYPED_PARAM_RE.finditer(m.group(3)):
+                    locals_.setdefault(pm.group(1), None)
                 continue
             owner, proc = None, None
             continue
         if owner is None:
             continue
+        for vm in UNTYPED_VAR_RE.finditer(line):
+            locals_.setdefault(vm.group(1), None)
         for tm in TYPED_NAME_RE.finditer(line):
             if "var/" in line[max(0, tm.start() - 4):tm.start() + 4] or line[tm.start():].startswith("var/"):
                 locals_[tm.group(2)] = norm(tm.group(1))
@@ -142,8 +168,11 @@ def violations(fields, rel, text):
                 continue
             if field in locals_:
                 continue  # a local of the same name shadows the field
-            if proc == "set_" + field and any(owner == t for t in fields[field]):
-                continue  # the generated setter (and only the declaring type's)
+            before, after = line[:m.start()].rstrip(), line[m.end():].rstrip()
+            if before.endswith(("(", ",")) or after.endswith(","):
+                continue  # a named argument or a list entry (`f(x, on = y)`, `on = y,` in a list)
+            if proc in ("set_" + field, field + "_add", field + "_remove") and any(owner == t for t in fields[field]):
+                continue  # the generated setters (and only the declaring type's)
             if any(related(owner, t) for t in fields[field]):
                 yield no, field, "%s/%s" % (owner, proc)
         for m in dotted.finditer(line):
@@ -151,12 +180,50 @@ def violations(fields, rel, text):
             if recv == "src":
                 continue  # handled as a bare write
             if m.start() > 0 and line[m.start() - 1] == ".":
-                rtype = None  # a chained access: the receiver's type is unknown
+                rtype = chain_type(owner, locals_, line[:m.start()], recv)  # a.b.recv.field
             else:
                 rtype = locals_.get(recv) or member_type(owner, recv)
             if rtype and not any(related(rtype, t) for t in fields[field]):
                 continue  # a typed receiver of an unrelated type: a different var
             yield no, field, "%s.%s in %s/%s" % (recv, field, owner, proc)
+
+
+CHAIN_RE = re.compile(r"((?:\w+\??\.)+)$")
+GLOBAL_DATUM_RE = re.compile(r"GLOBAL_DATUM(?:_INIT)?\(\s*(\w+)\s*,\s*(/[\w/]+)")
+
+
+def global_types():
+    """GLOB var name -> declared type, from GLOBAL_DATUM()/GLOBAL_DATUM_INIT()."""
+    if "globals" not in _CACHE:
+        out = {}
+        for _, path in dm_files():
+            with open(path, encoding="utf-8", errors="replace") as handle:
+                for gm in GLOBAL_DATUM_RE.finditer(handle.read()):
+                    out[gm.group(1)] = gm.group(2)
+        _CACHE["globals"] = out
+    return _CACHE["globals"]
+
+
+def chain_type(owner, locals_, before, recv):
+    """The type of `recv` in `a.b.recv` (before = the text up to recv), walking typed members
+    from the head (a local, a member of the owner, or GLOB.x); None when a link is unknown."""
+    cm = CHAIN_RE.search(before)
+    if not cm:
+        return None
+    links = [x.rstrip("?") for x in cm.group(1).split(".") if x] + [recv]
+    head = links[0]
+    if head == "GLOB" and len(links) > 1:
+        t = global_types().get(links[1])
+        links = links[1:]
+    elif head == "src":
+        t = owner
+    else:
+        t = locals_.get(head) or member_type(owner, head)
+    for link in links[1:]:
+        if not t:
+            return None
+        t = member_type(t, link)
+    return t
 
 
 _CACHE = {}

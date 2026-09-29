@@ -36,7 +36,8 @@ DECLARE_INTERACTIONS(/obj/item/supply_beacon, INTERACT_USE(null, PROC_REF(intera
 	layer = MOB_LAYER - 0.1
 	stat = 0
 
-	TIMESTAMP_VAR(target_drop_time)
+	/// om_after() timer that sends the drop once the beacon has stayed powered for drop_delay, or 0.
+	var/tmp/drop_timer = 0
 	var/drop_delay = 450
 	var/expended
 	var/drop_type
@@ -55,7 +56,7 @@ DECLARE_INTERACTIONS(/obj/item/supply_beacon, INTERACT_USE(null, PROC_REF(intera
 	if(!anchored && !connect_to_network())
 		to_chat(user, span_warning("This device must be placed over an exposed cable."))
 		return ITEM_INTERACT_BLOCKING
-	anchored = !anchored
+	set_anchored(!anchored)
 	user.visible_message(span_notice("\The [user] [anchored ? "secures" : "unsecures"] \the [src]."))
 	playsound(src, tool.usesound, 50, TRUE)
 	return ITEM_INTERACT_SUCCESS
@@ -75,7 +76,7 @@ DECLARE_INTERACTIONS(/obj/item/supply_beacon, INTERACT_USE(null, PROC_REF(intera
 
 /obj/machinery/power/supply_beacon/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(expended)
-		update_use_power(USE_POWER_OFF)
+		set_use_power(USE_POWER_OFF)
 		to_chat(user, span_warning("\The [src] has used up its charge."))
 		return TRUE
 	if(anchored)
@@ -95,7 +96,7 @@ DECLARE_INTERACTIONS(/obj/item/supply_beacon, INTERACT_USE(null, PROC_REF(intera
 		return
 	set_light(3, 3, "#00CCAA")
 	icon_state = "beacon_active"
-	update_use_power(USE_POWER_IDLE)
+	set_use_power(USE_POWER_IDLE)
 	if(user) to_chat(user, span_notice("You activate the beacon. The supply drop will be dispatched soon."))
 
 /obj/machinery/power/supply_beacon/proc/deactivate(mob/user, permanent)
@@ -105,8 +106,10 @@ DECLARE_INTERACTIONS(/obj/item/supply_beacon, INTERACT_USE(null, PROC_REF(intera
 	else
 		icon_state = "beacon"
 	set_light(0)
-	update_use_power(USE_POWER_OFF)
-	target_drop_time = null
+	set_use_power(USE_POWER_OFF)
+	if(drop_timer)
+		om_cancel_timer(src, drop_timer)
+		drop_timer = 0
 	if(user) to_chat(user, span_notice("You deactivate the beacon."))
 
 // an active beacon deactivates.
@@ -123,15 +126,20 @@ DECLARE_INTERACTIONS(/obj/item/supply_beacon, INTERACT_USE(null, PROC_REF(intera
 	if(draw_power(500) < 500)
 		deactivate()
 		return
-	if(!target_drop_time)
-		target_drop_time = world.time + drop_delay
-	else if(world.time >= target_drop_time)
-		deactivate(permanent = 1)
-		var/drop_x = src.x - 2
-		var/drop_y = src.y - 2
-		var/drop_z = src.z
-		GLOB.command_announcement.Announce("[using_map.starsys_name] Rapid Fabrication priority supply request #[rand(1000,9999)]-[rand(100,999)] received. Shipment dispatched via ballistic supply pod for immediate delivery. Have a nice day.", "Thank You For Your Patronage")
-		om_after(src, rand(100, 300), PROC_REF(drop_supply), drop_x, drop_y, drop_z)
+	if(!drop_timer)
+		drop_timer = om_after(src, drop_delay, PROC_REF(drop_timer_fired))
+
+/// om_after() callback: the beacon stayed powered for drop_delay, so the pod is sent.
+/obj/machinery/power/supply_beacon/proc/drop_timer_fired()
+	drop_timer = 0
+	if(expended || !use_power)
+		return
+	deactivate(permanent = 1)
+	var/drop_x = src.x - 2
+	var/drop_y = src.y - 2
+	var/drop_z = src.z
+	GLOB.command_announcement.Announce("[using_map.starsys_name] Rapid Fabrication priority supply request #[rand(1000,9999)]-[rand(100,999)] received. Shipment dispatched via ballistic supply pod for immediate delivery. Have a nice day.", "Thank You For Your Patronage")
+	om_after(src, rand(100, 300), PROC_REF(drop_supply), drop_x, drop_y, drop_z)
 
 /obj/machinery/power/supply_beacon/proc/drop_supply(drop_x, drop_y, drop_z)
 	new /datum/random_map/droppod/supply(null, drop_x, drop_y, drop_z, supplied_drop = drop_type) // Splat.

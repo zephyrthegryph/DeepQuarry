@@ -16,7 +16,7 @@
 	see_in_dark = 10 //SHADEkin
 	has_hands = TRUE //Pawbs
 	seedarkness = FALSE //SHAAAADEkin
-	attack_sound = 'sound/weapons/bladeslice.ogg'
+	attack_sound = SFX_WEAPONS_BLADESLICE
 	has_langs = list(LANGUAGE_GALCOM, LANGUAGE_SHADEKIN)
 
 	melee_damage_lower = 10
@@ -191,7 +191,7 @@
 /datum/om/stage/life/type_post/simple_mob/shadekin/perform(mob/living/simple_mob/shadekin/self, datum/om/frame/life/ctx)
 	..()
 	if(self.shadekin.in_phase)
-		self.density = FALSE
+		self.set_density(FALSE)
 
 	//Convert spare nutrition into energy at a certain ratio
 	if(. && self.nutrition > initial(self.nutrition) && self.shadekin.dark_energy < 100)
@@ -372,7 +372,7 @@
 						if((get_dist(src,henlo_human) <= 1))
 							dir = moving_to
 							if(prob(speak_chance))
-								visible_message(span_notice("\The [src] [pick(friendly)] \the [henlo_human]."))
+								act_message(src, null, null, MSG_OTHERS(span_notice("%U% [pick(friendly)] \the [henlo_human].")))
 								shy_approach = FALSE //ACCLIMATED
 							lifes_since_move = 0
 							return //No need to move

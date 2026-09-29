@@ -183,11 +183,9 @@
 // Calls beginning with "PRG_" are reserved for programs handling.
 // Calls beginning with "PC_" are reserved for computer handling (by whatever runs the program)
 // ALWAYS INCLUDE PARENT CALL ..() OR DIE IN FIRE.
-/datum/computer_file/program/Topic(href, href_list)
-	if(..())
-		return 1
-	if(computer())
-		return computer().Topic(href, href_list)
+// A program's links are the computer's links.
+/datum/computer_file/program/topic_forward()
+	return computer()
 
 // CONVENTIONS, READ THIS WHEN CREATING NEW PROGRAM AND OVERRIDING THIS PROC:
 // Topic calls are automagically forwarded from NanoModule this program contains.

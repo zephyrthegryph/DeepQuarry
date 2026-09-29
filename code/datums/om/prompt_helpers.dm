@@ -58,9 +58,13 @@
 
 // ---------------------------------------------------------------- Topic() handlers
 //
-// The answer re-enters Topic() with the same href_list plus the answer; `key` names it.
+// The answer re-enters the TOPIC_ACTION dispatcher with the same href_list plus the answer;
+// `key` names it. A handler passes its args list (the raw href_list is args[TOPIC_HREF]).
 
 /datum/proc/om_topic_ask(mob/user, list/href_list, key, prompt, list/fields)
+	// A TOPIC_ACTION handler passes its args list: the raw href_list rides in it.
+	if(islist(href_list[TOPIC_HREF]))
+		href_list = href_list[TOPIC_HREF]
 	var/answer_key = "om_answer_[key]"
 	if(!isnull(href_list[answer_key]))
 		return href_list[answer_key]
@@ -75,7 +79,7 @@
 	// Topic() handlers read usr; the answer arrives from the user's own tgui action, so this is
 	// who it already is, but say so for answers delivered any other way.
 	usr = actor
-	target.Topic(null, href_list)
+	topic_dispatch(target, actor, href_list)
 
 // ---------------------------------------------------------------- tgui_act() handlers
 //

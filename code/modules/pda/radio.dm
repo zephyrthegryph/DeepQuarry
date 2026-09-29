@@ -45,27 +45,6 @@
 
 	frequency.post_signal(src, signal, radio_filter = s_filter)
 
-/obj/item/radio/integrated/Topic(href, href_list)
-	..()
-	switch(href_list["op"])
-		if("control")
-			rel_set(src, "active", locate(href_list["bot"]))
-			post_signal(control_freq, "command", "bot_status", "active", active(), s_filter = bot_filter)
-
-		if("scanbots")		// find all bots
-			rel_clear(src, "botlist")
-			post_signal(control_freq, "command", "bot_status", s_filter = bot_filter)
-
-		if("botlist")
-			rel_clear(src, "active")
-
-		if("stop", "go", "home")
-			post_signal(control_freq, "command", href_list["op"], "active", active(), s_filter = bot_filter)
-			post_signal(control_freq, "command", "bot_status", "active", active(), s_filter = bot_filter)
-
-		if("summon")
-			post_signal(control_freq, "command", "summon", "active", active(), "target", get_turf(hostpda()), "useraccess", hostpda().GetAccess(), "user", usr, s_filter = bot_filter)
-			post_signal(control_freq, "command", "bot_status", "active", active(), s_filter = bot_filter)
 
 /obj/item/radio/integrated/receive_signal(datum/signal/signal)
 	if(bot_type && isbot(signal.source()) && signal.data["type"] == bot_type)

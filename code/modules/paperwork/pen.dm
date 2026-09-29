@@ -29,8 +29,8 @@
 	MATERIAL_BULK(MAT_STEEL, 10)
 	var/colour = "black"	//what colour the ink is!
 	pressure_resistance = 2
-	drop_sound = 'sound/items/drop/accessory.ogg'
-	pickup_sound = 'sound/items/pickup/accessory.ogg'
+	drop_sound = SFX_ITEMS_DROP_ACCESSORY
+	pickup_sound = SFX_ITEMS_PICKUP_ACCESSORY
 	var/can_click = TRUE
 
 	///Var for attack_self chain
@@ -51,7 +51,7 @@ DECLARE_INTERACTIONS(/obj/item/pen, \
 		return TRUE
 	user.setClickCooldown(1 SECOND)
 	to_chat(user, span_notice("Click."))
-	playsound(src, 'sound/items/penclick.ogg', 50, 1)
+	play_sfx(src, SFX_ITEMS_PENCLICK)
 	return TRUE
 
 /*
@@ -121,7 +121,7 @@ DECLARE_INTERACTIONS(/obj/item/pen, \
 	if(!Adjacent(user))
 		return TRUE
 	to_chat(user, span_notice("Click."))
-	playsound(src, 'sound/items/penclick.ogg', 50, 1)
+	play_sfx(src, SFX_ITEMS_PENCLICK)
 	return TRUE
 
 EXTEND_INTERACTIONS(/obj/item/pen/multi, INTERACT_USE("Change colour", PROC_REF(interaction_cycle_colour)))
@@ -220,7 +220,7 @@ EXTEND_INTERACTIONS(/obj/item/pen/blade, INTERACT_ALT("Toggle blade", PROC_REF(i
 	sharp = TRUE
 	edge = TRUE
 	w_class = active_w_class
-	playsound(src, 'sound/weapons/saberon.ogg', 15, 1)
+	play_sfx(src, SFX_WEAPONS_SABERON, 0.3)
 	injury_kind = INJURY_CUT
 	injury_kinds = alist(INJURY_BURN = 1/3, INJURY_CUT = 2/3)
 	catchable = FALSE
@@ -235,7 +235,7 @@ EXTEND_INTERACTIONS(/obj/item/pen/blade, INTERACT_ALT("Toggle blade", PROC_REF(i
 /obj/item/pen/blade/proc/deactivate(mob/living/user)
 	if(!active)
 		return
-	playsound(src, 'sound/weapons/saberoff.ogg', 15, 1)
+	play_sfx(src, SFX_WEAPONS_SABEROFF, 0.3)
 	active = 0
 	icon_state = default_icon_state
 	embed_chance = initial(embed_chance)
@@ -359,8 +359,8 @@ EXTEND_INTERACTIONS(/obj/item/pen/chameleon, \
 	var/uses = 30 //0 for unlimited uses
 	var/instant = 0
 	var/colourName = "red" //for updateIcon purposes
-	drop_sound = 'sound/items/drop/gloves.ogg'
-	pickup_sound = 'sound/items/pickup/gloves.ogg'
+	drop_sound = SFX_ITEMS_DROP_GLOVES
+	pickup_sound = SFX_ITEMS_PICKUP_GLOVES
 	can_click = FALSE
 	special_handling = TRUE
 

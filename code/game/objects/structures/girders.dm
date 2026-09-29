@@ -86,7 +86,7 @@
 /obj/structure/girder/proc/displace()
 	name = "displaced [girder_material.display_name] [initial(name)]"
 	icon_state = "displaced"
-	anchored = FALSE
+	set_anchored(FALSE)
 	update_integrity(displaced_health)
 	cover = 25
 
@@ -140,7 +140,7 @@
 
 /obj/structure/girder/proc/reset_girder()
 	name = "[girder_material.display_name] [initial(name)]"
-	anchored = TRUE
+	set_anchored(TRUE)
 	cover = initial(cover)
 	repair_damage(max_integrity)
 	state = 0

@@ -16,7 +16,7 @@
 	idle_power_usage = 10
 	active_power_usage = 100
 	circuit = /obj/item/circuitboard/jukebox
-	clicksound = 'sound/machines/buttonbeep.ogg'
+	clicksound = SFX_MACHINES_BUTTONBEEP
 	volume = 0.5
 	maintenance_flags = MACHINE_MAINT_STANDARD
 
@@ -34,7 +34,7 @@
 	own_set(src, "wires", new/datum/wires/jukebox(src))
 	update_icon()
 	if(!LAZYLEN(getTracksList()))
-		stat |= BROKEN
+		stat_add(BROKEN)
 	make_climbable()
 
 /obj/machinery/media/jukebox/proc/getTracksList()
@@ -43,12 +43,12 @@
 /obj/machinery/media/jukebox/machine_step()
 	if(!playing)
 		return PROCESS_KILL
-	if(inoperable())
+	if(!operable())
 		disconnect_media_source()
 		playing = 0
 		return PROCESS_KILL
 	// If the current track isn't finished playing, let it keep going
-	if(current_track() && world.time < media_start_time + current_track().duration)
+	if(current_track() && ELAPSED(src, media_start_time, CLOCK_WORLD) < current_track().duration)
 		return
 	// Oh... nothing in queue? Well then pick next according to our rules
 	var/list/tracks = getTracksList()
@@ -76,7 +76,7 @@
 /obj/machinery/media/jukebox/proc/start_stop_song()
 	if(current_track() && playing)
 		media_url = current_track().url
-		media_start_time = world.time
+		EXPIRY_STAMP(src, media_start_time, CLOCK_WORLD)
 		audible_message(span_notice("\The [src] begins to play [current_track().display()]."), runemessage = "[current_track().display()]")
 	else
 		media_url = ""
@@ -116,7 +116,7 @@
 	if(playing)
 		StopPlaying()
 	user.visible_message(span_warning("[user] has [anchored ? "un" : ""]secured \the [src]."), span_notice("You [anchored ? "un" : ""]secure \the [src]."))
-	anchored = !anchored
+	set_anchored(!anchored)
 	playsound(src, tool.usesound, 50, TRUE)
 	power_change()
 	update_icon()
@@ -129,18 +129,18 @@
 
 /obj/machinery/media/jukebox/power_change()
 	if(!powered(power_channel) || !anchored)
-		stat |= NOPOWER
+		stat_add(NOPOWER)
 	else
-		stat &= ~NOPOWER
+		stat_remove(NOPOWER)
 
-	if(stat & (NOPOWER|BROKEN) && playing)
+	if(!operable() && playing)
 		StopPlaying()
 	update_icon()
 
 /obj/machinery/media/jukebox/update_icon()
 	cut_overlays()
-	if(stat & (NOPOWER|BROKEN) || !anchored)
-		if(stat & BROKEN)
+	if(!operable() || !anchored)
+		if(has_stat(BROKEN))
 			icon_state = "[state_base]-broken"
 		else
 			icon_state = "[state_base]-nopower"
@@ -155,13 +155,13 @@
 		add_overlay("panel_open")
 
 /obj/machinery/media/jukebox/interact(mob/user)
-	if(inoperable())
+	if(!operable())
 		to_chat(user, "\The [src] doesn't appear to function.")
 		return
 	tgui_interact(user)
 
 /obj/machinery/media/jukebox/tgui_status(mob/user)
-	if(inoperable())
+	if(!operable())
 		to_chat(user, span_warning("[src] doesn't appear to function."))
 		return STATUS_CLOSE
 	if(!anchored)
@@ -223,7 +223,7 @@
 			return TRUE
 		if("play")
 			if(emagged)
-				playsound(src, 'sound/items/AirHorn.ogg', 100, 1)
+				play_sfx(src, SFX_ITEMS_AIRHORN)
 				for(var/mob/living/carbon/M in ohearers(6, src))
 					if(M.get_ear_protection() >= 2)
 						continue
@@ -266,15 +266,13 @@
 
 	explosion(src.loc, 0, 0, 1, rand(1,2), 1)
 
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-	s.set_up(3, 1, src)
-	s.start()
+	fx_sparks(src, 3)
 
 	replace_with(src, /obj/effect/decal/cleanable/blood/oil)
 
 /obj/machinery/media/jukebox/emag_act(remaining_charges, mob/user)
 	if(!emagged)
-		emagged = 1
+		set_emagged(1)
 		StopPlaying()
 		visible_message(span_danger("\The [src] makes a fizzling sound."))
 		update_icon()
@@ -283,7 +281,7 @@
 /obj/machinery/media/jukebox/proc/StopPlaying()
 	playing = 0
 	MACHINE_SLEEP(src)
-	update_use_power(USE_POWER_IDLE)
+	set_use_power(USE_POWER_IDLE)
 	update_icon()
 	start_stop_song()
 
@@ -292,7 +290,7 @@
 		return
 	playing = 1
 	MACHINE_WAKE(src)
-	update_use_power(USE_POWER_ACTIVE)
+	set_use_power(USE_POWER_ACTIVE)
 	update_icon()
 	start_stop_song()
 
@@ -352,7 +350,7 @@
 /// Untouchable: no interactions at all (the old attackby/attack_hand returned); only ghosts use it.
 /obj/machinery/media/jukebox/ghost/declare_interactions(list/into)
 	into += dq_interaction_from_spec(type, INTERACT_OBSERVER("Use", PROC_REF(ghost_jukebox_observer_use)))
-/obj/machinery/media/jukebox/ghost/update_use_power(new_use_power)
+/obj/machinery/media/jukebox/ghost/set_use_power(new_use_power)
 	return
 /obj/machinery/media/jukebox/ghost/power_change()
 	return
@@ -452,14 +450,18 @@
 	VV_DROPDOWN_OPTION("add_track", "Add New Track")
 	VV_DROPDOWN_OPTION("remove_track", "Remove Track")
 
-/obj/machinery/media/jukebox/ghost/vv_do_topic(list/href_list)
-	. = ..()
-	IF_VV_OPTION("add_track")
-		manual_track_add()
-		href_list[VV_HK_DATUM_REFRESH] = "\ref[src]"
-	IF_VV_OPTION("remove_track")
-		manual_track_remove()
-		href_list[VV_HK_DATUM_REFRESH] = "\ref[src]"
+VV_TOPIC_ACTION(/obj/machinery/media/jukebox/ghost, "add_track", PROC_REF(vv_topic_add_track))
+VV_TOPIC_ACTION(/obj/machinery/media/jukebox/ghost, "remove_track", PROC_REF(vv_topic_remove_track))
+
+/obj/machinery/media/jukebox/ghost/proc/vv_topic_add_track(mob/user, list/args)
+	manual_track_add()
+	user.client?.debug_variables(src)
+	return TRUE
+
+/obj/machinery/media/jukebox/ghost/proc/vv_topic_remove_track(mob/user, list/args)
+	manual_track_remove()
+	user.client?.debug_variables(src)
+	return TRUE
 
 /obj/machinery/media/jukebox/casinojukebox
 	name = "space casino jukebox"

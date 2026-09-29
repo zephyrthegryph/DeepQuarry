@@ -5,7 +5,7 @@
 	var/electronic_warfare = 1
 	var/mob/registered_user
 
-	var/datum/tgui_module/agentcard/agentcard_module
+	var/tmp/datum/tgui_module/agentcard/agentcard_module
 
 // agentcard_module is rebuilt fresh by Initialize() every time (like reset_icon());
 // registered_user is a mob ref (and a live observer registration) (C5).

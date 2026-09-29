@@ -26,13 +26,6 @@
 	zoom_possible = 1
 	thrusters_possible = 1
 
-	starting_components = list(
-		/obj/item/mecha_parts/component/hull/durable,
-		/obj/item/mecha_parts/component/actuator,
-		/obj/item/mecha_parts/component/armor/military,
-		/obj/item/mecha_parts/component/gas,
-		/obj/item/mecha_parts/component/electrical
-		)
 
 	starting_equipment = list(
 		/obj/item/mecha_parts/mecha_equipment/weapon/energy/pulse,
@@ -43,6 +36,14 @@
 
 	icon_scale_x = 1.5
 	icon_scale_y = 1.5
+
+TYPE_TABLE(/obj/mecha/combat/marauder, mecha_starting_components, list( \
+		/obj/item/mecha_parts/component/hull/durable, \
+		/obj/item/mecha_parts/component/actuator, \
+		/obj/item/mecha_parts/component/armor/military, \
+		/obj/item/mecha_parts/component/gas, \
+		/obj/item/mecha_parts/component/electrical \
+		))
 
 /obj/mecha/combat/marauder/seraph
 	desc = "Heavy-duty, command-type exosuit. This is a custom model, utilized only by high-ranking military personnel."
@@ -85,14 +86,14 @@
 	if(!can_move)
 		return 0
 	if(zoom)
-		if(world.time - last_message > 20)
+		if(ELAPSED(src, last_message, CLOCK_WORLD) > 2 SECONDS)
 			src.occupant_message("Unable to move while in zoom mode.")
-			last_message = world.time
+			EXPIRY_STAMP(src, last_message, CLOCK_WORLD)
 		return 0
 	if(connected_port)
-		if(world.time - last_message > 20)
+		if(ELAPSED(src, last_message, CLOCK_WORLD) > 2 SECONDS)
 			src.occupant_message("Unable to move while connected to the air system port")
-			last_message = world.time
+			EXPIRY_STAMP(src, last_message, CLOCK_WORLD)
 		return 0
 	if(!thrusters && (current_processes & MECHA_PROC_MOVEMENT))
 		return 0

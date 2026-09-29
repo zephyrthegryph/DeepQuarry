@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: MIT
  */
 
+OWN_TIMER(/datum/tgui_window, payload_timeout)
+
 /datum/tgui_window
 	var/id
 	var/tmp/client/client
@@ -34,7 +36,7 @@
 	var/document_id
 	/// world.time at which a prewarm initialize() was issued, so an idle shell that
 	/// never reports `ready` can be timed out and replaced.
-	var/prewarm_started_at = 0
+	EXPIRY_DECLARE(prewarm_started_at)
 	/// Ends the current one-second payload chunk budget window.
 	COOLDOWN_DECLARE(payload_chunk_window_cooldown)
 	/// payloadChunk topics accepted during the current accounting window.
@@ -640,8 +642,8 @@
 		"type" = message_type,
 		"count" = chunk_count,
 		"chunks" = list(),
-		"timeout" = om_after_replace(src, 10 SECONDS, PROC_REF(remove_oversized_payload), payload_id)
 	)
+	om_after_slot(src, "payload_timeout:[payload_id]", 10 SECONDS, PROC_REF(remove_oversized_payload), payload_id)
 
 /datum/tgui_window/proc/append_payload_chunk(payload_id, chunk)
 	var/list/payload = LAZYACCESS(oversized_payloads, payload_id)
@@ -650,7 +652,7 @@
 	var/list/chunks = payload["chunks"]
 	chunks += chunk
 	if(length(chunks) >= payload["count"])
-		om_cancel_timer(src, payload["timeout"])
+		om_cancel_timer_slot(src, "payload_timeout:[payload_id]")
 		var/message_type = payload["type"]
 		var/final_payload = chunks.Join()
 		remove_oversized_payload(payload_id)
@@ -659,7 +661,7 @@
 			return
 		on_message(message_type, json_decode(final_payload), list("type" = message_type, "payload" = final_payload, "tgui" = TRUE, "window_id" = id))
 	else
-		payload["timeout"] = om_after_replace(src, 10 SECONDS, PROC_REF(remove_oversized_payload), payload_id)
+		om_after_slot(src, "payload_timeout:[payload_id]", 10 SECONDS, PROC_REF(remove_oversized_payload), payload_id)
 
 /datum/tgui_window/proc/remove_oversized_payload(payload_id)
 	LAZYREMOVE(oversized_payloads, payload_id)

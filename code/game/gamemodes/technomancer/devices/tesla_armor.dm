@@ -7,6 +7,8 @@
 	cost = 150
 	obj_path = /obj/item/clothing/suit/armor/tesla
 
+OWN_TIMER(/obj/item/clothing/suit/armor/tesla, recharge_timer)
+
 /obj/item/clothing/suit/armor/tesla
 	name = "tesla armor"
 	desc = "This rather dangerous looking armor will hopefully shock your enemies, and not you in the process."
@@ -20,7 +22,6 @@
 	var/ready_icon_state = "tesla_armor_1" //also wip
 	var/normal_icon_state = "tesla_armor_0"
 	var/cooldown_to_charge = 15 SECONDS
-	var/recharge_timer
 
 /obj/item/clothing/suit/armor/tesla/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	//First, some retaliation.
@@ -44,7 +45,7 @@
 		//Deal with protecting our wearer now.
 		if(ready)
 			ready = 0
-			recharge_timer = om_after(src, cooldown_to_charge, PROC_REF(recharge_ready), user)
+			om_after_slot(src, "recharge_timer", cooldown_to_charge, PROC_REF(recharge_ready), user)
 			visible_message(span_danger("\The [user]'s [src.name] blocks [attack_text]!"))
 			update_icon()
 			return 1
@@ -77,7 +78,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/armor/tesla, INTERACT_USE("Toggle", 
 	..()
 
 /obj/item/clothing/suit/armor/tesla/proc/recharge_ready(mob/user)
-	recharge_timer = null
 	ready = 1
 	update_icon()
 	to_chat(user, span_notice("\The [src] is ready to protect you once more."))
@@ -88,4 +88,4 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/armor/tesla, INTERACT_USE("Toggle", 
 	lightning.old_style_target(target)
 	lightning.fire()
 	visible_message(span_danger("\The [src] strikes \the [target] with lightning!"))
-	playsound(src, 'sound/weapons/gauss_shoot.ogg', 75, 1)
+	play_sfx(src, SFX_WEAPONS_GAUSS_SHOOT, 1.5)

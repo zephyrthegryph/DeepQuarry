@@ -18,8 +18,8 @@
 	randpixel = 7
 	w_class = ITEMSIZE_NORMAL
 	max_amount = 60
-	drop_sound = 'sound/items/drop/axe.ogg'
-	pickup_sound = 'sound/items/pickup/axe.ogg'
+	drop_sound = SFX_ITEMS_DROP_AXE
+	pickup_sound = SFX_ITEMS_PICKUP_AXE
 
 	//crafting / welding vars
 	var/datum/material/material //*sigh* i guess this is how we're doing this.
@@ -78,8 +78,8 @@
 	throw_range = 20
 	flags = NONE
 	no_variants = FALSE
-	drop_sound = 'sound/items/drop/herb.ogg'
-	pickup_sound = 'sound/items/pickup/herb.ogg'
+	drop_sound = SFX_ITEMS_DROP_HERB
+	pickup_sound = SFX_ITEMS_PICKUP_HERB
 	craftable = TRUE
 	resistance_flags = FLAMMABLE
 
@@ -112,8 +112,8 @@
 	throw_range = 20
 	flags = NONE
 	no_variants = FALSE
-	drop_sound = 'sound/items/drop/wooden.ogg'
-	pickup_sound = 'sound/items/pickup/wooden.ogg'
+	drop_sound = SFX_ITEMS_DROP_WOODEN
+	pickup_sound = SFX_ITEMS_PICKUP_WOODEN
 	resistance_flags = FLAMMABLE
 
 /obj/item/stack/tile/wood/alt
@@ -402,8 +402,8 @@
 	throw_range = 20
 	flags = NONE
 	no_variants = FALSE
-	drop_sound = 'sound/items/drop/cloth.ogg'
-	pickup_sound = 'sound/items/pickup/cloth.ogg'
+	drop_sound = SFX_ITEMS_DROP_CLOTH
+	pickup_sound = SFX_ITEMS_PICKUP_CLOTH
 	resistance_flags = FLAMMABLE
 
 /obj/item/stack/tile/carpet/teal

@@ -1,9 +1,10 @@
+OWN_TIMER(/datum/stockMarket, process_timer)
+
 /datum/stockMarket
 	var/list/stocks = list() // ALLOW(instance_list): d: stock market singleton state
 	var/list/balances
 	var/list/stockBrokers
 	var/list/logs
-	var/process_timer
 
 /datum/stockMarket/New()
 		..()
@@ -12,9 +13,9 @@
 		schedule_process()
 
 /datum/stockMarket/proc/schedule_process()
-	if(QDELETED(src) || process_timer)
+	if(QDELETED(src) || om_timer_slot_pending(src, "process_timer"))
 		return
-	process_timer = om_after(src, 10 SECONDS, PROC_REF(market_tick))
+	om_after_slot(src, "process_timer", 10 SECONDS, PROC_REF(market_tick))
 
 /datum/stockMarket/proc/balanceLog(whose, net)
 	if (!(whose in balances))
@@ -112,7 +113,6 @@
 		S.last_read = list()
 
 /datum/stockMarket/proc/market_tick()
-	process_timer = null
 	for (var/stock in stocks)
 		var/datum/stock/S = stock
 		S.stock_tick(5)

@@ -14,8 +14,8 @@
 	var/board_type = new /datum/frame/frame_types/computer
 	var/list/req_components = null
 	var/contain_parts = 1
-	drop_sound = 'sound/items/drop/device.ogg'
-	pickup_sound = 'sound/items/pickup/device.ogg'
+	drop_sound = SFX_ITEMS_DROP_DEVICE
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 
 	/// If true, this board should be ignored during the circuitboard printing unit test, and give an examine hint that the board may be hard to get if so.
 	var/hidden = FALSE

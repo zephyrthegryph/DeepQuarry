@@ -6,8 +6,8 @@
 	var/beacon_active = FALSE
 	var/list/levels_for_distress
 	var/obj/item/gps/gps = null
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 /obj/item/emergency_beacon/Initialize(mapload)
 	for(var/i in 1 to length(levels_for_distress))
@@ -60,11 +60,11 @@ DECLARE_INTERACTIONS(/obj/item/emergency_beacon, \
 /obj/item/emergency_beacon/proc/activate_done(mob/user)
 	if(beacon_active)
 		return
-	user.visible_message(span_warning("[user] activates \the [src]!"),span_warning("You activate \the [src], spiking it into the ground!"))
+	act_message(user, src, MSG_SELF(span_warning("You activate %T%, spiking it into the ground!")), MSG_OTHERS(span_warning("%U% activates %T%!")))
 	beacon_active = TRUE
 	icon_state = "e_beacon_active"
 	user.drop_item()
-	anchored = TRUE
+	set_anchored(TRUE)
 	gps.tracking = TRUE
 	admin_chat_message(message = "'[user?.ckey || "Unknown"]' activated a personal emergency beacon", color = "#FF2222")
 	var/message = "This is an automated distress signal from a MIL-DTL-93352-compliant personal emergency beacon transmitting on [PUB_FREQ*0.1]kHz. \
@@ -86,7 +86,7 @@ DECLARE_INTERACTIONS(/obj/item/emergency_beacon, \
 /obj/item/emergency_beacon/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(W.has_tool_quality(TOOL_WRENCH) && beacon_active)
 		gps.tracking = FALSE
-		user.visible_message("[user] disassembles \the [src].")
+		act_message(user, src, others = "%U% disassembles %T%.")
 		consume(src, user)
 		return TRUE
 	return FALSE

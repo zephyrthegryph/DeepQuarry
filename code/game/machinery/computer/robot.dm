@@ -23,7 +23,7 @@
 	effect = /obj/machinery/computer/robotics/proc/interaction_use
 
 /obj/machinery/computer/robotics/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return TRUE
 	tgui_interact(user)
 	return TRUE

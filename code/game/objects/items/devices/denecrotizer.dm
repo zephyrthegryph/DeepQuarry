@@ -83,11 +83,11 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob, INTERACT_OBSERVER("Inhabit", PROC_RE
 	ghostjoin_icon()
 	if(capture_caught)
 		to_chat(src, span_notice("You are bound to [revivedby], follow their commands within reason and to the best of your abilities, and avoid betraying or abandoning them.") + " " + span_warning("You are allied with [revivedby]. Do not attack anyone for no reason. Of course, you may do scenes as you like, but you must still respect preferences."))
-		visible_message("[src]'s eyes flicker with a curious intelligence.", runemessage = "looks around")
+		act_message(src, null, others = "%U%'s eyes flicker with a curious intelligence.", runemessage = "looks around")
 		return
 	if(revivedby != "no one")
 		to_chat(src, span_notice("Where once your life had been rough and scary, you have been assisted by [revivedby]. They seem to be the reason you are on your feet again... so perhaps you should help them out.") + " " + span_warning("Being as you were revived, you are allied with the station. Do not attack anyone unless they are threatening the one who revived you. And try to listen to the one who revived you within reason. Of course, you may do scenes as you like, but you must still respect preferences."))
-		visible_message("[src]'s eyes flicker with a curious intelligence.", runemessage = "looks around")
+		act_message(src, null, others = "%U%'s eyes flicker with a curious intelligence.", runemessage = "looks around")
 
 /// Evaluate someone for being allowed to join as this mob from being a ghost
 /mob/living/simple_mob/proc/evaluate_ghost_join(mob/observer/dead/D)
@@ -119,7 +119,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob, INTERACT_OBSERVER("Inhabit", PROC_RE
 	icon_state = "denecrotizer"
 	w_class = ITEMSIZE_COST_NORMAL
 	var/charges = 5 //your army of minions can only be this big
-	var/last_used
+	EXPIRY_DECLARE(last_used)
 	var/cooldown = 10 MINUTES //LONG
 	var/revive_time = 30 SECONDS //Don't do this in combat
 	var/advanced = 1 //allows for ghosts to join mobs who get revived by this, and updates their faction to yours
@@ -137,12 +137,12 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob, INTERACT_OBSERVER("Inhabit", PROC_RE
 	if(!target.Adjacent(user))
 		return FALSE
 	if(stance != I_HELP) //be gentle
-		user.visible_message("[user] bonks [target] with [src].", runemessage = "bonks [target]")
+		act_message(user, target, others = "%U% bonks %T% with [src].", runemessage = "bonks [target]")
 		return FALSE
 	if(!istype(target))
 		to_chat(user, span_notice("[target] seems to be too complicated for [src] to interface with."))
 		return FALSE
-	if(!(world.time - last_used > cooldown))
+	if(!(ELAPSED(src, last_used, CLOCK_WORLD) > cooldown))
 		to_chat(user, span_notice("[src] doesn't seem to be ready yet."))
 		return FALSE
 	if(!charges)
@@ -163,7 +163,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob, INTERACT_OBSERVER("Inhabit", PROC_RE
 			to_chat(user, span_notice("[src] doesn't seem to work on that."))
 			return FALSE
 		if(!target.mind)
-			user.visible_message("[user] gently presses [src] to [target]...", runemessage = "presses [src] to [target]")
+			act_message(user, target, others = "%U% gently presses [src] to %T%...", runemessage = "presses [src] to [target]")
 			om_task_timed(user, revive_time, target = target, receiver = src, on_done = PROC_REF(check_target_timed_done), done_args = list(target, user))
 			return FALSE
 		else
@@ -177,16 +177,16 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob, INTERACT_OBSERVER("Inhabit", PROC_RE
 	target.ghostjoin = 1
 	registry_join(REGISTRY_GHOST_PODS, target)
 	target.ghostjoin_icon()
-	last_used = world.time
+	EXPIRY_STAMP(src, last_used, CLOCK_WORLD)
 	charges--
 	log_and_message_admins("used a denecrotizer to tame/offer a simplemob to ghosts: [target]. [ADMIN_FLW(src)]", user)
-	target.visible_message("[target]'s eyes widen, as though in revelation as it looks at [user].", runemessage = "eyes widen")
+	act_message(target, user, others = "%U%'s eyes widen, as though in revelation as it looks at %T%.", runemessage = "eyes widen")
 	if(charges == 0)
 		icon_state = "[initial(icon_state)]-o"
 		update_icon()
 
 /obj/item/denecrotizer/proc/ghostjoin_rez(mob/living/simple_mob/target, mob/living/user)
-	user.visible_message("[user] gently presses [src] to [target]...", runemessage = "presses [src] to [target]")
+	act_message(user, target, others = "%U% gently presses [src] to %T%...", runemessage = "presses [src] to [target]")
 	om_task_timed(user, revive_time, target = target, receiver = src, on_done = PROC_REF(ghostjoin_rez_timed_done), done_args = list(target, user))
 	return
 
@@ -195,13 +195,13 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob, INTERACT_OBSERVER("Inhabit", PROC_RE
 	target.revivedby = user.name
 	target.revive()
 	target.update_icon()
-	visible_message("[target] lifts its head and looks at [user].", runemessage = "lifts its head and looks at [user]")
+	act_message(target, user, others = "%U% lifts its head and looks at %T%.", runemessage = "lifts its head and looks at [user]")
 	log_and_message_admins("used a denecrotizer to revive a simple mob: [target]. [ADMIN_FLW(src)]", user)
 	if(!target.mind) //if it doesn't have a mind then no one has been playing as it, and it is safe to offer to ghosts.
 		target.ghostjoin = 1
 		registry_join(REGISTRY_GHOST_PODS, target)
 		target.ghostjoin_icon()
-	last_used = world.time
+	EXPIRY_STAMP(src, last_used, CLOCK_WORLD)
 	charges--
 	if(charges == 0)
 		icon_state = "[initial(icon_state)]-o"
@@ -209,7 +209,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob, INTERACT_OBSERVER("Inhabit", PROC_RE
 	return
 
 /obj/item/denecrotizer/proc/basic_rez(mob/living/simple_mob/target, mob/living/user) //so medical can have a way to bring back people's pets or whatever, does not change any settings about the mob or offer it to ghosts.
-	user.visible_message("[user] presses [src] to [target]...", runemessage = "presses [src] to [target]")
+	act_message(user, target, others = "%U% presses [src] to %T%...", runemessage = "presses [src] to [target]")
 	om_task_start(/datum/om/task/timed/denecrotizer_basic_rez, user, target, receiver = src, duration = revive_time)
 
 /datum/om/task/timed/denecrotizer_basic_rez
@@ -221,8 +221,8 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob, INTERACT_OBSERVER("Inhabit", PROC_RE
 	var/mob/living/user = task.actor
 	target.revive()
 	target.update_icon()
-	visible_message("[target] lifts its head and looks at [user].", runemessage = "lifts its head and looks at [user]")
-	last_used = world.time
+	act_message(target, user, others = "%U% lifts its head and looks at %T%.", runemessage = "lifts its head and looks at [user]")
+	EXPIRY_STAMP(src, last_used, CLOCK_WORLD)
 	charges--
 	if(charges == 0)
 		icon_state = "[initial(icon_state)]-o"
@@ -232,7 +232,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob, INTERACT_OBSERVER("Inhabit", PROC_RE
 /obj/item/denecrotizer/proc/basic_rez_timed_failed(datum/om/task/timed/denecrotizer_basic_rez/task)
 	var/mob/living/simple_mob/target = task.target
 	var/mob/living/user = task.actor
-	user.visible_message("[user] bonks [target] with [src]. Nothing happened.")
+	act_message(user, src, others = "%U% bonks [target] with %T%. Nothing happened.")
 	return
 
 /obj/item/denecrotizer/attack(mob/living/target, mob/living/user, target_zone, attack_modifier, stance = I_HURT)

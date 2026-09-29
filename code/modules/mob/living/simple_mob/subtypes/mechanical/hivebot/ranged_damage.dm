@@ -25,7 +25,7 @@
 	name = "laser hivebot"
 	desc = "A robot with a photonic weapon integrated into itself."
 	projectiletype = /obj/item/projectile/beam/blue
-	projectilesound = 'sound/weapons/Laser.ogg'
+	projectilesound = SFX_WEAPONS_LASER
 	player_msg = "You have a <b>laser attack</b>."
 	projectile_dispersion = 7
 	projectile_accuracy = -20
@@ -38,7 +38,7 @@
 	icon_living = "yellow"
 
 	projectiletype = /obj/item/projectile/ion
-	projectilesound = 'sound/weapons/Laser.ogg'
+	projectilesound = SFX_WEAPONS_LASER
 	player_msg = "You have a <b>ranged ion attack</b>, which is very strong against other synthetics.<br>\
 	Be careful to not hit yourself or your team, as it will affect you as well."
 
@@ -81,7 +81,7 @@
 	nodamage = TRUE
 
 	impact_effect_type = /obj/effect/temp_visual/impact_effect
-	hitsound_wall = 'sound/weapons/effects/searwall.ogg'
+	hitsound_wall = SFX_WEAPONS_EFFECTS_SEARWALL
 
 // Close to mid-ranged shooter that arcs over other things, ideal if allies are in front of it.
 // Difference from siege hivebots is that siege hivebots have limited charges for their attacks, are very long range, and
@@ -90,7 +90,7 @@
 	name = "backline hivebot"
 	desc = "A robot that can fire short-ranged projectiles over their allies."
 	projectiletype = /obj/item/projectile/arc/blue_energy
-	projectilesound = 'sound/weapons/Laser.ogg'
+	projectilesound = SFX_WEAPONS_LASER
 	player_msg = "Your attacks are short-ranged, but can <b>arc over obstructions</b> such as allies \
 	or barriers."
 
@@ -153,7 +153,7 @@
 	projectiletype = /obj/item/projectile/arc/fragmentation
 
 /datum/decl/mob_organ_names/hivebotsiege
-	hit_zones = list("central chassis", "armor plating", "reinforced positioning servo", "head", "sensor suite", "manipulator arm", "heavy weapons mount", "advanced weapons array", "front right leg", "front left leg", "rear left leg", "rear right leg")
+TYPE_TABLE(/datum/decl/mob_organ_names/hivebotsiege, mob_organ_hit_zones, list("central chassis", "armor plating", "reinforced positioning servo", "head", "sensor suite", "manipulator arm", "heavy weapons mount", "advanced weapons array", "front right leg", "front left leg", "rear left leg", "rear right leg"))
 
 
 // === merged from ranged_damage_vr.dm during hard-fork de-suffix (verified no override-order change) ===

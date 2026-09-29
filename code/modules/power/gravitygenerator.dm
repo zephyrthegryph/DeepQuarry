@@ -129,7 +129,7 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 	sprite_number = 8
 	use_power = USE_POWER_IDLE
 
-	var/on = TRUE
+	on = TRUE
 	var/breaker = TRUE
 	/// The eight part objects around it (owned: created here, destroyed with it).
 	var/list/obj/machinery/gravity_generator/part/parts
@@ -152,7 +152,7 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 // gravity goes off on its levels; its owned parts go with it.
 /obj/machinery/gravity_generator/main/on_destroy(force)
 	investigate_log("was destroyed!", "gravity")
-	on = FALSE
+	set_on(FALSE)
 	update_list()
 	if(!gravity_in_level())
 		update_gravity(FALSE)
@@ -171,7 +171,7 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 		if(count == 5) // Middle
 			rel_set(src, "middle", part)
 		if(count <= 3) // Their sprite is the top part of the generator
-			part.density = FALSE
+			part.set_density(FALSE)
 			part.plane = MOB_PLANE
 			part.layer = ABOVE_MOB_LAYER
 		part.sprite_number = count
@@ -187,19 +187,19 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 	if(!.)
 		return
 	for(var/obj/machinery/gravity_generator/M in parts)
-		if(!(M.stat & BROKEN))
+		if(!M.has_stat(BROKEN))
 			M.atom_break(damage_flag)
 	middle().cut_overlays()
 	charge_count = 0
 	breaker = FALSE
 	set_power()
-	set_state(0)
+	set_gravity_state(0)
 	investigate_log("has broken down.", "gravity")
 
 /obj/machinery/gravity_generator/main/atom_fix()
 	. = ..()
 	for(var/obj/machinery/gravity_generator/M in parts)
-		if(M.stat & BROKEN)
+		if(M.has_stat(BROKEN))
 			M.atom_fix()
 	broken_state = FALSE
 	update_icon()
@@ -234,7 +234,7 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 	if(PS.get_amount() >= 10)
 		PS.use(10)
 		to_chat(user, span_notice("You add the plating to the framework."))
-		playsound(src, 'sound/machines/click.ogg', 75, 1)
+		play_sfx(src, SFX_MACHINES_CLICK, 1.5)
 		broken_state++
 		update_icon()
 	else
@@ -282,7 +282,7 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 	data["charge_count"] = charge_count
 	data["charging_state"] = charging_state
 	data["on"] = on
-	data["operational"] = (stat & BROKEN) ? FALSE : TRUE
+	data["operational"] = (has_stat(BROKEN)) ? FALSE : TRUE
 
 	return data
 
@@ -300,19 +300,19 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 // Power and Icon States
 
 /obj/machinery/gravity_generator/main/power_change()
-	..()
+	. = ..()
 	investigate_log("has [stat & NOPOWER ? "lost" : "regained"] power.", "gravity")
 	set_power()
 
 /obj/machinery/gravity_generator/main/get_status()
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		return "fix[min(broken_state, 3)]"
 	return on || charging_state != POWER_IDLE ? "on" : "off"
 
 // Set the charging state based on power/breaker.
 /obj/machinery/gravity_generator/main/proc/set_power()
 	var/new_state = FALSE
-	if(stat & (NOPOWER|BROKEN) || !breaker)
+	if(!operable() || !breaker)
 		new_state = FALSE
 	else if(breaker)
 		new_state = TRUE
@@ -337,9 +337,9 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 		MACHINE_WAKE(src)
 
 // Set the state of the gravity.
-/obj/machinery/gravity_generator/main/proc/set_state(new_state)
+/obj/machinery/gravity_generator/main/proc/set_gravity_state(new_state)
 	charging_state = POWER_IDLE
-	update_use_power(new_state ? USE_POWER_ACTIVE : USE_POWER_IDLE)
+	set_use_power(new_state ? USE_POWER_ACTIVE : USE_POWER_IDLE)
 
 	// Sound the alert if gravity was just enabled or disabled.
 	var/alert = FALSE
@@ -367,15 +367,15 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 /// Spins up or down while charging; settled (or broken) it sleeps until set_power() starts a
 /// charge again.
 /obj/machinery/gravity_generator/main/machine_step()
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		return PROCESS_KILL
 	if(charging_state == POWER_IDLE)
 		return PROCESS_KILL
 	if(charging_state != POWER_IDLE)
 		if(charging_state == POWER_UP && charge_count >= 100)
-			set_state(1)
+			set_gravity_state(1)
 		else if(charging_state == POWER_DOWN && charge_count <= 0)
-			set_state(0)
+			set_gravity_state(0)
 		else
 			if(charging_state == POWER_UP)
 				charge_count += 2
@@ -383,7 +383,7 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 				charge_count -= 2
 
 			if(charge_count % 4 == 0 && prob(75)) // Let them know it is charging/discharging.
-				playsound(src, 'sound/effects/EMPulse.ogg', 100, 1)
+				play_sfx(src, SFX_EFFECTS_EMPULSE)
 
 			if(prob(25)) // To help stop "Your clothes feel warm." spam.
 				pulse_radiation()

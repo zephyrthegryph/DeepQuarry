@@ -33,7 +33,7 @@ DECLARE_INTERACTIONS(/obj/structure/firedoor_assembly, INTERACT_ITEM(null, PROC_
 
 	else if(istype(C, /obj/item/circuitboard/airalarm) && wired)
 		if(anchored)
-			playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
+			play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 			user.visible_message(span_warning("[user] has inserted a circuit into \the [src]!"),
 								  "You have inserted the circuit into \the [src]!")
 			if(glass)
@@ -47,7 +47,7 @@ DECLARE_INTERACTIONS(/obj/structure/firedoor_assembly, INTERACT_ITEM(null, PROC_
 	else if(istype(C, /obj/item/stack/material) && C.get_material_name() == MAT_RGLASS && !glass)
 		var/obj/item/stack/S = C
 		if (S.get_amount() >= 1)
-			playsound(src, 'sound/items/Crowbar.ogg', 100, 1)
+			play_sfx(src, SFX_ITEMS_CROWBAR, 2)
 			user.visible_message(span_info("[user] adds [S.name] to \the [src]."),
 								span_notice("You start to install [S.name] into \the [src]."))
 			om_task_timed(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done2), done_args = list(user, S))
@@ -85,7 +85,7 @@ DECLARE_INTERACTIONS(/obj/structure/firedoor_assembly, INTERACT_ITEM(null, PROC_
 	wired = FALSE
 
 /obj/structure/firedoor_assembly/wrench_act(mob/user, obj/item/tool)
-	anchored = !anchored
+	set_anchored(!anchored)
 	playsound(src, tool.usesound, 50, TRUE)
 	user.visible_message(span_warning("[user] has [anchored ? "" : "un"]secured \the [src]!"), "You have [anchored ? "" : "un"]secured \the [src]!")
 	update_icon()
@@ -95,9 +95,9 @@ DECLARE_INTERACTIONS(/obj/structure/firedoor_assembly, INTERACT_ITEM(null, PROC_
 	if(!glass && anchored)
 		return FALSE
 	if(glass)
-		use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WELDER, volume = 50, amount = 0, message_self = "You start to weld the glass panel out of \the [src].", message_others = "[user] welds the glass panel out of \the [src].", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
+		use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WELDER, volume = 50, amount = 0, start_self = "You start to weld the glass panel out of \the [src].", start_others = "[user] welds the glass panel out of \the [src].", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
 		return TRUE
-	use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WELDER, volume = 50, amount = 0, message_self = "You start to disassemble \the [src].", message_others = "[user] disassembles \the [src].", receiver = src, on_done = PROC_REF(welder_act_tool_done2), done_args = list(user))
+	use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WELDER, volume = 50, amount = 0, start_self = "You start to disassemble \the [src].", start_others = "[user] disassembles \the [src].", receiver = src, on_done = PROC_REF(welder_act_tool_done2), done_args = list(user))
 	return TRUE
 
 /obj/structure/firedoor_assembly/proc/welder_act_tool_done(mob/user)

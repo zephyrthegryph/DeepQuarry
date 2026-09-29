@@ -1,120 +1,89 @@
-//DO NOT ADD MORE TO THIS FILE.
-//Use vv_do_topic() for datums!
-/client/proc/view_var_Topic(href, href_list, hsrc)
-	if(!GLOB.prompt_flow) // its questions re-run it (prompt_flow(), prompt_helpers.dm)
-		return prompt_flow(src, PROC_REF(view_var_Topic), args)
-	if(!check_rights_for(src, R_VAREDIT) || !holder.CheckAdminHref(href, href_list))
+// The View Variables href entry (doc/rewrite/systems.md §20, macros in code/__defines/vv.dm).
+// Per-type actions are VV_TOPIC_ACTION rows beside their type's vv_get_dropdown(); the admin
+// client's own VV actions are VV_ADMIN_TOPIC_ACTION rows (here, topic_basic.dm, topic_list.dm).
+
+/// Every `_src_=vars` href, and server-side callers opening VV (`trusted`: a tgui panel's own
+/// act, which carries no href token). Its questions re-run it (prompt_flow(), prompt_helpers.dm).
+/client/proc/vv_topic(list/href_list, trusted = FALSE)
+	if(!GLOB.prompt_flow)
+		return prompt_flow(src, PROC_REF(vv_topic), args)
+	if(!href_list || !check_rights_for(src, R_VAREDIT))
 		return
-	var/target = GET_VV_TARGET
-	vv_do_basic(target, href_list, href)
-	if(isdatum(target))
-		var/datum/D = target
-		D.vv_do_topic(href_list)
-	else if(islist(target))
-		vv_do_list(target, href_list)
-	if(href_list["Vars"])
-		var/datum/vars_target = locate(href_list["Vars"])
-		if(href_list["special_varname"]) // Some special vars can't be located even if you have their ref, you have to use this instead
-			vars_target = vars_target.vars[href_list["special_varname"]]
-		debug_variables(vars_target)
+	if(!trusted && !holder.CheckAdminHref(null, href_list))
+		return
+	return topic_dispatch_vv(src, href_list)
 
-//~CARN: for renaming mobs (updates their name, real_name, mind.name, their ID/PDA and datacore records).
-	if(href_list["rename"])
+/// Dispatches a VV href for admin client `C`: the VV_TOPIC rows of the `target` datum's type
+/// first, then the client's VV_ADMIN_TOPIC rows. Neither runs the target's topic_allowed(): VV
+/// is gated by vv_topic() (R_VAREDIT + href token) and each row's TOPIC_RIGHTS.
+/proc/topic_dispatch_vv(client/C, list/href_list)
+	var/mob/user = C.mob
+	var/list/row
+	var/raw_target = href_list[VV_HK_TARGET]
+	if(!isnull(raw_target))
+		var/datum/target = topic_resolve_ref(C, raw_target, /datum, TOPIC_ANY)
+		if(target?.vv_topic_allowed(user))
+			row = topic_find_row(target, href_list, VV_TOPIC)
+			if(row)
+				return topic_run(target, user, href_list, row, FALSE)
+	row = topic_find_row(C, href_list, VV_ADMIN_TOPIC)
+	if(row)
+		return topic_run(C, user, href_list, row, FALSE)
+	return null
 
-		var/mob/M = locate_in_list(REGISTRY_MEMBERS(REGISTRY_MOBS), href_list["rename"])
-		if(!istype(M))
-			to_chat(usr, "This can only be used on instances of type /mob", confidential = TRUE)
+/// Whether this datum's VV_TOPIC rows may run for `user` (the admin client's rows always may).
+/datum/proc/vv_topic_allowed(mob/user)
+	return TRUE
+
+// Opens VV on a ref. Some special vars can't be located even with their ref: those links name
+// the owner and the var instead.
+VV_ADMIN_TOPIC_ACTION("Vars", PROC_REF(vv_topic_vars), TOPIC_REF("Vars", null, TOPIC_ANY), TOPIC_TEXT("special_varname"))
+
+/client/proc/vv_topic_vars(mob/user, list/args)
+	var/vars_target = args["Vars"]
+	var/special = args["special_varname"]
+	if(special)
+		var/datum/owner = vars_target
+		if(!isdatum(owner) || !(special in owner.vars))
 			return
+		vars_target = owner.vars[special]
+	debug_variables(vars_target)
+	return TRUE
 
-		var/new_name = flow_ask(mob, "rename", /datum/om/prompt/text, message = "What would you like to name this mob?", title = "Input a name", default = M.real_name, max_length = MAX_NAME_LEN)
-		new_name = trim(new_name, MAX_NAME_LEN)
+VV_ADMIN_TOPIC_ACTION("rotatedir=left", PROC_REF(vv_topic_rotate_left), TOPIC_REF("rotatedatum", /atom, TOPIC_ANY))
+VV_ADMIN_TOPIC_ACTION("rotatedir=right", PROC_REF(vv_topic_rotate_right), TOPIC_REF("rotatedatum", /atom, TOPIC_ANY))
 
-		// If the new name is something that would be restricted by IC chat filters,
-		// give the admin a warning but allow them to do it anyway if they want.
-		//if(is_ic_filtered(new_name) || is_soft_ic_filtered(new_name) && tgui_alert(usr, "Your selected name contains words restricted by IC chat filters. Confirm this new name?", "IC Chat Filter Conflict", list("Confirm", "Cancel")) == "Cancel")
-		//	return
+/client/proc/vv_topic_rotate_left(mob/user, list/args)
+	return vv_rotate(args["rotatedatum"], 45)
 
-		if( !new_name || !M )
-			return
+/client/proc/vv_topic_rotate_right(mob/user, list/args)
+	return vv_rotate(args["rotatedatum"], -45)
 
-		message_admins("Admin [key_name_admin(usr)] renamed [key_name_admin(M)] to [new_name].")
-		M.fully_replace_character_name(M.real_name,new_name)
-		vv_update_display(M, "name", new_name)
-		vv_update_display(M, "real_name", M.real_name || "No real name")
+/client/proc/vv_rotate(atom/A, angle)
+	if(!A)
+		return
+	A.set_dir(turn(A.dir, angle))
+	vv_update_display(A, "dir", dir2text(A.dir))
+	return TRUE
 
-	else if(href_list["rotatedatum"])
+// The VV body editor (/mob/living/vv_get_header(), vv_adjust_body()).
+VV_ADMIN_TOPIC_ACTION("adjustBody", PROC_REF(vv_topic_adjust_body), TOPIC_REF("mobToDamage", /mob/living, TOPIC_IN_MOBS), TOPIC_TEXT("adjustBody", 16))
 
-		var/atom/A = locate(href_list["rotatedatum"])
-		if(!istype(A))
-			to_chat(usr, "This can only be done to instances of type /atom", confidential = TRUE)
-			return
-
-		switch(href_list["rotatedir"])
-			if("right")
-				A.set_dir(turn(A.dir, -45))
-			if("left")
-				A.set_dir(turn(A.dir, 45))
-		vv_update_display(A, "dir", dir2text(A.dir))
-
-
-	else if(href_list["adjustBody"] && href_list["mobToDamage"])
-		var/mob/living/L = locate_in_list(REGISTRY_MEMBERS(REGISTRY_MOBS), href_list["mobToDamage"])
-		if(!istype(L) || !L.body)
-			return
-		var/action = href_list["adjustBody"]
-		var/log_msg = L.vv_adjust_body(src, action)
-		if(!log_msg)
-			return
-		if(QDELETED(L))
-			to_chat(usr, "Mob doesn't exist anymore", confidential = TRUE)
-			return
-		log_msg = "[key_name(usr)] [log_msg] on [key_name(L)]"
-		message_admins("[log_msg] ([ADMIN_LOOKUPFLW(L)])")
-		log_admin(log_msg)
-		admin_ticket_log(L, "<font color='blue'>[log_msg]</font>")
-		vv_update_display(L, "vitality", "[round(L.vitality() * 100)]%")
-		vv_update_display(L, "afflictions", "[LAZYLEN(L.body?.afflictions)]")
-		vv_update_display(L, "oxygen_debt", "[round(L.oxygen_debt(), 0.1)]")
-
-	else if(href_list["item_to_tweak"] && href_list["var_tweak"])
-
-		var/obj/item/editing = locate(href_list["item_to_tweak"])
-		if(!istype(editing) || QDELING(editing))
-			return
-
-		var/existing_val = -1
-		switch(href_list["var_tweak"])
-			if("injury_kind")
-				existing_val = editing.injury_kind
-			if("force")
-				existing_val = editing.force
-			else
-				CRASH("Invalid var_tweak passed to item vv set var: [href_list["var_tweak"]]")
-
-		var/new_val
-		if(href_list["var_tweak"] == "injury_kind")
-			var/list/kinds = list()
-			for(var/kind in 1 to INJURY_KIND_COUNT)
-				kinds[injury_kind_name(kind)] = kind
-			var/picked = flow_ask(mob, "tweak", /datum/om/prompt/choice, message = "Enter the new injury kind for [editing]", title = "Set Injury Kind", choices = kinds, default = injury_kind_name(existing_val))
-			new_val = picked ? kinds[picked] : null
-		else
-			new_val = flow_ask(mob, "tweak", /datum/om/prompt/number, message = "Enter the new value for [editing]'s [href_list["var_tweak"]]", title = "Set [href_list["var_tweak"]]", default = existing_val, min = -INFINITY, round_entry = FALSE)
-		if(isnull(new_val) || new_val == existing_val || QDELETED(editing) || !check_rights(R_VAREDIT))
-			return
-
-		switch(href_list["var_tweak"])
-			if("injury_kind")
-				editing.injury_kind = new_val
-			if("force")
-				editing.force = new_val
-
-		message_admins("[key_name(usr)] set [editing]'s [href_list["var_tweak"]] to [new_val] (was [existing_val])")
-		log_admin("[key_name(usr)] set [editing]'s [href_list["var_tweak"]] to [new_val] (was [existing_val])")
-		vv_update_display(editing, href_list["var_tweak"], istext(new_val) ? uppertext(new_val) : new_val)
-
-	//Finally, refresh if something modified the list.
-	if(href_list[VV_HK_DATUM_REFRESH])
-		var/datum/DAT = locate(href_list[VV_HK_DATUM_REFRESH])
-		if(isdatum(DAT) || istype(DAT, /client) || islist(DAT))
-			debug_variables(DAT)
+/client/proc/vv_topic_adjust_body(mob/user, list/args)
+	var/mob/living/L = args["mobToDamage"]
+	if(!L?.body)
+		return
+	var/log_msg = L.vv_adjust_body(src, args["adjustBody"])
+	if(!log_msg)
+		return
+	if(QDELETED(L))
+		to_chat(user, "Mob doesn't exist anymore", confidential = TRUE)
+		return
+	log_msg = "[key_name(user)] [log_msg] on [key_name(L)]"
+	message_admins("[log_msg] ([ADMIN_LOOKUPFLW(L)])")
+	log_admin(log_msg)
+	admin_ticket_log(L, "<font color='blue'>[log_msg]</font>")
+	vv_update_display(L, "vitality", "[round(L.vitality() * 100)]%")
+	vv_update_display(L, "afflictions", "[LAZYLEN(L.body?.afflictions)]")
+	vv_update_display(L, "oxygen_debt", "[round(L.oxygen_debt(), 0.1)]")
+	return TRUE

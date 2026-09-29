@@ -2,6 +2,9 @@
 #define ROBOT_ENTRY_CROWBAR "robot_crowbar"
 #define ROBOT_ENTRY_WELDER "robot_welder"
 
+OWN_TIMER(/mob/living/silicon/robot, killswitch)
+OWN_TIMER(/mob/living/silicon/robot, weapon_lock)
+
 /mob/living/silicon/robot
 	/// Traitor HUD images shown to a syndicate borg's client (see build_traitor_hud()).
 	var/list/traitor_hud_images
@@ -103,7 +106,7 @@
 	var/power_demand = 0
 	/// Accumulated heat the cooling loop failed to shed (machine physiology).
 	var/heat_debt = 0
-	// ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	// ALLOW(instance_list): d: per-mob req_access with starting entries, edited at runtime; mobs are few
 	var/list/req_access = list(ACCESS_ROBOTICS) // Interned per subtype in Initialize().
 	var/ident = 0
 	var/viewalerts = 0
@@ -112,12 +115,7 @@
 	var/lower_mod = 0
 	var/jetpack = 0
 	var/datum/effect/effect/system/ion_trail_follow/ion_trail = null
-	var/datum/effect/effect/system/spark_spread/spark_system //So they can initialize sparks whenever/N
 	var/jeton = 0
-	/// Timer id of a pending killswitch, or null.
-	var/killswitch
-	/// Timer id of an active weapon lock, or null.
-	var/weapon_lock
 	var/lawupdate = TRUE //Cyborgs will sync their laws with their AI by default
 	var/lockcharge //Used when looking to see if a borg is locked down.
 	var/lockdown = 0 //Controls whether or not the borg is actually locked down.
@@ -170,9 +168,6 @@
 /mob/living/silicon/robot/Initialize(mapload, is_decoy)
 	if(islist(req_access))
 		req_access = shared_type_list(type, "req_access", req_access)
-	own_set(src, "spark_system", new /datum/effect/effect/system/spark_spread()) // ALLOW(decl): configured before parent init
-	spark_system.set_up(5, 0, src)
-	spark_system.attach(src)
 	om_hook(src, /datum/om/event/living_shield_injury, src, PROC_REF(absorb_injury_with_shield))
 
 	add_language(LANGUAGE_ROBOT_TALK, 1)
@@ -552,21 +547,19 @@
 // --- Countdowns ------------------------------------------------------------------------------
 
 /mob/living/silicon/robot/proc/start_killswitch(delay = ROBOT_KILLSWITCH_DELAY)
-	if(killswitch)
+	if(om_timer_slot_pending(src, "killswitch"))
 		return FALSE
-	killswitch = om_after(src, delay, PROC_REF(fire_killswitch))
+	om_after_slot(src, "killswitch", delay, PROC_REF(fire_killswitch))
 	log_game("ROBOT: killswitch armed on [key_name(src)] ([delay / (1 SECOND)]s).")
 	return TRUE
 
 /mob/living/silicon/robot/proc/cancel_killswitch()
-	if(!killswitch)
+	if(!om_timer_slot_pending(src, "killswitch"))
 		return FALSE
-	om_cancel_timer(src, killswitch)
-	killswitch = null
+	om_cancel_timer_slot(src, "killswitch")
 	return TRUE
 
 /mob/living/silicon/robot/proc/fire_killswitch()
-	killswitch = null
 	if(stat == DEAD)
 		return
 	to_chat(src, span_danger("Killswitch Activated"))
@@ -575,14 +568,13 @@
 
 /// Lock the modules. Equipment drops once; activation is refused until the lock times out.
 /mob/living/silicon/robot/proc/start_weapon_lock(duration = ROBOT_WEAPON_LOCK_DELAY)
-	if(weapon_lock)
-		om_cancel_timer(src, weapon_lock)
-	weapon_lock = om_after(src, duration, PROC_REF(end_weapon_lock))
+	if(om_timer_slot_pending(src, "weapon_lock"))
+		om_cancel_timer_slot(src, "weapon_lock")
+	om_after_slot(src, "weapon_lock", duration, PROC_REF(end_weapon_lock))
 	uneq_all()
 	to_chat(src, span_danger("Weapon lock engaged."))
 
 /mob/living/silicon/robot/proc/end_weapon_lock()
-	weapon_lock = null
 	to_chat(src, span_danger("Weapon Lock Timed Out!"))
 
 // --- Naming ------------------------------------------------------------------------------------
@@ -747,7 +739,7 @@
 
 /mob/living/silicon/robot/bullet_act(obj/item/projectile/Proj)
 	..(Proj)
-	if(prob(75) && Proj.damage > 0) spark_system.start()
+	if(prob(75) && Proj.damage > 0) fx_sparks(src, 5, FALSE)
 	return 2
 
 // --- Tool and item interactions ---------------------------------------------------------------
@@ -793,7 +785,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 		apply_upgrade(W, user)
 		return TRUE
 	if(!(istype(W, /obj/item/robotanalyzer) || istype(W, /obj/item/healthanalyzer)) && W.force > 0)
-		spark_system.start()
+		fx_sparks(src, 5, FALSE)
 	return FALSE
 
 /// Insert a part into its empty slot. Afflictions it carried come back with it.
@@ -1223,11 +1215,11 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 			if(shreddamage)
 				attack_generic(H, shreddamage, "attacked")
 			else
-				playsound(src.loc, 'sound/effects/bang.ogg', 10, 1)
+				play_sfx(src.loc, SFX_EFFECTS_BANG, 0.2)
 				visible_message(span_warning("[H] punches [src], but doesn't leave a dent."))
 		if(I_DISARM)
 			H.do_attack_animation(src)
-			playsound(src.loc, 'sound/effects/clang2.ogg', 10, 1)
+			play_sfx(src.loc, SFX_EFFECTS_CLANG2, 0.2)
 			visible_message(span_warning("[H] taps [src]."))
 			if(hat && prob(10))
 				var/obj/item/flying_hat = remove_hat(get_turf(src))
@@ -1464,17 +1456,14 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 /mob/living/silicon/robot/proc/installed_modules()
 	robotact.tgui_interact(src)
 
-/mob/living/silicon/robot/Topic(href, href_list)
-	if(..())
-		return 1
+TOPIC_ACTION(/mob/living/silicon/robot, "showalerts", PROC_REF(topic_showalerts))
 
-	//All Topic Calls that are only for the Cyborg go here
-	if(usr != src)
-		return 1
-
-	if (href_list["showalerts"])
-		subsystem_alarm_monitor()
-		return 1
+/mob/living/silicon/robot/proc/topic_showalerts(mob/user, list/args)
+	//Only for the Cyborg
+	if(user != src)
+		return
+	subsystem_alarm_monitor()
+	return TRUE
 
 /mob/living/silicon/robot/proc/radio_menu()
 	radio.interact(src)//Just use the radio's Topic() instead of bullshit special-snowflake code

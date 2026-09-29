@@ -34,7 +34,7 @@
 
 /// Spills loot only while unpowered: every power change runs a step, and powered it sleeps.
 /obj/machinery/paradoxrift/machine_step()
-	if(!(stat & NOPOWER))
+	if(!has_stat(NOPOWER))
 		return PROCESS_KILL
 	else
 		if(prob(0.5*build_eff))
@@ -137,4 +137,4 @@
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/paradoxrift/step_start_condition()
-	return stat & NOPOWER
+	return has_stat(NOPOWER)

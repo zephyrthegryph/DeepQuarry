@@ -236,7 +236,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 		user.say("Ta'gh fara[pick("'","`")]qha fel d'amar det!")
 	else
 		user.whisper("Ta'gh fara[pick("'","`")]qha fel d'amar det!")
-	playsound(U, 'sound/items/Welder2.ogg', 25, 1)
+	play_sfx(U, SFX_ITEMS_WELDER2, 0.5)
 	var/turf/T = get_turf(U)
 	if(T)
 		T.hotspot_expose(700,125)
@@ -837,7 +837,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 
 /obj/effect/rune/proc/wall(mob/living/user)
 	user.say("Khari[pick("'","`")]d! Eske'te tannin!")
-	src.density = !src.density
+	set_density(!src.density)
 	user.injure(INJURY_BLUNT, 2)
 	if(src.density)
 		to_chat(user,span_danger("Your blood flows into the rune, and you feel that the very space over the rune thickens."))

@@ -124,12 +124,12 @@ EXTEND_INTERACTIONS(/obj/effect/energy_field, \
 	if(new_value < old_value)
 		ticks_recovering = min(ticks_recovering + 2, 10)
 		if(new_value < FIELD_INTEGRITY_PER_RENWICK) // We broke
-			density = FALSE
+			set_density(FALSE)
 			ticks_recovering = 10
 			if(new_value > 0)
 				update_integrity(0)
 	else if(new_value >= FIELD_INTEGRITY_PER_RENWICK)
-		density = TRUE
+		set_density(TRUE)
 
 	if(density != old_density)
 		update_icon()

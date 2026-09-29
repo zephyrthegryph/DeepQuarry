@@ -13,8 +13,8 @@
 	icon = 'icons/obj/gifts.dmi'
 	icon_state = "gift"
 	item_state = "gift1"
-	drop_sound = 'sound/items/drop/cardboardbox.ogg'
-	pickup_sound = 'sound/items/pickup/cardboardbox.ogg'
+	drop_sound = SFX_ITEMS_DROP_CARDBOARDBOX
+	pickup_sound = SFX_ITEMS_PICKUP_CARDBOARDBOX
 	///Var used for attack_hand chain.
 	var/special_handling = FALSE
 	resistance_flags = FLAMMABLE
@@ -33,7 +33,7 @@ DECLARE_INTERACTIONS(/obj/item/gift, INTERACT_USE(null, PROC_REF(interaction_sel
 /// Old attack_self.
 /obj/item/gift/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	user.drop_item()
-	playsound(src, 'sound/items/package_unwrap.ogg', 50,1)
+	play_sfx(src, SFX_ITEMS_PACKAGE_UNWRAP)
 	if(gift)
 		var/obj/item/present = gift
 		own_take(src, "gift") // owned while wrapped: unwrapping hands it over before the paper goes
@@ -126,8 +126,8 @@ DECLARE_INTERACTIONS(/obj/item/a_gift, INTERACT_USE("Open", PROC_REF(interaction
 	icon = 'icons/obj/items.dmi'
 	icon_state = "wrap_paper"
 	var/amount = 20.0
-	drop_sound = 'sound/items/drop/wrapper.ogg'
-	pickup_sound = 'sound/items/pickup/wrapper.ogg'
+	drop_sound = SFX_ITEMS_DROP_WRAPPER
+	pickup_sound = SFX_ITEMS_PICKUP_WRAPPER
 
 DECLARE_INTERACTIONS(/obj/item/wrapping_paper, INTERACT_ITEM(null, PROC_REF(interaction_item)))
 

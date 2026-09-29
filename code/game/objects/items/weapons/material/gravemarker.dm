@@ -33,26 +33,26 @@
 	var/carving_1 = sanitizeSafe(ask.carved_name, MAX_NAME_LEN)
 	var/carving_2 = sanitizeSafe(ask.text, MAX_NAME_LEN)
 	if(carving_1)
-		use_tool(user, W, src, delay = material.hardness, quality = TOOL_SCREWDRIVER, message_self = "You start carving \the [src.name].", message_others = "[user] starts carving \the [src.name].", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user, carving_1))
+		use_tool(user, W, src, delay = material.hardness, quality = TOOL_SCREWDRIVER, start_self = "You start carving \the [src.name].", start_others = "[user] starts carving \the [src.name].", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user, carving_1))
 	if(carving_2)
-		use_tool(user, W, src, delay = material.hardness, quality = TOOL_SCREWDRIVER, message_self = "You start carving \the [src.name].", message_others = "[user] starts carving \the [src.name].", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done2), done_args = list(user, carving_2))
+		use_tool(user, W, src, delay = material.hardness, quality = TOOL_SCREWDRIVER, start_self = "You start carving \the [src.name].", start_others = "[user] starts carving \the [src.name].", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done2), done_args = list(user, carving_2))
 
 /obj/item/material/gravemarker/proc/screwdriver_act_tool_done(mob/user, carving_1)
-	user.visible_message("[user] carves something into \the [src.name].", "You carve your message into \the [src.name].")
+	act_message(user, src, MSG_SELF("You carve your message into %T%."), MSG_OTHERS("%U% carves something into %T%."))
 	grave_name += carving_1
 	update_icon()
 /obj/item/material/gravemarker/proc/screwdriver_act_tool_done2(mob/user, carving_2)
-	user.visible_message("[user] carves something into \the [src.name].", "You carve your message into \the [src.name].")
+	act_message(user, src, MSG_SELF("You carve your message into %T%."), MSG_OTHERS("%U% carves something into %T%."))
 	epitaph += carving_2
 	update_icon()
 
 /obj/item/material/gravemarker/wrench_act(mob/user, obj/item/W)
-	use_tool(user, W, src, delay = material.hardness, quality = TOOL_WRENCH, message_self = "You start carving \the [src.name].", message_others = "[user] starts carving \the [src.name].", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
+	use_tool(user, W, src, delay = material.hardness, quality = TOOL_WRENCH, start_self = "You start carving \the [src.name].", start_others = "[user] starts carving \the [src.name].", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
 	return NONE
 
 /obj/item/material/gravemarker/proc/wrench_act_tool_done(mob/user)
 	material.place_dismantled_product(get_turf(src))
-	user.visible_message("[user] dismantles down \the [src.name].", "You dismantle \the [src.name].")
+	act_message(user, src, MSG_SELF("You dismantle %T%."), MSG_OTHERS("%U% dismantles down %T%."))
 	qdel(src)
 
 /obj/item/material/gravemarker/examine(mob/user)

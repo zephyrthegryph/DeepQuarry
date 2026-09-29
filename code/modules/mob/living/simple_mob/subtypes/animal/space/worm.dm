@@ -299,7 +299,7 @@
 	D.take_damage(2 * melee_damage_upper, BRUTE, MELEE)
 	if(QDELETED(D))
 		return STEP_FAIL("gone")
-	if(D.stat & (BROKEN|NOPOWER))
+	if(!D.operable())
 		D.open(TRUE)
 		eat_consume(D)
 		return STEP_DONE

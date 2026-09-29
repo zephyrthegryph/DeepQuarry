@@ -84,7 +84,7 @@
 	var/list/valid_moves
 	var/list/valid_removes
 	var/selected_node
-	var/turn_start_time = 0
+	EXPIRY_DECLARE(turn_start_time)
 	var/pone_pieces = 9
 	var/ptwo_pieces = 9
 	var/winner
@@ -158,7 +158,7 @@
 			if(!player_one || !player_two)
 				return FALSE
 			game_state = GAME_PLAYER_ONE
-			turn_start_time = world.time
+			EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
 			return TRUE
 		if("play_again")
 			if(game_state < GAME_OVER)
@@ -166,7 +166,7 @@
 			if(!player_one || !player_two)
 				return FALSE
 			reset()
-			turn_start_time = world.time
+			EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
 			return TRUE
 		if("play_again_swapped")
 			if(game_state < GAME_OVER)
@@ -177,7 +177,7 @@
 			var/mob/temp_player = player_one
 			rel_set(src, "player_one", player_two)
 			rel_set(src, "player_two", temp_player)
-			turn_start_time = world.time
+			EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
 			return TRUE
 		if("game_action")
 			if(ui.user == player_one && game_state == GAME_PLAYER_ONE)
@@ -185,14 +185,14 @@
 				if(game_action)
 					if(game_state < GAME_OVER && game_action == GAME_ACTION_END_TURN)
 						game_state = GAME_PLAYER_TWO
-						turn_start_time = world.time
+						EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
 					return TRUE
 			if(ui.user == player_two && game_state == GAME_PLAYER_TWO)
 				var/game_action = player_actions(params["action"], params["data"], ui.user, "b")
 				if(game_action)
 					if(game_state < GAME_OVER && game_action == GAME_ACTION_END_TURN)
 						game_state = GAME_PLAYER_ONE
-						turn_start_time = world.time
+						EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
 					return TRUE
 			return FALSE
 

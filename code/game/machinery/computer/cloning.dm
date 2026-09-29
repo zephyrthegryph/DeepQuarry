@@ -44,7 +44,7 @@ REL_PAIR_LIST(/obj/machinery/computer/cloning, pods, connected)
 /obj/machinery/computer/cloning/machine_step()
 	if(!autoprocess)
 		return PROCESS_KILL
-	if(!scanner() || !length(pods) || stat & NOPOWER)
+	if(!scanner() || !length(pods) || has_stat(NOPOWER))
 		return
 
 	if(scanner().get_occupant() && can_autoprocess())
@@ -127,7 +127,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/cloning, \
 /obj/machinery/computer/cloning/proc/cloning_console_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return TRUE
 
 	updatemodules()
@@ -140,7 +140,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/cloning, \
 	)
 
 /obj/machinery/computer/cloning/tgui_interact(mob/user, datum/tgui/ui = null)
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return
 
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -166,7 +166,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/cloning, \
 			var/status = "idle"
 			if(pod.mess)
 				status = "mess"
-			else if(occupant && !(pod.stat & NOPOWER))
+			else if(occupant && !pod.has_stat(NOPOWER))
 				status = "cloning"
 			tempods.Add(list(list(
 				"pod" = "\ref[pod]",
@@ -345,7 +345,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/cloning, \
 						cloneresult = pod.growclone(C)
 						if(cloneresult)
 							set_temp("Initiating cloning cycle...", "success")
-							playsound(src, 'sound/machines/medbayscanner1.ogg', 100, 1)
+							play_sfx(src, SFX_MACHINES_MEDBAYSCANNER1, 2)
 							own_move(C, pod, "growing_record")
 							menu = MENU_MAIN
 						else
@@ -374,7 +374,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/cloning, \
 	add_fingerprint(ui.user)
 
 /obj/machinery/computer/cloning/proc/scan_mob(mob/living/carbon/human/subject as mob, scan_brain = 0)
-	if(stat & NOPOWER)
+	if(has_stat(NOPOWER))
 		return
 	if(scanner().stat & (NOPOWER|BROKEN))
 		return

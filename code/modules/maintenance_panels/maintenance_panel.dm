@@ -48,7 +48,7 @@ EXTEND_INTERACTIONS(/obj/structure/window/maintenance_panel, \
 	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/window/maintenance_panel/proc/weld_toggle_done(mob/user)
-	anchored = !anchored
+	set_anchored(!anchored)
 	update_nearby_tiles(need_rebuild = 1)
 	update_nearby_icons()
 	update_verbs()
@@ -58,12 +58,12 @@ EXTEND_INTERACTIONS(/obj/structure/window/maintenance_panel, \
 // Heavier panel takes a metal-scrape sound on big hits, glass tink on small ones.
 /obj/structure/window/maintenance_panel/play_attack_sound(damage_amount, damage_type, damage_flag)
 	if(damage_amount < 30)
-		playsound(src, 'sound/effects/Glasshit.ogg', 100, 1)
+		play_sfx(src, SFX_EFFECTS_GLASSHIT, volume = 100)
 	else
-		playsound(src, 'sound/effects/grillehit.ogg', 75, 1)
+		play_sfx(src, SFX_EFFECTS_GRILLEHIT, 1.5)
 
 /obj/structure/window/maintenance_panel/shatter(display_message = 1)
-	playsound(src, pick(list('sound/effects/metalscrape1.ogg','sound/effects/metalscrape2.ogg','sound/effects/metalscrape3.ogg')), 70, 1)
+	play_sfx(src, SFX_EFFECTS_METALSCRAPE)
 	if(display_message)
 		visible_message("\the [src] thunks free of the wall!")
 	replace_with(src, glasstype)

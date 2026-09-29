@@ -1,6 +1,6 @@
 /obj/item/clothing/suit/storage
 	name = DEVELOPER_WARNING_NAME
-	var/obj/item/storage/internal/pockets
+	var/obj/item/storage/internal/pockets // owned: the internal storage object that holds the pockets' contents
 
 DECLARE_DEFAULT_CHILD(/obj/item/clothing/suit/storage, "pockets", /obj/item/storage/internal)
 

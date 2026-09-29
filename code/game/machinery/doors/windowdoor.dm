@@ -8,7 +8,7 @@
 	icon_state = "left"
 	var/base_state = "left"
 	min_force = 4
-	hitsound = 'sound/effects/Glasshit.ogg'
+	hitsound = SFX_EFFECTS_GLASSHIT
 	max_integrity = 150 //If you change this, consiter changing ../door/window/brigdoor/ max_integrity at the bottom of this .dm file
 	visible = 0.0
 	use_power = USE_POWER_OFF
@@ -51,8 +51,8 @@
 	if(operating == -1)
 		ae.icon_state = "door_electronics_smoked"
 		operating = 0
-	src.density = FALSE
-	playsound(src, "shatter", 70, 1)
+	set_density(FALSE)
+	play_sfx(src, SFX_SHATTER)
 	if(display_message)
 		visible_message("[src] shatters!")
 	qdel(src)
@@ -86,10 +86,10 @@
 		return !density
 	return TRUE
 /obj/machinery/door/window/can_pathfinding_enter(atom/movable/actor, dir, datum/pathfinding/search)
-	return (src.dir != dir) || ..() || (has_access(req_access, req_one_access, search.ss13_with_access) && !inoperable())
+	return (src.dir != dir) || ..() || (has_access(req_access, req_one_access, search.ss13_with_access) && operable())
 
 /obj/machinery/door/window/can_pathfinding_exit(atom/movable/actor, dir, datum/pathfinding/search)
-	return (src.dir != dir)  || ..() || (has_access(req_access, req_one_access, search.ss13_with_access) && !inoperable())
+	return (src.dir != dir)  || ..() || (has_access(req_access, req_one_access, search.ss13_with_access) && operable())
 /obj/machinery/door/window/Uncross(atom/movable/mover, turf/target)
 	if(istype(mover) && mover.checkpass(PASSGLASS))
 		return TRUE
@@ -112,14 +112,14 @@
 	if (!operating) //in case of emag
 		operating = 1
 	flick(text("[src.base_state]opening"), src)
-	playsound(src, 'sound/machines/door/windowdoor.ogg', 100, 1)
+	play_sfx(src, SFX_MACHINES_DOOR_WINDOWDOOR)
 	om_after(src, 1 SECONDS, PROC_REF(finish_open))
 
 /obj/machinery/door/window/proc/finish_open()
 	PRIVATE_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	explosion_resistance = 0
-	density = FALSE
+	set_density(FALSE)
 	update_icon()
 	update_nearby_tiles()
 
@@ -132,9 +132,9 @@
 		return FALSE
 	operating = TRUE
 	flick(text("[]closing", src.base_state), src)
-	playsound(src, 'sound/machines/door/windowdoor.ogg', 100, 1)
+	play_sfx(src, SFX_MACHINES_DOOR_WINDOWDOOR)
 
-	density = TRUE
+	set_density(TRUE)
 	update_icon()
 	explosion_resistance = initial(explosion_resistance)
 	update_nearby_tiles()
@@ -181,7 +181,7 @@
 	return H.species.can_shred(H, FALSE, 15)
 
 /obj/machinery/door/window/proc/interaction_shred(mob/user, obj/item/held, datum/interaction/interaction)
-	playsound(src, 'sound/effects/Glasshit.ogg', 75, 1)
+	play_sfx(src, SFX_EFFECTS_GLASSHIT)
 	visible_message(span_danger("[user] smashes against the [src.name]."), 1)
 	user.do_attack_animation(src)
 	user.setClickCooldown(user.get_attack_speed())
@@ -229,11 +229,9 @@
 
 /obj/machinery/door/window/proc/interaction_emag_slice(mob/user, obj/item/I, datum/interaction/interaction)
 	if(emag_act(10, user))
-		var/datum/effect/effect/system/spark_spread/spark_system = new /datum/effect/effect/system/spark_spread()
-		spark_system.set_up(5, 0, src.loc)
-		spark_system.start()
-		playsound(src, "sparks", 50, 1)
-		playsound(src, 'sound/weapons/blade1.ogg', 50, 1)
+		fx_sparks(src.loc, 5, FALSE)
+		play_sfx(src, SFX_SPARKS)
+		play_sfx(src, SFX_WEAPONS_BLADE1)
 		visible_message(span_warning("The glass door was sliced open by [user]!"))
 	return TRUE
 
@@ -256,7 +254,7 @@
 /obj/machinery/door/window/proc/interaction_smash(mob/user, obj/item/I, datum/interaction/interaction)
 	user.setClickCooldown(user.get_attack_speed(I))
 	var/aforce = I.force
-	playsound(src, 'sound/effects/Glasshit.ogg', 75, 1)
+	play_sfx(src, SFX_EFFECTS_GLASSHIT)
 	visible_message(span_danger("[src] was hit by [I]."))
 	if(I.obj_damage_type())
 		take_damage(aforce, I.obj_damage_type(), MELEE)
@@ -314,7 +312,7 @@
 	if(get_integrity() >= max_integrity)
 		to_chat(user, span_warning("[src] is already in good condition!"))
 		return TRUE
-	use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WELDER, volume = 50, amount = 1, message_self = "You begin repairing [src]...", receiver = src, on_done = PROC_REF(welder_act_tool_done_windoor), done_args = list(user))
+	use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WELDER, volume = 50, amount = 1, start_self = "You begin repairing [src]...", receiver = src, on_done = PROC_REF(welder_act_tool_done_windoor), done_args = list(user))
 	return TRUE
 
 /obj/machinery/door/window/proc/welder_act_tool_done_windoor(mob/user)
@@ -325,7 +323,7 @@
 /obj/machinery/door/window/crowbar_act(mob/user, obj/item/tool)
 	if(operating == 1 || density)
 		return FALSE
-	use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_CROWBAR, volume = 50, message_self = "You start to pry the windoor out of the frame.", message_others = "[user] begins prying the windoor out of the frame.", receiver = src, on_done = PROC_REF(crowbar_act_tool_done), done_args = list(user))
+	use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_CROWBAR, volume = 50, start_self = "You start to pry the windoor out of the frame.", start_others = "[user] begins prying the windoor out of the frame.", receiver = src, on_done = PROC_REF(crowbar_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/door/window/proc/crowbar_act_tool_done(mob/user)
@@ -336,7 +334,7 @@
 	if(base_state == "right" || base_state == "rightsecure")
 		assembly.facing = "r"
 	assembly.set_dir(dir)
-	assembly.anchored = TRUE
+	assembly.set_anchored(TRUE)
 	assembly.created_name = name
 	assembly.state = "02"
 	assembly.step = 2

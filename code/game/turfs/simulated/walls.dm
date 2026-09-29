@@ -197,7 +197,7 @@
 /turf/simulated/wall/proc/dismantle_wall(devastated, explode, no_product)
 	// A wall built from a substance material discharges its effect when breached.
 
-	playsound(src, 'sound/items/Welder.ogg', 100, 1)
+	play_sfx(src, SFX_ITEMS_WELDER)
 	if(!no_product)
 		if(reinf_material)
 			reinf_material.place_dismantled_girder(src, reinf_material, girder_material)
@@ -281,8 +281,8 @@
 	O.desc = "Looks hot."
 	O.icon = 'icons/effects/fire.dmi'
 	O.icon_state = "2"
-	O.anchored = TRUE
-	O.density = TRUE
+	O.set_anchored(TRUE)
+	O.set_density(TRUE)
 	O.plane = ABOVE_PLANE
 
 	if(girder_material.integrity >= 150 && !girder_material.is_brittle()) //Strong girders will remain in place when a wall is melted.
@@ -366,7 +366,6 @@
 	var/emagged = 0
 	window_type = "rglass"
 	var/turret_faction = null
-	modes = list(RCD_FLOORWALL, RCD_AIRLOCK, RCD_WINDOWGRILLE, RCD_DECONSTRUCT, RCD_WINDOOR, RCD_FIRELOCK, RCD_FRAME, RCD_WALLFRAME, RCD_CONVEYOR, RCD_TURRET)
 	var/static/image/radial_image_firelock = image(icon = 'icons/mob/radial.dmi', icon_state = "firelock")
 	var/static/image/radial_image_windoor = image(icon= 'icons/mob/radial.dmi', icon_state = "windoor")
 	var/static/image/radial_image_frame = image(icon = 'icons/mob/radial.dmi', icon_state = "machine")
@@ -425,7 +424,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 		else if(istype(S,/obj/item/stack/material/glass))
 			loaded = loadwithsheets(S, RCD_SHEETS_PER_MATTER_UNIT*1.33, user)
 	if(loaded)
-		playsound(src, 'sound/machines/click.ogg', 50, 1)
+		play_sfx(src, SFX_MACHINES_CLICK)
 		update_icon()
 		to_chat(user, span_notice("The RCD now holds [stored_matter]/[max_stored_matter] matter-units."))
 	return FALSE
@@ -476,17 +475,17 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 			om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(rcd_girder_chosen), choices = wall_types, anchor = src, require_near = TRUE, tooltips = TRUE, optional = TRUE)
 			return
 		if("Airlock")
-			mode_index = modes.Find(RCD_AIRLOCK)
+			mode_index = rcd_mode_index(RCD_AIRLOCK)
 		if("Windoor")
-			mode_index = modes.Find(RCD_WINDOOR)
+			mode_index = rcd_mode_index(RCD_WINDOOR)
 		if("Firelock")
-			mode_index = modes.Find(RCD_FIRELOCK)
+			mode_index = rcd_mode_index(RCD_FIRELOCK)
 		if("Deconstruct")
-			mode_index = modes.Find(RCD_DECONSTRUCT)
+			mode_index = rcd_mode_index(RCD_DECONSTRUCT)
 		if("Grilles & Windows")
-			mode_index = modes.Find(RCD_WINDOWGRILLE)
+			mode_index = rcd_mode_index(RCD_WINDOWGRILLE)
 		if("Frames")
-			mode_index = modes.Find(RCD_FRAME)
+			mode_index = rcd_mode_index(RCD_FRAME)
 		if("WallFrames")
 			var/list/wall_frame_types = list(
 			"Air Alarm" = image(icon = 'icons/mob/radial.dmi', icon_state = "wallframe"),
@@ -521,7 +520,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 			change_airlock_setting(user)
 			return
 		if("Conveyors")
-			mode_index = modes.Find(RCD_CONVEYOR)
+			mode_index = rcd_mode_index(RCD_CONVEYOR)
 		if("Turrets")
 			var/list/turret_factions = list(
 			"HOSTILE TO ALL" = image(icon = 'icons/mob/radial.dmi', icon_state = "turret1"),
@@ -535,7 +534,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /// The mode radial's (and its sub-radials') last step.
 /obj/item/rcd/proc/rcd_mode_changed(mob/living/user, choice)
-	playsound(src, 'sound/effects/pop.ogg', 50, FALSE)
+	play_sfx(src, SFX_EFFECTS_POP)
 	to_chat(user, span_notice("You change RCD's mode to '[choice]'."))
 
 /obj/item/rcd/proc/rcd_girder_chosen(datum/om/prompt/choice/radial/ask)
@@ -549,7 +548,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 			girder_type = /obj/structure/girder/bay
 		if("ERIS")
 			girder_type = /obj/structure/girder/eris
-	mode_index = modes.Find(RCD_FLOORWALL)
+	mode_index = rcd_mode_index(RCD_FLOORWALL)
 	rcd_mode_changed(user, "Floors & Walls")
 
 /obj/item/rcd/proc/rcd_wall_frame_chosen(datum/om/prompt/choice/radial/ask)
@@ -602,7 +601,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 		if("Entertainment Monitor")
 			wall_frame_type = /obj/machinery/computer/security/telescreen/entertainment
 
-	mode_index = modes.Find(RCD_WALLFRAME)
+	mode_index = rcd_mode_index(RCD_WALLFRAME)
 	rcd_mode_changed(user, "WallFrames")
 
 /obj/item/rcd/proc/rcd_turret_faction_chosen(datum/om/prompt/choice/radial/ask)
@@ -614,7 +613,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 			turret_faction = null
 		if("HOSTILE TO ENEMIES")
 			turret_faction = user.faction
-	mode_index = modes.Find(RCD_TURRET)
+	mode_index = rcd_mode_index(RCD_TURRET)
 	rcd_mode_changed(user, "Turrets")
 
 /obj/item/rcd/proc/get_airlock_image(airlock_type)
@@ -788,18 +787,25 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 	// structured TGUI AdminReport; byond:// links forwarded to host.
 	dq_admin_report_html(user, "Access Control", t1, src)
 
-/obj/item/rcd/Topic(href, href_list)
-	..()
-	if (usr.stat || usr.restrained())
-		return
-	if (href_list["close"])
-		// close TGUI window
-		SStgui.close_uis(src)
-		return
+TOPIC_ACTION(/obj/item/rcd, "close", PROC_REF(topic_close))
+TOPIC_ACTION(/obj/item/rcd, "access", PROC_REF(topic_access), TOPIC_TEXT("access", 16))
 
-	if (href_list["access"])
-		toggle_access(href_list["access"])
-		change_airlock_access(usr)
+/obj/item/rcd/topic_allowed(mob/user, list/href_list)
+	. = ..()
+	if(!.)
+		return
+	if(user.stat || user.restrained())
+		return FALSE
+
+/obj/item/rcd/proc/topic_close(mob/user, list/args)
+	// close TGUI window
+	SStgui.close_uis(src)
+	return TRUE
+
+/obj/item/rcd/proc/topic_access(mob/user, list/args)
+	toggle_access(args["access"])
+	change_airlock_access(user)
+	return TRUE
 
 /obj/item/rcd/proc/toggle_access(acc)
 	if (acc == "all")
@@ -831,11 +837,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 		// A lattice costs one rod to make. A sheet can make two rods, meaning a lattice costs half of a sheet.
 		// A sheet also makes four floor tiles, meaning it costs 1/4th of a sheet to place a floor tile on a lattice.
 		// Therefore it should cost 3/4ths of a sheet if a lattice is not present, or 1/4th of a sheet if it does.
-		return list(
-			RCD_VALUE_MODE = RCD_FLOORWALL,
-			RCD_VALUE_DELAY = 0,
-			RCD_VALUE_COST = L ? RCD_SHEETS_PER_MATTER_UNIT * 0.25 : RCD_SHEETS_PER_MATTER_UNIT * 0.75
-			)
+		return rcd_value_entry(RCD_FLOORWALL, 0, L ? RCD_SHEETS_PER_MATTER_UNIT * 0.25 : RCD_SHEETS_PER_MATTER_UNIT * 0.75)
 	return FALSE
 
 /turf/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
@@ -857,65 +859,29 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 				return 1
 			// A wall costs four sheets to build (two for the grider and two for finishing it).
 			var/cost = RCD_SHEETS_PER_MATTER_UNIT * 2
-			return list(
-				RCD_VALUE_MODE = RCD_FLOORWALL,
-				RCD_VALUE_DELAY = 0.5 SECONDS,
-				RCD_VALUE_COST = cost
-			)
+			return rcd_value_entry(RCD_FLOORWALL, 0.5 SECONDS, cost)
 		if(RCD_AIRLOCK)
 			// Airlock assemblies cost four sheets. Let's just add another for the electronics/wires/etc.
-			return list(
-				RCD_VALUE_MODE = RCD_AIRLOCK,
-				RCD_VALUE_DELAY = 5 SECONDS,
-				RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 5
-			)
+			return rcd_value_entry(RCD_AIRLOCK, 5 SECONDS, RCD_SHEETS_PER_MATTER_UNIT * 5)
 		if(RCD_WINDOOR)
-			return list(
-				RCD_VALUE_MODE = RCD_WINDOOR,
-				RCD_VALUE_DELAY = 3 SECONDS,
-				RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 3
-			)
+			return rcd_value_entry(RCD_WINDOOR, 3 SECONDS, RCD_SHEETS_PER_MATTER_UNIT * 3)
 		if(RCD_FIRELOCK)
-			return list(
-				RCD_VALUE_MODE = RCD_FIRELOCK,
-				RCD_VALUE_DELAY = 3 SECONDS,
-				RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 5
-			)
+			return rcd_value_entry(RCD_FIRELOCK, 3 SECONDS, RCD_SHEETS_PER_MATTER_UNIT * 5)
 		if(RCD_WINDOWGRILLE)
 			var/obj/structure/grille/G = locate_on(src, /obj/structure/grille)
 			if(G)
 				the_rcd.use_rcd(G, user)
 				return 1
-			return list(
-				RCD_VALUE_MODE = RCD_WINDOWGRILLE,
-				RCD_VALUE_DELAY = 1 SECOND,
-				RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 1
-			)
+			return rcd_value_entry(RCD_WINDOWGRILLE, 1 SECOND, RCD_SHEETS_PER_MATTER_UNIT * 1)
 		if(RCD_DECONSTRUCT)
 			//12 floor deconstructions per full RCD
-			return list(
-				RCD_VALUE_MODE = RCD_DECONSTRUCT,
-				RCD_VALUE_DELAY = 3 SECONDS,
-				RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 2.5
-			)
+			return rcd_value_entry(RCD_DECONSTRUCT, 3 SECONDS, RCD_SHEETS_PER_MATTER_UNIT * 2.5)
 		if(RCD_FRAME)
-			return list(
-				RCD_VALUE_MODE = RCD_FRAME,
-				RCD_VALUE_DELAY = 1.5 SECONDS,
-				RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 5
-			)
+			return rcd_value_entry(RCD_FRAME, 1.5 SECONDS, RCD_SHEETS_PER_MATTER_UNIT * 5)
 		if(RCD_CONVEYOR)
-			return list(
-				RCD_VALUE_MODE = RCD_CONVEYOR,
-				RCD_VALUE_DELAY = 1.5 SECONDS,
-				RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 6
-			)
+			return rcd_value_entry(RCD_CONVEYOR, 1.5 SECONDS, RCD_SHEETS_PER_MATTER_UNIT * 6)
 		if(RCD_TURRET)
-			return list(
-				RCD_VALUE_MODE = RCD_TURRET,
-				RCD_VALUE_DELAY = 6 SECONDS,
-				RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 10
-			)
+			return rcd_value_entry(RCD_TURRET, 6 SECONDS, RCD_SHEETS_PER_MATTER_UNIT * 10)
 	return FALSE
 
 /turf/simulated/floor/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
@@ -963,7 +929,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 				return FALSE
 			to_chat(user, span_notice("You construct the grille."))
 			var/obj/structure/grille/G = new(src)
-			G.anchored = TRUE
+			G.set_anchored(TRUE)
 			return TRUE
 		if(RCD_DECONSTRUCT)
 			to_chat(user, span_notice("You deconstruct \the [src]."))
@@ -1024,7 +990,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 	var/output_envelope = power_output_envelope(cost)
 	consume_resources(cost * output_envelope)
 	record_enhanced_output(cost, output_envelope)
-	playsound(A, 'sound/items/Deconstruct.ogg', 50, 1)
+	play_sfx(A, SFX_ITEMS_DECONSTRUCT)
 
 /turf/simulated/floor/proc/rcd_windoor_type_chosen(datum/om/prompt/choice/radial/rcd_build/ask)
 	if(!rcd_build_pick_ok(ask, RCD_WINDOOR))
@@ -1118,7 +1084,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 			frame.dir = EAST
 		if("WEST")
 			frame.dir = WEST
-	frame.anchored = 1
+	frame.set_anchored(1)
 	to_chat(user, span_notice("You build a frame"))
 	ask.rcd.finish_deferred_build(src, user, RCD_FRAME)
 
@@ -1153,17 +1119,9 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 			var/delay_to_use = material.integrity / 3 // Steel has 150 integrity, so it'll take five seconds to down a regular wall.
 			if(reinf_material)
 				delay_to_use += reinf_material.integrity / 3
-			return list(
-				RCD_VALUE_MODE = RCD_DECONSTRUCT,
-				RCD_VALUE_DELAY = delay_to_use,
-				RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 2.5
-				)
+			return rcd_value_entry(RCD_DECONSTRUCT, delay_to_use, RCD_SHEETS_PER_MATTER_UNIT * 2.5)
 		if(RCD_WALLFRAME)
-			return list(
-				RCD_VALUE_MODE = RCD_WALLFRAME,
-				RCD_VALUE_DELAY = 1,
-				RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 3
-				)
+			return rcd_value_entry(RCD_WALLFRAME, 1, RCD_SHEETS_PER_MATTER_UNIT * 3)
 	return FALSE
 
 /turf/simulated/wall/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
@@ -1193,7 +1151,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 			if(istype(O,/obj/machinery/light))
 				O.dir = GLOB.reverse_dir[O.dir]
 				return TRUE
-			var/list/adjusts = list(
+			var/static/list/adjusts = list(
 			/obj/machinery/computer/security/telescreen/entertainment,
 			/obj/machinery/ai_status_display,
 			/obj/machinery/station_map,
@@ -1236,17 +1194,9 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 			// Rwalls cost three to finish.
 			if(the_rcd.make_rwalls)
 				cost += RCD_SHEETS_PER_MATTER_UNIT * 1
-			return list(
-				RCD_VALUE_MODE = RCD_FLOORWALL,
-				RCD_VALUE_DELAY = 0.5 SECONDS,
-				RCD_VALUE_COST = cost
-			)
+			return rcd_value_entry(RCD_FLOORWALL, 0.5 SECONDS, cost)
 		if(RCD_DECONSTRUCT)
-			return list(
-				RCD_VALUE_MODE = RCD_DECONSTRUCT,
-				RCD_VALUE_DELAY = 0.5 SECONDS,
-				RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 1
-			)
+			return rcd_value_entry(RCD_DECONSTRUCT, 0.5 SECONDS, RCD_SHEETS_PER_MATTER_UNIT * 1)
 	return FALSE
 
 /obj/structure/girder/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
@@ -1279,11 +1229,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 /obj/structure/window/rcd_values(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	switch(passed_mode)
 		if(RCD_DECONSTRUCT)
-			return list(
-				RCD_VALUE_MODE = RCD_DECONSTRUCT,
-				RCD_VALUE_DELAY = 2 SECONDS,
-				RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 1
-			)
+			return rcd_value_entry(RCD_DECONSTRUCT, 2 SECONDS, RCD_SHEETS_PER_MATTER_UNIT * 1)
 		if(RCD_WINDOWGRILLE)
 			the_rcd.use_rcd(get_turf(src), user)
 			return 1
@@ -1321,18 +1267,10 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 				if(the_rcd.window_dir != "FULL")
 					construct_cost = 1
 			// A full tile window costs 4 glass sheets.
-			return list(
-				RCD_VALUE_MODE = RCD_WINDOWGRILLE,
-				RCD_VALUE_DELAY = 1 SECONDS,
-				RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * construct_cost
-			)
+			return rcd_value_entry(RCD_WINDOWGRILLE, 1 SECONDS, RCD_SHEETS_PER_MATTER_UNIT * construct_cost)
 		//Honestly shouldn't cost anything to deconstruct a grille
 		if(RCD_DECONSTRUCT)
-			return list(
-				RCD_VALUE_MODE = RCD_DECONSTRUCT,
-				RCD_VALUE_DELAY = 0.5 SECONDS,
-				RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 0
-			)
+			return rcd_value_entry(RCD_DECONSTRUCT, 0.5 SECONDS, RCD_SHEETS_PER_MATTER_UNIT * 0)
 	return FALSE
 
 /obj/structure/grille/proc/rcd_window_dir_chosen(datum/om/prompt/choice/radial/ask)
@@ -1356,7 +1294,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 				destroyed = 0
 				repair_damage(max_integrity)
 				update_icon()
-				density = 1
+				set_density(1)
 				to_chat(user, span_notice("You repair \the [src]."))
 				return TRUE
 			var/temp_dir
@@ -1392,7 +1330,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 				if("plastitanium")
 					window_to_spawn = (temp_dir==10?"/obj/structure/window/plastitanium/full":"/obj/structure/window/plastitanium")
 			var/obj/structure/window/WD = new window_to_spawn(loc)
-			WD.anchored = TRUE
+			WD.set_anchored(TRUE)
 			WD.dir = temp_dir
 			return TRUE
 	return FALSE
@@ -1404,11 +1342,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 	switch(passed_mode)
 		if(RCD_DECONSTRUCT)
 			//6 deconstructs per full RCD
-			return list(
-				RCD_VALUE_MODE = RCD_DECONSTRUCT,
-				RCD_VALUE_DELAY = 4 SECONDS,
-				RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 4
-			)
+			return rcd_value_entry(RCD_DECONSTRUCT, 4 SECONDS, RCD_SHEETS_PER_MATTER_UNIT * 4)
 		if(RCD_FIRELOCK)
 			the_rcd.use_rcd(get_turf(src), user)
 			return 1
@@ -1427,11 +1361,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 //////////////////////////////////////
 /obj/machinery/door/firedoor/rcd_values(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		return list(
-			RCD_VALUE_MODE = RCD_DECONSTRUCT,
-			RCD_VALUE_DELAY = 2 SECONDS,
-			RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 3
-		)
+		return rcd_value_entry(RCD_DECONSTRUCT, 2 SECONDS, RCD_SHEETS_PER_MATTER_UNIT * 3)
 	return FALSE
 
 /obj/machinery/door/firedoor/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
@@ -1444,11 +1374,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 //////////////////////////////////////
 /obj/machinery/computer/security/telescreen/rcd_values(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		return list(
-			RCD_VALUE_MODE = RCD_DECONSTRUCT,
-			RCD_VALUE_DELAY = 2 SECONDS,
-			RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 1
-		)
+		return rcd_value_entry(RCD_DECONSTRUCT, 2 SECONDS, RCD_SHEETS_PER_MATTER_UNIT * 1)
 	return FALSE
 
 /obj/machinery/computer/security/telescreen/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
@@ -1459,11 +1385,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/machinery/doorbell_chime/rcd_values(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		return list(
-			RCD_VALUE_MODE = RCD_DECONSTRUCT,
-			RCD_VALUE_DELAY = 2 SECONDS,
-			RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 1
-		)
+		return rcd_value_entry(RCD_DECONSTRUCT, 2 SECONDS, RCD_SHEETS_PER_MATTER_UNIT * 1)
 	return FALSE
 
 /obj/machinery/doorbell_chime/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
@@ -1474,11 +1396,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/machinery/status_display/rcd_values(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		return list(
-			RCD_VALUE_MODE = RCD_DECONSTRUCT,
-			RCD_VALUE_DELAY = 2 SECONDS,
-			RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 1
-		)
+		return rcd_value_entry(RCD_DECONSTRUCT, 2 SECONDS, RCD_SHEETS_PER_MATTER_UNIT * 1)
 	return FALSE
 
 /obj/machinery/status_display/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
@@ -1489,11 +1407,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/machinery/requests_console/rcd_values(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		return list(
-			RCD_VALUE_MODE = RCD_DECONSTRUCT,
-			RCD_VALUE_DELAY = 2 SECONDS,
-			RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 1
-		)
+		return rcd_value_entry(RCD_DECONSTRUCT, 2 SECONDS, RCD_SHEETS_PER_MATTER_UNIT * 1)
 	return FALSE
 
 /obj/machinery/requests_console/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
@@ -1504,11 +1418,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/machinery/atm/rcd_values(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		return list(
-			RCD_VALUE_MODE = RCD_DECONSTRUCT,
-			RCD_VALUE_DELAY = 2 SECONDS,
-			RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 1
-		)
+		return rcd_value_entry(RCD_DECONSTRUCT, 2 SECONDS, RCD_SHEETS_PER_MATTER_UNIT * 1)
 	return FALSE
 
 /obj/machinery/atm/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
@@ -1519,11 +1429,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/machinery/newscaster/rcd_values(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		return list(
-			RCD_VALUE_MODE = RCD_DECONSTRUCT,
-			RCD_VALUE_DELAY = 2 SECONDS,
-			RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 1
-		)
+		return rcd_value_entry(RCD_DECONSTRUCT, 2 SECONDS, RCD_SHEETS_PER_MATTER_UNIT * 1)
 	return FALSE
 
 /obj/machinery/newscaster/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
@@ -1534,11 +1440,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/machinery/recharger/wallcharger/rcd_values(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		return list(
-			RCD_VALUE_MODE = RCD_DECONSTRUCT,
-			RCD_VALUE_DELAY = 2 SECONDS,
-			RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 1
-		)
+		return rcd_value_entry(RCD_DECONSTRUCT, 2 SECONDS, RCD_SHEETS_PER_MATTER_UNIT * 1)
 	return FALSE
 
 /obj/machinery/recharger/wallcharger/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
@@ -1549,11 +1451,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/machinery/firealarm/rcd_values(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		return list(
-			RCD_VALUE_MODE = RCD_DECONSTRUCT,
-			RCD_VALUE_DELAY = 2 SECONDS,
-			RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 1
-		)
+		return rcd_value_entry(RCD_DECONSTRUCT, 2 SECONDS, RCD_SHEETS_PER_MATTER_UNIT * 1)
 	return FALSE
 
 /obj/machinery/firealarm/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
@@ -1564,11 +1462,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/machinery/alarm/rcd_values(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		return list(
-			RCD_VALUE_MODE = RCD_DECONSTRUCT,
-			RCD_VALUE_DELAY = 2 SECONDS,
-			RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 1
-		)
+		return rcd_value_entry(RCD_DECONSTRUCT, 2 SECONDS, RCD_SHEETS_PER_MATTER_UNIT * 1)
 	return FALSE
 
 /obj/machinery/alarm/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
@@ -1579,11 +1473,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/machinery/computer/guestpass/rcd_values(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		return list(
-			RCD_VALUE_MODE = RCD_DECONSTRUCT,
-			RCD_VALUE_DELAY = 2 SECONDS,
-			RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 1
-		)
+		return rcd_value_entry(RCD_DECONSTRUCT, 2 SECONDS, RCD_SHEETS_PER_MATTER_UNIT * 1)
 	return FALSE
 
 /obj/machinery/computer/guestpass/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
@@ -1594,11 +1484,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/item/radio/intercom/rcd_values(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		return list(
-			RCD_VALUE_MODE = RCD_DECONSTRUCT,
-			RCD_VALUE_DELAY = 2 SECONDS,
-			RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 1
-		)
+		return rcd_value_entry(RCD_DECONSTRUCT, 2 SECONDS, RCD_SHEETS_PER_MATTER_UNIT * 1)
 	return FALSE
 
 /obj/item/radio/intercom/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
@@ -1609,11 +1495,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/machinery/keycard_auth/rcd_values(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		return list(
-			RCD_VALUE_MODE = RCD_DECONSTRUCT,
-			RCD_VALUE_DELAY = 2 SECONDS,
-			RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 1
-		)
+		return rcd_value_entry(RCD_DECONSTRUCT, 2 SECONDS, RCD_SHEETS_PER_MATTER_UNIT * 1)
 	return FALSE
 
 /obj/machinery/keycard_auth/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
@@ -1624,11 +1506,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/item/geiger/wall/rcd_values(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		return list(
-			RCD_VALUE_MODE = RCD_DECONSTRUCT,
-			RCD_VALUE_DELAY = 2 SECONDS,
-			RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 1
-		)
+		return rcd_value_entry(RCD_DECONSTRUCT, 2 SECONDS, RCD_SHEETS_PER_MATTER_UNIT * 1)
 	return FALSE
 
 /obj/item/geiger/wall/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
@@ -1639,11 +1517,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/machinery/button/windowtint/rcd_values(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		return list(
-			RCD_VALUE_MODE = RCD_DECONSTRUCT,
-			RCD_VALUE_DELAY = 2 SECONDS,
-			RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 1
-		)
+		return rcd_value_entry(RCD_DECONSTRUCT, 2 SECONDS, RCD_SHEETS_PER_MATTER_UNIT * 1)
 	return FALSE
 
 /obj/machinery/button/windowtint/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
@@ -1654,11 +1528,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/machinery/computer/id_restorer/rcd_values(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		return list(
-			RCD_VALUE_MODE = RCD_DECONSTRUCT,
-			RCD_VALUE_DELAY = 2 SECONDS,
-			RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 1
-		)
+		return rcd_value_entry(RCD_DECONSTRUCT, 2 SECONDS, RCD_SHEETS_PER_MATTER_UNIT * 1)
 	return FALSE
 
 /obj/machinery/computer/id_restorer/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
@@ -1669,11 +1539,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/machinery/computer/timeclock/rcd_values(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		return list(
-			RCD_VALUE_MODE = RCD_DECONSTRUCT,
-			RCD_VALUE_DELAY = 2 SECONDS,
-			RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 1
-		)
+		return rcd_value_entry(RCD_DECONSTRUCT, 2 SECONDS, RCD_SHEETS_PER_MATTER_UNIT * 1)
 	return FALSE
 
 /obj/machinery/computer/timeclock/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
@@ -1684,11 +1550,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/machinery/station_map/rcd_values(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		return list(
-			RCD_VALUE_MODE = RCD_DECONSTRUCT,
-			RCD_VALUE_DELAY = 2 SECONDS,
-			RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 1
-		)
+		return rcd_value_entry(RCD_DECONSTRUCT, 2 SECONDS, RCD_SHEETS_PER_MATTER_UNIT * 1)
 	return FALSE
 
 /obj/machinery/station_map/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
@@ -1699,11 +1561,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/structure/trash_pile/rcd_values(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		return list(
-			RCD_VALUE_MODE = RCD_DECONSTRUCT,
-			RCD_VALUE_DELAY = 8 SECONDS,
-			RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 1
-		)
+		return rcd_value_entry(RCD_DECONSTRUCT, 8 SECONDS, RCD_SHEETS_PER_MATTER_UNIT * 1)
 	return FALSE
 
 /obj/structure/trash_pile/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
@@ -1714,11 +1572,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/structure/loot_pile/rcd_values(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		return list(
-			RCD_VALUE_MODE = RCD_DECONSTRUCT,
-			RCD_VALUE_DELAY = 8 SECONDS,
-			RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 1
-		)
+		return rcd_value_entry(RCD_DECONSTRUCT, 8 SECONDS, RCD_SHEETS_PER_MATTER_UNIT * 1)
 	return FALSE
 
 /obj/structure/loot_pile/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
@@ -1729,11 +1583,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/structure/frame/rcd_values(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		return list(
-			RCD_VALUE_MODE = RCD_DECONSTRUCT,
-			RCD_VALUE_DELAY = 2 SECONDS,
-			RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 1
-		)
+		return rcd_value_entry(RCD_DECONSTRUCT, 2 SECONDS, RCD_SHEETS_PER_MATTER_UNIT * 1)
 	return FALSE
 
 /obj/structure/frame/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
@@ -1744,11 +1594,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/machinery/ai_status_display/rcd_values(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		return list(
-			RCD_VALUE_MODE = RCD_DECONSTRUCT,
-			RCD_VALUE_DELAY = 2 SECONDS,
-			RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 1
-		)
+		return rcd_value_entry(RCD_DECONSTRUCT, 2 SECONDS, RCD_SHEETS_PER_MATTER_UNIT * 1)
 	return FALSE
 
 /obj/machinery/ai_status_display/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
@@ -1759,11 +1605,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/machinery/light/rcd_values(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		return list(
-			RCD_VALUE_MODE = RCD_DECONSTRUCT,
-			RCD_VALUE_DELAY = 2 SECONDS,
-			RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 1
-		)
+		return rcd_value_entry(RCD_DECONSTRUCT, 2 SECONDS, RCD_SHEETS_PER_MATTER_UNIT * 1)
 	return FALSE
 
 /obj/machinery/light/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
@@ -1774,11 +1616,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/machinery/hologram/holopad/rcd_values(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		return list(
-			RCD_VALUE_MODE = RCD_DECONSTRUCT,
-			RCD_VALUE_DELAY = 2 SECONDS,
-			RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 1
-		)
+		return rcd_value_entry(RCD_DECONSTRUCT, 2 SECONDS, RCD_SHEETS_PER_MATTER_UNIT * 1)
 	return FALSE
 
 /obj/machinery/hologram/holopad/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
@@ -1789,11 +1627,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/machinery/light_switch/rcd_values(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		return list(
-			RCD_VALUE_MODE = RCD_DECONSTRUCT,
-			RCD_VALUE_DELAY = 2 SECONDS,
-			RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 1
-		)
+		return rcd_value_entry(RCD_DECONSTRUCT, 2 SECONDS, RCD_SHEETS_PER_MATTER_UNIT * 1)
 	return FALSE
 
 /obj/machinery/light_switch/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
@@ -1804,11 +1638,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/structure/table/rcd_values(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		return list(
-			RCD_VALUE_MODE = RCD_DECONSTRUCT,
-			RCD_VALUE_DELAY = 2 SECONDS,
-			RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 1
-		)
+		return rcd_value_entry(RCD_DECONSTRUCT, 2 SECONDS, RCD_SHEETS_PER_MATTER_UNIT * 1)
 	return FALSE
 
 /obj/structure/table/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
@@ -1819,11 +1649,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/machinery/conveyor/rcd_values(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		return list(
-			RCD_VALUE_MODE = RCD_DECONSTRUCT,
-			RCD_VALUE_DELAY = 2 SECONDS,
-			RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 1
-		)
+		return rcd_value_entry(RCD_DECONSTRUCT, 2 SECONDS, RCD_SHEETS_PER_MATTER_UNIT * 1)
 	return FALSE
 
 /obj/machinery/conveyor/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
@@ -1834,11 +1660,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/machinery/door/window/rcd_values(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		return list(
-			RCD_VALUE_MODE = RCD_DECONSTRUCT,
-			RCD_VALUE_DELAY = 3 SECONDS,
-			RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 3
-		)
+		return rcd_value_entry(RCD_DECONSTRUCT, 3 SECONDS, RCD_SHEETS_PER_MATTER_UNIT * 3)
 	return FALSE
 
 /obj/machinery/door/window/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
@@ -1849,11 +1671,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/structure/firedoor_assembly/rcd_values(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		return list(
-			RCD_VALUE_MODE = RCD_DECONSTRUCT,
-			RCD_VALUE_DELAY = 1 SECONDS,
-			RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 1
-		)
+		return rcd_value_entry(RCD_DECONSTRUCT, 1 SECONDS, RCD_SHEETS_PER_MATTER_UNIT * 1)
 	return FALSE
 
 /obj/structure/firedoor_assembly/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
@@ -1864,11 +1682,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/structure/door_assembly/rcd_values(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		return list(
-			RCD_VALUE_MODE = RCD_DECONSTRUCT,
-			RCD_VALUE_DELAY = 1 SECONDS,
-			RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 1
-		)
+		return rcd_value_entry(RCD_DECONSTRUCT, 1 SECONDS, RCD_SHEETS_PER_MATTER_UNIT * 1)
 	return FALSE
 
 /obj/structure/door_assembly/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
@@ -1879,11 +1693,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/machinery/button/doorbell/rcd_values(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		return list(
-			RCD_VALUE_MODE = RCD_DECONSTRUCT,
-			RCD_VALUE_DELAY = 1 SECONDS,
-			RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 1
-		)
+		return rcd_value_entry(RCD_DECONSTRUCT, 1 SECONDS, RCD_SHEETS_PER_MATTER_UNIT * 1)
 	return FALSE
 
 /obj/machinery/button/doorbell/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
@@ -1897,3 +1707,15 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 /atom/proc/rcd_deconstruct(mob/living/user)
 	to_chat(user, span_notice("You deconstruct \the [src]."))
 	qdel(src)
+
+/// Shared rcd_values() results, keyed by "mode|delay|cost". Callers only read them.
+GLOBAL_LIST_EMPTY(rcd_value_entries)
+
+/// The shared, read-only rcd_values() result for (mode, delay, cost): built once per combination.
+/proc/rcd_value_entry(mode, delay, cost)
+	var/key = "[mode]|[delay]|[cost]"
+	var/list/entry = GLOB.rcd_value_entries[key]
+	if(!entry)
+		entry = list(RCD_VALUE_MODE = mode, RCD_VALUE_DELAY = delay, RCD_VALUE_COST = cost)
+		GLOB.rcd_value_entries[key] = entry
+	return entry

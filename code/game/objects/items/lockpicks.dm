@@ -50,7 +50,7 @@
 			if(H == user)
 				to_chat(user, span_notice("Your nose isn't locked. If you're feeling stuffy, maybe you should talk to a doctor..?"))
 			else
-				user.visible_message(span_notice("[user] tries to [pick_verb] [H]'s nose with \the [src]! They don't seem to be having much success."),span_notice("You try to [pick_verb] [H]'s nose. It doesn't seem to be working."))
+				act_message(user, src, MSG_SELF(span_notice("You try to [pick_verb] [H]'s nose. It doesn't seem to be working.")), MSG_OTHERS(span_notice("%U% tries to [pick_verb] [H]'s nose with %T%! They don't seem to be having much success.")))
 			return
 
 /obj/item/lockpick/proc/afterattack_timed_done(mob/user, obj/structure/simple_door/D)

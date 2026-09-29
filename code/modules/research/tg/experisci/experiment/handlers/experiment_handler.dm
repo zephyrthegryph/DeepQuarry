@@ -141,10 +141,10 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
 	var/atom/target = task.target
 	var/mob/user = task.actor
 	if(action_experiment(source, target))
-		playsound(user, 'sound/machines/ping.ogg', 25)
+		play_sfx(user, SFX_MACHINES_PING, 0.5)
 		to_chat(user, span_notice("You scan [target]."))
 	else if(!(config_flags & EXPERIMENT_CONFIG_SILENT_FAIL))
-		playsound(user, 'sound/machines/buzz-sigh.ogg', 25)
+		play_sfx(user, SFX_MACHINES_BUZZ_SIGH, 0.5)
 		to_chat(user, span_notice("[target] is not related to your currently selected experiment."))
 
 /**
@@ -155,7 +155,7 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
 	var/atom/scan_target = event.scanned_atoms
 
 	if(action_experiment(source, scan_target))
-		playsound(source, 'sound/machines/ping.ogg', 25)
+		play_sfx(source, SFX_MACHINES_PING, 0.5)
 		source.atom_say("Destructive analysis complete.")
 
 /**
@@ -172,7 +172,7 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
 		scan_target = wight_event.shadow_wight
 
 	if(action_experiment(source, scan_target))
-		playsound(source, 'sound/machines/ping.ogg', 25)
+		play_sfx(source, SFX_MACHINES_PING, 0.5)
 		source.atom_say("Spectral analysis complete.")
 
 /**
@@ -182,7 +182,7 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
 	EVENT_HANDLER
 
 	if(action_experiment(source, event.epicenter, event.devastation_range, event.heavy_impact_range, event.light_impact_range, event.seconds_taken))
-		playsound(source, 'sound/machines/ping.ogg', 25)
+		play_sfx(source, SFX_MACHINES_PING, 0.5)
 
 /// Hooks on a successful autopsy experiment
 /datum/experiment_handler/proc/try_run_autopsy_experiment(obj/source, datum/om/event/autopsy_performed/event)
@@ -190,7 +190,7 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
 	var/mob/living/target = event.target
 
 	if (action_experiment(source, target))
-		playsound(source, 'sound/machines/ping.ogg', 25)
+		play_sfx(source, SFX_MACHINES_PING, 0.5)
 		source.atom_say("New unique autopsy successfully catalogued.")
 
 

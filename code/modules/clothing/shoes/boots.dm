@@ -5,13 +5,13 @@
 	force = 3
 	can_hold_knife = 1
 	step_volume_mod = 1.2
-	drop_sound = 'sound/items/drop/boots.ogg'
+	drop_sound = SFX_ITEMS_DROP_BOOTS
 
 /obj/item/clothing/shoes/boots/cowboy
 	name = "cowboy boots"
 	desc = "Lacking a durasteel horse to ride."
 	icon_state = "cowboy"
-	drop_sound = 'sound/items/drop/leather.ogg'
+	drop_sound = SFX_ITEMS_DROP_LEATHER
 	heat_protection = FEET|LEGS
 	cold_protection = FEET|LEGS
 
@@ -50,8 +50,8 @@
 	icon_state = "jackboots"
 	armor_spec = "melee=30;bullet=10;laser=10;energy=15;bomb=20"
 	siemens_coefficient = 0.7
-	drop_sound = 'sound/items/drop/boots.ogg'
-	pickup_sound = 'sound/items/pickup/boots.ogg'
+	drop_sound = SFX_ITEMS_DROP_BOOTS
+	pickup_sound = SFX_ITEMS_PICKUP_BOOTS
 
 /obj/item/clothing/shoes/boots/jackboots/toeless
 	name = "toe-less jackboots"
@@ -59,8 +59,7 @@
 	icon_state = "digiboots"
 	item_state_slots = list(slot_r_hand_str = "jackboots", slot_l_hand_str = "jackboots")
 
-/obj/item/clothing/shoes/boots/jackboots/toeless/fit_constraint()
-	return null
+TYPE_TABLE(/obj/item/clothing/shoes/boots/jackboots/toeless, fit_spec, null)
 
 /obj/item/clothing/shoes/boots/jackboots/knee
 	name = "knee-length jackboots"
@@ -78,8 +77,7 @@
 	heat_protection = FEET|LEGS
 	cold_protection = FEET|LEGS
 
-/obj/item/clothing/shoes/boots/jackboots/toeless/knee/fit_constraint()
-	return null
+TYPE_TABLE(/obj/item/clothing/shoes/boots/jackboots/toeless/knee, fit_spec, null)
 
 /obj/item/clothing/shoes/boots/jackboots/thigh
 	name = "thigh-length jackboots"
@@ -97,8 +95,7 @@
 	heat_protection = FEET|LEGS
 	cold_protection = FEET|LEGS
 
-/obj/item/clothing/shoes/boots/jackboots/toeless/thigh/fit_constraint()
-	return null
+TYPE_TABLE(/obj/item/clothing/shoes/boots/jackboots/toeless/thigh, fit_spec, null)
 
 /obj/item/clothing/shoes/boots/jackboots/recolorable
 	icon_state = "boots_recolor"
@@ -109,8 +106,8 @@
 	icon_state = "workboots"
 	armor_spec = "melee=40;energy=15;bomb=20;rad=20"
 	siemens_coefficient = 0.7
-	drop_sound = 'sound/items/drop/boots.ogg'
-	pickup_sound = 'sound/items/pickup/boots.ogg'
+	drop_sound = SFX_ITEMS_DROP_BOOTS
+	pickup_sound = SFX_ITEMS_PICKUP_BOOTS
 
 /obj/item/clothing/shoes/boots/workboots/toeless
 	name = "toe-less workboots"
@@ -118,8 +115,7 @@
 	icon_state = "workbootstoeless"
 	item_state_slots = list(slot_r_hand_str = "workboots", slot_l_hand_str = "workboots")
 
-/obj/item/clothing/shoes/boots/workboots/toeless/fit_constraint()
-	return null
+TYPE_TABLE(/obj/item/clothing/shoes/boots/workboots/toeless, fit_spec, null)
 
 /obj/item/clothing/shoes/boots/winter
 	name = "winter boots"

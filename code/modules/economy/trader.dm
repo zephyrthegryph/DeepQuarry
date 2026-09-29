@@ -21,7 +21,7 @@
 	var/welcome_msg_finish = ". Would you like to browse the wares?"	//The final part of the welcome message.
 	var/list/interact_sound	//The sounds that may play when you click it. It will pick one at random from this list. It only thinks about this if there's anything in the list.
 	var/sound_cooldown = 0				//The sound can only play this often in deciseconds. Use '10 SECONDS' format to make it easier to read
-	var/sound_lastplayed = 0			//Automatically set when the sound is played.
+	EXPIRY_DECLARE(sound_lastplayed) //Automatically set when the sound is played.
 	var/pick_inventory = FALSE			//If true, when initialized the trader will randomly pick things from its start products list to set up
 	var/pick_inventory_quantity = 0		//This is how many things will be picked if pick_inventory is TRUE
 	var/move_trader = FALSE
@@ -103,10 +103,10 @@ DECLARE_INTERACTIONS(/obj/trader, 	INTERACT_HAND("Trade", PROC_REF(interaction_t
 		trader.trading = FALSE
 		return
 	if(length(trader.interact_sound) > 0)
-		if((world.time - trader.sound_lastplayed) > trader.sound_cooldown)
+		if(ELAPSED_SINCE(src, trader.sound_lastplayed, CLOCK_WORLD) > trader.sound_cooldown)
 			var/sound = DEFAULTPICK(trader.interact_sound, null)
 			playsound(trader, sound, 25, FALSE, ignore_walls = FALSE)
-			trader.sound_lastplayed = world.time
+			EXPIRY_STAMP(trader, sound_lastplayed, CLOCK_WORLD)
 	stage = "product"
 	om_ask(actor, /datum/om/prompt/choice, PROC_REF(product_picked), title = "Trader", message = "What would you like? You have [trader.get_value(trader.accepts)] banked with this trader.", choices = trader.products, timeout = 30 SECONDS)
 

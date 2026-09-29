@@ -58,7 +58,7 @@
 	qdel(src)
 
 /obj/machinery/the_singularitygen/wrench_act(mob/user, obj/item/W)
-	anchored = !anchored
+	set_anchored(!anchored)
 	playsound(src, W.usesound, 75, 1)
 	user.visible_message("[user.name] [anchored ? "secures" : "unsecures"] [src.name] to the floor.", \
 		"You [anchored ? "secure" : "unsecure"] the [src.name] to the floor.", \

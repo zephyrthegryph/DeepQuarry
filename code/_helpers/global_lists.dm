@@ -272,9 +272,9 @@ GLOBAL_LIST_EMPTY(mannequins)
 
 	// Custom species icon bases
 	///These are icons that you DO NOT want to be selectable!
-	var/list/blacklisted_icons = list(SPECIES_CUSTOM,SPECIES_PROMETHEAN)
+	var/static/list/blacklisted_icons = list(SPECIES_CUSTOM,SPECIES_PROMETHEAN)
 	///These are icons that you WANT to be selectable, even if they're a whitelist species!
-	var/list/whitelisted_icons = list(SPECIES_FENNEC,SPECIES_XENOHYBRID,SPECIES_VOX,SPECIES_ZORREN_DARK,SPECIES_SHADEKIN) //CHOMEdit
+	var/static/list/whitelisted_icons = list(SPECIES_FENNEC,SPECIES_XENOHYBRID,SPECIES_VOX,SPECIES_ZORREN_DARK,SPECIES_SHADEKIN)
 	for(var/species_name in GLOB.playable_species)
 		if(species_name in blacklisted_icons)
 			continue
@@ -708,42 +708,42 @@ GLOBAL_LIST_INIT(default_medbay_channels, list(
 	num2text(MED_I_FREQ) = list()
 ))
 
-GLOBAL_LIST_INIT(device_ringtones, list("beep" = 'sound/machines/twobeep.ogg',
-										"boom" = 'sound/effects/explosionfar.ogg',
-										"slip" = 'sound/misc/slip.ogg',
-										"honk" = 'sound/items/bikehorn.ogg',
-										"SKREE" = 'sound/voice/shriek1.ogg',
+GLOBAL_LIST_INIT(device_ringtones, list("beep" = SFX_MACHINES_TWOBEEP,
+										"boom" = SFX_EFFECTS_EXPLOSIONFAR,
+										"slip" = SFX_MISC_SLIP,
+										"honk" = SFX_ITEMS_BIKEHORN,
+										"SKREE" = SFX_VOICE_SHRIEK1,
 										// "holy" = 'sound/items/PDA/ambicha4-short.ogg',
-										"xeno" = 'sound/voice/hiss1.ogg',
-										"dust" = 'sound/effects/supermatter.ogg',
-										"spark" = 'sound/effects/sparks4.ogg',
-										"rad" = 'sound/items/geiger/high1.ogg',
-										"servo" = 'sound/machines/rig/rigservo.ogg',
+										"xeno" = SFX_VOICE_HISS1,
+										"dust" = SFX_EFFECTS_SUPERMATTER,
+										"spark" = SFX_EFFECTS_SPARKS4,
+										"rad" = SFX_ITEMS_GEIGER_HIGH1,
+										"servo" = SFX_MACHINES_RIG_RIGSERVO,
 										// "buh-boop" = 'sound/misc/buh-boop.ogg',
-										"trombone" = 'sound/misc/sadtrombone.ogg',
-										"whistle" = 'sound/misc/boatswain.ogg',
-										"chirp" = 'sound/misc/nymphchirp.ogg',
-										"slurp" = 'sound/items/drink.ogg',
-										"pwing" = 'sound/items/nif_tone_good.ogg',
-										"clack" = 'sound/items/storage/toolbox.ogg',
-										"bzzt" = 'sound/misc/null.ogg',	//vibrate mode
-										"chimes" = 'sound/misc/notice3.ogg',
-										"prbt" = 'sound/voice/prbt.ogg',
-										"bark" = 'sound/voice/bark2.ogg',
-										"bork" = 'sound/voice/bork.ogg',
-										"roark" = 'sound/voice/roarbark.ogg',
-										"chitter" = 'sound/voice/moth/moth_chitter.ogg',
-										"squish" = 'sound/effects/slime_squish.ogg',
-										"bubble"= 'sound/effects/bubbles.ogg',
-										"silly" = 'sound/effects/whistle.ogg',
+										"trombone" = SFX_MISC_SADTROMBONE,
+										"whistle" = SFX_MISC_BOATSWAIN,
+										"chirp" = SFX_MISC_NYMPHCHIRP,
+										"slurp" = SFX_ITEMS_DRINK,
+										"pwing" = SFX_ITEMS_NIF_TONE_GOOD,
+										"clack" = SFX_ITEMS_STORAGE_TOOLBOX,
+										"bzzt" = SFX_MISC_NULL,	//vibrate mode
+										"chimes" = SFX_MISC_NOTICE3,
+										"prbt" = SFX_VOICE_PRBT,
+										"bark" = SFX_VOICE_BARK2,
+										"bork" = SFX_VOICE_BORK,
+										"roark" = SFX_VOICE_ROARBARK,
+										"chitter" = SFX_VOICE_MOTH_MOTH_CHITTER,
+										"squish" = SFX_EFFECTS_SLIME_SQUISH,
+										"bubble"= SFX_EFFECTS_BUBBLES,
+										"silly" = SFX_EFFECTS_WHISTLE,
 										// "frog" = 'sound/voice/Croak.ogg',
-										"peep" = 'sound/voice/peep.ogg',
-										"quack" = 'sound/voice/quack.ogg',
+										"peep" = SFX_VOICE_PEEP,
+										"quack" = SFX_VOICE_QUACK,
 										// "ough" = 'sound/misc/ough.ogg',
-										"stamp" = 'sound/bureaucracy/stamp.ogg',
-										"gnome" = 'sound/items/hooh.ogg',
-										"ratchet" = 'sound/items/Ratchet.ogg',
-										"tether" = 'sound/items/tinytether.ogg'
+										"stamp" = SFX_BUREAUCRACY_STAMP,
+										"gnome" = SFX_ITEMS_HOOH,
+										"ratchet" = SFX_ITEMS_RATCHET,
+										"tether" = SFX_ITEMS_TINYTETHER
 										))
 
 GLOBAL_LIST_EMPTY(seen_citizenships)

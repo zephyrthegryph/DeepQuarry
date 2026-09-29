@@ -24,7 +24,6 @@ MATERIAL_MIX(/obj/item/pipe_dispenser, list(MAT_STEEL = 50000, MAT_GLASS = 25000
 	throw_speed = 1
 	throw_range = 5
 	w_class = ITEMSIZE_NORMAL
-	var/datum/effect/effect/system/spark_spread/spark_system
 	var/p_dir = NORTH 			// Next pipe will be built with this dir
 	var/p_flipped = FALSE		// If the next pipe should be built flipped
 	var/paint_color = "grey"	// Pipe color index for next pipe painted/built.
@@ -45,8 +44,6 @@ MATERIAL_MIX(/obj/item/pipe_dispenser, list(MAT_STEEL = 50000, MAT_GLASS = 25000
 
 /obj/item/pipe_dispenser/Initialize(mapload)
 	. = ..()
-	spark_system.set_up(5, 0, src)
-	spark_system.attach(src)
 	// RPDs have wrenches inside of them, so that they can wrench down spawned pipes without being used as superior wrenches themselves.
 
 /obj/item/pipe_dispenser/proc/SetupPipes()
@@ -57,7 +54,6 @@ MATERIAL_MIX(/obj/item/pipe_dispenser, list(MAT_STEEL = 50000, MAT_GLASS = 25000
 	if(!recipe())
 		recipe_static = first_atmos
 
-DECLARE_DEFAULT_CHILD(/obj/item/pipe_dispenser, "spark_system", /datum/effect/effect/system/spark_spread)
 DECLARE_DEFAULT_CHILD(/obj/item/pipe_dispenser, "tool", /obj/item/tool/wrench/cyborg)
 
 DECLARE_INTERACTIONS(/obj/item/pipe_dispenser, INTERACT_USE(null, PROC_REF(interaction_self)))
@@ -148,8 +144,8 @@ DECLARE_INTERACTIONS(/obj/item/pipe_dispenser, INTERACT_USE(null, PROC_REF(inter
 			else
 				mode |= n
 	if(playeffect)
-		spark_system.start()
-		playsound(get_turf(src), 'sound/effects/pop.ogg', 50, FALSE)
+		fx_sparks(src, 5, FALSE)
+		play_sfx(get_turf(src), SFX_EFFECTS_POP)
 	return TRUE
 
 /obj/item/pipe_dispenser/afterattack(atom/A, mob/user as mob, proximity)
@@ -172,16 +168,16 @@ DECLARE_INTERACTIONS(/obj/item/pipe_dispenser, INTERACT_USE(null, PROC_REF(inter
 	. = TRUE
 	if((mode & DESTROY_MODE) && can_destroy_pipe)
 		to_chat(user, span_notice("You start destroying a pipe..."))
-		playsound(src, 'sound/machines/click.ogg', 50, 1)
+		play_sfx(src, SFX_MACHINES_CLICK)
 		om_task_timed(user, 2, target = A, receiver = src, on_done = PROC_REF(afterattack_timed_done), done_args = list(A))
 		return
 
 	if((mode & PAINT_MODE)) //Paint pipes
 		if(!istype(A, /obj/machinery/atmospherics/pipe/simple/heat_exchanging) && istype(A, /obj/machinery/atmospherics/pipe))
 			var/obj/machinery/atmospherics/pipe/P = A
-			playsound(src, 'sound/machines/click.ogg', 50, 1)
+			play_sfx(src, SFX_MACHINES_CLICK)
 			P.change_color(GLOB.pipe_colors[paint_color])
-			user.visible_message(span_notice("[user] paints \the [P] [paint_color]."), span_notice("You paint \the [P] [paint_color]."))
+			act_message(user, null, MSG_SELF(span_notice("You paint \the [P] [paint_color].")), MSG_OTHERS(span_notice("%U% paints \the [P] [paint_color].")))
 			return
 
 	if(mode & BUILD_MODE) //Making pipes
@@ -189,7 +185,7 @@ DECLARE_INTERACTIONS(/obj/item/pipe_dispenser, INTERACT_USE(null, PROC_REF(inter
 			if(ATMOS_CATEGORY)
 				if(!can_make_pipe)
 					return ..()
-				playsound(src, 'sound/machines/click.ogg', 50, 1)
+				play_sfx(src, SFX_MACHINES_CLICK)
 				if(istype(recipe(), /datum/pipe_recipe/meter))
 					to_chat(user, span_notice("You start building a meter..."))
 					om_task_start(/datum/om/task/timed/pipe_dispenser_afterattack, user, A, queued_piping_layer = queued_piping_layer)
@@ -210,7 +206,7 @@ DECLARE_INTERACTIONS(/obj/item/pipe_dispenser, INTERACT_USE(null, PROC_REF(inter
 					to_chat(user, span_warning("[src]'s error light flickers; there's something in the way!"))
 					return
 				to_chat(user, span_notice("You start building a disposals pipe..."))
-				playsound(src, 'sound/machines/click.ogg', 50, 1)
+				play_sfx(src, SFX_MACHINES_CLICK)
 				om_task_start(/datum/om/task/timed/pipe_dispenser_afterattack3, user, A, queued_p_dir = queued_p_dir, queued_p_flipped = queued_p_flipped, R = R)
 
 			else
@@ -319,7 +315,7 @@ DECLARE_INTERACTIONS(/obj/item/pipe_dispenser, INTERACT_USE(null, PROC_REF(inter
 	qdel(P)
 
 /obj/item/pipe_dispenser/proc/activate()
-	playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
+	play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 
 /obj/item/pipe_dispenser/proc/do_wrench(atom/target, mob/user)
 	var/resolved = target.attackby(tool,user)

@@ -27,9 +27,7 @@
 	min_pressure_protection = null
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 
-/obj/item/clothing/head/helmet/space/rig/fit_constraint()
-	var/list/bodytypes = list(SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_TAJARAN, SPECIES_UNATHI, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_SERGAL, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_PROMETHEAN, SPECIES_VOX, SPECIES_TESHARI, SPECIES_VASILISSAN, SPECIES_RAPALA, SPECIES_ALRAUNE, SPECIES_FENNEC, SPECIES_XENOHYBRID, SPECIES_ALTEVIAN, SPECIES_SHADEKIN)
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/head/helmet/space/rig, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_TAJARAN, SPECIES_UNATHI, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_SERGAL, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_PROMETHEAN, SPECIES_VOX, SPECIES_TESHARI, SPECIES_VASILISSAN, SPECIES_RAPALA, SPECIES_ALRAUNE, SPECIES_FENNEC, SPECIES_XENOHYBRID, SPECIES_ALTEVIAN, SPECIES_SHADEKIN))))
 
 /obj/item/clothing/gloves/gauntlets/rig
 	name = "gauntlets"
@@ -38,17 +36,13 @@
 	item_flags = THICKMATERIAL
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 
-/obj/item/clothing/gloves/gauntlets/rig/fit_constraint()
-	var/list/bodytypes = list(SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_TAJARAN, SPECIES_UNATHI, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_SERGAL, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_PROMETHEAN, SPECIES_VOX, SPECIES_TESHARI, SPECIES_VASILISSAN, SPECIES_RAPALA, SPECIES_ALRAUNE, SPECIES_FENNEC, SPECIES_XENOHYBRID, SPECIES_ALTEVIAN, SPECIES_SHADEKIN)
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/gloves/gauntlets/rig, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_TAJARAN, SPECIES_UNATHI, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_SERGAL, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_PROMETHEAN, SPECIES_VOX, SPECIES_TESHARI, SPECIES_VASILISSAN, SPECIES_RAPALA, SPECIES_ALRAUNE, SPECIES_FENNEC, SPECIES_XENOHYBRID, SPECIES_ALTEVIAN, SPECIES_SHADEKIN))))
 /obj/item/clothing/shoes/magboots/rig
 	name = "boots"
 	icon_base = null
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 
-/obj/item/clothing/shoes/magboots/rig/fit_constraint()
-	var/list/bodytypes = list(SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_TAJARAN, SPECIES_UNATHI, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_SERGAL, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_PROMETHEAN, SPECIES_VOX, SPECIES_TESHARI, SPECIES_VASILISSAN, SPECIES_RAPALA, SPECIES_ALRAUNE, SPECIES_FENNEC, SPECIES_XENOHYBRID, SPECIES_ALTEVIAN, SPECIES_SHADEKIN)
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/shoes/magboots/rig, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_TAJARAN, SPECIES_UNATHI, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_SERGAL, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_PROMETHEAN, SPECIES_VOX, SPECIES_TESHARI, SPECIES_VASILISSAN, SPECIES_RAPALA, SPECIES_ALRAUNE, SPECIES_FENNEC, SPECIES_XENOHYBRID, SPECIES_ALTEVIAN, SPECIES_SHADEKIN))))
 
 /obj/item/clothing/suit/space/rig
 	name = "chestpiece"
@@ -84,13 +78,9 @@
 	min_pressure_protection = null
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 
-/obj/item/clothing/suit/space/rig/fit_constraint()
-	var/list/bodytypes = list(SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_TAJARAN, SPECIES_UNATHI, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_SERGAL, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_PROMETHEAN, SPECIES_VOX, SPECIES_TESHARI, SPECIES_VASILISSAN, SPECIES_RAPALA, SPECIES_ALRAUNE, SPECIES_FENNEC, SPECIES_XENOHYBRID, SPECIES_ALTEVIAN, SPECIES_SHADEKIN)
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/suit/space/rig, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_TAJARAN, SPECIES_UNATHI, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_SERGAL, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_PROMETHEAN, SPECIES_VOX, SPECIES_TESHARI, SPECIES_VASILISSAN, SPECIES_RAPALA, SPECIES_ALRAUNE, SPECIES_FENNEC, SPECIES_XENOHYBRID, SPECIES_ALTEVIAN, SPECIES_SHADEKIN))))
 
-/obj/item/clothing/suit/space/rig/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS,/obj/item/storage)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/space/rig, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS,/obj/item/storage))))
 
 EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/rig, \
 	INTERACT_HAND_UNGATED(null, PROC_REF(rig_suit_draw_knife_hand)), \
@@ -103,7 +93,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/rig, \
 		tacknife().forceMove(get_turf(src))
 		if(M.put_in_active_hand(tacknife()))
 			to_chat(M, span_notice("You slide \the [tacknife()] out of [src]."))
-			playsound(src, 'sound/weapons/flipblade.ogg', 40, 1)
+			play_sfx(src, SFX_WEAPONS_FLIPBLADE, 0.8)
 			rel_clear(src, "tacknife")
 			update_icon()
 		return TRUE
@@ -118,7 +108,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/rig, \
 		rel_set(src, "tacknife", I)
 		I.forceMove(src)
 		to_chat(M, span_notice("You slide the [I] into [src]."))
-		playsound(src, 'sound/weapons/flipblade.ogg', 40, 1)
+		play_sfx(src, SFX_WEAPONS_FLIPBLADE, 0.8)
 		update_icon()
 	return FALSE
 
@@ -160,9 +150,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/rig, \
 	flags =              THICKMATERIAL
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 
-/obj/item/clothing/suit/lightrig/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/lightrig, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
 
 /obj/item/clothing/shoes/lightrig
 	name = DEVELOPER_WARNING_NAME // "boots"

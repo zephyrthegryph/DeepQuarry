@@ -28,8 +28,8 @@ effective or pretty fucking useless.
 	var/times_used = 0 //Number of times it's been used.
 	var/max_uses = 2
 
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 DECLARE_INTERACTIONS(/obj/item/batterer, INTERACT_USE(null, PROC_REF(interaction_self)))
 
@@ -45,7 +45,7 @@ DECLARE_INTERACTIONS(/obj/item/batterer, INTERACT_USE(null, PROC_REF(interaction
 
 	add_attack_logs(user,affected,"Used a [name]")
 
-	playsound(src, 'sound/misc/interference.ogg', 50, 1)
+	play_sfx(src, SFX_MISC_INTERFERENCE)
 	to_chat(user, span_notice("You trigger [src]."))
 	times_used += 1
 	if(times_used >= max_uses)

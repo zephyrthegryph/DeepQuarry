@@ -37,11 +37,9 @@
 REL_KEYED(/obj/machinery/hyperpad/centre, linked_pad, map_pad_link_id, /obj/machinery/hyperpad/centre)
 KEYED_TARGET(/obj/machinery/hyperpad/centre, map_pad_id)
 
-/obj/machinery/hyperpad/operable()
-	return 1
-
-/obj/machinery/hyperpad/inoperable() //A lame way of making this machine always useable
-	return 0
+/// Always usable, powered or not.
+/obj/machinery/hyperpad/operable(additional_flags = 0)
+	return TRUE
 
 /// Old attack_ghost: ran the parent pad's first (the ghost default, then the primary pad's),
 /// then drifts the ghost to the linked pad.
@@ -122,7 +120,7 @@ KEYED_TARGET(/obj/machinery/hyperpad/centre, map_pad_id)
 
 /obj/machinery/hyperpad/centre/proc/detect(mob/user)
 	if(!ready)
-		var/list/dirs = list(1,2,4,8,5,9,6,10) //A really dumb way of making a circle of dirs around the centre piece. If there's a better way, tell me.
+		var/static/list/dirs = list(1,2,4,8,5,9,6,10) //A really dumb way of making a circle of dirs around the centre piece. If there's a better way, tell me.
 		var/list/turfs = trange(1, src) - loc
 		var/iterate = 1
 		for(var/turf/T in turfs)
@@ -140,7 +138,7 @@ KEYED_TARGET(/obj/machinery/hyperpad/centre, map_pad_id)
 /obj/machinery/hyperpad/centre/proc/startteleport(mob/user)
 	if(!linked_pad())
 		return
-	playsound(get_turf(src), 'sound/weapons/flash.ogg', 25, 1)
+	play_sfx(get_turf(src), SFX_WEAPONS_FLASH, 0.25)
 	teleporting = 1
 	om_after(src, teleport_speed, PROC_REF(doteleport), user)
 	var/speed = teleport_speed/8

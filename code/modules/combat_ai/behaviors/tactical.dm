@@ -3,7 +3,7 @@
 // These behaviors take advantage of the brain's A* pathing and the
 // post-attack / damage-event signal hooks to give each archetype the texture
 // of its legacy AI subtype (kiting, hit-and-run, evasive juke, etc).
-// All are opt-in: mobs that want them list them in get_ai_behaviors().
+// All are opt-in: mobs that want them list them in their get_ai_behaviors type table.
 
 // --- Evasive juke ----------------------------------------------------------
 // Step into an adjacent random cardinal after each completed melee attack.
@@ -23,7 +23,7 @@
 	// Only relevant immediately after a melee strike.
 	if(!brain.primary_threat)
 		return null
-	if(!brain.last_attack_at || world.time > brain.last_attack_at + 4)
+	if(!brain.last_attack_at || ELAPSED_SINCE(src, brain.last_attack_at + 4, CLOCK_WORLD) > 0)
 		return null
 	if(brain.last_juke_at == brain.last_attack_at)
 		return null
@@ -97,7 +97,7 @@
 	var/mob/threat = brain.primary_threat
 	if(!threat || !ismob(threat))
 		return null
-	if(!brain.last_attack_at || world.time > brain.last_attack_at + 6)
+	if(!brain.last_attack_at || ELAPSED_SINCE(src, brain.last_attack_at + 6, CLOCK_WORLD) > 0)
 		return null
 	var/mob/living/owner = brain.get_owner()
 	if(!owner)

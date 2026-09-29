@@ -147,10 +147,11 @@ GLOBAL_LIST_INIT(contrast_colors, list("#ff0000", "#00ff00", "#0000ff", "#ffff00
 // themselves as fire-resistant for a short window (firefoam, fire extinguisher
 // spray). Sets a per-turf cooldown that hotspot_expose checks before igniting.
 #define FIRE_PROTECTION_DURATION (30 SECONDS)
-/turf/var/fire_protection = 0
+/turf
+	EXPIRY_DECLARE(fire_protection)
 
 /turf/proc/apply_fire_protection()
-	fire_protection = world.time
+	EXPIRY_STAMP(src, fire_protection, CLOCK_WORLD)
 
 
 // Structured scan data shared by PDA, pAI and communicator TGUI clients.

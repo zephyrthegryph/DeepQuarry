@@ -243,7 +243,7 @@ DECLARE_INTERACTIONS(/turf, \
 
 	if(!success) // Nothing got hit.
 		user.visible_message(span_warning("\The [user] swipes \the [W] over \the [src]."))
-		playsound(src, 'sound/weapons/punchmiss.ogg', 25, 1, -1)
+		play_sfx(src, SFX_WEAPONS_PUNCHMISS)
 	return success
 
 /// Old MouseDrop_T: a lying mob crawls, dragging something along onto the tile.

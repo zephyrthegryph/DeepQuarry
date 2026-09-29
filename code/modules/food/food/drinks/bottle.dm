@@ -21,8 +21,8 @@
 	. = ..()
 	if(isGlass)
 		unacidable = TRUE
-		drop_sound = 'sound/items/drop/bottle.ogg'
-		pickup_sound = 'sound/items/pickup/bottle.ogg'
+		drop_sound = SFX_ITEMS_DROP_BOTTLE
+		pickup_sound = SFX_ITEMS_PICKUP_BOTTLE
 
 OWN(/obj/item/reagent_containers/food/drinks/bottle, rag, OWN_SPILL)
 
@@ -51,7 +51,7 @@ OWN(/obj/item/reagent_containers/food/drinks/bottle, rag, OWN_SPILL)
 	if(!isGlass || !smash_duration)
 		return 0
 
-	var/list/chance_table = list(100, 95, 90, 85, 75, 55, 35) //starting from distance 0
+	var/static/list/chance_table = list(100, 95, 90, 85, 75, 55, 35) //starting from distance 0
 	var/idx = max(distance + 1, 1) //since list indices start at 1
 	if(idx > chance_table.len)
 		return 0
@@ -78,7 +78,7 @@ OWN(/obj/item/reagent_containers/food/drinks/bottle, rag, OWN_SPILL)
 		var/mob/living/L = against
 		L.ignite_mob()
 
-	playsound(src, "shatter", 70, 1)
+	play_sfx(src, SFX_SHATTER)
 	src.transfer_fingerprints_to(B)
 
 	qdel(src)
@@ -220,7 +220,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/bottle, \
 	var/icon/broken_outline = icon('icons/obj/drinks.dmi', "broken")
 
 /obj/item/broken_bottle/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	playsound(src, 'sound/weapons/bladeslice.ogg', 50, 1, -1)
+	play_sfx(src, SFX_WEAPONS_BLADESLICE)
 	return ..()
 
 /obj/item/reagent_containers/food/drinks/bottle/gin

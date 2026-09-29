@@ -11,10 +11,11 @@
 	permeability_coefficient = 0.01
 	siemens_coefficient = 0.9
 	var/gas_filter_strength = 1			//For gas mask filters
-	var/list/filtered_gases = list(GAS_PHORON, GAS_N2O) // ALLOW(instance_list): c: read-only per-subtype constant table (2 subtype overrides); a getter would share it, not worth it on a rare type
 	armor_spec = "bio=75"
-	pickup_sound = 'sound/items/pickup/rubber.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_RUBBER
 	resistance_flags = FIRE_PROOF
+
+TYPE_TABLE_DECLARE(/obj/item/clothing/mask/gas, gasmask_filtered_gases, list(GAS_PHORON, GAS_N2O))
 
 /obj/item/clothing/mask/gas/filter_air(datum/gas_mixture/air)
 	var/datum/gas_mixture/gas_filtered = new
@@ -22,7 +23,7 @@
 	// LINDA_GAS_AMT is a read-only ternary expression macro; the old
 	// `LINDA_GAS_AMT(air, g) -=` line is not assignable. Rewrite as a paired
 	// adjust_gas: transfer the filtered moles, then remove the same from air.
-	for(var/g in filtered_gases)
+	for(var/g in TYPE_TABLE_GET(src, gasmask_filtered_gases))
 		var/source_amt = LINDA_GAS_AMT(air, g)
 		if(source_amt)
 			var/transferred = (source_amt * gas_filter_strength) - LINDA_GAS_AMT(gas_filtered, g)
@@ -52,7 +53,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/gas/half, INTERACT_ITEM(null, PROC_R
 /// Old attackby: fit a hailer. Always fell through to ..() afterwards.
 /obj/item/clothing/mask/gas/half/proc/half_mask_add_hailer_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/hailer))
-		playsound(src, 'sound/items/Screwdriver.ogg', 50, 1)
+		play_sfx(src, SFX_ITEMS_SCREWDRIVER)
 		user.drop_item(src)
 		var/obj/item/clothing/mask/gas/sechailer/N = new /obj/item/clothing/mask/gas/sechailer(src.loc)
 		transfer_blooddna_to(N)
@@ -94,15 +95,13 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/gas/half, INTERACT_ITEM(null, PROC_R
 	desc = "Clearly not designed for a human face."
 	flags = PHORONGUARD
 	item_flags = BLOCK_GAS_SMOKE_EFFECT | AIRTIGHT
-	filtered_gases = list(GAS_O2, GAS_N2O)
 	var/mask_open = FALSE	// Controls if the Vox can eat through this mask
 	actions_types = list(/datum/action/item_action/toggle_feeding_port)
 	helmet_handling = TRUE
 	special_handling = TRUE
 
-/obj/item/clothing/mask/gas/swat/vox/fit_constraint()
-	var/list/bodytypes = list(SPECIES_VOX)
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/mask/gas/swat/vox, gasmask_filtered_gases, list(GAS_O2, GAS_N2O))
+TYPE_TABLE(/obj/item/clothing/mask/gas/swat/vox, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_VOX))))
 
 /obj/item/clothing/mask/gas/swat/vox/proc/feeding_port(mob/user)
 	if(user.canmove && !user.stat)
@@ -127,11 +126,10 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/gas/swat/vox, INTERACT_USE("Feeding 
 	icon_state = "zaddat_mask"
 	item_state = "vax_mask"
 	flags_inv = HIDEEARS //semi-transparent
-	filtered_gases = list(GAS_PHORON, GAS_N2, GAS_N2O)
 
-/obj/item/clothing/mask/gas/zaddat/fit_constraint()
-	var/list/bodytypes = list(SPECIES_ZADDAT)
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/mask/gas/zaddat, gasmask_filtered_gases, list(GAS_PHORON, GAS_N2, GAS_N2O))
+
+TYPE_TABLE(/obj/item/clothing/mask/gas/zaddat, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_ZADDAT))))
 
 /obj/item/clothing/mask/gas/syndicate
 	name = "tactical mask"

@@ -13,7 +13,7 @@
 	var/split_amount = 5 // Amount of children we will normally have. Half of that for dead adult slimes. Is NOT carried across generations.
 	var/untamable = FALSE //Makes slime untamable via discipline.
 	var/untamable_inheirit = FALSE //Makes slime inheirit its untamability.
-	var/list/slime_mutation = list( // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	var/list/slime_mutation = list( // ALLOW(instance_list): c: interned per subtype by shared_type_list() in Initialize(), so instances share one list
 		/mob/living/simple_mob/slime/xenobio/orange,
 		/mob/living/simple_mob/slime/xenobio/metal,
 		/mob/living/simple_mob/slime/xenobio/blue,
@@ -24,6 +24,8 @@
 	var/harmless = FALSE // Set to true when pacified. Makes the slime harmless, not get hungry, and not be able to grow/reproduce.
 
 /mob/living/simple_mob/slime/xenobio/Initialize(mapload, mob/living/simple_mob/slime/xenobio/my_predecessor)
+	if(slime_mutation)
+		slime_mutation = shared_type_list(type, "slime_mutation", slime_mutation)
 	//legacy ASSERT against ai_holder_type removed; slimes now use the
 	// brain framework and /datum/slime_state for discipline.
 	number = rand(1, 1000)

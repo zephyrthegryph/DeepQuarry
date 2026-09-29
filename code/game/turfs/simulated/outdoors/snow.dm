@@ -31,7 +31,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/snow, \
 
 /// Old attackby: shovel the snow away.
 /turf/simulated/floor/outdoors/snow/proc/snow_shovel(mob/user, obj/item/W, datum/interaction/interaction)
-	use_tool(user, W, src, delay = 4 SECONDS, volume = 0, message_self = "You begin to remove \the [src] with your [W].", receiver = src, on_done = PROC_REF(attackby_tool_done), done_args = list(user), on_fail = PROC_REF(attackby_tool_failed), fail_args = list(user))
+	use_tool(user, W, src, delay = 4 SECONDS, volume = 0, start_self = "You begin to remove \the [src] with your [W].", receiver = src, on_done = PROC_REF(attackby_tool_done), done_args = list(user), on_fail = PROC_REF(attackby_tool_failed), fail_args = list(user))
 	return INTERACTION_HANDLED_PASS
 
 /turf/simulated/floor/outdoors/snow/proc/attackby_tool_done(mob/user)

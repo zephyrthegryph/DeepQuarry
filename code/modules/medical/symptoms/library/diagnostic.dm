@@ -19,16 +19,12 @@
 	audiences = SYMPTOM_AUDIENCE_PATIENT | SYMPTOM_AUDIENCE_PUBLIC
 	public_emote_chance = 2
 
-/datum/affliction_symptom/confusion/get_patient_messages()
-	var/static/list/L = list(
-		"You can't remember what you were just doing.",
-		"Your thoughts feel scattered.",
-	)
-	return L
+TYPE_TABLE(/datum/affliction_symptom/confusion, get_patient_messages, list( \
+		"You can't remember what you were just doing.", \
+		"Your thoughts feel scattered.", \
+	))
 
-/datum/affliction_symptom/confusion/get_public_emotes()
-	var/static/list/L = list("looks confused", "stares blankly")
-	return L
+TYPE_TABLE(/datum/affliction_symptom/confusion, get_public_emotes, list("looks confused", "stares blankly"))
 
 
 /datum/affliction_symptom/palpitations
@@ -38,12 +34,10 @@
 	audiences = SYMPTOM_AUDIENCE_PATIENT | SYMPTOM_AUDIENCE_SCANNER
 	scanner_phrase = "irregular cardiac rhythm"
 
-/datum/affliction_symptom/palpitations/get_patient_messages()
-	var/static/list/L = list(
-		"Your heart skips a beat.",
-		"Your chest flutters strangely.",
-	)
-	return L
+TYPE_TABLE(/datum/affliction_symptom/palpitations, get_patient_messages, list( \
+		"Your heart skips a beat.", \
+		"Your chest flutters strangely.", \
+	))
 
 
 /datum/affliction_symptom/abdominal_tenderness
@@ -54,11 +48,9 @@
 	patient_message_chance = 3
 	scanner_phrase = "abdominal tenderness on palpation"
 
-/datum/affliction_symptom/abdominal_tenderness/get_patient_messages()
-	var/static/list/L = list(
-		"Your belly feels tender when you move.",
-	)
-	return L
+TYPE_TABLE(/datum/affliction_symptom/abdominal_tenderness, get_patient_messages, list( \
+		"Your belly feels tender when you move.", \
+	))
 
 
 /datum/affliction_symptom/absent_reflex

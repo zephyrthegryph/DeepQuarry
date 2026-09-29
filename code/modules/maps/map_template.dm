@@ -4,7 +4,7 @@
 	var/height = 0
 	var/mappath = null
 	var/loaded = 0 // Times loaded this round
-	var/datum/parsed_map/cached_map
+	var/datum/parsed_map/parsed_map
 	var/keep_cached_map = FALSE
 
 	// Virgo stuff
@@ -42,7 +42,7 @@
 		width = bounds[MAP_MAXX] // Assumes all templates are rectangular, have a single Z level, and begin at 1,1,1
 		height = bounds[MAP_MAXY]
 		if(cache)
-			own_set(src, "cached_map", parsed)
+			own_set(src, "parsed_map", parsed)
 	return bounds
 
 /// Bounds written by the build (tools/build/lib/map_bounds.ts) so templates don't
@@ -180,8 +180,8 @@
 
 	// Accept cached maps, but don't save them automatically - we don't want
 	// ruins clogging up memory for the whole round.
-	var/datum/parsed_map/parsed = cached_map || new(file(mappath))
-	own_set(src, "cached_map", keep_cached_map ? parsed : null)
+	var/datum/parsed_map/parsed = parsed_map || new(file(mappath))
+	own_set(src, "parsed_map", keep_cached_map ? parsed : null)
 
 	if(!parsed.load(
 		T.x,
@@ -226,17 +226,17 @@
 /// Takes in a type path, locates an instance of that type in the cached map, and calculates its offset from the origin of the map, returns this offset in the form list(x, y).
 /datum/map_template/proc/discover_offset(obj/marker)
 	var/key
-	var/list/models = cached_map.grid_models
+	var/list/models = parsed_map.grid_models
 	for(key in models)
 		if(findtext(models[key], "[marker]")) // Yay compile time checks
 			break // This works by assuming there will ever only be one mobile dock in a template at most
 
-	for(var/datum/grid_set/gset as anything in cached_map.gridSets)
+	for(var/datum/grid_set/gset as anything in parsed_map.gridSets)
 		var/ycrd = gset.ycrd
 		for(var/line in gset.gridLines)
 			var/xcrd = gset.xcrd
-			for(var/j in 1 to length(line) step cached_map.key_len)
-				if(key == copytext(line, j, j + cached_map.key_len))
+			for(var/j in 1 to length(line) step parsed_map.key_len)
+				if(key == copytext(line, j, j + parsed_map.key_len))
 					return list(xcrd, ycrd)
 				++xcrd
 			--ycrd
@@ -245,7 +245,7 @@
 //❤ - Cyberboss
 /proc/load_new_z_level(file, name)
 	var/datum/map_template/template = new(file, name, TRUE)
-	if(!template.cached_map || template.cached_map.check_for_errors())
+	if(!template.parsed_map || template.parsed_map.check_for_errors())
 		return FALSE
 	template.load_new_z()
 	return TRUE

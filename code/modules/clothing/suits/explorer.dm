@@ -6,9 +6,7 @@
 	body_parts_covered = UPPER_TORSO|ARMS
 	flags_inv = HIDEHOLSTER
 
-/obj/item/clothing/suit/storage/explorer/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_DETECTIVE, /obj/item/clothing/head/beret)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/storage/explorer, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_DETECTIVE, /obj/item/clothing/head/beret))))
 
 /obj/item/clothing/suit/storage/explorer/crew
 	name = "\improper Explorer jacket"

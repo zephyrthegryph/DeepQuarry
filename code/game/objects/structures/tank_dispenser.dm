@@ -106,7 +106,7 @@
 	return TRUE
 
 /obj/structure/dispenser/wrench_act(mob/user, obj/item/I)
-	anchored = !anchored
+	set_anchored(!anchored)
 	to_chat(user, span_notice("You [anchored ? "wrench [src] into place" : "lean down and unwrench [src]"]."))
 	return TRUE
 
@@ -122,7 +122,7 @@
 				ui.user.put_in_hands(tank)
 				phorontanks--
 			. = TRUE
-			playsound(src, 'sound/items/drop/gascan.ogg', 100, 1, 1)
+			play_sfx(src, SFX_ITEMS_DROP_GASCAN)
 		if("oxygen")
 			var/obj/item/tank/tank = null
 			for(var/obj/item/tank/T in contents_of(src))
@@ -133,5 +133,5 @@
 				ui.user.put_in_hands(tank)
 				oxygentanks--
 			. = TRUE
-			playsound(src, 'sound/items/drop/gascan.ogg', 100, 1, 1)
+			play_sfx(src, SFX_ITEMS_DROP_GASCAN)
 	update_icon()

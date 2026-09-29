@@ -72,10 +72,10 @@
 			step_delay = 1
 			src.mecha_log_message("Deactivated.")
 
-/obj/item/mecha_parts/mecha_equipment/combat_shield/Topic(href, href_list)
-	..()
-	if(href_list["toggle_shield"])
-		toggle_shield()
+TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/combat_shield, "toggle_shield", PROC_REF(topic_toggle_shield))
+
+/obj/item/mecha_parts/mecha_equipment/combat_shield/proc/topic_toggle_shield(mob/user, list/args)
+	toggle_shield()
 	return
 
 /obj/item/mecha_parts/mecha_equipment/combat_shield/get_equip_info()

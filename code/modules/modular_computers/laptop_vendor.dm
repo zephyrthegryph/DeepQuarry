@@ -14,7 +14,7 @@
 	var/obj/item/modular_computer/tablet/fabricated_tablet = null
 
 	// Utility vars
-	var/state = 0 							// 0: Select device type, 1: Select loadout, 2: Payment, 3: Thankyou screen
+	state = 0 							// 0: Select device type, 1: Select loadout, 2: Payment, 3: Thankyou screen
 	var/devtype = 0 						// 0: None(unselected), 1: Laptop, 2: Tablet
 	var/total_price = 0						// Price of currently vended device.
 
@@ -29,7 +29,7 @@
 
 // Removes all traces of old order and allows you to begin configuration from scratch.
 /obj/machinery/lapvend/proc/reset_order()
-	state = 0
+	set_state(0)
 	devtype = 0
 	own_clear(src, "fabricated_laptop", OWN_DELETE)
 	own_clear(src, "fabricated_tablet", OWN_DELETE)
@@ -165,7 +165,7 @@
 			if(state) // We've already picked a device type
 				return FALSE
 			devtype = text2num(params["pick"])
-			state = 1
+			set_state(1)
 			fabricate_and_recalc_price(FALSE)
 			return TRUE
 		if("clean_order")
@@ -175,7 +175,7 @@
 		return FALSE
 	switch(action)
 		if("confirm_order")
-			state = 2 // Wait for ID swipe for payment processing
+			set_state(2) // Wait for ID swipe for payment processing
 			fabricate_and_recalc_price(FALSE)
 			return TRUE
 		if("hw_cpu")
@@ -218,7 +218,7 @@
 	..()
 
 /obj/machinery/lapvend/tgui_interact(mob/user, datum/tgui/ui)
-	if(stat & (BROKEN | NOPOWER | MAINT))
+	if(!operable())
 		if(ui)
 			ui.close()
 		return FALSE
@@ -264,7 +264,7 @@
 					fabricated_laptop.battery_module.charge_to_full()
 				fabricated_laptop.forceMove(src.loc)
 				fabricated_laptop.screen_on = 0
-				fabricated_laptop.anchored = FALSE
+				fabricated_laptop.set_anchored(FALSE)
 				fabricated_laptop.update_icon()
 				fabricated_laptop.update_verbs()
 				own_take(src, "fabricated_laptop")
@@ -275,7 +275,7 @@
 				fabricated_tablet.update_verbs()
 				own_take(src, "fabricated_tablet")
 			ping("Enjoy your new product!")
-			state = 3
+			set_state(3)
 			return TRUE
 		return TRUE
 	return FALSE

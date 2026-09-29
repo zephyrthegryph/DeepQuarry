@@ -11,12 +11,12 @@
 	var/monitor_last_input = 0
 	var/monitor_last_output = 0
 	var/monitor_last_moles = 0
-	var/monitor_last_time = 0
+	EXPIRY_DECLARE(monitor_last_time)
 	var/monitor_configuration = -1
 	var/maintenance_open = FALSE
 	var/last_reading_id
 	var/list/last_reading
-	var/monitor_started = 0
+	EXPIRY_DECLARE(monitor_started)
 	var/monitor_input = 0
 	var/monitor_output = 0
 	var/monitor_moles = 0
@@ -86,7 +86,7 @@
 	monitor_last_input = input_joules
 	monitor_last_output = output_joules
 	monitor_last_moles = delivered_moles
-	monitor_last_time = world.time
+	EXPIRY_STAMP(src, monitor_last_time, CLOCK_WORLD)
 	monitor_configuration = owner().material_configuration_revision
 	reset_observation()
 	schedule(0)
@@ -228,8 +228,8 @@
 	return FALSE
 
 /datum/material_service/proc/reset_observation()
-	monitor_started = world.time
-	monitor_last_time = world.time
+	EXPIRY_STAMP(src, monitor_started, CLOCK_WORLD)
+	EXPIRY_STAMP(src, monitor_last_time, CLOCK_WORLD)
 	monitor_input = input_joules
 	monitor_output = output_joules
 	monitor_moles = delivered_moles
@@ -280,11 +280,11 @@
 	monitor_last_input = input_joules
 	monitor_last_output = output_joules
 	monitor_last_moles = delivered_moles
-	monitor_last_time = world.time
+	EXPIRY_STAMP(src, monitor_last_time, CLOCK_WORLD)
 	var/duration = (world.time - monitor_started) / 10
 	var/consumed = input_joules - monitor_input + monitor_stored_energy - owner().material_operating_reservoir()
 	var/datum/money_account/observer_account = contract_account_for_mob(user)
-	last_reading = list("name" = owner().name, "assembly" = owner().material_assembly_id, "configuration" = monitor_configuration, "started" = monitor_started, "ended" = world.time, "duration" = duration, "input_joules" = input_joules - monitor_input, "output_joules" = output_joules - monitor_output, "minimum_output_watts" = monitor_minimum_output, "minimum_flow_moles" = monitor_minimum_flow, "minimum_pressure_kpa" = monitor_minimum_pressure, "maximum_temperature_k" = monitor_maximum_temperature, "efficiency" = (output_joules - monitor_output) / max(consumed, 1), "kind" = owner().material_measurement_kind(), "observer_account" = observer_account?.account_number, "observer_name" = user.real_name)
+	last_reading = list("name" = owner().name, "assembly" = owner().material_assembly_id, "configuration" = monitor_configuration, "started" = monitor_started, "ended" = EXPIRY_AT(null, CLOCK_WORLD, 0), "duration" = duration, "input_joules" = input_joules - monitor_input, "output_joules" = output_joules - monitor_output, "minimum_output_watts" = monitor_minimum_output, "minimum_flow_moles" = monitor_minimum_flow, "minimum_pressure_kpa" = monitor_minimum_pressure, "maximum_temperature_k" = monitor_maximum_temperature, "efficiency" = (output_joules - monitor_output) / max(consumed, 1), "kind" = owner().material_measurement_kind(), "observer_account" = observer_account?.account_number, "observer_name" = user.real_name)
 	tool.set_engineering_reading(last_reading)
 	return TRUE
 
@@ -325,7 +325,7 @@
 	..()
 
 /obj/machinery/photocopier/proc/print_engineering_reading(obj/item/multitool/tool, mob/user)
-	if(!tool.engineering_reading || toner <= 0 || copying || stat & (NOPOWER|BROKEN))
+	if(!tool.engineering_reading || toner <= 0 || copying || !operable())
 		to_chat(user, span_warning("The copier needs toner and power, and the multitool needs a recorded reading."))
 		return TRUE
 	var/list/reading = tool.engineering_reading

@@ -14,23 +14,19 @@
 /mob/living/simple_mob/glitch_boss
 	use_modern_ai = TRUE
 
-/mob/living/simple_mob/glitch_boss/get_ai_behaviors()
-	var/static/list/L = list(
-		/datum/ai_behavior/glitch_ads,
-		/datum/ai_behavior/glitch_calldown,
-		/datum/ai_behavior/glitch_bomb_lines,
-		/datum/ai_behavior/glitch_bullethell,
-		/datum/ai_behavior/glitch_illusions,
-		/datum/ai_behavior/glitch_confusion,
-		/datum/ai_behavior/glitch_speedup,
-		/datum/ai_behavior/ranged_attack,
-		/datum/ai_behavior/idle_wander,
-	)
-	return L
+TYPE_TABLE(/mob/living/simple_mob/glitch_boss, get_ai_behaviors, list( \
+	/datum/ai_behavior/glitch_ads, \
+	/datum/ai_behavior/glitch_calldown, \
+	/datum/ai_behavior/glitch_bomb_lines, \
+	/datum/ai_behavior/glitch_bullethell, \
+	/datum/ai_behavior/glitch_illusions, \
+	/datum/ai_behavior/glitch_confusion, \
+	/datum/ai_behavior/glitch_speedup, \
+	/datum/ai_behavior/ranged_attack, \
+	/datum/ai_behavior/idle_wander, \
+))
 
-/mob/living/simple_mob/glitch_boss/get_ai_target_selectors()
-	var/static/list/L = list(/datum/target_selector/prefer_players, /datum/target_selector/closest)
-	return L
+TYPE_TABLE(/mob/living/simple_mob/glitch_boss, get_ai_target_selectors, list(/datum/target_selector/prefer_players, /datum/target_selector/closest))
 
 // ---------------------------------------------------------------------------
 // Shared helpers

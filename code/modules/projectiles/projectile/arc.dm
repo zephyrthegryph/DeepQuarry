@@ -176,7 +176,7 @@
 	damage = 20
 	injury_kind = INJURY_CORROSIVE
 	armor_penetration = 30
-	fire_sound = 'sound/effects/slime_squish.ogg'
+	fire_sound = SFX_EFFECTS_SLIME_SQUISH
 	arc_height_multiplier = 0.5
 
 /obj/item/projectile/arc/spore/on_impact(turf/T)

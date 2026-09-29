@@ -23,23 +23,19 @@
 /mob/living/simple_mob/mechanical/mecha/eclipse
 	use_modern_ai = TRUE
 
-/mob/living/simple_mob/mechanical/mecha/eclipse/get_ai_behaviors()
-	var/static/list/L = list(
-		/datum/ai_behavior/three_phases_special,
-		/datum/ai_behavior/three_phases_kite,
-		/datum/ai_behavior/melee_attack,
-		/datum/ai_behavior/approach_threat,
-		/datum/ai_behavior/retaliate_to_attacker,
-		/datum/ai_behavior/idle_wander,
-	)
-	return L
+TYPE_TABLE(/mob/living/simple_mob/mechanical/mecha/eclipse, get_ai_behaviors, list( \
+	/datum/ai_behavior/three_phases_special, \
+	/datum/ai_behavior/three_phases_kite, \
+	/datum/ai_behavior/melee_attack, \
+	/datum/ai_behavior/approach_threat, \
+	/datum/ai_behavior/retaliate_to_attacker, \
+	/datum/ai_behavior/idle_wander, \
+))
 
-/mob/living/simple_mob/mechanical/mecha/eclipse/get_ai_target_selectors()
-	var/static/list/L = list(
-		/datum/target_selector/prefer_players,
-		/datum/target_selector/closest,
-	)
-	return L
+TYPE_TABLE(/mob/living/simple_mob/mechanical/mecha/eclipse, get_ai_target_selectors, list( \
+		/datum/target_selector/prefer_players, \
+		/datum/target_selector/closest, \
+	))
 
 // ---------------------------------------------------------------------------
 // Phase machine + bullet-hell special attack.
@@ -81,7 +77,7 @@
 	else if(hp_frac <= 0.7)
 		stance = I_GRAB              // Phase two
 	E.special_attack_target(target, stance)
-	brain.last_attack_at = world.time
+	EXPIRY_STAMP(brain, last_attack_at, CLOCK_WORLD)
 	return DQ_BEHAVIOR_DONE
 
 // ---------------------------------------------------------------------------

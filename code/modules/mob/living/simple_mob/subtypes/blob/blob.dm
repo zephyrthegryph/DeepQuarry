@@ -87,4 +87,4 @@ REL_PAIR_LIST(/obj/structure/blob/factory, spores, factory)
 	return ally
 
 /datum/decl/mob_organ_names/blob
-	hit_zones = list("mass")
+TYPE_TABLE(/datum/decl/mob_organ_names/blob, mob_organ_hit_zones, list("mass"))

@@ -256,8 +256,9 @@
 /datum/om/stage/life/supernatural/idle(mob/living/simple_mob/self)
 	return !self.purge
 
+OWN_TIMER(/mob/living/simple_mob, update_icon_timer)
+
 /mob/living/simple_mob/
-	var/update_icon_timer
 
 /mob/living/simple_mob
 	death_message = "dies!"
@@ -266,7 +267,7 @@
 	. = ..()
 	update_icon()
 	release_vore_contents()
-	density = FALSE //We don't block even if we did before
+	set_density(FALSE) //We don't block even if we did before
 
 	if(has_eye_glow)
 		remove_eyes()
@@ -276,7 +277,7 @@
 			if(prob(loot_list[path]))
 				new path(get_turf(src))
 
-	update_icon_timer = om_after(src, 0.3 SECONDS, PROC_REF(callback_update_icon))
+	om_after_slot(src, "update_icon_timer", 0.3 SECONDS, PROC_REF(callback_update_icon))
 
 	ghostjoin = 0
 	registry_leave(REGISTRY_GHOST_PODS, src)
@@ -285,7 +286,7 @@
 /// Undo what on_death() cleared: a revived creature blocks again, glows again and looks alive.
 /mob/living/simple_mob/on_revived(reason, datum/source)
 	. = ..()
-	density = initial(density)
+	set_density(initial(density))
 	if(has_eye_glow)
 		add_eyes()
 	update_icon()

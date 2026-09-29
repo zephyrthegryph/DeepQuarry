@@ -212,7 +212,7 @@
 /datum/unit_test/dq_pharmacology_catalogue
 
 /datum/unit_test/dq_pharmacology_catalogue/Run()
-	var/list/catalogued = dq_catalogued_affliction_types()
+	var/list/catalogued = GLOBAL_TABLE_GET(dq_catalogued_affliction_types)
 	var/list/expected = list(
 		/datum/affliction/chem_side_effect = list("Side effect", 10),
 		/datum/affliction/chem_interaction = list("Interaction", 7),
@@ -234,7 +234,7 @@
 	for(var/T in subtypesof(/datum/affliction/overdose))
 		var/datum/affliction/overdose/OD = dq_proto(T)
 		TEST_ASSERT(OD.chem_scaling, "[T] should scale with the excess dose")
-		var/list/stages = OD.get_stages()
+		var/list/stages = TYPE_TABLE_GET(OD, affliction_stages)
 		TEST_ASSERT_EQUAL(jointext(stages, ","), "Mild,Severe,Critical", "[T] should stage Mild, Severe, Critical")
 		for(var/stage_name in stages)
 			var/list/entry = stages[stage_name]

@@ -14,8 +14,8 @@
 	var/reveal_blood = TRUE
 	var/reveal_fibers = FALSE
 
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 /obj/item/detective_scanner/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if (!ishuman(M))

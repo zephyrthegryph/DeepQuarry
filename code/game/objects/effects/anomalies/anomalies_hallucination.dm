@@ -105,9 +105,7 @@ EXTEND_INTERACTIONS(/obj/effect/anomaly/hallucination/decoy, \
 	return FALSE
 
 /obj/effect/anomaly/hallucination/decoy/detonate()
-	var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread
-	sparks.set_up(3, 1, src)
-	sparks.start()
+	fx_sparks(src, 3)
 	return
 
 /obj/effect/anomaly/hallucination/decoy/generate_decoys()
@@ -122,8 +120,6 @@ EXTEND_INTERACTIONS(/obj/effect/anomaly/hallucination/decoy, \
 		return
 	switch(stats.severity)
 		if(0 to 15)
-			var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread
-			sparks.set_up(3, 1, src)
-			sparks.start()
+			fx_sparks(src, 3)
 		else
 			anomalyEffect()

@@ -16,7 +16,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/shuttle_control/specops, INTERACT_SI
 	var/specops_countdown_time = 600	//Length of the countdown when moving the shuttle
 
 	var/obj/item/radio/intercom/announcer = null
-	TIMESTAMP_VAR(reset_time) //the world.time at which the shuttle will be ready to move again.
+	EXPIRY_DECLARE(reset_time) //the world.time at which the shuttle will be ready to move again.
 	var/launch_prep = 0
 	var/cancel_countdown = 0
 	category = /datum/shuttle/autodock/ferry/specops
@@ -41,7 +41,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/shuttle_control/specops, INTERACT_SI
 	if (istype(user, /obj/machinery/computer))
 		var/obj/machinery/computer/C = user
 
-		if(world.time <= reset_time)
+		if(ELAPSED(src, reset_time, CLOCK_WORLD) <= 0)
 			C.visible_message(span_notice("[using_map.boss_name] will not allow the Special Operations shuttle to launch yet."))
 			if (((world.time - reset_time)/10) > 60)
 				C.visible_message(span_notice("[-((world.time - reset_time)/10)/60] minutes remain!"))
@@ -108,7 +108,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/shuttle_control/specops, INTERACT_SI
 
 /// The countdown: announcements at the marked seconds, then the launch. A cancel stops it.
 /datum/shuttle/autodock/ferry/specops/proc/start_launch_countdown(user)
-	var/list/message_tracker = list(0,1,2,3,5,10,30,45)//The seconds left that are announced.
+	var/static/list/message_tracker = list(0,1,2,3,5,10,30,45)//The seconds left that are announced.
 	cancel_countdown = 0
 	launch_prep = 1
 	for(var/seconds in message_tracker)
@@ -176,10 +176,10 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/shuttle_control/specops, INTERACT_SI
 	brightness_range = 5
 	brightness_power = 1
 	brightness_color = "#DA0205"
-	var/state = 0
+	state = 0
 
-/obj/machinery/light/small/readylight/proc/set_state(new_state)
-	state = new_state
+/obj/machinery/light/small/readylight/set_state(new_state)
+	. = ..()
 	if(state)
 		brightness_color = "00FF00"
 	else

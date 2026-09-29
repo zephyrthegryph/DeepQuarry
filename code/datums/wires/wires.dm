@@ -203,7 +203,7 @@
 				to_chat(ui.user, span_warning("You need a multitool!"))
 				return
 
-			playsound(holder, 'sound/weapons/empty.ogg', 20, 1)
+			play_sfx(holder, SFX_WEAPONS_EMPTY, 0.4)
 			pulse_color(color)
 
 			// If they pulse the electrify wire, call interactable() and try to shock them.

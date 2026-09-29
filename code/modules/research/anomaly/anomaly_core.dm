@@ -96,7 +96,7 @@ EXTEND_INTERACTIONS(/obj/item/assembly/signaler/anomaly, INTERACT_ITEM(null, PRO
 		var/mob/living/creature = to_teleport.loc
 		creature.drop_from_inventory(to_teleport, get_turf(creature))
 	var/turf/teleportable_turf = get_turf(to_teleport)
-	playsound(teleportable_turf, 'sound/effects/phasein.ogg', 100, TRUE)
+	play_sfx(teleportable_turf, SFX_EFFECTS_PHASEIN)
 	do_teleport(to_teleport, teleportable_turf, 4, channel = TELEPORT_CHANNEL_BLUESPACE)
 
 /obj/item/assembly/signaler/anomaly/grav
@@ -180,7 +180,7 @@ EXTEND_INTERACTIONS(/obj/item/assembly/signaler/anomaly, INTERACT_ITEM(null, PRO
 	var/turf/our_turf = get_turf(src)
 	if(!our_turf)
 		return
-	playsound(our_turf, 'sound/magic/Fireball.ogg', 100, TRUE)
+	play_sfx(our_turf, SFX_MAGIC_FIREBALL)
 	for(var/turf/turf as anything in RANGE_TURFS(1, our_turf))
 		our_turf.assume_gas(GAS_PHORON, 10, T20C)
 		our_turf.hotspot_expose(700, 400)

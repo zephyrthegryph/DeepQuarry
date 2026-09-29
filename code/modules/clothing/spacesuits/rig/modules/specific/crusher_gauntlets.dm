@@ -46,7 +46,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig_module/gauntlets, "stored_gauntlets", /obj/i
 			span_notice("You extend  [stored_gauntlets] from \the [holder] with a click!"),
 			span_notice("You hear a hiss and a click."))
 
-	playsound(src, 'sound/items/helmetdeploy.ogg', 40, 1)
+	play_sfx(src, SFX_ITEMS_HELMETDEPLOY)
 	M.put_in_hands(stored_gauntlets)
 
 /obj/item/rig_module/gauntlets/deactivate()

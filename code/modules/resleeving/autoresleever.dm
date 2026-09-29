@@ -18,7 +18,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/transhuman/autoresleever, REGISTRY_AUTORESLEE
 
 /obj/machinery/transhuman/autoresleever/update_icon()
 	. = ..()
-	if(stat & (BROKEN | MAINT | EMPED))
+	if(has_stat(BROKEN | MAINT | EMPED))
 		icon_state = "autoresleever-o"
 	else
 		icon_state = "autoresleever"
@@ -41,15 +41,15 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/autoresleever, \
 		return
 	if(user.mind)
 		if(user.mind.vore_death)
-			if(vore_respawn <= world.time - user.timeofdeath)
+			if(ELAPSED(user, timeofdeath, CLOCK_WORLD) >= vore_respawn)
 				autoresleeve(user)
 			else
-				to_chat(user, span_warning("You must wait [((vore_respawn - (world.time - user.timeofdeath)) * 0.1) / 60] minutes to use \the [src]."))
+				to_chat(user, span_warning("You must wait [((vore_respawn - ELAPSED(user, timeofdeath, CLOCK_WORLD)) * 0.1) / 60] minutes to use \the [src]."))
 				return
-		else if(respawn <= world.time - user.timeofdeath)
+		else if(ELAPSED(user, timeofdeath, CLOCK_WORLD) >= respawn)
 			autoresleeve(user)
 		else
-			to_chat(user, span_warning("You must wait [((respawn - (world.time - user.timeofdeath)) * 0.1) /60] minutes to use \the [src]."))
+			to_chat(user, span_warning("You must wait [((respawn - ELAPSED(user, timeofdeath, CLOCK_WORLD)) * 0.1) /60] minutes to use \the [src]."))
 			return
 	else if(spawntype)
 		var/_answer_k54 = rerun_ask(user, "k54", PROC_REF(autoresleever_interaction_ghost), args, /datum/om/prompt/choice/alert, message = "This [src] spawns something special, would you like to play as it?", title = "Creachur", choices = list("No","Yes"))
@@ -72,7 +72,7 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/autoresleever, \
 	return INTERACTION_HANDLED_PASS
 
 /obj/machinery/transhuman/autoresleever/proc/autoresleeve(mob/observer/dead/ghost)
-	if(stat & (BROKEN | MAINT | EMPED)) // Let it still work when power is just off, it has it's own backup reserve or something.
+	if(has_stat(BROKEN | MAINT | EMPED)) // Let it still work when power is just off, it has it's own backup reserve or something.
 		to_chat(ghost, span_warning("This machine is not functioning..."))
 		return
 	if(!isobserver(ghost))
@@ -134,8 +134,8 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/autoresleever, \
 	if(isnull(_answer_k153))
 		return
 	if(_answer_k153 != "Yes")
-		if(respawn >= world.time - ghost.timeofdeath) //We were given the option to resleeve due to an outside event, but closed the input box (be it by typing or otherwise) so we allow clicking the autosleever to revive.
-			ghost.timeofdeath = world.time - respawn
+		if(ELAPSED(ghost, timeofdeath, CLOCK_WORLD) <= respawn) //We were given the option to resleeve due to an outside event, but closed the input box (be it by typing or otherwise) so we allow clicking the autosleever to revive.
+			EXPIRY_SET(ghost, timeofdeath, -respawn, CLOCK_WORLD)
 		return
 	//This keeps people from dying in round, clicking the autoresleever, then swapping savefiles and clicking 'yes'
 	if(slot != ghost.client.prefs.default_slot && (!equip_body || !ghost_spawns))
@@ -268,7 +268,7 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/autoresleever, \
 	var/datum/transcore_db/db = GLOB.transcore_service.db_by_mind_name(new_character.mind.name)
 	if(db)
 		var/datum/transhuman/mind_record/record = db.backed_up[new_character.mind.name]
-		if((world.time - record.last_notification) < 30 MINUTES)
+		if(ELAPSED(record, last_notification, CLOCK_WORLD) < 30 MINUTES)
 			GLOB.global_announcer.autosay("[new_character.name] has been resleeved by the automatic resleeving system.", "TransCore Oversight", HAS_SYNTHETIC_BIOLOGY(new_character) ? "Science" : "Medical")
 		if(record.nif_path)
 			om_after(new_character, 0, /proc/resleeve_restore_nif, new_character, record) //Wait a moment for nif to do its thing if there is one

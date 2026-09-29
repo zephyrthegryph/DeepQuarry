@@ -65,7 +65,7 @@ DECLARE_INTERACTIONS(/obj/item/extrapolator, \
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/extrapolator/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	playsound(src, 'sound/machines/click.ogg', 50, TRUE)
+	play_sfx(src, SFX_MACHINES_CLICK)
 	if(scan)
 		icon_state = "extrapolator_sample"
 		scan = FALSE
@@ -262,7 +262,7 @@ DECLARE_INTERACTIONS(/obj/item/extrapolator, \
 	symptom_chosen(ask.answerer, ask.choice, ask.target)
 
 /obj/item/extrapolator/proc/symptom_chosen(mob/living/user, datum/viral_trait/chosen, atom/target)
-	user.visible_message(span_notice("[user] slots [target] into [src], which begins to whir and beep!"), span_notice("[icon2html(src, user)] You begin isolating " + span_bold("[chosen.name]") + " from [target]..."),)
+	act_message(user, src, MSG_SELF(span_notice("[icon2html(src, user)] You begin isolating " + span_bold("[chosen.name]") + " from [target]...")), MSG_OTHERS(span_notice("%U% slots [target] into %T%, which begins to whir and beep!")))
 	var/datum/affliction/contagion/engineered/symptom_holder = new
 	symptom_holder.name = chosen.name
 	own_add(symptom_holder, "symptoms", chosen.Copy()) // the target disease owns `chosen`; the isolate gets its own copy
@@ -284,8 +284,8 @@ DECLARE_INTERACTIONS(/obj/item/extrapolator, \
 
 /obj/item/extrapolator/proc/isolate_disease(mob/living/user, atom/target, datum/affliction/contagion/engineered/target_disease, timer = 10 SECONDS)
 	. = FALSE
-	user.visible_message(span_notice("[user] begins to thoroughly scan [target] with [src]..."), \
-		span_notice("[icon2html(src, user)] You begin isolating " + span_bold("[target_disease.name]") + " from [target]..."))
+	act_message(user, src, MSG_SELF(span_notice("[icon2html(src, user)] You begin isolating " + span_bold("[target_disease.name]") + " from [target]...")), \
+		MSG_OTHERS(span_notice("%U% begins to thoroughly scan [target] with %T%...")))
 	om_task_start(/datum/om/task/timed/extrapolator_isolate_disease, user, target, receiver = src, duration = isolate_time, target_disease = target_disease)
 	return TRUE
 
@@ -313,7 +313,7 @@ DECLARE_INTERACTIONS(/obj/item/extrapolator, \
 	culture_bottle.desc = "A small bottle. Contains [disease.agent] culture in synthblood medium."
 	culture_bottle.reagents.add_reagent(REAGENT_ID_BLOOD, 5, data)
 	user.put_in_hands(culture_bottle)
-	playsound(src, 'sound/machines/ping.ogg', vol = 30, vary = TRUE)
+	play_sfx(src, SFX_MACHINES_PING, 0.6, vary = TRUE)
 	COOLDOWN_START(src, usage_cooldown, 1 SECONDS)
 	LAZYSET(extracted_ids, disease.GetDiseaseID(), TRUE)
 	return TRUE

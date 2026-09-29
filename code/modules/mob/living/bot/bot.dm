@@ -9,7 +9,7 @@
 	makes_dirt = FALSE	// No more dirt from Beepsky
 
 	var/obj/item/card/id/botcard = null
-	var/list/botcard_access = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	var/list/botcard_access = list() // ALLOW(instance_list): d: per-mob botcard_access, filled at runtime; mobs are few
 	var/on = 1
 	var/open = 0
 	var/locked = 1
@@ -17,17 +17,19 @@
 	var/light_strength = 3
 	var/obj/item/paicard/paicard = null
 	var/obj/access_scanner = null
-	var/list/req_access = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
-	var/list/req_one_access = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	var/list/req_access = list() // ALLOW(instance_list): d: per-mob req_access, filled at runtime; mobs are few
+	var/list/req_one_access = list() // ALLOW(instance_list): d: per-mob req_one_access, filled at runtime; mobs are few
 
 	var/atom/target = null
 	/// How often each target was given up on, keyed by REF(target) text: AI memory, not a reference.
 	var/list/ignore_past
 	/// Targets the bot is currently ignoring (REL_LIST, cleared by the framework when they die).
 	var/list/ignore_list
-	var/list/patrol_path = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
-	var/list/target_path = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	var/list/patrol_path = list() // ALLOW(instance_list): d: per-mob patrol_path, sized at creation and filled in place; mobs are few
+	var/list/target_path = list() // ALLOW(instance_list): d: per-mob target_path, sized at creation and filled in place; mobs are few
 	var/turf/obstacle = null
+	/// TRUE while a detached handleAI() tick is still running (see start_ai()).
+	var/ai_running = FALSE
 
 	var/wait_if_pulled = 0 // Only applies to moving to the target
 	var/will_patrol = 0 // If set to 1, will patrol, duh
@@ -76,8 +78,8 @@
 	self.status_set(EFFECT_STUNNED, 0)
 	self.status_set(EFFECT_PARALYZED, 0)
 
-	if(self.on && !self.client && !om_busy(self) && !self.paicard)
-		om_after(self, 0, TYPE_PROC_REF(/mob/living/bot, handleAI)) // deferred off the Life stage (was spawn)
+	if(self.on && !self.client && !om_busy(self) && !self.paicard && !self.ai_running)
+		om_after(self, 0, TYPE_PROC_REF(/mob/living/bot, start_ai)) // deferred off the Life stage (was spawn)
 
 /datum/om/stage/life/type_post/bot
 	of = /mob/living/bot
@@ -193,9 +195,30 @@ EXTEND_INTERACTIONS(/mob/living/bot, INTERACT_ITEM(null, PROC_REF(bot_interactio
 		return
 	om_after(src, delay, PROC_REF(bot_step), count, delay, step_proc)
 
+/// OM callback: a step can path (calcTargetPath/startPatrol sleep on the pathfinder), so it runs detached.
 /mob/living/bot/proc/bot_step(count, delay, step_proc)
+	INVOKE_ASYNC(src, PROC_REF(run_bot_step), count, delay, step_proc) // ALLOW(scheduler): a bot step can sleep on the pathfinder, which scheduler callbacks must not
+
+/mob/living/bot/proc/run_bot_step(count, delay, step_proc)
 	call(src, step_proc)()
 	bot_steps(count - 1, delay, step_proc)
+
+/// OM callback for one AI tick. handleAI() can legitimately sleep (pathfinding waits on the
+/// pathfinder mutex and CHECK_TICKs through its search), and scheduler callbacks must not
+/// sleep, so the tick runs detached. `ai_running` keeps a slow tick from overlapping the next.
+/mob/living/bot/proc/start_ai()
+	if(ai_running)
+		return
+	ai_running = TRUE
+	INVOKE_ASYNC(src, PROC_REF(run_ai)) // ALLOW(scheduler): handleAI() sleeps on the pathfinder mutex; ai_running guards overlap
+
+/mob/living/bot/proc/run_ai()
+	try
+		handleAI()
+	catch(var/exception/e)
+		ai_running = FALSE
+		throw e
+	ai_running = FALSE
 
 /mob/living/bot/proc/handleAI()
 	if(length(ignore_list))

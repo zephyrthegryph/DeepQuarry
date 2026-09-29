@@ -57,7 +57,7 @@
 	var/raising= FALSE			//if the turret is currently opening or closing its cover
 	max_integrity = 80			//the turret's integrity
 	var/auto_repair = FALSE		//if 1 the turret slowly repairs itself.
-	var/locked = TRUE			//if the turret's behaviour control access is locked
+	locked = TRUE			//if the turret's behaviour control access is locked
 	var/controllock = FALSE		//if the turret responds to control panels
 
 	var/installation = /obj/item/gun/energy/gun		//the type of weapon installed
@@ -94,8 +94,6 @@
 	var/shot_sound 				//what sound should play when the turret fires
 	var/lethal_shot_sound		//what sound should play when the emagged turret fires
 
-	var/datum/effect/effect/system/spark_spread/spark_system	//the spark system, used for generating... sparks?
-
 	var/last_target			//last target fired at, prevents turrets from erratically firing at all valid targets in range
 	var/timeout = TURRET_POPCOOLDOWN // When a turret pops up, then finds nothing to shoot at, this number decrements until 0, when it pops down.
 	var/can_salvage = TRUE	// If false, salvaging doesn't give you anything.
@@ -114,7 +112,7 @@
 	check_down = TRUE
 
 /obj/machinery/porta_turret/can_catalogue(mob/user) // Dead turrets can't be scanned.
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		to_chat(user, span_warning("\The [src] was destroyed, so it cannot be scanned."))
 		return FALSE
 	return ..()
@@ -214,12 +212,6 @@
 	locked = FALSE
 	enabled = FALSE
 	anchored = FALSE
-	///What vests we will target.
-	var/list/vests_to_target = list( // ALLOW(instance_list): c: read-only per-subtype constant table (2 subtype overrides); a getter would share it, not worth it on a rare type
-		/obj/item/clothing/suit/lasertag/redtag,
-		/obj/item/clothing/suit/lasertag/bluetag,
-		/obj/item/clothing/suit/lasertag/omni
-	)
 	//These vars aren't used
 	check_access = FALSE
 	check_arrest = FALSE
@@ -228,23 +220,32 @@
 	check_all = FALSE
 	check_down = FALSE
 
+///What vests we will target.
+TYPE_TABLE_DECLARE(/obj/machinery/porta_turret/lasertag, turret_vests_to_target, list( \
+		/obj/item/clothing/suit/lasertag/redtag, \
+		/obj/item/clothing/suit/lasertag/bluetag, \
+		/obj/item/clothing/suit/lasertag/omni \
+	))
+
 /obj/machinery/porta_turret/lasertag/red
 	turret_type = "red"
 	installation = /obj/item/gun/energy/lasertag/red
 	projectile = /obj/item/projectile/beam/lasertag/red
-	vests_to_target = list(
-		/obj/item/clothing/suit/lasertag/bluetag,
-		/obj/item/clothing/suit/lasertag/omni
-	)
+
+TYPE_TABLE(/obj/machinery/porta_turret/lasertag/red, turret_vests_to_target, list( \
+		/obj/item/clothing/suit/lasertag/bluetag, \
+		/obj/item/clothing/suit/lasertag/omni \
+	))
 
 /obj/machinery/porta_turret/lasertag/blue
 	turret_type = "blue"
 	installation = /obj/item/gun/energy/lasertag/blue
 	projectile = /obj/item/projectile/beam/lasertag/blue
-	vests_to_target = list(
-		/obj/item/clothing/suit/lasertag/redtag,
-		/obj/item/clothing/suit/lasertag/omni
-	)
+
+TYPE_TABLE(/obj/machinery/porta_turret/lasertag/blue, turret_vests_to_target, list( \
+		/obj/item/clothing/suit/lasertag/redtag, \
+		/obj/item/clothing/suit/lasertag/omni \
+	))
 
 /obj/machinery/porta_turret/lasertag/omni
 	turret_type = "industrial"
@@ -264,7 +265,7 @@
 
 	if(ishuman(L))
 		var/mob/living/carbon/human/M = L
-		if(is_type_in_list(M.get_equipped_item(SLOT_ID_SUIT), vests_to_target)) // Checks if they are a red player
+		if(is_type_in_list(M.get_equipped_item(SLOT_ID_SUIT), TYPE_TABLE_GET(src, turret_vests_to_target))) // Checks if they are a red player
 			var/obj/item/clothing/suit/lasertag/tag_suit = M.get_equipped_item(SLOT_ID_SUIT)
 			if(tag_suit.lasertag_health > 0)
 				return TURRET_PRIORITY_TARGET
@@ -280,11 +281,6 @@
 	return data
 
 /obj/machinery/porta_turret/Initialize(mapload)
-	//Sets up a spark system
-	own_set(src, "spark_system", new /datum/effect/effect/system/spark_spread)
-	spark_system.set_up(5, 0, src)
-	spark_system.attach(src)
-
 	setup()
 
 	// If turrets ever switch overlays, this will need to be cached and reapplied each time overlays_cut() is called.
@@ -295,7 +291,7 @@
 
 
 /obj/machinery/porta_turret/update_icon()
-	if(stat & BROKEN) // Turret is dead.
+	if(has_stat(BROKEN)) // Turret is dead.
 		icon_state = "destroyed_target_prism_[turret_type]"
 
 	else if(raised || raising)
@@ -350,7 +346,7 @@
 		if(/obj/item/gun/energy/gun/burst)
 			lethal_icon_color = "red"
 			lethal_projectile = /obj/item/projectile/beam/burstlaser
-			lethal_shot_sound = 'sound/weapons/Laser.ogg'
+			lethal_shot_sound = SFX_WEAPONS_LASER
 			shot_delay = 1 SECOND
 
 		if(/obj/item/gun/energy/locked/phasegun/unlocked)
@@ -362,19 +358,19 @@
 		if(/obj/item/gun/energy/gun)
 			lethal_icon_color = "red"
 			lethal_projectile = /obj/item/projectile/beam	//If it has, going to kill mode
-			lethal_shot_sound = 'sound/weapons/Laser.ogg'
+			lethal_shot_sound = SFX_WEAPONS_LASER
 
 		if(/obj/item/gun/energy/gun/nuclear)
 			lethal_icon_color = "red"
 			lethal_projectile = /obj/item/projectile/beam	//If it has, going to kill mode
-			lethal_shot_sound = 'sound/weapons/Laser.ogg'
+			lethal_shot_sound = SFX_WEAPONS_LASER
 
 		if(/obj/item/gun/energy/xray)
 			lethal_icon_color = "green"
 			lethal_projectile = /obj/item/projectile/beam/xray
 			projectile = /obj/item/projectile/beam/stun // Otherwise we fire xrays on both modes.
-			lethal_shot_sound = 'sound/weapons/eLuger.ogg'
-			shot_sound = 'sound/weapons/taser.ogg'
+			lethal_shot_sound = SFX_WEAPONS_ELUGER
+			shot_sound = SFX_WEAPONS_TASER
 
 /obj/machinery/porta_turret/proc/isLocked(mob/user)
 	if(locked && !issilicon(user))
@@ -480,13 +476,13 @@
 /obj/machinery/porta_turret/power_change()
 	om_changed(src, CHANGE_MACHINE_SETTINGS)
 	if(powered())
-		stat &= ~NOPOWER
+		stat_remove(NOPOWER)
 		update_icon()
 	else
 		om_after(src, rand(0, 15), PROC_REF(power_off_delayed))
 
 /obj/machinery/porta_turret/proc/power_off_delayed()
-	stat |= NOPOWER
+	stat_add(NOPOWER)
 	update_icon()
 
 /datum/interaction/machine_item/porta_turret_lock
@@ -498,7 +494,7 @@
 /obj/machinery/porta_turret/proc/interaction_lock(mob/user, obj/item/I, datum/interaction/interaction)
 	//Behavior lock/unlock mangement
 	if(allowed(user))
-		locked = !locked
+		set_locked(!locked)
 		to_chat(user, span_notice("Controls are now [locked ? "locked" : "unlocked"]."))
 	else
 		to_chat(user, span_notice("Access denied."))
@@ -521,7 +517,7 @@
 	return FALSE
 
 /obj/machinery/porta_turret/crowbar_act(mob/user, obj/item/tool)
-	if(!(stat & BROKEN))
+	if(!has_stat(BROKEN))
 		return NONE
 	//If the turret is destroyed, you can remove it with a crowbar to
 	//try and salvage its components
@@ -545,7 +541,7 @@
 	qdel(src) // qdel
 
 /obj/machinery/porta_turret/wrench_act(mob/user, obj/item/tool)
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		return ITEM_INTERACT_BLOCKING
 	if(enabled || raised)
 		to_chat(user, span_warning("You cannot unsecure an active turret!"))
@@ -558,29 +554,29 @@
 		return ITEM_INTERACT_SUCCESS
 
 	//This code handles moving the turret around. After all, it's a portable turret!
-	use_tool(user, tool, src, delay = 5 SECONDS, quality = TOOL_WRENCH, volume = 0, message_self = "You begin [anchored ? "un" : ""]securing the turret.", message_others = "[user] begins [anchored ? "un" : ""]securing the turret.", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user, tool), claims = TRUE)
+	use_tool(user, tool, src, delay = 5 SECONDS, quality = TOOL_WRENCH, volume = 0, start_self = "You begin [anchored ? "un" : ""]securing the turret.", start_others = "[user] begins [anchored ? "un" : ""]securing the turret.", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user, tool), claims = TRUE)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/porta_turret/proc/wrench_act_tool_done(mob/user, obj/item/tool)
 	if(!anchored)
 		playsound(src, tool.usesound, 100, 1)
-		anchored = TRUE
+		set_anchored(TRUE)
 		update_icon()
 		to_chat(user, span_notice("You secure the exterior bolts on the turret."))
 	else
 		playsound(src, tool.usesound, 100, 1)
-		anchored = FALSE
+		set_anchored(FALSE)
 		to_chat(user, span_notice("You unsecure the exterior bolts on the turret."))
 		update_icon()
 
 /obj/machinery/porta_turret/proc/attempt_retaliate(incoming_damage)
 	if(QDELETED(src) || attacked || !enabled || emagged || incoming_damage < 1) //if the force of impact dealt at least 1 damage, the turret gets pissed off
 		return
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return
 	attacked = TRUE
 	om_after(src, TURRET_RETALIATION_TIME, PROC_REF(retaliate_end))
-	playsound(src, 'sound/machines/terminal_alert.ogg', 150)
+	play_sfx(src, SFX_MACHINES_TERMINAL_ALERT)
 
 /// om_after() target: back on after an emag's grace period.
 /obj/machinery/porta_turret/proc/emag_reenable()
@@ -595,9 +591,9 @@
 	PRIVATE_PROC(TRUE)
 
 	attacked = FALSE
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return
-	playsound(src, 'sound/machines/buzzbeep.ogg', 150)
+	play_sfx(src, SFX_MACHINES_BUZZBEEP, 3)
 
 /obj/machinery/porta_turret/attack_generic(mob/living/L, damage)
 	if(isanimal(L))
@@ -618,7 +614,7 @@
 		//the turret shoot much, much faster.
 		to_chat(user, span_warning("You short out [src]'s threat assessment circuits."))
 		visible_message(span_info("[src] hums oddly..."))
-		emagged = TRUE
+		set_emagged(TRUE)
 		controllock = TRUE
 		enabled = FALSE //turns off the turret temporarily
 		// 6 seconds for the traitor to gtfo of the area before the turret decides to ruin his shit.
@@ -637,7 +633,7 @@
 /obj/machinery/porta_turret/on_update_integrity(old_value, new_value)
 	. = ..()
 	if(new_value < old_value && (old_value - new_value) > 5 && prob(45))
-		spark_system?.start()
+		fx_sparks(src, 5, FALSE)
 
 // Reaching zero integrity runs the turret's death process (it persists as a
 // broken wreck rather than being deleted).
@@ -667,7 +663,7 @@
 		check_access = prob(20)	// check_access is a pretty big deal, so it's least likely to get turned on
 		check_anomalies = prob(50)
 		if(prob(20 * (1/severity))) //sev 1  = 20% chance sev 2 = 10% sev 3 = ~6 sev 4 = 5%
-			emagged = TRUE
+			set_emagged(TRUE)
 
 		enabled=0
 		om_after(src, rand(60, 600), PROC_REF(emp_reenable))
@@ -691,13 +687,13 @@
 
 /obj/machinery/porta_turret/proc/die()	//called when the turret dies, ie, integrity <= 0
 	atom_break()
-	spark_system?.start()	//creates some sparks because they look cool
+	fx_sparks(src, 5, FALSE)	//creates some sparks because they look cool
 	update_icon()
 	set_processing_speed(FALSE) // Drop back to slow machine processing
 
 /obj/machinery/porta_turret/machine_step()
 	//the main machinery process
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		//if the turret has no power or is broken, make the turret pop down if it hasn't already
 		popDown()
 		sleep_until_keys()
@@ -866,7 +862,7 @@
 		return
 	if(raising || raised)
 		return
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		return
 	set_raised_raising(raised, 1)
 	update_icon()
@@ -874,7 +870,7 @@
 	var/atom/flick_holder = new /atom/movable/porta_turret_cover(loc)
 	flick_holder.layer = layer + 0.1
 	flick("popup_[turret_type]", flick_holder)
-	playsound(src, 'sound/machines/turrets/turret_deploy.ogg', 100, 1)
+	play_sfx(src, SFX_MACHINES_TURRETS_TURRET_DEPLOY)
 	om_after(src, 1 SECOND, PROC_REF(popup_finish), flick_holder)
 
 /obj/machinery/porta_turret/proc/popup_finish(flick_holder)
@@ -898,7 +894,7 @@
 		return
 	if(raising || !raised)
 		return
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		return
 
 	set_raised_raising(raised, 1)
@@ -907,7 +903,7 @@
 	var/atom/flick_holder = new /atom/movable/porta_turret_cover(loc)
 	flick_holder.layer = layer + 0.1
 	flick("popdown_[turret_type]", flick_holder)
-	playsound(src, 'sound/machines/turrets/turret_retract.ogg', 100, 1)
+	play_sfx(src, SFX_MACHINES_TURRETS_TURRET_RETRACT)
 	om_after(src, 1 SECOND, PROC_REF(popdown_finish), flick_holder)
 
 /obj/machinery/porta_turret/proc/popdown_finish(flick_holder)
@@ -921,7 +917,7 @@
 /obj/machinery/porta_turret/proc/set_raised_raising(incoming_raised, incoming_raising)
 	raised = incoming_raised
 	raising = incoming_raising
-	density = raised || raising
+	set_density(raised || raising)
 
 /obj/machinery/porta_turret/proc/target(mob/living/target)
 	if(disabled)
@@ -936,7 +932,7 @@
 			var/old_dir = dir
 			set_dir(get_dir(src, target))	//even if you can't shoot, follow the target
 			if(dir != old_dir) // Play rotating sound, but only if we actually rotated
-				playsound(src, 'sound/machines/turrets/turret_rotate.ogg', 100, 1)
+				play_sfx(src, SFX_MACHINES_TURRETS_TURRET_ROTATE)
 			shootAt(target)
 			return TRUE
 	return FALSE
@@ -1177,13 +1173,13 @@
 			if(!anchored)
 				playsound(src, tool.usesound, 100, 1)
 				to_chat(user, span_notice("You secure the external bolts."))
-				anchored = TRUE
+				set_anchored(TRUE)
 				build_step = 1
 				return ITEM_INTERACT_SUCCESS
 		if(1)
 			playsound(src, tool.usesound, 75, 1)
 			to_chat(user, span_notice("You unfasten the external bolts."))
-			anchored = FALSE
+			set_anchored(FALSE)
 			build_step = 0
 			return ITEM_INTERACT_SUCCESS
 		if(2)
@@ -1290,7 +1286,7 @@
 
 /// Audit: an enabled, powered turret must not sleep with a target in view.
 /obj/machinery/porta_turret/om_sleep_violation()
-	if(!asleep_on_keys() || (stat & (NOPOWER|BROKEN)) || !enabled || speed_process)
+	if(!asleep_on_keys() || (!operable()) || !enabled || speed_process)
 		return null
 	for(var/mob/living/L in mobs_in_view(world.view, src))
 		if(assess_living(L) != TURRET_NOT_TARGET)
@@ -1357,16 +1353,14 @@
 	. = ..()
 	update_integrity(5)
 
-/obj/machinery/porta_turret/rcd/operable()
-	return !inoperable()
-
-/obj/machinery/porta_turret/rcd/inoperable()
-	return (stat & (BROKEN|EMPED))
+/// Runs on its own supply: only BROKEN and EMPED stop it.
+/obj/machinery/porta_turret/rcd/operable(additional_flags = 0)
+	return !has_stat(BROKEN | EMPED | additional_flags)
 
 /// Like the base turret, it sleeps on its settings key while broken or off and on the mob chunks
 /// around it while nothing is in view.
 /obj/machinery/porta_turret/rcd/machine_step()
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		popDown()
 		sleep_until_keys()
 		return PROCESS_KILL
@@ -1395,7 +1389,7 @@
 				popDown() // no valid targets, close the cover
 
 /obj/machinery/porta_turret/rcd/update_icon()
-	if(stat & BROKEN) // Turret is dead.
+	if(has_stat(BROKEN)) // Turret is dead.
 		icon_state = "destroyed_target_prism_[turret_type]"
 
 	else if(raised || raising)
@@ -1416,7 +1410,7 @@
 		icon_state = "turret_cover_[turret_type]"
 
 /obj/machinery/porta_turret/rcd/die()
-	spark_system.start()
+	fx_sparks(src, 5, FALSE)
 	qdel(src)
 
 /// Setup at spawn: arm what wakes it (machine_pipeline.dm, materialize_wakes()).
@@ -1426,4 +1420,4 @@
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/porta_turret/step_start_condition()
-	return enabled && !(stat & (NOPOWER|BROKEN))
+	return enabled && operable()

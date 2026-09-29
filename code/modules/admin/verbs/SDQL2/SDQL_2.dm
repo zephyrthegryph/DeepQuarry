@@ -997,7 +997,7 @@ GLOBAL_DATUM_INIT(sdql2_vv_statobj, /obj/effect/statclick/SDQL2_VV_all, new(null
 
 	var/list/whitespace = list(" ", "\n", "\t")
 	var/list/single = list("(", ")", ",", "+", "-", ".", "\[", "]", "{", "}", ";", ":")
-	var/list/multi = list(
+	var/static/list/multi = list(
 					"=" = list("", "="),
 					"<" = list("", "=", ">"),
 					">" = list("", "="),

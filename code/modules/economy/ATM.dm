@@ -34,19 +34,15 @@ log transactions
 	var/tmp/obj/item/card/held_card
 	var/editing_security_level = 0
 	var/view_screen = NO_SCREEN
-	var/datum/effect/effect/system/spark_spread/spark_system
 
-DECLARE_DEFAULT_CHILD(/obj/machinery/atm, "spark_system", /datum/effect/effect/system/spark_spread)
 
 /obj/machinery/atm/Initialize(mapload)
 	machine_id = "[station_name()] RT #[GLOB.num_financial_terminals++]"
 	. = ..()
-	spark_system.set_up(5, 0, src)
-	spark_system.attach(src)
 
 
 /obj/machinery/atm/machine_step()
-	if(stat & NOPOWER)
+	if(has_stat(NOPOWER))
 		return PROCESS_KILL
 
 	if(ticks_left_timeout > 0)
@@ -62,16 +58,16 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/atm, "spark_system", /datum/effect/effect/s
 	for(var/obj/item/spacecash/S in contents_of(src)) // ALLOW(latent): materialized above
 		S.forceMove(src.loc)
 		if(prob(50))
-			playsound(src, 'sound/items/polaroid1.ogg', 50, 1)
+			play_sfx(src, SFX_ITEMS_POLAROID1)
 		else
-			playsound(src, 'sound/items/polaroid2.ogg', 50, 1)
+			play_sfx(src, SFX_ITEMS_POLAROID2)
 		break
 	if(ticks_left_timeout <= 0 && ticks_left_locked_down <= 0 && !(locate_within(src, /obj/item/spacecash))) // ALLOW(latent): materialized above
 		return PROCESS_KILL
 
 /obj/machinery/atm/power_change()
 	. = ..()
-	if(. && !(stat & NOPOWER) && (ticks_left_timeout > 0 || ticks_left_locked_down > 0))
+	if(. && !has_stat(NOPOWER) && (ticks_left_timeout > 0 || ticks_left_locked_down > 0))
 		MACHINE_WAKE(src)
 
 /obj/machinery/atm/emag_act(remaining_charges, mob/user)
@@ -79,8 +75,8 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/atm, "spark_system", /datum/effect/effect/s
 		return
 
 	//short out the machine, shoot sparks, spew money!
-	emagged = 1
-	spark_system.start()
+	set_emagged(1)
+	fx_sparks(src, 5, FALSE)
 	spawn_money(rand(100,500),src.loc)
 	//we don't want to grief people by locking their id in an emagged ATM
 	release_held_id(user)
@@ -138,9 +134,9 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/atm, "spark_system", /datum/effect/effect/s
 	// Convert physical cash into an audited account deposit.
 	authenticated_account().credit(held.worth, user.real_name, "Cash deposit", machine_id)
 	if(prob(50))
-		playsound(src, 'sound/items/polaroid1.ogg', 50, 1)
+		play_sfx(src, SFX_ITEMS_POLAROID1)
 	else
-		playsound(src, 'sound/items/polaroid2.ogg', 50, 1)
+		play_sfx(src, SFX_ITEMS_POLAROID2)
 
 	to_chat(user, span_info("You insert [held] into [src]."))
 	src.attack_hand(user)
@@ -255,9 +251,9 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/atm, "spark_system", /datum/effect/effect/s
 			R.stamps += "<HR>" + span_italics("This paper has been stamped by the Automatic Teller Machine.")
 
 			if(prob(50))
-				playsound(src, 'sound/items/polaroid1.ogg', 50, 1)
+				play_sfx(src, SFX_ITEMS_POLAROID1)
 			else
-				playsound(src, 'sound/items/polaroid2.ogg', 50, 1)
+				play_sfx(src, SFX_ITEMS_POLAROID2)
 			. = TRUE
 
 		// Transaction logs
@@ -302,9 +298,9 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/atm, "spark_system", /datum/effect/effect/s
 			R.stamps += "<HR>" + span_italics("This paper has been stamped by the Automatic Teller Machine.")
 
 			if(prob(50))
-				playsound(src, 'sound/items/polaroid1.ogg', 50, 1)
+				play_sfx(src, SFX_ITEMS_POLAROID1)
 			else
-				playsound(src, 'sound/items/polaroid2.ogg', 50, 1)
+				play_sfx(src, SFX_ITEMS_POLAROID2)
 			. = TRUE
 
 		if("change_security_level")
@@ -350,7 +346,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/atm, "spark_system", /datum/effect/effect/s
 					if(number_incorrect_tries > max_pin_attempts)
 						//lock down the atm
 						ticks_left_locked_down = 30
-						playsound(src, 'sound/machines/buzz-two.ogg', 50, 1)
+						play_sfx(src, SFX_MACHINES_BUZZ_TWO, vary = TRUE)
 
 						//create an entry in the account transaction log
 						var/datum/money_account/failed_account = get_account(tried_account_num)
@@ -365,12 +361,12 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/atm, "spark_system", /datum/effect/effect/s
 					else
 						to_chat(ui.user, span_warning("[icon2html(src, ui.user.client)] Incorrect pin/account combination entered, [max_pin_attempts - number_incorrect_tries] attempts remaining."))
 						previous_account_number = tried_account_num
-						playsound(src, 'sound/machines/buzz-sigh.ogg', 50, 1)
+						play_sfx(src, SFX_MACHINES_BUZZ_SIGH, vary = TRUE)
 				else
 					to_chat(ui.user, span_warning("[icon2html(src, ui.user.client)] incorrect pin/account combination entered."))
 					number_incorrect_tries = 0
 			else
-				playsound(src, 'sound/machines/twobeep.ogg', 50, 1)
+				play_sfx(src, SFX_MACHINES_TWOBEEP)
 				ticks_left_timeout = 120
 				view_screen = NO_SCREEN
 
@@ -419,7 +415,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/atm, "spark_system", /datum/effect/effect/s
 				return
 
 			if(authenticated_account().debit(amount, authenticated_account().owner_name, "E-wallet withdrawal", machine_id))
-				playsound(src, 'sound/machines/chime.ogg', 50, 1)
+				play_sfx(src, SFX_MACHINES_CHIME)
 				spawn_ewallet(amount,src.loc,ui.user)
 			else
 				to_chat(ui.user, "[icon2html(src, ui.user.client)]" + span_warning("You don't have enough funds to do that!"))
@@ -436,7 +432,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/atm, "spark_system", /datum/effect/effect/s
 				return
 
 			if(authenticated_account().debit(amount, authenticated_account().owner_name, "Cash withdrawal", machine_id))
-				playsound(src, 'sound/machines/chime.ogg', 50, 1)
+				play_sfx(src, SFX_MACHINES_CHIME)
 				spawn_money(amount,src.loc,ui.user)
 			else
 				to_chat(ui.user, "[icon2html(src, ui.user.client)]" + span_warning("You don't have enough funds to do that!"))
@@ -445,7 +441,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/atm, "spark_system", /datum/effect/effect/s
 	if(.)
 		if(ticks_left_timeout > 0 || ticks_left_locked_down > 0)
 			MACHINE_WAKE(src)
-		playsound(src, "keyboard", 50, TRUE)
+		play_sfx(src, SFX_KEYBOARD, 1.25, vary = TRUE)
 
 /datum/interaction/machine_hand/ungated/atm_use
 	id = "atm_use"

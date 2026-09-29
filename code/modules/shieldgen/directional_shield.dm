@@ -62,7 +62,7 @@
 /obj/effect/directional_shield/bullet_act(obj/item/projectile/P)
 	adjust_health(-P.get_structure_damage())
 	P.on_hit(src)
-	playsound(src, 'sound/effects/EMPulse.ogg', 75, 1)
+	play_sfx(src, SFX_EFFECTS_EMPULSE, 0.75)
 
 // All the shields tied to their projector are one 'unit', and don't have individualized health values like most other shields.
 /obj/effect/directional_shield/proc/adjust_health(amount)
@@ -152,9 +152,9 @@
 		om_task_periodic(src, PERIODIC_SLOW) // regenerates after its delay
 		if(new_value > 0)
 			if(new_value < max_integrity / 4) // Play a more urgent sounding beep if it's at 25% health.
-				playsound(src, 'sound/machines/defib_success.ogg', 75, 0)
+				play_sfx(src, SFX_MACHINES_DEFIB_SUCCESS, 1.5)
 			else
-				playsound(src, 'sound/machines/defib_SafetyOn.ogg', 75, 0)
+				play_sfx(src, SFX_MACHINES_DEFIB_SAFETYON, 1.5)
 	update_shield_colors()
 
 /// A drained shield overloads; the projector survives and recharges. Fire and acid still destroy it.
@@ -164,7 +164,7 @@
 	destroy_shields()
 	var/turf/T = get_turf(src)
 	T?.visible_message(span_danger("\The [src] overloads and the shield vanishes!"))
-	playsound(src, 'sound/machines/defib_failed.ogg', 75, 0)
+	play_sfx(src, SFX_MACHINES_DEFIB_FAILED, 1.5)
 
 // Makes shields become gradually more red as the projector's health decreases.
 /obj/item/shield_projector/proc/update_shield_colors()
@@ -225,9 +225,9 @@ DECLARE_INTERACTIONS(/obj/item/shield_projector, INTERACT_SELF("Toggle", PROC_RE
 		if(always_on && !active) // Make shields as soon as possible if this is set.
 			create_shields()
 		if(get_integrity() >= max_integrity)
-			playsound(src, 'sound/machines/defib_ready.ogg', 75, 0)
+			play_sfx(src, SFX_MACHINES_DEFIB_READY, 1.5)
 		else
-			playsound(src, 'sound/machines/defib_safetyOff.ogg', 75, 0)
+			play_sfx(src, SFX_MACHINES_DEFIB_SAFETYOFF, 1.5)
 
 /obj/item/shield_projector/examine(mob/user)
 	. = ..()

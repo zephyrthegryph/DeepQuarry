@@ -36,7 +36,7 @@
 	maintenance_flags = MACHINE_MAINT_STANDARD
 
 /obj/machinery/light_switch/dismantle()
-	playsound(src, 'sound/items/Crowbar.ogg', 50, 1)
+	play_sfx(src, SFX_ITEMS_CROWBAR)
 	var/obj/structure/construction/lightswitch/A = new(src.loc, src.dir)
 	A.stage = FRAME_WIRED
 	A.pixel_x = pixel_x
@@ -96,7 +96,7 @@ DECLARE_INTERACTIONS(/obj/structure/construction, INTERACT_ITEM(null, PROC_REF(i
 				user.update_examine_panel(src)
 				user.visible_message("\The [user] adds wires to \the [src].", \
 					"You add wires to \the [src].", "You hear a noise.")
-				playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
+				play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 				update_icon()
 		return INTERACTION_HANDLED_PASS
 
@@ -106,12 +106,12 @@ DECLARE_INTERACTIONS(/obj/structure/construction, INTERACT_ITEM(null, PROC_REF(i
 	if(stage != FRAME_UNFASTENED)
 		to_chat(user, stage == FRAME_FASTENED ? "You have to unscrew the case first." : "You have to remove the wires first.")
 		return ITEM_INTERACT_BLOCKING
-	use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, message_self = "You start deconstructing \the [src].", message_others = "\The [user] begins deconstructing \the [src].", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
+	use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, start_self = "You start deconstructing \the [src].", start_others = "\The [user] begins deconstructing \the [src].", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/construction/proc/welder_act_tool_done(mob/user)
 	user.visible_message(span_warning("\The [user] has deconstructed \the [src]."), span_notice("You deconstruct \the [src]."))
-	playsound(src, 'sound/items/Deconstruct.ogg', 75, 1)
+	play_sfx(src, SFX_ITEMS_DECONSTRUCT, 1.5)
 	replace_with(src, /obj/item/stack/material/steel, 2)
 
 /obj/structure/construction/wirecutter_act(mob/user, obj/item/W)

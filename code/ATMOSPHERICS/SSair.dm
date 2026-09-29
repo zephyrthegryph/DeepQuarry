@@ -12,7 +12,7 @@ SUBSYSTEM_DEF(air)
 	ss_flags = SS_BACKGROUND
 	runlevels = RUNLEVEL_GAME | RUNLEVEL_POSTGAME
 
-	var/cached_cost = 0
+	var/phase_cost = 0
 
 	// cost_atoms / atom_process / process_atoms removed alongside
 	// /atom/proc/process_exposure. /tg/'s atom-exposure pipeline (paper
@@ -25,6 +25,11 @@ SUBSYSTEM_DEF(air)
 	var/cost_highpressure = 0
 	var/cost_superconductivity = 0
 	var/cost_pipenets = 0
+	/// Pipenet-stage breakdown (ms, MC average): topology commit and the Rust device-edge step.
+	var/cost_pipe_commit = 0
+	var/cost_pipe_devices = 0
+	/// Device-edge results the last fire's step returned (devices that moved gas or drew power).
+	var/pipe_devices_reported_last = 0
 	var/cost_rebuilds = 0
 	/// Main-thread cost of the gas tick and its events, in milliseconds.
 	var/cost_gas_events = 0
@@ -107,11 +112,21 @@ SUBSYSTEM_DEF(air)
 	return ..()
 
 
+/// Milliseconds per Initialize() phase (name -> ms), for the boot profile.
+/datum/controller/subsystem/air/var/list/init_phase_ms
+
+/datum/controller/subsystem/air/proc/init_phase_mark(name)
+	init_phase_ms[name] = rustg_time_milliseconds("ssair_init_phase")
+	rustg_time_reset("ssair_init_phase")
+
 /datum/controller/subsystem/air/Initialize()
+	init_phase_ms = list()
+	rustg_time_reset("ssair_init_phase")
 	map_loading = FALSE
 	// The machine world service's boot step (power, gas wakes, pump commit), where SSmachines
 	// used to initialize: before any atmos machinery setup below.
 	GLOB.machine_service.initialize()
+	init_phase_mark("machine_service")
 
 	// Register the gas roster in the Rust arena FIRST — reaction setup
 	// (init_gas_reactions -> build_min_requirements) and everything else that
@@ -122,33 +137,41 @@ SUBSYSTEM_DEF(air)
 	// Idempotent: in practice the very first turf air (created during mapload,
 	// before this runs) already triggered registration via gas_mixture/New().
 	ensure_auxmos_gas_registry()
+	init_phase_mark("gas_registry")
 
 	// The gas field was sized at world start (vg_configure_world); make sure it
 	// covers the map as loaded before registering turfs.
 	vg_configure_world(world.maxx, world.maxy, world.maxz)
+	init_phase_mark("configure_world")
 
 	// Fill GLOB.gas_data.overlays now that meta_gas_info's overlay objects exist,
 	// so the Rust turf-processing visuals path can render gas clouds.
 	build_gas_data_overlays()
+	init_phase_mark("gas_overlays")
 
 	gas_reactions = init_gas_reactions()
 	hotspot_reactions = init_hotspot_reactions()
+	init_phase_mark("reactions")
 
 	build_multiz_atmos_levels()
+	init_phase_mark("multiz")
 #ifdef BENCHMARK
 	benchmark_rust_mark("air: before turfs")
 #endif
 	setup_allturfs()
+	init_phase_mark("turfs")
 #ifdef BENCHMARK
 	benchmark_rust_mark("air: turfs registered")
 #endif
 	setup_atmos_machinery()
+	init_phase_mark("machinery")
 #ifdef BENCHMARK
 	benchmark_rust_mark("air: pipenets")
 #endif
 	// Rust setup is the sole pipenet topology build. Compatibility wrappers are
 	// materialized from its connected-region publication.
 	setup_turf_visuals()
+	init_phase_mark("turf_visuals")
 #ifdef BENCHMARK
 	benchmark_rust_mark("air: turf visuals")
 #endif
@@ -177,12 +200,12 @@ SUBSYSTEM_DEF(air)
 	if(currentpart == SSAIR_PIPENETS || !resumed)
 		timer = TICK_USAGE_REAL
 		if(!resumed)
-			cached_cost = 0
+			phase_cost = 0
 		process_pipenets(resumed)
-		cached_cost += TICK_USAGE_REAL - timer
+		phase_cost += TICK_USAGE_REAL - timer
 		if(state != SS_RUNNING)
 			return
-		cost_pipenets = MC_AVERAGE(cost_pipenets, TICK_DELTA_TO_MS(cached_cost))
+		cost_pipenets = MC_AVERAGE(cost_pipenets, TICK_DELTA_TO_MS(phase_cost))
 		resumed = FALSE
 		currentpart = SSAIR_TURFS
 
@@ -198,11 +221,11 @@ SUBSYSTEM_DEF(air)
 		gas_pressure_last = 0
 		vg_drain_events()
 		gas_frames++
-		cached_cost = TICK_USAGE_REAL - timer
+		phase_cost = TICK_USAGE_REAL - timer
 		// Dispatch no longer has a cost separate from the tick itself (both
 		// happen in this one non-resumable step now); tracked identically
 		// so the stat panel/profiler/benchmarks keep reading a real number.
-		cost_turfs = MC_AVERAGE(cost_turfs, TICK_DELTA_TO_MS(cached_cost))
+		cost_turfs = MC_AVERAGE(cost_turfs, TICK_DELTA_TO_MS(phase_cost))
 		cost_gas_events = cost_turfs
 		resumed = FALSE
 		currentpart = SSAIR_HIGHPRESSURE
@@ -212,12 +235,12 @@ SUBSYSTEM_DEF(air)
 	if(currentpart == SSAIR_HIGHPRESSURE)
 		timer = TICK_USAGE_REAL
 		if(!resumed)
-			cached_cost = 0
+			phase_cost = 0
 		process_high_pressure_delta(resumed)
-		cached_cost += TICK_USAGE_REAL - timer
+		phase_cost += TICK_USAGE_REAL - timer
 		if(state != SS_RUNNING)
 			return
-		cost_highpressure = MC_AVERAGE(cost_highpressure, TICK_DELTA_TO_MS(cached_cost))
+		cost_highpressure = MC_AVERAGE(cost_highpressure, TICK_DELTA_TO_MS(phase_cost))
 		resumed = FALSE
 		currentpart = SSAIR_SUPERCONDUCTIVITY
 
@@ -297,8 +320,12 @@ SUBSYSTEM_DEF(air)
 
 /datum/controller/subsystem/air/proc/process_pipenets(resumed = FALSE)
 	if (!resumed)
+		var/stage_timer = TICK_USAGE_REAL
 		rust_commit_pending_pipenets()
+		cost_pipe_commit = MC_AVERAGE(cost_pipe_commit, TICK_DELTA_TO_MS(TICK_USAGE_REAL - stage_timer))
+		stage_timer = TICK_USAGE_REAL
 		rust_step_pipe_devices()
+		cost_pipe_devices = MC_AVERAGE(cost_pipe_devices, TICK_DELTA_TO_MS(TICK_USAGE_REAL - stage_timer))
 		src.currentrun = networks.Copy()
 	//cache for sanic speed (lists are references anyways)
 	var/list/currentrun = src.currentrun

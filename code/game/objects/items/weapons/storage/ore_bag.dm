@@ -41,8 +41,8 @@
 		ORE_VERDANTIUM = 0,
 		ORE_RUTILE = 0)
 	var/last_update = 0
-	drop_sound = 'sound/items/drop/backpack.ogg'
-	pickup_sound = 'sound/items/pickup/backpack.ogg'
+	drop_sound = SFX_ITEMS_DROP_BACKPACK
+	pickup_sound = SFX_ITEMS_PICKUP_BACKPACK
 	item_flags = FLAMMABLE
 
 /obj/item/ore_bag/holding

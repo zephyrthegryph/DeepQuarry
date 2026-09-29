@@ -1,3 +1,4 @@
+
 /obj/machinery/bluespace_denier
 	name = "bluespace desyncronizer"
 	desc = "A portable device that causes small disruptions to bluespace when its sensors detect activity within it nearby. Wrench to activate and deactivate."
@@ -22,8 +23,8 @@ DECLARE_START_TIMER(/obj/machinery/bluespace_denier, 10 SECONDS, PROC_REF(start_
 		sense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity))
 
 /obj/machinery/bluespace_denier/power_change()
-	..()
-	if(!(stat & NOPOWER))
+	. = ..()
+	if(!has_stat(NOPOWER))
 		icon_state = "[base_state]1"
 	else
 		icon_state = "[base_state]1-p"
@@ -44,7 +45,7 @@ EXTEND_INTERACTIONS(/obj/machinery/bluespace_denier, INTERACT_SILICON("Pulse", P
 	if(!COOLDOWN_FINISHED(src, pulse_cooldown))
 		return
 
-	playsound(src, 'sound/weapons/flash.ogg', 100, 1)
+	play_sfx(src, SFX_WEAPONS_FLASH)
 	flick("[base_state]_flash", src)
 	COOLDOWN_START(src, pulse_cooldown, 15 SECONDS)
 	use_power(1500)
@@ -56,7 +57,7 @@ EXTEND_INTERACTIONS(/obj/machinery/bluespace_denier, INTERACT_SILICON("Pulse", P
 		SK.attack_dephase(null, src) //Won't dephase them if they're not in phase. It has built in checks.
 
 /obj/machinery/bluespace_denier/emp_act(severity)
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		..(severity)
 		return
 	if(prob(75/severity))
@@ -80,7 +81,7 @@ EXTEND_INTERACTIONS(/obj/machinery/bluespace_denier, INTERACT_SILICON("Pulse", P
 
 /obj/machinery/bluespace_denier/wrench_act(mob/user, obj/item/tool)
 	add_fingerprint(user)
-	anchored = !anchored
+	set_anchored(!anchored)
 	if(!anchored)
 		user.show_message(span_warning("[src] can now be moved."))
 		cut_overlays()

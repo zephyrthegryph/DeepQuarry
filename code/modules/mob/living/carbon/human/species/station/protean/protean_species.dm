@@ -217,7 +217,7 @@
 
 	L[++L.len] = list("- -- --- Abilities (Shift+LMB Examines) --- -- -", null, null, null, null)
 	var/client/C = H.client
-	var/list/powers = protean_powers()
+	var/list/powers = GLOBAL_TABLE_GET(protean_powers)
 	for(var/power_type in powers)
 		var/datum/protean_power/P = powers[power_type]
 		if(!P.button)

@@ -657,7 +657,7 @@
 		H.mind.transfer_to(S)
 
 	if(HAS_SYNTHETIC_BIOLOGY(H))
-		H.visible_message(span_danger("\The [H] collapses into parts, revealing a solitary diona nymph at the core."))
+		act_message(H, null, others = span_danger("%U% collapses into parts, revealing a solitary diona nymph at the core."))
 
 		// This is hard-set to default the body to a normal FBP, without changing anything.
 		// proto_replace: src may be H's private copy, still running this proc; deleted below.
@@ -681,7 +681,7 @@
 		else
 			qdel(D)
 
-	H.visible_message(span_danger("\The [H] splits apart with a wet slithering noise!"))
+	act_message(H, null, others = span_danger("%U% splits apart with a wet slithering noise!"))
 
 /datum/species/sergal
 	name = SPECIES_SERGAL
@@ -1230,7 +1230,7 @@
 		to_chat(H, span_notice("You catch the air in your wings and greatly slow your fall."))
 		landing.visible_message(span_infoplain(span_bold("\The [H]") + " glides down from above, landing safely."))
 		H.status_at_least(EFFECT_STUNNED, 1)
-		playsound(H, "rustle", 25, 1)
+		play_sfx(H, SFX_RUSTLE, extrarange = 0)
 	return TRUE
 */
 
@@ -1989,9 +1989,9 @@
 	set category = "Abilities.Alien"
 
 	if(check_alien_ability(150,1,O_RESIN))
-		visible_message(span_alium(span_bold("[src] has planted some alien weeds!")))
+		act_message(src, null, others = span_alium(span_bold("%U% has planted some alien weeds!")))
 		new /obj/effect/alien/weeds/node/weak(get_turf(src), null, "#321D37")	// Aliens.dm for weed node origin.
-		playsound(src, 'sound/effects/blobattack.ogg', 40, 1)
+		play_sfx(src, SFX_EFFECTS_BLOBATTACK, volume = 40)
 	return
 
 /mob/living/carbon/human/proc/check_plasma_amount(mob/living/carbon/human/M as mob)
@@ -2053,8 +2053,9 @@
 			else O = new /obj/item/stack/material/resin(targetLoc)
 
 	if(O)
-		visible_message(span_warning(span_bold("[src] vomits up a thick purple substance and begins to shape it!")), span_alium("You shape a [choice]."))
-		playsound(src, 'sound/effects/blobattack.ogg', 40, 1)
+		act_message(src, null, MSG_SELF(span_alium("You shape a [choice].")), \
+			MSG_OTHERS(span_warning(span_bold("%U% vomits up a thick purple substance and begins to shape it!"))))
+		play_sfx(src, SFX_EFFECTS_BLOBATTACK, volume = 40)
 
 	return
 

@@ -145,7 +145,7 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 		self.vore_checks()
 		self.handle_hungry()
 	if (!self.anchored)
-		self.anchored = 1 // If it's alive, it should root itself back down and once again be impossible to move.
+		self.set_anchored(1) // If it's alive, it should root itself back down and once again be impossible to move.
 
 /mob/living/simple_mob/vore/pitcher_plant/Initialize(mapload)
 	. = ..()
@@ -154,7 +154,7 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 
 /mob/living/simple_mob/vore/pitcher_plant/on_death(gibbed)
 	..()
-	anchored = 0
+	set_anchored(0)
 	if(fruit)
 		new /obj/item/reagent_containers/food/snacks/pitcher_fruit(get_turf(src))
 		fruit = FALSE
@@ -204,7 +204,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pitcher_plant, \
 	if(H.loc != vore_selected)
 		return
 	if(prob(15))
-		user.visible_message(span_notice("[user] pulls a sticky [H] free from \the [src]."), span_infoplain("You heft [H] free from \the [src]."))
+		act_message(user, H, MSG_SELF(span_infoplain("You heft %T% free from \the [src].")), MSG_OTHERS(span_notice("%U% pulls a sticky %T% free from \the [src].")))
 		rel_add(src, "prey_excludes", H)
 		vore_selected.release_specific_contents(H)
 		om_after(src, 1 MINUTES, PROC_REF(removeMobFromPreyExcludes), H)
@@ -225,11 +225,11 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pitcher_plant, \
 		if(!H)
 			to_chat(user, span_infoplain("The pitcher is empty."))
 		else
-			user.visible_message(span_infoplain("[user] uses a loop of wire to try fishing someone out of \the [src]."), span_infoplain("You use a loop of wire to try snagging someone trapped in \the [src]..."))
+			act_message(user, src, MSG_SELF(span_infoplain("You use a loop of wire to try snagging someone trapped in %T%...")), MSG_OTHERS(span_infoplain("%U% uses a loop of wire to try fishing someone out of %T%.")))
 			//You can just spam click to stack attempts if you feel like abusing it.
 			om_task_timed(user, rand(3 SECONDS, 7 SECONDS), target = src, receiver = src, on_done = PROC_REF(fish_out_done), done_args = list(user, H))
 	if(istype(O, /obj/item/newspaper))
-		user.visible_message(span_notice("[user] baps \the [src], but it doesn't seem to do anything."), span_notice("You whap \the [src] with a rolled up newspaper."))
+		act_message(user, src, MSG_SELF(span_notice("You whap %T% with a rolled up newspaper.")), MSG_OTHERS(span_notice("%U% baps %T%, but it doesn't seem to do anything.")))
 		to_chat(user, span_notice("Weird. That usually works. Maybe you can fish out its victim with some string or wire or something? Or maybe kill the thing with some plant-b-gone. Both would probably be safer than hacking it up with a person still inside."))
 		return TRUE // You can't newspaper people to freedom like you do with other mobs, but since that doesn't work, fucking tell people.
 	return FALSE

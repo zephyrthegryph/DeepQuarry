@@ -29,12 +29,10 @@
 	return
 
 /// Documents the keys that blood data must always carry. Used by validate_data().
-/datum/reagent/blood/get_data_schema()
-	return list("donor", "viruses", "species", "blood_DNA", "blood_type", "blood_colour", "resistances", "trace_chem", REAGENT_ID_ANTIBODIES, "changeling")
+TYPE_TABLE(/datum/reagent/blood, get_data_schema, list("donor", "viruses", "species", "blood_DNA", "blood_type", "blood_colour", "resistances", "trace_chem", REAGENT_ID_ANTIBODIES, "changeling"))
 
 /// Blood owns the contagions it carries: a transfer copies them.
-/datum/reagent/blood/reagent_data_codec()
-	return list("viruses")
+TYPE_TABLE(/datum/reagent/blood, reagent_data_codec_keys, list("viruses"))
 
 /datum/reagent/blood/copy_data_value(key, datum/D)
 	if(key == "viruses" && istype(D, /datum/affliction/contagion))
@@ -196,8 +194,8 @@
 		if(istype(holder.my_atom,/obj/item/reagent_containers/glass))
 			holder.splash(location, holder.total_volume)
 		holder.clear_reagents() // lets be sure it's all gone if it was in something weird instead
-		playsound(holder.my_atom, 'sound/effects/splat.ogg', 50, 1)
-		playsound(holder.my_atom, 'sound/voice/hiss6.ogg', 50, 1)
+		play_sfx(holder.my_atom, SFX_EFFECTS_SPLAT)
+		play_sfx(holder.my_atom, SFX_VOICE_HISS6, 0.5)
 		return TRUE
 	return FALSE
 

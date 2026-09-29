@@ -6,10 +6,10 @@
 	force = 3.0
 	w_class = ITEMSIZE_NORMAL
 	attack_verb = list("whipped")
-	hitsound = 'sound/weapons/towelwhip.ogg'
+	hitsound = SFX_WEAPONS_TOWELWHIP
 	desc = "A soft cotton towel."
-	drop_sound = 'sound/items/drop/cloth.ogg'
-	pickup_sound = 'sound/items/pickup/cloth.ogg'
+	drop_sound = SFX_ITEMS_DROP_CLOTH
+	pickup_sound = SFX_ITEMS_PICKUP_CLOTH
 
 /obj/item/towel/equipped(M, slot)
 	..()
@@ -25,8 +25,8 @@ DECLARE_INTERACTIONS(/obj/item/towel, INTERACT_USE(null, PROC_REF(interaction_se
 
 /// Old attack_self.
 /obj/item/towel/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
-	user.visible_message(span_notice("[user] uses [src] to towel themselves off."))
-	playsound(src, 'sound/weapons/towelwipe.ogg', 25, 1)
+	act_message(user, src, others = span_notice("%U% uses %T% to towel themselves off."))
+	play_sfx(src, SFX_WEAPONS_TOWELWIPE)
 	if(user.fire_stacks > 0)
 		user.adjust_fire_stacks(-1.5)
 	return TRUE

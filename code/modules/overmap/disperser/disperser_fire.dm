@@ -41,7 +41,7 @@
 
 	if(front()) //Meanwhile front might have exploded
 		front().layer = ABOVE_JUNK_LAYER //So the beam goes below us. Looks a lot better
-	playsound(start, 'sound/machines/disperser_fire.ogg', 100, 1)
+	play_sfx(start, SFX_MACHINES_DISPERSER_FIRE)
 	handle_beam(start, direction)
 	handle_overbeam()
 	qdel(atomcharge)

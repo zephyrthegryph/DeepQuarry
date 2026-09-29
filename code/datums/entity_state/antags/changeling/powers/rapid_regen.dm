@@ -45,7 +45,7 @@
 		C.UpdateAppearance()
 
 		// now make it obvious that we're not human (or whatever xeno race they are impersonating)
-		playsound(src, 'sound/effects/blobattack.ogg', 30, 1)
+		play_sfx(src, SFX_EFFECTS_BLOBATTACK)
 		var/T = get_turf(src)
 		new /obj/effect/gibspawner/human(T)
 		visible_message(span_warning("With a sickening squish, [src] reforms their whole body, casting their old parts on the floor!"),

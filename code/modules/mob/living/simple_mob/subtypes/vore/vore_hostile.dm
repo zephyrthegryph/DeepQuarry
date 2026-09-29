@@ -46,7 +46,7 @@
 	mob_size = MOB_LARGE
 
 	attacktext = list("flashes", "slaps", "smothers", "grapples")
-	attack_sound = 'sound/effects/attackblob.ogg'
+	attack_sound = SFX_EFFECTS_ATTACKBLOB
 
 
 	swallowTime = 2 SECONDS
@@ -135,7 +135,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/vore_hostile/abyss_lurker, INTER
 	has_eye_glow = TRUE
 
 	attacktext = list("pushes", "slaps", "whips", "grapples")
-	attack_sound = 'sound/effects/attackblob.ogg'
+	attack_sound = SFX_EFFECTS_ATTACKBLOB
 
 
 	swallowTime = 1 SECONDS
@@ -164,7 +164,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/vore_hostile/abyss_lurker, INTER
 	special_attack_cooldown = 10 SECONDS
 
 	var/leap_warmup = 1 SECOND // How long the leap telegraphing is.
-	var/leap_sound = 'sound/weapons/spiderlunge.ogg'
+	var/leap_sound = SFX_WEAPONS_SPIDERLUNGE
 
 /mob/living/simple_mob/vore/vore_hostile/leaper/load_default_bellies()
 	. = ..()
@@ -190,7 +190,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/vore_hostile/abyss_lurker, INTER
 		return FALSE
 
 	ai_busy_begin()
-	visible_message(span_warning("\The [src]'s eyes flash ominously!"))
+	act_message(src, null, null, MSG_OTHERS(span_warning("%U%'s eyes flash ominously!")))
 	to_chat(L, span_danger("\The [src] focuses on you!"))
 	// Telegraph, since getting stunned suddenly feels bad.
 	do_windup_animation(A, leap_warmup)
@@ -262,7 +262,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/vore_hostile/abyss_lurker, INTER
 	mob_size = MOB_LARGE
 
 	attacktext = list("splashes against", "slaps", "smothers", "engulfs")
-	attack_sound = 'sound/effects/attackblob.ogg'
+	attack_sound = SFX_EFFECTS_ATTACKBLOB
 
 
 	swallowTime = 0 SECONDS

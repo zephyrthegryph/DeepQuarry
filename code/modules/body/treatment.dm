@@ -352,57 +352,55 @@
 // --- Registry -----------------------------------------------------------
 
 /// Display names for the book. Order here is the order the book lists them.
-/proc/dq_treatment_tag_names()
-	var/static/list/names = list(
-		TREAT_HEMOSTATIC       = "Hemostatic",
-		TREAT_TISSUE_REPAIR    = "Tissue repair",
-		TREAT_BONE_REPAIR      = "Bone repair",
-		TREAT_BURN_CARE        = "Burn care",
-		TREAT_ANTIMICROBIAL    = "Antimicrobial",
-		TREAT_ANTITOXIN        = "Antitoxin",
-		TREAT_OXYGENATION      = "Oxygenation",
-		TREAT_NEURAL_REPAIR    = "Neural repair",
-		TREAT_CARDIAC          = "Cardiac support",
-		TREAT_RESPIRATORY      = "Respiratory repair",
-		TREAT_HEPATORENAL      = "Liver/kidney repair",
-		TREAT_OCULAR           = "Ocular repair",
-		TREAT_ANTIRADIATION    = "Anti-radiation",
-		TREAT_GENETIC_REPAIR   = "Genetic repair",
-		TREAT_THERMOREGULATION = "Thermoregulation",
-		TREAT_BLOOD_RESTORE    = "Blood restoration",
-		TREAT_CIRCULATORY      = "Circulatory support",
-		TREAT_ANALGESIC        = "Analgesic",
-		TREAT_STIMULANT        = "Stimulant",
-		TREAT_PLATING_REPAIR   = "Plating repair",
-		TREAT_WIRING_REPAIR    = "Wiring repair",
-		TREAT_SYSTEM_RESTORE   = "System restore",
-		TREAT_COOLANT          = "Coolant replenishment",
-		TREAT_CALIBRATION      = "Recalibration",
-		TREAT_SURGICAL_REPAIR  = "Surgical repair",
-		TREAT_RESECTION        = "Resection",
-		TREAT_AIRWAY           = "Airway clearance",
-		TREAT_DECOMPRESSION    = "Chest decompression",
-		TREAT_DEFIBRILLATION   = "Defibrillation",
-		TREAT_CHEST_COMPRESSION = "Chest compressions",
-		TREAT_VASOPRESSOR      = "Vasopressor",
-		TREAT_DIGESTIVE        = "Digestive repair",
-		TREAT_WOUND_PACKING    = "Wound packing",
-		TREAT_OCCLUSIVE_SEAL   = "Occlusive seal",
-		TREAT_REGENERATION     = "Natural regeneration",
-		TREAT_RESTORATION      = "Restoration",
-		TREAT_FEEDSTOCK        = "Refactory feedstock",
-		TREAT_SURGICAL_CLOSURE = "Surgical closure",
-		TREAT_PANEL_CLOSURE    = "Panel closure",
-		TREAT_BONE_SETTING     = "Bone setting",
-		TREAT_VESSEL_REPAIR    = "Vessel repair",
-		TREAT_TENDON_REPAIR    = "Tendon repair",
-		TREAT_FOREIGN_BODY_REMOVAL = "Foreign body removal",
-		TREAT_LITHOTRIPSY      = "Lithotripsy",
-	)
-	return names
+GLOBAL_LIST_INIT(dq_treatment_tag_names, list( \
+	TREAT_HEMOSTATIC       = "Hemostatic", \
+	TREAT_TISSUE_REPAIR    = "Tissue repair", \
+	TREAT_BONE_REPAIR      = "Bone repair", \
+	TREAT_BURN_CARE        = "Burn care", \
+	TREAT_ANTIMICROBIAL    = "Antimicrobial", \
+	TREAT_ANTITOXIN        = "Antitoxin", \
+	TREAT_OXYGENATION      = "Oxygenation", \
+	TREAT_NEURAL_REPAIR    = "Neural repair", \
+	TREAT_CARDIAC          = "Cardiac support", \
+	TREAT_RESPIRATORY      = "Respiratory repair", \
+	TREAT_HEPATORENAL      = "Liver/kidney repair", \
+	TREAT_OCULAR           = "Ocular repair", \
+	TREAT_ANTIRADIATION    = "Anti-radiation", \
+	TREAT_GENETIC_REPAIR   = "Genetic repair", \
+	TREAT_THERMOREGULATION = "Thermoregulation", \
+	TREAT_BLOOD_RESTORE    = "Blood restoration", \
+	TREAT_CIRCULATORY      = "Circulatory support", \
+	TREAT_ANALGESIC        = "Analgesic", \
+	TREAT_STIMULANT        = "Stimulant", \
+	TREAT_PLATING_REPAIR   = "Plating repair", \
+	TREAT_WIRING_REPAIR    = "Wiring repair", \
+	TREAT_SYSTEM_RESTORE   = "System restore", \
+	TREAT_COOLANT          = "Coolant replenishment", \
+	TREAT_CALIBRATION      = "Recalibration", \
+	TREAT_SURGICAL_REPAIR  = "Surgical repair", \
+	TREAT_RESECTION        = "Resection", \
+	TREAT_AIRWAY           = "Airway clearance", \
+	TREAT_DECOMPRESSION    = "Chest decompression", \
+	TREAT_DEFIBRILLATION   = "Defibrillation", \
+	TREAT_CHEST_COMPRESSION = "Chest compressions", \
+	TREAT_VASOPRESSOR      = "Vasopressor", \
+	TREAT_DIGESTIVE        = "Digestive repair", \
+	TREAT_WOUND_PACKING    = "Wound packing", \
+	TREAT_OCCLUSIVE_SEAL   = "Occlusive seal", \
+	TREAT_REGENERATION     = "Natural regeneration", \
+	TREAT_RESTORATION      = "Restoration", \
+	TREAT_FEEDSTOCK        = "Refactory feedstock", \
+	TREAT_SURGICAL_CLOSURE = "Surgical closure", \
+	TREAT_PANEL_CLOSURE    = "Panel closure", \
+	TREAT_BONE_SETTING     = "Bone setting", \
+	TREAT_VESSEL_REPAIR    = "Vessel repair", \
+	TREAT_TENDON_REPAIR    = "Tendon repair", \
+	TREAT_FOREIGN_BODY_REMOVAL = "Foreign body removal", \
+	TREAT_LITHOTRIPSY      = "Lithotripsy", \
+))
 
 /proc/dq_treatment_tag_name(tag)
-	return dq_treatment_tag_names()[tag] || tag
+	return GLOB.dq_treatment_tag_names[tag] || tag
 
 /// Mechanisms delivered by tools, kits, machines or procedures rather than
 /// (only) by reagents — a cure path the reagent tables can't see.
@@ -441,11 +439,8 @@
 
 /// reagent ID -> treatment_tags, built once from the chemistry prototypes.
 /// Only reagents that carry tags appear.
-/proc/dq_reagent_tag_table()
-	var/static/list/table
-	if(table)
-		return table
-	table = list()
+/proc/build_dq_reagent_tag_table()
+	var/list/table = list()
 	// Tags are NOT inherited: a subtype (dermalaze, inaprovalaze, slime
 	// fixers…) only treats if it declares its own, different profile. DM
 	// builds list defaults per instance, so compare contents, not refs.
@@ -465,6 +460,8 @@
 				continue
 		table[id] = R.treatment_tags
 	return table
+
+GLOBAL_TABLE(dq_reagent_tag_table, GLOBAL_PROC_REF(build_dq_reagent_tag_table))
 
 /proc/dq_same_tag_profile(list/a, list/b)
 	if(length(a) != length(b))
@@ -489,7 +486,7 @@ DECLARE_SHARED_CACHE(proto_reagent_tags, GLOBAL_PROC_REF(build_proto_reagent_tag
 /// reagent ID -> potency for every reagent that provides `tag`.
 /proc/dq_reagents_providing(tag)
 	var/list/out = list()
-	var/list/table = dq_reagent_tag_table()
+	var/list/table = GLOBAL_TABLE_GET(dq_reagent_tag_table)
 	for(var/id in table)
 		var/potency = table[id][tag]
 		if(potency)
@@ -507,7 +504,7 @@ DECLARE_SHARED_CACHE(proto_reagent_tags, GLOBAL_PROC_REF(build_proto_reagent_tag
 	var/list/out = cured_by ? cured_by.Copy() : list()
 	if(!treated_by)
 		return out
-	var/list/table = dq_reagent_tag_table()
+	var/list/table = GLOBAL_TABLE_GET(dq_reagent_tag_table)
 	for(var/id in table)
 		var/list/tags = table[id]
 		var/rate = 0
@@ -522,7 +519,7 @@ DECLARE_SHARED_CACHE(proto_reagent_tags, GLOBAL_PROC_REF(build_proto_reagent_tag
 	var/list/out = worsened_by ? worsened_by.Copy() : list()
 	if(!worsened_by_tags)
 		return out
-	var/list/table = dq_reagent_tag_table()
+	var/list/table = GLOBAL_TABLE_GET(dq_reagent_tag_table)
 	for(var/id in table)
 		var/list/tags = table[id]
 		var/rate = 0

@@ -27,7 +27,7 @@
 	projectile_type = /obj/item/projectile/bullet/shotgun
 	handle_casings = HOLD_CASINGS
 	COOLDOWN_DECLARE(pump_cooldown) 			//To prevent spammage
-	var/action_sound = 'sound/weapons/shotgunpump.ogg'
+	var/action_sound = SFX_WEAPONS_SHOTGUNPUMP
 	var/empty_sprite = 0 		//This is just a dirty var so it doesn't fudge up.
 	var/pump_animation = "shotgun-pump"	//You put the reference to the animation in question here. Frees up namming. Ex: "shotgun_old_pump" or "sniper_cycle"
 
@@ -305,7 +305,7 @@
 		H.update_inv_l_hand()
 		H.update_inv_r_hand()
 
-	playsound(src, 'sound/weapons/targeton.ogg', 50, 1)
+	play_sfx(src, SFX_WEAPONS_TARGETON)
 	user.update_mob_action_buttons()
 
 EXTEND_INTERACTIONS(/obj/item/gun/projectile/shotgun/compact, INTERACT_VERB("Toggle stock", PROC_REF(compact_shotgun_verb_toggle_stock), REQ_IN_INVENTORY))
@@ -407,7 +407,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/shotgun/compact, INTERACT_VERB("Tog
 /obj/item/projectile/bullet/shotgun/scatterprojectile
 	name = "pellet"
 	icon_state = "bullet"
-	fire_sound = 'sound/weapons/gunshot_shotgun.ogg'
+	fire_sound = SFX_WEAPONS_GUNSHOT_SHOTGUN
 	damage = 13
 
 /obj/item/storage/box/scattershot

@@ -21,7 +21,7 @@
 		return
 
 	power_change()
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return
 
 	if (reagents.total_volume <= 0)

@@ -41,7 +41,7 @@ REL(/area, main_air_alarm)
 	for(var/obj/machinery/alarm/AA in air_alarms)
 		if(exclude_self && AA == src)
 			continue
-		if(!(AA.stat & (NOPOWER|BROKEN)))
+		if(AA.operable())
 			checks += AA
 	if(!checks.len)
 		return
@@ -56,7 +56,7 @@ REL(/area, main_air_alarm)
 
 /area/proc/main_air_alarm_is_operating()
 	var/obj/machinery/alarm/AM = main_air_alarm
-	return AM && !(AM.stat & (NOPOWER | BROKEN))
+	return AM && AM.operable()
 
 /obj/machinery/alarm
 
@@ -73,7 +73,7 @@ REL(/area, main_air_alarm)
 	active_power_usage = 1000 //For heating/cooling rooms. 1000 joules equates to about 1 degree every 2 seconds for a single tile of air.
 	power_channel = ENVIRON
 	req_one_access = list(ACCESS_ATMOSPHERICS, ACCESS_ENGINE_EQUIP)
-	clicksound = "button"
+	clicksound = SFX_BUTTON
 	clickvol = 30
 	blocks_emissive = NONE
 	light_power = 0.25
@@ -85,13 +85,13 @@ REL(/area, main_air_alarm)
 	var/remote_control = 0
 	var/rcon_setting = 2
 	var/rcon_time = 0
-	var/locked = 1
+	locked = 1
 	panel_open = FALSE // If it's been screwdrivered open.
 	var/aidisabled = 0
 	var/shorted = 0
 	circuit = /obj/item/circuitboard/airalarm
 
-	var/mode = AALARM_MODE_SCRUBBING
+	mode = AALARM_MODE_SCRUBBING
 	var/screen = AALARM_SCREEN_MAIN
 	var/area_uid
 	var/area/alarm_area
@@ -103,7 +103,7 @@ REL(/area, main_air_alarm)
 	/// Keys are things like temperature and certain gasses. Values are lists, which contain, in order:
 	/// red warning minimum value, yellow warning minimum value, yellow warning maximum value, red warning maximum value
 	/// Use code\defines\gases.dm as reference for id/name. Please keep it consistent
-	/// Starts as the type's shared default_TLV() table, which is read-only; call own_TLV() before editing.
+	/// Starts as the type's shared alarm_TLV table, which is read-only; call own_TLV() before editing.
 	var/list/TLV
 	/// TRUE once TLV is a private deep copy that this alarm may edit.
 	var/TLV_owned = FALSE
@@ -173,25 +173,26 @@ REL(/area, main_air_alarm)
 
 /obj/machinery/alarm/proc/set_initial_TLV()
 	invalidate_gas_dependencies()
-	TLV = default_TLV()
+	TLV = TYPE_TABLE_GET(src, alarm_TLV)
 	TLV_owned = FALSE
 	update_icon()
 
-/// The shared, read-only threshold table for this alarm type. Subtypes override
-/// this with their own proc-local static table built from a copy of the parent's.
-/obj/machinery/alarm/proc/default_TLV()
-	var/static/list/table
-	if(!table)
-		table = list()
-		// breathable air according to human/Life()
-		table[GAS_O2] =			list(16, 19, 135, 140) // Partial pressure, kpa
-		table[GAS_N2] =			list(0, 0, 135, 140) // Partial pressure, kpa
-		table[GAS_CO2] =		list(-1.0, -1.0, 5, 10) // Partial pressure, kpa
-		table[GAS_PHORON] =		list(-1.0, -1.0, 0, 0.5) // Partial pressure, kpa
-		table[GAS_CH4] =		list(-1.0, -1.0, 0, 0.5) // Partial pressure, kpa
-		table["other"] =		list(-1.0, -1.0, 0.5, 1.0) // Partial pressure, kpa
-		table["pressure"] =		list(ONE_ATMOSPHERE * 0.80, ONE_ATMOSPHERE * 0.90, ONE_ATMOSPHERE * 1.10, ONE_ATMOSPHERE * 1.20) /* kpa */
-		table["temperature"] =	list(T0C - 26, T0C, T0C + 40, T0C + 66) // K
+/// The shared, read-only threshold table for each alarm type (TLV starts as it; own_TLV() copies
+/// before an edit). Subtypes override it with a builder that edits a fresh base table.
+TYPE_TABLE_DECLARE(/obj/machinery/alarm, alarm_TLV, air_alarm_TLV_base())
+
+/// A fresh copy of the default threshold table (breathable air).
+/proc/air_alarm_TLV_base()
+	var/list/table = list()
+	// breathable air according to human/Life()
+	table[GAS_O2] =			list(16, 19, 135, 140) // Partial pressure, kpa
+	table[GAS_N2] =			list(0, 0, 135, 140) // Partial pressure, kpa
+	table[GAS_CO2] =		list(-1.0, -1.0, 5, 10) // Partial pressure, kpa
+	table[GAS_PHORON] =		list(-1.0, -1.0, 0, 0.5) // Partial pressure, kpa
+	table[GAS_CH4] =		list(-1.0, -1.0, 0, 0.5) // Partial pressure, kpa
+	table["other"] =		list(-1.0, -1.0, 0.5, 1.0) // Partial pressure, kpa
+	table["pressure"] =		list(ONE_ATMOSPHERE * 0.80, ONE_ATMOSPHERE * 0.90, ONE_ATMOSPHERE * 1.10, ONE_ATMOSPHERE * 1.20) /* kpa */
+	table["temperature"] =	list(T0C - 26, T0C, T0C + 40, T0C + 66) // K
 	return table
 
 /proc/copy_air_alarm_TLV(list/table)
@@ -233,7 +234,7 @@ REL(/area, main_air_alarm)
 
 	if(old_pressurelevel != pressure_dangerlevel)
 		if(breach_detected())
-			mode = AALARM_MODE_OFF
+			set_mode(AALARM_MODE_OFF)
 			apply_mode()
 
 	if(SScontracts && (old_level != danger_level || old_pressurelevel != pressure_dangerlevel))
@@ -253,7 +254,7 @@ REL(/area, main_air_alarm)
 			"detail" = "[alarm_area_ref()] atmospheric service reports danger level [danger_level], [round(current_pressure, 0.1)] kPa, and [round(current_temperature, 0.1)] K.",
 		), "atmos-service:[REF(src)]:[contract_atmos_revision]", src)
 	if(mode == AALARM_MODE_CYCLE && environment.return_pressure() < ONE_ATMOSPHERE * 0.05)
-		mode = AALARM_MODE_FILL
+		set_mode(AALARM_MODE_FILL)
 		apply_mode()
 
 	if(alarm_area_ref()?.atmosalm || danger_level > 0)  // Looping Alarms (Trigger Decompression alarm here, on detection of any breach in the area)
@@ -342,7 +343,7 @@ REL(/area, main_air_alarm)
 /obj/machinery/alarm/proc/invalidate_gas_dependencies()
 	om_watch_invalidate(src)
 
-/obj/machinery/alarm/update_use_power(new_use_power)
+/obj/machinery/alarm/set_use_power(new_use_power)
 	if(use_power == new_use_power)
 		return
 	invalidate_gas_dependencies()
@@ -358,19 +359,19 @@ REL(/area, main_air_alarm)
 	if(!regulating_temperature)
 		//check for when we should start adjusting temperature
 		if(!TEST_TLV_VALUES && abs(environment.return_temperature() - target_temperature) > 2.0 && environment.return_pressure() >= 1)
-			update_use_power(USE_POWER_ACTIVE)
+			set_use_power(USE_POWER_ACTIVE)
 			set_regulating_temperature((environment.return_temperature() > target_temperature ? 1 : 2))
 			audible_message("\The [src] clicks as it starts [regulating_temperature == 1 ? "cooling" : "heating"] the room.",\
 			"You hear a click and a faint electronic hum.", runemessage = "* click *")
-			playsound(src, 'sound/machines/click.ogg', 50, 1)
+			play_sfx(src, SFX_MACHINES_CLICK)
 	else
 		//check for when we should stop adjusting temperature
 		if(TEST_TLV_VALUES || abs(environment.return_temperature() - target_temperature) <= 0.5 || environment.return_pressure() < 1)
-			update_use_power(USE_POWER_IDLE)
+			set_use_power(USE_POWER_IDLE)
 			audible_message("\The [src] clicks quietly as it stops [regulating_temperature == 1 ? "cooling" : "heating"] the room.",\
 			"You hear a click as a faint electronic humming stops.", runemessage = "* click *")
 			set_regulating_temperature(0)
-			playsound(src, 'sound/machines/click.ogg', 50, 1)
+			play_sfx(src, SFX_MACHINES_CLICK)
 
 	if(regulating_temperature)
 		if(target_temperature > T0C + MAX_TEMPERATURE)
@@ -387,7 +388,7 @@ REL(/area, main_air_alarm)
 				var/energy_used = min(gas.get_thermal_energy_change(target_temperature) , active_power_usage)
 
 				gas.add_thermal_energy(energy_used)
-				//use_power(energy_used, ENVIRON) //handle by update_use_power instead
+				//use_power(energy_used, ENVIRON) //handle by set_use_power instead
 			else	//gas cooling
 				var/heat_transfer = min(abs(gas.get_thermal_energy_change(target_temperature)), active_power_usage)
 
@@ -400,7 +401,7 @@ REL(/area, main_air_alarm)
 
 				heat_transfer = -gas.add_thermal_energy(-heat_transfer)	//get the actual heat transfer
 
-				//use_power(heat_transfer / cop, ENVIRON)	//handle by update_use_power instead
+				//use_power(heat_transfer / cop, ENVIRON)	//handle by set_use_power instead
 
 			environment.merge(gas)
 
@@ -475,7 +476,7 @@ REL(/area, main_air_alarm)
 		set_light(0)
 		set_light_on(FALSE)
 		return
-	if(!alarm_area_ref() || (stat & (NOPOWER|BROKEN)) || shorted)
+	if(!alarm_area_ref() || (!operable()) || shorted)
 		icon_state = "alarmp"
 		set_light(0)
 		set_light_on(FALSE)
@@ -532,7 +533,7 @@ REL(/area, main_air_alarm)
 	set_light_on(TRUE)
 
 /obj/machinery/alarm/receive_signal(datum/signal/signal)
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return
 	if(!signal || signal.encryption)
 		return
@@ -567,12 +568,12 @@ REL(/area, main_air_alarm)
 /obj/machinery/alarm/proc/refresh_all()
 	for(var/id_tag in alarm_area_ref().air_vent_names)
 		var/list/I = LAZYACCESS(alarm_area_ref().air_vent_info, id_tag)
-		if(I && I["timestamp"] + AALARM_REPORT_TIMEOUT / 2 > world.time)
+		if(I && ELAPSED_SINCE(src, I["timestamp"], CLOCK_WORLD) < AALARM_REPORT_TIMEOUT / 2)
 			continue
 		send_signal(id_tag, list("status"))
 	for(var/id_tag in alarm_area_ref().air_scrub_names)
 		var/list/I = LAZYACCESS(alarm_area_ref().air_scrub_info, id_tag)
-		if(I && I["timestamp"] + AALARM_REPORT_TIMEOUT / 2 > world.time)
+		if(I && ELAPSED_SINCE(src, I["timestamp"], CLOCK_WORLD) < AALARM_REPORT_TIMEOUT / 2)
 			continue
 		send_signal(id_tag, list("status"))
 
@@ -599,7 +600,7 @@ REL(/area, main_air_alarm)
 
 /obj/machinery/alarm/proc/apply_mode()
 	for(var/obj/machinery/alarm/AA in alarm_area_ref().air_alarms)
-		AA.mode = mode //propagate mode to other air alarms in the area
+		AA.set_mode(mode) //propagate mode to other air alarms in the area
 
 	switch(mode)
 		if(AALARM_MODE_SCRUBBING)
@@ -833,7 +834,7 @@ REL(/area, main_air_alarm)
 		var/list/selected
 		var/list/thresholds = list()
 
-		var/list/gas_names = list(GAS_O2, GAS_CO2, GAS_PHORON, GAS_CH4, "other")	//Gas ids made to match code\defines\gases.dm
+		var/static/list/gas_names = list(GAS_O2, GAS_CO2, GAS_PHORON, GAS_CH4, "other")	//Gas ids made to match code\defines\gases.dm
 		for(var/g in gas_names)
 			thresholds[++thresholds.len] = list("name" = g, "settings" = list())
 			selected = TLV[g]
@@ -891,7 +892,7 @@ REL(/area, main_air_alarm)
 	switch(action)
 		if("lock")
 			if((siliconaccess(ui.user) && !wires.is_cut(WIRE_IDSCAN)) || (isobserver(ui.user) && is_admin(ui.user)))
-				locked = !locked
+				set_locked(!locked)
 				. = TRUE
 		if( "power",
 			"o2_scrub",
@@ -930,7 +931,7 @@ REL(/area, main_air_alarm)
 			om_ask(ui.user, /datum/om/prompt/number/machine_ui, PROC_REF(threshold_entered), title = name, message = "New [name] for [env]:", default = TLV[env][name], min = -1, round_entry = FALSE, env = env, setting = name)
 			. = TRUE
 		if("mode")
-			mode = text2num(params["mode"])
+			set_mode(text2num(params["mode"]))
 			apply_mode(ui.user)
 			. = TRUE
 		if("alarm")
@@ -1035,12 +1036,12 @@ REL(/area, main_air_alarm)
 	return dismantle() ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING
 
 /obj/machinery/alarm/proc/togglelock(mob/user)
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		to_chat(user, "It does nothing.")
 		return
 	else
 		if(allowed(user) && !wires.is_cut(WIRE_IDSCAN))
-			locked = !locked
+			set_locked(!locked)
 			to_chat(user, span_notice("You [locked ? "lock" : "unlock"] the Air Alarm interface."))
 		else
 			to_chat(user, span_warning("Access denied."))
@@ -1048,7 +1049,7 @@ REL(/area, main_air_alarm)
 
 /obj/machinery/alarm/power_change()
 	invalidate_gas_dependencies()
-	..()
+	. = ..()
 	var/delay_time = rand(0,15)
 	if(delay_time)
 		om_after(src, delay_time, PROC_REF(process_power_change))
@@ -1059,7 +1060,7 @@ REL(/area, main_air_alarm)
 	update_icon()
 	if(!soundloop)
 		return
-	if(stat & (NOPOWER | BROKEN))
+	if(!operable())
 		soundloop.stop()
 	else if(atmoswarn)
 		soundloop.start()
@@ -1069,40 +1070,40 @@ REL(/area, main_air_alarm)
 	req_access = list(ACCESS_RD, ACCESS_ATMOSPHERICS, ACCESS_ENGINE_EQUIP)
 	target_temperature = 90
 
-/obj/machinery/alarm/server/default_TLV()
-	var/static/list/table
-	if(!table)
-		table = copy_air_alarm_TLV(..())
-		table[GAS_O2] =			list(-1.0, -1.0,-1.0,-1.0) // Partial pressure, kpa
-		table[GAS_CO2] =		list(-1.0, -1.0,   5,  10) // Partial pressure, kpa
-		table[GAS_PHORON] =		list(-1.0, -1.0, 0, 0.5) // Partial pressure, kpa
-		table[GAS_CH4] =		list(-1.0, -1.0, 0, 0.5) // Partial pressure, kpa
-		table["other"] =		list(-1.0, -1.0, 0.5, 1.0) // Partial pressure, kpa
-		table["pressure"] =		list(0,ONE_ATMOSPHERE*0.10,ONE_ATMOSPHERE*1.40,ONE_ATMOSPHERE*1.60) /* kpa */
-		table["temperature"] =	list(20, 40, 140, 160) // K
+TYPE_TABLE(/obj/machinery/alarm/server, alarm_TLV, air_alarm_TLV_server())
+
+/proc/air_alarm_TLV_server()
+	var/list/table = air_alarm_TLV_base()
+	table[GAS_O2] =			list(-1.0, -1.0,-1.0,-1.0) // Partial pressure, kpa
+	table[GAS_CO2] =		list(-1.0, -1.0,   5,  10) // Partial pressure, kpa
+	table[GAS_PHORON] =		list(-1.0, -1.0, 0, 0.5) // Partial pressure, kpa
+	table[GAS_CH4] =		list(-1.0, -1.0, 0, 0.5) // Partial pressure, kpa
+	table["other"] =		list(-1.0, -1.0, 0.5, 1.0) // Partial pressure, kpa
+	table["pressure"] =		list(0,ONE_ATMOSPHERE*0.10,ONE_ATMOSPHERE*1.40,ONE_ATMOSPHERE*1.60) /* kpa */
+	table["temperature"] =	list(20, 40, 140, 160) // K
 	return table
 
 /obj/machinery/alarm/freezer
 	target_temperature = T0C - 13.15 // Chilly freezer room
 
-/obj/machinery/alarm/freezer/default_TLV()
-	var/static/list/table
-	if(!table)
-		table = copy_air_alarm_TLV(..())
-		table["temperature"] =	list(T0C - 40, T0C - 20, T0C + 40, T0C + 66) // K, lower temperature for freezer air alarms
+TYPE_TABLE(/obj/machinery/alarm/freezer, alarm_TLV, air_alarm_TLV_freezer())
+
+/proc/air_alarm_TLV_freezer()
+	var/list/table = air_alarm_TLV_base()
+	table["temperature"] =	list(T0C - 40, T0C - 20, T0C + 40, T0C + 66) // K, lower temperature for freezer air alarms
 	return table
 
 /obj/machinery/alarm/sifwilderness
 	breach_detection = 0
 	report_danger_level = 0
 
-/obj/machinery/alarm/sifwilderness/default_TLV()
-	var/static/list/table
-	if(!table)
-		table = copy_air_alarm_TLV(..())
-		table["oxygen"] =		list(16, 17, 135, 140)
-		table["pressure"] =		list(0,ONE_ATMOSPHERE*0.10,ONE_ATMOSPHERE*1.50,ONE_ATMOSPHERE*1.60)
-		table["temperature"] =	list(T0C - 40, T0C - 31, T0C + 40, T0C + 120)
+TYPE_TABLE(/obj/machinery/alarm/sifwilderness, alarm_TLV, air_alarm_TLV_sifwilderness())
+
+/proc/air_alarm_TLV_sifwilderness()
+	var/list/table = air_alarm_TLV_base()
+	table["oxygen"] =		list(16, 17, 135, 140)
+	table["pressure"] =		list(0,ONE_ATMOSPHERE*0.10,ONE_ATMOSPHERE*1.50,ONE_ATMOSPHERE*1.60)
+	table["temperature"] =	list(T0C - 40, T0C - 31, T0C + 40, T0C + 120)
 	return table
 
 #undef LOAD_TLV_VALUES

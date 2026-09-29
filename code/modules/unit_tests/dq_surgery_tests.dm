@@ -45,7 +45,7 @@
 		TEST_ASSERT(S.name && S.name != "surgical step", "[S.type] has no name")
 		TEST_ASSERT(S.part_biology, "[S.type] works on no biology")
 		for(var/tag in S.treatments)
-			TEST_ASSERT(dq_treatment_tag_names()[tag], "[S.type] delivers unknown treatment tag [tag]")
+			TEST_ASSERT(GLOB.dq_treatment_tag_names[tag], "[S.type] delivers unknown treatment tag [tag]")
 
 /// Every procedure record names real steps, and every condition it treats
 /// responds to a mechanism those steps deliver (or the record repairs organs).

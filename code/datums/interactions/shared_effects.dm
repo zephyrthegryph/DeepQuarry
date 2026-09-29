@@ -14,7 +14,7 @@
 
 /// Open the machine's tgui interface, unless it is broken or unpowered (the input is still used).
 /obj/machinery/proc/interaction_open_ui_powered(mob/user, obj/item/held, datum/interaction/interaction)
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return TRUE
 	tgui_interact(user)
 	return TRUE

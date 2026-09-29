@@ -419,7 +419,7 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 
 	pose = new_pose
 	if(!quiet_pose)
-		visible_message("[src] [pose]")
+		act_message(src, null, others = "%U% [pose]")
 
 /mob/living/carbon/human/proc/add_pose_indicator()
 	if(pose_indicator)
@@ -495,7 +495,7 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 	var/added_passtable = FALSE
 
 	//Briefly un-dense to dodge projectiles
-	density = FALSE
+	set_density(FALSE)
 
 	//Parkour!
 	var/parkour_chance = 20 //Default
@@ -516,7 +516,7 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 	if(isturf(loc)) // You aren't very smart, are you?
 		for(var/obj/structure/stairs/top/S in contents_of(loc))
 			S.use_stairs_instant(src)
-			visible_message(span_warning("\The [src] falls down the stairs!"), span_warning("You fall down the stairs!"))
+			act_message(src, null, MSG_SELF(span_warning("You fall down the stairs!")), MSG_OTHERS(span_warning("%U% falls down the stairs!")))
 			status_at_least(EFFECT_CONFUSED, 10) //Thud
 			status_adjust(EFFECT_WEAKENED, 12)
 			injure(INJURY_BLUNT, 8, null, S)
@@ -535,7 +535,7 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 
 /mob/living/carbon/human/proc/flip_end(original_density, added_passtable)
 	if(!lying)
-		density = original_density
+		set_density(original_density)
 	if(added_passtable)
 		pass_flags &= ~PASSTABLE
 
@@ -560,7 +560,7 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 		message = "reveals their wings!"
 	else
 		message = "hides their wings."
-	visible_message(span_filter_notice("[src] [message]"))
+	act_message(src, null, others = span_filter_notice("%U% [message]"))
 
 /mob/living/carbon/human/verb/hide_tail_vr()
 	set name = "Show/Hide tail"
@@ -584,7 +584,7 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 		message = "reveals their tail!"
 	else
 		message = "hides their tail."
-	visible_message(span_filter_notice("[src] [message]"))
+	act_message(src, null, others = span_filter_notice("%U% [message]"))
 
 
 /mob/living/carbon/human/verb/hide_nutrition()

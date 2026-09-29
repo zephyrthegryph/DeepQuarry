@@ -78,8 +78,8 @@ DECLARE_INTERACTIONS(/obj/item/extraction_pack, INTERACT_USE(null, PROC_REF(inte
 			var/atom/movable/_tmp_buck_15 = M?.buckled_to()
 			_tmp_buck_15.unbuckle_mob(M)
 	else
-		A.anchored = TRUE
-		A.density = FALSE
+		A.set_anchored(TRUE)
+		A.set_density(FALSE)
 	var/list/flooring_near_beacon = list()
 	for(var/turf/simulated/floor/floor in orange(1, beacon()))
 		flooring_near_beacon += floor
@@ -104,7 +104,7 @@ DECLARE_INTERACTIONS(/obj/item/extraction_pack, INTERACT_USE(null, PROC_REF(inte
 /obj/effect/extraction_holder/proc/fulton_inflate(atom/movable/A, turf/landing)
 	cut_overlays()
 	add_overlay(fulton_balloon("fulton_balloon"))
-	playsound(src, 'sound/items/fulext_deploy.wav', 50, 1, -3)
+	play_sfx(src, SFX_ITEMS_FULEXT_DEPLOY)
 	animate(src, pixel_z = 10, time = 20)
 	animate(pixel_z = 15, time = 10)
 	animate(pixel_z = 10, time = 10)
@@ -113,7 +113,7 @@ DECLARE_INTERACTIONS(/obj/item/extraction_pack, INTERACT_USE(null, PROC_REF(inte
 	om_after(src, 6 SECONDS, PROC_REF(fulton_launch), A, landing)
 
 /obj/effect/extraction_holder/proc/fulton_launch(atom/movable/A, turf/landing)
-	playsound(src, 'sound/items/fultext_launch.wav', 50, 1, -3)
+	play_sfx(src, SFX_ITEMS_FULTEXT_LAUNCH)
 	animate(src, pixel_z = 1000, time = 30)
 	if(ishuman(A))
 		var/mob/living/carbon/human/L = A
@@ -135,8 +135,8 @@ DECLARE_INTERACTIONS(/obj/item/extraction_pack, INTERACT_USE(null, PROC_REF(inte
 
 /obj/effect/extraction_holder/proc/fulton_land(atom/movable/A)
 	cut_overlays()
-	A.anchored = FALSE // An item has to be unanchored to be extracted in the first place.
-	A.density = initial(A.density)
+	A.set_anchored(FALSE) // An item has to be unanchored to be extracted in the first place.
+	A.set_density(initial(A.density))
 	animate(src, pixel_z = 0, time = 5)
 	om_after(src, 0.5 SECONDS, PROC_REF(fulton_release), A)
 

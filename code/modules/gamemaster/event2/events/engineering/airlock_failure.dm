@@ -72,7 +72,7 @@
 			if(can_break_door(door))
 				om_after(src, 1, PROC_REF(break_door), door) // Emagging proc is actually a blocking proc and that's bad for the ticker.
 				door.visible_message(span_danger("\The [door]'s panel sparks!"))
-				playsound(door, "sparks", 50, 1)
+				play_sfx(door, SFX_SPARKS)
 				log_game("Airlock Failure event has broken \the [door] airlock in [area].")
 				LAZYOR(affected_areas, area)
 				doors_to_break--

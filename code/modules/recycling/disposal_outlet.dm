@@ -12,7 +12,7 @@
 	var/active = FALSE // Code appendix.
 	var/tmp/turf/target	// this will be where the output objects are 'thrown' to.
 	var/mode = 0
-	TIMESTAMP_VAR(start_eject)
+	EXPIRY_DECLARE(start_eject)
 	var/eject_range = 3 //Did you know, in TGcode, it's a default of 2 tiles?
 
 /obj/structure/disposaloutlet/Initialize(mapload)
@@ -51,7 +51,7 @@ DECLARE_INTERACTIONS(/obj/structure/disposaloutlet, INTERACT_ITEM(null, PROC_REF
 /obj/structure/disposaloutlet/welder_act(mob/user, obj/item/I)
 	if(mode != OUTLET_UNSCREWED)
 		return ITEM_INTERACT_BLOCKING
-	use_tool(user, I, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 100, message_self = "You start slicing the floorweld off the disposal outlet.", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
+	use_tool(user, I, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 100, start_self = "You start slicing the floorweld off the disposal outlet.", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/disposaloutlet/proc/welder_act_tool_done(mob/user)
@@ -64,8 +64,8 @@ DECLARE_INTERACTIONS(/obj/structure/disposaloutlet, INTERACT_ITEM(null, PROC_REF
 	C.set_dir(dir)
 	C.ptype = 7
 	C.update()
-	C.anchored = TRUE
-	C.density = TRUE
+	C.set_anchored(TRUE)
+	C.set_density(TRUE)
 	replace_with(src, C)
 
 /obj/structure/disposaloutlet/multitool_act(mob/user, obj/item/I)
@@ -88,16 +88,16 @@ DECLARE_INTERACTIONS(/obj/structure/disposaloutlet, INTERACT_ITEM(null, PROC_REF
 	SHOULD_NOT_SLEEP(TRUE)
 
 	flick("outlet-open", src)
-	if((start_eject + 30) < world.time)
-		start_eject = world.time
-		playsound(src, 'sound/machines/warning-buzzer.ogg', 50, 0, 0)
+	if(ELAPSED(src, start_eject, CLOCK_WORLD) > 3 SECONDS)
+		EXPIRY_STAMP(src, start_eject, CLOCK_WORLD)
+		play_sfx(src, SFX_MACHINES_WARNING_BUZZER)
 		om_after(src, 2 SECONDS, PROC_REF(expel_contents), received_items, gas, TRUE)
 	else
 		om_after(src, 2 SECONDS, PROC_REF(expel_contents), received_items, gas)
 
 /obj/structure/disposaloutlet/proc/expel_contents(list/ejected_items, datum/gas_mixture/gas, playsound = FALSE)
 	if(playsound)
-		playsound(src, 'sound/machines/hiss.ogg', 50, 0, 0)
+		play_sfx(src, SFX_MACHINES_HISS)
 
 	var/turf/T = get_turf(src)
 

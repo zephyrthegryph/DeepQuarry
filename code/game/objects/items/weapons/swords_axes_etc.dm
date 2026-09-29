@@ -16,7 +16,7 @@
 	icon_state = "baton"
 	slot_flags = SLOT_BELT
 	force = 10
-	drop_sound = 'sound/items/drop/metalweapon.ogg'
+	drop_sound = SFX_ITEMS_DROP_METALWEAPON
 
 /obj/item/melee/classic_baton
 	name = "police baton"
@@ -26,8 +26,8 @@
 	item_state = "classic_baton"
 	slot_flags = SLOT_BELT
 	force = 10
-	drop_sound = 'sound/items/drop/crowbar.ogg'
-	pickup_sound = 'sound/items/pickup/crowbar.ogg'
+	drop_sound = SFX_ITEMS_DROP_CROWBAR
+	pickup_sound = SFX_ITEMS_PICKUP_CROWBAR
 
 /obj/item/melee/classic_baton/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if (CLUMSY_FAIL_CHANCE(user))
@@ -51,8 +51,8 @@
 	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_SMALL
 	force = 3
-	drop_sound = 'sound/items/drop/crowbar.ogg'
-	pickup_sound = 'sound/items/pickup/crowbar.ogg'
+	drop_sound = SFX_ITEMS_DROP_CROWBAR
+	pickup_sound = SFX_ITEMS_PICKUP_CROWBAR
 	var/on = 0
 
 DECLARE_INTERACTIONS(/obj/item/melee/telebaton, INTERACT_USE(null, PROC_REF(interaction_self)))
@@ -61,18 +61,18 @@ DECLARE_INTERACTIONS(/obj/item/melee/telebaton, INTERACT_USE(null, PROC_REF(inte
 /obj/item/melee/telebaton/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	on = !on
 	if(on)
-		user.visible_message(span_warning("With a flick of their wrist, [user] extends their telescopic baton."),\
-		span_warning("You extend the baton."),\
-		"You hear an ominous click.")
+		act_message(user, null, MSG_SELF(span_warning("You extend the baton.")), \
+			MSG_OTHERS(span_warning("With a flick of their wrist, %U% extends their telescopic baton.")), \
+			MSG_BLIND("You hear an ominous click."))
 		icon_state = "telebaton1"
 		item_state = icon_state
 		w_class = ITEMSIZE_NORMAL
 		force = 15//quite robust
 		attack_verb = list("smacked", "struck", "slapped")
 	else
-		user.visible_message(span_infoplain(span_bold("\The [user]") + " collapses their telescopic baton."),\
-		span_notice("You collapse the baton."),\
-		"You hear a click.")
+		act_message(user, null, MSG_SELF(span_notice("You collapse the baton.")), \
+			MSG_OTHERS(span_infoplain(span_bold("%U%") + " collapses their telescopic baton.")), \
+			MSG_BLIND("You hear a click."))
 		icon_state = "telebaton0"
 		item_state = icon_state
 		w_class = ITEMSIZE_SMALL
@@ -84,7 +84,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/telebaton, INTERACT_USE(null, PROC_REF(inte
 		H.update_inv_l_hand()
 		H.update_inv_r_hand()
 
-	playsound(src, 'sound/weapons/empty.ogg', 50, 1)
+	play_sfx(src, SFX_WEAPONS_EMPTY)
 	add_fingerprint(user)
 
 	if(blood_overlay && forensic_data?.has_blooddna()) //updates blood overlay, if any

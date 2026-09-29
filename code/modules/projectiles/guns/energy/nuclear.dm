@@ -16,8 +16,8 @@
 	modifystate = "egunstun"
 
 	firemodes = list(
-		list(mode_name="stun", projectile_type=/obj/item/projectile/beam/stun/med, modifystate="egunstun", fire_sound='sound/weapons/taser.ogg', charge_cost = 240),
-		list(mode_name="lethal", projectile_type=/obj/item/projectile/beam, modifystate="egunkill", fire_sound='sound/weapons/Laser.ogg', charge_cost = 480),
+		list(mode_name="stun", projectile_type=/obj/item/projectile/beam/stun/med, modifystate="egunstun", fire_sound=SFX_WEAPONS_TASER, charge_cost = 240),
+		list(mode_name="lethal", projectile_type=/obj/item/projectile/beam, modifystate="egunkill", fire_sound=SFX_WEAPONS_LASER, charge_cost = 480),
 		)
 
 /*
@@ -39,8 +39,8 @@
 	modifystate = "riflestun"
 
 	firemodes = list(
-		list(mode_name="stun", projectile_type=/obj/item/projectile/beam/stun, modifystate="riflestun", fire_sound='sound/weapons/taser.ogg', wielded_item_state="riflestun-wielded", charge_cost = 120),
-		list(mode_name="lethal", projectile_type=/obj/item/projectile/beam, modifystate="riflekill", fire_sound='sound/weapons/Laser.ogg', wielded_item_state="riflekill-wielded", charge_cost = 240),
+		list(mode_name="stun", projectile_type=/obj/item/projectile/beam/stun, modifystate="riflestun", fire_sound=SFX_WEAPONS_TASER, wielded_item_state="riflestun-wielded", charge_cost = 120),
+		list(mode_name="lethal", projectile_type=/obj/item/projectile/beam, modifystate="riflekill", fire_sound=SFX_WEAPONS_LASER, wielded_item_state="riflekill-wielded", charge_cost = 240),
 		)
 
 /*
@@ -102,14 +102,14 @@
 	description_fluff = "RayZar is Ward-Takahashi’s main consumer weapons brand, known for producing and licensing a wide variety of specialist \
 	energy weapons of various types and quality primarily for the civilian market."
 	icon_state = "PDWstun"
-	fire_sound = 'sound/weapons/taser.ogg'
+	fire_sound = SFX_WEAPONS_TASER
 	w_class = ITEMSIZE_SMALL
 	projectile_type = /obj/item/projectile/beam/stun/med
 	modifystate = "PDWstun"
 
 	firemodes = list(
-		list(mode_name="stun", projectile_type=/obj/item/projectile/beam/stun/med, modifystate="PDWstun", fire_sound='sound/weapons/taser.ogg', charge_cost = 240),
-		list(mode_name="lethal", projectile_type=/obj/item/projectile/beam, modifystate="PDWkill", fire_sound='sound/weapons/Laser.ogg', charge_cost = 480),
+		list(mode_name="stun", projectile_type=/obj/item/projectile/beam/stun/med, modifystate="PDWstun", fire_sound=SFX_WEAPONS_TASER, charge_cost = 240),
+		list(mode_name="lethal", projectile_type=/obj/item/projectile/beam, modifystate="PDWkill", fire_sound=SFX_WEAPONS_LASER, charge_cost = 480),
 		)
 
 /*
@@ -128,8 +128,8 @@
 	modifystate = "ep08stun"
 
 	firemodes = list(
-		list(mode_name="stun", projectile_type=/obj/item/projectile/beam/stun, modifystate="ep08stun", fire_sound='sound/weapons/taser.ogg', charge_cost = 120),
-		list(mode_name="lethal", projectile_type=/obj/item/projectile/beam/eluger, modifystate="ep08kill", fire_sound='sound/weapons/Laser.ogg', charge_cost = 240),
+		list(mode_name="stun", projectile_type=/obj/item/projectile/beam/stun, modifystate="ep08stun", fire_sound=SFX_WEAPONS_TASER, charge_cost = 120),
+		list(mode_name="lethal", projectile_type=/obj/item/projectile/beam/eluger, modifystate="ep08kill", fire_sound=SFX_WEAPONS_LASER, charge_cost = 240),
 		)
 
 /*
@@ -167,15 +167,15 @@
 	icon_state = "lasgunstun"
 	icon = 'icons/obj/gun_yw.dmi'
 	item_state = null	//so the human update icon uses the icon_state instead.
-	fire_sound = 'sound/weapons/taser.ogg'
+	fire_sound = SFX_WEAPONS_TASER
 	fire_delay = 10 // Handguns should be inferior to two-handed weapons.
 
 	projectile_type = /obj/item/projectile/beam/stun
 	modifystate = "lasgunstun"
 
 	firemodes = list(
-		list(mode_name="stun", projectile_type=/obj/item/projectile/beam/stun/weak, modifystate="lasgunstun", fire_sound='sound/weapons/taser.ogg', charge_cost = 240),
-		list(mode_name="lethal", projectile_type=/obj/item/projectile/beam, modifystate="lasgunkill", fire_sound='sound/weapons/Laser.ogg', charge_cost = 480),
+		list(mode_name="stun", projectile_type=/obj/item/projectile/beam/stun/weak, modifystate="lasgunstun", fire_sound=SFX_WEAPONS_TASER, charge_cost = 240),
+		list(mode_name="lethal", projectile_type=/obj/item/projectile/beam, modifystate="lasgunkill", fire_sound=SFX_WEAPONS_LASER, charge_cost = 480),
 		)
 
 
@@ -185,7 +185,7 @@
 	icon = 'icons/obj/gun_yw.dmi'
 	icon_state = "mg42-e100"	//May resprite this to be more rifley
 	item_state = null	//so the human update icon uses the icon_state instead.
-	fire_sound = 'sound/weapons/Laser.ogg'
+	fire_sound = SFX_WEAPONS_LASER
 	charge_cost = 1
 	force = 8
 	w_class = ITEMSIZE_HUGE //Probably gonna make it a rifle sooner or later //Dude, come on. It's a machine gun.
@@ -198,10 +198,10 @@
 	one_handed_penalty = 2
 
 	firemodes = list(
-		list(mode_name="single fire", burst=1, projectile_type=/obj/item/projectile/beam/burstlaser, modifystate="mg42-e", fire_sound='sound/weapons/Laser.ogg', charge_cost = 100),
-		list(mode_name="burst fire", burst=3, fire_delay=null, move_delay=4, burst_accuracy=list(0,0,0), dispersion=list(0.0, 0.2, 0.5), projectile_type=/obj/item/projectile/beam/burstlaser, modifystate="mg42-e", fire_sound='sound/weapons/Laser.ogg'),
-		list(mode_name="5 laser burst", burst=5, fire_delay=null, move_delay=4, burst_accuracy=list(0,0,0,0,0), dispersion=list(0.0, 0.2, 0.5, 0.5, 0.5), projectile_type=/obj/item/projectile/beam/burstlaser, modifystate="mg42-e", fire_sound='sound/weapons/Laser.ogg'),
-		list(mode_name="15 laser burst, ye boi.", burst=15, fire_delay=null, move_delay=4, burst_accuracy=list(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0), dispersion=list(0.0, 0.2, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5), projectile_type=/obj/item/projectile/beam/burstlaser, modifystate="mg42-e", fire_sound='sound/weapons/Laser.ogg'),
+		list(mode_name="single fire", burst=1, projectile_type=/obj/item/projectile/beam/burstlaser, modifystate="mg42-e", fire_sound=SFX_WEAPONS_LASER, charge_cost = 100),
+		list(mode_name="burst fire", burst=3, fire_delay=null, move_delay=4, burst_accuracy=list(0,0,0), dispersion=list(0.0, 0.2, 0.5), projectile_type=/obj/item/projectile/beam/burstlaser, modifystate="mg42-e", fire_sound=SFX_WEAPONS_LASER),
+		list(mode_name="5 laser burst", burst=5, fire_delay=null, move_delay=4, burst_accuracy=list(0,0,0,0,0), dispersion=list(0.0, 0.2, 0.5, 0.5, 0.5), projectile_type=/obj/item/projectile/beam/burstlaser, modifystate="mg42-e", fire_sound=SFX_WEAPONS_LASER),
+		list(mode_name="15 laser burst, ye boi.", burst=15, fire_delay=null, move_delay=4, burst_accuracy=list(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0), dispersion=list(0.0, 0.2, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5), projectile_type=/obj/item/projectile/beam/burstlaser, modifystate="mg42-e", fire_sound=SFX_WEAPONS_LASER),
 		)
 
 /obj/item/gun/energy/x01
@@ -211,14 +211,14 @@
 	icon = 'icons/obj/gun_yw.dmi'
 	item_state = null	//so the human update icon uses the icon_state instead.
 	item_icons = list(slot_r_hand_str = 'icons/mob/items/righthand_guns_yw.dmi', slot_l_hand_str = 'icons/mob/items/lefthand_guns_yw.dmi')
-	fire_sound = 'sound/weapons/taser.ogg'
+	fire_sound = SFX_WEAPONS_TASER
 	fire_delay = 8 // Handguns should be inferior to two-handed weapons.
 
 	projectile_type = /obj/item/projectile/beam/stun
 	modifystate = "x01stun"
 
 	firemodes = list(
-		list(mode_name="stun", fire_delay = 8, projectile_type= /obj/item/projectile/beam/stun, modifystate="x01stun", fire_sound='sound/weapons/taser.ogg', charge_cost = 240),
-		list(mode_name="laser", fire_delay = 8, projectile_type=/obj/item/projectile/beam, modifystate="x01laser", fire_sound='sound/weapons/Laser.ogg', charge_cost = 480),
-		list(mode_name="gauss", fire_delay=15, projectile_type=/obj/item/projectile/energy/gauss, modifystate="x01gauss", fire_sound='sound/weapons/gauss_shoot.ogg', charge_cost = 360)
+		list(mode_name="stun", fire_delay = 8, projectile_type= /obj/item/projectile/beam/stun, modifystate="x01stun", fire_sound=SFX_WEAPONS_TASER, charge_cost = 240),
+		list(mode_name="laser", fire_delay = 8, projectile_type=/obj/item/projectile/beam, modifystate="x01laser", fire_sound=SFX_WEAPONS_LASER, charge_cost = 480),
+		list(mode_name="gauss", fire_delay=15, projectile_type=/obj/item/projectile/energy/gauss, modifystate="x01gauss", fire_sound=SFX_WEAPONS_GAUSS_SHOOT, charge_cost = 360)
 		)

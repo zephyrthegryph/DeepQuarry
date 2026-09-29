@@ -20,28 +20,24 @@
 	/// Once-per-life emergency-invisibility latch (legacy ai_holder.used_invis).
 	var/ddraig_used_invis = FALSE
 
-/mob/living/simple_mob/vore/ddraig/get_ai_behaviors()
-	var/static/list/L = list(
-		/datum/ai_behavior/ddraig_panic_cloak,
-		/datum/ai_behavior/ddraig_flee_cloaked,
-		/datum/ai_behavior/ddraig_lunge,
-		/datum/ai_behavior/ddraig_firebreath,
-		/datum/ai_behavior/ddraig_tfbeam,
-		/datum/ai_behavior/melee_attack,
-		/datum/ai_behavior/maul_unconscious,
-		/datum/ai_behavior/approach_threat,
-		/datum/ai_behavior/retaliate_to_attacker,
-		/datum/ai_behavior/idle_wander,
-		/datum/ai_behavior/idle_speak,
-	)
-	return L
+TYPE_TABLE(/mob/living/simple_mob/vore/ddraig, get_ai_behaviors, list( \
+	/datum/ai_behavior/ddraig_panic_cloak, \
+	/datum/ai_behavior/ddraig_flee_cloaked, \
+	/datum/ai_behavior/ddraig_lunge, \
+	/datum/ai_behavior/ddraig_firebreath, \
+	/datum/ai_behavior/ddraig_tfbeam, \
+	/datum/ai_behavior/melee_attack, \
+	/datum/ai_behavior/maul_unconscious, \
+	/datum/ai_behavior/approach_threat, \
+	/datum/ai_behavior/retaliate_to_attacker, \
+	/datum/ai_behavior/idle_wander, \
+	/datum/ai_behavior/idle_speak, \
+))
 
-/mob/living/simple_mob/vore/ddraig/get_ai_target_selectors()
-	var/static/list/L = list(
-		/datum/target_selector/prefer_players,
-		/datum/target_selector/closest,
-	)
-	return L
+TYPE_TABLE(/mob/living/simple_mob/vore/ddraig, get_ai_target_selectors, list( \
+		/datum/target_selector/prefer_players, \
+		/datum/target_selector/closest, \
+	))
 
 // ---------------------------------------------------------------------------
 // Special-attack rotation. All three sit in the same range band (2..6) and
@@ -90,17 +86,15 @@
 	if(!istype(D))
 		return DQ_BEHAVIOR_FAILED
 	D.lunge(target)
-	brain.last_attack_at = world.time
+	EXPIRY_STAMP(brain, last_attack_at, CLOCK_WORLD)
 	return DQ_BEHAVIOR_DONE
 
-/datum/ai_behavior/ddraig_lunge/get_player_verb_info()
-	var/static/list/L = list(
-		"name" = "Lunge",
-		"desc" = "Telegraph, then leap at a target to knock them down.",
-		"category" = "Dragon",
-		"auto_target" = FALSE,
-	)
-	return L
+TYPE_TABLE(/datum/ai_behavior/ddraig_lunge, get_player_verb_info, list( \
+		"name" = "Lunge", \
+		"desc" = "Telegraph, then leap at a target to knock them down.", \
+		"category" = "Dragon", \
+		"auto_target" = FALSE, \
+	))
 
 // --- Fire breath -----------------------------------------------------------
 
@@ -126,17 +120,15 @@
 	if(!istype(D))
 		return DQ_BEHAVIOR_FAILED
 	D.firebreathstart(target)
-	brain.last_attack_at = world.time
+	EXPIRY_STAMP(brain, last_attack_at, CLOCK_WORLD)
 	return DQ_BEHAVIOR_DONE
 
-/datum/ai_behavior/ddraig_firebreath/get_player_verb_info()
-	var/static/list/L = list(
-		"name" = "Fire Breath",
-		"desc" = "Open your maw and spew a gout of flame at a target.",
-		"category" = "Dragon",
-		"auto_target" = FALSE,
-	)
-	return L
+TYPE_TABLE(/datum/ai_behavior/ddraig_firebreath, get_player_verb_info, list( \
+		"name" = "Fire Breath", \
+		"desc" = "Open your maw and spew a gout of flame at a target.", \
+		"category" = "Dragon", \
+		"auto_target" = FALSE, \
+	))
 
 // --- Transformation beam ---------------------------------------------------
 
@@ -162,17 +154,15 @@
 	if(!istype(D))
 		return DQ_BEHAVIOR_FAILED
 	D.tfbeam(target)
-	brain.last_attack_at = world.time
+	EXPIRY_STAMP(brain, last_attack_at, CLOCK_WORLD)
 	return DQ_BEHAVIOR_DONE
 
-/datum/ai_behavior/ddraig_tfbeam/get_player_verb_info()
-	var/static/list/L = list(
-		"name" = "Polymorph Beam",
-		"desc" = "Breathe a rainbow beam that briefly transforms a target into a critter.",
-		"category" = "Dragon",
-		"auto_target" = FALSE,
-	)
-	return L
+TYPE_TABLE(/datum/ai_behavior/ddraig_tfbeam, get_player_verb_info, list( \
+		"name" = "Polymorph Beam", \
+		"desc" = "Breathe a rainbow beam that briefly transforms a target into a critter.", \
+		"category" = "Dragon", \
+		"auto_target" = FALSE, \
+	))
 
 // ---------------------------------------------------------------------------
 // Emergency cloak — once per life, below 25% HP, vanish and bolt.

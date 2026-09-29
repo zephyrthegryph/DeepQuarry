@@ -9,11 +9,11 @@
 	var/time_between_spawn = 1 MINUTE
 	var/time_to_end = 45 MINUTES
 	var/spawned_num = 0
-	var/init_time
+	EXPIRY_DECLARE(init_time)
 
 /obj/effect/bspawner/Initialize(mapload)
 	. = ..()
-	init_time = world.time
+	EXPIRY_STAMP(src, init_time, CLOCK_WORLD)
 
 DECLARE_START_TIMER(/obj/effect/bspawner, "time_between_spawn", PROC_REF(spawn_due))
 DECLARE_START_TIMER(/obj/effect/bspawner, "time_to_end", /datum/proc/qdel_self)

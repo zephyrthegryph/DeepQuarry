@@ -74,7 +74,7 @@
 	endurance = 200
 	pass_flags = PASSTABLE
 	movement_cooldown = 3
-	movement_sound = 'sound/effects/spider_loop.ogg'
+	movement_sound = SFX_EFFECTS_SPIDER_LOOP
 	poison_resist = 0.5
 
 	see_in_dark = 10
@@ -89,7 +89,7 @@
 	melee_damage_lower = 18
 	melee_damage_upper = 30
 	attack_injury_kind = INJURY_CUT
-	attack_sound = 'sound/weapons/bite.ogg'
+	attack_sound = SFX_WEAPONS_BITE
 
 	heat_damage_per_tick = 20
 	cold_damage_per_tick = 20
@@ -123,7 +123,7 @@
 	pain_emote_3p = list("chitters", "clicks")
 
 	var/warning_warmup = 2 SECONDS // How long the leap telegraphing is.
-	var/warning_sound = 'sound/weapons/spiderlunge.ogg'
+	var/warning_sound = SFX_WEAPONS_SPIDERLUNGE
 
 	no_pull_when_living = TRUE
 
@@ -203,7 +203,7 @@
 	if(victim?.reagents)
 		victim.reagents.add_reagent(REAGENT_ID_WARNINGTOXIN, poison_per_bite)
 		victim.status_adjust(EFFECT_WEAKENED, 2)
-		victim.visible_message(span_danger("\The [src] has bitten \the [victim]!"))
+		act_message(src, victim, null, MSG_OTHERS(span_danger("%U% has bitten %T%!")))
 		to_chat(victim, span_critical("\The [src] bites you and retreats!"))
 		. = TRUE
 
@@ -211,4 +211,4 @@
 
 	ai_busy_end()
 /datum/decl/mob_organ_names/spider
-	hit_zones = list("cephalothorax", "abdomen", "left forelegs", "right forelegs", "left hind legs", "right hind legs", "pedipalp", "mouthparts")
+TYPE_TABLE(/datum/decl/mob_organ_names/spider, mob_organ_hit_zones, list("cephalothorax", "abdomen", "left forelegs", "right forelegs", "left hind legs", "right hind legs", "pedipalp", "mouthparts"))

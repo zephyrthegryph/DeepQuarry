@@ -121,6 +121,6 @@
 			return FALSE
 
 /datum/decl/mob_organ_names/frostfly
-	hit_zones = list("head", "thorax", "abdomen", "left vestigal wing", "right vestigal wing", "left legs", "right legs")
+TYPE_TABLE(/datum/decl/mob_organ_names/frostfly, mob_organ_hit_zones, list("head", "thorax", "abdomen", "left vestigal wing", "right vestigal wing", "left legs", "right legs"))
 
 DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/animal/sif/frostfly, "smoke_special", /datum/effect/effect/system/smoke_spread/frost)

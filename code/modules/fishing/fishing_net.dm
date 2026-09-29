@@ -20,10 +20,11 @@
 
 	default_material = MAT_CLOTH
 
-	var/list/accepted_mobs = list(/mob/living/simple_mob/animal/passive/fish) // ALLOW(instance_list): c: read-only per-subtype constant table (1 subtype overrides); a getter would share it, not worth it on a rare type
 
 	///Var for attack_self chain
 	var/special_handling = FALSE
+
+TYPE_TABLE_DECLARE(/obj/item/material/fishing_net, fishing_net_accepted_mobs, list(/mob/living/simple_mob/animal/passive/fish))
 
 /obj/item/material/fishing_net/Initialize(mapload)
 	. = ..()
@@ -35,7 +36,7 @@
 
 	if(istype(A, /turf))
 		var/mob/living/Target
-		for(var/type in accepted_mobs)
+		for(var/type in TYPE_TABLE_GET(src, fishing_net_accepted_mobs))
 			Target = locate_within(A, type)
 			if(Target)
 				afterattack(Target, user, proximity)
@@ -43,7 +44,7 @@
 
 	if(istype(A, /mob))
 		var/accept = FALSE
-		for(var/D in accepted_mobs)
+		for(var/D in TYPE_TABLE_GET(src, fishing_net_accepted_mobs))
 			if(istype(A, D))
 				accept = TRUE
 		for(var/atom/At in contents_of(src))
@@ -137,9 +138,10 @@ EXTEND_INTERACTIONS(/obj/item/material/fishing_net, \
 
 	default_material = MAT_CLOTH
 
-	accepted_mobs = list(/mob/living/simple_mob/animal/sif/glitterfly, /mob/living/carbon/human)
 
 	special_handling = TRUE
+
+TYPE_TABLE(/obj/item/material/fishing_net/butterfly_net, fishing_net_accepted_mobs, list(/mob/living/simple_mob/animal/sif/glitterfly, /mob/living/carbon/human))
 
 /obj/item/material/fishing_net/butterfly_net/afterattack(atom/A, mob/user, proximity)
 	if(get_dist(get_turf(src), A) > reach)
@@ -147,7 +149,7 @@ EXTEND_INTERACTIONS(/obj/item/material/fishing_net, \
 
 	if(istype(A, /turf))
 		var/mob/living/Target
-		for(var/type in accepted_mobs)
+		for(var/type in TYPE_TABLE_GET(src, fishing_net_accepted_mobs))
 			Target = locate_within(A, type)
 			if(Target)
 				afterattack(Target, user, proximity)
@@ -155,7 +157,7 @@ EXTEND_INTERACTIONS(/obj/item/material/fishing_net, \
 
 	if(istype(A, /mob))
 		var/accept = FALSE
-		for(var/D in accepted_mobs)
+		for(var/D in TYPE_TABLE_GET(src, fishing_net_accepted_mobs))
 			if(istype(A, D))
 				var/mob/M = A
 				if(ishuman(M) && M.size_multiplier > 0.5)
@@ -174,7 +176,7 @@ EXTEND_INTERACTIONS(/obj/item/material/fishing_net, \
 		var/mob/L = A
 		user.visible_message(span_notice("[user] snatches [L] with \the [src]."), span_notice("You snatch [L] with \the [src]."))
 		L.forceMove(src)
-		playsound(src, 'sound/effects/plop.ogg', 50, 1)
+		play_sfx(src, SFX_EFFECTS_PLOP, volume = 50, vary = TRUE)
 		update_icon()
 		update_weight()
 		return

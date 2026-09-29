@@ -53,7 +53,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/designer, \
 /obj/machinery/computer/transhuman/designer/proc/body_designer_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	. = TRUE
 	add_fingerprint(user)
-	if(inoperable())
+	if(!operable())
 		return
 	if(!designer_gui)
 		own_set(src, "designer_gui", new /datum/tgui_module/appearance_changer/body_designer(src, null))

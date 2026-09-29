@@ -45,7 +45,7 @@
 
 	base_attack_cooldown = 5 SECONDS
 	projectiletype = /obj/item/projectile/beam/appendage
-	projectilesound = 'sound/effects/slime_squish.ogg'
+	projectilesound = SFX_EFFECTS_SLIME_SQUISH
 
 	vore_default_mode = DM_SELECT
 
@@ -102,8 +102,8 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pakkun, \
 		return FALSE
 	if(!resting)
 		return FALSE
-	playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
-	user.visible_message(span_notice("\The [user] shakes \the [src] awake."),span_notice("You shake \the [src] awake!"))
+	play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
+	act_message(user, src, MSG_SELF(span_notice("You shake %T% awake!")), MSG_OTHERS(span_notice("%U% shakes %T% awake.")))
 	lay_down()
 	return TRUE
 
@@ -131,7 +131,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pakkun, \
 /mob/living/simple_mob/vore/pakkun/proc/pakkun_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
 	if(!istype(O, /obj/item/newspaper) || ckey || !isturf(user.loc))
 		return FALSE
-	user.visible_message(span_info("[user] swats [src] with [O]!"))
+	act_message(user, src, null, MSG_OTHERS(span_info("%U% swats %T% with %I%!")), item = O)
 	release_vore_contents()
 	for(var/mob/living/L in living_mobs(0))
 		if(!(LAZYFIND(prey_excludes, L)))

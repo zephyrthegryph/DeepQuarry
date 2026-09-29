@@ -99,7 +99,7 @@
 	melee_damage_lower = 7
 	melee_damage_upper = 15
 	attacktext = list("attacked")
-	attack_sound = 'sound/weapons/bite.ogg'
+	attack_sound = SFX_WEAPONS_BITE
 
 	min_oxy = 0
 	max_oxy = 0
@@ -133,7 +133,7 @@
 		var/mob/living/L = A
 		if(prob(knockdown_chance))
 			L.status_at_least(EFFECT_WEAKENED, 3)
-			L.visible_message(span_danger("\The [src] knocks down \the [L]!"))
+			act_message(src, L, null, MSG_OTHERS(span_danger("%U% knocks down %T%!")))
 
 /mob/living/simple_mob/vore/aggressive/mimic/will_show_tooltip()
 	return FALSE

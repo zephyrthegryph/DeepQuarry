@@ -10,7 +10,7 @@
 	var/scan_num = 0
 	var/tmp/obj/scanned_obj
 	var/tmp/obj/machinery/artifact_scanpad/owned_scanner
-	TIMESTAMP_VAR(scan_completion_time)
+	EXPIRY_DECLARE(scan_completion_time)
 	var/scan_duration = 50
 	var/tmp/obj/scanned_object
 	var/report_num = 0
@@ -48,7 +48,7 @@
 
 /obj/machinery/artifact_analyser/proc/interaction_artifact_analyser_use(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
-	if(stat & (NOPOWER|BROKEN) || get_dist(src, user) > 1)
+	if(!operable() || get_dist(src, user) > 1)
 		return TRUE
 	tgui_interact(user)
 	return TRUE
@@ -96,7 +96,7 @@
 						if(A.in_use)
 							artifact_in_use = 1
 						else
-							A.anchored = TRUE
+							A.set_anchored(TRUE)
 							A.in_use = 1
 
 					if(artifact_in_use)
@@ -116,48 +116,45 @@
 					atom_say("Unable to isolate scan target.")
 				else
 					scan_in_progress = 1
-					scan_completion_time = world.time + scan_duration
+					EXPIRY_SET(src, scan_completion_time, scan_duration, CLOCK_WORLD)
 					om_after(src, scan_duration + 1, PROC_REF(scan_timer_fired))
 					atom_say("Scanning begun.")
 			return TRUE
 
 /// A scan finishes on its timer (om_after() at the completion time), not by polling.
 /obj/machinery/artifact_analyser/proc/scan_timer_fired()
-	MACHINE_WAKE(src)
+	if(scan_in_progress)
+		finish_scan()
 
 /obj/machinery/artifact_analyser/machine_step()
-	if(!scan_in_progress)
-		return PROCESS_KILL
-	if(world.time <= scan_completion_time)
-		om_after(src, scan_completion_time + 1 - world.time, PROC_REF(scan_timer_fired))
-		return PROCESS_KILL
-	if(scan_in_progress && world.time > scan_completion_time)
-		scan_in_progress = 0
+	return PROCESS_KILL
 
-		var/results = ""
-		if(!owned_scanner())
-			reconnect_scanner()
-		if(!owned_scanner())
-			results = "Error communicating with scanner."
-		else if(!scanned_object() || scanned_object().loc != owned_scanner().loc)
-			results = "Unable to locate scanned object. Ensure it was not moved in the process."
-		else
-			results = get_scan_info(scanned_object())
+/obj/machinery/artifact_analyser/proc/finish_scan()
+	scan_in_progress = 0
+	var/results = ""
+	if(!owned_scanner())
+		reconnect_scanner()
+	if(!owned_scanner())
+		results = "Error communicating with scanner."
+	else if(!scanned_object() || scanned_object().loc != owned_scanner().loc)
+		results = "Unable to locate scanned object. Ensure it was not moved in the process."
+	else
+		results = get_scan_info(scanned_object())
 
-		atom_say("Scanning complete.")
-		var/obj/item/paper/P = new(src.loc)
-		P.name = "[src] report #[++report_num]"
-		P.info = span_bold("[src] analysis report #[report_num]") + "<br>"
-		P.info += "<br>"
-		P.info += "[bicon(scanned_object())] [results]"
-		P.stamped = list(/obj/item/stamp)
-		P.add_overlay("paper_stamped")
+	atom_say("Scanning complete.")
+	var/obj/item/paper/P = new(src.loc)
+	P.name = "[src] report #[++report_num]"
+	P.info = span_bold("[src] analysis report #[report_num]") + "<br>"
+	P.info += "<br>"
+	P.info += "[bicon(scanned_object())] [results]"
+	P.stamped = list(/obj/item/stamp)
+	P.add_overlay("paper_stamped")
 
-		if(scanned_object() && istype(scanned_object(), /obj/machinery/artifact))
-			var/obj/machinery/artifact/A = scanned_object()
-			A.anchored = FALSE
-			A.in_use = 0
-		rel_clear(src, "scanned_object")
+	if(scanned_object() && istype(scanned_object(), /obj/machinery/artifact))
+		var/obj/machinery/artifact/A = scanned_object()
+		A.set_anchored(FALSE)
+		A.in_use = 0
+	rel_clear(src, "scanned_object")
 
 //hardcoded responses, oh well
 /obj/machinery/artifact_analyser/proc/get_scan_info(obj/scanned_obj)

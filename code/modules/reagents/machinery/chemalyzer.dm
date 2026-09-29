@@ -11,7 +11,7 @@
 	anchored = TRUE
 	use_power = TRUE
 	idle_power_usage = 20
-	clicksound = "button"
+	clicksound = SFX_BUTTON
 	circuit = /obj/item/circuitboard/chemical_analyzer
 	var/list/found_reagents
 

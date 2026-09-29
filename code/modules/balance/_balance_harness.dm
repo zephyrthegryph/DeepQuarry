@@ -54,6 +54,10 @@
 /datum/balance_scenario/proc/expected_keys()
 	return list()
 
+/// expected_keys() of each scenario type, built once. A scenario whose keys are a fixed list
+/// overrides the table directly.
+TYPE_TABLE_DECLARE(/datum/balance_scenario, balance_expected_keys, expected_keys())
+
 /datum/balance_scenario/proc/record(key, value, unit = "")
 	if(isnum(value))
 		value = round(value, 0.01)
@@ -176,7 +180,7 @@
 		entry["runtimes"] = GLOB.total_runtimes - runtimes_before
 		var/list/results = scenario.results || list()
 		var/list/missing = list()
-		for(var/key in scenario.expected_keys())
+		for(var/key in TYPE_TABLE_GET(scenario, balance_expected_keys))
 			if(!(key in results))
 				missing += key
 		entry["missing_keys"] = missing

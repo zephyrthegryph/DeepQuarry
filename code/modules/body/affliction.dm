@@ -144,7 +144,7 @@
 	/// Trend baselines (D9): baseline key (a device, or a profile type) -> severity at that
 	/// device's last explicit scan. Lazy.
 	var/list/scan_baselines
-	/// Active stage id (see get_stages()).
+	/// Active stage id (see the affliction_stages table).
 	var/stage
 
 
@@ -394,11 +394,10 @@
 
 /// Per-stage table: stage id -> list("name", "description", "symptom_pool",
 /// "min_symptoms", "max_symptoms", "factors", "spontaneous_emotes",
-/// "spontaneous_emote_prob", "organ_damage_*", "always_spawns"). Return a
-/// static list. A stage's "factors" (alist) replaces `factors` and applies
+/// "spontaneous_emote_prob", "organ_damage_*", "always_spawns"). Shared,
+/// read-only. A stage's "factors" (alist) replaces `factors` and applies
 /// at full value.
-/datum/affliction/proc/get_stages()
-	return null
+TYPE_TABLE_DECLARE(/datum/affliction, affliction_stages, null)
 
 /datum/affliction/proc/recompute_stage_from_severity()
 	return
@@ -406,7 +405,7 @@
 /datum/affliction/proc/_apply_stage(new_stage)
 	if(new_stage == stage)
 		return
-	var/list/stages = get_stages()
+	var/list/stages = TYPE_TABLE_GET(src, affliction_stages)
 	if(!stages || !stages[new_stage])
 		return
 	stage = new_stage

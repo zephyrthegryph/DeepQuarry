@@ -7,10 +7,8 @@
 		if(SK && SK.in_phase)
 			var/turf/T = get_turf(src)
 			visible_message(span_notice("[src] fizzles and disappears as something interacts with it!"))
-			playsound(src, pick('sound/effects/Glassbr1.ogg', 'sound/effects/Glassbr2.ogg', 'sound/effects/Glassbr3.ogg'), 50, 1)
-			var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread()
-			s.set_up(5, 1, T)
-			s.start()
+			play_sfx(src, SFX_SHATTER, volume = 50)
+			fx_sparks(T, 5)
 			SK.attack_dephase(T, src)
 			qdel(src)
 

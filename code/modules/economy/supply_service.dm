@@ -20,7 +20,9 @@ GLOBAL_DATUM_INIT(supply_service, /datum/world_service/supply, new)
 
 	var/points_per_slip = 2
 	var/points_per_money = 0.02 // Legacy export values convert at 1 point = 50 Thalers.
-	TIMESTAMP_VAR(next_payroll)
+	EXPIRY_DECLARE(next_payroll)
+	/// om_after() timer for the next payroll_cycle(), or 0 until the first service step arms it.
+	var/tmp/payroll_timer = 0
 	/// NanoTrasen's default contribution toward the station's projected gross payroll.
 	var/nt_salary_support = 0.75
 	/// Command-selected rule for dividing the projected station payroll pool.
@@ -66,7 +68,7 @@ GLOBAL_DATUM_INIT(supply_service, /datum/world_service/supply, new)
 			qdel(P)
 	initialize_cargo_market()
 
-	next_payroll = world.time + 15 MINUTES
+	EXPIRY_SET(src, next_payroll, 15 MINUTES, CLOCK_WORLD)
 	log_world("World service [name] initialized: [length(supply_pack)] supply packs.")
 
 /datum/world_service/supply/proc/reset_shift_economy_tracking()
@@ -84,15 +86,20 @@ GLOBAL_DATUM_INIT(supply_service, /datum/world_service/supply, new)
 
 /datum/world_service/supply/service_step(resumed)
 	process_cargo_market()
-	if(world.time < next_payroll)
-		return TRUE
-	next_payroll = world.time + 15 MINUTES
+	if(!payroll_timer)
+		payroll_timer = om_after(src, LEFT_UNTIL(src, next_payroll, CLOCK_WORLD), PROC_REF(payroll_cycle))
+	return TRUE
+
+/// om_after() callback every 15 minutes: the department budget cycle and payroll.
+/// next_payroll is only the displayed time of the next cycle.
+/datum/world_service/supply/proc/payroll_cycle()
+	EXPIRY_SET(src, next_payroll, 15 MINUTES, CLOCK_WORLD)
+	payroll_timer = om_after(src, 15 MINUTES, PROC_REF(payroll_cycle))
 	var/completed_service_period = service_accounting_period
 	var/list/funded_allocations = run_department_budget_cycle()
 	run_department_payroll()
 	publish_budget_cycle_settlement(funded_allocations, completed_service_period)
 	settle_service_contract_period(completed_service_period)
-	return TRUE
 
 /datum/world_service/supply/proc/run_department_budget_cycle()
 	var/list/funded_allocations = list()

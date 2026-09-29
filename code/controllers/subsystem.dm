@@ -203,15 +203,15 @@
 	if (reset_time)
 		postponed_fires = 0
 		if (queue_node_flags & SS_TICKER)
-			next_fire = world.time + (world.tick_lag * wait)
+			next_fire = world.time + (world.tick_lag * wait) // ALLOW(sys_world_time_write): MC scheduler internals (next_fire/queued_time drive Master, like master.dm)
 		else
-			next_fire = world.time + wait
+			next_fire = world.time + wait // ALLOW(sys_world_time_write): MC scheduler internals (next_fire/queued_time drive Master, like master.dm)
 		return
 
 	if (queue_node_flags & SS_TICKER)
-		next_fire = world.time + (world.tick_lag * wait)
+		next_fire = world.time + (world.tick_lag * wait) // ALLOW(sys_world_time_write): MC scheduler internals (next_fire/queued_time drive Master, like master.dm)
 	else if (queue_node_flags & SS_POST_FIRE_TIMING)
-		next_fire = world.time + wait + (world.tick_lag * (tick_overrun/100))
+		next_fire = world.time + wait + (world.tick_lag * (tick_overrun/100)) // ALLOW(sys_world_time_write): MC scheduler internals (next_fire/queued_time drive Master, like master.dm)
 	else if (queue_node_flags & SS_KEEP_TIMING)
 		next_fire += wait
 	else
@@ -251,7 +251,7 @@
 			if (queue_node_priority < SS_priority)
 				break
 
-	queued_time = world.time
+	queued_time = world.time // ALLOW(sys_world_time_write): MC scheduler internals (next_fire/queued_time drive Master, like master.dm)
 	queued_priority = SS_priority
 	state = SS_QUEUED
 	if (SS_flags & SS_BACKGROUND) //update our running total

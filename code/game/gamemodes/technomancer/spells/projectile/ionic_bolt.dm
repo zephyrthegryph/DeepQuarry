@@ -17,4 +17,4 @@
 	instability_per_shot = 6
 	cooldown = 10
 	pre_shot_delay = 0
-	fire_sound = 'sound/effects/supermatter.ogg'
+	fire_sound = SFX_EFFECTS_SUPERMATTER

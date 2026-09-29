@@ -21,7 +21,7 @@
 		return ITEM_INTERACT_SUCCESS
 
 	user.visible_message(span_infoplain(span_bold("\The [user]") + " welds the barrel of \the [src] into place."))
-	playsound(src, 'sound/items/Welder2.ogg', 100, 1)
+	play_sfx(src, SFX_ITEMS_WELDER2, 2)
 	increment_construction_stage()
 	return ITEM_INTERACT_SUCCESS
 
@@ -29,7 +29,7 @@
 	if(construction_stage < 9)
 		return NONE
 	user.visible_message(span_infoplain(span_bold("\The [user]") + " secures \the [src] and finishes it off."))
-	playsound(src, 'sound/items/Screwdriver.ogg', 50, 1)
+	play_sfx(src, SFX_ITEMS_SCREWDRIVER)
 	var/obj/item/gun/magnetic/coilgun = new(loc)
 	var/put_in_hands
 	var/mob/M = src.loc

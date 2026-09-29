@@ -4,7 +4,7 @@
 	icon = 'icons/obj/ecig.dmi'
 	var/active = 0
 	var/cartridge_type = /obj/item/reagent_containers/ecig_cartridge/med_nicotine
-	var/obj/item/reagent_containers/ecig_cartridge/ec_cartridge
+	var/obj/item/reagent_containers/ecig_cartridge/ec_cartridge // owned: the loaded cartridge, kept in the e-cig's contents
 	w_class = ITEMSIZE_TINY
 	slot_flags = SLOT_EARS | SLOT_MASK
 	attack_verb = list("attacked", "poked", "battered")

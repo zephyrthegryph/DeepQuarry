@@ -74,7 +74,7 @@
 		else
 			rel_add(src, "visible_neutrals", M)
 
-	last_update = world.time
+	EXPIRY_STAMP(src, last_update, CLOCK_WORLD)
 	trim_old_damage()
 	trim_old_sounds()
 	trim_old_hazards()
@@ -132,7 +132,7 @@
 	for(var/i = length(known_hazards), i >= 1, i--)
 		var/list/entry = known_hazards[i]
 		var/atom/hazard = locate(entry[1])
-		if(entry[3] < world.time || !(hazard in hazard_atoms))
+		if(ELAPSED_SINCE(src, entry[3], CLOCK_WORLD) > 0 || !(hazard in hazard_atoms))
 			known_hazards.Cut(i, i + 1)
 			if(hazard in hazard_atoms)
 				rel_remove(src, "hazard_atoms", hazard)

@@ -15,8 +15,8 @@
 	throw_range = 8
 	max_storage_space = ITEMSIZE_COST_SMALL * 7 // 14
 	var/list/icon_variety
-	drop_sound = 'sound/items/drop/cardboardbox.ogg'
-	pickup_sound = 'sound/items/pickup/cardboardbox.ogg'
+	drop_sound = SFX_ITEMS_DROP_CARDBOARDBOX
+	pickup_sound = SFX_ITEMS_PICKUP_CARDBOARDBOX
 
 /obj/item/storage/firstaid/Initialize(mapload)
 	. = ..()
@@ -64,25 +64,23 @@
 	icon_state = "surgerykit"
 	item_state = "firstaid-surgery"
 
-/obj/item/storage/firstaid/surgery/hold_constraint()
-	var/list/holds = list(
-		/obj/item/surgical/bone_clamp,
-		/obj/item/surgical/bonesetter,
-		/obj/item/surgical/cautery,
-		/obj/item/surgical/circular_saw,
-		/obj/item/surgical/hemostat,
-		/obj/item/surgical/retractor,
-		/obj/item/surgical/scalpel,
-		/obj/item/surgical/surgicaldrill,
-		/obj/item/surgical/bonegel,
-		/obj/item/surgical/FixOVein,
-		/obj/item/stack/medical/advanced/bruise_pack,
-		/obj/item/stack/nanopaste,
-		/obj/item/healthanalyzer,
-		/obj/item/autopsy_scanner,
-		/obj/item/surgical/bioregen
-		)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/firstaid/surgery, hold_spec, list(HOLD_ONLY(list( \
+		/obj/item/surgical/bone_clamp, \
+		/obj/item/surgical/bonesetter, \
+		/obj/item/surgical/cautery, \
+		/obj/item/surgical/circular_saw, \
+		/obj/item/surgical/hemostat, \
+		/obj/item/surgical/retractor, \
+		/obj/item/surgical/scalpel, \
+		/obj/item/surgical/surgicaldrill, \
+		/obj/item/surgical/bonegel, \
+		/obj/item/surgical/FixOVein, \
+		/obj/item/stack/medical/advanced/bruise_pack, \
+		/obj/item/stack/nanopaste, \
+		/obj/item/healthanalyzer, \
+		/obj/item/autopsy_scanner, \
+		/obj/item/surgical/bioregen \
+		)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 
 /obj/item/storage/firstaid/clotting
 	name = "clotting kit"
@@ -104,14 +102,14 @@
 	desc = "It's an airtight container for storing medication."
 	icon_state = "pill_canister"
 	icon = 'icons/obj/chemical.dmi'
-	drop_sound = 'sound/items/drop/pillbottle.ogg'
-	pickup_sound = 'sound/items/pickup/pillbottle.ogg'
+	drop_sound = SFX_ITEMS_DROP_PILLBOTTLE
+	pickup_sound = SFX_ITEMS_PICKUP_PILLBOTTLE
 	item_state_slots = list(slot_r_hand_str = "contsolid", slot_l_hand_str = "contsolid")
 	w_class = ITEMSIZE_SMALL
 	allow_quick_gather = 1
 	allow_quick_empty = 1
 	use_to_pickup = TRUE
-	use_sound = 'sound/items/storage/pillbottle.ogg'
+	use_sound = SFX_ITEMS_STORAGE_PILLBOTTLE
 	max_storage_space = ITEMSIZE_COST_TINY * 14
 	var/wrapper_color
 	var/label
@@ -120,9 +118,7 @@
 	var/base_name = " "
 	var/base_desc = " "
 
-/obj/item/storage/pill_bottle/hold_constraint()
-	var/list/holds = list(/obj/item/reagent_containers/pill,/obj/item/dice,/obj/item/paper)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_TINY))
+TYPE_TABLE(/obj/item/storage/pill_bottle, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/pill,/obj/item/dice,/obj/item/paper)), HOLD_MAX_SIZE(ITEMSIZE_TINY)))
 
 /obj/item/storage/pill_bottle/Initialize(mapload)
 	. = ..()
@@ -470,9 +466,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/pill_bottle, INTERACT_ITEM("Label", PROC_R
 	starts_with = list(/obj/item/reagent_containers/pill/sleevingcure)
 */
 
-/obj/item/storage/mrebag/pill/hold_constraint()
-	var/list/holds = list(/obj/item/reagent_containers/pill)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_TINY))
+TYPE_TABLE(/obj/item/storage/mrebag/pill, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/pill)), HOLD_MAX_SIZE(ITEMSIZE_TINY)))
 
 /obj/item/storage/pill_bottle/paracetamol
 	name = "pill bottle (" + REAGENT_PARACETAMOL + ")"

@@ -44,7 +44,7 @@ DECLARE_INTERACTIONS(/obj/structure/droppod_door, \
 	deploying = FALSE
 	deployed = TRUE
 	visible_message(span_danger("The explosive bolts on \the [src] detonate, throwing it open!"))
-	playsound(src, 'sound/effects/bang.ogg', 50, 1, 5)
+	play_sfx(src, SFX_EFFECTS_BANG, extrarange = 5)
 
 	// This is shit but it will do for the sake of testing.
 	for(var/obj/structure/droppod_door/D in orange(1,src))
@@ -77,12 +77,12 @@ DECLARE_INTERACTIONS(/obj/structure/droppod_door, \
 		M.throw_at(get_edge_target_turf(origin,src.dir),rand(0,3),50)
 
 	// Create a decorative ramp bottom and flatten out our current ramp.
-	density = FALSE
+	set_density(FALSE)
 	set_opacity(0)
 	icon_state = "ramptop"
 	var/obj/structure/droppod_door/door_bottom = new(T)
 	door_bottom.deployed = TRUE
-	door_bottom.density = FALSE
+	door_bottom.set_density(FALSE)
 	door_bottom.set_opacity(0)
 	door_bottom.dir = src.dir
 	door_bottom.icon_state = "rampbottom"

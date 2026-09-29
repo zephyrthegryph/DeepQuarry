@@ -46,7 +46,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 	var/tmp/other_flags = 0
 
 	var/tmp/stat = NIF_PREINSTALL		// Status of the NIF
-	var/tmp/install_done				// Time when install will finish
+	EXPIRY_TMP_DECLARE(install_done) // Time when install will finish
 	var/tmp/open = FALSE				// If it's open for maintenance (1-3)
 	var/tmp/should_be_in = BP_HEAD		// Organ we're supposed to be held in
 
@@ -237,7 +237,7 @@ DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_ite
 /obj/item/nif/proc/rewire_done(mob/user, obj/item/stack/cable_coil/C)
 	if(open == 1 && C.use(3))
 		user.visible_message("[user] replaces some wiring in \the [src].",span_notice("You replace any burned out wiring in \the [src]."))
-		playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
+		play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 		open = 2
 		update_icon()
 
@@ -307,10 +307,10 @@ DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_ite
 	if(!install_done)
 		if(human.mind.name == owner)
 			owner_key = human.ckey
-			install_done = world.time + 1 MINUTE
+			EXPIRY_SET(src, install_done, 1 MINUTE, CLOCK_WORLD)
 			notify("Welcome back, [owner]! Performing quick-calibration...")
 		else if(!owner)
-			install_done = world.time + 15 MINUTES // Install time from 35 minutes to 15 minutes.
+			EXPIRY_SET(src, install_done, 15 MINUTES, CLOCK_WORLD) // Install time from 35 minutes to 15 minutes.
 			owner_key = human.ckey
 			notify("Adapting to new user...")
 			om_after(src, 5 SECONDS, PROC_REF(notify), "Adjoining optic [HAS_SYNTHETIC_BIOLOGY(human) ? "interface" : "nerve"], please be patient.", TRUE)
@@ -735,7 +735,7 @@ DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_ite
 	forceMove(eo)
 	rel_add(eo, "implants", src)
 	implant(T)
-	playsound(T,'sound/effects/slime_squish.ogg',50,1)
+	play_sfx(T, SFX_EFFECTS_SLIME_SQUISH)
 
 /mob/living/carbon/human/proc/set_nif_examine()
 	set name = "NIF Appearance"

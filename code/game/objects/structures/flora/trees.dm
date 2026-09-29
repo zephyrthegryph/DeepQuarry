@@ -71,7 +71,7 @@
 		damage_to_do = round(damage_to_do / 4)
 	if(damage_to_do > 0)
 		if(W.sharp && W.edge)
-			playsound(src, 'sound/effects/woodcutting.ogg', 50, 1)
+			play_sfx(src, SFX_EFFECTS_WOODCUTTING, 0.5)
 		else
 			playsound(src, W.hitsound, 50, 1)
 		if(damage_to_do > 5 && !indestructable)
@@ -136,7 +136,7 @@
 		return
 
 	is_stump = TRUE
-	density = FALSE
+	set_density(FALSE)
 	icon_state = "[base_state]_stump"
 	cut_overlays() // For the Sif tree and other future glowy trees.
 	set_light(0)

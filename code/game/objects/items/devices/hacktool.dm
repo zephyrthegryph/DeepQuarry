@@ -8,8 +8,8 @@
 	var/list/known_targets
 	var/list/supported_types
 	var/datum/tgui_state/default/must_hack/hack_state
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 /obj/item/multitool/hacktool/override
 	hackspeed = 0.75
@@ -122,12 +122,12 @@ DECLARE_DEFAULT_CHILD(/obj/item/multitool/hacktool, "hack_state", /datum/tgui_st
 	to_chat(user, span_notice("Override successful!"))
 	A.locked = FALSE
 	A.update_icon()
-	playsound(A, 'sound/machines/click.ogg', 15, 1, -3)
+	play_sfx(A, SFX_MACHINES_CLICK, 0.3, extrarange = -3)
 /obj/item/multitool/hacktool/proc/attempt_hack_timed_done2(mob/user, obj/structure/closet/crate/secure/A)
 	to_chat(user, span_notice("Override successful!"))
 	A.locked = FALSE
 	A.update_icon()
-	playsound(A, 'sound/machines/click.ogg', 15, 1, -3)
+	play_sfx(A, SFX_MACHINES_CLICK, 0.3, extrarange = -3)
 
 /obj/item/multitool/hacktool/proc/sanity_check()
 	if(max_known_targets < 1) max_known_targets = 1

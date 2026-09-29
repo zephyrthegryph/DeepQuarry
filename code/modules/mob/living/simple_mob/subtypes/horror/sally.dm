@@ -1,5 +1,5 @@
 /mob/living/simple_mob/horror/Sally
-	reaction_sound = 'sound/h_sounds/holla.ogg'
+	reaction_sound = SFX_H_SOUNDS_HOLLA
 	name = "???"
 	desc = "A mass of tentacles hold up a large head, graced with one of the grandest smiles in the galaxy. It's a shame about the constant oil leaking from its eyes."
 
@@ -11,7 +11,7 @@
 	icon = 'icons/mob/horror_show/widehorror.dmi'
 	icon_gib = "generic_gib"
 
-	attack_sound = 'sound/h_sounds/sampler.ogg'
+	attack_sound = SFX_H_SOUNDS_SAMPLER
 
 	endurance = 200
 
@@ -29,11 +29,11 @@
 	say_list_type = /datum/say_list/Sally
 
 /mob/living/simple_mob/horror/Sally/on_death(gibbed)
-	playsound(src, 'sound/h_sounds/lynx.ogg', 50, 1)
+	play_sfx(src, SFX_H_SOUNDS_LYNX)
 	..()
 
 /mob/living/simple_mob/horror/Sally/bullet_act()
-	playsound(src, 'sound/h_sounds/holla.ogg', 50, 1)
+	play_sfx(src, SFX_H_SOUNDS_HOLLA)
 	..()
 
 /datum/say_list/Sally

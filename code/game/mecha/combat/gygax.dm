@@ -18,13 +18,6 @@
 	max_universal_equip = 1
 	max_special_equip = 1
 
-	starting_components = list(
-		/obj/item/mecha_parts/component/hull/lightweight,
-		/obj/item/mecha_parts/component/actuator,
-		/obj/item/mecha_parts/component/armor/marshal,
-		/obj/item/mecha_parts/component/gas,
-		/obj/item/mecha_parts/component/electrical
-		)
 
 	overload_possible = 1
 
@@ -32,6 +25,14 @@
 	icon_scale_y = 1.35
 
 //Not quite sure how to move those yet.
+
+TYPE_TABLE(/obj/mecha/combat/gygax, mecha_starting_components, list( \
+		/obj/item/mecha_parts/component/hull/lightweight, \
+		/obj/item/mecha_parts/component/actuator, \
+		/obj/item/mecha_parts/component/armor/marshal, \
+		/obj/item/mecha_parts/component/gas, \
+		/obj/item/mecha_parts/component/electrical \
+		))
 /obj/mecha/combat/gygax/get_commands()
 	var/output = {"<div class='wr'>
 						<div class='header'>Special</div>
@@ -96,15 +97,16 @@
 	max_universal_equip = 1
 	max_special_equip = 1
 
-	starting_components = list(
-		/obj/item/mecha_parts/component/hull,
-		/obj/item/mecha_parts/component/actuator,
-		/obj/item/mecha_parts/component/armor/lightweight,
-		/obj/item/mecha_parts/component/gas,
-		/obj/item/mecha_parts/component/electrical
-		)
 
 	var/obj/item/clothing/glasses/hud/health/mech/hud
+
+TYPE_TABLE(/obj/mecha/combat/gygax/serenity, mecha_starting_components, list( \
+		/obj/item/mecha_parts/component/hull, \
+		/obj/item/mecha_parts/component/actuator, \
+		/obj/item/mecha_parts/component/armor/lightweight, \
+		/obj/item/mecha_parts/component/gas, \
+		/obj/item/mecha_parts/component/electrical \
+		))
 
 DECLARE_DEFAULT_CHILD(/obj/mecha/combat/gygax/serenity, "hud", /obj/item/clothing/glasses/hud/health/mech)
 

@@ -76,6 +76,8 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 	var/periodic
 	/// list of list(delay, proc ref).
 	var/list/timers
+	/// EXPIRY_ON_LAPSE: var name -> list(clock, proc_ref) (code/datums/sys/expiry.dm).
+	var/list/expiry_hooks
 
 /datum/lifecycle_decls/New(owner_type)
 	src.owner_type = owner_type
@@ -150,6 +152,9 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 /datum/lifecycle_decls/proc/add_timer(delay, proc_ref)
 	LAZYADD(timers, list(list(delay, proc_ref)))
 
+/datum/lifecycle_decls/proc/add_expiry_hook(var_name, clock, proc_ref)
+	LAZYSET(expiry_hooks, var_name, list(clock, proc_ref))
+
 /// Validates the declarations against the first instance and works out the work bits.
 /// A bad declaration is reported and dropped here, once per type, never mid-lifecycle.
 /datum/lifecycle_decls/proc/finish(datum/D)
@@ -189,7 +194,13 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 		work |= DECL_WORK_INIT
 	if(appearance_layers)
 		work |= DECL_WORK_APPEARANCE
-	if(registries || services || binders || behaviours || periodic || timers)
+	for(var/hook_var in expiry_hooks?.Copy())
+		if(!(hook_var in D.vars))
+			stack_trace("EXPIRY_ON_LAPSE([owner_type], \"[hook_var]\"): no such var; dropped")
+			expiry_hooks -= hook_var
+	if(!length(expiry_hooks))
+		expiry_hooks = null
+	if(registries || services || binders || behaviours || periodic || timers || expiry_hooks)
 		work |= DECL_WORK_MATERIALIZE
 	if(binders)
 		work |= DECL_WORK_UNBIND
@@ -412,6 +423,8 @@ DECLARE_SHARED_CACHE_EX(decl_appearance, GLOBAL_PROC_REF(build_decl_appearance),
 		om_task_periodic(A, decls.periodic)
 	for(var/list/timer in decls.timers)
 		om_after(A, lifecycle_decl_value(A, timer[1]), timer[2])
+	for(var/hook_var in decls.expiry_hooks)
+		expiry_arm(A, hook_var, A.vars[hook_var], TRUE)
 
 /// The inverse, from /atom/on_dematerialize(). Registries, behaviours and timers are left by
 /// the core (leave_registries(), om_teardown_rest()).

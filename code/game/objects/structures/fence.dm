@@ -140,7 +140,7 @@
 /obj/structure/fence/proc/update_cut_status()
 	if(!cuttable)
 		return
-	density = TRUE
+	set_density(TRUE)
 
 	switch(hole_size)
 		if(NO_HOLE)
@@ -149,7 +149,7 @@
 			icon_state = "straight_cut2"
 		if(LARGE_HOLE)
 			icon_state = "straight_cut3"
-			density = FALSE
+			set_density(FALSE)
 
 //FENCE DOORS
 
@@ -165,7 +165,7 @@
 	var/lock_type = "simple"	//string matched to "pick_type" on /obj/item/lockpick
 	var/can_pick = TRUE	//can it be picked/bypassed?
 	var/lock_difficulty = 1	//multiplier to picking/bypassing time
-	var/keysound = 'sound/items/toolbelt_equip.ogg'
+	var/keysound = SFX_ITEMS_TOOLBELT_EQUIP
 
 /obj/structure/fence/door/Initialize(mapload)
 	update_door_status()
@@ -260,15 +260,15 @@
 			open = FALSE
 
 	update_door_status()
-	playsound(src, 'sound/machines/click.ogg', 100, 1)
+	play_sfx(src, SFX_MACHINES_CLICK, 2)
 
 /obj/structure/fence/door/proc/update_door_status()
 	switch(open)
 		if(FALSE)
-			density = TRUE
+			set_density(TRUE)
 			icon_state = "door_closed"
 		if(TRUE)
-			density = FALSE
+			set_density(FALSE)
 			icon_state = "door_opened"
 
 /obj/structure/fence/door/proc/can_open(mob/user)

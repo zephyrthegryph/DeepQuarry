@@ -3,7 +3,7 @@
 	desc = "A folded membrane which rapidly expands into a large cubical shape on activation."
 	icon = 'icons/obj/inflatable.dmi'
 	icon_state = "folded_wall"
-	drop_sound = 'sound/items/drop/rubber.ogg'
+	drop_sound = SFX_ITEMS_DROP_RUBBER
 	w_class = ITEMSIZE_NORMAL
 	var/deploy_path = /obj/structure/inflatable
 	///Var used for attack_self chain
@@ -79,7 +79,7 @@ DECLARE_INTERACTIONS(/obj/item/inflatable, INTERACT_SELF("Inflate", PROC_REF(inf
 		visible_message(span_danger("[user] pierces [src] with [W]!"))
 		puncture()
 	if(W.obj_damage_type())
-		playsound(src, 'sound/effects/Glasshit.ogg', 75, 1)
+		play_sfx(src, SFX_EFFECTS_GLASSHIT)
 		receive_weapon_hit(W, user)
 	return TRUE
 
@@ -87,7 +87,7 @@ DECLARE_INTERACTIONS(/obj/item/inflatable, INTERACT_SELF("Inflate", PROC_REF(inf
 	hand_deflate_effect(user)
 
 /obj/item/inflatable/proc/inflate(mob/user,location)
-	playsound(location, 'sound/items/zip.ogg', 75, 1)
+	play_sfx(location, SFX_ITEMS_ZIP)
 	to_chat(user, span_notice("You inflate [src]."))
 	var/obj/structure/inflatable/R = new deploy_path(location)
 	src.transfer_fingerprints_to(R)
@@ -95,7 +95,7 @@ DECLARE_INTERACTIONS(/obj/item/inflatable, INTERACT_SELF("Inflate", PROC_REF(inf
 	consume(src, user)
 
 /obj/structure/inflatable/proc/deflate()
-	playsound(src, 'sound/machines/hiss.ogg', 75, 1)
+	play_sfx(src, SFX_MACHINES_HISS, 1.5, vary = TRUE)
 	visible_message("[src] slowly deflates.")
 	om_after(src, 5 SECONDS, PROC_REF(deflate_finish))
 
@@ -105,7 +105,7 @@ DECLARE_INTERACTIONS(/obj/item/inflatable, INTERACT_SELF("Inflate", PROC_REF(inf
 	replace_with(src, R)
 
 /obj/structure/inflatable/proc/puncture()
-	playsound(src, 'sound/machines/hiss.ogg', 75, 1)
+	play_sfx(src, SFX_MACHINES_HISS, 1.5, vary = TRUE)
 	visible_message("[src] rapidly deflates!")
 	var/obj/item/inflatable/torn/R = new /obj/item/inflatable/torn(loc)
 	src.transfer_fingerprints_to(R)
@@ -212,7 +212,7 @@ DECLARE_INTERACTIONS(/obj/item/inflatable, INTERACT_SELF("Inflate", PROC_REF(inf
 	om_after(src, 1 SECOND, PROC_REF(open_finish))
 
 /obj/structure/inflatable/door/proc/open_finish()
-	density = FALSE
+	set_density(FALSE)
 	opacity = 0
 	state = 1
 	update_icon()
@@ -224,7 +224,7 @@ DECLARE_INTERACTIONS(/obj/item/inflatable, INTERACT_SELF("Inflate", PROC_REF(inf
 	om_after(src, 1 SECOND, PROC_REF(close_finish))
 
 /obj/structure/inflatable/door/proc/close_finish()
-	density = TRUE
+	set_density(TRUE)
 	opacity = 0
 	state = 0
 	update_icon()
@@ -237,7 +237,7 @@ DECLARE_INTERACTIONS(/obj/item/inflatable, INTERACT_SELF("Inflate", PROC_REF(inf
 		icon_state = "door_closed"
 
 /obj/structure/inflatable/door/deflate()
-	playsound(src, 'sound/machines/hiss.ogg', 75, 1)
+	play_sfx(src, SFX_MACHINES_HISS, 1.5, vary = TRUE)
 	visible_message("[src] slowly deflates.")
 	om_after(src, 5 SECONDS, PROC_REF(deflate_finish))
 
@@ -247,7 +247,7 @@ DECLARE_INTERACTIONS(/obj/item/inflatable, INTERACT_SELF("Inflate", PROC_REF(inf
 	replace_with(src, R)
 
 /obj/structure/inflatable/door/puncture()
-	playsound(src, 'sound/machines/hiss.ogg', 75, 1)
+	play_sfx(src, SFX_MACHINES_HISS, 1.5, vary = TRUE)
 	visible_message("[src] rapidly deflates!")
 	var/obj/item/inflatable/door/torn/R = new /obj/item/inflatable/door/torn(loc)
 	src.transfer_fingerprints_to(R)
@@ -289,6 +289,4 @@ EXTEND_INTERACTIONS(/obj/item/inflatable/door/torn, INTERACT_USE("Inflate", PROC
 	max_storage_space = ITEMSIZE_COST_NORMAL * 7
 	starts_with = list(/obj/item/inflatable/door = 3, /obj/item/inflatable = 4)
 
-/obj/item/storage/briefcase/inflatable/hold_constraint()
-	var/list/holds = list(/obj/item/inflatable)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/briefcase/inflatable, hold_spec, list(HOLD_ONLY(list(/obj/item/inflatable)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))

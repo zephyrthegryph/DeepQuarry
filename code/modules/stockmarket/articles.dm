@@ -27,7 +27,7 @@ GLOBAL_LIST_EMPTY(FrozenAccounts)
 	var/author = "P. Pubbie"
 	var/spacetime = ""
 	var/opinion = 0
-	var/ticks = 0
+	EXPIRY_DECLARE(ticks)
 	var/tmp/datum/stock/about
 	var/outlet = ""
 	var/static/list/outlets = list()
@@ -78,7 +78,7 @@ GLOBAL_LIST_EMPTY(FrozenAccounts)
 	else
 		author = pick(authors)
 
-	ticks = world.time
+	EXPIRY_STAMP(src, ticks, CLOCK_WORLD)
 
 /datum/article/proc/generateOutletName()
 	var/list/locations = list("Earth", "Luna", "Mars", "Saturn", "Jupiter", "Uranus", "Pluto", "Europa", "Io", "Phobos", "Deimos", "Space", "Venus", "Neptune", "Mercury", "Kalliope", "Ganymede", "Callisto", "Amalthea", "Himalia", "Orion", "Sybil", "Basil", "Badger", "Terry", "Artyom")

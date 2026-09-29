@@ -21,7 +21,7 @@
 	attacktext = list("scratches")
 	see_in_dark = 8
 	minbodytemp = 0
-	var/well_fed = 0
+	EXPIRY_DECLARE(well_fed)
 
 	vore_bump_chance = 0
 	vore_digest_chance = 50
@@ -105,19 +105,19 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/meowl, INTERACT_INSERT(/obj/item
 /mob/living/simple_mob/vore/meowl/proc/meowl_interaction_feed(mob/user, obj/item/O, datum/interaction/interaction)
 	if(stat == DEAD)
 		return TRUE
-	user.visible_message(span_notice("\The [src] happily gulps down \the [O] right out of \the [user]'s hand, it seems pretty content now."),span_notice("\The [src] happily gulps down \the [O] right out of your hand, it seems pretty content now."))
+	act_message(user, src, MSG_SELF(span_notice("%T% happily gulps down %I% right out of your hand, it seems pretty content now.")), MSG_OTHERS(span_notice("%T% happily gulps down %I% right out of %U%'s hand, it seems pretty content now.")), item = O)
 	consume(O, user)
-	well_fed = world.time
+	EXPIRY_STAMP(src, well_fed, CLOCK_WORLD)
 	return TRUE
 
 /mob/living/simple_mob/vore/meowl/PounceTarget(mob/living/M, successrate = 100)
 	COOLDOWN_START(src, vore_pounce_cooldown, 1 SECONDS) // don't attempt another pounce for a while
 	if(prob(max(successrate,33))) // pounce success!
 		M.status_at_least(EFFECT_WEAKENED, 5)
-		M.visible_message(span_danger("\The [src] pounces on \the [M]!"))
+		act_message(src, M, null, MSG_OTHERS(span_danger("%U% pounces on %T%!")))
 	else // pounce misses!
-		M.visible_message(span_danger("\The [src] attempts to pounce \the [M] but misses!"))
-		playsound(src, 'sound/weapons/punchmiss.ogg', 25, 1, -1)
+		act_message(src, M, null, MSG_OTHERS(span_danger("%U% attempts to pounce %T% but misses!")))
+		play_sfx(src, SFX_WEAPONS_PUNCHMISS)
 
 	if(will_eat(M) && (!M.canmove || vore_standing_too)) //if they're edible then eat them too
 		return EatTarget(M)

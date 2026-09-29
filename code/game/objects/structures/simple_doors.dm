@@ -15,15 +15,15 @@
 	var/state = 0 //closed, 1 == open
 	var/isSwitchingStates = 0
 	var/oreAmount = 7
-	var/knock_sound = 'sound/machines/door/knock_glass.ogg'
-	var/knock_hammer_sound = 'sound/weapons/sonic_jackhammer.ogg'
+	var/knock_sound = SFX_MACHINES_DOOR_KNOCK_GLASS
+	var/knock_hammer_sound = SFX_WEAPONS_SONIC_JACKHAMMER
 
 	var/locked = FALSE	//has the door been locked?
 	var/lock_id = null	//does the door have an associated key?
 	var/lock_type = "simple"	//string matched to "pick_type" on /obj/item/lockpick
 	var/can_pick = TRUE	//can it be picked/bypassed?
 	var/lock_difficulty = 1	//multiplier to picking/bypassing time
-	var/keysound = 'sound/items/toolbelt_equip.ogg'
+	var/keysound = SFX_ITEMS_TOOLBELT_EQUIP
 
 /// Heat behaviour rule: a flammable material door burns.
 /obj/structure/simple_door/proc/rule_burn(datum/rule/rule)
@@ -109,7 +109,7 @@
 		if(locked && state == 0)
 			to_chat(M,span_warning("It's locked!"))
 			return
-		if(world.time - last_bumped <= 60)
+		if(ELAPSED(src, last_bumped, CLOCK_WORLD) <= 6 SECONDS)
 			return
 		if(M.client)
 			if(iscarbon(M))
@@ -134,7 +134,7 @@
 	om_after(src, 1 SECOND, PROC_REF(open_finish))
 
 /obj/structure/simple_door/proc/open_finish()
-	density = FALSE
+	set_density(FALSE)
 	set_opacity(0)
 	state = 1
 	update_icon()
@@ -148,7 +148,7 @@
 	om_after(src, 1 SECOND, PROC_REF(close_finish))
 
 /obj/structure/simple_door/proc/close_finish()
-	density = TRUE
+	set_density(TRUE)
 	set_opacity(1)
 	state = 0
 	update_icon()
@@ -187,11 +187,11 @@
 	else if(istype(W,/obj/item) && breakable) //not sure, can't not just weapons get passed to this proc?
 		visible_message(span_danger("[user] hits [src] with [W]!"))
 		if(material == get_material_by_name(MAT_RESIN))
-			playsound(src, 'sound/effects/attackblob.ogg', 100, 1)
+			play_sfx(src, SFX_EFFECTS_ATTACKBLOB, 2)
 		else if(material == get_material_by_name(MAT_WOOD) || material == get_material_by_name(MAT_SIFWOOD) || material == get_material_by_name(MAT_HARDWOOD))
-			playsound(src, 'sound/effects/woodcutting.ogg', 100, 1)
+			play_sfx(src, SFX_EFFECTS_WOODCUTTING)
 		else
-			playsound(src, 'sound/weapons/smash.ogg', 50, 1)
+			play_sfx(src, SFX_WEAPONS_SMASH)
 		receive_weapon_hit(W, user)
 	else
 		interaction_hand(user, W, interaction)
@@ -218,11 +218,11 @@
 /obj/structure/simple_door/attack_generic(mob/user, damage, attack_verb)
 	visible_message(span_danger("[user] [attack_verb] the [src]!"))
 	if(material == get_material_by_name(MAT_RESIN))
-		playsound(src, 'sound/effects/attackblob.ogg', 100, 1)
+		play_sfx(src, SFX_EFFECTS_ATTACKBLOB, 2)
 	else if(material == (get_material_by_name(MAT_WOOD) || get_material_by_name(MAT_SIFWOOD) || get_material_by_name(MAT_HARDWOOD)))
-		playsound(src, 'sound/effects/woodcutting.ogg', 100, 1)
+		play_sfx(src, SFX_EFFECTS_WOODCUTTING)
 	else
-		playsound(src, 'sound/weapons/smash.ogg', 50, 1)
+		play_sfx(src, SFX_WEAPONS_SMASH)
 	user.do_attack_animation(src)
 	receive_generic_attack(user, damage)
 
@@ -302,35 +302,35 @@ DECLARE_PERIODIC(/obj/structure/simple_door/uranium, PERIODIC_SLOW)
 //I was going to give wooden doors RAD_VERY_LIGHT_INSULATION but they need a proper parent instead of this garbage.
 /obj/structure/simple_door/wood/Initialize(mapload,material_name)
 	. = ..(mapload, material_name || MAT_WOOD)
-	knock_sound = 'sound/machines/door/knock_wood.wav'
+	knock_sound = SFX_MACHINES_DOOR_KNOCK_WOOD
 
 /obj/structure/simple_door/hardwood/Initialize(mapload,material_name)
 	. = ..(mapload, material_name || MAT_HARDWOOD)
-	knock_sound = 'sound/machines/door/knock_wood.wav'
+	knock_sound = SFX_MACHINES_DOOR_KNOCK_WOOD
 
 /obj/structure/simple_door/sifwood/Initialize(mapload,material_name)
 	. = ..(mapload, material_name || MAT_SIFWOOD)
-	knock_sound = 'sound/machines/door/knock_wood.wav'
+	knock_sound = SFX_MACHINES_DOOR_KNOCK_WOOD
 
 /obj/structure/simple_door/birchwood/Initialize(mapload,material_name)
 	. = ..(mapload, material_name || MAT_BIRCHWOOD)
-	knock_sound = 'sound/machines/door/knock_wood.wav'
+	knock_sound = SFX_MACHINES_DOOR_KNOCK_WOOD
 
 /obj/structure/simple_door/pinewood/Initialize(mapload,material_name)
 	. = ..(mapload, material_name || MAT_PINEWOOD)
-	knock_sound = 'sound/machines/door/knock_wood.wav'
+	knock_sound = SFX_MACHINES_DOOR_KNOCK_WOOD
 
 /obj/structure/simple_door/oakwood/Initialize(mapload,material_name)
 	. = ..(mapload, material_name || MAT_OAKWOOD)
-	knock_sound = 'sound/machines/door/knock_wood.wav'
+	knock_sound = SFX_MACHINES_DOOR_KNOCK_WOOD
 
 /obj/structure/simple_door/acaciawood/Initialize(mapload,material_name)
 	. = ..(mapload, material_name || MAT_ACACIAWOOD)
-	knock_sound = 'sound/machines/door/knock_wood.wav'
+	knock_sound = SFX_MACHINES_DOOR_KNOCK_WOOD
 
 /obj/structure/simple_door/redwood/Initialize(mapload,material_name)
 	. = ..(mapload, material_name || MAT_REDWOOD)
-	knock_sound = 'sound/machines/door/knock_wood.wav'
+	knock_sound = SFX_MACHINES_DOOR_KNOCK_WOOD
 
 /obj/structure/simple_door/resin/Initialize(mapload,material_name)
 	. = ..(mapload, material_name || MAT_RESIN)

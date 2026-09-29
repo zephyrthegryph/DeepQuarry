@@ -24,11 +24,10 @@
 	var/open = 0
 	w_class = ITEMSIZE_NORMAL
 	max_storage_space = ITEMSIZE_SMALL * 7
-	use_sound = 'sound/items/storage/briefcase.ogg'
+	use_sound = SFX_ITEMS_STORAGE_BRIEFCASE
 	special_handling = TRUE
 
-/obj/item/storage/secure/hold_constraint()
-	return list(HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage/secure, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 /obj/item/storage/secure/examine(mob/user)
 	. = ..()
@@ -45,11 +44,9 @@ EXTEND_INTERACTIONS(/obj/item/storage/secure, \
 /obj/item/storage/secure/proc/interaction_secure_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(locked)
 		if (istype(W, /obj/item/melee/energy/blade) && emag_act(INFINITY, user, "You slice through the lock of \the [src]"))
-			var/datum/effect/effect/system/spark_spread/spark_system = new /datum/effect/effect/system/spark_spread()
-			spark_system.set_up(5, 0, src.loc)
-			spark_system.start()
-			playsound(src, 'sound/weapons/blade1.ogg', 50, 1)
-			playsound(src, "sparks", 50, 1)
+			fx_sparks(src.loc, 5, FALSE)
+			play_sfx(src, SFX_WEAPONS_BLADE1)
+			play_sfx(src, SFX_SPARKS)
 			return INTERACTION_HANDLED_PASS
 
 		//At this point you have exhausted all the special things to do when locked
@@ -190,8 +187,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/secure, \
 	w_class = ITEMSIZE_LARGE
 	max_storage_space = ITEMSIZE_COST_NORMAL * 4
 
-/obj/item/storage/secure/briefcase/hold_constraint()
-	return list(HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/secure/briefcase, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 
 EXTEND_INTERACTIONS(/obj/item/storage/secure/briefcase, INTERACT_HAND_UNGATED("Open", PROC_REF(interaction_briefcase_hand)))
 
@@ -229,9 +225,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/secure/briefcase, INTERACT_HAND_UNGATED("O
 		/obj/item/pen
 	)
 
-/obj/item/storage/secure/safe/hold_constraint()
-	var/list/refuses = list(/obj/item/storage/secure/briefcase)
-	return list(HOLD_NOT(refuses), HOLD_MAX_SIZE(ITEMSIZE_LARGE))
+TYPE_TABLE(/obj/item/storage/secure/safe, hold_spec, list(HOLD_NOT(list(/obj/item/storage/secure/briefcase)), HOLD_MAX_SIZE(ITEMSIZE_LARGE)))
 
 EXTEND_INTERACTIONS(/obj/item/storage/secure/safe, INTERACT_HAND_UNGATED("Keypad", TYPE_PROC_REF(/atom, interaction_open_ui)))
 

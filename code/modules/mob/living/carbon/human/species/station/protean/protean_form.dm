@@ -7,22 +7,20 @@
 	/// There is only ever the one: if it is destroyed, it is gone.
 	var/obj/item/rig/protean/rig
 	/// world.time of the last form change (form strain).
-	var/last_switch_time = 0
+	EXPIRY_DECLARE(last_switch_time)
 
-/datum/forms/protean/get_form_types()
-	var/static/list/types = list(/datum/form/human, /datum/form/protean_blob)
-	return types
+TYPE_TABLE(/datum/forms/protean, get_form_types, list(/datum/form/human, /datum/form/protean_blob))
 
 /datum/forms/protean/attach()
 	. = ..()
 	var/mob/living/carbon/human/H = owner
-	var/list/power_verbs = protean_power_verbs()
+	var/list/power_verbs = GLOBAL_TABLE_GET(protean_power_verbs)
 	if(length(power_verbs))
 		add_verb(H, power_verbs)
 
 /datum/forms/protean/detach()
 	var/mob/living/carbon/human/H = owner
-	var/list/power_verbs = protean_power_verbs()
+	var/list/power_verbs = GLOBAL_TABLE_GET(protean_power_verbs)
 	if(length(power_verbs))
 		remove_verb(H, power_verbs)
 	return ..()
@@ -102,8 +100,8 @@
 	. = ..()
 	if(!.)
 		return
-	last_switch_time = world.time
-	if(previous_switch && world.time - previous_switch < NANITE_FORM_SWITCH_GRACE)
+	EXPIRY_STAMP(src, last_switch_time, CLOCK_WORLD)
+	if(previous_switch && ELAPSED_SINCE(src, previous_switch, CLOCK_WORLD) < NANITE_FORM_SWITCH_GRACE)
 		var/mob/living/carbon/human/H = owner
 		H.body?.afflict(/datum/affliction/nanite/form_strain, null, NANITE_STRAIN_PER_FAST_SWITCH)
 		log_game("FORMS: [key_name(H)] changed form again within [NANITE_FORM_SWITCH_GRACE / 10] seconds; form strain.")
@@ -115,7 +113,7 @@
 		return
 	rig?.recharge_from(source)
 	var/shapeless = !is_form(/datum/form/human) || in_rig()
-	if(shapeless && world.time - last_switch_time > NANITE_FORM_HOLD_LIMIT)
+	if(shapeless && ELAPSED_SINCE(src, last_switch_time, CLOCK_WORLD) > NANITE_FORM_HOLD_LIMIT)
 		source.body?.afflict(/datum/affliction/nanite/form_strain, null, NANITE_STRAIN_PER_HELD_TICK)
 
 /// The orchestrator coordinates a change of shape. A damaged one may fail to:
@@ -154,7 +152,7 @@
 
 /datum/form/protean_blob/proc/get_style()
 	RETURN_TYPE(/datum/protean_blob_style)
-	return protean_blob_styles()[style_id] || protean_blob_styles()["puddle1"]
+	return GLOBAL_TABLE_GET(protean_blob_styles)[style_id] || GLOBAL_TABLE_GET(protean_blob_styles)["puddle1"]
 
 /datum/form/protean_blob/on_enter(datum/forms/F, mob/living/carbon/human/H)
 	release_everything(H)
@@ -181,7 +179,7 @@
 
 /// Change style; keeps the holder sprite and belly capacity in step.
 /datum/form/protean_blob/proc/set_style(new_style_id, mob/living/carbon/human/H)
-	if(!protean_blob_styles()[new_style_id])
+	if(!GLOBAL_TABLE_GET(protean_blob_styles)[new_style_id])
 		return FALSE
 	style_id = new_style_id
 	H.vore_capacity = get_style().vore_capacity
@@ -222,12 +220,9 @@
 
 // --- Blob styles: appearance as data ---------------------------------------------------
 
-/// id -> /datum/protean_blob_style, in radial-menu order.
-/proc/protean_blob_styles()
-	var/static/list/styles
-	if(styles)
-		return styles
-	styles = list()
+/// Builds id -> /datum/protean_blob_style, in radial-menu order. Read via GLOBAL_TABLE_GET(protean_blob_styles).
+/proc/build_protean_blob_styles()
+	var/list/styles = list()
 	for(var/style_type in subtypesof(/datum/protean_blob_style))
 		var/datum/protean_blob_style/S = style_type
 		if(!initial(S.id))
@@ -235,6 +230,7 @@
 		S = new style_type()
 		styles[S.id] = S
 	return styles
+GLOBAL_TABLE(protean_blob_styles, GLOBAL_PROC_REF(build_protean_blob_styles))
 
 /// A single-sprite style: a body tinted with the primary colour and eyes
 /// tinted with the highlight colour.
@@ -336,12 +332,11 @@
 /datum/protean_blob_style/layered/New()
 	..()
 	own_take_all(src, "layers")
-	for(var/list/spec as anything in layer_specs())
+	for(var/list/spec as anything in TYPE_TABLE_GET(src, layer_specs))
 		own_add(src, "layers", new /datum/protean_blob_layer(arglist(spec)))
 
 /// Constructor arguments for each layer, in draw order.
-/datum/protean_blob_style/layered/proc/layer_specs()
-	return list()
+TYPE_TABLE_DECLARE(/datum/protean_blob_style/layered, layer_specs, list())
 
 /datum/protean_blob_style/layered/proc/default_states()
 	. = list()
@@ -457,15 +452,14 @@
 /datum/protean_blob_style/layered/dragon/radial_image()
 	return image(icon = preview_icon, icon_state = preview_state)
 
-/datum/protean_blob_style/layered/dragon/layer_specs()
-	return list(
-		list("Underbelly", list("dragon_underSmooth", "dragon_underPlated"), "dragon_underSmooth", TRUE, TRUE, TRUE, FALSE, EAST, -48, 0),
-		list("Body", list("dragon_bodySmooth", "dragon_bodyScaled"), "dragon_bodySmooth", TRUE, TRUE, FALSE, FALSE, EAST, -48, 0),
-		list("Ears", list("dragon_earsNormal"), "dragon_earsNormal", TRUE, TRUE, FALSE, FALSE, EAST, -76, -50),
-		list("Mane", list("dragon_maneNone", "dragon_maneShaggy", "dragon_maneDorsalfin"), "dragon_maneShaggy", TRUE, TRUE, FALSE, FALSE, EAST, -76, -50),
-		list("Horns", list("dragon_hornsPointy", "dragon_hornsCurved", "dragon_hornsCurved2", "dragon_hornsJagged", "dragon_hornsCrown", "dragon_hornsSkull"), "dragon_hornsPointy", TRUE, TRUE, FALSE, FALSE, EAST, -86, -50),
-		list("Eyes", list("dragon_eyesNormal"), "dragon_eyesNormal", TRUE, TRUE, FALSE, TRUE, SOUTH, -48, -50),
-	)
+TYPE_TABLE(/datum/protean_blob_style/layered/dragon, layer_specs, list( \
+		list("Underbelly", list("dragon_underSmooth", "dragon_underPlated"), "dragon_underSmooth", TRUE, TRUE, TRUE, FALSE, EAST, -48, 0), \
+		list("Body", list("dragon_bodySmooth", "dragon_bodyScaled"), "dragon_bodySmooth", TRUE, TRUE, FALSE, FALSE, EAST, -48, 0), \
+		list("Ears", list("dragon_earsNormal"), "dragon_earsNormal", TRUE, TRUE, FALSE, FALSE, EAST, -76, -50), \
+		list("Mane", list("dragon_maneNone", "dragon_maneShaggy", "dragon_maneDorsalfin"), "dragon_maneShaggy", TRUE, TRUE, FALSE, FALSE, EAST, -76, -50), \
+		list("Horns", list("dragon_hornsPointy", "dragon_hornsCurved", "dragon_hornsCurved2", "dragon_hornsJagged", "dragon_hornsCrown", "dragon_hornsSkull"), "dragon_hornsPointy", TRUE, TRUE, FALSE, FALSE, EAST, -86, -50), \
+		list("Eyes", list("dragon_eyesNormal"), "dragon_eyesNormal", TRUE, TRUE, FALSE, TRUE, SOUTH, -48, -50), \
+	))
 
 /datum/protean_blob_style/layered/dullahan
 	id = "dullahan"
@@ -479,16 +473,15 @@
 /datum/protean_blob_style/layered/dullahan/radial_image()
 	return image(icon = preview_icon, icon_state = preview_state)
 
-/datum/protean_blob_style/layered/dullahan/layer_specs()
-	return list(
-		list("Body", list("dullahanbody"), "dullahanbody", FALSE, FALSE),
-		list("Eyes", list("dullahaneyes"), "dullahaneyes", TRUE, TRUE, TRUE, FALSE, SOUTH, -16, 0),
-		list("Metalshell", list("dullahanmetal", "dullahanmetal2", "dullahancommand"), "dullahanmetal", TRUE, TRUE, TRUE, FALSE, SOUTH, -16, 0),
-		list("Head", list("dullahanhead", "dullahanhead2"), "dullahanhead", FALSE, TRUE, TRUE, FALSE, SOUTH, -16, -16),
-		list("Lights", list("dullahanlightsempty", "dullahanlights", "dullahanwings", "dullahanlights2", "dullahanwings2", "dullahanwings3"), "dullahanlightsempty", TRUE, TRUE, TRUE, FALSE, SOUTH, -16, -16),
-		list("Breastplate", list("dullahanextendedoff", "dullahanextendedon"), "dullahanextendedoff", FALSE, FALSE),
-		list("Clothes", list("dullahanclothesempty", "dullahanclothes", "dullahanclothes2", "dullahanengibreastplate"), "dullahanclothesempty", FALSE, TRUE, TRUE, FALSE, SOUTH, -16, -16),
-	)
+TYPE_TABLE(/datum/protean_blob_style/layered/dullahan, layer_specs, list( \
+		list("Body", list("dullahanbody"), "dullahanbody", FALSE, FALSE), \
+		list("Eyes", list("dullahaneyes"), "dullahaneyes", TRUE, TRUE, TRUE, FALSE, SOUTH, -16, 0), \
+		list("Metalshell", list("dullahanmetal", "dullahanmetal2", "dullahancommand"), "dullahanmetal", TRUE, TRUE, TRUE, FALSE, SOUTH, -16, 0), \
+		list("Head", list("dullahanhead", "dullahanhead2"), "dullahanhead", FALSE, TRUE, TRUE, FALSE, SOUTH, -16, -16), \
+		list("Lights", list("dullahanlightsempty", "dullahanlights", "dullahanwings", "dullahanlights2", "dullahanwings2", "dullahanwings3"), "dullahanlightsempty", TRUE, TRUE, TRUE, FALSE, SOUTH, -16, -16), \
+		list("Breastplate", list("dullahanextendedoff", "dullahanextendedon"), "dullahanextendedoff", FALSE, FALSE), \
+		list("Clothes", list("dullahanclothesempty", "dullahanclothes", "dullahanclothes2", "dullahanengibreastplate"), "dullahanclothesempty", FALSE, TRUE, TRUE, FALSE, SOUTH, -16, -16), \
+	))
 
 /// The command shell is reserved for command staff.
 /datum/protean_blob_style/layered/dullahan/layer_options(datum/protean_blob_layer/L, mob/living/carbon/human/H)

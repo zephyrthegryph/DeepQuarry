@@ -38,7 +38,7 @@
 		gun.forceMove(src)
 		own_set(src, "installed_gun", gun)
 		to_chat(user, span_notice("You slide \the [gun] into the firing mechanism."))
-		playsound(src, 'sound/items/Crowbar.ogg', 50, 1)
+		play_sfx(src, SFX_ITEMS_CROWBAR)
 	else
 		return FALSE
 	return INTERACTION_HANDLED_PASS
@@ -55,7 +55,7 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/manipulation/weapon_firing, \
 		to_chat(user, span_notice("You slide \the [installed_gun] out of the firing mechanism."))
 		size = initial(size)
 		complexity = initial(complexity)
-		playsound(src, 'sound/items/Crowbar.ogg', 50, 1)
+		play_sfx(src, SFX_ITEMS_CROWBAR)
 		own_take(src, "installed_gun")
 	else
 		to_chat(user, span_notice("There's no weapon to remove from the mechanism."))

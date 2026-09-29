@@ -18,7 +18,7 @@
 
 	//	environment_smash = 1	// Whatever this gets renamed to, Harvesters need to break things
 
-	attack_sound = 'sound/weapons/pierce.ogg'
+	attack_sound = SFX_WEAPONS_PIERCE
 
 	armor_spec = "melee=10;bullet=20;laser=20;energy=20;bomb=20;bio=100;rad=100"
 
@@ -31,7 +31,7 @@
 	attack_injury_kind = INJURY_CUT
 
 /datum/decl/mob_organ_names/harvester
-	hit_zones = list("cephalothorax", "eye", "carapace", "energy crystal", "mandible")
+TYPE_TABLE(/datum/decl/mob_organ_names/harvester, mob_organ_hit_zones, list("cephalothorax", "eye", "carapace", "energy crystal", "mandible"))
 
 ////////////////////////////
 //		Greater Harvester
@@ -53,4 +53,4 @@
 	movement_cooldown = 0
 
 
-	attack_sound = 'sound/weapons/pierce.ogg'
+	attack_sound = SFX_WEAPONS_PIERCE

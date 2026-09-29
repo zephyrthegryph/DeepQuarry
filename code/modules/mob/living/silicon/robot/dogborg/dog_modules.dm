@@ -83,18 +83,22 @@ DECLARE_INTERACTIONS(/obj/item/boop_module, INTERACT_USE(null, PROC_REF(interact
 /obj/item/reagent_containers/borghypo/hound
 	name = "MediHound hypospray"
 	desc = "An advanced chemical synthesizer and injection system utilizing carrier's reserves, designed for heavy-duty medical equipment."
-	reagent_ids = list(REAGENT_ID_INAPROVALINE, REAGENT_ID_TRICORDRAZINE, REAGENT_ID_DEXALIN, REAGENT_ID_BICARIDINE, REAGENT_ID_KELOTANE, REAGENT_ID_ANTITOXIN, REAGENT_ID_SPACEACILLIN, REAGENT_ID_TRAMADOL, REAGENT_ID_ADRANOL) // More chems for Medihound
 	var/datum/matter_synth/water = null
+
+// More chems for Medihound
+TYPE_TABLE(/obj/item/reagent_containers/borghypo/hound, borghypo_reagent_ids, list(REAGENT_ID_INAPROVALINE, REAGENT_ID_TRICORDRAZINE, REAGENT_ID_DEXALIN, REAGENT_ID_BICARIDINE, REAGENT_ID_KELOTANE, REAGENT_ID_ANTITOXIN, REAGENT_ID_SPACEACILLIN, REAGENT_ID_TRAMADOL, REAGENT_ID_ADRANOL))
 
 /obj/item/reagent_containers/borghypo/hound/lost
 	name = "Hound hypospray"
 	desc = "An advanced chemical synthesizer and injection system utilizing carrier's reserves."
-	reagent_ids = list(REAGENT_ID_TRICORDRAZINE, REAGENT_ID_INAPROVALINE, REAGENT_ID_BICARIDINE, REAGENT_ID_DEXALIN, REAGENT_ID_ANTITOXIN, REAGENT_ID_TRAMADOL, REAGENT_ID_SPACEACILLIN)
+
+TYPE_TABLE(/obj/item/reagent_containers/borghypo/hound/lost, borghypo_reagent_ids, list(REAGENT_ID_TRICORDRAZINE, REAGENT_ID_INAPROVALINE, REAGENT_ID_BICARIDINE, REAGENT_ID_DEXALIN, REAGENT_ID_ANTITOXIN, REAGENT_ID_TRAMADOL, REAGENT_ID_SPACEACILLIN))
 
 /obj/item/reagent_containers/borghypo/hound/trauma
 	name = "Hound hypospray"
 	desc = "An advanced chemical synthesizer and injection system utilizing carrier's reserves."
-	reagent_ids = list(REAGENT_ID_TRICORDRAZINE, REAGENT_ID_INAPROVALINE, REAGENT_ID_OXYCODONE, REAGENT_ID_DEXALIN ,REAGENT_ID_SPACEACILLIN)
+
+TYPE_TABLE(/obj/item/reagent_containers/borghypo/hound/trauma, borghypo_reagent_ids, list(REAGENT_ID_TRICORDRAZINE, REAGENT_ID_INAPROVALINE, REAGENT_ID_OXYCODONE, REAGENT_ID_DEXALIN ,REAGENT_ID_SPACEACILLIN))
 
 //Tongue stuff
 /obj/item/robot_tongue
@@ -102,7 +106,7 @@ DECLARE_INTERACTIONS(/obj/item/boop_module, INTERACT_USE(null, PROC_REF(interact
 	desc = "Useful for slurping mess off the floor before affectionately licking the crew members in the face."
 	icon = 'icons/mob/dogborg_vr.dmi'
 	icon_state = "synthtongue"
-	hitsound = 'sound/effects/attackblob.ogg'
+	hitsound = SFX_EFFECTS_ATTACKBLOB
 	var/emagged = 0
 	var/datum/matter_synth/water = null // readds water
 	flags = NOBLUDGEON //No more attack messages
@@ -202,10 +206,10 @@ DECLARE_INTERACTIONS(/obj/item/robot_tongue, INTERACT_USE(null, PROC_REF(interac
 			L.apply_effect(STUTTER, 1)
 			L.visible_message(span_danger("[user] has shocked [L] with its tongue!"), \
 								span_userdanger("[user] has shocked you with its tongue! You can feel the betrayal."))
-			playsound(src, 'sound/weapons/egloves.ogg', 50, 1, -1)
+			play_sfx(src, SFX_WEAPONS_EGLOVES)
 		else
 			user.visible_message(span_notice("\The [user] affectionately licks all over \the [target]'s face!"), span_notice("You affectionately lick all over \the [target]'s face!"))
-			playsound(src, 'sound/effects/attackblob.ogg', 50, 1)
+			play_sfx(src, SFX_EFFECTS_ATTACKBLOB)
 			water.use_charge(5)
 			var/mob/living/carbon/human/H = target
 			if(H.species.lightweight == 1)
@@ -418,7 +422,7 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/pounce, INTERACT_USE(null, PROC_REF(inter
 		src.throw_at(get_step(get_turf(T),get_turf(src)), 4, 1, src)
 	*/
 	src.throw_at(get_step(get_turf(T),get_turf(src)), 4, 1, src) // no bluespace pounce
-	playsound(src, 'sound/mecha/mechstep2.ogg', 50, 1)
+	play_sfx(src, SFX_MECHA_MECHSTEP2)
 	pixel_y = default_pixel_y
 
 	if(!bluespace)

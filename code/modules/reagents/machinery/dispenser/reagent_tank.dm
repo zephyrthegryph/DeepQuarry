@@ -378,7 +378,7 @@ DECLARE_REAGENTS(/obj/structure/reagent_dispensers/acid, null, list(REAGENT_ID_S
 				var/obj/item/stack/material/plastic/P = I
 				src.add_fingerprint(user)
 				to_chat(user, span_notice("You start to attach a cup dispenser onto the water-cooler."))
-				playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
+				play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 				om_task_timed(user, 2 SECONDS, src, src, PROC_REF(cupholder_done), list(user, P))
 			else
 				to_chat(user, span_warning("You need to wrench down the cooler first."))
@@ -428,7 +428,7 @@ DECLARE_REAGENTS(/obj/structure/reagent_dispensers/acid, null, list(REAGENT_ID_S
 
 /obj/structure/reagent_dispensers/water_cooler/proc/wrench_act_tool_done(mob/user, obj/item/tool)
 	to_chat(user, span_notice("You [anchored ? "un" : ""]secure \the [src]."))
-	anchored = !anchored
+	set_anchored(!anchored)
 	playsound(src, tool.usesound, 50, TRUE)
 	return ITEM_INTERACT_SUCCESS
 
@@ -445,7 +445,7 @@ DECLARE_REAGENTS(/obj/structure/reagent_dispensers/acid, null, list(REAGENT_ID_S
 		return ITEM_INTERACT_SUCCESS
 	if(bottle)
 		return ITEM_INTERACT_BLOCKING
-	use_tool(user, tool, src, delay = 2 SECONDS, volume = 50, message_self = "You start taking the water-cooler apart.", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user))
+	use_tool(user, tool, src, delay = 2 SECONDS, volume = 50, start_self = "You start taking the water-cooler apart.", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/reagent_dispensers/water_cooler/proc/screwdriver_act_tool_done(mob/user)

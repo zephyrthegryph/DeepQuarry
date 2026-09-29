@@ -90,11 +90,11 @@
 
 /obj/structure/timer_door/Initialize(mapload)
 	. = ..()
-	start_time = world.time
+	EXPIRY_STAMP(src, start_time, CLOCK_WORLD)
 
 DECLARE_START_TIMER(/obj/structure/timer_door, "time_til_open", /datum/proc/qdel_self)
 
-DESTROY_EFFECTS(/obj/structure/timer_door, new /datum/destroy_effects_data(message = "%SRC% opens up!", message_class = "danger", sound = 'sound/effects/bang.ogg', sound_volume = 75))
+DESTROY_EFFECTS(/obj/structure/timer_door, new /datum/destroy_effects_data(message = "%SRC% opens up!", message_class = "danger", sound = SFX_EFFECTS_BANG, sound_volume = 75))
 
 /obj/structure/timer_door/ten
 	time_til_open = 10 MINUTES

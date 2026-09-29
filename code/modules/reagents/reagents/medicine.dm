@@ -823,11 +823,9 @@
 /// confusion while a targeted (organic) organ is damaged, then either the clash
 /// with a partner reagent or the drug's solo effect. A drug sets its organ
 /// targets and partners by overriding the two getters.
-/datum/reagent/proc/daxon_organs()
-	return null
+TYPE_TABLE_DECLARE(/datum/reagent, daxon_organs, null)
 
-/datum/reagent/proc/daxon_partners()
-	return null
+TYPE_TABLE_DECLARE(/datum/reagent, daxon_partners, null)
 
 /datum/reagent/proc/daxon_clash(mob/living/carbon/human/H, removed)
 	return
@@ -839,14 +837,14 @@
 	if(!ishuman(M))
 		return
 	var/mob/living/carbon/human/H = M
-	var/list/targets = daxon_organs()
+	var/list/targets = TYPE_TABLE_GET(src, daxon_organs)
 	for(var/obj/item/organ/internal/I as anything in H.internal_organ_list())
 		if(I.is_robotic() || !(I.organ_tag in targets))
 			continue
 		if(I.damage > 0)
 			H.status_at_least(EFFECT_CONFUSED, 2)
 			break
-	for(var/partner in daxon_partners())
+	for(var/partner in TYPE_TABLE_GET(src, daxon_partners))
 		if(H.body?.reagent_volume(partner))
 			daxon_clash(H, removed)
 			return
@@ -879,13 +877,9 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_HIGHREFINED
 	industrial_use = REFINERYEXPORT_REASON_SPECIALDRUG
 
-/datum/reagent/respirodaxon/daxon_organs()
-	var/static/list/organs = list(O_LUNGS, O_VOICE, O_GBLADDER)
-	return organs
+TYPE_TABLE(/datum/reagent/respirodaxon, daxon_organs, list(O_LUNGS, O_VOICE, O_GBLADDER))
 
-/datum/reagent/respirodaxon/daxon_partners()
-	var/static/list/partners = list(REAGENT_ID_GASTIRODAXON, REAGENT_ID_PERIDAXON)
-	return partners
+TYPE_TABLE(/datum/reagent/respirodaxon, daxon_partners, list(REAGENT_ID_GASTIRODAXON, REAGENT_ID_PERIDAXON))
 
 /datum/reagent/respirodaxon/daxon_clash(mob/living/carbon/human/H, removed)
 	if(H.losebreath >= 15 && prob(H.losebreath))
@@ -911,13 +905,9 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_HIGHREFINED
 	industrial_use = REFINERYEXPORT_REASON_SPECIALDRUG
 
-/datum/reagent/gastirodaxon/daxon_organs()
-	var/static/list/organs = list(O_APPENDIX, O_STOMACH, O_INTESTINE, O_NUTRIENT, O_PLASMA, O_POLYP)
-	return organs
+TYPE_TABLE(/datum/reagent/gastirodaxon, daxon_organs, list(O_APPENDIX, O_STOMACH, O_INTESTINE, O_NUTRIENT, O_PLASMA, O_POLYP))
 
-/datum/reagent/gastirodaxon/daxon_partners()
-	var/static/list/partners = list(REAGENT_ID_HEPANEPHRODAXON, REAGENT_ID_PERIDAXON)
-	return partners
+TYPE_TABLE(/datum/reagent/gastirodaxon, daxon_partners, list(REAGENT_ID_HEPANEPHRODAXON, REAGENT_ID_PERIDAXON))
 
 /datum/reagent/gastirodaxon/daxon_clash(mob/living/carbon/human/H, removed)
 	if(prob(10))
@@ -940,13 +930,9 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_HIGHREFINED
 	industrial_use = REFINERYEXPORT_REASON_SPECIALDRUG
 
-/datum/reagent/hepanephrodaxon/daxon_organs()
-	var/static/list/organs = list(O_LIVER, O_KIDNEYS, O_APPENDIX, O_ACID, O_HIVE)
-	return organs
+TYPE_TABLE(/datum/reagent/hepanephrodaxon, daxon_organs, list(O_LIVER, O_KIDNEYS, O_APPENDIX, O_ACID, O_HIVE))
 
-/datum/reagent/hepanephrodaxon/daxon_partners()
-	var/static/list/partners = list(REAGENT_ID_CORDRADAXON, REAGENT_ID_PERIDAXON)
-	return partners
+TYPE_TABLE(/datum/reagent/hepanephrodaxon, daxon_partners, list(REAGENT_ID_CORDRADAXON, REAGENT_ID_PERIDAXON))
 
 /datum/reagent/hepanephrodaxon/daxon_clash(mob/living/carbon/human/H, removed)
 	if(prob(5))
@@ -971,13 +957,9 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_HIGHREFINED
 	industrial_use = REFINERYEXPORT_REASON_SPECIALDRUG
 
-/datum/reagent/cordradaxon/daxon_organs()
-	var/static/list/organs = list(O_HEART, O_SPLEEN, O_RESPONSE, O_ANCHOR, O_EGG)
-	return organs
+TYPE_TABLE(/datum/reagent/cordradaxon, daxon_organs, list(O_HEART, O_SPLEEN, O_RESPONSE, O_ANCHOR, O_EGG))
 
-/datum/reagent/cordradaxon/daxon_partners()
-	var/static/list/partners = list(REAGENT_ID_HYRONALIN, REAGENT_ID_PERIDAXON)
-	return partners
+TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN, REAGENT_ID_PERIDAXON))
 
 /datum/reagent/cordradaxon/daxon_clash(mob/living/carbon/human/H, removed)
 	H.losebreath = CLAMP(H.losebreath + 1, 0, 10)
@@ -1223,8 +1205,8 @@
 			to_chat(M, span_notice("You regain focus..."))
 		else
 			var/delay = (5 MINUTES)
-			if(world.time > data + delay)
-				data = world.time
+			if(ELAPSED_SINCE(src, data, CLOCK_WORLD) > delay)
+				data = EXPIRY_AT(src, CLOCK_WORLD, 0) // ALLOW(sys_world_time_write): reagent `data` is an untyped per-reagent payload slot, not a declarable var
 				to_chat(M, span_warning("Your senses feel unfocused, and divided."))
 
 /datum/reagent/spaceacillin/affect_touch(mob/living/carbon/M, alien, removed)
@@ -1258,8 +1240,8 @@
 			to_chat(M, span_notice("Your body ceases its revolt."))
 		else
 			var/delay = (3 MINUTES)
-			if(world.time > data + delay)
-				data = world.time
+			if(ELAPSED_SINCE(src, data, CLOCK_WORLD) > delay)
+				data = EXPIRY_AT(src, CLOCK_WORLD, 0) // ALLOW(sys_world_time_write): reagent `data` is an untyped per-reagent payload slot, not a declarable var
 				to_chat(M, span_critical("It feels like your body is revolting!"))
 		M.status_at_least(EFFECT_CONFUSED, 7)
 		M.injure(INJURY_BURN, removed * 2, source = src)
@@ -1333,8 +1315,8 @@
 			to_chat(M, span_notice("The itching fades..."))
 		else
 			var/delay = (2 MINUTES)
-			if(world.time > data + delay)
-				data = world.time
+			if(ELAPSED_SINCE(src, data, CLOCK_WORLD) > delay)
+				data = EXPIRY_AT(src, CLOCK_WORLD, 0) // ALLOW(sys_world_time_write): reagent `data` is an untyped per-reagent payload slot, not a declarable var
 				to_chat(M, span_warning("Your skin itches."))
 
 /datum/reagent/spacomycaze/touch_obj(obj/O)

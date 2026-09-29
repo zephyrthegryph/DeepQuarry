@@ -49,9 +49,7 @@
 	var/drawn_resting = FALSE
 
 /// Form types this character can take, first one is the starting form.
-/datum/forms/proc/get_form_types()
-	var/static/list/types = list(/datum/form/human)
-	return types
+TYPE_TABLE_DECLARE(/datum/forms, get_form_types, list(/datum/form/human))
 
 /datum/forms/New(mob/living/carbon/human/H)
 	..()
@@ -60,7 +58,7 @@
 		return
 	rel_set(src, "owner", H)
 	own_take_all(src, "forms")
-	var/list/types = get_form_types()
+	var/list/types = TYPE_TABLE_GET(src, get_form_types)
 	for(var/form_type in types)
 		own_put(src, "forms", form_type, new form_type())
 	rel_set(src, "current", forms[types[1]])
@@ -173,8 +171,7 @@
 	var/enter_sound
 
 /// Verbs this form grants while worn.
-/datum/form/proc/get_form_verbs()
-	return null
+TYPE_TABLE_DECLARE(/datum/form, get_form_verbs, null)
 
 /datum/form/proc/on_enter(datum/forms/F, mob/living/carbon/human/H)
 	if(!has_hands)
@@ -182,14 +179,14 @@
 		H.drop_r_hand()
 	if(holder_type)
 		H.holder_type = holder_type
-	var/list/form_verbs = get_form_verbs()
+	var/list/form_verbs = TYPE_TABLE_GET(src, get_form_verbs)
 	if(length(form_verbs))
 		add_verb(H, form_verbs)
 
 /datum/form/proc/on_exit(datum/forms/F, mob/living/carbon/human/H)
 	if(holder_type)
 		H.holder_type = F.prior_holder_type
-	var/list/form_verbs = get_form_verbs()
+	var/list/form_verbs = TYPE_TABLE_GET(src, get_form_verbs)
 	if(length(form_verbs))
 		remove_verb(H, form_verbs)
 

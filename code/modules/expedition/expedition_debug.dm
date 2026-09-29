@@ -70,8 +70,8 @@
 		materialization.degradation_events += "defender initialization failed"
 	site.floors = scan_floors(z)
 	site.status = EXP_STATUS_ACTIVE
-	site.deployed_at = world.time
-	site.last_occupied = world.time
+	EXPIRY_STAMP(site, deployed_at, CLOCK_WORLD)
+	EXPIRY_STAMP(site, last_occupied, CLOCK_WORLD)
 	own_put(src, "sites", "[z]", site)
 	demand()
 	return site
@@ -123,20 +123,7 @@
 	if(!check_rights(R_DEBUG))
 		return
 
-	var/list/mission_types = list(
-		/datum/expedition_mission/survey,
-		/datum/expedition_mission/extermination,
-		/datum/expedition_mission/salvage,
-		/datum/expedition_mission/retrieval,
-		/datum/expedition_mission/rescue,
-		/datum/expedition_mission/derelict,
-		/datum/expedition_mission/raid,
-		/datum/expedition_mission/recovery,
-		/datum/expedition_mission/siege,
-		/datum/expedition_mission/recon,
-		/datum/expedition_mission/restore,
-		/datum/expedition_mission/station_assault,
-	)
+	var/list/mission_types = GLOB.expedition_mission_types
 	// Answers re-run this verb.
 	var/mission_type = client_ask("mission", VERB_REF(generate_expedition_mission), args, R_DEBUG, /datum/om/prompt/choice, message = "Mission type?", title = "Expedition Mission", choices = mission_types)
 	if(!mission_type)

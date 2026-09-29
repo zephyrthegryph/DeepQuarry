@@ -31,15 +31,15 @@
 	/// Material-derived resistance to EMP charge loss, as a percentage.
 	var/material_emp_resistance = 0
 	var/material_discharge_credit
-	var/material_discharge_updated
+	EXPIRY_DECLARE(material_discharge_updated)
 	/// Hysteretic physical state. A quenched conductor must cool meaningfully
 	/// below its transition before it can carry enhanced output again.
 	var/material_superconducting = FALSE
 	var/material_quenched = FALSE
 	var/material_feedback_cooldown = 0
 
-	drop_sound = 'sound/items/drop/component.ogg'
-	pickup_sound = 'sound/items/pickup/component.ogg'
+	drop_sound = SFX_ITEMS_DROP_COMPONENT
+	pickup_sound = SFX_ITEMS_PICKUP_COMPONENT
 
 	// Overlay stuff.
 	var/standard_overlays = TRUE
@@ -126,7 +126,7 @@
 		material_discharge_credit = material_discharge_limit
 	else
 		material_discharge_credit = min(material_discharge_limit, material_discharge_credit + max(world.time - material_discharge_updated, 0) / 10 * material_discharge_limit)
-	material_discharge_updated = world.time
+	EXPIRY_STAMP(src, material_discharge_updated, CLOCK_WORLD)
 
 /obj/item/cell/proc/material_delivery_efficiency(amount)
 	var/temperature = material_service?.temperature || T20C
@@ -168,7 +168,7 @@
 	var/atom/device = isobj(loc) ? loc : src
 	if(quenching)
 		device.visible_message(span_warning("[device] snaps with a harsh electrical crack as frost flashes from its casing!"))
-		playsound(device, 'sound/effects/sparks4.ogg', 55, TRUE)
+		play_sfx(device, SFX_EFFECTS_SPARKS4, volume = 55)
 	else
 		device.visible_message(span_notice("Condensation creeps across [device] as its electrical hum becomes suddenly clean."))
 

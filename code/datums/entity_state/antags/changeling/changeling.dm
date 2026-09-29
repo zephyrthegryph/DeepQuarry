@@ -89,7 +89,7 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 	return changeling_cooldowns[id]
 
 /datum/changeling/proc/set_cooldown(id, cooldown_time)
-	changeling_cooldowns[id] = world.time + cooldown_time
+	changeling_cooldowns[id] = EXPIRY_AT(src, CLOCK_WORLD, cooldown_time)
 
 /datum/changeling/proc/is_on_cooldown(id)
 	// ALLOW(cooldown): per-ability cooldown table keyed by id (one var per ability would be dozens)
@@ -309,7 +309,7 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 //Former /turf procs
 /turf/proc/AdjacentTurfsRangedSting()
 	//Yes this is snowflakey, but I couldn't get it to work any other way.. -Luke
-	var/list/allowed = list(
+	var/static/list/allowed = list(
 		/obj/structure/table,
 		/obj/structure/closet,
 		/obj/structure/frame,

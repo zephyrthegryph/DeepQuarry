@@ -112,21 +112,21 @@
 			SStgui.update_uis(src)
 			return TRUE
 		if("untag")
-			holder().Topic("del_tag=[ref]", list("_src_" = "holder", "del_tag" = ref))
+			holder().topic_internal(ui.user, list("_src_" = "holder", "del_tag" = ref))
 			SStgui.update_uis(src)
 			return TRUE
 		if("mark")
-			holder().Topic("mark_datum=[ref]", list("_src_" = "holder", "mark_datum" = ref))
+			holder().topic_internal(ui.user, list("_src_" = "holder", "mark_datum" = ref))
 			SStgui.update_uis(src)
 			return TRUE
 		if("vv")
-			holder().Topic("Vars=[ref]", list("_src_" = "vars", "Vars" = ref))
+			ui.user.client?.vv_topic(list("Vars" = ref), TRUE)
 			return TRUE
 		if("pp")
-			holder().Topic("priv_msg=[ref]", list("_src_" = "holder", "playerpanel" = ref))
+			holder().topic_internal(ui.user, list("_src_" = "holder", "playerpanel" = ref))
 			return TRUE
 		if("follow")
-			holder().Topic("adminmoreinfo=[ref]", list("_src_" = "holder", "adminobs" = ref))
+			holder().topic_internal(ui.user, list("_src_" = "holder", "adminobs" = ref))
 			return TRUE
 
 // ---- ToRban list ---------------------------------------------------------
@@ -187,7 +187,7 @@
 
 /datum/unban_panel
 	var/tmp/datum/admins/holder
-	var/list/cached_rows
+	var/list/shown_rows
 
 /datum/unban_panel/New(datum/admins/owner_holder)
 	..()
@@ -205,7 +205,7 @@
 	ui.set_autoupdate(FALSE)
 
 /datum/unban_panel/proc/snapshot_bans()
-	cached_rows = list()
+	shown_rows = list()
 	if(!GLOB.banlist)
 		return
 	// GLOB.banlist is a shared savefile cursor — record the prior cd
@@ -231,7 +231,7 @@
 				expiry = "[raw_min] Minutes"
 		else
 			expiry = "Permaban"
-		cached_rows += list(list(
+		shown_rows += list(list(
 			"key_id" = "[key][id]",
 			"key" = "[key]",
 			"id" = "[id]",
@@ -246,8 +246,8 @@
 	var/list/data = list()
 	if(!holder())
 		return data
-	data["bans"] = cached_rows || list()
-	data["count"] = length(cached_rows)
+	data["bans"] = shown_rows || list()
+	data["count"] = length(shown_rows)
 	return data
 
 /datum/unban_panel/tgui_act(action, list/params, datum/tgui/ui)
@@ -261,12 +261,12 @@
 			SStgui.update_uis(src)
 			return TRUE
 		if("unban")
-			holder().Topic("unbanf=[key_id]", list("unbanf" = key_id))
+			holder().topic_internal(ui.user, list("unbanf" = key_id))
 			snapshot_bans()
 			SStgui.update_uis(src)
 			return TRUE
 		if("edit")
-			holder().Topic("unbane=[key_id]", list("unbane" = key_id))
+			holder().topic_internal(ui.user, list("unbane" = key_id))
 			snapshot_bans()
 			SStgui.update_uis(src)
 			return TRUE
@@ -314,11 +314,8 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 		ui.open()
 	ui.set_autoupdate(FALSE)
 
-/datum/jobban_panel/proc/get_offmap_job_titles()
-	var/static/list/titles
-	if(titles)
-		return titles
-	titles = list()
+/proc/build_jobban_offmap_job_titles()
+	var/list/titles = list()
 	for(var/dept in GLOB.offmap_departments)
 		for(var/jobPos in SSjob.get_job_titles_in_department(dept))
 			if(!jobPos)
@@ -329,20 +326,17 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 			titles += job.title
 	return titles
 
-/datum/jobban_panel/proc/get_dept_layout()
-	var/static/list/layout
-	if(layout)
-		return layout
-	layout = list(
-		list("title" = "Command Positions",     "color" = "#ccccff", "dept_bantype" = "commanddept",     "dept_const" = DEPARTMENT_COMMAND,     "extra_jobs" = null),
-		list("title" = "Security Positions",    "color" = "#ffddf0", "dept_bantype" = "securitydept",    "dept_const" = DEPARTMENT_SECURITY,    "extra_jobs" = null),
-		list("title" = "Engineering Positions", "color" = "#fff5cc", "dept_bantype" = "engineeringdept", "dept_const" = DEPARTMENT_ENGINEERING, "extra_jobs" = null),
-		list("title" = "Cargo Positions",       "color" = "#fff5cc", "dept_bantype" = "cargodept",       "dept_const" = DEPARTMENT_CARGO,       "extra_jobs" = null),
-		list("title" = "Medical Positions",     "color" = "#ffeef0", "dept_bantype" = "medicaldept",     "dept_const" = DEPARTMENT_MEDICAL,     "extra_jobs" = null),
-		list("title" = "Science Positions",     "color" = "#e79fff", "dept_bantype" = "sciencedept",     "dept_const" = DEPARTMENT_RESEARCH,    "extra_jobs" = null),
-		list("title" = "Exploration Positions", "color" = "#ebb8fc", "dept_bantype" = "explorationdept", "dept_const" = DEPARTMENT_PLANET,      "extra_jobs" = null),
-	)
-	return layout
+GLOBAL_TABLE(jobban_offmap_job_titles, GLOBAL_PROC_REF(build_jobban_offmap_job_titles))
+
+GLOBAL_LIST_INIT(jobban_dept_layout, list(
+	list("title" = "Command Positions",     "color" = "#ccccff", "dept_bantype" = "commanddept",     "dept_const" = DEPARTMENT_COMMAND,     "extra_jobs" = null),
+	list("title" = "Security Positions",    "color" = "#ffddf0", "dept_bantype" = "securitydept",    "dept_const" = DEPARTMENT_SECURITY,    "extra_jobs" = null),
+	list("title" = "Engineering Positions", "color" = "#fff5cc", "dept_bantype" = "engineeringdept", "dept_const" = DEPARTMENT_ENGINEERING, "extra_jobs" = null),
+	list("title" = "Cargo Positions",       "color" = "#fff5cc", "dept_bantype" = "cargodept",       "dept_const" = DEPARTMENT_CARGO,       "extra_jobs" = null),
+	list("title" = "Medical Positions",     "color" = "#ffeef0", "dept_bantype" = "medicaldept",     "dept_const" = DEPARTMENT_MEDICAL,     "extra_jobs" = null),
+	list("title" = "Science Positions",     "color" = "#e79fff", "dept_bantype" = "sciencedept",     "dept_const" = DEPARTMENT_RESEARCH,    "extra_jobs" = null),
+	list("title" = "Exploration Positions", "color" = "#ebb8fc", "dept_bantype" = "explorationdept", "dept_const" = DEPARTMENT_PLANET,      "extra_jobs" = null),
+))
 
 /datum/jobban_panel/proc/get_dept_job_titles(dept_const)
 	var/static/list/titles_by_dept
@@ -383,12 +377,12 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 	data["target_name"] = target().name
 	data["target_ref"] = "\ref[target()]"
 	var/list/departments = list()
-	for(var/list/layout_entry in get_dept_layout())
+	for(var/list/layout_entry in GLOB.jobban_dept_layout)
 		departments += list(build_dept_block(layout_entry["dept_const"], layout_entry["title"], layout_entry["dept_bantype"], layout_entry["color"]))
 
 	// Offmap is the union of multiple departments.
 	var/list/offmap_block_jobs = list()
-	for(var/title in get_offmap_job_titles())
+	for(var/title in GLOBAL_TABLE_GET(jobban_offmap_job_titles))
 		offmap_block_jobs += list(list(
 			"title" = title,
 			"is_banned" = !!jobban_isbanned(target(), title),
@@ -433,7 +427,7 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 	))
 
 	// Misc roles.
-	var/list/misc_roles = list(JOB_DIONAEA, JOB_GRAFFITI, JOB_CUSTOM_LOADOUT, JOB_PAI, JOB_GHOSTROLES, JOB_ANTAGHUD)
+	var/static/list/misc_roles = list(JOB_DIONAEA, JOB_GRAFFITI, JOB_CUSTOM_LOADOUT, JOB_PAI, JOB_GHOSTROLES, JOB_ANTAGHUD)
 	var/list/misc_jobs = list()
 	for(var/entry in misc_roles)
 		misc_jobs += list(list(
@@ -459,12 +453,12 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 		if("toggle_job")
 			var/title = "[params["title"]]"
 			// use REF() macro (canonical form) instead of legacy \ref[target] interpolation.
-			holder().Topic("jobban3=[title];jobban4=[REF(target())]", list("_src_" = "holder", "jobban3" = title, "jobban4" = REF(target())))
+			holder().topic_internal(ui.user, list("_src_" = "holder", "jobban3" = title, "jobban4" = REF(target())))
 			SStgui.update_uis(src)
 			return TRUE
 		if("toggle_dept")
 			var/bantype = "[params["bantype"]]"
-			holder().Topic("jobban3=[bantype];jobban4=[REF(target())]", list("_src_" = "holder", "jobban3" = bantype, "jobban4" = REF(target())))
+			holder().topic_internal(ui.user, list("_src_" = "holder", "jobban3" = bantype, "jobban4" = REF(target())))
 			SStgui.update_uis(src)
 			return TRUE
 		if("refresh")
@@ -543,16 +537,16 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 	switch(action)
 		if("sort")
 			var/by = "[params["by"]]"
-			our_comp().Topic("sort=[by]", list("our_comp" = "\ref[our_comp()]", "sort" = by))
+			our_comp().tgui_act("sort", list("field" = by), ui, ui.state())
 			SStgui.update_uis(src)
 			return TRUE
 		if("order_by_id")
-			our_comp().Topic("orderbyid=1", list("our_comp" = "\ref[our_comp()]", "orderbyid" = "1"))
+			our_comp().tgui_act("orderbyid", list(), ui, ui.state())
 			SStgui.update_uis(src)
 			return TRUE
 		if("delete")
 			var/id = "[params["id"]]"
-			our_comp().Topic("delid=[id]", list("our_comp" = "\ref[our_comp()]", "delid" = id))
+			our_comp().tgui_act("delid", list("id" = id), ui, ui.state())
 			SStgui.update_uis(src)
 			return TRUE
 
@@ -594,8 +588,8 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 	if(.)
 		return
 	if(action == "transfer_supplies")
-		var/ref = "[params["mob_ref"]]"
-		Topic("betraitor=1;traitormob=[ref]", list("betraitor" = "1", "traitormob" = ref))
+		var/mob/M = locate_in_list(REGISTRY_MEMBERS(REGISTRY_MOBS), "[params["mob_ref"]]")
+		betraitor(ui.user, M)
 		SStgui.update_uis(src)
 		return TRUE
 

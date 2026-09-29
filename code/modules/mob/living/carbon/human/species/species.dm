@@ -156,8 +156,8 @@
 	var/poison_type = GAS_PHORON								// Poisonous air.
 	var/exhale_type = GAS_CO2								// Exhaled gas type.
 	var/water_breather = FALSE
-	var/suit_inhale_sound = 'sound/effects/mob_effects/suit_breathe_in.ogg'
-	var/suit_exhale_sound = 'sound/effects/mob_effects/suit_breathe_out.ogg'
+	var/suit_inhale_sound = SFX_EFFECTS_MOB_EFFECTS_SUIT_BREATHE_IN
+	var/suit_exhale_sound = SFX_EFFECTS_MOB_EFFECTS_SUIT_BREATHE_OUT
 	var/bad_swimmer = FALSE
 
 	var/body_temperature = BODYTEMP_NORMAL							// Species will try to stabilize at this temperature. (also affects temperature processing)
@@ -420,9 +420,7 @@
 /// Names of list vars that subtypes override but nothing edits in place. Every
 /// instance of a species type shares the first instance's lists (one per human
 /// plus one in GLOB.all_species), so writers must assign a new list, never edit.
-/datum/species/proc/shared_table_vars()
-	var/static/list/names = list("assisted_langs", "unarmed_types", "cold_discomfort_strings", "heat_discomfort_strings", "has_organ", "genders", "secondary_langs", "inherent_verbs", "default_emotes", "speech_sounds", "species_component")
-	return names
+TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "unarmed_types", "cold_discomfort_strings", "heat_discomfort_strings", "has_organ", "genders", "secondary_langs", "inherent_verbs", "default_emotes", "speech_sounds", "species_component"))
 
 /datum/species/proc/share_type_tables()
 	var/static/list/tables_by_type = list()
@@ -433,7 +431,7 @@
 		return
 	resolve_limb_table()
 	shared = list()
-	for(var/name in shared_table_vars())
+	for(var/name in TYPE_TABLE_GET(src, shared_table_vars))
 		shared[name] = vars[name]
 	tables_by_type[type] = shared
 
@@ -587,9 +585,8 @@
 				t_him = "her"
 
 	if(target.touch_reaction_flags & SPECIES_TRAIT_PERSONAL_BUBBLE)
-		H.visible_message( \
-			span_notice("[target] moves to avoid being touched by [H]!"), \
-			span_notice("[target] moves to avoid being touched by you!"), )
+		act_message(H, target, MSG_SELF(span_notice("%T% moves to avoid being touched by you!")), \
+			MSG_OTHERS(span_notice("%T% moves to avoid being touched by %U%!")))
 		return
 
 	var/covered_mouth = FALSE
@@ -606,33 +603,25 @@
 
 	if(H.zone_sel.selecting == BP_HEAD)
 		if((target.touch_reaction_flags & SPECIES_TRAIT_PATTING_DEFENCE) && !covered_mouth)
-			H.visible_message( \
-				span_warning("[target] reflexively bites the hand of [H] to prevent head patting!"), \
-				span_warning("[target] reflexively bites your hand!"), )
+			act_message(H, target, MSG_SELF(span_warning("%T% reflexively bites your hand!")), \
+				MSG_OTHERS(span_warning("%T% reflexively bites the hand of %U% to prevent head patting!")))
 			H.injure(INJURY_PIERCE, 1, H.hand ? BP_L_HAND : BP_R_HAND, target) // Bitten
 		else
-			H.visible_message( \
-				span_notice("[H] pats [target] on the head."), \
-				span_notice("You pat [target] on the head."), )
+			act_message(H, target, MSG_SELF(span_notice("You pat %T% on the head.")), MSG_OTHERS(span_notice("%U% pats %T% on the head.")))
 	else if(H.zone_sel.selecting == BP_R_HAND || H.zone_sel.selecting == BP_L_HAND)
-		H.visible_message( \
-			span_notice("[H] shakes [target]'s hand."), \
-			span_notice("You shake [target]'s hand."), )
+		act_message(H, target, MSG_SELF(span_notice("You shake %T%'s hand.")), MSG_OTHERS(span_notice("%U% shakes %T%'s hand.")))
 	else if(H.zone_sel.selecting == "mouth")
 		if((target.touch_reaction_flags & SPECIES_TRAIT_PATTING_DEFENCE) && !covered_mouth)
-			H.visible_message( \
-				span_warning("[target] reflexively bites the hand of [H] to prevent nose booping!"), \
-				span_warning("[target] reflexively bites your hand!"), )
+			act_message(H, target, MSG_SELF(span_warning("%T% reflexively bites your hand!")), \
+				MSG_OTHERS(span_warning("%T% reflexively bites the hand of %U% to prevent nose booping!")))
 			H.injure(INJURY_PIERCE, 1, H.hand ? BP_L_HAND : BP_R_HAND, target) // Bitten
 		else
-			H.visible_message( \
-				span_notice("[H] boops [target]'s nose."), \
-				span_notice("You boop [target] on the nose."), )
+			act_message(H, target, MSG_SELF(span_notice("You boop %T% on the nose.")), MSG_OTHERS(span_notice("%U% boops %T%'s nose.")))
 	else if(H.zone_sel.selecting == BP_GROIN)
 		H.vore_bellyrub(target)
 	else
-		H.visible_message(span_notice("[H] hugs [target] to make [t_him] feel better!"), \
-						span_notice("You hug [target] to make [t_him] feel better!"))
+		act_message(H, target, MSG_SELF(span_notice("You hug %T% to make [t_him] feel better!")), \
+			MSG_OTHERS(span_notice("%U% hugs %T% to make [t_him] feel better!")))
 
 /datum/species/proc/remove_inherent_verbs(mob/living/carbon/human/H)
 	if(inherent_verbs)
@@ -772,7 +761,7 @@
 		if(!silent)
 			to_chat(H, span_notice("\The [landing] cushions your fall."))
 			landing.visible_message(span_infoplain(span_bold("\The [H]") + " 's fall is cushioned by \The [landing]."))
-			playsound(H, "rustle", 25, 1)
+			play_sfx(H, SFX_RUSTLE, extrarange = 0)
 		if(!soft_landing)
 			H.status_at_least(EFFECT_WEAKENED, 10)
 		return TRUE*/
@@ -783,7 +772,7 @@
 			if(!silent)
 				to_chat(H, span_notice("You splash down into \the [landing]."))
 				landing.visible_message(span_infoplain(span_bold("\The [H]") + " splashes down into \The [landing]."))
-				playsound(H, "'sound/effects/slosh.ogg'", 25, 5)
+				play_sfx(H, SFX_EFFECTS_SLOSH)
 			return TRUE
 
 	if(soft_landing)
@@ -791,7 +780,7 @@
 		if(!silent)
 			to_chat(H, span_notice("You manage to lower impact of the fall and land safely."))
 			landing.visible_message(span_infoplain(span_bold("\The [H]") + " lowers down from above, landing safely."))
-			playsound(H, "rustle", 25, 1)
+			play_sfx(H, SFX_RUSTLE, extrarange = 0)
 		return TRUE
 
 	if(has_trait(src, TRAIT_HEAVY_LANDING))
@@ -799,7 +788,7 @@
 		if(!silent)
 			to_chat(H, span_danger("You land with a heavy crash!"))
 			landing.visible_message(span_danger(span_bold("\The [H]") + " crashes down from above!"))
-			playsound(H, 'sound/effects/meteorimpact.ogg', 75, TRUE, 3)
+			play_sfx(H, SFX_EFFECTS_METEORIMPACT, volume = 75, extrarange = 3)
 			for(var/i = 1 to 10)
 				H.injure(INJURY_BLUNT, rand((0), (10)), null, landing)
 			H.status_at_least(EFFECT_WEAKENED, 20)

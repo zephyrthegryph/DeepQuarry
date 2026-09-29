@@ -15,7 +15,7 @@
 	if(spawner_type && deliveryamt)
 		// Make a quick flash
 		var/turf/T = get_turf(src)
-		playsound(src, 'sound/effects/phasein.ogg', 100, 1)
+		play_sfx(src, SFX_EFFECTS_PHASEIN)
 		if(flash)
 			for(var/mob/living/carbon/human/M in viewers(T, null))
 				if(M.eyecheck() <= 0)
@@ -99,7 +99,7 @@ DECLARE_INTERACTIONS(/obj/item/grenade/spawnergrenade/manhacks/station/locked, I
 			to_chat(user, span_warning("You [locked ? "enable" : "disable"] the safety lock on \the [src]."))
 		else
 			to_chat(user, span_warning("Access denied."))
-		user.visible_message(span_notice("[user] swipes \the [I] against \the [src]."))
+		act_message(user, src, others = span_notice("%U% swipes \the [I] against %T%."))
 	else
 		return FALSE
 	return INTERACTION_HANDLED_PASS

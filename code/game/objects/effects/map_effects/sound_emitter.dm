@@ -2,8 +2,6 @@
 /obj/effect/map_effect/interval/sound_emitter
 	name = "sound emitter"
 	icon_state = "sound_emitter"
-	// ALLOW(instance_list): c: read-only per-subtype constant table (12 subtype overrides); a getter would share it, not worth it on a rare type
-	var/list/sounds_to_play = list(null) // List containing sound files or strings of sound groups.
 	// A sound or string is picked randomly each run.
 
 	var/sound_volume = 50 // How loud the sound is. 0 is silent, and 100 is loudest. Please be reasonable with the volume.
@@ -32,10 +30,13 @@
 
 	var/sound_preference = null // Player preference to check before playing this sound to them, if any.
 
+// List containing sound files or strings of sound groups.
+TYPE_TABLE_DECLARE(/obj/effect/map_effect/interval/sound_emitter, sound_emitter_sounds, list(null))
+
 /obj/effect/map_effect/interval/sound_emitter/trigger()
 	playsound(
 		src,
-		pick(sounds_to_play),
+		pick(TYPE_TABLE_GET(src, sound_emitter_sounds)),
 		sound_volume,
 		sound_frequency_variance,
 		sound_extra_range,
@@ -50,71 +51,83 @@
 	..()
 
 /obj/effect/map_effect/interval/sound_emitter/thunder
-	sounds_to_play = list("thunder")
 	interval_lower_bound = 10 SECONDS
 	interval_upper_bound = 15 SECONDS
 
+TYPE_TABLE(/obj/effect/map_effect/interval/sound_emitter/thunder, sound_emitter_sounds, list(SFX_THUNDER))
+
 /obj/effect/map_effect/interval/sound_emitter/geiger
-	sounds_to_play = list('sound/items/geiger/low1.ogg', 'sound/items/geiger/low2.ogg', 'sound/items/geiger/low3.ogg', 'sound/items/geiger/low4.ogg')
 	interval_lower_bound = 1 SECOND
 	interval_upper_bound = 1 SECOND
 
+TYPE_TABLE(/obj/effect/map_effect/interval/sound_emitter/geiger, sound_emitter_sounds, list('sound/items/geiger/low1.ogg', 'sound/items/geiger/low2.ogg', 'sound/items/geiger/low3.ogg', 'sound/items/geiger/low4.ogg'))
+
 /obj/effect/map_effect/interval/sound_emitter/geiger/med
-	sounds_to_play = list('sound/items/geiger/med1.ogg', 'sound/items/geiger/med2.ogg', 'sound/items/geiger/med3.ogg', 'sound/items/geiger/med4.ogg')
+
+TYPE_TABLE(/obj/effect/map_effect/interval/sound_emitter/geiger/med, sound_emitter_sounds, list('sound/items/geiger/med1.ogg', 'sound/items/geiger/med2.ogg', 'sound/items/geiger/med3.ogg', 'sound/items/geiger/med4.ogg'))
 
 /obj/effect/map_effect/interval/sound_emitter/geiger/high
-	sounds_to_play = list('sound/items/geiger/high1.ogg', 'sound/items/geiger/high2.ogg', 'sound/items/geiger/high3.ogg', 'sound/items/geiger/high4.ogg')
+
+TYPE_TABLE(/obj/effect/map_effect/interval/sound_emitter/geiger/high, sound_emitter_sounds, list('sound/items/geiger/high1.ogg', 'sound/items/geiger/high2.ogg', 'sound/items/geiger/high3.ogg', 'sound/items/geiger/high4.ogg'))
 
 /obj/effect/map_effect/interval/sound_emitter/geiger/ext
-	sounds_to_play = list('sound/items/geiger/ext1.ogg', 'sound/items/geiger/ext2.ogg', 'sound/items/geiger/ext3.ogg', 'sound/items/geiger/ext4.ogg')
+
+TYPE_TABLE(/obj/effect/map_effect/interval/sound_emitter/geiger/ext, sound_emitter_sounds, list('sound/items/geiger/ext1.ogg', 'sound/items/geiger/ext2.ogg', 'sound/items/geiger/ext3.ogg', 'sound/items/geiger/ext4.ogg'))
 
 /obj/effect/map_effect/interval/sound_emitter/punching
-	sounds_to_play = list("punch")
 	interval_lower_bound = 5
 	interval_upper_bound = 1 SECOND
 
+TYPE_TABLE(/obj/effect/map_effect/interval/sound_emitter/punching, sound_emitter_sounds, list(SFX_PUNCH))
+
 /obj/effect/map_effect/interval/sound_emitter/explosions
-	sounds_to_play = list("explosion")
 	interval_lower_bound = 5 SECONDS
 	interval_upper_bound = 10 SECONDS
 
+TYPE_TABLE(/obj/effect/map_effect/interval/sound_emitter/explosions, sound_emitter_sounds, list(SFX_EXPLOSION))
+
 /obj/effect/map_effect/interval/sound_emitter/explosions/distant
-	sounds_to_play = list('sound/effects/explosionfar.ogg')
+
+TYPE_TABLE(/obj/effect/map_effect/interval/sound_emitter/explosions/distant, sound_emitter_sounds, list('sound/effects/explosionfar.ogg'))
 
 /obj/effect/map_effect/interval/sound_emitter/ballistic_gunfight
-	sounds_to_play = list(
-		'sound/weapons/gunshot1.ogg',
-		'sound/weapons/gunshot_deagle.ogg',
-		'sound/weapons/gunshot_generic_rifle.ogg',
-		'sound/weapons/gunshot_sniper.ogg',
-		'sound/weapons/gunshot_shotgun.ogg',
-		'sound/weapons/gunshot3.ogg',
-		'sound/weapons/gunshot_machinegun.ogg'
-		)
 	interval_lower_bound = 5
 	interval_upper_bound = 2 SECONDS
 
+TYPE_TABLE(/obj/effect/map_effect/interval/sound_emitter/ballistic_gunfight, sound_emitter_sounds, list( \
+		'sound/weapons/gunshot1.ogg', \
+		'sound/weapons/gunshot_deagle.ogg', \
+		'sound/weapons/gunshot_generic_rifle.ogg', \
+		'sound/weapons/gunshot_sniper.ogg', \
+		'sound/weapons/gunshot_shotgun.ogg', \
+		'sound/weapons/gunshot3.ogg', \
+		'sound/weapons/gunshot_machinegun.ogg' \
+		))
+
 /obj/effect/map_effect/interval/sound_emitter/energy_gunfight
-	sounds_to_play = list(
-		'sound/weapons/taser.ogg',
-		'sound/weapons/Laser.ogg',
-		'sound/weapons/eLuger.ogg',
-		'sound/weapons/laser3.ogg',
-		'sound/weapons/pulse.ogg',
-		'sound/weapons/gauss_shoot.ogg',
-		'sound/weapons/emitter.ogg'
-		)
 	interval_lower_bound = 5
 	interval_upper_bound = 2 SECONDS
 
 
 // I'm not sorry.
+
+TYPE_TABLE(/obj/effect/map_effect/interval/sound_emitter/energy_gunfight, sound_emitter_sounds, list( \
+		'sound/weapons/taser.ogg', \
+		'sound/weapons/Laser.ogg', \
+		'sound/weapons/eLuger.ogg', \
+		'sound/weapons/laser3.ogg', \
+		'sound/weapons/pulse.ogg', \
+		'sound/weapons/gauss_shoot.ogg', \
+		'sound/weapons/emitter.ogg' \
+		))
 /obj/effect/map_effect/interval/sound_emitter/clownsteps
-	sounds_to_play = list("clownstep")
 	interval_lower_bound = 5
 	interval_upper_bound = 1 SECOND
 
+TYPE_TABLE(/obj/effect/map_effect/interval/sound_emitter/clownsteps, sound_emitter_sounds, list(SFX_CLOWNSTEP))
+
 /obj/effect/map_effect/interval/sound_emitter/bikehorns
-	sounds_to_play = list('sound/items/bikehorn.ogg')
 	interval_lower_bound = 5
 	interval_upper_bound = 1 SECOND
+
+TYPE_TABLE(/obj/effect/map_effect/interval/sound_emitter/bikehorns, sound_emitter_sounds, list('sound/items/bikehorn.ogg'))

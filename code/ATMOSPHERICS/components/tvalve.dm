@@ -13,7 +13,7 @@
 	dir = SOUTH
 	initialize_directions = SOUTH|NORTH|WEST
 
-	var/state = 0 // 0 = go straight, 1 = go to side
+	state = 0 // 0 = go straight, 1 = go to side
 
 	var/mirrored = FALSE
 	var/tee = FALSE // Note: Tee not actually supported for T-valves: no sprites
@@ -60,7 +60,7 @@
 	if(state) return 0
 
 	var/list/old_edges = rust_pipe_internal_edges()
-	state = 1
+	set_state(1)
 	update_icon()
 	rust_rewire_internal_ports(old_edges, rust_pipe_internal_edges())
 
@@ -72,7 +72,7 @@
 		return 0
 
 	var/list/old_edges = rust_pipe_internal_edges()
-	state = 0
+	set_state(0)
 	update_icon()
 	rust_rewire_internal_ports(old_edges, rust_pipe_internal_edges())
 
@@ -183,9 +183,8 @@
 	state = 1
 
 /obj/machinery/atmospherics/tvalve/digital/power_change()
-	var/old_stat = stat
-	..()
-	if(old_stat != stat)
+	. = ..()
+	if(.)
 		update_icon()
 
 /obj/machinery/atmospherics/tvalve/digital/update_icon()
@@ -252,7 +251,7 @@
 		to_chat(user, span_warning("You cannot unwrench \the [src], it too exerted due to internal pressure."))
 		add_fingerprint(user)
 		return ITEM_INTERACT_BLOCKING
-	use_tool(user, W, src, delay = 40, quality = TOOL_WRENCH, volume = 50, message_self = "You begin to unfasten \the [src]...", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
+	use_tool(user, W, src, delay = 40, quality = TOOL_WRENCH, volume = 50, start_self = "You begin to unfasten \the [src]...", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/atmospherics/tvalve/proc/wrench_act_tool_done(mob/user)

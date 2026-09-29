@@ -26,7 +26,7 @@ DECLARE_INTERACTIONS(/obj/structure/bigDelivery, \
 	return TRUE
 
 /obj/structure/bigDelivery/proc/unwrap()
-	playsound(src, 'sound/items/package_unwrap.ogg', 50, 1)
+	play_sfx(src, SFX_ITEMS_PACKAGE_UNWRAP)
 	// Destroy will drop our wrapped object on the turf, so let it.
 	qdel(src)
 
@@ -42,7 +42,7 @@ DECLARE_INTERACTIONS(/obj/structure/bigDelivery, \
 					update_icon()
 				else
 					src.sortTag = O.currTag
-				playsound(src, 'sound/machines/twobeep.ogg', 50, 1)
+				play_sfx(src, SFX_MACHINES_TWOBEEP)
 			else
 				to_chat(user, span_warning("The package is already labeled for [O.currTag]."))
 		else
@@ -64,7 +64,7 @@ DECLARE_INTERACTIONS(/obj/structure/bigDelivery, \
 				user.visible_message("\The [user] titles \the [src] with \a [W], marking down: \"[str]\"",\
 				span_notice("You title \the [src]: \"[str]\""),\
 				"You hear someone scribbling a note.")
-				playsound(src, pick('sound/bureaucracy/pen1.ogg','sound/bureaucracy/pen2.ogg'), 20)
+				play_sfx(src, SFX_BUREAUCRACY_PEN)
 				name = "[name] ([str])"
 				if(!examtext && !nameset)
 					nameset = 1
@@ -86,7 +86,7 @@ DECLARE_INTERACTIONS(/obj/structure/bigDelivery, \
 				user.visible_message("\The [user] labels \the [src] with \a [W], scribbling down: \"[examtext]\"",\
 				span_notice("You label \the [src]: \"[examtext]\""),\
 				"You hear someone scribbling a note.")
-				playsound(src, pick('sound/bureaucracy/pen1.ogg','sound/bureaucracy/pen2.ogg'), 20)
+				play_sfx(src, SFX_BUREAUCRACY_PEN)
 	return INTERACTION_HANDLED_PASS
 
 /// Old attack_robot: an adjacent cyborg unwraps it. Never fell through.
@@ -150,8 +150,8 @@ DESTROY_EFFECTS(/obj/structure/bigDelivery, new /datum/destroy_effects_data(drop
 	name = "small parcel"
 	icon = 'icons/obj/storage_vr.dmi'
 	icon_state = "deliverycrate3"
-	drop_sound = 'sound/items/drop/cardboardbox.ogg'
-	pickup_sound = 'sound/items/pickup/cardboardbox.ogg'
+	drop_sound = SFX_ITEMS_DROP_CARDBOARDBOX
+	pickup_sound = SFX_ITEMS_PICKUP_CARDBOARDBOX
 	var/obj/item/wrapped = null
 	var/sortTag = null
 	var/examtext = null
@@ -188,7 +188,7 @@ DECLARE_INTERACTIONS(/obj/item/smallDelivery, \
 					update_icon()
 				else
 					src.sortTag = O.currTag
-				playsound(src, 'sound/machines/twobeep.ogg', 50, 1)
+				play_sfx(src, SFX_MACHINES_TWOBEEP)
 			else
 				to_chat(user, span_warning("The package is already labeled for [O.currTag]."))
 		else
@@ -210,7 +210,7 @@ DECLARE_INTERACTIONS(/obj/item/smallDelivery, \
 				user.visible_message("\The [user] titles \the [src] with \a [W], marking down: \"[str]\"",\
 				span_notice("You title \the [src]: \"[str]\""),\
 				"You hear someone scribbling a note.")
-				playsound(src, pick('sound/bureaucracy/pen1.ogg','sound/bureaucracy/pen2.ogg'), 20)
+				play_sfx(src, SFX_BUREAUCRACY_PEN)
 				name = "[name] ([str])"
 				if(!examtext && !nameset)
 					nameset = 1
@@ -233,7 +233,7 @@ DECLARE_INTERACTIONS(/obj/item/smallDelivery, \
 				user.visible_message("\The [user] labels \the [src] with \a [W], scribbling down: \"[examtext]\"",\
 				span_notice("You label \the [src]: \"[examtext]\""),\
 				"You hear someone scribbling a note.")
-				playsound(src, pick('sound/bureaucracy/pen1.ogg','sound/bureaucracy/pen2.ogg'), 20)
+				play_sfx(src, SFX_BUREAUCRACY_PEN)
 	return INTERACTION_HANDLED_PASS
 
 /// Old attack_robot: an adjacent cyborg unwraps it as in hand. Never fell through.

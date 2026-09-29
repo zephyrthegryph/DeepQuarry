@@ -23,14 +23,14 @@
 
 	endurance = 120
 	movement_cooldown = -1
-	turn_sound = 'sound/mecha/mechmove01.ogg'
+	turn_sound = SFX_MECHA_MECHMOVE01
 
 	melee_damage_lower = 5
 	melee_damage_upper = 5
 	base_attack_cooldown = 2 SECONDS
 	attacktext = list("injected")
 	projectiletype = /obj/item/projectile/fake_syringe/poison
-	projectilesound = 'sound/weapons/empty.ogg' // Just like the syringe gun.
+	projectilesound = SFX_WEAPONS_EMPTY // Just like the syringe gun.
 
 
 /mob/living/simple_mob/mechanical/mecha/odysseus/manned

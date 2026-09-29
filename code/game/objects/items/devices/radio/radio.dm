@@ -293,7 +293,7 @@ DECLARE_INTERACTIONS(/obj/item/radio, INTERACT_USE(null, PROC_REF(interaction_se
 			. = TRUE
 
 	if(. && iscarbon(ui.user))
-		playsound(src, "button", 10)
+		play_sfx(src, SFX_BUTTON)
 
 GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 
@@ -628,6 +628,7 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 
 /obj/item/radio/borg
 	var/tmp/mob/living/silicon/robot/myborg // Cyborg which owns this radio (a relation view). Used for power checks
+	// owned: installed encryption key, kept in the radio's contents
 	var/obj/item/encryptionkey/keyslot = null//Borg radios can handle a single encryption key
 	icon = 'icons/obj/robot_component.dmi' // Cyborgs radio icons should look like the component.
 	icon_state = "radio"

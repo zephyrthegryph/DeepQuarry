@@ -102,7 +102,7 @@
 		else						// otherwise limit to 10 tiles
 			target = get_ranged_target_turf(T, direction, 10)
 
-		playsound(src, 'sound/machines/hiss.ogg', 50, 0, 0)
+		play_sfx(src, SFX_MACHINES_HISS)
 		if(H)
 			for(var/atom/movable/AM in H.slot_contents(CONTAINER_SLOT_DISPOSAL))
 				if(QDELETED(AM))
@@ -116,7 +116,7 @@
 
 	else	// no specified direction, so throw in random direction
 
-		playsound(src, 'sound/machines/hiss.ogg', 50, 0, 0)
+		play_sfx(src, SFX_MACHINES_HISS)
 		if(H)
 			for(var/atom/movable/AM in H.slot_contents(CONTAINER_SLOT_DISPOSAL))
 				if(QDELETED(AM))
@@ -182,7 +182,7 @@
 	if(!T.is_plating())
 		return ITEM_INTERACT_BLOCKING // prevent interaction with T-scanner revealed pipes
 	add_fingerprint(user)
-	use_tool(user, I, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 100, message_self = "You start slicing [src]....", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user), on_fail = PROC_REF(welder_act_tool_failed), fail_args = list(user))
+	use_tool(user, I, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 100, start_self = "You start slicing [src]....", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user), on_fail = PROC_REF(welder_act_tool_failed), fail_args = list(user))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/disposalpipe/proc/welder_act_tool_done(mob/user)
@@ -230,8 +230,8 @@
 	C.subtype = subtype
 	transfer_fingerprints_to(C)
 	C.set_dir(dir)
-	C.density = FALSE
-	C.anchored = TRUE
+	C.set_density(FALSE)
+	C.set_anchored(TRUE)
 	C.update()
 
 	replace_with(src, C)

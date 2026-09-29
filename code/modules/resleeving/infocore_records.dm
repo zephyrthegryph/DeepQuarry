@@ -14,15 +14,15 @@
 
 	//0: Normal, 1: Might be dead, 2: Definitely dead, show on console
 	var/dead_state = 0
-	var/last_update = 0
-	var/last_notification
+	EXPIRY_DECLARE(last_update)
+	EXPIRY_DECLARE(last_notification)
 	var/do_notify = TRUE
 
 	//Backend
 	var/ckey = ""
 	var/id_gender = MALE
 	var/datum/mind/mind_ref
-	var/cryo_at = 0
+	EXPIRY_DECLARE(cryo_at)
 	var/nif_path
 	var/nif_durability
 	var/list/nif_software
@@ -60,7 +60,7 @@
 	if(istype(M,/mob) && !M.read_preference(/datum/preference/toggle/autotranscore))
 		do_notify = FALSE
 
-	last_update = world.time
+	EXPIRY_STAMP(src, last_update, CLOCK_WORLD)
 
 	if(add_to_db)
 		GLOB.transcore_service.add_backup(src, database_key = database_key)

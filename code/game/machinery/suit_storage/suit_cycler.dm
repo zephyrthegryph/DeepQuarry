@@ -11,12 +11,12 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 
 	req_access = list(ACCESS_CAPTAIN,ACCESS_HEADS)
 
-	var/active = 0          // PLEASE HOLD.
+	active = 0          // PLEASE HOLD.
 	var/safeties = 1        // The cycler won't start with a living thing inside it unless safeties are off.
 	var/irradiating = 0     // If this is > 0, the cycler is decontaminating whatever is inside it.
 	var/radiation_level = 2 // 1 is removing germs, 2 is removing blood, 3 is removing phoron.
 	var/model_text = ""     // Some flavour text for the topic box.
-	var/locked = 1          // If locked, nothing can be taken from or added to the cycler.
+	locked = 1          // If locked, nothing can be taken from or added to the cycler.
 	var/can_repair          // If set, the cycler can repair voidsuits.
 	var/electrified = 0
 
@@ -69,7 +69,7 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 	target_species_static = species["No Change"]
 
 	if(!target_department() || !target_species())
-		stat |= BROKEN
+		stat_add(BROKEN)
 
 	set_wires(new /datum/wires/suit_storage_unit(src))
 
@@ -305,7 +305,7 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 	//Clear the access reqs, disable the safeties, and open up all paintjobs.
 	to_chat(user, span_danger("You run the sequencer across the interface, corrupting the operating protocols."))
 
-	emagged = 1
+	set_emagged(1)
 	safeties = 0
 	req_access = list()
 	return 1
@@ -319,7 +319,7 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 	effect = /obj/machinery/suit_cycler/proc/interaction_use
 
 /obj/machinery/suit_cycler/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return TRUE
 
 	if(!user.IsAdvancedToolUser())
@@ -342,7 +342,7 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 		ui.open()
 
 /obj/machinery/suit_cycler/tgui_data(mob/user)
-	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SUIT_CYCLER)
+	var/mob/living/carbon/human/occupant = slot_item_real(OCCUPANT_SLOT_SUIT_CYCLER)
 	var/list/data = list()
 
 	data["model_text"] = model_text
@@ -434,20 +434,20 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 		if("repair_suit")
 			if(!suit || !can_repair)
 				return
-			active = 1
+			set_active(1)
 			om_after(src, 10 SECONDS, PROC_REF(finish_repair), ui.user)
 			. = TRUE
 
 		if("apply_paintjob")
 			if(!suit && !helmet)
 				return
-			active = 1
+			set_active(1)
 			om_after(src, 10 SECONDS, PROC_REF(finish_paintjob), ui.user)
 			. = TRUE
 
 		if("lock")
 			if(allowed(ui.user))
-				locked = !locked
+				set_locked(!locked)
 				to_chat(ui.user, "You [locked ? "" : "un"]lock \the [src].")
 			else
 				to_chat(ui.user, span_danger("Access denied."))
@@ -462,7 +462,7 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 				to_chat(ui.user, span_danger("The cycler has detected an occupant. Please remove the occupant before commencing the decontamination cycle."))
 				return
 
-			active = 1
+			set_active(1)
 			irradiating = 10
 			MACHINE_WAKE(src)
 			om_after(src, 1 SECOND, PROC_REF(uv_wash))
@@ -492,8 +492,8 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 			return PROCESS_KILL
 		return
 
-	if(active && stat & (BROKEN|NOPOWER))
-		active = 0
+	if(active && !operable())
+		set_active(0)
 		irradiating = 0
 		electrified = 0
 		return PROCESS_KILL
@@ -524,8 +524,8 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 	var/turf/T = get_turf(src)
 	T.visible_message("[icon2html(src,viewers(src))]" + span_notice("The [src] beeps several times."))
 	icon_state = initial(icon_state)
-	active = 0
-	playsound(src, 'sound/machines/boobeebeep.ogg', 50)
+	set_active(0)
+	play_sfx(src, SFX_MACHINES_BOOBEEBEEP)
 
 /obj/machinery/suit_cycler/proc/repair_suit()
 	if(!suit || !suit.damage || !suit.can_breach)

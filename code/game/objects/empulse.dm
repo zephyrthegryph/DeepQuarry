@@ -27,7 +27,7 @@
 
 	// One sound for the pulse; playsound already reaches every listener in range (Q6).
 	if(locate_in_list(range(first_range, epicenter), /mob))
-		playsound(epicenter, 'sound/effects/EMPulse.ogg', 100, TRUE)
+		play_sfx(epicenter, SFX_EFFECTS_EMPULSE)
 
 	for(var/list/hit as anything in emp_falloff_turfs(epicenter, first_range, second_range, third_range, fourth_range))
 		var/turf/T = hit[1]

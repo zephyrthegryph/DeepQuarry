@@ -124,8 +124,8 @@ DECLARE_INTERACTIONS(/obj/item/tk_grab, INTERACT_USE(null, PROC_REF(interaction_
 	if(!focus())	return
 	var/obj/effect/overlay/O = new /obj/effect/overlay(locate(focus().x,focus().y,focus().z))
 	O.name = "sparkles"
-	O.anchored = TRUE
-	O.density = FALSE
+	O.set_anchored(TRUE)
+	O.set_density(FALSE)
 	O.layer = FLY_LAYER
 	O.set_dir(pick(GLOB.cardinal))
 	O.icon = 'icons/effects/effects.dmi'

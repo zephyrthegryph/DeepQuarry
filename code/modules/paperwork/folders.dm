@@ -5,8 +5,8 @@
 	icon_state = "folder"
 	w_class = ITEMSIZE_SMALL
 	pressure_resistance = 2
-	drop_sound = 'sound/items/drop/paper.ogg'
-	pickup_sound = 'sound/items/pickup/paper.ogg'
+	drop_sound = SFX_ITEMS_DROP_PAPER
+	pickup_sound = SFX_ITEMS_PICKUP_PAPER
 	slot_flags = SLOT_BELT | SLOT_HOLSTER
 	/// Card stock: barely slows a fire (containment paths, C2).
 	insulation = 0.1
@@ -133,11 +133,11 @@ DECLARE_INTERACTIONS(/obj/item/folder, \
 	var/list/data = list()
 	data["folder_name"] = name
 	var/list/items = list()
-	for(var/obj/item/paper/P in slot_contents(CONTAINER_SLOT_PAGES))
+	FOR_REAL_CONTENTS(var/obj/item/paper/P, src)
 		items += list(list("ref" = "\ref[P]", "name" = P.name, "kind" = "paper"))
-	for(var/obj/item/photo/Ph in slot_contents(CONTAINER_SLOT_PAGES))
+	FOR_REAL_CONTENTS(var/obj/item/photo/Ph, src)
 		items += list(list("ref" = "\ref[Ph]", "name" = Ph.name, "kind" = "photo"))
-	for(var/obj/item/paper_bundle/Pb in slot_contents(CONTAINER_SLOT_PAGES))
+	FOR_REAL_CONTENTS(var/obj/item/paper_bundle/Pb, src)
 		items += list(list("ref" = "\ref[Pb]", "name" = Pb.name, "kind" = "bundle"))
 	data["items"] = items
 	return data

@@ -15,8 +15,8 @@
 	var/saved_icon_state = "cigbutt"
 	var/saved_overlays
 
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 /obj/item/chameleon/dropped(mob/user, equipping, slot)
 	if(equipping)
@@ -35,7 +35,7 @@ DECLARE_INTERACTIONS(/obj/item/chameleon, INTERACT_USE(null, PROC_REF(toggle)))
 	if(!proximity) return
 	if(!active_dummy)
 		if(istype(target,/obj/item) && !istype(target, /obj/item/disk/nuclear))
-			playsound(src, 'sound/weapons/flash.ogg', 100, 1, -6)
+			play_sfx(src, SFX_WEAPONS_FLASH, extrarange = -6)
 			to_chat(user, span_notice("Scanned [target]."))
 			saved_item = target.type
 			saved_icon = target.icon
@@ -46,7 +46,7 @@ DECLARE_INTERACTIONS(/obj/item/chameleon, INTERACT_USE(null, PROC_REF(toggle)))
 	if(!can_use || !saved_item) return
 	if(active_dummy)
 		eject_all()
-		playsound(src, 'sound/effects/pop.ogg', 100, 1, -6)
+		play_sfx(src, SFX_EFFECTS_POP, 2, vary = TRUE, extrarange = -6)
 		own_clear(src, "active_dummy", OWN_DELETE)
 		to_chat(user, span_notice("You deactivate the [src]."))
 		var/obj/effect/overlay/T = new /obj/effect/overlay(get_turf(src))
@@ -54,7 +54,7 @@ DECLARE_INTERACTIONS(/obj/item/chameleon, INTERACT_USE(null, PROC_REF(toggle)))
 		flick("emppulse",T)
 		T.expire(0.8 SECONDS)
 	else
-		playsound(src, 'sound/effects/pop.ogg', 100, 1, -6)
+		play_sfx(src, SFX_EFFECTS_POP, 2, vary = TRUE, extrarange = -6)
 		var/obj/O = new saved_item(src)
 		if(!O) return
 		if(istype(user.loc, /obj/item/holder)) // This doesn't go well...
@@ -70,10 +70,7 @@ DECLARE_INTERACTIONS(/obj/item/chameleon, INTERACT_USE(null, PROC_REF(toggle)))
 
 /obj/item/chameleon/proc/disrupt(delete_dummy = 1)
 	if(active_dummy)
-		var/datum/effect/effect/system/spark_spread/spark_system = new /datum/effect/effect/system/spark_spread
-		spark_system.set_up(5, 0, src)
-		spark_system.attach(src)
-		spark_system.start()
+		fx_sparks(src, 5, FALSE)
 		eject_all()
 		if(delete_dummy)
 			own_clear(src, "active_dummy", OWN_DELETE)

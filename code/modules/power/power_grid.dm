@@ -285,7 +285,7 @@
 	var/material_loss_watts = 0
 	var/material_pending_heat = 0
 	var/material_pending_heat_elapsed = 0
-	var/last_material_process = 0
+	EXPIRY_DECLARE(last_material_process)
 
 /datum/material_power_overlay/New(id)
 	region_id = id
@@ -348,7 +348,7 @@
 /// conductor any more (the caller drops the overlay).
 /datum/material_power_overlay/proc/process_material_network()
 	var/elapsed_seconds = last_material_process ? max((world.time - last_material_process) / 10, 0.1) : 1
-	last_material_process = world.time
+	EXPIRY_STAMP(src, last_material_process, CLOCK_WORLD)
 	if(material_cache_dirty)
 		rebuild_material_cache()
 	if(!material_graph?.has_custom_conductors && !material_graph?.has_superconductors)

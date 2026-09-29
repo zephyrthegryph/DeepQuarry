@@ -183,7 +183,7 @@ OWN(/obj/machinery/mineral/processing_unit_console, inserted_id, OWN_SPILL)
 	var/sheets_per_tick = 10
 	var/list/ores_processing
 	var/list/ores_stored = list() // ALLOW(instance_list): d: filled in New() with an entry per ore
-	var/active = FALSE
+	active = FALSE
 
 	var/points = 0
 	var/points_mult = 1 //- multiplier for points generated when ore hits the processors

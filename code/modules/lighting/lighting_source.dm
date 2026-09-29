@@ -43,7 +43,9 @@
 	if (top_atom != source_atom)
 		rel_add(top_atom, "light_sources", src)
 
-	source_turf = top_atom // ALLOW(ownership): lighting engine turf cache, rewritten on every light move; a turf relation index entry per move would grow without bound
+	// A turf, never the top atom itself: holding a movable here until the first update_corners()
+	// kept a top atom deleted in the meantime alive -> hard delete -> GC_FAILURE_HARD_LOOKUP search.
+	source_turf = isturf(top_atom) ? top_atom : top_atom.loc // ALLOW(ownership): lighting engine turf cache, rewritten on every light move; a turf relation index entry per move would grow without bound
 	pixel_turf = get_turf_pixel(top_atom) || source_turf // ALLOW(ownership): lighting engine turf cache, rewritten on every light move; a turf relation index entry per move would grow without bound
 
 	light_power = source_atom.light_power

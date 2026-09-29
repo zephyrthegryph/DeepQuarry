@@ -209,14 +209,14 @@ DECLARE_DEFAULT_CHILD(/obj/item/integrated_circuit/output/text_to_speech/advance
 	the speaker to tell the user if something goes very wrong when booting up.  It can also do other similar synthetic sounds such \
 	as buzzing, pinging, chiming, and more."
 	sounds = list(
-		"beep"			= 'sound/machines/twobeep.ogg',
-		"chime"			= 'sound/machines/chime.ogg',
-		"buzz sigh"		= 'sound/machines/buzz-sigh.ogg',
-		"buzz twice"	= 'sound/machines/buzz-two.ogg',
-		"ping"			= 'sound/machines/ping.ogg',
-		"synth yes"		= 'sound/machines/synth_yes.ogg',
-		"synth no"		= 'sound/machines/synth_no.ogg',
-		"warning buzz"	= 'sound/machines/warning-buzzer.ogg'
+		"beep"			= SFX_MACHINES_TWOBEEP,
+		"chime"			= SFX_MACHINES_CHIME,
+		"buzz sigh"		= SFX_MACHINES_BUZZ_SIGH,
+		"buzz twice"	= SFX_MACHINES_BUZZ_TWO,
+		"ping"			= SFX_MACHINES_PING,
+		"synth yes"		= SFX_MACHINES_SYNTH_YES,
+		"synth no"		= SFX_MACHINES_SYNTH_NO,
+		"warning buzz"	= SFX_MACHINES_WARNING_BUZZER
 		)
 	spawn_flags = IC_SPAWN_DEFAULT|IC_SPAWN_RESEARCH
 
@@ -224,14 +224,14 @@ DECLARE_DEFAULT_CHILD(/obj/item/integrated_circuit/output/text_to_speech/advance
 	name = "securitron sound circuit"
 	desc = "A miniature speaker is attached to this component.  Considered by some to be the essential component for a securitron."
 	sounds = list(
-		"creep"			= 'sound/voice/bcreep.ogg',
-		"criminal"		= 'sound/voice/bcriminal.ogg',
-		"freeze"		= 'sound/voice/bfreeze.ogg',
-		"god"			= 'sound/voice/bgod.ogg',
-		"i am the law"	= 'sound/voice/biamthelaw.ogg',
-		"insult"		= 'sound/voice/binsult.ogg',
-		"radio"			= 'sound/voice/bradio.ogg',
-		"secure day"	= 'sound/voice/bsecureday.ogg',
+		"creep"			= SFX_VOICE_BCREEP,
+		"criminal"		= SFX_VOICE_BCRIMINAL,
+		"freeze"		= SFX_VOICE_BFREEZE,
+		"god"			= SFX_VOICE_BGOD,
+		"i am the law"	= SFX_VOICE_BIAMTHELAW,
+		"insult"		= SFX_VOICE_BINSULT,
+		"radio"			= SFX_VOICE_BRADIO,
+		"secure day"	= SFX_VOICE_BSECUREDAY,
 		)
 	spawn_flags = IC_SPAWN_RESEARCH
 
@@ -239,21 +239,21 @@ DECLARE_DEFAULT_CHILD(/obj/item/integrated_circuit/output/text_to_speech/advance
 	name = "medbot sound circuit"
 	desc = "A miniature speaker is attached to this component, used to annoy patients while they get pricked by a medbot."
 	sounds = list(
-		"surgeon"		= 'sound/voice/medbot/msurgeon.ogg',
-		"radar"			= 'sound/voice/medbot/mradar.ogg',
-		"feel better"	= 'sound/voice/medbot/mfeelbetter.ogg',
-		"patched up"	= 'sound/voice/medbot/mpatchedup.ogg',
-		"injured"		= 'sound/voice/medbot/minjured.ogg',
-		"insult"		= 'sound/voice/medbot/minsult.ogg',
-		"coming"		= 'sound/voice/medbot/mcoming.ogg',
-		"help"			= 'sound/voice/medbot/mhelp.ogg',
-		"live"			= 'sound/voice/medbot/mlive.ogg',
-		"lost"			= 'sound/voice/medbot/mlost.ogg',
-		"flies"			= 'sound/voice/medbot/mflies.ogg',
-		"catch"			= 'sound/voice/medbot/mcatch.ogg',
-		"delicious"		= 'sound/voice/medbot/mdelicious.ogg',
-		"apple"			= 'sound/voice/medbot/mapple.ogg',
-		"no"			= 'sound/voice/medbot/mno.ogg',
+		"surgeon"		= SFX_VOICE_MEDBOT_MSURGEON,
+		"radar"			= SFX_VOICE_MEDBOT_MRADAR,
+		"feel better"	= SFX_VOICE_MEDBOT_MFEELBETTER,
+		"patched up"	= SFX_VOICE_MEDBOT_MPATCHEDUP,
+		"injured"		= SFX_VOICE_MEDBOT_MINJURED,
+		"insult"		= SFX_VOICE_MEDBOT_MINSULT,
+		"coming"		= SFX_VOICE_MEDBOT_MCOMING,
+		"help"			= SFX_VOICE_MEDBOT_MHELP,
+		"live"			= SFX_VOICE_MEDBOT_MLIVE,
+		"lost"			= SFX_VOICE_MEDBOT_MLOST,
+		"flies"			= SFX_VOICE_MEDBOT_MFLIES,
+		"catch"			= SFX_VOICE_MEDBOT_MCATCH,
+		"delicious"		= SFX_VOICE_MEDBOT_MDELICIOUS,
+		"apple"			= SFX_VOICE_MEDBOT_MAPPLE,
+		"no"			= SFX_VOICE_MEDBOT_MNO,
 		)
 	spawn_flags = IC_SPAWN_RESEARCH
 

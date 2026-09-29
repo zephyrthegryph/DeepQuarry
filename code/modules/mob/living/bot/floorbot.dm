@@ -68,7 +68,7 @@ EXTEND_INTERACTIONS(/mob/living/bot/floorbot, INTERACT_HAND_UNGATED("Open contro
 		emagged = 1
 		if(user)
 			to_chat(user, span_notice("The [src] buzzes and beeps."))
-			playsound(src, 'sound/machines/buzzbeep.ogg', 50, 0)
+			play_sfx(src, SFX_MACHINES_BUZZBEEP)
 		return 1
 
 /mob/living/bot/floorbot/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
@@ -113,7 +113,7 @@ EXTEND_INTERACTIONS(/mob/living/bot/floorbot, INTERACT_HAND_UNGATED("Open contro
 
 	if(vocal && prob(1))
 		automatic_custom_emote(AUDIBLE_MESSAGE, "makes an excited beeping sound!")
-		playsound(src, 'sound/machines/twobeep.ogg', 50, 0)
+		play_sfx(src, SFX_MACHINES_TWOBEEP, vary = FALSE)
 
 /mob/living/bot/floorbot/handleAdjacentTarget()
 	if(get_turf(target) == src.loc)
@@ -275,7 +275,7 @@ EXTEND_INTERACTIONS(/mob/living/bot/floorbot, INTERACT_HAND_UNGATED("Open contro
 /mob/living/bot/floorbot/explode()
 	turn_off()
 	visible_message(span_danger("\The [src] blows apart!"))
-	playsound(src, "sparks", 50, 1)
+	play_sfx(src, SFX_SPARKS)
 	var/turf/Tsec = get_turf(src)
 
 	var/obj/item/storage/toolbox/mechanical/N = new /obj/item/storage/toolbox/mechanical(Tsec)
@@ -285,9 +285,7 @@ EXTEND_INTERACTIONS(/mob/living/bot/floorbot, INTERACT_HAND_UNGATED("Open contro
 	if(prob(50))
 		new /obj/item/robot_parts/l_arm(Tsec)
 	new /obj/item/stack/tile/floor(Tsec, amount)
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-	s.set_up(3, 1, src)
-	s.start()
+	fx_sparks(src, 3)
 	return ..()
 
 /mob/living/bot/floorbot/proc/addTiles(am)

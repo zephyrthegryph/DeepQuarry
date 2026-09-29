@@ -16,11 +16,11 @@
 
 // attack_self moved to code/modules/spells/spellbook_panel.dm so it opens via structured TGUI.
 
-/obj/item/spellbook/Topic(href, href_list)
-	..()
-	if(!ishuman(usr))
-		return 1
-	var/mob/living/carbon/human/H = usr
+/// The panel's "choose" action: learns, upgrades or buys `spell_choice` (params/ui carry the upgrade prompt's re-run).
+/obj/item/spellbook/proc/choose_spell(mob/user, spell_choice, list/params, datum/tgui/ui)
+	if(!ishuman(user) || !istext(spell_choice))
+		return
+	var/mob/living/carbon/human/H = user
 
 	if(H.stat || H.restrained())
 		return
@@ -31,8 +31,8 @@
 
 	if(loc == H || (in_range(src, H) && istype(loc, /turf)))
 		H.set_machine(src)
-		if(href_list["spell_choice"])
-			if(href_list["spell_choice"] == "rememorize")
+		if(spell_choice)
+			if(spell_choice == "rememorize")
 				var/area/wizard_station/A = locate()
 				if(is_in_holder(H, A))
 					uses = max_uses
@@ -42,7 +42,7 @@
 				else
 					temp = "You may only re-memorize spells whilst located inside the wizard sanctuary."
 			else if(uses >= 1 && max_uses >=1)
-				if(href_list["spell_choice"] == "noclothes")
+				if(spell_choice == "noclothes")
 					if(uses < 2)
 						return
 				uses--
@@ -51,7 +51,7 @@
 				var/list/available_spells = list(magicmissile = "Magic Missile", fireball = "Fireball", disabletech = "Disable Tech", smoke = "Smoke", blind = "Blind", subjugation = "Subjugation", mindswap = "Mind Transfer", forcewall = "Forcewall", blink = "Blink", teleport = "Teleport", mutate = "Mutate", etherealjaunt = "Ethereal Jaunt", knock = "Knock", horseman = "Curse of the Horseman", staffchange = "Staff of Change", mentalfocus = "Mental Focus", soulstone = "Six Soul Stone Shards and the spell Artificer", armor = "Mastercrafted Armor Set", staffanimate = "Staff of Animation", noclothes = "No Clothes")
 				var/already_knows = 0
 				for(var/datum/spell/aspell in H.spell_list)
-					if(available_spells[href_list["spell_choice"]] == initial(aspell.name))
+					if(available_spells[spell_choice] == initial(aspell.name))
 						already_knows = 1
 						if(!aspell.can_improve())
 							temp = "This spell cannot be improved further."
@@ -59,7 +59,7 @@
 							break
 						else
 							if(aspell.can_improve("speed") && aspell.can_improve("power"))
-								var/upgrade = topic_ask(H, href_list, "upgrade", /datum/om/prompt/choice/alert, message = "Do you want to upgrade this spell's speed or power?", title = "Select Upgrade", choices = list("Speed", "Power", "Cancel"))
+								var/upgrade = act_ask(H, "choose", params, ui, "upgrade", /datum/om/prompt/choice/alert, message = "Do you want to upgrade this spell's speed or power?", title = "Select Upgrade", choices = list("Speed", "Power", "Cancel"))
 								if(isnull(upgrade)) // the answer re-runs this link
 									uses++
 									return
@@ -78,7 +78,7 @@
 			/*
 			*/
 				if(!already_knows)
-					switch(href_list["spell_choice"])
+					switch(spell_choice)
 						if("noclothes")
 							feedback_add_details("wizard_spell_learned","NC")
 							H.add_spell(new/datum/spell/noclothes)
@@ -162,12 +162,7 @@
 								to_chat(H, span_notice("The walls suddenly disappear."))
 							temp = "You have purchased a scrying orb, and gained x-ray vision."
 							max_uses--
-		else
-			if(href_list["temp"])
-				temp = null
-		attack_self()
 
-	return
 
 //Single Use Spellbooks//
 

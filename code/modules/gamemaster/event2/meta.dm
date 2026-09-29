@@ -62,20 +62,15 @@
 	return 0
 
 
-/datum/event2/meta/Topic(href, href_list)
-	if(..())
-		return
+TOPIC_ACTION(/datum/event2/meta, "force", PROC_REF(topic_force), TOPIC_RIGHTS(R_ADMIN|R_EVENT|R_DEBUG))
+TOPIC_ACTION(/datum/event2/meta, "toggle", PROC_REF(topic_toggle), TOPIC_RIGHTS(R_ADMIN|R_EVENT|R_DEBUG))
 
-	if(!check_rights(R_ADMIN|R_EVENT|R_DEBUG))
-		message_admins("[usr] has attempted to manipulate an event without sufficent privilages.")
-		return
+/datum/event2/meta/proc/topic_force(mob/user, list/args)
+	// SSevent_ticker.start_event(event_type) // We don't use SSgame_master yet.
+	message_admins("Event '[name]' was forced by [user.key].")
+	return TRUE
 
-	if(href_list["force"])
-		// SSevent_ticker.start_event(event_type) // We don't use SSgame_master yet.
-		message_admins("Event '[name]' was forced by [usr.key].")
-
-	if(href_list["toggle"])
-		enabled = !enabled
-		message_admins("Event '[name]' was toggled [enabled ? "on" : "off"] by [usr.key].")
-
-	// SSgame_master.interact(usr) // To refresh the UI. // We don't use SSgame_master yet.
+/datum/event2/meta/proc/topic_toggle(mob/user, list/args)
+	enabled = !enabled
+	message_admins("Event '[name]' was toggled [enabled ? "on" : "off"] by [user.key].")
+	return TRUE

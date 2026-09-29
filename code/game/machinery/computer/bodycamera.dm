@@ -56,13 +56,13 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/security/telescreen/bodycamera, "b
 
 /obj/machinery/computer/security/telescreen/bodycamera/Click(location, control, params)
 	var/list/modifiers = params2list(params)
-	if(GLOB.input_router.click_is(modifiers, GLOB.input_router.alternate_table(), INPUT_ACTION_ALTERNATE))
+	if(GLOB.input_router.click_is(modifiers, TYPE_TABLE_GET(GLOB.input_router, alternate_table), INPUT_ACTION_ALTERNATE))
 		if(isliving(usr) && Adjacent(usr) && !usr.incapacitated())
 			bodycam_toggle()
 			visible_message("<b>[usr]</b> toggles [src] [enabled ? "on" : "off"].","You toggle [src] [enabled ? "on" : "off"].", runemessage = "click")
 	//Changing click to only come into play when shift or alt clicking. These things are ANNOYING.
 			return
-	if(GLOB.input_router.click_is(modifiers, GLOB.input_router.shift_table(), INPUT_ACTION_INSPECT))
+	if(GLOB.input_router.click_is(modifiers, TYPE_TABLE_GET(GLOB.input_router, shift_table), INPUT_ACTION_INSPECT))
 		attack_hand(usr)
 		return
 	..()
@@ -87,7 +87,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/security/telescreen/bodycamera, "b
 		return
 	if(showing)
 		stop_showing()
-	if(stat & NOPOWER)
+	if(has_stat(NOPOWER))
 		return
 	if(!thing || !other_thing)
 		return
@@ -116,8 +116,8 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/security/telescreen/bodycamera, "b
 		stop_showing()
 
 /obj/machinery/computer/security/telescreen/bodycamera/power_change()
-	..()
-	if(stat & NOPOWER)
+	. = ..()
+	if(has_stat(NOPOWER))
 		bradio?.on = FALSE
 		stop_showing()
 	else if(enabled)

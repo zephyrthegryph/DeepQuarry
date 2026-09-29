@@ -179,8 +179,8 @@ GLOBAL_LIST_EMPTY(spell_cast_args)
 			var/obj/effect/overlay/spell = new /obj/effect/overlay(location)
 			spell.icon = overlay_icon
 			spell.icon_state = overlay_icon_state
-			spell.anchored = TRUE
-			spell.density = FALSE
+			spell.set_anchored(TRUE)
+			spell.set_density(FALSE)
 			om_qdel_after(spell, overlay_lifespan)
 	return valid_targets
 
@@ -190,9 +190,7 @@ GLOBAL_LIST_EMPTY(spell_cast_args)
 		if(isliving(target) && message)
 			to_chat(target, "[message]")
 		if(sparks_spread)
-			var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread()
-			sparks.set_up(sparks_amt, 0, location) //no idea what the 0 is
-			sparks.start()
+			fx_sparks(location, sparks_amt, FALSE)
 		if(smoke_spread)
 			if(smoke_spread == 1)
 				var/datum/effect/effect/system/smoke_spread/smoke = new /datum/effect/effect/system/smoke_spread()

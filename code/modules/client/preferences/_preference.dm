@@ -567,8 +567,6 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 	/// If you implement this, you must implement `icon_for(value)` for every possible value.
 	var/should_generate_icons = FALSE
 
-	var/list/cached_values
-
 	/// If the preference is a main feature (PREFERENCE_CATEGORY_FEATURES or PREFERENCE_CATEGORY_CLOTHING)
 	/// this is the name of the feature that will be presented.
 	var/main_feature_name
@@ -584,11 +582,15 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 	// Override `init_values()` instead.
 	SHOULD_NOT_OVERRIDE(TRUE)
 
-	if(isnull(cached_values))
-		cached_values = init_possible_values()
-		ASSERT(cached_values.len)
+	return CACHED_KEY(preference_choices, type, src)
 
-	return cached_values
+DECLARE_SHARED_CACHE(preference_choices, GLOBAL_PROC_REF(build_preference_choices), SC_NEVER)
+
+/// Shared-cache builder: a choiced preference's possible values, once per type.
+/proc/build_preference_choices(datum/preference/choiced/preference)
+	var/list/values = TYPE_TABLE_GET(preference, pref_choices) || preference.init_possible_values()
+	ASSERT(length(values))
+	return values
 
 /// Returns a list of every possible value, serialized.
 /datum/preference/choiced/proc/get_choices_serialized()
@@ -601,6 +603,11 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 		serialized_choices += pref_serialize(choice)
 
 	return serialized_choices
+
+/// A choice list that is a fixed shared table (e.g. a GLOB list): set with
+/// TYPE_TABLE(/datum/preference/choiced/x, pref_choices, GLOB.y) instead of overriding
+/// `init_possible_values()`. Shared and read-only.
+TYPE_TABLE_DECLARE(/datum/preference/choiced, pref_choices, null)
 
 /// Returns a list of every possible value.
 /// This must be overriden by `/datum/preference/choiced` subtypes.

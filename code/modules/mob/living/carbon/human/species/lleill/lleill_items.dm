@@ -26,7 +26,7 @@
 
 /datum/reagent/glamour_transparent/affect_blood(mob/living/carbon/target, removed)
 	if(!dq_get_cloaked(target))
-		target.visible_message(span_infoplain(span_bold("\The [target]") + " vanishes from sight."))
+		act_message(target, null, others = span_infoplain(span_bold("%U%") + " vanishes from sight."))
 		target.cloak()
 	target.bloodstr.clear_reagents() //instantly clears reagents afterwards
 	target.ingested.clear_reagents()
@@ -175,7 +175,7 @@ DECLARE_INTERACTIONS(/obj/item/glamour_face, INTERACT_USE(null, PROC_REF(interac
 	if(!H)
 		return
 	if(h_action == "Recall")
-		H.visible_message(span_infoplain(span_bold("\The [H]") + " returns to the face."))
+		act_message(H, null, others = span_infoplain(span_bold("%U%") + " returns to the face."))
 		qdel(H) // the framework clears our homunculus view
 		return
 	if(h_action == "Speak Through")
@@ -409,10 +409,8 @@ DECLARE_INTERACTIONS(/obj/item/glamour_unstable, \
 	var/mob/living/M = user
 	if(!istype(M))
 		return TRUE
-	user.visible_message(span_warning("[user] triggers \the [src]!"), span_danger("You trigger \the [src]!"))
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread()
-	s.set_up(5, 1, get_turf(src))
-	s.start()
+	act_message(user, src, MSG_SELF(span_danger("You trigger %T%!")), MSG_OTHERS(span_warning("%U% triggers %T%!")))
+	fx_sparks(get_turf(src), 5)
 	var/effect_choice = rand(1,4)
 	switch(effect_choice)
 		if(1) //teleport
@@ -493,5 +491,5 @@ DECLARE_INTERACTIONS(/obj/item/glamour_unstable, \
 /mob/living/proc/glamour_cloak_expires()
 	if(dq_get_cloaked(src))
 		uncloak()
-		visible_message(span_infoplain(span_bold("\The [src]") + " appears as if from thin air."))
+		act_message(src, null, others = span_infoplain(span_bold("%U%") + " appears as if from thin air."))
 

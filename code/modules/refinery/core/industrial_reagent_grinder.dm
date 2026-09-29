@@ -95,7 +95,7 @@ OWN(/obj/machinery/reagent_refinery/grinder, holdingitems, OWN_SPILL)
 		return
 
 	power_change()
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return
 
 	// Get objects from incoming conveyors
@@ -105,16 +105,16 @@ OWN(/obj/machinery/reagent_refinery/grinder, holdingitems, OWN_SPILL)
 			if(!T)
 				continue
 			var/obj/machinery/conveyor/C = locate_on(T, /obj/machinery/conveyor)
-			if(C && !C.stat && C.operating && C.dir == GLOB.reverse_dir[D] && contents_count(T) > 1) // If an operating conveyor points into us... Check if it's moving anything
+			if(C && !C.has_stat(MACHINE_STAT_ANY) && C.operating && C.dir == GLOB.reverse_dir[D] && contents_count(T) > 1) // If an operating conveyor points into us... Check if it's moving anything
 				var/obj/item/I = pick(T.contents - list(C))
 				if(istype(I) && conveyor_load(I))
 					break
 
 	if(holdingitems.len > 0 && grind_items_to_reagents(holdingitems,reagents))
 		//Lazy coder sound design moment. THE SEQUEL
-		playsound(src, 'sound/items/poster_being_created.ogg', 50, 1)
-		playsound(src, 'sound/items/electronic_assembly_emptying.ogg', 50, 1)
-		playsound(src, 'sound/effects/metalscrape2.ogg', 50, 1)
+		play_sfx(src, SFX_ITEMS_POSTER_BEING_CREATED)
+		play_sfx(src, SFX_ITEMS_ELECTRONIC_ASSEMBLY_EMPTYING)
+		play_sfx(src, SFX_EFFECTS_METALSCRAPE2)
 		if(holdingitems.len == 0)
 			update_icon()
 
@@ -124,7 +124,7 @@ OWN(/obj/machinery/reagent_refinery/grinder, holdingitems, OWN_SPILL)
 	cut_overlays()
 	var/image/pipe = image(icon, icon_state = "grinder_cons", dir = dir)
 	add_overlay(pipe)
-	if(stat & (NOPOWER|BROKEN) || !anchored)
+	if(!operable() || !anchored)
 		icon_state = "grinder_off"
 	else
 		icon_state = "grinder_on"
@@ -164,6 +164,6 @@ OWN(/obj/machinery/reagent_refinery/grinder, holdingitems, OWN_SPILL)
 		return TRUE
 	for(var/D in GLOB.cardinal)
 		var/obj/machinery/conveyor/C = locate_within(get_step(src, D), /obj/machinery/conveyor)
-		if(C && !C.stat && C.operating && C.dir == GLOB.reverse_dir[D])
+		if(C && !C.has_stat(MACHINE_STAT_ANY) && C.operating && C.dir == GLOB.reverse_dir[D])
 			return TRUE
 	return FALSE

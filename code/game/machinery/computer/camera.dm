@@ -46,7 +46,7 @@
 
 /obj/machinery/computer/security/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return TRUE
 	tgui_interact(user)
 	return TRUE
@@ -148,13 +148,13 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/security/telescreen/entertainment,
 
 /obj/machinery/computer/security/telescreen/entertainment/Click(location, control, params)
 	var/list/modifiers = params2list(params)
-	if(GLOB.input_router.click_is(modifiers, GLOB.input_router.alternate_table(), INPUT_ACTION_ALTERNATE))
+	if(GLOB.input_router.click_is(modifiers, TYPE_TABLE_GET(GLOB.input_router, alternate_table), INPUT_ACTION_ALTERNATE))
 		if(isliving(usr) && Adjacent(usr) && !usr.incapacitated())
 			toggle()
 			visible_message(span_infoplain(span_bold("[usr]") + " toggles [src] [enabled ? "on" : "off"]."),span_info("You toggle [src] [enabled ? "on" : "off"]."), runemessage = "click")
 	// start - Changing click to only come into play when shift or alt clicking. These things are ANNOYING.
 			return
-	if(GLOB.input_router.click_is(modifiers, GLOB.input_router.shift_table(), INPUT_ACTION_INSPECT))
+	if(GLOB.input_router.click_is(modifiers, TYPE_TABLE_GET(GLOB.input_router, shift_table), INPUT_ACTION_INSPECT))
 		attack_hand(usr)
 		return
 	..()
@@ -168,7 +168,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/security/telescreen/entertainment,
 		return
 	if(showing)
 		stop_showing()
-	if(stat & NOPOWER)
+	if(has_stat(NOPOWER))
 		return
 	rel_set(src, "showing", thing)
 	if(pinboard)
@@ -185,8 +185,8 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/security/telescreen/entertainment,
 		stop_showing()
 
 /obj/machinery/computer/security/telescreen/entertainment/power_change()
-	..()
-	if(stat & NOPOWER)
+	. = ..()
+	if(has_stat(NOPOWER))
 		radio?.on = FALSE
 		stop_showing()
 	else if(enabled)

@@ -78,20 +78,20 @@
 	// This will actually protect it from further damage.
 	if(prob(25))
 		A.energy_fail(rand(60, 120))
-		playsound(A, 'sound/machines/defib_success.ogg', 50, 1)
+		play_sfx(A, SFX_MACHINES_DEFIB_SUCCESS, vary = TRUE)
 		apcs_disabled++
 		return
 
 	// Decent chance to overload lighting circuit.
 	if(prob(30))
 		A.overload_lighting()
-		playsound(A, 'sound/effects/lightningshock.ogg', 50, 1)
+		play_sfx(A, SFX_EFFECTS_LIGHTNINGSHOCK, 0.5, extrarange = 0)
 		apcs_overloaded++
 
 	// Relatively small chance to emag the apc as apc_damage event does.
 	if(prob(5))
-		A.emagged = TRUE
+		A.set_emagged(TRUE)
 		A.update_icon()
-		playsound(A, 'sound/machines/chime.ogg', 50, 1)
+		play_sfx(A, SFX_MACHINES_CHIME)
 		apcs_emagged++
 

@@ -1,3 +1,5 @@
+OWN_TIMER(/obj/item, tip_timer)
+
 /obj/item
 	name = "item"
 	icon = 'icons/obj/weapons.dmi' //'icons/obj/items.dmi' //It was accidentally set to weapons.dmi 11 months ago...leaving it as is until further analysis
@@ -11,7 +13,7 @@
 	var/health = null // organ condition (the body rewrite owns it). Object hit points are integrity (take_damage/get_integrity), never this.
 	// burn_point removed (dead, 0 refs)
 	var/burning = null
-	var/hitsound = "swing_hit"
+	var/hitsound = SFX_SWING_HIT
 	var/usesound = null // Like hitsound, but for when used properly and not to kill someone.
 	var/storage_cost = null
 	var/slot_flags = 0		//This is used to determine on which slots an item can fit.
@@ -104,11 +106,10 @@
 	// Sound used when equipping the items into a valid slot.
 	var/equip_sound
 	// pickup sound - this is the default
-	var/pickup_sound = "generic_pickup"
+	var/pickup_sound = SFX_GENERIC_PICKUP
 	// drop sound - this is the default
-	var/drop_sound = "generic_drop"
+	var/drop_sound = SFX_GENERIC_DROP
 
-	var/tmp/tip_timer // reference to timer id for a tooltip we might open soon
 
 	var/no_random_knockdown = FALSE			//stops item from being able to randomly knock people down in combat
 
@@ -433,9 +434,9 @@
 			else if(hitsound)
 				playsound(hit_atom, hitsound, volume, TRUE, -1)
 			else
-				playsound(hit_atom, 'sound/weapons/genhit.ogg', volume, TRUE, -1)
+				play_sfx(hit_atom, SFX_WEAPONS_GENHIT, volume = volume, extrarange = -1)
 		else
-			playsound(hit_atom, 'sound/weapons/throwtap.ogg', 1, volume, -1)
+			play_sfx(hit_atom, SFX_WEAPONS_THROWTAP, vary = volume)
 	else
 		playsound(src, drop_sound, 30, preference = /datum/preference/toggle/drop_sounds)
 
@@ -603,7 +604,7 @@
 	var/hit_zone = get_zone_with_miss_chance(U.zone_sel.selecting, M, U.get_accuracy_penalty(U))
 	if(!hit_zone)
 		U.do_attack_animation(M)
-		playsound(src, 'sound/weapons/punchmiss.ogg', 25, 1, -1)
+		play_sfx(src, SFX_WEAPONS_PUNCHMISS)
 		visible_message(span_danger("\The [U] attempts to stab \the [M] in the eyes, but misses!"))
 		return ITEM_INTERACT_FAILURE
 
@@ -629,10 +630,8 @@
 			to_chat(M, span_danger("[user] stabs you in the eye with [src]!"))
 			to_chat(user, span_danger("You stab [M] in the eye with [src]!"))
 		else
-			user.visible_message( \
-				span_danger("[user] has stabbed themself with [src]!"), \
-				span_danger("You stab yourself in the eyes with [src]!") \
-			)
+			act_message(user, src, MSG_SELF(span_danger("You stab yourself in the eyes with %T%!")), \
+				MSG_OTHERS(span_danger("%U% has stabbed themself with %T%!")))
 
 		H.injure(INJURY_CUT, rand(3, 4), eyes, src, flags = INJURE_SILENT)
 		if(eyes.damage >= eyes.min_bruised_damage)
@@ -937,11 +936,11 @@ GLOBAL_LIST_EMPTY(blood_overlays_by_type)
 		return
 	if(usr?.read_preference(/datum/preference/toggle/inv_tooltips) && ((src in usr) || isstorage(loc))) // If in inventory or in storage we're looking at
 		var/user = usr
-		tip_timer = om_after(src, 5, PROC_REF(openTip), location, control, params, user)
+		om_after_slot(src, "tip_timer", 5, PROC_REF(openTip), location, control, params, user)
 
 /obj/item/MouseExited()
 	. = ..()
-	om_cancel_timer(src, tip_timer)
+	om_cancel_timer_slot(src, "tip_timer")
 	closeToolTip(usr, src)
 
 /obj/item/proc/openTip(location, control, params, user)

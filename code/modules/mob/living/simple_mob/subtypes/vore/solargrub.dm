@@ -80,12 +80,10 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 		if(self.attached)
 			if(self.ai_brain) self.ai_busy_begin()
 			if(prob(2))
-				self.visible_message(span_infoplain(span_bold("\The [self]") + " begins to sink power from the net."))
+				act_message(self, null, null, MSG_OTHERS(span_infoplain(span_bold("%U%") + " begins to sink power from the net.")))
 			if(prob(5))
-				var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread()
-				sparks.set_up(5, 0, get_turf(self))
-				sparks.start()
-			self.anchored = TRUE
+				fx_sparks(get_turf(self), 5, FALSE)
+			self.set_anchored(TRUE)
 			self.PN = self.attached.get_power_region()
 			power_draw(self.PN, self.powerdraw)
 			self.charge = self.charge + (self.powerdraw/1000) //This adds raw powerdraw to charge(Charge is in Ks as in 1 = 1000)
@@ -98,10 +96,10 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 						var/drain_val = min(apc_drain_rate, cur_charge)
 						A.cell.use(drain_val * CELLRATE)
 		else if(!self.attached && self.anchored)
-			self.anchored = FALSE
+			self.set_anchored(FALSE)
 			self.PN = 0
 		if(prob(1) && self.charge >= 32000 && self.can_evolve == 1 && GLOB.moth_amount < 1) //it's reading from the moth_amount global list to determine if it can evolve. There should only ever be a maxcap of 1 existing solar moth alive at any time. TODO: make the code decrease the list after 1 has spawned this shift.
-			self.anchored = 0
+			self.set_anchored(0)
 			self.PN = 0
 			self.release_vore_contents()
 			if(self.prey_excludes)
@@ -110,7 +108,7 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 			self.death_star()
 
 /mob/living/simple_mob/vore/solargrub/proc/death_star()
-	visible_message(span_warning("\The [src]'s shell rips open and evolves!"))
+	act_message(src, null, null, MSG_OTHERS(span_warning("%U%'s shell rips open and evolves!")))
 
 /*
 //Commenting this bit out. It's unncecessary, especially since we only use one form.
@@ -133,13 +131,11 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 		var/mob/living/L = A
 		if(prob(shock_chance))
 			A.emp_act(4) //The weakest strength of EMP
-			playsound(src, 'sound/weapons/egloves.ogg', 75, 1)
+			play_sfx(src, SFX_WEAPONS_EGLOVES, 1.5, extrarange = 0)
 			L.status_at_least(EFFECT_WEAKENED, 4)
 			L.status_at_least(EFFECT_STUNNED, 4)
 			L.status_at_least(EFFECT_STUTTERING, 4)
-			var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-			s.set_up(5, 1, L)
-			s.start()
+			fx_sparks(L, 5)
 			visible_message(span_danger("The grub releases a powerful shock!"))
 		else
 			if(L.reagents)
@@ -154,7 +150,7 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 		L.reagents.add_reagent(poison_type, poison_per_bite)
 
 /mob/living/simple_mob/vore/solargrub/on_death(gibbed)
-	src.anchored = FALSE
+	set_anchored(FALSE)
 	set_light(0)
 	..()
 

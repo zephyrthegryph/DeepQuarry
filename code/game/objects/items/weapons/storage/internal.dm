@@ -15,9 +15,7 @@
 EXTEND_INTERACTIONS(/obj/item/storage/internal, INTERACT_HAND_UNGATED(null, TYPE_PROC_REF(/atom, interaction_swallow)))
 
 /// Internal storage is part of its owner and is never worn on its own.
-/obj/item/storage/internal/equip_constraint()
-	var/list/nothing = list()
-	return list(REQ_BECAUSE(REQ_TYPE(PRED_TARGET, nothing), "it can't be worn"))
+TYPE_TABLE(/obj/item/storage/internal, equip_spec, list(REQ_BECAUSE(REQ_TYPE(PRED_TARGET, list()), "it can't be worn")))
 
 //Helper procs to cleanly implement internal storages - storage items that provide inventory slots for other items.
 //These procs are completely optional, it is up to the master item to decide when it's storage get's opened by calling open()

@@ -28,7 +28,7 @@ GLOBAL_LIST_INIT(alphabet_upper, list("A","B","C","D","E","F","G","H","I","J","K
  */
 //Simply removes < and > and limits the length of the message
 /proc/strip_html_simple(t,limit=MAX_MESSAGE_LEN)
-	var/list/strip_chars = list("<",">")
+	var/static/list/strip_chars = list("<",">")
 	t = copytext(t,1,limit)
 	for(var/char in strip_chars)
 		var/index = findtext(t, char)

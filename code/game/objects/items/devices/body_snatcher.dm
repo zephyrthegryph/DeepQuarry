@@ -8,8 +8,8 @@
 	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_SMALL
 	MATERIAL_BULK(MAT_STEEL, 200)
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 	flags = NOBLUDGEON
 
 /// Re-checked on the answer: the device is still in hand, and the victim is next to the user and alive.
@@ -33,7 +33,7 @@
 		log_and_message_admins("attempted to body swap with [key_name(M)] while they were SSD!")
 	else
 		log_and_message_admins("attempted to body swap with [key_name(M)].")
-	user.visible_message(span_warning("[user] pushes the device up their forehead and [M]'s head, the device beginning to let out a series of light beeps!"),span_notice("You begin swap minds with [M]!"))
+	act_message(user, null, MSG_SELF(span_notice("You begin swap minds with [M]!")), MSG_OTHERS(span_warning("%U% pushes the device up their forehead and [M]'s head, the device beginning to let out a series of light beeps!")))
 	om_task_timed(user, 35 SECONDS, target = M, receiver = src, on_done = PROC_REF(attack_timed_done), done_args = list(M, user))
 
 /obj/item/bodysnatcher/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)

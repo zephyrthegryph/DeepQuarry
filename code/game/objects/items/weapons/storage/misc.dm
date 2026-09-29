@@ -39,9 +39,7 @@ GLOBAL_LIST_INIT(random_weighted_donuts, list(
 	foldable = /obj/item/stack/material/cardboard
 	//starts_with = list(/obj/item/reagent_containers/food/snacks/donut/normal = 6)
 
-/obj/item/storage/box/donut/hold_constraint()
-	var/list/holds = list(/obj/item/reagent_containers/food/snacks/donut)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage/box/donut, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/food/snacks/donut)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 /obj/item/storage/box/donut/Initialize(mapload)
 	if(!empty)
@@ -71,13 +69,11 @@ GLOBAL_LIST_INIT(random_weighted_donuts, list(
 	max_storage_space = ITEMSIZE_COST_TINY * 6
 	starts_with = list(/obj/item/reagent_containers/food/snacks/worm = 6)
 
-/obj/item/storage/box/wormcan/hold_constraint()
-	var/list/holds = list(
-		/obj/item/reagent_containers/food/snacks/wormsickly,
-		/obj/item/reagent_containers/food/snacks/worm,
-		/obj/item/reagent_containers/food/snacks/wormdeluxe
-	)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage/box/wormcan, hold_spec, list(HOLD_ONLY(list( \
+		/obj/item/reagent_containers/food/snacks/wormsickly, \
+		/obj/item/reagent_containers/food/snacks/worm, \
+		/obj/item/reagent_containers/food/snacks/wormdeluxe \
+	)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 /obj/item/storage/box/wormcan/Initialize(mapload)
 	. = ..()

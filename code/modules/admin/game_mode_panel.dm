@@ -76,25 +76,25 @@
 		if("toggle")
 			// Forward to the existing /game_mode Topic handler.
 			var/key = "[params["key"]]"
-			target_mode.Topic("toggle=[key]", list("toggle" = key))
+			topic_dispatch(target_mode, ui.user, list("toggle" = key))
 			SStgui.update_uis(src)
 			return TRUE
 		if("set")
 			var/key = "[params["key"]]"
-			target_mode.Topic("set=[key]", list("set" = key))
+			topic_dispatch(target_mode, ui.user, list("set" = key))
 			SStgui.update_uis(src)
 			return TRUE
 		if("debug_antag")
 			var/id = "[params["id"]]"
-			target_mode.Topic("debug_antag=[id]", list("debug_antag" = id))
+			topic_dispatch(target_mode, ui.user, list("debug_antag" = id))
 			return TRUE
 		if("remove_antag_type")
 			var/id = "[params["id"]]"
-			target_mode.Topic("remove_antag_type=[id]", list("remove_antag_type" = id))
+			topic_dispatch(target_mode, ui.user, list("remove_antag_type" = id))
 			SStgui.update_uis(src)
 			return TRUE
 		if("add_antag_type")
-			target_mode.Topic("add_antag_type=1", list("add_antag_type" = "1"))
+			topic_dispatch(target_mode, ui.user, list("add_antag_type" = "1"))
 			recompute_antag_caps()
 			SStgui.update_uis(src)
 			return TRUE

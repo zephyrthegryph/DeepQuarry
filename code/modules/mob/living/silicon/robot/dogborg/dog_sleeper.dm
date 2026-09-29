@@ -16,8 +16,6 @@
 	var/min_vitality = 0
 	var/cleaning = 0
 	var/patient_laststat = null
-	// ALLOW(instance_list): c: read-only per-subtype constant table (10 subtype overrides); a getter would share it, not worth it on a rare type
-	var/list/injection_chems = list(REAGENT_ID_INAPROVALINE, REAGENT_ID_BICARIDINE, REAGENT_ID_KELOTANE, REAGENT_ID_ANTITOXIN, REAGENT_ID_DEXALIN, REAGENT_ID_TRICORDRAZINE, REAGENT_ID_SPACEACILLIN, REAGENT_ID_TRAMADOL) //The borg is able to heal every damage type. As a nerf, they use 750 charge per injection.
 	var/eject_port = "ingestion"
 	/// Things in our contents spared from digestion.
 	var/list/items_preserved
@@ -35,7 +33,7 @@
 	var/startdrain = 500
 	var/max_item_count = 1
 	var/upgraded_capacity = FALSE
-	var/gulpsound = 'sound/vore/gulp.ogg'
+	var/gulpsound = SFX_VORE_GULP
 	var/datum/matter_synth/metal/metal = null
 	var/datum/matter_synth/glass/glass = null
 	var/datum/matter_synth/wood/wood = null
@@ -43,7 +41,7 @@
 	var/datum/matter_synth/water = null
 	var/digest_brute = 2
 	/// world.time of the last digestion pass (0: none yet).
-	var/tmp/last_digest_time = 0
+	EXPIRY_TMP_DECLARE(last_digest_time)
 	var/digest_burn = 3
 	var/digest_multiplier = 1
 	var/recycles = FALSE
@@ -52,6 +50,8 @@
 	var/ore_storage = FALSE
 	var/obj/item/ore_bag/sleeper/ore_bag //Used by supply compactor
 	flags = NOBLUDGEON
+//The borg is able to heal every damage type. As a nerf, they use 750 charge per injection.
+TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAGENT_ID_INAPROVALINE, REAGENT_ID_BICARIDINE, REAGENT_ID_KELOTANE, REAGENT_ID_ANTITOXIN, REAGENT_ID_DEXALIN, REAGENT_ID_TRICORDRAZINE, REAGENT_ID_SPACEACILLIN, REAGENT_ID_TRAMADOL))
 
 /obj/item/dogborg/sleeper/Initialize(mapload)
 	if(analyzer) //Destructive analysis
@@ -236,7 +236,7 @@ REL_LIST(/obj/item/dogborg/sleeper, items_preserved)
 		hound.visible_message(span_warning("[hound.name] empties out their contents via their [eject_port] port."), span_notice("You empty your contents via your [eject_port] port."))
 		for(var/atom/movable/content in contents)
 			content.forceMove(get_turf(src))
-		playsound(src, 'sound/effects/splat.ogg', 50, 1)
+		play_sfx(src, SFX_EFFECTS_SPLAT)
 	update_patient()
 
 /obj/item/dogborg/sleeper/proc/vore_ingest_all()
@@ -287,7 +287,7 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/sleeper, INTERACT_USE(null, PROC_REF(inte
 
 	var/mob/living/silicon/robot/robot_user = user
 	var/list/robot_chems = list()
-	for(var/re in injection_chems)
+	for(var/re in TYPE_TABLE_GET(src, sleeper_injection_chems))
 		var/datum/reagent/possible_reagent = chemistry_service().chemical_reagents[re]
 		UNTYPED_LIST_ADD(robot_chems, list("id" = possible_reagent.id, "name" = possible_reagent.name))
 
@@ -398,7 +398,7 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/sleeper, INTERACT_USE(null, PROC_REF(inte
 			hound.visible_message(span_warning("[hound.name] empties out their cargo compartment via their [eject_port] port."), span_notice("You empty your cargo compartment via your [eject_port] port."))
 			for(var/atom/movable/content in deliverylists[delivery_tag])
 				content.forceMove(get_turf(src))
-			playsound(src, 'sound/effects/splat.ogg', 50, 1)
+			play_sfx(src, SFX_EFFECTS_SPLAT)
 			update_patient()
 			deliverylists[delivery_tag].Cut()
 			return TRUE
@@ -407,7 +407,7 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/sleeper, INTERACT_USE(null, PROC_REF(inte
 				to_chat(ui.user, span_notice("ERROR: Subject cannot metabolise chemicals."))
 				return FALSE
 			var/selected_reagent = params["value"]
-			if(!(selected_reagent in injection_chems))
+			if(!(selected_reagent in TYPE_TABLE_GET(src, sleeper_injection_chems)))
 				return FALSE
 			if(selected_reagent == REAGENT_ID_INAPROVALINE || patient.vitality() > min_vitality)
 				inject_chem(ui.user, selected_reagent)
@@ -417,7 +417,7 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/sleeper, INTERACT_USE(null, PROC_REF(inte
 
 /obj/item/dogborg/sleeper/proc/inject_chem(mob/user, chem)
 	if(patient && patient.reagents)
-		if(chem in (injection_chems + REAGENT_ID_INAPROVALINE))
+		if(chem in (TYPE_TABLE_GET(src, sleeper_injection_chems) + REAGENT_ID_INAPROVALINE))
 			if(!hound.cell || hound.cell.charge < 800) //This is so borgs don't kill themselves with it.
 				to_chat(hound, span_notice("You don't have enough power to synthesize fluids."))
 				return
@@ -487,26 +487,14 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/sleeper, INTERACT_USE(null, PROC_REF(inte
 		return
 
 	if(prob(20))
-		var/churnsound = pick(
-			'sound/vore/digest1.ogg',
-			'sound/vore/digest2.ogg',
-			'sound/vore/digest3.ogg',
-			'sound/vore/digest4.ogg',
-			'sound/vore/digest5.ogg',
-			'sound/vore/digest6.ogg',
-			'sound/vore/digest7.ogg',
-			'sound/vore/digest8.ogg',
-			'sound/vore/digest9.ogg',
-			'sound/vore/digest10.ogg',
-			'sound/vore/digest11.ogg',
-			'sound/vore/digest12.ogg')
+		var/churnsound = SFX_CLASSIC_DIGESTION_SOUNDS
 		playsound(src, churnsound, vol = 100, vary = 1, falloff = 0.1, ignore_walls = TRUE, preference = /datum/preference/toggle/digestion_noises)
 	//If the timing is right, and there are items to be touched
 	if(SSair.times_fired%3==1)
 		// digest_brute / digest_burn are rates per BELLY_BASELINE_TICK, applied as
 		// continuous harm for the time since the last digestion pass.
 		var/delta_factor = last_digest_time ? clamp((world.time - last_digest_time) / BELLY_BASELINE_TICK, 0, DOGBORG_DIGEST_MAX_CATCHUP) : 1
-		last_digest_time = world.time
+		EXPIRY_STAMP(src, last_digest_time, CLOCK_WORLD)
 
 		//Burn all the mobs or add them to the exclusion list
 		for(var/mob/living/T in (touchable_items))
@@ -520,22 +508,12 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/sleeper, INTERACT_USE(null, PROC_REF(inte
 
 /// The belly is empty: announce it and stop cleaning.
 /obj/item/dogborg/sleeper/proc/finish_clean_cycle()
-	var/finisher = pick(
-		'sound/vore/death1.ogg',
-		'sound/vore/death2.ogg',
-		'sound/vore/death3.ogg',
-		'sound/vore/death4.ogg',
-		'sound/vore/death5.ogg',
-		'sound/vore/death6.ogg',
-		'sound/vore/death7.ogg',
-		'sound/vore/death8.ogg',
-		'sound/vore/death9.ogg',
-		'sound/vore/death10.ogg')
+	var/finisher = SFX_CLASSIC_DEATH_SOUNDS
 	playsound(src, finisher, vol = 100, vary = 1, falloff = 0.1, ignore_walls = TRUE, preference = /datum/preference/toggle/digestion_noises)
 	to_chat(hound, span_notice("Your [src.name] is now clean. Ending self-cleaning cycle."))
 	cleaning = 0
 	update_patient()
-	playsound(src, 'sound/machines/ding.ogg', vol = 100, vary = 1, falloff = 0.1, ignore_walls = TRUE, preference = /datum/preference/toggle/digestion_noises)
+	play_sfx(src, SFX_MACHINES_DING, 2, falloff = 0.1, ignore_walls = TRUE, preference = /datum/preference/toggle/digestion_noises)
 
 /// One digestion pass on a living occupant; indigestible ones are preserved.
 /obj/item/dogborg/sleeper/proc/digest_occupant(mob/living/T, delta_factor)
@@ -556,17 +534,7 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/sleeper, INTERACT_USE(null, PROC_REF(inte
 		log_admin("[key_name(hound)] has digested [key_name(T)] with a cyborg belly. ([hound ? "<a href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[hound.x];Y=[hound.y];Z=[hound.z]'>JMP</a>" : "null"])")
 	to_chat(hound, span_notice("You feel your belly slowly churn around [T], breaking them down into a soft slurry to be used as power for your systems."))
 	to_chat(T, span_notice("You feel [hound]'s belly slowly churn around your form, breaking you down into a soft slurry to be used as power for [hound]'s systems."))
-	var/deathsound = pick(
-		'sound/vore/death1.ogg',
-		'sound/vore/death2.ogg',
-		'sound/vore/death3.ogg',
-		'sound/vore/death4.ogg',
-		'sound/vore/death5.ogg',
-		'sound/vore/death6.ogg',
-		'sound/vore/death7.ogg',
-		'sound/vore/death8.ogg',
-		'sound/vore/death9.ogg',
-		'sound/vore/death10.ogg')
+	var/deathsound = SFX_CLASSIC_DEATH_SOUNDS
 	playsound(src, deathsound, vol = 100, vary = 1, falloff = 0.1, ignore_walls = TRUE, preference = /datum/preference/toggle/digestion_noises)
 	if(is_vore_predator(T))
 		for(var/obj/belly/B as anything in T.vore_organs)

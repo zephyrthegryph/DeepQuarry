@@ -103,7 +103,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/merc/melee/sword, INTERACT_I
 	. = TRUE
 	if(O.force)
 		if(prob(20))
-			visible_message(span_danger("\The [src] blocks \the [O] with its shield!"))
+			act_message(src, O, null, MSG_OTHERS(span_danger("%U% blocks %T% with its shield!")))
 			if(user)
 				ai_brain.react_to_attack(user)
 			return
@@ -111,12 +111,12 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/merc/melee/sword, INTERACT_I
 			return FALSE
 	else
 		to_chat(user, span_warning("This weapon is ineffective, it does no damage."))
-		visible_message(span_warning("\The [user] gently taps [src] with \the [O]."))
+		act_message(user, src, null, MSG_OTHERS(span_warning("%U% gently taps %T% with %I%.")), item = O)
 
 /mob/living/simple_mob/humanoid/merc/melee/sword/bullet_act(obj/item/projectile/Proj)
 	if(!Proj)	return
 	if(prob(35))
-		visible_message(span_bolddanger("[src] blocks [Proj] with its shield!"))
+		act_message(src, null, null, MSG_OTHERS(span_bolddanger("%U% blocks [Proj] with its shield!")))
 		if(Proj.firer)
 			ai_brain.react_to_attack(Proj.firer)
 		return
@@ -135,7 +135,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/merc/melee/sword, INTERACT_I
 	icon_living = "syndicateranged"
 	projectiletype = /obj/item/projectile/bullet/pistol/medium
 //	casingtype = /obj/item/ammo_casing/spent	//Makes infinite stacks of bullets when put in PoIs.
-	projectilesound = 'sound/weapons/gunshot_light.ogg'
+	projectilesound = SFX_WEAPONS_GUNSHOT_LIGHT
 	loot_list = list(/obj/item/gun/projectile/colt = 100)
 
 	needs_reload = TRUE
@@ -174,7 +174,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/merc/melee/sword, INTERACT_I
 
 	loot_list = list(/obj/item/gun/projectile/automatic/z8 = 100)
 
-	projectilesound = 'sound/weapons/gunshot_heavy.ogg'
+	projectilesound = SFX_WEAPONS_GUNSHOT_HEAVY
 	projectiletype = /obj/item/projectile/bullet/rifle/a762
 	projectile_dispersion = 8
 	projectile_accuracy = -15
@@ -185,7 +185,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/merc/melee/sword, INTERACT_I
 	loot_list = list(/obj/item/gun/magnetic/railgun/flechette = 100)
 	projectiletype = /obj/item/projectile/bullet/magnetic/flechette/rapid // Who thought rapid fire 20 damage with 100% armor pen was a good idea?
 
-	projectilesound = 'sound/weapons/rapidslice.ogg'
+	projectilesound = SFX_WEAPONS_RAPIDSLICE
 	projectile_dispersion = 5
 	projectile_accuracy = -20
 	base_attack_cooldown = 15
@@ -198,7 +198,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/merc/melee/sword, INTERACT_I
 	icon_state = "syndicateranged_laser"
 	icon_living = "syndicateranged_laser"
 	projectiletype = /obj/item/projectile/beam/midlaser
-	projectilesound = 'sound/weapons/Laser.ogg'
+	projectilesound = SFX_WEAPONS_LASER
 
 	loot_list = list(/obj/item/gun/energy/laser = 100)
 
@@ -213,7 +213,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/merc/melee/sword, INTERACT_I
 	icon_state = "syndicateranged_ionrifle"
 	icon_living = "syndicateranged_ionrifle"
 	projectiletype = /obj/item/projectile/ion
-	projectilesound = 'sound/weapons/Laser.ogg'
+	projectilesound = SFX_WEAPONS_LASER
 
 	loot_list = list(/obj/item/gun/energy/ionrifle = 100)
 
@@ -227,7 +227,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/merc/melee/sword, INTERACT_I
 	icon_state = "syndicateranged_shotgun"
 	icon_living = "syndicateranged_shotgun"
 	projectiletype = /obj/item/projectile/bullet/pellet/shotgun		// Buckshot
-	projectilesound = 'sound/weapons/gunshot_shotgun.ogg'
+	projectilesound = SFX_WEAPONS_GUNSHOT_SHOTGUN
 
 	loot_list = list(/obj/item/gun/projectile/shotgun/pump = 100)
 
@@ -243,7 +243,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/merc/melee/sword, INTERACT_I
 	icon_state = "syndicateranged_technician"
 	icon_living = "syndicateranged_technician"
 	projectiletype = /obj/item/projectile/fake_syringe/poison	// Toxin dart.
-	projectilesound = 'sound/weapons/gunshot_old.ogg'
+	projectilesound = SFX_WEAPONS_GUNSHOT_OLD
 
 	loot_list = list(/obj/item/gun/projectile/dartgun = 100,
 		/obj/item/gun/launcher/grenade = 100,
@@ -266,7 +266,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/merc/melee/sword, INTERACT_I
 	icon_state = "syndicateranged_sniper"
 	icon_living = "syndicateranged_sniper"
 	projectiletype = /obj/item/projectile/bullet/rifle/a145/highvel // Really scary bullet.
-	projectilesound = 'sound/weapons/gunshot_cannon.ogg'
+	projectilesound = SFX_WEAPONS_GUNSHOT_CANNON
 
 	projectile_accuracy = 75
 
@@ -327,11 +327,11 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/merc/melee/sword, INTERACT_I
 			shoot(A) //Perform the shoot action
 			if(casingtype) //If the mob is designated to leave casings...
 				new casingtype(loc) //... leave the casing.
-			ranged_cooldown = world.time + ranged_cooldown_time + ((injury_level / 2) SECONDS) //Special addition here. This is a timer. Keeping updating the time after shooting. Add that ranged cooldown time specified in the mob to the world time.
+			EXPIRY_SET(src, ranged_cooldown, ranged_cooldown_time + ((injury_level / 2) SECONDS), CLOCK_WORLD) //Special addition here. This is a timer. Keeping updating the time after shooting. Add that ranged cooldown time specified in the mob to the world time.
 		return TRUE	//End these commands here.
 	// ition End
 
-	visible_message(span_danger(span_bold("\The [src]") + " fires at \the [orig_targ]!"))
+	act_message(src, null, null, MSG_OTHERS(span_danger(span_bold("%U%") + " fires at \the [orig_targ]!")))
 	shoot(A)
 	if(casingtype)
 		new casingtype(loc)
@@ -348,7 +348,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/merc/melee/sword, INTERACT_I
 	icon_state = "syndicateranged_veteran"
 	icon_living = "syndicateranged_veteran"
 	projectiletype = /obj/item/projectile/bullet/rifle/a762
-	projectilesound = 'sound/weapons/gunshot_heavy.ogg'
+	projectilesound = SFX_WEAPONS_GUNSHOT_HEAVY
 	loot_list = list(/obj/item/gun/projectile/garand = 100)
 	reload_max = 8
 	reload_time = 2 // It takes a bit to jam a stripper clip into the rifle.
@@ -360,7 +360,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/merc/melee/sword, INTERACT_I
 	icon_state = "syndicate_handcannon"
 	icon_living = "syndicate_handcannon"
 	projectiletype = /obj/item/projectile/bullet/pistol/strong
-	projectilesound = 'sound/weapons/gunshot_deagle.ogg'
+	projectilesound = SFX_WEAPONS_GUNSHOT_DEAGLE
 	loot_list = list(/obj/item/gun/projectile/deagle = 100)
 	needs_reload = TRUE
 	reload_max = 7		// Deagle Reload
@@ -434,7 +434,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/merc/melee/sword, INTERACT_I
 	reload_max = 7
 	reload_time = 2 SECONDS //Takes a While to load all those shells.
 	projectiletype = /obj/item/projectile/bullet/pellet/shotgun		// Buckshot
-	projectilesound = 'sound/weapons/gunshot_shotgun.ogg'
+	projectilesound = SFX_WEAPONS_GUNSHOT_SHOTGUN
 	loot_list = list(/obj/item/gun/projectile/shotgun/pump/combat = 100)
 
 //Auto-Shotgun Space Merc
@@ -446,7 +446,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/merc/melee/sword, INTERACT_I
 	base_attack_cooldown = 5 // Two attacks a second or so.
 	reload_max = 24
 	projectiletype = /obj/item/projectile/bullet/pellet/shotgun		// Buckshot
-	projectilesound = 'sound/weapons/gunshot_shotgun.ogg'
+	projectilesound = SFX_WEAPONS_GUNSHOT_SHOTGUN
 	loot_list = list(/obj/item/gun/projectile/automatic/as24 = 100)
 
 //Machine Gun Merc
@@ -458,7 +458,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/merc/melee/sword, INTERACT_I
 	base_attack_cooldown = 2.5 // Four Attacks a Second. MOAR DAKKA
 	reload_max = 50
 	projectiletype = /obj/item/projectile/bullet/rifle/a545
-	projectilesound = 'sound/weapons/gunshot_light.ogg'
+	projectilesound = SFX_WEAPONS_GUNSHOT_LIGHT
 	loot_list = list(/obj/item/gun/projectile/automatic/l6_saw = 100)
 
 //Tommy-Las Merc
@@ -471,7 +471,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/merc/melee/sword, INTERACT_I
 	reload_max = 3
 	reload_time = 0.5  // Meant to Simulate controlled Supressive Bursts
 	projectiletype = /obj/item/projectile/beam/weaklaser
-	projectilesound = 'sound/weapons/Laser.ogg'
+	projectilesound = SFX_WEAPONS_LASER
 	// loot_list = list(/obj/item/gun/energy/tommylaser = 100) // Downstream
 
 /mob/living/simple_mob/humanoid/merc/ranged/space/fal
@@ -480,7 +480,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/merc/melee/sword, INTERACT_I
 	icon_state = "syndicatespace-commando"
 	icon_living = "syndicatespace-commando"
 	projectiletype = /obj/item/projectile/bullet/rifle/a762
-	projectilesound = 'sound/weapons/gunshot_heavy.ogg'
+	projectilesound = SFX_WEAPONS_GUNSHOT_HEAVY
 	// loot_list = list(/obj/item/gun/projectile/automatic/fal = 100)// Downstream
 	reload_max = 20
 
@@ -492,7 +492,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/merc/melee/sword, INTERACT_I
 	armor_spec = "melee=80;bullet=65;laser=50;energy=15;bomb=80;bio=100;rad=100" // this is the merc rig's stats
 	say_list_type = /datum/say_list/merc/elite
 	projectiletype = /obj/item/projectile/bullet/pistol/medium/ap/suppressor // it's high velocity
-	projectilesound = 'sound/weapons/doompistol.ogg' // converted from .wavs extracted from doom 2
+	projectilesound = SFX_WEAPONS_DOOMPISTOL // converted from .wavs extracted from doom 2
 	base_attack_cooldown = 3 // three? attacks a second
 	reload_max = 30 // extended mags
 	special_attack_charges = 5
@@ -518,19 +518,19 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/merc/ranged/space/suppressor
 	. = TRUE
 	if(O.force)
 		if(prob(50))
-			visible_message(span_danger("\The [src] blocks \the [O] with its shield!"))
+			act_message(src, O, null, MSG_OTHERS(span_danger("%U% blocks %T% with its shield!")))
 			if(user)
 				ai_brain.react_to_attack(user)
 			return
 		else
 			return FALSE
 	else
-		visible_message(span_warning("\The [user] gently taps [src] with \the [O]."))
+		act_message(user, src, null, MSG_OTHERS(span_warning("%U% gently taps %T% with %I%.")), item = O)
 
 /mob/living/simple_mob/humanoid/merc/ranged/space/suppressor/bullet_act(obj/item/projectile/Proj)
 	if(!Proj)	return
 	if(prob(50))
-		visible_message(span_warning("[src] blocks [Proj] with its shield!"))
+		act_message(src, null, null, MSG_OTHERS(span_warning("%U% blocks [Proj] with its shield!")))
 		if(Proj.firer)
 			ai_brain.react_to_attack(Proj.firer)
 		return

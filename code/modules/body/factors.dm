@@ -48,12 +48,9 @@
 	src.desc = desc
 
 /// BF_* -> /datum/body_factor_def. Built once.
-/proc/body_factor_defs()
-	var/static/list/defs
-	if(defs)
-		return defs
-	defs = new /list(BF_COUNT)
-	var/list/rows = list(
+/proc/build_body_factor_defs()
+	var/list/defs = new /list(BF_COUNT)
+	var/list/rows = list( // ALLOW(sys_const_list_alloc): input rows of a one-shot table builder, runs once
 		// id, name, rule, baseline, min, max, format, desc
 		list(BF_AIRWAY, "Airway", BF_RULE_MULT, 1, 0, 1, "percent", "How open the airway is."),
 		list(BF_RESP_DRIVE, "Breathing drive", BF_RULE_MULT, 1, 0, 2, "percent", "The drive to breathe unaided."),
@@ -136,33 +133,32 @@
 			stack_trace("body factor [id] has no definition")
 	return defs
 
+GLOBAL_TABLE(body_factor_defs, GLOBAL_PROC_REF(build_body_factor_defs))
+
 /// Flat list of baselines, indexed by BF_*. Shared: never mutate.
-/proc/body_factor_baselines()
-	RETURN_TYPE(/list)
-	var/static/list/baselines
-	if(baselines)
-		return baselines
-	var/list/defs = body_factor_defs()
-	baselines = new /list(BF_COUNT)
+/proc/build_body_factor_baselines()
+	var/list/defs = GLOBAL_TABLE_GET(body_factor_defs)
+	var/list/baselines = new /list(BF_COUNT)
 	for(var/id in 1 to BF_COUNT)
 		var/datum/body_factor_def/D = defs[id]
 		baselines[id] = D ? D.baseline : 0
 	return baselines
 
+GLOBAL_TABLE(body_factor_baselines, GLOBAL_PROC_REF(build_body_factor_baselines))
+
 /// Flat list of combine rules, indexed by BF_*. Shared: never mutate.
-/proc/body_factor_rules()
-	var/static/list/rules
-	if(rules)
-		return rules
-	var/list/defs = body_factor_defs()
-	rules = new /list(BF_COUNT)
+/proc/build_body_factor_rules()
+	var/list/defs = GLOBAL_TABLE_GET(body_factor_defs)
+	var/list/rules = new /list(BF_COUNT)
 	for(var/id in 1 to BF_COUNT)
 		var/datum/body_factor_def/D = defs[id]
 		rules[id] = D ? D.rule : BF_RULE_ADD
 	return rules
 
+GLOBAL_TABLE(body_factor_rules, GLOBAL_PROC_REF(build_body_factor_rules))
+
 /proc/body_factor_baseline(id)
-	return body_factor_baselines()[id]
+	return GLOBAL_TABLE_GET(body_factor_baselines)[id]
 
 /// Fold one source's table into `acc` (a flat BF_COUNT list seeded with the
 /// baselines) at `scale`. Returns `acc`, allocating it on the first
@@ -171,8 +167,9 @@
 	if(!length(table) || scale <= 0)
 		return acc
 	if(!acc)
-		acc = body_factor_baselines().Copy()
-	var/list/rules = body_factor_rules()
+		var/list/baselines = GLOBAL_TABLE_GET(body_factor_baselines)
+		acc = baselines.Copy()
+	var/list/rules = GLOBAL_TABLE_GET(body_factor_rules)
 	for(var/id in table)
 		if(!isnum(id) || id < 1 || id > BF_COUNT)
 			stack_trace("invalid body factor id [id] in a factor table")
@@ -196,8 +193,8 @@
 /proc/body_factor_finalize(list/acc)
 	if(!acc)
 		return null
-	var/list/defs = body_factor_defs()
-	var/list/baselines = body_factor_baselines()
+	var/list/defs = GLOBAL_TABLE_GET(body_factor_defs)
+	var/list/baselines = GLOBAL_TABLE_GET(body_factor_baselines)
 	var/at_baseline = TRUE
 	for(var/id in 1 to BF_COUNT)
 		var/datum/body_factor_def/D = defs[id]
@@ -371,7 +368,8 @@
 /datum/affliction/proc/accumulate_factors(list/acc)
 	factor_band = round(severity / BF_SEVERITY_BAND)
 	if(stage)
-		var/list/entry = get_stages()?[stage]
+		var/list/stages = TYPE_TABLE_GET(src, affliction_stages)
+		var/list/entry = stages?[stage]
 		if(entry)
 			return body_factor_accumulate(acc, entry["factors"], 1)
 	return body_factor_accumulate(acc, factors, severity / AFFLICTION_SEVERITY_TERMINAL)
@@ -497,7 +495,7 @@ DECLARE_SHARED_CACHE(reagent_merged_species_factors, GLOBAL_PROC_REF(build_reage
 	. = list()
 	if(!length(table))
 		return
-	var/list/defs = body_factor_defs()
+	var/list/defs = GLOBAL_TABLE_GET(body_factor_defs)
 	for(var/id in table)
 		var/datum/body_factor_def/D = (isnum(id) && id >= 1 && id <= BF_COUNT) ? defs[id] : null
 		if(!D)

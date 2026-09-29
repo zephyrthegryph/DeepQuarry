@@ -15,7 +15,7 @@
 	if(!equip_ready)
 		return 0
 
-	playsound(src, 'sound/effects/bang.ogg', 30, 1, 30)
+	play_sfx(src, SFX_EFFECTS_BANG, 0.6, extrarange = 30)
 	chassis.occupant_message(span_warning("You emit a high-pitched noise from the mech."))
 	for(var/mob/living/carbon/M in ohearers(6, chassis))
 		if(ishuman(M))
@@ -24,7 +24,7 @@
 			if(ear_safety > 0)
 				continue
 		to_chat(M, span_warning("Your ears feel like they're bleeding!"))
-		playsound(M, 'sound/effects/bang.ogg', 70, 1, 30)
+		play_sfx(M, SFX_EFFECTS_BANG, 1.4, extrarange = 30)
 		M.status_set(EFFECT_SLEEPING, 0)
 		M.status_adjust(EFFECT_DEAFENED, 30)
 		M.deaf_loop.start() // Ear Ringing/Deafness

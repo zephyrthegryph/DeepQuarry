@@ -261,7 +261,7 @@ OWN(/datum/seed_pile, seeds, OWN_SPILL)
 	effect = /obj/machinery/seed_storage/proc/interaction_use
 
 /obj/machinery/seed_storage/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return TRUE
 
 	if(seconds_electrified != 0)
@@ -446,7 +446,7 @@ OWN(/datum/seed_pile, seeds, OWN_SPILL)
 
 /obj/machinery/seed_storage/wrench_act(mob/user, obj/item/tool)
 	playsound(src, tool.usesound, 50, TRUE)
-	anchored = !anchored
+	set_anchored(!anchored)
 	to_chat(user, span_filter_notice("You [anchored ? "wrench" : "unwrench"] \the [src]."))
 	return ITEM_INTERACT_SUCCESS
 
@@ -470,7 +470,7 @@ OWN(/datum/seed_pile, seeds, OWN_SPILL)
 
 /obj/machinery/seed_storage/emag_act(remaining_charges, mob/user)
 	if(!src.emagged)
-		emagged = 1
+		set_emagged(1)
 		if(lockdown)
 			to_chat(user, span_notice("\The [src]'s control panel thunks, as its cover retracts."))
 			lockdown = 0
@@ -478,11 +478,8 @@ OWN(/datum/seed_pile, seeds, OWN_SPILL)
 			req_access = list()
 			req_one_access = list()
 			to_chat(user, span_warning("\The [src]'s access mechanism shorts out."))
-			var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread()
-			sparks.set_up(3, 0, get_turf(src))
-			sparks.start()
+			fx_sparks(src, 3, FALSE)
 			visible_message(span_warning("\The [src]'s panel sparks!"))
-			qdel(sparks)
 		return 1
 
 /obj/machinery/seed_storage/proc/add(obj/item/seeds/O as obj, contraband = 0)

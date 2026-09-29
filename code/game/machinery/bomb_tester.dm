@@ -25,7 +25,9 @@
 	var/sim_canister_output = 10*ONE_ATMOSPHERE
 
 	var/simulating = 0
-	TIMESTAMP_VAR(simulation_started)
+	EXPIRY_DECLARE(simulation_started)
+	/// om_after() timer that ends the running simulation, or 0.
+	var/tmp/simulation_timer = 0
 	var/simulation_delay = 20 SECONDS
 
 	var/simulation_results
@@ -53,8 +55,6 @@
 	..()
 	if(test_canister() && !Adjacent(test_canister()))
 		rel_clear(src, "test_canister")
-	if(simulating && world.time >= simulation_started + simulation_delay)
-		simulation_finish()
 
 /obj/machinery/bomb_tester/update_icon()
 	cut_overlays()
@@ -62,15 +62,15 @@
 		add_overlay("[icon_name]-tank1")
 	if(tank2)
 		add_overlay("[icon_name]-tank2")
-	if(stat & NOPOWER)
+	if(has_stat(NOPOWER))
 		icon_state = "[icon_name]-p"
 	else
 		icon_state = "[icon_name][simulating]"
 
 /obj/machinery/bomb_tester/power_change()
-	..()
+	. = ..()
 	update_icon()
-	if(simulating && stat & NOPOWER)
+	if(simulating && has_stat(NOPOWER))
 		simulation_finish(1)
 
 /obj/machinery/bomb_tester/RefreshParts()
@@ -218,8 +218,9 @@
 		simulation_finish()
 		return
 	simulating = 1
-	update_use_power(USE_POWER_ACTIVE)
-	simulation_started = world.time
+	set_use_power(USE_POWER_ACTIVE)
+	EXPIRY_STAMP(src, simulation_started, CLOCK_WORLD)
+	simulation_timer = om_after(src, simulation_delay, PROC_REF(simulation_timer_fired))
 	update_icon()
 	switch(sim_mode)
 		if(MODE_SINGLE)
@@ -343,19 +344,28 @@
 	if(intervals == 10)
 		simulation_results += "<hr>Final Result: No detonation."
 
+/// om_after() callback: the simulation's run time is up.
+/obj/machinery/bomb_tester/proc/simulation_timer_fired()
+	simulation_timer = 0
+	if(simulating)
+		simulation_finish()
+
 /obj/machinery/bomb_tester/proc/simulation_finish(cancelled = 0)
+	if(simulation_timer)
+		om_cancel_timer(src, simulation_timer)
+		simulation_timer = 0
 	simulating = 0
-	update_use_power(USE_POWER_IDLE)
+	set_use_power(USE_POWER_IDLE)
 	update_icon()
 	if(test_canister() && test_canister().anchored && !test_canister().connected_port())
 		test_canister().anchored = FALSE
 	if(cancelled)
 		return
 	if(simulation_results == "Error")
-		playsound(src, 'sound/machines/buzz-sigh.ogg', 50, 0)
+		play_sfx(src, SFX_MACHINES_BUZZ_SIGH)
 		state("Invalid parameters.")
 	else if(simulation_results == "Unstable")
-		playsound(src, 'sound/machines/buzz-two.ogg', 50, 0)
+		play_sfx(src, SFX_MACHINES_BUZZ_TWO)
 		state("Tank instability detected. Please step away from the device.")
 	else
 		ping("Simulation complete!")

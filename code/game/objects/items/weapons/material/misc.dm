@@ -21,8 +21,8 @@
 	edge = TRUE
 	attack_verb = list("chopped", "torn", "cut")
 	applies_material_colour = 0
-	drop_sound = 'sound/items/drop/axe.ogg'
-	pickup_sound = 'sound/items/pickup/axe.ogg'
+	drop_sound = SFX_ITEMS_DROP_AXE
+	pickup_sound = SFX_ITEMS_PICKUP_AXE
 /* We have one already
 /obj/item/material/knife/machete/hatchet/stone
 	name = "sharp rock"
@@ -149,12 +149,12 @@ DECLARE_INTERACTIONS(/obj/item/material/snow/snowball, \
 			if(prob(min(90, force * 3)) && ishuman(target) && (user.zone_sel in list(BP_L_LEG, BP_R_LEG, BP_L_FOOT, BP_R_FOOT, BP_L_ARM, BP_R_ARM, BP_L_HAND, BP_R_HAND)))
 				ranged_disarm(target)
 			else
-				target.visible_message(span_danger("\The [src] sends \the [target] stumbling away."))
+				act_message(target, src, others = span_danger("%T% sends %U% stumbling away."))
 				target.Move(get_step(target,get_dir(user,target)))
 		if(I_GRAB)
 			var/turf/STurf = get_turf(target)
 			om_after(STurf, 2, TYPE_PROC_REF(/atom, om_playsound), 'sound/effects/snap.ogg', 60, 1)
-			target.visible_message(span_critical("\The [src] yanks \the [target] towards \the [user]!"))
+			act_message(user, target, others = span_critical("\The [src] yanks %T% towards %U%!"))
 			target.throw_at(get_turf(get_step(user,get_dir(user,target))), 2, 1, src)
 
 	..()
@@ -177,7 +177,7 @@ DECLARE_INTERACTIONS(/obj/item/material/snow/snowball, \
 		if(!(H.species.flags & NO_SLIP) && prob(10) && (user.zone_sel in list(BP_L_LEG, BP_R_LEG, BP_L_FOOT, BP_R_FOOT)))
 			var/armor_check = H.armor_against(INJURY_BLUNT, user.zone_sel)
 			H.apply_effect(3, WEAKEN, armor_check)
-			playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
+			play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
 			if(armor_check < 60)
 				visible_message(span_danger("\The [src] has tripped [H]!"))
 			else
@@ -186,7 +186,7 @@ DECLARE_INTERACTIONS(/obj/item/material/snow/snowball, \
 
 		else
 			if(H.break_all_grabs(user))
-				playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
+				play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
 				return
 
 			if(user.zone_sel in list(BP_L_ARM, BP_R_ARM, BP_L_HAND, BP_R_HAND))
@@ -194,15 +194,15 @@ DECLARE_INTERACTIONS(/obj/item/material/snow/snowball, \
 					if(I && prob(holding[I]))
 						H.drop_from_inventory(I)
 						visible_message(span_danger("\The [src] has disarmed [H]!"))
-						playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
+						play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
 						return
 
 DECLARE_INTERACTIONS(/obj/item/material/whip, INTERACT_USE(null, PROC_REF(interaction_self)))
 
 /// Old attack_self.
 /obj/item/material/whip/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	user.visible_message(span_warning("\The [user] cracks \the [src]!"))
-	playsound(src, 'sound/effects/snap.ogg', 50, 1)
+	act_message(user, src, others = span_warning("%U% cracks %T%!"))
+	play_sfx(src, SFX_EFFECTS_SNAP)
 	return TRUE
 
 
@@ -234,7 +234,7 @@ DECLARE_INTERACTIONS(/obj/item/material/whip, INTERACT_USE(null, PROC_REF(intera
 	item_state = "cleaving_saw"
 	active = 0
 	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
-	hitsound = 'sound/weapons/bladeslice.ogg'
+	hitsound = SFX_WEAPONS_BLADESLICE
 	w_class = ITEMSIZE_LARGE
 	edge = 1
 	sharp = 1

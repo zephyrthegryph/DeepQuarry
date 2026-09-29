@@ -27,7 +27,7 @@
 	base_attack_cooldown = 2.5 SECONDS
 
 	projectiletype = /obj/item/projectile/energy/slow_orb
-	projectilesound = 'sound/effects/uncloak.ogg'
+	projectilesound = SFX_EFFECTS_UNCLOAK
 
 	special_attack_min_range = 0
 	special_attack_max_range = 10
@@ -51,7 +51,7 @@
 	agony = 15
 	armor_penetration = 40
 
-	fire_sound = 'sound/effects/uncloak.ogg'
+	fire_sound = SFX_EFFECTS_UNCLOAK
 	combustion = TRUE
 
 /mob/living/simple_mob/glitch_boss
@@ -276,7 +276,7 @@
 	base_attack_cooldown = 2.5 SECONDS
 
 	projectiletype = /obj/item/projectile/energy/slow_orb_fake
-	projectilesound = 'sound/effects/uncloak.ogg'
+	projectilesound = SFX_EFFECTS_UNCLOAK
 
 	var/prob_respawn = 15
 
@@ -304,7 +304,7 @@
 	agony = 0
 	armor_penetration = 0
 
-	fire_sound = 'sound/effects/uncloak.ogg'
+	fire_sound = SFX_EFFECTS_UNCLOAK
 	combustion = TRUE
 
 #undef GA_ADS

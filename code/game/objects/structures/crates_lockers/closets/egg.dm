@@ -8,8 +8,8 @@
 	var/icon_opened = "egg_open"
 	var/icon_locked = "egg"
 	closet_appearance = null
-	open_sound = 'sound/vore/schlorp.ogg'
-	close_sound = 'sound/vore/schlorp.ogg'
+	open_sound = SFX_VORE_SCHLORP
+	close_sound = SFX_VORE_SCHLORP
 	opened = 0
 	sealed = 0 //Don't touch this.
 	max_integrity = 100

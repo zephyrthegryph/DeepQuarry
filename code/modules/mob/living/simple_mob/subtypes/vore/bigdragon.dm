@@ -48,6 +48,9 @@ I think I covered everything.
 ///		Main type
 ///
 
+OWN_TIMER(/mob/living/simple_mob/vore/bigdragon, firebreathtimer)
+OWN_TIMER(/mob/living/simple_mob/vore/bigdragon, chargetimer)
+
 /mob/living/simple_mob/vore/bigdragon
 	drag_buckle = FALSE
 	name = "large dragon"
@@ -126,8 +129,6 @@ I think I covered everything.
 	var/small_icon = 'icons/mob/bigdragon_small.dmi'
 	var/small_icon_state = "dragon_small"
 	var/flames
-	var/firebreathtimer
-	var/chargetimer
 
 	tame_items = list(
 	/obj/item/coin/gold = 100,
@@ -136,12 +137,12 @@ I think I covered everything.
 
 	//recycling spider lunge with some modifications
 	var/charge_warmup = 2 SECOND
-	var/charge_sound = 'sound/weapons/spiderlunge.ogg'
+	var/charge_sound = SFX_WEAPONS_SPIDERLUNGE
 
 	//Modular icons. Lists are referred to when picking styles.
 
 	//Sprites are layered ontop of one-another in order of this list
-	var/list/overlay_colors = list( // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	var/list/overlay_colors = list( // ALLOW(instance_list): d: per-instance colours, rolled at spawn and repainted by the player
 		"Underbelly" = "#FFFFFF",
 		"Body" = "#FFFFFF",
 		"Ears" = "#FFFFFF",
@@ -736,7 +737,7 @@ I think I covered everything.
 			if(!gentle)
 				M.injure(INJURY_BLUNT, 20, source = src)
 			to_chat(M, span_userdanger("You're thrown back by [src]!"))
-			playsound(src, get_sfx("punch"), 50, 1)
+			playsound(src, get_sfx(SFX_PUNCH), 50, 1)
 		AM.throw_at(throwtarget, maxthrow, 3, src)
 
 /mob/living/simple_mob/vore/bigdragon/proc/chargestart(atom/A)
@@ -744,7 +745,7 @@ I think I covered everything.
 		ai_busy_begin()
 	do_windup_animation(A, charge_warmup)
 	//callbacks are more reliable than byond's process scheduler
-	chargetimer = om_after(src, charge_warmup, PROC_REF(chargeend), A)
+	om_after_slot(src, "chargetimer", charge_warmup, PROC_REF(chargeend), A)
 
 
 /mob/living/simple_mob/vore/bigdragon/proc/chargeend(atom/A, explicit = 0, gentle = 0)
@@ -755,7 +756,7 @@ I think I covered everything.
 	status_flags |= LEAPING
 	flying  = 1		//So we can thunk into things
 	dq_set_hovering(src, 1)	// So we don't hurt ourselves running off cliffs
-	visible_message(span_danger("\The [src] charges at \the [A]!"))
+	act_message(src, A, null, MSG_OTHERS(span_danger("%U% charges at %T%!")))
 	throw_at(A, 7, 2)
 	playsound(src, charge_sound, 75, 1)
 	if(status_flags & LEAPING)
@@ -785,7 +786,7 @@ I think I covered everything.
 		ai_busy_begin()
 	flames = 1
 	build_icons()
-	firebreathtimer = om_after(src, charge_warmup, PROC_REF(firebreathend), A)
+	om_after_slot(src, "firebreathtimer", charge_warmup, PROC_REF(firebreathend), A)
 	playsound(src, "sound/magic/Fireball.ogg", 50, 1)
 
 /mob/living/simple_mob/vore/bigdragon/proc/firebreathend(atom/A)
@@ -794,7 +795,7 @@ I think I covered everything.
 		ai_busy_end()
 		return
 	var/obj/item/projectile/P = new /obj/item/projectile/bullet/dragon(get_turf(src))
-	src.visible_message(span_danger("\The [src] spews fire at \the [A]!"))
+	act_message(src, A, null, MSG_OTHERS(span_danger("%U% spews fire at %T%!")))
 	playsound(src, "sound/weapons/Flamer.ogg", 50, 1)
 	P.launch_projectile(A, BP_TORSO, src)
 	ai_busy_end()
@@ -896,12 +897,10 @@ I think I covered everything.
 
 /mob/living/simple_mob/vore/bigdragon/proc/canceltimers()
 	//Cancel any charges or firebreaths winding up
-	if(firebreathtimer)
-		om_cancel_timer(src, firebreathtimer)
-		firebreathtimer = null
-	if(chargetimer)
-		om_cancel_timer(src, chargetimer)
-		chargetimer = null
+	if(om_timer_slot_pending(src, "firebreathtimer"))
+		om_cancel_timer_slot(src, "firebreathtimer")
+	if(om_timer_slot_pending(src, "chargetimer"))
+		om_cancel_timer_slot(src, "chargetimer")
 	//re-enable the AI
 	ai_busy_end()
 //Smack people it warns

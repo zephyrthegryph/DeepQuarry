@@ -90,14 +90,14 @@
 	effect = /obj/structure/bed/nest/proc/interaction_nest_item
 
 /obj/structure/bed/nest/proc/interaction_nest_item(mob/user, obj/item/W, datum/interaction/interaction)
-	playsound(src, 'sound/effects/attackblob.ogg', 100, 1)
+	play_sfx(src, SFX_EFFECTS_ATTACKBLOB, 2)
 	for(var/mob/M in viewers(src, 7))
 		M.show_message(span_warning("[user] hits [src] with [W]!"), 1)
 	receive_weapon_hit(W, user)
 	return TRUE
 
 /obj/structure/bed/nest/atom_destruction(damage_flag)
-	density = FALSE
+	set_density(FALSE)
 	return ..()
 
 // start - Allows xenos to clean nests.

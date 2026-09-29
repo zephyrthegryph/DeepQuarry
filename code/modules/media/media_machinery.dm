@@ -2,7 +2,7 @@
 /obj/machinery/media
 	var/playing = 0				// Am I playing right now?
 	var/media_url = ""			// URL of media I am playing
-	TIMESTAMP_VAR(media_start_time) // world.time when it started playing
+	EXPIRY_DECLARE(media_start_time) // world.time when it started playing
 	var/volume = 1				// 0 - 1 for ease of coding.
 
 	var/tmp/area/master_area	// My area

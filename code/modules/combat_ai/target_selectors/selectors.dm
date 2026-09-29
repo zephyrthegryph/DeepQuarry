@@ -79,7 +79,7 @@
 			score *= 2
 		// Held items that grant AI behaviors are dangerous.
 		for(var/obj/item/I in M.get_all_held_items())
-			var/list/granted = I.get_dq_granted_behaviors()
+			var/list/granted = TYPE_TABLE_GET(I, item_granted_behaviors)
 			if(LAZYLEN(granted))
 				score += length(granted) * 25
 		if(score > best_score)

@@ -44,13 +44,13 @@ DECLARE_DEFAULT_CHILD(/obj/mecha/working/hoverpod, "ion_trail", /datum/effect/ef
 		ion_trail.stop()
 
 //Modified phazon code
-/obj/mecha/working/hoverpod/Topic(href, href_list)
-	..()
-	if (href_list["toggle_stabilization"])
-		stabilization_enabled = !stabilization_enabled
-		send_byjax(src?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","stabilization_command","[stabilization_enabled?"Dis":"En"]able thruster stabilization")
-		src.occupant_message(span_notice("Thruster stabilization [stabilization_enabled? "enabled" : "disabled"]."))
-		return
+TOPIC_ACTION(/obj/mecha/working/hoverpod, "toggle_stabilization", PROC_REF(topic_toggle_stabilization))
+
+/obj/mecha/working/hoverpod/proc/topic_toggle_stabilization(mob/user, list/args)
+	stabilization_enabled = !stabilization_enabled
+	send_byjax(src?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","stabilization_command","[stabilization_enabled?"Dis":"En"]able thruster stabilization")
+	src.occupant_message(span_notice("Thruster stabilization [stabilization_enabled? "enabled" : "disabled"]."))
+	return
 
 /obj/mecha/working/hoverpod/get_commands()
 	var/output = {"<div class='wr'>

@@ -52,10 +52,8 @@
 	var/started
 	/// TRUE from start() until stop(): the loop is waiting to start, looping or dormant.
 	var/tmp/running = FALSE
-	/// The pending om_after() timer id: the next loop, the start delay or the dormant recheck.
-	var/tmp/loop_token
 	/// world.time of the first loop, so max_loops counts from the real start.
-	var/tmp/loop_started_at
+	EXPIRY_TMP_DECLARE(loop_started_at)
 	/// Player chunk tokens while nobody can hear the loop; null while it is looping (Q5).
 	var/tmp/list/dormant_chunk_tokens
 
@@ -110,17 +108,15 @@
 	loop_started_at = null
 
 /datum/looping_sound/proc/cancel_loop_timer()
-	if(!isnull(loop_token))
-		om_cancel_timer(src, loop_token)
-		loop_token = null
+	if(om_timer_slot_pending(src, "loop_token"))
+		om_cancel_timer_slot(src, "loop_token")
 
 /// Arms the loop's one timer (the next loop, the start delay or the dormant recheck).
 /datum/looping_sound/proc/set_loop_timer(delay)
 	cancel_loop_timer()
-	loop_token = om_after(src, delay, PROC_REF(loop_timer_fired))
+	om_after_slot(src, "loop_token", delay, PROC_REF(loop_timer_fired))
 
 /datum/looping_sound/proc/loop_timer_fired()
-	loop_token = null
 	if(!running)
 		return
 	if(dormant_chunk_tokens)
@@ -137,18 +133,18 @@
 		L.wake_from_dormancy(FALSE)
 
 /datum/looping_sound/om_sleep_violation()
-	if(running && isnull(loop_token) && !dormant_chunk_tokens)
+	if(running && !om_timer_slot_pending(src, "loop_token") && !dormant_chunk_tokens)
 		return "running with no loop timer and no chunk keys"
-	if(dormant_chunk_tokens && isnull(loop_token))
+	if(dormant_chunk_tokens && !om_timer_slot_pending(src, "loop_token"))
 		return "dormant without its recheck timer"
 	return null
 
 /datum/looping_sound/proc/sound_loop()
 	if(QDELETED(src) || !running)
 		return
-	if(isnull(loop_started_at))
-		loop_started_at = world.time
-	if(max_loops && world.time >= loop_started_at + mid_length * max_loops)
+	if(!loop_started_at)
+		EXPIRY_STAMP(src, loop_started_at, CLOCK_WORLD)
+	if(max_loops && ELAPSED(src, loop_started_at, CLOCK_WORLD) >= mid_length * max_loops)
 		stop()
 		return
 	if(!direct && !has_listener())
@@ -204,7 +200,7 @@
 
 /datum/looping_sound/proc/play(soundfile)
 	var/list/atoms_cache = output_list()
-	var/sound/S = sound(soundfile)
+	var/sound/S = sound(get_sfx(soundfile))
 	if(direct)
 		S.channel = sound_service().random_available_channel()
 		S.volume = volume
@@ -254,3 +250,5 @@
 	rel_remove(src, "output_atoms", thing)
 
 REL_LIST(/datum/looping_sound, output_atoms)
+
+OWN_TIMER(/datum/looping_sound, loop_token)

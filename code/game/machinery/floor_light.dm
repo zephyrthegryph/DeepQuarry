@@ -38,7 +38,7 @@ DECLARE_INTERACTIONS(/obj/item/floor_light, INTERACT_USE(null, PROC_REF(interact
 	active_power_usage = 20
 	power_channel = LIGHT
 
-	var/on
+	on = null
 	var/damaged
 	var/default_light_range = 4
 	var/default_light_power = 0.75
@@ -48,12 +48,12 @@ DECLARE_INTERACTIONS(/obj/item/floor_light, INTERACT_USE(null, PROC_REF(interact
 	anchored = TRUE
 
 /obj/machinery/floor_light/screwdriver_act(mob/user, obj/item/tool)
-	anchored = !anchored
+	set_anchored(!anchored)
 	visible_message(span_notice("\The [user] has [anchored ? "attached" : "detached"] \the [src]."))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/floor_light/welder_act(mob/user, obj/item/tool)
-	if(!(damaged || (stat & BROKEN)))
+	if(!(damaged || (has_stat(BROKEN))))
 		return ITEM_INTERACT_BLOCKING
 	use_tool(user, tool, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
@@ -99,13 +99,13 @@ DECLARE_INTERACTIONS(/obj/item/floor_light, INTERACT_USE(null, PROC_REF(interact
 /obj/machinery/floor_light/proc/interaction_smash(mob/user, obj/item/held, datum/interaction/interaction)
 	if(issmall(user))
 		return FALSE
-	if(!isnull(damaged) && !(stat & BROKEN))
+	if(!isnull(damaged) && !has_stat(BROKEN))
 		visible_message(span_danger("\The [user] smashes \the [src]!"))
-		playsound(src, "shatter", 70, 1)
+		play_sfx(src, SFX_SHATTER)
 		atom_break()
 	else
 		visible_message(span_danger("\The [user] attacks \the [src]!"))
-		playsound(src, 'sound/effects/Glasshit.ogg', 75, 1)
+		play_sfx(src, SFX_EFFECTS_GLASSHIT)
 		if(isnull(damaged)) damaged = 0
 	update_brightness()
 	return TRUE
@@ -120,16 +120,16 @@ DECLARE_INTERACTIONS(/obj/item/floor_light, INTERACT_USE(null, PROC_REF(interact
 		to_chat(user, span_warning("\The [src] must be screwed down first."))
 		return TRUE
 
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		to_chat(user, span_warning("\The [src] is too damaged to be functional."))
 		return TRUE
 
-	if(stat & NOPOWER)
+	if(has_stat(NOPOWER))
 		to_chat(user, span_warning("\The [src] is unpowered."))
 		return TRUE
 
-	on = !on
-	if(on) update_use_power(USE_POWER_ACTIVE)
+	set_on(!on)
+	if(on) set_use_power(USE_POWER_ACTIVE)
 	// visible_message(span_notice("\The [user] turns \the [src] [on ? "on" : "off"].")) // No thankouuuu. Too spammy.
 	update_brightness()
 	return TRUE
@@ -138,11 +138,11 @@ DECLARE_INTERACTIONS(/obj/item/floor_light, INTERACT_USE(null, PROC_REF(interact
 	..()
 	var/need_update
 	if((!anchored || broken()) && on)
-		update_use_power(USE_POWER_OFF)
-		on = 0
+		set_use_power(USE_POWER_OFF)
+		set_on(0)
 		need_update = 1
 	else if(use_power && !on)
-		update_use_power(USE_POWER_OFF)
+		set_use_power(USE_POWER_OFF)
 		need_update = 1
 	if(need_update)
 		update_brightness()
@@ -153,7 +153,7 @@ DECLARE_INTERACTIONS(/obj/item/floor_light, INTERACT_USE(null, PROC_REF(interact
 		if(light_range != default_light_range || light_power != default_light_power || light_color != default_light_colour)
 			set_light(default_light_range, default_light_power, default_light_colour)
 	else
-		update_use_power(USE_POWER_OFF)
+		set_use_power(USE_POWER_OFF)
 		if(light_range || light_power)
 			set_light(0)
 
@@ -171,7 +171,7 @@ DECLARE_INTERACTIONS(/obj/item/floor_light, INTERACT_USE(null, PROC_REF(interact
 			add_overlay(CACHED_KEY(floor_light_overlays, "floorlight-broken[damaged]-[default_light_colour]", "flicker[damaged]", default_light_colour, layer+0.001))
 
 /obj/machinery/floor_light/proc/broken()
-	return (stat & (BROKEN|NOPOWER))
+	return (!operable())
 
 /obj/machinery/floor_light/ex_act(severity)
 	if(severity >= 2 && isnull(damaged))

@@ -49,7 +49,7 @@
 
 /obj/machinery/portable_atmospherics/powered/pump/emp_act(severity, recursive)
 	. = ..()
-	if (. & EMP_PROTECT_SELF || stat & (BROKEN|NOPOWER))
+	if (. & EMP_PROTECT_SELF || !operable())
 		return
 
 	if(prob(50/severity))
@@ -250,26 +250,25 @@
 /obj/machinery/portable_atmospherics/powered/pump/huge/update_icon()
 	cut_overlays()
 
-	if(on && !(stat & (NOPOWER|BROKEN)))
+	if(on && operable())
 		icon_state = "siphon:1"
 	else
 		icon_state = "siphon:0"
 
 /obj/machinery/portable_atmospherics/powered/pump/huge/power_change()
-	var/old_stat = stat
-	..()
-	if (old_stat != stat)
+	. = ..()
+	if (.)
 		update_icon()
 
 /obj/machinery/portable_atmospherics/powered/pump/huge/machine_step()
-	if(!anchored || (stat & (NOPOWER|BROKEN)))
+	if(!anchored || (!operable()))
 		set_on(0)
 		last_flow_rate = 0
 		last_power_draw = 0
 		update_icon()
 	var/new_use_power = 1 + on
 	if(new_use_power != use_power)
-		update_use_power(new_use_power)
+		set_use_power(new_use_power)
 	if(!on)
 		return PROCESS_KILL
 
@@ -317,7 +316,7 @@
 	if(on)
 		to_chat(user, span_warning("Turn \the [src] off first!"))
 		return ITEM_INTERACT_BLOCKING
-	anchored = !anchored
+	set_anchored(!anchored)
 	playsound(src, tool.usesound, 50, TRUE)
 	to_chat(user, span_notice("You [anchored ? "wrench" : "unwrench"] \the [src]."))
 	return ITEM_INTERACT_SUCCESS
@@ -339,13 +338,13 @@
 	target_pressure = 0
 
 /obj/machinery/portable_atmospherics/powered/pump/huge/stationary/purge/power_change()
-	..()
-	if(!(stat & (NOPOWER|BROKEN)))
+	. = ..()
+	if(operable())
 		set_on(1)
 		update_icon()
 
 /obj/machinery/portable_atmospherics/powered/pump/huge/step_has_work()
-	return on && anchored && !(stat & (NOPOWER|BROKEN))
+	return on && anchored && operable()
 
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).

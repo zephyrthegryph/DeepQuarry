@@ -205,46 +205,44 @@
 /// Fracture pain and slowdown are body factors, by region and by whether a
 /// splint holds the bone still. A splint doesn't knit the bone; it cuts the
 /// grinding (pain) and the limp.
-/datum/affliction/untreated_fracture/get_stages()
-	var/static/list/S = list(
-		"Unset leg" = list(
-			"name" = "untreated fracture",
-			"description" = "A broken leg bone, unset and unsupported. Every step grinds the fragments.",
-			"symptom_pool" = list(/datum/affliction_symptom/sharp_pain = 80, /datum/affliction_symptom/throbbing_pain = 60),
-			"factors" = alist(BF_SLOWDOWN = 1.5, BF_PAIN = 15),
-		),
-		"Splinted leg" = list(
-			"name" = "splinted fracture",
-			"description" = "A broken leg bone held still by a splint.",
-			"symptom_pool" = list(/datum/affliction_symptom/throbbing_pain = 40, /datum/affliction_symptom/sharp_pain = 20),
-			"factors" = alist(BF_SLOWDOWN = 0.5, BF_PAIN = 5),
-		),
-		"Unset arm" = list(
-			"name" = "untreated fracture",
-			"description" = "A broken arm bone, unset and unsupported.",
-			"symptom_pool" = list(/datum/affliction_symptom/sharp_pain = 80, /datum/affliction_symptom/throbbing_pain = 60),
-			"factors" = alist(BF_ACCURACY = -15, BF_PAIN = 15),
-		),
-		"Splinted arm" = list(
-			"name" = "splinted fracture",
-			"description" = "A broken arm bone held still by a splint.",
-			"symptom_pool" = list(/datum/affliction_symptom/throbbing_pain = 40, /datum/affliction_symptom/sharp_pain = 20),
-			"factors" = alist(BF_ACCURACY = -5, BF_PAIN = 5),
-		),
-		"Unset" = list(
-			"name" = "untreated fracture",
-			"description" = "A broken bone, unset and unsupported.",
-			"symptom_pool" = list(/datum/affliction_symptom/sharp_pain = 80, /datum/affliction_symptom/throbbing_pain = 60),
-			"factors" = alist(BF_SLOWDOWN = 0.5, BF_PAIN = 15),
-		),
-		"Splinted" = list(
-			"name" = "splinted fracture",
-			"description" = "A broken bone held still by a splint.",
-			"symptom_pool" = list(/datum/affliction_symptom/throbbing_pain = 40, /datum/affliction_symptom/sharp_pain = 20),
-			"factors" = alist(BF_PAIN = 5),
-		),
-	)
-	return S
+TYPE_TABLE(/datum/affliction/untreated_fracture, affliction_stages, list( \
+	"Unset leg" = list( \
+		"name" = "untreated fracture", \
+		"description" = "A broken leg bone, unset and unsupported. Every step grinds the fragments.", \
+		"symptom_pool" = list(/datum/affliction_symptom/sharp_pain = 80, /datum/affliction_symptom/throbbing_pain = 60), \
+		"factors" = alist(BF_SLOWDOWN = 1.5, BF_PAIN = 15), \
+	), \
+	"Splinted leg" = list( \
+		"name" = "splinted fracture", \
+		"description" = "A broken leg bone held still by a splint.", \
+		"symptom_pool" = list(/datum/affliction_symptom/throbbing_pain = 40, /datum/affliction_symptom/sharp_pain = 20), \
+		"factors" = alist(BF_SLOWDOWN = 0.5, BF_PAIN = 5), \
+	), \
+	"Unset arm" = list( \
+		"name" = "untreated fracture", \
+		"description" = "A broken arm bone, unset and unsupported.", \
+		"symptom_pool" = list(/datum/affliction_symptom/sharp_pain = 80, /datum/affliction_symptom/throbbing_pain = 60), \
+		"factors" = alist(BF_ACCURACY = -15, BF_PAIN = 15), \
+	), \
+	"Splinted arm" = list( \
+		"name" = "splinted fracture", \
+		"description" = "A broken arm bone held still by a splint.", \
+		"symptom_pool" = list(/datum/affliction_symptom/throbbing_pain = 40, /datum/affliction_symptom/sharp_pain = 20), \
+		"factors" = alist(BF_ACCURACY = -5, BF_PAIN = 5), \
+	), \
+	"Unset" = list( \
+		"name" = "untreated fracture", \
+		"description" = "A broken bone, unset and unsupported.", \
+		"symptom_pool" = list(/datum/affliction_symptom/sharp_pain = 80, /datum/affliction_symptom/throbbing_pain = 60), \
+		"factors" = alist(BF_SLOWDOWN = 0.5, BF_PAIN = 15), \
+	), \
+	"Splinted" = list( \
+		"name" = "splinted fracture", \
+		"description" = "A broken bone held still by a splint.", \
+		"symptom_pool" = list(/datum/affliction_symptom/throbbing_pain = 40, /datum/affliction_symptom/sharp_pain = 20), \
+		"factors" = alist(BF_PAIN = 5), \
+	), \
+))
 
 /datum/affliction/untreated_fracture/on_added()
 	. = ..()
@@ -322,7 +320,7 @@
 	progression_rate = 2.0
 	treated_by = list(TREAT_BURN_CARE = 1.2, TREAT_CIRCULATORY = 0.4)
 	// symptom_pool / factors / spontaneous emotes come from
-	// get_stages() — burn_shock has three stages driven by cumulative
+	// the affliction_stages table — burn_shock has three stages driven by cumulative
 	// limb burn load across all external organs, swapped in tick().
 	min_symptoms = 1
 	max_symptoms = 2
@@ -330,7 +328,8 @@
 	// balance: stage 3 lowers BF_CIRCULATION.
 	/// total_burn()'s per-tick cache.
 	var/tmp/burn_cache = 0
-	var/tmp/burn_cache_time = -1
+	EXPIRY_TMP_DECLARE(burn_cache_time)
+	burn_cache_time = -1
 
 /datum/affliction/burn_shock/New()
 	..()
@@ -338,54 +337,52 @@
 	// pool before tick gets to recompute from limb burns.
 	_apply_stage("Stage 1")
 
-/datum/affliction/burn_shock/get_stages()
-	var/static/list/S = list(
-		"Stage 1" = list(
-			"symptom_pool" = list(
-				/datum/affliction_symptom/pallor = 70,
-				/datum/affliction_symptom/chills = 50,
-			),
-			"min_symptoms" = 1,
-			"max_symptoms" = 2,
-			"factors" = alist(BF_HEART_RATE = 10, BF_BP_SYSTOLIC = -5),
-		),
-		"Stage 2" = list(
-			"symptom_pool" = list(
-				/datum/affliction_symptom/pallor       = 80,
-				/datum/affliction_symptom/chills       = 60,
-				/datum/affliction_symptom/short_breath = 50,
-				/datum/affliction_symptom/dizziness    = 40,
-			),
-			"min_symptoms" = 2,
-			"max_symptoms" = 3,
-			"factors" = alist(BF_SLOWDOWN = 0.6, BF_HEART_RATE = 25, BF_BP_SYSTOLIC = -20, BF_BP_DIASTOLIC = -10),
-			"spontaneous_emotes" = list("wince", "groan"),
-			"spontaneous_emote_prob" = 4,
-		),
-		"Stage 3" = list(
-			"symptom_pool" = list(
-				/datum/affliction_symptom/pallor       = 90,
-				/datum/affliction_symptom/chills       = 80,
-				/datum/affliction_symptom/short_breath = 70,
-				/datum/affliction_symptom/dizziness    = 60,
-				/datum/affliction_symptom/confusion    = 40,
-				/datum/affliction_symptom/cyanosis     = 50,
-			),
-			"min_symptoms" = 3,
-			"max_symptoms" = 4,
-			"factors" = alist(BF_SLOWDOWN = 1.4, BF_ACCURACY = -20, BF_MOTOR_CONTROL = 0.97, BF_HEART_RATE = 40, BF_BP_SYSTOLIC = -35, BF_BP_DIASTOLIC = -20, BF_CIRCULATION = 0.5),
-			"spontaneous_emotes" = list("groan in pain", "collapse", "shudder"),
-			"spontaneous_emote_prob" = 7,
-		),
-	)
-	return S
+TYPE_TABLE(/datum/affliction/burn_shock, affliction_stages, list( \
+	"Stage 1" = list( \
+		"symptom_pool" = list( \
+			/datum/affliction_symptom/pallor = 70, \
+			/datum/affliction_symptom/chills = 50, \
+		), \
+		"min_symptoms" = 1, \
+		"max_symptoms" = 2, \
+		"factors" = alist(BF_HEART_RATE = 10, BF_BP_SYSTOLIC = -5), \
+	), \
+	"Stage 2" = list( \
+		"symptom_pool" = list( \
+			/datum/affliction_symptom/pallor       = 80, \
+			/datum/affliction_symptom/chills       = 60, \
+			/datum/affliction_symptom/short_breath = 50, \
+			/datum/affliction_symptom/dizziness    = 40, \
+		), \
+		"min_symptoms" = 2, \
+		"max_symptoms" = 3, \
+		"factors" = alist(BF_SLOWDOWN = 0.6, BF_HEART_RATE = 25, BF_BP_SYSTOLIC = -20, BF_BP_DIASTOLIC = -10), \
+		"spontaneous_emotes" = list("wince", "groan"), \
+		"spontaneous_emote_prob" = 4, \
+	), \
+	"Stage 3" = list( \
+		"symptom_pool" = list( \
+			/datum/affliction_symptom/pallor       = 90, \
+			/datum/affliction_symptom/chills       = 80, \
+			/datum/affliction_symptom/short_breath = 70, \
+			/datum/affliction_symptom/dizziness    = 60, \
+			/datum/affliction_symptom/confusion    = 40, \
+			/datum/affliction_symptom/cyanosis     = 50, \
+		), \
+		"min_symptoms" = 3, \
+		"max_symptoms" = 4, \
+		"factors" = alist(BF_SLOWDOWN = 1.4, BF_ACCURACY = -20, BF_MOTOR_CONTROL = 0.97, BF_HEART_RATE = 40, BF_BP_SYSTOLIC = -35, BF_BP_DIASTOLIC = -20, BF_CIRCULATION = 0.5), \
+		"spontaneous_emotes" = list("groan in pain", "collapse", "shudder"), \
+		"spontaneous_emote_prob" = 7, \
+	), \
+))
 
 /// Total limb burn on the owner. tick() walks the limbs (`fresh`) and the damage_scaling() its
 /// progress calls in the same world tick reuses that sum.
 /datum/affliction/burn_shock/proc/total_burn(fresh = FALSE)
 	if(!fresh && burn_cache_time == world.time)
 		return burn_cache
-	burn_cache_time = world.time
+	EXPIRY_STAMP(src, burn_cache_time, CLOCK_WORLD)
 	burn_cache = 0
 	var/mob/living/carbon/human/H = owner
 	if(istype(H))

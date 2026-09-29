@@ -19,10 +19,10 @@
 				if(L.zone_sel.selecting == BP_GROIN)
 					if(L.vore_bellyrub(src))
 						return
-				L.visible_message(span_notice("\The [L] [response_help] \the [src]."))
+				act_message(L, src, null, MSG_OTHERS(span_notice("%U% [response_help] %T%.")))
 
 		if(I_DISARM)
-			L.visible_message(span_notice("\The [L] [response_disarm] \the [src]."))
+			act_message(L, src, null, MSG_OTHERS(span_notice("%U% [response_disarm] %T%.")))
 			L.do_attack_animation(src)
 			//TODO: Push the mob away or something
 
@@ -32,7 +32,7 @@
 			if (!(status_flags & CANPUSH))
 				return
 			if(!incapacitated(INCAPACITATION_ALL) && prob(grab_resist))
-				L.visible_message(span_warning("\The [L] tries to grab \the [src] but fails!"))
+				act_message(L, src, null, MSG_OTHERS(span_warning("%U% tries to grab %T% but fails!")))
 				return
 
 			var/obj/item/grab/G = new /obj/item/grab(L, src)
@@ -44,7 +44,7 @@
 			G.synch()
 			rel_set(src, "LAssailant", L)
 
-			L.visible_message(span_warning("\The [L] has grabbed [src] passively!"))
+			act_message(L, src, null, MSG_OTHERS(span_warning("%U% has grabbed %T% passively!")))
 			L.do_attack_animation(src)
 
 		if(I_HURT)
@@ -67,15 +67,15 @@
 					if(attacker.has_mutation(HULK))
 						real_damage *= 2
 				if(real_damage <= damage_threshold)
-					L.visible_message(span_warning("\The [L] uselessly hits \the [src]!"))
+					act_message(L, src, null, MSG_OTHERS(span_warning("%U% uselessly hits %T%!")))
 					L.do_attack_animation(src)
 					return
 				injure(hit_kind, real_damage, null, L, flags = INJURE_ARMORED)
-				L.visible_message(span_warning("\The [L] [pick(attack.attack_verb)] \the [src]!"))
+				act_message(L, src, null, MSG_OTHERS(span_warning("%U% [pick(attack.attack_verb)] %T%!")))
 				L.do_attack_animation(src)
 				return
 			injure(INJURY_BLUNT, harm_intent_damage, null, L, flags = INJURE_ARMORED)
-			L.visible_message(span_warning("\The [L] [response_harm] \the [src]!"))
+			act_message(L, src, null, MSG_OTHERS(span_warning("%U% [response_harm] %T%!")))
 			L.do_attack_animation(src)
 
 	return
@@ -92,7 +92,7 @@
 			if(is_injured())
 				if(MED.use(1))
 					mend(TREAT_TISSUE_REPAIR, MED.heal_brute)
-					visible_message(span_infoplain(span_bold("\The [user]") + " applies the [MED] on [src]."))
+					act_message(user, src, null, MSG_OTHERS(span_infoplain(span_bold("%U%") + " applies the [MED] on %T%.")))
 		else
 			to_chat(user, span_notice("\The [src] is dead, medical items won't bring [p_them()] back to life.")) // the gender lookup is somewhat overkill, but it functions identically to the obsolete gender macros and future-proofs this code
 	if(can_butcher(user, O))	//if the animal can be butchered, do so and return. It's likely to be gibbed.
@@ -197,11 +197,9 @@
 		return 0
 
 	receive_shock(shock_damage * (100 - resistance) / 100, source)
-	playsound(src, "sparks", 50, 1, -1)
+	play_sfx(src, SFX_SPARKS, extrarange = -1)
 
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-	s.set_up(5, 1, loc)
-	s.start()
+	fx_sparks(loc, 5)
 
 /mob/living/simple_mob/get_shock_protection()
 	. = shock_resist
@@ -260,7 +258,7 @@
 	if(!client)
 		inflict_shock_damage(200) // Mobs that are very beefy or resistant to shock may survive getting struck.
 		if(stat == DEAD)
-			visible_message(span_critical("\The [src] disintegrates into ash!"))
+			act_message(src, null, null, MSG_OTHERS(span_critical("%U% disintegrates into ash!")))
 			ash()
 			return // No point deafening something that wont exist.
 
@@ -271,7 +269,7 @@
 	// Unlike lightning, we don't add an additional damage spike (since lava already hurts a lot).
 	if(!client)
 		if(stat == DEAD)
-			visible_message(span_critical("\The [src] flashes into ash as the lava consumes them!"))
+			act_message(src, null, null, MSG_OTHERS(span_critical("%U% flashes into ash as the lava consumes them!")))
 			ash()
 
 // Injections.

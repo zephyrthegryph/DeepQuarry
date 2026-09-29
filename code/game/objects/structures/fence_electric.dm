@@ -55,9 +55,7 @@
 /obj/structure/fence/proc/electrocute(mob/living/M)
 	if(electrocute_mob(M, get_area(src), src, 0.7))
 		visible_message("\The [src] zaps [M]!")
-		var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-		s.set_up(5, 1, src)
-		s.start()
+		fx_sparks(src, 5)
 		return TRUE
 	return FALSE
 

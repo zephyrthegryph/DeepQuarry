@@ -45,7 +45,7 @@
 	var/base_state = "dartgun"
 
 	caliber = "dart"
-	fire_sound = 'sound/weapons/empty.ogg'
+	fire_sound = SFX_WEAPONS_EMPTY
 	fire_sound_text = "a metallic click"
 	recoil = 0
 	silenced = 1
@@ -66,6 +66,7 @@
 
 // Slotted beakers sit in the gun's contents; mixing is a subset of them.
 OWN(/obj/item/gun/projectile/dartgun, beakers, OWN_CONTAINED)
+REL_LIST(/obj/item/gun/projectile/dartgun, mixing)
 
 /obj/item/gun/projectile/dartgun/Initialize(mapload)
 	. = ..()
@@ -127,7 +128,7 @@ OWN(/obj/item/gun/projectile/dartgun, beakers, OWN_CONTAINED)
 //fills the given dart with reagents
 /obj/item/gun/projectile/dartgun/proc/fill_dart(obj/item/projectile/bullet/chemdart/dart)
 	if(length(mixing))
-		var/mix_amount = dart.reagent_amount/mixing.len
+		var/mix_amount = dart.reagent_amount/length(mixing)
 		for(var/obj/item/reagent_containers/glass/beaker/B in mixing)
 			B.reagents.trans_to_obj(dart, mix_amount)
 
@@ -149,33 +150,6 @@ OWN(/obj/item/gun/projectile/dartgun, beakers, OWN_CONTAINED)
 			return 1
 	return 0
 
-/obj/item/gun/projectile/dartgun/Topic(href, href_list)
-	if(..()) return 1
-	src.add_fingerprint(usr)
-	if(href_list["stop_mix"])
-		var/index = text2num(href_list["stop_mix"])
-		if(index <= length(beakers))
-			for(var/obj/item/M in mixing)
-				if(M == LAZYACCESS(beakers, index))
-					LAZYREMOVE(mixing, M)
-					break
-	else if (href_list["mix"])
-		var/index = text2num(href_list["mix"])
-		if(index <= length(beakers))
-			LAZYADD(mixing, LAZYACCESS(beakers, index))
-	else if (href_list["eject"])
-		var/index = text2num(href_list["eject"])
-		if(index <= length(beakers))
-			if(LAZYACCESS(beakers, index))
-				var/obj/item/reagent_containers/glass/beaker/B = LAZYACCESS(beakers, index)
-				to_chat(usr, "You remove [B] from [src].")
-				LAZYREMOVE(mixing, B)
-				own_take_member(src, "beakers", B)
-				B.forceMove(get_turf(src))
-	else if (href_list["eject_cart"])
-		unload_ammo(usr)
-	src.updateUsrDialog(usr)
-	return
 
 ///Variants of the Dartgun and Chemdarts.///
 
@@ -219,7 +193,7 @@ OWN(/obj/item/gun/projectile/dartgun, beakers, OWN_CONTAINED)
 	item_state = null
 
 	caliber = "dart"
-	fire_sound = 'sound/weapons/empty.ogg'
+	fire_sound = SFX_WEAPONS_EMPTY
 	fire_sound_text = "a metallic click"
 	recoil = 0
 	silenced = 1
@@ -246,3 +220,31 @@ OWN(/obj/item/gun/projectile/dartgun, beakers, OWN_CONTAINED)
 				reagents.trans_to_mob(L, reagent_amount, CHEM_BLOOD)
 		else if(istype(target, /obj/item/reagent_containers/food) || istype(target, /obj/item/slime_extract))
 			reagents.trans_to_obj(target, reagent_amount)
+
+/// Starts (`mix` TRUE) or stops mixing the beaker in slot `index`.
+/obj/item/gun/projectile/dartgun/proc/dartgun_set_mixing(mob/user, index, mix)
+	add_fingerprint(user)
+	if(!isnum(index) || index < 1 || index > length(beakers))
+		return
+	var/obj/item/B = LAZYACCESS(beakers, index)
+	if(!B)
+		return
+	if(mix)
+		rel_add(src, "mixing", B)
+	else
+		rel_remove(src, "mixing", B)
+	updateUsrDialog(user)
+
+/// Ejects the beaker in slot `index` onto the floor.
+/obj/item/gun/projectile/dartgun/proc/dartgun_eject_beaker(mob/user, index)
+	add_fingerprint(user)
+	if(!isnum(index) || index < 1 || index > length(beakers))
+		return
+	var/obj/item/reagent_containers/glass/beaker/B = LAZYACCESS(beakers, index)
+	if(!B)
+		return
+	to_chat(user, "You remove [B] from [src].")
+	rel_remove(src, "mixing", B)
+	own_take_member(src, "beakers", B)
+	B.forceMove(get_turf(src))
+	updateUsrDialog(user)

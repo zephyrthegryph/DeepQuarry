@@ -17,12 +17,10 @@
 	audiences = SYMPTOM_AUDIENCE_PATIENT
 	patient_message_chance = 5
 
-/datum/affliction_symptom/headache/get_patient_messages()
-	var/static/list/L = list(
-		"A dull headache builds behind your eyes.",
-		"Your head throbs.",
-	)
-	return L
+TYPE_TABLE(/datum/affliction_symptom/headache, get_patient_messages, list( \
+		"A dull headache builds behind your eyes.", \
+		"Your head throbs.", \
+	))
 
 
 /datum/affliction_symptom/dizziness
@@ -32,13 +30,11 @@
 	audiences = SYMPTOM_AUDIENCE_PATIENT
 	patient_message_chance = 5
 
-/datum/affliction_symptom/dizziness/get_patient_messages()
-	var/static/list/L = list(
-		"The room sways for a moment.",
-		"You feel briefly lightheaded.",
-		"Your balance feels off.",
-	)
-	return L
+TYPE_TABLE(/datum/affliction_symptom/dizziness, get_patient_messages, list( \
+		"The room sways for a moment.", \
+		"You feel briefly lightheaded.", \
+		"Your balance feels off.", \
+	))
 
 
 /datum/affliction_symptom/blurred_vision
@@ -47,12 +43,10 @@
 	clinical_description = "Reduced visual acuity, particularly at the periphery."
 	audiences = SYMPTOM_AUDIENCE_PATIENT
 
-/datum/affliction_symptom/blurred_vision/get_patient_messages()
-	var/static/list/L = list(
-		"Your vision blurs at the edges.",
-		"It's hard to focus your eyes.",
-	)
-	return L
+TYPE_TABLE(/datum/affliction_symptom/blurred_vision, get_patient_messages, list( \
+		"Your vision blurs at the edges.", \
+		"It's hard to focus your eyes.", \
+	))
 
 
 /datum/affliction_symptom/internal_pressure
@@ -62,12 +56,10 @@
 	audiences = SYMPTOM_AUDIENCE_PATIENT
 	patient_message_chance = 3
 
-/datum/affliction_symptom/internal_pressure/get_patient_messages()
-	var/static/list/L = list(
-		"You feel an odd pressure deep inside.",
-		"Something doesn't feel right.",
-	)
-	return L
+TYPE_TABLE(/datum/affliction_symptom/internal_pressure, get_patient_messages, list( \
+		"You feel an odd pressure deep inside.", \
+		"Something doesn't feel right.", \
+	))
 
 
 /datum/affliction_symptom/fatigue
@@ -76,12 +68,10 @@
 	clinical_description = "Generalised loss of stamina and concentration disproportionate to recent exertion."
 	audiences = SYMPTOM_AUDIENCE_PATIENT
 
-/datum/affliction_symptom/fatigue/get_patient_messages()
-	var/static/list/L = list(
-		"You feel inexplicably tired.",
-		"It's getting hard to stay alert.",
-	)
-	return L
+TYPE_TABLE(/datum/affliction_symptom/fatigue, get_patient_messages, list( \
+		"You feel inexplicably tired.", \
+		"It's getting hard to stay alert.", \
+	))
 
 
 /datum/affliction_symptom/numbness_arm
@@ -90,12 +80,10 @@
 	clinical_description = "Loss of sensation in the affected arm and hand; reduced fine-motor function."
 	audiences = SYMPTOM_AUDIENCE_PATIENT
 
-/datum/affliction_symptom/numbness_arm/get_patient_messages()
-	var/static/list/L = list(
-		"Your arm feels numb and useless.",
-		"You can barely feel your fingers.",
-	)
-	return L
+TYPE_TABLE(/datum/affliction_symptom/numbness_arm, get_patient_messages, list( \
+		"Your arm feels numb and useless.", \
+		"You can barely feel your fingers.", \
+	))
 
 
 /datum/affliction_symptom/numbness_leg
@@ -104,12 +92,10 @@
 	clinical_description = "Loss of sensation in the affected leg and foot; reduced proprioception."
 	audiences = SYMPTOM_AUDIENCE_PATIENT
 
-/datum/affliction_symptom/numbness_leg/get_patient_messages()
-	var/static/list/L = list(
-		"Your leg feels numb and dead.",
-		"You can barely feel where your foot ends.",
-	)
-	return L
+TYPE_TABLE(/datum/affliction_symptom/numbness_leg, get_patient_messages, list( \
+		"Your leg feels numb and dead.", \
+		"You can barely feel where your foot ends.", \
+	))
 
 
 /datum/affliction_symptom/burning_limb
@@ -119,9 +105,7 @@
 	audiences = SYMPTOM_AUDIENCE_PATIENT
 	patient_message_chance = 6
 
-/datum/affliction_symptom/burning_limb/get_patient_messages()
-	var/static/list/L = list(
-		"Your limb feels like it's on fire from the inside.",
-		"There's an unbearable burning sensation deep in the tissue.",
-	)
-	return L
+TYPE_TABLE(/datum/affliction_symptom/burning_limb, get_patient_messages, list( \
+		"Your limb feels like it's on fire from the inside.", \
+		"There's an unbearable burning sensation deep in the tissue.", \
+	))

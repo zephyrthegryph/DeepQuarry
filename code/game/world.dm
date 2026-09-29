@@ -313,7 +313,7 @@ GLOBAL_VAR(restart_counter)
 	var/data = list()
 	data["tick_usage"] = world.tick_usage
 	data["tick_lag"] = world.tick_lag
-	data["time"] = world.time
+	data["time"] = EXPIRY_AT(src, CLOCK_WORLD, 0)
 	data["timestamp"] = rustg_unix_timestamp()
 	return data
 
@@ -354,6 +354,7 @@ GLOBAL_VAR(restart_counter)
 GLOBAL_VAR_INIT(world_topic_spam_protect_ip, "0.0.0.0")
 GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 
+// ALLOW(sys_topic_override): server queries from BYOND world.Export (T is a query string, not an href to a datum); TGS and the status/ping protocol own its shape.
 /world/Topic(T, addr, master, key)
 	TGS_TOPIC
 	log_topic("\"[T]\", from:[addr], master:[master], key:[key]")
@@ -361,7 +362,7 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 	// Opt-in MC liveness probe for hung-server triage; localhost only.
 	if (T == "mcdiag" && (addr == "127.0.0.1" || findtext(addr, "127.0.0.1:") == 1))
 		var/list/d = list(
-			"world_time" = world.time, "tick_usage" = world.tick_usage, "cpu" = world.cpu, "sleep_offline" = world.sleep_offline,
+			"world_time" = world.time, "tick_usage" = world.tick_usage, "cpu" = world.cpu, "sleep_offline" = world.sleep_offline, // ALLOW(sys_world_time_write): reports the current clock in a diagnostic reply, not a stored time
 			"mc_iteration" = Master?.iteration, "mc_last_run" = Master?.last_run, "mc_sleep_delta" = Master?.sleep_delta,
 			"mc_processing" = Master?.processing, "mc_runlevel" = Master?.current_runlevel, "mc_init_stage" = Master?.init_stage_completed,
 			"mc_tickdrift" = Master?.tickdrift, "mc_queue_head" = "[Master?.queue_head()]", "failsafe_lasttick" = Failsafe?.lasttick,
@@ -383,6 +384,80 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 		if(length(top) > 40)
 			top.Cut(41)
 		return json_encode(top)
+
+	// Localhost-only census of machines with step work on the machine pipeline, by type, with how
+	// many of them the step stage's idle rule would settle (watch armed / no work).
+	if (T == "omsteps" && (addr == "127.0.0.1" || findtext(addr, "127.0.0.1:") == 1))
+		var/list/active_by_type = list()
+		var/list/settleable_by_type = list()
+		var/active = 0
+		for(var/obj/machinery/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
+			if(!M.step_active || !om_attached(M, /datum/om/pipeline/machine))
+				continue
+			active++
+			var/type_key = "[M.type]"
+			active_by_type[type_key] = (active_by_type[type_key] || 0) + 1
+			if(om_watch_armed(M) || !M.step_has_work())
+				settleable_by_type[type_key] = (settleable_by_type[type_key] || 0) + 1
+		return json_encode(list("active" = active, "active_by_type" = active_by_type, "settleable_by_type" = settleable_by_type))
+
+	// Localhost-only census of the OM deadline wheel: entries per bucket, how many are still live
+	// (their generation matches the rec's armed deadline) and which owner types/behaviours hold them.
+	if (T == "omdeadlines" && (addr == "127.0.0.1" || findtext(addr, "127.0.0.1:") == 1))
+		var/datum/om/scheduler/sched = om_scheduler()
+		var/datum/om/registry/reg = om_registry()
+		var/total = 0
+		var/live = 0
+		var/max_bucket = 0
+		var/list/by_owner = list()
+		var/list/by_behaviour = list()
+		for(var/list/L as anything in sched.buckets)
+			var/n = length(L) / 4
+			total += n
+			max_bucket = max(max_bucket, n)
+			for(var/i in 1 to length(L) step 4)
+				var/datum/om/rec/rec = L[i]
+				var/dl_key = L[i + 1]
+				var/bid = dl_key % OM_DL_SUB
+				var/datum/om/behaviour/B = (bid >= 1 && bid <= length(reg.behaviours)) ? reg.behaviours[bid] : null
+				var/bname = B ? "[B.type]" : "bid [bid]"
+				var/is_live = FALSE
+				if(rec && !rec.torn_down && rec.deadlines)
+					var/list/D = rec.deadlines
+					for(var/j in 1 to length(D) step 3)
+						if(D[j] == dl_key && D[j + 1] == L[i + 2])
+							is_live = TRUE
+							break
+				if(is_live)
+					live++
+				var/owner_type = "[rec?.owner?.type]"
+				by_owner[owner_type] = (by_owner[owner_type] || 0) + 1
+				by_behaviour["[bname][is_live ? "" : " (stale)"]"] = (by_behaviour["[bname][is_live ? "" : " (stale)"]"] || 0) + 1
+		return json_encode(list("total" = total, "live" = live, "stale" = total - live, "max_bucket" = max_bucket, "by_owner" = by_owner, "by_behaviour" = by_behaviour))
+
+	// Localhost-only on-demand proc profiling for live triage: mcprof_start begins a BYOND proc +
+	// sendmaps profile, mcprof_dump writes both as JSON into the round log dir and returns the paths,
+	// mcprof_stop ends collection.
+	if ((T == "mcprof_start" || T == "mcprof_dump" || T == "mcprof_stop") && (addr == "127.0.0.1" || findtext(addr, "127.0.0.1:") == 1))
+		if(T == "mcprof_start")
+			world.Profile(PROFILE_CLEAR)
+			world.Profile(PROFILE_CLEAR, type = "sendmaps")
+			world.Profile(PROFILE_START)
+			world.Profile(PROFILE_START, type = "sendmaps")
+			log_runtime("MCPROF: started at [world.time]")
+			return "started"
+		if(T == "mcprof_stop")
+			world.Profile(PROFILE_STOP)
+			world.Profile(PROFILE_STOP, type = "sendmaps")
+			log_runtime("MCPROF: stopped at [world.time]")
+			return "stopped"
+		var/stamp = "[world.time]"
+		var/proc_path = "[GLOB.log_directory]/profiler/mcprof-[stamp].json"
+		var/maps_path = "[GLOB.log_directory]/profiler/mcprof-sendmaps-[stamp].json"
+		WRITE_FILE(file(proc_path), world.Profile(PROFILE_REFRESH, format = "json"))
+		WRITE_FILE(file(maps_path), world.Profile(PROFILE_REFRESH, type = "sendmaps", format = "json"))
+		log_runtime("MCPROF: dumped [proc_path] and [maps_path]")
+		return "[proc_path]|[maps_path]"
 
 	if (T == "ping")
 		var/x = 1

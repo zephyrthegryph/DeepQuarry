@@ -31,11 +31,9 @@
 
 // MOB HELPERS
 // ===========
-/proc/dq_medical_effect_registry()
-	var/static/list/registry
-	if(registry)
-		return registry
-	registry = list()
+/// Builds the medical effect registry: effect name => prototype. Read via GLOBAL_TABLE_GET(dq_medical_effect_registry).
+/proc/build_dq_medical_effect_registry()
+	var/list/registry = list()
 	// Explicit catalog: adding an effect requires registering it here, making
 	// discovery deterministic and eliminating runtime subtype-tree reflection.
 	var/static/list/effect_types = list(
@@ -48,6 +46,7 @@
 		var/datum/medical_effect/prototype = new effect_type
 		registry[prototype.name] = prototype
 	return registry
+GLOBAL_TABLE(dq_medical_effect_registry, GLOBAL_PROC_REF(build_dq_medical_effect_registry))
 
 /mob/living/carbon/human/var/list/datum/medical_effect/side_effects
 /mob/proc/add_side_effect(name, strength = 0)
@@ -57,7 +56,7 @@
 			M.strength = max(M.strength, 10)
 			M.start = life_tick
 			return
-	var/list/registry = dq_medical_effect_registry()
+	var/list/registry = GLOBAL_TABLE_GET(dq_medical_effect_registry)
 	var/datum/medical_effect/prototype = registry[name]
 	if(!prototype)
 		return
@@ -73,7 +72,7 @@
 	for(var/datum/medical_effect/active in side_effects)
 		if(active.cure(src))
 			own_remove(src, "side_effects", active)
-	var/list/registry = dq_medical_effect_registry()
+	var/list/registry = GLOBAL_TABLE_GET(dq_medical_effect_registry)
 	for(var/effect_name in registry)
 		var/datum/medical_effect/prototype = registry[effect_name]
 		if(!prototype.manifest(src))

@@ -17,7 +17,7 @@
 	var/wet_floors = 0
 	var/spray_blood = 0
 	var/blood = 1
-	var/list/target_types = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	var/list/target_types = list() // ALLOW(instance_list): d: per-mob target_types, sized at creation and filled in place; mobs are few
 
 /mob/living/bot/cleanbot/Initialize(mapload)
 	. = ..()
@@ -32,7 +32,7 @@
 /mob/living/bot/cleanbot/handleIdle()
 	if(!wet_floors && !spray_blood && vocal && prob(2))
 		automatic_custom_emote(AUDIBLE_MESSAGE, "makes an excited booping sound!")
-		playsound(src, 'sound/machines/synth_yes.ogg', 50, 0)
+		play_sfx(src, SFX_MACHINES_SYNTH_YES)
 
 	if(wet_floors && prob(5)) // Make a mess
 		if(istype(loc, /turf/simulated))
@@ -198,9 +198,7 @@
 	if(prob(50))
 		new /obj/item/robot_parts/l_arm(Tsec)
 
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-	s.set_up(3, 1, src)
-	s.start()
+	fx_sparks(src, 3)
 	return ..()
 
 /mob/living/bot/cleanbot/update_icons()
@@ -267,7 +265,7 @@ EXTEND_INTERACTIONS(/mob/living/bot/cleanbot, INTERACT_HAND_UNGATED("Open contro
 	if(!wet_floors || !spray_blood)
 		if(user)
 			to_chat(user, span_notice("The [src] buzzes and beeps."))
-			playsound(src, 'sound/machines/buzzbeep.ogg', 50, 0)
+			play_sfx(src, SFX_MACHINES_BUZZBEEP)
 		spray_blood = 1
 		wet_floors = 1
 		return 1

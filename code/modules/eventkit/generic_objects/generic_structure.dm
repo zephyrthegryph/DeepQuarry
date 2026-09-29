@@ -48,9 +48,7 @@ DECLARE_INTERACTIONS(/obj/structure/generic_structure, INTERACT_HAND(null, PROC_
 			src.visible_message(span_notice("[text_activated]"))
 			update_icon()
 			if(effect == 1)
-				var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-				s.set_up(3, 1, src)
-				s.start()
+				fx_sparks(src, 3)
 			if(effect == 2)
 				for(var/obj/machinery/light/L in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 					if(L.z != src.z || get_dist(src,L) > 10)
@@ -116,7 +114,7 @@ DECLARE_INTERACTIONS(/obj/structure/generic_structure, INTERACT_HAND(null, PROC_
 		return ITEM_INTERACT_BLOCKING
 	add_fingerprint(user)
 	to_chat(user, span_notice("You [anchored ? "un" : ""]secured \the [src]!"))
-	anchored = !anchored
+	set_anchored(!anchored)
 	return ITEM_INTERACT_SUCCESS
 
 ADMIN_VERB(generic_structure, R_SPAWN, "Spawn Generic Structure", "Spawn a customisable structure with a range of different options.", ADMIN_CATEGORY_FUN_EVENT_KIT)

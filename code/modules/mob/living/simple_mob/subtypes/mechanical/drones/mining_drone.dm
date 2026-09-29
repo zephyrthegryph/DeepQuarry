@@ -33,7 +33,7 @@
 
 	base_attack_cooldown = 2.5 SECONDS
 	projectiletype = /obj/item/projectile/energy/excavate
-	projectilesound = 'sound/weapons/pulse3.ogg'
+	projectilesound = SFX_WEAPONS_PULSE3
 
 	response_help = "pokes"
 	response_disarm = "gently pushes aside"
@@ -153,7 +153,7 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/mechanical/mining_drone, "shields",
 				self.my_storage.rangedload(T, self)
 
 		if(contents_count(self.my_storage) >= self.my_storage.max_storage_space)
-			self.visible_message(span_infoplain(span_bold("\The [self]") + " emits a shrill beep, indicating its storage is full."))
+			act_message(self, null, null, MSG_OTHERS(span_infoplain(span_bold("%U%") + " emits a shrill beep, indicating its storage is full.")))
 
 		var/obj/structure/ore_box/OB = locate_in_list(view(2, self), /obj/structure/ore_box)
 
@@ -163,7 +163,7 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/mechanical/mining_drone, "shields",
 				self.my_storage.remove_from_storage(I, OB)
 
 /datum/decl/mob_organ_names/miningdrone
-	hit_zones = list("chassis", "comms array", "sensor suite", "left excavator module", "right excavator module", "maneuvering thruster")
+TYPE_TABLE(/datum/decl/mob_organ_names/miningdrone, mob_organ_hit_zones, list("chassis", "comms array", "sensor suite", "left excavator module", "right excavator module", "maneuvering thruster"))
 
 /datum/say_list/malf_drone/mining
 	say_threaten = list("Armed intruder detected.", "Lay down your weapons.", "Mining personnel only.", "Threat detected.", "Mining gear check: negative.")

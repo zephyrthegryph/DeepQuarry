@@ -73,7 +73,7 @@
 
 /obj/machinery/atmospherics/pipe/zpipe/proc/burst()
 	src.visible_message(span_warning("\The [src] bursts!"));
-	playsound(src, 'sound/effects/bang.ogg', 25, 1)
+	play_sfx(src, SFX_EFFECTS_BANG, 0.5)
 	var/datum/effect/effect/system/smoke_spread/smoke = new
 	smoke.set_up(1,0, src.loc, 0)
 	smoke.start()

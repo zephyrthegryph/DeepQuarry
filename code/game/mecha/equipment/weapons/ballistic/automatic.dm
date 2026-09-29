@@ -4,7 +4,7 @@
 	icon_state = "mecha_uac2"
 	equip_cooldown = 10
 	projectile = /obj/item/projectile/bullet/pistol/medium
-	fire_sound = 'sound/weapons/gunshot_machinegun.ogg'
+	fire_sound = SFX_WEAPONS_GUNSHOT_MACHINEGUN
 	projectiles = 300 // 10 bursts, matching the Scattershot's 10. Also, conveniently, doesn't eat your powercell when reloading like 300 bullets does. // Literally
 	projectiles_per_shot = 3
 	deviation = 0.3

@@ -86,7 +86,7 @@ BONUS
 		phage = new(get_turf((M.loc)))
 		M.injure(INJURY_CUT, rand(1, 5))
 
-	playsound(M, 'sound/effects/splat.ogg', 50, 1)
+	play_sfx(M, SFX_EFFECTS_SPLAT)
 
 	phage.endurance += A.resistance
 	// The creature carries detached copies, never the host's own affliction.

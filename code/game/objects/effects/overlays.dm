@@ -125,7 +125,7 @@ EXTEND_INTERACTIONS(/obj/effect/overlay/snow, \
 	anchored = TRUE
 	vis_flags = VIS_INHERIT_DIR
 	///When detected to be unused it gets set to world.time, after a while it gets removed
-	TIMESTAMP_VAR(unused)
+	EXPIRY_DECLARE(unused)
 	///overlays which go unused for this amount of time get cleaned up
 	var/cache_expiration = 2 MINUTES
 

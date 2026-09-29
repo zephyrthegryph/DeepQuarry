@@ -100,7 +100,7 @@ REL_PAIR_LIST(/obj/machinery/door/blast/puzzle, locks, linked_objects)
 
 /obj/machinery/door/blast/puzzle/proc/interaction_use(mob/user, obj/item/C, datum/interaction/interaction)
 	var/harming = interaction.stance == I_HURT
-	if(C.pry == 1 && (!harming || (stat & BROKEN)))
+	if(C.pry == 1 && (!harming || (has_stat(BROKEN))))
 		if(istype(C,/obj/item/material/twohanded/fireaxe))
 			var/obj/item/material/twohanded/fireaxe/F = C
 			if(!F.wielded)

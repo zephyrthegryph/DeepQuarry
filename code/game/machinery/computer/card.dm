@@ -10,7 +10,7 @@
 	circuit = /obj/item/circuitboard/card
 	var/obj/item/card/id/scan = null
 	var/obj/item/card/id/modify = null
-	var/mode = 0.0
+	mode = 0.0
 	var/printing = null
 
 /obj/machinery/computer/card/proc/is_centcom()
@@ -92,7 +92,7 @@
 	effect = /obj/machinery/computer/card/proc/interaction_open_ui_impl
 
 /obj/machinery/computer/card/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return TRUE
 	tgui_interact(user)
 	return TRUE
@@ -257,7 +257,7 @@
 			. = TRUE
 
 		if("mode")
-			mode = text2num(params["mode_target"])
+			set_mode(text2num(params["mode_target"]))
 			. = TRUE
 
 		if("print")

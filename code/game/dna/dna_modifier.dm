@@ -67,7 +67,7 @@
 	active_power_usage = 300
 	interact_offline = 1
 	circuit = /obj/item/circuitboard/clonescanner
-	var/locked = 0
+	locked = 0
 	VAR_PRIVATE/mob/living/occupant = null
 	var/obj/item/reagent_containers/glass/beaker = null
 	var/opened = 0
@@ -514,20 +514,20 @@ DECLARE_START_TIMER(/obj/machinery/computer/scan_consolenew, 25 SECONDS, PROC_RE
 
 	switch(action)
 		if("selectMenuKey")
-			playsound(src, 'sound/machines/button.ogg', 30, 1, 0)
+			play_sfx(src, SFX_MACHINES_BUTTON)
 			var/key = params["key"]
 			if(!(key in list(/*PAGE_UI,*/ PAGE_SE, PAGE_BUFFER, PAGE_REJUVENATORS))) // Traitgenes Body design console is used to edit UIs now
 				return TRUE
 			selected_menu_key = key
 			return TRUE
 		if("toggleLock")
-			playsound(src, 'sound/machines/button.ogg', 30, 1, 0)
+			play_sfx(src, SFX_MACHINES_BUTTON)
 			if(connected() && connected().get_occupant())
 				connected().locked = !(connected().locked)
 			return TRUE
 
 		if("pulseRadiation")
-			playsound(src, 'sound/machines/button.ogg', 30, 1, 0)
+			play_sfx(src, SFX_MACHINES_BUTTON)
 			irradiating = radiation_duration
 			var/lock_state = connected().locked
 			connected().locked = TRUE //lock it
@@ -540,7 +540,7 @@ DECLARE_START_TIMER(/obj/machinery/computer/scan_consolenew, 25 SECONDS, PROC_RE
 			radiation_intensity = clamp(text2num(params["value"]), 1, 10)
 			return TRUE
 		if("injectRejuvenators")
-			playsound(src, 'sound/machines/button.ogg', 30, 1, 0)
+			play_sfx(src, SFX_MACHINES_BUTTON)
 			if(!connected().get_occupant() || !connected().beaker)
 				return TRUE
 			var/mob/living/carbon/WC = connected()?.get_occupant()
@@ -551,7 +551,7 @@ DECLARE_START_TIMER(/obj/machinery/computer/scan_consolenew, 25 SECONDS, PROC_RE
 			return TRUE
 	////////////////////////////////////////////////////////
 		if("selectSEBlock") // This chunk of code updates selected block / sub-block based on click (se stands for strutural enzymes)
-			playsound(src, "keyboard", 40)
+			play_sfx(src, SFX_KEYBOARD)
 			var/select_block = text2num(params["block"])
 			var/select_subblock = text2num(params["subblock"])
 			if(!select_block || !select_subblock)
@@ -564,7 +564,7 @@ DECLARE_START_TIMER(/obj/machinery/computer/scan_consolenew, 25 SECONDS, PROC_RE
 			if(!connected()?.get_occupant())
 				return TRUE
 			var/mob/living/carbon/WC = connected()?.get_occupant()
-			playsound(src, "keyboard", 40)
+			play_sfx(src, SFX_KEYBOARD)
 			var/block = WC.dna.GetSESubBlock(selected_se_block,selected_se_subblock)
 
 			irradiating = radiation_duration
@@ -576,14 +576,14 @@ DECLARE_START_TIMER(/obj/machinery/computer/scan_consolenew, 25 SECONDS, PROC_RE
 			return TRUE
 
 		if("ejectBeaker")
-			playsound(src, 'sound/machines/button.ogg', 30, 1, 0)
+			play_sfx(src, SFX_MACHINES_BUTTON)
 			if(connected().beaker)
 				var/obj/item/reagent_containers/glass/B = connected().beaker
 				B.forceMove(connected().loc)
 				connected().beaker = null
 			return TRUE
 		if("ejectOccupant")
-			playsound(src, 'sound/machines/button.ogg', 30, 1, 0)
+			play_sfx(src, SFX_MACHINES_BUTTON)
 			connected().eject_occupant()
 			// Eject disk too, because we can't get to the UI otherwise
 			if(!disk)
@@ -601,7 +601,7 @@ DECLARE_START_TIMER(/obj/machinery/computer/scan_consolenew, 25 SECONDS, PROC_RE
 			switch(bufferOption)
 				// Traitgenes Moved SE and UI saves to storing the entire body record
 				if("saveDNA")
-					playsound(src, "keyboard", 40) // into console
+					play_sfx(src, SFX_KEYBOARD) // into console
 					var/mob/living/carbon/WC = connected()?.get_occupant()
 					if(WC && WC.dna)
 						// Traitgenes Properly clone records
@@ -615,7 +615,7 @@ DECLARE_START_TIMER(/obj/machinery/computer/scan_consolenew, 25 SECONDS, PROC_RE
 						own_put(src, "buffers", bufferId, databuf)
 					return TRUE
 				if("clear")
-					playsound(src, "keyboard", 40)
+					play_sfx(src, SFX_KEYBOARD)
 					// Traitgenes Storing the entire body record
 					var/datum/transhuman/body_record/R = new /datum/transhuman/body_record()
 					own_set(R, "mydna", new /datum/dna2/record)
@@ -625,7 +625,7 @@ DECLARE_START_TIMER(/obj/machinery/computer/scan_consolenew, 25 SECONDS, PROC_RE
 					own_put(src, "buffers", bufferId, R)
 					return TRUE
 				if("changeLabel")
-					playsound(src, "keyboard", 40)
+					play_sfx(src, SFX_KEYBOARD)
 					tgui_modal_input(src, "changeBufferLabel", "Please enter the new buffer label:", null, list("id" = bufferId), buffer.mydna.name, TGUI_MODAL_INPUT_MAX_LENGTH_NAME)
 					return TRUE
 				if("transfer")
@@ -648,7 +648,7 @@ DECLARE_START_TIMER(/obj/machinery/computer/scan_consolenew, 25 SECONDS, PROC_RE
 					return TRUE
 				// Traitgenes Storing the entire body record
 				if("loadDisk")
-					playsound(src, "keyboard", 40)
+					play_sfx(src, SFX_KEYBOARD)
 					if(isnull(disk) || !disk.stored)
 						return
 					// Traitgenes Properly clone records
@@ -657,7 +657,7 @@ DECLARE_START_TIMER(/obj/machinery/computer/scan_consolenew, 25 SECONDS, PROC_RE
 					databuf.mydna.types = DNA2_BUF_SE // structurals only
 					own_put(src, "buffers", bufferId, databuf)
 				if("saveDisk")
-					playsound(src, "keyboard", 40)
+					play_sfx(src, SFX_KEYBOARD)
 					if(isnull(disk)) // Traitgenes Removed readonly
 						return TRUE
 					var/datum/transhuman/body_record/buf = buffers[bufferId]
@@ -668,21 +668,21 @@ DECLARE_START_TIMER(/obj/machinery/computer/scan_consolenew, 25 SECONDS, PROC_RE
 					disk.name = "Body Design Disk ('[buf.mydna.name]')"
 					return TRUE
 				if("sleeveDisk")
-					playsound(src, "keyboard", 40)
+					play_sfx(src, SFX_KEYBOARD)
 					var/datum/transhuman/body_record/buf = buffers[bufferId]
 					// Send printable record to first sleevepod in area
 					print_sleeve(ui.user, buf)
 					return TRUE
 
 		if("wipeDisk")
-			playsound(src, "keyboard", 40)
+			play_sfx(src, SFX_KEYBOARD)
 			// Traitgenes Storing the entire body record
 			if(isnull(disk))
 				return TRUE
 			own_clear(disk, "stored", OWN_DELETE)
 			return TRUE
 		if("ejectDisk")
-			playsound(src, 'sound/machines/button.ogg', 30, 1, 0)
+			play_sfx(src, SFX_MACHINES_BUTTON)
 			if(!disk)
 				return TRUE
 			disk.forceMove(get_turf(src))
@@ -863,7 +863,7 @@ DECLARE_START_TIMER(/obj/machinery/computer/scan_consolenew, 25 SECONDS, PROC_RE
 	irradiating = 0
 	connected().locked = lock_state
 
-	playsound(src, "keyboard", 40)
+	play_sfx(src, SFX_KEYBOARD)
 
 	var/mob/living/carbon/WC = connected()?.get_occupant()
 	if(!WC)

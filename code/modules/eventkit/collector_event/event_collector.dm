@@ -12,11 +12,6 @@
 	var/blocker_insertion_impedement_threshold = -1 //if we have more blockers than this, we can't place item in :(
 	var/show_blocker_in_examine = TRUE
 
-	var/list/possible_ingredients = list( // ALLOW(instance_list): c: read-only per-subtype constant table (1 subtype overrides); a getter would share it, not worth it on a rare type
-		/obj/item/trash,
-		/obj/item/toy/plushie/ipc,
-		/obj/item/toy/tennis
-	) //list of items that can make up a recipe.
 
 	var/no_dupes_in_recipe = FALSE //do we care about repeats? if so, set to true
 	var/need_recipe_in_order = FALSE //start from the first one! or ignore it and do whatever, man...
@@ -41,11 +36,11 @@
 	var/sound_for_recipe_complete
 
 	var/wait_between_items = 0 //How long must you wait before adding another item
-	var/next_item_added = 0 //world time when the next item can be added
+	EXPIRY_DECLARE(next_item_added) //world time when the next item can be added
 
 	var/type_to_spawn_on_complete
 
-	var/static/list/recipe_process_sounds = list('sound/effects/smoke.ogg', 'sound/effects/bubbles.ogg')
+	var/static/recipe_process_sounds = SFX_EFFECTS_SMOKE_MIX
 	var/recipe_process_sound_chance = 50 //prob(50) per active process tick
 
 	//internal stuff, don't touch this with subtypes.
@@ -54,6 +49,13 @@
 	var/list/disabling_sources //what things are disabling us?
 	var/list/active_recipe //volatile, when given an item it removes it
 	var/current_step = 0 //current step for icon states
+
+//list of items that can make up a recipe.
+TYPE_TABLE_DECLARE(/obj/structure/event_collector, event_collector_ingredients, list( \
+	/obj/item/trash, \
+	/obj/item/toy/plushie/ipc, \
+	/obj/item/toy/tennis \
+))
 
 REGISTRY_MEMBERSHIP(/obj/structure/event_collector, REGISTRY_EVENT_COLLECTORS)
 
@@ -104,7 +106,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/event_collector, REGISTRY_EVENT_COLLECTORS)
 /obj/structure/event_collector/proc/pick_new_recipe()
 	active_recipe = list() //clear it out
 	if(no_dupes_in_recipe)
-		var/list/destructive_clone = possible_ingredients.Copy()
+		var/list/destructive_clone = TYPE_TABLE_COPY(src, event_collector_ingredients)
 		for(var/i in 1 to recipe_size)
 			var/temp = pick(destructive_clone)
 			active_recipe += temp
@@ -112,7 +114,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/event_collector, REGISTRY_EVENT_COLLECTORS)
 
 	else
 		for(var/i in 1 to recipe_size)
-			active_recipe += pick(possible_ingredients)
+			active_recipe += pick(TYPE_TABLE_GET(src, event_collector_ingredients))
 
 	if(noisy_step_completion)
 		var/next_item = "Nothing! The sequence is done!"
@@ -126,7 +128,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/event_collector, REGISTRY_EVENT_COLLECTORS)
 	var/blockers = get_blockers()
 	if(awaiting_next_recipe && blockers < 10)
 		if( recipe_process_sounds && prob(recipe_process_sound_chance) )
-			playsound(src,pick(recipe_process_sounds),25,TRUE)
+			playsound(src,recipe_process_sounds,25,TRUE)
 
 		calls_remaining -= max(0, 10-blockers) //10's a multiplier in case we want to scale it based on how many blockers
 		if(calls_remaining <= 0)
@@ -242,7 +244,7 @@ DECLARE_INTERACTIONS(/obj/structure/event_collector, INTERACT_ITEM(null, PROC_RE
 		current_step += 1
 		update_icon()
 		post_recipe_complete(user)
-		next_item_added = (world.time + wait_between_items)
+		EXPIRY_SET(src, next_item_added, wait_between_items, CLOCK_WORLD)
 
 /obj/structure/event_collector/proc/start_recipe_process()
 	awaiting_next_recipe = TRUE

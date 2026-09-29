@@ -15,7 +15,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	unacidable = TRUE
 	pass_flags = PASSTABLE
 	mouse_opacity = 0
-	hitsound = 'sound/weapons/pierce.ogg'
+	hitsound = SFX_WEAPONS_PIERCE
 
 	blocks_emissive = EMISSIVE_BLOCK_GENERIC
 
@@ -28,8 +28,8 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 
 	//Fired processing vars
 	var/fired = FALSE	//Have we been fired yet
-	var/last_projectile_move = 0
-	var/last_process = 0
+	EXPIRY_DECLARE(last_projectile_move)
+	EXPIRY_DECLARE(last_process)
 	var/time_offset = 0
 	var/datum/point/vector/trajectory
 	var/trajectory_ignore_forcemove = FALSE	//instructs forceMove to NOT reset our trajectory to the new location!
@@ -135,7 +135,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 
 	embed_chance = 0	//Base chance for a projectile to embed
 
-	var/fire_sound = 'sound/weapons/gunshot_old.ogg' // Can be overriden in gun.dm's fire_sound var. It can also be null but I don't know why you'd ever want to do that. -Ace
+	var/fire_sound = SFX_WEAPONS_GUNSHOT_OLD // Can be overriden in gun.dm's fire_sound var. It can also be null but I don't know why you'd ever want to do that. -Ace
 
 	var/vacuum_traversal = TRUE //Determines if the projectile can exist in vacuum, if false, the projectile will be deleted if it enters vacuum.
 
@@ -217,7 +217,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 /obj/item/projectile/proc/pixel_move(trajectory_multiplier, hitscanning = FALSE)
 	if(!loc || !trajectory)
 		return
-	last_projectile_move = world.time
+	EXPIRY_STAMP(src, last_projectile_move, CLOCK_WORLD)
 	if(homing)
 		process_homing()
 	var/forcemoved = FALSE
@@ -287,7 +287,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 		homing_offset_y = -homing_offset_y
 
 /obj/item/projectile/periodic_step()
-	last_process = world.time
+	EXPIRY_STAMP(src, last_process, CLOCK_WORLD)
 	if(!loc || !fired || !trajectory)
 		fired = FALSE
 		return PROCESS_KILL
@@ -374,7 +374,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	forceMove(starting)
 	trajectory_ignore_forcemove = FALSE
 	own_set(src, "trajectory", new /datum/point/vector(starting.x, starting.y, starting.z, pixel_x, pixel_y, Angle, GLOB.projectile_pixel_speed))
-	last_projectile_move = world.time
+	EXPIRY_STAMP(src, last_projectile_move, CLOCK_WORLD)
 	permutated = list()
 	originalRange = range
 	fired = TRUE
@@ -769,14 +769,14 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	if(result == PROJECTILE_FORCE_MISS)
 		if(!silenced)
 			target_mob.visible_message(span_infoplain(span_bold("\The [src]") + " misses \the [target_mob] narrowly!"))
-			playsound(target_mob, "bullet_miss", 75, 1)
+			play_sfx(target_mob, SFX_BULLET_MISS)
 		return FALSE
 
 	var/impacted_organ = parse_zone(def_zone)
 	if(isanimal(target_mob))
 		var/mob/living/simple_mob/SM = target_mob
 		var/datum/decl/mob_organ_names/organ_plan = SM.organ_names
-		impacted_organ = pick(organ_plan.hit_zones)
+		impacted_organ = pick(TYPE_TABLE_GET(organ_plan, mob_organ_hit_zones))
 
 	//hit messages
 	if(silenced)
@@ -935,7 +935,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 // === merged from projectile_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/projectile/bullet/pellet/shotgun/silver
 	name = "shrapnel"
-	fire_sound = 'sound/weapons/weaponsounds_shotgunshot.ogg'
+	fire_sound = SFX_WEAPONS_WEAPONSOUNDS_SHOTGUNSHOT
 	damage = 10
 	mob_bonus_damage = 16 // Potential 156 Damage against demons at point blank.
 	embed_chance = -1

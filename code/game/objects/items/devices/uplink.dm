@@ -18,14 +18,14 @@
 	var/faction = ""					//Antag faction holder.
 
 	var/offer_time = 10 MINUTES			//The time increment per discount offered
-	var/next_offer_time
+	EXPIRY_DECLARE(next_offer_time)
 	var/datum/uplink_item/discount_item_static	//The item to be discounted
 	var/discount_amount					//The amount as a percent the item will be discounted by
 	var/compact_mode = FALSE
 
 	icon = 'icons/obj/device.dmi'
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 DECLARE_START_TIMER(/obj/item/uplink, "offer_time", PROC_REF(next_offer)) //It seems like only the /hidden type actually makes use of this...
 
@@ -63,7 +63,7 @@ DECLARE_START_TIMER(/obj/item/uplink, "offer_time", PROC_REF(next_offer)) //It s
 /obj/item/uplink/hidden/next_offer()
 	discount_item_static = GLOB.default_uplink_selection.get_random_item(INFINITY)
 	discount_amount = pick(90;0.9, 80;0.8, 70;0.7, 60;0.6, 50;0.5, 40;0.4, 30;0.3, 20;0.2, 10;0.1)
-	next_offer_time = world.time + offer_time
+	EXPIRY_SET(src, next_offer_time, offer_time, CLOCK_WORLD)
 	SStgui.update_uis(src)
 	om_after(src, offer_time, PROC_REF(next_offer))
 

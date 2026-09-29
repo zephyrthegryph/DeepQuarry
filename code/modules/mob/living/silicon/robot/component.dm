@@ -301,25 +301,23 @@
 
 // --- Robot helpers --------------------------------------------------------------------
 
-/// Component type per slot. Subtypes override to change a part.
-/mob/living/silicon/robot/proc/get_component_types()
-	var/static/list/types = list(
-		/datum/robot_component/actuator,
-		/datum/robot_component/radio,
-		/datum/robot_component/cell,
-		/datum/robot_component/diagnosis_unit,
-		/datum/robot_component/camera,
-		/datum/robot_component/binary_communication,
-		/datum/robot_component/armour,
-		/datum/robot_component/cooling,
-		/datum/robot_component/core,
-	)
-	return types
+/// Component type per slot. Subtypes override the table to change a part.
+TYPE_TABLE_DECLARE(/mob/living/silicon/robot, robot_component_types, list( \
+	/datum/robot_component/actuator, \
+	/datum/robot_component/radio, \
+	/datum/robot_component/cell, \
+	/datum/robot_component/diagnosis_unit, \
+	/datum/robot_component/camera, \
+	/datum/robot_component/binary_communication, \
+	/datum/robot_component/armour, \
+	/datum/robot_component/cooling, \
+	/datum/robot_component/core, \
+))
 
 /// Build the slot list. External parts are created installed; internal parts
 /// are always present; the power slot waits for set_cell().
 /mob/living/silicon/robot/proc/initialize_components()
-	var/list/types = get_component_types()
+	var/list/types = TYPE_TABLE_GET(src, robot_component_types)
 	components = new /list(ROBOT_SLOT_COUNT) // ALLOW(ownership): a fresh positional slot table (nulls only); each part is adopted by own_put() below
 	for(var/slot in 1 to ROBOT_SLOT_COUNT)
 		var/component_type = types[slot]

@@ -98,7 +98,7 @@
 	rel_set(src, "inturf", get_step(src, dir))
 	locate_machinery()
 	if(!turbine())
-		stat |= BROKEN
+		stat_add(BROKEN)
 
 // When anchored, don't let air past us.
 /obj/machinery/compressor/CanZASPass(turf/T, is_zone)
@@ -155,10 +155,10 @@
 			locate_machinery()
 			if(turbine())
 				to_chat(user, span_notice("Turbine connected."))
-				stat &= ~BROKEN
+				stat_remove(BROKEN)
 			else
 				to_chat(user, span_warning("Turbine not connected."))
-				stat |= BROKEN
+				stat_add(BROKEN)
 
 /// Starts or stops the compressor; the compressor and its turbine run only while it is started.
 /obj/machinery/compressor/proc/set_starter(value)
@@ -170,8 +170,8 @@
 
 /obj/machinery/compressor/machine_step()
 	if(!turbine())
-		stat = BROKEN
-	if(stat & BROKEN)
+		set_stat(BROKEN)
+	if(has_stat(BROKEN))
 		return PROCESS_KILL
 	if(!starter)
 		return PROCESS_KILL
@@ -190,7 +190,7 @@
 	// RPM function to include compression friction - be advised that too low/high of a compfriction value can make things screwy
 	rpm = max(0, rpm - (rpm*rpm)/(COMPFRICTION*efficiency))
 
-	if(starter && !(stat & NOPOWER))
+	if(starter && !has_stat(NOPOWER))
 		use_power(2800)
 		if(rpm<1000)
 			rpmtarget = 1000
@@ -227,7 +227,7 @@
 	rel_set(src, "outturf", get_step(src, dir))
 	locate_machinery()
 	if(!compressor())
-		stat |= BROKEN
+		stat_add(BROKEN)
 
 /obj/machinery/power/turbine/RefreshParts()
 	var/P = get_part_rating(/obj/item/stock_parts/capacitor)
@@ -255,15 +255,15 @@
 			locate_machinery()
 			if(compressor())
 				to_chat(user, span_notice("Compressor connected."))
-				stat &= ~BROKEN
+				stat_remove(BROKEN)
 			else
 				to_chat(user, span_warning("Compressor not connected."))
-				stat |= BROKEN
+				stat_add(BROKEN)
 
 /obj/machinery/power/turbine/machine_step()
 	if(!compressor())
-		stat = BROKEN
-	if(stat & BROKEN)
+		set_stat(BROKEN)
+	if(has_stat(BROKEN))
 		return PROCESS_KILL
 	if(!compressor().starter)
 		return PROCESS_KILL
@@ -307,7 +307,7 @@
 	. = ..()
 	if(!Adjacent(user) && !issilicon(user))
 		return
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return
 
 	ui = SStgui.try_update_ui(user, src, ui)

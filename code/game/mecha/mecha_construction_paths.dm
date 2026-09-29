@@ -84,7 +84,7 @@
 /datum/construction_graph/mecha/proc/finish_parts(atom/target)
 	target.icon = icon_finished
 	target.icon_state = "[icon_prefix]0"
-	target.density = TRUE
+	target.set_density(TRUE)
 	target.overlays.len = 0
 
 /datum/construction_graph/mecha/proc/finish_mecha(atom/target, mob/actor)
@@ -194,15 +194,15 @@
 /datum/interaction/construction/mecha_ladder/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
 	switch(tool)
 		if(TOOL_WELDER)
-			playsound(target, 'sound/items/Welder2.ogg', 50, TRUE)
+			play_sfx(target, SFX_ITEMS_WELDER2)
 		if(TOOL_WRENCH)
-			playsound(target, 'sound/items/Ratchet.ogg', 50, TRUE)
+			play_sfx(target, SFX_ITEMS_RATCHET)
 		if(TOOL_SCREWDRIVER)
-			playsound(target, 'sound/items/Screwdriver.ogg', 50, TRUE)
+			play_sfx(target, SFX_ITEMS_SCREWDRIVER)
 		if(TOOL_WIRECUTTER)
-			playsound(target, 'sound/items/Wirecutter.ogg', 50, TRUE)
+			play_sfx(target, SFX_ITEMS_WIRECUTTER, 0.5)
 	if(!tool && ispath(item_type, /obj/item/stack/cable_coil))
-		playsound(target, 'sound/items/Deconstruct.ogg', 50, TRUE)
+		play_sfx(target, SFX_ITEMS_DECONSTRUCT)
 	var/self_raw = mech_token_text(step_self, actor, target, held)
 	var/others_raw = mech_token_text(step_others, actor, target, held)
 	var/self_text = step_span ? span_infoplain(self_raw) : self_raw

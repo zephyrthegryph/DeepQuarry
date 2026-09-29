@@ -315,7 +315,7 @@ GLOBAL_PROTECT(protected_ranks)
 					skip = 1
 				if(!skip)
 					var/datum/admins/admin_holder = new(admin_ranks, admin_ckey)
-					admin_holder.cached_feedback_link = admin_feedback || NO_FEEDBACK_LINK
+					admin_holder.fetched_feedback_link = admin_feedback || NO_FEEDBACK_LINK
 		if (!no_update)
 			save_admin_backup()
 			sync_admins_with_db()

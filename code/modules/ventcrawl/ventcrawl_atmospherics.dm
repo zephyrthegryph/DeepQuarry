@@ -46,7 +46,7 @@
 				COOLDOWN_START(user, next_play_vent, 30)
 				var/turf/T = get_turf(src)
 				GLOB.motiontracker_service.ping(T,40) // Teshari rattler
-				playsound(T, 'sound/machines/ventcrawl.ogg', 50, 1, -3)
+				play_sfx(T, SFX_MACHINES_VENTCRAWL)
 				var/message = pick(
 					prob(90);"* clunk *",
 					prob(90);"* thud *",

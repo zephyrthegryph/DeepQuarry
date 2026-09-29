@@ -105,7 +105,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/armor/reactive, INTERACT_USE("Toggle
 
 /obj/item/clothing/suit/armor/reactive/teleport/reactive_activation(mob/living/carbon/human/owner, atom/movable/hitby, attack_text = "the attack", final_block_chance = 0, damage = 0)
 	owner.visible_message(span_danger("The reactive teleport system flings [owner] clear of [attack_text]!"))
-	playsound(get_turf(owner), 'sound/effects/phasein.ogg', 100, TRUE)
+	play_sfx(get_turf(owner), SFX_EFFECTS_PHASEIN)
 	do_teleport(owner, get_turf(owner), tele_range, no_effects = TRUE, channel = TELEPORT_CHANNEL_BLUESPACE)
 	COOLDOWN_START(src, reactivearmor_cooldown, reactivearmor_cooldown_duration)
 	return TRUE
@@ -113,8 +113,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/armor/reactive, INTERACT_USE("Toggle
 /obj/item/clothing/suit/armor/reactive/teleport/emp_activation(mob/living/carbon/human/owner, atom/movable/hitby, attack_text = "the attack", final_block_chance = 0, damage = 0)
 	owner.visible_message(span_danger("The reactive teleport system flings itself clear of [attack_text], leaving someone behind in the process!"))
 	owner.drop_from_inventory(src, get_turf(src))
-	playsound(get_turf(owner),'sound/machines/buzz-sigh.ogg', 50, TRUE)
-	playsound(get_turf(owner), 'sound/effects/phasein.ogg', 100, TRUE)
+	play_sfx(get_turf(owner), SFX_MACHINES_BUZZ_SIGH, vary = TRUE)
+	play_sfx(get_turf(owner), SFX_EFFECTS_PHASEIN)
 	do_teleport(src, get_turf(owner), tele_range, no_effects = TRUE, channel = TELEPORT_CHANNEL_BLUESPACE)
 	COOLDOWN_START(src, reactivearmor_cooldown, reactivearmor_cooldown_duration)
 	return FALSE
@@ -127,7 +127,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/armor/reactive, INTERACT_USE("Toggle
 	emp_message = span_warning("The repulse generator is reset to default settings...")
 
 /obj/item/clothing/suit/armor/reactive/repulse/reactive_activation(mob/living/carbon/human/owner, atom/movable/hitby, attack_text = "the attack", damage = 0)
-	playsound(get_turf(owner),'sound/effects/repulse.ogg', 100, TRUE)
+	play_sfx(get_turf(owner), SFX_EFFECTS_REPULSE)
 	owner.visible_message(span_danger("[src] blocks [attack_text], converting the attack into a wave of force!"))
 	var/turf/owner_turf = get_turf(owner)
 	var/list/thrown_items = list()
@@ -142,7 +142,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/armor/reactive, INTERACT_USE("Toggle
 	return TRUE
 
 /obj/item/clothing/suit/armor/reactive/repulse/emp_activation(mob/living/carbon/human/owner, atom/movable/hitby, attack_text = "the attack", damage = 0)
-	playsound(get_turf(owner),'sound/effects/repulse.ogg', 100, TRUE)
+	play_sfx(get_turf(owner), SFX_EFFECTS_REPULSE)
 	owner.visible_message(span_danger("[src] does not block [attack_text], and instead generates an attracting force!"))
 	var/turf/owner_turf = get_turf(owner)
 	var/list/thrown_items = list()
@@ -171,9 +171,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/armor/reactive, INTERACT_USE("Toggle
 	var/zap_range = 20
 
 /obj/item/clothing/suit/armor/reactive/tesla/cooldown_activation(mob/living/carbon/human/owner)
-	var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread()
-	sparks.set_up(1, 1, src)
-	sparks.start()
+	fx_sparks(src, 1)
 	..()
 
 /obj/item/clothing/suit/armor/reactive/tesla/reactive_activation(mob/living/carbon/human/owner, atom/movable/hitby, attack_text = "the attack", damage = 0)
@@ -203,9 +201,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/armor/reactive, INTERACT_USE("Toggle
 	clothing_traits = list(TRAIT_MADNESS_IMMUNE)
 
 /obj/item/clothing/suit/armor/reactive/hallucinating/cooldown_activation(mob/living/carbon/human/owner)
-	var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread()
-	sparks.set_up(1, 1, src)
-	sparks.start()
+	fx_sparks(src, 1)
 	..()
 
 /obj/item/clothing/suit/armor/reactive/hallucinating/reactive_activation(mob/living/carbon/human/owner, atom/movable/hitby, attack_text = "the attack", damage = 0)
@@ -237,7 +233,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/armor/reactive, INTERACT_USE("Toggle
 	reactivearmor_cooldown_duration = 10 SECONDS
 
 /obj/item/clothing/suit/armor/reactive/barricade/reactive_activation(mob/living/carbon/human/owner, atom/movable/hitby, attack_text = "the attack", damage = 0)
-	playsound(get_turf(owner),'sound/effects/repulse.ogg', 100, TRUE)
+	play_sfx(get_turf(owner), SFX_EFFECTS_REPULSE)
 	owner.visible_message(span_danger("The reactive armor interposes matter from another world between [src] and [attack_text]!"))
 	for (var/atom/movable/target in repulse_targets(owner))
 		repulse(target, owner)
@@ -287,7 +283,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/armor/reactive, INTERACT_USE("Toggle
 
 /obj/item/clothing/suit/armor/reactive/fire/reactive_activation(mob/living/carbon/human/owner, atom/movable/hitby, attack_text = "the attack", damage = 0)
 	owner.visible_message(span_danger("[src] blocks [attack_text], sending out jets of flame!"))
-	playsound(get_turf(owner), 'sound/magic/Fireball.ogg', 100, TRUE)
+	play_sfx(get_turf(owner), SFX_MAGIC_FIREBALL)
 	for(var/mob/living/carbon_victim in range(6, get_turf(src)))
 		if(carbon_victim != owner)
 			carbon_victim.adjust_fire_stacks(8)
@@ -298,7 +294,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/armor/reactive, INTERACT_USE("Toggle
 
 /obj/item/clothing/suit/armor/reactive/fire/emp_activation(mob/living/carbon/human/owner, atom/movable/hitby, attack_text = "the attack", damage = 0)
 	owner.visible_message(span_danger("[src] just makes [attack_text] worse by spewing molten death on [owner]!"))
-	playsound(get_turf(owner), 'sound/magic/Fireball.ogg', 100, TRUE)
+	play_sfx(get_turf(owner), SFX_MAGIC_FIREBALL)
 	owner.adjust_fire_stacks(12)
 	owner.ignite_mob()
 	COOLDOWN_START(src, reactivearmor_cooldown, reactivearmor_cooldown_duration)
@@ -313,7 +309,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/armor/reactive, INTERACT_USE("Toggle
 
 /obj/item/clothing/suit/armor/reactive/weather/reactive_activation(mob/living/carbon/human/owner, atom/movable/hitby, attack_text = "the attack", damage = 0)
 	owner.visible_message(span_danger("The reactive armor alters the weather around [owner], shielding [owner.p_them()] from [attack_text]!"))
-	playsound(src, 'sound/effects/lightningbolt.ogg', 33, TRUE)
+	play_sfx(src, SFX_EFFECTS_LIGHTNINGBOLT, 0.33)
 
 	new /obj/effect/effect/smoke/bad(get_turf(loc))
 
@@ -336,7 +332,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/armor/reactive, INTERACT_USE("Toggle
 
 /obj/item/clothing/suit/armor/reactive/weather/emp_activation(mob/living/carbon/human/owner, atom/movable/hitby, attack_text = "the attack", damage = 0)
 	owner.visible_message(span_danger("The reactive armor malfunctions, calling down a storm upon [owner.p_them()]!"))
-	playsound(src, 'sound/effects/lightningbolt.ogg', 33, TRUE)
+	play_sfx(src, SFX_EFFECTS_LIGHTNINGBOLT, 0.33)
 
 	new /obj/effect/effect/smoke/bad(loc)
 
@@ -390,9 +386,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/armor/reactive, INTERACT_USE("Toggle
 	animate(owner, alpha = initial(owner.alpha), time = animation_time)
 
 /obj/item/clothing/suit/armor/reactive/stealth/proc/destroy_illusion(mob/illusion)
-	var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread()
-	sparks.set_up(3, 3, illusion)
-	sparks.start()
+	fx_sparks(illusion, 3, 3)
 	illusion.expire(animation_time)
 
 /obj/item/clothing/suit/armor/reactive/stealth/emp_activation(mob/living/carbon/human/owner, atom/movable/hitby, attack_text = "the attack", damage = 0)

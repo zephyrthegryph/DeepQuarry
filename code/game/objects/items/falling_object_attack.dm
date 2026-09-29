@@ -35,5 +35,5 @@
 		var/target_zone = ran_zone()
 		if(!L.injure(INJURY_BLUNT, 35, target_zone, src, flags = INJURE_ARMORED))
 			break
-	playsound(src, 'sound/effects/clang2.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_CLANG2)
 	qdel(src)

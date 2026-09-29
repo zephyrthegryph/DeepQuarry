@@ -81,14 +81,14 @@
 		if(!stat)
 			var/mob/M = AM
 			M.visible_message(span_blue("[icon2html(src,viewers(M))] Squeek!"))
-			playsound(src, 'sound/effects/mouse_squeak.ogg', 35, 1)
+			play_sfx(src, SFX_EFFECTS_MOUSE_SQUEAK)
 	..()
 
 /mob/living/simple_mob/animal/space/mouse_army/on_death(gibbed)
 	layer = MOB_LAYER
-	playsound(src, 'sound/effects/mouse_squeak_loud.ogg', 35, 1)
+	play_sfx(src, SFX_EFFECTS_MOUSE_SQUEAK_LOUD)
 	if(client)
-		client.time_died_as_mouse = world.time
+		EXPIRY_STAMP(client, time_died_as_mouse, CLOCK_WORLD)
 	..()
 
 /mob/living/simple_mob/animal/space/mouse_army/cannot_use_vents()
@@ -100,7 +100,7 @@
 	src.icon_state = "mouse_[rank]_splat"
 	layer = MOB_LAYER
 	if(client)
-		client.time_died_as_mouse = world.time
+		EXPIRY_STAMP(client, time_died_as_mouse, CLOCK_WORLD)
 
 //Base ported from vgstation. Operative Mice.
 //Icon artists: DeityLink and plosky1
@@ -137,7 +137,7 @@
 	var/ruptured = 0
 
 /mob/living/simple_mob/animal/space/mouse_army/pyro/on_death(gibbed)
-	visible_message(span_critical("\The [src]'s tank groans!"))
+	act_message(src, null, null, MSG_OTHERS(span_critical("%U%'s tank groans!")))
 	var/delay = rand(1, 3)
 	color_sequence(mouse_warning_flash(delay))
 
@@ -173,7 +173,7 @@
 
 
 /mob/living/simple_mob/animal/space/mouse_army/ammo/on_death(gibbed)
-	visible_message(span_critical("\The [src]'s body begins to rupture!"))
+	act_message(src, null, null, MSG_OTHERS(span_critical("%U%'s body begins to rupture!")))
 	var/delay = rand(explosion_delay_lower, explosion_delay_upper)
 	color_sequence(mouse_warning_flash(delay))
 
@@ -246,7 +246,7 @@
 			var/mob/living/L = A
 			L.status_at_least(EFFECT_WEAKENED, cloaked_weaken_amount)
 			to_chat(L, span_danger("\The [src] ambushes you!"))
-			playsound(L, 'sound/weapons/spiderlunge.ogg', 75, 1)
+			play_sfx(L, SFX_WEAPONS_SPIDERLUNGE)
 	uncloak()
 	..()
 
@@ -434,14 +434,14 @@
 
 /mob/living/simple_mob/animal/space/mouse_army/pyro/proc/rupture()
 	if(!ruptured)
-		visible_message(span_critical("\The [src]'s tank ruptures!"))
+		act_message(src, null, null, MSG_OTHERS(span_critical("%U%'s tank ruptures!")))
 		ruptured = 1
 		adjust_fire_stacks(2)
 		ignite_mob()
 
 /mob/living/simple_mob/animal/space/mouse_army/ammo/proc/detonate()
 	if(src && !exploded)
-		visible_message(span_critical("\The [src]'s body detonates!"))
+		act_message(src, null, null, MSG_OTHERS(span_critical("%U%'s body detonates!")))
 		exploded = 1
 		explosion(src.loc, explosion_dev_range, explosion_heavy_range, explosion_light_range, explosion_flash_range)
 		qdel(src)

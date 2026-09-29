@@ -9,7 +9,7 @@
 	use_power = USE_POWER_IDLE
 	layer = ON_WINDOW_LAYER
 	power_channel = EQUIP
-	var/on = 0
+	on = 0
 	var/id_tag = null
 
 	var/frequency = AIRLOCK_FREQ
@@ -54,12 +54,11 @@
 	COOLDOWN_START(src, feedback_cooldown, 5 SECONDS)
 
 /obj/machinery/mech_sensor/proc/enabled()
-	return on && !(stat & NOPOWER)
+	return on && !has_stat(NOPOWER)
 
 /obj/machinery/mech_sensor/power_change()
-	var/old_stat = stat
-	..()
-	if(old_stat != stat)
+	. = ..()
+	if(.)
 		update_icon()
 
 /obj/machinery/mech_sensor/update_icon(safety = 0)
@@ -80,16 +79,16 @@
 		rel_set(src, "radio_connection", GLOB.radio_service.add_object(src, frequency))
 
 /obj/machinery/mech_sensor/receive_signal(datum/signal/signal)
-	if(stat & NOPOWER)
+	if(has_stat(NOPOWER))
 		return
 
 	if(!signal.data["tag"] || (signal.data["tag"] != id_tag))
 		return
 
 	if(signal.data["command"] == "enable")
-		on = 1
+		set_on(1)
 	else if (signal.data["command"] == "disable")
-		on = 0
+		set_on(0)
 
 	update_icon()
 

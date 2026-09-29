@@ -13,8 +13,8 @@
 	var/list/datum/autopsy_data_scanner/chemtraces
 	var/target_name = null
 	var/timeofdeath = null
-	drop_sound = 'sound/items/drop/device.ogg'
-	pickup_sound = 'sound/items/pickup/device.ogg'
+	drop_sound = SFX_ITEMS_DROP_DEVICE
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 
 /datum/autopsy_data_scanner
 	var/weapon = null // this is the DEFINITE weapon type that was used
@@ -27,7 +27,7 @@
 	var/pretend_weapon = null
 	var/damage = 0
 	var/hits = 0
-	var/time_inflicted = 0
+	EXPIRY_DECLARE(time_inflicted)
 
 /datum/autopsy_data/proc/copy()
 	var/datum/autopsy_data/W = new()
@@ -174,7 +174,7 @@
 	if(!S.open)
 		to_chat(user, span_warning("You have to cut [S] open first!"))
 		return
-	M.visible_message(span_infoplain(span_bold("\The [user]") + " scans the wounds on [M]'s [S.name] with [src]"))
+	act_message(user, M, others = span_infoplain(span_bold("%U%") + " scans the wounds on %T%'s [S.name] with [src]"))
 
 	src.add_data(S)
 	OM_EMIT(src, /datum/om/event/autopsy_performed, user, M)

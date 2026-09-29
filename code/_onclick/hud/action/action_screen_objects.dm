@@ -45,7 +45,7 @@
 		return
 
 	var/list/modifiers = params2list(params)
-	if(GLOB.input_router.click_is(modifiers, GLOB.input_router.shift_table(), INPUT_ACTION_INSPECT))
+	if(GLOB.input_router.click_is(modifiers, TYPE_TABLE_GET(GLOB.input_router, shift_table), INPUT_ACTION_INSPECT))
 		var/datum/hud/our_hud = usr.hud_used
 		our_hud.position_action(src, SCRN_OBJ_DEFAULT)
 		return TRUE
@@ -53,7 +53,7 @@
 		return
 	usr.setClickCooldown(1)
 	var/trigger_flags
-	if(GLOB.input_router.click_is(modifiers, GLOB.input_router.secondary_table(), INPUT_ACTION_ALTERNATE_SECONDARY))
+	if(GLOB.input_router.click_is(modifiers, TYPE_TABLE_GET(GLOB.input_router, secondary_table), INPUT_ACTION_ALTERNATE_SECONDARY))
 		trigger_flags |= TRIGGER_SECONDARY_ACTION
 	linked_action().Trigger(trigger_flags = trigger_flags)
 	return TRUE
@@ -253,8 +253,6 @@
 	screen_loc = ui_action_palette
 	var/datum/hud/our_hud
 	var/expanded = FALSE
-	/// Id of any currently running timers that set our color matrix
-	var/color_timer_id
 
 // the hud owns us as its toggle_palette; one deleted on its own clears that var.
 
@@ -302,13 +300,12 @@ GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,
 	color_for_now(GLOB.palette_removed_matrix)
 
 /atom/movable/screen/button_palette/proc/color_for_now(list/color)
-	if(color_timer_id)
+	if(om_timer_slot_pending(src, "color_timer_id"))
 		return
 	add_atom_colour(color, TEMPORARY_COLOUR_PRIORITY) //We unfortunately cannot animate matrix colors. Curse you lummy it would be ~~non~~trivial to interpolate between the two valuessssssssss
-	color_timer_id = om_after(src, 2 SECONDS, PROC_REF(remove_color), color)
+	om_after_slot(src, "color_timer_id", 2 SECONDS, PROC_REF(remove_color), color)
 
 /atom/movable/screen/button_palette/proc/remove_color(list/to_remove)
-	color_timer_id = null
 	remove_atom_colour(TEMPORARY_COLOUR_PRIORITY, to_remove)
 
 /atom/movable/screen/button_palette/proc/can_use(mob/user)
@@ -322,7 +319,7 @@ GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,
 	if(!can_use(usr))
 		return
 
-	if(GLOB.input_router.click_is(params, GLOB.input_router.alternate_table(), INPUT_ACTION_ALTERNATE))
+	if(GLOB.input_router.click_is(params, TYPE_TABLE_GET(GLOB.input_router, alternate_table), INPUT_ACTION_ALTERNATE))
 		for(var/datum/action/action as anything in usr.actions) // Reset action positions to default
 			for(var/atom/movable/screen/movable/action_button/button as anything in action.viewers)
 				var/datum/hud/hud = button.our_hud
@@ -474,3 +471,4 @@ GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,
 	return owner
 
 
+OWN_TIMER(/atom/movable/screen/button_palette, color_timer_id)

@@ -4,11 +4,6 @@
 	icon = 'icons/obj/cooking_event.dmi'
 	icon_state = "equipment_empty"
 
-	possible_ingredients = list(
-		/obj/item/collector_item/nukies_acid,
-		/obj/item/collector_item/nukies_formula,
-		/obj/item/collector_item/nukies_sludge
-	)
 
 	no_dupes_in_recipe = TRUE
 	automatic_recipe_restart = FALSE
@@ -17,6 +12,12 @@
 	need_recipe_in_order = TRUE
 
 	type_to_spawn_on_complete = /obj/item/reagent_containers/food/drinks/cans/nukie_one
+
+TYPE_TABLE(/obj/structure/event_collector/nukies, event_collector_ingredients, list( \
+	/obj/item/collector_item/nukies_acid, \
+	/obj/item/collector_item/nukies_formula, \
+	/obj/item/collector_item/nukies_sludge \
+))
 
 /obj/structure/event_collector/nukies/update_icon()
 	. = ..()

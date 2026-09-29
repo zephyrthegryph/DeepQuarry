@@ -34,7 +34,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/tank/jetpack, "ion_trail", /datum/effect/effect/
 	. = ..()
 	if(air_contents.total_moles() < 5)
 		. += span_danger("The meter on \the [src] indicates you are almost out of gas!")
-		playsound(src, 'sound/effects/alert.ogg', 50, 1)
+		play_sfx(src, SFX_EFFECTS_ALERT)
 
 /obj/item/tank/jetpack/proc/toggle_rockets_effect(mob/user, obj/item/held, datum/interaction/interaction)
 	stabilization_on = !( stabilization_on )

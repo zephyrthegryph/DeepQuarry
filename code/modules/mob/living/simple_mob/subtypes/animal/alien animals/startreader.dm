@@ -91,7 +91,7 @@
 	if(L.has_status(EFFECT_WEAKENED)) //Don't stun people while they're already stunned! That's SILLY!
 		return
 	if(prob(15))
-		visible_message(span_danger("\The [src] trips \the [L]!"))
+		act_message(src, L, null, MSG_OTHERS(span_danger("%U% trips %T%!")))
 		L.status_adjust(EFFECT_WEAKENED, rand(1,10))
 
 /datum/om/stage/life/type_post/simple_mob/vore/alienanimals/startreader
@@ -103,7 +103,7 @@
 		self.flip_cooldown = 0
 		self.flipped = FALSE
 		self.handle_flip()
-		self.visible_message(span_notice("\The [self] rights itself!!!"))
+		act_message(self, null, null, MSG_OTHERS(span_notice("%U% rights itself!!!")))
 		return
 	if(self.flip_cooldown)
 		self.flip_cooldown --

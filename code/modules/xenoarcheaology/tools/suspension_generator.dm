@@ -8,7 +8,7 @@
 	req_access = list(ACCESS_RESEARCH)
 	var/obj/item/cell/cell
 	var/tmp/obj/item/card/id/auth_card
-	var/locked = 1
+	locked = 1
 	var/power_use = 15
 	var/obj/effect/suspension_field/suspension_field
 
@@ -105,7 +105,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/suspension_gen, "cell", /obj/item/cell/high
 
 		if("lock")
 			if(allowed(ui.user))
-				locked = !locked
+				set_locked(!locked)
 				return TRUE
 
 /obj/machinery/suspension_gen/screwdriver_act(mob/user, obj/item/tool)
@@ -116,7 +116,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/suspension_gen, "cell", /obj/item/cell/high
 /obj/machinery/suspension_gen/wrench_act(mob/user, obj/item/tool)
 	if(suspension_field)
 		return ITEM_INTERACT_BLOCKING
-	anchored = !anchored
+	set_anchored(!anchored)
 	playsound(src, tool.usesound, 50, TRUE)
 	to_chat(user, span_info("You wrench the stabilising bolts [anchored ? "into place" : "loose"]."))
 	if(anchored)
@@ -125,7 +125,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/suspension_gen, "cell", /obj/item/cell/high
 	else
 		desc = "It has stubby bolts aligned along its tracks for stabilising."
 		icon_state = "suspension"
-	playsound(loc, 'sound/items/Ratchet.ogg', 40)
+	play_sfx(loc, SFX_ITEMS_RATCHET, 0.8, vary = FALSE)
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
 
@@ -168,13 +168,13 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/suspension_gen, "cell", /obj/item/cell/high
 		if(istype(C, /obj/item/card/emag))
 			C.resolve_attackby(src, user)
 		else if(istype(C, /obj/item/card/id) && check_access(C))
-			locked = 0
+			set_locked(0)
 		if(!locked)
 			return 1
 
 /obj/machinery/suspension_gen/emag_act(remaining_charges, mob/user)
 	if(cell && cell.charge > 0 && locked)
-		locked = 0
+		set_locked(0)
 		return 1
 
 //checks for whether the machine can be activated or not should already have occurred by this point
@@ -196,7 +196,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/suspension_gen, "cell", /obj/item/cell/high
 	MACHINE_WAKE(src)
 	visible_message(span_blue("[icon2html(src,viewers(src))] [src] activates with a low hum."))
 	icon_state = "suspension_on"
-	playsound(loc, 'sound/machines/quiet_beep.ogg', 40)
+	play_sfx(loc, SFX_MACHINES_QUIET_BEEP)
 	update_icon()
 
 	for(var/obj/item/I in turf_contents_of_type(T, /obj/item))
@@ -233,7 +233,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/suspension_gen, "cell", /obj/item/cell/high
 	visible_message(span_blue("[icon2html(src,viewers(src))] [src] deactivates with a gentle shudder."))
 	own_clear(src, "suspension_field", OWN_DELETE)
 	icon_state = "suspension_wrenched"
-	playsound(loc, 'sound/machines/quiet_beep.ogg', 40)
+	play_sfx(loc, SFX_MACHINES_QUIET_BEEP)
 	update_icon()
 
 // its field deactivates.

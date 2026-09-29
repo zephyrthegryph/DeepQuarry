@@ -16,7 +16,7 @@
 	var/light_range_on = 2
 	var/light_power_on = 1
 
-	clicksound = "keyboard"
+	clicksound = SFX_KEYBOARD
 	integrity_failure = 0.5
 
 /obj/machinery/computer/Initialize(mapload)
@@ -56,26 +56,26 @@
 		icon_state = "computer[append_string]"
 
 	if(icon_keyboard)
-		if(stat & NOPOWER)
-			playsound(src, 'sound/machines/terminal_off.ogg', 50, 1)
+		if(has_stat(NOPOWER))
+			play_sfx(src, SFX_MACHINES_TERMINAL_OFF)
 			return add_overlay("[icon_keyboard]_off")
 		. += icon_keyboard
 
 	// This whole block lets screens ignore lighting and be visible even in the darkest room
 	var/overlay_state = icon_screen
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		overlay_state = "[icon_state]_broken"
 
 	. += mutable_appearance(icon, overlay_state)
 	. += emissive_appearance(icon, overlay_state)
-	playsound(src, 'sound/machines/terminal_on.ogg', 50, 1)
+	play_sfx(src, SFX_MACHINES_TERMINAL_ON)
 
 	add_overlay(.)
 
 /obj/machinery/computer/power_change()
-	..()
+	. = ..()
 	update_icon()
-	if(stat & NOPOWER)
+	if(has_stat(NOPOWER))
 		set_light(0)
 	else
 		set_light(light_range_on, light_power_on)

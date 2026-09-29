@@ -111,7 +111,7 @@
 	var/datum/effect/effect/system/smoke_spread/chem/S = new /datum/effect/effect/system/smoke_spread/chem
 	S.attach(location)
 	S.set_up(holder, 120, 0, location)
-	playsound(location, 'sound/effects/smoke.ogg', 50, 1, -3)
+	play_sfx(location, SFX_EFFECTS_SMOKE)
 	S.start()
 	..()
 
@@ -429,7 +429,7 @@
 
 /datum/decl/chemical_reaction/instant/slime/nuclear_radpulse/on_reaction(datum/reagents/holder)
 	log_and_message_admins("Green extract reaction (radiation pulse) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
-	playsound(holder.my_atom, 'sound/effects/phasein.ogg', 75, 1)
+	play_sfx(holder.my_atom, SFX_EFFECTS_PHASEIN, 0.75)
 	holder.my_atom.visible_message(span_danger("\The [holder.my_atom] begins to vibrate violently!"))
 	om_after(holder.my_atom, 5 SECONDS, /proc/slime_green_pulse, holder.my_atom)
 	..()

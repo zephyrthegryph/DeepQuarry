@@ -56,7 +56,7 @@ EXTEND_INTERACTIONS(/obj/item/book/codex, INTERACT_USE("Read", PROC_REF(interact
 	w_class = ITEMSIZE_SMALL
 	root_type = /datum/lore/codex/category/main_news
 	libcategory = "Reference"
-	drop_sound = 'sound/items/drop/device.ogg'
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 /* // REMOVAL
 // Combines SOP/Regs/Law

@@ -17,7 +17,7 @@
 	desc = "Stubby and round, this space-capable craft is an ancient favorite. It has a jury-rigged welder-laser."
 	catalogue_data = list(/datum/category_item/catalogue/technology/hoverpod)
 	icon_state = "engineering_pod"
-	movement_sound = 'sound/machines/hiss.ogg'
+	movement_sound = SFX_MACHINES_HISS
 	wreckage = /obj/structure/loot_pile/mecha/hoverpod
 
 	endurance = 150
@@ -46,4 +46,4 @@
 	return TRUE
 
 /datum/decl/mob_organ_names/hoverpod
-	hit_zones = list("central chassis", "control module", "hydraulics", "left manipulator", "right manipulator", "left landing strut", "right landing strut", "maneuvering thruster", "sensor suite", "radiator", "power supply")
+TYPE_TABLE(/datum/decl/mob_organ_names/hoverpod, mob_organ_hit_zones, list("central chassis", "control module", "hydraulics", "left manipulator", "right manipulator", "left landing strut", "right landing strut", "maneuvering thruster", "sensor suite", "radiator", "power supply"))

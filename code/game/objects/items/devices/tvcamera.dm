@@ -12,8 +12,8 @@
 	/// Relation view: what the feed shows.
 	var/atom/showing
 	var/showing_name
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 DECLARE_DEFAULT_CHILD(/obj/item/tvcamera, "camera", /obj/machinery/camera/network/thunder)
 DECLARE_DEFAULT_CHILD(/obj/item/tvcamera, "radio", /obj/item/radio)
@@ -55,30 +55,6 @@ DECLARE_INTERACTIONS(/obj/item/tvcamera, INTERACT_USE(null, PROC_REF(interaction
 		camera.c_tag = channel
 		to_chat(user, span_notice("New channel name - '[channel]' is set"))
 
-/obj/item/tvcamera/Topic(bred, href_list, state = GLOB.tgui_physical_state)
-	if(..())
-		return 1
-	if(href_list["channel"])
-		om_ask(usr, /datum/om/prompt/text, PROC_REF(channel_named), default = channel, title = "Select new channel name", message = "Channel name", max_length = MAX_NAME_LEN, requires = PROMPT_USABLE_BY("physical"))
-	if(href_list["video"])
-		camera.set_status(!camera.status)
-		if(camera.status)
-			to_chat(usr,span_notice("Video streaming activated. Broadcasting on channel '[channel]'"))
-			show_tvs(loc)
-		else
-			to_chat(usr,span_notice("Video streaming deactivated."))
-			hide_tvs()
-			for(var/obj/machinery/computer/security/telescreen/entertainment/ES as anything in REGISTRY_MEMBERS(REGISTRY_ENTERTAINMENT_SCREENS))
-				ES.stop_showing()
-		update_icon()
-	if(href_list["sound"])
-		radio.ToggleBroadcast()
-		if(radio.broadcasting)
-			to_chat(usr,span_notice("Audio streaming activated. Broadcasting on frequency [format_frequency(radio.frequency)]."))
-		else
-			to_chat(usr,span_notice("Audio streaming deactivated."))
-	if(!href_list["close"])
-		attack_self(usr)
 
 /obj/item/tvcamera/proc/show_tvs(atom/thing)
 	if(showing)
@@ -111,7 +87,7 @@ DECLARE_INTERACTIONS(/obj/item/tvcamera, INTERACT_USE(null, PROC_REF(interaction
 		return
 	if(camera.status && !isturf(target))
 		show_tvs(target)
-		user.visible_message(span_infoplain(span_bold("[user]") + " aims [src] at [target]."), span_info("You aim [src] at [target]."))
+		act_message(user, src, MSG_SELF(span_info("You aim %T% at [target].")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " aims %T% at [target].")))
 		if(user.check_current_machine(src))
 			show_ui(user) // refresh the UI
 
@@ -205,36 +181,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/bodycam, INTERACT_USE(null, PRO
 		bcamera.c_tag = channel
 		to_chat(user, span_notice("New channel name - '[channel]' is set"))
 
-/obj/item/clothing/accessory/bodycam/Topic(bred, href_list, state = GLOB.tgui_physical_state)
-
-	if(..())
-		return 1
-	if(href_list["channel"])
-		om_ask(usr, /datum/om/prompt/text, PROC_REF(channel_named), default = channel, title = "Select new channel name", message = "Channel name", max_length = MAX_NAME_LEN, requires = PROMPT_USABLE_BY("physical"))
-	if(href_list["video"])
-		bcamera.set_status(!bcamera.status)
-		var/turf/here = get_turf(usr)
-		if(bcamera.status)
-			to_chat(usr,span_notice("Video streaming activated. Broadcasting on channel '[channel]'"))
-			if(here)
-				here.visible_message(span_notice("[usr] turns on their body camera."))
-			show_bodycamera_tvs(loc)
-		else
-			to_chat(usr,span_notice("Video streaming deactivated."))
-			if(here)
-				here.visible_message(span_warning("[usr] turns off their body camera!"))
-			hide_bodycamera_tvs()
-			for(var/obj/machinery/computer/security/telescreen/bodycamera/ES as anything in REGISTRY_MEMBERS(REGISTRY_BODYCAMERA_SCREENS))
-				ES.stop_showing()
-		update_icon()
-	if(href_list["sound"])
-		bradio.ToggleBroadcast()
-		if(bradio.broadcasting)
-			to_chat(usr,span_notice("Audio streaming activated. Broadcasting on frequency [format_frequency(bradio.frequency)]."))
-		else
-			to_chat(usr,span_notice("Audio streaming deactivated."))
-	if(!href_list["close"])
-		attack_self(usr)
 
 /obj/item/clothing/accessory/bodycam/proc/show_bodycamera_tvs(atom/thing)
 	if(showing)
@@ -359,3 +305,52 @@ DECLARE_INTERACTIONS(/obj/item/TVAssembly, INTERACT_ITEM(null, PROC_REF(interact
 				return TRUE
 
 	return FALSE
+
+/obj/item/tvcamera/proc/camera_set_channel(mob/user)
+	om_ask(user, /datum/om/prompt/text, PROC_REF(channel_named), default = channel, title = "Select new channel name", message = "Channel name", max_length = MAX_NAME_LEN, requires = PROMPT_USABLE_BY("physical"))
+
+/obj/item/tvcamera/proc/camera_toggle_video(mob/user)
+	camera.set_status(!camera.status)
+	if(camera.status)
+		to_chat(user,span_notice("Video streaming activated. Broadcasting on channel '[channel]'"))
+		show_tvs(loc)
+	else
+		to_chat(user,span_notice("Video streaming deactivated."))
+		hide_tvs()
+		for(var/obj/machinery/computer/security/telescreen/entertainment/ES as anything in REGISTRY_MEMBERS(REGISTRY_ENTERTAINMENT_SCREENS))
+			ES.stop_showing()
+	update_icon()
+
+/obj/item/tvcamera/proc/camera_toggle_audio(mob/user)
+	radio.ToggleBroadcast()
+	if(radio.broadcasting)
+		to_chat(user,span_notice("Audio streaming activated. Broadcasting on frequency [format_frequency(radio.frequency)]."))
+	else
+		to_chat(user,span_notice("Audio streaming deactivated."))
+
+/obj/item/clothing/accessory/bodycam/proc/camera_set_channel(mob/user)
+	om_ask(user, /datum/om/prompt/text, PROC_REF(channel_named), default = channel, title = "Select new channel name", message = "Channel name", max_length = MAX_NAME_LEN, requires = PROMPT_USABLE_BY("physical"))
+
+/obj/item/clothing/accessory/bodycam/proc/camera_toggle_video(mob/user)
+	bcamera.set_status(!bcamera.status)
+	var/turf/here = get_turf(user)
+	if(bcamera.status)
+		to_chat(user,span_notice("Video streaming activated. Broadcasting on channel '[channel]'"))
+		if(here)
+			here.visible_message(span_notice("[user] turns on their body camera."))
+		show_bodycamera_tvs(loc)
+	else
+		to_chat(user,span_notice("Video streaming deactivated."))
+		if(here)
+			here.visible_message(span_warning("[user] turns off their body camera!"))
+		hide_bodycamera_tvs()
+		for(var/obj/machinery/computer/security/telescreen/bodycamera/ES as anything in REGISTRY_MEMBERS(REGISTRY_BODYCAMERA_SCREENS))
+			ES.stop_showing()
+	update_icon()
+
+/obj/item/clothing/accessory/bodycam/proc/camera_toggle_audio(mob/user)
+	bradio.ToggleBroadcast()
+	if(bradio.broadcasting)
+		to_chat(user,span_notice("Audio streaming activated. Broadcasting on frequency [format_frequency(bradio.frequency)]."))
+	else
+		to_chat(user,span_notice("Audio streaming deactivated."))

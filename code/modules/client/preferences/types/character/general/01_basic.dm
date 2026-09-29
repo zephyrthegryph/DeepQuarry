@@ -166,7 +166,7 @@
 
 /datum/preference/choiced/living/spawnpoint/init_possible_values()
 	var/list/spawnkeys = list()
-	for(var/spawntype in get_spawn_points())
+	for(var/spawntype in GLOB.spawntypes)
 		spawnkeys += spawntype
 	return spawnkeys
 
@@ -193,12 +193,7 @@
 	savefile_identifier = PREFERENCE_CHARACTER
 	savefile_key = "emote_sound_mode"
 
-/datum/preference/choiced/living/emote_sound_mode/init_possible_values()
-	return list(
-		EMOTE_SOUND_NO_FREQ,
-		EMOTE_SOUND_VOICE_FREQ,
-		EMOTE_SOUND_VOICE_LIST,
-	)
+TYPE_TABLE(/datum/preference/choiced/living/emote_sound_mode, pref_choices, list(EMOTE_SOUND_NO_FREQ, EMOTE_SOUND_VOICE_FREQ, EMOTE_SOUND_VOICE_LIST))
 
 /datum/preference/choiced/living/emote_sound_mode/apply_to_living(mob/living/target, value)
 	target.emote_sound_mode = value

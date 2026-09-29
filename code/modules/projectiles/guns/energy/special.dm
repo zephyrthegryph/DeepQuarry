@@ -92,7 +92,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/gun/energy/floragun, "emitter", /obj/item/stock_
 	//allow shooting into adjacent hydrotrays regardless of intent
 	if(!emitter)
 		to_chat(user, span_notice("The [src] has no laser! "))
-		playsound(src, 'sound/weapons/empty.ogg', 50, 1)
+		play_sfx(src, SFX_WEAPONS_EMPTY)
 		return
 	if(adjacent_flag && istype(target,/obj/machinery/portable_atmospherics/hydroponics))
 		user.visible_message(span_danger("\The [user] fires \the [src] into \the [target]!"))
@@ -201,7 +201,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/floragun, INTERACT_VERB("Select Gene", 
 		user.visible_message("*fizzle*", span_danger("*fizzle*"))
 	else
 		src.visible_message("*fizzle*")
-	playsound(src, 'sound/effects/sparks1.ogg', 100, 1)
+	play_sfx(src, SFX_EFFECTS_SPARKS1)
 /*
 /obj/item/gun/energy/staff/animate
 	name = "staff of animation"
@@ -385,7 +385,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/floragun, INTERACT_VERB("Select Gene", 
 	slot_flags = SLOT_BELT
 	accuracy = 100
 	fire_delay = 12
-	fire_sound = 'sound/weapons/eLuger.ogg'
+	fire_sound = SFX_WEAPONS_ELUGER
 
 	projectile_type = /obj/item/projectile/beam/medigun
 
@@ -397,7 +397,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/floragun, INTERACT_VERB("Select Gene", 
 	name = "9000-series Ball Lightning Taser"
 	desc = "The brainchild of Hephaestus Industries Civil Pacification Division, the BLT-9000 was intended for riot control but despite enthusiastic interest from law-enforcement agencies across the Commonwealth and beyond, its indiscriminate nature led to it being banned from civilian use in virtually all jurisdictions. As a result, most pieces are found in the hands of collectors."
 	icon_state = "BFG"
-	fire_sound = 'sound/effects/phasein.ogg'
+	fire_sound = SFX_EFFECTS_PHASEIN
 	item_state = "mhdhowitzer"
 	wielded_item_state = "mhdhowitzer-wielded" //Placeholder
 	slot_flags = SLOT_BELT|SLOT_BACK
@@ -418,7 +418,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/floragun, INTERACT_VERB("Select Gene", 
 		handle_click_empty(user)
 		return
 
-	playsound(src, 'sound/weapons/chargeup.ogg', 100, 1)
+	play_sfx(src, SFX_WEAPONS_CHARGEUP)
 	spinning_up = TRUE
 	update_icon()
 	user.visible_message(span_notice("[user] starts charging the [src]!"), \
@@ -453,9 +453,9 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/floragun, INTERACT_VERB("Select Gene", 
 	spun = FALSE
 
 /obj/item/projectile/beam/stun/weak/BFG
-	fire_sound = 'sound/effects/sparks6.ogg'
-	hitsound = 'sound/effects/sparks4.ogg'
-	hitsound_wall = 'sound/effects/sparks7.ogg'
+	fire_sound = SFX_EFFECTS_SPARKS6
+	hitsound = SFX_EFFECTS_SPARKS4
+	hitsound_wall = SFX_EFFECTS_SPARKS7
 
 /obj/item/projectile/bullet/BFGtaser
 	name = "lightning ball"
@@ -465,8 +465,8 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/floragun, INTERACT_VERB("Select Gene", 
 	damage = 100
 	injury_kind = INJURY_PAIN
 	embed_chance = 0
-	hitsound = 'sound/weapons/zapbang.ogg'
-	hitsound_wall = 'sound/weapons/effects/searwall.ogg'
+	hitsound = SFX_WEAPONS_ZAPBANG
+	hitsound_wall = SFX_WEAPONS_EFFECTS_SEARWALL
 	var/zaptype = /obj/item/projectile/beam/stun/weak/BFG
 
 /obj/item/projectile/bullet/BFGtaser/periodic_step()
@@ -509,7 +509,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/floragun, INTERACT_VERB("Select Gene", 
 /obj/item/projectile/energy/plasmastun/slow
 	name = "plasma pulse"
 	icon_state = "plasma_stun"
-	fire_sound = 'sound/weapons/weaponsounds_laserstrong.ogg'
+	fire_sound = SFX_WEAPONS_WEAPONSOUNDS_LASERSTRONG
 	armor_penetration = 10
 	range = 9
 	damage = 0
@@ -538,7 +538,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/floragun, INTERACT_VERB("Select Gene", 
 	icon_state = "toxin"
 	damage = 0
 	hud_state = "pistol_tranq"
-	fire_sound = 'sound/weapons/taser.ogg'
+	fire_sound = SFX_WEAPONS_TASER
 	nodamage = 1
 	modifier_type_to_apply = /datum/body_effect/rednet
 	modifier_duration = 0.5 MINUTE
@@ -562,7 +562,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/floragun, INTERACT_VERB("Select Gene", 
 /obj/item/projectile/bullet/magnetic/supercannon/on_hit(atom/target, blocked = 0, def_zone = null)
 	if(istype(target,/turf/simulated/wall) || istype(target,/mob/living))
 		target.visible_message(span_danger("The [src] burns a perfect hole through \the [target] with a blinding flash!"))
-		playsound(target, 'sound/effects/teleport.ogg', 40, 0)
+		play_sfx(target, SFX_EFFECTS_TELEPORT)
 	return ..(target, blocked, def_zone)
 
 /obj/item/projectile/bullet/magnetic/supercannon/Bump(atom/target) //On hit doesnt work on turfs, gotta snowflake it. Why is on_hit() called by the target, NOT the proj?????
@@ -583,7 +583,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/floragun, INTERACT_VERB("Select Gene", 
 	item_state = "supercannon"
 	wielded_item_state = "supercannon-wielded"
 	w_class = ITEMSIZE_HUGE
-	fire_sound = 'sound/weapons/gunshot_cannon.ogg'
+	fire_sound = SFX_WEAPONS_GUNSHOT_CANNON
 	slot_flags = SLOT_BELT|SLOT_BACK
 	charge_cost = 2400 //You got 1 shot...
 	self_recharge = TRUE

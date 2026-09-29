@@ -9,8 +9,6 @@
 	circuit = /obj/item/circuitboard/message_monitor
 	//Server linked to.
 	var/obj/machinery/message_server/linkedServer
-	//Sparks effect - For emag
-	var/datum/effect/effect/system/spark_spread/spark_system = new /datum/effect/effect/system/spark_spread
 	//Messages - Saves me time if I want to change something.
 	var/noserver = list("text" = "ALERT: No server detected.", "style" = "alert")
 	var/incorrectkey = list("text" = "ALERT: Incorrect decryption key!", "style" = "warning")
@@ -29,7 +27,7 @@
 	var/list/temp = null
 
 /obj/machinery/computer/message_monitor/screwdriver_act(mob/living/user, obj/item/tool)
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return ..()
 	if(!istype(user))
 		return ITEM_INTERACT_BLOCKING
@@ -45,8 +43,7 @@
 	if(!emag && operable())
 		if(!isnull(linkedServer()))
 			emag = 1
-			spark_system.set_up(5, 0, src)
-			spark_system.start()
+			fx_sparks(src, 5, FALSE)
 			var/obj/item/paper/monitorkey/MK = new/obj/item/paper/monitorkey
 			MK.forceMove(loc)
 			// Will help make emagging the console not so easy to get away with.
@@ -160,7 +157,7 @@
 	effect = /obj/machinery/computer/message_monitor/proc/interaction_open_ui_impl
 
 /obj/machinery/computer/message_monitor/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return TRUE
 	if(!istype(user))
 		return TRUE

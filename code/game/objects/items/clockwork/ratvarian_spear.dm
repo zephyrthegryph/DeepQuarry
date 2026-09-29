@@ -13,5 +13,5 @@
 	edge = TRUE
 	injury_kind = INJURY_CUT
 	attack_verb = list("stabbed", "poked", "slashed")
-	hitsound = 'sound/weapons/bladeslice.ogg'
+	hitsound = SFX_WEAPONS_BLADESLICE
 	w_class = ITEMSIZE_HUGE

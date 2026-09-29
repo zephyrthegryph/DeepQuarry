@@ -29,10 +29,8 @@
 	req_access = list()
 	req_one_access = list()
 
-/obj/item/rig/ch/clockwork/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_MINING, POCKET_ENGINEERING, POCKET_HEAVYTOOLS, POCKET_BAYSUIT,  /obj/item/storage/backpack, /obj/item/ratvarian_spear
-		)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/rig/ch/clockwork, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_MINING, POCKET_ENGINEERING, POCKET_HEAVYTOOLS, POCKET_BAYSUIT,  /obj/item/storage/backpack, /obj/item/ratvarian_spear \
+		))))
 
 /obj/item/clothing/suit/space/rig/ch/clockwork
 	name = "cuirass"

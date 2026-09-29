@@ -151,13 +151,13 @@ REL_LIST(/obj/machinery/computer/area_atmos, connectedscrubbers)
 	name = "Heavy Scrubber Control"
 	zone = "This computer is operating industrial scrubbers nearby."
 	var/scrub_id = "generic"
-	var/last_scan = 0
+	EXPIRY_DECLARE(last_scan)
 
 /obj/machinery/computer/area_atmos/tag/scanscrubbers()
-	if(last_scan && world.time - last_scan < 20 SECONDS)
+	if(last_scan && ELAPSED(src, last_scan, CLOCK_WORLD) < 20 SECONDS)
 		return 0
 	else
-		last_scan = world.time
+		EXPIRY_STAMP(src, last_scan, CLOCK_WORLD)
 
 	rel_clear(src, "connectedscrubbers")
 

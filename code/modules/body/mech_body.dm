@@ -30,23 +30,21 @@
 
 /// Body parts in the order a hit reaches them. Armour and hull soak first; the rest are
 /// internal parts hit by chance.
-/datum/mech_body_plan/proc/part_order()
-	var/static/list/order = list(MECH_ARMOR, MECH_HULL, MECH_ACTUATOR, MECH_ELECTRIC, MECH_GAS)
-	return order
+TYPE_TABLE_DECLARE(/datum/mech_body_plan, part_order, list(MECH_ARMOR, MECH_HULL, MECH_ACTUATOR, MECH_ELECTRIC, MECH_GAS))
 
 /// The affliction flyweights, keyed by their MECHA_INT_* flag as text.
-/datum/mech_body_plan/proc/afflictions()
-	var/static/list/table
-	if(!table)
-		table = list()
-		for(var/path in subtypesof(/datum/mech_affliction))
-			var/datum/mech_affliction/A = new path
-			if(A.flag)
-				table["[A.flag]"] = A
+/proc/build_mech_affliction_flyweights()
+	var/list/table = list()
+	for(var/path in subtypesof(/datum/mech_affliction))
+		var/datum/mech_affliction/A = new path
+		if(A.flag)
+			table["[A.flag]"] = A
 	return table
 
+GLOBAL_TABLE(mech_affliction_flyweights, GLOBAL_PROC_REF(build_mech_affliction_flyweights))
+
 /datum/mech_body_plan/proc/affliction_for(flag)
-	return afflictions()["[flag]"]
+	return GLOBAL_TABLE_GET(mech_affliction_flyweights)["[flag]"]
 
 /// A body part (installed component) by slot, or null.
 /datum/mech_body_plan/proc/part(obj/mecha/host, slot)
@@ -102,7 +100,7 @@
 	var/obj/item/mecha_parts/component/armor/plates = part(host, MECH_ARMOR)
 	if(plates)
 		var/efficiency = plates.get_efficiency()
-		var/absorb = plates.damage_absorption[armor_key]
+		var/absorb = TYPE_TABLE_GET(plates, mecha_armor_absorption)[armor_key]
 		if(isnull(absorb))
 			absorb = 1
 		if(efficiency > 0.25)
@@ -117,7 +115,7 @@
 		hull.damage_part(hull_share, armor_key)
 		damage -= hull_share
 	// Internal parts: hit by chance, each taking a quarter.
-	for(var/slot in part_order())
+	for(var/slot in TYPE_TABLE_GET(src, part_order))
 		if(slot == MECH_ARMOR || slot == MECH_HULL)
 			continue
 		var/obj/item/mecha_parts/component/C = part(host, slot)
@@ -154,7 +152,7 @@
 			return 0
 		pass_damage *= factor
 		if(prob(25))
-			host.spark_system.start()
+			fx_sparks(host, 2, FALSE)
 		. = injure(host, pass_damage, injury_armor_key(P.injury_kind))
 		if(QDELETED(host))
 			return
@@ -307,7 +305,7 @@
 	. = list()
 	if(!LAZYLEN(host.afflictions))
 		return
-	var/list/table = afflictions()
+	var/list/table = GLOBAL_TABLE_GET(mech_affliction_flyweights)
 	for(var/key in table)
 		var/datum/mech_affliction/A = table[key]
 		if(A in host.afflictions)
@@ -415,6 +413,6 @@
 /// Sparks and burns out cell capacity.
 /datum/mech_affliction/short_circuit/tick(obj/mecha/host)
 	if(host.get_charge())
-		host.spark_system.start()
+		fx_sparks(host, 2, FALSE)
 		host.cell.charge -= min(20, host.cell.charge)
 		host.cell.maxcharge -= min(20, host.cell.maxcharge)

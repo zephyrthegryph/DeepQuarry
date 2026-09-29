@@ -30,13 +30,13 @@
 /obj/structure/gargoyle/Initialize(mapload, mob/living/carbon/human/H, ident_ovr, mat_ovr, adj_ovr, tint_ovr, revert = TRUE, discard_clothes)
 	. = ..()
 	if(isspace(loc) || isopenspace(loc))
-		anchored = FALSE
+		set_anchored(FALSE)
 	if(!istype(H) || !isturf(H.loc))
 		return
 	var/datum/trait_state/gargoyle/comp = H.get_trait_state(/datum/trait_state/gargoyle)
 	var/tint = "#FFFFFF"
 	if(comp)
-		comp.cooldown = world.time + (15 SECONDS)
+		EXPIRY_SET(comp, cooldown, (15 SECONDS), CLOCK_WORLD)
 		rel_set(comp, "statue", src)
 		comp.transformed = TRUE
 		comp.paused = FALSE
@@ -49,7 +49,7 @@
 	rel_set(src, "WR_gargoyle", H)
 
 	if(H.get_effective_size(TRUE) < 0.5) // "So small! I can step over it!"
-		density = FALSE
+		set_density(FALSE)
 
 	if(ident_ovr)
 		identifier = ident_ovr
@@ -186,7 +186,7 @@
 		return
 	var/datum/trait_state/gargoyle/comp = gargoyle.get_trait_state(/datum/trait_state/gargoyle)
 	if(comp)
-		comp.cooldown = world.time + (15 SECONDS)
+		EXPIRY_SET(comp, cooldown, (15 SECONDS), CLOCK_WORLD)
 		rel_clear(comp, "statue")
 		comp.transformed = FALSE
 	else
@@ -258,7 +258,7 @@
 	if(W.has_tool_quality(TOOL_WRENCH))
 		if(isspace(loc) || isopenspace(loc))
 			to_chat(user, span_warning("You can't anchor that here!"))
-			anchored = FALSE
+			set_anchored(FALSE)
 			return TRUE
 		var/was_anchored = anchored
 		use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WRENCH, volume = 50, receiver = src, on_done = PROC_REF(attackby_tool_done), done_args = list(user, was_anchored))
@@ -281,7 +281,7 @@
 
 /obj/structure/gargoyle/proc/attackby_tool_done(mob/living/user, was_anchored)
 	to_chat(user, span_notice("You [was_anchored ? "un" : ""]anchor the [src]."))
-	anchored = !anchored
+	set_anchored(!anchored)
 
 /obj/structure/gargoyle/set_dir(new_dir)
 	. = ..()

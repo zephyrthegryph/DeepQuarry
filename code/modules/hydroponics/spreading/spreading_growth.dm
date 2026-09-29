@@ -151,9 +151,9 @@
 		return
 
 	//move out to the destination
-	child.anchored = FALSE
+	child.set_anchored(FALSE)
 	child.Move(target_turf)	// Do a normal move, so we can cross and uncross things we need to. Stairs, Open space "falling", etc.
-	child.anchored = TRUE
+	child.set_anchored(TRUE)
 	child.update_icon()
 
 	// start: Pitcher plant spawning

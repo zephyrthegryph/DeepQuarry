@@ -93,7 +93,7 @@ DECLARE_INTERACTIONS(/obj/item/bluespace_harpoon, \
 	if(is_jammed(A) || is_jammed(user))
 		COOLDOWN_START(src, firable, 30 SECONDS)
 		to_chat(user,span_warning("\The [src] shot fizzles due to interference!"))
-		playsound(src, 'sound/weapons/wave.ogg', 60, 1)
+		play_sfx(src, SFX_WEAPONS_WAVE, vary = TRUE)
 		return
 	var/turf/T = get_turf(A)
 	if(!T || (T.check_density(ignore_mobs = TRUE) && mode == 1))
@@ -111,16 +111,12 @@ DECLARE_INTERACTIONS(/obj/item/bluespace_harpoon, \
 		return
 
 	COOLDOWN_START(src, firable, 30 SECONDS)
-	playsound(src, 'sound/weapons/wave.ogg', 60, 1)
+	play_sfx(src, SFX_WEAPONS_WAVE, vary = TRUE)
 
 	user.visible_message(span_warning("[user] fires \the [src]!"),span_warning("You fire \the [src]!"))
 
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-	s.set_up(4, 1, A)
-	s.start()
-	s = new /datum/effect/effect/system/spark_spread
-	s.set_up(4, 1, user)
-	s.start()
+	fx_sparks(A, 4)
+	fx_sparks(user, 4)
 
 	var/turf/FromTurf = mode ? get_turf(user) : get_turf(A)
 	var/turf/ToTurf = mode ? get_turf(A) : get_turf(user)

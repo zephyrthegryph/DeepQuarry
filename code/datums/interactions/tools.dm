@@ -31,7 +31,7 @@
 /// The last use_tool() call: its unscaled delay, quality, amount and volume. Parity tests read it; only unit tests write it.
 GLOBAL_LIST_EMPTY(dq_tool_last_use)
 
-/proc/use_tool(mob/actor, obj/item/tool, atom/target, datum/interaction/interaction, delay = 0, quality, tier = 1, amount = 0, volume = 50, message_self, message_others, datum/callback/extra_checks, silent = FALSE, datum/receiver, on_done, list/done_args, on_fail, list/fail_args, claims = FALSE, busy, job_type, list/job_params)
+/proc/use_tool(mob/actor, obj/item/tool, atom/target, datum/interaction/interaction, delay = 0, quality, tier = 1, amount = 0, volume = 50, start_self, start_others, datum/callback/extra_checks, silent = FALSE, datum/receiver, on_done, list/done_args, on_fail, list/fail_args, claims = FALSE, busy, job_type, list/job_params, start_feedback)
 	if(!actor || !target)
 		return FALSE
 	if(interaction)
@@ -39,10 +39,7 @@ GLOBAL_LIST_EMPTY(dq_tool_last_use)
 		tier = interaction.tool_tier
 		amount = interaction.tool_amount
 		volume = interaction.tool_volume
-		var/list/start = interaction.start_messages(actor, target, tool)
-		if(start)
-			message_self = start[1]
-			message_others = start[2]
+		start_feedback = interaction.start_feedback_for(actor, target, tool)
 #ifdef UNIT_TESTS
 	GLOB.dq_tool_last_use = list("delay" = interaction ? interaction.base_duration(actor, target) : delay, "quality" = quality, "amount" = amount, "volume" = volume)
 #endif
@@ -66,13 +63,10 @@ GLOBAL_LIST_EMPTY(dq_tool_last_use)
 	var/time = interaction ? interaction.duration_for(actor, target, tool) : tool_delay(actor, tool, delay, quality)
 
 	// 6a. Start messages (an interaction's only when it takes time).
-	if((message_self || message_others) && (!interaction || time > 0))
-		var/others_text = interaction ? interaction.fill_message(message_others, actor, target) : message_others
-		var/self_text = interaction ? interaction.fill_message(message_self, actor, target) : message_self
-		if(others_text)
-			actor.visible_message(span_notice(others_text), self_text ? span_notice(self_text) : null)
-		else if(self_text)
-			to_chat(actor, span_notice(self_text))
+	if(start_feedback && (!interaction || time > 0))
+		act_message_t(actor, target, start_feedback, tool)
+	else if(start_self || start_others)
+		act_message(actor, target, msg_span(start_self, "notice"), msg_span(start_others, "notice"), item = tool)
 
 	// 4. The wait: a tool job task, finished in use_tool_finish().
 	// A job with state is its own tool_job subtype (`job_type`, its vars in `job_params`); it

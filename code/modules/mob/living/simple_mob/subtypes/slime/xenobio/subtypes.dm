@@ -124,7 +124,7 @@
 	shock_resist = 1
 
 	projectiletype = /obj/item/projectile/beam/lightning/slime
-	projectilesound = 'sound/effects/lightningbolt.ogg'
+	projectilesound = SFX_EFFECTS_LIGHTNINGBOLT
 	glow_toggle = TRUE
 	player_msg = "You have a <b>ranged electric attack</b>. You also <b>shock enemies you attack</b>, and your electric stun attack charges passively.<br>\
 	You are also immune to shocking attacks."
@@ -155,7 +155,7 @@
 
 /obj/item/projectile/beam/lightning/slime
 	power = 10
-	fire_sound = 'sound/effects/lightningbolt.ogg'
+	fire_sound = SFX_EFFECTS_LIGHTNINGBOLT
 
 
 /mob/living/simple_mob/slime/xenobio/dark_purple/get_mechanics_info(list/additional_information)
@@ -183,7 +183,7 @@
 	fire_trigger_proc = TYPE_PROC_REF(/mob/living/simple_mob/slime/xenobio/dark_purple, ignite)
 
 /mob/living/simple_mob/slime/xenobio/dark_purple/proc/ignite()
-	visible_message(span_critical("\The [src] erupts in an inferno!"))
+	act_message(src, null, null, MSG_OTHERS(span_critical("%U% erupts in an inferno!")))
 	for(var/turf/simulated/target_turf in view(2, src))
 		target_turf.assume_gas(GAS_PHORON, 30, 1500+T0C)
 		target_turf.hotspot_expose(1500+T0C, 400)
@@ -292,7 +292,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/slime/xenobio/dark_purple, INTERACT_I
 
 /mob/living/simple_mob/slime/xenobio/silver/bullet_act(obj/item/projectile/P, def_zone)
 	if(istype(P,/obj/item/projectile/beam) || istype(P, /obj/item/projectile/energy))
-		visible_message(span_danger("\The [src] reflects \the [P]!"))
+		act_message(src, P, null, MSG_OTHERS(span_danger("%U% reflects %T%!")))
 
 		// Find a turf near or on the original location to bounce to
 		var/new_x = P.starting.x + pick(0, 0, 0, -1, 1, -2, 2)
@@ -358,21 +358,17 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/slime/xenobio/dark_purple, INTERACT_I
 	var/turf/target_turf = pick(valid_turfs)
 	var/turf/T = get_turf(src)
 
-	var/datum/effect/effect/system/spark_spread/s1 = new /datum/effect/effect/system/spark_spread
-	s1.set_up(5, 1, T)
-	var/datum/effect/effect/system/spark_spread/s2 = new /datum/effect/effect/system/spark_spread
-	s2.set_up(5, 1, target_turf)
 
 
 	T.visible_message(span_notice("\The [src] vanishes!"))
-	s1.start()
+	fx_sparks(T, 5)
 
 	forceMove(target_turf)
-	playsound(target_turf, 'sound/effects/phasein.ogg', 50, 1)
+	play_sfx(target_turf, SFX_EFFECTS_PHASEIN, 0.5)
 	to_chat(src, span_notice("You teleport to \the [target_turf]."))
 
 	target_turf.visible_message(span_warning("\The [src] appears!"))
-	s2.start()
+	fx_sparks(target_turf, 5)
 
 	if(Adjacent(A))
 		attack_target(A)
@@ -411,15 +407,15 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/slime/xenobio/dark_purple, INTERACT_I
 	if(isliving(A) && stance == I_HURT)
 		var/mob/living/L = A
 		if(L.mob_size <= MOB_MEDIUM)
-			visible_message(span_danger("\The [src] sends \the [L] flying with the impact!"))
-			playsound(src, "punch", 50, 1)
+			act_message(src, L, null, MSG_OTHERS(span_danger("%U% sends %T% flying with the impact!")))
+			play_sfx(src, SFX_PUNCH)
 			L.status_at_least(EFFECT_WEAKENED, 1)
 			var/throwdir = get_dir(src, L)
 			L.throw_at(get_edge_target_turf(L, throwdir), 3, 1, src)
 		else
 			to_chat(L, span_warning("\The [src] hits you with incredible force, but you remain in place."))
-			visible_message(span_danger("\The [src] hits \the [L] with incredible force, to no visible effect!"))
-			playsound(src, "punch", 50, 1)
+			act_message(src, L, null, MSG_OTHERS(span_danger("%U% hits %T% with incredible force, to no visible effect!")))
+			play_sfx(src, SFX_PUNCH)
 
 
 /mob/living/simple_mob/slime/xenobio/amber/get_mechanics_info(list/additional_information)

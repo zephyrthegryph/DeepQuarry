@@ -25,7 +25,7 @@ GLOBAL_REAL(logger, /datum/log_holder)
 	var/list/data_cache
 
 	/// Last time the ui_data was updated
-	var/last_data_update = 0
+	EXPIRY_DECLARE(last_data_update)
 
 	var/initialized = FALSE
 	var/shutdown = FALSE
@@ -72,7 +72,7 @@ ADMIN_VERB(log_viewer_new, R_ADMIN|R_MOD|R_DEBUG, "View Round Logs", "View the r
 	return data
 
 /datum/log_holder/tgui_data(mob/user)
-	if(!last_data_update || (world.time - last_data_update) > LOG_UPDATE_TIMEOUT)
+	if(!last_data_update || ELAPSED_SINCE(src, last_data_update, CLOCK_WORLD) > LOG_UPDATE_TIMEOUT)
 		cache_ui_data()
 	return data_cache || list()
 
@@ -88,7 +88,7 @@ ADMIN_VERB(log_viewer_new, R_ADMIN|R_MOD|R_DEBUG, "View Round Logs", "View the r
 		category_map[category.category] = category_data
 
 	LAZYCLEARLIST(data_cache)
-	last_data_update = world.time
+	EXPIRY_STAMP(src, last_data_update, CLOCK_WORLD)
 
 	LAZYSET(data_cache, "categories", category_map)
 	LAZYSET(data_cache, "last_data_update", last_data_update)
@@ -118,7 +118,7 @@ ADMIN_VERB(log_viewer_new, R_ADMIN|R_MOD|R_DEBUG, "View Round Logs", "View the r
 
 	human_readable_enabled = CONFIG_GET(flag/log_as_human_readable)
 
-	category_group_tree = assemble_log_category_tree()
+	category_group_tree = GLOBAL_TABLE_GET(log_category_tree)
 	var/config_flag
 	for(var/datum/log_category/master_category as anything in category_group_tree)
 		var/list/sub_categories = category_group_tree[master_category]
@@ -158,12 +158,8 @@ ADMIN_VERB(log_viewer_new, R_ADMIN|R_MOD|R_DEBUG, "View Round Logs", "View the r
 	shutdown = TRUE
 
 /// Iterates over all log category types to assemble them into a tree of main category -> (sub category)[] while also checking for loops and sanity errors
-/datum/log_holder/proc/assemble_log_category_tree()
-	var/static/list/category_tree
-	if(category_tree)
-		return category_tree
-
-	category_tree = list()
+/proc/build_log_category_tree()
+	var/list/category_tree = list()
 	var/list/all_types = subtypesof(/datum/log_category)
 	var/list/known_categories = list()
 	var/list/sub_categories = list()
@@ -196,6 +192,8 @@ ADMIN_VERB(log_viewer_new, R_ADMIN|R_MOD|R_DEBUG, "View Round Logs", "View the r
 			category_tree[master] += list(sub_category)
 
 	return category_tree
+
+GLOBAL_TABLE(log_category_tree, GLOBAL_PROC_REF(build_log_category_tree))
 
 /// Log entry header used to mark a file is being reset
 #define LOG_CATEGORY_RESET_FILE_MARKER "{\"LOG FILE RESET -- THIS IS AN ERROR\"}"

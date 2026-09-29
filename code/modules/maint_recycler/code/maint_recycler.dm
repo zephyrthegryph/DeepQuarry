@@ -21,7 +21,7 @@
 	use_power = USE_POWER_IDLE
 	idle_power_usage = 300
 	active_power_usage = 300
-	clicksound = 'code/modules/maint_recycler/sfx/typing.ogg'
+	clicksound = SFX_RECYCLER_TYPING
 
 	light_color = "#0f8f0f"
 
@@ -107,11 +107,7 @@
 		'code/modules/maint_recycler/sfx/voice/thankyou/the-ecosystem-thanks-you.ogg'
 	)
 
-	var/static/list/angry_sounds = list(
-		'code/modules/maint_recycler/sfx/voice/mad/denied.ogg',
-		'code/modules/maint_recycler/sfx/voice/mad/die die die die.ogg',
-		'code/modules/maint_recycler/sfx/voice/mad/this will not stand.ogg'
-	)
+	var/static/angry_sounds = SFX_RECYCLER_DENIED_MIX
 
 	///voice audio files filted via audacity:
 	/// * Rectifier distort @ 39
@@ -170,13 +166,13 @@ OWN(/obj/machinery/maint_recycler, inserted_item, OWN_SPILL)
 /obj/machinery/maint_recycler/crowbar_act(mob/user, obj/item/tool)
 	if(door_open)
 		return ..()
-	if(!(stat & (BROKEN | NOPOWER)))
+	if(operable())
 		to_chat(user, span_warning("\The [src]'s door won't budge!"))
 		return ITEM_INTERACT_BLOCKING
 	to_chat(user, span_warning("You lever \the [src]'s door open!"))
 	open_door(user)
 	eject_item(user)
-	playsound(src, 'sound/machines/door/airlock_creaking.ogg', 4, FALSE)
+	play_sfx(src, SFX_MACHINES_DOOR_AIRLOCK_CREAKING, 0.04, vary = FALSE)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/maint_recycler/declare_interactions(list/into)
@@ -250,7 +246,7 @@ OWN(/obj/machinery/maint_recycler, inserted_item, OWN_SPILL)
 				source.forceMove(src)
 				own_set(src, "inserted_item", source)
 				update_icon()
-				playsound(src, 'code/modules/maint_recycler/sfx/voice/a wonderful throw.ogg', 75)
+				play_sfx(src, SFX_RECYCLER_A_WONDERFUL_THROW)
 				set_screen_state("screen_happy",10)
 				return
 		else
@@ -262,10 +258,10 @@ OWN(/obj/machinery/maint_recycler, inserted_item, OWN_SPILL)
 	set_screen_state("screen_deny",10)
 	to_chat(user, span_warning("\The [src] rejects \the [O]!"))
 	if(prob(99))
-		playsound(src, 'code/modules/maint_recycler/sfx/generaldeny.ogg', 75, 1)
+		play_sfx(src, SFX_RECYCLER_GENERALDENY)
 		return
 	else
-		playsound(src, 'code/modules/maint_recycler/sfx/voice/mad/denied.ogg', 75)
+		play_sfx(src, SFX_RECYCLER_DENIED)
 
 //add people to the evil list, and be mean to them
 /obj/machinery/maint_recycler/proc/evil_act(obj/item/O,mob/user)
@@ -281,7 +277,7 @@ OWN(/obj/machinery/maint_recycler, inserted_item, OWN_SPILL)
 		if(!isRepeat) GLOB.global_announcer.autosay("PROPERTY DESTRUCTION ALERT: Crewmember [user] has been recorded attempting to destroy high priority station equipment in [get_area(src)]. Please ensure the integrity of \the [O].", "[src]", "Security")
 		audible_message("[src] states, \"CRIMINAL INTENT DETECTED.\" ", "\The [src]'s screen briefly flashes to an angry red graphic!" , runemessage = ">:(")
 
-	playsound(src,pick(angry_sounds),80)
+	playsound(src,angry_sounds,80)
 	set_screen_state("screen_mad",30)
 
 	om_after(src, 0.3 SECONDS, PROC_REF(shoot_at), user)
@@ -292,14 +288,14 @@ OWN(/obj/machinery/maint_recycler, inserted_item, OWN_SPILL)
 	if(!door_open || door_locked) return
 	door_moving = TRUE
 	flick("door closing",hatch)
-	playsound(src, 'code/modules/maint_recycler/sfx/hatchclose.ogg', 40, 1)
+	play_sfx(src, SFX_RECYCLER_HATCHCLOSE)
 	om_after(src, 1 SECOND, PROC_REF(door_finished_moving), FALSE)
 
 /obj/machinery/maint_recycler/proc/open_door(mob/user)
 	if(door_open || door_locked) return
 	door_moving = TRUE
 	flick("door opening",hatch)
-	playsound(src, 'code/modules/maint_recycler/sfx/hatchopen.ogg', 40, 1)
+	play_sfx(src, SFX_RECYCLER_HATCHOPEN)
 	om_after(src, 1 SECOND, PROC_REF(door_finished_moving), TRUE)
 
 /obj/machinery/maint_recycler/proc/door_finished_moving(open)
@@ -318,7 +314,7 @@ OWN(/obj/machinery/maint_recycler, inserted_item, OWN_SPILL)
 /obj/machinery/maint_recycler/proc/shoot(mob/victim)
 	var/projectile = /obj/item/projectile/beam/stun
 	var/obj/item/projectile/P = new projectile(loc)
-	playsound(src, 'sound/weapons/taser.ogg', 30, 1)
+	play_sfx(src, SFX_WEAPONS_TASER)
 	P.old_style_target(victim)
 	P.fire()
 
@@ -355,7 +351,7 @@ OWN(/obj/machinery/maint_recycler, inserted_item, OWN_SPILL)
 		to_chat(user, span_warning("\The [src] doesn't have anything to recycle!"))
 		return //sanity check
 	door_locked = TRUE
-	playsound(src, 'code/modules/maint_recycler/sfx/recycle_act.ogg', 50)
+	play_sfx(src, SFX_RECYCLER_RECYCLE_ACT)
 	set_screen_state("screen_recycle",20)
 	om_after(src, 2 SECONDS, PROC_REF(post_recycle), user)
 
@@ -534,8 +530,8 @@ UTILITY PROCS
 	return .
 
 /obj/machinery/maint_recycler/power_change()
-	..()
-	if(stat & NOPOWER)
+	. = ..()
+	if(has_stat(NOPOWER))
 		set_on_state(FALSE)
 
 /obj/machinery/maint_recycler/proc/set_screen_state(state, duration = 10)
@@ -553,11 +549,11 @@ UTILITY PROCS
 	if(is_on == state) return
 	is_on = state
 	if(is_on)
-		playsound(src, 'code/modules/maint_recycler/sfx/initialBoot.ogg', 20, 1)
+		play_sfx(src, SFX_RECYCLER_INITIALBOOT)
 		set_light(light_range_on, light_power_on)
 		monitor_screen.icon_state = "screen_default"
 	else
-		playsound(src, 'sound/machines/terminal_off.ogg', 50, 1)
+		play_sfx(src, SFX_MACHINES_TERMINAL_OFF)
 		set_light(0)
 		monitor_screen.icon_state = "screen_off"
 

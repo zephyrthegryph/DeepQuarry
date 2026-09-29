@@ -31,26 +31,25 @@
 	// The slot IS the occupant: read it with SLOT_ITEM(holder, slot_id).
 
 
-
 // structured TGUI ImplantChair (see
 // code/modules/admin/implant_chair_panel.dm).
 
-/obj/machinery/implantchair/Topic(href, href_list)
-	if((get_dist(src, usr) <= 1) || isAI(usr))
-		if(href_list["implant"])
-			if(src?.slot_item(OCCUPANT_SLOT_IMPLANT_CHAIR))
-				injecting = 1
-				go_out()
-				ready = 0
-				om_after(src, injection_cooldown, PROC_REF(set_ready))
-
-		if(href_list["replenish"])
-			ready = 0
-			om_after(src, replenish_cooldown, PROC_REF(replenished))
-
-		src.updateUsrDialog(usr)
-		src.add_fingerprint(usr)
+/obj/machinery/implantchair/proc/start_implant(mob/user)
+	if(get_dist(src, user) > 1 && !isAI(user))
 		return
+	if(src?.slot_item(OCCUPANT_SLOT_IMPLANT_CHAIR))
+		injecting = 1
+		go_out()
+		ready = 0
+		om_after(src, injection_cooldown, PROC_REF(set_ready))
+	add_fingerprint(user)
+
+/obj/machinery/implantchair/proc/start_replenish(mob/user)
+	if(get_dist(src, user) > 1 && !isAI(user))
+		return
+	ready = 0
+	om_after(src, replenish_cooldown, PROC_REF(replenished))
+	add_fingerprint(user)
 
 
 /obj/machinery/implantchair/declare_interactions(list/into)
@@ -157,7 +156,7 @@
 	effect = /obj/machinery/implantchair/proc/interaction_move_inside
 
 /obj/machinery/implantchair/proc/interaction_move_inside(mob/user, obj/item/held, datum/interaction/interaction)
-	if(user.stat != 0 || stat & (NOPOWER|BROKEN))
+	if(user.stat != 0 || !operable())
 		return TRUE
 	put_mob(user)
 	return TRUE

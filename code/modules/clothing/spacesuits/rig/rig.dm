@@ -33,7 +33,7 @@
 	var/ai_interface_path = "RIGSuit"
 	var/interface_title = "Hardsuit Controller"
 	var/interface_intro = "NT"
-	var/wearer_move_delay //Used for AI moving.
+	EXPIRY_DECLARE(wearer_move_delay) //Used for AI moving.
 	var/ai_controlled_move_delay = 10
 
 	// Keeps track of what this rig should spawn with.
@@ -93,7 +93,6 @@
 	var/emp_protection = 0
 	item_flags = PHORONGUARD // add
 
-	var/datum/effect/effect/system/spark_spread/spark_system
 	var/datum/mini_hud/rig/minihud
 
 	// Decomposed subsystems — see rig_power_system.dm and rig_component_registry.dm
@@ -109,7 +108,6 @@
 	permeability_coefficient = 0  //Protect the squishies, after all this shit should be waterproof.
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 
-DECLARE_DEFAULT_CHILD(/obj/item/rig, "spark_system", /datum/effect/effect/system/spark_spread)
 DECLARE_DEFAULT_CHILD(/obj/item/rig, "power_system", /datum/rig_power_system)
 DECLARE_DEFAULT_CHILD(/obj/item/rig, "component_registry", /datum/rig_component_registry)
 
@@ -122,9 +120,6 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig, "component_registry", /datum/rig_component_
 
 	if(!LAZYLEN(req_access) && !LAZYLEN(req_one_access))
 		locked = 0
-
-	spark_system.set_up(5, 0, src)
-	spark_system.attach(src)
 
 	// Instantiate the decomposed subsystems.
 	power_system.cooling_on              = cooling_on
@@ -287,7 +282,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig, "component_registry", /datum/rig_component_
 
 	if(!seal_target && !suit_is_deployed())
 		M.visible_message(span_danger("[M]'s suit flashes an error light."),span_danger("Your suit flashes an error light. It can't function properly without being fully deployed."))
-		playsound(src, 'sound/machines/rig/rigerror.ogg', 20, FALSE)
+		play_sfx(src, SFX_MACHINES_RIG_RIGERROR)
 		seal_finish(M, seal_target, booting_L, booting_R, TRUE)
 		return 0
 
@@ -317,7 +312,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig, "component_registry", /datum/rig_component_
 	var/mob/living/carbon/human/M = task.actor
 	if(M)
 		to_chat(M, span_warning("You must remain still while the suit is adjusting the components."))
-		playsound(src, 'sound/machines/rig/rigerror.ogg', 20, FALSE)
+		play_sfx(src, SFX_MACHINES_RIG_RIGERROR)
 	seal_finish(M, task.seal_target, task.booting_L, task.booting_R, TRUE)
 
 /obj/item/rig/proc/seal_stage_done(datum/om/task/timed/rig_seal/task)
@@ -382,7 +377,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig, "component_registry", /datum/rig_component_
 	else
 		piece.set_armor_value("bio", src.get_armor().value("bio"))
 	piece.worn_protection_changed()
-	playsound(src,'sound/machines/rig/rigservo.ogg', 10, FALSE)
+	play_sfx(src, SFX_MACHINES_RIG_RIGSERVO)
 
 /obj/item/rig/proc/seal_finish(mob/living/carbon/human/M, seal_target, atom/movable/screen/rig_booting/booting_L, atom/movable/screen/rig_booting/booting_R, failed_to_seal)
 	if(!failed_to_seal)
@@ -413,7 +408,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig, "component_registry", /datum/rig_component_
 		else
 			own_set(src, "minihud", new /datum/mini_hud/rig (M.hud_used, src))
 	to_chat(M, span_boldnotice("Your entire suit [canremove ? "loosens as the components relax" : "tightens around you as the components lock into place"]."))
-	playsound(src, 'sound/machines/rig/rigstarted.ogg', 10, FALSE)
+	play_sfx(src, SFX_MACHINES_RIG_RIGSTARTED)
 	M.client?.screen -= booting_L
 	qdel(booting_L)
 	booting_R.icon_state = "boot_done"
@@ -542,7 +537,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig, "component_registry", /datum/rig_component_
 
 	if(fail_msg)
 		to_chat(user, fail_msg)
-		playsound(src, 'sound/machines/rig/rigerror.ogg', 20, FALSE)
+		play_sfx(src, SFX_MACHINES_RIG_RIGERROR)
 		return 0
 
 	// This is largely for cancelling stealth and whatever.
@@ -712,7 +707,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig, "component_registry", /datum/rig_component_
 				if(istype(holder))
 					if(use_obj && check_slot == use_obj)
 						balloon_alert(H, "your [use_obj.name] [use_obj.gender == PLURAL ? "retract" : "retracts"] swiftly.")
-						playsound(src, 'sound/machines/rig/rigservo.ogg', 10, FALSE)
+						play_sfx(src, SFX_MACHINES_RIG_RIGSERVO)
 						rel_clear(use_obj, "master_rig")   // intentional retract: silence the dropped() safety net
 						use_obj.canremove = TRUE
 						holder.drop_from_inventory(use_obj)
@@ -733,7 +728,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig, "component_registry", /datum/rig_component_
 			else
 				rel_set(use_obj, "master_rig", src)   // the piece now knows its controller, so it can free itself
 				balloon_alert(H, "your [use_obj.name] [use_obj.gender == PLURAL ? "deploy" : "deploys"] swiftly.")
-				playsound(src, 'sound/machines/rig/rigservo.ogg', 10, FALSE)
+				play_sfx(src, SFX_MACHINES_RIG_RIGSERVO)
 
 	if(piece == "helmet" && helmet?.light_system == STATIC_LIGHT)
 		helmet.update_light()
@@ -799,7 +794,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig, "component_registry", /datum/rig_component_
 
 /obj/item/rig/proc/shock(mob/user)
 	if (electrocute_mob(user, cell, src)) //electrocute_mob() handles removing charge from the cell, no need to do that here.
-		spark_system.start()
+		fx_sparks(src, 5, FALSE)
 		if(user.has_status(EFFECT_STUNNED))
 			return 1
 	return 0
@@ -953,7 +948,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig, "component_registry", /datum/rig_component_
 	if(istype(wearer()?.buckled_to(), /obj/vehicle))
 		//manually set move_delay for vehicles so we don't inherit any mob movement penalties
 		//specific vehicle move delays are set in code\modules\vehicles\vehicle.dm
-		wearer_move_delay = world.time
+		EXPIRY_STAMP(src, wearer_move_delay, CLOCK_WORLD)
 		var/atom/movable/_tmp_buck_13 = wearer()?.buckled_to()
 		return _tmp_buck_13.relaymove(wearer(), direction)
 

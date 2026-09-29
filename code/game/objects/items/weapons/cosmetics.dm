@@ -8,8 +8,8 @@
 	slot_flags = SLOT_EARS
 	var/colour = "red"
 	var/open = 0
-	drop_sound = 'sound/items/drop/glass.ogg'
-	pickup_sound = 'sound/items/pickup/glass.ogg'
+	drop_sound = SFX_ITEMS_DROP_GLASS
+	pickup_sound = SFX_ITEMS_PICKUP_GLASS
 
 /obj/item/lipstick/purple
 	name = "purple lipstick"
@@ -53,14 +53,14 @@ DECLARE_INTERACTIONS(/obj/item/lipstick, INTERACT_USE(null, PROC_REF(interaction
 			to_chat(user, span_notice("You need to wipe off the old lipstick first!"))
 			return ITEM_INTERACT_FAILURE
 		if(H == user)
-			user.visible_message(span_notice("[user] does their lips with \the [src]."), \
-									span_notice("You take a moment to apply \the [src]. Perfect!"))
+			act_message(user, src, MSG_SELF(span_notice("You take a moment to apply %T%. Perfect!")), \
+				MSG_OTHERS(span_notice("%U% does their lips with %T%.")))
 			H.lip_style = colour
 			H.update_icons_body()
 			return ITEM_INTERACT_SUCCESS
 		else
-			user.visible_message(span_warning("[user] begins to do [H]'s lips with \the [src]."), \
-									span_notice("You begin to apply \the [src]."))
+			act_message(user, src, MSG_SELF(span_notice("You begin to apply %T%.")), \
+				MSG_OTHERS(span_warning("%U% begins to do [H]'s lips with %T%.")))
 			om_task_timed(user, 2 SECONDS, target = H, receiver = src, on_done = PROC_REF(attack_timed_done), done_args = list(user, H))
 			return ITEM_INTERACT_SUCCESS
 	else
@@ -68,8 +68,8 @@ DECLARE_INTERACTIONS(/obj/item/lipstick, INTERACT_USE(null, PROC_REF(interaction
 		return ITEM_INTERACT_FAILURE
 
 /obj/item/lipstick/proc/attack_timed_done(mob/living/user, mob/living/carbon/human/H)
-	user.visible_message(span_notice("[user] does [H]'s lips with \the [src]."), \
-							span_notice("You apply \the [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You apply %T%.")), \
+		MSG_OTHERS(span_notice("%U% does [H]'s lips with %T%.")))
 	H.lip_style = colour
 	H.update_icons_body()
 	return ITEM_INTERACT_SUCCESS
@@ -102,7 +102,7 @@ DECLARE_INTERACTIONS(/obj/item/haircomb, INTERACT_USE(null, PROC_REF(interaction
 				text = "guy"
 			if(FEMALE)
 				text = "lady"
-	user.visible_message(span_notice("[user] uses [src] to comb their hair with incredible style and sophistication. What a [text]."))
+	act_message(user, src, others = span_notice("%U% uses %T% to comb their hair with incredible style and sophistication. What a [text]."))
 	return TRUE
 
 /obj/item/makeover

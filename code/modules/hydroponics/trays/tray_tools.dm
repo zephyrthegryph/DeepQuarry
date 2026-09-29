@@ -28,8 +28,8 @@
 	item_state = "analyzer"
 	var/datum/seed/last_seed
 	var/list/last_reagents
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 	special_handling = TRUE
 
 

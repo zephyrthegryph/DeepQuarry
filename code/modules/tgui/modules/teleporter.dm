@@ -45,7 +45,7 @@
 				else
 					var/mob/M = I.loc
 					if(M.stat == 2)
-						if(M.timeofdeath + 6000 < world.time)
+						if(ELAPSED(M, timeofdeath, CLOCK_WORLD) > 10 MINUTES)
 							continue
 					var/turf/T = get_turf(M)
 					if(!T)

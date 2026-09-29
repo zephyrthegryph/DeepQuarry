@@ -128,6 +128,10 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 /// Points source.var_name (a single REF view) at `target`, or clears it with null. A pair view
 /// sets the partner's side too; the old partner stops naming source. Returns the target.
 /proc/rel_set(datum/source, var_name, datum/target)
+	// Nothing changes (e.g. New() linking null into an empty view): no table needed, which also
+	// keeps datums made during global init (before the shared caches exist) off the table.
+	if(source.vars[var_name] == target)
+		return target
 	var/list/entry = _rel_entry(source, var_name)
 	if(!entry)
 		source.vars[var_name] = target // ALLOW(api, ownership): undeclared view, reported above

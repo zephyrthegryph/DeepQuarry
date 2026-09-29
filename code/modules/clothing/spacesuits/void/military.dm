@@ -33,8 +33,7 @@
 	item_state_slots = null
 	light_overlay = "helmet_light_dual"
 
-/obj/item/clothing/head/helmet/space/void/merc/odst/fit_constraint()
-	return null
+TYPE_TABLE(/obj/item/clothing/head/helmet/space/void/merc/odst, fit_spec, null)
 
 /obj/item/clothing/suit/space/void/merc/odst
 	name = "ODST Armor"
@@ -45,5 +44,4 @@
 	breach_threshold = 16 //Extra Thicc
 	resilience = 0.05 //Military Armor
 
-/obj/item/clothing/suit/space/void/merc/odst/fit_constraint()
-	return null
+TYPE_TABLE(/obj/item/clothing/suit/space/void/merc/odst, fit_spec, null)

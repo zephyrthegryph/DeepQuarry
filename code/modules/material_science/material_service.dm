@@ -29,14 +29,14 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 /datum/reagent/acid/polyacid
 	material_corrosivity = 1.6
 
-/proc/material_corrosive_gases()
-	var/static/list/types
-	if(!types)
-		types = list()
-		for(var/datum/gas/gas_type as anything in subtypesof(/datum/gas))
-			if(initial(gas_type.material_corrosivity))
-				types += gas_type
+/proc/build_material_corrosive_gases()
+	var/list/types = list()
+	for(var/datum/gas/gas_type as anything in subtypesof(/datum/gas))
+		if(initial(gas_type.material_corrosivity))
+			types += gas_type
 	return types
+
+GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_gases))
 
 /obj
 	var/datum/material_service/material_service
@@ -185,7 +185,7 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	var/temperature = T20C
 	var/buffer_energy = 0
 	var/chemical_rate = 0
-	var/chemical_last_update = 0
+	EXPIRY_DECLARE(chemical_last_update)
 	var/input_joules = 0
 	var/output_joules = 0
 	var/loss_joules = 0
@@ -214,8 +214,8 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	rel_set(src, "owner", assembly)
 	if(!owner().material_assembly_id)
 		owner().material_assembly_id = "ME-[++GLOB.next_material_assembly_id]"
-	last_update = world.time
-	chemical_last_update = world.time
+	EXPIRY_STAMP(src, last_update, CLOCK_WORLD)
+	EXPIRY_STAMP(src, chemical_last_update, CLOCK_WORLD)
 	initialize_thermal_stock()
 	register_diagnostics()
 	schedule(1 SECOND)
@@ -290,7 +290,7 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	// Sleeping means the previous environment had no continuing effect. Do not
 	// charge minutes spent asleep against a newly hot or corrosive mixture.
 	if(!active && !timer)
-		last_update = world.time
+		EXPIRY_STAMP(src, last_update, CLOCK_WORLD)
 	if(topology_changed)
 		watches_dirty = TRUE
 	schedule(active && !topology_changed ? MATERIAL_SERVICE_INTERVAL : 0)
@@ -407,7 +407,7 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 
 /datum/material_service/proc/settle_chemical()
 	var/elapsed = max(0, (world.time - chemical_last_update) / 10)
-	chemical_last_update = world.time
+	EXPIRY_STAMP(src, chemical_last_update, CLOCK_WORLD)
 	if(chemical_rate && elapsed)
 		owner().material_environment_liner_integrity = max(0, owner().material_environment_liner_integrity - chemical_rate * elapsed)
 		if(owner().material_environment_liner_integrity <= 0)
@@ -504,7 +504,7 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	var/elapsed = has_sampled ? clamp((world.time - last_update) / 10, 0, MATERIAL_SERVICE_MAX_ELAPSED) : 0
 	has_sampled = TRUE
 	settle_chemical()
-	last_update = world.time
+	EXPIRY_STAMP(src, last_update, CLOCK_WORLD)
 	if(QDELETED(owner()))
 		updating = FALSE
 		return

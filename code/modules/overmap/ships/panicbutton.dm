@@ -44,7 +44,7 @@ DECLARE_INTERACTIONS(/obj/structure/panic_button, INTERACT_HAND_AS(I_HURT, "Smas
 		if(interaction.stance == I_HURT)
 			user.automatic_custom_emote(VISIBLE_MESSAGE, "smashes the glass on [src]!")
 			glass = FALSE
-			playsound(src, 'sound/effects/hit_on_shattered_glass.ogg')
+			play_sfx(src, SFX_EFFECTS_HIT_ON_SHATTERED_GLASS, volume = 0, vary = FALSE)
 			update_icon()
 		else
 			user.automatic_custom_emote(VISIBLE_MESSAGE, "pats [src] in a friendly manner.")
@@ -53,7 +53,7 @@ DECLARE_INTERACTIONS(/obj/structure/panic_button, INTERACT_HAND_AS(I_HURT, "Smas
 	else
 		user.automatic_custom_emote(VISIBLE_MESSAGE, "pushes the button on [src]!")
 		launch(user)
-		playsound(src, get_sfx("button"))
+		playsound(src, get_sfx(SFX_BUTTON))
 		update_icon()
 	return TRUE
 

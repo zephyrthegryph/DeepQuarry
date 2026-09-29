@@ -36,7 +36,7 @@
 
 	switch(ptype)
 		if(DISPOSAL_PIPE_BIN, DISPOSAL_PIPE_OUTLET, DISPOSAL_PIPE_CHUTE)
-			density = TRUE
+			set_density(TRUE)
 		if(DISPOSAL_PIPE_SORTER, DISPOSAL_PIPE_SORTER_FLIPPED)
 			subtype = newsubtype
 
@@ -233,12 +233,12 @@ EXTEND_INTERACTIONS(/obj/structure/disposalconstruct, INTERACT_VERB("Flip Pipe",
 	var/obj/structure/disposalpipe/CP = locate_on(T, /obj/structure/disposalpipe)
 
 	if(anchored)
-		anchored = FALSE
+		set_anchored(FALSE)
 		if(ispipe)
 			level = 2
-			density = FALSE
+			set_density(FALSE)
 		else
-			density = TRUE
+			set_density(TRUE)
 		to_chat(user, "You detach the [nicetype] from the underfloor.")
 	else
 		if(!ispipe)
@@ -254,12 +254,12 @@ EXTEND_INTERACTIONS(/obj/structure/disposalconstruct, INTERACT_VERB("Flip Pipe",
 				to_chat(user, "There is already a [nicetype] at that location.")
 				return ITEM_INTERACT_BLOCKING
 
-		anchored = TRUE
+		set_anchored(TRUE)
 		if(ispipe)
 			level = 1
-			density = FALSE
+			set_density(FALSE)
 		else
-			density = TRUE
+			set_density(TRUE)
 		to_chat(user, "You attach the [nicetype] to the underfloor.")
 	playsound(src, I.usesound, 100, 1)
 	update()
@@ -276,7 +276,7 @@ EXTEND_INTERACTIONS(/obj/structure/disposalconstruct, INTERACT_VERB("Flip Pipe",
 	if(!anchored)
 		to_chat(user, "You need to attach it to the plating first!")
 		return ITEM_INTERACT_BLOCKING
-	use_tool(user, I, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 100, message_self = "Welding the [nicetype] in place.", receiver = src, job_type = /datum/om/task/timed/tool_job/disposal_weld, job_params = list("nicetype" = nicetype, "ispipe" = ispipe))
+	use_tool(user, I, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 100, start_self = "Welding the [nicetype] in place.", receiver = src, job_type = /datum/om/task/timed/tool_job/disposal_weld, job_params = list("nicetype" = nicetype, "ispipe" = ispipe))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/disposalconstruct/proc/welder_act_tool_done(mob/user, nicetype, ispipe)
@@ -301,7 +301,7 @@ EXTEND_INTERACTIONS(/obj/structure/disposalconstruct, INTERACT_VERB("Flip Pipe",
 	else if(ptype == DISPOSAL_PIPE_BIN)
 		var/obj/machinery/disposal/P = new(src.loc)
 		transfer_fingerprints_to(P)
-		P.mode = 0
+		P.set_mode(0)
 	else if(ptype == DISPOSAL_PIPE_OUTLET)
 		var/obj/structure/disposaloutlet/P = new(src.loc)
 		transfer_fingerprints_to(P)

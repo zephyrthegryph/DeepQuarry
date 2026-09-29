@@ -10,8 +10,8 @@
 	var/audio = 0		//If you need to hear to get the message
 	var/listening = 0
 	var/datum/language/langset_static
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 /obj/item/universal_translator/proc/language_chosen(datum/om/prompt/choice/ask)
 	if(listening)
@@ -102,8 +102,9 @@ DECLARE_INTERACTIONS(/obj/item/universal_translator, INTERACT_USE(null, PROC_REF
 /obj/item/universal_translator/limited
 	name = "handheld translator (galcom)"
 	desc = "This handy device appears to translate specific languages that it hears into onscreen text for a user."
-	var/list/known_languages = list(LANGUAGE_GALCOM) // ALLOW(instance_list): c: read-only per-subtype constant table (24 subtype overrides); a getter would share it, not worth it on a rare type
 	icon_state = "translator_small"
+
+TYPE_TABLE_DECLARE(/obj/item/universal_translator/limited, translator_languages, list(LANGUAGE_GALCOM))
 
 /obj/item/universal_translator/limited/hear_talk(mob/M, list/message_pieces, verb)
 	if(!listening || !istype(M))
@@ -129,7 +130,7 @@ DECLARE_INTERACTIONS(/obj/item/universal_translator, INTERACT_USE(null, PROC_REF
 	var/confirm = 0
 
 	for(var/datum/multilingual_say_piece/S in message_pieces)
-		if(S.speaking.name in known_languages)
+		if(S.speaking.name in TYPE_TABLE_GET(src, translator_languages))
 			confirm = 1
 			new_message += (S.message + " ")
 
@@ -145,99 +146,124 @@ DECLARE_INTERACTIONS(/obj/item/universal_translator, INTERACT_USE(null, PROC_REF
 
 /obj/item/universal_translator/limited/sol
 	name = "handheld translator (solcom)"
-	known_languages = list(LANGUAGE_SOL_COMMON)
+
+TYPE_TABLE(/obj/item/universal_translator/limited/sol, translator_languages, list(LANGUAGE_SOL_COMMON))
 
 /obj/item/universal_translator/limited/terminus
 	name = "handheld translator (terminus)"
-	known_languages = list(LANGUAGE_TERMINUS)
+
+TYPE_TABLE(/obj/item/universal_translator/limited/terminus, translator_languages, list(LANGUAGE_TERMINUS))
 
 /obj/item/universal_translator/limited/tradeband
 	name = "handheld translator (tradeband)"
-	known_languages = list(LANGUAGE_TRADEBAND)
+
+TYPE_TABLE(/obj/item/universal_translator/limited/tradeband, translator_languages, list(LANGUAGE_TRADEBAND))
 
 /obj/item/universal_translator/limited/gutterband
 	name = "handheld translator (gutterband)"
-	known_languages = list(LANGUAGE_GUTTER)
+
+TYPE_TABLE(/obj/item/universal_translator/limited/gutterband, translator_languages, list(LANGUAGE_GUTTER))
 
 /obj/item/universal_translator/limited/skrellian
 	name = "handheld translator (skrellian)"
-	known_languages = list(LANGUAGE_SKRELLIAN)
+
+TYPE_TABLE(/obj/item/universal_translator/limited/skrellian, translator_languages, list(LANGUAGE_SKRELLIAN))
 
 /obj/item/universal_translator/limited/unathi
 	name = "handheld translator (sinta'unathi)"
-	known_languages = list(LANGUAGE_UNATHI)
+
+TYPE_TABLE(/obj/item/universal_translator/limited/unathi, translator_languages, list(LANGUAGE_UNATHI))
 
 /obj/item/universal_translator/limited/siik
 	name = "handheld translator (siik)"
-	known_languages = list(LANGUAGE_SIIK)
+
+TYPE_TABLE(/obj/item/universal_translator/limited/siik, translator_languages, list(LANGUAGE_SIIK))
 
 /obj/item/universal_translator/limited/schechi
 	name = "handheld translator (schechi)"
-	known_languages = list(LANGUAGE_SCHECHI)
+
+TYPE_TABLE(/obj/item/universal_translator/limited/schechi, translator_languages, list(LANGUAGE_SCHECHI))
 
 /obj/item/universal_translator/limited/vedaqh
 	name = "handheld translator (vedaqh)"
-	known_languages = list(LANGUAGE_ZADDAT)
+
+TYPE_TABLE(/obj/item/universal_translator/limited/vedaqh, translator_languages, list(LANGUAGE_ZADDAT))
 
 /obj/item/universal_translator/limited/birdsong
 	name = "handheld translator (birdsong)"
-	known_languages = list(LANGUAGE_BIRDSONG)
+
+TYPE_TABLE(/obj/item/universal_translator/limited/birdsong, translator_languages, list(LANGUAGE_BIRDSONG))
 
 /obj/item/universal_translator/limited/sagaru
 	name = "handheld translator (sagaru)"
-	known_languages = list(LANGUAGE_SAGARU)
+
+TYPE_TABLE(/obj/item/universal_translator/limited/sagaru, translator_languages, list(LANGUAGE_SAGARU))
 
 /obj/item/universal_translator/limited/canilunzt
 	name = "handheld translator (canilunzt)"
-	known_languages = list(LANGUAGE_CANILUNZT)
+
+TYPE_TABLE(/obj/item/universal_translator/limited/canilunzt, translator_languages, list(LANGUAGE_CANILUNZT))
 
 /obj/item/universal_translator/limited/ecureuilian
 	name = "handheld translator (ecureuilian)"
-	known_languages = list(LANGUAGE_ECUREUILIAN)
+
+TYPE_TABLE(/obj/item/universal_translator/limited/ecureuilian, translator_languages, list(LANGUAGE_ECUREUILIAN))
 
 /obj/item/universal_translator/limited/daemon
 	name = "handheld translator (daemon)"
-	known_languages = list(LANGUAGE_DAEMON)
+
+TYPE_TABLE(/obj/item/universal_translator/limited/daemon, translator_languages, list(LANGUAGE_DAEMON))
 
 /obj/item/universal_translator/limited/enochian
 	name = "handheld translator (enochian)"
-	known_languages = list(LANGUAGE_ENOCHIAN)
+
+TYPE_TABLE(/obj/item/universal_translator/limited/enochian, translator_languages, list(LANGUAGE_ENOCHIAN))
 
 /obj/item/universal_translator/limited/vespinae
 	name = "handheld translator (vespinae)"
-	known_languages = list(LANGUAGE_VESPINAE)
+
+TYPE_TABLE(/obj/item/universal_translator/limited/vespinae, translator_languages, list(LANGUAGE_VESPINAE))
 
 /obj/item/universal_translator/limited/dragon
 	name = "handheld translator (d'rudak'ar)"
-	known_languages = list(LANGUAGE_DRUDAKAR)
+
+TYPE_TABLE(/obj/item/universal_translator/limited/dragon, translator_languages, list(LANGUAGE_DRUDAKAR))
 
 /obj/item/universal_translator/limited/spacer
 	name = "handheld translator (spacer)"
-	known_languages = list(LANGUAGE_SPACER)
+
+TYPE_TABLE(/obj/item/universal_translator/limited/spacer, translator_languages, list(LANGUAGE_SPACER))
 
 /obj/item/universal_translator/limited/tavan
 	name = "handheld translator (tavan)"
-	known_languages = list(LANGUAGE_TAVAN)
+
+TYPE_TABLE(/obj/item/universal_translator/limited/tavan, translator_languages, list(LANGUAGE_TAVAN))
 
 /obj/item/universal_translator/limited/echosong
 	name = "handheld translator (echo song)"
-	known_languages = list(LANGUAGE_ECHOSONG)
+
+TYPE_TABLE(/obj/item/universal_translator/limited/echosong, translator_languages, list(LANGUAGE_ECHOSONG))
 
 /obj/item/universal_translator/limited/akhani
 	name = "handheld translator (akhani)"
-	known_languages = list(LANGUAGE_AKHANI)
+
+TYPE_TABLE(/obj/item/universal_translator/limited/akhani, translator_languages, list(LANGUAGE_AKHANI))
 
 /obj/item/universal_translator/limited/alai
 	name = "handheld translator (alai)"
-	known_languages = list(LANGUAGE_ALAI)
+
+TYPE_TABLE(/obj/item/universal_translator/limited/alai, translator_languages, list(LANGUAGE_ALAI))
 
 /obj/item/universal_translator/limited/glamour  //Admin spawn only, just here for utility
 	name = "handheld translator (glamourspeak)"
-	known_languages = list(LANGUAGE_LLEILL)
+
+TYPE_TABLE(/obj/item/universal_translator/limited/glamour, translator_languages, list(LANGUAGE_LLEILL))
 
 /obj/item/universal_translator/limited/teppi  //Admin spawn only, just here for utility
 	name = "handheld translator (teppi)"
-	known_languages = list(LANGUAGE_TEPPI)
+
+
+TYPE_TABLE(/obj/item/universal_translator/limited/teppi, translator_languages, list(LANGUAGE_TEPPI))
 
 /// A shared definition (registered: never owned or cleared).
 /obj/item/universal_translator/proc/langset() as /datum/language

@@ -1,7 +1,6 @@
 /obj/machinery/portable_atmospherics/hydroponics/machine_step()
-	if(growth_timer)
-		om_cancel_timer(src, growth_timer)
-		growth_timer = null
+	if(om_timer_slot_pending(src, "growth_timer"))
+		om_cancel_timer_slot(src, "growth_timer")
 	if(frozen == 1)
 		return PROCESS_KILL
 
@@ -18,12 +17,12 @@
 	// Update values every cycle rather than every process() tick.
 	if(force_update)
 		force_update = 0
-	else if(world.time < (lastcycle + cycledelay))
+	else if(BEFORE(src, (lastcycle + cycledelay), CLOCK_WORLD))
 		if(!nearby_chemical_smoke && (!reagents || reagents.total_volume <= 0))
 			schedule_growth_wake()
 			return PROCESS_KILL
 		return
-	lastcycle = world.time
+	EXPIRY_STAMP(src, lastcycle, CLOCK_WORLD)
 
 	// Mutation level drops each main tick.
 	mutation_level -= rand(2,4)

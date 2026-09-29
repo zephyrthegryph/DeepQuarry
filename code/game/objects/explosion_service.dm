@@ -279,7 +279,7 @@ GLOBAL_DATUM_INIT(explosion_service, /datum/world_service/explosions, new)
 		var/max_range = max(best[2], best[3], best[4], best[5])
 		var/far_dist = best[3] * 5 + best[2] * 20
 		if(best_distance <= round(max_range + world.view - 2, 1))
-			M.playsound_local(epicenter, get_sfx("explosion"), 100, TRUE, get_rand_frequency(), falloff = 5)
+			M.playsound_local(epicenter, get_sfx(SFX_EXPLOSION), 100, TRUE, get_rand_frequency(), falloff = 5)
 			if(isliving(M))
 				var/mob/living/living_listener = M
 				living_listener.deaf_loop.start()

@@ -99,7 +99,7 @@
 	connected_port().on = 1 //Activate port updates
 	MACHINE_WAKE(connected_port())
 
-	anchored = TRUE //Prevent movement
+	set_anchored(TRUE) //Prevent movement
 
 	//Actually enforce the air sharing
 	connected_port().rust_attach_external_device(src)
@@ -112,11 +112,11 @@
 
 	connected_port().rust_detach_external_device()
 
-	anchored = FALSE
+	set_anchored(FALSE)
 
 	var/obj/machinery/atmospherics/portables_connector/old_port = connected_port()
 	rel_clear(old_port, "connected_device")
-	old_port.on = 0
+	old_port.set_on(0)
 	MACHINE_SLEEP(old_port)
 	rel_clear(src, "connected_port")
 	om_changed(src, CHANGE_MACHINE_SETTINGS)

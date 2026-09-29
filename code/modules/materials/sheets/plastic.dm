@@ -11,6 +11,6 @@
 	no_variants = FALSE
 	pass_color = TRUE
 	strict_color_stacking = TRUE
-	drop_sound = 'sound/items/drop/cardboardbox.ogg'
-	pickup_sound = 'sound/items/pickup/cardboardbox.ogg'
+	drop_sound = SFX_ITEMS_DROP_CARDBOARDBOX
+	pickup_sound = SFX_ITEMS_PICKUP_CARDBOARDBOX
 	resistance_flags = FLAMMABLE

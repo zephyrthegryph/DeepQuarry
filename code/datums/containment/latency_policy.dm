@@ -7,7 +7,8 @@
 /// Per-atom idle clock: world.time of the last materialize, move into a
 /// holder, or interaction. Reset on every one of those, so the sweep only
 /// offers atoms that have genuinely sat untouched.
-/atom/movable/var/tmp/latent_touched_at = 0
+/atom/movable
+	EXPIRY_TMP_DECLARE(latent_touched_at)
 
 /// world.time before which the sweep will not offer this atom again, set when
 /// latent_collapse() refused it although can_be_latent() passed. A refusal is a
@@ -38,7 +39,7 @@
  */
 /proc/dq_latent_touch(atom/movable/A)
 	if(A)
-		A.latent_touched_at = world.time
+		EXPIRY_STAMP(A, latent_touched_at, CLOCK_WORLD)
 
 // ---- Policy ----
 
@@ -83,7 +84,7 @@
 	if(record && record[LEDGER_E_SLOT] == CONTAINER_SLOT_STOCK)
 		return FALSE
 	var/delay = A.loc.latent_idle_delay
-	if(world.time < A.latent_touched_at + delay)
+	if(ELAPSED(A, latent_touched_at, CLOCK_WORLD) < delay)
 		return FALSE
 	return TRUE
 
@@ -153,6 +154,11 @@ GLOBAL_LIST_EMPTY(latency_policy_log)
 
 /// Checks per PERIODIC_SLOW frame (2 s): 32 per 4 s, as the reactor sweep spent.
 #define LATENCY_SWEEP_BUDGET 16
+/// Time a sweep frame may spend (ms). A collapse check scans the subtree's references and costs
+/// 5-25 ms on a full locker, so an unbounded frame over 16 holders ran ~275 ms in one tick every
+/// 2 s on Southern Cross. Past the budget the frame stops and the next frame resumes at the same
+/// holder (refused atoms are on cooldown and collapsed ones are gone, so nothing repeats).
+#define LATENCY_SWEEP_MS_BUDGET 4
 /// Shortest wait before the sweep re-offers an atom latent_collapse() refused.
 #define LATENCY_REFUSAL_BACKOFF_MIN (1 MINUTES)
 
@@ -203,7 +209,9 @@ GLOBAL_DATUM_INIT(latency_sweep, /datum/latency_sweep, new)
 	// so the indexes below stay valid for the whole frame.
 	var/list/keys = holders.Copy()
 	var/list/dead
-	while(checked < LATENCY_SWEEP_BUDGET && checked < count)
+	var/frame_start = TICK_USAGE_REAL
+	var/out_of_time = FALSE
+	while(checked < LATENCY_SWEEP_BUDGET && checked < count && !out_of_time)
 		var/atom/holder = keys[(index % count) + 1]
 		index++
 		checked++
@@ -213,6 +221,11 @@ GLOBAL_DATUM_INIT(latency_sweep, /datum/latency_sweep, new)
 		for(var/atom/movable/A as anything in holder.contents)
 			if(COOLDOWN_TIMELEFT(A, latent_refused_until))
 				continue
+			if(TICK_DELTA_TO_MS(TICK_USAGE_REAL - frame_start) >= LATENCY_SWEEP_MS_BUDGET)
+				// Resume at this holder next frame.
+				index--
+				out_of_time = TRUE
+				break
 			var/eligible = FALSE
 			try
 				eligible = can_be_latent(A)
@@ -237,6 +250,7 @@ GLOBAL_DATUM_INIT(latency_sweep, /datum/latency_sweep, new)
 	cursor = index % max(length(holders), 1)
 
 #undef LATENCY_SWEEP_BUDGET
+#undef LATENCY_SWEEP_MS_BUDGET
 #undef LATENCY_REFUSAL_BACKOFF_MIN
 
 // ---- Admin toggle (containment.md §4.7 "Safety") ----

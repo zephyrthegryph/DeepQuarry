@@ -18,7 +18,7 @@
 	VV_DROPDOWN_OPTION(VV_HK_EDIT_FILTERS, "Edit Filters")
 	VV_DROPDOWN_OPTION(VV_HK_TEST_MATRIXES, "Test Matrices")
 
-/// Admin var-edit questions about an atom (vv_do_topic()).
+/// Admin var-edit questions about an atom (its VV_TOPIC_ACTION rows).
 /datum/om/prompt/number/vv_edit
 	requires = PROMPT_ADMIN(R_VAREDIT)
 	min = -INFINITY
@@ -114,56 +114,50 @@
 	if(ask.text)
 		vv_auto_rename(src, ask.text)
 
-/atom/vv_do_topic(list/href_list)
-	. = ..()
+VV_TOPIC_ACTION(/atom, VV_HK_TRIGGER_EXPLOSION, PROC_REF(vv_topic_explosion))
+VV_TOPIC_ACTION(/atom, VV_HK_TRIGGER_EMP, PROC_REF(vv_topic_emp))
+VV_TOPIC_ACTION(/atom, VV_HK_MODIFY_TRANSFORM, PROC_REF(vv_topic_modify_transform), TOPIC_RIGHTS(R_VAREDIT))
+VV_TOPIC_ACTION(/atom, VV_HK_SPIN_ANIMATION, PROC_REF(vv_topic_spin_animation), TOPIC_RIGHTS(R_VAREDIT))
+VV_TOPIC_ACTION(/atom, VV_HK_STOP_ALL_ANIMATIONS, PROC_REF(vv_topic_stop_animations), TOPIC_RIGHTS(R_VAREDIT))
+VV_TOPIC_ACTION(/atom, VV_HK_AUTO_RENAME, PROC_REF(vv_topic_auto_rename), TOPIC_RIGHTS(R_VAREDIT))
+VV_TOPIC_ACTION(/atom, VV_HK_EDIT_FILTERS, PROC_REF(vv_topic_edit_filters), TOPIC_RIGHTS(R_VAREDIT))
+VV_TOPIC_ACTION(/atom, VV_HK_TEST_MATRIXES, PROC_REF(vv_topic_test_matrixes), TOPIC_RIGHTS(R_VAREDIT))
 
-	if(!.)
-		return
+/atom/proc/vv_topic_explosion(mob/user, list/args)
+	return SSadmin_verbs.dynamic_invoke_verb(user, /datum/admin_verb/admin_explosion, src)
 
-	if(href_list[VV_HK_TRIGGER_EXPLOSION])
-		return SSadmin_verbs.dynamic_invoke_verb(usr, /datum/admin_verb/admin_explosion, src)
+/atom/proc/vv_topic_emp(mob/user, list/args)
+	return SSadmin_verbs.dynamic_invoke_verb(user, /datum/admin_verb/admin_emp, src)
 
-	if(href_list[VV_HK_TRIGGER_EMP])
-		return SSadmin_verbs.dynamic_invoke_verb(usr, /datum/admin_verb/admin_emp, src)
+/atom/proc/vv_topic_modify_transform(mob/user, list/args)
+	om_flow_start(/datum/om/flow/vv_transform, user, src)
+	return TRUE
 
-	if(href_list[VV_HK_MODIFY_TRANSFORM])
-		if(!check_rights(R_VAREDIT))
-			return
-		om_flow_start(/datum/om/flow/vv_transform, usr, src)
+/atom/proc/vv_topic_spin_animation(mob/user, list/args)
+	om_flow_start(/datum/om/flow/vv_spin, user, src)
+	return TRUE
 
-	if(href_list[VV_HK_SPIN_ANIMATION])
-		if(!check_rights(R_VAREDIT))
-			return
-		om_flow_start(/datum/om/flow/vv_spin, usr, src)
+/atom/proc/vv_topic_stop_animations(mob/user, list/args)
+	om_ask(user, /datum/om/prompt/confirm, TYPE_PROC_REF(/atom, vv_stop_animations_answered), title = "Stop Animating", message = "Are you sure?", requires = PROMPT_ADMIN(R_VAREDIT))
+	return TRUE
 
-	if(href_list[VV_HK_STOP_ALL_ANIMATIONS])
-		if(!check_rights(R_VAREDIT))
-			return
-		om_ask(usr, /datum/om/prompt/confirm, TYPE_PROC_REF(/atom, vv_stop_animations_answered), title = "Stop Animating", message = "Are you sure?", requires = PROMPT_ADMIN(R_VAREDIT))
-		return
+/atom/proc/vv_topic_auto_rename(mob/user, list/args)
+	om_ask(user, /datum/om/prompt/text, TYPE_PROC_REF(/atom, vv_auto_rename_entered), title = "Automatic Rename", message = "What do you want to rename this to?", requires = PROMPT_ADMIN(R_VAREDIT))
+	return TRUE
 
-	if(href_list[VV_HK_AUTO_RENAME])
-		if(!check_rights(R_VAREDIT))
-			return
-		om_ask(usr, /datum/om/prompt/text, TYPE_PROC_REF(/atom, vv_auto_rename_entered), title = "Automatic Rename", message = "What do you want to rename this to?", requires = PROMPT_ADMIN(R_VAREDIT))
-		// Check the new name against the chat filter. If it triggers the IC chat filter, give an option to confirm.
-		//if(newname && !(is_ic_filtered(newname) || is_soft_ic_filtered(newname) && tgui_alert(usr, "Your selected name contains words restricted by IC chat filters. Confirm this new name?", "IC Chat Filter Conflict", list("Confirm", "Cancel")) != "Confirm"))
+/atom/proc/vv_topic_edit_filters(mob/user, list/args)
+	user.client?.open_filter_editor(src)
+	return TRUE
 
-	if(href_list[VV_HK_EDIT_FILTERS])
-		if(!check_rights(R_VAREDIT))
-			return
-		usr.client?.open_filter_editor(src)
-
-	if(href_list[VV_HK_TEST_MATRIXES])
-		if(!check_rights(R_VAREDIT))
-			return
-		usr.client?.open_matrix_tester(src)
+/atom/proc/vv_topic_test_matrixes(mob/user, list/args)
+	user.client?.open_matrix_tester(src)
+	return TRUE
 
 /atom/vv_get_header()
 	. = ..()
 	var/refid = REF(src)
 	. += "[VV_HREF_TARGETREF(refid, VV_HK_AUTO_RENAME, span_bold("<span id='name'>[src]</span>"))]"
-	. += "<br>" + span_small("<a href='byond://?_src_=vars;[HrefToken()];rotatedatum=[refid];rotatedir=left'><<</a> <a href='byond://?_src_=vars;[HrefToken()];datumedit=[refid];varnameedit=dir' id='dir'>[dir2text(dir) || dir]</a> <a href='byond://?_src_=vars;[HrefToken()];rotatedatum=[refid];rotatedir=right'>>></a>")
+	. += "<br>" + span_small("<a href='byond://?_src_=vars;[HrefToken()];rotatedatum=[refid];rotatedir=left'><<</a> [VV_HREF_TARGETREF_1V(refid, VV_HK_BASIC_EDIT, "[dir2text(dir) || dir]", "dir")] <a href='byond://?_src_=vars;[HrefToken()];rotatedatum=[refid];rotatedir=right'>>></a>")
 
 /**
  * call back when a var is edited on this atom

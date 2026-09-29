@@ -61,10 +61,10 @@
 	effect = /obj/machinery/computer/aiupload/proc/interaction_select_ai
 
 /obj/machinery/computer/aiupload/proc/interaction_select_ai(mob/user, obj/item/held, datum/interaction/interaction)
-	if(src.stat & NOPOWER)
+	if(src.has_stat(NOPOWER))
 		to_chat(user, "The upload computer has no power!")
 		return TRUE
-	if(src.stat & BROKEN)
+	if(src.has_stat(BROKEN))
 		to_chat(user, "The upload computer is broken!")
 		return TRUE
 
@@ -112,10 +112,10 @@
 	effect = /obj/machinery/computer/borgupload/proc/interaction_select_borg
 
 /obj/machinery/computer/borgupload/proc/interaction_select_borg(mob/user, obj/item/held, datum/interaction/interaction)
-	if(src.stat & NOPOWER)
+	if(src.has_stat(NOPOWER))
 		to_chat(user, "The upload computer has no power!")
 		return TRUE
-	if(src.stat & BROKEN)
+	if(src.has_stat(BROKEN))
 		to_chat(user, "The upload computer is broken!")
 		return TRUE
 

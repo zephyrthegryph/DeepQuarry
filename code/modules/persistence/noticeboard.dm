@@ -98,7 +98,7 @@
 	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/noticeboard/wrench_act(mob/user, obj/item/tool)
-	use_tool(user, tool, src, delay = 5 SECONDS, volume = 50, message_others = "[user] begins dismantling [src].", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
+	use_tool(user, tool, src, delay = 5 SECONDS, volume = 50, start_others = "[user] begins dismantling [src].", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/noticeboard/proc/wrench_act_tool_done(mob/user)

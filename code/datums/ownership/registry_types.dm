@@ -106,7 +106,7 @@ GLOBAL_LIST_INIT(registry_enum_procs, list(
 	return body_effect_def(D.type) // a def is made once per type and never replaced
 
 /proc/registry_body_factor_def(datum/body_factor_def/D)
-	var/list/defs = body_factor_defs()
+	var/list/defs = GLOBAL_TABLE_GET(body_factor_defs)
 	return (D.id > 0 && D.id <= length(defs)) ? defs[D.id] : null
 
 /proc/registry_language(datum/language/D)
@@ -128,7 +128,7 @@ GLOBAL_LIST_INIT(registry_enum_procs, list(
 	return D // every tgui state is a GLOB.tgui_*_state singleton; nothing else makes one
 
 /proc/registry_rule(datum/D)
-	return dq_rules()[D.type]
+	return GLOBAL_TABLE_GET(dq_rules)[D.type]
 
 /proc/registry_rule_type_table(datum/rule_type_table/D)
 	return dq_rule_table_for(D.rules) == D ? D : null

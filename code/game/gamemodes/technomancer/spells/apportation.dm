@@ -32,12 +32,8 @@
 		if(istype(hit_atom, /obj/item))
 			var/obj/item/I = hit_atom
 
-			var/datum/effect/effect/system/spark_spread/s1 = new /datum/effect/effect/system/spark_spread
-			var/datum/effect/effect/system/spark_spread/s2 = new /datum/effect/effect/system/spark_spread
-			s1.set_up(2, 1, user)
-			s2.set_up(2, 1, I)
-			s1.start()
-			s2.start()
+			fx_sparks(user, 2)
+			fx_sparks(I, 2)
 			I.visible_message(span_danger("\The [I] vanishes into thin air!"))
 			I.forceMove(get_turf(user))
 			user.drop_item(src)
@@ -50,12 +46,8 @@
 		else if(isliving(hit_atom))
 			var/mob/living/L = hit_atom
 			to_chat(L, span_danger("You are teleported towards \the [user]."))
-			var/datum/effect/effect/system/spark_spread/s1 = new /datum/effect/effect/system/spark_spread
-			var/datum/effect/effect/system/spark_spread/s2 = new /datum/effect/effect/system/spark_spread
-			s1.set_up(2, 1, user)
-			s2.set_up(2, 1, L)
-			s1.start()
-			s2.start()
+			fx_sparks(user, 2)
+			fx_sparks(L, 2)
 			L.throw_at(get_step(get_turf(src),get_turf(L)), 4, 1, src)
 			user.drop_item(src)
 			src.moveToNullspace()

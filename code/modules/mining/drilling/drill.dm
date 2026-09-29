@@ -16,7 +16,7 @@
 	/// Connected braces: pairs with each brace's connected (REL_PAIR_LIST).
 	var/list/obj/machinery/mining/brace/supports
 	var/supported = 0
-	var/active = 0
+	active = 0
 	var/list/resource_field
 	var/list/gas_field
 	var/obj/item/radio/intercom/faultreporter
@@ -197,7 +197,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/mining/drill, "cell", "cell")
 
 			if(current_capacity >= capacity)
 				system_error("Insufficient storage space.")
-				active = 0
+				set_active(0)
 				need_player_check = 1
 				update_icon()
 				return
@@ -230,7 +230,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/mining/drill, "cell", "cell")
 			rel_remove(src, "resource_field", harvesting)
 
 	else if(!length(gas_field)) // Won't stop digging if gas pressure is detected
-		active = 0
+		set_active(0)
 		need_player_check = 1
 		update_icon()
 		system_error("Resources depleted.")
@@ -319,7 +319,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/mining/drill, "cell", "cell")
 		return TRUE
 	else if(supported && !panel_open)
 		if(use_cell_power())
-			active = !active
+			set_active(!active)
 			if(active)
 				visible_message(span_infoplain(span_bold("\The [src]") + " lurches downwards, grinding noisily."))
 				need_update_field = 1
@@ -389,10 +389,10 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/mining/drill, "cell", "cell")
 	var/list/braces = supports
 	if(!length(braces) && initial(anchored) == 0)
 		icon_state = "mining_drill"
-		anchored = FALSE
-		active = 0
+		set_anchored(FALSE)
+		set_active(0)
 	else
-		anchored = TRUE
+		set_anchored(TRUE)
 
 	if(length(braces))
 		if(length(braces) >= braces_needed)
@@ -411,7 +411,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/mining/drill, "cell", "cell")
 		src.visible_message(span_infoplain(span_bold("\The [src]") + " flashes a '[error]' warning."))
 		faultreporter.autosay(error, src.name, "Supply", using_map.get_map_levels(z))
 	need_player_check = 1
-	active = 0
+	set_active(0)
 	update_icon()
 
 /obj/machinery/mining/drill/proc/get_resource_field()
@@ -535,7 +535,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/mining/drill, "cell", "cell")
 		return ITEM_INTERACT_BLOCKING
 	playsound(src, tool.usesound, 100, TRUE)
 	balloon_alert(user, "[anchored ? "una" : "a"]nchored the brace")
-	anchored = !anchored
+	set_anchored(!anchored)
 	if(anchored)
 		connect()
 	else

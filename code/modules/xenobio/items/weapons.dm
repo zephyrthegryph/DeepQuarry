@@ -43,7 +43,7 @@
 	desc = "Straight out of NT's testing laboratories, this small gun is used to subdue non-humanoid xeno life forms. \
 	While marketed towards handling slimes, it may be useful for other creatures."
 	icon_state = "taserblue"
-	fire_sound = 'sound/weapons/taser2.ogg'
+	fire_sound = SFX_WEAPONS_TASER2
 	charge_cost = 120 // Twice as many shots.
 	projectile_type = /obj/item/projectile/beam/stun/xeno
 	accuracy = 30 // Make it a bit easier to hit the slimes.
@@ -132,7 +132,7 @@ DECLARE_INTERACTIONS(/obj/item/xenobio, \
 		user.put_in_hands(loaded_item)
 		user.visible_message(span_notice("[user] removes [loaded_item] from [src]."), span_notice("You remove [loaded_item] from [src]."))
 		loaded_item = null
-		playsound(src, 'sound/weapons/empty.ogg', 50, 1)
+		play_sfx(src, SFX_WEAPONS_EMPTY)
 	else
 		return FALSE
 	return TRUE
@@ -156,27 +156,23 @@ DECLARE_INTERACTIONS(/obj/item/xenobio, \
 		user.put_in_hands(loaded_item)
 		user.visible_message(span_notice("[user] removes [loaded_item] from [src]."), span_notice("You remove [loaded_item] from [src]."))
 		loaded_item = null
-		playsound(src, 'sound/weapons/empty.ogg', 50, 1)
+		play_sfx(src, SFX_WEAPONS_EMPTY)
 	return TRUE
 
 /obj/item/xenobio/afterattack(atom/A, mob/user as mob)
 	if(!loaded_item)
 		to_chat(user,span_warning("\The [src] shot fizzles, it appears you need to load something!"))
-		playsound(src, 'sound/weapons/empty.ogg', 50, 1)
+		play_sfx(src, SFX_WEAPONS_EMPTY)
 		return
 	if(!COOLDOWN_FINISHED(src, firable))
 		return
 
-	playsound(src, 'sound/weapons/wave.ogg', 60, 1)
+	play_sfx(src, SFX_WEAPONS_WAVE, vary = TRUE)
 
 	user.visible_message(span_warning("[user] fires \the [src]!"),span_warning("You fire \the [src]!"))
 
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-	s.set_up(4, 1, A)
-	s.start()
-	s = new /datum/effect/effect/system/spark_spread
-	s.set_up(4, 1, user)
-	s.start()
+	fx_sparks(A, 4)
+	fx_sparks(user, 4)
 
 /obj/item/xenobio/monkey_gun
 	name = "Bluespace Cube Rehydrator"
@@ -193,11 +189,11 @@ DECLARE_INTERACTIONS(/obj/item/xenobio, \
 	var/turf/T = get_turf(A)
 	if(!T || (T.check_density(ignore_mobs = TRUE)))
 		to_chat(user,span_warning("Your rehydrator flashes an error as it attempts to process your target."))
-		playsound(src, 'sound/weapons/empty.ogg', 50, 1)
+		play_sfx(src, SFX_WEAPONS_EMPTY)
 		return
 	if(isliving(A))
 		to_chat(user,span_warning("The rehydrator's saftey systems prevent firing into living creatures!"))
-		playsound(src, 'sound/weapons/empty.ogg', 50, 1)
+		play_sfx(src, SFX_WEAPONS_EMPTY)
 		return
 	if(loaded_item)
 		var/obj/item/reagent_containers/food/snacks/monkeycube/cube = loaded_item
@@ -222,7 +218,7 @@ DECLARE_INTERACTIONS(/obj/item/xenobio, \
 		grind_core(AM, user)
 		return
 	if(istype(AM, /mob/living/carbon/human/monkey))
-		playsound(src, 'sound/machines/juicer.ogg', 25, 1)
+		play_sfx(src, SFX_MACHINES_JUICER)
 		om_task_timed(user, 1.5 SECONDS, src, src, PROC_REF(grind_monkey), list(AM), on_fail = PROC_REF(grind_ended))
 		return
 	processing = FALSE
@@ -232,17 +228,17 @@ DECLARE_INTERACTIONS(/obj/item/xenobio, \
 		qdel(S)
 		processing = FALSE
 		return
-	playsound(src, 'sound/machines/juicer.ogg', 25, 1)
+	play_sfx(src, SFX_MACHINES_JUICER)
 	om_task_timed(user, 1.5 SECONDS, src, src, PROC_REF(grind_core_done), list(S, user), on_fail = PROC_REF(grind_ended))
 
 /obj/item/slime_grinder/proc/grind_core_done(mob/living/simple_mob/slime/S, mob/living/user)
 	new S.coretype(get_turf(S))
-	playsound(src, 'sound/effects/splat.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_SPLAT)
 	S.cores--
 	grind_core(S, user)
 
 /obj/item/slime_grinder/proc/grind_monkey(mob/living/carbon/human/M)
-	playsound(src, 'sound/effects/splat.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_SPLAT)
 	qdel(M)
 	monkeys_recycled++
 	om_after(src, 1 SECOND, PROC_REF(make_cubes))
@@ -253,7 +249,7 @@ DECLARE_INTERACTIONS(/obj/item/xenobio, \
 		processing = FALSE
 		return
 	new /obj/item/reagent_containers/food/snacks/monkeycube(get_turf(src))
-	playsound(src, 'sound/effects/splat.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_SPLAT)
 	monkeys_recycled -= 4
 	om_after(src, 1 SECOND, PROC_REF(make_cubes))
 
@@ -280,7 +276,7 @@ DECLARE_INTERACTIONS(/obj/item/xenobio, \
 		return ITEM_INTERACT_FAILURE
 	if(!can_insert(M))
 		to_chat(user, span_warning("\The [src] cannot process \the [M] at this time."))
-		playsound(src, 'sound/machines/buzz-sigh.ogg', 50, 1)
+		play_sfx(src, SFX_MACHINES_BUZZ_SIGH, vary = TRUE)
 		return ITEM_INTERACT_FAILURE
 
 	extract(M, user)

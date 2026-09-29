@@ -35,31 +35,27 @@ GLOBAL_LIST_EMPTY(dq_flavor_panels)
 		ui = new(user, src, "FlavorText", "Update Flavour Text")
 		ui.open()
 
-/datum/flavor_panel/proc/get_flavor_keys()
-	var/static/list/keys = list("general", "head", "face", "eyes", "torso", "arms", "hands", "legs", "feet")
-	return keys
+TYPE_TABLE_DECLARE(/datum/flavor_panel, get_flavor_keys, list("general", "head", "face", "eyes", "torso", "arms", "hands", "legs", "feet"))
 
-/datum/flavor_panel/proc/get_flavor_labels()
-	var/static/list/labels = list(
-		"general" = "General",
-		"head" = "Head",
-		"face" = "Face",
-		"eyes" = "Eyes",
-		"torso" = "Body",
-		"arms" = "Arms",
-		"hands" = "Hands",
-		"legs" = "Legs",
-		"feet" = "Feet",
-	)
-	return labels
+TYPE_TABLE_DECLARE(/datum/flavor_panel, get_flavor_labels, list( \
+		"general" = "General", \
+		"head" = "Head", \
+		"face" = "Face", \
+		"eyes" = "Eyes", \
+		"torso" = "Body", \
+		"arms" = "Arms", \
+		"hands" = "Hands", \
+		"legs" = "Legs", \
+		"feet" = "Feet", \
+	))
 
 /datum/flavor_panel/tgui_data(mob/user)
 	var/list/data = list()
 	if(!host)
 		return data
 	var/list/parts = list()
-	var/list/labels = get_flavor_labels()
-	for(var/k in get_flavor_keys())
+	var/list/labels = TYPE_TABLE_GET(src, get_flavor_labels)
+	for(var/k in TYPE_TABLE_GET(src, get_flavor_keys))
 		parts += list(list(
 			"key" = k,
 			"label" = labels[k],
@@ -75,10 +71,10 @@ GLOBAL_LIST_EMPTY(dq_flavor_panels)
 	switch(action)
 		if("edit")
 			var/key = "[params["key"]]"
-			host.Topic("flavor_change=[key]", list("flavor_change" = key))
+			topic_dispatch(host, ui.user, list("flavor_change" = key))
 			SStgui.update_uis(src)
 			return TRUE
 		if("done")
-			host.Topic("flavor_change=done", list("flavor_change" = "done"))
+			topic_dispatch(host, ui.user, list("flavor_change" = "done"))
 			return TRUE
 

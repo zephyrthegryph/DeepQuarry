@@ -6,9 +6,7 @@
 	w_class = ITEMSIZE_NORMAL
 	storage_slots = 15
 
-/obj/item/storage/bag/salvage/hold_constraint()
-	var/list/holds = list(/obj/item/salvage)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/bag/salvage, hold_spec, list(HOLD_ONLY(list(/obj/item/salvage)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 
 /obj/item/storage/bag/salvage/bluespace
 	name = "bluespace treasure satchel"

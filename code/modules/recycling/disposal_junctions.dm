@@ -109,7 +109,7 @@ DECLARE_INTERACTIONS(/obj/structure/disposalpipe/sortjunction, INTERACT_ITEM(nul
 				LAZYREMOVE(GLOB.tagger_locations["[sortType]"], current_z)
 			sortType = O.currTag
 			LAZYADD(GLOB.tagger_locations["[sortType]"], current_z)
-			playsound(src, 'sound/machines/twobeep.ogg', 100, 1)
+			play_sfx(src, SFX_MACHINES_TWOBEEP, 2)
 			to_chat(user, span_blue("Changed filter to '[sortType]'."))
 			updatename()
 			updatedesc()

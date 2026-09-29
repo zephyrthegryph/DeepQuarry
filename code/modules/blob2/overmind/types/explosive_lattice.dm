@@ -40,7 +40,7 @@
 	E.start()
 
 	// Now for sounds.
-	playsound(T, "explosion", 75, 1) // Local sound.
+	play_sfx(T, SFX_EXPLOSION) // Local sound.
 
 	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS)) // For everyone else.
 		if(M.z == T.z && get_dist(M, T) > world.view && !M.has_status(EFFECT_DEAFENED) && !istype(M.loc,/turf/space))

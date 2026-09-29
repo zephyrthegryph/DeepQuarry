@@ -225,6 +225,18 @@ if $grep -n '\.(buckled|buckled_mobs|affecting|grabbed_by|pulling|pulledby)\s*[|
 	FAILED=1
 fi;
 
+part "stored timer handles"
+# A timer id kept in a var or list by hand goes stale when the timer fires, is cancelled or its
+# owner is deleted, unless every path remembers to clear it. Named timers belong in a framework
+# timer slot instead (om_after_slot()/om_cancel_timer_slot()/om_timer_slot_pending(), code/datums/om/timer.dm),
+# which the OM keeps right by construction. A local `var/x = om_after(...)` (a test holding an id
+# for one proc) is fine; storing the id anywhere else, or returning it from a helper, is not.
+if $grep -nE '([]A-Za-z0-9_.)][[:space:]]*[-+]?=|(^|[^[:alnum:]_])return|LAZYSET\(|LAZYADD\(|list\()[[:space:]]*om_after(_replace|_unique)?\(' "${code_files[@]}" | grep -vE '^code/datums/om/|var/[[:alnum:]_]+[[:space:]]*=[[:space:]]*om_after'; then
+	echo
+	echo -e "${RED}ERROR: a timer id from om_after() is stored or returned. Use an owned timer: OWN_TIMER(type, name) + om_after_slot(E, \"name\", ...), om_cancel_timer_slot(), om_timer_slot_pending().${NC}"
+	FAILED=1
+fi;
+
 part "gas mixture mirror writes"
 # /datum/gas_mixture temperature/volume are READ-ONLY mirrors of the Rust atmos arena
 # (the authoritative store). A bare `air.temperature = x` / `air_contents.volume = y`
@@ -726,7 +738,7 @@ fi;
 part "legacy equip restriction vars"
 # can_hold / cant_hold / species_restricted were replaced by the property
 # registry: predicates (code/datums/properties/predicates.dm) and constraints
-# (code/datums/properties/constraints.dm, fit_constraint()). Declare a
+# (code/datums/properties/constraints.dm, the fit_spec table). Declare a
 # constraint instead of reintroducing the old lists.
 if $grep -n '\b(can_hold|cant_hold|species_restricted)\b' "${code_files[@]}" \
 	| $grep -v ':\s*//|:\s*\*'; then

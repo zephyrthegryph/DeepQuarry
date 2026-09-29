@@ -47,7 +47,7 @@
 
 	base_attack_cooldown = 5
 	projectiletype = /obj/item/projectile/beam/drone
-	projectilesound = 'sound/weapons/laser3.ogg'
+	projectilesound = SFX_WEAPONS_LASER3
 
 	response_help = "pokes"
 	response_disarm = "gently pushes aside"
@@ -106,4 +106,4 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/mechanical/combat_drone, "shields",
 /mob/living/simple_mob/mechanical/combat_drone/event
 
 /datum/decl/mob_organ_names/combatdrone
-	hit_zones = list("chassis", "comms array", "sensor suite", "left weapons module", "right weapons module", "maneuvering thruster")
+TYPE_TABLE(/datum/decl/mob_organ_names/combatdrone, mob_organ_hit_zones, list("chassis", "comms array", "sensor suite", "left weapons module", "right weapons module", "maneuvering thruster"))

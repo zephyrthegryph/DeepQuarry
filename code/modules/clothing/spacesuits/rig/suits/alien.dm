@@ -20,9 +20,7 @@
 	helm_type = /obj/item/clothing/head/helmet/space/rig/breacher
 	boot_type = /obj/item/clothing/shoes/magboots/rig/breacher
 
-/obj/item/rig/breacher/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_STORAGE)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/rig/breacher, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_STORAGE))))
 
 /obj/item/rig/breacher/fancy
 	name = "breacher chassis control module"
@@ -38,15 +36,11 @@
 /obj/item/clothing/head/helmet/space/rig/breacher
 	force = 5
 
-/obj/item/clothing/head/helmet/space/rig/breacher/fit_constraint()
-	var/list/bodytypes = list(SPECIES_UNATHI)
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/head/helmet/space/rig/breacher, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_UNATHI))))
 
 /obj/item/clothing/suit/space/rig/breacher
 
-/obj/item/clothing/suit/space/rig/breacher/fit_constraint()
-	var/list/bodytypes = list(SPECIES_UNATHI)
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/suit/space/rig/breacher, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_UNATHI))))
 
 /obj/item/clothing/shoes/magboots/rig/breacher
 
@@ -56,9 +50,7 @@
  *	VOX
  */
 
-/obj/item/clothing/shoes/magboots/rig/breacher/fit_constraint()
-	var/list/bodytypes = list(SPECIES_UNATHI)
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/shoes/magboots/rig/breacher, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_UNATHI))))
 
 /obj/item/rig/vox	//Just to get the flags set up
 	name = "alien control module"
@@ -78,16 +70,12 @@
 	chest_type = /obj/item/clothing/suit/space/rig/vox
 	glove_type = /obj/item/clothing/gloves/gauntlets/rig/vox
 
-/obj/item/rig/vox/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_EXPLO, POCKET_BAYSUIT)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/rig/vox, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_EXPLO, POCKET_BAYSUIT))))
 
 /obj/item/clothing/head/helmet/space/rig/vox
 	flags_inv = HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE
 
-/obj/item/clothing/head/helmet/space/rig/vox/fit_constraint()
-	var/list/bodytypes = list(SPECIES_VOX)
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/head/helmet/space/rig/vox, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_VOX))))
 
 /obj/item/clothing/shoes/magboots/rig/vox
 	name = "talons"
@@ -95,15 +83,11 @@
 		SPECIES_VOX = 'icons/inventory/feet/mob_vox.dmi'
 		)
 
-/obj/item/clothing/shoes/magboots/rig/vox/fit_constraint()
-	var/list/bodytypes = list(SPECIES_VOX)
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/shoes/magboots/rig/vox, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_VOX))))
 
 /obj/item/clothing/suit/space/rig/vox
 
-/obj/item/clothing/suit/space/rig/vox/fit_constraint()
-	var/list/bodytypes = list(SPECIES_VOX)
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/suit/space/rig/vox, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_VOX))))
 
 /obj/item/clothing/gloves/gauntlets/rig/vox
 	name = DEVELOPER_WARNING_NAME
@@ -112,9 +96,7 @@
 		SPECIES_VOX = 'icons/inventory/hands/mob_vox.dmi'
 		)
 
-/obj/item/clothing/gloves/gauntlets/rig/vox/fit_constraint()
-	var/list/bodytypes = list(SPECIES_VOX)
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/gloves/gauntlets/rig/vox, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_VOX))))
 
 /obj/item/rig/vox/carapace
 	name = "dense alien control module"
@@ -218,9 +200,7 @@
 	chest_type = /obj/item/clothing/suit/space/rig/vox/ch
 	glove_type = /obj/item/clothing/gloves/gauntlets/rig/vox/ch
 
-/obj/item/rig/vox/engineering/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SECURITY, POCKET_SUIT_REGULATORS)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/rig/vox/engineering, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SECURITY, POCKET_SUIT_REGULATORS))))
 
 /obj/item/rig/vox/security
 	name = "sturdy alien control module"
@@ -250,6 +230,4 @@
 	chest_type = /obj/item/clothing/suit/space/rig/vox/ch
 	glove_type = /obj/item/clothing/gloves/gauntlets/rig/vox/ch
 
-/obj/item/rig/vox/security/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SECURITY, POCKET_SUIT_REGULATORS)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/rig/vox/security, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SECURITY, POCKET_SUIT_REGULATORS))))

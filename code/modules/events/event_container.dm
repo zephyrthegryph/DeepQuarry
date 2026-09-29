@@ -2,14 +2,14 @@
 	var/severity = -1
 	var/delayed = 0
 	var/delay_modifier = 1
-	TIMESTAMP_VAR(next_event_time)
+	EXPIRY_DECLARE(next_event_time)
 	/// Every event_meta this container made (owned); available_events and next_event name members of it.
 	var/list/event_pool
 	var/list/available_events
 	var/list/last_event_time
 	var/tmp/datum/event_meta/next_event
 
-	var/last_world_time = 0
+	EXPIRY_DECLARE(last_world_time)
 
 /// The random-event clock: every 2 s it advances (or, paused, pushes back) the next event.
 /datum/event_container/periodic_step()
@@ -21,10 +21,10 @@
 
 	if(delayed || !CONFIG_GET(flag/allow_random_events))
 		next_event_time += (world.time - last_world_time)
-	else if(world.time > next_event_time)
+	else if(ELAPSED_SINCE(src, next_event_time, CLOCK_WORLD) > 0)
 		start_event()
 
-	last_world_time = world.time
+	EXPIRY_STAMP(src, last_world_time, CLOCK_WORLD)
 
 /datum/event_container/proc/start_event()
 	if(!next_event())	// If non-one has explicitly set an event, randomly pick one
@@ -98,7 +98,7 @@
 		var/lower = (event_delays["lower"] MINUTES)
 		var/upper = (event_delays["upper"] MINUTES)
 		var/event_delay = rand(lower, upper)
-		next_event_time = world.time + event_delay
+		EXPIRY_SET(src, next_event_time, event_delay, CLOCK_WORLD)
 	// Otherwise, follow the standard setup process
 	else
 		var/playercount_modifier = 1
@@ -116,7 +116,7 @@
 		playercount_modifier = playercount_modifier * delay_modifier
 
 		var/event_delay = rand(CONFIG_GET(number_list/event_delay_lower)[severity] MINUTES, CONFIG_GET(number_list/event_delay_upper)[severity] MINUTES) * playercount_modifier
-		next_event_time = world.time + event_delay
+		EXPIRY_SET(src, next_event_time, event_delay, CLOCK_WORLD)
 
 	log_game("Next event of severity [GLOB.severity_to_string[severity]] in [(next_event_time - world.time)/600] minutes.")
 

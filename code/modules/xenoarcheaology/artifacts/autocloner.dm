@@ -7,7 +7,7 @@
 	var/spawn_type
 	var/time_spent_spawning = 0
 	var/time_per_spawn = 0
-	var/last_process= 0
+	EXPIRY_DECLARE(last_process)
 	density = TRUE
 	var/previous_power_state = 0
 
@@ -46,7 +46,7 @@
 /// cloner sleeps until power returns (a power change runs a step).
 /obj/machinery/auto_cloner/machine_step()
 	if(!last_process)
-		last_process = world.time
+		EXPIRY_STAMP(src, last_process, CLOCK_WORLD)
 	if(powered(power_channel))
 		if(!previous_power_state)
 			previous_power_state = 1
@@ -60,7 +60,7 @@
 		//if we've finished growing...
 		if(time_spent_spawning >= time_per_spawn)
 			time_spent_spawning = 0
-			update_use_power(USE_POWER_IDLE)
+			set_use_power(USE_POWER_IDLE)
 			src.visible_message(span_notice("[icon2html(src,viewers(src))] [src] pings!"))
 			icon_state = "cellold1"
 			desc = "It's full of a bubbling viscous liquid, and is lit by a mysterious glow."
@@ -69,11 +69,11 @@
 
 		//if we're getting close to finished, kick into overdrive power usage
 		if(time_spent_spawning / time_per_spawn > 0.75)
-			update_use_power(USE_POWER_ACTIVE)
+			set_use_power(USE_POWER_ACTIVE)
 			icon_state = "cellold2"
 			desc = "It's full of a bubbling viscous liquid, and is lit by a mysterious glow. A dark shape appears to be forming inside..."
 		else
-			update_use_power(USE_POWER_IDLE)
+			set_use_power(USE_POWER_IDLE)
 			icon_state = "cellold1"
 			desc = "It's full of a bubbling viscous liquid, and is lit by a mysterious glow."
 
@@ -90,4 +90,4 @@
 			last_process = 0
 			return PROCESS_KILL
 
-	last_process = world.time
+	EXPIRY_STAMP(src, last_process, CLOCK_WORLD)

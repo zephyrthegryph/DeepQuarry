@@ -179,8 +179,8 @@
 			if(FEMALE)
 				t_him = "her"
 
-	H.visible_message(span_infoplain(span_bold("\The [H]") + " glomps [target] to make [t_him] feel better!"), \
-					span_notice("You glomp [target] to make [t_him] feel better!"))
+	act_message(H, target, MSG_SELF(span_notice("You glomp %T% to make [t_him] feel better!")), \
+		MSG_OTHERS(span_infoplain(span_bold("%U%") + " glomps %T% to make [t_him] feel better!")))
 	H.apply_stored_shock_to(target)
 
 /datum/species/shapeshifter/promethean/handle_death(mob/living/carbon/human/H)
@@ -236,12 +236,12 @@
 #define PROMETHEAN_STARVING_PAIN_CAP 90
 
 /// A trait state, added by the species.
+OWN_TIMER(/datum/trait_state/promethean_biology, still_timer)
+
 /datum/trait_state/promethean_biology
 	life_stage = /datum/om/stage/life/trait/promethean_biology
 	/// Held still for PROMETHEAN_STILLNESS_TIME.
 	var/still = FALSE
-	/// Stillness timer id.
-	var/still_timer
 
 /datum/trait_state/promethean_biology/setup()
 	return ishuman(owner)
@@ -255,17 +255,15 @@
 /datum/trait_state/promethean_biology/detach()
 	om_unhook(owner, list(/datum/om/event/moved, /datum/om/event/mob_equipped_item), src)
 	..()
-	if(still_timer)
-		om_cancel_timer(src, still_timer)
-		still_timer = null
+	if(om_timer_slot_pending(src, "still_timer"))
+		om_cancel_timer_slot(src, "still_timer")
 
 /datum/trait_state/promethean_biology/proc/restart_stillness()
 	still = FALSE
-	still_timer = om_after_replace(src, PROMETHEAN_STILLNESS_TIME, PROC_REF(became_still))
+	om_after_slot(src, "still_timer", PROMETHEAN_STILLNESS_TIME, PROC_REF(became_still))
 
 /datum/trait_state/promethean_biology/proc/became_still()
 	still = TRUE
-	still_timer = null
 
 /datum/trait_state/promethean_biology/proc/on_moved(mob/living/carbon/human/source, datum/om/event/moved/event)
 	EVENT_HANDLER

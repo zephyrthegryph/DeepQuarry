@@ -77,7 +77,7 @@ EXTEND_INTERACTIONS(/obj/structure/lift/button, INTERACT_ITEM(null, PROC_REF(int
 	var/obj/item/card/id/id = W.GetID()
 	if(istype(id))
 		if(!check_access(id))
-			playsound(src, 'sound/machines/buzz-two.ogg', 50, 0)
+			play_sfx(src, SFX_MACHINES_BUZZ_TWO)
 			return INTERACTION_HANDLED_PASS
 		lift().priority_mode()
 		if(floor == lift().current_floor())
@@ -91,7 +91,7 @@ EXTEND_INTERACTIONS(/obj/structure/lift/button, INTERACT_ITEM(null, PROC_REF(int
 	if(!..())
 		return
 	if(lift().fire_mode || lift().priority_mode)
-		playsound(src, 'sound/machines/buzz-two.ogg', 50, 0)
+		play_sfx(src, SFX_MACHINES_BUZZ_TWO)
 		return
 	light_up()
 	pressed(user, stance)
@@ -139,12 +139,12 @@ EXTEND_INTERACTIONS(/obj/structure/lift/panel, \
 	var/obj/item/card/id/id = W.GetID()
 	if(istype(id))
 		if(!check_access(id))
-			playsound(src, 'sound/machines/buzz-two.ogg', 50, 0)
+			play_sfx(src, SFX_MACHINES_BUZZ_TWO)
 			return INTERACTION_HANDLED_PASS
 		lift().update_fire_mode(!lift().fire_mode)
 		if(lift().fire_mode)
 			audible_message(span_danger("Firefighter Mode Activated.  Door safeties disabled.  Manual control engaged."), runemessage = "SCREECH")
-			playsound(src, 'sound/machines/airalarm.ogg', 25, 0, 4, volume_channel = VOLUME_CHANNEL_ALARMS)
+			play_sfx(src, SFX_MACHINES_AIRALARM, volume_channel = VOLUME_CHANNEL_ALARMS)
 		else
 			audible_message(span_warning("Firefighter Mode Deactivated. Door safeties enabled.  Automatic control engaged."), runemessage = "ding")
 		return INTERACTION_HANDLED_PASS

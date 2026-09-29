@@ -15,6 +15,10 @@
 /datum/proc/declared_forward_vars()
 	return null
 
+/// OWN_TIMER names: the timers this type owns (code/datums/om/timer.dm).
+/datum/proc/declared_timer_slots()
+	return list()
+
 /// POOL_RESET vars (pool_release() resets them).
 /datum/proc/declared_pool_reset()
 	return null
@@ -60,6 +64,8 @@
 	/// KEEP_AFTER_DESTROY / POOL_RESET names.
 	var/list/keep_vars
 	var/list/pool_reset_vars
+	/// OWN_TIMER names (owned timers), or null.
+	var/list/timer_slots
 	/// TRUE when the type declares nothing to tear down (the fast path).
 	var/empty = TRUE
 	/// TRUE when materialize/dematerialize has keyed-link work (REL_KEYED views or KEYED_TARGET).
@@ -100,6 +106,8 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 				LAZYADD(T.shared_vars, var_name)
 	T.keep_vars = D.declared_keep_vars()
 	T.pool_reset_vars = D.declared_pool_reset()
+	var/list/slots = D.declared_timer_slots()
+	T.timer_slots = length(slots) ? slots : null
 	T.empty = !(T.own_vars || T.ref_vars || T.proto_vars)
 	T.materialize_work = !!(T.keyed_vars || D.keyed_target_var())
 	own_validate_table(D, T)

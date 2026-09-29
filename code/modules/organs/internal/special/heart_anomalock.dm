@@ -1,3 +1,5 @@
+OWN_TIMER(/obj/item/organ/internal/heart/machine/anomalock, lightning_timer)
+
 /obj/item/organ/internal/heart/machine/anomalock
 	name = "voltaic combat cyberheart"
 	desc = "A cutting-edge cyberheart. Voltaic technology allows the heart to keep the body upright in dire circumstances, alongside redirecting anomalous flux energy to fully shield the user from shocks and electro-magnetic pulses. Requires a Flux core as a power source."
@@ -9,8 +11,6 @@
 	var/survival_cooldown_time = 10 MINUTES
 	///The lightning effect on our mob when the implant is active
 	var/mutable_appearance/lightning_overlay
-	///how long the lightning lasts
-	var/lightning_timer
 
 	///The core item the organ runs off.
 	var/obj/item/assembly/signaler/anomaly/core
@@ -28,7 +28,7 @@
 
 	if(!removed)
 		add_lightning_overlay(30 SECONDS)
-		playsound(owner, 'sound/machines/defib_zap.ogg', 50, TRUE, -1)
+		play_sfx(owner, SFX_MACHINES_DEFIB_ZAP)
 		owner.emp_protection_flags |= EMP_PROTECT_SELF|EMP_PROTECT_CONTENTS
 		om_hook(owner, /datum/om/event/trait_gained, src, PROC_REF(on_owner_trait_gained))
 		om_hook(owner, /datum/om/event/atom_emp_act, src, PROC_REF(on_emp_act))
@@ -45,16 +45,16 @@
 
 /obj/item/organ/internal/heart/machine/anomalock/proc/add_lightning_overlay(time_to_last = 10 SECONDS)
 	if(lightning_overlay)
-		lightning_timer = om_after_replace(src, time_to_last, PROC_REF(clear_lightning_overlay), owner)
+		om_after_slot(src, "lightning_timer", time_to_last, PROC_REF(clear_lightning_overlay), owner)
 		return
 	lightning_overlay = mutable_appearance(icon = 'icons/effects/effects.dmi', icon_state = "lightning")
 	owner.add_overlay(lightning_overlay)
-	lightning_timer = om_after_replace(src, time_to_last, PROC_REF(clear_lightning_overlay), owner)
+	om_after_slot(src, "lightning_timer", time_to_last, PROC_REF(clear_lightning_overlay), owner)
 
 /obj/item/organ/internal/heart/machine/anomalock/proc/clear_lightning_overlay(mob/organ_owner)
 	organ_owner?.cut_overlay(lightning_overlay)
-	if(lightning_timer)
-		om_cancel_timer(src, lightning_timer)
+	if(om_timer_slot_pending(src, "lightning_timer"))
+		om_cancel_timer_slot(src, "lightning_timer")
 	lightning_overlay = null
 
 /// Event wrapper: the owner gained a trait; only critical condition triggers survival mode.
@@ -76,7 +76,7 @@
 
 /obj/item/organ/internal/heart/machine/anomalock/proc/notify_cooldown(mob/living/carbon/organ_owner)
 	balloon_alert(organ_owner, "your heart strengthtens")
-	playsound(owner, 'sound/machines/defib_zap.ogg', 40)
+	play_sfx(owner, SFX_MACHINES_DEFIB_ZAP, 0.8, vary = FALSE, extrarange = 0)
 
 /obj/item/organ/internal/heart/machine/anomalock/proc/on_emp_act(datum/source, datum/om/event/atom_emp_act/event)
 	EVENT_HANDLER
@@ -112,7 +112,7 @@ EXTEND_INTERACTIONS(/obj/item/organ/internal/heart/machine/anomalock, INTERACT_I
 	user.unEquip(W, TRUE, src)
 	own_set(src, "core", W)
 	balloon_alert(user, "core_installed")
-	playsound(src, 'sound/machines/click.ogg')
+	play_sfx(src, SFX_MACHINES_CLICK, volume = 0, vary = FALSE)
 	update_icon()
 
 /datum/om/task/timed/anomalock_remove_core

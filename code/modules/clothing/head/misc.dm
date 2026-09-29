@@ -27,8 +27,8 @@
 	desc = "A nice hair pin."
 	slot_flags = SLOT_HEAD | SLOT_EARS
 	body_parts_covered = 0
-	drop_sound = 'sound/items/drop/accessory.ogg'
-	pickup_sound = 'sound/items/pickup/accessory.ogg'
+	drop_sound = SFX_ITEMS_DROP_ACCESSORY
+	pickup_sound = SFX_ITEMS_PICKUP_ACCESSORY
 
 /obj/item/clothing/head/pin/pink
 	icon_state = "pinkpin"
@@ -178,8 +178,8 @@
 	icon_state = "cardborg_h"
 	flags_inv = HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE
 	body_parts_covered = HEAD|FACE|EYES
-	drop_sound = 'sound/items/drop/cardboardbox.ogg'
-	pickup_sound = 'sound/items/pickup/cardboardbox.ogg'
+	drop_sound = SFX_ITEMS_DROP_CARDBOARDBOX
+	pickup_sound = SFX_ITEMS_PICKUP_CARDBOARDBOX
 
 /obj/item/clothing/head/rabbitears
 	name = "rabbit ears"
@@ -335,8 +335,8 @@
 	desc = "A jeweled headpiece originating in India."
 	icon_state = "maangtikka"
 	body_parts_covered = 0
-	drop_sound = 'sound/items/drop/ring.ogg'
-	pickup_sound = 'sound/items/pickup/ring.ogg'
+	drop_sound = SFX_ITEMS_DROP_RING
+	pickup_sound = SFX_ITEMS_PICKUP_RING
 
 /obj/item/clothing/head/jingasa
 	name = "jingasa"
@@ -422,9 +422,7 @@
 	desc = "A brown fedora. Perfect for detectives or those trying to pilfer artifacts."
 	icon_state = "fedora_brown"
 
-/obj/item/clothing/head/fedora/brown/suit_storage_constraint()
-	var/list/stores = list(POCKET_SLEUTH)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/head/fedora/brown, suit_storage_spec, list(HOLD_ONLY(list(POCKET_SLEUTH))))
 
 /obj/item/clothing/head/fedora/white
 	desc = "A white fedora, really cool hat if you're a mobster. A really lame hat if you're not."

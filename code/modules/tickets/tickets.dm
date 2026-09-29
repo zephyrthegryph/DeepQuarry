@@ -225,8 +225,8 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 	var/list/tags
 	var/state = AHELP_ACTIVE
 
-	var/opened_at
-	var/closed_at
+	EXPIRY_DECLARE(opened_at)
+	EXPIRY_DECLARE(closed_at)
 
 	var/tmp/client/initiator	//semi-misnomer, it's the person who ahelped/was bwoinked
 	/// The handling admin's ckey (a client is not a datum, so it is held by key); read with handler_client().
@@ -260,7 +260,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 		return
 
 	id = ++ticket_counter
-	opened_at = world.time
+	EXPIRY_STAMP(src, opened_at, CLOCK_WORLD)
 
 	name = msg
 
@@ -431,7 +431,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 /datum/ticket/proc/RemoveActive()
 	if(state != AHELP_ACTIVE)
 		return
-	closed_at = world.time
+	EXPIRY_STAMP(src, closed_at, CLOCK_WORLD)
 	own_clear(src, "statclick", OWN_DELETE)
 	own_take_member(GLOB.tickets, "active_tickets", src) // Close()/Resolve() re-adopt it via ListInsert()
 	if(initiator() && initiator().current_ticket() == src)
@@ -687,7 +687,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket)
 /proc/keywords_lookup(msg,irc)
 
 	//This is a list of words which are ignored by the parser when comparing message contents for names. MUST BE IN LOWER CASE!
-	var/list/adminhelp_ignored_words = list("unknown","the","a","an","of","monkey","alien","as", "i")
+	var/static/list/adminhelp_ignored_words = list("unknown","the","a","an","of","monkey","alien","as", "i")
 
 	//explode the input msg into a list
 	var/list/msglist = splittext(msg, " ")

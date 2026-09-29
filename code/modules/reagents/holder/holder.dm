@@ -1,5 +1,5 @@
 /datum/reagents
-	/// Empty holders share reagents_empty_list() here and in reagent_by_id; own_reagent_lists() before writing.
+	/// Empty holders share GLOB.reagents_empty_list here and in reagent_by_id; own_reagent_lists() before writing.
 	/// Owned per-holder reagent instances (untyped: the lint reads a registry-typed list as SHARED;
 	/// these instances are private copies, not the registered definitions).
 	var/list/reagent_list
@@ -17,7 +17,7 @@
 
 /datum/reagents/New(max = 100, atom/A = null)
 	..()
-	reagent_list = reagents_empty_list() // ALLOW(ownership): the shared empty sentinel, never written (own_reagent_lists() first)
+	reagent_list = GLOB.reagents_empty_list // ALLOW(ownership): the shared empty sentinel, never written (own_reagent_lists() first)
 	reagent_by_id = reagent_list
 	maximum_volume = max
 	rel_set(src, "my_atom", A)
@@ -247,7 +247,7 @@
 		else
 			reagent_by_id -= id
 		if(!length(reagent_list))
-			reagent_list = reagents_empty_list() // ALLOW(ownership): the shared empty sentinel, never written (own_reagent_lists() first)
+			reagent_list = GLOB.reagents_empty_list // ALLOW(ownership): the shared empty sentinel, never written (own_reagent_lists() first)
 			reagent_by_id = reagent_list
 		qdel(current)
 		update_total()
@@ -599,13 +599,11 @@
 
 /// The one empty list every empty holder points reagent_list and reagent_by_id at.
 /// Never write to it: call own_reagent_lists() first.
-/proc/reagents_empty_list()
-	var/static/list/empty = list()
-	return empty
+GLOBAL_LIST_EMPTY(reagents_empty_list)
 
 /// Copy-on-write: give this holder its own lists before adding a reagent.
 /datum/reagents/proc/own_reagent_lists()
-	var/list/empty = reagents_empty_list()
+	var/list/empty = GLOB.reagents_empty_list
 	if(reagent_list == empty || !reagent_list)
 		reagent_list = list() // ALLOW(ownership): a private empty list before own_add() (never the shared sentinel)
 	if(reagent_by_id == empty || !reagent_by_id)

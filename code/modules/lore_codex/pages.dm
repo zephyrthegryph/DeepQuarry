@@ -15,12 +15,9 @@
 	if(name)
 		keywords.Add(name)
 
-/datum/lore/codex/Topic(href, href_list)
-	. = ..()
-	if(.)
-		return
-
-	holder().Topic(href, href_list) // Redirect to the physical object
+// Page links (quick links) are handled by the codex they belong to.
+/datum/lore/codex/topic_forward()
+	return holder()
 
 /datum/lore/codex/page
 

@@ -21,8 +21,8 @@
 	var/showadvscan = TRUE
 	var/guide = FALSE
 
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 /obj/item/healthanalyzer/Initialize(mapload)
 	. = ..()
@@ -54,7 +54,7 @@
 	if(!user)
 		return
 	if(CLUMSY_FAIL_CHANCE(user))
-		user.visible_message(span_warning("\The [user] has analyzed the floor's vitals!"), span_warning("You try to analyze the floor's vitals!"))
+		act_message(user, null, MSG_SELF(span_warning("You try to analyze the floor's vitals!")), MSG_OTHERS(span_warning("%U% has analyzed the floor's vitals!")))
 		to_chat(user, span_notice("Health analyzer results for the floor: no vital signs."))
 		return
 	if(!user.IsAdvancedToolUser())
@@ -64,7 +64,7 @@
 		return
 
 	flick("[icon_state]-scan", src)
-	user.visible_message(span_notice("[user] has analyzed [M]'s vitals."), span_notice("You have analyzed [M]'s vitals."))
+	act_message(user, M, MSG_SELF(span_notice("You have analyzed %T%'s vitals.")), MSG_OTHERS(span_notice("%U% has analyzed %T%'s vitals.")))
 
 	var/datum/diagnosis/D = M.diagnose(active_profile(), src, TRUE) // D9: each use is an explicit scan with this analyzer's baseline
 	if(!D)

@@ -11,8 +11,8 @@
 	throwforce = 7
 	flags = NOCONDUCT
 	w_class = ITEMSIZE_NORMAL
-	drop_sound = 'sound/items/drop/metalweapon.ogg'
-	pickup_sound = 'sound/items/pickup/metalweapon.ogg'
+	drop_sound = SFX_ITEMS_DROP_METALWEAPON
+	pickup_sound = SFX_ITEMS_PICKUP_METALWEAPON
 	attack_verb = list("beaten")
 	var/lightcolor = "#FF6A00"
 	var/stunforce = 0
@@ -128,7 +128,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/melee/baton/loaded, "bcell", /obj/item/cell/devi
 	if(istype(W, /obj/item/tape_roll) || istype(W, /obj/item/taperoll))
 		if(grip_safety && !taped_safety)	//no point letting people wrap tape around the grips of batons without a safety
 			to_chat(user, span_notice("You firmly wrap tape around the baton's grip, disabling the safety system."))
-			playsound(src, 'sound/effects/tape.ogg',25)
+			play_sfx(src, SFX_EFFECTS_TAPE)
 			taped_safety = TRUE
 		else if(grip_safety && taped_safety)
 			to_chat(user, span_notice("The grip safety has already been taped down."))
@@ -166,7 +166,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/baton, \
 	if(bcell && bcell.charge >= hitcost)
 		status = !status
 		to_chat(user, span_notice("[src] is now [status ? "on" : "off"]."))
-		playsound(src, "sparks", 75, 1, -1)
+		play_sfx(src, SFX_SPARKS, 1.5, extrarange = -1)
 		update_icon()
 	else
 		status = 0
@@ -204,15 +204,15 @@ DECLARE_INTERACTIONS(/obj/item/melee/baton, \
 		stun *= 0.5
 	else if(!status)
 		if(affecting)
-			target.visible_message(span_warning("[target] has been prodded in the [affecting.name] with [src] by [user]. Luckily it was off."))
+			act_message(user, target, others = span_warning("%T% has been prodded in the [affecting.name] with [src] by %U%. Luckily it was off."))
 		else
-			target.visible_message(span_warning("[target] has been prodded with [src] by [user]. Luckily it was off."))
+			act_message(user, target, others = span_warning("%T% has been prodded with [src] by %U%. Luckily it was off."))
 	else
 		if(affecting)
-			target.visible_message(span_danger("[target] has been prodded in the [affecting.name] with [src] by [user]!"))
+			act_message(user, target, others = span_danger("%T% has been prodded in the [affecting.name] with [src] by %U%!"))
 		else
-			target.visible_message(span_danger("[target] has been prodded with [src] by [user]!"))
-		playsound(src, 'sound/weapons/egloves.ogg', 50, 1, -1)
+			act_message(user, target, others = span_danger("%T% has been prodded with [src] by %U%!"))
+		play_sfx(src, SFX_WEAPONS_EGLOVES)
 
 	//stun effects
 	if(status)

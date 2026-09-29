@@ -11,7 +11,7 @@
 	var/tmp/client/client
 	var/datum/tgui_window/window
 	var/broken = FALSE
-	var/initialized_at
+	EXPIRY_DECLARE(initialized_at)
 	var/oldchat = FALSE
 	/// Each client notifies on protected playback, so this prevents spamming admins.
 	var/static/admins_warned = 0 // COOLDOWN, shared by every panel
@@ -44,7 +44,7 @@
 	om_after(src, 1 TICKS, PROC_REF(initialize_window))
 
 /datum/tgui_panel/proc/initialize_window()
-	initialized_at = world.time
+	EXPIRY_STAMP(src, initialized_at, CLOCK_WORLD)
 	// Perform a clean initialization
 	window.initialize(
 		strict_mode = TRUE,

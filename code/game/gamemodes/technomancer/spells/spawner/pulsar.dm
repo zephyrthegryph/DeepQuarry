@@ -26,10 +26,11 @@
 	empulse(hit_atom, 1, 1, 1, 1, log=1)
 
 // Does something every so often. Deletes itself when pulses_remaining hits zero.
+OWN_TIMER(/obj/effect/temporary_effect/pulse, pulsetimer)
+
 /obj/effect/temporary_effect/pulse
 	var/pulses_remaining = 3
 	var/pulse_delay = 2 SECONDS
-	var/pulsetimer
 
 /obj/effect/temporary_effect/pulse/Initialize(mapload)
 	..()
@@ -41,7 +42,7 @@
 /obj/effect/temporary_effect/pulse/proc/pulse_loop()
 
 	if(pulses_remaining > 0)
-		pulsetimer = om_after(src, pulse_delay, PROC_REF(pulse_loop))
+		om_after_slot(src, "pulsetimer", pulse_delay, PROC_REF(pulse_loop))
 		pulses_remaining--
 		on_pulse()
 	else

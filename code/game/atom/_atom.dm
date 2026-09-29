@@ -17,7 +17,7 @@
 	var/bubble_icon = "normal" ///what icon the atom uses for speechbubbles
 	var/datum/forensics_crime/forensic_data
 
-	var/tmp/last_bumped = 0
+	EXPIRY_TMP_DECLARE(last_bumped)
 
 	///Chemistry.
 	var/datum/reagents/reagents = null
@@ -298,6 +298,8 @@
 	if(density == new_density)
 		return FALSE
 	density = !!new_density // Sanitize to be strictly 0 or 1
+	if(istype(src, /obj/machinery))
+		om_changed(src, CHANGE_MACHINE_SETTINGS) // the declared field's channel (machinery_fields.dm)
 	return TRUE
 
 // Called to set the atom's invisibility and usd to add behavior to invisibility changes.
@@ -598,40 +600,38 @@
 			return
 
 ///Passes Stat Browser Panel clicks to the game and calls client click on an atom
-/atom/Topic(href, list/href_list)
-	. = ..()
-	if(!usr?.client)
+TOPIC_ACTION(/atom, "statpanel_item_click", PROC_REF(topic_statpanel_click), TOPIC_TEXT("statpanel_item_click", 8), TOPIC_TEXT("statpanel_item_shiftclick", 8), TOPIC_TEXT("statpanel_item_ctrlclick", 8), TOPIC_TEXT("statpanel_item_altclick", 8))
+
+/atom/proc/topic_statpanel_click(mob/user, list/args)
+	if(!user?.client)
 		return
-	var/client/usr_client = usr.client
 	var/list/paramslist = list()
-
-	if(href_list["statpanel_item_click"])
-		switch(href_list["statpanel_item_click"])
-			if("left")
-				paramslist["left"] = "1"
-			if("right")
-				paramslist["right"] = "1"
-			if("middle")
-				paramslist["middle"] = "1"
-			else
-				return
-
-		if(href_list["statpanel_item_shiftclick"])
-			paramslist["shift"] = "1"
-		if(href_list["statpanel_item_ctrlclick"])
-			paramslist["ctrl"] = "1"
-		if(href_list["statpanel_item_altclick"])
-			paramslist["alt"] = "1"
-
-		var/mouseparams = list2params(paramslist)
-		usr_client.Click(src, loc, null, mouseparams)
-		return TRUE
+	switch(args["statpanel_item_click"])
+		if("left")
+			paramslist["left"] = "1"
+		if("right")
+			paramslist["right"] = "1"
+		if("middle")
+			paramslist["middle"] = "1"
+		else
+			return
+	if(args["statpanel_item_shiftclick"])
+		paramslist["shift"] = "1"
+	if(args["statpanel_item_ctrlclick"])
+		paramslist["ctrl"] = "1"
+	if(args["statpanel_item_altclick"])
+		paramslist["alt"] = "1"
+	user.client.Click(src, loc, null, list2params(paramslist))
+	return TRUE
 
 GLOBAL_LIST_EMPTY(icon_dimensions)
 
+/// get_oversized_icon_offsets() for an unshifted atom (shared; callers only read it).
+GLOBAL_LIST_INIT(zero_icon_offsets, list("x" = 0, "y" = 0))
+
 /atom/proc/get_oversized_icon_offsets()
 	if (pixel_x == 0 && pixel_y == 0)
-		return list("x" = 0, "y" = 0)
+		return GLOB.zero_icon_offsets
 	var/list/icon_dimensions = get_icon_dimensions(icon)
 	var/icon_width = icon_dimensions["width"]
 	var/icon_height = icon_dimensions["height"]
@@ -674,7 +674,7 @@ GLOBAL_LIST_EMPTY(icon_dimensions)
 *	Include EXTRAPOLATOR_SPECIAL_HANDLED in the list if the extrapolation act has been handled by this proc or a signal, and should not be handled by the extrapolator itself.
 */
 /atom/proc/extrapolator_act(mob/living/user, obj/item/extrapolator/extrapolator, dry_run = FALSE)
-	. = list(EXTRAPOLATOR_RESULT_DISEASES = list())
+	. = list(EXTRAPOLATOR_RESULT_DISEASES = list()) // ALLOW(sys_const_list_alloc): fresh result container that overrides fill via EXTRAPOLATOR_ACT_ADD_DISEASES(., ...)
 
 /**
 *	Wash this atom

@@ -71,7 +71,7 @@
 	air_contents.set_temperature(T20C + ((severity - 1) * rand(-50, 50)))
 	air_contents.adjust_gas(gas_type, (10 * MOLES_CELLSTANDARD) - LINDA_GAS_AMT(air_contents, gas_type))
 	target_turf().assume_air(air_contents)
-	playsound(target_turf(), 'sound/effects/smoke.ogg', 50, 1)
+	play_sfx(target_turf(), SFX_EFFECTS_SMOKE, extrarange = 0)
 
 /// Chosen target area
 /datum/event/atmos_leak/proc/target_area() as /area

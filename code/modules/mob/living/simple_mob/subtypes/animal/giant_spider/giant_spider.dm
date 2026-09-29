@@ -15,7 +15,7 @@
 	endurance = 90
 
 	base_attack_cooldown = 15
-	projectilesound = 'sound/weapons/taser2.ogg'
+	projectilesound = SFX_WEAPONS_TASER2
 	projectiletype = /obj/item/projectile/ion/pistol
 
 	melee_damage_lower = 8

@@ -114,8 +114,18 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 	if (isnull(cached_serialized_url_mappings) || cached_serialized_url_mappings_transport_type != SSassets.transport.type)
 		cached_serialized_url_mappings = TGUI_CREATE_MESSAGE("asset/mappings", get_url_mappings())
 		cached_serialized_url_mappings_transport_type = SSassets.transport.type
+		om_rec_of(src) // join the object model so the declared caches are cleared on CHANGE_EXPLICIT
 
 	return cached_serialized_url_mappings
+
+/// The serialized URL mappings (and the transport they were built for) are declared
+/// caches: regenerating the asset raises CHANGE_EXPLICIT and the object-model core nulls them.
+/datum/asset/declared_cache_vars()
+	var/list/L = ..()
+	L = L ? L.Copy() : list()
+	L["cached_serialized_url_mappings"] = CACHE_ON_CHANGE(CHANGE_EXPLICIT)
+	L["cached_serialized_url_mappings_transport_type"] = CACHE_ON_CHANGE(CHANGE_EXPLICIT)
+	return L
 
 /datum/asset/proc/register()
 	return
@@ -131,8 +141,7 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 /datum/asset/proc/regenerate()
 	SHOULD_CALL_PARENT(FALSE)
 	unregister()
-	cached_serialized_url_mappings = null
-	cached_serialized_url_mappings_transport_type = null
+	om_changed(src, CHANGE_EXPLICIT)
 	register()
 
 /// Unregisters any assets from the transport.
@@ -227,7 +236,7 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 	var/list/to_generate
 	var/list/sizes    // "32x32" -> list(10, icon/normal, icon/stripped)
 	var/list/sprites  // "foo_bar" -> list("32x32", 5)
-	var/list/cached_spritesheets_needed
+	var/list/spritesheets_needed
 	var/generating_cache = FALSE
 	var/fully_generated = FALSE
 	/// If this asset should be fully loaded on new
@@ -267,22 +276,21 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 		for(var/size_id in sizes)
 			SSassets.transport.unregister_asset("[name]_[size_id].png")
 	else
-		for(var/sheet in cached_spritesheets_needed)
+		for(var/sheet in spritesheets_needed)
 			SSassets.transport.unregister_asset(sheet)
 
 /datum/asset/spritesheet/regenerate()
 	unregister()
 	sprites = list()
 	fdel("[ASSET_CROSS_ROUND_CACHE_DIRECTORY]/spritesheet.[name].css")
-	for(var/sheet in cached_spritesheets_needed)
+	for(var/sheet in spritesheets_needed)
 		fdel("[ASSET_CROSS_ROUND_CACHE_DIRECTORY]/spritesheet.[sheet].png")
 	fdel("data/spritesheets/spritesheet_[name].css")
 	for(var/size_id in sizes)
 		fdel("data/spritesheets/[name]_[size_id].png")
 	sizes = list()
 	to_generate = list()
-	cached_serialized_url_mappings = null
-	cached_serialized_url_mappings_transport_type = null
+	om_changed(src, CHANGE_EXPLICIT)
 	fully_generated = FALSE
 	var/old_load = load_immediately
 	load_immediately = TRUE
@@ -450,7 +458,7 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 		var/asset_cache_item = SSassets.transport.register_asset(asset_id, file_path, file_hash=hash)
 		var/asset_url = SSassets.transport.get_asset_url(asset_cache_item = asset_cache_item)
 		replaced_css = replacetext(replaced_css, find_background_urls.match, "background:url('[asset_url]')")
-		LAZYADD(cached_spritesheets_needed, asset_id)
+		LAZYADD(spritesheets_needed, asset_id)
 
 	var/replaced_css_filename = "data/spritesheets/spritesheet_[name].css"
 	var/css_hash = rustg_hash_string("md5", replaced_css)
@@ -465,11 +473,11 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 	return TRUE
 
 /datum/asset/spritesheet/proc/send_from_cache(client/client)
-	if (isnull(cached_spritesheets_needed))
-		stack_trace("cached_spritesheets_needed was null when sending assets from [type] from cache")
-		cached_spritesheets_needed = list()
+	if (isnull(spritesheets_needed))
+		stack_trace("spritesheets_needed was null when sending assets from [type] from cache")
+		spritesheets_needed = list()
 
-	return SSassets.transport.send_assets(client, cached_spritesheets_needed + "spritesheet_[name].css")
+	return SSassets.transport.send_assets(client, spritesheets_needed + "spritesheet_[name].css")
 
 /// Returns the URL to put in the background:url of the CSS asset
 /datum/asset/spritesheet/proc/get_background_url(asset)
@@ -493,7 +501,7 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 	var/list/mappings = list()
 	mappings["spritesheet_[name].css"] = SSassets.transport.get_asset_url("spritesheet_[name].css")
 
-	for (var/asset_name in cached_spritesheets_needed)
+	for (var/asset_name in spritesheets_needed)
 		mappings[asset_name] = SSassets.transport.get_asset_url(asset_name)
 
 	return mappings

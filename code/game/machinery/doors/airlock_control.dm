@@ -119,7 +119,7 @@
 		var/datum/signal/signal = new
 		signal.transmission_method = TRANSMISSION_RADIO //radio signal
 		signal.data["tag"] = id_tag
-		signal.data["timestamp"] = world.time
+		signal.data["timestamp"] = EXPIRY_AT(src, CLOCK_WORLD, 0)
 
 		signal.data["door_status"] = density?("closed"):("open")
 		signal.data["lock_status"] = locked?("locked"):("unlocked")
@@ -176,7 +176,7 @@
 
 	var/datum/radio_frequency/radio_connection
 
-	var/on = 1
+	on = 1
 	var/alert = 0
 	var/previousPressure
 
@@ -243,7 +243,7 @@
 			var/datum/signal/signal = new
 			signal.transmission_method = TRANSMISSION_RADIO //radio signal
 			signal.data["tag"] = id_tag
-			signal.data["timestamp"] = world.time
+			signal.data["timestamp"] = EXPIRY_AT(src, CLOCK_WORLD, 0)
 			signal.data["pressure"] = num2text(pressure)
 
 			radio_connection().post_signal(src, signal, range = AIRLOCK_CONTROL_RANGE, radio_filter = RADIO_AIRLOCK)
@@ -325,7 +325,7 @@
 
 	var/datum/radio_frequency/radio_connection
 
-	var/on = 1
+	on = 1
 
 /obj/machinery/access_button/update_icon()
 	if(panel_open)

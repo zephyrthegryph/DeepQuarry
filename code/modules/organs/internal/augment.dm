@@ -163,7 +163,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/organ/internal/augment, "integrated_object", "in
 		rel_set(equipping, "my_augment", cling_to_organ)
 
 	if(make_sound)
-		playsound(src, 'sound/items/change_jaws.ogg', 30, 1)
+		play_sfx(src, SFX_ITEMS_CHANGE_JAWS, 0.6)
 
 	if(equipping.loc != src)
 		equipping.dropped(src)

@@ -48,7 +48,7 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/omni, null, list(APPEARANCE_ANY =
 	build_icons()
 
 /obj/machinery/atmospherics/omni/update_icon()
-	if(stat & NOPOWER)
+	if(has_stat(NOPOWER))
 		overlays = overlays_off
 	else if(error_check())
 		overlays = overlays_error
@@ -62,21 +62,30 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/omni, null, list(APPEARANCE_ANY =
 /obj/machinery/atmospherics/omni/proc/error_check()
 	return
 
+/// Wake tracing for omni devices (off by default): define DQ_TRACE_OMNI_WAKE to log every
+/// arm/clear/wake/step decision, for chasing OM_AUDIT missed wakes.
+#ifdef DQ_TRACE_OMNI_WAKE
+#define OMNI_WAKE_TRACE(M, what) log_world("OMNI_WAKE_TRACE [REF(M)] [M.name] t=[world.time] [what] stat=[M.stat] use_power=[M.use_power] active=[M.step_active] armed=[om_watch_armed(M)]")
+#else
+#define OMNI_WAKE_TRACE(M, what)
+#endif
+
 /obj/machinery/atmospherics/omni/machine_step()
+	OMNI_WAKE_TRACE(src, "step")
 	last_power_draw = 0
 	last_flow_rate = 0
 
 	if(error_check())
-		update_use_power(USE_POWER_OFF)
+		set_use_power(USE_POWER_OFF)
 
-	if((stat & (NOPOWER|BROKEN)) || !use_power)
+	if((!operable()) || !use_power)
 		return 0
 	return 1
 
 /obj/machinery/atmospherics/omni/power_change()
-	var/old_stat = stat
-	..()
-	if(old_stat != stat)
+	. = ..()
+	OMNI_WAKE_TRACE(src, "power_change changed=[.]")
+	if(.)
 		update_icon()
 		wake_for_state_change()
 
@@ -91,27 +100,29 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/omni, null, list(APPEARANCE_ANY =
 			mixture_ids |= id
 	om_watch_arm_condition(src, "gas", mixture_ids, GAS_DEPENDENCY_ALL, om_callable(src, PROC_REF(gas_wake_condition)), wake_callback = om_callable(src, PROC_REF(wake_for_state_change)))
 	MACHINE_SLEEP(src)
+	OMNI_WAKE_TRACE(src, "hibernate mixtures=[length(mixture_ids)]")
 
 /obj/machinery/atmospherics/omni/proc/clear_gas_dependencies()
 	om_watch_disarm(src, "gas")
 
 /obj/machinery/atmospherics/omni/proc/gas_wake_condition()
-	return use_power && !(stat & (NOPOWER|BROKEN)) && can_process_gas()
+	return use_power && operable() && can_process_gas()
 
 /obj/machinery/atmospherics/omni/proc/can_process_gas()
 	return TRUE
 
 /obj/machinery/atmospherics/omni/proc/wake_for_state_change()
 	clear_gas_dependencies()
-	if(use_power && !(stat & (NOPOWER|BROKEN)))
+	if(use_power && operable())
 		MACHINE_WAKE(src)
+	OMNI_WAKE_TRACE(src, "wake_for_state_change")
 
 /obj/machinery/atmospherics/omni/wrench_act(mob/user, obj/item/W)
 	if(!can_unwrench())
 		to_chat(user, span_warning("You cannot unwrench \the [src], it is too exerted due to internal pressure."))
 		add_fingerprint(user)
 		return ITEM_INTERACT_BLOCKING
-	use_tool(user, W, src, delay = 40, volume = 50, message_self = "You begin to unfasten \the [src]...", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
+	use_tool(user, W, src, delay = 40, volume = 50, start_self = "You begin to unfasten \the [src]...", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/atmospherics/omni/proc/wrench_act_tool_done(mob/user)
@@ -310,7 +321,7 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/omni, null, list(APPEARANCE_ANY =
 /obj/machinery/atmospherics/omni/click_ctrl(mob/user)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	if(allowed(user))
-		update_use_power(!use_power)
+		set_use_power(!use_power)
 		wake_for_state_change()
 		update_icon()
 		add_fingerprint(user)

@@ -108,7 +108,7 @@
 		box_segments = draw_box(target, grab_range, user.client)
 		color_box(box_segments, "#330099", 60 SECONDS)
 
-	playsound(src, 'sound/machines/beep.ogg', 50)
+	play_sfx(src, SFX_MACHINES_BEEP)
 
 	rel_set(src, "grabbed_entity", target)
 	if(isliving(target))
@@ -156,7 +156,7 @@
 	var/mob/user = task.actor
 	var/list/effects = task.effects
 	to_chat(user, span_warning("With a buzz, \the [src] flashes red, the beam on \the [target] has broken!"))
-	playsound(src, 'sound/machines/buzz-two.ogg', 50)
+	play_sfx(src, SFX_MACHINES_BUZZ_TWO)
 	color_box(effects[3], "#330099", 3)
 	grab_ended(target, user, effects)
 

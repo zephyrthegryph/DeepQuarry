@@ -27,7 +27,7 @@
 	projectile_dispersion = 12
 	projectile_accuracy = -25
 
-	projectilesound = 'sound/weapons/thudswoosh.ogg'
+	projectilesound = SFX_WEAPONS_THUDSWOOSH
 	projectiletype = /obj/item/projectile/webball
 	base_attack_cooldown = 10
 	melee_damage_lower = 8
@@ -49,7 +49,7 @@
 /mob/living/simple_mob/animal/giant_spider/webslinger/do_special_attack(atom/A, stance)
 	ai_busy_begin()
 	var/obj/item/projectile/bola/B = new /obj/item/projectile/bola(src.loc)
-	playsound(src, 'sound/weapons/thudswoosh.ogg', 100, 1)
+	play_sfx(src, SFX_WEAPONS_THUDSWOOSH, 2, extrarange = 0)
 	if(!B)
 		return
 	B.old_style_target(A, src)

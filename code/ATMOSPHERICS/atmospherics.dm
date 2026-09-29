@@ -213,6 +213,10 @@ REL_PAIR_LIST(/obj/machinery/atmospherics, network_memberships, normal_members)
 		return
 	last_flow_rate = 0
 	last_power_draw = 0
+	// Nothing to do at this level: park. Subtypes with work call ..() for the resets above and
+	// return their own verdict. Returning null here kept every plain pipe (~9k on Southern Cross)
+	// step_active forever once anything woke it, so the machine pipeline ran them all every frame.
+	return PROCESS_KILL
 
 /// Completion callback for deferred Rust gas transfers. Devices which queued a
 /// request must make their scheduling decision from the committed amount, not
@@ -370,9 +374,9 @@ REL_PAIR_LIST(/obj/machinery/atmospherics, network_memberships, normal_members)
 	var/internal_pressure = int_air.return_pressure()-env_air.return_pressure()
 	atom_deconstruct()
 	// Release pressure
-	playsound(our_turf, 'sound/effects/bang.ogg', 70, 0, 0)
-	playsound(our_turf, 'sound/effects/clang2.ogg', 70, 0, 0)
+	play_sfx(our_turf, SFX_EFFECTS_BANG, 1.4, vary = FALSE)
+	play_sfx(our_turf, SFX_EFFECTS_CLANG2, 1.4, vary = FALSE)
 	if(internal_pressure > 2*ONE_ATMOSPHERE)
 		unsafe_pressure_release(user, internal_pressure)
-		playsound(our_turf, 'sound/machines/hiss.ogg', 50, 0, 0)
+		play_sfx(our_turf, SFX_MACHINES_HISS)
 

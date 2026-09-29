@@ -11,18 +11,11 @@
 	/// Typepath of custom material to use for objects.
 	var/datum/material/material
 	/// Sound to play when transforming a tile
-	var/sound = 'sound/effects/blind.ogg'
+	var/sound = SFX_EFFECTS_BLIND
 	/// Weighted list of turfs to replace the floor with.
 	var/list/replace_floors = list(/turf/simulated/floor/tiled = 1) // ALLOW(instance_list): d: edited in place per instance (1 writers)
 	/// Typepath of turf to replace walls with.
 	var/replace_walls = /turf/simulated/wall
-	/// List of weighted lists for object replacement. Key is an original typepath, value is a weighted list of typepaths to replace it with.
-	var/list/replace_objs = list( // ALLOW(instance_list): c: read-only per-subtype constant table (8 subtype overrides); a getter would share it, not worth it on a rare type
-		/obj/structure/bed/chair = list(/obj/structure/bed/chair = 1),
-		/obj/machinery/door/airlock = list(/obj/machinery/door/airlock = 1, /obj/machinery/door/airlock/glass = 1),
-		/obj/structure/table = list(/obj/structure/table = 1),
-		/obj/structure/toilet = list(/obj/structure/toilet = 1)
-	)
 	/// List of random spawns to place in completely open turfs
 	var/list/random_spawns
 	/// Prob of placing a random spawn in a completely open turf
@@ -32,6 +25,14 @@
 	var/replace_window
 	/// Colour to recolour windows with, replaced by material colour if material was specified.
 	var/window_colour = "#ffffff"
+
+/// List of weighted lists for object replacement. Key is an original typepath, value is a weighted list of typepaths to replace it with.
+TYPE_TABLE_DECLARE(/datum/dimension_theme, dimension_replace_objs, list( \
+		/obj/structure/bed/chair = list(/obj/structure/bed/chair = 1), \
+		/obj/machinery/door/airlock = list(/obj/machinery/door/airlock = 1, /obj/machinery/door/airlock/glass = 1), \
+		/obj/structure/table = list(/obj/structure/table = 1), \
+		/obj/structure/toilet = list(/obj/structure/toilet = 1) \
+	))
 
 /datum/dimension_theme/New()
 	if(material)
@@ -143,14 +144,14 @@
 			var/obj/machinery/door/airlock/airlock = object
 			var/obj/machinery/door/airlock/new_airlock = new_object
 			new_airlock.req_one_access = airlock.req_one_access?.Copy()
-			new_airlock.locked = airlock.locked
+			new_airlock.set_locked(airlock.locked)
 			if(istype(object, /obj/machinery/door/airlock/multi_tile))
 				for(var/turf/location in object.locs)
 					if(location == object.loc)
 						continue
 					var/obj/machinery/door/airlock/long_airlock = new replace_path(location)
 					long_airlock.req_one_access = airlock.req_one_access?.Copy()
-					long_airlock.locked = airlock.locked
+					long_airlock.set_locked(airlock.locked)
 					long_airlock.name = airlock.name
 		new_object.name = object.name
 	qdel(object)
@@ -164,45 +165,48 @@
 /datum/dimension_theme/proc/get_replacement_object_typepath(obj/object)
 	PROTECTED_PROC(TRUE)
 
-	for(var/type in replace_objs)
+	for(var/type in TYPE_TABLE_GET(src, dimension_replace_objs))
 		if(istype(object, type))
-			return pick_weight(replace_objs[type])
+			return pick_weight(TYPE_TABLE_GET(src, dimension_replace_objs)[type])
 
 /datum/dimension_theme/gold
 	name = "Gold"
 	icon_state = "sheet-gold_2"
 	material = /datum/material/gold
 	replace_floors = list(/turf/simulated/floor/tiled/material/gold = 1)
-	replace_objs = list(
-		/obj/structure/bed/chair = list(/obj/structure/bed/chair = 1),
-		/obj/machinery/door/airlock = list(/obj/machinery/door/airlock/gold = 1),
-		/obj/structure/table = list(/obj/structure/table/gold = 1),
-		/obj/structure/toilet = list(/obj/structure/toilet = 1)
-	)
 	replace_walls = /turf/simulated/wall/gold
+
+TYPE_TABLE(/datum/dimension_theme/gold, dimension_replace_objs, list( \
+		/obj/structure/bed/chair = list(/obj/structure/bed/chair = 1), \
+		/obj/machinery/door/airlock = list(/obj/machinery/door/airlock/gold = 1), \
+		/obj/structure/table = list(/obj/structure/table/gold = 1), \
+		/obj/structure/toilet = list(/obj/structure/toilet = 1) \
+	))
 
 /datum/dimension_theme/radioactive
 	name = "Radioactive"
 	icon_state = "sheet-uranium_2"
 	material = /datum/material/uranium
 	replace_floors = list(/turf/simulated/floor/tiled/material/uranium = 1)
-	replace_objs = list(
-		/obj/machinery/door/airlock = list(/obj/machinery/door/airlock/uranium = 1),
-	)
 	replace_walls = /turf/simulated/wall/uranium
-	sound = 'sound/items/Welder.ogg'
+	sound = SFX_ITEMS_WELDER
+
+TYPE_TABLE(/datum/dimension_theme/radioactive, dimension_replace_objs, list( \
+		/obj/machinery/door/airlock = list(/obj/machinery/door/airlock/uranium = 1), \
+	))
 
 /datum/dimension_theme/wood
 	name = "Wood"
 	icon_state = "sheet-plank"
 	material = /datum/material/wood
 	replace_floors = list(/turf/simulated/floor/wood = 1)
-	replace_objs = list(
-		/obj/structure/bed/chair = list(/obj/structure/bed/chair/wood = 1),
-		/obj/machinery/door/airlock = list(/obj/structure/simple_door/wood = 1),
-		/obj/structure/table = list(/obj/structure/table/woodentable = 1)
-	)
 	replace_walls = /turf/simulated/wall/wood
+
+TYPE_TABLE(/datum/dimension_theme/wood, dimension_replace_objs, list( \
+		/obj/structure/bed/chair = list(/obj/structure/bed/chair/wood = 1), \
+		/obj/machinery/door/airlock = list(/obj/structure/simple_door/wood = 1), \
+		/obj/structure/table = list(/obj/structure/table/woodentable = 1) \
+	))
 /datum/dimension_theme/natural
 	name = "Natural"
 	icon = 'icons/obj/plants.dmi'
@@ -210,11 +214,6 @@
 	window_colour = "#0b8011ff"
 	replace_floors = list(/turf/simulated/floor/grass = 1)
 	replace_walls = /turf/simulated/wall/wood
-	replace_objs = list(
-		/obj/structure/bed/chair = list(/obj/structure/bed/chair/wood = 3, /obj/structure/bed/chair/wood/wings = 1),
-		/obj/machinery/door/airlock = list(/obj/structure/simple_door/wood = 1),
-		/obj/structure/table = list(/obj/structure/table/woodentable = 1)
-	)
 	random_spawns = list(
 		/obj/structure/flora/grass/green = 3,
 		/obj/structure/flora/bush = 3,
@@ -222,43 +221,53 @@
 		)
 	random_spawn_chance = 10
 
+TYPE_TABLE(/datum/dimension_theme/natural, dimension_replace_objs, list( \
+		/obj/structure/bed/chair = list(/obj/structure/bed/chair/wood = 3, /obj/structure/bed/chair/wood/wings = 1), \
+		/obj/machinery/door/airlock = list(/obj/structure/simple_door/wood = 1), \
+		/obj/structure/table = list(/obj/structure/table/woodentable = 1) \
+	))
+
 /datum/dimension_theme/phoron
 	name = "Phoron"
 	icon_state = "sheet-phoron_2"
 	material = /datum/material/phoron
 	replace_floors = list(/turf/simulated/floor/tiled/material/phoron = 1)
-	replace_objs = list(
-		/obj/machinery/door/airlock = list(/obj/machinery/door/airlock/phoron = 1),
-	)
 	replace_walls = /turf/simulated/wall/phoron
+
+TYPE_TABLE(/datum/dimension_theme/phoron, dimension_replace_objs, list( \
+		/obj/machinery/door/airlock = list(/obj/machinery/door/airlock/phoron = 1), \
+	))
 
 /datum/dimension_theme/glass
 	name = "Glass"
 	icon_state = "sheet-glass_2"
 	material = /datum/material/glass
 	replace_floors = list(/turf/simulated/floor/glass = 1)
-	replace_objs = list(
-		/obj/machinery/door/airlock = list(/obj/machinery/door/airlock/glass = 1),
-		/obj/structure/table = list(/obj/structure/table/glass = 1)
-	)
 	replace_walls = /turf/simulated/wall/glass
+
+TYPE_TABLE(/datum/dimension_theme/glass, dimension_replace_objs, list( \
+		/obj/machinery/door/airlock = list(/obj/machinery/door/airlock/glass = 1), \
+		/obj/structure/table = list(/obj/structure/table/glass = 1) \
+	))
 
 /datum/dimension_theme/snow
 	name = "Snow"
 	icon_state = "sheet-snow_2"
 	material = /datum/material/snowbrick
 	replace_floors = list(/turf/simulated/floor/snow = 10, /turf/simulated/floor/outdoors/ice = 1)
-	replace_objs = list(
-		/obj/machinery/door/airlock = list(/obj/structure/simple_door/snowbrick = 1),
-	)
 	replace_walls = /turf/simulated/wall/snowbrick
+
+TYPE_TABLE(/datum/dimension_theme/snow, dimension_replace_objs, list( \
+		/obj/machinery/door/airlock = list(/obj/structure/simple_door/snowbrick = 1), \
+	))
 
 /datum/dimension_theme/diamond
 	name = "Diamond"
 	icon_state = "sheet-diamond"
 	material = /datum/material/diamond
 	replace_floors = list(/turf/simulated/floor/tiled/material/diamond = 1)
-	replace_objs = list(
-		/obj/machinery/door/airlock = list(/obj/machinery/door/airlock/diamond = 1)
-	)
 	replace_walls = /turf/simulated/wall/diamond
+
+TYPE_TABLE(/datum/dimension_theme/diamond, dimension_replace_objs, list( \
+		/obj/machinery/door/airlock = list(/obj/machinery/door/airlock/diamond = 1) \
+	))

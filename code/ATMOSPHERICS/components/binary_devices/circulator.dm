@@ -16,7 +16,7 @@
 	var/last_heat_capacity = 0
 	var/last_temperature = 0
 	var/last_pressure_delta = 0
-	TIMESTAMP_VAR(last_worldtime_transfer)
+	EXPIRY_DECLARE(last_worldtime_transfer)
 	var/last_stored_energy_transferred = 0
 	var/volume_capacity_used = 0
 	var/stored_energy = 0
@@ -31,7 +31,7 @@
 
 /obj/machinery/atmospherics/binary/circulator/proc/return_transfer_air()
 	var/datum/gas_mixture/removed
-	if(anchored && !(stat&BROKEN) && network1)
+	if(anchored && !has_stat(BROKEN) && network1)
 		var/input_starting_pressure = air1.return_pressure()
 		var/output_starting_pressure = air2.return_pressure()
 		last_pressure_delta = max(input_starting_pressure - output_starting_pressure - 5, 0)
@@ -57,7 +57,7 @@
 				//Update the gas networks.
 				network1.mark_dirty()
 
-				last_worldtime_transfer = world.time
+				EXPIRY_STAMP(src, last_worldtime_transfer, CLOCK_WORLD)
 				// The "running" overlay times out 5 s after the last transfer: one timer,
 				// re-armed per transfer, instead of a machine polling the clock.
 				om_after_replace(src, 5 SECONDS, PROC_REF(expire_transfer_display))
@@ -73,7 +73,7 @@
 	return last_stored_energy_transferred
 
 /obj/machinery/atmospherics/binary/circulator/proc/expire_transfer_display()
-	if(!recent_moles_transferred || last_worldtime_transfer > world.time - 50)
+	if(!recent_moles_transferred || ELAPSED(src, last_worldtime_transfer, CLOCK_WORLD) < 5 SECONDS)
 		return
 	recent_moles_transferred = 0
 	update_icon()
@@ -81,7 +81,7 @@
 /obj/machinery/atmospherics/binary/circulator/update_icon()
 	icon_state = anchored ? "circ-assembled" : "circ-unassembled"
 	cut_overlays()
-	if (stat & (BROKEN|NOPOWER) || !anchored)
+	if (!operable() || !anchored)
 		return 1
 	if (last_pressure_delta > 0 && recent_moles_transferred > 0)
 		if (temperature_overlay)
@@ -97,7 +97,7 @@
 
 /obj/machinery/atmospherics/binary/circulator/wrench_act(mob/user, obj/item/W)
 	playsound(src, W.usesound, 75, 1)
-	anchored = !anchored
+	set_anchored(!anchored)
 	user.visible_message("[user.name] [anchored ? "secures" : "unsecures"] the bolts holding [src.name] to the floor.", \
 				"You [anchored ? "secure" : "unsecure"] the bolts holding [src] to the floor.", \
 				"You hear a ratchet.")

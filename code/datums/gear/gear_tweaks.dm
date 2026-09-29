@@ -453,6 +453,7 @@ GLOBAL_DATUM_INIT(gear_tweak_free_digestable, /datum/gear_tweak/toggle_digestabl
 	return computer_hardware_answered(seq, list(ValidProcessors, ValidBatteries, ValidHardDrives, ValidNetworkCards, ValidNanoPrinters, ValidCardSlots, ValidTeslaLinks))
 
 /datum/gear_tweak/tablet/get_default()
+	// ALLOW(sys_const_list_alloc): default metadata stored into a player\'s loadout preferences, where it is saved and edited per character; each caller needs its own list
 	return list(1, 1, 1, 1, 1, 1, 1)
 
 /datum/gear_tweak/tablet/tweak_item(obj/item/modular_computer/tablet/I, list/metadata)
@@ -544,6 +545,7 @@ GLOBAL_DATUM_INIT(gear_tweak_free_digestable, /datum/gear_tweak/toggle_digestabl
 		. += names[seq.get("[i]")]
 
 /datum/gear_tweak/laptop/get_default()
+	// ALLOW(sys_const_list_alloc): default metadata stored into a player\'s loadout preferences, where it is saved and edited per character; each caller needs its own list
 	return list(1, 1, 1, 1, 1, 1, 1)
 
 /datum/gear_tweak/laptop/tweak_item(obj/item/modular_computer/laptop/preset/I, list/metadata)

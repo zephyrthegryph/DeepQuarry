@@ -271,6 +271,11 @@ def puts_object(rhs, local_types, owner):
     """True when the written value (or key) is recognisably an entity: src, a new expression, or a
     local/argument declared with an entity type."""
     text = rhs.split("//", 1)[0]
+    # A proc call's arguments are not the written value: EXPIRY_AT(src, ...) writes a number.
+    prev = None
+    while prev != text:
+        prev = text
+        text = re.sub(r"\b(?!new\b)[A-Za-z_]\w*\s*\([^()]*\)", "0", text)
     for m in OBJ_TOKEN.finditer(text):
         tok = m.group(1)
         if tok == "src" or tok == "new":
@@ -483,14 +488,15 @@ def main(argv=None):
                     # A member var assigned a new entity: whatever its declared type, the holder made
                     # it, so it owns it (own_set), unless declared otherwise.
                     got = idx.member(rtype, name)
-                    if got:
+                    d = idx.decl(rtype, name)
+                    if got and not (d and decl_kind_of.get(d[1]) == "SHARED"):
                         kind, dtype = "entity", got[0]
                 if not kind and rtype and how in OBJLIST_WRITES and puts_object(rhs, local_types, owner):
                     # An untyped list var collecting entities (src, a new object, an entity-typed local):
                     # an object-keyed roster, which is an owned or relation list.
                     got = idx.member(rtype, name)
                     d = idx.decl(rtype, name)
-                    if got and got[2] and not (d and d[1] == "SHARED"):
+                    if got and got[2] and not (d and decl_kind_of.get(d[1]) == "SHARED"):
                         kind, dtype = "list", got[0]
                 if not kind:
                     continue

@@ -38,40 +38,55 @@
 	tool_volume = 0
 
 /datum/interaction/construction/mecha/undo_bolts
+	feedback = /datum/msg/interaction/construction/mecha/undo_bolts
 	from_state = MECHA_BOLTS_SECURED
 	to_state = MECHA_PANEL_LOOSE
 	step_text = "undo the securing bolts"
 	tool = TOOL_WRENCH
-	message_self = "You undo the securing bolts."
+
+/datum/msg/interaction/construction/mecha/undo_bolts
+	self = "You undo the securing bolts."
 
 /datum/interaction/construction/mecha/tighten_bolts
+	feedback = /datum/msg/interaction/construction/mecha/tighten_bolts
 	from_state = MECHA_PANEL_LOOSE
 	to_state = MECHA_BOLTS_SECURED
 	step_text = "tighten the securing bolts"
 	tool = TOOL_WRENCH
-	message_self = "You tighten the securing bolts."
+
+/datum/msg/interaction/construction/mecha/tighten_bolts
+	self = "You tighten the securing bolts."
 
 /datum/interaction/construction/mecha/open_hatch
+	feedback = /datum/msg/interaction/construction/mecha/open_hatch
 	from_state = MECHA_PANEL_LOOSE
 	to_state = MECHA_CELL_OPEN
 	step_text = "open the hatch to the power unit"
 	tool = TOOL_CROWBAR
-	message_self = "You open the hatch to the power unit"
+
+/datum/msg/interaction/construction/mecha/open_hatch
+	self = "You open the hatch to the power unit"
 
 /datum/interaction/construction/mecha/close_hatch
+	feedback = /datum/msg/interaction/construction/mecha/close_hatch
 	from_state = MECHA_CELL_OPEN
 	to_state = MECHA_PANEL_LOOSE
 	step_text = "close the hatch to the power unit"
 	tool = TOOL_CROWBAR
-	message_self = "You close the hatch to the power unit"
+
+/datum/msg/interaction/construction/mecha/close_hatch
+	self = "You close the hatch to the power unit"
 
 /datum/interaction/construction/mecha/remove_cell
+	feedback = /datum/msg/interaction/construction/mecha/remove_cell
 	from_state = MECHA_CELL_OPEN
 	to_state = MECHA_CELL_OUT
 	step_text = "unscrew and pry out the power cell"
 	tool = TOOL_SCREWDRIVER
 	requires = list(REQ_REACH_ADJACENT, REQ_ON(PRED_TARGET, /obj/mecha/proc/maintenance_has_cell, "there's no power cell"))
-	message_self = "You unscrew and pry out the powercell."
+
+/datum/msg/interaction/construction/mecha/remove_cell
+	self = "You unscrew and pry out the powercell."
 
 /datum/interaction/construction/mecha/remove_cell/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
 	var/obj/mecha/mech = target
@@ -81,12 +96,15 @@
 	return TRUE
 
 /datum/interaction/construction/mecha/secure_cell
+	feedback = /datum/msg/interaction/construction/mecha/secure_cell
 	from_state = MECHA_CELL_OUT
 	to_state = MECHA_CELL_OPEN
 	step_text = "screw the power cell in place"
 	tool = TOOL_SCREWDRIVER
 	requires = list(REQ_REACH_ADJACENT, REQ_ON(PRED_TARGET, /obj/mecha/proc/maintenance_has_cell, "there's no power cell"))
-	message_self = "You screw the cell in place"
+
+/datum/msg/interaction/construction/mecha/secure_cell
+	self = "You screw the cell in place"
 
 /// With the cell out, the crowbar pries out a component. The state doesn't change.
 /datum/interaction/construction/mecha/pry_component
@@ -166,31 +184,38 @@
 	return istype(mech) && mech_body_plan().has_affliction(mech, treats)
 
 /datum/interaction/mecha_treat/fix_temperature
+	feedback = /datum/msg/interaction/mecha_treat/fix_temperature
 	id = "mecha_fix_temperature"
 	name = "Repair the temperature controller"
 	tool = TOOL_SCREWDRIVER
 	treats = MECHA_INT_TEMP_CONTROL
 	effect = /obj/mecha/proc/fix_temperature_control
-	message_self = "You repair the damaged temperature controller."
+
+/datum/msg/interaction/mecha_treat/fix_temperature
+	self = "You repair the damaged temperature controller."
 
 /obj/mecha/proc/fix_temperature_control(mob/actor, obj/item/held, datum/interaction/interaction)
 	return mech_body_plan().cure(src, MECHA_INT_TEMP_CONTROL)
 
 /// A welder seals a breached tank before it patches anything else.
 /datum/interaction/mecha_treat/seal_tank
+	feedback = /datum/msg/interaction/mecha_treat/seal_tank
 	id = "mecha_seal_tank"
 	name = "Seal the gas tank"
 	priority = 25
 	tool = TOOL_WELDER
 	treats = MECHA_INT_TANK_BREACH
 	effect = /obj/mecha/proc/seal_tank
-	message_self = "You repair the damaged gas tank."
+
+/datum/msg/interaction/mecha_treat/seal_tank
+	self = "You repair the damaged gas tank."
 
 /obj/mecha/proc/seal_tank(mob/actor, obj/item/held, datum/interaction/interaction)
 	return mech_body_plan().cure(src, MECHA_INT_TANK_BREACH)
 
 /// Fused wiring behind the power unit hatch takes two lengths of cable.
 /datum/interaction/mecha_treat/fix_wiring
+	feedback = /datum/msg/interaction/mecha_treat/fix_wiring
 	id = "mecha_fix_wiring"
 	name = "Replace the fused wires"
 	tool = TOOL_CABLE_COIL
@@ -198,7 +223,9 @@
 	treats = MECHA_INT_SHORT_CIRCUIT
 	requires = list(REQ_REACH_ADJACENT, REQ_ON(PRED_TARGET, /obj/mecha/proc/maintenance_hatch_open, "the power unit hatch is closed"))
 	effect = /obj/mecha/proc/fix_wiring
-	message_self = "You replace the fused wires."
+
+/datum/msg/interaction/mecha_treat/fix_wiring
+	self = "You replace the fused wires."
 
 /obj/mecha/proc/fix_wiring(mob/actor, obj/item/held, datum/interaction/interaction)
 	return mech_body_plan().cure(src, MECHA_INT_SHORT_CIRCUIT)
@@ -219,7 +246,7 @@
 		to_chat(actor, span_warning("\The [held] is empty."))
 		return TRUE
 	held.reagents.remove_any(MECHA_EXTINGUISH_FOAM)
-	playsound(src, 'sound/effects/extinguish.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_EXTINGUISH, volume = 50, extrarange = 0)
 	to_chat(actor, span_notice("You flood \the [src]'s internals with foam."))
 	mech_body_plan().cure(src, MECHA_INT_FIRE)
 	return TRUE
@@ -305,7 +332,7 @@
 /obj/mecha/proc/paste_repair(mob/actor, obj/item/stack/nanopaste/held, datum/interaction/interaction)
 	var/datum/mech_body_plan/plan = mech_body_plan()
 	var/any_part = FALSE
-	for(var/slot in plan.part_order())
+	for(var/slot in TYPE_TABLE_GET(plan, part_order))
 		var/obj/item/mecha_parts/component/C = plan.part(src, slot)
 		if(!C)
 			continue

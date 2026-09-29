@@ -8,11 +8,7 @@
 	//  atom_flags =  ATOM_FLAG_NO_TEMP_CHANGE | ATOM_FLAG_CLIMBABLE
 	var/chargetype
 	var/chargedesc
-	var/static/list/move_sounds = list( // some nasty sounds to make when moving the board
-		'sound/effects/metalscrape1.ogg',
-		'sound/effects/metalscrape2.ogg',
-		'sound/effects/metalscrape3.ogg'
-	)
+	var/static/move_sounds = SFX_EFFECTS_METALSCRAPE
 
 // make a screeching noise to drive people mad
 /obj/structure/ship_munition/disperser_charge/Moved(atom/old_loc, direction, forced = FALSE)
@@ -20,7 +16,7 @@
 	if(prob(50))
 		var/turf/T = get_turf(src)
 		if(!isspace(T) && !istype(T, /turf/simulated/floor/carpet))
-			playsound(T, pick(move_sounds), 50, 1)
+			playsound(T, move_sounds, 50, 1)
 
 /obj/structure/ship_munition/disperser_charge/fire
 	name = "FR1-ENFER charge"

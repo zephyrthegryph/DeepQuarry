@@ -65,7 +65,7 @@
 /datum/armour_dimensional_theme/proc/place_barrier(turf/source, list/custom_materials)
 	var/obj/structure/barricade/placed_barricade = new barricade(source, custom_materials)
 	if(!barricade_anchored)
-		placed_barricade.anchored = FALSE
+		placed_barricade.set_anchored(FALSE)
 
 /datum/armour_dimensional_theme/safe
 

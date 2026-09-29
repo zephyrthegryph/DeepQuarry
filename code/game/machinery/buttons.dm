@@ -5,7 +5,7 @@
 	layer = ABOVE_WINDOW_LAYER
 	desc = "A remote control switch for something."
 	var/id = null
-	var/active = FALSE
+	active = FALSE
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
 	idle_power_usage = 2
@@ -40,7 +40,7 @@
 	return !istype(target, /obj/machinery/button/remote)
 
 /obj/machinery/button/proc/interaction_press(mob/user, obj/item/held, datum/interaction/interaction)
-	playsound(src, 'sound/machines/button.ogg', 100, 1)
+	play_sfx(src, SFX_MACHINES_BUTTON, volume = 100)
 	return TRUE
 
 /obj/machinery/button/windowtint/multitint
@@ -49,7 +49,7 @@
 
 /obj/machinery/button/windowtint/multitint/toggle_tint()
 	use_power(5)
-	active = !active
+	set_active(!active)
 	update_icon()
 
 	var/in_range = range(src,range)

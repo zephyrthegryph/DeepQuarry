@@ -111,8 +111,8 @@
 
 		if(missed) // Most likely we have a slow attack and they dodged it or we somehow got moved.
 			add_attack_logs(src, A, "Animal-attacked (dodged)", admin_notify = FALSE)
-			playsound(src, 'sound/rakshasa/Decay1.ogg', 75, 1)
-			visible_message(span_warning("\The [src] misses."))
+			play_sfx(src, SFX_RAKSHASA_DECAY1)
+			act_message(src, null, null, MSG_OTHERS(span_warning("%U% misses.")))
 			return FALSE
 		tryBumpNom(A) //Meant for bump noms but this works as intended here and has sanity checks.
 
@@ -177,7 +177,7 @@
 		if(istype(L, /mob/living/simple_mob/vore/slug))
 			return
 		L.status_at_least(EFFECT_WEAKENED, 10)
-		playsound(src, 'sound/rakshasa/Decay3.ogg', 100, 1)
+		play_sfx(src, SFX_RAKSHASA_DECAY3)
 		alert_slug(L)
 
 	if(istype(AM, /mob/living/carbon) || istype(AM, /mob/living/silicon))
@@ -190,7 +190,7 @@
 			L.stop_pulling()
 			L.status_at_least(EFFECT_WEAKENED, 2)
 			to_chat(L, span_warning("You tripped in the sticky substance, sticking to [my_turf]!"))
-			playsound(src, 'sound/rakshasa/Decay3.ogg', 100, 1)
+			play_sfx(src, SFX_RAKSHASA_DECAY3)
 			alert_slug(L)
 
 /obj/effect/slug_glue/proc/alert_slug(mob/living/victim as mob)

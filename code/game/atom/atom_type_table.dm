@@ -9,7 +9,7 @@
 // a registry walk per atom.
 //
 // Every source the table reads is itself built once and never changes after
-// the world has started (the registry declarations, dq_rules(), the OM
+// the world has started (the registry declarations, GLOBAL_TABLE_GET(dq_rules), the OM
 // registry), so a cached row never goes stale.
 
 /// The type joins at least one unconditional registry on materialize.

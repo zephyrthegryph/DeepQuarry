@@ -147,7 +147,7 @@
 				return
 
 		if(VV_DATUM_TYPE)
-			.["value"] = pick_closest_path(FALSE, get_fancy_list_of_datum_types(), "[key]:path")
+			.["value"] = pick_closest_path(FALSE, GLOBAL_TABLE_GET(get_fancy_list_of_datum_types), "[key]:path")
 			if(.["value"] == null)
 				.["class"] = null
 				return
@@ -173,7 +173,7 @@
 			.["value"] = things[value]
 
 		if(VV_DATUM_REFERENCE)
-			var/type = pick_closest_path(FALSE, get_fancy_list_of_datum_types(), "[key]:path")
+			var/type = pick_closest_path(FALSE, GLOBAL_TABLE_GET(get_fancy_list_of_datum_types), "[key]:path")
 			var/subtypes = vv_subtype_prompt(type, key)
 			if(subtypes == null)
 				.["class"] = null
@@ -251,7 +251,7 @@
 			.["value"] = newguy
 
 		if(VV_NEW_DATUM)
-			var/type = pick_closest_path(FALSE, get_fancy_list_of_datum_types(), "[key]:path")
+			var/type = pick_closest_path(FALSE, GLOBAL_TABLE_GET(get_fancy_list_of_datum_types), "[key]:path")
 			if(!type)
 				.["class"] = null
 				return

@@ -5,10 +5,11 @@
 	armor_penetration = 40
 	injury_kind = INJURY_BLUNT
 	pass_flags = PASSTABLE | PASSBLOB
-	fire_sound = 'sound/effects/slime_squish.ogg'
+	fire_sound = SFX_EFFECTS_SLIME_SQUISH
 	var/splatter = FALSE			// Will this make a cloud of reagents?
 	var/splatter_volume = 5			// The volume of its chemical container, for said cloud of reagents.
-	var/list/my_chems = list(REAGENT_ID_MOLD) // ALLOW(instance_list): c: read-only per-subtype constant table (6 subtype overrides); a getter would share it, not worth it on a rare type
+
+TYPE_TABLE_DECLARE(/obj/item/projectile/energy/blob, blob_projectile_chems, list(REAGENT_ID_MOLD))
 
 /obj/item/projectile/energy/blob/splattering
 	splatter = TRUE
@@ -25,26 +26,28 @@
 		var/datum/effect/effect/system/smoke_spread/chem/blob/S = new /datum/effect/effect/system/smoke_spread/chem/blob
 		S.attach(location)
 		S.set_up(reagents, rand(1, splatter_volume), 0, location)
-		playsound(location, 'sound/effects/slime_squish.ogg', 30, 1, -3)
+		play_sfx(location, SFX_EFFECTS_SLIME_SQUISH, 0.6, extrarange = -3)
 		S.start()
 	..()
 
 /obj/item/projectile/energy/blob/proc/ready_chemicals()
 	if(reagents)
-		var/reagent_vol = (round((splatter_volume / my_chems.len) * 100) / 100) //Cut it at the hundreds place, please.
-		for(var/reagent in my_chems)
+		var/reagent_vol = (round((splatter_volume / length(TYPE_TABLE_GET(src, blob_projectile_chems))) * 100) / 100) //Cut it at the hundreds place, please.
+		for(var/reagent in TYPE_TABLE_GET(src, blob_projectile_chems))
 			reagents.add_reagent(reagent, reagent_vol)
 
 /obj/item/projectile/energy/blob/toxic
 	injury_kind = INJURY_TOXIN
-	my_chems = list(REAGENT_ID_AMATOXIN)
+
+TYPE_TABLE(/obj/item/projectile/energy/blob/toxic, blob_projectile_chems, list(REAGENT_ID_AMATOXIN))
 
 /obj/item/projectile/energy/blob/toxic/splattering
 	splatter = TRUE
 
 /obj/item/projectile/energy/blob/acid
 	injury_kind = INJURY_BURN
-	my_chems = list(REAGENT_ID_SACID, REAGENT_ID_MOLD)
+
+TYPE_TABLE(/obj/item/projectile/energy/blob/acid, blob_projectile_chems, list(REAGENT_ID_SACID, REAGENT_ID_MOLD))
 
 /obj/item/projectile/energy/blob/acid/splattering
 	splatter = TRUE
@@ -52,12 +55,14 @@
 /obj/item/projectile/energy/blob/combustible
 	splatter = TRUE
 	flammability = 0.25
-	my_chems = list(REAGENT_ID_FUEL, REAGENT_ID_MOLD)
+
+TYPE_TABLE(/obj/item/projectile/energy/blob/combustible, blob_projectile_chems, list(REAGENT_ID_FUEL, REAGENT_ID_MOLD))
 
 /obj/item/projectile/energy/blob/freezing
-	my_chems = list(REAGENT_ID_FROSTOIL)
 	modifier_type_to_apply = /datum/body_effect/chilled
 	modifier_duration = 0.25 MINUTE // Determined to be to long of a slowdown time.
+
+TYPE_TABLE(/obj/item/projectile/energy/blob/freezing, blob_projectile_chems, list(REAGENT_ID_FROSTOIL))
 
 /obj/item/projectile/energy/blob/freezing/splattering
 	splatter = TRUE
@@ -69,4 +74,4 @@
 	injury_kind = INJURY_CORROSIVE
 	armor_penetration = 20
 	penetrating = 3
-	fire_sound = 'sound/effects/slime_squish.ogg'
+	fire_sound = SFX_EFFECTS_SLIME_SQUISH

@@ -25,7 +25,7 @@
 	var/can_cook_mobs				// Whether or not this machine accepts grabbed mobs.
 	var/mob_injury_kind = INJURY_BLUNT	// What a mob stuffed inside suffers: burns for cooking appliances, bruising for cereal/candy
 	var/food_color					// Colour of resulting food item.
-	var/cooked_sound = 'sound/machines/ding.ogg'				// Sound played when cooking completes.
+	var/cooked_sound = SFX_MACHINES_DING				// Sound played when cooking completes.
 	var/can_burn_food = FALSE		// Can the object burn food that is left inside?
 	var/burn_chance = 10			// How likely is the food to burn?
 	var/list/cooking_objs	// List of things being cooked
@@ -73,29 +73,33 @@
 	else
 		to_chat(user, span_notice("It is empty."))
 
+/// list(colour, text) per cooking stage for the tgui panel, indexed by report_progress_tgui(). Shared, read-only.
+GLOBAL_LIST_INIT(appliance_progress_texts, list( 	list("average", "Not Cooking."), 	list("blue", "Cold."), 	list("blue", "It's barely started cooking."), 	list("average", "It's cooking away nicely."), 	list("good", "It's almost ready!"), 	list("good", "It's done!"), 	list("bad", "It looks overcooked, get it out!"), 	list("bad", "It is burning!"), ))
+
 /obj/machinery/appliance/proc/report_progress_tgui(datum/cooking_item/CI)
+	var/list/texts = GLOB.appliance_progress_texts
 	if(!CI || !CI.max_cookwork)
-		return list("average", "Not Cooking.")
+		return texts[1]
 
 	if(!CI.cookwork)
-		return list("blue", "Cold.")
+		return texts[2]
 
 	var/progress = CI.cookwork / CI.max_cookwork
 
 	if (progress < 0.25)
-		return list("blue", "It's barely started cooking.")
+		return texts[3]
 	if (progress < 0.75)
-		return list("average", "It's cooking away nicely.")
+		return texts[4]
 	if (progress < 1)
-		return list("good", "It's almost ready!")
+		return texts[5]
 
 	var/half_overcook = (CI.overcook_mult - 1)*0.5
 	if (progress < 1+half_overcook)
-		return list("good", "It's done!")
+		return texts[6]
 	if (progress < CI.overcook_mult)
-		return list("bad", "It looks overcooked, get it out!")
+		return texts[7]
 	else
-		return list("bad", "It is burning!")
+		return texts[8]
 
 /obj/machinery/appliance/proc/report_progress(datum/cooking_item/CI)
 	if (!CI || !CI.max_cookwork)
@@ -121,7 +125,7 @@
 		return span_danger("It is burning!")
 
 /obj/machinery/appliance/update_icon()
-	if (!stat && length(cooking_objs))
+	if (!has_stat(MACHINE_STAT_ANY) && length(cooking_objs))
 		icon_state = on_icon
 
 	else
@@ -146,18 +150,18 @@
 		to_chat(user, span_warning("You can't reach [src] from here!"))
 		return
 
-	if (stat & POWEROFF)//Its turned off
-		stat &= ~POWEROFF
-		use_power = 1
+	if (has_stat(POWEROFF))//Its turned off
+		stat_remove(POWEROFF)
+		set_use_power(1)
 		user.visible_message(span_filter_notice("[user] turns [src] on."), span_filter_notice("You turn on [src]."))
 
 	else //Its on, turn it off
-		stat |= POWEROFF
-		use_power = 0
+		stat_add(POWEROFF)
+		set_use_power(0)
 		user.visible_message(span_filter_notice("[user] turns [src] off."), span_filter_notice("You turn off [src]."))
 		cooking = FALSE // Stop cooking here, too, just in case.
 
-	playsound(src, 'sound/machines/click.ogg', 40, 1)
+	play_sfx(src, SFX_MACHINES_CLICK, 0.8)
 	update_icon()
 
 /obj/machinery/appliance/silicon_pull(mob/living/silicon/user)
@@ -246,7 +250,7 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 
 /// Old attackby.
 /obj/machinery/appliance/proc/appliance_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
-	if(!cook_type || (stat & (BROKEN)))
+	if(!cook_type || (has_stat(BROKEN)))
 		to_chat(user, span_warning("\The [src] is not working."))
 		return INTERACTION_HANDLED_PASS
 
@@ -619,7 +623,7 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 	// Produce nasty smoke.
 	visible_message(span_danger("\The [src] vomits a gout of rancid smoke!"))
 	var/datum/effect/effect/system/smoke_spread/bad/burntfood/smoke = new /datum/effect/effect/system/smoke_spread/bad/burntfood
-	playsound(src, 'sound/effects/smoke.ogg', 20, 1)
+	play_sfx(src, SFX_EFFECTS_SMOKE, 0.4, extrarange = 0)
 	smoke.attach(src)
 	smoke.set_up(10, 0, get_turf(src), 300)
 	smoke.start()
@@ -652,7 +656,7 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 /obj/machinery/appliance/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = ..()
 
-	data["on"] = !(stat & POWEROFF)
+	data["on"] = !has_stat(POWEROFF)
 	data["safety"] = food_safety
 	data["containersRemovable"] = can_remove_items(user, show_warning = FALSE)
 	data["selected_option"] = selected_option

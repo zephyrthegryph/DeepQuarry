@@ -20,7 +20,7 @@
 	attack_injury_kind = INJURY_CUT
 
 	attacktext = list("chomped")
-	attack_sound = 'sound/weapons/bite.ogg'
+	attack_sound = SFX_WEAPONS_BITE
 
 	organ_names = /datum/decl/mob_organ_names/abberation
 
@@ -71,4 +71,4 @@
 	melee_damage_upper = 25
 
 /datum/decl/mob_organ_names/abberation
-	hit_zones = list("fleshy mass", "maw", "eye(?)", "orifice(?)")
+TYPE_TABLE(/datum/decl/mob_organ_names/abberation, mob_organ_hit_zones, list("fleshy mass", "maw", "eye(?)", "orifice(?)"))

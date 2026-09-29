@@ -208,3 +208,22 @@
 #undef FASTADDICT_PROC
 #undef POISONADDICT_PROC
 #undef ADDICTION_PEAK
+
+/proc/get_addictive_reagents(addict_type)
+	RETURN_TYPE(/list)
+	switch(addict_type)
+		if(ADDICT_NORMAL)
+			return GLOB.reagent_addictive_standard // Most reagents go here
+		if(ADDICT_SLOW)
+			return GLOB.reagent_addictive_slow	// Booze, Cigs
+		if(ADDICT_FAST)
+			return GLOB.reagent_addictive_fast	// Bliss, hyperzine, hardcore drugs
+		if(ADDICT_POISON)
+			return GLOB.reagent_addictive_poison // Poisons that use handle_addiction() for unique longterm poisoning
+	// The union is built once (the tables are constant) instead of per call.
+	return GLOBAL_TABLE_GET(reagent_addictive_all)
+
+GLOBAL_TABLE(reagent_addictive_all, GLOBAL_PROC_REF(build_reagent_addictive_all))
+
+/proc/build_reagent_addictive_all()
+	return GLOB.reagent_addictive_standard + GLOB.reagent_addictive_fast + GLOB.reagent_addictive_slow + GLOB.reagent_addictive_poison

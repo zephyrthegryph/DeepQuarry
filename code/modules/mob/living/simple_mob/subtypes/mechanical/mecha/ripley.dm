@@ -25,7 +25,7 @@
 	base_attack_cooldown = 5 // About 20 DPS.
 	attack_armor_pen = 50
 	attack_injury_kind = INJURY_PIERCE
-	attack_sound = 'sound/mecha/mechdrill.ogg'
+	attack_sound = SFX_MECHA_MECHDRILL
 	attacktext = list("drilled", "bored", "pierced")
 
 /mob/living/simple_mob/mechanical/mecha/ripley/manned

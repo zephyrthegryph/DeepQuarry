@@ -101,10 +101,8 @@
 	return TRUE
 
 /obj/structure/closet/proc/bluespace_sparks()
-	playsound(src, 'sound/effects/sparks6.ogg', 100, TRUE)
-	var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread
-	sparks.set_up(2, 1, loc)
-	sparks.start()
+	play_sfx(src, SFX_EFFECTS_SPARKS6)
+	fx_sparks(loc, 2)
 
 #undef BLUESPACE_EXIT_SOUND
 #undef BLUESPACE_THROW_RANGE

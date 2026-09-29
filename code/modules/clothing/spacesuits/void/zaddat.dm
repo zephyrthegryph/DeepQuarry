@@ -8,9 +8,7 @@
 	armor_spec = "bio=100;rad=70;cold=60" //realistically would have some armor but balance.
 	siemens_coefficient = 1
 
-/obj/item/clothing/head/helmet/space/void/zaddat/fit_constraint()
-	var/list/bodytypes = list(SPECIES_ZADDAT, SPECIES_PROMETHEAN)
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/head/helmet/space/void/zaddat, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_ZADDAT, SPECIES_PROMETHEAN))))
 
 
 /obj/item/clothing/suit/space/void/zaddat
@@ -25,13 +23,9 @@
 
 	breach_threshold = 12
 
-/obj/item/clothing/suit/space/void/zaddat/fit_constraint()
-	var/list/bodytypes = list(SPECIES_ZADDAT, SPECIES_PROMETHEAN)
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/suit/space/void/zaddat, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_ZADDAT, SPECIES_PROMETHEAN))))
 
-/obj/item/clothing/suit/space/void/zaddat/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/space/void/zaddat, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS))))
 
 EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void/zaddat, \
 	INTERACT_VERB("Customize Shroud", PROC_REF(zaddat_custom_suit_verb), REQ_IN_INVENTORY), \

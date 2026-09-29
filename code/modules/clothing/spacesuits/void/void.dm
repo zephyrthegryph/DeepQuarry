@@ -17,9 +17,7 @@
 	light_overlay = "helmet_light"
 	var/no_cycle = FALSE	//stop this item from being put in a cycler
 
-/obj/item/clothing/head/helmet/space/void/fit_constraint()
-	var/list/bodytypes = list(SPECIES_HUMAN, SPECIES_RAPALA, SPECIES_VASILISSAN, SPECIES_ALRAUNE, SPECIES_PROMETHEAN, SPECIES_XENOCHIMERA, SPECIES_XENOMORPH_HYBRID)
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/head/helmet/space/void, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_HUMAN, SPECIES_RAPALA, SPECIES_VASILISSAN, SPECIES_ALRAUNE, SPECIES_PROMETHEAN, SPECIES_XENOCHIMERA, SPECIES_XENOMORPH_HYBRID))))
 
 /obj/item/clothing/suit/space/void
 	name = "voidsuit"
@@ -42,9 +40,12 @@
 	can_breach = 1
 
 	//Inbuilt devices.
+	// owned: deployable boots, kept in the suit's contents
 	var/obj/item/clothing/shoes/magboots/boots = null // Deployable boots, if any.
 	hood = null   // Deployable helmet, if any.
+	// owned: deployable tank, kept in the suit's contents
 	var/obj/item/tank/tank = null              // Deployable tank, if any.
+	// owned: installed cooling unit, kept in the suit's contents
 	var/obj/item/suit_cooling_unit/cooler = null// Cooling unit, for FBPs.  Cannot be installed alongside a tank.
 
 	//Cycler settings
@@ -52,13 +53,9 @@
 
 //Does it spawn with any Inbuilt devices?
 
-/obj/item/clothing/suit/space/void/fit_constraint()
-	var/list/bodytypes = list(SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_RAPALA, SPECIES_VASILISSAN, SPECIES_ALRAUNE, SPECIES_PROMETHEAN, SPECIES_XENOCHIMERA, SPECIES_XENOMORPH_HYBRID)
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/suit/space/void, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_RAPALA, SPECIES_VASILISSAN, SPECIES_ALRAUNE, SPECIES_PROMETHEAN, SPECIES_XENOCHIMERA, SPECIES_XENOMORPH_HYBRID))))
 
-/obj/item/clothing/suit/space/void/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/space/void, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS))))
 // A path in boots/hood/tank is created in the suit; null deploys nothing.
 DECLARE_DEFAULT_CHILD(/obj/item/clothing/suit/space/void, "boots", "boots")
 DECLARE_DEFAULT_CHILD(/obj/item/clothing/suit/space/void, "hood", "hood")
@@ -181,7 +178,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/clothing/suit/space/void, "tank", "tank")
 		hood.canremove = TRUE
 		H.drop_from_inventory(hood)
 		hood.forceMove(src)
-		playsound(src.loc, 'sound/machines/click2.ogg', 75, 1)
+		play_sfx(src.loc, SFX_MACHINES_CLICK2)
 	else
 		if(H.get_equipped_item(SLOT_ID_HEAD))
 			to_chat(H, span_danger("You cannot deploy your helmet while wearing \the [H.get_equipped_item(SLOT_ID_HEAD)]."))
@@ -189,7 +186,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/clothing/suit/space/void, "tank", "tank")
 		if(H.equip_to_slot_if_possible(hood, SLOT_ID_HEAD))
 			hood.canremove = FALSE
 			to_chat(H, span_info("You deploy your suit helmet, sealing you off from the world."))
-			playsound(src.loc, 'sound/machines/click2.ogg', 75, 1)
+			play_sfx(src.loc, SFX_MACHINES_CLICK2)
 
 EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void, \
 	INTERACT_ALT("Eject tank", PROC_REF(voidsuit_eject_tank_alt)), \
@@ -225,7 +222,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void, \
 		removing = cooler
 		own_take(src, "cooler")
 	to_chat(H, span_danger("You press the emergency release, ejecting \the [removing] from your suit."))
-	playsound(src.loc, 'sound/machines/click.ogg', 75, 1)
+	play_sfx(src.loc, SFX_MACHINES_CLICK, 1.5)
 	removing.canremove = TRUE
 	H.drop_from_inventory(removing)
 
@@ -368,9 +365,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void, \
 	sprite_sheets_obj = null
 	hood = /obj/item/clothing/head/helmet/space/void/autolok // autoinstall the helmet
 
-/obj/item/clothing/suit/space/void/autolok/fit_constraint()
-	var/list/bodytypes = list("exclude",SPECIES_DIONA,SPECIES_VOX)
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/suit/space/void/autolok, fit_spec, list(REQ_FITS_BODYTYPES(list("exclude",SPECIES_DIONA,SPECIES_VOX))))
 
 EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void/autolok, INTERACT_ITEM(null, PROC_REF(autolok_worn_item)))
 
@@ -464,9 +459,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void/autolok, INTERACT_ITEM(nu
 	sprite_sheets = ALL_VR_SPRITE_SHEETS_HEAD_MOB
 	sprite_sheets_obj = null
 
-/obj/item/clothing/head/helmet/space/void/autolok/fit_constraint()
-	var/list/bodytypes = list("exclude",SPECIES_DIONA,SPECIES_VOX)
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/head/helmet/space/void/autolok, fit_spec, list(REQ_FITS_BODYTYPES(list("exclude",SPECIES_DIONA,SPECIES_VOX))))
 
 
 /obj/item/clothing/head/helmet/space/void

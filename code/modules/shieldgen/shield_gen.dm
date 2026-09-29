@@ -3,12 +3,12 @@
 	desc = "A machine that generates a field of energy optimized for blocking meteorites when activated."
 	icon = 'icons/obj/machines/shielding.dmi'
 	icon_state = "generator0"
-	var/active = 0
+	active = 0
 	var/field_radius = 3
 	var/max_field_radius = 150
 	var/list/field
 	density = TRUE
-	var/locked = 0
+	locked = 0
 	var/average_field_strength = 0
 	var/strengthen_rate = 0.2
 	var/max_strengthen_rate = 0.5	//the maximum rate that the generator can increase the average field strength
@@ -51,12 +51,10 @@ REL_PAIR_LIST(/obj/machinery/shield_gen, capacitors, owned_gen)
 
 /obj/machinery/shield_gen/emag_act(remaining_charges, mob/user)
 	if(prob(75))
-		src.locked = !src.locked
+		set_locked(!src.locked)
 		to_chat(user, "Controls are now [src.locked ? "locked." : "unlocked."]")
 		. = 1
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-	s.set_up(5, 1, src)
-	s.start()
+	fx_sparks(src, 5)
 
 /// Old attackby: swipe an ID to lock/unlock the controls.
 /datum/interaction/machine_item/shield_gen_swipe_id
@@ -68,14 +66,14 @@ REL_PAIR_LIST(/obj/machinery/shield_gen, capacitors, owned_gen)
 
 /obj/machinery/shield_gen/proc/interaction_swipe_id(mob/user, obj/item/card/id/C, datum/interaction/interaction)
 	if((ACCESS_CAPTAIN in C.GetAccess()) || (ACCESS_SECURITY in C.GetAccess()) || (ACCESS_ENGINE in C.GetAccess()))
-		src.locked = !src.locked
+		set_locked(!src.locked)
 		to_chat(user, "Controls are now [src.locked ? "locked." : "unlocked."]")
 	else
 		to_chat(user, span_red("Access denied."))
 	return TRUE
 
 /obj/machinery/shield_gen/wrench_act(mob/user, obj/item/W)
-	anchored = !anchored
+	set_anchored(!anchored)
 	playsound(src, W.usesound, 75, 1)
 	src.visible_message(span_blue("[icon2html(src,viewers(src))] [src] has been [anchored?"bolted to the floor":"unbolted from the floor"] by [user]."))
 
@@ -106,7 +104,7 @@ REL_PAIR_LIST(/obj/machinery/shield_gen, capacitors, owned_gen)
 	effect = /obj/machinery/shield_gen/proc/interaction_open_ui_impl
 
 /obj/machinery/shield_gen/proc/shield_gen_not_broken(mob/actor, atom/target, obj/item/held)
-	return !(stat & BROKEN)
+	return !has_stat(BROKEN)
 
 /obj/machinery/shield_gen/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user)
@@ -119,7 +117,7 @@ REL_PAIR_LIST(/obj/machinery/shield_gen, capacitors, owned_gen)
 		ui.open()
 
 /obj/machinery/shield_gen/tgui_status(mob/user)
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		return STATUS_CLOSE
 	return ..()
 
@@ -245,7 +243,7 @@ REL_PAIR_LIST(/obj/machinery/shield_gen, capacitors, owned_gen)
 
 /obj/machinery/shield_gen/proc/toggle()
 	set background = 1
-	active = !active
+	set_active(!active)
 	if(active)
 		MACHINE_WAKE(src)
 	update_icon()
@@ -282,7 +280,7 @@ REL_PAIR_LIST(/obj/machinery/shield_gen, capacitors, owned_gen)
 			own_add(src, "field", new /obj/effect/energy_field(O, src))
 
 /obj/machinery/shield_gen/update_icon()
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		icon_state = "broke"
 		set_light(0)
 		shield_hum.stop()

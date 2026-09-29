@@ -50,11 +50,11 @@
 /obj/structure/bookcase/wrench_act(mob/user, obj/item/tool)
 	playsound(src, tool.usesound, 100, 1)
 	to_chat(user, anchored ? span_notice("You unfasten \the [src] from the floor.") : span_notice("You secure \the [src] to the floor."))
-	anchored = !anchored
+	set_anchored(!anchored)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/bookcase/screwdriver_act(mob/user, obj/item/tool)
-	use_tool(user, tool, src, delay = 2.5 SECONDS, volume = 75, message_self = "You begin dismantling \the [src].", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user))
+	use_tool(user, tool, src, delay = 2.5 SECONDS, volume = 75, start_self = "You begin dismantling \the [src].", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/bookcase/proc/screwdriver_act_tool_done(mob/user)
@@ -194,8 +194,8 @@ Book Cart End
 	var/occult_tier = 0 //If the book is an occult book or not and how strong it is. Used for attack_self
 	///Var for attack_self chain
 	var/special_handling = FALSE
-	drop_sound = 'sound/items/drop/book.ogg'
-	pickup_sound = 'sound/items/pickup/book.ogg'
+	drop_sound = SFX_ITEMS_DROP_BOOK
+	pickup_sound = SFX_ITEMS_PICKUP_BOOK
 	resistance_flags = FLAMMABLE
 
 /// Old attack_self: read the book. Occult and specially handled books leave it to their own self-use.
@@ -216,10 +216,10 @@ Book Cart End
 	if(dat)
 		display_content(user)
 		user.visible_message("[user] opens a book titled \"[src.title]\" and begins reading intently.")
-		playsound(src, 'sound/bureaucracy/bookopen.ogg', 50, 1)
+		play_sfx(src, SFX_BUREAUCRACY_BOOKOPEN)
 		// onclose() was for the legacy "book" browse() window
 		// that no longer exists (books are TGUI now).
-		playsound(src, 'sound/bureaucracy/bookclose.ogg', 50, 1)
+		play_sfx(src, SFX_BUREAUCRACY_BOOKCLOSE)
 	else
 		to_chat(user, "This book is completely blank!")
 	return TRUE
@@ -352,7 +352,7 @@ DECLARE_INTERACTIONS(/obj/item/book, \
 	if(carved)
 		return
 	to_chat(user, span_notice("You carve out the pages from [title]! You didn't want to read it anyway."))
-	playsound(src, 'sound/bureaucracy/papercrumple.ogg', 50, 1)
+	play_sfx(src, SFX_BUREAUCRACY_PAPERCRUMPLE)
 	new /obj/item/shreddedp(get_turf(src))
 	carved = TRUE
 
@@ -441,12 +441,12 @@ EXTEND_INTERACTIONS(/obj/item/book/bundle, INTERACT_USE("Read", PROC_REF(interac
 		if("next_page")
 			if(page != pages.len)
 				page++
-				playsound(src, "pageturn", 50, 1)
+				play_sfx(src, SFX_PAGETURN)
 			return TRUE
 		if("prev_page")
 			if(page > 1)
 				page--
-				playsound(src, "pageturn", 50, 1)
+				play_sfx(src, SFX_PAGETURN)
 			return TRUE
 
 /*

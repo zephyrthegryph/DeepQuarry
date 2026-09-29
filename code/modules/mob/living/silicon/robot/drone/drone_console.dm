@@ -101,7 +101,7 @@
 				return
 
 			for(var/obj/machinery/drone_fabricator/fab in oview(3,src))
-				if(fab.stat & NOPOWER)
+				if(fab.has_stat(NOPOWER))
 					continue
 
 				rel_set(src, "dronefab", fab)

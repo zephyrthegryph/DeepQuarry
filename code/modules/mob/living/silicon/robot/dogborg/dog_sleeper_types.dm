@@ -2,20 +2,22 @@
 	name = "Brig-Belly"
 	desc = "A mounted portable-brig that holds criminals for processing or 'processing'."
 	icon_state = "sleeperb"
-	injection_chems = null //So they don't have all the same chems as the medihound!
 	stabilizer = TRUE
 	medsensor = FALSE
+//So they don't have all the same chems as the medihound!
+TYPE_TABLE(/obj/item/dogborg/sleeper/K9, sleeper_injection_chems, null)
 
 /obj/item/dogborg/sleeper/compactor //Janihound gut.
 	name = "Garbage Processor"
 	desc = "A mounted garbage compactor unit with fuel processor, capable of processing any kind of contaminant."
 	icon_state = "compactor"
-	injection_chems = null //So they don't have all the same chems as the medihound!
 	compactor = TRUE
 	recycles = TRUE
 	max_item_count = 25
 	stabilizer = FALSE
 	medsensor = FALSE
+//So they don't have all the same chems as the medihound!
+TYPE_TABLE(/obj/item/dogborg/sleeper/compactor, sleeper_injection_chems, null)
 
 /obj/item/dogborg/sleeper/compactor/analyzer //sci-borg gut.
 	name = "Digestive Analyzer"
@@ -38,10 +40,10 @@
 	name = "Supply Storage"
 	desc = "A mounted survival unit with fuel processor, helpful with both deliveries and assisting injured miners."
 	icon_state = "sleeperc"
-	injection_chems = list(REAGENT_ID_GLUCOSE,REAGENT_ID_INAPROVALINE,REAGENT_ID_TRICORDRAZINE)
 	max_item_count = 20
 	ore_storage = TRUE
 	medsensor = FALSE
+TYPE_TABLE(/obj/item/dogborg/sleeper/compactor/supply, sleeper_injection_chems, list(REAGENT_ID_GLUCOSE,REAGENT_ID_INAPROVALINE,REAGENT_ID_TRICORDRAZINE))
 
 /obj/item/dogborg/sleeper/compactor/supply/afterattack(atom/movable/target, mob/living/silicon/user, proximity_flag, click_parameters)
 	if(!proximity_flag)
@@ -65,11 +67,12 @@
 	name = "Brew Belly"
 	desc = "A mounted drunk tank unit with fuel processor, for putting away particularly rowdy patrons."
 	icon_state = "brewer"
-	injection_chems = null //So they don't have all the same chems as the medihound!
 	max_item_count = 10
 	recycles = FALSE
 	stabilizer = TRUE
 	medsensor = FALSE
+//So they don't have all the same chems as the medihound!
+TYPE_TABLE(/obj/item/dogborg/sleeper/compactor/brewer, sleeper_injection_chems, null)
 
 /obj/item/dogborg/sleeper/compactor/generic
 	name = "Internal Cache"
@@ -80,7 +83,7 @@
 
 /obj/item/dogborg/sleeper/compactor/brewer/inject_chem(mob/user, chem)
 	if(patient && patient.reagents)
-		if(chem in (injection_chems + REAGENT_ID_INAPROVALINE))
+		if(chem in (TYPE_TABLE_GET(src, sleeper_injection_chems) + REAGENT_ID_INAPROVALINE))
 			if(!hound.cell || hound.cell.charge < 200) //This is so borgs don't kill themselves with it.
 				to_chat(hound, span_notice("You don't have enough power to synthesize fluids."))
 				return
@@ -96,30 +99,31 @@
 	name = "Emergency Storage"
 	desc = "A mounted 'emergency containment cell'."
 	icon_state = "sleeperert"
-	injection_chems = list(REAGENT_ID_INAPROVALINE, REAGENT_ID_TRAMADOL) // short list
+// short list
+TYPE_TABLE(/obj/item/dogborg/sleeper/K9/ert, sleeper_injection_chems, list(REAGENT_ID_INAPROVALINE, REAGENT_ID_TRAMADOL))
 
 /obj/item/dogborg/sleeper/trauma //Trauma borg belly
 	name = "Recovery Belly"
 	desc = "A downgraded model of the sleeper belly, intended primarily for post-surgery recovery."
 	icon_state = "sleeper"
-	injection_chems = list(REAGENT_ID_INAPROVALINE, REAGENT_ID_DEXALIN, REAGENT_ID_TRICORDRAZINE, REAGENT_ID_SPACEACILLIN, REAGENT_ID_OXYCODONE)
+TYPE_TABLE(/obj/item/dogborg/sleeper/trauma, sleeper_injection_chems, list(REAGENT_ID_INAPROVALINE, REAGENT_ID_DEXALIN, REAGENT_ID_TRICORDRAZINE, REAGENT_ID_SPACEACILLIN, REAGENT_ID_OXYCODONE))
 
 /obj/item/dogborg/sleeper/lost
 	name = "Multipurpose Belly"
 	desc = "A multipurpose belly, capable of functioning as both sleeper and processor."
 	icon_state = "sleeperlost"
-	injection_chems = list(REAGENT_ID_TRICORDRAZINE, REAGENT_ID_BICARIDINE, REAGENT_ID_DEXALIN, REAGENT_ID_ANTITOXIN, REAGENT_ID_TRAMADOL, REAGENT_ID_SPACEACILLIN)
 	compactor = TRUE
 	max_item_count = 25
 	stabilizer = TRUE
 	medsensor = TRUE
+TYPE_TABLE(/obj/item/dogborg/sleeper/lost, sleeper_injection_chems, list(REAGENT_ID_TRICORDRAZINE, REAGENT_ID_BICARIDINE, REAGENT_ID_DEXALIN, REAGENT_ID_ANTITOXIN, REAGENT_ID_TRAMADOL, REAGENT_ID_SPACEACILLIN))
 
 /obj/item/dogborg/sleeper/syndie
 	name = "Combat Triage Belly"
 	desc = "A mounted sleeper that stabilizes patients and can inject reagents in the borg's reserves. This one is for more extreme combat scenarios."
 	icon_state = "sleepersyndiemed"
-	injection_chems = list(REAGENT_ID_HEALINGNANITES, REAGENT_ID_HYPERZINE, REAGENT_ID_TRAMADOL, REAGENT_ID_OXYCODONE, REAGENT_ID_SPACEACILLIN, REAGENT_ID_PERIDAXON, REAGENT_ID_OSTEODAXON, REAGENT_ID_MYELAMINE, REAGENT_ID_SYNTHBLOOD)
 	digest_multiplier = 2
+TYPE_TABLE(/obj/item/dogborg/sleeper/syndie, sleeper_injection_chems, list(REAGENT_ID_HEALINGNANITES, REAGENT_ID_HYPERZINE, REAGENT_ID_TRAMADOL, REAGENT_ID_OXYCODONE, REAGENT_ID_SPACEACILLIN, REAGENT_ID_PERIDAXON, REAGENT_ID_OSTEODAXON, REAGENT_ID_MYELAMINE, REAGENT_ID_SYNTHBLOOD))
 
 /obj/item/dogborg/sleeper/K9/syndie
 	name = "Cell-Belly"
@@ -138,11 +142,11 @@
 	name = "Bluespace Filing Belly"
 	desc = "A mounted bluespace storage unit for carrying paperwork"
 	icon_state = "sleeperd"
-	injection_chems = null
 	compactor = TRUE
 	recycles = FALSE
 	max_item_count = 25
 	medsensor = FALSE
+TYPE_TABLE(/obj/item/dogborg/sleeper/command, sleeper_injection_chems, null)
 
 /obj/item/dogborg/sleeper/compactor/honkborg
 	name = "Jiggles Von Hungertron"
@@ -154,8 +158,9 @@
 	name = "Store-Belly"
 	desc = "Equipment for a ExploreHound unit. A mounted portable-storage device that holds supplies/person."
 	icon_state = "sleeperlost"
-	injection_chems = list(REAGENT_ID_INAPROVALINE) // Only to stabilize during extractions
 	compactor = TRUE
 	max_item_count = 4
 	medsensor = FALSE
 	recycles = TRUE
+// Only to stabilize during extractions
+TYPE_TABLE(/obj/item/dogborg/sleeper/exploration, sleeper_injection_chems, list(REAGENT_ID_INAPROVALINE))

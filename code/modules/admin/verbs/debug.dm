@@ -401,7 +401,7 @@ ADMIN_VERB(cmd_admin_dress, R_FUN, "elect equipment", "Select equipment for a mo
 
 	var/mob/living/carbon/human/target_human = target
 
-	var/datum/decl/hierarchy/outfit/outfit = verb_ask(user, "a4", args, /datum/om/prompt/choice, message = "Select outfit.", title = "Select equipment.", choices = outfits())
+	var/datum/decl/hierarchy/outfit/outfit = verb_ask(user, "a4", args, /datum/om/prompt/choice, message = "Select outfit.", title = "Select equipment.", choices = GLOB.outfits_decls)
 	if(isnull(outfit))
 		return
 	if(!outfit)

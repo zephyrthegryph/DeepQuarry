@@ -34,7 +34,7 @@
 		return FALSE
 	appearance = thing_to_copy.appearance
 	rel_set(src, "copying", thing_to_copy)
-	density = thing_to_copy.density // So you can't bump into objects that aren't supposed to be dense.
+	set_density(thing_to_copy.density) // So you can't bump into objects that aren't supposed to be dense.
 	catalogue_data = thing_to_copy.get_catalogue_data()
 	dq_set_catalogue_delay(src, thing_to_copy.get_catalogue_delay()) // copy DQ catalogue scan-delay so illusions don't reveal themselves via faster scan time
 	return TRUE
@@ -67,21 +67,20 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/illusion, \
 /mob/living/simple_mob/illusion/proc/illusion_interaction_hand(mob/living/carbon/human/M, obj/item/held, datum/interaction/interaction)
 	. = TRUE
 	if(!realistic)
-		playsound(src, 'sound/weapons/punchmiss.ogg', 25, 1, -1)
-		visible_message(span_warning("\The [M]'s hand goes through \the [src]!"))
+		play_sfx(src, SFX_WEAPONS_PUNCHMISS)
+		act_message(M, src, null, MSG_OTHERS(span_warning("%U%'s hand goes through %T%!")))
 		return
 	else
 		switch(interaction.stance)
 			if(I_HELP)
-				M.visible_message(
-					span_notice("\The [M] hugs [src] to make [p_them()] feel better!"), \
-					span_notice("You hug [src] to make [p_them()] feel better!")
-					) // slightly redundant as at the moment most mobs still use the normal gender var, but it works and future-proofs it
-				playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
+				act_message(M, src, \
+					MSG_SELF(span_notice("You hug %T% to make [p_them()] feel better!")), \
+					MSG_OTHERS(span_notice("%U% hugs %T% to make [p_them()] feel better!"))) // slightly redundant as at the moment most mobs still use the normal gender var, but it works and future-proofs it
+				play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
 
 			if(I_DISARM)
-				playsound(src, 'sound/weapons/punchmiss.ogg', 25, 1, -1)
-				visible_message(span_danger("\The [M] attempted to disarm [src]!"))
+				play_sfx(src, SFX_WEAPONS_PUNCHMISS)
+				act_message(M, src, null, MSG_OTHERS(span_danger("%U% attempted to disarm %T%!")))
 				M.do_attack_animation(src)
 
 			if(I_GRAB)
@@ -89,15 +88,15 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/illusion, \
 
 			if(I_HURT)
 				injure(INJURY_BLUNT, harm_intent_damage, source = M)
-				M.visible_message(span_danger("\The [M] [response_harm] \the [src]"))
+				act_message(M, src, null, MSG_OTHERS(span_danger("%U% [response_harm] %T%")))
 				M.do_attack_animation(src)
 
 /mob/living/simple_mob/illusion/hit_with_weapon(obj/item/I, mob/living/user, effective_force, hit_zone)
 	if(realistic)
 		return ..()
 
-	playsound(src, 'sound/weapons/punchmiss.ogg', 25, 1, -1)
-	visible_message(span_warning("\The [user]'s [I] goes through \the [src]!"))
+	play_sfx(src, SFX_WEAPONS_PUNCHMISS)
+	act_message(user, src, null, MSG_OTHERS(span_warning("%U%'s %I% goes through %T%!")), item = I)
 	return FALSE
 
 /mob/living/simple_mob/illusion/ex_act()

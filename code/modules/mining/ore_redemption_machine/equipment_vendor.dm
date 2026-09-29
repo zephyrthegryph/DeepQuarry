@@ -162,9 +162,8 @@ OWN(/obj/machinery/mineral/equipment_vendor, inserted_id, OWN_SPILL)
 	prize_list["Extra"] = list() // Used in child vendors
 
 /obj/machinery/mineral/equipment_vendor/power_change()
-	var/old_stat = stat
-	..()
-	if(old_stat != stat)
+	. = ..()
+	if(.)
 		update_icon()
 	if(inserted_id && !powered())
 		visible_message(span_notice("The ID slot indicator light flickers on \the [src] as it spits out a card before powering down."))
@@ -177,7 +176,7 @@ OWN(/obj/machinery/mineral/equipment_vendor, inserted_id, OWN_SPILL)
 	else
 		cut_overlay("[initial(icon_state)]-panel")
 
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		icon_state = "[initial(icon_state)]-broken"
 	else if(powered())
 		icon_state = initial(icon_state)
@@ -432,8 +431,6 @@ OWN(/obj/machinery/mineral/equipment_vendor, inserted_id, OWN_SPILL)
 	dirty_items = TRUE
 
 /obj/machinery/mineral/equipment_vendor/ex_act(severity, target)
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-	s.set_up(5, 1, src)
-	s.start()
+	fx_sparks(src, 5)
 	return ..()
 

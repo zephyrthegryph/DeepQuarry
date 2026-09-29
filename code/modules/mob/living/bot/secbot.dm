@@ -34,9 +34,9 @@
 
 	var/used_weapon	= /obj/item/melee/baton	//Weapon used by the bot
 
-	var/static/list/threat_found_sounds = list('sound/voice/bcriminal.ogg', 'sound/voice/bjustice.ogg', 'sound/voice/bfreeze.ogg')
-	var/list/preparing_arrest_sounds = list('sound/voice/bgod.ogg', 'sound/voice/biamthelaw.ogg', 'sound/voice/bsecureday.ogg', 'sound/voice/bradio.ogg', 'sound/voice/bcreep.ogg') // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
-	var/static/list/fighting_sounds = list('sound/voice/biamthelaw.ogg', 'sound/voice/bradio.ogg', 'sound/voice/bjustice.ogg')
+	var/static/threat_found_sounds = SFX_VOICE_BCRIMINAL_MIX
+	var/preparing_arrest_sounds = SFX_VOICE_BGOD_MIX // ALLOW(instance_list): mob: an SFX mix key (a string), not a list; subtypes may point it at another mix
+	var/static/fighting_sounds = SFX_VOICE_BIAMTHELAW_MIX
 // They don't like being pulled. This is going to fuck with slimesky, but meh. //Screw you. Just screw you and your 'meh'
 /datum/om/stage/life/type_post/bot/secbot
 	of = /mob/living/bot/secbot
@@ -212,7 +212,7 @@ EXTEND_INTERACTIONS(/mob/living/bot/secbot, INTERACT_HAND_UNGATED("Open controls
 		return
 
 	if(!target)
-		playsound(src, pick(threat_found_sounds), 50)
+		playsound(src, threat_found_sounds, 50)
 		GLOB.global_announcer.autosay("[src] was attacked by a hostile <b>[target_name(attacker)]</b> in <b>[get_area(src)]</b>.", "[src]", "Security")
 	rel_set(src, "target", attacker)
 	attacked = TRUE
@@ -223,7 +223,8 @@ EXTEND_INTERACTIONS(/mob/living/bot/secbot, INTERACT_HAND_UNGATED("Open controls
 	if(declare_arrests)
 		GLOB.global_announcer.autosay("[src] is [arrest_type ? "detaining" : "arresting"] a level [threat] suspect <b>[suspect_name]</b> in <b>[get_area(src)]</b>.", "[src]", "Security")
 	say("Down on the floor, [suspect_name]! You have [SECBOT_WAIT_TIME*2] seconds to comply.")
-	playsound(src, pick(preparing_arrest_sounds), 50)
+	if(preparing_arrest_sounds)
+		playsound(src, preparing_arrest_sounds, 50)
 	// Register to be told when the target moves
 	dq_add_recursive_move(target)
 	om_hook(target, /datum/om/event/movable_attempted_move, src, PROC_REF(target_moved))
@@ -264,7 +265,7 @@ EXTEND_INTERACTIONS(/mob/living/bot/secbot, INTERACT_HAND_UNGATED("Open controls
 			awaiting_surrender = 0
 			say("Level [threat] infraction alert!")
 			automatic_custom_emote(VISIBLE_MESSAGE, "points at [M.name]!")
-			playsound(src, pick(threat_found_sounds), 50)
+			playsound(src, threat_found_sounds, 50)
 			return
 
 /mob/living/bot/secbot/handleAdjacentTarget()
@@ -313,10 +314,10 @@ EXTEND_INTERACTIONS(/mob/living/bot/secbot, INTERACT_HAND_UNGATED("Open controls
 	if(!COOLDOWN_FINISHED(src, can_next_insult))
 		return
 	if(threat >= 10)
-		playsound(src, 'sound/voice/binsult.ogg', 75)
+		play_sfx(src, SFX_VOICE_BINSULT, 0.75)
 		COOLDOWN_START(src, can_next_insult, 20 SECONDS)
 	else
-		playsound(src, pick(fighting_sounds), 75)
+		playsound(src, fighting_sounds, 75)
 		COOLDOWN_START(src, can_next_insult, 5 SECONDS)
 
 
@@ -335,21 +336,21 @@ EXTEND_INTERACTIONS(/mob/living/bot/secbot, INTERACT_HAND_UNGATED("Open controls
 			cuff = FALSE
 		if(!cuff)
 			H.stun_effect_act(0, stun_strength, null, electric = TRUE)
-			playsound(src, 'sound/weapons/egloves.ogg', 50, 1, -1)
+			play_sfx(src, SFX_WEAPONS_EGLOVES)
 			do_attack_animation(H)
 			om_hold_busy(src, 2, PROC_REF(update_icons))
 			update_icons()
 			visible_message(span_warning("\The [H] was prodded by \the [src] with a stun baton!"))
 			insult(H)
 		else
-			playsound(src, 'sound/weapons/handcuffs.ogg', 30, 1, -2)
+			play_sfx(src, SFX_WEAPONS_HANDCUFFS, extrarange = -2)
 			visible_message(span_warning("\The [src] is trying to put handcuffs on \the [H]!"))
 			bot_work(6 SECONDS, H, PROC_REF(UnarmedAttack_secbot_done), list(H))
 	else if(isliving(M))
 		var/mob/living/L = M
 		L.injure(INJURY_BLUNT, xeno_harm_strength, null, src)
 		do_attack_animation(M)
-		playsound(src, "swing_hit", 50, 1, -1)
+		play_sfx(src, SFX_SWING_HIT, 2)
 		om_hold_busy(src, 2, PROC_REF(update_icons))
 		update_icons()
 		visible_message(span_warning("\The [M] was beaten by \the [src] with a stun baton!"))
@@ -382,9 +383,7 @@ EXTEND_INTERACTIONS(/mob/living/bot/secbot, INTERACT_HAND_UNGATED("Open controls
 	if(prob(50))
 		new /obj/item/robot_parts/l_arm(Tsec)
 
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-	s.set_up(3, 1, src)
-	s.start()
+	fx_sparks(src, 3)
 
 	new /obj/effect/decal/cleanable/blood/oil(Tsec)
 	return ..()

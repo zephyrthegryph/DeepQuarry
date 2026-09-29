@@ -43,12 +43,12 @@
 
 /obj/machinery/recharge_station/machine_step()
 	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_RECHARGE_STATION)
-	if(stat & (BROKEN))
+	if(has_stat(BROKEN))
 		return PROCESS_KILL
 	if(!cell) // Shouldn't be possible, but sanity check
 		return PROCESS_KILL
 
-	if((stat & NOPOWER) && !has_cell_power()) // No power and cell is dead.
+	if((has_stat(NOPOWER)) && !has_cell_power()) // No power and cell is dead.
 		if(icon_update_tick)
 			icon_update_tick = 0 //just rebuild the overlay once more only
 			update_icon()
@@ -65,7 +65,7 @@
 
 	//Then, if external power is available, recharge the internal cell
 	var/recharge_amount = 0
-	if(!(stat & NOPOWER))
+	if(!has_stat(NOPOWER))
 		// Calculating amount of power to draw
 		recharge_amount = (occupant ? restore_power_active : restore_power_passive) * CELLRATE
 
@@ -291,12 +291,12 @@
 /obj/machinery/recharge_station/update_icon()
 	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_RECHARGE_STATION)
 	..()
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		icon_state = "borgcharger0"
 		return
 
 	if(occupant)
-		if((stat & NOPOWER) && !has_cell_power())
+		if((has_stat(NOPOWER)) && !has_cell_power())
 			icon_state = "borgcharger2"
 		else
 			icon_state = "borgcharger1"
@@ -380,13 +380,13 @@
 /obj/machinery/recharge_station/ghost_pod_recharger/update_icon()
 	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_RECHARGE_STATION)
 	..()
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		icon_state = "borg_pod_closed"
 		desc = "It appears broken..."
 		return
 
 	if(occupant)
-		if((stat & NOPOWER) && !has_cell_power())
+		if((has_stat(NOPOWER)) && !has_cell_power())
 			icon_state = "borg_pod_closed"
 			desc = "It appears to be unpowered..."
 		else

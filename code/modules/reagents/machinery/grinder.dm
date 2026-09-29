@@ -41,7 +41,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/reagentgrinder, "beaker", /obj/item/reagent
 		for(var/obj/item/O as anything in holdingitems)
 			. += span_notice("- \A [O.name].")
 
-	if(!(stat & (NOPOWER|BROKEN)))
+	if(operable())
 		. += span_notice("The status display reads:") + "\n"
 		if(beaker)
 			for(var/datum/reagent/R in beaker.reagents.reagent_list)
@@ -180,7 +180,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/reagentgrinder, "beaker", /obj/item/reagent
 		options["eject"] = radial_eject
 
 	if(isAI(user))
-		if(stat & NOPOWER)
+		if(has_stat(NOPOWER))
 			return
 		options["examine"] = radial_examine
 
@@ -193,7 +193,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/reagentgrinder, "beaker", /obj/item/reagent
 /obj/machinery/reagentgrinder/proc/radial_option_chosen(datum/om/prompt/choice/radial/ask)
 	var/mob/user = ask.answerer
 	// post choice verification
-	if(!user || om_busy(src) || (isAI(user) && stat & NOPOWER) || user.incapacitated())
+	if(!user || om_busy(src) || (isAI(user) && has_stat(NOPOWER)) || user.incapacitated())
 		return
 
 	switch(ask.choice)
@@ -217,14 +217,14 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/reagentgrinder, "beaker", /obj/item/reagent
 /obj/machinery/reagentgrinder/proc/grind()
 
 	power_change()
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return
 
 	// Sanity check.
 	if (!beaker || (beaker && beaker.reagents.total_volume >= beaker.reagents.maximum_volume))
 		return
 
-	playsound(src, 'sound/machines/blender.ogg', 50, 1)
+	play_sfx(src, SFX_MACHINES_BLENDER)
 	om_hold_busy(src, 6 SECONDS)
 
 	// Process.

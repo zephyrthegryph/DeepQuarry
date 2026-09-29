@@ -28,9 +28,7 @@
 	///If we're emagged or not.
 	var/emagged
 
-/obj/item/clothing/suit/lasertag/suit_storage_constraint()
-	var/list/stores = list (/obj/item/gun/energy/lasertag)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/lasertag, suit_storage_spec, list(HOLD_ONLY(list (/obj/item/gun/energy/lasertag))))
 
 /obj/item/clothing/suit/lasertag/emag_act(remaining_charges, mob/user, emag_source)
 	if(!emagged)
@@ -175,9 +173,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/lasertag, \
 	icon_state = "bluetag"
 	item_state_slots = list(slot_r_hand_str = "tdblue", slot_l_hand_str = "tdblue")
 
-/obj/item/clothing/suit/lasertag/bluetag/suit_storage_constraint()
-	var/list/stores = list (/obj/item/gun/energy/lasertag/blue)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/lasertag/bluetag, suit_storage_spec, list(HOLD_ONLY(list (/obj/item/gun/energy/lasertag/blue))))
 
 /obj/item/clothing/suit/lasertag/redtag
 	name = "red laser tag armor"
@@ -185,9 +181,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/lasertag, \
 	icon_state = "redtag"
 	item_state_slots = list(slot_r_hand_str = "tdred", slot_l_hand_str = "tdred")
 
-/obj/item/clothing/suit/lasertag/redtag/suit_storage_constraint()
-	var/list/stores = list (/obj/item/gun/energy/lasertag/red)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/lasertag/redtag, suit_storage_spec, list(HOLD_ONLY(list (/obj/item/gun/energy/lasertag/red))))
 
 /obj/item/clothing/suit/lasertag/bluetag/sub
 	name = "Brigader Armor"
@@ -203,6 +197,4 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/lasertag, \
 	name = "universal laser tag armour"
 	desc = "Laser tag armor with no allegiance. For the true renegade, or a free for all."
 
-/obj/item/clothing/suit/lasertag/omni/suit_storage_constraint()
-	var/list/stores = list (/obj/item/gun/energy/lasertag/omni)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit/lasertag/omni, suit_storage_spec, list(HOLD_ONLY(list (/obj/item/gun/energy/lasertag/omni))))

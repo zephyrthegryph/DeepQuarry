@@ -50,7 +50,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	density = TRUE
 	status_flags = CANPUSH
 	shouldnt_see = list(/mob/observer/eye, /obj/effect/rune)
-	var/list/network = list(NETWORK_DEFAULT) // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	var/list/network = list(NETWORK_DEFAULT) // ALLOW(instance_list): d: per-mob network with starting entries, edited at runtime; mobs are few
 	var/obj/machinery/camera/camera = null
 	var/aiRestorePowerRoutine = 0
 	/// Backup capacitor charge, 0..AI_BACKUP_CAPACITY. Drains while the core is
@@ -59,7 +59,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	var/viewalerts = 0
 	var/icon/holo_icon				//Default is assigned when AI is created.
 	var/holo_color = null
-	var/list/connected_robots = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	var/list/connected_robots = list() // ALLOW(instance_list): d: per-mob connected_robots, filled at runtime; mobs are few
 	var/obj/item/pda/ai/aiPDA = null
 	var/obj/item/communicator/aiCommunicator = null
 	var/obj/item/multitool/aiMulti = null
@@ -132,9 +132,9 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	if(!is_dummy)
 		own_set(src, "aiPDA", new/obj/item/pda/ai(src)) // ALLOW(decl): conditional on is_dummy
 	SetName(pickedName)
-	anchored = TRUE
+	set_anchored(TRUE)
 	canmove = 0
-	density = TRUE
+	set_density(TRUE)
 
 	if(!is_dummy)
 		own_set(src, "aiCommunicator", new /obj/item/communicator/integrated(src)) // ALLOW(decl): conditional on is_dummy
@@ -353,14 +353,14 @@ DECLARE_DEFAULT_CHILD(/mob/living/silicon/ai, "aiCamera", /obj/item/camera/silic
 		qdel(src)
 		return
 	if(powered_ai.APU_power)
-		update_use_power(USE_POWER_OFF)
+		set_use_power(USE_POWER_OFF)
 		return
 	if(!powered_ai.anchored)
 		forceMove(powered_ai.loc)
-		update_use_power(USE_POWER_OFF)
+		set_use_power(USE_POWER_OFF)
 		use_power(50000) // Less optimalised but only called if AI is unwrenched. This prevents usage of wrenching as method to keep AI operational without power. Intellicard is for that.
 	if(powered_ai.anchored)
-		update_use_power(USE_POWER_ACTIVE)
+		set_use_power(USE_POWER_ACTIVE)
 
 /mob/living/silicon/ai/proc/pick_icon()
 	set category = "AI.Settings"
@@ -491,54 +491,70 @@ DECLARE_DEFAULT_CHILD(/mob/living/silicon/ai, "aiCamera", /obj/item/camera/silic
 		view_core()
 	..()
 
-/mob/living/silicon/ai/Topic(href, href_list)
-	if(..()) //VOREstation edit: So the AI can actually can actually get its OOC prefs read
-		return
-	if(usr != src)
-		return
-	/*if(..()) // <------ MOVED FROM HERE
-		return*/
-	if (href_list["mach_close"])
-		if (href_list["mach_close"] == "aialerts")
-			viewalerts = 0
-		// legacy browse(null) close removed; see /mob/Topic.
-		unset_machine()
-	if (href_list["switchcamera"])
-		switchCamera(locate_in_list(REGISTRY_MEMBERS(REGISTRY_CAMERAS), href_list["switchcamera"]))
-	if (href_list["showalerts"])
-		subsystem_alarm_monitor()
-	//Carn: holopad requests
-	if (href_list["jumptoholopad"])
-		var/obj/machinery/hologram/holopad/H = locate(href_list["jumptoholopad"])
-		if(stat == CONSCIOUS)
-			if(H)
-				actor_use(/datum/input_adapter/ai, src, H) //may as well recycle
-			else
-				to_chat(src, span_notice("Unable to locate the holopad."))
+TOPIC_ACTION(/mob/living/silicon/ai, "switchcamera", PROC_REF(topic_switchcamera), TOPIC_REF("switchcamera", /obj/machinery/camera, PROC_REF(topic_cameras)))
+TOPIC_ACTION(/mob/living/silicon/ai, "showalerts", PROC_REF(topic_showalerts))
+TOPIC_ACTION(/mob/living/silicon/ai, "jumptoholopad", PROC_REF(topic_jumptoholopad), TOPIC_REF("jumptoholopad", /obj/machinery/hologram/holopad, TOPIC_IN_WORLD)) //Carn: holopad requests
+TOPIC_ACTION(/mob/living/silicon/ai, "track", PROC_REF(topic_track), TOPIC_REF("track", /mob, TOPIC_IN_MOBS), TOPIC_TEXT("trackname", MAX_NAME_LEN * 2))
+TOPIC_ACTION(/mob/living/silicon/ai, "trackbot", PROC_REF(topic_trackbot), TOPIC_REF("trackbot", /mob/living/bot, TOPIC_IN_MOBS))
+TOPIC_ACTION(/mob/living/silicon/ai, "open", PROC_REF(topic_open_door), TOPIC_REF("open", /mob, TOPIC_IN_MOBS))
 
-	if (href_list["track"])
-		var/mob/target = locate_in_list(REGISTRY_MEMBERS(REGISTRY_MOBS), href_list["track"])
+/// TOPIC_REF source: the camera network.
+/mob/living/silicon/ai/proc/topic_cameras()
+	return REGISTRY_MEMBERS(REGISTRY_CAMERAS)
 
-		if(target && (!ishuman(target) || html_decode(href_list["trackname"]) == target:get_face_name()))
-			ai_actual_track(target)
+// These links work only for the AI itself (others still reach the rows every mob has).
+/mob/living/silicon/ai/proc/topic_switchcamera(mob/user, list/args)
+	if(user != src)
+		return
+	switchCamera(args["switchcamera"])
+	return TRUE
+
+/mob/living/silicon/ai/proc/topic_showalerts(mob/user, list/args)
+	if(user != src)
+		return
+	subsystem_alarm_monitor()
+	return TRUE
+
+/mob/living/silicon/ai/proc/topic_jumptoholopad(mob/user, list/args)
+	if(user != src)
+		return
+	var/obj/machinery/hologram/holopad/H = args["jumptoholopad"]
+	if(stat == CONSCIOUS)
+		if(H)
+			actor_use(/datum/input_adapter/ai, src, H) //may as well recycle
 		else
-			to_chat(src, span_filter_warning("[span_red("System error. Cannot locate [html_decode(href_list["trackname"])].")]"))
+			to_chat(src, span_notice("Unable to locate the holopad."))
+	return TRUE
+
+/mob/living/silicon/ai/proc/topic_track(mob/user, list/args)
+	if(user != src)
 		return
+	var/mob/target = args["track"]
+	var/trackname = html_decode(args["trackname"])
+	var/mob/living/carbon/human/H = target
+	if(target && (!istype(H) || trackname == H.get_face_name()))
+		ai_actual_track(target)
+	else
+		to_chat(src, span_filter_warning("[span_red("System error. Cannot locate [trackname].")]"))
+	return TRUE
 
-	if(href_list["trackbot"])
-		var/mob/living/bot/target = locate_in_list(REGISTRY_MEMBERS(REGISTRY_MOBS), href_list["trackbot"])
-		if(target)
-			ai_actual_track(target)
-		else
-			to_chat(src, span_warning("Target is not on or near any active cameras on the station."))
+/mob/living/silicon/ai/proc/topic_trackbot(mob/user, list/args)
+	if(user != src)
 		return
+	var/mob/living/bot/target = args["trackbot"]
+	if(target)
+		ai_actual_track(target)
+	else
+		to_chat(src, span_warning("Target is not on or near any active cameras on the station."))
+	return TRUE
 
-	if(href_list["open"])
-		var/mob/target = locate_in_list(REGISTRY_MEMBERS(REGISTRY_MOBS), href_list["open"])
-		if(target)
-			open_nearest_door(target)
-
-	return
+/mob/living/silicon/ai/proc/topic_open_door(mob/user, list/args)
+	if(user != src)
+		return
+	var/mob/target = args["open"]
+	if(target)
+		open_nearest_door(target)
+	return TRUE
 
 /mob/living/silicon/ai/proc/camera_visibility(mob/observer/eye/aiEye/moved_eye)
 	GLOB.cameranet.visibility(moved_eye, client, src?.eyes_list())
@@ -835,11 +851,11 @@ EXTEND_INTERACTIONS(/mob/living/silicon/ai, INTERACT_INSERT(/obj/item/aicard, PR
 	if(user == deployed_shell)
 		to_chat(user, span_notice("The shell's subsystems resist your efforts to tamper with your bolts."))
 		return ITEM_INTERACT_BLOCKING
-	use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WRENCH, volume = 50, message_others = "\The [user] starts to [anchored ? "unbolt" : "bolt"] \the [src] [anchored ? "from" : "to"] the plating...", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user), on_fail = PROC_REF(wrench_act_tool_failed), fail_args = list(user))
+	use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WRENCH, volume = 50, start_others = "\The [user] starts to [anchored ? "unbolt" : "bolt"] \the [src] [anchored ? "from" : "to"] the plating...", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user), on_fail = PROC_REF(wrench_act_tool_failed), fail_args = list(user))
 	return ITEM_INTERACT_SUCCESS
 
 /mob/living/silicon/ai/proc/wrench_act_tool_done(mob/user)
-	anchored = !anchored
+	set_anchored(!anchored)
 	user.visible_message(span_notice("\The [user] finishes [anchored ? "fastening down" : "unfastening"] \the [src]!"))
 	return ITEM_INTERACT_SUCCESS
 

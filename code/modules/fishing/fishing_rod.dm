@@ -13,7 +13,7 @@
 	sharp = TRUE
 	injury_kind = INJURY_PIERCE
 	attack_verb = list("whipped", "battered", "slapped", "fished", "hooked")
-	hitsound = 'sound/weapons/punchmiss.ogg'
+	hitsound = SFX_WEAPONS_PUNCHMISS
 	applies_material_colour = TRUE
 	default_material = MAT_WOOD
 	can_dull = FALSE

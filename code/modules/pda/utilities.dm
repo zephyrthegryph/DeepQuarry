@@ -24,7 +24,7 @@
 
 /datum/data/pda/utility/honk/start()
 	if(COOLDOWN_FINISHED(src, honk_cooldown))
-		playsound(pda().loc, 'sound/items/bikehorn.ogg', 50, 1)
+		play_sfx(pda().loc, SFX_ITEMS_BIKEHORN)
 		COOLDOWN_START(src, honk_cooldown, 2 SECONDS)
 
 /datum/data/pda/utility/toggle_door
@@ -119,7 +119,7 @@
 /datum/data/pda/utility/scanmode/notes/scan_atom(atom/A, mob/user)
 	if(notes() && istype(A, /obj/item/paper))
 		var/obj/item/paper/P = A
-		var/list/brlist = list("p", "/p", "br", "hr", "h1", "h2", "h3", "h4", "/h1", "/h2", "/h3", "/h4")
+		var/static/list/brlist = list("p", "/p", "br", "hr", "h1", "h2", "h3", "h4", "/h1", "/h2", "/h3", "/h4")
 
 		// JMO 20140705: Makes scanned document show up properly in the notes. Not pretty for formatted documents,
 		// as this will clobber the HTML, but at least it lets you scan a document. You can restore the original

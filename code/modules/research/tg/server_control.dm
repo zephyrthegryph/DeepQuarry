@@ -42,8 +42,8 @@
 /obj/machinery/computer/rdservercontrol/emag_act(remaining_charges, mob/user, emag_source)
 	if(emagged)
 		return FALSE
-	emagged = TRUE
-	playsound(src, "sparks", 75, TRUE)
+	set_emagged(TRUE)
+	play_sfx(src, SFX_SPARKS, 1.5)
 	balloon_alert(user, "console emagged")
 	return TRUE
 
@@ -86,7 +86,7 @@
 		return TRUE
 	if(!allowed(usr) && !emagged)
 		balloon_alert(usr, "access denied!")
-		playsound(src, 'sound/machines/click.ogg', 20, TRUE)
+		play_sfx(src, SFX_MACHINES_CLICK, 0.4)
 		return TRUE
 
 	switch(action)
@@ -100,7 +100,7 @@
 			var/obj/machinery/computer/rdconsole_tg/console_selected = locate_in_list(stored_research().consoles_accessing, params["selected_console"])
 			if(!console_selected)
 				return FALSE
-			console_selected.locked = !console_selected.locked
+			console_selected.set_locked(!console_selected.locked)
 			return TRUE
 
 /// A shared definition/flyweight (never cleared).

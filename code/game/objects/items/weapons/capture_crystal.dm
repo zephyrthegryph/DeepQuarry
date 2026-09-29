@@ -3,8 +3,8 @@
 	desc = "A silent, unassuming crystal in what appears to be some kind of steel housing."
 	icon = 'icons/obj/capture_crystal_vr.dmi'
 	icon_state = "inactive"
-	drop_sound = 'sound/items/drop/ring.ogg'
-	pickup_sound = 'sound/items/pickup/ring.ogg'
+	drop_sound = SFX_ITEMS_DROP_RING
+	pickup_sound = SFX_ITEMS_PICKUP_RING
 	throwforce = 0
 	force = 0
 	actions_types = list(/datum/action/item_action/command)
@@ -53,10 +53,10 @@
 	var/mob/living/M = src.loc
 	if(M != owner)
 		to_chat(M, span_notice("\The [src] emits an unpleasant tone... It does not respond to your command."))
-		playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
+		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 	else if(!bound_mob)
 		to_chat(M, span_notice("\The [src] emits an unpleasant tone... There is nothing to command."))
-		playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
+		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 	else if(isanimal(bound_mob) && !bound_mob.client)
 		if(bound_mob.ai_brain)
 			var/datum/ai_brain/AI = bound_mob.ai_brain
@@ -67,7 +67,7 @@
 		om_ask(user, /datum/om/prompt/text/crystal_command, PROC_REF(command_entered))
 	else
 		to_chat(M, span_notice("\The [src] emits an unpleasant tone... \The [bound_mob] is unresponsive."))
-		playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
+		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 
 //Lets the owner get AI controlled bound mobs to follow them, or tells player controlled mobs to follow them.
 /obj/item/capture_crystal/proc/follow_owner_effect(mob/user, obj/item/held, datum/interaction/interaction)
@@ -76,16 +76,16 @@
 	var/mob/living/M = src.loc
 	if(M != owner)
 		to_chat(M, span_notice("\The [src] emits an unpleasant tone... It does not respond to your command."))
-		playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
+		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 	else if(!bound_mob || bound_mob.stat != CONSCIOUS)
 		to_chat(M, span_notice("\The [src] emits an unpleasant tone... \The [bound_mob] is not able to hear your command."))
-		playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
+		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 	else if(bound_mob.client)
 		to_chat(bound_mob, span_notice("\The [owner] wishes for you to follow them."))
 	else if(bound_mob in contents)
 		if(!bound_mob.ai_brain)
 			to_chat(M, span_notice("\The [src] emits an unpleasant tone... \The [bound_mob] is not able to follow your command."))
-			playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
+			play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 			return
 		var/datum/ai_brain/AI = bound_mob.ai_brain
 		var/mob/current_leader = AI.get_leader()
@@ -97,10 +97,10 @@
 			to_chat(M, span_notice("\The [src] chimes~ \The [bound_mob] started following [M]."))
 	else if(!(bound_mob in view(M)))
 		to_chat(M, span_notice("\The [src] emits an unpleasant tone... \The [bound_mob] is not able to hear your command."))
-		playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
+		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 		if(!bound_mob.ai_brain)
 			to_chat(M, span_notice("\The [src] emits an unpleasant tone... \The [bound_mob] is not able to follow your command."))
-			playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
+			play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 			return
 		var/datum/ai_brain/AI = bound_mob.ai_brain
 		var/mob/current_leader = AI.get_leader()
@@ -120,7 +120,7 @@
 	if(M != owner)
 		to_chat(M, span_notice("\The [src] is too hard for you to break."))
 	else
-		M.visible_message("\The [M] crushes \the [src] into dust...", "\The [src] cracks and disintegrates in your hand.")
+		act_message(M, src, MSG_SELF("%T% cracks and disintegrates in your hand."), MSG_OTHERS("%U% crushes %T% into dust..."))
 		qdel(src)
 
 //If you catch something/someone and want to give it to someone else though, that's fine.
@@ -130,10 +130,10 @@
 	var/mob/living/M = src.loc
 	if(M != owner)
 		to_chat(M, span_notice("\The [src] emits an unpleasant tone... It does not respond to your command."))
-		playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
+		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 	else
-		M.visible_message("\The [src] flickers in \the [M]'s hand and emits a little tone.", "\The [src] flickers in your hand and emits a little tone.")
-		playsound(src, 'sound/effects/capture-crystal-out.ogg', 75, 1, -1)
+		act_message(M, src, MSG_SELF("%T% flickers in your hand and emits a little tone."), MSG_OTHERS("%T% flickers in %U%'s hand and emits a little tone."))
+		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_OUT)
 		rel_clear(src, "owner")
 
 //Let's make inviting ghosts be an option you can do instead of an automatic thing!
@@ -173,15 +173,15 @@
 	var/mob/living/U = src.loc
 	if(!bound_mob)
 		to_chat(U, span_notice("\The [src] emits an unpleasant tone... There is nothing to enhance."))
-		playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
+		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 		return
 	else if(U != owner)
 		to_chat(U, span_notice("\The [src] emits an unpleasant tone... It does not respond to your command."))
-		playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
+		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 		return
 	else if(bound_mob.client || !isanimal(bound_mob))
 		to_chat(U, span_notice("\The [src] emits an unpleasant tone... \The [bound_mob] is not eligable for enhancement."))
-		playsound(src, 'sound/effects/capture-crystal-problem.ogg', 75, 1, -1)
+		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_PROBLEM)
 		return		//Need to type cast the mob so it can detect ghostjoin
 	var/mob/living/simple_mob/M = bound_mob
 	if(M.ghostjoin)
@@ -242,19 +242,19 @@
 			return ITEM_INTERACT_FAILURE
 		if(user.zone_sel.selecting == "mouth")	//Click while targetting the mouth and you eat/feed the stored mob to whoever you clicked on
 			if(bound_mob in contents)
-				user.visible_message("\The [user] moves \the [src] to [M]'s [M.vore_selected]...")
+				act_message(user, src, others = "%U% moves %T% to [M]'s [M.vore_selected]...")
 				M.perform_the_nom(M, bound_mob, M, M.vore_selected)
 				return ITEM_INTERACT_SUCCESS
 	else if(M == user)		//You don't have a mob, you ponder the orb instead of trying to capture yourself
-		user.visible_message("\The [user] ponders \the [src]...", "You ponder \the [src]...")
+		act_message(user, src, MSG_SELF("You ponder %T%..."), MSG_OTHERS("%U% ponders %T%..."))
 		return ITEM_INTERACT_FAILURE
 	else if (cooldown_check())	//Try to capture someone without throwing
-		user.visible_message("\The [user] taps \the [M] with \the [src].")
+		act_message(user, src, others = "%U% taps \the [M] with %T%.")
 		activate(user, M)
 		return ITEM_INTERACT_SUCCESS
 	else
 		to_chat(user, span_notice("\The [src] emits an unpleasant tone... It is not ready yet."))
-		playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
+		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 		return ITEM_INTERACT_FAILURE
 
 //Tries to unleash or recall your stored mob
@@ -264,12 +264,12 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 /obj/item/capture_crystal/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(loadout && !bound_mob)
 		to_chat(user, span_notice("\The [src] emits an unpleasant tone... It is not ready yet."))
-		playsound(src, 'sound/effects/capture-crystal-problem.ogg', 75, 1, -1)
+		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_PROBLEM)
 		return TRUE
 	if(bound_mob && !owner)
 		if(bound_mob == user)
 			to_chat(user, span_notice("\The [src] emits an unpleasant tone... It does not activate for you."))
-			playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
+			play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 			return TRUE
 		om_ask(user, /datum/om/prompt/confirm, PROC_REF(claim_answered), title = "Claim ownership", message = "\The [src] hasn't got an owner. It has \the [bound_mob] registered to it. Would you like to claim this as yours?", no_first = TRUE, answer_on_no = TRUE, ask_flags = ASK_CARRIED | ASK_CAPABLE)
 		return TRUE
@@ -286,12 +286,12 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 	if(!cooldown_check())
 		to_chat(user, span_notice("\The [src] emits an unpleasant tone... It is not ready yet."))
 		if(bound_mob)
-			playsound(src, 'sound/effects/capture-crystal-problem.ogg', 75, 1, -1)
+			play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_PROBLEM)
 		else
-			playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
+			play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 	else if(user == bound_mob)	//You can't recall yourself
 		to_chat(user, span_notice("\The [src] emits an unpleasant tone... It does not activate for you."))
-		playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
+		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 	else if(!active)
 		activate(user)
 	else
@@ -306,7 +306,7 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 /obj/item/capture_crystal/proc/capture(mob/living/M, mob/living/U)
 	if(!M.capture_crystal || M.capture_caught)
 		to_chat(U, span_warning("This creature is not suitable for capture."))
-		playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
+		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 		return
 	knowyoursignals(M, U)
 	rel_set(src, "owner", U)
@@ -369,15 +369,15 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 /obj/item/capture_crystal/proc/capture_player(mob/living/M, mob/living/U)
 	if(jobban_isbanned(M, JOB_GHOSTROLES))
 		to_chat(U, span_warning("This creature is not suitable for capture."))
-		playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
+		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 	else if(!M.capture_crystal || M.capture_caught)
 		to_chat(U, span_warning("This creature is not suitable for capture."))
-		playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
+		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 	else
 		om_ask(M, /datum/om/prompt/confirm/crystal_capture, PROC_REF(ask_capture_sure), message = "Would you like to be caught by in [src] by [U]? You will be bound to their will.", capturer = U)
 		return
 	to_chat(U, span_warning("This creature is too strong willed to be captured."))
-	playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
+	play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 
 /// Consent to being caught, asked twice. Re-checked on each answer: still conscious, the crystal
 /// still empty, still catchable, the capturer within 7 tiles. A no, a cancel or a failed check
@@ -418,7 +418,7 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 /obj/item/capture_crystal/proc/capture_refused(mob/living/U)
 	if(U)
 		to_chat(U, span_warning("This creature is too strong willed to be captured."))
-	playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
+	play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 
 /obj/item/capture_crystal/proc/capture_answered(datum/om/prompt/confirm/crystal_capture/ask)
 	var/mob/living/M = ask.answerer
@@ -450,7 +450,7 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 /obj/item/capture_crystal/proc/activate(mob/living/user, target)
 	if(!cooldown_check())		//Are we ready to do things yet?
 		to_chat(user, span_notice("\The [src] clicks unsatisfyingly... It is not ready yet."))
-		playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
+		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 		return
 	if(spawn_mob_type && !bound_mob)			//We don't already have a mob, but we know what kind of mob we want
 		rel_set(src, "bound_mob", new spawn_mob_type(src)) //Well let's spawn it then!
@@ -458,7 +458,7 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 		spawn_mob_type = null
 		capture(bound_mob, user)
 	if(bound_mob)								//We have a mob! Let's finish setting up.
-		user.visible_message("\The [src] clicks, and then emits a small chime.", "\The [src] grows warm in your hand, something inside is awake.")
+		act_message(user, src, MSG_SELF("%T% grows warm in your hand, something inside is awake."), MSG_OTHERS("%T% clicks, and then emits a small chime."))
 		active = TRUE
 		if(!owner)								//Do we have an owner? It's pretty unlikely that this would ever happen! But it happens, let's claim the crystal.
 			rel_set(src, "owner", user)
@@ -471,11 +471,11 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 		var/mob/living/M = target
 		COOLDOWN_START(src, activate_cooldown_until, activate_cooldown)
 		if(M.capture_caught)					//Can't capture things that were already caught.
-			playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
+			play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 			to_chat(user, span_notice("\The [src] clicks unsatisfyingly... \The [M] is already under someone else's control."))
 			return
 		else if(M.stat == DEAD)						//Is it dead? We can't influence dead things.
-			playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
+			play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 			to_chat(user, span_notice("\The [src] clicks unsatisfyingly... \The [M] is not in a state to be captured."))
 			return
 		else if(M.client)							//Is it player controlled?
@@ -483,34 +483,34 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 			return
 		else if(!isanimal(M))						//So it's not player controlled, but it's also not a simplemob?
 			to_chat(user, span_warning("This creature is not suitable for capture."))
-			playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
+			play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 			return
 		var/mob/living/simple_mob/S = M
 		if(!S.ai_brain)						//We don't really want to capture simplemobs that don't have an AI
 			to_chat(user, span_warning("This creature is not suitable for capture."))
-			playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
+			play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 		else if(prob(capture_chance(S, user)))				//OKAY! So we have an NPC simplemob with an AI, let's calculate its capture chance! It varies based on the mob's condition.
 			capture(S, user)					//We did it! Woo! We capture it!
-			user.visible_message("\The [src] clicks, and then emits a small chime.", "Alright! \The [S] was caught!")
+			act_message(user, src, MSG_SELF("Alright! \The [S] was caught!"), MSG_OTHERS("%T% clicks, and then emits a small chime."))
 			recall(user)
 			active = TRUE
 		else									//Shoot, it didn't work and now it's mad!!!
 			S.ai_brain.go_wake()
 			S.ai_brain.give_target(user, TRUE)
 			user.visible_message("\The [src] bonks into \the [S], angering it!")
-			playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
+			play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 			to_chat(user, span_notice("\The [src] clicks unsatisfyingly."))
 		update_icon()
 		return
 	//The target is not a mob, so let's not do anything.
-	playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
+	play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 	to_chat(user, span_notice("\The [src] clicks unsatisfyingly."))
 
 //We're using the crystal, but what will it do?
 /obj/item/capture_crystal/proc/determine_action(mob/living/U, T)
 	if(!cooldown_check())	//Are we ready yet?
 		to_chat(U, span_notice("\The [src] clicks unsatisfyingly... It is not ready yet."))
-		playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
+		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 		return				//No
 	if(bound_mob in contents)	//Do we have our mob?
 		if(T)
@@ -524,7 +524,7 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 		active = FALSE
 		update_icon()
 		rel_clear(src, "owner")
-		playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
+		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 
 //Let's try to call our mob back!
 /obj/item/capture_crystal/proc/recall(mob/living/user)
@@ -535,13 +535,13 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 			M.ai_brain.go_sleep()	//AI doesn't need to think when it's in the crystal
 		bound_mob.forceMove(src)
 		COOLDOWN_START(src, activate_cooldown_until, activate_cooldown)
-		bound_mob.visible_message("\The [user]'s [src] flashes, disappearing [bound_mob] in an instant!!!", "\The [src] pulls you back into confinement in a flash of light!!!")
+		act_message(bound_mob, src, MSG_SELF("%T% pulls you back into confinement in a flash of light!!!"), MSG_OTHERS("\The [user]'s [src] flashes, disappearing %U% in an instant!!!"))
 		animate_action(turfmemory)
-		playsound(src, 'sound/effects/capture-crystal-in.ogg', 75, 1, -1)
+		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_IN)
 		update_icon()
 	else
 		to_chat(user, span_notice("\The [src] clicks and emits a small, unpleasant tone. \The [bound_mob] cannot be recalled."))
-		playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
+		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 
 //Let's let our mob out!
 /obj/item/capture_crystal/proc/unleash(mob/living/user, atom/target)
@@ -559,9 +559,9 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 		var/mob/living/simple_mob/M = bound_mob
 		M.ai_brain.go_wake()		//Okay it's time to do work, let's wake up!
 	bound_mob.faction = owner.faction	//Let's make sure we aren't hostile to our owner or their friends
-	bound_mob.visible_message("\The [user]'s [src] flashes, \the [bound_mob] appears in an instant!!!", "The world around you rematerialize as you are unleashed from the [src] next to \the [user]. You feel a strong compulsion to enact \the [owner]'s will.")
+	act_message(bound_mob, src, MSG_SELF("The world around you rematerialize as you are unleashed from %T% next to \the [user]. You feel a strong compulsion to enact \the [owner]'s will."), MSG_OTHERS("\The [user]'s [src] flashes, %U% appears in an instant!!!"))
 	animate_action(get_turf(bound_mob))
-	playsound(src, 'sound/effects/capture-crystal-out.ogg', 75, 1, -1)
+	play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_OUT)
 	update_icon()
 
 //Let's make a flashy sparkle when someone appears or disappears!
@@ -592,9 +592,9 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 	else if(!cooldown_check())		//OTHERWISE let's obey the cooldown
 		to_chat(thrower, span_notice("\The [src] emits an soft tone... It is not ready yet."))
 		if(bound_mob)
-			playsound(src, 'sound/effects/capture-crystal-problem.ogg', 75, 1, -1)
+			play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_PROBLEM)
 		else
-			playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
+			play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 	else if(!active)					//The ball isn't set up, let's try to set it up.
 		if(isliving(target))	//We're hitting a mob, let's try to capture it.
 			om_after(src, 10, PROC_REF(activate), thrower, target)
@@ -602,12 +602,12 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 		om_after(src, 10, PROC_REF(activate), thrower, src)
 	else if(!bound_mob)				//We hit something else, and we don't have a mob, so we can't really do anything!
 		to_chat(thrower, span_notice("\The [src] clicks unpleasantly..."))
-		playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
+		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 	else if(bound_mob in contents)	//We have our mob! Let's try to let it out.
 		om_after(src, 10, PROC_REF(unleash), thrower, src)
 	else						//Our mob isn't here, we can't do anything.
 		to_chat(thrower, span_notice("\The [src] clicks unpleasantly..."))
-		playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
+		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 
 /obj/item/capture_crystal/basic
 
@@ -967,7 +967,7 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 /obj/item/capture_crystal/loadout/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(!bound_mob && M != user)
 		to_chat(user, span_notice("\The [src] emits an unpleasant tone..."))
-		playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
+		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 		return ITEM_INTERACT_FAILURE
 	. = ..()
 
@@ -983,12 +983,12 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 /obj/item/capture_crystal/cheap/capture(mob/living/M, mob/living/U)
 	if(!M.capture_crystal || M.capture_caught)
 		to_chat(U, span_warning("This creature is not suitable for capture with this crystal."))
-		playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
+		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 		return
 	knowyoursignals(M, U)
 	if(isanimal(M) || !M.client)
 		to_chat(U, span_warning("This creature is not suitable for capture."))
-		playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
+		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 		return
 	rel_set(src, "owner", U)
 	if(!bound_mob)
@@ -1000,7 +1000,7 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 /obj/item/capture_crystal/cheap/activate(mob/living/user, target)
 	if(!cooldown_check())		//Are we ready to do things yet?
 		to_chat(user, span_notice("\The [src] clicks unsatisfyingly... It is not ready yet."))
-		playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
+		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 		return
 	if(spawn_mob_type && !bound_mob)			//We don't already have a mob, but we know what kind of mob we want
 		rel_set(src, "bound_mob", new spawn_mob_type(src)) //Well let's spawn it then!
@@ -1008,7 +1008,7 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 		spawn_mob_type = null
 		capture(bound_mob, user)
 	if(bound_mob)								//We have a mob! Let's finish setting up.
-		user.visible_message("\The [src] clicks, and then emits a small chime.", "\The [src] grows warm in your hand, something inside is awake.")
+		act_message(user, src, MSG_SELF("%T% grows warm in your hand, something inside is awake."), MSG_OTHERS("%T% clicks, and then emits a small chime."))
 		active = TRUE
 		if(!owner)								//Do we have an owner? It's pretty unlikely that this would ever happen! But it happens, let's claim the crystal.
 			rel_set(src, "owner", user)
@@ -1021,11 +1021,11 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 		var/mob/living/M = target
 		COOLDOWN_START(src, activate_cooldown_until, activate_cooldown)
 		if(M.capture_caught)					//Can't capture things that were already caught.
-			playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
+			play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 			to_chat(user, span_notice("\The [src] clicks unsatisfyingly... \The [M] is already under someone else's control."))
 			return
 		else if(M.stat == DEAD)						//Is it dead? We can't influence dead things.
-			playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
+			play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 			to_chat(user, span_notice("\The [src] clicks unsatisfyingly... \The [M] is not in a state to be captured."))
 			return
 		else if(M.client)							//Is it player controlled?
@@ -1033,22 +1033,22 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 			return
 		else if(!isanimal(M))						//So it's not player controlled, but it's also not a simplemob?
 			to_chat(user, span_warning("This creature is not suitable for capture."))
-			playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
+			play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 			return
 		var/mob/living/simple_mob/S = M
 		if(!S.ai_brain)						//We don't really want to capture simplemobs that don't have an AI
 			to_chat(user, span_warning("This creature is not suitable for capture."))
-			playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
+			play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 		else									//Shoot, it didn't work and now it's mad!!!
 			S.ai_brain.go_wake()
 			S.ai_brain.give_target(user, TRUE)
 			user.visible_message("\The [src] bonks into \the [S], angering it!")
-			playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
+			play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 			to_chat(user, span_notice("\The [src] clicks unsatisfyingly."))
 		update_icon()
 		return
 	//The target is not a mob, so let's not do anything.
-	playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
+	play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 	to_chat(user, span_notice("\The [src] clicks unsatisfyingly."))
 
 /// Old object verbs.

@@ -38,8 +38,7 @@
 						of manpower as much as they handle hands-on operations and repairs. They are also expected to keep the rest of the station informed of \
 						any structural threats to the station that may be hazardous to health or disruptive to work."
 
-/datum/job/chief_engineer/get_request_reasons()
-	return list("Engine setup", "Construction project", "Repairs necessary", "Training crew", "Assembling expedition team")
+TYPE_TABLE(/datum/job/chief_engineer, get_request_reasons, list("Engine setup", "Construction project", "Repairs necessary", "Training crew", "Assembling expedition team"))
 
 /datum/job/chief_engineer/equip(mob/living/carbon/human/H, alt_title)
 	. = ..()
@@ -84,8 +83,7 @@
 	job_description = "An " + JOB_ENGINEER + " keeps the station running. They repair damages, keep the atmosphere stable, and ensure that power is being \
 						generated and distributed. On quiet shifts, they may be called upon to make cosmetic alterations to the station."
 
-/datum/job/engineer/get_request_reasons()
-	return list("Engine setup", "Construction project", "Repairs necessary", "Assembling expedition team")
+TYPE_TABLE(/datum/job/engineer, get_request_reasons, list("Engine setup", "Construction project", "Repairs necessary", "Assembling expedition team"))
 
 /datum/job/engineer/equip(mob/living/carbon/human/H, alt_title)
 	. = ..()
@@ -163,8 +161,7 @@
 	job_description = "An " + JOB_ATMOSPHERIC_TECHNICIAN + " is primarily concerned with keeping the station's atmosphere breathable. They are expected to have a good \
 						understanding of the pipes, vents, and scrubbers that move gasses around the station, and to be familiar with proper firefighting procedure."
 
-/datum/job/atmos/get_request_reasons()
-	return list("Construction project", "Repairs necessary", "Assembling expedition team")
+TYPE_TABLE(/datum/job/atmos, get_request_reasons, list("Construction project", "Repairs necessary", "Assembling expedition team"))
 
 /datum/alt_title/refuel_tech
 	title = JOB_ALT_FUEL_TECHNICIAN

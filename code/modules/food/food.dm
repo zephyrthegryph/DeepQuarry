@@ -8,8 +8,8 @@
 	max_transfer_amount = null
 	volume = 50 //Sets the default container amount for all food items.
 	var/filling_color = "#FFFFFF" //Used by sandwiches and custom food.
-	drop_sound = 'sound/items/drop/food.ogg'
-	pickup_sound = 'sound/items/pickup/food.ogg'
+	drop_sound = SFX_ITEMS_DROP_FOOD
+	pickup_sound = SFX_ITEMS_PICKUP_FOOD
 
 	var/food_can_insert_micro = FALSE
 	var/list/food_inserted_micros

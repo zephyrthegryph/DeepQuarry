@@ -176,27 +176,23 @@
 	var/list/synths
 
 /// The tools this augment carries (constant per type).
-/obj/item/organ/internal/augment/armmounted/shoulder/multiple/proc/tool_types()
-	var/static/list/types = list(
-		/obj/item/tool/screwdriver,
-		/obj/item/tool/wrench,
-		/obj/item/tool/crowbar,
-		/obj/item/tool/wirecutters,
-		/obj/item/multitool,
-		/obj/item/stack/cable_coil/gray,
-		/obj/item/tape_roll,
-		)
-	return types
+TYPE_TABLE_DECLARE(/obj/item/organ/internal/augment/armmounted/shoulder/multiple, tool_types, list( \
+		/obj/item/tool/screwdriver, \
+		/obj/item/tool/wrench, \
+		/obj/item/tool/crowbar, \
+		/obj/item/tool/wirecutters, \
+		/obj/item/multitool, \
+		/obj/item/stack/cable_coil/gray, \
+		/obj/item/tape_roll, \
+		))
 
 /// Matter synthesizers feeding the augment's stack tools (constant per type).
-/obj/item/organ/internal/augment/armmounted/shoulder/multiple/proc/synth_types()
-	var/static/list/types = list(/datum/matter_synth/wire)
-	return types
+TYPE_TABLE_DECLARE(/obj/item/organ/internal/augment/armmounted/shoulder/multiple, synth_types, list(/datum/matter_synth/wire))
 
 /obj/item/organ/internal/augment/armmounted/shoulder/multiple/Initialize(mapload)
 	. = ..()
 
-	for(var/path in tool_types())
+	for(var/path in TYPE_TABLE_GET(src, tool_types))
 		if(integrated_object && istype(integrated_object, path))
 			continue
 		own_put(src, "integrated_tools", path, new path(src))
@@ -207,7 +203,7 @@
 
 	integrated_tool_images = list()
 
-	var/list/synth_paths = synth_types()
+	var/list/synth_paths = TYPE_TABLE_GET(src, synth_types)
 	for(var/datumpath in synth_paths)
 		own_add(src, "synths", new datumpath)
 
@@ -298,24 +294,20 @@
 	icon_state = "augment_medkit"
 	integrated_object_type = null
 
-/obj/item/organ/internal/augment/armmounted/shoulder/multiple/medical/tool_types()
-	var/static/list/types = list(
-		/obj/item/surgical/hemostat,
-		/obj/item/surgical/retractor,
-		/obj/item/surgical/cautery,
-		/obj/item/surgical/surgicaldrill,
-		/obj/item/surgical/scalpel,
-		/obj/item/surgical/circular_saw,
-		/obj/item/surgical/bonegel,
-		/obj/item/surgical/FixOVein,
-		/obj/item/surgical/bonesetter,
-		/obj/item/stack/medical/crude_pack,
-		)
-	return types
+TYPE_TABLE(/obj/item/organ/internal/augment/armmounted/shoulder/multiple/medical, tool_types, list( \
+		/obj/item/surgical/hemostat, \
+		/obj/item/surgical/retractor, \
+		/obj/item/surgical/cautery, \
+		/obj/item/surgical/surgicaldrill, \
+		/obj/item/surgical/scalpel, \
+		/obj/item/surgical/circular_saw, \
+		/obj/item/surgical/bonegel, \
+		/obj/item/surgical/FixOVein, \
+		/obj/item/surgical/bonesetter, \
+		/obj/item/stack/medical/crude_pack, \
+		))
 
-/obj/item/organ/internal/augment/armmounted/shoulder/multiple/medical/synth_types()
-	var/static/list/types = list(/datum/matter_synth/bandage)
-	return types
+TYPE_TABLE(/obj/item/organ/internal/augment/armmounted/shoulder/multiple/medical, synth_types, list(/datum/matter_synth/bandage))
 
 // MED-6: this organ has work every periodic_step(), so the organs life stage stays awake for it.
 /obj/item/organ/internal/augment/armmounted/shoulder/multiple/life_step_idle()

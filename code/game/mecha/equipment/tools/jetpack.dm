@@ -120,10 +120,10 @@
 	if(!chassis) return
 	return (equip_ready ? span_green("*") : span_red("*")) + "&nbsp;[src.name] \[<a href=\"?src=\ref[src];toggle=1\">Toggle</a>\]"
 
-/obj/item/mecha_parts/mecha_equipment/tool/jetpack/Topic(href,href_list)
-	..()
-	if(href_list["toggle"])
-		toggle()
+TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/jetpack, "toggle", PROC_REF(topic_toggle))
+
+/obj/item/mecha_parts/mecha_equipment/tool/jetpack/proc/topic_toggle(mob/user, list/args)
+	toggle()
 
 /obj/item/mecha_parts/mecha_equipment/tool/jetpack/do_after_cooldown()
 	om_after(src, equip_cooldown, PROC_REF(cooldown_over))

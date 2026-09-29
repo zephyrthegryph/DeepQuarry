@@ -190,9 +190,7 @@
 	var/repair_rate = 1
 
 /// Organs these lungs keep repaired (constant).
-/obj/item/organ/internal/lungs/replicant/mending/proc/repair_list()
-	var/static/list/organ_tags = list(O_HEART, O_KIDNEYS, O_VOICE, O_GBLADDER, O_PLASMA)
-	return organ_tags
+TYPE_TABLE_DECLARE(/obj/item/organ/internal/lungs/replicant/mending, repair_list, list(O_HEART, O_KIDNEYS, O_VOICE, O_GBLADDER, O_PLASMA))
 
 /obj/item/organ/internal/lungs/replicant/mending/handle_organ_proc_special()
 	if(!owner)
@@ -201,7 +199,7 @@
 	var/modifier = 1 - (0.5 * is_bruised())
 
 	if(istype(owner))
-		for(var/o_tag in repair_list())
+		for(var/o_tag in TYPE_TABLE_GET(src, repair_list))
 			var/obj/item/organ/O = owner.organ_in(o_tag)
 			if(O)
 				owner.mend(TREAT_RESTORATION, repair_rate * modifier, O)

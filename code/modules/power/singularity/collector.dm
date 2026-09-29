@@ -10,8 +10,8 @@
 	var/tmp/obj/item/tank/phoron/P
 	var/last_power = 0
 	var/last_power_new = 0
-	var/active = 0
-	var/locked = 0
+	active = 0
+	locked = 0
 	var/drainratio = 1
 	rad_shield_material = MAT_LEAD
 	rad_shield_thickness_mm = RAD_COLLECTOR_THICKNESS_MM
@@ -99,10 +99,10 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/rad_collector, REGISTRY_RAD_COLLECTORS)
 /obj/machinery/power/rad_collector/proc/interaction_lock(mob/user, obj/item/W, datum/interaction/interaction)
 	if (src.allowed(user))
 		if(active)
-			src.locked = !src.locked
+			set_locked(!src.locked)
 			to_chat(user, "The controls are now [src.locked ? "locked." : "unlocked."]")
 		else
-			src.locked = 0 //just in case it somehow gets locked
+			set_locked(0) //just in case it somehow gets locked
 			to_chat(user, span_red("The controls can only be locked when the [src] is active."))
 	else
 		to_chat(user, span_red("Access denied!"))
@@ -119,7 +119,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/rad_collector, REGISTRY_RAD_COLLECTORS)
 		to_chat(user, span_blue("Remove the phoron tank first."))
 		return ITEM_INTERACT_BLOCKING
 	playsound(src, W.usesound, 75, 1)
-	anchored = !anchored
+	set_anchored(!anchored)
 	user.visible_message("[user.name] [anchored ? "secures" : "unsecures"] the [src.name].", \
 		"You [anchored ? "secure" : "undo"] the external bolts.", \
 		"You hear a ratchet.")
@@ -141,7 +141,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/rad_collector, REGISTRY_RAD_COLLECTORS)
 	return ..()
 
 /obj/machinery/power/rad_collector/proc/eject()
-	locked = 0
+	set_locked(0)
 	var/obj/item/tank/phoron/Z = src.P()
 	if (!Z)
 		return
@@ -169,13 +169,13 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/rad_collector, REGISTRY_RAD_COLLECTORS)
 	cut_overlays()
 	if(P())
 		add_overlay("ptank")
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return
 	if(active)
 		add_overlay("on")
 
 /obj/machinery/power/rad_collector/proc/toggle_power()
-	active = !active
+	set_active(!active)
 	if(active)
 		icon_state = "ca_on"
 		flick("ca_active", src)

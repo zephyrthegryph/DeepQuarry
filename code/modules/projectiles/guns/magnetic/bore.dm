@@ -64,7 +64,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/magnetic/matfed, INTERACT_HAND(null, PROC_REF(
 		if(removing)
 			user.put_in_hands(removing)
 			user.visible_message(span_infoplain(span_bold("\The [user]") + " removes \the [removing] from \the [src]."))
-			playsound(src, 'sound/machines/click.ogg', 10, 1)
+			play_sfx(src, SFX_MACHINES_CLICK, 0.2)
 			update_icon()
 			return TRUE
 	return FALSE
@@ -114,7 +114,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/magnetic/matfed, INTERACT_HAND(null, PROC_REF(
 	if(!can_load_sheet(task.sheets))
 		return STEP_DONE
 	mat_storage += SHEET_MATERIAL_AMOUNT
-	playsound(src, 'sound/effects/phasein.ogg', 15, 1)
+	play_sfx(src, SFX_EFFECTS_PHASEIN, 0.15)
 	task.loaded_any = TRUE
 	task.sheets.use(1)
 	return can_load_sheet(task.sheets) ? STEP_REPEAT(1.5 SECONDS) : STEP_DONE
@@ -124,7 +124,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/magnetic/matfed, INTERACT_HAND(null, PROC_REF(
 	var/mob/user = task.actor
 	if(task.loaded_any && user)
 		user.visible_message(span_infoplain(span_bold("\The [user]") + " loads \the [src] with \the [task.sheets]."))
-		playsound(src, 'sound/weapons/flipblade.ogg', 50, 1)
+		play_sfx(src, SFX_WEAPONS_FLIPBLADE)
 	update_icon()
 
 /// Old attackby: the parent's first, then its own.
@@ -138,7 +138,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/magnetic/matfed, INTERACT_HAND(null, PROC_REF(
 				return
 			own_set(src, "manipulator", thing)
 			user.drop_from_inventory(manipulator, src)
-			playsound(src, 'sound/machines/click.ogg', 10,1)
+			play_sfx(src, SFX_MACHINES_CLICK, 0.2)
 			mat_cost = initial(mat_cost) / (2*manipulator.rating)
 			user.visible_message(span_infoplain(span_bold("\The [user]") + " slots \the [manipulator] into \the [src]."))
 			update_icon()
@@ -173,7 +173,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/magnetic/matfed, INTERACT_HAND(null, PROC_REF(
 			success = TRUE
 		if(success)
 			user.visible_message(span_infoplain(span_bold("\The [user]") + " loads \the [src] with \the [M]."))
-			playsound(src, 'sound/weapons/flipblade.ogg', 50, 1)
+			play_sfx(src, SFX_WEAPONS_FLIPBLADE)
 		update_icon()
 		return
 
@@ -286,7 +286,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/magnetic/matfed, INTERACT_HAND(null, PROC_REF(
 /// Pulls the cord (2 seconds a pull, a timed action each) until the motor starts.
 /obj/item/gun/magnetic/matfed/phoronbore/proc/pull_cord(mob/living/user, pulls)
 	if(pulls > 0)
-		playsound(src, 'sound/items/small_motor/motor_pull_attempt.ogg', 100)
+		play_sfx(src, SFX_ITEMS_SMALL_MOTOR_MOTOR_PULL_ATTEMPT)
 		om_task_timed(user, 2 SECONDS, src, src, PROC_REF(pull_cord), list(user, pulls - 1), on_fail = PROC_REF(pull_abandoned))
 		return
 	soundloop.start()

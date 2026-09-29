@@ -7,9 +7,9 @@
 	max_storage_space = ITEMSIZE_COST_NORMAL * 7 //This should ensure belts always have enough room to store whatever.
 	slot_flags = SLOT_BELT
 	attack_verb = list("whipped", "lashed", "disciplined")
-	equip_sound = 'sound/items/toolbelt_equip.ogg'
-	drop_sound = 'sound/items/drop/toolbelt.ogg'
-	pickup_sound = 'sound/items/pickup/toolbelt.ogg'
+	equip_sound = SFX_ITEMS_TOOLBELT_EQUIP
+	drop_sound = SFX_ITEMS_DROP_TOOLBELT
+	pickup_sound = SFX_ITEMS_PICKUP_TOOLBELT
 	sprite_sheets = list(
 		SPECIES_TESHARI = 'icons/inventory/belt/mob_teshari.dmi',
 		SPECIES_WEREBEAST = 'icons/inventory/belt/mob_werebeast.dmi'
@@ -17,8 +17,7 @@
 
 	var/show_above_suit = 0
 
-/obj/item/storage/belt/hold_constraint()
-	return list(HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/belt, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 
 /obj/item/storage/belt/proc/toggle_layer_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
@@ -51,48 +50,46 @@
 	desc = "Can hold various tools."
 	icon_state = "utility"
 
-/obj/item/storage/belt/utility/hold_constraint()
-	var/list/holds = list(
-		///obj/item/combitool,
-		/obj/item/tool/crowbar,
-		/obj/item/tool/screwdriver,
-		/obj/item/weldingtool,
-		/obj/item/tool/wirecutters,
-		/obj/item/tool/wrench,
-		/obj/item/tool/transforming/powerdrill,
-		/obj/item/tool/transforming/jawsoflife,
-		/obj/item/multitool,
-		/obj/item/flashlight,
-		/obj/item/cell/device,
-		/obj/item/stack/cable_coil,
-		/obj/item/t_scanner,
-		/obj/item/analyzer,
-		/obj/item/clothing/glasses,
-		/obj/item/clothing/gloves,
-		/obj/item/pda,
-		/obj/item/megaphone,
-		/obj/item/taperoll,
-		/obj/item/radio/headset,
-		/obj/item/robotanalyzer,
-		/obj/item/material/minihoe,
-		/obj/item/material/knife/machete/hatchet,
-		/obj/item/analyzer/plant_analyzer,
-		/obj/item/extinguisher/mini,
-		/obj/item/tape_roll,
-		/obj/item/integrated_electronics/wirer,
-		/obj/item/pipe_dispenser,
-		/obj/item/holosign_creator/combifan,
-		/obj/item/rcd,
-		/obj/item/integrated_electronics/debugger,
-		/obj/item/shovel/spade,
-		/obj/item/stack/nanopaste,
-		/obj/item/geiger,
-		/obj/item/reagent_scanner,
-		/obj/item/lightpainter,
-		/obj/item/anomaly_releaser,
-		/obj/item/anomaly_scanner
-		)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/belt/utility, hold_spec, list(HOLD_ONLY(list( \
+/* /obj/item/combitool, */ \
+		/obj/item/tool/crowbar, \
+		/obj/item/tool/screwdriver, \
+		/obj/item/weldingtool, \
+		/obj/item/tool/wirecutters, \
+		/obj/item/tool/wrench, \
+		/obj/item/tool/transforming/powerdrill, \
+		/obj/item/tool/transforming/jawsoflife, \
+		/obj/item/multitool, \
+		/obj/item/flashlight, \
+		/obj/item/cell/device, \
+		/obj/item/stack/cable_coil, \
+		/obj/item/t_scanner, \
+		/obj/item/analyzer, \
+		/obj/item/clothing/glasses, \
+		/obj/item/clothing/gloves, \
+		/obj/item/pda, \
+		/obj/item/megaphone, \
+		/obj/item/taperoll, \
+		/obj/item/radio/headset, \
+		/obj/item/robotanalyzer, \
+		/obj/item/material/minihoe, \
+		/obj/item/material/knife/machete/hatchet, \
+		/obj/item/analyzer/plant_analyzer, \
+		/obj/item/extinguisher/mini, \
+		/obj/item/tape_roll, \
+		/obj/item/integrated_electronics/wirer, \
+		/obj/item/pipe_dispenser, \
+		/obj/item/holosign_creator/combifan, \
+		/obj/item/rcd, \
+		/obj/item/integrated_electronics/debugger, \
+		/obj/item/shovel/spade, \
+		/obj/item/stack/nanopaste, \
+		/obj/item/geiger, \
+		/obj/item/reagent_scanner, \
+		/obj/item/lightpainter, \
+		/obj/item/anomaly_releaser, \
+		/obj/item/anomaly_scanner \
+		)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 
 /obj/item/storage/belt/utility/full
 	starts_with = list(
@@ -143,46 +140,44 @@
 	item_state = "utility_ce"
 	storage_slots = 8	//If they get better everything-else, why not the belt too?
 
-/obj/item/storage/belt/utility/chief/hold_constraint()
-	var/list/holds = list(
-		/obj/item/rcd,	//They've given one from the get-go, it's hard to imagine they wouldn't be given something that can store it neater than a bag
-		/obj/item/pipe_dispenser,
-		/obj/item/holosign_creator/combifan,
-		/obj/item/tool/crowbar,
-		/obj/item/tool/screwdriver,
-		/obj/item/weldingtool,
-		/obj/item/tool/wirecutters,
-		/obj/item/tool/wrench,
-		/obj/item/tool/transforming/powerdrill,
-		/obj/item/tool/transforming/jawsoflife,
-		/obj/item/multitool,
-		/obj/item/flashlight,
-		/obj/item/cell/device,
-		/obj/item/stack/cable_coil,
-		/obj/item/t_scanner,
-		/obj/item/analyzer,
-		/obj/item/clothing/glasses,
-		/obj/item/clothing/gloves,
-		/obj/item/pda,
-		/obj/item/megaphone,
-		/obj/item/taperoll,
-		/obj/item/radio/headset,
-		/obj/item/robotanalyzer,
-		/obj/item/material/minihoe,
-		/obj/item/material/knife/machete/hatchet,
-		/obj/item/analyzer/plant_analyzer,
-		/obj/item/extinguisher/mini,
-		/obj/item/tape_roll,
-		/obj/item/integrated_electronics/wirer,
-		/obj/item/integrated_electronics/debugger,
-		/obj/item/shovel/spade,
-		/obj/item/stack/nanopaste,
-		/obj/item/geiger,
-		/obj/item/areaeditor/blueprints,	//It's a bunch of paper that could prolly be rolled up & slipped into the belt, not to mention CE only, see the RCD's thing above
-		/obj/item/wire_reader,	//As above
-		/obj/item/holosign_creator/combifan
-		)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/belt/utility/chief, hold_spec, list(HOLD_ONLY(list( \
+		/obj/item/rcd, /* They've given one from the get-go, it's hard to imagine they wouldn't be given something that can store it neater than a bag */ \
+		/obj/item/pipe_dispenser, \
+		/obj/item/holosign_creator/combifan, \
+		/obj/item/tool/crowbar, \
+		/obj/item/tool/screwdriver, \
+		/obj/item/weldingtool, \
+		/obj/item/tool/wirecutters, \
+		/obj/item/tool/wrench, \
+		/obj/item/tool/transforming/powerdrill, \
+		/obj/item/tool/transforming/jawsoflife, \
+		/obj/item/multitool, \
+		/obj/item/flashlight, \
+		/obj/item/cell/device, \
+		/obj/item/stack/cable_coil, \
+		/obj/item/t_scanner, \
+		/obj/item/analyzer, \
+		/obj/item/clothing/glasses, \
+		/obj/item/clothing/gloves, \
+		/obj/item/pda, \
+		/obj/item/megaphone, \
+		/obj/item/taperoll, \
+		/obj/item/radio/headset, \
+		/obj/item/robotanalyzer, \
+		/obj/item/material/minihoe, \
+		/obj/item/material/knife/machete/hatchet, \
+		/obj/item/analyzer/plant_analyzer, \
+		/obj/item/extinguisher/mini, \
+		/obj/item/tape_roll, \
+		/obj/item/integrated_electronics/wirer, \
+		/obj/item/integrated_electronics/debugger, \
+		/obj/item/shovel/spade, \
+		/obj/item/stack/nanopaste, \
+		/obj/item/geiger, \
+		/obj/item/areaeditor/blueprints, /* It's a bunch of paper that could prolly be rolled up & slipped into the belt, not to mention CE only, see the RCD's thing above */ \
+		/obj/item/wire_reader, /* As above */ \
+		/obj/item/holosign_creator/combifan \
+		)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 
 /obj/item/storage/belt/utility/chief/full
 	starts_with = list(
@@ -202,51 +197,49 @@
 	storage_slots = 14 //twice the amount as a normal belt
 	max_storage_space = ITEMSIZE_COST_NORMAL * 14
 
-/obj/item/storage/belt/utility/holding/hold_constraint()
-	var/list/holds = list(
-		/obj/item/tool/crowbar,
-		/obj/item/tool/screwdriver,
-		/obj/item/weldingtool,
-		/obj/item/tool/wirecutters,
-		/obj/item/tool/wrench,
-		/obj/item/tool/transforming/powerdrill,
-		/obj/item/tool/transforming/jawsoflife,
-		/obj/item/multitool,
-		/obj/item/flashlight,
-		/obj/item/cell/device,
-		/obj/item/stack/cable_coil,
-		/obj/item/t_scanner,
-		/obj/item/analyzer,
-		/obj/item/clothing/glasses,
-		/obj/item/clothing/gloves,
-		/obj/item/pda,
-		/obj/item/megaphone,
-		/obj/item/taperoll,
-		/obj/item/radio/headset,
-		/obj/item/robotanalyzer,
-		/obj/item/material/minihoe,
-		/obj/item/material/knife/machete/hatchet,
-		/obj/item/analyzer/plant_analyzer,
-		/obj/item/extinguisher/mini,
-		/obj/item/tape_roll,
-		/obj/item/integrated_electronics/wirer,
-		/obj/item/integrated_electronics/debugger,
-		/obj/item/shovel/spade,
-		/obj/item/stack/nanopaste,
-		/obj/item/cell, //this is a bigger belt, might as well make it hold bigger cells too
-		/obj/item/pipe_dispenser, //bigger belt for bigger tools
-		/obj/item/rcd, //see above
-		/obj/item/quantum_pad_booster,
-		/obj/item/inducer,
-		/obj/item/stack/material/steel,
-		/obj/item/stack/material/glass,
-		/obj/item/lightreplacer,
-		/obj/item/pickaxe/plasmacutter,
-		/obj/item/holosign_creator/combifan,
-		/obj/item/reagent_scanner,
-		/obj/item/lightpainter
-	)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/belt/utility/holding, hold_spec, list(HOLD_ONLY(list( \
+		/obj/item/tool/crowbar, \
+		/obj/item/tool/screwdriver, \
+		/obj/item/weldingtool, \
+		/obj/item/tool/wirecutters, \
+		/obj/item/tool/wrench, \
+		/obj/item/tool/transforming/powerdrill, \
+		/obj/item/tool/transforming/jawsoflife, \
+		/obj/item/multitool, \
+		/obj/item/flashlight, \
+		/obj/item/cell/device, \
+		/obj/item/stack/cable_coil, \
+		/obj/item/t_scanner, \
+		/obj/item/analyzer, \
+		/obj/item/clothing/glasses, \
+		/obj/item/clothing/gloves, \
+		/obj/item/pda, \
+		/obj/item/megaphone, \
+		/obj/item/taperoll, \
+		/obj/item/radio/headset, \
+		/obj/item/robotanalyzer, \
+		/obj/item/material/minihoe, \
+		/obj/item/material/knife/machete/hatchet, \
+		/obj/item/analyzer/plant_analyzer, \
+		/obj/item/extinguisher/mini, \
+		/obj/item/tape_roll, \
+		/obj/item/integrated_electronics/wirer, \
+		/obj/item/integrated_electronics/debugger, \
+		/obj/item/shovel/spade, \
+		/obj/item/stack/nanopaste, \
+		/obj/item/cell, /* this is a bigger belt, might as well make it hold bigger cells too */ \
+		/obj/item/pipe_dispenser, /* bigger belt for bigger tools */ \
+		/obj/item/rcd, /* see above */ \
+		/obj/item/quantum_pad_booster, \
+		/obj/item/inducer, \
+		/obj/item/stack/material/steel, \
+		/obj/item/stack/material/glass, \
+		/obj/item/lightreplacer, \
+		/obj/item/pickaxe/plasmacutter, \
+		/obj/item/holosign_creator/combifan, \
+		/obj/item/reagent_scanner, \
+		/obj/item/lightpainter \
+	)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 
 
 /obj/item/storage/belt/medical
@@ -254,42 +247,40 @@
 	desc = "Can hold various medical equipment."
 	icon_state = "medical"
 
-/obj/item/storage/belt/medical/hold_constraint()
-	var/list/holds = list(
-		/obj/item/healthanalyzer,
-		/obj/item/dnainjector,
-		/obj/item/reagent_containers/dropper,
-		/obj/item/reagent_containers/glass/beaker,
-		/obj/item/reagent_containers/glass/bottle,
-		/obj/item/reagent_containers/pill,
-		/obj/item/reagent_containers/syringe,
-		/obj/item/storage/quickdraw/syringe_case, // ition - Adds syringe cases,
-		/obj/item/flame/lighter/zippo,
-		/obj/item/storage/fancy/cigarettes,
-		/obj/item/storage/pill_bottle,
-		/obj/item/stack/medical,
-		/obj/item/radio/headset,
-		/obj/item/pda,
-		/obj/item/taperoll,
-		/obj/item/megaphone,
-		/obj/item/clothing/mask/surgical,
-		/obj/item/clothing/head/surgery,
-		/obj/item/clothing/gloves,
-		/obj/item/reagent_containers/hypospray,
-		/obj/item/clothing/glasses,
-		/obj/item/tool/crowbar,
-		/obj/item/flashlight,
-		/obj/item/cell/device,
-		/obj/item/extinguisher/mini,
-		/obj/item/ammo_casing/macrobattery, // Macrobatteries for the Curabitur can fit into medbelts.
-		/obj/item/sleevemate,
-		/obj/item/mass_spectrometer,
-		/obj/item/surgical,
-		/obj/item/clothing/mask/chewable/candy/lolli,
-		/obj/item/extrapolator,
-		/obj/item/gene_scanner,
-		)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/belt/medical, hold_spec, list(HOLD_ONLY(list( \
+		/obj/item/healthanalyzer, \
+		/obj/item/dnainjector, \
+		/obj/item/reagent_containers/dropper, \
+		/obj/item/reagent_containers/glass/beaker, \
+		/obj/item/reagent_containers/glass/bottle, \
+		/obj/item/reagent_containers/pill, \
+		/obj/item/reagent_containers/syringe, \
+		/obj/item/storage/quickdraw/syringe_case, /* ition - Adds syringe cases, */ \
+		/obj/item/flame/lighter/zippo, \
+		/obj/item/storage/fancy/cigarettes, \
+		/obj/item/storage/pill_bottle, \
+		/obj/item/stack/medical, \
+		/obj/item/radio/headset, \
+		/obj/item/pda, \
+		/obj/item/taperoll, \
+		/obj/item/megaphone, \
+		/obj/item/clothing/mask/surgical, \
+		/obj/item/clothing/head/surgery, \
+		/obj/item/clothing/gloves, \
+		/obj/item/reagent_containers/hypospray, \
+		/obj/item/clothing/glasses, \
+		/obj/item/tool/crowbar, \
+		/obj/item/flashlight, \
+		/obj/item/cell/device, \
+		/obj/item/extinguisher/mini, \
+		/obj/item/ammo_casing/macrobattery, /* Macrobatteries for the Curabitur can fit into medbelts. */ \
+		/obj/item/sleevemate, \
+		/obj/item/mass_spectrometer, \
+		/obj/item/surgical, \
+		/obj/item/clothing/mask/chewable/candy/lolli, \
+		/obj/item/extrapolator, \
+		/obj/item/gene_scanner, \
+		)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 
 /obj/item/storage/belt/medical/emt
 	name = "EMT utility belt"
@@ -308,42 +299,40 @@
 	desc = "Can hold security gear like handcuffs and flashes."
 	icon_state = "security"
 
-/obj/item/storage/belt/security/hold_constraint()
-	var/list/holds = list(
-		/obj/item/grenade,
-		/obj/item/reagent_containers/spray/pepper,
-		/obj/item/handcuffs,
-		/obj/item/flash,
-		/obj/item/clothing/glasses,
-		/obj/item/ammo_casing/a12g,
-		/obj/item/ammo_magazine,
-		/obj/item/cell/device,
-		/obj/item/reagent_containers/food/snacks/donut/,
-		/obj/item/melee/baton,
-		/obj/item/gun/energy/taser,
-		/obj/item/gun/energy/stunrevolver,
-		/obj/item/gun/energy/stunrevolver/vintage,
-		/obj/item/gun/magnetic/railgun/heater/pistol,
-		/obj/item/gun/energy/gun,
-		/obj/item/flame/lighter,
-		/obj/item/flashlight,
-		/obj/item/taperecorder,
-		/obj/item/rectape,
-		/obj/item/pda,
-		/obj/item/radio/headset,
-		/obj/item/clothing/gloves,
-		/obj/item/hailer,
-		/obj/item/megaphone,
-		/obj/item/melee,
-		/obj/item/clothing/accessory/badge,
-		/obj/item/gun/projectile/sec,
-		/obj/item/gun/projectile/p92x,
-		/obj/item/taperoll,
-		/obj/item/gun/projectile/colt/detective,
-		/obj/item/holowarrant,
-		/obj/item/ticket_printer
-		)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/belt/security, hold_spec, list(HOLD_ONLY(list( \
+		/obj/item/grenade, \
+		/obj/item/reagent_containers/spray/pepper, \
+		/obj/item/handcuffs, \
+		/obj/item/flash, \
+		/obj/item/clothing/glasses, \
+		/obj/item/ammo_casing/a12g, \
+		/obj/item/ammo_magazine, \
+		/obj/item/cell/device, \
+		/obj/item/reagent_containers/food/snacks/donut/, \
+		/obj/item/melee/baton, \
+		/obj/item/gun/energy/taser, \
+		/obj/item/gun/energy/stunrevolver, \
+		/obj/item/gun/energy/stunrevolver/vintage, \
+		/obj/item/gun/magnetic/railgun/heater/pistol, \
+		/obj/item/gun/energy/gun, \
+		/obj/item/flame/lighter, \
+		/obj/item/flashlight, \
+		/obj/item/taperecorder, \
+		/obj/item/rectape, \
+		/obj/item/pda, \
+		/obj/item/radio/headset, \
+		/obj/item/clothing/gloves, \
+		/obj/item/hailer, \
+		/obj/item/megaphone, \
+		/obj/item/melee, \
+		/obj/item/clothing/accessory/badge, \
+		/obj/item/gun/projectile/sec, \
+		/obj/item/gun/projectile/p92x, \
+		/obj/item/taperoll, \
+		/obj/item/gun/projectile/colt/detective, \
+		/obj/item/holowarrant, \
+		/obj/item/ticket_printer \
+		)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 
 /obj/item/storage/belt/detective
 	name = "forensic utility belt"
@@ -351,47 +340,45 @@
 	icon_state = "security"
 	storage_slots = 7
 
-/obj/item/storage/belt/detective/hold_constraint()
-	var/list/holds = list(
-		/obj/item/taperecorder,
-		/obj/item/rectape,
-		/obj/item/clothing/glasses,
-		/obj/item/flashlight,
-		/obj/item/cell/device,
-		/obj/item/reagent_containers/spray/luminol,
-		/obj/item/sample,
-		/obj/item/forensics/sample_kit/powder,
-		/obj/item/forensics/swab,
-		/obj/item/uv_light,
-		/obj/item/forensics/sample_kit,
-		/obj/item/photo,
-		/obj/item/camera_film,
-		/obj/item/camera,
-		/obj/item/autopsy_scanner,
-		/obj/item/mass_spectrometer,
-		/obj/item/clothing/accessory/badge,
-		/obj/item/reagent_scanner,
-		/obj/item/reagent_containers/dropper,
-		/obj/item/reagent_containers/syringe,
-		/obj/item/pda,
-		/obj/item/hailer,
-		/obj/item/megaphone,
-		/obj/item/radio/headset,
-		/obj/item/clothing/gloves,
-		/obj/item/taperoll,
-		/obj/item/reagent_containers/spray/pepper,
-		/obj/item/handcuffs,
-		/obj/item/flash,
-		/obj/item/flame/lighter,
-		/obj/item/reagent_containers/food/snacks/donut/,
-		///obj/item/ammo_magazine,	//Detectives don't get projectile weapons as standard here
-		///obj/item/gun/projectile/colt/detective,	//Detectives don't get projectile weapons as standard here
-		/obj/item/gun/energy/stunrevolver/detective,	//In keeping with the same vein as above, they can store their special one
-		/obj/item/holowarrant,
-		/obj/item/reagent_containers/food/drinks/flask,
-		/obj/item/ticket_printer
-		)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/belt/detective, hold_spec, list(HOLD_ONLY(list( \
+		/obj/item/taperecorder, \
+		/obj/item/rectape, \
+		/obj/item/clothing/glasses, \
+		/obj/item/flashlight, \
+		/obj/item/cell/device, \
+		/obj/item/reagent_containers/spray/luminol, \
+		/obj/item/sample, \
+		/obj/item/forensics/sample_kit/powder, \
+		/obj/item/forensics/swab, \
+		/obj/item/uv_light, \
+		/obj/item/forensics/sample_kit, \
+		/obj/item/photo, \
+		/obj/item/camera_film, \
+		/obj/item/camera, \
+		/obj/item/autopsy_scanner, \
+		/obj/item/mass_spectrometer, \
+		/obj/item/clothing/accessory/badge, \
+		/obj/item/reagent_scanner, \
+		/obj/item/reagent_containers/dropper, \
+		/obj/item/reagent_containers/syringe, \
+		/obj/item/pda, \
+		/obj/item/hailer, \
+		/obj/item/megaphone, \
+		/obj/item/radio/headset, \
+		/obj/item/clothing/gloves, \
+		/obj/item/taperoll, \
+		/obj/item/reagent_containers/spray/pepper, \
+		/obj/item/handcuffs, \
+		/obj/item/flash, \
+		/obj/item/flame/lighter, \
+		/obj/item/reagent_containers/food/snacks/donut/, \
+/* /obj/item/ammo_magazine, - Detectives don't get projectile weapons as standard here */ \
+/* /obj/item/gun/projectile/colt/detective, - Detectives don't get projectile weapons as standard here */ \
+		/obj/item/gun/energy/stunrevolver/detective, /* In keeping with the same vein as above, they can store their special one */ \
+		/obj/item/holowarrant, \
+		/obj/item/reagent_containers/food/drinks/flask, \
+		/obj/item/ticket_printer \
+		)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 
 /obj/item/storage/belt/soulstone
 	name = "soul stone belt"
@@ -399,11 +386,9 @@
 	icon_state = "soulstone"
 	storage_slots = 6
 
-/obj/item/storage/belt/soulstone/hold_constraint()
-	var/list/holds = list(
-		/obj/item/soulstone
-		)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/belt/soulstone, hold_spec, list(HOLD_ONLY(list( \
+		/obj/item/soulstone \
+		)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 
 /obj/item/storage/belt/soulstone/full
 	starts_with = list(/obj/item/soulstone = 6)
@@ -434,35 +419,33 @@
 	item_state = "security"
 	storage_slots = 8
 
-/obj/item/storage/belt/medical/alien/hold_constraint()
-	var/list/holds = list(
-		/obj/item/healthanalyzer,
-		/obj/item/dnainjector,
-		/obj/item/reagent_containers/dropper,
-		/obj/item/reagent_containers/glass/beaker,
-		/obj/item/reagent_containers/glass/bottle,
-		/obj/item/reagent_containers/pill,
-		/obj/item/reagent_containers/syringe,
-		/obj/item/flame/lighter/zippo,
-		/obj/item/storage/fancy/cigarettes,
-		/obj/item/storage/pill_bottle,
-		/obj/item/stack/medical,
-		/obj/item/radio/headset,
-		/obj/item/pda,
-		/obj/item/taperoll,
-		/obj/item/megaphone,
-		/obj/item/clothing/mask/surgical,
-		/obj/item/clothing/head/surgery,
-		/obj/item/clothing/gloves,
-		/obj/item/reagent_containers/hypospray,
-		/obj/item/clothing/glasses,
-		/obj/item/tool/crowbar,
-		/obj/item/flashlight,
-		/obj/item/cell/device,
-		/obj/item/extinguisher/mini,
-		/obj/item/surgical
-		)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/belt/medical/alien, hold_spec, list(HOLD_ONLY(list( \
+		/obj/item/healthanalyzer, \
+		/obj/item/dnainjector, \
+		/obj/item/reagent_containers/dropper, \
+		/obj/item/reagent_containers/glass/beaker, \
+		/obj/item/reagent_containers/glass/bottle, \
+		/obj/item/reagent_containers/pill, \
+		/obj/item/reagent_containers/syringe, \
+		/obj/item/flame/lighter/zippo, \
+		/obj/item/storage/fancy/cigarettes, \
+		/obj/item/storage/pill_bottle, \
+		/obj/item/stack/medical, \
+		/obj/item/radio/headset, \
+		/obj/item/pda, \
+		/obj/item/taperoll, \
+		/obj/item/megaphone, \
+		/obj/item/clothing/mask/surgical, \
+		/obj/item/clothing/head/surgery, \
+		/obj/item/clothing/gloves, \
+		/obj/item/reagent_containers/hypospray, \
+		/obj/item/clothing/glasses, \
+		/obj/item/tool/crowbar, \
+		/obj/item/flashlight, \
+		/obj/item/cell/device, \
+		/obj/item/extinguisher/mini, \
+		/obj/item/surgical \
+		)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 
 /obj/item/storage/belt/medical/alien
 	starts_with = list(
@@ -482,12 +465,10 @@
 	icon_state = "champion"
 	storage_slots = 1
 
-/obj/item/storage/belt/champion/hold_constraint()
 	// The legacy can_hold named the luchador mask as a string, which never
 	// matched, so the belt has always refused everything. Kept as-is for P3's
 	// parity; list /obj/item/clothing/mask/luchador here to make it hold one.
-	var/list/holds = list()
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/belt/champion, hold_spec, list(HOLD_ONLY(list()), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 
 /obj/item/storage/belt/security/tactical
 	name = "combat belt"
@@ -496,42 +477,40 @@
 	storage_slots = 9
 	max_storage_space = ITEMSIZE_COST_NORMAL * 7
 
-/obj/item/storage/belt/security/tactical/hold_constraint()
-	var/list/holds = list(
-		/obj/item/grenade,
-		/obj/item/reagent_containers/spray/pepper,
-		/obj/item/handcuffs,
-		/obj/item/flash,
-		/obj/item/clothing/glasses,
-		/obj/item/ammo_casing/a12g,
-		/obj/item/ammo_magazine,
-		/obj/item/cell/device,
-		/obj/item/reagent_containers/food/snacks/donut/,
-		/obj/item/melee/baton,
-		/obj/item/gun/energy/taser,
-		/obj/item/gun/energy/stunrevolver,
-		/obj/item/gun/energy/stunrevolver/vintage,
-		/obj/item/gun/magnetic/railgun/heater/pistol,
-		/obj/item/gun/energy/gun,
-		/obj/item/flame/lighter,
-		/obj/item/flashlight,
-		/obj/item/taperecorder,
-		/obj/item/rectape,
-		/obj/item/pda,
-		/obj/item/radio/headset,
-		/obj/item/clothing/gloves,
-		/obj/item/hailer,
-		/obj/item/megaphone,
-		/obj/item/melee,
-		/obj/item/clothing/accessory/badge,
-		/obj/item/gun/projectile/sec,
-		/obj/item/gun/projectile/p92x,
-		/obj/item/taperoll,
-		/obj/item/gun/projectile/colt/detective,
-		/obj/item/holowarrant,
-		/obj/item/ticket_printer
-		)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/belt/security/tactical, hold_spec, list(HOLD_ONLY(list( \
+		/obj/item/grenade, \
+		/obj/item/reagent_containers/spray/pepper, \
+		/obj/item/handcuffs, \
+		/obj/item/flash, \
+		/obj/item/clothing/glasses, \
+		/obj/item/ammo_casing/a12g, \
+		/obj/item/ammo_magazine, \
+		/obj/item/cell/device, \
+		/obj/item/reagent_containers/food/snacks/donut/, \
+		/obj/item/melee/baton, \
+		/obj/item/gun/energy/taser, \
+		/obj/item/gun/energy/stunrevolver, \
+		/obj/item/gun/energy/stunrevolver/vintage, \
+		/obj/item/gun/magnetic/railgun/heater/pistol, \
+		/obj/item/gun/energy/gun, \
+		/obj/item/flame/lighter, \
+		/obj/item/flashlight, \
+		/obj/item/taperecorder, \
+		/obj/item/rectape, \
+		/obj/item/pda, \
+		/obj/item/radio/headset, \
+		/obj/item/clothing/gloves, \
+		/obj/item/hailer, \
+		/obj/item/megaphone, \
+		/obj/item/melee, \
+		/obj/item/clothing/accessory/badge, \
+		/obj/item/gun/projectile/sec, \
+		/obj/item/gun/projectile/p92x, \
+		/obj/item/taperoll, \
+		/obj/item/gun/projectile/colt/detective, \
+		/obj/item/holowarrant, \
+		/obj/item/ticket_printer \
+		)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 
 /obj/item/storage/belt/bandolier
 	name = "shotgun bandolier"
@@ -539,19 +518,17 @@
 	icon_state = "bandolier1"
 	storage_slots = 8
 
-/obj/item/storage/belt/bandolier/hold_constraint()
-	var/list/holds = list(
-		/obj/item/ammo_casing/a12g,
-		/obj/item/ammo_casing/a12g/pellet,
-		/obj/item/ammo_casing/a12g/blank,
-		/obj/item/ammo_casing/a12g/practice,
-		/obj/item/ammo_casing/a12g/beanbag,
-		/obj/item/ammo_casing/a12g/stunshell,
-		/obj/item/ammo_casing/a12g/flash,
-		/obj/item/ammo_casing/a12g/emp,
-		/obj/item/ammo_casing/a12g/flechette
-		)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_TINY))
+TYPE_TABLE(/obj/item/storage/belt/bandolier, hold_spec, list(HOLD_ONLY(list( \
+		/obj/item/ammo_casing/a12g, \
+		/obj/item/ammo_casing/a12g/pellet, \
+		/obj/item/ammo_casing/a12g/blank, \
+		/obj/item/ammo_casing/a12g/practice, \
+		/obj/item/ammo_casing/a12g/beanbag, \
+		/obj/item/ammo_casing/a12g/stunshell, \
+		/obj/item/ammo_casing/a12g/flash, \
+		/obj/item/ammo_casing/a12g/emp, \
+		/obj/item/ammo_casing/a12g/flechette \
+		)), HOLD_MAX_SIZE(ITEMSIZE_TINY)))
 
 /obj/item/storage/belt/security/tactical/bandolier
 	name = "combat bandolier"
@@ -564,69 +541,65 @@
 	icon_state = "janitor"
 	storage_slots = 7
 
-/obj/item/storage/belt/janitor/hold_constraint()
-	var/list/holds = list(
-		/obj/item/clothing/glasses,
-		/obj/item/flashlight,
-		/obj/item/cell/device,
-		/obj/item/grenade,
-		/obj/item/pda,
-		/obj/item/radio/headset,
-		/obj/item/clothing/gloves,
-		/obj/item/clothing/mask/surgical, //sterile mask,
-		/obj/item/assembly/mousetrap,
-		/obj/item/light/bulb,
-		/obj/item/light/tube,
-		/obj/item/flame/lighter,
-		/obj/item/megaphone,
-		/obj/item/taperoll,
-		/obj/item/reagent_containers/spray,
-		/obj/item/soap,
-		/obj/item/holosign_creator,
-		/obj/item/lightreplacer,
-		/obj/item/clothing/glasses/hud/janitor
-		)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/belt/janitor, hold_spec, list(HOLD_ONLY(list( \
+		/obj/item/clothing/glasses, \
+		/obj/item/flashlight, \
+		/obj/item/cell/device, \
+		/obj/item/grenade, \
+		/obj/item/pda, \
+		/obj/item/radio/headset, \
+		/obj/item/clothing/gloves, \
+		/obj/item/clothing/mask/surgical, /* sterile mask, */ \
+		/obj/item/assembly/mousetrap, \
+		/obj/item/light/bulb, \
+		/obj/item/light/tube, \
+		/obj/item/flame/lighter, \
+		/obj/item/megaphone, \
+		/obj/item/taperoll, \
+		/obj/item/reagent_containers/spray, \
+		/obj/item/soap, \
+		/obj/item/holosign_creator, \
+		/obj/item/lightreplacer, \
+		/obj/item/clothing/glasses/hud/janitor \
+		)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 
 /obj/item/storage/belt/archaeology
 	name = "excavation gear-belt"
 	desc = "Can hold various excavation gear."
 	icon_state = "gear"
 
-/obj/item/storage/belt/archaeology/hold_constraint()
-	var/list/holds = list(
-		/obj/item/stack/marker_beacon,
-		/obj/item/clothing/glasses,
-		/obj/item/storage/box/samplebags,
-		/obj/item/xenoarch_multi_tool,
-		/obj/item/core_sampler,
-		/obj/item/beacon_locator,
-		/obj/item/radio/beacon,
-		/obj/item/gps,
-		/obj/item/measuring_tape,
-		/obj/item/flashlight,
-		/obj/item/depth_scanner,
-		/obj/item/camera,
-		/obj/item/ano_scanner,
-		/obj/item/geiger,
-		/obj/item/cell/device,
-		/obj/item/pickaxe,
-		/obj/item/paper,
-		/obj/item/paper_bundle,
-		/obj/item/photo,
-		/obj/item/folder,
-		/obj/item/pen,
-		/obj/item/folder,
-		/obj/item/clipboard,
-		/obj/item/anodevice,
-		/obj/item/tool/wrench,
-		/obj/item/tool/transforming/powerdrill,
-		/obj/item/multitool,
-		/obj/item/storage/excavation,
-		/obj/item/anobattery,
-		/obj/item/pickaxe
-		)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/belt/archaeology, hold_spec, list(HOLD_ONLY(list( \
+		/obj/item/stack/marker_beacon, \
+		/obj/item/clothing/glasses, \
+		/obj/item/storage/box/samplebags, \
+		/obj/item/xenoarch_multi_tool, \
+		/obj/item/core_sampler, \
+		/obj/item/beacon_locator, \
+		/obj/item/radio/beacon, \
+		/obj/item/gps, \
+		/obj/item/measuring_tape, \
+		/obj/item/flashlight, \
+		/obj/item/depth_scanner, \
+		/obj/item/camera, \
+		/obj/item/ano_scanner, \
+		/obj/item/geiger, \
+		/obj/item/cell/device, \
+		/obj/item/pickaxe, \
+		/obj/item/paper, \
+		/obj/item/paper_bundle, \
+		/obj/item/photo, \
+		/obj/item/folder, \
+		/obj/item/pen, \
+		/obj/item/folder, \
+		/obj/item/clipboard, \
+		/obj/item/anodevice, \
+		/obj/item/tool/wrench, \
+		/obj/item/tool/transforming/powerdrill, \
+		/obj/item/multitool, \
+		/obj/item/storage/excavation, \
+		/obj/item/anobattery, \
+		/obj/item/pickaxe \
+		)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 
 /obj/item/storage/belt/fannypack
 	name = "leather fannypack"
@@ -636,8 +609,7 @@
 	storage_slots = null
 	max_storage_space = ITEMSIZE_COST_NORMAL * 2
 
-/obj/item/storage/belt/fannypack/hold_constraint()
-	return list(HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage/belt/fannypack, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 /obj/item/storage/belt/fannypack/black
 	name = "black fannypack"
@@ -696,11 +668,9 @@
 	icon_state = "dbandolier"
 	storage_slots = 8
 
-/obj/item/storage/belt/dbandolier/hold_constraint()
-	var/list/holds = list(
-		/obj/item/ammo_casing/afoam_dart
-		)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/belt/dbandolier, hold_spec, list(HOLD_ONLY(list( \
+		/obj/item/ammo_casing/afoam_dart \
+		)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 
 /obj/item/storage/belt/explorer
 	name = "explorer's belt"
@@ -710,49 +680,47 @@
 	storage_slots = 5	//makes it strictly inferior to any specialized belt as they have seven slots, but it's far more versatile
 	max_storage_space = ITEMSIZE_COST_NORMAL * 5
 
-/obj/item/storage/belt/explorer/hold_constraint()
-	var/list/holds = list(
-		/obj/item/grenade,
-		/obj/item/tool,
-		/obj/item/weldingtool,
-		/obj/item/pickaxe,
-		/obj/item/multitool,
-		/obj/item/stack/cable_coil,
-		/obj/item/analyzer,
-		/obj/item/flashlight,
-		/obj/item/cell,
-		/obj/item/gun,
-		/obj/item/material,
-		/obj/item/melee,
-		/obj/item/shield,
-		/obj/item/ammo_casing,
-		/obj/item/ammo_magazine,
-		/obj/item/healthanalyzer,
-		/obj/item/robotanalyzer,
-		/obj/item/reagent_containers/glass/beaker,
-		/obj/item/reagent_containers/glass/bottle,
-		/obj/item/storage/pill_bottle,
-		/obj/item/stack/medical,
-		/obj/item/stack/marker_beacon,
-		/obj/item/extinguisher/mini,
-		/obj/item/storage/quickdraw/syringe_case,
-		/obj/item/photo,
-		/obj/item/camera_film,
-		/obj/item/camera,
-		/obj/item/taperecorder,
-		/obj/item/tape,
-		/obj/item/geiger,
-		/obj/item/gps,
-		/obj/item/ano_scanner,
-		/obj/item/cataloguer,
-		/obj/item/radio,
-		/obj/item/mapping_unit,
-		/obj/item/binoculars,
-		/obj/item/kinetic_crusher,
-		/obj/item/analyzer,
-		/obj/item/storage/sample_container
-		)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/belt/explorer, hold_spec, list(HOLD_ONLY(list( \
+		/obj/item/grenade, \
+		/obj/item/tool, \
+		/obj/item/weldingtool, \
+		/obj/item/pickaxe, \
+		/obj/item/multitool, \
+		/obj/item/stack/cable_coil, \
+		/obj/item/analyzer, \
+		/obj/item/flashlight, \
+		/obj/item/cell, \
+		/obj/item/gun, \
+		/obj/item/material, \
+		/obj/item/melee, \
+		/obj/item/shield, \
+		/obj/item/ammo_casing, \
+		/obj/item/ammo_magazine, \
+		/obj/item/healthanalyzer, \
+		/obj/item/robotanalyzer, \
+		/obj/item/reagent_containers/glass/beaker, \
+		/obj/item/reagent_containers/glass/bottle, \
+		/obj/item/storage/pill_bottle, \
+		/obj/item/stack/medical, \
+		/obj/item/stack/marker_beacon, \
+		/obj/item/extinguisher/mini, \
+		/obj/item/storage/quickdraw/syringe_case, \
+		/obj/item/photo, \
+		/obj/item/camera_film, \
+		/obj/item/camera, \
+		/obj/item/taperecorder, \
+		/obj/item/tape, \
+		/obj/item/geiger, \
+		/obj/item/gps, \
+		/obj/item/ano_scanner, \
+		/obj/item/cataloguer, \
+		/obj/item/radio, \
+		/obj/item/mapping_unit, \
+		/obj/item/binoculars, \
+		/obj/item/kinetic_crusher, \
+		/obj/item/analyzer, \
+		/obj/item/storage/sample_container \
+		)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 
 /obj/item/storage/belt/explorer/pathfinder
 	name = "pathfinder's belt"
@@ -771,60 +739,58 @@
 	max_storage_space = ITEMSIZE_COST_NORMAL * 6
 		//Pretty much, if it's in the mining vendor, they should be able to put it on the belt.
 
-/obj/item/storage/belt/miner/hold_constraint()
-	var/list/holds = list(
-		/obj/item/fulton_core,
-		/obj/item/extraction_pack,
-		/obj/item/resonator,
-		/obj/item/stack/marker_beacon,
-		/obj/item/stack/flag,
-		/obj/item/modular_computer/tablet,
-		/obj/item/clothing/glasses,
-		/obj/item/clothing/shoes/bhop,
-		/obj/item/multitool,
-		/obj/item/core_sampler,
-		/obj/item/beacon_locator,
-		/obj/item/radio,
-		/obj/item/measuring_tape,
-		/obj/item/flashlight,
-		/obj/item/depth_scanner,
-		/obj/item/camera,
-		/obj/item/ano_scanner,
-		/obj/item/xenoarch_multi_tool,
-		/obj/item/geiger,
-		/obj/item/gps,
-		/obj/item/laser_pointer,
-		/obj/item/survivalcapsule,
-		/obj/item/perfect_tele/one_beacon,
-		/obj/item/binoculars,
-		/obj/item/storage/box/samplebags,
-		/obj/item/cell/device,
-		/obj/item/pickaxe,
-		/obj/item/shovel,
-		/obj/item/paper,
-		/obj/item/paper_bundle,
-		/obj/item/photo,
-		/obj/item/folder,
-		/obj/item/pen,
-		/obj/item/folder,
-		/obj/item/clipboard,
-		/obj/item/anodevice,
-		/obj/item/tool/wrench,
-		/obj/item/tool/screwdriver,
-		/obj/item/tool/transforming/powerdrill,
-		/obj/item/storage/excavation,
-		/obj/item/anobattery,
-		/obj/item/reagent_containers/hypospray/autoinjector,
-		/obj/item/plastique/seismic/locked,
-		/obj/item/gun/magnetic/matfed/phoronbore,
-		/obj/item/storage/bag/sheetsnatcher,
-		/obj/item/melee,
-		/obj/item/kinetic_crusher,
-		/obj/item/mining_scanner,
-		/obj/item/ore_bag,
-		/obj/item/storage/sample_container
-		)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_LARGE))
+TYPE_TABLE(/obj/item/storage/belt/miner, hold_spec, list(HOLD_ONLY(list( \
+		/obj/item/fulton_core, \
+		/obj/item/extraction_pack, \
+		/obj/item/resonator, \
+		/obj/item/stack/marker_beacon, \
+		/obj/item/stack/flag, \
+		/obj/item/modular_computer/tablet, \
+		/obj/item/clothing/glasses, \
+		/obj/item/clothing/shoes/bhop, \
+		/obj/item/multitool, \
+		/obj/item/core_sampler, \
+		/obj/item/beacon_locator, \
+		/obj/item/radio, \
+		/obj/item/measuring_tape, \
+		/obj/item/flashlight, \
+		/obj/item/depth_scanner, \
+		/obj/item/camera, \
+		/obj/item/ano_scanner, \
+		/obj/item/xenoarch_multi_tool, \
+		/obj/item/geiger, \
+		/obj/item/gps, \
+		/obj/item/laser_pointer, \
+		/obj/item/survivalcapsule, \
+		/obj/item/perfect_tele/one_beacon, \
+		/obj/item/binoculars, \
+		/obj/item/storage/box/samplebags, \
+		/obj/item/cell/device, \
+		/obj/item/pickaxe, \
+		/obj/item/shovel, \
+		/obj/item/paper, \
+		/obj/item/paper_bundle, \
+		/obj/item/photo, \
+		/obj/item/folder, \
+		/obj/item/pen, \
+		/obj/item/folder, \
+		/obj/item/clipboard, \
+		/obj/item/anodevice, \
+		/obj/item/tool/wrench, \
+		/obj/item/tool/screwdriver, \
+		/obj/item/tool/transforming/powerdrill, \
+		/obj/item/storage/excavation, \
+		/obj/item/anobattery, \
+		/obj/item/reagent_containers/hypospray/autoinjector, \
+		/obj/item/plastique/seismic/locked, \
+		/obj/item/gun/magnetic/matfed/phoronbore, \
+		/obj/item/storage/bag/sheetsnatcher, \
+		/obj/item/melee, \
+		/obj/item/kinetic_crusher, \
+		/obj/item/mining_scanner, \
+		/obj/item/ore_bag, \
+		/obj/item/storage/sample_container \
+		)), HOLD_MAX_SIZE(ITEMSIZE_LARGE)))
 
 /obj/item/storage/belt/archaeology
 
@@ -836,21 +802,19 @@
 	storage_slots = 5
 	max_storage_space = ITEMSIZE_COST_NORMAL * 5
 
-/obj/item/storage/belt/hydro/hold_constraint()
-	var/list/holds = list(
-		/obj/item/analyzer/plant_analyzer,
-		/obj/item/reagent_containers/glass/beaker,
-		/obj/item/reagent_containers/glass/bottle,
-		/obj/item/shovel/spade,
-		/obj/item/tool/wirecutters,
-		/obj/item/material/minihoe,
-		/obj/item/material/knife/machete/hatchet,
-		/obj/item/reagent_containers/spray/plantbgone,
-		/obj/item/plantspray,
-		/obj/item/gun/energy/floragun,
-		/obj/item/seeds
-		)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_LARGE))
+TYPE_TABLE(/obj/item/storage/belt/hydro, hold_spec, list(HOLD_ONLY(list( \
+		/obj/item/analyzer/plant_analyzer, \
+		/obj/item/reagent_containers/glass/beaker, \
+		/obj/item/reagent_containers/glass/bottle, \
+		/obj/item/shovel/spade, \
+		/obj/item/tool/wirecutters, \
+		/obj/item/material/minihoe, \
+		/obj/item/material/knife/machete/hatchet, \
+		/obj/item/reagent_containers/spray/plantbgone, \
+		/obj/item/plantspray, \
+		/obj/item/gun/energy/floragun, \
+		/obj/item/seeds \
+		)), HOLD_MAX_SIZE(ITEMSIZE_LARGE)))
 
 /// Old object verbs.
 EXTEND_INTERACTIONS(/obj/item/storage/belt, \

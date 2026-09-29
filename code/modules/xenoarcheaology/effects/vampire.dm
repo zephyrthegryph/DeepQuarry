@@ -2,9 +2,9 @@
 /datum/artifact_effect/vampire
 	name = "Cultic Vampirism"
 	effect_type = EFFECT_VAMPIRE
-	var/last_bloodcall = 0
+	EXPIRY_DECLARE(last_bloodcall)
 	var/bloodcall_interval = 50
-	var/last_eat = 0
+	EXPIRY_DECLARE(last_eat)
 	var/eat_interval = 100
 	var/charges = 0
 	var/list/nearby_mobs
@@ -21,9 +21,9 @@
 		harvested = 1 //We're in a harvester. We need special handling for this.
 	if(isliving(holder.loc))
 		holder = holder.loc
-	last_bloodcall = world.time
+	EXPIRY_STAMP(src, last_bloodcall, CLOCK_WORLD)
 	if(ishuman(M))
-		playsound(holder, pick('sound/hallucinations/wail.ogg','sound/hallucinations/veryfar_noise.ogg','sound/hallucinations/far_noise.ogg'), 50, 1, -3)
+		play_sfx(holder, SFX_HALLUCINATIONS_WAIL)
 
 		var/target = pick(M.organs_by_name)
 		var/searing = rand(5, 10)
@@ -62,22 +62,22 @@
 		if(!L.stat && L.mind)
 			rel_add(src, "nearby_mobs", L)
 
-	if(world.time - bloodcall_interval >= last_bloodcall && LAZYLEN(nearby_mobs))
+	if(ELAPSED(src, last_bloodcall, CLOCK_WORLD) >= bloodcall_interval && LAZYLEN(nearby_mobs))
 		var/mob/living/carbon/human/M = DEFAULTPICK(nearby_mobs, null)
 		if(get_dist(M, T) <= effectrange && M.vitality() > 0.6)
 			bloodcall(M)
 			holder.Beam(M, icon_state = "drainbeam", time = 1 SECOND)
 
-	if(world.time - last_eat >= eat_interval)
+	if(ELAPSED(src, last_eat, CLOCK_WORLD) >= eat_interval)
 		var/obj/effect/decal/cleanable/blood/B = locate_in_list(range(2,holder), /obj/effect/decal/cleanable/blood)
 		if(B)
-			last_eat = world.time
+			EXPIRY_STAMP(src, last_eat, CLOCK_WORLD)
 			B.moveToNullspace()
 			if(istype(B, /obj/effect/decal/cleanable/blood/drip))
 				charges += 0.25
 			else
 				charges += 1
-				playsound(holder, 'sound/effects/splat.ogg', 50, 1, -3)
+				play_sfx(holder, SFX_EFFECTS_SPLAT, extrarange = -3)
 
 			qdel(B)
 
@@ -91,7 +91,7 @@
 			charges -= 1
 			var/spawn_type = pick(/mob/living/simple_mob/animal/space/bats, /mob/living/simple_mob/creature, /mob/living/simple_mob/faithless)
 			new spawn_type(pick(RANGE_TURFS(1,T)))
-			playsound(holder, pick('sound/hallucinations/growl1.ogg','sound/hallucinations/growl2.ogg','sound/hallucinations/growl3.ogg'), 50, 1, -3)
+			play_sfx(holder, SFX_HALLUCINATIONS_GROWL)
 
 	if(charges >= 1 && length(nearby_mobs) && prob(15 * length(nearby_mobs)))
 		var/mob/living/L = DEFAULTPICK(nearby_mobs, null)

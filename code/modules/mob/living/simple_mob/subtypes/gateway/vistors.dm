@@ -22,8 +22,9 @@
 		var/projectile_kind = P.injury_kind
 		var/incoming_damage = (round(P.damage / damage_mod) - (round((P.damage / damage_mod) * 0.3)))
 		if(!(istype(P, /obj/item/projectile/energy) || istype(P, /obj/item/projectile/beam)))
-			visible_message(span_danger("The [P.name] bounces off of [src]'s shield!"), \
-						span_userdanger("The [P.name] bounces off of [src]'s shield!"))
+			act_message(src, null, \
+				MSG_SELF(span_userdanger("The [P.name] bounces off of %U%'s shield!")), \
+				MSG_OTHERS(span_danger("The [P.name] bounces off of %U%'s shield!")))
 			new /obj/item/material/shard/shrapnel(src.loc)
 			if(!P.obj_damage_type())
 				projectile_kind = INJURY_BLUNT
@@ -31,8 +32,9 @@
 			injure(projectile_kind, incoming_damage, null, P, P.armor_penetration, flags = INJURE_ARMORED)
 			return -1 //Doesn't reflect non-beams or non-energy projectiles. They just smack and drop with little to no effect.
 		else
-			visible_message(span_danger("The [P.name] gets reflected by [src]'s shield!"), \
-						span_userdanger("The [P.name] gets reflected by [src]'s shield!"))
+			act_message(src, null, \
+				MSG_SELF(span_userdanger("The [P.name] gets reflected by %U%'s shield!")), \
+				MSG_OTHERS(span_danger("The [P.name] gets reflected by %U%'s shield!")))
 			damage_mod = rand(3,5)
 			incoming_damage = (round(P.damage / damage_mod) - (round((P.damage / damage_mod) * 0.3)))
 			if(!P.obj_damage_type())
@@ -115,7 +117,8 @@
 /obj/item/grenade/shooter/energy/homing //This is a horrid idea
 	name = "homing grenade"
 	desc = "A horrifically dangerous rave in a can."
-	projectile_types = list(/obj/item/projectile/energy/homing_bolt)
+
+TYPE_TABLE(/obj/item/grenade/shooter/energy/homing, shooter_grenade_projectiles, list(/obj/item/projectile/energy/homing_bolt))
 
 /mob/living/simple_mob/mechanical/mecha/vistor/vistorgreen
 	name = "vistor green"
@@ -266,9 +269,7 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/mechanical/mecha/vistor/vistororang
 /mob/living/simple_mob/mechanical/mecha/vistor/on_death(gibbed)
 	..()
 	new /obj/effect/decal/cleanable/blood/gibs/robot(src.loc)
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-	s.set_up(3, 1, src)
-	s.start()
+	fx_sparks(src, 3)
 
 /obj/structure/loot_pile/mecha/phazon/forgotten
 	name = "forgotten wreckage"

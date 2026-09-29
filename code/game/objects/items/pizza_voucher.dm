@@ -26,12 +26,12 @@ DECLARE_INTERACTIONS(/obj/item/pizzavoucher, INTERACT_USE(null, PROC_REF(interac
 /obj/item/pizzavoucher/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	if(!spent)
-		user.visible_message(span_notice("[user] presses a button on [src]!"))
+		act_message(user, src, others = span_notice("%U% presses a button on %T%!"))
 		desc = desc + " This one seems to be used-up."
 		spent = TRUE
-		user.visible_message(span_notice("A small bluespace rift opens just above [user]'s head and spits out a pizza box!"),
-			span_notice("A small bluespace rift opens just above your head and spits out a pizza box!"),
-			span_notice("You hear a fwoosh followed by a thump."))
+		act_message(user, null, MSG_SELF(span_notice("A small bluespace rift opens just above your head and spits out a pizza box!")), \
+			MSG_OTHERS(span_notice("A small bluespace rift opens just above %U%'s head and spits out a pizza box!")), \
+			MSG_BLIND(span_notice("You hear a fwoosh followed by a thump.")))
 		if(special_delivery)
 			GLOB.command_announcement.Announce("SPECIAL DELIVERY PIZZA ORDER #[rand(1000,9999)]-[rand(100,999)] HAS BEEN RECEIVED. SHIPMENT DISPATCHED VIA EXTRA-POWERFUL BALLISTIC LAUNCHERS FOR IMMEDIATE DELIVERY! THANK YOU AND ENJOY YOUR PIZZA!", "WE ALWAYS DELIVER!")
 			new /obj/effect/falling_effect/pizza_delivery/special(user.loc)

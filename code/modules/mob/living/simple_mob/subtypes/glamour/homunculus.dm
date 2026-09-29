@@ -71,10 +71,10 @@
 			if(istype(A,/obj/item/gun/projectile) || istype(I,/obj/item/gun/projectile))
 				seen_gun = 1
 				projectiletype = /obj/item/projectile/bullet/pistol/medium
-				projectilesound = 'sound/weapons/gunshot_light.ogg'
+				projectilesound = SFX_WEAPONS_GUNSHOT_LIGHT
 				if(istype(A,/obj/item/gun/projectile/shotgun) || istype(I,/obj/item/gun/projectile/shotgun))
 					projectiletype = /obj/item/projectile/bullet/pellet/shotgun
-					projectilesound = 'sound/weapons/gunshot_shotgun.ogg'
+					projectilesound = SFX_WEAPONS_GUNSHOT_SHOTGUN
 					reload_time = 1.5 SECONDS
 					ranged_attack_delay = 1.5 SECONDS
 					projectile_dispersion = 8
@@ -85,14 +85,14 @@
 					projectile_accuracy = -20
 				if(istype(A,/obj/item/gun/projectile/heavysniper) || istype(I,/obj/item/gun/projectile/heavysniper))
 					projectiletype = /obj/item/projectile/bullet/rifle/a145/highvel // Do not get seen with a big ass sniper!
-					projectilesound = 'sound/weapons/gunshot_cannon.ogg'
+					projectilesound = SFX_WEAPONS_GUNSHOT_CANNON
 					ranged_attack_delay = 2.5 SECONDS
 					reload_time = 5 SECONDS
 					projectile_accuracy = 75
 			if(istype(A,/obj/item/gun/energy) || istype(I,/obj/item/gun/energy))
 				seen_gun = 1
 				projectiletype = /obj/item/projectile/beam/midlaser
-				projectilesound = 'sound/weapons/Laser.ogg'
+				projectilesound = SFX_WEAPONS_LASER
 				projectile_dispersion = 5
 				projectile_accuracy = -20
 				if(istype(A,/obj/item/gun/energy/ionrifle) || istype(I,/obj/item/gun/energy/ionrifle))
@@ -101,17 +101,17 @@
 					projectiletype = /obj/item/projectile/beam/heavylaser
 					ranged_attack_delay = 2.5 SECONDS
 					reload_time = 5 SECONDS
-					projectilesound = 'sound/weapons/lasercannonfire.ogg'
+					projectilesound = SFX_WEAPONS_LASERCANNONFIRE
 				if(istype(A,/obj/item/gun/energy/sniperrifle) || istype(I,/obj/item/gun/energy/sniperrifle))
 					projectiletype = /obj/item/projectile/beam/sniper // Do not get seen with a big ass sniper!
-					projectilesound = 'sound/weapons/gauss_shoot.ogg'
+					projectilesound = SFX_WEAPONS_GAUSS_SHOOT
 					ranged_attack_delay = 2.5 SECONDS
 					reload_time = 5 SECONDS
 					projectile_accuracy = 75
 			if(istype(A,/obj/item/gun/magnetic) || istype(I,/obj/item/gun/magnetic))
 				seen_gun = 1
 				projectiletype = /obj/item/projectile/bullet/magnetic/bore
-				projectilesound = 'sound/weapons/railgun.ogg'
+				projectilesound = SFX_WEAPONS_RAILGUN
 				ranged_attack_delay = 1.5 SECONDS
 				projectile_dispersion = 5
 				projectile_accuracy = 20

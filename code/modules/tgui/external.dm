@@ -227,9 +227,11 @@
  */
 /proc/bypass_topic_limit(href_list)
 	// Deviation from TG. Our statbrowser has so many commands that logging in as a borg can cause it to rate limit you. This needs fixing eventually.
+	// ALLOW(sys_topic_raw_dispatch): the tgui message protocol (tgui=1;type=...), not a datum href action; its messages reach tgui_act().
 	if(href_list["window_id"] == "statbrowser")
 		return TRUE
 	// Chunked messages will exceed the limit
+	// ALLOW(sys_topic_raw_dispatch): the tgui message protocol (tgui=1;type=...), not a datum href action; its messages reach tgui_act().
 	if(href_list["tgui"] && href_list["type"] == "payloadChunk")
 		return TRUE
 	return FALSE
@@ -241,12 +243,14 @@
  */
 /proc/tgui_Topic(href_list)
 	// Skip non-tgui topics
+	// ALLOW(sys_topic_raw_dispatch): the tgui message protocol (tgui=1;type=...), not a datum href action; its messages reach tgui_act().
 	if(!href_list["tgui"])
 		return FALSE
 	var/type = href_list["type"]
 	// Unconditionally collect tgui logs
 	if(type == "log")
 		var/context = href_list["window_id"]
+		// ALLOW(sys_topic_raw_dispatch): the tgui message protocol (tgui=1;type=...), not a datum href action; its messages reach tgui_act().
 		if (href_list["ns"])
 			context += " ([href_list["ns"]])"
 		log_tgui(usr, href_list["message"],
@@ -287,6 +291,7 @@
 
 	// Decode payload
 	var/payload
+	// ALLOW(sys_topic_raw_dispatch): the tgui message protocol (tgui=1;type=...), not a datum href action; its messages reach tgui_act().
 	if(href_list["payload"])
 		var/payload_text = href_list["payload"]
 

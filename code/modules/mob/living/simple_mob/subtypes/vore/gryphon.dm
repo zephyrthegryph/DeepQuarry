@@ -39,7 +39,7 @@
 	buckle_lying = FALSE
 
 	var/random_skin = TRUE
-	var/list/skins = list( // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	var/list/skins = list( // ALLOW(instance_list): d: per-mob skins with starting entries, edited at runtime; mobs are few
 		"gryphon"
 	)
 
@@ -53,7 +53,7 @@
 
 	can_be_drop_prey = FALSE
 	var/leap_warmup = 2 SECOND // How long the leap telegraphing is.
-	var/leap_sound = 'sound/weapons/spiderlunge.ogg'
+	var/leap_sound = SFX_WEAPONS_SPIDERLUNGE
 
 // Activate Noms!
 /mob/living/simple_mob/vore/gryphon
@@ -109,7 +109,7 @@
 		return FALSE
 
 	ai_busy_begin()
-	visible_message(span_warning("\The [src] crouches down and wiggles its haunches!"))
+	act_message(src, null, null, MSG_OTHERS(span_warning("%U% crouches down and wiggles its haunches!")))
 	to_chat(L, span_danger("\The [src] is looking right at you!"))
 	// Telegraph, since getting stunned suddenly feels bad.
 	do_windup_animation(A, leap_warmup)

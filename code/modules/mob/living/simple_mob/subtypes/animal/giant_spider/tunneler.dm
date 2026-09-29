@@ -89,7 +89,7 @@
 
 /mob/living/simple_mob/animal/giant_spider/tunneler/proc/tunnel_dig(atom/A, turf/destination, turf/starting_turf)
 	// Do the dig!
-	visible_message(span_danger("\The [src] tunnels towards \the [A]!"))
+	act_message(src, A, null, MSG_OTHERS(span_danger("%U% tunnels towards %T%!")))
 	submerge()
 	handle_tunnel(destination, PROC_REF(tunnel_arrived), list(destination, starting_turf))
 
@@ -111,8 +111,8 @@
 		if(L == src)
 			continue
 
-		visible_message(span_danger("\The [src] erupts from underneath, and hits \the [L]!"))
-		playsound(src, 'sound/weapons/heavysmash.ogg', 75, 1)
+		act_message(src, L, null, MSG_OTHERS(span_danger("%U% erupts from underneath, and hits %T%!")))
+		play_sfx(src, SFX_WEAPONS_HEAVYSMASH)
 		L.apply_body_effect(/datum/body_effect/entangled, 3 SECONDS) //L.status_at_least(EFFECT_WEAKENED, 3)
 		overshoot = FALSE
 
@@ -122,7 +122,7 @@
 
 	// Otherwise we need to keep going.
 	to_chat(src, span_warning("You overshoot your target!"))
-	playsound(src, 'sound/weapons/punchmiss.ogg', 75, 1)
+	play_sfx(src, SFX_WEAPONS_PUNCHMISS, 3, extrarange = 0)
 	var/dir_to_go = get_dir(starting_turf, destination)
 	for(var/i = 1 to rand(2, 4))
 		destination = get_step(destination, dir_to_go)
@@ -166,7 +166,7 @@
 		return
 	if(T.check_density(ignore_mobs = TRUE))
 		to_chat(src, span_critical("You hit something really solid!"))
-		playsound(src, "punch", 75, 1)
+		play_sfx(src, SFX_PUNCH, 1.5)
 		status_at_least(EFFECT_WEAKENED, 5)
 		apply_body_effect(/datum/body_effect/tunneler_vulnerable, 10 SECONDS)
 		tunnel_finish(FALSE, then_proc, extra) // Hit a wall.
@@ -174,7 +174,7 @@
 
 	// Stun anyone in our way.
 	for(var/mob/living/L in contents_of(T))
-		playsound(src, 'sound/weapons/heavysmash.ogg', 75, 1)
+		play_sfx(src, SFX_WEAPONS_HEAVYSMASH)
 		L.status_at_least(EFFECT_WEAKENED, 2)
 
 	// Get into the tile.
@@ -182,7 +182,7 @@
 
 	// Visuals and sound.
 	dig_under_floor(get_turf(src))
-	playsound(src, 'sound/effects/break_stone.ogg', 75, 1)
+	play_sfx(src, SFX_EFFECTS_BREAK_STONE)
 	om_after(src, tunnel_tile_speed, PROC_REF(tunnel_step_check), destination, steps_left - 1, last_loc, then_proc, extra)
 
 /mob/living/simple_mob/animal/giant_spider/tunneler/proc/tunnel_step_check(turf/destination, steps_left, last_loc, then_proc, list/extra)

@@ -10,12 +10,10 @@
 	/// Do we go after trash and junk?
 	var/swoop_trash = FALSE
 
-/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/get_ai_target_selectors()
-	var/static/list/L = list(
-		/datum/target_selector/swoopie_filter,
-		/datum/target_selector/closest,
-	)
-	return L
+TYPE_TABLE(/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie, get_ai_target_selectors, list( \
+		/datum/target_selector/swoopie_filter, \
+		/datum/target_selector/closest, \
+	))
 
 // Custom target selector — filters visible_hostiles by the swoop toggles, and
 // optionally pulls trash items into consideration as targets.

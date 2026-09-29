@@ -361,13 +361,12 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 	. = ..()
 	VV_DROPDOWN_OPTION("check_static_power", "Check Static Power")
 
-/area/vv_do_topic(list/href_list)
-	. = ..()
-	IF_VV_OPTION("check_static_power")
-		if(!check_rights(R_DEBUG))
-			return
-		src.check_static_power(usr)
-		href_list[VV_HK_DATUM_REFRESH] = "\ref[src]"
+VV_TOPIC_ACTION(/area, "check_static_power", PROC_REF(vv_topic_check_static_power), TOPIC_RIGHTS(R_DEBUG))
+
+/area/proc/vv_topic_check_static_power(mob/user, list/args)
+	check_static_power(user)
+	user.client?.debug_variables(src)
+	return TRUE
 
 // Debugging proc to report if static power is correct or not.
 /area/proc/check_static_power(user)
@@ -408,7 +407,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 		L.update_floating( L.Check_Dense_Object() )
 
 	L.lastarea = src
-	L.lastareachange = world.time
+	EXPIRY_STAMP(L, lastareachange, CLOCK_WORLD)
 	play_ambience(L, initial = TRUE)
 	if(flag_check(AREA_NO_SPOILERS))
 		L.disable_spoiler_vision()
@@ -483,8 +482,8 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 		if(has_trait(H, TRAIT_UNLUCKY) && prob(50) && H.get_bodypart_name(BP_HEAD))
 			H.visible_message(span_warning("[H] falls to the ground from the sudden appearance of gravity, smashing [H.p_their()] head against the ground!"),span_warning("You smash your head into the ground as gravity appears!"))
 			H.injure(INJURY_BLUNT, 14, BP_HEAD, src)
-			playsound(H, 'sound/effects/tableheadsmash.ogg', 90, TRUE)
-		playsound(mob, "bodyfall", 50, 1)
+			play_sfx(H, SFX_EFFECTS_TABLEHEADSMASH)
+		play_sfx(mob, SFX_BODYFALL)
 
 /area/proc/prison_break(break_lights = TRUE, open_doors = TRUE, open_blast_doors = FALSE) //set blast doors to FALSE
 	var/obj/machinery/power/apc/theAPC = get_apc()

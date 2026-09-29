@@ -138,7 +138,7 @@
 		box_segments = draw_box(target, beam_range, user.client)
 		color_box(box_segments, "#00FF00", 5)
 
-	playsound(src, 'sound/weapons/wave.ogg', 50)
+	play_sfx(src, SFX_WEAPONS_WAVE, volume = 50)
 
 	var/active_hand = user.get_active_hand()
 	var/previous_scale = L.size_multiplier

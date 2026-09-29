@@ -14,9 +14,9 @@
 	w_class = ITEMSIZE_SMALL
 	material_total = 50
 	attack_verb = list("attacked", "bashed", "battered", "bludgeoned", "whacked")
-	usesound = 'sound/items/Crowbar.ogg'
-	drop_sound = 'sound/items/drop/crowbar.ogg'
-	pickup_sound = 'sound/items/pickup/crowbar.ogg'
+	usesound = SFX_ITEMS_CROWBAR
+	drop_sound = SFX_ITEMS_DROP_CROWBAR
+	pickup_sound = SFX_ITEMS_PICKUP_CROWBAR
 	toolspeed = 1
 	tool_qualities = list(TOOL_CROWBAR)
 
@@ -49,7 +49,7 @@
 	desc = "A hard-light crowbar. It appears to pry by itself, without any effort required."
 	catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_crowbar)
 	icon = 'icons/obj/abductor.dmi'
-	usesound = 'sound/weapons/sonic_jackhammer.ogg'
+	usesound = SFX_WEAPONS_SONIC_JACKHAMMER
 	icon_state = "crowbar"
 	toolspeed = 0.1
 
@@ -58,14 +58,14 @@
 	desc = "A crowbar whose head seems to phase in and out of view."
 	catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_crowbar)
 	icon_state = "hybcrowbar"
-	usesound = 'sound/weapons/sonic_jackhammer.ogg'
+	usesound = SFX_WEAPONS_SONIC_JACKHAMMER
 	toolspeed = 0.4
 	reach = 2
 
 /obj/item/tool/crowbar/power
 	name = "power pryer"
 	desc = "You shouldn't see this."
-	usesound = 'sound/items/jaws_pry.ogg'
+	usesound = SFX_ITEMS_JAWS_PRY
 	force = 15
 	toolspeed = 0.25
 
@@ -86,7 +86,7 @@
 	w_class = ITEMSIZE_SMALL
 	material_total = 30
 	attack_verb = list("whapped", "smacked", "swatted", "thwacked", "hit")
-	usesound = 'sound/items/Crowbar.ogg'
+	usesound = SFX_ITEMS_CROWBAR
 	toolspeed = 1
 	var/random_color = TRUE
 

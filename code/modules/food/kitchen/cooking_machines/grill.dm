@@ -34,7 +34,7 @@
 
 
 /obj/machinery/appliance/cooker/grill/update_icon() // TODO: Cooking icon
-	if(!stat)
+	if(!has_stat(MACHINE_STAT_ANY))
 		icon_state = on_icon
 		if(cooking == TRUE)
 			if(grill_loop)

@@ -7,7 +7,7 @@
 // (percent) and optional flat soak per key:
 //     armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=25"
 //     armor_spec = "melee=20;melee_flat=3"
-// Keys: dq_armor_keys(). Missing keys are 0. An empty string clears inherited armour.
+// Keys: GLOB.armor_keys. Missing keys are 0. An empty string clears inherited armour.
 // Per-type `armor = list(...)` declarations are gone (tools/ci/check_grep.sh,
 // "interned armour", rejects them).
 //
@@ -25,9 +25,7 @@
 // (dq_armor_turns_edge()) is rolled against the effective protection.
 
 /// Canonical key order of armour values.
-/proc/dq_armor_keys()
-	var/static/list/keys = list(MELEE, BULLET, LASER, ENERGY, BOMB, BIO, ARMOR_RAD, FIRE, ACID, ARMOR_COLD)
-	return keys
+GLOBAL_LIST_INIT(armor_keys, list(MELEE, BULLET, LASER, ENERGY, BOMB, BIO, ARMOR_RAD, FIRE, ACID, ARMOR_COLD))
 
 /// The interned armour with `values` (key -> points; "<key>_flat" -> flat soak).
 /// Identical values give the same datum. Zero entries are dropped.
@@ -57,7 +55,7 @@
 /// others sorted, each "key=value", flats as "key_flat=value".
 /proc/dq_armor_canonical(list/percent, list/flat)
 	var/list/parts = list()
-	var/list/keys = dq_armor_keys()
+	var/list/keys = GLOB.armor_keys
 	for(var/key in keys)
 		if(percent?[key])
 			parts += "[key]=[percent[key]]"
@@ -155,11 +153,11 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/armor)
 /datum/armor/proc/is_empty()
 	return !length(percent) && !length(flat)
 
-/// key -> points for every key in dq_armor_keys(), zeros included: the old
+/// key -> points for every key in GLOB.armor_keys, zeros included: the old
 /// armour list shape, for display.
 /datum/armor/proc/to_list()
 	. = list()
-	for(var/key in dq_armor_keys())
+	for(var/key in GLOB.armor_keys)
 		.[key] = value(key)
 	for(var/key in percent)
 		.[key] = percent[key]
@@ -228,7 +226,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/armor)
 /// Returns list(amount left, kind that lands, effective protection) indexed by
 /// ARMOR_SOAK_*. The list is reused by the next call: read it at once.
 /datum/armor/proc/soak(kind, amount, penetration = 0, bonus = 0)
-	var/static/list/result = list(0, 0, 0)
+	var/static/list/result = list(0, 0, 0) // ALLOW(sys_static_getter): reused scratch buffer, not a table
 	var/key = injury_armor_key(kind)
 	var/protection = key ? effective(key, penetration, bonus) : 0
 	result[ARMOR_SOAK_AMOUNT] = key ? soak_key(key, amount, penetration, bonus) : amount
@@ -272,18 +270,16 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/armor)
 
 /// The slots a holder blocks from: hands, the suit, and ears (headsets and
 /// event items that shield).
-/proc/dq_shield_slots()
-	var/static/list/slots = list(SLOT_ID_HAND_L, SLOT_ID_HAND_R, SLOT_ID_SUIT, SLOT_ID_EAR_L, SLOT_ID_EAR_R)
-	return slots
+GLOBAL_LIST_INIT(shield_slots, list(SLOT_ID_HAND_L, SLOT_ID_HAND_R, SLOT_ID_SUIT, SLOT_ID_EAR_L, SLOT_ID_EAR_R))
 
 /// Mitigation step 1: does something this holder holds or wears block the hit
-/// outright? Each item in dq_shield_slots() gets its handle_shield() in turn.
+/// outright? Each item in GLOB.shield_slots gets its handle_shield() in turn.
 /// Returns what the blocking item's handle_shield() returned: positive for a
 /// block, negative for a special projectile outcome (PROJECTILE_FORCE_MISS,
 /// PROJECTILE_CONTINUE), 0 when nothing blocked. Hit resolution calls this
 /// before a hit lands, so a blocked hit never reaches injure().
 /mob/living/proc/check_shields(damage = 0, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
-	for(var/slot in dq_shield_slots())
+	for(var/slot in GLOB.shield_slots)
 		var/obj/item/shield = get_equipped_item(slot)
 		if(!shield)
 			continue

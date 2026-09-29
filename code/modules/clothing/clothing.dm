@@ -1,8 +1,8 @@
 /obj/item/clothing
 	name = DEVELOPER_WARNING_NAME // "Clothing"
 	siemens_coefficient = 0.9
-	drop_sound = 'sound/items/drop/clothing.ogg'
-	pickup_sound = 'sound/items/pickup/clothing.ogg'
+	drop_sound = SFX_ITEMS_DROP_CLOTHING
+	pickup_sound = SFX_ITEMS_PICKUP_CLOTHING
 	resistance_flags = FLAMMABLE
 
 	var/list/accessories
@@ -295,9 +295,11 @@ EXTEND_INTERACTIONS(/obj/item/clothing/ears, INTERACT_HAND_UNGATED(null, PROC_RE
 	siemens_coefficient = 0.9
 	blood_sprite_state = "bloodyhands"
 	var/wired = 0
-	var/obj/item/cell/cell = 0
+	var/obj/item/cell/cell = 0 // owned: the installed power cell, kept in the gloves' contents
 	var/fingerprint_chance = 0					//How likely the glove is to let fingerprints through
+	// owned: the ring worn under the gloves, kept in their contents
 	var/obj/item/clothing/accessory/ring = null	//Covered ring
+	// owned: the undergloves worn under gauntlets, kept in their contents
 	var/obj/item/clothing/gloves/gloves = null	//Undergloves. Used for gauntlets.
 	var/glove_level = 2							//What "layer" the glove is on
 	var/overgloves = 0							//Used by gauntlets and arm_guards
@@ -312,8 +314,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/ears, INTERACT_HAND_UNGATED(null, PROC_RE
 		SPECIES_TESHARI = 'icons/inventory/hands/mob_teshari.dmi',
 		SPECIES_VOX = 'icons/inventory/hands/mob_vox.dmi'
 		)
-	drop_sound = 'sound/items/drop/gloves.ogg'
-	pickup_sound = 'sound/items/pickup/gloves.ogg'
+	drop_sound = SFX_ITEMS_DROP_GLOVES
+	pickup_sound = SFX_ITEMS_PICKUP_GLOVES
 
 	valid_accessory_slots = (\
 		ACCESSORY_SLOT_RING\
@@ -385,7 +387,7 @@ OWN(/obj/item/clothing/gloves, contents, OWN_SPILL)
 		return
 
 /obj/item/clothing/gloves
-	var/datum/unarmed_attack/special_attack = null //do the gloves have a special unarmed attack?
+	var/tmp/datum/unarmed_attack/special_attack = null //do the gloves have a special unarmed attack?
 	var/special_attack_type = null
 
 DECLARE_DEFAULT_CHILD(/obj/item/clothing/gloves, "special_attack", "special_attack_type")
@@ -403,15 +405,13 @@ DECLARE_DEFAULT_CHILD(/obj/item/clothing/gloves, "special_attack", "special_atta
 	fingerprint_chance = 100
 	punch_force = 2
 	body_parts_covered = 0
-	drop_sound = 'sound/items/drop/ring.ogg'
-	pickup_sound = 'sound/items/pickup/ring.ogg'
+	drop_sound = SFX_ITEMS_DROP_RING
+	pickup_sound = SFX_ITEMS_PICKUP_RING
 
 ///////////////////////////////////////////////////////////////////////
 //Head
 
-/obj/item/clothing/gloves/ring/fit_constraint()
-	var/list/bodytypes = list("exclude", SPECIES_DIONA)
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/gloves/ring, fit_spec, list(REQ_FITS_BODYTYPES(list("exclude", SPECIES_DIONA))))
 /obj/item/clothing/head
 	name = DEVELOPER_WARNING_NAME // "Head"
 	icon = 'icons/inventory/head/item.dmi'
@@ -436,8 +436,8 @@ DECLARE_DEFAULT_CHILD(/obj/item/clothing/gloves, "special_attack", "special_atta
 		SPECIES_TESHARI = 'icons/inventory/head/mob_teshari.dmi',
 		SPECIES_VOX = 'icons/inventory/head/mob_vox.dmi'
 		)
-	drop_sound = 'sound/items/drop/hat.ogg'
-	pickup_sound = 'sound/items/pickup/hat.ogg'
+	drop_sound = SFX_ITEMS_DROP_HAT
+	pickup_sound = SFX_ITEMS_PICKUP_HAT
 	helmet_handling = TRUE
 
 EXTEND_INTERACTIONS(/obj/item/clothing/head, \
@@ -569,8 +569,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head, \
 	var/list/say_messages
 	var/list/say_verbs
 
-	drop_sound = "generic_drop"
-	pickup_sound = "generic_pickup"
+	drop_sound = SFX_GENERIC_DROP
+	pickup_sound = SFX_GENERIC_PICKUP
 
 /obj/item/clothing/mask/update_clothing_icon()
 	if (ismob(src.loc))
@@ -599,7 +599,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head, \
 	blood_sprite_state = "shoeblood"
 
 	var/can_hold_knife = 0
-	var/obj/item/holding
+	var/obj/item/holding // owned: the knife tucked in the boot, kept in its contents
 
 	var/shoes_under_pants = 0
 
@@ -607,6 +607,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head, \
 	var/snow_speed = 0		//Speed boost/decrease on snow, lower/negative values mean more speed
 
 	var/step_volume_mod = 1	//How quiet or loud footsteps in this shoe are
+	// owned: the shoes worn under these (magboots), kept in their contents
 	var/obj/item/clothing/shoes/shoes = null	//If we are wearing shoes in our shoes. Used primarily for magboots.
 	var/blocks_footsteps = TRUE //Does this shoe block custom footstep sounds?
 
@@ -619,16 +620,14 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head, \
 		SPECIES_VOX = 'icons/inventory/feet/mob_vox.dmi',
 		SPECIES_WEREBEAST = 'icons/inventory/feet/mob_werebeast.dmi'
 		)
-	drop_sound = 'sound/items/drop/shoes.ogg'
-	pickup_sound = 'sound/items/pickup/shoes.ogg'
+	drop_sound = SFX_ITEMS_DROP_SHOES
+	pickup_sound = SFX_ITEMS_PICKUP_SHOES
 
 	update_icon_define_digi = "icons/inventory/feet/mob_digi.dmi"
 	var/list/inside_emotes
 	COOLDOWN_DECLARE(recent_squish)
 
-/obj/item/clothing/shoes/fit_constraint()
-	var/list/bodytypes = list("exclude",SPECIES_TESHARI, SPECIES_VOX)
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/shoes, fit_spec, list(REQ_FITS_BODYTYPES(list("exclude",SPECIES_TESHARI, SPECIES_VOX))))
 
 /obj/item/clothing/shoes/Initialize(mapload)
 	. = ..()
@@ -665,7 +664,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head, \
 
 	if(user.put_in_hands(holding))
 		user.visible_message(span_danger("\The [user] pulls a knife out of their boot!"))
-		playsound(src, 'sound/weapons/holster/sheathout.ogg', 25)
+		play_sfx(src, SFX_WEAPONS_HOLSTER_SHEATHOUT, 0.5, vary = FALSE)
 		own_take(src, "holding")
 		cut_overlay("[icon_state]_knife")
 	else
@@ -898,7 +897,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head, \
 
 	//Hood stuff. See hooded.dm for more info. This should be expanded so all suits can have hoods if desired.
 	//Currently only used by /obj/item/clothing/suit/storage/hooded.
-	var/obj/item/clothing/head/hood
+	var/obj/item/clothing/head/hood // owned: the attached hood, kept in the suit's contents while down
 	var/hoodtype = null //so the chaplain hoodie or other hoodies can override this
 	var/hood_up = FALSE
 	var/has_hood_sprite = FALSE
@@ -910,7 +909,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head, \
 	siemens_coefficient = 0.9
 	w_class = ITEMSIZE_NORMAL
 	preserve_item = 1
-	equip_sound = 'sound/items/jumpsuit_equip.ogg'
+	equip_sound = SFX_ITEMS_JUMPSUIT_EQUIP
 
 	sprite_sheets = list(
 		SPECIES_TESHARI = 'icons/inventory/suit/mob_teshari.dmi',
@@ -922,9 +921,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head, \
 
 	update_icon_define_digi = "icons/inventory/suit/mob_digi.dmi"
 
-/obj/item/clothing/suit/suit_storage_constraint()
-	var/list/stores = list(POCKET_EMERGENCY)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/clothing/suit, suit_storage_spec, list(HOLD_ONLY(list(POCKET_EMERGENCY))))
 
 /obj/item/clothing/suit/Initialize(mapload)
 	MakeHood()
@@ -1043,7 +1040,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head, \
 	heat_protection = ARMS|LEGS|CHEST
 	cold_protection = ARMS|LEGS|CHEST
 	armor_spec = ""
-	equip_sound = 'sound/items/jumpsuit_equip.ogg'
+	equip_sound = SFX_ITEMS_JUMPSUIT_EQUIP
 	w_class = ITEMSIZE_NORMAL
 	show_messages = 1
 	blood_sprite_state = "uniformblood"
@@ -1092,8 +1089,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head, \
 		|ACCESSORY_SLOT_DEPT\
 		|ACCESSORY_SLOT_OVER)
 
-	var/tmp/icon/rolled_down_icon = 'icons/inventory/uniform/mob_rolled_down.dmi'
-	var/tmp/icon/rolled_down_sleeves_icon = 'icons/inventory/uniform/mob_sleeves_rolled.dmi'
+	var/tmp/icon/rolled_down_icon = 'icons/inventory/uniform/mob_rolled_down.dmi' // an icon file resource ('*.dmi'), not an object reference
+	var/tmp/icon/rolled_down_sleeves_icon = 'icons/inventory/uniform/mob_sleeves_rolled.dmi' // an icon file resource ('*.dmi'), not an object reference
 
 	update_icon_define_digi = "icons/inventory/uniform/mob_digi.dmi"
 
@@ -1235,7 +1232,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under, \
 		to_chat(user, "This suit does not have any sensors.")
 		return 0
 
-	var/list/modes = list(
+	var/static/list/modes = list(
 		"Off" = SUIT_SENSOR_OFF,
 		"Binary sensors" = SUIT_SENSOR_BINARY,
 		"Vitals tracker" = SUIT_SENSOR_VITAL,

@@ -16,8 +16,8 @@
 
 	var/paddle_path = /obj/item/shockpaddles/linked
 	var/obj/item/cell/bcell = null
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 /obj/item/defib_kit/get_cell()
 	return bcell
@@ -356,18 +356,18 @@ DECLARE_INTERACTIONS(/obj/item/defib_kit, \
 		ghost.notify_revive("Someone is trying to resuscitate you. Re-enter your body if you want to be revived!", 'sound/effects/genetics.ogg', source = src)
 
 	//beginning to place the paddles on patient's chest to allow some time for people to move away to stop the process
-	user.visible_message(span_warning("\The [user] begins to place [src] on [H]'s chest."), span_warning("You begin to place [src] on [H]'s chest..."))
+	act_message(user, src, MSG_SELF(span_warning("You begin to place %T% on [H]'s chest...")), MSG_OTHERS(span_warning("%U% begins to place %T% on [H]'s chest.")))
 	om_task_timed(user, 3 SECONDS, target = H, receiver = src, on_done = PROC_REF(do_revive_timed_done), done_args = list(H, user), busy = src)
 	return TRUE
 
 /obj/item/shockpaddles/proc/do_revive_timed_done(mob/living/carbon/human/H, mob/user)
-	user.visible_message(span_infoplain(span_bold("\The [user]") + " places [src] on [H]'s chest."), span_warning("You place [src] on [H]'s chest."))
-	playsound(src, 'sound/machines/defib_charge.ogg', 50, 0)
+	act_message(user, src, MSG_SELF(span_warning("You place %T% on [H]'s chest.")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " places %T% on [H]'s chest.")))
+	play_sfx(src, SFX_MACHINES_DEFIB_CHARGE)
 
 	var/error = can_defib(H)
 	if(error)
 		make_announcement(error, "warning")
-		playsound(src, 'sound/machines/defib_failed.ogg', 50, 0)
+		play_sfx(src, SFX_MACHINES_DEFIB_FAILED)
 		return
 
 	if(check_blood_level(H))
@@ -388,12 +388,12 @@ DECLARE_INTERACTIONS(/obj/item/defib_kit, \
 	//deduct charge here, in case the base unit was EMPed or something during the delay time
 	if(!consume_enhanced_charge(chargecost, output_envelope))
 		make_announcement("buzzes, \"Insufficient charge.\"", "warning")
-		playsound(src, 'sound/machines/defib_failed.ogg', 50, 0)
+		play_sfx(src, SFX_MACHINES_DEFIB_FAILED)
 		return
 
-	H.visible_message(span_warning("\The [H]'s body convulses a bit."))
-	playsound(src, "bodyfall", 50, 1)
-	playsound(src, 'sound/machines/defib_zap.ogg', 50, 1, -1)
+	act_message(H, null, others = span_warning("%U%'s body convulses a bit."))
+	play_sfx(src, SFX_BODYFALL)
+	play_sfx(src, SFX_MACHINES_DEFIB_ZAP)
 	set_cooldown(cooldowntime)
 
 	// A living patient in a shockable rhythm: cardiovert, no resurrection involved.
@@ -401,30 +401,30 @@ DECLARE_INTERACTIONS(/obj/item/defib_kit, \
 		H.injure(INJURY_BURN, burn_damage_amt, BP_TORSO, src)
 		if(H.defibrillate_heart())
 			make_announcement("pings, \"Rhythm converted. Pulse detected.\"", "notice")
-			playsound(src, 'sound/machines/defib_success.ogg', 50, 0)
+			play_sfx(src, SFX_MACHINES_DEFIB_SUCCESS)
 		else
 			make_announcement("buzzes, \"Conversion failed. Continue CPR.\"", "warning")
-			playsound(src, 'sound/machines/defib_failed.ogg', 50, 0)
+			play_sfx(src, SFX_MACHINES_DEFIB_FAILED)
 		add_attack_logs(user, H, "Cardioverted using [name]")
 		return
 
 	var/error = can_revive(H)
 	if(error)
 		make_announcement(error, "warning")
-		playsound(src, 'sound/machines/defib_failed.ogg', 50, 0)
+		play_sfx(src, SFX_MACHINES_DEFIB_FAILED)
 		return
 
 	H.injure(INJURY_BURN, burn_damage_amt, BP_TORSO, src)
 	if(has_trait(H, TRAIT_UNLUCKY) && prob(5))
 		make_announcement("buzzes, \"Unknown error occurred. Please try again.\"", "warning")
-		playsound(src, 'sound/machines/defib_failed.ogg', 50, FALSE)
+		play_sfx(src, SFX_MACHINES_DEFIB_FAILED)
 		return
 
 	// A fibrillating corpse needs its rhythm converted to come back.
 	var/datum/affliction/cardiac_arrhythmia/rhythm = H.cardiac_arrhythmia()
 	if(rhythm && !rhythm.is_perfusing() && !H.defibrillate_heart())
 		make_announcement("buzzes, \"Resuscitation failed - rhythm did not convert. Continue CPR.\"", "warning")
-		playsound(src, 'sound/machines/defib_failed.ogg', 50, 0)
+		play_sfx(src, SFX_MACHINES_DEFIB_FAILED)
 		return
 
 	// Flush synthetic system faults (a no-op on organic parts).
@@ -433,11 +433,11 @@ DECLARE_INTERACTIONS(/obj/item/defib_kit, \
 	var/revived = make_alive(H)
 	if(revived != TRUE)
 		make_announcement("buzzes, \"Resuscitation failed - [revived]. Further attempts futile without treatment.\"", "warning")
-		playsound(src, 'sound/machines/defib_failed.ogg', 50, 0)
+		play_sfx(src, SFX_MACHINES_DEFIB_FAILED)
 		return
 
 	make_announcement("pings, \"Resuscitation successful.\"", "notice")
-	playsound(src, 'sound/machines/defib_success.ogg', 50, 0)
+	play_sfx(src, SFX_MACHINES_DEFIB_SUCCESS)
 
 	log_and_message_admins("used \a [src] to revive [key_name(H)].")
 
@@ -448,14 +448,14 @@ DECLARE_INTERACTIONS(/obj/item/defib_kit, \
 		return
 
 	//no need to spend time carefully placing the paddles, we're just trying to shock them
-	user.visible_message(span_danger("\The [user] slaps [src] onto [H]'s [affecting.name]."), span_danger("You overcharge [src] and slap them onto [H]'s [affecting.name]."))
+	act_message(user, src, MSG_SELF(span_danger("You overcharge %T% and slap them onto [H]'s [affecting.name].")), MSG_OTHERS(span_danger("%U% slaps %T% onto [H]'s [affecting.name].")))
 
 	//Just stop at awkwardly slapping electrodes on people if the safety is enabled
 	if(safety)
 		to_chat(user, span_warning("You can't do that while the safety is enabled."))
 		return
 
-	playsound(src, 'sound/machines/defib_charge.ogg', 50, 0)
+	play_sfx(src, SFX_MACHINES_DEFIB_CHARGE)
 	audible_message(span_warning("\The [src] lets out a steadily rising hum..."), runemessage = "whines")
 
 	var/output_envelope = power_output_envelope(chargecost)
@@ -476,12 +476,12 @@ DECLARE_INTERACTIONS(/obj/item/defib_kit, \
 	//deduct charge here, in case the base unit was EMPed or something during the delay time
 	if(!consume_enhanced_charge(chargecost, output_envelope))
 		make_announcement("buzzes, \"Insufficient charge.\"", "warning")
-		playsound(src, 'sound/machines/defib_failed.ogg', 50, 0)
+		play_sfx(src, SFX_MACHINES_DEFIB_FAILED)
 		return
 
-	user.visible_message(span_danger(span_italics("\The [user] shocks [H] with \the [src]!")), span_warning("You shock [H] with \the [src]!"))
-	playsound(src, 'sound/machines/defib_zap.ogg', 100, 1, -1)
-	playsound(src, 'sound/weapons/egloves.ogg', 100, 1, -1)
+	act_message(user, src, MSG_SELF(span_warning("You shock [H] with %T%!")), MSG_OTHERS(span_danger(span_italics("%U% shocks [H] with %T%!"))))
+	play_sfx(src, SFX_MACHINES_DEFIB_ZAP, 2)
+	play_sfx(src, SFX_WEAPONS_EGLOVES, 2)
 	set_cooldown(cooldowntime)
 
 	H.stun_effect_act(2, 120, target_zone, electric = TRUE)
@@ -549,10 +549,10 @@ DECLARE_INTERACTIONS(/obj/item/defib_kit, \
 		safety = new_safety
 		if(safety)
 			make_announcement("beeps, \"Safety protocols enabled!\"", "notice")
-			playsound(src, 'sound/machines/defib_SafetyOn.ogg', 50, 0)
+			play_sfx(src, SFX_MACHINES_DEFIB_SAFETYON)
 		else
 			make_announcement("beeps, \"Safety protocols disabled!\"", "warning")
-			playsound(src, 'sound/machines/defib_safetyOff.ogg', 50, 0)
+			play_sfx(src, SFX_MACHINES_DEFIB_SAFETYOFF)
 		update_icon()
 
 /obj/item/shockpaddles/robot
@@ -704,4 +704,4 @@ DECLARE_INTERACTIONS(/obj/item/defib_kit, \
 		update_icon()
 
 		make_announcement("beeps, \"Unit is re-energized.\"", "notice")
-		playsound(src, 'sound/machines/defib_ready.ogg', 50, 0)
+		play_sfx(src, SFX_MACHINES_DEFIB_READY)

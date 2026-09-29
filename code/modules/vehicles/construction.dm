@@ -74,6 +74,7 @@
 /datum/interaction/construction/vehicle/quadbike
 
 /datum/interaction/construction/vehicle/quadbike/tires
+	start_feedback = /datum/msg/start/interaction/construction/vehicle/quadbike/tires
 	from_state = 0
 	to_state = 1
 	step_text = "add tires to it"
@@ -82,7 +83,9 @@
 	item_use = CONSTRUCTION_ITEM_USE
 	duration = 4 SECONDS
 	tool_scaled = FALSE
-	start_self = "You start to add tires to %TARGET%."
+
+/datum/msg/start/interaction/construction/vehicle/quadbike/tires
+	self = "You start to add tires to %T%."
 
 /datum/interaction/construction/vehicle/quadbike/tires/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
 	var/obj/item/vehicle_assembly/quadbike/assembly = target
@@ -137,6 +140,7 @@
 	return TRUE
 
 /datum/interaction/construction/vehicle/quadbike/wire
+	start_feedback = /datum/msg/start/interaction/construction/vehicle/quadbike/wire
 	from_state = 3
 	to_state = 4
 	step_text = "wire it"
@@ -145,7 +149,9 @@
 	item_use = CONSTRUCTION_ITEM_USE
 	duration = 4 SECONDS
 	tool_scaled = FALSE
-	start_self = "You start to wire %TARGET%."
+
+/datum/msg/start/interaction/construction/vehicle/quadbike/wire
+	self = "You start to wire %T%."
 
 /datum/interaction/construction/vehicle/quadbike/wire/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
 	var/obj/item/vehicle_assembly/quadbike/assembly = target
@@ -181,6 +187,7 @@
 	return TRUE
 
 /datum/interaction/construction/vehicle/quadbike/reinforce
+	start_feedback = /datum/msg/start/interaction/construction/vehicle/quadbike/reinforce
 	from_state = 6
 	to_state = 7
 	step_text = "add reinforcement"
@@ -189,7 +196,9 @@
 	item_use = CONSTRUCTION_ITEM_USE
 	duration = 4 SECONDS
 	tool_scaled = FALSE
-	start_self = "You start to add reinforcement to %TARGET%."
+
+/datum/msg/start/interaction/construction/vehicle/quadbike/reinforce
+	self = "You start to add reinforcement to %T%."
 
 /datum/interaction/construction/vehicle/quadbike/reinforce/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
 	var/obj/item/vehicle_assembly/quadbike/assembly = target
@@ -198,12 +207,15 @@
 	return TRUE
 
 /datum/interaction/construction/vehicle/quadbike/finish
+	start_feedback = /datum/msg/start/interaction/construction/vehicle/quadbike/finish
 	from_state = 7
 	to_state = CONSTRUCTION_DONE
 	step_text = "finish it"
 	duration = 2 SECONDS
 	tool_scaled = FALSE
-	start_self = "You begin your finishing touches on %TARGET%."
+
+/datum/msg/start/interaction/construction/vehicle/quadbike/finish
+	self = "You begin your finishing touches on %T%."
 
 /datum/interaction/construction/vehicle/quadbike/finish/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
 	var/obj/item/vehicle_assembly/quadbike/assembly = target
@@ -260,6 +272,7 @@
 	return TRUE
 
 /datum/interaction/construction/vehicle/quadtrailer/wire
+	start_feedback = /datum/msg/start/interaction/construction/vehicle/quadtrailer/wire
 	from_state = 1
 	to_state = 2
 	step_text = "wire it"
@@ -268,7 +281,9 @@
 	item_use = CONSTRUCTION_ITEM_USE
 	duration = 4 SECONDS
 	tool_scaled = FALSE
-	start_self = "You start to wire %TARGET%."
+
+/datum/msg/start/interaction/construction/vehicle/quadtrailer/wire
+	self = "You start to wire %T%."
 
 /datum/interaction/construction/vehicle/quadtrailer/wire/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
 	var/obj/item/vehicle_assembly/quadtrailer/trailer = target
@@ -331,6 +346,7 @@
 	return TRUE
 
 /datum/interaction/construction/vehicle/spacebike/wire
+	start_feedback = /datum/msg/start/interaction/construction/vehicle/spacebike/wire
 	from_state = 1
 	to_state = 2
 	step_text = "wire it"
@@ -339,7 +355,9 @@
 	item_use = CONSTRUCTION_ITEM_USE
 	duration = 4 SECONDS
 	tool_scaled = FALSE
-	start_self = "You start to wire %TARGET%."
+
+/datum/msg/start/interaction/construction/vehicle/spacebike/wire
+	self = "You start to wire %T%."
 
 /datum/interaction/construction/vehicle/spacebike/wire/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
 	var/obj/item/vehicle_assembly/spacebike/assembly = target
@@ -348,6 +366,7 @@
 	return TRUE
 
 /datum/interaction/construction/vehicle/spacebike/seat
+	start_feedback = /datum/msg/start/interaction/construction/vehicle/spacebike/seat
 	from_state = 2
 	to_state = 3
 	step_text = "add a seat"
@@ -356,7 +375,9 @@
 	item_use = CONSTRUCTION_ITEM_USE
 	duration = 4 SECONDS
 	tool_scaled = FALSE
-	start_self = "You start to add a seat to %TARGET%."
+
+/datum/msg/start/interaction/construction/vehicle/spacebike/seat
+	self = "You start to add a seat to %T%."
 
 /datum/interaction/construction/vehicle/spacebike/seat/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
 	var/obj/item/vehicle_assembly/spacebike/assembly = target
@@ -405,12 +426,15 @@
 	return TRUE
 
 /datum/interaction/construction/vehicle/spacebike/finish
+	start_feedback = /datum/msg/start/interaction/construction/vehicle/spacebike/finish
 	from_state = 6
 	to_state = CONSTRUCTION_DONE
 	step_text = "finish it"
 	duration = 2 SECONDS
 	tool_scaled = FALSE
-	start_self = "You begin your finishing touches on %TARGET%."
+
+/datum/msg/start/interaction/construction/vehicle/spacebike/finish
+	self = "You begin your finishing touches on %T%."
 
 /datum/interaction/construction/vehicle/spacebike/finish/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
 	var/obj/item/vehicle_assembly/spacebike/assembly = target
@@ -461,6 +485,7 @@
 	)
 
 /datum/interaction/construction/vehicle/snowmobile/treads
+	start_feedback = /datum/msg/start/interaction/construction/vehicle/snowmobile/treads
 	from_state = 0
 	to_state = 1
 	step_text = "add treads to it"
@@ -469,7 +494,9 @@
 	item_use = CONSTRUCTION_ITEM_USE
 	duration = 4 SECONDS
 	tool_scaled = FALSE
-	start_self = "You start to add treads to %TARGET%."
+
+/datum/msg/start/interaction/construction/vehicle/snowmobile/treads
+	self = "You start to add treads to %T%."
 
 /datum/interaction/construction/vehicle/snowmobile/treads/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
 	var/obj/item/vehicle_assembly/snowmobile/assembly = target
@@ -504,6 +531,7 @@
 	return TRUE
 
 /datum/interaction/construction/vehicle/snowmobile/wire
+	start_feedback = /datum/msg/start/interaction/construction/vehicle/snowmobile/wire
 	from_state = 3
 	to_state = 4
 	step_text = "wire it"
@@ -512,7 +540,9 @@
 	item_use = CONSTRUCTION_ITEM_USE
 	duration = 4 SECONDS
 	tool_scaled = FALSE
-	start_self = "You start to wire %TARGET%."
+
+/datum/msg/start/interaction/construction/vehicle/snowmobile/wire
+	self = "You start to wire %T%."
 
 /datum/interaction/construction/vehicle/snowmobile/wire/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
 	var/obj/item/vehicle_assembly/snowmobile/assembly = target
@@ -548,6 +578,7 @@
 	return TRUE
 
 /datum/interaction/construction/vehicle/snowmobile/reinforce
+	start_feedback = /datum/msg/start/interaction/construction/vehicle/snowmobile/reinforce
 	from_state = 6
 	to_state = 7
 	step_text = "add reinforcement"
@@ -556,7 +587,9 @@
 	item_use = CONSTRUCTION_ITEM_USE
 	duration = 4 SECONDS
 	tool_scaled = FALSE
-	start_self = "You start to add reinforcement to %TARGET%."
+
+/datum/msg/start/interaction/construction/vehicle/snowmobile/reinforce
+	self = "You start to add reinforcement to %T%."
 
 /datum/interaction/construction/vehicle/snowmobile/reinforce/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
 	var/obj/item/vehicle_assembly/snowmobile/assembly = target
@@ -565,12 +598,15 @@
 	return TRUE
 
 /datum/interaction/construction/vehicle/snowmobile/finish
+	start_feedback = /datum/msg/start/interaction/construction/vehicle/snowmobile/finish
 	from_state = 7
 	to_state = CONSTRUCTION_DONE
 	step_text = "finish it"
 	duration = 2 SECONDS
 	tool_scaled = FALSE
-	start_self = "You begin your finishing touches on %TARGET%."
+
+/datum/msg/start/interaction/construction/vehicle/snowmobile/finish
+	self = "You begin your finishing touches on %T%."
 
 /datum/interaction/construction/vehicle/snowmobile/finish/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
 	var/obj/item/vehicle_assembly/snowmobile/assembly = target

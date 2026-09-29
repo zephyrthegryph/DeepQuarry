@@ -17,7 +17,7 @@
 
 	// Printing state variables
 	var/is_printing = FALSE		// If true, printer is busy cloning.
-	var/print_end_time = 0		// World time when printing will finish
+	EXPIRY_DECLARE(print_end_time) // World time when printing will finish
 	var/tmp/obj/item/electronic_assembly/queued_assembly	// The assembly being cloned.
 
 /obj/item/integrated_circuit_printer/proc/finish_printing()
@@ -27,7 +27,7 @@
 
 	// Drop the assembly on the ground
 	queued_assembly().forceMove(get_turf(src))
-	playsound(src, 'sound/machines/ding.ogg', 50, TRUE)
+	play_sfx(src, SFX_MACHINES_DING)
 	visible_message(span_notice("[src] beeps as it finishes printing '[queued_assembly().name]'."))
 
 	// Clear printing state
@@ -259,7 +259,7 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit_printer, \
 			var/obj/item/built = new build_type(get_turf(loc))
 			ui.user.put_in_hands(built)
 			to_chat(ui.user, span_notice("[capitalize(built.name)] printed."))
-			playsound(src, 'sound/items/jaws_pry.ogg', 50, TRUE)
+			play_sfx(src, SFX_ITEMS_JAWS_PRY)
 			return TRUE
 
 /**
@@ -492,13 +492,13 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit_printer, \
 	// Start the printing process
 	rel_set(src, "queued_assembly", assembly)
 	is_printing = TRUE
-	print_end_time = world.time + print_time
+	EXPIRY_SET(src, print_end_time, print_time, CLOCK_WORLD)
 
 	om_after(src, print_time, PROC_REF(finish_printing))
 
 	var/print_minutes = round(print_time / 600, 0.1) // Convert to minutes for display
 	to_chat(user, span_notice("Printing '[assembly.name]' with [LAZYLEN(created_components)] component\s. Estimated completion time: [print_minutes] minute\s."))
-	playsound(src, 'sound/machines/click.ogg', 50, TRUE)
+	play_sfx(src, SFX_MACHINES_CLICK)
 
 	return TRUE
 

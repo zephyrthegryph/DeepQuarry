@@ -17,6 +17,8 @@
 	Look at radio.dm for the prequel to this code.
 */
 
+OWN_TIMER(/obj/machinery/telecomms, thermal_timer)
+
 /obj/machinery/telecomms
 	icon = 'icons/obj/stationobjs.dmi'
 	unacidable = TRUE
@@ -31,7 +33,7 @@
 
 	var/machinetype = 0 // just a hacky way of preventing alike machines from pairing
 	var/toggled = 1 	// Is it toggled on
-	var/on = 1
+	on = 1
 	max_integrity = 100
 	var/produces_heat = 1	//whether the machine will produce heat when on.
 	heat_output = 1 // scaled by current_heat_output()
@@ -46,8 +48,7 @@
 	var/noisy = TRUE
 	/// Traffic decay and the heat level it sets are slow; they do not justify
 	/// keeping every network node in the two-second machinery roster.
-	var/thermal_timer
-	var/last_thermal_check
+	EXPIRY_DECLARE(last_thermal_check)
 
 /obj/machinery/telecomms/proc/relay_information(datum/signal/signal, filter, copysig, amount = 20)
 	// relay signal to all linked machinery that are of type [filter]. If signal has been sent [amount] times, stop sending
@@ -185,14 +186,14 @@ REL_SET(/obj/machinery/telecomms, links)
 /obj/machinery/telecomms/proc/update_power()
 	var/was_on = on
 	if(toggled)
-		if(stat & (BROKEN|NOPOWER|EMPED) || get_integrity() <= 0)
-			on = FALSE
+		if(!operable() || get_integrity() <= 0)
+			set_on(FALSE)
 			soundloop.stop()
 			noisy = FALSE
 		else
-			on = TRUE
+			set_on(TRUE)
 	else
-		on = FALSE
+		set_on(FALSE)
 		soundloop.stop()
 		noisy = FALSE
 	if(on && !noisy)
@@ -201,13 +202,12 @@ REL_SET(/obj/machinery/telecomms, links)
 	return was_on != on
 
 /obj/machinery/telecomms/machine_step()
-	if(thermal_timer)
-		om_cancel_timer(src, thermal_timer)
-		thermal_timer = null
+	if(om_timer_slot_pending(src, "thermal_timer"))
+		om_cancel_timer_slot(src, "thermal_timer")
 	var/power_changed = update_power()
 
 	var/elapsed_cycles = last_thermal_check ? max(round((world.time - last_thermal_check) / max(MACHINE_SERVICE_INTERVAL, 1)), 1) : 1
-	last_thermal_check = world.time
+	EXPIRY_STAMP(src, last_thermal_check, CLOCK_WORLD)
 
 	// Power transitions are the only process-time state that changes this icon.
 	// Reassigning icon_state every machinery tick is surprisingly expensive,
@@ -222,12 +222,11 @@ REL_SET(/obj/machinery/telecomms, links)
 	return PROCESS_KILL
 
 /obj/machinery/telecomms/proc/schedule_thermal_check()
-	if(thermal_timer || QDELETED(src))
+	if(om_timer_slot_pending(src, "thermal_timer") || QDELETED(src))
 		return
-	thermal_timer = om_after(src, max((initial(delay) + 1) * MACHINE_SERVICE_INTERVAL, 1), PROC_REF(thermal_check_due))
+	om_after_slot(src, "thermal_timer", max((initial(delay) + 1) * MACHINE_SERVICE_INTERVAL, 1), PROC_REF(thermal_check_due))
 
 /obj/machinery/telecomms/proc/thermal_check_due()
-	thermal_timer = null
 	MACHINE_WAKE(src)
 
 /obj/machinery/telecomms/power_change()
@@ -241,10 +240,10 @@ REL_SET(/obj/machinery/telecomms, links)
 	if (. & EMP_PROTECT_SELF)
 		return
 	if(prob(100/severity))
-		if(!(stat & EMPED))
-			stat |= EMPED
+		if(!has_stat(EMPED))
+			stat_add(EMPED)
 			MACHINE_WAKE(src)
-			playsound(src, 'sound/machines/tcomms/tcomms_pulse.ogg', 70, 1, 30)
+			play_sfx(src, SFX_MACHINES_TCOMMS_TCOMMS_PULSE)
 			var/duration = (300 * 10)/severity
 			om_after(src, rand(duration - 20, duration + 20), PROC_REF(emp_recover)) // Takes a long time for the machines to reboot.
 
@@ -252,7 +251,7 @@ REL_SET(/obj/machinery/telecomms, links)
 /// through the machine's heat body (heat_objects.dm); overheating is the
 /// overheating rule at the telecomms heat limit (temperature_thresholds.dm).
 /obj/machinery/telecomms/current_heat_output()
-	if(!produces_heat || !on || !use_power || (stat & (NOPOWER|BROKEN)))
+	if(!produces_heat || !on || !use_power || (!operable()))
 		return 0
 	return traffic > 0 ? idle_power_usage : idle_power_usage * 0.3
 
@@ -462,7 +461,7 @@ REL_SET(/obj/machinery/telecomms, links)
 			src.receive_information(signal, src)
 
 		// Try sending it!
-		var/list/try_send = list(/obj/machinery/telecomms/server, /obj/machinery/telecomms/hub, /obj/machinery/telecomms/broadcaster, /obj/machinery/telecomms/bus)
+		var/static/list/try_send = list(/obj/machinery/telecomms/server, /obj/machinery/telecomms/hub, /obj/machinery/telecomms/broadcaster, /obj/machinery/telecomms/bus)
 		var/i = 0
 		for(var/send in try_send)
 			if(i)
@@ -699,7 +698,7 @@ REL_SET(/obj/machinery/telecomms, links)
 	return src_z in using_map.get_map_levels(dst_z, TRUE, om_range = DEFAULT_OVERMAP_RANGE)
 
 /obj/machinery/telecomms/proc/emp_recover()
-	stat &= ~EMPED
+	stat_remove(EMPED)
 	MACHINE_WAKE(src)
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).

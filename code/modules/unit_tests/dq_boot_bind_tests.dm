@@ -52,7 +52,7 @@
 	term.disconnect_from_network()
 	var/list/saved = SSatoms.deferred_machine_binds
 	SSatoms.deferred_machine_binds = list()
-	term.anchored = TRUE
+	term.set_anchored(TRUE)
 	term.connect_to_network(FALSE)
 	TEST_ASSERT(SSatoms.deferred_machine_binds[term], "inside a batch the node is queued")
 	term.disconnect_from_network()
@@ -99,3 +99,27 @@
 	qdel_batch(list(C))
 	TEST_ASSERT(QDELETED(service), "the batch destroys the service with its owner")
 	TEST_ASSERT(isnull(GLOB.om_watch_registry[key]), "and its gas watches are disarmed by the batch's one pass")
+
+/// A machine whose first wake (materialize_wakes()) is still queued is not a missed wake; once
+/// that wake has run, a parked machine with work and nothing armed is.
+/datum/unit_test/dq_boot_bind_audit_first_wake
+
+/datum/unit_test/dq_boot_bind_audit_first_wake/Run()
+	var/obj/machinery/atmospherics/omni/mixer/M = allocate(/obj/machinery/atmospherics/omni/mixer, test_floor())
+	var/datum/om/pipeline/machine/P = locate_in_list(om_registry().pipelines, /datum/om/pipeline/machine)
+	TEST_ASSERT(P, "the machine pipeline is registered")
+	// Joining after boot schedules the first wake in the machine's `first_wake` slot (zero delay):
+	// it is pending until that timer runs, then the machine is audited as usual.
+	TEST_ASSERT(P.first_wake_pending(M), "a machine that joined after boot has its first wake queued in its slot")
+	M.materialize_wakes()
+	om_cancel_timer_slot(M, "first_wake")
+	TEST_ASSERT(!P.first_wake_pending(M), "a machine whose first wake already ran is audited as usual")
+	rel_add(om_global_owner(), "machine_first_wakes", M)
+	TEST_ASSERT(P.first_wake_pending(M), "a machine queued for the bulk first-wake pass has its first wake pending")
+	M.materialize_wakes()
+	TEST_ASSERT(!P.first_wake_pending(M), "running the first wake ends it, with nothing to clear by hand")
+	om_after_slot(M, "first_wake", 10 MINUTES, /obj/machinery/proc/materialize_wakes)
+	TEST_ASSERT(P.first_wake_pending(M), "a first wake in its timer slot is pending")
+	om_cancel_timer_slot(M, "first_wake")
+	TEST_ASSERT(!P.first_wake_pending(M), "cancelling the slot ends it")
+	TEST_ASSERT(!P.first_wake_pending(null), "a non-machine never counts as pending")

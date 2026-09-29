@@ -46,12 +46,12 @@
 
 /obj/structure/filingcabinet/wrench_act(mob/user, obj/item/tool)
 	playsound(src, tool.usesound, 50, TRUE)
-	anchored = !anchored
+	set_anchored(!anchored)
 	to_chat(user, span_notice("You [anchored ? "wrench" : "unwrench"] \the [src]."))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/filingcabinet/screwdriver_act(mob/user, obj/item/tool)
-	use_tool(user, tool, src, delay = 1 SECOND, volume = 50, message_self = "You begin taking the [name] apart.", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user, tool))
+	use_tool(user, tool, src, delay = 1 SECOND, volume = 50, start_self = "You begin taking the [name] apart.", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user, tool))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/filingcabinet/proc/screwdriver_act_tool_done(mob/user, obj/item/tool)
@@ -112,7 +112,7 @@ DECLARE_INTERACTIONS(/obj/structure/filingcabinet, \
 	data["cabinet_name"] = "[name]"
 	data["contents"] = list()
 	data["contents_ref"] = list()
-	for(var/obj/item/content in contents_of(src))
+	FOR_REAL_CONTENTS(var/obj/item/content, src)
 		data["contents"] += "[content]"
 		data["contents_ref"] += "[REF(content)]"
 
@@ -133,7 +133,7 @@ DECLARE_INTERACTIONS(/obj/structure/filingcabinet, \
 
 /obj/structure/filingcabinet/proc/open_animation()
 	flick("[initial(icon_state)]-open",src)
-	playsound(src, 'sound/bureaucracy/filingcabinet.ogg', 50, 1)
+	play_sfx(src, SFX_BUREAUCRACY_FILINGCABINET)
 	om_after(src, 2 SECONDS, TYPE_PROC_REF(/atom, set_icon_state), initial(icon_state))
 
 /*

@@ -6,7 +6,7 @@
 	show_messages = 1
 
 	var/slots = 5
-	var/obj/item/storage/internal/hold
+	var/obj/item/storage/internal/hold // owned: the internal storage object that holds the webbing's contents
 	w_class = ITEMSIZE_NORMAL
 	on_rolled = list("down" = "none")
 	var/hide_on_roll = FALSE

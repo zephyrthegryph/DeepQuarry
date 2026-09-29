@@ -9,13 +9,13 @@
 	use_power = USE_POWER_OFF
 	interact_offline = TRUE
 
-	var/active = 0
+	active = 0
 	var/power_gen = 5000
 	var/recent_fault = 0
 	var/power_output = 1
 
 /obj/machinery/power/port_gen/proc/IsBroken()
-	return (stat & (BROKEN|EMPED))
+	return (has_stat(BROKEN | EMPED))
 
 /obj/machinery/power/port_gen/proc/HasFuel() //Placeholder for fuel check.
 	return 1
@@ -31,10 +31,10 @@
 
 /obj/machinery/power/port_gen/proc/TogglePower()
 	if(active)
-		active = FALSE
+		set_active(FALSE)
 		update_icon()
 	else if(HasFuel())
-		active = TRUE
+		set_active(TRUE)
 		update_icon()
 	MACHINE_WAKE(src)
 
@@ -43,7 +43,7 @@
 		set_power_supply(power_gen * power_output)
 		UseFuel()
 	else
-		active = FALSE
+		set_active(FALSE)
 		set_power_supply(0)
 		update_icon()
 		if(!handleInactive())
@@ -88,19 +88,19 @@
 	var/duration = 6000 //ten minutes
 	switch(severity)
 		if(EMP_HEAVY)
-			stat |= BROKEN
+			stat_add(BROKEN)
 			if(prob(75)) explode()
 		if(EMP_MEDIUM)
-			if(prob(50)) stat |= BROKEN
+			if(prob(50)) stat_add(BROKEN)
 			if(prob(10)) explode()
 		if(EMP_LIGHT)
-			if(prob(25)) stat |= BROKEN
+			if(prob(25)) stat_add(BROKEN)
 			duration = 300
 		if(EMP_HARMLESS)
-			if(prob(10)) stat |= BROKEN
+			if(prob(10)) stat_add(BROKEN)
 			duration = 300
 
-	stat |= EMPED
+	stat_add(EMPED)
 	if(duration)
 		om_after(src, duration, PROC_REF(emp_recover))
 
@@ -279,7 +279,7 @@
 		explode() //if they're foolish enough to emag while it's running
 
 	if (!emagged)
-		emagged = 1
+		set_emagged(1)
 		return 1
 
 /obj/machinery/power/port_gen/pacman/declare_interactions(list/into)
@@ -350,8 +350,8 @@
 	else
 		disconnect_from_network()
 		to_chat(user, span_notice("You unsecure the generator from the floor."))
-	playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
-	anchored = !anchored
+	play_sfx(src, SFX_ITEMS_DECONSTRUCT)
+	set_anchored(!anchored)
 	return ITEM_INTERACT_SUCCESS
 
 /// Old attack_hand: base was always called first, then opened the interface if anchored.
@@ -724,7 +724,7 @@
 	going_kaboom = TRUE
 	visible_message(span_danger("\The [src] lets out an shower of sparks as it starts to lose stability!"),\
 		span_warningplain("You hear a loud electrical crack!"))
-	playsound(src, 'sound/effects/lightningshock.ogg', 100, 1, extrarange = 5)
+	play_sfx(src, SFX_EFFECTS_LIGHTNINGSHOCK)
 	tesla_zap(src, 5, power_gen * 0.05, current_jumps = 1)
 	om_after(null, 100, GLOBAL_PROC_REF(explosion), get_turf(src), 2, 3, 4, 8) // Not a normal explosion.
 
@@ -763,7 +763,7 @@
 	state_change = TRUE
 	RefreshParts()
 	update_icon()
-	playsound(src, 'sound/effects/metal_close.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_METAL_CLOSE)
 	return TRUE
 
 /// Old attackby: `state_change = TRUE` ran unconditionally first, then a void cell was inserted if there wasn't one already.
@@ -795,7 +795,7 @@
 	own_set(src, "cell", I)
 	RefreshParts()
 	update_icon()
-	playsound(src, 'sound/effects/metal_close.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_METAL_CLOSE)
 	return TRUE
 
 /obj/machinery/power/rtg/abductor/update_icon()
@@ -869,7 +869,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/power/rtg/abductor/hybrid/built, "cell", /o
 /obj/machinery/power/rtg/kugelblitz/proc/asplod()
 	visible_message(span_danger("\The [src] lets out an shower of sparks as it starts to lose stability!"),\
 		span_warningplain("You hear a loud electrical crack!"))
-	playsound(src, 'sound/effects/lightningshock.ogg', 100, 1, extrarange = 5)
+	play_sfx(src, SFX_EFFECTS_LIGHTNINGSHOCK)
 	var/turf/T = get_turf(src)
 	qdel(src)
 	new /obj/singularity(T)
@@ -1179,7 +1179,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/power/rtg/abductor/hybrid/built, "cell", /o
 		asplod()
 
 /obj/machinery/power/port_gen/proc/emp_recover()
-	stat &= ~EMPED
+	stat_remove(EMPED)
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/power/rtg/step_start_condition()

@@ -44,7 +44,7 @@
 	special_attack_cooldown = 10 SECONDS
 
 	var/leap_warmup = 1 SECOND // How long the leap telegraphing is.
-	var/leap_sound = 'sound/weapons/spiderlunge.ogg'
+	var/leap_sound = SFX_WEAPONS_SPIDERLUNGE
 
 // Multiplies damage if the victim is stunned in some form, including a successful leap.
 /mob/living/simple_mob/animal/giant_spider/hunter/apply_bonus_melee_damage(atom/A, damage_amount)
@@ -95,7 +95,7 @@
 
 	if(victim)
 		victim.status_at_least(EFFECT_WEAKENED, 2)
-		victim.visible_message(span_danger("\The [src] knocks down \the [victim]!"))
+		act_message(src, victim, null, MSG_OTHERS(span_danger("%U% knocks down %T%!")))
 		to_chat(victim, span_critical("\The [src] jumps on you!"))
 
 	ai_busy_end()

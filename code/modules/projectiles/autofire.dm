@@ -97,7 +97,7 @@
 	if(!isatom(object))
 		return FALSE
 	var/list/pa = params2list(params)
-	if(GLOB.input_router.click_is(pa, GLOB.input_router.secondary_table(), INPUT_ACTION_ALTERNATE_SECONDARY) || GLOB.input_router.click_is(pa, GLOB.input_router.click_catcher_table(), INPUT_ACTION_SWAP_HANDS))
+	if(GLOB.input_router.click_is(pa, TYPE_TABLE_GET(GLOB.input_router, secondary_table), INPUT_ACTION_ALTERNATE_SECONDARY) || GLOB.input_router.click_is(pa, TYPE_TABLE_GET(GLOB.input_router, click_catcher_table), INPUT_ACTION_SWAP_HANDS))
 		return FALSE
 	return TRUE
 

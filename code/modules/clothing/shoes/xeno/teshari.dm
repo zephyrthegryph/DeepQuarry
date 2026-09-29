@@ -6,6 +6,4 @@
 	item_state = "teshwrap"
 	shoes_under_pants = 1 //these are thin and wrapped around the leg, clothing would go over it
 
-/obj/item/clothing/shoes/footwraps/teshari/fit_constraint()
-	var/list/bodytypes = list(SPECIES_TESHARI)
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/shoes/footwraps/teshari, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_TESHARI))))

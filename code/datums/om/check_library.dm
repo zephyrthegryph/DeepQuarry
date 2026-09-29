@@ -200,7 +200,7 @@
 
 /datum/om/check/powered/why_not(datum/actor, datum/target)
 	var/obj/machinery/M = subject(actor, target)
-	if(!istype(M) || (M.stat & NOPOWER))
+	if(!istype(M) || (M.has_stat(NOPOWER)))
 		return "no power"
 
 /datum/om/check/holder_powered
@@ -209,7 +209,7 @@
 /datum/om/check/holder_powered/why_not(datum/actor, datum/target)
 	var/atom/movable/S = subject(actor, target)
 	var/obj/machinery/M = istype(S) ? S.loc : null
-	if(!istype(M) || (M.stat & NOPOWER))
+	if(!istype(M) || (M.has_stat(NOPOWER)))
 		return "no power"
 
 /datum/om/check/not_broken
@@ -217,7 +217,7 @@
 
 /datum/om/check/not_broken/why_not(datum/actor, datum/target)
 	var/obj/machinery/M = subject(actor, target)
-	if(istype(M) && (M.stat & BROKEN))
+	if(istype(M) && (M.has_stat(BROKEN)))
 		return "broken"
 
 /datum/om/check/panel_open

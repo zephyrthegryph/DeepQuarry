@@ -252,9 +252,6 @@ GLOBAL_LIST_INIT(construction_graphs, init_construction_graphs())
 	var/list/materials_out
 	/// Whether the wait scales with the tool's speed (a few old steps didn't).
 	var/tool_scaled = TRUE
-	/// Messages when a timed step starts. Tokens as for message_self.
-	var/start_self
-	var/start_others
 	/// Set on edges that need neither a tool nor an item (validate() allows them).
 	var/no_item_ok = FALSE
 	/// Items that stand in for `tool` (a plasma cutter for a welder). The tool clause is skipped for them;
@@ -345,9 +342,8 @@ GLOBAL_LIST_INIT(construction_graphs, init_construction_graphs())
 	var/sound = alt_sound(held)
 	if(sound && tool_volume)
 		playsound(target, sound, tool_volume, TRUE)
-	var/list/start = start_messages(actor, target, held)
 	return use_tool(actor, held, target, delay = alt_delay(actor, target, held), volume = 0,
-		message_self = fill_message(start?[1], actor, target), message_others = fill_message(start?[2], actor, target),
+		start_feedback = start_feedback_for(actor, target, held),
 		receiver = src, job_type = /datum/om/task/timed/tool_job/interaction, job_params = list("held" = held))
 
 /// Why `held` won't do for this edge's item, or null.
@@ -410,11 +406,6 @@ GLOBAL_VAR_INIT(dq_construction_instant, FALSE)
 	if(tool && tool_scaled)
 		return tool_delay(actor, held, duration, tool)
 	return duration
-
-/datum/interaction/construction/start_messages(mob/actor, atom/target, obj/item/held)
-	if(!start_self && !start_others)
-		return null
-	return list(start_self, start_others)
 
 /**
  * Runs the edge on `target` (the effect, after the cost is paid): takes the

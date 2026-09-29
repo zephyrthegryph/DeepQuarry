@@ -10,16 +10,13 @@
 	var/maximum_units = 12
 	var/base_price_multiplier = 1.25
 
-/datum/cargo_market_profile/proc/accepted_type_paths() as /list
-	return list()
-
-/datum/cargo_market_profile/proc/accepted_departments() as /list
-	return list()
+TYPE_TABLE_DECLARE(/datum/cargo_market_profile, accepted_type_paths, list())
+TYPE_TABLE_DECLARE(/datum/cargo_market_profile, accepted_departments, list())
 
 /datum/cargo_market_profile/proc/matches(obj/item)
 	if(!istype(item))
 		return FALSE
-	var/list/type_paths = accepted_type_paths()
+	var/list/type_paths = TYPE_TABLE_GET(src, accepted_type_paths)
 	if(length(type_paths))
 		var/type_match = FALSE
 		for(var/type_path in type_paths)
@@ -28,7 +25,7 @@
 				break
 		if(!type_match)
 			return FALSE
-	var/list/departments = accepted_departments()
+	var/list/departments = TYPE_TABLE_GET(src, accepted_departments)
 	if(length(departments) && !(item.economic_department in departments))
 		return FALSE
 	return length(type_paths) || item.economic_export_value > 0
@@ -41,9 +38,7 @@
 	maximum_units = 80
 	base_price_multiplier = 1.3
 
-/datum/cargo_market_profile/materials/accepted_type_paths()
-	var/static/list/paths = list(/obj/item/stack/material)
-	return paths
+TYPE_TABLE(/datum/cargo_market_profile/materials, accepted_type_paths, list(/obj/item/stack/material))
 
 /datum/cargo_market_profile/research_goods
 	id = "research_goods"
@@ -53,9 +48,7 @@
 	maximum_units = 8
 	base_price_multiplier = 1.45
 
-/datum/cargo_market_profile/research_goods/accepted_departments()
-	var/static/list/departments = list(DEPARTMENT_RESEARCH)
-	return departments
+TYPE_TABLE(/datum/cargo_market_profile/research_goods, accepted_departments, list(DEPARTMENT_RESEARCH))
 
 /datum/cargo_market_profile/engineering_goods
 	id = "engineering_goods"
@@ -65,9 +58,7 @@
 	maximum_units = 9
 	base_price_multiplier = 1.35
 
-/datum/cargo_market_profile/engineering_goods/accepted_departments()
-	var/static/list/departments = list(DEPARTMENT_ENGINEERING)
-	return departments
+TYPE_TABLE(/datum/cargo_market_profile/engineering_goods, accepted_departments, list(DEPARTMENT_ENGINEERING))
 
 /datum/cargo_market_profile/medical_goods
 	id = "medical_goods"
@@ -77,12 +68,10 @@
 	maximum_units = 10
 	base_price_multiplier = 1.5
 
-/datum/cargo_market_profile/medical_goods/accepted_type_paths()
-	var/static/list/paths = list(
-		/obj/item/organ/internal,
-		/obj/item/reagent_containers/glass/beaker/vial/vaccine,
-	)
-	return paths
+TYPE_TABLE(/datum/cargo_market_profile/medical_goods, accepted_type_paths, list( \
+		/obj/item/organ/internal, \
+		/obj/item/reagent_containers/glass/beaker/vial/vaccine, \
+	))
 
 /datum/cargo_market_profile/food
 	id = "food"
@@ -92,9 +81,7 @@
 	maximum_units = 18
 	base_price_multiplier = 1.3
 
-/datum/cargo_market_profile/food/accepted_type_paths()
-	var/static/list/paths = list(/obj/item/reagent_containers/food)
-	return paths
+TYPE_TABLE(/datum/cargo_market_profile/food, accepted_type_paths, list(/obj/item/reagent_containers/food))
 
 /datum/cargo_market_profile/weapons
 	id = "weapons"
@@ -104,13 +91,11 @@
 	maximum_units = 7
 	base_price_multiplier = 1.55
 
-/datum/cargo_market_profile/weapons/accepted_type_paths()
-	var/static/list/paths = list(
-		/obj/item/gun,
-		/obj/item/ammo_casing,
-		/obj/item/ammo_magazine,
-	)
-	return paths
+TYPE_TABLE(/datum/cargo_market_profile/weapons, accepted_type_paths, list( \
+		/obj/item/gun, \
+		/obj/item/ammo_casing, \
+		/obj/item/ammo_magazine, \
+	))
 
 /datum/cargo_market_profile/frontier_salvage
 	id = "frontier_salvage"
@@ -120,13 +105,11 @@
 	maximum_units = 12
 	base_price_multiplier = 1.4
 
-/datum/cargo_market_profile/frontier_salvage/accepted_type_paths()
-	var/static/list/paths = list(
-		/obj/item/salvage,
-		/obj/item/research_sample,
-		/obj/item/storage/sample_container,
-	)
-	return paths
+TYPE_TABLE(/datum/cargo_market_profile/frontier_salvage, accepted_type_paths, list( \
+		/obj/item/salvage, \
+		/obj/item/research_sample, \
+		/obj/item/storage/sample_container, \
+	))
 
 /datum/cargo_market_profile/general_manufactured
 	id = "general_manufactured"
@@ -151,17 +134,15 @@
 	var/legal_class = CARGO_MARKET_LEGAL_PUBLIC
 	var/active_cover_name
 
-/datum/cargo_market_counterparty/proc/seller_groups() as /list
-	return list()
+TYPE_TABLE_DECLARE(/datum/cargo_market_counterparty, seller_groups, list())
 
-/datum/cargo_market_counterparty/proc/buyer_profiles() as /list
-	return list()
+TYPE_TABLE_DECLARE(/datum/cargo_market_counterparty, buyer_profiles, list())
 
-/datum/cargo_market_counterparty/proc/cover_names() as /list
-	return list(name)
+/// Names a covert counterparty trades under (one is picked per rotation). Null: its own name.
+TYPE_TABLE_DECLARE(/datum/cargo_market_counterparty, cargo_cover_names, null)
 
 /datum/cargo_market_counterparty/proc/rotate_cover()
-	var/list/names = cover_names()
+	var/list/names = TYPE_TABLE_GET(src, cargo_cover_names)
 	active_cover_name = length(names) ? pick(names) : name
 
 /datum/cargo_market_counterparty/nanotrasen
@@ -172,13 +153,9 @@
 	seller_price_multiplier = 0.95
 	buyer_price_multiplier = 1.05
 
-/datum/cargo_market_counterparty/nanotrasen/seller_groups()
-	var/static/list/groups = list("Supplies", "Engineering", "Security", "Vendor Refills")
-	return groups
+TYPE_TABLE(/datum/cargo_market_counterparty/nanotrasen, seller_groups, list("Supplies", "Engineering", "Security", "Vendor Refills"))
 
-/datum/cargo_market_counterparty/nanotrasen/buyer_profiles()
-	var/static/list/profiles = list(/datum/cargo_market_profile/general_manufactured, /datum/cargo_market_profile/materials)
-	return profiles
+TYPE_TABLE(/datum/cargo_market_counterparty/nanotrasen, buyer_profiles, list(/datum/cargo_market_profile/general_manufactured, /datum/cargo_market_profile/materials))
 
 /datum/cargo_market_counterparty/solgov
 	id = "solgov_procurement"
@@ -186,13 +163,9 @@
 	faction_id = REPUTATION_FACTION_SOLGOV
 	description = "A regulated public-sector buyer and emergency-equipment supplier."
 
-/datum/cargo_market_counterparty/solgov/seller_groups()
-	var/static/list/groups = list("Security", "Medical", "Atmospherics")
-	return groups
+TYPE_TABLE(/datum/cargo_market_counterparty/solgov, seller_groups, list("Security", "Medical", "Atmospherics"))
 
-/datum/cargo_market_counterparty/solgov/buyer_profiles()
-	var/static/list/profiles = list(/datum/cargo_market_profile/medical_goods, /datum/cargo_market_profile/food)
-	return profiles
+TYPE_TABLE(/datum/cargo_market_counterparty/solgov, buyer_profiles, list(/datum/cargo_market_profile/medical_goods, /datum/cargo_market_profile/food))
 
 /datum/cargo_market_counterparty/chimera
 	id = "chimera_biologics"
@@ -202,13 +175,9 @@
 	seller_price_multiplier = 1.05
 	buyer_price_multiplier = 1.1
 
-/datum/cargo_market_counterparty/chimera/seller_groups()
-	var/static/list/groups = list("Hydroponics", "Medical")
-	return groups
+TYPE_TABLE(/datum/cargo_market_counterparty/chimera, seller_groups, list("Hydroponics", "Medical"))
 
-/datum/cargo_market_counterparty/chimera/buyer_profiles()
-	var/static/list/profiles = list(/datum/cargo_market_profile/medical_goods, /datum/cargo_market_profile/food)
-	return profiles
+TYPE_TABLE(/datum/cargo_market_counterparty/chimera, buyer_profiles, list(/datum/cargo_market_profile/medical_goods, /datum/cargo_market_profile/food))
 
 /datum/cargo_market_counterparty/eclipse
 	id = "eclipse_acquisitions"
@@ -219,13 +188,9 @@
 	buyer_price_multiplier = 1.15
 	legal_class = CARGO_MARKET_LEGAL_RESTRICTED
 
-/datum/cargo_market_counterparty/eclipse/seller_groups()
-	var/static/list/groups = list("Science", "Robotics", "Munitions")
-	return groups
+TYPE_TABLE(/datum/cargo_market_counterparty/eclipse, seller_groups, list("Science", "Robotics", "Munitions"))
 
-/datum/cargo_market_counterparty/eclipse/buyer_profiles()
-	var/static/list/profiles = list(/datum/cargo_market_profile/research_goods, /datum/cargo_market_profile/weapons)
-	return profiles
+TYPE_TABLE(/datum/cargo_market_counterparty/eclipse, buyer_profiles, list(/datum/cargo_market_profile/research_goods, /datum/cargo_market_profile/weapons))
 
 /datum/cargo_market_counterparty/syndicate
 	id = "syndicate_brokerage"
@@ -238,23 +203,17 @@
 	allows_contraband = TRUE
 	legal_class = CARGO_MARKET_LEGAL_COVERT
 
-/datum/cargo_market_counterparty/syndicate/cover_names()
-	var/static/list/names = list(
-		"Grey Meridian Medical",
-		"Helix Transit Cooperative",
-		"Kestrel Industrial Recovery",
-		"Orpheus Research Brokerage",
-		"Redwood Frontier Logistics",
-	)
-	return names
+TYPE_TABLE(/datum/cargo_market_counterparty/syndicate, cargo_cover_names, list( \
+	"Grey Meridian Medical", \
+	"Helix Transit Cooperative", \
+	"Kestrel Industrial Recovery", \
+	"Orpheus Research Brokerage", \
+	"Redwood Frontier Logistics", \
+))
 
-/datum/cargo_market_counterparty/syndicate/seller_groups()
-	var/static/list/groups = list("Munitions", "Miscellaneous", "Supplies")
-	return groups
+TYPE_TABLE(/datum/cargo_market_counterparty/syndicate, seller_groups, list("Munitions", "Miscellaneous", "Supplies"))
 
-/datum/cargo_market_counterparty/syndicate/buyer_profiles()
-	var/static/list/profiles = list(/datum/cargo_market_profile/weapons, /datum/cargo_market_profile/research_goods, /datum/cargo_market_profile/medical_goods)
-	return profiles
+TYPE_TABLE(/datum/cargo_market_counterparty/syndicate, buyer_profiles, list(/datum/cargo_market_profile/weapons, /datum/cargo_market_profile/research_goods, /datum/cargo_market_profile/medical_goods))
 
 /datum/cargo_market_counterparty/traders_guild
 	id = "itg_exchange"
@@ -264,13 +223,9 @@
 	seller_price_multiplier = 0.9
 	buyer_price_multiplier = 1.1
 
-/datum/cargo_market_counterparty/traders_guild/seller_groups()
-	var/static/list/groups = list("Miscellaneous", "Materials", "Recreation", "Costumes")
-	return groups
+TYPE_TABLE(/datum/cargo_market_counterparty/traders_guild, seller_groups, list("Miscellaneous", "Materials", "Recreation", "Costumes"))
 
-/datum/cargo_market_counterparty/traders_guild/buyer_profiles()
-	var/static/list/profiles = list(/datum/cargo_market_profile/general_manufactured, /datum/cargo_market_profile/frontier_salvage)
-	return profiles
+TYPE_TABLE(/datum/cargo_market_counterparty/traders_guild, buyer_profiles, list(/datum/cargo_market_profile/general_manufactured, /datum/cargo_market_profile/frontier_salvage))
 
 /datum/cargo_market_counterparty/talon
 	id = "talon_outfitters"
@@ -278,13 +233,9 @@
 	faction_id = REPUTATION_FACTION_TALON
 	description = "A frontier outfitter trading in field equipment, salvage, and expedition supplies."
 
-/datum/cargo_market_counterparty/talon/seller_groups()
-	var/static/list/groups = list("Hardsuits", "Voidsuits", "Engineering", "Atmospherics")
-	return groups
+TYPE_TABLE(/datum/cargo_market_counterparty/talon, seller_groups, list("Hardsuits", "Voidsuits", "Engineering", "Atmospherics"))
 
-/datum/cargo_market_counterparty/talon/buyer_profiles()
-	var/static/list/profiles = list(/datum/cargo_market_profile/frontier_salvage, /datum/cargo_market_profile/engineering_goods)
-	return profiles
+TYPE_TABLE(/datum/cargo_market_counterparty/talon, buyer_profiles, list(/datum/cargo_market_profile/frontier_salvage, /datum/cargo_market_profile/engineering_goods))
 
 /datum/cargo_market_counterparty/workers_union
 	id = "union_cooperative"
@@ -293,13 +244,9 @@
 	description = "A worker-owned purchasing cooperative focused on tools, provisions, and locally made goods."
 	seller_price_multiplier = 0.95
 
-/datum/cargo_market_counterparty/workers_union/seller_groups()
-	var/static/list/groups = list("Materials", "Supplies", "Hospitality")
-	return groups
+TYPE_TABLE(/datum/cargo_market_counterparty/workers_union, seller_groups, list("Materials", "Supplies", "Hospitality"))
 
-/datum/cargo_market_counterparty/workers_union/buyer_profiles()
-	var/static/list/profiles = list(/datum/cargo_market_profile/food, /datum/cargo_market_profile/engineering_goods, /datum/cargo_market_profile/general_manufactured)
-	return profiles
+TYPE_TABLE(/datum/cargo_market_counterparty/workers_union, buyer_profiles, list(/datum/cargo_market_profile/food, /datum/cargo_market_profile/engineering_goods, /datum/cargo_market_profile/general_manufactured))
 
 /datum/cargo_market_counterparty/veymed
 	id = "veymed_distribution"
@@ -309,13 +256,9 @@
 	seller_price_multiplier = 1.05
 	buyer_price_multiplier = 1.15
 
-/datum/cargo_market_counterparty/veymed/seller_groups()
-	var/static/list/groups = list("Medical", "Robotics")
-	return groups
+TYPE_TABLE(/datum/cargo_market_counterparty/veymed, seller_groups, list("Medical", "Robotics"))
 
-/datum/cargo_market_counterparty/veymed/buyer_profiles()
-	var/static/list/profiles = list(/datum/cargo_market_profile/medical_goods, /datum/cargo_market_profile/research_goods)
-	return profiles
+TYPE_TABLE(/datum/cargo_market_counterparty/veymed, buyer_profiles, list(/datum/cargo_market_profile/medical_goods, /datum/cargo_market_profile/research_goods))
 
 /datum/cargo_market_listing
 	var/id
@@ -337,7 +280,7 @@
 	var/fulfilled_units = 0
 	var/price_multiplier = 1
 	var/expires_at = 0
-	var/completed_at = 0
+	EXPIRY_DECLARE(completed_at)
 	var/cover_name
 	var/reservation_key
 	var/reserved_account = 0
@@ -355,7 +298,7 @@
 	var/value = 0
 	var/account_number = 0
 	var/principal_account = 0
-	var/occurred_at = 0
+	EXPIRY_DECLARE(occurred_at)
 	var/covert = FALSE
 	var/trace_strength = 0
 	var/detected = FALSE
@@ -399,7 +342,7 @@
 	var/list/market_bids
 	var/list/market_transactions
 	var/next_market_id = 1
-	TIMESTAMP_VAR(next_market_refresh)
+	EXPIRY_DECLARE(next_market_refresh)
 	var/market_generation = 0
 
 /datum/world_service/supply/proc/initialize_cargo_market()
@@ -446,12 +389,12 @@
 	var/list/listing_ids = market_listings?.Copy()
 	for(var/listing_id in listing_ids)
 		var/datum/cargo_market_listing/existing_listing = market_listings?[listing_id]
-		if(!(existing_listing.reservation_key && existing_listing.stock > 0 && world.time < existing_listing.expires_at))
+		if(!(existing_listing.reservation_key && existing_listing.stock > 0 && BEFORE(src, existing_listing.expires_at, CLOCK_WORLD)))
 			own_put(src, "market_listings", listing_id, null) // disposes of the owned listing
 	var/list/bid_ids = market_bids?.Copy()
 	for(var/bid_id in bid_ids)
 		var/datum/cargo_market_bid/existing_bid = market_bids?[bid_id]
-		if(!(existing_bid.reservation_key && !existing_bid.completed_at && world.time < existing_bid.expires_at))
+		if(!(existing_bid.reservation_key && !existing_bid.completed_at && BEFORE(src, existing_bid.expires_at, CLOCK_WORLD)))
 			own_put(src, "market_bids", bid_id, null) // disposes of the owned bid
 	market_generation++
 	var/expiry = world.time + CARGO_MARKET_REFRESH_INTERVAL
@@ -459,7 +402,7 @@
 		var/datum/cargo_market_counterparty/counterparty = market_counterparties?[counterparty_id]
 		counterparty.rotate_cover()
 		var/list/eligible_packs = list()
-		var/list/groups = counterparty.seller_groups()
+		var/list/groups = TYPE_TABLE_GET(counterparty, seller_groups)
 		for(var/pack_name in supply_pack)
 			var/datum/supply_pack/pack = supply_pack[pack_name]
 			if(!(pack.group in groups) || (!counterparty.allows_contraband && pack.contraband))
@@ -476,7 +419,7 @@
 			listing.expires_at = expiry
 			listing.cover_name = counterparty.active_cover_name
 			own_put(src, "market_listings", listing.id, listing)
-		var/list/profile_paths = counterparty.buyer_profiles().Copy()
+		var/list/profile_paths = TYPE_TABLE_COPY(counterparty, buyer_profiles)
 		for(var/bid_index in 1 to min(CARGO_MARKET_BIDS_PER_PARTY, length(profile_paths)))
 			var/profile_path = pick_n_take(profile_paths)
 			var/datum/cargo_market_profile/profile = new profile_path
@@ -492,7 +435,7 @@
 	next_market_refresh = expiry
 
 /datum/world_service/supply/proc/process_cargo_market()
-	if(world.time >= next_market_refresh)
+	if(!BEFORE(src, next_market_refresh, CLOCK_WORLD))
 		refresh_cargo_market()
 
 /datum/world_service/supply/proc/market_counterparty_visible(datum/cargo_market_counterparty/counterparty, mob/living/user, console_unlocked = FALSE)
@@ -554,7 +497,7 @@
 
 /datum/world_service/supply/proc/request_market_order(datum/cargo_market_listing/listing, mob/living/user, reason, console_unlocked = FALSE, personal_funding = FALSE, contract_funding = FALSE)
 	var/datum/cargo_market_counterparty/counterparty = market_counterparties?[listing?.counterparty_id]
-	if(!listing || listing.retired || !counterparty || listing.stock <= 0 || world.time >= listing.expires_at || !market_counterparty_access(counterparty, user, console_unlocked) || !market_reserved_access(listing.reserved_account, user, listing.reservation_key))
+	if(!listing || listing.retired || !counterparty || listing.stock <= 0 || !BEFORE(src, listing.expires_at, CLOCK_WORLD) || !market_counterparty_access(counterparty, user, console_unlocked) || !market_reserved_access(listing.reserved_account, user, listing.reservation_key))
 		return FALSE
 	var/datum/contract/faction_agent/funding_contract
 	if(contract_funding)
@@ -610,7 +553,7 @@
 	if(!order?.market_stock_reserved)
 		return FALSE
 	var/datum/cargo_market_listing/listing = market_listing(order.market_listing_id)
-	if(listing && !listing.retired && world.time < listing.expires_at)
+	if(listing && !listing.retired && BEFORE(src, listing.expires_at, CLOCK_WORLD))
 		listing.stock++
 	order.market_stock_reserved = FALSE
 	return TRUE
@@ -660,7 +603,7 @@
 	transaction.description = description
 	transaction.value = max(0, round(value))
 	transaction.account_number = account_number
-	transaction.occurred_at = world.time
+	EXPIRY_STAMP(transaction, occurred_at, CLOCK_WORLD)
 	transaction.reservation_key = reservation_key
 	var/datum/cargo_market_counterparty/counterparty = market_counterparties?[counterparty_id]
 	var/datum/contract/faction_agent/agent_contract = SScontracts?.agent_contract_for_market_key(reservation_key)
@@ -682,7 +625,7 @@
 		return FALSE
 	var/datum/cargo_market_bid/bid = market_bid(export.market_bid_id)
 	var/datum/cargo_market_counterparty/counterparty = market_counterparties?[bid?.counterparty_id]
-	if(!bid || !counterparty || bid.completed_at || world.time >= bid.expires_at || !bid.profile.matches(item))
+	if(!bid || !counterparty || bid.completed_at || !BEFORE(src, bid.expires_at, CLOCK_WORLD) || !bid.profile.matches(item))
 		return FALSE
 	var/reported_quantity = export_row["quantity"]
 	var/quantity = isnum(reported_quantity) ? max(1, reported_quantity) : 1
@@ -733,7 +676,7 @@
 		"detail" = "An external buyer accepted [item.name] against [bid.profile.name].",
 	), "market-export:[REF(item)]:[bid.id]", item)
 	if(bid.fulfilled_units >= bid.target_units && !bid.completed_at)
-		bid.completed_at = world.time
+		EXPIRY_STAMP(bid, completed_at, CLOCK_WORLD)
 		adjust_station_faction_reputation(counterparty.faction_id, 2)
 		adjust_department_faction_reputation(DEPARTMENT_CARGO, counterparty.faction_id, 6)
 		if(export.market_router_account)
@@ -756,7 +699,7 @@
 		return TRUE
 	var/datum/cargo_market_bid/bid = market_bid(bid_id)
 	var/datum/cargo_market_counterparty/counterparty = market_counterparties?[bid?.counterparty_id]
-	if(!bid || bid.reservation_key || bid.completed_at || world.time >= bid.expires_at || !market_counterparty_access(counterparty, user, console_unlocked) || !market_reserved_access(bid.reserved_account, user, bid.reservation_key))
+	if(!bid || bid.reservation_key || bid.completed_at || !BEFORE(src, bid.expires_at, CLOCK_WORLD) || !market_counterparty_access(counterparty, user, console_unlocked) || !market_reserved_access(bid.reserved_account, user, bid.reservation_key))
 		return FALSE
 	crate.cargo_market_bid_id = bid.id
 	crate.cargo_market_router_account = contract_account_for_mob(user)?.account_number || 0
@@ -776,7 +719,7 @@
 
 /datum/world_service/supply/proc/create_reserved_market_listing(datum/cargo_market_counterparty/counterparty, reserved_account, reservation_key, expires_at, excluded_group)
 	var/list/eligible_packs = list()
-	var/list/groups = counterparty.seller_groups()
+	var/list/groups = TYPE_TABLE_GET(counterparty, seller_groups)
 	for(var/pack_name in supply_pack)
 		var/datum/supply_pack/pack = supply_pack[pack_name]
 		if((excluded_group && pack.group == excluded_group) || !(pack.group in groups) || (!counterparty.allows_contraband && pack.contraband))
@@ -825,7 +768,7 @@
 			break
 	if(!counterparty)
 		return FALSE
-	var/expiry = contract.deadline > world.time ? contract.deadline : world.time + 30 MINUTES
+	var/expiry = BEFORE(src, contract.deadline, CLOCK_WORLD) ? contract.deadline : world.time + 30 MINUTES
 	var/needs_purchase_route = FALSE
 	var/needs_export_route = FALSE
 	for(var/datum/contract_requirement/requirement in contract.requirements)
@@ -860,7 +803,7 @@
 			continue
 		var/datum/cargo_market_bid/bid = market_bids?[market_id]
 		if(bid)
-			bid.completed_at = world.time
+			EXPIRY_STAMP(bid, completed_at, CLOCK_WORLD)
 			bid.reservation_key = null
 			bid.reserved_account = 0
 			bid.expires_at = min(bid.expires_at, next_market_refresh)
@@ -988,7 +931,7 @@
 	for(var/listing_id in market_listings)
 		var/datum/cargo_market_listing/listing = market_listings?[listing_id]
 		var/datum/cargo_market_counterparty/counterparty = market_counterparties?[listing.counterparty_id]
-		if(listing.retired || listing.stock <= 0 || world.time >= listing.expires_at || !market_counterparty_visible(counterparty, user, console_unlocked) || !market_reserved_access(listing.reserved_account, user, listing.reservation_key))
+		if(listing.retired || listing.stock <= 0 || !BEFORE(src, listing.expires_at, CLOCK_WORLD) || !market_counterparty_visible(counterparty, user, console_unlocked) || !market_reserved_access(listing.reserved_account, user, listing.reservation_key))
 			continue
 		var/can_access_listing = market_counterparty_access(counterparty, user, console_unlocked)
 		var/datum/contract/faction_agent/funding_contract = market_contract_funding(listing.reservation_key, user, listing.unit_price)
@@ -1012,7 +955,7 @@
 	for(var/bid_id in market_bids)
 		var/datum/cargo_market_bid/bid = market_bids?[bid_id]
 		var/datum/cargo_market_counterparty/counterparty = market_counterparties?[bid.counterparty_id]
-		if(bid.completed_at || bid.remaining_units() <= 0 || world.time >= bid.expires_at || !market_counterparty_visible(counterparty, user, console_unlocked) || !market_reserved_access(bid.reserved_account, user, bid.reservation_key))
+		if(bid.completed_at || bid.remaining_units() <= 0 || !BEFORE(src, bid.expires_at, CLOCK_WORLD) || !market_counterparty_visible(counterparty, user, console_unlocked) || !market_reserved_access(bid.reserved_account, user, bid.reservation_key))
 			continue
 		bids.Add(list(list(
 			"id" = bid.id,
@@ -1058,7 +1001,7 @@
 				var/datum/cargo_market_bid/assigned_bid = market_bid(crate.cargo_market_bid_id)
 				var/datum/cargo_market_counterparty/assigned_counterparty = market_counterparties?[assigned_bid?.counterparty_id]
 				var/assigned_visible = assigned_bid && assigned_counterparty && market_counterparty_visible(assigned_counterparty, user, console_unlocked)
-				var/assigned_active = assigned_visible && market_reserved_access(assigned_bid.reserved_account, user, assigned_bid.reservation_key) && !assigned_bid.completed_at && world.time < assigned_bid.expires_at
+				var/assigned_active = assigned_visible && market_reserved_access(assigned_bid.reserved_account, user, assigned_bid.reservation_key) && !assigned_bid.completed_at && BEFORE(src, assigned_bid.expires_at, CLOCK_WORLD)
 				outbound_crates.Add(list(list(
 					"ref" = REF(crate),
 					"name" = crate.name,

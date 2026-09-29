@@ -42,6 +42,8 @@
 	qdel(old_stock)
 	return replacement
 
+OWN_TIMER(/obj/machinery/material_furnace, firing_timer)
+
 /obj/machinery/material_furnace
 	name = "controlled-atmosphere alloy furnace"
 	desc = "A sealed furnace for melting, alloying, and heat-treating material sheets. Click it to fire a loaded charge or collect its finished alloy."
@@ -57,7 +59,6 @@
 	var/list/carbon_feed
 	var/tmp/obj/item/stack/material/processed_alloy/output_stock
 	var/firing = FALSE
-	var/firing_timer
 	var/datum/gas_mixture/chamber_air
 
 // The unfired charge sits in the furnace's contents until it is fired or unloaded.
@@ -194,7 +195,7 @@ DECLARE_REAGENTS(/obj/machinery/material_furnace, 120, null)
 	if(!LAZYLEN(feedstock))
 		to_chat(user, span_notice("The furnace is empty. Load material sheets before firing it."))
 		return TRUE
-	if(stat & (BROKEN | NOPOWER))
+	if(!operable())
 		to_chat(user, span_warning("The furnace has no power or requires repairs."))
 		return TRUE
 	firing = TRUE
@@ -205,7 +206,7 @@ DECLARE_REAGENTS(/obj/machinery/material_furnace, 120, null)
 		chamber_air.react()
 	set_light(3, 3, "#ff7b22")
 	visible_message(span_notice("[src] seals its chamber and begins heating the charge."))
-	firing_timer = om_after(src, 6 SECONDS, PROC_REF(finish_firing))
+	om_after_slot(src, "firing_timer", 6 SECONDS, PROC_REF(finish_firing))
 	return TRUE
 
 /// The old "Eject contents" object verb.
@@ -246,7 +247,6 @@ DECLARE_REAGENTS(/obj/machinery/material_furnace, 120, null)
 		unload_charge(user)
 
 /obj/machinery/material_furnace/proc/finish_firing()
-	firing_timer = null
 	firing = FALSE
 	icon_state = "nt_cruciforge"
 	set_light(0)

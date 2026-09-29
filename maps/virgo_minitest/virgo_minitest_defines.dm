@@ -20,6 +20,8 @@
 	// Minimal CI harness, not a complete station — skip the whole-station APC/vent/
 	// scrubber-coverage and wiring validity tests (they run against the live map).
 	skip_map_validity_tests = TRUE
+	// The test types exist only in unit-test builds (a plain -DCITESTING compile has none).
+#ifdef UNIT_TESTS
 	skipped_tests = list(
 		/datum/unit_test/dq_arrivals_shuttle_preserves_air,
 		/datum/unit_test/dq_escape_shuttle_preserves_air,
@@ -28,6 +30,7 @@
 		/datum/unit_test/dq_station_flight_never_substitutes_carrier_port,
 		/datum/unit_test/dq_southern_cross_berth_fits_every_expedition_craft,
 	)
+#endif
 
 	station_name  = "NSS Ade-testing"
 	station_short = "VORE-testing"

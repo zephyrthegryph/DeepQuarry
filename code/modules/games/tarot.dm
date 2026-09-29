@@ -35,7 +35,7 @@
 			if(prob(50))
 				P.name += " reversed"
 			own_add(src, "cards", P)
-		playsound(src, 'sound/items/cardshuffle.ogg', 50, 1)
+		play_sfx(src, SFX_ITEMS_CARDSHUFFLE)
 		user.visible_message("\The [user] shuffles [src].")
 		COOLDOWN_START(src, shuffle_cooldown, 1 SECOND)
 	else
@@ -89,7 +89,7 @@
 			if(prob(50))
 				P.name += " reversed"
 			own_add(src, "cards", P)
-		playsound(src, 'sound/items/cardshuffle.ogg', 50, 1)
+		play_sfx(src, SFX_ITEMS_CARDSHUFFLE)
 		user.visible_message("\The [user] shuffles [src].")
 		COOLDOWN_START(src, shuffle_cooldown, 1 SECOND)
 	else

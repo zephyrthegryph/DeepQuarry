@@ -104,7 +104,7 @@
 		if(user.ckey != owner_ckey) //ERROR: UNAUTHORIZED USER
 			to_chat(user, span_warning("You probably shouldn't mess with all these strange tools and parts...")) //give them a slightly fluffy explanation as to why it didn't work
 			return
-	playsound(src, 'sound/items/Screwdriver.ogg', 100, 1)
+	play_sfx(src, SFX_ITEMS_SCREWDRIVER, 2)
 	var/obj/N = new to_type(O.loc)
 	user.visible_message(span_notice("[user] opens \the [src] and modifies \the [O] into \the [N]."),span_notice("You open \the [src] and modify \the [O] into \the [N]."))
 
@@ -174,13 +174,13 @@
 	sharp = TRUE
 	edge = TRUE
 	injury_kind = INJURY_CUT
-	hitsound = 'sound/weapons/bladeslice.ogg'
+	hitsound = SFX_WEAPONS_BLADESLICE
 
 /obj/item/sword/fluff/joanaria/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 
 	if(default_parry_check(user, attacker, damage_source) && prob(75))
 		user.visible_message(span_danger("\The [user] parries [attack_text] with \the [src]!"))
-		playsound(src, 'sound/weapons/punchmiss.ogg', 50, 1)
+		play_sfx(src, SFX_WEAPONS_PUNCHMISS, 2, extrarange = 0)
 		return 1
 	return 0
 
@@ -193,7 +193,7 @@
 
 	if(default_parry_check(user, attacker, damage_source) && prob(75))
 		user.visible_message(span_danger("\The [user] parries [attack_text] with \the [src]!"))
-		playsound(src, 'sound/weapons/punchmiss.ogg', 50, 1)
+		play_sfx(src, SFX_WEAPONS_PUNCHMISS, 2, extrarange = 0)
 		return 1
 	return 0
 
@@ -401,7 +401,7 @@ EXTEND_INTERACTIONS(/obj/item/flag, INTERACT_USE("Wave", PROC_REF(flag_wave_self
 	var/new_icon = "mime"
 	if(istype(O,/obj/item/card/id) && O.icon_state != new_icon)
 		O.icon_state = new_icon // Changes the icon without changing the access.
-		playsound(src, 'sound/items/polaroid2.ogg', 100, 1)
+		play_sfx(src, SFX_ITEMS_POLAROID2, 2)
 		user.visible_message(span_warning(" [user] reprints their ID."))
 		consume(src, user)
 	else if(O.icon_state == new_icon)
@@ -461,8 +461,7 @@ EXTEND_INTERACTIONS(/obj/item/card/id/centcom/station/fluff/aronai, INTERACT_SEL
 	item_state = "serdy_armor"
 	body_parts_covered = CHEST|LEGS|ARMS //It's a full body suit, minus hands and feet. Arms and legs should be protected, not just the torso. Retains normal security armor values still.
 
-/obj/item/clothing/suit/armor/vest/wolftaur/serdy/fit_constraint()
-	return null
+TYPE_TABLE(/obj/item/clothing/suit/armor/vest/wolftaur/serdy, fit_spec, null)
 
 /obj/item/clothing/head/serdyhelmet //SilencedMP5A5's specialty helmet.
 	name = "custom security helmet"
@@ -479,7 +478,7 @@ EXTEND_INTERACTIONS(/obj/item/card/id/centcom/station/fluff/aronai, INTERACT_SEL
 	siemens_coefficient = 0.7
 	w_class = ITEMSIZE_NORMAL
 	ear_protection = 1
-	drop_sound = 'sound/items/drop/helm.ogg'
+	drop_sound = SFX_ITEMS_DROP_HELM
 
 //SilencedMP5A5:Serdykov Antoz
 /obj/item/modkit_conversion/fluff/serdykit
@@ -643,9 +642,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/khcrystal, INTERACT_SELF
 	max_storage_space = ITEMSIZE_COST_SMALL * 2
 	w_class = ITEMSIZE_SMALL
 
-/obj/item/storage/box/khcrystal/hold_constraint()
-	var/list/holds = list(/obj/item/paper/khcrystal_manual, /obj/item/clothing/accessory/collar/khcrystal)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage/box/khcrystal, hold_spec, list(HOLD_ONLY(list(/obj/item/paper/khcrystal_manual, /obj/item/clothing/accessory/collar/khcrystal)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 /obj/item/storage/box/khcrystal/Initialize(mapload)
 	. = ..()
@@ -684,7 +681,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/khcrystal, INTERACT_SELF
 		O.icon = new_icon
 		O.icon_state = new_icon_state // Changes the icon without changing the access.
 		O.desc = new_desc
-		playsound(src, 'sound/items/polaroid2.ogg', 100, 1)
+		play_sfx(src, SFX_ITEMS_POLAROID2, 2)
 		user.visible_message(span_warning(" [user] reprints their ID."))
 		consume(src, user)
 	else if(O.icon_state == new_icon)
@@ -719,7 +716,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/khcrystal, INTERACT_SELF
 	var/ambulance = FALSE
 	var/datum/looping_sound/ambulance/soundloop
 	var/ambulance_state = FALSE
-	var/ambulance_last_switch = 0
+	EXPIRY_DECLARE(ambulance_last_switch)
 
 /obj/item/storage/backpack/saddlebag/tempest/Initialize(mapload)
 	soundloop = new(list(src), FALSE)
@@ -751,7 +748,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/khcrystal, INTERACT_SELF
 	if(!ambulance)
 		om_task_periodic_stop(src)
 		return
-	if(world.time - ambulance_last_switch > 15)
+	if(ELAPSED(src, ambulance_last_switch, CLOCK_WORLD) > 1.5 SECONDS)
 		ambulance_state = !(ambulance_state)
 		var/newlight = "#FF0000"
 		if(ambulance_state)
@@ -760,7 +757,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/khcrystal, INTERACT_SELF
 			var/mob/M = loc
 			M.update_inv_back()
 		set_light(2, 1, newlight)
-		ambulance_last_switch = world.time
+		EXPIRY_STAMP(src, ambulance_last_switch, CLOCK_WORLD)
 */ //ChompREMOVE End
 
 /datum/looping_sound/ambulance
@@ -990,7 +987,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/melee/baton/fluff/stunstaff, "bcell", /obj/item/
 /obj/item/melee/baton/fluff/stunstaff/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	if(wielded && default_parry_check(user, attacker, damage_source) && prob(30))
 		user.visible_message(span_danger("\The [user] parries [attack_text] with \the [src]!"))
-		playsound(src, 'sound/weapons/punchmiss.ogg', 50, 1)
+		play_sfx(src, SFX_WEAPONS_PUNCHMISS, 2, extrarange = 0)
 		return 1
 	return 0
 
@@ -1018,9 +1015,9 @@ EXTEND_INTERACTIONS(/obj/item/melee/baton/fluff/stunstaff, INTERACT_SELF("Toggle
 		status = !status
 		to_chat(user, span_notice("[src] is now [status ? "on" : "off"]."))
 		if(status == 0)
-			playsound(src, 'sound/weapons/saberoff.ogg', 50, 1)
+			play_sfx(src, SFX_WEAPONS_SABEROFF)
 		else
-			playsound(src, 'sound/weapons/saberon.ogg', 50, 1)
+			play_sfx(src, SFX_WEAPONS_SABERON)
 	else
 		status = 0
 		to_chat(user, span_warning("[src] is out of charge."))
@@ -1038,9 +1035,7 @@ EXTEND_INTERACTIONS(/obj/item/melee/baton/fluff/stunstaff, INTERACT_SELF("Toggle
 	w_class = ITEMSIZE_HUGE
 	max_storage_space = 16
 
-/obj/item/storage/backpack/fluff/stunstaff/hold_constraint()
-	var/list/holds = list(/obj/item/melee/baton/fluff/stunstaff)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_HUGE))
+TYPE_TABLE(/obj/item/storage/backpack/fluff/stunstaff, hold_spec, list(HOLD_ONLY(list(/obj/item/melee/baton/fluff/stunstaff)), HOLD_MAX_SIZE(ITEMSIZE_HUGE)))
 
 /obj/item/storage/backpack/fluff/stunstaff/Initialize(mapload)
 	. = ..()
@@ -1068,12 +1063,12 @@ EXTEND_INTERACTIONS(/obj/item/melee/baton/fluff/stunstaff, INTERACT_SELF("Toggle
 	sharp = TRUE
 	edge = TRUE
 	w_class = active_w_class
-	playsound(src, 'sound/weapons/sparkle.ogg', 50, 1)
+	play_sfx(src, SFX_WEAPONS_SPARKLE)
 
 /obj/item/melee/fluffstuff/proc/deactivate(mob/living/user)
 	if(!active)
 		return
-	playsound(src, 'sound/weapons/sparkle.ogg', 50, 1)
+	play_sfx(src, SFX_WEAPONS_SPARKLE)
 	active = 0
 	embed_chance = initial(embed_chance)
 	force = initial(force)
@@ -1122,9 +1117,7 @@ EXTEND_INTERACTIONS(/obj/item/melee/fluffstuff, INTERACT_USE("Toggle", PROC_REF(
 	var/active_state = "wolfgirlsword"
 	injury_kind = INJURY_PAIN
 
-/obj/item/melee/fluffstuff/wolfgirlsword/suit_storage_constraint()
-	var/list/stores = list(/obj/item/shield/fluff/wolfgirlshield)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/melee/fluffstuff/wolfgirlsword, suit_storage_spec, list(HOLD_ONLY(list(/obj/item/shield/fluff/wolfgirlshield))))
 
 /obj/item/melee/fluffstuff/wolfgirlsword/dropped(mob/user, equipping, slot)
 	..()
@@ -1220,8 +1213,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/flask/vacuumflask/fluf
 	icon_override = 'icons/vore/custom_clothes_vr.dmi'
 	icon_state = "tiemgogs"
 
-/obj/item/clothing/glasses/welding/tiemgogs/equip_constraint()
-	return dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/glasses/welding/tiemgogs/proc/owner_fit, "these don't look like they were made to fit you")))
+TYPE_TABLE(/obj/item/clothing/glasses/welding/tiemgogs, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/glasses/welding/tiemgogs/proc/owner_fit, "these don't look like they were made to fit you"))))
 
 /obj/item/clothing/glasses/welding/tiemgogs/proc/owner_fit(mob/living/carbon/human/H)
 	return H?.ckey == "radiantaurora"
@@ -1250,9 +1242,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/flask/vacuumflask/fluf
 	glove_type = null
 	boot_type = null
 
-/obj/item/rig/nikki/suit_storage_constraint()
-	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_STORAGE)
-	return list(HOLD_ONLY(stores))
+TYPE_TABLE(/obj/item/rig/nikki, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_STORAGE))))
 
 EXTEND_INTERACTIONS(/obj/item/rig/nikki, INTERACT_ITEM(null, PROC_REF(nikki_rig_module_item)))
 
@@ -1263,8 +1253,7 @@ EXTEND_INTERACTIONS(/obj/item/rig/nikki, INTERACT_ITEM(null, PROC_REF(nikki_rig_
 		return TRUE
 	return FALSE
 
-/obj/item/rig/nikki/equip_constraint()
-	return dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/rig/nikki/proc/owner_fit, "the necklace never quite gets past your head")))
+TYPE_TABLE(/obj/item/rig/nikki, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/rig/nikki/proc/owner_fit, "the necklace never quite gets past your head"))))
 
 /obj/item/rig/nikki/proc/owner_fit(mob/living/carbon/human/H)
 	return H?.ckey == "ryumi"
@@ -1340,9 +1329,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/glass2/fluff/claraflas
 	w_class = ITEMSIZE_TINY
 	starts_with = list(/obj/item/clothing/mask/smokable/cigarette = 7)
 
-/obj/item/storage/fancy/fluff/charlotte/hold_constraint()
-	var/list/holds = list(/obj/item/clothing/mask/smokable/cigarette, /obj/item/flame/lighter, /obj/item/trash/cigbutt)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage/fancy/fluff/charlotte, hold_spec, list(HOLD_ONLY(list(/obj/item/clothing/mask/smokable/cigarette, /obj/item/flame/lighter, /obj/item/trash/cigbutt)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 /obj/item/storage/fancy/fluff/charlotte/Initialize(mapload)
 	if(!open_state)
@@ -1528,7 +1515,7 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/fluff/seona_mofuorb, INTERACT_SELF_AS(
 		om_task_timed(user, 1 SECOND, src, src, PROC_REF(search_done), list(user), claims = TRUE)
 		return
 
-	if(world.time - last_message <= 5 SECONDS)
+	if(ELAPSED(src, last_message, CLOCK_WORLD) <= 5 SECONDS)
 		return
 	if(interaction.stance == I_HELP)
 		user.visible_message(span_notice(span_bold("\The [user]") + " hugs [src]!"),span_notice("You hug [src]!"))
@@ -1542,9 +1529,9 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/fluff/seona_mofuorb, INTERACT_SELF_AS(
 	else
 		user.visible_message(span_notice(span_bold("\The [user]") + " pokes [src]."),span_notice("You poke [src]."))
 		icon_state = "pandorba_d"
-		playsound(src, 'sound/items/drop/plushie.ogg', 25, 0)
+		play_sfx(src, SFX_ITEMS_DROP_PLUSHIE, 0.5, vary = FALSE)
 		visible_message("[src] says, \"[pokephrase]\"")
-	last_message = world.time
+	EXPIRY_STAMP(src, last_message, CLOCK_WORLD)
 
 //Yeehawguvnah - Cephyra
 
@@ -1597,8 +1584,7 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/fluff/seona_mofuorb, INTERACT_SELF_AS(
 	slot_flags = SLOT_MASK | SLOT_OCLOTHING
 	replacementType = /obj/item/remote_scene_tool/tally_doll
 
-/obj/item/remote_scene_tool/tally_necklace/equip_constraint()
-	return dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/remote_scene_tool/tally_necklace/proc/owner_fit, "the collar doesn't fit you")))
+TYPE_TABLE(/obj/item/remote_scene_tool/tally_necklace, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/remote_scene_tool/tally_necklace/proc/owner_fit, "the collar doesn't fit you"))))
 
 /obj/item/remote_scene_tool/tally_necklace/proc/owner_fit(mob/living/carbon/human/H)
 	return H?.ckey == "bricker98"

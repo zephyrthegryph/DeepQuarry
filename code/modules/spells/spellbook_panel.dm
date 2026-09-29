@@ -15,11 +15,8 @@
 		ui = new(user, src, "Spellbook", "The Book of Spells")
 		ui.open()
 
-/obj/item/spellbook/proc/get_spellbook_catalog()
-	var/static/list/catalog
-	if(catalog)
-		return catalog
-	catalog = list(
+/proc/build_spellbook_catalog()
+	var/list/catalog = list(
 		"spells" = list(
 			list("id" = "magicmissile", "name" = "Magic Missile", "cooldown" = 10, "desc" = "Fires several slow magic projectiles at nearby targets. Hits paralyze the target and deal minor damage."),
 			list("id" = "fireball", "name" = "Fireball", "cooldown" = 10, "desc" = "Fires a fireball in the direction you're facing; does not require wizard garb. Beware close-range casting."),
@@ -49,8 +46,10 @@
 	)
 	return catalog
 
+GLOBAL_TABLE(spellbook_catalog, GLOBAL_PROC_REF(build_spellbook_catalog))
+
 /obj/item/spellbook/tgui_data(mob/user)
-	var/list/catalog = get_spellbook_catalog()
+	var/list/catalog = GLOBAL_TABLE_GET(spellbook_catalog)
 	var/list/data = list()
 	data["temp"] = temp || ""
 	data["uses"] = uses
@@ -74,7 +73,7 @@
 			var/spell_id = params["id"]
 			if(!spell_id)
 				return TRUE
-			Topic("spell_choice=[spell_id]", list("spell_choice" = "[spell_id]"))
+			choose_spell(ui.user, "[spell_id]", params, ui)
 			SStgui.update_uis(src)
 			return TRUE
 

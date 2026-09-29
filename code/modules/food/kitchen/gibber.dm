@@ -65,7 +65,7 @@
 	cut_overlays()
 	if (dirty)
 		add_overlay("grbloody")
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return
 	if (!occupant)
 		add_overlay("grjam")
@@ -87,7 +87,7 @@ EXTEND_INTERACTIONS(/obj/machinery/gibber, \
 
 /// Old attack_hand.
 /obj/machinery/gibber/proc/gibber_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return TRUE
 	if(operating)
 		to_chat(user, span_danger("The gibber is locked and running, wait for it to finish."))
@@ -100,7 +100,7 @@ EXTEND_INTERACTIONS(/obj/machinery/gibber, \
 	. += "The safety guard is [emagged ? span_danger("disabled") : "enabled"]."
 
 /obj/machinery/gibber/emag_act(remaining_charges, mob/user)
-	emagged = !emagged
+	set_emagged(!emagged)
 	to_chat(user, span_danger("You [emagged ? "disable" : "enable"] the gibber safety guard."))
 	return 1
 
@@ -235,7 +235,7 @@ EXTEND_INTERACTIONS(/obj/machinery/gibber, \
 		// remains stay physically in the slot, but are no longer "the occupant" --
 		// unlink without a ledger move (the remains stay physically where they are).
 		om_unlink(occupant, src, /datum/om/relation/slot/occupant/gibber)
-	playsound(src, 'sound/effects/splat.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_SPLAT)
 	operating = 0
 	if(LAZYLEN(byproducts))
 		for(var/path in byproducts)

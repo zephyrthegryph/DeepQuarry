@@ -35,7 +35,7 @@
 /// Camera software calls this when it positively identifies an intruder.
 /obj/machinery/generated_station_data_relay/proc/report_hostile(atom/contact, confidence = 80)
 	var/datum/generated_station_defense_runtime/runtime = defense_runtime
-	if(!runtime || !camera || QDELETED(camera) || (camera.stat & (BROKEN | NOPOWER)) || !can_see(camera, contact, 7))
+	if(!runtime || !camera || QDELETED(camera) || (!camera.operable()) || !can_see(camera, contact, 7))
 		return null
 	return runtime?.notify_sensor_contact(department_id, contact, "camera relay", confidence)
 

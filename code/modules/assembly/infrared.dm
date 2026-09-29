@@ -68,11 +68,11 @@ MATERIAL_MIX(/obj/item/assembly/infra, list(MAT_STEEL = 1000, MAT_GLASS = 500))
 	for(var/i = 1 to limit)
 		var/obj/effect/beam/i_beam/I = new /obj/effect/beam/i_beam(current_spot)
 		rel_set(I, "master", src)
-		I.density = TRUE
+		I.set_density(TRUE)
 		I.set_dir(dir)
 		if(!step(I, I.dir)) //Try to take a step in that direction
 			return //Couldn't, oh well, we hit a wall or something. Beam should qdel itself in it's Bump().
-		I.density = FALSE
+		I.set_density(FALSE)
 		own_add(src, "i_beams", I)
 		I.visible = visible
 

@@ -11,21 +11,21 @@
 	var/list/things_in_range//what is in a radius of us?
 	var/list/fields_in_range//What EM fields are in that radius?
 	var/list/active_field//Our active field.
-	var/active = 0 //are we even on?
+	active = 0 //are we even on?
 	var/id_tag //needed for !!rasins!!
 	circuit = /obj/item/circuitboard/hydromagnetic_trap
 
 /obj/machinery/power/hydromagnetic_trap/machine_step()
 	if(anchored)
 		if(!power_region)
-			src.active = 0
+			set_active(0)
 			connect_to_network()
 			if(!power_region)
 				return PROCESS_KILL
 
 		Search()
 		if(!length(active_field))
-			active = FALSE
+			set_active(FALSE)
 			icon_state = "mag_trap0"
 			return PROCESS_KILL
 		Active()
@@ -60,7 +60,7 @@
 	var/obj/effect/fusion_em_field/FFF
 	for(FFF in fields_in_range)
 		rel_add(src, "active_field", FFF)
-		active = 1
+		set_active(1)
 	return
 
 /obj/machinery/power/hydromagnetic_trap/proc/Active()//POWERRRRR

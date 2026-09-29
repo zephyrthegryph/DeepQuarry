@@ -14,7 +14,7 @@
 	conductivity = 1
 	melting_point = T0C+300 //okay, not melting in this case, but hot enough to destroy wood
 	ignition_point = T0C+288
-	dooropen_noise = 'sound/effects/doorcreaky.ogg'
+	dooropen_noise = SFX_EFFECTS_DOORCREAKY
 	door_icon_base = "wood"
 	destruction_desc = "splinters"
 	sheet_singular_name = "plank"

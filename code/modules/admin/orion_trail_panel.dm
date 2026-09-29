@@ -5,8 +5,8 @@
 // the screen based on `screen` and renders the appropriate
 // components. Events still embed their own HTML for now (the
 // per-event handlers each emit ad-hoc buttons that haven't been
-// unpacked); HtmlRenderer + forwardTopic relays clicks back to the
-// arcade's Topic handler the same way they did before.
+// unpacked); HtmlRenderer + forwardTopic relays their links to the
+// arcade's TOPIC_ACTION rows. The typed buttons call orion_* procs.
 
 // arcade.dm #undefs the ORION_STATUS_* macros at end-of-file, so
 // re-shadow the integer values here for use in our panel.
@@ -41,7 +41,7 @@
 	user.set_machine(src)
 
 	if(gameStatus == ORION_STATUS_GAMEOVER)
-		playsound(src, 'sound/arcade/ori_fail.ogg', 50, 1, extrarange = -3, falloff = 0.1, ignore_walls = FALSE)
+		play_sfx(src, SFX_ARCADE_ORI_FAIL, ignore_walls = FALSE)
 		if(emagged)
 			if(food <= 0)
 				user.set_nutrition(0)
@@ -52,7 +52,7 @@
 				to_chat(user, span_danger(span_large("You feel an immense wave of heat emanate from \the [src]. Your skin bursts into flames.")))
 			to_chat(user, span_danger(span_large("You're never going to make it to Orion...")))
 			user.death()
-			emagged = 0
+			set_emagged(0)
 			gameStatus = ORION_STATUS_START
 			name = "The Orion Trail"
 			desc = "Learn how our ancestors got to Orion, and have fun in the process!"
@@ -108,27 +108,27 @@
 		return
 	switch(action)
 		if("menu")
-			Topic("menu=1", list("menu" = "1"))
+			orion_menu(ui.user)
 			SStgui.update_uis(src)
 			return TRUE
 		if("new_game")
-			Topic("newgame=1", list("newgame" = "1"))
+			orion_newgame(ui.user)
 			SStgui.update_uis(src)
 			return TRUE
 		if("continue")
-			Topic("continue=1", list("continue" = "1"))
+			orion_continue(ui.user)
 			SStgui.update_uis(src)
 			return TRUE
 		if("blackhole_continue")
-			Topic("blackhole=1", list("blackhole" = "1"))
+			orion_blackhole(ui.user)
 			SStgui.update_uis(src)
 			return TRUE
 		if("blackhole_around")
-			Topic("pastblack=1", list("pastblack" = "1"))
+			orion_pastblack(ui.user)
 			SStgui.update_uis(src)
 			return TRUE
 		if("killcrew")
-			Topic("killcrew=1", list("killcrew" = "1"))
+			orion_killcrew(ui.user)
 			SStgui.update_uis(src)
 			return TRUE
 		if("close")

@@ -125,14 +125,14 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 	circuit = /obj/item/circuitboard/pointdefense
 	maintenance_flags = MACHINE_MAINT_STANDARD
 	appearance_flags = PIXEL_SCALE
-	var/active = TRUE
+	active = TRUE
 	var/charge_cooldown = 1 SECOND  //time between it can fire at different targets
-	var/last_shot = 0
+	EXPIRY_DECLARE(last_shot)
 	var/kill_range = 18
 	var/rotation_speed = 4.5 SECONDS  //How quickly we turn to face threats
 	var/obj/effect/meteor/engaging = null // The meteor we're shooting at (a relation view)
 	var/id_tag = null
-	var/fire_sounds = list('sound/weapons/frigate_turret/frigate_turret_fire1.ogg', 'sound/weapons/frigate_turret/frigate_turret_fire2.ogg', 'sound/weapons/frigate_turret/frigate_turret_fire3.ogg', 'sound/weapons/frigate_turret/frigate_turret_fire4.ogg')
+	var/fire_sounds = SFX_WEAPONS_FRIGATE_TURRET_FRIGATE_TURRET_FIRE_MIX
 
 /obj/machinery/pointdefense/Initialize(mapload)
 	. = ..()
@@ -145,17 +145,16 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 		. += "[desc_panel_image("multitool")]to set ident tag and connect to a mainframe."
 
 /obj/machinery/pointdefense/update_icon()
-	if(!active || !id_tag || inoperable())
+	if(!active || !id_tag || !operable())
 		icon_state = "[initial(icon_state)]_off"
 	else
 		icon_state = initial(icon_state)
 
 /obj/machinery/pointdefense/power_change()
-	var/old_stat = stat
-	..()
-	if(old_stat != stat)
+	. = ..()
+	if(.)
 		update_icon()
-		if(active && !(stat & (NOPOWER|BROKEN)))
+		if(active && operable())
 			MACHINE_WAKE(src)
 
 // Find controller with the same tag on connected z levels (if any)
@@ -213,7 +212,7 @@ REL_LIST(/obj/machinery/pointdefense_control, targets)
 	if(PC && M)
 		rel_remove(PC, "targets", M)
 
-	last_shot = world.time
+	EXPIRY_STAMP(src, last_shot, CLOCK_WORLD)
 	if(!istype(M))
 		return
 	//We throw a laser but it doesnt have to hit for meteor to explode
@@ -228,7 +227,7 @@ REL_LIST(/obj/machinery/pointdefense_control, targets)
 
 /obj/machinery/pointdefense/machine_step()
 	..()
-	if(stat & (BROKEN))
+	if(has_stat(BROKEN))
 		return PROCESS_KILL
 	if(!active)
 		sleep_until_keys(list(GLOB.meteor_watch, CHANGE_METEORS))
@@ -247,7 +246,7 @@ REL_LIST(/obj/machinery/pointdefense_control, targets)
 	if(LAZYLEN(REGISTRY_MEMBERS(REGISTRY_METEORS)) == 0)
 		return
 	// We can shoot
-	if(engaging || ((world.time - last_shot) < charge_cooldown))
+	if(engaging || (ELAPSED(src, last_shot, CLOCK_WORLD) < charge_cooldown))
 		return
 
 	var/obj/machinery/pointdefense_control/PC = get_controller()
@@ -306,8 +305,8 @@ REL_LIST(/obj/machinery/pointdefense_control, targets)
 	if(active)
 		return FALSE
 
-	playsound(src, 'sound/weapons/flash.ogg', 100, 0)
-	active = TRUE
+	play_sfx(src, SFX_WEAPONS_FLASH, vary = FALSE)
+	set_active(TRUE)
 	MACHINE_WAKE(src)
 	update_icon()
 	return TRUE
@@ -315,15 +314,15 @@ REL_LIST(/obj/machinery/pointdefense_control, targets)
 /obj/machinery/pointdefense/proc/Deactivate()
 	if(!active)
 		return FALSE
-	playsound(src, 'sound/machines/apc_nopower.ogg', 50, 0)
-	active = FALSE
+	play_sfx(src, SFX_MACHINES_APC_NOPOWER)
+	set_active(FALSE)
 	MACHINE_SLEEP(src)
 	update_icon()
 	return TRUE
 
 /// Audit: an active point defense must not sleep through meteors.
 /obj/machinery/pointdefense/om_sleep_violation()
-	if(!asleep_on_keys() || (stat & BROKEN) || !active)
+	if(!asleep_on_keys() || (has_stat(BROKEN)) || !active)
 		return null
 	if(LAZYLEN(REGISTRY_MEMBERS(REGISTRY_METEORS)))
 		return "asleep with [LAZYLEN(REGISTRY_MEMBERS(REGISTRY_METEORS))] meteors about"

@@ -36,8 +36,8 @@
 		sense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity))
 
 /obj/machinery/flasher/power_change()
-	..()
-	if(!(stat & NOPOWER))
+	. = ..()
+	if(!has_stat(NOPOWER))
 		icon_state = "[base_state]1"
 	else
 		icon_state = "[base_state]1-p"
@@ -65,7 +65,7 @@ EXTEND_INTERACTIONS(/obj/machinery/flasher, INTERACT_SILICON("Flash", PROC_REF(f
 	if((disable) || !COOLDOWN_FINISHED(src, flash_cooldown))
 		return
 
-	playsound(src, 'sound/weapons/flash.ogg', 100, 1)
+	play_sfx(src, SFX_WEAPONS_FLASH)
 	flick("[base_state]_flash", src)
 	COOLDOWN_START(src, flash_cooldown, 15 SECONDS)
 	use_power(1500)
@@ -99,7 +99,7 @@ EXTEND_INTERACTIONS(/obj/machinery/flasher, INTERACT_SILICON("Flash", PROC_REF(f
 
 /obj/machinery/flasher/emp_act(severity, recursive)
 	. = ..()
-	if (. & EMP_PROTECT_SELF || stat & (BROKEN|NOPOWER))
+	if (. & EMP_PROTECT_SELF || !operable())
 		return
 	if(prob(75/severity))
 		flash()
@@ -122,7 +122,7 @@ EXTEND_INTERACTIONS(/obj/machinery/flasher, INTERACT_SILICON("Flash", PROC_REF(f
 
 /obj/machinery/flasher/portable/wrench_act(mob/user, obj/item/tool)
 	add_fingerprint(user)
-	anchored = !anchored
+	set_anchored(!anchored)
 	if(!anchored)
 		user.show_message(span_warning("[src] can now be moved."))
 		cut_overlays()
@@ -160,7 +160,7 @@ KEYED_TARGET(/obj/machinery/flasher, id)
 	if(active)
 		return TRUE
 
-	active = TRUE
+	set_active(TRUE)
 	icon_state = "launcheract"
 
 	for(var/obj/machinery/flasher/M as anything in controlled_flashers)
@@ -172,4 +172,4 @@ KEYED_TARGET(/obj/machinery/flasher, id)
 /obj/machinery/button/flasher/proc/finish_trigger()
 	PRIVATE_PROC(TRUE)
 	icon_state = "launcherbtt"
-	active = FALSE
+	set_active(FALSE)

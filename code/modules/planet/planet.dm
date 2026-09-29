@@ -22,7 +22,7 @@
 	var/list/turf/simulated/floor/planet_floors
 	var/list/turf/unsimulated/wall/planetary/planet_walls
 
-	var/tmp/last_step = 0
+	EXPIRY_TMP_DECLARE(last_step)
 	var/needs_work = 0 // Bitflags to signal to the planet controller these need (properly deferrable) work. Flags defined in controller.
 
 	var/sun_name = "the sun" // For flavor.
@@ -54,7 +54,7 @@
 	if(current_time)
 		var/difference = last_step ? world.time - last_step : delta
 		own_set(src, "current_time", current_time.add_seconds((difference / 10) * PLANET_TIME_MODIFIER))
-	last_step = world.time
+	EXPIRY_STAMP(src, last_step, CLOCK_WORLD)
 	update_weather() // We update this first, because some weather types decease the brightness of the sun.
 	if(COOLDOWN_FINISHED(src, next_sun_process))
 		update_sun()

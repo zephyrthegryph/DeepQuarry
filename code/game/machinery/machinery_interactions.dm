@@ -95,7 +95,7 @@
  * gate's random neural fumble and its click sound stay in hand_gate().
  */
 /obj/machinery/proc/can_operate_by_hand(mob/actor, atom/target, obj/item/held)
-	if(inoperable(MAINT))
+	if(!operable(MAINT))
 		return "it isn't working"
 	if(actor.lying || actor.stat)
 		return "you can't reach it like this"

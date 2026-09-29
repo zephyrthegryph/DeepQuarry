@@ -7,14 +7,14 @@
 		anchored = FALSE
 		density = TRUE
 		req_access = list(ACCESS_ENGINE_EQUIP)
-		var/active = 0
+		active = 0
 		var/power = 0
-		var/state = 0
+		state = 0
 		var/steps = 0
 		var/last_check = 0
 		var/check_delay = 10
 		var/recalc = 0
-		var/locked = 1
+		locked = 1
 		var/destroyed = 0
 		var/directwired = 1
 		var/obj/structure/cable/attached		// the attached cable
@@ -54,7 +54,7 @@
 		return TRUE
 
 	if(src.active >= 1)
-		src.active = 0
+		set_active(0)
 		if(storedpower >= max_stored_power)
 			MACHINE_SLEEP(src)
 		icon_state = "Shield_Gen"
@@ -64,7 +64,7 @@
 			"You hear heavy droning fade out.")
 		for(var/dir in list(1,2,4,8)) src.cleanup(dir)
 	else
-		src.active = 1
+		set_active(1)
 		MACHINE_WAKE(src)
 		icon_state = "Shield_Gen_on"
 		user.visible_message("[user] turned the shield generator on.", \
@@ -117,19 +117,19 @@
 
 	if(src.active == 1)
 		if(!src.state == 1)
-			src.active = 0
+			set_active(0)
 			return
 		om_after(src, 1, PROC_REF(setup_field), 1)
 		om_after(src, 2, PROC_REF(setup_field), 2)
 		om_after(src, 3, PROC_REF(setup_field), 4)
 		om_after(src, 4, PROC_REF(setup_field), 8)
-		src.active = 2
+		set_active(2)
 	if(src.active >= 1)
 		if(src.power == 0)
 			src.visible_message(span_red("The [src.name] shuts down due to lack of power!"), \
 				"You hear heavy droning fade out")
 			icon_state = "Shield_Gen"
-			src.active = 0
+			set_active(0)
 			for(var/dir in list(1,2,4,8)) src.cleanup(dir)
 	if(!active && storedpower >= max_stored_power)
 		return PROCESS_KILL
@@ -186,7 +186,7 @@
 
 /obj/machinery/shieldwallgen/proc/interaction_id_swipe(mob/user, obj/item/W, datum/interaction/interaction)
 	if (src.allowed(user))
-		src.locked = !src.locked
+		set_locked(!src.locked)
 		to_chat(user, "Controls are now [src.locked ? "locked." : "unlocked."]")
 	else
 		to_chat(user, span_red("Access denied."))
@@ -207,8 +207,8 @@
 	if(active)
 		to_chat(user, "Turn off the field generator first.")
 		return ITEM_INTERACT_BLOCKING
-	state = !state
-	anchored = state
+	set_state(!state)
+	set_anchored(state)
 	playsound(src, W.usesound, 75, 1)
 	to_chat(user, "You [anchored ? "secure" : "undo"] the external reinforcing bolts[anchored ? " to" : " from"] the floor.")
 	// machine_step() sleeps while unanchored; an anchored generator with an
@@ -259,7 +259,7 @@
 		unacidable = TRUE
 		light_range = 3
 		var/needs_power = 0
-		var/active = 1
+		active = 1
 		var/delay = 5
 		var/last_active
 		var/mob/U

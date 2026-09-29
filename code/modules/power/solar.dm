@@ -91,15 +91,15 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 	return FALSE
 
 /obj/machinery/power/solar/crowbar_act(mob/user, obj/item/W)
-	playsound(src, 'sound/machines/click.ogg', 50, 1)
+	play_sfx(src, SFX_MACHINES_CLICK)
 	user.visible_message(span_notice("[user] begins to take the glass off the solar panel."))
 	use_tool(user, W, src, delay = 2 SECONDS, volume = 0, receiver = src, on_done = PROC_REF(crowbar_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/power/solar/proc/crowbar_act_tool_done(mob/user)
 	var/obj/item/solar_assembly/S = new(loc)
-	S.anchored = TRUE
-	playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
+	S.set_anchored(TRUE)
+	play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 	user.visible_message(span_notice("[user] takes the glass off the solar panel."))
 	replace_with(src, glass_type, 2)
 
@@ -118,7 +118,7 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 /obj/machinery/power/solar/update_icon()
 	..()
 	cut_overlays()
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		add_overlay("solar_panel-b")
 	else
 		add_overlay("solar_panel")
@@ -144,7 +144,7 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 	//isn't the power recieved from the incoming light proportionnal to cos(p_angle) (Lambert's cosine law) rather than cos(p_angle)^2 ?
 
 /obj/machinery/power/solar/proc/get_power_supplied()
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		return 0
 	if(!GLOB.sun || !control())
 		return 0  //if there's no sun or the panel is not linked to a solar control computer, no need to proceed
@@ -155,7 +155,7 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 	return GLOB.solar_gen_rate * sunfrac
 
 /obj/machinery/power/solar/proc/broken()
-	stat |= BROKEN
+	stat_add(BROKEN)
 	unset_control()
 	update_icon()
 	om_emit(src, new /datum/om/event/climb_shake(null))
@@ -245,7 +245,7 @@ DECLARE_INTERACTIONS(/obj/item/solar_assembly, \
 		if(istype(W, /obj/item/stack/material) && (W.get_material_name() == MAT_GLASS || W.get_material_name() == MAT_RGLASS))
 			var/obj/item/stack/material/S = W
 			if(S.use(2))
-				playsound(src, 'sound/machines/click.ogg', 50, 1)
+				play_sfx(src, SFX_MACHINES_CLICK)
 				user.visible_message(span_notice("[user] places the glass on the solar assembly."))
 				replace_with(src, tracker ? /obj/machinery/power/tracker : /obj/machinery/power/solar, W.type)
 			else
@@ -265,7 +265,7 @@ DECLARE_INTERACTIONS(/obj/item/solar_assembly, \
 /obj/item/solar_assembly/wrench_act(mob/user, obj/item/W)
 	if(!isturf(loc))
 		return ITEM_INTERACT_BLOCKING
-	anchored = !anchored
+	set_anchored(!anchored)
 	user.visible_message(span_notice("[user] [anchored ? "wrenches" : "unwrenches"] the solar assembly [anchored ? "into" : "from"] place."))
 	playsound(src, W.usesound, 75, 1)
 	return ITEM_INTERACT_SUCCESS
@@ -297,7 +297,7 @@ DECLARE_INTERACTIONS(/obj/item/solar_assembly, \
 	var/targetdir = 0		// target angle in manual tracking (since it updates every game minute)
 	var/track = 0			// 0= off  1=timed  2=auto (tracker)
 	var/trackrate = 600		// 300-900 seconds
-	TIMESTAMP_VAR(nexttime) // time for a panel to rotate of 1° in manual tracking
+	EXPIRY_DECLARE(nexttime) // time for a panel to rotate of 1° in manual tracking
 	var/tmp/obj/machinery/power/tracker/connected_tracker
 	var/needs_panel_check	// Powernet has been updated, need to check if panels are still connected.
 	var/connected_power		// Sum of power supplied by connected panels.
@@ -401,7 +401,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 
 //called by the sun controller, update the facing angle (either manually or via tracking) and rotates the panels accordingly
 /obj/machinery/power/solar_control/proc/update()
-	if(stat & (NOPOWER | BROKEN))
+	if(!operable())
 		return
 
 	switch(track)
@@ -413,11 +413,11 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 				connected_tracker().set_angle(GLOB.solar_service.get_solar_angle(get_turf(src)))
 
 /obj/machinery/power/solar_control/update_icon()
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		icon_state = "broken"
 		cut_overlays()
 		return
-	if(stat & NOPOWER)
+	if(has_stat(NOPOWER))
 		icon_state = "c_unpowered"
 		cut_overlays()
 		return
@@ -462,7 +462,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/power/solar_control/proc/disassemble_done(mob/user)
-	if (src.stat & BROKEN)
+	if (src.has_stat(BROKEN))
 		to_chat(user, span_blue("The broken glass falls out."))
 		var/obj/structure/frame/A = new /obj/structure/frame/computer(src.loc)
 		new /obj/item/material/shard(src.loc)
@@ -473,7 +473,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 		own_set(A, "circuit", M)
 		A.state = 3
 		A.icon_state = "computer_3"
-		A.anchored = TRUE
+		A.set_anchored(TRUE)
 		qdel(src)
 	else
 		to_chat(user, span_blue("You disconnect the monitor."))
@@ -485,11 +485,11 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 		own_set(A, "circuit", M)
 		A.state = 4
 		A.icon_state = "computer_4"
-		A.anchored = TRUE
+		A.set_anchored(TRUE)
 		qdel(src)
 
 /obj/machinery/power/solar_control/machine_step()
-	if(stat & (NOPOWER | BROKEN))
+	if(!operable())
 		return
 
 	if(connected_tracker()) //NOTE : handled here so that we don't add trackers to the processing list
@@ -497,7 +497,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 			connected_tracker().unset_control()
 
 	if(track==1 && trackrate) //manual tracking and set a rotation speed
-		if(nexttime <= world.time) //every time we need to increase/decrease the angle by 1°...
+		if(EXPIRY_EXPIRED(src, nexttime, CLOCK_WORLD)) //every time we need to increase/decrease the angle by 1°...
 			targetdir = (targetdir + trackrate/abs(trackrate) + 360) % 360 	//... do it
 			nexttime += 36000/abs(trackrate) //reset the counter for the next 1°
 
@@ -531,7 +531,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 			if(value != null)
 				trackrate = round(clamp(value, -7200, 7200), 0.01)
 				if(trackrate)
-					nexttime = world.time + 36000 / abs(trackrate)
+					EXPIRY_SET(src, nexttime, 36000 / abs(trackrate), CLOCK_WORLD)
 				return TRUE
 			return TRUE
 		if("tracking")
@@ -544,7 +544,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 			else if(track == 1) //begin manual tracking
 				targetdir = cdir
 				if(trackrate)
-					nexttime = world.time + 36000/abs(trackrate)
+					EXPIRY_SET(src, nexttime, 36000/abs(trackrate), CLOCK_WORLD)
 				set_panels(targetdir)
 			return TRUE
 

@@ -42,15 +42,14 @@
 	..()
 	for(var/datum/generated_room_constraint/built_constraint in build_constraints())
 		own_add(src, "constraints", built_constraint)
-	utility_requirements = build_utility_requirements()
+	utility_requirements = TYPE_TABLE_GET(src, build_utility_requirements)
 	variant_options = build_variant_options()
 
 
 /datum/generated_room_feature/proc/build_constraints()
 	return list()
 
-/datum/generated_room_feature/proc/build_utility_requirements()
-	return list()
+TYPE_TABLE_DECLARE(/datum/generated_room_feature, build_utility_requirements, list())
 
 /datum/generated_room_feature/proc/build_variant_options()
 	return list()
@@ -67,8 +66,7 @@
 		new /datum/generated_room_constraint/requires_access_path(id),
 	)
 
-/datum/generated_room_feature/surgery_table/build_utility_requirements()
-	return list("power")
+TYPE_TABLE(/datum/generated_room_feature/surgery_table, build_utility_requirements, list("power"))
 
 /datum/generated_room_feature/operating_computer
 	id = "operating-computer"
@@ -80,8 +78,7 @@
 	near_table.radius = 3
 	return list(new /datum/generated_room_constraint/against_wall(id), near_table)
 
-/datum/generated_room_feature/operating_computer/build_utility_requirements()
-	return list("power", "data")
+TYPE_TABLE(/datum/generated_room_feature/operating_computer, build_utility_requirements, list("power", "data"))
 
 /datum/generated_room_feature/medical_storage
 	id = "medical-storage"
@@ -274,13 +271,12 @@
 
 /datum/generated_room_feature_group/New()
 	..()
-	feature_types = build_feature_types()
+	feature_types = TYPE_TABLE_GET(src, build_group_feature_types)
 	for(var/datum/generated_room_constraint/built_constraint in build_constraints())
 		own_add(src, "constraints", built_constraint)
 
 
-/datum/generated_room_feature_group/proc/build_feature_types()
-	return list()
+TYPE_TABLE_DECLARE(/datum/generated_room_feature_group, build_group_feature_types, list())
 
 /datum/generated_room_feature_group/proc/build_constraints()
 	return list()
@@ -288,16 +284,14 @@
 /datum/generated_room_feature_group/operating_theatre
 	id = "operating-theatre"
 
-/datum/generated_room_feature_group/operating_theatre/build_feature_types()
-	return list(/datum/generated_room_feature/surgery_table, /datum/generated_room_feature/operating_computer)
+TYPE_TABLE(/datum/generated_room_feature_group/operating_theatre, build_group_feature_types, list(/datum/generated_room_feature/surgery_table, /datum/generated_room_feature/operating_computer))
 
 /datum/generated_room_feature_group/waiting_area
 	id = "waiting-area"
 	min_instances = 1
 	max_instances = 3
 
-/datum/generated_room_feature_group/waiting_area/build_feature_types()
-	return list(/datum/generated_room_feature/waiting_chair)
+TYPE_TABLE(/datum/generated_room_feature_group/waiting_area, build_group_feature_types, list(/datum/generated_room_feature/waiting_chair))
 
 /datum/generated_room_feature_group/waiting_area/build_constraints()
 	return list(new /datum/generated_room_constraint/separated_from(id, "staff-area", FALSE, 2))
@@ -307,16 +301,14 @@
 	max_instances = 3
 	tiles_per_instance = 24
 
-/datum/generated_room_feature_group/command_desk/build_feature_types()
-	return list(/datum/generated_room_feature/work_table, /datum/generated_room_feature/work_chair)
+TYPE_TABLE(/datum/generated_room_feature_group/command_desk, build_group_feature_types, list(/datum/generated_room_feature/work_table, /datum/generated_room_feature/work_chair))
 
 /datum/generated_room_feature_group/security_post
 	id = "security-post"
 	max_instances = 2
 	tiles_per_instance = 30
 
-/datum/generated_room_feature_group/security_post/build_feature_types()
-	return list(/datum/generated_room_feature/security_console, /datum/generated_room_feature/recharger, /datum/generated_room_feature/security_locker)
+TYPE_TABLE(/datum/generated_room_feature_group/security_post, build_group_feature_types, list(/datum/generated_room_feature/security_console, /datum/generated_room_feature/recharger, /datum/generated_room_feature/security_locker))
 
 /datum/generated_room_feature_group/patient_bay
 	id = "patient-bay"
@@ -324,8 +316,7 @@
 	max_instances = 4
 	tiles_per_instance = 18
 
-/datum/generated_room_feature_group/patient_bay/build_feature_types()
-	return list(/datum/generated_room_feature/patient_bed, /datum/generated_room_feature/sleeper, /datum/generated_room_feature/iv_drip)
+TYPE_TABLE(/datum/generated_room_feature_group/patient_bay, build_group_feature_types, list(/datum/generated_room_feature/patient_bed, /datum/generated_room_feature/sleeper, /datum/generated_room_feature/iv_drip))
 
 /datum/generated_room_feature_group/cargo_stack
 	id = "cargo-stack"
@@ -333,8 +324,7 @@
 	max_instances = 6
 	tiles_per_instance = 12
 
-/datum/generated_room_feature_group/cargo_stack/build_feature_types()
-	return list(/datum/generated_room_feature/cargo_crate)
+TYPE_TABLE(/datum/generated_room_feature_group/cargo_stack, build_group_feature_types, list(/datum/generated_room_feature/cargo_crate))
 
 /datum/generated_room_feature_group/berth_seating
 	id = "berth-seating"
@@ -342,8 +332,7 @@
 	max_instances = 6
 	tiles_per_instance = 12
 
-/datum/generated_room_feature_group/berth_seating/build_feature_types()
-	return list(/datum/generated_room_feature/shuttle_seat)
+TYPE_TABLE(/datum/generated_room_feature_group/berth_seating, build_group_feature_types, list(/datum/generated_room_feature/shuttle_seat))
 
 /datum/generated_room_feature_group/workstation_bank
 	id = "workstation-bank"
@@ -351,8 +340,7 @@
 	max_instances = 4
 	tiles_per_instance = 20
 
-/datum/generated_room_feature_group/workstation_bank/build_feature_types()
-	return list(/datum/generated_room_feature/work_table, /datum/generated_room_feature/work_chair)
+TYPE_TABLE(/datum/generated_room_feature_group/workstation_bank, build_group_feature_types, list(/datum/generated_room_feature/work_table, /datum/generated_room_feature/work_chair))
 
 /datum/generated_room_feature_group/communications_bank
 	id = "communications-bank"
@@ -360,8 +348,7 @@
 	max_instances = 3
 	tiles_per_instance = 24
 
-/datum/generated_room_feature_group/communications_bank/build_feature_types()
-	return list(/datum/generated_room_feature/communications_console, /datum/generated_room_feature/operator_chair)
+TYPE_TABLE(/datum/generated_room_feature_group/communications_bank, build_group_feature_types, list(/datum/generated_room_feature/communications_console, /datum/generated_room_feature/operator_chair))
 
 /datum/generated_room_feature_group/security_console_bank
 	id = "security-console-bank"
@@ -369,8 +356,7 @@
 	max_instances = 3
 	tiles_per_instance = 24
 
-/datum/generated_room_feature_group/security_console_bank/build_feature_types()
-	return list(/datum/generated_room_feature/security_console, /datum/generated_room_feature/operator_chair)
+TYPE_TABLE(/datum/generated_room_feature_group/security_console_bank, build_group_feature_types, list(/datum/generated_room_feature/security_console, /datum/generated_room_feature/operator_chair))
 
 /datum/generated_room_feature_group/engineering_bench
 	id = "engineering-bench"
@@ -378,8 +364,7 @@
 	max_instances = 3
 	tiles_per_instance = 24
 
-/datum/generated_room_feature_group/engineering_bench/build_feature_types()
-	return list(/datum/generated_room_feature/work_table, /datum/generated_room_feature/recharger, /datum/generated_room_feature/electrical_locker)
+TYPE_TABLE(/datum/generated_room_feature_group/engineering_bench, build_group_feature_types, list(/datum/generated_room_feature/work_table, /datum/generated_room_feature/recharger, /datum/generated_room_feature/electrical_locker))
 
 /datum/generated_room_feature_group/atmospherics_bench
 	id = "atmospherics-bench"
@@ -387,8 +372,7 @@
 	max_instances = 3
 	tiles_per_instance = 24
 
-/datum/generated_room_feature_group/atmospherics_bench/build_feature_types()
-	return list(/datum/generated_room_feature/work_table, /datum/generated_room_feature/recharger, /datum/generated_room_feature/atmos_locker)
+TYPE_TABLE(/datum/generated_room_feature_group/atmospherics_bench, build_group_feature_types, list(/datum/generated_room_feature/work_table, /datum/generated_room_feature/recharger, /datum/generated_room_feature/atmos_locker))
 
 /datum/generated_room_feature_group/medical_storage_bank
 	id = "medical-storage-bank"
@@ -396,8 +380,7 @@
 	max_instances = 4
 	tiles_per_instance = 18
 
-/datum/generated_room_feature_group/medical_storage_bank/build_feature_types()
-	return list(/datum/generated_room_feature/medical_storage)
+TYPE_TABLE(/datum/generated_room_feature_group/medical_storage_bank, build_group_feature_types, list(/datum/generated_room_feature/medical_storage))
 
 /datum/generated_room_feature_group/electrical_storage_bank
 	id = "electrical-storage-bank"
@@ -405,8 +388,7 @@
 	max_instances = 4
 	tiles_per_instance = 18
 
-/datum/generated_room_feature_group/electrical_storage_bank/build_feature_types()
-	return list(/datum/generated_room_feature/electrical_locker)
+TYPE_TABLE(/datum/generated_room_feature_group/electrical_storage_bank, build_group_feature_types, list(/datum/generated_room_feature/electrical_locker))
 
 /datum/generated_room_feature_group/security_storage_bank
 	id = "security-storage-bank"
@@ -414,8 +396,7 @@
 	max_instances = 4
 	tiles_per_instance = 18
 
-/datum/generated_room_feature_group/security_storage_bank/build_feature_types()
-	return list(/datum/generated_room_feature/security_locker)
+TYPE_TABLE(/datum/generated_room_feature_group/security_storage_bank, build_group_feature_types, list(/datum/generated_room_feature/security_locker))
 
 /datum/generated_room_feature_group/brig_bunks
 	id = "brig-bunks"
@@ -423,8 +404,7 @@
 	max_instances = 4
 	tiles_per_instance = 16
 
-/datum/generated_room_feature_group/brig_bunks/build_feature_types()
-	return list(/datum/generated_room_feature/brig_bed)
+TYPE_TABLE(/datum/generated_room_feature_group/brig_bunks, build_group_feature_types, list(/datum/generated_room_feature/brig_bed))
 
 /datum/generated_room_feature_group/cargo_workstation
 	id = "cargo-workstation"
@@ -432,8 +412,7 @@
 	max_instances = 3
 	tiles_per_instance = 24
 
-/datum/generated_room_feature_group/cargo_workstation/build_feature_types()
-	return list(/datum/generated_room_feature/work_table, /datum/generated_room_feature/operator_chair, /datum/generated_room_feature/cargo_crate)
+TYPE_TABLE(/datum/generated_room_feature_group/cargo_workstation, build_group_feature_types, list(/datum/generated_room_feature/work_table, /datum/generated_room_feature/operator_chair, /datum/generated_room_feature/cargo_crate))
 
 /// Connection exposed by a fragment to its containing room.
 /datum/generated_room_fragment_socket
@@ -471,7 +450,7 @@
 		own_add(src, "sockets", built_socket)
 	for(var/datum/generated_room_constraint/built_constraint in build_constraints())
 		own_add(src, "constraints", built_constraint)
-	occupied_offsets = build_occupied_offsets()
+	occupied_offsets = TYPE_TABLE_GET(src, build_occupied_offsets)
 
 
 /datum/generated_room_fragment/proc/build_sockets()
@@ -480,7 +459,10 @@
 /datum/generated_room_fragment/proc/build_constraints()
 	return list()
 
-/datum/generated_room_fragment/proc/build_occupied_offsets()
+/// Every tile of the fragment's width x height footprint (the default occupied offsets).
+TYPE_TABLE_DECLARE(/datum/generated_room_fragment, build_occupied_offsets, generated_room_fragment_grid_offsets(width, height))
+
+/proc/generated_room_fragment_grid_offsets(width, height)
 	var/list/offsets = list()
 	for(var/x in 1 to width)
 		for(var/y in 1 to height)
@@ -536,8 +518,7 @@
 		new /datum/generated_room_fragment_socket("power", "utility", NORTH, 3),
 	)
 
-/datum/generated_room_fragment/reception_corner/build_occupied_offsets()
-	return list(list(2, 2), list(3, 2), list(4, 2), list(3, 3))
+TYPE_TABLE(/datum/generated_room_fragment/reception_corner, build_occupied_offsets, list(list(2, 2), list(3, 2), list(4, 2), list(3, 3)))
 
 /datum/generated_room_fragment/reception_corner/materialize(turf/origin, rotation, mirrored, datum/generated_station_materialization/owner)
 	if(!origin || !owner || rotation || mirrored)
@@ -579,8 +560,7 @@
 	anchor_kind = "wall"
 	anchor_edge = NORTH
 
-/datum/generated_room_fragment/operator_nook/build_occupied_offsets()
-	return list(list(2, 1), list(3, 1), list(2, 2), list(3, 2))
+TYPE_TABLE(/datum/generated_room_fragment/operator_nook, build_occupied_offsets, list(list(2, 1), list(3, 1), list(2, 2), list(3, 2)))
 
 /datum/generated_room_fragment/operator_nook/materialize(turf/origin, rotation, mirrored, datum/generated_station_materialization/owner)
 	if(!origin || !owner || rotation || mirrored)
@@ -610,8 +590,7 @@
 	anchor_kind = "wall"
 	anchor_edge = NORTH
 
-/datum/generated_room_fragment/treatment_bay/build_occupied_offsets()
-	return list(list(1, 1), list(2, 1), list(3, 1), list(2, 2))
+TYPE_TABLE(/datum/generated_room_fragment/treatment_bay, build_occupied_offsets, list(list(1, 1), list(2, 1), list(3, 1), list(2, 2)))
 
 /datum/generated_room_fragment/treatment_bay/materialize(turf/origin, rotation, mirrored, datum/generated_station_materialization/owner)
 	if(!origin || !owner || rotation || mirrored)
@@ -631,8 +610,7 @@
 	anchor_kind = "wall"
 	anchor_edge = NORTH
 
-/datum/generated_room_fragment/storage_bay/build_occupied_offsets()
-	return list(list(1, 1), list(2, 1), list(3, 1), list(3, 2))
+TYPE_TABLE(/datum/generated_room_fragment/storage_bay, build_occupied_offsets, list(list(1, 1), list(2, 1), list(3, 1), list(3, 2)))
 
 /datum/generated_room_fragment/storage_bay/materialize(turf/origin, rotation, mirrored, datum/generated_station_materialization/owner)
 	if(!origin || !owner || rotation || mirrored)
@@ -656,18 +634,16 @@
 
 /datum/generated_room_variant/New()
 	..()
-	faction_ids = build_faction_ids()
-	style_ids = build_style_ids()
+	faction_ids = TYPE_TABLE_GET(src, build_faction_ids)
+	style_ids = TYPE_TABLE_GET(src, build_style_ids)
 	added_feature_types = build_added_feature_types()
 	removed_feature_ids = build_removed_feature_ids()
 	added_group_types = build_added_group_types()
 	added_fragment_types = build_added_fragment_types()
 
-/datum/generated_room_variant/proc/build_faction_ids()
-	return list()
+TYPE_TABLE_DECLARE(/datum/generated_room_variant, build_faction_ids, list())
 
-/datum/generated_room_variant/proc/build_style_ids()
-	return list()
+TYPE_TABLE_DECLARE(/datum/generated_room_variant, build_style_ids, list())
 
 /datum/generated_room_variant/proc/build_added_feature_types()
 	return list()
@@ -688,21 +664,17 @@
 	id = "sterile-research"
 	weight = 3
 
-/datum/generated_room_variant/sterile_research/build_faction_ids()
-	return list("research", "corporate")
+TYPE_TABLE(/datum/generated_room_variant/sterile_research, build_faction_ids, list("research", "corporate"))
 
-/datum/generated_room_variant/sterile_research/build_style_ids()
-	return list("sterile")
+TYPE_TABLE(/datum/generated_room_variant/sterile_research, build_style_ids, list("sterile"))
 
 /datum/generated_room_variant/salvage_industrial
 	id = "salvage-industrial"
 	weight = 2
 
-/datum/generated_room_variant/salvage_industrial/build_faction_ids()
-	return list("salvage")
+TYPE_TABLE(/datum/generated_room_variant/salvage_industrial, build_faction_ids, list("salvage"))
 
-/datum/generated_room_variant/salvage_industrial/build_style_ids()
-	return list("industrial")
+TYPE_TABLE(/datum/generated_room_variant/salvage_industrial, build_style_ids, list("industrial"))
 
 /// Deterministic, geometry-independent content request consumed by a room solver.
 /datum/generated_room_content_plan
@@ -823,33 +795,28 @@
 
 /datum/generated_room_definition/New()
 	..()
-	required_features = build_required_features()
-	required_groups = build_required_groups()
-	optional_groups = build_optional_groups()
-	fragment_options = build_fragment_options()
+	required_features = TYPE_TABLE_GET(src, build_required_features)
+	required_groups = TYPE_TABLE_GET(src, build_required_groups)
+	optional_groups = TYPE_TABLE_GET(src, build_optional_groups)
+	fragment_options = TYPE_TABLE_GET(src, build_fragment_options)
 	for(var/datum/generated_room_constraint/built_constraint in build_constraints())
 		own_add(src, "constraints", built_constraint)
-	variant_options = build_variant_options()
+	variant_options = TYPE_TABLE_GET(src, build_variant_options)
 	own_set(src, "room_style", build_room_style())
 
 
-/datum/generated_room_definition/proc/build_required_features()
-	return list()
+TYPE_TABLE_DECLARE(/datum/generated_room_definition, build_required_features, list())
 
-/datum/generated_room_definition/proc/build_required_groups()
-	return list()
+TYPE_TABLE_DECLARE(/datum/generated_room_definition, build_required_groups, list())
 
-/datum/generated_room_definition/proc/build_optional_groups()
-	return list()
+TYPE_TABLE_DECLARE(/datum/generated_room_definition, build_optional_groups, list())
 
-/datum/generated_room_definition/proc/build_fragment_options()
-	return list()
+TYPE_TABLE_DECLARE(/datum/generated_room_definition, build_fragment_options, list())
 
 /datum/generated_room_definition/proc/build_constraints()
 	return list()
 
-/datum/generated_room_definition/proc/build_variant_options()
-	return list()
+TYPE_TABLE_DECLARE(/datum/generated_room_definition, build_variant_options, list())
 
 /datum/generated_room_definition/proc/build_room_style()
 	return new /datum/generated_room_style
@@ -945,14 +912,11 @@
 	density_min = 0.16
 	density_max = 0.38
 
-/datum/generated_room_definition/surgery/build_required_features()
-	return list(/datum/generated_room_feature/medical_storage, /datum/generated_room_feature/sleeper)
+TYPE_TABLE(/datum/generated_room_definition/surgery, build_required_features, list(/datum/generated_room_feature/medical_storage, /datum/generated_room_feature/sleeper))
 
-/datum/generated_room_definition/surgery/build_required_groups()
-	return list(/datum/generated_room_feature_group/operating_theatre, /datum/generated_room_feature_group/medical_storage_bank)
+TYPE_TABLE(/datum/generated_room_definition/surgery, build_required_groups, list(/datum/generated_room_feature_group/operating_theatre, /datum/generated_room_feature_group/medical_storage_bank))
 
-/datum/generated_room_definition/surgery/build_variant_options()
-	return list(/datum/generated_room_variant/sterile_research, /datum/generated_room_variant/salvage_industrial)
+TYPE_TABLE(/datum/generated_room_definition/surgery, build_variant_options, list(/datum/generated_room_variant/sterile_research, /datum/generated_room_variant/salvage_industrial))
 
 /datum/generated_room_definition/surgery/build_room_style()
 	return new /datum/generated_room_style/medical
@@ -971,14 +935,11 @@
 	density_min = 0.18
 	density_max = 0.45
 
-/datum/generated_room_definition/reception/build_required_features()
-	return list(/datum/generated_room_feature/reception_desk, /datum/generated_room_feature/reception_chair)
+TYPE_TABLE(/datum/generated_room_definition/reception, build_required_features, list(/datum/generated_room_feature/reception_desk, /datum/generated_room_feature/reception_chair))
 
-/datum/generated_room_definition/reception/build_optional_groups()
-	return list(/datum/generated_room_feature_group/waiting_area)
+TYPE_TABLE(/datum/generated_room_definition/reception, build_optional_groups, list(/datum/generated_room_feature_group/waiting_area))
 
-/datum/generated_room_definition/reception/build_fragment_options()
-	return list(/datum/generated_room_fragment/reception_corner)
+TYPE_TABLE(/datum/generated_room_definition/reception, build_fragment_options, list(/datum/generated_room_fragment/reception_corner))
 
 /datum/generated_room_definition/reception/build_constraints()
 	return list(new /datum/generated_room_constraint/behind_access_boundary("staff-area", "public-area"))
@@ -992,17 +953,13 @@
 	density_min = 0.16
 	density_max = 0.4
 
-/datum/generated_room_definition/command_operations/build_required_groups()
-	return list(/datum/generated_room_feature_group/command_desk, /datum/generated_room_feature_group/communications_bank)
+TYPE_TABLE(/datum/generated_room_definition/command_operations, build_required_groups, list(/datum/generated_room_feature_group/command_desk, /datum/generated_room_feature_group/communications_bank))
 
-/datum/generated_room_definition/command_operations/build_optional_groups()
-	return list(/datum/generated_room_feature_group/waiting_area)
+TYPE_TABLE(/datum/generated_room_definition/command_operations, build_optional_groups, list(/datum/generated_room_feature_group/waiting_area))
 
-/datum/generated_room_definition/command_operations/build_fragment_options()
-	return list(/datum/generated_room_fragment/reception_corner)
+TYPE_TABLE(/datum/generated_room_definition/command_operations, build_fragment_options, list(/datum/generated_room_fragment/reception_corner))
 
-/datum/generated_room_definition/command_operations/build_variant_options()
-	return list(/datum/generated_room_variant/sterile_research, /datum/generated_room_variant/salvage_industrial)
+TYPE_TABLE(/datum/generated_room_definition/command_operations, build_variant_options, list(/datum/generated_room_variant/sterile_research, /datum/generated_room_variant/salvage_industrial))
 
 /datum/generated_room_definition/command_operations/build_room_style()
 	return new /datum/generated_room_style/command
@@ -1013,11 +970,9 @@
 	density_min = 0.14
 	density_max = 0.38
 
-/datum/generated_room_definition/command_communications/build_required_features()
-	return list(/datum/generated_room_feature/internals_crate)
+TYPE_TABLE(/datum/generated_room_definition/command_communications, build_required_features, list(/datum/generated_room_feature/internals_crate))
 
-/datum/generated_room_definition/command_communications/build_required_groups()
-	return list(/datum/generated_room_feature_group/communications_bank, /datum/generated_room_feature_group/workstation_bank)
+TYPE_TABLE(/datum/generated_room_definition/command_communications, build_required_groups, list(/datum/generated_room_feature_group/communications_bank, /datum/generated_room_feature_group/workstation_bank))
 
 /datum/generated_room_definition/command_communications/build_room_style()
 	return new /datum/generated_room_style/command
@@ -1028,11 +983,9 @@
 	density_min = 0.12
 	density_max = 0.34
 
-/datum/generated_room_definition/ai_core/build_required_features()
-	return list(/datum/generated_room_feature/recharger)
+TYPE_TABLE(/datum/generated_room_definition/ai_core, build_required_features, list(/datum/generated_room_feature/recharger))
 
-/datum/generated_room_definition/ai_core/build_required_groups()
-	return list(/datum/generated_room_feature_group/security_console_bank, /datum/generated_room_feature_group/electrical_storage_bank)
+TYPE_TABLE(/datum/generated_room_definition/ai_core, build_required_groups, list(/datum/generated_room_feature_group/security_console_bank, /datum/generated_room_feature_group/electrical_storage_bank))
 
 /datum/generated_room_definition/ai_core/build_constraints()
 	return list(new /datum/generated_room_constraint/behind_access_boundary("ai-control", "public-area"), new /datum/generated_room_constraint/requires_utility("ai-control", null, TRUE, 1))
@@ -1046,11 +999,9 @@
 	density_min = 0.14
 	density_max = 0.38
 
-/datum/generated_room_definition/ai_support/build_required_features()
-	return list(/datum/generated_room_feature/recharger)
+TYPE_TABLE(/datum/generated_room_definition/ai_support, build_required_features, list(/datum/generated_room_feature/recharger))
 
-/datum/generated_room_definition/ai_support/build_required_groups()
-	return list(/datum/generated_room_feature_group/engineering_bench, /datum/generated_room_feature_group/electrical_storage_bank)
+TYPE_TABLE(/datum/generated_room_definition/ai_support, build_required_groups, list(/datum/generated_room_feature_group/engineering_bench, /datum/generated_room_feature_group/electrical_storage_bank))
 
 /datum/generated_room_definition/ai_support/build_room_style()
 	return new /datum/generated_room_style/ai/support
@@ -1061,8 +1012,7 @@
 	density_min = 0.18
 	density_max = 0.45
 
-/datum/generated_room_definition/security_operations/build_required_groups()
-	return list(/datum/generated_room_feature_group/security_post, /datum/generated_room_feature_group/security_console_bank, /datum/generated_room_feature_group/workstation_bank)
+TYPE_TABLE(/datum/generated_room_definition/security_operations, build_required_groups, list(/datum/generated_room_feature_group/security_post, /datum/generated_room_feature_group/security_console_bank, /datum/generated_room_feature_group/workstation_bank))
 
 /datum/generated_room_definition/security_operations/build_room_style()
 	return new /datum/generated_room_style/security
@@ -1073,11 +1023,9 @@
 	density_min = 0.12
 	density_max = 0.36
 
-/datum/generated_room_definition/security_brig/build_required_features()
-	return list(/datum/generated_room_feature/work_table)
+TYPE_TABLE(/datum/generated_room_definition/security_brig, build_required_features, list(/datum/generated_room_feature/work_table))
 
-/datum/generated_room_definition/security_brig/build_required_groups()
-	return list(/datum/generated_room_feature_group/brig_bunks, /datum/generated_room_feature_group/security_console_bank)
+TYPE_TABLE(/datum/generated_room_definition/security_brig, build_required_groups, list(/datum/generated_room_feature_group/brig_bunks, /datum/generated_room_feature_group/security_console_bank))
 
 /datum/generated_room_definition/security_brig/build_constraints()
 	return list(new /datum/generated_room_constraint/behind_access_boundary("cell", "security-desk"))
@@ -1091,11 +1039,9 @@
 	density_min = 0.15
 	density_max = 0.4
 
-/datum/generated_room_definition/medical_ward/build_required_groups()
-	return list(/datum/generated_room_feature_group/patient_bay, /datum/generated_room_feature_group/medical_storage_bank)
+TYPE_TABLE(/datum/generated_room_definition/medical_ward, build_required_groups, list(/datum/generated_room_feature_group/patient_bay, /datum/generated_room_feature_group/medical_storage_bank))
 
-/datum/generated_room_definition/medical_ward/build_required_features()
-	return list(/datum/generated_room_feature/medical_storage)
+TYPE_TABLE(/datum/generated_room_definition/medical_ward, build_required_features, list(/datum/generated_room_feature/medical_storage))
 
 /datum/generated_room_definition/medical_ward/build_room_style()
 	return new /datum/generated_room_style/medical
@@ -1106,11 +1052,9 @@
 	density_min = 0.16
 	density_max = 0.42
 
-/datum/generated_room_definition/engineering_power/build_required_features()
-	return list(/datum/generated_room_feature/recharger)
+TYPE_TABLE(/datum/generated_room_definition/engineering_power, build_required_features, list(/datum/generated_room_feature/recharger))
 
-/datum/generated_room_definition/engineering_power/build_required_groups()
-	return list(/datum/generated_room_feature_group/engineering_bench, /datum/generated_room_feature_group/electrical_storage_bank)
+TYPE_TABLE(/datum/generated_room_definition/engineering_power, build_required_groups, list(/datum/generated_room_feature_group/engineering_bench, /datum/generated_room_feature_group/electrical_storage_bank))
 
 /datum/generated_room_definition/engineering_power/build_constraints()
 	return list(new /datum/generated_room_constraint/requires_utility("power-control", null, TRUE, 1))
@@ -1124,11 +1068,9 @@
 	density_min = 0.15
 	density_max = 0.42
 
-/datum/generated_room_definition/engineering_atmospherics/build_required_features()
-	return list(/datum/generated_room_feature/internals_crate)
+TYPE_TABLE(/datum/generated_room_definition/engineering_atmospherics, build_required_features, list(/datum/generated_room_feature/internals_crate))
 
-/datum/generated_room_definition/engineering_atmospherics/build_required_groups()
-	return list(/datum/generated_room_feature_group/atmospherics_bench)
+TYPE_TABLE(/datum/generated_room_definition/engineering_atmospherics, build_required_groups, list(/datum/generated_room_feature_group/atmospherics_bench))
 
 /datum/generated_room_definition/engineering_atmospherics/build_constraints()
 	return list(new /datum/generated_room_constraint/requires_utility("atmos-workshop", null, TRUE, 1))
@@ -1142,11 +1084,9 @@
 	density_min = 0.18
 	density_max = 0.48
 
-/datum/generated_room_definition/logistics_cargo/build_required_features()
-	return list(/datum/generated_room_feature/supply_console, /datum/generated_room_feature/cargo_locker)
+TYPE_TABLE(/datum/generated_room_definition/logistics_cargo, build_required_features, list(/datum/generated_room_feature/supply_console, /datum/generated_room_feature/cargo_locker))
 
-/datum/generated_room_definition/logistics_cargo/build_required_groups()
-	return list(/datum/generated_room_feature_group/cargo_stack)
+TYPE_TABLE(/datum/generated_room_definition/logistics_cargo, build_required_groups, list(/datum/generated_room_feature_group/cargo_stack))
 
 /datum/generated_room_definition/logistics_cargo/build_room_style()
 	return new /datum/generated_room_style/cargo
@@ -1157,11 +1097,9 @@
 	density_min = 0.16
 	density_max = 0.46
 
-/datum/generated_room_definition/logistics_processing/build_required_features()
-	return list()
+TYPE_TABLE(/datum/generated_room_definition/logistics_processing, build_required_features, list())
 
-/datum/generated_room_definition/logistics_processing/build_required_groups()
-	return list(/datum/generated_room_feature_group/cargo_stack, /datum/generated_room_feature_group/cargo_workstation)
+TYPE_TABLE(/datum/generated_room_definition/logistics_processing, build_required_groups, list(/datum/generated_room_feature_group/cargo_stack, /datum/generated_room_feature_group/cargo_workstation))
 
 /datum/generated_room_definition/logistics_processing/build_room_style()
 	return new /datum/generated_room_style/cargo/processing
@@ -1172,11 +1110,9 @@
 	density_min = 0.15
 	density_max = 0.4
 
-/datum/generated_room_definition/docking_control/build_required_features()
-	return list(/datum/generated_room_feature/internals_crate)
+TYPE_TABLE(/datum/generated_room_definition/docking_control, build_required_features, list(/datum/generated_room_feature/internals_crate))
 
-/datum/generated_room_definition/docking_control/build_required_groups()
-	return list(/datum/generated_room_feature_group/communications_bank, /datum/generated_room_feature_group/workstation_bank)
+TYPE_TABLE(/datum/generated_room_definition/docking_control, build_required_groups, list(/datum/generated_room_feature_group/communications_bank, /datum/generated_room_feature_group/workstation_bank))
 
 /datum/generated_room_definition/docking_control/build_room_style()
 	return new /datum/generated_room_style/docking/control
@@ -1187,11 +1123,9 @@
 	density_min = 0.14
 	density_max = 0.4
 
-/datum/generated_room_definition/docking_berth/build_required_features()
-	return list(/datum/generated_room_feature/internals_crate, /datum/generated_room_feature/communications_console)
+TYPE_TABLE(/datum/generated_room_definition/docking_berth, build_required_features, list(/datum/generated_room_feature/internals_crate, /datum/generated_room_feature/communications_console))
 
-/datum/generated_room_definition/docking_berth/build_required_groups()
-	return list(/datum/generated_room_feature_group/berth_seating)
+TYPE_TABLE(/datum/generated_room_definition/docking_berth, build_required_groups, list(/datum/generated_room_feature_group/berth_seating))
 
 /datum/generated_room_definition/docking_berth/build_room_style()
 	return new /datum/generated_room_style/docking

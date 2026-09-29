@@ -27,7 +27,7 @@
 	density = FALSE       		// can walk through it.
 	flags = WALL_ITEM
 	var/id = null     		// id of door it controls.
-	var/activation_time = 0
+	EXPIRY_DECLARE(activation_time)
 	var/timer_duration = 0
 
 	var/timing = FALSE		// boolean, true/1 timer is on, false/0 means it's not timing
@@ -55,7 +55,7 @@ REL_KEYED_LIST(/obj/machinery/door_timer, brig_flashers, id, /obj/machinery/flas
 			rel_add(src, "targets", C)
 
 	if(!LAZYLEN(targets) && !LAZYLEN(brig_doors) && !LAZYLEN(brig_flashers))
-		stat |= BROKEN
+		stat_add(BROKEN)
 	update_icon()
 
 //Main door timer loop, if it's timing and time is >0 reduce time by 1.
@@ -66,9 +66,9 @@ REL_KEYED_LIST(/obj/machinery/door_timer, brig_flashers, id, /obj/machinery/flas
 /obj/machinery/door_timer/machine_step()
 	if(!timing)
 		return PROCESS_KILL
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return sleep_until_powered()
-	if(world.time - activation_time >= timer_duration)
+	if(ELAPSED(src, activation_time, CLOCK_WORLD) >= timer_duration)
 		timer_end() // open doors, reset timer, clear status screen
 	update_icon()
 	if(!timing)
@@ -76,7 +76,7 @@ REL_KEYED_LIST(/obj/machinery/door_timer, brig_flashers, id, /obj/machinery/flas
 
 // has the door power situation changed, if so update icon.
 /obj/machinery/door_timer/power_change()
-	..()
+	. = ..()
 	update_icon()
 
 // open/closedoor checks if door_timer has power, if so it checks if the
@@ -84,10 +84,10 @@ REL_KEYED_LIST(/obj/machinery/door_timer, brig_flashers, id, /obj/machinery/flas
 
 // Closes and locks doors, power check
 /obj/machinery/door_timer/proc/timer_start()
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return 0
 
-	activation_time = world.time
+	EXPIRY_STAMP(src, activation_time, CLOCK_WORLD)
 	timing = TRUE
 	MACHINE_WAKE(src)
 
@@ -107,7 +107,7 @@ REL_KEYED_LIST(/obj/machinery/door_timer, brig_flashers, id, /obj/machinery/flas
 
 /// Opens and unlocks doors, power check
 /obj/machinery/door_timer/proc/timer_end(forced = FALSE)
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return 0
 
 	timing = FALSE
@@ -140,7 +140,7 @@ REL_KEYED_LIST(/obj/machinery/door_timer, brig_flashers, id, /obj/machinery/flas
 	. = new_time == timer_duration //return 1 on no change
 	timer_duration = new_time
 	if(timer_duration && activation_time && timing) // Setting it while active will reset the activation time
-		activation_time = world.time
+		EXPIRY_STAMP(src, activation_time, CLOCK_WORLD)
 
 /obj/machinery/door_timer/declare_interactions(list/into)
 	into += list(
@@ -211,7 +211,7 @@ REL_KEYED_LIST(/obj/machinery/door_timer, brig_flashers, id, /obj/machinery/flas
 					preset_time = PRESET_LONG
 			set_timer(timer_duration + preset_time)
 			if(timing)
-				activation_time = world.time
+				EXPIRY_STAMP(src, activation_time, CLOCK_WORLD)
 		else
 			. = FALSE
 
@@ -220,11 +220,11 @@ REL_KEYED_LIST(/obj/machinery/door_timer, brig_flashers, id, /obj/machinery/flas
 // if BROKEN, display blue screen of death icon AI uses
 // if timing=true, run update display function
 /obj/machinery/door_timer/update_icon()
-	if(stat & (NOPOWER))
+	if(has_stat(NOPOWER))
 		icon_state = "frame"
 		return
 
-	if(stat & (BROKEN))
+	if(has_stat(BROKEN))
 		set_picture("ai_bsod")
 		return
 

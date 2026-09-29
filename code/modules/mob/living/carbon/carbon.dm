@@ -84,9 +84,8 @@
 			if(istype(M,/mob/living))
 				var/mob/living/L = M
 				L.injure(INJURY_PIERCE, 3, L.hand ? BP_L_HAND : BP_R_HAND, src)
-				L.visible_message( \
-					span_warning("[L] is hurt by sharp body parts when touching [src]!"), \
-					span_warning("[src] is covered in sharp bits and it hurt when you touched them!"), )
+				act_message(L, src, MSG_SELF(span_warning("%T% is covered in sharp bits and it hurt when you touched them!")), \
+					MSG_OTHERS(span_warning("%U% is hurt by sharp body parts when touching %T%!")))
 
 	if(!istype(M, /mob/living/carbon)) return
 
@@ -173,19 +172,15 @@
 	receive_shock(0.2 * shock_damage, source) //shock a random part!
 	receive_shock(0.2 * shock_damage, source) //shock a random part!
 
-	playsound(src, "sparks", 50, 1, -1)
+	play_sfx(src, SFX_SPARKS, extrarange = -1)
 	if (shock_damage > 15)
-		src.visible_message(
-			span_warning("[src] was electrocuted[source ? " by the [source]" : ""]!"), \
-			span_danger("You feel a powerful shock course through your body!"), \
-			span_warning("You hear a heavy electrical crack.") \
-		)
+		act_message(src, null, MSG_SELF(span_danger("You feel a powerful shock course through your body!")), \
+			MSG_OTHERS(span_warning("%U% was electrocuted[source ? " by the [source]" : ""]!")), \
+			MSG_BLIND(span_warning("You hear a heavy electrical crack.")))
 	else
-		src.visible_message(
-			span_warning("[src] was shocked[source ? " by the [source]" : ""]."), \
-			span_warning("You feel a shock course through your body."), \
-			span_warning("You hear a zapping sound.") \
-		)
+		act_message(src, null, MSG_SELF(span_warning("You feel a shock course through your body.")), \
+			MSG_OTHERS(span_warning("%U% was shocked[source ? " by the [source]" : ""].")), \
+			MSG_BLIND(span_warning("You hear a zapping sound.")))
 
 	if(stun)
 		switch(shock_damage)
@@ -198,9 +193,7 @@
 			if(31 to INFINITY)
 				status_at_least(EFFECT_WEAKENED, 10) //This should work for now, more is really silly and makes you lay there forever
 
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-	s.set_up(5, 1, loc)
-	s.start()
+	fx_sparks(loc, 5)
 
 	return shock_damage
 
@@ -208,10 +201,8 @@
 	if (!is_critical() || on_fire)
 		if(src == M && ishuman(src))
 			var/mob/living/carbon/human/H = src
-			visible_message( \
-				span_notice("[src] examines [p_themselves()]."), \
-				span_notice("You check yourself for injuries.") \
-				)
+			act_message(src, null, MSG_SELF(span_notice("You check yourself for injuries.")), \
+				MSG_OTHERS(span_notice("%U% examines %THEMSELVES%.")))
 
 			for(var/obj/item/organ/external/org in H.organs)
 				var/list/status = list()
@@ -263,13 +254,13 @@
 			if((H.has_mutation(SKELETON)) && (!H.get_equipped_item(SLOT_ID_UNIFORM)) && (!H.get_equipped_item(SLOT_ID_SUIT)))
 				H.play_xylophone()
 		else if (on_fire)
-			playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
+			play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
 			if (M.on_fire)
-				M.visible_message(span_warning("[M] tries to pat out [src]'s flames, but to no avail!"),
-				span_warning("You try to pat out [src]'s flames, but to no avail! Put yourself out first!"))
+				act_message(M, src, MSG_SELF(span_warning("You try to pat out %T%'s flames, but to no avail! Put yourself out first!")), \
+					MSG_OTHERS(span_warning("%U% tries to pat out %T%'s flames, but to no avail!")))
 			else
-				M.visible_message(span_warning("[M] tries to pat out [src]'s flames!"),
-				span_warning("You try to pat out [src]'s flames! Hot!"))
+				act_message(M, src, MSG_SELF(span_warning("You try to pat out %T%'s flames! Hot!")), \
+					MSG_OTHERS(span_warning("%U% tries to pat out %T%'s flames!")))
 				om_task_timed(M, 1.5 SECONDS, target = src, receiver = src, on_done = PROC_REF(help_shake_act_carbon_done), done_args = list(M))
 		else
 			if (ishuman(src))
@@ -281,19 +272,19 @@
 			var/mob/living/carbon/human/H = src
 			if(istype(H)) show_ssd = H.species.show_ssd
 			if(show_ssd && !client && !teleop)
-				M.visible_message(span_notice("[M] shakes [src] trying to wake [H.p_them()] up!"), \
-				span_notice("You shake [src], but [p_they()] [p_do()] not respond... Maybe [H.p_theyre()] S.S.D?"))
+				act_message(M, src, MSG_SELF(span_notice("You shake %T%, but [p_they()] [p_do()] not respond... Maybe [H.p_theyre()] S.S.D?")), \
+					MSG_OTHERS(span_notice("%U% shakes %T% trying to wake [H.p_them()] up!")))
 			else if(lying || src.has_status(EFFECT_SLEEPING))
 				status_adjust(EFFECT_SLEEPING, -5)
 				if(!src.has_status(EFFECT_SLEEPING))
 					src.resting = 0
-				M.visible_message(span_notice("[M] shakes [src] trying to wake [H.p_them()] up!"), \
-									span_notice("You shake [src] trying to wake [H.p_them()] up!"))
+				act_message(M, src, MSG_SELF(span_notice("You shake %T% trying to wake [H.p_them()] up!")), \
+					MSG_OTHERS(span_notice("%U% shakes %T% trying to wake [H.p_them()] up!")))
 			else
 				var/mob/living/carbon/human/hugger = M
 				if(M.resting == 1) //Are they resting on the ground?
-					M.visible_message(span_notice("[M] grabs onto [src] and pulls [M.p_themselves()] up"), \
-							span_notice("You grip onto [src] and pull yourself up off the ground!"))
+					act_message(M, src, MSG_SELF(span_notice("You grip onto %T% and pull yourself up off the ground!")), \
+						MSG_OTHERS(span_notice("%U% grabs onto %T% and pulls %THEMSELVES% up")))
 					if(M.fire_stacks >= (src.fire_stacks + 3)) //Fire checks.
 						src.adjust_fire_stacks(1)
 						M.adjust_fire_stacks(-1)
@@ -304,8 +295,8 @@
 				else if(istype(hugger))
 					hugger.species.hug(hugger,src)
 				else
-					M.visible_message(span_notice("[M] hugs [src] to make [H.p_them()] feel better!"), \
-								span_notice("You hug [src] to make [H.p_them()] feel better!"))
+					act_message(M, src, MSG_SELF(span_notice("You hug %T% to make [H.p_them()] feel better!")), \
+						MSG_OTHERS(span_notice("%U% hugs %T% to make [H.p_them()] feel better!")))
 				if(M.fire_stacks >= (src.fire_stacks + 3))
 					src.adjust_fire_stacks(1)
 					M.adjust_fire_stacks(-1)
@@ -315,7 +306,7 @@
 			status_adjust(EFFECT_STUNNED, -3)
 			status_adjust(EFFECT_WEAKENED, -3)
 
-			playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
+			play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
 
 /mob/living/carbon/proc/help_shake_act_carbon_done(mob/living/carbon/M)
 	src.adjust_fire_stacks(-0.5)
@@ -323,13 +314,13 @@
 		M.adjust_fire_stacks(1)
 	M.ignite_mob()
 	if (M.on_fire)
-		M.visible_message(span_danger("The fire spreads from [src] to [M]!"),
-		span_danger("The fire spreads to you as well!"))
+		act_message(M, src, MSG_SELF(span_danger("The fire spreads to you as well!")), \
+			MSG_OTHERS(span_danger("The fire spreads from %T% to %U%!")))
 	else
 		src.adjust_fire_stacks(-0.5) //Less effective than stop, drop, and roll - also accounting for the fact that it takes half as long.
 		if (src.fire_stacks <= 0)
-			M.visible_message(span_warning("[M] successfully pats out [src]'s flames."),
-			span_warning("You successfully pat out [src]'s flames."))
+			act_message(M, src, MSG_SELF(span_warning("You successfully pat out %T%'s flames.")), \
+				MSG_OTHERS(span_warning("%U% successfully pats out %T%'s flames.")))
 			src.extinguish_mob()
 
 /mob/living/carbon/proc/eyecheck()
@@ -417,7 +408,7 @@
 		return FALSE
 	stop_pulling()
 	to_chat(src, span_warning("You slipped on [slipped_on]!"))
-	playsound(src, 'sound/misc/slip.ogg', 50, 1, -3)
+	play_sfx(src, SFX_MISC_SLIP, 2, extrarange = -3)
 	if(has_trait(src, SLIP_REFLEX_TRAIT) && !lying)
 		if(COOLDOWN_FINISHED(src, next_emote))
 			src.emote("sflip")
@@ -554,110 +545,6 @@
 	VV_DROPDOWN_OPTION(VV_HK_MARTIAL_ART, "Give Martial Arts")
 	VV_DROPDOWN_OPTION(VV_HK_GIVE_TRAUMA, "Give Brain Trauma")
 	VV_DROPDOWN_OPTION(VV_HK_CURE_TRAUMA, "Cure Brain Traumas")
-	*/
-
-/mob/living/carbon/vv_do_topic(list/href_list)
-	. = ..()
-
-	if(!.)
-		return
-
-	/*
-	if(href_list[VV_HK_MODIFY_BODYPART])
-		if(!check_rights(R_SPAWN))
-			return
-		var/edit_action = tgui_alert(usr, "What would you like to do?","Modify Body Part", list("replace","remove"))
-		if(!edit_action)
-			return
-		var/list/limb_list = list()
-		if(edit_action == "remove")
-			for(var/obj/item/bodypart/iter_part as anything in bodyparts)
-				limb_list += iter_part.body_zone
-				limb_list -= BODY_ZONE_CHEST
-		else
-			limb_list = list(BODY_ZONE_HEAD, BODY_ZONE_L_ARM, BODY_ZONE_R_ARM, BODY_ZONE_L_LEG, BODY_ZONE_R_LEG, BODY_ZONE_CHEST)
-		var/result = tgui_input_list(usr, "Please choose which bodypart to [edit_action]","[capitalize(edit_action)] Bodypart", sort_list(limb_list))
-		if(result)
-			var/obj/item/bodypart/part = get_bodypart(result)
-			var/list/limbtypes = list()
-			switch(result)
-				if(BODY_ZONE_CHEST)
-					limbtypes = typesof(/obj/item/bodypart/chest)
-				if(BODY_ZONE_R_ARM)
-					limbtypes = typesof(/obj/item/bodypart/arm/right)
-				if(BODY_ZONE_L_ARM)
-					limbtypes = typesof(/obj/item/bodypart/arm/left)
-				if(BODY_ZONE_HEAD)
-					limbtypes = typesof(/obj/item/bodypart/head)
-				if(BODY_ZONE_L_LEG)
-					limbtypes = typesof(/obj/item/bodypart/leg/left)
-				if(BODY_ZONE_R_LEG)
-					limbtypes = typesof(/obj/item/bodypart/leg/right)
-			switch(edit_action)
-				if("remove")
-					if(part)
-						part.drop_limb()
-						admin_ticket_log("[key_name_admin(usr)] has removed [src]'s [part.plaintext_zone]")
-					else
-						to_chat(usr, span_boldwarning("[src] doesn't have such bodypart."))
-						admin_ticket_log("[key_name_admin(usr)] has attempted to modify the bodyparts of [src]")
-				if("replace")
-					var/limb2add = tgui_input_list(usr, "Select a bodypart type to add", "Add/Replace Bodypart", sort_list(limbtypes))
-					var/obj/item/bodypart/new_bp = new limb2add()
-					if(new_bp.replace_limb(src, special = TRUE))
-						admin_ticket_log("key_name_admin(usr)] has replaced [src]'s [part.type] with [new_bp.type]")
-						qdel(part)
-					else
-						to_chat(usr, "Failed to replace bodypart! They might be incompatible.")
-						admin_ticket_log("[key_name_admin(usr)] has attempted to modify the bodyparts of [src]")
-
-	if(href_list[VV_HK_MODIFY_ORGANS])
-		return SSadmin_verbs.dynamic_invoke_verb(usr, /datum/admin_verb/manipulate_organs, src)
-
-	if(href_list[VV_HK_MARTIAL_ART])
-		if(!check_rights(NONE))
-			return
-		var/list/artpaths = subtypesof(/datum/martial_art)
-		var/list/artnames = list()
-		for(var/i in artpaths)
-			var/datum/martial_art/M = i
-			artnames[initial(M.name)] = M
-		var/result = tgui_input_list(usr, "Choose the martial art to teach","JUDO CHOP", sort_list(artnames, GLOBAL_PROC_REF(cmp_typepaths_asc))
-		if(!usr)
-			return
-		if(QDELETED(src))
-			to_chat(usr, span_boldwarning("Mob doesn't exist anymore."))
-			return
-		if(result)
-			var/chosenart = artnames[result]
-			var/datum/martial_art/MA = new chosenart(src)
-			MA.teach(src)
-			log_admin("[key_name(usr)] has taught [MA] to [key_name(src)].")
-			message_admins(span_notice("[key_name_admin(usr)] has taught [MA] to [key_name_admin(src)]."))
-
-	if(href_list[VV_HK_GIVE_TRAUMA])
-		if(!check_rights(NONE))
-			return
-		var/list/traumas = subtypesof(/datum/brain_trauma)
-		var/result = tgui_input_list(usr, "Choose the brain trauma to apply","Traumatize", sort_list(traumas, GLOBAL_PROC_REF(cmp_typepaths_asc)))
-		if(!usr)
-			return
-		if(QDELETED(src))
-			to_chat(usr, "Mob doesn't exist anymore")
-			return
-		if(!result)
-			return
-		var/datum/brain_trauma/BT = gain_trauma(result)
-		if(BT)
-			log_admin("[key_name(usr)] has traumatized [key_name(src)] with [BT.name]")
-			message_admins(span_notice("[key_name_admin(usr)] has traumatized [key_name_admin(src)] with [BT.name]."))
-
-	if(href_list[VV_HK_CURE_TRAUMA])
-		if(!check_rights(NONE))
-			return
-		cure_all_traumas(TRAUMA_RESILIENCE_ABSOLUTE)
-		log_admin("[key_name(usr)] has cured all traumas from [key_name(src)].")
-		message_admins(span_notice("[key_name_admin(usr)] has cured all traumas from [key_name_admin(src)]."))
 	*/
 
 /**

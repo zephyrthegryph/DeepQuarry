@@ -1,3 +1,5 @@
+OWN_TIMER(/obj/machinery/camera, camera_timer_token)
+
 /obj/machinery/camera
 	name = "security camera"
 	desc = "It's used to monitor rooms."
@@ -35,9 +37,8 @@
 	var/on_open_network = 0
 	var/always_visible = FALSE //Visable from any map, good for entertainment network cameras
 
-	var/affected_by_emp_until = 0
-	/// The om_after() timer for next_camera_deadline(), and the deadline it was set for.
-	var/tmp/camera_timer_token
+	EXPIRY_DECLARE(affected_by_emp_until)
+	/// The deadline the `camera_timer_token` timer slot was last set for (next_camera_deadline()).
 	var/tmp/camera_timer_at = 0
 
 	var/client_huds = null
@@ -96,31 +97,29 @@
 /// The earliest pending deadline (world.time), or 0 for none.
 /obj/machinery/camera/proc/next_camera_deadline()
 	. = 0
-	if((stat & EMPED) && affected_by_emp_until > 0)
+	if((has_stat(EMPED)) && affected_by_emp_until > 0)
 		. = affected_by_emp_until
 	// The motion alarm waits for power (power_change() reschedules).
-	if(detectTime > 0 && !(stat & (NOPOWER|EMPED)))
+	if(detectTime > 0 && !has_stat(NOPOWER | EMPED))
 		var/alarm_at = detectTime + alarm_delay + 1
 		if(!. || alarm_at < .)
 			. = alarm_at
 
 /obj/machinery/camera/proc/schedule_camera_timer()
 	var/deadline = next_camera_deadline()
-	if(deadline == camera_timer_at && (!isnull(camera_timer_token) || !deadline))
+	if(deadline == camera_timer_at && (om_timer_slot_pending(src, "camera_timer_token") || !deadline))
 		return
-	if(!isnull(camera_timer_token))
-		om_cancel_timer(src, camera_timer_token)
-		camera_timer_token = null
+	if(om_timer_slot_pending(src, "camera_timer_token"))
+		om_cancel_timer_slot(src, "camera_timer_token")
 	camera_timer_at = deadline
 	if(deadline)
 		om_attach(src, /datum/om/behaviour/sleeper/timed)
-		camera_timer_token = om_after(src, max(deadline - world.time, 0), PROC_REF(camera_timer_fired))
+		om_after_slot(src, "camera_timer_token", max(deadline - world.time, 0), PROC_REF(camera_timer_fired))
 
 /obj/machinery/camera/proc/camera_timer_fired()
-	camera_timer_token = null
 	camera_timer_at = 0
-	if((stat & EMPED) && world.time >= affected_by_emp_until)
-		stat &= ~EMPED
+	if(has_stat(EMPED) && EXPIRY_EXPIRED(src, affected_by_emp_until, CLOCK_WORLD))
+		stat_remove(EMPED)
 		cancelCameraAlarm()
 		update_icon()
 		update_coverage()
@@ -129,7 +128,7 @@
 
 /obj/machinery/camera/om_sleep_violation()
 	var/deadline = next_camera_deadline()
-	if(deadline && (isnull(camera_timer_token) || camera_timer_at > deadline))
+	if(deadline && (!om_timer_slot_pending(src, "camera_timer_token") || camera_timer_at > deadline))
 		return "deadline [deadline] (now [world.time]) has no timer"
 	return null
 
@@ -143,9 +142,9 @@
 	if (. & EMP_PROTECT_SELF)
 		return
 	if(!isEmpProof() && (forced || prob(100/severity)))
-		if(!affected_by_emp_until || (world.time > affected_by_emp_until))
+		if(!affected_by_emp_until || EXPIRY_EXPIRED(src, affected_by_emp_until, CLOCK_WORLD))
 			affected_by_emp_until = max(affected_by_emp_until, world.time + (90 SECONDS / severity))
-			stat |= EMPED
+			stat_add(EMPED)
 			set_light(0)
 			triggerCameraAlarm()
 			update_icon()
@@ -153,7 +152,7 @@
 			schedule_camera_timer()
 
 /obj/machinery/camera/blob_act(obj/structure/blob/B)
-	if((stat & BROKEN) || (resistance_flags & BOMB_PROOF))
+	if((has_stat(BROKEN)) || (resistance_flags & BOMB_PROOF))
 		return
 	deal_damage(DAMAGE_BLUNT, max_integrity * (1 - integrity_failure) + DAMAGE_PRECISION, source = B)
 
@@ -241,7 +240,7 @@
 	user.do_attack_animation(src)
 	user.setClickCooldown(user.get_attack_speed())
 	visible_message(span_warning("\The [user] slashes at [src]!"))
-	playsound(src, 'sound/weapons/slash.ogg', 100, 1)
+	play_sfx(src, SFX_WEAPONS_SLASH, 2)
 	add_hiddenprint(user)
 	deal_damage(DAMAGE_SHARP, max_integrity * (1 - integrity_failure) + DAMAGE_PRECISION, source = user, attacker = user)
 	return TRUE
@@ -278,7 +277,7 @@
 
 /obj/machinery/camera/welder_act(mob/user, obj/item/tool)
 	update_coverage()
-	if(!wires.is_all_cut() && !(stat & BROKEN))
+	if(!wires.is_all_cut() && !has_stat(BROKEN))
 		return ..()
 	if(!weld(tool, user, PROC_REF(welded_off), list(user, tool)))
 		return ITEM_INTERACT_BLOCKING
@@ -287,12 +286,12 @@
 /obj/machinery/camera/proc/welded_off(mob/user, obj/item/tool)
 	if(assembly)
 		assembly.forceMove(loc)
-		assembly.anchored = TRUE
+		assembly.set_anchored(TRUE)
 		assembly.camera_name = c_tag
 		assembly.camera_network = english_list(network, NETWORK_DEFAULT, ",", ",")
 		assembly.update_icon()
 		assembly.set_dir(dir)
-		if(stat & BROKEN)
+		if(has_stat(BROKEN))
 			assembly.state = 2
 			to_chat(user, span_notice("You repaired \the [src] frame."))
 		else
@@ -376,7 +375,7 @@
 			add_hiddenprint(user)
 		else
 			visible_message(span_notice(" [src] clicks and shuts down. "))
-		playsound(src, 'sound/items/Wirecutter.ogg', 100, 1)
+		play_sfx(src, SFX_ITEMS_WIRECUTTER)
 		icon_state = "[initial(icon_state)]1"
 	else
 		if(user)
@@ -384,7 +383,7 @@
 			add_hiddenprint(user)
 		else
 			visible_message(span_notice(" [src] clicks and reactivates itself. "))
-		playsound(src, 'sound/items/Wirecutter.ogg', 100, 1)
+		play_sfx(src, SFX_ITEMS_WIRECUTTER)
 		icon_state = initial(icon_state)
 
 /obj/machinery/camera/atom_break(damage_flag)
@@ -397,10 +396,8 @@
 	update_coverage()
 
 	//sparks
-	var/datum/effect/effect/system/spark_spread/spark_system = new /datum/effect/effect/system/spark_spread()
-	spark_system.set_up(5, 0, loc)
-	spark_system.start()
-	playsound(src, "sparks", 50, 1)
+	fx_sparks(loc, 5, FALSE)
+	play_sfx(src, SFX_SPARKS)
 
 /obj/machinery/camera/atom_fix()
 	. = ..()
@@ -416,9 +413,9 @@
 		update_coverage()
 
 /obj/machinery/camera/update_icon()
-	if (!status || (stat & BROKEN))
+	if (!status || (has_stat(BROKEN)))
 		icon_state = "[initial(icon_state)]1"
-	else if (stat & EMPED)
+	else if (has_stat(EMPED))
 		icon_state = "[initial(icon_state)]emp"
 	else
 		icon_state = initial(icon_state)
@@ -438,7 +435,7 @@
 /obj/machinery/camera/proc/can_use()
 	if(!status)
 		return 0
-	if(stat & (EMPED|BROKEN))
+	if(has_stat(EMPED | BROKEN))
 		return 0
 	return 1
 
@@ -492,7 +489,7 @@
 /obj/machinery/camera/proc/weld(obj/item/tool, mob/user, on_done, list/done_args)
 	if(om_busy(src)) // a weld in progress claims it
 		return 0
-	var/result = use_tool(user, tool, src, delay = 10 SECONDS, quality = TOOL_WELDER, volume = 50, message_self = "You start to weld [src]..", receiver = src, on_done = PROC_REF(weld_finished), done_args = list(on_done, done_args), claims = TRUE)
+	var/result = use_tool(user, tool, src, delay = 10 SECONDS, quality = TOOL_WELDER, volume = 50, start_self = "You start to weld [src]..", receiver = src, on_done = PROC_REF(weld_finished), done_args = list(on_done, done_args), claims = TRUE)
 	return result
 
 /obj/machinery/camera/proc/weld_finished(on_done, list/done_args)
@@ -503,7 +500,7 @@
 	if(!panel_open || isAI(user))
 		return
 
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		to_chat(user, span_warning("\The [src] is broken."))
 		return
 

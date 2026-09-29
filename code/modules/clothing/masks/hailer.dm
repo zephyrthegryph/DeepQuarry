@@ -160,7 +160,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/gas/sechailer, \
 		if(!safety)
 			message = "FUCK YOUR CUNT YOU SHIT EATING COCKSUCKER MAN EAT A DONG FUCKING ASS RAMMING SHIT FUCK EAT PENISES IN YOUR FUCK FACE AND SHIT OUT ABORTIONS OF FUCK AND DO SHIT IN YOUR ASS YOU COCK FUCK SHIT MONKEY FUCK ASS WANKER FROM THE DEPTHS OF SHIT."
 			user.visible_message(span_infoplain("[user]'s Compli-o-Nator: " + span_red(span_huge(span_bold("[message]")))))
-			playsound(src, 'sound/voice/binsult.ogg', 50, 0, 4) //Future sound channel = something like SFX
+			play_sfx(src, SFX_VOICE_BINSULT, 0.5, extrarange = 4) //Future sound channel = something like SFX
 			COOLDOWN_START(src, hail_cooldown, 3.5 SECONDS)
 			return
 

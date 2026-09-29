@@ -38,8 +38,7 @@
 	if(Adjacent(user))
 		. += span_notice("A particle beam can alter alloy stock placed inside it, or drive one of its exotic-matter reactions.")
 		. += span_notice("\The [src] contains:")
-		latent_materialize_all() // a walk needs real things (C5)
-		for(var/obj/item/I in contents) // ALLOW(latent): materialized above
+		FOR_REAL_CONTENTS(var/obj/item/I, src)
 			. += span_notice("\the [I]")
 
 /obj/machinery/particle_smasher/atmosanalyze(mob/user)
@@ -139,7 +138,7 @@
 	return TRUE
 
 /obj/machinery/particle_smasher/wrench_act(mob/user, obj/item/W)
-	anchored = !anchored
+	set_anchored(!anchored)
 	playsound(src, W.usesound, 75, 1)
 	user.visible_message("[user.name] [anchored ? "secures" : "unsecures"] [src.name] to the floor.", \
 		"You [anchored ? "secure" : "unsecure"] the [src.name] to the floor.", \

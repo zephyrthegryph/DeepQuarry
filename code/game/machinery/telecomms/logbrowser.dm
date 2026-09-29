@@ -77,7 +77,7 @@
 	effect = /obj/machinery/computer/telecomms/server/proc/interaction_open_ui_impl
 
 /obj/machinery/computer/telecomms/server/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return TRUE
 	tgui_interact(user)
 	return TRUE
@@ -166,8 +166,8 @@
 
 /obj/machinery/computer/telecomms/server/emag_act(remaining_charges, mob/user)
 	if(!emagged)
-		playsound(src, 'sound/effects/sparks4.ogg', 75, 1)
-		emagged = 1
+		play_sfx(src, SFX_EFFECTS_SPARKS4)
+		set_emagged(1)
 		to_chat(user, span_notice("You you disable the security protocols"))
 		return 1
 

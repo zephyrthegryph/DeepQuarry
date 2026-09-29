@@ -160,8 +160,8 @@ REGISTRY_MEMBERSHIP(/obj/effect/map_effect/beam_point, REGISTRY_BEAM_POINTS)
 /obj/effect/map_effect/beam_point/instant/electric
 	beam_icon_state = "nzcrentrs_power"
 	beam_type = /obj/effect/ebeam/reactive/electric
-	beam_creation_sound = 'sound/effects/lightningshock.ogg'
-	beam_destruction_sound = "sparks"
+	beam_creation_sound = SFX_EFFECTS_LIGHTNINGSHOCK
+	beam_destruction_sound = SFX_SPARKS
 
 // Turns on and off on a timer.
 /obj/effect/map_effect/beam_point/timer
@@ -171,8 +171,8 @@ REGISTRY_MEMBERSHIP(/obj/effect/map_effect/beam_point, REGISTRY_BEAM_POINTS)
 /obj/effect/map_effect/beam_point/timer/electric
 	beam_icon_state = "nzcrentrs_power"
 	beam_type = /obj/effect/ebeam/reactive/electric
-	beam_creation_sound = 'sound/effects/lightningshock.ogg'
-	beam_destruction_sound = "sparks"
+	beam_creation_sound = SFX_EFFECTS_LIGHTNINGSHOCK
+	beam_destruction_sound = SFX_SPARKS
 	seek_range = 3
 
 // Is only a target for other beams to connect to.

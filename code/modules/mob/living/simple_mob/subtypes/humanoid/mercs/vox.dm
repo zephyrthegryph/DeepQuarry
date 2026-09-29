@@ -57,7 +57,7 @@
 	desc = "A desperate looking Vox. Get your gun."
 
 	projectiletype = /obj/item/projectile/bullet/rifle/a762
-	projectilesound = 'sound/weapons/riflebolt.ogg'
+	projectilesound = SFX_WEAPONS_RIFLEBOLT
 	needs_reload = TRUE
 	reload_max = 20
 
@@ -88,7 +88,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/merc/voxpirate/boarder, INTE
 	. = TRUE
 	if(O.force)
 		if(prob(20))
-			visible_message(span_danger("\The [src] blocks \the [O] with its sword!"))
+			act_message(src, O, null, MSG_OTHERS(span_danger("%U% blocks %T% with its sword!")))
 			if(user)
 				ai_brain.react_to_attack(user)
 			return
@@ -96,12 +96,12 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/merc/voxpirate/boarder, INTE
 			return FALSE
 	else
 		to_chat(user, span_warning("This weapon is ineffective, it does no damage."))
-		visible_message(span_warning("\The [user] gently taps [src] with \the [O]."))
+		act_message(user, src, null, MSG_OTHERS(span_warning("%U% gently taps %T% with %I%.")), item = O)
 
 /mob/living/simple_mob/humanoid/merc/voxpirate/boarder/bullet_act(obj/item/projectile/Proj)
 	if(!Proj)	return
 	if(prob(35))
-		visible_message(span_warning("[src] blocks [Proj] with its sword!"))
+		act_message(src, null, null, MSG_OTHERS(span_warning("%U% blocks [Proj] with its sword!")))
 		if(Proj.firer)
 			ai_brain.react_to_attack(Proj.firer)
 		return
@@ -121,7 +121,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/merc/voxpirate/boarder, INTE
 	catalogue_data = list(/datum/category_item/catalogue/fauna/mercenary/vox/boarder)
 
 	projectiletype = /obj/item/projectile/bullet/pellet/shotgun
-	projectilesound = 'sound/weapons/gunshot_shotgun.ogg'
+	projectilesound = SFX_WEAPONS_GUNSHOT_SHOTGUN
 
 	corpse = /obj/effect/landmark/mobcorpse/vox/boarder_r
 	loot_list = list(/obj/item/gun/projectile/shotgun/pump/combat = 100,
@@ -150,7 +150,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/merc/voxpirate/boarder, INTE
 	catalogue_data = list(/datum/category_item/catalogue/fauna/mercenary/vox/technician)
 
 	projectiletype = /obj/item/projectile/ion
-	projectilesound = 'sound/weapons/Laser.ogg'
+	projectilesound = SFX_WEAPONS_LASER
 
 	corpse = /obj/effect/landmark/mobcorpse/vox/boarder_t
 	loot_list = list(/obj/item/gun/energy/ionrifle)
@@ -181,7 +181,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/merc/voxpirate/boarder, INTE
 	armor_spec = "melee=30;bullet=50;laser=60;energy=30;bomb=35;bio=100;rad=100" // Boosted armor to represent Tank role.
 
 	projectiletype = /obj/item/projectile/sonic/weak
-	projectilesound = 'sound/effects/basscannon.ogg'
+	projectilesound = SFX_EFFECTS_BASSCANNON
 
 	corpse = /obj/effect/landmark/mobcorpse/vox/suppressor
 	loot_list = list(/obj/item/gun/energy/sonic = 100)
@@ -212,7 +212,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/merc/voxpirate/boarder, INTE
 	armor_spec = "melee=60;bullet=50;laser=40;energy=15;bomb=30;bio=100;rad=100" // Vox RIG armor values.
 
 	projectiletype = /obj/item/projectile/beam/darkmatter
-	projectilesound = 'sound/weapons/eLuger.ogg'
+	projectilesound = SFX_WEAPONS_ELUGER
 
 	corpse = /obj/effect/landmark/mobcorpse/vox/captain
 	loot_list = list(/obj/item/gun/energy/darkmatter = 100)

@@ -47,7 +47,7 @@
 
 // Glass-on-glass sound rather than the default smash.
 /obj/structure/window/play_attack_sound(damage_amount, damage_type, damage_flag)
-	playsound(src, 'sound/effects/Glasshit.ogg', 100, TRUE)
+	play_sfx(src, SFX_EFFECTS_GLASSHIT, volume = 100)
 
 // Crack visuals / warnings as integrity drops past thresholds.
 /obj/structure/window/on_update_integrity(old_value, new_value)
@@ -77,7 +77,7 @@
 	add_overlay(img)
 
 /obj/structure/window/proc/shatter(display_message = 1)
-	playsound(src, "shatter", 70, 1)
+	play_sfx(src, SFX_SHATTER)
 	if(display_message)
 		visible_message("[src] shatters!")
 	if(reinf)
@@ -125,7 +125,7 @@
 /obj/structure/window/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
 	visible_message(span_danger("[src] was hit by [source]."))
 	if(!reinf && get_integrity() - source.thrown_impact_force(throwingdatum) <= 7)
-		anchored = FALSE
+		set_anchored(FALSE)
 		update_verbs()
 		update_nearby_icons()
 		step(src, get_dir(source, src))
@@ -137,7 +137,7 @@
 /// Old attack_tk: knock on the window at range.
 /obj/structure/window/proc/interaction_tk(mob/user, obj/item/held, datum/interaction/interaction)
 	user.visible_message(span_notice("Something knocks on [src]."))
-	playsound(src, 'sound/effects/Glasshit.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_GLASSHIT, volume = 50)
 	return TRUE
 
 /obj/structure/window/declare_interactions(list/into)
@@ -167,7 +167,7 @@
 			attack_generic(H, shreddamage + 5, "attacks")
 			return TRUE
 
-	playsound(src, 'sound/effects/glassknock.ogg', 80, 1)
+	play_sfx(src, SFX_EFFECTS_GLASSKNOCK)
 	user.do_attack_animation(src)
 	user.visible_message(span_danger("\The [user] bangs against \the [src]!"),
 						span_danger("You bang against \the [src]!"),
@@ -188,7 +188,7 @@
 		user.do_attack_animation(src)
 		shatter()
 	else
-		playsound(src, 'sound/effects/glassknock.ogg', 80, 1)
+		play_sfx(src, SFX_EFFECTS_GLASSKNOCK)
 		user.visible_message("[user.name] knocks on the [src.name].",
 							"You knock on the [src.name].",
 							"You hear a knocking sound.")
@@ -245,7 +245,7 @@
 	if(istype(W, /obj/item/stack/cable_coil) && reinf && state == 0 && !istype(src, /obj/structure/window/reinforced/polarized))
 		var/obj/item/stack/cable_coil/C = W
 		if (C.use(1))
-			playsound(src, 'sound/effects/sparks1.ogg', 75, 1)
+			play_sfx(src, SFX_EFFECTS_SPARKS1, 0.75)
 			user.visible_message( \
 				span_infoplain(span_bold("\The [user]") + " begins to wire \the [src] for electrochromic tinting."), \
 				span_notice("You begin to wire \the [src] for electrochromic tinting."), \
@@ -260,17 +260,17 @@
 			user.do_attack_animation(src)
 			hit(W.force)
 			if(get_integrity() <= 7)
-				anchored = FALSE
+				set_anchored(FALSE)
 				update_nearby_icons()
 				step(src, get_dir(user, src))
 		else
-			playsound(src, 'sound/effects/Glasshit.ogg', 75, 1)
+			play_sfx(src, SFX_EFFECTS_GLASSHIT)
 	return TRUE
 
 /obj/structure/window/proc/attackby_tool_done(state)
 	if(!(state == 0))
 		return
-	playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
+	play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 	var/obj/structure/window/reinforced/polarized/P = new(loc, dir)
 	if(is_fulltile())
 		P.fulltile = TRUE
@@ -278,7 +278,7 @@
 	P.max_integrity = max_integrity
 	P.update_integrity(get_integrity())
 	P.state = state
-	P.anchored = anchored
+	P.set_anchored(anchored)
 	replace_with(src, P)
 
 // Tool steps and weld repair: window_construction.dm.
@@ -308,7 +308,7 @@
 
 	//player-constructed windows
 	if (constructed)
-		anchored = FALSE
+		set_anchored(FALSE)
 		state = 0
 
 	// If we started anchored we'll need to disable rotation
@@ -326,7 +326,7 @@
 
 // neighbouring windows and tables re-smooth without it.
 /obj/structure/window/on_destroy(force)
-	density = FALSE
+	set_density(FALSE)
 	update_nearby_tiles()
 	var/turf/location = loc
 	..()
@@ -596,7 +596,7 @@ DECLARE_SHARED_CACHE(window_overlay_sets, GLOBAL_PROC_REF(build_window_overlay_s
 /obj/machinery/button/windowtint/proc/toggle_tint()
 	use_power(5)
 
-	active = !active
+	set_active(!active)
 	update_icon()
 
 	for(var/obj/structure/window/reinforced/polarized/W in range(src,range))
@@ -604,7 +604,7 @@ DECLARE_SHARED_CACHE(window_overlay_sets, GLOBAL_PROC_REF(build_window_overlay_s
 			W.toggle()
 
 /obj/machinery/button/windowtint/power_change()
-	..()
+	. = ..()
 	if(active && !powered(power_channel))
 		toggle_tint()
 
@@ -662,11 +662,7 @@ DECLARE_SHARED_CACHE(window_overlay_sets, GLOBAL_PROC_REF(build_window_overlay_s
 /obj/structure/window/rcd_values(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	switch(passed_mode)
 		if(RCD_DECONSTRUCT)
-			return list(
-				RCD_VALUE_MODE = RCD_DECONSTRUCT,
-				RCD_VALUE_DELAY = 5 SECONDS,
-				RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 5
-			)
+			return rcd_value_entry(RCD_DECONSTRUCT, 5 SECONDS, RCD_SHEETS_PER_MATTER_UNIT * 5)
 
 /obj/structure/window/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	switch(passed_mode)

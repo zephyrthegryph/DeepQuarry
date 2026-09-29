@@ -51,8 +51,8 @@ GLOBAL_LIST_INIT(civilian_cartridges, list(
 	icon_state = "cart"
 	item_state = "electronic"
 	w_class = ITEMSIZE_TINY
-	drop_sound = 'sound/items/drop/component.ogg'
-	pickup_sound = 'sound/items/pickup/component.ogg'
+	drop_sound = SFX_ITEMS_DROP_COMPONENT
+	pickup_sound = SFX_ITEMS_PICKUP_COMPONENT
 
 	var/obj/item/radio/integrated/radio = null
 

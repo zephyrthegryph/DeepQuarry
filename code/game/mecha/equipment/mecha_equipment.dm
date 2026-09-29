@@ -17,7 +17,7 @@
 	var/required_type = /obj/mecha //may be either a type or a list of allowed types
 	var/equip_type = null //mechaequip2
 	var/allow_duplicate = FALSE
-	var/ready_sound = 'sound/mecha/mech_reload_default.ogg' //Sound to play once the fire delay passed.
+	var/ready_sound = SFX_MECHA_MECH_RELOAD_DEFAULT //Sound to play once the fire delay passed.
 	var/enable_special = FALSE	// Will the tool do its special?
 
 	var/step_delay = 0	// Does the component slow/speed up the suit?
@@ -250,10 +250,16 @@
 	enable_special = FALSE
 	return
 
-/obj/item/mecha_parts/mecha_equipment/Topic(href,href_list)
-	if(href_list["detach"])
-		src.detach()
-	return
+TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment, "detach", PROC_REF(topic_detach))
+
+// Equipment hrefs come from the exosuit's control panel: only its conscious pilot uses them.
+/obj/item/mecha_parts/mecha_equipment/topic_allowed(mob/user, list/href_list)
+	if(!chassis || !user || user.stat)
+		return FALSE
+	return user == chassis.slot_item(MECHA_SLOT_PILOT)
+
+/obj/item/mecha_parts/mecha_equipment/proc/topic_detach(mob/user, list/args)
+	detach()
 
 /obj/item/mecha_parts/mecha_equipment/proc/set_ready_state(state)
 	equip_ready = state

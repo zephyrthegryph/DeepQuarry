@@ -67,7 +67,7 @@
 	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
 	armor_spec = "melee=60;bullet=50;laser=30;energy=80;bomb=30;bio=100;rad=100" // Same armor are cult armor, may nerf since DAMN THAT IS GOOD ARMOR
-	attack_sound = 'sound/weapons/bladeslice.ogg'
+	attack_sound = SFX_WEAPONS_BLADESLICE
 
 
 /mob/living/simple_mob/humanoid/cultist/human
@@ -105,7 +105,7 @@
 /mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/proc/do_special_attack_1(atom/A, turf/destination, turf/starting_turf)
 
 	// Do the dig!
-	visible_message(span_danger("\The [src] sinks into a puddle of blood \the [A]!"))
+	act_message(src, A, null, MSG_OTHERS(span_danger("%U% sinks into a puddle of blood %T%!")))
 	new /obj/effect/decal/cleanable/blood (src.loc)
 	flick("blood_out",A)
 	icon_state = "bloodout"
@@ -130,9 +130,9 @@
 		if(L == src)
 			continue
 
-		visible_message(span_danger("\The [src] suddenly rises from a pool of blood \the [L]!"))
+		act_message(src, L, null, MSG_OTHERS(span_danger("%U% suddenly rises from a pool of blood %T%!")))
 		new /obj/effect/decal/cleanable/blood (src.loc)
-		playsound(L, 'sound/weapons/heavysmash.ogg', 75, 1)
+		play_sfx(L, SFX_WEAPONS_HEAVYSMASH)
 		L.apply_body_effect(/datum/body_effect/entangled, 1 SECONDS)
 		overshoot = FALSE
 
@@ -144,7 +144,7 @@
 
 	// Otherwise we need to keep going.
 	to_chat(src, span_warning("You overshoot your target!"))
-	playsound(src, 'sound/weapons/punchmiss.ogg', 75, 1)
+	play_sfx(src, SFX_WEAPONS_PUNCHMISS, 3, extrarange = 0)
 	var/dir_to_go = get_dir(starting_turf, destination)
 	for(var/i = 1 to rand(2, 4))
 		destination = get_step(destination, dir_to_go)
@@ -175,7 +175,7 @@
 		T = get_step(src, get_dir(src, destination))
 		if(T.check_density(ignore_mobs = TRUE))
 			to_chat(src, span_critical("You hit something really solid!"))
-			playsound(src, "punch", 75, 1)
+			play_sfx(src, SFX_PUNCH, 1.5)
 			status_at_least(EFFECT_WEAKENED, 5)
 			apply_body_effect(/datum/body_effect/tunneler_vulnerable, 10 SECONDS)
 			return FALSE // Hit a wall.
@@ -232,7 +232,7 @@
 	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
 	armor_spec = "melee=45;bullet=40;laser=30;energy=80;bomb=20;bio=100;rad=100" // Reduced Resistance to Approximate increased Tesh damage.
-	attack_sound = 'sound/weapons/bladeslice.ogg'
+	attack_sound = SFX_WEAPONS_BLADESLICE
 
 
 /mob/living/simple_mob/humanoid/cultist/tesh
@@ -281,7 +281,7 @@
 	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
 	armor_spec = "melee=70;bullet=60;laser=30;energy=80;bomb=35;bio=100;rad=100" // Better Armor to match lizard brute resist
-	attack_sound = 'sound/weapons/rapidslice.ogg'
+	attack_sound = SFX_WEAPONS_RAPIDSLICE
 	movement_cooldown = 4
 	base_attack_cooldown = 7.5 //Two knives mean double stab.
 
@@ -330,8 +330,8 @@
 	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
 	armor_spec = "melee=50;bullet=30;laser=50;energy=80;bomb=25;bio=100;rad=100" //Armor Rebalanced for Cult Robes.
-	attack_sound = 'sound/weapons/rapidslice.ogg'
-	projectilesound = 'sound/weapons/spiderlunge.ogg'
+	attack_sound = SFX_WEAPONS_RAPIDSLICE
+	projectilesound = SFX_WEAPONS_SPIDERLUNGE
 
 
 /mob/living/simple_mob/humanoid/cultist/caster
@@ -379,7 +379,7 @@
 	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
 	armor_spec = "melee=50;bullet=30;laser=50;energy=80;bomb=25;bio=100;rad=100" //Armor Rebalanced for Cult Robes.
-	attack_sound = 'sound/weapons/rapidslice.ogg'
+	attack_sound = SFX_WEAPONS_RAPIDSLICE
 	movement_cooldown = 4
 
 
@@ -425,9 +425,9 @@
 	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
 	armor_spec = "melee=35;bullet=20;laser=35;energy=60;bomb=20;bio=100;rad=100" //Rebalanced for Robes and Tesh damage
-	attack_sound = 'sound/weapons/rapidslice.ogg'
+	attack_sound = SFX_WEAPONS_RAPIDSLICE
 	base_attack_cooldown = 7.5
-	projectilesound = 'sound/weapons/spiderlunge.ogg'
+	projectilesound = SFX_WEAPONS_SPIDERLUNGE
 
 
 /mob/living/simple_mob/humanoid/cultist/castertesh
@@ -472,7 +472,7 @@
 	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
 	armor_spec = "melee=60;bullet=50;laser=30;energy=80;bomb=30;bio=100;rad=100" // Same armor are cult armor, may nerf since DAMN THAT IS GOOD ARMOR
-	attack_sound = 'sound/weapons/bladeslice.ogg'
+	attack_sound = SFX_WEAPONS_BLADESLICE
 
 
 EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/cultist/elite, INTERACT_ITEM(null, PROC_REF(cultist_elite_interaction_item)))
@@ -482,7 +482,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/cultist/elite, INTERACT_ITEM
 	. = TRUE
 	if(O.force)
 		if(prob(30))
-			visible_message(span_danger("\The [src] blocks \the [O] with its shield!"))
+			act_message(src, O, null, MSG_OTHERS(span_danger("%U% blocks %T% with its shield!")))
 			if(user)
 				ai_brain.react_to_attack(user)
 			return
@@ -490,7 +490,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/cultist/elite, INTERACT_ITEM
 			return FALSE
 	else
 		to_chat(user, span_warning("This weapon is ineffective, it does no damage."))
-		visible_message(span_warning("\The [user] gently taps [src] with \the [O]."))
+		act_message(user, src, null, MSG_OTHERS(span_warning("%U% gently taps %T% with %I%.")), item = O)
 
 /mob/living/simple_mob/humanoid/cultist/elite/bullet_act(obj/item/projectile/Proj)
 	if(!Proj)	return
@@ -511,7 +511,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/cultist/elite, INTERACT_ITEM
 	new /obj/effect/decal/cleanable/blood/gibs (src.loc)
 	new /obj/item/material/shard (src.loc)
 	..()
-	playsound(src, 'sound/effects/Glassbr2.ogg', 100, 1)
+	play_sfx(src, SFX_EFFECTS_GLASSBR2)
 	ghostize()
 
 ////////////////////////////
@@ -547,10 +547,10 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/cultist/elite, INTERACT_ITEM
 	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
 	armor_spec = "melee=60;bullet=50;laser=50;energy=80;bomb=30;bio=100;rad=100" //Super Armor since Boss Mob
-	attack_sound = 'sound/weapons/bladeslice.ogg'
+	attack_sound = SFX_WEAPONS_BLADESLICE
 
 	base_attack_cooldown = 5
-	projectilesound = 'sound/weapons/spiderlunge.ogg'
+	projectilesound = SFX_WEAPONS_SPIDERLUNGE
 	var/obj/item/shield_projector/shields = null
 
 
@@ -599,7 +599,7 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/humanoid/cultist/magus, "shields", 
 	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
 	armor_spec = "melee=60;bullet=50;laser=50;energy=80;bomb=30;bio=100;rad=100" //Super Armor since Boss Mob
-	attack_sound = 'sound/weapons/bladeslice.ogg'
+	attack_sound = SFX_WEAPONS_BLADESLICE
 
 	projectiletype = /obj/item/projectile/bullet/pellet/shotgun
 
@@ -609,7 +609,7 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/humanoid/cultist/magus, "shields", 
 
 	needs_reload = TRUE
 	reload_max = 2
-	projectilesound = 'sound/weapons/gunshot_shotgun.ogg'
+	projectilesound = SFX_WEAPONS_GUNSHOT_SHOTGUN
 
 
 /mob/living/simple_mob/humanoid/cultist/hunter
@@ -723,9 +723,9 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/humanoid/cultist/magus, "shields", 
 	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
 	armor_spec = "melee=60;bullet=40;laser=60;energy=80;bomb=25;bio=100;rad=100"
-	attack_sound = 'sound/weapons/rapidslice.ogg'
+	attack_sound = SFX_WEAPONS_RAPIDSLICE
 	projectiletype = /obj/item/projectile/energy/plasma/vepr
-	projectilesound = 'sound/weapons/spiderlunge.ogg'
+	projectilesound = SFX_WEAPONS_SPIDERLUNGE
 	movement_cooldown = 2
 
 /obj/item/shield_projector/rectangle/automatic/magus

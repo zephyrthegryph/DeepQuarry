@@ -101,7 +101,7 @@ GENERAL_PROTECT_DATUM(/datum/log_entry)
 #define CHECK_AND_TRY_FILE_ERROR_RECOVERY(file) \
 	var/static/in_error_recovery = FALSE; \
 	var/last_verified = LAZYACCESS(logger.verified_log_files, ##file); \
-	if(isnull(last_verified) || world.time - last_verified >= LOG_FILE_RECHECK_INTERVAL) { \
+	if(isnull(last_verified) || ELAPSED_SINCE(src, last_verified, CLOCK_WORLD) >= LOG_FILE_RECHECK_INTERVAL) { \
 		if(!fexists(##file)) { \
 			LAZYREMOVE(logger.verified_log_files, ##file); \
 			if(in_error_recovery) { \

@@ -163,7 +163,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/janitorialcart, REGISTRY_JANITORIAL_CARTS)
 				else
 					mybucket.reagents.trans_to_obj(I, 5)	//
 					user.balloon_alert(user, "you wet [I] in [mybucket].")
-					playsound(src, 'sound/effects/slosh.ogg', 25, 1)
+					play_sfx(src, SFX_EFFECTS_SLOSH)
 			else
 				user.balloon_alert(user, "[I] can't absorb anymore liquid!")
 		else

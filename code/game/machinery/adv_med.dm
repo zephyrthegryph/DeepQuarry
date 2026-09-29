@@ -2,7 +2,7 @@
 
 /obj/machinery/bodyscanner
 	maintenance_flags = MACHINE_MAINT_STANDARD
-	var/locked
+	locked = null
 	name = "Body Scanner"
 	icon = 'icons/obj/Cryogenic2.dmi'
 	icon_state = "body_scanner_0"
@@ -41,8 +41,8 @@ REL_PAIR(/obj/machinery/bodyscanner, console, scanner)
 	// left to do it for them.
 
 /obj/machinery/bodyscanner/power_change()
-	..()
-	if(!(stat & (BROKEN|NOPOWER)))
+	. = ..()
+	if(operable())
 		set_light(2)
 	else
 		set_light(0)
@@ -80,7 +80,7 @@ EXTEND_INTERACTIONS(/obj/machinery/bodyscanner, \
 	if(!M.move_into(src, OCCUPANT_SLOT_BODY_SCANNER))
 		return TRUE
 	update_icon()
-	playsound(src, 'sound/machines/medbayscanner1.ogg', 50) // Beepboop you're being scanned. <3
+	play_sfx(src, SFX_MACHINES_MEDBAYSCANNER1, vary = FALSE) // Beepboop you're being scanned. <3
 	add_fingerprint(user)
 	qdel(G)
 	SStgui.update_uis(src)
@@ -131,7 +131,7 @@ EXTEND_INTERACTIONS(/obj/machinery/bodyscanner, \
 	if(!O.move_into(src, OCCUPANT_SLOT_BODY_SCANNER))
 		return TRUE
 	update_icon()
-	playsound(src, 'sound/machines/medbayscanner1.ogg', 50) // Beepboop you're being scanned. <3
+	play_sfx(src, SFX_MACHINES_MEDBAYSCANNER1, vary = FALSE) // Beepboop you're being scanned. <3
 	add_fingerprint(user)
 	SStgui.update_uis(src)
 	return TRUE
@@ -191,7 +191,7 @@ EXTEND_INTERACTIONS(/obj/machinery/bodyscanner, \
 		if("print_p")
 			var/atom/target = console ? console : src
 			visible_message(span_notice("[target] rattles and prints out a sheet of paper."))
-			playsound(src, 'sound/machines/printer.ogg', 50, 1)
+			play_sfx(src, SFX_MACHINES_PRINTER)
 			var/obj/item/paper/P = new /obj/item/paper(get_turf(target))
 			var/name = occupant ? occupant.name : "Unknown"
 			P.info = "<CENTER>" + span_bold("Body Scan - [name]") + "</CENTER><BR>"
@@ -209,7 +209,7 @@ EXTEND_INTERACTIONS(/obj/machinery/bodyscanner, \
 					"subject_ref" = identity.id,
 					"subject_id" = identity.id,
 					"subject_name" = scanned_human.real_name,
-					"scan_time" = world.time,
+					"scan_time" = EXPIRY_AT(src, CLOCK_WORLD, 0),
 					"snapshot" = medical_trial_snapshot(scanned_human),
 					"trial_markers" = scanned_human.medical_trial_marker_snapshot(),
 					"operator_account" = operator_account?.account_number,
@@ -222,7 +222,7 @@ EXTEND_INTERACTIONS(/obj/machinery/bodyscanner, \
 					"actor_account" = operator_account?.account_number,
 					"department" = DEPARTMENT_MEDICAL,
 					"evidence_ids" = list(evidence_id),
-					"scan_time" = world.time,
+					"scan_time" = EXPIRY_AT(src, CLOCK_WORLD, 0),
 					"detail" = "Authenticated body scan printed",
 				), "medical-scan:[evidence_id]", src, ui?.user, scanned_human)
 		else
@@ -345,7 +345,7 @@ EXTEND_INTERACTIONS(/obj/machinery/body_scanconsole, \
 
 /// Old attack_hand (it never reached the machinery gate).
 /obj/machinery/body_scanconsole/proc/body_scanconsole_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return TRUE
 
 	if(!scanner)
@@ -416,7 +416,7 @@ EXTEND_INTERACTIONS(/obj/machinery/body_scanconsole, \
 	if(console)
 		console.update_icon(h_ratio)
 
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		state = "gradient_gray"
 		scan = FALSE
 		set_light(0)
@@ -461,7 +461,7 @@ EXTEND_INTERACTIONS(/obj/machinery/body_scanconsole, \
 		add_overlay(gradient)
 
 /obj/machinery/body_scanconsole/update_icon(h_ratio)
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		icon_state = "scanner_terminal_off"
 		set_light(0)
 	else

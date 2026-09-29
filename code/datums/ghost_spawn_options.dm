@@ -78,7 +78,7 @@
 	if(!user.MayRespawn(TRUE))
 		return
 
-	var/deathtime = world.time - user.timeofdeath
+	var/deathtime = ELAPSED(user, timeofdeath, CLOCK_WORLD)
 	var/deathtimeminutes = round(deathtime / (1 MINUTE))
 	var/pluralcheck = "minute"
 	if(deathtimeminutes == 0)
@@ -98,7 +98,7 @@
 
 	if(!chosen_fabricator)
 		return
-	if(chosen_fabricator.stat & NOPOWER || !chosen_fabricator.produce_drones)
+	if(chosen_fabricator.has_stat(NOPOWER) || !chosen_fabricator.produce_drones)
 		return
 	if(chosen_fabricator.drone_progress < 100)
 		return

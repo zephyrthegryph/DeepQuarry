@@ -7,8 +7,6 @@ GLOBAL_LIST_INIT(spawntypes, populate_spawn_points())
 		spawns[spawn_point.display_name] = spawn_point
 	return spawns
 
-/proc/get_spawn_points()
-	return GLOB.spawntypes
 
 /datum/spawnpoint
 	var/msg          //Message to display on the arrivals computer.

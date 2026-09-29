@@ -284,7 +284,8 @@
 			if(!O.tier)
 				continue
 			var/datum/affliction/proto = dq_proto(O.condition_type)
-			TEST_ASSERT(proto.get_stages()?[O.tier], "[T.type] asks for tier [O.tier] of [O.condition_type], which has no such stage")
+			var/list/proto_stages = TYPE_TABLE_GET(proto, affliction_stages)
+			TEST_ASSERT(proto_stages?[O.tier], "[T.type] asks for tier [O.tier] of [O.condition_type], which has no such stage")
 
 /// C15: clearing a stage resolves the presenting symptoms.
 /datum/unit_test/dq_p1_c15_clear_stage

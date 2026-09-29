@@ -5,8 +5,8 @@
 	name = "drink"
 	desc = "yummy"
 	icon = 'icons/obj/drinks.dmi'
-	drop_sound = 'sound/items/drop/drinkglass.ogg'
-	pickup_sound =  'sound/items/pickup/drinkglass.ogg'
+	drop_sound = SFX_ITEMS_DROP_DRINKGLASS
+	pickup_sound =  SFX_ITEMS_PICKUP_DRINKGLASS
 	icon_state = null
 	flags = OPENCONTAINER
 	amount_per_transfer_from_this = 5
@@ -148,7 +148,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks, \
 
 /obj/item/reagent_containers/food/drinks/proc/open(mob/user)
 	if(!cant_open)
-		playsound(src,"canopen", rand(10,50), 1)
+		play_sfx(src, SFX_CANOPEN, volume = rand(10,50))
 		GLOB.cans_opened_roundstat++
 		to_chat(user, span_notice("You open [src] with an audible pop!"))
 		flags |= OPENCONTAINER
@@ -213,7 +213,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks, \
 		to_chat(user, span_notice("You swallow a gulp from \the [src]."))
 
 /obj/item/reagent_containers/food/drinks/feed_sound(mob/user)
-	playsound(src, 'sound/items/drink.ogg', rand(10, 50), TRUE)
+	play_sfx(src, SFX_ITEMS_DRINK, volume = rand(10, 50))
 
 /obj/item/reagent_containers/food/drinks/examine(mob/user)
 	. = ..()
@@ -266,8 +266,8 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks, \
 	item_state = "carton"
 	center_of_mass_x = 16
 	center_of_mass_y = 9
-	drop_sound = 'sound/items/drop/cardboardbox.ogg'
-	pickup_sound = 'sound/items/pickup/cardboardbox.ogg'
+	drop_sound = SFX_ITEMS_DROP_CARDBOARDBOX
+	pickup_sound = SFX_ITEMS_PICKUP_CARDBOARDBOX
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/milk, null, list(REAGENT_ID_MILK = 50))
 
@@ -279,8 +279,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/milk, null, list(REAGE
 	item_state = "carton"
 	center_of_mass_x = 16
 	center_of_mass_y = 9
-	drop_sound = 'sound/items/drop/cardboardbox.ogg'
-	pickup_sound = 'sound/items/pickup/cardboardbox.ogg'
+	drop_sound = SFX_ITEMS_DROP_CARDBOARDBOX
+	pickup_sound = SFX_ITEMS_PICKUP_CARDBOARDBOX
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/soymilk, null, list(REAGENT_ID_SOYMILK = 50))
 
@@ -293,8 +293,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/soymilk, null, list(RE
 	item_state = "carton"
 	center_of_mass_x = 16
 	center_of_mass_y = 9
-	drop_sound = 'sound/items/drop/cardboardbox.ogg'
-	pickup_sound = 'sound/items/pickup/cardboardbox.ogg'
+	drop_sound = SFX_ITEMS_DROP_CARDBOARDBOX
+	pickup_sound = SFX_ITEMS_PICKUP_CARDBOARDBOX
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/smallmilk, null, list(REAGENT_ID_MILK = 30))
 
@@ -307,8 +307,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/smallmilk, null, list(
 	item_state = "carton"
 	center_of_mass_x = 16
 	center_of_mass_y = 9
-	drop_sound = 'sound/items/drop/cardboardbox.ogg'
-	pickup_sound = 'sound/items/pickup/cardboardbox.ogg'
+	drop_sound = SFX_ITEMS_DROP_CARDBOARDBOX
+	pickup_sound = SFX_ITEMS_PICKUP_CARDBOARDBOX
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/smallchocmilk, null, list(REAGENT_ID_CHOCOLATEMILK = 30))
 
@@ -320,8 +320,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/smallchocmilk, null, l
 	trash = /obj/item/trash/coffee
 	center_of_mass_x = 15
 	center_of_mass_y = 10
-	drop_sound = 'sound/items/drop/papercup.ogg'
-	pickup_sound = 'sound/items/pickup/papercup.ogg'
+	drop_sound = SFX_ITEMS_DROP_PAPERCUP
+	pickup_sound = SFX_ITEMS_PICKUP_PAPERCUP
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/coffee, null, list(REAGENT_ID_COFFEE = 30))
 
@@ -334,8 +334,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/coffee, null, list(REA
 	trash = /obj/item/trash/coffee
 	center_of_mass_x = 16
 	center_of_mass_y = 14
-	drop_sound = 'sound/items/drop/papercup.ogg'
-	pickup_sound = 'sound/items/pickup/papercup.ogg'
+	drop_sound = SFX_ITEMS_DROP_PAPERCUP
+	pickup_sound = SFX_ITEMS_PICKUP_PAPERCUP
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/tea, null, list(REAGENT_ID_TEA = 30))
 
@@ -348,8 +348,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/tea, null, list(REAGEN
 	trash = /obj/item/trash/coffee
 	center_of_mass_x = 16
 	center_of_mass_y = 14
-	drop_sound = 'sound/items/drop/papercup.ogg'
-	pickup_sound = 'sound/items/pickup/papercup.ogg'
+	drop_sound = SFX_ITEMS_DROP_PAPERCUP
+	pickup_sound = SFX_ITEMS_PICKUP_PAPERCUP
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/decaf_tea, null, list(REAGENT_ID_TEADECAF = 30))
 
@@ -370,8 +370,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/ice, null, list(REAGEN
 	trash = /obj/item/trash/coffee
 	center_of_mass_x = 15
 	center_of_mass_y = 13
-	drop_sound = 'sound/items/drop/papercup.ogg'
-	pickup_sound = 'sound/items/pickup/papercup.ogg'
+	drop_sound = SFX_ITEMS_DROP_PAPERCUP
+	pickup_sound = SFX_ITEMS_PICKUP_PAPERCUP
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/h_chocolate, null, list(REAGENT_ID_HOTCOCO = 30))
 
@@ -384,8 +384,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/h_chocolate, null, lis
 	trash = /obj/item/trash/coffee
 	center_of_mass_x = 16
 	center_of_mass_y = 14
-	drop_sound = 'sound/items/drop/papercup.ogg'
-	pickup_sound = 'sound/items/pickup/papercup.ogg'
+	drop_sound = SFX_ITEMS_DROP_PAPERCUP
+	pickup_sound = SFX_ITEMS_PICKUP_PAPERCUP
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/greentea, null, list(REAGENT_ID_GREENTEA = 30))
 
@@ -398,8 +398,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/greentea, null, list(R
 	trash = /obj/item/trash/coffee
 	center_of_mass_x = 16
 	center_of_mass_y = 14
-	drop_sound = 'sound/items/drop/papercup.ogg'
-	pickup_sound = 'sound/items/pickup/papercup.ogg'
+	drop_sound = SFX_ITEMS_DROP_PAPERCUP
+	pickup_sound = SFX_ITEMS_PICKUP_PAPERCUP
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/chaitea, null, list(REAGENT_ID_CHAITEA = 30))
 
@@ -412,8 +412,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/chaitea, null, list(RE
 	trash = /obj/item/trash/coffee
 	center_of_mass_x = 16
 	center_of_mass_y = 14
-	drop_sound = 'sound/items/drop/papercup.ogg'
-	pickup_sound = 'sound/items/pickup/papercup.ogg'
+	drop_sound = SFX_ITEMS_DROP_PAPERCUP
+	pickup_sound = SFX_ITEMS_PICKUP_PAPERCUP
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/decaf, null, list(REAGENT_ID_DECAF = 30))
 
@@ -425,8 +425,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/decaf, null, list(REAG
 	trash = /obj/item/trash/ramen
 	center_of_mass_x = 16
 	center_of_mass_y = 11
-	drop_sound = 'sound/items/drop/papercup.ogg'
-	pickup_sound = 'sound/items/pickup/papercup.ogg'
+	drop_sound = SFX_ITEMS_DROP_PAPERCUP
+	pickup_sound = SFX_ITEMS_PICKUP_PAPERCUP
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/dry_ramen, null, list(REAGENT_ID_DRYRAMEN = 30))
 
@@ -438,8 +438,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/dry_ramen, null, list(
 	volume = 10
 	center_of_mass_x = 16
 	center_of_mass_y = 12
-	drop_sound = 'sound/items/drop/papercup.ogg'
-	pickup_sound = 'sound/items/pickup/papercup.ogg'
+	drop_sound = SFX_ITEMS_DROP_PAPERCUP
+	pickup_sound = SFX_ITEMS_PICKUP_PAPERCUP
 
 /obj/item/reagent_containers/food/drinks/sillycup/on_reagent_change()
 	..()

@@ -232,7 +232,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 
 		if("squish")
 			var/is_squished = target().tf_scale_x || target().tf_scale_y
-			playsound(target(), 'sound/items/hooh.ogg', 50, 1)
+			play_sfx(target(), SFX_ITEMS_HOOH)
 			if(!is_squished)
 				target().SetTransform(null, (target().size_multiplier * 1.2), (target().size_multiplier * 0.5))
 			else
@@ -241,7 +241,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 
 		if("pie_splat")
 			new/obj/effect/decal/cleanable/pie_smudge(get_turf(target()))
-			playsound(target(), 'sound/effects/slime_squish.ogg', 100, 1, get_rand_frequency(), falloff = 5)
+			play_sfx(target(), SFX_EFFECTS_SLIME_SQUISH, 2, extrarange = get_rand_frequency(), falloff = 5)
 			target().status_at_least(EFFECT_WEAKENED, 1)
 			target().visible_message(span_danger("[target()] is struck by pie!"))
 
@@ -251,7 +251,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			target().status_at_least(EFFECT_BLINDED, 10)
 			target().status_at_least(EFFECT_STUNNED, 5)
 			target().status_at_least(EFFECT_WEAKENED, 5)
-			playsound(target(), 'sound/effects/spray2.ogg', 100, 1, get_rand_frequency(), falloff = 5)
+			play_sfx(target(), SFX_EFFECTS_SPRAY2, extrarange = get_rand_frequency(), falloff = 5)
 
 		if("hot_dog")
 			hotdog_smite(target())

@@ -8,9 +8,10 @@
 	var/spamcheck = 0
 	var/emagged = 0
 	var/insults = 0
-	var/list/insultmsg = list("FUCK EVERYONE!", "I'M A TERRORIST!", "ALL SECURITY TO SHOOT ME ON SIGHT!", "I HAVE A BOMB!", "CAPTAIN IS A COMDOM!", "GLORY TO ALMACH!") // ALLOW(instance_list): c: read-only per-subtype constant table (1 subtype overrides); a getter would share it, not worth it on a rare type
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
+
+TYPE_TABLE_DECLARE(/obj/item/megaphone, megaphone_insults, list("FUCK EVERYONE!", "I'M A TERRORIST!", "ALL SECURITY TO SHOOT ME ON SIGHT!", "I HAVE A BOMB!", "CAPTAIN IS A COMDOM!", "GLORY TO ALMACH!"))
 
 /obj/item/megaphone/proc/can_broadcast(mob/living/user)
 	if(user.client)
@@ -34,7 +35,7 @@
 /obj/item/megaphone/proc/do_broadcast(mob/living/user, message)
 	if(emagged)
 		if(insults)
-			var/insult = pick(insultmsg)
+			var/insult = pick(TYPE_TABLE_GET(src, megaphone_insults))
 			user.audible_message(span_infoplain(span_bold("[user.GetVoice()]") + "[user.GetAltName()] broadcasts, " + span_large("\"[insult]\"")), runemessage = insult)
 			insults--
 		else
@@ -78,7 +79,8 @@ DECLARE_INTERACTIONS(/obj/item/megaphone, INTERACT_USE(null, PROC_REF(interactio
 	var/list/font_options = list("times new roman", "times", "verdana", "sans-serif", "serif", "georgia") // ALLOW(instance_list): d: replaced per instance at runtime (1 assignments)
 	var/list/color_options= list("#000000", "#ff0000", "#00ff00", "#0000ff") // ALLOW(instance_list): d: replaced per instance at runtime (1 assignments)
 
-	insultmsg = list("HONK?!", "HONK!", "HOOOOOOOONK!", "...!", "HUNK.", "Honk?")
+TYPE_TABLE(/obj/item/megaphone/super, megaphone_insults, list("HONK?!", "HONK!", "HOOOOOOOONK!", "...!", "HUNK.", "Honk?"))
+
 
 /obj/item/megaphone/super/emag_act(remaining_charges, mob/user)
 	..()
@@ -134,11 +136,11 @@ DECLARE_INTERACTIONS(/obj/item/megaphone, INTERACT_USE(null, PROC_REF(interactio
 /obj/item/megaphone/super/do_broadcast(mob/living/user, message)
 	if(emagged)
 		if(insults)
-			var/insult = pick(insultmsg)
+			var/insult = pick(TYPE_TABLE_GET(src, megaphone_insults))
 			user.audible_message(span_bold("[user.GetVoice()]") + "[user.GetAltName()] broadcasts, <FONT size=[broadcast_size] face='[broadcast_font]' color='[broadcast_color]'>\"[insult]\"</FONT>", runemessage = insult)
 			if(broadcast_size >= 11)
 				var/turf/T = get_turf(user)
-				playsound(src, 'sound/items/AirHorn.ogg', 100, 1)
+				play_sfx(src, SFX_ITEMS_AIRHORN)
 				for(var/mob/living/carbon/M in oviewers(4, T))
 					if(M.get_ear_protection() >= 2)
 						continue
@@ -156,9 +158,7 @@ DECLARE_INTERACTIONS(/obj/item/megaphone, INTERACT_USE(null, PROC_REF(interactio
 		else
 			user.audible_message(span_critical("*BZZZZzzzzzt*"))
 			if(prob(40) && insults <= 0)
-				var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-				s.set_up(2, 1, get_turf(user))
-				s.start()
+				fx_sparks(get_turf(user), 2)
 				user.visible_message(span_warning("\The [src] sparks violently!"))
 				om_after(src, 3 SECONDS, PROC_REF(overload_boom))
 	else

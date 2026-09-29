@@ -9,12 +9,12 @@
 
 	w_class = ITEMSIZE_NORMAL
 	slot_flags = null
-	fire_sound = 'sound/weapons/gunshot_light.ogg'
+	fire_sound = SFX_WEAPONS_GUNSHOT_LIGHT
 	load_method = MAGAZINE
 	force = 3
 	recoil = 2
 	auto_eject = 1
-	auto_eject_sound = 'sound/weapons/smg_empty_alarm.ogg'
+	auto_eject_sound = SFX_WEAPONS_SMG_EMPTY_ALARM
 	hitsound = null
 	caliber = "s762"
 	magazine_type = /obj/item/ammo_magazine/m762
@@ -34,6 +34,6 @@
 /obj/item/gun/projectile/automatic/fluff/crestrose/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	if(default_parry_check(user, attacker, damage_source) && prob(50))
 		user.visible_message(span_danger("\The [user] parries [attack_text] with \the [src]!"))
-		playsound(user, 'sound/weapons/punchmiss.ogg', 50, 1)
+		play_sfx(user, SFX_WEAPONS_PUNCHMISS, 2, extrarange = 0)
 		return 1
 	return 0

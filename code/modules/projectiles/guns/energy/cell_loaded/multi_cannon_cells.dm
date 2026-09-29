@@ -132,4 +132,4 @@ DECLARE_PERIODIC(/obj/item/ammo_casing/macrobattery, PERIODIC_SLOW)
 
 /obj/item/projectile/beam/heavylaser/lessheavy //all bark. no (or little) bite.
 	damage = 15
-	fire_sound = 'sound/weapons/gunshot_cannon.ogg'
+	fire_sound = SFX_WEAPONS_GUNSHOT_CANNON

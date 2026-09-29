@@ -907,7 +907,7 @@ DECLARE_DEFAULT_CHILD(/atom/movable/screen/movable/mapper_holder, "mapbutton", /
 		return TRUE
 	parent().powerClick()
 	flick("powClick",src)
-	usr << get_sfx("button")
+	usr << get_sfx(SFX_BUTTON)
 	return TRUE
 
 /atom/movable/screen/mapper/mapbutton
@@ -925,7 +925,7 @@ DECLARE_DEFAULT_CHILD(/atom/movable/screen/movable/mapper_holder, "mapbutton", /
 		return TRUE
 	parent().mapClick()
 	flick("mapClick",src)
-	usr << get_sfx("button")
+	usr << get_sfx(SFX_BUTTON)
 	return TRUE
 
 // Markers are 16x16, people have apparently settled on centering them on the 8,8 pixel

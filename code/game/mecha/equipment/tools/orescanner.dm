@@ -6,7 +6,7 @@
 	energy_drain = 30
 	range = MECH_MELEE|RANGED
 	equip_type = EQUIP_SPECIAL
-	ready_sound = 'sound/items/goggles_charge.ogg'
+	ready_sound = SFX_ITEMS_GOGGLES_CHARGE
 	required_type = list(/obj/mecha/working/ripley)
 
 	var/obj/item/mining_scanner/my_scanner = null

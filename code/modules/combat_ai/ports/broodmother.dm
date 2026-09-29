@@ -29,21 +29,17 @@
 		ai_brain.intelligence = AI_SMART
 		ai_brain.wander = TRUE
 
-/mob/living/simple_mob/animal/giant_spider/broodmother/get_ai_behaviors()
-	var/static/list/L = list(
-		/datum/ai_behavior/broodmother_spawn_brood,
-		/datum/ai_behavior/broodmother_launch_brood,
-		/datum/ai_behavior/ranged_attack,
-		/datum/ai_behavior/melee_attack,
-		/datum/ai_behavior/maul_unconscious,
-		/datum/ai_behavior/approach_threat,
-		/datum/ai_behavior/idle_wander,
-	)
-	return L
+TYPE_TABLE(/mob/living/simple_mob/animal/giant_spider/broodmother, get_ai_behaviors, list( \
+	/datum/ai_behavior/broodmother_spawn_brood, \
+	/datum/ai_behavior/broodmother_launch_brood, \
+	/datum/ai_behavior/ranged_attack, \
+	/datum/ai_behavior/melee_attack, \
+	/datum/ai_behavior/maul_unconscious, \
+	/datum/ai_behavior/approach_threat, \
+	/datum/ai_behavior/idle_wander, \
+))
 
-/mob/living/simple_mob/animal/giant_spider/broodmother/get_ai_target_selectors()
-	var/static/list/L = list(/datum/target_selector/prefer_players, /datum/target_selector/closest)
-	return L
+TYPE_TABLE(/mob/living/simple_mob/animal/giant_spider/broodmother, get_ai_target_selectors, list(/datum/target_selector/prefer_players, /datum/target_selector/closest))
 
 // ---------------------------------------------------------------------------
 // 1. Spawn brood (legacy I_DISARM) — birth a swarm at the broodmother's feet

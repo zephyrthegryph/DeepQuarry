@@ -54,4 +54,4 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/construct/shade, INTERACT_ITEM(null, 
 	ghostize()
 
 /datum/decl/mob_organ_names/shade
-	hit_zones = list("spectral robe", "featureless visage", "haunting glow")
+TYPE_TABLE(/datum/decl/mob_organ_names/shade, mob_organ_hit_zones, list("spectral robe", "featureless visage", "haunting glow"))

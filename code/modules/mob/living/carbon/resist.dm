@@ -2,19 +2,13 @@
 	adjust_fire_stacks(-1.2)
 	status_at_least(EFFECT_WEAKENED, 3)
 	spin(32,2)
-	visible_message(
-		span_danger("[src] rolls on the floor, trying to put themselves out!"),
-		span_notice("You stop, drop, and roll!")
-		)
+	act_message(src, null, MSG_SELF(span_notice("You stop, drop, and roll!")), MSG_OTHERS(span_danger("%U% rolls on the floor, trying to put themselves out!")))
 	om_after(src, 3 SECONDS, PROC_REF(resist_fire_done))
 	return TRUE
 
 /mob/living/carbon/proc/resist_fire_done()
 	if(fire_stacks <= 0)
-		visible_message(
-			span_danger("[src] has successfully extinguished themselves!"),
-			span_notice("You extinguish yourself.")
-			)
+		act_message(src, null, MSG_SELF(span_notice("You extinguish yourself.")), MSG_OTHERS(span_danger("%U% has successfully extinguished themselves!")))
 		extinguish_mob()
 	return TRUE
 
@@ -45,21 +39,20 @@
 		displaytime /= reduceCuffTime
 
 	if(cuff_break)
-		visible_message(span_danger("[src] is trying to break [I]!"),
-			span_warning("You attempt to break your [I]. (This will take around 5 seconds and you need to stand still)"))
+		act_message(src, null, MSG_SELF(span_warning("You attempt to break your [I]. (This will take around 5 seconds and you need to stand still)")), \
+			MSG_OTHERS(span_danger("%U% is trying to break [I]!")))
 
 		om_task_timed(src, 5 SECONDS, target = src, timed_action_flags = IGNORE_INCAPACITATED, receiver = src, on_done = PROC_REF(cuff_resist_carbon_done), done_args = list(I), on_fail = PROC_REF(cuff_resist_carbon_failed), fail_args = list(I))
 		return
 
-	visible_message(span_danger("[src] attempts to remove [I]!"),
-		span_warning("You attempt to remove [I]. (This will take around [displaytime] seconds and you need to stand still)"))
+	act_message(src, null, MSG_SELF(span_warning("You attempt to remove [I]. (This will take around [displaytime] seconds and you need to stand still)")), \
+		MSG_OTHERS(span_danger("%U% attempts to remove [I]!")))
 	om_task_timed(src, breakouttime, target = src, timed_action_flags = IGNORE_INCAPACITATED, receiver = src, on_done = PROC_REF(cuff_resist_carbon_done2), done_args = list(I))
 
 /mob/living/carbon/proc/cuff_resist_carbon_done(obj/item/handcuffs/I)
 	if(!I || src?.buckled_to())
 		return
-	visible_message(span_danger("[src] manages to break [I]!"),
-		span_warning("You successfully break your [I]."))
+	act_message(src, null, MSG_SELF(span_warning("You successfully break your [I].")), MSG_OTHERS(span_danger("%U% manages to break [I]!")))
 	say(pick(";RAAAAAAAARGH!", ";HNNNNNNNNNGGGGGGH!", ";GWAAAAAAAARRRHHH!", "NNNNNNNNGGGGGGGGHH!", ";AAAAAAARRRGH!" ))
 
 	drop_from_inventory(I)
@@ -73,8 +66,7 @@
 /mob/living/carbon/proc/cuff_resist_carbon_failed(obj/item/handcuffs/I)
 	to_chat(src, span_warning("You fail to break [I]."))
 /mob/living/carbon/proc/cuff_resist_carbon_done2(obj/item/handcuffs/I)
-	visible_message(span_danger("[src] manages to remove [I]!"),
-		span_notice("You successfully remove [I]."))
+	act_message(src, null, MSG_SELF(span_notice("You successfully remove [I].")), MSG_OTHERS(span_danger("%U% manages to remove [I]!")))
 	drop_from_inventory(I)
 
 /mob/living/carbon/resist_buckle()
@@ -85,10 +77,8 @@
 		return ..()
 
 	setClickCooldown(100)
-	visible_message(
-		span_danger("[src] attempts to unbuckle themself!"),
-		span_warning("You attempt to unbuckle yourself. (This will take around 2 minutes and you need to stand still)")
-		)
+	act_message(src, null, MSG_SELF(span_warning("You attempt to unbuckle yourself. (This will take around 2 minutes and you need to stand still)")), \
+		MSG_OTHERS(span_danger("%U% attempts to unbuckle themself!")))
 
 	om_task_timed(src, 2 MINUTES, target = src, timed_action_flags = IGNORE_INCAPACITATED, receiver = src, on_done = PROC_REF(resist_buckle_carbon_done), done_args = list())
 
@@ -96,8 +86,7 @@
 	var/obj/buckled = src?.buckled_to()
 	if(!buckled)
 		return
-	visible_message(span_danger("[src] manages to unbuckle themself!"),
-					span_notice("You successfully unbuckle yourself."))
+	act_message(src, null, MSG_SELF(span_notice("You successfully unbuckle yourself.")), MSG_OTHERS(span_danger("%U% manages to unbuckle themself!")))
 	buckled.user_unbuckle_mob(src, src)
 
 /mob/living/carbon/proc/can_break_cuffs()

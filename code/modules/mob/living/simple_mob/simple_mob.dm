@@ -96,14 +96,14 @@
 	var/reload_max = 1									// How many shots the mob gets before it has to reload, will not be used if needs_reload is FALSE
 	var/reload_count = 0								// A counter to keep track of how many shots the mob has fired so far. Reloads when it hits reload_max.
 	var/reload_time = 4 SECONDS							// How long it takes for a mob to reload. This is to buy a player a bit of time to run or fight.
-	var/reload_sound = 'sound/weapons/flipblade.ogg'	// What sound gets played when the mob successfully reloads. Defaults to the same sound as reloading guns. Can be null.
+	var/reload_sound = SFX_WEAPONS_FLIPBLADE	// What sound gets played when the mob successfully reloads. Defaults to the same sound as reloading guns. Can be null.
 
 	//Mob melee settings
 	var/melee_damage_lower = 2		// Lower bound of randomized melee damage
 	var/melee_damage_upper = 6		// Upper bound of randomized melee damage
-	// ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	// ALLOW(instance_list): d: per-mob attacktext with starting entries, edited at runtime; mobs are few
 	var/list/attacktext = list("attacked") // "You are [attacktext] by the mob!"
-	// ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	// ALLOW(instance_list): d: per-mob friendly with starting entries, edited at runtime; mobs are few
 	var/list/friendly = list("nuzzles") // "The mob [friendly] the person."
 	var/attack_sound = null				// Sound to play when I attack
 	var/melee_miss_chance = 0			// percent chance to miss a melee attack.
@@ -113,7 +113,7 @@
 	var/melee_attack_delay = 2			// If set, the mob will do a windup animation and can miss if the target moves out of the way.
 	var/ranged_attack_delay = null
 	var/special_attack_delay = null
-	var/ranged_cooldown = 0
+	EXPIRY_DECLARE(ranged_cooldown)
 	var/ranged_cooldown_time = 0
 	var/picked_color = FALSE
 	var/picked_size = FALSE
@@ -388,8 +388,8 @@
 	return ..()
 
 /datum/decl/mob_organ_names
-	// ALLOW(instance_list): c: read-only per-subtype constant table (55 subtype overrides); a getter would share it, not worth it on a rare type
-	var/list/hit_zones = list("body") //When in doubt, it's probably got a body.
+//When in doubt, it's probably got a body.
+TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"))
 
 /*
  * How injured are we? Returns a number that is then added to movement cooldown and firing/melee delay respectively.
@@ -485,7 +485,7 @@
 	var/vore_bump_chance = 0			// Chance of trying to eat anyone that bumps into them, regardless of hostility
 	var/vore_bump_emote	= "grabs hold of"				// Allow messages for bumpnom mobs to have a flavorful bumpnom
 	var/vore_pounce_chance = 5			// Chance of this mob knocking down an opponent
-	var/vore_pounce_cooldown = 0		// Cooldown timer - if it fails a pounce it won't pounce again for a while
+	EXPIRY_DECLARE(vore_pounce_cooldown) // Cooldown timer - if it fails a pounce it won't pounce again for a while
 	var/vore_pounce_successrate	= 100	// Chance of a pounce succeeding against a theoretical 0-health opponent
 	var/vore_pounce_falloff = 1			// Success rate falloff per %health of target mob.
 	var/vore_pounce_maxhealth = 80		// Mob will not attempt to pounce targets above this %health
@@ -632,10 +632,10 @@
 	if(prob(successrate)) // pounce success!
 		M.status_at_least(EFFECT_WEAKENED, 5)
 		M.status_adjust(EFFECT_STUNNED, 2)
-		M.visible_message(span_danger("\The [src] pounces on \the [M]!"))
+		act_message(src, M, null, MSG_OTHERS(span_danger("%U% pounces on %T%!")))
 	else // pounce misses!
-		M.visible_message(span_danger("\The [src] attempts to pounce \the [M] but misses!"))
-		playsound(src, 'sound/weapons/punchmiss.ogg', 25, 1, -1)
+		act_message(src, M, null, MSG_OTHERS(span_danger("%U% attempts to pounce %T% but misses!")))
+		play_sfx(src, SFX_WEAPONS_PUNCHMISS)
 
 	if(will_eat(M) && (M.lying || vore_standing_too)) //if they're edible then eat them too
 		return EatTarget(M)
@@ -754,7 +754,7 @@
 			return FALSE
 		if(tmob.canmove && prob(vore_pounce_chance)) //if they'd pounce for other noms, pounce for these too, otherwise still try and eat them if they hold still
 			tmob.status_at_least(EFFECT_WEAKENED, 5)
-		tmob.visible_message(span_danger("\The [src] [vore_bump_emote] \the [tmob]!"))
+		act_message(src, tmob, null, MSG_OTHERS(span_danger("%U% [vore_bump_emote] %T%!")))
 		ai_busy_begin()
 		spawn() // ALLOW(scheduler): animal_nom() sleeps in do_after() (S8)
 			animal_nom(tmob)
@@ -911,9 +911,9 @@
 	status_flags |= LEAPING
 	pixel_y = pixel_y + 10
 
-	visible_message(span_danger("\The [src] leaps at [T]!"))
+	act_message(src, T, null, MSG_OTHERS(span_danger("%U% leaps at %T%!")))
 	throw_at(get_step(get_turf(T),get_turf(src)), 4, 1, src)
-	playsound(src, 'sound/effects/bodyfall1.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_BODYFALL1)
 	pixel_y = default_pixel_y
 	om_after(src, 5, PROC_REF(leap_land), T)
 
@@ -939,7 +939,7 @@
 // sets, so every override stays after its base definition (resolution preserved). ===
 /mob/living/simple_mob
 	//speech sounds
-	var/list/speech_sounds = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	var/list/speech_sounds = list() // ALLOW(instance_list): d: per-mob speech_sounds, sized at creation and filled in place; mobs are few
 	var/speech_chance = 75 //mobs can be a bit more emotive than carbon/humans
 	var/speech_sound_enabled = TRUE
 

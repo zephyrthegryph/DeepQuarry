@@ -21,7 +21,7 @@
 
 	var/slowdown_held = 2
 	var/slowdown_worn = 1
-	var/empty_sound = 'sound/machines/twobeep.ogg'
+	var/empty_sound = SFX_MACHINES_TWOBEEP
 
 // Not going to check type repeatedly, if you code or varedit
 // load_type and get runtime errors, don't come crying to me.
@@ -100,7 +100,7 @@
 	projectile_type = /obj/item/projectile/bullet/magnetic/flechette
 	loaded = /obj/item/magnetic_ammo
 	removable_components = TRUE //.
-	empty_sound = 'sound/weapons/smg_empty_alarm.ogg'
+	empty_sound = SFX_WEAPONS_SMG_EMPTY_ALARM
 
 	firemodes = list(
 		list(mode_name="semiauto", burst=1, fire_delay=0.1, move_delay=null, one_handed_penalty=15, burst_accuracy=null, dispersion=null),
@@ -133,7 +133,7 @@
 	load_type = /obj/item/magnetic_ammo/pistol
 	projectile_type = /obj/item/projectile/bullet/magnetic/flechette/small
 	loaded = /obj/item/magnetic_ammo/pistol
-	empty_sound = 'sound/weapons/smg_empty_alarm.ogg'
+	empty_sound = SFX_WEAPONS_SMG_EMPTY_ALARM
 
 	firemodes = list(
 		list(mode_name="semiauto", burst=1, fire_delay=0.1, move_delay=null, one_handed_penalty=15, burst_accuracy=null, dispersion=null),
@@ -164,7 +164,7 @@
 	power_cost = 400
 	projectile_type = /obj/item/projectile/bullet/magnetic/heated
 	loaded = null
-	empty_sound = 'sound/weapons/smg_empty_alarm.ogg'
+	empty_sound = SFX_WEAPONS_SMG_EMPTY_ALARM
 
 	firemodes = list(
 		list(mode_name="high power", power_cost = 400, projectile_type = /obj/item/projectile/bullet/magnetic/heated, burst=1, fire_delay=8, move_delay=null, one_handed_penalty=15),
@@ -224,7 +224,7 @@
 
 	power_cost = 300
 	projectile_type = /obj/item/projectile/bullet/magnetic/flechette/hunting
-	empty_sound = 'sound/weapons/smg_empty_alarm.ogg'
+	empty_sound = SFX_WEAPONS_SMG_EMPTY_ALARM
 
 	firemodes = list(
 		list(mode_name="semiauto", burst=1, fire_delay=0.1, move_delay=null, one_handed_penalty=15, burst_accuracy=null, dispersion=null),

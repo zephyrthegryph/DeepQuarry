@@ -108,7 +108,7 @@ DECLARE_INTERACTIONS(/obj/item/borg/cloak, \
 	///How many times we have been hit in a short succession.
 	var/times_hit = 0
 	///When we were last hit.
-	var/last_hit_time = 0
+	EXPIRY_DECLARE(last_hit_time)
 	///If our cloak is currently up or not
 	var/cloaked = TRUE
 	///Body factors while the cloak is up (built once from the module's strength).
@@ -141,7 +141,7 @@ DECLARE_INTERACTIONS(/obj/item/borg/cloak, \
 	if(L.stat == DEAD || !state)
 		L.end_body_effect(type, TRUE)
 		return
-	if(state.times_hit && (world.time - state.last_hit_time) > hit_dissipation) //If we have been hit, but the time has passed, reset the hit counter.
+	if(state.times_hit && ELAPSED_SINCE(src, state.last_hit_time, CLOCK_WORLD) > hit_dissipation) //If we have been hit, but the time has passed, reset the hit counter.
 		if(!state.cloaked)
 			to_chat(L, span_warning("Your cloak whirrs back to life!"))
 		reset_cloak(L, state)
@@ -158,7 +158,7 @@ DECLARE_INTERACTIONS(/obj/item/borg/cloak, \
 	state.times_hit++
 	var/alpha_to_show = CLAMP((source.alpha+(damage*10)), source.alpha, 255) //The more damage we take, the more visible we become.
 	flick_cloak(source, alpha_to_show)
-	state.last_hit_time = world.time
+	EXPIRY_STAMP(state, last_hit_time, CLOCK_WORLD)
 	if(damage >= 50 || state.times_hit >= cloak_durability)
 		to_chat(source, span_warning("Your cloak buzzes and fails after sustaining too much damage!!"))
 		drop_cloak(source, state)

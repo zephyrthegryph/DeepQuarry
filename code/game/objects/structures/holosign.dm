@@ -34,7 +34,7 @@ REL_PAIR_LIST(/obj/item/holosign_creator, signs, projector)
 /obj/structure/holosign/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	user.setClickCooldown(user.get_attack_speed())
 	user.do_attack_animation(src)
-	playsound(loc, 'sound/weapons/egloves.ogg', 80, 1)
+	play_sfx(loc, SFX_WEAPONS_EGLOVES, 1.6, extrarange = 0)
 	take_damage(5, BRUTE, MELEE, sound_effect = FALSE)
 	return TRUE
 
@@ -47,7 +47,7 @@ REL_PAIR_LIST(/obj/item/holosign_creator, signs, projector)
 /obj/structure/holosign/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	user.setClickCooldown(user.get_attack_speed(W))
 	user.do_attack_animation(src)
-	playsound(loc, 'sound/weapons/egloves.ogg', 80, 1)
+	play_sfx(loc, SFX_WEAPONS_EGLOVES, 1.6, extrarange = 0)
 	receive_weapon_hit(W, user)
 	return TRUE
 
@@ -76,7 +76,7 @@ REL_PAIR_LIST(/obj/item/holosign_creator, signs, projector)
 	desc = "A holobarrier that uses biometrics to detect viruses. Denies passing to personnel with easily-detected, malicious viruses. Good for quarantines."
 	icon_state = "holo_medical"
 	alpha = 125
-	var/buzzed = 0
+	EXPIRY_DECLARE(buzzed)
 	rad_insulation = RAD_NO_INSULATION
 
 /obj/structure/holosign/barrier/medical/CanPass(atom/movable/mover, border_dir)
@@ -94,8 +94,8 @@ REL_PAIR_LIST(/obj/item/holosign_creator, signs, projector)
 	. = ..()
 	if(ishuman(AM) && !CheckHuman(AM))
 		if(COOLDOWN_FINISHED(src, buzzed))
-			playsound(get_turf(src), 'sound/machines/buzz-sigh.ogg', 50, 1)
-			buzzed = (world.time + 60)
+			play_sfx(get_turf(src), SFX_MACHINES_BUZZ_SIGH, vary = TRUE)
+			EXPIRY_SET(src, buzzed, 6 SECONDS, CLOCK_WORLD)
 
 		icon_state = "holo_medical-deny"
 		om_after_replace(src, 10 SECONDS, PROC_REF(reset_deny_icon))

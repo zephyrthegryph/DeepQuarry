@@ -17,8 +17,8 @@
 	var/tmp/datum/feed_message/important_message
 	var/scribble=""
 	var/scribble_page = null
-	drop_sound = 'sound/items/drop/wrapper.ogg'
-	pickup_sound = 'sound/items/pickup/wrapper.ogg'
+	drop_sound = SFX_ITEMS_DROP_WRAPPER
+	pickup_sound = SFX_ITEMS_PICKUP_WRAPPER
 	resistance_flags = FLAMMABLE
 
 // TGUI migration. The 3-screen browse() pager becomes a
@@ -92,7 +92,7 @@ DECLARE_INTERACTIONS(/obj/item/newspaper, \
 			else if(curr_page == 0)
 				screen = 1
 			curr_page++
-			playsound(src, "pageturn", 50, 1)
+			play_sfx(src, SFX_PAGETURN)
 			return TRUE
 		if("prev_page")
 			if(curr_page == 0)
@@ -102,7 +102,7 @@ DECLARE_INTERACTIONS(/obj/item/newspaper, \
 			else if(curr_page == pages + 1)
 				screen = 1
 			curr_page--
-			playsound(src, "pageturn", 50, 1)
+			play_sfx(src, SFX_PAGETURN)
 			return TRUE
 
 /// Old attackby.

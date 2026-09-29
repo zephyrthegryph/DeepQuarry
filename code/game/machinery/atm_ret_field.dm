@@ -71,7 +71,7 @@
 /obj/machinery/atmospheric_field_generator/welder_act(mob/user, obj/item/tool)
 	if(!hatch_open)
 		return NONE
-	use_tool(user, tool, src, delay = 1.5 SECONDS, quality = TOOL_WELDER, amount = 5, volume = 50, message_self = "You start to disassemble \the [src].", message_others = "[user] starts to disassemble \the [src].", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
+	use_tool(user, tool, src, delay = 1.5 SECONDS, quality = TOOL_WELDER, amount = 5, volume = 50, start_self = "You start to disassemble \the [src].", start_others = "[user] starts to disassemble \the [src].", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/atmospheric_field_generator/proc/welder_act_tool_done(mob/user)
@@ -83,7 +83,7 @@
 	generate_field()
 
 /obj/machinery/atmospheric_field_generator/update_icon()
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		icon_state = "arfg_broken"
 	else if(hatch_open && wires_intact)
 		icon_state = "arfg_open_wires"
@@ -95,28 +95,27 @@
 		icon_state = "arfg_off"
 
 /obj/machinery/atmospheric_field_generator/power_change()
-	var/oldstat = stat
-	..()
-	if(!(stat & (BROKEN|NOPOWER|EMPED)))
+	. = ..()
+	if(operable())
 		ispowered = TRUE
 		update_icon()
 		if(alwaysactive || wasactive)	//reboot our field if we were on or are supposed to be always-on
 			generate_field()
-	if(stat != oldstat && isactive && (stat & (BROKEN|NOPOWER|EMPED)))
+	if(. && isactive && (!operable()))
 		ispowered = FALSE
 		disable_field()
 		update_icon()
 
 /obj/machinery/atmospheric_field_generator/emp_act(severity, recursive)
 	. = ..()
-	if (. & EMP_PROTECT_SELF || (stat & EMPED))
+	if (. & EMP_PROTECT_SELF || (has_stat(EMPED)))
 		return
-	stat |= EMPED
+	stat_add(EMPED)
 	disable_field() //shutting dowwwwwwn
 	om_after(src, rand(reboot_delay_min, reboot_delay_max), PROC_REF(emp_reboot))
 
 /obj/machinery/atmospheric_field_generator/proc/emp_reboot()
-	stat &= ~EMPED
+	stat_remove(EMPED)
 	if(alwaysactive || wasactive) //reboot after a short delay if we were online before
 		generate_field()
 
@@ -140,19 +139,19 @@
 		icon_state = "arfg_on"
 		new field_type (src.loc)
 		src.visible_message(span_warning("The ARF-G crackles to life!"),span_warning("You hear an ARF-G coming online!"))
-		update_use_power(USE_POWER_ACTIVE)
+		set_use_power(USE_POWER_ACTIVE)
 	return
 
 /obj/machinery/atmospheric_field_generator/proc/disable_field()
 	if(isactive)
-		if(alwaysactive == TRUE && !(stat & (BROKEN|NOPOWER|EMPED))) //If we're not damaged, don't turn off if we're always on.
+		if(alwaysactive == TRUE && operable()) //If we're not damaged, don't turn off if we're always on.
 			return
 		else
 			icon_state = "arfg_off"
 			for(var/obj/structure/atmospheric_retention_field/F in contents_of(loc))
 				qdel(F)
 			src.visible_message("The ARF-G shuts down with a low hum.","You hear an ARF-G powering down.")
-			update_use_power(USE_POWER_IDLE)
+			set_use_power(USE_POWER_IDLE)
 			isactive = FALSE
 	return
 

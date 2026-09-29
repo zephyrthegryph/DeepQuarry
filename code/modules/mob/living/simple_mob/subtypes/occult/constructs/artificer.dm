@@ -16,7 +16,7 @@
 	melee_damage_upper = 20
 	organ_names = /datum/decl/mob_organ_names/artificer
 	attacktext = list("rammed")
-	attack_sound = 'sound/weapons/rapidslice.ogg'
+	attack_sound = SFX_WEAPONS_RAPIDSLICE
 	construct_spells = list(/datum/spell/aoe_turf/conjure/construct/lesser,
 							/datum/spell/aoe_turf/conjure/wall,
 							/datum/spell/aoe_turf/conjure/floor,
@@ -29,7 +29,7 @@
 							)
 
 /datum/decl/mob_organ_names/artificer
-	hit_zones = list("body", "carapace", "right manipulator", "left manipulator", "upper left appendage", "upper right appendage", "eye")
+TYPE_TABLE(/datum/decl/mob_organ_names/artificer, mob_organ_hit_zones, list("body", "carapace", "right manipulator", "left manipulator", "upper left appendage", "upper right appendage", "eye"))
 
 ////////////////////////////
 //		Ranged Artificer
@@ -43,7 +43,7 @@
 	icon_state = "caster_artificer"
 	icon_living = "caster_artificer"
 	projectiletype = /obj/item/projectile/beam/inversion
-	projectilesound = 'sound/weapons/spiderlunge.ogg'
+	projectilesound = SFX_WEAPONS_SPIDERLUNGE
 
 ////////////////////////////
 //		Artificer
@@ -63,5 +63,5 @@
 	melee_damage_upper = 10
 	attack_armor_pen = 50 // Does so little damage already, that this can be justified.
 	attacktext = list("rammed")
-	attack_sound = 'sound/weapons/rapidslice.ogg'
+	attack_sound = SFX_WEAPONS_RAPIDSLICE
 	movement_cooldown = 0

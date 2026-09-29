@@ -38,7 +38,7 @@
 		return
 
 	power_change()
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return
 
 	if(COOLDOWN_FINISHED(src, next_mode_toggle))
@@ -69,7 +69,7 @@
 	var/image/pipe = image(icon, icon_state = "reactor_cons", dir = dir)
 	add_overlay(pipe)
 	if(anchored)
-		if(!(stat & (NOPOWER|BROKEN)))
+		if(operable())
 			var/image/dot = image(icon, icon_state = "vat_dot_[ toggle_mode > REACTOR_MODE_INTAKE ? "on" : "off" ]") // Show refinery output mode
 			add_overlay(dot)
 		update_input_connection_overlays("reactor_intakes")
@@ -108,17 +108,17 @@
 			// Perform the connection, forcibly... we're ignoring adjacency checks with this
 			rel_set(internal_tank, "connected_port", pad)
 			rel_set(pad, "connected_device", internal_tank)
-			pad.on = 1 //Activate port updates
+			pad.set_on(1) //Activate port updates
 			// Actually enforce the air sharing
 			pad.rust_attach_external_device(internal_tank)
 			// Sfx
-			playsound(src, 'sound/mecha/gasconnected.ogg', 50, 1)
+			play_sfx(src, SFX_MECHA_GASCONNECTED)
 		else
 			internal_tank.disconnect()
-			playsound(src, 'sound/mecha/gasdisconnected.ogg', 50, 1)
+			play_sfx(src, SFX_MECHA_GASDISCONNECTED)
 	else if(internal_tank.connected_port())
 		internal_tank.disconnect() // How did we get here? qdelled pad?
-		playsound(src, 'sound/mecha/gasdisconnected.ogg', 50, 1)
+		play_sfx(src, SFX_MECHA_GASDISCONNECTED)
 
 /obj/machinery/reagent_refinery/reactor/return_air()
 	if(internal_tank)

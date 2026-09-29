@@ -102,7 +102,7 @@
 			inject_poison(L, target_zone)
 
 /mob/living/simple_mob/vore/oregrub/on_death(gibbed)
-	visible_message(span_warning("\The [src] shudders and collapses, expelling the ores it had devoured!"))
+	act_message(src, null, null, MSG_OTHERS(span_warning("%U% shudders and collapses, expelling the ores it had devoured!")))
 	var/i = rand(min_ore,max_ore)
 	while(i>1)
 		var/ore = pick(/obj/item/ore/glass,/obj/item/ore/coal,/obj/item/ore/iron,/obj/item/ore/lead,/obj/item/ore/marble,/obj/item/ore/phoron,/obj/item/ore/silver,/obj/item/ore/gold)

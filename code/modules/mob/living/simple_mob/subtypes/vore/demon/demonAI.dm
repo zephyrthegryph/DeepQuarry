@@ -1,5 +1,5 @@
 /mob/living/simple_mob/vore/demonAI
-	reaction_sound = 'sound/misc/demonlaugh.ogg'
+	reaction_sound = SFX_MISC_DEMONLAUGH
 	name = "Rift Walker"
 	desc = "A large bipedal creature, its body has a mixture of dark fur and scales. Marks on the creature's body pulse slowly with red light."
 
@@ -22,7 +22,7 @@
 	see_in_dark = 10
 	has_hands = TRUE
 	seedarkness = FALSE
-	attack_sound = 'sound/misc/demonattack.ogg'
+	attack_sound = SFX_MISC_DEMONATTACK
 	has_langs = list(LANGUAGE_GALCOM,LANGUAGE_SHADEKIN,LANGUAGE_CULT)
 
 	melee_damage_lower = 10
@@ -57,8 +57,8 @@
 
 	var/shifted_out = FALSE
 	var/shift_state = AB_SHIFT_NONE
-	var/last_shift = 0
-	var/blood_spawn = 0
+	EXPIRY_DECLARE(last_shift)
+	EXPIRY_DECLARE(blood_spawn)
 	var/is_shifting = FALSE
 
 	can_pain_emote = FALSE
@@ -94,7 +94,7 @@
 /datum/om/stage/life/type_post/simple_mob/vore/demonAI/perform(mob/living/simple_mob/vore/demonAI/self, datum/om/frame/life/ctx)
 	..()
 	if(self.shifted_out)
-		self.density = FALSE
+		self.set_density(FALSE)
 
 /datum/om/stage/life/environment/simple_mob/vore/demonAI
 	of = /mob/living/simple_mob/vore/demonAI
@@ -153,14 +153,14 @@
 // Applies bonus base damage if dq_get_cloaked(src).
 /mob/living/simple_mob/vore/demonAI/apply_bonus_melee_damage(atom/A, damage_amount)
 	if(dq_get_cloaked(src))
-		playsound(src.loc, 'sound/effects/blobattack.ogg', 50, 1)
+		play_sfx(src.loc, SFX_EFFECTS_BLOBATTACK, volume = 50)
 		uncloak()
 		return damage_amount + cloaked_bonus_damage
 	return ..()
 
 // Force uncloaking if attacked.
 /mob/living/simple_mob/vore/demonAI/bullet_act(obj/item/projectile/P)
-	playsound(src, 'sound/misc/demonlaugh.ogg', 50, 1)
+	play_sfx(src, SFX_MISC_DEMONLAUGH)
 	. = ..()
 	break_cloak()
 
@@ -183,7 +183,7 @@
 
 
 /mob/living/simple_mob/vore/demonAI/on_death(gibbed)
-	playsound(src, 'sound/misc/demondeath.ogg', 50, 1)
+	play_sfx(src, SFX_MISC_DEMONDEATH)
 	..()
 
 /mob/living/simple_mob/vore/demonAI/gibspam

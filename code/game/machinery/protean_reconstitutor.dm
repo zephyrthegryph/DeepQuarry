@@ -12,9 +12,9 @@
 	idle_power_usage = 10
 	active_power_usage = 1000
 	var/processing_revive = FALSE
-	clicksound = 'sound/machines/buttonbeep.ogg'	//standard initialization sound
-	var/dingsound = 'sound/machines/kitchen/microwave/microwave-end.ogg'	//sound to play when the process is complete
-	var/buzzsound = 'sound/items/nif_tone_bad.ogg'	//sound to play when we have to abort due to loss of posibrain client
+	clicksound = SFX_MACHINES_BUTTONBEEP	//standard initialization sound
+	var/dingsound = SFX_MACHINES_KITCHEN_MICROWAVE_MICROWAVE_END	//sound to play when the process is complete
+	var/buzzsound = SFX_ITEMS_NIF_TONE_BAD	//sound to play when we have to abort due to loss of posibrain client
 
 	//vars for basic functionality
 	var/obj/item/mmi/digital/posibrain/nano/protean_brain = null	//only allow protean brains, no midround upgrades to bypass the whitelist!
@@ -74,8 +74,8 @@
 
 /obj/machinery/protean_reconstitutor/update_icon()
 	cut_overlays()
-	if(stat & (NOPOWER|BROKEN) || !anchored)
-		if(stat & BROKEN)
+	if(!operable() || !anchored)
+		if(has_stat(BROKEN))
 			icon_state = "[state_base]-broken"
 		else
 			icon_state = "[state_base]-nopower"
@@ -223,7 +223,7 @@ EXTEND_INTERACTIONS(/obj/machinery/protean_reconstitutor, \
 		processing_revive = TRUE
 		power_change()
 		if(prob(2))
-			playsound(src, 'sound/machines/blender.ogg', 50, 1)
+			play_sfx(src, SFX_MACHINES_BLENDER)
 		else
 			playsound(src, clicksound, 50, 1)
 		nanomass_reserve -= nanomass_required

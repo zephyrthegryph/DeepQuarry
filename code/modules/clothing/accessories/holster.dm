@@ -4,14 +4,13 @@
 	icon_state = "holster"
 	slot = ACCESSORY_SLOT_WEAPON
 	concealed_holster = 1
-	var/obj/item/holstered = null
-	var/holster_in = 'sound/items/holsterin.ogg'
-	var/holster_out = 'sound/items/holsterout.ogg'
+	var/obj/item/holstered = null // owned: the holstered item, kept in the holster's contents
+	var/holster_in = SFX_ITEMS_HOLSTERIN
+	var/holster_out = SFX_ITEMS_HOLSTEROUT
 	w_class = ITEMSIZE_NORMAL
 
 /// Holsters take holsterable things; sheaths and special holsters list what they take.
-/obj/item/clothing/accessory/holster/hold_constraint()
-	return list(REQ_BECAUSE(REQ_TAG(PRED_TARGET, TAG_HOLSTERABLE), "it isn't made for a holster"))
+TYPE_TABLE(/obj/item/clothing/accessory/holster, hold_spec, list(REQ_BECAUSE(REQ_TAG(PRED_TARGET, TAG_HOLSTERABLE), "it isn't made for a holster")))
 
 /obj/item/clothing/accessory/holster/proc/holster(obj/item/I, mob/living/user)
 	if(holstered && istype(user))
@@ -172,9 +171,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/holster, \
 	name = "KA holster"
 	desc = "A specialized holster, made specifically for Kinetic Accelerators."
 
-/obj/item/clothing/accessory/holster/waist/kinetic_accelerator/hold_constraint()
-	var/list/holds = list(/obj/item/gun/energy/kinetic_accelerator)
-	return list(HOLD_ONLY(holds))
+TYPE_TABLE(/obj/item/clothing/accessory/holster/waist/kinetic_accelerator, hold_spec, list(HOLD_ONLY(list(/obj/item/gun/energy/kinetic_accelerator))))
 
 /obj/item/clothing/accessory/holster/waist/lanyard
 	name = "baton lanyard"
@@ -182,13 +179,11 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/holster, \
 	icon_state = "holster_lanyard"
 	overlay_state = "holster_lanyard"
 
-/obj/item/clothing/accessory/holster/waist/lanyard/hold_constraint()
-	var/list/holds = list(
-		/obj/item/melee/baton,
-		/obj/item/melee/classic_baton,
-		/obj/item/melee/telebaton
-		)
-	return list(HOLD_ONLY(holds))
+TYPE_TABLE(/obj/item/clothing/accessory/holster/waist/lanyard, hold_spec, list(HOLD_ONLY(list( \
+		/obj/item/melee/baton, \
+		/obj/item/melee/classic_baton, \
+		/obj/item/melee/telebaton \
+		))))
 
 /obj/item/clothing/accessory/holster/machete/rapier
 	name = "rapier sheath"
@@ -198,24 +193,20 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/holster, \
 	var/has_full_icon = 1
 	overlay_state = "sheath"
 
-/obj/item/clothing/accessory/holster/machete/rapier/hold_constraint()
-	var/list/holds = list(/obj/item/melee/rapier)
-	return list(HOLD_ONLY(holds))
+TYPE_TABLE(/obj/item/clothing/accessory/holster/machete/rapier, hold_spec, list(HOLD_ONLY(list(/obj/item/melee/rapier))))
 
 /obj/item/clothing/accessory/holster/machete/rapier/swords
 	name = "sword sheath"
 	desc = "A beautiful red sheath, probably for a beautiful blade."
 
-/obj/item/clothing/accessory/holster/machete/rapier/swords/hold_constraint()
-	var/list/holds = list(
-		/obj/item/melee/rapier,
-		/obj/item/material/sword/katana,
-		/obj/item/toy/cultsword,
-		/obj/item/material/sword,
-		/obj/item/melee/cursedblade,
-		/obj/item/melee/cultblade
-		)
-	return list(HOLD_ONLY(holds))
+TYPE_TABLE(/obj/item/clothing/accessory/holster/machete/rapier/swords, hold_spec, list(HOLD_ONLY(list( \
+		/obj/item/melee/rapier, \
+		/obj/item/material/sword/katana, \
+		/obj/item/toy/cultsword, \
+		/obj/item/material/sword, \
+		/obj/item/melee/cursedblade, \
+		/obj/item/melee/cultblade \
+		))))
 
 /obj/item/clothing/accessory/holster/machete/rapier/proc/occupied()
 	if(!has_full_icon)
@@ -267,8 +258,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/holster, \
 	icon_state = "instrument"
 	concealed_holster = 0
 
-/obj/item/clothing/accessory/holster/case/hold_constraint()
-	var/list/holds = list(/obj/item/instrument)
-	return list(HOLD_ONLY(holds))
+TYPE_TABLE(/obj/item/clothing/accessory/holster/case, hold_spec, list(HOLD_ONLY(list(/obj/item/instrument))))
 
 OWN(/obj/item/clothing/accessory/holster, holstered, OWN_CONTAINED)

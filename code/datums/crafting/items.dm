@@ -212,7 +212,7 @@
 	if(!target.anchored)
 		target.throw_at(target_zone, 6, 2, user, FALSE)
 	user.visible_message(span_warning("\The [src] discharges with a thunderous boom!"))
-	playsound(src, 'sound/weapons/resonator_blast.ogg', 100, 1, -1)
+	play_sfx(src, SFX_WEAPONS_RESONATOR_BLAST)
 
 //Eel stuff
 /obj/item/material/twohanded/fireaxe/scythe/harvester

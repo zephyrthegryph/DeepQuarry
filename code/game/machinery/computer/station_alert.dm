@@ -43,7 +43,7 @@
 
 /obj/machinery/computer/station_alert/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return TRUE
 	tgui_interact(user)
 	return TRUE
@@ -55,14 +55,14 @@
 	alarm_monitor.tgui_interact(user)
 
 /obj/machinery/computer/station_alert/proc/update_console_icon()
-	if(!(stat & (BROKEN|NOPOWER)))
+	if(operable())
 		var/last_icon = icon_screen
 		var/list/alarms = alarm_monitor ? alarm_monitor.major_alarms() : list()
 		if(alarms.len)
 			icon_screen = "alert:2"
-			playsound(src, 'sound/effects/comp_alert_major.ogg', 70, 1) // Alarm notifications
+			play_sfx(src, SFX_EFFECTS_COMP_ALERT_MAJOR) // Alarm notifications
 		else
 			icon_screen = initial(icon_screen)
-			playsound(src, 'sound/effects/comp_alert_clear.ogg', 50, 1) // Alarm notifications
+			play_sfx(src, SFX_EFFECTS_COMP_ALERT_CLEAR) // Alarm notifications
 		if(last_icon != icon_screen)
 			update_icon()

@@ -20,7 +20,7 @@
 	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 
 	attacktext = list("slammed into")
-	attack_sound = 'sound/effects/slime_squish.ogg'
+	attack_sound = SFX_EFFECTS_SLIME_SQUISH
 	say_list_type = /datum/say_list/spore
 
 	organ_names = /datum/decl/mob_organ_names/spore
@@ -154,4 +154,4 @@
 	return damage_to_do
 
 /datum/decl/mob_organ_names/spore
-	hit_zones = list("sporangium", "stolon", "sporangiophore")
+TYPE_TABLE(/datum/decl/mob_organ_names/spore, mob_organ_hit_zones, list("sporangium", "stolon", "sporangiophore"))

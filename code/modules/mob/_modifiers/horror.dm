@@ -659,7 +659,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 		M.unEquip(M.get_equipped_item(SLOT_ID_GLOVES), TRUE)
 	M.equip_to_slot_or_del(G, SLOT_ID_GLOVES)
 
-	playsound(M, 'sound/effects/blobattack.ogg', 30, 1)
+	play_sfx(M, SFX_EFFECTS_BLOBATTACK)
 	M.update_inv_wear_suit()
 	M.update_inv_head()
 	M.update_hair()

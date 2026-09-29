@@ -53,7 +53,7 @@
 		attempt_move(away_waypoint)
 
 	//wait ETA here, plus a late arrival sometimes.
-	arrive_time = world.time + GLOB.supply_service.movetime
+	EXPIRY_SET(src, arrive_time, GLOB.supply_service.movetime, CLOCK_WORLD)
 	var/wait = GLOB.supply_service.movetime
 	if (next_location() != away_waypoint && prob(late_chance))
 		wait += rand(0,max_late_time)

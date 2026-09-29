@@ -33,7 +33,7 @@ EXTEND_INTERACTIONS(/obj/item/assembly/electronic_assembly, \
 	return TRUE
 
 /obj/item/assembly/electronic_assembly/proc/toggle_open(mob/user)
-	playsound(src, 'sound/items/Crowbar.ogg', 50, 1)
+	play_sfx(src, SFX_ITEMS_CROWBAR)
 	opened = !opened
 	EA.opened = opened
 	to_chat(user, span_notice("You [opened ? "opened" : "closed"] \the [src]."))
@@ -66,7 +66,7 @@ EXTEND_INTERACTIONS(/obj/item/assembly/electronic_assembly, \
 /obj/item/assembly/electronic_assembly/examine(mob/user)
 	. = ..()
 	if(EA)
-		for(var/obj/item/integrated_circuit/IC in contents_of(EA))
+		FOR_REAL_CONTENTS(var/obj/item/integrated_circuit/IC, EA)
 			. += IC.external_examine(user)
 
 /// Old Open/Close Device Assembly verb: Open or close device assembly!

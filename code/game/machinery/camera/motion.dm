@@ -1,22 +1,22 @@
 /obj/machinery/camera
 	var/list/motionTargets = null
-	var/detectTime = 0
+	EXPIRY_DECLARE(detectTime)
 	var/area/ai_monitored/area_motion
 	var/alarm_delay = 100 // Don't forget, there's another 10 seconds in queueAlarm()
 
 /// The motion alarm fires once a target has been seen for alarm_delay (the camera's timer).
 /obj/machinery/camera/proc/check_motion_alarm()
-	if(stat & (NOPOWER|EMPED))
+	if(has_stat(NOPOWER | EMPED))
 		return
 	if(!isMotion())
 		return
-	if(detectTime > 0 && world.time - detectTime > alarm_delay)
+	if(detectTime > 0 && ELAPSED(src, detectTime, CLOCK_WORLD) > alarm_delay)
 		triggerAlarm()
 
 /obj/machinery/camera/proc/newTarget(mob/target)
 	if (isAI(target)) return 0
 	if (detectTime == 0)
-		detectTime = world.time // start the clock
+		EXPIRY_STAMP(src, detectTime, CLOCK_WORLD) // start the clock
 	if (!(target in motionTargets))
 		LAZYADD(motionTargets, target)
 		// Losing a target is event driven: it moves, dies or is deleted.
@@ -44,7 +44,7 @@
 		cancelAlarm()
 
 /obj/machinery/camera/proc/cancelAlarm()
-	if (!status || (stat & NOPOWER))
+	if (!status || (has_stat(NOPOWER)))
 		return 0
 	if (detectTime == -1)
 		GLOB.motion_alarm.clearAlarm(loc, src)
@@ -52,7 +52,7 @@
 	return 1
 
 /obj/machinery/camera/proc/triggerAlarm()
-	if (!status || (stat & NOPOWER))
+	if (!status || (has_stat(NOPOWER)))
 		return 0
 	if (!detectTime) return 0
 	GLOB.motion_alarm.triggerAlarm(loc, src)

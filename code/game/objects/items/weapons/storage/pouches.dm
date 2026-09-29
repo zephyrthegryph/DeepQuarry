@@ -6,8 +6,8 @@
 	desc = "This storage pouch can be used to provide some additional storage for quick access."
 	icon = 'icons/inventory/pockets/item.dmi'
 	slot_flags = SLOT_POCKET
-	drop_sound = 'sound/items/drop/backpack.ogg'
-	pickup_sound = 'sound/items/pickup/backpack.ogg'
+	drop_sound = SFX_ITEMS_DROP_BACKPACK
+	pickup_sound = SFX_ITEMS_PICKUP_BACKPACK
 
 	icon_state = "medium_generic"
 	max_storage_space = INVENTORY_POUCH_SPACE
@@ -18,8 +18,7 @@
 	/// Set while a delayed move is retried after its delay.
 	var/tmp/stall_passed = FALSE
 
-/obj/item/storage/pouch/hold_constraint()
-	return list(HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/pouch, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 
 /obj/item/storage/pouch/stall_insertion(obj/item/W, mob/user)
 	// No delay if you have the pouch in your hands
@@ -86,9 +85,7 @@
 	icon_state = "ammo"
 	max_storage_space = INVENTORY_POUCH_SPACE
 
-/obj/item/storage/pouch/ammo/hold_constraint()
-	var/list/holds = list(/obj/item/ammo_magazine, /obj/item/ammo_casing, /obj/item/cell/device, /obj/item/grenade, /obj/item/plastique)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/pouch/ammo, hold_spec, list(HOLD_ONLY(list(/obj/item/ammo_magazine, /obj/item/ammo_casing, /obj/item/cell/device, /obj/item/grenade, /obj/item/plastique)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 
 /obj/item/storage/pouch/eng_tool
 	name = "storage pouch (tools)"
@@ -96,40 +93,38 @@
 	icon_state = "engineering_tool"
 	max_storage_space = INVENTORY_POUCH_SPACE
 
-/obj/item/storage/pouch/eng_tool/hold_constraint()
-	var/list/holds = list(
-		/obj/item/tool/crowbar,
-		/obj/item/tool/screwdriver,
-		/obj/item/weldingtool,
-		/obj/item/tool/wirecutters,
-		/obj/item/tool/wrench,
-		/obj/item/tool/transforming/powerdrill,
-		/obj/item/tool/transforming/jawsoflife,
-		/obj/item/multitool,
-		/obj/item/flashlight,
-		/obj/item/cell/device,
-		/obj/item/stack/cable_coil,
-		/obj/item/t_scanner,
-		/obj/item/analyzer,
-		/obj/item/clothing/glasses,
-		/obj/item/clothing/gloves,
-		/obj/item/pda,
-		/obj/item/megaphone,
-		/obj/item/taperoll,
-		/obj/item/radio/headset,
-		/obj/item/robotanalyzer,
-		/obj/item/material/minihoe,
-		/obj/item/material/knife/machete/hatchet,
-		/obj/item/analyzer/plant_analyzer,
-		/obj/item/extinguisher/mini,
-		/obj/item/tape_roll,
-		/obj/item/integrated_electronics/wirer,
-		/obj/item/integrated_electronics/debugger,
-		/obj/item/shovel/spade,
-		/obj/item/stack/nanopaste,
-		/obj/item/geiger
-	) // make it the same as the tool-belt why was it not like this to start with wtf
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/pouch/eng_tool, hold_spec, list(HOLD_ONLY(list( \
+		/obj/item/tool/crowbar, \
+		/obj/item/tool/screwdriver, \
+		/obj/item/weldingtool, \
+		/obj/item/tool/wirecutters, \
+		/obj/item/tool/wrench, \
+		/obj/item/tool/transforming/powerdrill, \
+		/obj/item/tool/transforming/jawsoflife, \
+		/obj/item/multitool, \
+		/obj/item/flashlight, \
+		/obj/item/cell/device, \
+		/obj/item/stack/cable_coil, \
+		/obj/item/t_scanner, \
+		/obj/item/analyzer, \
+		/obj/item/clothing/glasses, \
+		/obj/item/clothing/gloves, \
+		/obj/item/pda, \
+		/obj/item/megaphone, \
+		/obj/item/taperoll, \
+		/obj/item/radio/headset, \
+		/obj/item/robotanalyzer, \
+		/obj/item/material/minihoe, \
+		/obj/item/material/knife/machete/hatchet, \
+		/obj/item/analyzer/plant_analyzer, \
+		/obj/item/extinguisher/mini, \
+		/obj/item/tape_roll, \
+		/obj/item/integrated_electronics/wirer, \
+		/obj/item/integrated_electronics/debugger, \
+		/obj/item/shovel/spade, \
+		/obj/item/stack/nanopaste, \
+		/obj/item/geiger \
+	) /* make it the same as the tool-belt why was it not like this to start with wtf */), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 
 /obj/item/storage/pouch/eng_supply
 	name = "storage pouch (supplies)"
@@ -137,19 +132,17 @@
 	icon_state = "engineering_supply"
 	max_storage_space = INVENTORY_POUCH_SPACE
 
-/obj/item/storage/pouch/eng_supply/hold_constraint()
-	var/list/holds = list(
-		/obj/item/cell/device,
-		/obj/item/stack/cable_coil,
-		/obj/item/taperoll,
-		/obj/item/extinguisher,
-		/obj/item/tape_roll,
-		/obj/item/stack/material/steel,
-		/obj/item/stack/material/glass,
-		/obj/item/lightreplacer,
-		/obj/item/cell
-	) // makes it actually useful lmao, adds sheets and cells as well as light replacers and lets you take any extinguisher that fits
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/pouch/eng_supply, hold_spec, list(HOLD_ONLY(list( \
+		/obj/item/cell/device, \
+		/obj/item/stack/cable_coil, \
+		/obj/item/taperoll, \
+		/obj/item/extinguisher, \
+		/obj/item/tape_roll, \
+		/obj/item/stack/material/steel, \
+		/obj/item/stack/material/glass, \
+		/obj/item/lightreplacer, \
+		/obj/item/cell \
+	) /* makes it actually useful lmao, adds sheets and cells as well as light replacers and lets you take any extinguisher that fits */), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 
 /obj/item/storage/pouch/eng_parts
 	name = "storage pouch (parts)"
@@ -162,13 +155,11 @@
 	allow_quick_empty = TRUE
 	collection_mode = TRUE
 
-/obj/item/storage/pouch/eng_parts/hold_constraint()
-	var/list/holds = list(
-		/obj/item/stock_parts,
-		/obj/item/stack/cable_coil,
-		/obj/item/circuitboard
-	)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/pouch/eng_parts, hold_spec, list(HOLD_ONLY(list( \
+		/obj/item/stock_parts, \
+		/obj/item/stack/cable_coil, \
+		/obj/item/circuitboard \
+	)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 
 /obj/item/storage/pouch/eng_parts/borg
 	name = "parts storage unit"
@@ -183,34 +174,32 @@
 	max_storage_space = ITEMSIZE_COST_SMALL*3 // makes it slightly smaller since its a lot of stuff with pocket access
 	remove_delay = 5 // .5 second delay, get the medical things faster because there is no reason to use this otherwise. still gotta stop moving to take things out.
 
-/obj/item/storage/pouch/medical/hold_constraint()
-	var/list/holds = list(
-		/obj/item/healthanalyzer,
-		/obj/item/dnainjector,
-		/obj/item/reagent_containers/dropper,
-		/obj/item/reagent_containers/glass/beaker,
-		/obj/item/reagent_containers/glass/bottle,
-		/obj/item/reagent_containers/pill,
-		/obj/item/reagent_containers/syringe,
-		/obj/item/storage/quickdraw/syringe_case,
-		/obj/item/storage/pill_bottle,
-		/obj/item/stack/medical,
-		/obj/item/reagent_containers/hypospray,
-		/obj/item/storage/quickdraw/syringe_case,
-		/obj/item/syringe_cartridge,
-		/obj/item/clothing/gloves/sterile,
-		/obj/item/sleevemate,
-		/obj/item/bodybag,
-		/obj/item/clothing/mask/surgical,
-		/obj/item/soap,
-		/obj/item/stack/nanopaste,
-		/obj/item/taperoll/medical,
-		/obj/item/storage/box/freezer,
-		/obj/item/clothing/mask/chewable/candy/lolli,
-		/obj/item/extrapolator,
-		/obj/item/gene_scanner,
-	) // added a bunch of misc medical stuff
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/pouch/medical, hold_spec, list(HOLD_ONLY(list( \
+		/obj/item/healthanalyzer, \
+		/obj/item/dnainjector, \
+		/obj/item/reagent_containers/dropper, \
+		/obj/item/reagent_containers/glass/beaker, \
+		/obj/item/reagent_containers/glass/bottle, \
+		/obj/item/reagent_containers/pill, \
+		/obj/item/reagent_containers/syringe, \
+		/obj/item/storage/quickdraw/syringe_case, \
+		/obj/item/storage/pill_bottle, \
+		/obj/item/stack/medical, \
+		/obj/item/reagent_containers/hypospray, \
+		/obj/item/storage/quickdraw/syringe_case, \
+		/obj/item/syringe_cartridge, \
+		/obj/item/clothing/gloves/sterile, \
+		/obj/item/sleevemate, \
+		/obj/item/bodybag, \
+		/obj/item/clothing/mask/surgical, \
+		/obj/item/soap, \
+		/obj/item/stack/nanopaste, \
+		/obj/item/taperoll/medical, \
+		/obj/item/storage/box/freezer, \
+		/obj/item/clothing/mask/chewable/candy/lolli, \
+		/obj/item/extrapolator, \
+		/obj/item/gene_scanner, \
+	) /* added a bunch of misc medical stuff */), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 
 /obj/item/storage/pouch/flares
 	name = "storage pouch (flares)"
@@ -219,9 +208,7 @@
 	storage_slots = 14 // Full box of flares.
 	remove_delay = 0 // Quick access to light sources.
 
-/obj/item/storage/pouch/flares/hold_constraint()
-	var/list/holds = list(/obj/item/flashlight/flare, /obj/item/flashlight/glowstick)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/pouch/flares, hold_spec, list(HOLD_ONLY(list(/obj/item/flashlight/flare, /obj/item/flashlight/glowstick)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 /obj/item/storage/pouch/flares/full_flare
 	starts_with = list(/obj/item/flashlight/flare = 14) // Full box of flares.
 /obj/item/storage/pouch/flares/full_glow
@@ -240,9 +227,7 @@
 	storage_slots = 1
 	remove_delay = 0
 
-/obj/item/storage/pouch/holster/hold_constraint()
-	var/list/holds = list(/obj/item/gun)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/pouch/holster, hold_spec, list(HOLD_ONLY(list(/obj/item/gun)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 /obj/item/storage/pouch/holster/full_stunrevolver
 	starts_with = list(/obj/item/gun/energy/stunrevolver)
 /obj/item/storage/pouch/holster/full_taser
@@ -261,9 +246,7 @@
 	storage_slots = 1
 	remove_delay = 0
 
-/obj/item/storage/pouch/baton/hold_constraint()
-	var/list/holds = list(/obj/item/melee, /obj/item/material, /obj/item/tool/wrench)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/pouch/baton, hold_spec, list(HOLD_ONLY(list(/obj/item/melee, /obj/item/material, /obj/item/tool/wrench)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 /obj/item/storage/pouch/baton/full
 	starts_with = list(/obj/item/melee/baton)
 

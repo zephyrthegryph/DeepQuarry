@@ -196,7 +196,7 @@
 
 /// Watts the machine emits right now. Subtypes scale it by load.
 /obj/machinery/proc/current_heat_output()
-	if(!heat_output || !use_power || (stat & (NOPOWER|BROKEN)))
+	if(!heat_output || !use_power || (!operable()))
 		return 0
 	return heat_output
 

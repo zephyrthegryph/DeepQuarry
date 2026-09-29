@@ -232,11 +232,11 @@ update_flag
 
 	if(port && anchored) // if it blew up, frees up the port
 		disconnect()
-		anchored = 0
+		set_anchored(0)
 
 	src.destroyed = 1
-	playsound(src, 'sound/effects/spray.ogg', 10, 1, -3)
-	src.density = FALSE
+	play_sfx(src, SFX_EFFECTS_SPRAY)
+	set_density(FALSE)
 	update_icon()
 
 	if (src.holding)

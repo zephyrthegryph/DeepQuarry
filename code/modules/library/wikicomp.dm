@@ -38,7 +38,7 @@
 			crash = FALSE
 	if(!crash)
 		tgui_interact(user)
-		playsound(src, "keyboard", 40) // into console
+		play_sfx(src, SFX_KEYBOARD) // into console
 	return TRUE
 
 /obj/machinery/librarywikicomp/allow_pai_interaction()
@@ -152,7 +152,7 @@
 	if(..())
 		return TRUE
 	add_fingerprint(ui.user)
-	playsound(src, "keyboard", 40) // into console
+	play_sfx(src, SFX_KEYBOARD) // into console
 
 	switch(action)
 		if("closesearch")
@@ -261,9 +261,9 @@
 
 /obj/machinery/librarywikicomp/proc/pay_donation(obj/item/card/id/I, mob/user, amount, datum/tgui/ui, pin)
 	visible_message(span_info("[user] swipes a card through [src]."))
-	playsound(src, 'sound/machines/id_swipe.ogg', 50, 1)
+	play_sfx(src, SFX_MACHINES_ID_SWIPE)
 	if(SSinternal_wiki.pay_with_card(I, user, src, amount, pin))
-		playsound(src, 'sound/machines/ping.ogg', 50, 1)
+		play_sfx(src, SFX_MACHINES_PING, vary = TRUE)
 		just_donated = TRUE
 		SStgui.update_user_uis(user, ui)
 

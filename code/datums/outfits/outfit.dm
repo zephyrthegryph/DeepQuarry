@@ -5,9 +5,6 @@ GLOBAL_DATUM_INIT(outfits_decls_root, /datum/decl/hierarchy/outfit, new) // Rewu
 /proc/outfit_by_type(outfit_type)
 	return GLOB.outfits_decls_by_type[outfit_type]
 
-/proc/outfits()
-	return GLOB.outfits_decls
-
 /datum/decl/hierarchy/outfit
 	name = "Naked"
 

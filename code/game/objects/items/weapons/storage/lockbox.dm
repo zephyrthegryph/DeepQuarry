@@ -15,8 +15,7 @@
 	var/icon_closed = "lockbox"
 	var/icon_broken = "lockbox+b"
 
-/obj/item/storage/lockbox/hold_constraint()
-	return list(HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/lockbox, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 
 
 EXTEND_INTERACTIONS(/obj/item/storage/lockbox, INTERACT_ITEM("Put in", PROC_REF(interaction_lockbox_item)))
@@ -42,11 +41,9 @@ EXTEND_INTERACTIONS(/obj/item/storage/lockbox, INTERACT_ITEM("Put in", PROC_REF(
 			to_chat(user, span_warning("Access Denied"))
 	else if(istype(W, /obj/item/melee/energy/blade))
 		if(emag_act(INFINITY, user, W, "The locker has been sliced open by [user] with an energy blade!", "You hear metal being sliced and sparks flying."))
-			var/datum/effect/effect/system/spark_spread/spark_system = new /datum/effect/effect/system/spark_spread()
-			spark_system.set_up(5, 0, src.loc)
-			spark_system.start()
-			playsound(src, 'sound/weapons/blade1.ogg', 50, 1)
-			playsound(src, "sparks", 50, 1)
+			fx_sparks(src.loc, 5, FALSE)
+			play_sfx(src, SFX_WEAPONS_BLADE1)
+			play_sfx(src, SFX_SPARKS)
 	if(!locked)
 		return interaction_item(user, W, interaction)
 	to_chat(user, span_warning("It's locked!"))

@@ -77,7 +77,7 @@
 	if(!T)
 		return FALSE
 	var/datum/map_template/shelter/template = dq_dark_tunnel_template()
-	playsound(actor, 'sound/effects/phasein.ogg', 100, 1)
+	play_sfx(actor, SFX_EFFECTS_PHASEIN)
 	actor.visible_message(span_notice("[actor] finishes pulling dark energies around themselves, creating a portal."))
 	log_and_message_admins("[key_name_admin(actor)] created a tunnel to the dark at [get_area(T)]!")
 	template.annihilate_plants(T)

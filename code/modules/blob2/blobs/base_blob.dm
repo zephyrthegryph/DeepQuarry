@@ -11,8 +11,8 @@
 	var/point_return = 0 //How many points the blob gets back when it removes a blob of that type. If less than 0, blob cannot be removed.
 	max_integrity = 30
 	var/health_regen = 2 //how much health this blob regens when pulsed
-	var/pulse_timestamp = 0 //we got pulsed when?
-	var/heal_timestamp = 0 //we got healed when?
+	EXPIRY_DECLARE(pulse_timestamp) //we got pulsed when?
+	EXPIRY_DECLARE(heal_timestamp) //we got healed when?
 	var/mob/observer/blob/overmind = null
 	var/base_name = "blob" // The name that gets appended along with the blob_type's name.
 	var/faction = FACTION_BLOB
@@ -28,7 +28,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob, REGISTRY_BLOBS)
 	. = ..()
 	update_icon()
 
-DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = 'sound/effects/splat.ogg'))
+DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = SFX_EFFECTS_SPLAT))
 
 /obj/structure/blob/update_icon() //Updates color based on overmind color if we have an overmind.
 	if(overmind)
@@ -80,13 +80,13 @@ DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = 'so
 	overmind.blob_type.on_emp(src, severity)
 
 /obj/structure/blob/proc/pulsed()
-	if(pulse_timestamp <= world.time)
+	if(!BEFORE(src, pulse_timestamp, CLOCK_WORLD))
 		consume_tile()
-		if(heal_timestamp <= world.time)
+		if(!BEFORE(src, heal_timestamp, CLOCK_WORLD))
 			adjust_integrity(health_regen)
-			heal_timestamp = world.time + 2 SECONDS
+			EXPIRY_SET(src, heal_timestamp, 2 SECONDS, CLOCK_WORLD)
 		update_icon()
-		pulse_timestamp = world.time + 1 SECOND
+		EXPIRY_SET(src, pulse_timestamp, 1 SECOND, CLOCK_WORLD)
 		if(overmind)
 			faction = overmind.blob_type.faction
 			overmind.blob_type.on_pulse(src)
@@ -122,9 +122,9 @@ DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = 'so
 
 		if(distance <= expand_range)
 			var/can_expand = TRUE
-			if(blobs_to_affect.len >= 120 && B.heal_timestamp > world.time)
+			if(blobs_to_affect.len >= 120 && BEFORE(src, B.heal_timestamp, CLOCK_WORLD))
 				can_expand = FALSE
-			if(!expanded && can_expand && B.pulse_timestamp <= world.time && prob(expand_probablity))
+			if(!expanded && can_expand && !BEFORE(src, B.pulse_timestamp, CLOCK_WORLD) && prob(expand_probablity))
 				var/obj/structure/blob/newB = B.expand(null, null, !expanded) //expansion falls off with range but is faster near the blob causing the expansion
 				if(newB)
 					if(expanded)
@@ -136,7 +136,7 @@ DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = 'so
 
 /// The second half of expand(): the new blob slides into `T`.
 /obj/structure/blob/proc/slide_into(turf/T, obj/structure/blob/origin, expand_reaction)
-	density = initial(density)
+	set_density(initial(density))
 	forceMove(T)
 	update_icon()
 	if(overmind && expand_reaction)
@@ -161,7 +161,7 @@ DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = 'so
 
 	if(istype(T, /turf/space) && !(locate_on(T, /obj/structure/lattice)) && prob(80))
 		make_blob = FALSE
-		playsound(src, 'sound/effects/splat.ogg', 50, 1) //Let's give some feedback that we DID try to spawn in space, since players are used to it
+		play_sfx(src, SFX_EFFECTS_SPLAT) //Let's give some feedback that we DID try to spawn in space, since players are used to it
 
 	consume_tile() //hit the tile we're in, making sure there are no border objects blocking us
 
@@ -181,7 +181,7 @@ DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = 'so
 			rel_set(B, "overmind", controller)
 		else
 			rel_set(B, "overmind", overmind)
-		B.density = TRUE
+		B.set_density(TRUE)
 		if(T.Enter(B,src)) //NOW we can attempt to move into the tile
 			// A decisecond later, so the slide animation works.
 			om_after(B, 0.1 SECONDS, TYPE_PROC_REF(/obj/structure/blob, slide_into), T, src, expand_reaction)
@@ -232,7 +232,7 @@ DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = 'so
 
 /obj/structure/blob/attack_generic(mob/user, damage, attack_verb)
 	visible_message(span_danger("[user] [attack_verb] the [src]!"))
-	playsound(src, 'sound/effects/attackblob.ogg', 100, 1)
+	play_sfx(src, SFX_EFFECTS_ATTACKBLOB, 2)
 	user.do_attack_animation(src)
 	if(overmind)
 		damage *= overmind.blob_type.brute_multiplier
@@ -315,7 +315,7 @@ DECLARE_INTERACTIONS(/obj/structure/blob, \
 /// Old attackby.
 /obj/structure/blob/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
-	playsound(src, 'sound/effects/attackblob.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_ATTACKBLOB)
 	visible_message(span_danger("\The [src] has been attacked with \the [W][(user ? " by [user]." : ".")]"))
 	var/damage = W.force
 	switch(W.obj_damage_type())
@@ -326,9 +326,9 @@ DECLARE_INTERACTIONS(/obj/structure/blob, \
 				damage *= 2
 
 			if(damage > 0)
-				playsound(src, 'sound/items/Welder.ogg', 100, 1)
+				play_sfx(src, SFX_ITEMS_WELDER)
 			else
-				playsound(src, 'sound/weapons/tap.ogg', 50, 1)
+				play_sfx(src, SFX_WEAPONS_TAP)
 		if(BRUTE)
 			if(overmind)
 				damage *= overmind.blob_type.brute_multiplier
@@ -336,9 +336,9 @@ DECLARE_INTERACTIONS(/obj/structure/blob, \
 				damage *= 2
 
 			if(damage > 0)
-				playsound(src, 'sound/effects/attackblob.ogg', 50, 1)
+				play_sfx(src, SFX_EFFECTS_ATTACKBLOB)
 			else
-				playsound(src, 'sound/weapons/tap.ogg', 50, 1)
+				play_sfx(src, SFX_WEAPONS_TAP)
 	if(overmind)
 		damage = overmind.blob_type.on_received_damage(src, damage, W.obj_damage_type(), user)
 	adjust_integrity(-damage)
@@ -439,7 +439,7 @@ DECLARE_INTERACTIONS(/obj/structure/blob, \
 /obj/structure/blob/handle_deconstruct(disassembled = TRUE)
 	if(disassembled)
 		return
-	playsound(src, 'sound/effects/splat.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_SPLAT)
 	if(overmind)
 		overmind.blob_type.on_death(src)
 

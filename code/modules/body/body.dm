@@ -350,7 +350,7 @@
 
 	if(reagent_volumes)
 		var/strength = chem_heal_strength()
-		var/list/table = dq_reagent_tag_table()
+		var/list/table = GLOBAL_TABLE_GET(dq_reagent_tag_table)
 		for(var/reagent_id in reagent_volumes)
 			var/list/tags = table[reagent_id]
 			if(!tags)

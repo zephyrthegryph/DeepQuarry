@@ -78,7 +78,7 @@ KEYED_TARGET(/obj/machinery/power/quantumpad, map_pad_id)
 /obj/machinery/power/quantumpad/proc/interaction_boost(mob/user, obj/item/quantum_pad_booster/booster, datum/interaction/interaction)
 	visible_message("[user] violently jams [booster] into the side of [src]. [src] beeps, quietly.", \
 	"You hear the sound of a device being improperly installed in sensitive machinery, then subsequent beeping.", runemessage = "beep!")
-	playsound(src, 'sound/items/rped.ogg', 25, 1)
+	play_sfx(src, SFX_ITEMS_RPED)
 	boosted = TRUE
 	consume(booster, user)
 	return TRUE
@@ -105,7 +105,7 @@ KEYED_TARGET(/obj/machinery/power/quantumpad, map_pad_id)
 	if(panel_open)
 		add_overlay("qpad-panel")
 
-	if(inoperable() || panel_open || !power_region)
+	if(!operable() || panel_open || !power_region)
 		icon_state = "[initial(icon_state)]-o"
 	else if (!linked_pad())
 		icon_state = "[initial(icon_state)]-b"
@@ -165,7 +165,7 @@ KEYED_TARGET(/obj/machinery/power/quantumpad, map_pad_id)
 		to_chat(user, span_warning("Linked pad is busy. Please wait."))
 		return TRUE
 
-	if(linked_pad().inoperable())
+	if(!linked_pad().operable())
 		to_chat(user, span_warning("Linked pad is not responding to ping."))
 		return TRUE
 	src.add_fingerprint(user)
@@ -191,7 +191,7 @@ KEYED_TARGET(/obj/machinery/power/quantumpad, map_pad_id)
 		to_chat(user, span_warning("This is too unstable a platform for \the [src] to operate on!"))
 		return
 	// ition End
-	playsound(src, 'sound/weapons/flash.ogg', 25, 1)
+	play_sfx(src, SFX_WEAPONS_FLASH, 0.25)
 	teleporting = 1
 
 	om_after(src, teleport_speed, PROC_REF(finish_teleport), user)
@@ -260,7 +260,7 @@ KEYED_TARGET(/obj/machinery/power/quantumpad, map_pad_id)
 		teleporting = 0
 		return
 	// Broken or whatever
-	if(inoperable())
+	if(!operable())
 		to_chat(user, span_warning("[src] is nonfunctional!"))
 		teleporting = 0
 		return
@@ -271,7 +271,7 @@ KEYED_TARGET(/obj/machinery/power/quantumpad, map_pad_id)
 		gateway_scatter(user)
 		return
 	// Nothing to teleport to
-	if(!linked_pad() || QDELETED(linked_pad()) || linked_pad().inoperable())
+	if(!linked_pad() || QDELETED(linked_pad()) || !linked_pad().operable())
 		to_chat(user, span_warning("Linked pad is not responding to ping. Teleport aborted."))
 		teleporting = 0
 		return

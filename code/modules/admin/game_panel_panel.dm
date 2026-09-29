@@ -42,19 +42,19 @@
 
 	switch(action)
 		if("change_mode")
-			owner_admin.Topic("c_mode=1", list("c_mode" = "1"))
+			owner_admin.topic_internal(ui.user, list("c_mode" = "1"))
 			SStgui.update_uis(src)
 			return TRUE
 		if("force_secret")
-			owner_admin.Topic("f_secret=1", list("f_secret" = "1"))
+			owner_admin.topic_internal(ui.user, list("f_secret" = "1"))
 			SStgui.update_uis(src)
 			return TRUE
 		if("spawn_panel")
-			owner_admin.Topic("spawn_panel=1", list("spawn_panel" = "1"))
+			owner_admin.topic_internal(ui.user, list("spawn_panel" = "1"))
 			return TRUE
 		if("vsc")
 			var/setting = "[params["setting"]]"
-			owner_admin.Topic("vsc=[setting]", list("vsc" = setting))
+			owner_admin.topic_internal(ui.user, list("vsc" = setting))
 			return TRUE
 
 /datum/admins

@@ -78,13 +78,12 @@ DECLARE_SHARED_CACHE_EX(mob_hat, GLOBAL_PROC_REF(build_mob_hat), SC_NEVER, 1024,
 /mob/living/silicon/robot/drone/is_sentient()
 	return FALSE
 
-/mob/living/silicon/robot/drone/ventcrawl_get_item_whitelist()
-	// Yes this allows any object, yes it's silly. I don't know if it's ever been abused by drones though.
-	return list(
-		/atom/movable/emissive_blocker,
-		/atom/movable/screen,
-		/obj
-		)
+// Yes this allows any object, yes it's silly. I don't know if it's ever been abused by drones though.
+TYPE_TABLE(/mob/living/silicon/robot/drone, ventcrawl_get_item_whitelist, list( \
+		/atom/movable/emissive_blocker, \
+		/atom/movable/screen, \
+		/obj \
+		))
 
 /mob/living/silicon/robot/drone/construction
 	name = "construction drone"
@@ -145,7 +144,7 @@ DECLARE_SHARED_CACHE_EX(mob_hat, GLOBAL_PROC_REF(build_mob_hat), SC_NEVER, 1024,
 	if(!module)
 		own_set(src, "module", new module_type(src))
 	flavor_text = "It's a tiny little repair drone. The casing is stamped with an corporate logo and the subscript: '[using_map.company_name] Recursive Repair Systems: Fixing Tomorrow's Problem, Today!'"
-	playsound(src, 'sound/machines/twobeep.ogg', 50, 0)
+	play_sfx(src, SFX_MACHINES_TWOBEEP, vary = FALSE)
 
 /mob/living/silicon/robot/drone/Login()
 	. = ..()

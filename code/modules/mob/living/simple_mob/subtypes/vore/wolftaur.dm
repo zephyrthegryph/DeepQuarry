@@ -18,7 +18,7 @@
 	say_list_type = /datum/say_list/wolftaur
 
 	var/random_skin = 1
-	var/list/skins = list( // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	var/list/skins = list( // ALLOW(instance_list): d: per-mob skins with starting entries, edited at runtime; mobs are few
 		"wolftaurwhite",
 		"wolftaurwhitec",
 		"wolftaurbrown",

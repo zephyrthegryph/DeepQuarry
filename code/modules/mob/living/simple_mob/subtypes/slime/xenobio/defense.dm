@@ -14,11 +14,11 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/slime/xenobio, INTERACT_HAND_UNGATED(
 
 		if(prob(fail_odds))
 			visible_message(span_warning("\The [L] attempts to wrestle \the [name] off!"))
-			playsound(src, 'sound/weapons/punchmiss.ogg', 25, 1, -1)
+			play_sfx(src, SFX_WEAPONS_PUNCHMISS)
 
 		else
 			visible_message(span_warning("\The [L] manages to wrestle \the [name] off!"))
-			playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
+			play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
 
 			if(prob(40))
 				adjust_discipline(1) // Do this here so that it will be justified discipline.

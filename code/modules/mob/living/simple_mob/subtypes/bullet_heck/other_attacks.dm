@@ -25,21 +25,17 @@
 	var/turf/target_turf = pick(valid_turfs)
 	var/turf/T = get_turf(src)
 
-	var/datum/effect/effect/system/spark_spread/s1 = new /datum/effect/effect/system/spark_spread
-	s1.set_up(5, 1, T)
-	var/datum/effect/effect/system/spark_spread/s2 = new /datum/effect/effect/system/spark_spread
-	s2.set_up(5, 1, target_turf)
 
 
 	T.visible_message(span_warning("\The [src] vanishes!"))
-	s1.start()
+	fx_sparks(T, 5)
 
 	forceMove(target_turf)
-	playsound(target_turf, 'sound/effects/phasein.ogg', 50, 1)
+	play_sfx(target_turf, SFX_EFFECTS_PHASEIN, 0.5)
 	to_chat(src, span_notice("You teleport to \the [target_turf]."))
 
 	target_turf.visible_message(span_warning("\The [src] appears!"))
-	s2.start()
+	fx_sparks(target_turf, 5)
 	attackcycle = next_cycle
 
 /obj/effect/artillery_attack
@@ -79,7 +75,7 @@
 		var/target_zone = ran_zone()
 		if(!L.injure(INJURY_BURN, 70, target_zone, src, flags = INJURE_ARMORED))
 			break
-	playsound(src, 'sound/effects/clang2.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_CLANG2)
 	expire(0.25 SECONDS)
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/proc/gravity_surge(atom/target, next_cycle, pull_radius, pull_strength)

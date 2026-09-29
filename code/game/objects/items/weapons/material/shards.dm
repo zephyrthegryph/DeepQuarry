@@ -65,7 +65,7 @@
 	var/break_damage = 4
 	var/light_glove_d = rand(2, 4)
 	var/no_glove_d = rand(4, 6)
-	var/list/forbidden_gloves = list(
+	var/static/list/forbidden_gloves = list(
 			/obj/item/clothing/gloves/sterile
 		)
 
@@ -97,8 +97,8 @@
 		user.injure(injury_kind, no_glove_d + (will_break ? break_damage : 0), active_hand, src)
 
 	if(will_break && src.loc == user) // If it's not in our hand anymore
-		user.visible_message(span_danger("[user] hit \the [target] with \the [src], shattering it!"), span_warning("You shatter \the [src] in your hand!"))
-		playsound(src, pick('sound/effects/Glassbr1.ogg', 'sound/effects/Glassbr2.ogg', 'sound/effects/Glassbr3.ogg'), 30, 1)
+		act_message(user, src, MSG_SELF(span_warning("You shatter %T% in your hand!")), MSG_OTHERS(span_danger("%U% hit \the [target] with %T%, shattering it!")))
+		play_sfx(src, SFX_SHATTER, volume = 30)
 		consume(src, user)
 	return
 
@@ -112,7 +112,7 @@
 		if(M?.buckled_to()) //wheelchairs, office chairs, rollerbeds
 			return
 
-		playsound(src, 'sound/effects/glass_step.ogg', 50, 1) // not sure how to handle metal shards with sounds
+		play_sfx(src, SFX_EFFECTS_GLASS_STEP) // not sure how to handle metal shards with sounds
 		if(ishuman(M))
 			var/mob/living/carbon/human/H = M
 

@@ -127,10 +127,11 @@
 		L.invalidate_factors()
 
 /mob/living
-	/// Body effect type -> list of timer ids, one per timed stack. Lazy.
+	/// Body effect type -> list of timed-stack names, one per timed stack, soonest first. Each
+	/// names a `body_effect` timer slot (body_effect_after()); the slot owns the timer. Lazy.
 	var/list/body_effect_timers
-	/// Body effect type -> the id of its pending tick timer. Lazy.
-	var/list/body_effect_tickers
+	/// Next timed-stack serial (names only, never a timer id).
+	var/tmp/body_effect_serial = 0
 	/// Body effect type -> an owned /datum/body_effect_origin naming whoever applied it. Lazy.
 	var/list/body_effect_origins
 	/// Body effect type -> per-application state (anything the definition keeps). Lazy.
@@ -211,17 +212,34 @@
 	UNSETEMPTY(body_effect_factors)
 	invalidate_factors()
 
-/// A timer for body effect `path` on the definition's clock. Returns its id.
-/mob/living/proc/body_effect_after(datum/body_effect/def, delay, proc_ref, path)
+OWN_TIMER(/mob/living, body_effect)
+
+/// The timer slot for body effect timer `name` ("[path]#[serial]" or "[path]#tick"): on the mob,
+/// or, for a world-clock effect, on the global owner under a name that includes the mob.
+/mob/living/proc/body_effect_slot(datum/body_effect/def, name)
+	return def.world_clock ? "body_effect:[om_handle(src)]:[name]" : "body_effect:[name]"
+
+/// Schedules body effect timer `name` for `path` on the definition's clock (replacing one of that
+/// name). The slot owns the timer: firing, cancelling and deletion end it.
+/mob/living/proc/body_effect_after(datum/body_effect/def, name, delay, proc_ref, path)
 	if(def.world_clock)
-		return om_after(null, delay, GLOBAL_PROC_REF(body_effect_world_timer), src, proc_ref, path)
-	return om_after(src, delay, proc_ref, path)
+		return om_after_slot(null, body_effect_slot(def, name), delay, GLOBAL_PROC_REF(body_effect_world_timer), src, proc_ref, path)
+	return om_after_slot(src, body_effect_slot(def, name), delay, proc_ref, path)
 
-/mob/living/proc/body_effect_cancel(datum/body_effect/def, id)
-	om_cancel_timer(def.world_clock ? null : src, id)
+/mob/living/proc/body_effect_cancel(datum/body_effect/def, name)
+	om_cancel_timer_slot(def.world_clock ? null : src, body_effect_slot(def, name))
 
-/mob/living/proc/body_effect_timer_left(datum/body_effect/def, id)
-	return om_timer_left(def.world_clock ? null : src, id) || 0
+/mob/living/proc/body_effect_pending(datum/body_effect/def, name)
+	return om_timer_slot_pending(def.world_clock ? null : src, body_effect_slot(def, name))
+
+/mob/living/proc/body_effect_timer_left(datum/body_effect/def, name)
+	return om_timer_slot_left(def.world_clock ? null : src, body_effect_slot(def, name)) || 0
+
+/// A new timed stack of `path`: its name, scheduled to expire after `duration`.
+/mob/living/proc/body_effect_new_stack(datum/body_effect/def, path, duration)
+	var/name = "[path]#[++body_effect_serial]"
+	body_effect_after(def, name, duration, PROC_REF(body_effect_expired), path)
+	return name
 
 /// A world-clock body effect timer firing (weak: dropped if the mob is gone).
 /proc/body_effect_world_timer(mob/living/L, proc_ref, path)
@@ -236,8 +254,8 @@
 	if(!length(timers))
 		return
 	var/datum/body_effect/def = body_effect_def(path)
-	for(var/id in timers)
-		. = max(., body_effect_timer_left(def, id))
+	for(var/name in timers)
+		. = max(., body_effect_timer_left(def, name))
 
 /// Applies body effect `path`. `duration` in deciseconds of the effect's clock; 0 or null holds
 /// it until removed. `origin`: whoever caused it (defaults to the mob). Returns TRUE when it took
@@ -257,15 +275,15 @@
 					return TRUE // held: nothing to extend
 				if(!duration)
 					// A held application replaces the countdown.
-					for(var/id in timers)
-						body_effect_cancel(def, id)
+					for(var/name in timers)
+						body_effect_cancel(def, name)
 					body_effect_timers -= path
 					return TRUE
 				if(body_effect_remaining(path) >= duration)
 					return TRUE
-				for(var/id in timers)
-					body_effect_cancel(def, id)
-				body_effect_timers[path] = list(body_effect_after(def, duration, PROC_REF(body_effect_expired), path))
+				for(var/name in timers)
+					body_effect_cancel(def, name)
+				body_effect_timers[path] = list(body_effect_new_stack(def, path, duration))
 				return TRUE
 	else
 		// The origin is readable from can_apply() and on_start().
@@ -279,7 +297,7 @@
 	om_changed(src, CHANGE_MOB_CONDITIONS)
 	if(duration)
 		LAZYINITLIST(body_effect_timers)
-		LAZYADD(body_effect_timers[path], body_effect_after(def, duration, PROC_REF(body_effect_expired), path))
+		LAZYADD(body_effect_timers[path], body_effect_new_stack(def, path, duration))
 	if(!current)
 		if(def.on_created_text)
 			to_chat(src, def.on_created_text)
@@ -294,15 +312,12 @@
 		if(LAZYLEN(def.filter_parameters))
 			add_filter("body_effect:[path]", def.filter_priority, def.filter_parameters)
 		if(def.tick_interval)
-			LAZYSET(body_effect_tickers, path, body_effect_after(def, def.tick_interval, PROC_REF(body_effect_tick), path))
+			body_effect_after(def, "[path]#tick", def.tick_interval, PROC_REF(body_effect_tick), path)
 		def.on_start(src)
 	return TRUE
 
 /// One tick of body effect `path`.
 /mob/living/proc/body_effect_tick(path)
-	if(body_effect_tickers)
-		body_effect_tickers -= path
-		UNSETEMPTY(body_effect_tickers)
 	if(!body_effect_stacks(path))
 		return
 	var/datum/body_effect/def = body_effect_def(path)
@@ -318,9 +333,9 @@
 	if(QDELETED(src) || !body_effect_stacks(path))
 		return
 	def.on_tick(src)
-	if(QDELETED(src) || !body_effect_stacks(path) || body_effect_tickers?[path])
+	if(QDELETED(src) || !body_effect_stacks(path) || body_effect_pending(def, "[path]#tick"))
 		return
-	LAZYSET(body_effect_tickers, path, body_effect_after(def, def.tick_interval, PROC_REF(body_effect_tick), path))
+	body_effect_after(def, "[path]#tick", def.tick_interval, PROC_REF(body_effect_tick), path)
 
 /// One timed stack of `path` ran out.
 /mob/living/proc/body_effect_expired(path)
@@ -363,16 +378,12 @@
 /// `expired`: the last timed stack ran out (as opposed to removal or a cure).
 /mob/living/proc/end_body_effect(path, silent, expired = FALSE)
 	var/datum/body_effect/def = body_effect_def(path)
-	for(var/id in body_effect_timers?[path])
-		body_effect_cancel(def, id)
+	for(var/name in body_effect_timers?[path])
+		body_effect_cancel(def, name)
 	if(body_effect_timers)
 		body_effect_timers -= path
 		UNSETEMPTY(body_effect_timers)
-	var/ticker = body_effect_tickers?[path]
-	if(ticker)
-		body_effect_cancel(def, ticker)
-		body_effect_tickers -= path
-		UNSETEMPTY(body_effect_tickers)
+	body_effect_cancel(def, "[path]#tick")
 	if(!om_release(src, EFFECT_BODY_EFFECTS, src, path))
 		return
 	om_changed(src, CHANGE_MOB_CONDITIONS)
@@ -404,7 +415,6 @@
 	for(var/key in body_effects().Copy())
 		end_body_effect(key, silent)
 	body_effect_timers = null
-	body_effect_tickers = null
 
 /// Ends the effects that don't outlast death (end_on_death). Called from death().
 /mob/living/proc/end_body_effects_on_death()

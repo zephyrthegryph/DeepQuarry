@@ -26,8 +26,7 @@
 	om_task_periodic_stop(src)
 	..()
 
-/obj/item/clothing/mask/synthfacemask/equip_constraint()
-	return dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/mask/synthfacemask/proc/robotic_head, "you must have a compatible robotic head to install this upgrade")))
+TYPE_TABLE(/obj/item/clothing/mask/synthfacemask, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/mask/synthfacemask/proc/robotic_head, "you must have a compatible robotic head to install this upgrade"))))
 
 /obj/item/clothing/mask/synthfacemask/proc/robotic_head(mob/living/carbon/human/H)
 	if(!istype(H))

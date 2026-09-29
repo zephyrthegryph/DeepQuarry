@@ -48,7 +48,7 @@ DECLARE_INTERACTIONS(/obj/item/instrument, INTERACT_USE(null, PROC_REF(interacti
 	name = "space violin"
 	desc = "A wooden musical instrument with four strings and a bow. \"The devil went down to space, he was looking for an assistant to grief.\""
 	icon_state = "violin"
-	hitsound = "swing_hit"
+	hitsound = SFX_SWING_HIT
 	allowed_instrument_ids = "violin"
 
 /obj/item/instrument/violin/golden
@@ -67,7 +67,7 @@ DECLARE_INTERACTIONS(/obj/item/instrument, INTERACT_USE(null, PROC_REF(interacti
 	desc = "A 'Mura' brand banjo. It's pretty much just a drum with a neck and strings."
 	icon_state = "banjo"
 	attack_verb = list("scruggs-styled", "hum-diggitied", "shin-dug", "clawhammered")
-	hitsound = 'sound/weapons/banjoslap.ogg'
+	hitsound = SFX_WEAPONS_BANJOSLAP
 	allowed_instrument_ids = "banjo"
 
 /obj/item/instrument/guitar
@@ -75,7 +75,7 @@ DECLARE_INTERACTIONS(/obj/item/instrument, INTERACT_USE(null, PROC_REF(interacti
 	desc = "It's made of wood and has bronze strings."
 	icon_state = "guitar"
 	attack_verb = list("played metal on", "serenaded", "crashed", "smashed")
-	hitsound = 'sound/weapons/stringsmash.ogg'
+	hitsound = SFX_WEAPONS_STRINGSMASH
 	allowed_instrument_ids = list("guitar","csteelgt","cnylongt", "ccleangt", "cmutedgt")
 
 /obj/item/instrument/eguitar
@@ -84,7 +84,7 @@ DECLARE_INTERACTIONS(/obj/item/instrument, INTERACT_USE(null, PROC_REF(interacti
 	icon_state = "eguitar"
 	force = 12
 	attack_verb = list("played metal on", "shreded", "crashed", "smashed")
-	hitsound = 'sound/weapons/stringsmash.ogg'
+	hitsound = SFX_WEAPONS_STRINGSMASH
 	allowed_instrument_ids = "eguitar"
 
 /obj/item/instrument/glockenspiel
@@ -113,7 +113,7 @@ DECLARE_INTERACTIONS(/obj/item/instrument, INTERACT_USE(null, PROC_REF(interacti
 	attack_verb = list("played", "jazzed", "trumpeted", "mourned", "dooted", "spooked")
 
 /obj/item/instrument/trumpet/spectral/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	playsound (src, 'sound/runtime/instruments/trombone/En4.mid', 100,1,-1)
+	play_sfx(src, SFX_RUNTIME_INSTRUMENTS_TROMBONE_EN4)
 	..()
 
 /obj/item/instrument/saxophone
@@ -130,7 +130,7 @@ DECLARE_INTERACTIONS(/obj/item/instrument, INTERACT_USE(null, PROC_REF(interacti
 	attack_verb = list("played", "jazzed", "saxed", "mourned", "dooted", "spooked")
 
 /obj/item/instrument/saxophone/spectral/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	playsound (src, 'sound/runtime/instruments/saxophone/En4.mid', 100,1,-1)
+	play_sfx(src, SFX_RUNTIME_INSTRUMENTS_SAXOPHONE_EN4)
 	..()
 
 /obj/item/instrument/trombone
@@ -147,7 +147,7 @@ DECLARE_INTERACTIONS(/obj/item/instrument, INTERACT_USE(null, PROC_REF(interacti
 	attack_verb = list("played", "jazzed", "tromboneed", "mourned", "dooted", "spooked")
 
 /obj/item/instrument/trombone/spectral/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	playsound (src, 'sound/runtime/instruments/trombone/Cn4.mid', 100,1,-1)
+	play_sfx(src, SFX_RUNTIME_INSTRUMENTS_TROMBONE_CN4)
 	..()
 
 /obj/item/instrument/recorder
@@ -179,35 +179,8 @@ DECLARE_INTERACTIONS(/obj/item/instrument, INTERACT_USE(null, PROC_REF(interacti
 	force = 0
 	throw_speed = 3
 	throw_range = 15
-	hitsound = 'sound/items/bikehorn.ogg'
-/*
-/obj/item/choice_beacon/music
-	name = "instrument delivery beacon"
-	desc = "Summon your tool of art."
-	icon_state = "gangtool-red"
+	hitsound = SFX_ITEMS_BIKEHORN
 
-/obj/item/choice_beacon/music/generate_display_names()
-	var/static/list/instruments
-	if(!instruments)
-		instruments = list()
-		var/list/templist = list(/obj/item/instrument/violin,
-							/obj/item/instrument/piano_synth,
-							/obj/item/instrument/banjo,
-							/obj/item/instrument/guitar,
-							/obj/item/instrument/eguitar,
-							/obj/item/instrument/glockenspiel,
-							/obj/item/instrument/accordion,
-							/obj/item/instrument/trumpet,
-							/obj/item/instrument/saxophone,
-							/obj/item/instrument/trombone,
-							/obj/item/instrument/recorder,
-							/obj/item/instrument/harmonica,
-							/obj/item/instrument/piano_synth/headphones
-							)
-		for(var/atom/A as anything in templist)
-			instruments[initial(A.name)] = A
-	return instruments
-*/
 /obj/item/instrument/musicalmoth
 	name = "musical moth"
 	desc = "Despite its popularity, this controversial musical toy was eventually banned due to its unethically sampled sounds of moths screaming in agony."
@@ -216,7 +189,7 @@ DECLARE_INTERACTIONS(/obj/item/instrument, INTERACT_USE(null, PROC_REF(interacti
 	attack_verb = list("fluttered", "flaped")
 	w_class = ITEMSIZE_SMALL
 	force = 0
-	hitsound = 'sound/voice/moth/scream_moth.ogg'
+	hitsound = SFX_VOICE_MOTH_SCREAM_MOTH
 
 //////////////Fluff items
 

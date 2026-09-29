@@ -42,7 +42,7 @@
 		explosion(loc, 0, 0, 0/*flame_range = 5*/, adminlog = FALSE)
 		qdel(src)
 		return
-	on = TRUE
+	set_on(TRUE)
 	broken()
 
 /obj/structure/closet/tesla_act(power, explosive = FALSE, current_jumps = current_jumps)

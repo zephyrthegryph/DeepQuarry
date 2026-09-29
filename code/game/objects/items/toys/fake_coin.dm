@@ -14,8 +14,8 @@
 	w_class = ITEMSIZE_TINY
 	slot_flags = SLOT_EARS
 	var/sides = 2
-	drop_sound = 'sound/items/drop/ring.ogg'
-	pickup_sound = 'sound/items/pickup/ring.ogg'
+	drop_sound = SFX_ITEMS_DROP_RING
+	pickup_sound = SFX_ITEMS_PICKUP_RING
 
 /obj/item/fake_coin/Initialize(mapload)
 	. = ..()
@@ -116,6 +116,6 @@ DECLARE_INTERACTIONS(/obj/item/fake_coin, INTERACT_USE(null, PROC_REF(interactio
 		comment = "tails"
 	else if(result == 2)
 		comment = "heads"
-	user.visible_message(span_notice("[user] has thrown \the [src]. It lands on [comment]!"), \
-							span_notice("You throw \the [src]. It lands on [comment]!"))
+	act_message(user, src, MSG_SELF(span_notice("You throw %T%. It lands on [comment]!")), \
+		MSG_OTHERS(span_notice("%U% has thrown %T%. It lands on [comment]!")))
 	return TRUE

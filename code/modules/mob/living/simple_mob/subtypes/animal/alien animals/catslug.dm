@@ -89,23 +89,22 @@
 	B.absorbchance = 1
 	B.escapechance = 15
 
-/mob/living/simple_mob/vore/alienanimals/catslug/ventcrawl_get_item_whitelist()
-	return list(
-		VENTCRAWL_BASE_WHITELIST,
-		VENTCRAWL_VORE_WHITELIST,
-		VENTCRAWL_SMALLITEM_WHITELIST,
-		// Catslug unique items.
-		/obj/item/material,
-		/obj/item/melee,
-		/obj/item/stack/,
-		/obj/item/tool,
-		/obj/item/reagent_containers/food,
-		/obj/item/ore,
-		/obj/item/disk/nuclear,
-		/obj/item/card,
-		/obj/item/radio,
-		/obj/item/perfect_tele_beacon,
-		)
+// Catslug unique items.
+TYPE_TABLE(/mob/living/simple_mob/vore/alienanimals/catslug, ventcrawl_get_item_whitelist, list( \
+		VENTCRAWL_BASE_WHITELIST, \
+		VENTCRAWL_VORE_WHITELIST, \
+		VENTCRAWL_SMALLITEM_WHITELIST, \
+		/obj/item/material, \
+		/obj/item/melee, \
+		/obj/item/stack/, \
+		/obj/item/tool, \
+		/obj/item/reagent_containers/food, \
+		/obj/item/ore, \
+		/obj/item/disk/nuclear, \
+		/obj/item/card, \
+		/obj/item/radio, \
+		/obj/item/perfect_tele_beacon, \
+		))
 
 /mob/living/simple_mob/vore/alienanimals/catslug/Initialize(mapload)
 	. = ..()
@@ -147,12 +146,12 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/catslug, \
 	O.bitecount ++
 	if(O.bitecount >= 3)
 		consume(O, user)
-		visible_message(span_notice("\The [src] eats \the [O]."))
+		act_message(src, O, null, MSG_OTHERS(span_notice("%U% eats %T%.")))
 	else
 		to_chat(user, span_notice("\The [src] takes a bite of \the [O]."))
 		if(user != src)
 			to_chat(src, span_notice("\The [user] feeds \the [O] to you."))
-	playsound(src, 'sound/items/eatfood.ogg', 75, 1)
+	play_sfx(src, SFX_ITEMS_EATFOOD)
 
 /// Old attack_hand; subtypes override this proc.
 /mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_interaction_hand(mob/living/carbon/human/M, obj/item/held, datum/interaction/interaction)
@@ -165,43 +164,43 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/catslug, \
 			remove_hat(M)
 			return
 		return FALSE
-	playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
+	play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
 	if(resting)
-		M.visible_message(span_notice("\The [M.name] shakes \the [src] awake from their nap."),span_notice("You shake \the [src] awake!"))
+		act_message(M, src, MSG_SELF(span_notice("You shake %T% awake!")), MSG_OTHERS(span_notice("\The [M.name] shakes %T% awake from their nap.")))
 		lay_down()
 		ai_brain.go_wake()
 		return
 	if(M.zone_sel.selecting == BP_HEAD)
-		M.visible_message( \
-			span_notice("[M] pats \the [src] on the head."), \
-			span_notice("You pat \the [src] on the head."), )
+		act_message(M, src, \
+			MSG_SELF(span_notice("You pat %T% on the head.")), \
+			MSG_OTHERS(span_notice("%U% pats %T% on the head.")))
 		if(client)
 			return
 		if(prob(10))
-			visible_message(span_notice("\The [src] purrs and leans into [M]'s hand."))
+			act_message(src, M, null, MSG_OTHERS(span_notice("%U% purrs and leans into %T%'s hand.")))
 	else if(M.zone_sel.selecting == BP_R_HAND || M.zone_sel.selecting == BP_L_HAND)
-		M.visible_message( \
-			span_notice("[M] shakes \the [src]'s hand."), \
-			span_notice("You shake \the [src]'s hand."), )
+		act_message(M, src, \
+			MSG_SELF(span_notice("You shake %T%'s hand.")), \
+			MSG_OTHERS(span_notice("%U% shakes %T%'s hand.")))
 		if(client)
 			return
 		if(prob(10))
-			visible_message(span_notice("\The [src]'s looks a little confused nibbles at [M]'s hand experimentally."))
+			act_message(src, M, null, MSG_OTHERS(span_notice("%U%'s looks a little confused nibbles at %T%'s hand experimentally.")))
 	else if(M.zone_sel.selecting == "mouth")
-		M.visible_message( \
-			span_notice("[M] boops \the [src]'s nose."), \
-			span_notice("You boop \the [src] on the nose."), )
+		act_message(M, src, \
+			MSG_SELF(span_notice("You boop %T% on the nose.")), \
+			MSG_OTHERS(span_notice("%U% boops %T%'s nose.")))
 		if(client)
 			return
 		if(prob(10))
-			visible_message(span_notice("\The [src]'s eyes widen as they stare at [M]. After a moment they rub their prodded snoot."))
+			act_message(src, M, null, MSG_OTHERS(span_notice("%U%'s eyes widen as they stare at %T%. After a moment they rub their prodded snoot.")))
 	else if(M.zone_sel.selecting == BP_GROIN)
-		M.visible_message( \
-			span_notice("[M] rubs \the [src]'s tummy..."), \
-			span_notice("You rub \the [src]'s tummy... You feel the danger."), )
+		act_message(M, src, \
+			MSG_SELF(span_notice("You rub %T%'s tummy... You feel the danger.")), \
+			MSG_OTHERS(span_notice("%U% rubs %T%'s tummy...")))
 		if(client)
 			return
-		visible_message(span_notice("\The [src] pushes [M]'s hand away from their tummy and furrows their brow!"))
+		act_message(src, M, null, MSG_OTHERS(span_notice("%U% pushes %T%'s hand away from their tummy and furrows their brow!")))
 		//prob(5) give_target on tummy rub removed.
 	else
 		return FALSE
@@ -350,43 +349,43 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/catslug, \
 		return FALSE
 	if(interaction.stance != I_HELP)
 		return FALSE
-	playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
+	play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
 	if(resting)
-		M.visible_message(span_notice("\The [M.name] shakes \the [src] awake from their nap."),span_notice("You shake \the [src] awake!"))
+		act_message(M, src, MSG_SELF(span_notice("You shake %T% awake!")), MSG_OTHERS(span_notice("\The [M.name] shakes %T% awake from their nap.")))
 		lay_down()
 		ai_brain.go_wake()
 		return
 	if(M.zone_sel.selecting == BP_HEAD)
-		M.visible_message( \
-			span_notice("[M] pats \the [src] on their helmet."), \
-			span_notice("You pat \the [src] on their helmet."), )
+		act_message(M, src, \
+			MSG_SELF(span_notice("You pat %T% on their helmet.")), \
+			MSG_OTHERS(span_notice("%U% pats %T% on their helmet.")))
 		if(client)
 			return
 		if(prob(10))
-			visible_message(span_notice("\The [src] purrs and leans into [M]'s hand."))
+			act_message(src, M, null, MSG_OTHERS(span_notice("%U% purrs and leans into %T%'s hand.")))
 	else if(M.zone_sel.selecting == BP_R_HAND || M.zone_sel.selecting == BP_L_HAND)
-		M.visible_message( \
-			span_notice("[M] shakes \the [src]'s hand."), \
-			span_notice("You shake \the [src]'s hand."), )
+		act_message(M, src, \
+			MSG_SELF(span_notice("You shake %T%'s hand.")), \
+			MSG_OTHERS(span_notice("%U% shakes %T%'s hand.")))
 		if(client)
 			return
 		if(prob(10))
-			visible_message(span_notice("\The [src]'s looks a little confused and bonks their helmet's faceplate against [M]'s hand experimentally, attempting to nibble at it."))
+			act_message(src, M, null, MSG_OTHERS(span_notice("%U%'s looks a little confused and bonks their helmet's faceplate against %T%'s hand experimentally, attempting to nibble at it.")))
 	else if(M.zone_sel.selecting == "mouth")
-		M.visible_message( \
-			span_notice("[M] attempts to boop \the [src]'s nose, defeated only by the helmet they wear."), \
-			span_notice("You attempt to boop \the [src] on the nose, stopped only by that helmet they wear."), )
+		act_message(M, src, \
+			MSG_SELF(span_notice("You attempt to boop %T% on the nose, stopped only by that helmet they wear.")), \
+			MSG_OTHERS(span_notice("%U% attempts to boop %T%'s nose, defeated only by the helmet they wear.")))
 		if(client)
 			return
 		if(prob(10))
-			visible_message(span_notice("\The [src]'s eyes widen as they stare at [M]. After a moment they rub at the faint mark [M]'s digit left upon the surface of their helmet's faceplate."))
+			act_message(src, M, null, MSG_OTHERS(span_notice("%U%'s eyes widen as they stare at %T%. After a moment they rub at the faint mark %T%'s digit left upon the surface of their helmet's faceplate.")))
 	else if(M.zone_sel.selecting == BP_GROIN)
-		M.visible_message( \
-			span_notice("[M] rubs \the [src]'s tummy..."), \
-			span_notice("You rub \the [src]'s tummy, accidently pressing a few of the buttons on their chestpiece in the process... You feel the danger."), )
+		act_message(M, src, \
+			MSG_SELF(span_notice("You rub %T%'s tummy, accidently pressing a few of the buttons on their chestpiece in the process... You feel the danger.")), \
+			MSG_OTHERS(span_notice("%U% rubs %T%'s tummy...")))
 		if(client)
 			return
-		visible_message(span_notice("\The [src] pushes [M]'s hand away from their tummy and furrows their brow, frantically pressing at the buttons [M] so carelessly pushed!"))
+		act_message(src, M, null, MSG_OTHERS(span_notice("%U% pushes %T%'s hand away from their tummy and furrows their brow, frantically pressing at the buttons %T% so carelessly pushed!")))
 		//prob(5) give_target on tummy rub removed.
 	else
 		return FALSE
@@ -450,43 +449,43 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/catslug, \
 		return FALSE
 	if(interaction.stance != I_HELP)
 		return FALSE
-	playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
+	play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
 	if(resting)
-		M.visible_message(span_notice("\The [M.name] shakes \the [src] awake from their nap."),span_notice("You shake \the [src] awake!"))
+		act_message(M, src, MSG_SELF(span_notice("You shake %T% awake!")), MSG_OTHERS(span_notice("\The [M.name] shakes %T% awake from their nap.")))
 		lay_down()
 		ai_brain.go_wake()
 		return
 	if(M.zone_sel.selecting == BP_HEAD)
-		M.visible_message( \
-			span_notice("[M] pats \the [src] on their helmet."), \
-			span_notice("You pat \the [src] on their helmet."), )
+		act_message(M, src, \
+			MSG_SELF(span_notice("You pat %T% on their helmet.")), \
+			MSG_OTHERS(span_notice("%U% pats %T% on their helmet.")))
 		if(client)
 			return
 		if(prob(10))
-			visible_message(span_notice("\The [src] purrs and leans into [M]'s hand."))
+			act_message(src, M, null, MSG_OTHERS(span_notice("%U% purrs and leans into %T%'s hand.")))
 	else if(M.zone_sel.selecting == BP_R_HAND || M.zone_sel.selecting == BP_L_HAND)
-		M.visible_message( \
-			span_notice("[M] shakes \the [src]'s hand."), \
-			span_notice("You shake \the [src]'s hand."), )
+		act_message(M, src, \
+			MSG_SELF(span_notice("You shake %T%'s hand.")), \
+			MSG_OTHERS(span_notice("%U% shakes %T%'s hand.")))
 		if(client)
 			return
 		if(prob(10))
-			visible_message(span_notice("\The [src]'s looks a little confused and bonks their helmet's faceplate against [M]'s hand experimentally, attempting to nibble at it."))
+			act_message(src, M, null, MSG_OTHERS(span_notice("%U%'s looks a little confused and bonks their helmet's faceplate against %T%'s hand experimentally, attempting to nibble at it.")))
 	else if(M.zone_sel.selecting == "mouth")
-		M.visible_message( \
-			span_notice("[M] attempts to boop \the [src]'s nose, defeated only by the helmet they wear."), \
-			span_notice("You attempt to boop \the [src] on the nose, stopped only by that helmet they wear."), )
+		act_message(M, src, \
+			MSG_SELF(span_notice("You attempt to boop %T% on the nose, stopped only by that helmet they wear.")), \
+			MSG_OTHERS(span_notice("%U% attempts to boop %T%'s nose, defeated only by the helmet they wear.")))
 		if(client)
 			return
 		if(prob(10))
-			visible_message(span_notice("\The [src]'s eyes widen as they stare at [M]. After a moment they rub at the faint mark [M]'s digit left upon the surface of their helmet's faceplate."))
+			act_message(src, M, null, MSG_OTHERS(span_notice("%U%'s eyes widen as they stare at %T%. After a moment they rub at the faint mark %T%'s digit left upon the surface of their helmet's faceplate.")))
 	else if(M.zone_sel.selecting == BP_GROIN)
-		M.visible_message( \
-			span_notice("[M] rubs \the [src]'s tummy..."), \
-			span_notice("You rub \the [src]'s tummy... You feel the danger."), )
+		act_message(M, src, \
+			MSG_SELF(span_notice("You rub %T%'s tummy... You feel the danger.")), \
+			MSG_OTHERS(span_notice("%U% rubs %T%'s tummy...")))
 		if(client)
 			return
-		visible_message(span_notice("\The [src] pushes [M]'s hand away from their tummy and furrows their brow!"))
+		act_message(src, M, null, MSG_OTHERS(span_notice("%U% pushes %T%'s hand away from their tummy and furrows their brow!")))
 		//prob(5) give_target on tummy rub removed.
 	else
 		return FALSE
@@ -1001,7 +1000,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/catslug, \
 	icon_dead = "suslug_dead"
 	var/image/eye_image
 	var/is_impostor = FALSE
-	var/kill_cooldown
+	EXPIRY_DECLARE(kill_cooldown)
 	can_wear_hat = FALSE
 
 /mob/living/simple_mob/vore/alienanimals/catslug/suslug/impostor
@@ -1046,7 +1045,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/catslug, \
 	if(!is_impostor)
 		to_chat(src, span_notice("You are not an impostor! You can't kill like that!"))
 		return
-	if((world.time - kill_cooldown) < 1 MINUTE)
+	if(ELAPSED_SINCE(src, kill_cooldown, CLOCK_WORLD) < 1 MINUTE)
 		to_chat(src, span_notice("You cannot kill so soon after previous kill!"))
 		return
 
@@ -1065,8 +1064,8 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/catslug, \
 
 	if(target && istype(target))
 		target.injure(INJURY_BLUNT, target.get_endurance() * 30, source = src, flags = INJURE_IGNORE_RESISTANCE)
-		visible_message(span_warning("\The [src] kills \the [target]!"))
-		kill_cooldown = world.time
+		act_message(src, target, null, MSG_OTHERS(span_warning("%U% kills %T%!")))
+		EXPIRY_STAMP(src, kill_cooldown, CLOCK_WORLD)
 
 /mob/living/simple_mob/vore/alienanimals/catslug/suslug/color
 	picked_color = TRUE

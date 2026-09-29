@@ -13,12 +13,12 @@ MATERIAL_MIX(/obj/item/laser_pointer, list(MAT_GLASS = 500, MAT_STEEL = 500))
 	var/max_energy = 8
 	var/effectchance = 20
 	var/cooldown = 10
-	var/last_used_time = 0
+	EXPIRY_DECLARE(last_used_time)
 	var/recharging = 0
 	var/recharge_locked = 0
 	var/obj/item/stock_parts/micro_laser/diode //used for upgrading!
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 
 /obj/item/laser_pointer/red
@@ -79,7 +79,7 @@ DECLARE_INTERACTIONS(/obj/item/laser_pointer, INTERACT_INSERT(/obj/item/stock_pa
 		return
 	if(!(target in view(user, world.view)))
 		return
-	if(!(world.time - last_used_time >= cooldown))
+	if(!(ELAPSED(src, last_used_time, CLOCK_WORLD) >= cooldown))
 		return
 	if (!diode)
 		to_chat(user, span_notice("You point [src] at [target], but nothing happens!"))
@@ -179,13 +179,13 @@ DECLARE_INTERACTIONS(/obj/item/laser_pointer, INTERACT_INSERT(/obj/item/stock_pa
 	for(var/mob/living/simple_mob/animal/passive/cat/C in viewers(1,targloc))
 		if (!(C.stat || C?.buckled_to()))
 			if(prob(50) && !(C.client))
-				C.visible_message(span_warning("[C] pounces on the light!"), span_warning("You pounce on the light!"))
+				act_message(C, null, MSG_SELF(span_warning("You pounce on the light!")), MSG_OTHERS(span_warning("%U% pounces on the light!")))
 				step_towards(C, targloc)
 				C.lay_down()
 				om_after(C, 1 SECOND, "lay_down")
 			else
 				C.set_dir(get_dir(C,targloc))
-				C.visible_message(span_notice("[C] watches the light."), span_notice("Your attention is drawn to the mysterious glowing dot."))
+				act_message(C, null, MSG_SELF(span_notice("Your attention is drawn to the mysterious glowing dot.")), MSG_OTHERS(span_notice("%U% watches the light.")))
 
 
 	//laser pointer image
@@ -200,11 +200,11 @@ DECLARE_INTERACTIONS(/obj/item/laser_pointer, INTERACT_INSERT(/obj/item/stock_pa
 	I.pixel_y = target.pixel_y + rand(-5,5)
 
 	if(outmsg)
-		user.visible_message(span_info("[user] points [src] at [target]."), outmsg)
+		act_message(user, src, MSG_SELF(outmsg), MSG_OTHERS(span_info("%U% points %T% at [target].")))
 	else
-		user.visible_message(span_info("[user] points [src] at [target]."), span_info("You point [src] at [target]."))
+		act_message(user, src, MSG_SELF(span_info("You point %T% at [target].")), MSG_OTHERS(span_info("%U% points %T% at [target].")))
 
-	last_used_time = world.time
+	EXPIRY_STAMP(src, last_used_time, CLOCK_WORLD)
 	energy -= 1
 	if(energy <= max_energy)
 		if(!recharging)

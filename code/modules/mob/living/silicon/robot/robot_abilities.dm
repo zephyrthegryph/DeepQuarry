@@ -95,7 +95,7 @@
 /// So you can still sparkle on demand without violence.
 /mob/living/silicon/robot/proc/dq_do_spark_plug(mob/actor, obj/item/held, datum/interaction/ability/interaction)
 	to_chat(src, span_filter_notice("You harmlessly spark."))
-	spark_system.start()
+	fx_sparks(src, 5, FALSE)
 	return TRUE
 
 /datum/interaction/ability/self/robot_toggle_grabbability

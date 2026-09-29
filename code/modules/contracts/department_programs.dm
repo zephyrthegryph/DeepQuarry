@@ -193,7 +193,7 @@
 	fuel_protocol.add_option(make_contract_clause_option("balanced", "Mixed gas · 650 EER", "Stages: 300 / 450 / 650 EER. Under 15% phoron, 4,500 K, and above 85% integrity.", 0, 0, 0, 0, 0, 0, 0, list("fuel_certification_profile" = "balanced")), TRUE)
 	fuel_protocol.add_option(make_contract_clause_option("phoron_free", "No phoron · 500 EER", "Stages: 200 / 325 / 500 EER with effectively no phoron.", 100, 250, 50, 2, 5, 2, 5 MINUTES, list("fuel_certification_profile" = "phoron_free")))
 	contract.add_negotiation_clause(fuel_protocol)
-	var/list/output_checks = list(
+	var/static/list/output_checks = list(
 		list("key" = "station_machine", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 1),
 		list("key" = "gas_count", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 2),
 		list("key" = "plasma_fraction", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_MOST, "expected" = 0.15),

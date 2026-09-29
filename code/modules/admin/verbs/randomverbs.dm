@@ -551,11 +551,8 @@ ADMIN_VERB(respawn_character, (R_ADMIN|R_REJUVINATE), "Spawn Character", "(Re)Sp
 
 	if(showy == "Telesparks")
 		anim(spawnloc,new_character,'icons/mob/mob.dmi',,"phasein",,new_character.dir)
-		playsound(spawnloc, "sparks", 50, 1)
-		var/datum/effect/effect/system/spark_spread/spk = new(new_character)
-		spk.set_up(5, 0, new_character)
-		spk.attach(new_character)
-		spk.start()
+		play_sfx(spawnloc, SFX_SPARKS)
+		fx_sparks(new_character, 5, FALSE)
 
 	//We were able to spawn them, right?
 	if(!new_character)
@@ -665,7 +662,7 @@ ADMIN_VERB(respawn_character, (R_ADMIN|R_REJUVINATE), "Spawn Character", "(Re)Sp
 			new_character.plane = 1
 			new_character.pixel_x = rand(-150, 150)
 			new_character.pixel_y = 500 // When you think that pixel_z is height but you are wrong
-			new_character.density = FALSE
+			new_character.set_density(FALSE)
 			new_character.opacity = FALSE
 			animate(new_character, pixel_y = initial_y, pixel_x = initial_x , time = 7)
 			spawn(7) // ALLOW(scheduler): admin verb (allowlist)

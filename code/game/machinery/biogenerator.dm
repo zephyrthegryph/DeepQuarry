@@ -187,7 +187,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/biogenerator, "beaker", /obj/item/reagent_c
 					return FALSE
 				points -= cost * amt_to_actually_dispense
 				beaker.reagents.add_reagent(br.reagent_id, amt_to_actually_dispense)
-				playsound(src, 'sound/machines/reagent_dispense.ogg', 25, 1)
+				play_sfx(src, SFX_MACHINES_REAGENT_DISPENSE)
 				return FALSE
 
 			if(amount <= 0 || amount > bi.equipment_amt)
@@ -201,12 +201,12 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/biogenerator, "beaker", /obj/item/reagent_c
 			points -= cost * amount
 			if(ispath(bi.equipment_path, /obj/item/stack))
 				new bi.equipment_path(loc, amount)
-				playsound(src, 'sound/machines/vending/vending_drop.ogg', 100, 1)
+				play_sfx(src, SFX_MACHINES_VENDING_VENDING_DROP)
 				return TRUE
 
 			for(var/i in 1 to amount)
 				new bi.equipment_path(loc)
-				playsound(src, 'sound/machines/vending/vending_drop.ogg', 100, 1)
+				play_sfx(src, SFX_MACHINES_VENDING_VENDING_DROP)
 			return TRUE
 
 /obj/machinery/biogenerator/on_reagent_change()			//When the reagents change, change the icon as well.
@@ -287,7 +287,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/biogenerator, "beaker", /obj/item/reagent_c
 	effect = /obj/machinery/biogenerator/proc/interaction_use
 
 /obj/machinery/biogenerator/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		return TRUE
 	tgui_interact(user)
 	return TRUE
@@ -295,7 +295,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/biogenerator, "beaker", /obj/item/reagent_c
 /obj/machinery/biogenerator/proc/activate(mob/user)
 	if(user.stat)
 		return
-	if(stat) //NOPOWER etc
+	if(has_stat(MACHINE_STAT_ANY)) //NOPOWER etc
 		return
 	if(processing)
 		to_chat(user, span_notice("The biogenerator is in the process of working."))
@@ -314,14 +314,14 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/biogenerator, "beaker", /obj/item/reagent_c
 
 	processing = 1
 	update_icon()
-	playsound(src, 'sound/machines/blender.ogg', 40, 1)
+	play_sfx(src, SFX_MACHINES_BLENDER, 0.8)
 	use_power(S * 30)
 	om_after(src, (S + 15) / eat_eff, PROC_REF(finish_processing))
 
 /obj/machinery/biogenerator/proc/finish_processing()
 	processing = 0
 	SStgui.update_uis(src)
-	playsound(src, 'sound/machines/biogenerator_end.ogg', 40, 1)
+	play_sfx(src, SFX_MACHINES_BIOGENERATOR_END)
 	update_icon()
 
 /obj/machinery/biogenerator/RefreshParts()

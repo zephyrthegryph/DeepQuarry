@@ -51,6 +51,26 @@ LINTS = {
     "subsystem_fire": "tools/ci/subsystem_fire_lint.py (fire() outside the core allowlist)",
 }
 
+
+def _sys_rules():
+    """The generic-systems rules (`sys_<rule>`, tools/ci/sys_lint.py), one module per system in
+    tools/ci/sys_rules/. Loaded here directly (no import of sys_lint, which imports this file)."""
+    import importlib.util
+    out = {}
+    for path in sorted(glob.glob(os.path.join(os.path.dirname(__file__), "sys_rules", "*.py"))):
+        name = os.path.splitext(os.path.basename(path))[0]
+        if name.startswith("_"):
+            continue
+        spec = importlib.util.spec_from_file_location("sys_rules_" + name, path)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        for rule in getattr(mod, "RULES", {}):
+            out["sys_" + rule] = "tools/ci/sys_rules/%s.py" % name
+    return out
+
+
+LINTS.update(_sys_rules())
+
 # `// ALLOW(a, b): reason`; the reason is checked separately so a bare one is an error.
 ALLOW = re.compile(r"(?://+|/\*)\s*ALLOW\(\s*([\w\s,]*?)\s*\)\s*(:?)\s*(.*?)\s*(?:\*/.*)?$")
 

@@ -4,7 +4,7 @@
 	emote_message_1p = "You slap yourself across the face!"
 	emote_message_3p_target = "slaps TARGET across the face. Ouch!"
 	emote_message_3p = "slaps USER_SELF across the face!"
-	emote_sound = 'sound/effects/snap.ogg'
+	emote_sound = SFX_EFFECTS_SNAP
 	check_restraints = TRUE
 	check_range = 1
 

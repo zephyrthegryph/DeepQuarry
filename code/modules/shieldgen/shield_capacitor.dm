@@ -7,14 +7,14 @@
 	desc = "A machine that charges a shield generator."
 	icon = 'icons/obj/machines/shielding.dmi'
 	icon_state = "capacitor"
-	var/active = 0
+	active = 0
 	density = TRUE
 	var/stored_charge = 0	//not to be confused with power cell charge, this is in Joules
 	var/last_stored_charge = 0
 	var/time_since_fail = 100
 	var/max_charge = 8e6	//8 MJ
 	var/max_charge_rate = 400000	//400 kW
-	var/locked = 0
+	locked = 0
 	use_power = USE_POWER_OFF //doesn't use APC power
 	var/charge_rate = 100000	//100 kW
 	var/tmp/obj/machinery/shield_gen/owned_gen
@@ -33,12 +33,10 @@
 
 /obj/machinery/shield_capacitor/emag_act(remaining_charges, mob/user)
 	if(prob(75))
-		src.locked = !src.locked
+		set_locked(!src.locked)
 		to_chat(user, "Controls are now [src.locked ? "locked." : "unlocked."]")
 		. = 1
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-	s.set_up(5, 1, src)
-	s.start()
+	fx_sparks(src, 5)
 
 /datum/interaction/machine_item/shield_capacitor_id_swipe
 	id = "shield_capacitor_id_swipe"
@@ -48,7 +46,7 @@
 
 /obj/machinery/shield_capacitor/proc/interaction_id_swipe(mob/user, obj/item/card/id/W, datum/interaction/interaction)
 	if((ACCESS_CAPTAIN in W.GetAccess()) || (ACCESS_SECURITY in W.GetAccess()) || (ACCESS_ENGINE in W.GetAccess()))
-		src.locked = !src.locked
+		set_locked(!src.locked)
 		to_chat(user, "Controls are now [src.locked ? "locked." : "unlocked."]")
 	else
 		to_chat(user, span_red("Access denied."))
@@ -58,7 +56,7 @@
 REL_PAIR(/obj/machinery/shield_capacitor, owned_gen, capacitors)
 
 /obj/machinery/shield_capacitor/wrench_act(mob/user, obj/item/W)
-	anchored = !anchored
+	set_anchored(!anchored)
 	playsound(src, W.usesound, 75, 1)
 	src.visible_message(span_blue("[icon2html(src,viewers(src))] [src] has been [anchored ? "bolted to the floor" : "unbolted from the floor"] by [user]."))
 
@@ -85,7 +83,7 @@ REL_PAIR(/obj/machinery/shield_capacitor, owned_gen, capacitors)
 	effect = /obj/machinery/shield_capacitor/proc/interaction_use
 
 /obj/machinery/shield_capacitor/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
-	if(stat & (BROKEN))
+	if(has_stat(BROKEN))
 		return TRUE
 	tgui_interact(user)
 	return TRUE
@@ -97,7 +95,7 @@ REL_PAIR(/obj/machinery/shield_capacitor, owned_gen, capacitors)
 		ui.open()
 
 /obj/machinery/shield_capacitor/tgui_status(mob/user)
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		return STATUS_CLOSE
 	return ..()
 
@@ -115,7 +113,7 @@ REL_PAIR(/obj/machinery/shield_capacitor, owned_gen, capacitors)
 
 /obj/machinery/shield_capacitor/machine_step()
 	if (!anchored)
-		active = 0
+		set_active(0)
 		return PROCESS_KILL
 
 	//see if we can connect to a power net.
@@ -154,7 +152,7 @@ REL_PAIR(/obj/machinery/shield_capacitor, owned_gen, capacitors)
 			if(!active && !anchored)
 				to_chat(ui.user, span_red("The [src] needs to be firmly secured to the floor first."))
 				return
-			active = !active
+			set_active(!active)
 			if(stored_charge < max_charge)
 				MACHINE_WAKE(src)
 			. = TRUE
@@ -165,7 +163,7 @@ REL_PAIR(/obj/machinery/shield_capacitor, owned_gen, capacitors)
 			. = TRUE
 
 /obj/machinery/shield_capacitor/power_change()
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		icon_state = "broke"
 	else
 		..()

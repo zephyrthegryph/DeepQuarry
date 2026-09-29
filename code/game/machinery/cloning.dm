@@ -46,7 +46,7 @@
 	VAR_PRIVATE/mob/living/occupant_mob = null
 	var/heal_level = 20				// Growth quality: the clone is released once its genetic damage falls to clone_release_load().
 	var/heal_rate = 1
-	var/locked = 0
+	locked = 0
 	var/obj/machinery/computer/cloning/connected //So we remember the connected clone machine.
 	/// The body record being grown: handed over by the console in growclone(), deleted once the body is made.
 	var/datum/transhuman/body_record/growing_record
@@ -73,7 +73,7 @@ REL_PAIR(/obj/machinery/clonepod, connected, pods)
 // The occupant slot already spilled the clone in phase 3; go_out() is kept for its mess
 // branch (a failed clone leaves gibs).
 /obj/machinery/clonepod/on_destroy(force)
-	locked = FALSE
+	set_locked(FALSE)
 	go_out()
 	..()
 
@@ -119,7 +119,7 @@ EXTEND_INTERACTIONS(/obj/machinery/clonepod, \
 /// Old attack_hand (it never reached the machinery gate).
 /obj/machinery/clonepod/proc/clonepod_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	var/mob/living/occupant = get_occupant()
-	if((isnull(occupant)) || (stat & NOPOWER))
+	if((isnull(occupant)) || (has_stat(NOPOWER)))
 		return TRUE
 	if(occupant.stat != DEAD)
 		to_chat(user, "Current clone cycle is [round(get_completion())]% complete.")
@@ -153,7 +153,7 @@ EXTEND_INTERACTIONS(/obj/machinery/clonepod, \
 	remove_biomass(CLONE_BIOMASS)
 
 	attempting = 1 //One at a time!!
-	locked = 1
+	set_locked(1)
 
 	eject_wait = 1
 	om_after(src, 30, PROC_REF(clear_eject_wait), BR, clonemind)
@@ -206,15 +206,15 @@ EXTEND_INTERACTIONS(/obj/machinery/clonepod, \
 //Grow clones to maturity then kick them out.  FREELOADERS
 /obj/machinery/clonepod/machine_step()
 	var/mob/living/occupant = get_occupant()
-	if(stat & NOPOWER) //Autoeject if power is lost
+	if(has_stat(NOPOWER)) //Autoeject if power is lost
 		if(occupant)
-			locked = 0
+			set_locked(0)
 			go_out()
 		return PROCESS_KILL
 
 	if((occupant) && (occupant.loc == src))
 		if((occupant.stat == DEAD) || (occupant.suiciding) || !occupant.key)  //Autoeject corpses and suiciding dudes.
-			locked = 0
+			set_locked(0)
 			go_out()
 			connected_message("Clone Rejected: Deceased.")
 			return
@@ -240,17 +240,17 @@ EXTEND_INTERACTIONS(/obj/machinery/clonepod, \
 			return
 
 		else if(!eject_wait)
-			playsound(src, 'sound/machines/medbayscanner1.ogg', 50, 1)
+			play_sfx(src, SFX_MACHINES_MEDBAYSCANNER1)
 			audible_message("\The [src] signals that the cloning process is complete.", runemessage = "ding")
 			connected_message("Cloning Process Complete.")
-			locked = 0
+			set_locked(0)
 			go_out()
 			return
 
 	else if((!occupant) || (occupant.loc != src))
 		set_occupant(null)
 		if(locked)
-			locked = 0
+			set_locked(0)
 		return PROCESS_KILL
 
 	return
@@ -280,7 +280,7 @@ EXTEND_INTERACTIONS(/obj/machinery/clonepod, \
 		if((clone_growth_load(occupant) > DQ_CLONE_UNLOCK_LOAD) && (occupant.stat != DEAD))
 			to_chat(user, span_warning("Access Refused."))
 			return TRUE
-		locked = 0
+		set_locked(0)
 		to_chat(user, "System unlocked.")
 		return TRUE
 	if(istype(W,/obj/item/reagent_containers/glass))
@@ -307,10 +307,10 @@ EXTEND_INTERACTIONS(/obj/machinery/clonepod, \
 		to_chat(user, span_warning("Can not do that while [src] is in use."))
 		return ITEM_INTERACT_BLOCKING
 	if(anchored)
-		anchored = FALSE
+		set_anchored(FALSE)
 		rel_clear(src, "connected")
 	else
-		anchored = TRUE
+		set_anchored(TRUE)
 	playsound(src, tool.usesound, 100, TRUE)
 	user.visible_message("[user] [anchored ? "secures" : "unsecures"] [src] to the floor.", "You [anchored ? "secure" : "unsecure"] [src] to the floor.")
 	return ITEM_INTERACT_SUCCESS
@@ -328,7 +328,7 @@ EXTEND_INTERACTIONS(/obj/machinery/clonepod, \
 	if(isnull(get_occupant()))
 		return
 	to_chat(user, "You force an emergency ejection.")
-	locked = 0
+	set_locked(0)
 	go_out()
 	return 1
 
@@ -484,7 +484,7 @@ EXTEND_INTERACTIONS(/obj/machinery/clonepod, \
 /obj/machinery/clonepod/update_icon()
 	..()
 	icon_state = "pod_0"
-	if(get_occupant() && !(stat & NOPOWER))
+	if(get_occupant() && !has_stat(NOPOWER))
 		icon_state = "pod_1"
 	else if(mess)
 		icon_state = "pod_g"

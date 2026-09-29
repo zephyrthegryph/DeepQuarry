@@ -128,10 +128,10 @@
 	user.forceMove(target_turf)
 	to_chat(user, span_notice("You are teleported to your Mark."))
 
-	playsound(target_turf, 'sound/effects/phasein.ogg', 25, 1)
-	playsound(target_turf, 'sound/effects/sparks2.ogg', 50, 1)
+	play_sfx(target_turf, SFX_EFFECTS_PHASEIN, 0.25)
+	play_sfx(target_turf, SFX_EFFECTS_SPARKS2)
 
-	playsound(old_turf, 'sound/effects/sparks2.ogg', 50, 1)
+	play_sfx(old_turf, SFX_EFFECTS_SPARKS2)
 
 	adjust_instability(25)
 	consume(src, user)

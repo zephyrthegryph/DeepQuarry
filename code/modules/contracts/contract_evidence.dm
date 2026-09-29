@@ -36,11 +36,11 @@
 	var/id
 	var/kind
 	var/subject_id
-	var/created_at
+	EXPIRY_DECLARE(created_at)
 	var/creator_account
 	var/source_ref
 	var/consumed_by
-	var/consumed_at
+	EXPIRY_DECLARE(consumed_at)
 	var/reference_count = 0
 	var/void_reason
 	var/list/payload
@@ -52,7 +52,7 @@
 	subject_id = _subject_id
 	creator_account = _creator_account
 	source_ref = source ? REF(source) : null
-	created_at = world.time
+	EXPIRY_STAMP(src, created_at, CLOCK_WORLD)
 	payload = _payload ? deepCopyList(_payload) : list()
 
 /datum/controller/subsystem/contracts/proc/subject_identity(mob/living/subject) as /datum/contract_subject_identity
@@ -148,7 +148,7 @@
 	for(var/evidence_id in unique_ids)
 		var/datum/contract_evidence/evidence = evidence_by_id[evidence_id]
 		evidence.consumed_by = contract_id
-		evidence.consumed_at = world.time
+		EXPIRY_STAMP(evidence, consumed_at, CLOCK_WORLD)
 	emit_contract_event(CONTRACT_EVENT_EVIDENCE_CONSUMED, list(
 		"contract_id" = contract_id,
 		"evidence_ids" = unique_ids.Copy(),

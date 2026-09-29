@@ -93,7 +93,7 @@
 /obj/item/mindbinder/proc/self_bind_mob_confirmed(datum/om/prompt/confirm/mindbinder/self_bind/mob/ask)
 	var/mob/user = ask.answerer
 	var/mob/living/target = ask.subject
-	user.visible_message(span_warning("[user] presses [src] against [target]. The device beginning to let out a series of beeps!"),span_notice("You begin to bind yourself into [target]!"))
+	act_message(user, src, MSG_SELF(span_notice("You begin to bind yourself into [target]!")), MSG_OTHERS(span_warning("%U% presses %T% against [target]. The device beginning to let out a series of beeps!")))
 	log_and_message_admins("attempted to bind themselves to \an [target] with a Mind Binder.", user)
 	om_task_timed(user, 30 SECONDS, target = target, receiver = src, on_done = PROC_REF(bind_mob_timed_done), done_args = list(target, user))
 
@@ -101,7 +101,7 @@
 	var/mob/user = ask.answerer
 	var/obj/item/item = ask.subject
 	log_and_message_admins("attempted to bind themselves to \an [item] with a Mind Binder.", user)
-	user.visible_message(span_warning("[user] presses [src] against [item]. The device beginning to let out a series of beeps!"),span_notice("You begin to bind yourself into [item]!"))
+	act_message(user, src, MSG_SELF(span_notice("You begin to bind yourself into [item]!")), MSG_OTHERS(span_warning("%U% presses %T% against [item]. The device beginning to let out a series of beeps!")))
 	om_task_timed(user, 30 SECONDS, target = item, receiver = src, on_done = PROC_REF(bind_item_timed_done), done_args = list(item, user))
 
 /obj/item/mindbinder/proc/store_mob_confirmed(datum/om/prompt/confirm/mindbinder/store_mob/ask)
@@ -111,7 +111,7 @@
 		log_and_message_admins("attempted to take [key_name(target)]'s mind with a Mind Binder while they were SSD!", user)
 	else
 		log_and_message_admins("attempted to take [key_name(target)]'s mind with a Mind Binder.", user)
-	user.visible_message(span_warning("[user] presses [src] against [target]'s head. The device beginning to let out a series of beeps!"),span_notice("You begin to download [target]'s mind!"))
+	act_message(user, src, MSG_SELF(span_notice("You begin to download [target]'s mind!")), MSG_OTHERS(span_warning("%U% presses %T% against [target]'s head. The device beginning to let out a series of beeps!")))
 	om_task_timed(user, 30 SECONDS, target = target, receiver = src, on_done = PROC_REF(store_mob_timed_done), done_args = list(target, user))
 
 /obj/item/mindbinder/proc/bind_mob(mob/living/target)
@@ -127,7 +127,7 @@
 		om_ask(usr, /datum/om/prompt/confirm/mindbinder/self_bind/mob, PROC_REF(self_bind_mob_confirmed), subject = target)
 		return
 
-	usr.visible_message(span_warning("[usr] presses [src] against [target]. The device beginning to let out a series of beeps!"),span_notice("You begin to bind someone's mind into [target]!"))
+	act_message(usr, src, MSG_SELF(span_notice("You begin to bind someone's mind into [target]!")), MSG_OTHERS(span_warning("%U% presses %T% against [target]. The device beginning to let out a series of beeps!")))
 	log_and_message_admins("attempted to bind [key_name(src.possessed_voice[1])] to \an [target] with a Mind Binder.")
 	var/doTime = 30 SECONDS
 	if(ishuman(target) || issilicon(target) || isanimal(target))
@@ -177,7 +177,7 @@
 		return
 
 	log_and_message_admins("attempted to bind [key_name(src.possessed_voice[1])] to \an [item] with a Mind Binder.")
-	usr.visible_message(span_warning("[usr] presses [src] against [item]. The device beginning to let out a series of beeps!"),span_notice("You begin to bind someone's mind into [item]!"))
+	act_message(usr, src, MSG_SELF(span_notice("You begin to bind someone's mind into [item]!")), MSG_OTHERS(span_warning("%U% presses %T% against [item]. The device beginning to let out a series of beeps!")))
 	om_task_timed(usr, 5 SECONDS, target = item, receiver = src, on_done = PROC_REF(bind_item_timed_done2), done_args = list(item, usr))
 
 	update_icon()
@@ -226,7 +226,7 @@
 	var/mob/living/voice/target = item.possessed_voice[1]
 
 	log_and_message_admins("attempted to take [key_name(target)]'s mind out of \an [item] with a Mind Binder.")
-	usr.visible_message(span_warning("[usr] presses [src] against [item]. The device beginning to let out a series of beeps!"),span_notice("You begin to download someone's mind from [item]!"))
+	act_message(usr, src, MSG_SELF(span_notice("You begin to download someone's mind from [item]!")), MSG_OTHERS(span_warning("%U% presses %T% against [item]. The device beginning to let out a series of beeps!")))
 	om_task_start(/datum/om/task/timed/mindbinder_store_item, usr, item, receiver = src, target_arg = target)
 
 	update_icon()

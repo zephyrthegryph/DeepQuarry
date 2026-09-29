@@ -74,7 +74,7 @@
 
 	if(source.lying) //play crawling sound if we're lying
 		if(turf.footstep)
-			playsound(turf, 'sound/effects/footstep/crawl1.ogg', 15 * volume, falloff = 1, vary = sound_vary)
+			play_sfx(turf, SFX_EFFECTS_FOOTSTEP_CRAWL1, volume = 15 * volume, vary = sound_vary)
 		return
 
 	if(iscarbon(source))

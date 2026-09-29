@@ -80,7 +80,7 @@
 		if(ttone in GLOB.device_ringtones)
 			S = GLOB.device_ringtones[ttone]
 		else
-			S = 'sound/machines/twobeep.ogg'
+			S = SFX_MACHINES_TWOBEEP
 
 		playsound(src, S, 50, 1)
 		for (var/mob/O in hearers(2, loc))
@@ -114,13 +114,18 @@
 	user.log_talk("(COMM: [src]) sent \"[message]\" to [exonet.get_atom_from_address(comm.exonet.address)]", LOG_PDA)
 	to_chat(user, span_notice("[icon2html(src,user.client)] Sent message to [istype(comm, /obj/item/communicator) ? comm.owner : comm.name], <b>\"[message]\"</b> (<a href='byond://?src=\ref[src];action=Reply;target=\ref[exonet.get_atom_from_address(comm.exonet.address)]'>Reply</a>)"))
 
-/obj/item/communicator/Topic(href, href_list)
-	switch(href_list["action"])
-		if("Reply")
-			var/obj/item/communicator/comm = locate(href_list["target"])
-			if(!istype(comm) || !comm.exonet)
-				return
-			om_ask(usr, /datum/om/prompt/text/communicator/reply, PROC_REF(reply_entered), comm = comm)
+TOPIC_ACTION(/obj/item/communicator, "action=Reply", PROC_REF(topic_reply), TOPIC_REF("target", /obj/item/communicator))
+
+// Reply links arrive in chat for whoever carries the communicator (in hand, a pocket, or a NIF).
+/obj/item/communicator/topic_allowed(mob/user, list/href_list)
+	return user && get(src, /mob) == user
+
+/obj/item/communicator/proc/topic_reply(mob/user, list/args)
+	var/obj/item/communicator/comm = args["target"]
+	if(!comm?.exonet)
+		return
+	om_ask(user, /datum/om/prompt/text/communicator/reply, PROC_REF(reply_entered), comm = comm)
+	return TRUE
 
 // Verb: text_communicator()
 // Parameters: None
@@ -189,7 +194,6 @@
 				if(M == src)
 					continue
 				M.show_message("Comm IM - [src] -> [chosen_communicator]: [text_message]")
-
 
 
 // Show Text Messages verb body relocated to code/modules/communicator/exonet_log_panel.dm (structured TGUI).

@@ -102,28 +102,38 @@ DECLARE_INTERACTIONS(/obj/item/areaeditor, \
 		else
 			. += "Your [src.name] seems like it has enough room for [charges] more edits!"
 
-/obj/item/areaeditor/Topic(href, href_list)
-	if(..())
-		return TRUE
-	if ((usr.restrained() || usr.stat || usr.get_active_hand() != src))
+TOPIC_ACTION(/obj/item/areaeditor, "create_area", PROC_REF(topic_create_area))
+TOPIC_ACTION(/obj/item/areaeditor, "create_area_whole", PROC_REF(topic_create_area_whole))
+
+// The editor works only in the active hand of someone able to use it.
+/obj/item/areaeditor/topic_allowed(mob/user, list/href_list)
+	. = ..()
+	if(!.)
 		return
-	if(href_list["create_area"])
-		if(in_use)
-			return
-		var/area/A = get_area(usr)
-		if(A.flag_check(BLUE_SHIELDED))
-			to_chat(usr, span_warning("You cannot edit restricted areas."))
-			return
-		in_use = TRUE
-		create_area(usr, src)
-		in_use = FALSE
-	if(href_list["create_area_whole"])
-		if(in_use)
-			return
-		in_use = TRUE
-		create_area_whole(usr, src)
-		in_use = FALSE
-	updateUsrDialog(usr)
+	if(user.restrained() || user.stat || user.get_active_hand() != src)
+		return FALSE
+
+/obj/item/areaeditor/proc/topic_create_area(mob/user, list/args)
+	if(in_use)
+		return
+	var/area/A = get_area(user)
+	if(A.flag_check(BLUE_SHIELDED))
+		to_chat(user, span_warning("You cannot edit restricted areas."))
+		return
+	in_use = TRUE
+	create_area(user, src)
+	in_use = FALSE
+	updateUsrDialog(user)
+	return TRUE
+
+/obj/item/areaeditor/proc/topic_create_area_whole(mob/user, list/args)
+	if(in_use)
+		return
+	in_use = TRUE
+	create_area_whole(user, src)
+	in_use = FALSE
+	updateUsrDialog(user)
+	return TRUE
 
 //Station Wire Tool.
 /obj/item/wire_reader //Not really a blueprint, but it's included here as such.
@@ -152,14 +162,18 @@ DECLARE_INTERACTIONS(/obj/item/wire_reader, INTERACT_USE("Read", PROC_REF(intera
 	// structured TGUI AdminReport; byond:// links forwarded to host.
 	dq_admin_report_html(user, "[src]", ., src)
 
-/obj/item/wire_reader/Topic(href, href_list)
-	if(..())
-		return
-	if(href_list["view_wireset"])
-		legend = href_list["view_wireset"];
-	if(href_list["view_legend"])
-		legend = TRUE
-	attack_self(usr)
+TOPIC_ACTION(/obj/item/wire_reader, "view_wireset", PROC_REF(topic_view_wireset), TOPIC_TEXT("view_wireset", MAX_NAME_LEN))
+TOPIC_ACTION(/obj/item/wire_reader, "view_legend", PROC_REF(topic_view_legend))
+
+/obj/item/wire_reader/proc/topic_view_wireset(mob/user, list/args)
+	legend = args["view_wireset"]
+	attack_self(user)
+	return TRUE
+
+/obj/item/wire_reader/proc/topic_view_legend(mob/user, list/args)
+	legend = TRUE
+	attack_self(user)
+	return TRUE
 
 /obj/item/wire_reader/proc/view_station_wire_devices(mob/user)
 	var/message = "<br>You examine the wire legend.<br>"
@@ -221,26 +235,38 @@ EXTEND_INTERACTIONS(/obj/item/areaeditor/blueprints, INTERACT_USE("Read", PROC_R
 	// structured TGUI AdminReport; byond:// links forwarded to host.
 	dq_admin_report_html(user, "[src]", ., src)
 
-/obj/item/areaeditor/blueprints/Topic(href, href_list)
-	if(..())
+TOPIC_ACTION(/obj/item/areaeditor/blueprints, "edit_area", PROC_REF(topic_edit_area))
+TOPIC_ACTION(/obj/item/areaeditor/blueprints, "exit_legend", PROC_REF(topic_exit_legend))
+TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_legend", PROC_REF(topic_view_legend))
+TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_wireset", PROC_REF(topic_view_wireset), TOPIC_TEXT("view_wireset", MAX_NAME_LEN))
+
+/obj/item/areaeditor/blueprints/proc/topic_edit_area(mob/user, list/args)
+	if(get_area_type()!=AREA_STATION)
 		return
-	if(href_list["edit_area"])
-		if(get_area_type()!=AREA_STATION)
-			return
-		if(in_use)
-			return
-		in_use = TRUE
-		edit_area()
-		in_use = FALSE
-	if(href_list["exit_legend"])
-		legend = FALSE;
-	if(href_list["view_legend"])
-		if(wire_schematics) //No href hacks allow for you, my friend!
-			legend = TRUE;
-	if(href_list["view_wireset"])
-		if(wire_schematics) //No href hacks allow for you, my friend!
-			legend = href_list["view_wireset"];
-	attack_self(usr)
+	if(in_use)
+		return
+	in_use = TRUE
+	edit_area()
+	in_use = FALSE
+	attack_self(user)
+	return TRUE
+
+/obj/item/areaeditor/blueprints/proc/topic_exit_legend(mob/user, list/args)
+	legend = FALSE
+	attack_self(user)
+	return TRUE
+
+/obj/item/areaeditor/blueprints/proc/topic_view_legend(mob/user, list/args)
+	if(wire_schematics) //No href hacks allow for you, my friend!
+		legend = TRUE
+	attack_self(user)
+	return TRUE
+
+/obj/item/areaeditor/blueprints/proc/topic_view_wireset(mob/user, list/args)
+	if(wire_schematics) //No href hacks allow for you, my friend!
+		legend = args["view_wireset"]
+	attack_self(user)
+	return TRUE
 
 //Code for viewing pipes or whatnot. Think t-ray scanner.
 //Code for viewing pipes or whatnot. Think t-ray scanner.

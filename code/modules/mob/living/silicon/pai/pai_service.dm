@@ -184,7 +184,7 @@ GLOBAL_DATUM_INIT(pai_service, /datum/world_service/pai, new)
 	if(check_is_delayed(ghost_key))
 		to_chat(inquirer, span_notice("This pAI is responding to a request, but may become available again shortly..."))
 		return
-	asked[ghost_key] = world.time
+	asked[REF(ghost)] = EXPIRY_AT(null, CLOCK_WORLD, 0)
 
 	// Can't play, still respawning
 	var/time_till_respawn = ghost.time_till_respawn()
@@ -239,7 +239,7 @@ GLOBAL_DATUM_INIT(pai_service, /datum/world_service/pai, new)
 
 /datum/world_service/pai/proc/block_pai_invites(ghost_ref)
 	SHOULD_NOT_OVERRIDE(TRUE)
-	asked[ghost_ref] = world.time + 99 HOURS // We never want to be asked again
+	asked[ghost_ref] = EXPIRY_AT(null, CLOCK_WORLD, 0) + 99 HOURS // We never want to be asked again
 
 /datum/world_service/pai/proc/clear_pai_block_delay(ghost_ref)
 	SHOULD_NOT_OVERRIDE(TRUE)

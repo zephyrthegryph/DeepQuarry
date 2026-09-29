@@ -235,7 +235,7 @@
 	spell_projectile = /obj/item/projectile/energy/plasmastun/slow
 	pre_shot_delay = 0
 	cooldown = 5
-	fire_sound = 'sound/weapons/weaponsounds_laserstrong.ogg'
+	fire_sound = SFX_WEAPONS_WEAPONSOUNDS_LASERSTRONG
 
 /datum/spell/targeted/unrestricted/mend
 	name = "Mend Target"

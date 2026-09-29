@@ -117,9 +117,9 @@
 /mob/living/carbon/human/proc/bloodsuck_begin(mob/living/carbon/human/B, noise, bleed)
 	COOLDOWN_START(src, last_special, 600)
 	if(noise)
-		src.visible_message(span_infoplain(span_red(span_bold("[src] moves their head next to [B]'s neck, seemingly looking for something!"))))
+		act_message(src, B, others = span_infoplain(span_red(span_bold("%U% moves their head next to %T%'s neck, seemingly looking for something!"))))
 	else
-		src.visible_message(span_infoplain(span_red(span_italics("[src] moves their head next to [B]'s neck, seemingly looking for something!"))), range = 1)
+		act_message(src, B, others = span_infoplain(span_red(span_italics("%U% moves their head next to %T%'s neck, seemingly looking for something!"))), range = 1)
 
 	if(bleed) //Due to possibility of missing/misclick and missing the bleeding cues, we are warning the scene members of BLEEDING being on
 		to_chat(src, span_warning("This is going to cause [B] to keep bleeding!"))
@@ -139,9 +139,9 @@
 	var/bleed = task.bleed
 	if(!Adjacent(B)) return
 	if(noise)
-		src.visible_message(span_infoplain(span_red(span_bold("[src] suddenly extends their fangs and plunges them down into [B]'s neck!"))))
+		act_message(src, B, others = span_infoplain(span_red(span_bold("%U% suddenly extends their fangs and plunges them down into %T%'s neck!"))))
 	else
-		src.visible_message(span_infoplain(span_red(span_italics("[src] suddenly extends their fangs and plunges them down into [B]'s neck!"))), range = 1)
+		act_message(src, B, others = span_infoplain(span_red(span_italics("%U% suddenly extends their fangs and plunges them down into %T%'s neck!"))), range = 1)
 	if(bleed)
 		B.injure(INJURY_PIERCE, 10, BP_HEAD, src)
 		var/obj/item/organ/external/E = B.get_organ(BP_HEAD)
@@ -300,7 +300,7 @@
 			T.set_nutrition(T.nutrition*0.95)
 		if(2)
 			to_chat(src, span_notice("You feel stronger with every passing moment as you drain [T]."))
-			visible_message(span_danger("[src] seems to be doing something to [T], resulting in [T]'s body looking weaker with every passing moment!"))
+			act_message(src, T, others = span_danger("%U% seems to be doing something to %T%, resulting in %T%'s body looking weaker with every passing moment!"))
 			to_chat(T, span_danger("You feel weaker with every passing moment as [src] drains you!"))
 			set_nutrition((nutrition + (T.nutrition*0.1)))
 			T.set_nutrition(T.nutrition*0.9)
@@ -351,7 +351,7 @@
 			absorbing_prey = FALSE
 			to_chat(src, span_notice("You have completely drained [T], killing them in the process."))
 			to_chat(T, span_danger(span_massive("You... Feel... So... Weak...")))
-			visible_message(span_danger("[src] seems to finish whatever they were doing to [T]."))
+			act_message(src, T, others = span_danger("%U% seems to finish whatever they were doing to %T%."))
 			add_attack_logs(src,T,"Succubus drained (lethal)")
 			return 0
 	return stage
@@ -561,7 +561,7 @@
 		return
 
 	COOLDOWN_START(src, last_special, vore_shred_time)
-	visible_message(span_danger("[src] appears to be preparing to do something to [T]!")) //Let everyone know that bad times are ahead
+	act_message(src, T, others = span_danger("%U% appears to be preparing to do something to %T%!")) //Let everyone know that bad times are ahead
 
 	om_task_start(/datum/om/task/timed/living_shred_limb_living, src, T, duration = vore_shred_time, T_ext = T_ext, T_int = T_int, B = B)
 
@@ -588,10 +588,11 @@
 		T_int.removed()
 		if(B)
 			T_int.forceMove(B) //Move to pred's gut
-			visible_message(span_danger("[src] severely damages [T_int.name] of [T]!"))
+			act_message(src, T, others = span_danger("%U% severely damages [T_int.name] of %T%!"))
 		else
 			T_int.forceMove(T.loc)
-			visible_message(span_danger("[src] severely damages [T_ext.name] of [T], resulting in their [T_int.name] coming out!"),span_warning("You tear out [T]'s [T_int.name]!"))
+			act_message(src, T, MSG_SELF(span_warning("You tear out %T%'s [T_int.name]!")), \
+				MSG_OTHERS(span_danger("%U% severely damages [T_ext.name] of %T%, resulting in their [T_int.name] coming out!")))
 
 	//Removing an external organ
 	else if(!T_int && (T_ext.damage >= 25 || T_ext.get_trauma() >= 25))
@@ -600,20 +601,20 @@
 		//Is it groin/chest? You can't remove those.
 		if(T_ext.cannot_amputate)
 			T.injure(INJURY_CUT, 25, T_ext.organ_tag, src)
-			visible_message(span_danger("[src] severely damages [T]'s [T_ext.name]!"))
+			act_message(src, T, others = span_danger("%U% severely damages %T%'s [T_ext.name]!"))
 		else if(B)
 			T_ext.forceMove(B)
-			visible_message(span_warning("[src] swallows [T]'s [T_ext.name] into their [lowertext(B.name)]!"))
+			act_message(src, T, others = span_warning("%U% swallows %T%'s [T_ext.name] into their [lowertext(B.name)]!"))
 		else
 			T_ext.forceMove(T.loc)
-			visible_message(span_warning("[src] tears off [T]'s [T_ext.name]!"),span_warning("You tear off [T]'s [T_ext.name]!"))
+			act_message(src, T, MSG_SELF(span_warning("You tear off %T%'s [T_ext.name]!")), MSG_OTHERS(span_warning("%U% tears off %T%'s [T_ext.name]!")))
 
 	//Not targeting an internal organ w/ > 25 damage , and the limb doesn't have < 25 damage.
 	else
 		if(T_int)
 			T.injure(INJURY_CUT, 25, T_int, src, affliction = /datum/affliction/lesion/laceration)
 		T.injure(INJURY_CUT, 25, T_ext.organ_tag, src)
-		visible_message(span_danger("[src] severely damages [T]'s [T_ext.name]!"))
+		act_message(src, T, others = span_danger("%U% severely damages %T%'s [T_ext.name]!"))
 
 	add_attack_logs(src,T,"Shredded (hardvore)")
 
@@ -681,7 +682,7 @@
 		return
 
 	if(!C.anchored && !C?.pulled_by_mob()) //Not currently anchored, and not pulled by anyone.
-		C.anchored = TRUE //This is the only way to stop the inertial_drift.
+		C.set_anchored(TRUE) //This is the only way to stop the inertial_drift.
 		C.adjust_nutrition(-25)
 		update_floating()
 		to_chat(C, span_notice("You hover in place."))
@@ -755,7 +756,7 @@
 		if(water_floor.depth >= 1) //Is it deep enough?
 			apply_body_effect(/datum/body_effect/underwater_stealth) //No duration. It'll remove itself when they exit the water!
 			to_chat(src, "You dive into the water!")
-			visible_message("[src] dives into the water!")
+			act_message(src, null, others = "%U% dives into the water!")
 		else
 			to_chat(src, "The water here is not deep enough to dive into!")
 			return
@@ -832,8 +833,8 @@
 	if(target?.buckled_to()) //how are you src?.buckled_to() in the water?!
 		var/atom/movable/_tmp_buck_19 = target?.buckled_to()
 		_tmp_buck_19.unbuckle_mob()
-	target.visible_message(span_vwarning("\The [target] suddenly disappears, being dragged into the water!"),\
-		span_vdanger("You are dragged below the water and feel yourself slipping directly into \the [src]'s [vore_selected.get_belly_name()]!"))
+	act_message(target, src, MSG_SELF(span_vdanger("You are dragged below the water and feel yourself slipping directly into %T%'s [vore_selected.get_belly_name()]!")), \
+		MSG_OTHERS(span_vwarning("%U% suddenly disappears, being dragged into the water!")))
 	to_chat(src, span_vnotice("You successfully drag \the [target] into the water, slipping them into your [vore_selected.get_belly_name()]."))
 	vore_selected.nom_atom(target)
 
@@ -906,8 +907,8 @@
 		to_chat(src, span_warning("You need to be closer to do that."))
 		return
 
-	visible_message(span_vnotice("\The [src] attempts to snatch up [target]!"), 					span_vnotice("You attempt to snatch up [target]!") )
-	playsound(src, 'sound/vore/sunesound/pred/schlorp.ogg', 25)
+	act_message(src, target, MSG_SELF(span_vnotice("You attempt to snatch up %T%!")), MSG_OTHERS(span_vnotice("%U% attempts to snatch up %T%!")))
+	play_sfx(src, SFX_VORE_SUNESOUND_PRED_SCHLORP)
 
 	//Code to shoot the beam here.
 	var/obj/item/projectile/beam/appendage/appendage_attack = new /obj/item/projectile/beam/appendage(get_turf(loc))
@@ -921,9 +922,9 @@
 	damage = 0
 	eyeblur = 0
 	can_miss = FALSE //Let's not miss our tongue!
-	fire_sound = 'sound/effects/slime_squish.ogg'
-	hitsound = 'sound/vore/sunesound/pred/schlorp.ogg'
-	hitsound_wall = 'sound/vore/sunesound/pred/schlorp.ogg'
+	fire_sound = SFX_EFFECTS_SLIME_SQUISH
+	hitsound = SFX_VORE_SUNESOUND_PRED_SCHLORP
+	hitsound_wall = SFX_VORE_SUNESOUND_PRED_SCHLORP
 	excavation_amount = 0
 	hitscan_light_intensity = 0
 	hitscan_light_range = 0
@@ -972,9 +973,9 @@
 			if(isliving(firer))
 				var/mob/living/originator = firer
 				originator.status_at_least(EFFECT_WEAKENED, 2) //If you hit something dense or anchored, fall flat on your face.
-				originator.visible_message(span_warning("\The [originator] trips over their self and falls flat on their face!"), \
-								span_warning("You trip over yourself and fall flat on your face!") )
-				playsound(originator, "punch", 25, 1, -1)
+				act_message(originator, null, MSG_SELF(span_warning("You trip over yourself and fall flat on your face!")), \
+					MSG_OTHERS(span_warning("%U% trips over their self and falls flat on their face!")))
+				play_sfx(originator, SFX_PUNCH, 0.5, extrarange = -1)
 			return
 		else
 			hit_object.throw_at(firer, throw_range, hit_object.throw_speed, firer)
@@ -982,9 +983,9 @@
 		if(isliving(firer))
 			var/mob/living/originator = firer
 			originator.status_at_least(EFFECT_WEAKENED, 2) //Hit a wall? Whoops!
-			originator.visible_message(span_warning("\The [originator] trips over their self and falls flat on their face!"), \
-							span_warning("You trip over yourself and fall flat on your face!") )
-			playsound(originator, "punch", 25, 1, -1)
+			act_message(originator, null, MSG_SELF(span_warning("You trip over yourself and fall flat on your face!")), \
+				MSG_OTHERS(span_warning("%U% trips over their self and falls flat on their face!")))
+			play_sfx(originator, SFX_PUNCH, 0.5, extrarange = -1)
 			return
 		else
 			return
@@ -1031,7 +1032,7 @@
 
 
 	firemodes = list(
-		list(mode_name="vore", projectile_type=/obj/item/projectile/beam/appendage, modifystate=null, fire_sound='sound/vore/sunesound/pred/schlorp.ogg', charge_cost = 0),)
+		list(mode_name="vore", projectile_type=/obj/item/projectile/beam/appendage, modifystate=null, fire_sound=SFX_VORE_SUNESOUND_PRED_SCHLORP, charge_cost = 0),)
 
 /obj/item/gun/energy/gun/tongue/update_icon() //No updating the icon.
 	icon_state = "synthtongue"
@@ -1050,8 +1051,8 @@
 
 /obj/item/projectile/bullet/BFGtaser/tongue
 	name = "tongue ball"
-	hitsound = 'sound/vore/sunesound/pred/schlorp.ogg'
-	hitsound_wall = 'sound/vore/sunesound/pred/schlorp.ogg'
+	hitsound = SFX_VORE_SUNESOUND_PRED_SCHLORP
+	hitsound_wall = SFX_VORE_SUNESOUND_PRED_SCHLORP
 	zaptype = /obj/item/projectile/beam/appendage
 
 /mob/living/proc/target_lunge() //The leaper leap, but usable as an ability
@@ -1060,7 +1061,7 @@
 	set desc = "Dive atop your prey and gobble them up!"
 
 	var/leap_warmup = 1 SECOND //Easy to modify
-	var/leap_sound = 'sound/weapons/spiderlunge.ogg'
+	var/leap_sound = SFX_WEAPONS_SPIDERLUNGE
 
 	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || !COOLDOWN_FINISHED(src, last_special)) //No tongue flicking while status_units(EFFECT_STUNNED).
 		to_chat(src, span_warning("You can't do that in your current state."))
@@ -1107,7 +1108,7 @@
 		return
 
 	var/leap_warmup = ask.leap_warmup
-	visible_message(span_warning("\The [src] rears back, ready to lunge!"))
+	act_message(src, null, others = span_warning("%U% rears back, ready to lunge!"))
 	to_chat(target, span_danger("\The [src] focuses on you!"))
 	// Telegraph, since getting stunned suddenly feels bad.
 	do_windup_animation(target, leap_warmup)
@@ -1256,7 +1257,7 @@
 		to_chat(src, span_notice("Somehow, you forgot your means of injecting. (Select a verb!)"))
 		return
 
-	visible_message(span_warning("[src] is preparing to [trait_injection_verb] [target]!"))
+	act_message(src, target, others = span_warning("%U% is preparing to [trait_injection_verb] %T%!"))
 	om_task_timed(src, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(injection_living_done), done_args = list(target, synth))
 
 /mob/living/proc/injection_living_done(mob/living/target, synth)
@@ -1336,23 +1337,23 @@
 /mob/living/proc/succubus_bite_chosen(datum/om/prompt/choice/succubus_bite/ask)
 	var/mob/living/carbon/human/T = ask.target
 	var/choice = ask.choice
-	src.visible_message(span_bolddanger("[src] moves their head next to [T]'s neck, seemingly looking for something!"))
+	act_message(src, T, others = span_bolddanger("%U% moves their head next to %T%'s neck, seemingly looking for something!"))
 
 	om_task_timed(src, 30 SECONDS, target = T, receiver = src, on_done = PROC_REF(succubus_bite_living_done), done_args = list(T, choice))
 
 /mob/living/proc/succubus_bite_living_done(mob/living/carbon/human/T, choice)
 	if(choice == REAGENT_APHRODISIAC)
 		src.show_message(span_warning("You sink your fangs into [T] and inject your aphrodisiac!"))
-		src.visible_message(span_red("[src] sinks their fangs into [T]!"))
+		act_message(src, T, others = span_red("%U% sinks their fangs into %T%!"))
 		T.bloodstr.add_reagent(REAGENT_ID_APHRODIAC_FLUID,100)
 		return 0
 	else if(choice == "Numbing")
 		src.show_message(span_warning("You sink your fangs into [T] and inject your poison!"))
-		src.visible_message(span_red("[src] sinks their fangs into [T]!"))
+		act_message(src, T, others = span_red("%U% sinks their fangs into %T%!"))
 		T.bloodstr.add_reagent(REAGENT_ID_NUMBING_FLUID,20) //Poisons should work when more units are injected
 	else if(choice == "Paralyzing")
 		src.show_message(span_warning("You sink your fangs into [T] and inject your poison!"))
-		src.visible_message(span_red("[src] sinks their fangs into [T]!"))
+		act_message(src, T, others = span_red("%U% sinks their fangs into %T%!"))
 		T.bloodstr.add_reagent(REAGENT_ID_PARALYZE_FLUID,20) //Poisons should work when more units are injected
 	else
 		return //Should never happen
@@ -1437,7 +1438,7 @@
 		eggs += 1
 		return 0
 	else if(choice == "lay your Eggs" && eggs > 0)
-		src.visible_message(span_infoplain(span_white("[src] freezes and vissibly tries to squat down")))
+		act_message(src, null, others = span_infoplain(span_white("%U% freezes and vissibly tries to squat down")))
 
 		while(eggs > 0)
 			src.show_message(span_warning("You lay a egg!"))
@@ -1483,7 +1484,7 @@
 
 	to_chat(src, span_notice("You jab your stinger into [T]."))
 	to_chat(T, span_danger("You feel a stabbing pain as you are stung!"))
-	src.visible_message(span_infoplain(span_red("[src] sinks their stinger into [T]!")))
+	act_message(src, T, others = span_infoplain(span_red("%U% sinks their stinger into %T%!")))
 	T.bloodstr.add_reagent(REAGENT_ID_CONDENSEDCAPSAICINV,3)
 	COOLDOWN_START(src, last_special, (5 SECONDS)) // Many little jabs instead of one big one
 
@@ -1529,8 +1530,8 @@
 	if (get_dist(src,target) >= 2)
 		to_chat(src, span_warning("You need to be closer to do that."))
 		return
-	target.visible_message(span_vnotice("\The [pred]'s [belly] seems interested in \the [target]."),\
-			span_vwarning("\The [pred]'s [belly] threatens to [lowertext(belly.vore_verb)] you!"))
+	act_message(target, pred, MSG_SELF(span_vwarning("%T%'s [belly] threatens to [lowertext(belly.vore_verb)] you!")), \
+		MSG_OTHERS(span_vnotice("%T%'s [belly] seems interested in %U%.")))
 	to_chat(pred, span_vnotice("Your [belly] tries to [lowertext(belly.vore_verb)] \the [target].")) //people who want this will often be unaware pred players, so I'm making the warning a bit smaller text for them
 	to_chat(pred, span_vwarning("You look for a chance to [lowertext(belly.vore_verb)] \the [target]."))
 	var/starting_loc = target.loc

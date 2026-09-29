@@ -63,22 +63,22 @@ DECLARE_REAGENTS(/obj/machinery/v_garbosystem, CARGOTANKER_VOLUME * 2, null)
 		update()
 
 /obj/machinery/v_garbosystem/proc/update()
-	if(stat & (BROKEN | NOPOWER))
+	if(!operable())
 		operating = FALSE
-		update_use_power(USE_POWER_OFF)
+		set_use_power(USE_POWER_OFF)
 		return
 	if(!operating)
-		update_use_power(USE_POWER_OFF)
+		set_use_power(USE_POWER_OFF)
 		return
 	icon_state = "cronchy_active"
 	MACHINE_WAKE(src)
-	update_use_power(USE_POWER_ACTIVE)
+	set_use_power(USE_POWER_ACTIVE)
 
 /obj/machinery/v_garbosystem/machine_step()
 	if(!operating || !crusher() || crusher().stat & (NOPOWER|BROKEN))
 		icon_state = "cronchy_off"
 		return PROCESS_KILL
-	if(stat & (BROKEN | NOPOWER))
+	if(!operable())
 		icon_state = "cronchy_off"
 		return PROCESS_KILL
 	icon_state = "cronchy_active"
@@ -87,7 +87,7 @@ DECLARE_REAGENTS(/obj/machinery/v_garbosystem, CARGOTANKER_VOLUME * 2, null)
 	om_after(src, 1, PROC_REF(grind_affecting))
 
 /obj/machinery/v_garbosystem/emag_act(remaining_charges, mob/user, emag_source)
-	emagged = !emagged
+	set_emagged(!emagged)
 	update()
 
 /datum/interaction/machine_item/v_garbosystem_crowbar_open
@@ -167,14 +167,14 @@ DECLARE_REAGENTS(/obj/machinery/v_garbosystem, CARGOTANKER_VOLUME * 2, null)
 				if(isliving(A))
 					var/mob/living/L = A
 					if(!emagged && ishuman(L) && L.mind)
-						playsound(src, 'sound/machines/warning-buzzer.ogg', 50, 0, 0)
+						play_sfx(src, SFX_MACHINES_WARNING_BUZZER)
 						visible_message(span_warning("POSSIBLE CREW MEMBER DETECTED! EMERGENCY STOP ENGAGED!"))
 						GLOB.global_announcer.autosay("Possible crew member detected in grinder feed. Emergency Stop Protocols engaged!", "Recycling Grinder Alert", "Supply")
 						operating = FALSE
 						update()
 						break
 					if(L.stat == DEAD)
-						playsound(src, 'sound/effects/splat.ogg', 50, 1)
+						play_sfx(src, SFX_EFFECTS_SPLAT)
 						if(L.meat_amount && L.meat_type) // Get all the goobs outta this goober
 							while(L.meat_amount > 0)
 								var/obj/item/meat = new L.meat_type(src)
@@ -197,7 +197,7 @@ DECLARE_REAGENTS(/obj/machinery/v_garbosystem, CARGOTANKER_VOLUME * 2, null)
 						break
 				for(var/atom/movable/C in contents_of(A))
 					if(C.anchored)
-						C.anchored = FALSE
+						C.set_anchored(FALSE)
 					C.forceMove(loc)
 				if(isitem(A))
 					A.SpinAnimation(5,3)
@@ -211,9 +211,9 @@ DECLARE_REAGENTS(/obj/machinery/v_garbosystem, CARGOTANKER_VOLUME * 2, null)
 			break
 	if(items_taken) //Lazy coder sound design moment.
 		GLOB.Recycled_Items = GLOB.Recycled_Items + items_taken
-		playsound(src, 'sound/items/poster_being_created.ogg', 50, 1)
-		playsound(src, 'sound/items/electronic_assembly_emptying.ogg', 50, 1)
-		playsound(src, 'sound/effects/metalscrape2.ogg', 50, 1)
+		play_sfx(src, SFX_ITEMS_POSTER_BEING_CREATED)
+		play_sfx(src, SFX_ITEMS_ELECTRONIC_ASSEMBLY_EMPTYING)
+		play_sfx(src, SFX_EFFECTS_METALSCRAPE2)
 
 /obj/machinery/v_garbosystem/proc/crunch_item(atom/movable/A)
 	if(A.loc == loc)

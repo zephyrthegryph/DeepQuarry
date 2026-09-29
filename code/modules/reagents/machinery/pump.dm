@@ -15,7 +15,7 @@
 
 	var/obj/item/cell/cell = null
 	var/reagents_per_cycle = 5
-	var/on = 0
+	on = 0
 	var/unlocked = 0
 	var/open = 0
 
@@ -68,13 +68,13 @@ DECLARE_REAGENTS(/obj/machinery/pump, 200, null)
 
 	icon_state = "[initial(icon_state)][on ? "-running" : ""]"
 
-/// Pumps every machine frame while on; off, it sleeps until set_state() turns it on.
+/// Pumps every machine frame while on; off, it sleeps until set_pump_on() turns it on.
 /obj/machinery/pump/machine_step()
 	if(!on)
 		return PROCESS_KILL
 
 	if(!anchored || !(cell?.use(active_power_usage)))
-		set_state(FALSE)
+		set_pump_on(FALSE)
 		return
 
 	var/turf/T = get_turf(src)
@@ -89,14 +89,14 @@ DECLARE_REAGENTS(/obj/machinery/pump, 200, null)
 // Returns TRUE/FALSE on power state changing
 // var/target = target power state
 // var/message = TRUE/FALSE whether to make a message about state change
-/obj/machinery/pump/proc/set_state(target, message = TRUE)
+/obj/machinery/pump/proc/set_pump_on(target, message = TRUE)
 	if(target == on)
 		return FALSE
 
 	if(!on && (!(cell?.check_charge(active_power_usage)) || !anchored))
 		return FALSE
 
-	on = !on
+	set_on(!on)
 	update_icon()
 	if(on)
 		MACHINE_WAKE(src)
@@ -116,7 +116,7 @@ DECLARE_REAGENTS(/obj/machinery/pump, 200, null)
 /obj/machinery/pump/proc/pump_silicon_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	if(isrobot(user))
 		return FALSE
-	if(!set_state(!on))
+	if(!set_pump_on(!on))
 		to_chat(user, span_notice("You try to toggle \the [src] but it does not respond."))
 	return TRUE
 
@@ -172,11 +172,11 @@ DECLARE_REAGENTS(/obj/machinery/pump, 200, null)
 		cell.add_fingerprint(user)
 		cell.update_icon()
 		own_take(src, "cell")
-		set_state(FALSE)
+		set_pump_on(FALSE)
 		to_chat(user, span_notice("You remove the power cell."))
 		return TRUE
 
-	if(!set_state(!on))
+	if(!set_pump_on(!on))
 		to_chat(user, span_notice("You try to toggle \the [src] but it does not respond."))
 	return TRUE
 

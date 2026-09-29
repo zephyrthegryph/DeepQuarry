@@ -45,7 +45,7 @@ REL_PAIR(/obj/structure/ladder, target_up, target_down)
 /obj/structure/ladder/welder_act(mob/user, obj/item/C)
 	var/obj/item/weldingtool/WT = C.get_welder()
 	if(WT.remove_fuel(0, user))
-		playsound(src, 'sound/items/Welder2.ogg', 50, TRUE)
+		play_sfx(src, SFX_ITEMS_WELDER2)
 		user.visible_message("\The [user] starts to deconstruct \the [src].", "You start to deconstruct \the [src].", "You hear welding")
 		om_task_timed(user, 2 SECONDS, src, src, PROC_REF(deconstruct_done), list(user, WT))
 		return ITEM_INTERACT_SUCCESS
@@ -60,17 +60,17 @@ REL_PAIR(/obj/structure/ladder, target_up, target_down)
 		target_up.visible_message("\The [target_up] deconstructs from below")
 		A = new /obj/structure/ladder_assembly(target_up.loc)
 		A.state = LADDER_CONSTRUCTION_WELDED
-		A.anchored = TRUE
+		A.set_anchored(TRUE)
 		qdel(target_up)
 	if(target_down)
 		target_down.visible_message("\The [target_down] deconstructs from above")
 		A = new /obj/structure/ladder_assembly(target_down.loc)
 		A.state = LADDER_CONSTRUCTION_WELDED
-		A.anchored = TRUE
+		A.set_anchored(TRUE)
 		qdel(target_down)
 	A = new /obj/structure/ladder_assembly(loc)
 	A.state = LADDER_CONSTRUCTION_WRENCHED
-	A.anchored = TRUE
+	A.set_anchored(TRUE)
 	qdel(src)
 
 DECLARE_INTERACTIONS(/obj/structure/ladder, \

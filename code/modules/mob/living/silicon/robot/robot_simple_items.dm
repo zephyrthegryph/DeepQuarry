@@ -139,7 +139,7 @@ DECLARE_INTERACTIONS(/obj/item/robotic_multibelt, INTERACT_USE(null, PROC_REF(in
 /obj/item/tool/screwdriver/cyborg
 	name = "powered screwdriver"
 	desc = "An electrical screwdriver, designed to be both precise and quick."
-	usesound = 'sound/items/drill_use.ogg'
+	usesound = SFX_ITEMS_DRILL_USE_2
 	icon = 'icons/obj/tools_robot.dmi'
 	icon_state = "toolkit_engiborg_screwdriver"
 	random_color = FALSE
@@ -148,7 +148,7 @@ DECLARE_INTERACTIONS(/obj/item/robotic_multibelt, INTERACT_USE(null, PROC_REF(in
 /obj/item/tool/crowbar/cyborg
 	name = "hydraulic crowbar"
 	desc = "A hydraulic prying tool, compact but powerful. Designed to replace crowbars in industrial synthetics."
-	usesound = 'sound/items/jaws_pry.ogg'
+	usesound = SFX_ITEMS_JAWS_PRY
 	icon = 'icons/obj/tools_robot.dmi'
 	icon_state = "toolkit_engiborg_crowbar"
 	force = 10
@@ -159,7 +159,7 @@ DECLARE_INTERACTIONS(/obj/item/robotic_multibelt, INTERACT_USE(null, PROC_REF(in
 	desc = "The jaws of a small dog. Still strong enough to pry things."
 	icon = 'icons/mob/dogborg_vr.dmi'
 	icon_state = "smalljaws_textless"
-	hitsound = 'sound/weapons/bite.ogg'
+	hitsound = SFX_WEAPONS_BITE
 	attack_verb = list("nibbled", "bit", "gnawed", "chomped", "nommed")
 	force = 15
 
@@ -168,7 +168,7 @@ DECLARE_INTERACTIONS(/obj/item/robotic_multibelt, INTERACT_USE(null, PROC_REF(in
 	desc = "An advanced welder designed to be used in robotic systems."
 	icon = 'icons/obj/tools_robot.dmi'
 	icon_state = "indwelder_cyborg"
-	usesound = 'sound/items/Welder2.ogg'
+	usesound = SFX_ITEMS_WELDER2
 	toolspeed = 0.5
 	welding = FALSE
 	no_passive_burn = TRUE
@@ -186,7 +186,7 @@ DECLARE_INTERACTIONS(/obj/item/robotic_multibelt, INTERACT_USE(null, PROC_REF(in
 	desc = "This cuts wires. With science."
 	icon = 'icons/obj/tools_robot.dmi'
 	icon_state = "toolkit_engiborg_cutters"
-	usesound = 'sound/items/jaws_cut.ogg'
+	usesound = SFX_ITEMS_JAWS_CUT
 	random_color = FALSE
 	toolspeed = 0.5
 
@@ -195,7 +195,7 @@ DECLARE_INTERACTIONS(/obj/item/robotic_multibelt, INTERACT_USE(null, PROC_REF(in
 	desc = "An advanced robotic wrench. Can be found in industrial synthetic shells."
 	icon = 'icons/obj/tools_robot.dmi'
 	icon_state = "toolkit_engiborg_wrench"
-	usesound = 'sound/items/drill_use.ogg'
+	usesound = SFX_ITEMS_DRILL_USE_2
 	toolspeed = 0.5
 
 /obj/item/multitool/cyborg
@@ -571,8 +571,8 @@ EXTEND_INTERACTIONS(/obj/item/stack/cable_coil/cyborg, INTERACT_USE("Change colo
 
 	var/mob/living/silicon/robot/our_robot
 
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 	///Var for attack_self chain
 	var/special_handling = FALSE
@@ -584,8 +584,7 @@ REL(/obj/item/gripper, our_robot)
 /obj/item/storage/internal/gripper
 	max_storage_space = ITEMSIZE_COST_HUGE
 
-/obj/item/storage/internal/gripper/hold_constraint()
-	return list(HOLD_MAX_SIZE(ITEMSIZE_HUGE))
+TYPE_TABLE(/obj/item/storage/internal/gripper, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_HUGE)))
 
 /obj/item/gripper/Initialize(mapload)
 	. = ..()
@@ -767,57 +766,39 @@ EXTEND_INTERACTIONS(/obj/item/gripper, INTERACT_VERB("Drop Item", PROC_REF(gripp
 // What each gripper can pick up: its hold constraint (P3), checked through
 // dq_constraint_refusal() like any other holder.
 
-/obj/item/gripper/hold_constraint()
-	return list(HOLD_ONLY(list(BASIC_GRIPPER)))
+TYPE_TABLE(/obj/item/gripper, hold_spec, list(HOLD_ONLY(list(BASIC_GRIPPER))))
 
-/obj/item/gripper/engineering/hold_constraint()
-	return list(HOLD_ONLY(list(BASIC_GRIPPER, CIRCUIT_GRIPPER, SHEET_GRIPPER)))
+TYPE_TABLE(/obj/item/gripper/engineering, hold_spec, list(HOLD_ONLY(list(BASIC_GRIPPER, CIRCUIT_GRIPPER, SHEET_GRIPPER))))
 
-/obj/item/gripper/drone/hold_constraint()
-	return list(HOLD_ONLY(list(BASIC_GRIPPER, SHEET_GRIPPER)))
+TYPE_TABLE(/obj/item/gripper/drone, hold_spec, list(HOLD_ONLY(list(BASIC_GRIPPER, SHEET_GRIPPER))))
 
-/obj/item/gripper/omni/hold_constraint()
-	return list(HOLD_ONLY(list(OMNI_GRIPPER)))
+TYPE_TABLE(/obj/item/gripper/omni, hold_spec, list(HOLD_ONLY(list(OMNI_GRIPPER))))
 
-/obj/item/gripper/miner/hold_constraint()
-	return list(HOLD_ONLY(list(MINER_GRIPPER)))
+TYPE_TABLE(/obj/item/gripper/miner, hold_spec, list(HOLD_ONLY(list(MINER_GRIPPER))))
 
-/obj/item/gripper/security/hold_constraint()
-	return list(HOLD_ONLY(list(SECURITY_GRIPPER)))
+TYPE_TABLE(/obj/item/gripper/security, hold_spec, list(HOLD_ONLY(list(SECURITY_GRIPPER))))
 
-/obj/item/gripper/paperwork/hold_constraint()
-	return list(HOLD_ONLY(list(PAPERWORK_GRIPPER)))
+TYPE_TABLE(/obj/item/gripper/paperwork, hold_spec, list(HOLD_ONLY(list(PAPERWORK_GRIPPER))))
 
-/obj/item/gripper/medical/hold_constraint()
-	return list(HOLD_ONLY(list(BASIC_GRIPPER, ORGAN_GRIPPER, MEDICAL_GRIPPER)))
+TYPE_TABLE(/obj/item/gripper/medical, hold_spec, list(HOLD_ONLY(list(BASIC_GRIPPER, ORGAN_GRIPPER, MEDICAL_GRIPPER))))
 
-/obj/item/gripper/research/hold_constraint()
-	return list(HOLD_ONLY(list(BASIC_GRIPPER, CIRCUIT_GRIPPER, SHEET_GRIPPER, EXOSUIT_GRIPPER, ROBOTICS_ORGAN_GRIPPER, RESEARCH_GRIPPER)))
+TYPE_TABLE(/obj/item/gripper/research, hold_spec, list(HOLD_ONLY(list(BASIC_GRIPPER, CIRCUIT_GRIPPER, SHEET_GRIPPER, EXOSUIT_GRIPPER, ROBOTICS_ORGAN_GRIPPER, RESEARCH_GRIPPER))))
 
-/obj/item/gripper/circuit/hold_constraint()
-	return list(HOLD_ONLY(list(CIRCUIT_GRIPPER)))
+TYPE_TABLE(/obj/item/gripper/circuit, hold_spec, list(HOLD_ONLY(list(CIRCUIT_GRIPPER))))
 
-/obj/item/gripper/service/hold_constraint()
-	return list(HOLD_ONLY(list(SERVICE_GRIPPER)))
+TYPE_TABLE(/obj/item/gripper/service, hold_spec, list(HOLD_ONLY(list(SERVICE_GRIPPER))))
 
-/obj/item/gripper/gravekeeper/hold_constraint()
-	return list(HOLD_ONLY(list(GRAVEYARD_GRIPPER)))
+TYPE_TABLE(/obj/item/gripper/gravekeeper, hold_spec, list(HOLD_ONLY(list(GRAVEYARD_GRIPPER))))
 
-/obj/item/gripper/scene/hold_constraint()
-	return list(HOLD_ONLY(list(SCENE_GRIPPER)))
+TYPE_TABLE(/obj/item/gripper/scene, hold_spec, list(HOLD_ONLY(list(SCENE_GRIPPER))))
 
-/obj/item/gripper/no_use/organ/hold_constraint()
-	return list(HOLD_ONLY(list(ORGAN_GRIPPER)))
+TYPE_TABLE(/obj/item/gripper/no_use/organ, hold_spec, list(HOLD_ONLY(list(ORGAN_GRIPPER))))
 
-/obj/item/gripper/no_use/organ/robotics/hold_constraint()
-	return list(HOLD_ONLY(list(ROBOTICS_ORGAN_GRIPPER)))
+TYPE_TABLE(/obj/item/gripper/no_use/organ/robotics, hold_spec, list(HOLD_ONLY(list(ROBOTICS_ORGAN_GRIPPER))))
 
-/obj/item/gripper/no_use/mech/hold_constraint()
-	return list(HOLD_ONLY(list(EXOSUIT_GRIPPER)))
+TYPE_TABLE(/obj/item/gripper/no_use/mech, hold_spec, list(HOLD_ONLY(list(EXOSUIT_GRIPPER))))
 
-/obj/item/gripper/no_use/loader/hold_constraint()
-	return list(HOLD_ONLY(list(SHEET_GRIPPER)))
+TYPE_TABLE(/obj/item/gripper/no_use/loader, hold_spec, list(HOLD_ONLY(list(SHEET_GRIPPER))))
 
-/obj/item/gripper/syndicate/hold_constraint()
-	return list(HOLD_ONLY(list(BASIC_GRIPPER, SECURITY_GRIPPER, MINER_GRIPPER, PAPERWORK_GRIPPER, MEDICAL_GRIPPER, RESEARCH_GRIPPER, CIRCUIT_GRIPPER, SERVICE_GRIPPER, GRAVEYARD_GRIPPER, ORGAN_GRIPPER, ROBOTICS_ORGAN_GRIPPER, EXOSUIT_GRIPPER, SHEET_GRIPPER)))
+TYPE_TABLE(/obj/item/gripper/syndicate, hold_spec, list(HOLD_ONLY(list(BASIC_GRIPPER, SECURITY_GRIPPER, MINER_GRIPPER, PAPERWORK_GRIPPER, MEDICAL_GRIPPER, RESEARCH_GRIPPER, CIRCUIT_GRIPPER, SERVICE_GRIPPER, GRAVEYARD_GRIPPER, ORGAN_GRIPPER, ROBOTICS_ORGAN_GRIPPER, EXOSUIT_GRIPPER, SHEET_GRIPPER))))
 

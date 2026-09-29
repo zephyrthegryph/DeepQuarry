@@ -40,8 +40,8 @@
 	desc = "A collection of tiny colored bricks ready to be built into whatever you want."
 	icon = 'icons/vore/smoleworld_vr.dmi'
 	icon_state = "smolematerial"
-	drop_sound = 'sound/items/drop/smolematerial.ogg'
-	pickup_sound = 'sound/items/pickup/pillbottle.ogg'
+	drop_sound = SFX_ITEMS_DROP_SMOLEMATERIAL
+	pickup_sound = SFX_ITEMS_PICKUP_PILLBOTTLE
 	default_type = MAT_SMOLEBRICKS
 	w_class = ITEMSIZE_SMALL
 
@@ -55,9 +55,9 @@
 	throw_range = 4
 	w_class = ITEMSIZE_LARGE
 	max_storage_space = ITEMSIZE_COST_SMALL * 7 // most code copied from toolbox
-	use_sound = 'sound/items/storage/smolecase.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
-	pickup_sound = 'sound/items/pickup/device.ogg'
+	use_sound = SFX_ITEMS_STORAGE_SMOLECASE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 	starts_with = list( /obj/item/stack/material/smolebricks,
 	/obj/item/stack/material/smolebricks, /obj/item/stack/material/smolebricks, /obj/item/stack/material/smolebricks, /obj/item/stack/material/smolebricks,
 	/obj/item/stack/material/smolebricks, /obj/item/stack/material/smolebricks, /obj/item/stack/material/smolebricks, /obj/item/stack/material/smolebricks,
@@ -67,8 +67,7 @@
 //Track code
 //defineing actions
 
-/obj/item/storage/smolebrickcase/hold_constraint()
-	return list(HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/smolebrickcase, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 /obj/structure/smoletrack
 	icon = 'icons/vore/smoleworld_vr.dmi'
 	color = "#ffffff"
@@ -90,7 +89,7 @@ EXTEND_INTERACTIONS(/obj/structure/smoletrack, \
 	if(has_trait(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
 		return
 	to_chat(user, span_notice("[src] was dismantaled into bricks."))
-	playsound(src, 'sound/items/smolesmallbuild.ogg', 50, 1, -1, volume_channel = VOLUME_CHANNEL_MASTER)
+	play_sfx(src, SFX_ITEMS_SMOLESMALLBUILD, volume_channel = VOLUME_CHANNEL_MASTER)
 	var/turf/simulated/floor/F = get_turf(src)
 	if(istype(F))
 		new /obj/item/stack/material/smolebricks(F)
@@ -125,7 +124,7 @@ EXTEND_INTERACTIONS(/obj/structure/smoletrack, \
 /obj/structure/smoletrack/proc/smoletrack_verb_dismantle(mob/user, obj/item/held, datum/interaction/interaction)
 	if(has_trait(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
 		return
-	playsound(src, 'sound/items/smolesmallbuild.ogg', 50, 1, -1, volume_channel = VOLUME_CHANNEL_MASTER)
+	play_sfx(src, SFX_ITEMS_SMOLESMALLBUILD, volume_channel = VOLUME_CHANNEL_MASTER)
 	var/turf/simulated/floor/F = get_turf(src)
 	if(istype(F))
 		new /obj/item/stack/material/smolebricks(F)
@@ -190,7 +189,7 @@ EXTEND_INTERACTIONS(/obj/structure/smolebuilding, \
 		if(has_trait(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
 			return
 		to_chat(user, span_notice("[src] was dismantaled into bricks."))
-		playsound(src, 'sound/items/smolesmallbuild.ogg', 50, 1, -1, volume_channel = VOLUME_CHANNEL_MASTER)
+		play_sfx(src, SFX_ITEMS_SMOLESMALLBUILD, volume_channel = VOLUME_CHANNEL_MASTER)
 		if(!isnull(loc))
 			new /obj/item/stack/material/smolebricks(loc)
 			new /obj/item/stack/material/smolebricks(loc)
@@ -201,7 +200,7 @@ EXTEND_INTERACTIONS(/obj/structure/smolebuilding, \
 		if(has_trait(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
 			return
 
-		playsound(src, 'sound/items/smolebuildinghit2.ogg', 50, 1)
+		play_sfx(src, SFX_ITEMS_SMOLEBUILDINGHIT2)
 		user.do_attack_animation(src)
 		user.visible_message(span_danger("\The [user] bangs against \the [src]!"),
 							span_danger("You bang against \the [src]!"),
@@ -215,7 +214,7 @@ EXTEND_INTERACTIONS(/obj/structure/smolebuilding, \
 /// Stomped flat: the building leaves ruins.
 /obj/structure/smolebuilding/handle_deconstruct(disassembled = TRUE)
 	visible_message(span_danger("\The [src] falls apart!"))
-	playsound(src, 'sound/items/smolebuildingdestoryed.ogg', 50, 1, -1, volume_channel = VOLUME_CHANNEL_MASTER)
+	play_sfx(src, SFX_ITEMS_SMOLEBUILDINGDESTORYED, volume_channel = VOLUME_CHANNEL_MASTER)
 	new /obj/structure/smoleruins(loc)
 //results of attacks will remove building and spawn in ruins.
 /obj/structure/smolebuilding/proc/dismantle()
@@ -233,7 +232,7 @@ EXTEND_INTERACTIONS(/obj/structure/smolebuilding, \
 //is the same as dismaintal but instead of ruins it just makes it all explode
 /obj/structure/smolebuilding/proc/displode()
 	visible_message(span_danger("\The [src] explodes into pieces!"))
-	playsound(src, 'sound/items/smolebuildingdestoryedshort.ogg', 50, 1, -1, volume_channel = VOLUME_CHANNEL_MASTER)
+	play_sfx(src, SFX_ITEMS_SMOLEBUILDINGDESTORYEDSHORT, volume_channel = VOLUME_CHANNEL_MASTER)
 	new /obj/item/stack/material/smolebricks(loc)
 	replace_with(src, /obj/item/stack/material/smolebricks)
 	return
@@ -247,7 +246,7 @@ EXTEND_INTERACTIONS(/obj/structure/smoleruins, 	INTERACT_HAND_UNGATED_AS(I_DISAR
 	if(has_trait(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
 		return
 	to_chat(user, span_notice("[src] was dismantaled into bricks."))
-	playsound(src, 'sound/items/smolelargeunbuild.ogg', 50, 1, volume_channel = VOLUME_CHANNEL_MASTER)
+	play_sfx(src, SFX_ITEMS_SMOLELARGEUNBUILD, volume_channel = VOLUME_CHANNEL_MASTER)
 	if(!isnull(loc))
 		new /obj/item/stack/material/smolebricks(loc)
 		new /obj/item/stack/material/smolebricks(loc)
@@ -265,7 +264,7 @@ EXTEND_INTERACTIONS(/obj/structure/smoleruins, 	INTERACT_HAND_UNGATED_AS(I_DISAR
 
 /obj/structure/smoleruins/proc/displode()
 	visible_message(span_danger("\The [src] explodes into pieces!"))
-	playsound(src, 'sound/items/smolebuildingdestoryedshort.ogg', 50, 1, -1, volume_channel = VOLUME_CHANNEL_MASTER)
+	play_sfx(src, SFX_ITEMS_SMOLEBUILDINGDESTORYEDSHORT, volume_channel = VOLUME_CHANNEL_MASTER)
 	new /obj/item/stack/material/smolebricks(loc)
 	replace_with(src, /obj/item/stack/material/smolebricks)
 	return
@@ -282,7 +281,7 @@ EXTEND_INTERACTIONS(/obj/structure/smoleruins, 	INTERACT_HAND_UNGATED_AS(I_DISAR
 /obj/structure/smolebuilding/proc/smolebuilding_verb_dismantle(mob/user, obj/item/held, datum/interaction/interaction)
 	if(has_trait(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
 		return
-	playsound(src, 'sound/items/smolesmallbuild.ogg', 50, 1, -1, volume_channel = VOLUME_CHANNEL_MASTER)
+	play_sfx(src, SFX_ITEMS_SMOLESMALLBUILD, volume_channel = VOLUME_CHANNEL_MASTER)
 	if(!isnull(loc))
 		new /obj/item/stack/material/smolebricks(loc)
 		new /obj/item/stack/material/smolebricks(loc)
@@ -346,7 +345,7 @@ EXTEND_INTERACTIONS(/obj/structure/smoleruins, 	INTERACT_HAND_UNGATED_AS(I_DISAR
 	icon_state = "tether_trash"
 	name = "tether"
 	desc = "Its a tiny bit of plastic in the shape of the tether. There seems to be a small button on top."
-	honk_sound = 'sound/items/tinytether.ogg'
+	honk_sound = SFX_ITEMS_TINYTETHER
 
 /obj/item/reagent_containers/food/snacks/snackplanet/moon
 	name = "moon"
@@ -356,7 +355,7 @@ EXTEND_INTERACTIONS(/obj/structure/smoleruins, 	INTERACT_HAND_UNGATED_AS(I_DISAR
 	bitesize = 1
 	nutriment_amt = 2
 	nutriment_desc = list(REAGENT_ID_SUGAR = 2)
-	drop_sound = 'sound/items/drop/basketball.ogg'
+	drop_sound = SFX_ITEMS_DROP_BASKETBALL
 
 /obj/item/reagent_containers/food/snacks/snackplanet/virgo3b
 	name = "Virgo 3B"
@@ -367,7 +366,7 @@ EXTEND_INTERACTIONS(/obj/structure/smoleruins, 	INTERACT_HAND_UNGATED_AS(I_DISAR
 	trash = /obj/item/bikehorn/tinytether
 	nutriment_amt = 2
 	nutriment_desc = list("spicy" = 2, "tang" = 2)
-	drop_sound = 'sound/items/drop/basketball.ogg'
+	drop_sound = SFX_ITEMS_DROP_BASKETBALL
 
 /obj/item/reagent_containers/food/snacks/snackplanet/phoron
 	name = "phoron giant"
@@ -378,7 +377,7 @@ EXTEND_INTERACTIONS(/obj/structure/smoleruins, 	INTERACT_HAND_UNGATED_AS(I_DISAR
 	trash = /obj/item/trash/candychunk
 	nutriment_amt = 2
 	nutriment_desc = list("spicy" = 2)
-	drop_sound = 'sound/items/drop/basketball.ogg'
+	drop_sound = SFX_ITEMS_DROP_BASKETBALL
 
 /obj/item/reagent_containers/food/snacks/snackplanet/virgoprime
 	name = "Virgo Prime"
@@ -389,7 +388,7 @@ EXTEND_INTERACTIONS(/obj/structure/smoleruins, 	INTERACT_HAND_UNGATED_AS(I_DISAR
 	trash = /obj/item/trash/candychunk
 	nutriment_amt = 2
 	nutriment_desc = list("salty" = 2)
-	drop_sound = 'sound/items/drop/basketball.ogg'
+	drop_sound = SFX_ITEMS_DROP_BASKETBALL
 
 /obj/item/storage/bagoplanets
 	name = "bag o' planets"
@@ -398,12 +397,11 @@ EXTEND_INTERACTIONS(/obj/structure/smoleruins, 	INTERACT_HAND_UNGATED_AS(I_DISAR
 	icon_state = "sp_storage"
 	w_class = ITEMSIZE_LARGE
 	max_storage_space = ITEMSIZE_COST_SMALL * 7 // most code copied from toolbox
-	drop_sound = 'sound/items/drop/food.ogg'
-	pickup_sound = 'sound/items/pickup/food.ogg'
+	drop_sound = SFX_ITEMS_DROP_FOOD
+	pickup_sound = SFX_ITEMS_PICKUP_FOOD
 	starts_with = list(/obj/item/reagent_containers/food/snacks/snackplanet/phoron,
 	/obj/item/reagent_containers/food/snacks/snackplanet/virgo3b,/obj/item/reagent_containers/food/snacks/snackplanet/moon,
 	/obj/item/reagent_containers/food/snacks/snackplanet/virgoprime
 	)
 
-/obj/item/storage/bagoplanets/hold_constraint()
-	return list(HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/bagoplanets, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))

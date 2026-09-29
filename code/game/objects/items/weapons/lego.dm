@@ -18,13 +18,11 @@
 	if(isliving(AM))
 		var/mob/living/L = AM
 		if(L.m_intent == I_RUN)
-			L.visible_message(
-				span_danger("[L] steps on \the [src]."),
-				span_danger("You step on \the [src], you poor bastard!"),
-				span_hear(span_bold("You hear the sound of immeasurable suffering!"))
-				)
+			act_message(L, src, MSG_SELF(span_danger("You step on %T%, you poor bastard!")), \
+				MSG_OTHERS(span_danger("%U% steps on %T%.")), \
+				MSG_BLIND(span_hear(span_bold("You hear the sound of immeasurable suffering!"))))
 			L.injure(INJURY_PAIN, 100, source = src)
-			playsound(src, 'sound/misc/legodeath.ogg', 50, 1)
+			play_sfx(src, SFX_MISC_LEGODEATH)
 			qdel(src)
 	..()
 
@@ -48,12 +46,10 @@
 	if(isliving(AM))
 		var/mob/living/L = AM
 		if(L.m_intent == I_RUN)
-			L.visible_message(
-				span_danger("[L] steps on \the [src]."),
-				span_danger("You step on \the [src], you poor bastard!"),
-				span_hear(span_bold("You hear the sound of immeasurable suffering!"))
-				)
+			act_message(L, src, MSG_SELF(span_danger("You step on %T%, you poor bastard!")), \
+				MSG_OTHERS(span_danger("%U% steps on %T%.")), \
+				MSG_BLIND(span_hear(span_bold("You hear the sound of immeasurable suffering!"))))
 			L.gib()
-			playsound(src, 'sound/misc/legodeath.ogg', 50, 1)
+			play_sfx(src, SFX_MISC_LEGODEATH)
 			qdel(src)
 	..()

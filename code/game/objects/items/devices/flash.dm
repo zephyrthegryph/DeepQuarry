@@ -42,8 +42,8 @@
 
 	var/cell_type = /obj/item/cell/device
 
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 
 DECLARE_DEFAULT_CHILD(/obj/item/flash, "power_supply", "cell_type")
@@ -51,7 +51,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/flash, "power_supply", "cell_type")
 /obj/item/flash/screwdriver_act(mob/user, obj/item/tool)
 	if(!broken)
 		return ITEM_INTERACT_SKIP_TO_ATTACK
-	user.visible_message(span_infoplain(span_bold("\The [user]") + " starts trying to repair \the [src]'s bulb."))
+	act_message(user, src, others = span_infoplain(span_bold("%U%") + " starts trying to repair %T%'s bulb."))
 	use_tool(user, tool, src, delay = 40 SECONDS + rand(0, 20 SECONDS), quality = TOOL_SCREWDRIVER, volume = 0, receiver = src, job_type = /datum/om/task/timed/tool_job/flash_repair)
 	return ITEM_INTERACT_SUCCESS
 
@@ -59,13 +59,13 @@ DECLARE_DEFAULT_CHILD(/obj/item/flash, "power_supply", "cell_type")
 	if(!(can_repair))
 		return
 	if(prob(30))
-		user.visible_message(span_notice("\The [user] successfully repairs \the [src]!"))
+		act_message(user, src, others = span_notice("%U% successfully repairs %T%!"))
 		broken = FALSE
 		update_icon()
 	playsound(src, tool.usesound, 50, 1)
 
 /obj/item/flash/proc/screwdriver_act_tool_failed(mob/user, obj/item/tool)
-	user.visible_message(span_infoplain(span_bold("\The [user]") + " fails to repair \the [src]."))
+	act_message(user, src, others = span_infoplain(span_bold("%U%") + " fails to repair %T%."))
 
 /obj/item/flash/update_icon()
 	var/obj/item/cell/battery = power_supply
@@ -156,7 +156,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/flash, "power_supply", "cell_type")
 		if(user)
 			update_icon()
 			to_chat(user, span_warning(span_italics("click")))
-			playsound(src, 'sound/weapons/empty.ogg', 80, 1)
+			play_sfx(src, SFX_WEAPONS_EMPTY, 1.6)
 		return FALSE
 	else if(battery && battery.checked_use(charge_cost + (round(charge_cost / 4) * max(0, times_used - max_flashes)))) // Using over your maximum flashes starts taking more charge per added flash.
 		times_used++
@@ -184,7 +184,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/flash, "power_supply", "cell_type")
 	if(!check_capacitor(user))
 		return ITEM_INTERACT_FAILURE
 
-	playsound(src, 'sound/weapons/flash.ogg', 100, 1)
+	play_sfx(src, SFX_WEAPONS_FLASH)
 
 	if(isrobot(user))
 		var/atom/movable/overlay/animation = new(user.loc)
@@ -198,12 +198,12 @@ DECLARE_DEFAULT_CHILD(/obj/item/flash, "power_supply", "cell_type")
 	if(attempt_flash(target))
 		flick("flash2", src)
 		if(issilicon(target))
-			user.visible_message(span_notice("[user] overloads [target]'s sensors with the flash!"))
+			act_message(user, target, others = span_notice("%U% overloads %T%'s sensors with the flash!"))
 		else
-			user.visible_message(span_disarm("[user] blinds [target] with the flash!"))
+			act_message(user, target, others = span_disarm("%U% blinds %T% with the flash!"))
 		return ITEM_INTERACT_SUCCESS
 	//fail message
-	user.visible_message(span_notice("[user] fails to blind [target] with the flash!"))
+	act_message(user, target, others = span_notice("%U% fails to blind %T% with the flash!"))
 	return ITEM_INTERACT_FAILURE
 
 /// Sees if we can flash the target and if so, does the effects of it.
@@ -275,7 +275,7 @@ DECLARE_INTERACTIONS(/obj/item/flash, INTERACT_USE("Flash", PROC_REF(interaction
 	if(!check_capacitor(user))
 		return
 
-	playsound(src, 'sound/weapons/flash.ogg', 100, 1)
+	play_sfx(src, SFX_WEAPONS_FLASH)
 	flick("flash2", src)
 	if(user && isrobot(user))
 		var/atom/movable/overlay/animation = new(user.loc)
@@ -308,7 +308,7 @@ DECLARE_INTERACTIONS(/obj/item/flash, INTERACT_USE("Flash", PROC_REF(interaction
 		if(safety <= 0)
 			C.injure(INJURY_PAIN, halloss_per_flash, BP_HEAD, src)
 			C.flash_eyes()
-			C.visible_message(span_disarm("[C] is blinded by the flash!"), span_danger("You're blinded by the flash!"), span_warning("You hear the sound of a flash!"))
+			act_message(C, null, MSG_SELF(span_danger("You're blinded by the flash!")), MSG_OTHERS(span_disarm("%U% is blinded by the flash!")), MSG_BLIND(span_warning("You hear the sound of a flash!")))
 	..()
 
 /obj/item/flash/synthetic

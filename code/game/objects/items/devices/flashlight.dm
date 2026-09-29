@@ -36,8 +36,8 @@ MATERIAL_MIX(/obj/item/flashlight, list(MAT_STEEL = 50,MAT_GLASS = 20))
 	var/power_use = 1
 	var/flickering = FALSE
 	var/single_use = FALSE
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 	///Var for attack_self chain
 	var/special_handling = FALSE
@@ -58,7 +58,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/flashlight, "cell", "cell_type") // unpowered su
 	if(power_usage)
 		if(cell.use(power_usage) != power_usage) // we weren't able to use our full power_usage amount!
 			visible_message(span_warning("\The [src] flickers before going dull."))
-			playsound(src, 'sound/effects/sparks3.ogg', 10, 1, -3) // Small cue that your light went dull in your pocket. //
+			play_sfx(src, SFX_EFFECTS_SPARKS3) // Small cue that your light went dull in your pocket. //
 			on = 0
 			update_brightness()
 			return PROCESS_KILL
@@ -112,7 +112,7 @@ DECLARE_INTERACTIONS(/obj/item/flashlight, \
 		om_task_periodic(src, PERIODIC_SLOW)
 	else if(power_use)
 		om_task_periodic_stop(src)
-	playsound(src, 'sound/weapons/empty.ogg', 15, 1, -3)
+	play_sfx(src, SFX_WEAPONS_EMPTY, 0.3, extrarange = -3)
 	update_brightness()
 	user.update_mob_action_buttons()
 	return CAN_USE
@@ -135,14 +135,14 @@ DECLARE_INTERACTIONS(/obj/item/flashlight, \
 			if(H.species.vision_organ)
 				vision = H.organ_in(H.species.vision_organ)
 			if(!vision)
-				user.visible_message(span_infoplain(span_bold("\The [user]") + " directs [src] at [M]'s face."), \
-										span_notice("You direct [src] at [M]'s face."))
+				act_message(user, src, MSG_SELF(span_notice("You direct %T% at [M]'s face.")), \
+					MSG_OTHERS(span_infoplain(span_bold("%U%") + " directs %T% at [M]'s face.")))
 				to_chat(user, span_warning("You can't find any [H.species.vision_organ ? H.species.vision_organ : "eyes"] on [H]!"))
 				user.setClickCooldown(user.get_attack_speed(src))
 				return ITEM_INTERACT_FAILURE
 
-			user.visible_message(span_infoplain(span_bold("\The [user]") + " directs [src] to [M]'s eyes."), \
-									span_notice("You direct [src] to [M]'s eyes."))
+			act_message(user, src, MSG_SELF(span_notice("You direct %T% to [M]'s eyes.")), \
+				MSG_OTHERS(span_infoplain(span_bold("%U%") + " directs %T% to [M]'s eyes.")))
 			if(H != user)	//can't look into your own eyes buster
 				if(M.stat == DEAD || M.blinded)	//mob is dead or fully blind
 					to_chat(user, span_warning("\The [M]'s pupils do not react to the light!"))
@@ -177,7 +177,7 @@ DECLARE_INTERACTIONS(/obj/item/flashlight, \
 		user.put_in_hands(cell)
 		own_take(src, "cell")
 		to_chat(user, span_notice("You remove the cell from the [src]."))
-		playsound(src, 'sound/machines/button.ogg', 30, 1, 0)
+		play_sfx(src, SFX_MACHINES_BUTTON)
 		on = 0
 		update_brightness()
 		return TRUE
@@ -223,7 +223,7 @@ DECLARE_INTERACTIONS(/obj/item/flashlight, \
 				W.forceMove(src)
 				own_set(src, "cell", W)
 				to_chat(user, span_notice("You install a cell in \the [src]."))
-				playsound(src, 'sound/machines/button.ogg', 30, 1, 0)
+				play_sfx(src, SFX_MACHINES_BUTTON)
 				update_brightness()
 			else
 				to_chat(user, span_notice("\The [src] already has a cell."))
@@ -272,7 +272,7 @@ DECLARE_INTERACTIONS(/obj/item/flashlight, \
 	on = !on
 	update_brightness()
 	if(!on) // Only play when the light turns off.
-		playsound(src, 'sound/effects/light_flicker.ogg', 50, 1)
+		play_sfx(src, SFX_EFFECTS_LIGHT_FLICKER)
 	om_after(src, rand(5,15), PROC_REF(do_flicker), amount, flicker_color, original_color, original_on, OL, ++ticker)
 
 /obj/item/flashlight/proc/finish_flicker(original_color, original_on, datum/overlay_lighting/OL)
@@ -287,8 +287,8 @@ DECLARE_INTERACTIONS(/obj/item/flashlight, \
 	desc = "A pen-sized light, used by medical staff."
 	icon_state = "penlight"
 	item_state = "pen"
-	drop_sound = 'sound/items/drop/accessory.ogg'
-	pickup_sound = 'sound/items/pickup/accessory.ogg'
+	drop_sound = SFX_ITEMS_DROP_ACCESSORY
+	pickup_sound = SFX_ITEMS_PICKUP_ACCESSORY
 	slot_flags = SLOT_EARS
 	light_range = 2
 	w_class = ITEMSIZE_TINY
@@ -335,7 +335,7 @@ MATERIAL_MIX(/obj/item/flashlight/maglight, list(MAT_STEEL = 200,MAT_GLASS = 50)
 	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_SMALL
 	attack_verb = list ("smacked", "thwacked", "thunked")
-	hitsound = "swing_hit"
+	hitsound = SFX_SWING_HIT
 
 /obj/item/flashlight/drone
 	name = "low-power flashlight"
@@ -405,8 +405,8 @@ MATERIAL_MIX(/obj/item/flashlight/maglight, list(MAT_STEEL = 200,MAT_GLASS = 50)
 	var/produce_heat = 1500
 	power_use = 0
 	cell_type = null
-	drop_sound = 'sound/items/drop/gloves.ogg'
-	pickup_sound = 'sound/items/pickup/gloves.ogg'
+	drop_sound = SFX_ITEMS_DROP_GLOVES
+	pickup_sound = SFX_ITEMS_PICKUP_GLOVES
 	light_system = MOVABLE_LIGHT
 	single_use = TRUE
 
@@ -441,7 +441,7 @@ MATERIAL_MIX(/obj/item/flashlight/maglight, list(MAT_STEEL = 200,MAT_GLASS = 50)
 		return
 	// All good, turn it on.
 	if(. == CAN_USE)
-		user.visible_message(span_notice("[user] activates the flare."), span_notice("You pull the cord on the flare, activating it!"))
+		act_message(user, null, MSG_SELF(span_notice("You pull the cord on the flare, activating it!")), MSG_OTHERS(span_notice("%U% activates the flare.")))
 		force = on_damage
 		injury_kind = INJURY_BURN
 		om_task_periodic(src, PERIODIC_SLOW)
@@ -498,7 +498,7 @@ MATERIAL_MIX(/obj/item/flashlight/maglight, list(MAT_STEEL = 200,MAT_GLASS = 50)
 		return
 
 	if(. == CAN_USE)
-		user.visible_message(span_notice("[user] cracks and shakes \the [name]."), span_notice("You crack and shake \the [src], turning it on!"))
+		act_message(user, src, MSG_SELF(span_notice("You crack and shake %T%, turning it on!")), MSG_OTHERS(span_notice("%U% cracks and shakes \the [name].")))
 		om_task_periodic(src, PERIODIC_SLOW)
 
 /obj/item/flashlight/glowstick/red

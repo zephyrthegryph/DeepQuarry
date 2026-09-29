@@ -4,7 +4,7 @@
 	icon = 'icons/obj/items.dmi'
 	icon_state = "fire_extinguisher0"
 	item_state = "fire_extinguisher"
-	hitsound = 'sound/weapons/smash.ogg'
+	hitsound = SFX_WEAPONS_SMASH
 	throwforce = 10
 	w_class = ITEMSIZE_NORMAL
 	throw_speed = 2
@@ -12,8 +12,8 @@
 	force = 10
 	MATERIAL_BULK(MAT_STEEL, 90)
 	attack_verb = list("slammed", "whacked", "bashed", "thunked", "battered", "bludgeoned", "thrashed")
-	drop_sound = 'sound/items/drop/gascan.ogg'
-	pickup_sound = 'sound/items/pickup/gascan.ogg'
+	drop_sound = SFX_ITEMS_DROP_GASCAN
+	pickup_sound = SFX_ITEMS_PICKUP_GASCAN
 
 	var/spray_particles = 3
 	var/spray_amount = 10	//units of liquid per particle
@@ -80,7 +80,7 @@ DECLARE_INTERACTIONS(/obj/item/extinguisher, INTERACT_USE(null, PROC_REF(interac
 	if(O.anchored) return
 
 	// Six pushes slowing down (each sets a chair's propelled countdown), then three more.
-	var/list/move_speed = list(1, 1, 1, 2, 2, 3, 3, 3, 3)
+	var/static/list/move_speed = list(1, 1, 1, 2, 2, 3, 3, 3, 3)
 	var/delay = 0
 	for(var/i in 1 to 9)
 		om_after(O, delay, TYPE_PROC_REF(/obj, extinguisher_propel_step), user, movementdirection, i <= 6 ? 6 - i : null)
@@ -100,7 +100,7 @@ DECLARE_INTERACTIONS(/obj/item/extinguisher, INTERACT_USE(null, PROC_REF(interac
 		var/obj/o = target
 		var/amount = o.reagents.trans_to_obj(src, 50)
 		to_chat(user, span_notice("You fill [src] with [amount] units of the contents of [target]."))
-		playsound(src, 'sound/effects/refill.ogg', 50, 1, -6)
+		play_sfx(src, SFX_EFFECTS_REFILL)
 		return
 
 	if (!safety)
@@ -113,7 +113,7 @@ DECLARE_INTERACTIONS(/obj/item/extinguisher, INTERACT_USE(null, PROC_REF(interac
 
 		COOLDOWN_START(src, use_cooldown, 20)
 
-		playsound(src, 'sound/effects/extinguish.ogg', 75, 1, -3)
+		play_sfx(src, SFX_EFFECTS_EXTINGUISH)
 
 		var/direction = get_dir(src,target)
 

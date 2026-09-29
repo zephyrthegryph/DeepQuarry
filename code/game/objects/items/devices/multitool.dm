@@ -15,8 +15,8 @@ MATERIAL_MIX(/obj/item/multitool, list(MAT_STEEL = 50,MAT_GLASS = 20))
 	throwforce = 5.0
 	throw_range = 15
 	throw_speed = 3
-	drop_sound = 'sound/items/drop/multitool.ogg'
-	pickup_sound = 'sound/items/pickup/multitool.ogg'
+	drop_sound = SFX_ITEMS_DROP_MULTITOOL
+	pickup_sound = SFX_ITEMS_PICKUP_MULTITOOL
 
 
 	var/mode_index = 1
@@ -118,8 +118,8 @@ DECLARE_INTERACTIONS(/obj/item/multitool, INTERACT_USE(null, PROC_REF(interactio
 	var/obj/item/organ/external/E = H.get_organ(target_zone)
 	if(!E || !(H.body.biology_of(E) & treatment_tag_biology(TREAT_CALIBRATION)))
 		return ..()
-	user.visible_message(span_notice("[user] plugs \the [src] into a diagnostic port on [H]'s [E.name] and starts recalibrating."), \
-		span_notice("You start recalibrating [H]'s [E.name]."))
+	act_message(user, src, MSG_SELF(span_notice("You start recalibrating [H]'s [E.name].")), \
+		MSG_OTHERS(span_notice("%U% plugs %T% into a diagnostic port on [H]'s [E.name] and starts recalibrating.")))
 	om_task_start(/datum/om/task/timed/multitool_attack, user, H, receiver = src, E = E)
 	return TRUE
 

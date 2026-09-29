@@ -29,20 +29,17 @@ DECLARE_INTERACTIONS(/obj/structure/gootrap, INTERACT_HAND(null, PROC_REF(intera
 /obj/structure/gootrap/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(has_buckled_mobs() && can_use(user))
 		var/victim = english_list(src?.buckled_mob_list())
-		user.visible_message(
-			span_notice("[user] begins freeing [victim] from \the [src]."),
-			span_notice("You carefully begin to free [victim] from \the [src]."),
-			)
+		act_message(user, victim, MSG_SELF(span_notice("You carefully begin to free %T% from \the [src].")), MSG_OTHERS(span_notice("%U% begins freeing %T% from \the [src].")))
 		om_task_timed(user, 5, target = src, receiver = src, on_done = PROC_REF(attack_hand_gootrap_done), done_args = list(user, victim))
 	else
 		return FALSE
 	return TRUE
 
 /obj/structure/gootrap/proc/attack_hand_gootrap_done(mob/user, victim)
-	user.visible_message(span_notice("[victim] has been freed from \the [src] by [user]."))
+	act_message(victim, user, null, MSG_OTHERS(span_notice("%U% has been freed from \the [src] by %T%.")))
 	for(var/A in src?.buckled_mob_list())
 		unbuckle_mob(A)
-	anchored = 0
+	set_anchored(0)
 
 /obj/structure/gootrap/proc/attack_mob(mob/living/L)
 	//trap the victim in place
@@ -65,14 +62,10 @@ DECLARE_INTERACTIONS(/obj/structure/gootrap, INTERACT_HAND(null, PROC_REF(intera
 	if(deployed && isliving(AM))
 		var/mob/living/L = AM
 		if(L.m_intent == I_RUN)
-			L.visible_message(
-				span_danger("[L] steps on \the [src]."),
-				span_danger("You step on \the [src]!"),
-				span_hear(span_bold("You hear a gooey schlorp as the goo ensnares your leg!"))
-				)
+			act_message(L, src, MSG_SELF(span_danger("You step on %T%!")), MSG_OTHERS(span_danger("%U% steps on %T%.")), MSG_BLIND(span_hear(span_bold("You hear a gooey schlorp as the goo ensnares your leg!"))))
 			attack_mob(L)
 			if(!has_buckled_mobs())
-				anchored = 0
+				set_anchored(0)
 			deployed = 0
 			message_admins("[key_name(usr)] has stepped in the goo trap.")
 	..()

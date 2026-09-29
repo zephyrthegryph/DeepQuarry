@@ -50,8 +50,8 @@ DECLARE_INTERACTIONS(/obj/item/bodybag, INTERACT_SELF("Unfold", PROC_REF(bodybag
 	desc = "A plastic bag designed for the storage and transportation of cadavers."
 	icon = 'icons/obj/closets/bodybag.dmi'
 	closet_appearance = null
-	open_sound = 'sound/items/zip.ogg'
-	close_sound = 'sound/items/zip.ogg'
+	open_sound = SFX_ITEMS_ZIP
+	close_sound = SFX_ITEMS_ZIP
 	var/item_path = /obj/item/bodybag
 	density = FALSE
 	storage_capacity = (MOB_MEDIUM * 2) - 1
@@ -115,7 +115,7 @@ EXTEND_INTERACTIONS(/obj/structure/closet/body_bag, INTERACT_ITEM(null, PROC_REF
 
 /obj/structure/closet/body_bag/close()
 	if(..())
-		density = FALSE
+		set_density(FALSE)
 		return 1
 	return 0
 
@@ -125,7 +125,7 @@ EXTEND_INTERACTIONS(/obj/structure/closet/body_bag, INTERACT_ITEM(null, PROC_REF
 		if(!ishuman(usr))	return 0
 		if(opened)	return 0
 		if(contents_count(src) || has_latent())	return 0 // ALLOW(latent): latent entries checked
-		visible_message("[usr] folds up the [src.name]")
+		act_message(usr, src, others = "%U% folds up %T%")
 		var/folded = new item_path(get_turf(src))
 		expire(0)
 		return folded
@@ -268,7 +268,7 @@ EXTEND_INTERACTIONS(/obj/structure/closet/body_bag/cryobag, \
 		. += span_info("You peer into \the [src].")
 		if(syringe)
 			. += span_info("It has a syringe added to it.")
-		for(var/mob/living/L in contents) // ALLOW(latent): mobs are never latent
+		FOR_REAL_CONTENTS(var/mob/living/L, src)
 			. += L.examine(user)
 
 /// Old attackby: while closed, scan the occupant or load an injector.

@@ -723,17 +723,49 @@ fn take_wakes() -> Vec<Wake> {
         })
         .collect();
     // Turf cells change on the worker: refresh their mirrors from DM's view.
-    let turfs: Vec<u32> = with_mixes(|m| {
-        m.watched
-            .keys()
-            .copied()
-            .filter(|&h| h >= TURF_BASE)
-            .collect()
-    });
-    let fresh: Vec<(u32, GasCell)> = turfs
-        .into_iter()
-        .filter_map(|h| Some((h, cell_of_mixture(&load(MixRef::from_id(h)?)?))))
-        .collect();
+    // Only when that view changed: the turf field pins a new frame about once
+    // a second while this drain runs every tick (twice: reactor wakes and
+    // dependency observations), and re-reading every watched turf cell each
+    // time cost most of the OM world step on Southern Cross. Newly watched
+    // cells are primed at watch time (`watch_mirrored`), so an unchanged
+    // view leaves every mirror current.
+    let started = std::time::Instant::now();
+    let signature = turf_view_signature();
+    let changed = signature.is_none() || LAST_TURF_SIGNATURE.get() != signature;
+    let mut fresh: Vec<(u32, GasCell)> = Vec::new();
+    if changed {
+        let turfs: Vec<u32> = with_mixes(|m| {
+            m.watched
+                .keys()
+                .copied()
+                .filter(|&h| h >= TURF_BASE)
+                .collect()
+        });
+        fresh = turfs
+            .into_iter()
+            .filter_map(|h| Some((h, cell_of_mixture(&load(MixRef::from_id(h)?)?))))
+            .collect();
+        LAST_TURF_SIGNATURE.set(signature);
+    }
+    {
+        let metrics = crate::metrics::registry();
+        #[allow(clippy::cast_precision_loss)]
+        {
+            metrics
+                .gauge("gas_watch.turf_refresh_cells")
+                .set(fresh.len() as f64);
+            metrics
+                .gauge("gas_watch.turf_refresh_us")
+                .set(started.elapsed().as_secs_f64() * 1e6);
+        }
+        metrics
+            .counter(if changed {
+                "gas_watch.turf_refreshes"
+            } else {
+                "gas_watch.turf_refresh_skips"
+            })
+            .inc();
+    }
     let deps = with_mixes(|m| {
         for (h, c) in fresh {
             m.probes.set(h, c);
@@ -747,6 +779,27 @@ fn take_wakes() -> Vec<Wake> {
         out.append(&mut h.2);
     });
     out
+}
+
+thread_local! {
+    /// [`turf_view_signature`] as of the last turf mirror refresh.
+    static LAST_TURF_SIGNATURE: std::cell::Cell<Option<TurfViewSignature>> = const { std::cell::Cell::new(None) };
+}
+
+type TurfViewSignature = ((usize, u64, u64, u64), (usize, u64, u64, u64));
+
+/// What DM reads from the turf gas field (cells and geometry) changes only
+/// when this does (`MainPort::read_signature`). `None` before the field exists.
+fn turf_view_signature() -> Option<TurfViewSignature> {
+    let key = super::turf_key().ok()?;
+    with_world(|w| {
+        let sim = w.sim();
+        Ok((
+            sim.port_ref(key.cells).read_signature(),
+            sim.port_ref(key.geometry).read_signature(),
+        ))
+    })
+    .ok()
 }
 
 thread_local! {

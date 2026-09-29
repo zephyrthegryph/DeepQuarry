@@ -16,8 +16,8 @@
 	var/range = 3
 	var/on = 0
 	var/step_alpha = 50
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 DECLARE_INTERACTIONS(/obj/item/uv_light, INTERACT_USE(null, PROC_REF(interaction_self)))
 

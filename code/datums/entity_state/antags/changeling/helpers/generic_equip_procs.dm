@@ -45,7 +45,7 @@
 	equip_to_slot_or_del(B, SLOT_ID_SHOES)
 
 	changeling.chem_charges -= chem_cost
-	playsound(src, 'sound/effects/blobattack.ogg', 30, 1)
+	play_sfx(src, SFX_EFFECTS_BLOBATTACK)
 	M.update_inv_wear_suit()
 	M.update_inv_head()
 	M.update_hair()
@@ -119,7 +119,7 @@
 				success = 1
 
 		if(success)
-			playsound(src, 'sound/effects/splat.ogg', 30, 1)
+			play_sfx(src, SFX_EFFECTS_SPLAT, 0.6)
 			visible_message(span_warning("[src] pulls on their clothes, peeling it off along with parts of their skin attached!"),
 			span_notice("We remove and deform our equipment."))
 		changeling.armor_deployed = 0
@@ -190,5 +190,5 @@ GLOBAL_LIST_INIT(changeling_grown_pieces, list(
 
 	changeling.chem_charges -= cost
 	if(make_sound)
-		playsound(src, 'sound/effects/blobattack.ogg', 30, 1)
+		play_sfx(src, SFX_EFFECTS_BLOBATTACK)
 	return 1

@@ -6,7 +6,7 @@
 	energy_drain = 30
 	range = MECH_MELEE
 	equip_type = EQUIP_UTILITY
-	ready_sound = 'sound/effects/spray.ogg'
+	ready_sound = SFX_EFFECTS_SPRAY
 	required_type = list(/obj/mecha/working/ripley)
 
 	tooltype = /obj/item/inflatable_dispenser/robot
@@ -16,11 +16,11 @@
 	. = ..()
 	rel_set(src, "my_deployer", my_tool)
 
-/obj/item/mecha_parts/mecha_equipment/tool/powertool/inflatables/Topic(href, href_list)
-	..()
-	if(href_list["toggle_deployable_mode"])
-		my_deployer().attack_self()
-		update_chassis_page()
+TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/powertool/inflatables, "toggle_deployable_mode", PROC_REF(topic_toggle_deployable_mode))
+
+/obj/item/mecha_parts/mecha_equipment/tool/powertool/inflatables/proc/topic_toggle_deployable_mode(mob/user, list/args)
+	my_deployer().attack_self()
+	update_chassis_page()
 	return
 
 /obj/item/mecha_parts/mecha_equipment/tool/powertool/inflatables/get_equip_info()

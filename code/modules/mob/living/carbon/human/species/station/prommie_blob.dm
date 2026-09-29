@@ -3,9 +3,7 @@
 
 /datum/forms/promethean
 
-/datum/forms/promethean/get_form_types()
-	var/static/list/types = list(/datum/form/human, /datum/form/promethean_blob)
-	return types
+TYPE_TABLE(/datum/forms/promethean, get_form_types, list(/datum/form/human, /datum/form/promethean_blob))
 
 /datum/form/promethean_blob
 	name = "promethean blob"
@@ -15,19 +13,17 @@
 	draws_body = FALSE
 	factors = alist(BF_INCOMING_PHYSICAL = 0.75, BF_INCOMING_THERMAL = 2)
 	enter_message = "squishes into their true form!"
-	enter_sound = 'sound/effects/slime_squish.ogg'
+	enter_sound = SFX_EFFECTS_SLIME_SQUISH
 	/// Spread out into an adult-sized puddle.
 	var/is_wide = FALSE
 	/// Gemstone shine overlay.
 	var/shiny = FALSE
 
-/datum/form/promethean_blob/get_form_verbs()
-	var/static/list/form_verbs = list(
-		/mob/living/carbon/human/proc/prommie_toggle_expand,
-		/mob/living/carbon/human/proc/prommie_toggle_shine,
-		/mob/living/carbon/human/proc/prommie_select_colour,
-	)
-	return form_verbs
+TYPE_TABLE(/datum/form/promethean_blob, get_form_verbs, list( \
+		/mob/living/carbon/human/proc/prommie_toggle_expand, \
+		/mob/living/carbon/human/proc/prommie_toggle_shine, \
+		/mob/living/carbon/human/proc/prommie_select_colour, \
+	))
 
 /datum/form/promethean_blob/on_enter(datum/forms/F, mob/living/carbon/human/H)
 	release_everything(H)
@@ -36,7 +32,7 @@
 /datum/form/promethean_blob/on_exit(datum/forms/F, mob/living/carbon/human/H)
 	..()
 	H.visible_message(span_infoplain(span_bold("[H.name]") + " pulls together, forming a humanoid shape!"))
-	playsound(H, 'sound/effects/slime_squish.ogg', 15)
+	play_sfx(H, SFX_EFFECTS_SLIME_SQUISH, 0.3, vary = FALSE)
 
 /datum/form/promethean_blob/build_overlays(datum/forms/F, mob/living/carbon/human/H)
 	var/slime_icon = 'icons/mob/slime2.dmi'

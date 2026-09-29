@@ -67,10 +67,7 @@ EXTEND_INTERACTIONS(/obj/item/paper/talisman, INTERACT_USE_AS(I_HURT, "Crumple",
 		qdel(src)
 		return
 
-	// Talisman rune picker is just a labelled list-of-actions,
-	// which is exactly what tgui_input_list is for. Routes the user's
-	// pick straight to Topic(rune=<choice>) so the existing handler
-	// runs unchanged.
+	// Talisman rune picker is just a labelled list-of-actions; the pick goes to imbue_rune().
 	var/static/list/rune_options = list(
 		"N'ath reth sh'yro eth d'raggathnor! — summon a new arcane tome" = "newtome",
 		"Sas'so c'arta forbici! — move to a rune with the same last word" = "teleport",
@@ -92,44 +89,33 @@ EXTEND_INTERACTIONS(/obj/item/paper/talisman, INTERACT_USE_AS(I_HURT, "Crumple",
 /obj/item/paper/talisman/proc/talisman_chant_chosen(datum/om/prompt/choice/carried_item/ask)
 	var/rune = ask.choices[ask.choice]
 	if(rune && uses > 0)
-		Topic("rune=[rune]", list("rune" = rune))
+		imbue_rune(ask.answerer, rune)
 
 
-/obj/item/paper/talisman/Topic(href, href_list)
-	if(!src)	return
-	if (usr.stat || usr.restrained() || !in_range(src, usr))	return
-
-	if (href_list["rune"])
-		switch(href_list["rune"])
-			if("newtome")
-				var/obj/item/paper/talisman/T = new /obj/item/paper/talisman(get_turf(usr))
-				T.imbue = "newtome"
-			if("teleport")
-				var/obj/item/paper/talisman/T = new /obj/item/paper/talisman(get_turf(usr))
-				T.imbue = "[pick("ire", "ego", "nahlizet", "certum", "veri", "jatkaa", "balaq", "mgar", "karazet", "geeri", "orkan", "allaq")]"
-				T.info = "[T.imbue]"
-			if("emp")
-				var/obj/item/paper/talisman/T = new /obj/item/paper/talisman(get_turf(usr))
-				T.imbue = "emp"
-			if("conceal")
-				var/obj/item/paper/talisman/T = new /obj/item/paper/talisman(get_turf(usr))
-				T.imbue = "conceal"
-			if("communicate")
-				var/obj/item/paper/talisman/T = new /obj/item/paper/talisman(get_turf(usr))
-				T.imbue = "communicate"
-			if("runestun")
-				var/obj/item/paper/talisman/T = new /obj/item/paper/talisman(get_turf(usr))
-				T.imbue = "runestun"
-			if("armor")
-				var/obj/item/paper/talisman/T = new /obj/item/paper/talisman(get_turf(usr))
-				T.imbue = "armor"
-			if("soulstone")
-				new /obj/item/soulstone(get_turf(usr))
-			if("construct")
-				new /obj/structure/constructshell/cult(get_turf(usr))
-		src.uses--
-		supply()
-	return
+/// Makes the chosen talisman (the user must still hold and be able to use this one).
+/obj/item/paper/talisman/proc/imbue_rune(mob/user, rune)
+	if(!user || user.stat || user.restrained() || !in_range(src, user))
+		return
+	var/turf/T = get_turf(user)
+	switch(rune)
+		if("newtome")
+			var/obj/item/paper/talisman/new_talisman = new /obj/item/paper/talisman(T)
+			new_talisman.imbue = "newtome"
+		if("teleport")
+			var/obj/item/paper/talisman/new_talisman = new /obj/item/paper/talisman(T)
+			new_talisman.imbue = "[pick("ire", "ego", "nahlizet", "certum", "veri", "jatkaa", "balaq", "mgar", "karazet", "geeri", "orkan", "allaq")]"
+			new_talisman.info = "[new_talisman.imbue]"
+		if("emp", "conceal", "communicate", "runestun", "armor")
+			var/obj/item/paper/talisman/new_talisman = new /obj/item/paper/talisman(T)
+			new_talisman.imbue = rune
+		if("soulstone")
+			new /obj/item/soulstone(T)
+		if("construct")
+			new /obj/structure/constructshell/cult(T)
+		else
+			return
+	src.uses--
+	supply()
 
 
 /obj/item/paper/talisman/supply

@@ -252,7 +252,7 @@
 					foundstuff = 1
 					AM.forceMove(src)
 				if(foundstuff)
-					src.visible_message(span_warning("[src] plunges their head into \the [D], greedily sucking up everything inside!"))
+					act_message(src, null, null, MSG_OTHERS(span_warning("%U% plunges their head into \the [D], greedily sucking up everything inside!")))
 				else //Oh, Nothing was inside...
 					to_chat(src, span_infoplain("You poke your head into \the [D], but there doesnt seem to be anything of interest..."))
 				return TRUE
@@ -275,7 +275,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie,
 	if(interaction.stance == I_GRAB && Vac && Vac.loc == src)
 		if(L.zone_sel.selecting == BP_HEAD)
 			if(L.put_in_active_hand(Vac))
-				L.visible_message(span_warning("[L] grabs [src] by the neck, brandishing the thing like a regular vacuum cleaner!"))
+				act_message(L, src, null, MSG_OTHERS(span_warning("%U% grabs %T% by the neck, brandishing the thing like a regular vacuum cleaner!")))
 				L.start_pulling(src)
 				return TRUE
 	return FALSE

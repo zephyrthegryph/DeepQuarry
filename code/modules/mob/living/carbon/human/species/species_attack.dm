@@ -1,7 +1,7 @@
 /datum/unarmed_attack/bite/sharp //eye teeth
 	attack_name = "sharp bite"
 	attack_verb = list("bit", "chomped on")
-	attack_sound = 'sound/weapons/bite.ogg'
+	attack_sound = SFX_WEAPONS_BITE
 	shredding = 0
 	sharp = TRUE
 	edge = TRUE
@@ -21,7 +21,7 @@
 	attack_noun = list("claws")
 	eye_attack_text = "claws"
 	eye_attack_text_victim = "sharp claws"
-	attack_sound = 'sound/weapons/slice.ogg'
+	attack_sound = SFX_WEAPONS_SLICE
 	miss_sound = 'sound/weapons/slashmiss.ogg'
 	sharp = TRUE
 	edge = TRUE
@@ -32,7 +32,7 @@
 	attack_damage = CLAMP(attack_damage, 1, 5)
 
 	if(target == user)
-		user.visible_message(span_danger("[user] [pick(attack_verb)] [user.p_themselves()] in the [affecting.name]!"))
+		act_message(user, null, others = span_danger("%U% [pick(attack_verb)] %THEMSELVES% in the [affecting.name]!"))
 		return 0
 
 	switch(zone)
@@ -40,20 +40,17 @@
 			// ----- HEAD ----- //
 			switch(attack_damage)
 				if(1 to 2)
-					user.visible_message(span_danger("[user] scratched [target] across [target.p_their()] cheek!"))
+					act_message(user, target, others = span_danger("%U% scratched %T% across [target.p_their()] cheek!"))
 				if(3 to 4)
-					user.visible_message(span_danger("[user] [pick(attack_verb)] [target]'s [pick("head", "neck")]!")) //'with spread claws' sounds a little bit odd, just enough that conciseness is better here I think
+					act_message(user, target, others = span_danger("%U% [pick(attack_verb)] %T%'s [pick("head", "neck")]!")) //'with spread claws' sounds a little bit odd, just enough that conciseness is better here I think
 				if(5)
-					user.visible_message(pick(
-						span_danger("[user] rakes [user.p_their()] [pick(attack_noun)] across [target]'s face!"),
-						span_danger("[user] tears [user.p_their()] [pick(attack_noun)] into [target]'s face!"),
-						))
+					act_message(user, target, others = pick( span_danger("%U% rakes %THEIR% [pick(attack_noun)] across %T%'s face!"), span_danger("%U% tears %THEIR% [pick(attack_noun)] into %T%'s face!"), ))
 		else
 			// ----- BODY ----- //
 			switch(attack_damage)
-				if(1 to 2)	user.visible_message(span_danger("[user] scratched [target]'s [affecting.name]!"))
-				if(3 to 4)	user.visible_message(span_danger("[user] [pick(attack_verb)] [pick("", "", "the side of")] [target]'s [affecting.name]!"))
-				if(5)		user.visible_message(span_danger("[user] tears [user.p_their()] [pick(attack_noun)] [pick("deep into", "into", "across")] [target]'s [affecting.name]!"))
+				if(1 to 2)	act_message(user, target, others = span_danger("%U% scratched %T%'s [affecting.name]!"))
+				if(3 to 4)	act_message(user, target, others = span_danger("%U% [pick(attack_verb)] [pick("", "", "the side of")] %T%'s [affecting.name]!"))
+				if(5)		act_message(user, target, others = span_danger("%U% tears %THEIR% [pick(attack_noun)] [pick("deep into", "into", "across")] %T%'s [affecting.name]!"))
 
 /datum/unarmed_attack/claws/strong
 	attack_name = "strong claws"
@@ -65,7 +62,7 @@
 	attack_name = "xenomorph claws"
 	attack_verb = list("slashed", "gouged", "punctured", "hacked", "ripped")
 	attack_noun = list("claws", "tailblade", "talons")
-	attack_sound = 'sound/weapons/alien_claw_flesh.ogg'
+	attack_sound = SFX_WEAPONS_ALIEN_CLAW_FLESH
 	damage = 10
 	shredding = 0
 
@@ -74,7 +71,7 @@
 	attack_damage = CLAMP(attack_damage, 1, 5)
 
 	if(target == user)
-		user.visible_message(span_danger("[user] [pick(attack_verb)] [user.p_themselves()] in the [affecting.name]!"))
+		act_message(user, null, others = span_danger("%U% [pick(attack_verb)] %THEMSELVES% in the [affecting.name]!"))
 		return 0
 
 	switch(zone)
@@ -82,17 +79,17 @@
 			// ----- HEAD ----- //
 			switch(attack_damage)
 				if(1 to 2)
-					user.visible_message(span_danger("[user] rakes [user.p_their()] [pick(attack_noun)] across [target]'s face!"))
+					act_message(user, target, others = span_danger("%U% rakes %THEIR% [pick(attack_noun)] across %T%'s face!"))
 				if(3 to 4)
-					user.visible_message(span_danger("[user] [pick(attack_verb)] [target]'s [pick("head", "neck")]!"))
+					act_message(user, target, others = span_danger("%U% [pick(attack_verb)] %T%'s [pick("head", "neck")]!"))
 				if(5)
-					user.visible_message(span_danger("[user] tears [user.p_their()] [pick(attack_noun)] into [target]'s face!"))
+					act_message(user, target, others = span_danger("%U% tears %THEIR% [pick(attack_noun)] into %T%'s face!"))
 		else
 			// ----- BODY ----- //
 			switch(attack_damage)
-				if(1 to 2)	user.visible_message(span_danger("[user] maims [target]'s [affecting.name]!"))
-				if(3 to 4)	user.visible_message(span_danger("[user] [pick(attack_verb)] [pick("", "", "the side of")] [target]'s [affecting.name]!"))
-				if(5)		user.visible_message(span_danger("[user] impales [user.p_their()] [pick(attack_noun)] deep into [target]'s [affecting.name]!"))
+				if(1 to 2)	act_message(user, target, others = span_danger("%U% maims %T%'s [affecting.name]!"))
+				if(3 to 4)	act_message(user, target, others = span_danger("%U% [pick(attack_verb)] [pick("", "", "the side of")] %T%'s [affecting.name]!"))
+				if(5)		act_message(user, target, others = span_danger("%U% impales %THEIR% [pick(attack_noun)] deep into %T%'s [affecting.name]!"))
 
 /datum/unarmed_attack/claws/strong/xeno/queen
 	attack_name = "enormous xenomorph claws"
@@ -135,14 +132,14 @@
 
 /datum/unarmed_attack/stomp/weak/show_attack(mob/living/carbon/human/user, mob/living/carbon/human/target, zone, attack_damage)
 	var/obj/item/organ/external/affecting = target.get_organ(zone)
-	user.visible_message(span_warning("[user] jumped up and down on \the [target]'s [affecting.name]!"))
+	act_message(user, target, others = span_warning("%U% jumped up and down on %T%'s [affecting.name]!"))
 	playsound(user, attack_sound, 25, 1, -1)
 
 /datum/unarmed_attack/bite/sharp/numbing //Is using this against someone you are truly trying to fight a bad idea? Yes. Yes it is.
 	attack_name = "numbing bite"
 	attack_verb = list("bit")
 	attack_noun = list("fangs")
-	attack_sound = 'sound/weapons/bite.ogg'
+	attack_sound = SFX_WEAPONS_BITE
 	shredding = 0
 	sharp = TRUE
 	edge = TRUE
@@ -152,37 +149,37 @@
 
 	attack_damage = CLAMP(attack_damage, 1, 5)
 	if(target == user)
-		user.visible_message(span_danger("[user] [pick(attack_verb)] \himself in the [affecting.name]!"))
+		act_message(user, null, others = span_danger("%U% [pick(attack_verb)] %THEMSELVES% in the [affecting.name]!"))
 		return 0 //No venom for you.
 	switch(zone)
 		if(BP_HEAD, O_MOUTH, O_EYES)
 			// ----- HEAD ----- //
 			switch(attack_damage)
 				if(1 to 2)
-					user.visible_message(span_danger("[user]'s fangs scrape across [target]'s cheek!"))
+					act_message(user, target, others = span_danger("%U%'s fangs scrape across %T%'s cheek!"))
 					to_chat(target, span_danger("Your face feels tingly!"))
 					target.bloodstr.add_reagent(REAGENT_ID_NUMBENZYME,attack_damage) //Have to add this here, otherwise the swtich fails.
 				if(3 to 4)
-					user.visible_message(span_danger("[user]'s fangs pierce into [target]'s neck at an odd, awkward angle!"))
+					act_message(user, target, others = span_danger("%U%'s fangs pierce into %T%'s neck at an odd, awkward angle!"))
 					to_chat(target, span_danger("Your neck feels like it's on fire before going numb!"))
 					target.bloodstr.add_reagent(REAGENT_ID_NUMBENZYME,attack_damage)
 				if(5)
-					user.visible_message(span_danger("[user] sinks \his [pick(attack_noun)] <b><i>deep</i></b> into [target]'s neck, causing the vein to bulge outwards at some type of chemical is pumped into it!"))
+					act_message(user, target, others = span_danger("%U% sinks %THEIR% [pick(attack_noun)] <b><i>deep</i></b> into %T%'s neck, causing the vein to bulge outwards at some type of chemical is pumped into it!"))
 					to_chat(target, span_danger("Your neck feels like it's going to burst! Moments later, you simply can't feel your neck any longer, the numbness beginning to spread throughout your body!"))
 					target.bloodstr.add_reagent(REAGENT_ID_NUMBENZYME,attack_damage)
 		else
 			// ----- BODY ----- //
 			switch(attack_damage)
 				if(1 to 2)
-					user.visible_message(span_danger("[user]'s fangs scrape across [target]'s [affecting.name]!"))
+					act_message(user, target, others = span_danger("%U%'s fangs scrape across %T%'s [affecting.name]!"))
 					to_chat(target, span_danger("Your [affecting.name] feels tingly!"))
 					target.bloodstr.add_reagent(REAGENT_ID_NUMBENZYME,attack_damage)
 				if(3 to 4)
-					user.visible_message(span_danger("[user]'s fangs pierce [pick("", "", "the side of")] [target]'s [affecting.name]!"))
+					act_message(user, target, others = span_danger("%U%'s fangs pierce [pick("", "", "the side of")] %T%'s [affecting.name]!"))
 					to_chat(target, span_danger("Your [affecting.name] feels like it's on fire before going numb!"))
 					target.bloodstr.add_reagent(REAGENT_ID_NUMBENZYME,attack_damage)
 				if(5)
-					user.visible_message(span_danger("[user]'s fangs sink deep into [target]'s [affecting.name], one of their veins bulging outwards from the sudden fluid pumped into it!"))
+					act_message(user, target, others = span_danger("%U%'s fangs sink deep into %T%'s [affecting.name], one of their veins bulging outwards from the sudden fluid pumped into it!"))
 					to_chat(target, span_danger("Your [affecting.name] feels like it's going to burst! Moments later, you simply can't feel your [affecting.name] any longer, the numbness slowly spreading throughout your body!"))
 					target.bloodstr.add_reagent(REAGENT_ID_NUMBENZYME,attack_damage)
 

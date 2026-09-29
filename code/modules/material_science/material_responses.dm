@@ -37,6 +37,8 @@
 /obj/item/var/datum/material_response/material_response
 /// Pinned in the saved state (code/datums/state/codecs.dm, /datum/state_codec/pinned).
 
+OWN_TIMER(/datum/material_response, scintillation_timer)
+
 /datum/material_response
 	/// The item this state belongs to.
 	var/obj/item/parent
@@ -45,12 +47,11 @@
 	var/medical_form = FALSE
 	var/armor_form = FALSE
 	var/tool_form = FALSE
-	var/last_energy_settlement
+	EXPIRY_DECLARE(last_energy_settlement)
 	var/reference_temperature
 	var/next_piezo_response = 0
 	var/stored_phase_energy = 0
 	var/stored_reactive_energy = 0
-	var/scintillation_timer
 
 REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 
@@ -68,7 +69,7 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 	medical_form = !!_medical_form
 	armor_form = !!_armor_form
 	tool_form = !!_tool_form
-	last_energy_settlement = world.time
+	EXPIRY_STAMP(src, last_energy_settlement, CLOCK_WORLD)
 	reference_temperature = ambient_temperature()
 	stored_reactive_energy = armor_form ? material.reactive_energy_capacity : 0
 	if(material.reagent_porosity > 0 && (medical_form || tool_form))
@@ -183,12 +184,11 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 	if(material.scintillation_efficiency > 0)
 		var/obj/item/item = parent
 		item.set_light(clamp(material.scintillation_efficiency * 5, 0.5, 5), clamp(material.scintillation_efficiency * 3, 0.3, 3), "#88ddff")
-		if(scintillation_timer)
-			om_cancel_timer(src, scintillation_timer)
-		scintillation_timer = om_after(src, 5 SECONDS, PROC_REF(end_scintillation))
+		if(om_timer_slot_pending(src, "scintillation_timer"))
+			om_cancel_timer_slot(src, "scintillation_timer")
+		om_after_slot(src, "scintillation_timer", 5 SECONDS, PROC_REF(end_scintillation))
 
 /datum/material_response/proc/end_scintillation()
-	scintillation_timer = null
 	var/obj/item/item = parent
 	var/datum/material/material = material()
 	if(!istype(item) || !material)

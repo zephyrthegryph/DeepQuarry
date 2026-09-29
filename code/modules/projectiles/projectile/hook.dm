@@ -12,9 +12,9 @@
 	speed = 2
 	armor_penetration = 15
 
-	var/impact_sound = 'sound/effects/uncloak.ogg'
+	var/impact_sound = SFX_EFFECTS_UNCLOAK
 	var/crack_sound = 'sound/effects/teleport.ogg'
-	fire_sound = 'sound/effects/zzzt.ogg'
+	fire_sound = SFX_EFFECTS_ZZZT
 
 	var/target_distance = null	// Shamelessly stolen from arcing projectiles.
 	var/my_tracking_beam = null	// Beam made by the launcher. Tracked here to destroy it in time with the impact.
@@ -93,7 +93,7 @@
 		if(!(H.species.flags & NO_SLIP) && prob(50))
 			var/armor_check = H.armor_against(INJURY_BLUNT, def_zone)
 			H.apply_effect(3, WEAKEN, armor_check)
-			playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
+			play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
 			if(armor_check < 60)
 				visible_message(span_danger("\The [src] has pushed [H]!"))
 			else
@@ -102,14 +102,14 @@
 
 		else
 			if(H.break_all_grabs(firer))
-				playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
+				play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
 				return
 
 			for(var/obj/item/I in holding)
 				if(I)
 					H.drop_from_inventory(I)
 					visible_message(span_danger("\The [src] has disarmed [H]!"))
-					playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
+					play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
 					return
 
 

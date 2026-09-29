@@ -285,5 +285,4 @@
 		return remaining_time_needed
 	return 0
 
-/datum/job/proc/get_request_reasons()
-	return list()
+TYPE_TABLE_DECLARE(/datum/job, get_request_reasons, list())

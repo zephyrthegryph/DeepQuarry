@@ -74,7 +74,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot/platform, \
 		return
 
 	// Boilerplate from drone fabs, unsure if there's a shared proc to use instead.
-	var/deathtime = world.time - user.timeofdeath
+	var/deathtime = ELAPSED(user, timeofdeath, CLOCK_WORLD)
 	var/deathtimeminutes = round(deathtime / (1 MINUTE))
 	var/pluralcheck = ""
 	if(deathtimeminutes == 1)

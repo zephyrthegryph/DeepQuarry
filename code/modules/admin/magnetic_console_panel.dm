@@ -45,7 +45,7 @@
 	. = ..()
 	if(.)
 		return
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return
 	var/mob/user = ui?.user
 	if(!user)
@@ -55,51 +55,51 @@
 
 	switch(action)
 		if("set_frequency")
-			Topic("operation=setfreq", list("operation" = "setfreq"))
+			magnet_operation(user, "setfreq")
 			SStgui.update_uis(src)
 			return TRUE
 		if("set_code")
 			// Legacy panel used the same "setfreq" handler for both.
-			Topic("operation=setfreq", list("operation" = "setfreq"))
+			magnet_operation(user, "setfreq")
 			SStgui.update_uis(src)
 			return TRUE
 		if("probe")
-			Topic("operation=probe", list("operation" = "probe"))
+			magnet_operation(user, "probe")
 			SStgui.update_uis(src)
 			return TRUE
 		if("toggle_power")
-			Topic("radio-op=togglepower", list("radio-op" = "togglepower"))
+			magnet_radio_op(user, "togglepower")
 			SStgui.update_uis(src)
 			return TRUE
 		if("elec_minus")
-			Topic("radio-op=minuselec", list("radio-op" = "minuselec"))
+			magnet_radio_op(user, "minuselec")
 			SStgui.update_uis(src)
 			return TRUE
 		if("elec_plus")
-			Topic("radio-op=pluselec", list("radio-op" = "pluselec"))
+			magnet_radio_op(user, "pluselec")
 			SStgui.update_uis(src)
 			return TRUE
 		if("mag_minus")
-			Topic("radio-op=minusmag", list("radio-op" = "minusmag"))
+			magnet_radio_op(user, "minusmag")
 			SStgui.update_uis(src)
 			return TRUE
 		if("mag_plus")
-			Topic("radio-op=plusmag", list("radio-op" = "plusmag"))
+			magnet_radio_op(user, "plusmag")
 			SStgui.update_uis(src)
 			return TRUE
 		if("speed_minus")
-			Topic("operation=minusspeed", list("operation" = "minusspeed"))
+			magnet_operation(user, "minusspeed")
 			SStgui.update_uis(src)
 			return TRUE
 		if("speed_plus")
-			Topic("operation=plusspeed", list("operation" = "plusspeed"))
+			magnet_operation(user, "plusspeed")
 			SStgui.update_uis(src)
 			return TRUE
 		if("set_path")
-			Topic("operation=setpath", list("operation" = "setpath"))
+			magnet_operation(user, "setpath")
 			SStgui.update_uis(src)
 			return TRUE
 		if("toggle_moving")
-			Topic("operation=togglemoving", list("operation" = "togglemoving"))
+			magnet_operation(user, "togglemoving")
 			SStgui.update_uis(src)
 			return TRUE

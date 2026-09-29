@@ -8,13 +8,11 @@ GLOBAL_LIST_INIT(registries, build_registries())
 /// The lists are the registries' own, so a read costs one lookup.
 GLOBAL_LIST_INIT(registry_members, registry_member_lists())
 /// type -> the registries its instances join (an empty list for most types).
-/// The same list as registries_by_type_table(), which works before GLOB is
+/// The same list as registries_by_type_early, a real global that works before GLOB is
 /// built (datums created while globals initialize join registries too).
-GLOBAL_LIST_INIT(registries_by_type, registries_by_type_table())
-
-/proc/registries_by_type_table()
-	var/static/list/by_type = list()
-	return by_type
+/// Created on first use, whichever global initializes first.
+GLOBAL_REAL_VAR(list/registries_by_type_early)
+GLOBAL_LIST_INIT(registries_by_type, registries_by_type_early || (registries_by_type_early = list()))
 
 /proc/build_registries()
 	// GLOB is still being built while globals initialize, so the shared
@@ -173,7 +171,7 @@ GLOBAL_LIST_INIT(registries_by_type, registries_by_type_table())
 
 /// The registries this datum's type joins, cached per type.
 /datum/proc/type_registries()
-	var/list/by_type = registries_by_type_table()
+	var/list/by_type = registries_by_type_early || (registries_by_type_early = list())
 	var/list/cached = by_type[type]
 	if(cached)
 		return cached
@@ -240,7 +238,7 @@ GLOBAL_LIST_INIT(registries_by_type, registries_by_type_table())
 /proc/dq_lifecycle_leave_registries(datum/D)
 	if(isatom(D))
 		return
-	var/list/registries = registries_by_type_table()[D.type]
+	var/list/registries = registries_by_type_early?[D.type]
 	if(registries && !length(registries))
 		return // cached: this type joins nothing
 	D.leave_registries()

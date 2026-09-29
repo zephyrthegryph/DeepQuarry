@@ -153,7 +153,7 @@ EXTEND_INTERACTIONS(/obj/item/radio/intercom, \
 /obj/item/radio/intercom/wirecutter_act(mob/user, obj/item/tool)
 	if(!wiresexposed)
 		return ITEM_INTERACT_BLOCKING
-	user.visible_message(span_warning("[user] has cut the wires inside \the [src]!"), "You have cut the wires inside \the [src].")
+	act_message(user, src, MSG_SELF("You have cut the wires inside %T%."), MSG_OTHERS(span_warning("%U% has cut the wires inside %T%!")))
 	playsound(src, tool.usesound, 50, TRUE)
 	var/obj/structure/frame/frame = new(loc)
 	var/obj/item/circuitboard/board = circuit
@@ -163,7 +163,7 @@ EXTEND_INTERACTIONS(/obj/item/radio/intercom, \
 	board.forceMove(frame)
 	own_move(board, frame, "circuit") // from the intercom to the frame (CONTAINED there)
 	frame.set_dir(dir)
-	frame.anchored = TRUE
+	frame.set_anchored(TRUE)
 	frame.state = 2
 	frame.update_icon()
 	board.atom_deconstruct(TRUE, src)

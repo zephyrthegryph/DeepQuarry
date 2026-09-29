@@ -609,15 +609,15 @@
 			break
 	TEST_ASSERT(test_turf, "A real beam test requires an in-bounds clear firing lane")
 	var/obj/machinery/target = new(get_step(test_turf, NORTH))
-	target.density = TRUE
+	target.set_density(TRUE)
 	target.max_integrity = 10000
 	target.update_integrity(10000)
 	var/obj/machinery/power/emitter/emitter = new(test_turf)
 	emitter.set_dir(NORTH)
 	var/net = power_test_grid(1000000)
 	power_test_join(net, emitter)
-	emitter.state = 2
-	emitter.active = TRUE
+	emitter.set_state(2)
+	emitter.set_active(TRUE)
 	TEST_ASSERT(abs(emitter.emitter_output_limit() - 1) < 0.001, "Default glass and copper must support the emitter's rated output")
 	emitter.material_last_charge = world.time - 10 SECONDS
 	emitter.charge_emitter()

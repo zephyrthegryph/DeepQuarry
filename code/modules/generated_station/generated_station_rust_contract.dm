@@ -2,23 +2,20 @@
 #define GENERATED_STATION_RUST_MAJOR 1
 #define GENERATED_STATION_RUST_MINOR 0
 
+GLOBAL_LIST_INIT(generated_station_rust_room_role_table, list(
+	"command" = list("reception", "operations", "communications", "meeting", "briefing", "records", "liaison", "archive"),
+	"ai" = list("foyer", "core", "satellite", "support", "robotics", "monitoring", "secure-storage", "server-closet"),
+	"security" = list("reception", "operations", "brig", "armory", "interrogation", "evidence", "locker-room", "checkpoint"),
+	"medical" = list("reception", "treatment", "surgery", "ward", "pharmacy", "recovery", "storage", "exam"),
+	"engineering" = list("foyer", "power", "atmospherics", "workshop", "equipment", "maintenance", "storage", "tool-room"),
+	"logistics" = list("reception", "cargo", "processing", "warehouse", "dispatch", "sorting", "storage", "inventory"),
+	"docking" = list("reception", "control", "berth", "security", "customs", "lounge", "equipment", "supply"),
+))
+GLOBAL_LIST_INIT(generated_station_rust_room_role_table_default, list("reception", "control", "support"))
+
+/// Shared list; never write into it.
 /proc/generated_station_rust_room_roles(department_id)
-	switch(department_id)
-		if("command")
-			return list("reception", "operations", "communications", "meeting", "briefing", "records", "liaison", "archive")
-		if("ai")
-			return list("foyer", "core", "satellite", "support", "robotics", "monitoring", "secure-storage", "server-closet")
-		if("security")
-			return list("reception", "operations", "brig", "armory", "interrogation", "evidence", "locker-room", "checkpoint")
-		if("medical")
-			return list("reception", "treatment", "surgery", "ward", "pharmacy", "recovery", "storage", "exam")
-		if("engineering")
-			return list("foyer", "power", "atmospherics", "workshop", "equipment", "maintenance", "storage", "tool-room")
-		if("logistics")
-			return list("reception", "cargo", "processing", "warehouse", "dispatch", "sorting", "storage", "inventory")
-		if("docking")
-			return list("reception", "control", "berth", "security", "customs", "lounge", "equipment", "supply")
-	return list("reception", "control", "support")
+	return GLOB.generated_station_rust_room_role_table[department_id] || GLOB.generated_station_rust_room_role_table_default
 
 /proc/generated_station_rust_metadata(seed, width, height)
 	var/datum/generated_station_prng/prng = new(seed)
@@ -62,8 +59,7 @@
 /// sprite-accurate previews. Keep this vocabulary in lockstep with
 /// generated_station_rust_fixture_type(); an omitted ID becomes an obvious
 /// preview failure instead of a misleading generic marker.
-/proc/generated_station_rust_fixture_ids()
-	return list(
+GLOBAL_LIST_INIT(generated_station_rust_fixture_ids, list(
 		"operating_table", "anesthetic", "medical_bed", "privacy_screen", "medical_console",
 		"instrument_table", "experiment_table", "workbench", "conference_table", "food_prep",
 		"serving_counter", "loading_table", "reception_desk", "worktable", "table", "side_table",
@@ -83,11 +79,11 @@
 		"server_rack", "server", "coolant_unit", "plant", "display_case", "shelf",
 		"work_chair", "operator_chair", "crew_monitor", "ai_upload", "power_monitor",
 		"atmos_control", "equipment_recharger", "charger_table", "engineering_vendor", "air_canister", "oxygen_canister",
-	)
+))
 
 /proc/generated_station_rust_sprite_previews()
 	var/list/previews = list()
-	for(var/fixture_id in generated_station_rust_fixture_ids())
+	for(var/fixture_id in GLOB.generated_station_rust_fixture_ids)
 		var/atom/movable/preview_atom_type = generated_station_rust_fixture_type(fixture_id)
 		if(!preview_atom_type)
 			continue

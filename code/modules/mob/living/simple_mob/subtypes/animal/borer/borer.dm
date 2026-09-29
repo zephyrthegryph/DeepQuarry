@@ -40,7 +40,7 @@
 	var/docile_counter = 0						// How long we are docile for
 
 	var/has_reproduced = FALSE
-	var/used_dominate							// world.time when the dominate power was last used.
+	EXPIRY_DECLARE(used_dominate) // world.time when the dominate power was last used.
 
 	can_be_drop_prey = FALSE
 	vent_crawl_time = 30 						// faster vent crawler
@@ -418,5 +418,5 @@
 			to_chat(M, "[src.true_name] whispers to [host], \"[message]\"")
 
 /datum/decl/mob_organ_names/borer
-	hit_zones = list("head", "central segment", "tail segment")
+TYPE_TABLE(/datum/decl/mob_organ_names/borer, mob_organ_hit_zones, list("head", "central segment", "tail segment"))
 

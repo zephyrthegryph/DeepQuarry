@@ -17,7 +17,7 @@
 	var/enabled = FALSE
 	var/lethal = FALSE
 	var/lethal_is_configurable = TRUE
-	var/locked = TRUE
+	locked = TRUE
 	var/area/control_area //can be area name, path or nothing.
 
 	var/targetting_is_configurable = TRUE // if false, you cannot change who this turret attacks via its UI
@@ -108,7 +108,7 @@
 	effect = /obj/machinery/turretid/proc/interaction_toggle_lock
 
 /obj/machinery/turretid/proc/interaction_toggle_lock(mob/user, obj/item/W, datum/interaction/interaction)
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		return TRUE
 
 	if(istype(W, /obj/item/card/id)||istype(W, /obj/item/pda))
@@ -116,7 +116,7 @@
 			if(emagged)
 				to_chat(user, span_notice("The turret control is unresponsive."))
 			else
-				locked = !locked
+				set_locked(!locked)
 				to_chat(user, span_notice("You [ locked ? "lock" : "unlock"] the panel."))
 		return TRUE
 	return FALSE
@@ -124,8 +124,8 @@
 /obj/machinery/turretid/emag_act(remaining_charges, mob/user)
 	if(!emagged)
 		to_chat(user, span_danger("You short out the turret controls' access analysis module."))
-		emagged = TRUE
-		locked = FALSE
+		set_emagged(TRUE)
+		set_locked(FALSE)
 		ailock = FALSE
 		return TRUE
 
@@ -223,13 +223,13 @@
 	update_icon()
 
 /obj/machinery/turretid/power_change()
-	..()
+	. = ..()
 	updateTurrets()
 	update_icon()
 
 /obj/machinery/turretid/update_icon()
 	..()
-	if(stat & NOPOWER)
+	if(has_stat(NOPOWER))
 		icon_state = "control_off"
 		set_light(0)
 	else if(enabled)

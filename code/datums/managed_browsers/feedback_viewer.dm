@@ -111,53 +111,69 @@ ADMIN_VERB(view_feedback, R_ADMIN|R_DEBUG|R_EVENT, "View Feedback", "Open the Fe
 	// structured TGUI AdminReport.
 	dq_admin_report_html(my_client().mob, "[author]'s Feedback", dat, src)
 
-/datum/managed_browser/feedback_viewer/Topic(href, href_list[])
-	if(!my_client())
-		return FALSE
+TOPIC_ACTION(/datum/managed_browser/feedback_viewer, "close", PROC_REF(topic_close))
+TOPIC_ACTION(/datum/managed_browser/feedback_viewer, "show_full_feedback", PROC_REF(topic_show_full_feedback), TOPIC_TEXT("feedback_author"), TOPIC_TEXT("feedback_content"))
+TOPIC_ACTION(/datum/managed_browser/feedback_viewer, "filter_id", PROC_REF(topic_filter_id))
+TOPIC_ACTION(/datum/managed_browser/feedback_viewer, "filter_author", PROC_REF(topic_filter_author))
+TOPIC_ACTION(/datum/managed_browser/feedback_viewer, "filter_topic", PROC_REF(topic_filter_topic))
+TOPIC_ACTION(/datum/managed_browser/feedback_viewer, "filter_content", PROC_REF(topic_filter_content))
+TOPIC_ACTION(/datum/managed_browser/feedback_viewer, "filter_datetime", PROC_REF(topic_filter_datetime))
 
-	if(href_list["close"]) // To avoid refreshing.
+// Only the viewer's own client drives it.
+/datum/managed_browser/feedback_viewer/topic_allowed(mob/user, list/href_list)
+	var/client/C = my_client()
+	return C && user?.client == C
+
+/datum/managed_browser/feedback_viewer/proc/topic_close(mob/user, list/args)
+	return TRUE // To avoid refreshing.
+
+/datum/managed_browser/feedback_viewer/proc/topic_show_full_feedback(mob/user, list/args)
+	display_big_feedback(args["feedback_author"], args["feedback_content"])
+	return TRUE
+
+/datum/managed_browser/feedback_viewer/proc/topic_filter_id(mob/user, list/args)
+	var/id_to_search = topic_ask(my_client(), args, "k130", /datum/om/prompt/number, message = "Write feedback ID here.", title = "Filter by ID")
+	if(isnull(id_to_search))
 		return
-
-	if(href_list["show_full_feedback"])
-		display_big_feedback(href_list["feedback_author"], href_list["feedback_content"])
-		return
-
-	if(href_list["filter_id"])
-		var/id_to_search = topic_ask(my_client(), href_list, "k130", /datum/om/prompt/number, message = "Write feedback ID here.", title = "Filter by ID")
-		if(isnull(id_to_search))
-			return
-		if(id_to_search)
-			last_query = feedback_filter(SQLITE_FEEDBACK_COLUMN_ID, id_to_search, TRUE)
-
-	if(href_list["filter_author"])
-		var/author_to_search = topic_ask(my_client(), href_list, "k135", /datum/om/prompt/text, message = "Write desired key or hash here. Partial keys/hashes are allowed.", title = "Filter by Author")
-		if(isnull(author_to_search))
-			return
-		if(author_to_search)
-			last_query = feedback_filter(SQLITE_FEEDBACK_COLUMN_AUTHOR, author_to_search)
-
-	if(href_list["filter_topic"])
-		var/topic_to_search = topic_ask(my_client(), href_list, "k140", /datum/om/prompt/text, message = "Write desired topic here. Partial topics are allowed. \nThe current topics in the config are [english_list(CONFIG_GET(str_list/sqlite_feedback_topics))].", title = "Filter by Topic")
-		if(isnull(topic_to_search))
-			return
-		if(topic_to_search)
-			last_query = feedback_filter(SQLITE_FEEDBACK_COLUMN_TOPIC, topic_to_search)
-
-	if(href_list["filter_content"])
-		var/content_to_search = topic_ask(my_client(), href_list, "k145", /datum/om/prompt/text, message = "Write desired content to find here. Partial matches are allowed.", title = "Filter by Content", multiline = TRUE, max_length = MAX_TGUI_INPUT)
-		if(isnull(content_to_search))
-			return
-		if(content_to_search)
-			last_query = feedback_filter(SQLITE_FEEDBACK_COLUMN_CONTENT, content_to_search)
-
-	if(href_list["filter_datetime"])
-		var/datetime_to_search = topic_ask(my_client(), href_list, "k150", /datum/om/prompt/text, message = "Write desired datetime. Partial matches are allowed.\nFormat is 'YYYY-MM-DD HH:MM:SS'.", title = "Filter by Datetime")
-		if(isnull(datetime_to_search))
-			return
-		if(datetime_to_search)
-			last_query = feedback_filter(SQLITE_FEEDBACK_COLUMN_DATETIME, datetime_to_search)
-
-	// Refresh.
+	if(id_to_search)
+		last_query = feedback_filter(SQLITE_FEEDBACK_COLUMN_ID, id_to_search, TRUE)
 	display()
+	return TRUE
+
+/datum/managed_browser/feedback_viewer/proc/topic_filter_author(mob/user, list/args)
+	var/author_to_search = topic_ask(my_client(), args, "k135", /datum/om/prompt/text, message = "Write desired key or hash here. Partial keys/hashes are allowed.", title = "Filter by Author")
+	if(isnull(author_to_search))
+		return
+	if(author_to_search)
+		last_query = feedback_filter(SQLITE_FEEDBACK_COLUMN_AUTHOR, author_to_search)
+	display()
+	return TRUE
+
+/datum/managed_browser/feedback_viewer/proc/topic_filter_topic(mob/user, list/args)
+	var/topic_to_search = topic_ask(my_client(), args, "k140", /datum/om/prompt/text, message = "Write desired topic here. Partial topics are allowed. \nThe current topics in the config are [english_list(CONFIG_GET(str_list/sqlite_feedback_topics))].", title = "Filter by Topic")
+	if(isnull(topic_to_search))
+		return
+	if(topic_to_search)
+		last_query = feedback_filter(SQLITE_FEEDBACK_COLUMN_TOPIC, topic_to_search)
+	display()
+	return TRUE
+
+/datum/managed_browser/feedback_viewer/proc/topic_filter_content(mob/user, list/args)
+	var/content_to_search = topic_ask(my_client(), args, "k145", /datum/om/prompt/text, message = "Write desired content to find here. Partial matches are allowed.", title = "Filter by Content", multiline = TRUE, max_length = MAX_TGUI_INPUT)
+	if(isnull(content_to_search))
+		return
+	if(content_to_search)
+		last_query = feedback_filter(SQLITE_FEEDBACK_COLUMN_CONTENT, content_to_search)
+	display()
+	return TRUE
+
+/datum/managed_browser/feedback_viewer/proc/topic_filter_datetime(mob/user, list/args)
+	var/datetime_to_search = topic_ask(my_client(), args, "k150", /datum/om/prompt/text, message = "Write desired datetime. Partial matches are allowed.\nFormat is 'YYYY-MM-DD HH:MM:SS'.", title = "Filter by Datetime")
+	if(isnull(datetime_to_search))
+		return
+	if(datetime_to_search)
+		last_query = feedback_filter(SQLITE_FEEDBACK_COLUMN_DATETIME, datetime_to_search)
+	display()
+	return TRUE
 
 

@@ -12,7 +12,7 @@
 	idle_power_usage = 40
 	interact_offline = 1
 	circuit = /obj/item/circuitboard/sleeper_console
-	clicksound = 'sound/machines/buttonbeep.ogg'
+	clicksound = SFX_MACHINES_BUTTONBEEP
 	clickvol = 30
 
 /obj/machinery/sleep_console/Initialize(mapload)
@@ -68,8 +68,8 @@ EXTEND_INTERACTIONS(/obj/machinery/sleep_console, \
 	return deconstruct_display(user, tool)
 
 /obj/machinery/sleep_console/power_change()
-	..()
-	if(stat & (NOPOWER|BROKEN))
+	. = ..()
+	if(!operable())
 		icon_state = "sleeperconsole-p"
 	else
 		icon_state = initial(icon_state)
@@ -193,7 +193,7 @@ EXTEND_INTERACTIONS(/obj/machinery/sleeper, \
 		ui.open()
 
 /obj/machinery/sleeper/tgui_data(mob/user)
-	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SLEEPER)
+	var/mob/living/carbon/human/occupant = slot_item_real(OCCUPANT_SLOT_SLEEPER)
 	var/data[0]
 	data["amounts"] = amounts
 	data["hasOccupant"] = occupant ? 1 : 0
@@ -357,13 +357,13 @@ EXTEND_INTERACTIONS(/obj/machinery/sleeper, \
 
 /obj/machinery/sleeper/machine_step()
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SLEEPER)
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return PROCESS_KILL
 	if(!occupant)
 		return PROCESS_KILL
 	if(occupant)
 		if(auto_eject_dead && occupant.stat == DEAD)
-			playsound(loc, 'sound/machines/buzz-sigh.ogg', 40)
+			play_sfx(loc, SFX_MACHINES_BUZZ_SIGH, 0.8)
 			go_out()
 			return
 		occupant.set_stasis(stasis_level, src)
@@ -468,7 +468,7 @@ EXTEND_INTERACTIONS(/obj/machinery/sleeper, \
 	if(pumping)
 		toggle_pump()
 
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		..(severity, recursive)
 		return
 
@@ -493,7 +493,7 @@ EXTEND_INTERACTIONS(/obj/machinery/sleeper, \
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SLEEPER)
 	if(!M)
 		return
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return
 	if(M?.buckled_to())
 		return
@@ -521,7 +521,7 @@ EXTEND_INTERACTIONS(/obj/machinery/sleeper, \
 	if(!M.move_into(src, OCCUPANT_SLOT_SLEEPER))
 		return
 	occupant = M
-	update_use_power(USE_POWER_ACTIVE)
+	set_use_power(USE_POWER_ACTIVE)
 	MACHINE_WAKE(src)
 	occupant.cozyloop.start() // Cozy Music
 	update_icon()
@@ -539,7 +539,7 @@ EXTEND_INTERACTIONS(/obj/machinery/sleeper, \
 	// everything except a hand-kept exclude list" loop -- the source of the
 	// sleeper's partial-eject bug -- is gone.
 	slot_remove(occupant, get_turf(src))
-	update_use_power(USE_POWER_IDLE)
+	set_use_power(USE_POWER_IDLE)
 	update_icon()
 	toggle_filter()
 	toggle_pump()
@@ -559,7 +559,7 @@ EXTEND_INTERACTIONS(/obj/machinery/sleeper, \
 
 /obj/machinery/sleeper/proc/inject_chemical(mob/living/user, chemical, amount)
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SLEEPER)
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return
 	if(!(amount in amounts))
 		return

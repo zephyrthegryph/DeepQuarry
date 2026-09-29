@@ -50,7 +50,7 @@ DECLARE_INTERACTIONS(/obj/item/disk/botany, INTERACT_USE(null, PROC_REF(interact
 	var/obj/item/disk/botany/loaded_disk //Currently loaded data disk.
 
 	var/open = 0
-	var/active = 0
+	active = 0
 	var/action_time = 5
 	COOLDOWN_DECLARE(action_cooldown)
 	var/eject_disk = 0
@@ -88,7 +88,7 @@ OWN(/obj/machinery/botany, loaded_disk, OWN_SPILL)
 	return TRUE
 
 /obj/machinery/botany/proc/finished_task()
-	active = 0
+	set_active(0)
 	if(failed_task)
 		failed_task = 0
 		visible_message(span_filter_notice("[icon2html(src,viewers(src))] [src] pings unhappily, flashing a red warning light."))
@@ -181,7 +181,7 @@ OWN(/obj/machinery/botany, loaded_disk, OWN_SPILL)
 /obj/machinery/botany/wrench_act(mob/user, obj/item/tool)
 	playsound(src, tool.usesound, 100, TRUE)
 	to_chat(user, span_notice("You [anchored ? "un" : ""]secure \the [src]."))
-	anchored = !anchored
+	set_anchored(!anchored)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/botany/crowbar_act(mob/user, obj/item/tool)
@@ -273,7 +273,7 @@ OWN(/obj/machinery/botany, loaded_disk, OWN_SPILL)
 				return
 
 			COOLDOWN_START(src, action_cooldown, action_time)
-			active = 1
+			set_active(1)
 
 			if(seed && seed.seed())
 				seed_hand_over(seed, "seed_static", src, "genetics_static") // the packet is consumed below
@@ -288,7 +288,7 @@ OWN(/obj/machinery/botany, loaded_disk, OWN_SPILL)
 				return
 
 			COOLDOWN_START(src, action_cooldown, action_time)
-			active = 1
+			set_active(1)
 
 			var/datum/plantgene/P = genetics().get_gene(params["get_gene"])
 			if(!P)
@@ -372,12 +372,12 @@ OWN(/obj/machinery/botany, loaded_disk, OWN_SPILL)
 				return
 
 			COOLDOWN_START(src, action_cooldown, action_time)
-			active = 1
+			set_active(1)
 
 			if(!isnull(GLOB.plant_service.seeds[seed.seed().name]))
 				var/datum/seed/modified_seed = seed.seed().diverge(1)
 				if(!modified_seed) // TRAIT_IMMUTABLE: never edit the shared line
-					active = 0
+					set_active(FALSE)
 					return
 				proto_set(seed, "seed_static", modified_seed)
 				seed.seed_type = seed.seed().name

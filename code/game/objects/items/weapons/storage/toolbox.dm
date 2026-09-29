@@ -16,14 +16,13 @@
 	w_class = ITEMSIZE_LARGE
 	max_storage_space = ITEMSIZE_COST_SMALL * 7 //enough to hold all starting contents
 	attack_verb = list("robusted")
-	use_sound = 'sound/items/storage/toolbox.ogg'
-	drop_sound = 'sound/items/drop/toolbox.ogg'
-	pickup_sound = 'sound/items/pickup/toolbox.ogg'
+	use_sound = SFX_ITEMS_STORAGE_TOOLBOX
+	drop_sound = SFX_ITEMS_DROP_TOOLBOX
+	pickup_sound = SFX_ITEMS_PICKUP_TOOLBOX
 
 //Emergency
 
-/obj/item/storage/toolbox/hold_constraint()
-	return list(HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/toolbox, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 /obj/item/storage/toolbox/emergency
 	name = "emergency toolbox"
 	icon = 'icons/obj/storage_vr.dmi'
@@ -150,8 +149,7 @@
 	var/filled = FALSE
 	attack_verb = list("lunched")
 
-/obj/item/storage/toolbox/lunchbox/hold_constraint()
-	return list(HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage/toolbox/lunchbox, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 /obj/item/storage/toolbox/lunchbox/Initialize(mapload)
 	if(filled)

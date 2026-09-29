@@ -1,5 +1,5 @@
 /mob/living/simple_mob/horror/Steve
-	reaction_sound = 'sound/h_sounds/holla.ogg'
+	reaction_sound = SFX_H_SOUNDS_HOLLA
 	name = "???"
 	desc = "A formless blob of flesh with one, giant, everblinking eye. It has a large machine gun and a watercooler stuck stright into its skin."
 
@@ -11,7 +11,7 @@
 	icon = 'icons/mob/horror_show/GHPS.dmi'
 	icon_gib = "generic_gib"
 
-	attack_sound = 'sound/h_sounds/mumble.ogg'
+	attack_sound = SFX_H_SOUNDS_MUMBLE
 
 	endurance = 175
 
@@ -20,7 +20,7 @@
 	grab_resist = 100
 
 	projectiletype = /obj/item/projectile/bullet/pistol/medium
-	projectilesound = 'sound/weapons/gunshot_light.ogg'
+	projectilesound = SFX_WEAPONS_GUNSHOT_LIGHT
 
 	needs_reload = TRUE
 	base_attack_cooldown = 5 // Two attacks a second or so.
@@ -36,11 +36,11 @@
 	say_list_type = /datum/say_list/Steve
 
 /mob/living/simple_mob/horror/Steve/on_death(gibbed)
-	playsound(src, 'sound/h_sounds/holla.ogg', 50, 1)
+	play_sfx(src, SFX_H_SOUNDS_HOLLA)
 	..()
 
 /mob/living/simple_mob/horror/Steve/bullet_act()
-	playsound(src, 'sound/h_sounds/holla.ogg', 50, 1)
+	play_sfx(src, SFX_H_SOUNDS_HOLLA)
 	..()
 
 /datum/say_list/Steve

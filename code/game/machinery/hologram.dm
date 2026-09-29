@@ -115,7 +115,7 @@ Possible to do for anyone motivated enough:
 
 /obj/machinery/hologram/holopad/proc/activate_holo(mob/living/silicon/ai/user)
 	var/mob/observer/eye/eyeobj = user?.active_eye()
-	if(!(stat & NOPOWER) && eyeobj?.loc == src.loc)//If the projector has power and client eye is on it
+	if(!has_stat(NOPOWER) && eyeobj?.loc == src.loc)//If the projector has power and client eye is on it
 		if(user.holo)
 			to_chat(user, span_danger("ERROR:") + " Image feed in progress.")
 			return
@@ -156,7 +156,7 @@ REL_LIST(/obj/machinery/hologram/holopad, masters)
 	hologram.pixel_x = 16 - round(A.holo_icon.Width() / 2) // centers the hologram on the tile
 	// hologram.mouse_opacity = 0//So you can't click on it. // Removal
 	hologram.layer = FLY_LAYER//Above all the other objects/mobs. Or the vast majority of them.
-	hologram.anchored = TRUE//So space wind cannot drag it.
+	hologram.set_anchored(TRUE) //So space wind cannot drag it.
 	hologram.name = "[A.name] (Hologram)"//If someone decides to right click.
 
 	if(!isnull(color))
@@ -201,7 +201,7 @@ REL_LIST(/obj/machinery/hologram/holopad, masters)
 /obj/machinery/hologram/holopad/machine_step()
 	for (var/mob/living/silicon/ai/master in masters)
 		var/active_ai = (master && !master.stat && master.client && master?.active_eye())//If there is an AI attached, it's not incapacitated, it has a client, and the client eye is centered on the projector.
-		if((stat & NOPOWER) || !active_ai)
+		if((has_stat(NOPOWER)) || !active_ai)
 			clear_holo(master)
 			continue
 

@@ -110,17 +110,19 @@
 			active_conversation = null
 
 // Specifically here for the chat message.
-/datum/data/pda/app/messenger/Topic(href, href_list)
-	if(!pda().can_use(usr))
-		return
-	unnotify()
+TOPIC_ACTION(/datum/data/pda/app/messenger, "choice=Message", PROC_REF(topic_message), TOPIC_REF("target", /obj/item/pda))
 
-	switch(href_list["choice"])
-		if("Message")
-			var/obj/item/pda/P = locate(href_list["target"])
-			create_message(usr, P)
-			if(href_list["target"] in conversations)            // Need to make sure the message went through, if not welp.
-				active_conversation = href_list["target"]
+/datum/data/pda/app/messenger/topic_allowed(mob/user, list/href_list)
+	return pda()?.can_use(user)
+
+/datum/data/pda/app/messenger/proc/topic_message(mob/user, list/args)
+	unnotify()
+	var/obj/item/pda/P = args["target"]
+	create_message(user, P)
+	var/target_ref = "\ref[P]"
+	if(target_ref in conversations)            // Need to make sure the message went through, if not welp.
+		active_conversation = target_ref
+	return TRUE
 
 
 /datum/data/pda/app/messenger/proc/create_message(mob/living/U, obj/item/pda/P)

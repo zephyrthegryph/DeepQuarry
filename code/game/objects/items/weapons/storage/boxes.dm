@@ -30,15 +30,14 @@
 	var/foldable = /obj/item/stack/material/cardboard	// BubbleWrap - if set, can be folded (when empty) into a sheet of cardboard
 	var/trash = null  // if set, can be crushed into a trash item when empty
 	max_storage_space = INVENTORY_BOX_SPACE
-	use_sound = 'sound/items/storage/box.ogg'
-	drop_sound = 'sound/items/drop/cardboardbox.ogg'
-	pickup_sound = 'sound/items/pickup/cardboardbox.ogg'
+	use_sound = SFX_ITEMS_STORAGE_BOX
+	drop_sound = SFX_ITEMS_DROP_CARDBOARDBOX
+	pickup_sound = SFX_ITEMS_PICKUP_CARDBOARDBOX
 	resistance_flags = FLAMMABLE
 
 // BubbleWrap - A box can be folded up to make card
 
-/obj/item/storage/box/hold_constraint()
-	return list(HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage/box, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 EXTEND_INTERACTIONS(/obj/item/storage/box, \
 	INTERACT_USE_AS(I_HELP, "Fold", PROC_REF(interaction_fold)), \
 	INTERACT_USE_AS(I_DISARM, "Fold", PROC_REF(interaction_fold)), \
@@ -66,17 +65,17 @@ EXTEND_INTERACTIONS(/obj/item/storage/box, \
 			return
 		// Now make the cardboard
 		to_chat(user, span_notice("You fold [src] flat."))
-		playsound(src, 'sound/items/storage/boxfold.ogg', 30, 1)
+		play_sfx(src, SFX_ITEMS_STORAGE_BOXFOLD)
 		replace_with(src, foldable)
 
 	//try to crush it
 	if(ispath(trash))
 		if(length(slot_contents(CONTAINER_SLOT_STORAGE)) && interaction.stance == I_HURT)  // only crush with things inside in combat mode.
-			user.visible_message(span_danger("[user] crushes \the [src], spilling its contents everywhere!"), span_danger("You crush \the [src], spilling its contents everywhere!"))
+			act_message(user, src, MSG_SELF(span_danger("You crush %T%, spilling its contents everywhere!")), MSG_OTHERS(span_danger("%U% crushes %T%, spilling its contents everywhere!")))
 			spill()
 		else
 			to_chat(user, span_notice("You crumple up \the [src].")) //make trash
-		playsound(src.loc, 'sound/items/drop/wrapper.ogg', 30, 1)
+		play_sfx(src.loc, SFX_ITEMS_DROP_WRAPPER, 0.6)
 		var/obj/item/trash = new src.trash()
 		qdel(src)
 		user.put_in_hands(trash)
@@ -190,56 +189,56 @@ EXTEND_INTERACTIONS(/obj/item/storage/box, \
 	desc = span_bold("WARNING: These devices are extremely dangerous and can cause blindness or deafness in repeated use.")
 	icon_state = "flashbang"
 	starts_with = list(/obj/item/grenade/flashbang = 7)
-	drop_sound = 'sound/items/drop/ammobox.ogg'
-	pickup_sound = 'sound/items/pickup/ammobox.ogg'
+	drop_sound = SFX_ITEMS_DROP_AMMOBOX
+	pickup_sound = SFX_ITEMS_PICKUP_AMMOBOX
 
 /obj/item/storage/box/emps
 	name = "box of emp grenades"
 	desc = "A box containing 5 military grade EMP grenades.<br> WARNING: Do not use near unshielded electronics or biomechanical augmentations, death or permanent paralysis may occur."
 	icon_state = "emp"
 	starts_with = list(/obj/item/grenade/empgrenade = 7)
-	drop_sound = 'sound/items/drop/ammobox.ogg'
-	pickup_sound = 'sound/items/pickup/ammobox.ogg'
+	drop_sound = SFX_ITEMS_DROP_AMMOBOX
+	pickup_sound = SFX_ITEMS_PICKUP_AMMOBOX
 
 /obj/item/storage/box/empslite
 	name = "box of low yield emp grenades"
 	desc = "A box containing 5 low yield EMP grenades.<br> WARNING: Do not use near unshielded electronics or biomechanical augmentations, death or permanent paralysis may occur."
 	icon_state = "emp"
 	starts_with = list(/obj/item/grenade/empgrenade/low_yield = 7)
-	drop_sound = 'sound/items/drop/ammobox.ogg'
-	pickup_sound = 'sound/items/pickup/ammobox.ogg'
+	drop_sound = SFX_ITEMS_DROP_AMMOBOX
+	pickup_sound = SFX_ITEMS_PICKUP_AMMOBOX
 
 /obj/item/storage/box/smokes
 	name = "box of smoke bombs"
 	desc = "A box containing 7 smoke bombs."
 	icon_state = "flashbang"
 	starts_with = list(/obj/item/grenade/smokebomb = 7)
-	drop_sound = 'sound/items/drop/ammobox.ogg'
-	pickup_sound = 'sound/items/pickup/ammobox.ogg'
+	drop_sound = SFX_ITEMS_DROP_AMMOBOX
+	pickup_sound = SFX_ITEMS_PICKUP_AMMOBOX
 
 /obj/item/storage/box/anti_photons
 	name = "box of anti-photon grenades"
 	desc = "A box containing 7 experimental photon disruption grenades."
 	icon_state = "flashbang"
 	starts_with = list(/obj/item/grenade/anti_photon = 7)
-	drop_sound = 'sound/items/drop/ammobox.ogg'
-	pickup_sound = 'sound/items/pickup/ammobox.ogg'
+	drop_sound = SFX_ITEMS_DROP_AMMOBOX
+	pickup_sound = SFX_ITEMS_PICKUP_AMMOBOX
 
 /obj/item/storage/box/frags
 	name = "box of fragmentation grenades (WARNING)"
 	desc = "A box containing 7 military grade fragmentation grenades.<br> WARNING: These devices are extremely dangerous and can cause limb loss or death in repeated use."
 	icon_state = "frag"
 	starts_with = list(/obj/item/grenade/explosive = 7)
-	drop_sound = 'sound/items/drop/ammobox.ogg'
-	pickup_sound = 'sound/items/pickup/ammobox.ogg'
+	drop_sound = SFX_ITEMS_DROP_AMMOBOX
+	pickup_sound = SFX_ITEMS_PICKUP_AMMOBOX
 
 /obj/item/storage/box/frags_half_box
 	name = "box of fragmentation grenades (WARNING)"
 	desc = "A box containing 4 military grade fragmentation grenades.<br> WARNING: These devices are extremely dangerous and can cause limb loss or death in repeated use."
 	icon_state = "frag"
 	starts_with = list(/obj/item/grenade/explosive = 4)
-	drop_sound = 'sound/items/drop/ammobox.ogg'
-	pickup_sound = 'sound/items/pickup/ammobox.ogg'
+	drop_sound = SFX_ITEMS_DROP_AMMOBOX
+	pickup_sound = SFX_ITEMS_PICKUP_AMMOBOX
 
 /obj/item/storage/box/metalfoam
 	name = "box of metal foam grenades."
@@ -330,9 +329,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/box, \
 	icon_state = "monkeycubebox"
 	starts_with = list(/obj/item/reagent_containers/food/snacks/monkeycube/wrapped = 4)
 
-/obj/item/storage/box/monkeycubes/hold_constraint()
-	var/list/holds = list(/obj/item/reagent_containers/food/snacks/monkeycube)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage/box/monkeycubes, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/food/snacks/monkeycube)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 /obj/item/storage/box/monkeycubes/farwacubes
 	name = "farwa cube box"
@@ -437,9 +434,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/box, \
 	icon_state = "spbox"
 	starts_with = list(/obj/item/toy/snappop = 8)
 
-/obj/item/storage/box/snappops/hold_constraint()
-	var/list/holds = list(/obj/item/toy/snappop)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage/box/snappops, hold_spec, list(HOLD_ONLY(list(/obj/item/toy/snappop)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 /obj/item/storage/box/matches
 	name = "matchbox"
@@ -449,12 +444,10 @@ EXTEND_INTERACTIONS(/obj/item/storage/box, \
 	w_class = ITEMSIZE_TINY
 	slot_flags = SLOT_BELT
 	starts_with = list(/obj/item/flame/match = 10)
-	drop_sound = 'sound/items/drop/matchbox.ogg'
-	pickup_sound =  'sound/items/pickup/matchbox.ogg'
+	drop_sound = SFX_ITEMS_DROP_MATCHBOX
+	pickup_sound =  SFX_ITEMS_PICKUP_MATCHBOX
 
-/obj/item/storage/box/matches/hold_constraint()
-	var/list/holds = list(/obj/item/flame/match)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage/box/matches, hold_spec, list(HOLD_ONLY(list(/obj/item/flame/match)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 EXTEND_INTERACTIONS(/obj/item/storage/box/matches, INTERACT_ITEM("Strike", PROC_REF(interaction_strike)))
 
@@ -463,9 +456,9 @@ EXTEND_INTERACTIONS(/obj/item/storage/box/matches, INTERACT_ITEM("Strike", PROC_
 	if(istype(W) && !W.lit && !W.burnt)
 		if(prob(25))
 			W.light(user)
-			user.visible_message(span_notice("[user] manages to light the match on the matchbox."))
+			act_message(user, null, others = span_notice("%U% manages to light the match on the matchbox."))
 		else
-			playsound(src, 'sound/items/cigs_lighters/matchstick_hit.ogg', 25, 0, -1)
+			play_sfx(src, SFX_ITEMS_CIGS_LIGHTERS_MATCHSTICK_HIT)
 	W.update_icon()
 	return INTERACTION_HANDLED_PASS
 
@@ -485,9 +478,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/box/matches, INTERACT_ITEM("Strike", PROC_
 	max_storage_space = ITEMSIZE_COST_SMALL * 24 //holds 24 items of w_class 2
 	use_to_pickup = TRUE // for picking up broken bulbs, not that most people will try
 
-/obj/item/storage/box/lights/hold_constraint()
-	var/list/holds = list(/obj/item/light/tube, /obj/item/light/bulb)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage/box/lights, hold_spec, list(HOLD_ONLY(list(/obj/item/light/tube, /obj/item/light/bulb)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 /obj/item/storage/box/lights/bulbs
 	starts_with = list(
@@ -523,9 +514,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/box/matches, INTERACT_ITEM("Strike", PROC_
 	max_storage_space = ITEMSIZE_COST_NORMAL * 5 // Formally 21.  Odd numbers are bad.
 	use_to_pickup = TRUE // for picking up broken bulbs, not that most people will try
 
-/obj/item/storage/box/freezer/hold_constraint()
-	var/list/holds = list(/obj/item/organ, /obj/item/reagent_containers/blood, /obj/item/reagent_containers/glass, /obj/item/reagent_containers/food)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/box/freezer, hold_spec, list(HOLD_ONLY(list(/obj/item/organ, /obj/item/reagent_containers/blood, /obj/item/reagent_containers/glass, /obj/item/reagent_containers/food)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 
 /obj/item/storage/box/freezer/red
 	icon_state = "portafreezer_red"
@@ -570,9 +559,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/box/matches, INTERACT_ITEM("Strike", PROC_
 
 //Donk-pockets
 
-/obj/item/storage/box/capguntoy/hold_constraint()
-	var/list/holds = list(/obj/item/gun/projectile/revolver/capgun, /obj/item/ammo_magazine/ammo_box/cap)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/box/capguntoy, hold_spec, list(HOLD_ONLY(list(/obj/item/gun/projectile/revolver/capgun, /obj/item/ammo_magazine/ammo_box/cap)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 /obj/item/storage/box/donkpockets
 	name = "box of donk-pockets"
 	desc = span_bold("Instructions:") + " " + span_italics("Heat in microwave. Product will cool if not eaten within seven minutes.")
@@ -650,9 +637,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/box/matches, INTERACT_ITEM("Strike", PROC_
 	max_storage_space = ITEMSIZE_COST_NORMAL * 6
 	starts_with = list(/obj/item/reagent_containers/food/snacks/canned/brainzsnax = 6)
 
-/obj/item/storage/box/brainzsnax/hold_constraint()
-	var/list/holds = list(/obj/item/reagent_containers/food/snacks/canned)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage/box/brainzsnax, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/food/snacks/canned)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 /obj/item/storage/box/brainzsnax/red
 	starts_with = list(/obj/item/reagent_containers/food/snacks/canned/brainzsnax/red = 6)
@@ -665,8 +650,8 @@ EXTEND_INTERACTIONS(/obj/item/storage/box/matches, INTERACT_ITEM("Strike", PROC_
 	icon_state = "secbox"
 	starts_with = list(/obj/item/ammo_magazine/sam48 = 3)
 	max_storage_space = ITEMSIZE_COST_NORMAL * 3
-	drop_sound = 'sound/items/drop/ammobox.ogg'
-	pickup_sound = 'sound/items/pickup/ammobox.ogg'
+	drop_sound = SFX_ITEMS_DROP_AMMOBOX
+	pickup_sound = SFX_ITEMS_PICKUP_AMMOBOX
 
 /obj/item/storage/box/weapon_cells
 	name = "box of weapon cells"

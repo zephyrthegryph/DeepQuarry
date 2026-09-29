@@ -12,8 +12,8 @@ MATERIAL_MIX(/obj/item/motiontracker, list(MAT_STEEL = 30,MAT_GLASS = 20))
 	throw_range = 20
 
 
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 /obj/item/motiontracker/Initialize(mapload)
 	om_hook(GLOB.motiontracker_service, /datum/om/event/movable_motiontracker, src, PROC_REF(handle_motion_tracking))

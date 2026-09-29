@@ -45,7 +45,7 @@
 	var/light_impact_range = event.light_impact_range
 	var/seconds_taken = event.took
 
-	if(stat & NOPOWER)
+	if(has_stat(NOPOWER))
 		return
 
 	var/x0 = epicenter.x
@@ -74,8 +74,8 @@
 	update_static_data_for_all_viewers()
 
 /obj/machinery/doppler_array/power_change()
-	..()
-	if(!(stat & NOPOWER))
+	. = ..()
+	if(!has_stat(NOPOWER))
 		icon_state = initial(icon_state)
 	else
 		icon_state = "[initial(icon_state)]_off"

@@ -200,9 +200,7 @@ OWN(/obj/machinery/computer/telescience, crystals, OWN_SPILL)
 
 /obj/machinery/computer/telescience/proc/sparks()
 	if(telepad())
-		var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread()
-		s.set_up(5, 1, get_turf(telepad()))
-		s.start()
+		fx_sparks(get_turf(telepad()), 5)
 	else
 		return
 
@@ -229,7 +227,7 @@ OWN(/obj/machinery/computer/telescience, crystals, OWN_SPILL)
 				var/L = get_turf(telepad())
 				var/blocked = list(/mob/living/simple_mob/vore, /mob/living/simple_mob/vore/ddraig) + typesof(/mob/living/simple_mob/vore/woof) + typesof(/mob/living/simple_mob/vore/overmap)
 				var/list/hostiles = typesof(/mob/living/simple_mob/vore) - blocked
-				playsound(L, 'sound/effects/phasein.ogg', 100, 1, extrarange = 3, falloff = 5)
+				play_sfx(L, SFX_EFFECTS_PHASEIN, extrarange = 3, falloff = 5)
 				for(var/i in 1 to rand(1,4))
 					var/chosen = pick(hostiles)
 					var/mob/living/simple_mob/vore/H = new chosen
@@ -268,7 +266,7 @@ OWN(/obj/machinery/computer/telescience, crystals, OWN_SPILL)
 		flick("pad-beam", telepad())
 
 		if(spawn_time > 15) // 1.5 seconds
-			playsound(telepad(), 'sound/weapons/flash.ogg', 50, 1)
+			play_sfx(telepad(), SFX_WEAPONS_FLASH, 0.5)
 			// Wait depending on the time the projectile took to get there
 			teleporting = 1
 			temp_msg = "Powering up bluespace crystals. Please wait."
@@ -323,7 +321,7 @@ OWN(/obj/machinery/computer/telescience, crystals, OWN_SPILL)
 	var/area/A = get_area(target)
 	if(!telepad())
 		return
-	if(telepad().inoperable())
+	if(!telepad().operable())
 		return
 	teleporting = 0
 	COOLDOWN_START(src, teleport_cooldown, (spawn_time * 2))
@@ -332,9 +330,7 @@ OWN(/obj/machinery/computer/telescience, crystals, OWN_SPILL)
 	// use a lot of power
 	use_power(trueDistance * 10000)
 
-	var/datum/effect/effect/system/spark_spread/S = new /datum/effect/effect/system/spark_spread()
-	S.set_up(5, 1, get_turf(telepad()))
-	S.start()
+	fx_sparks(get_turf(telepad()), 5)
 
 	if(!A || (A.flag_check(BLUE_SHIELDED)) || (target.block_tele)) // consistency smh
 		telefail()
@@ -347,9 +343,7 @@ OWN(/obj/machinery/computer/telescience, crystals, OWN_SPILL)
 	temp_msg += "Data printed below."
 
 	var/sparks = get_turf(target)
-	var/datum/effect/effect/system/spark_spread/Y = new /datum/effect/effect/system/spark_spread()
-	Y.set_up(5, 1, sparks)
-	Y.start()
+	fx_sparks(sparks, 5)
 
 	var/turf/source = target
 	var/turf/dest = get_turf(telepad())
@@ -362,7 +356,7 @@ OWN(/obj/machinery/computer/telescience, crystals, OWN_SPILL)
 
 	var/list/sent_atoms = list()
 	flick("pad-beam", telepad())
-	playsound(telepad(), 'sound/weapons/emitter2.ogg', 25, 1, extrarange = 3, falloff = 5)
+	play_sfx(telepad(), SFX_WEAPONS_EMITTER2)
 	for(var/atom/movable/ROI in source)
 		// if is anchored, don't let through
 		if(ROI.anchored)

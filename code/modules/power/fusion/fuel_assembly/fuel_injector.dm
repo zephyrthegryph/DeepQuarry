@@ -33,7 +33,7 @@ OWN(/obj/machinery/fusion_fuel_injector, cur_assembly, OWN_SPILL)
 /obj/machinery/fusion_fuel_injector/machine_step()
 	if(!injecting)
 		return PROCESS_KILL
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		StopInjecting()
 		return PROCESS_KILL
 	Inject()
@@ -147,7 +147,7 @@ OWN(/obj/machinery/fusion_fuel_injector, cur_assembly, OWN_SPILL)
 		var/obj/item/fuel_assembly/removed = own_take(src, "cur_assembly")
 		removed.forceMove(get_turf(src))
 		user.put_in_hands(removed)
-		visible_message(span_infoplain(span_bold("\The [user]") + " removes \the [removed] from \the [src]."))
+		act_message(user, src, others = span_infoplain(span_bold("%U%") + " removes \the [removed] from %T%."))
 		return TRUE
 	else
 		to_chat(user, span_warning("There is no fuel rod in \the [src]."))
@@ -157,14 +157,14 @@ OWN(/obj/machinery/fusion_fuel_injector, cur_assembly, OWN_SPILL)
 	if(!injecting && cur_assembly)
 		icon_state = "injector1"
 		injecting = 1
-		update_use_power(USE_POWER_IDLE)
+		set_use_power(USE_POWER_IDLE)
 		MACHINE_WAKE(src)
 
 /obj/machinery/fusion_fuel_injector/proc/StopInjecting()
 	if(injecting)
 		injecting = 0
 		icon_state = "injector0"
-		update_use_power(USE_POWER_OFF)
+		set_use_power(USE_POWER_OFF)
 
 /obj/machinery/fusion_fuel_injector/proc/Inject()
 	if(!injecting)

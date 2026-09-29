@@ -465,7 +465,7 @@
 	var/datum/data/record/disposition_record = active2()
 	LAZYINITLIST(disposition_record.disposition_history)
 	disposition_record.disposition_history.Add(list(list(
-		"occurred_at" = world.time,
+		"occurred_at" = EXPIRY_AT(src, CLOCK_WORLD, 0),
 		"actor_account" = contract_account_for_mob(user)?.account_number,
 		"actor_name" = user?.real_name,
 		"previous_status" = old_status,
@@ -559,7 +559,7 @@
 
 /obj/machinery/computer/secure_data/emp_act(severity, recursive)
 	. = ..()
-	if (. & EMP_PROTECT_SELF ||stat & (BROKEN|NOPOWER))
+	if (. & EMP_PROTECT_SELF ||!operable())
 		return
 
 	for(var/datum/data/record/R in GLOB.data_core.security)

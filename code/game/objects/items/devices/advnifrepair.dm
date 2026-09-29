@@ -13,8 +13,8 @@ MATERIAL_MIX(/obj/item/nifrepairer, list(MAT_STEEL = 4000, MAT_GLASS = 6000))
 	throw_range = 10
 	var/datum/reagents/supply
 	var/efficiency = 15 //How many units reagent per 1 unit nanopaste
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 /obj/item/nifrepairer/Initialize(mapload)
 	. = ..()

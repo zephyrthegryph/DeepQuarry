@@ -11,7 +11,7 @@
 	var/tmp/obj/effect/shuttle_landmark/current_location	//Set current_location_tag, not this: New() resolves the tag into the landmark.
 	var/current_location_tag	// the tag it starts as; resolved into current_location at init
 
-	TIMESTAMP_TMP_VAR(arrive_time) //the time at which the shuttle arrives when long jumping
+	EXPIRY_TMP_DECLARE(arrive_time) //the time at which the shuttle arrives when long jumping
 	var/flags = SHUTTLE_FLAGS_NONE
 	var/process_state = IDLE_STATE // Used with SHUTTLE_FLAGS_PROCESS, as well as to store current state.
 	var/always_process = FALSE // Automated shuttles may need idle-state checks.
@@ -32,7 +32,7 @@
 	var/mothershuttle 	//tag of mothershuttle
 	var/motherdock		//tag of mothershuttle landmark, defaults to starting location
 
-	var/tmp/depart_time = 0 //Similar to above, set when the shuttle leaves when long jumping. Used for progress bars.
+	EXPIRY_TMP_DECLARE(depart_time) //Similar to above, set when the shuttle leaves when long jumping. Used for progress bars.
 
 	var/debug_logging = FALSE // If set to true, the shuttle will start broadcasting its debug messages to admins
 
@@ -195,8 +195,8 @@
 		make_sounds(HYPERSPACE_END)
 		return	//someone cancelled the launch
 
-	arrive_time = world.time + travel_time*10
-	depart_time = world.time
+	EXPIRY_SET(src, arrive_time, travel_time*10, CLOCK_WORLD)
+	EXPIRY_STAMP(src, depart_time, CLOCK_WORLD)
 
 	moving_status = SHUTTLE_INTRANSIT
 	on_shuttle_departure(start_location, destination)
@@ -215,7 +215,7 @@
 /// In transit: every half second until arrival time, the travel sound every four seconds
 /// (the sound file is five) and the landing warning five seconds out.
 /datum/shuttle/proc/long_jump_transit(obj/effect/shuttle_landmark/start_location, obj/effect/shuttle_landmark/destination, made_warning)
-	if(world.time >= arrive_time)
+	if(EXPIRY_EXPIRED(src, arrive_time, CLOCK_WORLD))
 		if(!attempt_move(destination))
 			attempt_move(start_location) //try to go back to where we started. If that fails, I guess we're stuck in the interim location
 		long_jump_arrived(start_location, destination)
@@ -426,11 +426,11 @@
 	var/sound_to_play = null
 	switch(sound_type)
 		if(HYPERSPACE_WARMUP)
-			sound_to_play = 'sound/effects/shuttles/hyperspace_begin.ogg'
+			sound_to_play = SFX_EFFECTS_SHUTTLES_HYPERSPACE_BEGIN
 		if(HYPERSPACE_PROGRESS)
-			sound_to_play = 'sound/effects/shuttles/hyperspace_progress.ogg'
+			sound_to_play = SFX_EFFECTS_SHUTTLES_HYPERSPACE_PROGRESS
 		if(HYPERSPACE_END)
-			sound_to_play = 'sound/effects/shuttles/hyperspace_end.ogg'
+			sound_to_play = SFX_EFFECTS_SHUTTLES_HYPERSPACE_END
 	for(var/area/A in shuttle_area)
 		for(var/obj/machinery/door/E in contents_of(A))	//dumb, I know, but playing it on the engines doesn't do it justice
 			playsound(E, sound_to_play, 50, FALSE)

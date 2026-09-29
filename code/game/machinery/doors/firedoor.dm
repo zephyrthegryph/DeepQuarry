@@ -50,8 +50,8 @@
 		"hot",
 		"cold"
 	)
-	var/open_sound = 'sound/machines/firelockopen.ogg' // firedoor sound variable.
-	var/close_sound = 'sound/machines/firelockclose.ogg' // firedoor sound variable.
+	var/open_sound = SFX_MACHINES_FIRELOCKOPEN // firedoor sound variable.
+	var/close_sound = SFX_MACHINES_FIRELOCKCLOSE // firedoor sound variable.
 
 /obj/machinery/door/firedoor/Initialize(mapload)
 	. = ..()
@@ -135,8 +135,8 @@ REL(/obj/machinery/door/firedoor, turbolift_floor)
 		var/obj/mecha/mecha = AM
 		if(mecha?.slot_item(MECHA_SLOT_PILOT))
 			var/mob/M = mecha?.slot_item(MECHA_SLOT_PILOT)
-			if(world.time - M.last_bumped <= 10) return //Can bump-open one airlock per second. This is to prevent popup message spam.
-			M.last_bumped = world.time
+			if(ELAPSED(M, last_bumped, CLOCK_WORLD) <= 1 SECOND) return //Can bump-open one airlock per second. This is to prevent popup message spam.
+			EXPIRY_STAMP(M, last_bumped, CLOCK_WORLD)
 			attack_hand(M)
 	return 0
 
@@ -191,7 +191,7 @@ REL(/obj/machinery/door/firedoor, turbolift_floor)
 	if(user.incapacitated() || (get_dist(src, user) > 1 && !issilicon(user)))
 		to_chat(user, "Sorry, you must remain able bodied and close to \the [src] in order to use it.")
 		return TRUE
-	if(density && (stat & (BROKEN|NOPOWER))) //can still close without power
+	if(density && (!operable())) //can still close without power
 		to_chat(user, "\The [src] is not functioning, you'll have to force it open manually.")
 		return TRUE
 
@@ -236,17 +236,17 @@ REL(/obj/machinery/door/firedoor, turbolift_floor)
 	..()
 
 /obj/machinery/door/firedoor/proc/attack_alien_timed_done()
-	playsound(src, 'sound/machines/door/airlock_creaking.ogg', 100, 1)
+	play_sfx(src, SFX_MACHINES_DOOR_AIRLOCK_CREAKING)
 	src.blocked = 0
 	update_icon()
 	open(1)
 /obj/machinery/door/firedoor/proc/attack_alien_timed_done2(mob/user)
-	playsound(src, 'sound/machines/door/airlock_creaking.ogg', 100, 1)
+	play_sfx(src, SFX_MACHINES_DOOR_AIRLOCK_CREAKING)
 	visible_message(span_danger("\The [user] forces \the [src] open!"))
 	open(1)
 
 /obj/machinery/door/firedoor/attack_generic(mob/living/user, damage)
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		if(damage >= STRUCTURE_MIN_DAMAGE_THRESHOLD)
 			var/time_to_force = (2 + (2 * blocked)) * 5
 			if(src.density)
@@ -306,7 +306,7 @@ REL(/obj/machinery/door/firedoor, turbolift_floor)
 			return TRUE
 
 		update_icon()
-		use_tool(user, C, src, delay = 3 SECONDS, volume = 100, message_self = "You start forcing \the [src] [density ? "open" : "closed"] with \the [C]!", message_others = "\The [user] starts to force \the [src] [density ? "open" : "closed"] with \a [C]!", receiver = src, on_done = PROC_REF(interaction_use_item_tool_done), done_args = list(user, C), on_fail = TYPE_PROC_REF(/atom, update_icon), claims = TRUE)
+		use_tool(user, C, src, delay = 3 SECONDS, volume = 100, start_self = "You start forcing \the [src] [density ? "open" : "closed"] with \the [C]!", start_others = "\The [user] starts to force \the [src] [density ? "open" : "closed"] with \a [C]!", receiver = src, on_done = PROC_REF(interaction_use_item_tool_done), done_args = list(user, C), on_fail = TYPE_PROC_REF(/atom, update_icon), claims = TRUE)
 		update_icon()
 		return TRUE
 
@@ -360,7 +360,7 @@ REL(/obj/machinery/door/firedoor, turbolift_floor)
 		to_chat(user, span_notice("Someone's already prying that [density ? "open" : "closed"]."))
 		return TRUE
 	update_icon()
-	use_tool(user, tool, src, delay = 3 SECONDS, quality = TOOL_CROWBAR, volume = 100, message_self = "You start forcing \the [src] [density ? "open" : "closed"] with \the [tool]!", message_others = "\The [user] starts to force \the [src] [density ? "open" : "closed"] with \a [tool]!", receiver = src, on_done = PROC_REF(crowbar_act_tool_done), done_args = list(user, tool), on_fail = TYPE_PROC_REF(/atom, update_icon), claims = TRUE)
+	use_tool(user, tool, src, delay = 3 SECONDS, quality = TOOL_CROWBAR, volume = 100, start_self = "You start forcing \the [src] [density ? "open" : "closed"] with \the [tool]!", start_others = "\The [user] starts to force \the [src] [density ? "open" : "closed"] with \a [tool]!", receiver = src, on_done = PROC_REF(crowbar_act_tool_done), done_args = list(user, tool), on_fail = TYPE_PROC_REF(/atom, update_icon), claims = TRUE)
 	update_icon()
 	return TRUE
 
@@ -369,20 +369,20 @@ REL(/obj/machinery/door/firedoor, turbolift_floor)
 		return
 	playsound(src, tool.usesound, 50, TRUE)
 	user.visible_message(span_danger("[user] has removed the electronics from \the [src]."), "You have removed the electronics from [src].")
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		new /obj/item/circuitboard/broken(loc)
 	else
 		new /obj/item/circuitboard/airalarm(loc)
 	var/obj/structure/firedoor_assembly/assembly = new(loc)
-	assembly.anchored = TRUE
-	assembly.density = TRUE
+	assembly.set_anchored(TRUE)
+	assembly.set_density(TRUE)
 	assembly.wired = TRUE
 	assembly.glass = glass
 	assembly.update_icon()
 	replace_with(src, assembly)
 
 /obj/machinery/door/firedoor/proc/crowbar_act_tool_done(mob/user, obj/item/tool)
-	if(!((stat & (BROKEN|NOPOWER) || !density)))
+	if(!((!operable() || !density)))
 		return
 	user.visible_message(span_danger("\The [user] forces \the [src] [density ? "open" : "closed"] with \a [tool]!"), "You force \the [src] [density ? "open" : "closed"] with \the [tool]!", "You hear metal strain, and a door [density ? "open" : "close"].")
 	if(density)
@@ -517,7 +517,7 @@ REL(/obj/machinery/door/firedoor, turbolift_floor)
 		update_icon()
 
 	if(!forced)
-		if(stat & (BROKEN|NOPOWER))
+		if(!operable())
 			return //needs power to open unless it was forced
 		else
 			use_power(360)
@@ -606,8 +606,8 @@ REL(/obj/machinery/door/firedoor, turbolift_floor)
 /obj/machinery/door/firedoor/multi_tile
 	icon = 'icons/obj/doors/DoorHazard2x1.dmi'
 	width = 2
-	open_sound = 'sound/machines/firewide1o.ogg'
-	close_sound = 'sound/machines/firewide1c.ogg'
+	open_sound = SFX_MACHINES_FIREWIDE1O
+	close_sound = SFX_MACHINES_FIREWIDE1C
 
 /obj/machinery/door/firedoor/glass
 	name = "\improper Emergency Glass Shutter"
@@ -629,8 +629,8 @@ REL(/obj/machinery/door/firedoor, turbolift_floor)
 	icon = 'icons/obj/doors/DoorHazardGlass2x1.dmi'
 	width = 2
 	glass = 1
-	open_sound = 'sound/machines/firewide1o.ogg'
-	close_sound = 'sound/machines/firewide1c.ogg'
+	open_sound = SFX_MACHINES_FIREWIDE1O
+	close_sound = SFX_MACHINES_FIREWIDE1C
 
 /obj/machinery/door/firedoor/border_only/can_pathfinding_exit(atom/movable/actor, dir, datum/pathfinding/search)
 	return (src.dir != dir) || ..()

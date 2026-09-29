@@ -28,8 +28,8 @@
 	TEST_ASSERT(length(pred.vore_organs), "the pred should have a belly")
 	for(var/obj/belly/B as anything in pred.vore_organs)
 		TEST_ASSERT_NULL(B.cycle_token, "empty [B] should not cycle")
-		TEST_ASSERT_NULL(B.liquid_timer, "empty [B] should hold no timer")
-		TEST_ASSERT(!om_deadline_pending(B, /datum/om/behaviour/belly_cycle) && !B.liquid_timer, "empty [B] should hold no scheduled work")
+		TEST_ASSERT(!om_timer_slot_pending(B, "liquid_timer"), "empty [B] should hold no timer")
+		TEST_ASSERT(!om_deadline_pending(B, /datum/om/behaviour/belly_cycle) && !om_timer_slot_pending(B, "liquid_timer"), "empty [B] should hold no scheduled work")
 		TEST_ASSERT(!(B.datum_flags & DF_ISPROCESSING), "empty [B] should not be on a processing subsystem")
 		var/list/owned = B.belly_owned_lists()
 		TEST_ASSERT_EQUAL(length(owned), 0, "empty [B] owns lists: [jointext(owned, ", ")]")
@@ -39,7 +39,7 @@
 	TEST_ASSERT(mine.digest_messages_prey == theirs.digest_messages_prey, "two default bellies should share one digest message list")
 	TEST_ASSERT(mine.emote_lists == theirs.emote_lists, "two default bellies should share one emote table")
 	TEST_ASSERT(mine.generated_reagents == theirs.generated_reagents, "two default bellies should share one liquid table")
-	TEST_ASSERT_EQUAL(length(belly_default_lists()["emote_lists"]), 0, "the shared emote table must stay empty")
+	TEST_ASSERT_EQUAL(length(GLOBAL_TABLE_GET(belly_default_lists)["emote_lists"]), 0, "the shared emote table must stay empty")
 
 /// Subtype message lists are shared per type.
 /datum/unit_test/dq_vore_subtype_lists_shared
@@ -49,8 +49,8 @@
 	var/obj/belly/dragon/maw/A = allocate(/obj/belly/dragon/maw, H)
 	var/obj/belly/dragon/maw/B = allocate(/obj/belly/dragon/maw, H)
 	TEST_ASSERT(A.struggle_messages_inside == B.struggle_messages_inside, "two bellies of one type should share their type's struggle messages")
-	TEST_ASSERT(A.struggle_messages_inside != belly_default_lists()["struggle_messages_inside"], "a subtype's own messages should not be the base default")
-	TEST_ASSERT(A.digest_messages_owner == belly_default_lists()["digest_messages_owner"], "a var the subtype leaves alone should be the base default")
+	TEST_ASSERT(A.struggle_messages_inside != GLOBAL_TABLE_GET(belly_default_lists)["struggle_messages_inside"], "a subtype's own messages should not be the base default")
+	TEST_ASSERT(A.digest_messages_owner == GLOBAL_TABLE_GET(belly_default_lists)["digest_messages_owner"], "a var the subtype leaves alone should be the base default")
 
 /// Devour, struggle, transfer and release are ledger moves, and the cycle follows occupancy.
 /datum/unit_test/dq_vore_devour_struggle_release
@@ -229,9 +229,9 @@
 	belly.name = "Custom"
 	belly.set_messages("You are held in a custom belly.\n\nThe custom belly squeezes you.", STRUGGLE_INSIDE, limit = MAX_MESSAGE_LEN)
 	belly.set_messages("A custom idle emote, gently.", BELLY_MODE_HOLD, limit = MAX_MESSAGE_LEN)
-	TEST_ASSERT_EQUAL(length(belly_default_lists()["emote_lists"]), 0, "customizing an emote must not touch the shared table")
-	TEST_ASSERT(belly.struggle_messages_inside != belly_default_lists()["struggle_messages_inside"], "a customized list should be the belly's own")
-	TEST_ASSERT_EQUAL(belly.struggle_messages_outside, belly_default_lists()["struggle_messages_outside"], "an untouched list should stay shared")
+	TEST_ASSERT_EQUAL(length(GLOBAL_TABLE_GET(belly_default_lists)["emote_lists"]), 0, "customizing an emote must not touch the shared table")
+	TEST_ASSERT(belly.struggle_messages_inside != GLOBAL_TABLE_GET(belly_default_lists)["struggle_messages_inside"], "a customized list should be the belly's own")
+	TEST_ASSERT_EQUAL(belly.struggle_messages_outside, GLOBAL_TABLE_GET(belly_default_lists)["struggle_messages_outside"], "an untouched list should stay shared")
 
 	var/list/errors = list()
 	var/list/blob = state_serialize(belly, NONE, errors)
@@ -244,12 +244,12 @@
 	TEST_ASSERT_NOTNULL(copy, "the belly should load: [jointext(errors, "; ")]")
 	TEST_ASSERT_EQUAL(jointext(copy.struggle_messages_inside, "|"), "You are held in a custom belly.|The custom belly squeezes you.", "customized messages should round trip")
 	TEST_ASSERT_EQUAL(jointext(copy.emote_lists[DM_HOLD], "|"), "A custom idle emote, gently.", "customized emotes should round trip")
-	TEST_ASSERT_EQUAL(copy.struggle_messages_outside, belly_default_lists()["struggle_messages_outside"], "a default list should load shared")
+	TEST_ASSERT_EQUAL(copy.struggle_messages_outside, GLOBAL_TABLE_GET(belly_default_lists)["struggle_messages_outside"], "a default list should load shared")
 
 	// An older save wrote every list out in full: equal ones go back to sharing.
-	var/list/default_prey_messages = belly_default_lists()["digest_messages_prey"]
+	var/list/default_prey_messages = GLOBAL_TABLE_GET(belly_default_lists)["digest_messages_prey"]
 	var/list/old = list("type" = "/obj/belly", "name" = "Old", "digest_messages_prey" = default_prey_messages.Copy())
 	var/obj/belly/old_belly = state_materialize(json_decode(json_encode(old)), pred, NONE, errors)
 	TEST_ASSERT_NOTNULL(old_belly, "an old blob should load: [jointext(errors, "; ")]")
-	TEST_ASSERT_EQUAL(old_belly.digest_messages_prey, belly_default_lists()["digest_messages_prey"], "a saved list equal to the default should be shared again")
+	TEST_ASSERT_EQUAL(old_belly.digest_messages_prey, GLOBAL_TABLE_GET(belly_default_lists)["digest_messages_prey"], "a saved list equal to the default should be shared again")
 	TEST_ASSERT_EQUAL(length(old_belly.belly_owned_lists()), 0, "a loaded default belly owns no lists")

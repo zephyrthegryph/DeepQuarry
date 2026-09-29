@@ -15,7 +15,7 @@
 	/// The harvester draining this anomaly (a relation view, written by /obj/machinery/anomaly_harvester).
 	var/obj/machinery/anomaly_harvester/attached_harvester
 
-	TIMESTAMP_VAR(next_activation)
+	EXPIRY_DECLARE(next_activation)
 	// Total of points we'll get once the anomaly does a pulse
 	var/points
 	var/curr_health
@@ -118,9 +118,7 @@
 		return
 	if(critical)
 		anom.detonate()
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-	s.set_up(5, 1, src)
-	s.start()
+	fx_sparks(src, 5)
 	QDEL_NULL(anom)
 	return
 

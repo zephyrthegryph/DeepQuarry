@@ -22,8 +22,8 @@ MATERIAL_MIX(/obj/item/suit_cooling_unit, list(MAT_STEEL = 15000, MAT_GLASS = 35
 	var/max_cooling = 15				// in degrees per second - probably don't need to mess with heat capacity here
 	var/charge_consumption = 3			// charge per second at max_cooling
 	var/thermostat = T20C
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 	//TODO: make it heat up the surroundings when not in space
 

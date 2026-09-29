@@ -38,7 +38,6 @@ GLOBAL_LIST_EMPTY(grub_machine_overlays)
 		/obj/machinery/button/windowtint
 		)
 
-	var/datum/effect/effect/system/spark_spread/sparks
 	var/image/machine_effect
 
 	var/obj/machinery/abstract_grub_machine/powermachine
@@ -50,8 +49,6 @@ GLOBAL_LIST_EMPTY(grub_machine_overlays)
 
 /mob/living/simple_mob/animal/solargrub_larva/Initialize(mapload)
 	. = ..()
-	sparks.set_up()
-	sparks.attach(src)
 	add_verb(src, /mob/living/proc/ventcrawl)
 
 /mob/living/simple_mob/animal/solargrub_larva/on_death(gibbed)
@@ -83,7 +80,7 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/solargrub_larva, REGISTRY_SOLA
 			for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 				M << self.machine_effect
 		if(prob(10))
-			self.sparks.start()
+			fx_sparks(self, 3, FALSE)
 		return
 
 /mob/living/simple_mob/animal/solargrub_larva/attack_target(atom/A)
@@ -114,7 +111,7 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/solargrub_larva, REGISTRY_SOLA
 	forceMove(M)
 	powermachine.draining = 2
 	MACHINE_WAKE(powermachine)
-	visible_message(span_warning("\The [src] finds an opening and crawls inside \the [M]."))
+	act_message(src, M, null, MSG_OTHERS(span_warning("%U% finds an opening and crawls inside %T%.")))
 	if(!(M.type in GLOB.grub_machine_overlays))
 		generate_machine_effect(M)
 	machine_effect = image(GLOB.grub_machine_overlays[M.type], M) //Can't do this the reasonable way with an overlay,
@@ -134,7 +131,7 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/solargrub_larva, REGISTRY_SOLA
 		else
 			return
 	forceMove(get_turf(M))
-	sparks.start()
+	fx_sparks(src, 3, FALSE)
 	if(machine_effect)
 		QDEL_NULL(machine_effect)
 	ai_brain?.lose_target()
@@ -148,7 +145,7 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/solargrub_larva, REGISTRY_SOLA
 	if(!end_vent)
 		return
 	forceMove(vent)
-	playsound(vent, 'sound/machines/ventcrawl.ogg', 50, 1, -3)
+	play_sfx(vent, SFX_MACHINES_VENTCRAWL)
 	vent.visible_message("\The [src] wiggles into \the [vent]!")
 	ventcrawl_travel(vent, end_vent, 3)
 
@@ -165,12 +162,12 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/solargrub_larva, REGISTRY_SOLA
 			return
 		ventcrawl_travel(vent, end_vent, redirect_attempts - 1)
 		return
-	playsound(end_vent, 'sound/machines/ventcrawl.ogg', 50, 1, -3)
+	play_sfx(end_vent, SFX_MACHINES_VENTCRAWL)
 	forceMove(get_turf(end_vent))
 
 /mob/living/simple_mob/animal/solargrub_larva/proc/expand_grub()
 	eject_from_machine()
-	visible_message(span_warning("\The [src] suddenly balloons in size!"))
+	act_message(src, null, null, MSG_OTHERS(span_warning("%U% suddenly balloons in size!")))
 	log_game("A larva has matured into a grub in area [src.loc.name] ([src.x],[src.y],[src.z]")
 	var/mob/living/simple_mob/vore/solargrub/adult = new(get_turf(src))
 	adult.tracked = tracked
@@ -251,4 +248,3 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/solargrub_larva, REGISTRY_SOLA
 
 
 DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/animal/solargrub_larva, "powermachine", /obj/machinery/abstract_grub_machine)
-DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/animal/solargrub_larva, "sparks", /datum/effect/effect/system/spark_spread)

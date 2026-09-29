@@ -36,8 +36,9 @@
 	var/list/lookup = get_reaction_lookup()
 	for(var/datum/reagent/R as anything in reagent_list)
 		for(var/datum/decl/chemical_reaction/distilling/C in lookup[R.id])
-			levels |= C.temp_range[1]
-			levels |= C.temp_range[2]
+			var/list/temp_range = TYPE_TABLE_GET(C, distilling_temp_range)
+			levels |= temp_range[1]
+			levels |= temp_range[2]
 	return levels
 
 /// (Re)builds the ThresholdSet when the candidate bounds change.

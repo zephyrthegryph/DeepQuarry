@@ -1,3 +1,5 @@
+OWN_TIMER(/obj/machinery/door, door_timer_token)
+
 /obj/machinery/door
 	announce_damage_bands = TRUE
 	name = "Door"
@@ -24,11 +26,10 @@
 	max_integrity = 300
 	integrity_failure = 0.25
 	var/min_force = 10 //minimum amount of force needed to damage the door with a melee weapon
-	var/hitsound = 'sound/weapons/smash.ogg' //sound door makes when hit with a weapon
+	var/hitsound = SFX_WEAPONS_SMASH //sound door makes when hit with a weapon
 	var/block_air_zones = 1 //If set, air zones cannot merge across the door even when it is opened.
-	var/close_door_at = 0 //When to automatically close the door, if possible
-	/// The om_after() timer for next_door_deadline(), and the deadline it was set for.
-	var/tmp/door_timer_token
+	EXPIRY_DECLARE(close_door_at) //When to automatically close the door, if possible
+	/// The deadline the `door_timer_token` timer slot was last set for (next_door_deadline()).
 	var/tmp/door_timer_at = 0
 	var/list/autoclose_blockers
 
@@ -98,29 +99,27 @@
 /// Keeps one om_after() timer on next_door_deadline(). Call after changing any deadline.
 /obj/machinery/door/proc/schedule_door_timer()
 	var/deadline = next_door_deadline()
-	if(deadline == door_timer_at && (!isnull(door_timer_token) || !deadline))
+	if(deadline == door_timer_at && (om_timer_slot_pending(src, "door_timer_token") || !deadline))
 		return
-	if(!isnull(door_timer_token))
-		om_cancel_timer(src, door_timer_token)
-		door_timer_token = null
+	if(om_timer_slot_pending(src, "door_timer_token"))
+		om_cancel_timer_slot(src, "door_timer_token")
 	door_timer_at = deadline
 	if(deadline)
 		om_attach(src, /datum/om/behaviour/sleeper/timed)
-		door_timer_token = om_after(src, max(deadline - world.time, 0), PROC_REF(door_timer_fired))
+		om_after_slot(src, "door_timer_token", max(deadline - world.time, 0), PROC_REF(door_timer_fired))
 
 /obj/machinery/door/proc/door_timer_fired()
-	door_timer_token = null
 	door_timer_at = 0
 	door_deadlines_due()
 	schedule_door_timer()
 
 /// Runs every deadline that has passed. Called from the door's timer wake.
 /obj/machinery/door/proc/door_deadlines_due()
-	if(close_door_at && world.time >= close_door_at)
+	if(close_door_at && EXPIRY_EXPIRED(src, close_door_at, CLOCK_WORLD))
 		if(density && !operating)
 			close_door_at = 0
 		else if(autoclose)
-			close_door_at = world.time + next_close_wait()
+			EXPIRY_SET(src, close_door_at, next_close_wait(), CLOCK_WORLD)
 			close()
 		else
 			close_door_at = 0
@@ -129,13 +128,13 @@
 	var/deadline = next_door_deadline()
 	if(!deadline)
 		return null
-	if(isnull(door_timer_token) || door_timer_at > deadline)
+	if(!om_timer_slot_pending(src, "door_timer_token") || door_timer_at > deadline)
 		return "deadline [deadline] (now [world.time]) has no timer (timer at [door_timer_at])"
 	return null
 
 /obj/machinery/door/proc/autoclose_in(wait)
 	clear_autoclose_blockers()
-	close_door_at = world.time + wait
+	EXPIRY_SET(src, close_door_at, wait, CLOCK_WORLD)
 	schedule_door_timer()
 
 /obj/machinery/door/proc/sleep_until_autoclose_blocker_moves(atom/movable/blocker)
@@ -173,9 +172,9 @@
 
 	if(ismob(AM))
 		var/mob/M = AM
-		if(world.time - M.last_bumped <= 10)
+		if(ELAPSED(M, last_bumped, CLOCK_WORLD) <= 1 SECOND)
 			return	//Can bump-open one airlock per second. This is to prevent shock spam.
-		M.last_bumped = world.time
+		EXPIRY_STAMP(M, last_bumped, CLOCK_WORLD)
 		if(M.restrained() && !check_access(null))
 			return
 		else if(has_trait(M, TRAIT_AMBIENT_PEST_MOB) && !(M.ckey))
@@ -328,7 +327,7 @@
 		if(heat_proof)
 			to_chat(user, span_warning("\The [src] is already reinforced."))
 			return TRUE
-		if((stat & BROKEN) || (get_integrity() < max_integrity))
+		if((has_stat(BROKEN)) || (get_integrity() < max_integrity))
 			to_chat(user, span_notice("It looks like \the [src] broken. Repair it before reinforcing it."))
 			return TRUE
 		if(!density)
@@ -377,7 +376,7 @@
 			to_chat(user, span_warning("You will need more plasteel to reinforce \the [src]."))
 			return ITEM_INTERACT_BLOCKING
 
-		use_tool(user, tool, src, delay = 1 SECOND, quality = TOOL_WELDER, volume = 50, amount = 0, message_self = "You start welding the plasteel into place.", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
+		use_tool(user, tool, src, delay = 1 SECOND, quality = TOOL_WELDER, volume = 50, amount = 0, start_self = "You start welding the plasteel into place.", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
 		return ITEM_INTERACT_SUCCESS
 
 	if(get_integrity() < max_integrity)
@@ -386,7 +385,7 @@
 			return ITEM_INTERACT_BLOCKING
 
 		var/repairtime = max_integrity - get_integrity()
-		use_tool(user, tool, src, delay = repairtime, quality = TOOL_WELDER, volume = 50, amount = 0, message_self = "You start to fix dents and repair \the [src].", receiver = src, on_done = PROC_REF(welder_act_tool_done2), done_args = list(user))
+		use_tool(user, tool, src, delay = repairtime, quality = TOOL_WELDER, volume = 50, amount = 0, start_self = "You start to fix dents and repair \the [src].", receiver = src, on_done = PROC_REF(welder_act_tool_done2), done_args = list(user))
 		return ITEM_INTERACT_SUCCESS
 	return NONE
 
@@ -438,7 +437,7 @@
 
 /obj/machinery/door/examine(mob/user)
 	. = ..()
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		. += "It is broken!"
 
 /// What a door does when it breaks, after the base machinery break.
@@ -456,7 +455,7 @@
 
 /obj/machinery/door/blob_act(obj/structure/blob/B)
 	if(density) // If it's closed.
-		if(stat & BROKEN)
+		if(has_stat(BROKEN))
 			open(1)
 		else
 			receive_blob(B)
@@ -484,9 +483,9 @@
 			if(density)
 				flick("door_spark", src)
 		if("deny")
-			if(density && !(stat & (NOPOWER|BROKEN)))
+			if(density && operable())
 				flick("door_deny", src)
-				playsound(src, 'sound/machines/buzz-two.ogg', 50, 0)
+				play_sfx(src, SFX_MACHINES_BUZZ_TWO)
 	return
 
 /obj/machinery/door/proc/open(forced = 0)
@@ -504,7 +503,7 @@
 /obj/machinery/door/proc/open_internalsetdensity(forced = 0)
 	PRIVATE_PROC(TRUE) //do not touch this or BYOND will devour you
 	SHOULD_NOT_OVERRIDE(TRUE)
-	density = FALSE
+	set_density(FALSE)
 	update_nearby_tiles()
 	om_after(src, anim_length_before_finalize, PROC_REF(open_internalfinish), forced)
 
@@ -562,7 +561,7 @@
 /obj/machinery/door/proc/close_internalsetdensity(forced = 0)
 	PRIVATE_PROC(TRUE) //do not touch this or BYOND will devour you
 	SHOULD_NOT_OVERRIDE(TRUE)
-	density = TRUE
+	set_density(TRUE)
 	explosion_resistance = initial(explosion_resistance)
 	layer = closed_layer
 	update_nearby_tiles()
@@ -650,7 +649,7 @@
 
 /obj/machinery/button/windowtint/doortint/toggle_tint()
 	use_power(5)
-	active = !active
+	set_active(!active)
 	update_icon()
 
 	for(var/obj/machinery/door/D in range(src,range))

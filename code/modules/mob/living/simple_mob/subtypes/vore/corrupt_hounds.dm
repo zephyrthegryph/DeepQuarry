@@ -26,7 +26,7 @@
 	faction = FACTION_CORRUPT
 
 	endurance = 200
-	movement_sound = 'sound/effects/houndstep.ogg'
+	movement_sound = SFX_EFFECTS_HOUNDSTEP
 	see_in_dark = 8
 
 	melee_damage_lower = 10
@@ -210,7 +210,7 @@
 
 	ranged_attack_delay = 2 SECONDS
 	projectiletype = /obj/item/projectile/beam/midlaser
-	projectilesound = 'sound/weapons/Laser.ogg'
+	projectilesound = SFX_WEAPONS_LASER
 	projectile_dispersion = 5
 	projectile_accuracy = -20
 
@@ -268,7 +268,7 @@
 	faction = "corrupt"
 
 	endurance = 200
-	movement_sound = 'sound/effects/houndstep.ogg'
+	movement_sound = SFX_EFFECTS_HOUNDSTEP
 	see_in_dark = 8
 
 	melee_damage_lower = 10

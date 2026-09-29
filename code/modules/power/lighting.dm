@@ -110,7 +110,7 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 	else if(user.drop_from_inventory(W))
 		user.visible_message(span_notice("[user] hooks up [W] to [src]."), \
 		span_notice("You add [W] to [src]."))
-		playsound(src, 'sound/machines/click.ogg', 50, TRUE)
+		play_sfx(src, SFX_MACHINES_CLICK)
 		W.forceMove(src)
 		own_set(src, "cell", W)
 		add_fingerprint(user)
@@ -141,12 +141,12 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 	if(stage == 3)
 		to_chat(user, "You have to unscrew the case first.")
 		return ITEM_INTERACT_BLOCKING
-	use_tool(user, tool, src, delay = 3 SECONDS, volume = 75, message_self = "You begin deconstructing [src].", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
+	use_tool(user, tool, src, delay = 3 SECONDS, volume = 75, start_self = "You begin deconstructing [src].", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/light_construct/proc/wrench_act_tool_done(mob/user)
 	user.visible_message("[user.name] deconstructs [src].", "You deconstruct [src].", "You hear a noise.")
-	playsound(src, 'sound/items/Deconstruct.ogg', 75, TRUE)
+	play_sfx(src, SFX_ITEMS_DECONSTRUCT, 1.5)
 	replace_with(src, /obj/item/stack/material/steel, sheets_refunded)
 	return ITEM_INTERACT_SUCCESS
 
@@ -218,6 +218,8 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 			icon_state = "flamp-empty"
 
 // the standard tube light fixture
+OWN_TIMER(/obj/machinery/light, light_timer_token)
+
 /obj/machinery/light
 	name = "light fixture"
 	icon = 'icons/obj/lighting.dmi'
@@ -239,7 +241,7 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 	/// Charge of a pristine emergency cell held as data (C5), or null for none.
 	/// emergency_cell() makes it real.
 	var/latent_cell_charge = null
-	var/on = 0					// 1 if on, 0 if off
+	on = 0					// 1 if on, 0 if off
 	var/brightness_range
 	var/brightness_power
 	var/brightness_color
@@ -259,16 +261,15 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 
 	var/obj/item/cell/emergency_light/cell
 	/// Emergency cell deadlines (world.time; 0 for none) and when discharge accounting last ran.
-	var/tmp/emergency_recharge_at = 0
-	var/tmp/emergency_discharge_at = 0
-	var/emergency_discharge_started
+	EXPIRY_TMP_DECLARE(emergency_recharge_at)
+	EXPIRY_TMP_DECLARE(emergency_discharge_at)
+	EXPIRY_DECLARE(emergency_discharge_started)
 	/// Wake state: the area whose power it watches, the one om_after() timer on
 	/// next_light_deadline(), and the auto-flicker chunk watches and recheck.
 	var/tmp/area/area_power_token
 	var/tmp/last_area_power = null
-	var/tmp/light_timer_token
 	var/tmp/light_timer_at = 0
-	var/tmp/flicker_check_at = 0
+	EXPIRY_TMP_DECLARE(flicker_check_at)
 	var/tmp/list/flicker_chunk_tokens
 	var/start_with_cell = TRUE	// if true, this fixture generates a very weak cell at roundstart
 
@@ -371,15 +372,15 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 					remove_light_overlay()
 		if(LIGHT_EMPTY)
 			icon_state = "[base_state]-empty"
-			on = 0
+			set_on(0)
 			remove_light_overlay()
 		if(LIGHT_BURNED)
 			icon_state = "[base_state]-burned"
-			on = 0
+			set_on(0)
 			remove_light_overlay()
 		if(LIGHT_BROKEN)
 			icon_state = "[base_state]-broken"
-			on = 0
+			set_on(0)
 			remove_light_overlay()
 	return
 
@@ -394,15 +395,15 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 				else
 					remove_light_overlay()
 			if(LIGHT_EMPTY)
-				on = 0
+				set_on(0)
 				icon_state = "[base_state][on]"
 				remove_light_overlay()
 			if(LIGHT_BURNED)
-				on = 0
+				set_on(0)
 				icon_state = "[base_state][on]"
 				remove_light_overlay()
 			if(LIGHT_BROKEN)
-				on = 0
+				set_on(0)
 				icon_state = "[base_state][on]"
 				remove_light_overlay()
 		return
@@ -454,7 +455,7 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 	if(!on)
 		needsound = TRUE // Play sound next time we turn on
 	else if(needsound)
-		playsound(src, 'sound/effects/lighton.ogg', 65, 1)
+		play_sfx(src, SFX_EFFECTS_LIGHTON)
 		needsound = FALSE // Don't play sound again until we've been turned off
 
 	if(on)
@@ -480,22 +481,22 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 				if(status == LIGHT_OK && trigger)
 					status = LIGHT_BURNED
 					update_icon()
-					on = 0
+					set_on(0)
 					set_light(0)
 			else
-				update_use_power(USE_POWER_ACTIVE)
+				set_use_power(USE_POWER_ACTIVE)
 				set_light(correct_range, correct_power, correct_color)
 				overlay_color = correct_overlay
 		if(cell?.charge < cell?.maxcharge)
 			schedule_emergency_recharge()
 	else if(has_emergency_power(LIGHT_EMERGENCY_POWER_USE) && !turned_off())
-		update_use_power(USE_POWER_IDLE)
+		set_use_power(USE_POWER_IDLE)
 		emergency_mode = TRUE
 		begin_emergency_discharge()
 		if(auto_flicker)
 			start_flicker_watch()
 	else
-		update_use_power(USE_POWER_IDLE)
+		set_use_power(USE_POWER_IDLE)
 		set_light(0)
 	update_light()
 	update_active_power_usage((light_range * light_power) * LIGHTING_POWER_FACTOR)
@@ -524,7 +525,7 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 // attempt to set the light's on/off status
 // will not switch on if broken/burned/empty
 /obj/machinery/light/proc/seton(s)
-	on = (s && status == LIGHT_OK)
+	set_on((s && status == LIGHT_OK))
 	update()
 
 /obj/machinery/light/get_cell()
@@ -610,7 +611,7 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 	own_set(src, "installed_light", L)
 	L.forceMove(src) //Move it into the socket!
 
-	on = powered() && !turned_off() // Do not instantly turn on lights if the area lightswitch is off
+	set_on(powered() && !turned_off()) // Do not instantly turn on lights if the area lightswitch is off
 	update()
 
 	if(on && rigged)
@@ -720,9 +721,7 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 	else if(status == LIGHT_EMPTY)
 		to_chat(user, "You stick \the [W] into the light socket!")
 		if(has_power() && !(W.flags & NOCONDUCT))
-			var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-			s.set_up(3, 1, src)
-			s.start()
+			fx_sparks(src, 3)
 			if (prob(75))
 				electrocute_mob(user, get_area(src), src, rand(0.7,1.0))
 	return TRUE
@@ -758,7 +757,7 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 	return bulb().multitool_act(user, tool)
 
 /obj/machinery/light/flamp/wrench_act(mob/user, obj/item/tool)
-	anchored = !anchored
+	set_anchored(!anchored)
 	playsound(src, tool.usesound, 50, TRUE)
 	to_chat(user, span_notice("You [anchored ? "wrench" : "unwrench"] \the [src]."))
 	return ITEM_INTERACT_SUCCESS
@@ -831,20 +830,20 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 	if(status != LIGHT_OK)
 		flickering = 0
 		return
-	on = !on
+	set_on(!on)
 	if(flicker_color && brightness_color != flicker_color)
 		brightness_color = flicker_color
 		brightness_color_ns = flicker_color
 		update(0) //Yes. This is done here and then immediately followed up with another update(0). Why does it need that? I have no clue. But a single update(0) does not work.
 	update(0)
 	if(!on) // Only play when the light turns off.
-		playsound(src, 'sound/effects/light_flicker.ogg', 50, 1)
+		play_sfx(src, SFX_EFFECTS_LIGHT_FLICKER)
 	if(remaining_flicks > 0)
 		remaining_flicks--
 		om_after(src, rand(5, 15), PROC_REF(do_flicker), remaining_flicks, flicker_color, original_color, original_color_ns)
 		return
 	//All this happens after our final flicker.
-	on = (status == LIGHT_OK)
+	set_on((status == LIGHT_OK))
 	brightness_color = original_color
 	brightness_color_ns = original_color_ns
 	update(0)
@@ -954,10 +953,10 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 		return TRUE
 
 	if(on)
-		on = 0
+		set_on(0)
 		update()
 	else
-		on = has_power()
+		set_on(has_power())
 		update()
 	return TRUE
 
@@ -987,11 +986,9 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 
 	if(!skip_sound_and_sparks)
 		if(status == LIGHT_OK || status == LIGHT_BURNED)
-			playsound(src, 'sound/effects/Glasshit.ogg', 75, 1)
+			play_sfx(src, SFX_EFFECTS_GLASSHIT)
 		if(on)
-			var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-			s.set_up(3, 1, src)
-			s.start()
+			fx_sparks(src, 3)
 	status = LIGHT_BROKEN //This occasionally runtimes when it occurs midround after build mode spawns a broken light. No idea why.
 	if(installed_light) // a latent bulb takes the fixture's status
 		installed_light.status = status
@@ -1012,7 +1009,7 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 	status = LIGHT_OK
 	if(installed_light)
 		installed_light.status = LIGHT_OK
-	on = 1
+	set_on(1)
 	update()
 
 //blob effect
@@ -1060,32 +1057,30 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 
 /obj/machinery/light/proc/schedule_light_timer()
 	var/deadline = next_light_deadline()
-	if(deadline == light_timer_at && (!isnull(light_timer_token) || !deadline))
+	if(deadline == light_timer_at && (om_timer_slot_pending(src, "light_timer_token") || !deadline))
 		return
-	if(!isnull(light_timer_token))
-		om_cancel_timer(src, light_timer_token)
-		light_timer_token = null
+	if(om_timer_slot_pending(src, "light_timer_token"))
+		om_cancel_timer_slot(src, "light_timer_token")
 	light_timer_at = deadline
 	if(deadline)
-		light_timer_token = om_after(src, max(deadline - world.time, 0), PROC_REF(light_timer_fired))
+		om_after_slot(src, "light_timer_token", max(deadline - world.time, 0), PROC_REF(light_timer_fired))
 
 /obj/machinery/light/proc/light_timer_fired()
-	light_timer_token = null
 	light_timer_at = 0
 	if(QDELETED(src))
 		return
-	if(emergency_discharge_at && world.time >= emergency_discharge_at)
+	if(emergency_discharge_at && EXPIRY_EXPIRED(src, emergency_discharge_at, CLOCK_WORLD))
 		continue_emergency_discharge()
-	if(emergency_recharge_at && world.time >= emergency_recharge_at)
+	if(emergency_recharge_at && EXPIRY_EXPIRED(src, emergency_recharge_at, CLOCK_WORLD))
 		finish_emergency_recharge()
-	if(flicker_check_at && world.time >= flicker_check_at)
+	if(flicker_check_at && EXPIRY_EXPIRED(src, flicker_check_at, CLOCK_WORLD))
 		flicker_check_at = 0
 		auto_flicker_check()
 	schedule_light_timer()
 
 /obj/machinery/light/om_sleep_violation()
 	var/deadline = next_light_deadline()
-	if(deadline && (isnull(light_timer_token) || light_timer_at > deadline))
+	if(deadline && (!om_timer_slot_pending(src, "light_timer_token") || light_timer_at > deadline))
 		return "deadline [deadline] (now [world.time]) has no timer"
 	if(get_area(src) && isnull(area_power_token()))
 		return "not watching its area's power"
@@ -1117,15 +1112,15 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 	// Set the initial emergency appearance immediately, then account for charge
 	// in coarse time-based batches: one timer per fixture every 10 seconds.
 	use_emergency_power(0)
-	emergency_discharge_started = world.time
-	emergency_discharge_at = world.time + 10 SECONDS
+	EXPIRY_STAMP(src, emergency_discharge_started, CLOCK_WORLD)
+	EXPIRY_SET(src, emergency_discharge_at, 10 SECONDS, CLOCK_WORLD)
 	schedule_light_timer()
 
 /obj/machinery/light/proc/settle_emergency_discharge()
 	if(!emergency_discharge_started || !has_cell())
 		return
 	var/elapsed = max(0, world.time - emergency_discharge_started)
-	emergency_discharge_started = world.time
+	EXPIRY_STAMP(src, emergency_discharge_started, CLOCK_WORLD)
 	var/amount = LIGHT_EMERGENCY_POWER_USE * (elapsed / (2 SECONDS))
 	if(amount > 0)
 		use_emergency_power(min(amount, emergency_cell().charge))
@@ -1141,7 +1136,7 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 		emergency_discharge_started = 0
 		update(FALSE)
 		return
-	emergency_discharge_at = world.time + 10 SECONDS
+	EXPIRY_SET(src, emergency_discharge_at, 10 SECONDS, CLOCK_WORLD)
 
 /obj/machinery/light/proc/schedule_emergency_recharge()
 	if(!cell || cell.charge >= cell.maxcharge || !has_power() || emergency_recharge_at)
@@ -1149,7 +1144,7 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 	// Charging is time based. Preserve the historical rate of 0.4 charge every
 	// two seconds while stable power is available.
 	var/charge_steps = CEILING((cell.maxcharge - cell.charge) / (LIGHT_EMERGENCY_POWER_USE * 2), 1)
-	emergency_recharge_at = world.time + max(1, charge_steps * (2 SECONDS))
+	EXPIRY_SET(src, emergency_recharge_at, max(1, charge_steps * (2 SECONDS)), CLOCK_WORLD)
 	schedule_light_timer()
 
 /obj/machinery/light/proc/finish_emergency_recharge()
@@ -1179,11 +1174,11 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 		schedule_light_timer()
 		return
 	if(flickering)
-		flicker_check_at = world.time + 2 SECONDS
+		EXPIRY_SET(src, flicker_check_at, 2 SECONDS, CLOCK_WORLD)
 	else if(check_for_player_proximity(src, radius = 12, ignore_ghosts = FALSE, ignore_afk = TRUE))
 		seton(TRUE) // Lights must be on to flicker.
 		flicker(5)
-		flicker_check_at = world.time + 2 SECONDS
+		EXPIRY_SET(src, flicker_check_at, 2 SECONDS, CLOCK_WORLD)
 	else
 		seton(FALSE) // Otherwise keep it dark and spooky for when someone shows up.
 		flicker_check_at = 0
@@ -1251,8 +1246,8 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 	///Replaces brightness_color during nightshifts.
 	var/nightshift_color = LIGHT_COLOR_NIGHTSHIFT
 
-	drop_sound = 'sound/items/drop/glass.ogg'
-	pickup_sound = 'sound/items/pickup/glass.ogg'
+	drop_sound = SFX_ITEMS_DROP_GLASS
+	pickup_sound = SFX_ITEMS_PICKUP_GLASS
 
 	var/init_brightness_range = 8
 	var/init_brightness_power = 1
@@ -1359,7 +1354,7 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 // attack bulb/tube with object
 // if a syringe, can inject phoron to make it explode
 /obj/item/light/multitool_act(mob/user, obj/item/tool)
-	var/list/menu_list = list(
+	var/static/list/menu_list = list(
 		"Normal Range",
 		"Normal Brightness",
 		"Normal Color",
@@ -1460,7 +1455,7 @@ DECLARE_INTERACTIONS(/obj/item/light, INTERACT_ITEM(null, PROC_REF(interaction_i
 		status = LIGHT_BROKEN
 		force = 5
 		sharp = TRUE
-		playsound(src, 'sound/effects/Glasshit.ogg', 75, 1)
+		play_sfx(src, SFX_EFFECTS_GLASSHIT)
 		update_icon()
 
 //Lamp Shade
@@ -1515,7 +1510,7 @@ DECLARE_INTERACTIONS(/obj/item/light, INTERACT_ITEM(null, PROC_REF(interaction_i
 		if(prob(L.broken_chance))
 			broken(1)
 
-	on = powered()
+	set_on(powered())
 	last_area_power = !!has_power()
 	subscribe_area_power()
 	update(0)
@@ -1750,7 +1745,7 @@ DECLARE_INTERACTIONS(/obj/item/light, INTERACT_ITEM(null, PROC_REF(interaction_i
 
 /// A power surge blows the light.
 /obj/machinery/light/proc/surge_break()
-	on = 1
+	set_on(1)
 	broken()
 
 OWN(/obj/machinery/light, installed_light, OWN_CONTAINED)

@@ -80,6 +80,14 @@
 /// instance D stands for (so D is registered iff GETTER(D) == D).
 #define REGISTRY_TYPE(PATH, GETTER) ##PATH/registry_getter() { return GETTER; }
 
+// ---- owned timers ----
+/// NAME is a timer the entity owns: at most one pending per (entity, NAME), scheduled with
+/// om_after_slot(E, "NAME", ...), read with om_timer_slot_pending()/om_timer_slot_left(),
+/// cancelled with om_cancel_timer_slot(), and released by teardown with the entity's other
+/// owned things. A keyed family ("NAME:key") is declared once by NAME. Timer ids are never
+/// stored in vars (check_grep "stored timer handles").
+#define OWN_TIMER(PATH, NAME) ##PATH/declared_timer_slots() { . = ..(); . += #NAME; }
+
 // ---- annotations (not kinds) ----
 /// Diagnostic: VAR is deliberately left set after destruction (an id the GC report reads).
 #define KEEP_AFTER_DESTROY(PATH, VAR) ##PATH/declared_keep_vars() { . = ..(); LAZYADD(., nameof(PATH::VAR)); }

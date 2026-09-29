@@ -47,9 +47,8 @@
 	add_underlay(T, node, dir)
 
 /obj/machinery/atmospherics/unary/outlet_injector/power_change()
-	var/old_stat = stat
-	..()
-	if(old_stat != stat)
+	. = ..()
+	if(.)
 		update_icon()
 
 /obj/machinery/atmospherics/unary/outlet_injector/machine_step()
@@ -58,7 +57,7 @@
 	last_power_draw = 0
 	last_flow_rate = 0
 
-	if((stat & (NOPOWER|BROKEN)) || !use_power)
+	if((!operable()) || !use_power)
 		register_gas_dependencies()
 		return PROCESS_KILL
 
@@ -85,12 +84,12 @@
 
 /// The same test process() makes before it pumps: powered, on, and holding enough warm gas.
 /obj/machinery/atmospherics/unary/outlet_injector/gas_wake_condition()
-	if((stat & (NOPOWER|BROKEN)) || !use_power)
+	if((!operable()) || !use_power)
 		return FALSE
 	return air_contents && air_contents.return_temperature() > 0 && air_contents.total_moles() >= MINIMUM_MOLES_TO_PUMP
 
 /obj/machinery/atmospherics/unary/outlet_injector/proc/inject()
-	if(injecting || (stat & NOPOWER))
+	if(injecting || (has_stat(NOPOWER)))
 		return 0
 
 	var/datum/gas_mixture/environment = loc.return_air()
@@ -145,10 +144,10 @@
 		return 0
 
 	if(signal.data["power"])
-		update_use_power(text2num(signal.data["power"]))
+		set_use_power(text2num(signal.data["power"]))
 
 	if(signal.data["power_toggle"])
-		update_use_power(!use_power)
+		set_use_power(!use_power)
 
 	if(signal.data["inject"])
 		spawn inject()
@@ -176,20 +175,23 @@
 
 /// The old attack_hand: never called ..(), so it stays ungated.
 /datum/interaction/machine_hand/ungated/outlet_injector_toggle
+	feedback = /datum/msg/interaction/machine_hand/ungated/outlet_injector_toggle
 	id = "outlet_injector_toggle"
 	name = "Toggle"
 	category = INTERACTION_CAT_TOGGLE
-	message_self = "You toggle %TARGET%."
 	effect = /obj/machinery/atmospherics/unary/outlet_injector/proc/interaction_toggle
+
+/datum/msg/interaction/machine_hand/ungated/outlet_injector_toggle
+	self = "You toggle %T%."
 
 /obj/machinery/atmospherics/unary/outlet_injector/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	injecting = !injecting
-	update_use_power(injecting ? USE_POWER_IDLE : USE_POWER_OFF)
+	set_use_power(injecting ? USE_POWER_IDLE : USE_POWER_OFF)
 	update_icon()
 	return TRUE
 
 /obj/machinery/atmospherics/unary/outlet_injector/multitool_act(mob/user, obj/item/W)
-	var/list/options = list("Frequency", "ID Tag", "-SAVE TO BUFFER-", "Cancel")
+	var/static/list/options = list("Frequency", "ID Tag", "-SAVE TO BUFFER-", "Cancel")
 	var/answer = rerun_ask(user, "k197", TYPE_PROC_REF(/atom, multitool_act), args, /datum/om/prompt/choice/alert, message = "[src] has an ID of \"[id]\" and a frequency of [frequency]. What would you like to change?", title = "Options!", choices = options)
 	if(isnull(answer))
 		return ITEM_INTERACT_BLOCKING
@@ -222,7 +224,7 @@
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/atmospherics/unary/outlet_injector/wrench_act(mob/user, obj/item/W)
-	use_tool(user, W, src, delay = 40, volume = 50, message_self = "You begin to unfasten \the [src]...", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
+	use_tool(user, W, src, delay = 40, volume = 50, start_self = "You begin to unfasten \the [src]...", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/atmospherics/unary/outlet_injector/proc/wrench_act_tool_done(mob/user)

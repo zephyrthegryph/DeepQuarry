@@ -15,7 +15,7 @@
 
 	caliber = "nsfw"
 
-	fire_sound = 'sound/weapons/taser.ogg'
+	fire_sound = SFX_WEAPONS_TASER
 
 	load_method = MAGAZINE //Nyeh heh hehhh.
 	magazine_type = null
@@ -166,7 +166,7 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/cell_mag, INTERACT_ITEM("Load", PROC
 		B.forceMove(src)
 		own_add(src, "stored_ammo", B)
 		update_icon()
-	playsound(src, 'sound/weapons/flipblade.ogg', 50, 1)
+	play_sfx(src, SFX_WEAPONS_FLIPBLADE)
 	update_icon()
 	if(istype(loc, /obj/item/gun/projectile/cell_loaded)) // Update the HUD if we're in a gun + have a user. Not that one should be able to reload the mag while it's in a gun, but just in caaaaase.
 		var/obj/item/gun/projectile/cell_loaded/cell_load = loc
@@ -241,9 +241,7 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/cell_mag, INTERACT_ITEM("Load", PROC
 	desc = "A storage case for a multi-purpose handgun. Variety hour!"
 	w_class = ITEMSIZE_NORMAL
 
-/obj/item/storage/secure/briefcase/nsfw_pack_hybrid/hold_constraint()
-	var/list/holds = list(/obj/item/gun/projectile/cell_loaded,/obj/item/ammo_magazine/cell_mag,/obj/item/ammo_casing/microbattery)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/secure/briefcase/nsfw_pack_hybrid, hold_spec, list(HOLD_ONLY(list(/obj/item/gun/projectile/cell_loaded,/obj/item/ammo_magazine/cell_mag,/obj/item/ammo_casing/microbattery)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 
 /obj/item/storage/secure/briefcase/nsfw_pack_hybrid/Initialize(mapload)
 	. = ..()
@@ -265,9 +263,7 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/cell_mag, INTERACT_ITEM("Load", PROC
 	desc = "A storage case for a multi-purpose handgun. Variety hour!"
 	w_class = ITEMSIZE_NORMAL
 
-/obj/item/storage/secure/briefcase/nsfw_pack_hybrid_combat/hold_constraint()
-	var/list/holds = list(/obj/item/gun/projectile/cell_loaded,/obj/item/ammo_magazine/cell_mag,/obj/item/ammo_casing/microbattery)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/secure/briefcase/nsfw_pack_hybrid_combat, hold_spec, list(HOLD_ONLY(list(/obj/item/gun/projectile/cell_loaded,/obj/item/ammo_magazine/cell_mag,/obj/item/ammo_casing/microbattery)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 
 /obj/item/storage/secure/briefcase/nsfw_pack_hybrid_combat/Initialize(mapload)
 	. = ..()

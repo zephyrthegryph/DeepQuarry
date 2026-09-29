@@ -22,8 +22,8 @@
 	actions_types = list(/datum/action/item_action/toggle_head_light)
 	w_class = ITEMSIZE_NORMAL
 	ear_protection = 1
-	drop_sound = 'sound/items/drop/helm.ogg'
-	pickup_sound = 'sound/items/pickup/helm.ogg'
+	drop_sound = SFX_ITEMS_DROP_HELM
+	pickup_sound = SFX_ITEMS_PICKUP_HELM
 	resistance_flags = FIRE_PROOF
 
 /obj/item/clothing/head/hardhat/orange

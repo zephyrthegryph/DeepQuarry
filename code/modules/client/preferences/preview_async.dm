@@ -352,7 +352,7 @@
 		var/output = rustg_iconforge_check(jobs[dir_key][1])
 		if(output != RUSTG_JOB_NO_RESULTS_YET)
 			outputs[dir_key] = output
-	if(length(outputs) < length(jobs) && world.time <= state[8])
+	if(length(outputs) < length(jobs) && ELAPSED_SINCE(null, state[8], CLOCK_WORLD) <= 0)
 		om_after(src, world.tick_lag, PROC_REF(poll_step))
 		return
 	if(prefs)

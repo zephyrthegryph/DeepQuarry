@@ -11,7 +11,7 @@
 		slot_l_hand_str = 'icons/mob/items/lefthand_magic.dmi',
 		slot_r_hand_str = 'icons/mob/items/righthand_magic.dmi',
 		)
-	fire_sound = 'sound/weapons/emitter.ogg'
+	fire_sound = SFX_WEAPONS_EMITTER
 	w_class = ITEMSIZE_HUGE
 	projectile_type = null
 	var/checks_antimagic = TRUE
@@ -52,4 +52,4 @@
 		user.visible_message("*wzhzhzh*", span_danger("The [name] whizzles quietly."))
 	else
 		src.visible_message("*wzhzh*")
-	playsound(src, 'sound/weapons/empty.ogg', 100, 1)
+	play_sfx(src, SFX_WEAPONS_EMPTY, 2)

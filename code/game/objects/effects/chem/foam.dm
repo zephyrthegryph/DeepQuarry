@@ -21,7 +21,7 @@
 	. = ..()
 	// icon_state = "[ismetal? "m" : ""]foam" // Removal
 	metal = ismetal
-	playsound(src, 'sound/effects/bubbles2.ogg', 80, 1, -3)
+	play_sfx(src, SFX_EFFECTS_BUBBLES2)
 	if(dries)
 		om_after(src, 3 + metal * 3, PROC_REF(post_spread))
 		om_after(src, 12 SECONDS, PROC_REF(pre_harden))

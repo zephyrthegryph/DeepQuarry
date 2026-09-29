@@ -6,7 +6,7 @@
 	layer = ABOVE_WINDOW_LAYER
 	circuit = /obj/item/circuitboard/keycard_auth
 	flags = WALL_ITEM
-	var/active = 0 //This gets set to 1 on all devices except the one where the initial request was made.
+	active = 0 //This gets set to 1 on all devices except the one where the initial request was made.
 	var/event = ""
 	var/screen = 1
 	var/confirmed = 0 //This variable is set by the device that confirms the request.
@@ -28,7 +28,7 @@
 	return TRUE
 
 /obj/machinery/keycard_auth/screwdriver_act(mob/user, obj/item/tool)
-	use_tool(user, tool, src, delay = 1 SECOND, volume = 50, message_self = "You begin removing the faceplate from the [src]", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user))
+	use_tool(user, tool, src, delay = 1 SECOND, volume = 50, start_self = "You begin removing the faceplate from the [src]", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_BLOCKING
 
 /obj/machinery/keycard_auth/proc/screwdriver_act_tool_done(mob/user)
@@ -42,7 +42,7 @@
 	A.pixel_x = pixel_x
 	A.pixel_y = pixel_y
 	A.set_dir(dir)
-	A.anchored = TRUE
+	A.set_anchored(TRUE)
 	latent_materialize_all() // a walk needs real things (C5)
 	for(var/obj/C in contents_of(src)) // ALLOW(latent): materialized above
 		if(istype(C, /obj/item/circuitboard))
@@ -75,7 +75,7 @@
 	effect = /obj/machinery/keycard_auth/proc/interaction_swipe
 
 /obj/machinery/keycard_auth/proc/interaction_swipe(mob/user, obj/item/W, datum/interaction/interaction)
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		to_chat(user, "This device is not powered.")
 		return TRUE
 
@@ -93,8 +93,8 @@
 	return TRUE
 
 /obj/machinery/keycard_auth/power_change()
-	..()
-	if(stat &NOPOWER)
+	. = ..()
+	if(has_stat(NOPOWER))
 		icon_state = "auth_off"
 
 // TGUI migration. attack_hand opens KeycardAuth.tsx;
@@ -105,7 +105,7 @@
 	effect = /obj/machinery/keycard_auth/proc/interaction_open_ui_impl
 
 /obj/machinery/keycard_auth/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
-	if(user.stat || stat & (NOPOWER|BROKEN))
+	if(user.stat || !operable())
 		to_chat(user, "This device is not powered.")
 		return TRUE
 	if(!user.IsAdvancedToolUser())
@@ -136,7 +136,7 @@
 	if(om_busy(src))
 		to_chat(usr, "This device is busy.")
 		return TRUE
-	if(usr.stat || stat & (BROKEN|NOPOWER))
+	if(usr.stat || !operable())
 		to_chat(usr, "This device is without power.")
 		return TRUE
 	switch(action)
@@ -151,7 +151,7 @@
 			return TRUE
 
 /obj/machinery/keycard_auth/proc/reset()
-	active = 0
+	set_active(0)
 	event = ""
 	screen = 1
 	confirmed = 0
@@ -179,19 +179,19 @@
 	reset()
 
 /obj/machinery/keycard_auth/proc/receive_request(obj/machinery/keycard_auth/source)
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return
 	rel_set(src, "event_source", source)
 	// Busy for the confirmation window: a hold claims the device and closes the window when it ends.
 	om_release_busy(src, "new request")
-	active = 1
+	set_active(1)
 	icon_state = "auth_on"
 	om_hold_busy(src, confirm_delay, PROC_REF(receive_window_closed))
 
 /obj/machinery/keycard_auth/proc/receive_window_closed()
 	rel_clear(src, "event_source")
 	icon_state = "auth_off"
-	active = 0
+	set_active(0)
 
 /obj/machinery/keycard_auth/proc/trigger_event(mob/user)
 	switch(event)

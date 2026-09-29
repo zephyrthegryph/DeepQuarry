@@ -102,7 +102,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/photocopier/faxmachine, REGISTRY_FAXES)
 		return
 	if(L.stat || L.restrained())
 		return
-	if(GLOB.last_fax_role_request && (world.time - GLOB.last_fax_role_request < 5 MINUTES))
+	if(GLOB.last_fax_role_request && (ELAPSED_SINCE(src, GLOB.last_fax_role_request, CLOCK_WORLD) < 5 MINUTES))
 		to_chat(L, span_warning("The global automated relays are still recalibrating. Try again later or relay your request in written form for processing."))
 		return
 
@@ -136,7 +136,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/photocopier/faxmachine, REGISTRY_FAXES)
 	var/datum/job/job_to_request = SSjob.get_job(role)
 	var/reason = "Unspecified"
 	var/list/possible_reasons = list("Unspecified", "General duties", "Emergency situation")
-	possible_reasons += job_to_request.get_request_reasons()
+	possible_reasons += TYPE_TABLE_GET(job_to_request, get_request_reasons)
 	var/_answer_k136 = rerun_ask(L, "k136", PROC_REF(request_roles), args, /datum/om/prompt/choice, message = "Pick request reason.", title = "Request reason", choices = possible_reasons)
 	if(isnull(_answer_k136))
 		return
@@ -181,7 +181,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/photocopier/faxmachine, REGISTRY_FAXES)
 	message_color = ping_dept.color
 
 	message_chat_rolerequest(message_color, ping_name, reason, role)
-	GLOB.last_fax_role_request = world.time
+	GLOB.last_fax_role_request = EXPIRY_AT(src, CLOCK_WORLD, 0)
 	to_chat(L, span_notice("Your request was transmitted."))
 
 /obj/machinery/photocopier/faxmachine/tgui_interact(mob/user, datum/tgui/ui)
@@ -351,13 +351,13 @@ Extracted to its own procedure for easier logic handling with paper bundles.
 	if(toner <= 10) //allow replacing when low toner is affecting the print darkness
 		user.drop_item()
 		to_chat(user, span_notice("You insert the toner cartridge into \the [src]."))
-		playsound(loc, 'sound/machines/click.ogg', 50, 1)
+		play_sfx(loc, SFX_MACHINES_CLICK)
 		var/obj/item/toner/T = held
 		toner += T.toner_amount
 		consume(held, user)
 	else
 		to_chat(user, span_notice("This cartridge is not yet ready for replacement! Use up the rest of the toner."))
-		playsound(loc, 'sound/machines/buzz-two.ogg', 75, 1)
+		play_sfx(loc, SFX_MACHINES_BUZZ_TWO, 1.5, vary = TRUE)
 	return TRUE
 
 /obj/machinery/photocopier/faxmachine/multitool_act(mob/user, obj/item/tool)
@@ -375,7 +375,7 @@ Extracted to its own procedure for easier logic handling with paper bundles.
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/photocopier/faxmachine/proc/sendfax(destination, mob/living/sender)
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return
 
 	use_power(200)
@@ -398,7 +398,7 @@ Extracted to its own procedure for easier logic handling with paper bundles.
 	return success
 
 /obj/machinery/photocopier/faxmachine/proc/receivefax(obj/item/incoming)
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return 0
 
 	if(department == "Unknown")
@@ -424,7 +424,7 @@ Extracted to its own procedure for easier logic handling with paper bundles.
 	use_power(active_power_usage)
 
 /obj/machinery/photocopier/faxmachine/proc/send_admin_fax(mob/sender, destination)
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return
 
 	use_power(200)

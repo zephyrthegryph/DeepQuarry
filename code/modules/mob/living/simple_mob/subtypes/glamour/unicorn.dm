@@ -29,7 +29,7 @@
 	faction = FACTION_GLAMOUR
 
 	projectiletype = /obj/item/projectile/beam/rainbow
-	projectilesound = 'sound/weapons/sparkle.ogg'
+	projectilesound = SFX_WEAPONS_SPARKLE
 	projectile_dispersion = 7
 	projectile_accuracy = -20
 

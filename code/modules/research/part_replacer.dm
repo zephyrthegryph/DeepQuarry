@@ -12,17 +12,15 @@
 	collection_mode = 1
 	display_contents_with_number = 1
 	max_storage_space = 100
-	drop_sound = 'sound/items/drop/device.ogg'
-	pickup_sound = 'sound/items/pickup/device.ogg'
+	drop_sound = SFX_ITEMS_DROP_DEVICE
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 	var/panel_req = TRUE
-	var/pshoom_or_beepboopblorpzingshadashwoosh = 'sound/items/rped.ogg'
+	var/pshoom_or_beepboopblorpzingshadashwoosh = SFX_ITEMS_RPED
 	var/reskin_ran = FALSE
 	var/unique_reskin = list("Soulless" = "RPED",
 							"Soulful" = "RPED_old")
 
-/obj/item/storage/part_replacer/hold_constraint()
-	var/list/holds = list(/obj/item/stock_parts)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/part_replacer, hold_spec, list(HOLD_ONLY(list(/obj/item/stock_parts)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 
 /obj/item/storage/part_replacer/proc/play_rped_sound()
 	//Plays the sound for RPED exhanging or installing parts.
@@ -93,9 +91,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/part_replacer, INTERACT_ALT("Reskin", PROC
 	storage_slots = 200
 	max_storage_space = 400
 
-/obj/item/storage/part_replacer/adv/hold_constraint()
-	var/list/holds = list(/obj/item/stock_parts, /obj/item/reagent_containers/glass/beaker)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
+TYPE_TABLE(/obj/item/storage/part_replacer/adv, hold_spec, list(HOLD_ONLY(list(/obj/item/stock_parts, /obj/item/reagent_containers/glass/beaker)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 
 /obj/item/storage/part_replacer/adv/discount_bluespace
 	name = "prototype bluespace rapid part exchange device"
@@ -106,7 +102,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/part_replacer, INTERACT_ALT("Reskin", PROC
 	storage_slots = 400
 	max_storage_space = 800
 	panel_req = FALSE
-	pshoom_or_beepboopblorpzingshadashwoosh = 'sound/items/pshoom.ogg'
+	pshoom_or_beepboopblorpzingshadashwoosh = SFX_ITEMS_PSHOOM
 	unique_reskin = list("Soulless" = "DBRPED",
 						"Soulful" = "DBRPED_old")
 
@@ -119,7 +115,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/part_replacer, INTERACT_ALT("Reskin", PROC
 	storage_slots = 400
 	max_storage_space = 800
 	panel_req = FALSE
-	pshoom_or_beepboopblorpzingshadashwoosh = 'sound/items/pshoom.ogg'
+	pshoom_or_beepboopblorpzingshadashwoosh = SFX_ITEMS_PSHOOM
 	unique_reskin = list("Soulless" = "DBRPED",
 						"Soulful" = "DBRPED_old")
 

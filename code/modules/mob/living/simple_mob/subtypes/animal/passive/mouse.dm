@@ -99,14 +99,14 @@
 		if(!stat)
 			var/mob/M = AM
 			M.visible_message(span_blue("[icon2html(src,viewers(src))] Squeek!"))
-			playsound(src, 'sound/effects/mouse_squeak.ogg', 35, 1)
+			play_sfx(src, SFX_EFFECTS_MOUSE_SQUEAK)
 	..()
 
 /mob/living/simple_mob/animal/passive/mouse/on_death(gibbed)
 	layer = MOB_LAYER
-	playsound(src, 'sound/effects/mouse_squeak_loud.ogg', 35, 1)
+	play_sfx(src, SFX_EFFECTS_MOUSE_SQUEAK_LOUD)
 	if(client)
-		client.time_died_as_mouse = world.time
+		EXPIRY_STAMP(client, time_died_as_mouse, CLOCK_WORLD)
 	..()
 
 /mob/living/simple_mob/animal/passive/mouse/cannot_use_vents()
@@ -118,7 +118,7 @@
 	src.icon_state = "mouse_[body_color]_splat"
 	layer = MOB_LAYER
 	if(client)
-		client.time_died_as_mouse = world.time
+		EXPIRY_STAMP(client, time_died_as_mouse, CLOCK_WORLD)
 
 /*
  * Mouse types
@@ -305,7 +305,7 @@ EXTEND_INTERACTIONS(/obj/item/holder/mouse, INTERACT_USE(null, PROC_REF(interact
 	for(var/L in contents)
 		if(isanimal(L))
 			var/mob/living/simple_mob/S = L
-			user.visible_message(span_notice("[user] [S.response_help] \the [S]."))
+			act_message(user, S, null, MSG_OTHERS(span_notice("%U% [S.response_help] %T%.")))
 	return TRUE
 
 /mob/living/simple_mob/animal/passive/mouse/mining
@@ -335,7 +335,7 @@ EXTEND_INTERACTIONS(/obj/item/holder/mouse, INTERACT_USE(null, PROC_REF(interact
 	src.icon_state = "mouse_miner_splat"
 	layer = MOB_LAYER
 	if(client)
-		client.time_died_as_mouse = world.time
+		EXPIRY_STAMP(client, time_died_as_mouse, CLOCK_WORLD)
 
 /mob/living/simple_mob/animal/passive/mouse/beastmode
 	body_color = "white" // Always set white so it can be easily recoloured

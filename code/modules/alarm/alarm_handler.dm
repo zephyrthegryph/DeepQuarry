@@ -83,7 +83,7 @@
 	return visible_alarms(z)
 
 /datum/alarm_handler/proc/check_alarm_cleared(datum/alarm/alarm)
-	if ((alarm.end_time && world.time > alarm.end_time) || !length(alarm.sources))
+	if ((alarm.end_time && ELAPSED_SINCE(src, alarm.end_time, CLOCK_WORLD) > 0) || !length(alarm.sources))
 		on_alarm_change(alarm, ALARM_CLEARED)
 		own_remove(src, "alarms", alarm) // destroys it
 		return 1

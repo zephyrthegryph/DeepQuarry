@@ -112,20 +112,20 @@
 	var/incorporeal_move = 0 //0 is off, 1 is normal, 2 is for ninjas.
 	var/list/pinned                     // Lazylist of things pinning this creature to walls (see living_defense.dm). Usually empty.
 	var/list/embedded                   // Lazylist of embedded items, since simple mobs don't have organs. Usually empty.
-	// ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	// ALLOW(instance_list): d: per-mob languages, filled at runtime; mobs are few
 	var/list/languages = list()         // For speaking/listening.
-	// ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	// ALLOW(instance_list): d: per-mob language_keys, filled at runtime; mobs are few
 	var/list/language_keys = list()		// List of language keys indexing languages
 	var/species_language = null			// For species who want reset to use a specified default.
 	var/only_species_language  = 0		// For species who can only speak their default and no other languages. Does not affect understanding.
-	// ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	// ALLOW(instance_list): c: interned per subtype by shared_type_list() in Initialize(), so instances share one list
 	var/list/speak_emote = list("says") // Verbs used when speaking. Defaults to 'say' if speak_emote is null.
 	var/emote_type = 1		// Define emote default type, 1 for seen emotes, 2 for heard emotes
 	var/facing_dir = null   // Used for the ancient art of moonwalking.
 
 	var/name_archive //For admin things like possession
 
-	var/timeofdeath = 0.0//Living
+	EXPIRY_DECLARE(timeofdeath) //Living
 	/// What onlookers see when this mob dies ("\The [src] <death_message>"). See /mob/proc/get_death_message().
 	var/death_message = "seizes up and falls limp..."
 	COOLDOWN_DECLARE(cpr_time) //Carbon
@@ -203,7 +203,7 @@
 
 //Wizard mode, but can be used in other modes thanks to the brand new "Give Spell" badmin button
 	// Spells migrate between mobs on mind/ghost swaps (spellbook.dm, mind_transfer.dm): a relation list.
-	var/list/datum/spell/spell_list = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	var/list/datum/spell/spell_list = list() // ALLOW(instance_list): d: per-mob spell_list, filled at runtime; mobs are few
 
 //Changlings, but can be used in other modes
 //	var/obj/effect/proc_holder/changpower/list/power_list = list()
@@ -215,7 +215,7 @@
 	var/status_flags = CANPUSH	//bitflags: CANPUSH, LEAPING, HIDING, PASSEMOTES, FAKEDEATH. Status immunities and godmode are effects (EFFECT_IMMUNE_*, EFFECT_GODMODE).
 
 	var/tmp/area/lastarea = null
-	var/tmp/lastareachange = null
+	EXPIRY_TMP_DECLARE(lastareachange)
 
 	var/digitalcamo = 0 // Can they be tracked by the AI?
 
@@ -235,7 +235,7 @@
 	//so don't treat them as being SSD even though their client var is null.
 	var/tmp/mob/teleop = null
 
-	// ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	// ALLOW(instance_list): c: interned per subtype by shared_type_list() in Initialize(), so instances share one list
 	var/list/shouldnt_see = list(/mob/observer/eye)	//list of objects that this mob shouldn't see in the stat panel. this silliness is needed because of AI alt+click and cult blood runes. Interned per subtype in /mob/Initialize().
 
 	var/list/active_genes
@@ -272,7 +272,7 @@
 	var/tmp/datum/focus //What receives our keyboard inputs. src by default
 
 	/// dict of custom stat tabs with data
-	var/list/list/misc_tabs = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	var/list/list/misc_tabs = list() // ALLOW(instance_list): d: per-mob misc_tabs, filled at runtime; mobs are few
 
 	// Membership list maintained by /datum/action Grant()/Remove(): a relation list.
 	var/tmp/list/datum/action/actions

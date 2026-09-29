@@ -43,7 +43,7 @@
 	var/become_anomalous = FALSE //This, simply put, gives the item either precursor or an arcane tech level, along with setting a random tech level to 4-7.
 
 	/// Used for the below material type generation code.
-	var/list/banned_materials = list(
+	var/static/list/banned_materials = list(
 		/datum/material/flesh,
 		/datum/material/fluff,
 		/datum/material/darkglass,

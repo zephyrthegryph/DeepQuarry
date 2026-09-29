@@ -6,7 +6,7 @@
 	idle_power_usage = 10
 	var/datum/embedded_program/program	//the currently executing program
 	var/list/valid_actions
-	var/on = 1
+	on = 1
 
 /obj/machinery/embedded_controller/Initialize(mapload)
 	if(ispath(program))
@@ -30,9 +30,6 @@
 		if(program.signal_requires_processing(signal, receive_method, receive_param))
 			MACHINE_WAKE(src)
 
-/obj/machinery/embedded_controller/Topic()
-	. = ..()
-	// stack_trace("WARNING: Embedded controller [src] ([type]) had Topic() called unexpectedly. Please report this.") // statpanel means that topic can always be called for clicking
 
 /obj/machinery/embedded_controller/tgui_act(action, params, datum/tgui/ui)
 	if(..())

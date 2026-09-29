@@ -3,7 +3,7 @@
 	desc = "A Hephaestus exosuit-mounted mortar for use on planetary-or-similar bodies."
 	icon_state = "mecha_mortar"
 	equip_cooldown = 30
-	fire_sound = 'sound/weapons/gunshot_cannon.ogg'
+	fire_sound = SFX_WEAPONS_GUNSHOT_CANNON
 	fire_volume = 100
 	projectiles = 3
 	deviation = 0.6

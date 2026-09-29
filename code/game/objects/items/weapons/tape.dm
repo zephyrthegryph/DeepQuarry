@@ -4,8 +4,8 @@
 	icon = 'icons/obj/bureaucracy.dmi'
 	icon_state = "taperoll"
 	w_class = ITEMSIZE_TINY
-	drop_sound = 'sound/items/drop/cardboardbox.ogg'
-	pickup_sound = 'sound/items/pickup/cardboardbox.ogg'
+	drop_sound = SFX_ITEMS_DROP_CARDBOARDBOX
+	pickup_sound = SFX_ITEMS_PICKUP_CARDBOARDBOX
 
 	toolspeed = 2 //It is now used in surgery as a not awful, but probably dangerous option, due to speed.
 
@@ -24,20 +24,20 @@
 		return
 	if(!H.organs_by_name[BP_HEAD] || !H.has_eyes() || H.get_equipped_item(SLOT_ID_EYES) || (H.get_equipped_item(SLOT_ID_HEAD) && (H.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE)))
 		return
-	user.visible_message(span_danger("\The [user] has taped up \the [H]'s eyes!"))
+	act_message(user, H, others = span_danger("%U% has taped up %T%'s eyes!"))
 	H.equip_to_slot_or_del(new /obj/item/clothing/glasses/sunglasses/blindfold/tape(H), SLOT_ID_EYES, ignore_obstructions = FALSE)
 	H.update_inv_glasses()
-	playsound(src, 'sound/effects/tape.ogg',25)
+	play_sfx(src, SFX_EFFECTS_TAPE)
 
 /obj/item/tape_roll/proc/tape_mouth_done(mob/living/carbon/human/H, mob/living/user)
 	if(!can_place(H, user))
 		return
 	if(!H.organs_by_name[BP_HEAD] || !H.check_has_mouth() || (H.get_equipped_item(SLOT_ID_HEAD) && (H.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE)))
 		return
-	user.visible_message(span_danger("\The [user] has taped up \the [H]'s mouth!"))
+	act_message(user, H, others = span_danger("%U% has taped up %T%'s mouth!"))
 	H.equip_to_slot_or_del(new /obj/item/clothing/mask/muzzle/tape(H), SLOT_ID_MASK, ignore_obstructions = FALSE)
 	H.update_inv_wear_mask()
-	playsound(src, 'sound/effects/tape.ogg',25)
+	play_sfx(src, SFX_EFFECTS_TAPE)
 
 /obj/item/tape_roll/attack(mob/living/M, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
 	if(ishuman(M))
@@ -62,7 +62,7 @@
 				if(H.get_equipped_item(SLOT_ID_HEAD) && (H.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE))
 					to_chat(user, span_warning("Remove their [H.get_equipped_item(SLOT_ID_HEAD)] first."))
 					return ITEM_INTERACT_FAILURE
-				user.visible_message(span_danger("\The [user] begins taping over \the [H]'s eyes!"))
+				act_message(user, null, others = span_danger("%U% begins taping over \the [H]'s eyes!"))
 
 				om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(tape_eyes_done), done_args = list(H, user))
 
@@ -79,7 +79,7 @@
 				if(H.get_equipped_item(SLOT_ID_HEAD) && (H.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE))
 					to_chat(user, span_warning("Remove their [H.get_equipped_item(SLOT_ID_HEAD)] first."))
 					return ITEM_INTERACT_FAILURE
-				user.visible_message(span_danger("\The [user] begins taping up \the [H]'s mouth!"))
+				act_message(user, null, others = span_danger("%U% begins taping up \the [H]'s mouth!"))
 
 				om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(tape_mouth_done), done_args = list(H, user))
 
@@ -88,7 +88,7 @@
 					return ITEM_INTERACT_FAILURE
 
 				var/obj/item/handcuffs/cable/tape/T = new(user)
-				playsound(src, 'sound/effects/tape.ogg',25)
+				play_sfx(src, SFX_EFFECTS_TAPE)
 
 				if(!T.attempt_to_cuff(H, user))
 					consume(T, user)
@@ -103,7 +103,7 @@
 	var/obj/item/ducttape/tape = new(get_turf(src))
 	tape.attach(W)
 	user.put_in_hands(tape)
-	playsound(src, 'sound/effects/tape.ogg',25)
+	play_sfx(src, SFX_EFFECTS_TAPE)
 
 /obj/item/ducttape
 	name = "tape"
@@ -163,7 +163,7 @@ DECLARE_INTERACTIONS(/obj/item/ducttape, \
 
 /// Old attack_hand.
 /obj/item/ducttape/proc/interaction_hand(mob/living/L, obj/item/held, datum/interaction/interaction)
-	anchored = FALSE
+	set_anchored(FALSE)
 	return FALSE // Pick it up now that it's unanchored.
 
 /obj/item/ducttape/afterattack(A, mob/user, flag, params)
@@ -182,9 +182,9 @@ DECLARE_INTERACTIONS(/obj/item/ducttape, \
 			return											// reduce papers around corners issue.
 
 	user.drop_from_inventory(src)
-	playsound(src, 'sound/effects/tape.ogg',25)
+	play_sfx(src, SFX_EFFECTS_TAPE)
 	forceMove(source_turf)
-	anchored = TRUE
+	set_anchored(TRUE)
 
 	if(params)
 		var/list/mouse_control = params2list(params)

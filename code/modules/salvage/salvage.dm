@@ -6,8 +6,8 @@
 	throwforce = 5
 	throw_speed = 1
 	throw_range = 4
-	hitsound = 'sound/items/salvage/salvagepickup.ogg'
-	drop_sound = 'sound/items/salvage/salvagedrop.ogg'
+	hitsound = SFX_ITEMS_SALVAGE_SALVAGEPICKUP
+	drop_sound = SFX_ITEMS_SALVAGE_SALVAGEDROP
 	w_class = ITEMSIZE_NORMAL
 	var/worth = 100
 
@@ -38,16 +38,16 @@
 	name = "mysterious brick"
 	desc = "A peculier brick formed out of what appears to be plastic. This would make a fantastic collector's item."
 	icon_state = "lego_brick"
-	hitsound = 'sound/items/smolesmallbuild.ogg'
-	drop_sound = 'sound/items/drop/smolematerial.ogg'
+	hitsound = SFX_ITEMS_SMOLESMALLBUILD
+	drop_sound = SFX_ITEMS_DROP_SMOLEMATERIAL
 
 /obj/item/salvage/ruin/nanotrasen
 	name = "lost research notes"
 	desc = "A collection of research notes penned by old Nanotrasen scientists from decades past, technology lost in time- until you found them. It is a mystery what technology Central Command will push if they could just get their hands on these notes."
 	icon_state = "research_doc"
-	hitsound = 'sound/items/pickup/paper.ogg'
-	pickup_sound = 'sound/items/pickup/paper.ogg'
-	drop_sound = 'sound/items/drop/paper.ogg'
+	hitsound = SFX_ITEMS_PICKUP_PAPER
+	pickup_sound = SFX_ITEMS_PICKUP_PAPER
+	drop_sound = SFX_ITEMS_DROP_PAPER
 
 /obj/item/salvage/ruin/nanotrasen/Initialize(mapload)
 	. = ..()
@@ -57,9 +57,9 @@
 	name = "carp scales"
 	desc = "A collection of scales shed from a corrupted space carp. Their culinary potential could mean untold riches for Nanotrasen."
 	icon_state = "dragon_scales"
-	hitsound = 'sound/effects/glass_step.ogg'
-	pickup_sound = 'sound/effects/glass_step.ogg'
-	drop_sound = 'sound/effects/glass_step.ogg'
+	hitsound = SFX_EFFECTS_GLASS_STEP
+	pickup_sound = SFX_EFFECTS_GLASS_STEP
+	drop_sound = SFX_EFFECTS_GLASS_STEP
 
 /obj/item/salvage/loot
 	desc = "A tonne of salvage looted from a fallen foe. Who spawned the base type? Report this on the github."
@@ -68,22 +68,22 @@
 	name = "stolen jewellery"
 	desc = "A collection of stolen jewellery, fashioned from pilfered bluespace crystals and gems. Rumour has it, local pirates have been known to use these accessories to avoid capture."
 	icon_state = "pirate_treasure"
-	hitsound = 'sound/items/taperecorder_drop.ogg'
-	pickup_sound = 'sound/items/taperecorder_pickup.ogg'
-	drop_sound = 'sound/items/taperecorder_drop.ogg'
+	hitsound = SFX_ITEMS_TAPERECORDER_DROP
+	pickup_sound = SFX_ITEMS_TAPERECORDER_PICKUP
+	drop_sound = SFX_ITEMS_TAPERECORDER_DROP
 
 /obj/item/salvage/loot/russian
 	name = "siosp manual"
 	desc = "A small manual, written in Neo-Russkyia, detailing the manifesto of Malfoy Ames, father of The Cygni Rebellion. Central Command may wish to share this with their allies in the Trans-Solar Federation."
 	icon_state = "ussp_manual"
-	hitsound = 'sound/items/pickup/paper.ogg'
-	pickup_sound = 'sound/items/pickup/paper.ogg'
-	drop_sound = 'sound/items/drop/paper.ogg'
+	hitsound = SFX_ITEMS_PICKUP_PAPER
+	pickup_sound = SFX_ITEMS_PICKUP_PAPER
+	drop_sound = SFX_ITEMS_DROP_PAPER
 
 /obj/item/salvage/loot/syndicate
 	name = "syndicate intel"
 	desc = "A folder detailing Syndicate plans to infiltrate and sabotage operations in the Vir system. Central Command may find use of this to aid them in counter-intelligence."
 	icon_state = "syndie_doc"
-	hitsound = 'sound/items/pickup/paper.ogg'
-	pickup_sound = 'sound/items/pickup/paper.ogg'
-	drop_sound = 'sound/items/drop/paper.ogg'
+	hitsound = SFX_ITEMS_PICKUP_PAPER
+	pickup_sound = SFX_ITEMS_PICKUP_PAPER
+	drop_sound = SFX_ITEMS_DROP_PAPER

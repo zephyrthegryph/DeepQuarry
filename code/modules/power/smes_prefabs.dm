@@ -108,7 +108,7 @@
 /obj/machinery/power/smes/batteryrack/mapped/input_and_output_on/apply_mapped_settings()
 	inputting(TRUE)
 	outputting(TRUE)
-	mode = 3
+	set_mode(3)
 
 
 ////////////////////////////////////////////////////////////////////////////////////

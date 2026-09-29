@@ -19,7 +19,7 @@
 /datum/unit_test/dq_medical_every_condition_identifiable/Run()
 	TEST_ASSERT(length(subtypesof(/datum/affliction)) > 0, "no /datum/affliction subtypes registered")
 	var/list/failures = list()
-	for(var/T in dq_catalogued_affliction_types())
+	for(var/T in GLOBAL_TABLE_GET(dq_catalogued_affliction_types))
 		var/datum/affliction/proto = new T()
 		// Silent-marker conditions intentionally have no symptoms — they
 		// exist only as a state-flag readable by other conditions (e.g.
@@ -29,7 +29,7 @@
 		if(silent_marker)
 			qdel(proto)
 			continue
-		var/list/stages = proto.get_stages()
+		var/list/stages = TYPE_TABLE_GET(proto, affliction_stages)
 		if(stages)
 			for(var/stage_id in stages)
 				var/list/sd = stages[stage_id]
@@ -82,7 +82,7 @@
 		qdel(sg)
 
 	var/list/failures = list()
-	for(var/T in dq_catalogued_affliction_types())
+	for(var/T in GLOBAL_TABLE_GET(dq_catalogued_affliction_types))
 		var/datum/affliction/proto = new T()
 		var/curable = FALSE
 		if(length(proto.effective_cures()))
@@ -129,7 +129,7 @@
 	// reachable from this set is filtered out of the encyclopedia
 	// anyway, so it can't surface the generic OD fallback.
 	var/list/medical_reagents = list()
-	for(var/T in dq_catalogued_affliction_types())
+	for(var/T in GLOBAL_TABLE_GET(dq_catalogued_affliction_types))
 		var/datum/affliction/cproto = new T()
 		for(var/id in cproto.effective_cures())
 			medical_reagents[id] = TRUE
@@ -142,7 +142,7 @@
 
 	// Build the set of reagents that DO have a DQ OD condition.
 	var/list/has_od_condition = list()
-	for(var/T in dq_catalogued_affliction_types())
+	for(var/T in GLOBAL_TABLE_GET(dq_catalogued_affliction_types))
 		var/datum/affliction/cproto = new T()
 		if(cproto.subcategory == "Overdose" && length(cproto.caused_by_chems) == 1)
 			for(var/id in cproto.caused_by_chems)

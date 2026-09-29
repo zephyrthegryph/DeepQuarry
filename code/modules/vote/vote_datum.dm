@@ -2,7 +2,7 @@
 	// Person who started the vote
 	var/initiator = "the server"
 	// world.time the bote started at
-	var/started_time
+	EXPIRY_DECLARE(started_time)
 	// The question being asked
 	var/question
 	// Vote type text, for showing in UIs and stuff
@@ -49,7 +49,7 @@
 		log_admin("[capitalize(vote_type_text)] vote started by [key_name(usr)].")
 
 	log_vote(text)
-	started_time = world.time
+	EXPIRY_STAMP(src, started_time, CLOCK_WORLD)
 	announce(text)
 
 /datum/vote/proc/remaining()
@@ -121,12 +121,11 @@
 		You have [time/10] seconds to vote."))
 	world << sound('sound/ambience/alarm4.ogg', repeat = 0, wait = 0, volume = 50, channel = 3)
 
-/datum/vote/Topic(href, list/href_list)
-	if(href_list["vote"] == "open")
-		if(src)
-			tgui_interact(usr)
-		else
-			to_chat(usr, "There is no active vote to participate in.")
+TOPIC_ACTION(/datum/vote, "vote=open", PROC_REF(topic_open))
+
+/datum/vote/proc/topic_open(mob/user, list/args)
+	tgui_interact(user)
+	return TRUE
 
 /datum/vote/proc/tick()
 	if(remaining() == 0)

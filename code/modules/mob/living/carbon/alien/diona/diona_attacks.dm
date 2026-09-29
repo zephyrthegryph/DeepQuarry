@@ -6,7 +6,7 @@
 		var/obj/item/removed_hat = own_take(src, "hat")
 		removed_hat.forceMove(get_turf(src))
 		H.put_in_hands(removed_hat)
-		H.visible_message(span_danger("\The [H] removes \the [src]'s [removed_hat]."))
+		act_message(H, src, others = span_danger("%U% removes %T%'s [removed_hat]."))
 		update_icon()
 	else
 		return ..()
@@ -22,5 +22,5 @@ EXTEND_INTERACTIONS(/mob/living/carbon/alien/diona, INTERACT_ITEM_AS(I_HELP, "Pu
 		return TRUE
 	user.unEquip(held)
 	wear_hat(held)
-	user.visible_message(span_infoplain(span_bold("\The [user]") + " puts \the [held] on \the [src]."))
+	act_message(user, src, others = span_infoplain(span_bold("%U%") + " puts %I% on %T%."), item = held)
 	return TRUE

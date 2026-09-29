@@ -5,8 +5,8 @@
 	icon = 'icons/obj/forensics.dmi'
 	icon_state = "case"
 	storage_slots = 14
-	drop_sound = 'sound/items/drop/toolbox.ogg'
-	pickup_sound = 'sound/items/pickup/toolbox.ogg'
+	drop_sound = SFX_ITEMS_DROP_TOOLBOX
+	pickup_sound = SFX_ITEMS_PICKUP_TOOLBOX
 
 /obj/item/storage/briefcase/crimekit/Initialize(mapload)
 	. = ..()

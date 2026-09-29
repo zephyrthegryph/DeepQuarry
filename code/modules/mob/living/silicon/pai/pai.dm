@@ -21,7 +21,7 @@
 
 	var/ram = 100	// Used as currency to purchase different abilities
 	/// Installed software: id -> TRUE. The definitions are GLOB.pai_software_by_key[id].
-	var/list/software = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	var/list/software = list() // ALLOW(instance_list): d: per-mob software, sized at creation and filled in place; mobs are few
 	var/userDNA		// The DNA string of our assigned user
 
 	var/default_pai_card_path = /obj/item/paicard // Used when the pai is spawned directly by mapping or admin
@@ -522,7 +522,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/pai, \
 		ghost.notify_revive("Someone is trying to revive you. Re-enter your body if you want to be revived!", 'sound/effects/pai-restore.ogg', source = card)
 	canmove = TRUE
 	card.setEmotion(15)
-	playsound(card, 'sound/effects/pai-restore.ogg', 50, FALSE)
+	play_sfx(card, SFX_EFFECTS_PAI_RESTORE)
 	card.visible_message(span_filter_notice("\The [card] chimes."), runemessage = "chime")
 
 /mob/living/silicon/pai/lay_down()
@@ -553,7 +553,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/pai, \
 		return
 
 	cableturf.visible_message("The data cable rapidly retracts back into its spool.", "You hear a click and the sound of wire spooling rapidly.")
-	playsound(src, 'sound/machines/click.ogg', 50, 1)
+	play_sfx(src, SFX_MACHINES_CLICK)
 	own_clear(src, "cable", OWN_DELETE)
 
 //////////////////////////////////////////////////////////////////////////////////////////////////

@@ -29,18 +29,19 @@
 	occupant_message(message)
 	return
 
-/obj/item/mecha_parts/mecha_equipment/tool/cable_layer/Topic(href,href_list)
-	..()
-	if(href_list["toggle"])
-		set_ready_state(!equip_ready)
-		occupant_message("[src] [equip_ready?"dea":"a"]ctivated.")
-		src.mecha_log_message("[equip_ready?"Dea":"A"]ctivated.")
-		return
-	if(href_list["cut"])
-		if(cable && cable.get_amount())
-			om_ask(chassis?.slot_item(MECHA_SLOT_PILOT), /datum/om/prompt/number, PROC_REF(cable_length_entered), default = min(cable.get_amount(), 30), subject = chassis, title = "Cut cable", message = "Please specify the length of cable to cut", requires = list(/datum/om/check/inside_target))
-		else
-			occupant_message("There's no more cable on the reel.")
+TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/cable_layer, "toggle", PROC_REF(topic_toggle))
+TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/cable_layer, "cut", PROC_REF(topic_cut))
+
+/obj/item/mecha_parts/mecha_equipment/tool/cable_layer/proc/topic_toggle(mob/user, list/args)
+	set_ready_state(!equip_ready)
+	occupant_message("[src] [equip_ready?"dea":"a"]ctivated.")
+	src.mecha_log_message("[equip_ready?"Dea":"A"]ctivated.")
+
+/obj/item/mecha_parts/mecha_equipment/tool/cable_layer/proc/topic_cut(mob/user, list/args)
+	if(cable && cable.get_amount())
+		om_ask(chassis?.slot_item(MECHA_SLOT_PILOT), /datum/om/prompt/number, PROC_REF(cable_length_entered), default = min(cable.get_amount(), 30), subject = chassis, title = "Cut cable", message = "Please specify the length of cable to cut", requires = list(/datum/om/check/inside_target))
+	else
+		occupant_message("There's no more cable on the reel.")
 	return
 
 /obj/item/mecha_parts/mecha_equipment/tool/cable_layer/proc/cable_length_entered(datum/om/prompt/number/ask)

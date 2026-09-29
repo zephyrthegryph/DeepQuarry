@@ -10,7 +10,7 @@
 
 	var/tmp/area/linkedholodeck
 	var/tmp/area/target
-	var/active = 0
+	active = 0
 	/// Objects the current program projected (a relation view; derez() deletes them).
 	var/list/obj/holographic_objs
 	/// Holocarp the current program spawned (a relation view).
@@ -155,10 +155,10 @@
 	add_fingerprint(ui.user)
 
 /obj/machinery/computer/HolodeckControl/emag_act(remaining_charges, mob/user as mob)
-	playsound(src, 'sound/effects/sparks4.ogg', 75, 1)
+	play_sfx(src, SFX_EFFECTS_SPARKS4)
 	rel_set(src, "last_to_emag", user) //emag again to change the owner
 	if (!emagged)
-		emagged = 1
+		set_emagged(1)
 		safety_disabled = 1
 		update_projections()
 		to_chat(user, span_notice("You vastly increase projector power and override the safety and security protocols."))
@@ -204,9 +204,8 @@ REL_LIST(/obj/machinery/computer/HolodeckControl, holographic_mobs)
 	..()
 
 /obj/machinery/computer/HolodeckControl/power_change()
-	var/oldstat = stat
-	..()
-	if (stat != oldstat && active && (stat & NOPOWER))
+	. = ..()
+	if (. && active && (has_stat(NOPOWER)))
 		emergencyShutdown()
 
 /// Watches its holograms (and draws power for them) while a program runs or holograms exist;
@@ -223,7 +222,7 @@ REL_LIST(/obj/machinery/computer/HolodeckControl, holographic_mobs)
 			rel_remove(src, "holographic_mobs", C)
 			C.derez()
 
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return
 	if(active)
 		use_power(item_power_usage * (length(holographic_objs) + length(holographic_mobs)))
@@ -231,16 +230,14 @@ REL_LIST(/obj/machinery/computer/HolodeckControl, holographic_mobs)
 		if(!checkInteg(linkedholodeck()))
 			damaged = 1
 			loadProgram(powerdown_program, 0)
-			active = 0
-			update_use_power(USE_POWER_IDLE)
+			set_active(0)
+			set_use_power(USE_POWER_IDLE)
 			for(var/mob/M in range(10,src))
 				M.show_message("The holodeck overloads!")
 
 			for(var/turf/T in linkedholodeck())
 				if(prob(30))
-					var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-					s.set_up(2, 1, T)
-					s.start()
+					fx_sparks(T, 2)
 				T.ex_act(3)
 				T.hotspot_expose(1000,500,1)
 
@@ -277,8 +274,8 @@ REL_LIST(/obj/machinery/computer/HolodeckControl, holographic_mobs)
 		if(!linkedholodeck().get_gravity())
 			linkedholodeck().gravitychange(1)
 
-		active = 0
-		update_use_power(USE_POWER_IDLE)
+		set_active(0)
+		set_use_power(USE_POWER_IDLE)
 
 /obj/machinery/computer/HolodeckControl/proc/loadProgram(prog, check_delay = 1)
 	if(!prog)
@@ -306,8 +303,8 @@ REL_LIST(/obj/machinery/computer/HolodeckControl, holographic_mobs)
 				return 0
 
 	start_change_cooldowns()
-	active = 1
-	update_use_power(USE_POWER_ACTIVE)
+	set_active(1)
+	set_use_power(USE_POWER_ACTIVE)
 
 	for(var/item in holographic_objs)
 		derez(item)
@@ -380,8 +377,8 @@ REL_LIST(/obj/machinery/computer/HolodeckControl, holographic_mobs)
 
 	COOLDOWN_START(src, gravity_short_cooldown, 1.5 SECONDS)
 	COOLDOWN_START(src, gravity_long_cooldown, 2.5 SECONDS)
-	active = 1
-	update_use_power(USE_POWER_IDLE)
+	set_active(1)
+	set_use_power(USE_POWER_IDLE)
 
 	if(A.get_gravity())
 		A.gravitychange(0)
@@ -395,13 +392,11 @@ REL_LIST(/obj/machinery/computer/HolodeckControl, holographic_mobs)
 	if(!linkedholodeck().get_gravity())
 		linkedholodeck().gravitychange(1)
 
-	active = 0
-	update_use_power(USE_POWER_IDLE)
+	set_active(0)
+	set_use_power(USE_POWER_IDLE)
 
 /obj/machinery/computer/HolodeckControl/proc/atmos_test_ignite(turf/T)
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-	s.set_up(2, 1, T)
-	s.start()
+	fx_sparks(T, 2)
 	if(T)
 		T.set_temperature(5000)  // arena-authoritative; not the stale DM mirror
 		T.hotspot_expose(50000,50000,1)

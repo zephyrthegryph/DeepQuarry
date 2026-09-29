@@ -13,8 +13,8 @@
 	var/malfunction = 0
 	var/initialize_loc = BP_TORSO
 	var/known_implant = FALSE
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 /// The implant site slot is keyed by implant type (organ_external.dm): at
 /// most one implant of a given kind per organ.
@@ -124,7 +124,7 @@ REGISTRY_MEMBERSHIP(/obj/item/implant/tracking, REGISTRY_TRACKING_IMPLANTS)
 		implant_mob = O.owner
 
 	if(ismob(implant_mob) && implant_mob.stat == DEAD)
-		if(world.time >= implant_mob.timeofdeath + degrade_time)
+		if(ELAPSED(implant_mob, timeofdeath, CLOCK_WORLD) >= degrade_time)
 			name = "melted implant"
 			desc = "Charred circuit in melted plastic case. Wonder what that used to be..."
 			icon_state = "implant_melted"
@@ -266,7 +266,7 @@ Implant Specifics:<BR>"}
 			if (elevel == "Localized Limb")
 				if(part) //For some reason, small_boom() didn't work. So have this bit of working copypaste.
 					imp_in().visible_message(span_warning("Something beeps inside [imp_in()][part ? "'s [part.name]" : ""]!"))
-					playsound(src, 'sound/items/countdown.ogg', 75, 1, -3)
+					play_sfx(src, SFX_ITEMS_COUNTDOWN)
 					om_after(src, 2.5 SECONDS, PROC_REF(limb_boom))
 			if (elevel == "Destroy Body")
 				explosion(get_turf(T), -1, 0, 1, 6)
@@ -350,7 +350,7 @@ Implant Specifics:<BR>"}
 /obj/item/implant/explosive/proc/small_boom()
 	if (ishuman(imp_in()) && part)
 		imp_in().visible_message(span_warning("Something beeps inside [imp_in()][part ? "'s [part.name]" : ""]!"))
-		playsound(src, 'sound/items/countdown.ogg', 75, 1, -3)
+		play_sfx(src, SFX_ITEMS_COUNTDOWN)
 		om_after(src, 25, PROC_REF(small_boom_goes))
 
 //////////////////////////////
@@ -400,7 +400,7 @@ the implant may become unstable and either pre-maturely inject the subject or si
 	to_chat(R, "You hear a faint *beep*.")
 	if(!src.reagents.total_volume)
 		to_chat(R, "You hear a faint click from your chest.")
-		playsound(R, 'sound/weapons/empty.ogg', 10, 1)
+		play_sfx(R, SFX_WEAPONS_EMPTY, 0.2)
 		expire(0)
 	return
 
@@ -456,7 +456,7 @@ the implant may become unstable and either pre-maturely inject the subject or si
 		return
 	var/datum/antagonist/antag_data = GLOB.antag_service.get_antag_data(H.mind.special_role)
 	if(antag_data && (antag_data.flags & ANTAG_IMPLANT_IMMUNE))
-		H.visible_message("[H] seems to resist the implant!", "You feel the corporate tendrils of [using_map.company_name] try to invade your mind!")
+		act_message(H, null, MSG_SELF("You feel the corporate tendrils of [using_map.company_name] try to invade your mind!"), MSG_OTHERS("%U% seems to resist the implant!"))
 		. = FALSE
 
 /obj/item/implant/loyalty/post_implant(mob/M)

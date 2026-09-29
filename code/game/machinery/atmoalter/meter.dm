@@ -90,7 +90,7 @@
 		icon_state = "meterX"
 		return PROCESS_KILL
 
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		icon_state = "meter0"
 		return PROCESS_KILL
 
@@ -128,7 +128,7 @@
 	if(get_dist(user, src) > 3 && !(isAI(user) || isobserver(user)))
 		. += span_warning("You are too far away to read it.")
 
-	else if(stat & (NOPOWER|BROKEN))
+	else if(!operable())
 		. += span_warning("The display is off.")
 
 	else if(target_ref())
@@ -152,7 +152,7 @@
 	return ..()
 
 /obj/machinery/meter/wrench_act(mob/user, obj/item/tool)
-	use_tool(user, tool, src, delay = 4 SECONDS, volume = 50, message_self = "You begin to unfasten \the [src]...", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
+	use_tool(user, tool, src, delay = 4 SECONDS, volume = 50, start_self = "You begin to unfasten \the [src]...", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/meter/proc/wrench_act_tool_done(mob/user)

@@ -27,7 +27,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/timeclock, "announce", /obj/item/r
 OWN(/obj/machinery/computer/timeclock, card, OWN_SPILL)
 
 /obj/machinery/computer/timeclock/update_icon()
-	if(inoperable())
+	if(!operable())
 		icon_state = "[initial(icon_state)]_off"
 	else if(card)
 		icon_state = "[initial(icon_state)]_card"
@@ -35,11 +35,10 @@ OWN(/obj/machinery/computer/timeclock, card, OWN_SPILL)
 		icon_state = "[initial(icon_state)]"
 
 /obj/machinery/computer/timeclock/power_change()
-	var/old_stat = stat
 	. = ..()
-	if(old_stat != stat)
+	if(.)
 		update_icon()
-	if(stat & NOPOWER)
+	if(has_stat(NOPOWER))
 		set_light(0)
 	else
 		set_light(light_range_on, light_power_on)
@@ -62,7 +61,7 @@ OWN(/obj/machinery/computer/timeclock, card, OWN_SPILL)
 	if(!card && user.unEquip(I))
 		I.forceMove(src)
 		own_set(src, "card", I)
-		playsound(src, 'sound/effects/insert_id_card.ogg', 75, 0) // Timeclock beepboop. TODO: Make clocks delay reading the card for ~3 seconds to line up with quiet boops
+		play_sfx(src, SFX_EFFECTS_INSERT_ID_CARD) // Timeclock beepboop. TODO: Make clocks delay reading the card for ~3 seconds to line up with quiet boops
 		SStgui.update_uis(src)
 		update_icon()
 	else if(card)
@@ -121,13 +120,13 @@ OWN(/obj/machinery/computer/timeclock, card, OWN_SPILL)
 			if(card)
 				ui.user.put_in_hands(card)
 				own_take(src, "card")
-				playsound(src, 'sound/effects/remove_id_card.ogg', 75, 0) // Timeclock beepboop. TODO: Make clocks delay reading the card for ~3 seconds to line up with quiet boops
+				play_sfx(src, SFX_EFFECTS_REMOVE_ID_CARD) // Timeclock beepboop. TODO: Make clocks delay reading the card for ~3 seconds to line up with quiet boops
 			else
 				var/obj/item/I = ui.user.get_active_hand()
 				if (istype(I, /obj/item/card/id) && ui.user.unEquip(I))
 					I.forceMove(src)
 					own_set(src, "card", I)
-					playsound(src, 'sound/effects/insert_id_card.ogg', 75, 0) // Timeclock beepboop. TODO: Make clocks delay reading the card for ~3 seconds to line up with quiet boops
+					play_sfx(src, SFX_EFFECTS_INSERT_ID_CARD) // Timeclock beepboop. TODO: Make clocks delay reading the card for ~3 seconds to line up with quiet boops
 			update_icon()
 			return TRUE
 		if("switch-to-onduty-rank")
@@ -136,7 +135,7 @@ OWN(/obj/machinery/computer/timeclock, card, OWN_SPILL)
 					makeOnDuty(params["switch-to-onduty-rank"], params["switch-to-onduty-assignment"], ui.user)
 					ui.user.put_in_hands(card)
 					own_take(src, "card")
-					playsound(src, 'sound/effects/remove_id_card.ogg', 75, 0) // Timeclock beepboop. TODO: Make clocks delay reading the card for ~3 seconds to line up with quiet boops
+					play_sfx(src, SFX_EFFECTS_REMOVE_ID_CARD) // Timeclock beepboop. TODO: Make clocks delay reading the card for ~3 seconds to line up with quiet boops
 			update_icon()
 			return TRUE
 		if("switch-to-offduty")
@@ -145,7 +144,7 @@ OWN(/obj/machinery/computer/timeclock, card, OWN_SPILL)
 					makeOffDuty(ui.user)
 					ui.user.put_in_hands(card)
 					own_take(src, "card")
-					playsound(src, 'sound/effects/remove_id_card.ogg', 75, 0) // Timeclock beepboop. TODO: Make clocks delay reading the card for ~3 seconds to line up with quiet boops
+					play_sfx(src, SFX_EFFECTS_REMOVE_ID_CARD) // Timeclock beepboop. TODO: Make clocks delay reading the card for ~3 seconds to line up with quiet boops
 			update_icon()
 			return TRUE
 
@@ -192,7 +191,7 @@ OWN(/obj/machinery/computer/timeclock, card, OWN_SPILL)
 		card.assignment = newassignment
 		card.name = text("[card.registered_name]'s ID Card ([card.assignment])")
 		GLOB.data_core.manifest_modify(card.registered_name, card.assignment, card.rank)
-		card.last_job_switch = world.time
+		EXPIRY_STAMP(card, last_job_switch, CLOCK_WORLD)
 		newjob.current_positions++
 		var/mob/living/carbon/human/H = user
 		H.mind.assigned_role = card.rank
@@ -217,7 +216,7 @@ OWN(/obj/machinery/computer/timeclock, card, OWN_SPILL)
 		card.assignment = ptojob.title
 		card.name = text("[card.registered_name]'s ID Card ([card.assignment])")
 		GLOB.data_core.manifest_modify(card.registered_name, card.assignment, card.rank)
-		card.last_job_switch = world.time
+		EXPIRY_STAMP(card, last_job_switch, CLOCK_WORLD)
 		var/mob/living/carbon/human/H = user
 		H.mind.assigned_role = ptojob.title
 		H.mind.role_alt_title = ptojob.title
@@ -235,7 +234,7 @@ OWN(/obj/machinery/computer/timeclock, card, OWN_SPILL)
 	return TRUE
 
 /obj/machinery/computer/timeclock/proc/getCooldown()
-	return 1 MINUTES - (world.time - card.last_job_switch) // 10 minute wait down to 1 minute.
+	return 1 MINUTES - ELAPSED(card, last_job_switch, CLOCK_WORLD) // 10 minute wait down to 1 minute.
 
 /obj/machinery/computer/timeclock/proc/checkFace(mob/user)
 	var/turf/location = get_turf(src) // Needed for admin logs.
@@ -248,7 +247,7 @@ OWN(/obj/machinery/computer/timeclock, card, OWN_SPILL)
 		return TRUE
 
 /obj/item/card/id
-	var/last_job_switch
+	EXPIRY_DECLARE(last_job_switch)
 
 	///Var for attack_self chain
 	var/special_handling = FALSE
@@ -259,7 +258,7 @@ OWN(/obj/machinery/computer/timeclock, card, OWN_SPILL)
 
 /obj/item/card/id/Initialize(mapload)
 	. = ..()
-	last_job_switch = world.time
+	EXPIRY_STAMP(src, last_job_switch, CLOCK_WORLD)
 
 //
 // Frame type for construction

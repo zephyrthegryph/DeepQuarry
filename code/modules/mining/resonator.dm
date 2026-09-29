@@ -39,7 +39,7 @@
 		var/depth = 0
 		var/fields = 0
 		if(depth == 0)
-			playsound(src,'sound/weapons/resonator_fire.ogg',50,1)
+			play_sfx(src, SFX_WEAPONS_RESONATOR_FIRE)
 			new /obj/effect/resonance(T, creator, burst_time)
 			fields++
 			depth++
@@ -75,7 +75,7 @@
 
 
 	else
-		playsound(src,'sound/weapons/resonator_fire.ogg',50,1)
+		play_sfx(src, SFX_WEAPONS_RESONATOR_FIRE)
 		new /obj/effect/resonance(T, creator, burst_time)
 		fieldsactive++
 		om_after(src, burst_time, PROC_REF(field_burst))
@@ -131,7 +131,7 @@ DECLARE_INTERACTIONS(/obj/item/resonator, INTERACT_USE(null, PROC_REF(interactio
 	var/turf/T = get_turf(src)
 	if(!T)
 		return
-	playsound(src, 'sound/weapons/resonator_blast.ogg', 50, 1)
+	play_sfx(src, SFX_WEAPONS_RESONATOR_BLAST, 0.5, extrarange = 0)
 	// Make the collapsing effect
 	new /obj/effect/temp_visual/resonance_crush(T)
 

@@ -355,9 +355,9 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/security/engine, \
 	src.active_engines = active_engines
 
 	if(!lead() && !tow())
-		anchored = FALSE
+		set_anchored(FALSE)
 	else
-		anchored = TRUE
+		set_anchored(TRUE)
 
 OWN(/obj/vehicle/train/security/engine, key, OWN_CONTAINED)
 

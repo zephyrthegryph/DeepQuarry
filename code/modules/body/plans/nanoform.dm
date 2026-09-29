@@ -205,6 +205,8 @@
 /// nor acts: it is held alive and unconscious
 /// (consciousness_at_max), its control cluster goes inert, and it is revived
 /// step by step by treatment mechanisms.
+OWN_TIMER(/datum/affliction/core_dormancy, reboot_timer)
+
 /datum/affliction/core_dormancy
 	name = "core dormancy"
 	category = "Synthetic"
@@ -221,8 +223,6 @@
 	var/revival_step = DORMANCY_SEALED
 	/// The mob whose /datum/om/event/before/living_body_status we answer.
 	var/mob/living/held_mob
-	/// The reboot timer, once the core is jump-started.
-	var/reboot_timer
 
 
 /datum/affliction/core_dormancy/on_added()
@@ -234,7 +234,7 @@
 	om_hook(held_mob, /datum/om/event/before/atom_tool_act, src, PROC_REF(on_body_screwdriver))
 	om_hook(held_mob, /datum/om/event/before/attackby, src, PROC_REF(on_body_attackby))
 	log_game("NANOFORM: [key_name(held_mob)] entered core dormancy at [AREACOORD(held_mob)].")
-	playsound(held_mob, 'sound/voice/borg_deathsound.ogg', 50, 1)
+	play_sfx(held_mob, SFX_VOICE_BORG_DEATHSOUND)
 	held_mob.visible_message(span_bold("[held_mob.name]") + " shudders and retreats inwards, coalescing into a single core component!")
 	to_chat(held_mob, span_warning("Your swarm has lost cohesion! You are locked in your core control module until you are repaired. Instructions for your revival are shown when your module is examined."))
 	var/datum/forms/protean/F = held_mob.get_protean_forms()
@@ -258,9 +258,8 @@
 	..()
 
 /datum/affliction/core_dormancy/proc/release()
-	if(reboot_timer)
-		om_cancel_timer(src, reboot_timer)
-		reboot_timer = null
+	if(om_timer_slot_pending(src, "reboot_timer"))
+		om_cancel_timer_slot(src, "reboot_timer")
 	if(!held_mob)
 		return
 	om_unhook(held_mob, list(/datum/om/event/before/living_body_status, /datum/om/event/before/atom_tool_act, /datum/om/event/before/attackby), src)
@@ -350,7 +349,7 @@
 	var/mob/living/user = task.actor
 	var/atom/site = task.target
 	var/step = task.step
-	playsound(site, 'sound/machines/defib_charge.ogg', 50, 0)
+	play_sfx(site, SFX_MACHINES_DEFIB_CHARGE)
 	om_task_start(/datum/om/task/timed/core_dormancy_repair_step, user, site, duration = 1 SECOND, W = W, step = step)
 
 /datum/om/task/timed/core_dormancy_repair_step
@@ -372,18 +371,18 @@
 			open_panel()
 		if(DORMANCY_OPEN)
 			if(patient.mend(TREAT_CALIBRATION, 1))
-				playsound(site, 'sound/items/Deconstruct.ogg', 50, 1)
+				play_sfx(site, SFX_ITEMS_DECONSTRUCT)
 				to_chat(user, span_notice("You carefully slot [W] into [site]."))
 				consume(W, user)
 		if(DORMANCY_PROGRAMMED)
 			var/obj/item/stack/nanopaste/paste = W
 			if(paste.use(1) && patient.mend(TREAT_PLATING_REPAIR, 1))
-				playsound(site, 'sound/effects/ointment.ogg', 50, 1)
+				play_sfx(site, SFX_EFFECTS_OINTMENT)
 				to_chat(user, span_notice("You slather the interior confines of [site] with [W]."))
 		if(DORMANCY_PASTED)
-			playsound(site, 'sound/machines/defib_zap.ogg', 50, 1, -1)
+			play_sfx(site, SFX_MACHINES_DEFIB_ZAP)
 			if(patient.mend(TREAT_DEFIBRILLATION, 1))
-				playsound(site, 'sound/machines/defib_success.ogg', 50, 0)
+				play_sfx(site, SFX_MACHINES_DEFIB_SUCCESS)
 				new /obj/effect/gibspawner/robot(get_turf(site))
 				site.atom_say("Contact received! Reassembly nanites calibrated. Estimated time to resucitation: 1 minute 30 seconds")
 	log_game("NANOFORM: [key_name(user)] worked on [key_name(patient)]'s dormant core with [W] via [site]; step [step] -> [revival_step].")
@@ -408,15 +407,14 @@
 	revival_step = next_step
 	log_game("NANOFORM: [key_name(owner)] dormancy advanced to step [revival_step] by [tag].")
 	if(revival_step == DORMANCY_REBOOTING)
-		reboot_timer = om_after(src, DORMANCY_REBOOT_TIME, PROC_REF(complete_revival))
+		om_after_slot(src, "reboot_timer", DORMANCY_REBOOT_TIME, PROC_REF(complete_revival))
 	return 1
 
 /// Reassembly finished: rebuild cohesion and what the revival steps repaired,
 /// then leave dormancy. Afflictions the revival didn't touch stay.
 /datum/affliction/core_dormancy/proc/complete_revival()
-	if(reboot_timer)
-		om_cancel_timer(src, reboot_timer)
-		reboot_timer = null
+	if(om_timer_slot_pending(src, "reboot_timer"))
+		om_cancel_timer_slot(src, "reboot_timer")
 	var/mob/living/patient = owner
 	var/datum/body/humanoid/nanoform/B = body
 	if(!patient || !istype(B))
@@ -429,7 +427,7 @@
 		log_game("NANOFORM: [key_name(patient)] was still lethally damaged after reconstitution and fell dormant again.")
 		return
 	to_chat(patient, span_notice("You have finished reconstituting."))
-	playsound(get_turf(patient), 'sound/machines/ding.ogg', 50, 1)
+	play_sfx(get_turf(patient), SFX_MACHINES_DING)
 
 /datum/affliction/core_dormancy/proc/revival_instructions()
 	switch(revival_step)

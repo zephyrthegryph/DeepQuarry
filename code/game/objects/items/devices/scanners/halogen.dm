@@ -7,14 +7,14 @@
 	throwforce = 0
 	throw_speed = 3
 	throw_range = 7
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 /obj/item/halogen_counter/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(!iscarbon(M))
 		to_chat(user, span_warning("This device can only scan organic beings!"))
 		return ITEM_INTERACT_FAILURE
-	user.visible_message(span_warning("\The [user] has analyzed [M]'s radiation levels!"), span_notice("Analyzing Results for [M]:"))
+	act_message(user, M, MSG_SELF(span_notice("Analyzing Results for %T%:")), MSG_OTHERS(span_warning("%U% has analyzed %T%'s radiation levels!")))
 	if(M.radiation)
 		to_chat(user, span_notice("Radiation Level: [M.radiation]"))
 	else

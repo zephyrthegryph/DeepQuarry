@@ -97,7 +97,7 @@
 		return FALSE // We can't cocoon walls sadly.
 	if(istype(AM, /mob/living/simple_mob/animal/giant_spider))
 		return FALSE
-	visible_message(span_notice("\The [src] begins to secrete a sticky substance around \the [AM]."))
+	act_message(src, AM, null, MSG_OTHERS(span_notice("%U% begins to secrete a sticky substance around %T%.")))
 
 	// The work claims the spider: its AI stays still.
 	om_task_timed(src, 5 SECONDS, target = AM, receiver = src, on_done = PROC_REF(spin_cocoon_nurse_done), done_args = list(AM), on_fail = PROC_REF(spin_cocoon_nurse_failed), fail_args = list(AM), busy = src)
@@ -123,7 +123,7 @@
 		if(istype(L, /mob/living/simple_mob/animal/giant_spider)) // Cannibalism is bad.
 			continue
 		fed++
-		visible_message(span_warning("\The [src] sticks a proboscis into \the [L], and sucks a viscous substance out."))
+		act_message(src, L, null, MSG_OTHERS(span_warning("%U% sticks a proboscis into %T%, and sucks a viscous substance out.")))
 		to_chat(src, span_notice("You've fed upon \the [L], and can now lay [fed] cluster\s of eggs."))
 		L.forceMove(C)
 		large_cocoon = TRUE
@@ -163,7 +163,7 @@
 		return FALSE
 	if(istext(om_task_start(/datum/om/task/mob_work/spider_web, src, T)))
 		return FALSE
-	visible_message(span_notice("\The [src] begins to secrete a sticky substance.") )
+	act_message(src, null, null, MSG_OTHERS(span_notice("%U% begins to secrete a sticky substance.")))
 	return TRUE
 
 /mob/living/simple_mob/animal/giant_spider/nurse/proc/web_done(datum/om/task/task)
@@ -182,7 +182,7 @@
 		return FALSE // Already got eggs here.
 	if(istext(om_task_start(/datum/om/task/mob_work/spider_eggs, src, T)))
 		return FALSE
-	visible_message(span_notice("\The [src] begins to lay a cluster of eggs.") ) // the task claims the spider: no egg spam
+	act_message(src, null, null, MSG_OTHERS(span_notice("%U% begins to lay a cluster of eggs."))) // the task claims the spider: no egg spam
 	return TRUE
 
 /mob/living/simple_mob/animal/giant_spider/nurse/proc/eggs_done(datum/om/task/task)

@@ -170,18 +170,18 @@
 	var/turf/T = test_floor()
 
 	var/obj/machinery/igniter/igniter = allocate(/obj/machinery/igniter, T)
-	igniter.on = FALSE
+	igniter.set_on(FALSE)
 	TEST_ASSERT_EQUAL(igniter.machine_step(), PROCESS_KILL, "a switched-off igniter kept stepping")
 	MACHINE_SLEEP(igniter)
 	igniter.interaction_toggle(null, null, null)
 	TEST_ASSERT(igniter.on && machine_stepping(igniter), "switching an igniter on did not wake it")
-	igniter.on = FALSE
+	igniter.set_on(FALSE)
 
 	var/obj/machinery/feeder/feeder = allocate(/obj/machinery/feeder, T)
 	TEST_ASSERT_EQUAL(feeder.machine_step(), PROCESS_KILL, "an unattached feeder kept stepping")
 
 	var/obj/machinery/pump/pump = allocate(/obj/machinery/pump, T)
-	pump.on = FALSE
+	pump.set_on(FALSE)
 	TEST_ASSERT_EQUAL(pump.machine_step(), PROCESS_KILL, "a switched-off reagent pump kept stepping")
 
 	var/obj/machinery/bunsen_burner/bunsen = allocate(/obj/machinery/bunsen_burner, T)
@@ -218,7 +218,7 @@
 
 	// A door timer counts down only while timing, and wakes when started.
 	MACHINE_SLEEP(brig)
-	brig.stat &= ~(NOPOWER|BROKEN)
+	brig.stat_remove(NOPOWER|BROKEN)
 	brig.set_timer(1 MINUTE)
 	brig.timer_start()
 	TEST_ASSERT(machine_stepping(brig), "starting a brig timer did not wake it")
@@ -234,20 +234,20 @@
 	var/obj/machinery/igniter/igniter = allocate(/obj/machinery/igniter, test_floor())
 	var/P = /datum/om/pipeline/machine
 	var/datum/om/stage/machine/step/stage = om_registry().stage_by_type[/datum/om/stage/machine/step]
-	igniter.on = TRUE
-	igniter.stat |= NOPOWER
+	igniter.set_on(TRUE)
+	igniter.stat_add(NOPOWER)
 	MACHINE_WAKE(igniter)
 	igniter.om_rec.sched.run_pass(1e9)
 	om_run_frame_now(igniter, P)
 	TEST_ASSERT(!igniter.step_active && igniter.step_waiting_power, "an unpowered igniter did not wait for power")
 	TEST_ASSERT(stage.idle(igniter), "an unpowered waiting machine is not idle")
-	igniter.stat &= ~NOPOWER
+	igniter.stat_remove(NOPOWER)
 	TEST_ASSERT(!stage.idle(igniter), "a powered waiting machine still looks idle to the audit")
 	om_changed(igniter, CHANGE_MACHINE_POWER)
 	igniter.om_rec.sched.run_pass(1e9)
 	om_run_frame_now(igniter, P)
 	TEST_ASSERT(igniter.step_active, "power returning did not restart its work")
-	igniter.on = FALSE
+	igniter.set_on(FALSE)
 
 #endif
 

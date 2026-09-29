@@ -45,9 +45,9 @@
 	if(result)
 		switch(stepsound)
 			if(1)
-				playsound(src,'sound/mecha/bigmech_lstep.ogg',40,1)
+				play_sfx(src, SFX_MECHA_BIGMECH_LSTEP)
 			if(2)
-				playsound(src,'sound/mecha/bigmech_rstep.ogg',40,1)
+				play_sfx(src, SFX_MECHA_BIGMECH_RSTEP)
 	return result
 
 /obj/mecha/combat/gorilla/mechturn(direction)
@@ -55,9 +55,9 @@
 	var/turnsound = rand(1,2)
 	switch(turnsound)
 		if(1)
-			playsound(src,'sound/mecha/bigmech_lturn.ogg',40,1)
+			play_sfx(src, SFX_MECHA_BIGMECH_LTURN)
 		if(2)
-			playsound(src,'sound/mecha/bigmech_rturn.ogg',40,1)
+			play_sfx(src, SFX_MECHA_BIGMECH_RTURN)
 	return 1
 
 /obj/mecha/combat/gorilla/relaymove(mob/user,direction)
@@ -68,14 +68,14 @@
 	if(!can_move)
 		return 0
 	if(zoom)
-		if(world.time - last_message > 20)
+		if(ELAPSED(src, last_message, CLOCK_WORLD) > 2 SECONDS)
 			src.occupant_message("Unable to move while in zoom mode.")
-			last_message = world.time
+			EXPIRY_STAMP(src, last_message, CLOCK_WORLD)
 		return 0
 	if(connected_port)
-		if(world.time - last_message > 20)
+		if(ELAPSED(src, last_message, CLOCK_WORLD) > 2 SECONDS)
 			src.occupant_message("Unable to move while connected to the air system port")
-			last_message = world.time
+			EXPIRY_STAMP(src, last_message, CLOCK_WORLD)
 		return 0
 	if(state || !has_charge(step_energy_drain))
 		return 0
@@ -122,7 +122,7 @@
 	icon_state = "mecha_uac2"
 	equip_cooldown = 60 // 6 seconds
 	projectile = /obj/item/projectile/bullet/cannon
-	fire_sound = 'sound/weapons/gunshot_cannon.ogg'
+	fire_sound = SFX_WEAPONS_GUNSHOT_CANNON
 	projectiles = 1
 	projectile_energy_cost = 1000
 	salvageable = 0 // We don't want players ripping this off a dead mech. Could potentially be a prize for beating it if Devs bless me and someone offers a nerf idea.

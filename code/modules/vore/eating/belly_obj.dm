@@ -260,7 +260,7 @@
 	var/tmp/list/belly_surrounding		// Lazy. A list of living mobs surrounded by this belly, including inside containers, food, on mobs, etc. Exclusing inside other bellies.
 	var/bellytemperature = T20C				// Temperature applied to humans in the belly.
 	var/temperature_damage = FALSE			// Does temperature damage prey?
-	var/tmp/last_transfer_log = 0				// Prevent server message spam!
+	EXPIRY_TMP_DECLARE(last_transfer_log)				// Prevent server message spam!
 	var/tmp/next_transfer_log = 0				// Prevent server message spam!
 	var/tmp/entrance_log_count = 0				// Entrance count before spawm
 	flags = NOREACT							// We dont want bellies to start bubling nonstop due to people mixing when transfering and making different reagents
@@ -276,7 +276,7 @@
 	// Lists still shared with the type's defaults (belly_shared_lists.dm) are not saved:
 	// a load gives the belly the same shared copy.
 	var/list/customized = belly_unshared_list_names()
-	for(var/var_name in belly_default_lists())
+	for(var/var_name in GLOBAL_TABLE_GET(belly_default_lists))
 		if(!(var_name in customized))
 			. += var_name
 
@@ -337,15 +337,15 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 	//Generic entered message
 	if(!owner.mute_entry && entrance_logs)
 		if(!istype(thing, /mob/observer))	//Don't have ghosts announce they're reentering the belly on death
-			if(world.time - last_transfer_log > ENTRY_MESSAGE_INTERVAL)
-				last_transfer_log = world.time
+			if(ELAPSED(src, last_transfer_log, CLOCK_WORLD) > ENTRY_MESSAGE_INTERVAL)
+				EXPIRY_STAMP(src, last_transfer_log, CLOCK_WORLD)
 				entrance_log_count = 0
 			if(COOLDOWN_FINISHED(src, next_transfer_log))
 				to_chat(owner,span_vnotice("[thing] slides into your [lowertext(name)]."))
 				entrance_log_count++
 				if(entrance_log_count >= MAX_ENTRY_MESSAAGES)
 					COOLDOWN_START(src, next_transfer_log, ENTRY_MESSAGE_INTERVAL)
-					last_transfer_log = world.time
+					EXPIRY_STAMP(src, last_transfer_log, CLOCK_WORLD)
 
 	//Sound w/ antispam flag setting
 	if(vore_sound && !recent_sound && !istype(thing, /mob/observer))

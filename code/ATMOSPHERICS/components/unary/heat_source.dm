@@ -70,7 +70,7 @@ DECLARE_REAGENTS(/obj/machinery/atmospherics/unary/heater, 120, null)
 	..()
 
 	reagent_cooling = 1 + (reagents.machine_cooling_power(reagents) / reagents.maximum_volume)
-	if(stat & (NOPOWER|BROKEN) || !use_power)
+	if(!operable() || !use_power)
 		heating = 0
 		update_icon()
 		register_gas_dependencies()
@@ -98,12 +98,11 @@ DECLARE_REAGENTS(/obj/machinery/atmospherics/unary/heater, 120, null)
 /// Eligibility rule for waking from gas (unary_base.dm register_gas_dependencies()): the same
 /// test process() makes before it heats anything.
 /obj/machinery/atmospherics/unary/heater/gas_wake_condition()
-	return use_power && !(stat & (NOPOWER|BROKEN)) && network && air_contents.total_moles() && air_contents.return_temperature() < set_temperature
+	return use_power && operable() && network && air_contents.total_moles() && air_contents.return_temperature() < set_temperature
 
 /obj/machinery/atmospherics/unary/heater/power_change()
-	var/old_stat = stat
-	..()
-	if(old_stat != stat)
+	. = ..()
+	if(.)
 		// machine_step() sleeps on NOPOWER; a power transition is a dependency change.
 		invalidate_gas_dependencies()
 		update_icon()
@@ -154,7 +153,7 @@ DECLARE_REAGENTS(/obj/machinery/atmospherics/unary/heater, 120, null)
 	. = TRUE
 	switch(action)
 		if("toggleStatus")
-			update_use_power(!use_power)
+			set_use_power(!use_power)
 			update_icon()
 		if("setGasTemperature")
 			var/amount = text2num(params["temp"])

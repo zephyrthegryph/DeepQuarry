@@ -26,7 +26,7 @@
 	var/backup_author=""
 	var/censored=0
 	var/is_admin_channel=0
-	var/updated = 0
+	EXPIRY_DECLARE(updated)
 	var/announcement = ""
 
 /datum/feed_message/proc/clear()
@@ -42,7 +42,7 @@
 	parent_channel().update()
 
 /datum/feed_channel/proc/update()
-	updated = world.time
+	EXPIRY_STAMP(src, updated, CLOCK_WORLD)
 
 /datum/feed_channel/proc/clear()
 	src.channel_name = ""
@@ -170,9 +170,9 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 
 /obj/machinery/newscaster/update_icon()
 	cut_overlays()
-	if(!ispowered || (stat & BROKEN))
+	if(!ispowered || (has_stat(BROKEN)))
 		icon_state = "newscaster_off"
-		if(stat & BROKEN) //If the thing is smashed, add crack overlay on top of the unpowered sprite.
+		if(has_stat(BROKEN)) //If the thing is smashed, add crack overlay on top of the unpowered sprite.
 			add_overlay("crack3")
 		set_light(0)
 		set_light_on(FALSE)
@@ -200,17 +200,17 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 	return
 
 /obj/machinery/newscaster/power_change()
-	if(stat & BROKEN) //Broken shit can't be powered.
+	if(has_stat(BROKEN)) //Broken shit can't be powered.
 		return
-	..()
-	if(!(stat & NOPOWER))
+	. = ..()
+	if(!has_stat(NOPOWER))
 		ispowered = 1
 		update_icon()
 	else
 		om_after(src, rand(0, 15), PROC_REF(lose_power))
 
 /obj/machinery/newscaster/tgui_status(mob/user)
-	if(!ispowered || (stat & BROKEN))
+	if(!ispowered || (has_stat(BROKEN)))
 		return STATUS_CLOSE
 	. = ..()
 
@@ -228,7 +228,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 	effect = /obj/machinery/newscaster/proc/interaction_open
 
 /obj/machinery/newscaster/proc/interaction_open(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!ispowered || (stat & BROKEN))
+	if(!ispowered || (has_stat(BROKEN)))
 		return TRUE
 
 	if(!node())
@@ -704,7 +704,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 	else
 		for(var/mob/O in hearers(world.view-1, T))
 			O.show_message(span_newscaster("<EM>[name]</EM> beeps, \"Attention! Wanted issue distributed!\""),2)
-		playsound(src, 'sound/machines/warning-buzzer.ogg', 75, 1)
+		play_sfx(src, SFX_MACHINES_WARNING_BUZZER, 1.5, vary = TRUE)
 	return
 
 /obj/machinery/newscaster/proc/lose_power()

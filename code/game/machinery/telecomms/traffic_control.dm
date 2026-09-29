@@ -1,9 +1,6 @@
 //This file was auto-corrected by findeclaration.exe on 25.5.2012 20:42:32
 
 
-
-
-
 /obj/machinery/computer/telecomms/traffic
 	name = "Telecommunications Traffic Control"
 	desc = "Used to upload code to telecommunication consoles for execution."
@@ -89,87 +86,89 @@
 		update_ide()
 
 
-
-
 // structured TGUI Traffic Control (see
 // code/modules/admin/traffic_control_panel.dm).
 
-/obj/machinery/computer/telecomms/traffic/Topic(href, href_list)
-	if(..())
+/// Access gate shared by the traffic console's actions.
+/obj/machinery/computer/telecomms/traffic/proc/traffic_access(mob/user)
+	add_fingerprint(user)
+	user.set_machine(src)
+	if(!src.allowed(user) && !emagged)
+		to_chat(user, span_warning("ACCESS DENIED."))
+		return FALSE
+	return TRUE
+
+/obj/machinery/computer/telecomms/traffic/proc/traffic_view_server(mob/user, id)
+	if(!traffic_access(user))
 		return
+	screen = 1
+	for(var/obj/machinery/telecomms/T in servers)
+		if(T.id == id)
+			rel_set(src, "SelectedServer", T)
+			break
+	updateUsrDialog(user)
 
-
-	add_fingerprint(usr)
-	usr.set_machine(src)
-	if(!src.allowed(usr) && !emagged)
-		to_chat(usr, span_warning("ACCESS DENIED."))
+/obj/machinery/computer/telecomms/traffic/proc/traffic_set_network(mob/user)
+	if(!traffic_access(user))
 		return
+	om_ask(user, /datum/om/prompt/text, PROC_REF(network_entered), message = "Which network do you want to view?", title = "Comm Monitor", default = network, max_length = 15, requires = PROMPT_USABLE)
+	updateUsrDialog(user)
 
-	if(href_list["viewserver"])
-		screen = 1
-		for(var/obj/machinery/telecomms/T in servers)
-			if(T.id == href_list["viewserver"])
-				rel_set(src, "SelectedServer", T)
-				break
+/obj/machinery/computer/telecomms/traffic/proc/traffic_operation(mob/user, op)
+	if(!traffic_access(user))
+		return
+	switch(op)
 
-	if(href_list["operation"])
-		switch(href_list["operation"])
+		if("release")
+			rel_clear(src, "servers")
+			screen = 0
 
-			if("release")
-				rel_clear(src, "servers")
+		if("mainmenu")
+			screen = 0
+
+		if("scan")
+			if(length(servers) > 0)
+				temp = span_red("- FAILED: CANNOT PROBE WHEN BUFFER FULL -")
+
+			else
+				for(var/obj/machinery/telecomms/server/T in range(25, src))
+					if(T.network == network)
+						rel_add(src, "servers", T)
+
+				if(!length(servers))
+					temp = span_red("- FAILED: UNABLE TO LOCATE SERVERS IN \[[network]\] -")
+				else
+					temp = span_blue("- [length(servers)] SERVERS PROBED & BUFFERED -")
+
 				screen = 0
 
-			if("mainmenu")
-				screen = 0
+		if("editcode")
+			if(editingcode() == user) return
+			if(user in viewingcode) return
 
-			if("scan")
-				if(length(servers) > 0)
-					temp = span_red("- FAILED: CANNOT PROBE WHEN BUFFER FULL -")
+			if(!editingcode())
+				rel_set(src, "lasteditor", user)
+				rel_set(src, "editingcode", user)
+				winshow(editingcode(), "Telecomms IDE", 1) // show the IDE
+				winset(editingcode(), "tcscode", "is-disabled=false")
+				winset(editingcode(), "tcscode", "text=\"\"")
+				var/showcode = replacetext(storedcode, "\\\"", "\\\\\"")
+				showcode = replacetext(storedcode, "\"", "\\\"")
+				winset(editingcode(), "tcscode", "text=\"[showcode]\"")
+				update_ide()
 
-				else
-					for(var/obj/machinery/telecomms/server/T in range(25, src))
-						if(T.network == network)
-							rel_add(src, "servers", T)
+			else
+				LAZYADD(viewingcode, user)
+				winshow(user, "Telecomms IDE", 1) // show the IDE
+				winset(user, "tcscode", "is-disabled=true")
+				winset(editingcode(), "tcscode", "text=\"\"")
+				var/showcode = replacetext(storedcode, "\"", "\\\"")
+				winset(user, "tcscode", "text=\"[showcode]\"")
 
-					if(!length(servers))
-						temp = span_red("- FAILED: UNABLE TO LOCATE SERVERS IN \[[network]\] -")
-					else
-						temp = span_blue("- [length(servers)] SERVERS PROBED & BUFFERED -")
+		if("togglerun")
+			SelectedServer()?.autoruncode = !(SelectedServer()?.autoruncode)
 
-					screen = 0
-
-			if("editcode")
-				if(editingcode() == usr) return
-				if(usr in viewingcode) return
-
-				if(!editingcode())
-					rel_set(src, "lasteditor", usr)
-					rel_set(src, "editingcode", usr)
-					winshow(editingcode(), "Telecomms IDE", 1) // show the IDE
-					winset(editingcode(), "tcscode", "is-disabled=false")
-					winset(editingcode(), "tcscode", "text=\"\"")
-					var/showcode = replacetext(storedcode, "\\\"", "\\\\\"")
-					showcode = replacetext(storedcode, "\"", "\\\"")
-					winset(editingcode(), "tcscode", "text=\"[showcode]\"")
-					update_ide()
-
-				else
-					LAZYADD(viewingcode, usr)
-					winshow(usr, "Telecomms IDE", 1) // show the IDE
-					winset(usr, "tcscode", "is-disabled=true")
-					winset(editingcode(), "tcscode", "text=\"\"")
-					var/showcode = replacetext(storedcode, "\"", "\\\"")
-					winset(usr, "tcscode", "text=\"[showcode]\"")
-
-			if("togglerun")
-				SelectedServer().autoruncode = !(SelectedServer().autoruncode)
-
-	if(href_list["network"])
-
-		om_ask(usr, /datum/om/prompt/text, PROC_REF(network_entered), message = "Which network do you want to view?", title = "Comm Monitor", default = network, max_length = 15, requires = PROMPT_USABLE)
-
-	updateUsrDialog(usr)
-	return
+	updateUsrDialog(user)
 
 /obj/machinery/computer/telecomms/traffic/proc/network_entered(datum/om/prompt/text/ask)
 	var/mob/user = ask.answerer
@@ -187,8 +186,8 @@
 
 /obj/machinery/computer/telecomms/traffic/emag_act(remaining_charges, mob/user)
 	if(!emagged)
-		playsound(src, 'sound/effects/sparks4.ogg', 75, 1)
-		emagged = 1
+		play_sfx(src, SFX_EFFECTS_SPARKS4)
+		set_emagged(1)
 		to_chat(user, span_notice("You you disable the security protocols"))
 		updateUsrDialog(user)
 		return 1

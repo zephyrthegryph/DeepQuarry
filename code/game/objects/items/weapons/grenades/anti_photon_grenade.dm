@@ -4,8 +4,8 @@
 	icon = 'icons/obj/grenade.dmi'
 	icon_state = "emp"
 	det_time = 20
-	var/light_sound = 'sound/effects/phasein.ogg'
-	var/blast_sound = 'sound/effects/bang.ogg'
+	var/light_sound = SFX_EFFECTS_PHASEIN
+	var/blast_sound = SFX_EFFECTS_BANG
 
 /obj/item/grenade/anti_photon/detonate(parent_callback = FALSE)
 	if(parent_callback) // An awful way to do this, but the spawn() setup left me no choice when porting to timers

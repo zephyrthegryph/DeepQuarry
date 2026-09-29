@@ -82,7 +82,7 @@
 	effect = /obj/machinery/account_database/proc/interaction_open_ui_impl
 
 /obj/machinery/account_database/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return TRUE
 	tgui_interact(user)
 	return TRUE

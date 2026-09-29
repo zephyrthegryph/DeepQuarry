@@ -64,7 +64,7 @@
 	///How long an object has been paused for, to be added to the travel time.
 	var/delayed_time = 0
 	///The last world.time value stored when the thrownthing was moving.
-	var/last_move = 0
+	EXPIRY_DECLARE(last_move)
 	/// If our thrownthing has been blocked
 	var/blocked = FALSE
 
@@ -108,7 +108,7 @@
 
 	diagonal_error = dist_x/2 - dist_y
 
-	start_time = world.time
+	EXPIRY_STAMP(src, start_time, CLOCK_WORLD)
 
 
 /// Phase 2: the throw leaves the throwing lane (the throw_of unlink clears the movable's `throwing`).
@@ -142,10 +142,10 @@
 		finalize()
 		return
 
+	EXPIRY_STAMP(src, last_move, CLOCK_WORLD)
+
 	var/area/A = get_area(AM.loc)
 	var/atom/step
-
-	last_move = world.time
 
 	//calculate how many tiles to move, making up for any missed ticks.
 	var/turf/target_turf = src.target_turf

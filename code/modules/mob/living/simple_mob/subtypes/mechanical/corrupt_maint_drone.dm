@@ -29,7 +29,7 @@
 	faction = FACTION_UNDERDARK
 	endurance = 25
 	movement_cooldown = -1
-	movement_sound = 'sound/effects/servostep.ogg'
+	movement_sound = SFX_EFFECTS_SERVOSTEP
 
 	pass_flags = PASSTABLE
 	mob_swap_flags = 0
@@ -39,7 +39,7 @@
 	melee_damage_upper = 6
 	base_attack_cooldown = 2.5 // Four attacks per second.
 	attack_injury_kind = INJURY_CUT
-	attack_sound = 'sound/weapons/bladeslice.ogg'
+	attack_sound = SFX_WEAPONS_BLADESLICE
 	attacktext = list("cut", "sliced")
 
 	var/poison_type = "welder fuel"	// The reagent that gets injected when it attacks.

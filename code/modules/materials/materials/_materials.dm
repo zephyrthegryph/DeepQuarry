@@ -317,7 +317,7 @@ GLOBAL_LIST_INIT(name_to_material, populate_material_list())
 	// Noise when someone is faceplanted onto a table made of this material.
 	var/tableslam_noise = 'sound/weapons/tablehit1.ogg'
 	// Noise made when a simple door made of this material opens or closes.
-	var/dooropen_noise = 'sound/effects/stonedoor_openclose.ogg'
+	var/dooropen_noise = SFX_EFFECTS_STONEDOOR_OPENCLOSE
 	// Path to resulting stacktype.
 	var/stack_type
 	// Wallrot crumble message.

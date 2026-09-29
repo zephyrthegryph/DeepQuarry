@@ -175,8 +175,8 @@ DECLARE_INTERACTIONS(/obj/item/dice, \
 	desc = "It's a small bag with dice inside."
 	icon = 'icons/obj/dice.dmi'
 	icon_state = "dicebag"
-	drop_sound = 'sound/items/drop/hat.ogg'
-	pickup_sound = 'sound/items/pickup/hat.ogg'
+	drop_sound = SFX_ITEMS_DROP_HAT
+	pickup_sound = SFX_ITEMS_PICKUP_HAT
 
 /obj/item/storage/pill_bottle/dice/Initialize(mapload)
 	. = ..()
@@ -188,8 +188,8 @@ DECLARE_INTERACTIONS(/obj/item/dice, \
 	desc = "It's a small bag with gaming dice inside."
 	icon = 'icons/obj/dice.dmi'
 	icon_state = "magicdicebag"
-	drop_sound = 'sound/items/drop/hat.ogg'
-	pickup_sound = 'sound/items/pickup/hat.ogg'
+	drop_sound = SFX_ITEMS_DROP_HAT
+	pickup_sound = SFX_ITEMS_PICKUP_HAT
 
 /obj/item/storage/pill_bottle/dice_nerd/Initialize(mapload)
 	. = ..()
@@ -214,11 +214,9 @@ DECLARE_INTERACTIONS(/obj/item/dice, \
 	storage_slots = 5
 	special_handling = TRUE
 
-/obj/item/storage/dicecup/hold_constraint()
-	var/list/holds = list(
-		/obj/item/dice,
-		)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage/dicecup, hold_spec, list(HOLD_ONLY(list( \
+		/obj/item/dice, \
+		)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 EXTEND_INTERACTIONS(/obj/item/storage/dicecup, \
 	INTERACT_USE("Shake", PROC_REF(interaction_shake)), \

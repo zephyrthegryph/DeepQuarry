@@ -51,7 +51,7 @@ MATERIAL_MIX(/obj/item/camera_assembly, list(MAT_STEEL = 700,MAT_GLASS = 300))
 	if(state == 0 && isturf(loc))
 		playsound(src, tool.usesound, 50, TRUE)
 		to_chat(user, span_notice("You wrench the assembly into place."))
-		anchored = TRUE
+		set_anchored(TRUE)
 		state = 1
 		update_icon()
 		auto_turn()
@@ -59,7 +59,7 @@ MATERIAL_MIX(/obj/item/camera_assembly, list(MAT_STEEL = 700,MAT_GLASS = 300))
 	if(state == 1)
 		playsound(src, tool.usesound, 50, TRUE)
 		to_chat(user, span_notice("You unattach the assembly from its place."))
-		anchored = FALSE
+		set_anchored(FALSE)
 		state = 0
 		update_icon()
 		return TRUE
@@ -78,7 +78,7 @@ MATERIAL_MIX(/obj/item/camera_assembly, list(MAT_STEEL = 700,MAT_GLASS = 300))
 	else
 		to_chat(user, span_notice("You unweld the assembly from its place."))
 		state = 1
-	anchored = TRUE
+	set_anchored(TRUE)
 	return TRUE
 
 /obj/item/camera_assembly/wirecutter_act(mob/user, obj/item/tool)
@@ -197,7 +197,7 @@ DECLARE_INTERACTIONS(/obj/item/camera_assembly, \
 /obj/item/camera_assembly/proc/weld(obj/item/weldingtool/WT, mob/user, on_done, list/done_args)
 	if(om_busy(src)) // a weld in progress claims it
 		return 0
-	var/result = use_tool(user, WT, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, message_self = "You start to weld the [src]..", receiver = src, on_done = PROC_REF(weld_finished), done_args = list(on_done, done_args), claims = TRUE)
+	var/result = use_tool(user, WT, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, start_self = "You start to weld the [src]..", receiver = src, on_done = PROC_REF(weld_finished), done_args = list(on_done, done_args), claims = TRUE)
 	return result
 
 

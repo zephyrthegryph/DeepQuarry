@@ -9,6 +9,8 @@
 // Use to show shuttle ETA/ETD times
 // Alert status
 // And arbitrary messages set by comms computer
+OWN_TIMER(/obj/machinery/status_display, refresh_token)
+
 /obj/machinery/status_display
 	icon = 'icons/obj/status_display.dmi'
 	icon_state = "frame"
@@ -22,7 +24,7 @@
 	idle_power_usage = 10
 	circuit =  /obj/item/circuitboard/status_display
 	flags = WALL_ITEM
-	var/mode = 1	// 0 = Blank
+	mode = 1	// 0 = Blank
 					// 1 = Shuttle timer
 					// 2 = Arbitrary message(s)
 					// 3 = alert picture
@@ -53,10 +55,9 @@
 
 	var/seclevel = "green"
 
-	/// The om_after() timer for the next redraw (a countdown, the clock or a scrolling message)
-	/// and when it is due; the shuttle schedule watched in shuttle modes (SHUTTLE_SCHEDULE_*, 0
+	/// When the next redraw in the `refresh_token` timer slot is due (a countdown, the clock or a
+	/// scrolling message); the shuttle schedule watched in shuttle modes (SHUTTLE_SCHEDULE_*, 0
 	/// for none) and the entity whose CHANGE_SHUTTLE_SCHEDULE it watches.
-	var/tmp/refresh_token
 	var/tmp/refresh_at = 0
 	var/tmp/shuttle_key_token
 	var/tmp/shuttle_key_id = 0
@@ -131,14 +132,14 @@
 
 /// Redraws now and schedules the next redraw.
 /obj/machinery/status_display/proc/refresh()
-	if(stat & NOPOWER)
+	if(has_stat(NOPOWER))
 		remove_display()
 	else
 		update()
 	schedule_refresh()
 
 /obj/machinery/status_display/proc/schedule_refresh()
-	var/powered = !(stat & NOPOWER)
+	var/powered = !has_stat(NOPOWER)
 	var/want_shuttle = powered ? watched_shuttle() : 0
 	if(want_shuttle != shuttle_key_id)
 		if(!isnull(shuttle_key_token))
@@ -152,25 +153,23 @@
 			shuttle_key_token = source
 	var/delay = powered ? next_refresh_delay() : 0
 	var/at = delay ? world.time + delay : 0
-	if(!isnull(refresh_token))
+	if(om_timer_slot_pending(src, "refresh_token"))
 		if(at && at == refresh_at)
 			return
-		om_cancel_timer(src, refresh_token)
-		refresh_token = null
+		om_cancel_timer_slot(src, "refresh_token")
 	refresh_at = at
 	if(at)
 		om_attach(src, /datum/om/behaviour/sleeper/status_display) // for the audit
-		refresh_token = om_after(src, delay, PROC_REF(refresh_timer_fired))
+		om_after_slot(src, "refresh_token", delay, PROC_REF(refresh_timer_fired))
 
 /obj/machinery/status_display/proc/refresh_timer_fired()
-	refresh_token = null
 	refresh_at = 0
 	refresh()
 
 /obj/machinery/status_display/om_sleep_violation()
-	if(stat & NOPOWER)
+	if(has_stat(NOPOWER))
 		return null
-	if(next_refresh_delay() && isnull(refresh_token))
+	if(next_refresh_delay() && !om_timer_slot_pending(src, "refresh_token"))
 		return "mode [mode] needs redrawing but has no timer"
 	if(watched_shuttle() != shuttle_key_id || (shuttle_key_id && isnull(shuttle_key_token)))
 		return "mode [mode] is not watching its shuttle"
@@ -182,7 +181,7 @@
 		refresh()
 
 /obj/machinery/status_display/emp_act(severity, recursive)
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		..(severity, recursive)
 		return
 	set_picture("ai_bsod")
@@ -291,11 +290,11 @@
 	// On most alerts, this will change to a flashing alert picture in a specific color.
 	// Doing that for green alert automatically doesn't really make sense, but it is still available on the comm consoles/PDAs.
 	if(seclevel2num(new_level) == SEC_LEVEL_GREEN)
-		mode = STATUS_DISPLAY_TIME
+		set_mode(STATUS_DISPLAY_TIME)
 		set_light(0) // Remove any glow we had from the alert previously.
 		refresh()
 		return
-	mode = STATUS_DISPLAY_ALERT
+	set_mode(STATUS_DISPLAY_ALERT)
 	display_alert(new_level)
 	schedule_refresh()
 
@@ -347,24 +346,24 @@
 /obj/machinery/status_display/receive_signal(datum/signal/signal)
 	switch(signal.data["command"])
 		if("blank")
-			mode = STATUS_DISPLAY_BLANK
+			set_mode(STATUS_DISPLAY_BLANK)
 			set_light(0)
 
 		if("shuttle")
-			mode = STATUS_DISPLAY_TRANSFER_SHUTTLE_TIME
+			set_mode(STATUS_DISPLAY_TRANSFER_SHUTTLE_TIME)
 			set_light(0)
 
 		if("message")
-			mode = STATUS_DISPLAY_MESSAGE
+			set_mode(STATUS_DISPLAY_MESSAGE)
 			set_message(signal.data["msg1"], signal.data["msg2"])
 			set_light(0)
 
 		if("alert")
-			mode = STATUS_DISPLAY_ALERT
+			set_mode(STATUS_DISPLAY_ALERT)
 			set_picture(signal.data["picture_state"])
 
 		if("time")
-			mode = STATUS_DISPLAY_TIME
+			set_mode(STATUS_DISPLAY_TIME)
 			set_light(0)
 	refresh()
 

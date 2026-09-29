@@ -94,27 +94,25 @@
 /// Body slot display table. Keep in head-down order; `multi` controls whether the slot can
 /// hold more than one item (only SLOT_ID_TIE should). SLOT_ID_LEGS is generally fluff layer.
 /// `group` collapses related slots into one section in the UI for visual scanability.
-/datum/preference_editor/loadout/proc/body_slot_table()
-	var/static/list/L = list(
-		list("id" = SLOT_ID_HEAD,       "label" = "Head",         "group" = "Face & Head"),
-		list("id" = SLOT_ID_EYES,    "label" = "Eyes",         "group" = "Face & Head"),
-		list("id" = SLOT_ID_MASK,  "label" = "Mask",         "group" = "Face & Head"),
-		list("id" = SLOT_ID_EAR_L,      "label" = "Left Ear",     "group" = "Face & Head"),
-		list("id" = SLOT_ID_EAR_R,      "label" = "Right Ear",    "group" = "Face & Head"),
-		list("id" = SLOT_ID_UNIFORM,  "label" = "Uniform",      "group" = "Clothing"),
-		list("id" = SLOT_ID_SUIT,  "label" = "Outer Suit",   "group" = "Clothing"),
-		list("id" = SLOT_ID_TIE,        "label" = "Accessories",  "group" = "Clothing", "multi" = TRUE),
-		list("id" = SLOT_ID_GLOVES,     "label" = "Gloves",       "group" = "Hands & Feet"),
-		list("id" = SLOT_ID_SHOES,      "label" = "Shoes",        "group" = "Hands & Feet"),
-		list("id" = SLOT_ID_BACK,       "label" = "Back",         "group" = "Carry"),
-		list("id" = SLOT_ID_BELT,       "label" = "Belt",         "group" = "Carry"),
-		list("id" = SLOT_ID_ID,    "label" = "ID",           "group" = "Carry"),
-		list("id" = SLOT_ID_POCKET_L,    "label" = "Left Pocket",  "group" = "Pockets"),
-		list("id" = SLOT_ID_POCKET_R,    "label" = "Right Pocket", "group" = "Pockets"),
-		list("id" = SLOT_ID_SUIT_STORAGE,    "label" = "Suit Storage", "group" = "Pockets"),
-		list("id" = SLOT_ID_LEGS,       "label" = "Legs Layer",   "group" = "Other"),
-	)
-	return L
+TYPE_TABLE_DECLARE(/datum/preference_editor/loadout, body_slot_table, list( \
+		list("id" = SLOT_ID_HEAD,       "label" = "Head",         "group" = "Face & Head"), \
+		list("id" = SLOT_ID_EYES,    "label" = "Eyes",         "group" = "Face & Head"), \
+		list("id" = SLOT_ID_MASK,  "label" = "Mask",         "group" = "Face & Head"), \
+		list("id" = SLOT_ID_EAR_L,      "label" = "Left Ear",     "group" = "Face & Head"), \
+		list("id" = SLOT_ID_EAR_R,      "label" = "Right Ear",    "group" = "Face & Head"), \
+		list("id" = SLOT_ID_UNIFORM,  "label" = "Uniform",      "group" = "Clothing"), \
+		list("id" = SLOT_ID_SUIT,  "label" = "Outer Suit",   "group" = "Clothing"), \
+		list("id" = SLOT_ID_TIE,        "label" = "Accessories",  "group" = "Clothing", "multi" = TRUE), \
+		list("id" = SLOT_ID_GLOVES,     "label" = "Gloves",       "group" = "Hands & Feet"), \
+		list("id" = SLOT_ID_SHOES,      "label" = "Shoes",        "group" = "Hands & Feet"), \
+		list("id" = SLOT_ID_BACK,       "label" = "Back",         "group" = "Carry"), \
+		list("id" = SLOT_ID_BELT,       "label" = "Belt",         "group" = "Carry"), \
+		list("id" = SLOT_ID_ID,    "label" = "ID",           "group" = "Carry"), \
+		list("id" = SLOT_ID_POCKET_L,    "label" = "Left Pocket",  "group" = "Pockets"), \
+		list("id" = SLOT_ID_POCKET_R,    "label" = "Right Pocket", "group" = "Pockets"), \
+		list("id" = SLOT_ID_SUIT_STORAGE,    "label" = "Suit Storage", "group" = "Pockets"), \
+		list("id" = SLOT_ID_LEGS,       "label" = "Legs Layer",   "group" = "Other"), \
+	))
 
 /// Returns the body-slot key (numeric string or "other") for the given /datum/gear.
 /datum/preference_editor/loadout/proc/slot_key_for(datum/gear/G)
@@ -128,25 +126,23 @@
 /// from the indirect vars (headset, backpack), not declared statically on the outfit.
 /// Resolved separately below in job_default_labels so the ghost shows the job's actual
 /// themed kit instead of being blank.
-/datum/preference_editor/loadout/proc/outfit_field_to_slot()
-	var/static/list/L = list(
-		"uniform"    = "[SLOT_ID_UNIFORM]",
-		"suit"       = "[SLOT_ID_SUIT]",
-		"belt"       = "[SLOT_ID_BELT]",
-		"gloves"     = "[SLOT_ID_GLOVES]",
-		"shoes"      = "[SLOT_ID_SHOES]",
-		"head"       = "[SLOT_ID_HEAD]",
-		"mask"       = "[SLOT_ID_MASK]",
-		"glasses"    = "[SLOT_ID_EYES]",
-		"l_pocket"   = "[SLOT_ID_POCKET_L]",
-		"r_pocket"   = "[SLOT_ID_POCKET_R]",
-		"suit_store" = "[SLOT_ID_SUIT_STORAGE]",
-	)
-	return L
+TYPE_TABLE_DECLARE(/datum/preference_editor/loadout, loadout_outfit_field_to_slot, list( \
+	"uniform"    = "[SLOT_ID_UNIFORM]", \
+	"suit"       = "[SLOT_ID_SUIT]", \
+	"belt"       = "[SLOT_ID_BELT]", \
+	"gloves"     = "[SLOT_ID_GLOVES]", \
+	"shoes"      = "[SLOT_ID_SHOES]", \
+	"head"       = "[SLOT_ID_HEAD]", \
+	"mask"       = "[SLOT_ID_MASK]", \
+	"glasses"    = "[SLOT_ID_EYES]", \
+	"l_pocket"   = "[SLOT_ID_POCKET_L]", \
+	"r_pocket"   = "[SLOT_ID_POCKET_R]", \
+	"suit_store" = "[SLOT_ID_SUIT_STORAGE]", \
+))
 
 /// Returns {body_slot_str: item_name} for the given job's outfit, using initial(.name)
 /// instead of instantiating items. The straight slot mappings (uniform/suit/belt/etc.)
-/// come from outfit_field_to_slot(); the indirect slots — l_ear, back, wear_id, the
+/// come from the loadout_outfit_field_to_slot table; the indirect slots — l_ear, back, wear_id, the
 /// per-job pda_slot — are filled at runtime by pre_equip() from outfit.headset /
 /// outfit.backpack / outfit.id_type / outfit.pda_type, so resolve those explicitly here.
 /// `backbag_choice` is vestigial (the backbag pref was deleted) — kept in signature for
@@ -158,7 +154,7 @@
 	var/datum/decl/hierarchy/outfit/outfit = outfit_by_type(job.outfit_type)
 	if(!outfit)
 		return out
-	var/list/mapping = outfit_field_to_slot()
+	var/list/mapping = TYPE_TABLE_GET(src, loadout_outfit_field_to_slot)
 	for(var/field in mapping)
 		var/path = outfit.vars[field]
 		if(!path || !ispath(path))
@@ -467,7 +463,7 @@
 
 	return list(
 		"categories" = categories,
-		"body_slots" = body_slot_table(),
+		"body_slots" = TYPE_TABLE_GET(src, body_slot_table),
 		"starting_kit" = sk_static,
 		"underwear" = uw_static,
 	)

@@ -14,7 +14,7 @@
 	var/absorbing_prey = 0 				// Determines if the person is using the succubus drain or not. See station_special_abilities_vr.
 	var/drain_finalized = 0				// Determines if the succubus drain will be KO'd/absorbed. Can be toggled on at any time.
 	var/fuzzy = 0						// Preference toggle for sharp/fuzzy icon.
-	var/next_preyloop					// For Fancy sound internal loop
+	EXPIRY_DECLARE(next_preyloop) // For Fancy sound internal loop
 	var/stuffing_feeder = FALSE			// Can feed foods to others whole, like trash eater can eat them on their own.
 	var/adminbus_trash = FALSE			// For abusing trash eater for event shenanigans.
 	var/adminbus_eat_minerals = FALSE	// This creature subsists on a diet of pure adminium.
@@ -581,7 +581,6 @@
 	return taste_message
 
 
-
 //This is just the above proc but switched about.
 /mob/living/proc/smell(mob/living/smelled in living_mobs(1, TRUE))
 	set name = "Smell"
@@ -619,8 +618,6 @@
 			smell_message += "a plain old normal [src]"
 
 	return smell_message
-
-
 
 
 //
@@ -1124,7 +1121,7 @@
 		nom = list("nutrition" = 100,  "remark" = "The crytal was particularly brittle and not difficult to break apart, but the inside was incredibly flavoursome. Though devoid of any actual healing power, it seems to be very nutritious!", "WTF" = FALSE)
 
 	if(nom) //Ravenous 1-4, snackage confirmed. Clear for chowdown, over.
-		playsound(src, 'sound/items/eatfood.ogg', rand(10,50), 1)
+		play_sfx(src, SFX_ITEMS_EATFOOD, volume = rand(10,50))
 		var/T = (istype(M) ? M.hardness/40 : 1) SECONDS //1.5 seconds to eat a sheet of metal. 2.5 for durasteel and diamond & 1 by default (applies to some ores like raw carbon, slag, etc.
 		to_chat(src, span_notice("You start crunching on [I] with your powerful jaws, attempting to tear it apart..."))
 		//Eat on the move, but not multiple things at once.
@@ -1166,40 +1163,21 @@
 	. += "<a href='byond://?src=\ref[src];vore_prefs=1'>\[Mechanical Vore Preferences\]</a>"
 
 
-/mob/living/Topic(href, href_list)	//Can't find any instances of Topic() being overridden by /mob/living in polaris' base code, even though /mob/living/carbon/human's Topic() has a ..() call
-	if(href_list["vore_prefs"])
-		display_voreprefs(usr)
-	if(href_list["ooc_notes"])
-		do_examine_ooc(usr)
-	if(href_list["edit_ooc_notes"])
-		if(usr == src)
-			set_metainfo_panel(usr)
-	if(href_list["edit_ooc_note_likes"])
-		if(usr == src)
-			set_metainfo_likes(usr)
-	if(href_list["edit_ooc_note_dislikes"])
-		if(usr == src)
-			set_metainfo_dislikes(usr)
-	if(href_list["save_ooc_panel"])
-		if(usr == src)
-			save_ooc_panel(usr)
-	if(href_list["print_ooc_notes_chat"])
-		print_ooc_notes_chat(usr)
-	if(href_list["edit_ooc_note_favs"])
-		if(usr == src)
-			set_metainfo_favs(usr)
-	if(href_list["edit_ooc_note_maybes"])
-		if(usr == src)
-			set_metainfo_maybes(usr)
-	if(href_list["set_metainfo_ooc_style"])
-		set_metainfo_ooc_style(usr)
-	if(href_list["save_private_notes"])
-		if(usr == src)
-			save_private_notes(usr)
-	if(href_list["edit_private_notes"])
-		if(usr == src)
-			set_metainfo_private_notes(usr)
-	return ..()
+TOPIC_ACTION(/mob/living, "vore_prefs", PROC_REF(topic_vore_prefs))
+TOPIC_ACTION(/mob/living, "ooc_notes", PROC_REF(topic_ooc_notes))
+TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes_chat))
+
+/mob/living/proc/topic_vore_prefs(mob/user, list/args)
+	display_voreprefs(user)
+	return TRUE
+
+/mob/living/proc/topic_ooc_notes(mob/user, list/args)
+	do_examine_ooc(user)
+	return TRUE
+
+/mob/living/proc/topic_print_ooc_notes_chat(mob/user, list/args)
+	print_ooc_notes_chat(user)
+	return TRUE
 
 /mob/living/proc/display_voreprefs(mob/user)	//Called by Topic() calls on instances of /mob/living (and subtypes) containing vore_prefs as an argument
 	if(!user)
@@ -1488,7 +1466,6 @@
 	icon = 'icons/mob/screen/midnight.dmi'
 	icon_state = "vore"
 	screen_loc = ui_smallquad
-
 
 
 //

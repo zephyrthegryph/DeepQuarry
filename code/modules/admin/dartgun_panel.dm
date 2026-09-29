@@ -50,17 +50,18 @@
 			if(!B)
 				return TRUE
 			if(check_beaker_mixing(B))
-				Topic("stop_mix=[idx]", list("stop_mix" = "[idx]"))
+				dartgun_set_mixing(ui.user, idx, FALSE)
 			else
-				Topic("mix=[idx]", list("mix" = "[idx]"))
+				dartgun_set_mixing(ui.user, idx, TRUE)
 			SStgui.update_uis(src)
 			return TRUE
 		if("eject_beaker")
 			var/idx = text2num("[params["index"]]")
-			Topic("eject=[idx]", list("eject" = "[idx]"))
+			dartgun_eject_beaker(ui.user, idx)
 			SStgui.update_uis(src)
 			return TRUE
 		if("eject_cart")
-			Topic("eject_cart=1", list("eject_cart" = "1"))
+			add_fingerprint(ui.user)
+			unload_ammo(ui.user)
 			SStgui.update_uis(src)
 			return TRUE

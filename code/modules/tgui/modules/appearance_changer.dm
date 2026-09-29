@@ -560,8 +560,9 @@
 				// Create it from the mob
 				to_chat(ui.user,span_notice("\The [owner()]'s bodyrecord was saved to the disk."))
 				owner().update_dna()
-				own_set(DC.disk, "stored", new /datum/transhuman/body_record(owner(), FALSE, FALSE)) // Saves a COPY! The old record is deleted
-				DC.disk.stored.locked = FALSE // remove lock
+				var/datum/transhuman/body_record/record = new /datum/transhuman/body_record(owner(), FALSE, FALSE) // Saves a COPY! The old record is deleted
+				record.locked = FALSE // remove lock
+				own_set(DC.disk, "stored", record)
 				DC.disk.name = "[initial(DC.disk.name)] ([owner().real_name])"
 			return TRUE
 		if("ejectdisk")

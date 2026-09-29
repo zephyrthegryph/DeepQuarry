@@ -22,7 +22,7 @@
 	melee_damage_lower = 8
 	melee_damage_upper = 12
 	attacktext = list("bitten")
-	attack_sound = 'sound/weapons/bite.ogg'
+	attack_sound = SFX_WEAPONS_BITE
 
 	organ_names = /datum/decl/mob_organ_names/tree
 
@@ -39,7 +39,7 @@
 		var/mob/living/L = A
 		if(prob(15))
 			L.status_at_least(EFFECT_WEAKENED, 3)
-			L.visible_message(span_danger("\The [src] knocks down \the [L]!"))
+			act_message(src, L, null, MSG_OTHERS(span_danger("%U% knocks down %T%!")))
 
 /mob/living/simple_mob/animal/space/tree
 	delete_on_death = TRUE
@@ -47,8 +47,8 @@
 
 /mob/living/simple_mob/animal/space/tree/on_death(gibbed)
 	..()
-	playsound(src, 'sound/effects/woodcutting.ogg', 100, 1)
+	play_sfx(src, SFX_EFFECTS_WOODCUTTING)
 	new /obj/item/stack/material/wood(loc)
 
 /datum/decl/mob_organ_names/tree
-	hit_zones = list("trunk", "branches", "twigs")
+TYPE_TABLE(/datum/decl/mob_organ_names/tree, mob_organ_hit_zones, list("trunk", "branches", "twigs"))

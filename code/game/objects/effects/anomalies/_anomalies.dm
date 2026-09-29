@@ -11,7 +11,7 @@
 	var/area/impact_area
 
 	var/lifespan = ANOMALY_COUNTDOWN_TIMER
-	var/death_time
+	EXPIRY_DECLARE(death_time)
 
 	var/countdown_colour
 	var/obj/effect/countdown/anomaly/countdown
@@ -42,7 +42,7 @@
 
 	if(new_lifespan)
 		lifespan = new_lifespan
-	death_time = world.time + lifespan
+	EXPIRY_SET(src, death_time, lifespan, CLOCK_WORLD)
 
 	if(countdown_colour)
 		countdown.color = countdown_colour
@@ -78,13 +78,13 @@ DECLARE_PERIODIC(/obj/effect/anomaly, PERIODIC_SLOW)
 /obj/effect/anomaly/proc/anomalyPulse()
 	if(!stats)
 		return FALSE
-	if(world.time < stats.next_activation)
+	if(EXPIRY_ACTIVE(stats, next_activation, CLOCK_WORLD))
 		return FALSE
 
 	stats.pulse_effect()
 	if(QDELETED(src))
 		return FALSE
-	stats.next_activation = world.time + rand(stats.min_activation, stats.max_activation)
+	EXPIRY_SET(stats, next_activation, rand(stats.min_activation, stats.max_activation), CLOCK_WORLD)
 	return TRUE
 
 /obj/effect/anomaly/proc/move_anomaly()
@@ -117,7 +117,7 @@ DECLARE_PERIODIC(/obj/effect/anomaly, PERIODIC_SLOW)
 		own_set(src, "stats", new /datum/anomaly_stats)
 		rel_set(stats, "attached_anomaly", src)
 		stats.calculate_points()
-		density = TRUE
+		set_density(TRUE)
 	return
 
 EXTEND_INTERACTIONS(/obj/effect/anomaly, \

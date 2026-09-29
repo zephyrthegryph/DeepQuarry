@@ -34,22 +34,18 @@
 	if(. && ai_brain)
 		ai_brain.vision_range = 16
 
-/mob/living/simple_mob/vr/alchemistbee/get_ai_behaviors()
-	var/static/list/L = list(
-		/datum/ai_behavior/alchemistbee_chemblast,
-		/datum/ai_behavior/alchemistbee_dangerbolt,
-		/datum/ai_behavior/alchemistbee_homingcluster,
-		/datum/ai_behavior/alchemistbee_aoe_backpedal,
-		/datum/ai_behavior/ranged_attack,
-		/datum/ai_behavior/melee_attack,
-		/datum/ai_behavior/approach_threat,
-		/datum/ai_behavior/idle_wander,
-	)
-	return L
+TYPE_TABLE(/mob/living/simple_mob/vr/alchemistbee, get_ai_behaviors, list( \
+	/datum/ai_behavior/alchemistbee_chemblast, \
+	/datum/ai_behavior/alchemistbee_dangerbolt, \
+	/datum/ai_behavior/alchemistbee_homingcluster, \
+	/datum/ai_behavior/alchemistbee_aoe_backpedal, \
+	/datum/ai_behavior/ranged_attack, \
+	/datum/ai_behavior/melee_attack, \
+	/datum/ai_behavior/approach_threat, \
+	/datum/ai_behavior/idle_wander, \
+))
 
-/mob/living/simple_mob/vr/alchemistbee/get_ai_target_selectors()
-	var/static/list/L = list(/datum/target_selector/prefer_players, /datum/target_selector/closest)
-	return L
+TYPE_TABLE(/mob/living/simple_mob/vr/alchemistbee, get_ai_target_selectors, list(/datum/target_selector/prefer_players, /datum/target_selector/closest))
 
 // ---------------------------------------------------------------------------
 // Shared helper — count attackable mobs within `radius` of `center`.
@@ -103,7 +99,7 @@
 		return DQ_BEHAVIOR_FAILED
 	COOLDOWN_START(B, special_attack_cooldown_until, B.special_attack_cooldown)
 	B.chemblast(target)
-	brain.last_attack_at = world.time
+	EXPIRY_STAMP(brain, last_attack_at, CLOCK_WORLD)
 	return DQ_BEHAVIOR_DONE
 
 // ---------------------------------------------------------------------------
@@ -152,7 +148,7 @@
 		return DQ_BEHAVIOR_FAILED
 	COOLDOWN_START(B, special_attack_cooldown_until, B.special_attack_cooldown)
 	B.dangerbolt(target)
-	brain.last_attack_at = world.time
+	EXPIRY_STAMP(brain, last_attack_at, CLOCK_WORLD)
 	return DQ_BEHAVIOR_DONE
 
 // ---------------------------------------------------------------------------
@@ -189,7 +185,7 @@
 		return DQ_BEHAVIOR_FAILED
 	COOLDOWN_START(B, special_attack_cooldown_until, B.special_attack_cooldown)
 	B.homingcluster(target)
-	brain.last_attack_at = world.time
+	EXPIRY_STAMP(brain, last_attack_at, CLOCK_WORLD)
 	return DQ_BEHAVIOR_DONE
 
 // ---------------------------------------------------------------------------

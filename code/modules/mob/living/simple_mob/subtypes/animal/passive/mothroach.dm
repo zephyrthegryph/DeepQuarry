@@ -66,7 +66,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/mothroach, \
 	unarmed_touch(user, interaction.stance)
 
 	if(stat != DEAD)
-		playsound(src, 'sound/voice/scream/moth/moth_scream.ogg', 50, TRUE)
+		play_sfx(src, SFX_VOICE_SCREAM_MOTH_MOTH_SCREAM)
 
 /// Old attackby: the normal attack, then a scream.
 /mob/living/simple_mob/animal/passive/mothroach/proc/mothroach_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
@@ -74,7 +74,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/mothroach, \
 	hit_with_item(O, user)
 
 	if(stat != DEAD)
-		playsound(src, 'sound/voice/scream/moth/moth_scream.ogg', 50, TRUE)
+		play_sfx(src, SFX_VOICE_SCREAM_MOTH_MOTH_SCREAM)
 
 /datum/say_list/mothroach
 	emote_hear = list("flutters")

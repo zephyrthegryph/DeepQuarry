@@ -16,7 +16,7 @@
 	icon_override = 'icons/vore/custom_guns_vr.dmi'
 	item_state = "gun"
 
-	fire_sound = 'sound/weapons/taser.ogg'
+	fire_sound = SFX_WEAPONS_TASER
 	projectile_type = /obj/item/projectile/beam/stun/med // default proj uses weak stun but firemode switches to med, fixing
 
 	modifystate = "stun"
@@ -52,7 +52,7 @@
 
 /obj/item/gun/energy/gun/protector/ui_action_click(mob/user, actiontype)
 	gun_light_on = !gun_light_on
-	playsound(src, 'sound/weapons/empty.ogg', 40, TRUE)
+	play_sfx(src, SFX_WEAPONS_EMPTY, 0.8)
 	update_brightness(user)
 	update_icon()
 

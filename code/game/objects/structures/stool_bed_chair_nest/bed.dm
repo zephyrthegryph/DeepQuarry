@@ -282,8 +282,8 @@
 	w_class = ITEMSIZE_LARGE
 	var/rollertype = /obj/item/roller
 	var/bedtype = /obj/structure/bed/roller
-	drop_sound = 'sound/items/drop/axe.ogg'
-	pickup_sound = 'sound/items/pickup/axe.ogg'
+	drop_sound = SFX_ITEMS_DROP_AXE
+	pickup_sound = SFX_ITEMS_PICKUP_AXE
 
 DECLARE_INTERACTIONS(/obj/item/roller, \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \
@@ -343,18 +343,18 @@ DECLARE_INTERACTIONS(/obj/item/roller_holder, INTERACT_USE(null, PROC_REF(intera
 /obj/structure/bed/roller/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
 
-	playsound(src, 'sound/effects/roll.ogg', 100, 1)
+	play_sfx(src, SFX_EFFECTS_ROLL)
 
 /obj/structure/bed/roller/post_buckle_mob(mob/living/M as mob)
 	if(M?.buckled_to() == src)
 		M.pixel_y = 6
 		M.old_y = 6
-		density = TRUE
+		set_density(TRUE)
 		icon_state = "[initial(icon_state)]_up"
 	else
 		M.pixel_y = 0
 		M.old_y = 0
-		density = FALSE
+		set_density(FALSE)
 		icon_state = "[initial(icon_state)]"
 	update_icon()
 	return ..()
@@ -446,7 +446,7 @@ DECLARE_INTERACTIONS(/obj/item/roller_holder, INTERACT_USE(null, PROC_REF(intera
 	return TRUE
 
 /obj/structure/dirtybed/proc/wrench_act_tool_done(mob/user)
-	anchored = !anchored
+	set_anchored(!anchored)
 	to_chat(user, span_notice("You [anchored ? "secured" : "unsecured"] \the [src]!"))
 
 DECLARE_DEFAULT_CHILD(/obj/item/roller_holder, "held", /obj/item/roller)

@@ -48,7 +48,7 @@
 	/// For packaged/canned food sounds
 	var/opening_sound = null
 	/// Sound of eating.
-	var/eating_sound = 'sound/items/eatfood.ogg'
+	var/eating_sound = SFX_ITEMS_EATFOOD
 
 	/// Yems.
 	food_can_insert_micro = TRUE
@@ -1239,14 +1239,15 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sausage, null, list(RE
 	nutriment_amt = 2
 	nutriment_desc = list("heartiness" = 1, "dough" = 2)
 	var/warm = FALSE
-	var/list/heated_reagents = list(REAGENT_ID_TRICORDRAZINE = 5) // ALLOW(instance_list): c: read-only per-subtype constant table (3 subtype overrides); a getter would share it, not worth it on a rare type
+
+TYPE_TABLE_DECLARE(/obj/item/reagent_containers/food/snacks/donkpocket, donkpocket_heated_reagents, list(REAGENT_ID_TRICORDRAZINE = 5))
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donkpocket, null, list(REAGENT_ID_PROTEIN = 2))
 
 /obj/item/reagent_containers/food/snacks/donkpocket/proc/heat()
 	warm = 1
-	for(var/reagent in heated_reagents)
-		reagents.add_reagent(reagent, heated_reagents[reagent])
+	for(var/reagent in TYPE_TABLE_GET(src, donkpocket_heated_reagents))
+		reagents.add_reagent(reagent, TYPE_TABLE_GET(src, donkpocket_heated_reagents)[reagent])
 	bitesize = 6
 	name = "warm [name]"
 	cooltime()
@@ -1304,15 +1305,17 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donkpocket, null, list
 	icon_state = "dankpocket"
 	nutriment_amt = 2
 	nutriment_desc = list("heartiness" = 1, "dough" = 2)
-	heated_reagents = list(REAGENT_ID_BLISS = 5)
+
+TYPE_TABLE(/obj/item/reagent_containers/food/snacks/donkpocket/dankpocket, donkpocket_heated_reagents, list(REAGENT_ID_BLISS = 5))
 
 /obj/item/reagent_containers/food/snacks/donkpocket/sinpocket
 	name = "\improper Sin-pocket"
 	desc = "The food of choice for the veteran. Do <B>NOT</B> overconsume."
 	filling_color = "#6D6D00"
-	heated_reagents = list(REAGENT_ID_DOCTORSDELIGHT = 5, REAGENT_ID_HYPERZINE = 0.75, REAGENT_ID_SYNAPTIZINE = 0.25)
 	var/has_been_heated = FALSE
 	special_handling = TRUE
+
+TYPE_TABLE(/obj/item/reagent_containers/food/snacks/donkpocket/sinpocket, donkpocket_heated_reagents, list(REAGENT_ID_DOCTORSDELIGHT = 5, REAGENT_ID_HYPERZINE = 0.75, REAGENT_ID_SYNAPTIZINE = 0.25))
 
 EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/donkpocket/sinpocket, INTERACT_SELF("Crush package", PROC_REF(sinpocket_self)))
 
@@ -2530,7 +2533,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/appletart, null, list(
 	center_of_mass_x = 16
 	center_of_mass_y = 8
 	bitesize = 5
-	eating_sound = 'sound/items/drink.ogg'
+	eating_sound = SFX_ITEMS_DRINK
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/meatballsoup, null, list(REAGENT_ID_PROTEIN = 8, REAGENT_ID_WATER = 5))
 
@@ -2540,7 +2543,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/meatballsoup, null, li
 	icon_state = "slimesoup" //nonexistant? - 3/1/2020 FIXED. roro's live on. - 7/14/2020 - The fuck are you smoking, roro's is stupid, name it slimesoup so it's clear wtf it is.
 	filling_color = "#C4DBA0"
 	bitesize = 5
-	eating_sound = 'sound/items/drink.ogg'
+	eating_sound = SFX_ITEMS_DRINK
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/slimesoup, null, list(REAGENT_ID_SLIMEJELLY = 5, REAGENT_ID_WATER = 10))
 
@@ -2552,7 +2555,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/slimesoup, null, list(
 	center_of_mass_x = 16
 	center_of_mass_y = 7
 	bitesize = 5
-	eating_sound = 'sound/items/drink.ogg'
+	eating_sound = SFX_ITEMS_DRINK
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/bloodsoup, null, list(REAGENT_ID_PROTEIN = 2, REAGENT_ID_BLOOD = 10, REAGENT_ID_WATER = 5))
 
@@ -2566,7 +2569,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/bloodsoup, null, list(
 	nutriment_amt = 4
 	nutriment_desc = list("salt" = 1, "the worst joke" = 3)
 	bitesize = 5
-	eating_sound = 'sound/items/drink.ogg'
+	eating_sound = SFX_ITEMS_DRINK
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/clownstears, null, list(REAGENT_ID_BANANA = 5, REAGENT_ID_WATER = 10, REAGENT_ID_SODIUMCHLORIDE = 1))
 
@@ -2580,7 +2583,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/clownstears, null, lis
 	center_of_mass_y = 8
 	nutriment_desc = list(PLANT_CARROT = 2, PLANT_CORN = 2, PLANT_EGGPLANT = 2, PLANT_POTATO = 2)
 	bitesize = 5
-	eating_sound = 'sound/items/drink.ogg'
+	eating_sound = SFX_ITEMS_DRINK
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/vegetablesoup, null, list(REAGENT_ID_VEGETABLESOUP = 10))
 
@@ -2595,7 +2598,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/vegetablesoup, null, l
 	nutriment_amt = 8
 	nutriment_desc = list("salad" = 4, REAGENT_ID_EGG = 2, PLANT_POTATO = 2)
 	bitesize = 5
-	eating_sound = 'sound/items/drink.ogg'
+	eating_sound = SFX_ITEMS_DRINK
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/nettlesoup, null, list(REAGENT_ID_WATER = 5, REAGENT_ID_TRICORDRAZINE = 5))
 
@@ -2610,7 +2613,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/nettlesoup, null, list
 	nutriment_amt = 1
 	nutriment_desc = list("backwash" = 1)
 	bitesize = 5
-	eating_sound = 'sound/items/drink.ogg'
+	eating_sound = SFX_ITEMS_DRINK
 
 /obj/item/reagent_containers/food/snacks/mysterysoup/Initialize(mapload)
 	. = ..()
@@ -2660,7 +2663,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/nettlesoup, null, list
 	center_of_mass_x = 16
 	center_of_mass_y = 11
 	bitesize = 5
-	eating_sound = 'sound/items/drink.ogg'
+	eating_sound = SFX_ITEMS_DRINK
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/wishsoup, null, list(REAGENT_ID_WATER = 10))
 
@@ -2679,7 +2682,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/wishsoup, null, list(R
 	center_of_mass_x = 16
 	center_of_mass_y = 7
 	bitesize = 3
-	eating_sound = 'sound/items/drink.ogg'
+	eating_sound = SFX_ITEMS_DRINK
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/tomatosoup, null, list(REAGENT_ID_TOMATOSOUP = 10))
 
@@ -2692,7 +2695,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/tomatosoup, null, list
 	center_of_mass_x = 17
 	center_of_mass_y = 10
 	bitesize = 3
-	eating_sound = 'sound/items/drink.ogg'
+	eating_sound = SFX_ITEMS_DRINK
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/mushroomsoup, null, list(REAGENT_ID_MUSHROOMSOUP = 10))
 
@@ -2705,7 +2708,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/mushroomsoup, null, li
 	center_of_mass_x = 15
 	center_of_mass_y = 8
 	bitesize = 3
-	eating_sound = 'sound/items/drink.ogg'
+	eating_sound = SFX_ITEMS_DRINK
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/beetsoup, null, list(REAGENT_ID_BEETSOUP = 10))
 
@@ -2722,7 +2725,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/beetsoup, null, list(R
 	center_of_mass_x = 16
 	center_of_mass_y = 7
 	bitesize = 3
-	eating_sound = 'sound/items/drink.ogg'
+	eating_sound = SFX_ITEMS_DRINK
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/soup/onion, null, list(REAGENT_ID_ONIONSOUP = 10))
 
@@ -2745,10 +2748,10 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/chickennoodlesoup, nul
 	center_of_mass_y = 5
 	nutriment_amt = 6
 	nutriment_desc = list(PLANT_TOMATO = 2, PLANT_POTATO = 2, PLANT_CARROT = 2, PLANT_EGGPLANT = 2, PLANT_MUSHROOMS = 2)
-	drop_sound = 'sound/items/drop/shovel.ogg'
-	pickup_sound = 'sound/items/pickup/shovel.ogg'
+	drop_sound = SFX_ITEMS_DROP_SHOVEL
+	pickup_sound = SFX_ITEMS_PICKUP_SHOVEL
 	bitesize = 10
-	eating_sound = 'sound/items/drink.ogg'
+	eating_sound = SFX_ITEMS_DRINK
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/stew, null, list(REAGENT_ID_PROTEIN = 4, REAGENT_ID_TOMATOJUICE = 5, REAGENT_ID_IMIDAZOLINE = 5, REAGENT_ID_WATER = 5, REAGENT_ID_FUNGI = 1))
 
@@ -2763,7 +2766,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/stew, null, list(REAGE
 	center_of_mass_x = 16
 	center_of_mass_y = 5
 	bitesize = 6
-	eating_sound = 'sound/items/drink.ogg'
+	eating_sound = SFX_ITEMS_DRINK
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/bearstew, null, list(REAGENT_ID_PROTEIN = 4, REAGENT_ID_HYPERZINE = 5, REAGENT_ID_TOMATOJUICE = 5, REAGENT_ID_IMIDAZOLINE = 5, REAGENT_ID_WATER = 5))
 
@@ -2778,7 +2781,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/bearstew, null, list(R
 	nutriment_amt = 3
 	nutriment_desc = list("chilli peppers" = 3)
 	bitesize = 5
-	eating_sound = 'sound/items/drink.ogg'
+	eating_sound = SFX_ITEMS_DRINK
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/hotchili, null, list(REAGENT_ID_PROTEIN = 3, REAGENT_ID_CAPSAICIN = 3, REAGENT_ID_TOMATOJUICE = 2))
 
@@ -2793,7 +2796,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/hotchili, null, list(R
 	nutriment_amt = 3
 	nutriment_desc = list("ice peppers" = 3)
 	bitesize = 5
-	eating_sound = 'sound/items/drink.ogg'
+	eating_sound = SFX_ITEMS_DRINK
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/coldchili, null, list(REAGENT_ID_PROTEIN = 3, REAGENT_ID_FROSTOIL = 3, REAGENT_ID_TOMATOJUICE = 2))
 
@@ -2809,7 +2812,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/coldchili, null, list(
 	center_of_mass_x = 15
 	center_of_mass_y = 9
 	bitesize = 6
-	eating_sound = 'sound/items/drink.ogg'
+	eating_sound = SFX_ITEMS_DRINK
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/bearchili, null, list(REAGENT_ID_PROTEIN = 3, REAGENT_ID_CAPSAICIN = 3, REAGENT_ID_TOMATOJUICE = 2, REAGENT_ID_HYPERZINE = 5))
 
@@ -4381,7 +4384,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/roastedpeanuts, null, 
 	nutriment_amt = 20
 	nutriment_desc = list("chalk" = 6)
 	bitesize = 4
-	eating_sound = 'sound/items/drink.ogg'
+	eating_sound = SFX_ITEMS_DRINK
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/liquidfood, null, list(REAGENT_ID_IRON = 3))
 
@@ -4395,7 +4398,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/liquidfood, null, list
 	center_of_mass_x = 16
 	center_of_mass_y = 15
 	bitesize = 4
-	eating_sound = 'sound/items/drink.ogg'
+	eating_sound = SFX_ITEMS_DRINK
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/liquidprotein, null, list(REAGENT_ID_PROTEIN = 30, REAGENT_ID_IRON = 3))
 
@@ -4409,7 +4412,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/liquidprotein, null, l
 	center_of_mass_x = 16
 	center_of_mass_y = 15
 	bitesize = 4
-	eating_sound = 'sound/items/drink.ogg'
+	eating_sound = SFX_ITEMS_DRINK
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/liquidvitamin, null, list(REAGENT_ID_FLOUR = 20, REAGENT_ID_TRICORDRAZINE = 5, REAGENT_ID_PARACETAMOL = 5, REAGENT_ID_ENZYME = 1, REAGENT_ID_IRON = 3))
 
@@ -5992,15 +5995,13 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/mint, null, list(REAGE
 	slot_flags = SLOT_EARS
 	w_class = ITEMSIZE_TINY
 	starts_with = list(/obj/item/reagent_containers/food/snacks/mint/admints = 6)
-	use_sound = 'sound/items/drop/paper.ogg'
-	drop_sound = 'sound/items/drop/wrapper.ogg'
+	use_sound = SFX_ITEMS_DROP_PAPER
+	drop_sound = SFX_ITEMS_DROP_WRAPPER
 	max_storage_space = 6
 	foldable = null
 	trash = /obj/item/trash/admints
 
-/obj/item/storage/box/admints/hold_constraint()
-	var/list/holds = list(/obj/item/reagent_containers/food/snacks/mint/admints)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage/box/admints, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/food/snacks/mint/admints)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 /obj/item/reagent_containers/food/snacks/candy
 	name = "\improper Grandma Ellen's Candy Bar"
@@ -6314,8 +6315,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sosjerky, null, list(R
 	filling_color = "#631212"
 	center_of_mass_x = 15
 	center_of_mass_y = 9
-	drop_sound = 'sound/items/drop/soda.ogg'
-	pickup_sound = 'sound/items/pickup/soda.ogg'
+	drop_sound = SFX_ITEMS_DROP_SODA
+	pickup_sound = SFX_ITEMS_PICKUP_SODA
 	bitesize = 2
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/unajerky, null, list(REAGENT_ID_PROTEIN = 8, REAGENT_ID_CAPSAICIN = 2))
@@ -6765,7 +6766,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/chocobanana, null, lis
 
 /obj/item/reagent_containers/food/snacks/canned
 	icon = 'icons/obj/food_canned.dmi'
-	opening_sound = 'sound/effects/tincanopen.ogg'
+	opening_sound = SFX_EFFECTS_TINCANOPEN
 	canned = TRUE
 
 //////////Just a short line of Canned Consumables, great for treasure in faraway abandoned outposts//////////
@@ -6933,7 +6934,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/canned/ntbeans, null, 
 
 /obj/item/reagent_containers/food/snacks/packaged
 	icon = 'icons/obj/food_package.dmi'
-	opening_sound = 'sound/effects/packagedfoodopen.ogg'
+	opening_sound = SFX_EFFECTS_PACKAGEDFOODOPEN
 	package = TRUE
 
 //////////////Lunar Cakes - proof of concept//////////////
@@ -7410,7 +7411,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/sushi, null,
 	trash = /obj/item/trash/snack_bowl
 	nutriment_amt = 6
 	nutriment_desc = list("meat" = 2, "vegetables" = 2, "seasoning" = 5)
-	eating_sound = 'sound/items/drink.ogg'
+	eating_sound = SFX_ITEMS_DRINK
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/goulash, null, list(REAGENT_ID_PROTEIN = 3, REAGENT_ID_WATER = 5))
 
@@ -7460,9 +7461,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/reishicup, null, list(
 	)
 	foldable = null
 
-/obj/item/storage/box/wings/hold_constraint()
-	var/list/holds = list(/obj/item/reagent_containers/food/snacks/chickenwing)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage/box/wings, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/food/snacks/chickenwing)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 /obj/item/storage/box/wings/Initialize(mapload)
 	. = ..()
@@ -7494,7 +7493,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/chickenwing, null, lis
 	trash = /obj/item/trash/asian_bowl
 	nutriment_amt = 6
 	nutriment_desc = list("spicyness" = 4, "sourness" = 4, REAGENT_ID_TOFU = 1)
-	eating_sound = 'sound/items/drink.ogg'
+	eating_sound = SFX_ITEMS_DRINK
 	bitesize = 2
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/hotandsoursoup, null, list(REAGENT_ID_HOTNSOURSOUP = 10))
@@ -7507,7 +7506,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/hotandsoursoup, null, 
 	trash = /obj/item/trash/asian_bowl
 	nutriment_amt = 6
 	nutriment_desc = list("fried egg" = 2, "egg noodles" = 4)
-	eating_sound = 'sound/items/drink.ogg'
+	eating_sound = SFX_ITEMS_DRINK
 	bitesize = 2
 
 /obj/item/reagent_containers/food/snacks/generalschicken
@@ -7833,10 +7832,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cube/nutriment, null, 
 		/obj/item/reagent_containers/food/snacks/cube/nutriment = 4
 	)
 
-/obj/item/storage/box/wings/tray/hold_constraint()
-	var/list/holds = list(/obj/item/reagent_containers/food/snacks/cube/protein,
-					/obj/item/reagent_containers/food/snacks/cube/nutriment)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage/box/wings/tray, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/food/snacks/cube/protein, \
+					/obj/item/reagent_containers/food/snacks/cube/nutriment)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 /obj/item/reagent_containers/food/snacks/carpmeat/sif //Making fish meat non-toxic!  As advised by Ascian!
 	toxin_type = null
@@ -7889,7 +7886,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cheesenachos, null, li
 	nutriment_amt = 8
 	nutriment_desc = list("soy" = 8)
 	bitesize = 4
-	eating_sound = 'sound/items/drink.ogg'
+	eating_sound = SFX_ITEMS_DRINK
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/milosoup, null, list(REAGENT_ID_WATER = 5))
 
@@ -7902,7 +7899,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/milosoup, null, list(R
 	center_of_mass_x = 16
 	center_of_mass_y = 7
 	bitesize = 3
-	eating_sound = 'sound/items/drink.ogg'
+	eating_sound = SFX_ITEMS_DRINK
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/onionsoup, null, list(REAGENT_ID_ONIONSOUP = 10))
 
@@ -7919,9 +7916,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/onionsoup, null, list(
 		/obj/item/reagent_containers/food/snacks/grub = 6
 	)
 
-/obj/item/storage/box/wings/bucket/hold_constraint()
-	var/list/holds = list(/obj/item/reagent_containers/food/snacks/grub)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage/box/wings/bucket, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/food/snacks/grub)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 /obj/item/reagent_containers/food/snacks/grub
 	name = "grub"
@@ -8047,7 +8042,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/locust_cooked, null, l
 	icon_state = "donkpocket_ascended"
 	nutriment_amt = 5
 	nutriment_desc = list("burning fires of radioactive hell" = 20)
-	heated_reagents = list(REAGENT_ID_SUPERMATTER = 1)
+
+TYPE_TABLE(/obj/item/reagent_containers/food/snacks/donkpocket/ascended, donkpocket_heated_reagents, list(REAGENT_ID_SUPERMATTER = 1))
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donkpocket/ascended, null, list(REAGENT_ID_URANIUM = 3, REAGENT_ID_THERMITEV = 3))
 
@@ -8085,7 +8081,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donkpocket/ascended, n
 	trash = /obj/item/trash/ratjuice
 	nutriment_amt = 2
 	nutriment_desc = list("essence of steak" = 6)
-	eating_sound = 'sound/items/drink.ogg'
+	eating_sound = SFX_ITEMS_DRINK
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/ratliquid, null, list(REAGENT_ID_PROTEIN = 4))
 
@@ -8235,9 +8231,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/ratsteak, null, list(R
 	)
 	foldable = null
 
-/obj/item/storage/box/jaffacake/hold_constraint()
-	var/list/holds = list(/obj/item/reagent_containers/food/snacks/jaffacake)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage/box/jaffacake, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/food/snacks/jaffacake)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 /obj/item/reagent_containers/food/snacks/winegum
 	name = "wine gum"
@@ -8287,9 +8281,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/ratsteak, null, list(R
 	)
 	foldable = null
 
-/obj/item/storage/box/winegum/hold_constraint()
-	var/list/holds = list(/obj/item/reagent_containers/food/snacks/winegum)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage/box/winegum, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/food/snacks/winegum)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 /obj/item/reagent_containers/food/snacks/packaged/pasty
 	name = "Terran Pasty"
@@ -8330,9 +8322,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/packaged/pasty, null, 
 	)
 	foldable = null
 
-/obj/item/storage/box/saucer/hold_constraint()
-	var/list/holds = list(/obj/item/reagent_containers/food/snacks/saucer)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage/box/saucer, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/food/snacks/saucer)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 /obj/item/reagent_containers/food/snacks/custardcream
 	name = "Custard Cream"
@@ -8356,9 +8346,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/packaged/pasty, null, 
 	)
 	foldable = null
 
-/obj/item/storage/box/custardcream/hold_constraint()
-	var/list/holds = list(/obj/item/reagent_containers/food/snacks/custardcream)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage/box/custardcream, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/food/snacks/custardcream)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 /obj/item/reagent_containers/food/snacks/bourbon
 	name = "Bourbon Biscuit"
@@ -8382,9 +8370,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/packaged/pasty, null, 
 	)
 	foldable = null
 
-/obj/item/storage/box/bourbon/hold_constraint()
-	var/list/holds = list(/obj/item/reagent_containers/food/snacks/bourbon)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage/box/bourbon, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/food/snacks/bourbon)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/bourbon, null, list(REAGENT_ID_COCO = 2))
 
@@ -8444,9 +8430,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/packaged/scotchegg, nu
 	)
 	foldable = null
 
-/obj/item/storage/box/shrimpsandbananas/hold_constraint()
-	var/list/holds = list(/obj/item/reagent_containers/food/snacks/foam_banana,/obj/item/reagent_containers/food/snacks/foam_shrimp)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage/box/shrimpsandbananas, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/food/snacks/foam_banana,/obj/item/reagent_containers/food/snacks/foam_shrimp)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 /obj/item/reagent_containers/food/snacks/rhubarbcustard
 	name = "Rhubarb and Custard Sweet"
@@ -8476,9 +8460,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/packaged/scotchegg, nu
 	)
 	foldable = null
 
-/obj/item/storage/box/rhubarbcustard/hold_constraint()
-	var/list/holds = list(/obj/item/reagent_containers/food/snacks/rhubarbcustard)
-	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
+TYPE_TABLE(/obj/item/storage/box/rhubarbcustard, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/food/snacks/rhubarbcustard)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 /obj/item/reagent_containers/food/snacks/packaged/porkpie
 	name = "Pork Pie"
@@ -8507,7 +8489,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/acorn, null, list(REAG
 	if(!src?.reagents)
 		return
 	src.warm = 0
-	for(var/reagent in heated_reagents)
+	for(var/reagent in TYPE_TABLE_GET(src, donkpocket_heated_reagents))
 		src.reagents.del_reagent(reagent)
 	src.name = initial(name)
 

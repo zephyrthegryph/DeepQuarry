@@ -33,7 +33,7 @@
 	player_msg = "You will automatically alert your owner (if one exists) of enemies you see nearby.<br>\
 	You can also <b>see invisible entities, and will automatically uncloak</b> nearby invisible or hidden enemies."
 
-	var/list/seen_mobs = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	var/list/seen_mobs = list() // ALLOW(instance_list): d: per-mob seen_mobs, filled at runtime; mobs are few
 	var/view_range = 5
 
 // For PoIs.
@@ -98,7 +98,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/mechanical/ward/monitor/crew, INTERAC
 		// Decloak them .
 		if(L.is_cloaked())
 			Beam(L, icon_state = "solar_beam", time = 5)
-			playsound(L, 'sound/effects/EMPulse.ogg', 75, 1)
+			play_sfx(L, SFX_EFFECTS_EMPULSE, 0.75)
 			L.break_cloak()
 
 			to_chat(L, span_danger("\The [src] disrupts your cloak!"))

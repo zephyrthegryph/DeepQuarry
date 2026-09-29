@@ -57,7 +57,7 @@ EXTEND_INTERACTIONS(/obj/item/material/ashtray, INTERACT_ITEM(null, PROC_REF(ash
 		if (istype(W,/obj/item/clothing/mask/smokable/cigarette))
 			var/obj/item/clothing/mask/smokable/cigarette/cig = W
 			if (cig.lit == 1)
-				src.visible_message("[user] crushes [cig] in \the [src], putting it out.")
+				act_message(user, src, others = "%U% crushes [cig] in %T%, putting it out.")
 				om_task_periodic_stop(cig)
 				var/obj/item/butt = new cig.type_butt(src)
 				cig.transfer_fingerprints_to(butt)
@@ -71,7 +71,7 @@ EXTEND_INTERACTIONS(/obj/item/material/ashtray, INTERACT_ITEM(null, PROC_REF(ash
 			else if (cig.lit == 0)
 				to_chat(user, "You place [cig] in [src] without even smoking it. Why would you do that?")
 
-		src.visible_message("[user] places [W] in [src].")
+		act_message(user, src, others = "%U% places [W] in %T%.")
 		user.update_inv_l_hand()
 		user.update_inv_r_hand()
 		add_fingerprint(user)

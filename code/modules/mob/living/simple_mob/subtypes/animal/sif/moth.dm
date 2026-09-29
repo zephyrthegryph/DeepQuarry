@@ -139,6 +139,6 @@
 	return FALSE
 
 /datum/decl/mob_organ_names/moth
-	hit_zones = list("head", "thorax", "abdomen", "left forewing", "left hindwing", "right forewing", "right hindwing", "left foreleg", "right foreleg", "left hindleg", "right hindleg")
+TYPE_TABLE(/datum/decl/mob_organ_names/moth, mob_organ_hit_zones, list("head", "thorax", "abdomen", "left forewing", "left hindwing", "right forewing", "right hindwing", "left foreleg", "right foreleg", "left hindleg", "right hindleg"))
 
 DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/animal/sif/tymisian, "smoke_spore", /datum/effect/effect/system/smoke_spread/mothspore)

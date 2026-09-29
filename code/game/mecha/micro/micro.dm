@@ -27,7 +27,7 @@
 	if(isliving(target))
 		var/mob/living/M = target
 		if(pilot_is_harming())
-			playsound(src, 'sound/weapons/punch4.ogg', 50, 1)
+			play_sfx(src, SFX_WEAPONS_PUNCH4)
 			if(melee_injury_kind == INJURY_BLUNT)
 				step_away(M,src,15)
 			var/hit_zone = ishuman(M) ? pick(BP_TORSO, BP_TORSO, BP_TORSO, BP_HEAD) : null
@@ -67,19 +67,17 @@
 						var/atom/target_atom = target
 						target_atom.attackby(src,src?.slot_item(MECHA_SLOT_PILOT))
 					else
-						playsound(src, 'sound/weapons/smash.ogg', 50, 1)
+						play_sfx(src, SFX_WEAPONS_SMASH)
 					melee_can_hit = 0
 					om_after(src, melee_cooldown, PROC_REF(reset_melee))
 					break
 	return
 
 
-/obj/mecha/micro/Topic(href,href_list)
-	..()
-	var/datum/topic_input/top_filter = new (href,href_list)
-	if(top_filter.get("close"))
-		am = null
-		return
+TOPIC_ACTION(/obj/mecha/micro, "close", PROC_REF(topic_close))
+
+/obj/mecha/micro/topic_close(mob/user, list/args)
+	am = null
 
 // override move_inside() so only micro crew can use them
 
@@ -102,19 +100,19 @@
 
 /obj/mecha/micro/mechturn(direction)
 	set_dir(direction)
-	playsound(src,'sound/mecha/mechmove03.ogg',40,1)
+	play_sfx(src, SFX_MECHA_MECHMOVE03)
 	return 1
 
 /obj/mecha/micro/mechstep(direction)
 	var/result = step(src,direction)
 	if(result)
-		playsound(src,'sound/mecha/mechmove04.ogg',40,1)
+		play_sfx(src, SFX_MECHA_MECHMOVE04)
 	return result
 
 /obj/mecha/micro/mechsteprand()
 	var/result = step_rand(src)
 	if(result)
-		playsound(src,'sound/mecha/mechmove04.ogg',40,1)
+		play_sfx(src, SFX_MECHA_MECHMOVE04)
 	return result
 
 /obj/effect/decal/mecha_wreckage/micro

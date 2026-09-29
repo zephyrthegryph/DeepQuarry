@@ -17,7 +17,7 @@
 
 /datum/round_status_panel
 	var/datum/admins/owner_admin
-	var/list/cached_antag_blocks
+	var/list/shown_antag_blocks
 
 /datum/round_status_panel/New(datum/admins/owner_admin)
 	..()
@@ -43,7 +43,7 @@
 			var/list/block = A?.get_check_antag_data(owner_admin)
 			if(block)
 				blocks += list(block)
-	cached_antag_blocks = blocks
+	shown_antag_blocks = blocks
 
 /datum/round_status_panel/tgui_close(mob/user)
 	SStgui.close_uis(src)
@@ -75,7 +75,7 @@
 		shuttle_data["state"] = SHUTTLE_STATE_IDLE
 	data["shuttle"] = shuttle_data
 
-	data["antag_blocks"] = cached_antag_blocks || list()
+	data["antag_blocks"] = shown_antag_blocks || list()
 	return data
 
 /datum/round_status_panel/proc/format_shuttle_timer(seconds)
@@ -127,7 +127,7 @@
 				if(isnull(new_time_left))
 					return
 				if(isnum(new_time_left))
-					GLOB.emergency_shuttle_service.launch_time = world.time + (new_time_left * 10)
+					EXPIRY_SET(GLOB.emergency_shuttle_service, launch_time, (new_time_left * 10), CLOCK_WORLD)
 					log_admin("[key_name(ui.user)] edited the Emergency Shuttle's launch time to [new_time_left]")
 					message_admins(span_blue("[key_name_admin(ui.user)] edited the Emergency Shuttle's launch time to [new_time_left * 10]"), 1)
 			else if(GLOB.emergency_shuttle_service.shuttle.has_arrive_time())
@@ -135,7 +135,7 @@
 				if(isnull(new_time_left))
 					return
 				if(isnum(new_time_left))
-					GLOB.emergency_shuttle_service.shuttle.arrive_time = world.time + (new_time_left * 10)
+					EXPIRY_SET(GLOB.emergency_shuttle_service.shuttle, arrive_time, (new_time_left * 10), CLOCK_WORLD)
 					log_admin("[key_name(ui.user)] edited the Emergency Shuttle's arrival time to [new_time_left]")
 					message_admins(span_blue("[key_name_admin(ui.user)] edited the Emergency Shuttle's arrival time to [new_time_left * 10]"), 1)
 			else

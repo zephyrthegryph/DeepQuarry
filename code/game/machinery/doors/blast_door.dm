@@ -25,8 +25,8 @@
 	var/icon_state_opening = null
 	var/icon_state_closed = null
 	var/icon_state_closing = null
-	var/open_sound = 'sound/machines/door/blastdooropen.ogg'
-	var/close_sound = 'sound/machines/door/blastdoorclose.ogg'
+	var/open_sound = SFX_MACHINES_DOOR_BLASTDOOROPEN
+	var/close_sound = SFX_MACHINES_DOOR_BLASTDOORCLOSE
 	var/damage = BLAST_DOOR_CRUSH_DAMAGE
 	var/multiplier = 1 // The multiplier for how powerful our YEET is.
 	var/istransparent = 0
@@ -71,7 +71,7 @@
 // Description: Emag action to allow blast doors to double their yeet distance and speed.
 /obj/machinery/door/blast/emag_act()
 	if(!emagged)
-		emagged = 1
+		set_emagged(1)
 		multiplier = 2 // Haha emag go yeet
 		return 1
 
@@ -86,7 +86,7 @@
 	operating = TRUE
 	playsound(src, open_sound, 100, 1)
 	flick(icon_state_opening, src)
-	density = FALSE
+	set_density(FALSE)
 	update_nearby_tiles()
 	update_icon()
 	set_opacity(0)
@@ -110,7 +110,7 @@
 	playsound(src, close_sound, 100, 1)
 	layer = closed_layer
 	flick(icon_state_closing, src)
-	density = TRUE
+	set_density(TRUE)
 	update_nearby_tiles()
 	update_icon()
 	set_rad_insulation(closed_rad_insulation())
@@ -137,7 +137,7 @@
 // Description: Opens or closes the door, depending on current state. No checks are done inside this proc.
 /obj/machinery/door/blast/proc/force_toggle(forced = 0, mob/user as mob)
 	if (forced)
-		playsound(src, 'sound/machines/door/airlock_creaking.ogg', 100, 1)
+		play_sfx(src, SFX_MACHINES_DOOR_AIRLOCK_CREAKING)
 
 	if(src.density)
 		src.force_open()
@@ -205,7 +205,7 @@
 	src.add_fingerprint(user)
 	var/harming = interaction.stance == I_HURT
 	if(istype(C, /obj/item)) // For reasons unknown, sometimes C is actually not what it is advertised as, like a mob.
-		if(C.pry == 1 && (!harming || (stat & BROKEN))) // Can we pry it open with something, like a crowbar/fireaxe/lingblade?
+		if(C.pry == 1 && (!harming || (has_stat(BROKEN)))) // Can we pry it open with something, like a crowbar/fireaxe/lingblade?
 			if(istype(C,/obj/item/material/twohanded/fireaxe)) // Fireaxes need to be in both hands to pry.
 				var/obj/item/material/twohanded/fireaxe/F = C
 				if(!F.wielded)
@@ -213,7 +213,7 @@
 					return TRUE
 
 			// If we're at this point, it's a fireaxe in both hands or something else that doesn't care for twohanding.
-			if(((stat & NOPOWER) || (stat & BROKEN)) && !( src.operating ))
+			if(((has_stat(NOPOWER)) || (has_stat(BROKEN))) && !( src.operating ))
 				force_toggle(1, user)
 
 			else
@@ -294,11 +294,11 @@
 	..()
 
 /obj/machinery/door/blast/proc/attack_alien_timed_done(mob/user)
-	playsound(src, 'sound/machines/door/airlock_creaking.ogg', 100, 1)
+	play_sfx(src, SFX_MACHINES_DOOR_AIRLOCK_CREAKING)
 	visible_message(span_danger("\The [user] forces \the [src] open!"))
 	force_open(1)
 /obj/machinery/door/blast/proc/attack_alien_timed_done2(mob/user)
-	playsound(src, 'sound/machines/door/airlock_creaking.ogg', 100, 1)
+	play_sfx(src, SFX_MACHINES_DOOR_AIRLOCK_CREAKING)
 	visible_message(span_danger("\The [user] forces \the [src] closed!"))
 	force_close(1)
 
@@ -306,7 +306,7 @@
 // Parameters: Attacking simple mob, incoming damage.
 // Description: Checks the power or integrity of the blast door, if either have failed, chekcs the damage to determine if the creature would be able to open the door by force. Otherwise, super.
 /obj/machinery/door/blast/attack_generic(mob/living/user, damage)
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		if(damage >= STRUCTURE_MIN_DAMAGE_THRESHOLD)
 			if(src.density)
 				visible_message(span_danger("\The [user] starts forcing \the [src] open!"))
@@ -334,11 +334,11 @@
 		force_open()
 		return 1
 	else
-		if (src.operating || (stat & BROKEN || stat & NOPOWER))
+		if (src.operating || (has_stat(BROKEN) || has_stat(NOPOWER)))
 			return 1
 		force_open()
 
-	if(autoclose && src.operating && !(stat & BROKEN || stat & NOPOWER))
+	if(autoclose && src.operating && !(has_stat(BROKEN) || has_stat(NOPOWER)))
 		om_after(src, 15 SECONDS, PROC_REF(close))
 	return 1
 
@@ -347,7 +347,7 @@
 // Description: Closes the door. Does necessary checks.
 /obj/machinery/door/blast/close()
 
-	if (src.operating || (stat & BROKEN || stat & NOPOWER))
+	if (src.operating || (has_stat(BROKEN) || has_stat(NOPOWER)))
 		return
 
 	force_close()

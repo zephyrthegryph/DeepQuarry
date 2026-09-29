@@ -16,11 +16,11 @@
 	icon_state = "wm_1"
 	density = TRUE
 	anchored = TRUE
-	clicksound = "button"
+	clicksound = SFX_BUTTON
 	clickvol = 40
 
 	circuit = /obj/item/circuitboard/washing
-	var/state = EMPTY_OPEN
+	state = EMPTY_OPEN
 	var/hacked = TRUE //Bleh, screw hacking, let's have it hacked by default.
 	var/gibs_ready = FALSE
 	var/obj/crayon
@@ -78,12 +78,12 @@ OWN(/obj/machinery/washing_machine, washing, OWN_SPILL)
 		return
 
 	if(locate(/mob,washing))
-		state = BLOODY_RUNNING
+		set_state(BLOODY_RUNNING)
 	else
-		state = RUNNING
+		set_state(RUNNING)
 	update_icon()
 	visible_message("The washing machine starts a cycle.")
-	playsound(src, 'sound/items/washingmachine.ogg', 50, 1, 1)
+	play_sfx(src, SFX_ITEMS_WASHINGMACHINE)
 
 	om_after(src, 2 SECONDS, PROC_REF(finish_wash), damage_modifier)
 
@@ -111,10 +111,10 @@ OWN(/obj/machinery/washing_machine, washing, OWN_SPILL)
 		mobs.stat = DEAD //Kill them so they can't interact anymore.
 
 	if(has_mobs)
-		state = BLOODY_CLOSED
+		set_state(BLOODY_CLOSED)
 		gibs_ready = TRUE
 	else
-		state = FULL_CLOSED
+		set_state(FULL_CLOSED)
 	update_icon()
 
 /datum/interaction/machine_verb/washing_machine_climb_out
@@ -196,7 +196,7 @@ OWN(/obj/machinery/washing_machine, washing, OWN_SPILL)
 				user.drop_item()
 				W.forceMove(src)
 				own_add(src, "washing", W)
-				state = FULL_OPEN
+				set_state(FULL_OPEN)
 			else
 				to_chat(user, span_notice("You can't put the item in right now."))
 		else
@@ -212,7 +212,7 @@ OWN(/obj/machinery/washing_machine, washing, OWN_SPILL)
 		grabbed.forceMove(src)
 		own_add(src, "washing", grabbed)
 		consume(G, user)
-		state = FULL_CLOSED
+		set_state(FULL_CLOSED)
 	else
 		to_chat(user, "You can't shove [G?.grab_target()] in unless the washer is empty and open!")
 
@@ -235,25 +235,25 @@ OWN(/obj/machinery/washing_machine, washing, OWN_SPILL)
 		return TRUE //No interacting with it from the inside!
 	switch(state)
 		if(EMPTY_OPEN)
-			state = EMPTY_CLOSED
+			set_state(EMPTY_CLOSED)
 		if(EMPTY_CLOSED)
-			state = EMPTY_OPEN
+			set_state(EMPTY_OPEN)
 			for(var/atom/movable/O in washing)
 				O.forceMove(get_turf(src))
 			own_take_all(src, "washing")
 		if(FULL_OPEN)
-			state = FULL_CLOSED
+			set_state(FULL_CLOSED)
 		if(FULL_CLOSED)
 			for(var/atom/movable/O in washing)
 				O.forceMove(get_turf(src))
 			rel_clear(src, "crayon")
 			own_take_all(src, "washing")
-			state = EMPTY_OPEN
+			set_state(EMPTY_OPEN)
 		if(RUNNING)
 			if(user)
 				to_chat(user, span_warning("The [src] is busy."))
 		if(BLOODY_OPEN)
-			state = BLOODY_CLOSED
+			set_state(BLOODY_CLOSED)
 		if(BLOODY_CLOSED)
 			if(gibs_ready)
 				gibs_ready = FALSE
@@ -264,7 +264,7 @@ OWN(/obj/machinery/washing_machine, washing, OWN_SPILL)
 			for(var/atom/movable/O in washing)
 				O.forceMove(get_turf(src))
 			rel_clear(src, "crayon")
-			state = EMPTY_OPEN
+			set_state(EMPTY_OPEN)
 			own_take_all(src, "washing")
 
 	update_icon()

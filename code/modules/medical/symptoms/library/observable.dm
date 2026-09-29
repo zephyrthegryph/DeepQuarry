@@ -19,9 +19,7 @@
 	public_emote_chance = 2
 	scanner_phrase = "abnormally pale skin"
 
-/datum/affliction_symptom/pallor/get_public_emotes()
-	var/static/list/L = list("looks pale")
-	return L
+TYPE_TABLE(/datum/affliction_symptom/pallor, get_public_emotes, list("looks pale"))
 
 
 /datum/affliction_symptom/cyanosis
@@ -33,9 +31,7 @@
 	public_emote_chance = 2
 	scanner_phrase = "cyanosis of the lips and extremities"
 
-/datum/affliction_symptom/cyanosis/get_public_emotes()
-	var/static/list/L = list("has a faint blue tinge to their lips")
-	return L
+TYPE_TABLE(/datum/affliction_symptom/cyanosis, get_public_emotes, list("has a faint blue tinge to their lips"))
 
 
 /datum/affliction_symptom/bleeding_visible
@@ -47,9 +43,7 @@
 	public_emote_chance = 3
 	scanner_phrase = "active external blood loss"
 
-/datum/affliction_symptom/bleeding_visible/get_public_emotes()
-	var/static/list/L = list("bleeds heavily")
-	return L
+TYPE_TABLE(/datum/affliction_symptom/bleeding_visible, get_public_emotes, list("bleeds heavily"))
 
 
 /datum/affliction_symptom/jaundice
@@ -61,9 +55,7 @@
 	public_emote_chance = 2
 	scanner_phrase = "icterus on inspection"
 
-/datum/affliction_symptom/jaundice/get_public_emotes()
-	var/static/list/L = list("looks faintly yellow")
-	return L
+TYPE_TABLE(/datum/affliction_symptom/jaundice, get_public_emotes, list("looks faintly yellow"))
 
 
 /datum/affliction_symptom/chills
@@ -74,16 +66,12 @@
 	audiences = SYMPTOM_AUDIENCE_PATIENT | SYMPTOM_AUDIENCE_PUBLIC
 	public_emote_chance = 3
 
-/datum/affliction_symptom/chills/get_patient_messages()
-	var/static/list/L = list(
-		"A cold shiver runs through you.",
-		"You feel a sudden chill.",
-	)
-	return L
+TYPE_TABLE(/datum/affliction_symptom/chills, get_patient_messages, list( \
+		"A cold shiver runs through you.", \
+		"You feel a sudden chill.", \
+	))
 
-/datum/affliction_symptom/chills/get_public_emotes()
-	var/static/list/L = list("shivers")
-	return L
+TYPE_TABLE(/datum/affliction_symptom/chills, get_public_emotes, list("shivers"))
 
 
 /datum/affliction_symptom/fever_sensation
@@ -94,16 +82,12 @@
 	audiences = SYMPTOM_AUDIENCE_PATIENT | SYMPTOM_AUDIENCE_PUBLIC
 	public_emote_chance = 2
 
-/datum/affliction_symptom/fever_sensation/get_patient_messages()
-	var/static/list/L = list(
-		"You feel uncomfortably warm.",
-		"Your skin feels flushed.",
-	)
-	return L
+TYPE_TABLE(/datum/affliction_symptom/fever_sensation, get_patient_messages, list( \
+		"You feel uncomfortably warm.", \
+		"Your skin feels flushed.", \
+	))
 
-/datum/affliction_symptom/fever_sensation/get_public_emotes()
-	var/static/list/L = list("looks flushed", "wipes their brow")
-	return L
+TYPE_TABLE(/datum/affliction_symptom/fever_sensation, get_public_emotes, list("looks flushed", "wipes their brow"))
 
 
 /datum/affliction_symptom/cold_mottled_skin
@@ -115,9 +99,7 @@
 	public_emote_chance = 2
 	scanner_phrase = "discoloured, devitalised tissue; necrosis confirmed"
 
-/datum/affliction_symptom/cold_mottled_skin/get_public_emotes()
-	var/static/list/L = list("has a patch of skin that looks grey and lifeless")
-	return L
+TYPE_TABLE(/datum/affliction_symptom/cold_mottled_skin, get_public_emotes, list("has a patch of skin that looks grey and lifeless"))
 
 
 /datum/affliction_symptom/unsteady_gait
@@ -129,9 +111,7 @@
 	public_emote_chance = 3
 	scanner_phrase = "ataxia on motor examination"
 
-/datum/affliction_symptom/unsteady_gait/get_public_emotes()
-	var/static/list/L = list("sways unsteadily", "stumbles slightly")
-	return L
+TYPE_TABLE(/datum/affliction_symptom/unsteady_gait, get_public_emotes, list("sways unsteadily", "stumbles slightly"))
 
 
 /datum/affliction_symptom/pupillary_asymmetry
@@ -143,9 +123,7 @@
 	public_emote_chance = 1
 	scanner_phrase = "anisocoria; suspected intracranial pathology"
 
-/datum/affliction_symptom/pupillary_asymmetry/get_public_emotes()
-	var/static/list/L = list("blinks slowly, one pupil noticeably larger than the other")
-	return L
+TYPE_TABLE(/datum/affliction_symptom/pupillary_asymmetry, get_public_emotes, list("blinks slowly, one pupil noticeably larger than the other"))
 
 
 /datum/affliction_symptom/cloudy_eye
@@ -157,9 +135,7 @@
 	public_emote_chance = 2
 	scanner_phrase = "loss of retinal definition; vision compromised"
 
-/datum/affliction_symptom/cloudy_eye/get_public_emotes()
-	var/static/list/L = list("squints, one eye unfocused")
-	return L
+TYPE_TABLE(/datum/affliction_symptom/cloudy_eye, get_public_emotes, list("squints, one eye unfocused"))
 
 
 /datum/affliction_symptom/limb_weakness
@@ -171,9 +147,7 @@
 	public_emote_chance = 3
 	scanner_phrase = "motor weakness in affected limb"
 
-/datum/affliction_symptom/limb_weakness/get_public_emotes()
-	var/static/list/L = list("can't quite grip with their affected hand", "drags their leg slightly")
-	return L
+TYPE_TABLE(/datum/affliction_symptom/limb_weakness, get_public_emotes, list("can't quite grip with their affected hand", "drags their leg slightly"))
 
 
 /datum/affliction_symptom/skin_burns_minor
@@ -185,9 +159,7 @@
 	public_emote_chance = 2
 	scanner_phrase = "dermal radiation injury; early burns visible"
 
-/datum/affliction_symptom/skin_burns_minor/get_public_emotes()
-	var/static/list/L = list("has red, raw patches of skin")
-	return L
+TYPE_TABLE(/datum/affliction_symptom/skin_burns_minor, get_public_emotes, list("has red, raw patches of skin"))
 
 
 // --- Chem side-effect symptoms ----------------------------------------
@@ -202,16 +174,12 @@
 	public_emote_chance = 4
 	scanner_phrase = "diminished arousal; opioid-class CNS depression suspected"
 
-/datum/affliction_symptom/drowsy/get_patient_messages()
-	var/static/list/L = list(
-		"Your eyelids feel heavy.",
-		"It's hard to keep your head up.",
-	)
-	return L
+TYPE_TABLE(/datum/affliction_symptom/drowsy, get_patient_messages, list( \
+		"Your eyelids feel heavy.", \
+		"It's hard to keep your head up.", \
+	))
 
-/datum/affliction_symptom/drowsy/get_public_emotes()
-	var/static/list/L = list("yawns deeply", "nods off for a moment")
-	return L
+TYPE_TABLE(/datum/affliction_symptom/drowsy, get_public_emotes, list("yawns deeply", "nods off for a moment"))
 
 
 /datum/affliction_symptom/jittery
@@ -222,16 +190,12 @@
 	audiences = SYMPTOM_AUDIENCE_PATIENT | SYMPTOM_AUDIENCE_PUBLIC
 	public_emote_chance = 3
 
-/datum/affliction_symptom/jittery/get_patient_messages()
-	var/static/list/L = list(
-		"You feel restless, can't quite sit still.",
-		"There's a buzzing energy under your skin.",
-	)
-	return L
+TYPE_TABLE(/datum/affliction_symptom/jittery, get_patient_messages, list( \
+		"You feel restless, can't quite sit still.", \
+		"There's a buzzing energy under your skin.", \
+	))
 
-/datum/affliction_symptom/jittery/get_public_emotes()
-	var/static/list/L = list("fidgets restlessly", "shifts from foot to foot")
-	return L
+TYPE_TABLE(/datum/affliction_symptom/jittery, get_public_emotes, list("fidgets restlessly", "shifts from foot to foot"))
 
 
 // Nausea is primarily a subjective sensation, but severe enough nausea
@@ -247,18 +211,14 @@
 	audiences = SYMPTOM_AUDIENCE_PATIENT | SYMPTOM_AUDIENCE_PUBLIC
 	public_emote_chance = 2
 
-/datum/affliction_symptom/nausea/get_patient_messages()
-	var/static/list/L = list(
-		"You feel queasy.",
-		"Your stomach turns.",
-		"A wave of nausea rolls through you.",
-	)
-	return L
+TYPE_TABLE(/datum/affliction_symptom/nausea, get_patient_messages, list( \
+		"You feel queasy.", \
+		"Your stomach turns.", \
+		"A wave of nausea rolls through you.", \
+	))
 
-/datum/affliction_symptom/nausea/get_public_emotes()
-	var/static/list/L = list(
-		"retches",
-		"heaves and vomits",
-		"clutches their stomach and gags",
-	)
-	return L
+TYPE_TABLE(/datum/affliction_symptom/nausea, get_public_emotes, list( \
+		"retches", \
+		"heaves and vomits", \
+		"clutches their stomach and gags", \
+	))

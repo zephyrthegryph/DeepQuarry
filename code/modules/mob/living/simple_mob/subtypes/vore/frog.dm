@@ -62,7 +62,7 @@
 	if(stat) //you are dead
 		ai_busy_end()
 		return
-	playsound(src, 'sound/vore/sunesound/pred/schlorp.ogg', 25)
+	play_sfx(src, SFX_VORE_SUNESOUND_PRED_SCHLORP)
 	var/obj/item/projectile/beam/appendage/appendage_attack = new /obj/item/projectile/beam/appendage(get_turf(loc))
 	appendage_attack.old_style_target(A, src)
 	appendage_attack.launch_projectile(A, BP_TORSO, src)

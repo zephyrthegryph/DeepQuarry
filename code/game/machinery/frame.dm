@@ -368,10 +368,10 @@ GLOBAL_LIST(construction_frame_floor)
 			own_set(src, "circuit", new frame_type.circuit(src))
 
 	if(frame_type.name == "Computer")
-		density = TRUE
+		set_density(TRUE)
 
 	if(frame_type.frame_class == FRAME_CLASS_MACHINE)
-		density = TRUE
+		set_density(TRUE)
 
 	update_icon()
 
@@ -391,7 +391,7 @@ DECLARE_INTERACTIONS(/obj/structure/frame, INTERACT_ITEM(null, PROC_REF(interact
 	if(istype(P, /obj/item/stack/cable_coil) && state == FRAME_WIRED && frame_type.frame_class == FRAME_CLASS_MACHINE)
 		for(var/I in req_components)
 			if(istype(P, I) && (req_components[I] > 0))
-				playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
+				play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 				var/obj/item/stack/cable_coil/CP = P
 				if(CP.get_amount() > 1)
 					var/camt = min(CP.get_amount(), req_components[I]) // amount of cable to take, idealy amount required, but limited by amount provided
@@ -453,7 +453,7 @@ DECLARE_INTERACTIONS(/obj/structure/frame, INTERACT_ITEM(null, PROC_REF(interact
 		return installed_part
 
 	if(installed_part)
-		playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
+		play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 		update_desc()
 		to_chat(user, desc)
 		return TRUE
@@ -467,7 +467,7 @@ DECLARE_INTERACTIONS(/obj/structure/frame, INTERACT_ITEM(null, PROC_REF(interact
 		installed_part |= install_part(user, P, TRUE)
 	if(!installed_part)
 		return FALSE
-	playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
+	play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 	update_desc()
 	to_chat(user, desc)
 	return TRUE

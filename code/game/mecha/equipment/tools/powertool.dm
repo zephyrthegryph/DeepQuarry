@@ -6,7 +6,7 @@
 	energy_drain = 15
 	range = MECH_MELEE
 	equip_type = EQUIP_UTILITY
-	ready_sound = 'sound/items/Ratchet.ogg'
+	ready_sound = SFX_ITEMS_RATCHET
 	required_type = list(/obj/mecha/working/ripley)
 
 	var/obj/item/my_tool = null
@@ -15,7 +15,7 @@
 /obj/item/mecha_parts/mecha_equipment/tool/powertool/Initialize(mapload)
 	own_set(src, "my_tool", new tooltype(src))
 	my_tool.name = name
-	my_tool.anchored = TRUE
+	my_tool.set_anchored(TRUE)
 	my_tool.canremove = FALSE
 	return ..()
 
@@ -34,18 +34,18 @@
 	desc = "An exosuit-mounted pneumatic prybar."
 	icon_state = "mecha_crowbar"
 	tooltype = /obj/item/tool/crowbar/power
-	ready_sound = 'sound/mecha/gasdisconnected.ogg'
+	ready_sound = SFX_MECHA_GASDISCONNECTED
 
 /obj/item/mecha_parts/mecha_equipment/tool/powertool/cutter
 	name = "pneumatic cablecutter"
 	desc = "An exosuit-mounted pneumatic cablecutter."
 	icon_state = "mecha_cablecutter"
 	tooltype = /obj/item/tool/wirecutters/power
-	ready_sound = 'sound/mecha/gasdisconnected.ogg'
+	ready_sound = SFX_MECHA_GASDISCONNECTED
 
 /obj/item/mecha_parts/mecha_equipment/tool/powertool/screwdriver
 	name = "pneumatic screwdriver"
 	desc = "An exosuit-mounted pneumatic screwdriver."
 	icon_state = "mecha_screwdriver"
 	tooltype = /obj/item/tool/screwdriver/power
-	ready_sound = 'sound/mecha/gasdisconnected.ogg'
+	ready_sound = SFX_MECHA_GASDISCONNECTED

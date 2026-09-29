@@ -47,7 +47,7 @@ DECLARE_REAGENTS(/obj/machinery/power/fusion_core, 10000, null)
 OWN(/obj/machinery/power/fusion_core, material_sample, OWN_SPILL)
 
 /obj/machinery/power/fusion_core/proc/check_core_status()
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		return
 	if(idle_power_usage > avail())
 		return
@@ -55,7 +55,7 @@ OWN(/obj/machinery/power/fusion_core, material_sample, OWN_SPILL)
 
 /// Runs its field while it has one; shut down, it sleeps until Startup().
 /obj/machinery/power/fusion_core/machine_step()
-	if((stat & BROKEN) || !power_region || !owned_field)
+	if((has_stat(BROKEN)) || !power_region || !owned_field)
 		Shutdown()
 		return PROCESS_KILL
 
@@ -69,15 +69,17 @@ OWN(/obj/machinery/power/fusion_core, material_sample, OWN_SPILL)
 		if(!QDELETED(owned_field))
 			om_after(owned_field, 1, TYPE_PROC_REF(/obj/effect/fusion_em_field, core_tick))
 
-/obj/machinery/power/fusion_core/Topic(href, href_list)
-	if(..())
-		return 1
-	if(href_list["str"])
-		var/dif = text2num(href_list["str"])
-		field_strength = min(max(field_strength + dif, MIN_FIELD_STR), MAX_FIELD_STR)
-		update_active_power_usage(500 * field_strength)
-		if(owned_field)
-			owned_field.ChangeFieldStrength(field_strength)
+TOPIC_ACTION(/obj/machinery/power/fusion_core, "str", PROC_REF(topic_str), TOPIC_NUM("str"))
+
+/obj/machinery/power/fusion_core/proc/topic_str(mob/user, list/args)
+	var/dif = args["str"]
+	if(!isnum(dif))
+		return
+	field_strength = min(max(field_strength + dif, MIN_FIELD_STR), MAX_FIELD_STR)
+	update_active_power_usage(500 * field_strength)
+	if(owned_field)
+		owned_field.ChangeFieldStrength(field_strength)
+	return TRUE
 
 /obj/machinery/power/fusion_core/proc/Startup()
 	if(owned_field)
@@ -86,7 +88,7 @@ OWN(/obj/machinery/power/fusion_core, material_sample, OWN_SPILL)
 	owned_field.ChangeFieldStrength(field_strength)
 	MACHINE_WAKE(src)
 	icon_state = "core1"
-	update_use_power(USE_POWER_ACTIVE)
+	set_use_power(USE_POWER_ACTIVE)
 	. = 1
 
 /obj/machinery/power/fusion_core/proc/Shutdown(force_rupture)
@@ -97,7 +99,7 @@ OWN(/obj/machinery/power/fusion_core, material_sample, OWN_SPILL)
 		else
 			owned_field.RadiateAll()
 		own_clear(src, "owned_field", OWN_DELETE)
-	update_use_power(USE_POWER_IDLE)
+	set_use_power(USE_POWER_IDLE)
 
 /obj/machinery/power/fusion_core/proc/AddParticles(name, quantity = 1)
 	if(owned_field)

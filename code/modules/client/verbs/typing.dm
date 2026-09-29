@@ -6,11 +6,11 @@
 /client/proc/initialize_commandbar_spy()
 	src << output('html/typing_indicator.html', "commandbar_spy")
 
-/client/proc/handle_commandbar_typing(href_list)
+/client/proc/handle_commandbar_typing(typed_verb, argument_length)
 	if(!prefs?.read_preference(/datum/preference/toggle/show_typing_indicator))
 		return
 
-	if(length(href_list["verb"]) < 1 || !(lowertext(href_list["verb"]) in IC_VERBS) || text2num(href_list["argument_length"]) < 1)
+	if(length(typed_verb) < 1 || !(lowertext(typed_verb) in IC_VERBS) || !(argument_length >= 1))
 		if(commandbar_typing)
 			commandbar_typing = FALSE
 			stop_typing()
@@ -22,11 +22,11 @@
 
 	if(!commandbar_thinking)
 		commandbar_thinking = TRUE
-		start_thinking(href_list["verb"])
+		start_thinking(typed_verb)
 
 	if(!commandbar_typing)
 		commandbar_typing = TRUE
-		start_typing(href_list["verb"])
+		start_typing(typed_verb)
 
 
 /** Sets the mob as "thinking" - with indicator and the TRAIT_THINKING_IN_CHARACTER trait */

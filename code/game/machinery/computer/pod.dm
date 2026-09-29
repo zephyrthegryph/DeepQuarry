@@ -22,7 +22,7 @@ REL_KEYED_LIST(/obj/machinery/computer/pod, pod_doors, id, /obj/machinery/door/b
 REL_KEYED_LIST(/obj/machinery/computer/pod, pod_drivers, id, /obj/machinery/mass_driver)
 
 /obj/machinery/computer/pod/proc/alarm()
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return
 
 	if(!( connected() ))
@@ -115,7 +115,7 @@ REL_KEYED_LIST(/obj/machinery/computer/pod, pod_drivers, id, /obj/machinery/mass
 			return TRUE
 
 /obj/machinery/computer/pod/machine_step()
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return PROCESS_KILL
 	if(!timing)
 		return PROCESS_KILL
@@ -128,9 +128,9 @@ REL_KEYED_LIST(/obj/machinery/computer/pod, pod_drivers, id, /obj/machinery/mass
 		return PROCESS_KILL
 
 /obj/machinery/computer/pod/power_change()
-	..()
+	. = ..()
 	// machine_step() sleeps on NOPOWER; resume the countdown when power returns.
-	if(timing && !(stat & (NOPOWER|BROKEN)))
+	if(timing && operable())
 		MACHINE_WAKE(src)
 
 /obj/machinery/computer/pod/old

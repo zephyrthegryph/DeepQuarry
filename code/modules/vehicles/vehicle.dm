@@ -25,7 +25,6 @@
 	var/brute_dam_coeff = 1.0
 	var/open = 0	//Maint panel
 	var/locked = 1
-	var/stat = 0
 	var/emagged = 0
 	var/powered = 0		//set if vehicle is powered and should use fuel when moving
 	var/move_delay = 1	//set this to limit the speed of the vehicle
@@ -170,12 +169,12 @@ DECLARE_INTERACTIONS(/obj/vehicle, INTERACT_ITEM(null, PROC_REF(interaction_vehi
 		return
 
 	var/was_on = on
-	stat |= EMPED
+	stat_add(EMPED)
 	var/obj/effect/overlay/pulse2 = new /obj/effect/overlay(src.loc)
 	pulse2.icon = 'icons/effects/effects.dmi'
 	pulse2.icon_state = "empdisable"
 	pulse2.name = "emp sparks"
-	pulse2.anchored = TRUE
+	pulse2.set_anchored(TRUE)
 	pulse2.set_dir(pick(GLOB.cardinal))
 
 	om_qdel_after(pulse2, 1 SECOND)
@@ -191,7 +190,7 @@ DECLARE_INTERACTIONS(/obj/vehicle, INTERACT_ITEM(null, PROC_REF(interaction_vehi
 // Vehicle procs
 //-------------------------------------------
 /obj/vehicle/proc/turn_on()
-	if(!mechanical || stat)
+	if(!mechanical || has_stat(MACHINE_STAT_ANY))
 		return FALSE
 	if(!cell)
 		return FALSE
@@ -200,7 +199,7 @@ DECLARE_INTERACTIONS(/obj/vehicle, INTERACT_ITEM(null, PROC_REF(interaction_vehi
 	if(on)
 		return FALSE
 	on = 1
-	playsound(src, 'sound/effects/vehicle/ignition_car.ogg', 60, 2, -2) // New sound effects.
+	play_sfx(src, SFX_EFFECTS_VEHICLE_IGNITION_CAR) // New sound effects.
 	soundloop.start()
 	set_light(initial(light_range))
 	update_icon()
@@ -212,7 +211,7 @@ DECLARE_INTERACTIONS(/obj/vehicle, INTERACT_ITEM(null, PROC_REF(interaction_vehi
 	if(!mechanical)
 		return FALSE
 	on = 0
-	playsound(src, 'sound/effects/vehicle/engine_off.ogg', 60, 2, -2) // New sound effects.
+	play_sfx(src, SFX_EFFECTS_VEHICLE_ENGINE_OFF) // New sound effects.
 	soundloop.stop()
 	set_light(0)
 	update_icon()
@@ -230,7 +229,7 @@ DECLARE_INTERACTIONS(/obj/vehicle, INTERACT_ITEM(null, PROC_REF(interaction_vehi
 
 /obj/vehicle/proc/explode()
 	src.visible_message(span_bolddanger("[src] blows apart!"), 1)
-	playsound(src, 'sound/effects/explosions/vehicleexplosion.ogg', 100, 8, 3) // New sound effects.
+	play_sfx(src, SFX_EFFECTS_EXPLOSIONS_VEHICLEEXPLOSION) // New sound effects.
 	var/turf/Tsec = get_turf(src)
 
 	//stuns people who are thrown off a train that has been blown up
@@ -328,7 +327,7 @@ DECLARE_INTERACTIONS(/obj/vehicle, INTERACT_ITEM(null, PROC_REF(interaction_vehi
 
 	C.forceMove(loc)
 	C.set_dir(dir)
-	C.anchored = TRUE
+	C.set_anchored(TRUE)
 
 	rel_set(src, "load", C)
 
@@ -377,7 +376,7 @@ DECLARE_INTERACTIONS(/obj/vehicle, INTERACT_ITEM(null, PROC_REF(interaction_vehi
 
 	load.forceMove(dest)
 	load.set_dir(get_dir(loc, dest))
-	load.anchored = FALSE		//we can only load non-anchored items, so it makes sense to set this to false
+	load.set_anchored(FALSE) //we can only load non-anchored items, so it makes sense to set this to false
 	if(ismob(load))
 		var/mob/L = load
 		L.pixel_x = L.default_pixel_x
@@ -428,7 +427,7 @@ DECLARE_INTERACTIONS(/obj/vehicle, INTERACT_ITEM(null, PROC_REF(interaction_vehi
 	volume_chan = VOLUME_CHANNEL_AMBIENCE
 
 /obj/vehicle/proc/emp_recover(was_on)
-	stat &= ~EMPED
+	stat_remove(EMPED)
 	if(was_on)
 		turn_on()
 

@@ -5,7 +5,7 @@
 	icon_state = "mecha_pulse"
 	energy_drain = 120
 	projectile = /obj/item/projectile/beam/pulse/heavy
-	fire_sound = 'sound/weapons/gauss_shoot.ogg'
+	fire_sound = SFX_WEAPONS_GAUSS_SHOOT
 
 /obj/item/projectile/beam/pulse/heavy
 	name = "heavy pulse laser"

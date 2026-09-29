@@ -100,7 +100,7 @@ FLOOR SAFES
 	data["open"] = !!open
 	data["dial"] = dial
 	var/list/c = list()
-	for(var/obj/item/P in contents)
+	FOR_REAL_CONTENTS(var/obj/item/P, src)
 		c += list(list("ref" = "\ref[P]", "name" = P.name))
 	data["contents"] = c
 	return data
@@ -134,7 +134,7 @@ FLOOR SAFES
 					tumbler_2_pos = decrement(tumbler_2_pos)
 					if(canhear)
 						to_chat(user, span_notice("You hear a [pick("click", "chink", "clink")] from \the [src]."))
-						playsound(src, 'sound/machines/click.ogg', 20, 1)
+						play_sfx(src, SFX_MACHINES_CLICK, 0.4)
 				check_unlocked(user, canhear)
 			return TRUE
 		if("increment")
@@ -147,7 +147,7 @@ FLOOR SAFES
 					tumbler_2_pos = increment(tumbler_2_pos)
 					if(canhear)
 						to_chat(user, span_notice("You hear a [pick("click", "chink", "clink")] from \the [src]."))
-						playsound(src, 'sound/machines/click.ogg', 20, 1)
+						play_sfx(src, SFX_MACHINES_CLICK, 0.4)
 				check_unlocked(user, canhear)
 			return TRUE
 		if("retrieve")

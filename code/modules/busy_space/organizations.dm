@@ -25,13 +25,6 @@
 			"escort",
 			"search and rescue"
 			)
-	// ALLOW(instance_list): c: read-only per-subtype constant table (8 subtype overrides); a getter would share it, not worth it on a rare type
-	var/list/flight_types = list(		//operations and flights - we can override this if we want to remove the military-sounding ones or add our own
-			"flight",
-			"mission",
-			"route",
-			"assignment"
-			)
 	// ALLOW(instance_list): d: edited in place per instance (7 writers)
 	var/list/ship_names = list(		//Names of spaceships.  This is a mostly generic list that all the other organizations inherit from if they don't have anything better.
 			"Scout",
@@ -1460,11 +1453,6 @@
 			"StarFlight - getting you where you need to be since 2137."
 			)
 	ship_prefixes = list("SFI-X" = "a VIP liner", "SFI-L" = "a luxury liner", "SFI-B" = "a business liner", "SFI-E" = "an economy liner", "SFI-M" = "a wedding", "SFI-O" = "a marketing", "SFI-S" = "a safari", "SFI-A" = "an aquatic adventure")
-	flight_types = list(		//no military-sounding ones here
-			"flight",
-			"route",
-			"tour"
-			)
 	ship_names = list(	//birbs
 			"Rhea",
 			"Ostrich",
@@ -1740,14 +1728,6 @@
 			"Wreckless Endangerment",
 			"Scarab"
 			)
-	//remove a couple types, add the more down-to-earth 'job' to reflect some personality
-	flight_types = list(
-			"job",
-			"op",
-			"operation",
-			"assignment",
-			"contract"
-			)
 	destination_names = list (
 			"a frontier scrapyard",
 			"a trashbelt",
@@ -1846,14 +1826,6 @@
 	autogenerate_destination_names = TRUE //force random dest generation
 
 	ship_prefixes = list("ISV" = "a general", "IEV" = "a prospecting", "IEC" = "a prospecting", "IFV" = "a bulk freight", "ITV" = "a passenger transport", "ITC" = "a just-in-time delivery", "IPV" = "a patrol", "IHV" = "a bounty hunting", "ICC" = "an escort", "IMV" = "a mining", "IPS" = "an interplanetary shipping")
-	flight_types = list(
-			"flight",
-			"mission",
-			"route",
-			"operation",
-			"assignment",
-			"contract"
-			)
 	//ship names: blank, because we use the universal list
 	//ship_names = list()
 
@@ -2453,13 +2425,6 @@
 
 	org_type = "government"
 	ship_prefixes = list("SFM-M" = "a patrol")	 // The Salthans don't do anything else.
-	flight_types = list(
-			"mission",
-			"operation",
-			"exercise",
-			"assignment",
-			"deployment"
-			)
 			//specifically-undefeated generals, just to shake up the usual list everyone knows
 	ship_names = list(
 			"Ahmose I",
@@ -2689,13 +2654,6 @@
 
 	org_type = "military"
 	ship_prefixes = list ("USDF" = "a classified")
-	flight_types = list(
-			"mission",
-			"operation",
-			"exercise",
-			"assignment",
-			"deployment"
-			)
 	ship_names = list(
 			"Aphrodite",
 			"Apollo",
@@ -2788,14 +2746,6 @@
 
 	org_type = "military"
 	ship_prefixes = list("PCRC" = "a private security")
-	flight_types = list(
-			"flight",
-			"mission",
-			"route",
-			"operation",
-			"assignment",
-			"contract"
-			)
 	//law/protection terms
 	ship_names = list(
 			"Detective",
@@ -2852,14 +2802,6 @@
 
 	org_type = "military"
 	ship_prefixes = list("HPF" = "a secure freight", "HPT" = "a training", "HPS" = "a logistics", "HPV" = "a patrol", "HPH" = "a bounty hunting", "HPX" = "an experimental", "HPC" = "a command", "HPI" = "a mercy")
-	flight_types = list(
-			"flight",
-			"mission",
-			"route",
-			"operation",
-			"assignment",
-			"contract"
-			)
 	//animals, preferably predators, all factual/extant critters
 	ship_names = list(
 			"Wolf",
@@ -2937,14 +2879,6 @@
 
 	org_type = "military"
 	ship_prefixes = list("SAARE" = "a classified")
-	flight_types = list(
-			"flight",
-			"mission",
-			"route",
-			"operation",
-			"assignment",
-			"contract"
-			)
 	ship_names = list()
 	destination_names = list(
 			"SAARE Command",

@@ -69,6 +69,8 @@ SUBSYSTEM_DEF(profiler)
 			"high_pressure" = SSair.cost_highpressure,
 			"superconductivity" = SSair.cost_superconductivity,
 			"pipenets" = SSair.cost_pipenets,
+			"pipe_commit" = SSair.cost_pipe_commit,
+			"pipe_devices" = SSair.cost_pipe_devices,
 			"rebuilds" = SSair.cost_rebuilds,
 			"gas_tick" = SSair.cost_turfs,
 			"gas_events" = SSair.cost_gas_events,
@@ -84,6 +86,8 @@ SUBSYSTEM_DEF(profiler)
 			"hotspots" = length(SSair.hotspots),
 			"pressure_deltas" = length(SSair.high_pressure_delta),
 			"pipenets" = length(SSair.networks),
+			"pipe_devices" = SSair.rust_pipe_device_count,
+			"pipe_devices_reported" = SSair.pipe_devices_reported_last,
 			"rebuild" = length(SSair.rebuild_queue),
 			"expansion" = length(SSair.expansion_queue),
 		),
@@ -106,10 +110,17 @@ SUBSYSTEM_DEF(profiler)
 	subsystems["world_step"] = om_world_diagnostics()
 	var/list/profile = list(
 		"sequence" = ++diagnostic_sequence,
-		"world_time_ds" = world.time,
+		"world_time_ds" = EXPIRY_AT(src, CLOCK_WORLD, 0),
 		"players" = length(GLOB.clients),
-		"map_cpu" = world.cpu,
-		"map_tick_usage" = world.tick_usage,
+		// world.cpu / world.tick_usage are the whole server tick (DM code). The map
+		// send cost (appearance/turf/obj changes pushed to clients) is world.map_cpu
+		// only; with no clients it is ~0. Earlier profiles logged world.cpu and
+		// world.tick_usage under the map_* names, which read as idle map churn.
+		"cpu" = world.cpu,
+		"tick_usage" = world.tick_usage,
+		"map_cpu" = world.map_cpu,
+		"initialized" = Master.initializations_seconds > 0,
+		"sleep_offline" = world.sleep_offline,
 		"subsystems" = subsystems,
 		"atmos_arena" = atmos_arena,
 		"rust_allocator" = rust_allocator,
@@ -120,10 +131,13 @@ SUBSYSTEM_DEF(profiler)
 	log_runtime("ATMOS_PROFILE [json_encode(atmos_arena)]")
 	log_runtime("RUST_ALLOC_PROFILE [json_encode(rust_allocator)]")
 
+/// The diagnostics readout of a missing subsystem or service (shared; only encoded).
+GLOBAL_LIST_INIT(profiler_missing_diagnostics, list("missing" = TRUE))
+
 /// A world service's cost readout (it runs on the OM scheduler, not as a subsystem).
 /datum/controller/subsystem/profiler/proc/world_service_diagnostics(datum/world_service/target)
 	if(!target)
-		return list("missing" = TRUE)
+		return GLOB.profiler_missing_diagnostics
 	var/list/stat = null
 	var/datum/om/scheduler/sched = GLOB.om_live_sched
 	if(sched && target.lane)
@@ -141,7 +155,7 @@ SUBSYSTEM_DEF(profiler)
 
 /datum/controller/subsystem/profiler/proc/subsystem_diagnostics(datum/controller/subsystem/target)
 	if(!target)
-		return list("missing" = TRUE)
+		return GLOB.profiler_missing_diagnostics
 	return list(
 		"name" = target.name,
 		"active_ema_ms" = target.cost,

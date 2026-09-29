@@ -44,7 +44,7 @@
  */
 /datum/song/proc/playkey_synth(key, atom/player)
 	key = clamp(key + note_shift, key_min, key_max)
-	if((world.time - MUSICIAN_HEARCHECK_MINDELAY) > last_hearcheck)
+	if(ELAPSED_SINCE(src, last_hearcheck, CLOCK_WORLD) > MUSICIAN_HEARCHECK_MINDELAY)
 		do_hearcheck()
 	var/datum/instrument_key/K = using_instrument().samples[num2text(key)] //See how fucking easy it is to make a number text? You don't need a complicated 9 line proc!
 	//Should probably add channel limiters here at some point but I don't care right now.
@@ -108,8 +108,8 @@
  * * wait_ds - the deciseconds we should decay by. This is to compensate for any lag, as otherwise songs would get pretty nasty during high time dilation.
  */
 /datum/song/proc/process_decay(wait_ds)
-	var/linear_dropoff = cached_linear_dropoff * wait_ds
-	var/exponential_dropoff = cached_exponential_dropoff ** wait_ds
+	var/linear_dropoff = linear_dropoff_rate() * wait_ds
+	var/exponential_dropoff = sustain_exponential_dropoff ** wait_ds
 	for(var/channel in channels_playing)
 		if(full_sustain_held_note && (channel == last_channel_played))
 			continue

@@ -42,9 +42,7 @@
 /datum/event/rogue_drone/end()
 	var/num_recovered = 0
 	for(var/mob/living/simple_mob/mechanical/combat_drone/D in drones_list)
-		var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread()
-		sparks.set_up(3, 0, D.loc)
-		sparks.start()
+		fx_sparks(D.loc, 3, FALSE)
 		D.z = using_map.admin_levels[1]
 		D.loot_list = list()
 

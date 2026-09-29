@@ -10,8 +10,8 @@ MATERIAL_MIX(/obj/item/reagent_scanner, list(MAT_STEEL = 30,MAT_GLASS = 20))
 	throwforce = 5
 	throw_speed = 4
 	throw_range = 20
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 	var/details = 0
 	var/recent_fail = 0

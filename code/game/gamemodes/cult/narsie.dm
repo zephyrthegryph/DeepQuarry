@@ -137,7 +137,7 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 	T.icon = 'icons/turf/walls.dmi'
 	T.icon_state = "cult-narsie"
 	T.opacity = 0
-	T.density = FALSE
+	T.set_density(FALSE)
 	set_light(1)
 
 /obj/singularity/narsie/large/consume(const/atom/A) //Has its own consume proc because it doesn't need energy and I don't want BoHs to explode it. --NEO

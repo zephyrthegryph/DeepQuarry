@@ -99,7 +99,7 @@ DECLARE_INTERACTIONS(/obj/item/mmi, \
 			to_chat(user, span_warning("\The [src] appears to reject this brain.  It is incompatible."))
 			return INTERACTION_HANDLED_PASS
 
-		user.visible_message(span_infoplain(span_bold("\The [user]") + " sticks \a [O] into \the [src]."))
+		act_message(user, src, others = span_infoplain(span_bold("%U%") + " sticks \a [O] into %T%."))
 		user.drop_item()
 		insert_brain(B, "brain placed in [src] by [key_name(user)]")
 

@@ -133,7 +133,7 @@
 	if(active)
 		return
 	to_chat(escapee, span_warning("You push against the thin pipe walls..."))
-	playsound(loc, 'sound/machines/door/airlock_creaking.ogg', 30, FALSE, 3) //yeah I know but at least it sounds like metal being bent.
+	play_sfx(loc, SFX_MACHINES_DOOR_AIRLOCK_CREAKING, 0.3, vary = FALSE, extrarange = 3) //yeah I know but at least it sounds like metal being bent.
 
 	om_task_timed(escapee, 20 SECONDS, transport_cylinder, src, PROC_REF(burst_pipe), list(transport_cylinder))
 
@@ -158,7 +158,7 @@
 
 	for(var/mob/M in hearers(get_turf(src)))
 		M.show_message("<FONT size=[max(0, 5 - get_dist(src, M))]>CLONG, clong!</FONT>", AUDIBLE_MESSAGE)
-	playsound(src, 'sound/effects/clang.ogg', 50, 0, 0)
+	play_sfx(src, SFX_EFFECTS_CLANG, 2, vary = FALSE, extrarange = 0)
 
 // called to vent all gas in holder to a location
 /obj/structure/disposalholder/proc/vent_gas(atom/location)

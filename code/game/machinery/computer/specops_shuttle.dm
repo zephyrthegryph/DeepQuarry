@@ -20,7 +20,7 @@ GLOBAL_VAR_INIT(specops_shuttle_timeleft, 0)
 	var/temp = null
 	var/hacked = 0
 	var/allowedtocall = 0
-	var/specops_shuttle_timereset = 0
+	EXPIRY_DECLARE(specops_shuttle_timereset)
 
 /proc/specops_return()
 	var/obj/item/radio/intercom/announcer = new /obj/item/radio/intercom(null)//We need a fake AI to announce some stuff below. Otherwise it will be wonky.
@@ -75,7 +75,7 @@ GLOBAL_VAR_INIT(specops_shuttle_timeleft, 0)
 	GLOB.specops_shuttle_at_station = 0
 
 	for(var/obj/machinery/computer/specops_shuttle/S in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		S.specops_shuttle_timereset = world.time + SPECOPS_RETURN_DELAY
+		EXPIRY_SET(S, specops_shuttle_timereset, SPECOPS_RETURN_DELAY, CLOCK_WORLD)
 
 	qdel(announcer)
 
@@ -133,7 +133,7 @@ GLOBAL_VAR_INIT(specops_shuttle_timeleft, 0)
 		to_chat(M, span_notice("You have arrived to [station_name()]. Commence operation!"))
 
 	for(var/obj/machinery/computer/specops_shuttle/S in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		S.specops_shuttle_timereset = world.time + SPECOPS_RETURN_DELAY
+		EXPIRY_SET(S, specops_shuttle_timereset, SPECOPS_RETURN_DELAY, CLOCK_WORLD)
 
 	qdel(announcer)
 
@@ -172,59 +172,49 @@ GLOBAL_VAR_INIT(specops_shuttle_timeleft, 0)
 // structured TGUI Specops Shuttle (see
 // code/modules/admin/specops_shuttle_panel.dm).
 
-/obj/machinery/computer/specops_shuttle/Topic(href, href_list)
-	if(..())
-		return 1
+/obj/machinery/computer/specops_shuttle/proc/specops_send_to_dock(mob/user)
+	if(!GLOB.specops_shuttle_at_station|| GLOB.specops_shuttle_moving_to_station || GLOB.specops_shuttle_moving_to_centcom)
+		return
 
-	if ((usr.contents.Find(src) || (in_range(src, usr) && istype(loc, /turf))) || (istype(usr, /mob/living/silicon)))
-		usr.set_machine(src)
+	if (!specops_can_move())
+		to_chat(user, span_notice("[using_map.boss_name] will not allow the Special Operations shuttle to return yet."))
+		if(world.timeofday <= specops_shuttle_timereset)
+			if (((world.timeofday - specops_shuttle_timereset)/10) > 60)
+				to_chat(user, span_notice("[-((world.timeofday - specops_shuttle_timereset)/10)/60] minutes remain!"))
+			to_chat(user, span_notice("[-(world.timeofday - specops_shuttle_timereset)/10] seconds remain!"))
+		return
 
-	if (href_list["sendtodock"])
-		if(!GLOB.specops_shuttle_at_station|| GLOB.specops_shuttle_moving_to_station || GLOB.specops_shuttle_moving_to_centcom) return
+	to_chat(user, span_notice("The Special Operations shuttle will arrive at [using_map.boss_name] in [(SPECOPS_MOVETIME/10)] seconds."))
 
-		if (!specops_can_move())
-			to_chat(usr, span_notice("[using_map.boss_name] will not allow the Special Operations shuttle to return yet."))
-			if(world.timeofday <= specops_shuttle_timereset)
-				if (((world.timeofday - specops_shuttle_timereset)/10) > 60)
-					to_chat(usr, span_notice("[-((world.timeofday - specops_shuttle_timereset)/10)/60] minutes remain!"))
-				to_chat(usr, span_notice("[-(world.timeofday - specops_shuttle_timereset)/10] seconds remain!"))
-			return
+	temp += "Shuttle departing.<BR><BR>"
+	add_fingerprint(user)
+	updateUsrDialog(user)
 
-		to_chat(usr, span_notice("The Special Operations shuttle will arrive at [using_map.boss_name] in [(SPECOPS_MOVETIME/10)] seconds."))
+	GLOB.specops_shuttle_moving_to_centcom = 1
+	GLOB.specops_shuttle_time = world.timeofday + SPECOPS_MOVETIME
+	specops_return()
 
-		temp += "Shuttle departing.<BR><BR><A href='byond://?src=\ref[src];mainmenu=1'>OK</A>"
-		updateUsrDialog(usr)
+/obj/machinery/computer/specops_shuttle/proc/specops_send_to_station(mob/user)
+	if(GLOB.specops_shuttle_at_station || GLOB.specops_shuttle_moving_to_station || GLOB.specops_shuttle_moving_to_centcom)
+		return
 
-		GLOB.specops_shuttle_moving_to_centcom = 1
-		GLOB.specops_shuttle_time = world.timeofday + SPECOPS_MOVETIME
-		specops_return()
+	if (!specops_can_move())
+		to_chat(user, span_warning("The Special Operations shuttle is unable to leave."))
+		return
 
-	else if (href_list["sendtostation"])
-		if(GLOB.specops_shuttle_at_station || GLOB.specops_shuttle_moving_to_station || GLOB.specops_shuttle_moving_to_centcom) return
+	to_chat(user, span_notice("The Special Operations shuttle will arrive on [station_name()] in [(SPECOPS_MOVETIME/10)] seconds."))
 
-		if (!specops_can_move())
-			to_chat(usr, span_warning("The Special Operations shuttle is unable to leave."))
-			return
+	temp += "Shuttle departing.<BR><BR>"
+	add_fingerprint(user)
+	updateUsrDialog(user)
 
-		to_chat(usr, span_notice("The Special Operations shuttle will arrive on [station_name()] in [(SPECOPS_MOVETIME/10)] seconds."))
+	var/area/centcom/specops/special_ops = locate()
+	if(special_ops)
+		special_ops.readyalert()//Trigger alarm for the spec ops area.
+	GLOB.specops_shuttle_moving_to_station = 1
 
-		temp += "Shuttle departing.<BR><BR><A href='byond://?src=\ref[src];mainmenu=1'>OK</A>"
-		updateUsrDialog(usr)
-
-		var/area/centcom/specops/special_ops = locate()
-		if(special_ops)
-			special_ops.readyalert()//Trigger alarm for the spec ops area.
-		GLOB.specops_shuttle_moving_to_station = 1
-
-		GLOB.specops_shuttle_time = world.timeofday + SPECOPS_MOVETIME
-		specops_process()
-
-	else if (href_list["mainmenu"])
-		temp = null
-
-	add_fingerprint(usr)
-	updateUsrDialog(usr)
-	return
+	GLOB.specops_shuttle_time = world.timeofday + SPECOPS_MOVETIME
+	specops_process()
 
 #undef SPECOPS_MOVETIME
 #undef SPECOPS_STATION_AREATYPE

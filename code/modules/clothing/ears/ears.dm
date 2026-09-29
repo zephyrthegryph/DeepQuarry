@@ -52,17 +52,15 @@ EXTEND_INTERACTIONS(/obj/item/clothing/ears/earmuffs/headphones, \
 	slot_flags = SLOT_EARS
 	resistance_flags = FIRE_PROOF
 
-/obj/item/clothing/ears/skrell/fit_constraint()
-	var/list/bodytypes = list(SPECIES_SKRELL)
-	return list(REQ_FITS_BODYTYPES(bodytypes))
+TYPE_TABLE(/obj/item/clothing/ears/skrell, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_SKRELL))))
 
 /obj/item/clothing/ears/skrell/chain
 	name = "Gold headtail chains"
 	desc = "A delicate golden chain worn by female skrell to decorate their head tails."
 	icon_state = "skrell_chain"
 	item_state_slots = list(slot_r_hand_str = "egg5", slot_l_hand_str = "egg5")
-	drop_sound = 'sound/items/drop/ring.ogg'
-	pickup_sound = 'sound/items/pickup/ring.ogg'
+	drop_sound = SFX_ITEMS_DROP_RING
+	pickup_sound = SFX_ITEMS_PICKUP_RING
 
 /obj/item/clothing/ears/skrell/chain/silver
 	name = "Silver headtail chains"
@@ -93,8 +91,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/ears/earmuffs/headphones, \
 	desc = "Golden metallic bands worn by male skrell to adorn their head tails."
 	icon_state = "skrell_band"
 	item_state_slots = list(slot_r_hand_str = "egg5", slot_l_hand_str = "egg5")
-	drop_sound = 'sound/items/drop/ring.ogg'
-	pickup_sound = 'sound/items/pickup/ring.ogg'
+	drop_sound = SFX_ITEMS_DROP_RING
+	pickup_sound = SFX_ITEMS_PICKUP_RING
 
 /obj/item/clothing/ears/skrell/band/silver
 	name = "Silver headtail bands"

@@ -39,7 +39,7 @@
 
 	to_chat(user, span_notice("You feed the slime the stabilizer. It is now less likely to mutate."))
 	xenobio_slime.mutation_chance = between(0, xenobio_slime.mutation_chance - 15, 100)
-	playsound(src, 'sound/effects/bubbles.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_BUBBLES)
 	consume(src, user)
 	return ITEM_INTERACT_SUCCESS
 
@@ -68,7 +68,7 @@
 
 	to_chat(user, span_notice("You feed the slime the mutator. It is now more likely to mutate."))
 	xenobio_slime.mutation_chance = between(0, xenobio_slime.mutation_chance + 12, 100)
-	playsound(src, 'sound/effects/bubbles.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_BUBBLES)
 	consume(src, user)
 	return ITEM_INTERACT_SUCCESS
 
@@ -129,7 +129,7 @@
 		to_chat(M, span_warning("You consume the agent and feel a serene sense of peace."))
 		to_chat(user, span_notice("You feed \the [SM] the agent, calming it."))
 
-	playsound(src, 'sound/effects/bubbles.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_BUBBLES)
 	AI.remove_target() // So hostile things stop attacking people even if not hostile anymore.
 	var/_answer_k126 = rerun_ask(user, "k126", PROC_REF(attack), args, /datum/om/prompt/text, message = "Would you like to give \the [M] a name?", title = "Name your new pet", default = M.name, max_length = MAX_NAME_LEN)
 	if(isnull(_answer_k126))
@@ -171,7 +171,7 @@
 
 	to_chat(user, span_notice("You feed the slime the steroid. It will now produce one more extract."))
 	xenobio_slime.cores++
-	playsound(src, 'sound/effects/bubbles.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_BUBBLES)
 	consume(src, user)
 	return ITEM_INTERACT_SUCCESS
 
@@ -203,7 +203,7 @@
 	to_chat(xenobio_slime, span_notice("\The [user] feeds you \the [src], and you suspect that all the other slimes will be \
 	your friends, at least if you don't attack them first."))
 	xenobio_slime.unify()
-	playsound(src, 'sound/effects/bubbles.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_BUBBLES)
 	consume(src, user)
 	return ITEM_INTERACT_SUCCESS
 
@@ -244,7 +244,7 @@
 	if(istype(M, /mob/living/simple_mob/slime))
 		var/mob/living/simple_mob/slime/slime = M
 		slime.update_mood() //Makes them drop-nomable.
-	playsound(src, 'sound/effects/bubbles.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_BUBBLES)
 	consume(src, user)
 	return ITEM_INTERACT_SUCCESS
 
@@ -284,7 +284,7 @@
 	to_chat(SM, span_notice("\The [user] feeds you \the [src], and feel that \the [user] wants to be best friends with you."))
 	rel_add(SM, "friends", user)
 	AI.remove_target() // So hostile things stop attacking people even if not hostile anymore.
-	playsound(src, 'sound/effects/bubbles.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_BUBBLES)
 	consume(src, user)
 	return ITEM_INTERACT_SUCCESS
 
@@ -313,7 +313,7 @@
 	xenobio_slime.make_adult()
 	xenobio_slime.amount_grown = 10
 	xenobio_slime.reproduce()
-	playsound(src, 'sound/effects/bubbles.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_BUBBLES)
 	consume(src, user)
 	return ITEM_INTERACT_SUCCESS
 
@@ -325,7 +325,7 @@ DECLARE_INTERACTIONS(/obj/item/slimepotion, INTERACT_ITEM(null, PROC_REF(interac
 /obj/item/slimepotion/proc/interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
 	if(istype(O, /obj/item/slimepotion/mimic))
 		to_chat(user, span_notice("You apply the mimic to the slime potion as it copies it's effects."))
-		playsound(src, 'sound/effects/bubbles.ogg', 50, 1)
+		play_sfx(src, SFX_EFFECTS_BUBBLES)
 		var/newtype = src.type
 		new newtype(get_turf(src))
 		consume(O, user)
@@ -355,7 +355,7 @@ DECLARE_INTERACTIONS(/obj/item/slimepotion, INTERACT_ITEM(null, PROC_REF(interac
 
 	to_chat(user, span_notice("You feed the slime the infertility agent. It will now have less offspring."))
 	xenobio_slime.split_amount = between(2, xenobio_slime.split_amount - 2, 6)
-	playsound(src, 'sound/effects/bubbles.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_BUBBLES)
 	consume(src, user)
 	return ITEM_INTERACT_SUCCESS
 
@@ -382,7 +382,7 @@ DECLARE_INTERACTIONS(/obj/item/slimepotion, INTERACT_ITEM(null, PROC_REF(interac
 
 	to_chat(user, span_notice("You feed the slime the fertility agent. It will now have more offspring."))
 	xenobio_slime.split_amount = between(2, xenobio_slime.split_amount + 2, 6)
-	playsound(src, 'sound/effects/bubbles.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_BUBBLES)
 	consume(src, user)
 	return ITEM_INTERACT_SUCCESS
 
@@ -406,7 +406,7 @@ DECLARE_INTERACTIONS(/obj/item/slimepotion, INTERACT_ITEM(null, PROC_REF(interac
 
 	to_chat(user, span_notice("You feed the slime the shrinking agent. It is now back to being a baby."))
 	xenobio_slime.make_baby()
-	playsound(src, 'sound/effects/bubbles.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_BUBBLES)
 	consume(src, user)
 	return ITEM_INTERACT_SUCCESS
 
@@ -427,7 +427,7 @@ DECLARE_INTERACTIONS(/obj/item/slimepotion, INTERACT_ITEM(null, PROC_REF(interac
 
 	to_chat(user, span_notice("You feed the slime the death agent. Its face flashes pain of betrayal before it goes still."))
 	xenobio_slime.injure(INJURY_TOXIN, xenobio_slime.get_endurance() * 5, source = src, flags = INJURE_IGNORE_RESISTANCE)
-	playsound(src, 'sound/effects/bubbles.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_BUBBLES)
 	consume(src, user)
 	return ITEM_INTERACT_SUCCESS
 
@@ -452,7 +452,7 @@ DECLARE_INTERACTIONS(/obj/item/slimepotion, INTERACT_ITEM(null, PROC_REF(interac
 	to_chat(user, span_notice("You feed the slime the death agent. It will now only get angrier at taming attempts."))
 	xenobio_slime.untamable = TRUE
 	xenobio_slime.untamable_inheirit = TRUE
-	playsound(src, 'sound/effects/bubbles.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_BUBBLES)
 	consume(src, user)
 	return ITEM_INTERACT_SUCCESS
 
@@ -479,7 +479,7 @@ EXTEND_INTERACTIONS(/obj/item/slimepotion/mimic, INTERACT_ITEM(null, PROC_REF(mi
 	if(istype(M, /obj/item/slimepotion/mimic))
 		to_chat(user, span_warning("You apply the mimic to the mimic, resulting a mimic that copies a mimic that copies a mimic that copies a mimic that-"))
 		var/location = get_turf(src)
-		playsound(location, 'sound/weapons/gauss_shoot.ogg', 50, 1)
+		play_sfx(location, SFX_WEAPONS_GAUSS_SHOOT)
 		var/datum/effect/effect/system/grav_pull/s = new /datum/effect/effect/system/grav_pull
 		s.set_up(3, 3, location)
 		s.start()
@@ -519,7 +519,7 @@ EXTEND_INTERACTIONS(/obj/item/slimepotion/mimic, INTERACT_ITEM(null, PROC_REF(mi
 		add_verb(xenobio_slime, /mob/living/simple_mob/proc/animal_nom)
 	xenobio_slime.ghostjoin_icon()
 	log_and_message_admins("used a sapience potion on a simple mob: [xenobio_slime]. [ADMIN_FLW(src)]", user)
-	playsound(src, 'sound/effects/bubbles.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_BUBBLES)
 	consume(src, user)
 	return ITEM_INTERACT_SUCCESS
 
@@ -546,6 +546,6 @@ EXTEND_INTERACTIONS(/obj/item/slimepotion/mimic, INTERACT_ITEM(null, PROC_REF(mi
 	xenobio_slime.adjust_discipline(10)
 	if(xenobio_slime.slime_state && justified)
 		xenobio_slime.slime_state.obedience = 10
-	playsound(src, 'sound/effects/bubbles.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_BUBBLES)
 	consume(src, user)
 	return ITEM_INTERACT_SUCCESS

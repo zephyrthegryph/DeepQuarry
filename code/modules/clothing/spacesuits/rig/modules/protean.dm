@@ -83,12 +83,10 @@ These should come standard with the Protean rigsuit, unless you want them to wor
 	var/armor_weight_ratio = 0.01	//This amount of slowdown per 1% of armour. 3 slowdown at the max armour.
 
 /// The armor types the wearer can configure.
-/obj/item/rig_module/protean/armor/proc/armor_types()
-	var/static/list/types = list("melee", "bullet", "laser", "energy", "bomb")
-	return types
+TYPE_TABLE_DECLARE(/obj/item/rig_module/protean/armor, armor_types, list("melee", "bullet", "laser", "energy", "bomb"))
 
 /obj/item/rig_module/protean/armor/engage()
-	var/armor_chosen = rerun_ask(usr, "a1", PROC_REF(engage), args, /datum/om/prompt/choice, message = "Which armor to adjust?", title = "Protean Armor", choices = armor_types())
+	var/armor_chosen = rerun_ask(usr, "a1", PROC_REF(engage), args, /datum/om/prompt/choice, message = "Which armor to adjust?", title = "Protean Armor", choices = TYPE_TABLE_GET(src, armor_types))
 	if(isnull(armor_chosen))
 		return
 	if(armor_chosen)
@@ -99,7 +97,7 @@ These should come standard with the Protean rigsuit, unless you want them to wor
 			LAZYSET(armor_settings, armor_chosen, armorvalue)
 			interface_desc = initial(interface_desc)
 			slowdown = 0
-			for(var/entry in armor_types())	//This is dumb and ugly but I dont feel like rewriting rig TGUI just to make this a pretty list
+			for(var/entry in TYPE_TABLE_GET(src, armor_types))	//This is dumb and ugly but I dont feel like rewriting rig TGUI just to make this a pretty list
 				var/value = LAZYACCESS(armor_settings, entry) || 0
 				interface_desc += " [entry]: [value]"
 				slowdown += value*armor_weight_ratio
@@ -116,7 +114,7 @@ These should come standard with the Protean rigsuit, unless you want them to wor
 	var/mob/living/carbon/human/H = holder.wearer()
 	if(H)
 		var/list/temparmor = list()
-		for(var/entry in armor_types())
+		for(var/entry in TYPE_TABLE_GET(src, armor_types))
 			temparmor[entry] = LAZYACCESS(armor_settings, entry) || 0
 		temparmor["bio"] = 100
 		temparmor["rad"] = 100

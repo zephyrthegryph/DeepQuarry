@@ -206,7 +206,7 @@
 			. = TRUE
 
 	if(. && !issilicon(ui.user))
-		playsound(src, "terminal_type", 50, 1)
+		play_sfx(src, SFX_TERMINAL_TYPE)
 
 /// Accessor for the middle var.
 /obj/machinery/computer/ship/disperser/proc/middle() as /obj/machinery/disperser/middle

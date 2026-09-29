@@ -26,8 +26,8 @@
 	var/obj/item/wepon
 
 	var/shatter_message = "The pylon shatters!"
-	var/impact_sound = 'sound/effects/Glasshit.ogg'
-	var/shatter_sound = 'sound/effects/Glassbr3.ogg'
+	var/impact_sound = SFX_EFFECTS_GLASSHIT
+	var/shatter_sound = SFX_EFFECTS_GLASSBR3
 
 	var/activation_cooldown = 30 SECONDS
 	COOLDOWN_DECLARE(activation_cooldown_until)
@@ -65,7 +65,7 @@ DECLARE_INTERACTIONS(/obj/structure/cult/pylon, \
 			om_task_periodic_stop(src)
 			playsound(src,shatter_sound, 75, 1)
 			isbroken = 1
-			density = FALSE
+			set_density(FALSE)
 			icon_state = "[initial(icon_state)]-broken"
 			set_light(0)
 
@@ -81,7 +81,7 @@ DECLARE_INTERACTIONS(/obj/structure/cult/pylon, \
 			user.do_attack_animation(src)
 			playsound(src,shatter_sound, 75, 1)
 			isbroken = 1
-			density = FALSE
+			set_density(FALSE)
 			icon_state = "[initial(icon_state)]-broken"
 			set_light(0)
 		else
@@ -100,7 +100,7 @@ DECLARE_INTERACTIONS(/obj/structure/cult/pylon, \
 		om_task_periodic(src, PERIODIC_SLOW)
 		to_chat(user, "You repair \the [src].")
 		isbroken = 0
-		density = TRUE
+		set_density(TRUE)
 		icon_state = initial(icon_state)
 		set_light(5)
 

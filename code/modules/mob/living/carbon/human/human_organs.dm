@@ -80,7 +80,7 @@
 			var/list/limb_wounds = E.get_wounds() // one walk per limb per cycle (audit D24)
 			self.number_wounds += length(limb_wounds)
 
-			if (!self.lying && !self?.buckled_to() && world.time - self.l_move_time < 15)
+			if (!self.lying && !self?.buckled_to() && ELAPSED_SINCE(src, self.l_move_time, CLOCK_WORLD) < 15)
 			//Moving around with fractured ribs won't do you any good
 				if (prob(10) && !self.stat && self.can_feel_pain() && self.factor(BF_ANALGESIA) < 50 && E.is_broken() && length(E.held_organs()))
 					self.custom_pain("Pain jolts through your broken [E.encased ? E.encased : E.name], staggering you!", 50)
@@ -116,12 +116,8 @@
 			//malfunctioning only happens intermittently so treat it as a missing limb when it procs
 			stance_damage += 2
 			if(isturf(loc) && prob(10))
-				visible_message("\The [src]'s [E.name] [pick("twitches", "shudders")] and sparks!")
-				var/datum/effect/effect/system/spark_spread/spark_system = new ()
-				spark_system.set_up(5, 0, src)
-				spark_system.attach(src)
-				spark_system.start()
-				om_qdel_after(spark_system, 1 SECOND)
+				act_message(src, null, others = "%U%'s [E.name] [pick("twitches", "shudders")] and sparks!")
+				fx_sparks(src, 5, FALSE)
 		else if (E.is_broken())
 			stance_damage += 1
 		else if (E.is_dislocated())
@@ -161,7 +157,7 @@
 		for(var/limb_tag in list(BP_L_HAND, BP_L_ARM))
 			var/obj/item/organ/external/E = get_organ(limb_tag)
 			if(!E)
-				visible_message(span_danger("Lacking a functioning left hand, \the [src] drops \the [get_equipped_item(SLOT_ID_HAND_L)]."))
+				act_message(src, null, others = span_danger("Lacking a functioning left hand, %U% drops \the [get_equipped_item(SLOT_ID_HAND_L)]."))
 				drop_from_inventory(get_equipped_item(SLOT_ID_HAND_L))
 				break
 
@@ -169,7 +165,7 @@
 		for(var/limb_tag in list(BP_R_HAND, BP_R_ARM))
 			var/obj/item/organ/external/E = get_organ(limb_tag)
 			if(!E)
-				visible_message(span_danger("Lacking a functioning right hand, \the [src] drops \the [get_equipped_item(SLOT_ID_HAND_R)]."))
+				act_message(src, null, others = span_danger("Lacking a functioning right hand, %U% drops \the [get_equipped_item(SLOT_ID_HAND_R)]."))
 				drop_from_inventory(get_equipped_item(SLOT_ID_HAND_R))
 				break
 
@@ -212,11 +208,7 @@
 			if(!isbelly(loc))
 				automatic_custom_emote(VISIBLE_MESSAGE, "drops what they were holding, their [E.name] malfunctioning!", check_stat = TRUE)
 
-				var/datum/effect/effect/system/spark_spread/spark_system = new /datum/effect/effect/system/spark_spread()
-				spark_system.set_up(5, 0, src)
-				spark_system.attach(src)
-				spark_system.start()
-				om_qdel_after(spark_system, 1 SECOND)
+				fx_sparks(src, 5, FALSE)
 
 //Handles chem traces
 /mob/living/carbon/human/proc/handle_trace_chems()
