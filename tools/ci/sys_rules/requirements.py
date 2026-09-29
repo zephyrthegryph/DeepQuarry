@@ -46,7 +46,7 @@ IF = re.compile(r"^if\s*\(")
 ACTING = re.compile(r"\b(?:drop_from_inventory|unEquip|drop_item|drop_held_item|put_in_\w+|remove_from_mob|"
                     r"use|use_charge|checked_use|use_tool|do_after|do_mob|tgui_\w+|input|alert|forceMove|"
                     r"try_\w+|attempt_\w+|consume\w*|transfer\w*|insert_item|user_unbuckle_mob|"
-                    r"buckle_mob|remove_fuel|use_resource|spend\w*|pay\w*|charge|om_task_timed)\s*\(")
+                    r"buckle_mob|Move|remove_fuel|use_resource|spend\w*|pay\w*|charge|om_task_timed)\s*\(")
 ELSE = re.compile(r"^else\b")
 
 

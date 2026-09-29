@@ -10,16 +10,14 @@
 /obj/item/modular_computer/proc/pred_computer_has_card_slot(mob/actor, atom/target, obj/item/held)
 	return !!card_slot
 
+/// Requirement: a living, able, non-animal user (simple mobs can't work the buttons). Reach is the verb's own clause.
+/obj/item/modular_computer/proc/pred_computer_hands_on(mob/actor, atom/target, obj/item/held)
+	if(!isliving(actor) || isanimal(actor) || actor.incapacitated())
+		return "you can't do that"
+	return TRUE
+
 /// Old verb "Forced Shutdown": to be used when something bugs out and the UI is nonfunctional.
 /obj/item/modular_computer/proc/computer_emergency_shutdown(mob/user, obj/item/held, datum/interaction/interaction)
-	if(user.incapacitated() || !isliving(user) || isanimal(user)) // Preventing simple_mobs from interacting
-		to_chat(user, span_warning("You can't do that."))
-		return
-
-	if(!Adjacent(user))
-		to_chat(user, span_warning("You can't reach it."))
-		return
-
 	if(enabled)
 		bsod = 1
 		update_icon()
@@ -27,29 +25,12 @@
 		to_chat(user, "You press a hard-reset button on \the [src]. It displays a brief debug screen before shutting down.")
 		om_after(src, 2 SECONDS, PROC_REF(clear_bsod))
 
-
 /// Old verb "Eject ID": eject the ID card from the computer, if it has an ID slot with a card inside.
 /obj/item/modular_computer/proc/computer_verb_eject_id(mob/user, obj/item/held, datum/interaction/interaction)
-	if(user.incapacitated() || !isliving(user) || isanimal(user)) // Preventing simple_mobs from interacting
-		to_chat(user, span_warning("You can't do that."))
-		return
-
-	if(!Adjacent(user))
-		to_chat(user, span_warning("You can't reach it."))
-		return
-
 	proc_eject_id(user)
 
 /// Old verb "Eject Portable Storage".
 /obj/item/modular_computer/proc/computer_verb_eject_usb(mob/user, obj/item/held, datum/interaction/interaction)
-	if(user.incapacitated() || !isliving(user) || isanimal(user)) // Preventing simple_mobs from interacting
-		to_chat(user, span_warning("You can't do that."))
-		return
-
-	if(!Adjacent(user))
-		to_chat(user, span_warning("You can't reach it."))
-		return
-
 	proc_eject_usb(user)
 
 /obj/item/modular_computer/proc/proc_eject_id(mob/user)
@@ -106,9 +87,9 @@ DECLARE_INTERACTIONS(/obj/item/modular_computer, \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
 	INTERACT_SILICON("Use", PROC_REF(modular_computer_silicon_use)), \
 	INTERACT_OBSERVER("View", PROC_REF(modular_computer_ghost_view)), \
-	INTERACT_VERB("Forced Shutdown", PROC_REF(computer_emergency_shutdown)), \
-	INTERACT_VERB("Eject ID", PROC_REF(computer_verb_eject_id), REQ_ON(PRED_TARGET, /obj/item/modular_computer/proc/pred_computer_has_card_slot, null)), \
-	INTERACT_VERB("Eject Portable Storage", PROC_REF(computer_verb_eject_usb), REQ_ON(PRED_TARGET, /obj/item/modular_computer/proc/pred_computer_has_drive, null)), \
+	INTERACT_VERB("Forced Shutdown", PROC_REF(computer_emergency_shutdown), REQ_TARGET_STATE(/obj/item/modular_computer/proc/pred_computer_hands_on)), \
+	INTERACT_VERB("Eject ID", PROC_REF(computer_verb_eject_id), REQ_ON(PRED_TARGET, /obj/item/modular_computer/proc/pred_computer_has_card_slot, null), REQ_TARGET_STATE(/obj/item/modular_computer/proc/pred_computer_hands_on)), \
+	INTERACT_VERB("Eject Portable Storage", PROC_REF(computer_verb_eject_usb), REQ_ON(PRED_TARGET, /obj/item/modular_computer/proc/pred_computer_has_drive, null), REQ_TARGET_STATE(/obj/item/modular_computer/proc/pred_computer_hands_on)), \
 )
 
 /// Old attack_hand.

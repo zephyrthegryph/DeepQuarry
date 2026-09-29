@@ -31,20 +31,22 @@ DECLARE_INTERACTIONS(/obj/item/hoist_kit, INTERACT_USE(null, PROC_REF(interactio
 
 EXTEND_INTERACTIONS(/obj/effect/hoist_hook, \
 	INTERACT_HAND_UNGATED(null, TYPE_PROC_REF(/atom, interaction_swallow)), \
-	INTERACT_DRAG("Attach", PROC_REF(interaction_hoist_hook_attach)), \
+	INTERACT_DRAG("Attach", PROC_REF(interaction_hoist_hook_attach), REQ_TARGET_STATE(/obj/effect/hoist_hook/proc/can_attach)), \
 )
+
+/// Requirement: TRUE, or why the dragged thing can't be clamped on.
+/obj/effect/hoist_hook/proc/can_attach(mob/user, atom/target, atom/movable/held)
+	if(!istype(held) || !held.simulated || held.anchored)
+		return "you can't do that"
+	if(source_hoist().hoistee())
+		return "[source_hoist().hoistee()] is already attached"
+	return TRUE
 
 /// Old MouseDrop_T: clamp the dragged thing onto the hook. Replaces the buckle drag.
 /obj/effect/hoist_hook/proc/interaction_hoist_hook_attach(mob/user, atom/movable/AM, datum/interaction/interaction)
 	if (use_check(user, 0))
 		return TRUE
 
-	if (!istype(AM) || !AM.simulated || AM.anchored)
-		to_chat(user, span_notice("You can't do that."))
-		return TRUE
-	if (source_hoist().hoistee())
-		to_chat(user, span_notice("\The [source_hoist().hoistee()] is already attached to \the [src]!"))
-		return TRUE
 	source_hoist().attach_hoistee(AM)
 	user.visible_message(span_danger("[user] attaches \the [AM] to \the [src]."), span_danger("You attach \the [AM] to \the [src]."), span_danger("You hear something clamp into place."))
 	return TRUE
@@ -160,26 +162,37 @@ DECLARE_REF(/obj/structure/hoist, "source_hook", OWNED, null)
 	silicon_use = ROBOT_USE_HAND
 
 DECLARE_INTERACTIONS(/obj/structure/hoist, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
-	INTERACT_VERB("Collapse Hoist", PROC_REF(hoist_verb_collapse)), \
+	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand), REQ_TARGET_STATE(/obj/structure/hoist/proc/can_work_hoist)), \
+	INTERACT_VERB("Collapse Hoist", PROC_REF(hoist_verb_collapse), REQ_TARGET_STATE(/obj/structure/hoist/proc/can_collapse)), \
 )
+
+/// Requirement: TRUE, or why this user can't work the hoist. Non-humanoids are turned away silently by the effect.
+/obj/structure/hoist/proc/can_work_hoist(mob/living/user, atom/target, obj/item/held)
+	if(!(ishuman(user) || issilicon(user)))
+		return TRUE
+	if(user.incapacitated())
+		return "you can't do that while incapacitated"
+	if(!user.IsAdvancedToolUser())
+		return "you stare cluelessly at it"
+	if(broken)
+		return "the hoist is broken"
+	return TRUE
+
+/// Requirement: TRUE, or why the hoist can't be collapsed now.
+/obj/structure/hoist/proc/can_collapse(mob/user, atom/target, obj/item/held)
+	if(!(ishuman(user) || issilicon(user)) || isobserver(user) || user.incapacitated())
+		return TRUE
+	if(!user.IsAdvancedToolUser())
+		return "you stare cluelessly at it"
+	if(hoistee())
+		return "you cannot collapse the hoist with [hoistee()] attached"
+	return TRUE
 
 /// Old attack_hand.
 /obj/structure/hoist/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if (!(ishuman(user) || issilicon(user)))
 		return TRUE
 
-	if (user.incapacitated())
-		to_chat(user, span_notice("You can't do that while incapacitated."))
-		return TRUE
-
-	if (!user.IsAdvancedToolUser())
-		to_chat(user, span_notice("You stare cluelessly at \the [src]."))
-		return TRUE
-
-	if(broken)
-		to_chat(user, span_warning("The hoist is broken!"))
-		return TRUE
 	var/can = can_move_dir(movedir)
 	var/movtext = movedir == UP ? "raise" : "lower"
 	if (!can) // If you can't...
@@ -215,13 +228,6 @@ DECLARE_INTERACTIONS(/obj/structure/hoist, \
 		return
 
 	if (isobserver(user) || user.incapacitated())
-		return
-	if (!user.IsAdvancedToolUser()) // thanks nanacode
-		to_chat(user, span_notice("You stare cluelessly at \the [src]."))
-		return
-
-	if (hoistee())
-		to_chat(user, span_notice("You cannot collapse the hoist with \the [hoistee()] attached!"))
 		return
 	collapse_kit()
 
