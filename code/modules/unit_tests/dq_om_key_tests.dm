@@ -21,7 +21,7 @@
 	M.machine_step()
 	TEST_ASSERT(M.asleep_on_keys(), "stable power monitor did not sleep on its grid keys")
 	TEST_ASSERT_NULL(M.om_sleep_violation(), "a stable sleeping power monitor reported a violation")
-	var/failure = om_wake_test(M, CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(power_warn), P))
+	var/failure = om_wake_test(M, om_callable(null, GLOBAL_PROC_REF(power_warn), P))
 	TEST_ASSERT(!failure, failure)
 	power_test_drop_grid(P)
 
@@ -35,7 +35,7 @@
 	var/obj/machinery/shield_capacitor/C = allocate(/obj/machinery/shield_capacitor, test_floor())
 	// The keys process() sleeps on when the grid gives it nothing.
 	TEST_ASSERT(C.sleep_until_keys(list(node, CHANGE_POWER_GRID_RATE|CHANGE_POWER_GRID_STATE)), "capacitor refused to sleep")
-	var/failure = om_wake_test(C, CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(power_test_set_brownout), P, TRUE))
+	var/failure = om_wake_test(C, om_callable(null, GLOBAL_PROC_REF(power_test_set_brownout), P, TRUE))
 	TEST_ASSERT(!failure, failure)
 	// A topology-only change is not the capacitor's input.
 	C.sleep_until_keys(list(node, CHANGE_POWER_GRID_RATE|CHANGE_POWER_GRID_STATE))
@@ -64,7 +64,7 @@
 	turret.machine_step()
 	TEST_ASSERT(turret.asleep_on_keys(), "disabled turret did not sleep on its settings key")
 	TEST_ASSERT_NULL(turret.om_sleep_violation(), "a disabled sleeping turret reported a violation")
-	var/failure = om_wake_test(turret, CALLBACK(turret, TYPE_PROC_REF(/obj/machinery/porta_turret, emp_reenable)))
+	var/failure = om_wake_test(turret, om_callable(turret, TYPE_PROC_REF(/obj/machinery/porta_turret, emp_reenable)))
 	TEST_ASSERT(!failure, failure)
 
 /datum/unit_test/dq_om_keys_wake_point_defense
@@ -79,7 +79,7 @@
 	TEST_ASSERT(PD.asleep_on_keys(), "idle point defense did not sleep on the meteor key")
 	TEST_ASSERT_NULL(PD.om_sleep_violation(), "an idle point defense reported a violation")
 	// The meteor key is what /obj/effect/meteor publishes on Initialize and Destroy.
-	var/failure = om_wake_test(PD, CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(om_changed), GLOB.meteor_watch, CHANGE_METEORS))
+	var/failure = om_wake_test(PD, om_callable(null, GLOBAL_PROC_REF(om_changed), GLOB.meteor_watch, CHANGE_METEORS))
 	TEST_ASSERT(!failure, failure)
 
 /datum/unit_test/dq_om_keys_wake_disposal
@@ -96,7 +96,7 @@
 	D.machine_step()
 	TEST_ASSERT(D.asleep_on_keys(), "idle disposal did not sleep on its key")
 	TEST_ASSERT_NULL(D.om_sleep_violation(), "an idle disposal reported a violation")
-	var/failure = om_wake_test(D, CALLBACK(D, TYPE_PROC_REF(/obj/machinery/disposal, wake_for_state_change)))
+	var/failure = om_wake_test(D, om_callable(D, TYPE_PROC_REF(/obj/machinery/disposal, wake_for_state_change)))
 	TEST_ASSERT(!failure, failure)
 
 /datum/unit_test/dq_om_keys_wake_calm_brain
@@ -111,7 +111,7 @@
 	var/mob/living/visitor = allocate(/mob/living, locate(world.maxx, world.maxy, T.z))
 	TEST_ASSERT(B.hibernate_calm(), "calm brain refused to hibernate")
 	TEST_ASSERT_NULL(B.om_sleep_violation(), "a calm hibernating brain reported a violation")
-	var/failure = om_wake_test(B, CALLBACK(visitor, TYPE_PROC_REF(/atom/movable, forceMove), T))
+	var/failure = om_wake_test(B, om_callable(visitor, TYPE_PROC_REF(/atom/movable, forceMove), T))
 	TEST_ASSERT(!failure, failure)
 	TEST_ASSERT(B.loop_running(DQAI_PROCESSING), "woken brain did not rejoin strategic processing")
 	// The audit catches a brain asleep with a threat.

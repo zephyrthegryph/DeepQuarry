@@ -262,17 +262,17 @@ GLOBAL_VAR_INIT(unit_test_block_pool_ready, FALSE)
 /// assumptions" flakiness pattern: a test that only passed because a shared
 /// turf happened to already be warm, or because the CI machine happened to be
 /// fast enough that round N finished within a guessed frame count). Returns
-/// TRUE the moment `condition.Invoke()` is truthy, FALSE if `max_attempts` is
+/// TRUE the moment `om_run(condition)` is truthy, FALSE if `max_attempts` is
 /// exhausted first. `advance` may be null to just poll `condition` on a sleep.
-/proc/wait_for_condition(datum/callback/condition, datum/callback/advance, max_attempts = 60)
+/proc/wait_for_condition(list/condition, list/advance, max_attempts = 60)
 	for(var/i in 1 to max_attempts)
-		if(condition.Invoke())
+		if(om_run(condition))
 			return TRUE
 		if(advance)
-			advance.Invoke()
+			om_run(advance)
 		else
 			sleep(world.tick_lag)
-	return condition.Invoke()
+	return om_run(condition)
 
 /// The focused test types: the file named by the test-focus world param
 /// (`dm-test --focus=`, tools/dq_focused_test.sh) when given, otherwise every

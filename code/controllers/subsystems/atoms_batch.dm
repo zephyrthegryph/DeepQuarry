@@ -55,7 +55,7 @@
 	/// The frame currently initializing atoms, or null (no batch, or its frame is yielding).
 	var/tmp/datum/materialize_batch/active_batch
 	/// Test hook: when set, every chunk boundary yields and calls this instead of stoplag().
-	var/tmp/datum/callback/batch_yield_probe
+	var/tmp/list/batch_yield_probe
 	/// Every frame that opened, in order, when a test is recording (else null).
 	var/list/batch_trace
 
@@ -89,7 +89,7 @@
 /// A chunk boundary: yields to the MC if the tick is spent (never under unit tests, which
 /// have no clients to keep smooth) and keeps the frame isolated while it sleeps.
 /datum/controller/subsystem/atoms/proc/batch_yield_point(datum/materialize_batch/batch)
-	var/datum/callback/probe = batch_yield_probe
+	var/list/probe = batch_yield_probe
 	if(!probe)
 		#ifdef UNIT_TESTS
 		return
@@ -101,7 +101,7 @@
 	active_batch = null
 	clear_tracked_initalize(batch.source)
 	if(probe)
-		probe.Invoke(batch)
+		om_run(probe, batch)
 	else
 		stoplag() // ALLOW(scheduler): map-load batches yield between chunks (sec 3.3a)
 	set_tracked_initalized(INITIALIZATION_INNEW_MAPLOAD, batch.source)

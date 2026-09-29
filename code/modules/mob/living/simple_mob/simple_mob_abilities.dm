@@ -152,7 +152,7 @@
 				playsound(src, "sound/weapons/punchmiss.ogg", 50, 1)
 
 				// throw_at returns FALSE if it will not call it's callback - useful to prevent state jamming
-				if(!throw_at(T, 10, pounce_speed, callback = CALLBACK(src, PROC_REF(pouncefinish), foundpt, foundpm, T)))
+				if(!throw_at(T, 10, pounce_speed, callback = om_callable(src, PROC_REF(pouncefinish), foundpt, foundpm, T)))
 					if(status_flags & LEAPING)
 						status_flags &= ~LEAPING
 						flying = 0

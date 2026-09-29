@@ -271,7 +271,7 @@
 /// materialize() as lane work (object_model_core.md §4.11): its phases run a budgeted slice at
 /// a time and resume by cursor, so the live game keeps its ticks and nothing sleeps. `on_done`
 /// is invoked with the materialization, or null when it failed.
-/datum/generated_station_materializer/proc/materialize_async(datum/generated_station_spec/new_spec, new_z, origin_x = 1, origin_y = 1, datum/flight_plan/flight_plan = null, fast_mode = FALSE, datum/callback/on_done)
+/datum/generated_station_materializer/proc/materialize_async(datum/generated_station_spec/new_spec, new_z, origin_x = 1, origin_y = 1, datum/flight_plan/flight_plan = null, fast_mode = FALSE, list/on_done)
 	var/datum/generated_station_materialization_job/job = new(src, flight_plan, fast_mode)
 	job.execute_async(new_spec, new_z, origin_x, origin_y, on_done)
 

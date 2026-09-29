@@ -53,7 +53,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob, INTERACT_OBSERVER("Inhabit", PROC_RE
 	if(!evaluate_ghost_join(user))
 		return FALSE
 
-	tgui_alert_async(user, "Would you like to become [src]? It is bound to [revivedby].", "Become Mob", list("Yes","No"), CALLBACK(src, PROC_REF(reply_ghost_join)), 20 SECONDS)
+	tgui_alert_async(user, "Would you like to become [src]? It is bound to [revivedby].", "Become Mob", list("Yes","No"), om_callable(src, PROC_REF(reply_ghost_join)), 20 SECONDS)
 	return TRUE
 
 /// A reply to an async alert request was received

@@ -76,7 +76,7 @@
 	EVENT_HANDLER
 	var/list/post_change_callbacks = event.post_change_callbacks
 
-	post_change_callbacks += CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(qdel), src)
+	post_change_callbacks += list(om_callable(null, GLOBAL_PROC_REF(qdel), src))
 
 /// LC-refs: the item this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/search_object/proc/item() as /atom

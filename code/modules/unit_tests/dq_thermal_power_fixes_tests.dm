@@ -85,7 +85,7 @@
 	om_test_ticks(4)
 	TEST_ASSERT_EQUAL(om_traced_count(valve), before, "a change on another network woke the valve")
 	om_untrace(valve)
-	var/failure = om_wake_test(valve, CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(wake_automatic_shutoff_valves), ours))
+	var/failure = om_wake_test(valve, om_callable(null, GLOBAL_PROC_REF(wake_automatic_shutoff_valves), ours))
 	TEST_ASSERT(!failure, failure)
 
 	rel_clear(valve, "network_node1")

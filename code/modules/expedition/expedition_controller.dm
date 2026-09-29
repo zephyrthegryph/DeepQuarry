@@ -206,16 +206,16 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 /datum/world_service/expedition/proc/materialize_site_async(datum/expedition_site/descriptor, datum/flight_plan/plan)
 	if(!descriptor || QDELETED(descriptor) || !plan || QDELETED(plan))
 		return
+	// The descriptor keeps owning its mission while the site generates (the deferred steps hold it
+	// by handle only); the generated site takes it over with own_transfer() in site_materialized().
 	var/datum/expedition_mission/mission = descriptor.mission
-	own_take(descriptor, "mission")
 	plan.generation_progress = 15
 	plan.generation_stage = "Generating terrain"
-	generate_site_async(mission, descriptor.difficulty, descriptor.assigned_shuttle(), descriptor.origin_console(), plan, CALLBACK(src, PROC_REF(site_materialized), descriptor, plan, mission))
+	generate_site_async(mission, descriptor.difficulty, descriptor.assigned_shuttle(), descriptor.origin_console(), plan, om_callable(src, PROC_REF(site_materialized), descriptor, plan, mission))
 
 /// The generated site replaces its descriptor (the destination the crew planned against).
 /datum/world_service/expedition/proc/site_materialized(datum/expedition_site/descriptor, datum/flight_plan/plan, datum/expedition_mission/mission, datum/expedition_site/site)
 	if(!site)
-		own_set(descriptor, "mission", mission)
 		if(plan && !QDELETED(plan))
 			plan.generation_state = FLIGHT_GENERATION_FAILED
 			plan.generation_stage = "Terrain generation failed"
@@ -429,7 +429,7 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 /// generate_site() for the live game: the same attempts, but planning and materializing run as
 /// lane work and timers (object_model_core.md §4.11), so nothing sleeps. `on_done` is invoked
 /// with the site, or null.
-/datum/world_service/expedition/proc/generate_site_async(datum/expedition_mission/mission = null, difficulty = EXP_DIFF_LOW, datum/shuttle/autodock/overmap/assigned_shuttle = null, obj/machinery/computer/shuttle_control/explore/origin_console = null, datum/flight_plan/flight_plan = null, datum/callback/on_done)
+/datum/world_service/expedition/proc/generate_site_async(datum/expedition_mission/mission = null, difficulty = EXP_DIFF_LOW, datum/shuttle/autodock/overmap/assigned_shuttle = null, obj/machinery/computer/shuttle_control/explore/origin_console = null, datum/flight_plan/flight_plan = null, list/on_done)
 	if(mission)
 		difficulty = mission.difficulty
 	var/gen_started = REALTIMEOFDAY
@@ -437,7 +437,7 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 	var/z = acquire_z(needs_wipe)
 	if(!isnum(z) || z < 1)
 		log_world("Expedition: failed to acquire a z-level for a new site.")
-		on_done?.Invoke(null)
+		om_run(on_done, null)
 		return
 	var/list/generation = list(
 		"mission" = mission,
@@ -461,7 +461,7 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 	if(length(needs_wipe))
 		// Pooled levels must expose vacuum beyond the generated hull even if a failed or
 		// interrupted teardown left another substrate behind.
-		wipe_z_async(z, CALLBACK(src, PROC_REF(generation_attempt), generation))
+		wipe_z_async(z, om_callable(src, PROC_REF(generation_attempt), generation))
 		return
 	generation_attempt(generation)
 
@@ -475,7 +475,7 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 	var/attempt_seed = ((generation["seed"] + (generation["attempt"] - 1) * 104729 - 1) % 16000000) + 1
 	generation["attempt_seed"] = attempt_seed
 	var/datum/generated_station_planner/planner = new
-	planner.plan_async(attempt_seed, 160, 160, CALLBACK(src, PROC_REF(generation_planned), generation, planner))
+	planner.plan_async(attempt_seed, 160, 160, om_callable(src, PROC_REF(generation_planned), generation, planner))
 
 /datum/world_service/expedition/proc/generation_planned(list/generation, datum/generated_station_planner/planner, datum/generated_station_spec/station_spec)
 	var/planner_error = planner.error_message
@@ -488,7 +488,7 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 	materializer.strict_room_contracts = FALSE
 	var/origin_x = max(1, round((world.maxx - station_spec.grid_width) / 2))
 	var/origin_y = max(1, round((world.maxy - station_spec.grid_height) / 2))
-	materializer.materialize_async(station_spec, generation["z"], origin_x, origin_y, generation["plan"], FALSE, CALLBACK(src, PROC_REF(generation_materialized), generation, materializer, station_spec))
+	materializer.materialize_async(station_spec, generation["z"], origin_x, origin_y, generation["plan"], FALSE, om_callable(src, PROC_REF(generation_materialized), generation, materializer, station_spec))
 
 /datum/world_service/expedition/proc/generation_materialized(list/generation, datum/generated_station_materializer/materializer, datum/generated_station_spec/station_spec, datum/generated_station_materialization/station_materialization)
 	generation["yields"] += materializer.last_yield_count
@@ -501,15 +501,15 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 		return
 	log_world("Expedition: generated-station materialization attempt [generation["attempt"]] failed on z[generation["z"]] (seed [generation["attempt_seed"]]): [materialization_error || "no result"].")
 	qdel(station_spec)
-	wipe_z_async(generation["z"], CALLBACK(src, PROC_REF(generation_attempt), generation))
+	wipe_z_async(generation["z"], om_callable(src, PROC_REF(generation_attempt), generation))
 
 /datum/world_service/expedition/proc/generation_publish(list/generation, datum/generated_station_spec/station_spec, datum/generated_station_materialization/station_materialization)
 	var/datum/expedition_site/site = publish_generated_site(generation["mission"], generation["difficulty"], generation["shuttle"], generation["console"], generation["plan"], generation["z"], generation["started"], generation["zalloc"], generation["seed"], station_spec, station_materialization, generation["yields"], generation["elapsed"])
-	var/datum/callback/on_done = generation["done"]
-	on_done?.Invoke(site)
+	var/list/on_done = generation["done"]
+	om_run(on_done, site)
 
 /// wipe_z() as lane work: a turf at a time within the scheduler's budget, then `on_done`.
-/datum/world_service/expedition/proc/wipe_z_async(z, datum/callback/on_done)
+/datum/world_service/expedition/proc/wipe_z_async(z, list/on_done)
 	evacuate_mobs_from_z(z)
 	om_task_slices(src, PROC_REF(wipe_z_slice), list(block(locate(1, 1, z), locate(world.maxx, world.maxy, z)), 1), on_done)
 
@@ -597,7 +597,7 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 
 	// Let the mission lay down its objective content.
 	if(mission)
-		own_set(site, "mission", mission)
+		own_move(mission, site, "mission") // from the planned descriptor, which owned it until now
 		mission.populate(site)
 		if(!mission.has_viable_objectives())
 			station_materialization.degradation_events += "mission objective population was incomplete"

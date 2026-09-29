@@ -4652,7 +4652,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_EQUAL(shield_capacitor.machine_step(), PROCESS_KILL, "full shield capacitor remained scheduled")
 	var/obj/machinery/atmospherics/valve/shutoff/shutoff = new(T)
 	TEST_ASSERT(!isnull(shutoff.global_leak_token), "automatic shutoff valve did not subscribe to the global leak key")
-	var/shutoff_wake = om_wake_test(shutoff, CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(wake_automatic_shutoff_valves)))
+	var/shutoff_wake = om_wake_test(shutoff, om_callable(null, GLOBAL_PROC_REF(wake_automatic_shutoff_valves)))
 	TEST_ASSERT(!shutoff_wake, shutoff_wake)
 	var/obj/machinery/sleeper/sleeper = new(T)
 	sleeper.stat = 0

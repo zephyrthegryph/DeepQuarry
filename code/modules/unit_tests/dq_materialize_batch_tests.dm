@@ -35,7 +35,7 @@ GLOBAL_LIST_EMPTY(dq_batch_probe_log)
 
 /// Drops the test hooks; the probes are own()ed and go with the test.
 /datum/unit_test/dq_materialize_batch/proc/reset_hooks()
-	rel_clear(SSatoms, "batch_yield_probe")
+	SSatoms.batch_yield_probe = null
 	SSatoms.batch_trace = null
 	GLOB.dq_batch_probe_log.Cut()
 
@@ -62,7 +62,7 @@ GLOBAL_LIST_EMPTY(dq_batch_probe_log)
 	var/total = MATERIALIZE_CHUNK_SIZE * 2 + 10
 	main_batch = uninitialized_probes(total)
 	SSatoms.batch_trace = list()
-	rel_set(SSatoms, "batch_yield_probe", CALLBACK(src, PROC_REF(on_yield)))
+	SSatoms.batch_yield_probe = om_callable(src, PROC_REF(on_yield))
 	SSatoms.InitializeAtoms(main_batch.Copy())
 	var/datum/materialize_batch/batch = SSatoms.batch_trace[1]
 	reset_hooks()

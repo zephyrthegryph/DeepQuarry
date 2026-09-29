@@ -195,9 +195,8 @@ SUBSYSTEM_DEF(ticker)
 	equip_characters()
 
 
-	for(var/I in round_start_events)
-		var/datum/callback/cb = I
-		cb.InvokeAsync()
+	for(var/list/spec as anything in round_start_events)
+		om_run_async(spec)
 	LAZYCLEARLIST(round_start_events)
 
 	//otherwise round_start_time would be 0 for the signals
@@ -269,11 +268,12 @@ SUBSYSTEM_DEF(ticker)
 		statistic_cycle() // Polls population totals regularly and stores them in an SQL DB -- TLE
 
 //These callbacks will fire after roundstart key transfer
-/datum/controller/subsystem/ticker/proc/OnRoundstart(datum/callback/cb)
+/// `spec` is an om_callable() spec.
+/datum/controller/subsystem/ticker/proc/OnRoundstart(list/spec)
 	if(!HasRoundStarted())
-		LAZYADD(round_start_events, cb)
+		LAZYADD(round_start_events, list(spec))
 	else
-		cb.InvokeAsync()
+		om_run_async(spec)
 
 //These callbacks will fire before roundend report
 /datum/controller/subsystem/ticker/proc/OnRoundend(datum/callback/cb)

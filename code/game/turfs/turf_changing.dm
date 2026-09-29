@@ -89,8 +89,8 @@
 	qdel(src)
 
 	var/turf/W = new N( locate(src.x, src.y, src.z) )
-	for(var/datum/callback/post_change as anything in post_change_callbacks)
-		post_change.InvokeAsync(W)
+	for(var/list/post_change as anything in post_change_callbacks)
+		om_run_async(post_change, W)
 	var/turf/open/new_open_turf = W
 	if(old_air && istype(new_open_turf) && new_open_turf.air)
 		new_open_turf.air.copy_from(old_air)

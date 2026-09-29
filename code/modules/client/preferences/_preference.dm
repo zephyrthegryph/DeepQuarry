@@ -479,10 +479,10 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 
 // atomic multi-pref update. Callers (e.g., editor handle_action procs, random
 // character button) wrap a series of update_preference calls in this so disk writes
-// coalesce. Pass a CALLBACK(src, PROC_REF(my_proc), arg1, arg2, ...).
-/datum/preferences/proc/update_many(datum/callback/cb)
+// coalesce. Pass an om_callable(src, PROC_REF(my_proc), arg1, arg2, ...).
+/datum/preferences/proc/update_many(list/spec)
 	begin_update_batch()
-	cb.Invoke()
+	om_run(spec)
 	end_update_batch()
 
 /datum/preferences/proc/update_preference_by_type(preference_type, preference_value)

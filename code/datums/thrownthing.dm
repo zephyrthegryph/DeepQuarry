@@ -58,7 +58,7 @@
 	///How many tiles that need to be moved in order to travel to the target.
 	var/diagonal_error
 	///If a thrown thing has a callback, it can be invoked here within thrownthing. Owned: it goes with the throw.
-	var/datum/callback/callback
+	var/list/callback // om_callable() spec run when the throw lands
 	///Mainly exists for things that would freeze a thrown object in place, like a timestop'd tile. Or a Tractor Beam.
 	var/paused = FALSE
 	///How long an object has been paused for, to be added to the travel time.
@@ -85,7 +85,7 @@
 	src.diagonals_first = diagonals_first
 	src.force = force
 	src.gentle = gentle
-	own_set(src, "callback", callback)
+	src.callback = callback
 	src.target_zone = target_zone
 	if(!QDELETED(thrower) && ismob(thrower))
 		src.target_zone = thrower.zone_sel ? thrower.zone_sel.selecting : null
@@ -217,7 +217,7 @@
 		thrownthing.throw_impact(t_target, src)
 
 	if (callback)
-		callback.Invoke()
+		om_run(callback)
 
 	if (!QDELETED(thrownthing))
 		thrownthing.fall()

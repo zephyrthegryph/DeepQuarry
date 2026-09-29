@@ -32,7 +32,7 @@
  * asleep, and after `change` runs it must wake within `ticks`. Returns null on success or
  * the failure. Settles for `ticks` first (a Band watch reports its starting band).
  */
-/proc/om_world_wake_test(datum/D, datum/callback/change, ticks = 4)
+/proc/om_world_wake_test(datum/D, list/change, ticks = 4)
 	om_world_trace(D)
 	om_test_ticks(ticks)
 	var/before = om_world_traced_wakes(D)
@@ -40,7 +40,7 @@
 	if(om_world_traced_wakes(D) != before)
 		om_world_untrace(D)
 		return "[D.type] woke while its input held steady"
-	change.Invoke()
+	om_run(change)
 	om_test_ticks(ticks)
 	var/after = om_world_traced_wakes(D)
 	om_world_untrace(D)
@@ -347,12 +347,12 @@
 /datum/unit_test/dq_world_wake_test_helper/Run()
 	world_test_probe_set(60, 100, 293)
 	var/datum/world_test_gauge/gauge = allocate(/datum/world_test_gauge, 60)
-	var/failure = om_world_wake_test(gauge, CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(world_test_probe_set), 60, 150, 293))
+	var/failure = om_world_wake_test(gauge, om_callable(null, GLOBAL_PROC_REF(world_test_probe_set), 60, 150, 293))
 	TEST_ASSERT(!failure, failure)
 	// And the helper catches an owner that misses its input.
 	world_test_probe_set(61, 100, 293)
 	var/datum/world_test_gauge/deaf = allocate(/datum/world_test_gauge, 61)
-	failure = om_world_wake_test(deaf, CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(world_test_probe_set), 62, 150, 293))
+	failure = om_world_wake_test(deaf, om_callable(null, GLOBAL_PROC_REF(world_test_probe_set), 62, 150, 293))
 	TEST_ASSERT(findtext(failure, "did not wake"), "the helper passed an owner that missed its input")
 
 #undef WORLD_PROBE

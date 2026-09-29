@@ -6,15 +6,15 @@ GLOBAL_DATUM_INIT(runechat_service, /datum/world_service/runechat, new)
 	lane = /datum/om/behaviour/world/runechat
 	on_demand = TRUE
 
-	var/list/datum/callback/message_queue = list()
+	var/list/message_queue = list() // om_callable() specs
 
 /datum/world_service/runechat/has_work()
 	return length(message_queue)
 
 /datum/world_service/runechat/service_step(resumed)
 	while(length(message_queue))
-		var/datum/callback/queued_message = message_queue[length(message_queue)]
-		queued_message.Invoke()
+		var/list/queued_message = message_queue[length(message_queue)]
+		om_run(queued_message)
 		message_queue.len--
 		if(TICK_CHECK)
 			return FALSE

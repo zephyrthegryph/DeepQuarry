@@ -80,7 +80,7 @@
 /// plan() for the live game: the Rust job is polled on a timer and its result read back as lane
 /// work (object_model_core.md §4.11), so nothing sleeps. `on_done` is invoked with the spec, or
 /// null (error_message says why).
-/datum/generated_station_planner/proc/plan_async(seed, width = 160, height = 160, datum/callback/on_done)
+/datum/generated_station_planner/proc/plan_async(seed, width = 160, height = 160, list/on_done)
 	error_message = null
 	seed = generated_station_plan_seed(seed)
 	var/request_json = plan_request(seed, width, height)
@@ -148,8 +148,8 @@
 
 /datum/generated_station_planner/proc/plan_async_end(list/state, datum/generated_station_spec/spec)
 	state["spec"] = spec
-	var/datum/callback/on_done = state["done"]
-	on_done?.Invoke(spec)
+	var/list/on_done = state["done"]
+	om_run(on_done, spec)
 
 /// The plan's array sections, read a page at a time by plan_fetch_slice().
 /proc/generated_station_plan_sections()

@@ -1294,7 +1294,7 @@
 /datum/om/event/tgui_window_visible/New(client)
 	src.client = client
 
-/// From base of turf/ChangeTurf(): (path, list/new_baseturfs, flags, list/post_change_callbacks). `post_change_callbacks` is a list that signal handlers can mutate to append `/datum/callback` objects. They will be called with the new turf after the turf has changed.
+/// From base of turf/ChangeTurf(): (path, list/new_baseturfs, flags, list/post_change_callbacks). `post_change_callbacks` is a list that handlers append om_callable() specs to (as list(spec)). They will be called with the new turf after the turf has changed.
 /datum/om/event/turf_change
 	sync = TRUE
 	var/path

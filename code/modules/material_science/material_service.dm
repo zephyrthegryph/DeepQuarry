@@ -283,7 +283,7 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	om_unhook(source, /datum/om/event/turf_change, src)
 	rel_clear(src, "watched_turf")
 	watches_dirty = TRUE
-	post_change_callbacks += CALLBACK(src, PROC_REF(environment_changed))
+	post_change_callbacks += list(om_callable(src, PROC_REF(environment_changed)))
 
 /datum/material_service/proc/environment_changed(topology_changed = TRUE)
 	// Sleeping means the previous environment had no continuing effect. Do not

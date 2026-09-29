@@ -302,7 +302,7 @@ GLOBAL_VAR(restart_counter)
 	if(unit_test_is_focused_run())
 		start_delay = 2 SECONDS
 #endif
-	SSticker.OnRoundstart(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(om_after), null, start_delay, after_start))
+	SSticker.OnRoundstart(om_callable(null, GLOBAL_PROC_REF(om_after), null, start_delay, after_start))
 
 /// om_after() target: ends the round now (a test-harness run with no tests compiled in).
 /proc/force_end_round()
@@ -553,7 +553,7 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 		log_world("Test run failed!\n[fail_reasons.Join("\n")]")
 	// Shut down once Reboot() has returned (the MC is already down, so this is a world tick
 	// callback, not a timer): deleting the world from inside Reboot() leaves byond in a bad way.
-	world_next_tick(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(world_finish_test_shutdown)))
+	world_next_tick(om_callable(null, GLOBAL_PROC_REF(world_finish_test_shutdown)))
 
 /proc/world_finish_test_shutdown()
 	qdel(world) //shut it down
@@ -562,16 +562,17 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 /// whose follow-up must run after they return, including after the MC has shut down.
 GLOBAL_LIST_EMPTY(world_next_tick_callbacks)
 
-/proc/world_next_tick(datum/callback/C)
-	GLOB.world_next_tick_callbacks += C
+/// `spec` is an om_callable() spec.
+/proc/world_next_tick(list/spec)
+	GLOB.world_next_tick_callbacks += list(spec)
 
 /world/Tick()
 	if(!GLOB || !length(GLOB.world_next_tick_callbacks))
 		return
 	var/list/due = GLOB.world_next_tick_callbacks
 	GLOB.world_next_tick_callbacks = list()
-	for(var/datum/callback/C as anything in due)
-		C.InvokeAsync()
+	for(var/list/spec as anything in due)
+		om_run_async(spec)
 
 /world/Reboot(reason = 0, fast_track = FALSE)
 	if (reason || fast_track) //special reboot, do none of the normal stuff

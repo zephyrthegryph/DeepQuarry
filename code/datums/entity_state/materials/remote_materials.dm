@@ -55,7 +55,7 @@ handles linking back and forth.
 	om_hook(owner, /datum/om/event/before/attackby, src, PROC_REF(on_item_insert))
 
 	if(mapload) // wait for silo to initialize during mapload
-		SSticker.OnRoundstart(CALLBACK(src, PROC_REF(_PrepareStorage), connect_to_silo))
+		SSticker.OnRoundstart(om_callable(src, PROC_REF(_PrepareStorage), connect_to_silo))
 	else //directly register in round
 		_PrepareStorage(connect_to_silo)
 

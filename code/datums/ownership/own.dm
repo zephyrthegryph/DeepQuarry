@@ -242,6 +242,24 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 		qdel(value)
 	return adopted
 
+/// Moves `value` into dest.dest_var from wherever it is owned now (own_transfer() from its current
+/// owner), or adopts it when nothing owns it. For a hand-off whose source slot the caller doesn't
+/// name (an expedition mission passed through a generation job, a gift's contents).
+/proc/own_move(datum/value, datum/dest, dest_var, dest_key = null)
+	if(!isdatum(value))
+		return null
+	var/datum/current = owner_of(value)
+	if(current)
+		if(current == dest && value.own_slot == dest_var)
+			return value
+		var/list/cur = current.vars[value.own_slot]
+		return own_transfer(current, value.own_slot, dest, dest_var, islist(cur) ? value : null, dest_key)
+	if(!isnull(dest_key))
+		return own_put(dest, dest_var, dest_key, value)
+	if(islist(dest.vars[dest_var]))
+		return own_add(dest, dest_var, value)
+	return own_set(dest, dest_var, value)
+
 /// Detaches everything holder.var_name owns and returns it as a list, all unowned (the caller
 /// adopts or destroys each). The var is emptied.
 /proc/own_take_all(datum/holder, var_name)

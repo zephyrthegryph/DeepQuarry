@@ -363,7 +363,7 @@ GLOBAL_VAR_INIT(timed_actions_instant, FALSE)
  * `slice_proc`, a proc on E called as (cursor), does one bounded slice and returns the next
  * cursor (lists pass as they are), or null when the work is done. Slices run back to back while the OM scheduler's budget
  * lasts; the rest resumes by its cursor on a later pass, on E's clock. `on_done`, a proc on E or
- * a /datum/callback, runs after the last slice. Before the live scheduler runs (world init), or with `now`, every
+ * an om_callable() spec, runs after the last slice. Before the live scheduler runs (world init), or with `now`, every
  * slice runs at once. Deleting E drops the rest.
  */
 /proc/om_task_slices(datum/E, slice_proc, cursor, on_done, now = FALSE)
@@ -373,7 +373,7 @@ GLOBAL_VAR_INIT(timed_actions_instant, FALSE)
 		if(!QDELETED(E))
 			_om_slices_done(E, on_done)
 		return
-	// on_done travels in a list: a callback passed to om_after() on its own is held weakly.
+	// on_done travels boxed in a list, so a spec (itself a list) reaches _om_slices_done() whole.
 	om_after(E, 0, /proc/_om_slices_run, E, slice_proc, cursor, list(on_done))
 
 /proc/_om_slices_run(datum/E, slice_proc, cursor, list/done_box)
@@ -386,10 +386,9 @@ GLOBAL_VAR_INIT(timed_actions_instant, FALSE)
 		return
 	_om_slices_done(E, done_box[1])
 
-/// `on_done`: a proc on E, or a /datum/callback.
+/// `on_done`: a proc on E, or an om_callable() spec.
 /proc/_om_slices_done(datum/E, on_done)
-	if(istype(on_done, /datum/callback))
-		var/datum/callback/C = on_done
-		C.Invoke()
+	if(islist(on_done))
+		om_run(on_done)
 	else if(on_done)
 		call(E, on_done)()

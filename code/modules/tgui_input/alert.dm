@@ -148,7 +148,7 @@
  * * callback - The callback to be invoked when a choice is made.
  * * timeout - The timeout of the alert, after which the modal will close and qdel itself. Disabled by default, can be set to seconds otherwise.
  */
-/proc/tgui_alert_async(mob/user, message = "", title, list/buttons = list("Ok"), datum/callback/callback, timeout = 0, autofocus = TRUE, ui_state = GLOB.tgui_always_state)
+/proc/tgui_alert_async(mob/user, message = "", title, list/buttons = list("Ok"), list/callback, timeout = 0, autofocus = TRUE, ui_state = GLOB.tgui_always_state)
 	if (istext(buttons))
 		stack_trace("tgui_alert() received text for buttons instead of list")
 		return
@@ -176,18 +176,19 @@
  * An asynchronous version of tgui_modal to be used with callbacks instead of waiting on user responses.
  */
 /datum/tgui_alert/async
-	/// The callback to be invoked by the tgui_modal upon having a choice made.
-	var/datum/callback/callback
+	/// The om_callable() spec run with the choice once one is made.
+	var/list/callback
 
 /datum/tgui_alert/async/New(mob/user, message, title, list/buttons, callback, timeout, autofocus, ui_state)
 	..(user, message, title, buttons, timeout, autofocus, ui_state)
-	own_set(src, "callback", callback)
+	src.callback = callback
 
 
 /datum/tgui_alert/async/set_choice(choice)
 	. = ..()
 	if(!isnull(src.choice))
-		callback?.InvokeAsync(src.choice)
+		if(callback)
+			om_run_async(callback, src.choice)
 
 /datum/tgui_alert/async/wait()
 	return
