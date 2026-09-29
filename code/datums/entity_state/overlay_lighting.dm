@@ -233,11 +233,10 @@
 	if(.)
 		var/atom/movable/old_parent_attached_to = .
 		om_unhook(old_parent_attached_to, list(/datum/om/event/qdeleting, /datum/om/event/moved), src)
-		// Hooks are refused while either end is being destroyed (detach() runs in our own teardown).
-		if(old_parent_attached_to == current_holder() && !QDELETED(old_parent_attached_to) && !QDELETED(src))
+		if(old_parent_attached_to == current_holder())
 			om_hook(old_parent_attached_to, /datum/om/event/qdeleting, src, PROC_REF(on_holder_qdel))
 			om_hook(old_parent_attached_to, /datum/om/event/moved, src, PROC_REF(on_holder_moved))
-	if(parent_attached_to() && !QDELETED(src))
+	if(parent_attached_to())
 		if(parent_attached_to() == current_holder())
 			om_unhook(current_holder(), list(/datum/om/event/qdeleting, /datum/om/event/moved), src)
 		om_hook(parent_attached_to(), /datum/om/event/qdeleting, src, PROC_REF(on_parent_attached_to_qdel))
@@ -249,9 +248,7 @@
 	if(new_holder == current_holder())
 		return
 	if(istype(new_holder,/obj/structure/closet))
-		new_holder = null
-	if(QDELETED(new_holder) || QDELETED(src))
-		new_holder = null // a dying holder refuses hooks, and a dying light holds nothing // Forbid crates from holding lights, this only applies to contents 'holding', when you put a flashlight into a crate for example. Not crates with lights... Not that there are any.
+		new_holder = null // Forbid crates from holding lights, this only applies to contents 'holding', when you put a flashlight into a crate for example. Not crates with lights... Not that there are any.
 	if(current_holder())
 		if(current_holder() != owner && current_holder() != parent_attached_to())
 			om_unhook(current_holder(), list(/datum/om/event/qdeleting, /datum/om/event/moved), src)
@@ -279,9 +276,7 @@
 		set_holder(movable_parent)
 		return
 	var/atom/inside = movable_parent.loc //Parent's loc
-	// A container being destroyed can't hold the light: its qdeleting hook (parent_attached_to)
-	// re-checks the holder while the parent still sits inside it.
-	if(isnull(inside) || QDELETED(inside))
+	if(isnull(inside))
 		set_holder(null)
 		return
 	if(isturf(inside.loc))

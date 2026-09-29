@@ -20,6 +20,9 @@
 	  * a hard del by the GC subsystme, or to be autocollected (if it has no references)
 	  */
 	var/tmp/gc_destroyed
+	/// The LIFECYCLE_PHASE_* its destroy transaction has reached (0: alive). Read through
+	/// LIFECYCLE_DYING() / OWN_GUARD(); written only by destroy_transaction_phases().
+	var/tmp/destroy_phase = 0
 
 	/// Open uis owned by this datum
 	/// Lazy, since this case is semi rare

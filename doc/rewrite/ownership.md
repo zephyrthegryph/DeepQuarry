@@ -25,8 +25,8 @@ proto.dm, shared.dm, registry_types.dm, clone.dm, audit.dm, table.dm), the rich-
 
 ### 1.1 Invariants (checked in every build)
 
-- **O1 One owner.** An owned entity records its owner on itself: `own_holder_ref` (the owner's ref
-  text, weak, so owner and child never form a reference cycle) and `own_slot` (the var). Read with
+- **O1 One owner.** An owned entity records its owner on itself: `own_holder_ref` (the owner's weak key,
+  `own_key()`, so owner and child never form a reference cycle) and `own_slot` (the var). Read with
   `owner_of(D)` / `owner_slot_of(D)`; both re-check that the owner still names D. Movables in
   contents are owned by their ledger slot (`containment.md`); an `OWN(..., OWN_CONTAINED)` var
   names one of them.
@@ -40,8 +40,20 @@ proto.dm, shared.dm, registry_types.dm, clone.dm, audit.dm, table.dm), the rich-
   slipped out (a raw drop, an owner that died without disposing of it).
 - **O5 Teardown.** Phase 2: a dying owned entity leaves its owner's var. Phase 3: `OWN_SPILL`
   movables drop out. Phase 4: every owned var is disposed of by policy, then relation views clear
-  on both ends. From phase 0 the dying entity refuses new timers, hooks, tasks and relation links
-  (`OWN: refused ...`).
+  on both ends. The phases are one declared sequence, `GLOB.destroy_step_sequence`
+  (`DESTROY_STEP_*`, `code/datums/lifecycle/transaction.dm`); each step sets the datum's
+  `destroy_phase`, and the contents release check is its own step right after the contents steps.
+- **O5a One teardown guard.** Every accessor that gives an entity something new (`own_set`,
+  `own_add`, `own_put`, `own_transfer`, `own_move`, `rel_set`, `rel_add`, `om_link`, `proto_set`,
+  `proto_private`, `shared_set`, `om_after` and `OWN_TIMER` slots, `om_hook`, `om_task`, and the
+  ledger's contents adoption) asks `own_guard()` (`code/datums/ownership/guard.dm`) and nothing
+  else: when the holder or the target is at or past `LIFECYCLE_REFUSE_PHASE` (or marked for
+  deletion) the write is refused. Inside a destroy transaction the refusal is silent (a teardown
+  cascade: a dying holder's `on_destroy`, a spilled item's `Moved()`, a light re-reading its
+  holder); outside one it is a stack trace (`OWN: refused ...`). Releases are never refused. Call
+  sites carry no `QDELETED()` guards of their own for this. Contents adoption refuses a dying
+  holder only from its links phase, since its own contents step materializes latent entries
+  into its slots. `ownership_teardown_guard` tries every accessor on a dying holder and target.
 - **O6 Phase 8.** An owned var that holds a value again after phase 4 was re-set during teardown:
   phase 8 deletes the value and reports it. Nothing is nulled silently.
 
@@ -109,8 +121,9 @@ dropped. A mob stays real (the serializer refuses mobs) and clones as a fresh in
   its own OM record (the `rec.owner` cycle kept it alive with live timers or hooks). The audit tears
   the record down.
 
-Test builds keep an index of every stamped entity and every rec, audit every 5 minutes and at the
-end of the run (a finding fails the run). Servers audit on demand (admin verb "Ownership Audit").
+The audit walks every live datum (no index: an index cost a weak key per entity at boot). Test
+builds audit every 5 minutes and at the end of the run (a finding fails the run). Servers audit on
+demand (admin verb "Ownership Audit").
 
 ### 1.6 Owned timers (`code/datums/om/timer.dm`)
 
@@ -167,7 +180,15 @@ seeds, contagions (cleanables, infected rooms), network gas, robot and AI sprite
 ### 4.1 Light edges: relation views (`views.dm`)
 
 A view var holds a direct reference (reads are free). The target keeps a lazy weak reverse index,
-`om_refs_in` (source ref text → var names). When either end dies the framework clears its side.
+`om_refs_in` (an alist: source key → var names). When either end dies the framework clears its side.
+
+Weak keys (`own_key()` / `own_locate()` in `own.dm`) name entities in every weak index: owner
+stamps, reverse indexes, keyed links, OM handle slots. A key is the ref spelled in decimal behind a
+fast-varying prefix, cached on the datum; a turf's is its position. Never keep raw ref text alive
+in bulk: BYOND 516's string table degrades on many strings sharing a prefix, and one retained ref
+per entity made boot quadratic. For the same reason big indexes are `alist`s (a plain list inserts
+a new key in linear time), `rel_names()` answers "does this list view name X" from the index, and
+an index prunes stale entries at each doubling rather than every 48 additions.
 
 ```dm
 REL_PAIR(/obj/machinery/sleeper, console, sleeper)             // two-sided, single on this end
@@ -275,7 +296,7 @@ A site kept on purpose carries `// ALLOW(ownership): <reason>`.
 |---|---|
 | raw writes, contradictions, kinds, matrix, callbacks, handles | `ownership_lint.py` |
 | `GLOB.x[key] = src` self-registration | `registry_lint.py` |
-| double ownership, orphaned replacement, phase 8 re-sets, refused work on dying entities | runtime, every build |
+| double ownership, orphaned replacement, phase 8 re-sets, refused work on dying entities (`own_guard()`) | runtime, every build |
 | one kind per var, policy procs, matrix | `own_validate_table()` (first instance of a type), `own_validate_boot()` |
 | orphans and rec cycles | `own_audit()` (test builds, admin verb) |
 | DEF freeze | test builds |

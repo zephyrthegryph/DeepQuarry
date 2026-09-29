@@ -435,7 +435,7 @@ export function formatComparison(rows: Comparison[], onlyChanges = false): strin
     Number.isFinite(r.change_pct) ? `${r.change_pct >= 0 ? '+' : ''}${r.change_pct.toFixed(1)}%` : '-',
     Number.isFinite(r.noise_pct) ? `±${r.noise_pct.toFixed(1)}%` : '-',
     r.verdict === 'not_comparable' ? 'not comparable (load)' : r.verdict,
-  ]);
+  ].map((cell) => String(cell ?? '-'))); // a metric missing from one side (class, verdict) prints '-'
   const widths = header.map((h, i) => Math.max(h.length, ...body.map((row) => row[i].length)));
   const line = (cells: string[]) => cells.map((c, i) => c.padEnd(widths[i])).join('  ');
   return [line(header), line(widths.map((w) => '-'.repeat(w))), ...body.map(line)].join('\n');

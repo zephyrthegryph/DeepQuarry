@@ -10,12 +10,14 @@
 /// TRUE when holder.var_name holds a private copy the holder owns.
 /proc/proto_is_private(datum/holder, var_name)
 	var/datum/value = holder.vars[var_name]
-	return isdatum(value) && value.own_holder_ref == ref(holder) && value.own_slot == var_name
+	return isdatum(value) && value.own_holder_ref == own_key(holder) && value.own_slot == var_name
 
 /// holder.var_name as a private copy the holder may mutate: made (and owned) on first call.
 /proc/proto_private(datum/holder, var_name)
 	var/datum/value = holder.vars[var_name]
 	if(!isdatum(value) || proto_is_private(holder, var_name))
+		return value
+	if(!own_guard(holder, null, "proto_private([var_name])")) // the one teardown guard (guard.dm)
 		return value
 	var/datum/copy = value.proto_copy()
 	if(!isdatum(copy))
@@ -32,6 +34,8 @@
 	var/datum/old = holder.vars[var_name]
 	if(old == value)
 		return value
+	if(!isnull(value) && !own_guard(holder, value, "proto_set([var_name])")) // the one teardown guard (guard.dm)
+		return null
 	var/old_private = proto_is_private(holder, var_name)
 	if(isdatum(value) && !is_registered(value))
 		if(!own_stamp(value, holder, var_name))

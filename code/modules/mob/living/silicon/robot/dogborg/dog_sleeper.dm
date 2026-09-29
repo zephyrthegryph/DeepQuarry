@@ -103,7 +103,7 @@ REL_LIST(/obj/item/dogborg/sleeper, items_preserved)
 		playsound(src, gulpsound, vol = 100, vary = 1, falloff = 0.1, preference = /datum/preference/toggle/eating_noises)
 
 /obj/item/dogborg/sleeper/afterattack(atom/movable/target, mob/living/silicon/user, proximity_flag, click_parameters)
-	refresh_hound()
+	rel_set(src, "hound", loc)
 	if(!istype(target))
 		return
 	if(!proximity_flag)
@@ -234,28 +234,21 @@ REL_LIST(/obj/item/dogborg/sleeper, items_preserved)
 		return TRUE
 	return FALSE
 
-/// Points `hound` at whatever holds us now. On the way out (on_destroy) we, or the module
-/// holding us, may be dying: then nothing new is linked (a dying entity takes no links).
-/obj/item/dogborg/sleeper/proc/refresh_hound()
-	if(QDELETED(src) || QDELETED(loc))
-		return
-	rel_set(src, "hound", loc)
-
 /obj/item/dogborg/sleeper/proc/go_out()
-	refresh_hound()
+	rel_set(src, "hound", src.loc)
 	rel_clear(src, "items_preserved")
 	cleaning = 0
 	for(var/list/dlist in deliverylists)
 		dlist.Cut()
 	if(contents_count(src) > 0)
-		hound?.visible_message(span_warning("[hound.name] empties out their contents via their [eject_port] port."), span_notice("You empty your contents via your [eject_port] port."))
+		hound.visible_message(span_warning("[hound.name] empties out their contents via their [eject_port] port."), span_notice("You empty your contents via your [eject_port] port."))
 		for(var/atom/movable/content in contents)
 			content.forceMove(get_turf(src))
 		play_sfx(src, SFX_EFFECTS_SPLAT)
 	update_patient()
 
 /obj/item/dogborg/sleeper/proc/vore_ingest_all()
-	refresh_hound()
+	rel_set(src, "hound", src.loc)
 	if (!istype(hound) || contents_count(src) <= 0)
 		return
 	if (!hound.vore_selected)
@@ -472,7 +465,7 @@ UI_ACT_PROC(/obj/item/dogborg/sleeper, ui_act_inject)
 
 //For if the dogborg's existing patient uh, doesn't make it.
 /obj/item/dogborg/sleeper/proc/update_patient()
-	refresh_hound()
+	rel_set(src, "hound", src.loc)
 	if(!istype(hound,/mob/living/silicon/robot))
 		return
 

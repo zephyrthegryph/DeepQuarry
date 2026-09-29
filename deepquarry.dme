@@ -790,6 +790,7 @@
 #include "code\datums\om\world_lanes.dm"
 #include "code\datums\ownership\audit.dm"
 #include "code\datums\ownership\clone.dm"
+#include "code\datums\ownership\guard.dm"
 #include "code\datums\ownership\own.dm"
 #include "code\datums\ownership\proto.dm"
 #include "code\datums\ownership\views.dm"

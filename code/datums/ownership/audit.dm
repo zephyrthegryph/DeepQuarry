@@ -8,49 +8,64 @@
 //     still has it. The audit tears the record down (timers, hooks, tasks) and reports it.
 //
 // Test builds audit every OWN_AUDIT_INTERVAL and fail the run on a finding; servers audit on
-// demand ("Ownership Audit" debug verb).
+// demand ("Ownership Audit" debug verb). The audit walks every live datum (a native loop, well
+// under a second on a full map) rather than keeping an index: a per-stamp and per-rec index cost
+// a weak key per entity at boot, most of Atoms init on Southern Cross.
 
 #define OWN_AUDIT_INTERVAL (5 MINUTES)
 
-#ifdef UNIT_TESTS
-/// Test builds: every rec's ref text (om_rec_of() adds, the rec's teardown removes).
-GLOBAL_LIST_EMPTY(om_rec_audit_index)
-#endif
+/// Test builds: names the type that stamped D when the key now resolves to another type (a
+/// recycled key: the real owner is gone and an unrelated datum reuses its ref).
+/proc/own_audit_owner_note(datum/D, datum/H)
+	#ifdef UNIT_TESTS
+	if(D.own_holder_type && D.own_holder_type != H?.type)
+		return " (stamped by [D.own_holder_type]; its key was recycled)"
+	#endif
+	return ""
 
 /// Runs the audit. Returns the report lines (each also reported through OWN_REPORT unless `quiet`).
 /proc/own_audit(quiet = FALSE)
 	. = list()
-	#ifdef UNIT_TESTS
-	for(var/ref_text in GLOB.own_audit_index.Copy())
-		var/datum/D = locate(ref_text)
-		if(!isdatum(D) || D.own_holder_ref == null)
-			GLOB.own_audit_index -= ref_text
+	// Collected first (in a helper, so no loop variable of this frame holds a datum while
+	// own_audit_rec_dropped() counts references): the checks below unstamp and tear down.
+	var/list/found = own_audit_collect()
+	var/list/stamped = found[1]
+	var/list/recs = found[2]
+	found = null
+	for(var/datum/D as anything in stamped)
+		if(D.own_holder_ref == null || QDELETED(D))
 			continue
-		if(QDELETED(D))
-			continue
-		var/datum/H = locate(D.own_holder_ref)
+		var/datum/H = own_locate(D.own_holder_ref)
 		if(!isdatum(H))
-			. += "orphan: [D.type] names an owner that no longer exists ([D.own_slot])"
+			. += "orphan: [D.type] names an owner that no longer exists ([D.own_slot])[own_audit_owner_note(D, null)]"
 			own_unstamp(D)
 		else if(QDELETED(H))
-			. += "orphan: [D.type] is still owned by [H.type].[D.own_slot], which was destroyed"
+			. += "orphan: [D.type] is still owned by [H.type].[D.own_slot], which was destroyed[own_audit_owner_note(D, H)]"
 		else if(!own_names(H, D.own_slot, D))
-			. += "orphan: [D.type] is stamped as owned by [H.type].[D.own_slot], which no longer holds it (overwritten or dropped without own_set/own_take)"
+			. += "orphan: [D.type] is stamped as owned by [H.type].[D.own_slot], which no longer holds it (overwritten or dropped without own_set/own_take)[own_audit_owner_note(D, H)]"
 			own_unstamp(D)
-	for(var/ref_text in GLOB.om_rec_audit_index.Copy())
-		var/datum/om/rec/rec = locate(ref_text)
-		if(!istype(rec) || rec.torn_down || !rec.owner)
-			GLOB.om_rec_audit_index -= ref_text
+	stamped = null
+	for(var/datum/om/rec/rec as anything in recs)
+		if(rec.torn_down || !rec.owner)
 			continue
 		if(own_audit_rec_dropped(rec))
 			var/owner_type = rec.owner.type
 			. += "dropped with a rec: [owner_type] is referenced only by its own OM record ([length(rec.timers) / OM_TIMER_STRIDE] timer\s); tearing it down"
 			om_teardown_rest(rec.owner)
-			GLOB.om_rec_audit_index -= ref_text
-	#endif
 	if(!quiet)
 		for(var/line in .)
 			OWN_REPORT("AUDIT: [line]")
+
+/// Every live datum stamped as owned, and every OM record: list(stamped, recs).
+/proc/own_audit_collect()
+	var/list/stamped = list()
+	var/list/recs = list()
+	for(var/datum/thing) // every live datum
+		if(thing.own_holder_ref)
+			stamped += thing
+		else if(istype(thing, /datum/om/rec))
+			recs += thing
+	return list(stamped, recs)
 
 /// TRUE when rec's owner is referenced by nothing but its own record: unowned, not in the world,
 /// not a registered singleton, and refcount() accounted for by the record's internal references.
@@ -115,9 +130,9 @@ GLOBAL_LIST_EMPTY(om_rec_audit_index)
 	log_world("OWN AUDIT: [length(lines)] finding\s")
 	om_after(om_global_owner(), OWN_AUDIT_INTERVAL, GLOBAL_PROC_REF(own_audit_periodic))
 
-ADMIN_VERB(ownership_audit, R_DEBUG, "Ownership Audit", "Runs the ownership orphan audit now (the full index is kept in test builds only).", ADMIN_CATEGORY_DEBUG_MISC)
+ADMIN_VERB(ownership_audit, R_DEBUG, "Ownership Audit", "Runs the ownership orphan audit now.", ADMIN_CATEGORY_DEBUG_MISC)
 	var/list/lines = own_audit(quiet = TRUE)
-	to_chat(user, span_notice("Ownership audit: [length(lines)] finding\s[length(lines) ? "" : " (the index is only kept in test builds)"]."))
+	to_chat(user, span_notice("Ownership audit: [length(lines)] finding\s."))
 	for(var/line in lines)
 		to_chat(user, line)
 	log_admin("[key_name(user)] ran the ownership audit: [length(lines)] finding\s.")

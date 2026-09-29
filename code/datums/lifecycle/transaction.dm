@@ -22,6 +22,7 @@ GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
 /proc/destroy_transaction(datum/D, force, datum/qdel_item/trash)
 	var/hint = QDEL_HINT_QUEUE
 	var/aborted = FALSE
+	GLOB.destroy_transaction_depth++
 	try
 		hint = destroy_transaction_phases(D, force, trash)
 	catch(var/exception/e)
@@ -34,6 +35,7 @@ GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
 		dq_report_caught(e, "destroy transaction of [D?.type]")
 		if(D)
 			dq_lifecycle_finish_aborted(D)
+	GLOB.destroy_transaction_depth--
 	if(D && ismovable(D) && hint != QDEL_HINT_LETMELIVE)
 		dq_lifecycle_release_loc(D, aborted)
 	return hint
@@ -79,7 +81,36 @@ GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
 	if(AM.loc)
 		AM.loc = null // ALLOW(containment): last-resort nullspace after moveToNullspace() threw
 
-/// The phases of destroy_transaction(), in order.
+/// The destroy transaction's steps, in order: the one declared sequence (DESTROY_STEP_* in
+/// code/__defines/lifecycle.dm). destroy_transaction_phases() runs exactly this list; a step's
+/// place in it is the only thing that decides when it runs (dq_destroy_sequence_tests.dm checks
+/// the invariants: phases never go backwards except the effects' second half, and the contents
+/// release check sits right after the contents steps, before links dispose of the ledger).
+GLOBAL_LIST_INIT(destroy_step_sequence, list(
+	DESTROY_STEP_GUARD, // phase 0: QDELETED(D) from here; the teardown guard refuses new work
+	DESTROY_STEP_LEAVE_REGISTRIES, // non-atoms leave registries (atoms do it in dematerialize)
+	DESTROY_STEP_MIND, // phase 0.5: minds, pre-order, whole tree (movables)
+	DESTROY_STEP_UNBIND, // phase 1: Rust bindings, topology, heat bodies; before dematerialize
+	DESTROY_STEP_DEMATERIALIZE, // phase 2: index leaves; an owned entity leaves its owner's var
+	DESTROY_STEP_CONTENTS_RESOLVE, // phase 3: every slot's declared destroy policy, post-order
+	DESTROY_STEP_CONTENTS_SPILL, // phase 3: OWN_SPILL movables drop out
+	DESTROY_STEP_CONTENTS_CHECK_RELEASED, // phase 3: the check that it did, while the ledger exists
+	DESTROY_STEP_LINKS, // phase 4: prerelease, on_destroy, owned values by policy, relations
+	DESTROY_STEP_TEARDOWN, // phase 5: periodic work, screens, OM timers/hooks/tasks, handles
+	DESTROY_STEP_EFFECTS, // phase 6: declared destroy effects
+	DESTROY_STEP_DESTROY, // phase 7: the core Destroy() chain
+	DESTROY_STEP_EFFECTS_AFTER, // phase 6's second half: neighbours that smooth against D
+	DESTROY_STEP_SCRUB, // phase 8: re-set owned vars reported and deleted, cycles broken
+	DESTROY_STEP_POSTCONDITION, // leak check (test builds, toggleable on servers)
+))
+
+/// How many destroy transactions are running (nested qdel()s inside a teardown count). While it
+/// is positive, the teardown guard refuses writes touching dying entities silently
+/// (code/datums/ownership/guard.dm).
+GLOBAL_VAR_INIT(destroy_transaction_depth, 0)
+
+/// Runs GLOB.destroy_step_sequence on D. Each step sets D.destroy_phase to its phase (never
+/// lowering it) before it runs and is timed onto that phase.
 /proc/destroy_transaction_phases(datum/D, force, datum/qdel_item/trash)
 	DQ_LIFECYCLE_TRACE(D, "begin")
 	// Indexed by LIFECYCLE_PHASE_* id, so it must have a slot per phase
@@ -87,131 +118,105 @@ GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
 	if(length(trash.phase_ms) < LIFECYCLE_PHASE_COUNT)
 		trash.phase_ms = new /list(LIFECYCLE_PHASE_COUNT)
 
-	// Phase 0: guard. From here QDELETED(D) is true (gc_destroyed is set),
-	// which is what stops re-entrant qdel(D) (qdel()'s own check, above this
-	// call) and any pair/partner loop that already checks QDELETED().
-	var/tick = world.tick_usage
-	D.gc_destroyed = GC_CURRENTLY_BEING_QDELETED
-	D.datum_flags |= DF_DESTROYING
-	OM_EMIT(D, /datum/om/event/qdeleting, force)
-	dq_lifecycle_time(trash, LIFECYCLE_PHASE_GUARD, tick)
-	DQ_LIFECYCLE_TRACE(D, "LIFECYCLE_PHASE_GUARD done")
-
-	// Phase 2 for datums that aren't atoms: leave registries (atoms leave in
-	// their own phase 2, through dematerialize).
-	dq_lifecycle_leave_registries(D)
-
-	if(isatom(D))
-		var/atom/movable/AM = D
-		if(ismovable(AM))
-			// Phase 0.5: mind, pre-order, whole tree. A no-op until a body
-			// plan declares a TRANSFER(mind) slot_def (DQ Medical, O2).
-			tick = world.tick_usage
-			dq_lifecycle_resolve_minds(AM)
-			dq_lifecycle_time(trash, LIFECYCLE_PHASE_MIND, tick)
-			DQ_LIFECYCLE_TRACE(D, "LIFECYCLE_PHASE_MIND done")
-
-	// Phase 1: unbind, for every datum: Rust entity bindings, pipe/cable
-	// topology, heat bodies (lifecycle_unbind() overrides). Must precede
-	// dematerialize.
-	tick = world.tick_usage
-	D.lifecycle_unbind()
-	lifecycle_decls_unbind(D) // DECLARE_BIND releases (declarations.dm)
-	dq_lifecycle_time(trash, LIFECYCLE_PHASE_UNBIND, tick)
-	DQ_LIFECYCLE_TRACE(D, "LIFECYCLE_PHASE_UNBIND done")
-
-	// Phase 2: dematerialize. Index leaves that aren't registries yet
-	// (lifecycle_dematerialize() overrides), for every datum.
-	tick = world.tick_usage
-	D.lifecycle_dematerialize()
-	DQ_LIFECYCLE_TRACE(D, "lifecycle_dematerialize() returned")
-	// An owned entity leaves its owner's var (ownership.md §1.5: no owner keeps a dying child).
-	if(D.own_holder_ref)
-		own_release_from_owner(D)
-	dq_lifecycle_time(trash, LIFECYCLE_PHASE_DEMATERIALIZE, tick)
-	DQ_LIFECYCLE_TRACE(D, "LIFECYCLE_PHASE_DEMATERIALIZE done")
-
-	if(isatom(D))
-		var/atom/movable/AM = D
-		if(ismovable(AM))
-			// Phase 3: contents. Every slot's declared destroy policy,
-			// post-order (children before parents -- see
-			// code/datums/containment/lifecycle.dm's file header for why
-			// that falls out of ordinary qdel() recursion with no extra work).
-			tick = world.tick_usage
-			AM.dq_lifecycle_resolve_contents()
-			own_spill_phase(AM)
-			AM.dq_lifecycle_check_released()
-			dq_lifecycle_time(trash, LIFECYCLE_PHASE_CONTENTS, tick)
-			DQ_LIFECYCLE_TRACE(D, "LIFECYCLE_PHASE_CONTENTS done")
-
-	// Phase 4: links. Owned values disposed of by policy, relation edges and REF views cleared
-	// on both ends (doc/rewrite/ownership.md, code/datums/ownership/).
-	tick = world.tick_usage
-	D.lifecycle_prerelease() // teardown that still reads the declared vars (links.dm)
-	D.on_destroy(force) // the type's destroy hook: back-vars, partners and handles still live
-	if(D.om_rec)
-		om_behaviours_on_destroy(D) // each attached behaviour's on_entity_destroy(E)
-	if(ismovable(D))
-		dq_lifecycle_leave_own_slot(D) // slot-exit hooks see live back-refs
-	dq_lifecycle_clear_links(D)
-	dq_lifecycle_time(trash, LIFECYCLE_PHASE_LINKS, tick)
-	DQ_LIFECYCLE_TRACE(D, "LIFECYCLE_PHASE_LINKS done")
-
-	// Phase 5: teardown. Periodic work (om_task_periodic()), client screens,
-	// walk() loops, then the object-model teardown: OM timers, hooks, tasks,
-	// deadlines, grants and behaviours (om_teardown_rest()) and OM handles.
-	// /datum/Destroy() (phase 7) only clears the tag, closes tgui windows and
-	// does reference-tracking bookkeeping.
-	tick = world.tick_usage
-	dq_lifecycle_teardown(D)
-	dq_lifecycle_time(trash, LIFECYCLE_PHASE_TEARDOWN, tick)
-	DQ_LIFECYCLE_TRACE(D, "LIFECYCLE_PHASE_TEARDOWN done")
-
-	// Phase 6: effects. Declared destroy_effects data (L3).
-	tick = world.tick_usage
-	var/datum/destroy_effects_data/effects = D.destroy_effects()
+	var/hint = QDEL_HINT_QUEUE
+	var/datum/destroy_effects_data/effects
 	var/turf/effects_turf
-	effects?.apply_per_atom(D)
-	// Under a batch (batch.dm) effects are merged per turf and neighbour updates run once at the end.
-	if(effects && !dq_batch_effects(D, effects))
-		effects_turf = effects.apply(D)
-	dq_lifecycle_time(trash, LIFECYCLE_PHASE_EFFECTS, tick)
-	DQ_LIFECYCLE_TRACE(D, "LIFECYCLE_PHASE_EFFECTS done")
-
-	// Phase 7: the core Destroy() chain (the type's on_destroy() already ran
-	// at the start of phase 4, while its declared links still read) (/datum,
-	// /atom, /atom/movable, ... and the MC's controllers: the only Destroy()
-	// overrides tools/ci/lifecycle_counts_lint.py allows). A type's declared
-	// destroy_hint replaces the core's plain QDEL_HINT_QUEUE.
-	tick = world.tick_usage
-	var/hint = D.Destroy(force)
-	if(D.destroy_hint && hint == QDEL_HINT_QUEUE)
-		hint = D.destroy_hint
-	dq_lifecycle_time(trash, LIFECYCLE_PHASE_DESTROY, tick)
-	DQ_LIFECYCLE_TRACE(D, "LIFECYCLE_PHASE_DESTROY done")
-
-	if(isnull(D)) // Destroy() hard-deleted itself (rare; some override del()s src)
-		return hint
-
-	// Phase 6's second half: neighbours that smooth against D, now it's gone.
-	if(effects_turf)
+	var/tick
+	var/phase
+	for(var/step in GLOB.destroy_step_sequence)
+		phase = DESTROY_STEP_PHASE(step)
+		if(D.destroy_phase < phase)
+			D.destroy_phase = phase
 		tick = world.tick_usage
-		effects.apply_after(D, effects_turf)
-		dq_lifecycle_time(trash, LIFECYCLE_PHASE_EFFECTS, tick)
-		DQ_LIFECYCLE_TRACE(D, "LIFECYCLE_PHASE_EFFECTS done")
-
-	// Phase 8: scrub. Null outbound declared owned/pair vars to break
-	// reference cycles, then hand D to GC. Nothing is parked in nullspace.
-	tick = world.tick_usage
-	dq_lifecycle_scrub(D)
-	dq_lifecycle_time(trash, LIFECYCLE_PHASE_SCRUB, tick)
-	DQ_LIFECYCLE_TRACE(D, "LIFECYCLE_PHASE_SCRUB done")
-
-	// Postcondition (leak_check.dm): on in test builds, toggleable on servers.
-	// Nothing D still holds may be a deleted object that holds D back.
-	if(GLOB.dq_lifecycle_leak_check && hint != QDEL_HINT_LETMELIVE)
-		dq_lifecycle_postcondition(D)
+		switch(step)
+			if(DESTROY_STEP_GUARD)
+				// From here QDELETED(D) is true (gc_destroyed is set), which is what stops
+				// re-entrant qdel(D) (qdel()'s own check, above this call), and the teardown
+				// guard refuses new ownership, relations, timers, hooks and tasks on D.
+				D.gc_destroyed = GC_CURRENTLY_BEING_QDELETED
+				D.datum_flags |= DF_DESTROYING
+				OM_EMIT(D, /datum/om/event/qdeleting, force)
+			if(DESTROY_STEP_LEAVE_REGISTRIES)
+				dq_lifecycle_leave_registries(D)
+				continue // untimed, as before
+			if(DESTROY_STEP_MIND)
+				// A no-op until a body plan declares a TRANSFER(mind) slot_def (DQ Medical, O2).
+				if(!ismovable(D))
+					continue
+				dq_lifecycle_resolve_minds(D)
+			if(DESTROY_STEP_UNBIND)
+				D.lifecycle_unbind()
+				lifecycle_decls_unbind(D) // DECLARE_BIND releases (declarations.dm)
+			if(DESTROY_STEP_DEMATERIALIZE)
+				D.lifecycle_dematerialize()
+				DQ_LIFECYCLE_TRACE(D, "lifecycle_dematerialize() returned")
+				// An owned entity leaves its owner's var (ownership.md sec 1.5: no owner keeps a dying child).
+				if(D.own_holder_ref)
+					own_release_from_owner(D)
+			if(DESTROY_STEP_CONTENTS_RESOLVE)
+				// Children before parents: see code/datums/containment/lifecycle.dm's header.
+				if(!ismovable(D))
+					continue
+				var/atom/movable/resolving = D
+				resolving.dq_lifecycle_resolve_contents()
+			if(DESTROY_STEP_CONTENTS_SPILL)
+				if(!ismovable(D))
+					continue
+				own_spill_phase(D)
+			if(DESTROY_STEP_CONTENTS_CHECK_RELEASED)
+				if(!ismovable(D))
+					continue
+				var/atom/movable/checking = D
+				checking.dq_lifecycle_check_released()
+			if(DESTROY_STEP_LINKS)
+				// Owned values disposed of by policy, relation edges and REF views cleared on
+				// both ends (doc/rewrite/ownership.md, code/datums/ownership/).
+				D.lifecycle_prerelease() // teardown that still reads the declared vars (links.dm)
+				D.on_destroy(force) // the type's destroy hook: back-vars, partners and handles still live
+				if(D.om_rec)
+					om_behaviours_on_destroy(D) // each attached behaviour's on_entity_destroy(E)
+				if(ismovable(D))
+					dq_lifecycle_leave_own_slot(D) // slot-exit hooks see live back-refs
+				dq_lifecycle_clear_links(D)
+			if(DESTROY_STEP_TEARDOWN)
+				// Periodic work (om_task_periodic()), client screens, walk() loops, then the
+				// object-model teardown: OM timers, hooks, tasks, deadlines, grants and
+				// behaviours (om_teardown_rest()) and OM handles. /datum/Destroy() (phase 7) only
+				// clears the tag, closes tgui windows and does reference-tracking bookkeeping.
+				dq_lifecycle_teardown(D)
+			if(DESTROY_STEP_EFFECTS)
+				// Declared destroy_effects data (L3). Under a batch (batch.dm) effects are merged
+				// per turf and neighbour updates run once at the end.
+				effects = D.destroy_effects()
+				effects?.apply_per_atom(D)
+				if(effects && !dq_batch_effects(D, effects))
+					effects_turf = effects.apply(D)
+			if(DESTROY_STEP_DESTROY)
+				// The core Destroy() chain (the type's on_destroy() already ran in the links
+				// step, while its declared links still read) (/datum, /atom, /atom/movable, ...
+				// and the MC's controllers: the only Destroy() overrides
+				// tools/ci/lifecycle_counts_lint.py allows). A type's declared destroy_hint
+				// replaces the core's plain QDEL_HINT_QUEUE.
+				hint = D.Destroy(force)
+				if(isnull(D)) // Destroy() hard-deleted itself (rare; some override del()s src)
+					return hint
+				if(D.destroy_hint && hint == QDEL_HINT_QUEUE)
+					hint = D.destroy_hint
+			if(DESTROY_STEP_EFFECTS_AFTER)
+				if(!effects_turf)
+					continue
+				effects.apply_after(D, effects_turf)
+			if(DESTROY_STEP_SCRUB)
+				// Null outbound declared owned/pair vars to break reference cycles, then hand D
+				// to GC. Nothing is parked in nullspace.
+				dq_lifecycle_scrub(D)
+			if(DESTROY_STEP_POSTCONDITION)
+				// leak_check.dm: nothing D still holds may be a deleted object that holds D back.
+				if(GLOB.dq_lifecycle_leak_check && hint != QDEL_HINT_LETMELIVE)
+					dq_lifecycle_postcondition(D)
+				continue // untimed, as before
+		dq_lifecycle_time(trash, phase, tick)
+		DQ_LIFECYCLE_TRACE(D, "[DESTROY_STEP_NAME(step)] done")
 
 	DQ_LIFECYCLE_TRACE(D, "end")
 	return hint

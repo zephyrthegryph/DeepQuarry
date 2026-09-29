@@ -224,7 +224,8 @@ DECLARE_PERIODIC_WHILE(/obj/machinery, PERIODIC_FAST, "speed_process")
 /// boot bulk queue, or in its `first_wake` timer slot. Derived, never stored: firing, cancelling
 /// and deletion all end it on their own (a deleted machine's handle stops resolving).
 /obj/machinery/proc/first_wake_pending()
-	return om_timer_slot_pending(src, "first_wake") || (src in om_global_owner().machine_first_wakes)
+	// rel_names(): the boot queue holds every machine, so a list scan here made the bulk pass quadratic.
+	return om_timer_slot_pending(src, "first_wake") || rel_names(om_global_owner(), "machine_first_wakes", src)
 
 /// Arms what wakes this machine later (gas watches, change watches). Default: nothing to arm.
 /obj/machinery/proc/arm_wakes()

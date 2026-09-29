@@ -24,6 +24,8 @@
 
 /// Points holder.var_name at a registered instance (or null). Asserts registration.
 /proc/shared_set(datum/holder, var_name, datum/value)
+	if(!isnull(value) && !own_guard(holder, value, "shared_set([var_name])")) // the one teardown guard (guard.dm)
+		return null
 	if(!isnull(value) && !is_registered(value))
 		OWN_REPORT("[holder.type].[var_name] is SHARED but [value.type] is not a registered instance (own it, or make the var PROTO)")
 	holder.vars[var_name] = value // ALLOW(api, ownership): the accessor
@@ -41,7 +43,7 @@ GLOBAL_LIST_EMPTY(def_freeze_snapshot)
 /proc/def_freeze_digest(datum/D)
 	. = list()
 	for(var/name in D.vars)
-		if(name in list("vars", "gc_destroyed", "om_rec", "om_listen", "om_hid", "om_refs_in", "datum_flags", "tag", "own_holder_ref", "own_slot", "cached_ref"))
+		if(name in list("vars", "gc_destroyed", "om_rec", "om_listen", "om_hid", "om_refs_in", "datum_flags", "tag", "own_holder_ref", "own_slot", "own_key_text", "cached_ref"))
 			continue
 		var/value = D.vars[name]
 		if(!issaved(value) && !islist(value))

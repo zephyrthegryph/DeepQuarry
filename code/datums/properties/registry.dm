@@ -166,9 +166,11 @@
 /// The base provider answering `id` for `path`: the deepest applies_to.
 /datum/property_registry/proc/base_provider(path, id)
 	// A memo of references to our own providers, kept off the (registered, frozen-after-boot)
-	// registry instance: "[registry ref]|[type]|[id]" -> the base provider, or FALSE.
+	// registry instance: "[registry key]|[type]|[id]" -> the base provider, or FALSE. The registry
+	// is named by its cached own_key(), not ref(src): this runs per property read (~365k times at
+	// boot), and building a ref string each time was most of its cost.
 	var/static/list/resolved_base = list()
-	var/key = "[ref(src)]|[path]|[id]"
+	var/key = "[own_key(src)]|[path]|[id]"
 	. = resolved_base[key]
 	if(!isnull(.))
 		return . || null

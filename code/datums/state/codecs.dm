@@ -57,11 +57,11 @@ GLOBAL_LIST_EMPTY(state_codec_instances)
 	var/kind = entry?[OWNE_KIND]
 	if(!kind)
 		var/datum/V = value
-		if(isdatum(V) && V.own_holder_ref == ref(D))
+		if(isdatum(V) && V.own_holder_ref == own_key(D))
 			kind = OWNK_OWN
 		else if(islist(value))
 			for(var/datum/member in value)
-				if(member.own_holder_ref == ref(D))
+				if(member.own_holder_ref == own_key(D))
 					kind = OWNK_OWN
 				break
 	switch(kind)
