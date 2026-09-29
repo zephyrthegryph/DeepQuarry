@@ -821,7 +821,6 @@ UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_print_p)
 		active1().fields["notes"] = notes
 		SStgui.update_uis(src)
 
-DECLARE_UI_MODAL(/obj/machinery/computer/skills)
 
 /obj/machinery/computer/skills/ui_modal_opened(mob/user, id, list/arguments, datum/tgui/ui, datum/tgui_state/state)
 	. = TRUE

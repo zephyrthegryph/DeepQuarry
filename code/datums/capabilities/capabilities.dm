@@ -104,19 +104,21 @@
 	var/list/caps = caps_of(src)
 	for(var/datum/capability/C as anything in caps)
 		C.on_holder_init(src, mapload)
-	if(length(caps) || periodic_cadence || type_draws(src))
+	if(length(caps) || periodic_cadence || type_derives(src))
 		changed(src)
 
-/// Whether A's type draws anything: its first instance's draw() is tried once and remembered.
-/proc/type_draws(atom/A)
+/// Whether A's type has anything derived to apply at init: its first instance's draw() and
+/// hidden_verbs() are tried once and the answer remembered for the type.
+/proc/type_derives(atom/A)
 	var/known = GLOB.type_draws_cache[A.type]
 	if(!isnull(known))
 		return known
 	var/datum/look/L = GLOB.look_builder
 	L.reset()
 	A.draw(L)
-	GLOB.type_draws_cache[A.type] = L.touched
-	return L.touched
+	var/derives = L.touched || length(A.hidden_verbs()) > 0
+	GLOB.type_draws_cache[A.type] = derives
+	return derives
 
 GLOBAL_LIST_EMPTY(type_draws_cache)
 

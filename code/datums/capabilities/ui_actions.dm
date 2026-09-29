@@ -26,6 +26,10 @@
 	var/proc_name = "ui_[action]"
 	if(!istext(action) || !hascall(host, proc_name))
 		return null
+	// A legacy UI_ACT row for this action still wins until its host is migrated.
+	var/datum/ui_decl/decl = ui_decl_of(host)
+	if(decl?.acts[action])
+		return null
 	var/mob/user = ui?.user
 	if(!host.ui_allowed(user, action))
 		return list(TRUE, FALSE)
