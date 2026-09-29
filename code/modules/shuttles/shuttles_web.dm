@@ -270,7 +270,7 @@ UI_DATA_REPLACE(/obj/machinery/computer/shuttle_control/web, "merge:ui_data_obj_
 
 	var/list/doors = list()
 	for(var/obj/machinery/door/airlock/A as anything in linked_doors)
-		doors[my_doors[A.id_tag]] = list("bolted" = A.locked, "open" = !A.density)
+		doors[my_doors[A.id_tag]] = list("bolted" = is_bolted(A), "open" = !A.density)
 
 	var/list/sensors = list()
 	for(var/obj/machinery/shuttle_sensor/S as anything in linked_sensors)

@@ -405,10 +405,10 @@
 /area/expoutpost/stationshuttle)
 "aba" = (
 /obj/machinery/door/airlock/glass_external{
+	cap_state = 128;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "exp_sling_station_door";
-	locked = 1;
 	name = "Carrier Sling Access";
 	req_access = list();
 	req_one_access = list(5,43,67)
@@ -418,10 +418,10 @@
 /area/expoutpost/stationshuttle)
 "abb" = (
 /obj/machinery/door/airlock/glass_external{
+	cap_state = 128;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "exp_sling_hatch";
-	locked = 1;
 	name = "Carrier Sling Hatch";
 	req_access = list();
 	req_one_access = list(5,43,67)

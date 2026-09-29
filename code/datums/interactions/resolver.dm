@@ -75,6 +75,10 @@
 			continue
 		if(!interaction.tool || !held()?.has_tool_quality(interaction.tool))
 			continue
+		// One declared for another stance (a pry offered outside combat mode) is not what was meant:
+		// the tool falls through to the target's next use, as a legacy entry skipped it.
+		if(!interaction.is_meant(actor(), target(), held()))
+			continue
 		return interaction
 	return null
 

@@ -587,6 +587,7 @@
 #include "code\datums\capabilities\library\cell_holder.dm"
 #include "code\datums\capabilities\library\climb.dm"
 #include "code\datums\capabilities\library\cover.dm"
+#include "code\datums\capabilities\library\doors.dm"
 #include "code\datums\capabilities\library\drinkable.dm"
 #include "code\datums\capabilities\library\edible.dm"
 #include "code\datums\capabilities\library\emag.dm"

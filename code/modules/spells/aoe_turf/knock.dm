@@ -23,5 +23,5 @@
 /obj/machinery/door/proc/knocked_open()
 	if(istype(src, /obj/machinery/door/airlock))
 		var/obj/machinery/door/airlock/AL = src //casting is important
-		AL.set_locked(0)
+		cap_set(AL, CAP_BOLTED, FALSE)
 	open()

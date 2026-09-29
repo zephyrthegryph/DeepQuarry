@@ -28,14 +28,13 @@
 /obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp/proc/pry_airlock(obj/machinery/door/airlock/AD)
 	if(!chassis?.Adjacent(AD))
 		return
-	AD.welded = FALSE
-	AD.update_icon()
+	set_welded(AD, FALSE)
 	play_sfx(AD, SFX_MACHINES_DOOR_AIRLOCK_CREAKING)
 	AD.visible_message(span_danger("\The [chassis] tears \the [AD] open!"))
 	toggle_airlock(AD)
 
 /obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp/proc/toggle_airlock(obj/machinery/door/airlock/AD)
-	if(AD.welded)
+	if(is_welded(AD))
 		return
 	if(AD.density)
 		AD.open(1)
@@ -69,10 +68,10 @@
 						FD.close(1)
 				else if(istype(O, /obj/machinery/door/airlock))	// D o o r s.
 					var/obj/machinery/door/airlock/AD = O
-					if(AD.locked)
+					if(is_bolted(AD))
 						occupant_message(span_notice("The airlock's bolts prevent it from being forced."))
 					else if(!AD.operating)
-						if(AD.welded)
+						if(is_welded(AD))
 							AD.visible_message(span_warning("\The [chassis] begins prying on \the [AD]!"))
 							om_task_timed(chassis?.slot_item(MECHA_SLOT_PILOT), 15 SECONDS, AD, src, PROC_REF(pry_airlock), list(AD), IGNORE_HELD_ITEM)
 						else

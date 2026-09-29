@@ -558,10 +558,10 @@
 /area/awaymission)
 "bM" = (
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	frequency = 1375;
 	icon_state = "door_locked";
 	id_tag = "carp_inner";
-	locked = 1;
 	name = "External Access";
 	req_access = newlist()
 	},
@@ -659,10 +659,10 @@
 /area/awaymission)
 "bX" = (
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	frequency = 1375;
 	icon_state = "door_locked";
 	id_tag = "carp_outer";
-	locked = 1;
 	name = "External Access";
 	req_access = newlist()
 	},

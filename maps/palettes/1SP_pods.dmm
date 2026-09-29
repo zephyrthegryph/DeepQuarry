@@ -2917,9 +2917,9 @@
 /area/survivalpod/superpose/HydroCave)
 "axk" = (
 /obj/machinery/door/airlock/hatch{
+	cap_state = 128;
 	icon_state = "door_locked";
 	id_tag = "estrella_side_hatch";
-	locked = 1;
 	req_access = null;
 	req_one_access = null
 	},
@@ -3315,9 +3315,9 @@
 /area/survivalpod/superpose/HydroCave)
 "aOw" = (
 /obj/machinery/door/airlock/hatch{
+	cap_state = 128;
 	icon_state = "door_locked";
 	id_tag = "estrella_back_hatch";
-	locked = 1;
 	req_one_access = null
 	},
 /obj/machinery/button/remote/airlock{
@@ -6421,9 +6421,9 @@
 /area/template_noop)
 "dlp" = (
 /obj/machinery/door/airlock/hatch{
+	cap_state = 128;
 	icon_state = "door_locked";
 	id_tag = "engine_access_hatch";
-	locked = 1;
 	req_access = list(11)
 	},
 /turf/simulated/floor,
@@ -8826,8 +8826,8 @@
 /area/survivalpod/superpose/MethLab)
 "eKE" = (
 /obj/machinery/door/airlock/engineering{
+	cap_state = 128;
 	icon_state = "door_locked";
-	locked = 1;
 	name = "Cargo Bay"
 	},
 /turf/simulated/shuttle/floor{
@@ -10277,11 +10277,11 @@
 /area/survivalpod)
 "fKG" = (
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	desc = "It opens and closes. It is stamped with the logo of Major Bill's Transportation";
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = null;
-	locked = 1;
 	name = "MBT-540"
 	},
 /obj/item/tape/medical{
@@ -10935,10 +10935,10 @@
 	req_one_access = null
 	},
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	frequency = null;
 	icon_state = "door_locked";
 	id_tag = null;
-	locked = 1;
 	name = "Ship Hatch";
 	req_access = null
 	},
@@ -12647,8 +12647,8 @@
 /area/survivalpod/superpose/CultShip)
 "huV" = (
 /obj/machinery/door/airlock/command{
-	icon_state = "door_locked";
-	locked = 1
+	cap_state = 128;
+	icon_state = "door_locked"
 	},
 /turf/simulated/shuttle/floor{
 	icon_state = "floor_white"
@@ -15813,10 +15813,10 @@
 /area/survivalpod/superpose/HydroCave)
 "jQk" = (
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	frequency = null;
 	icon_state = "door_locked";
 	id_tag = null;
-	locked = 1;
 	name = "Ship Hatch";
 	req_access = null
 	},
@@ -20601,9 +20601,9 @@
 /area/survivalpod/superpose/LoneHome)
 "nbf" = (
 /obj/machinery/door/airlock/hatch{
+	cap_state = 128;
 	icon_state = "door_locked";
 	id_tag = "estrella_back_hatch";
-	locked = 1;
 	req_one_access = null
 	},
 /turf/simulated/floor/tiled/techmaint,
@@ -22325,10 +22325,10 @@
 "orZ" = (
 /obj/machinery/atmospherics/pipe/simple/visible,
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	frequency = null;
 	icon_state = "door_locked";
 	id_tag = null;
-	locked = 1;
 	name = "Ship Hatch";
 	req_access = null
 	},
@@ -23252,11 +23252,11 @@
 /area/survivalpod/superpose/CrashedQurantineShip)
 "oPi" = (
 /obj/machinery/door/airlock/multi_tile/metal/mait{
+	cap_state = 128;
 	dir = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "estrella_outer";
-	locked = 1;
 	name = "External Access"
 	},
 /obj/machinery/door/firedoor/border_only,
@@ -25907,11 +25907,11 @@
 /area/template_noop)
 "pDj" = (
 /obj/machinery/door/airlock/multi_tile/metal/mait{
+	cap_state = 128;
 	dir = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "estrella_inner";
-	locked = 1;
 	name = "Internal Access"
 	},
 /obj/machinery/atmospherics/pipe/simple/visible{
@@ -27817,10 +27817,10 @@
 /area/template_noop)
 "qYf" = (
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	frequency = null;
 	icon_state = "door_locked";
 	id_tag = null;
-	locked = 1;
 	name = "Ship Hatch";
 	req_access = null
 	},
@@ -34382,9 +34382,9 @@
 /area/survivalpod/superpose/GrandLibrary)
 "wkp" = (
 /obj/machinery/door/airlock/multi_tile/metal/mait{
+	cap_state = 128;
 	icon_state = "door_locked";
 	id_tag = "SP-CargoHatch";
-	locked = 1;
 	name = "Rear Hatch"
 	},
 /obj/machinery/button/remote/airlock{

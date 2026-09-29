@@ -137,8 +137,8 @@
 	)
 
 /// Type-local entries: stance-declared interactions run from the one proc that names them
-/// (airlock.dm, windowdoor.dm, robot.dm keep the defines file-local).
-/datum/unit_test/dq_interaction_definitions/var/static/list/type_local_entries = list("airlock_ctrl", "airlock_weld", "airlock_pry", "windoor_weld", "robot_crowbar", "robot_welder")
+/// (windowdoor.dm and robot.dm keep the defines file-local; the airlock's ctrl entries are capability entries).
+/datum/unit_test/dq_interaction_definitions/var/static/list/type_local_entries = list("windoor_weld", "robot_crowbar", "robot_welder")
 
 /datum/unit_test/dq_interaction_definitions/Run()
 	var/list/seen = list()

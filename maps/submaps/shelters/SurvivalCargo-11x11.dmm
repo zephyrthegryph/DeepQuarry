@@ -427,9 +427,9 @@
 /area/survivalpod/superpose/SurvivalCargo)
 "Qq" = (
 /obj/machinery/door/airlock/multi_tile/metal/mait{
+	cap_state = 128;
 	icon_state = "door_locked";
 	id_tag = "SP-CargoHatch";
-	locked = 1;
 	name = "Rear Hatch"
 	},
 /obj/machinery/button/remote/airlock{

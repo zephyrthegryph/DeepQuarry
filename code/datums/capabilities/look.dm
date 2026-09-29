@@ -50,12 +50,26 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 	icon_state = name
 	touched = TRUE
 
-/// An overlay icon_state (or an image / mutable_appearance), added only `when` is true.
-/datum/look/proc/overlay(name, when = TRUE)
+/// An overlay icon_state (or an image / mutable_appearance), added only `when` is true. `icon`
+/// draws the state from another icon file than the holder's (one shared image per icon and state).
+/datum/look/proc/overlay(name, when = TRUE, icon)
 	touched = TRUE
 	if(!when || isnull(name))
 		return
-	LAZYADD(overlays, name)
+	LAZYADD(overlays, icon ? look_image(icon, name) : name)
+
+/// Drops a layer a capability drew (the holder's own draw() knows its sprite has no such state in
+/// this state): every overlay or glow named `name` added so far.
+/datum/look/proc/hide(name)
+	touched = TRUE
+	if(overlays)
+		overlays -= name
+		if(!length(overlays))
+			overlays = null
+	if(glows)
+		glows -= name
+		if(!length(glows))
+			glows = null
 
 /// A gauge overlay: "[name][step]" for level (0..1) quantised to 0..levels. Null level: nothing.
 /datum/look/proc/gauge(name, level, levels = 4)
@@ -76,6 +90,16 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 /datum/look/proc/set_icon(file)
 	icon = file
 	touched = TRUE
+
+/// The shared image for an overlay drawn from another icon file (look.overlay(icon =)).
+/proc/look_image(icon, name)
+	var/static/list/cache = list()
+	var/key = "[icon]:[name]"
+	var/image/I = cache[key]
+	if(!I)
+		I = image(icon = icon, icon_state = name)
+		cache[key] = I
+	return I
 
 /datum/look/proc/set_color(value)
 	color = value

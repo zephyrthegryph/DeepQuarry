@@ -6,13 +6,9 @@
 - Improper'd all of the names in the new()
 */
 
-// Airlock-local interaction entries: stance-declared interactions run from the proc that names them.
-/// click_ctrl(): hammer on the door (combat mode) or hold it open (Grab).
+// Airlock-local entry key: the stance-declared ctrl-click entries (hammer on the door in combat mode,
+// hold it open with Grab) run from click_ctrl().
 #define AIRLOCK_ENTRY_CTRL "airlock_ctrl"
-/// welder_act(): weld shut or unweld.
-#define AIRLOCK_ENTRY_WELD "airlock_weld"
-/// crowbar_act(): remove the electronics or force the door, outside combat mode.
-#define AIRLOCK_ENTRY_PRY "airlock_pry"
 
 /obj/machinery/door/airlock
 	name = "Airlock"
@@ -26,16 +22,16 @@
 
 	blocks_emissive = EMISSIVE_BLOCK_GENERIC // Not quite as nice as /tg/'s custom masks. We should make those sometime
 
+	tgui_id = "AiAirlock"
 	var/aiControlDisabled = 0 //If 1, AI control is disabled until the AI hacks back in and disables the lock. If 2, the AI has bypassed the lock. If -1, the control is enabled but the AI had bypassed it earlier, so if it is disabled again the AI would have no trouble getting back in.
 	var/hackProof = 0 // if 1, this door can't be hacked by the AI
-	EXPIRY_DECLARE(electrified_until) //World time when the door is no longer electrified. -1 if it is permanently electrified until someone fixes it.
-	EXPIRY_DECLARE(main_power_lost_until) //World time when main power is restored.
-	EXPIRY_DECLARE(backup_power_lost_until) //World time when backup power is restored.
-	backup_power_lost_until = -1
+	/// 0: not electrified. 1: electrified for a while (timed_set() reverts it: time_left()). -1: until someone fixes it.
+	var/electrified_until = 0
+	/// 0: main power on. 1: lost for a while (timed_set() restores it). -1: lost until the cables are mended.
+	var/main_power_lost_until = 0
+	/// 0: backup power carrying the door. 1: out for a while (timed_set()). -1: standing by, or cut.
+	var/backup_power_lost_until = -1
 	var/has_beeped = 0					//If 1, will not beep on failed closing attempt. Resets when door closes.
-	var/spawnPowerRestoreRunning = 0
-	var/welded = null
-	locked = FALSE
 	var/lights = 1 // bolt lights show by default
 	var/aiDisabledIdScanner = 0
 	var/aiHacking = FALSE
@@ -49,6 +45,7 @@
 	COOLDOWN_DECLARE(bump_zap_cooldown)
 	var/safe = 1
 	normalspeed = 1
+	silicon_use = SILICON_USE_UI
 	var/obj/item/airlock_electronics/electronics = null
 	COOLDOWN_DECLARE(hasShocked) //Prevents multiple shocks from happening
 	var/secured_wires = 0
@@ -87,7 +84,7 @@
 /obj/machinery/door/airlock/attack_generic(mob/living/user, damage)
 	if(!operable())
 		if(damage >= STRUCTURE_MIN_DAMAGE_THRESHOLD)
-			if(locked || welded)
+			if(is_bolted(src) || is_welded(src))
 				act_message(user, src, others = span_danger("%U% begins breaking into %T% internals!"))
 				om_task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_generic_timed_done), done_args = list(user), busy = user)
 			else if(density)
@@ -102,9 +99,7 @@
 	..()
 
 /obj/machinery/door/airlock/proc/attack_generic_timed_done(mob/living/user)
-	set_locked(FALSE)
-	welded = FALSE
-	update_icon()
+	cap_set(src, CAP_BOLTED | CAP_WELDED, FALSE)
 	open(TRUE)
 	if(prob(25))
 		shock(user, 100)
@@ -114,7 +109,7 @@
 		return ..()
 	var/mob/living/carbon/human/X = user
 	if(istype(X.species, /datum/species/xenos))
-		if(locked || welded)
+		if(is_bolted(src) || is_welded(src))
 			act_message(user, src, others = span_alium("%U% begins tearing into %T% internals!"))
 			do_animate("deny")
 			om_task_timed(user, 15 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_alien_timed_done), done_args = list(user), busy = user)
@@ -133,9 +128,7 @@
 	act_message(user, src, others = span_danger("%U% tears %T% open, sparks flying from its electronics!"))
 	do_animate("spark")
 	play_sfx(src, SFX_MACHINES_DOOR_AIRLOCK_TEAR_APART, volume_channel = VOLUME_CHANNEL_DOORS)
-	set_locked(FALSE)
-	welded = FALSE
-	update_icon()
+	cap_set(src, CAP_BOLTED | CAP_WELDED, FALSE)
 	open(TRUE)
 	atom_break() //These aren't emags, these be CLAWS
 /obj/machinery/door/airlock/proc/attack_alien_timed_done2(mob/user)
@@ -148,28 +141,11 @@
 		return get_material_by_name(mineral)
 	return get_material_by_name(MAT_STEEL)
 
-/obj/machinery/door/airlock/next_door_deadline()
-	. = ..()
-	if(main_power_lost_until > 0 && (!. || main_power_lost_until < .))
-		. = main_power_lost_until
-	if(backup_power_lost_until > 0 && (!. || backup_power_lost_until < .))
-		. = backup_power_lost_until
-	if(electrified_until > 0 && (!. || electrified_until < .))
-		. = electrified_until
-
+// Power loss and electrification are timed_set() values (they restore themselves through their
+// setters); the door's own deadline timer only keeps autoclose.
 /obj/machinery/door/airlock/door_deadlines_due()
-	if(close_door_at && !density && !operating && (locked || welded || !arePowerSystemsOn() || wires.is_cut(WIRE_OPEN_DOOR)))
+	if(close_door_at && !density && !operating && (is_bolted(src) || is_welded(src) || !arePowerSystemsOn() || wire_cut(WIRE_OPEN_DOOR)))
 		close_door_at = 0
-	if(main_power_lost_until > 0 && EXPIRY_EXPIRED(src, main_power_lost_until, CLOCK_WORLD))
-		regainMainPower()
-		if(main_power_lost_until > 0) // Cables cut since: lost until mended (mending calls regainMainPower()).
-			main_power_lost_until = -1
-	if(backup_power_lost_until > 0 && EXPIRY_EXPIRED(src, backup_power_lost_until, CLOCK_WORLD))
-		regainBackupPower()
-		if(backup_power_lost_until > 0)
-			backup_power_lost_until = -1
-	else if(electrified_until > 0 && EXPIRY_EXPIRED(src, electrified_until, CLOCK_WORLD))
-		electrify(0)
 	return ..()
 
 /// Raises CHANGE_MACHINE_MODE for whatever watches this door (bolts, power, electrification).
@@ -254,6 +230,15 @@ About the new airlock wires panel:
 		return TRUE
 	return FALSE
 
+// cap_electrify() (code/datums/capabilities/library/doors.dm) reads these.
+/obj/machinery/door/airlock/is_electrified()
+	return isElectrified()
+
+/obj/machinery/door/airlock/electrified_left()
+	if(electrified_until <= 0)
+		return electrified_until
+	return round(time_left(src, nameof(electrified_until)) / 10, 1)
+
 /obj/machinery/door/airlock/proc/canAIControl()
 	return ((aiControlDisabled!=1) && (!isAllPowerLoss()));
 
@@ -266,7 +251,7 @@ About the new airlock wires panel:
 	return (main_power_lost_until==0 || backup_power_lost_until==0)
 
 /obj/machinery/door/airlock/requiresID()
-	return !(wires.is_cut(WIRE_IDSCAN) || aiDisabledIdScanner)
+	return !(wire_cut(WIRE_IDSCAN) || aiDisabledIdScanner)
 
 /obj/machinery/door/airlock/proc/isAllPowerLoss()
 	if(!operable())
@@ -275,97 +260,134 @@ About the new airlock wires panel:
 		return TRUE
 	return FALSE
 
+/// Whether `wire` is cut. A door whose wires were never touched has none cut (the wires capability
+/// makes its datum on first use, under its type key).
+/obj/machinery/door/airlock/proc/wire_cut(wire)
+	var/datum/wires/W = cap_data?[/datum/capability/wires]
+	return W ? W.is_cut(wire) : FALSE
+
+/obj/machinery/door/airlock/wires_type_for(default_type)
+	return secured_wires ? /datum/wires/airlock/secure : default_type
+
 /obj/machinery/door/airlock/proc/mainPowerCablesCut()
-	return wires.is_cut(WIRE_MAIN_POWER1) || wires.is_cut(WIRE_MAIN_POWER2)
+	return wire_cut(WIRE_MAIN_POWER1) || wire_cut(WIRE_MAIN_POWER2)
 
 /obj/machinery/door/airlock/proc/backupPowerCablesCut()
-	return wires.is_cut(WIRE_BACKUP_POWER1) || wires.is_cut(WIRE_BACKUP_POWER2)
+	return wire_cut(WIRE_BACKUP_POWER1) || wire_cut(WIRE_BACKUP_POWER2)
+
+/// The main power setter (timed_set() restores through it): restoring with a cut cable stays lost
+/// until the cable is mended, and backup power stands down once main power is back.
+/obj/machinery/door/airlock/proc/set_main_power_lost_until(value)
+	if(!value && mainPowerCablesCut())
+		value = -1
+	if(main_power_lost_until == value)
+		return FALSE
+	main_power_lost_until = value
+	if(!value && !backup_power_lost_until)
+		set_backup_power_lost_until(-1)
+	resume_autoclose_if_possible()
+	changed(src)
+	publish_door_mode()
+	return TRUE
+
+/// The backup power setter: restoring it carries the door only while main power is out; with a cut
+/// cable, or main power back, it stands by (-1).
+/obj/machinery/door/airlock/proc/set_backup_power_lost_until(value)
+	if(!value && (backupPowerCablesCut() || !main_power_lost_until))
+		value = -1
+	if(backup_power_lost_until == value)
+		return FALSE
+	backup_power_lost_until = value
+	resume_autoclose_if_possible()
+	changed(src)
+	publish_door_mode()
+	return TRUE
+
+/// The electrification setter: a timed electrification that runs out on a door whose electrify wire
+/// is cut stays electrified.
+/obj/machinery/door/airlock/proc/set_electrified_until(value)
+	if(!value && wire_cut(WIRE_ELECTRIFY) && arePowerSystemsOn())
+		value = -1
+	if(electrified_until == value)
+		return FALSE
+	electrified_until = value
+	changed(src)
+	publish_door_mode()
+	return TRUE
 
 /obj/machinery/door/airlock/proc/loseMainPower()
-	main_power_lost_until = mainPowerCablesCut() ? -1 : world.time + (1 MINUTE)
+	if(mainPowerCablesCut())
+		timed_cancel(src, nameof(main_power_lost_until))
+		set_main_power_lost_until(-1)
+	else
+		timed_set(src, nameof(main_power_lost_until), 1, for_time = 1 MINUTE, clock = CLOCK_WORLD, revert_to = 0)
 
 	// If backup power is permanently disabled then activate in 10 seconds if possible, otherwise it's already enabled or a timer is already running
 	if(backup_power_lost_until == -1 && !backupPowerCablesCut())
-		EXPIRY_SET(src, backup_power_lost_until, (10 SECONDS), CLOCK_WORLD)
-
-	schedule_door_timer()
+		timed_set(src, nameof(backup_power_lost_until), 1, for_time = 10 SECONDS, clock = CLOCK_WORLD, revert_to = 0)
 
 	// Disable electricity if required
 	if(electrified_until && isAllPowerLoss())
 		electrify(0)
-
-	update_icon()
-	publish_door_mode()
 
 /obj/machinery/door/airlock/proc/loseBackupPower()
-	backup_power_lost_until = backupPowerCablesCut() ? -1 : world.time + (1 MINUTE)
-
-	schedule_door_timer()
+	if(backupPowerCablesCut())
+		timed_cancel(src, nameof(backup_power_lost_until))
+		set_backup_power_lost_until(-1)
+	else
+		timed_set(src, nameof(backup_power_lost_until), 1, for_time = 1 MINUTE, clock = CLOCK_WORLD, revert_to = 0)
 
 	// Disable electricity if required
 	if(electrified_until && isAllPowerLoss())
 		electrify(0)
 
-	update_icon()
-	publish_door_mode()
-
 /obj/machinery/door/airlock/proc/regainMainPower()
-	if(!mainPowerCablesCut())
-		main_power_lost_until = 0
-		// If backup power is currently active then disable, otherwise let it count down and disable itself later
-		if(!backup_power_lost_until)
-			backup_power_lost_until = -1
-
-	update_icon()
-	schedule_door_timer()
-	resume_autoclose_if_possible()
-	publish_door_mode()
+	timed_cancel(src, nameof(main_power_lost_until))
+	set_main_power_lost_until(0)
 
 /obj/machinery/door/airlock/proc/regainBackupPower()
-	if(!backupPowerCablesCut())
-		// Restore backup power only if main power is offline, otherwise permanently disable
-		backup_power_lost_until = main_power_lost_until == 0 ? -1 : 0
-
-	update_icon()
-	schedule_door_timer()
-	resume_autoclose_if_possible()
-	publish_door_mode()
+	timed_cancel(src, nameof(backup_power_lost_until))
+	set_backup_power_lost_until(0)
 
 /obj/machinery/door/airlock/proc/resume_autoclose_if_possible()
-	// Unit-created and partially constructed doors may not have a wire datum yet.
-	// No wire datum means there is no cut open-door wire preventing autoclose.
-	if(autoclose && !density && !operating && !locked && !welded && arePowerSystemsOn() && (!wires || !wires.is_cut(WIRE_OPEN_DOOR)))
+	if(autoclose && !density && !operating && !is_bolted(src) && !is_welded(src) && arePowerSystemsOn() && !wire_cut(WIRE_OPEN_DOOR))
 		autoclose_in(next_close_wait())
 
-/obj/machinery/door/airlock/proc/electrify(duration, feedback = 0)
+/// Electrifies the door for `duration` seconds (-1: until fixed, 0: stops). feedback tells `user`.
+/obj/machinery/door/airlock/proc/electrify(duration, feedback = FALSE, mob/user)
 	var/message = ""
-	if(wires.is_cut(WIRE_ELECTRIFY) && arePowerSystemsOn())
-		message = text("The electrification wire is cut - Door permanently electrified.")
-		electrified_until = -1
+	var/mob/actor = user || usr // the wires window still calls this without a user
+	if(wire_cut(WIRE_ELECTRIFY) && arePowerSystemsOn())
+		message = "The electrification wire is cut - Door permanently electrified."
+		timed_cancel(src, nameof(electrified_until))
+		set_electrified_until(-1)
 	else if(duration && !arePowerSystemsOn())
-		message = text("The door is unpowered - Cannot electrify the door.")
-		electrified_until = 0
+		message = "The door is unpowered - Cannot electrify the door."
+		timed_cancel(src, nameof(electrified_until))
+		set_electrified_until(0)
 	else if(!duration && electrified_until != 0)
 		message = "The door is now un-electrified."
-		electrified_until = 0
+		timed_cancel(src, nameof(electrified_until))
+		set_electrified_until(0)
 	else if(duration)	//electrify door for the given duration seconds
-		if(usr)
-			shockedby += text("\[[time_stamp()]\] - [usr](ckey:[usr.ckey])")
-			add_attack_logs(usr,src,"Electrified a door")
+		if(actor)
+			shockedby += "\[[time_stamp()]\] - [actor](ckey:[actor.ckey])"
+			add_attack_logs(actor, src, "Electrified a door")
 		else
-			shockedby += text("\[[time_stamp()]\] - EMP)")
+			shockedby += "\[[time_stamp()]\] - EMP)"
 		message = "The door is now electrified [duration == -1 ? "permanently" : "for [duration] second\s"]."
-		electrified_until = duration == -1 ? -1 : world.time + (duration SECONDS)
+		if(duration == -1)
+			timed_cancel(src, nameof(electrified_until))
+			set_electrified_until(-1)
+		else
+			timed_set(src, nameof(electrified_until), 1, for_time = duration SECONDS, clock = CLOCK_WORLD, revert_to = 0)
 
-	schedule_door_timer()
-	publish_door_mode()
+	if(feedback && message && actor)
+		to_chat(actor, message)
 
-	if(feedback && message)
-		to_chat(usr,message)
-
-/obj/machinery/door/airlock/proc/set_idscan(activate, feedback = 0)
+/obj/machinery/door/airlock/proc/set_idscan(activate, feedback = FALSE, mob/user)
 	var/message = ""
-	if(wires.is_cut(WIRE_IDSCAN))
+	if(wire_cut(WIRE_IDSCAN))
 		message = "The IdScan wire is cut - IdScan feature permanently disabled."
 	else if(activate && aiDisabledIdScanner)
 		aiDisabledIdScanner = 0
@@ -374,21 +396,21 @@ About the new airlock wires panel:
 		aiDisabledIdScanner = 1
 		message = "IdScan feature has been disabled."
 
-	if(feedback && message)
-		to_chat(usr,message)
+	if(feedback && message && user)
+		to_chat(user, message)
 
-/obj/machinery/door/airlock/proc/set_safeties(activate, feedback = 0)
+/obj/machinery/door/airlock/proc/set_safeties(activate, feedback = FALSE, mob/user)
 	var/message = ""
 	// Safeties!  We don't need no stinking safeties!
-	if (wires.is_cut(WIRE_SAFETY))
-		message = text("The safety wire is cut - Cannot enable safeties.")
+	if (wire_cut(WIRE_SAFETY))
+		message = "The safety wire is cut - Cannot enable safeties."
 	else if (!activate && safe)
 		safe = 0
 	else if (activate && !safe)
 		safe = 1
 
-	if(feedback && message)
-		to_chat(usr,message)
+	if(feedback && message && user)
+		to_chat(user, message)
 
 // shock user with probability prb (if all connections & power are working)
 // returns 1 if shocked, 0 otherwise
@@ -404,53 +426,67 @@ About the new airlock wires panel:
 	else
 		return FALSE
 
+// The door template the base door declares (door.dm) doesn't apply: draw() below is the look.
 APPEARANCE_NONE(/obj/machinery/door/airlock)
-DECLARE_APPEARANCE_PROC(/obj/machinery/door/airlock, TYPE_PROC_REF(/atom, appearance_overlays), list("get_integrity"))
-/obj/machinery/door/airlock/appearance_overlays()
-	. = list()
+
+/// Bridge while door.dm's other doors still draw through update_icon(): its shared procs (and the
+/// declared appearance watch on stat and density) call update_icon(), which marks the airlock changed
+/// so draw() runs.
+// ALLOW(sys_update_icon, sys_old_appearance): bridge only; it draws nothing, it marks the airlock so draw() runs
+/obj/machinery/door/airlock/update_icon()
+	changed(src)
+
+/obj/machinery/door/airlock/capabilities()
+	. = ..()
+	// draw() shows door_locked while the bolt lights are on, so the bolts and emergency access draw no
+	// layer of their own; the door's own welder repair (door.dm) mends it.
+	. += door(wires = /datum/wires/airlock, electrify = TRUE, ai_control = TRUE, emag_effect = PROC_REF(emag_effect), weld_applies = PROC_REF(can_weld_now), weld_help_applies = PROC_REF(can_weld_without_repair))
+	. += cap_frozen_shut()
+	. += cap_hand("Use", PROC_REF(touch_airlock), needs = PROC_REF(can_touch_by_hand))
+	. += cap_use_on("Use", /obj/item, PROC_REF(use_item_on_airlock), works_broken = TRUE, works_unpowered = TRUE)
+	. += airlock_ctrl_entry(cap_hand("Hammer on the door", PROC_REF(hammer_on_door), works_broken = TRUE, works_unpowered = TRUE, stance = I_HURT), insulated = TRUE)
+	. += airlock_ctrl_entry(cap_hand("Hold the door open", PROC_REF(hold_door_open), works_broken = TRUE, works_unpowered = TRUE, stance = I_GRAB))
+
+/// A ctrl-click entry: run from click_ctrl() for the stance it declares.
+/proc/airlock_ctrl_entry(datum/capability/entry/C, insulated = FALSE)
+	cap_entry_setup(C.entry, insulated = insulated, legacy_entry = AIRLOCK_ENTRY_CTRL)
+	return C
+
+/obj/machinery/door/airlock/draw(datum/look/look)
+	..()
+	// doorint.dmi and its kin have no wires, broken or dark states: the sparks below show damage.
+	look.hide("wires")
+	look.hide("broken")
+	look.hide("dark")
+	var/powered = !has_stat(NOPOWER)
+	var/damaged = get_integrity() < max_integrity * 3/4
 	if(density)
-		if(locked && lights && arePowerSystemsOn())
-			icon_state = "door_locked"
-		else
-			icon_state = "door_closed"
-		if(p_open || welded)
-			if(p_open)
-				. += "panel_open"
-			if (!has_stat(NOPOWER))
+		look.state((is_bolted(src) && lights && arePowerSystemsOn()) ? "door_locked" : "door_closed")
+		if(panel_is_open(src) || is_welded(src))
+			if(powered)
 				if(has_stat(BROKEN))
-					. += "sparks_broken"
-				else if (get_integrity() < max_integrity * 3/4)
-					. += "sparks_damaged"
-			if(welded)
-				. += "welded"
-		else if (get_integrity() < max_integrity * 3/4 && !has_stat(NOPOWER))
-			. += "sparks_damaged"
+					look.overlay("sparks_broken")
+				else if(damaged)
+					look.overlay("sparks_damaged")
+		else if(damaged && powered)
+			look.overlay("sparks_damaged")
 	else
-		icon_state = "door_open"
-		if((has_stat(BROKEN)) && !has_stat(NOPOWER))
-			. += "sparks_open"
-	if(frozen)
-		. += image(icon = 'icons/turf/overlays.dmi', icon_state = "snowairlock")
-	return .
+		look.hide("panel_open")
+		look.hide("welded")
+		look.state(open_state())
+		look.overlay("sparks_open", when = has_stat(BROKEN) && powered)
+	look.overlay("snowairlock", when = frozen, icon = 'icons/turf/overlays.dmi')
+
+/// The icon_state of the open door (a subtype shows its bolts on an open door).
+/obj/machinery/door/airlock/proc/open_state()
+	return "door_open"
 
 /obj/machinery/door/airlock/do_animate(animation)
 	switch(animation)
 		if("opening")
-			cut_overlay()
-			if(p_open)
-				flick("o_door_opening", src)  //can not use flick due to BYOND bug updating overlays right before flicking
-				update_icon()
-			else
-				flick("door_opening", src)//[stat ? "_stat":]
-				update_icon()
+			flick(panel_is_open(src) ? "o_door_opening" : "door_opening", src)
 		if("closing")
-			cut_overlay()
-			if(p_open)
-				flick("o_door_closing", src)
-				update_icon()
-			else
-				flick("door_closing", src)
-				update_icon()
+			flick(panel_is_open(src) ? "o_door_closing" : "door_closing", src)
 		if("spark")
 			if(density)
 				flick("door_spark", src)
@@ -459,47 +495,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/door/airlock, TYPE_PROC_REF(/atom, appear
 				flick("door_deny", src)
 				playsound(src, denied_sound, 50, 0, 3)
 	return
-
-/obj/machinery/door/airlock
-	silicon_use = SILICON_USE_UI
-
-DECLARE_UI(/obj/machinery/door/airlock, "AiAirlock")
-
-UI_DATA_REPLACE(/obj/machinery/door/airlock, "speed=normalspeed:num", "welded", "merge:ui_data_obj_machinery_door_airlock{power:list,shock:num,shock_timeleft:unknown,id_scanner:bool,locked:num,lights:num,safe:num,opened:bool,wires:list}")
-
-/// The computed part of /obj/machinery/door/airlock's window data (declared on its UI_DATA row).
-/obj/machinery/door/airlock/proc/ui_data_obj_machinery_door_airlock(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = list()
-
-	var/list/power = list()
-	power["main"] = main_power_lost_until > 0 ? 0 : 2
-	power["main_timeleft"] = round(main_power_lost_until > 0 ? max(main_power_lost_until - world.time,	0) / 10 : main_power_lost_until, 1)
-	power["backup"] = backup_power_lost_until > 0 ? 0 : 2
-	power["backup_timeleft"] = round(backup_power_lost_until > 0 ? max(backup_power_lost_until - world.time, 0) / 10 : backup_power_lost_until, 1)
-	data["power"] = power
-
-	data["shock"] = (electrified_until == 0) ? 2 : 0
-	data["shock_timeleft"] = round(electrified_until > 0 ? max(electrified_until - world.time, 	0) / 10 : electrified_until, 1)
-	data["id_scanner"] = !aiDisabledIdScanner
-	data["locked"] = locked // bolted
-	data["lights"] = lights // bolt lights
-	data["safe"] = safe // safeties
-	data["opened"] = !density // opened
-
-	var/list/wire = list()
-	wire["main_1"] = !wires.is_cut(WIRE_MAIN_POWER1)
-	wire["main_2"] = !wires.is_cut(WIRE_MAIN_POWER2)
-	wire["backup_1"] = !wires.is_cut(WIRE_BACKUP_POWER1)
-	wire["backup_2"] = !wires.is_cut(WIRE_BACKUP_POWER2)
-	wire["shock"] = !wires.is_cut(WIRE_ELECTRIFY)
-	wire["id_scanner"] = !wires.is_cut(WIRE_IDSCAN)
-	wire["bolts"] = !wires.is_cut(WIRE_DOOR_BOLTS)
-	wire["lights"] = !wires.is_cut(WIRE_BOLT_LIGHT)
-	wire["safe"] = !wires.is_cut(WIRE_SAFETY)
-	wire["timing"] = !wires.is_cut(WIRE_SPEED)
-
-	data["wires"] = wire
-	return data
 
 /obj/machinery/door/airlock/proc/hack(mob/user as mob)
 	if(aiHacking)
@@ -590,24 +585,15 @@ UI_DATA_REPLACE(/obj/machinery/door/airlock, "speed=normalspeed:num", "welded", 
 				fx_sparks(src, 5)
 	. = ..()
 
-/obj/machinery/door/airlock/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/airlock_use,
-	)
-	..()
+// ---- entries (capabilities() above lists them) ----
 
-/// The old attack_hand: shock/hold-open/xenos/maintenance-panel handling, then fell through to ..() (the base machine_hand chain).
-/datum/interaction/machine_hand/airlock_use
-	id = "airlock_use"
-	name = "Use"
-	effect = /obj/machinery/door/airlock/proc/interaction_use
+/// The Use touch needs what the machinery hand gate needs: power, posture and dexterity.
+/obj/machinery/door/airlock/proc/can_touch_by_hand(mob/user, obj/item/held)
+	return can_operate_by_hand(user, src, held)
 
-/obj/machinery/door/airlock/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!issilicon(user))
-		if(isElectrified())
-			if(shock(user, 100))
-				return TRUE
-
+/// A bare hand on the airlock (cap_electrify() has already zapped): let go of a door someone holds,
+/// xenos tear at it, an open panel shows the wires. Otherwise declines, and the door's own Use opens it.
+/obj/machinery/door/airlock/proc/touch_airlock(mob/user, obj/item/held)
 	if(!Adjacent(hold_open()))
 		rel_clear(src, nameof(hold_open))
 
@@ -623,48 +609,63 @@ UI_DATA_REPLACE(/obj/machinery/door/airlock, "speed=normalspeed:num", "welded", 
 			attack_alien(user)
 			return TRUE
 
-	if(p_open)
-		wires.Interact(user)
+	if(panel_is_open(src))
+		wires_of(src).Interact(user)
 		return TRUE
 
 	return FALSE
 
-/// Abstract: a ctrl-click on the airlock that answers one stance (run from click_ctrl()).
-/datum/interaction/airlock_ctrl
-	entry = AIRLOCK_ENTRY_CTRL
-	requires = list(REQ_REACH_ADJACENT)
+/// Anything held against the airlock (after cap_electrify()): tape, a signaler, a pAI cable, or a
+/// prying weapon on an unpowered door. Otherwise declines, and the door's own item use follows.
+/obj/machinery/door/airlock/proc/use_item_on_airlock(mob/user, obj/item/held)
+	touched_with(user, held)
 
-/datum/interaction/airlock_ctrl/hammer
-	id = "airlock_hammer"
-	name = "Hammer on the door"
-	stance = I_HURT
-	effect = /obj/machinery/door/airlock/proc/interaction_hammer
+	if(istype(held, /obj/item/taperoll))
+		return TRUE
 
-/datum/interaction/airlock_ctrl/hold_open
-	id = "airlock_hold_open"
-	name = "Hold the door open"
-	stance = I_GRAB
-	effect = /obj/machinery/door/airlock/proc/interaction_hold_open
+	if(istype(held, /obj/item/assembly/signaler))
+		attack_hand(user)
+		return TRUE
 
-/obj/machinery/door/airlock/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/airlock_ctrl/hammer,
-		/datum/interaction/airlock_ctrl/hold_open,
-	)
-	..()
+	if(istype(held, /obj/item/pai_cable))	// -- TLE
+		var/obj/item/pai_cable/cable = held
+		cable.plugin(src, user)
+		return TRUE
 
-/obj/machinery/door/airlock/proc/interaction_hammer(mob/user, obj/item/held, datum/interaction/interaction)
+	// Non-crowbar prying weapons retain their special unpowered-door behavior.
+	if(held.pry && !held.has_tool_quality(TOOL_CROWBAR) && !arePowerSystemsOn())
+		if(is_bolted(src))
+			to_chat(user, span_notice("The airlock's bolts prevent it from being forced."))
+			return TRUE
+		if(!is_welded(src) && !operating)
+			if(istype(held, /obj/item/material/twohanded/fireaxe))
+				var/obj/item/material/twohanded/fireaxe/F = held
+				if(!F.wielded)
+					to_chat(user, span_warning("You need to be wielding \the [F] to do that."))
+					return TRUE
+			if(density)
+				open(TRUE)
+			else
+				close(1)
+			return TRUE
+	return FALSE
+
+/// An item touched the airlock (before anything else it does). Subtypes react (phoron ignites).
+/obj/machinery/door/airlock/proc/touched_with(mob/user, obj/item/held)
+	return
+
+/obj/machinery/door/airlock/proc/hammer_on_door(mob/user, obj/item/held)
 	act_message(user, src, others = span_warning("%U% hammers on %T%!"), blind = span_warning("Someone hammers loudly on %T%!"))
-	add_fingerprint(user)
 	if(icon_state == "door_closed" && arePowerSystemsOn())
 		flick("door_deny", src)
 	playsound(src, knock_hammer_sound, 50, 0, 3)
 	return TRUE
 
-/obj/machinery/door/airlock/proc/interaction_hold_open(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/door/airlock/proc/hold_door_open(mob/user, obj/item/held)
 	rel_set(src, nameof(hold_open), user)
 	act_message(user, src, others = span_info("%U% begins holding %T% open."), blind = span_info("Someone has started holding %T% open."))
-	attack_hand(user)
+	if(!touch_airlock(user))
+		attack_hand(user)
 	return TRUE
 
 /obj/machinery/door/airlock/click_ctrl(mob/user) //Hold door open
@@ -675,7 +676,7 @@ UI_DATA_REPLACE(/obj/machinery/door/airlock, "speed=normalspeed:num", "welded", 
 	if(!Adjacent(user))
 		return CLICK_ACTION_BLOCKING
 
-	// Combat mode hammers on the door; Grab holds it open (the stance-declared ctrl interactions below).
+	// Combat mode hammers on the door; Grab holds it open (the stance-declared ctrl entries in capabilities()).
 	if(run_interaction_entry(user, src, user.get_active_hand(), AIRLOCK_ENTRY_CTRL))
 		return CLICK_ACTION_SUCCESS
 
@@ -697,416 +698,34 @@ UI_DATA_REPLACE(/obj/machinery/door/airlock, "speed=normalspeed:num", "welded", 
 	playsound(src, knock_unpowered_sound, 50, 0, 3)
 	return CLICK_ACTION_SUCCESS
 
-/obj/machinery/door/airlock/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	if(!user_allowed(ui.user))
-		return FALSE
-	return TRUE
+// ---- cap_weld_shut() and cap_pry() ----
 
-UI_ACT(/obj/machinery/door/airlock, "disrupt-main", ui_act_disrupt_main)
-UI_ACT_PROC(/obj/machinery/door/airlock, ui_act_disrupt_main)
-	if(!main_power_lost_until)
-		loseMainPower()
-		update_icon()
-	else
-		to_chat(ui.user, span_warning("Main power is already offline."))
-	. = TRUE
-	update_icon()
-	return TRUE
+/// Welding shut is offered on a closed, still door with no plasteel being fitted.
+/obj/machinery/door/airlock/proc/can_weld_now()
+	return density && operating <= 0 && !reinforcing
 
-UI_ACT(/obj/machinery/door/airlock, "disrupt-backup", ui_act_disrupt_backup)
-UI_ACT_PROC(/obj/machinery/door/airlock, ui_act_disrupt_backup)
-	if(!backup_power_lost_until)
-		loseBackupPower()
-		update_icon()
-	else
-		to_chat(ui.user, span_warning("Backup power is already offline."))
-	. = TRUE
-	update_icon()
-	return TRUE
+/// Outside combat mode a damaged airlock is repaired instead (the door's welder use, door.dm).
+/obj/machinery/door/airlock/proc/can_weld_without_repair()
+	return can_weld_now() && get_integrity() >= max_integrity
 
-UI_ACT(/obj/machinery/door/airlock, "shock-restore", ui_act_shock_restore)
-UI_ACT_PROC(/obj/machinery/door/airlock, ui_act_shock_restore)
-	electrify(0, 1)
-	. = TRUE
-	update_icon()
-	return TRUE
+/obj/machinery/door/airlock/cap_pry_name(mob/user)
+	return can_remove_electronics() ? "Remove electronics" : "Force open or closed"
 
-UI_ACT(/obj/machinery/door/airlock, "shock-temp", ui_act_shock_temp)
-UI_ACT_PROC(/obj/machinery/door/airlock, ui_act_shock_temp)
-	electrify(30, 1)
-	. = TRUE
-	update_icon()
-	return TRUE
-
-UI_ACT(/obj/machinery/door/airlock, "shock-perm", ui_act_shock_perm)
-UI_ACT_PROC(/obj/machinery/door/airlock, ui_act_shock_perm)
-	electrify(-1, 1)
-	. = TRUE
-	update_icon()
-	return TRUE
-
-UI_ACT(/obj/machinery/door/airlock, "idscan-toggle", ui_act_idscan_toggle)
-UI_ACT_PROC(/obj/machinery/door/airlock, ui_act_idscan_toggle)
-	set_idscan(aiDisabledIdScanner, 1)
-	. = TRUE
-// if("emergency-toggle")
-// 	toggle_emergency(ui.user)
-// 	. = TRUE
-	update_icon()
-	return TRUE
-
-UI_ACT(/obj/machinery/door/airlock, "bolt-toggle", ui_act_bolt_toggle)
-UI_ACT_PROC(/obj/machinery/door/airlock, ui_act_bolt_toggle)
-	toggle_bolt(ui.user)
-	. = TRUE
-	update_icon()
-	return TRUE
-
-UI_ACT(/obj/machinery/door/airlock, "light-toggle", ui_act_light_toggle)
-UI_ACT_PROC(/obj/machinery/door/airlock, ui_act_light_toggle)
-	if(wires.is_cut(WIRE_BOLT_LIGHT))
-		to_chat(ui.user, "The bolt lights wire is cut - The door bolt lights are permanently disabled.")
-		return
-	lights = !lights
-	update_icon()
-	. = TRUE
-	update_icon()
-	return TRUE
-
-UI_ACT(/obj/machinery/door/airlock, "safe-toggle", ui_act_safe_toggle)
-UI_ACT_PROC(/obj/machinery/door/airlock, ui_act_safe_toggle)
-	set_safeties(!safe, 1)
-	. = TRUE
-	update_icon()
-	return TRUE
-
-UI_ACT(/obj/machinery/door/airlock, "speed-toggle", ui_act_speed_toggle)
-UI_ACT_PROC(/obj/machinery/door/airlock, ui_act_speed_toggle)
-	if(wires.is_cut(WIRE_SPEED))
-		to_chat(ui.user, "The timing wire is cut - Cannot alter timing.")
-		return
-	normalspeed = !normalspeed
-	. = TRUE
-	update_icon()
-	return TRUE
-
-UI_ACT(/obj/machinery/door/airlock, "open-close", ui_act_open_close)
-UI_ACT_PROC(/obj/machinery/door/airlock, ui_act_open_close)
-	user_toggle_open(ui.user)
-	. = TRUE
-	update_icon()
-	return TRUE
-
-/obj/machinery/door/airlock/proc/user_allowed(mob/user)
-	var/mob/living/silicon/robot/R = user
-	if(istype(R) && !check_access(R.idcard))
-		return FALSE
-	var/allowed = (issilicon(user) && canAIControl(user))
-	if(!allowed && isobserver(user))
-		var/mob/observer/dead/D = user
-		if(D.can_admin_interact())
-			allowed = TRUE
-	return allowed
-
-/obj/machinery/door/airlock/proc/toggle_bolt(mob/user)
-	if(!user_allowed(user))
-		return
-	if(wires.is_cut(WIRE_DOOR_BOLTS))
-		to_chat(user, span_warning("The door bolt drop wire is cut - you can't toggle the door bolts."))
-		return
-	if(locked)
-		if(!arePowerSystemsOn())
-			to_chat(user, span_warning("The door has no power - you can't raise the door bolts."))
-		else
-			unlock()
-			to_chat(user, span_notice("The door bolts have been raised."))
-	else
-		lock()
-		to_chat(user, span_warning("The door bolts have been dropped."))
-
-/obj/machinery/door/airlock/proc/user_toggle_open(mob/user)
-	if(!user_allowed(user))
-		return
-	if(frozen)
-		to_chat(user, span_warning("The airlock is frozen shut!"))
-	else if(welded)
-		to_chat(user, span_warning("The airlock has been welded shut!"))
-	else if(locked)
-		to_chat(user, span_warning("The door bolts are down!"))
-	else if(!density)
-		if(hold_open())
-			if(hold_open() == user)
-				rel_clear(src, nameof(hold_open))
-				close()
-			else
-				to_chat(user, span_warning("[hold_open()] is holding \the [src] open!"))
-				return
-		close()
-	else
-		open()
-
-/obj/machinery/door/airlock/proc/can_remove_electronics()
-	return !frozen && p_open && (operating < 0 || (!operating && welded && !arePowerSystemsOn() && density && (!locked || (has_stat(BROKEN)))))
-
-/obj/machinery/door/airlock/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/airlock_use_item,
-	)
-	..()
-
-/// The old attackby: de-icing, shock, signaler, pai cable and unpowered prying, then fell through to ..().
-/datum/interaction/machine_item/airlock_use_item
-	id = "airlock_use_item"
-	name = "Use"
-	held_type = /obj/item
-	effect = /obj/machinery/door/airlock/proc/interaction_use_item
-
-/obj/machinery/door/airlock/proc/interaction_use_item(mob/user, obj/item/C, datum/interaction/interaction)
-	if(frozen)
-		// Melting with hot objects that don't take fuel
-		if(C.is_hot())
-			om_task_timed(user, 9 SECONDS, target = src, receiver = src, on_done = PROC_REF(interaction_use_item_timed_done), done_args = list(user), busy = user)
-			return TRUE
-
-		// This is just funny
-		if(istype(C, /obj/item/pen/crayon))
-			to_chat(user, span_notice("You try to use \the [C] to clear the ice, but it crumbles away!"))
-			consume(C, user)
-			return TRUE
-
-		// Check if we have something that can deice properly, and then use it's deice speed
-		for(var/IT in deicing_tools)
-			if(istype(C, IT))
-				handleRemoveIce(C, user, deicing_tools[IT])
-				return TRUE
-
-		//if we can't de-ice the door tell them what's wrong.
-		to_chat(user, span_notice("\the [src] is frozen shut!"))
-		return TRUE
-
-	if(!issilicon(user))
-		if(isElectrified() && shock(user, 75))
-			return TRUE
-
-	if(istype(C, /obj/item/taperoll))
-		return TRUE
-
-	add_fingerprint(user)
-
-	if(istype(C, /obj/item/assembly/signaler))
-		attack_hand(user)
-		return TRUE
-
-	if(istype(C, /obj/item/pai_cable))	// -- TLE
-		var/obj/item/pai_cable/cable = C
-		cable.plugin(src, user)
-		return TRUE
-
-	// Non-crowbar prying weapons retain their special unpowered-door behavior.
-	if(C.pry && !C.has_tool_quality(TOOL_CROWBAR) && !arePowerSystemsOn())
-		if(locked)
-			to_chat(user, span_notice("The airlock's bolts prevent it from being forced."))
-			return TRUE
-		if(!welded && !operating)
-			if(istype(C, /obj/item/material/twohanded/fireaxe))
-				var/obj/item/material/twohanded/fireaxe/F = C
-				if(!F.wielded)
-					to_chat(user, span_warning("You need to be wielding \the [F] to do that."))
-					return TRUE
-			if(density)
-				open(TRUE)
-			else
-				close(1)
-			return TRUE
-	return FALSE
-
-/obj/machinery/door/airlock/proc/interaction_use_item_timed_done(mob/user)
-	to_chat(user, span_notice("You finish melting the ice off \the [src]"))
-	unFreeze()
-
-/obj/machinery/door/airlock/welder_act(mob/user, obj/item/tool)
-	if(frozen)
-		var/obj/item/weldingtool/welder = tool.get_welder()
-		if(welder.remove_fuel(0,user) && welder.isOn())
-			to_chat(user, span_notice("You start to melt the ice off \the [src]"))
-			playsound(src, welder.usesound, 50, 1)
-			om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(welder_act_timed_done), done_args = list(user), busy = user)
-		return ITEM_INTERACT_SUCCESS
-	if(!issilicon(user) && isElectrified() && shock(user, 75))
-		return ITEM_INTERACT_BLOCKING
-	add_fingerprint(user)
-	// Weld shut or unweld (the stance-declared weld interactions below); otherwise the door's reinforce/repair.
-	if(run_interaction_entry(user, src, tool, AIRLOCK_ENTRY_WELD))
-		return ITEM_INTERACT_SUCCESS
-	return ..()
-
-/// Abstract: welding the airlock shut or open with a welder, per stance (run from welder_act()).
-/datum/interaction/airlock_weld
-	entry = AIRLOCK_ENTRY_WELD
-	default_action = INPUT_ACTION_USE
-	category = INTERACTION_CAT_LOCK
-	tool = TOOL_WELDER
-	tool_volume = 0
-	requires = list(REQ_REACH_ADJACENT)
-	effect = /obj/machinery/door/airlock/proc/interaction_weld
-
-/datum/interaction/airlock_weld/display_name(mob/actor, atom/target)
-	var/obj/machinery/door/airlock/airlock = target
-	return airlock.welded ? "Unweld" : "Weld shut"
-
-/// Outside combat mode a damaged airlock is repaired instead (interaction_weld() declines).
-/datum/interaction/airlock_weld/help
-	id = "airlock_weld_help"
-	name = "Weld shut"
-	stance = I_HELP
-
-/datum/interaction/airlock_weld/disarm
-	id = "airlock_weld_disarm"
-	name = "Weld shut"
-	stance = I_DISARM
-
-/datum/interaction/airlock_weld/grab
-	id = "airlock_weld_grab"
-	name = "Weld shut"
-	stance = I_GRAB
-
-/datum/interaction/airlock_weld/harm
-	id = "airlock_weld_harm"
-	name = "Weld shut"
-	stance = I_HURT
-
-/obj/machinery/door/airlock/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/airlock_weld/help,
-		/datum/interaction/airlock_weld/disarm,
-		/datum/interaction/airlock_weld/grab,
-		/datum/interaction/airlock_weld/harm,
-		/datum/interaction/airlock_pry/help,
-		/datum/interaction/airlock_pry/disarm,
-		/datum/interaction/airlock_pry/grab,
-	)
-	..()
-
-/obj/machinery/door/airlock/proc/interaction_weld(mob/user, obj/item/tool, datum/interaction/interaction)
-	if(reinforcing || (operating > 0) || !density)
-		return FALSE
-	if(interaction.stance == I_HELP && get_integrity() < max_integrity)
-		return FALSE
-	var/obj/item/weldingtool/welder = tool.get_welder()
-	if(welder.remove_fuel(0,user))
-		welded = !welded
-		playsound(src, tool.usesound, 75, 1)
-		update_icon()
-	return TRUE
-
-/obj/machinery/door/airlock/proc/welder_act_timed_done(mob/user)
-	to_chat(user, span_notice("You finish melting the ice off \the [src]"))
-	unFreeze()
-
-/obj/machinery/door/airlock/screwdriver_act(mob/user, obj/item/tool)
-	if(frozen)
-		return ITEM_INTERACT_SKIP_TO_ATTACK
-	if(!issilicon(user) && isElectrified() && shock(user, 75))
-		return ITEM_INTERACT_BLOCKING
-	add_fingerprint(user)
-	if(!p_open)
-		p_open = TRUE
-		playsound(src, tool.usesound, 50, 1)
-		update_icon()
-		attack_hand(user)
-		return ITEM_INTERACT_SUCCESS
-	if(has_stat(BROKEN))
-		to_chat(user, span_warning("The panel is broken and cannot be closed."))
-		return ITEM_INTERACT_BLOCKING
-	p_open = FALSE
-	playsound(src, tool.usesound, 50, 1)
-	update_icon()
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/door/airlock/wirecutter_act(mob/user, obj/item/tool)
-	if(frozen)
-		return ITEM_INTERACT_SKIP_TO_ATTACK
-	if(!issilicon(user) && isElectrified() && shock(user, 75))
-		return ITEM_INTERACT_BLOCKING
-	add_fingerprint(user)
-	attack_hand(user)
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/door/airlock/multitool_act(mob/user, obj/item/tool)
-	if(frozen)
-		return ITEM_INTERACT_SKIP_TO_ATTACK
-	if(!issilicon(user) && isElectrified() && shock(user, 75))
-		return ITEM_INTERACT_BLOCKING
-	add_fingerprint(user)
-	attack_hand(user)
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/door/airlock/crowbar_act(mob/user, obj/item/tool)
-	if(frozen)
-		return ITEM_INTERACT_SKIP_TO_ATTACK
-	if(!issilicon(user) && isElectrified() && shock(user, 75))
-		return ITEM_INTERACT_BLOCKING
-	add_fingerprint(user)
-	if(reinforcing)
-		return ..()
-	// Outside combat mode: remove the electronics or force the door (the stance-declared pry interactions).
-	// In combat mode nothing is declared, so the crowbar goes on to strike the door.
-	if(run_interaction_entry(user, src, tool, AIRLOCK_ENTRY_PRY))
-		return ITEM_INTERACT_SUCCESS
-	return ..()
-
-/// Abstract: prying the airlock with a crowbar outside combat mode (run from crowbar_act()).
-/datum/interaction/airlock_pry
-	entry = AIRLOCK_ENTRY_PRY
-	default_action = INPUT_ACTION_USE
-	category = INTERACTION_CAT_OPEN
-	tool = TOOL_CROWBAR
-	tool_volume = 0
-	requires = list(REQ_REACH_ADJACENT, REQ_TARGET_STATE(/obj/machinery/door/airlock/proc/can_force))
-	effect = /obj/machinery/door/airlock/proc/interaction_pry
-
-/datum/interaction/airlock_pry/display_name(mob/actor, atom/target)
-	var/obj/machinery/door/airlock/airlock = target
-	return airlock.can_remove_electronics() ? "Remove electronics" : "Force open or closed"
-
-/datum/interaction/airlock_pry/help
-	id = "airlock_pry_help"
-	name = "Force open or closed"
-	stance = I_HELP
-
-/datum/interaction/airlock_pry/disarm
-	id = "airlock_pry_disarm"
-	name = "Force open or closed"
-	stance = I_DISARM
-
-/datum/interaction/airlock_pry/grab
-	id = "airlock_pry_grab"
-	name = "Force open or closed"
-	stance = I_GRAB
-
-/// Requirement for prying: removing the electronics is always possible; forcing needs no power and no bolts.
-/obj/machinery/door/airlock/proc/can_force(mob/user, atom/target, obj/item/tool)
+/// Removing the electronics is always possible; forcing needs no power and no bolts.
+/obj/machinery/door/airlock/cap_pry_reason(mob/user, obj/item/held)
 	if(can_remove_electronics())
 		return TRUE
 	if(arePowerSystemsOn())
 		return "the airlock's motors resist your efforts to force it"
-	if(locked)
+	if(is_bolted(src))
 		return "the airlock's bolts prevent it from being forced"
 	return TRUE
 
-/obj/machinery/door/airlock/proc/interaction_pry(mob/user, obj/item/tool, datum/interaction/interaction)
+/obj/machinery/door/airlock/cap_pry_force(mob/user, obj/item/held)
 	if(can_remove_electronics())
-		use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_CROWBAR, volume = 75, start_self = "You start to remove electronics from the airlock assembly.", start_others = "[user] removes the electronics from the airlock assembly.", receiver = src, on_done = PROC_REF(crowbar_act_tool_done), done_args = list(user))
+		use_tool(user, held, src, delay = 4 SECONDS, quality = TOOL_CROWBAR, volume = 75, start_self = "You start to remove electronics from the airlock assembly.", start_others = "[user] removes the electronics from the airlock assembly.", receiver = src, on_done = PROC_REF(crowbar_act_tool_done), done_args = list(user))
 		return TRUE
-
-	// Force doors open/closed
-	if(density)
-		open(TRUE)
-	else
-		close(1)
-	return TRUE
+	return ..()
 
 /obj/machinery/door/airlock/proc/crowbar_act_tool_done(mob/user)
 	to_chat(user, span_notice("You removed the airlock electronics!"))
@@ -1133,6 +752,97 @@ UI_ACT_PROC(/obj/machinery/door/airlock, ui_act_open_close)
 		own_take(src, nameof(electronics))
 	qdel(src)
 
+/obj/machinery/door/airlock/proc/can_remove_electronics()
+	return !frozen && panel_is_open(src) && (operating < 0 || (!operating && is_welded(src) && !arePowerSystemsOn() && density && (!is_bolted(src) || (has_stat(BROKEN)))))
+
+// ---- panel() ----
+
+/// The panel capability's handler, refined: a broken panel won't close, and opening it shows the wires.
+/obj/machinery/door/airlock/cap_panel_toggle(mob/user, obj/item/held)
+	if(panel_is_open(src) && has_stat(BROKEN))
+		return refuse(user, "The panel is broken and cannot be closed.")
+	. = ..()
+	if(panel_is_open(src))
+		wires_of(src).Interact(user)
+
+// ---- emag() ----
+
+/// A cryptographic sequencer sparks a closed, working door open for good. Declines (no use spent) on
+/// an open or dead door.
+/obj/machinery/door/airlock/proc/emag_effect(mob/user, obj/item/card/emag/card)
+	// ALLOW(sys_emag_act): cap_emag()'s effect reuses the door's shared on_emag() mechanism (door.dm)
+	if(!on_emag(1, user, card))
+		return FALSE // cap_emag(): the effect refuses first, so nothing is set or spent
+	return TRUE
+
+// door.dm declares the door's emag for every door; the airlock's is its emag() capability.
+TYPE_TABLE(/obj/machinery/door/airlock, emag_decl, null)
+
+// ---- frozen doors ----
+
+/datum/capability/frozen_shut
+
+/// A frozen airlock: every tool and item chips (or melts) the ice before anything else it would do.
+/proc/cap_frozen_shut()
+	return new /datum/capability/frozen_shut
+
+/datum/capability/frozen_shut/interactions(atom/holder)
+	. = list()
+	for(var/quality in list(TOOL_CROWBAR, TOOL_SCREWDRIVER, TOOL_WIRECUTTER, TOOL_MULTITOOL, TOOL_WELDER))
+		var/datum/capability/entry/wrapper = cap_tool("Clear the ice", quality, TYPE_PROC_REF(/obj/machinery/door/airlock, deice), works_broken = TRUE, works_unpowered = TRUE, priority = 100)
+		. += cap_entry_setup(adopt_entry(wrapper, id = "frozen_shut:[quality]"), applies = TYPE_PROC_REF(/obj/machinery/door/airlock, is_frozen), insulated = TRUE, tool_volume = 0)
+	// Below the emag (50), above the airlock's other item uses.
+	var/datum/capability/entry/by_item = cap_use_on("Clear the ice", /obj/item, TYPE_PROC_REF(/obj/machinery/door/airlock, deice), works_broken = TRUE, works_unpowered = TRUE, priority = 40)
+	. += cap_entry_setup(adopt_entry(by_item, id = "frozen_shut:item"), applies = TYPE_PROC_REF(/obj/machinery/door/airlock, is_frozen), insulated = TRUE)
+
+/datum/capability/frozen_shut/examine(atom/holder, mob/user)
+	var/obj/machinery/door/airlock/A = holder
+	if(istype(A) && A.frozen)
+		return list(span_danger("it's frozen shut!"))
+	return null
+
+/obj/machinery/door/airlock/proc/is_frozen()
+	return frozen
+
+/obj/machinery/door/airlock/proc/deice(mob/user, obj/item/held)
+	// A lit welder melts it.
+	var/obj/item/weldingtool/welder = held.get_welder()
+	if(welder)
+		if(welder.remove_fuel(0,user) && welder.isOn())
+			to_chat(user, span_notice("You start to melt the ice off \the [src]"))
+			playsound(src, welder.usesound, 50, 1)
+			om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(welder_act_timed_done), done_args = list(user), busy = user)
+		return TRUE
+
+	// Melting with hot objects that don't take fuel
+	if(held.is_hot())
+		om_task_timed(user, 9 SECONDS, target = src, receiver = src, on_done = PROC_REF(interaction_use_item_timed_done), done_args = list(user), busy = user)
+		return TRUE
+
+	// This is just funny
+	if(istype(held, /obj/item/pen/crayon))
+		to_chat(user, span_notice("You try to use \the [held] to clear the ice, but it crumbles away!"))
+		consume(held, user)
+		return TRUE
+
+	// Check if we have something that can deice properly, and then use it's deice speed
+	for(var/IT in deicing_tools)
+		if(istype(held, IT))
+			handleRemoveIce(held, user, deicing_tools[IT])
+			return TRUE
+
+	//if we can't de-ice the door tell them what's wrong.
+	to_chat(user, span_notice("\the [src] is frozen shut!"))
+	return TRUE
+
+/obj/machinery/door/airlock/proc/interaction_use_item_timed_done(mob/user)
+	to_chat(user, span_notice("You finish melting the ice off \the [src]"))
+	unFreeze()
+
+/obj/machinery/door/airlock/proc/welder_act_timed_done(mob/user)
+	to_chat(user, span_notice("You finish melting the ice off \the [src]"))
+	unFreeze()
+
 /obj/machinery/door/airlock/proc/handleRemoveIce(obj/item/W, mob/user as mob, time = 15)
 	to_chat(user, span_notice("You start to chip at the ice covering \the [src]"))
 	om_task_timed(user, time SECONDS, target = src, receiver = src, on_done = PROC_REF(handleRemoveIce_timed_done), done_args = list(user), busy = user)
@@ -1141,8 +851,64 @@ UI_ACT_PROC(/obj/machinery/door/airlock, ui_act_open_close)
 	unFreeze()
 	to_chat(user, span_notice("You finish chipping the ice off \the [src]"))
 
+// ---- the remote control panel (cap_ai_control(), the AiAirlock window) ----
+
+/obj/machinery/door/airlock/ui_allowed(mob/user, action)
+	return user_allowed(user)
+
+/obj/machinery/door/airlock/door_safeties_on()
+	return !!safe
+
+/obj/machinery/door/airlock/proc/user_allowed(mob/user)
+	var/mob/living/silicon/robot/R = user
+	if(istype(R) && !check_access(R.idcard))
+		return FALSE
+	var/allowed = (issilicon(user) && canAIControl(user))
+	if(!allowed && isobserver(user))
+		var/mob/observer/dead/D = user
+		if(D.can_admin_interact())
+			allowed = TRUE
+	return allowed
+
+/obj/machinery/door/airlock/proc/toggle_bolt(mob/user)
+	if(!user_allowed(user))
+		return
+	if(wire_cut(WIRE_DOOR_BOLTS))
+		to_chat(user, span_warning("The door bolt drop wire is cut - you can't toggle the door bolts."))
+		return
+	if(is_bolted(src))
+		if(!arePowerSystemsOn())
+			to_chat(user, span_warning("The door has no power - you can't raise the door bolts."))
+		else
+			unlock()
+			to_chat(user, span_notice("The door bolts have been raised."))
+	else
+		lock()
+		to_chat(user, span_warning("The door bolts have been dropped."))
+
+/obj/machinery/door/airlock/proc/user_toggle_open(mob/user)
+	if(!user_allowed(user))
+		return
+	if(frozen)
+		to_chat(user, span_warning("The airlock is frozen shut!"))
+	else if(is_welded(src))
+		to_chat(user, span_warning("The airlock has been welded shut!"))
+	else if(is_bolted(src))
+		to_chat(user, span_warning("The door bolts are down!"))
+	else if(!density)
+		if(hold_open())
+			if(hold_open() == user)
+				rel_clear(src, nameof(hold_open))
+				close()
+			else
+				to_chat(user, span_warning("[hold_open()] is holding \the [src] open!"))
+				return
+		close()
+	else
+		open()
+
 /obj/machinery/door/airlock/on_broken()
-	p_open = TRUE
+	cap_set(src, CAP_PANEL_OPEN, TRUE)
 	if (secured_wires)
 		lock()
 	for (var/mob/O in viewers(src, null))
@@ -1150,8 +916,6 @@ UI_ACT_PROC(/obj/machinery/door/airlock, ui_act_open_close)
 			O.show_message("[name]'s control panel bursts open, sparks spewing out!")
 
 	fx_sparks(src, 5)
-
-	update_icon()
 	return
 
 /obj/machinery/door/airlock/open(forced=0)
@@ -1215,15 +979,15 @@ UI_ACT_PROC(/obj/machinery/door/airlock, ui_act_open_close)
 
 /obj/machinery/door/airlock/can_open(forced=0)
 	if(!forced)
-		if(!arePowerSystemsOn() || wires.is_cut(WIRE_OPEN_DOOR))
+		if(!arePowerSystemsOn() || wire_cut(WIRE_OPEN_DOOR))
 			return FALSE
 
-	if(locked || welded)
+	if(is_bolted(src) || is_welded(src))
 		return FALSE
 	. = ..()
 
 /obj/machinery/door/airlock/can_close(forced=0)
-	if(locked || welded)
+	if(is_bolted(src) || is_welded(src))
 		return FALSE
 	if(!forced)
 		//despite the name, this wire is for general door control.
@@ -1232,7 +996,7 @@ UI_ACT_PROC(/obj/machinery/door/airlock, ui_act_open_close)
 				return FALSE
 			else
 				rel_clear(src, nameof(hold_open))
-		if(!arePowerSystemsOn() || wires.is_cut(WIRE_OPEN_DOOR))
+		if(!arePowerSystemsOn() || wire_cut(WIRE_OPEN_DOOR))
 			return	0
 	. = ..()
 
@@ -1287,7 +1051,7 @@ UI_ACT_PROC(/obj/machinery/door/airlock, ui_act_open_close)
 	injure(INJURY_BLUNT, crush_damage)
 	return FALSE
 
-/obj/machinery/door/airlock/close(forced= FALSE, ignore_safties = FALSE, crush_damage = DOOR_CRUSH_DAMAGE)
+/obj/machinery/door/airlock/close(forced= FALSE, ignore_safties = FALSE, crush_damage)
 	if(!can_close(forced))
 		return FALSE
 	clear_autoclose_blockers()
@@ -1308,10 +1072,7 @@ UI_ACT_PROC(/obj/machinery/door/airlock, ui_act_open_close)
 					sleep_until_autoclose_blocker_moves(AM)
 					return
 
-	for(var/turf/turf in locs)
-		for(var/atom/movable/AM in turf)
-			if(AM.airlock_crush(crush_damage))
-				take_damage(crush_damage, BRUTE, MELEE)
+	door_crush(src, crush_damage) // cap_crush()
 
 	use_power(360)	//360 W seems much more appropriate for an actuator moving an industrial door capable of crushing people
 	has_beeped = 0
@@ -1363,17 +1124,17 @@ UI_ACT_PROC(/obj/machinery/door/airlock, ui_act_open_close)
 			killthis.ex_act(2)//Smashin windows
 	. = ..()
 
+/// Drops the bolts (cap_bolts(): CAP_BOLTED). forced drops them mid-swing.
 /obj/machinery/door/airlock/proc/lock(forced=0)
-	if(locked)
+	if(is_bolted(src))
 		return FALSE
 
 	if (operating && !forced) return FALSE
 
-	set_locked(TRUE)
+	cap_set(src, CAP_BOLTED, TRUE)
 	playsound(src, bolt_down_sound, 30, 0, 3, volume_channel = VOLUME_CHANNEL_DOORS)
 	for(var/mob/M in range(1,src))
 		M.show_message("You hear a click from the bottom of the door.", 2)
-	update_icon()
 	// A bolted open door cannot autoclose: drop the deadline instead of waking to find that out.
 	if(close_door_at && !density)
 		close_door_at = 0
@@ -1381,26 +1142,38 @@ UI_ACT_PROC(/obj/machinery/door/airlock, ui_act_open_close)
 	publish_door_mode()
 	return TRUE
 
+/// Raises the bolts. Unless forced, needs power, a still door and an uncut bolt wire.
 /obj/machinery/door/airlock/proc/unlock(forced=0)
-	if(!locked)
+	if(!is_bolted(src))
 		return
 
 	if (!forced)
-		if(operating || !arePowerSystemsOn() || wires.is_cut(WIRE_DOOR_BOLTS)) return
+		if(operating || !arePowerSystemsOn() || wire_cut(WIRE_DOOR_BOLTS)) return
 
-	set_locked(FALSE)
+	cap_set(src, CAP_BOLTED, FALSE)
 	playsound(src, bolt_up_sound, 30, 0, 3, volume_channel = VOLUME_CHANNEL_DOORS)
 	for(var/mob/M in range(1,src))
 		M.show_message("You hear a click from the bottom of the door.", 2)
-	update_icon()
 	resume_autoclose_if_possible()
 	publish_door_mode()
 	return TRUE
 
+/// cap_bolts() drops and raises through the airlock's own bolt mechanism.
+/obj/machinery/door/airlock/set_bolted(on, forced = FALSE)
+	return on ? lock(forced) : unlock(forced)
+
 /obj/machinery/door/airlock/allowed(mob/M)
-	if(locked)
+	if(is_bolted(src))
 		return FALSE
 	. = ..()
+
+/// The access check is the cap_door_access() capability (the door's own req_access, design review H1),
+/// and emergency access lets anyone through.
+/obj/machinery/door/airlock/check_access_list(list/L)
+	if(emergency_access_on(src))
+		return TRUE
+	var/datum/capability/lock/C = cap_of(src, /datum/capability/lock)
+	return C ? C.grants(src, L) : ..()
 
 /obj/machinery/door/airlock/Initialize(mapload, obj/structure/door_assembly/assembly=null)
 	//if assembly is given, create the new door from the assembly
@@ -1429,14 +1202,10 @@ UI_ACT_PROC(/obj/machinery/door/airlock, ui_act_open_close)
 		//get the dir from the assembly
 		set_dir(assembly.dir)
 
-	//wires
+	// Wires: the wires capability makes them on first use, secure ones for secured_wires (wires_type_for()).
 	var/turf/T = get_turf(src)
 	if(T && (T.z in using_map.admin_levels))
 		secured_wires = 1
-	if (secured_wires)
-		own_set(src, nameof(wires), new/datum/wires/airlock/secure(src))
-	else
-		own_set(src, nameof(wires), new/datum/wires/airlock(src))
 
 	. = ..()
 
@@ -1448,7 +1217,6 @@ UI_ACT_PROC(/obj/machinery/door/airlock, ui_act_open_close)
 	name = "\improper [name]"
 	if(frequency)
 		set_frequency(frequency)
-	update_icon()
 
 // Most doors will never be deconstructed over the course of a round,
 // so as an optimization defer the creation of electronics until
@@ -1471,16 +1239,18 @@ DAMAGE_REACTION(/obj/machinery/door/airlock, DAMAGE_EMP, PROC_REF(airlock_emp))
 /// An EMP may electrify the airlock for a while.
 /obj/machinery/door/airlock/proc/airlock_emp(datum/damage_packet/packet)
 	if(prob(40/packet.severity))
-		var/duration = world.time + ((30 / packet.severity) SECONDS)
-		if(duration > electrified_until)
-			electrify(duration)
+		var/seconds = 30 / packet.severity
+		// Never shortens a longer (or permanent) electrification.
+		if(electrified_until != -1 && time_left(src, nameof(electrified_until)) < seconds SECONDS)
+			electrify(seconds)
 
 /obj/machinery/door/airlock/power_change() //putting this is obj/machinery/door itself makes non-airlock doors turn invisible for some reason
 	. = ..()
 	if(has_stat(NOPOWER))
 		// If we lost power, disable electrification
 		// Keeping door lights on, runs on internal battery or something.
-		electrified_until = 0
+		timed_cancel(src, nameof(electrified_until))
+		set_electrified_until(0)
 	resume_autoclose_if_possible()
 
 /obj/machinery/door/airlock/proc/prison_open()
@@ -1508,11 +1278,6 @@ DAMAGE_REACTION(/obj/machinery/door/airlock, DAMAGE_EMP, PROC_REF(airlock_emp))
 	return FALSE
 */
 
-/obj/machinery/door/airlock/examine(mob/user)
-	. = ..()
-	if(frozen)
-		. += span_danger("it's frozen shut!")
-
 /// Most airlocks don't freeze, subtypes set this
 /obj/machinery/door/airlock/proc/can_freeze()
 	SHOULD_BE_PURE(TRUE) // Don't put logic here, just return if the airlock can freeze or not.
@@ -1524,14 +1289,14 @@ DAMAGE_REACTION(/obj/machinery/door/airlock, DAMAGE_EMP, PROC_REF(airlock_emp))
 	PRIVATE_PROC(TRUE)
 
 	frozen = FALSE
-	update_icon()
+	changed(src)
 
 /obj/machinery/door/airlock/proc/freeze()
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 
 	frozen = TRUE
-	update_icon()
+	changed(src)
 
 // === merged from airlock_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/machinery/door/airlock/scp
@@ -1541,7 +1306,7 @@ DAMAGE_REACTION(/obj/machinery/door/airlock, DAMAGE_EMP, PROC_REF(airlock_emp))
 	close_sound_powered = 'sound/machines/scp1c.ogg'
 
 /obj/machinery/door/airlock/can_pathfinding_enter(atom/movable/actor, dir, datum/pathfinding/search)
-	return ..() || (has_access(req_access, req_one_access, search.ss13_with_access) && !locked && operable())
+	return ..() || (has_access(req_access, req_one_access, search.ss13_with_access) && !is_bolted(src) && operable())
 
 // === merged from robot_chomp.dm during hard-fork de-suffix. Placed in this file because it
 // is the highest-positioned definer in the override chain for the members it
@@ -1624,9 +1389,7 @@ EXTEND_INTERACTIONS(/obj/machinery/door/airlock, INTERACT_ROBOT("Use", PROC_REF(
 		return TRUE
 	return FALSE
 
-/obj/machinery/door/airlock/ownership()
-	. = ..()
-	. += owns(nameof(electronics), policy = OWN_CONTAINED)
+OWN(/obj/machinery/door/airlock, electronics, OWN_CONTAINED)
 
 /// closeOther (a relation view: it reads null once the target is deleted).
 /obj/machinery/door/airlock/proc/closeOther() as /obj/machinery/door/airlock
@@ -1641,5 +1404,3 @@ EXTEND_INTERACTIONS(/obj/machinery/door/airlock, INTERACT_ROBOT("Use", PROC_REF(
 	return water_res
 
 #undef AIRLOCK_ENTRY_CTRL
-#undef AIRLOCK_ENTRY_WELD
-#undef AIRLOCK_ENTRY_PRY
