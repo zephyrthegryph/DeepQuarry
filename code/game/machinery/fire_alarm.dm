@@ -20,7 +20,7 @@ FIRE ALARM
 	idle_power_usage = 2
 	active_power_usage = 6
 	power_channel = ENVIRON
-	set_panel_open(FALSE)
+	panel_open = FALSE
 	var/seclevel
 	circuit = /obj/item/circuitboard/firealarm
 	var/alarms_hidden = FALSE //If the alarms from this machine are visible on consoles
