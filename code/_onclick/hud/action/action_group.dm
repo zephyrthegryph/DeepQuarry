@@ -35,9 +35,11 @@
 		index = length(actions) + 1
 	index = min(length(actions) + 1, index)
 	rel_add(src, "actions", action)
-	// rel_add appends; bubble it back to `index` (membership is unchanged, only the order)
-	for(var/i = length(actions); i > index; i--)
-		actions.Swap(i, i - 1)
+	// rel_add appends: move the members that belong after it back to the end, in order
+	var/list/after = actions.Copy(index, length(actions))
+	for(var/atom/movable/screen/member as anything in after)
+		rel_remove(src, "actions", member)
+		rel_add(src, "actions", member)
 	refresh_actions()
 
 /datum/action_group/proc/remove_action(atom/movable/screen/action)

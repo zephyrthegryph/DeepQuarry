@@ -73,7 +73,7 @@
 /datum/computer_file/program/newsbrowser/kill_program()
 	..()
 	requires_ntnet = TRUE
-	own_take(src, "loaded_article")
+	own_clear(src, "loaded_article", OWN_DELETE)
 	download_progress = 0
 	downloading = FALSE
 	show_archived = FALSE
@@ -97,7 +97,7 @@
 			downloading = 0
 			download_progress = 0
 			requires_ntnet = 1
-			own_take(src, "loaded_article")
+			own_clear(src, "loaded_article", OWN_DELETE)
 		if("PRG_clearmessage")
 			. = TRUE
 			message = ""

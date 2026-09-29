@@ -76,7 +76,7 @@
 	if(!downloaded_file)
 		return
 	generate_network_log("Aborted download of file [hacked_download ? "**ENCRYPTED**" : downloaded_file.filename].[downloaded_file.filetype].")
-	own_take(src, "downloaded_file")
+	own_clear(src, "downloaded_file", OWN_DELETE) // null already when store_file() took it
 	download_completion = 0
 	ui_header = "downloader_finished.gif"
 
@@ -87,7 +87,7 @@
 	if(!computer() || !computer().hard_drive || !computer().hard_drive.store_file(downloaded_file))
 		// The download failed
 		downloaderror = "I/O ERROR - Unable to save file. Check whether you have enough free space on your hard drive and whether your hard drive is properly connected. If the issue persists contact your system administrator for assistance."
-	own_take(src, "downloaded_file")
+	own_clear(src, "downloaded_file", OWN_DELETE) // null already when store_file() took it
 	download_completion = 0
 	ui_header = "downloader_finished.gif"
 
@@ -129,7 +129,7 @@
 			if(downloaderror)
 				download_completion = 0
 				download_netspeed = 0
-				own_take(src, "downloaded_file")
+				own_clear(src, "downloaded_file", OWN_DELETE) // null already when store_file() took it
 				downloaderror = ""
 			return TRUE
 	return FALSE

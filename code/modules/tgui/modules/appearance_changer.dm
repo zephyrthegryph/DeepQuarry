@@ -558,11 +558,9 @@
 					owner().resleeve_lock = FALSE // unlock it, even though it's only temp, so you don't get the warning every time
 			if(!owner().changeling_locked && (!owner().resleeve_lock && can_change(owner(), APPEARANCE_RACE)))
 				// Create it from the mob
-				if(DC.disk.stored)
-					QDEL_NULL(DC.disk.stored)
 				to_chat(ui.user,span_notice("\The [owner()]'s bodyrecord was saved to the disk."))
 				owner().update_dna()
-				DC.disk.stored = new /datum/transhuman/body_record(owner(), FALSE, FALSE) // Saves a COPY!
+				own_set(DC.disk, "stored", new /datum/transhuman/body_record(owner(), FALSE, FALSE)) // Saves a COPY! The old record is deleted
 				DC.disk.stored.locked = FALSE // remove lock
 				DC.disk.name = "[initial(DC.disk.name)] ([owner().real_name])"
 			return TRUE

@@ -123,8 +123,7 @@
 		if("obj_delete")
 			var/datum/objective/O = locate(params["ref"])
 			if(istype(O))
-				rel_remove(target_mind, "objectives", O)
-				qdel(O)
+				qdel(O) // it leaves the mind's objectives as it goes
 			SStgui.update_uis(src)
 			return TRUE
 		if("obj_announce")

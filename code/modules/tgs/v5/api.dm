@@ -35,7 +35,8 @@
 
 /datum/tgs_api/v5/New(datum/tgs_event_handler/event_handler, datum/tgs_version/version, datum/tgs_http_handler/http_handler)
 	. = ..()
-	own_set(src, "interop_version", version)
+	// the base type owns `version` (and replaces it on reattach): keep our own copy of the interop version
+	own_set(src, "interop_version", new /datum/tgs_version(version.raw_parameter))
 	own_set(src, "http_handler", http_handler)
 	TGS_DEBUG_LOG("V5 API created: [json_encode(args)]")
 
@@ -50,7 +51,7 @@
 	access_identifier = world.params[DMAPI5_PARAM_ACCESS_IDENTIFIER]
 
 	var/datum/tgs_version/api_version = ApiVersion()
-	own_take(src, "version") // we want this to be the TGS version, not the interop version
+	own_clear(src, "version", OWN_DELETE) // we want this to be the TGS version, not the interop version
 
 	// sleep once to prevent an issue where world.Export on the first tick can hang indefinitely
 	TGS_DEBUG_LOG("Starting Export bug prevention sleep tick. time:[world.time] sleep_offline:[world.sleep_offline]")

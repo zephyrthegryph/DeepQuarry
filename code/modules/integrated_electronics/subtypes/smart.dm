@@ -49,7 +49,7 @@
 
 /obj/item/integrated_circuit/smart/advanced_pathfinder/Initialize(mapload)
 	.=..()
-	idc = new(src)
+	own_set(src, "idc", new /obj/item/card/id(src))
 
 /obj/item/integrated_circuit/smart/advanced_pathfinder/do_work()
 	if(!assembly())

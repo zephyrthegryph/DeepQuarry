@@ -1255,7 +1255,7 @@
 
 
 		var/obj/item/paper/admin/P = new /obj/item/paper/admin( null ) //hopefully the null loc won't cause trouble for us
-		faxreply = P
+		own_set(src, "faxreply", P) // a replaced reply is deleted
 
 		rel_set(P, "admindatum", src)
 		P.origin = replyorigin
@@ -1561,9 +1561,9 @@
 		if (src.admincaster_screen == 0)
 			if(src.admincaster_feed_channel())
 				rel_clear(src, "admincaster_feed_channel")
-				src.admincaster_scratch_channel = new /datum/feed_channel
+				own_set(src, "admincaster_scratch_channel", new /datum/feed_channel)
 			if(src.admincaster_feed_message)
-				src.admincaster_feed_message = new /datum/feed_message
+				own_set(src, "admincaster_feed_message", new /datum/feed_message)
 		SSadmin_verbs.dynamic_invoke_verb(usr.client, /datum/admin_verb/access_news_network)
 
 	else if(href_list["ac_show_channel"])

@@ -14,10 +14,12 @@
 	special_handling = TRUE
 
 /obj/item/book/codex/Initialize(mapload)
-	tree = codex_tree_keys["[root_type]"]
-	if(!tree)
-		tree = new(src, root_type)
-		codex_tree_keys["[root_type]"] = tree
+	// the tree is shared by every codex of this root type (codex_tree_keys holds it): we only view it
+	var/datum/codex_tree/shared_tree = codex_tree_keys["[root_type]"]
+	if(!shared_tree)
+		shared_tree = new(src, root_type)
+		codex_tree_keys["[root_type]"] = shared_tree
+	rel_set(src, "tree", shared_tree)
 	. = ..()
 
 EXTEND_INTERACTIONS(/obj/item/book/codex, INTERACT_USE("Read", PROC_REF(interaction_read_codex)))
@@ -25,10 +27,11 @@ EXTEND_INTERACTIONS(/obj/item/book/codex, INTERACT_USE("Read", PROC_REF(interact
 /// Old attack_self.
 /obj/item/book/codex/proc/interaction_read_codex(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!tree)
-		tree = codex_tree_keys["[root_type]"]
-		if(!tree)
-			tree = new(src, root_type)
-			codex_tree_keys["[root_type]"] = tree
+		var/datum/codex_tree/shared_tree = codex_tree_keys["[root_type]"]
+		if(!shared_tree)
+			shared_tree = new(src, root_type)
+			codex_tree_keys["[root_type]"] = shared_tree
+		rel_set(src, "tree", shared_tree)
 	icon_state = "[initial(icon_state)]-open"
 	tree.display(user)
 

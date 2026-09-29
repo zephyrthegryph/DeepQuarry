@@ -864,9 +864,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			if(isnull(wake))
 				return
 			if(L.ai_brain)	//Cleaning up the original ai
-				var/datum/ai_brain/old_brain = L.ai_brain
-				own_take(L, "ai_brain")
-				qdel(old_brain)	//Only way I could make #TESTING - Unable to be GC'd to stop. del() logs show it works.
+				own_clear(L, "ai_brain", OWN_DELETE)	//Only way I could make #TESTING - Unable to be GC'd to stop. del() logs show it works.
 			L.initialize_ai_brain()
 			L.faction = faction
 			if(stance)

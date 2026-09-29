@@ -30,7 +30,7 @@
 /obj/item/integrated_circuit/output/video_camera/Initialize(mapload)
 	. = ..()
 	camera_network_id = "ic_cam_[sequential_id(/obj/item/integrated_circuit/output/video_camera)]"
-	camera = new(src, camera_network_id, see_dark)
+	own_set(src, "camera", new /obj/machinery/camera/intcircuit(src, camera_network_id, see_dark))
 	update_camera_name()
 
 
