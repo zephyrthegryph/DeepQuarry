@@ -119,6 +119,9 @@
 /// verb_source() names: shared sources for verb grants nothing else owns.
 #define VERB_SOURCE_CONFIG "config"
 #define VERB_SOURCE_ADMIN "admin"
+/// A capability on an atom while any source grants it (code/datums/capabilities/condition.dm): a temporary
+/// condition with behaviour, `om_grant_for(A, GRANT_CAPABILITY, /datum/capability/condition/x, source, time)`.
+#define GRANT_CAPABILITY "grant_capability"
 #define GRANT_ACCESS "grant_access"
 #define GRANT_TRAIT "grant_trait"
 

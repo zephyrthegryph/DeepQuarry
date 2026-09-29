@@ -212,7 +212,7 @@ The decision table. **Read it before writing anything with a timer.**
 |---|---|---|
 | "Not more than once per N" | `COOLDOWN_DECLARE(x)` + `COOLDOWN_START(src, x, N)` / `COOLDOWN_FINISHED(src, x)` | [built] |
 | A var that reverts after N | `timed_set(src, nameof(var), value, for_time = N)`, read the var directly, `time_left(src, nameof(var))` for a countdown, `timed_cancel(...)` | [built] |
-| A temporary condition **with behaviour** (EMP'd, failed, jammed, on fire) | a timed grant of a capability: `om_grant_for(src, GRANT_CAPABILITY, /datum/capability/condition/x, source, N)` | [planned] (plan §2.17) |
+| A temporary condition **with behaviour** (EMP'd, failed, jammed, on fire) | a timed grant of a capability: `om_grant_for(src, GRANT_CAPABILITY, /datum/capability/condition/x, source, N)` | [built] (`condition.dm`) |
 | Do something once, later | `after(src, N, PROC_REF(x), args...)`; owned, weak, dropped if src or any datum arg is gone | [built] |
 | One pending "do later" per name (re-arming replaces it) | `om_after_slot(src, "name", N, PROC_REF(x))` | [built] |
 | Something repeating while a condition holds | a cadence: `should_run()` + `periodic_step(dt)`, **never** a timer that re-arms itself | [built] |
@@ -684,7 +684,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/computer/general_air_control/fuel_injectio
 	timed_set(src, nameof(perceived_danger), new_danger, for_time = TIME_WITHOUT_RADIATION_BEFORE_RESET, revert_to = RAD_LEVEL_NONE)
 ```
 
-## B15. Temporary state → a timed grant [planned]
+## B15. Temporary state → a timed grant [built]
 
 Any var or field that exists only to hold a temporary condition with behaviour becomes a capability held for a time by a source. Examples: `failure_until`, `emp_until`, `jammed_until`, `shocked_until`, `overloaded`, `on_fire_until`.
 
@@ -705,7 +705,7 @@ Any var or field that exists only to hold a temporary condition with behaviour b
 
 - **Keep:** `timed_set` for pure value reverts that have no behaviour.
 - **Mobs:** keep afflictions and modifiers for body effects (they already follow this model).
-- **Until `GRANT_CAPABILITY` exists:** use `timed_set` on a plain flag, and **never** store an end time.
+- **Built:** `GRANT_CAPABILITY` (`code/datums/capabilities/condition.dm`) is a per-key effect: `om_grant_for(A, GRANT_CAPABILITY, path, source, duration)`, `om_grant(...)` and `om_revoke(...)`. The capability is one shared instance per path (`cap_condition_instance(path)`), attached with `add_capability()` while any source holds it and removed with the last hold (timed expiry or a deleted source). `/datum/capability/condition` has `blocks` (`ALL_ENTRIES`, or a list of capability types whose entries it refuses), `exempt` (capability types that still work), `else_say` ("%T% isn't responding."), `condition_hidden_verbs` and `draw()` (overlay `layer_name`).
 
 ## B16. `qdel()` → lifecycle verbs
 
