@@ -70,9 +70,9 @@ EXTEND_INTERACTIONS(/obj/item/material/fishing_rod, INTERACT_ITEM(null, PROC_REF
 		if(Bait)
 			Bait.forceMove(get_turf(user))
 			to_chat(user, span_notice("You swap \the [Bait] with \the [I]."))
-		own_set(src, "Bait", I)
-		user.drop_from_inventory(Bait)
-		Bait.forceMove(src)
+		user.drop_from_inventory(I)
+		I.forceMove(src)
+		own_set(src, "Bait", I) // CONTAINED: in our contents first
 		update_bait()
 	return FALSE
 

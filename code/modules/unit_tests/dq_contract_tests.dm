@@ -1014,6 +1014,7 @@
 	doctor.real_name = "Integration Doctor"
 	var/obj/item/card/id/medical/head/head_id = new(doctor)
 	var/obj/machinery/computer/skills/management = new(test_turf)
+	head_id.forceMove(management) // CONTAINED: in its contents before own_set
 	own_set(management, "scan", head_id)
 	var/datum/contract_definition/definition = SScontracts.definitions["experimental_medication_study"]
 	var/datum/contract/medical_trial/trial = definition.create_contract()
@@ -1059,6 +1060,7 @@
 	var/mob/living/carbon/human/doctor = new(test_turf)
 	var/obj/item/card/id/medical/head/head_id = new(doctor)
 	var/obj/machinery/computer/skills/management = new(test_turf)
+	head_id.forceMove(management) // CONTAINED: in its contents before own_set
 	own_set(management, "scan", head_id)
 	TEST_ASSERT(management.accept_management_contract(report, doctor), "department console rejected the rare-case report")
 	TEST_ASSERT(report.print_case_forms(test_turf), "rare-case forms did not print (state [report.state], consent time [report.consent_time], location [test_turf])")
@@ -1095,7 +1097,10 @@
 		rel_add(packet, "pages", page)
 	var/obj/machinery/photocopier/faxmachine/fax = new(test_turf)
 	fax.set_stat(0)
+	packet.forceMove(fax) // CONTAINED: in its contents before own_set
 	own_set(fax, "copyitem", packet)
+	own_take(management, "scan")
+	head_id.forceMove(fax)
 	own_set(fax, "scan", head_id)
 	TEST_ASSERT(fax.sendfax(CONTRACT_FAX_CASE_REGISTRY, doctor), "powered fax machine rejected the authenticated rare-case packet")
 	TEST_ASSERT_EQUAL(report.state, CONTRACT_COMPLETED, "real fax-machine submission did not complete the rare-case report")

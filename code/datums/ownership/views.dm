@@ -412,12 +412,35 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 
 // ---------------------------------------------------------------- replace_with identity
 
+/// The type family a replace_with() successor must belong to for `original`'s identity (handle
+/// slot and relation views) to follow it: the original's type cut to its first three path
+/// elements (/obj/machinery/door, /obj/item/clothing, /mob/living/carbon). A registry or holder
+/// view naming an airlock means "this airlock" as a machine; the door_assembly or steel stack it
+/// is torn down into is not one, and would answer procs the holder calls on it with runtimes.
+/proc/om_forward_family(datum/original)
+	var/list/parts = splittext("[original.type]", "/")
+	if(length(parts) > 4)
+		parts.Cut(5)
+	return text2path(jointext(parts, "/"))
+
+/// TRUE when `successor` is the same kind of thing as `original` (om_forward_family()).
+/proc/om_forward_compatible(datum/original, datum/successor)
+	var/family = om_forward_family(original)
+	return !family || istype(successor, family)
+
 /// replace_with(): `successor` takes over `original`'s identity before the original is destroyed.
+/// Identity follows only a successor of the same family (om_forward_compatible()):
 /// - its handle slot (old handles resolve to the successor), unless the successor has its own;
 /// - every relation view naming the original re-links to the successor;
+/// otherwise the original's handle and views end with it, as in any destroy. Always:
 /// - its FORWARD_STATE vars: an owned value moves, a relation view re-links, a value is copied.
 /proc/om_handle_forward(datum/original, datum/successor)
 	if(!original || !successor || original == successor)
+		return
+	if(!om_forward_compatible(original, successor))
+		if(GLOB.dq_lifecycle_trace_depth)
+			log_world("LIFECYCLE_TRACE: [original.type] [ref(original)] replace_with: successor [successor.type] is outside family [om_forward_family(original)]; handle and views end with the original")
+		om_forward_state(original, successor)
 		return
 	var/id = original.om_hid
 	if(id && !successor.om_hid)
@@ -442,6 +465,10 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 			rel_add(S, name, successor)
 		else if(S.vars[name] == original)
 			rel_set(S, name, successor)
+	om_forward_state(original, successor)
+
+/// replace_with(): carries `original`'s FORWARD_STATE vars to `successor` (om_handle_forward()).
+/proc/om_forward_state(datum/original, datum/successor)
 	for(var/name in original.declared_forward_vars())
 		if(!(name in successor.vars))
 			continue

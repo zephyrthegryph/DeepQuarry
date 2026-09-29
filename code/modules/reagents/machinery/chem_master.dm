@@ -56,9 +56,9 @@
 	return !beaker
 
 /obj/machinery/chem_master/proc/interaction_load_beaker(mob/user, obj/item/B, datum/interaction/interaction)
-	own_set(src, "beaker", B)
 	user.drop_item()
 	B.forceMove(src)
+	own_set(src, "beaker", B) // CONTAINED: in our contents first
 	to_chat(user, "You add 	he [B] to the machine.")
 	update_icon()
 	return TRUE
@@ -80,9 +80,9 @@
 	// straight off a turf or out of a latent holder still holds its
 	// pills as a declared generator until now.
 	PB.make_contents_real()
-	own_set(src, "loaded_pill_bottle", PB)
 	user.drop_item()
-	B.forceMove(src)
+	PB.forceMove(src)
+	own_set(src, "loaded_pill_bottle", PB) // CONTAINED: in our contents first
 	to_chat(user, "You add \the [loaded_pill_bottle] into the dispenser slot.")
 	return TRUE
 

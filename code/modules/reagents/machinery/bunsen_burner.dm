@@ -39,8 +39,8 @@ DECLARE_REAGENTS_TYPED(/obj/machinery/bunsen_burner, 1, null, /datum/reagents/di
 		return TRUE
 	// A new hand touches the beacon
 	user.drop_item(src)
-	own_set(src, "held_container", W)
-	held_container.forceMove(src)
+	W.forceMove(src)
+	own_set(src, "held_container", W) // CONTAINED: in our contents first
 	reagents.maximum_volume = held_container.reagents.maximum_volume // Update internal reagent distilling volume
 	to_chat(user, span_notice("You put \the [held_container] onto \the [src]."))
 	if(held_container.reagents.total_volume > 0)

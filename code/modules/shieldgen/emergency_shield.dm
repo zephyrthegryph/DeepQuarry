@@ -324,8 +324,8 @@ DAMAGE_REACTION(/obj/machinery/shieldgen, DAMAGE_EMP, PROC_REF(emp_scramble))
 		var/obj/item/cell/C = user.get_active_hand()
 		if(istype(C))
 			user.drop_item()
-			own_set(src, "cell", C)
 			C.forceMove(src)
+			own_set(src, "cell", C) // CONTAINED: in our contents first
 			C.add_fingerprint(user)
 
 			act_message(user, src, MSG_SELF(span_notice("You insert the power cell into %T%.")), MSG_OTHERS(span_notice("%U% inserts a power cell into %T%.")))

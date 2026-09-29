@@ -164,16 +164,18 @@
 			if(istype(ui.user.get_active_hand(), /obj/item/tank))
 				var/obj/item/tank/T = ui.user.get_active_hand()
 				var/slot = params["slot"]
+				var/slot_var
 				if(slot == 1 && !tank1)
-					own_set(src, "tank1", T)
+					slot_var = "tank1"
 				else if(slot == 2 && !tank2)
-					own_set(src, "tank2", T)
+					slot_var = "tank2"
 				else
 					to_chat(ui.user, span_warning("Slot [slot] is full."))
 					return
 
 				ui.user.drop_item(T)
 				T.forceMove(src)
+				own_set(src, slot_var, T) // CONTAINED: in our contents first
 				return TRUE
 			else
 				to_chat(ui.user, span_warning("You must be wielding a tank to insert it!"))

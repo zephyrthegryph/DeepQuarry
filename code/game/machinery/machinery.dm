@@ -408,6 +408,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 	latent_materialize_all(CONTAINER_SLOT_INTERNALS)
 	own_take_all(src, "component_parts")
 	for(var/obj/item/I in slot_contents(CONTAINER_SLOT_INTERNALS))
+		if(owner_of(I)) // already held by a var (an APC's cell, a camera's assembly): not a loose part
+			continue
 		if(istype(I, /obj/item/circuitboard))
 			own_set(src, "circuit", I)
 		else

@@ -227,8 +227,12 @@ assoc values) and refuses a datum used as an assoc key.
   to sleep under that slot; re-materializing into the entry unparks it into the same slot, so old
   handles resolve again and the views re-link (`om_handle_unpark()`, `rel_wake()`). Views count as
   accounted references in the collapse refcount check.
-- **`replace_with()`** hands the original's handle slot, relation views and `FORWARD_STATE(PATH,
-  var)` vars to its successor (`om_handle_forward()`).
+- **`replace_with()`** hands the original's `FORWARD_STATE(PATH, var)` vars to its successor
+  (`om_handle_forward()`), and its handle slot and relation views too when the successor is the
+  same kind of thing: inside the original's type cut to three path elements
+  (`om_forward_family()`, e.g. `/obj/machinery/door`). A successor outside it (an airlock torn
+  down into a `door_assembly` or a steel stack) is a new thing: the original's handle and views
+  end with it, as in any destroy, and the successor registers itself.
 - **Turf handles** carry their z-level's generation, so a handle to a recycled level's turf stops
   resolving.
 

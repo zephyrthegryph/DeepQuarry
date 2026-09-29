@@ -18,7 +18,7 @@
 /obj/structure/fireaxecabinet/Initialize(mapload)
 	. = ..()
 	if(starts_with_axe)
-		own_set(src, "fireaxe", new /obj/item/material/twohanded/fireaxe())
+		own_set(src, "fireaxe", new /obj/item/material/twohanded/fireaxe(src))
 	update_icon()
 
 /obj/structure/fireaxecabinet/declare_interactions(list/into)

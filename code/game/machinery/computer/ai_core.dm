@@ -26,9 +26,9 @@ DECLARE_INTERACTIONS(/obj/structure/AIcore, INTERACT_ITEM(null, PROC_REF(interac
 				play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 				to_chat(user, span_notice("You place the circuit board inside the frame."))
 				icon_state = "1"
-				own_set(src, "circuit", P)
 				user.drop_item()
 				P.forceMove(src)
+				own_set(src, "circuit", P) // CONTAINED: in our contents first
 		if(2)
 			if(istype(P, /obj/item/stack/cable_coil))
 				var/obj/item/stack/cable_coil/C = P

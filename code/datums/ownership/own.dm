@@ -329,6 +329,10 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 		. += value
 	else if(islist(value))
 		var/list/L = value
+		if(var_name == "contents") // built in, never assoc: indexing it by a thing is a bad index
+			for(var/datum/thing as anything in L)
+				. += thing
+			return
 		for(var/key in L)
 			if(isdatum(key))
 				. += key
@@ -355,6 +359,8 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 		H.vars[var_name] = null // ALLOW(api, ownership): lifecycle release
 		own_field_changed(H, var_name)
 		return
+	if(var_name == "contents")
+		return // built in: the dying thing leaves by moving, never by a cut or an index
 	if(islist(value))
 		var/list/L = value
 		L -= D
@@ -407,6 +413,8 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 	if(current == value)
 		holder.vars[var_name] = null // ALLOW(api, ownership): lifecycle release
 		own_field_changed(holder, var_name)
+	else if(var_name == "contents")
+		return // built in: a member leaves by moving (the caller moves it), never by a cut
 	else if(islist(current))
 		var/list/L = current
 		L -= value

@@ -333,7 +333,7 @@
 	TEST_ASSERT(E.periodic_pipe == PERIODIC_SLOW, "a new event is not on the slow lane")
 	E.kill()
 	TEST_ASSERT(!om_task_periodic_running(E), "a killed event kept its lane")
-	rel_remove(GLOB.event_service, "finished_events", E)
+	own_remove(GLOB.event_service, "finished_events", E) // the service owns finished events
 	for(var/i = EVENT_LEVEL_MUNDANE to EVENT_LEVEL_MAJOR)
 		var/datum/event_container/EC = GLOB.event_service.event_containers[i]
 		TEST_ASSERT(EC.periodic_pipe == PERIODIC_SLOW, "event container [i] is not keeping its clock")

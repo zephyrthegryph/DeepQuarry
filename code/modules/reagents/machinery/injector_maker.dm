@@ -74,9 +74,9 @@
 /obj/machinery/injector_maker/proc/interaction_add_beaker(mob/user, obj/item/O, datum/interaction/interaction)
 	if (beaker)
 		return TRUE
-	own_set(src, "beaker", O)
 	user.drop_item()
 	O.forceMove(src)
+	own_set(src, "beaker", O) // CONTAINED: in our contents first
 	update_icon()
 	return TRUE
 
