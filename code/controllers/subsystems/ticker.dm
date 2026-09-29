@@ -52,7 +52,7 @@ SUBSYSTEM_DEF(ticker)
 
 	var/roundend_check_paused = FALSE
 
-	var/round_start_time = 0
+	EXPIRY_DECLARE(round_start_time)
 	var/list/round_start_events
 	var/list/round_end_events
 	var/mode_result = "undefined"
@@ -201,7 +201,7 @@ SUBSYSTEM_DEF(ticker)
 	LAZYCLEARLIST(round_start_events)
 
 	//otherwise round_start_time would be 0 for the signals
-	round_start_time = world.time
+	EXPIRY_STAMP(src, round_start_time, CLOCK_WORLD)
 	GLOB.round_start_time = REALTIMEOFDAY
 
 	// Spawn randomized items

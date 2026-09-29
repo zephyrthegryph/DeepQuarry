@@ -125,7 +125,7 @@
 
 	var/name_archive //For admin things like possession
 
-	var/timeofdeath = 0.0//Living
+	EXPIRY_DECLARE(timeofdeath) //Living
 	/// What onlookers see when this mob dies ("\The [src] <death_message>"). See /mob/proc/get_death_message().
 	var/death_message = "seizes up and falls limp..."
 	COOLDOWN_DECLARE(cpr_time) //Carbon

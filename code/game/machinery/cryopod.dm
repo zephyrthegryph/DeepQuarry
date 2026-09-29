@@ -555,7 +555,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/cryopod, "announce", /obj/item/radio/interc
 	// begin: Dont delete mobs-in-mobs
 	if(to_despawn.client && to_despawn.stat<2)
 		var/mob/observer/dead/newghost = to_despawn.ghostize()
-		newghost.timeofdeath = world.time
+		EXPIRY_STAMP(newghost, timeofdeath, CLOCK_WORLD)
 	// end: Dont delete mobs-in-mobs
 
 	//This should guarantee that ghosts don't spawn.

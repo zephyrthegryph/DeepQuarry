@@ -41,15 +41,15 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/autoresleever, \
 		return
 	if(user.mind)
 		if(user.mind.vore_death)
-			if(ELAPSED_SINCE(user, user.timeofdeath, CLOCK_WORLD) >= vore_respawn)
+			if(ELAPSED(user, timeofdeath, CLOCK_WORLD) >= vore_respawn)
 				autoresleeve(user)
 			else
-				to_chat(user, span_warning("You must wait [((vore_respawn - (world.time - user.timeofdeath)) * 0.1) / 60] minutes to use \the [src]."))
+				to_chat(user, span_warning("You must wait [((vore_respawn - ELAPSED(user, timeofdeath, CLOCK_WORLD)) * 0.1) / 60] minutes to use \the [src]."))
 				return
-		else if(ELAPSED_SINCE(user, user.timeofdeath, CLOCK_WORLD) >= respawn)
+		else if(ELAPSED(user, timeofdeath, CLOCK_WORLD) >= respawn)
 			autoresleeve(user)
 		else
-			to_chat(user, span_warning("You must wait [((respawn - (world.time - user.timeofdeath)) * 0.1) /60] minutes to use \the [src]."))
+			to_chat(user, span_warning("You must wait [((respawn - ELAPSED(user, timeofdeath, CLOCK_WORLD)) * 0.1) /60] minutes to use \the [src]."))
 			return
 	else if(spawntype)
 		var/_answer_k54 = rerun_ask(user, "k54", PROC_REF(autoresleever_interaction_ghost), args, /datum/om/prompt/choice/alert, message = "This [src] spawns something special, would you like to play as it?", title = "Creachur", choices = list("No","Yes"))
@@ -134,8 +134,8 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/autoresleever, \
 	if(isnull(_answer_k153))
 		return
 	if(_answer_k153 != "Yes")
-		if(ELAPSED_SINCE(ghost, ghost.timeofdeath, CLOCK_WORLD) <= respawn) //We were given the option to resleeve due to an outside event, but closed the input box (be it by typing or otherwise) so we allow clicking the autosleever to revive.
-			ghost.timeofdeath = world.time - respawn
+		if(ELAPSED(ghost, timeofdeath, CLOCK_WORLD) <= respawn) //We were given the option to resleeve due to an outside event, but closed the input box (be it by typing or otherwise) so we allow clicking the autosleever to revive.
+			EXPIRY_SET(ghost, timeofdeath, -respawn, CLOCK_WORLD)
 		return
 	//This keeps people from dying in round, clicking the autoresleever, then swapping savefiles and clicking 'yes'
 	if(slot != ghost.client.prefs.default_slot && (!equip_body || !ghost_spawns))

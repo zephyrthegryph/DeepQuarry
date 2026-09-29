@@ -76,7 +76,7 @@
 				investigate_log("turned " + span_red("off") + " by [user.key]","singulo")
 			else
 				src.active = 1
-				material_last_charge = EXPIRY_AT(src, CLOCK_WORLD, 0)
+				EXPIRY_STAMP(src, material_last_charge, CLOCK_WORLD)
 				MACHINE_WAKE(src)
 				balloon_alert_visible("turned on")
 				src.shot_number = 0
@@ -134,7 +134,7 @@
 		material_service.output_joules += desired_beam
 		material_service.loss_joules += required_energy - desired_beam
 		material_service.last_output_watts = desired_beam / max(fire_delay / 10, 0.1)
-		material_service.last_work_time = EXPIRY_AT(material_service, CLOCK_WORLD, 0)
+		EXPIRY_STAMP(material_service, last_work_time, CLOCK_WORLD)
 		material_service.add_heat(required_energy - desired_beam)
 
 		playsound(src, 'sound/weapons/emitter.ogg', 25, 1)

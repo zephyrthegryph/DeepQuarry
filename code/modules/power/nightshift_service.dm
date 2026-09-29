@@ -27,7 +27,7 @@ GLOBAL_DATUM_INIT(nightshift_service, /datum/world_service/nightshift, new)
 		return update_nightshift(resumed = TRUE)
 	if(!automatic)
 		return TRUE
-	if(ELAPSED_SINCE(src, SSticker.round_start_time, CLOCK_WORLD) < nightshift_first_check)
+	if(ELAPSED(SSticker, round_start_time, CLOCK_WORLD) < nightshift_first_check)
 		return TRUE
 	return check_nightshift()
 
