@@ -21,7 +21,7 @@
 	var/obj/item/organ/external/torso = H.get_organ(BP_TORSO)
 	TEST_ASSERT_NOTNULL(torso, "setup: the human has a torso")
 	torso.robotize()
-	H.synthetic = null // the chassis record is cosmetic data, not the biology
+	rel_clear(H, "synthetic") // the chassis record is cosmetic data, not the biology
 	TEST_ASSERT_EQUAL(H.biology(), BIOLOGY_SYNTHETIC, "a robotic torso makes the body synthetic")
 	TEST_ASSERT(HAS_SYNTHETIC_BIOLOGY(H), "HAS_SYNTHETIC_BIOLOGY reads the body")
 	TEST_ASSERT_NULL(H.robolimb_model(), "robolimb_model() is the chassis record only")

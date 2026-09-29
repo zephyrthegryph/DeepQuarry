@@ -60,7 +60,7 @@ place the ordering hazards now scattered through code comments are encoded:
 | 1 | **Unbind.** Every R10 entity binding (`vg_entity_unbind`), heat bodies and pipe/cable topology, through the declared `bindings`. Must precede dematerialize. | vg bindings | ~20 atmos/heat Destroy blocks and the hard-ordered heat release in `/atom/Destroy` |
 | 2 | **Dematerialize.** Leave registries (L3) and drop rule bindings, as today. Every remaining `GLOB.x += src` moves into a registry declaration. | registries | ~72 list removals |
 | 3 | **Contents.** Resolve every slot's **declared destroy policy** (§3). This is depth-first post-order through nested holders: children before parents. No holder-managed or leftover `contents` loops remain. | containment ledger | hand spills, `QDEL_LIST` of parts, machinery `component_parts` loops, the movable `contents` sweep |
-| 4 | **Links.** `lifecycle_prerelease()`, the type's `on_destroy()` and behaviours' `on_entity_destroy(E)`, then clear every declared relationship (§4), including `DECLARE_REF(..., BACKLIST_HANDLE)` memberships named by handle: owned children deleted, pairs' other sides nulled, back-list memberships removed. | links framework | ~400 null/QDEL_NULL/pair bodies |
+| 4 | **Links.** `lifecycle_prerelease()`, the type's `on_destroy()` and behaviours' `on_entity_destroy(E)`, then dispose of every owned value by policy and clear every relation on both ends (§4, [ownership.md](ownership.md)). | links framework | ~400 null/QDEL_NULL/pair bodies |
 | 5 | **Teardown.** Stop every processor (START_PROCESSING records its subsystem on the datum); timers, reactor, components, signals and tgui (already in `/datum/Destroy`); `client.screen` release; OM timers and task steps owned by the datum (`om_teardown_rest`); arguments naming it are handles and stop resolving; grants auto-revoke (source lifetime). | core | ~150 stop/deltimer/unregister/close_uis bodies |
 | 6 | **Effects.** Declared `destroy_effects` data: message, sound, debris type, neighbour update. | effects | ~60 effect bodies |
 | 7 | **Core `Destroy()`.** The core chain (`/atom/movable`, `/atom`, `/datum`). A `Destroy()` override anywhere else is banned outright (`lifecycle_counts_lint.py`); the only other `Destroy()` definitions are `/client` and the MC's `/datum/controller` tree. The GC hint is the type's `destroy_hint` var. | type | every per-type `Destroy()` |
@@ -73,15 +73,13 @@ Around the phases:
   `QDEL_HINT_LETMELIVE` after the object had already been half torn down.
 - **The destroy hook.** The type's `on_destroy(force)` (domain consequences only; always
   calls `..()`) runs at the start of phase 4, after `lifecycle_prerelease()` and before
-  the links clear: contents are resolved, but DECLARE_REF(..., BACK)/BACKLIST/PAIR vars, owned children
+  the links clear: contents are resolved, but relation views, owned children
   and handles still read, so it can reach its owner and partners.
 - **Behaviours** get `/datum/om/behaviour/proc/on_entity_destroy(E)` right after it, also
   before the links clear, so the entity's declared vars
   still read; `on_stop(E)` follows in phase 5.
-- **Handles mid-delete.** From phase 0 a handle accessor (`owner()` returning
-  `om_resolve(owner_handle)`) reads null for the dying object, so `thing.owner() == src`
-  is FALSE inside src's own teardown. Compare with `om_handle_is(thing.owner_handle, src)`,
-  which matches until phase 5 releases the handle slot.
+- **Views mid-delete.** From phase 0 the dying object is `QDELETED`, but its relation views and
+  its partners' views of it stay set until phase 4, so `on_destroy()` can still read them.
 
 **No nullspace parking** (DQ Medical requirement): the transaction never moves
 an atom to nullspace to "finish later". Contents resolve in phase 3 while the
@@ -125,85 +123,36 @@ Destroy) is **removed**.
 
 ## 4. Declared references
 
-Every object-typed var on a datum is declared as exactly one of these kinds. A
-lint derived from the L1 reference lint (`tools/ci/state_schema_lint.py`)
-enforces it.
+Every object-typed var is one of own / shared / proto / relation. The model, its accessors,
+declarations and checks are specified in [ownership.md](ownership.md); this section only says how
+the transaction uses it.
 
-| Declaration | Semantics | Covers |
-|---|---|---|
-| **slot content** | lives in a ledger slot, with its policy per §3 | cells, parts, wires, occupants, organs |
-| `OWNED` / `OWNED_LIST` / `OWNED_VALUES` | a child that is not contained (actions, loops, helpers, DB/tgui contexts), deleted in phase 4 | `QDEL_NULL`/`QDEL_LIST` bodies |
-| `PAIR` (OPT: the partner's var) | two-sided. Set and cleared only through `link_set()`/`link_clear()`, and destroying either side nulls the other | sleeper↔console, portals, teleporter, turbolift doors, card_slot holder |
-| `BACKLIST` (OPT: the owner's list var) | membership in another object's list (assoc or plain), removed automatically | `projector.signs`, aim lists, implant DB |
-| `DEF` | a frozen definition or registry object that is never deleted (`/datum/material`, `/datum/decl`, a techweb design, an uplink category). Destruction does nothing with it. A var whose declared type is in `DEF_TYPES` (`tools/ci/state_schema_lint.py`: material, decl, language, property_def) is an implicit `DECLARE_REF(..., DEF)` and needs no declaration; species are not in it, because `produceCopy()` makes per-mob copies | material, flooring, closet appearance, designs, uplink categories |
-| `TRANSIENT` | a pooled object's per-use field (§4.1). `pool_release()` resets each to its initial value from the declaration, so no hand-written clearing can leak a reference. Scalars may be listed too. The lint accepts it only on a `POOL_DECLARE`d type | damage packet `source`/`attacker`/`weapon` |
-| OM handle | a text var holding `om_handle(x)`, resolved with `om_resolve(h)` (null once `x` is deleted). Replaces `/datum/weakref` ([object_model_core.md §4.11](object_model_core.md#411-one-scheduler-time-sequences-and-asynchrony)) | "remember who it was": last attacker, forensics, logs, UI selections, tgui and client refs, saved IDs |
-| declared cache | `declared_cache_vars()` maps the var to its invalidation rule: `CACHE_ON_CHANGE(bits)`, `CACHE_ON_EVENT(path)` or `CACHE_ON_RELATION(path)` (`code/__DEFINES/om.dm`). The OM core nulls the var when the rule fires (a raise of those channels, an event of that type, an edge of that relation added or removed); scrubbed in phase 8 | caches |
+| Phase | What ownership does |
+|---|---|
+| 0 | the dying entity refuses new timers, hooks, tasks and relation links |
+| 2 | a dying owned entity leaves its owner's var (`own_release_from_owner()`) |
+| 3 | `OWN_SPILL` movables still inside drop to the holder's drop location (`own_spill_phase()`) |
+| 4 | every owned var is disposed of by policy (`own_teardown()`), private proto copies are deleted, then relation views clear on both ends (`rel_teardown()`) and rich edges are unlinked (`om_teardown_links()`) |
+| 8 | an owned var re-set during teardown is deleted and reported (`own_scrub()`) |
 
-- **LC-refs.** Every datum-typed instance var or list is exactly one of: a
-  relation or slot, an owned child, an OM handle, a declared cache with an
-  invalidation rule, a `DECLARE_REF(..., DEF)` definition reference, or a `DECLARE_REF(..., TRANSIENT)` field of
-  a pooled type. There is no "weak" kind any more: `/datum/weakref` goes
-  away, live links become relations and everything else becomes a handle.
-  The LC-refs lint (`tools/ci/scheduler_lints.py`) counts undeclared vars and is
-  ratcheted to 0. `GLOB` lists of objects become OM registries, which drop
-  deleted members.
-- **LC-refs: lists.** The same rule covers what an instance list *holds*. A list
-  var that gets objects as keys or values (`L[obj] = ...`, `L[key] = obj`,
-  `L += obj`, `L |= obj`, `L = list(obj = ...)`) must be declared: an owned-children
-  list (`OWNED_LIST`/`OWNED_VALUES`), the list side of a backlist (named as the
-  OPT of some `BACKLIST`), or a declared cache. Otherwise it becomes a relation,
-  a registry, or is keyed by `om_handle()`. `tools/ci/declared_refs_lint.py` finds
-  these writes syntactically (an object is `src`, `usr`, a `new` expression or a
-  name the proc declares object-typed) and ratchets them per file in
-  an outright ban (the ratchet reached 0; a justified write carries `// ALLOW(object_keyed_lists): <reason>`).
-- **LC-refs: cache rules.** A `declared_cache_vars()` entry without a
-  `CACHE_ON_*` rule fails the lint outright (no ratchet), and the core reports one
-  at runtime when the type first joins the OM (`om_cache_scan()`). The rule is read
-  once per type into its type table; change rules add their bits to the entity's
-  listen mask so the raise reaches the core, which clears the cache before any
-  other dispatch.
-- Medical, body, organs, afflictions, surgery, protean and Life are in the
-  sweep like everything else (§7). Their mapping: body `OWNED` from the
-  mob; afflictions and the clock schedule `OWNED_LIST`; organs as slot
-  content (O2); mind via `mind_host` `TRANSFER`.
-- Per-type relationship tables are **precomputed at boot**, following the
-  pattern of `registries_by_type`, so phase 4 is a table walk with no `vars[]`
-  reflection.
-- Generic nulling runs **after** leftover `Destroy()` (phase 8). Legacy code
-  that reads its own refs during Destroy still works, and code that does
-  `qdel(x); x.foo` in the same tick isn't broken mid-call.
+- Most declarations are implicit: a var written with `own_*` is owned (`OWN_DELETE`), one written
+  with `rel_*` is a relation view, one typed as a registry type is shared. Declared: `OWN(...,
+  OWN_SPILL / OWN_CONTAINED)`, `OWN_POLICY`, `OWN_IF`, `PROTO`, `SHARED`, `REL_PAIR`,
+  `REL_PAIR_LIST`, `REL_SET`, `REL_KEYED`, and the annotations `KEEP_AFTER_DESTROY`,
+  `POOL_RESET`, `FORWARD_STATE` (`code/__defines/ownership.dm`).
+- Hand-written clean-up of declared things in `on_destroy()` / `lifecycle_prerelease()` is
+  redundant and goes; only real domain consequences stay.
+- Declared caches (`declared_cache_vars()` with a `CACHE_ON_*` rule) are unchanged.
 
-### 4.1 One-place declarations and pools
+### 4.1 Pools
 
-**`DECLARE_REF()`.** Every declared reference is one line next to the type, in one form
-(`code/__defines/lifecycle.dm`):
-
-```dm
-/datum/component/geiger_sound
-	var/datum/looping_sound/geiger/sound
-DECLARE_REF(/datum/component/geiger_sound, "sound", OWNED, null)
-DECLARE_REF(/obj/item/organ, "owner", BACK, "organs_by_name")
-DECLARE_REF(/obj/machinery/sleeper, "console", PAIR, "sleeper")
-```
-
-`DECLARE_REF(PATH, VAR, KIND, OPT)`: `VAR` is the var name as a string (a `"a.b"` path for
-`BACK_VIA`, a flag var or `LIFECYCLE_QUEUE_ALWAYS` for `QUEUE`); `KIND` is one of the
-kinds in the tables here, written bare (it pastes onto `REFKIND_`); `OPT` is the
-kind's argument (the partner's var for the two-sided kinds, a getter for `QUEUE`)
-or `null`. Each line overrides `declared_refs()` and adds one entry on top of the
-parent's, and `dq_lifecycle_link_table()` caches the result per type as kind ->
-var -> OPT. There is no other form: no per-kind macro, no hand-written table proc.
-`tools/ci/declared_refs_lint.py` suggests a kind for an undeclared var from how the
-type writes it (see its header).
-
-**Pools** (`code/datums/lifecycle/pool.dm`). A scratch object made and dropped on
-a hot path (the damage packet, one per hit) is pooled instead:
+A scratch object made and dropped on a hot path (the damage packet, one per hit) is pooled
+(`code/datums/lifecycle/pool.dm`):
 
 ```dm
 POOL_DECLARE(/datum/damage_packet)
-DECLARE_REF(/datum/damage_packet, "source", TRANSIENT, null)
-DECLARE_REF(/datum/damage_packet, "attacker", TRANSIENT, null)
+POOL_RESET(/datum/damage_packet, source)
+POOL_RESET(/datum/damage_packet, attacker)
 ...
 
 var/datum/damage_packet/packet = pool_take(/datum/damage_packet)
@@ -212,7 +161,7 @@ packet.release()   // or pool_release(packet)
 ```
 
 - `pool_take(type)` hands out a free object or makes one; `pool_release(obj)` resets
-  the `DECLARE_REF(..., TRANSIENT)` fields and returns it to the per-type free list.
+  the `POOL_RESET` fields and returns it to the per-type free list.
 - Releasing an object that isn't taken crashes (double-release detection).
 - Pooled objects refuse a normal `qdel()` (`POOL_DECLARE` overrides `Destroy()`).
 - Poisoning, `pool_set_poison(TRUE)` (tests and debugging): a released object is
@@ -221,42 +170,6 @@ packet.release()   // or pool_release(packet)
 - `om_diagnostics()["pools"]` (`pool_diagnostics()`) reports free, out, peak,
   created, taken, released, double releases, poisoned, use-after-release and
   refused qdels per pooled type.
-
-### 4.2 Bookkeeping kinds: partners found through a path, back-lists, queues
-
-Some bookkeeping has no plain var of ours on either end: the partner is reached
-through a handle and then another handle, sits in our `loc`, or holds us in a
-list whose other side we keep. These kinds declare it, so no `on_destroy()` body
-is written for it (`code/__defines/lifecycle.dm`, `code/datums/lifecycle/links.dm`).
-They run in phase 4 after `on_destroy()`: partners and members first, before owned
-and held vars are cleared. Partners doomed in the same batch are skipped.
-
-| Declaration | Semantics | Replaces |
-|---|---|---|
-| `BACK_HANDLE` (OPT: their var) | our OM handle names a partner whose var names us (by reference or handle); that var is nulled | `owner()?.hud_used = null` |
-| `BACK_VIA` (VAR: the path, OPT: `their`) | the partner is reached through a path of our vars, `"a"` or `"a.b.c"`. Each hop holds a reference or an OM handle, and the end may be a `/client`. `their` is a var name, a list of names, or `list(/partner/type = name)`, applied only when the partner is that type. A named list loses us and our handle; any other named var that names us is nulled. Our own vars are left alone | `master().cl().screen -= src`, `com()?.teleport_control.hub_handle = null`, `LAZYREMOVE(loc.implants, src)`, a machine's `component_parts -= src` |
-| `LIST_BACK` (VAR: our list, OPT: the member vars) | the owner side of a back-list. Every member of our list (keys and assoc values, references or handles) has the named vars cleared the same way, then our list is dropped | `for(B in beacons) B.tele_hand_handle = null`, spawner nests, contract children, puzzle locks, a client-only image leaving each client's `images` |
-| `DROP` | the var is nulled. The target is not deleted, cut or told | scratch tables keyed by atoms (`/datum/state_context`), lists the object was handed and may share (reactive icons, reagent `data`) |
-| `QUEUE` (VAR: `flag_var`, OPT: `/proc/getter`) | membership in a subsystem queue, or a global list that isn't an OM registry. When `flag_var` is set (or the key is `LIFECYCLE_QUEUE_ALWAYS`), src is removed from the list the global proc returns | `if(needs_update) SSlighting.corners_queue -= src` |
-
-```dm
-// Before
-/obj/effect/bmode/on_destroy(force)
-	if(master() && master().cl())
-		master().cl().screen -= src
-	..()
-
-// After
-DECLARE_REF(/obj/effect/bmode, "master_handle.cl_handle", BACK_VIA, "screen")
-```
-
-What stays in `on_destroy()`:
-- **Ordering the framework can't give.** A status effect leaves its mob's list
-  before its `on_remove()` hook runs, but the destroy hook runs before the links clear.
-- **Membership changed through a domain proc** that does more than the list write:
-  `unset_control()`, `remove_tank()`, `detach()`, `deselect_AI_mob()`.
-- **State beside the reference.** A lighting corner also resets its turfs'
-  `lighting_corners_initialised`, and a body designer clears the console's selection.
 
 ## 5. Replacing qdel call sites
 
@@ -299,7 +212,7 @@ qdel and Destroy() ratchets, weakrefs) includes them. They use the same phases:
 | Step | Scope | Owner |
 |---|---|---|
 | LC1 | `destroy_transaction()` in `qdel` with phases 0–8; `SLOT_DROP_HOLDER` removed and policies for every slot; nested children-first resolution; `TRANSFER(resolver)`; processor recording and auto-stop; screen release | ledger-joint (replaces J1) |
-| LC2 | Links framework: `DECLARE_REF(..., OWNED)`/`DECLARE_REF(..., PAIR)`/`DECLARE_REF(..., BACKLIST)`, boot-time tables, `link_set`/`link_clear`, the declared-reference lint and its ratchet | ledger-joint |
+| LC2 | Links framework (superseded by the ownership model, [ownership.md](ownership.md): own / shared / proto / relations, `ownership_lint.py`) | ledger-joint, own |
 | LC3 | Verbs: `consume`, `replace_with`, `lifetime`/`expire`, `slot_clear`, `delete_on_death`, plus the `destroy_effects` data | ledger-joint |
 | LC4 | Mechanical sweeps: delete the ~200 redundant overrides; convert overrides and qdel sites domain by domain; ratchet the lints to the floor | conversion agents, after the core systems land |
 
