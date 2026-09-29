@@ -42,6 +42,8 @@
 	qdel(old_stock)
 	return replacement
 
+OM_TIMER_SLOT(/obj/machinery/material_furnace, firing_timer)
+
 /obj/machinery/material_furnace
 	name = "controlled-atmosphere alloy furnace"
 	desc = "A sealed furnace for melting, alloying, and heat-treating material sheets. Click it to fire a loaded charge or collect its finished alloy."
@@ -57,7 +59,6 @@
 	var/list/carbon_feed
 	var/tmp/output_stock_handle
 	var/firing = FALSE
-	var/firing_timer
 	var/datum/gas_mixture/chamber_air
 
 /obj/machinery/material_furnace/Initialize(mapload)
@@ -201,7 +202,7 @@ DECLARE_REF(/obj/machinery/material_furnace, "chamber_air", OWNED, null)
 		chamber_air.react()
 	set_light(3, 3, "#ff7b22")
 	visible_message(span_notice("[src] seals its chamber and begins heating the charge."))
-	firing_timer = om_after(src, 6 SECONDS, PROC_REF(finish_firing))
+	om_after_slot(src, "firing_timer", 6 SECONDS, PROC_REF(finish_firing))
 	return TRUE
 
 /// The old "Eject contents" object verb.
@@ -242,7 +243,6 @@ DECLARE_REF(/obj/machinery/material_furnace, "chamber_air", OWNED, null)
 		unload_charge(user)
 
 /obj/machinery/material_furnace/proc/finish_firing()
-	firing_timer = null
 	firing = FALSE
 	icon_state = "nt_cruciforge"
 	set_light(0)

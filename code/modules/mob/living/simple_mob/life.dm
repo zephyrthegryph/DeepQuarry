@@ -256,8 +256,9 @@
 /datum/om/stage/life/supernatural/idle(mob/living/simple_mob/self)
 	return !self.purge
 
+OM_TIMER_SLOT(/mob/living/simple_mob, update_icon_timer)
+
 /mob/living/simple_mob/
-	var/update_icon_timer
 
 /mob/living/simple_mob
 	death_message = "dies!"
@@ -276,7 +277,7 @@
 			if(prob(loot_list[path]))
 				new path(get_turf(src))
 
-	update_icon_timer = om_after(src, 0.3 SECONDS, PROC_REF(callback_update_icon))
+	om_after_slot(src, "update_icon_timer", 0.3 SECONDS, PROC_REF(callback_update_icon))
 
 	ghostjoin = 0
 	registry_leave(REGISTRY_GHOST_PODS, src)

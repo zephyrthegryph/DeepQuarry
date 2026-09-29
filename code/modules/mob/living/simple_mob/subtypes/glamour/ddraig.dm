@@ -1,3 +1,5 @@
+OM_TIMER_SLOT(/mob/living/simple_mob/vore/ddraig, firebreathtimer)
+
 /mob/living/simple_mob/vore/ddraig
 	name = "ddraig"
 	desc = "A massive, slender dragon like creature. It's body is covered in slick, vibrant pink scales. Atop its back sits large, thin white wings that are reminiscent of those scene on butterflies."
@@ -47,7 +49,6 @@
 	heat_resist = 1
 
 	var/flames
-	var/firebreathtimer
 	var/charge_warmup = 3 SECOND
 	var/tf_warmup = 2 SECOND
 
@@ -190,7 +191,7 @@
 	ai_busy_begin()
 	visible_message(span_warning("\The [src] opens its maw, emitting flames!"))
 	do_windup_animation(A, charge_warmup)
-	firebreathtimer = om_after(src, charge_warmup, PROC_REF(firebreathend), A)
+	om_after_slot(src, "firebreathtimer", charge_warmup, PROC_REF(firebreathend), A)
 	playsound(src, "sound/magic/Fireball.ogg", 50, 1)
 
 /mob/living/simple_mob/vore/ddraig/proc/firebreathend(atom/A)

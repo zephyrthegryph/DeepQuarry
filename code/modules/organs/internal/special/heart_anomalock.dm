@@ -1,3 +1,5 @@
+OM_TIMER_SLOT(/obj/item/organ/internal/heart/machine/anomalock, lightning_timer)
+
 /obj/item/organ/internal/heart/machine/anomalock
 	name = "voltaic combat cyberheart"
 	desc = "A cutting-edge cyberheart. Voltaic technology allows the heart to keep the body upright in dire circumstances, alongside redirecting anomalous flux energy to fully shield the user from shocks and electro-magnetic pulses. Requires a Flux core as a power source."
@@ -9,8 +11,6 @@
 	var/survival_cooldown_time = 10 MINUTES
 	///The lightning effect on our mob when the implant is active
 	var/mutable_appearance/lightning_overlay
-	///how long the lightning lasts
-	var/lightning_timer
 
 	///The core item the organ runs off.
 	var/obj/item/assembly/signaler/anomaly/core
@@ -47,16 +47,16 @@ DECLARE_REF(/obj/item/organ/internal/heart/machine/anomalock, "lightning_overlay
 
 /obj/item/organ/internal/heart/machine/anomalock/proc/add_lightning_overlay(time_to_last = 10 SECONDS)
 	if(lightning_overlay)
-		lightning_timer = om_after_replace(src, time_to_last, PROC_REF(clear_lightning_overlay), owner)
+		om_after_slot(src, "lightning_timer", time_to_last, PROC_REF(clear_lightning_overlay), owner)
 		return
 	lightning_overlay = mutable_appearance(icon = 'icons/effects/effects.dmi', icon_state = "lightning")
 	owner.add_overlay(lightning_overlay)
-	lightning_timer = om_after_replace(src, time_to_last, PROC_REF(clear_lightning_overlay), owner)
+	om_after_slot(src, "lightning_timer", time_to_last, PROC_REF(clear_lightning_overlay), owner)
 
 /obj/item/organ/internal/heart/machine/anomalock/proc/clear_lightning_overlay(mob/organ_owner)
 	organ_owner?.cut_overlay(lightning_overlay)
-	if(lightning_timer)
-		om_cancel_timer(src, lightning_timer)
+	if(om_timer_slot_pending(src, "lightning_timer"))
+		om_cancel_timer_slot(src, "lightning_timer")
 	lightning_overlay = null
 
 /// Event wrapper: the owner gained a trait; only critical condition triggers survival mode.

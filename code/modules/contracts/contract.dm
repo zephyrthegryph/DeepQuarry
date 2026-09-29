@@ -168,6 +168,9 @@ DECLARE_REF(/datum/contract_negotiation_clause, "options", OWNED_VALUES, null)
 /datum/contract_definition/proc/finalize_contract_authoring(datum/contract/contract, list/context)
 	return
 
+OM_TIMER_SLOT(/datum/contract, deadline_timer)
+OM_TIMER_SLOT(/datum/contract, offer_timer)
+
 /datum/contract
 	var/id
 	var/definition_id
@@ -200,11 +203,9 @@ DECLARE_REF(/datum/contract_negotiation_clause, "options", OWNED_VALUES, null)
 	var/personal_reputation_reward = 0
 	var/deadline = 0
 	var/deadline_duration = 0
-	var/deadline_timer
 	var/deadline_grace_duration = CONTRACT_DEFAULT_GRACE_DURATION
 	var/grace_until = 0
 	var/offer_expires_at = 0
-	var/offer_timer
 	var/accepted_at = 0
 	var/accepted_by_account = 0
 	var/closed_at = 0
@@ -277,11 +278,10 @@ DECLARE_REF(/datum/contract, "children", LIST_BACK, "parent")
 		audit(CONTRACT_AUDIT_CREATED, "Contract offered by [issuer_name].")
 	audit(CONTRACT_AUDIT_OFFER, "Published on [board_key || "the contract board"]: [offer_reason || "eligible offer"].")
 	offer_expires_at = world.time + duration
-	offer_timer = om_after(src, duration, PROC_REF(expire_offer))
+	om_after_slot(src, "offer_timer", duration, PROC_REF(expire_offer))
 	return TRUE
 
 /datum/contract/proc/expire_offer()
-	offer_timer = null
 	if(state == CONTRACT_OFFERED)
 		close(CONTRACT_CANCELLED, CONTRACT_AUDIT_CANCELLED, "The offer expired without acceptance.", CONTRACT_CLOSE_EXPIRED)
 
@@ -437,9 +437,8 @@ DECLARE_REF(/datum/contract, "children", LIST_BACK, "parent")
 		escrow_balance = reward
 	negotiation_locked = TRUE
 	var/old_state = state
-	if(offer_timer)
-		om_cancel_timer(src, offer_timer)
-		offer_timer = null
+	if(om_timer_slot_pending(src, "offer_timer"))
+		om_cancel_timer_slot(src, "offer_timer")
 	offer_expires_at = 0
 	state = CONTRACT_ACTIVE
 	accepted_at = world.time
@@ -447,7 +446,7 @@ DECLARE_REF(/datum/contract, "children", LIST_BACK, "parent")
 	if(deadline_duration > 0)
 		deadline = world.time + deadline_duration
 	if(deadline > world.time) // ALLOW(cooldown): contract/offer expiry and deadline state, not a rate limit
-		deadline_timer = om_after(src, deadline - world.time, PROC_REF(check_deadline))
+		om_after_slot(src, "deadline_timer", deadline - world.time, PROC_REF(check_deadline))
 	SScontracts.set_contract_state(src, old_state, state)
 	subscribe_events()
 	for(var/datum/contract_requirement/requirement in requirements)
@@ -472,7 +471,6 @@ DECLARE_REF(/datum/contract, "children", LIST_BACK, "parent")
 	return null
 
 /datum/contract/proc/check_deadline()
-	deadline_timer = null
 	if(state == CONTRACT_ACTIVE && deadline && world.time >= deadline) // ALLOW(cooldown): contract/offer expiry and deadline state, not a rate limit
 		if(deadline_grace_duration > 0)
 			enter_grace()
@@ -487,7 +485,7 @@ DECLARE_REF(/datum/contract, "children", LIST_BACK, "parent")
 	var/old_state = state
 	state = CONTRACT_GRACE
 	grace_until = world.time + deadline_grace_duration
-	deadline_timer = om_after(src, deadline_grace_duration, PROC_REF(check_deadline))
+	om_after_slot(src, "deadline_timer", deadline_grace_duration, PROC_REF(check_deadline))
 	SScontracts.set_contract_state(src, old_state, state)
 	audit(CONTRACT_AUDIT_GRACE, "The operational deadline passed; already-prepared evidence has [DisplayTimeText(deadline_grace_duration)] to arrive.")
 	SScontracts?.notify_contract(src, "Contract [id] entered its evidence grace period.")
@@ -549,9 +547,8 @@ DECLARE_REF(/datum/contract, "children", LIST_BACK, "parent")
 		// Gameplay is already complete. An unavailable finance account must not
 		// turn an otherwise successful contract into a deadline failure while it
 		// waits for the account-status signal that retries payment.
-		if(deadline_timer)
-			om_cancel_timer(src, deadline_timer)
-			deadline_timer = null
+		if(om_timer_slot_pending(src, "deadline_timer"))
+			om_cancel_timer_slot(src, "deadline_timer")
 		deadline = 0
 		grace_until = 0
 		audit(CONTRACT_AUDIT_PAYMENT, "Completion is verified, but payment is deferred until every recipient account can accept its share.")
@@ -659,12 +656,10 @@ DECLARE_REF(/datum/contract, "children", LIST_BACK, "parent")
 	var/old_state = state
 	if(old_state in list(CONTRACT_ACTIVE, CONTRACT_GRACE))
 		unsubscribe_events()
-	if(deadline_timer)
-		om_cancel_timer(src, deadline_timer)
-		deadline_timer = null
-	if(offer_timer)
-		om_cancel_timer(src, offer_timer)
-		offer_timer = null
+	if(om_timer_slot_pending(src, "deadline_timer"))
+		om_cancel_timer_slot(src, "deadline_timer")
+	if(om_timer_slot_pending(src, "offer_timer"))
+		om_cancel_timer_slot(src, "offer_timer")
 	offer_expires_at = 0
 	grace_until = 0
 	state = new_state

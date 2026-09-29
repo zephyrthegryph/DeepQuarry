@@ -107,8 +107,13 @@
 	var/obj/machinery/atmospherics/omni/mixer/M = allocate(/obj/machinery/atmospherics/omni/mixer, test_floor())
 	var/datum/om/pipeline/machine/P = locate_in_list(om_registry().pipelines, /datum/om/pipeline/machine)
 	TEST_ASSERT(P, "the machine pipeline is registered")
-	M.materialize_timer = 1
-	TEST_ASSERT(P.first_wake_pending(M), "a machine with materialize_wakes() queued has its first wake pending")
-	M.materialize_timer = 0
-	TEST_ASSERT(!P.first_wake_pending(M), "after it runs, the machine is audited as usual")
+	TEST_ASSERT(!P.first_wake_pending(M), "a machine whose first wake already ran is audited as usual")
+	GLOB.machine_first_wakes[om_handle(M)] = TRUE
+	TEST_ASSERT(P.first_wake_pending(M), "a machine queued for the bulk first-wake pass has its first wake pending")
+	M.materialize_wakes()
+	TEST_ASSERT(!P.first_wake_pending(M), "running the first wake ends it, with nothing to clear by hand")
+	om_after_slot(M, "first_wake", 10 MINUTES, /obj/machinery/proc/materialize_wakes)
+	TEST_ASSERT(P.first_wake_pending(M), "a first wake in its timer slot is pending")
+	om_cancel_timer_slot(M, "first_wake")
+	TEST_ASSERT(!P.first_wake_pending(M), "cancelling the slot ends it")
 	TEST_ASSERT(!P.first_wake_pending(null), "a non-machine never counts as pending")

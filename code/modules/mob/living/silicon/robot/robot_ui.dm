@@ -63,7 +63,7 @@
 	data["max_health"] = 100
 	data["light_color"] = R.robot_light_col
 
-	data["weapon_lock"] = !!R.weapon_lock
+	data["weapon_lock"] = !!om_timer_slot_pending(R, "weapon_lock")
 
 	var/list/modules = list()
 	for(var/obj/item/I as anything in R.module.modules)
@@ -137,7 +137,7 @@
 					to_chat(ui.user, span_warning("You disable [C]."))
 			. = TRUE
 		if("toggle_module")
-			if(R.weapon_lock)
+			if(om_timer_slot_pending(R, "weapon_lock"))
 				to_chat(ui.user, span_danger("Error: Modules locked."))
 				return
 			var/obj/item/module = locate(params["ref"])

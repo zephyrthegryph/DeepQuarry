@@ -37,6 +37,8 @@
 /obj/item/var/datum/material_response/material_response // ALLOW(state_ref): owned child (DECLARE_REF OWNED); saved as before, the one-line REF_VAR form hid it from this lint
 DECLARE_REF(/obj/item, "material_response", OWNED, null)
 
+OM_TIMER_SLOT(/datum/material_response, scintillation_timer)
+
 /datum/material_response
 	/// The item this state belongs to.
 	var/obj/item/parent
@@ -50,7 +52,6 @@ DECLARE_REF(/obj/item, "material_response", OWNED, null)
 	var/next_piezo_response = 0
 	var/stored_phase_energy = 0
 	var/stored_reactive_energy = 0
-	var/scintillation_timer
 
 REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 
@@ -184,12 +185,11 @@ DECLARE_REF(/datum/material_response, "parent", BACK, "material_response")
 	if(material.scintillation_efficiency > 0)
 		var/obj/item/item = parent
 		item.set_light(clamp(material.scintillation_efficiency * 5, 0.5, 5), clamp(material.scintillation_efficiency * 3, 0.3, 3), "#88ddff")
-		if(scintillation_timer)
-			om_cancel_timer(src, scintillation_timer)
-		scintillation_timer = om_after(src, 5 SECONDS, PROC_REF(end_scintillation))
+		if(om_timer_slot_pending(src, "scintillation_timer"))
+			om_cancel_timer_slot(src, "scintillation_timer")
+		om_after_slot(src, "scintillation_timer", 5 SECONDS, PROC_REF(end_scintillation))
 
 /datum/material_response/proc/end_scintillation()
-	scintillation_timer = null
 	var/obj/item/item = parent
 	var/datum/material/material = material()
 	if(!istype(item) || !material)

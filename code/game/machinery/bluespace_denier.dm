@@ -1,3 +1,5 @@
+OM_TIMER_SLOT(/obj/machinery/bluespace_denier, timerid)
+
 /obj/machinery/bluespace_denier
 	name = "bluespace desyncronizer"
 	desc = "A portable device that causes small disruptions to bluespace when its sensors detect activity within it nearby. Wrench to activate and deactivate."
@@ -12,12 +14,11 @@
 	density = TRUE
 	use_power = USE_POWER_IDLE
 	idle_power_usage = 2
-	var/timerid
 
 /obj/machinery/bluespace_denier/Initialize(mapload)
 	. = ..()
 	// if already anchored, setup the proxity check
-	timerid = om_after(src, 10 SECONDS, PROC_REF(start_up))
+	om_after_slot(src, "timerid", 10 SECONDS, PROC_REF(start_up))
 
 /obj/machinery/bluespace_denier/proc/start_up()
 	if(anchored)

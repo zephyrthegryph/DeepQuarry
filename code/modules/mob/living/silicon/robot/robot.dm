@@ -2,6 +2,9 @@
 #define ROBOT_ENTRY_CROWBAR "robot_crowbar"
 #define ROBOT_ENTRY_WELDER "robot_welder"
 
+OM_TIMER_SLOT(/mob/living/silicon/robot, killswitch)
+OM_TIMER_SLOT(/mob/living/silicon/robot, weapon_lock)
+
 /mob/living/silicon/robot
 	/// Traitor HUD images shown to a syndicate borg's client (see build_traitor_hud()).
 	var/list/traitor_hud_images
@@ -114,10 +117,6 @@
 	var/datum/effect/effect/system/ion_trail_follow/ion_trail = null
 	var/datum/effect/effect/system/spark_spread/spark_system //So they can initialize sparks whenever/N
 	var/jeton = 0
-	/// Timer id of a pending killswitch, or null.
-	var/killswitch
-	/// Timer id of an active weapon lock, or null.
-	var/weapon_lock
 	var/lawupdate = TRUE //Cyborgs will sync their laws with their AI by default
 	var/lockcharge //Used when looking to see if a borg is locked down.
 	var/lockdown = 0 //Controls whether or not the borg is actually locked down.
@@ -553,21 +552,19 @@
 // --- Countdowns ------------------------------------------------------------------------------
 
 /mob/living/silicon/robot/proc/start_killswitch(delay = ROBOT_KILLSWITCH_DELAY)
-	if(killswitch)
+	if(om_timer_slot_pending(src, "killswitch"))
 		return FALSE
-	killswitch = om_after(src, delay, PROC_REF(fire_killswitch))
+	om_after_slot(src, "killswitch", delay, PROC_REF(fire_killswitch))
 	log_game("ROBOT: killswitch armed on [key_name(src)] ([delay / (1 SECOND)]s).")
 	return TRUE
 
 /mob/living/silicon/robot/proc/cancel_killswitch()
-	if(!killswitch)
+	if(!om_timer_slot_pending(src, "killswitch"))
 		return FALSE
-	om_cancel_timer(src, killswitch)
-	killswitch = null
+	om_cancel_timer_slot(src, "killswitch")
 	return TRUE
 
 /mob/living/silicon/robot/proc/fire_killswitch()
-	killswitch = null
 	if(stat == DEAD)
 		return
 	to_chat(src, span_danger("Killswitch Activated"))
@@ -576,14 +573,13 @@
 
 /// Lock the modules. Equipment drops once; activation is refused until the lock times out.
 /mob/living/silicon/robot/proc/start_weapon_lock(duration = ROBOT_WEAPON_LOCK_DELAY)
-	if(weapon_lock)
-		om_cancel_timer(src, weapon_lock)
-	weapon_lock = om_after(src, duration, PROC_REF(end_weapon_lock))
+	if(om_timer_slot_pending(src, "weapon_lock"))
+		om_cancel_timer_slot(src, "weapon_lock")
+	om_after_slot(src, "weapon_lock", duration, PROC_REF(end_weapon_lock))
 	uneq_all()
 	to_chat(src, span_danger("Weapon lock engaged."))
 
 /mob/living/silicon/robot/proc/end_weapon_lock()
-	weapon_lock = null
 	to_chat(src, span_danger("Weapon Lock Timed Out!"))
 
 // --- Naming ------------------------------------------------------------------------------------

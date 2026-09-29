@@ -1,5 +1,6 @@
+OM_TIMER_SLOT(/datum/tgs_event_handler/impl, reattach_timer)
+
 /datum/tgs_event_handler/impl
-	var/reattach_timer // a timer id
 
 /datum/tgs_event_handler/impl/HandleEvent(event_code, ...)
 	switch(event_code)
@@ -23,7 +24,7 @@
 			to_chat(world, span_boldannounce("Server updated, changes will be applied on the next round..."))
 		if(TGS_EVENT_WATCHDOG_DETACH)
 			message_admins("TGS restarting...")
-			reattach_timer = om_after(src, 1 MINUTES, PROC_REF(LateOnReattach))
+			om_after_slot(src, "reattach_timer", 1 MINUTES, PROC_REF(LateOnReattach))
 		if(TGS_EVENT_WATCHDOG_REATTACH)
 			var/datum/tgs_version/old_version = world.TgsVersion()
 			var/datum/tgs_version/new_version = args[2]
@@ -31,9 +32,8 @@
 				to_chat(world, span_boldannounce("TGS updated to v[new_version.deprefixed_parameter]"))
 			else
 				message_admins("TGS: Back online")
-			if(reattach_timer)
-				om_cancel_timer(src, reattach_timer)
-				reattach_timer = null
+			if(om_timer_slot_pending(src, "reattach_timer"))
+				om_cancel_timer_slot(src, "reattach_timer")
 		if(TGS_EVENT_WATCHDOG_SHUTDOWN)
 			to_chat_immediate(world, span_boldannounce("Server is shutting down!"))
 

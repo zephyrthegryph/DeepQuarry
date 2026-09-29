@@ -205,6 +205,8 @@
 /// nor acts: it is held alive and unconscious
 /// (consciousness_at_max), its control cluster goes inert, and it is revived
 /// step by step by treatment mechanisms.
+OM_TIMER_SLOT(/datum/affliction/core_dormancy, reboot_timer)
+
 /datum/affliction/core_dormancy
 	name = "core dormancy"
 	category = "Synthetic"
@@ -221,8 +223,6 @@
 	var/revival_step = DORMANCY_SEALED
 	/// The mob whose /datum/om/event/before/living_body_status we answer.
 	var/mob/living/held_mob
-	/// The reboot timer, once the core is jump-started.
-	var/reboot_timer
 
 DECLARE_REF(/datum/affliction/core_dormancy, "held_mob", BACK, null)
 
@@ -259,9 +259,8 @@ DECLARE_REF(/datum/affliction/core_dormancy, "held_mob", BACK, null)
 	..()
 
 /datum/affliction/core_dormancy/proc/release()
-	if(reboot_timer)
-		om_cancel_timer(src, reboot_timer)
-		reboot_timer = null
+	if(om_timer_slot_pending(src, "reboot_timer"))
+		om_cancel_timer_slot(src, "reboot_timer")
 	if(!held_mob)
 		return
 	om_unhook(held_mob, list(/datum/om/event/before/living_body_status, /datum/om/event/before/atom_tool_act, /datum/om/event/before/attackby), src)
@@ -409,15 +408,14 @@ DECLARE_REF(/datum/affliction/core_dormancy, "held_mob", BACK, null)
 	revival_step = next_step
 	log_game("NANOFORM: [key_name(owner)] dormancy advanced to step [revival_step] by [tag].")
 	if(revival_step == DORMANCY_REBOOTING)
-		reboot_timer = om_after(src, DORMANCY_REBOOT_TIME, PROC_REF(complete_revival))
+		om_after_slot(src, "reboot_timer", DORMANCY_REBOOT_TIME, PROC_REF(complete_revival))
 	return 1
 
 /// Reassembly finished: rebuild cohesion and what the revival steps repaired,
 /// then leave dormancy. Afflictions the revival didn't touch stay.
 /datum/affliction/core_dormancy/proc/complete_revival()
-	if(reboot_timer)
-		om_cancel_timer(src, reboot_timer)
-		reboot_timer = null
+	if(om_timer_slot_pending(src, "reboot_timer"))
+		om_cancel_timer_slot(src, "reboot_timer")
 	var/mob/living/patient = owner
 	var/datum/body/humanoid/nanoform/B = body
 	if(!patient || !istype(B))

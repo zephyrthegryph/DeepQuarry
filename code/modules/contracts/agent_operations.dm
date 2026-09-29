@@ -351,7 +351,6 @@
 	return finalize_operation("Authoritative operation evidence")
 
 /datum/contract/faction_agent/check_deadline()
-	deadline_timer = null
 	if(state == CONTRACT_ACTIVE && deadline && world.time >= deadline) // ALLOW(cooldown): contract/offer expiry and deadline state, not a rate limit
 		if(current_operation_ratio() >= CONTRACT_GRADE_MINIMUM_RATIO)
 			finalize_operation()

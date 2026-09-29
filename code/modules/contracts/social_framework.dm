@@ -419,7 +419,6 @@ DECLARE_REF(/datum/contract/social, "stakeholder_proposals", OWNED_VALUES, null)
 	return complete()
 
 /datum/contract/social/check_deadline()
-	deadline_timer = null
 	if(state == CONTRACT_ACTIVE && deadline && world.time >= deadline) // ALLOW(cooldown): contract/offer expiry and deadline state, not a rate limit
 		if(can_finalize_outcome())
 			finalize_graded_outcome()

@@ -64,9 +64,7 @@ SUBSYSTEM_DEF(ticker)
 	/// Why an emergency shuttle was called
 	var/emergency_reason
 
-	/// ID of round reboot timer, if it exists
 	var/reboot_timer = null
-	/// ID of round countdown timer, if it exists
 	var/countdown_timer = null
 
 	/// ### LEGACY VARS ###
@@ -473,7 +471,7 @@ SUBSYSTEM_DEF(ticker)
 	if(!delay)
 		delay = CONFIG_GET(number/round_end_countdown) SECONDS
 		if(delay >= 60 SECONDS)
-			countdown_timer = om_after(src, 60 SECONDS, PROC_REF(announce_countdown), delay)
+			om_after_slot(src, "countdown_timer", 60 SECONDS, PROC_REF(announce_countdown), delay)
 
 	var/skip_delay = check_rights()
 	if(delay_end && !skip_delay)
@@ -484,16 +482,16 @@ SUBSYSTEM_DEF(ticker)
 
 	var/start_wait = world.time
 	UNTIL(round_end_sound_sent || (world.time - start_wait) > (delay * 2)) //don't wait forever
-	reboot_timer = om_after(src, delay - (world.time - start_wait), PROC_REF(reboot_callback), reason, end_string)
+	om_after_slot(src, "reboot_timer", delay - (world.time - start_wait), PROC_REF(reboot_callback), reason, end_string)
 
 /datum/controller/subsystem/ticker/proc/announce_countdown(remaining_time)
 	remaining_time -= 60 SECONDS
 	if(remaining_time > 60 SECONDS)
 		to_chat(world, span_boldannounce("Rebooting World in [DisplayTimeText(remaining_time)]."))
-		countdown_timer = om_after(src, 60 SECONDS, PROC_REF(announce_countdown), remaining_time)
+		om_after_slot(src, "countdown_timer", 60 SECONDS, PROC_REF(announce_countdown), remaining_time)
 		return
 	if(remaining_time <= 60 SECONDS && remaining_time > 0)
-		countdown_timer = om_after(src, remaining_time, PROC_REF(announce_countdown), remaining_time - 1 SECOND)
+		om_after_slot(src, "countdown_timer", remaining_time, PROC_REF(announce_countdown), remaining_time - 1 SECOND)
 		return
 	if(!delay_end)
 		to_chat(world, span_boldannounce("Rebooting World."))
@@ -513,15 +511,13 @@ SUBSYSTEM_DEF(ticker)
  * * user - the user that cancelled the reboot, may be null
  */
 /datum/controller/subsystem/ticker/proc/cancel_reboot(mob/user)
-	if(!reboot_timer)
+	if(!om_timer_slot_pending(src, "reboot_timer"))
 		to_chat(user, span_warning("There is no pending reboot!"))
 		return FALSE
 	to_chat(world, span_boldannounce("An admin has delayed the round end."))
-	om_cancel_timer(src, reboot_timer)
-	reboot_timer = null
-	if(countdown_timer)
-		om_cancel_timer(src, countdown_timer)
-		countdown_timer = null
+	om_cancel_timer_slot(src, "reboot_timer")
+	if(om_timer_slot_pending(src, "countdown_timer"))
+		om_cancel_timer_slot(src, "countdown_timer")
 	return TRUE
 
 /**
@@ -532,11 +528,9 @@ SUBSYSTEM_DEF(ticker)
 /datum/controller/subsystem/ticker/proc/toggle_delay()
 	delay_end = !delay_end
 
-	if(countdown_timer)
-		om_cancel_timer(src, countdown_timer)
-		countdown_timer = null
-	if(reboot_timer)
-		om_cancel_timer(src, reboot_timer)
-		reboot_timer = null
+	if(om_timer_slot_pending(src, "countdown_timer"))
+		om_cancel_timer_slot(src, "countdown_timer")
+	if(om_timer_slot_pending(src, "reboot_timer"))
+		om_cancel_timer_slot(src, "reboot_timer")
 	else
 		Reboot("World reboot after administrative delay.")

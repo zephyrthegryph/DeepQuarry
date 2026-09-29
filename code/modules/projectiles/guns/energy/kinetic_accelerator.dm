@@ -40,6 +40,8 @@
 	if(T.z in using_map.station_levels)
 		. = FALSE
 
+OM_TIMER_SLOT(/obj/item/gun/energy/kinetic_accelerator, recharge_timerid)
+
 /obj/item/gun/energy/kinetic_accelerator
 	name = "proto-kinetic accelerator"
 	desc = "A self recharging, ranged mining tool that does increased damage in low pressure."
@@ -66,7 +68,6 @@
 	var/max_mod_capacity = 100
 	var/list/modkits
 
-	var/recharge_timerid
 
 /obj/item/gun/energy/kinetic_accelerator/consume_next_projectile()
 	if(overheat)
@@ -201,8 +202,8 @@
 
 	var/carried = max(1, loc.ConflictElementCount(CONFLICT_ELEMENT_KA))
 
-	om_cancel_timer(src, recharge_timerid)
-	recharge_timerid = om_after(src, recharge_time * carried, PROC_REF(reload))
+	om_cancel_timer_slot(src, "recharge_timerid")
+	om_after_slot(src, "recharge_timerid", recharge_time * carried, PROC_REF(reload))
 
 /obj/item/gun/energy/kinetic_accelerator/proc/reload()
 	power_supply.give(power_supply.maxcharge)

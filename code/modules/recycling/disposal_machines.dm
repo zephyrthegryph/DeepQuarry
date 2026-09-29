@@ -18,6 +18,8 @@
 #define DISPOSALMODE_CHARGING 1
 #define DISPOSALMODE_CHARGED 2
 
+OM_TIMER_SLOT(/obj/machinery/disposal, power_retry_timer)
+
 /obj/machinery/disposal
 	name = "disposal unit"
 	desc = "A pneumatic waste disposal unit."
@@ -35,7 +37,6 @@
 	active_power_usage = 2200	//the pneumatic pump power. 3 HP ~ 2200W
 	idle_power_usage = 100
 	var/stat_tracking = TRUE
-	var/power_retry_timer
 	flags = REMOTEVIEW_ON_ENTER
 
 // C11: one slot, accepting anything (any movable dropped, thrown or grabbed
@@ -684,14 +685,13 @@
 		update_icon()	// update icon
 		if(flush || length(slot_contents(CONTAINER_SLOT_DISPOSAL)))
 			wake_for_state_change()
-		else if(mode == DISPOSALMODE_CHARGING && !(stat & NOPOWER) && can_pressurize_from(loc.return_air()) && !power_retry_timer)
+		else if(mode == DISPOSALMODE_CHARGING && !(stat & NOPOWER) && can_pressurize_from(loc.return_air()) && !om_timer_slot_pending(src, "power_retry_timer"))
 			// A station-wide restoration otherwise wakes every empty bin in the
 			// same tick, their combined pump surge drops the grid, and all of them
 			// go back to sleep without charging. Spread retries across the cycle.
-			power_retry_timer = om_after(src, rand(1 SECOND, 30 SECONDS), PROC_REF(retry_charge_after_power_restore))
+			om_after_slot(src, "power_retry_timer", rand(1 SECOND, 30 SECONDS), PROC_REF(retry_charge_after_power_restore))
 
 /obj/machinery/disposal/proc/retry_charge_after_power_restore()
-	power_retry_timer = null
 	if(mode == DISPOSALMODE_CHARGING && !(stat & (NOPOWER|BROKEN)) && can_pressurize_from(loc.return_air()))
 		wake_for_state_change()
 

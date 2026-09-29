@@ -1,4 +1,6 @@
 //Helper object for picking dionaea (and other creatures) up.
+OM_TIMER_SLOT(/obj/item/holder, cleanup_timer)
+
 /obj/item/holder
 	name = "holder"
 	desc = "You shouldn't ever see this."
@@ -20,8 +22,6 @@
 		)
 	pixel_y = 8
 	var/mob/living/held_mob
-	/// The om_after() timer id of a pending cleanup_check(), or 0.
-	var/tmp/cleanup_timer = 0
 	var/matrix/original_transform
 	var/original_vis_flags = NONE
 
@@ -115,11 +115,10 @@
 /// If the mob leaves the holder, or the holder lands on a turf or in a belly, clean us up: checked
 /// right after the move that did it (Exited(), Moved()), never polled.
 /obj/item/holder/proc/schedule_cleanup_check()
-	if(!cleanup_timer)
-		cleanup_timer = om_after(src, 0, PROC_REF(cleanup_check))
+	if(!om_timer_slot_pending(src, "cleanup_timer"))
+		om_after_slot(src, "cleanup_timer", 0, PROC_REF(cleanup_check))
 
 /obj/item/holder/proc/cleanup_check()
-	cleanup_timer = 0
 	if(held_mob?.loc != src || isturf(loc) || isbelly(loc))
 		qdel(src)
 

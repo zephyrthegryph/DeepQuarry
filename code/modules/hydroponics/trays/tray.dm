@@ -1,5 +1,7 @@
 #define AGE_MOD_MAX 10 // Define for age_mod sanity check as a define to allow for easy tweaking.
 
+OM_TIMER_SLOT(/obj/machinery/portable_atmospherics/hydroponics, growth_timer)
+
 /obj/machinery/portable_atmospherics/hydroponics
 	name = "hydroponics tray"
 	desc = "A tray usually full of fluid for growing plants."
@@ -44,7 +46,6 @@
 	var/obj/temp_chem_holder   // Something to hold reagents during process_reagents()
 	var/labelled
 	var/frozen = 0				//Is the plant frozen? -1 is used to define trays that can't be frozen. 0 is unfrozen and 1 is frozen.
-	var/growth_timer
 
 	// Seed details/line data.
 	var/datum/seed/seed = null // The currently planted seed
@@ -231,12 +232,11 @@ DECLARE_REF(/obj/machinery/portable_atmospherics/hydroponics, "ov_alert3", OWNED
 	MACHINE_WAKE(src)
 
 /obj/machinery/portable_atmospherics/hydroponics/proc/schedule_growth_wake()
-	if(growth_timer || frozen == 1)
+	if(om_timer_slot_pending(src, "growth_timer") || frozen == 1)
 		return
-	growth_timer = om_after(src, max(1, lastcycle + cycledelay - world.time), PROC_REF(wake_for_growth))
+	om_after_slot(src, "growth_timer", max(1, lastcycle + cycledelay - world.time), PROC_REF(wake_for_growth))
 
 /obj/machinery/portable_atmospherics/hydroponics/proc/wake_for_growth()
-	growth_timer = null
 	MACHINE_WAKE(src)
 
 // Give the seeds time to initialize itself
