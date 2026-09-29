@@ -117,7 +117,7 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 						return
 				else if(AM.loc != H)
 					return // it already left the holder: not the holder's to drop or delete
-	qdel(value)
+	qdel(value) // ALLOW(lifecycle): the ownership framework disposes of owned values by policy
 
 /// Owned-child release hook: `child` is leaving holder.var_name (disposed, taken or moved out),
 /// still intact. For consequences outside the child: a media source's listeners, a tooltip's
@@ -242,7 +242,7 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 		adopted = own_set(dest, dest_var, value)
 	if(!adopted)
 		OWN_REPORT("own_transfer of [value.type] from [from.type].[from_var] to [dest.type].[dest_var] refused; destroying it")
-		qdel(value)
+		qdel(value) // ALLOW(lifecycle): the ownership framework disposes of owned values by policy
 	return adopted
 
 /// Moves `value` into dest.dest_var from wherever it is owned now (own_transfer() from its current
@@ -377,7 +377,7 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 			own_unstamp(thing)
 			var/atom/drop = AM.drop_location()
 			if(!drop || QDELETED(drop))
-				qdel(thing)
+				qdel(thing) // ALLOW(lifecycle): the ownership framework disposes of owned values by policy
 			else
 				thing.forceMove(drop)
 				thing.update_icon()

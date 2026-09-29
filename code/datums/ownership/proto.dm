@@ -39,7 +39,7 @@
 	if(old_private)
 		own_unstamp(old)
 		if(!QDELETED(old))
-			qdel(old)
+			qdel(old) // ALLOW(lifecycle): proto teardown deletes the private copy the holder owns
 	return value
 
 /// proto_set() that hands the replaced private copy back, detached and unowned, instead of
@@ -69,4 +69,4 @@
 	if(private)
 		own_unstamp(value)
 		if(!QDELETED(value))
-			qdel(value)
+			qdel(value) // ALLOW(lifecycle): proto teardown deletes the private copy the holder owns
