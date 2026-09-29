@@ -14,6 +14,15 @@
 
 #define OWN_AUDIT_INTERVAL (5 MINUTES)
 
+/// Test builds: names the type that stamped D when the key now resolves to another type (a
+/// recycled key: the real owner is gone and an unrelated datum reuses its ref).
+/proc/own_audit_owner_note(datum/D, datum/H)
+	#ifdef UNIT_TESTS
+	if(D.own_holder_type && D.own_holder_type != H?.type)
+		return " (stamped by [D.own_holder_type]; its key was recycled)"
+	#endif
+	return ""
+
 /// Runs the audit. Returns the report lines (each also reported through OWN_REPORT unless `quiet`).
 /proc/own_audit(quiet = FALSE)
 	. = list()
@@ -28,12 +37,12 @@
 			continue
 		var/datum/H = own_locate(D.own_holder_ref)
 		if(!isdatum(H))
-			. += "orphan: [D.type] names an owner that no longer exists ([D.own_slot])"
+			. += "orphan: [D.type] names an owner that no longer exists ([D.own_slot])[own_audit_owner_note(D, null)]"
 			own_unstamp(D)
 		else if(QDELETED(H))
-			. += "orphan: [D.type] is still owned by [H.type].[D.own_slot], which was destroyed"
+			. += "orphan: [D.type] is still owned by [H.type].[D.own_slot], which was destroyed[own_audit_owner_note(D, H)]"
 		else if(!own_names(H, D.own_slot, D))
-			. += "orphan: [D.type] is stamped as owned by [H.type].[D.own_slot], which no longer holds it (overwritten or dropped without own_set/own_take)"
+			. += "orphan: [D.type] is stamped as owned by [H.type].[D.own_slot], which no longer holds it (overwritten or dropped without own_set/own_take)[own_audit_owner_note(D, H)]"
 			own_unstamp(D)
 	stamped = null
 	for(var/datum/om/rec/rec as anything in recs)

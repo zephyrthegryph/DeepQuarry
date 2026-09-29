@@ -40,8 +40,20 @@ proto.dm, shared.dm, registry_types.dm, clone.dm, audit.dm, table.dm), the rich-
   slipped out (a raw drop, an owner that died without disposing of it).
 - **O5 Teardown.** Phase 2: a dying owned entity leaves its owner's var. Phase 3: `OWN_SPILL`
   movables drop out. Phase 4: every owned var is disposed of by policy, then relation views clear
-  on both ends. From phase 0 the dying entity refuses new timers, hooks, tasks and relation links
-  (`OWN: refused ...`).
+  on both ends. The phases are one declared sequence, `GLOB.destroy_step_sequence`
+  (`DESTROY_STEP_*`, `code/datums/lifecycle/transaction.dm`); each step sets the datum's
+  `destroy_phase`, and the contents release check is its own step right after the contents steps.
+- **O5a One teardown guard.** Every accessor that gives an entity something new (`own_set`,
+  `own_add`, `own_put`, `own_transfer`, `own_move`, `rel_set`, `rel_add`, `om_link`, `proto_set`,
+  `proto_private`, `shared_set`, `om_after` and `OWN_TIMER` slots, `om_hook`, `om_task`, and the
+  ledger's contents adoption) asks `own_guard()` (`code/datums/ownership/guard.dm`) and nothing
+  else: when the holder or the target is at or past `LIFECYCLE_REFUSE_PHASE` (or marked for
+  deletion) the write is refused. Inside a destroy transaction the refusal is silent (a teardown
+  cascade: a dying holder's `on_destroy`, a spilled item's `Moved()`, a light re-reading its
+  holder); outside one it is a stack trace (`OWN: refused ...`). Releases are never refused. Call
+  sites carry no `QDELETED()` guards of their own for this. Contents adoption refuses a dying
+  holder only from its links phase, since its own contents step materializes latent entries
+  into its slots. `ownership_teardown_guard` tries every accessor on a dying holder and target.
 - **O6 Phase 8.** An owned var that holds a value again after phase 4 was re-set during teardown:
   phase 8 deletes the value and reports it. Nothing is nulled silently.
 
@@ -284,7 +296,7 @@ A site kept on purpose carries `// ALLOW(ownership): <reason>`.
 |---|---|
 | raw writes, contradictions, kinds, matrix, callbacks, handles | `ownership_lint.py` |
 | `GLOB.x[key] = src` self-registration | `registry_lint.py` |
-| double ownership, orphaned replacement, phase 8 re-sets, refused work on dying entities | runtime, every build |
+| double ownership, orphaned replacement, phase 8 re-sets, refused work on dying entities (`own_guard()`) | runtime, every build |
 | one kind per var, policy procs, matrix | `own_validate_table()` (first instance of a type), `own_validate_boot()` |
 | orphans and rec cycles | `own_audit()` (test builds, admin verb) |
 | DEF freeze | test builds |
