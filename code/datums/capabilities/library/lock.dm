@@ -18,7 +18,7 @@
 	var/list/id_types
 
 /// An access lock: access (all required) and/or req_one_access (any one). id_types: what is swiped.
-/proc/access_lock(list/access, list/req_one_access, list/id_types = list(/obj/item/card/id, /obj/item/pda), behind = NONE, log)
+/proc/cap_lock(list/access, list/req_one_access, list/id_types = list(/obj/item/card/id, /obj/item/pda), behind = NONE, log)
 	var/datum/capability/lock/C = new
 	C.req_access = access
 	C.req_one_access = req_one_access
@@ -28,7 +28,7 @@
 	return C
 
 /datum/capability/lock/interactions(atom/holder)
-	var/datum/capability/entry/wrapper = use_on("Lock", id_types, TYPE_PROC_REF(/atom, cap_lock_swipe), behind = behind, log = log, priority = 10, name_proc = TYPE_PROC_REF(/atom, cap_lock_name))
+	var/datum/capability/entry/wrapper = cap_use_on("Lock", id_types, TYPE_PROC_REF(/atom, cap_lock_swipe), behind = behind, log = log, priority = 10, name_proc = TYPE_PROC_REF(/atom, cap_lock_name))
 	return list(own_entry(wrapper, id = "lock:[jointext(id_types, ",")]"))
 
 /datum/capability/lock/examine(atom/holder, mob/user)

@@ -33,8 +33,11 @@
 	om_changed(E, channel)
 #if defined(UNIT_TESTS)
 	// H5: a refresh that marks its own entity again is a feedback loop (a reactive proc wrote state).
-	if(E == GLOB.refresh_running && !GLOB.refresh_self_mark_expected)
-		stack_trace("REFRESH SELF-MARK: [E.type] marked itself changed during its own refresh")
+	if(E == GLOB.refresh_running)
+		var/msg = "REFRESH SELF-MARK: [E.type] marked itself changed during its own refresh"
+		GLOB.refresh_self_marks += msg
+		if(!GLOB.refresh_self_mark_expected)
+			stack_trace(msg)
 #endif
 	refresh_trace_note(E, channel)
 	var/datum/D = E
@@ -54,6 +57,8 @@ GLOBAL_LIST_EMPTY(refresh_queue)
 /// The entity whose refresh is running now (the self-mark detector reads it).
 GLOBAL_DATUM(refresh_running, /datum)
 GLOBAL_VAR_INIT(refresh_self_mark_expected, FALSE)
+/// Self-mark reports this round (the detector test reads them).
+GLOBAL_LIST_EMPTY(refresh_self_marks)
 
 /// Whether one of owner's capabilities draws `child` (its draws_var holds it).
 /proc/owner_draws_child(atom/owner, datum/child)

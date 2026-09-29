@@ -8,7 +8,7 @@
 	var/delay = 0
 
 /// A maintenance panel toggled with `tool`; behind = COVER puts it behind a cover.
-/proc/panel(tool = TOOL_SCREWDRIVER, behind = NONE, locked_by = NONE, delay = 0, log)
+/proc/cap_panel(tool = TOOL_SCREWDRIVER, behind = NONE, locked_by = NONE, delay = 0, log)
 	var/datum/capability/panel/C = new
 	C.tool_quality = tool
 	C.behind = behind
@@ -18,7 +18,7 @@
 	return C
 
 /datum/capability/panel/interactions(atom/holder)
-	var/datum/capability/entry/wrapper = tool("Open maintenance panel", tool_quality, TYPE_PROC_REF(/atom, cap_panel_toggle), delay = delay, behind = behind, locked_by = locked_by, log = log, priority = 10, name_proc = TYPE_PROC_REF(/atom, cap_panel_name))
+	var/datum/capability/entry/wrapper = cap_tool("Open maintenance panel", tool_quality, TYPE_PROC_REF(/atom, cap_panel_toggle), delay = delay, behind = behind, locked_by = locked_by, log = log, priority = 10, name_proc = TYPE_PROC_REF(/atom, cap_panel_name))
 	return list(own_entry(wrapper, id = "panel:[tool_quality]"))
 
 /datum/capability/panel/examine(atom/holder, mob/user)

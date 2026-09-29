@@ -1,12 +1,12 @@
 /**
  * The standard machine frame ladder and the deconstruct capability (doc/rewrite/dx_conventions.md §2).
  *
- * A board-built machine carries deconstructible(board): with its maintenance panel open, a crowbar
+ * A board-built machine carries cap_deconstruct(board): with its maintenance panel open, a crowbar
  * takes it apart into a frame holding its board, and the frame's standard ladder builds it back:
  *
  *	/obj/structure/frame/capabilities()
  *		. = ..()
- *		. += standard_frame_ladder()
+ *		. += cap_frame_ladder()
  *
  * Which of the frame's steps are offered depends on its frame class (machine, computer, display,
  * alarm) and on whether it came with its board (then it has an outer cover instead of a board to
@@ -24,10 +24,10 @@
 	var/tmp/datum/interaction/capability/dismantle
 
 /**
- * deconstructible(board = /obj/item/circuitboard/x): with the panel open (`behind`), a crowbar
+ * cap_deconstruct(board = /obj/item/circuitboard/x): with the panel open (`behind`), a crowbar
  * dismantles the machine into its frame. Works broken and unpowered.
  */
-/proc/deconstructible(board, behind = PANEL, locked_by = NONE, needs, else_say, log = LOG_GAME)
+/proc/cap_deconstruct(board, behind = PANEL, locked_by = NONE, needs, else_say, log = LOG_GAME)
 	var/datum/capability/deconstruct/made = new
 	made.board = board
 	made.behind = behind
@@ -76,8 +76,8 @@
  * The frame's ladder. Its stage is the frame's `state` (FRAME_*), plus "loose" for a placed frame
  * that isn't wrenched down; frame_ladder_stage() names them.
  */
-/proc/standard_frame_ladder()
-	return construction(
+/proc/cap_frame_ladder()
+	return cap_construction(
 		ladder_options(state = TYPE_PROC_REF(/obj/structure/frame, frame_ladder_stage), store = TYPE_PROC_REF(/obj/structure/frame, set_frame_ladder_stage), starts = list("placed")),
 		stage("loose",
 			also = list(

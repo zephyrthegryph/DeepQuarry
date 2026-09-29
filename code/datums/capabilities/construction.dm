@@ -5,7 +5,7 @@
  *
  *	/obj/item/camera_assembly/capabilities()
  *		. = ..()
- *		. += construction(
+ *		. += cap_construction(
  *			stage("loose", desc = "It is lying loose."),
  *			stage("secured", build = with_tool(TOOL_WRENCH), undo = with_tool(TOOL_WRENCH), anchored = TRUE),
  *			stage("wired", build = using(/obj/item/stack/cable_coil, amount = 2), undo = with_tool(TOOL_WIRECUTTER)),
@@ -38,11 +38,11 @@
 	var/stage
 
 /**
- * The construction capability: construction(stage(...), ..., ladder_options(...)). The gating
+ * The construction capability: cap_construction(stage(...), ..., ladder_options(...)). The gating
  * keywords are named args of ladder_options() only where they differ per step; the capability's
  * own `needs` / `else_say` / `behind` / `locked_by` gate every step.
  */
-/proc/construction(...)
+/proc/cap_construction(...)
 	var/datum/capability/construction/made = new
 	made.declaration = args.Copy()
 	return made
@@ -178,8 +178,8 @@
 	return new /datum/ladder_cost(LADDER_COST_HAND, null, null, 0, delay, TRUE, 0, null, null, null, null, null, null, ladder_sfx(sfx, sfx_volume), ladder_sfx(done_sfx, done_volume))
 
 /**
- * A framework entry used as a cost: tool("", TOOL_WRENCH, delay = 2 SECONDS), hand(""),
- * insert("", /obj/item/cell) or use_on("", /obj/item/tape) with no handler (the ladder is the
+ * A framework entry used as a cost: cap_tool("", TOOL_WRENCH, delay = 2 SECONDS), cap_hand(""),
+ * cap_insert("", /obj/item/cell) or cap_use_on("", /obj/item/tape) with no handler (the ladder is the
  * handler). Its needs / else_say join the step's. For stack amounts, sounds, fuel or stand-in items,
  * use the ladder's own with_tool() / using() / inserting() / holding() / empty_hand().
  */

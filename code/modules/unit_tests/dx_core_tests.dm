@@ -62,7 +62,7 @@ TRACKED(/obj/cap_fixture/dx_core, power_level, CHANGE_EFFECTS)
 	. = ..()
 	. += dx_test_cap(/datum/capability/dx_test/a, "alpha")
 	. += dx_test_cap(/datum/capability/dx_test/b, "beta")
-	. += hand("Configure", PROC_REF(dx_configure), form = list(dx_canned_field("mode", "fast"), dx_canned_field("count", 3)))
+	. += cap_hand("Configure", PROC_REF(dx_configure), form = list(dx_canned_field("mode", "fast"), dx_canned_field("count", 3)))
 
 /obj/cap_fixture/dx_core/draw(datum/look/look)
 	..()
@@ -123,13 +123,13 @@ TRACKED(/obj/cap_fixture/dx_periodic, gating, CHANGE_EFFECTS)
 /datum/dx_ui_host/ui_logged()
 	return list("record" = LOG_GAME)
 
-/datum/dx_ui_host/proc/ui_set_value(mob/user, value)
+/datum/dx_ui_host/proc/act_set_value(mob/user, value)
 	value = ui_number(value, 0, 100)
 	if(isnull(value))
 		return refuse(user, "That isn't a number.")
 	src.value = value
 
-/datum/dx_ui_host/proc/ui_record(mob/user)
+/datum/dx_ui_host/proc/act_record(mob/user)
 	logged_calls++
 
 // ---------------------------------------------------------------- 1. capabilities()
@@ -172,15 +172,36 @@ TRACKED(/obj/cap_fixture/dx_periodic, gating, CHANGE_EFFECTS)
 	TEST_ASSERT_EQUAL(F.refresh_bits, 0, "bits are cleared after the refresh")
 	TEST_ASSERT_EQUAL(F.icon_state, "on", "draw ran")
 
+/// A capability that draws the holder's `child` (draws_var): the child's changes mark the holder (H2).
+/datum/capability/dx_draws_child
+	draws_var = "child"
+
+/obj/cap_fixture/dx_core/draws_child
+
+/obj/cap_fixture/dx_core/draws_child/capabilities()
+	. = ..()
+	var/datum/capability/dx_draws_child/C = new
+	C.draws_var = nameof(/obj/cap_fixture/dx_core::child)
+	. += C
+
+/// H2: a child's change marks its owner only when a capability of the owner draws that child.
 /datum/unit_test/dx_core_changed_owner_chain/Run()
-	var/obj/cap_fixture/dx_core/F = allocate(/obj/cap_fixture/dx_core)
+	var/obj/cap_fixture/dx_core/plain = allocate(/obj/cap_fixture/dx_core)
+	var/datum/dx_core_child/plain_child = new
+	own_set(plain, nameof(/obj/cap_fixture/dx_core::child), plain_child)
+	refresh_flush()
+	TEST_ASSERT(owner_of(plain_child) == plain, "the child is owned")
+	TEST_ASSERT(plain_child.set_level(2), "the child's setter changed it")
+	TEST_ASSERT(!plain.refresh_queued, "an owner that doesn't draw the child is not marked")
+	refresh_flush()
+
+	var/obj/cap_fixture/dx_core/draws_child/F = allocate(/obj/cap_fixture/dx_core/draws_child)
 	var/datum/dx_core_child/K = new
 	own_set(F, nameof(/obj/cap_fixture/dx_core::child), K)
 	refresh_flush()
-	TEST_ASSERT(owner_of(K) == F, "the child is owned")
 	var/before = F.state_changes
 	TEST_ASSERT(K.set_level(2), "the child's setter changed it")
-	TEST_ASSERT(F.refresh_queued, "the owner is queued with its child")
+	TEST_ASSERT(F.refresh_queued, "the owner that draws the child is queued with it")
 	TEST_ASSERT(F.refresh_bits & CHANGE_EFFECTS, "the owner carries the child's channel")
 	refresh_flush()
 	TEST_ASSERT_EQUAL(F.state_changes - before, 1, "the owner refreshed once")
@@ -269,7 +290,7 @@ TRACKED(/obj/cap_fixture/dx_periodic, gating, CHANGE_EFFECTS)
 /datum/unit_test/dx_core_ui_actions/Run()
 	var/datum/dx_ui_host/H = new
 	var/datum/tgui/ui = ui_test_window(H)
-	TEST_ASSERT(H.tgui_act("set_value", list("value" = "42"), ui), "ui_set_value ran")
+	TEST_ASSERT(H.tgui_act("set_value", list("value" = "42"), ui), "act_set_value ran")
 	TEST_ASSERT_EQUAL(H.value, 42, "named arg reached the proc and was validated")
 	TEST_ASSERT(!H.tgui_act("set_value", list("value" = "lots"), ui), "a validator refusal is refused")
 	TEST_ASSERT_EQUAL(H.value, 42, "unchanged after a refusal")
@@ -284,7 +305,7 @@ TRACKED(/obj/cap_fixture/dx_periodic, gating, CHANGE_EFFECTS)
 	TEST_ASSERT_EQUAL(H.value, 42, "the refused action did not run")
 	H.allow = TRUE
 	var/records = length(GLOB.dispatch_records)
-	TEST_ASSERT(H.tgui_act("record", list(), ui), "ui_record ran")
+	TEST_ASSERT(H.tgui_act("record", list(), ui), "act_record ran")
 	TEST_ASSERT_EQUAL(H.logged_calls, 1, "once")
 	TEST_ASSERT_EQUAL(GLOB.dispatch_records[length(GLOB.dispatch_records)], "record|0|1", "a ui_logged action is logged")
 	TEST_ASSERT_EQUAL(length(GLOB.dispatch_records) - records, 1, "one record")

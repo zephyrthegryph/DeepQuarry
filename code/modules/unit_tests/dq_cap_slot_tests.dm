@@ -10,9 +10,9 @@
 
 /obj/item/cap_slot_probe/capabilities()
 	. = ..()
-	. += slot(nameof(cell), /obj/item/cell, needs = PROC_REF(is_steady), else_say = "hold it steady", eject_via = SLOT_VIA_ALT|SLOT_VIA_USE, \
+	. += cap_slot(nameof(cell), /obj/item/cell, needs = PROC_REF(is_steady), else_say = "hold it steady", eject_via = SLOT_VIA_ALT|SLOT_VIA_USE, \
 		examine_held = "It holds %I%.", examine_empty = "It has no cell.")
-	. += slot(nameof(driver), /obj/item/tool/screwdriver, name = "Stow driver", eject_via = SLOT_VIA_NONE)
+	. += cap_slot(nameof(driver), /obj/item/tool/screwdriver, name = "Stow driver", eject_via = SLOT_VIA_NONE)
 
 /obj/item/cap_slot_probe/proc/is_steady(mob/user, obj/item/held)
 	return steady

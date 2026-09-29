@@ -2,15 +2,15 @@
 
 /obj/cap_fixture/breakable/capabilities()
 	. = ..()
-	. += breakable(repair_tool = TOOL_WRENCH, repair_delay = 0)
-	. += hand("Poke", TYPE_PROC_REF(/obj/cap_fixture/breakable, poke))
+	. += cap_breakable(repair_tool = TOOL_WRENCH, repair_delay = 0)
+	. += cap_hand("Poke", TYPE_PROC_REF(/obj/cap_fixture/breakable, poke))
 
 /obj/cap_fixture/breakable/proc/poke(mob/user, obj/item/held)
 	return TRUE
 
 /obj/cap_fixture/breakable_default/capabilities()
 	. = ..()
-	. += breakable()
+	. += cap_breakable()
 
 /// atom_break() sets CAP_BROKEN, which refuses other entries, examines and draws; the repair clears it.
 /datum/unit_test/dx_cap_breakable_break_and_repair/Run()

@@ -10,7 +10,7 @@
 	var/wires_type
 
 /// Wires of `wires_type`, reachable while everything in `behind` is open.
-/proc/wires(wires_type, behind = PANEL, log)
+/proc/cap_wires(wires_type, behind = PANEL, log)
 	var/datum/capability/wires/C = new
 	C.wires_type = wires_type
 	C.behind = behind
@@ -31,8 +31,8 @@
 
 /datum/capability/wires/interactions(atom/holder)
 	return list(
-		own_entry(tool("Pulse wires", TOOL_MULTITOOL, TYPE_PROC_REF(/atom, cap_wires_open), behind = behind, log = log, priority = 10), id = "wires:multitool"),
-		own_entry(tool("Cut wires", TOOL_WIRECUTTER, TYPE_PROC_REF(/atom, cap_wires_open), behind = behind, log = log, priority = 10), id = "wires:wirecutter"),
+		own_entry(cap_tool("Pulse wires", TOOL_MULTITOOL, TYPE_PROC_REF(/atom, cap_wires_open), behind = behind, log = log, priority = 10), id = "wires:multitool"),
+		own_entry(cap_tool("Cut wires", TOOL_WIRECUTTER, TYPE_PROC_REF(/atom, cap_wires_open), behind = behind, log = log, priority = 10), id = "wires:wirecutter"),
 	)
 
 /datum/capability/wires/draw(atom/holder, datum/look/look)

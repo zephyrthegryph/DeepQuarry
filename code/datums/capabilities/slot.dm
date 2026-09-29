@@ -56,7 +56,7 @@
  * eject_msg, full_msg, swap_msg (templates or /datum/msg types; null for silence), eject_via,
  * eject_drop, ungated, when_full, no_insert, examine_held, examine_empty, layer, ui_key.
  */
-/proc/slot(var_name, accepts = /obj/item, behind = NONE, locked_by = NONE, needs, else_say = "you can't do that right now", \
+/proc/cap_slot(var_name, accepts = /obj/item, behind = NONE, locked_by = NONE, needs, else_say = "you can't do that right now", \
 		eject_needs, eject_else_say = "you can't do that right now", works_broken = TRUE, works_unpowered = TRUE, log, \
 		name, eject_name, insert_msg = "You insert %I% into %T%.", eject_msg = "You remove %I% from %T%.", \
 		full_msg = "%T% already holds %I%.", swap_msg = "You swap %I% out of %T%.", eject_via = SLOT_VIA_ALT, eject_drop = FALSE, \

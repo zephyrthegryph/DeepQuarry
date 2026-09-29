@@ -2,8 +2,8 @@
 
 /obj/cap_fixture/panel/capabilities()
 	. = ..()
-	. += panel()
-	. += hand("Poke", TYPE_PROC_REF(/obj/cap_fixture/panel, poke), behind = PANEL)
+	. += cap_panel()
+	. += cap_hand("Poke", TYPE_PROC_REF(/obj/cap_fixture/panel, poke), behind = PANEL)
 
 /obj/cap_fixture/panel
 	var/pokes = 0

@@ -22,12 +22,12 @@
 
 /obj/item/dq_ladder_probe/capabilities()
 	. = ..()
-	. += construction(
+	. += cap_construction(
 		ladder_options(anywhere = list(branch("start", with_tool(TOOL_CROWBAR), say = "reset %T%", when = PROC_REF(probe_can_reset)))),
 		stage("start", desc = "A probe at the start."),
 		stage("wired", build = using(/obj/item/stack/cable_coil, amount = 3), undo = with_tool(TOOL_WIRECUTTER), anchored = TRUE, on_enter = PROC_REF(probe_marked)),
-		stage("boarded", build = insert(null, /obj/item/stock_parts/capacitor), undo = hand(null)),
-		stage("finished", build = tool(null, TOOL_WRENCH, delay = 3 SECONDS),
+		stage("boarded", build = cap_insert(null, /obj/item/stock_parts/capacitor), undo = cap_hand(null)),
+		stage("finished", build = cap_tool(null, TOOL_WRENCH, delay = 3 SECONDS),
 			also = list(branch(LADDER_DONE, with_tool(TOOL_SCREWDRIVER), say = "melt %T% down", become = /obj/item/stack/material/steel, amount = 2,
 				needs = PROC_REF(probe_cool), else_say = "it is too hot"))),
 	)
@@ -86,7 +86,7 @@
 /datum/unit_test/dq_capability_frame_ladder/Run()
 	var/turf/T = test_floor()
 	var/obj/structure/frame/frame = allocate(/obj/structure/frame, T)
-	var/datum/capability/construction/C = standard_frame_ladder()
+	var/datum/capability/construction/C = cap_frame_ladder()
 	var/datum/construction_ladder/ladder = C.ladder_for(frame)
 	var/list/problems = ladder.validate()
 	TEST_ASSERT(!length(problems), "valid: [jointext(problems, "; ")]")
@@ -96,7 +96,7 @@
 /datum/unit_test/dq_capability_deconstruct
 
 /datum/unit_test/dq_capability_deconstruct/Run()
-	var/datum/capability/deconstruct/C = deconstructible(board = /obj/item/circuitboard)
+	var/datum/capability/deconstruct/C = cap_deconstruct(board = /obj/item/circuitboard)
 	var/list/entries = C.interactions(null)
 	TEST_ASSERT_EQUAL(length(entries), 1, "one entry")
 	var/datum/interaction/capability/entry = entries[1]

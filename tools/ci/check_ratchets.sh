@@ -40,7 +40,8 @@ for lint in \
 	stance_examine_lint.py \
 	ui_actions_lint.py \
 	sys_lint.py \
-	tracked_lint.py; do
+	tracked_lint.py \
+	cap_bits_lint.py; do
 	echo "::group::$lint"
 	if ! "$PY" "tools/ci/$lint"; then
 		failed+=("$lint")

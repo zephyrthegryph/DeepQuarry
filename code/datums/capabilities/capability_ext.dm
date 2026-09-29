@@ -124,16 +124,18 @@ GLOBAL_LIST_EMPTY(caps_order_cache)
 
 /// A system capability holders join: iterate `members` instead of scanning atoms.
 /datum/cap_system
+	/// Members as an assoc list (atom -> TRUE): joining and leaving are O(1).
 	var/list/members = list()
 
 /datum/cap_system/proc/join(atom/A)
-	members |= A
+	members[A] = TRUE
 
 /datum/cap_system/proc/leave(atom/A)
 	members -= A
 
 /// The singleton of a cap_system type.
 /proc/cap_system(path)
+	RETURN_TYPE(/datum/cap_system)
 	var/datum/cap_system/S = GLOB.cap_systems[path]
 	if(!S)
 		S = new path

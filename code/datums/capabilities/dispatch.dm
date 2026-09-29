@@ -83,10 +83,13 @@ GLOBAL_DATUM(dispatch_context_now, /datum/dispatch_context)
 	if(ctx.returned && GLOB.dispatch_context_now == ctx)
 		// Resumed after a sleep: an ask_*() re-bound ctx; unbind it now the handler is done.
 		GLOB.dispatch_context_now = null
-	if(failed || result == UI_REFUSED || QDELETED(target))
+	if(failed || QDELETED(target))
 		return failed ? FALSE : result
+	// Every dispatched call marks its target (it may have written plain vars); only a success
+	// (truthy, not refused: a cancelled prompt returns null) is fingerprinted and logged.
 	changed(target)
-	dispatch_record(ctx.user, target, action_name, log, null)
+	if(dispatch_succeeded(result))
+		dispatch_record(ctx.user, target, action_name, log, null)
 	return result
 
 /// Handler failures this round (the dispatch tests read them).
@@ -97,6 +100,10 @@ GLOBAL_VAR_INIT(dispatch_failure_expected, FALSE)
 GLOBAL_LIST_EMPTY(dispatch_records)
 /// The last dispatch_record() call (user, target, action, log). Only unit tests write and read it.
 GLOBAL_LIST_EMPTY(dispatch_last_record)
+
+/// Whether a handler's result counts as done: truthy and not UI_REFUSED.
+/proc/dispatch_succeeded(result)
+	return result && result != UI_REFUSED
 
 /// Tells user why an action was refused; a ui_<action> or entry handler returns its result.
 /proc/refuse(mob/user, text)

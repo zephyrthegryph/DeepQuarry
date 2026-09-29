@@ -9,7 +9,7 @@
 	/// Refuse while the holder is anchored.
 	var/needs_unanchored = TRUE
 
-/proc/rotate(clockwise = TRUE, counter = TRUE, needs_unanchored = TRUE, behind = NONE, log)
+/proc/cap_rotate(clockwise = TRUE, counter = TRUE, needs_unanchored = TRUE, behind = NONE, log)
 	var/datum/capability/rotate/C = new
 	C.clockwise = clockwise
 	C.counter = counter
@@ -22,11 +22,11 @@
 	. = list()
 	var/needs = needs_unanchored ? TYPE_PROC_REF(/atom/movable, cap_rotate_free) : null
 	if(clockwise)
-		var/datum/interaction/capability/E = adopt_entry(hand("Rotate clockwise", TYPE_PROC_REF(/atom/movable, cap_rotate_clockwise), behind = behind, needs = needs, works_broken = TRUE, works_unpowered = TRUE, log = log))
+		var/datum/interaction/capability/E = adopt_entry(cap_hand("Rotate clockwise", TYPE_PROC_REF(/atom/movable, cap_rotate_clockwise), behind = behind, needs = needs, works_broken = TRUE, works_unpowered = TRUE, log = log))
 		E.default_action = INPUT_ACTION_ALTERNATE
 		. += E
 	if(counter)
-		var/datum/interaction/capability/E = adopt_entry(hand("Rotate counter-clockwise", TYPE_PROC_REF(/atom/movable, cap_rotate_counter), behind = behind, needs = needs, works_broken = TRUE, works_unpowered = TRUE, log = log))
+		var/datum/interaction/capability/E = adopt_entry(cap_hand("Rotate counter-clockwise", TYPE_PROC_REF(/atom/movable, cap_rotate_counter), behind = behind, needs = needs, works_broken = TRUE, works_unpowered = TRUE, log = log))
 		E.default_action = clockwise ? null : INPUT_ACTION_ALTERNATE
 		. += E
 

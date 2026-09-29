@@ -18,13 +18,13 @@
 
 /obj/cap_fixture/cover_hand/capabilities()
 	. = ..()
-	. += cover(open_tool = BY_HAND, locked_by = LOCK)
-	. += access_lock(access = list(ACCESS_SECURITY))
-	. += panel(behind = COVER)
+	. += cap_cover(open_tool = BY_HAND, locked_by = LOCK)
+	. += cap_lock(access = list(ACCESS_SECURITY))
+	. += cap_panel(behind = COVER)
 
 /obj/cap_fixture/cover_crowbar/capabilities()
 	. = ..()
-	. += cover()
+	. += cap_cover()
 
 /// A cover opened by hand: the bit, the name by state, examine, the layer and gating of others.
 /datum/unit_test/dx_cap_cover_by_hand/Run()
