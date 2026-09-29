@@ -94,8 +94,16 @@ TYPE_TABLE_DECLARE(/datum/input_router, primary_table, list(list(list(LEFT_CLICK
 
 /atom/Click(location, control, params) // This is their reaction to being clicked on (standard proc)
 	if(src)
+		// Input latency (code/controllers/measure/): stamp the click when it arrives and again as ClickOn() begins.
+		// Today the two are one call apart, so the wait is the event emit's cost and the arrival depth says how
+		// far into the tick BYOND got to the click; a click queue (unified plan step 5) makes the wait real.
+		var/datum/tick_meter/meter = km_meter()
+		var/entry_time = world.time
+		var/entry_usage = TICK_USAGE
 		OM_EMIT(src, /datum/om/event/click, location, control, params, usr)
+		var/dispatch_usage = meter.click_dispatched(entry_time, entry_usage)
 		usr.ClickOn(src, params)
+		meter.click_done(entry_time, dispatch_usage)
 
 /atom/DblClick(location, control, params)
 	if(src)

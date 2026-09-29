@@ -36,6 +36,8 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	sched.slot_ds = OM_SLOT_DS
 	sched.phase_seed = 0
 	sched.dl_cursor = 0
+	// Its own meter: a test pass must not charge the live one. A short ring, since tests never read a long one.
+	sched.meter = new /datum/tick_meter(32)
 	GLOB.om_sched = sched
 	return sched
 
@@ -135,6 +137,9 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 #endif
 	var/last_run_ms = 0
 	var/runs = 0
+	/// Where this scheduler charges what it spends, per system (code/controllers/measure/): the live meter, or a
+	/// test's own (om_test_begin()).
+	var/datum/tick_meter/meter
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 	/// Tests: when a list, every dispatched change is logged here as list(entity, bits).
 	var/list/test_raises
@@ -154,6 +159,7 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	dl_cursor = round(now())
 	slot_ds = world.tick_lag > 0 ? world.tick_lag : OM_SLOT_DS
 	phase_seed = rand(0, 65535)
+	meter = km_meter()
 
 /datum/om/scheduler/proc/now()
 	return isnull(manual_time) ? world.time : manual_time
@@ -316,7 +322,10 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	if(world_pass_delivered)
 		for(var/lane in 1 to OM_LANE_COUNT)
 			world_pass_delivered[lane] = 0
+	var/world_step_start = TICK_USAGE
 	world_step()
+	if(isnull(manual_time))
+		meter.charge(KM_SYS_OM_NATIVE, TICK_USAGE_TO_MS(world_step_start))
 
 	// 1. Deadlines.
 	limit = start + avail * OM_DEADLINE_SHARE
@@ -386,13 +395,25 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	// Eager derived values are inputs to wakes in every lane: a behaviour in
 	// an earlier lane observing a derived channel must see the change this
 	// pass, not the next. The queue is empty (one length check) almost always.
-	if(!run_derived_queue())
-		return FALSE
-	if(lane == LANE_DERIVED)
-		if(!run_services())
+	if(length(derived_queue))
+		var/derived_start = TICK_USAGE
+		var/derived_done = run_derived_queue()
+		meter.charge(KM_SYS_OM_CORE, TICK_USAGE_TO_MS(derived_start))
+		if(!derived_done)
 			return FALSE
-	if(!run_world_wakes(lane))
-		return FALSE
+	if(lane == LANE_DERIVED)
+		if(length(service_queue))
+			var/services_start = TICK_USAGE
+			var/services_done = run_services()
+			meter.charge(KM_SYS_OM_CORE, TICK_USAGE_TO_MS(services_start))
+			if(!services_done)
+				return FALSE
+	if(length(world_q?[lane]))
+		var/native_start = TICK_USAGE
+		var/native_done = run_world_wakes(lane)
+		meter.charge(KM_SYS_OM_NATIVE, TICK_USAGE_TO_MS(native_start))
+		if(!native_done)
+			return FALSE
 	if(!run_wakes(lane))
 		return FALSE
 	for(var/datum/om/ring/R as anything in lane_rings[lane])
@@ -445,6 +466,8 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 			var/late = t - R.next_abs * R.slot_ds
 			if(late > S[OM_STAT_LATE_MAX])
 				S[OM_STAT_LATE_MAX] = late
+			if(late > 0)
+				meter.note_late(B.system_idx, late)
 			if(dt_ds > B.compiled_max_interval)
 				S[OM_STAT_BREACHES]++
 		if(!run_slot(R, L))
@@ -564,7 +587,9 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	calls = n_calls
 	var/list/S = stat_for(B.id)
 	S[OM_STAT_RUNS] += ran
-	S[OM_STAT_MS] += TICK_USAGE_TO_MS(t0)
+	var/spent = TICK_USAGE_TO_MS(t0)
+	S[OM_STAT_MS] += spent
+	meter.charge(B.system_idx, spent)
 	return !(out && i <= length(L))
 
 /// Clocked, substepped, or holding behaviours (fixed-step ones only when clocked).
@@ -723,7 +748,9 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 				continue
 			stat_inc(B.id, OM_STAT_WAKES)
 			var/ver = rec.att_ver
+			var/wake_start = TICK_USAGE
 			call_hook(rec, B, OM_HOOK_WAKE, bits)
+			meter.charge(B.system_idx, TICK_USAGE_TO_MS(wake_start))
 			if(rec.torn_down)
 				break
 			if(rec.att_ver != ver)
@@ -885,6 +912,7 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	if(!length(D))
 		rec.deadlines = null
 	stat_inc(bid, OM_STAT_DEADLINES)
+	var/deadline_start = TICK_USAGE
 	switch(sub)
 		if(0)
 			call_hook(rec, B, OM_HOOK_DEADLINE)
@@ -892,6 +920,7 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 			om_throttle_release(rec, B)
 		else
 			call_hook(rec, B, OM_HOOK_KEYED, sub)
+	meter.charge(B.system_idx, TICK_USAGE_TO_MS(deadline_start))
 
 // ---------------------------------------------------------------- min_interval throttle
 
@@ -983,6 +1012,7 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	.["registry_errors"] = reg.errors.Copy()
 	.["io"] = om_io_diagnostics(sched)
 	.["pools"] = pool_diagnostics()
+	.["kernel"] = km_diagnostics(sched)
 
 /// The behaviour this ring runs.
 /datum/om/ring/proc/behaviour() as /datum/om/behaviour

@@ -15,6 +15,9 @@ SUBSYSTEM_DEF(behaviours)
 	var/last_done = TRUE
 	/// Milliseconds spent in fire() since boot (benchmarks: life_sweep).
 	var/bench_ms = 0
+	// Its cost is charged to the systems whose behaviours it runs (the scheduler does that as work finishes), and
+	// what no behaviour owns lands on om_core below, so the MC does not charge it as one lump.
+	system_idx = KM_SYS_DECOMPOSED
 	/// The pipeline missed-wake audit (pipeline.dm): next run, and the admin verb's switch.
 	EXPIRY_DECLARE(next_audit)
 	var/audit_forced = FALSE
@@ -31,12 +34,18 @@ SUBSYSTEM_DEF(behaviours)
 	if(!sched)
 		return
 	var/start = TICK_USAGE
+	var/datum/tick_meter/meter = sched.meter
+	var/charged_before = meter.tick_charged
 	last_done = sched.run_pass(Master.current_ticklimit)
 	bench_ms += TICK_USAGE_TO_MS(start)
 	if(EXPIRY_EXPIRED(src, next_audit, CLOCK_WORLD) && audit_enabled())
 		EXPIRY_SET(src, next_audit, OM_AUDIT_INTERVAL, CLOCK_WORLD)
 		om_pipeline_audit(sched, OM_AUDIT_PARKED_SAMPLE, OM_AUDIT_AWAKE_SAMPLE)
 		om_sleeper_audit(64, TRUE)
+	// The remainder of this fire that no behaviour owned: deadline-wheel walking, borrow scans, queue bookkeeping,
+	// hooks run outside a slot, the audits. Unowned work must show up somewhere, or an overrun inside Behaviours
+	// would name only the part that was attributed.
+	meter.charge(KM_SYS_OM_CORE, TICK_USAGE_TO_MS(start) - (meter.tick_charged - charged_before))
 
 /// The audit runs in unit test and TESTING builds always; on servers only with the
 /// OM_PIPELINE_AUDIT config flag or the admin verb (it is a debugging aid, not a feature).

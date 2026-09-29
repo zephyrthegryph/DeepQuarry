@@ -5,6 +5,7 @@ SUBSYSTEM_DEF(input)
 	flags = SS_TICKER | SS_NO_INIT
 	priority = FIRE_PRIORITY_INPUT
 	runlevels = RUNLEVELS_DEFAULT | RUNLEVEL_LOBBY
+	counts_as_input = TRUE
 
 /datum/controller/subsystem/input/fire()
 	var/list/clients = GLOB.clients // Let's sing the list cache song

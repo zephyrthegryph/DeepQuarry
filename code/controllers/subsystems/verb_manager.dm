@@ -4,16 +4,14 @@
  *
  * see TICK_ORDER.md for more info on how the byond tick is structured.
  *
- * The way the MC allots its time is via TICK_LIMIT_RUNNING, it simply subtracts the cost of SendMaps (MAPTICK_LAST_INTERNAL_TICK_USAGE)
- * plus TICK_BYOND_RESERVE from the tick and uses up to that amount of time (minus the percentage of the tick used by the time it executes subsystems)
- * on subsystems running cool things like atmospherics or Life or SSInput or whatever.
+ * The way the MC allots its time is via TICK_LIMIT_RUNNING (80% of the tick, see _tick.dm). It does not subtract the cost of SendMaps
+ * (MAPTICK_LAST_INTERNAL_TICK_USAGE) from that: the ~20% it leaves is what verbs, clicks, SendMaps and any overrun all share.
+ * The tick meter (code/controllers/measure/) measures how much of a tick SendMaps recently took (TICK_BYOND_RESERVE), names what
+ * caused each overrun, and records how long every queued verb and every click waited.
  *
  * Without this subsystem, verbs are likely to cause overtime if the MC uses all of the time it has allotted for itself in the tick, and SendMaps
  * uses as much as its expected to, and an expensive verb ends up executing that tick. This is because the MC is completely blind to the cost of
- * verbs, it can't account for it at all. The only chance for verbs to not cause overtime in a tick where the MC used as much of the tick
- * as it allotted itself and where SendMaps costed as much as it was expected to is if the verb(s) take less than TICK_BYOND_RESERVE percent of
- * the tick, which isn't much. Not to mention if SendMaps takes more than 30% of the tick and the MC forces itself to take at least 70% of the
- * normal tick duration which causes ticks to naturally overrun even in the absence of verbs.
+ * verbs, it can't account for it at all.
  *
  * With this subsystem, the MC can account for the cost of verbs and thus stop major overruns of ticks. This means that the most important subsystems
  * like SSinput can start at the same time they were supposed to, leading to a smoother experience for the player since ticks aren't riddled with
@@ -25,6 +23,7 @@ SUBSYSTEM_DEF(verb_manager)
 	flags = SS_TICKER | SS_NO_INIT
 	priority = FIRE_PRIORITY_DELAYED_VERBS
 	runlevels = RUNLEVEL_LOBBY | RUNLEVELS_DEFAULT
+	counts_as_input = TRUE
 
 	///list of callbacks to procs called from verbs or verblike procs that were executed when the server was overloaded and had to delay to the next tick.
 	///this list is ran through every tick, and the subsystem does not yield until this queue is finished.
@@ -94,6 +93,7 @@ SUBSYSTEM_DEF(verb_manager)
 		return FALSE
 
 	if((TICK_USAGE < tick_check) && !subsystem_to_use.always_queue)
+		km_meter().verb_direct()
 		return FALSE
 
 	var/list/args_to_check = args.Copy()
@@ -134,7 +134,10 @@ SUBSYSTEM_DEF(verb_manager)
 	. = FALSE //errored
 	if(message_admins_on_queue)
 		message_admins("[name] verb queuing: tick usage: [TICK_USAGE]%, proc: [incoming_callback.delegate], object: [incoming_callback.target_object()], usr: [usr]")
+	incoming_callback.enqueue_time = world.time
+	incoming_callback.enqueue_usage = TICK_USAGE
 	verb_queue += incoming_callback
+	km_meter().verb_queued(length(verb_queue))
 	return TRUE
 
 /datum/controller/subsystem/verb_manager/fire(resumed)
@@ -151,6 +154,7 @@ SUBSYSTEM_DEF(verb_manager)
 			stack_trace("non /datum/callback/verb_callback inside [name]'s verb_queue!")
 			continue
 
+		km_meter().verb_run(verb_callback.enqueue_time, verb_callback.enqueue_usage)
 		verb_callback.InvokeAsync()
 		executed_verbs++
 

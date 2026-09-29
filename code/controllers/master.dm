@@ -823,6 +823,9 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 
 /datum/controller/master/proc/record_performance_tick(usage)
 	usage = max(usage, 0)
+	// Close the tick's per-system accounting first: an overrun's record below names the systems it attributed.
+	var/datum/tick_meter/meter = km_meter()
+	meter.end_tick(usage, MAPTICK_LAST_INTERNAL_TICK_USAGE)
 	perf_tick_usage += usage
 	perf_tick_realtime += REALTIMEOFDAY
 	perf_samples_total++
@@ -843,6 +846,9 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 			"top_usage" = perf_tick_top_usage,
 			"maptick" = MAPTICK_LAST_INTERNAL_TICK_USAGE,
 			"breakdown" = breakdown,
+			// The same tick by system, from inside Behaviours as well as the MC's own subsystems.
+			"top_systems" = meter.latest_top_systems(),
+			"streak" = meter.streak,
 		)
 		if(usage > previous_worst_usage)
 			perf_worst_tick = tick_record
@@ -1048,6 +1054,7 @@ GLOBAL_LIST_INIT(empty_performance_window, list("samples" = 0, "avg" = 0, "p50" 
 			var/state = queue_node.ignite(queue_node_paused)
 			tick_usage = TICK_USAGE - tick_usage
 			perf_tick_peak_usage = max(perf_tick_peak_usage, TICK_USAGE)
+			km_meter().charge_subsystem(queue_node, max(tick_usage, 0))
 			LAZYSET(perf_tick_breakdown, queue_node.name, (LAZYACCESS(perf_tick_breakdown, queue_node.name) || 0) + max(tick_usage, 0))
 			if(tick_usage > perf_tick_top_usage)
 				perf_tick_top_usage = tick_usage

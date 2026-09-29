@@ -1,0 +1,9 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - admin: "Added a Kernel view to the MC stat panel: cost per system (OM behaviour family or MC subsystem) with ms per second, p99, lateness, breaches and overrun share, plus player input latency"
+  - admin: "Added the Tick Report verb: the last minute of ticks with usage, maptick, input cost and the top systems of each"
+  - admin: "A tick over budget now writes one admin-log line naming the systems that caused it, instead of just Behaviours"
+  - code_imp: "Tick meter (code/controllers/measure/): per-system attribution and histograms, a 1200-tick flight recorder, overrun attribution, and click and queued-verb latency, all without per-tick allocation"
+  - code_imp: "Every benchmark scenario now reports tick percentiles, per-system cost and input p99; bench-compare gates on input_p99 and breaches; the idle scenario sends synthetic clicks and verbs"
+  - code_imp: "Defined TICK_BYOND_RESERVE as the measured maptick peak and removed the unused MAPTICK_MC_MIN_RESERVE and the stale SendMaps comment in verb_manager"

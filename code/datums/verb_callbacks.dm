@@ -3,6 +3,10 @@
 /datum/callback/verb_callback
 	///the tick this callback datum was created in. used for testing latency
 	var/creation_time = 0
+	///world.time and TICK_USAGE when this verb was queued for a later tick (SSverb_manager.queue_verb()): the tick meter
+	///reads them when it runs, to record how long the verb waited.
+	var/enqueue_time = 0
+	var/enqueue_usage = 0
 
 /datum/callback/verb_callback/New(thingtocall, proctocall, ...)
 	creation_time = DS2TICKS(world.time)
