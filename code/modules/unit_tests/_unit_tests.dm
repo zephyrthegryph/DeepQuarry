@@ -355,6 +355,7 @@
 #include "../benchmarks/shared_cache.dm"
 #include "../benchmarks/life_sweep.dm"
 #include "../benchmarks/life_sweep_adapter.dm"
+#include "../benchmarks/dx_refresh.dm"
 #include "../balance/balance_benchmark.dm"
 #endif
 #ifdef REFERENCE_TRACKING_DEBUG //Don't try and parse this file if ref tracking isn't turned on. IE: don't parse ref tracking please mr linter

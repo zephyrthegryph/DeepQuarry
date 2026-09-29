@@ -162,10 +162,9 @@ TRACKED(/obj/cap_fixture/dx_review, tracked_value, CHANGE_EFFECTS)
 
 /// H5: an entity that marks itself during its own refresh is reported.
 /datum/unit_test/dx_review_self_mark/Run()
-	var/obj/cap_fixture/dx_review_selfmark/F = allocate(/obj/cap_fixture/dx_review_selfmark)
-	refresh_flush()
-	var/before = length(GLOB.refresh_self_marks)
 	GLOB.refresh_self_mark_expected = TRUE
+	var/before = length(GLOB.refresh_self_marks)
+	var/obj/cap_fixture/dx_review_selfmark/F = allocate(/obj/cap_fixture/dx_review_selfmark)
 	changed(F)
 	refresh_flush()
 	GLOB.refresh_self_mark_expected = FALSE
