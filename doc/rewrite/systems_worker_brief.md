@@ -59,3 +59,9 @@ declaration, writes and reads (e.g. an expiry var: `var/x_until`, `x_until = wor
 `world.time > x_until`), the lint flags all three; converting only one shape is a half-state and
 must fail the lint. Before calling a system done, list every shape the old pattern takes and
 confirm the rule flags each.
+
+## ALLOW means a real exception (lead rule)
+An `ALLOW(sys_*)` is only for a site that must stay the old way. If a site can't convert because
+the primitive lacks something (a holder type, a hide/suppress case, an argument shape), that is a
+**framework gap**: extend the primitive and convert the site. Before reporting done, review every
+ALLOW you added and classify it. Gaps get fixed, not annotated.
