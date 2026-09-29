@@ -4,7 +4,8 @@
 // own_transfer/own_move), a relation (rel_set/rel_add, om_link), a prototype or shared value
 // (proto_set/proto_private/shared_set), a timer (om_after/om_after_slot, OWN_TIMER slots), a
 // hook (om_hook), a task (om_task) or a contents slot (the ledger's note_enter) -- asks
-// own_guard() first, and nothing else decides. Releases (own_take, own_remove, own_clear,
+// own_guard() first, and nothing else decides. (Contents adoption refuses a dying holder only
+// from its links phase: its own contents step still adopts, see own_guard().) Releases (own_take, own_remove, own_clear,
 // rel_clear, rel_remove, cancelling a timer) are never refused.
 //
 // The predicate: the holder or the target is at or past LIFECYCLE_REFUSE_PHASE of its destroy
@@ -23,9 +24,12 @@
 // The refused accessor returns what it returns for "nothing written" (null / FALSE / 0).
 
 /// TRUE when `holder` may acquire `target` now (either may be null or a non-datum). `what` names
-/// the write for the report.
-/proc/own_guard(datum/holder, datum/target, what)
-	var/holder_dying = isdatum(holder) && LIFECYCLE_DYING(holder)
+/// the write for the report. `holder_refuse_phase` moves the holder's threshold later for a write
+/// its own teardown still makes: contents adoption passes LIFECYCLE_PHASE_LINKS, because a dying
+/// holder's contents step (phase 3) materializes its latent entries into its slots to resolve
+/// them by policy. The target's threshold never moves.
+/proc/own_guard(datum/holder, datum/target, what, holder_refuse_phase = LIFECYCLE_REFUSE_PHASE)
+	var/holder_dying = isdatum(holder) && (holder_refuse_phase == LIFECYCLE_REFUSE_PHASE ? LIFECYCLE_DYING(holder) : holder.destroy_phase >= holder_refuse_phase)
 	if(!holder_dying && !(isdatum(target) && LIFECYCLE_DYING(target)))
 		return TRUE
 	if(GLOB.destroy_transaction_depth > 0)

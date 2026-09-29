@@ -33,6 +33,7 @@ OWN_TIMER(/datum/guard_test_holder, guard_slot)
 			run_case(dying_end, inside)
 	contents_case(FALSE)
 	contents_case(TRUE)
+	contents_phase_case()
 
 /// Tries every accessor with one end (`dying_end`) in its destroy transaction's links phase.
 /datum/unit_test/ownership_teardown_guard/proc/run_case(dying_end, inside)
@@ -149,6 +150,21 @@ OWN_TIMER(/datum/guard_test_holder, guard_slot)
 			TEST_ASSERT(!length(capture), "a teardown refusal of contents adoption is silent: [json_encode(capture)]")
 		else
 			TEST_ASSERT(length(capture), "a refusal of contents adoption outside a teardown is reported")
+
+/// A holder in its own contents step (phase 3) still adopts: it materializes latent entries
+/// into its slots to resolve them by policy. From its links phase on it refuses (above).
+/datum/unit_test/ownership_teardown_guard/proc/contents_phase_case()
+	var/obj/item/storage/box/holder = allocate(/obj/item/storage/box/empty_guard_test, run_loc_floor_bottom_left)
+	var/obj/item/tool/wrench/thing = allocate(/obj/item/tool/wrench, run_loc_floor_bottom_left)
+	TEST_ASSERT_NOTNULL(dq_ledger(holder), "the box keeps a ledger")
+	holder.destroy_phase = LIFECYCLE_PHASE_CONTENTS
+	GLOB.destroy_transaction_depth++
+	thing.forceMove(holder)
+	var/adopted = holder.ledger?.entries[thing] ? TRUE : FALSE
+	GLOB.destroy_transaction_depth--
+	holder.destroy_phase = 0
+	thing.forceMove(run_loc_floor_bottom_left)
+	TEST_ASSERT(adopted, "a holder in its contents step adopts what it materializes")
 
 /obj/item/storage/box/empty_guard_test
 	starts_with = null

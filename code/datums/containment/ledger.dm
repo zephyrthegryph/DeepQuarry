@@ -265,7 +265,7 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 		pending_new_slot = null
 	var/flags = pending_flags
 	pending_flags = null
-	if(!own_guard(holder, thing, "contents adoption")) // the one teardown guard (guard.dm)
+	if(!own_guard(holder, thing, "contents adoption", LIFECYCLE_PHASE_LINKS)) // the one teardown guard (guard.dm)
 		return
 	var/datum/om/relation/slot/def = def_by_id(id)
 	var/cost = def.cost(holder, thing)
