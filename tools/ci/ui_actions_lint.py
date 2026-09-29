@@ -27,7 +27,7 @@ BUILTIN = {"modal_open": {"id", "arguments"}, "modal_answer": {"id", "answer", "
 # ui_* procs that are framework hooks, not actions.
 HOOKS = {"allowed", "logged", "redirect", "prepare", "interface", "title", "window", "opening", "opened",
 	"act_allowed", "nested_allowed", "nested_done", "slot_fragment", "modal_opened", "modal_answered",
-	"types", "data", "status", "host", "close", "static_data"}
+	"types", "data", "status", "host", "close", "static_data", "assets"}
 LEGACY = re.compile(r"^\s*DECLARE_UI\w*\(\s*(/[\w/]+)")
 
 
