@@ -121,7 +121,7 @@
 		return span_danger("It is burning!")
 
 /obj/machinery/appliance/update_icon()
-	if (!stat && length(cooking_objs))
+	if (!has_stat(MACHINE_STAT_ANY) && length(cooking_objs))
 		icon_state = on_icon
 
 	else
@@ -146,13 +146,13 @@
 		to_chat(user, span_warning("You can't reach [src] from here!"))
 		return
 
-	if (stat & POWEROFF)//Its turned off
-		stat &= ~POWEROFF
+	if (has_stat(POWEROFF))//Its turned off
+		stat_remove(POWEROFF)
 		use_power = 1
 		user.visible_message(span_filter_notice("[user] turns [src] on."), span_filter_notice("You turn on [src]."))
 
 	else //Its on, turn it off
-		stat |= POWEROFF
+		stat_add(POWEROFF)
 		use_power = 0
 		user.visible_message(span_filter_notice("[user] turns [src] off."), span_filter_notice("You turn off [src]."))
 		cooking = FALSE // Stop cooking here, too, just in case.
@@ -246,7 +246,7 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 
 /// Old attackby.
 /obj/machinery/appliance/proc/appliance_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
-	if(!cook_type || (stat & (BROKEN)))
+	if(!cook_type || (has_stat(BROKEN)))
 		to_chat(user, span_warning("\The [src] is not working."))
 		return INTERACTION_HANDLED_PASS
 
@@ -652,7 +652,7 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 /obj/machinery/appliance/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = ..()
 
-	data["on"] = !(stat & POWEROFF)
+	data["on"] = !has_stat(POWEROFF)
 	data["safety"] = food_safety
 	data["containersRemovable"] = can_remove_items(user, show_warning = FALSE)
 	data["selected_option"] = selected_option

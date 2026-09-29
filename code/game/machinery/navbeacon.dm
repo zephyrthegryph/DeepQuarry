@@ -9,7 +9,7 @@
 	plane = PLATING_PLANE
 	anchored = TRUE
 	var/open = FALSE		// true if cover is open
-	var/locked = TRUE		// true if controls are locked
+	locked = TRUE		// true if controls are locked
 	var/location = ""	// location response text
 	var/list/codes	// assoc. list of transponder codes
 	req_access = list(ACCESS_ENGINE)
@@ -90,7 +90,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/navbeacon, REGISTRY_NAVBEACONS)
 		return FALSE
 
 	if(allowed(user))
-		locked = !locked
+		set_locked(!locked)
 		to_chat(user, span_notice("Controls are now [locked ? "locked." : "unlocked."]"))
 		return TRUE
 

@@ -81,7 +81,7 @@ Thus, the two variables affect pump operation are set in New():
 /obj/machinery/atmospherics/binary/pump/proc/update_rust_device()
 	if(!vg_entity)
 		return
-	if((stat & (NOPOWER|BROKEN)) || !get_on())
+	if((!operable()) || !get_on())
 		rust_unregister_device()
 		return
 	rust_set_device(1, 2)
@@ -91,7 +91,7 @@ Thus, the two variables affect pump operation are set in New():
 /// 3-5) through the generated wiring: the atom_break()/atom_fix() hook pushes
 /// it whenever integrity changes, and the reconciler covers anchored.
 /obj/machinery/atmospherics/binary/pump/pump_input_operable()
-	return anchored && !(stat & BROKEN)
+	return anchored && !has_stat(BROKEN)
 
 //Radio remote control
 
@@ -122,7 +122,7 @@ Thus, the two variables affect pump operation are set in New():
 	return 1
 
 /obj/machinery/atmospherics/binary/pump/tgui_interact(mob/user, datum/tgui/ui)
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return
 	ui = SStgui.try_update_ui(user, src, ui)
 	if(!ui)
@@ -235,9 +235,8 @@ Thus, the two variables affect pump operation are set in New():
 	update_icon()
 
 /obj/machinery/atmospherics/binary/pump/power_change()
-	var/old_stat = stat
-	..()
-	if(old_stat != stat)
+	. = ..()
+	if(.)
 		update_rust_device()
 		update_icon()
 
@@ -295,7 +294,7 @@ Thus, the two variables affect pump operation are set in New():
 	init_on = TRUE
 
 /obj/machinery/atmospherics/binary/pump/wrench_act(mob/user, obj/item/W)
-	if (!(stat & NOPOWER) && use_power)
+	if (!has_stat(NOPOWER) && use_power)
 		to_chat(user, span_warning("You cannot unwrench this [src], turn it off first."))
 		return ITEM_INTERACT_BLOCKING
 	if(!can_unwrench())

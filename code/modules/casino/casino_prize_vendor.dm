@@ -230,11 +230,11 @@
 	)
 
 /obj/machinery/casino_prize_dispenser/power_change()
-	..()
-	if(stat & BROKEN)
+	. = ..()
+	if(has_stat(BROKEN))
 		icon_state = "[initial(icon_state)]-broken"
 	else
-		if(!(stat & NOPOWER))
+		if(!has_stat(NOPOWER))
 			icon_state = initial(icon_state)
 		else
 			om_after(src, rand(0, 15), TYPE_PROC_REF(/atom, set_icon_state), "[initial(icon_state)]-off")
@@ -271,7 +271,7 @@
 	effect = /obj/machinery/casino_prize_dispenser/proc/interaction_use
 
 /obj/machinery/casino_prize_dispenser/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return TRUE
 	tgui_interact(user)
 	return TRUE
@@ -317,7 +317,7 @@
 		ui.open()
 
 /obj/machinery/casino_prize_dispenser/tgui_act(action, params, datum/tgui/ui)
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return
 	if(ui.user.stat || ui.user.restrained())
 		return
@@ -415,7 +415,7 @@
 	//Currently doesnt have an ingame way to show. Can only be viewed through View-Variables, to ensure theres no chance of players ckeys exposed - Jack
 
 /obj/machinery/casino_prize_dispenser/proc/speak(message)
-	if(stat & NOPOWER)
+	if(has_stat(NOPOWER))
 		return
 
 	if(!message)

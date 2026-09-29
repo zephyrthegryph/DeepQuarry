@@ -23,9 +23,9 @@
 	var/const/num_power_levels = 6	// Total number of power level icon has
 	var/Varedit_start = 0
 	var/Varpower = 0
-	var/active = 0
+	active = 0
 	var/power = 30000  // Current amount of power
-	var/state = 0
+	state = 0
 	var/warming_up = 0
 	var/list/obj/machinery/containment_field/fields
 	var/list/connected_gens	// OM handles of the linked generators (om_resolve_all())
@@ -76,10 +76,10 @@
 /obj/machinery/field_generator/machine_step()
 	if(Varedit_start == 1)
 		if(active == 0)
-			active = 1
-			state = 2
+			set_active(1)
+			set_state(2)
 			power = field_generator_max_power
-			anchored = TRUE
+			set_anchored(TRUE)
 			warming_up = 3
 			start_fields()
 			update_icon()
@@ -130,19 +130,19 @@
 	if(tool_quality == TOOL_WRENCH)
 		switch(state)
 			if(0)
-				state = 1
+				set_state(1)
 				playsound(src, W.usesound, 75, 1)
 				user.visible_message("[user.name] secures [src.name] to the floor.", \
 					"You secure the external reinforcing bolts to the floor.", \
 					"You hear ratchet")
-				src.anchored = TRUE
+				set_anchored(TRUE)
 			if(1)
-				state = 0
+				set_state(0)
 				playsound(src, W.usesound, 75, 1)
 				user.visible_message("[user.name] unsecures [src.name] reinforcing bolts from the floor.", \
 					"You undo the external reinforcing bolts.", \
 					"You hear ratchet")
-				src.anchored = FALSE
+				set_anchored(FALSE)
 			if(2)
 				to_chat(user, span_red("The [src.name] needs to be unwelded from the floor."))
 				return
@@ -160,12 +160,12 @@
 /obj/machinery/field_generator/proc/construction_tool_act_tool_done(mob/user)
 	if(!src)
 		return
-	state = 2
+	set_state(2)
 	to_chat(user, "You weld the field generator to the floor.")
 /obj/machinery/field_generator/proc/construction_tool_act_tool_done2(mob/user)
 	if(!src)
 		return
-	state = 1
+	set_state(1)
 	to_chat(user, "You cut the [src] free from the floor.")
 
 /obj/machinery/field_generator/wrench_act(mob/user, obj/item/W)
@@ -187,7 +187,7 @@
 	..()
 
 /obj/machinery/field_generator/proc/turn_off()
-	active = 0
+	set_active(0)
 	om_after(src, 1, PROC_REF(finish_turn_off))
 	update_icon()
 
@@ -196,7 +196,7 @@
 	set_light(0)
 
 /obj/machinery/field_generator/proc/turn_on()
-	active = 1
+	set_active(1)
 	MACHINE_WAKE(src)
 	warming_up = 1
 	om_after(src, 1 + 5 SECONDS, PROC_REF(warm_up_step))
@@ -270,7 +270,7 @@
 	om_after(src, 2, PROC_REF(setup_field), 2)
 	om_after(src, 3, PROC_REF(setup_field), 4)
 	om_after(src, 4, PROC_REF(setup_field), 8)
-	src.active = 2
+	set_active(2)
 	MACHINE_WAKE(src)
 
 /obj/machinery/field_generator/proc/setup_field(NSEW)

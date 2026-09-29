@@ -79,7 +79,7 @@
 	// may already be a dead handle at that point.
 	if(QDELETED(src))
 		return
-	if(!node || !use_power || (stat & (NOPOWER|BROKEN)) || welded)
+	if(!node || !use_power || (!operable()) || welded)
 		rust_unregister_device()
 		return
 	var/datum/gas_mixture/environment = return_air()
@@ -200,7 +200,7 @@
 	update_underlays()
 
 /obj/machinery/atmospherics/unary/vent_scrubber/receive_signal(datum/signal/signal)
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return
 	if(!signal.data["tag"] || (signal.data["tag"] != id_tag) || (signal.data["sigtype"]!="command"))
 		return 0
@@ -289,9 +289,8 @@
 	return
 
 /obj/machinery/atmospherics/unary/vent_scrubber/power_change()
-	var/old_stat = stat
-	..()
-	if(old_stat != stat)
+	. = ..()
+	if(.)
 		invalidate_gas_dependencies()
 		update_icon()
 
@@ -315,7 +314,7 @@
 		update_icon()
 
 /obj/machinery/atmospherics/unary/vent_scrubber/wrench_act(mob/user, obj/item/W)
-	if (!(stat & NOPOWER) && use_power)
+	if (!has_stat(NOPOWER) && use_power)
 		to_chat(user, span_warning("You cannot unwrench \the [src], turn it off first."))
 		return ITEM_INTERACT_BLOCKING
 	var/turf/T = src.loc

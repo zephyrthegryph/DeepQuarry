@@ -526,10 +526,10 @@ EXTEND_INTERACTIONS(/obj/structure/bed/roller/massage, INTERACT_ALT(null, PROC_R
 /// Old click_alt.
 /obj/structure/bed/roller/massage/proc/interaction_alt(mob/living/carbon/user, obj/item/held, datum/interaction/interaction)
 	if(anchored)
-		anchored = 0
+		set_anchored(0)
 		src.visible_message(span_notice("[user] turns the breaks off on the [src]!"))
 	else if(!anchored)
-		anchored = 1
+		set_anchored(1)
 		src.visible_message(span_notice("[user] turns the breaks on for the [src]!"))
 	return TRUE
 

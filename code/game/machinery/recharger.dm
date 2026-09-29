@@ -189,7 +189,7 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 	if(charging)
 		to_chat(user, span_warning("Remove [charging] first!"))
 		return ITEM_INTERACT_BLOCKING
-	anchored = !anchored
+	set_anchored(!anchored)
 	om_changed(src, CHANGE_MACHINE_ANCHORED)
 	to_chat(user, "You [anchored ? "attached" : "detached"] [src].")
 	playsound(src, tool.usesound, 75, TRUE)

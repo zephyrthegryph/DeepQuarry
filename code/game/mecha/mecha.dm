@@ -939,7 +939,7 @@ DECLARE_REF(/obj/mecha, "minihud", PAIR, "owner_mech")
 	else if(istype(obstacle, /obj))//Then we check for regular obstacles.
 		var/obj/O = obstacle
 		if(istype(O, /obj/effect/portal))	//derpfix
-			src.anchored = 0				// Portals can only move unanchored objects.
+			set_anchored(0) // Portals can only move unanchored objects.
 			O.Crossed(src)
 			om_after(src, 0, TYPE_PROC_REF(/atom/movable, set_anchored), TRUE) //countering the portal's deferred teleport
 		if(O.anchored)

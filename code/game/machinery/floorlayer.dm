@@ -4,9 +4,9 @@
 	icon_state = "pipe_d"
 	density = TRUE
 	var/old_turf_handle
-	var/on = 0
+	on = 0
 	var/obj/item/stack/tile/T
-	var/list/mode = list("dismantle"=0,"laying"=0,"collect"=0) // ALLOW(instance_list): d: edited in place per instance (3 writers)
+	var/list/work_modes = list("dismantle"=0,"laying"=0,"collect"=0) // ALLOW(instance_list): d: edited in place per instance (3 writers)
 
 DECLARE_DEFAULT_CHILD(/obj/machinery/floorlayer, "T", /obj/item/stack/tile/floor)
 
@@ -14,13 +14,13 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/floorlayer, "T", /obj/item/stack/tile/floor
 	. = ..()
 
 	if(on)
-		if(mode["dismantle"])
+		if(work_modes["dismantle"])
 			dismantleFloor(old_turf())
 
-		if(mode["laying"])
+		if(work_modes["laying"])
 			layFloor(old_turf())
 
-		if(mode["collect"])
+		if(work_modes["collect"])
 			CollectTiles(old_turf())
 
 
@@ -41,7 +41,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/floorlayer, "T", /obj/item/stack/tile/floor
 	effect = /obj/machinery/floorlayer/proc/interaction_toggle
 
 /obj/machinery/floorlayer/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
-	on = !on
+	set_on(!on)
 	user.visible_message(span_notice("[user] has [!on?"de":""]activated \the [src]."), span_notice("You [!on?"de":""]activate \the [src]."))
 	return TRUE
 
@@ -60,14 +60,14 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/floorlayer, "T", /obj/item/stack/tile/floor
 	return TRUE
 
 /obj/machinery/floorlayer/wrench_act(mob/user, obj/item/tool)
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(work_mode_chosen), message = "Choose work mode", title = "Mode", choices = mode, requires = PROMPT_ADJACENT)
+	om_ask(user, /datum/om/prompt/choice, PROC_REF(work_mode_chosen), message = "Choose work mode", title = "Mode", choices = work_modes, requires = PROMPT_ADJACENT)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/floorlayer/proc/work_mode_chosen(datum/om/prompt/choice/ask)
 	var/mob/user = ask.answerer
 	var/selected_mode = ask.choice
-	mode[selected_mode] = !mode[selected_mode]
-	user.visible_message(span_notice("[user] has set \the [src] [selected_mode] mode [mode[selected_mode] ? "on" : "off"]."), span_notice("You set \the [src] [selected_mode] mode [mode[selected_mode] ? "on" : "off"]."))
+	work_modes[selected_mode] = !work_modes[selected_mode]
+	user.visible_message(span_notice("[user] has set \the [src] [selected_mode] mode [work_modes[selected_mode] ? "on" : "off"]."), span_notice("You set \the [src] [selected_mode] mode [work_modes[selected_mode] ? "on" : "off"]."))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/floorlayer/crowbar_act(mob/user, obj/item/tool)
@@ -99,13 +99,13 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/floorlayer, "T", /obj/item/stack/tile/floor
 
 /obj/machinery/floorlayer/examine(mob/user)
 	. = ..()
-	var/dismantle = mode["dismantle"]
-	var/laying = mode["laying"]
-	var/collect = mode["collect"]
+	var/dismantle = work_modes["dismantle"]
+	var/laying = work_modes["laying"]
+	var/collect = work_modes["collect"]
 	. += span_notice("[src] [!T ? "don't " : ""]has [!T ? "" : "[T.get_amount()] [T] "]tile\s, dismantle is [dismantle ? "on" : "off"], laying is [laying ? "on" : "off"], collect is [collect ? "on" : "off"].")
 
 /obj/machinery/floorlayer/proc/reset()
-	on=0
+	set_on(0)
 	return
 
 /obj/machinery/floorlayer/proc/dismantleFloor(turf/new_turf)

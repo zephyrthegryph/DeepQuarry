@@ -335,7 +335,7 @@ DECLARE_REF(/obj/machinery/computer/ship/navigation, "nav_tgui", OWNED, null)
 	density = FALSE
 
 /obj/machinery/computer/ship/navigation/telescreen/update_icon()
-	if(stat & NOPOWER || stat & BROKEN)
+	if(has_stat(NOPOWER) || has_stat(BROKEN))
 		icon_state = "tele_off"
 		set_light(0)
 	else

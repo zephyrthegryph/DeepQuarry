@@ -15,7 +15,7 @@
 	power_rating = 3000
 	power_losses = 240
 
-	var/on = FALSE
+	on = FALSE
 
 	var/target_temp = T20C
 
@@ -127,7 +127,7 @@ DECLARE_REF(/obj/machinery/portable_atmospherics/powered/reagent_distillery, "ov
 
 /obj/machinery/portable_atmospherics/powered/reagent_distillery/proc/toggle_power(mob/user = usr)
 	if(powered())
-		on = !on
+		set_on(!on)
 		MACHINE_WAKE(src)
 		to_chat(user, span_notice("You turn \the [src] [on ? "on" : "off"]."))
 	else
@@ -325,7 +325,7 @@ DECLARE_REF(/obj/machinery/portable_atmospherics/powered/reagent_distillery, "ov
 		avg_pressure /= members.len
 
 	if(!powered())
-		on = FALSE
+		set_on(FALSE)
 
 	var/current_temp = get_temperature()
 	if(!on || (use_atmos && (!connected_port() || (avg_pressure / avg_temp) < (1000 / T20C)))) // This mostly respects gas laws by ignoring volume but it should make it usable at low temps
@@ -351,7 +351,7 @@ DECLARE_REF(/obj/machinery/portable_atmospherics/powered/reagent_distillery, "ov
 			distillery_heat(0, line?.air)
 		else if(!run_pump)
 			visible_message(span_notice("\The [src]'s motors wind down."))
-			on = FALSE
+			set_on(FALSE)
 
 		if(InputBeaker && reagents.total_volume < reagents.maximum_volume)
 			InputBeaker.reagents.trans_to_holder(reagents, amount = rand(10,20))

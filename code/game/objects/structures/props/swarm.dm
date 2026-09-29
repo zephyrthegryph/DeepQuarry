@@ -35,7 +35,7 @@ DECLARE_REF(/obj/structure/cult/pylon/swarm, "active_beams", OWNED_LIST, null)
 			om_task_periodic_stop(src)
 			playsound(src,shatter_sound, 75, 1)
 			isbroken = 1
-			density = FALSE
+			set_density(FALSE)
 			icon_state = "[initial(icon_state)]-broken"
 			set_light(0)
 
@@ -51,7 +51,7 @@ DECLARE_REF(/obj/structure/cult/pylon/swarm, "active_beams", OWNED_LIST, null)
 			user.do_attack_animation(src)
 			playsound(src,shatter_sound, 75, 1)
 			isbroken = 1
-			density = FALSE
+			set_density(FALSE)
 			icon_state = "[initial(icon_state)]-broken"
 			set_light(0)
 		else
@@ -113,7 +113,7 @@ DECLARE_REF(/obj/structure/cult/pylon/swarm, "active_beams", OWNED_LIST, null)
 			om_task_periodic_stop(src)
 			playsound(src,shatter_sound, 75, 1)
 			isbroken = 1
-			density = FALSE
+			set_density(FALSE)
 			icon_state = "[initial(icon_state)]-broken"
 			set_light(0)
 
@@ -129,7 +129,7 @@ DECLARE_REF(/obj/structure/cult/pylon/swarm, "active_beams", OWNED_LIST, null)
 			user.do_attack_animation(src)
 			playsound(src,shatter_sound, 75, 1)
 			isbroken = 1
-			density = FALSE
+			set_density(FALSE)
 			icon_state = "[initial(icon_state)]-broken"
 			set_light(0)
 		else

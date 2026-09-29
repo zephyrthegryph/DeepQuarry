@@ -55,7 +55,7 @@
 	if(construction_state < 3)
 		update_use_power(USE_POWER_OFF)
 		assembled = 0
-		active = 0
+		set_active(0)
 		for(var/obj/structure/particle_accelerator/part in om_resolve_all(connected_parts))
 			part.strength = null
 			part.powered = 0
@@ -64,7 +64,7 @@
 		return
 	if(!part_scan())
 		update_use_power(USE_POWER_IDLE)
-		active = 0
+		set_active(0)
 		connected_parts = list()
 
 /obj/machinery/particle_accelerator/control_box/update_icon()
@@ -115,11 +115,11 @@
 		strength_change()
 
 /obj/machinery/particle_accelerator/control_box/power_change()
-	..()
-	if(stat & NOPOWER)
-		active = 0
+	. = ..()
+	if(has_stat(NOPOWER))
+		set_active(0)
 		update_use_power(USE_POWER_OFF)
-	else if(!stat && construction_state == 3)
+	else if(!has_stat(MACHINE_STAT_ANY) && construction_state == 3)
 		update_use_power(USE_POWER_IDLE)
 
 /// Emits every machine frame while active; off, it sleeps until toggle_power() turns it on.
@@ -190,7 +190,7 @@
 	return 0
 
 /obj/machinery/particle_accelerator/control_box/proc/toggle_power(mob/user)
-	active = !active
+	set_active(!active)
 	investigate_log("turned [active? span_red("ON") : span_green("OFF")] by [user ? user.key : "outside forces"]","singulo")
 	message_admins("PA Control Computer turned [active ?"ON":"OFF"] by [user ? key_name(user, user.client) : "outside forces"][ADMIN_QUE(user)] in [ADMIN_COORDJMP(src)]")
 

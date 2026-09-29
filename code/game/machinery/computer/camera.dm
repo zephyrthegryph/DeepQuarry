@@ -47,7 +47,7 @@ DECLARE_REF(/obj/machinery/computer/security, "camera", OWNED, null)
 
 /obj/machinery/computer/security/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return TRUE
 	tgui_interact(user)
 	return TRUE
@@ -171,7 +171,7 @@ DECLARE_REF(/obj/machinery/computer/security/telescreen/entertainment, "radio", 
 		return
 	if(showing)
 		stop_showing()
-	if(stat & NOPOWER)
+	if(has_stat(NOPOWER))
 		return
 	showing = om_handle(thing)
 	if(pinboard)
@@ -188,8 +188,8 @@ DECLARE_REF(/obj/machinery/computer/security/telescreen/entertainment, "radio", 
 		stop_showing()
 
 /obj/machinery/computer/security/telescreen/entertainment/power_change()
-	..()
-	if(stat & NOPOWER)
+	. = ..()
+	if(has_stat(NOPOWER))
 		radio?.on = FALSE
 		stop_showing()
 	else if(enabled)

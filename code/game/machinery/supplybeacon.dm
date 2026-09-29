@@ -55,7 +55,7 @@ DECLARE_INTERACTIONS(/obj/item/supply_beacon, INTERACT_USE(null, PROC_REF(intera
 	if(!anchored && !connect_to_network())
 		to_chat(user, span_warning("This device must be placed over an exposed cable."))
 		return ITEM_INTERACT_BLOCKING
-	anchored = !anchored
+	set_anchored(!anchored)
 	user.visible_message(span_notice("\The [user] [anchored ? "secures" : "unsecures"] \the [src]."))
 	playsound(src, tool.usesound, 50, TRUE)
 	return ITEM_INTERACT_SUCCESS

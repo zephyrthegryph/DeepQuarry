@@ -257,7 +257,7 @@
 	var/next_dir
 
 /obj/structure/transit_tube_pod/proc/travel_ended(datum/om/task/T)
-	density = TRUE
+	set_density(TRUE)
 	moving = 0
 
 /obj/structure/transit_tube_pod/proc/travel_step(datum/om/task/transit_pod/T)
@@ -296,7 +296,7 @@
 				return travel_coast(T)
 			set_dir(T.next_dir)
 			forceMove(tube.loc) // When moving from one tube to another, skip collision and such.
-			density = tube.density
+			set_density(tube.density)
 			if(tube.should_stop_pod(src, T.next_dir))
 				tube.pod_stopped(src, dir)
 				return STEP_DONE
@@ -316,7 +316,7 @@
 //  /turf/inertial_drift appears to only work on mobs, and re-implementing some of the
 //  logic allows a gradual slowdown and eventual stop when passing over non-space turfs.
 /obj/structure/transit_tube_pod/proc/travel_coast(datum/om/task/transit_pod/T)
-	density = TRUE
+	set_density(TRUE)
 	if(T.last_delay > 10)
 		return STEP_DONE
 	T.phase = "coast"
@@ -393,7 +393,7 @@
 		tube_dirs = parse_dirs(icon_state)
 
 		if(copytext(icon_state, 1, 3) == "D-" || findtextEx(icon_state, "Pass"))
-			density = FALSE
+			set_density(FALSE)
 
 // Tube station directions are simply 90 to either side of
 //  the exit.

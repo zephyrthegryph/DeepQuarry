@@ -29,7 +29,7 @@
 
 /obj/machinery/anomaly_harvester/machine_step()
 	..()
-	if(stat & (NOPOWER|BROKEN) || !anchored)
+	if(!operable() || !anchored)
 		update_use_power(USE_POWER_OFF)
 	else
 		update_use_power(USE_POWER_IDLE)
@@ -137,7 +137,7 @@
 
 /obj/machinery/anomaly_harvester/update_icon()
 	cut_overlays()
-	if(stat & (NOPOWER|BROKEN) || !anchored)
+	if(!operable() || !anchored)
 		add_overlay("harvester_off")
 	else
 		add_overlay("harvester_on")

@@ -558,7 +558,7 @@
 
 /obj/machinery/computer/secure_data/emp_act(severity, recursive)
 	. = ..()
-	if (. & EMP_PROTECT_SELF ||stat & (BROKEN|NOPOWER))
+	if (. & EMP_PROTECT_SELF ||!operable())
 		return
 
 	for(var/datum/data/record/R in GLOB.data_core.security)

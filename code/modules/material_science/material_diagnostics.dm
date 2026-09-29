@@ -323,7 +323,7 @@
 	..()
 
 /obj/machinery/photocopier/proc/print_engineering_reading(obj/item/multitool/tool, mob/user)
-	if(!tool.engineering_reading || toner <= 0 || copying || stat & (NOPOWER|BROKEN))
+	if(!tool.engineering_reading || toner <= 0 || copying || !operable())
 		to_chat(user, span_warning("The copier needs toner and power, and the multitool needs a recorded reading."))
 		return TRUE
 	var/list/reading = tool.engineering_reading

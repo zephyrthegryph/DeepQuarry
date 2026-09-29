@@ -49,7 +49,7 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/omni, null, list(APPEARANCE_ANY =
 	build_icons()
 
 /obj/machinery/atmospherics/omni/update_icon()
-	if(stat & NOPOWER)
+	if(has_stat(NOPOWER))
 		overlays = overlays_off
 	else if(error_check())
 		overlays = overlays_error
@@ -70,14 +70,13 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/omni, null, list(APPEARANCE_ANY =
 	if(error_check())
 		update_use_power(USE_POWER_OFF)
 
-	if((stat & (NOPOWER|BROKEN)) || !use_power)
+	if((!operable()) || !use_power)
 		return 0
 	return 1
 
 /obj/machinery/atmospherics/omni/power_change()
-	var/old_stat = stat
-	..()
-	if(old_stat != stat)
+	. = ..()
+	if(.)
 		update_icon()
 		wake_for_state_change()
 
@@ -97,14 +96,14 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/omni, null, list(APPEARANCE_ANY =
 	om_watch_disarm(src, "gas")
 
 /obj/machinery/atmospherics/omni/proc/gas_wake_condition()
-	return use_power && !(stat & (NOPOWER|BROKEN)) && can_process_gas()
+	return use_power && operable() && can_process_gas()
 
 /obj/machinery/atmospherics/omni/proc/can_process_gas()
 	return TRUE
 
 /obj/machinery/atmospherics/omni/proc/wake_for_state_change()
 	clear_gas_dependencies()
-	if(use_power && !(stat & (NOPOWER|BROKEN)))
+	if(use_power && operable())
 		MACHINE_WAKE(src)
 
 /obj/machinery/atmospherics/omni/wrench_act(mob/user, obj/item/W)

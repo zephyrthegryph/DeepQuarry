@@ -38,7 +38,7 @@
 	. = ..()
 	if(.)	//no need to duplicate adjacency check
 		var/temperature = get_temperature()
-		if(!stat)
+		if(!has_stat(MACHINE_STAT_ANY))
 			if (temperature < min_temp)
 				. += span_warning("\The [src] is still heating up and is too cold to cook anything yet.")
 			else
@@ -76,9 +76,9 @@
 /obj/machinery/appliance/cooker/update_icon()
 	cut_overlays()
 	var/image/light
-	if(use_power == 1 && !stat)
+	if(use_power == 1 && !has_stat(MACHINE_STAT_ANY))
 		light = image(icon, "light_idle")
-	else if(use_power == 2 && !stat)
+	else if(use_power == 2 && !has_stat(MACHINE_STAT_ANY))
 		light = image(icon, "light_preheating")
 	else
 		light = image(icon, "light_off")
@@ -87,7 +87,7 @@
 	add_overlay(light)
 
 /obj/machinery/appliance/cooker/machine_step()
-	if (!stat)
+	if (!has_stat(MACHINE_STAT_ANY))
 		heat_up()
 	else
 		set_heating(FALSE)
@@ -95,7 +95,7 @@
 	..()
 	if(cooking)
 		return
-	if(!stat)
+	if(!has_stat(MACHINE_STAT_ANY))
 		// Idle at temperature: hibernate until it cools below the thermostat band.
 		if(get_temperature() >= optimal_temp && arm_thermostat())
 			return PROCESS_KILL
@@ -164,8 +164,8 @@
 		warm_contents()
 	else if(!isnull(heat_body))
 		vg_heat_body_power(heat_body, 0)
-		vg_heat_body_keep(heat_body, !stat)
-		if(stat)
+		vg_heat_body_keep(heat_body, !has_stat(MACHINE_STAT_ANY))
+		if(has_stat(MACHINE_STAT_ANY))
 			release_contents_heat()
 
 /// Wakes the cooker when its body cools below the thermostat band.

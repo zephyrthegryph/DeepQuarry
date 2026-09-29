@@ -21,7 +21,7 @@
 	effect = /obj/machinery/computer/shuttle/proc/interaction_authorize
 
 /obj/machinery/computer/shuttle/proc/interaction_authorize(mob/user, obj/item/card/W, datum/interaction/interaction)
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return TRUE
 	if ((!( istype(W, /obj/item/card) ) || !( SSticker ) || GLOB.emergency_shuttle_service.location() || !( user )))
 		return TRUE
@@ -88,4 +88,4 @@
 	if(!emagged && !GLOB.emergency_shuttle_service.location())
 		to_chat(world, span_boldnotice("Alert: Shuttle launch time shortened to 10 seconds!"))
 		GLOB.emergency_shuttle_service.set_launch_countdown(10)
-		emagged = 1
+		set_emagged(1)

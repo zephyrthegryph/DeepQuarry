@@ -63,7 +63,7 @@ DECLARE_REAGENTS(/obj/machinery/v_garbosystem, CARGOTANKER_VOLUME * 2, null)
 		update()
 
 /obj/machinery/v_garbosystem/proc/update()
-	if(stat & (BROKEN | NOPOWER))
+	if(!operable())
 		operating = FALSE
 		update_use_power(USE_POWER_OFF)
 		return
@@ -78,7 +78,7 @@ DECLARE_REAGENTS(/obj/machinery/v_garbosystem, CARGOTANKER_VOLUME * 2, null)
 	if(!operating || !crusher() || crusher().stat & (NOPOWER|BROKEN))
 		icon_state = "cronchy_off"
 		return PROCESS_KILL
-	if(stat & (BROKEN | NOPOWER))
+	if(!operable())
 		icon_state = "cronchy_off"
 		return PROCESS_KILL
 	icon_state = "cronchy_active"
@@ -87,7 +87,7 @@ DECLARE_REAGENTS(/obj/machinery/v_garbosystem, CARGOTANKER_VOLUME * 2, null)
 	om_after(src, 1, PROC_REF(grind_affecting))
 
 /obj/machinery/v_garbosystem/emag_act(remaining_charges, mob/user, emag_source)
-	emagged = !emagged
+	set_emagged(!emagged)
 	update()
 
 /datum/interaction/machine_item/v_garbosystem_crowbar_open

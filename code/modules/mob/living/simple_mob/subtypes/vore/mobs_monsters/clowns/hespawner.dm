@@ -26,7 +26,7 @@
 	var/chosen_clown = ask.choice || pick(ask.choices)
 	if(used || !M.ckey)
 		return
-	density = FALSE
+	set_density(FALSE)
 	var/mob/living/simple_mob/R = new chosen_clown(get_turf(src))
 	if(M.mind)
 		M.mind.transfer_to(R)

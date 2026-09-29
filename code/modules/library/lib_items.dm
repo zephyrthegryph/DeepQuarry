@@ -50,7 +50,7 @@
 /obj/structure/bookcase/wrench_act(mob/user, obj/item/tool)
 	playsound(src, tool.usesound, 100, 1)
 	to_chat(user, anchored ? span_notice("You unfasten \the [src] from the floor.") : span_notice("You secure \the [src] to the floor."))
-	anchored = !anchored
+	set_anchored(!anchored)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/bookcase/screwdriver_act(mob/user, obj/item/tool)

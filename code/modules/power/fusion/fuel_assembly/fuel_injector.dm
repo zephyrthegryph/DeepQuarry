@@ -33,7 +33,7 @@ DECLARE_REF(/obj/machinery/fusion_fuel_injector, "cur_assembly", SPILL, null)
 /obj/machinery/fusion_fuel_injector/machine_step()
 	if(!injecting)
 		return PROCESS_KILL
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		StopInjecting()
 		return PROCESS_KILL
 	Inject()

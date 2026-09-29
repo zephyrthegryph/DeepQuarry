@@ -34,7 +34,7 @@
 		return FALSE
 	appearance = thing_to_copy.appearance
 	copying = thing_to_copy
-	density = thing_to_copy.density // So you can't bump into objects that aren't supposed to be dense.
+	set_density(thing_to_copy.density) // So you can't bump into objects that aren't supposed to be dense.
 	catalogue_data = thing_to_copy.get_catalogue_data()
 	dq_set_catalogue_delay(src, thing_to_copy.get_catalogue_delay()) // copy DQ catalogue scan-delay so illusions don't reveal themselves via faster scan time
 	return TRUE

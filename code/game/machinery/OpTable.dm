@@ -25,7 +25,7 @@
 
 /obj/machinery/optable/ex_act(severity)
 	if(severity == 3 && prob(25))
-		density = FALSE
+		set_density(FALSE)
 	return ..()
 
 EXTEND_INTERACTIONS(/obj/machinery/optable, \
@@ -39,7 +39,7 @@ EXTEND_INTERACTIONS(/obj/machinery/optable, \
 /obj/machinery/optable/proc/optable_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user.has_mutation(HULK))
 		visible_message(span_danger("\The [user] destroys \the [src]!"))
-		density = FALSE
+		set_density(FALSE)
 		qdel(src)
 	return TRUE
 

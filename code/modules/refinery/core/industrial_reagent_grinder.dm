@@ -95,7 +95,7 @@ DECLARE_REF(/obj/machinery/reagent_refinery/grinder, "holdingitems", SPILL_LIST,
 		return
 
 	power_change()
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return
 
 	// Get objects from incoming conveyors
@@ -105,7 +105,7 @@ DECLARE_REF(/obj/machinery/reagent_refinery/grinder, "holdingitems", SPILL_LIST,
 			if(!T)
 				continue
 			var/obj/machinery/conveyor/C = locate_on(T, /obj/machinery/conveyor)
-			if(C && !C.stat && C.operating && C.dir == GLOB.reverse_dir[D] && contents_count(T) > 1) // If an operating conveyor points into us... Check if it's moving anything
+			if(C && !C.has_stat(MACHINE_STAT_ANY) && C.operating && C.dir == GLOB.reverse_dir[D] && contents_count(T) > 1) // If an operating conveyor points into us... Check if it's moving anything
 				var/obj/item/I = pick(T.contents - list(C))
 				if(istype(I) && conveyor_load(I))
 					break
@@ -124,7 +124,7 @@ DECLARE_REF(/obj/machinery/reagent_refinery/grinder, "holdingitems", SPILL_LIST,
 	cut_overlays()
 	var/image/pipe = image(icon, icon_state = "grinder_cons", dir = dir)
 	add_overlay(pipe)
-	if(stat & (NOPOWER|BROKEN) || !anchored)
+	if(!operable() || !anchored)
 		icon_state = "grinder_off"
 	else
 		icon_state = "grinder_on"
@@ -164,6 +164,6 @@ DECLARE_REF(/obj/machinery/reagent_refinery/grinder, "holdingitems", SPILL_LIST,
 		return TRUE
 	for(var/D in GLOB.cardinal)
 		var/obj/machinery/conveyor/C = locate_within(get_step(src, D), /obj/machinery/conveyor)
-		if(C && !C.stat && C.operating && C.dir == GLOB.reverse_dir[D])
+		if(C && !C.has_stat(MACHINE_STAT_ANY) && C.operating && C.dir == GLOB.reverse_dir[D])
 			return TRUE
 	return FALSE

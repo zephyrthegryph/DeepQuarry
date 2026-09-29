@@ -277,7 +277,7 @@
 /obj/machinery/artifact_harvester/machine_step()
 	if(harvesting == 0)
 		return PROCESS_KILL
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return sleep_until_powered()
 
 	if(harvesting > 0)

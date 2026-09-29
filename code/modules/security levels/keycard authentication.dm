@@ -6,7 +6,7 @@
 	layer = ABOVE_WINDOW_LAYER
 	circuit = /obj/item/circuitboard/keycard_auth
 	flags = WALL_ITEM
-	var/active = 0 //This gets set to 1 on all devices except the one where the initial request was made.
+	active = 0 //This gets set to 1 on all devices except the one where the initial request was made.
 	var/event = ""
 	var/screen = 1
 	var/confirmed = 0 //This variable is set by the device that confirms the request.
@@ -74,7 +74,7 @@
 	effect = /obj/machinery/keycard_auth/proc/interaction_swipe
 
 /obj/machinery/keycard_auth/proc/interaction_swipe(mob/user, obj/item/W, datum/interaction/interaction)
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		to_chat(user, "This device is not powered.")
 		return TRUE
 
@@ -92,8 +92,8 @@
 	return TRUE
 
 /obj/machinery/keycard_auth/power_change()
-	..()
-	if(stat &NOPOWER)
+	. = ..()
+	if(has_stat(NOPOWER))
 		icon_state = "auth_off"
 
 // TGUI migration. attack_hand opens KeycardAuth.tsx;
@@ -104,7 +104,7 @@
 	effect = /obj/machinery/keycard_auth/proc/interaction_open_ui_impl
 
 /obj/machinery/keycard_auth/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
-	if(user.stat || stat & (NOPOWER|BROKEN))
+	if(user.stat || !operable())
 		to_chat(user, "This device is not powered.")
 		return TRUE
 	if(!user.IsAdvancedToolUser())
@@ -135,7 +135,7 @@
 	if(om_busy(src))
 		to_chat(usr, "This device is busy.")
 		return TRUE
-	if(usr.stat || stat & (BROKEN|NOPOWER))
+	if(usr.stat || !operable())
 		to_chat(usr, "This device is without power.")
 		return TRUE
 	switch(action)
@@ -178,7 +178,7 @@
 	reset()
 
 /obj/machinery/keycard_auth/proc/receive_request(obj/machinery/keycard_auth/source)
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return
 	event_source_handle = om_handle(source)
 	// Busy for the confirmation window: a hold claims the device and closes the window when it ends.

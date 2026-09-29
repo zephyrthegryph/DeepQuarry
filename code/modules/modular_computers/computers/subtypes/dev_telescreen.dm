@@ -22,7 +22,7 @@
 /obj/item/modular_computer/telescreen/crowbar_act(mob/user, obj/item/tool)
 	if(anchored)
 		shutdown_computer()
-		anchored = FALSE
+		set_anchored(FALSE)
 		screen_on = FALSE
 		pixel_x = 0
 		pixel_y = 0
@@ -45,7 +45,7 @@
 			pixel_y = 0
 		else
 			return ITEM_INTERACT_BLOCKING
-	anchored = TRUE
+	set_anchored(TRUE)
 	screen_on = TRUE
 	to_chat(user, "You secure \the [src].")
 	return ITEM_INTERACT_SUCCESS

@@ -29,7 +29,7 @@
 /obj/structure/gargoyle/Initialize(mapload, mob/living/carbon/human/H, ident_ovr, mat_ovr, adj_ovr, tint_ovr, revert = TRUE, discard_clothes)
 	. = ..()
 	if(isspace(loc) || isopenspace(loc))
-		anchored = FALSE
+		set_anchored(FALSE)
 	if(!istype(H) || !isturf(H.loc))
 		return
 	var/datum/trait_state/gargoyle/comp = H.get_trait_state(/datum/trait_state/gargoyle)
@@ -48,7 +48,7 @@
 	WR_gargoyle = om_handle(H)
 
 	if(H.get_effective_size(TRUE) < 0.5) // "So small! I can step over it!"
-		density = FALSE
+		set_density(FALSE)
 
 	if(ident_ovr)
 		identifier = ident_ovr
@@ -257,7 +257,7 @@
 	if(W.has_tool_quality(TOOL_WRENCH))
 		if(isspace(loc) || isopenspace(loc))
 			to_chat(user, span_warning("You can't anchor that here!"))
-			anchored = FALSE
+			set_anchored(FALSE)
 			return TRUE
 		var/was_anchored = anchored
 		use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WRENCH, volume = 50, receiver = src, on_done = PROC_REF(attackby_tool_done), done_args = list(user, was_anchored))
@@ -280,7 +280,7 @@
 
 /obj/structure/gargoyle/proc/attackby_tool_done(mob/living/user, was_anchored)
 	to_chat(user, span_notice("You [was_anchored ? "un" : ""]anchor the [src]."))
-	anchored = !anchored
+	set_anchored(!anchored)
 
 /obj/structure/gargoyle/set_dir(new_dir)
 	. = ..()

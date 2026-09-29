@@ -65,7 +65,7 @@
 
 /obj/machinery/food_replicator/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return TRUE
 
 	if(panel_open)
@@ -88,7 +88,7 @@
 /obj/machinery/food_replicator/proc/dish_chosen(datum/om/prompt/choice/ask)
 	var/mob/user = ask.answerer
 	var/choice = ask.choice
-	if(printing || (stat & (BROKEN|NOPOWER)))
+	if(printing || (!operable()))
 		return
 
 	var/product_path = products[choice]
@@ -184,11 +184,11 @@
 
 	icon_state = initial(icon_state)
 
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		icon_state = "destroyed"
 	if(panel_open)
 		add_overlay("panel_open")
-	if(stat & (NOPOWER|EMPED))
+	if(has_stat(NOPOWER | EMPED))
 		add_overlay("poweroff")
 	if(printing)
 		add_overlay("printing")
@@ -196,7 +196,7 @@
 /// Reconciles its power draw with its state on every power or break change; printing sets its
 /// own draw while it runs.
 /obj/machinery/food_replicator/machine_step()
-	if(stat & (NOPOWER|BROKEN|EMPED))
+	if(!operable())
 		update_use_power(USE_POWER_OFF)
 		return PROCESS_KILL
 	if(printing)
@@ -232,7 +232,7 @@
 	printing = FALSE
 	update_icon()
 
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return
 
 	if(foodItem)
@@ -255,7 +255,7 @@
 	om_after(src, 6 SECONDS, PROC_REF(self_destruct_boom)) // GET OUT, GET OUT
 
 /obj/machinery/food_replicator/proc/self_destruct_boom()
-	stat = BROKEN
+	set_stat(BROKEN)
 	update_icon()
 	explosion(src, 0, 0, 2)
 

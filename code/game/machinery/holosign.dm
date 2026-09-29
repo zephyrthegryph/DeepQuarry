@@ -16,7 +16,7 @@
 	var/signlight = "#E9E4AF"
 
 /obj/machinery/holosign/proc/toggle()
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return
 	lit = !lit
 	update_use_power(lit ? USE_POWER_ACTIVE : USE_POWER_IDLE)
@@ -31,8 +31,8 @@
 		set_light(2, 0.25, signlight)
 
 /obj/machinery/holosign/power_change()
-	..()
-	if(stat & NOPOWER)
+	. = ..()
+	if(has_stat(NOPOWER))
 		lit = 0
 		update_use_power(USE_POWER_OFF)
 
@@ -80,7 +80,7 @@
 
 	use_power(5)
 
-	active = !active
+	set_active(!active)
 	icon_state = "light[active]"
 
 	for(var/obj/machinery/holosign/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))

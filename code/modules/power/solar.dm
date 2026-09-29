@@ -116,7 +116,7 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 /obj/machinery/power/solar/update_icon()
 	..()
 	cut_overlays()
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		add_overlay("solar_panel-b")
 	else
 		add_overlay("solar_panel")
@@ -142,7 +142,7 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 	//isn't the power recieved from the incoming light proportionnal to cos(p_angle) (Lambert's cosine law) rather than cos(p_angle)^2 ?
 
 /obj/machinery/power/solar/proc/get_power_supplied()
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		return 0
 	if(!GLOB.sun || !control())
 		return 0  //if there's no sun or the panel is not linked to a solar control computer, no need to proceed
@@ -153,7 +153,7 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 	return GLOB.solar_gen_rate * sunfrac
 
 /obj/machinery/power/solar/proc/broken()
-	stat |= BROKEN
+	stat_add(BROKEN)
 	unset_control()
 	update_icon()
 	om_emit(src, new /datum/om/event/climb_shake(null))
@@ -264,7 +264,7 @@ DECLARE_INTERACTIONS(/obj/item/solar_assembly, \
 /obj/item/solar_assembly/wrench_act(mob/user, obj/item/W)
 	if(!isturf(loc))
 		return ITEM_INTERACT_BLOCKING
-	anchored = !anchored
+	set_anchored(!anchored)
 	user.visible_message(span_notice("[user] [anchored ? "wrenches" : "unwrenches"] the solar assembly [anchored ? "into" : "from"] place."))
 	playsound(src, W.usesound, 75, 1)
 	return ITEM_INTERACT_SUCCESS
@@ -391,7 +391,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 
 //called by the sun controller, update the facing angle (either manually or via tracking) and rotates the panels accordingly
 /obj/machinery/power/solar_control/proc/update()
-	if(stat & (NOPOWER | BROKEN))
+	if(!operable())
 		return
 
 	switch(track)
@@ -403,11 +403,11 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 				connected_tracker().set_angle(GLOB.solar_service.get_solar_angle(get_turf(src)))
 
 /obj/machinery/power/solar_control/update_icon()
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		icon_state = "broken"
 		cut_overlays()
 		return
-	if(stat & NOPOWER)
+	if(has_stat(NOPOWER))
 		icon_state = "c_unpowered"
 		cut_overlays()
 		return
@@ -452,7 +452,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/power/solar_control/proc/disassemble_done(mob/user)
-	if (src.stat & BROKEN)
+	if (src.has_stat(BROKEN))
 		to_chat(user, span_blue("The broken glass falls out."))
 		var/obj/structure/frame/A = new /obj/structure/frame/computer(src.loc)
 		new /obj/item/material/shard(src.loc)
@@ -479,7 +479,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 		qdel(src)
 
 /obj/machinery/power/solar_control/machine_step()
-	if(stat & (NOPOWER | BROKEN))
+	if(!operable())
 		return
 
 	if(connected_tracker()) //NOTE : handled here so that we don't add trackers to the processing list

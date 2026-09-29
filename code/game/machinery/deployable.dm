@@ -17,7 +17,7 @@ Deployable items
 	density = TRUE
 	icon_state = "barrier0"
 	max_integrity = 100
-	var/locked = 0.0
+	locked = 0.0
 
 DECLARE_APPEARANCE(/obj/machinery/deployable/barrier, "locked", list("0" = list(APPEARANCE_ICON_STATE = "barrier0"), "1" = list(APPEARANCE_ICON_STATE = "barrier1")))
 
@@ -39,8 +39,8 @@ DECLARE_APPEARANCE(/obj/machinery/deployable/barrier, "locked", list("0" = list(
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	if(allowed(user))
 		if(emagged < 2.0)
-			locked = !locked
-			anchored = !anchored
+			set_locked(!locked)
+			set_anchored(!anchored)
 			icon_state = "barrier[locked]"
 			if((locked == 1.0) && (emagged < 2.0))
 				to_chat(user, "Barrier lock toggled on.")
@@ -78,7 +78,7 @@ DECLARE_APPEARANCE(/obj/machinery/deployable/barrier, "locked", list("0" = list(
 	if(get_integrity() >= max_integrity && !emagged)
 		return ITEM_INTERACT_BLOCKING
 	repair_damage(max_integrity)
-	emagged = FALSE
+	set_emagged(FALSE)
 	req_access = list(ACCESS_SECURITY)
 	visible_message(span_warning("[user] repairs \the [src]!"))
 	return ITEM_INTERACT_SUCCESS
@@ -90,11 +90,11 @@ DECLARE_APPEARANCE(/obj/machinery/deployable/barrier, "locked", list("0" = list(
 
 /obj/machinery/deployable/barrier/emp_act(severity, recursive)
 	. = ..()
-	if (. & EMP_PROTECT_SELF || (stat & (BROKEN|NOPOWER)))
+	if (. & EMP_PROTECT_SELF || (!operable()))
 		return
 	if(prob(50/severity))
-		locked = !locked
-		anchored = !anchored
+		set_locked(!locked)
+		set_anchored(!anchored)
 		icon_state = "barrier[locked]"
 
 /obj/machinery/deployable/barrier/CanPass(atom/movable/mover, turf/target)//So bullets will fly over and stuff.
@@ -120,7 +120,7 @@ DECLARE_APPEARANCE(/obj/machinery/deployable/barrier, "locked", list("0" = list(
 
 /obj/machinery/deployable/barrier/emag_act(remaining_charges, mob/user)
 	if(emagged == 0)
-		emagged = 1
+		set_emagged(1)
 		req_access = null
 		req_one_access = null
 		to_chat(user, "You break the ID authentication lock on \the [src].")
@@ -130,7 +130,7 @@ DECLARE_APPEARANCE(/obj/machinery/deployable/barrier, "locked", list("0" = list(
 		visible_message(span_warning("BZZzZZzZZzZT"))
 		return 1
 	else if(emagged == 1)
-		emagged = 2
+		set_emagged(2)
 		to_chat(user, "You short out the anchoring mechanism on \the [src].")
 		var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
 		s.set_up(2, 1, src)
@@ -178,7 +178,7 @@ DECLARE_APPEARANCE(/obj/machinery/deployable/barrier, "locked", list("0" = list(
 		return
 	toppled = TRUE
 	icon_state = "cutout_pushed_over"
-	density = FALSE
+	set_density(FALSE)
 	name = initial(name)
 	desc = initial(desc)
 	visible_message(span_warning("[src] topples over!"))
@@ -188,7 +188,7 @@ DECLARE_APPEARANCE(/obj/machinery/deployable/barrier, "locked", list("0" = list(
 		return
 	toppled = FALSE
 	icon_state = initial(icon_state)
-	density = TRUE
+	set_density(TRUE)
 	name = fake_name
 	desc = fake_desc
 	visible_message(span_warning("[src] is uprighted to their proper position."))

@@ -104,7 +104,7 @@ DECLARE_REF(/obj/machinery/power/generator, "soundloop", OWNED, null)
 		circ1().temperature_overlay = null
 	if (circ2())
 		circ2().temperature_overlay = null
-	if (stat & (NOPOWER|BROKEN))
+	if (!operable())
 		return 1
 	else
 		if (lastgenlev != 0)
@@ -124,7 +124,7 @@ DECLARE_REF(/obj/machinery/power/generator, "soundloop", OWNED, null)
 		stored_energy = 0
 		set_power_supply(0)
 		return PROCESS_KILL
-	if(!circ1() || !circ2() || stat & (BROKEN|NOPOWER))
+	if(!circ1() || !circ2() || !operable())
 		stored_energy = 0
 		set_power_supply(0)
 		return PROCESS_KILL
@@ -205,7 +205,7 @@ DECLARE_REF(/obj/machinery/power/generator, "soundloop", OWNED, null)
 
 /obj/machinery/power/generator/wrench_act(mob/user, obj/item/W)
 	playsound(src, W.usesound, 75, 1)
-	anchored = !anchored
+	set_anchored(!anchored)
 	user.visible_message("[user.name] [anchored ? "secures" : "unsecures"] the bolts holding [src.name] to the floor.", \
 					"You [anchored ? "secure" : "unsecure"] the bolts holding [src] to the floor.", \
 					"You hear a ratchet.")
@@ -236,7 +236,7 @@ DECLARE_REF(/obj/machinery/power/generator, "soundloop", OWNED, null)
 
 /obj/machinery/power/generator/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
-	if(stat & (BROKEN|NOPOWER) || !anchored)
+	if(!operable() || !anchored)
 		return TRUE
 	if(!circ1() || !circ2()) //Just incase the middle part of the TEG was not wrenched last.
 		reconnect()
@@ -287,7 +287,7 @@ DECLARE_REF(/obj/machinery/power/generator, "soundloop", OWNED, null)
 	return data
 
 /obj/machinery/power/generator/power_change()
-	..()
+	. = ..()
 	if(anchored)
 		clear_gas_dependencies()
 		MACHINE_WAKE(src)

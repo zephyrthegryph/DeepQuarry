@@ -37,7 +37,7 @@
 	for(var/obj/machinery/alarm/AA in air_alarms)
 		if(exclude_self && AA == src)
 			continue
-		if(!(AA.stat & (NOPOWER|BROKEN)))
+		if(AA.operable())
 			checks += AA
 	if(!checks.len)
 		return
@@ -52,7 +52,7 @@
 
 /area/proc/main_air_alarm_is_operating()
 	var/obj/machinery/alarm/AM = om_resolve(main_air_alarm)
-	return AM && !(AM.stat & (NOPOWER | BROKEN))
+	return AM && AM.operable()
 
 /obj/machinery/alarm
 
@@ -81,13 +81,13 @@
 	var/remote_control = 0
 	var/rcon_setting = 2
 	var/rcon_time = 0
-	var/locked = 1
+	locked = 1
 	panel_open = FALSE // If it's been screwdrivered open.
 	var/aidisabled = 0
 	var/shorted = 0
 	circuit = /obj/item/circuitboard/airalarm
 
-	var/mode = AALARM_MODE_SCRUBBING
+	mode = AALARM_MODE_SCRUBBING
 	var/screen = AALARM_SCREEN_MAIN
 	var/area_uid
 	var/alarm_area_handle
@@ -230,7 +230,7 @@ DECLARE_REF(/obj/machinery/alarm, "soundloop", OWNED, null)
 
 	if(old_pressurelevel != pressure_dangerlevel)
 		if(breach_detected())
-			mode = AALARM_MODE_OFF
+			set_mode(AALARM_MODE_OFF)
 			apply_mode()
 
 	if(SScontracts && (old_level != danger_level || old_pressurelevel != pressure_dangerlevel))
@@ -250,7 +250,7 @@ DECLARE_REF(/obj/machinery/alarm, "soundloop", OWNED, null)
 			"detail" = "[alarm_area_ref()] atmospheric service reports danger level [danger_level], [round(current_pressure, 0.1)] kPa, and [round(current_temperature, 0.1)] K.",
 		), "atmos-service:[REF(src)]:[contract_atmos_revision]", src)
 	if(mode == AALARM_MODE_CYCLE && environment.return_pressure() < ONE_ATMOSPHERE * 0.05)
-		mode = AALARM_MODE_FILL
+		set_mode(AALARM_MODE_FILL)
 		apply_mode()
 
 	if(alarm_area_ref()?.atmosalm || danger_level > 0)  // Looping Alarms (Trigger Decompression alarm here, on detection of any breach in the area)
@@ -472,7 +472,7 @@ DECLARE_REF(/obj/machinery/alarm, "soundloop", OWNED, null)
 		set_light(0)
 		set_light_on(FALSE)
 		return
-	if(!alarm_area_ref() || (stat & (NOPOWER|BROKEN)) || shorted)
+	if(!alarm_area_ref() || (!operable()) || shorted)
 		icon_state = "alarmp"
 		set_light(0)
 		set_light_on(FALSE)
@@ -529,7 +529,7 @@ DECLARE_REF(/obj/machinery/alarm, "soundloop", OWNED, null)
 	set_light_on(TRUE)
 
 /obj/machinery/alarm/receive_signal(datum/signal/signal)
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return
 	if(!signal || signal.encryption)
 		return
@@ -888,7 +888,7 @@ DECLARE_REF(/obj/machinery/alarm, "soundloop", OWNED, null)
 	switch(action)
 		if("lock")
 			if((siliconaccess(ui.user) && !wires.is_cut(WIRE_IDSCAN)) || (isobserver(ui.user) && is_admin(ui.user)))
-				locked = !locked
+				set_locked(!locked)
 				. = TRUE
 		if( "power",
 			"o2_scrub",
@@ -927,7 +927,7 @@ DECLARE_REF(/obj/machinery/alarm, "soundloop", OWNED, null)
 			om_ask(ui.user, /datum/om/prompt/number/machine_ui, PROC_REF(threshold_entered), title = name, message = "New [name] for [env]:", default = TLV[env][name], min = -1, round_entry = FALSE, env = env, setting = name)
 			. = TRUE
 		if("mode")
-			mode = text2num(params["mode"])
+			set_mode(text2num(params["mode"]))
 			apply_mode(ui.user)
 			. = TRUE
 		if("alarm")
@@ -1032,12 +1032,12 @@ DECLARE_REF(/obj/machinery/alarm, "soundloop", OWNED, null)
 	return dismantle() ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING
 
 /obj/machinery/alarm/proc/togglelock(mob/user)
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		to_chat(user, "It does nothing.")
 		return
 	else
 		if(allowed(user) && !wires.is_cut(WIRE_IDSCAN))
-			locked = !locked
+			set_locked(!locked)
 			to_chat(user, span_notice("You [locked ? "lock" : "unlock"] the Air Alarm interface."))
 		else
 			to_chat(user, span_warning("Access denied."))
@@ -1045,7 +1045,7 @@ DECLARE_REF(/obj/machinery/alarm, "soundloop", OWNED, null)
 
 /obj/machinery/alarm/power_change()
 	invalidate_gas_dependencies()
-	..()
+	. = ..()
 	var/delay_time = rand(0,15)
 	if(delay_time)
 		om_after(src, delay_time, PROC_REF(process_power_change))
@@ -1056,7 +1056,7 @@ DECLARE_REF(/obj/machinery/alarm, "soundloop", OWNED, null)
 	update_icon()
 	if(!soundloop)
 		return
-	if(stat & (NOPOWER | BROKEN))
+	if(!operable())
 		soundloop.stop()
 	else if(atmoswarn)
 		soundloop.start()

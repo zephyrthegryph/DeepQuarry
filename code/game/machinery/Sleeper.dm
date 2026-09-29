@@ -68,8 +68,8 @@ EXTEND_INTERACTIONS(/obj/machinery/sleep_console, \
 	return deconstruct_display(user, tool)
 
 /obj/machinery/sleep_console/power_change()
-	..()
-	if(stat & (NOPOWER|BROKEN))
+	. = ..()
+	if(!operable())
 		icon_state = "sleeperconsole-p"
 	else
 		icon_state = initial(icon_state)
@@ -357,7 +357,7 @@ EXTEND_INTERACTIONS(/obj/machinery/sleeper, \
 
 /obj/machinery/sleeper/machine_step()
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SLEEPER)
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return PROCESS_KILL
 	if(!occupant)
 		return PROCESS_KILL
@@ -468,7 +468,7 @@ EXTEND_INTERACTIONS(/obj/machinery/sleeper, \
 	if(pumping)
 		toggle_pump()
 
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		..(severity, recursive)
 		return
 
@@ -493,7 +493,7 @@ EXTEND_INTERACTIONS(/obj/machinery/sleeper, \
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SLEEPER)
 	if(!M)
 		return
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return
 	if(M?.buckled_to())
 		return
@@ -559,7 +559,7 @@ EXTEND_INTERACTIONS(/obj/machinery/sleeper, \
 
 /obj/machinery/sleeper/proc/inject_chemical(mob/living/user, chemical, amount)
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SLEEPER)
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return
 	if(!(amount in amounts))
 		return

@@ -25,7 +25,6 @@
 	var/brute_dam_coeff = 1.0
 	var/open = 0	//Maint panel
 	var/locked = 1
-	var/stat = 0
 	var/emagged = 0
 	var/powered = 0		//set if vehicle is powered and should use fuel when moving
 	var/move_delay = 1	//set this to limit the speed of the vehicle
@@ -172,7 +171,7 @@ DECLARE_INTERACTIONS(/obj/vehicle, INTERACT_ITEM(null, PROC_REF(interaction_vehi
 		return
 
 	var/was_on = on
-	stat |= EMPED
+	stat_add(EMPED)
 	var/obj/effect/overlay/pulse2 = new /obj/effect/overlay(src.loc)
 	pulse2.icon = 'icons/effects/effects.dmi'
 	pulse2.icon_state = "empdisable"
@@ -193,7 +192,7 @@ DECLARE_INTERACTIONS(/obj/vehicle, INTERACT_ITEM(null, PROC_REF(interaction_vehi
 // Vehicle procs
 //-------------------------------------------
 /obj/vehicle/proc/turn_on()
-	if(!mechanical || stat)
+	if(!mechanical || has_stat(MACHINE_STAT_ANY))
 		return FALSE
 	if(!cell)
 		return FALSE
@@ -430,7 +429,7 @@ DECLARE_INTERACTIONS(/obj/vehicle, INTERACT_ITEM(null, PROC_REF(interaction_vehi
 	volume_chan = VOLUME_CHANNEL_AMBIENCE
 
 /obj/vehicle/proc/emp_recover(was_on)
-	stat &= ~EMPED
+	stat_remove(EMPED)
 	if(was_on)
 		turn_on()
 

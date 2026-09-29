@@ -132,14 +132,14 @@
 
 /obj/machinery/pipedispenser/proc/wrench_act_tool_done(mob/user)
 	unwrenched = !unwrenched
-	anchored = !unwrenched
+	set_anchored(!unwrenched)
 	if(unwrenched)
-		stat |= MAINT
+		stat_add(MAINT)
 		user.visible_message(span_notice("[user] unfastens \the [src]."), span_notice("You have unfastened \the [src]. Now it can be pulled somewhere else."), "You hear ratchet.")
 		if(user.check_current_machine(src))
 			SStgui.close_uis(src)
 	else
-		stat &= ~MAINT
+		stat_remove(MAINT)
 		user.visible_message(span_notice("[user] fastens \the [src]."), span_notice("You have fastened \the [src]. Now it can dispense pipes."), "You hear ratchet.")
 		power_change()
 	return ITEM_INTERACT_SUCCESS

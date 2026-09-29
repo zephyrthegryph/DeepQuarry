@@ -116,7 +116,7 @@
 	pixel_x = initial(target.pixel_x)
 	pixel_y = initial(target.pixel_y)
 
-	density = target.density
+	set_density(target.density)
 
 	if(isobj(target))
 		size_multiplier = 1
@@ -166,7 +166,7 @@
 	icon_scale_x = initial(icon_scale_x)
 	icon_scale_y = initial(icon_scale_y)
 
-	density = initial(density)
+	set_density(initial(density))
 
 	cut_overlays(TRUE) //ALL of zem
 

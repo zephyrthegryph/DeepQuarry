@@ -16,7 +16,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/communications, "communications", 
 
 /obj/machinery/computer/communications/emag_act(remaining_charges, mob/user)
 	if(!emagged)
-		emagged = TRUE
+		set_emagged(TRUE)
 		communications.emagged = TRUE
 		to_chat(user, "You scramble the communication routing circuits!")
 		return TRUE

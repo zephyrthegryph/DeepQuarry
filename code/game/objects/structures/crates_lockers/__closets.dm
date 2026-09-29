@@ -207,7 +207,7 @@ DECLARE_REF(/obj/structure/closet, "door_obj", OWNED, null)
 	opened = 1
 	playsound(src, open_sound, 50, 1, -3)
 	if(initial(density))
-		density = !density
+		set_density(!density)
 	animate_door()
 	return 1
 
@@ -231,7 +231,7 @@ DECLARE_REF(/obj/structure/closet, "door_obj", OWNED, null)
 
 	playsound(src, close_sound, 50, 1, -3)
 	if(initial(density))
-		density = !density
+		set_density(!density)
 	animate_door(TRUE)
 	if(om_wants(src, /datum/om/event/closet_closed))
 		om_emit(src, new /datum/om/event/closet_closed)
@@ -359,7 +359,7 @@ DECLARE_REF(/obj/structure/closet, "door_obj", OWNED, null)
 	return TRUE
 
 /obj/structure/closet/proc/wrench_act_tool_done(mob/user)
-	anchored = !anchored
+	set_anchored(!anchored)
 	to_chat(user, span_notice("You [anchored ? "secured" : "unsecured"] \the [src]!"))
 
 /obj/structure/closet/welder_act(mob/user, obj/item/W)

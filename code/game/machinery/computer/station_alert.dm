@@ -44,7 +44,7 @@ DECLARE_REF(/obj/machinery/computer/station_alert, "alarm_monitor", OWNED, null)
 
 /obj/machinery/computer/station_alert/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return TRUE
 	tgui_interact(user)
 	return TRUE
@@ -56,7 +56,7 @@ DECLARE_REF(/obj/machinery/computer/station_alert, "alarm_monitor", OWNED, null)
 	alarm_monitor.tgui_interact(user)
 
 /obj/machinery/computer/station_alert/proc/update_console_icon()
-	if(!(stat & (BROKEN|NOPOWER)))
+	if(operable())
 		var/last_icon = icon_screen
 		var/list/alarms = alarm_monitor ? alarm_monitor.major_alarms() : list()
 		if(alarms.len)

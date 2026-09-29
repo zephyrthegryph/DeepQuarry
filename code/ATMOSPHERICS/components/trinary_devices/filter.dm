@@ -97,7 +97,7 @@
 	last_power_draw = 0
 	last_flow_rate = 0
 
-	if((stat & (NOPOWER|BROKEN)) || !use_power)
+	if((!operable()) || !use_power)
 		rust_unregister_device_n("filtered")
 		rust_unregister_device_n("clean")
 		return PROCESS_KILL
@@ -244,7 +244,7 @@
 	om_watch_arm_condition(src, "gas", list(air1?.arena_id()), GAS_DEPENDENCY_COMPOSITION | GAS_DEPENDENCY_PRESSURE, CALLBACK(src, PROC_REF(gas_wake_condition)), wake_callback = CALLBACK(src, PROC_REF(wake_from_gas)))
 
 /obj/machinery/atmospherics/trinary/atmos_filter/proc/gas_wake_condition()
-	return use_power && !(stat & (NOPOWER|BROKEN)) && (set_flow_rate / air1.return_volume()) * air1.total_moles() > MINIMUM_MOLES_TO_FILTER
+	return use_power && operable() && (set_flow_rate / air1.return_volume()) * air1.total_moles() > MINIMUM_MOLES_TO_FILTER
 
 /obj/machinery/atmospherics/trinary/atmos_filter/proc/wake_from_gas()
 	om_watch_disarm(src, "gas")

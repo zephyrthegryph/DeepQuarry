@@ -58,7 +58,7 @@ DECLARE_INTERACTIONS(/obj/item/target, INTERACT_HAND(null, PROC_REF(interaction_
 	if(stake)
 		if(stake.pinned_target)
 			stake.density = TRUE
-			density = FALSE
+			set_density(FALSE)
 			layer = OBJ_LAYER
 
 			forceMove(user.loc)

@@ -501,7 +501,7 @@
 
 /proc/is_relay_online()
 	for(var/obj/machinery/telecomms/relay/M in world)
-		if(M.stat == 0)
+		if(!M.has_stat(MACHINE_STAT_ANY))
 			return 1
 	return 0
 

@@ -17,12 +17,12 @@
 		SMES.charge = 0
 	for(var/obj/machinery/power/generator/generated_station/generator in topology.power_objects)
 		generators += generator
-		generator.stat |= BROKEN
+		generator.stat_add(BROKEN)
 	TEST_ASSERT(!topology.power_available(), "Generated microgrid remained available after every source was depleted")
 	for(var/obj/machinery/power/smes/SMES as anything in smes_charges)
 		SMES.charge = smes_charges[SMES]
 	for(var/obj/machinery/power/generator/generated_station/generator as anything in generators)
-		generator.stat &= ~BROKEN
+		generator.stat_remove(BROKEN)
 	TEST_ASSERT(topology.power_available(), "Generated microgrid did not recover after restoring its physical sources")
 	qdel(topology)
 	qdel(builder)

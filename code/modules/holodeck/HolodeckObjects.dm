@@ -209,7 +209,7 @@ EXTEND_INTERACTIONS(/obj/structure/window/reinforced/holowindow, INTERACT_ITEM(n
 	if(W.obj_damage_type())
 		hit(W.force)
 		if(get_integrity() <= 7)
-			anchored = FALSE
+			set_anchored(FALSE)
 			update_nearby_icons()
 			step(src, get_dir(user, src))
 	else
@@ -292,7 +292,7 @@ EXTEND_INTERACTIONS(/obj/structure/window/reinforced/holowindow, INTERACT_ITEM(n
 	return TRUE
 
 /obj/machinery/door/window/holowindoor/shatter(display_message = 1)
-	src.density = FALSE
+	set_density(FALSE)
 	playsound(src, "shatter", 70, 1)
 	if(display_message)
 		visible_message("[src] fades away as it shatters!")
@@ -502,7 +502,7 @@ DECLARE_INTERACTIONS(/obj/structure/holohoop, INTERACT_ITEM(null, PROC_REF(inter
 	effect = /obj/machinery/readybutton/proc/interaction_press
 
 /obj/machinery/readybutton/proc/interaction_press(mob/user, obj/item/held, datum/interaction/interaction)
-	if(user.stat || stat & (NOPOWER|BROKEN))
+	if(user.stat || !operable())
 		to_chat(user, "This device is not powered.")
 		return TRUE
 

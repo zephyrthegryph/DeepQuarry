@@ -203,11 +203,11 @@
 
 /datum/om/frame/machine/proc/fact_powered()
 	var/obj/machinery/M = entity
-	return !(M.stat & NOPOWER)
+	return !M.has_stat(NOPOWER)
 
 /datum/om/frame/machine/proc/fact_broken()
 	var/obj/machinery/M = entity
-	return M.stat & BROKEN
+	return M.has_stat(BROKEN)
 
 /datum/om/frame/machine/proc/fact_anchored()
 	var/obj/machinery/M = entity
@@ -264,7 +264,7 @@
 	if(!M.step_active)
 		if(!isnull(M.react_sleep_tokens))
 			M.cancel_sleep_keys()
-		else if(!M.step_on_power_change && (!M.step_waiting_power || (M.stat & (NOPOWER|BROKEN))))
+		else if(!M.step_on_power_change && (!M.step_waiting_power || (!M.operable())))
 			return STAGE_IDLE
 		M.set_step_active(TRUE)
 	M.set_step_waiting_power(FALSE)
@@ -278,7 +278,7 @@
 /datum/om/stage/machine/step/idle(obj/machinery/M)
 	if(M.speed_process)
 		return TRUE
-	return !M.step_active && (!M.step_waiting_power || (M.stat & (NOPOWER|BROKEN)))
+	return !M.step_active && (!M.step_waiting_power || (!M.operable()))
 
 /// The machine's look, after what changed it (CHANGE_MACHINE_OUTPUT). The root just updates.
 /datum/om/stage/machine/present
@@ -317,7 +317,7 @@
 
 /// Settled: nothing to charge (or it can't), and the power mode already says so.
 /datum/om/stage/machine/power/recharger/idle(obj/machinery/recharger/M)
-	if((M.stat & (NOPOWER | BROKEN)) || !M.anchored)
+	if((!M.operable()) || !M.anchored)
 		return M.use_power == USE_POWER_OFF
 	if(!M.charging || M.charging_complete())
 		return M.use_power == USE_POWER_IDLE
@@ -343,7 +343,7 @@
 		M.update_icon()
 
 /datum/om/stage/machine/power/cell_charger/idle(obj/machinery/cell_charger/M)
-	if((M.stat & (NOPOWER | BROKEN)) || !M.anchored)
+	if((!M.operable()) || !M.anchored)
 		return M.use_power == USE_POWER_OFF
 	if(!M.charging || M.charging.fully_charged())
 		return M.use_power == USE_POWER_IDLE
@@ -403,7 +403,7 @@
 	reads = list("timing")
 
 /datum/om/stage/machine/power/firealarm/perform(obj/machinery/firealarm/M, datum/om/frame/machine/F)
-	if(M.stat & (NOPOWER|BROKEN))
+	if(!M.operable())
 		return STAGE_IDLE
 
 	if(M.timing)
@@ -425,7 +425,7 @@
 /// Settled once there's no countdown left running, or while unpowered/broken (power_change()
 /// and atom_fix() wake it); a fresh alarm still gets one perform() before it parks.
 /datum/om/stage/machine/power/firealarm/idle(obj/machinery/firealarm/M)
-	return !M.timing || (M.stat & (NOPOWER|BROKEN))
+	return !M.timing || (!M.operable())
 
 // ---------------------------------------------------------------- air alarms
 
@@ -451,7 +451,7 @@
 	if(!MA)
 		M.alarm_area_ref().elect_main_air_alarm()
 		MA = om_resolve(M.alarm_area_ref().main_air_alarm) // try again
-	if(!MA || (M.stat & (NOPOWER|BROKEN)) || M.shorted || MA.shorted)
+	if(!MA || (!M.operable()) || M.shorted || MA.shorted)
 		M.register_gas_dependencies()
 		return STAGE_IDLE
 	// Only the elected controller scans and regulates. The main alarm publishes
@@ -660,7 +660,3 @@ OM_FIELD(/obj/machinery/alarm, regulating_temperature, 0, CHANGE_MACHINE_SETTING
 OM_FIELD(/obj/machinery/portable_atmospherics/canister, valve_open, 0, CHANGE_MACHINE_SETTINGS)
 /// TRUE while the canister has nothing to do; until arm_wakes() or a frame says otherwise.
 OM_FIELD(/obj/machinery/portable_atmospherics/canister, om_settled, TRUE, CHANGE_MACHINE_SETTINGS)
-/// The portable pump's power switch.
-OM_FIELD(/obj/machinery/portable_atmospherics/powered/pump, on, 0, CHANGE_MACHINE_SETTINGS)
-/// The portable scrubber's power switch.
-OM_FIELD(/obj/machinery/portable_atmospherics/powered/scrubber, on, 0, CHANGE_MACHINE_SETTINGS)

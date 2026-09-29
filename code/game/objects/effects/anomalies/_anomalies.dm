@@ -120,7 +120,7 @@ DECLARE_REF(/obj/effect/anomaly, "stats", OWNED, null)
 		stats = new /datum/anomaly_stats
 		stats.attached_anomaly = om_handle(src)
 		stats.calculate_points()
-		density = TRUE
+		set_density(TRUE)
 	return
 
 EXTEND_INTERACTIONS(/obj/effect/anomaly, \

@@ -71,7 +71,7 @@
 		take_item(A)
 
 /obj/machinery/recycling/proc/can_accept_item(obj/item/O)
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return FALSE
 	if(panel_open)
 		return FALSE

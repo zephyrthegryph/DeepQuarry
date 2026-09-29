@@ -171,14 +171,14 @@ DECLARE_INTERACTIONS(/obj/structure/particle_accelerator, INTERACT_INSERT(/obj/i
 		if(0)
 			if(tool_quality == TOOL_WRENCH)
 				playsound(src, O.usesound, 75, 1)
-				src.anchored = TRUE
+				set_anchored(TRUE)
 				user.visible_message("[user.name] secures the [src.name] to the floor.", \
 					"You secure the external bolts.")
 				temp_state++
 		if(1)
 			if(tool_quality == TOOL_WRENCH)
 				playsound(src, O.usesound, 75, 1)
-				src.anchored = FALSE
+				set_anchored(FALSE)
 				user.visible_message("[user.name] detaches the [src.name] from the floor.", \
 					"You remove the external bolts.")
 				temp_state--
@@ -221,7 +221,7 @@ DECLARE_INTERACTIONS(/obj/structure/particle_accelerator, INTERACT_INSERT(/obj/i
 	idle_power_usage = 0
 	active_power_usage = 0
 	var/construction_state = 0
-	var/active = 0
+	active = 0
 	var/reference = null
 	var/powered = null
 	var/strength = 0
@@ -287,14 +287,14 @@ DECLARE_INTERACTIONS(/obj/structure/particle_accelerator, INTERACT_INSERT(/obj/i
 		if(0)
 			if(tool_quality == TOOL_WRENCH)
 				playsound(src, O.usesound, 75, 1)
-				src.anchored = TRUE
+				set_anchored(TRUE)
 				user.visible_message("[user.name] secures the [src.name] to the floor.", \
 					"You secure the external bolts.")
 				temp_state++
 		if(1)
 			if(tool_quality == TOOL_WRENCH)
 				playsound(src, O.usesound, 75, 1)
-				src.anchored = FALSE
+				set_anchored(FALSE)
 				user.visible_message("[user.name] detaches the [src.name] from the floor.", \
 					"You remove the external bolts.")
 				temp_state--
@@ -317,7 +317,7 @@ DECLARE_INTERACTIONS(/obj/structure/particle_accelerator, INTERACT_INSERT(/obj/i
 				user.visible_message("[user.name] opens the [src.name]'s access panel.", \
 					"You open the access panel.")
 				temp_state--
-				active = 0
+				set_active(0)
 	if(temp_state == src.construction_state)//Nothing changed
 		return 0
 	else

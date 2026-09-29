@@ -47,9 +47,8 @@
 	add_underlay(T, node, dir)
 
 /obj/machinery/atmospherics/unary/outlet_injector/power_change()
-	var/old_stat = stat
-	..()
-	if(old_stat != stat)
+	. = ..()
+	if(.)
 		update_icon()
 
 /obj/machinery/atmospherics/unary/outlet_injector/machine_step()
@@ -58,7 +57,7 @@
 	last_power_draw = 0
 	last_flow_rate = 0
 
-	if((stat & (NOPOWER|BROKEN)) || !use_power)
+	if((!operable()) || !use_power)
 		register_gas_dependencies()
 		return PROCESS_KILL
 
@@ -85,12 +84,12 @@
 
 /// The same test process() makes before it pumps: powered, on, and holding enough warm gas.
 /obj/machinery/atmospherics/unary/outlet_injector/gas_wake_condition()
-	if((stat & (NOPOWER|BROKEN)) || !use_power)
+	if((!operable()) || !use_power)
 		return FALSE
 	return air_contents && air_contents.return_temperature() > 0 && air_contents.total_moles() >= MINIMUM_MOLES_TO_PUMP
 
 /obj/machinery/atmospherics/unary/outlet_injector/proc/inject()
-	if(injecting || (stat & NOPOWER))
+	if(injecting || (has_stat(NOPOWER)))
 		return 0
 
 	var/datum/gas_mixture/environment = loc.return_air()

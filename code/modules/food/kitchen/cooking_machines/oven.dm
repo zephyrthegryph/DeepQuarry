@@ -63,7 +63,7 @@ DECLARE_REF(/obj/machinery/appliance/cooker/oven, "oven_loop", OWNED, null)
 
 /obj/machinery/appliance/cooker/oven/update_icon()
 	if(!open)
-		if(!stat)
+		if(!has_stat(MACHINE_STAT_ANY))
 			icon_state = "ovenclosed_on"
 			if(cooking == TRUE)
 				icon_state = "ovenclosed_cooking"

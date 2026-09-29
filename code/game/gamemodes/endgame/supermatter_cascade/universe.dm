@@ -74,12 +74,12 @@ GLOBAL_VAR_INIT(universe_has_ended, 0)
 	return
 /datum/universal_state/supermatter_cascade/proc/MiscSet()
 	for (var/obj/machinery/firealarm/alm in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		if (!(alm.stat & BROKEN))
+		if (!alm.has_stat(BROKEN))
 			alm.ex_act(2)
 
 /datum/universal_state/supermatter_cascade/proc/APCSet()
 	for (var/obj/machinery/power/apc/APC in REGISTRY_MEMBERS(REGISTRY_APCS))
-		if (!(APC.stat & BROKEN) && !APC.is_critical)
+		if (!APC.has_stat(BROKEN) && !APC.is_critical)
 			APC.chargemode = 0
 			if(APC.cell)
 				APC.cell.charge = 0

@@ -214,7 +214,7 @@
 		vent_icon += "weld"
 		playsound(src, stop_sound, 25, ignore_walls = FALSE, preference = /datum/preference/toggle/air_pump_noise)
 
-	else if(!use_power || !node || (stat & (NOPOWER|BROKEN)))
+	else if(!use_power || !node || (!operable()))
 		vent_icon += "off"
 		playsound(src, stop_sound, 25, ignore_walls = FALSE, preference = /datum/preference/toggle/air_pump_noise)
 	else
@@ -242,7 +242,7 @@
 	update_underlays()
 
 /obj/machinery/atmospherics/unary/vent_pump/proc/can_pump()
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return 0
 	if(!use_power)
 		return 0
@@ -326,7 +326,7 @@
 	broadcast_status()
 
 /obj/machinery/atmospherics/unary/vent_pump/receive_signal(datum/signal/signal)
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return
 
 	if(!signal.data["tag"] || (signal.data["tag"] != id_tag) || (signal.data["sigtype"]!="command"))
@@ -416,7 +416,7 @@
 		update_icon()
 
 /obj/machinery/atmospherics/unary/vent_pump/wrench_act(mob/user, obj/item/W)
-	if (!(stat & NOPOWER) && use_power)
+	if (!has_stat(NOPOWER) && use_power)
 		to_chat(user, span_warning("You cannot unwrench \the [src], turn it off first."))
 		return ITEM_INTERACT_BLOCKING
 	var/turf/T = src.loc
@@ -447,9 +447,8 @@
 		. += "It seems welded shut."
 
 /obj/machinery/atmospherics/unary/vent_pump/power_change()
-	var/old_stat = stat
-	..()
-	if(old_stat != stat)
+	. = ..()
+	if(.)
 		invalidate_gas_dependencies()
 		update_icon()
 

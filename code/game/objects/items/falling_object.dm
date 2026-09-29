@@ -54,7 +54,7 @@
 		shake_camera(M, 2, 2)
 
 	playsound(src, 'sound/effects/meteorimpact.ogg', 50, 1)
-	density = initial(density)
+	set_density(initial(density))
 	opacity = initial(opacity)
 	plane = initial(plane)
 

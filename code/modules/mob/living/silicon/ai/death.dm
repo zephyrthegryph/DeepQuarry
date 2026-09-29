@@ -22,7 +22,7 @@
 		var/obj/item/aicard/card = loc
 		card.update_icon()
 
-	density = TRUE
+	set_density(TRUE)
 
 /mob/living/silicon/ai/on_revived(reason, datum/source)
 	. = ..()

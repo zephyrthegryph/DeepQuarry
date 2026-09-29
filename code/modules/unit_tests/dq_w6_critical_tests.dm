@@ -12,7 +12,7 @@
 	var/obj/machinery/sleeper/S = allocate(/obj/machinery/sleeper, test_floor())
 	var/mob/living/carbon/human/patient = allocate(/mob/living/carbon/human, test_floor())
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, test_floor())
-	S.stat = 0
+	S.set_stat(0)
 	patient.move_into(S, OCCUPANT_SLOT_SLEEPER)
 	TEST_ASSERT(!LAZYACCESS(S.available_chemicals, REAGENT_ID_TOXIN), "the sleeper must not list toxin")
 	S.inject_chemical(user, REAGENT_ID_TOXIN, 5)

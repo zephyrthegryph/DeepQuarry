@@ -145,7 +145,7 @@
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/beehive/wrench_act(mob/user, obj/item/tool)
-	anchored = !anchored
+	set_anchored(!anchored)
 	playsound(src, tool.usesound, 50, TRUE)
 	user.visible_message(span_notice("[user] [anchored ? "wrenches" : "unwrenches"] \the [src]."), span_notice("You [anchored ? "wrench" : "unwrench"] \the [src]."))
 	return ITEM_INTERACT_SUCCESS
@@ -268,7 +268,7 @@
 
 	if(panel_open)
 		add_overlay("[icon_state]_panel")
-	if(stat & NOPOWER)
+	if(has_stat(NOPOWER))
 		icon_state = "[icon_state]_off"
 		return
 	if(processing)
@@ -285,7 +285,7 @@
 /obj/machinery/honey_extractor/proc/ready_for_item(mob/actor, atom/target, obj/item/held)
 	if(processing)
 		return "it's currently spinning, wait until it's finished"
-	if(stat & NOPOWER)
+	if(has_stat(NOPOWER))
 		return "it's powerless and can't grant your wishes"
 	if(panel_open)
 		return "its maintenance panel is open, it would not be safe to turn it on"
@@ -429,7 +429,7 @@ DECLARE_APPEARANCE(/obj/item/bee_pack, "full", list("0" = list(APPEARANCE_OVERLA
 	if(processing)
 		to_chat(user, span_notice("\The [src] is currently spinning, wait until it's finished."))
 		return ITEM_INTERACT_BLOCKING
-	anchored = !anchored
+	set_anchored(!anchored)
 	playsound(src, tool.usesound, 50, TRUE)
 	user.visible_message(span_notice("[user] [anchored ? "wrenches" : "unwrenches"] \the [src]."), span_notice("You [anchored ? "wrench" : "unwrench"] \the [src]."))
 	return ITEM_INTERACT_SUCCESS

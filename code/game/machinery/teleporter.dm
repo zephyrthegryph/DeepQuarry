@@ -59,7 +59,7 @@ DECLARE_REF(/obj/machinery/computer/teleporter, "teleport_control", OWNED, null)
 	effect = /obj/machinery/computer/teleporter/proc/interaction_insert_card
 
 /obj/machinery/computer/teleporter/proc/interaction_insert_card(mob/user, obj/item/card/data/C, datum/interaction/interaction)
-	if(stat & (NOPOWER|BROKEN) & (C.function != "teleporter"))
+	if(!operable() && C.function != "teleporter")
 		attack_hand()
 
 	var/obj/L = null
@@ -110,7 +110,7 @@ DECLARE_REF(/obj/machinery/computer/teleporter, "teleport_control", OWNED, null)
 
 /obj/machinery/computer/teleporter/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return TRUE
 	teleport_control.tgui_interact(user)
 	return TRUE
@@ -121,7 +121,7 @@ DECLARE_REF(/obj/machinery/computer/teleporter, "teleport_control", OWNED, null)
 	effect = /obj/machinery/computer/teleporter/proc/interaction_set_id
 
 /obj/machinery/computer/teleporter/proc/interaction_set_id(mob/user, obj/item/held, datum/interaction/interaction)
-	if(stat & (NOPOWER|BROKEN) || !isliving(user))
+	if(!operable() || !isliving(user))
 		return TRUE
 	om_ask(user, /datum/om/prompt/text, PROC_REF(teleporter_id_entered), title = "Set teleporter ID", message = "ID Tag:", requires = PROMPT_ADJACENT)
 	return TRUE
@@ -212,7 +212,7 @@ DECLARE_REF(/obj/machinery/teleport/hub, "com_handle.teleport_control", BACK_VIA
 	desc = "It's the station thingy of a teleport thingy." //seriously, wtf.
 	icon_state = "controller"
 	dir = 4
-	COOLDOWN_DECLARE(active)
+	COOLDOWN_DECLARE(teleport_cooldown)
 	var/engaged = 0
 	use_power = USE_POWER_IDLE
 	idle_power_usage = 10
@@ -229,7 +229,7 @@ DECLARE_REF(/obj/machinery/teleport/hub, "com_handle.teleport_control", BACK_VIA
 DECLARE_REF(/obj/machinery/teleport/station, "com_handle.com_handle.teleport_control", BACK_VIA, "station_handle")
 
 /obj/machinery/teleport/station/proc/engage(mob/user)
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return
 
 	if(com())
@@ -245,7 +245,7 @@ DECLARE_REF(/obj/machinery/teleport/station, "com_handle.com_handle.teleport_con
 	return
 
 /obj/machinery/teleport/station/proc/disengage(mob/user)
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return
 
 	if(com())
@@ -261,10 +261,10 @@ DECLARE_REF(/obj/machinery/teleport/station, "com_handle.com_handle.teleport_con
 	return
 
 /obj/machinery/teleport/station/proc/testfire()
-	if(!com() || !COOLDOWN_FINISHED(src, active))
+	if(!com() || !COOLDOWN_FINISHED(src, teleport_cooldown))
 		return
 
-	COOLDOWN_START(src, active, 3 SECONDS)
+	COOLDOWN_START(src, teleport_cooldown, 3 SECONDS)
 	visible_message(span_notice("Test firing!"))
 	com().teleport()
 	use_power(5000)
@@ -272,8 +272,8 @@ DECLARE_REF(/obj/machinery/teleport/station, "com_handle.com_handle.teleport_con
 
 
 /obj/machinery/teleport/station/power_change()
-	..()
-	if(stat & NOPOWER)
+	. = ..()
+	if(has_stat(NOPOWER))
 		icon_state = "controller-p"
 
 		if(com())

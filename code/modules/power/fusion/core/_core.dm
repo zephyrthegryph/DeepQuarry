@@ -55,7 +55,7 @@ DECLARE_REF(/obj/machinery/power/fusion_core, "material_sample", SPILL, null)
 			FCC.cur_viewed_device_handle = null
 
 /obj/machinery/power/fusion_core/proc/check_core_status()
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		return
 	if(idle_power_usage > avail())
 		return
@@ -63,7 +63,7 @@ DECLARE_REF(/obj/machinery/power/fusion_core, "material_sample", SPILL, null)
 
 /// Runs its field while it has one; shut down, it sleeps until Startup().
 /obj/machinery/power/fusion_core/machine_step()
-	if((stat & BROKEN) || !power_region || !owned_field)
+	if((has_stat(BROKEN)) || !power_region || !owned_field)
 		Shutdown()
 		return PROCESS_KILL
 

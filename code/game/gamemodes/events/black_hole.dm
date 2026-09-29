@@ -72,9 +72,9 @@ DECLARE_START_TIMER(/obj/effect/bhole, 0.4 SECONDS, PROC_REF(controller))
 /obj/effect/bhole/proc/move()
 	//MOVEMENT
 	if(prob(50))
-		anchored = FALSE
+		set_anchored(FALSE)
 		step(src, pick(GLOB.alldirs))
-		anchored = TRUE
+		set_anchored(TRUE)
 	controller()
 
 /obj/effect/bhole/proc/grav(r, ex_act_force, pull_chance, turf_removal_chance)

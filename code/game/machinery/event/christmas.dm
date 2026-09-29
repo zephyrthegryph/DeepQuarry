@@ -33,10 +33,10 @@
 		return
 	if(user.ckey == santa_ckey)
 		if(anchored == 0)
-			anchored = 1
+			set_anchored(1)
 			to_chat(user,span_notice("You bind the sack, none can make off with it now!"))
 		else
-			anchored = 0
+			set_anchored(0)
 			to_chat(user,span_notice("You unbind the sack, you can now drag it off. But so can anyone else!"))
 	else
 		to_chat(user, span_warning("Only Santa can bind and unbind his sack!"))

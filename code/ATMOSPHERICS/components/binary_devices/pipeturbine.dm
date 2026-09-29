@@ -41,7 +41,7 @@
 
 /obj/machinery/atmospherics/pipeturbine/machine_step()
 	..()
-	if(!anchored || (stat & BROKEN))
+	if(!anchored || (has_stat(BROKEN)))
 		return PROCESS_KILL
 	kin_energy *= 1 - kin_loss
 	dP = max(air_in.return_pressure() - air_out.return_pressure(), 0)
@@ -83,7 +83,7 @@
 	return PROCESS_KILL
 
 /obj/machinery/atmospherics/pipeturbine/proc/gas_wake_condition()
-	return anchored && !(stat & BROKEN) && air_in.return_pressure() - air_out.return_pressure() > 10
+	return anchored && !has_stat(BROKEN) && air_in.return_pressure() - air_out.return_pressure() > 10
 
 /obj/machinery/atmospherics/pipeturbine/proc/wake_from_gas()
 	om_watch_disarm(src, "gas")
@@ -101,7 +101,7 @@
 		add_overlay(image('icons/obj/pipeturbine.dmi', "hi-turb"))
 
 /obj/machinery/atmospherics/pipeturbine/wrench_act(mob/user, obj/item/W)
-	anchored = !anchored
+	set_anchored(!anchored)
 	MACHINE_WAKE(src)
 	playsound(src, W.usesound, 50, 1)
 	to_chat(user, span_notice("You [anchored ? "secure" : "unsecure"] the bolts holding \the [src] to the floor."))
@@ -226,14 +226,14 @@
 		turbine = locate_within(get_step(src,dir), /obj/machinery/atmospherics/pipeturbine)
 		if(!turbine)
 			return
-		if (turbine.stat & (BROKEN) || !turbine.anchored || turn(turbine.dir,180) != dir)
+		if (turbine.has_stat(BROKEN) || !turbine.anchored || turn(turbine.dir,180) != dir)
 			turbine = null
 
 /// Converts its turbine's spin while there is any; parked otherwise, the turbine's own step wakes
 /// it (pipeturbine machine_step()).
 /obj/machinery/power/turbinemotor/machine_step()
 	updateConnection()
-	if(!turbine || !anchored || stat & (BROKEN) || turbine.kin_energy < TURBINE_MIN_KIN_ENERGY)
+	if(!turbine || !anchored || has_stat(BROKEN) || turbine.kin_energy < TURBINE_MIN_KIN_ENERGY)
 		return PROCESS_KILL
 
 	var/power_generated = kin_to_el_ratio * turbine.kin_energy
@@ -241,7 +241,7 @@
 	add_avail(power_generated)
 
 /obj/machinery/power/turbinemotor/wrench_act(mob/user, obj/item/W)
-	anchored = !anchored
+	set_anchored(!anchored)
 	MACHINE_WAKE(src)
 	playsound(src, W.usesound, 50, 1)
 	turbine = null
@@ -250,10 +250,10 @@
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/atmospherics/pipeturbine/step_has_work()
-	return anchored && !(stat & BROKEN) && (kin_energy >= TURBINE_MIN_KIN_ENERGY || gas_wake_condition())
+	return anchored && !has_stat(BROKEN) && (kin_energy >= TURBINE_MIN_KIN_ENERGY || gas_wake_condition())
 
 /obj/machinery/power/turbinemotor/step_has_work()
-	return turbine && anchored && !(stat & BROKEN) && turbine.kin_energy >= TURBINE_MIN_KIN_ENERGY
+	return turbine && anchored && !has_stat(BROKEN) && turbine.kin_energy >= TURBINE_MIN_KIN_ENERGY
 
 #undef TURBINE_MIN_KIN_ENERGY
 

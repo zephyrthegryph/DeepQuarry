@@ -54,7 +54,7 @@ DECLARE_REF(/obj/machinery/computer/fusion_core_control, "monitor", OWNED, null)
 	effect = /obj/machinery/computer/fusion_core_control/proc/interaction_open_ui_impl
 
 /obj/machinery/computer/fusion_core_control/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return TRUE
 
 	monitor.tgui_interact(user)

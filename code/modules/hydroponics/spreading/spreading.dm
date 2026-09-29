@@ -186,10 +186,10 @@ REGISTRY_MEMBERSHIP(/obj/effect/plant, REGISTRY_GROWING_PLANTS)
 		plane = ABOVE_PLANE
 		set_opacity(1)
 		if(!isnull(seed().chems[REAGENT_ID_WOODPULP]))
-			density = TRUE
+			set_density(TRUE)
 	else
 		reset_plane_and_layer()
-		density = FALSE
+		set_density(FALSE)
 
 /obj/effect/plant/proc/calc_dir()
 	var/turf/T = get_turf(src)

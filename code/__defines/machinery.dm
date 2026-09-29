@@ -28,6 +28,10 @@
 #define POWEROFF 0x4  // TBD.
 #define MAINT    0x8  // Under maintenance.
 #define EMPED    0x10 // Temporary broken by EMP pulse.
+/// What operable() (machinery_fields.dm) rejects.
+#define MACHINE_INOPERABLE_FLAGS (NOPOWER | BROKEN | MAINT | EMPED)
+/// Every machine condition bit: has_stat(MACHINE_STAT_ANY) is "anything wrong at all".
+#define MACHINE_STAT_ANY (BROKEN | NOPOWER | POWEROFF | MAINT | EMPED)
 
 // Remote control states
 #define RCON_NO		1

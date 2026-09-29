@@ -27,7 +27,7 @@
 	anchored = TRUE
 	density = TRUE
 	var/datum/gas_mixture/air_contents	// internal reservoir
-	var/mode = DISPOSALMODE_CHARGING
+	mode = DISPOSALMODE_CHARGING
 	var/flush = FALSE	// true if flush handle is pulled
 	var/flushing = FALSE	// true if flushing in progress
 	var/flush_every_ticks = 30 //Every 30 ticks it will look whether it is ready to flush
@@ -63,7 +63,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 		stored = make_from
 		*/
 		qdel(make_from)
-		mode = DISPOSALMODE_OFF
+		set_mode(DISPOSALMODE_OFF)
 
 	var/obj/structure/disposalpipe/trunk/trunk = locate_on(loc, /obj/structure/disposalpipe/trunk)
 
@@ -85,7 +85,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 			var/fill_ratio = (PRESSURE_TANK_VOLUME / environment_volume) * (SEND_PRESSURE / environment_pressure)
 			air_contents.copy_from_ratio(environment, fill_ratio)
 			air_contents.set_volume(PRESSURE_TANK_VOLUME)
-			mode = DISPOSALMODE_CHARGED
+			set_mode(DISPOSALMODE_CHARGED)
 	update_icon()
 
 // it unlinks and ejects its contents.
@@ -120,7 +120,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	MACHINE_SLEEP(src)
 
 /obj/machinery/disposal/proc/gas_wake_condition()
-	if(mode != DISPOSALMODE_CHARGING || (stat & (NOPOWER|BROKEN)))
+	if(mode != DISPOSALMODE_CHARGING || (!operable()))
 		return FALSE
 	var/datum/gas_mixture/environment = loc?.return_air()
 	return environment && can_pressurize_from(environment)
@@ -181,7 +181,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 
 /obj/machinery/disposal/proc/interaction_disposal_insert(mob/user, obj/item/I, datum/interaction/interaction, drag_dropped = FALSE)
 	wake_for_state_change()
-	if(stat & BROKEN || !I || !user || !istype(I))
+	if(has_stat(BROKEN) || !I || !user || !istype(I))
 		return TRUE
 
 	add_fingerprint(user)
@@ -257,7 +257,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 		if(length(slot_contents(CONTAINER_SLOT_DISPOSAL)))
 			to_chat(user, "Eject the items first!")
 		return ITEM_INTERACT_BLOCKING
-	mode = mode == DISPOSALMODE_OFF ? DISPOSALMODE_EJECTONLY : DISPOSALMODE_OFF
+	set_mode(mode == DISPOSALMODE_OFF ? DISPOSALMODE_EJECTONLY : DISPOSALMODE_OFF)
 	playsound(src, I.usesound, 50, 1)
 	to_chat(user, "You [mode == DISPOSALMODE_EJECTONLY ? "remove" : "attach"] the screws around the power connection.")
 	return ITEM_INTERACT_SUCCESS
@@ -345,7 +345,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	var/obj/machinery/disposal/new_bin = new new_disposal_path(loc)
 	if(nametag) // mailer only
 		new_bin.name = "[initial(new_bin.name)]([nametag])"
-	new_bin.stat = stat
+	new_bin.set_stat(stat) // ALLOW(sys_stat_bits): copies the whole condition onto the replacement bin
 	new_bin.dir = new_dir
 	new_bin.mode = mode
 	new_bin.update_icon() // sets up wall outlets
@@ -438,7 +438,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	effect = /obj/machinery/disposal/proc/interaction_disposal_use
 
 /obj/machinery/disposal/proc/interaction_disposal_use(mob/user, obj/item/held, datum/interaction/interaction)
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		return TRUE
 
 	if(user && user.loc == src)
@@ -501,7 +501,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 		to_chat(ui.user, span_warning("The disposal units power is disabled."))
 		return
 
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		return
 
 	add_fingerprint(ui.user)
@@ -511,10 +511,10 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 
 	switch(action)
 		if("pumpOn")
-			mode = DISPOSALMODE_CHARGING
+			set_mode(DISPOSALMODE_CHARGING)
 			update_icon()
 		if("pumpOff")
-			mode = DISPOSALMODE_OFF
+			set_mode(DISPOSALMODE_OFF)
 			update_icon()
 
 		if("engageHandle")
@@ -553,9 +553,9 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 // update the icon & overlays to reflect mode & status
 /obj/machinery/disposal/update_icon()
 	cut_overlays()
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		icon_state = "disposal-broken"
-		mode = DISPOSALMODE_OFF
+		set_mode(DISPOSALMODE_OFF)
 		flush = 0
 		return
 
@@ -564,7 +564,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 		add_overlay("[controls_iconstate]-handle")
 
 	// only handle is shown if no power
-	if(stat & NOPOWER || mode == DISPOSALMODE_EJECTONLY)
+	if(has_stat(NOPOWER) || mode == DISPOSALMODE_EJECTONLY)
 		return
 
 	// 	check for items in disposal - occupied light
@@ -580,7 +580,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 // timed process
 // charge the gas reservoir and perform flush if ready
 /obj/machinery/disposal/machine_step()
-	if(!air_contents || (stat & BROKEN))			// nothing can happen if broken
+	if(!air_contents || (has_stat(BROKEN)))			// nothing can happen if broken
 		update_use_power(USE_POWER_OFF)
 		return PROCESS_KILL
 
@@ -604,7 +604,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	if(mode != DISPOSALMODE_CHARGING) //if off or ready, no need to charge
 		update_use_power(USE_POWER_IDLE)
 	else if(air_contents.return_pressure() >= SEND_PRESSURE)
-		mode = DISPOSALMODE_CHARGED //if full enough, switch to ready mode
+		set_mode(DISPOSALMODE_CHARGED) //if full enough, switch to ready mode
 		update_icon()
 		if(!flush && !length(slot_contents(CONTAINER_SLOT_DISPOSAL)))
 			sleep_until_keys()
@@ -615,7 +615,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 			return PROCESS_KILL
 
 /obj/machinery/disposal/proc/pressurize()
-	if(stat & NOPOWER)			// won't charge if no power
+	if(has_stat(NOPOWER))			// won't charge if no power
 		update_use_power(USE_POWER_OFF)
 		return FALSE
 
@@ -673,7 +673,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	// now reset disposal state
 	flush = FALSE
 	if(mode == DISPOSALMODE_CHARGED)	// if was ready,
-		mode = DISPOSALMODE_CHARGING	// switch to charging
+		set_mode(DISPOSALMODE_CHARGING) // switch to charging
 
 	wake_for_state_change()
 	update_icon()
@@ -685,7 +685,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 		update_icon()	// update icon
 		if(flush || length(slot_contents(CONTAINER_SLOT_DISPOSAL)))
 			wake_for_state_change()
-		else if(mode == DISPOSALMODE_CHARGING && !(stat & NOPOWER) && can_pressurize_from(loc.return_air()) && !power_retry_timer)
+		else if(mode == DISPOSALMODE_CHARGING && !has_stat(NOPOWER) && can_pressurize_from(loc.return_air()) && !power_retry_timer)
 			// A station-wide restoration otherwise wakes every empty bin in the
 			// same tick, their combined pump surge drops the grid, and all of them
 			// go back to sleep without charging. Spread retries across the cycle.
@@ -693,7 +693,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 
 /obj/machinery/disposal/proc/retry_charge_after_power_restore()
 	power_retry_timer = null
-	if(mode == DISPOSALMODE_CHARGING && !(stat & (NOPOWER|BROKEN)) && can_pressurize_from(loc.return_air()))
+	if(mode == DISPOSALMODE_CHARGING && operable() && can_pressurize_from(loc.return_air()))
 		wake_for_state_change()
 
 // called when the bin expels items, generally from a disposal network, or trying to flush without a proper connection.
@@ -822,7 +822,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 
 /// Audit: a unit sleeping on its own key must be idle and empty.
 /obj/machinery/disposal/om_sleep_violation()
-	if(!asleep_on_keys() || (stat & BROKEN))
+	if(!asleep_on_keys() || (has_stat(BROKEN)))
 		return null
 	if(flush || length(slot_contents(CONTAINER_SLOT_DISPOSAL)))
 		return "asleep with [flush ? "a flush pending" : "contents"]"

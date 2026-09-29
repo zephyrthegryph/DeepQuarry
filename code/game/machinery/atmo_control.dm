@@ -19,12 +19,12 @@
 	desc = "Senses atmospheric conditions."
 
 	anchored = TRUE
-	var/state = 0
+	state = 0
 
 	var/id_tag
 	var/frequency = PUMPS_FREQ
 
-	var/on = 1
+	on = 1
 	var/output = 3
 	//Flags:
 	// 1 for pressure

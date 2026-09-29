@@ -112,7 +112,7 @@
 /obj/machinery/computer/looking_glass/emag_act(remaining_charges, mob/user as mob)
 	if (!emagged)
 		playsound(src, 'sound/effects/sparks4.ogg', 75, 1)
-		emagged = 1
+		set_emagged(1)
 		to_chat(user, span_notice("You unlock several programs that were hidden somewhere in memory."))
 		log_game("[key_name(user)] emagged the [name]")
 		return 1
@@ -157,9 +157,8 @@
 	..()
 
 /obj/machinery/computer/looking_glass/power_change()
-	var/oldstat = stat
-	..()
-	if (stat != oldstat && (stat & NOPOWER))
+	. = ..()
+	if (. && (has_stat(NOPOWER)))
 		unload_program()
 
 /// LC-refs: the my_area this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.

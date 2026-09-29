@@ -1356,7 +1356,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 				destroyed = 0
 				repair_damage(max_integrity)
 				update_icon()
-				density = 1
+				set_density(1)
 				to_chat(user, span_notice("You repair \the [src]."))
 				return TRUE
 			var/temp_dir

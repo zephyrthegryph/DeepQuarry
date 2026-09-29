@@ -106,7 +106,7 @@
 	return TRUE
 
 /obj/structure/dispenser/wrench_act(mob/user, obj/item/I)
-	anchored = !anchored
+	set_anchored(!anchored)
 	to_chat(user, span_notice("You [anchored ? "wrench [src] into place" : "lean down and unwrench [src]"]."))
 	return TRUE
 

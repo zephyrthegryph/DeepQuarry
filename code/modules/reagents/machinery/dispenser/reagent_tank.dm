@@ -428,7 +428,7 @@ DECLARE_REAGENTS(/obj/structure/reagent_dispensers/acid, null, list(REAGENT_ID_S
 
 /obj/structure/reagent_dispensers/water_cooler/proc/wrench_act_tool_done(mob/user, obj/item/tool)
 	to_chat(user, span_notice("You [anchored ? "un" : ""]secure \the [src]."))
-	anchored = !anchored
+	set_anchored(!anchored)
 	playsound(src, tool.usesound, 50, TRUE)
 	return ITEM_INTERACT_SUCCESS
 

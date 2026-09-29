@@ -48,7 +48,7 @@
 
 /obj/machinery/artifact_analyser/proc/interaction_artifact_analyser_use(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
-	if(stat & (NOPOWER|BROKEN) || get_dist(src, user) > 1)
+	if(!operable() || get_dist(src, user) > 1)
 		return TRUE
 	tgui_interact(user)
 	return TRUE

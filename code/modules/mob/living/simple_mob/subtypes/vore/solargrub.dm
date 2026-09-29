@@ -154,7 +154,7 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 		L.reagents.add_reagent(poison_type, poison_per_bite)
 
 /mob/living/simple_mob/vore/solargrub/on_death(gibbed)
-	src.anchored = FALSE
+	set_anchored(FALSE)
 	set_light(0)
 	..()
 

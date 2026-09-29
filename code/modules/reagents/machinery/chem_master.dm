@@ -14,7 +14,7 @@
 	var/obj/item/reagent_containers/beaker = null
 	var/obj/item/storage/pill_bottle/loaded_pill_bottle = null
 	var/list/pill_bottle_wrappers = null // Enable customizing pill bottle type
-	var/mode = 0
+	mode = 0
 	var/condi = 0
 	var/useramount = 15 // Last used amount
 	var/pillamount = 10
@@ -103,7 +103,7 @@
 	effect = /obj/machinery/chem_master/proc/interaction_open_ui_impl
 
 /obj/machinery/chem_master/proc/chem_master_not_broken(mob/actor, atom/target, obj/item/held)
-	return !(stat & BROKEN)
+	return !has_stat(BROKEN)
 
 /obj/machinery/chem_master/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user)
@@ -434,7 +434,7 @@
 	. = TRUE
 	switch(action)
 		if("toggle")
-			mode = !mode
+			set_mode(!mode)
 		if("ejectp")
 			if(loaded_pill_bottle)
 				loaded_pill_bottle.forceMove(get_turf(src))

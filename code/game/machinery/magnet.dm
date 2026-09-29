@@ -20,7 +20,7 @@
 	var/magnetic_field = 1 // the range of magnetic attraction
 	var/code = 0 // frequency code, they should be different unless you have a group of magnets working together or something
 	var/center_handle // the center of magnetic attraction
-	var/on = 0
+	on = 0
 	var/magnet_active = 0
 
 	// x, y modifiers to the center turf; (0, 0) is centered on the magnet, whereas (1, -1) is one tile right, one tile down
@@ -113,7 +113,7 @@
 			if("set-code")
 				if(modifier)	code = modifier
 			if("toggle-power")
-				on = !on
+				set_on(!on)
 
 				if(on)
 					magnetic_process()
@@ -122,8 +122,8 @@
 /// Clamps its settings and reconciles its power draw and icon: after every command, and on
 /// every power or break change.
 /obj/machinery/magnetic_module/machine_step()
-	if(stat & NOPOWER)
-		on = 0
+	if(has_stat(NOPOWER))
+		set_on(0)
 
 	// Sanity checks:
 	if(electricity_level <= 0)
@@ -235,14 +235,14 @@
 // structured TGUI MagneticConsole (see
 // code/modules/admin/magnetic_console_panel.dm).
 /obj/machinery/magnetic_controller/proc/interaction_open(mob/user, obj/item/held, datum/interaction/interaction)
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return TRUE
 	user.set_machine(src)
 	tgui_interact(user)
 	return TRUE
 
 /obj/machinery/magnetic_controller/Topic(href, href_list)
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return
 	usr.set_machine(src)
 	add_fingerprint(usr)
@@ -312,7 +312,7 @@
 
 /// One step of the magnet path: signal the next move, then wait by `speed`.
 /obj/machinery/magnetic_controller/proc/magnet_move_step()
-	if(!moving || length(rpath) < 1 || (stat & (BROKEN|NOPOWER)))
+	if(!moving || length(rpath) < 1 || (!operable()))
 		looping = 0
 		return
 

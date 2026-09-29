@@ -64,7 +64,7 @@ DECLARE_INTERACTIONS(/obj/item/emergency_beacon, \
 	beacon_active = TRUE
 	icon_state = "e_beacon_active"
 	user.drop_item()
-	anchored = TRUE
+	set_anchored(TRUE)
 	gps.tracking = TRUE
 	admin_chat_message(message = "'[user?.ckey || "Unknown"]' activated a personal emergency beacon", color = "#FF2222")
 	var/message = "This is an automated distress signal from a MIL-DTL-93352-compliant personal emergency beacon transmitting on [PUB_FREQ*0.1]kHz. \

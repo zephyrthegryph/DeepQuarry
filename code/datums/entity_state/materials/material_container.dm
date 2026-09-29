@@ -473,7 +473,7 @@ DECLARE_REF(/datum/material_container, "owner", BACK, null)
 /datum/material_container/proc/attempt_insert(mob/living/user, obj/item/weapon)
 	if(istype(owner, /obj/machinery))
 		var/obj/machinery/machine = owner
-		if(machine.stat || machine.panel_open)
+		if(machine.has_stat(MACHINE_STAT_ANY) || machine.panel_open)
 			return
 	if(istype(weapon, /obj/item/stack/cable_coil)) // Temporary fix, prevents recycling cable coils
 		to_chat(user, span_warning("\The [weapon] cannot be recycled."))

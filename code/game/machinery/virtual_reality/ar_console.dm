@@ -27,7 +27,7 @@
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
 	if(!occupant)
 		return PROCESS_KILL
-	if(stat & (BROKEN))
+	if(has_stat(BROKEN))
 		if(occupant)
 			perform_exit()
 			visible_message(span_infoplain(span_bold("\The [src]") + " emits a low droning sound, before the pod door clicks open."))
@@ -66,7 +66,7 @@
 
 /obj/machinery/vr_sleeper/alien/proc/interaction_eject_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
-	if(stat & (BROKEN) || (eject_dead && occupant && occupant.stat == DEAD))
+	if(has_stat(BROKEN) || (eject_dead && occupant && occupant.stat == DEAD))
 		perform_exit()
 	else
 		go_out()

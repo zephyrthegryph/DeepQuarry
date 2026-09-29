@@ -36,14 +36,14 @@
 		if(!attached())
 			to_chat(user, "No exposed cable here to attach to.")
 			return ITEM_INTERACT_BLOCKING
-		anchored = TRUE
+		set_anchored(TRUE)
 		mode = 1
 		visible_message(span_notice("[user] attaches [src] to the cable!"))
 		playsound(src, tool.usesound, 50, 1)
 		return ITEM_INTERACT_SUCCESS
 	if(mode == 2)
 		om_task_periodic_stop(src)
-		anchored = FALSE
+		set_anchored(FALSE)
 	mode = 0
 	visible_message(span_notice("[user] detaches [src] from the cable!"))
 	set_light(0)

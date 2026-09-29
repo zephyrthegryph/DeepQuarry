@@ -30,13 +30,13 @@
 DECLARE_REF(/obj/machinery/vending/nifsoft_shop, "entopic", OWNED, null)
 
 /obj/machinery/vending/nifsoft_shop/power_change()
-	..()
+	. = ..()
 	if(!entopic) return //Early APC init(), ignore
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		icon_state = "[initial(icon_state)]-broken"
 		entopic.hide()
 	else
-		if(!(stat & NOPOWER))
+		if(!has_stat(NOPOWER))
 			icon_state = initial(icon_state)
 			entopic.show()
 		else
@@ -162,7 +162,7 @@ DECLARE_REF(/obj/machinery/vending/nifsoft_shop, "entopic", OWNED, null)
 
 /obj/machinery/vending/nifsoft_shop/emag_act(remaining_charges, mob/user) //Yeees, YEEES! Give me that black market tech.
 	if(!emagged || !(categories & CAT_HIDDEN))
-		emagged = 1
+		set_emagged(1)
 		categories |= CAT_HIDDEN
 		to_chat(user, "You short out [src]'s access lock & stock restrictions.")
 		return 1

@@ -712,7 +712,7 @@ DECLARE_INTERACTIONS(/obj/item/survivalcapsule, INTERACT_USE("Deploy", PROC_REF(
 	effect = /obj/machinery/light_switch/survival_pod/proc/interaction_toggle_impl
 
 /obj/machinery/light_switch/survival_pod/proc/interaction_toggle_impl(mob/user, obj/item/held, datum/interaction/interaction)
-	on = !on
+	set_on(!on)
 	playsound(src, 'sound/machines/button.ogg', 100, 1, 0)
 	if(!target_light())
 		var/turf/dT = get_step(src, dir)

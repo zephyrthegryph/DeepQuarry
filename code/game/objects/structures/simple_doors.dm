@@ -134,7 +134,7 @@
 	om_after(src, 1 SECOND, PROC_REF(open_finish))
 
 /obj/structure/simple_door/proc/open_finish()
-	density = FALSE
+	set_density(FALSE)
 	set_opacity(0)
 	state = 1
 	update_icon()
@@ -148,7 +148,7 @@
 	om_after(src, 1 SECOND, PROC_REF(close_finish))
 
 /obj/structure/simple_door/proc/close_finish()
-	density = TRUE
+	set_density(TRUE)
 	set_opacity(1)
 	state = 0
 	update_icon()

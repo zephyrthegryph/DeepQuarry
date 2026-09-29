@@ -1,0 +1,35 @@
+// Core machine state as declared fields (doc/rewrite/systems.md §2).
+//
+// Every write goes through the generated setter (set_on(), set_locked(), stat_add(), ...), which
+// raises the channel only on a real change; tools/ci/sys_rules/fields.py and field_write_lint.py
+// reject direct writes. operable() is the one reader for "powered and working".
+
+OM_FIELD(/obj/machinery, on, FALSE, CHANGE_MACHINE_SETTINGS)
+OM_FIELD(/obj/machinery, active, FALSE, CHANGE_MACHINE_SETTINGS)
+OM_FIELD(/obj/machinery, state, 0, CHANGE_MACHINE_SETTINGS)
+OM_FIELD(/obj/machinery, mode, 0, CHANGE_MACHINE_SETTINGS)
+OM_FIELD(/obj/machinery, locked, FALSE, CHANGE_MACHINE_MODE)
+OM_FIELD(/obj/machinery, emagged, FALSE, CHANGE_MACHINE_SETTINGS)
+
+/// Machine condition bits (BROKEN, NOPOWER, POWEROFF, MAINT, EMPED; code/__defines/machinery.dm).
+/// BROKEN, MAINT and EMPED raise CHANGE_MACHINE_BROKEN, NOPOWER and POWEROFF CHANGE_MACHINE_POWER.
+OM_FLAG_FIELD_BITS(/obj/machinery, stat, 0, CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_POWER, list("[BROKEN]" = CHANGE_MACHINE_BROKEN, "[NOPOWER]" = CHANGE_MACHINE_POWER, "[POWEROFF]" = CHANGE_MACHINE_POWER, "[MAINT]" = CHANGE_MACHINE_BROKEN, "[EMPED]" = CHANGE_MACHINE_BROKEN))
+
+/// Powered and working: none of NOPOWER, BROKEN, MAINT, EMPED (plus `additional_flags`).
+/// interact_offline is deliberately not folded in: it is a UI-reach rule (tgui_status,
+/// CanUseTopic), not "the machine works".
+OM_DERIVE_FIELD(/obj/machinery, operable, CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_POWER)
+/obj/machinery/proc/operable(additional_flags = 0)
+	return !(stat & (MACHINE_INOPERABLE_FLAGS | additional_flags))
+
+/// Anchoring: set_anchored() (atoms_movable.dm) is the setter and raises the family channel.
+OM_FIELD_SETTER(/atom/movable, anchored, 0)
+OM_FIELD_SETTER(/obj/machinery, anchored, CHANGE_MACHINE_ANCHORED)
+OM_FIELD_SETTER(/mob, anchored, CHANGE_MOB_CAN_MOVE)
+
+/// Density: set_density() (_atom.dm) is the setter; a machine hears CHANGE_MACHINE_SETTINGS.
+OM_FIELD_SETTER(/atom, density, 0)
+OM_FIELD_SETTER(/obj/machinery, density, CHANGE_MACHINE_SETTINGS)
+
+/// Vehicles keep their own condition bits (BROKEN, ...), same API as machines.
+OM_FLAG_FIELD(/obj/vehicle, stat, 0, CHANGE_EXPLICIT)

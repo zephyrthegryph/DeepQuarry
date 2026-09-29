@@ -162,7 +162,7 @@ DECLARE_APPEARANCE(/obj/structure/reflector, null, list(APPEARANCE_ANY = list(AP
 			user.visible_message(span_notice("[user] starts to cut [src] free from the floor."),
 								span_notice("You start to cut [src] free from the floor..."),
 								span_hear("You hear welding."))
-			anchored = FALSE
+			set_anchored(FALSE)
 			to_chat(user, span_notice("You cut [src] free from the floor."))
 
 	//Finishing the frame
@@ -196,7 +196,7 @@ DECLARE_APPEARANCE(/obj/structure/reflector, null, list(APPEARANCE_ANY = list(AP
 	if(!I.remove_fuel(1,user))
 		to_chat(user, span_warning("You require fuel to weld the [src]!"))
 		return
-	anchored = TRUE
+	set_anchored(TRUE)
 	user.visible_message(span_notice("[user] welds [src] to the floor."),
 						span_notice("You weld [src] to the floor..."),
 						span_hear("You hear welding."))

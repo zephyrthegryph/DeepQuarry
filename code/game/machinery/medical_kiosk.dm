@@ -46,7 +46,7 @@
 	. = ..()
 	if(panel_open)
 		icon_state = "kiosk_open" // panel
-	else if((stat & (NOPOWER|BROKEN)) || !active_user())
+	else if((!operable()) || !active_user())
 		icon_state = "kiosk_off" // asleep or no power
 	else
 		icon_state = "kiosk" // waiting for user or to finish processing
@@ -59,7 +59,7 @@ EXTEND_INTERACTIONS(/obj/machinery/medical_kiosk, \
 /// Old attack_hand.
 /obj/machinery/medical_kiosk/proc/medical_kiosk_interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(istype(user) && Adjacent(user))
-		if(inoperable() || panel_open)
+		if(!operable() || panel_open)
 			to_chat(user, span_warning("\The [src] seems to be nonfunctional..."))
 		else if(active_user() && active_user() != user)
 			to_chat(user, span_warning("Another patient has begin using this machine. Please wait for them to finish, or their session to time out."))
@@ -100,7 +100,7 @@ EXTEND_INTERACTIONS(/obj/machinery/medical_kiosk, \
 
 /datum/om/prompt/choice/kiosk_service/valid()
 	var/obj/machinery/medical_kiosk/K = subject
-	if(choice == "Cancel" || K.inoperable() || K.panel_open)
+	if(choice == "Cancel" || !K.operable() || K.panel_open)
 		return "cancelled"
 	return null
 
@@ -131,7 +131,7 @@ EXTEND_INTERACTIONS(/obj/machinery/medical_kiosk, \
 /obj/machinery/medical_kiosk/proc/start_using_timed_done(datum/om/task/timed/medical_kiosk_start_using/task)
 	var/mob/living/user = task.actor
 	var/choice = task.choice
-	if(inoperable())
+	if(!operable())
 		return
 
 	// Service completes

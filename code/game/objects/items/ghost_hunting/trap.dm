@@ -136,7 +136,7 @@ DECLARE_REF(/obj/item/ghost_trap, "ghost_reporter", OWNED, null)
 	deployed = TRUE
 	user.drop_from_inventory(src)
 	update_icon()
-	anchored = TRUE
+	set_anchored(TRUE)
 	log_and_message_admins("has set up a [name] at \the [get_area(loc)]", user)
 
 /obj/item/ghost_trap/container_resist(mob/living/escapee)
@@ -182,7 +182,7 @@ DECLARE_INTERACTIONS(/obj/item/ghost_trap, \
 	user.visible_message(span_notice("Something has been freed from \the [src] by [user]."))
 	for(var/A in src?.buckled_mob_list())
 		unbuckle_mob(A)
-	anchored = FALSE
+	set_anchored(FALSE)
 	deployed = FALSE
 /obj/item/ghost_trap/proc/attack_hand_timed_done2(mob/user)
 	user.visible_message(
@@ -190,7 +190,7 @@ DECLARE_INTERACTIONS(/obj/item/ghost_trap, \
 		span_notice("You have deactivated \the [src]!")
 		)
 	deployed = FALSE
-	anchored = FALSE
+	set_anchored(FALSE)
 	update_icon()
 
 /obj/item/ghost_trap/proc/catch_ghost(mob/passing_entity)
@@ -241,7 +241,7 @@ DECLARE_INTERACTIONS(/obj/item/ghost_trap, \
 		GLOB.motiontracker_service.ping(src,100) // Clunk!
 		catch_ghost(passing_entity)
 		deployed = FALSE
-		anchored = FALSE
+		set_anchored(FALSE)
 		update_icon()
 		log_and_message_admins("has been captured at \the [get_area(loc)] by the [name], last touched by [forensic_data?.get_lastprint()]", passing_entity)
 

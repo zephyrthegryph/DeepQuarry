@@ -217,7 +217,7 @@
 	if(isrobot(user)) //Robots cannot unequip/drop items, for Safety Reasons.
 		forceMove(T)
 	user.drop_item(T)
-	anchored = TRUE
+	set_anchored(TRUE)
 	on_anchored()
 	switch(ndir)
 		if(NORTH)

@@ -542,7 +542,7 @@
 
 /obj/machinery/librarycomp/emag_act(remaining_charges, mob/user)
 	if (src.density && !src.emagged)
-		src.emagged = 1
+		set_emagged(1)
 		return 1
 
 /*

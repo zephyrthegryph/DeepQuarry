@@ -2,7 +2,7 @@
 
 /obj/machinery/bodyscanner
 	maintenance_flags = MACHINE_MAINT_STANDARD
-	var/locked
+	locked = null
 	name = "Body Scanner"
 	icon = 'icons/obj/Cryogenic2.dmi'
 	icon_state = "body_scanner_0"
@@ -41,8 +41,8 @@ DECLARE_REF(/obj/machinery/bodyscanner, "console", PAIR, "scanner")
 	// left to do it for them.
 
 /obj/machinery/bodyscanner/power_change()
-	..()
-	if(!(stat & (BROKEN|NOPOWER)))
+	. = ..()
+	if(operable())
 		set_light(2)
 	else
 		set_light(0)
@@ -345,7 +345,7 @@ EXTEND_INTERACTIONS(/obj/machinery/body_scanconsole, \
 
 /// Old attack_hand (it never reached the machinery gate).
 /obj/machinery/body_scanconsole/proc/body_scanconsole_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return TRUE
 
 	if(!scanner)
@@ -416,7 +416,7 @@ EXTEND_INTERACTIONS(/obj/machinery/body_scanconsole, \
 	if(console)
 		console.update_icon(h_ratio)
 
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		state = "gradient_gray"
 		scan = FALSE
 		set_light(0)
@@ -461,7 +461,7 @@ EXTEND_INTERACTIONS(/obj/machinery/body_scanconsole, \
 		add_overlay(gradient)
 
 /obj/machinery/body_scanconsole/update_icon(h_ratio)
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		icon_state = "scanner_terminal_off"
 		set_light(0)
 	else

@@ -4,7 +4,7 @@
 	icon = 'icons/obj/stationobjs.dmi'
 	icon_state = "igniter1"
 	var/id = null
-	var/on = 1.0
+	on = 1.0
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
 	idle_power_usage = 2
@@ -25,7 +25,7 @@
 /obj/machinery/igniter/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	use_power(50)
-	on = !(on)
+	set_on(!(on))
 	icon_state = text("igniter[]", on)
 	if(on)
 		MACHINE_WAKE(src)
@@ -36,7 +36,7 @@
 /obj/machinery/igniter/machine_step()
 	if(!on)
 		return PROCESS_KILL
-	if(stat & NOPOWER)
+	if(has_stat(NOPOWER))
 		return sleep_until_powered()
 	var/turf/location = src.loc
 	if(isturf(location))
@@ -45,8 +45,8 @@
 DECLARE_APPEARANCE(/obj/machinery/igniter, "on", list("0" = list(APPEARANCE_ICON_STATE = "igniter0"), "1" = list(APPEARANCE_ICON_STATE = "igniter1")))
 
 /obj/machinery/igniter/power_change()
-	..()
-	if(!(stat & NOPOWER))
+	. = ..()
+	if(!has_stat(NOPOWER))
 		icon_state = "igniter[on]"
 	else
 		icon_state = "igniter0"
@@ -69,8 +69,8 @@ DECLARE_APPEARANCE(/obj/machinery/igniter, "on", list("0" = list(APPEARANCE_ICON
 	active_power_usage = 4
 
 /obj/machinery/sparker/power_change()
-	..()
-	if(!(stat & NOPOWER) && disable == 0)
+	. = ..()
+	if(!has_stat(NOPOWER) && disable == 0)
 
 		icon_state = "[base_state]"
 	else
@@ -115,7 +115,7 @@ EXTEND_INTERACTIONS(/obj/machinery/sparker, INTERACT_SILICON("Ignite", PROC_REF(
 	return 1
 
 /obj/machinery/sparker/emp_act(severity, recursive)
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		..(severity, recursive)
 		return
 	ignite()
@@ -143,7 +143,7 @@ EXTEND_INTERACTIONS(/obj/machinery/sparker, INTERACT_SILICON("Ignite", PROC_REF(
 	if(active)
 		return TRUE
 
-	active = TRUE
+	set_active(TRUE)
 	icon_state = "launcheract"
 
 	for(var/obj/machinery/sparker/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
@@ -163,7 +163,7 @@ EXTEND_INTERACTIONS(/obj/machinery/sparker, INTERACT_SILICON("Ignite", PROC_REF(
 	PRIVATE_PROC(TRUE)
 
 	icon_state = "launcherbtt"
-	active = FALSE
+	set_active(FALSE)
 
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).

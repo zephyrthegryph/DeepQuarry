@@ -27,7 +27,7 @@
 
 /obj/machinery/portable_atmospherics/powered/scrubber/emp_act(severity, recursive)
 	. = ..()
-	if (. & EMP_PROTECT_SELF || stat & (BROKEN|NOPOWER))
+	if (. & EMP_PROTECT_SELF || !operable())
 		return
 
 	if(prob(50/severity))
@@ -206,19 +206,18 @@
 /obj/machinery/portable_atmospherics/powered/scrubber/huge/update_icon()
 	src.overlays = 0
 
-	if(on && !(stat & (NOPOWER|BROKEN)))
+	if(on && operable())
 		icon_state = "scrubber:1"
 	else
 		icon_state = "scrubber:0"
 
 /obj/machinery/portable_atmospherics/powered/scrubber/huge/power_change()
-	var/old_stat = stat
-	..()
-	if (old_stat != stat)
+	. = ..()
+	if (.)
 		update_icon()
 
 /obj/machinery/portable_atmospherics/powered/scrubber/huge/machine_step()
-	if(!anchored || (stat & (NOPOWER|BROKEN)))
+	if(!anchored || (!operable()))
 		set_on(0)
 		last_flow_rate = 0
 		last_power_draw = 0
@@ -256,7 +255,7 @@
 	if(on)
 		to_chat(user, span_warning("Turn \the [src] off first!"))
 		return ITEM_INTERACT_BLOCKING
-	anchored = !anchored
+	set_anchored(!anchored)
 	playsound(src, tool.usesound, 50, TRUE)
 	to_chat(user, span_notice("You [anchored ? "wrench" : "unwrench"] \the [src]."))
 	return ITEM_INTERACT_SUCCESS
@@ -277,7 +276,7 @@
 	return ITEM_INTERACT_BLOCKING
 
 /obj/machinery/portable_atmospherics/powered/scrubber/huge/step_has_work()
-	return on && anchored && !(stat & (NOPOWER|BROKEN))
+	return on && anchored && operable()
 
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).

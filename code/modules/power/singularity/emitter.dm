@@ -14,7 +14,7 @@
 	use_power = USE_POWER_OFF	//uses grid power, not APC power
 	active_power_usage = 30000	//30 kW laser. I guess that means 30 kJ per shot.
 
-	var/active = 0
+	active = 0
 	var/powered = 0
 	var/fire_delay = 100
 	var/max_burst_delay = 100
@@ -22,8 +22,8 @@
 	var/burst_shots = 3
 	COOLDOWN_DECLARE(shot_cooldown)
 	var/shot_number = 0
-	var/state = 0
-	var/locked = 0
+	state = 0
+	locked = 0
 
 	// Anomaly harvesting stuff
 	var/anomalous = FALSE
@@ -68,14 +68,14 @@
 			return 1
 		if(!src.locked)
 			if(src.active==1)
-				src.active = 0
+				set_active(0)
 				MACHINE_SLEEP(src)
 				balloon_alert_visible("turned off")
 				message_admins("Emitter turned off by [key_name(user, user.client)](<A href='byond://?_src_=holder;[HrefToken()];adminmoreinfo=\ref[user]'>?</A>) in ([x],[y],[z] - <A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)",0,1)
 				log_game("EMITTER([x],[y],[z]) OFF by [key_name(user)]")
 				investigate_log("turned " + span_red("off") + " by [user.key]","singulo")
 			else
-				src.active = 1
+				set_active(1)
 				material_last_charge = world.time
 				MACHINE_WAKE(src)
 				balloon_alert_visible("turned on")
@@ -92,10 +92,10 @@
 		return 1
 
 /obj/machinery/power/emitter/machine_step()
-	if(stat & (BROKEN))
+	if(has_stat(BROKEN))
 		return PROCESS_KILL
 	if(src.state != 2 || (!power_region && active_power_usage))
-		src.active = 0
+		set_active(0)
 		update_icon()
 		return PROCESS_KILL
 	if(!active)
@@ -156,19 +156,19 @@
 			return
 		switch(state)
 			if(0)
-				state = 1
+				set_state(1)
 				playsound(src, W.usesound, 75, 1)
 				user.visible_message("[user.name] secures [src] to the floor.", \
 					"You secure the external reinforcing bolts to the floor.", \
 					"You hear a ratchet.")
-				src.anchored = TRUE
+				set_anchored(TRUE)
 			if(1)
-				state = 0
+				set_state(0)
 				playsound(src, W.usesound, 75, 1)
 				user.visible_message("[user.name] unsecures [src] reinforcing bolts from the floor.", \
 					"You undo the external reinforcing bolts.", \
 					"You hear a ratchet.")
-				src.anchored = FALSE
+				set_anchored(FALSE)
 				disconnect_from_network()
 			if(2)
 				to_chat(user, span_warning("\The [src] needs to be unwelded from the floor."))
@@ -193,13 +193,13 @@
 /obj/machinery/power/emitter/proc/construction_tool_act_tool_done(mob/user)
 	if(!src)
 		return
-	state = 2
+	set_state(2)
 	to_chat(user, "You weld [src] to the floor.")
 	connect_to_network()
 /obj/machinery/power/emitter/proc/construction_tool_act_tool_done2(mob/user)
 	if(!src)
 		return
-	state = 1
+	set_state(1)
 	to_chat(user, "You cut [src] free from the floor.")
 	disconnect_from_network()
 
@@ -259,7 +259,7 @@
 		to_chat(user, span_warning("The lock seems to be broken."))
 		return TRUE
 	if(allowed(user))
-		locked = !locked
+		set_locked(!locked)
 		to_chat(user, "The controls are now [locked ? "locked." : "unlocked."]")
 		update_icon()
 	else
@@ -300,8 +300,8 @@
 
 /obj/machinery/power/emitter/emag_act(remaining_charges, mob/user)
 	if(!emagged)
-		locked = 0
-		emagged = 1
+		set_locked(0)
+		set_emagged(1)
 		user.visible_message("[user.name] emags [src].",span_warning("You short out the lock."))
 		return 1
 

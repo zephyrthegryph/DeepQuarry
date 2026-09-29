@@ -9,13 +9,13 @@
 	use_power = USE_POWER_OFF
 	interact_offline = TRUE
 
-	var/active = 0
+	active = 0
 	var/power_gen = 5000
 	var/recent_fault = 0
 	var/power_output = 1
 
 /obj/machinery/power/port_gen/proc/IsBroken()
-	return (stat & (BROKEN|EMPED))
+	return (has_stat(BROKEN | EMPED))
 
 /obj/machinery/power/port_gen/proc/HasFuel() //Placeholder for fuel check.
 	return 1
@@ -31,10 +31,10 @@
 
 /obj/machinery/power/port_gen/proc/TogglePower()
 	if(active)
-		active = FALSE
+		set_active(FALSE)
 		update_icon()
 	else if(HasFuel())
-		active = TRUE
+		set_active(TRUE)
 		update_icon()
 	MACHINE_WAKE(src)
 
@@ -43,7 +43,7 @@
 		set_power_supply(power_gen * power_output)
 		UseFuel()
 	else
-		active = FALSE
+		set_active(FALSE)
 		set_power_supply(0)
 		update_icon()
 		if(!handleInactive())
@@ -88,19 +88,19 @@
 	var/duration = 6000 //ten minutes
 	switch(severity)
 		if(EMP_HEAVY)
-			stat |= BROKEN
+			stat_add(BROKEN)
 			if(prob(75)) explode()
 		if(EMP_MEDIUM)
-			if(prob(50)) stat |= BROKEN
+			if(prob(50)) stat_add(BROKEN)
 			if(prob(10)) explode()
 		if(EMP_LIGHT)
-			if(prob(25)) stat |= BROKEN
+			if(prob(25)) stat_add(BROKEN)
 			duration = 300
 		if(EMP_HARMLESS)
-			if(prob(10)) stat |= BROKEN
+			if(prob(10)) stat_add(BROKEN)
 			duration = 300
 
-	stat |= EMPED
+	stat_add(EMPED)
 	if(duration)
 		om_after(src, duration, PROC_REF(emp_recover))
 
@@ -279,7 +279,7 @@
 		explode() //if they're foolish enough to emag while it's running
 
 	if (!emagged)
-		emagged = 1
+		set_emagged(1)
 		return 1
 
 /obj/machinery/power/port_gen/pacman/declare_interactions(list/into)
@@ -351,7 +351,7 @@
 		disconnect_from_network()
 		to_chat(user, span_notice("You unsecure the generator from the floor."))
 	playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
-	anchored = !anchored
+	set_anchored(!anchored)
 	return ITEM_INTERACT_SUCCESS
 
 /// Old attack_hand: base was always called first, then opened the interface if anchored.
@@ -1179,7 +1179,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/power/rtg/abductor/hybrid/built, "cell", /o
 		asplod()
 
 /obj/machinery/power/port_gen/proc/emp_recover()
-	stat &= ~EMPED
+	stat_remove(EMPED)
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/power/rtg/step_start_condition()

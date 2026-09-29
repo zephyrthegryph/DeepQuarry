@@ -42,7 +42,7 @@
 /obj/machinery/computer/rdservercontrol/emag_act(remaining_charges, mob/user, emag_source)
 	if(emagged)
 		return FALSE
-	emagged = TRUE
+	set_emagged(TRUE)
 	playsound(src, "sparks", 75, TRUE)
 	balloon_alert(user, "console emagged")
 	return TRUE

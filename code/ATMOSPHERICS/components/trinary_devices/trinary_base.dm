@@ -46,9 +46,8 @@
 	update_underlays()
 
 /obj/machinery/atmospherics/trinary/power_change()
-	var/old_stat = stat
 	. = ..()
-	if(old_stat != stat)
+	if(.)
 		update_icon()
 
 /obj/machinery/atmospherics/trinary/wrench_act(mob/user, obj/item/W)

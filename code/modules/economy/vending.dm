@@ -24,7 +24,7 @@
 	var/vend_power_usage = 150 //actuators and stuff
 
 	// Vending-related
-	var/active = 1 //No sales pitches if off!
+	active = 1 //No sales pitches if off!
 	var/vend_ready = 1 //Are we ready to vend?? Is it time??
 	var/vend_delay = 10 //How long does it take to vend?
 	var/categories = CAT_NORMAL // Bitmask of cats we're currently showing
@@ -199,7 +199,7 @@ DECLARE_REF(/obj/machinery/vending, "product_records", OWNED_LIST, null)
 
 /obj/machinery/vending/emag_act(remaining_charges, mob/user)
 	if(!emagged)
-		emagged = 1
+		set_emagged(1)
 		to_chat(user, span_filter_notice("You short out \the [src]'s product lock."))
 		return 1
 
@@ -241,7 +241,7 @@ DECLARE_REF(/obj/machinery/vending, "product_records", OWNED_LIST, null)
 	effect = /obj/machinery/vending/proc/interaction_refill
 
 /obj/machinery/vending/proc/interaction_refill(mob/user, obj/item/refill_cartridge/RC, datum/interaction/interaction)
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		to_chat(user, span_notice("You cannot refill [src] while it is not functioning."))
 		return TRUE
 	if(!anchored)
@@ -404,7 +404,7 @@ DECLARE_REF(/obj/machinery/vending, "product_records", OWNED_LIST, null)
 	effect = /obj/machinery/vending/proc/interaction_use
 
 /obj/machinery/vending/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return TRUE
 
 	if(seconds_electrified != 0)
@@ -492,7 +492,7 @@ DECLARE_REF(/obj/machinery/vending, "product_records", OWNED_LIST, null)
 	return data
 
 /obj/machinery/vending/tgui_act(action, params, datum/tgui/ui)
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return
 	if(ui.user.stat || ui.user.restrained())
 		return
@@ -730,7 +730,7 @@ DECLARE_REF(/obj/machinery/vending, "product_records", OWNED_LIST, null)
 	SStgui.update_uis(src)
 
 /obj/machinery/vending/machine_step()
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return PROCESS_KILL
 
 	if(!active)
@@ -756,7 +756,7 @@ DECLARE_REF(/obj/machinery/vending, "product_records", OWNED_LIST, null)
 	return
 
 /obj/machinery/vending/proc/speak(message)
-	if(stat & NOPOWER)
+	if(has_stat(NOPOWER))
 		return
 
 	if(!message)
@@ -767,11 +767,11 @@ DECLARE_REF(/obj/machinery/vending, "product_records", OWNED_LIST, null)
 	return
 
 /obj/machinery/vending/power_change()
-	..()
-	if(stat & BROKEN)
+	. = ..()
+	if(has_stat(BROKEN))
 		icon_state = "[initial(icon_state)]-broken"
 	else
-		if(!(stat & NOPOWER))
+		if(!has_stat(NOPOWER))
 			icon_state = initial(icon_state)
 			// machine_step() sleeps on NOPOWER; resume timed work on restore.
 			if(active && (seconds_electrified > 0 || shoot_inventory || (!shut_up && length(slogan_list))))

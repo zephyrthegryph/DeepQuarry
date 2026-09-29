@@ -131,10 +131,10 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/chemical_synthesizer, "catalyst", /obj/item
 
 /obj/machinery/chemical_synthesizer/update_icon()
 	underlays.Cut()
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		icon_state = "synth_broken"
 		return
-	if(stat & NOPOWER)
+	if(has_stat(NOPOWER))
 		icon_state = "synth_off"
 		return
 	if(!busy)
@@ -229,7 +229,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/chemical_synthesizer, "catalyst", /obj/item
 	if(catalyst)
 		to_chat(user, span_warning("There is already \a [catalyst] in \the [src] catalyst slot!"))
 		return TRUE
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		to_chat(user, span_warning("The clamp will not secure the catalyst while the machine is down!"))
 		return TRUE
 
@@ -270,7 +270,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/chemical_synthesizer, "catalyst", /obj/item
 /obj/machinery/chemical_synthesizer/machine_step()
 	if(!_recharge_reagents)
 		return PROCESS_KILL
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return sleep_until_powered()
 	var/short = FALSE
 	for(var/label in cartridges)
@@ -508,7 +508,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/chemical_synthesizer, "catalyst", /obj/item
 
 /// Old attack_ghost: view the interface while it works. Never fell through.
 /obj/machinery/chemical_synthesizer/proc/chem_synthesizer_ghost_view(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!(stat & (BROKEN|NOPOWER)))
+	if(operable())
 		tgui_interact(user)
 	return TRUE
 
@@ -519,7 +519,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/chemical_synthesizer, "catalyst", /obj/item
 	effect = /obj/machinery/chemical_synthesizer/proc/interaction_use
 
 /obj/machinery/chemical_synthesizer/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return TRUE
 	tgui_interact(user)
 	return TRUE
@@ -625,7 +625,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/chemical_synthesizer, "catalyst", /obj/item
 	if(stalled) // Incase SOMEHOW this var is true when the machine isn't running.
 		stalled = FALSE
 
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return
 
 	if(!queue)
@@ -666,7 +666,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/chemical_synthesizer, "catalyst", /obj/item
 		stall()
 		return
 
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		stall()
 		return
 
@@ -683,7 +683,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/chemical_synthesizer, "catalyst", /obj/item
 		stall()
 		return
 
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		stall()
 		return
 
@@ -740,7 +740,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/chemical_synthesizer, "catalyst", /obj/item
 
 // Now that we're done, bottle up the product.
 /obj/machinery/chemical_synthesizer/proc/bottle_product(r_id)
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		stall()
 		return
 

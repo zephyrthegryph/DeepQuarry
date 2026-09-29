@@ -922,7 +922,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 		if(O == selection)
 			LAZYREMOVE(pinned, O)
 		if(!LAZYLEN(pinned))
-			anchored = FALSE
+			set_anchored(FALSE)
 	return 1
 
 /mob/proc/yank_out_object()

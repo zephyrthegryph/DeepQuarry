@@ -31,7 +31,7 @@
 		return
 
 	power_change()
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return
 
 	// extract and filter side products

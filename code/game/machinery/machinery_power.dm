@@ -37,15 +37,10 @@
 // Returns TRUE if NOPOWER stat flag changed.
 // can override if needed
 /obj/machinery/proc/power_change()
-	var/oldstat = stat
-	if(powered(power_channel))
-		stat &= ~NOPOWER
-	else
-		stat |= NOPOWER
-	if(stat == oldstat)
+	var/changed = powered(power_channel) ? stat_remove(NOPOWER) : stat_add(NOPOWER)
+	if(!changed) // the setter raised CHANGE_MACHINE_POWER
 		return FALSE
-	OM_CHANGED(src, CHANGE_MACHINE_POWER) // dm-health: tracked(CHANGE_MACHINE_POWER)
-	if(stat & NOPOWER)
+	if(has_stat(NOPOWER))
 		OM_EMIT(src, /datum/om/event/machinery_power_lost)
 	else
 		OM_EMIT(src, /datum/om/event/machinery_power_restored)

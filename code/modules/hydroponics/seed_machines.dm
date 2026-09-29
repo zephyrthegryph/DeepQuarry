@@ -50,7 +50,7 @@ DECLARE_INTERACTIONS(/obj/item/disk/botany, INTERACT_USE(null, PROC_REF(interact
 	var/obj/item/disk/botany/loaded_disk //Currently loaded data disk.
 
 	var/open = 0
-	var/active = 0
+	active = 0
 	var/action_time = 5
 	COOLDOWN_DECLARE(action_cooldown)
 	var/eject_disk = 0
@@ -88,7 +88,7 @@ DECLARE_REF(/obj/machinery/botany, "loaded_disk", SPILL, null)
 	return TRUE
 
 /obj/machinery/botany/proc/finished_task()
-	active = 0
+	set_active(0)
 	if(failed_task)
 		failed_task = 0
 		visible_message(span_filter_notice("[icon2html(src,viewers(src))] [src] pings unhappily, flashing a red warning light."))
@@ -181,7 +181,7 @@ DECLARE_REF(/obj/machinery/botany, "loaded_disk", SPILL, null)
 /obj/machinery/botany/wrench_act(mob/user, obj/item/tool)
 	playsound(src, tool.usesound, 100, TRUE)
 	to_chat(user, span_notice("You [anchored ? "un" : ""]secure \the [src]."))
-	anchored = !anchored
+	set_anchored(!anchored)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/botany/crowbar_act(mob/user, obj/item/tool)
@@ -275,7 +275,7 @@ DECLARE_REF(/obj/machinery/botany, "loaded_disk", SPILL, null)
 				return
 
 			COOLDOWN_START(src, action_cooldown, action_time)
-			active = 1
+			set_active(1)
 
 			if(seed && seed.seed())
 				genetics_static = seed.seed()
@@ -290,7 +290,7 @@ DECLARE_REF(/obj/machinery/botany, "loaded_disk", SPILL, null)
 				return
 
 			COOLDOWN_START(src, action_cooldown, action_time)
-			active = 1
+			set_active(1)
 
 			var/datum/plantgene/P = genetics().get_gene(params["get_gene"])
 			if(!P)
@@ -374,7 +374,7 @@ DECLARE_REF(/obj/machinery/botany, "loaded_disk", SPILL, null)
 				return
 
 			COOLDOWN_START(src, action_cooldown, action_time)
-			active = 1
+			set_active(1)
 
 			if(!isnull(GLOB.plant_service.seeds[seed.seed().name]))
 				seed.seed_static = seed.seed().diverge(1)

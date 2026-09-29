@@ -18,7 +18,7 @@
 /obj/structure/displaycase/atom_destruction(damage_flag)
 	SHOULD_CALL_PARENT(FALSE)
 	if(!destroyed)
-		density = FALSE
+		set_density(FALSE)
 		destroyed = 1
 		new /obj/item/material/shard( src.loc )
 		playsound(src, "shatter", 70, 1)

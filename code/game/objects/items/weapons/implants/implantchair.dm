@@ -157,7 +157,7 @@
 	effect = /obj/machinery/implantchair/proc/interaction_move_inside
 
 /obj/machinery/implantchair/proc/interaction_move_inside(mob/user, obj/item/held, datum/interaction/interaction)
-	if(user.stat != 0 || stat & (NOPOWER|BROKEN))
+	if(user.stat != 0 || !operable())
 		return TRUE
 	put_mob(user)
 	return TRUE

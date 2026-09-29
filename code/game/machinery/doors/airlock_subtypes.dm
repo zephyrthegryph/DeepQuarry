@@ -382,14 +382,14 @@
 	mineral = MAT_URANIUM
 	COOLDOWN_DECLARE(event_cooldown)
 	/// Mutex to prevent infinite recursion when propagating radiation pulses
-	var/active = null
+	active = null
 
 /obj/machinery/door/airlock/uranium/proc/radiate()
 	if(active)
 		return
 	if(!COOLDOWN_FINISHED(src, event_cooldown))
 		return
-	active = TRUE
+	set_active(TRUE)
 	radiation_pulse(
 		src,
 		max_range = 3,
@@ -399,7 +399,7 @@
 		strength = 5,
 	)
 	COOLDOWN_START(src, event_cooldown, 1.5 SECONDS)
-	active = FALSE
+	set_active(FALSE)
 
 /obj/machinery/door/airlock/uranium_appearance
 	icon = 'icons/obj/doors/Dooruranium.dmi'

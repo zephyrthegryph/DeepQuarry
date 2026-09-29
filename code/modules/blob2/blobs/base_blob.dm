@@ -136,7 +136,7 @@ DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = 'so
 
 /// The second half of expand(): the new blob slides into `T`.
 /obj/structure/blob/proc/slide_into(turf/T, obj/structure/blob/origin, expand_reaction)
-	density = initial(density)
+	set_density(initial(density))
 	forceMove(T)
 	update_icon()
 	if(overmind && expand_reaction)

@@ -18,7 +18,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/transhuman/autoresleever, REGISTRY_AUTORESLEE
 
 /obj/machinery/transhuman/autoresleever/update_icon()
 	. = ..()
-	if(stat & (BROKEN | MAINT | EMPED))
+	if(has_stat(BROKEN | MAINT | EMPED))
 		icon_state = "autoresleever-o"
 	else
 		icon_state = "autoresleever"
@@ -72,7 +72,7 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/autoresleever, \
 	return INTERACTION_HANDLED_PASS
 
 /obj/machinery/transhuman/autoresleever/proc/autoresleeve(mob/observer/dead/ghost)
-	if(stat & (BROKEN | MAINT | EMPED)) // Let it still work when power is just off, it has it's own backup reserve or something.
+	if(has_stat(BROKEN | MAINT | EMPED)) // Let it still work when power is just off, it has it's own backup reserve or something.
 		to_chat(ghost, span_warning("This machine is not functioning..."))
 		return
 	if(!isobserver(ghost))

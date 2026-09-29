@@ -53,7 +53,7 @@
 	if(alarm)
 		icon_state = "fdiffuser_emergency"
 		return
-	if((stat & (NOPOWER | BROKEN)) || !enabled)
+	if((!operable()) || !enabled)
 		icon_state = "fdiffuser_off"
 	else
 		icon_state = "fdiffuser_on"
@@ -101,7 +101,7 @@
 	for(var/direction in GLOB.cardinal)
 		var/turf/neighbor = get_step(center, direction)
 		for(var/obj/machinery/shield_diffuser/D in turf_contents_of_type(neighbor, /obj/machinery/shield_diffuser))
-			if(D.enabled && !D.alarm && !(D.stat & (NOPOWER | BROKEN)))
+			if(D.enabled && !D.alarm && D.operable())
 				return TRUE
 	return FALSE
 

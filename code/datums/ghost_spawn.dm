@@ -162,7 +162,7 @@ GLOBAL_VAR_INIT(allowed_ghost_spawns, 2)
 	var/timedifference_text = time_diff > 0 ? time2text(time_diff, "mm:ss") : ""
 	var/list/all_fabricators = list()
 	for(var/obj/machinery/drone_fabricator/DF in REGISTRY_MEMBERS(REGISTRY_DRONE_FABRICATORS))
-		if(DF.stat & NOPOWER || !DF.produce_drones)
+		if(DF.has_stat(NOPOWER) || !DF.produce_drones)
 			continue
 		if(DF.drone_progress >= 100)
 			all_fabricators += list(REF(DF) = DF.fabricator_tag)

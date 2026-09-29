@@ -62,7 +62,7 @@
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
 	if(!occupant)
 		return PROCESS_KILL
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		if(occupant)
 			occupant.exit_vr(FALSE)
 			visible_message(span_infoplain(span_bold("\The [src]") + " emits a low droning sound, before the pod door clicks open."))
@@ -152,7 +152,7 @@
 /obj/machinery/vr_sleeper/emp_act(severity, recursive)
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
 	. = ..()
-	if (. & EMP_PROTECT_SELF || stat & (BROKEN|NOPOWER))
+	if (. & EMP_PROTECT_SELF || !operable())
 		return
 
 	if(occupant)
@@ -175,7 +175,7 @@
 
 /obj/machinery/vr_sleeper/proc/interaction_eject(mob/user, obj/item/held, datum/interaction/interaction)
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
-	if(stat & (BROKEN|NOPOWER) || occupant && occupant.stat == DEAD)
+	if(!operable() || occupant && occupant.stat == DEAD)
 		perform_exit()
 	else
 		go_out()
@@ -204,7 +204,7 @@
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
 	if(!M)
 		return
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return
 	if(!ishuman(M))
 		to_chat(user, span_warning("\The [src] rejects [M] with a sharp beep."))

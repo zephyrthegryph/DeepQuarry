@@ -89,13 +89,13 @@ REGISTRY_MEMBERSHIP(/obj/machinery/requests_console, REGISTRY_ALARM_CONSOLES)
 	..()
 
 /obj/machinery/requests_console/power_change()
-	..()
+	. = ..()
 	update_icon()
 
 /obj/machinery/requests_console/update_icon()
 	cut_overlays()
 
-	if(stat & NOPOWER)
+	if(has_stat(NOPOWER))
 		set_light(0)
 		set_light_on(FALSE)
 		icon_state = "req_comp_off"
@@ -268,7 +268,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/requests_console, REGISTRY_ALARM_CONSOLES)
 		reset_message(1)
 	. = TRUE
 /obj/machinery/requests_console/proc/interaction_id(mob/user, obj/item/held, datum/interaction/interaction)
-	if(inoperable(MAINT))
+	if(!operable(MAINT))
 		return TRUE
 	if(screen == RCS_MESSAUTH)
 		var/obj/item/card/id/T = held
@@ -286,7 +286,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/requests_console, REGISTRY_ALARM_CONSOLES)
 	return TRUE
 
 /obj/machinery/requests_console/proc/interaction_stamp(mob/user, obj/item/held, datum/interaction/interaction)
-	if(inoperable(MAINT))
+	if(!operable(MAINT))
 		return TRUE
 	if(screen == RCS_MESSAUTH)
 		var/obj/item/stamp/T = held

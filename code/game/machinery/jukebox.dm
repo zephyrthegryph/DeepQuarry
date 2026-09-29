@@ -34,7 +34,7 @@
 	wires = new/datum/wires/jukebox(src)
 	update_icon()
 	if(!LAZYLEN(getTracksList()))
-		stat |= BROKEN
+		stat_add(BROKEN)
 	make_climbable()
 
 /obj/machinery/media/jukebox/proc/getTracksList()
@@ -43,7 +43,7 @@
 /obj/machinery/media/jukebox/machine_step()
 	if(!playing)
 		return PROCESS_KILL
-	if(inoperable())
+	if(!operable())
 		disconnect_media_source()
 		playing = 0
 		return PROCESS_KILL
@@ -116,7 +116,7 @@
 	if(playing)
 		StopPlaying()
 	user.visible_message(span_warning("[user] has [anchored ? "un" : ""]secured \the [src]."), span_notice("You [anchored ? "un" : ""]secure \the [src]."))
-	anchored = !anchored
+	set_anchored(!anchored)
 	playsound(src, tool.usesound, 50, TRUE)
 	power_change()
 	update_icon()
@@ -129,18 +129,18 @@
 
 /obj/machinery/media/jukebox/power_change()
 	if(!powered(power_channel) || !anchored)
-		stat |= NOPOWER
+		stat_add(NOPOWER)
 	else
-		stat &= ~NOPOWER
+		stat_remove(NOPOWER)
 
-	if(stat & (NOPOWER|BROKEN) && playing)
+	if(!operable() && playing)
 		StopPlaying()
 	update_icon()
 
 /obj/machinery/media/jukebox/update_icon()
 	cut_overlays()
-	if(stat & (NOPOWER|BROKEN) || !anchored)
-		if(stat & BROKEN)
+	if(!operable() || !anchored)
+		if(has_stat(BROKEN))
 			icon_state = "[state_base]-broken"
 		else
 			icon_state = "[state_base]-nopower"
@@ -155,13 +155,13 @@
 		add_overlay("panel_open")
 
 /obj/machinery/media/jukebox/interact(mob/user)
-	if(inoperable())
+	if(!operable())
 		to_chat(user, "\The [src] doesn't appear to function.")
 		return
 	tgui_interact(user)
 
 /obj/machinery/media/jukebox/tgui_status(mob/user)
-	if(inoperable())
+	if(!operable())
 		to_chat(user, span_warning("[src] doesn't appear to function."))
 		return STATUS_CLOSE
 	if(!anchored)
@@ -274,7 +274,7 @@
 
 /obj/machinery/media/jukebox/emag_act(remaining_charges, mob/user)
 	if(!emagged)
-		emagged = 1
+		set_emagged(1)
 		StopPlaying()
 		visible_message(span_danger("\The [src] makes a fizzling sound."))
 		update_icon()

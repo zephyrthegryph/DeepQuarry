@@ -173,7 +173,7 @@ DECLARE_REF(/obj/machinery/maint_recycler, "item_overlay", OWNED, null)
 /obj/machinery/maint_recycler/crowbar_act(mob/user, obj/item/tool)
 	if(door_open)
 		return ..()
-	if(!(stat & (BROKEN | NOPOWER)))
+	if(operable())
 		to_chat(user, span_warning("\The [src]'s door won't budge!"))
 		return ITEM_INTERACT_BLOCKING
 	to_chat(user, span_warning("You lever \the [src]'s door open!"))
@@ -535,8 +535,8 @@ UTILITY PROCS
 	return .
 
 /obj/machinery/maint_recycler/power_change()
-	..()
-	if(stat & NOPOWER)
+	. = ..()
+	if(has_stat(NOPOWER))
 		set_on_state(FALSE)
 
 /obj/machinery/maint_recycler/proc/set_screen_state(state, duration = 10)

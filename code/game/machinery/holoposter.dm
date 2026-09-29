@@ -45,13 +45,13 @@ REGISTRY_MEMBERSHIP(/obj/machinery/holoposter, REGISTRY_HOLOPOSTERS)
 	. += examine_addon
 
 /obj/machinery/holoposter/update_icon()
-	if(stat & NOPOWER)
+	if(has_stat(NOPOWER))
 		icon_state = "off"
 		examine_addon = "It appears to be powered off."
 		set_light(0)
 		return
 	var/new_color = LIGHT_COLOR_HALOGEN
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		icon_state = "glitch"
 		examine_addon = "It appears to be malfunctioning."
 		new_color = "#6A6C71"
@@ -82,7 +82,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/holoposter, REGISTRY_HOLOPOSTERS)
 
 /obj/machinery/holoposter/multitool_act(mob/user, obj/item/tool)
 	src.add_fingerprint(user)
-	if(stat & (NOPOWER))
+	if(has_stat(NOPOWER))
 		return ITEM_INTERACT_BLOCKING
 	playsound(src, 'sound/items/penclick.ogg', 60, TRUE)
 	om_ask(user, /datum/om/prompt/choice, PROC_REF(poster_chosen), message = "Available Posters", title = "Holographic Poster", choices = postertypes + "random", requires = PROMPT_ADJACENT)
@@ -90,7 +90,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/holoposter, REGISTRY_HOLOPOSTERS)
 
 /obj/machinery/holoposter/proc/poster_chosen(datum/om/prompt/choice/ask)
 	var/choice = ask.choice
-	if(stat & (NOPOWER))
+	if(has_stat(NOPOWER))
 		return
 	icon_state = choice
 	if(icon_state == "random")
@@ -106,13 +106,13 @@ REGISTRY_MEMBERSHIP(/obj/machinery/holoposter, REGISTRY_HOLOPOSTERS)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/holoposter/power_change()
-	var/wasUnpowered = stat & NOPOWER
-	..()
-	if(wasUnpowered != (stat & NOPOWER))
+	var/wasUnpowered = has_stat(NOPOWER)
+	. = ..()
+	if(wasUnpowered != (has_stat(NOPOWER)))
 		update_icon()
 
 /obj/machinery/holoposter/emp_act(severity, recursive)
 	. = ..()
-	if (. & EMP_PROTECT_SELF || stat & BROKEN)
+	if (. & EMP_PROTECT_SELF || has_stat(BROKEN))
 		return
 	atom_break()

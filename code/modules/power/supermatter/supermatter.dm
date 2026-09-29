@@ -191,7 +191,7 @@ DECLARE_REF(/obj/machinery/power/supermatter, "soundloop", OWNED, null)
 /obj/machinery/power/supermatter/proc/explode()
 	message_admins("Supermatter exploded at ([x],[y],[z] - <A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)")
 	log_game("SUPERMATTER([x],[y],[z]) Exploded. Power:[power], Oxygen:[oxygen], Damage:[damage], Integrity:[get_integrity()]")
-	anchored = TRUE
+	set_anchored(TRUE)
 	grav_pulling = 1
 	exploded = 1
 	// Looping Alarms. We want to stop the alarm here.

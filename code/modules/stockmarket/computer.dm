@@ -45,7 +45,7 @@
 	effect = /obj/machinery/computer/stockexchange/proc/interaction_use
 
 /obj/machinery/computer/stockexchange/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return TRUE
 	tgui_interact(user)
 	return TRUE

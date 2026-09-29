@@ -107,7 +107,7 @@
 	layer = MOB_LAYER - 0.1 //so people can't hide it and it's REALLY OBVIOUS
 	stat = 0
 
-	var/active = 0
+	active = 0
 	var/icontype = "beacon"
 
 /obj/machinery/power/singularity_beacon/proc/Activate(mob/user = null)
@@ -119,7 +119,7 @@
 		if(singulo.z == z)
 			singulo.target = src
 	icon_state = "[icontype]1"
-	active = 1
+	set_active(1)
 	MACHINE_WAKE(src)
 	if(user)
 		to_chat(user, span_notice("You activate the beacon."))
@@ -129,7 +129,7 @@
 		if(singulo.target == src)
 			singulo.target = null
 	icon_state = "[icontype]0"
-	active = 0
+	set_active(0)
 	if(user)
 		to_chat(user, span_notice("You deactivate the beacon."))
 
@@ -161,7 +161,7 @@
 		to_chat(user, span_danger("You need to deactivate the beacon first!"))
 		return ITEM_INTERACT_BLOCKING
 	if(anchored)
-		anchored = FALSE
+		set_anchored(FALSE)
 		to_chat(user, span_notice("You unscrew the beacon from the floor."))
 		playsound(src, tool.usesound, 50, TRUE)
 		disconnect_from_network()
@@ -169,7 +169,7 @@
 	if(!connect_to_network())
 		to_chat(user, "This device must be placed over an exposed cable.")
 		return ITEM_INTERACT_BLOCKING
-	anchored = TRUE
+	set_anchored(TRUE)
 	to_chat(user, span_notice("You screw the beacon to the floor and attach the cable."))
 	playsound(src, tool.usesound, 50, TRUE)
 	return ITEM_INTERACT_SUCCESS

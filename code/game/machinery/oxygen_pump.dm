@@ -65,7 +65,7 @@ EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
 /obj/machinery/oxygen_pump/proc/oxygen_pump_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user.is_incorporeal())
 		return TRUE
-	if((stat & MAINT) && tank)
+	if((has_stat(MAINT)) && tank)
 		user.visible_message(span_infoplain(span_bold("\The [user]") + " removes \the [tank] from \the [src]."), span_notice("You remove \the [tank] from \the [src]."))
 		user.put_in_hands(tank)
 		src.add_fingerprint(user)
@@ -127,7 +127,7 @@ EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
 	if(!tank)
 		to_chat(user, span_warning("There is no tank in \the [src]."))
 		return
-	if(stat & MAINT)
+	if(has_stat(MAINT))
 		to_chat(user, span_warning("Please close the maintenance hatch first."))
 		return
 	if(!Adjacent(target))
@@ -147,7 +147,7 @@ EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
 /obj/machinery/oxygen_pump/proc/oxygen_pump_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(user.is_incorporeal())
 		return TRUE
-	if(istype(W, /obj/item/tank) && (stat & MAINT))
+	if(istype(W, /obj/item/tank) && (has_stat(MAINT)))
 		if(tank)
 			to_chat(user, span_warning("\The [src] already has a tank installed!"))
 		else
@@ -156,16 +156,17 @@ EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
 			tank = W
 			user.visible_message(span_infoplain(span_bold("\The [user]") + " installs \the [tank] into \the [src]."), span_notice("You install \the [tank] into \the [src]."))
 			src.add_fingerprint(user)
-	if(istype(W, /obj/item/tank) && !stat)
+	if(istype(W, /obj/item/tank) && !has_stat(MACHINE_STAT_ANY))
 		to_chat(user, span_warning("Please open the maintenance hatch first."))
 	return TRUE
 
 /obj/machinery/oxygen_pump/screwdriver_act(mob/user, obj/item/tool)
 	if(user.is_incorporeal())
 		return ITEM_INTERACT_BLOCKING
-	stat ^= MAINT
-	user.visible_message(span_notice("\The [user] [(stat & MAINT) ? "opens" : "closes"] \the [src]."), span_notice("You [(stat & MAINT) ? "open" : "close"] \the [src]."))
-	icon_state = (stat & MAINT) ? icon_state_open : icon_state_closed
+	if(!stat_remove(MAINT))
+		stat_add(MAINT)
+	user.visible_message(span_notice("\The [user] [has_stat(MAINT) ? "opens" : "closes"] \the [src]."), span_notice("You [has_stat(MAINT) ? "open" : "close"] \the [src]."))
+	icon_state = (has_stat(MAINT)) ? icon_state_open : icon_state_closed
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/oxygen_pump/examine(mob/user)

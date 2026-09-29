@@ -323,7 +323,7 @@ DECLARE_REF(/obj/machinery/computer/telescience, "inserted_gps", SPILL, null)
 	var/area/A = get_area(target)
 	if(!telepad())
 		return
-	if(telepad().inoperable())
+	if(!telepad().operable())
 		return
 	teleporting = 0
 	COOLDOWN_START(src, teleport_cooldown, (spawn_time * 2))

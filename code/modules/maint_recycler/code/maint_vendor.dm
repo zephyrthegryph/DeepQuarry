@@ -143,7 +143,7 @@ DECLARE_REF(/obj/machinery/maint_vendor, "product_datums", OWNED_LIST, null)
 /obj/machinery/maint_vendor/update_icon()
 	. = ..()
 	cut_overlays()
-	if(!(stat & NOPOWER))
+	if(!has_stat(NOPOWER))
 		add_overlay(mutable_appearance(src.icon, "passiveGlow")) //product display. screen is distinct.
 		add_overlay(emissive_appearance(src.icon, "passiveGlow"))
 
@@ -230,7 +230,7 @@ DECLARE_REF(/obj/machinery/maint_vendor, "product_datums", OWNED_LIST, null)
 		monitor_screen.icon_state = "screen_off"
 
 /obj/machinery/maint_vendor/power_change()
-	..()
-	if(stat & NOPOWER)
+	. = ..()
+	if(has_stat(NOPOWER))
 		set_on_state(FALSE)
 	update_icon()

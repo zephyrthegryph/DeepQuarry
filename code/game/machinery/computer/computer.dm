@@ -56,14 +56,14 @@
 		icon_state = "computer[append_string]"
 
 	if(icon_keyboard)
-		if(stat & NOPOWER)
+		if(has_stat(NOPOWER))
 			playsound(src, 'sound/machines/terminal_off.ogg', 50, 1)
 			return add_overlay("[icon_keyboard]_off")
 		. += icon_keyboard
 
 	// This whole block lets screens ignore lighting and be visible even in the darkest room
 	var/overlay_state = icon_screen
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		overlay_state = "[icon_state]_broken"
 
 	. += mutable_appearance(icon, overlay_state)
@@ -73,9 +73,9 @@
 	add_overlay(.)
 
 /obj/machinery/computer/power_change()
-	..()
+	. = ..()
 	update_icon()
-	if(stat & NOPOWER)
+	if(has_stat(NOPOWER))
 		set_light(0)
 	else
 		set_light(light_range_on, light_power_on)

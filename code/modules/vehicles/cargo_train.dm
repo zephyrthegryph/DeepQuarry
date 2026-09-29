@@ -380,9 +380,9 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/engine, \
 	src.active_engines = active_engines
 
 	if(!lead() && !tow())
-		anchored = FALSE
+		set_anchored(FALSE)
 	else
-		anchored = TRUE
+		set_anchored(TRUE)
 
 /obj/vehicle/train/engine/update_icon()
 	..()
@@ -502,9 +502,9 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/trolley_tank, \
 	src.active_engines = active_engines
 
 	if(!lead() && !tow())
-		anchored = FALSE
+		set_anchored(FALSE)
 	else
-		anchored = TRUE
+		set_anchored(TRUE)
 
 /obj/vehicle/train/trolley_tank/examine(mob/user, infix, suffix)
 	. = ..()

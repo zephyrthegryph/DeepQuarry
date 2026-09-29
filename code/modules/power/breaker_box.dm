@@ -16,7 +16,7 @@
 	anchored = TRUE
 	unacidable = TRUE
 	circuit = /obj/item/circuitboard/breakerbox
-	var/on = 0
+	on = 0
 	var/directions = list(1,2,4,8,5,6,9,10)
 	var/RCon_tag = "NO_TAG"
 	var/update_locked = 0
@@ -42,7 +42,7 @@
 	return INITIALIZE_HINT_LATELOAD
 
 /obj/machinery/power/breakerbox/activated/LateInitialize()
-	set_state(1)
+	set_breaker_on(1)
 
 /obj/machinery/power/breakerbox/examine(mob/user)
 	. = ..()
@@ -69,7 +69,7 @@
 	update_locked = 0
 
 /obj/machinery/power/breakerbox/proc/toggle_done(mob/user, by_hand)
-	set_state(!on)
+	set_breaker_on(!on)
 	if(by_hand)
 		user.visible_message(\
 		span_notice("[user.name] [on ? "enabled" : "disabled"] the breaker box!"),\
@@ -139,8 +139,8 @@
 	default_part_replacement(user, W)
 	return TRUE
 
-/obj/machinery/power/breakerbox/proc/set_state(state)
-	on = state
+/obj/machinery/power/breakerbox/proc/set_breaker_on(state)
+	set_on(state)
 	if(on)
 		icon_state = icon_state_on
 		var/list/connection_dirs = list()
@@ -167,7 +167,7 @@
 // Used by RCON to toggle the breaker box.
 /obj/machinery/power/breakerbox/proc/auto_toggle()
 	if(!update_locked)
-		set_state(!on)
+		set_breaker_on(!on)
 		update_locked = 1
 		om_after(src, 1 MINUTE, PROC_REF(unlock_updates))
 

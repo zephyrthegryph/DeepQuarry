@@ -290,7 +290,7 @@
 
 /obj/structure/door_assembly/proc/wrench_act_tool_done(mob/user, was_anchored)
 	to_chat(user, span_notice("You [was_anchored ? "un" : ""]secured the airlock assembly!"))
-	anchored = !anchored
+	set_anchored(!anchored)
 
 /obj/structure/door_assembly/wirecutter_act(mob/user, obj/item/W)
 	if(state != 1)

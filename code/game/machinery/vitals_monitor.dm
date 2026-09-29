@@ -27,7 +27,7 @@
 /obj/machinery/vitals_monitor/examine(mob/user)
 	. = ..()
 	if(victim())
-		if(stat & NOPOWER)
+		if(has_stat(NOPOWER))
 			. += span_notice("It's unpowered.")
 			return
 		. += span_notice("Vitals of [victim()]:")
@@ -91,7 +91,7 @@
 
 /obj/machinery/vitals_monitor/update_icon()
 	cut_overlays()
-	if(stat & NOPOWER)
+	if(has_stat(NOPOWER))
 		return
 	add_overlay("screen")
 

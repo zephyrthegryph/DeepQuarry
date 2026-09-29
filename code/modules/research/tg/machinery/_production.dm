@@ -430,7 +430,7 @@ DECLARE_REF(/obj/machinery/rnd/production, "materials", OWNED, null)
 		finalize_build()
 		return
 
-	if(stat & NOPOWER)
+	if(has_stat(NOPOWER))
 		atom_say("Unable to continue production, power failure.")
 		finalize_build()
 		return

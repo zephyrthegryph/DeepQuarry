@@ -49,8 +49,8 @@
 /obj/machinery/slot_machine/power_change()
 	if(isbroken) //Broken shit can't be powered.
 		return
-	..()
-	if(!(stat & NOPOWER))
+	. = ..()
+	if(!has_stat(NOPOWER))
 		ispowered = 1
 		update_icon()
 	else
@@ -195,8 +195,8 @@
 /obj/machinery/station_slot_machine/power_change()
 	if(isbroken) //Broken shit can't be powered.
 		return
-	..()
-	if(!(stat & NOPOWER))
+	. = ..()
+	if(!has_stat(NOPOWER))
 		ispowered = 1
 		update_icon()
 	else

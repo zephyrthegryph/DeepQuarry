@@ -21,7 +21,7 @@
 	if(!anchored)
 		return
 
-	if(stat & (BROKEN))
+	if(has_stat(BROKEN))
 		return
 
 	splitter_transfer()

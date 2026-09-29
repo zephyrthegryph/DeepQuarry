@@ -287,7 +287,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/biogenerator, "beaker", /obj/item/reagent_c
 	effect = /obj/machinery/biogenerator/proc/interaction_use
 
 /obj/machinery/biogenerator/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		return TRUE
 	tgui_interact(user)
 	return TRUE
@@ -295,7 +295,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/biogenerator, "beaker", /obj/item/reagent_c
 /obj/machinery/biogenerator/proc/activate(mob/user)
 	if(user.stat)
 		return
-	if(stat) //NOPOWER etc
+	if(has_stat(MACHINE_STAT_ANY)) //NOPOWER etc
 		return
 	if(processing)
 		to_chat(user, span_notice("The biogenerator is in the process of working."))

@@ -37,7 +37,7 @@ DECLARE_REF(/obj/machinery/computer/gyrotron_control, "monitor", OWNED, null)
 	effect = /obj/machinery/computer/gyrotron_control/proc/interaction_use
 
 /obj/machinery/computer/gyrotron_control/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return TRUE
 
 	monitor.tgui_interact(user)

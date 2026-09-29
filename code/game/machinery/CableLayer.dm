@@ -6,7 +6,7 @@
 	var/last_piece_handle
 	var/obj/item/stack/cable_coil/cable
 	var/max_cable = 100
-	var/on = 0
+	on = 0
 
 /obj/machinery/cablelayer/Initialize(mapload)
 	cable = new(src, max_cable)
@@ -58,7 +58,7 @@
 	return cable || on
 
 /obj/machinery/cablelayer/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
-	on=!on
+	set_on(!on)
 	user.visible_message("\The [user] [!on?"dea":"a"]ctivates \the [src].", "You switch [src] [on? "on" : "off"]")
 	return TRUE
 

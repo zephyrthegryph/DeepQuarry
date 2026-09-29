@@ -56,7 +56,7 @@
 		om_hook(target, /datum/om/event/qdeleting, src, PROC_REF(target_deleted))
 
 	if(!LAZYLEN(targets))
-		stat |= BROKEN
+		stat_add(BROKEN)
 	update_icon()
 
 /obj/machinery/door_timer/proc/target_deleted(datum/source, datum/om/event/qdeleting/event)
@@ -71,7 +71,7 @@
 /obj/machinery/door_timer/machine_step()
 	if(!timing)
 		return PROCESS_KILL
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return sleep_until_powered()
 	if(world.time - activation_time >= timer_duration)
 		timer_end() // open doors, reset timer, clear status screen
@@ -81,7 +81,7 @@
 
 // has the door power situation changed, if so update icon.
 /obj/machinery/door_timer/power_change()
-	..()
+	. = ..()
 	update_icon()
 
 // open/closedoor checks if door_timer has power, if so it checks if the
@@ -89,7 +89,7 @@
 
 // Closes and locks doors, power check
 /obj/machinery/door_timer/proc/timer_start()
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return 0
 
 	activation_time = world.time
@@ -112,7 +112,7 @@
 
 /// Opens and unlocks doors, power check
 /obj/machinery/door_timer/proc/timer_end(forced = FALSE)
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return 0
 
 	timing = FALSE
@@ -225,11 +225,11 @@
 // if BROKEN, display blue screen of death icon AI uses
 // if timing=true, run update display function
 /obj/machinery/door_timer/update_icon()
-	if(stat & (NOPOWER))
+	if(has_stat(NOPOWER))
 		icon_state = "frame"
 		return
 
-	if(stat & (BROKEN))
+	if(has_stat(BROKEN))
 		set_picture("ai_bsod")
 		return
 

@@ -86,11 +86,11 @@ DECLARE_REF(/obj/machinery/firealarm, "causality", OWNED, null)
 		set_light(0)
 		return
 
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		icon_state = "firex"
 		set_light(0)
 		return
-	else if(stat & NOPOWER)
+	else if(has_stat(NOPOWER))
 		icon_state = "firep"
 		set_light(0)
 		return
@@ -188,7 +188,7 @@ DECLARE_REF(/obj/machinery/firealarm, "causality", OWNED, null)
 // down instead of a dedicated timer.
 
 /obj/machinery/firealarm/power_change()
-	..()
+	. = ..()
 	om_after(src, rand(0,15), PROC_REF(power_change_settle))
 
 /datum/interaction/machine_hand/ungated/firealarm_use
@@ -198,7 +198,7 @@ DECLARE_REF(/obj/machinery/firealarm, "causality", OWNED, null)
 	effect = /obj/machinery/firealarm/proc/interaction_firealarm_use
 
 /obj/machinery/firealarm/proc/interaction_firealarm_use(mob/user, obj/item/held, datum/interaction/interaction)
-	if(user.stat || stat & (NOPOWER | BROKEN))
+	if(user.stat || !operable())
 		return TRUE
 
 	add_fingerprint(user)
@@ -271,7 +271,7 @@ DECLARE_REF(/obj/machinery/firealarm, "causality", OWNED, null)
 	effect = /obj/machinery/partyalarm/proc/interaction_partyalarm_use
 
 /obj/machinery/partyalarm/proc/interaction_partyalarm_use(mob/user, obj/item/held, datum/interaction/interaction)
-	if(user.stat || stat & (NOPOWER|BROKEN))
+	if(user.stat || !operable())
 		return TRUE
 	user.set_machine(src)
 	tgui_interact(user)
@@ -313,7 +313,7 @@ DECLARE_REF(/obj/machinery/firealarm, "causality", OWNED, null)
 	. = ..()
 	if(.)
 		return
-	if(usr.stat || stat & (BROKEN|NOPOWER))
+	if(usr.stat || !operable())
 		return TRUE
 	switch(action)
 		if("reset")
@@ -336,7 +336,7 @@ DECLARE_REF(/obj/machinery/firealarm, "causality", OWNED, null)
 	// Looping Red/Violet/Orange Alarms
 	if(!soundloop)
 		return
-	if(stat & (NOPOWER | BROKEN)) // Are we broken or out of power?
+	if(!operable()) // Are we broken or out of power?
 		soundloop.stop() // Stop the loop once we're out of power
 		engalarm.stop() // Stop these bc we're out of power
 		critalarm.stop() // Stop these, out of power

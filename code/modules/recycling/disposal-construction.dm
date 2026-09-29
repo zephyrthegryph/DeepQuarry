@@ -36,7 +36,7 @@
 
 	switch(ptype)
 		if(DISPOSAL_PIPE_BIN, DISPOSAL_PIPE_OUTLET, DISPOSAL_PIPE_CHUTE)
-			density = TRUE
+			set_density(TRUE)
 		if(DISPOSAL_PIPE_SORTER, DISPOSAL_PIPE_SORTER_FLIPPED)
 			subtype = newsubtype
 
@@ -233,12 +233,12 @@ EXTEND_INTERACTIONS(/obj/structure/disposalconstruct, INTERACT_VERB("Flip Pipe",
 	var/obj/structure/disposalpipe/CP = locate_on(T, /obj/structure/disposalpipe)
 
 	if(anchored)
-		anchored = FALSE
+		set_anchored(FALSE)
 		if(ispipe)
 			level = 2
-			density = FALSE
+			set_density(FALSE)
 		else
-			density = TRUE
+			set_density(TRUE)
 		to_chat(user, "You detach the [nicetype] from the underfloor.")
 	else
 		if(!ispipe)
@@ -254,12 +254,12 @@ EXTEND_INTERACTIONS(/obj/structure/disposalconstruct, INTERACT_VERB("Flip Pipe",
 				to_chat(user, "There is already a [nicetype] at that location.")
 				return ITEM_INTERACT_BLOCKING
 
-		anchored = TRUE
+		set_anchored(TRUE)
 		if(ispipe)
 			level = 1
-			density = FALSE
+			set_density(FALSE)
 		else
-			density = TRUE
+			set_density(TRUE)
 		to_chat(user, "You attach the [nicetype] to the underfloor.")
 	playsound(src, I.usesound, 100, 1)
 	update()

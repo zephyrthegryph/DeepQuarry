@@ -1092,7 +1092,7 @@
 	followup.forceMove(packet)
 	packet.pages = list(consent, narrative, baseline, followup)
 	var/obj/machinery/photocopier/faxmachine/fax = new(test_turf)
-	fax.stat = 0
+	fax.set_stat(0)
 	fax.copyitem = packet
 	fax.scan = head_id
 	TEST_ASSERT(fax.sendfax(CONTRACT_FAX_CASE_REGISTRY, doctor), "powered fax machine rejected the authenticated rare-case packet")

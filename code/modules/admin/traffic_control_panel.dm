@@ -13,7 +13,7 @@
 	effect = /obj/machinery/computer/telecomms/traffic/proc/interaction_open_ui_impl
 
 /obj/machinery/computer/telecomms/traffic/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return TRUE
 	user.set_machine(src)
 	tgui_interact(user)

@@ -3,7 +3,7 @@
 	desc = "A giant, alien drill mounted on long treads."
 	icon = 'icons/obj/mining.dmi'
 	icon_state = "gigadrill"
-	var/active = 0
+	active = 0
 	var/drill_time = 10
 	var/tmp/drilling_turf_handle
 	density = TRUE
@@ -24,11 +24,11 @@
 
 /obj/machinery/giga_drill/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	if(active)
-		active = 0
+		set_active(0)
 		icon_state = "gigadrill"
 		to_chat(user, span_notice("You press a button and \the [src] slowly spins down."))
 	else
-		active = 1
+		set_active(1)
 		icon_state = "gigadrill_mov"
 		to_chat(user, span_notice("You press a button and \the [src] shudders to life."))
 	return TRUE
@@ -39,7 +39,7 @@
 			var/turf/simulated/mineral/M = A
 			drilling_turf_handle = om_handle(get_turf(src))
 			src.visible_message(span_bold("\The [src]") + " begins to drill into \the [M].")
-			anchored = TRUE
+			set_anchored(TRUE)
 			om_after(src, drill_time, PROC_REF(finish_drilling), M)
 
 /obj/machinery/giga_drill/proc/finish_drilling(turf/simulated/mineral/M)
@@ -47,7 +47,7 @@
 		M.GetDrilled()
 		src.forceMove(M)
 	drilling_turf_handle = null
-	anchored = FALSE
+	set_anchored(FALSE)
 
 /// LC-refs: the drilling_turf this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/giga_drill/proc/drilling_turf() as /turf

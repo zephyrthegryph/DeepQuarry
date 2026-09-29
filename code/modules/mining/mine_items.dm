@@ -264,7 +264,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/flag, \
 		return FALSE
 	upright = 0
 	icon_state = base_state
-	anchored = FALSE
+	set_anchored(FALSE)
 	src.visible_message(span_infoplain(span_bold("[user]") + " knocks down [src]."))
 	return TRUE
 

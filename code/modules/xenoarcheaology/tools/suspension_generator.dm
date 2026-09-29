@@ -8,7 +8,7 @@
 	req_access = list(ACCESS_RESEARCH)
 	var/obj/item/cell/cell
 	var/tmp/auth_card_handle
-	var/locked = 1
+	locked = 1
 	var/power_use = 15
 	var/obj/effect/suspension_field/suspension_field
 
@@ -105,7 +105,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/suspension_gen, "cell", /obj/item/cell/high
 
 		if("lock")
 			if(allowed(ui.user))
-				locked = !locked
+				set_locked(!locked)
 				return TRUE
 
 /obj/machinery/suspension_gen/screwdriver_act(mob/user, obj/item/tool)
@@ -116,7 +116,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/suspension_gen, "cell", /obj/item/cell/high
 /obj/machinery/suspension_gen/wrench_act(mob/user, obj/item/tool)
 	if(suspension_field)
 		return ITEM_INTERACT_BLOCKING
-	anchored = !anchored
+	set_anchored(!anchored)
 	playsound(src, tool.usesound, 50, TRUE)
 	to_chat(user, span_info("You wrench the stabilising bolts [anchored ? "into place" : "loose"]."))
 	if(anchored)
@@ -168,13 +168,13 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/suspension_gen, "cell", /obj/item/cell/high
 		if(istype(C, /obj/item/card/emag))
 			C.resolve_attackby(src, user)
 		else if(istype(C, /obj/item/card/id) && check_access(C))
-			locked = 0
+			set_locked(0)
 		if(!locked)
 			return 1
 
 /obj/machinery/suspension_gen/emag_act(remaining_charges, mob/user)
 	if(cell && cell.charge > 0 && locked)
-		locked = 0
+		set_locked(0)
 		return 1
 
 //checks for whether the machine can be activated or not should already have occurred by this point

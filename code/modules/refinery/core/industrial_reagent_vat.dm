@@ -26,7 +26,7 @@
 		return
 
 	power_change()
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return
 
 	refinery_transfer()
@@ -49,7 +49,7 @@
 	var/image/pipe = image(icon, icon_state = "vat_cons", dir = dir)
 	add_overlay(pipe)
 	if(anchored)
-		if(!(stat & (NOPOWER|BROKEN)))
+		if(operable())
 			var/image/dot = image(icon, icon_state = "vat_dot_[ amount_per_transfer_from_this > 0 ? "on" : "off" ]")
 			add_overlay(dot)
 		update_input_connection_overlays("vat_intakes")

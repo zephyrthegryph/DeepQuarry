@@ -171,7 +171,7 @@
 		if(!M.use_power) // Not using power at all
 			to_chat(user, span_notice("ERROR: No power grid connection. Unable to overload."))
 			return
-		if(M.inoperable()) // Not functional
+		if(!M.operable()) // Not functional
 			to_chat(user, span_notice("ERROR: Unknown error. Machine is probably damaged or power supply is nonfunctional."))
 			return
 	else // Not a machine at all (what the hell is this doing in Machines list anyway??)

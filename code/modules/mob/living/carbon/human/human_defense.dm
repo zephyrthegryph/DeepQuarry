@@ -421,7 +421,7 @@ emp_act
 				if(T)
 					forceMove(T)
 					visible_message(span_warning("[src] is pinned to the wall by [thrown_object]!"),span_warning("You are pinned to the wall by [thrown_object]!"))
-					src.anchored = TRUE
+					set_anchored(TRUE)
 					LAZYADD(src.pinned, thrown_object)
 
 // This does a prob check to catch the thing flying at you, with a minimum of 1%

@@ -108,7 +108,7 @@
 	if(panel_open)
 		add_overlay("qpad-panel")
 
-	if(inoperable() || panel_open || !power_region)
+	if(!operable() || panel_open || !power_region)
 		icon_state = "[initial(icon_state)]-o"
 	else if (!linked_pad())
 		icon_state = "[initial(icon_state)]-b"
@@ -168,7 +168,7 @@
 		to_chat(user, span_warning("Linked pad is busy. Please wait."))
 		return TRUE
 
-	if(linked_pad().inoperable())
+	if(!linked_pad().operable())
 		to_chat(user, span_warning("Linked pad is not responding to ping."))
 		return TRUE
 	src.add_fingerprint(user)
@@ -264,7 +264,7 @@
 		teleporting = 0
 		return
 	// Broken or whatever
-	if(inoperable())
+	if(!operable())
 		to_chat(user, span_warning("[src] is nonfunctional!"))
 		teleporting = 0
 		return
@@ -275,7 +275,7 @@
 		gateway_scatter(user)
 		return
 	// Nothing to teleport to
-	if(!linked_pad() || QDELETED(linked_pad()) || linked_pad().inoperable())
+	if(!linked_pad() || QDELETED(linked_pad()) || !linked_pad().operable())
 		to_chat(user, span_warning("Linked pad is not responding to ping. Teleport aborted."))
 		teleporting = 0
 		return

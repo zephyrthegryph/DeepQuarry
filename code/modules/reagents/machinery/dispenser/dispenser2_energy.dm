@@ -7,7 +7,7 @@
 /obj/machinery/chemical_dispenser/machine_step()
 	if(!_recharge_reagents)
 		return PROCESS_KILL
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return PROCESS_KILL
 	if(--process_tick <= 0)
 		process_tick = 15
@@ -41,7 +41,7 @@
 
 /obj/machinery/chemical_dispenser/power_change()
 	. = ..()
-	if(. && !(stat & (BROKEN|NOPOWER)) && needs_recharge())
+	if(. && operable() && needs_recharge())
 		MACHINE_WAKE(src)
 
 /obj/machinery/chemical_dispenser

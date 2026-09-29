@@ -69,7 +69,7 @@
 /obj/machinery/partslathe/update_icon()
 	if(panel_open)
 		icon_state = "partslathe-open"
-	else if(inoperable())
+	else if(!operable())
 		icon_state = "partslathe-off"
 	else if(busy)
 		icon_state = "partslathe-lidclose"
@@ -98,7 +98,7 @@
 		return TRUE
 	if(default_part_replacement(user, O))
 		return TRUE
-	if(inoperable())
+	if(!operable())
 		return TRUE
 	if(panel_open)
 		to_chat(user, span_notice("You can't load \the [src] while it's opened."))
@@ -142,7 +142,7 @@
 
 /obj/machinery/partslathe/machine_step()
 	..()
-	if(stat)
+	if(has_stat(MACHINE_STAT_ANY))
 		update_icon()
 		return
 	if(queue.len == 0)

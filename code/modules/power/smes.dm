@@ -94,7 +94,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 	soundloop.extra_range = -6 // Doing this here bc we're reusing the generator hum, and can't directly edit that one
 	soundloop.falloff = 0.2 // Harsher falloff.
 	if(!check_terminals())
-		stat |= BROKEN
+		stat_add(BROKEN)
 		return
 	update_icon()
 	if(!power_region)
@@ -174,7 +174,7 @@ DECLARE_REF(/obj/machinery/power/smes, "soundloop", OWNED, null)
 /obj/machinery/power/smes/proc/power_sync()
 	if(QDELETED(src) || !vg_entity)
 		return
-	var/working = !(stat & BROKEN) && !grid_check
+	var/working = !has_stat(BROKEN) && !grid_check
 	set_input_enabled(working && input_attempt && !input_pulsed && !input_cut ? 1 : 0)
 	set_output_enabled(working && output_attempt && !output_pulsed && !output_cut ? 1 : 0)
 	set_capacity(capacity)
@@ -221,7 +221,7 @@ DECLARE_REF(/obj/machinery/power/smes, "soundloop", OWNED, null)
 
 /obj/machinery/power/smes/update_icon()
 	cut_overlays()
-	if(stat & BROKEN)	return
+	if(has_stat(BROKEN))	return
 
 	add_overlay("smes-op[outputting]")
 
@@ -267,7 +267,7 @@ DECLARE_REF(/obj/machinery/power/smes, "soundloop", OWNED, null)
 /// a wake (a settings change, damage, a new terminal) resends the settings once. Returns
 /// STAGE_IDLE when the unit has nothing more to do until the next wake.
 /obj/machinery/power/smes/proc/power_step()
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		soundloop.stop()
 		noisy = FALSE
 	power_sync()
@@ -337,7 +337,7 @@ DECLARE_REF(/obj/machinery/power/smes, "soundloop", OWNED, null)
 	user.visible_message(\
 			span_filter_notice(span_notice("[user.name] has added cables to the [src].")),\
 			span_filter_notice(span_notice("You added cables to the [src].")))
-	stat = 0
+	set_stat(0)
 	if(!power_region)
 		connect_to_network()
 
@@ -659,7 +659,7 @@ DECLARE_REF(/obj/machinery/power/smes, "soundloop", OWNED, null)
 
 /obj/machinery/power/smes/buildable/hybrid/update_icon()
 	cut_overlays()
-	if(stat & BROKEN)	return
+	if(has_stat(BROKEN))	return
 
 	add_overlay("smes-op[outputting]")
 

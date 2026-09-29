@@ -190,7 +190,7 @@ DECLARE_REF(/obj/machinery/door/firedoor, "turbolift_floor", BACKLIST, "doors")
 	if(user.incapacitated() || (get_dist(src, user) > 1 && !issilicon(user)))
 		to_chat(user, "Sorry, you must remain able bodied and close to \the [src] in order to use it.")
 		return TRUE
-	if(density && (stat & (BROKEN|NOPOWER))) //can still close without power
+	if(density && (!operable())) //can still close without power
 		to_chat(user, "\The [src] is not functioning, you'll have to force it open manually.")
 		return TRUE
 
@@ -245,7 +245,7 @@ DECLARE_REF(/obj/machinery/door/firedoor, "turbolift_floor", BACKLIST, "doors")
 	open(1)
 
 /obj/machinery/door/firedoor/attack_generic(mob/living/user, damage)
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		if(damage >= STRUCTURE_MIN_DAMAGE_THRESHOLD)
 			var/time_to_force = (2 + (2 * blocked)) * 5
 			if(src.density)
@@ -368,7 +368,7 @@ DECLARE_REF(/obj/machinery/door/firedoor, "turbolift_floor", BACKLIST, "doors")
 		return
 	playsound(src, tool.usesound, 50, TRUE)
 	user.visible_message(span_danger("[user] has removed the electronics from \the [src]."), "You have removed the electronics from [src].")
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		new /obj/item/circuitboard/broken(loc)
 	else
 		new /obj/item/circuitboard/airalarm(loc)
@@ -381,7 +381,7 @@ DECLARE_REF(/obj/machinery/door/firedoor, "turbolift_floor", BACKLIST, "doors")
 	replace_with(src, assembly)
 
 /obj/machinery/door/firedoor/proc/crowbar_act_tool_done(mob/user, obj/item/tool)
-	if(!((stat & (BROKEN|NOPOWER) || !density)))
+	if(!((!operable() || !density)))
 		return
 	user.visible_message(span_danger("\The [user] forces \the [src] [density ? "open" : "closed"] with \a [tool]!"), "You force \the [src] [density ? "open" : "closed"] with \the [tool]!", "You hear metal strain, and a door [density ? "open" : "close"].")
 	if(density)
@@ -516,7 +516,7 @@ DECLARE_REF(/obj/machinery/door/firedoor, "turbolift_floor", BACKLIST, "doors")
 		update_icon()
 
 	if(!forced)
-		if(stat & (BROKEN|NOPOWER))
+		if(!operable())
 			return //needs power to open unless it was forced
 		else
 			use_power(360)

@@ -23,10 +23,10 @@ DECLARE_REF(/obj/effect/fusion_particle_catcher, "parent", BACKLIST, "particle_c
 
 /obj/effect/fusion_particle_catcher/proc/UpdateSize()
 	if(parent.size >= mysize)
-		density = TRUE
+		set_density(TRUE)
 		name = "collector [mysize] ON"
 	else
-		density = FALSE
+		set_density(FALSE)
 		name = "collector [mysize] OFF"
 
 /obj/effect/fusion_particle_catcher/bullet_act(obj/item/projectile/Proj)

@@ -49,7 +49,7 @@
 		deactivate()
 
 /obj/machinery/holoplant/proc/activate()
-	if(!anchored || stat & (NOPOWER|BROKEN))
+	if(!anchored || !operable())
 		return
 
 	plant = prepare_icon(emagged ? "emagged" : null)
@@ -65,8 +65,8 @@
 	update_use_power(USE_POWER_OFF)
 
 /obj/machinery/holoplant/power_change()
-	..()
-	if(stat & NOPOWER)
+	. = ..()
+	if(has_stat(NOPOWER))
 		deactivate()
 	else
 		activate()
@@ -97,7 +97,7 @@
 	if(emagged)
 		return
 
-	emagged = TRUE
+	set_emagged(TRUE)
 	if(plant)
 		deactivate()
 	activate()

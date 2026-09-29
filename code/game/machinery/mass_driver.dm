@@ -44,7 +44,7 @@
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/mass_driver/proc/drive(amount)
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return
 	use_power(500)
 	var/O_limit
@@ -63,6 +63,6 @@
 
 /obj/machinery/mass_driver/emp_act(severity, recursive)
 	. = ..()
-	if (. & EMP_PROTECT_SELF || stat & (BROKEN|NOPOWER))
+	if (. & EMP_PROTECT_SELF || !operable())
 		return
 	drive()

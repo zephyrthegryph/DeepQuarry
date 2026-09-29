@@ -132,9 +132,9 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	if(!is_dummy)
 		aiPDA = new/obj/item/pda/ai(src) // ALLOW(decl): conditional on is_dummy
 	SetName(pickedName)
-	anchored = TRUE
+	set_anchored(TRUE)
 	canmove = 0
-	density = TRUE
+	set_density(TRUE)
 
 	if(!is_dummy)
 		aiCommunicator = new /obj/item/communicator/integrated(src) // ALLOW(decl): conditional on is_dummy
@@ -853,7 +853,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/ai, INTERACT_INSERT(/obj/item/aicard, PR
 	return ITEM_INTERACT_SUCCESS
 
 /mob/living/silicon/ai/proc/wrench_act_tool_done(mob/user)
-	anchored = !anchored
+	set_anchored(!anchored)
 	user.visible_message(span_notice("\The [user] finishes [anchored ? "fastening down" : "unfastening"] \the [src]!"))
 	return ITEM_INTERACT_SUCCESS
 

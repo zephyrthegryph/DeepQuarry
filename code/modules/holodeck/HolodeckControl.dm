@@ -10,7 +10,7 @@
 
 	var/tmp/linkedholodeck_handle
 	var/tmp/target_handle
-	var/active = 0
+	active = 0
 	var/list/holographic_objs
 	var/list/holographic_mobs
 	var/damaged = 0
@@ -156,7 +156,7 @@
 	playsound(src, 'sound/effects/sparks4.ogg', 75, 1)
 	last_to_emag_handle = om_handle(user) //emag again to change the owner
 	if (!emagged)
-		emagged = 1
+		set_emagged(1)
 		safety_disabled = 1
 		update_projections()
 		to_chat(user, span_notice("You vastly increase projector power and override the safety and security protocols."))
@@ -198,9 +198,8 @@
 	..()
 
 /obj/machinery/computer/HolodeckControl/power_change()
-	var/oldstat = stat
-	..()
-	if (stat != oldstat && active && (stat & NOPOWER))
+	. = ..()
+	if (. && active && (has_stat(NOPOWER)))
 		emergencyShutdown()
 
 /// Watches its holograms (and draws power for them) while a program runs or holograms exist;
@@ -217,7 +216,7 @@
 			LAZYREMOVE(holographic_mobs, C)
 			C.derez()
 
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return
 	if(active)
 		use_power(item_power_usage * (length(holographic_objs) + length(holographic_mobs)))
@@ -225,7 +224,7 @@
 		if(!checkInteg(linkedholodeck()))
 			damaged = 1
 			loadProgram(powerdown_program, 0)
-			active = 0
+			set_active(0)
 			update_use_power(USE_POWER_IDLE)
 			for(var/mob/M in range(10,src))
 				M.show_message("The holodeck overloads!")
@@ -271,7 +270,7 @@
 		if(!linkedholodeck().get_gravity())
 			linkedholodeck().gravitychange(1)
 
-		active = 0
+		set_active(0)
 		update_use_power(USE_POWER_IDLE)
 
 /obj/machinery/computer/HolodeckControl/proc/loadProgram(prog, check_delay = 1)
@@ -300,7 +299,7 @@
 				return 0
 
 	start_change_cooldowns()
-	active = 1
+	set_active(1)
 	update_use_power(USE_POWER_ACTIVE)
 
 	for(var/item in holographic_objs)
@@ -369,7 +368,7 @@
 
 	COOLDOWN_START(src, gravity_short_cooldown, 1.5 SECONDS)
 	COOLDOWN_START(src, gravity_long_cooldown, 2.5 SECONDS)
-	active = 1
+	set_active(1)
 	update_use_power(USE_POWER_IDLE)
 
 	if(A.get_gravity())
@@ -384,7 +383,7 @@
 	if(!linkedholodeck().get_gravity())
 		linkedholodeck().gravitychange(1)
 
-	active = 0
+	set_active(0)
 	update_use_power(USE_POWER_IDLE)
 
 /obj/machinery/computer/HolodeckControl/proc/atmos_test_ignite(turf/T)

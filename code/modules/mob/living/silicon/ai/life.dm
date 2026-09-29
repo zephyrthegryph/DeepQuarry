@@ -168,7 +168,7 @@
 			var/attempt = step - 4
 			var/obj/machinery/power/apc/theAPC = null
 			for(var/obj/machinery/power/apc/APC in current_area)
-				if(!(APC.stat & BROKEN))
+				if(!APC.has_stat(BROKEN))
 					theAPC = APC
 					break
 			if(!theAPC)
@@ -188,7 +188,7 @@
 		if(9)
 			var/obj/machinery/power/apc/theAPC = null
 			for(var/obj/machinery/power/apc/APC in current_area)
-				if(!(APC.stat & BROKEN))
+				if(!APC.has_stat(BROKEN))
 					theAPC = APC
 					break
 			if(!theAPC)

@@ -16,7 +16,7 @@
 
 	else // Sanity check: if the pinned target can't be found in immediate view
 		pinned_target = null
-		density = TRUE
+		set_density(TRUE)
 
 /obj/structure/target_stake/declare_interactions(list/into)
 	into += list(
@@ -37,7 +37,7 @@
 		return TRUE // get rid of that pinned target first!
 
 	if(istype(W, /obj/item/target))
-		density = FALSE
+		set_density(FALSE)
 		W.density = TRUE
 		user.remove_from_mob(W)
 		W.forceMove(loc)
@@ -55,7 +55,7 @@
 /obj/structure/target_stake/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	// taking pinned targets off!
 	if(pinned_target)
-		density = TRUE
+		set_density(TRUE)
 		pinned_target.density = FALSE
 		pinned_target.layer = OBJ_LAYER
 

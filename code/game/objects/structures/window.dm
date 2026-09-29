@@ -125,7 +125,7 @@
 /obj/structure/window/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
 	visible_message(span_danger("[src] was hit by [source]."))
 	if(!reinf && get_integrity() - source.thrown_impact_force(throwingdatum) <= 7)
-		anchored = FALSE
+		set_anchored(FALSE)
 		update_verbs()
 		update_nearby_icons()
 		step(src, get_dir(source, src))
@@ -260,7 +260,7 @@
 			user.do_attack_animation(src)
 			hit(W.force)
 			if(get_integrity() <= 7)
-				anchored = FALSE
+				set_anchored(FALSE)
 				update_nearby_icons()
 				step(src, get_dir(user, src))
 		else
@@ -308,7 +308,7 @@
 
 	//player-constructed windows
 	if (constructed)
-		anchored = FALSE
+		set_anchored(FALSE)
 		state = 0
 
 	// If we started anchored we'll need to disable rotation
@@ -326,7 +326,7 @@
 
 // neighbouring windows and tables re-smooth without it.
 /obj/structure/window/on_destroy(force)
-	density = FALSE
+	set_density(FALSE)
 	update_nearby_tiles()
 	var/turf/location = loc
 	..()
@@ -596,7 +596,7 @@ DECLARE_SHARED_CACHE(window_overlay_sets, GLOBAL_PROC_REF(build_window_overlay_s
 /obj/machinery/button/windowtint/proc/toggle_tint()
 	use_power(5)
 
-	active = !active
+	set_active(!active)
 	update_icon()
 
 	for(var/obj/structure/window/reinforced/polarized/W in range(src,range))
@@ -604,7 +604,7 @@ DECLARE_SHARED_CACHE(window_overlay_sets, GLOBAL_PROC_REF(build_window_overlay_s
 			W.toggle()
 
 /obj/machinery/button/windowtint/power_change()
-	..()
+	. = ..()
 	if(active && !powered(power_channel))
 		toggle_tint()
 

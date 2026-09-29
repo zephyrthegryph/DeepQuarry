@@ -29,7 +29,7 @@
 	var/list/temp = null
 
 /obj/machinery/computer/message_monitor/screwdriver_act(mob/living/user, obj/item/tool)
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return ..()
 	if(!istype(user))
 		return ITEM_INTERACT_BLOCKING
@@ -160,7 +160,7 @@
 	effect = /obj/machinery/computer/message_monitor/proc/interaction_open_ui_impl
 
 /obj/machinery/computer/message_monitor/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return TRUE
 	if(!istype(user))
 		return TRUE

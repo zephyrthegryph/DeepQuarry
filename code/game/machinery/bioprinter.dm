@@ -141,7 +141,7 @@ EXTEND_INTERACTIONS(/obj/machinery/organ_printer, \
 /// Old attack_hand (it never reached the machinery gate).
 /obj/machinery/organ_printer/proc/organ_printer_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return TRUE
 
 	if(panel_open)
@@ -186,7 +186,7 @@ EXTEND_INTERACTIONS(/obj/machinery/organ_printer, \
 
 /datum/om/prompt/choice/bioprinter_print/valid()
 	var/obj/machinery/organ_printer/P = subject
-	if(P.printing || (P.stat & (BROKEN|NOPOWER)))
+	if(P.printing || (!P.operable()))
 		return "busy"
 	return null
 
@@ -213,7 +213,7 @@ EXTEND_INTERACTIONS(/obj/machinery/organ_printer, \
 	printing = 0
 	update_icon()
 
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return
 
 	print_organ(organ_path)

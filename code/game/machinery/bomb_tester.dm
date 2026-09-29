@@ -62,15 +62,15 @@
 		add_overlay("[icon_name]-tank1")
 	if(tank2)
 		add_overlay("[icon_name]-tank2")
-	if(stat & NOPOWER)
+	if(has_stat(NOPOWER))
 		icon_state = "[icon_name]-p"
 	else
 		icon_state = "[icon_name][simulating]"
 
 /obj/machinery/bomb_tester/power_change()
-	..()
+	. = ..()
 	update_icon()
-	if(simulating && stat & NOPOWER)
+	if(simulating && has_stat(NOPOWER))
 		simulation_finish(1)
 
 /obj/machinery/bomb_tester/RefreshParts()
