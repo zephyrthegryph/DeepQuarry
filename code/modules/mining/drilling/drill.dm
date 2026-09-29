@@ -305,10 +305,8 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/mining/drill, "cell", "cell")
 
 	if (panel_open && cell && user.Adjacent(src))
 		balloon_alert(user, "you take out \the [cell]")
-		user.put_in_hands(cell)
-		if(component_parts)
-			own_take_member(src, "component_parts", cell)
-		own_take(src, "cell")
+		var/obj/item/cell/removed = own_take(src, "cell")
+		user.put_in_hands(removed)
 		return TRUE
 	else if(need_player_check)
 		balloon_alert(user, "manual override hit, the drill's error checking resets.")
@@ -379,7 +377,8 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/mining/drill, "cell", "cell")
 	var/cap_rating = get_part_rating(/obj/item/stock_parts/capacitor)
 	if(cap_rating)
 		charge_use -= 10 * cap_rating
-	own_set(src, "cell", locate_within(src, /obj/item/cell))
+	// `cell` is set only by inserting one (it is not a board part, so not in component_parts);
+	// re-adopting "whatever cell is inside" here could claim a cell another var already owns.
 
 /obj/machinery/mining/drill/proc/check_supports()
 
