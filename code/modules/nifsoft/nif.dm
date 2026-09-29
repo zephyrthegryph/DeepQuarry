@@ -494,7 +494,14 @@ DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_ite
 		notify("The software \"[NS]\" refuses to be uninstalled.",TRUE)
 		return FALSE
 
-	own_take_member(src, "nifsofts", old_soft.list_pos)
+	// Detach it from its slot (the list shifts), then pad the slot back: nifsofts is a
+	// positional table indexed by list_pos.
+	var/slot = old_soft.list_pos
+	own_take_member(src, "nifsofts", old_soft)
+	if(!nifsofts)
+		nifsofts = new /list(TOTAL_NIF_SOFTWARE) // ALLOW(ownership): a fresh positional slot table (nulls only)
+	else if(length(nifsofts) < TOTAL_NIF_SOFTWARE)
+		nifsofts.Insert(slot, null) // ALLOW(ownership): an empty slot (null), keeping every other soft at its list_pos
 	power_usage -= old_soft.p_drain
 
 	if(old_soft.tick_flags == NIF_ALWAYSTICK)
