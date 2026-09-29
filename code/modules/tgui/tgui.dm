@@ -495,6 +495,7 @@
 			close(can_be_suspended = FALSE)
 			return TRUE
 		if("log")
+			// ALLOW(sys_topic_raw_dispatch): tgui protocol message field (fatal log flag), not a datum href action.
 			if(href_list["fatal"])
 				close(can_be_suspended = FALSE)
 		if("setSharedState")

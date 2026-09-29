@@ -12,6 +12,7 @@
 	if(!length(href_str))
 		return
 	var/list/href_list = params2list(href_str)
+	// ALLOW(sys_topic_raw_dispatch): routes forwarded links by _src_ exactly as client/Topic does, then hands them to the dispatcher.
 	switch(href_list["_src_"])
 		if("holder")
 			var/datum/admins/holder = user?.client?.holder

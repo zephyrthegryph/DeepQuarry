@@ -47,6 +47,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	#if defined(TOPIC_DEBUGGING)
 	to_world("[src]'s Topic: [href] destined for [hsrc].")
 
+	// ALLOW(sys_topic_raw_dispatch): client/Topic is BYOND's href entry: transport-level keys (asset cache, rate limiter, statbrowser) are read before any datum dispatch.
 	if(href_list["nano_err"]) //nano throwing errors
 		to_world("## NanoUI, Subject [src]: " + html_decode(href_list["nano_err")]) //NANO DEBUG HOOK
 
@@ -54,6 +55,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 
 	// asset_cache
 	var/asset_cache_job
+	// ALLOW(sys_topic_raw_dispatch): client/Topic is BYOND's href entry: transport-level keys (asset cache, rate limiter, statbrowser) are read before any datum dispatch.
 	if(href_list["asset_cache_confirm_arrival"])
 		asset_cache_job = asset_cache_confirm_arrival(href_list["asset_cache_confirm_arrival"])
 		if (!asset_cache_job)
@@ -69,6 +71,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 			if (minute != topiclimiter[CURRENT_MINUTE])
 				topiclimiter[CURRENT_MINUTE] = minute
 				topiclimiter[MINUTE_COUNT] = 0
+			// ALLOW(sys_topic_raw_dispatch): client/Topic is BYOND's href entry: transport-level keys (asset cache, rate limiter, statbrowser) are read before any datum dispatch.
 			if(href_list["window_id"] != "statbrowser")
 				topiclimiter[MINUTE_COUNT] += 1
 			if (topiclimiter[MINUTE_COUNT] > mtl)
@@ -116,6 +119,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	if(!hsrc && topic_dispatch(src, usr, href_list))
 		return
 
+	// ALLOW(sys_topic_raw_dispatch): client/Topic is BYOND's href entry: transport-level keys (asset cache, rate limiter, statbrowser) are read before any datum dispatch.
 	switch(href_list["_src_"])
 		if("holder")	hsrc = holder
 		if("usr")		hsrc = mob
@@ -140,8 +144,8 @@ TOPIC_ACTION(/client, "priv_msg", PROC_REF(topic_priv_msg), TOPIC_TEXT("priv_msg
 TOPIC_ACTION(/client, "mentorhelp_msg", PROC_REF(topic_mentorhelp_msg), TOPIC_TEXT("mentorhelp_msg", 64))
 TOPIC_ACTION(/client, "discord_reg", PROC_REF(topic_discord_reg), TOPIC_TEXT("discord_reg", 128))
 TOPIC_ACTION(/client, "reload_statbrowser", PROC_REF(topic_reload_statbrowser))
-TOPIC_ACTION(/client, "asset_cache_preload_data", PROC_REF(topic_asset_cache_preload_data))
-TOPIC_ACTION(/client, "commandbar_typing", PROC_REF(topic_commandbar_typing))
+TOPIC_ACTION(/client, "asset_cache_preload_data", PROC_REF(topic_asset_cache_preload_data), TOPIC_TEXT("asset_cache_preload_data"))
+TOPIC_ACTION(/client, "commandbar_typing", PROC_REF(topic_commandbar_typing), TOPIC_TEXT("verb", 64), TOPIC_NUM("argument_length"))
 TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("link", 1024))
 
 /// A client passed in an href as a client ref, a mob ref (older links) or a ckey.
@@ -193,12 +197,11 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 	return TRUE
 
 /client/proc/topic_asset_cache_preload_data(mob/user, list/args)
-	var/list/href_list = args[TOPIC_HREF]
-	asset_cache_preload_data(href_list["asset_cache_preload_data"])
+	asset_cache_preload_data(args["asset_cache_preload_data"])
 	return TRUE
 
 /client/proc/topic_commandbar_typing(mob/user, list/args)
-	handle_commandbar_typing(args[TOPIC_HREF])
+	handle_commandbar_typing(args["verb"], args["argument_length"])
 	return TRUE
 
 /client/proc/topic_open_link(mob/user, list/args)

@@ -94,6 +94,7 @@ GLOBAL_LIST_EMPTY(topic_tables)
 					return null
 				handler_args[name] = found
 			if(TOPIC_SPEC_NUM)
+				// ALLOW(sys_topic_raw_num): the core dispatcher's TOPIC_NUM conversion.
 				handler_args[spec[2]] = text2num(href_list[spec[2]])
 			if(TOPIC_SPEC_TEXT)
 				var/text = href_list[spec[2]]
