@@ -76,5 +76,5 @@ Cost per behaviour, lane, pipeline stage and world service: admin verb **OM Prof
   scheduler already drops.
 - A time kept as *data* (an expiry, a schedule, a start stamp read back for elapsed math) is
   not a cooldown. Name it for a point in time (`*_at`, `*_until`, `*_since`, `*deadline`,
-  `*expires`) or declare it with `TIMESTAMP_VAR(name)` (`code/__defines/cooldowns.dm`), and
+  `*expires`) or declare it with `EXPIRY_DECLARE(name)` (`code/__defines/sys_expiry.dm`), and
   `tools/ci/cooldown_lint.py` recognises it without an `ALLOW(cooldown)`.
