@@ -37,7 +37,11 @@
 
 /// Declares one href action on PATH. Expands to a topic_actions() link (like DECLARE_REF).
 #define TOPIC_ACTION(PATH, KEY, PROC, SPECS...) ##PATH/topic_actions() { return topic_register(..(), KEY, PROC, list(SPECS)); }
-/// href value `NAME` is a ref to a TYPE, looked up in SOURCE (see above).
+/// A row in a separate href namespace NS: plain Topic() hrefs never reach it; only a dispatch that
+/// names NS does (topic_find_row(target, href_list, NS)), which brings its own gate (View
+/// Variables: topic_dispatch_vv()).
+#define TOPIC_NS_ACTION(PATH, NS, KEY, PROC, SPECS...) ##PATH/topic_actions() { return topic_register(..(), KEY, PROC, list(SPECS), NS); }
+/// href value `NAME` is a ref to a TYPE (or any of a list of types; null: anything locate() finds, TOPIC_ANY only, the handler validates), looked up in SOURCE (see above).
 #define TOPIC_REF(NAME, TYPE, SOURCE...) (list(TOPIC_SPEC_REF, NAME, TYPE) + list(SOURCE))
 /// href value `NAME` as a number (null if absent or not numeric).
 #define TOPIC_NUM(NAME) list(TOPIC_SPEC_NUM, NAME)

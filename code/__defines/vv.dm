@@ -45,23 +45,30 @@
 #define VV_HREF_TARGET_1V(target, href_key, text, varname) "<a href='[VV_HREF_TARGET_INTERNAL(target, href_key)];[VV_HK_VARNAME]=[varname]'>[text]</a>" //for stuff like basic varedits, one variable
 #define VV_HREF_TARGETREF_1V(targetref, href_key, text, varname) "<a href='[VV_HREF_TARGETREF_INTERNAL(targetref, href_key)];[VV_HK_VARNAME]=[varname]'>[text]</a>"
 
-#define GET_VV_TARGET locate(href_list[VV_HK_TARGET])
-#define GET_VV_VAR_TARGET href_list[VV_HK_VARNAME]
-
-//Helper for getting something to vv_do_topic in general
+//Helper for linking to a VV_TOPIC_ACTION row in general
 #define VV_TOPIC_LINK(datum, href_key, text) "<a href='byond://?_src_=vars;[HrefToken()];[href_key]=TRUE;target=[REF(datum)]'>text</a>"
 
 //Helpers for vv_get_dropdown()
 #define VV_DROPDOWN_OPTION(href_key, name) . += "<option value='?_src_=vars;[HrefToken()];[href_key]=TRUE;target=[REF(src)]'>[name]</option>"
 
-//Helpers for vv_do_topic(list/href_list)
-#define IF_VV_OPTION(href_key) if(href_list[href_key])
+// View Variables href actions (doc/rewrite/systems.md §20). A `_src_=vars` href reaches
+// /client/proc/vv_topic(), which checks R_VAREDIT and the admin href token, then
+// topic_dispatch_vv(): the `target` datum's VV_TOPIC rows first, then the admin client's
+// VV_ADMIN_TOPIC rows. Both namespaces are unreachable from plain Topic() hrefs.
+/// Namespace of per-type actions on the VV'd datum (the dropdown actions).
+#define VV_TOPIC "vv"
+/// Namespace of actions on the admin's own client (basic edits, lists, Vars, rename, ...).
+#define VV_ADMIN_TOPIC "vv_admin"
+/// A VV dropdown action on datums of PATH; the handler runs on the VV'd datum as proc(mob/user, list/args).
+#define VV_TOPIC_ACTION(PATH, KEY, PROC, SPECS...) ##PATH/topic_actions() { return topic_register(..(), KEY, PROC, list(SPECS), VV_TOPIC); }
+/// A VV action handled by the admin's client; declare the VV target as a TOPIC_REF spec.
+#define VV_ADMIN_TOPIC_ACTION(KEY, PROC, SPECS...) /client/topic_actions() { return topic_register(..(), KEY, PROC, list(SPECS), VV_ADMIN_TOPIC); }
 
 // VV HREF KEYS
 #define VV_HK_TARGET "target"
 #define VV_HK_VARNAME "targetvar" //name or index of var for 1 variable targeting hrefs.
 
-// vv_do_list() keys
+// VV list action keys (view_variables/topic_list.dm)
 #define VV_HK_LIST_ADD "listadd"
 #define VV_HK_LIST_EDIT "listedit"
 #define VV_HK_LIST_CHANGE "listchange"
@@ -71,7 +78,7 @@
 #define VV_HK_LIST_SHUFFLE "listshuffle"
 #define VV_HK_LIST_SET_LENGTH "listlen"
 
-// vv_do_basic() keys
+// VV basic action keys (view_variables/topic_basic.dm)
 #define VV_HK_BASIC_EDIT "datumedit"
 #define VV_HK_BASIC_CHANGE "datumchange"
 #define VV_HK_BASIC_MASSEDIT "massedit"
@@ -173,7 +180,6 @@
 #define VK_HK_TURN_AI "turn_ai"
 #define VK_HK_TURN_ROBOT "turn_robot"
 
-#define VV_HK_DATUM_REFRESH "datumrefresh"
 
 // Flags for debug_variable() that do little things to what we end up rendering
 

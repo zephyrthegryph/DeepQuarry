@@ -25,7 +25,7 @@
 			return
 		if("vars")
 			if(user?.client)
-				user.client.view_var_Topic(href_str, href_list, host)
+				user.client.vv_topic(href_list)
 			return
 	if(host)
 		host.Topic(href_str, href_list)

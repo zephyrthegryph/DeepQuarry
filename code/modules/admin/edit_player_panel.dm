@@ -176,7 +176,7 @@ GLOBAL_LIST_EMPTY(dq_edit_player_panels)
 			SStgui.update_uis(src)
 			return TRUE
 		if("vv")
-			holder().Topic("Vars=[tref]", list("_src_" = "vars", "Vars" = tref))
+			ui.user.client?.vv_topic(list("Vars" = tref), TRUE)
 			return TRUE
 		if("traitor")
 			forward_topic("traitor=[tref]")

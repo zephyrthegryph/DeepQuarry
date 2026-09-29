@@ -123,7 +123,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	switch(href_list["_src_"])
 		if("holder")	hsrc = holder
 		if("usr")		hsrc = mob
-		if("vars")		return view_var_Topic(href,href_list,hsrc)
+		if("vars")		return vv_topic(href_list)
 
 	if (hsrc)
 		var/datum/real_src = hsrc

@@ -853,25 +853,19 @@ DECLARE_INTERACTIONS(/atom/movable/overlay, 	INTERACT_HAND_UNGATED(null, PROC_RE
 	VV_DROPDOWN_OPTION(VV_HK_GET_MOVABLE, "Get Movable")
 	VV_DROPDOWN_OPTION(VV_HK_EDIT_PARTICLES, "Edit Particles")
 
-/atom/movable/vv_do_topic(list/href_list)
-	. = ..()
+VV_TOPIC_ACTION(/atom/movable, VV_HK_GET_MOVABLE, PROC_REF(vv_topic_get_movable), TOPIC_RIGHTS(R_ADMIN))
+VV_TOPIC_ACTION(/atom/movable, VV_HK_EDIT_PARTICLES, PROC_REF(vv_topic_edit_particles), TOPIC_RIGHTS(R_VAREDIT))
 
-	if(!.)
-		return
+/atom/movable/proc/vv_topic_get_movable(mob/user, list/args)
+	if(ismob(src)) // incase there was a client inside an object being yoinked
+		var/mob/M = src
+		M.reset_perspective(src) // Force reset to self before teleport
+	forceMove(get_turf(user))
+	return TRUE
 
-	if(href_list[VV_HK_GET_MOVABLE])
-		if(!check_rights(R_ADMIN))
-			return
-		if(QDELETED(src))
-			return
-		if(ismob(src)) // incase there was a client inside an object being yoinked
-			var/mob/M = src
-			M.reset_perspective(src) // Force reset to self before teleport
-		forceMove(get_turf(usr))
-
-	if(href_list[VV_HK_EDIT_PARTICLES] && check_rights(R_VAREDIT))
-		var/client/C = usr.client
-		C?.open_particle_editor(src)
+/atom/movable/proc/vv_topic_edit_particles(mob/user, list/args)
+	user.client?.open_particle_editor(src)
+	return TRUE
 
 DECLARE_REF(/atom/movable, "riding_datum", OWNED, null)
 

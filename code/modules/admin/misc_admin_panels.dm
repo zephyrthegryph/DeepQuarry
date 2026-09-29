@@ -120,7 +120,7 @@
 			SStgui.update_uis(src)
 			return TRUE
 		if("vv")
-			holder().Topic("Vars=[ref]", list("_src_" = "vars", "Vars" = ref))
+			ui.user.client?.vv_topic(list("Vars" = ref), TRUE)
 			return TRUE
 		if("pp")
 			holder().Topic("priv_msg=[ref]", list("_src_" = "holder", "playerpanel" = ref))

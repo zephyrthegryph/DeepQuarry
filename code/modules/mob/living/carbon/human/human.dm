@@ -1966,28 +1966,37 @@ TOPIC_ACTION(/mob/living/carbon/human, "emprecordadd", PROC_REF(topic_hud_empadd
 	VV_DROPDOWN_OPTION(VK_HK_TURN_AI, "Make AI")
 	VV_DROPDOWN_OPTION(VK_HK_TURN_ROBOT, "Make Robot")
 
-/mob/living/carbon/human/vv_do_topic(list/href_list)
-	. = ..()
-	if(!.)
-		return
+VV_TOPIC_ACTION(/mob/living/carbon/human, VV_HK_SET_SPECIES, PROC_REF(vv_topic_set_species), TOPIC_RIGHTS(R_SPAWN))
+VV_TOPIC_ACTION(/mob/living/carbon/human, VK_HK_TURN_SKELETON, PROC_REF(vv_topic_turn_skeleton), TOPIC_RIGHTS(R_FUN))
+VV_TOPIC_ACTION(/mob/living/carbon/human, VV_HK_TURN_MONKEY, PROC_REF(vv_topic_turn_monkey), TOPIC_RIGHTS(R_SPAWN))
+VV_TOPIC_ACTION(/mob/living/carbon/human, VV_HK_TURN_ALIEN, PROC_REF(vv_topic_turn_alien), TOPIC_RIGHTS(R_SPAWN))
+VV_TOPIC_ACTION(/mob/living/carbon/human, VK_HK_TURN_AI, PROC_REF(vv_topic_turn_ai), TOPIC_RIGHTS(R_SPAWN))
+VV_TOPIC_ACTION(/mob/living/carbon/human, VK_HK_TURN_ROBOT, PROC_REF(vv_topic_turn_robot), TOPIC_RIGHTS(R_SPAWN))
 
-	if(href_list[VV_HK_SET_SPECIES])
-		if(!check_rights(R_SPAWN))
-			return
-		om_ask(usr, /datum/om/prompt/choice, PROC_REF(vv_species_chosen), message = "Please choose a new species", title = "Species", choices = sortTim(GLOB.all_species, GLOBAL_PROC_REF(cmp_text_asc)), requires = PROMPT_ADMIN(R_SPAWN))
+/mob/living/carbon/human/proc/vv_topic_set_species(mob/user, list/args)
+	om_ask(user, /datum/om/prompt/choice, PROC_REF(vv_species_chosen), message = "Please choose a new species", title = "Species", choices = sortTim(GLOB.all_species, GLOBAL_PROC_REF(cmp_text_asc)), requires = PROMPT_ADMIN(R_SPAWN))
+	return TRUE
 
-	if(href_list[VK_HK_TURN_SKELETON])
-		if(!check_rights(R_FUN))
-			return
-		ChangeToSkeleton()
-		href_list[VV_HK_DATUM_REFRESH] = "\ref[src]"
+/mob/living/carbon/human/proc/vv_topic_turn_skeleton(mob/user, list/args)
+	ChangeToSkeleton()
+	user.client?.debug_variables(src)
+	return TRUE
 
-	var/static/list/transforms = list(VV_HK_TURN_MONKEY = "monkey", VV_HK_TURN_ALIEN = "alien", VK_HK_TURN_AI = "ai", VK_HK_TURN_ROBOT = "robot")
-	for(var/hk in transforms)
-		if(href_list[hk])
-			if(!check_rights(R_SPAWN))
-				return
-			vv_confirm_transform(usr, transforms[hk])
+/mob/living/carbon/human/proc/vv_topic_turn_monkey(mob/user, list/args)
+	vv_confirm_transform(user, "monkey")
+	return TRUE
+
+/mob/living/carbon/human/proc/vv_topic_turn_alien(mob/user, list/args)
+	vv_confirm_transform(user, "alien")
+	return TRUE
+
+/mob/living/carbon/human/proc/vv_topic_turn_ai(mob/user, list/args)
+	vv_confirm_transform(user, "ai")
+	return TRUE
+
+/mob/living/carbon/human/proc/vv_topic_turn_robot(mob/user, list/args)
+	vv_confirm_transform(user, "robot")
+	return TRUE
 
 /mob/living/carbon/human/proc/vv_species_chosen(datum/om/prompt/choice/ask)
 	var/mob/user = ask.answerer
