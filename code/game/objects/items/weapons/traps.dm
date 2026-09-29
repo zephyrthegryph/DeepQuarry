@@ -194,7 +194,7 @@ DECLARE_INTERACTIONS(/obj/item/beartrap, \
 	if(!QDELETED(src))
 		max_integrity = max(1, round(material.integrity / 3)) * MATERIAL_WEAR_UNIT
 		update_integrity(max_integrity)
-		name = (material.get_edge_damage() * force_divisor > 15) ?  "[material.display_name] razor wire" : "[material.display_name] [initial(name)]"
+		name = (material.edge_damage() * force_divisor > 15) ?  "[material.display_name] razor wire" : "[material.display_name] [initial(name)]"
 
 /obj/item/material/barbedwire/proc/can_use(mob/user)
 	return (user.IsAdvancedToolUser() && !issilicon(user) && !user.stat && !user.restrained())

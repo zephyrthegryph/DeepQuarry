@@ -300,7 +300,7 @@
 			"heatResistance" = round(mat.heat_resistance),
 			"thermalInsulation" = round(mat.thermal_insulation),
 			"corrosionResistance" = round(mat.corrosion_resistance),
-			"pressureLimit" = round(mat.material_pressure_limit(MATERIAL_PIPE_REFERENCE_RADIUS, MATERIAL_PIPE_REFERENCE_THICKNESS, T20C) / ONE_ATMOSPHERE, 0.1),
+			"pressureLimit" = round(mat.pressure_limit(MATERIAL_PIPE_REFERENCE_RADIUS, MATERIAL_PIPE_REFERENCE_THICKNESS, T20C) / ONE_ATMOSPHERE, 0.1),
 			"resistivity" = mat.electrical_resistivity,
 			"criticalTemperature" = mat.critical_temperature,
 			"criticalCurrentDensity" = mat.critical_current_density,

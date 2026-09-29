@@ -295,9 +295,9 @@ DAMAGE_REACTION(/obj/structure/girder, DAMAGE_BLOB, PROC_REF(girder_blob))
 
 /// Shielding derived from the frame material plus any reinforcement.
 /obj/structure/girder/proc/update_rad_insulation()
-	var/transmission = girder_material ? girder_material.material_radiation_transmission(RAD_GIRDER_THICKNESS_MM) : RAD_NO_INSULATION
+	var/transmission = girder_material ? girder_material.radiation_transmission(RAD_GIRDER_THICKNESS_MM) : RAD_NO_INSULATION
 	if(reinf_material)
-		transmission *= reinf_material.material_radiation_transmission(RAD_GIRDER_REINFORCEMENT_THICKNESS_MM)
+		transmission *= reinf_material.radiation_transmission(RAD_GIRDER_REINFORCEMENT_THICKNESS_MM)
 	set_rad_insulation(transmission)
 
 /obj/structure/girder/proc/reinforce_girder()

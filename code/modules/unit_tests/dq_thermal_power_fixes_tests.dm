@@ -52,8 +52,8 @@
 	var/datum/material/glass = get_material_by_name(MAT_GLASS)
 	TEST_ASSERT_NOTNULL(steel, "no steel material")
 	TEST_ASSERT_NOTNULL(glass, "no glass material")
-	var/steel_coefficient = steel.material_thermal_conductance(2.5, 0.25, T20C) / WALL_CONDUCTANCE_PER_TRANSFER_COEFFICIENT
-	var/glass_coefficient = glass.material_thermal_conductance(2.5, 0.25, T20C) / WALL_CONDUCTANCE_PER_TRANSFER_COEFFICIENT
+	var/steel_coefficient = steel.thermal_conductance(2.5, 0.25, T20C) / WALL_CONDUCTANCE_PER_TRANSFER_COEFFICIENT
+	var/glass_coefficient = glass.thermal_conductance(2.5, 0.25, T20C) / WALL_CONDUCTANCE_PER_TRANSFER_COEFFICIENT
 	TEST_ASSERT(steel_coefficient < WALL_MAX_HEAT_TRANSFER_COEFFICIENT, "steel walls still hit the conductance cap ([steel_coefficient])")
 	TEST_ASSERT(glass_coefficient < steel_coefficient, "glass conducts no worse than steel ([glass_coefficient] vs [steel_coefficient])")
 

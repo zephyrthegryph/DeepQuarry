@@ -277,6 +277,7 @@
 #include "dq_w6_critical_tests.dm"
 #include "dq_om_core_tests.dm"
 #include "dq_shared_cache_tests.dm"
+#include "dq_material_tree_tests.dm"
 #include "dq_sys_hygiene_tests.dm"
 #include "dq_sys_requirements_tests.dm"
 #include "dq_sys_tables_tests.dm"

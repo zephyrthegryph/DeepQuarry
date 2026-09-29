@@ -142,7 +142,7 @@
 			if((abs(environment_temperature-pipe_temperature) > minimum_temperature_difference) || (loc_as_turf.special_temperature))
 				can_hibernate = FALSE
 				var/datum/material/material = engineered_material()
-				var/effective_conductivity = material ? clamp(material.material_thermal_conductance(surface, 0.004, pipe_temperature) / 10000, 0.001, 1) : thermal_conductivity
+				var/effective_conductivity = material ? clamp(material.thermal_conductance(surface, 0.004, pipe_temperature) / 10000, 0.001, 1) : thermal_conductivity
 				parent.temperature_interact(loc, volume, effective_conductivity)
 		else if(istype(loc, /turf/space/))
 			if(abs(pipe_temperature - TCMB) > minimum_temperature_difference)

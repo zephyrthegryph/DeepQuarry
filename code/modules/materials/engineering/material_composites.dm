@@ -5,32 +5,6 @@
 /atom/proc/material_reaction_rate_multiplier()
 	return 1
 
-/datum/material/proc/material_electrical_resistance(length_m, area_mm2, temperature, current_density = 0)
-	var/effective_resistivity = max(electrical_resistivity, 0.0001)
-	if(critical_temperature > 0 && temperature < critical_temperature && current_density <= critical_current_density)
-		effective_resistivity = 0.0001
-	else if(temperature > T20C)
-		effective_resistivity *= 1 + (temperature - T20C) / max(heat_resistance * 35, 500)
-	return effective_resistivity * max(length_m, 0.01) / max(area_mm2, 0.1)
-
-/datum/material/proc/material_thermal_conductance(area_m2, thickness_m, temperature)
-	var/effective_conductivity = max(conductivity, 1) * (1 - thermal_insulation / 125)
-	if(temperature > melting_point)
-		effective_conductivity *= 1.5
-	return max(0.001, effective_conductivity * max(area_m2, 0.001) / max(thickness_m, 0.0001))
-
-/datum/material/proc/material_pressure_limit(radius_mm, wall_thickness_mm, temperature)
-	var/temperature_factor = clamp((melting_point - temperature) / max(melting_point - T20C, 1), 0.08, 1)
-	var/effective_strength = max(yield_strength, hardness * 5, 25) * temperature_factor
-	var/fracture_factor = clamp(fracture_toughness / 50, 0.25, 1.5)
-	return max(ONE_ATMOSPHERE, effective_strength * max(wall_thickness_mm, 0.1) / max(radius_mm, 1) * fracture_factor * ONE_ATMOSPHERE)
-
-/datum/material/proc/material_corrosion_rate(reagent_id, temperature = T20C)
-	var/datum/reagent/chemical = chemistry_service().chemical_reagents[reagent_id]
-	var/aggression = chemical?.material_corrosivity || 0
-	var/temperature_factor = max(0.25, 1 + (temperature - T20C) / 300)
-	return max(0, aggression * temperature_factor * (100 - corrosion_resistance) / 100)
-
 /// Emitted on GLOB.om_world when a material's physical vars change after facts were read from
 /// it (material_facts_changed()). Shared caches of material-derived facts clear on it.
 /datum/om/event/material_facts_changed
@@ -44,18 +18,6 @@
 		M.shared_cache_uid = "m:[M.name]"
 		return M.shared_cache_uid
 	return shared_cache_assign_uid(M)
-
-/// Radiation transmission through `thickness_mm` of this material. Shared per (material,
-/// thickness) (doc/rewrite/init_and_turfs.md sec 3.1): every wall, window, girder, door and item
-/// of a material asks the same question of the same (usually singleton) material.
-/datum/material/proc/material_radiation_transmission(thickness_mm)
-	return CACHED_KEY(material_radiation_transmission, "[MATERIAL_CACHE_ID(src)]|[thickness_mm]", src, thickness_mm)
-
-/proc/build_material_radiation_transmission(datum/material/M, thickness_mm)
-	var/attenuation = max(0, M.radiation_resistance + M.density / 8) * max(thickness_mm, 0) / 100
-	return clamp(2.718281828 ** (-attenuation), 0, 1)
-
-DECLARE_SHARED_CACHE_EX(material_radiation_transmission, GLOBAL_PROC_REF(build_material_radiation_transmission), SC_ON_EVENT(/datum/om/event/material_facts_changed), 4096, 0)
 
 /// A material's physical vars changed after facts were read from it: every shared cache of
 /// material-derived facts clears (SC_ON_EVENT; changes are rare). A material that was not yet
@@ -103,7 +65,7 @@ DECLARE_SHARED_CACHE_EX(material_radiation_transmission, GLOBAL_PROC_REF(build_m
 /obj/proc/material_environment_pressure_limit(base_pressure, radius_mm, wall_thickness_mm, temperature)
 	var/selected_limit = construction_pressure_limit(radius_mm, wall_thickness_mm, temperature)
 	var/datum/material/steel = get_material_by_name(MAT_STEEL)
-	var/reference_limit = steel?.material_pressure_limit(radius_mm, wall_thickness_mm, T20C)
+	var/reference_limit = steel?.pressure_limit(radius_mm, wall_thickness_mm, T20C)
 	return (!isnull(selected_limit) && reference_limit) ? base_pressure * selected_limit / reference_limit : base_pressure
 
 /obj/proc/material_environment_begin_leak()
@@ -226,7 +188,7 @@ DECLARE_SHARED_CACHE_EX(material_radiation_transmission, GLOBAL_PROC_REF(build_m
 		return FALSE
 	var/corrosion = 0
 	for(var/datum/reagent/reagent in contents.reagent_list)
-		corrosion += liner.material_corrosion_rate(reagent.id) * reagent.volume / max(contents.total_volume, 1)
+		corrosion += liner.corrosion_rate(reagent.id) * reagent.volume / max(contents.total_volume, 1)
 	if(corrosion <= 0)
 		return FALSE
 	material_environment_liner_integrity = max(0, material_environment_liner_integrity - corrosion * max(elapsed_seconds, 0))
@@ -248,7 +210,7 @@ DECLARE_SHARED_CACHE_EX(material_radiation_transmission, GLOBAL_PROC_REF(build_m
 	var/corrosion = 0
 	if(liner && reagents?.total_volume)
 		for(var/datum/reagent/chemical in reagents.reagent_list)
-			corrosion += liner.material_corrosion_rate(chemical.id) * chemical.volume / reagents.total_volume
+			corrosion += liner.corrosion_rate(chemical.id) * chemical.volume / reagents.total_volume
 	material_service_event(MATERIAL_EVENT_CORROSION, corrosion)
 	material_service?.contents_changed()
 

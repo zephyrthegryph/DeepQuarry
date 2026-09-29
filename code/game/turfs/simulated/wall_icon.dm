@@ -58,13 +58,13 @@
 	var/explosion = material.explosion_resistance
 	if(reinf_material && reinf_material.explosion_resistance > explosion)
 		explosion = reinf_material.explosion_resistance
-	var/conductance = material.material_thermal_conductance(2.5, 0.25, material_temperature)
+	var/conductance = material.thermal_conductance(2.5, 0.25, material_temperature)
 	return list(
 		W.material_integrity_cap(),
 		explosion,
 		clamp(conductance / WALL_CONDUCTANCE_PER_TRANSFER_COEFFICIENT, 0.001, WALL_MAX_HEAT_TRANSFER_COEFFICIENT),
 		max(10000, material.density * material.specific_heat * 25),
-		material.material_radiation_transmission(RAD_WALL_THICKNESS_MM),
+		material.radiation_transmission(RAD_WALL_THICKNESS_MM),
 		reinf_material ? "reinforced [material.display_name] wall" : "[material.display_name] wall",
 		reinf_material ? "It seems to be a section of wall reinforced with [reinf_material.display_name] and plated with [material.display_name]." : "It seems to be a section of wall plated with [material.display_name].",
 	)

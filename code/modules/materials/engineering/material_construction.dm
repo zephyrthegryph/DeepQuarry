@@ -250,27 +250,27 @@
 /// performs the job instead of averaging an item into one magic material.
 /obj/proc/construction_electrical_resistance(length_m, area_mm2, temperature, current_density = 0)
 	var/datum/material/conductor = material_for_role(MATERIAL_ROLE_CONDUCTOR) || primary_construction_material()
-	return conductor ? conductor.material_electrical_resistance(length_m, area_mm2, temperature, current_density) : null
+	return conductor ? conductor.electrical_resistance(length_m, area_mm2, temperature, current_density) : null
 
 /obj/proc/construction_thermal_conductance(area_m2, thickness_m, temperature)
 	var/datum/material/thermal = material_for_role(MATERIAL_ROLE_THERMAL) || material_for_role(MATERIAL_ROLE_STRUCTURE) || primary_construction_material()
-	var/conductance = thermal ? thermal.material_thermal_conductance(area_m2, thickness_m, temperature) : null
+	var/conductance = thermal ? thermal.thermal_conductance(area_m2, thickness_m, temperature) : null
 	if(!isnull(conductance) && thermal?.thermal_switch_temperature)
 		var/switch_fraction = clamp((temperature - thermal.thermal_switch_temperature) / 20, 0, 1)
 		conductance *= 1 + (thermal.thermal_switch_ratio - 1) * switch_fraction
 	var/datum/material/insulator = material_for_role(MATERIAL_ROLE_INSULATION)
 	if(!isnull(conductance) && insulator)
-		var/insulation_conductance = insulator.material_thermal_conductance(area_m2, thickness_m, temperature)
+		var/insulation_conductance = insulator.thermal_conductance(area_m2, thickness_m, temperature)
 		conductance = 1 / (1 / conductance + 1 / insulation_conductance)
 	return conductance
 
 /obj/proc/construction_pressure_limit(radius_mm, wall_thickness_mm, temperature)
 	var/datum/material/structure = material_for_role(MATERIAL_ROLE_STRUCTURE) || primary_construction_material()
-	return structure ? structure.material_pressure_limit(radius_mm, wall_thickness_mm, temperature) : null
+	return structure ? structure.pressure_limit(radius_mm, wall_thickness_mm, temperature) : null
 
 /obj/proc/construction_radiation_transmission(thickness_mm)
 	var/datum/material/jacket = material_for_role(MATERIAL_ROLE_JACKET) || material_for_role(MATERIAL_ROLE_STRUCTURE) || primary_construction_material()
-	return jacket ? jacket.material_radiation_transmission(thickness_mm) : 1
+	return jacket ? jacket.radiation_transmission(thickness_mm) : 1
 
 /obj/examine(mob/user)
 	. = ..()

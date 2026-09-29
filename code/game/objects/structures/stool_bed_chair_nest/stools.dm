@@ -28,7 +28,7 @@
 		return INITIALIZE_HINT_QDEL
 	if(new_padding_material)
 		padding_material = get_material_by_name(new_padding_material)
-	force = round(material.get_blunt_damage()*0.4)
+	force = round(material.blunt_damage()*0.4)
 	update_icon()
 
 /obj/item/stool/padded/Initialize(mapload, new_material)

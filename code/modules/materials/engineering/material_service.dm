@@ -401,7 +401,7 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 	var/datum/material/liner = owner().material_for_role(MATERIAL_ROLE_LINER)
 	if(liner && owner().reagents?.total_volume)
 		for(var/datum/reagent/chemical in owner().reagents.reagent_list)
-			chemical_rate += liner.material_corrosion_rate(chemical.id, temperature) * chemical.volume / owner().reagents.total_volume
+			chemical_rate += liner.corrosion_rate(chemical.id, temperature) * chemical.volume / owner().reagents.total_volume
 	if(chemical_rate)
 		schedule()
 

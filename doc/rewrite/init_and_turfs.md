@@ -1028,7 +1028,7 @@ Floors now share their edge and inner-corner overlay lists per (flooring,
 border bits, corner bits) (`/datum/decl/flooring/proc/get_edge_overlays()`),
 full-tile windows share theirs per (icon, basestate, connections, damage
 step, layer) (`window_overlay_images()`), and
-`/datum/material/proc/material_radiation_transmission()` is cached per
+`/datum/material/proc/radiation_transmission()` is cached per
 material and thickness, so window, girder, door, wall and item shielding is
 worked out once per material (`material_facts_changed()` drops the cache).
 

@@ -47,9 +47,9 @@
 /obj/item/material/twohanded/update_force()
 	base_name = name
 	if(sharp || edge)
-		force_wielded = material.get_edge_damage()
+		force_wielded = material.edge_damage()
 	else
-		force_wielded = material.get_blunt_damage()
+		force_wielded = material.blunt_damage()
 	force_wielded = round(force_wielded*force_divisor)
 	force_unwielded = round(force_wielded*unwielded_force_divisor)
 	force = force_unwielded

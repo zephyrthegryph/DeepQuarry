@@ -172,8 +172,8 @@ DECLARE_SHARED_CACHE(sc_test_obj, GLOBAL_PROC_REF(sc_test_build_obj), SC_NEVER)
 	var/datum/material/steel/copy = new
 	copy.radiation_resistance = steel.radiation_resistance + 50
 	TEST_ASSERT_NOTEQUAL(MATERIAL_CACHE_ID(copy), MATERIAL_CACHE_ID(steel), "an unregistered material of the same name has its own id")
-	var/steel_rad = steel.material_radiation_transmission(60)
-	TEST_ASSERT(copy.material_radiation_transmission(60) < steel_rad, "and its own facts")
+	var/steel_rad = steel.radiation_transmission(60)
+	TEST_ASSERT(copy.radiation_transmission(60) < steel_rad, "and its own facts")
 	var/datum/shared_cache/rad = SHARED_CACHE(material_radiation_transmission)
 	TEST_ASSERT(rad.entry_count() >= 2, "both cached")
 	steel.material_facts_changed()
