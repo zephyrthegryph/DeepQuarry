@@ -85,21 +85,28 @@ GLOBAL_LIST_EMPTY(msg_defs)
  * An action seen from two sides: `user` reads `self`, everyone else in `range` who can see
  * reads `others`, and those who can't see get `blind`. Any line may be null. A non-mob user
  * (a machine acting) only has the others and blind lines. `exclude` lists mobs that see none of it.
+ * `runemessage` is the chat bubble shown over `user` to those who see it (tokens are filled);
+ * null keeps the default (none for a mob, the eye glyph for anything else).
  */
-/proc/act_message(atom/user, atom/target, self, others, blind, range = world.view, obj/item/item, list/exclude)
+/proc/act_message(atom/user, atom/target, self, others, blind, range = world.view, obj/item/item, list/exclude, runemessage)
 	if(!user)
 		return
 	self = msg_fill(self, user, target, item)
 	others = msg_fill(others, user, target, item)
 	blind = msg_fill(blind, user, target, item)
+	runemessage = msg_fill(runemessage, user, target, item)
 	if(ismob(user))
 		var/mob/M = user
 		if(others || blind)
-			M.visible_message(others, self, blind, exclude ? exclude.Copy() : null, range)
+			M.visible_message(others, self, blind, exclude ? exclude.Copy() : null, range, runemessage)
 		else if(self)
 			to_chat(M, self)
 		return
-	if(others || blind)
+	if(!(others || blind))
+		return
+	if(runemessage)
+		user.visible_message(others, blind, exclude ? exclude.Copy() : null, range, runemessage)
+	else
 		user.visible_message(others, blind, exclude ? exclude.Copy() : null, range)
 
 /// act_message() with a declared template (a /datum/msg type). Null msg_type sends nothing.
