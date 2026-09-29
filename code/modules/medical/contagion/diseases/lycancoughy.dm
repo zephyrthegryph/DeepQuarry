@@ -63,7 +63,8 @@
 					H.injure(INJURY_BLUNT, rand(5, 10), stomach)
 				else
 					var/atom/hairball = pick(prob(50) ? puppy_types : plush_types)
-					H.visible_message(span_danger("[H] coughs up \a [initial(hairball.name)]!"), span_userdanger("You cough up \a [initial(hairball.name)]?!"))
+					act_message(H, null, MSG_SELF(span_userdanger("You cough up \a [initial(hairball.name)]?!")), \
+						MSG_OTHERS(span_danger("%U% coughs up \a [initial(hairball.name)]!")))
 					H.emote("cough")
 					new hairball(H.loc)
 					barklimit--

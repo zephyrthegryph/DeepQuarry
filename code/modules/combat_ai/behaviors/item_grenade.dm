@@ -56,7 +56,7 @@
 	var/obj/item/grenade/G = source
 	if(!owner || !istype(G) || !isturf(target))
 		return DQ_BEHAVIOR_FAILED
-	owner.visible_message(span_warning("[owner] hurls [G]!"))
+	act_message(owner, null, others = span_warning("%U% hurls [G]!"))
 	// Use the grenade's own activate/throw pipeline. Drop from hand first.
 	owner.drop_from_inventory(G)
 	G.activate(owner)

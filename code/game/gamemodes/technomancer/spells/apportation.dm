@@ -39,7 +39,7 @@
 			user.drop_item(src)
 			src.moveToNullspace()
 			user.put_in_hands(I)
-			user.visible_message(span_notice("\A [I] appears in \the [user]'s hand!"))
+			act_message(user, null, others = span_notice("\A [I] appears in %U%'s hand!"))
 			add_attack_logs(user,I,"Stolen with [src]")
 			consume(src, user)
 		//Now let's try to teleport a living mob.
@@ -60,7 +60,7 @@
 		return
 
 	L.status_at_least(EFFECT_WEAKENED, 3)
-	user.visible_message(span_warning(span_bold("\The [user]") + " seizes [L]!"))
+	act_message(user, L, others = span_warning(span_bold("%U%") + " seizes %T%!"))
 
 	var/obj/item/grab/G = new(user, L)
 

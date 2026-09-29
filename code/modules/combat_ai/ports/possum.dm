@@ -20,11 +20,11 @@ TYPE_TABLE(/mob/living/simple_mob/animal/passive/opossum, get_ai_behaviors, list
 	if(!resting && stat == CONSCIOUS)
 		if(!client)
 			if(!is_angry)
-				visible_message(span_infoplain(span_bold("\The [src]") + " hisses!"))
+				act_message(src, null, others = span_infoplain(span_bold("%U%") + " hisses!"))
 				is_angry = TRUE
 				COOLDOWN_START(src, be_angery_until, rand(30 SECONDS, 1 MINUTE))
 			else
-				visible_message(span_infoplain(span_bold("\The [src]") + " dies!"))
+				act_message(src, null, others = span_infoplain(span_bold("%U%") + " dies!"))
 				resting = TRUE
 				COOLDOWN_START(src, play_dead_until, rand(1 MINUTE, 2 MINUTES))
 		update_icon()

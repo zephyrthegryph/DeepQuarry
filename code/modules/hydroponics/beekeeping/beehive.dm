@@ -59,7 +59,7 @@
 	if(closed)
 		to_chat(user, span_notice("You need to open \the [src] with a crowbar before smoking the bees."))
 		return TRUE
-	user.visible_message(span_notice("[user] smokes the bees in \the [src]."), span_notice("You smoke the bees in \the [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You smoke the bees in %T%.")), MSG_OTHERS(span_notice("%U% smokes the bees in %T%.")))
 	smoked = 30
 	MACHINE_WAKE(src)
 	update_icon()
@@ -81,7 +81,7 @@
 	if(held.honey)
 		to_chat(user, span_notice("\The [held] is full with beeswax and honey, empty it in the extractor first."))
 		return TRUE
-	user.visible_message(span_notice("[user] loads \the [held] into \the [src]."), span_notice("You load \the [held] into \the [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You load %I% into %T%.")), MSG_OTHERS(span_notice("%U% loads %I% into %T%.")), item = held)
 	update_icon()
 	user.drop_from_inventory(held)
 	held.forceMove(src)
@@ -108,12 +108,16 @@
 		to_chat(user, span_notice("You need to open \the [src] with a crowbar before moving the bees."))
 		return TRUE
 	if(held.full)
-		user.visible_message(span_notice("[user] puts the queen and the bees from \the [held] into \the [src]."), span_notice("You put the queen and the bees from \the [held] into \the [src]."))
+		act_message(user, src, MSG_SELF(span_notice("You put the queen and the bees from %I% into %T%.")), \
+			MSG_OTHERS(span_notice("%U% puts the queen and the bees from %I% into %T%.")), \
+			item = held)
 		bee_count = 20
 		MACHINE_WAKE(src)
 		held.empty()
 	else
-		user.visible_message(span_notice("[user] puts bees and larvae from \the [src] into \the [held]."), span_notice("You put bees and larvae from \the [src] into \the [held]."))
+		act_message(user, src, MSG_SELF(span_notice("You put bees and larvae from %T% into %I%.")), \
+			MSG_OTHERS(span_notice("%U% puts bees and larvae from %T% into %I%.")), \
+			item = held)
 		bee_count /= 2
 		held.fill()
 	update_icon()
@@ -140,14 +144,15 @@
 
 /obj/machinery/beehive/crowbar_act(mob/user, obj/item/tool)
 	closed = !closed
-	user.visible_message(span_notice("[user] [closed ? "closes" : "opens"] \the [src]."), span_notice("You [closed ? "close" : "open"] \the [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You [closed ? "close" : "open"] %T%.")), MSG_OTHERS(span_notice("%U% [closed ? "closes" : "opens"] %T%.")))
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/beehive/wrench_act(mob/user, obj/item/tool)
 	set_anchored(!anchored)
 	playsound(src, tool.usesound, 50, TRUE)
-	user.visible_message(span_notice("[user] [anchored ? "wrenches" : "unwrenches"] \the [src]."), span_notice("You [anchored ? "wrench" : "unwrench"] \the [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You [anchored ? "wrench" : "unwrench"] %T%.")), \
+		MSG_OTHERS(span_notice("%U% [anchored ? "wrenches" : "unwrenches"] %T%.")))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/beehive/screwdriver_act(mob/user, obj/item/tool)
@@ -165,7 +170,7 @@
 /obj/machinery/beehive/proc/dismantle_done(mob/user)
 	if(bee_count || length(frames))
 		return
-	user.visible_message(span_notice("[user] dismantles \the [src]."), span_notice("You dismantle \the [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You dismantle %T%.")), MSG_OTHERS(span_notice("%U% dismantles %T%.")))
 	replace_with(src, /obj/item/beehive_assembly)
 
 /datum/interaction/machine_hand/ungated/beehive_harvest
@@ -199,7 +204,8 @@
 		if(!smoked && bee_count)
 			to_chat(user, span_notice("The bees won't let you take the honeycombs out like this, smoke them first."))
 			return TRUE
-		user.visible_message(span_notice("[user] starts taking the honeycombs out of \the [src]."), span_notice("You start taking the honeycombs out of \the [src]..."))
+		act_message(user, src, MSG_SELF(span_notice("You start taking the honeycombs out of %T%...")), \
+			MSG_OTHERS(span_notice("%U% starts taking the honeycombs out of %T%.")))
 		harvest_next(user)
 		return TRUE
 
@@ -302,7 +308,9 @@
 	if(!held.honey)
 		to_chat(user, span_notice("\The [held] is empty, put it into a beehive."))
 		return TRUE
-	user.visible_message(span_notice("[user] loads \the [held]'s comb into \the [src] and turns it on."), span_notice("You load \the [held] into \the [src] and turn it on."))
+	act_message(user, src, MSG_SELF(span_notice("You load %I% into %T% and turn it on.")), \
+		MSG_OTHERS(span_notice("%U% loads %I%'s comb into %T% and turns it on.")), \
+		item = held)
 	processing = held.honey
 	update_icon()
 	use_power_oneoff(active_power_usage * 5) //uses 5 second of active power at once, because I could not figure out how active powerdraw works and if or how the work is timed.
@@ -325,7 +333,9 @@
 	var/transferred = min(held.reagents.maximum_volume - held.reagents.total_volume, honey)
 	held.reagents.add_reagent(REAGENT_ID_HONEY, transferred)
 	honey -= transferred
-	user.visible_message(span_notice("[user] collects honey from \the [src] into \the [held]."), span_notice("You collect [transferred] units of honey from \the [src] into \the [held]."))
+	act_message(user, src, MSG_SELF(span_notice("You collect [transferred] units of honey from %T% into %I%.")), \
+		MSG_OTHERS(span_notice("%U% collects honey from %T% into %I%.")), \
+		item = held)
 	return TRUE
 
 /obj/item/bee_smoker
@@ -375,7 +385,7 @@ DECLARE_INTERACTIONS(/obj/item/beehive_assembly, INTERACT_USE(null, PROC_REF(int
 	return TRUE
 
 /obj/item/beehive_assembly/proc/assemble_done(mob/user)
-	user.visible_message(span_notice("[user] constructs a beehive."), span_notice("You construct a beehive."))
+	act_message(user, null, MSG_SELF(span_notice("You construct a beehive.")), MSG_OTHERS(span_notice("%U% constructs a beehive.")))
 	new /obj/machinery/beehive(get_turf(user))
 	consume(src, user)
 
@@ -431,7 +441,8 @@ DECLARE_APPEARANCE(/obj/item/bee_pack, "full", list("0" = list(APPEARANCE_OVERLA
 		return ITEM_INTERACT_BLOCKING
 	set_anchored(!anchored)
 	playsound(src, tool.usesound, 50, TRUE)
-	user.visible_message(span_notice("[user] [anchored ? "wrenches" : "unwrenches"] \the [src]."), span_notice("You [anchored ? "wrench" : "unwrench"] \the [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You [anchored ? "wrench" : "unwrench"] %T%.")), \
+		MSG_OTHERS(span_notice("%U% [anchored ? "wrenches" : "unwrenches"] %T%.")))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/honey_extractor/screwdriver_act(mob/user, obj/item/tool)

@@ -37,7 +37,7 @@
 			cards -= P
 		cards = newcards
 		play_sfx(src, SFX_ITEMS_CARDSHUFFLE)
-		user.visible_message("\The [user] shuffles [src].")
+		act_message(user, src, others = "%U% shuffles %T%.")
 		COOLDOWN_START(src, shuffle_cooldown, 1 SECOND)
 	else
 		return
@@ -92,7 +92,7 @@
 			cards -= P
 		cards = newcards
 		play_sfx(src, SFX_ITEMS_CARDSHUFFLE)
-		user.visible_message("\The [user] shuffles [src].")
+		act_message(user, src, others = "%U% shuffles %T%.")
 		COOLDOWN_START(src, shuffle_cooldown, 1 SECOND)
 	else
 		return

@@ -81,9 +81,9 @@
 	if(istype(ejecting) && !QDELETED(ejecting) && ejecting.loc == src)
 		ejecting.dropInto(loc)
 		if(user == src)
-			visible_message(span_infoplain(span_bold("\The [src]") + " ejects \the [ejecting] from its cargo compartment."))
+			act_message(src, ejecting, others = span_infoplain(span_bold("%U%") + " ejects %T% from its cargo compartment."))
 		else
-			user.visible_message(span_infoplain(span_bold("\The [user]") + " pulls \the [ejecting] from \the [src]'s cargo compartment."))
+			act_message(user, ejecting, others = span_infoplain(span_bold("%U%") + " pulls %T% from \the [src]'s cargo compartment."))
 
 /// Old attack_ai: an adjacent cyborg unloads cargo; otherwise the next silicon Use / default.
 /mob/living/silicon/robot/platform/proc/platform_silicon_unload(mob/user, obj/item/held, datum/interaction/interaction)
@@ -100,7 +100,7 @@
 	if(!istype(removing) || QDELETED(removing) || removing.loc != src)
 		LAZYREMOVE(stored_atoms, remove_ref)
 	else
-		user.visible_message(span_infoplain(span_bold("\The [user]") + " begins unloading \the [removing] from \the [src]'s cargo compartment."))
+		act_message(user, removing, others = span_infoplain(span_bold("%U%") + " begins unloading %T% from \the [src]'s cargo compartment."))
 		om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(try_remove_cargo_platform_done), done_args = list(user, removing))
 	return TRUE
 
@@ -141,9 +141,9 @@
 	if(!can_mouse_drop(dropping, user) || !can_store_atom(dropping, user))
 		return FALSE
 	if(user == src)
-		visible_message(span_infoplain(span_bold("\The [src]") + " begins loading \the [dropping] into its cargo compartment."))
+		act_message(src, dropping, others = span_infoplain(span_bold("%U%") + " begins loading %T% into its cargo compartment."))
 	else
-		user.visible_message(span_infoplain(span_bold("\The [user]") + " begins loading \the [dropping] into \the [src]'s cargo compartment."))
+		act_message(user, dropping, others = span_infoplain(span_bold("%U%") + " begins loading %T% into \the [src]'s cargo compartment."))
 	om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(MouseDrop_T_platform_done), done_args = list(dropping, user))
 	return TRUE
 

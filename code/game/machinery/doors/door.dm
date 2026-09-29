@@ -54,11 +54,11 @@ OM_TIMER_SLOT(/obj/machinery/door, door_timer_token)
 	if(isanimal(user))
 		var/mob/living/simple_mob/S = user
 		if(damage >= STRUCTURE_MIN_DAMAGE_THRESHOLD)
-			visible_message(span_danger("\The [user] smashes into [src]!"))
+			act_message(user, src, others = span_danger("%U% smashes into %T%!"))
 			playsound(src, S.attack_sound, 75, 1)
 			receive_generic_attack(user, damage)
 		else
-			visible_message(span_infoplain(span_bold("\The [user]") + " bonks \the [src] harmlessly."))
+			act_message(user, src, others = span_infoplain(span_bold("%U%") + " bonks %T% harmlessly."))
 	user.do_attack_animation(src)
 
 /obj/machinery/door/Initialize(mapload)
@@ -301,9 +301,9 @@ OM_TIMER_SLOT(/obj/machinery/door, door_timer_token)
 	if(W.obj_damage_type())
 		user.do_attack_animation(src)
 		if(W.force < min_force)
-			user.visible_message(span_danger("\The [user] hits \the [src] with \the [W] with no visible effect."))
+			act_message(user, src, others = span_danger("%U% hits %T% with %I% with no visible effect."), item = W)
 		else
-			user.visible_message(span_danger("\The [user] forcefully strikes \the [src] with \the [W]!"))
+			act_message(user, src, others = span_danger("%U% forcefully strikes %T% with %I%!"), item = W)
 			playsound(src, hitsound, 100, 1)
 			receive_weapon_hit(W, user, silent = FALSE)
 	return TRUE

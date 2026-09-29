@@ -29,7 +29,7 @@ TYPE_TABLE(/obj/item/clothing/accessory/holster, hold_spec, list(REQ_BECAUSE(REQ
 	user.drop_from_inventory(holstered, target = src)
 	holstered.add_fingerprint(user)
 	w_class = max(w_class, holstered.w_class)
-	user.visible_message(span_notice("[user] holsters \the [holstered]."), span_notice("You holster \the [holstered]."))
+	act_message(user, null, MSG_SELF(span_notice("You holster \the [holstered].")), MSG_OTHERS(span_notice("%U% holsters \the [holstered].")))
 	name = "occupied [initial(name)]"
 
 /obj/item/clothing/accessory/holster/proc/clear_holster()
@@ -59,15 +59,11 @@ TYPE_TABLE(/obj/item/clothing/accessory/holster, hold_spec, list(REQ_BECAUSE(REQ
 		var/sound_vol = 25
 		if(stance == I_HURT)
 			sound_vol = 50
-			user.visible_message(
-				span_danger("[user] draws \the [holstered], ready to go!"),
-				span_warning("You draw \the [holstered], ready to go!")
-				)
+			act_message(user, null, MSG_SELF(span_warning("You draw \the [holstered], ready to go!")), \
+				MSG_OTHERS(span_danger("%U% draws \the [holstered], ready to go!")))
 		else
-			user.visible_message(
-				span_notice("[user] draws \the [holstered], pointing it at the ground."),
-				span_notice("You draw \the [holstered], pointing it at the ground.")
-				)
+			act_message(user, null, MSG_SELF(span_notice("You draw \the [holstered], pointing it at the ground.")), \
+				MSG_OTHERS(span_notice("%U% draws \the [holstered], pointing it at the ground.")))
 
 		if(holster_out)
 			playsound(src, holster_out, sound_vol)

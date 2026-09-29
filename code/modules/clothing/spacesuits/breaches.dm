@@ -65,7 +65,7 @@
 			amount_left = 0
 			B.update_descriptor()
 
-	user.visible_message(span_infoplain(span_bold("[user]") + " patches some of the damage on \the [src]."))
+	act_message(user, src, others = span_infoplain(span_bold("%U%") + " patches some of the damage on %T%."))
 	calc_breach_damage()
 
 /obj/item/clothing/suit/space/proc/create_breaches(breach_type, amount)

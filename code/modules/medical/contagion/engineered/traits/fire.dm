@@ -79,12 +79,12 @@ Bonus
 	M.adjust_fire_stacks(1 * power)
 	M.injure(INJURY_BURN, 2 * power)
 	if(infective && !(A.spread_flags & DISEASE_SPREAD_FALTERED))
-		M.visible_message(span_danger("[M] bursts into flames, spreading burning sparks about the area!"))
+		act_message(M, null, others = span_danger("%U% bursts into flames, spreading burning sparks about the area!"))
 	return TRUE
 
 /datum/viral_trait/fire/proc/Firestacks_stage_5(mob/living/M, datum/affliction/contagion/engineered/A)
 	M.adjust_fire_stacks(3 * power)
 	M.injure(INJURY_BURN, 5 * power)
 	if(infective && !(A.spread_flags & DISEASE_SPREAD_FALTERED))
-		M.visible_message(span_danger("[M] bursts into flames, spreading burning sparks about the area!"))
+		act_message(M, null, others = span_danger("%U% bursts into flames, spreading burning sparks about the area!"))
 	return TRUE

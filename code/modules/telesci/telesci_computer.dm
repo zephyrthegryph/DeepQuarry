@@ -72,7 +72,7 @@ DECLARE_REF(/obj/machinery/computer/telescience, "inserted_gps", SPILL, null)
 		return TRUE
 	LAZYADD(crystals, W)
 	W.forceMove(src)
-	user.visible_message("[user] inserts [W] into \the [src]'s crystal slot.", span_notice("You insert [W] into \the [src]'s crystal slot."))
+	act_message(user, src, MSG_SELF(span_notice("You insert [W] into %T%'s crystal slot.")), MSG_OTHERS("%U% inserts [W] into %T%'s crystal slot."))
 	return TRUE
 
 /// Old attackby: the GPS branch.
@@ -88,7 +88,7 @@ DECLARE_REF(/obj/machinery/computer/telescience, "inserted_gps", SPILL, null)
 		inserted_gps = W
 		user.unEquip(W)
 		W.forceMove(src)
-		user.visible_message("[user] inserts [W] into \the [src]'s GPS device slot.", span_notice("You insert [W] into \the [src]'s GPS device slot."))
+		act_message(user, src, MSG_SELF(span_notice("You insert [W] into %T%'s GPS device slot.")), MSG_OTHERS("%U% inserts [W] into %T%'s GPS device slot."))
 	return TRUE
 
 /obj/machinery/computer/telescience/multitool_act(mob/user, obj/item/tool)

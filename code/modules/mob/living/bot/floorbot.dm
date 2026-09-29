@@ -205,10 +205,10 @@ EXTEND_INTERACTIONS(/mob/living/bot/floorbot, INTERACT_HAND_UNGATED("Open contro
 	if(emagged && istype(A, /turf/simulated/floor))
 		var/turf/simulated/floor/F = A
 		if(F.flooring)
-			visible_message(span_warning("\The [src] begins to tear the floor tile from the floor!"))
+			act_message(src, null, others = span_warning("%U% begins to tear the floor tile from the floor!"))
 			bot_work(5 SECONDS, A, PROC_REF(UnarmedAttack_floorbot_done), list(F))
 		else
-			visible_message(span_danger("\The [src] begins to tear through the floor!"))
+			act_message(src, null, others = span_danger("%U% begins to tear through the floor!"))
 			bot_work(15 SECONDS, A, PROC_REF(UnarmedAttack_floorbot_done2), list(F))
 		target = null
 	else if(isopenturf(A) || istype(A, /turf/simulated/mineral/floor))
@@ -217,28 +217,28 @@ EXTEND_INTERACTIONS(/mob/living/bot/floorbot, INTERACT_HAND_UNGATED("Open contro
 			building = 1
 		if(amount < building)
 			return
-		visible_message(span_infoplain(span_bold("\The [src]") + " begins to repair the hole."))
+		act_message(src, null, others = span_infoplain(span_bold("%U%") + " begins to repair the hole."))
 		bot_work(5 SECONDS, A, PROC_REF(UnarmedAttack_floorbot_done3), list(A, building))
 		target = null
 	else if(istype(A, /turf/simulated/floor))
 		var/turf/simulated/floor/F = A
 		if(F.broken || F.burnt)
-			visible_message(span_infoplain(span_bold("\The [src]") + " begins to remove the broken floor."))
+			act_message(src, null, others = span_infoplain(span_bold("%U%") + " begins to remove the broken floor."))
 			bot_work(5 SECONDS, F, PROC_REF(UnarmedAttack_floorbot_done4), list(F))
 			target = null
 		else if(!F.flooring && amount)
-			visible_message(span_infoplain(span_bold("\The [src]") + " begins to improve the floor."))
+			act_message(src, null, others = span_infoplain(span_bold("%U%") + " begins to improve the floor."))
 			bot_work(5 SECONDS, F, PROC_REF(UnarmedAttack_floorbot_done5), list(F))
 			target = null
 	else if(istype(A, /obj/item/stack/tile/floor) && amount < maxAmount)
 		var/obj/item/stack/tile/floor/T = A
-		visible_message(span_infoplain(span_bold("\The [src]") + " begins to collect tiles."))
+		act_message(src, null, others = span_infoplain(span_bold("%U%") + " begins to collect tiles."))
 		bot_work(2 SECONDS, T, PROC_REF(UnarmedAttack_floorbot_done6), list(T))
 		target = null
 	else if(istype(A, /obj/item/stack/material) && amount + 4 <= maxAmount)
 		var/obj/item/stack/material/M = A
 		if(M.get_material_name() == MAT_STEEL)
-			visible_message(span_infoplain(span_bold("\The [src]") + " begins to make tiles."))
+			act_message(src, null, others = span_infoplain(span_bold("%U%") + " begins to make tiles."))
 			bot_work(5 SECONDS, A, PROC_REF(UnarmedAttack_floorbot_done7), list(M))
 
 /mob/living/bot/floorbot/proc/UnarmedAttack_floorbot_done(turf/simulated/floor/F)
@@ -274,7 +274,7 @@ EXTEND_INTERACTIONS(/mob/living/bot/floorbot, INTERACT_HAND_UNGATED("Open contro
 
 /mob/living/bot/floorbot/explode()
 	turn_off()
-	visible_message(span_danger("\The [src] blows apart!"))
+	act_message(src, null, others = span_danger("%U% blows apart!"))
 	play_sfx(src, SFX_SPARKS)
 	var/turf/Tsec = get_turf(src)
 

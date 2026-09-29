@@ -91,7 +91,7 @@ TYPE_TABLE(/obj/item/clothing/suit, equip_spec, dq_spec_join(..(), list(REQ_ON(P
 		if(!(def_zone in list(BP_TORSO, BP_GROIN)))
 			reflectchance /= 2
 		if(P.starting && prob(reflectchance))
-			visible_message(span_danger("\The [user]'s [src.name] reflects [attack_text]!"))
+			act_message(user, null, others = span_danger("%U%'s [src.name] reflects [attack_text]!"))
 
 			// Find a turf near or on the original location to bounce to
 			var/new_x = P.starting.x + pick(0, 0, 0, 0, 0, -1, 1, -2, 2)

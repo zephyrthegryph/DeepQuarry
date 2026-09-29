@@ -187,12 +187,13 @@
 		if (C.get_amount() < 1)
 			to_chat(user, span_warning("You need one length of coil to wire the airlock assembly."))
 			return TRUE
-		user.visible_message("[user] wires the airlock assembly.", "You start to wire the airlock assembly.")
+		act_message(user, null, MSG_SELF("You start to wire the airlock assembly."), MSG_OTHERS("%U% wires the airlock assembly."))
 		om_task_timed(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, C))
 
 	else if(istype(W, /obj/item/airlock_electronics) && state == 1)
 		playsound(src, W.usesound, 100, 1)
-		user.visible_message("[user] installs the electronics into the airlock assembly.", "You start to install electronics into the airlock assembly.")
+		act_message(user, null, MSG_SELF("You start to install electronics into the airlock assembly."), \
+			MSG_OTHERS("%U% installs the electronics into the airlock assembly."))
 
 		om_task_timed(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done2), done_args = list(W, user))
 
@@ -203,7 +204,8 @@
 			if (S.get_amount() >= 1)
 				if(material_name == MAT_RGLASS)
 					play_sfx(src, SFX_ITEMS_CROWBAR, 2)
-					user.visible_message("[user] adds [S.name] to the airlock assembly.", "You start to install [S.name] into the airlock assembly.")
+					act_message(user, null, MSG_SELF("You start to install [S.name] into the airlock assembly."), \
+						MSG_OTHERS("%U% adds [S.name] to the airlock assembly."))
 					om_task_timed(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done3), done_args = list(user, S))
 				else if(material_name)
 					// Ugly hack, will suffice for now. Need to fix it upstream as well, may rewrite mineral walls. ~Z
@@ -212,7 +214,8 @@
 						return TRUE
 					if(S.get_amount() >= 2)
 						play_sfx(src, SFX_ITEMS_CROWBAR, 2)
-						user.visible_message("[user] adds [S.name] to the airlock assembly.", "You start to install [S.name] into the airlock assembly.")
+						act_message(user, null, MSG_SELF("You start to install [S.name] into the airlock assembly."), \
+							MSG_OTHERS("%U% adds [S.name] to the airlock assembly."))
 						om_task_start(/datum/om/task/timed/door_assembly_attackby, user, src, S = S, material_name = material_name)
 
 	update_state()

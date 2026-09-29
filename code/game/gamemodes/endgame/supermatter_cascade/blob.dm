@@ -45,9 +45,9 @@ EXTEND_INTERACTIONS(/turf/unsimulated/wall/supermatter, 	INTERACT_ROBOT("Touch",
 
 /// Old attack_hand.
 /turf/unsimulated/wall/supermatter/proc/supermatter_wall_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	user.visible_message(span_warning("\The [user] reaches out and touches \the [src]... And then blinks out of existance."),\
-		span_danger("You reach out and touch \the [src]. Everything immediately goes quiet. Your last thought is \"That was not a wise decision.\""),\
-		span_warning("You hear an unearthly noise."))
+	act_message(user, src, MSG_SELF(span_danger("You reach out and touch %T%. Everything immediately goes quiet. Your last thought is \"That was not a wise decision.\"")), \
+		MSG_OTHERS(span_warning("%U% reaches out and touches %T%... And then blinks out of existance.")), \
+		MSG_BLIND(span_warning("You hear an unearthly noise.")))
 
 	play_sfx(src, SFX_EFFECTS_SUPERMATTER)
 
@@ -56,9 +56,10 @@ EXTEND_INTERACTIONS(/turf/unsimulated/wall/supermatter, 	INTERACT_ROBOT("Touch",
 
 /// Old attackby.
 /turf/unsimulated/wall/supermatter/proc/supermatter_wall_item(mob/living/user, obj/item/W, datum/interaction/interaction)
-	user.visible_message(span_warning("\The [user] touches \a [W] to \the [src] as a silence fills the room..."),\
-		span_danger("You touch \the [W] to \the [src] when everything suddenly goes silent.\"") + "\n" + span_notice("\The [W] flashes into dust as you flinch away from \the [src]."),\
-		span_warning("Everything suddenly goes silent."))
+	act_message(user, src, MSG_SELF(span_danger("You touch %I% to %T% when everything suddenly goes silent.\"") + "\n" + span_notice("%I% flashes into dust as you flinch away from %T%.")), \
+		MSG_OTHERS(span_warning("%U% touches \a [W] to %T% as a silence fills the room...")), \
+		MSG_BLIND(span_warning("Everything suddenly goes silent.")), \
+		item = W)
 
 	play_sfx(src, SFX_EFFECTS_SUPERMATTER)
 

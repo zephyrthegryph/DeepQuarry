@@ -313,7 +313,8 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 	. = ..()
 	if(!emagged)
 		set_emagged(TRUE)
-		visible_message(span_warning("\The [user] slides a weird looking ID into \the [src]!"),span_warning("You temporarily short the safety mechanisms."))
+		act_message(user, src, others = span_warning("%U% slides a weird looking ID into %T%!"), \
+			blind = span_warning("You temporarily short the safety mechanisms."))
 		return 1
 
 // Just a different sprite

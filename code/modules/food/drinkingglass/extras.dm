@@ -107,7 +107,8 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/glass2, \
 		to_chat(user, span_warning("There's not enough of [victim] left to sip on!"))
 		return
 
-	user.visible_message(span_infoplain(span_bold("[user]") + " starts sipping on [victim] with [src]!"), span_info("You start sipping on [victim] with [src]."))
+	act_message(user, victim, MSG_SELF(span_info("You start sipping on %T% with [src].")), \
+		MSG_OTHERS(span_infoplain(span_bold("%U%") + " starts sipping on %T% with [src]!")))
 	om_task_start(/datum/om/task/timed/straw_sipp, user, victim, reagent_type = reagent_type)
 
 /datum/om/task/timed/straw_sipp
@@ -119,7 +120,8 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/glass2, \
 	var/mob/living/victim = task.target
 	var/mob/user = task.actor
 	var/reagent_type = task.reagent_type
-	user.visible_message(span_infoplain(span_bold("[user]") + " sips some of [victim] with [src]!"), span_info("You take a sip of [victim] with [src]. Yum!"))
+	act_message(user, victim, MSG_SELF(span_info("You take a sip of %T% with [src]. Yum!")), \
+		MSG_OTHERS(span_infoplain(span_bold("%U%") + " sips some of %T% with [src]!")))
 	if(victim.vore_taste)
 		to_chat(user, span_infoplain(span_bold("[victim]") + " tastes like... [victim.vore_taste]!"))
 

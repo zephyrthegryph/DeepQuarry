@@ -41,13 +41,15 @@ DECLARE_INTERACTIONS(/obj/structure/boulder, INTERACT_ITEM(null, PROC_REF(intera
 			C.depth_scanner.scan_atom(user, src)
 			return INTERACTION_HANDLED_PASS
 		else
-			user.visible_message(span_bold("\The [user]") + " extends \the [C] over \the [src], a flurry of red beams scanning \the [src]'s surface!", span_notice("You extend \the [C] over \the [src], a flurry of red beams scanning \the [src]'s surface!"))
+			act_message(user, src, MSG_SELF(span_notice("You extend %I% over %T%, a flurry of red beams scanning %T%'s surface!")), \
+				MSG_OTHERS(span_bold("%U%") + " extends %I% over %T%, a flurry of red beams scanning %T%'s surface!"), \
+				item = C)
 			om_task_timed(user, 1.5 SECONDS, src, src, PROC_REF(measure_done), list(user))
 			return INTERACTION_HANDLED_PASS
 
 	if(istype(I, /obj/item/measuring_tape))
 		var/obj/item/measuring_tape/P = I
-		user.visible_message(span_bold("\The [user]") + " extends \the [P] towards \the [src].", span_notice("You extend \the [P] towards \the [src]."))
+		act_message(user, src, MSG_SELF(span_notice("You extend %I% towards %T%.")), MSG_OTHERS(span_bold("%U%") + " extends %I% towards %T%."), item = P)
 		om_task_timed(user, 1.5 SECONDS, src, src, PROC_REF(measure_done), list(user))
 		return INTERACTION_HANDLED_PASS
 
@@ -82,7 +84,8 @@ DECLARE_INTERACTIONS(/obj/structure/boulder, INTERACT_ITEM(null, PROC_REF(intera
 			O.anchored = FALSE	// Anchored finds are lame.
 			src.visible_message(span_warning("\The [src] suddenly crumbles away."))
 		else
-			user.visible_message(span_warning("\The [src] suddenly crumbles away."), span_notice("\The [src] has been whittled away under your careful excavation, but there was nothing of interest inside."))
+			act_message(user, src, MSG_SELF(span_notice("%T% has been whittled away under your careful excavation, but there was nothing of interest inside.")), \
+				MSG_OTHERS(span_warning("%T% suddenly crumbles away.")))
 		qdel(src)
 
 /obj/structure/boulder/Bumped(AM)

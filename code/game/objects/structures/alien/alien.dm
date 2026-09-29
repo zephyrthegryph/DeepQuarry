@@ -17,7 +17,7 @@
 	..()
 
 /obj/structure/alien/attack_generic(mob/user, damage, attack_verb)
-	visible_message(span_danger("[user] [attack_verb] the [src]!"))
+	act_message(user, src, others = span_danger("%U% [attack_verb] %T%!"))
 	play_sfx(src, SFX_EFFECTS_ATTACKBLOB, 2)
 	user.do_attack_animation(src)
 	receive_generic_attack(user, damage)
@@ -40,7 +40,7 @@
 /obj/structure/alien/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	user.setClickCooldown(user.get_attack_speed(W))
 	play_sfx(src, SFX_EFFECTS_ATTACKBLOB, 2)
-	visible_message(span_danger("[user] attacks the [src]!"))
+	act_message(user, src, others = span_danger("%U% attacks %T%!"))
 	receive_weapon_hit(W, user)
 	return TRUE
 
@@ -59,7 +59,7 @@
 /obj/structure/alien/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	if (HULK in user.mutations)
-		visible_message(span_warning("[user] destroys the [name]!"))
+		act_message(user, null, others = span_warning("%U% destroys the [name]!"))
 		take_damage(get_integrity(), BRUTE, MELEE, sound_effect = FALSE)
 	else
 
@@ -68,13 +68,13 @@
 			if(interaction.stance == I_HURT)
 				var/mob/living/carbon/M = user
 				if(locate_in_list(M.internal_organ_list(), /obj/item/organ/internal/xenos/hivenode))
-					visible_message (span_warning("[user] strokes the [name] and it melts away!"), 1)
+					act_message(user, null, others = span_warning("%U% strokes the [name] and it melts away!"))
 					take_damage(get_integrity(), BRUTE, MELEE, sound_effect = FALSE)
 					return TRUE
 				if(locate_in_list(M.internal_organ_list(), /obj/item/organ/internal/xenos/resinspinner/replicant))
 					om_task_timed(M, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(usr))
 					return TRUE
-			visible_message(span_warning("[usr] claws at the [name]!"))
+			act_message(usr, null, others = span_warning("%U% claws at the [name]!"))
 			take_damage(rand(5,10), BRUTE, MELEE, sound_effect = FALSE)
 	return TRUE
 

@@ -28,14 +28,13 @@ DECLARE_INTERACTIONS(/obj/structure/firedoor_assembly, INTERACT_ITEM(null, PROC_
 		if (cable.get_amount() < 1)
 			to_chat(user, span_warning("You need one length of coil to wire \the [src]."))
 			return INTERACTION_HANDLED_PASS
-		user.visible_message("[user] wires \the [src].", "You start to wire \the [src].")
+		act_message(user, src, MSG_SELF("You start to wire %T%."), MSG_OTHERS("%U% wires %T%."))
 		om_task_timed(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, cable))
 
 	else if(istype(C, /obj/item/circuitboard/airalarm) && wired)
 		if(anchored)
 			play_sfx(src, SFX_ITEMS_DECONSTRUCT)
-			user.visible_message(span_warning("[user] has inserted a circuit into \the [src]!"),
-								  "You have inserted the circuit into \the [src]!")
+			act_message(user, src, MSG_SELF("You have inserted the circuit into %T%!"), MSG_OTHERS(span_warning("%U% has inserted a circuit into %T%!")))
 			if(glass)
 				new /obj/machinery/door/firedoor/glass(loc)
 			else
@@ -48,8 +47,7 @@ DECLARE_INTERACTIONS(/obj/structure/firedoor_assembly, INTERACT_ITEM(null, PROC_
 		var/obj/item/stack/S = C
 		if (S.get_amount() >= 1)
 			play_sfx(src, SFX_ITEMS_CROWBAR, 2)
-			user.visible_message(span_info("[user] adds [S.name] to \the [src]."),
-								span_notice("You start to install [S.name] into \the [src]."))
+			act_message(user, src, MSG_SELF(span_notice("You start to install [S.name] into %T%.")), MSG_OTHERS(span_info("%U% adds [S.name] to %T%.")))
 			om_task_timed(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done2), done_args = list(user, S))
 
 	else
@@ -73,7 +71,7 @@ DECLARE_INTERACTIONS(/obj/structure/firedoor_assembly, INTERACT_ITEM(null, PROC_
 	if(!wired)
 		return FALSE
 	playsound(src, tool.usesound, 100, TRUE)
-	user.visible_message("[user] cuts the wires from \the [src].", "You start to cut the wires from \the [src].")
+	act_message(user, src, MSG_SELF("You start to cut the wires from %T%."), MSG_OTHERS("%U% cuts the wires from %T%."))
 	om_task_timed(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(wirecutter_act_timed_done), done_args = list(user))
 	return TRUE
 
@@ -87,7 +85,7 @@ DECLARE_INTERACTIONS(/obj/structure/firedoor_assembly, INTERACT_ITEM(null, PROC_
 /obj/structure/firedoor_assembly/wrench_act(mob/user, obj/item/tool)
 	set_anchored(!anchored)
 	playsound(src, tool.usesound, 50, TRUE)
-	user.visible_message(span_warning("[user] has [anchored ? "" : "un"]secured \the [src]!"), "You have [anchored ? "" : "un"]secured \the [src]!")
+	act_message(user, src, MSG_SELF("You have [anchored ? "" : "un"]secured %T%!"), MSG_OTHERS(span_warning("%U% has [anchored ? "" : "un"]secured %T%!")))
 	update_icon()
 	return TRUE
 
@@ -106,5 +104,5 @@ DECLARE_INTERACTIONS(/obj/structure/firedoor_assembly, INTERACT_ITEM(null, PROC_
 	glass = FALSE
 	update_icon()
 /obj/structure/firedoor_assembly/proc/welder_act_tool_done2(mob/user)
-	user.visible_message(span_warning("[user] has disassembled \the [src]."), "You have disassembled \the [src].")
+	act_message(user, src, MSG_SELF("You have disassembled %T%."), MSG_OTHERS(span_warning("%U% has disassembled %T%.")))
 	replace_with(src, /obj/item/stack/material/steel, 2)

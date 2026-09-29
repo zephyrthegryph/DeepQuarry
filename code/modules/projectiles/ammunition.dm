@@ -100,7 +100,7 @@ DECLARE_INTERACTIONS(/obj/item/ammo_casing, INTERACT_ITEM(null, PROC_REF(interac
 		var/obj/item/ammo_magazine/handful/H = make_ammo_handful(src, other, user)
 		if(H)
 			user.put_in_hands(H)
-			user.visible_message("[user] gathers some rounds into a handful.", span_notice("You gather the rounds into a handful."))
+			act_message(user, null, MSG_SELF(span_notice("You gather the rounds into a handful.")), MSG_OTHERS("%U% gathers some rounds into a handful."))
 			play_sfx(H, SFX_WEAPONS_EMPTY, 0.5)
 	else
 		return FALSE
@@ -268,7 +268,7 @@ DECLARE_INTERACTIONS(/obj/item/ammo_magazine, \
 				var/obj/item/ammo_casing/C = stored_ammo[stored_ammo.len]
 				stored_ammo-=C
 				user.put_in_hands(C)
-				user.visible_message("\The [user] removes \a [C] from [src].", span_notice("You remove \a [C] from [src]."))
+				act_message(user, src, MSG_SELF(span_notice("You remove \a [C] from %T%.")), MSG_OTHERS("%U% removes \a [C] from %T%."))
 				update_icon()
 				return TRUE
 	return FALSE
@@ -374,7 +374,7 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/ammo_box, INTERACT_ALT(null, PROC_RE
 				var/obj/item/ammo_casing/C = stored_ammo[stored_ammo.len]
 				stored_ammo-=C
 				user.put_in_hands(C)
-				user.visible_message("\The [user] removes \a [C] from [src].", span_notice("You remove \a [C] from [src]."))
+				act_message(user, src, MSG_SELF(span_notice("You remove \a [C] from %T%.")), MSG_OTHERS("%U% removes \a [C] from %T%."))
 				update_icon()
 				return TRUE
 	return FALSE

@@ -94,7 +94,7 @@
 	if(damage < STRUCTURE_MIN_DAMAGE_THRESHOLD)
 		return 0
 	user.do_attack_animation(src)
-	visible_message(span_danger("[user] [attack_message] the [src]!"))
+	act_message(user, src, others = span_danger("%U% [attack_message] %T%!"))
 	om_after(src, 1, PROC_REF(dismantle))
 	return 1
 
@@ -322,7 +322,7 @@
 	return (HULK in actor.mutations)
 
 /obj/structure/girder/proc/interaction_hulk_smash(mob/user, obj/item/held, datum/interaction/interaction)
-	visible_message(span_danger("[user] smashes [src] apart!"))
+	act_message(user, src, others = span_danger("%U% smashes %T% apart!"))
 	dismantle()
 	return TRUE
 

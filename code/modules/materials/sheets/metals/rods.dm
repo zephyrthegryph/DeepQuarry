@@ -46,8 +46,8 @@ EXTEND_INTERACTIONS(/obj/item/stack/rods, INTERACT_ITEM(null, PROC_REF(rods_inte
 		var/obj/item/stack/medical/splint/ghetto/new_splint = new(get_turf(user))
 		new_splint.add_fingerprint(user)
 
-		user.visible_message(span_infoplain(span_bold("\The [user]") + " constructs \a [new_splint] out of a [singular_name]."), \
-				span_notice("You use make \a [new_splint] out of a [singular_name]."))
+		act_message(user, null, MSG_SELF(span_notice("You use make \a [new_splint] out of a [singular_name].")), \
+			MSG_OTHERS(span_infoplain(span_bold("%U%") + " constructs \a [new_splint] out of a [singular_name].")))
 		src.use(1)
 		return INTERACTION_HANDLED_PASS
 
@@ -62,7 +62,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/rods, INTERACT_ITEM(null, PROC_REF(rods_inte
 		return ITEM_INTERACT_BLOCKING
 	var/obj/item/stack/material/steel/new_item = new(user.loc)
 	new_item.add_to_stacks(user)
-	visible_message(span_notice("[src] is shaped into metal by [user.name] with the welding tool."), span_notice("You hear welding."))
+	act_message(src, user, others = span_notice("%U% is shaped into metal by %T% with the welding tool."), blind = span_notice("You hear welding."))
 	var/replace = user.get_inactive_hand() == src
 	use(2)
 	if(QDELETED(src) && replace)

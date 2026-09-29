@@ -160,7 +160,7 @@ DECLARE_INTERACTIONS(/obj/item/integrated_electronics/debugger, INTERACT_USE(nul
 /obj/item/integrated_electronics/debugger/afterattack(atom/target, mob/living/user, proximity)
 	if(accepting_refs && proximity)
 		data_to_write = ic_ref(target)
-		visible_message(span_notice("[user] slides \a [src]'s over \the [target]."))
+		act_message(user, src, others = span_notice("%U% slides %T% over \the [target]."))
 		to_chat(user, span_notice("You set \the [src]'s memory to a reference to [target.name] \[Ref\]. The ref scanner is \
 		now off."))
 		accepting_refs = 0
@@ -257,7 +257,7 @@ DECLARE_INTERACTIONS(/obj/item/integrated_electronics/debugger, INTERACT_USE(nul
 		return
 	if(accepting_refs && toolmode == MULTITOOL_MODE_INTCIRCUITS && proximity)
 		ref_wiring = ic_ref(target)
-		visible_message(span_notice("[user] slides \a [src]'s over \the [target]."))
+		act_message(user, src, others = span_notice("%U% slides %T% over \the [target]."))
 		to_chat(user, span_notice("You set \the [src]'s memory to a reference to [target.name] \[Ref\]. The ref scanner is \
 		now off."))
 		accepting_refs = 0

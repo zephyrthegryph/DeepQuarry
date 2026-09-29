@@ -69,8 +69,8 @@
 	var/datum/changeling/comp = L.get_changeling_state()
 	animate(L,alpha = 10, alpha = 255, time = 10)
 	L.invisibility = initial(L.invisibility)
-	L.visible_message(span_warning("[L] suddenly fades in, seemingly from nowhere!"),
-	span_notice("We revert our camouflage, revealing ourselves."))
+	act_message(L, null, MSG_SELF(span_notice("We revert our camouflage, revealing ourselves.")), \
+		MSG_OTHERS(span_warning("%U% suddenly fades in, seemingly from nowhere!")))
 	L.set_m_intent(I_RUN)
 	if(comp)
 		dq_set_cloaked(comp, FALSE)

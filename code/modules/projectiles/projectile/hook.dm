@@ -174,14 +174,14 @@
 					if(prob(disarm_chance) && ishuman(L))
 						ranged_disarm(L)
 					else
-						L.visible_message(span_danger("\The [src] sends \the [L] stumbling backwards."))
+						act_message(src, L, others = span_danger("%U% sends %T% stumbling backwards."))
 						L.throw_at(get_turf(get_step(L,get_dir(firer,L))), 1, 1, src)
 					done_mob_unique = TRUE
 					success = TRUE
 				if(I_GRAB)
 					var/turf/STurf = get_turf(L)
 					om_after(STurf, 2, TYPE_PROC_REF(/atom, om_playsound), crack_sound, 60, 1)
-					L.visible_message(span_critical("\The [src] rips [L] towards \the [firer]!"))
+					act_message(src, L, others = span_critical("%U% rips %T% towards \the [firer]!"))
 					L.throw_at(get_turf(get_step(firer,get_dir(firer,L))), 6, 1, src)
 					done_mob_unique = TRUE
 					success = TRUE

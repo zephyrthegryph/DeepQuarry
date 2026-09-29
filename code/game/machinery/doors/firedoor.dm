@@ -198,9 +198,9 @@ DECLARE_REF(/obj/machinery/door/firedoor, "turbolift_floor", BACKLIST, "doors")
 		to_chat(user, span_warning("Access denied. Please wait for authorities to arrive, or for the alert to clear."))
 		return TRUE
 	else
-		user.visible_message(span_notice("\The [src] [density ? "open" : "close"]s for \the [user]."),\
-		"\The [src] [density ? "open" : "close"]s.",\
-		"You hear a beep, and a door opening.")
+		act_message(user, src, MSG_SELF("%T% [density ? "open" : "close"]s."), \
+			MSG_OTHERS(span_notice("%T% [density ? "open" : "close"]s for %U%.")), \
+			MSG_BLIND("You hear a beep, and a door opening."))
 
 	var/needs_to_close = 0
 	if(density)
@@ -221,16 +221,16 @@ DECLARE_REF(/obj/machinery/door/firedoor, "turbolift_floor", BACKLIST, "doors")
 		var/mob/living/carbon/human/X = user
 		if(istype(X.species, /datum/species/xenos))
 			if(src.blocked)
-				visible_message(span_alium("\The [user] begins digging into \the [src] internals!"))
+				act_message(user, src, others = span_alium("%U% begins digging into %T% internals!"))
 				om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_alien_timed_done), done_args = list())
 			else if(src.density)
-				visible_message(span_alium("\The [user] begins forcing \the [src] open!"))
+				act_message(user, src, others = span_alium("%U% begins forcing %T% open!"))
 				om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_alien_timed_done2), done_args = list(user), busy = user)
 			else
-				visible_message(span_danger("\The [user] forces \the [src] closed!"))
+				act_message(user, src, others = span_danger("%U% forces %T% closed!"))
 				close(1)
 		else
-			visible_message(span_notice("\The [user] strains fruitlessly to force \the [src] [density ? "open" : "closed"]."))
+			act_message(user, src, others = span_notice("%U% strains fruitlessly to force %T% [density ? "open" : "closed"]."))
 			return
 	..()
 
@@ -241,7 +241,7 @@ DECLARE_REF(/obj/machinery/door/firedoor, "turbolift_floor", BACKLIST, "doors")
 	open(1)
 /obj/machinery/door/firedoor/proc/attack_alien_timed_done2(mob/user)
 	play_sfx(src, SFX_MACHINES_DOOR_AIRLOCK_CREAKING)
-	visible_message(span_danger("\The [user] forces \the [src] open!"))
+	act_message(user, src, others = span_danger("%U% forces %T% open!"))
 	open(1)
 
 /obj/machinery/door/firedoor/attack_generic(mob/living/user, damage)
@@ -249,23 +249,23 @@ DECLARE_REF(/obj/machinery/door/firedoor, "turbolift_floor", BACKLIST, "doors")
 		if(damage >= STRUCTURE_MIN_DAMAGE_THRESHOLD)
 			var/time_to_force = (2 + (2 * blocked)) * 5
 			if(src.density)
-				visible_message(span_danger("\The [user] starts forcing \the [src] open!"))
+				act_message(user, src, others = span_danger("%U% starts forcing %T% open!"))
 				om_task_timed(user, time_to_force, target = src, receiver = src, on_done = PROC_REF(attack_generic_timed_done), done_args = list(user), busy = user)
 			else
 				time_to_force = (time_to_force / 2)
-				visible_message(span_danger("\The [user] starts forcing \the [src] closed!"))
+				act_message(user, src, others = span_danger("%U% starts forcing %T% closed!"))
 				om_task_timed(user, time_to_force, target = src, receiver = src, on_done = PROC_REF(attack_generic_timed_done2), done_args = list(user), busy = user)
 		else
-			visible_message(span_notice("\The [user] strains fruitlessly to force \the [src] [density ? "open" : "closed"]."))
+			act_message(user, src, others = span_notice("%U% strains fruitlessly to force %T% [density ? "open" : "closed"]."))
 		return
 	..()
 
 /obj/machinery/door/firedoor/proc/attack_generic_timed_done(mob/living/user)
-	visible_message(span_danger("\The [user] forces \the [src] open!"))
+	act_message(user, src, others = span_danger("%U% forces %T% open!"))
 	src.blocked = 0
 	open(1)
 /obj/machinery/door/firedoor/proc/attack_generic_timed_done2(mob/living/user)
-	visible_message(span_danger("\The [user] forces \the [src] closed!"))
+	act_message(user, src, others = span_danger("%U% forces %T% closed!"))
 	close(1)
 
 /obj/machinery/door/firedoor/declare_interactions(list/into)
@@ -312,9 +312,10 @@ DECLARE_REF(/obj/machinery/door/firedoor, "turbolift_floor", BACKLIST, "doors")
 	return FALSE
 
 /obj/machinery/door/firedoor/proc/interaction_use_item_tool_done(mob/user, obj/item/C)
-	user.visible_message(span_danger("\The [user] forces \the [ blocked ? "welded" : "" ] [src] [density ? "open" : "closed"] with \a [C]!"),\
-			"You force \the [ blocked ? "welded" : "" ] [src] [density ? "open" : "closed"] with \the [C]!",\
-			"You hear metal strain and groan, and a door [density ? "opening" : "closing"].")
+	act_message(user, src, MSG_SELF("You force \the [ blocked ? "welded" : "" ] %T% [density ? "open" : "closed"] with %I%!"), \
+		MSG_OTHERS(span_danger("%U% forces \the [ blocked ? "welded" : "" ] %T% [density ? "open" : "closed"] with \a [C]!")), \
+		MSG_BLIND("You hear metal strain and groan, and a door [density ? "opening" : "closing"]."), \
+		item = C)
 	if(density)
 		open(1)
 	else
@@ -331,7 +332,10 @@ DECLARE_REF(/obj/machinery/door/firedoor, "turbolift_floor", BACKLIST, "doors")
 	var/obj/item/weldingtool/welder = tool.get_welder()
 	if(welder.remove_fuel(0, user))
 		blocked = !blocked
-		user.visible_message(span_danger("\The [user] [blocked ? "welds" : "unwelds"] \the [src] with \a [welder]."), "You [blocked ? "weld" : "unweld"] \the [src] with \the [welder].", "You hear something being welded.")
+		act_message(user, src, MSG_SELF("You [blocked ? "weld" : "unweld"] %T% with %I%."), \
+			MSG_OTHERS(span_danger("%U% [blocked ? "welds" : "unwelds"] %T% with \a [welder].")), \
+			MSG_BLIND("You hear something being welded."), \
+			item = welder)
 		playsound(src, welder.usesound, 100, TRUE)
 		update_icon()
 	return TRUE
@@ -341,7 +345,8 @@ DECLARE_REF(/obj/machinery/door/firedoor, "turbolift_floor", BACKLIST, "doors")
 		return FALSE
 	hatch_open = !hatch_open
 	playsound(src, tool.usesound, 50, TRUE)
-	user.visible_message(span_danger("[user] has [hatch_open ? "opened" : "closed"] \the [src] maintenance hatch."), "You have [hatch_open ? "opened" : "closed"] the [src] maintenance hatch.")
+	act_message(user, src, MSG_SELF("You have [hatch_open ? "opened" : "closed"] %T% maintenance hatch."), \
+		MSG_OTHERS(span_danger("%U% has [hatch_open ? "opened" : "closed"] %T% maintenance hatch.")))
 	update_icon()
 	return TRUE
 
@@ -352,7 +357,7 @@ DECLARE_REF(/obj/machinery/door/firedoor, "turbolift_floor", BACKLIST, "doors")
 		if(!hatch_open)
 			to_chat(user, span_danger("You must open the maintenance hatch first!"))
 			return TRUE
-		user.visible_message(span_danger("[user] is removing the electronics from \the [src]."), "You start to remove the electronics from [src].")
+		act_message(user, src, MSG_SELF("You start to remove the electronics from %T%."), MSG_OTHERS(span_danger("%U% is removing the electronics from %T%.")))
 		om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(crowbar_act_timed_done), done_args = list(user, tool))
 		return TRUE
 	if(om_busy(src))
@@ -367,7 +372,7 @@ DECLARE_REF(/obj/machinery/door/firedoor, "turbolift_floor", BACKLIST, "doors")
 	if(!(blocked && density && hatch_open))
 		return
 	playsound(src, tool.usesound, 50, TRUE)
-	user.visible_message(span_danger("[user] has removed the electronics from \the [src]."), "You have removed the electronics from [src].")
+	act_message(user, src, MSG_SELF("You have removed the electronics from %T%."), MSG_OTHERS(span_danger("%U% has removed the electronics from %T%.")))
 	if(has_stat(BROKEN))
 		new /obj/item/circuitboard/broken(loc)
 	else
@@ -383,7 +388,10 @@ DECLARE_REF(/obj/machinery/door/firedoor, "turbolift_floor", BACKLIST, "doors")
 /obj/machinery/door/firedoor/proc/crowbar_act_tool_done(mob/user, obj/item/tool)
 	if(!((!operable() || !density)))
 		return
-	user.visible_message(span_danger("\The [user] forces \the [src] [density ? "open" : "closed"] with \a [tool]!"), "You force \the [src] [density ? "open" : "closed"] with \the [tool]!", "You hear metal strain, and a door [density ? "open" : "close"].")
+	act_message(user, src, MSG_SELF("You force %T% [density ? "open" : "closed"] with %I%!"), \
+		MSG_OTHERS(span_danger("%U% forces %T% [density ? "open" : "closed"] with \a [tool]!")), \
+		MSG_BLIND("You hear metal strain, and a door [density ? "open" : "close"]."), \
+		item = tool)
 	if(density)
 		open(TRUE)
 	else

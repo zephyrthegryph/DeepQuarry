@@ -54,7 +54,7 @@
 			if(D.get_amount() < 1)
 				to_chat(user, span_warning("You need one sheet of [material.display_name] to repair \the [src]."))
 				return TRUE
-			visible_message(span_notice("[user] begins to repair \the [src]."))
+			act_message(user, src, others = span_notice("%U% begins to repair %T%."))
 			om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, D))
 			return TRUE
 		return TRUE
@@ -75,7 +75,7 @@
 		return
 	if(D.use(1))
 		repair_damage(max_integrity)
-		visible_message(span_notice("[user] repairs \the [src]."))
+		act_message(user, src, others = span_notice("%U% repairs %T%."))
 	return
 
 /obj/structure/barricade/atom_destruction(damage_flag)
@@ -83,7 +83,7 @@
 	return ..()
 
 /obj/structure/barricade/attack_generic(mob/user, damage, attack_verb)
-	visible_message(span_danger("[user] [attack_verb] the [src]!"))
+	act_message(user, src, others = span_danger("%U% [attack_verb] %T%!"))
 	if(material == get_material_by_name(MAT_RESIN))
 		play_sfx(src, SFX_EFFECTS_ATTACKBLOB, 2)
 	else if(material == get_material_by_name(MAT_CLOTH) || material == get_material_by_name(MAT_SYNCLOTH))

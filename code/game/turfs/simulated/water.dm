@@ -53,7 +53,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water, \
 	var/obj/item/reagent_containers/RG = O
 	if (istype(RG) && RG.is_open_container())
 		RG.reagents.add_reagent(reagent_type, min(RG.volume - RG.reagents.total_volume, RG.amount_per_transfer_from_this))
-		user.visible_message(span_notice("[user] fills \the [RG] using \the [src]."),span_notice("You fill \the [RG] using \the [src]."))
+		act_message(user, src, MSG_SELF(span_notice("You fill %I% using %T%.")), MSG_OTHERS(span_notice("%U% fills %I% using %T%.")), item = RG)
 		return TRUE
 
 	else if(istype(O, /obj/item/mop))
@@ -86,7 +86,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water, \
 			return water_breath
 	if(L && L.is_bad_swimmer() && depth >= 2 && !L.buckled() && !L.flying)
 		if(prob(10))
-			L.visible_message(span_notice("[L] splashes wildly."),span_warning("You struggle to keep your head above the water!"))
+			act_message(L, null, MSG_SELF(span_warning("You struggle to keep your head above the water!")), MSG_OTHERS(span_notice("%U% splashes wildly.")))
 		if(L.can_breathe_water())
 			var/datum/gas_mixture/water_breath = new()
 			var/datum/gas_mixture/above_air = return_air()

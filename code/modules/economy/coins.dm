@@ -189,8 +189,8 @@ DECLARE_INTERACTIONS(/obj/item/coin, \
 		comment = "tails"
 	else if(result == 2)
 		comment = "heads"
-	user.visible_message(span_notice("[user] has thrown \the [src]. It lands on [comment]!"), \
-							span_notice("You throw \the [src]. It lands on [comment]!"))
+	act_message(user, src, MSG_SELF(span_notice("You throw %T%. It lands on [comment]!")), \
+		MSG_OTHERS(span_notice("%U% has thrown %T%. It lands on [comment]!")))
 	balloon_alert_visible("\the [src] lands on [comment]!", "\the [src] lands on [comment]!")
 	return TRUE
 
@@ -245,9 +245,9 @@ DECLARE_INTERACTIONS(/obj/item/aliencoin, INTERACT_USE(null, PROC_REF(interactio
 		comment = "tails"
 	else if(result == 2)
 		comment = "heads"
-	user.visible_message(span_notice("[user] has thrown [src]. It lands on [comment]! "), runemessage = "[src] landed on [comment]")
+	act_message(user, src, others = span_notice("%U% has thrown %T%. It lands on [comment]! "), runemessage = "[src] landed on [comment]")
 	if(rand(1,20) == 1)
-		user.visible_message(span_notice("[user] fumbled the [src]!"), runemessage = "fumbles [src]")
+		act_message(user, src, others = span_notice("%U% fumbled %T%!"), runemessage = "fumbles [src]")
 		user.remove_from_mob(src)
 	return TRUE
 

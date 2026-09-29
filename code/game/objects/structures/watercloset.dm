@@ -104,7 +104,9 @@
 	var/mob/living/swirlie = om_resolve(swirlie_mob)
 	if(swirlie)
 		user.setClickCooldown(user.get_attack_speed())
-		user.visible_message(span_danger("[user] slams the toilet seat onto [swirlie.name]'s head!"), span_notice("You slam the toilet seat onto [swirlie.name]'s head!"), "You hear reverberating porcelain.")
+		act_message(user, null, MSG_SELF(span_notice("You slam the toilet seat onto [swirlie.name]'s head!")), \
+			MSG_OTHERS(span_danger("%U% slams the toilet seat onto [swirlie.name]'s head!")), \
+			MSG_BLIND("You hear reverberating porcelain."))
 		swirlie.injure(INJURY_BLUNT, 5, BP_HEAD, src)
 		return TRUE
 
@@ -163,12 +165,12 @@
 				return TRUE
 			var/mob/living/swirlie = om_resolve(swirlie_mob)
 			if(open && !swirlie)
-				user.visible_message(span_danger("[user] starts to give [GM] a swirlie!"), span_notice("You start to give [GM] a swirlie!"))
+				act_message(user, GM, MSG_SELF(span_notice("You start to give %T% a swirlie!")), MSG_OTHERS(span_danger("%U% starts to give %T% a swirlie!")))
 				swirlie_mob = om_handle(GM)
 				om_task_start(/datum/om/task/timed/toilet_attackby, user, GM, receiver = src)
 				swirlie_mob = null
 			else
-				user.visible_message(span_danger("[user] slams [GM] into the [src]!"), span_notice("You slam [GM] into the [src]!"))
+				act_message(user, GM, MSG_SELF(span_notice("You slam %T% into the [src]!")), MSG_OTHERS(span_danger("%U% slams %T% into the [src]!")))
 				GM.injure(INJURY_BLUNT, 5, BP_HEAD, src)
 
 	if(cistern && !teleplumb_crystal && istype(I, /obj/item/bluespace_crystal))
@@ -205,16 +207,20 @@
 		open = TRUE //Open it.
 		update_icon()
 	if(!refilling)
-		user.visible_message(span_danger("[user] gives [GM] a swirlie!"), span_notice("You give [GM] a swirlie!"), "You hear a toilet flushing.")
+		act_message(user, GM, MSG_SELF(span_notice("You give %T% a swirlie!")), \
+			MSG_OTHERS(span_danger("%U% gives %T% a swirlie!")), \
+			MSG_BLIND("You hear a toilet flushing."))
 		if(!GM.internal)
 			GM.body?.add_restriction(src, BF_AIRWAY, 0, 5 SECONDS) // a faceful of water
 		if(GM.size_multiplier <= 0.75)
-			GM.visible_message(span_danger("[GM] gets sucked into \the [src] due to their small size!"), span_userdanger("You get sucked into \the [src]!"))
+			act_message(GM, src, MSG_SELF(span_userdanger("You get sucked into %T%!")), \
+				MSG_OTHERS(span_danger("%U% gets sucked into %T% due to their small size!")))
 			GM.forceMove(get_turf(src))
 			GM.status_at_least(EFFECT_WEAKENED, 5)
 		flush()
 	else
-		user.visible_message(span_warning("[user] tries to give [GM.name] a swirlie, but the toilet was still refilling!"), span_warning("You cant give [GM] swirlie while \the [src] is still refilling!"))
+		act_message(user, GM, MSG_SELF(span_warning("You cant give %T% swirlie while \the [src] is still refilling!")), \
+			MSG_OTHERS(span_warning("%U% tries to give [GM.name] a swirlie, but the toilet was still refilling!")))
 /obj/structure/toilet/proc/attackby_timed_done2(obj/item/I, mob/living/user)
 	to_chat(user, span_notice("You insert \the [I] into \the [src]. A deep rumble eminates from within it, and a faint blue glow eminates from the bottom of the bowl for a moment."))
 	user.drop_item()
@@ -264,12 +270,16 @@
 			if(COOLDOWN_FINISHED(src, panic_flush))
 				panic_mult++
 				COOLDOWN_START(src, panic_flush, 1 SECOND) //Let's not encourage hitting the click-cap.
-				user.visible_message(span_notice("[user] pulls the flush lever mid-flush!"), span_notice("You full the flush lever mid-flush!"), "you hear the sound of a toilet handle being jiggled.")
+				act_message(user, null, MSG_SELF(span_notice("You full the flush lever mid-flush!")), \
+					MSG_OTHERS(span_notice("%U% pulls the flush lever mid-flush!")), \
+					MSG_BLIND("you hear the sound of a toilet handle being jiggled."))
 				return TRUE
 			to_chat(user, span_notice("You need to wait [round((COOLDOWN_TIMELEFT(src, panic_flush)) / 10, 0.1)] more seconds longer before you can pull the flush lever again!"))
 		return TRUE
 	//Flush succeeds
-	user.visible_message(span_notice("[user] flushes the toilet."), span_notice("You flush the toilet."), "you hear a toilet flushing.")
+	act_message(user, null, MSG_SELF(span_notice("You flush the toilet.")), \
+		MSG_OTHERS(span_notice("%U% flushes the toilet.")), \
+		MSG_BLIND("you hear a toilet flushing."))
 	flush()
 	return TRUE
 
@@ -479,7 +489,7 @@
 			if(GM.loc != get_turf(src))
 				to_chat(user, span_notice("[GM.name] needs to be on the urinal."))
 				return TRUE
-			user.visible_message(span_danger("[user] slams [GM.name] into the [src]!"), span_notice("You slam [GM.name] into the [src]!"))
+			act_message(user, src, MSG_SELF(span_notice("You slam [GM.name] into %T%!")), MSG_OTHERS(span_danger("%U% slams [GM.name] into %T%!")))
 			GM.injure(INJURY_BLUNT, 8, BP_HEAD, src)
 		else
 			to_chat(user, span_notice("You need a tighter grip."))
@@ -515,7 +525,9 @@ DECLARE_REF(/obj/machinery/shower, "reagents", OWNED, null)
 	return TRUE
 
 /obj/structure/toilet/proc/crowbar_act_timed_done(mob/user)
-	user.visible_message(span_notice("[user] [cistern ? "replaces the lid on the cistern" : "lifts the lid off the cistern"]!"), span_notice("You [cistern ? "replace the lid on the cistern" : "lift the lid off the cistern"]!"), "You hear grinding porcelain.")
+	act_message(user, null, MSG_SELF(span_notice("You [cistern ? "replace the lid on the cistern" : "lift the lid off the cistern"]!")), \
+		MSG_OTHERS(span_notice("%U% [cistern ? "replaces the lid on the cistern" : "lifts the lid off the cistern"]!")), \
+		MSG_BLIND("You hear grinding porcelain."))
 	cistern = !cistern
 	update_icon()
 
@@ -605,7 +617,8 @@ DECLARE_REF(/obj/machinery/shower, "reagents", OWNED, null)
 
 /obj/machinery/shower/proc/interaction_set_temperature_timed_done(mob/user, newtemp)
 	current_temperature = newtemp
-	user.visible_message(span_notice("[user] adjusts the shower."), span_notice("You adjust the shower to [current_temperature] temperature."))
+	act_message(user, null, MSG_SELF(span_notice("You adjust the shower to [current_temperature] temperature.")), \
+		MSG_OTHERS(span_notice("%U% adjusts the shower.")))
 	add_fingerprint(user)
 
 /obj/machinery/shower/examine(mob/user)
@@ -1121,7 +1134,7 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/galaxy, INTERACT_USE("Squeeze
 	var/obj/item/reagent_containers/RG = O
 	if (istype(RG) && RG.is_open_container())
 		RG.reagents.add_reagent(REAGENT_ID_WATER, min(RG.volume - RG.reagents.total_volume, RG.amount_per_transfer_from_this))
-		user.visible_message(span_notice("[user] fills \the [RG] using \the [src]."),span_notice("You fill \the [RG] using \the [src]."))
+		act_message(user, src, MSG_SELF(span_notice("You fill %I% using %T%.")), MSG_OTHERS(span_notice("%U% fills %I% using %T%.")), item = RG)
 		play_sfx(src, SFX_EFFECTS_SINK)
 		return 1
 
@@ -1138,9 +1151,8 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/galaxy, INTERACT_USE("Squeeze
 					R.draw_power(ROBOT_CELL_JOULES(20), src, 0, TRUE)
 				else
 					B.deductcharge(B.hitcost)
-				user.visible_message( \
-					span_danger("[user] was stunned by [user.p_their()] wet [O]!"), \
-					span_userdanger("[user] was stunned by [user.p_their()] wet [O]!"))
+				act_message(user, null, MSG_SELF(span_userdanger("%U% was stunned by %THEIR% wet [O]!")), \
+					MSG_OTHERS(span_danger("%U% was stunned by %THEIR% wet [O]!")))
 				return 1
 	else if(istype(O, /obj/item/mop))
 		O.reagents.add_reagent(REAGENT_ID_WATER, 5)
@@ -1184,9 +1196,7 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/galaxy, INTERACT_USE("Squeeze
 
 	O.wash(CLEAN_SCRUB)
 	O.water_act(rand(1,10))
-	user.visible_message( \
-		span_notice("[user] washes \a [I] using \the [src]."), \
-		span_notice("You wash \a [I] using \the [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You wash \a [I] using %T%.")), MSG_OTHERS(span_notice("%U% washes \a [I] using %T%.")))
 
 /obj/structure/sink/proc/attackby_timed_failed4(datum/om/task/timed/sink_attackby/task)
 	var/mob/user = task.actor

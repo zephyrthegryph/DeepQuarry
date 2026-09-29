@@ -86,7 +86,7 @@ EXTEND_INTERACTIONS(/obj/machinery/medical_kiosk, \
 	wake_lock(user)
 
 	// User requests service
-	user.visible_message(span_bold("[user]") + " wakes [src].", "You wake [src].")
+	act_message(user, src, MSG_SELF("You wake %T%."), MSG_OTHERS(span_bold("%U%") + " wakes %T%."))
 	om_ask(user, /datum/om/prompt/choice/kiosk_service, PROC_REF(service_chosen), title = "[src]")
 	return TRUE
 
@@ -117,7 +117,7 @@ EXTEND_INTERACTIONS(/obj/machinery/medical_kiosk, \
 	var/choice = ask.choice
 
 	// Service begins, delay
-	visible_message(span_bold("\The [src]") + " scans [user] thoroughly!")
+	act_message(src, user, others = span_bold("%U%") + " scans %T% thoroughly!")
 	flick("kiosk_active", src)
 	om_task_start(/datum/om/task/timed/medical_kiosk_start_using, user, src, receiver = src, choice = choice)
 	return TRUE

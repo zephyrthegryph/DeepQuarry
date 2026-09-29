@@ -25,10 +25,7 @@
 		to_chat(user, span_warning("You can't get a reading from this."))
 		return ITEM_INTERACT_SUCCESS
 	var/mob/living/carbon/human/H = M
-	user.visible_message(
-		span_notice("[user] takes [H]'s temperature."),
-		span_notice("You take [H]'s temperature."),
-	)
+	act_message(user, H, MSG_SELF(span_notice("You take %T%'s temperature.")), MSG_OTHERS(span_notice("%U% takes %T%'s temperature.")))
 	om_task_timed(user, 3 SECONDS, H, src, PROC_REF(read_temperature), list(user, H))
 	return ITEM_INTERACT_SUCCESS
 
@@ -52,10 +49,8 @@
 		to_chat(user, span_warning("You can't fit the cuff on this."))
 		return ITEM_INTERACT_SUCCESS
 	var/mob/living/carbon/human/H = M
-	user.visible_message(
-		span_notice("[user] starts wrapping [src] around [H]'s arm."),
-		span_notice("You wrap [src] around [H]'s arm and begin pumping."),
-	)
+	act_message(user, src, MSG_SELF(span_notice("You wrap %T% around [H]'s arm and begin pumping.")), \
+		MSG_OTHERS(span_notice("%U% starts wrapping %T% around [H]'s arm.")))
 	om_task_timed(user, 12 SECONDS, H, src, PROC_REF(read_pressure), list(user, H))
 	return ITEM_INTERACT_SUCCESS
 
@@ -81,10 +76,8 @@
 		to_chat(user, span_warning("You can't clip this to anything useful here."))
 		return ITEM_INTERACT_SUCCESS
 	var/mob/living/carbon/human/H = M
-	user.visible_message(
-		span_notice("[user] clips [src] to [H]'s fingertip."),
-		span_notice("You clip [src] to [H]'s fingertip and wait for the reading."),
-	)
+	act_message(user, src, MSG_SELF(span_notice("You clip %T% to [H]'s fingertip and wait for the reading.")), \
+		MSG_OTHERS(span_notice("%U% clips %T% to [H]'s fingertip.")))
 	om_task_timed(user, 4 SECONDS, H, src, PROC_REF(read_oximetry), list(user, H))
 	return ITEM_INTERACT_SUCCESS
 

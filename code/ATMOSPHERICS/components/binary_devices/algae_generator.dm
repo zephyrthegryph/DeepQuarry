@@ -308,7 +308,7 @@
 			stored_material[S.material.name] += S.perunit
 			S.use(1)
 			count++
-		user.visible_message("\The [user] inserts [S.name] into \the [src].", span_notice("You insert [count] [S.name] into \the [src]."))
+		act_message(user, src, MSG_SELF(span_notice("You insert [count] [S.name] into %T%.")), MSG_OTHERS("%U% inserts [S.name] into %T%."))
 	else
 		to_chat(user, span_warning("\The [src] cannot hold more [S.name]."))
 	return 1

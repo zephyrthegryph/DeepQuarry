@@ -135,7 +135,7 @@
 	return (mask == full_mask) ? top_state : "p[mask]"
 
 /datum/interaction/construction/mecha_part/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	actor.visible_message(span_infoplain("[actor] has connected [held] to [target]."), span_infoplain("You connect [held] to [target]"))
+	act_message(actor, target, MSG_SELF(span_infoplain("You connect [held] to %T%")), MSG_OTHERS(span_infoplain("%U% has connected [held] to %T%.")))
 	target.add_overlay(held.icon_state + "+o")
 	if(after == top_state)
 		var/datum/construction_graph/mecha/mecha_graph = graph
@@ -208,7 +208,7 @@
 	var/self_text = step_span ? span_infoplain(self_raw) : self_raw
 	var/others_text = step_span ? span_infoplain(others_raw) : others_raw
 	if(others_text)
-		actor.visible_message(others_text, self_text)
+		act_message(actor, null, MSG_SELF(self_text), MSG_OTHERS(others_text))
 	else if(self_text)
 		to_chat(actor, self_text)
 	if(to_state == CONSTRUCTION_DONE)

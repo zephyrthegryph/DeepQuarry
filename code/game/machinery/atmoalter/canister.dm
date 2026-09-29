@@ -330,7 +330,7 @@ update_flag
 
 /obj/machinery/portable_atmospherics/canister/proc/interaction_generic(mob/user, obj/item/W, datum/interaction/interaction)
 	if(!istype(W, /obj/item/tank) && !istype(W, /obj/item/analyzer) && !istype(W, /obj/item/pda))
-		visible_message(span_warning("\The [user] hits \the [src] with \a [W]!"))
+		act_message(user, src, others = span_warning("%U% hits %T% with \a [W]!"))
 		src.add_fingerprint(user)
 		receive_weapon_hit(W, user, silent = FALSE)
 

@@ -406,7 +406,7 @@ EXTEND_INTERACTIONS(/obj/machinery/sleeper, \
 			beaker = I
 			user.drop_item()
 			I.forceMove(src)
-			user.visible_message(span_infoplain(span_bold("\The [user]") + " adds \a [I] to \the [src]."), span_notice("You add \a [I] to \the [src]."))
+			act_message(user, src, MSG_SELF(span_notice("You add \a [I] to %T%.")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " adds \a [I] to %T%.")))
 		else
 			to_chat(user, span_warning("\The [src] has a beaker already."))
 		return TRUE
@@ -504,9 +504,9 @@ EXTEND_INTERACTIONS(/obj/machinery/sleeper, \
 		to_chat(user, span_warning("\The [src] is not designed for that organism!"))
 		return
 	if(M == user)
-		visible_message("\The [user] starts climbing into \the [src].")
+		act_message(user, src, others = "%U% starts climbing into %T%.")
 	else
-		visible_message("\The [user] starts putting [M] into \the [src].")
+		act_message(user, M, others = "%U% starts putting %T% into \the [src].")
 
 	om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(go_in_timed_done), done_args = list(M, user))
 

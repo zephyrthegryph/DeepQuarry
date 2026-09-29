@@ -605,17 +605,16 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 
 /obj/machinery/cash_register/proc/toggle_anchors_tool_done(mob/user)
 	if(!anchored)
-		user.visible_message(span_notice("\The [user] has secured \the [src] to the floor."),
-							span_notice("You have secured \the [src] to the floor."))
+		act_message(user, src, MSG_SELF(span_notice("You have secured %T% to the floor.")), MSG_OTHERS(span_notice("%U% has secured %T% to the floor.")))
 	else
-		user.visible_message(span_warning("\The [user] has unsecured \the [src] from the floor."),
-							span_notice("You have unsecured \the [src] from the floor."))
+		act_message(user, src, MSG_SELF(span_notice("You have unsecured %T% from the floor.")), \
+			MSG_OTHERS(span_warning("%U% has unsecured %T% from the floor.")))
 	set_anchored(!anchored)
 	return
 
 /obj/machinery/cash_register/emag_act(remaining_charges, mob/user)
 	if(!emagged)
-		src.visible_message(span_danger("The [src]'s cash box springs open as [user] swipes the card through the scanner!"))
+		act_message(user, src, others = span_danger("%T%'s cash box springs open as %U% swipes the card through the scanner!"))
 		play_sfx(src, SFX_SPARKS)
 		req_access = list()
 		set_emagged(1)

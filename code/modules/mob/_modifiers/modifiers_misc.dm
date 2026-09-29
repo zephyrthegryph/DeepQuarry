@@ -85,7 +85,7 @@ the artifact triggers the rage.
 /datum/body_effect/berserk/on_start(mob/living/L)
 	if(ishuman(L)) // Most other mobs don't really use nutrition and can't get it back.
 		L.adjust_nutrition(-nutrition_cost)
-	L.visible_message(span_critical("\The [L] descends into an all consuming rage!"))
+	act_message(L, null, others = span_critical("%U% descends into an all consuming rage!"))
 
 	// End all stuns.
 	L.status_set(EFFECT_PARALYZED, 0)
@@ -159,7 +159,7 @@ the artifact triggers the rage.
 	factors = alist(BF_SLOWDOWN = 2, BF_EVASION = -30, BF_ATTACK_SPEED = 1.5, BF_MELEE_DAMAGE = 0.6, BF_DISABLE_DURATION = 1.5)
 
 /datum/body_effect/berserk_exhaustion/on_start(mob/living/L)
-	L.visible_message(span_warning("\The [L] looks exhausted."))
+	act_message(L, null, others = span_warning("%U% looks exhausted."))
 
 
 // Synth version with no benefits due to a loss of focus inside a metal shell, which can't be pushed harder just be being mad.
@@ -338,7 +338,7 @@ the artifact triggers the rage.
 /// Only running out kills: curing or removing the doom (curea) lifts it.
 /datum/body_effect/doomed/on_end(mob/living/L, expired)
 	if(expired && L.stat != DEAD)
-		L.visible_message(span_alien("\The [L] collapses, the life draining from their body."))
+		act_message(L, null, others = span_alien("%U% collapses, the life draining from their body."))
 		L.death()
 
 /datum/body_effect/outline_test

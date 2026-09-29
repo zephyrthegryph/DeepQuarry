@@ -104,11 +104,12 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass, \
 		return ITEM_INTERACT_FAILURE
 
 	if(!COOLDOWN_FINISHED(target, venom_milking_cd))
-		user.visible_message(span_warning("[user] attempts to express venom from [target], but nothing happens."), span_warning("[target] had their venom expressed too recently, try again later."))
+		act_message(user, target, MSG_SELF(span_warning("%T% had their venom expressed too recently, try again later.")), \
+			MSG_OTHERS(span_warning("%U% attempts to express venom from %T%, but nothing happens.")))
 		return ITEM_INTERACT_FAILURE
 
 	COOLDOWN_START(target, venom_milking_cd, 30 SECONDS)
-	user.visible_message(span_notice("[user] expresses venom from [target]."))
+	act_message(user, target, others = span_notice("%U% expresses venom from %T%."))
 	reagents.add_reagent(reagent, amount)
 	return ITEM_INTERACT_SUCCESS
 

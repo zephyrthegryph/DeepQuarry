@@ -617,7 +617,7 @@ TOPIC_ACTION(/mob, "flavor_change", PROC_REF(topic_flavor_change))
 	if(pulling)
 		if(ishuman(pulling))
 			var/mob/living/carbon/human/H = pulling
-			visible_message(span_warning("\The [src] lets go of \the [H]."), span_notice("You let go of \the [H]."), exclude_mobs = list(H))
+			act_message(src, H, MSG_SELF(span_notice("You let go of %T%.")), MSG_OTHERS(span_warning("%U% lets go of %T%.")), exclude = list(H))
 			if(!H.stat)
 				to_chat(H, span_warning("\The [src] lets go of you."))
 		// The pulling relation's on_unlink() (code/datums/om/library.dm)
@@ -700,11 +700,11 @@ TOPIC_ACTION(/mob, "flavor_change", PROC_REF(topic_flavor_change))
 	if(ishuman(AM))
 		var/mob/living/carbon/human/H = AM
 		if(H.lying) // If they're on the ground we're probably dragging their arms to move them
-			visible_message(span_warning("\The [src] leans down and grips \the [H]'s arms."), span_notice("You lean down and grip \the [H]'s arms."), exclude_mobs = list(H))
+			act_message(src, H, MSG_SELF(span_notice("You lean down and grip %T%'s arms.")), MSG_OTHERS(span_warning("%U% leans down and grips %T%'s arms.")), exclude = list(H))
 			if(!H.stat)
 				to_chat(H, span_warning("\The [src] leans down and grips your arms."))
 		else //Otherwise we're probably just holding their arm to lead them somewhere
-			visible_message(span_warning("\The [src] grips \the [H]'s arm."), span_notice("You grip \the [H]'s arm."), exclude_mobs = list(H))
+			act_message(src, H, MSG_SELF(span_notice("You grip %T%'s arm.")), MSG_OTHERS(span_warning("%U% grips %T%'s arm.")), exclude = list(H))
 			if(!H.stat)
 				to_chat(H, span_warning("\The [src] grips your arm."))
 		play_sfx(loc, SFX_WEAPONS_THUDSWOOSH, 0.5, vary = FALSE, extrarange = 0) //Quieter than hugging/grabbing but we still want some audio feedback
@@ -878,9 +878,11 @@ TOPIC_ACTION(/mob, "flavor_change", PROC_REF(topic_flavor_change))
 		return
 
 	if(self)
-		visible_message(span_boldwarning("[src] rips [selection] out of their body."),span_boldwarning("You rip [selection] out of your body."))
+		act_message(src, null, MSG_SELF(span_boldwarning("You rip [selection] out of your body.")), \
+			MSG_OTHERS(span_boldwarning("%U% rips [selection] out of their body.")))
 	else
-		visible_message(span_boldwarning("[U] rips [selection] out of [src]'s body."),span_boldwarning("[U] rips [selection] out of your body."))
+		act_message(src, U, MSG_SELF(span_boldwarning("%T% rips [selection] out of your body.")), \
+			MSG_OTHERS(span_boldwarning("%T% rips [selection] out of %U%'s body.")))
 	valid_objects = get_visible_implants(0)
 	if(valid_objects.len == 1) //Yanking out last object - removing verb.
 		remove_verb(src, /mob/proc/yank_out_object)

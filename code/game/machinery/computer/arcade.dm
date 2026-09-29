@@ -623,7 +623,8 @@ TOPIC_ACTION(/obj/machinery/computer/arcade/orion_trail, "trade", PROC_REF(orion
 			event = null
 		else if(emagged)
 			if(user.name == sheriff)
-				src.visible_message("\The [src] states, 'THE CREW HAS CHOSEN TO KILL [user]'. A gunshot can be heard coming from \the [src]", "You hear 'THE CREW HAS CHOSEN TO KILL [user]' followed by a gunshot")
+				act_message(src, user, others = "%U% states, 'THE CREW HAS CHOSEN TO KILL %T%'. A gunshot can be heard coming from %U%", \
+					blind = "You hear 'THE CREW HAS CHOSEN TO KILL %T%' followed by a gunshot")
 				L.injure(INJURY_PIERCE, 30, null, src)
 		if(event == ORION_TRAIL_MUTINY) //only ends the ORION_TRAIL_MUTINY event, since you can do this action in multiple places
 			event = null
@@ -684,7 +685,8 @@ TOPIC_ACTION(/obj/machinery/computer/arcade/orion_trail, "trade", PROC_REF(orion
 					var/lost_crew = remove_crewmember()
 					last_spaceport_action = "You failed to raid the spaceport! You lost [FU*-1] Fuel and [FO*-1] Food, AND [lost_crew] in your scramble to escape! ([FU]FI,[FO]FO,-Crew)"
 					if(emagged)
-						src.visible_message("The machine states, 'YOU ARE UNDER ARREST, RAIDER!' and shoots handcuffs onto [user]!", "You hear something say 'YOU ARE UNDER ARREST, RAIDER!' and a clinking sound")
+						act_message(user, src, others = "The machine states, 'YOU ARE UNDER ARREST, RAIDER!' and shoots handcuffs onto %U%!", \
+							blind = "You hear something say 'YOU ARE UNDER ARREST, RAIDER!' and a clinking sound")
 						var/obj/item/handcuffs/C = new(src.loc)
 						var/mob/living/carbon/human/H = user
 						if(istype(H))
@@ -1165,7 +1167,7 @@ DECLARE_INTERACTIONS(/obj/item/orion_ship, INTERACT_USE(null, PROC_REF(interacti
 
 		if(istype(cashmoney, /obj/item/spacecash))
 
-			visible_message(span_info("\The [user] inserts some cash into \the [src]."))
+			act_message(user, src, others = span_info("%U% inserts some cash into %T%."))
 			cashmoney.worth -= gameprice
 
 			if(cashmoney.worth <= 0)
@@ -1184,7 +1186,7 @@ DECLARE_INTERACTIONS(/obj/item/orion_ship, INTERACT_USE(null, PROC_REF(interacti
 ///// Ewallet
 /obj/machinery/computer/arcade/clawmachine/proc/pay_with_ewallet(obj/item/spacecash/ewallet/wallet, mob/user)
 	if(!emagged)
-		visible_message(span_info("\The [user] swipes \the [wallet] through \the [src]."))
+		act_message(user, src, others = span_info("%U% swipes %I% through %T%."), item = wallet)
 		play_sfx(src, SFX_MACHINES_ID_SWIPE)
 		if(gameprice > wallet.worth)
 			visible_message(span_info("Insufficient funds."))
@@ -1200,9 +1202,9 @@ DECLARE_INTERACTIONS(/obj/item/orion_ship, INTERACT_USE(null, PROC_REF(interacti
 ///// ID
 /obj/machinery/computer/arcade/clawmachine/proc/pay_with_card(obj/item/card/id/I, obj/item/ID_container, mob/user)
 	if(I==ID_container || ID_container == null)
-		visible_message(span_info("\The [user] swipes \the [I] through \the [src]."))
+		act_message(user, src, others = span_info("%U% swipes %I% through %T%."), item = I)
 	else
-		visible_message(span_info("\The [user] swipes \the [ID_container] through \the [src]."))
+		act_message(user, src, others = span_info("%U% swipes %I% through %T%."), item = ID_container)
 	play_sfx(src, SFX_MACHINES_ID_SWIPE)
 	var/datum/money_account/customer_account = get_account(I.associated_account_number)
 	if(!customer_account)

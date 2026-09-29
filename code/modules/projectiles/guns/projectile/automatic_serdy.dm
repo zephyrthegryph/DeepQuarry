@@ -955,8 +955,8 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/hectate, INTERACT_V
 		if(is_human && H.eyecheck() < 1)
 			user.flash_eyes() //Flashbang effect
 
-		user.visible_message(/*What other people experience*/span_notice("[user] manages to pull the trigger on the [src], causing a large bang and a big flash before [src] recoils backwards, crashing violently into [user] and causing them to go flying!"), \
-		/*What you experience*/ span_warning("As you pull the trigger, you suddenly see a flash of bright white light and a loud bang which immediately triggers ringing in your ears. Before you can even react, you feel the giant gun crashing into you and propelling you backwards, and then everything goes black!"))
+		act_message(user, src, MSG_SELF(/*What you experience*/ span_warning("As you pull the trigger, you suddenly see a flash of bright white light and a loud bang which immediately triggers ringing in your ears. Before you can even react, you feel the giant gun crashing into you and propelling you backwards, and then everything goes black!")), \
+			MSG_OTHERS(/*What other people experience*/span_notice("%U% manages to pull the trigger on %T%, causing a large bang and a big flash before %T% recoils backwards, crashing violently into %U% and causing them to go flying!")))
 		if(user.organs && user.organs.len) //You are going to break a lot of bones.
 			user.injure(INJURY_BLUNT, 15, BP_L_ARM, src)
 			user.injure(INJURY_BLUNT, 15, BP_R_ARM, src)
@@ -1458,7 +1458,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/hectate, INTERACT_V
 		if(loaded.len)
 			var/burstsetting = burst
 			burst = 2
-			user.visible_message(span_danger("The shotgun goes off!"), span_danger("The shotgun goes off in your face!"))
+			act_message(user, null, MSG_SELF(span_danger("The shotgun goes off in your face!")), MSG_OTHERS(span_danger("The shotgun goes off!")))
 			Fire_userless(user)
 			burst = burstsetting
 			return

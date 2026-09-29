@@ -30,7 +30,7 @@
 
 	changeling.chem_charges--
 	H.remove_changeling_powers()
-	H.visible_message(span_warning("[H] transforms!"))
+	act_message(H, null, others = span_warning("%U% transforms!"))
 	changeling.geneticdamage = 30
 	to_chat(H, span_warning("Our genes cry out!"))
 	var/list/implants = list() //Try to preserve implants.
@@ -66,7 +66,7 @@
 
 	changeling.chem_charges--
 	C.remove_changeling_powers()
-	C.visible_message(span_warning("[C] transforms!"))
+	act_message(C, null, others = span_warning("%U% transforms!"))
 	QDEL_SWAP(C.dna, chosen_dna.Clone())
 
 	var/list/implants = list()

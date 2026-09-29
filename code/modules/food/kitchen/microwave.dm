@@ -162,10 +162,8 @@ EXTEND_INTERACTIONS(/obj/machinery/microwave, \
 
 /obj/machinery/microwave/proc/do_repair_step_tool_done(mob/user, full_repair)
 
-	user.visible_message(
-		span_infoplain(span_bold("\The [user]") + (full_repair ? " fixes \the [src]." : " fixes part of \the [src].")),
-		span_notice(full_repair ? "You have fixed \the [src]." : "You have fixed part of \the [src].")
-	)
+	act_message(user, src, MSG_SELF(span_notice(full_repair ? "You have fixed %T%." : "You have fixed part of %T%.")), \
+		MSG_OTHERS(span_infoplain(span_bold("%U%") + (full_repair ? " fixes %T%." : " fixes part of %T%."))))
 
 	broken = full_repair ? NOT_BROKEN : KINDA_BROKEN
 	flags |= MICROWAVE_FLAGS
@@ -181,19 +179,13 @@ EXTEND_INTERACTIONS(/obj/machinery/microwave, \
 		to_chat(user, span_warning("It's dirty!"))
 		return TRUE
 
-	user.visible_message( \
-		span_infoplain(span_bold("\The [user]") + " starts to clean \the [src]."),
-		span_notice("You start to clean \the [src].") \
-	)
+	act_message(user, src, MSG_SELF(span_notice("You start to clean %T%.")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " starts to clean %T%.")))
 
 	om_task_timed(user, 2 SECONDS, src, src, PROC_REF(clean_done), list(user))
 	return TRUE
 
 /obj/machinery/microwave/proc/clean_done(mob/user)
-	user.visible_message( \
-		span_infoplain(span_bold("\The [user]") + " has cleaned \the [src]."),
-		span_notice("You have cleaned \the [src].") \
-	)
+	act_message(user, src, MSG_SELF(span_notice("You have cleaned %T%.")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " has cleaned %T%.")))
 
 	dirty = 0
 	flags |= MICROWAVE_FLAGS
@@ -208,15 +200,10 @@ EXTEND_INTERACTIONS(/obj/machinery/microwave, \
 		if(istype(our_stack) && our_stack.get_amount() > 0)
 			var/obj/item/stack/St = our_stack.split(1)
 			St.forceMove(src)
-			user.visible_message( \
-				span_notice(span_bold("\The [user]") + " has added one [O] to \the [src]."), \
-				span_notice("You add one [O] to \the [src]."))
+			act_message(user, src, MSG_SELF(span_notice("You add one [O] to %T%.")), MSG_OTHERS(span_notice(span_bold("%U%") + " has added one [O] to %T%.")))
 			return TRUE
 		user.drop_from_inventory(O, src)
-		user.visible_message(
-			span_infoplain(span_bold("\The [user]") + " has added \the [O] to \the [src]."), \
-			span_notice("You add \the [O] to \the [src].")
-		)
+		act_message(user, src, MSG_SELF(span_notice("You add %I% to %T%.")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " has added %I% to %T%.")), item = O)
 		return TRUE
 	if(istype(O, /obj/item/storage/bag/plants)) // There might be a better way about making plant bags dump their contents into a microwave, but it works.
 		var/obj/item/storage/bag/plants/bag = O
@@ -269,10 +256,8 @@ EXTEND_INTERACTIONS(/obj/machinery/microwave, \
 /obj/machinery/microwave/crowbar_act(mob/user, obj/item/tool)
 	if(panel_open)
 		return ..()
-	user.visible_message(
-		span_notice("\The [user] begins [anchored ? "unsecuring" : "securing"] \the [src]."),
-		span_notice("You attempt to [anchored ? "unsecure" : "secure"] \the [src].")
-	)
+	act_message(user, src, MSG_SELF(span_notice("You attempt to [anchored ? "unsecure" : "secure"] %T%.")), \
+		MSG_OTHERS(span_notice("%U% begins [anchored ? "unsecuring" : "securing"] %T%.")))
 	om_task_start(/datum/om/task/timed/microwave_secure, user, src, duration = (2 SECONDS) / tool.toolspeed)
 	return ITEM_INTERACT_SUCCESS
 
@@ -282,10 +267,8 @@ EXTEND_INTERACTIONS(/obj/machinery/microwave, \
 
 /obj/machinery/microwave/proc/secure_done(datum/om/task/timed/microwave_secure/task)
 	var/mob/user = task.actor
-	user.visible_message(
-		span_notice("\The [user] [anchored ? "unsecures" : "secures"] \the [src]."),
-		span_notice("You [anchored ? "unsecure" : "secure"] \the [src].")
-	)
+	act_message(user, src, MSG_SELF(span_notice("You [anchored ? "unsecure" : "secure"] %T%.")), \
+		MSG_OTHERS(span_notice("%U% [anchored ? "unsecures" : "secures"] %T%.")))
 	set_anchored(!anchored)
 
 /obj/machinery/microwave/tgui_status(mob/user)
@@ -573,10 +556,8 @@ EXTEND_INTERACTIONS(/obj/machinery/microwave, \
 
 /// Old Eject content verb.
 /obj/machinery/microwave/proc/microwave_verb_eject(mob/user, obj/item/held, datum/interaction/interaction)
-	user.visible_message(
-	span_notice("[user] tries to open [src] and remove its contents.") ,
-	span_notice("You try to open [src] and remove its contents.")
-	)
+	act_message(user, src, MSG_SELF(span_notice("You try to open %T% and remove its contents.")), \
+		MSG_OTHERS(span_notice("%U% tries to open %T% and remove its contents.")))
 
 	om_task_timed(user, 1 SECOND, src, src, PROC_REF(eject_done), list(user))
 	return TRUE
@@ -586,10 +567,8 @@ EXTEND_INTERACTIONS(/obj/machinery/microwave, \
 		to_chat(user, span_warning("You can't do that, [src] door is locked!"))
 		return
 
-	user.visible_message(
-	span_notice("[user] opened [src] and has taken out [english_list(cookingContents())].") ,
-	span_notice("You have opened [src] and taken out [english_list(cookingContents())].")
-	)
+	act_message(user, src, MSG_SELF(span_notice("You have opened %T% and taken out [english_list(cookingContents())].")), \
+		MSG_OTHERS(span_notice("%U% opened %T% and has taken out [english_list(cookingContents())].")))
 	dispose()
 
 /obj/machinery/microwave/CanPass(atom/movable/mover, turf/target, height=0, air_group=0)

@@ -223,7 +223,8 @@ GLOBAL_TABLE(mech_affliction_flyweights, GLOBAL_PROC_REF(build_mech_affliction_f
 	if(!factor)
 		return 0
 	host.occupant_message(span_warning(span_red(span_bold("[user] hits [host] with [W]."))))
-	user.visible_message(span_warning(span_red(span_bold("[user] hits [host] with [W]."))), span_danger(span_red(span_bold("You hit [host] with [W]."))))
+	act_message(user, host, MSG_SELF(span_danger(span_red(span_bold("You hit %T% with [W].")))), \
+		MSG_OTHERS(span_warning(span_red(span_bold("%U% hits %T% with [W].")))))
 	var/pass_damage = W.force * factor
 	for(var/obj/item/mecha_parts/mecha_equipment/ME in host.equipment)
 		pass_damage = ME.handle_projectile_contact(W, user, pass_damage)

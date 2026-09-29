@@ -280,8 +280,9 @@ GLOBAL_PROTECT(surgical_steps)
 /// Starting messages, pain and germs.
 /datum/surgical_step/proc/begin(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool, atom/work_target)
 	var/what = work_target ? "[work_target]" : "body"
-	user.visible_message(span_filter_notice("[user] starts [begin_text] [target]'s [what] with \the [tool]."), \
-		span_filter_notice("You start [begin_text] [target]'s [what] with \the [tool]."))
+	act_message(user, target, MSG_SELF(span_filter_notice("You start [begin_text] %T%'s [what] with %I%.")), \
+		MSG_OTHERS(span_filter_notice("%U% starts [begin_text] %T%'s [what] with %I%.")), \
+		item = tool)
 	user.balloon_alert_visible("starts [begin_text] [target]'s [what]", "[begin_text] \the [what]")
 	if(pain && pain_text && part)
 		target.custom_pain(replacetext(pain_text, "%PART%", part.name), pain)
@@ -306,15 +307,17 @@ GLOBAL_PROTECT(surgical_steps)
 /// Completion messages.
 /datum/surgical_step/proc/finish_message(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool, atom/work_target)
 	var/what = work_target ? "[work_target]" : "body"
-	user.visible_message(span_notice("[user] [end_text] [target]'s [what] with \the [tool]."), \
-		span_notice("You finish [begin_text] [target]'s [what] with \the [tool]."))
+	act_message(user, target, MSG_SELF(span_notice("You finish [begin_text] %T%'s [what] with %I%.")), \
+		MSG_OTHERS(span_notice("%U% [end_text] %T%'s [what] with %I%.")), \
+		item = tool)
 	user.balloon_alert_visible("[end_text] [target]'s [what]", "finished [begin_text] \the [what]")
 
 /// A failed step: a specific complication, created as an injury.
 /datum/surgical_step/proc/complicate(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool, atom/work_target)
 	var/what = work_target ? "[work_target]" : "body"
-	user.visible_message(span_danger("[user]'s hand [fail_text] [target]'s [what] with \the [tool]!"), \
-		span_danger("Your hand [fail_text] [target]'s [what] with \the [tool]!"))
+	act_message(user, target, MSG_SELF(span_danger("Your hand [fail_text] %T%'s [what] with %I%!")), \
+		MSG_OTHERS(span_danger("%U%'s hand [fail_text] %T%'s [what] with %I%!")), \
+		item = tool)
 	user.balloon_alert_visible("[fail_text] [target]'s [what]", "your hand [fail_text] \the [what]")
 	if(!complication_amount)
 		return

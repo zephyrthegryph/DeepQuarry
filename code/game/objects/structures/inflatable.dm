@@ -76,7 +76,7 @@ DECLARE_INTERACTIONS(/obj/item/inflatable, INTERACT_SELF("Inflate", PROC_REF(inf
 
 /obj/structure/inflatable/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if (can_puncture(W))
-		visible_message(span_danger("[user] pierces [src] with [W]!"))
+		act_message(user, src, others = span_danger("%U% pierces %T% with [W]!"))
 		puncture()
 	if(W.obj_damage_type())
 		play_sfx(src, SFX_EFFECTS_GLASSHIT)
@@ -124,9 +124,9 @@ DECLARE_INTERACTIONS(/obj/item/inflatable, INTERACT_SELF("Inflate", PROC_REF(inf
 /obj/structure/inflatable/attack_generic(mob/user, damage, attack_verb)
 	user.do_attack_animation(src)
 	if(get_integrity() - damage <= 0)
-		user.visible_message(span_danger("[user] [attack_verb] open the [src]!"))
+		act_message(user, src, others = span_danger("%U% [attack_verb] open %T%!"))
 	else
-		user.visible_message(span_danger("[user] [attack_verb] at [src]!"))
+		act_message(user, src, others = span_danger("%U% [attack_verb] at %T%!"))
 	receive_generic_attack(user, damage)
 	return 1
 

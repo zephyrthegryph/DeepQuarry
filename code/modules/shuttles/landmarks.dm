@@ -168,7 +168,7 @@ DECLARE_INTERACTIONS(/obj/item/spaceflare, INTERACT_USE(null, PROC_REF(interacti
 /// Old attack_self.
 /obj/item/spaceflare/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!active)
-		visible_message(span_notice("[user] pulls the cord, activating the [src]."))
+		act_message(user, src, others = span_notice("%U% pulls the cord, activating %T%."))
 		activate()
 	return TRUE
 

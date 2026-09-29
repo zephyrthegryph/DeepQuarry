@@ -106,7 +106,9 @@
 			return
 	play_sfx(src, SFX_ITEMS_SCREWDRIVER, 2)
 	var/obj/N = new to_type(O.loc)
-	user.visible_message(span_notice("[user] opens \the [src] and modifies \the [O] into \the [N]."),span_notice("You open \the [src] and modify \the [O] into \the [N]."))
+	act_message(user, src, MSG_SELF(span_notice("You open %T% and modify %I% into \the [N].")), \
+		MSG_OTHERS(span_notice("%U% opens %T% and modifies %I% into \the [N].")), \
+		item = O)
 
 	// Transfer forensics to, lets avoid CRIME exploits
 	O.transfer_fingerprints_to(N)
@@ -179,7 +181,7 @@
 /obj/item/sword/fluff/joanaria/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 
 	if(default_parry_check(user, attacker, damage_source) && prob(75))
-		user.visible_message(span_danger("\The [user] parries [attack_text] with \the [src]!"))
+		act_message(user, src, others = span_danger("%U% parries [attack_text] with %T%!"))
 		play_sfx(src, SFX_WEAPONS_PUNCHMISS, 2, extrarange = 0)
 		return 1
 	return 0
@@ -192,7 +194,7 @@
 /obj/item/material/knife/tacknife/combatknife/fluff/katarina/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 
 	if(default_parry_check(user, attacker, damage_source) && prob(75))
-		user.visible_message(span_danger("\The [user] parries [attack_text] with \the [src]!"))
+		act_message(user, src, others = span_danger("%U% parries [attack_text] with %T%!"))
 		play_sfx(src, SFX_WEAPONS_PUNCHMISS, 2, extrarange = 0)
 		return 1
 	return 0
@@ -229,10 +231,12 @@ EXTEND_INTERACTIONS(/obj/item/card/id/centcom/station/fluff/joanbadge, INTERACT_
 /obj/item/card/id/centcom/station/fluff/joanbadge/proc/joanbadge_flash_self(mob/user, obj/item/held, datum/interaction/interaction)
 	. = TRUE
 	if(isliving(user))
-		user.visible_message(span_warning("[user] flashes their golden security badge.\nIt reads:NT Security."),span_warning("You display the faded badge.\nIt reads: NT Security."))
+		act_message(user, null, MSG_SELF(span_warning("You display the faded badge.\nIt reads: NT Security.")), \
+			MSG_OTHERS(span_warning("%U% flashes their golden security badge.\nIt reads:NT Security.")))
 
 /obj/item/card/id/centcom/station/fluff/joanbadge/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	user.visible_message(span_warning("[user] invades [M]'s personal space, thrusting [src] into their face insistently."),span_warning("You invade [M]'s personal space, thrusting [src] into their face insistently."))
+	act_message(user, M, MSG_SELF(span_warning("You invade %T%'s personal space, thrusting [src] into their face insistently.")), \
+		MSG_OTHERS(span_warning("%U% invades %T%'s personal space, thrusting [src] into their face insistently.")))
 	return ITEM_INTERACT_SUCCESS
 
 //JoanRisu:Joan Risu
@@ -300,10 +304,11 @@ EXTEND_INTERACTIONS(/obj/item/flag, INTERACT_USE("Wave", PROC_REF(flag_wave_self
 /// Old attack_self: wave the banner.
 /obj/item/flag/proc/flag_wave_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(isliving(user))
-		user.visible_message(span_warning("[user] waves their Banner around!"),span_warning("You wave your Banner around."))
+		act_message(user, null, MSG_SELF(span_warning("You wave your Banner around.")), MSG_OTHERS(span_warning("%U% waves their Banner around!")))
 
 /obj/item/flag/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	user.visible_message(span_warning("[user] invades [M]'s personal space, thrusting [src] into their face insistently."),span_warning("You invade [M]'s personal space, thrusting [src] into their face insistently."))
+	act_message(user, M, MSG_SELF(span_warning("You invade %T%'s personal space, thrusting [src] into their face insistently.")), \
+		MSG_OTHERS(span_warning("%U% invades %T%'s personal space, thrusting [src] into their face insistently.")))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/flag/federation
@@ -402,7 +407,7 @@ EXTEND_INTERACTIONS(/obj/item/flag, INTERACT_USE("Wave", PROC_REF(flag_wave_self
 	if(istype(O,/obj/item/card/id) && O.icon_state != new_icon)
 		O.icon_state = new_icon // Changes the icon without changing the access.
 		play_sfx(src, SFX_ITEMS_POLAROID2, 2)
-		user.visible_message(span_warning(" [user] reprints their ID."))
+		act_message(user, null, others = span_warning(" %U% reprints their ID."))
 		consume(src, user)
 	else if(O.icon_state == new_icon)
 		to_chat(user, span_notice("[O] already has been reprinted."))
@@ -682,7 +687,7 @@ TYPE_TABLE(/obj/item/storage/box/khcrystal, hold_spec, list(HOLD_ONLY(list(/obj/
 		O.icon_state = new_icon_state // Changes the icon without changing the access.
 		O.desc = new_desc
 		play_sfx(src, SFX_ITEMS_POLAROID2, 2)
-		user.visible_message(span_warning(" [user] reprints their ID."))
+		act_message(user, null, others = span_warning(" %U% reprints their ID."))
 		consume(src, user)
 	else if(O.icon_state == new_icon)
 		to_chat(user, span_notice("[O] already has been reprinted."))
@@ -859,7 +864,8 @@ EXTEND_INTERACTIONS(/obj/item/fluff/dragor_dot, INTERACT_USE(null, PROC_REF(drag
 	fluff_badge = TRUE
 
 /obj/item/clothing/accessory/badge/holo/detective/ruda/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	user.visible_message(span_danger("[user] invades [M]'s personal space, thrusting [src] into their face with an insistent huff."),span_danger("You invade [M]'s personal space, thrusting [src] into their face with an insistent huff."))
+	act_message(user, M, MSG_SELF(span_danger("You invade %T%'s personal space, thrusting [src] into their face with an insistent huff.")), \
+		MSG_OTHERS(span_danger("%U% invades %T%'s personal space, thrusting [src] into their face with an insistent huff.")))
 	user.do_attack_animation(M)
 	user.setClickCooldown(DEFAULT_QUICK_COOLDOWN) //to prevent spam
 	return ITEM_INTERACT_SUCCESS
@@ -877,9 +883,11 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/badge/holo/detective/ruda, INTE
 
 	if(isliving(user))
 		if(stored_name)
-			user.visible_message(span_notice("[user] displays their [src].\nIt reads: [stored_name], [badge_string]."),span_notice("You display your [src].\nIt reads: [stored_name], [badge_string]."))
+			act_message(user, src, MSG_SELF(span_notice("You display your %T%.\nIt reads: [stored_name], [badge_string].")), \
+				MSG_OTHERS(span_notice("%U% displays their %T%.\nIt reads: [stored_name], [badge_string].")))
 		else
-			user.visible_message(span_notice("[user] displays their [src].\nIt reads: [badge_string]."),span_notice("You display your [src]. It reads: [badge_string]."))
+			act_message(user, src, MSG_SELF(span_notice("You display your %T%. It reads: [badge_string].")), \
+				MSG_OTHERS(span_notice("%U% displays their %T%.\nIt reads: [badge_string].")))
 
 /obj/item/card/id/fluff/xennith
 	name = "\improper Amy Lessen's Central Command ID (Xenobiology Director)"
@@ -986,7 +994,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/melee/baton/fluff/stunstaff, "bcell", /obj/item/
 
 /obj/item/melee/baton/fluff/stunstaff/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	if(wielded && default_parry_check(user, attacker, damage_source) && prob(30))
-		user.visible_message(span_danger("\The [user] parries [attack_text] with \the [src]!"))
+		act_message(user, src, others = span_danger("%U% parries [attack_text] with %T%!"))
 		play_sfx(src, SFX_WEAPONS_PUNCHMISS, 2, extrarange = 0)
 		return 1
 	return 0
@@ -1083,8 +1091,8 @@ EXTEND_INTERACTIONS(/obj/item/melee/fluffstuff, INTERACT_USE("Toggle", PROC_REF(
 /obj/item/melee/fluffstuff/proc/fluffstuff_toggle_self(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if (active)
 		if (CLUMSY_HARM_CHANCE(user))
-			user.visible_message(span_danger("\The [user] accidentally cuts \himself with \the [src]."),\
-			span_danger("You accidentally cut yourself with \the [src]."))
+			act_message(user, src, MSG_SELF(span_danger("You accidentally cut yourself with %T%.")), \
+				MSG_OTHERS(span_danger("%U% accidentally cuts %THEMSELVES% with %T%.")))
 			user.injure(INJURY_CUT, 5, source = src)
 			user.injure(INJURY_BURN, 5, source = src)
 		deactivate(user)
@@ -1518,16 +1526,17 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/fluff/seona_mofuorb, INTERACT_SELF_AS(
 	if(ELAPSED(src, last_message, CLOCK_WORLD) <= 5 SECONDS)
 		return
 	if(interaction.stance == I_HELP)
-		user.visible_message(span_notice(span_bold("\The [user]") + " hugs [src]!"),span_notice("You hug [src]!"))
+		act_message(user, src, MSG_SELF(span_notice("You hug %T%!")), MSG_OTHERS(span_notice(span_bold("%U%") + " hugs %T%!")))
 		icon_state = "pandorba"
 	else if (interaction.stance == I_HURT)
-		user.visible_message(span_warning(span_bold("\The [user]") + " punches [src]!"),span_warning("You punch [src]!"))
+		act_message(user, src, MSG_SELF(span_warning("You punch %T%!")), MSG_OTHERS(span_warning(span_bold("%U%") + " punches %T%!")))
 		icon_state = "pandorba_h"
 	else if (interaction.stance == I_GRAB)
-		user.visible_message(span_warning(span_bold("\The [user]") + " attempts to strangle [src]!"),span_warning("You attempt to strangle [src]!"))
+		act_message(user, src, MSG_SELF(span_warning("You attempt to strangle %T%!")), \
+			MSG_OTHERS(span_warning(span_bold("%U%") + " attempts to strangle %T%!")))
 		icon_state = "pandorba_g"
 	else
-		user.visible_message(span_notice(span_bold("\The [user]") + " pokes [src]."),span_notice("You poke [src]."))
+		act_message(user, src, MSG_SELF(span_notice("You poke %T%.")), MSG_OTHERS(span_notice(span_bold("%U%") + " pokes %T%.")))
 		icon_state = "pandorba_d"
 		play_sfx(src, SFX_ITEMS_DROP_PLUSHIE, 0.5, vary = FALSE)
 		visible_message("[src] says, \"[pokephrase]\"")

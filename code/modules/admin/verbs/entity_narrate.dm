@@ -185,7 +185,7 @@ ADMIN_VERB(narrate_mob_args, R_FUN, "Narrate Entity", "Narrate entities using po
 		if(message && mode == "Speak")
 			our_entity.audible_message(span_bold("[our_entity.name]") + " [message]")
 		else if(message && mode == "Emote")
-			our_entity.visible_message(span_bold("[our_entity.name]") + " [message]")
+			act_message(our_entity, null, others = span_bold("%U%") + " [MSG_LITERAL(message)]")
 		else
 			return
 

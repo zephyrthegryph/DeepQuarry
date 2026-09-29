@@ -102,8 +102,8 @@ DECLARE_APPEARANCE(/obj/effect/mine, null, list(APPEARANCE_ANY = list(APPEARANCE
 
 /obj/effect/mine/screwdriver_act(mob/living/user, obj/item/tool)
 	panel_open = !panel_open
-	user.visible_message(span_warning("[user] very carefully screws the mine's panel [panel_open ? "open" : "closed"]."),
-		span_notice("You very carefully screw the mine's panel [panel_open ? "open" : "closed"]."))
+	act_message(user, null, MSG_SELF(span_notice("You very carefully screw the mine's panel [panel_open ? "open" : "closed"].")), \
+		MSG_OTHERS(span_warning("%U% very carefully screws the mine's panel [panel_open ? "open" : "closed"].")))
 	playsound(src, tool.usesound, 50, 1)
 	alpha = camo_net ? (panel_open ? 255 : 50) : 255
 	return ITEM_INTERACT_SUCCESS
@@ -328,7 +328,7 @@ DECLARE_INTERACTIONS(/obj/item/mine, \
 /obj/item/mine/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	msg_admin_attack("[key_name_admin(user)] primed \a [src]")
-	user.visible_message("[user] starts priming \the [src.name].", "You start priming \the [src.name]. Hold still!")
+	act_message(user, null, MSG_SELF("You start priming \the [src.name]. Hold still!"), MSG_OTHERS("%U% starts priming \the [src.name]."))
 	om_task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user), on_fail = PROC_REF(attack_self_timed_failed), fail_args = list(user))
 	return TRUE
 
@@ -337,7 +337,7 @@ DECLARE_INTERACTIONS(/obj/item/mine, \
 	prime(user)
 
 /obj/item/mine/proc/attack_self_timed_failed(mob/user)
-	visible_message("[user] triggers \the [src.name]!", "You accidentally trigger \the [src.name]!")
+	act_message(user, null, others = "%U% triggers \the [src.name]!", blind = "You accidentally trigger \the [src.name]!")
 	prime(user, TRUE)
 
 /// Old attackby.

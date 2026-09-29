@@ -33,5 +33,6 @@
 			if(!can_stumble_vore(living_guy, living_mob) && !can_stumble_vore(living_mob, living_guy)) //Works both ways! Either way, someone's getting eaten!
 				continue
 			living_mob.stumble_into(living_guy) //logic reversed here because the game is DUMB. This means that living_guy is stumbling into the target!
-			living_guy.visible_message(span_danger("[living_guy] loses their balance and slips into [living_mob]!"), span_boldwarning("You lose your balance, slipping into [living_mob]!"))
+			act_message(living_guy, living_mob, MSG_SELF(span_boldwarning("You lose your balance, slipping into %T%!")), \
+				MSG_OTHERS(span_danger("%U% loses their balance and slips into %T%!")))
 			return

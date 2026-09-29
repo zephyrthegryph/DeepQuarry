@@ -283,10 +283,7 @@ DECLARE_INTERACTIONS(/obj/item/gripper, \
 		A.charging = FALSE
 		A.update_icon()
 
-		user.visible_message(
-			span_danger("[user] removes the power cell from [A]!"),
-			"You remove the power cell."
-		)
+		act_message(user, A, MSG_SELF("You remove the power cell."), MSG_OTHERS(span_danger("%U% removes the power cell from %T%!")))
 
 		return TRUE
 
@@ -304,10 +301,7 @@ DECLARE_INTERACTIONS(/obj/item/gripper, \
 		A.remove_cell()
 		A.update_icon()
 
-		user.visible_message(
-			span_danger("[user] removes the power cell from [A]!"),
-			"You remove the power cell."
-		)
+		act_message(user, A, MSG_SELF("You remove the power cell."), MSG_OTHERS(span_danger("%U% removes the power cell from %T%!")))
 
 		return TRUE
 

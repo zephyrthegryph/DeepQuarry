@@ -300,10 +300,9 @@ Thus, the two variables affect pump operation are set in New():
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/atmospherics/binary/volume_pump/proc/wrench_act_tool_done(mob/user)
-	user.visible_message( \
-		span_infoplain(span_bold("\The [user]") + " unfastens \the [src]."), \
-		span_notice("You have unfastened \the [src]."), \
-		"You hear ratchet.")
+	act_message(user, src, MSG_SELF(span_notice("You have unfastened %T%.")), \
+		MSG_OTHERS(span_infoplain(span_bold("%U%") + " unfastens %T%.")), \
+		MSG_BLIND("You hear ratchet."))
 	atom_deconstruct()
 
 /obj/machinery/atmospherics/binary/volume_pump/multitool_act(mob/user, obj/item/W)

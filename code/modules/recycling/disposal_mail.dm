@@ -61,9 +61,9 @@ DECLARE_INTERACTIONS(/obj/structure/bigDelivery, \
 				if(!str || !length(str))
 					to_chat(user, span_warning(" Invalid text."))
 					return INTERACTION_HANDLED_PASS
-				user.visible_message("\The [user] titles \the [src] with \a [W], marking down: \"[str]\"",\
-				span_notice("You title \the [src]: \"[str]\""),\
-				"You hear someone scribbling a note.")
+				act_message(user, src, MSG_SELF(span_notice("You title %T%: \"[MSG_LITERAL(str)]\"")), \
+					MSG_OTHERS("%U% titles %T% with \a [W], marking down: \"[MSG_LITERAL(str)]\""), \
+					MSG_BLIND("You hear someone scribbling a note."))
 				play_sfx(src, SFX_BUREAUCRACY_PEN)
 				name = "[name] ([str])"
 				if(!examtext && !nameset)
@@ -83,9 +83,9 @@ DECLARE_INTERACTIONS(/obj/structure/bigDelivery, \
 					update_icon()
 				else
 					examtext = str
-				user.visible_message("\The [user] labels \the [src] with \a [W], scribbling down: \"[examtext]\"",\
-				span_notice("You label \the [src]: \"[examtext]\""),\
-				"You hear someone scribbling a note.")
+				act_message(user, src, MSG_SELF(span_notice("You label %T%: \"[MSG_LITERAL(examtext)]\"")), \
+					MSG_OTHERS("%U% labels %T% with \a [W], scribbling down: \"[MSG_LITERAL(examtext)]\""), \
+					MSG_BLIND("You hear someone scribbling a note."))
 				play_sfx(src, SFX_BUREAUCRACY_PEN)
 	return INTERACTION_HANDLED_PASS
 
@@ -207,9 +207,9 @@ DECLARE_INTERACTIONS(/obj/item/smallDelivery, \
 				if(!str || !length(str))
 					to_chat(user, span_warning(" Invalid text."))
 					return INTERACTION_HANDLED_PASS
-				user.visible_message("\The [user] titles \the [src] with \a [W], marking down: \"[str]\"",\
-				span_notice("You title \the [src]: \"[str]\""),\
-				"You hear someone scribbling a note.")
+				act_message(user, src, MSG_SELF(span_notice("You title %T%: \"[MSG_LITERAL(str)]\"")), \
+					MSG_OTHERS("%U% titles %T% with \a [W], marking down: \"[MSG_LITERAL(str)]\""), \
+					MSG_BLIND("You hear someone scribbling a note."))
 				play_sfx(src, SFX_BUREAUCRACY_PEN)
 				name = "[name] ([str])"
 				if(!examtext && !nameset)
@@ -230,9 +230,9 @@ DECLARE_INTERACTIONS(/obj/item/smallDelivery, \
 					update_icon()
 				else
 					examtext = str
-				user.visible_message("\The [user] labels \the [src] with \a [W], scribbling down: \"[examtext]\"",\
-				span_notice("You label \the [src]: \"[examtext]\""),\
-				"You hear someone scribbling a note.")
+				act_message(user, src, MSG_SELF(span_notice("You label %T%: \"[MSG_LITERAL(examtext)]\"")), \
+					MSG_OTHERS("%U% labels %T% with \a [W], scribbling down: \"[MSG_LITERAL(examtext)]\""), \
+					MSG_BLIND("You hear someone scribbling a note."))
 				play_sfx(src, SFX_BUREAUCRACY_PEN)
 	return INTERACTION_HANDLED_PASS
 

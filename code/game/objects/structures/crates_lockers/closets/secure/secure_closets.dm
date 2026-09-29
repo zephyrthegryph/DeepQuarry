@@ -92,7 +92,7 @@
 		if(visual_feedback)
 			visible_message(visual_feedback, audible_feedback)
 		else if(user && emag_source)
-			visible_message(span_warning("\The [src] has been broken by \the [user] with \an [emag_source]!"), "You hear a faint electrical spark.")
+			act_message(src, user, others = span_warning("%U% has been broken by %T% with \an [emag_source]!"), blind = "You hear a faint electrical spark.")
 		else
 			visible_message(span_warning("\The [src] sparks and breaks open!"), "You hear a faint electrical spark.")
 		update_icon()

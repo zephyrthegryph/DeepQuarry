@@ -154,7 +154,7 @@
 		if(loaded.len)
 			var/burstsetting = burst
 			burst = 2
-			user.visible_message(span_danger("The shotgun goes off!"), span_danger("The shotgun goes off in your face!"))
+			act_message(user, null, MSG_SELF(span_danger("The shotgun goes off in your face!")), MSG_OTHERS(span_danger("The shotgun goes off!")))
 			Fire_userless(user)
 			user.hud_used?.update_ammo_hud(user, src) // TGMC Ammo HUD Port
 			burst = burstsetting
@@ -282,18 +282,18 @@
 	var/mob/living/user = loc
 	stock = !stock
 	if(stock)
-		user.visible_message(span_warning("With a fluid movement, [user] unfolds their shotgun's stock and foregrip."),\
-		span_warning("You unfold the shotgun's stock and foregrip."),\
-		"You hear an ominous click.")
+		act_message(user, null, MSG_SELF(span_warning("You unfold the shotgun's stock and foregrip.")), \
+			MSG_OTHERS(span_warning("With a fluid movement, %U% unfolds their shotgun's stock and foregrip.")), \
+			MSG_BLIND("You hear an ominous click."))
 		icon_state = "compshot"
 		item_state = icon_state
 		w_class = ITEMSIZE_LARGE
 		one_handed_penalty = 15 //Stock extended to steady it, even with just the one hand.
 		recoil = 1 //As above, stock and foregrip would help with the kick
 	else
-		user.visible_message(span_infoplain(span_bold("\The [user]") + " collapses their shotgun's stock and fold it's foregrip."),\
-		span_notice("You fold the shotgun's stock and foregrip."),\
-		"You hear a click.")
+		act_message(user, null, MSG_SELF(span_notice("You fold the shotgun's stock and foregrip.")), \
+			MSG_OTHERS(span_infoplain(span_bold("%U%") + " collapses their shotgun's stock and fold it's foregrip.")), \
+			MSG_BLIND("You hear a click."))
 		icon_state = "compshotc"
 		item_state = icon_state
 		w_class = ITEMSIZE_NORMAL

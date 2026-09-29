@@ -255,7 +255,7 @@ EXTEND_INTERACTIONS(/obj/machinery/clonepod, \
 	if(LAZYLEN(containers) >= container_limit)
 		to_chat(user, span_warning("\The [src] has too many containers loaded!"))
 		return
-	user.visible_message("[user] has loaded \the [W] into \the [src].", "You load \the [W] into \the [src].")
+	act_message(user, src, MSG_SELF("You load %I% into %T%."), MSG_OTHERS("%U% has loaded %I% into %T%."), item = W)
 	track_biomass_container(W)
 	user.drop_item()
 	W.forceMove(src)
@@ -309,7 +309,8 @@ EXTEND_INTERACTIONS(/obj/machinery/clonepod, \
 	else
 		set_anchored(TRUE)
 	playsound(src, tool.usesound, 100, TRUE)
-	user.visible_message("[user] [anchored ? "secures" : "unsecures"] [src] to the floor.", "You [anchored ? "secure" : "unsecure"] [src] to the floor.")
+	act_message(user, src, MSG_SELF("You [anchored ? "secure" : "unsecure"] %T% to the floor."), \
+		MSG_OTHERS("%U% [anchored ? "secures" : "unsecures"] %T% to the floor."))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/clonepod/multitool_act(mob/user, obj/item/tool)

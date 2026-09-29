@@ -80,8 +80,9 @@
 	if(P.lit && !user.restrained())
 		if(istype(P, /obj/item/flame/lighter/zippo))
 			class = "rose>"
-		user.visible_message("<span class='[class]'>[user] holds \the [P] up to \the [src], it looks like [user.p_theyre()] trying to burn it!</span>", \
-		"<span class='[class]'>You hold \the [P] up to \the [src], burning it slowly.</span>")
+		act_message(user, src, MSG_SELF("<span class='[class]'>You hold %I% up to %T%, burning it slowly.</span>"), \
+			MSG_OTHERS("<span class='[class]'>%U% holds %I% up to %T%, it looks like %THEYRE% trying to burn it!</span>"), \
+			item = P)
 
 		om_after(src, 2 SECONDS, PROC_REF(burn_through), user, P, class)
 
@@ -244,8 +245,8 @@ DECLARE_INTERACTIONS(/obj/item/paper_bundle, \
 
 /obj/item/paper_bundle/proc/burn_through(mob/user, obj/item/flame/P, class)
 	if(get_dist(src, user) < 2 && user.get_active_hand() == P && P.lit)
-		user.visible_message("<span class='[class]'>[user] burns right through \the [src], turning it to ash. It flutters through the air before settling on the floor in a heap.</span>", \
-		"<span class='[class]'>You burn right through \the [src], turning it to ash. It flutters through the air before settling on the floor in a heap.</span>")
+		act_message(user, src, MSG_SELF("<span class='[class]'>You burn right through %T%, turning it to ash. It flutters through the air before settling on the floor in a heap.</span>"), \
+			MSG_OTHERS("<span class='[class]'>%U% burns right through %T%, turning it to ash. It flutters through the air before settling on the floor in a heap.</span>"))
 
 		if(user.get_inactive_hand() == src)
 			user.drop_from_inventory(src)

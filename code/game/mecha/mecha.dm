@@ -1047,24 +1047,26 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 					mech_body_plan().roll_affliction(src, list(MECHA_INT_TEMP_CONTROL,MECHA_INT_TANK_BREACH,MECHA_INT_CONTROL_LOST))
 				play_sfx(src, SFX_WEAPONS_SLASH, extrarange = -1)
 				to_chat(user, span_danger("You attack the armored suit!"))
-				visible_message(span_danger("\The [user] attacks [src.name]'s armor!"))
+				act_message(user, null, others = span_danger("%U% attacks [src.name]'s armor!"))
 			else
 				src.log_append_to_last("Armor saved.")
 				play_sfx(src, SFX_WEAPONS_SLASH, extrarange = -1)
 				to_chat(user, span_danger("Your attack had no effect!"))
 				src.occupant_message(span_notice("\The [user]'s attack is stopped by the armor."))
-				visible_message(span_warning("\The [user] rebounds off [src.name]'s armor!"))
+				act_message(user, null, others = span_warning("%U% rebounds off [src.name]'s armor!"))
 		else
-			user.visible_message(span_danger("\The [user] hits \the [src]. Nothing happens."),span_danger("You hit \the [src] with no visible effect."))
+			act_message(user, src, MSG_SELF(span_danger("You hit %T% with no visible effect.")), MSG_OTHERS(span_danger("%U% hits %T%. Nothing happens.")))
 			src.log_append_to_last("Armor saved.")
 		return TRUE
 	else if (user.has_mutation(HULK) && lands)
 		plan.injure(src, 15, MELEE)
 		if(prob(25))	//Hulks punch hard but lets not give them consistent internal damage.
 			mech_body_plan().roll_affliction(src, list(MECHA_INT_TEMP_CONTROL,MECHA_INT_TANK_BREACH,MECHA_INT_CONTROL_LOST))
-		user.visible_message(span_warning(span_red(span_bold("[user] hits [src.name], doing some damage."))), span_warning(span_red(span_bold("You hit [src.name] with all your might. The metal creaks and bends."))))
+		act_message(user, null, MSG_SELF(span_warning(span_red(span_bold("You hit [src.name] with all your might. The metal creaks and bends.")))), \
+			MSG_OTHERS(span_warning(span_red(span_bold("%U% hits [src.name], doing some damage.")))))
 	else
-		user.visible_message(span_infoplain((span_red(span_bold("[user] hits [src.name]. Nothing happens.")))),span_infoplain(span_red(span_bold("You hit [src.name] with no visible effect."))))
+		act_message(user, null, MSG_SELF(span_infoplain(span_red(span_bold("You hit [src.name] with no visible effect.")))), \
+			MSG_OTHERS(span_infoplain((span_red(span_bold("%U% hits [src.name]. Nothing happens."))))))
 		src.log_append_to_last("Armor saved.")
 	return TRUE
 
@@ -1188,7 +1190,7 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 		if(E.can_attach(src))
 			user.drop_item()
 			E.attach(src)
-			user.visible_message("[user] attaches [W] to [src]", "You attach [W] to [src]")
+			act_message(user, src, MSG_SELF("You attach [W] to %T%"), MSG_OTHERS("%U% attaches [W] to %T%"))
 		else
 			to_chat(user, "You were unable to attach [W] to [src]")
 		return TRUE
@@ -1198,7 +1200,7 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 		if(MC.attach(src))
 			user.drop_item()
 			MC.forceMove(src)
-			user.visible_message("[user] installs \the [W] in \the [src]", "You install \the [W] in \the [src].")
+			act_message(user, src, MSG_SELF("You install %I% in %T%."), MSG_OTHERS("%U% installs %I% in %T%"), item = W)
 		return TRUE
 
 	if(istype(W, /obj/item/card/robot))
@@ -1251,7 +1253,7 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 	else if(istype(W, /obj/item/mecha_parts/mecha_tracking))
 		user.drop_from_inventory(W)
 		W.forceMove(src)
-		user.visible_message("[user] attaches [W] to [src].", "You attach [W] to [src]")
+		act_message(user, src, MSG_SELF("You attach [W] to %T%"), MSG_OTHERS("%U% attaches [W] to %T%."))
 		return TRUE
 
 	else
@@ -1281,7 +1283,7 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 	//Added a message here since people assume their first click failed or something./N
 //	to_chat(user, "Installing MMI, please stand by.")
 
-	visible_message(span_notice("[usr] starts to insert a brain into [src.name]"))
+	act_message(usr, null, others = span_notice("%U% starts to insert a brain into [src.name]"))
 
 	var/started = om_task_start(/datum/om/task/timed/mecha_mmi_install, user, src, receiver = src, mmi_as_oc = mmi_as_oc)
 	return !istext(started)
@@ -1601,12 +1603,12 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 			return
 
 	if(get_equipment(/obj/item/mecha_parts/mecha_equipment/runningboard))
-		visible_message(span_notice("\The [user] is instantly lifted into [src.name] by the running board!"))
+		act_message(user, null, others = span_notice("%U% is instantly lifted into [src.name] by the running board!"))
 		moved_inside(user)
 		if(ishuman(occupant))
 			GrantActions(occupant, 1)
 	else
-		visible_message(span_infoplain(span_bold("\The [user]") + " starts to climb into [src.name]"))
+		act_message(user, null, others = span_infoplain(span_bold("%U%") + " starts to climb into [src.name]"))
 		om_task_start(/datum/om/task/timed/mecha_climb_in, user, src, receiver = src)
 	return
 
@@ -2521,7 +2523,9 @@ TOPIC_ACTION(/obj/mecha, "drop_from_cargo", PROC_REF(topic_drop_from_cargo), TOP
 	var/obj/item/mecha_parts/mecha_equipment/tool/passenger/P = ask.choices[ask.choice]
 	var/mob/passenger_occupant = P?.slot_item(MECHA_SLOT_PILOT)
 
-	user.visible_message(span_infoplain(span_bold("\The [user]") + " begins opening the hatch on \the [P]..."), span_notice("You begin opening the hatch on \the [P]..."))
+	act_message(user, null, MSG_SELF(span_notice("You begin opening the hatch on %I%...")), \
+		MSG_OTHERS(span_infoplain(span_bold("%U%") + " begins opening the hatch on %I%...")), \
+		item = P)
 	om_task_timed(user, 4 SECONDS, src, P, TYPE_PROC_REF(/obj/item/mecha_parts/mecha_equipment/tool/passenger, forced_out), list(user, passenger_occupant))
 	return
 
@@ -2587,13 +2591,13 @@ TOPIC_ACTION(/obj/mecha, "drop_from_cargo", PROC_REF(topic_drop_from_cargo), TOP
 	if(!mech_body_plan().strike_lands(src))//Deflected
 		src.log_append_to_last("Armor saved.")
 		src.occupant_message(span_notice("\The [user]'s attack is stopped by the armor."))
-		visible_message(span_infoplain(span_bold("\The [user]") + " rebounds off [src.name]'s armor!"))
+		act_message(user, null, others = span_infoplain(span_bold("%U%") + " rebounds off [src.name]'s armor!"))
 		add_attack_logs(user, src, "attacked")
 		play_sfx(src, SFX_WEAPONS_SLASH, extrarange = -1)
 
 	else if(damage < damage_minimum) // Pathetic damage levels just don't harm MECH. // temp_damage_minimum -> damage_minimum
 		src.occupant_message(span_notice("\The [user]'s doesn't dent \the [src] paint."))
-		src.visible_message("\The [user]'s attack doesn't dent \the [src] armor")
+		act_message(user, src, others = "%U%'s attack doesn't dent %T% armor")
 		src.log_append_to_last("Armor saved.")
 		play_sfx(src, SFX_EFFECTS_GLASSHIT, volume = 50)
 		return
@@ -2602,7 +2606,7 @@ TOPIC_ACTION(/obj/mecha, "drop_from_cargo", PROC_REF(topic_drop_from_cargo), TOP
 		mech_body_plan().injure(src, damage, MELEE)
 		if(damage > internal_damage_minimum)	//Only decently painful attacks trigger a chance of mech damage.
 			mech_body_plan().roll_affliction(src, list(MECHA_INT_TEMP_CONTROL,MECHA_INT_TANK_BREACH,MECHA_INT_CONTROL_LOST))
-		visible_message(span_danger("[user] [attack_message] [src]!"))
+		act_message(user, src, others = span_danger("%U% [attack_message] %T%!"))
 		add_attack_logs(user, src, "attacked")
 
 	return 1

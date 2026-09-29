@@ -78,7 +78,7 @@ DECLARE_APPEARANCE(/obj/machinery/deployable/barrier, "locked", list("0" = list(
 	repair_damage(max_integrity)
 	set_emagged(FALSE)
 	req_access = list(ACCESS_SECURITY)
-	visible_message(span_warning("[user] repairs \the [src]!"))
+	act_message(user, src, others = span_warning("%U% repairs %T%!"))
 	return ITEM_INTERACT_SUCCESS
 
 // At zero integrity the barrier blows apart.

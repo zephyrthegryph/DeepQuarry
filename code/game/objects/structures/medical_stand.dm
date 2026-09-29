@@ -121,16 +121,16 @@
 				src.add_fingerprint(user)
 				om_task_timed(user, 3 SECONDS, target = target, receiver = src, on_done = PROC_REF(MouseDrop_timed_done), done_args = list(target, user))
 				return
-			user.visible_message(span_infoplain(span_bold("\The [user]") + " begins carefully placing the mask onto [target]."),
-						span_notice("You begin carefully placing the mask onto [target]."))
+			act_message(user, target, MSG_SELF(span_notice("You begin carefully placing the mask onto %T%.")), \
+				MSG_OTHERS(span_infoplain(span_bold("%U%") + " begins carefully placing the mask onto %T%.")))
 			om_task_timed(user, 10 SECONDS, target = target, receiver = src, on_done = PROC_REF(MouseDrop_timed_done2), done_args = list(target, user))
 			return
 		if("Drip needle")
 			if(attached())
 				om_task_timed(user, 2 SECONDS, target = target, receiver = src, on_done = PROC_REF(needle_removed))
 			else if(ishuman(target))
-				user.visible_message(span_infoplain(span_bold("\The [user]") + " begins inserting needle into [target]'s vein."),
-								span_notice("You begin inserting needle into [target]'s vein."))
+				act_message(user, target, MSG_SELF(span_notice("You begin inserting needle into %T%'s vein.")), \
+					MSG_OTHERS(span_infoplain(span_bold("%U%") + " begins inserting needle into %T%'s vein.")))
 				om_task_start(/datum/om/task/timed/medical_stand_needle_inserted, user, target, receiver = src)
 			update_icon()
 
@@ -146,8 +146,7 @@
 	var/mob/user = task.actor
 	if(!target || !user)
 		return
-	user.visible_message(span_notice("\The [user]'s hand slips and pricks \the [target]."),
-				span_notice("Your hand slips and pricks \the [target]."))
+	act_message(user, target, MSG_SELF(span_notice("Your hand slips and pricks %T%.")), MSG_OTHERS(span_notice("%U%'s hand slips and pricks %T%.")))
 	target.injure(INJURY_PIERCE, 3, pick(BP_R_ARM, BP_L_ARM), src)
 
 /datum/om/task/timed/medical_stand_needle_inserted
@@ -160,8 +159,8 @@
 	var/mob/user = task.actor
 	if(attached())
 		return
-	user.visible_message(span_infoplain(span_bold("\The [user]") + "hooks \the [target] up to \the [src]."),
-					span_notice("You hook \the [target] up to \the [src]."))
+	act_message(user, target, MSG_SELF(span_notice("You hook %T% up to \the [src].")), \
+		MSG_OTHERS(span_infoplain(span_bold("%U%") + "hooks %T% up to \the [src].")))
 	attached_handle = om_handle(target)
 	om_task_periodic(src, PERIODIC_SLOW)
 	update_icon()
@@ -185,8 +184,8 @@
 	if(!can_apply_to_target(target, user))
 		return
 	// place mask and add fingerprints
-	user.visible_message(span_notice("\The [user] has placed \the mask on [target]'s mouth."),
-						span_notice("You have placed \the mask on [target]'s mouth."))
+	act_message(user, target, MSG_SELF(span_notice("You have placed \the mask on %T%'s mouth.")), \
+		MSG_OTHERS(span_notice("%U% has placed \the mask on %T%'s mouth.")))
 	if(attach_mask(target))
 		src.add_fingerprint(user)
 		update_icon()
@@ -224,7 +223,8 @@ DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
 				to_chat(user, span_warning("There is no tank in \the [src]!"))
 				return
 			else if (tank && is_loosen)
-				user.visible_message(span_warningplain(span_bold("\The [user]") + " removes \the [tank] from \the [src]."), span_warning("You remove \the [tank] from \the [src]."))
+				act_message(user, src, MSG_SELF(span_warning("You remove \the [tank] from %T%.")), \
+					MSG_OTHERS(span_warningplain(span_bold("%U%") + " removes \the [tank] from %T%.")))
 				user.put_in_hands(tank)
 				tank = null
 				valve_opened = FALSE
@@ -232,7 +232,8 @@ DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
 				update_icon()
 				return
 			else if (!is_loosen)
-				user.visible_message(span_warningplain(span_bold("\The [user]") + " tries to removes \the [tank] from \the [src] but it won't budge."), span_warning("You try to remove \the [tank] from \the [src] but it won't budge."))
+				act_message(user, src, MSG_SELF(span_warning("You try to remove \the [tank] from %T% but it won't budge.")), \
+					MSG_OTHERS(span_warningplain(span_bold("%U%") + " tries to removes \the [tank] from %T% but it won't budge.")))
 				return
 		if ("Toggle valve")
 			if (!tank)
@@ -240,16 +241,14 @@ DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
 				return
 			else
 				if (valve_opened)
-					src.visible_message(span_infoplain(span_bold("\The [user]") + " closes valve on \the [src]!"),
-						span_notice("You close valve on \the [src]."))
+					act_message(user, src, others = span_infoplain(span_bold("%U%") + " closes valve on %T%!"), blind = span_notice("You close valve on %T%."))
 					if(breather())
 						breather().internals?.icon_state = "internal0"
 						breather().internal = null
 					valve_opened = FALSE
 					update_icon()
 				else
-					src.visible_message(span_infoplain(span_bold("\The [user]") + " opens valve on \the [src]!"),
-										span_notice("You open valve on \the [src]."))
+					act_message(user, src, others = span_infoplain(span_bold("%U%") + " opens valve on %T%!"), blind = span_notice("You open valve on %T%."))
 					if(breather())
 						breather().internal = tank
 						breather().internals?.icon_state = "internal1"
@@ -338,7 +337,7 @@ DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
 			user.drop_item()
 			W.forceMove(src)
 			tank = W
-			user.visible_message(span_bold("\The [user]") + " attaches \the [tank] to \the [src].", span_notice("You attach \the [tank] to \the [src]."))
+			act_message(user, src, MSG_SELF(span_notice("You attach %I% to %T%.")), MSG_OTHERS(span_bold("%U%") + " attaches %I% to %T%."), item = tank)
 			src.add_fingerprint(user)
 			update_icon()
 		return TRUE
@@ -363,9 +362,8 @@ DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
 		to_chat(user, span_warning("There is no tank in \the [src]."))
 		return TRUE
 	is_loosen = !is_loosen
-	user.visible_message(
-		span_notice("The [user] [is_loosen ? "loosens" : "tightens"] the nut holding [tank] in place."),
-		span_notice("You [is_loosen ? "loosen" : "tighten"] the nut holding [tank] in place."))
+	act_message(user, null, MSG_SELF(span_notice("You [is_loosen ? "loosen" : "tighten"] the nut holding [tank] in place.")), \
+		MSG_OTHERS(span_notice("%U% [is_loosen ? "loosens" : "tightens"] the nut holding [tank] in place.")))
 	return TRUE
 
 /obj/structure/medical_stand/examine(mob/user)

@@ -123,11 +123,11 @@ DECLARE_REF(/obj/item/clothing/glasses/omnihud, "tgarscreen", OWNED, null)
 	prescription = !prescription
 	play_sfx(src, SFX_ITEMS_SCREWDRIVER)
 	if(prescription)
-		user.visible_message("[user] uploads new prescription data to the [src.name] and resets the lenses.")
+		act_message(user, null, others = "%U% uploads new prescription data to the [src.name] and resets the lenses.")
 		name = "[initial(name)] (pr)" //change the name *after* the text so the message above is accurate
 		icon_state = "[initial(icon_state)]" //reset the icon state just to be safe
 	else
-		user.visible_message("[user] deletes the prescription data on the [src.name] and resets the lenses.")
+		act_message(user, null, others = "%U% deletes the prescription data on the [src.name] and resets the lenses.")
 		name = "[initial(name)]"
 		icon_state = "[initial(icon_state)]"
 

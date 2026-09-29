@@ -847,6 +847,7 @@ ADMIN_VERB(sendFax, R_ADMIN|R_MOD|R_EVENT, "Send Fax", "Sends a fax to this mach
 
 /// An admin fax reply: its title, then (admin-initiated) whether to stamp it. A cancel skips either.
 /datum/om/prompt/text/fax_title
+	name_text = TRUE
 	title = "Title"
 	message = "Pick a title for the report"
 	cancel_answer = ""

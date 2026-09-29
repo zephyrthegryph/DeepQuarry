@@ -358,7 +358,7 @@
 
 /// A dead summon fades into nothingness.
 /mob/living/proc/fade_away()
-	visible_message(span_infoplain(span_bold("\The [src]") + " begins to fade away..."))
+	act_message(src, null, others = span_infoplain(span_bold("%U%") + " begins to fade away..."))
 	animate(src, alpha = 255, alpha = 0, time = 30) // Makes them fade into nothingness.
 	expire(30)
 

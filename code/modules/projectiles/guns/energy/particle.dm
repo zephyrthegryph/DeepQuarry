@@ -66,12 +66,12 @@
 		var/pressure =  environment ? environment.return_pressure() : 0
 
 		if (!power_supply || power_supply.charge < charge_cost)
-			user.visible_message(span_warning("*click*"), span_danger("*click*"))
+			act_message(user, null, MSG_SELF(span_danger("*click*")), MSG_OTHERS(span_warning("*click*")))
 			play_sfx(src, SFX_WEAPONS_EMPTY, 2)
 			return 0
 		if(pressure >= 10)
 			if (safetycatch) //weapons with a pressure regulator simply won't fire
-				user.visible_message(span_warning("*click*"), span_danger("The pressure-interlock prevents you from firing \the [src]."))
+				act_message(user, src, MSG_SELF(span_danger("The pressure-interlock prevents you from firing %T%.")), MSG_OTHERS(span_warning("*click*")))
 				play_sfx(src, SFX_WEAPONS_EMPTY, 2)
 				return 0
 			else if (prob(min(pressure, 100))) //pressure% chance of failing
@@ -83,21 +83,24 @@
 
 /obj/item/gun/energy/particle/proc/pressuremalfunction(severity, mob/user, turf/T)
 	if (severity <= 10) // just doesn't fire. 10% chance in 100 atmo.
-		user.visible_message(span_warning("*click*"), span_danger("\The [src] jams."))
+		act_message(user, src, MSG_SELF(span_danger("%T% jams.")), MSG_OTHERS(span_warning("*click*")))
 		play_sfx(src, SFX_WEAPONS_EMPTY, 2)
 	else if (severity <= 60) //50% chance of fizzling and wasting a shot
-		user.visible_message(span_warning("\The [user] fires \the [src], but the shot fizzles in the air!"), span_danger("You fire \the [src], but the shot fizzles in the air!"))
+		act_message(user, src, MSG_SELF(span_danger("You fire %T%, but the shot fizzles in the air!")), \
+			MSG_OTHERS(span_warning("%U% fires %T%, but the shot fizzles in the air!")))
 		power_supply.charge -= charge_cost
 		playsound(src, fire_sound, 100, 1)
 		fx_sparks(T, 2)
 		update_icon()
 	else if (severity <= 80) //20% chance of shorting out and emptying the cell
-		user.visible_message(span_warning("\The [user] pulls the trigger, but \the [src] shorts out!"), span_danger("You pull the trigger, but \the [src] shorts out!"))
+		act_message(user, src, MSG_SELF(span_danger("You pull the trigger, but %T% shorts out!")), \
+			MSG_OTHERS(span_warning("%U% pulls the trigger, but %T% shorts out!")))
 		power_supply.charge = 0
 		fx_sparks(T, 2)
 		update_icon()
 	else if (severity <= 90) //10% chance of breaking the gun
-		user.visible_message(span_warning("\The [user] pulls the trigger, but \the [src] erupts in a shower of sparks!"), span_danger("You pull the trigger, but \the [src] bursts into a shower of sparks!"))
+		act_message(user, src, MSG_SELF(span_danger("You pull the trigger, but %T% bursts into a shower of sparks!")), \
+			MSG_OTHERS(span_warning("%U% pulls the trigger, but %T% erupts in a shower of sparks!")))
 		fx_sparks(T, 2)
 		power_supply.charge = 0
 		power_supply.maxcharge = 1 //just to avoid div/0 runtimes
@@ -107,12 +110,12 @@
 		charge_cost += charge_cost
 		update_icon()
 	else if (severity <= 150) // 10% chance of exploding
-		user.visible_message(span_danger("\The [user] pulls the trigger, but \the [src] explodes!"), span_danger("The [src] explodes!"))
+		act_message(user, src, MSG_SELF(span_danger("%T% explodes!")), MSG_OTHERS(span_danger("%U% pulls the trigger, but %T% explodes!")))
 		log_and_message_admins("blew themself up with a particle gun.", user)
 		explosion(T, -1, -1, 1, 1)
 		consume(src, user)
 	else //can only possibly happen if you're dumb enough to fire it in an OVER pressure environment, over 150kPa
-		user.visible_message(span_danger("\The [user] pulls the trigger, but \the [src] explodes!"), span_danger("The [src] explodes catastrophically!"))
+		act_message(user, src, MSG_SELF(span_danger("%T% explodes catastrophically!")), MSG_OTHERS(span_danger("%U% pulls the trigger, but %T% explodes!")))
 		log_and_message_admins("blew their dumb ass up with a particle gun.", user)
 		explosion(T, -1, 1, 2, 2)
 		consume(src, user)

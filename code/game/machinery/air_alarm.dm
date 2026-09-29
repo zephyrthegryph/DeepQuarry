@@ -1027,7 +1027,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/alarm, alarm_TLV, air_alarm_TLV_base())
 	add_fingerprint(user)
 	if(!panel_open)
 		return ITEM_INTERACT_BLOCKING
-	user.visible_message(span_warning("[user] has cut the wires inside \the [src]!"), "You have cut the wires inside \the [src].")
+	act_message(user, src, MSG_SELF("You have cut the wires inside %T%."), MSG_OTHERS(span_warning("%U% has cut the wires inside %T%!")))
 	playsound(src, tool.usesound, 50, TRUE)
 	new /obj/item/stack/cable_coil(get_turf(src), 5)
 	return dismantle() ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING

@@ -114,7 +114,7 @@ EXTEND_INTERACTIONS(/obj/item/backup_implanter, \
 	var/mob/living/user = task.actor
 	var/turf/T1 = task.T1
 	if((get_turf(M) == T1) && src.imps.len)
-		M.visible_message(span_notice("[M] has been backup implanted by [user]."))
+		act_message(M, user, others = span_notice("%U% has been backup implanted by %T%."))
 
 		var/obj/item/implant/backup/imp = imps[imps.len]
 		if(imp.handle_implant(M,user.zone_sel.selecting))
@@ -128,7 +128,7 @@ EXTEND_INTERACTIONS(/obj/item/backup_implanter, \
 	if (!istype(M, /mob/living/carbon))
 		return ITEM_INTERACT_FAILURE
 	if(user && imps.len)
-		M.visible_message(span_notice("[user] is injecting a backup implant into [M]."))
+		act_message(user, M, others = span_notice("%U% is injecting a backup implant into %T%."))
 
 		user.setClickCooldown(DEFAULT_QUICK_COOLDOWN)
 		user.do_attack_animation(M)
@@ -187,7 +187,7 @@ EXTEND_INTERACTIONS(/obj/structure/backup_implanter_ch, \
 		return FALSE
 
 	if(user)
-		user.visible_message(span_notice("[user] is injecting a backup implant into [user]."))
+		act_message(user, null, others = span_notice("%U% is injecting a backup implant into %U%."))
 
 		user.setClickCooldown(DEFAULT_QUICK_COOLDOWN)
 
@@ -203,7 +203,7 @@ EXTEND_INTERACTIONS(/obj/structure/backup_implanter_ch, \
 	if(imp.handle_implant(user, user.zone_sel.selecting))
 		imp.post_implant(user)
 		add_attack_logs(user, user, "Implanted backup implant")
-		user.visible_message(span_notice("[user] has been backup implanted by [user]."))
+		act_message(user, null, others = span_notice("%U% has been backup implanted by %U%."))
 
 	//If implanting somehow fails, delete the implant.
 	else

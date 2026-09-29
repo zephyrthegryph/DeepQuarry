@@ -164,6 +164,6 @@ TYPE_TABLE(/mob/living/silicon/robot/platform, robot_component_types, list( \
 
 			if(!recharge_complete && recharging_atom.percent() >= 100)
 				recharge_complete = TRUE
-				visible_message(span_infoplain("[span_bold("\The [src]")] beeps and flashes a green light above \his recharging port."))
+				act_message(src, null, others = span_infoplain("[span_bold("%U%")] beeps and flashes a green light above \his recharging port."))
 
 DECLARE_DEFAULT_CHILD(/mob/living/silicon/robot/platform, "mmi", /obj/item/mmi/digital/robot)

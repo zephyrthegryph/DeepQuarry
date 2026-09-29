@@ -17,7 +17,7 @@
 /datum/om/stage/life/vr_derez/perform(mob/living/self, datum/om/frame/life/ctx)
 	if(self.virtual_reality_mob && !istype(get_area(self), /area/vr))
 		log_admin("[self] escaped virtual reality")
-		self.visible_message("[self] blinks out of existence.")
+		act_message(self, null, others = "%U% blinks out of existence.")
 		self.return_from_vr()
 		for(var/obj/belly/B in self.vore_organs) // Assume anybody inside an escaped VR mob is also an escaped VR mob.
 			for(var/mob/living/L in B)

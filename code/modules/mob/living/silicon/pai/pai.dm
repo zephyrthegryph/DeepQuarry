@@ -326,10 +326,10 @@ EXTEND_INTERACTIONS(/mob/living/silicon/pai, \
 			to_chat(user, span_notice("[src] is not accepting access modifcations at this time."))
 			return TRUE
 	if(W.force)
-		visible_message(span_danger("[user.name] attacks [src] with [W]!"))
+		act_message(src, null, others = span_danger("[user.name] attacks %U% with [W]!"))
 		receive_weapon_hit(W, user, silent = FALSE)
 	else
-		visible_message(span_warning("[user.name] bonks [src] harmlessly with [W]."))
+		act_message(src, null, others = span_warning("[user.name] bonks %U% harmlessly with [W]."))
 	om_after(src, 1, PROC_REF(close_up_unless_dead))
 	return TRUE
 
@@ -372,12 +372,12 @@ EXTEND_INTERACTIONS(/mob/living/silicon/pai, \
 
 /// Old attack_hand, help: pat it. (Grab and harm reach the gate and the default touch.)
 /mob/living/silicon/pai/proc/pai_interaction_pat(mob/user, obj/item/held, datum/interaction/interaction)
-	visible_message(span_notice("\The [user] pats \the [src]."))
+	act_message(user, src, others = span_notice("%U% pats %T%."))
 	return TRUE
 
 /// Old attack_hand, disarm: boop it shut.
 /mob/living/silicon/pai/proc/pai_interaction_boop(mob/user, obj/item/held, datum/interaction/interaction)
-	visible_message(span_danger("\The [user] boops \the [src] on the head."))
+	act_message(user, src, others = span_danger("%U% boops %T% on the head."))
 	close_up()
 	return TRUE
 

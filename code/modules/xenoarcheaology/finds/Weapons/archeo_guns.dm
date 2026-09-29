@@ -17,7 +17,8 @@
 	if(loaded.len)
 		var/obj/item/ammo_casing/C = loaded[loaded.len]
 		loaded.len--
-		user.visible_message("[user] removes \a casing from [src], the casing fizzling in the air before evaporating into dust.", span_notice("You remove \a casing from [src], the casing fizzling in the air before evaporating into dust"))
+		act_message(user, src, MSG_SELF(span_notice("You remove \a casing from %T%, the casing fizzling in the air before evaporating into dust")), \
+			MSG_OTHERS("%U% removes \a casing from %T%, the casing fizzling in the air before evaporating into dust."))
 		C.moveToNullspace() //Into the void!
 		qdel(C) //And begone!
 		play_sfx(src, SFX_WEAPONS_EMPTY)

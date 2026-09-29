@@ -448,7 +448,7 @@ DECLARE_REF(/mob/living/carbon/human, "xenochimera", OWNED, null)
 		remove_verb(src, /mob/living/carbon/human/proc/hatch)
 		clear_alert("hatch")
 		xc.chimera_hatch((reload_slot == "From Slot" && client))
-		visible_message(span_warning(span_huge("[src] rises to \his feet."))) //Bloody hell...
+		act_message(src, null, others = span_warning(span_huge("%U% rises to %THEIR% feet."))) //Bloody hell...
 		if(has_braindamage)
 			// apply_body_effect(/datum/body_effect/resleeving_sickness/chimera, sickness_duration) //
 			injure(INJURY_NEURAL, 5) // if they're reviving from dead, they come back with 5 brain damage on top of whatever's unhealed.

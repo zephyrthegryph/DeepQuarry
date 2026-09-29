@@ -129,7 +129,7 @@
 		chassis.internal_components[component_type] = src
 
 		if(user)
-			chassis.visible_message(span_notice("[user] installs \the [src] in \the [chassis]."))
+			act_message(user, chassis, others = span_notice("%U% installs \the [src] in %T%."))
 		return TRUE
 	return FALSE
 

@@ -96,7 +96,7 @@
 	make_climbable()
 
 /obj/structure/meteorite/proc/break_apart_done(mob/M)
-	M.visible_message(span_warning("[M] breaks apart \the [src]."), span_warning("You break apart \the [src]."))
+	act_message(M, src, MSG_SELF(span_warning("You break apart %T%.")), MSG_OTHERS(span_warning("%U% breaks apart %T%.")))
 	for(var/obj/O in contents_of(src))
 		O.forceMove(get_turf(src))
 	qdel(src)
@@ -107,7 +107,7 @@ DECLARE_INTERACTIONS(/obj/structure/meteorite, INTERACT_ITEM(null, PROC_REF(inte
 /obj/structure/meteorite/proc/interaction_item(mob/M, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/pickaxe))
 		var/obj/item/pickaxe/P = I
-		M.visible_message(span_warning("[M] starts [P.drill_verb] \the [src]."), span_warning("You start [P.drill_verb] \the [src]."))
+		act_message(M, src, MSG_SELF(span_warning("You start [P.drill_verb] %T%.")), MSG_OTHERS(span_warning("%U% starts [P.drill_verb] %T%.")))
 
 		om_task_timed(M, P.digspeed*3, src, src, PROC_REF(break_apart_done), list(M))
 		return INTERACTION_HANDLED_PASS

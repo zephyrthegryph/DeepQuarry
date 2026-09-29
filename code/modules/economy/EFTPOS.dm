@@ -246,9 +246,9 @@ DECLARE_INTERACTIONS(/obj/item/eftpos, \
 	if (istype(I, /obj/item/card/id))
 		var/obj/item/card/id/C = I
 		if(I==ID_container || ID_container == null)
-			usr.visible_message(span_info("\The [usr] swipes a card through \the [src]."))
+			act_message(usr, src, others = span_info("%U% swipes a card through %T%."))
 		else
-			usr.visible_message(span_info("\The [usr] swipes \the [ID_container] through \the [src]."))
+			act_message(usr, src, others = span_info("%U% swipes %I% through %T%."), item = ID_container)
 		if(transaction_locked && !transaction_paid)
 			if(linked_account())
 				if(!linked_account().suspended)
@@ -300,7 +300,7 @@ DECLARE_INTERACTIONS(/obj/item/eftpos, \
 				transaction_locked = 0
 				transaction_paid = 0
 			else
-				usr.visible_message(span_info("\The [usr] swipes a card through \the [src]."))
+				act_message(usr, src, others = span_info("%U% swipes a card through %T%."))
 				play_sfx(src, SFX_MACHINES_CHIME)
 				src.visible_message("[icon2html(src,viewers(src))] \The [src] chimes.")
 				transaction_paid = 1

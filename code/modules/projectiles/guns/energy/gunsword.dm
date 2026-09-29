@@ -97,8 +97,8 @@ EXTEND_INTERACTIONS(/obj/item/cell/device/weapon/gunsword, INTERACT_USE(null, PR
 /obj/item/cell/device/weapon/gunsword/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if (active)
 		if (CLUMSY_HARM_CHANCE(user))
-			user.visible_message(span_danger("\The [user] accidentally cuts [user.p_themselves()] with \the [src]."),\
-			span_danger("You accidentally cut yourself with \the [src]."))
+			act_message(user, src, MSG_SELF(span_danger("You accidentally cut yourself with %T%.")), \
+				MSG_OTHERS(span_danger("%U% accidentally cuts %THEMSELVES% with %T%.")))
 			user.injure(INJURY_CUT, 5, source = src)
 			user.injure(INJURY_BURN, 5, source = src)
 		deactivate(user)

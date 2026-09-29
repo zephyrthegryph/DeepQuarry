@@ -134,7 +134,7 @@
 			to_chat(user, span_warning("You [locked ? "enable" : "disable"] the safety interlock on \the [src]."))
 		else
 			to_chat(user, span_warning("Access denied."))
-		user.visible_message(span_notice("[user] swipes \the [I] against \the [src]."))
+		act_message(user, src, others = span_notice("%U% swipes %I% against %T%."), item = I)
 		return INTERACTION_HANDLED_PASS
 	return ..()
 

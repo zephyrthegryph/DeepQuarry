@@ -209,7 +209,7 @@ DECLARE_INTERACTIONS(/obj/item/shield_projector, INTERACT_SELF("Toggle", PROC_RE
 	else
 		set_dir(user.dir) // Needed for linear shields.
 		set_on(TRUE)
-	visible_message(span_notice("\The [user] [!active ? "de":""]activates \the [src]."))
+	act_message(user, src, others = span_notice("%U% [!active ? "de":""]activates %T%."))
 	return TRUE
 
 /obj/item/shield_projector/proc/set_on(on)
@@ -418,7 +418,7 @@ EXTEND_INTERACTIONS(/obj/item/shield_projector/line/exosuit, INTERACT_USE("Toggl
 		else
 			set_dir(user.dir)
 		create_shields()
-	visible_message(span_notice("\The [user] [!active ? "de":""]activates \the [src]."))
+	act_message(user, src, others = span_notice("%U% [!active ? "de":""]activates %T%."))
 
 /obj/item/shield_projector/line/exosuit/adjust_health(amount)
 	..()

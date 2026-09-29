@@ -72,11 +72,9 @@ DECLARE_INTERACTIONS(/obj/structure/cult/pylon, \
 /obj/structure/cult/pylon/proc/attackpylon(mob/user as mob, damage)
 	if(!isbroken)
 		if(prob(1+ damage * 5))
-			user.visible_message(
-				span_danger("[user] smashed \the [src]!"),
-				span_warning("You hit \the [src], and its crystal breaks apart!"),
-				"You hear a tinkle of crystal shards."
-				)
+			act_message(user, src, MSG_SELF(span_warning("You hit %T%, and its crystal breaks apart!")), \
+				MSG_OTHERS(span_danger("%U% smashed %T%!")), \
+				MSG_BLIND("You hear a tinkle of crystal shards."))
 			om_task_periodic_stop(src)
 			user.do_attack_animation(src)
 			playsound(src,shatter_sound, 75, 1)

@@ -115,7 +115,8 @@
 /obj/machinery/media/jukebox/wrench_act(mob/user, obj/item/tool)
 	if(playing)
 		StopPlaying()
-	user.visible_message(span_warning("[user] has [anchored ? "un" : ""]secured \the [src]."), span_notice("You [anchored ? "un" : ""]secure \the [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You [anchored ? "un" : ""]secure %T%.")), \
+		MSG_OTHERS(span_warning("%U% has [anchored ? "un" : ""]secured %T%.")))
 	set_anchored(!anchored)
 	playsound(src, tool.usesound, 50, TRUE)
 	power_change()

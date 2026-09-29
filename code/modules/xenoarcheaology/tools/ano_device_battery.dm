@@ -257,9 +257,9 @@ DECLARE_INTERACTIONS(/obj/item/anodevice, \
 	if(activated && inserted_battery()?.battery_effect?.effect == EFFECT_TOUCH && !isnull(inserted_battery()))
 		inserted_battery()?.battery_effect?.DoEffectTouch(M)
 		inserted_battery().use_power(energy_consumed_on_touch)
-		user.visible_message(span_blue("[user] taps [M] with [src], and it shudders on contact."))
+		act_message(user, M, others = span_blue("%U% taps %T% with [src], and it shudders on contact."))
 	else
-		user.visible_message(span_blue("[user] taps [M] with [src], but nothing happens."))
+		act_message(user, M, others = span_blue("%U% taps %T% with [src], but nothing happens."))
 
 	//admin logging
 	M.lastattacker = user

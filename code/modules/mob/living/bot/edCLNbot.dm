@@ -38,13 +38,13 @@
 	if(!red_switch && blue_switch && !green_switch && prob(50) || src.emagged)
 		if(istype(loc, /turf/simulated))
 			var/turf/simulated/T = loc
-			visible_message(span_infoplain(span_bold("\The [src]") + " squirts a puddle of water on the floor!"))
+			act_message(src, null, others = span_infoplain(span_bold("%U%") + " squirts a puddle of water on the floor!"))
 			T.wet_floor()
 
 	if(!red_switch && !blue_switch && green_switch && prob(10) || src.emagged)
 		if(istype(loc, /turf/simulated))
 			var/turf/simulated/T = loc
-			visible_message(span_warning("\The [src] stomps on \the [T], breaking it!"))
+			act_message(src, T, others = span_warning("%U% stomps on %T%, breaking it!"))
 			qdel(T)
 
 	if(red_switch && blue_switch && green_switch && prob(1))
@@ -52,7 +52,7 @@
 
 /mob/living/bot/cleanbot/edCLN/explode()
 	on = 0
-	visible_message(span_danger("[src] blows apart!"))
+	act_message(src, null, others = span_danger("%U% blows apart!"))
 	var/turf/Tsec = get_turf(src)
 
 	new /obj/item/secbot_assembly/ed209_assembly(Tsec)

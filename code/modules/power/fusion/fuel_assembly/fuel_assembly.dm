@@ -158,7 +158,7 @@ EXTEND_INTERACTIONS(/obj/item/fuel_assembly/blitz/unshielded, INTERACT_HAND_DEFA
 	if(istype(G) && ((G.flags & THICKMATERIAL && prob(70)) || istype(G, /obj/item/clothing/gloves/gauntlets)))
 		return
 
-	H.visible_message(span_danger("\The [src] flashes as it scorches [H]'s hand!"))
+	act_message(src, H, others = span_danger("%U% flashes as it scorches %T%'s hand!"))
 
 	if(H.hand)
 		H.injure(INJURY_BURN, 7, BP_L_HAND, src)

@@ -211,7 +211,7 @@ EXTEND_INTERACTIONS(/obj/machinery/dna_scannernew, \
 		beaker = item
 		user.drop_item()
 		item.forceMove(src)
-		user.visible_message("\The [user] adds \a [item] to \the [src]!", "You add \a [item] to \the [src]!")
+		act_message(user, src, MSG_SELF("You add \a [item] to %T%!"), MSG_OTHERS("%U% adds \a [item] to %T%!"))
 		SStgui.update_uis(src)
 		return TRUE
 
@@ -225,7 +225,7 @@ EXTEND_INTERACTIONS(/obj/machinery/dna_scannernew, \
 			brain.forceMove(src)
 			put_in(brain.hosted_view())
 			src.add_fingerprint(user)
-			user.visible_message("\The [user] adds \a [item] to \the [src]!", "You add \a [item] to \the [src]!")
+			act_message(user, src, MSG_SELF("You add \a [item] to %T%!"), MSG_OTHERS("%U% adds \a [item] to %T%!"))
 			SStgui.update_uis(src)
 			return TRUE
 		else

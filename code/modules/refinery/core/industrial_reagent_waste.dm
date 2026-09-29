@@ -73,7 +73,7 @@
 	var/obj/vehicle/train/trolley_tank/C = dropping
 	// Drain it!
 	C.reagents.trans_to_holder( src.reagents, src.reagents.maximum_volume)
-	visible_message("\The [user] drains \the [C] into \the [src].")
+	act_message(user, C, others = "%U% drains %T% into \the [src].")
 	update_icon()
 	return TRUE
 
@@ -81,7 +81,7 @@
 	var/atom/movable/C = dropping
 	// Drain it!
 	C.reagents.trans_to_holder( src.reagents, src.reagents.maximum_volume)
-	visible_message("\The [user] dumps \the [C] into \the [src].")
+	act_message(user, C, others = "%U% dumps %T% into \the [src].")
 	update_icon()
 	return TRUE
 

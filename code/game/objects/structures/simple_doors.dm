@@ -176,16 +176,16 @@
 		else if(key.key_id != src.lock_id)
 			to_chat(user,span_warning("The [key] doesn't fit \the [src]'s lock!"))
 		else if(key.key_id == src.lock_id)
-			visible_message(span_notice("[user] [key.keyverb] \the [key] and [locked ? "unlocks" : "locks"] \the [src]."))
+			act_message(user, src, others = span_notice("%U% [key.keyverb] %I% and [locked ? "unlocks" : "locks"] %T%."), item = key)
 			locked = !locked
 			playsound(src, keysound,100, 1)
 		return TRUE
 	if(istype(W,/obj/item/pickaxe) && breakable)
 		var/obj/item/pickaxe/digTool = W
-		visible_message(span_danger("[user] starts digging [src]!"))
+		act_message(user, src, others = span_danger("%U% starts digging %T%!"))
 		om_task_timed(user, digTool.digspeed*get_integrity()/10, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
 	else if(istype(W,/obj/item) && breakable) //not sure, can't not just weapons get passed to this proc?
-		visible_message(span_danger("[user] hits [src] with [W]!"))
+		act_message(user, src, others = span_danger("%U% hits %T% with [W]!"))
 		if(material == get_material_by_name(MAT_RESIN))
 			play_sfx(src, SFX_EFFECTS_ATTACKBLOB, 2)
 		else if(material == get_material_by_name(MAT_WOOD) || material == get_material_by_name(MAT_SIFWOOD) || material == get_material_by_name(MAT_HARDWOOD))
@@ -200,7 +200,7 @@
 /obj/structure/simple_door/proc/attackby_timed_done(mob/user)
 	if(!(src))
 		return
-	visible_message(span_danger("[user] finished digging [src]!"))
+	act_message(user, src, others = span_danger("%U% finished digging %T%!"))
 	Dismantle()
 
 /obj/structure/simple_door/welder_act(mob/user, obj/item/W)
@@ -216,7 +216,7 @@
 	return receive_projectile(P, def_zone, 0.1)
 
 /obj/structure/simple_door/attack_generic(mob/user, damage, attack_verb)
-	visible_message(span_danger("[user] [attack_verb] the [src]!"))
+	act_message(user, src, others = span_danger("%U% [attack_verb] %T%!"))
 	if(material == get_material_by_name(MAT_RESIN))
 		play_sfx(src, SFX_EFFECTS_ATTACKBLOB, 2)
 	else if(material == (get_material_by_name(MAT_WOOD) || get_material_by_name(MAT_SIFWOOD) || get_material_by_name(MAT_HARDWOOD)))
@@ -370,7 +370,7 @@ DECLARE_PERIODIC(/obj/structure/simple_door/uranium, PERIODIC_SLOW)
 /obj/structure/simple_door/resin/proc/interaction_resin_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	if (HULK in user.mutations)
-		visible_message(span_warning("[user] destroys the [name]!"))
+		act_message(user, null, others = span_warning("%U% destroys the [name]!"))
 		Dismantle(1)
 		return TRUE
 	TryToSwitchState(user)
@@ -389,10 +389,10 @@ DECLARE_PERIODIC(/obj/structure/simple_door/uranium, PERIODIC_SLOW)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	var/mob/living/carbon/M = user
 	if(locate_in_list(M.internal_organ_list(), /obj/item/organ/internal/xenos/hivenode))
-		visible_message (span_warning("[user] strokes the [name] and it melts away!"), 1)
+		act_message(user, null, others = span_warning("%U% strokes the [name] and it melts away!"))
 		Dismantle(1)
 		return TRUE
-	visible_message(span_warning("[user] tears at the [name]!"))
+	act_message(user, null, others = span_warning("%U% tears at the [name]!"))
 	take_damage(20, BRUTE, MELEE, FALSE)
 	return TRUE
 // end.

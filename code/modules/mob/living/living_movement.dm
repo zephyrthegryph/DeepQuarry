@@ -143,12 +143,12 @@ default behaviour is:
 			if(H.species.lightweight == TRUE && prob(50))
 				if(H.has_mutation(HULK)) //No knocking over the hulk
 					return
-				H.visible_message(span_warning("[src] bumps into [H], knocking them off balance!"))
+				act_message(src, H, others = span_warning("%U% bumps into %T%, knocking them off balance!"))
 				H.status_at_least(EFFECT_WEAKENED, 5)
 				now_pushing = FALSE
 				return
 			if(H.species.lightweight_light == 1 && !H.combat_mode)
-				H.visible_message(span_warning("[src] bumps into [H], knocking them off balance!"))
+				act_message(src, H, others = span_warning("%U% bumps into %T%, knocking them off balance!"))
 				H.status_at_least(EFFECT_WEAKENED, 5)
 				now_pushing = FALSE
 				return
@@ -272,7 +272,7 @@ default behaviour is:
 	var/area/A = get_area(src)
 	if(forced || (lying && !src?.buckled_to() && pull_damage() && A.get_gravity() && (prob(injury_load(INJURY_CATEGORY_PHYSICAL) * 200 / max(1, get_endurance())))))
 		injure(INJURY_BLUNT, 2, null, dragger)
-		visible_message(span_danger("\The [src]'s [HAS_SYNTHETIC_BIOLOGY(src) ? "state" : "wounds"] worsen terribly from being dragged!"), runemessage = "is dragged, wounds worsening!")
+		act_message(src, null, others = span_danger("%U%'s [HAS_SYNTHETIC_BIOLOGY(src) ? "state" : "wounds"] worsen terribly from being dragged!"), runemessage = "is dragged, wounds worsening!")
 		return TRUE
 
 /mob/living/Moved(atom/oldloc, direct, forced, movetime)

@@ -138,10 +138,10 @@ TYPE_TABLE(/obj/item/lasertagknife/red, lasertag_knife_allowed_suits, list(/obj/
 	var/success = handle_lasertag_attack(target, user, tag_damage, vest_override, required_vest, TYPE_TABLE_GET(src, lasertag_knife_allowed_suits))
 
 	if(success)
-		user.visible_message(span_danger("[target] has been zapped with [src] by [user]!"))
+		act_message(target, user, others = span_danger("%U% has been zapped with [src] by %T%!"))
 		play_sfx(src, SFX_WEAPONS_EGLOVES)
 	else
-		user.visible_message(span_danger("[target] has been harmlessly bonked with [src] by [user]!"))
+		act_message(target, user, others = span_danger("%U% has been harmlessly bonked with [src] by %T%!"))
 		play_sfx(src, SFX_WEAPONS_PUNCHMISS, 3, extrarange = 0)
 	return ITEM_INTERACT_SUCCESS
 

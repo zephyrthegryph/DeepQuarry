@@ -42,7 +42,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/floorlayer, "T", /obj/item/stack/tile/floor
 
 /obj/machinery/floorlayer/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	set_on(!on)
-	user.visible_message(span_notice("[user] has [!on?"de":""]activated \the [src]."), span_notice("You [!on?"de":""]activate \the [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You [!on?"de":""]activate %T%.")), MSG_OTHERS(span_notice("%U% has [!on?"de":""]activated %T%.")))
 	return TRUE
 
 /// Old attackby: load a tile stack.
@@ -67,7 +67,8 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/floorlayer, "T", /obj/item/stack/tile/floor
 	var/mob/user = ask.answerer
 	var/selected_mode = ask.choice
 	work_modes[selected_mode] = !work_modes[selected_mode]
-	user.visible_message(span_notice("[user] has set \the [src] [selected_mode] mode [work_modes[selected_mode] ? "on" : "off"]."), span_notice("You set \the [src] [selected_mode] mode [work_modes[selected_mode] ? "on" : "off"]."))
+	act_message(user, src, MSG_SELF(span_notice("You set %T% [selected_mode] mode [work_modes[selected_mode] ? "on" : "off"].")), \
+		MSG_OTHERS(span_notice("%U% has set %T% [selected_mode] mode [work_modes[selected_mode] ? "on" : "off"].")))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/floorlayer/crowbar_act(mob/user, obj/item/tool)

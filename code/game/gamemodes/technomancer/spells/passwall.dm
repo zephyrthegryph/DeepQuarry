@@ -34,7 +34,7 @@
 	var/turf/found_turf = null			//Our destination, if one is found.
 	var/i = maximum_distance
 
-	visible_message(span_info("[user] rests a hand on \the [hit_atom]."))
+	act_message(user, hit_atom, others = span_info("%U% rests a hand on %T%."))
 
 	while(i)
 		checked_turf = get_step(checked_turf, direction) //Advance in the given direction
@@ -65,7 +65,7 @@
 			to_chat(user, span_warning("You need to stand still in order to phase through \the [hit_atom]."))
 			return 0
 		if(pay_energy(total_cost) && !user.incapacitated() )
-			visible_message(span_warning("[user] appears to phase through \the [hit_atom]!"))
+			act_message(user, hit_atom, others = span_warning("%U% appears to phase through %T%!"))
 			to_chat(user, span_info("You find a destination on the other side of \the [hit_atom], and phase through it."))
 			fx_sparks(our_turf, 5, FALSE)
 			user.forceMove(found_turf)

@@ -182,7 +182,7 @@
 
 /obj/machinery/door/window/proc/interaction_shred(mob/user, obj/item/held, datum/interaction/interaction)
 	play_sfx(src, SFX_EFFECTS_GLASSHIT)
-	visible_message(span_danger("[user] smashes against the [src.name]."), 1)
+	act_message(user, null, others = span_danger("%U% smashes against the [src.name]."))
 	user.do_attack_animation(src)
 	user.setClickCooldown(user.get_attack_speed())
 	take_damage(25, BRUTE, MELEE)
@@ -232,7 +232,7 @@
 		fx_sparks(src.loc, 5, FALSE)
 		play_sfx(src, SFX_SPARKS)
 		play_sfx(src, SFX_WEAPONS_BLADE1)
-		visible_message(span_warning("The glass door was sliced open by [user]!"))
+		act_message(user, null, others = span_warning("The glass door was sliced open by %U%!"))
 	return TRUE
 
 /datum/interaction/machine_item/windowdoor_smash

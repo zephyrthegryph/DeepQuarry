@@ -97,7 +97,7 @@
 	W.forceMove(src)
 	set_charging(W)
 	om_changed(src, CHANGE_MACHINE_OCCUPANT)
-	user.visible_message("[user] inserts [charging] into [src].", "You insert [charging] into [src].")
+	act_message(user, src, MSG_SELF("You insert [charging] into %T%."), MSG_OTHERS("%U% inserts [charging] into %T%."))
 	chargelevel = -1
 	update_icon()
 	return TRUE
@@ -128,7 +128,7 @@
 	if(charging)
 		user.put_in_hands(charging)
 		charging.update_icon()
-		user.visible_message("[user] removes [charging] from [src].", "You remove [charging] from [src].")
+		act_message(user, src, MSG_SELF("You remove [charging] from %T%."), MSG_OTHERS("%U% removes [charging] from %T%."))
 
 		set_charging(null)
 		chargelevel = -1
@@ -140,7 +140,7 @@
 /obj/machinery/cell_charger/proc/cell_charger_silicon_take(mob/user, obj/item/held, datum/interaction/interaction)
 	if(isrobot(user) && Adjacent(user)) // Borgs can remove the cell if they are near enough
 		if(charging)
-			user.visible_message("[user] removes [charging] from [src].", "You remove [charging] from [src].")
+			act_message(user, src, MSG_SELF("You remove [charging] from %T%."), MSG_OTHERS("%U% removes [charging] from %T%."))
 			charging.forceMove(src.loc)
 			charging.update_icon()
 			set_charging(null)

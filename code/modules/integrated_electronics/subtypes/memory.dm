@@ -132,7 +132,7 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/memory/constant, INTERACT_USE(
 	if(accepting_refs && proximity)
 		var/datum/integrated_io/O = outputs[1]
 		O.data = ic_ref(target)
-		visible_message(span_notice("[user] slides \a [src]'s over \the [target]."))
+		act_message(user, src, others = span_notice("%U% slides %T% over \the [target]."))
 		to_chat(user, span_notice("You set \the [src]'s memory to a reference to [O.display_data(O.data)]. The ref scanner is \
 		now off."))
 		accepting_refs = 0

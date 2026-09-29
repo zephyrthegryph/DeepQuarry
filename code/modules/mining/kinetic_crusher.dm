@@ -298,11 +298,9 @@ DECLARE_INTERACTIONS(/obj/item/kinetic_crusher/machete/gauntlets, INTERACT_USE(n
 	if(storing_module())
 		src.forceMove(storing_module())
 		storing_module().stored_gauntlets = src
-		user.visible_message(
-			span_notice("[user] retracts [src] with a click and a hiss."),
-			span_notice("You retract [src] with a click and a hiss."),
-			span_notice("You hear a click and a hiss.")
-			)
+		act_message(user, src, MSG_SELF(span_notice("You retract %T% with a click and a hiss.")), \
+			MSG_OTHERS(span_notice("%U% retracts %T% with a click and a hiss.")), \
+			MSG_BLIND(span_notice("You hear a click and a hiss.")))
 		play_sfx(src, SFX_ITEMS_HELMETDEPLOY)
 		storing_module().active = FALSE
 	else

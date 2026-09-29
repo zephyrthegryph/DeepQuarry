@@ -101,7 +101,7 @@ DECLARE_REF(/obj/item/reagent_containers/food/drinks/bottle, "rag", SPILL, null)
 		return
 
 	user.put_in_hands(src.smash(user.loc, choice))
-	user.visible_message(span_danger("\The [user] smashed \the [src] on \the [choice]!"))
+	act_message(user, src, others = span_danger("%U% smashed %T% on \the [choice]!"))
 	to_chat(user, span_danger("You smash \the [src] on \the [choice]!"))
 
 EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/bottle, \
@@ -172,11 +172,11 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/bottle, \
 		weaken_duration = smash_duration + min(0, force - target.injury_armor(INJURY_BLUNT, hit_zone) + 10)
 
 	if(hit_zone == "head" && istype(target, /mob/living/carbon/))
-		user.visible_message(span_danger("\The [user] smashes [src] over [target]'s head!"))
+		act_message(user, src, others = span_danger("%U% smashes %T% over [target]'s head!"))
 		if(weaken_duration)
 			target.apply_effect(min(weaken_duration, 5), WEAKEN, blocked) // Never weaken more than a flash!
 	else
-		user.visible_message(span_danger("\The [user] smashes [src] into [target]!"))
+		act_message(user, src, others = span_danger("%U% smashes %T% into [target]!"))
 
 	//The reagents in the bottle splash all over the target, thanks for the idea Nodrak
 	if(reagents)
@@ -197,7 +197,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/bottle, \
 		return
 
 	var/spin_rotation = (rand(0,359))
-	user.visible_message(span_warning("\The [user] spins \the [src]!"),span_notice("You spin \the [src]!"))
+	act_message(user, src, MSG_SELF(span_notice("You spin %T%!")), MSG_OTHERS(span_warning("%U% spins %T%!")))
 	SpinAnimation(3,10)
 	om_after(src, 3 SECONDS, PROC_REF(finish_spin), spin_rotation)
 

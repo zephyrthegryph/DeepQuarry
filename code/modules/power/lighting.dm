@@ -85,7 +85,7 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 
 /obj/machinery/light_construct/proc/interaction_remove_cell(mob/user, obj/item/held, datum/interaction/interaction)
 	if(cell())
-		user.visible_message("[user] removes [cell()] from [src]!",span_notice("You remove [cell()]."))
+		act_message(user, src, MSG_SELF(span_notice("You remove [cell()].")), MSG_OTHERS("%U% removes [cell()] from %T%!"))
 		user.put_in_hands(cell())
 		cell().update_icon()
 		cell_handle = null
@@ -108,8 +108,7 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 	if(cell())
 		to_chat(user, span_warning("There is a power cell already installed!"))
 	else if(user.drop_from_inventory(W))
-		user.visible_message(span_notice("[user] hooks up [W] to [src]."), \
-		span_notice("You add [W] to [src]."))
+		act_message(user, src, MSG_SELF(span_notice("You add [W] to %T%.")), MSG_OTHERS(span_notice("%U% hooks up [W] to %T%.")))
 		play_sfx(src, SFX_MACHINES_CLICK)
 		W.forceMove(src)
 		cell_handle = om_handle(W)
@@ -130,8 +129,7 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 	if (coil.use(1))
 		stage = 2
 		update_icon()
-		user.visible_message("[user.name] adds wires to [src].", \
-			"You add wires to [src].")
+		act_message(user, src, MSG_SELF("You add wires to %T%."), MSG_OTHERS("[user.name] adds wires to %T%."))
 	return TRUE
 
 /obj/machinery/light_construct/wrench_act(mob/user, obj/item/tool)
@@ -145,7 +143,7 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/light_construct/proc/wrench_act_tool_done(mob/user)
-	user.visible_message("[user.name] deconstructs [src].", "You deconstruct [src].", "You hear a noise.")
+	act_message(user, src, MSG_SELF("You deconstruct %T%."), MSG_OTHERS("[user.name] deconstructs %T%."), MSG_BLIND("You hear a noise."))
 	play_sfx(src, SFX_ITEMS_DECONSTRUCT, 1.5)
 	replace_with(src, /obj/item/stack/material/steel, sheets_refunded)
 	return ITEM_INTERACT_SUCCESS
@@ -156,7 +154,7 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 	stage = 1
 	update_icon()
 	new /obj/item/stack/cable_coil(get_turf(src), 1, "red")
-	user.visible_message("[user.name] removes the wiring from [src].", "You remove the wiring from [src].", "You hear a noise.")
+	act_message(user, src, MSG_SELF("You remove the wiring from %T%."), MSG_OTHERS("[user.name] removes the wiring from %T%."), MSG_BLIND("You hear a noise."))
 	playsound(src, tool.usesound, 50, TRUE)
 	return ITEM_INTERACT_SUCCESS
 
@@ -165,7 +163,7 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 		return ITEM_INTERACT_BLOCKING
 	stage = 3
 	update_icon()
-	user.visible_message("[user.name] closes [src]'s casing.", "You close [src]'s casing.", "You hear a noise.")
+	act_message(user, src, MSG_SELF("You close %T%'s casing."), MSG_OTHERS("[user.name] closes %T%'s casing."), MSG_BLIND("You hear a noise."))
 	playsound(src, tool.usesound, 75, TRUE)
 	var/obj/machinery/light/finished_light = new fixture_type(loc, src)
 	finished_light.set_dir(dir)
@@ -520,7 +518,7 @@ DECLARE_REF(/obj/machinery/light, "overlay_layer", OWNED, null)
 		return
 	if(!(status == LIGHT_OK||status == LIGHT_BURNED))
 		return
-	visible_message(span_danger("[user] smashes the light!"))
+	act_message(user, null, others = span_danger("%U% smashes the light!"))
 	user.do_attack_animation(src)
 	deal_damage(DAMAGE_BLUNT, max_integrity * (1 - integrity_failure) + DAMAGE_PRECISION, source = user, attacker = user)
 	return 1
@@ -750,7 +748,7 @@ DECLARE_REF(/obj/machinery/light, "overlay_layer", OWNED, null)
 	if(status != LIGHT_EMPTY)
 		return NONE
 	playsound(src, tool.usesound, 75, TRUE)
-	user.visible_message("[user.name] opens [src]'s casing.", "You open [src]'s casing.", "You hear a noise.")
+	act_message(user, src, MSG_SELF("You open %T%'s casing."), MSG_OTHERS("[user.name] opens %T%'s casing."), MSG_BLIND("You hear a noise."))
 	replace_with(src, construct_type, src)
 	return ITEM_INTERACT_SUCCESS
 
@@ -768,7 +766,7 @@ DECLARE_REF(/obj/machinery/light, "overlay_layer", OWNED, null)
 /obj/machinery/light/flamp/screwdriver_act(mob/user, obj/item/tool)
 	if(lamp_shade)
 		playsound(src, tool.usesound, 75, TRUE)
-		user.visible_message("[user.name] removes [src]'s lamp shade.", "You remove [src]'s lamp shade.", "You hear a noise.")
+		act_message(user, src, MSG_SELF("You remove %T%'s lamp shade."), MSG_OTHERS("[user.name] removes %T%'s lamp shade."), MSG_BLIND("You hear a noise."))
 		lamp_shade = FALSE
 		new /obj/item/lampshade(loc)
 		update_icon()

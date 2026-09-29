@@ -102,11 +102,11 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water/digestive_enzymes/nanites, \
 				to_chat(checker, span_warning("With you in control, \the [src] will not attempt to recycle your body, no matter the setting you pick"))
 			else
 				to_chat(checker, span_warning("You realize there is no way for the simplistic [src] to ignore your form, if you set it to recycle."))
-			checker.visible_message(span_warning("\The [checker] inspects \the [src]"), span_warning("You begin to interface with \the [src]."))
+			act_message(checker, src, MSG_SELF(span_warning("You begin to interface with %T%.")), MSG_OTHERS(span_warning("%U% inspects %T%")))
 			om_task_timed(checker, 3 SECONDS, src, src, PROC_REF(interface_on), list(checker, targets))
 		if("Off")
 			if(active)
-				checker.visible_message(span_warning("\The [checker] inspects \the [src]"), span_warning("You begin to interface with \the [src]."))
+				act_message(checker, src, MSG_SELF(span_warning("You begin to interface with %T%.")), MSG_OTHERS(span_warning("%U% inspects %T%")))
 				om_task_timed(checker, 3 SECONDS, src, src, PROC_REF(toggle_all), list(FALSE))
 
 /turf/simulated/floor/water/digestive_enzymes/nanites/proc/interface_on(mob/user, choice2)

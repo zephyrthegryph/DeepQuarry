@@ -131,7 +131,7 @@ DECLARE_APPEARANCE(/obj/machinery/space_heater, "panel_open", list("1" = list(AP
 	cell = C
 	C.forceMove(src)
 	C.add_fingerprint(user)
-	user.visible_message(span_notice("[user] inserts a power cell into [src]."), span_notice("You insert the power cell into [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You insert the power cell into %T%.")), MSG_OTHERS(span_notice("%U% inserts a power cell into %T%.")))
 	power_change()
 	return TRUE
 
@@ -150,7 +150,8 @@ DECLARE_APPEARANCE(/obj/machinery/space_heater, "panel_open", list("1" = list(AP
 /obj/machinery/space_heater/screwdriver_act(mob/user, obj/item/tool)
 	panel_open = !panel_open
 	playsound(src, tool.usesound, 50, TRUE)
-	user.visible_message(span_notice("[user] [panel_open ? "opens" : "closes"] the hatch on [src]."), span_notice("You [panel_open ? "open" : "close"] the hatch on [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You [panel_open ? "open" : "close"] the hatch on %T%.")), \
+		MSG_OTHERS(span_notice("%U% [panel_open ? "opens" : "closes"] the hatch on %T%.")))
 	update_icon()
 	if(!panel_open && user.check_current_machine(src))
 		SStgui.close_uis(src)
@@ -164,7 +165,8 @@ DECLARE_APPEARANCE(/obj/machinery/space_heater, "panel_open", list("1" = list(AP
 		set_state(state ? SHEATER_OFF : SHEATER_STANDBY)
 		if(state)
 			MACHINE_WAKE(src)
-		user.visible_message(span_notice("[user] switches [state ? "on" : "off"] the [src]."),span_notice("You switch [state ? "on" : "off"] the [src]."))
+		act_message(user, src, MSG_SELF(span_notice("You switch [state ? "on" : "off"] %T%.")), \
+			MSG_OTHERS(span_notice("%U% switches [state ? "on" : "off"] %T%.")))
 		update_icon()
 	return
 
@@ -210,7 +212,7 @@ DECLARE_APPEARANCE(/obj/machinery/space_heater, "panel_open", list("1" = list(AP
 
 		if("cellremove")
 			if(cell && !ui.user.get_active_hand())
-				ui.user.visible_message(span_notice("[ui.user] removes [cell] from [src]."), span_notice("You remove [cell] from [src]."))
+				act_message(ui.user, src, MSG_SELF(span_notice("You remove [cell] from %T%.")), MSG_OTHERS(span_notice("%U% removes [cell] from %T%.")))
 				cell.update_icon()
 				ui.user.put_in_hands(cell)
 				cell.add_fingerprint(ui.user)
@@ -230,7 +232,9 @@ DECLARE_APPEARANCE(/obj/machinery/space_heater, "panel_open", list("1" = list(AP
 					power_change()
 					if(state)
 						MACHINE_WAKE(src)
-					ui.user.visible_message(span_notice("[ui.user] inserts \the [C] into \the [src]."), span_notice("You insert \the [C] into \the [src]."))
+					act_message(ui.user, src, MSG_SELF(span_notice("You insert %I% into %T%.")), \
+						MSG_OTHERS(span_notice("%U% inserts %I% into %T%.")), \
+						item = C)
 				. = TRUE
 
 /obj/machinery/space_heater/machine_step()

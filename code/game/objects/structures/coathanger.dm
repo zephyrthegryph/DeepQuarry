@@ -24,7 +24,7 @@
 	return !!coat()
 
 /obj/structure/coatrack/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	user.visible_message("[user] takes [coat()] off \the [src].", "You take [coat()] off the \the [src]")
+	act_message(user, src, MSG_SELF("You take [coat()] off %T%"), MSG_OTHERS("%U% takes [coat()] off %T%."))
 	if(!user.put_in_active_hand(coat()))
 		coat().forceMove(get_turf(user))
 	coat_handle = null
@@ -43,7 +43,7 @@
 		if(istype(W,T))
 			can_hang = 1
 	if (can_hang && !coat())
-		user.visible_message("[user] hangs [W] on \the [src].", "You hang [W] on the \the [src]")
+		act_message(user, src, MSG_SELF("You hang [W] on %T%"), MSG_OTHERS("%U% hangs [W] on %T%."))
 		coat_handle = om_handle(W)
 		user.drop_from_inventory(coat(), src)
 		update_icon()

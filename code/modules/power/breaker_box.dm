@@ -71,9 +71,8 @@
 /obj/machinery/power/breakerbox/proc/toggle_done(mob/user, by_hand)
 	set_breaker_on(!on)
 	if(by_hand)
-		user.visible_message(\
-		span_notice("[user.name] [on ? "enabled" : "disabled"] the breaker box!"),\
-		span_notice("You [on ? "enabled" : "disabled"] the breaker box!"))
+		act_message(user, null, MSG_SELF(span_notice("You [on ? "enabled" : "disabled"] the breaker box!")), \
+			MSG_OTHERS(span_notice("[user.name] [on ? "enabled" : "disabled"] the breaker box!")))
 	else
 		to_chat(user, span_green("Update Completed. New setting:[on ? "on": "off"]"))
 	update_locked = 1

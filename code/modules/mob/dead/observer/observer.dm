@@ -764,7 +764,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 	if(!..())
 		return FALSE
 
-	visible_message(span_deadsay(span_bold("[src]") + " points to [pointed_at]."))
+	act_message(src, pointed_at, others = span_deadsay(span_bold("%U%") + " points to %T%."))
 
 /mob/observer/dead/proc/manifest(mob/user)
 	is_manifest = TRUE
@@ -772,20 +772,16 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 	// Allows them to use the 'ghost  whisper' verb add_verb(src, /mob/observer/dead/verb/ghost_whisper)
 	to_chat(src, span_filter_notice(span_purple("As you are now in the realm of the living, you can whisper to the living with the " + span_bold("Spectral Whisper") + " verb, inside the IC tab.")))
 	if(!user)
-		visible_message(span_deadsay("The ghost of \the [src] is dragged back in to our plane of reality!"))
+		act_message(src, null, others = span_deadsay("The ghost of %U% is dragged back in to our plane of reality!"))
 		toggle_ghost_visibility(TRUE)
 		return
 	if(plane != PLANE_WORLD)
-		user.visible_message( \
-			span_warning("\The [user] drags ghost, [src], to our plane of reality!"), \
-			span_warning("You drag [src] to our plane of reality!") \
-		)
+		act_message(user, src, MSG_SELF(span_warning("You drag %T% to our plane of reality!")), \
+			MSG_OTHERS(span_warning("%U% drags ghost, %T%, to our plane of reality!")))
 		toggle_ghost_visibility(TRUE)
 	else
-		user.visible_message ( \
-			span_warning("\The [user] just tried to smash [user.p_their()] book into that ghost!  It's not very effective."), \
-			span_warning("You get the feeling that the ghost can't become any more visible.") \
-		)
+		act_message(user, null, MSG_SELF(span_warning("You get the feeling that the ghost can't become any more visible.")), \
+			MSG_OTHERS(span_warning("%U% just tried to smash %THEIR% book into that ghost!  It's not very effective.")))
 
 /mob/observer/dead/proc/toggle_icon(icon)
 	if(!client)
@@ -833,7 +829,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 
 	if(plane == PLANE_WORLD)
 		COOLDOWN_START(src, invisible_toggle_cooldown, 600)
-		visible_message(span_emote("It fades from sight..."), span_info("You are now invisible."))
+		act_message(src, null, MSG_SELF(span_info("You are now invisible.")), MSG_OTHERS(span_emote("It fades from sight...")))
 	else
 		to_chat(src, span_info("You are now visible!"))
 

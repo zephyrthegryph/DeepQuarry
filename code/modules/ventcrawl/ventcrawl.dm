@@ -123,7 +123,8 @@ TYPE_TABLE_DECLARE(/mob/living, ventcrawl_get_item_whitelist, list( \
 	if(!can_ventcrawl())
 		return
 
-	visible_message(span_infoplain(span_bold("[src] scrambles into the ventilation ducts!")), span_infoplain("You climb into the ventilation system."))
+	act_message(src, null, MSG_SELF(span_infoplain("You climb into the ventilation system.")), \
+		MSG_OTHERS(span_infoplain(span_bold("%U% scrambles into the ventilation ducts!"))))
 
 	forceMove(vent_found)
 	add_ventcrawl(vent_found)

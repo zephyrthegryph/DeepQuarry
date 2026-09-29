@@ -80,6 +80,13 @@ GLOBAL_LIST_INIT(alphabet_upper, list("A","B","C","D","E","F","G","H","I","J","K
 /proc/sanitizeSafe(input, max_length = MAX_MESSAGE_LEN, encode = 1, trim = 1, extra = 1)
 	return sanitize(replace_characters(input, list(">"=" ","<"=" ", "\""="'")), max_length, encode, trim, extra)
 
+/// Names never carry a raw %: it would read as an act_message token (%U%, %T%) when the name is
+/// put into a message line (doc/rewrite/systems.md section 15). Every name path strips it.
+/proc/strip_name_tokens(text)
+	if(!istext(text) || !findtext(text, "%"))
+		return text
+	return replacetext(text, "%", "")
+
 //Filters out undesirable characters from names
 /proc/sanitizeName(input, max_length = MAX_NAME_LEN, allow_numbers = 0)
 	if(!input || length(input) > max_length)
@@ -118,8 +125,8 @@ GLOBAL_LIST_INIT(alphabet_upper, list("A","B","C","D","E","F","G","H","I","J","K
 				output += ascii2text(ascii_char)
 				last_char_group = 2
 
-			// ~   |   @  :  #  $  %  &  *  +
-			if(126,124,64,58,35,36,37,38,42,43)			//Other symbols that we'll allow (mainly for AI)
+			// ~   |   @  :  #  $  &  *  +   (no %: see strip_name_tokens())
+			if(126,124,64,58,35,36,38,42,43)			//Other symbols that we'll allow (mainly for AI)
 				if(!last_char_group)		continue	//suppress at start of string
 				if(!allow_numbers)			continue
 				output += ascii2text(ascii_char)

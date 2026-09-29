@@ -345,8 +345,7 @@ EXTEND_INTERACTIONS(/obj/item/organ/external/head, INTERACT_ITEM(null, PROC_REF(
 /// Old attackby.
 /obj/item/organ/external/head/proc/head_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/toy/plushie) || istype(I, /obj/item/organ/external/head))
-		user.visible_message(span_notice("[user] makes \the [I] kiss \the [src]!."), \
-		span_notice("You make \the [I] kiss \the [src]!."))
+		act_message(user, src, MSG_SELF(span_notice("You make %I% kiss %T%!.")), MSG_OTHERS(span_notice("%U% makes %I% kiss %T%!.")), item = I)
 	return FALSE
 
 /obj/item/organ/external/head/get_icon(skeletal, can_apply_transparency = TRUE)

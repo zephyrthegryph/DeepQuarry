@@ -71,7 +71,7 @@ DECLARE_REF(/obj/machinery/pda_multicaster, "soundloop", OWNED, null)
 
 /obj/machinery/pda_multicaster/proc/toggle_power(mob/user)
 	toggle = !toggle
-	visible_message("\the [user] turns \the [src] [toggle ? "on" : "off"].")
+	act_message(user, src, others = "%U% turns %T% [toggle ? "on" : "off"].")
 	update_power()
 	if(!toggle)
 		var/msg = "[user.client.key] ([user]) has turned [src] off, at [x],[y],[z]."

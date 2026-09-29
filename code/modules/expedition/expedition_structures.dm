@@ -52,10 +52,7 @@ DECLARE_INTERACTIONS(/obj/structure/expedition_survey_beacon, \
 	if(scanned)
 		to_chat(user, span_notice("[src] has already been logged."))
 		return INTERACTION_HANDLED_PASS
-	user.visible_message(
-		span_notice("[user] sweeps [W] across [src]."),
-		span_notice("You begin logging [src]'s readings with [W]...")
-	)
+	act_message(user, src, MSG_SELF(span_notice("You begin logging %T%'s readings with [W]...")), MSG_OTHERS(span_notice("%U% sweeps [W] across %T%.")))
 	play_sfx(src, SFX_ITEMS_DECONSTRUCT, 0.6)
 	om_task_timed(user, 3 SECONDS, src, src, PROC_REF(log_readings_done), list(W, user))
 	return INTERACTION_HANDLED_PASS
@@ -115,7 +112,7 @@ DECLARE_INTERACTIONS(/obj/structure/expedition_demo_target, INTERACT_ITEM(null, 
 /obj/structure/expedition_demo_target/attack_generic(mob/user, damage)
 	user.setClickCooldown(user.get_attack_speed())
 	if(damage >= STRUCTURE_MIN_DAMAGE_THRESHOLD)
-		visible_message(span_danger("[user] smashes into [src]!"))
+		act_message(user, src, others = span_danger("%U% smashes into %T%!"))
 		receive_generic_attack(user, damage)
 	user.do_attack_animation(src)
 	return 1

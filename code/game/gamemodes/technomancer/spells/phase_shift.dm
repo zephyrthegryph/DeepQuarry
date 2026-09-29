@@ -54,7 +54,7 @@ DECLARE_REF(/obj/effect/phase_shift, "contents", SPILL_LIST, null)	// everything
 	if(isturf(user.loc)) //Check if we're not already in a rift.
 		if(pay_energy(2000))
 			var/obj/effect/phase_shift/PS = new(get_turf(user))
-			visible_message(span_warning("[user] vanishes into a pink rift!"))
+			act_message(user, null, others = span_warning("%U% vanishes into a pink rift!"))
 			to_chat(user, span_info("You create an unstable rift, and go through it.  Be sure to not stay too long."))
 			user.forceMove(PS)
 			adjust_instability(10)

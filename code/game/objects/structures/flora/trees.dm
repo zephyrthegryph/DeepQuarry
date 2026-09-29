@@ -64,7 +64,7 @@
 			om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(chop_done), done_args = list(W, user))
 		return TRUE
 
-	visible_message(span_danger("\The [user] hits \the [src] with \the [W]!"))
+	act_message(user, src, others = span_danger("%U% hits %T% with %I%!"), item = W)
 
 	var/damage_to_do = W.force
 	if(!W.sharp && !W.edge)
@@ -85,7 +85,7 @@
 	return TRUE
 
 /obj/structure/flora/tree/proc/chop_done(obj/item/W, mob/living/user)
-	visible_message(span_infoplain(span_bold("\The [user]") + " digs up \the [src] stump with \the [W]."))
+	act_message(user, src, others = span_infoplain(span_bold("%U%") + " digs up %T% stump with %I%."), item = W)
 	qdel(src)
 
 // Shakes the tree slightly, more or less stolen from lockers.

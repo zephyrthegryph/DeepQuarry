@@ -231,7 +231,7 @@ DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = SFX
 	return B
 
 /obj/structure/blob/attack_generic(mob/user, damage, attack_verb)
-	visible_message(span_danger("[user] [attack_verb] the [src]!"))
+	act_message(user, src, others = span_danger("%U% [attack_verb] %T%!"))
 	play_sfx(src, SFX_EFFECTS_ATTACKBLOB, 2)
 	user.do_attack_animation(src)
 	if(overmind)
@@ -262,7 +262,7 @@ DECLARE_INTERACTIONS(/obj/structure/blob, \
 			return TRUE
 
 		H.do_attack_animation(src)
-		H.visible_message(span_danger("[H] strikes \the [src]!"))
+		act_message(H, src, others = span_danger("%U% strikes %T%!"))
 
 		var/real_damage = rand(3,6)
 		var/hit_kind = attack.injury_kind
@@ -316,7 +316,7 @@ DECLARE_INTERACTIONS(/obj/structure/blob, \
 /obj/structure/blob/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	play_sfx(src, SFX_EFFECTS_ATTACKBLOB)
-	visible_message(span_danger("\The [src] has been attacked with \the [W][(user ? " by [user]." : ".")]"))
+	act_message(src, user, others = span_danger("%U% has been attacked with %I%[user ? " by %T%." : "."]"), item = W)
 	var/damage = W.force
 	switch(W.obj_damage_type())
 		if(BURN)

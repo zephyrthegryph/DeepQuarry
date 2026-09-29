@@ -74,7 +74,7 @@
 		return
 	LAZYADD(to_be_processed, AM)
 	AM.forceMove(src)
-	visible_message(span_infoplain(span_bold("\The [user]") + " places [AM] inside \the [src]."))
+	act_message(user, AM, others = span_infoplain(span_bold("%U%") + " places %T% inside \the [src]."))
 
 /obj/machinery/processor/proc/begin_processing()
 	if(processing)

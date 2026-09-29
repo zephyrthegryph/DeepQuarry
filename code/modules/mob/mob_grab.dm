@@ -158,19 +158,19 @@
 	switch(target_zone)
 		if(O_MOUTH)
 			if(announce)
-				user.visible_message(span_warning("\The [user] covers [target]'s mouth!"))
+				act_message(user, target, others = span_warning("%U% covers %T%'s mouth!"))
 			if(target.status_units(EFFECT_MUTED) < 3)
 				target.status_set(EFFECT_MUTED, 3)
 		if(O_EYES)
 			if(announce)
-				assailant.visible_message(span_warning("[assailant] covers [affecting]'s eyes!"))
+				act_message(assailant, affecting, others = span_warning("%U% covers %T%'s eyes!"))
 			if(affecting.status_units(EFFECT_BLINDED) < 3)
 				affecting.status_at_least(EFFECT_BLINDED, 3)
 		if(BP_HEAD)
 			if(force_down)
 				if(!user.combat_mode) // the holder's posture while the grab ticks (state)
 					if(announce)
-						assailant.visible_message(span_warning("[assailant] sits on [target]'s face!"))
+						act_message(assailant, target, others = span_warning("%U% sits on %T%'s face!"))
 
 
 DECLARE_INTERACTIONS(/obj/item/grab, INTERACT_USE("Tighten grip", PROC_REF(interaction_tighten)))
@@ -250,9 +250,9 @@ DECLARE_INTERACTIONS(/obj/item/grab, INTERACT_USE("Tighten grip", PROC_REF(inter
 		if(!allow_upgrade)
 			return
 		if(!affecting.lying || size_difference(affecting, assailant) > 0)
-			assailant.visible_message(span_warning("[assailant] has grabbed [affecting] aggressively (now hands)!"))
+			act_message(assailant, affecting, others = span_warning("%U% has grabbed %T% aggressively (now hands)!"))
 		else
-			assailant.visible_message(span_warning("[assailant] pins [affecting] down to the ground (now hands)!"))
+			act_message(assailant, affecting, others = span_warning("%U% pins %T% down to the ground (now hands)!"))
 			apply_pinning(affecting, assailant)
 
 		state = GRAB_AGGRESSIVE
@@ -264,7 +264,7 @@ DECLARE_INTERACTIONS(/obj/item/grab, INTERACT_USE("Tighten grip", PROC_REF(inter
 			to_chat(assailant, span_notice("You squeeze [affecting], but nothing interesting happens."))
 			return
 
-		assailant.visible_message(span_warning("[assailant] has reinforced [assailant.p_their()] grip on [affecting] (now neck)!"))
+		act_message(assailant, affecting, others = span_warning("%U% has reinforced %THEIR% grip on %T% (now neck)!"))
 		state = GRAB_NECK
 		icon_state = "grabbed+1"
 		assailant.set_dir(get_dir(assailant, affecting))
@@ -273,11 +273,11 @@ DECLARE_INTERACTIONS(/obj/item/grab, INTERACT_USE("Tighten grip", PROC_REF(inter
 		hud.name = "kill"
 		affecting.status_at_least(EFFECT_STUNNED, 10) //10 ticks of ensured grab
 	else if(state < GRAB_UPGRADING)
-		assailant.visible_message(span_danger("[assailant] starts to tighten [assailant.p_their()] grip on [affecting]'s neck!"))
+		act_message(assailant, affecting, others = span_danger("%U% starts to tighten %THEIR% grip on %T%'s neck!"))
 		hud.icon_state = "kill1"
 
 		state = GRAB_KILL
-		assailant.visible_message(span_danger("[assailant] has tightened [assailant.p_their()] grip on [affecting]'s neck!"))
+		act_message(assailant, affecting, others = span_danger("%U% has tightened %THEIR% grip on %T%'s neck!"))
 		add_attack_logs(assailant,affecting,"Strangled")
 		affecting.setClickCooldown(10)
 		affecting.AdjustLosebreath(1)
@@ -348,7 +348,7 @@ DECLARE_INTERACTIONS(/obj/item/grab, INTERACT_USE("Tighten grip", PROC_REF(inter
 	var/mob/living/carbon/human/assailant = src?.grab_assailant()
 	var/mob/living/affecting = src?.grab_target()
 	if(state == GRAB_KILL)
-		assailant.visible_message(span_warning("[assailant] lost [assailant.p_their()] tight grip on [affecting]'s neck!"))
+		act_message(assailant, affecting, others = span_warning("%U% lost %THEIR% tight grip on %T%'s neck!"))
 		hud.icon_state = "kill"
 		state = GRAB_NECK
 
@@ -396,7 +396,7 @@ DECLARE_INTERACTIONS(/obj/item/grab, INTERACT_USE("Tighten grip", PROC_REF(inter
 			reset_kill_state()
 			return
 		else if(grab_name)
-			affecting.visible_message(span_warning("[affecting] has broken free of [assailant]'s [grab_name]!"))
+			act_message(affecting, assailant, others = span_warning("%U% has broken free of %T%'s [grab_name]!"))
 		qdel(src)
 
 //returns the number of size categories between affecting and assailant, rounded. Positive means A is larger than B

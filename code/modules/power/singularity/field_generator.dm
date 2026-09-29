@@ -113,9 +113,7 @@
 	return active < 1
 
 /obj/machinery/field_generator/proc/interaction_activate(mob/user, obj/item/held, datum/interaction/interaction)
-	user.visible_message("[user.name] turns on the [name]", \
-		"You turn on the [name].", \
-		"You hear heavy droning")
+	act_message(user, null, MSG_SELF("You turn on the [name]."), MSG_OTHERS("[user.name] turns on the [name]"), MSG_BLIND("You hear heavy droning"))
 	turn_on()
 	log_game("FIELDGEN([x],[y],[z]) Activated by [key_name(user)]")
 	investigate_log(span_green("activated") + " by [user.key].","singulo")
@@ -132,16 +130,16 @@
 			if(0)
 				set_state(1)
 				playsound(src, W.usesound, 75, 1)
-				user.visible_message("[user.name] secures [src.name] to the floor.", \
-					"You secure the external reinforcing bolts to the floor.", \
-					"You hear ratchet")
+				act_message(user, null, MSG_SELF("You secure the external reinforcing bolts to the floor."), \
+					MSG_OTHERS("[user.name] secures [src.name] to the floor."), \
+					MSG_BLIND("You hear ratchet"))
 				set_anchored(TRUE)
 			if(1)
 				set_state(0)
 				playsound(src, W.usesound, 75, 1)
-				user.visible_message("[user.name] unsecures [src.name] reinforcing bolts from the floor.", \
-					"You undo the external reinforcing bolts.", \
-					"You hear ratchet")
+				act_message(user, null, MSG_SELF("You undo the external reinforcing bolts."), \
+					MSG_OTHERS("[user.name] unsecures [src.name] reinforcing bolts from the floor."), \
+					MSG_BLIND("You hear ratchet"))
 				set_anchored(FALSE)
 			if(2)
 				to_chat(user, span_red("The [src.name] needs to be unwelded from the floor."))

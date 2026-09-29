@@ -179,9 +179,9 @@ EXTEND_INTERACTIONS(/obj/effect/alien/weeds, \
 	var/obj/item/W = held
 	user.setClickCooldown(user.get_attack_speed(W))
 	if(LAZYLEN(W.attack_verb))
-		visible_message(span_danger("\The [src] have been [pick(W.attack_verb)] with \the [W][(user ? " by [user]." : ".")]"))
+		act_message(src, user, others = span_danger("%U% have been [pick(W.attack_verb)] with %I%[user ? " by %T%." : "."]"), item = W)
 	else
-		visible_message(span_danger("\The [src] have been attacked with \the [W][(user ? " by [user]." : ".")]"))
+		act_message(src, user, others = span_danger("%U% have been attacked with %I%[user ? " by %T%." : "."]"), item = W)
 
 	var/damage = W.force / 4.0
 
@@ -193,7 +193,7 @@ EXTEND_INTERACTIONS(/obj/effect/alien/weeds, \
 	if(!welder.remove_fuel(0, user))
 		return ITEM_INTERACT_BLOCKING
 	user.setClickCooldown(user.get_attack_speed(tool))
-	visible_message(span_danger("\The [src] have been burned with \the [tool] by [user]."))
+	act_message(src, user, others = span_danger("%U% have been burned with %I% by %T%."), item = tool)
 	play_sfx(src, SFX_ITEMS_WELDER)
 	take_damage(15, BRUTE, MELEE, sound_effect = FALSE)
 	return ITEM_INTERACT_SUCCESS
@@ -203,7 +203,7 @@ EXTEND_INTERACTIONS(/obj/effect/alien/weeds, \
 /obj/effect/alien/weeds/proc/interaction_touch_weeds(mob/user, obj/item/held, datum/interaction/interaction)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	if(user.has_mutation(HULK))
-		visible_message(span_warning("[user] destroys the [name]!"))
+		act_message(user, null, others = span_warning("%U% destroys the [name]!"))
 		take_damage(get_integrity(), BRUTE, MELEE, sound_effect = FALSE)
 	else
 
@@ -212,7 +212,7 @@ EXTEND_INTERACTIONS(/obj/effect/alien/weeds, \
 			if(interaction.stance == I_HURT)
 				var/mob/living/carbon/M = user
 				if(locate_in_list(M.internal_organ_list(), /obj/item/organ/internal/xenos/hivenode))
-					visible_message (span_warning("[user] strokes the [name] and it melts away!"), 1)
+					act_message(user, null, others = span_warning("%U% strokes the [name] and it melts away!"))
 					take_damage(get_integrity(), BRUTE, MELEE, sound_effect = FALSE)
 					return TRUE
 	return TRUE

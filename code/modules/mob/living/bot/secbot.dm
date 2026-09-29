@@ -340,11 +340,11 @@ EXTEND_INTERACTIONS(/mob/living/bot/secbot, INTERACT_HAND_UNGATED("Open controls
 			do_attack_animation(H)
 			om_hold_busy(src, 2, PROC_REF(update_icons))
 			update_icons()
-			visible_message(span_warning("\The [H] was prodded by \the [src] with a stun baton!"))
+			act_message(H, src, others = span_warning("%U% was prodded by %T% with a stun baton!"))
 			insult(H)
 		else
 			play_sfx(src, SFX_WEAPONS_HANDCUFFS, extrarange = -2)
-			visible_message(span_warning("\The [src] is trying to put handcuffs on \the [H]!"))
+			act_message(src, H, others = span_warning("%U% is trying to put handcuffs on %T%!"))
 			bot_work(6 SECONDS, H, PROC_REF(UnarmedAttack_secbot_done), list(H))
 	else if(isliving(M))
 		var/mob/living/L = M
@@ -353,7 +353,7 @@ EXTEND_INTERACTIONS(/mob/living/bot/secbot, INTERACT_HAND_UNGATED("Open controls
 		play_sfx(src, SFX_SWING_HIT, 2)
 		om_hold_busy(src, 2, PROC_REF(update_icons))
 		update_icons()
-		visible_message(span_warning("\The [M] was beaten by \the [src] with a stun baton!"))
+		act_message(M, src, others = span_warning("%U% was beaten by %T% with a stun baton!"))
 		insult(L)
 
 /mob/living/bot/secbot/proc/UnarmedAttack_secbot_done(mob/living/carbon/human/H)
@@ -371,7 +371,7 @@ EXTEND_INTERACTIONS(/mob/living/bot/secbot, INTERACT_HAND_UNGATED("Open controls
 		S.slimebatoned(src, xeno_stun_strength)
 
 /mob/living/bot/secbot/explode()
-	visible_message(span_warning("[src] blows apart!"))
+	act_message(src, null, others = span_warning("%U% blows apart!"))
 	var/turf/Tsec = get_turf(src)
 
 	var/obj/item/secbot_assembly/Sa = new /obj/item/secbot_assembly(Tsec)

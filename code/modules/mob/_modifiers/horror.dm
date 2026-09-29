@@ -621,9 +621,9 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 
 	//First, check if we're already wearing the armor, and if so, take it off.
 	if(istype(M.get_equipped_item(SLOT_ID_SUIT), armor_type) || istype(M.get_equipped_item(SLOT_ID_HEAD), helmet_type) || istype(M.get_equipped_item(SLOT_ID_SHOES), boot_type) || istype(M.get_equipped_item(SLOT_ID_GLOVES), glove_type))
-		M.visible_message(span_warning("[M] casts off their [M.get_equipped_item(SLOT_ID_SUIT) ? M.get_equipped_item(SLOT_ID_SUIT).name : "armor"]!"),
-		span_warning("We cast off our [M.get_equipped_item(SLOT_ID_SUIT) ? M.get_equipped_item(SLOT_ID_SUIT).name : "armor"]"),
-		span_warningplain("You hear the organic matter ripping and tearing!"))
+		act_message(M, null, MSG_SELF(span_warning("We cast off our [M.get_equipped_item(SLOT_ID_SUIT) ? M.get_equipped_item(SLOT_ID_SUIT).name : "armor"]")), \
+			MSG_OTHERS(span_warning("%U% casts off their [M.get_equipped_item(SLOT_ID_SUIT) ? M.get_equipped_item(SLOT_ID_SUIT).name : "armor"]!")), \
+			MSG_BLIND(span_warningplain("You hear the organic matter ripping and tearing!")))
 		if(istype(M.get_equipped_item(SLOT_ID_SUIT), armor_type))
 			M.slot_clear(SLOT_ID_SUIT)
 		if(istype(M.get_equipped_item(SLOT_ID_HEAD), helmet_type))

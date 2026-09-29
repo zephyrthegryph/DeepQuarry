@@ -42,7 +42,7 @@ DECLARE_REF(/obj/item/spell/flame_tongue, "welder", OWNED, null)
 	if(isliving(hit_atom) && stance != I_HELP)
 		var/mob/living/L = hit_atom
 		if(pay_energy(1000))
-			visible_message(span_danger("\The [user] reaches out towards \the [L] with the flaming hand, and they ignite!"))
+			act_message(user, L, others = span_danger("%U% reaches out towards %T% with the flaming hand, and they ignite!"))
 			to_chat(L, span_danger("You ignite!"))
 			L.fire_act()
 			add_attack_logs(user,L,"Ignited with [src]")

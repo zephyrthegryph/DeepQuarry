@@ -235,7 +235,7 @@ EXTEND_INTERACTIONS(/obj/structure/bed/chair, INTERACT_TK("Rotate", PROC_REF(int
 				victim.apply_effect(6, WEAKEN, blocked)
 				victim.apply_effect(6, STUTTER, blocked)
 				victim.injure(INJURY_BLUNT, 10, def_zone, src, flags = INJURE_ARMORED)
-			occupant.visible_message(span_danger("[occupant] crashed into \the [A]!"))
+			act_message(occupant, A, others = span_danger("%U% crashed into %T%!"))
 
 /obj/structure/bed/chair/office/light
 	icon_state = "officechair_white"

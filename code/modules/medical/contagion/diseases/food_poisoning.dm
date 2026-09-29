@@ -71,6 +71,6 @@
 					host.emote("vomit")
 				else
 					to_chat(host, span_danger("Your stomach lurches painfully"))
-					host.visible_message(span_danger("[host] gags and retches!"))
+					act_message(host, null, others = span_danger("%U% gags and retches!"))
 					host.status_at_least(EFFECT_STUNNED, rand(4, 8))
 					host.status_at_least(EFFECT_WEAKENED, rand(4, 8))

@@ -46,7 +46,7 @@ OM_TIMER_SLOT(/obj/item/clothing/suit/armor/tesla, recharge_timer)
 		if(ready)
 			ready = 0
 			om_after_slot(src, "recharge_timer", cooldown_to_charge, PROC_REF(recharge_ready), user)
-			visible_message(span_danger("\The [user]'s [src.name] blocks [attack_text]!"))
+			act_message(user, null, others = span_danger("%U%'s [src.name] blocks [attack_text]!"))
 			update_icon()
 			return 1
 	return 0

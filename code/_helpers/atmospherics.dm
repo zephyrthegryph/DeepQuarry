@@ -1,6 +1,6 @@
 /proc/analyze_gases_by(obj/tool, atom/A, mob/user)
 	if(tool != A)
-		user.visible_message(span_notice("\The [user] has used \an [tool] on \the [A]"))
+		act_message(user, tool, others = span_notice("%U% has used %T% on \the [A]"))
 
 	A.add_fingerprint(user)
 	var/list/result = A.atmosanalyze(user)

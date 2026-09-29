@@ -69,7 +69,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/lasertag, \
 		return null
 	lasertag_max_health = new_health
 	lasertag_health = lasertag_max_health
-	user.visible_message(user, span_notice("Set [src]'s allowed shots to [lasertag_max_health], fully healing the vest!"))
+	act_message(user, src, MSG_SELF(span_notice("Set %T%'s allowed shots to [lasertag_max_health], fully healing the vest!")))
 
 /// Old verb "Adjust Healing Timer".
 /obj/item/clothing/suit/lasertag/proc/lasertag_adjust_heal_time_verb(mob/user, obj/item/held, datum/interaction/interaction)
@@ -136,7 +136,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/lasertag, \
 				wearer.visible_message(span_warning("[src] beeps as it takes a shot! [lasertag_health] shots remaining!"))
 				return
 
-			wearer.visible_message(span_boldwarning("[src] beeps as its health is fully depleted! [wearer] is down!"))
+			act_message(src, wearer, others = span_boldwarning("%U% beeps as its health is fully depleted! %T% is down!"))
 			to_chat(wearer, span_large(span_danger("You're out!"))) //People KEEP MISSING THAT THEY'RE OUT, SO NOW THEY WON'T.
 			wearer.status_at_least(EFFECT_STUNNED, 5)
 			wearer.status_at_least(EFFECT_WEAKENED, 5)

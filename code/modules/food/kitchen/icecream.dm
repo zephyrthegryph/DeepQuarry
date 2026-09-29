@@ -136,7 +136,7 @@ EXTEND_INTERACTIONS(/obj/machinery/icecream_vat, \
 		var/obj/item/reagent_containers/food/snacks/icecream/I = O
 		if(!I.ice_creamed)
 			if(LAZYACCESS(product_types, dispense_flavour) > 0)
-				src.visible_message("[icon2html(src,viewers(src))] " + span_info("[user] scoops delicious [flavour_name] icecream into [I]."))
+				act_message(user, src, others = "[icon2html(src,viewers(src))] " + span_info("%U% scoops delicious [flavour_name] icecream into [I]."))
 				product_types[dispense_flavour] -= 1
 				I.add_ice_cream(flavour_name)
 				if(I.reagents.total_volume < 10)
@@ -162,9 +162,9 @@ EXTEND_INTERACTIONS(/obj/machinery/icecream_vat, \
 		LAZYADDASSOC(product_types, make_type, amount)
 		var/flavour = get_flavour_name(make_type)
 		if(make_type > 4)
-			src.visible_message(span_info("[user] cooks up some [flavour] cones."))
+			act_message(user, src, others = span_info("%U% cooks up some [flavour] cones."))
 		else
-			src.visible_message(span_info("[user] whips up some [flavour] icecream."))
+			act_message(user, src, others = span_info("%U% whips up some [flavour] icecream."))
 	else
 		to_chat(user, span_warning("You don't have the ingredients to make this."))
 

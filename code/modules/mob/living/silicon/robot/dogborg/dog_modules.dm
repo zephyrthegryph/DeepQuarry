@@ -23,7 +23,7 @@ DECLARE_INTERACTIONS(/obj/item/boop_module, INTERACT_USE(null, PROC_REF(interact
 	var/total_moles = environment.total_moles()
 
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
-	user.visible_message(span_notice("[user] scans the air."), span_notice("You scan the air..."))
+	act_message(user, null, MSG_SELF(span_notice("You scan the air...")), MSG_OTHERS(span_notice("%U% scans the air.")))
 
 	to_chat(user, span_boldnotice("Scan results:"))
 	if(abs(pressure - ONE_ATMOSPHERE) < 10)
@@ -49,7 +49,7 @@ DECLARE_INTERACTIONS(/obj/item/boop_module, INTERACT_USE(null, PROC_REF(interact
 		return
 
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
-	user.visible_message(span_notice("[user] scan at \the [O.name]."), span_notice("You scan \the [O.name]..."))
+	act_message(user, null, MSG_SELF(span_notice("You scan \the [O.name]...")), MSG_OTHERS(span_notice("%U% scan at \the [O.name].")))
 
 	if(!isnull(O.reagents))
 		var/dat = ""
@@ -132,7 +132,8 @@ DECLARE_INTERACTIONS(/obj/item/robot_tongue, INTERACT_USE(null, PROC_REF(interac
 	return TRUE
 
 /obj/item/robot_tongue/proc/tongue_eat_trash(atom/target, mob/user)
-	user.visible_message(span_filter_notice("[user] finishes eating \the [target.name]."), span_notice("You finish eating \the [target.name]."))
+	act_message(user, null, MSG_SELF(span_notice("You finish eating \the [target.name].")), \
+		MSG_OTHERS(span_filter_notice("%U% finishes eating \the [target.name].")))
 	to_chat(user, span_notice("You finish off \the [target.name]."))
 	qdel(target)
 	var/mob/living/silicon/robot/R = user
@@ -140,14 +141,15 @@ DECLARE_INTERACTIONS(/obj/item/robot_tongue, INTERACT_USE(null, PROC_REF(interac
 	water.use_charge(5)
 
 /obj/item/robot_tongue/proc/tongue_eat_food(atom/target, mob/user)
-	user.visible_message("[user] finishes eating \the [target.name].", span_notice("You finish eating \the [target.name]."))
+	act_message(user, null, MSG_SELF(span_notice("You finish eating \the [target.name].")), MSG_OTHERS("%U% finishes eating \the [target.name]."))
 	user << span_notice("You finish off \the [target.name].")
 	qdel(target)
 	var/mob/living/silicon/robot/R = user
 	R.add_power(ROBOT_CELL_JOULES(250), src)
 
 /obj/item/robot_tongue/proc/tongue_eat_cell(atom/target, mob/user)
-	user.visible_message(span_filter_notice("[user] finishes gulping down \the [target.name]."), span_notice("You finish swallowing \the [target.name]."))
+	act_message(user, null, MSG_SELF(span_notice("You finish swallowing \the [target.name].")), \
+		MSG_OTHERS(span_filter_notice("%U% finishes gulping down \the [target.name].")))
 	to_chat(user, span_notice("You finish off \the [target.name], and gain some charge!"))
 	var/mob/living/silicon/robot/R = user
 	var/obj/item/cell/C = target
@@ -170,28 +172,34 @@ DECLARE_INTERACTIONS(/obj/item/robot_tongue, INTERACT_USE(null, PROC_REF(interac
 		if (water.energy == water.max_energy && istype(target, /obj/structure/toilet))
 			to_chat(user, span_notice("You refrain from lapping water from the [target.name] with your reserves filled."))
 			return
-		user.visible_message(span_filter_notice("[user] begins to lap up water from [target.name]."), span_notice("You begin to lap up water from [target.name]."))
+		act_message(user, null, MSG_SELF(span_notice("You begin to lap up water from [target.name].")), \
+			MSG_OTHERS(span_filter_notice("%U% begins to lap up water from [target.name].")))
 		om_task_timed(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(afterattack_robot_tongue_done), done_args = list(), busy = src)
 	else if(water.energy < 5)
 		to_chat(user, span_notice("Your mouth feels dry. You should drink up some water ."))
 		return
 	else if(istype(target,/obj/effect/decal/cleanable))
-		user.visible_message(span_filter_notice("[user] begins to lick off \the [target.name]."), span_notice("You begin to lick off \the [target.name]..."))
+		act_message(user, null, MSG_SELF(span_notice("You begin to lick off \the [target.name]...")), \
+			MSG_OTHERS(span_filter_notice("%U% begins to lick off \the [target.name].")))
 		om_task_timed(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(afterattack_robot_tongue_done2), done_args = list(target, user), busy = src)
 	else if(istype(target,/obj/item))
 		if(istype(target,/obj/item/trash))
-			user.visible_message(span_filter_notice("[user] nibbles away at \the [target.name]."), span_notice("You begin to nibble away at \the [target.name]..."))
+			act_message(user, null, MSG_SELF(span_notice("You begin to nibble away at \the [target.name]...")), \
+				MSG_OTHERS(span_filter_notice("%U% nibbles away at \the [target.name].")))
 			om_task_timed(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(tongue_eat_trash), done_args = list(target, user), busy = src)
 			return
 		if(istype(target,/obj/item/reagent_containers/food))
-			user.visible_message("[user] nibbles away at \the [target.name].", span_notice("You begin to nibble away at \the [target.name]..."))
+			act_message(user, null, MSG_SELF(span_notice("You begin to nibble away at \the [target.name]...")), \
+				MSG_OTHERS("%U% nibbles away at \the [target.name]."))
 			om_task_timed(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(tongue_eat_food), done_args = list(target, user), busy = src)
 			return
 		if(istype(target,/obj/item/cell))
-			user.visible_message(span_filter_notice("[user] begins cramming \the [target.name] down its throat."), span_notice("You begin cramming \the [target.name] down your throat..."))
+			act_message(user, null, MSG_SELF(span_notice("You begin cramming \the [target.name] down your throat...")), \
+				MSG_OTHERS(span_filter_notice("%U% begins cramming \the [target.name] down its throat.")))
 			om_task_timed(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(tongue_eat_cell), done_args = list(target, user), busy = src)
 			return
-		user.visible_message(span_filter_notice("[user] begins to lick \the [target.name] clean..."), span_notice("You begin to lick \the [target.name] clean..."))
+		act_message(user, null, MSG_SELF(span_notice("You begin to lick \the [target.name] clean...")), \
+			MSG_OTHERS(span_filter_notice("%U% begins to lick \the [target.name] clean...")))
 		om_task_timed(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(afterattack_robot_tongue_done3), done_args = list(target, user), busy = src)
 		return
 	else if(ishuman(target))
@@ -204,18 +212,20 @@ DECLARE_INTERACTIONS(/obj/item/robot_tongue, INTERACT_USE(null, PROC_REF(interac
 			L.status_at_least(EFFECT_STUNNED, 1)
 			L.status_at_least(EFFECT_WEAKENED, 1)
 			L.apply_effect(STUTTER, 1)
-			L.visible_message(span_danger("[user] has shocked [L] with its tongue!"), \
-								span_userdanger("[user] has shocked you with its tongue! You can feel the betrayal."))
+			act_message(L, user, MSG_SELF(span_userdanger("%T% has shocked you with its tongue! You can feel the betrayal.")), \
+				MSG_OTHERS(span_danger("%T% has shocked %U% with its tongue!")))
 			play_sfx(src, SFX_WEAPONS_EGLOVES)
 		else
-			user.visible_message(span_notice("\The [user] affectionately licks all over \the [target]'s face!"), span_notice("You affectionately lick all over \the [target]'s face!"))
+			act_message(user, target, MSG_SELF(span_notice("You affectionately lick all over %T%'s face!")), \
+				MSG_OTHERS(span_notice("%U% affectionately licks all over %T%'s face!")))
 			play_sfx(src, SFX_EFFECTS_ATTACKBLOB)
 			water.use_charge(5)
 			var/mob/living/carbon/human/H = target
 			if(H.species.lightweight == 1)
 				H.status_at_least(EFFECT_WEAKENED, 3)
 	else
-		user.visible_message(span_filter_notice("[user] begins to lick \the [target.name] clean..."), span_notice("You begin to lick \the [target.name] clean..."))
+		act_message(user, null, MSG_SELF(span_notice("You begin to lick \the [target.name] clean...")), \
+			MSG_OTHERS(span_filter_notice("%U% begins to lick \the [target.name] clean...")))
 		om_task_timed(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(afterattack_robot_tongue_done4), done_args = list(target, user), busy = src)
 		return
 
@@ -413,7 +423,7 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/pounce, INTERACT_USE(null, PROC_REF(inter
 	status_flags |= LEAPING
 	pixel_y = pixel_y + 10
 
-	src.visible_message(span_danger("\The [src] leaps at [T]!"))
+	act_message(src, T, others = span_danger("%U% leaps at %T%!"))
 	/* // disable for now
 	if(bluespace)
 		src.forceMove(get_turf(T))

@@ -46,7 +46,7 @@
 	to_chat(M, span_critical("Please be advised, this role is NOT AN ANTAGONIST."))
 	to_chat(M, span_warning("You may be a spooky space monster, but your role is to facilitate spooky space monster roleplay, not to fight the station and kill people. You can of course eat and/or digest people as you like if OOC prefs align, but this should be done as part of roleplay. If you intend to fight the station and kill people and such, you need permission from the staff team. GENERALLY, this role should avoid well populated areas. You’re a weird spooky space monster, so the bar is probably not where you’d want to go if you intend to survive. Of course, you’re welcome to try to make friends and roleplay how you will in this regard, but something to keep in mind."))
 	newPred.ckey = M.ckey
-	newPred.visible_message(span_warning("[newPred] emerges from somewhere!"))
+	act_message(newPred, null, others = span_warning("%U% emerges from somewhere!"))
 	log_and_message_admins("successfully entered \a [src] and became a [newPred].")
 	newPred.offer_load_bellies()
 	qdel(src)
@@ -186,7 +186,7 @@ DECLARE_REGISTRY(/obj/structure/ghost_pod/ghost_activated/maintpred/redgate, REG
 	to_chat(new_character, span_critical("Please be advised, this role is " + span_bold("NOT AN ANTAGONIST.")))
 	to_chat(new_character, span_notice("Whoever or whatever your chosen character slot is, your role is to facilitate roleplay focused around that character; this role is not free license to attack and murder people without provocation or explicit out-of-character consent. You should probably be cautious around high-traffic and highly sensitive areas (e.g. Telecomms) as Security personnel would be well within their rights to treat you as a trespasser. That said, good luck!"))
 
-	new_character.visible_message(span_warning("[new_character] appears to crawl out of somewhere."))
+	act_message(new_character, null, others = span_warning("%U% appears to crawl out of somewhere."))
 	qdel(src)
 
 DECLARE_REGISTRY(/obj/structure/ghost_pod/ghost_activated/maint_lurker, REGISTRY_GHOST_PODS)

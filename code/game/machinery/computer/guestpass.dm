@@ -49,8 +49,8 @@ EXTEND_INTERACTIONS(/obj/item/card/id/guest, INTERACT_USE_AS(I_HELP, "Show", PRO
 
 /// Old attack_self outside combat mode: flash the pass.
 /obj/item/card/id/guest/proc/interaction_guest_pass_show(mob/living/user, obj/item/held, datum/interaction/interaction)
-	user.visible_message("\The [user] shows you: [icon2html(src,viewers(src))] [src.name]. The assignment on the card: [src.assignment]",\
-		"You flash your ID card: [icon2html(src, user.client)] [src.name]. The assignment on the card: [src.assignment]")
+	act_message(user, null, MSG_SELF("You flash your ID card: [icon2html(src, user.client)] [src.name]. The assignment on the card: [src.assignment]"), \
+		MSG_OTHERS("%U% shows you: [icon2html(src,viewers(src))] [src.name]. The assignment on the card: [src.assignment]"))
 
 	src.add_fingerprint(user)
 
@@ -66,7 +66,7 @@ EXTEND_INTERACTIONS(/obj/item/card/id/guest, INTERACT_USE_AS(I_HELP, "Show", PRO
 	var/mob/living/user = ask.answerer
 	if(icon_state != "guest-invalid")
 		//rip guest pass </3
-		user.visible_message(span_infoplain(span_bold("\The [user]") + "deactivates \the [src]."))
+		act_message(user, src, others = span_infoplain(span_bold("%U%") + "deactivates %T%."))
 		icon_state = "guest-invalid"
 		update_icon()
 		EXPIRY_STAMP(src, expiration_time, CLOCK_WORLD)

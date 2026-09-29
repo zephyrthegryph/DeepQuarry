@@ -77,7 +77,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/material/supermatter, INTERACT_HAND_DEFAULT(
 			burn_user = FALSE
 
 		if(burn_user)
-			H.visible_message(span_danger("\The [src] flashes as it scorches [H]'s hands!"))
+			act_message(src, H, others = span_danger("%U% flashes as it scorches %T%'s hands!"))
 			H.injure(INJURY_BURN, amount / 2 + 5, BP_R_HAND, src)
 			H.injure(INJURY_BURN, amount / 2 + 5, BP_L_HAND, src)
 			H.drop_from_inventory(src, get_turf(H))

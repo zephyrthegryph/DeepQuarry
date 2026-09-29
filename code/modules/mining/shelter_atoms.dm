@@ -807,8 +807,9 @@ DECLARE_INTERACTIONS(/obj/item/survivalcapsule, INTERACT_USE("Deploy", PROC_REF(
 	pixel_y = -32
 
 /obj/item/gps/computer/wrench_act(mob/user, obj/item/tool)
-	user.visible_message(span_warning("[user] disassembles [src]."),
-		span_notice("You start to disassemble [src]..."), "You hear clanking and banging noises.")
+	act_message(user, src, MSG_SELF(span_notice("You start to disassemble %T%...")), \
+		MSG_OTHERS(span_warning("%U% disassembles %T%.")), \
+		MSG_BLIND("You hear clanking and banging noises."))
 	om_task_timed(user, 4 SECONDS, src, src, PROC_REF(disassemble_done))
 	return ITEM_INTERACT_SUCCESS
 
@@ -881,8 +882,9 @@ EXTEND_INTERACTIONS(/obj/item/gps/computer, INTERACT_HAND_UNGATED(null, PROC_REF
 	replace_with(src, buildstacktype, buildstackamount)
 
 /obj/structure/fans/wrench_act(mob/user, obj/item/tool)
-	user.visible_message(span_warning("[user] disassembles [src]."),
-		span_notice("You start to disassemble [src]..."), "You hear clanking and banging noises.")
+	act_message(user, src, MSG_SELF(span_notice("You start to disassemble %T%...")), \
+		MSG_OTHERS(span_warning("%U% disassembles %T%.")), \
+		MSG_BLIND("You hear clanking and banging noises."))
 	om_task_timed(user, 4 SECONDS, src, src, TYPE_PROC_REF(/obj, atom_deconstruct), list(TRUE))
 	return ITEM_INTERACT_SUCCESS
 

@@ -86,7 +86,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/card/robot, "dummy_card", "dummy_card_type")
 				add_overlay(image("icon" = I.icon, "icon_state" = I.icon_state, "layer" = 30 + I.layer))
 				addedSomething = 1
 		if ( addedSomething )
-			user.visible_message(span_notice("[user] loads some items onto their service tray."))
+			act_message(user, null, others = span_notice("%U% loads some items onto their service tray."))
 
 		return
 
@@ -121,9 +121,9 @@ DECLARE_DEFAULT_CHILD(/obj/item/card/robot, "dummy_card", "dummy_card_type")
 				I.scatter_steps(rand(1, 2))
 		if ( droppedSomething )
 			if ( foundtable )
-				user.visible_message(span_notice("[user] unloads their service tray."))
+				act_message(user, null, others = span_notice("%U% unloads their service tray."))
 			else
-				user.visible_message(span_notice("[user] drops all the items on their tray."))
+				act_message(user, null, others = span_notice("%U% drops all the items on their tray."))
 
 	return ..()
 
@@ -472,7 +472,7 @@ DECLARE_INTERACTIONS(/obj/item/borg/combat/shield, \
 
 		var/mob/living/user = src.loc
 		if(isliving(user))
-			user.visible_message(span_danger("[user]'s shield reactivates!"), span_danger("Your shield reactivates!"))
+			act_message(user, null, MSG_SELF(span_danger("Your shield reactivates!")), MSG_OTHERS(span_danger("%U%'s shield reactivates!")))
 			user.update_icon()
 
 /obj/item/borg/combat/shield/proc/adjust_flash_count(mob/living/user, amount)
@@ -487,7 +487,7 @@ DECLARE_INTERACTIONS(/obj/item/borg/combat/shield, \
 
 /obj/item/borg/combat/shield/proc/overload(mob/living/user)
 	active = 0
-	user.visible_message(span_danger("[user]'s shield destabilizes!"), span_danger("Your shield destabilizes!"))
+	act_message(user, null, MSG_SELF(span_danger("Your shield destabilizes!")), MSG_OTHERS(span_danger("%U%'s shield destabilizes!")))
 	user.update_icon()
 	COOLDOWN_START(src, overload_cooldown, shield_refresh)
 	om_task_periodic(src, PERIODIC_SLOW)
@@ -587,7 +587,7 @@ DECLARE_INTERACTIONS(/obj/item/inflatable_dispenser, INTERACT_USE(null, PROC_REF
 			stored_doors++
 			qdel(A)
 		play_sfx(src, SFX_MACHINES_HISS, 1.5, vary = TRUE)
-		visible_message(span_filter_notice("\The [user] deflates \the [A] with \the [src]!"))
+		act_message(user, A, others = span_filter_notice("%U% deflates %T% with \the [src]!"))
 		return
 	if(istype(A, /obj/item/inflatable))
 		if(!istype(A, /obj/item/inflatable/door))
@@ -602,7 +602,7 @@ DECLARE_INTERACTIONS(/obj/item/inflatable_dispenser, INTERACT_USE(null, PROC_REF
 				return
 			stored_doors++
 			qdel(A)
-		visible_message(span_filter_notice("\The [user] picks up \the [A] with \the [src]!"))
+		act_message(user, A, others = span_filter_notice("%U% picks up %T% with \the [src]!"))
 		return
 
 	to_chat(user, span_filter_notice("You fail to pick up \the [A] with \the [src]."))
@@ -665,10 +665,9 @@ DECLARE_INTERACTIONS(/obj/item/robo_dice, INTERACT_USE(null, PROC_REF(interactio
 	if(sides <= 0)
 		return
 	var/result = rand(1, sides)
-	user.visible_message(
-		span_notice("\The [user] rolls a virtual [sides]-sided die. The result is [result]."),
-		span_notice("You roll a virtual [sides]-sided die. The result is [result]."),
-		span_notice("You hear synthesized audio of clattering plastic with a soft ping."))
+	act_message(user, null, MSG_SELF(span_notice("You roll a virtual [sides]-sided die. The result is [result].")), \
+		MSG_OTHERS(span_notice("%U% rolls a virtual [sides]-sided die. The result is [result].")), \
+		MSG_BLIND(span_notice("You hear synthesized audio of clattering plastic with a soft ping.")))
 	user.balloon_alert_visible("rolled: [result]", blind_message = "*clatter, ping!*")
 	play_sfx(user, SFX_EFFECTS_DICEROLL_ROBOTIC)
 

@@ -98,13 +98,14 @@
 		return FALSE
 	if(tension)
 		if(bolt)
-			user.visible_message("[user] relaxes the tension on [src]'s string and removes [bolt].","You relax the tension on [src]'s string and remove [bolt].")
+			act_message(user, src, MSG_SELF("You relax the tension on %T%'s string and remove [bolt]."), \
+				MSG_OTHERS("%U% relaxes the tension on %T%'s string and removes [bolt]."))
 			bolt.forceMove(get_turf(src))
 			var/obj/item/arrow/A = bolt
 			bolt = null
 			A.removed(user)
 		else
-			user.visible_message("[user] relaxes the tension on [src]'s string.","You relax the tension on [src]'s string.")
+			act_message(user, src, MSG_SELF("You relax the tension on %T%'s string."), MSG_OTHERS("%U% relaxes the tension on %T%'s string."))
 		tension = 0
 		update_icon()
 	else
@@ -120,7 +121,7 @@
 		return
 
 	current_user = user
-	user.visible_message("[user] begins to draw back the string of [src].",span_notice("You begin to draw back the string of [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You begin to draw back the string of %T%.")), MSG_OTHERS("%U% begins to draw back the string of %T%."))
 	tension = 1
 	draw_step(user)
 
@@ -132,7 +133,8 @@
 	om_task_timed(user, 2.5 SECONDS, src, src, PROC_REF(draw_notch), list(user), on_fail = PROC_REF(draw_relaxed), fail_args = list(user))
 
 /obj/item/gun/launcher/crossbow/proc/draw_relaxed(mob/user)
-	user?.visible_message("[user] stops drawing and relaxes the string of [src].",span_warning("You stop drawing back and relax the string of [src]."))
+	act_message(user, src, others = "%U% stops drawing and relaxes the string of %T%.", \
+		blind = span_warning("You stop drawing back and relax the string of %T%."))
 	tension = 0
 	update_icon()
 
@@ -149,7 +151,7 @@
 		to_chat(user, "[src] clunks as you draw the string to its maximum tension!")
 		return
 
-	user.visible_message("[user] draws back the string of [src]!",span_notice("You continue drawing back the string of [src]!"))
+	act_message(user, src, MSG_SELF(span_notice("You continue drawing back the string of %T%!")), MSG_OTHERS("%U% draws back the string of %T%!"))
 	draw_step(user)
 
 /obj/item/gun/launcher/crossbow/proc/increase_tension(mob/user as mob)
@@ -176,7 +178,7 @@
 		if (istype(W,/obj/item/arrow))
 			user.drop_from_inventory(W, src)
 			bolt = W
-			user.visible_message("[user] slides [bolt] into [src].","You slide [bolt] into [src].")
+			act_message(user, src, MSG_SELF("You slide [bolt] into %T%."), MSG_OTHERS("%U% slides [bolt] into %T%."))
 			update_icon()
 			return
 		else if(istype(W,/obj/item/stack/rods))
@@ -186,7 +188,7 @@
 				bolt.add_fingerprint(user)
 				bolt.forceMove(src)
 				update_icon()
-				user.visible_message("[user] jams [bolt] into [src].","You jam [bolt] into [src].")
+				act_message(user, src, MSG_SELF("You jam [bolt] into %T%."), MSG_OTHERS("%U% jams [bolt] into %T%."))
 				superheat_rod(user)
 			return
 

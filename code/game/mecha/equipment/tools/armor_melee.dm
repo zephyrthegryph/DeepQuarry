@@ -26,7 +26,7 @@
 		inc_damage = 0
 	else
 		chassis.occupant_message(span_danger("\The [user] hits [chassis] with [W]."))
-		user.visible_message(span_danger("\The [user] hits [chassis] with [W]."), span_danger("You hit [src] with [W]."))
+		act_message(user, src, MSG_SELF(span_danger("You hit %T% with [W].")), MSG_OTHERS(span_danger("%U% hits [chassis] with [W].")))
 		inc_damage *= damage_coeff
 	set_ready_state(FALSE)
 	chassis.use_power(energy_drain)

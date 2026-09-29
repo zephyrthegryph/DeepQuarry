@@ -58,14 +58,14 @@ EXTEND_INTERACTIONS(/obj/effect/decal/writing, \
 	if(isnull(_message))
 		return TRUE
 	if(_message && loc && user && !user.incapacitated() && user.Adjacent(loc) && thing.loc == user)
-		user.visible_message(span_warning("\The [user] begins carving something into \the [loc]."))
+		act_message(user, null, others = span_warning("%U% begins carving something into \the [loc]."))
 		om_task_timed(user, max(2 SECONDS, length(_message)), src, src, PROC_REF(carve_done), list(user, _message))
 	return INTERACTION_HANDLED_PASS
 
 /obj/effect/decal/writing/proc/carve_done(mob/user, _message)
 	if(!loc)
 		return
-	user.visible_message(span_danger("\The [user] carves some graffiti into \the [loc]."))
+	act_message(user, null, others = span_danger("%U% carves some graffiti into \the [loc]."))
 	message = "[message] [_message]"
 	author = user.ckey
 	if(lowertext(message) == "elbereth")
@@ -80,5 +80,5 @@ EXTEND_INTERACTIONS(/obj/effect/decal/writing, \
 
 /obj/effect/decal/writing/proc/clear_done(mob/user, obj/item/weldingtool/welder)
 	playsound(loc, welder.usesound, 50, 1)
-	user.visible_message(span_infoplain(span_bold("\The [user]") + " clears away some graffiti."))
+	act_message(user, null, others = span_infoplain(span_bold("%U%") + " clears away some graffiti."))
 	qdel(src)

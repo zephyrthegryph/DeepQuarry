@@ -156,7 +156,9 @@
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/meter/proc/wrench_act_tool_done(mob/user)
-	user.visible_message(span_infoplain(span_bold("\The [user]") + " unfastens \the [src]."), span_notice("You have unfastened \the [src]."), "You hear ratchet.")
+	act_message(user, src, MSG_SELF(span_notice("You have unfastened %T%.")), \
+		MSG_OTHERS(span_infoplain(span_bold("%U%") + " unfastens %T%.")), \
+		MSG_BLIND("You hear ratchet."))
 	replace_with(src, /obj/item/pipe_meter)
 
 /obj/machinery/meter/screwdriver_act(mob/user, obj/item/tool)

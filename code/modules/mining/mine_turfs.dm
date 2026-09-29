@@ -408,7 +408,9 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 
 		if (istype(W, /obj/item/measuring_tape))
 			var/obj/item/measuring_tape/P = W
-			user.visible_message(span_infoplain(span_bold("\The [user]") + " extends \a [P] towards \the [src]."),span_notice("You extend \the [P] towards \the [src]."))
+			act_message(user, src, MSG_SELF(span_notice("You extend %I% towards %T%.")), \
+				MSG_OTHERS(span_infoplain(span_bold("%U%") + " extends \a [P] towards %T%.")), \
+				item = P)
 			om_task_timed(user, 1.5 SECONDS, src, src, PROC_REF(measure_done), list(user))
 			return INTERACTION_HANDLED_PASS
 
@@ -417,7 +419,9 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 			if(C.mode) //Mode means scanning
 				C.depth_scanner.scan_atom(user, src)
 			else
-				user.visible_message(span_infoplain(span_bold("\The [user]") + " extends \the [C] over \the [src], a flurry of red beams scanning \the [src]'s surface!"), span_notice("You extend \the [C] over \the [src], a flurry of red beams scanning \the [src]'s surface!"))
+				act_message(user, src, MSG_SELF(span_notice("You extend %I% over %T%, a flurry of red beams scanning %T%'s surface!")), \
+					MSG_OTHERS(span_infoplain(span_bold("%U%") + " extends %I% over %T%, a flurry of red beams scanning %T%'s surface!")), \
+					item = C)
 				om_task_timed(user, 1.5 SECONDS, src, src, PROC_REF(measure_done), list(user))
 			return INTERACTION_HANDLED_PASS
 

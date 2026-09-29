@@ -59,17 +59,17 @@
 			MACHINE_SLEEP(src)
 		icon_state = "Shield_Gen"
 
-		user.visible_message("[user] turned the shield generator off.", \
-			"You turn off the shield generator.", \
-			"You hear heavy droning fade out.")
+		act_message(user, null, MSG_SELF("You turn off the shield generator."), \
+			MSG_OTHERS("%U% turned the shield generator off."), \
+			MSG_BLIND("You hear heavy droning fade out."))
 		for(var/dir in list(1,2,4,8)) src.cleanup(dir)
 	else
 		set_active(1)
 		MACHINE_WAKE(src)
 		icon_state = "Shield_Gen_on"
-		user.visible_message("[user] turned the shield generator on.", \
-			"You turn on the shield generator.", \
-			"You hear heavy droning.")
+		act_message(user, null, MSG_SELF("You turn on the shield generator."), \
+			MSG_OTHERS("%U% turned the shield generator on."), \
+			MSG_BLIND("You hear heavy droning."))
 	src.add_fingerprint(user)
 	return TRUE
 
@@ -200,7 +200,7 @@
 
 /obj/machinery/shieldwallgen/proc/interaction_hit(mob/user, obj/item/W, datum/interaction/interaction)
 	src.add_fingerprint(user)
-	visible_message(span_red("The [src.name] has been hit with \the [W.name] by [user.name]!"))
+	act_message(src, user, others = span_red("%U% has been hit with %I% by %T%!"), item = W)
 	return TRUE
 
 /obj/machinery/shieldwallgen/wrench_act(mob/user, obj/item/W)

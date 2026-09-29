@@ -33,7 +33,7 @@
 		to_chat(user, span_danger("The spike already has something on it, finish collecting its meat first!"))
 	else
 		if(spike(G?.grab_target()))
-			visible_message(span_danger("[user] has forced [G?.grab_target()] onto the spike, killing [G.p_them()] instantly!"))
+			act_message(user, null, others = span_danger("%U% has forced [G?.grab_target()] onto the spike, killing [G.p_them()] instantly!"))
 			var/mob/M = G?.grab_target()
 			M.forceMove(src)
 			consume(G, user)

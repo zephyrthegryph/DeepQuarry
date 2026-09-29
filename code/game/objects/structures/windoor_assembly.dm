@@ -103,7 +103,7 @@
 	if(state == "01")
 		//Adding cable to the assembly. Step 5 complete.
 		if(istype(W, /obj/item/stack/cable_coil) && anchored)
-			user.visible_message("[user] wires the windoor assembly.", "You start to wire the windoor assembly.")
+			act_message(user, null, MSG_SELF("You start to wire the windoor assembly."), MSG_OTHERS("%U% wires the windoor assembly."))
 
 			var/obj/item/stack/cable_coil/CC = W
 			om_task_timed(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, CC))
@@ -112,7 +112,8 @@
 		//Adding airlock electronics for access. Step 6 complete.
 		if(istype(W, /obj/item/airlock_electronics))
 			play_sfx(src, SFX_ITEMS_SCREWDRIVER, 2)
-			user.visible_message("[user] installs the electronics into the airlock assembly.", "You start to install electronics into the airlock assembly.")
+			act_message(user, null, MSG_SELF("You start to install electronics into the airlock assembly."), \
+				MSG_OTHERS("%U% installs the electronics into the airlock assembly."))
 
 			om_task_start(/datum/om/task/timed/windoor_assembly_attackby, user, src, W = W)
 

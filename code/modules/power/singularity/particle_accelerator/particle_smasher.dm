@@ -141,9 +141,9 @@ DECLARE_REF(/obj/machinery/particle_smasher, "recipes", OWNED_LIST, null)
 /obj/machinery/particle_smasher/wrench_act(mob/user, obj/item/W)
 	set_anchored(!anchored)
 	playsound(src, W.usesound, 75, 1)
-	user.visible_message("[user.name] [anchored ? "secures" : "unsecures"] [src.name] to the floor.", \
-		"You [anchored ? "secure" : "unsecure"] the [src.name] to the floor.", \
-		"You hear a ratchet.")
+	act_message(user, null, MSG_SELF("You [anchored ? "secure" : "unsecure"] the [src.name] to the floor."), \
+		MSG_OTHERS("[user.name] [anchored ? "secures" : "unsecures"] [src.name] to the floor."), \
+		MSG_BLIND("You hear a ratchet."))
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
 

@@ -111,7 +111,7 @@
 				switch(rng)
 					if(0)
 						fx_sparks(loc, 5, FALSE)
-						visible_message(span_warning("Electrical sparks manifest from nowhere around \the [src]!"))
+						act_message(src, null, others = span_warning("Electrical sparks manifest from nowhere around %U%!"))
 					if(1)
 						return
 
@@ -172,7 +172,7 @@
 				switch(rng)
 					if(0)
 						fx_sparks(loc, 5, FALSE)
-						visible_message(span_warning("Electrical sparks manifest from nowhere around \the [src]!"))
+						act_message(src, null, others = span_warning("Electrical sparks manifest from nowhere around %U%!"))
 					if(1)
 						return
 
@@ -235,8 +235,8 @@
 					if(0)
 						apply_effect(instability, IRRADIATE)
 					if(1)
-						visible_message(span_warning("\The [src] suddenly collapses!"),
-						span_danger("You suddenly feel very light-headed, and faint!"))
+						act_message(src, null, MSG_SELF(span_danger("You suddenly feel very light-headed, and faint!")), \
+							MSG_OTHERS(span_warning("%U% suddenly collapses!")))
 						status_at_least(EFFECT_PARALYZED, instability * 0.1)
 						status_at_least(EFFECT_SLEEPING, instability * 0.1)
 					if(2)

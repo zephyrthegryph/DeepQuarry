@@ -277,6 +277,7 @@
 #include "dq_sys_hygiene_tests.dm"
 #include "dq_sys_tables_tests.dm"
 #include "dq_sys_topic_tests.dm"
+#include "dq_sys_messages_tests.dm"
 #include "dq_om_core_fix_tests.dm"
 #include "dq_om_pipeline_tests.dm"
 #include "dq_om_relations_tests.dm"

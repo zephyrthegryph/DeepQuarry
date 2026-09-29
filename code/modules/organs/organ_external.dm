@@ -217,7 +217,7 @@ DECLARE_REF(/obj/item/organ/external, "applied_pressure", BACK, null)
 		I.forceMove(get_turf(user)) //just in case something was embedded that is not an item
 		if(istype(I))
 			user.put_in_hands(I)
-		user.visible_message(span_danger("\The [user] rips \the [I] out of \the [src]!"))
+		act_message(user, src, others = span_danger("%U% rips %I% out of %T%!"), item = I)
 		return TRUE //no eating the limb until everything's been removed
 	return ..(user, held, interaction, TRUE)
 
@@ -288,16 +288,16 @@ EXTEND_INTERACTIONS(/obj/item/organ/external, INTERACT_ITEM(null, PROC_REF(exter
 	switch(stage)
 		if(0)
 			if(istype(W,/obj/item/surgical/scalpel))
-				user.visible_message(span_danger(span_bold("[user]") + " cuts [src] open with [W]!"))
+				act_message(user, src, others = span_danger(span_bold("%U%") + " cuts %T% open with [W]!"))
 				stage++
 				return INTERACTION_HANDLED_PASS
 		if(1)
 			if(istype(W,/obj/item/surgical/retractor))
-				user.visible_message(span_danger(span_bold("[user]") + " cracks [src] open like an egg with [W]!"))
+				act_message(user, src, others = span_danger(span_bold("%U%") + " cracks %T% open like an egg with [W]!"))
 				stage++
 				return INTERACTION_HANDLED_PASS
 			if(istype(W,/obj/item/surgical/cautery))
-				user.visible_message(span_danger(span_bold("[user]") + " closes [src] with [W]!"))
+				act_message(user, src, others = span_danger(span_bold("%U%") + " closes %T% with [W]!"))
 				stage--
 				return INTERACTION_HANDLED_PASS
 		if(2)
@@ -307,16 +307,16 @@ EXTEND_INTERACTIONS(/obj/item/organ/external, INTERACT_ITEM(null, PROC_REF(exter
 					if(isnull(removing))
 						return TRUE
 					if(!removing || removing.loc != src || !Adjacent(user)) //Didn't select anything or selected something that was already removed OR we walked away.
-						user.visible_message(span_danger(span_bold("[user]") + " decides against removing anything from [src]"))
+						act_message(user, src, others = span_danger(span_bold("%U%") + " decides against removing anything from %T%"))
 						return INTERACTION_HANDLED_PASS
 					removing.forceMove(get_turf(user.loc))
 					user.put_in_hands(removing)
-					user.visible_message(span_danger(span_bold("[user]") + " extracts [removing] from [src] with [W]!"))
+					act_message(user, src, others = span_danger(span_bold("%U%") + " extracts [removing] from %T% with [W]!"))
 				else
-					user.visible_message(span_danger(span_bold("[user]") + " fishes around fruitlessly in [src] with [W]."))
+					act_message(user, src, others = span_danger(span_bold("%U%") + " fishes around fruitlessly in %T% with [W]."))
 				return INTERACTION_HANDLED_PASS
 			if(istype(W,/obj/item/surgical/FixOVein))
-				user.visible_message(span_danger(span_bold("[user]") + " partially closes [src] with [W]!"))
+				act_message(user, src, others = span_danger(span_bold("%U%") + " partially closes %T% with [W]!"))
 				stage--
 				return INTERACTION_HANDLED_PASS
 			//Begin necrosis surgery
@@ -324,12 +324,12 @@ EXTEND_INTERACTIONS(/obj/item/organ/external, INTERACT_ITEM(null, PROC_REF(exter
 				if(!(status & ORGAN_DEAD))
 					to_chat(user, span_notice("The limb isn't necrotic, there's no need to fix it!"))
 					return INTERACTION_HANDLED_PASS
-				user.visible_message(span_danger(span_bold("[user]") + " cuts necrotic tissue off [src] with [W]!"))
+				act_message(user, src, others = span_danger(span_bold("%U%") + " cuts necrotic tissue off %T% with [W]!"))
 				stage++
 				return INTERACTION_HANDLED_PASS
 		if(3)
 			if(istype(W,/obj/item/surgical/bioregen))
-				user.visible_message(span_danger(span_bold("[user]") + " rejuvinates formerly necrotic tissue on [src] with [W]!"))
+				act_message(user, src, others = span_danger(span_bold("%U%") + " rejuvinates formerly necrotic tissue on %T% with [W]!"))
 				germ_level = 0
 				status &= ~ORGAN_DEAD
 				clear_necrosis() // the dead-tissue afflictions go too (audit D12)
@@ -721,9 +721,9 @@ EXTEND_INTERACTIONS(/obj/item/organ/external, INTERACT_ITEM(null, PROC_REF(exter
 			fix_verb = "finishes patching"
 			disfigured = FALSE //Prevents some edgecases where you can repair despite hitting disfigurement thresholds, they're fully healed at this point anyways.
 		if(user == src.owner)
-			user.visible_message(span_infoplain(span_bold("\The [user]") + " [fix_verb] [damage_desc] on [user.p_their()] [src.name] with [tool]."))
+			act_message(user, null, others = span_infoplain(span_bold("%U%") + " [fix_verb] [damage_desc] on %THEIR% [src.name] with [tool]."))
 		else
-			user.visible_message(span_infoplain(span_bold("\The [user]") + " [fix_verb] [damage_desc] on [owner]'s [src.name] with [tool]."))
+			act_message(user, null, others = span_infoplain(span_bold("%U%") + " [fix_verb] [damage_desc] on [owner]'s [src.name] with [tool]."))
 	if(tool_proc)
 		call(tool, tool_proc)(arglist(list(user) + (tool_args || list())))
 
@@ -1233,14 +1233,12 @@ Note that amputating the affected organ does in fact remove the infection from t
 	if(!holder)
 		return
 	if (holder.get_equipped_item(SLOT_ID_HANDCUFFED) && (body_part in list(ARM_LEFT, ARM_RIGHT, HAND_LEFT, HAND_RIGHT)))
-		holder.visible_message(\
-			"\The [holder.get_equipped_item(SLOT_ID_HANDCUFFED).name] falls off of [holder.name].",\
-			"\The [holder.get_equipped_item(SLOT_ID_HANDCUFFED).name] falls off you.")
+		act_message(holder, null, MSG_SELF("\The [holder.get_equipped_item(SLOT_ID_HANDCUFFED).name] falls off you."), \
+			MSG_OTHERS("\The [holder.get_equipped_item(SLOT_ID_HANDCUFFED).name] falls off of [holder.name]."))
 		holder.drop_from_inventory(holder.get_equipped_item(SLOT_ID_HANDCUFFED))
 	if (holder.get_equipped_item(SLOT_ID_LEGCUFFED) && (body_part in list(FOOT_LEFT, FOOT_RIGHT, LEG_LEFT, LEG_RIGHT)))
-		holder.visible_message(\
-			"\The [holder.get_equipped_item(SLOT_ID_LEGCUFFED).name] falls off of [holder.name].",\
-			"\The [holder.get_equipped_item(SLOT_ID_LEGCUFFED).name] falls off you.")
+		act_message(holder, null, MSG_SELF("\The [holder.get_equipped_item(SLOT_ID_LEGCUFFED).name] falls off you."), \
+			MSG_OTHERS("\The [holder.get_equipped_item(SLOT_ID_LEGCUFFED).name] falls off of [holder.name]."))
 		holder.drop_from_inventory(holder.get_equipped_item(SLOT_ID_LEGCUFFED))
 
 // checks if all wounds on the organ are bandaged
@@ -1535,10 +1533,9 @@ Note that amputating the affected organ does in fact remove the infection from t
 
 	//Robotic limbs explode if sabotaged.
 	if(is_robotic && sabotaged)
-		victim.visible_message(
-			span_danger("\The [victim]'s [src.name] explodes violently!"),\
-			span_danger("Your [src.name] explodes!"),\
-			span_danger("You hear an explosion!"))
+		act_message(victim, null, MSG_SELF(span_danger("Your [src.name] explodes!")), \
+			MSG_OTHERS(span_danger("%U%'s [src.name] explodes violently!")), \
+			MSG_BLIND(span_danger("You hear an explosion!")))
 		// owner is already null here (the base removed() detached us): use victim (audit D4).
 		explosion(get_turf(victim),-1,-1,2,3)
 		fx_sparks(victim, 5, FALSE)

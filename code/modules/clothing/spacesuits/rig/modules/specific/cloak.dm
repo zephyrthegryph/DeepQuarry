@@ -34,7 +34,7 @@
 
 	anim(get_turf(H), H, 'icons/effects/effects.dmi', "electricity",null,20,null)
 
-	H.visible_message("[H.name] vanishes into thin air!")
+	act_message(H, null, others = "%U% vanishes into thin air!")
 
 /obj/item/rig_module/stealth_field/deactivate()
 
@@ -49,5 +49,5 @@
 	anim(get_turf(H), H, 'icons/effects/effects.dmi', "electricity",null,20,null)
 	H.alpha = initial(H.alpha)
 
-	H.visible_message("[H.name] appears from thin air!")
+	act_message(H, null, others = "%U% appears from thin air!")
 	play_sfx(H, SFX_EFFECTS_STEALTHOFF, 1.5, extrarange = 0)

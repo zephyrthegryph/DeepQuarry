@@ -135,12 +135,12 @@ GLOBAL_VAR(bomb_set)
 /obj/machinery/nuclearbomb/proc/welder_act_tool_done(mob/user)
 	if(!src || !user)
 		return ITEM_INTERACT_SUCCESS
-	user.visible_message("[user] cuts through the bolt covers on [src].", "You cut through the bolt cover.")
+	act_message(user, src, MSG_SELF("You cut through the bolt cover."), MSG_OTHERS("%U% cuts through the bolt covers on %T%."))
 	removal_stage = 1
 /obj/machinery/nuclearbomb/proc/welder_act_tool_done2(mob/user)
 	if(!src || !user)
 		return ITEM_INTERACT_SUCCESS
-	user.visible_message("[user] cuts apart the anchoring system sealant on [src].", "You cut apart the anchoring system's sealant.")
+	act_message(user, src, MSG_SELF("You cut apart the anchoring system's sealant."), MSG_OTHERS("%U% cuts apart the anchoring system sealant on %T%."))
 	removal_stage = 3
 
 /obj/machinery/nuclearbomb/crowbar_act(mob/user, obj/item/tool)
@@ -159,12 +159,13 @@ GLOBAL_VAR(bomb_set)
 /obj/machinery/nuclearbomb/proc/crowbar_act_tool_done(mob/user)
 	if(!src || !user)
 		return ITEM_INTERACT_SUCCESS
-	user.visible_message("[user] forces open the bolt covers on [src].", "You force open the bolt covers.")
+	act_message(user, src, MSG_SELF("You force open the bolt covers."), MSG_OTHERS("%U% forces open the bolt covers on %T%."))
 	removal_stage = 2
 /obj/machinery/nuclearbomb/proc/crowbar_act_tool_done2(mob/user)
 	if(!src || !user)
 		return ITEM_INTERACT_SUCCESS
-	user.visible_message("[user] crowbars [src] off of the anchors. It can now be moved.", "You jam the crowbar under the nuclear device and lift it off its anchors. You can now move it!")
+	act_message(user, src, MSG_SELF("You jam the crowbar under the nuclear device and lift it off its anchors. You can now move it!"), \
+		MSG_OTHERS("%U% crowbars %T% off of the anchors. It can now be moved."))
 	set_anchored(FALSE)
 	removal_stage = 5
 
@@ -180,7 +181,7 @@ GLOBAL_VAR(bomb_set)
 /obj/machinery/nuclearbomb/proc/wrench_act_tool_done(mob/user)
 	if(!src || !user)
 		return ITEM_INTERACT_SUCCESS
-	user.visible_message("[user] unwrenches the anchoring bolts on [src].", "You unwrench the anchoring bolts.")
+	act_message(user, src, MSG_SELF("You unwrench the anchoring bolts."), MSG_OTHERS("%U% unwrenches the anchoring bolts on %T%."))
 	removal_stage = 4
 
 // TGUI migration. attack_hand opens the main control view

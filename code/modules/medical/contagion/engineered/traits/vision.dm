@@ -81,7 +81,8 @@ Bonus
 								to_chat(M, span_userdanger("You go blind!"))
 							M.injure(INJURY_BLUNT, eyes.max_damage, eyes, flags = INJURE_IGNORE_RESISTANCE)
 					else
-						M.visible_message(span_warning("[M]'s eyes fall out of their sockets!"), span_userdanger("Your eyes out of their sockets!"))
+						act_message(M, null, MSG_SELF(span_userdanger("Your eyes out of their sockets!")), \
+							MSG_OTHERS(span_warning("%U%'s eyes fall out of their sockets!")))
 						eyes.forceMove(get_turf(M))
 
 				else

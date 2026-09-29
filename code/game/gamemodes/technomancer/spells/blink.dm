@@ -94,7 +94,7 @@
 			to_chat(user, span_warning("Teleportation doesn't seem to work here."))
 			return
 		if(pay_energy(300))
-			visible_message(span_danger("\The [user] reaches out towards \the [AM] with a glowing hand."))
+			act_message(user, AM, others = span_danger("%U% reaches out towards %T% with a glowing hand."))
 			if(check_for_scepter())
 				safe_blink(AM, 10)
 			else

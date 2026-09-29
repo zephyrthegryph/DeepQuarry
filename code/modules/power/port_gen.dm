@@ -915,7 +915,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/power/rtg/abductor/hybrid/built, "cell", /o
 /obj/machinery/power/rtg/reg/user_buckle_mob(mob/living/M, mob/user, forced = FALSE, silent = TRUE)
 	. = ..()
 	M.pixel_y = 8
-	M.visible_message(span_notice("\The [M], hops up onto \the [src] and begins running!"))
+	act_message(M, src, others = span_notice("%U%, hops up onto %T% and begins running!"))
 
 /obj/machinery/power/rtg/reg/unbuckle_mob(mob/living/buckled_mob, force = FALSE)
 	. = ..()
@@ -963,7 +963,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/power/rtg/abductor/hybrid/built, "cell", /o
 /obj/machinery/power/rtg/reg/proc/runner_process(mob/living/runner)
 	if(runner.stat != CONSCIOUS)
 		unbuckle_mob(runner)
-		runner.visible_message(span_warning("\The [runner], topples off of \the [src]!"))
+		act_message(runner, src, others = span_warning("%U%, topples off of %T%!"))
 		return
 	var/cool_rotations
 	if(ishuman(runner))
@@ -990,7 +990,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/power/rtg/abductor/hybrid/built, "cell", /o
 			cool_rotations *= 0.25
 		else	//TOO HUNGY IT TIME TO STOP!!!
 			unbuckle_mob(runner)
-			runner.visible_message(span_notice("\The [runner], panting and exhausted hops off of \the [src]!"))
+			act_message(runner, src, others = span_notice("%U%, panting and exhausted hops off of %T%!"))
 	if(part_mult > 1)
 		cool_rotations += (cool_rotations * (part_mult - 1)) / 4
 	power_gen = cool_rotations

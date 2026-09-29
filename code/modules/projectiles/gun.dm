@@ -228,10 +228,8 @@ DECLARE_REF(/obj/item/gun, "firemode_selector", OWNED, null)
 		if(P)
 			if(process_projectile(P, user, user, pick(BP_L_FOOT, BP_R_FOOT)))
 				handle_post_fire(user, user)
-				user.visible_message(
-					span_danger("\The [user] shoots [user.p_themselves()] in the foot with \the [src]!"),
-					span_danger("You shoot yourself in the foot with \the [src]!")
-					)
+				act_message(user, src, MSG_SELF(span_danger("You shoot yourself in the foot with %T%!")), \
+					MSG_OTHERS(span_danger("%U% shoots %THEMSELVES% in the foot with %T%!")))
 				M.drop_item()
 		else
 			handle_click_empty(user)
@@ -271,7 +269,7 @@ DECLARE_REF(/obj/item/gun, "firemode_selector", OWNED, null)
 			to_chat(user, span_notice("You ready \the [src]!  Click and drag the target around to shoot."))
 		else//Otherwise just make a new one
 			auto_target = new/atom/movable/screen/auto_target(get_turf(A), src)
-			visible_message(span_danger("\The [user] readies the [src]!"))
+			act_message(user, src, others = span_danger("%U% readies %T%!"))
 			play_sfx(src, SFX_WEAPONS_TARGETON)
 			to_chat(user, span_notice("You ready \the [src]!  Click and drag the target around to shoot."))
 			return
@@ -572,7 +570,7 @@ EXTEND_INTERACTIONS(/obj/item/gun, \
 //called if there was no projectile to shoot
 /obj/item/gun/proc/handle_click_empty(mob/user)
 	if (user)
-		user.visible_message("*click click*", span_danger("*click*"))
+		act_message(user, null, MSG_SELF(span_danger("*click*")), MSG_OTHERS("*click click*"))
 		user.hud_used?.update_ammo_hud(user, src)
 		// Running dry ends any held-trigger autofire immediately, so a dropped
 		// magazine turns into one click instead of a stream of them.
@@ -596,11 +594,9 @@ EXTEND_INTERACTIONS(/obj/item/gun, \
 				continue
 			to_chat(L, 	span_danger("\The [user] fires \the [src][pointblank ? " point blank at \the [target]":""][reflex ? " by reflex":""]!"))
 	else
-		user.visible_message(
-			span_danger("\The [user] fires \the [src][pointblank ? " point blank at \the [target]":""][reflex ? " by reflex":""]!"),
-			span_warning("You fire \the [src][pointblank ? " point blank at \the [target]":""][reflex ? " by reflex":""]!"),
-			"You hear a [fire_sound_text]!"
-			)
+		act_message(user, src, MSG_SELF(span_warning("You fire %T%[pointblank ? " point blank at \the [target]":""][reflex ? " by reflex":""]!")), \
+			MSG_OTHERS(span_danger("%U% fires %T%[pointblank ? " point blank at \the [target]":""][reflex ? " by reflex":""]!")), \
+			MSG_BLIND("You hear a [fire_sound_text]!"))
 
 	add_attack_logs(user, target, "Fired gun '[src.name]' ([reflex ? "REFLEX" : "MANUAL"])")
 
@@ -742,7 +738,7 @@ EXTEND_INTERACTIONS(/obj/item/gun, \
 	var/mob/living/carbon/human/M = user
 
 	mouthshoot = 1
-	M.visible_message(span_red("[user] sticks their gun in their mouth, ready to pull the trigger..."))
+	act_message(user, M, others = span_red("%U% sticks their gun in their mouth, ready to pull the trigger..."))
 	om_task_timed(user, 4 SECONDS, src, src, PROC_REF(suicide_trigger), list(M), on_fail = PROC_REF(suicide_reconsidered), fail_args = list(M))
 
 /obj/item/gun/proc/suicide_reconsidered(mob/living/carbon/human/M)
@@ -753,7 +749,7 @@ EXTEND_INTERACTIONS(/obj/item/gun, \
 	var/mob/living/user = M
 	var/obj/item/projectile/in_chamber = consume_next_projectile()
 	if (istype(in_chamber))
-		user.visible_message(span_warning("[user] pulls the trigger."))
+		act_message(user, null, others = span_warning("%U% pulls the trigger."))
 		play_fire_sound(M, in_chamber)
 		if(istype(in_chamber, /obj/item/projectile/beam/lasertag))
 			user.show_message(span_warning("You feel rather silly, trying to commit suicide with a toy."))

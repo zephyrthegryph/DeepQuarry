@@ -49,7 +49,7 @@ DECLARE_INTERACTIONS(/obj/item/floor_light, INTERACT_USE(null, PROC_REF(interact
 
 /obj/machinery/floor_light/screwdriver_act(mob/user, obj/item/tool)
 	set_anchored(!anchored)
-	visible_message(span_notice("\The [user] has [anchored ? "attached" : "detached"] \the [src]."))
+	act_message(user, src, others = span_notice("%U% has [anchored ? "attached" : "detached"] %T%."))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/floor_light/welder_act(mob/user, obj/item/tool)
@@ -61,7 +61,7 @@ DECLARE_INTERACTIONS(/obj/item/floor_light, INTERACT_USE(null, PROC_REF(interact
 /obj/machinery/floor_light/proc/welder_act_tool_done(mob/user)
 	if(QDELETED(src))
 		return ITEM_INTERACT_BLOCKING
-	visible_message(span_notice("\The [user] has repaired \the [src]."))
+	act_message(user, src, others = span_notice("%U% has repaired %T%."))
 	atom_fix()
 	damaged = null
 	update_brightness()
@@ -100,11 +100,11 @@ DECLARE_INTERACTIONS(/obj/item/floor_light, INTERACT_USE(null, PROC_REF(interact
 	if(issmall(user))
 		return FALSE
 	if(!isnull(damaged) && !has_stat(BROKEN))
-		visible_message(span_danger("\The [user] smashes \the [src]!"))
+		act_message(user, src, others = span_danger("%U% smashes %T%!"))
 		play_sfx(src, SFX_SHATTER)
 		atom_break()
 	else
-		visible_message(span_danger("\The [user] attacks \the [src]!"))
+		act_message(user, src, others = span_danger("%U% attacks %T%!"))
 		play_sfx(src, SFX_EFFECTS_GLASSHIT)
 		if(isnull(damaged)) damaged = 0
 	update_brightness()

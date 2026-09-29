@@ -199,9 +199,9 @@
 		return
 
 	if(M == user)
-		visible_message("\The [user] starts climbing into \the [src].")
+		act_message(user, src, others = "%U% starts climbing into %T%.")
 	else
-		visible_message("\The [user] starts putting [M] into \the [src].")
+		act_message(user, M, others = "%U% starts putting %T% into \the [src].")
 
 	om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(go_in_timed_done), done_args = list(M, user))
 	return

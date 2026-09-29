@@ -156,7 +156,7 @@ DECLARE_INTERACTIONS(/obj/vehicle, INTERACT_ITEM(null, PROC_REF(interaction_vehi
 	repair_damage(10)
 	user.setClickCooldown(user.get_attack_speed(tool))
 	playsound(src, welder.usesound, 50, TRUE)
-	user.visible_message(span_red("[user] repairs [src]!"), span_blue("You repair [src]!"))
+	act_message(user, src, MSG_SELF(span_blue("You repair %T%!")), MSG_OTHERS(span_red("%U% repairs %T%!")))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/vehicle/proc/adjust_health(amount)
@@ -404,7 +404,7 @@ DECLARE_INTERACTIONS(/obj/vehicle, INTERACT_ITEM(null, PROC_REF(interaction_vehi
 /obj/vehicle/attack_generic(mob/user, damage, attack_message)
 	if(!damage)
 		return
-	visible_message(span_danger("[user] [attack_message] the [src]!"))
+	act_message(user, src, others = span_danger("%U% [attack_message] %T%!"))
 	add_attack_logs(user, src, "attacked")
 	user.do_attack_animation(src)
 	receive_generic_attack(user, damage)

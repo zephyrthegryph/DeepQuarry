@@ -139,7 +139,7 @@ DECLARE_APPEARANCE(/obj/structure/reflector, null, list(APPEARANCE_ANY = list(AP
 		if(anchored)
 			to_chat(user, span_warning("Unweld [src] from the floor first!"))
 			return TRUE
-		user.visible_message(span_notice("[user] starts to dismantle [src]."), span_notice("You start to dismantle [src]..."))
+		act_message(user, src, MSG_SELF(span_notice("You start to dismantle %T%...")), MSG_OTHERS(span_notice("%U% starts to dismantle %T%.")))
 
 		om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
 	else if(W.get_welder())
@@ -149,9 +149,9 @@ DECLARE_APPEARANCE(/obj/structure/reflector, null, list(APPEARANCE_ANY = list(AP
 				to_chat(user, span_warning("You require fuel to weld the [src]!"))
 				return TRUE
 
-			user.visible_message(span_notice("[user] starts to weld [src] to the floor."),
-								span_notice("You start to weld [src] to the floor..."),
-								span_hear("You hear welding."))
+			act_message(user, src, MSG_SELF(span_notice("You start to weld %T% to the floor...")), \
+				MSG_OTHERS(span_notice("%U% starts to weld %T% to the floor.")), \
+				MSG_BLIND(span_hear("You hear welding.")))
 
 			om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done2), done_args = list(user, I))
 			return TRUE
@@ -159,9 +159,9 @@ DECLARE_APPEARANCE(/obj/structure/reflector, null, list(APPEARANCE_ANY = list(AP
 			if(!I.remove_fuel(1,user))
 				return TRUE
 
-			user.visible_message(span_notice("[user] starts to cut [src] free from the floor."),
-								span_notice("You start to cut [src] free from the floor..."),
-								span_hear("You hear welding."))
+			act_message(user, src, MSG_SELF(span_notice("You start to cut %T% free from the floor...")), \
+				MSG_OTHERS(span_notice("%U% starts to cut %T% free from the floor.")), \
+				MSG_BLIND(span_hear("You hear welding.")))
 			set_anchored(FALSE)
 			to_chat(user, span_notice("You cut [src] free from the floor."))
 
@@ -188,7 +188,7 @@ DECLARE_APPEARANCE(/obj/structure/reflector, null, list(APPEARANCE_ANY = list(AP
 	return TRUE
 
 /obj/structure/reflector/proc/attackby_timed_done(mob/user)
-	user.visible_message(span_notice("[user] dismantles [src]."), span_notice("You dismantle [src]..."))
+	act_message(user, src, MSG_SELF(span_notice("You dismantle %T%...")), MSG_OTHERS(span_notice("%U% dismantles %T%.")))
 	if(buildstackamount)
 		new buildstacktype(drop_location(), buildstackamount)
 	replace_with(src, framebuildstacktype, framebuildstackamount)
@@ -197,9 +197,9 @@ DECLARE_APPEARANCE(/obj/structure/reflector, null, list(APPEARANCE_ANY = list(AP
 		to_chat(user, span_warning("You require fuel to weld the [src]!"))
 		return
 	set_anchored(TRUE)
-	user.visible_message(span_notice("[user] welds [src] to the floor."),
-						span_notice("You weld [src] to the floor..."),
-						span_hear("You hear welding."))
+	act_message(user, src, MSG_SELF(span_notice("You weld %T% to the floor...")), \
+		MSG_OTHERS(span_notice("%U% welds %T% to the floor.")), \
+		MSG_BLIND(span_hear("You hear welding.")))
 
 /obj/structure/reflector/proc/rotate(mob/user)
 	if (!can_rotate || admin)

@@ -13,7 +13,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot/platform, \
 			if(istype(recharging_atom) && !QDELETED(recharging_atom) && recharging_atom.loc == src)
 				recharging_atom.dropInto(loc)
 				user.put_in_hands(recharging_atom)
-				user.visible_message(span_infoplain(span_bold("\The [user]") + " pops \the [recharging_atom] out of \the [src]'s recharging port."))
+				act_message(user, src, others = span_infoplain(span_bold("%U%") + " pops %I% out of %T%'s recharging port."), item = recharging_atom)
 			recharging = null
 			return TRUE
 
@@ -31,7 +31,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot/platform, \
 			W.forceMove(src)
 			recharging = om_handle(W)
 			recharge_complete = FALSE
-			user.visible_message(span_infoplain(span_bold("\The [user]") + " slots \the [W] into \the [src]'s recharging port."))
+			act_message(user, src, others = span_infoplain(span_bold("%U%") + " slots %I% into %T%'s recharging port."), item = W)
 		return TRUE
 
 	// Old code returned FALSE here so the painter's afterattack called try_paint(); a used-up input

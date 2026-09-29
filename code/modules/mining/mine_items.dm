@@ -265,7 +265,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/flag, \
 	upright = 0
 	icon_state = base_state
 	set_anchored(FALSE)
-	src.visible_message(span_infoplain(span_bold("[user]") + " knocks down [src]."))
+	act_message(user, src, others = span_infoplain(span_bold("%U%") + " knocks down %T%."))
 	return TRUE
 
 /// Old attack_self: plant a flag.
@@ -287,7 +287,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/flag, \
 	newflag.set_anchored(TRUE)
 	newflag.name = newflag.singular_name
 	newflag.icon_state = "[newflag.base_state]_open"
-	newflag.visible_message(span_infoplain(span_bold("[user]") + " plants [newflag] firmly in the ground."))
+	act_message(user, newflag, others = span_infoplain(span_bold("%U%") + " plants %T% firmly in the ground."))
 	src.use(1)
 
 /*****************************Trailblazer item********************************/
@@ -339,7 +339,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/lightpole, INTERACT_USE("Plant", PROC_REF(li
 	if(locate_within(T, /obj/structure/trailblazer))
 		return
 	var/obj/structure/trailblazer/newlightpole = new blazer_type(T)
-	newlightpole.visible_message("\The [user] plants \the [newlightpole] firmly in the ground.")
+	act_message(user, newlightpole, others = "%U% plants %T% firmly in the ground.")
 	use(1)
 
 /*****************************Trailblazer structure********************************/
@@ -369,7 +369,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/lightpole, INTERACT_USE("Plant", PROC_REF(li
 	set_light(2, 2, "#FF0000")
 
 /obj/structure/trailblazer/proc/knock_down_done(mob/user)
-	visible_message("\The [user] knocks down \the [src].")
+	act_message(user, src, others = "%U% knocks down %T%.")
 	replace_with(src, stack_type, 1)
 
 DECLARE_INTERACTIONS(/obj/structure/trailblazer, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))

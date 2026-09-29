@@ -43,7 +43,7 @@
 		var/text = sanitizeSafe(_answer_k37, writing_space)
 		if(!text || thing.loc != user || (!Adjacent(user) && loc != user) || user.incapacitated())
 			return INTERACTION_HANDLED_PASS
-		user.visible_message(span_infoplain(span_bold("\The [user]") + " jots a note down on \the [src]."))
+		act_message(user, src, others = span_infoplain(span_bold("%U%") + " jots a note down on %T%."))
 		written_by = user.ckey
 		if(written_text)
 			written_text = "[written_text] [text]"

@@ -340,7 +340,7 @@
 			return
 		//crumple dat paper
 		info = stars(info,85)
-		user.visible_message("\The [user] crumples \the [src] into a ball!")
+		act_message(user, src, others = "%U% crumples %T% into a ball!")
 		play_sfx(src, SFX_BUREAUCRACY_PAPERCRUMPLE)
 		icon_state = "scrap"
 		return
@@ -365,15 +365,13 @@
 	return TRUE
 
 /obj/item/paper/proc/wipe_lipstick_done(mob/living/user, mob/living/carbon/human/H)
-	user.visible_message(span_notice("[user] wipes [H]'s lipstick off with \the [src]."), \
-							span_notice("You wipe off [H]'s lipstick."))
+	act_message(user, H, MSG_SELF(span_notice("You wipe off %T%'s lipstick.")), MSG_OTHERS(span_notice("%U% wipes %T%'s lipstick off with \the [src].")))
 	H.lip_style = null
 	H.update_icons_body()
 
 /obj/item/paper/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(user.zone_sel.selecting == O_EYES)
-		user.visible_message(span_notice("You show the paper to [M]. "), \
-			span_notice(" [user] holds up a paper and shows it to [M]. "))
+		act_message(user, M, MSG_SELF(span_notice(" %U% holds up a paper and shows it to %T%. ")), MSG_OTHERS(span_notice("You show the paper to %T%. ")))
 		M.examinate(src)
 		return ITEM_INTERACT_SUCCESS
 
@@ -385,8 +383,8 @@
 				H.lip_style = null
 				H.update_icons_body()
 			else
-				user.visible_message(span_warning("[user] begins to wipe [H]'s lipstick off with \the [src]."), \
-										span_notice("You begin to wipe off [H]'s lipstick."))
+				act_message(user, H, MSG_SELF(span_notice("You begin to wipe off %T%'s lipstick.")), \
+					MSG_OTHERS(span_warning("%U% begins to wipe %T%'s lipstick off with \the [src].")))
 				om_task_timed(user, 1 SECOND, H, src, PROC_REF(wipe_lipstick_done), list(user, H))
 				return ITEM_INTERACT_SUCCESS
 
@@ -547,8 +545,9 @@
 		if(istype(P, /obj/item/flame/lighter/zippo))
 			class = "rose"
 
-		user.visible_message("<span class='[class]'>[user] holds \the [P] up to \the [src], it looks like [user.p_theyre()] trying to burn it!</span>", \
-		"<span class='[class]'>You hold \the [P] up to \the [src], burning it slowly.</span>")
+		act_message(user, src, MSG_SELF("<span class='[class]'>You hold %I% up to %T%, burning it slowly.</span>"), \
+			MSG_OTHERS("<span class='[class]'>%U% holds %I% up to %T%, it looks like %THEYRE% trying to burn it!</span>"), \
+			item = P)
 		play_sfx(src, SFX_BUREAUCRACY_PAPERBURN)
 
 		om_after(src, 2 SECONDS, PROC_REF(burn_through), user, P, class)
@@ -895,8 +894,8 @@ DECLARE_INTERACTIONS(/obj/item/paper, \
 
 /obj/item/paper/proc/burn_through(mob/user, obj/item/flame/P, class)
 	if(get_dist(src, user) < 2 && user.get_active_hand() == P && P.lit)
-		user.visible_message("<span class='[class]'>[user] burns right through \the [src], turning it to ash. It flutters through the air before settling on the floor in a heap.</span>", \
-		"<span class='[class]'>You burn right through \the [src], turning it to ash. It flutters through the air before settling on the floor in a heap.</span>")
+		act_message(user, src, MSG_SELF("<span class='[class]'>You burn right through %T%, turning it to ash. It flutters through the air before settling on the floor in a heap.</span>"), \
+			MSG_OTHERS("<span class='[class]'>%U% burns right through %T%, turning it to ash. It flutters through the air before settling on the floor in a heap.</span>"))
 
 		if(user.get_inactive_hand() == src)
 			user.drop_from_inventory(src)

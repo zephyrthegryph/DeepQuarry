@@ -770,7 +770,7 @@ DECLARE_REF(/obj/item/projectile, "my_case_handle", BACK_HANDLE, "BB")
 
 	if(result == PROJECTILE_FORCE_MISS)
 		if(!silenced)
-			target_mob.visible_message(span_infoplain(span_bold("\The [src]") + " misses \the [target_mob] narrowly!"))
+			act_message(src, target_mob, others = span_infoplain(span_bold("%U%") + " misses %T% narrowly!"))
 			play_sfx(target_mob, SFX_BULLET_MISS)
 		return FALSE
 
@@ -788,10 +788,8 @@ DECLARE_REF(/obj/item/projectile, "my_case_handle", BACK_HANDLE, "BB")
 		var/volume = vol_by_damage()
 		playsound(target_mob, hitsound, volume, 1, -1)
 		// X has fired Y is now given by the guns so you cant tell who shot you if you could not see the shooter
-		target_mob.visible_message(
-			span_danger("\The [target_mob] was hit in the [impacted_organ] by \the [src]!"),
-			span_critical("You've been hit in the [impacted_organ] by \the [src]!")
-		)
+		act_message(target_mob, src, MSG_SELF(span_critical("You've been hit in the [impacted_organ] by %T%!")), \
+			MSG_OTHERS(span_danger("%U% was hit in the [impacted_organ] by %T%!")))
 
 	//admin logs
 	if(!no_attack_log)

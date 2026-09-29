@@ -96,8 +96,7 @@ DECLARE_SHARED_CACHE_EX(table_icon, GLOBAL_PROC_REF(build_table_icon), SC_NEVER,
 	if(!carpeted && material() && istype(W, /obj/item/stack/tile/carpet))
 		var/obj/item/stack/tile/carpet/C = W
 		if(C.use(1))
-			user.visible_message(span_infoplain(span_bold("\The [user]") + " adds \the [C] to \the [src]."),
-								span_notice("You add \the [C] to \the [src]."))
+			act_message(user, src, MSG_SELF(span_notice("You add %I% to %T%.")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " adds %I% to %T%.")), item = C)
 			carpeted = 1
 			carpeted_type = W.type
 			update_icon()
@@ -120,7 +119,8 @@ DECLARE_SHARED_CACHE_EX(table_icon, GLOBAL_PROC_REF(build_table_icon), SC_NEVER,
 /obj/structure/table/crowbar_act(mob/user, obj/item/tool)
 	if(!carpeted)
 		return ITEM_INTERACT_BLOCKING
-	user.visible_message(span_infoplain(span_bold("\The [user]") + " removes the carpet from \the [src]."), span_notice("You remove the carpet from \the [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You remove the carpet from %T%.")), \
+		MSG_OTHERS(span_infoplain(span_bold("%U%") + " removes the carpet from %T%.")))
 	new carpeted_type(loc)
 	carpeted = FALSE
 	update_icon()
@@ -145,7 +145,8 @@ DECLARE_SHARED_CACHE_EX(table_icon, GLOBAL_PROC_REF(build_table_icon), SC_NEVER,
 	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/table/proc/welder_act_tool_done(mob/user)
-	user.visible_message(span_infoplain(span_bold("\The [user]") + " repairs some damage to \the [src]."), span_notice("You repair some damage to \the [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You repair some damage to %T%.")), \
+		MSG_OTHERS(span_infoplain(span_bold("%U%") + " repairs some damage to %T%.")))
 	repair_damage(max_integrity / 5)
 	return ITEM_INTERACT_SUCCESS
 
@@ -167,22 +168,22 @@ DECLARE_INTERACTIONS(/obj/structure/table, \
 	return FALSE
 
 /obj/structure/table/attack_alien(mob/user as mob)
-	visible_message(span_danger("\The [user] tears apart \the [src]!"))
+	act_message(user, src, others = span_danger("%U% tears apart %T%!"))
 	src.break_to_parts()
 
 /obj/structure/table/attack_generic(mob/user as mob, damage)
 	if(damage >= 10)
 		if(reinforced() && prob(70))
-			visible_message(span_danger("\The [user] smashes against \the [src]!"))
+			act_message(user, src, others = span_danger("%U% smashes against %T%!"))
 			receive_generic_attack(user, damage / 2)
 			user.do_attack_animation(src)
 			..()
 		else
-			visible_message(span_danger("\The [user] tears apart \the [src]!"))
+			act_message(user, src, others = span_danger("%U% tears apart %T%!"))
 			src.break_to_parts()
 			user.do_attack_animation(src)
 			return 1
-	visible_message(span_infoplain(span_bold("\The [user]") + " scratches at \the [src]!"))
+	act_message(user, src, others = span_infoplain(span_bold("%U%") + " scratches at %T%!"))
 	return ..()
 
 /obj/structure/table/proc/reinforce_table(obj/item/stack/material/S, mob/user)
@@ -264,7 +265,7 @@ DECLARE_INTERACTIONS(/obj/structure/table, \
 	var/datum/material/M = task.M
 	if(!S.use(1))
 		return
-	user.visible_message(span_notice("\The [user] [verb]es \the [src] with [M.display_name]."), span_notice("You finish [verb]ing \the [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You finish [verb]ing %T%.")), MSG_OTHERS(span_notice("%U% [verb]es %T% with [M.display_name].")))
 	call(src, done_proc)(M)
 
 // Returns the material to set the table to.
@@ -275,14 +276,14 @@ DECLARE_INTERACTIONS(/obj/structure/table, \
 		return M
 
 	if(om_busy(src)) return M
-	user.visible_message(span_infoplain(span_bold("\The [user]") + " begins removing the [type_holding] holding \the [src]'s [M.display_name] [what] in place."),
-								span_notice("You begin removing the [type_holding] holding \the [src]'s [M.display_name] [what] in place."))
+	act_message(user, src, MSG_SELF(span_notice("You begin removing the [type_holding] holding %T%'s [M.display_name] [what] in place.")), \
+		MSG_OTHERS(span_infoplain(span_bold("%U%") + " begins removing the [type_holding] holding %T%'s [M.display_name] [what] in place.")))
 	use_tool(user, tool, src, delay = delay, volume = 50, receiver = src, job_type = /datum/om/task/timed/tool_job/table_layer_remove, job_params = list("material" = M, "what" = what, "which" = which))
 	return TRUE
 
 /obj/structure/table/proc/common_material_remove_tool_done(mob/user, datum/material/M, what, which)
-	user.visible_message(span_infoplain(span_bold("\The [user]") + " removes the [M.display_name] [what] from \the [src]."),
-								span_notice("You remove the [M.display_name] [what] from \the [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You remove the [M.display_name] [what] from %T%.")), \
+		MSG_OTHERS(span_infoplain(span_bold("%U%") + " removes the [M.display_name] [what] from %T%.")))
 	new M.stack_type(src.loc)
 	if(which == "reinforced")
 		reinforced_static = null
@@ -306,14 +307,12 @@ DECLARE_INTERACTIONS(/obj/structure/table, \
 
 /obj/structure/table/proc/dismantle(obj/item/W, mob/user)
 	if(om_busy(src)) return
-	user.visible_message(span_infoplain(span_bold("\The [user]") + " begins dismantling \the [src]."),
-							span_notice("You begin dismantling \the [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You begin dismantling %T%.")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " begins dismantling %T%.")))
 	use_tool(user, W, src, delay = 2 SECONDS, volume = 50, receiver = src, on_done = PROC_REF(dismantle_tool_done), done_args = list(user), claims = TRUE)
 	return TRUE
 
 /obj/structure/table/proc/dismantle_tool_done(mob/user)
-	user.visible_message(span_infoplain(span_bold("\The [user]") + " dismantles \the [src]."),
-							span_notice("You dismantle \the [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You dismantle %T%.")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " dismantles %T%.")))
 	replace_with(src, /obj/item/stack/material/steel)
 	return
 

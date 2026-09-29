@@ -47,7 +47,7 @@ Loot piles can be depleted, if loot_depleted is turned on.  Note that players wh
 			to_chat(L, span_warning("\The [src] is already being searched."))
 			return TRUE
 
-		L.visible_message("[user] searches through \the [src].",span_notice("You search through \the [src]."))
+		act_message(L, user, MSG_SELF(span_notice("You search through \the [src].")), MSG_OTHERS("%T% searches through \the [src]."))
 
 		//Do the searching
 		om_task_timed(user, rand(4 SECONDS,6 SECONDS), target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(L), claims = TRUE)

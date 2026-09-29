@@ -489,9 +489,10 @@ DECLARE_REF(/obj/machinery/autolathe, "materials", OWNED, null)
 		return FALSE
 
 	// The rest has to do with loading from design disks
-	user.visible_message(span_notice("[user] begins to load \the [O] in \the [src]..."),
-		balloon_alert(user, "uploading design..."),
-		span_hear("You hear the chatter of a floppy drive."))
+	act_message(user, src, MSG_SELF(balloon_alert(user, "uploading design...")), \
+		MSG_OTHERS(span_notice("%U% begins to load %I% in %T%...")), \
+		MSG_BLIND(span_hear("You hear the chatter of a floppy drive.")), \
+		item = O)
 
 	om_task_start(/datum/om/task/timed/autolathe_interaction_attackby, user, src, receiver = src, O = O, busy = src)
 	return TRUE

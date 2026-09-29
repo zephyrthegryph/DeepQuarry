@@ -100,11 +100,12 @@ DECLARE_INTERACTIONS(/obj/item/mecha_parts/mecha_equipment/generator, INTERACT_I
 /obj/item/mecha_parts/mecha_equipment/generator/proc/interaction_item(mob/user, obj/item/weapon, datum/interaction/interaction)
 	var/result = load_fuel(weapon)
 	if(isnull(result))
-		user.visible_message("[user] tries to shove [weapon] into [src]. What a dumb-ass.",span_warning("[fuel] traces minimal. [weapon] cannot be used as fuel."))
+		act_message(user, src, MSG_SELF(span_warning("[fuel] traces minimal. [weapon] cannot be used as fuel.")), \
+			MSG_OTHERS("%U% tries to shove [weapon] into %T%. What a dumb-ass."))
 	else if(!result)
 		to_chat(user, "Unit is full.")
 	else
-		user.visible_message("[user] loads [src] with [fuel].","[result] unit\s of [fuel] successfully loaded.")
+		act_message(user, src, MSG_SELF("[result] unit\s of [fuel] successfully loaded."), MSG_OTHERS("%U% loads %T% with [fuel]."))
 	return INTERACTION_HANDLED_PASS
 
 /obj/item/mecha_parts/mecha_equipment/generator/critfail()

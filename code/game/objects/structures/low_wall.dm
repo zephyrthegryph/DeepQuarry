@@ -273,7 +273,7 @@ DESTROY_EFFECTS(/obj/structure/low_wall, new /datum/destroy_effects_data(neighbo
 	return ..()
 
 /obj/structure/low_wall/attack_generic(mob/user, damage, attack_verb)
-	visible_message(span_danger("[user] [attack_verb] the [src]!"))
+	act_message(user, src, others = span_danger("%U% [attack_verb] %T%!"))
 	user.do_attack_animation(src)
 	receive_generic_attack(user, damage)
 	return ..()

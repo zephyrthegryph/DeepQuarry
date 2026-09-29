@@ -30,7 +30,7 @@
 		user.visible_message(span_notice("You can't make coins out of that."))
 		return TRUE
 	else if(M.coin_type)
-		user.visible_message("[user] starts to feed a sheet of [M.default_type] into \the [src].")
+		act_message(user, src, others = "%U% starts to feed a sheet of [M.default_type] into %T%.")
 		press_next(user, M)
 	return TRUE
 

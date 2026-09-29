@@ -143,7 +143,7 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/blood, \
 			switch(reagents.get_master_reagent_id())
 				if(REAGENT_ID_BLOOD)
 					user.show_message(span_warning("You sink your fangs into \the [src] and suck the blood out of it!"))
-					user.visible_message(span_red("[user] sinks their fangs into \the [src] and drains it!"))
+					act_message(user, src, others = span_red("%U% sinks their fangs into %T% and drains it!"))
 					user.adjust_nutrition(remove_volume*5)
 					reagents.remove_reagent(reagent_to_remove, remove_volume)
 					update_icon()

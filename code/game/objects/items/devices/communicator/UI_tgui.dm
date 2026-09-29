@@ -323,6 +323,7 @@ DECLARE_REF(/obj/item/communicator, "cam_plane_masters", OWNED_LIST, null)
 	requires = PROMPT_USABLE
 
 /datum/om/prompt/text/communicator/name
+	name_text = TRUE
 	title = "Communicator"
 	message = "Please enter your name."
 	encode = FALSE

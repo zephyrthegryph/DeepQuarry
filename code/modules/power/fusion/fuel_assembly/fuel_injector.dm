@@ -80,9 +80,9 @@ DECLARE_REF(/obj/machinery/fusion_fuel_injector, "cur_assembly", SPILL, null)
 			return TRUE
 	if(cur_assembly)
 		cur_assembly.forceMove(get_turf(src))
-		visible_message(span_infoplain(span_bold("\The [user]") + " swaps \the [src]'s [cur_assembly] for \a [held]."))
+		act_message(user, src, others = span_infoplain(span_bold("%U%") + " swaps %T%'s [cur_assembly] for \a [held]."))
 	else
-		visible_message(span_infoplain(span_bold("\The [user]") + " inserts \a [held] into \the [src]."))
+		act_message(user, src, others = span_infoplain(span_bold("%U%") + " inserts \a [held] into %T%."))
 
 	user.drop_from_inventory(held)
 	held.forceMove(src)
@@ -145,7 +145,7 @@ DECLARE_REF(/obj/machinery/fusion_fuel_injector, "cur_assembly", SPILL, null)
 	if(cur_assembly)
 		cur_assembly.forceMove(get_turf(src))
 		user.put_in_hands(cur_assembly)
-		visible_message(span_infoplain(span_bold("\The [user]") + " removes \the [cur_assembly] from \the [src]."))
+		act_message(user, src, others = span_infoplain(span_bold("%U%") + " removes \the [cur_assembly] from %T%."))
 		cur_assembly = null
 		return TRUE
 	else

@@ -161,7 +161,7 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 	if(!do_allowed_checks(G, user))
 		return TRUE
 	if(has_trait(user, TRAIT_UNLUCKY) && prob(10))
-		user.visible_message("[user] inserts [charging] into [src] backwards!", "You insert [charging] into [src] backwards!")
+		act_message(user, src, MSG_SELF("You insert [charging] into %T% backwards!"), MSG_OTHERS("%U% inserts [charging] into %T% backwards!"))
 		user.drop_item()
 		G.forceMove(get_turf(src))
 		return TRUE
@@ -170,7 +170,7 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 	set_charging(G)
 	om_changed(src, CHANGE_MACHINE_OCCUPANT)
 	update_icon()
-	user.visible_message("[user] inserts [charging] into [src].", "You insert [charging] into [src].")
+	act_message(user, src, MSG_SELF("You insert [charging] into %T%."), MSG_OTHERS("%U% inserts [charging] into %T%."))
 	return TRUE
 
 /obj/machinery/recharger/proc/interaction_drag_insert(mob/user, obj/item/G, datum/interaction/interaction)
@@ -180,7 +180,7 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 	set_charging(G)
 	om_changed(src, CHANGE_MACHINE_OCCUPANT)
 	update_icon()
-	user.visible_message("[user] inserts [charging] into [src].", "You insert [charging] into [src].")
+	act_message(user, src, MSG_SELF("You insert [charging] into %T%."), MSG_OTHERS("%U% inserts [charging] into %T%."))
 	return TRUE
 
 /obj/machinery/recharger/wrench_act(mob/user, obj/item/tool)
@@ -200,7 +200,7 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 /obj/machinery/recharger/proc/interaction_take(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	if(charging)
-		user.visible_message("[user] removes [charging] from [src].", "You remove [charging] from [src].")
+		act_message(user, src, MSG_SELF("You remove [charging] from %T%."), MSG_OTHERS("%U% removes [charging] from %T%."))
 		charging.update_icon()
 		user.put_in_hands(charging)
 		set_charging(null)
@@ -212,7 +212,7 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 /obj/machinery/recharger/proc/recharger_silicon_take(mob/user, obj/item/held, datum/interaction/interaction)
 	if(isrobot(user) && Adjacent(user)) // Borgs can remove the cell if they are near enough
 		if(charging)
-			user.visible_message("[user] removes [charging] from [src].", "You remove [charging] from [src].")
+			act_message(user, src, MSG_SELF("You remove [charging] from %T%."), MSG_OTHERS("%U% removes [charging] from %T%."))
 			charging.update_icon()
 			charging.forceMove(src.loc)
 			set_charging(null)

@@ -274,14 +274,14 @@ DECLARE_INTERACTIONS(/obj/item/melee/robotic/jaws/small, INTERACT_USE(null, PROC
 	else
 		if(affecting)
 			if(dogborg)
-				target.visible_message(span_danger("[target] has been zap-chomped in the [affecting.name] with [src] by [user]!"))
+				act_message(target, src, others = span_danger("%U% has been zap-chomped in the [affecting.name] with %T% by [user]!"))
 			else
-				target.visible_message(span_danger("[target] has been zapped in the [affecting.name] with [src] by [user]!"))
+				act_message(target, src, others = span_danger("%U% has been zapped in the [affecting.name] with %T% by [user]!"))
 		else
 			if(dogborg)
-				target.visible_message(span_danger("[target] has been zap-chomped with [src] by [user]!"))
+				act_message(target, src, others = span_danger("%U% has been zap-chomped with %T% by [user]!"))
 			else
-				target.visible_message(span_danger("[target] has been zapped with [src] by [user]!"))
+				act_message(target, src, others = span_danger("%U% has been zapped with %T% by [user]!"))
 
 	play_sfx(src, SFX_WEAPONS_EGLOVES)
 	target.stun_effect_act(0, agony, hit_zone, src, electric = TRUE)
@@ -520,16 +520,16 @@ DECLARE_INTERACTIONS(/obj/item/melee/robotic/baton, \
 	//We are off!
 	if(!status)
 		if(affecting)
-			target.visible_message(span_warning("[target] has been prodded in the [affecting.name] with [src] by [user]. Luckily it was off."))
+			act_message(target, src, others = span_warning("%U% has been prodded in the [affecting.name] with %T% by [user]. Luckily it was off."))
 		else
-			target.visible_message(span_warning("[target] has been prodded with [src] by [user]. Luckily it was off."))
+			act_message(target, src, others = span_warning("%U% has been prodded with %T% by [user]. Luckily it was off."))
 		return
 
 	//We are on!
 	if(affecting)
-		target.visible_message(span_danger("[target] has been prodded in the [affecting.name] with [src] by [user]!"))
+		act_message(target, src, others = span_danger("%U% has been prodded in the [affecting.name] with %T% by [user]!"))
 	else
-		target.visible_message(span_danger("[target] has been prodded with [src] by [user]!"))
+		act_message(target, src, others = span_danger("%U% has been prodded with %T% by [user]!"))
 	play_sfx(src, SFX_WEAPONS_EGLOVES)
 	target.stun_effect_act(stun, agony, hit_zone, src, electric = TRUE)
 	msg_admin_attack("[key_name(user)] stunned [key_name(target)] with the [src].")

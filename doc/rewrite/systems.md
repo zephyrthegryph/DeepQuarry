@@ -379,6 +379,45 @@ act_message_t(user, target, /datum/msg/pry)                          // declared
 - Replaces `user.visible_message(self, others)` pairs and interaction `message_self/others`.
 - Lint `sys_visible_pair`.
 
+As built (rewrite/sys-messages):
+- Runtime `code/modules/messages/act_message.dm`, defines `code/__defines/messages.dm`.
+  `act_message(user, target, self, others, blind, range = world.view, item, exclude)`; a non-mob
+  user (a machine acting) has only the others/blind lines. `MSG_SELF/MSG_OTHERS/MSG_BLIND` are
+  readability wrappers; callers keep their own span_*() wrapping.
+- Tokens render `	he [x]` (`%U%`, `%T%`, `%I%`), capitalised when they open a line (after
+  leading tags). Pronoun tokens: `%THEY% %THEM% %THEIR% %THEIRS% %THEMSELVES% %THEYRE% %THEYVE%
+  %S% %ES%` and capitalised `%They% %Them% %Their% %Theyre%`.
+- `/datum/msg` (a DEF type in state_schema_lint): `self`, `others`, `blind`, `span_class`
+  (default "notice"), `range`; `texts(user, target, item)` may be overridden for wording that
+  depends on the call. `msg_def(type)` returns the singleton. One-line declarations:
+  `MSG_DEF(name, self, others)`, `MSG_DEF_SELF(name, self)`.
+- Interactions: `feedback` / `start_feedback` (msg types, picked by `feedback_for()` /
+  `start_feedback_for()` before the effect runs) replace `message_self/message_others`,
+  `messages()`, `start_messages()`, `fill_message()` and construction `start_self/start_others`.
+  Templates mirror the interaction path: `/datum/msg/interaction/...` and
+  `/datum/msg/start/interaction/...`. `use_tool()` takes `start_feedback` or inline
+  `start_self/start_others` (renamed from message_self/message_others).
+- Lint `sys_visible_pair` (tools/ci/sys_rules/messages.py): a visible_message call outside the
+  runtime that passes a mob self message, interpolates the actor (`[R]` for a mob receiver R,
+  `[src]` in a bare call in a /mob proc, `[user]`/`[usr]`), or follows `to_chat(R, ...)`.
+  Named arguments are read by name (`self_message =` is the self line; `range =` is not), and
+  `[R.name]` / `[R.real_name]` count as naming the actor.
+- Migration (rewrite/msg2): every legacy site converted, baseline empty, no ALLOW. An atom
+  emitting a line about its user (`visible_message("[user] ...")` in an /obj proc) became
+  `act_message(user, src, others = ...)` (the line now originates at the user, no eye rune), or
+  `act_message(src, user, ...)` where the user may be null. Obj calls that passed a self line
+  as the blind argument (`visible_message(others, "You ...")`) now show it to the user.
+  Tokens render `	he`, so proper names are unchanged and objects gain "the".
+- Player text is literal: wrap it in `MSG_LITERAL()` (emotes, ghost emotes, narrate, package
+  labels). It swaps `%` for a private-use mark that `msg_fill()` restores after filling, so a typed
+  `%U%` shows as typed. Only pass MSG_LITERAL text to act_message (the fill is what
+  unmarks it).
+- `msg_fill()` is a single left-to-right pass (`msg_token()` per `%NAME%`): substituted names and
+  pronouns are never re-scanned. Names never hold a raw %: `strip_name_tokens()` runs in
+  `sanitizeName()` (character names, `sanitize_name()`), in name-length text prompts
+  (`/datum/om/prompt/text` with `max_length <= MAX_NAME_LEN` or `name_text = TRUE`; the pen,
+  labeler, tag and rename prompts) and in name-length `tgui_input_text()`.
+
 ## 16. Sound and effect sets
 
 ```dm

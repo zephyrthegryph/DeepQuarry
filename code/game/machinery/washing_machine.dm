@@ -143,11 +143,11 @@ DECLARE_REF(/obj/machinery/washing_machine, "washing", SPILL_LIST, null)
 /obj/machinery/washing_machine/proc/user_climb_out_timed_done(mob/user)
 	if(!(state in list(EMPTY_CLOSED, FULL_CLOSED, BLOODY_CLOSED))) //Someone shut the door while we were trying to climb out!
 		user.forceMove(get_turf(src))
-		visible_message("[user] climbs out of the [src]!")
+		act_message(user, src, others = "%U% climbs out of %T%!")
 	else
 		to_chat(user, "Someone shut the door on you!")
 /obj/machinery/washing_machine/proc/user_climb_out_timed_done2(mob/user)
-	visible_message("[user] climbs out of the [src]!")
+	act_message(user, src, others = "%U% climbs out of %T%!")
 	interaction_washing_machine_use(user, null, null, force = TRUE)
 
 /obj/machinery/washing_machine/container_resist(mob/living/escapee)
@@ -182,7 +182,8 @@ DECLARE_REF(/obj/machinery/washing_machine, "washing", SPILL_LIST, null)
 		if((state == EMPTY_OPEN) && hacked)
 			var/obj/item/grab/G = W
 			if(ishuman(G?.grab_assailant()) && (iscorgi(G?.grab_target()) || ishuman(G?.grab_target())))
-				user.visible_message("[user] begins stuffing [G?.grab_target()] into the [src]!", "You begin stuffing [G?.grab_target()] into the [src]!")
+				act_message(user, src, MSG_SELF("You begin stuffing [G?.grab_target()] into %T%!"), \
+					MSG_OTHERS("%U% begins stuffing [G?.grab_target()] into %T%!"))
 				om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(interaction_washing_machine_use_item_timed_done), done_args = list(user, G))
 		//else: old fell through to a bare ..() (approximated as a no-op)
 
@@ -208,7 +209,7 @@ DECLARE_REF(/obj/machinery/washing_machine, "washing", SPILL_LIST, null)
 /obj/machinery/washing_machine/proc/interaction_washing_machine_use_item_timed_done(mob/user, obj/item/grab/G)
 	if(state == EMPTY_OPEN) //Checking to make sure nobody closed it before we shoved em in it.
 		var/mob/grabbed = G?.grab_target()
-		user.visible_message("[user] stuffs [grabbed] into the [src] and shuts the door!", "You stuff [grabbed] into the [src] and shut the door!")
+		act_message(user, grabbed, MSG_SELF("You stuff %T% into the [src] and shut the door!"), MSG_OTHERS("%U% stuffs %T% into the [src] and shuts the door!"))
 		grabbed.forceMove(src)
 		LAZYADD(washing, grabbed)
 		consume(G, user)

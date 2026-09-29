@@ -29,7 +29,7 @@
 	if(ishuman(src))
 		var/mob/living/carbon/human/S = src
 		if(S.species.lightweight == 1)
-			visible_message(span_vwarning("[M] carelessly bowls [src] over!"))
+			act_message(M, src, others = span_vwarning("%U% carelessly bowls %T% over!"))
 			M.forceMove(get_turf(src))
 			M.injure(INJURY_BLUNT, 0.5, source = src)
 			status_at_least(EFFECT_WEAKENED, 4)
@@ -39,10 +39,10 @@
 
 	if(round(weight) > 474)
 		var/throwtarget = get_edge_target_turf(M, reverse_direction(M.dir))
-		visible_message(span_vwarning("[M] bounces backwards off of [src]'s plush body!"))
+		act_message(M, src, others = span_vwarning("%U% bounces backwards off of %T%'s plush body!"))
 		M.throw_at(throwtarget, 5, 1) //it's funny and nobdy ever takes weight >474 so this is extremely rare
 		return
 
-	visible_message(span_vwarning("[M] trips over [src]!"))
+	act_message(M, src, others = span_vwarning("%U% trips over %T%!"))
 	M.forceMove(get_turf(src))
 	M.injure(INJURY_BLUNT, 1, source = src)

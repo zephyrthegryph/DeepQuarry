@@ -19,7 +19,7 @@
 
 /obj/machinery/power/thermoregulator/cryogaia/wrench_act(mob/user, obj/item/I)
 	set_anchored(!anchored)
-	visible_message(span_notice("\The [src] has been [anchored ? "bolted to the floor" : "unbolted from the floor"] by [user].")) //Does this not need to be disabled?
+	act_message(src, user, others = span_notice("%U% has been [anchored ? "bolted to the floor" : "unbolted from the floor"] by %T%.")) //Does this not need to be disabled?
 	playsound(src, I.usesound, 75, 1)
 	if(anchored)
 		connect_to_network()
@@ -174,7 +174,7 @@
 
 /obj/machinery/power/thermoregulator/wrench_act(mob/user, obj/item/tool)
 	set_anchored(!anchored)
-	visible_message(span_notice("\The [src] has been [anchored ? "bolted to the floor" : "unbolted from the floor"] by [user]."))
+	act_message(src, user, others = span_notice("%U% has been [anchored ? "bolted to the floor" : "unbolted from the floor"] by %T%."))
 	playsound(src, tool.usesound, 75, 1)
 	if(anchored)
 		connect_to_network()
@@ -214,7 +214,8 @@
 	if(!anchored)
 		return
 	set_on(!on)
-	user.visible_message(span_notice("[user] [on ? "activates" : "deactivates"] \the [src]."),span_notice("You [on ? "activate" : "deactivate"] \the [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You [on ? "activate" : "deactivate"] %T%.")), \
+		MSG_OTHERS(span_notice("%U% [on ? "activates" : "deactivates"] %T%.")))
 	if(!on)
 		change_mode(MODE_IDLE)
 	wake_for_state_change()

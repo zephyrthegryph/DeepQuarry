@@ -46,7 +46,7 @@
 		return
 
 	if(in_range(src, usr) && ishuman(over_object) && get_dist(over_object, src) <= 1)
-		visible_message("[usr] inserts the feeding tube into \the [over_object].")
+		act_message(usr, null, others = "%U% inserts the feeding tube into \the [over_object].")
 		attached_handle = om_handle(over_object)
 		update_icon()
 		MACHINE_WAKE(src)

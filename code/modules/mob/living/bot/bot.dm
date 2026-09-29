@@ -152,7 +152,7 @@ EXTEND_INTERACTIONS(/mob/living/bot, INTERACT_ITEM(null, PROC_REF(bot_interactio
 		return ITEM_INTERACT_BLOCKING
 	mend(TREAT_PLATING_REPAIR, 10)
 	mend(TREAT_WIRING_REPAIR, 10)
-	user.visible_message(span_notice("[user] repairs [src]."), span_notice("You repair [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You repair %T%.")), MSG_OTHERS(span_notice("%U% repairs %T%.")))
 	playsound(src, tool.usesound, 50, TRUE)
 	return ITEM_INTERACT_SUCCESS
 

@@ -293,13 +293,14 @@ DECLARE_REGISTRY(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJECTS)
 		if(isnull(bellychoice))
 			return
 		if(bellychoice)
-			L.visible_message(span_warning("[L] is trying to stuff \the [src] into [L.gender == MALE ? "his" : L.gender == FEMALE ? "her" : "their"] [bellychoice]!"),span_notice("You begin putting \the [src] into your [bellychoice]!"))
+			act_message(L, src, MSG_SELF(span_notice("You begin putting %T% into your [bellychoice]!")), \
+				MSG_OTHERS(span_warning("%U% is trying to stuff %T% into [L.gender == MALE ? "his" : L.gender == FEMALE ? "her" : "their"] [bellychoice]!")))
 			om_task_timed(L, 5 SECONDS, src, src, PROC_REF(eaten_by), list(L, bellychoice))
 
 /obj/effect/overmap/visitable/ship/proc/eaten_by(mob/living/L, obj/belly/bellychoice)
 	forceMove(bellychoice)
 	skybox_service().rebuild_skyboxes(map_z)
-	L.visible_message(span_warning("[L] eats a spaceship! This is totally normal."),"You eat the the spaceship! Yum, metal.")
+	act_message(L, null, MSG_SELF("You eat the the spaceship! Yum, metal."), MSG_OTHERS(span_warning("%U% eats a spaceship! This is totally normal.")))
 
 /obj/effect/overmap/visitable/ship/proc/get_people_in_ship()
 	. = list()

@@ -625,7 +625,7 @@
 				var/obj/item/clothing/mask/smokable/S = H.get_equipped_item(SLOT_ID_MASK)
 				if(S.lit)
 					S.quench() // No smoking in my medbay!
-					H.visible_message(span_notice("[H]\'s [S.name] is put out."))
+					act_message(H, null, others = span_notice("%U%\'s [S.name] is put out."))
 
 /datum/reagent/lube // TODO: spraying on borgs speeds them up
 	name = REAGENT_LUBE
@@ -961,7 +961,7 @@
 	if(istype(L) && L.faction)
 		if(L.faction == "plants") //This would be better with a variable but I'm not adding that because upstream conflicts. If you send this upstream please do this.
 			L.injure(INJURY_TOXIN, 15 * amount, source = src)
-			L.visible_message(span_warning("[L] withers rapidly!"), span_danger("The chemical burns you!"))
+			act_message(L, null, MSG_SELF(span_danger("The chemical burns you!")), MSG_OTHERS(span_warning("%U% withers rapidly!")))
 
 //////SAP IN UNREFINED FORM////
 
@@ -1182,7 +1182,7 @@ DECLARE_REAGENTS_TINTED(/obj/item/reagent_containers/pill/phenethylamine, null, 
 	if(istype(M, /mob/living/simple_mob/slime)) //I'm sure foam is water-based!
 		var/mob/living/simple_mob/slime/S = M
 		S.injure(INJURY_CORROSIVE, 15 * reac_volume, source = src)
-		S.visible_message(span_warning("[S]'s flesh sizzles where the foam touches it!"), span_danger("Your flesh burns in the foam!"))
+		act_message(S, null, MSG_SELF(span_danger("Your flesh burns in the foam!")), MSG_OTHERS(span_warning("%U%'s flesh sizzles where the foam touches it!")))
 	if(istype(M))
 		M.adjust_fire_stacks(-reac_volume)
 		M.extinguish_mob()

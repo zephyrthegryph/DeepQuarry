@@ -52,7 +52,7 @@
 
 		if(WIRE_BORG_CAMERA)
 			if(!isnull(R.camera) && R.camera.can_use() && !R.scrambledcodes)
-				R.visible_message("[R]'s camera lense focuses loudly.")
+				act_message(R, null, others = "%U%'s camera lense focuses loudly.")
 				to_chat(R, "Your camera lense focuses loudly.")
 
 		if(WIRE_BORG_LOCKED)

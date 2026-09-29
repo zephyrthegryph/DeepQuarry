@@ -48,7 +48,7 @@ DECLARE_INTERACTIONS(/obj/item/robotanalyzer, INTERACT_ALT(null, PROC_REF(intera
 		to_chat(user, span_red("You can't analyze non-robotic things!"))
 		return
 
-	user.visible_message(span_notice("\The [user] has analyzed [M]'s components."),span_notice("You have analyzed [M]'s components."))
+	act_message(user, M, MSG_SELF(span_notice("You have analyzed %T%'s components.")), MSG_OTHERS(span_notice("%U% has analyzed %T%'s components.")))
 	switch(scan_type)
 		if("robot")
 			if(mode)

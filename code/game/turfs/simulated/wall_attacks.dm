@@ -166,7 +166,8 @@ EXTEND_INTERACTIONS(/turf/simulated/wall, \
 					T.ReplaceWithLattice()
 					T.ChangeTurf(/turf/simulated/floor, preserve_outdoors = TRUE)
 					play_sfx(src, SFX_WEAPONS_GENHIT)
-					user.visible_message(span_notice("[user] patches a hole in the ceiling."), span_notice("You patch a hole in the ceiling."))
+					act_message(user, null, MSG_SELF(span_notice("You patch a hole in the ceiling.")), \
+						MSG_OTHERS(span_notice("%U% patches a hole in the ceiling.")))
 					expended_tile = TRUE
 			else
 				to_chat(user, span_warning("There aren't any holes in the ceiling to patch here."))
@@ -178,7 +179,8 @@ EXTEND_INTERACTIONS(/turf/simulated/wall, \
 				make_indoors()
 				if(!expended_tile) // Would've already played a sound
 					play_sfx(src, SFX_WEAPONS_GENHIT)
-				user.visible_message(span_notice("[user] roofs \the [src], shielding it from the elements."), span_notice("You roof \the [src] tile, shielding it from the elements."))
+				act_message(user, src, MSG_SELF(span_notice("You roof %T% tile, shielding it from the elements.")), \
+					MSG_OTHERS(span_notice("%U% roofs %T%, shielding it from the elements.")))
 		return INTERACTION_HANDLED_PASS
 
 	// Welders reach the wall's interactions (wall_construction.dm) before attackby.

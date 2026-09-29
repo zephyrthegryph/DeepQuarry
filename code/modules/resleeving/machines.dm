@@ -448,9 +448,9 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/resleever, \
 
 	if(put_mob(O))
 		if(O == user)
-			visible_message("[user] climbs into \the [src].")
+			act_message(user, src, others = "%U% climbs into %T%.")
 		else
-			visible_message("[user] puts [O] into \the [src].")
+			act_message(user, O, others = "%U% puts %T% into \the [src].")
 
 	add_fingerprint(user)
 	return TRUE

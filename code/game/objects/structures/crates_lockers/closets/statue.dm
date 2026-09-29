@@ -108,7 +108,7 @@
 /// Overrides closet's interaction_item(): a statue takes weapon hits instead of storing items.
 /obj/structure/closet/statue/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	user.do_attack_animation(src)
-	visible_message(span_danger("[user] strikes [src] with [I]."))
+	act_message(user, src, others = span_danger("%U% strikes %T% with [I]."))
 	receive_weapon_hit(I, user)
 	return TRUE
 

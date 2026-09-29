@@ -50,8 +50,9 @@
 		to_chat(user, span_notice("[src] already has something inside it."))
 		return
 
-	user.visible_message("[user] puts [I] into [src]", "You put [I] inside [src].",\
-	"You hear a rustle as someone puts something into a plastic bag.")
+	act_message(user, src, MSG_SELF("You put [I] inside %T%."), \
+		MSG_OTHERS("%U% puts [I] into %T%"), \
+		MSG_BLIND("You hear a rustle as someone puts something into a plastic bag."))
 
 	icon_state = "evidence"
 
@@ -78,8 +79,9 @@ DECLARE_INTERACTIONS(/obj/item/evidencebag, INTERACT_USE(null, PROC_REF(interact
 /obj/item/evidencebag/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(LAZYLEN(contents))
 		var/obj/item/I = contents[1]
-		user.visible_message("[user] takes [I] out of [src]", "You take [I] out of [src].",\
-		"You hear someone rustle around in a plastic bag, and remove something.")
+		act_message(user, src, MSG_SELF("You take [I] out of %T%."), \
+			MSG_OTHERS("%U% takes [I] out of %T%"), \
+			MSG_BLIND("You hear someone rustle around in a plastic bag, and remove something."))
 		cut_overlays()	//remove the overlays
 
 		user.put_in_hands(I)

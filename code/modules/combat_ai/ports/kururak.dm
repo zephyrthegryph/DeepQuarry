@@ -165,7 +165,7 @@ TYPE_TABLE(/mob/living/simple_mob/animal/sif/kururak, get_ai_behaviors, list( \
 	var/mob/living/simple_mob/animal/sif/kururak/K = brain.holder
 	if(!istype(K) || !isliving(target))
 		return DQ_BEHAVIOR_FAILED
-	K.visible_message(span_warning("[K] yowls, calling the pack!"))
+	act_message(K, null, others = span_warning("%U% yowls, calling the pack!"))
 	for(var/mob/living/ally as anything in brain.model.visible_friendlies)
 		if(!ally.ai_brain)
 			continue

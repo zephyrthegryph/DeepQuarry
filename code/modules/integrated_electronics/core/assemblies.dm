@@ -345,7 +345,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/electronic_assembly, "battery", /obj/item/cell/d
 			if(S.scan(target))
 				scanned = TRUE
 		if(scanned)
-			visible_message(span_infoplain(span_bold("\The [user]") + " waves \the [src] around [target]."))
+			act_message(user, src, others = span_infoplain(span_bold("%U%") + " waves %T% around [target]."))
 
 	// Support for reference grabber + future ranged circuitry.
 	for(var/obj/item/integrated_circuit/input/reference_grabber/G in contents)

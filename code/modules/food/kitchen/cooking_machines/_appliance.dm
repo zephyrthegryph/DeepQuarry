@@ -153,12 +153,12 @@ GLOBAL_LIST_INIT(appliance_progress_texts, list( 	list("average", "Not Cooking."
 	if (has_stat(POWEROFF))//Its turned off
 		stat_remove(POWEROFF)
 		set_use_power(1)
-		user.visible_message(span_filter_notice("[user] turns [src] on."), span_filter_notice("You turn on [src]."))
+		act_message(user, src, MSG_SELF(span_filter_notice("You turn on %T%.")), MSG_OTHERS(span_filter_notice("%U% turns %T% on.")))
 
 	else //Its on, turn it off
 		stat_add(POWEROFF)
 		set_use_power(0)
-		user.visible_message(span_filter_notice("[user] turns [src] off."), span_filter_notice("You turn off [src]."))
+		act_message(user, src, MSG_SELF(span_filter_notice("You turn off %T%.")), MSG_OTHERS(span_filter_notice("%U% turns %T% off.")))
 		cooking = FALSE // Stop cooking here, too, just in case.
 
 	play_sfx(src, SFX_MACHINES_CLICK, 0.8)
@@ -298,7 +298,7 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 		CI = new /datum/cooking_item/(CC)
 		I.forceMove(src)
 		LAZYADD(cooking_objs, CI)
-		user.visible_message(span_infoplain(span_bold("\The [user]") + " puts \the [I] into \the [src]."))
+		act_message(user, src, others = span_infoplain(span_bold("%U%") + " puts %I% into %T%."), item = I)
 		if (CC.check_contents() == 0)//If we're just putting an empty container in, then dont start any processing.
 			return TRUE
 	else
@@ -312,7 +312,7 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 		CI.combine_target = selected_option
 
 	// We can actually start cooking now.
-	user.visible_message(span_infoplain(span_bold("\The [user]") + " puts \the [I] into \the [src]."))
+	act_message(user, src, others = span_infoplain(span_bold("%U%") + " puts %I% into %T%."), item = I)
 
 	get_cooking_work(CI)
 	cooking = TRUE
@@ -769,7 +769,7 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 		CI.reset()//reset instead of deleting if the container is left inside
 
 	if(user)
-		user.visible_message(span_notice("\The [user] removes \the [thing] from \the [src]."))
+		act_message(user, src, others = span_notice("%U% removes %I% from %T%."), item = thing)
 		if(cook_container)
 			cook_container.food_items--
 			if(!LAZYLEN(cook_container.food_items)) //Empty.

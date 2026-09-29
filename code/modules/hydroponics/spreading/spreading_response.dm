@@ -63,24 +63,21 @@
 		if(prob(chance))
 			for(var/mob/living/L as anything in src?.buckled_mob_list())
 				if(!(user in src?.buckled_mob_list()))
-					L.visible_message(\
-					span_infoplain(span_bold("\The [user]") + " frees \the [L] from \the [src]."),\
-					span_infoplain(span_bold("\The [user]") + " frees you from \the [src]."),\
-					span_warning("You hear shredding and ripping."))
+					act_message(L, user, MSG_SELF(span_infoplain(span_bold("%T%") + " frees you from \the [src].")), \
+						MSG_OTHERS(span_infoplain(span_bold("%T%") + " frees %U% from \the [src].")), \
+						MSG_BLIND(span_warning("You hear shredding and ripping.")))
 				else
-					L.visible_message(\
-					span_infoplain(span_bold("\The [L]") + " struggles free of \the [src]."),\
-					span_notice("You untangle \the [src] from around yourself."),\
-					span_warning("You hear shredding and ripping."))
+					act_message(L, src, MSG_SELF(span_notice("You untangle %T% from around yourself.")), \
+						MSG_OTHERS(span_infoplain(span_bold("%U%") + " struggles free of %T%.")), \
+						MSG_BLIND(span_warning("You hear shredding and ripping.")))
 				unbuckle()
 		else
 			user.setClickCooldown(user.get_attack_speed())
 			health -= rand(1,5)
 			var/text = pick("rip","tear","pull", "bite", "tug")
-			user.visible_message(\
-			span_warning("\The [user] [text]s at \the [src]."),\
-			span_warning("You [text] at \the [src]."),\
-			span_warning("You hear shredding and ripping."))
+			act_message(user, src, MSG_SELF(span_warning("You [text] at %T%.")), \
+				MSG_OTHERS(span_warning("%U% [text]s at %T%.")), \
+				MSG_BLIND(span_warning("You hear shredding and ripping.")))
 			check_health()
 			return
 

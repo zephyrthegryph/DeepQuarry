@@ -19,7 +19,9 @@ EXTEND_INTERACTIONS(/obj/item/stack/animalhide, INTERACT_ITEM(null, PROC_REF(ani
 /obj/item/stack/animalhide/proc/animalhide_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(has_edge(W) || is_sharp(W))
 		//visible message on mobs is defined as visible_message(var/message, var/self_message, var/blind_message)
-		user.visible_message(span_infoplain(span_bold("\The [user]") + " starts cutting hair off \the [src]"), span_notice("You start cutting the hair off \the [src]"), "You hear the sound of a knife rubbing against flesh")
+		act_message(user, src, MSG_SELF(span_notice("You start cutting the hair off %T%")), \
+			MSG_OTHERS(span_infoplain(span_bold("%U%") + " starts cutting hair off %T%")), \
+			MSG_BLIND("You hear the sound of a knife rubbing against flesh"))
 		if(amount > 0)
 			om_task_start(/datum/om/task/timed/scrape_hides, user, null, duration = 2.5 SECONDS)
 	else

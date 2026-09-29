@@ -110,9 +110,8 @@ DECLARE_REF(/obj/structure/prop/prism, "remote_dial", BACKLIST, "my_turrets")
 /obj/structure/prop/prism/proc/rotate_confirmed(datum/om/prompt/confirm/prism_rotate/ask)
 	var/mob/living/user = ask.answerer
 	if(!ask.yes)
-		visible_message(\
-			span_notice("[user.name] decides not to try turning \the [src]."),\
-			span_notice("You decide not to try turning \the [src]."))
+		act_message(user, src, MSG_SELF(span_notice("You decide not to try turning %T%.")), \
+			MSG_OTHERS(span_notice("%U% decides not to try turning %T%.")))
 		return
 	if(free_rotate)
 		om_ask(user, /datum/om/prompt/number/prism_bearing, PROC_REF(bearing_entered))
@@ -236,9 +235,8 @@ DECLARE_REF(/obj/structure/prop/prism, "remote_dial", BACKLIST, "my_turrets")
 /obj/structure/prop/prismcontrol/proc/rotate_confirmed(datum/om/prompt/confirm/prism_rotate/ask)
 	var/mob/living/user = ask.answerer
 	if(!ask.yes)
-		visible_message(\
-			span_notice("[user.name] decides not to try turning \the [src]."),\
-			span_notice("You decide not to try turning \the [src]."))
+		act_message(user, src, MSG_SELF(span_notice("You decide not to try turning %T%.")), \
+			MSG_OTHERS(span_notice("%U% decides not to try turning %T%.")))
 		return TRUE
 
 	if(!my_turrets || !length(my_turrets))
@@ -273,9 +271,8 @@ DECLARE_REF(/obj/structure/prop/prism, "remote_dial", BACKLIST, "my_turrets")
 /obj/structure/prop/prismcontrol/proc/rotate_final(datum/om/prompt/confirm/prism_rotate_final/ask)
 	var/mob/living/user = ask.answerer
 	if(!ask.yes)
-		visible_message(\
-			span_notice("[user.name] decides not to try turning \the [src]."),\
-			span_notice("You decide not to try turning \the [src]."))
+		act_message(user, src, MSG_SELF(span_notice("You decide not to try turning %T%.")), \
+			MSG_OTHERS(span_notice("%U% decides not to try turning %T%.")))
 		return
 	var/new_bearing = ask.bearing
 

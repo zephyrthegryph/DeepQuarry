@@ -1790,7 +1790,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under/hyperfiber/bluespace, \
 		if(!original_size)
 			original_size = H.size_multiplier
 		H.resize(new_size/100, uncapped = H.has_large_resize_bounds(), ignore_prefs = TRUE) // Ignores prefs because you can only resize yourself
-		H.visible_message(span_warning("The space around [H] distorts as they change size!"),span_notice("The space around you distorts as you change size!"))
+		act_message(H, null, MSG_SELF(span_notice("The space around you distorts as you change size!")), \
+			MSG_OTHERS(span_warning("The space around %U% distorts as they change size!")))
 
 /obj/item/clothing/under/hyperfiber/bluespace/mob_can_unequip(mob/M, slot, disable_warning = 0)
 	. = ..()
@@ -1798,7 +1799,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under/hyperfiber/bluespace, \
 		var/mob/living/carbon/human/H = M
 		H.resize(original_size, ignore_prefs = TRUE)
 		original_size = null
-		H.visible_message(span_warning("The space around [H] distorts as they return to their original size!"),span_notice("The space around you distorts as you return to your original size!"))
+		act_message(H, null, MSG_SELF(span_notice("The space around you distorts as you return to your original size!")), \
+			MSG_OTHERS(span_warning("The space around %U% distorts as they return to their original size!")))
 
 /obj/item/clothing/gloves/bluespace
 	name = "size standardization bracelet"
@@ -1828,7 +1830,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under/hyperfiber/bluespace, \
 			EXPIRY_STAMP(src, last_activated, CLOCK_WORLD)
 			original_size = H.size_multiplier
 			H.resize(target_size, ignore_prefs = FALSE) // In case someone else tries to put it on you. // no uncapped
-			H.visible_message(span_warning("The space around [H] distorts as they change size!"),span_notice("The space around you distorts as you change size!"))
+			act_message(H, null, MSG_SELF(span_notice("The space around you distorts as you change size!")), \
+				MSG_OTHERS(span_warning("The space around %U% distorts as they change size!")))
 			log_admin("Admin [key_name(M)]'s size was altered by a bluespace bracelet.")
 
 /obj/item/clothing/gloves/bluespace/mob_can_unequip(mob/M, gloves, disable_warning = 0)
@@ -1840,7 +1843,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under/hyperfiber/bluespace, \
 		EXPIRY_STAMP(src, last_activated, CLOCK_WORLD)
 		H.resize(original_size, ignore_prefs = FALSE) // no uncapped
 		original_size = null
-		H.visible_message(span_warning("The space around [H] distorts as they return to their original size!"),span_notice("The space around you distorts as you return to your original size!"))
+		act_message(H, null, MSG_SELF(span_notice("The space around you distorts as you return to your original size!")), \
+			MSG_OTHERS(span_warning("The space around %U% distorts as they return to their original size!")))
 		log_admin("Admin [key_name(M)]'s size was altered by a bluespace bracelet.")
 		to_chat(M, span_warning("\The [src] flickers. It is now recharging and will be ready again in thirty seconds."))
 
@@ -1860,7 +1864,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under/hyperfiber/bluespace, \
 		target_size = (rand(25,200)) /100 // set to our rule cap
 		if(target_size < 0.25) // set to our rule cap
 			target_size = 0.25 // set to our rule cap
-		user.visible_message(span_notice("\The [user] swipes the [emag_source] over the \the [src]."),span_notice("You swipes the [emag_source] over the \the [src]."))
+		act_message(user, src, MSG_SELF(span_notice("You swipes the [emag_source] over %T%.")), \
+			MSG_OTHERS(span_notice("%U% swipes the [emag_source] over %T%.")))
 		return 1
 
 /obj/item/clothing/gloves/bluespace/emagged
@@ -1942,7 +1947,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/gloves/bluespace/deluxe, \
 		if(!original_size)
 			original_size = H.size_multiplier
 		H.resize(new_size/100, ignore_prefs = TRUE) // Ignores prefs because you can only resize yourself
-		H.visible_message(span_notice("The space around [H] distorts as they change size!"), span_notice("The space around you distorts as you change size!"))
+		act_message(H, null, MSG_SELF(span_notice("The space around you distorts as you change size!")), \
+			MSG_OTHERS(span_notice("The space around %U% distorts as they change size!")))
 		target_size = new_size/100
 		EXPIRY_STAMP(src, last_activated, CLOCK_WORLD)
 

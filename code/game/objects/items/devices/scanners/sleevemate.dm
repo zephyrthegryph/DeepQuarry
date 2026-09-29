@@ -243,7 +243,7 @@ TOPIC_ACTION(/obj/item/sleevemate, "mindrelease", PROC_REF(topic_mindrelease), T
 
 	var/mob/living/carbon/human/H = target
 
-	user.visible_message("[user] begins scanning [target]'s body.",span_notice("You begin scanning [target]'s body."))
+	act_message(user, target, MSG_SELF(span_notice("You begin scanning %T%'s body.")), MSG_OTHERS("%U% begins scanning %T%'s body."))
 	om_task_start(/datum/om/task/timed/sleevemate_topic2, user, target, receiver = src, H = H)
 
 /obj/item/sleevemate/proc/topic_mindsteal(mob/user, list/args)
@@ -313,7 +313,8 @@ TOPIC_ACTION(/obj/item/sleevemate, "mindrelease", PROC_REF(topic_mindrelease), T
 			to_chat(user,span_warning("\The [H] is too complex to put this mind into!"))
 			return
 
-	user.visible_message(span_warning("[user] begins uploading someone's mind into [target]!"),span_notice("You begin uploading a mind into [target]!"))
+	act_message(user, target, MSG_SELF(span_notice("You begin uploading a mind into %T%!")), \
+		MSG_OTHERS(span_warning("%U% begins uploading someone's mind into %T%!")))
 	om_task_timed(user, 35 SECONDS, target = target, receiver = src, on_done = PROC_REF(Topic_timed_done4), done_args = list(target, user))
 
 /obj/item/sleevemate/proc/topic_mindrelease(mob/user, list/args)

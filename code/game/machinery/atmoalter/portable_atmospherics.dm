@@ -228,7 +228,8 @@ DECLARE_REF(/obj/machinery/portable_atmospherics, "holding", OWNED, null)
 	C.add_fingerprint(user)
 	cell = C
 	C.forceMove(src)
-	user.visible_message(span_notice("[user] opens the panel on [src] and inserts [C]."), span_notice("You open the panel on [src] and insert [C]."))
+	act_message(user, src, MSG_SELF(span_notice("You open the panel on %T% and insert [C].")), \
+		MSG_OTHERS(span_notice("%U% opens the panel on %T% and inserts [C].")))
 	power_change()
 	return TRUE
 
@@ -238,7 +239,8 @@ DECLARE_REF(/obj/machinery/portable_atmospherics, "holding", OWNED, null)
 	if(!cell)
 		to_chat(user, span_warning("There is no power cell installed."))
 		return ITEM_INTERACT_BLOCKING
-	user.visible_message(span_notice("[user] opens the panel on [src] and removes [cell]."), span_notice("You open the panel on [src] and remove [cell]."))
+	act_message(user, src, MSG_SELF(span_notice("You open the panel on %T% and remove [cell].")), \
+		MSG_OTHERS(span_notice("%U% opens the panel on %T% and removes [cell].")))
 	playsound(src, tool.usesound, 50, TRUE)
 	cell.add_fingerprint(user)
 	cell.forceMove(loc)

@@ -115,7 +115,9 @@
 				return ITEM_INTERACT_BLOCKING
 	playsound(src, tool.usesound, 75, TRUE)
 	set_anchored(!anchored)
-	user.visible_message("[user.name] [anchored ? "secures" : "unsecures"] the bolts holding [src.name] to the floor.", "You [anchored ? "secure" : "unsecure"] the bolts holding [src] to the floor.", "You hear a ratchet.")
+	act_message(user, src, MSG_SELF("You [anchored ? "secure" : "unsecure"] the bolts holding %T% to the floor."), \
+		MSG_OTHERS("[user.name] [anchored ? "secures" : "unsecures"] the bolts holding [src.name] to the floor."), \
+		MSG_BLIND("You hear a ratchet."))
 	update_neighbours()
 	update_icon()
 	wake_refinery_line()

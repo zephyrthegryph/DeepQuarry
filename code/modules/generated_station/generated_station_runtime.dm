@@ -54,7 +54,7 @@
 	return !captured && get_integrity() > 0
 
 /obj/machinery/generated_station_department_control/proc/interaction_override(mob/user, obj/item/held, datum/interaction/interaction)
-	user.visible_message(span_notice("[user] begins overriding [src]."), span_notice("You begin overriding [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You begin overriding %T%.")), MSG_OTHERS(span_notice("%U% begins overriding %T%.")))
 	om_task_timed(user, 3 SECONDS, src, src, PROC_REF(override_done), list(user))
 	return TRUE
 

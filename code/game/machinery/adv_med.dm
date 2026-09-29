@@ -124,9 +124,9 @@ EXTEND_INTERACTIONS(/obj/machinery/bodyscanner, \
 		return TRUE
 
 	if(O == user)
-		visible_message("[user] climbs into \the [src].")
+		act_message(user, src, others = "%U% climbs into %T%.")
 	else
-		visible_message("[user] puts [O] into the body scanner.")
+		act_message(user, O, others = "%U% puts %T% into the body scanner.")
 
 	if(!O.move_into(src, OCCUPANT_SLOT_BODY_SCANNER))
 		return TRUE

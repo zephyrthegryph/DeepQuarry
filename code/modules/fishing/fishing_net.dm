@@ -55,7 +55,7 @@ TYPE_TABLE_DECLARE(/obj/item/material/fishing_net, fishing_net_accepted_mobs, li
 			to_chat(user, span_filter_notice("[A] can't be trapped in \the [src]."))
 			return
 		var/mob/L = A
-		user.visible_message(span_notice("[user] snatches [L] with \the [src]."), span_notice("You snatch [L] with \the [src]."))
+		act_message(user, L, MSG_SELF(span_notice("You snatch %T% with \the [src].")), MSG_OTHERS(span_notice("%U% snatches %T% with \the [src].")))
 		L.forceMove(src)
 		update_icon()
 		update_weight()
@@ -73,10 +73,10 @@ EXTEND_INTERACTIONS(/obj/item/material/fishing_net, \
 		return FALSE
 	for(var/mob/M in contents_of(src))
 		M.forceMove(get_turf(src))
-		user.visible_message(span_notice("[user] releases [M] from \the [src]."), span_notice("You release [M] from \the [src]."))
+		act_message(user, M, MSG_SELF(span_notice("You release %T% from \the [src].")), MSG_OTHERS(span_notice("%U% releases %T% from \the [src].")))
 	for(var/obj/item/I in contents_of(src))
 		I.forceMove(get_turf(src))
-		user.visible_message(span_notice("[user] dumps \the [I] out of \the [src]."), span_notice("You dump \the [I] out of \the [src]."))
+		act_message(user, src, MSG_SELF(span_notice("You dump %I% out of %T%.")), MSG_OTHERS(span_notice("%U% dumps %I% out of %T%.")), item = I)
 	update_icon()
 	update_weight()
 	return TRUE
@@ -174,7 +174,7 @@ TYPE_TABLE(/obj/item/material/fishing_net/butterfly_net, fishing_net_accepted_mo
 			to_chat(user, span_filter_notice("[A] can't be trapped in \the [src]."))
 			return
 		var/mob/L = A
-		user.visible_message(span_notice("[user] snatches [L] with \the [src]."), span_notice("You snatch [L] with \the [src]."))
+		act_message(user, L, MSG_SELF(span_notice("You snatch %T% with \the [src].")), MSG_OTHERS(span_notice("%U% snatches %T% with \the [src].")))
 		L.forceMove(src)
 		play_sfx(src, SFX_EFFECTS_PLOP, volume = 50, vary = TRUE)
 		update_icon()
@@ -190,13 +190,13 @@ EXTEND_INTERACTIONS(/obj/item/material/fishing_net/butterfly_net, INTERACT_USE("
 		if(!user.get_inactive_hand()) //Check if the inactive hand is empty
 			M.forceMove(get_turf(src))
 			M.attempt_to_scoop(user, stance = I_HELP)
-			user.visible_message(span_notice("[user] scoops [M] out from \the [src]."), span_notice("You pull [M] from \the [src]."))
+			act_message(user, M, MSG_SELF(span_notice("You pull %T% from \the [src].")), MSG_OTHERS(span_notice("%U% scoops %T% out from \the [src].")))
 		else
 			M.forceMove(get_turf(src))
-			user.visible_message(span_notice("[user] releases [M] from \the [src]."), span_notice("You release [M] from \the [src]."))
+			act_message(user, M, MSG_SELF(span_notice("You release %T% from \the [src].")), MSG_OTHERS(span_notice("%U% releases %T% from \the [src].")))
 	for(var/obj/item/I in contents_of(src))
 		I.forceMove(get_turf(src))
-		user.visible_message(span_notice("[user] dumps \the [I] out of \the [src]."), span_notice("You dump \the [I] out of \the [src]."))
+		act_message(user, src, MSG_SELF(span_notice("You dump %I% out of %T%.")), MSG_OTHERS(span_notice("%U% dumps %I% out of %T%.")), item = I)
 	update_icon()
 	update_weight()
 	return

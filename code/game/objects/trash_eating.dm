@@ -60,7 +60,7 @@
 // PDA
 /// The ten-second threat is over: down it goes.
 /obj/item/proc/threat_eaten(mob/living/user)
-	user.visible_message(span_warning("[user] successfully makes [src] disappear!"))
+	act_message(user, src, others = span_warning("%U% successfully makes %T% disappear!"))
 	user.swallow_trash(src)
 
 /obj/item/pda/proc/eat_risk_confirmed(datum/om/prompt/confirm/ask)
@@ -79,7 +79,7 @@
 		if(!watching)
 			return FALSE
 		else
-			user.visible_message(span_warning("[user] is threatening to make [src] disappear!"))
+			act_message(user, src, others = span_warning("%U% is threatening to make %T% disappear!"))
 			if(id)
 				om_ask(user, /datum/om/prompt/confirm, PROC_REF(eat_risk_confirmed), title = "Confirmation", message = "The PDA you're holding contains a vulnerable ID card. Will you risk it?", yes_text = "Definitely", no_text = "Cancel", ask_flags = ASK_CARRIED | ASK_CAPABLE)
 				return FALSE
@@ -106,7 +106,7 @@
 		if(!watching)
 			return FALSE
 		else
-			user.visible_message(span_warning("[user] is threatening to make [src] disappear!"))
+			act_message(user, src, others = span_warning("%U% is threatening to make %T% disappear!"))
 			om_task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(threat_eaten), done_args = list(user))
 			return FALSE
 	return TRUE
@@ -270,41 +270,41 @@
 /obj/item/cell/after_trash_eaten(mob/living/user)
 	if(!..(user))
 		return
-	visible_message(span_warning("[user] sates their electric appetite with a [src]!"))
+	act_message(user, src, others = span_warning("%U% sates their electric appetite with a %T%!"))
 	to_chat(user, span_notice("You can taste the spicy flavor of electrolytes, yum."))
 
 /obj/item/walkpod/after_trash_eaten(mob/living/user)
 	if(!..(user))
 		return
-	visible_message(span_warning("[user] sates their musical appetite with a [src]!"))
+	act_message(user, src, others = span_warning("%U% sates their musical appetite with a %T%!"))
 	to_chat(user, span_notice("You can taste the jazzy flavor of music."))
 
 /obj/item/mail/junkmail/after_trash_eaten(mob/living/user)
 	if(!..(user))
 		return
-	visible_message(span_warning("[user] devours the [src]!"))
+	act_message(user, src, others = span_warning("%U% devours %T%!"))
 	to_chat(user, span_notice("You can taste the flavor of the galactic postal service."))
 
 /obj/item/gun/energy/sizegun/after_trash_eaten(mob/living/user)
 	if(!..(user))
 		return
-	visible_message(span_warning("[user] devours the [src]!"))
+	act_message(user, src, others = span_warning("%U% devours %T%!"))
 	to_chat(user, span_notice("You didn't read the warning label, did you?"))
 
 /obj/item/slow_sizegun/after_trash_eaten(mob/living/user)
 	if(!..(user))
 		return
-	visible_message(span_warning("[user] devours the [src]!"))
+	act_message(user, src, others = span_warning("%U% devours %T%!"))
 	to_chat(user, span_notice("You taste the flavor of sunday driver bluespace."))
 
 /obj/item/laser_pointer/after_trash_eaten(mob/living/user)
 	if(!..(user))
 		return
-	visible_message(span_warning("[user] devours the [src]!"))
+	act_message(user, src, others = span_warning("%U% devours %T%!"))
 	to_chat(user, span_notice("You taste the flavor of a laser."))
 
 /obj/item/canvas/after_trash_eaten(mob/living/user)
 	if(!..(user))
 		return
-	visible_message(span_warning("[user] devours the [src]!"))
+	act_message(user, src, others = span_warning("%U% devours %T%!"))
 	to_chat(user, span_notice("You taste the flavor of priceless artwork."))

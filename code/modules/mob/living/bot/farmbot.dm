@@ -186,25 +186,25 @@ EXTEND_INTERACTIONS(/mob/living/bot/farmbot, INTERACT_HAND_AS(I_HELP, "Open cont
 			if(FARMBOT_COLLECT)
 				action = "water" // Needs a better one
 				update_icons()
-				visible_message(span_notice("[src] starts [T.dead? "removing the plant from" : "harvesting"] \the [A]."))
+				act_message(src, A, others = span_notice("%U% starts [T.dead? "removing the plant from" : "harvesting"] %T%."))
 
 				om_task_start(/datum/om/task/timed/farm_job, src, T, job = FARMBOT_COLLECT, busy = src)
 			if(FARMBOT_WATER)
 				action = "water"
 				update_icons()
-				visible_message(span_notice("[src] starts watering \the [A]."))
+				act_message(src, A, others = span_notice("%U% starts watering %T%."))
 
 				om_task_start(/datum/om/task/timed/farm_job, src, T, job = FARMBOT_WATER, busy = src)
 			if(FARMBOT_UPROOT)
 				action = "hoe"
 				update_icons()
-				visible_message(span_notice("[src] starts uprooting the weeds in \the [A]."))
+				act_message(src, A, others = span_notice("%U% starts uprooting the weeds in %T%."))
 
 				om_task_start(/datum/om/task/timed/farm_job, src, T, job = FARMBOT_UPROOT, busy = src)
 			if(FARMBOT_NUTRIMENT)
 				action = "fertile"
 				update_icons()
-				visible_message(span_notice("[src] starts fertilizing \the [A]."))
+				act_message(src, A, others = span_notice("%U% starts fertilizing %T%."))
 
 				om_task_start(/datum/om/task/timed/farm_job, src, T, job = FARMBOT_NUTRIMENT, busy = src)
 
@@ -213,7 +213,7 @@ EXTEND_INTERACTIONS(/mob/living/bot/farmbot, INTERACT_HAND_AS(I_HELP, "Open cont
 			return
 		action = "water"
 		update_icons()
-		visible_message(span_notice("[src] starts refilling its tank from \the [A]."))
+		act_message(src, A, others = span_notice("%U% starts refilling its tank from %T%."))
 
 		refill_step(A)
 	else if(emagged && ishuman(A))
@@ -225,14 +225,14 @@ EXTEND_INTERACTIONS(/mob/living/bot/farmbot, INTERACT_HAND_AS(I_HELP, "Open cont
 				flick("farmbot_hoe", src)
 				do_attack_animation(A)
 				if(prob(50))
-					visible_message(span_danger("[src] swings wildly at [A] with a minihoe, missing completely!"))
+					act_message(src, A, others = span_danger("%U% swings wildly at %T% with a minihoe, missing completely!"))
 					return
 				var/t = pick("slashed", "sliced", "cut", "clawed")
 				A.attack_generic(src, 5, t)
 			if("water")
 				flick("farmbot_water", src)
 
-				visible_message(span_danger("[src] splashes [A] with water!"))
+				act_message(src, A, others = span_danger("%U% splashes %T% with water!"))
 				tank.reagents.splash(A, 100)
 
 /// Three seconds of work on a tray (harvest, water, weed or fertilize: `job`); the bot is busy.
@@ -264,28 +264,28 @@ EXTEND_INTERACTIONS(/mob/living/bot/farmbot, INTERACT_HAND_AS(I_HELP, "Open cont
 /mob/living/bot/farmbot/proc/refill_end()
 	action = ""
 	update_icons()
-	visible_message(span_notice("[src] finishes refilling its tank."))
+	act_message(src, null, others = span_notice("%U% finishes refilling its tank."))
 
 /mob/living/bot/farmbot/proc/farm_job_done(datum/om/task/timed/farm_job/task)
 	var/obj/machinery/portable_atmospherics/hydroponics/T = task.target
 	switch(task.job)
 		if(FARMBOT_COLLECT)
-			visible_message(span_notice("[src] [T.dead? "removes the plant from" : "harvests"] \the [T]."))
+			act_message(src, T, others = span_notice("%U% [T.dead? "removes the plant from" : "harvests"] %T%."))
 			T.attack_hand(src)
 		if(FARMBOT_WATER)
 			play_sfx(src, SFX_EFFECTS_SLOSH)
-			visible_message(span_notice("[src] waters \the [T]."))
+			act_message(src, T, others = span_notice("%U% waters %T%."))
 			tank.reagents.trans_to(T, 100 - T.waterlevel)
 		if(FARMBOT_UPROOT)
-			visible_message(span_notice("[src] uproots the weeds in \the [T]."))
+			act_message(src, T, others = span_notice("%U% uproots the weeds in %T%."))
 			T.weedlevel = 0
 		if(FARMBOT_NUTRIMENT)
-			visible_message(span_notice("[src] fertilizes \the [T]."))
+			act_message(src, T, others = span_notice("%U% fertilizes %T%."))
 			T.reagents.add_reagent(REAGENT_ID_AMMONIA, 10)
 	farm_job_end(task)
 
 /mob/living/bot/farmbot/explode()
-	visible_message(span_danger("[src] blows apart!"))
+	act_message(src, null, others = span_danger("%U% blows apart!"))
 	var/turf/Tsec = get_turf(src)
 
 	new /obj/item/material/minihoe(Tsec)
@@ -432,7 +432,7 @@ DECLARE_INTERACTIONS(/obj/item/farmbot_arm_assembly, \
 #undef FARMBOT_NUTRIMENT
 
 /mob/living/bot/farmbot/proc/emag_takes()
-	visible_message(span_warning("[src] buzzes oddly."))
+	act_message(src, null, others = span_warning("%U% buzzes oddly."))
 	emagged = 1
 
 DECLARE_REF(/mob/living/bot/farmbot, "tank", HELD, null)

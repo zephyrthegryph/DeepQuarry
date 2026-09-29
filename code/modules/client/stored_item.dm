@@ -124,7 +124,7 @@
 		return
 	var/obj/item/N = new I(get_turf(src))
 	log_admin("[key_name_admin(user)] retrieved [N] from the item bank.")
-	visible_message(span_notice("\The [src] dispenses the [N] to \the [user]."))
+	act_message(src, user, others = span_notice("%U% dispenses the [N] to %T%."))
 	user.put_in_hands(N)
 	N.persist_storable = FALSE
 	var/path = src.persist_item_savefile_path(user)
@@ -149,7 +149,7 @@
 		bank_interrupted()
 		return
 	src.persist_item_savefile_save(user, O)
-	user.visible_message(span_notice("\The [user] stores \the [O] in \the [src]."),span_notice("You stored \the [O] in \the [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You stored %I% in %T%.")), MSG_OTHERS(span_notice("%U% stores %I% in %T%.")), item = O)
 	log_admin("[key_name_admin(user)] stored [O] in the item bank.")
 	consume(O, user)
 	busy_bank = FALSE
@@ -174,7 +174,7 @@
 				to_chat(user, span_warning("\The [src] buzzes. \The [O] contains [check], which cannot be stored. Please remove this item before attempting to store \the [O]. As a reminder, any contents of \the [O] will be lost if you store it with contents."))
 				return TRUE
 		busy_bank = TRUE
-		user.visible_message(span_notice("\The [user] begins storing \the [O] in \the [src]."),span_notice("You begin storing \the [O] in \the [src]."))
+		act_message(user, src, MSG_SELF(span_notice("You begin storing %I% in %T%.")), MSG_OTHERS(span_notice("%U% begins storing %I% in %T%.")), item = O)
 		icon_state = "item_bank_o"
 		om_task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(store_done), done_args = list(user, O), on_fail = PROC_REF(bank_interrupted))
 		return TRUE

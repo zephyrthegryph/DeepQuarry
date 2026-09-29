@@ -244,6 +244,7 @@
 
 /// The name a synthetic body's new occupant picks. A cancel is another go (see new_form_name_declined()).
 /datum/om/prompt/text/new_form_name
+	name_text = TRUE
 	title = "New Name"
 	message = "Pick a name for your new form!"
 	var/required = FALSE

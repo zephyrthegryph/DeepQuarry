@@ -23,7 +23,9 @@
 	if(!panel_open)
 		to_chat(user, span_notice("The maintenance panel must be screwed open for this!"))
 		return ITEM_INTERACT_BLOCKING
-	user.visible_message(span_infoplain(span_bold("\The [user]") + " rotates \the [src] with \the [tool]."), span_notice("You rotate \the [src] with \the [tool]."))
+	act_message(user, src, MSG_SELF(span_notice("You rotate %T% with %I%.")), \
+		MSG_OTHERS(span_infoplain(span_bold("%U%") + " rotates %T% with %I%.")), \
+		item = tool)
 	set_dir(turn(dir, 90))
 	play_sfx(src, SFX_ITEMS_JAWS_PRY)
 	return ITEM_INTERACT_SUCCESS

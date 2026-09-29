@@ -219,7 +219,7 @@ EXTEND_INTERACTIONS(/obj/machinery/protean_reconstitutor, \
 		return TRUE
 	else if(!processing_revive && protean_brain && protean_orchestrator && protean_refactory && (nanomass_reserve >= nanomass_required))
 		//we're good, let's get recombobulating!
-		src.visible_message(span_notice("[user] initializes \the [src]. It chirps, \"Please stand by, synchronizing components... estimated time to completion: five minutes.\""))
+		act_message(user, src, others = span_notice("%U% initializes %T%. It chirps, \"Please stand by, synchronizing components... estimated time to completion: five minutes.\""))
 		processing_revive = TRUE
 		power_change()
 		if(prob(2))

@@ -80,7 +80,8 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/crossbow/bow, INTERACT_HAND(null, PR
 /// Old attack_hand.
 /obj/item/gun/launcher/crossbow/bow/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(loc == user && bolt && !drawn)
-		user.visible_message(span_infoplain(span_bold("[user]") + " removes [bolt] from [src]."),span_infoplain("You remove [bolt] from [src]."))
+		act_message(user, src, MSG_SELF(span_infoplain("You remove [bolt] from %T%.")), \
+			MSG_OTHERS(span_infoplain(span_bold("%U%") + " removes [bolt] from %T%.")))
 		unload(user)
 	else
 		return FALSE
@@ -94,7 +95,8 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/crossbow/bow, INTERACT_HAND(null, PR
 	if(hardlight)
 		return FALSE
 	if(drawn)
-		user.visible_message(span_infoplain(span_bold("[user]") + " relaxes the tension on [src]'s string."),span_infoplain("You relax the tension on [src]'s string."))
+		act_message(user, src, MSG_SELF(span_infoplain("You relax the tension on %T%'s string.")), \
+			MSG_OTHERS(span_infoplain(span_bold("%U%") + " relaxes the tension on %T%'s string.")))
 		drawn = FALSE
 		update_icon()
 	else
@@ -109,13 +111,15 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/crossbow/bow, INTERACT_HAND(null, PR
 		return
 
 	current_user = user
-	user.visible_message(span_infoplain(span_bold("[user]") + " begins to draw back the string of [src]."),span_notice("You begin to draw back the string of [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You begin to draw back the string of %T%.")), \
+		MSG_OTHERS(span_infoplain(span_bold("%U%") + " begins to draw back the string of %T%.")))
 	om_task_timed(user, 2.5 SECONDS, src, src, PROC_REF(drawn_fully), list(user))
 	update_icon()
 
 /obj/item/gun/launcher/crossbow/bow/proc/drawn_fully(mob/user)
 	drawn = TRUE
-	user.visible_message(span_infoplain(span_bold("[user]") + "draws the string on [src] back fully!"), span_infoplain("You draw the string on [src] back fully!"))
+	act_message(user, src, MSG_SELF(span_infoplain("You draw the string on %T% back fully!")), \
+		MSG_OTHERS(span_infoplain(span_bold("%U%") + "draws the string on %T% back fully!")))
 	update_icon()
 
 /// Old attackby. It never called ..(): any item stops here, but afterattack still follows.
@@ -124,7 +128,7 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/crossbow/bow, INTERACT_HAND(null, PR
 	if(!bolt && istype(W,/obj/item/arrow/standard))
 		user.drop_from_inventory(W, src)
 		bolt = W
-		user.visible_message(span_infoplain("[user] slides [bolt] into [src]."),span_infoplain("You slide [bolt] into [src]."))
+		act_message(user, src, MSG_SELF(span_infoplain("You slide [bolt] into %T%.")), MSG_OTHERS(span_infoplain("%U% slides [bolt] into %T%.")))
 		update_icon()
 
 /obj/item/gun/launcher/crossbow/bow/update_icon()
@@ -154,13 +158,15 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/crossbow/bow, INTERACT_HAND(null, PR
 	if(.)
 		return TRUE
 	if(drawn)
-		user.visible_message(span_infoplain(span_bold("[user]") + " relaxes the tension on [src]'s string."),span_infoplain("You relax the tension on [src]'s string."))
+		act_message(user, src, MSG_SELF(span_infoplain("You relax the tension on %T%'s string.")), \
+			MSG_OTHERS(span_infoplain(span_bold("%U%") + " relaxes the tension on %T%'s string.")))
 		drawn = FALSE
 		update_icon()
 		return
 	// Automatically knock the arrow as it forms
 	if(!bolt)
-		user.visible_message(span_infoplain(span_bold("[user]") + " fabricates a new hardlight projectile with [src]."),span_infoplain("You fabricate a new hardlight projectile with [src]."))
+		act_message(user, src, MSG_SELF(span_infoplain("You fabricate a new hardlight projectile with %T%.")), \
+			MSG_OTHERS(span_infoplain(span_bold("%U%") + " fabricates a new hardlight projectile with %T%.")))
 		bolt = new /obj/item/arrow/energy(src)
 		update_icon()
 	draw(user)

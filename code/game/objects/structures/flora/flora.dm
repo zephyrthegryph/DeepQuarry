@@ -83,7 +83,7 @@
 	return TRUE
 
 /obj/structure/flora/proc/attackby_timed_done(mob/living/user)
-	visible_message(span_notice("\The [user] uproots and discards \the [src]!"))
+	act_message(user, src, others = span_notice("%U% uproots and discards %T%!"))
 	qdel(src)
 
 /obj/structure/flora/proc/can_harvest(obj/item/I)
@@ -329,7 +329,7 @@
 	user.drop_from_inventory(I, src)
 	I.forceMove(src)
 	stored_item = I
-	src.visible_message("[icon2html(src,viewers(src))] [icon2html(I,viewers(src))] [user] places [I] into [src].")
+	act_message(user, src, others = "[icon2html(src,viewers(src))] [icon2html(I,viewers(src))] %U% places [I] into %T%.")
 
 /obj/structure/flora/pottedplant/proc/attackby_timed_failed2(datum/om/task/timed/pottedplant_attackby/task)
 	var/mob/user = task.actor

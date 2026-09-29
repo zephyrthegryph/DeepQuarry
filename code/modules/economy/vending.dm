@@ -347,7 +347,7 @@ DECLARE_REF(/obj/machinery/vending, "product_records", OWNED_LIST, null)
 
 	if(istype(cashmoney, /obj/item/spacecash))
 
-		visible_message(span_info("\The [user] inserts some cash into \the [src]."))
+		act_message(user, src, others = span_info("%U% inserts some cash into %T%."))
 		cashmoney.worth -= currently_vending().price
 
 		if(cashmoney.worth <= 0)
@@ -366,7 +366,7 @@ DECLARE_REF(/obj/machinery/vending, "product_records", OWNED_LIST, null)
  * successful, 0 if failed.
  */
 /obj/machinery/vending/proc/pay_with_ewallet(obj/item/spacecash/ewallet/wallet, mob/user)
-	visible_message(span_info("\The [user] swipes \the [wallet] through \the [src]."))
+	act_message(user, src, others = span_info("%U% swipes %I% through %T%."), item = wallet)
 	play_sfx(src, SFX_MACHINES_ID_SWIPE)
 	if(currently_vending().price > wallet.worth)
 		to_chat(user, span_warning("Insufficient funds on chargecard."))

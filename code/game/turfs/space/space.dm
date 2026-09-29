@@ -152,7 +152,7 @@ EXTEND_INTERACTIONS(/turf/space, INTERACT_ITEM("Build", PROC_REF(space_build)))
 					T.ReplaceWithLattice()
 					T.ChangeTurf(/turf/simulated/floor)
 					play_sfx(src, SFX_WEAPONS_GENHIT)
-					user.visible_message(span_notice("[user] expands the ceiling."), span_notice("You expand the ceiling."))
+					act_message(user, null, MSG_SELF(span_notice("You expand the ceiling.")), MSG_OTHERS(span_notice("%U% expands the ceiling.")))
 			else
 				to_chat(user, span_warning("There aren't any holes in the ceiling to patch here."))
 				return INTERACTION_HANDLED_PASS

@@ -120,7 +120,7 @@
 			log_and_message_admins("[H] died outside of the dark but there were no valid floors to warp to")
 			return
 
-		H.visible_message("<b>\The [H.name]</b> phases to somewhere far away!")
+		act_message(H, null, others = "<b>%U%</b> phases to somewhere far away!")
 		var/obj/effect/temp_visual/shadekin/phase_out/phaseanimout = new /obj/effect/temp_visual/shadekin/phase_out(H.loc)
 		phaseanimout.dir = H.dir
 		SK.respite_activating = TRUE

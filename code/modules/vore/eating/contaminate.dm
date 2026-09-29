@@ -58,8 +58,7 @@ EXTEND_INTERACTIONS(/obj/structure/sink, INTERACT_ITEM("Wash", PROC_REF(sink_was
 
 /obj/structure/sink/proc/wash_gurgled_done(mob/user, obj/item/I)
 	I.wash(CLEAN_SCRUB)
-	user.visible_message(span_notice("[user] washes [I] using [src]."),
-		span_notice("You wash [I] using [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You wash [I] using %T%.")), MSG_OTHERS(span_notice("%U% washes [I] using %T%.")))
 
 //////////////
 // Special handling of gurgle_contaminate

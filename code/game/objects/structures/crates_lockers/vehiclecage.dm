@@ -63,11 +63,11 @@
 	disassemble(W, user)
 
 /obj/structure/vehiclecage/wrench_act(mob/user, obj/item/W)
-	user.visible_message(span_notice("[user] begins loosening \the [src]'s bolts."))
+	act_message(user, src, others = span_notice("%U% begins loosening %T%'s bolts."))
 	return tool_disassemble(user, W, 6 SECONDS, TOOL_WRENCH)
 
 /obj/structure/vehiclecage/wirecutter_act(mob/user, obj/item/W)
-	user.visible_message(span_notice("[user] begins cutting \the [src]'s bolts."))
+	act_message(user, src, others = span_notice("%U% begins cutting %T%'s bolts."))
 	return tool_disassemble(user, W, 7 SECONDS, TOOL_WIRECUTTER)
 
 /obj/structure/vehiclecage/update_icon()
@@ -107,9 +107,9 @@
 
 /obj/structure/vehiclecage/proc/load_vehicle(obj/vehicle/V, mob/user as mob)
 	if(user)
-		user.visible_message(span_notice("[user] loads \the [V] into \the [src]."), \
-								span_notice("You load \the [V] into \the [src]."), \
-								span_notice("You hear creaking metal."))
+		act_message(user, V, MSG_SELF(span_notice("You load %T% into \the [src].")), \
+			MSG_OTHERS(span_notice("%U% loads %T% into \the [src].")), \
+			MSG_BLIND(span_notice("You hear creaking metal.")))
 
 	V.forceMove(src)
 
@@ -126,9 +126,9 @@
 			AM.forceMove(T)
 
 	my_vehicle_handle = null
-	user.visible_message(span_notice("[user] release \the [src]."), \
-							span_notice("You finally release \the [src]."), \
-							span_notice("You hear creaking metal."))
+	act_message(user, src, MSG_SELF(span_notice("You finally release %T%.")), \
+		MSG_OTHERS(span_notice("%U% release %T%.")), \
+		MSG_BLIND(span_notice("You hear creaking metal.")))
 	qdel(src)
 
 /obj/structure/vehiclecage/spacebike

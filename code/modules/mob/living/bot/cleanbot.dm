@@ -40,7 +40,7 @@
 			T.wet_floor()
 
 	if(spray_blood && prob(5)) // Make a big mess
-		visible_message("Something flies out of [src]. It seems to be acting oddly.")
+		act_message(src, null, others = "Something flies out of %U%. It seems to be acting oddly.")
 		var/obj/effect/decal/cleanable/blood/gibs/gib = new /obj/effect/decal/cleanable/blood/gibs(get_turf(src))
 		ignore_list += gib
 		om_after(src, 1 MINUTE, PROC_REF(clear_ignored_gib), gib)
@@ -190,7 +190,7 @@
 
 /mob/living/bot/cleanbot/explode()
 	on = 0
-	visible_message(span_danger("[src] blows apart!"))
+	act_message(src, null, others = span_danger("%U% blows apart!"))
 	var/turf/Tsec = get_turf(src)
 
 	new /obj/item/reagent_containers/glass/bucket(Tsec)

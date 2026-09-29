@@ -103,14 +103,14 @@ DECLARE_REF(/obj/machinery/appliance/mixer, "mixer_loop", OWNED, null)
 	if(has_stat(POWEROFF))//Its turned off
 		stat_remove(POWEROFF)
 		if(user)
-			user.visible_message(span_filter_notice("[user] turns the [src] on."), span_filter_notice("You turn on \the [src]."))
+			act_message(user, src, MSG_SELF(span_filter_notice("You turn on %T%.")), MSG_OTHERS(span_filter_notice("%U% turns %T% on.")))
 			get_cooking_work(CI)
 			set_use_power(2)
 	else //Its on, turn it off
 		stat_add(POWEROFF)
 		set_use_power(0)
 		if(user)
-			user.visible_message(span_filter_notice("[user] turns the [src] off."), span_filter_notice("You turn off \the [src]."))
+			act_message(user, src, MSG_SELF(span_filter_notice("You turn off %T%.")), MSG_OTHERS(span_filter_notice("%U% turns %T% off.")))
 	play_sfx(src, SFX_MACHINES_CLICK, 0.8)
 	update_icon()
 

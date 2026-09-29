@@ -112,7 +112,9 @@
 	if(current_stage >= MAX_HOLE_SIZE)
 		to_chat(user, span_notice("This fence has too much cut out of it already."))
 		return TRUE
-	user.visible_message(span_danger("\The [user] starts cutting through \the [src] with \the [W]."), span_danger("You start cutting through \the [src] with \the [W]."))
+	act_message(user, src, MSG_SELF(span_danger("You start cutting through %T% with %I%.")), \
+		MSG_OTHERS(span_danger("%U% starts cutting through %T% with %I%.")), \
+		item = W)
 	use_tool(user, W, src, delay = CUT_TIME, quality = TOOL_WIRECUTTER, volume = 50, receiver = src, on_done = PROC_REF(wirecutter_act_tool_done), done_args = list(user, current_stage))
 	return TRUE
 
@@ -121,11 +123,11 @@
 		return
 	switch(++hole_size)
 		if(MEDIUM_HOLE)
-			visible_message(span_notice("\The [user] cuts into \the [src] some more."))
+			act_message(user, src, others = span_notice("%U% cuts into %T% some more."))
 			to_chat(user, span_notice("You could probably fit yourself through that hole now. Although climbing through would be much faster if you made it even bigger."))
 			make_climbable()
 		if(LARGE_HOLE)
-			visible_message(span_notice("\The [user] completely cuts through \the [src]."))
+			act_message(user, src, others = span_notice("%U% completely cuts through %T%."))
 			to_chat(user, span_notice("The hole in \the [src] is now big enough to walk through."))
 			unmake_climbable()
 	update_cut_status()
@@ -217,7 +219,7 @@
 		else if(key.key_id != src.lock_id)
 			to_chat(user,span_warning("The [key] doesn't fit \the [src]'s lock!"))
 		else if(key.key_id == src.lock_id)
-			visible_message(span_notice("[user] [key.keyverb] \the [key] and [locked ? "unlocks" : "locks"] \the [src]."))
+			act_message(user, src, others = span_notice("%U% [key.keyverb] %I% and [locked ? "unlocks" : "locks"] %T%."), item = key)
 			locked = !locked
 			playsound(src, keysound,100, 1)
 		return TRUE
@@ -253,10 +255,10 @@
 /obj/structure/fence/door/proc/toggle(mob/user)
 	switch(open)
 		if(FALSE)
-			visible_message(span_notice("\The [user] opens \the [src]."))
+			act_message(user, src, others = span_notice("%U% opens %T%."))
 			open = TRUE
 		if(TRUE)
-			visible_message(span_notice("\The [user] closes \the [src]."))
+			act_message(user, src, others = span_notice("%U% closes %T%."))
 			open = FALSE
 
 	update_door_status()

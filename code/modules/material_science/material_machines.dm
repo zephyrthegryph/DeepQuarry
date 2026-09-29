@@ -114,7 +114,7 @@ DECLARE_REF(/obj/machinery/material_furnace, "chamber_air", OWNED, null)
 		return TRUE
 	stock.forceMove(src)
 	LAZYADD(feedstock, stock)
-	visible_message(span_notice("[user] loads [stock] into [src]."))
+	act_message(user, src, others = span_notice("%U% loads [stock] into %T%."))
 	return TRUE
 
 /// The old attackby's second branch: adds carbon (coal ore) to the charge.
@@ -133,7 +133,7 @@ DECLARE_REF(/obj/machinery/material_furnace, "chamber_air", OWNED, null)
 		return TRUE
 	item.forceMove(src)
 	LAZYADD(carbon_feed, item)
-	visible_message(span_notice("[user] adds carbon to [src]'s charge."))
+	act_message(user, src, others = span_notice("%U% adds carbon to %T%'s charge."))
 	return TRUE
 
 /// The old attackby's third branch: transfers gas between a tank and the furnace chamber.
@@ -154,7 +154,7 @@ DECLARE_REF(/obj/machinery/material_furnace, "chamber_air", OWNED, null)
 		else
 			tank.air_contents.merge(charge)
 		qdel(charge)
-		visible_message(span_notice("[user] transfers gas [from_tank ? "from [tank] into" : "from [src] into"] the furnace chamber."))
+		act_message(user, src, others = span_notice("%U% transfers gas [from_tank ? "from [tank] into" : "from %T% into"] the furnace chamber."))
 	return TRUE
 
 /// The old attackby's fourth branch: pours reagents into the chamber, else falls through to ..().
@@ -184,7 +184,7 @@ DECLARE_REF(/obj/machinery/material_furnace, "chamber_air", OWNED, null)
 		output_stock_handle = null
 		finished.forceMove(user.drop_location())
 		user.put_in_hands(finished)
-		visible_message(span_notice("[user] removes [finished] from [src]'s output tray."))
+		act_message(user, src, others = span_notice("%U% removes [finished] from %T%'s output tray."))
 		return TRUE
 	if(firing)
 		to_chat(user, span_warning("The furnace is still firing."))
@@ -221,10 +221,7 @@ DECLARE_REF(/obj/machinery/material_furnace, "chamber_air", OWNED, null)
 	if(!output_stock() && !LAZYLEN(feedstock) && !LAZYLEN(carbon_feed))
 		to_chat(user, span_notice("The furnace is empty."))
 		return TRUE
-	user.visible_message(
-		span_notice("[user] begins opening [src]."),
-		span_notice("You begin opening [src].")
-	)
+	act_message(user, src, MSG_SELF(span_notice("You begin opening %T%.")), MSG_OTHERS(span_notice("%U% begins opening %T%.")))
 	om_task_timed(user, 1 SECOND, src, src, PROC_REF(eject_contents_done), list(user))
 	return TRUE
 
@@ -236,10 +233,8 @@ DECLARE_REF(/obj/machinery/material_furnace, "chamber_air", OWNED, null)
 		output_stock_handle = null
 		finished.forceMove(user.drop_location())
 		user.put_in_hands(finished)
-		user.visible_message(
-			span_notice("[user] removes [finished] from [src]'s output tray."),
-			span_notice("You remove [finished] from [src]'s output tray.")
-		)
+		act_message(user, src, MSG_SELF(span_notice("You remove [finished] from %T%'s output tray.")), \
+			MSG_OTHERS(span_notice("%U% removes [finished] from %T%'s output tray.")))
 	if(LAZYLEN(feedstock) || LAZYLEN(carbon_feed))
 		unload_charge(user)
 
@@ -354,7 +349,7 @@ DECLARE_REF(/obj/machinery/material_furnace, "chamber_air", OWNED, null)
 	for(var/obj/item/ore/coal as anything in carbon_feed)
 		coal.forceMove(user.drop_location())
 	carbon_feed = null
-	visible_message(span_notice("[user] unloads the unfired charge from [src]."))
+	act_message(user, src, others = span_notice("%U% unloads the unfired charge from %T%."))
 	return TRUE
 
 /obj/structure/material_anvil
@@ -391,7 +386,7 @@ DECLARE_REF(/obj/machinery/material_furnace, "chamber_air", OWNED, null)
 		stock_handle = om_handle(replacement)
 		stock().forceMove(src)
 		qdel(batch)
-		visible_message(span_notice("[user] works the alloy under the hammer, refining its shape and internal structure."))
+		act_message(user, null, others = span_notice("%U% works the alloy under the hammer, refining its shape and internal structure."))
 		return INTERACTION_HANDLED_PASS
 	return FALSE
 
@@ -456,7 +451,7 @@ EXTEND_INTERACTIONS(/obj/structure/bed/bath/material_treatment, INTERACT_ITEM(nu
 	user.put_in_hands(replacement)
 	reagents.remove_any(required_medium)
 	qdel(batch)
-	visible_message(span_notice("[user] [process_description] [stock] in [src]."))
+	act_message(user, src, others = span_notice("%U% [process_description] [stock] in %T%."))
 	return INTERACTION_HANDLED_PASS
 
 EXTEND_INTERACTIONS(/obj/item/stack/material/processed_alloy, INTERACT_ITEM(null, PROC_REF(processed_alloy_item)))

@@ -194,14 +194,14 @@ EXTEND_INTERACTIONS(/obj/structure/reagent_dispensers/fueltank, \
 /// Old attack_hand.
 /obj/structure/reagent_dispensers/fueltank/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if (rig)
-		user.visible_message("[user] begins to detach [rig] from \the [src].", "You begin to detach [rig] from \the [src]")
+		act_message(user, src, MSG_SELF("You begin to detach [rig] from %T%"), MSG_OTHERS("%U% begins to detach [rig] from %T%."))
 		om_task_timed(user, 2 SECONDS, src, src, PROC_REF(detach_rig_done), list(user))
 	return TRUE
 
 /obj/structure/reagent_dispensers/fueltank/proc/detach_rig_done(mob/user)
 	if(!rig)
 		return
-	user.visible_message(span_notice("[user] detaches [rig] from \the [src]."), span_notice("You detach [rig] from \the [src]"))
+	act_message(user, src, MSG_SELF(span_notice("You detach [rig] from %T%")), MSG_OTHERS(span_notice("%U% detaches [rig] from %T%.")))
 	rig.forceMove(get_turf(user))
 	rig = null
 	overlays = new/list()
@@ -213,7 +213,7 @@ EXTEND_INTERACTIONS(/obj/structure/reagent_dispensers/fueltank, \
 		if (rig)
 			to_chat(user, span_warning("There is another device in the way."))
 			return FALSE
-		user.visible_message("[user] begins rigging [W] to \the [src].", "You begin rigging [W] to \the [src]")
+		act_message(user, src, MSG_SELF("You begin rigging [W] to %T%"), MSG_OTHERS("%U% begins rigging [W] to %T%."))
 		om_task_timed(user, 2 SECONDS, src, src, PROC_REF(rig_assembly_done), list(user, W))
 
 	return FALSE
@@ -221,7 +221,7 @@ EXTEND_INTERACTIONS(/obj/structure/reagent_dispensers/fueltank, \
 /obj/structure/reagent_dispensers/fueltank/proc/rig_assembly_done(mob/user, obj/item/assembly_holder/H)
 	if(rig)
 		return
-	user.visible_message(span_notice("[user] rigs [H] to \the [src]."), span_notice("You rig [H] to \the [src]"))
+	act_message(user, src, MSG_SELF(span_notice("You rig [H] to %T%")), MSG_OTHERS(span_notice("%U% rigs [H] to %T%.")))
 
 	if (istype(H.a_left,/obj/item/assembly/igniter) || istype(H.a_right,/obj/item/assembly/igniter))
 		message_admins("[key_name_admin(user)] rigged fueltank at [loc.loc.name] ([loc.x],[loc.y],[loc.z]) for explosion. (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[loc.x];Y=[loc.y];Z=[loc.z]'>JMP</a>)")
@@ -238,7 +238,8 @@ EXTEND_INTERACTIONS(/obj/structure/reagent_dispensers/fueltank, \
 
 /obj/structure/reagent_dispensers/fueltank/wrench_act(mob/user, obj/item/tool)
 	add_fingerprint(user)
-	user.visible_message("[user] wrenches [src]'s faucet [modded ? "closed" : "open"].", "You wrench [src]'s faucet [modded ? "closed" : "open"]")
+	act_message(user, src, MSG_SELF("You wrench %T%'s faucet [modded ? "closed" : "open"]"), \
+		MSG_OTHERS("%U% wrenches %T%'s faucet [modded ? "closed" : "open"]."))
 	modded = !modded
 	playsound(src, tool.usesound, 75, TRUE)
 	if(modded)

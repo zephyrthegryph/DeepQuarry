@@ -159,7 +159,7 @@ EXTEND_INTERACTIONS(/obj/machinery/smartfridge, \
 	if(accept_check(O))
 		user.remove_from_mob(O)
 		stock(O)
-		user.visible_message(span_notice("[user] has added \the [O] to \the [src]."), span_notice("You add \the [O] to \the [src]."))
+		act_message(user, src, MSG_SELF(span_notice("You add %I% to %T%.")), MSG_OTHERS(span_notice("%U% has added %I% to %T%.")), item = O)
 		sortTim(item_records, GLOBAL_PROC_REF(cmp_stored_item_name))
 
 	else if(istype(O, /obj/item/storage/bag))
@@ -172,7 +172,7 @@ EXTEND_INTERACTIONS(/obj/machinery/smartfridge, \
 				stock(G)
 				plants_loaded = 1
 		if(plants_loaded)
-			user.visible_message(span_notice("[user] loads \the [src] with \the [P]."), span_notice("You load \the [src] with \the [P]."))
+			act_message(user, src, MSG_SELF(span_notice("You load %T% with %I%.")), MSG_OTHERS(span_notice("%U% loads %T% with %I%.")), item = P)
 			if(contents_count(P) > 0) // ALLOW(latent): materialized above
 				to_chat(user, span_notice("Some items are refused."))
 
@@ -197,7 +197,8 @@ EXTEND_INTERACTIONS(/obj/machinery/smartfridge, \
 
 /obj/machinery/smartfridge/screwdriver_act(mob/user, obj/item/tool)
 	panel_open = !panel_open
-	user.visible_message(span_filter_notice("[user] [panel_open ? "opens" : "closes"] the maintenance panel of \the [src]."), span_notice("You [panel_open ? "open" : "close"] the maintenance panel of \the [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You [panel_open ? "open" : "close"] the maintenance panel of %T%.")), \
+		MSG_OTHERS(span_filter_notice("%U% [panel_open ? "opens" : "closes"] the maintenance panel of %T%.")))
 	playsound(src, tool.usesound, 50, TRUE)
 	update_icon()
 	return ITEM_INTERACT_SUCCESS

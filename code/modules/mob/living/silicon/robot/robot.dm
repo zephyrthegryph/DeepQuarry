@@ -832,7 +832,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 		return FALSE
 	user.setClickCooldown(user.get_attack_speed(coil))
 	mend(TREAT_WIRING_REPAIR, 30)
-	visible_message(span_filter_notice(span_red("[user] has fixed some of the burnt wires on [src]!")))
+	act_message(user, src, others = span_filter_notice(span_red("%U% has fixed some of the burnt wires on %T%!")))
 	return TRUE
 
 /// Put a cell into the empty mount. It keeps whatever damage it carried.
@@ -1061,7 +1061,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 	user.setClickCooldown(user.get_attack_speed(welder))
 	mend(TREAT_PLATING_REPAIR, 30)
 	add_fingerprint(user)
-	visible_message(span_filter_notice("[span_red("[user] has fixed some of the dents on [src]!")]"))
+	act_message(src, user, others = span_filter_notice("[span_red("%T% has fixed some of the dents on %U%!")]"))
 	return TRUE
 
 /mob/living/silicon/robot/declare_interactions(list/into)
@@ -1127,13 +1127,14 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 /mob/living/silicon/robot/resist_restraints()
 	if(bolt)
 		if(!bolt.malfunction)
-			visible_message(span_danger("[src] is trying to break their [bolt]!"), span_warning("You attempt to break your [bolt]. (This will take around 90 seconds and you need to stand still)"))
+			act_message(src, null, MSG_SELF(span_warning("You attempt to break your [bolt]. (This will take around 90 seconds and you need to stand still)")), \
+				MSG_OTHERS(span_danger("%U% is trying to break their [bolt]!")))
 			om_task_timed(src, 1.5 MINUTES, target = src, timed_action_flags = IGNORE_INCAPACITATED, receiver = src, on_done = PROC_REF(resist_restraints_robot_done), done_args = list())
 
 	return
 
 /mob/living/silicon/robot/proc/resist_restraints_robot_done()
-	visible_message(span_danger("[src] manages to break \the [bolt]!"), span_warning("You successfully break your [bolt]."))
+	act_message(src, null, MSG_SELF(span_warning("You successfully break your [bolt].")), MSG_OTHERS(span_danger("%U% manages to break \the [bolt]!")))
 	bolt.malfunction = MALFUNCTION_PERMANENT
 
 /mob/living/silicon/robot/proc/module_reset(notify = TRUE)
@@ -1206,9 +1207,9 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 			if(grabbable)
 				attempt_to_scoop(H)
 			else if(client && !client.prefs.read_preference(/datum/preference/toggle/human/borg_petting)) // migrated pref
-				visible_message(span_notice("[H] reaches out for [src], but quickly refrains from petting."))
+				act_message(H, src, others = span_notice("%U% reaches out for %T%, but quickly refrains from petting."))
 			else
-				visible_message(span_notice("[H] pets [src]."))
+				act_message(H, src, others = span_notice("%U% pets %T%."))
 		if(I_HURT)
 			H.do_attack_animation(src)
 			var/shreddamage = H.species.can_shred(H, FALSE, 15)
@@ -1216,15 +1217,15 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 				attack_generic(H, shreddamage, "attacked")
 			else
 				play_sfx(src.loc, SFX_EFFECTS_BANG, 0.2)
-				visible_message(span_warning("[H] punches [src], but doesn't leave a dent."))
+				act_message(H, src, others = span_warning("%U% punches %T%, but doesn't leave a dent."))
 		if(I_DISARM)
 			H.do_attack_animation(src)
 			play_sfx(src.loc, SFX_EFFECTS_CLANG2, 0.2)
-			visible_message(span_warning("[H] taps [src]."))
+			act_message(H, src, others = span_warning("%U% taps %T%."))
 			if(hat && prob(10))
 				var/obj/item/flying_hat = remove_hat(get_turf(src))
 				flying_hat.throw_at_random(FALSE, 3, 2)
-				visible_message(span_danger("[flying_hat] goes flying off [src]'s head!"))
+				act_message(src, null, others = span_danger("[flying_hat] goes flying off %U%'s head!"))
 		if(I_GRAB)
 			grab_vore_interact(H)
 

@@ -89,7 +89,7 @@ DECLARE_INTERACTIONS(/obj/structure/mob_spawner, INTERACT_ITEM(null, PROC_REF(in
 
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	user.do_attack_animation(src)
-	visible_message(span_warning("\The [src] has been [LAZYLEN(I.attack_verb) ? "[pick(I.attack_verb)]":"attacked"] with \the [I] by [user]."))
+	act_message(src, user, others = span_warning("%U% has been [LAZYLEN(I.attack_verb) ? "[pick(I.attack_verb)]":"attacked"] with %I% by %T%."), item = I)
 	receive_weapon_hit(I, user, silent = FALSE)
 	return INTERACTION_HANDLED_PASS
 

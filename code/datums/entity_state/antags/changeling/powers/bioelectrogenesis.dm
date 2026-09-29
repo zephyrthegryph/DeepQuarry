@@ -51,9 +51,9 @@
 				add_attack_logs(src,grabbed,"Changeling shocked")
 
 				if(siemens)
-					visible_message(span_warning("Arcs of electricity strike [G?.grab_target()]!"),
-					span_warning("Our hand channels raw electricity into [G?.grab_target()]."),
-					span_warningplain("You hear sparks!"))
+					act_message(src, null, MSG_SELF(span_warning("Our hand channels raw electricity into [G?.grab_target()].")), \
+						MSG_OTHERS(span_warning("Arcs of electricity strike [G?.grab_target()]!")), \
+						MSG_BLIND(span_warningplain("You hear sparks!")))
 				else
 					to_chat(src, span_warning("Our gloves block us from shocking \the [G?.grab_target()]."))
 				changeling.chem_charges -= 10
@@ -75,9 +75,9 @@
 
 			//Now for the actual recharging.
 			for(var/obj/item/cell/cell in L)
-				visible_message(span_warning("Some sparks fall out from \the [src.name]\'s [held_item]!"),
-				span_warning("Our hand channels raw electricity into \the [held_item]. We must remain by the [held_item] to recharge it."),
-				span_warningplain("You hear sparks!"))
+				act_message(src, held_item, MSG_SELF(span_warning("Our hand channels raw electricity into %T%. We must remain by %T% to recharge it.")), \
+					MSG_OTHERS(span_warning("Some sparks fall out from \the [src.name]\'s %T%!")), \
+					MSG_BLIND(span_warningplain("You hear sparks!")))
 				cell.gradual_charge(10, siemens, TRUE, src)
 				success = TRUE
 			if(success == FALSE) //If we couldn't do anything with the ability, don't deduct the chemicals.

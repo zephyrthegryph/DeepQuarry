@@ -81,10 +81,10 @@ DECLARE_APPEARANCE(/obj/machinery/igniter, "on", list("0" = list(APPEARANCE_ICON
 	disable = !disable
 	playsound(src, tool.usesound, 50, TRUE)
 	if(disable)
-		user.visible_message(span_warning("[user] has disabled the [src]!"), span_warning("You disable the connection to the [src]."))
+		act_message(user, src, MSG_SELF(span_warning("You disable the connection to %T%.")), MSG_OTHERS(span_warning("%U% has disabled %T%!")))
 		icon_state = "[base_state]-d"
 	else
-		user.visible_message(span_warning("[user] has reconnected the [src]!"), span_warning("You fix the connection to the [src]."))
+		act_message(user, src, MSG_SELF(span_warning("You fix the connection to %T%.")), MSG_OTHERS(span_warning("%U% has reconnected %T%!")))
 		icon_state = powered() ? "[base_state]" : "[base_state]-p"
 	return ITEM_INTERACT_SUCCESS
 

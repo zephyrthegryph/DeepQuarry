@@ -134,7 +134,8 @@
 						for(var/Z in missing)
 							if(H.regenerate_limb(Z, TRUE))
 								play_sfx(H, SFX_EFFECTS_BLOBATTACK, volume = 50)
-								H.visible_message(span_warning("[H]'s missing limbs reform, making a loud, grotesque sound!"), span_userdanger("You limbs regrow, making a loud, crunchy sound and giving you great pain!"))
+								act_message(H, null, MSG_SELF(span_userdanger("You limbs regrow, making a loud, crunchy sound and giving you great pain!")), \
+									MSG_OTHERS(span_warning("%U%'s missing limbs reform, making a loud, grotesque sound!")))
 								H.emote("scream")
 								if(Z == BP_HEAD)
 									if(isliving(ownermind().current))

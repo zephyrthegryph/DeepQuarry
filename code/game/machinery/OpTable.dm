@@ -38,7 +38,7 @@ EXTEND_INTERACTIONS(/obj/machinery/optable, \
 /// Old attack_hand (it never reached the machinery gate).
 /obj/machinery/optable/proc/optable_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user.has_mutation(HULK))
-		visible_message(span_danger("\The [user] destroys \the [src]!"))
+		act_message(user, src, others = span_danger("%U% destroys %T%!"))
 		set_density(FALSE)
 		qdel(src)
 	return TRUE
@@ -75,9 +75,9 @@ EXTEND_INTERACTIONS(/obj/machinery/optable, \
 
 /obj/machinery/optable/proc/take_victim(mob/living/carbon/C, mob/living/carbon/user as mob)
 	if(C == user)
-		user.visible_message("[user] climbs on \the [src].","You climb on \the [src].")
+		act_message(user, src, MSG_SELF("You climb on %T%."), MSG_OTHERS("%U% climbs on %T%."))
 	else
-		visible_message(span_notice("\The [C] has been laid on \the [src] by [user]."))
+		act_message(C, user, others = span_notice("%U% has been laid on \the [src] by %T%."))
 	var/mob/puller = C?.pulled_by_mob()
 	if(puller)
 		puller.stop_pulling()

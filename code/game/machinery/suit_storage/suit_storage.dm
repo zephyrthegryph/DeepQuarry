@@ -385,7 +385,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/suit_storage_unit, "MASK", "mask_type")
 	if((OCCUPANT) || (HELMET) || (SUIT))
 		to_chat(user, span_warning("It's too cluttered inside for you to fit in!"))
 		return TRUE
-	visible_message(span_info("[user] starts squeezing into the suit storage unit!"), 3)
+	act_message(user, null, others = span_info("%U% starts squeezing into the suit storage unit!"))
 	om_task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(interaction_move_inside_timed_done), done_args = list(user))
 	return TRUE
 
@@ -424,7 +424,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/suit_storage_unit, "MASK", "mask_type")
 		if((OCCUPANT) || (HELMET) || (SUIT)) //Unit needs to be absolutely empty
 			to_chat(user, span_warning("The unit's storage area is too cluttered."))
 			return TRUE
-		visible_message(span_notice("[user] starts putting [grabbed.name] into the Suit Storage Unit."), 3)
+		act_message(user, null, others = span_notice("%U% starts putting [grabbed.name] into the Suit Storage Unit."))
 		om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(interaction_use_item_timed_done), done_args = list(user, G))
 		return TRUE
 	if(istype(I,/obj/item/clothing/suit/space))

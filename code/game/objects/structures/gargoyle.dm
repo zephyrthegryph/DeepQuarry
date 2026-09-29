@@ -121,7 +121,8 @@
 	flapping = H.flapping
 	H.toggle_tail(FALSE, FALSE)
 	H.toggle_wing(FALSE, FALSE)
-	H.visible_message(span_warning("[H]'s skin rapidly [adjective] as they turn to [material]!"), span_warning("Your skin abruptly [adjective] as you turn to [material]!"))
+	act_message(H, null, MSG_SELF(span_warning("Your skin abruptly [adjective] as you turn to [material]!")), \
+		MSG_OTHERS(span_warning("%U%'s skin rapidly [adjective] as they turn to [material]!")))
 	H.forceMove(src)
 	H.status_set(EFFECT_BLINDED, 0)
 	H.status_set(EFFECT_SLEEPING, 0)
@@ -215,7 +216,8 @@
 				gargoyle.injure(INJURY_BLUNT, f, ran_zone(), src)
 			hurtmessage = " " + span_bold("You feel your body take the damage that was dealt while being [material]!")
 	alpha = 0
-	gargoyle.visible_message(span_warning("[gargoyle]'s skin rapidly reverts, returning them to normal!"), span_warning("Your skin reverts, freeing your movement once more![hurtmessage]"))
+	act_message(gargoyle, null, MSG_SELF(span_warning("Your skin reverts, freeing your movement once more![hurtmessage]")), \
+		MSG_OTHERS(span_warning("%U%'s skin rapidly reverts, returning them to normal!")))
 	gargoyle = null
 	if(deleting)
 		qdel(src)
@@ -237,7 +239,7 @@
 
 /obj/structure/gargoyle/attack_generic(mob/user, damage, attack_message = "hits")
 	user.do_attack_animation(src)
-	visible_message(span_danger("[user] [attack_message] the [src]!"))
+	act_message(user, src, others = span_danger("%U% [attack_message] %T%!"))
 	damage(damage)
 
 /obj/structure/gargoyle/declare_interactions(list/into)

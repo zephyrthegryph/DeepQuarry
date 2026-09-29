@@ -76,7 +76,7 @@
 		to_chat(H,span_warning("Unable to comply! Energy too low, or not facing a working airlock!"))
 		return 0
 
-	H.visible_message(span_warning("[H] begins overriding the airlock!"),span_notice("You begin overriding the airlock!"))
+	act_message(H, null, MSG_SELF(span_notice("You begin overriding the airlock!")), MSG_OTHERS(span_warning("%U% begins overriding the airlock!")))
 	om_task_timed(H, 6 SECONDS, A, src, PROC_REF(override_done), list(A))
 
 	var/username = FindNameFromID(H) || "Unknown"

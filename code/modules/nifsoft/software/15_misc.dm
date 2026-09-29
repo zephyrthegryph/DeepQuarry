@@ -20,7 +20,8 @@
 			om_after(src, 0, PROC_REF(deactivate))
 			return FALSE
 
-		H.visible_message(span_warning("Thin snakelike tendrils grow from [H] and connect to \the [apc()]."),span_notice("Thin snakelike tendrils grow from you and connect to \the [apc()]."))
+		act_message(H, null, MSG_SELF(span_notice("Thin snakelike tendrils grow from you and connect to \the [apc()].")), \
+			MSG_OTHERS(span_warning("Thin snakelike tendrils grow from %U% and connect to \the [apc()].")))
 
 /datum/nifsoft/apc_recharge/deactivate(force = FALSE)
 	if((. = ..()))
@@ -35,7 +36,8 @@
 			return TRUE
 		else
 			nif().notify("APC charging has ended.")
-			H.visible_message(span_warning("[H]'s snakelike tendrils whip back into their body from \the [apc()]."),span_notice("The APC connector tendrils return to your body."))
+			act_message(H, null, MSG_SELF(span_notice("The APC connector tendrils return to your body.")), \
+				MSG_OTHERS(span_warning("%U%'s snakelike tendrils whip back into their body from \the [apc()].")))
 			deactivate()
 			return FALSE
 

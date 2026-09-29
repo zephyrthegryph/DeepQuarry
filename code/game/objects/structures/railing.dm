@@ -215,7 +215,7 @@ DESTROY_EFFECTS(/obj/structure/railing, new /datum/destroy_effects_data(neighbor
 	return TRUE
 
 /obj/structure/railing/proc/wrench_act_timed_done(mob/user)
-	user.visible_message(span_infoplain(span_bold("\The [user]") + " dismantles \the [src]."), span_notice("You dismantle \the [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You dismantle %T%.")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " dismantles %T%.")))
 	replace_with(src, /obj/item/stack/material/steel, 2)
 
 /obj/structure/railing/welder_act(mob/user, obj/item/W)
@@ -228,11 +228,12 @@ DESTROY_EFFECTS(/obj/structure/railing, new /datum/destroy_effects_data(neighbor
 	return TRUE
 
 /obj/structure/railing/proc/welder_act_timed_done(mob/user)
-	user.visible_message(span_infoplain(span_bold("\The [user]") + " repairs some damage to \the [src]."), span_notice("You repair some damage to \the [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You repair some damage to %T%.")), \
+		MSG_OTHERS(span_infoplain(span_bold("%U%") + " repairs some damage to %T%.")))
 	repair_damage(max_integrity / 5)
 
 /obj/structure/railing/screwdriver_act(mob/user, obj/item/W)
-	user.visible_message(span_info(span_bold("\The [user]") + " begins [anchored ? "unscrewing" : "fastening"] \the [src]."))
+	act_message(user, src, others = span_info(span_bold("%U%") + " begins [anchored ? "unscrewing" : "fastening"] %T%."))
 	playsound(src, W.usesound, 75, 1)
 	om_task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(screwdriver_act_timed_done), done_args = list(user))
 	return TRUE

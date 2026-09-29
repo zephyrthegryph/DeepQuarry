@@ -46,7 +46,7 @@
 	if(target?.buckled_to())
 		var/atom/movable/_tmp_buck_47 = target?.buckled_to()
 		_tmp_buck_47.unbuckle_mob()
-	target.visible_message(span_vwarning("\The [target] suddenly disappears somewhere above!"),\
-		span_vdanger("You are dragged above and feel yourself slipping directly into \the [src]'s [vore_selected.get_belly_name()]!"))
+	act_message(target, src, MSG_SELF(span_vdanger("You are dragged above and feel yourself slipping directly into %T%'s [vore_selected.get_belly_name()]!")), \
+		MSG_OTHERS(span_vwarning("%U% suddenly disappears somewhere above!")))
 	to_chat(src, span_vnotice("You successfully snatch \the [target], slipping them into your [vore_selected.get_belly_name()]."))
 	vore_selected.nom_atom(target)

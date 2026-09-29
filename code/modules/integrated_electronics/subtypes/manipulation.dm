@@ -188,7 +188,7 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/manipulation/weapon_firing, \
 		if(attached_grenade)
 			to_chat(user, span_warning("There is already a grenade attached!"))
 		else if(user.unEquip(G, force=1))
-			user.visible_message(span_warning("\The [user] attaches \a [G] to \the [src]!"), span_notice("You attach \the [G] to \the [src]."))
+			act_message(user, src, MSG_SELF(span_notice("You attach %I% to %T%.")), MSG_OTHERS(span_warning("%U% attaches \a [G] to %T%!")), item = G)
 			attach_grenade(G)
 			G.forceMove(src)
 	else
@@ -203,7 +203,8 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/manipulation/grenade, \
 /// Old attack_self.
 /obj/item/integrated_circuit/manipulation/grenade/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(attached_grenade)
-		user.visible_message(span_warning("\The [user] removes \an [attached_grenade] from \the [src]!"), span_notice("You remove \the [attached_grenade] from \the [src]."))
+		act_message(user, src, MSG_SELF(span_notice("You remove \the [attached_grenade] from %T%.")), \
+			MSG_OTHERS(span_warning("%U% removes \an [attached_grenade] from %T%!")))
 		user.put_in_any_hand_if_possible(attached_grenade) || attached_grenade.dropInto(loc)
 		detach_grenade()
 	else

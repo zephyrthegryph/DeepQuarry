@@ -231,7 +231,7 @@ DECLARE_REF(/obj/machinery/appliance/cooker/fryer, "oil", OWNED, null)
 		else if(!H.can_feel_pain(E))
 			nopain = 2
 
-	user.visible_message(span_danger("\The [user] shoves \the [victim][E ? "'s [E.name]" : ""] into \the [src]!"))
+	act_message(user, victim, others = span_danger("%U% shoves %T%[E ? "'s [E.name]" : ""] into \the [src]!"))
 	if (damage > 0)
 		if(E)
 			if(E.children && E.children.len)
@@ -267,7 +267,8 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance/cooker/fryer, INTERACT_ITEM(null, P
 			if(I.reagents.total_volume <= 0 && oil)
 				//Its empty, handle scooping some hot oil out of the fryer
 				oil.trans_to(I, I.reagents.maximum_volume)
-				user.visible_message(span_filter_notice("[user] scoops some oil out of \the [src]."), span_notice("You scoop some oil out of \the [src]."))
+				act_message(user, src, MSG_SELF(span_notice("You scoop some oil out of %T%.")), \
+					MSG_OTHERS(span_filter_notice("%U% scoops some oil out of %T%.")))
 				return TRUE
 	//It contains stuff, handle pouring any oil into the fryer
 	//Possibly in future allow pouring non-oil reagents in, in  order to sabotage it and poison food.
@@ -282,7 +283,9 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance/cooker/fryer, INTERACT_ITEM(null, P
 				I.reagents.remove_reagent(R.id, delta)
 				amount += delta
 		if(amount > 0)
-			user.visible_message(span_filter_notice("[user] pours some oil into \the [src]."), span_notice("You pour [amount]u of oil into \the [src]."), span_notice("You hear something viscous being poured into a metal container."))
+			act_message(user, src, MSG_SELF(span_notice("You pour [amount]u of oil into %T%.")), \
+				MSG_OTHERS(span_filter_notice("%U% pours some oil into %T%.")), \
+				MSG_BLIND(span_notice("You hear something viscous being poured into a metal container.")))
 			return TRUE
 	//If neither of the above returned, then call parent as normal
 	return FALSE

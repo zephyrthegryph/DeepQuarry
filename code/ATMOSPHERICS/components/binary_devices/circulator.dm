@@ -98,9 +98,9 @@
 /obj/machinery/atmospherics/binary/circulator/wrench_act(mob/user, obj/item/W)
 	playsound(src, W.usesound, 75, 1)
 	set_anchored(!anchored)
-	user.visible_message("[user.name] [anchored ? "secures" : "unsecures"] the bolts holding [src.name] to the floor.", \
-				"You [anchored ? "secure" : "unsecure"] the bolts holding [src] to the floor.", \
-				"You hear a ratchet.")
+	act_message(user, src, MSG_SELF("You [anchored ? "secure" : "unsecure"] the bolts holding %T% to the floor."), \
+		MSG_OTHERS("[user.name] [anchored ? "secures" : "unsecures"] the bolts holding [src.name] to the floor."), \
+		MSG_BLIND("You hear a ratchet."))
 
 	if(anchored)
 		temperature_overlay = null

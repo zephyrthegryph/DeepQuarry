@@ -20,7 +20,7 @@
 		speaker.status_adjust(EFFECT_HALLUCINATING, 5)
 
 	if(prob(5))
-		speaker.visible_message(span_danger("[speaker] suddenly " + pick("writhes", "twitches", "shudders", "quivers", "contorts unnaturally")))
+		act_message(speaker, null, others = span_danger("%U% suddenly " + pick("writhes", "twitches", "shudders", "quivers", "contorts unnaturally")))
 	else if(ishuman(speaker))
 		var/mob/living/carbon/human/human_speaker = speaker
 		if(prob(1))
@@ -34,8 +34,8 @@
 				spider.desc = "A small, writhing mass of flesh and tendrils."
 				var/obj/item/organ/external/head/head = human_speaker.get_organ(BP_HEAD)
 				if(head)
-					speaker.visible_message(span_danger("[speaker] opens [speaker.p_their()] mouth to speak and a writing mass of tendrils crawls out."))
+					act_message(speaker, null, others = span_danger("%U% opens %THEIR% mouth to speak and a writing mass of tendrils crawls out."))
 				else
-					speaker.visible_message(span_danger("[speaker] acts as if [speaker.p_theyre()] attempting to speak, only for a writing mass of tendrils to crawl out of [speaker.p_their()] neck hole."))
+					act_message(speaker, null, others = span_danger("%U% acts as if %THEYRE% attempting to speak, only for a writing mass of tendrils to crawl out of %THEIR% neck hole."))
 	speaker_mask = speaker.redspace_speech_name() || speaker.real_name
 	..(speaker, message, speaker_mask)

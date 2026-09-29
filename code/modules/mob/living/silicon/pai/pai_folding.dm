@@ -50,7 +50,7 @@
 				if(card in affecting.implants)
 					H.injure(INJURY_BLUNT, rand(30,50), affecting, src)
 					LAZYREMOVE(affecting.implants, card)
-					H.visible_message(span_danger("\The [src] explodes out of \the [H]'s [affecting.name] in shower of gore!"))
+					act_message(src, H, others = span_danger("%U% explodes out of %T%'s [affecting.name] in shower of gore!"))
 					break
 		holder.drop_from_inventory(card)
 	else if(isbelly(card.loc)) // .

@@ -62,8 +62,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/rad_collector, REGISTRY_RAD_COLLECTORS)
 	if(anchored)
 		if(!src.locked)
 			toggle_power()
-			user.visible_message("[user.name] turns the [src.name] [active? "on":"off"].", \
-			"You turn the [src.name] [active? "on":"off"].")
+			act_message(user, null, MSG_SELF("You turn the [src.name] [active? "on":"off"]."), \
+				MSG_OTHERS("[user.name] turns the [src.name] [active? "on":"off"]."))
 			investigate_log("turned [active?span_green("on"): span_red("off")] by [user.key]. [P()?"Fuel: [round(LINDA_GAS_AMT(P().air_contents, GAS_PHORON)/0.29)]%":span_red("It is empty")].","singulo")
 			return TRUE
 		else
@@ -120,9 +120,9 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/rad_collector, REGISTRY_RAD_COLLECTORS)
 		return ITEM_INTERACT_BLOCKING
 	playsound(src, W.usesound, 75, 1)
 	set_anchored(!anchored)
-	user.visible_message("[user.name] [anchored ? "secures" : "unsecures"] the [src.name].", \
-		"You [anchored ? "secure" : "undo"] the external bolts.", \
-		"You hear a ratchet.")
+	act_message(user, null, MSG_SELF("You [anchored ? "secure" : "undo"] the external bolts."), \
+		MSG_OTHERS("[user.name] [anchored ? "secures" : "unsecures"] the [src.name]."), \
+		MSG_BLIND("You hear a ratchet."))
 	if(anchored)
 		connect_to_network()
 	else

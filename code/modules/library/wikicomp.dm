@@ -33,7 +33,7 @@
 
 /obj/machinery/librarywikicomp/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	if(crash)
-		user.visible_message("[user] performs percussive maintenance on \the [src].", "You try to smack some sense into \the [src].")
+		act_message(user, src, MSG_SELF("You try to smack some sense into %T%."), MSG_OTHERS("%U% performs percussive maintenance on %T%."))
 		if(prob(10))
 			crash = FALSE
 	if(!crash)
@@ -260,7 +260,7 @@
 			. = TRUE
 
 /obj/machinery/librarywikicomp/proc/pay_donation(obj/item/card/id/I, mob/user, amount, datum/tgui/ui, pin)
-	visible_message(span_info("[user] swipes a card through [src]."))
+	act_message(user, src, others = span_info("%U% swipes a card through %T%."))
 	play_sfx(src, SFX_MACHINES_ID_SWIPE)
 	if(SSinternal_wiki.pay_with_card(I, user, src, amount, pin))
 		play_sfx(src, SFX_MACHINES_PING, vary = TRUE)

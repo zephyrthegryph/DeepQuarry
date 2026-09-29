@@ -84,7 +84,7 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/pneumatic, \
 	if(!tank() && istype(W,/obj/item/tank))
 		user.drop_from_inventory(W, src)
 		tank_handle = om_handle(W)
-		user.visible_message("[user] jams [W] into [src]'s valve and twists it closed.","You jam [W] into [src]'s valve and twist it closed.")
+		act_message(user, src, MSG_SELF("You jam [W] into %T%'s valve and twist it closed."), MSG_OTHERS("%U% jams [W] into %T%'s valve and twists it closed."))
 		update_icon()
 	else if(istype(W))
 		item_storage.try_insert(W, user)

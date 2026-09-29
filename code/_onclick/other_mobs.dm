@@ -3,7 +3,7 @@
 	if(!damage || !uses_integrity)
 		return 0
 	user.do_attack_animation(src)
-	visible_message(span_danger("[user] [attack_verb || "attacks"] \the [src]!"))
+	act_message(user, src, others = span_danger("%U% [attack_verb || "attacks"] %T%!"))
 	receive_generic_attack(user, damage)
 	return 1
 

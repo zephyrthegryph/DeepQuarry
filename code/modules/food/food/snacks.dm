@@ -277,7 +277,7 @@
 				to_chat(user, "You can't feed [eater] a whole [src] as they don't appear to have a belly to fit it!")
 				balloon_alert(user, "they don't have a belly to fit it!")
 				return
-			user.visible_message("[user] attempts to make [eater] consume [src] whole into their [belly_target].")
+			act_message(user, eater, others = "%U% attempts to make %T% consume [src] whole into their [belly_target].")
 			user.balloon_alert_visible("attempts to make [eater] consume [src] whole into their [belly_target].")
 			var/feed_duration = 3 SECONDS
 			user.setClickCooldown(user.get_attack_speed(src))
@@ -295,7 +295,7 @@
 	var/mob/living/user = task.actor
 	var/obj/belly/belly_target = task.belly_target
 	add_attack_logs(user,eater,"Whole-fed with [src.name] containing [reagentlist(src)] into [belly_target]", admin_notify = FALSE)
-	user.visible_message("[user] successfully forces [src] into [eater]'s [belly_target].")
+	act_message(user, src, others = "%U% successfully forces %T% into [eater]'s [belly_target].")
 	user.balloon_alert_visible("forces [src] into [eater]'s [belly_target].")
 	user.drop_item()
 	if(!move_into(belly_target, BELLY_SLOT_INTERIOR, user))
@@ -319,11 +319,11 @@
 
 	if(swallow_whole)
 		add_attack_logs(user, human_eater,"Whole-fed with [src.name] containing [reagentlist(src)] into [belly_target]", admin_notify = FALSE)
-		user.visible_message("[user] successfully forces [src] into [human_eater]'s [belly_target].")
+		act_message(user, src, others = "%U% successfully forces %T% into [human_eater]'s [belly_target].")
 		user.balloon_alert_visible("forces [src] into [human_eater]'s [belly_target]")
 	else
 		add_attack_logs(user, human_eater,"Fed with [src.name] containing [reagentlist(src)]", admin_notify = FALSE)
-		user.visible_message("[user] feeds [human_eater] [src].")
+		act_message(user, human_eater, others = "%U% feeds %T% [src].")
 		user.balloon_alert_visible("feeds [human_eater] [src].")
 	finish_feeding(human_eater, user, swallow_whole, belly_target)
 
@@ -435,11 +435,12 @@
 
 			var/slices_lost = 0
 			if (W.w_class > 3)
-				user.visible_message(span_notice("\The [user] crudely slices \the [src] with [W]!"), span_notice("You crudely slice \the [src] with your [W]!"))
+				act_message(user, src, MSG_SELF(span_notice("You crudely slice %T% with your [W]!")), \
+					MSG_OTHERS(span_notice("%U% crudely slices %T% with [W]!")))
 				user.balloon_alert_visible("crudely slices \the [src]", "crudely sliced \the [src]")
 				slices_lost = rand(1,min(1,round(slices_num/2)))
 			else
-				user.visible_message(span_notice(span_bold("\The [user]") + " slices \the [src]!"), span_notice("You slice \the [src]!"))
+				act_message(user, src, MSG_SELF(span_notice("You slice %T%!")), MSG_OTHERS(span_notice(span_bold("%U%") + " slices %T%!")))
 				user.balloon_alert_visible("slices \the [src]", "sliced \the [src]!")
 			var/reagents_per_slice = reagents.total_volume/slices_num
 			for(var/i=1 to (slices_num-slices_lost))
@@ -516,7 +517,7 @@ DECLARE_REF(/obj/item/reagent_containers/food/snacks, "contents", SPILL_LIST, nu
 /obj/item/reagent_containers/food/snacks/attack_generic(mob/living/user)
 	if(!isanimal(user) && !isalien(user))
 		return
-	user.visible_message(span_infoplain(span_bold("[user]") + " nibbles away at \the [src]."),span_info("You nibble away at \the [src]."))
+	act_message(user, src, MSG_SELF(span_info("You nibble away at %T%.")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " nibbles away at %T%.")))
 	user.balloon_alert_visible("nibbles away at \the [src].","nibbled away at \the [src].")
 	bitecount++
 	if(reagents)
@@ -1331,7 +1332,8 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/donkpocket/sinpocke
 		to_chat(user, span_notice("The heating chemicals have already been spent."))
 		return TRUE
 	has_been_heated = TRUE
-	user.visible_message(span_notice("[user] crushes \the [src] package."), "You crush \the [src] package and feel a comfortable heat build up. Now just to wait for it to be ready.")
+	act_message(user, src, MSG_SELF("You crush %T% package and feel a comfortable heat build up. Now just to wait for it to be ready."), \
+		MSG_OTHERS(span_notice("%U% crushes %T% package.")))
 	om_after(src, 20 SECONDS, PROC_REF(self_heated), user)
 	return TRUE
 
@@ -4815,7 +4817,8 @@ MAP_RESOLVER(/obj/item/reagent_containers/food/snacks/bageltwo, GLOBAL_PROC_REF(
 	add_overlay(J)
 
 	if (user)
-		user.visible_message(span_notice("[user] dips \the [src] into \the [coating().name]"), span_notice("You dip \the [src] into \the [coating().name]"))
+		act_message(user, src, MSG_SELF(span_notice("You dip %T% into \the [coating().name]")), \
+			MSG_OTHERS(span_notice("%U% dips %T% into \the [coating().name]")))
 
 	return 1
 
@@ -4855,7 +4858,7 @@ MAP_RESOLVER(/obj/item/reagent_containers/food/snacks/bageltwo, GLOBAL_PROC_REF(
 
 /obj/item/reagent_containers/food/snacks/proc/on_consume(mob/eater, mob/feeder = null)
 	if(!reagents.total_volume)
-		eater.visible_message(span_notice("[eater] finishes eating \the [src]."),span_notice("You finish eating \the [src]."))
+		act_message(eater, src, MSG_SELF(span_notice("You finish eating %T%.")), MSG_OTHERS(span_notice("%U% finishes eating %T%.")))
 
 		if (!feeder)
 			feeder = eater

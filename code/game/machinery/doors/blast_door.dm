@@ -226,9 +226,9 @@
 			if(W.obj_damage_type())
 				user.do_attack_animation(src)
 				if(W.force < min_force)
-					user.visible_message(span_danger("\The [user] hits \the [src] with \the [W] with no visible effect."))
+					act_message(user, src, others = span_danger("%U% hits %T% with %I% with no visible effect."), item = W)
 				else
-					user.visible_message(span_danger("\The [user] forcefully strikes \the [src] with \the [W]!"))
+					act_message(user, src, others = span_danger("%U% forcefully strikes %T% with %I%!"), item = W)
 					playsound(src, hitsound, 100, 1)
 					receive_weapon_hit(W, user, W.force * 0.35, silent = FALSE) //it's a blast door, it should take a while. -Luke
 				return TRUE
@@ -251,9 +251,9 @@
 		if(istype(W) && (W.obj_damage_type()))
 			user.do_attack_animation(src)
 			if(W.force < min_force) //No actual non-weapon item shouls have a force greater than the min_force, but let's include this just in case.
-				user.visible_message(span_danger("\The [user] hits \the [src] with \the [W] with no visible effect."))
+				act_message(user, src, others = span_danger("%U% hits %T% with %I% with no visible effect."), item = W)
 			else
-				user.visible_message(span_danger("\The [user] forcefully strikes \the [src] with \the [W]!"))
+				act_message(user, src, others = span_danger("%U% forcefully strikes %T% with %I%!"), item = W)
 				playsound(src, hitsound, 100, 1)
 				receive_weapon_hit(W, user, W.force * 0.15, silent = FALSE) //If the item isn't a weapon, let's make this take longer than usual to break it down.
 			return TRUE
@@ -283,23 +283,23 @@
 		var/mob/living/carbon/human/X = user
 		if(istype(X.species, /datum/species/xenos))
 			if(src.density)
-				visible_message(span_alium("\The [user] begins forcing \the [src] open!"))
+				act_message(user, src, others = span_alium("%U% begins forcing %T% open!"))
 				om_task_timed(user, 15 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_alien_timed_done), done_args = list(user), busy = user)
 			else
-				visible_message(span_alium("\The [user] begins forcing \the [src] closed!"))
+				act_message(user, src, others = span_alium("%U% begins forcing %T% closed!"))
 				om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_alien_timed_done2), done_args = list(user), busy = user)
 		else
-			visible_message(span_notice("\The [user] strains fruitlessly to force \the [src] [density ? "open" : "closed"]."))
+			act_message(user, src, others = span_notice("%U% strains fruitlessly to force %T% [density ? "open" : "closed"]."))
 			return
 	..()
 
 /obj/machinery/door/blast/proc/attack_alien_timed_done(mob/user)
 	play_sfx(src, SFX_MACHINES_DOOR_AIRLOCK_CREAKING)
-	visible_message(span_danger("\The [user] forces \the [src] open!"))
+	act_message(user, src, others = span_danger("%U% forces %T% open!"))
 	force_open(1)
 /obj/machinery/door/blast/proc/attack_alien_timed_done2(mob/user)
 	play_sfx(src, SFX_MACHINES_DOOR_AIRLOCK_CREAKING)
-	visible_message(span_danger("\The [user] forces \the [src] closed!"))
+	act_message(user, src, others = span_danger("%U% forces %T% closed!"))
 	force_close(1)
 
 // Proc: attack_generic()
@@ -309,21 +309,21 @@
 	if(!operable())
 		if(damage >= STRUCTURE_MIN_DAMAGE_THRESHOLD)
 			if(src.density)
-				visible_message(span_danger("\The [user] starts forcing \the [src] open!"))
+				act_message(user, src, others = span_danger("%U% starts forcing %T% open!"))
 				om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_generic_timed_done), done_args = list(user), busy = user)
 			else
-				visible_message(span_danger("\The [user] starts forcing \the [src] closed!"))
+				act_message(user, src, others = span_danger("%U% starts forcing %T% closed!"))
 				om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_generic_timed_done2), done_args = list(user), busy = user)
 		else
-			visible_message(span_notice("\The [user] strains fruitlessly to force \the [src] [density ? "open" : "closed"]."))
+			act_message(user, src, others = span_notice("%U% strains fruitlessly to force %T% [density ? "open" : "closed"]."))
 		return
 	..()
 
 /obj/machinery/door/blast/proc/attack_generic_timed_done(mob/living/user)
-	visible_message(span_danger("\The [user] forces \the [src] open!"))
+	act_message(user, src, others = span_danger("%U% forces %T% open!"))
 	force_open(1)
 /obj/machinery/door/blast/proc/attack_generic_timed_done2(mob/living/user)
-	visible_message(span_danger("\The [user] forces \the [src] closed!"))
+	act_message(user, src, others = span_danger("%U% forces %T% closed!"))
 	force_close(1)
 
 // Proc: open()

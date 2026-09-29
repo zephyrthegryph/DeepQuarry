@@ -1647,16 +1647,16 @@
 					if(comp.revive_ready >= 1) // if it's not reviving, start doing so
 						comp.revive_ready = REVIVING_READY
 						COOLDOWN_RESET(comp, revive_cooldown) // overrides the normal cooldown
-						H.visible_message(span_info("[H] shudders briefly, then relaxes, faint movements stirring within."))
+						act_message(H, null, others = span_info("%U% shudders briefly, then relaxes, faint movements stirring within."))
 						comp.chimera_regenerate()
 					else if(comp.revive_ready == REVIVING_DONE)// already reviving, check if they're ready to hatch
 						comp.chimera_hatch()
-						H.visible_message(span_danger(span_huge("[H] violently convulses and then bursts open, revealing a new, intact copy in the pool of viscera."))) // Hope you were wearing waterproofs, doc...
+						act_message(H, null, others = span_danger(span_huge("%U% violently convulses and then bursts open, revealing a new, intact copy in the pool of viscera."))) // Hope you were wearing waterproofs, doc...
 						H.injure(INJURY_NEURAL, 10, source = holder.my_atom) // they're reviving from dead, so take 10 brain damage
 					else //they're already reviving but haven't hatched. Give a little message to tell them to wait.
-						H.visible_message(span_info("[H] stirs faintly, but doesn't appear to be ready to wake up yet."))
+						act_message(H, null, others = span_info("%U% stirs faintly, but doesn't appear to be ready to wake up yet."))
 				else
-					H.visible_message(span_info("[H] twitches for a moment, but remains still.")) // no nutriment
+					act_message(H, null, others = span_info("%U% twitches for a moment, but remains still.")) // no nutriment
 
 
 // === merged from instant_vr.dm during hard-fork de-suffix (verified no override-order change) ===

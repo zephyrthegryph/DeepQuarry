@@ -45,6 +45,6 @@
 	your body was reduced to ashes and your soul was cursed to remain trapped in the blade forever. \
 	Now it is up to you to decide whether you want to be a faithful companion, or a bitter prisoner of the blade."))
 	R.ghost_inhabit(M)
-	visible_message(span_warning("The blade shines brightly for a brief moment as [usr] pulls it out of the stone!"))
+	act_message(usr, null, others = span_warning("The blade shines brightly for a brief moment as %U% pulls it out of the stone!"))
 	log_and_message_admins("successfully acquired a cursed sword.")
 	..()

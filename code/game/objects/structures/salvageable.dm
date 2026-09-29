@@ -16,16 +16,12 @@
 /obj/structure/salvageable/crowbar_act(mob/user, obj/item/I)
 	playsound(src, I.usesound, 50, 1)
 	var/actual_time = I.toolspeed * 170
-	user.visible_message( \
-		span_infoplain(span_bold("\The [user]") + " begins salvaging from \the [src]."), \
-		span_notice("You start salvaging from \the [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You start salvaging from %T%.")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " begins salvaging from %T%.")))
 	om_task_timed(user, actual_time, target = src, receiver = src, on_done = PROC_REF(crowbar_act_timed_done), done_args = list(user))
 	return TRUE
 
 /obj/structure/salvageable/proc/crowbar_act_timed_done(mob/user)
-	user.visible_message( \
-		span_notice("\The [user] has salvaged \the [src]."), \
-		span_notice("You salvage \the [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You salvage %T%.")), MSG_OTHERS(span_notice("%U% has salvaged %T%.")))
 	dismantle()
 	qdel(src)
 

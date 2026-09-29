@@ -35,7 +35,7 @@
 		if(is_type_in_list(target_move, GLOB.ventcrawl_machinery) && target_move.can_crawl_through())
 			user.remove_ventcrawl()
 			user.forceMove(target_move.loc) //handles entering and so on
-			user.visible_message("You hear something squeezing through the ducts.", "You climb out the ventilation system.")
+			act_message(user, null, MSG_SELF("You climb out the ventilation system."), MSG_OTHERS("You hear something squeezing through the ducts."))
 		else if(target_move.can_crawl_through())
 			if(target_move.return_network(target_move) != return_network(src))
 				user.remove_ventcrawl()
@@ -59,7 +59,7 @@
 		if((direction & initialize_directions) || is_type_in_list(src, GLOB.ventcrawl_machinery) && src.can_crawl_through()) //if we move in a way the pipe can connect, but doesn't - or we're in a vent
 			user.remove_ventcrawl()
 			user.forceMove(src.loc)
-			user.visible_message("You hear something squeezing through the pipes.", "You climb out the ventilation system.")
+			act_message(user, null, MSG_SELF("You climb out the ventilation system."), MSG_OTHERS("You hear something squeezing through the pipes."))
 	user.setMoveCooldown(1)
 
 /obj/machinery/atmospherics/proc/can_crawl_through()

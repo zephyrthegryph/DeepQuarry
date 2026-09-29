@@ -243,7 +243,7 @@ DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_ite
 
 /obj/item/nif/proc/rewire_done(mob/user, obj/item/stack/cable_coil/C)
 	if(open == 1 && C.use(3))
-		user.visible_message("[user] replaces some wiring in \the [src].",span_notice("You replace any burned out wiring in \the [src]."))
+		act_message(user, src, MSG_SELF(span_notice("You replace any burned out wiring in %T%.")), MSG_OTHERS("%U% replaces some wiring in %T%."))
 		play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 		open = 2
 		update_icon()
@@ -251,7 +251,7 @@ DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_ite
 /obj/item/nif/proc/pry_open_done(mob/user, obj/item/tool)
 	if(open != 0)
 		return
-	user.visible_message("[user] unscrews and pries open \the [src].",span_notice("You unscrew and pry open \the [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You unscrew and pry open %T%.")), MSG_OTHERS("%U% unscrews and pries open %T%."))
 	playsound(src, tool.usesound, 50, 1)
 	open = 1
 	update_icon()
@@ -259,7 +259,7 @@ DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_ite
 /obj/item/nif/proc/reseal_done(mob/user, obj/item/tool)
 	if(open != 3)
 		return
-	user.visible_message("[user] closes up \the [src].",span_notice("You re-seal \the [src] for use once more."))
+	act_message(user, src, MSG_SELF(span_notice("You re-seal %T% for use once more.")), MSG_OTHERS("%U% closes up %T%."))
 	playsound(src, tool.usesound, 50, 1)
 	open = FALSE
 	repair(initial(durability))
@@ -269,7 +269,7 @@ DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_ite
 /obj/item/nif/proc/reset_circuits_done(mob/user)
 	if(open != 2)
 		return
-	user.visible_message("[user] resets several circuits in \the [src].",span_notice("You find and repair any faulty circuits in \the [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You find and repair any faulty circuits in %T%.")), MSG_OTHERS("%U% resets several circuits in %T%."))
 	open = 3
 	update_icon()
 
@@ -417,7 +417,7 @@ DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_ite
 	last_notification = message // TGUI Hook
 
 	to_chat(human,span_filter_nif(span_bold("\[[icon2html(src.big_icon, human.client)]NIF\]") + " displays, " + (alert ? span_danger(message) : span_notice(message))))
-	if(prob(1)) human.visible_message(span_notice("\The [human] [pick(GLOB.nif_look_messages)]."))
+	if(prob(1)) act_message(human, null, others = span_notice("%U% [pick(GLOB.nif_look_messages)]."))
 	if(alert)
 		human << bad_sound
 	else
@@ -517,7 +517,7 @@ DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_ite
 	if(stat != NIF_WORKING) return FALSE
 
 	if(human)
-		if(prob(5)) human.visible_message(span_notice("\The [human] [pick(GLOB.nif_look_messages)]."))
+		if(prob(5)) act_message(human, null, others = span_notice("%U% [pick(GLOB.nif_look_messages)]."))
 		var/applies_to = soft.applies_to
 		var/synth = HAS_SYNTHETIC_BIOLOGY(human)
 		if(synth && !(applies_to & NIF_SYNTHETIC))
@@ -544,7 +544,7 @@ DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_ite
 //Deactivate a nifsoft
 /obj/item/nif/proc/deactivate(datum/nifsoft/soft)
 	if(human)
-		if(prob(5)) human.visible_message(span_notice("\The [human] [pick(GLOB.nif_look_messages)]."))
+		if(prob(5)) act_message(human, null, others = span_notice("%U% [pick(GLOB.nif_look_messages)]."))
 		human << click_sound
 
 	if(soft.tick_flags == NIF_ACTIVETICK)
@@ -714,9 +714,9 @@ DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_ite
 		if(!eo)
 			to_chat(user,span_warning("They should probably regrow their torso first."))
 			return ITEM_INTERACT_FAILURE
-		U.visible_message(span_notice("[U] begins installing [src] into [T]'s chest by just stuffing it in."),
-		span_notice("You begin installing [src] into [T]'s chest by just stuffing it in."),
-		"There's a wet SQUISH noise.")
+		act_message(U, src, MSG_SELF(span_notice("You begin installing %T% into [T]'s chest by just stuffing it in.")), \
+			MSG_OTHERS(span_notice("%U% begins installing %T% into [T]'s chest by just stuffing it in.")), \
+			MSG_BLIND("There's a wet SQUISH noise."))
 		om_task_start(/datum/om/task/timed/nif_stuff_in, user, T, receiver = src, eo = eo, target_zone = BP_TORSO)
 		return ITEM_INTERACT_SUCCESS
 	else

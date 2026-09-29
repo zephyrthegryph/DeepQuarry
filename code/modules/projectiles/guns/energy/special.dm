@@ -95,7 +95,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/gun/energy/floragun, "emitter", /obj/item/stock_
 		play_sfx(src, SFX_WEAPONS_EMPTY)
 		return
 	if(adjacent_flag && istype(target,/obj/machinery/portable_atmospherics/hydroponics))
-		user.visible_message(span_danger("\The [user] fires \the [src] into \the [target]!"))
+		act_message(user, src, others = span_danger("%U% fires %T% into \the [target]!"))
 		Fire(target,user)
 		return
 	..()
@@ -198,7 +198,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/floragun, INTERACT_VERB("Select Gene", 
 
 /obj/item/gun/energy/staff/handle_click_empty(mob/user = null)
 	if (user)
-		user.visible_message("*fizzle*", span_danger("*fizzle*"))
+		act_message(user, null, MSG_SELF(span_danger("*fizzle*")), MSG_OTHERS("*fizzle*"))
 	else
 		src.visible_message("*fizzle*")
 	play_sfx(src, SFX_EFFECTS_SPARKS1)
@@ -291,7 +291,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/floragun, INTERACT_VERB("Select Gene", 
 	var/turf/target_turf = get_turf(A)
 	var/beameffect = user.Beam(target_turf,icon_state="sat_beam",icon='icons/effects/beam.dmi',time=31, maxdistance=10,beam_type=/obj/effect/ebeam,beam_sleep_time=3)
 	if(beameffect)
-		user.visible_message(span_cult("[user] aims \the [src] at \the [A]."))
+		act_message(user, src, others = span_cult("%U% aims %T% at \the [A]."))
 	if(power_supply && power_supply.charge >= charge_cost) //Do a delay for pointblanking too.
 		power_cycle = TRUE
 		om_task_start(/datum/om/task/timed/maghowitzer_howitzer_charged, user, src, receiver = src, A = A, target_turf = target_turf, melee = TRUE, arg3 = target_zone, arg4 = attack_modifier, beam_holder = list(beameffect), click_empty = FALSE)
@@ -311,7 +311,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/floragun, INTERACT_VERB("Select Gene", 
 	var/beameffect = user.Beam(target_turf,icon_state="sat_beam",icon='icons/effects/beam.dmi',time=31, maxdistance=10,beam_type=/obj/effect/ebeam,beam_sleep_time=3)
 
 	if(beameffect)
-		user.visible_message(span_cult("[user] aims \the [src] at \the [A]."))
+		act_message(user, src, others = span_cult("%U% aims %T% at \the [A]."))
 
 	if(!power_cycle)
 		power_cycle = TRUE
@@ -421,8 +421,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/floragun, INTERACT_VERB("Select Gene", 
 	play_sfx(src, SFX_WEAPONS_CHARGEUP)
 	spinning_up = TRUE
 	update_icon()
-	user.visible_message(span_notice("[user] starts charging the [src]!"), \
-						span_notice("You start charging the [src]!"))
+	act_message(user, src, MSG_SELF(span_notice("You start charging %T%!")), MSG_OTHERS(span_notice("%U% starts charging %T%!")))
 	om_task_start(/datum/om/task/timed/bfgtaser_spun_up, user, src, receiver = src, target_arg = target, clickparams = clickparams, pointblank = pointblank, reflex = reflex, stance = stance)
 
 /obj/item/gun/energy/bfgtaser/var/spun = FALSE

@@ -148,7 +148,7 @@ DECLARE_REF(/obj/item/gun/magnetic, "capacitor", OWNED, null)
 		to_chat(user, span_warning("\The [src] has no capacitor installed."))
 		return ITEM_INTERACT_SUCCESS
 	user.put_in_hands(capacitor)
-	user.visible_message(span_infoplain(span_bold("\The [user]") + " unscrews \the [capacitor] from \the [src]."))
+	act_message(user, src, others = span_infoplain(span_bold("%U%") + " unscrews \the [capacitor] from %T%."))
 	playsound(src, tool.usesound, 50, 1)
 	capacitor = null
 	update_icon()
@@ -166,7 +166,7 @@ DECLARE_REF(/obj/item/gun/magnetic, "capacitor", OWNED, null)
 			om_task_periodic(src, PERIODIC_SLOW)
 			user.drop_from_inventory(cell, src)
 			play_sfx(src, SFX_MACHINES_CLICK, 0.2)
-			user.visible_message(span_infoplain(span_bold("\The [user]") + " slots \the [cell] into \the [src]."))
+			act_message(user, src, others = span_infoplain(span_bold("%U%") + " slots %I% into %T%."), item = cell)
 			update_icon()
 			return
 
@@ -179,7 +179,7 @@ DECLARE_REF(/obj/item/gun/magnetic, "capacitor", OWNED, null)
 			user.drop_from_inventory(capacitor, src)
 			play_sfx(src, SFX_MACHINES_CLICK, 0.2)
 			power_per_tick = (power_cost*0.15) * capacitor.rating
-			user.visible_message(span_infoplain(span_bold("\The [user]") + " slots \the [capacitor] into \the [src]."))
+			act_message(user, src, others = span_infoplain(span_bold("%U%") + " slots %I% into %T%."), item = capacitor)
 			update_icon()
 			return
 
@@ -200,7 +200,7 @@ DECLARE_REF(/obj/item/gun/magnetic, "capacitor", OWNED, null)
 			loaded = new load_type(src, 1)
 			ammo.use(1)
 
-		user.visible_message(span_infoplain(span_bold("\The [user]") + " loads \the [src] with \the [loaded]."))
+		act_message(user, src, others = span_infoplain(span_bold("%U%") + " loads %T% with \the [loaded]."))
 		play_sfx(src, SFX_WEAPONS_FLIPBLADE)
 		update_icon()
 		return
@@ -224,7 +224,7 @@ DECLARE_INTERACTIONS(/obj/item/gun/magnetic, INTERACT_HAND(null, PROC_REF(intera
 		if(removing)
 			removing.forceMove(get_turf(src))
 			user.put_in_hands(removing)
-			user.visible_message(span_infoplain(span_bold("\The [user]") + " removes \the [removing] from \the [src]."))
+			act_message(user, src, others = span_infoplain(span_bold("%U%") + " removes %I% from %T%."), item = removing)
 			play_sfx(src, SFX_MACHINES_CLICK, 0.2)
 			update_icon()
 			return TRUE

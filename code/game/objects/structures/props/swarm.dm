@@ -42,11 +42,9 @@ DECLARE_REF(/obj/structure/cult/pylon/swarm, "active_beams", OWNED_LIST, null)
 /obj/structure/cult/pylon/swarm/attackpylon(mob/user as mob, damage)
 	if(!isbroken)
 		if(prob(1 + damage * 3))
-			user.visible_message(
-				span_danger("[user] smashed \the [src]!"),
-				span_warning("You hit \the [src], and its crystal breaks apart!"),
-				"You hear a tinkle of crystalline shards."
-				)
+			act_message(user, src, MSG_SELF(span_warning("You hit %T%, and its crystal breaks apart!")), \
+				MSG_OTHERS(span_danger("%U% smashed %T%!")), \
+				MSG_BLIND("You hear a tinkle of crystalline shards."))
 			om_task_periodic_stop(src)
 			user.do_attack_animation(src)
 			playsound(src,shatter_sound, 75, 1)
@@ -120,11 +118,9 @@ DECLARE_REF(/obj/structure/cult/pylon/swarm, "active_beams", OWNED_LIST, null)
 /obj/structure/cult/pylon/swarm/defender/attackpylon(mob/user as mob, damage)
 	if(!isbroken)
 		if(prob(1 + damage * 2) && damage >= 15)
-			user.visible_message(
-				span_danger("[user] smashed \the [src]!"),
-				span_warning("You hit \the [src], and its crystal breaks apart!"),
-				"You hear a tinkle of crystalline shards."
-				)
+			act_message(user, src, MSG_SELF(span_warning("You hit %T%, and its crystal breaks apart!")), \
+				MSG_OTHERS(span_danger("%U% smashed %T%!")), \
+				MSG_BLIND("You hear a tinkle of crystalline shards."))
 			om_task_periodic_stop(src)
 			user.do_attack_animation(src)
 			playsound(src,shatter_sound, 75, 1)

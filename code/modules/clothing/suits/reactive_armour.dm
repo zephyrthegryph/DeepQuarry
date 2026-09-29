@@ -104,7 +104,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/armor/reactive, INTERACT_USE("Toggle
 	var/tele_range = 6
 
 /obj/item/clothing/suit/armor/reactive/teleport/reactive_activation(mob/living/carbon/human/owner, atom/movable/hitby, attack_text = "the attack", final_block_chance = 0, damage = 0)
-	owner.visible_message(span_danger("The reactive teleport system flings [owner] clear of [attack_text]!"))
+	act_message(owner, null, others = span_danger("The reactive teleport system flings %U% clear of [attack_text]!"))
 	play_sfx(get_turf(owner), SFX_EFFECTS_PHASEIN)
 	do_teleport(owner, get_turf(owner), tele_range, no_effects = TRUE, channel = TELEPORT_CHANNEL_BLUESPACE)
 	COOLDOWN_START(src, reactivearmor_cooldown, reactivearmor_cooldown_duration)
@@ -181,7 +181,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/armor/reactive, INTERACT_USE("Toggle
 	return TRUE
 
 /obj/item/clothing/suit/armor/reactive/tesla/emp_activation(mob/living/carbon/human/owner, atom/movable/hitby, attack_text = "the attack", damage = 0)
-	owner.visible_message(span_danger("[src] blocks [attack_text], but pulls a massive charge of energy into [owner] from the surrounding environment!"))
+	act_message(src, owner, others = span_danger("%U% blocks [attack_text], but pulls a massive charge of energy into %T% from the surrounding environment!"))
 	REMOVE_CLOTHING_TRAIT(owner, TRAIT_TESLA_SHOCKIMMUNE)
 	electrocute_mob(owner, get_area(src), src, 1)
 	ADD_CLOTHING_TRAIT(owner, TRAIT_TESLA_SHOCKIMMUNE)
@@ -217,7 +217,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/armor/reactive, INTERACT_USE("Toggle
 	return TRUE
 
 /obj/item/clothing/suit/armor/reactive/hallucinating/emp_activation(mob/living/carbon/human/owner, atom/movable/hitby, attack_text = "the attack", damage = 0)
-	owner.visible_message(span_danger("[src] blocks [attack_text], but pulls a massive charge of mental energy into [owner] from the surrounding environment!"))
+	act_message(src, owner, others = span_danger("%U% blocks [attack_text], but pulls a massive charge of mental energy into %T% from the surrounding environment!"))
 	owner.status_adjust(EFFECT_HALLUCINATING, 75)
 	to_chat(owner, span_danger("Your nose bleeds!"))
 	owner.drip(1)
@@ -293,7 +293,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/armor/reactive, INTERACT_USE("Toggle
 	return TRUE
 
 /obj/item/clothing/suit/armor/reactive/fire/emp_activation(mob/living/carbon/human/owner, atom/movable/hitby, attack_text = "the attack", damage = 0)
-	owner.visible_message(span_danger("[src] just makes [attack_text] worse by spewing molten death on [owner]!"))
+	act_message(src, owner, others = span_danger("%U% just makes [attack_text] worse by spewing molten death on %T%!"))
 	play_sfx(get_turf(owner), SFX_MAGIC_FIREBALL)
 	owner.adjust_fire_stacks(12)
 	owner.ignite_mob()
@@ -308,7 +308,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/armor/reactive, INTERACT_USE("Toggle
 	reactivearmor_cooldown_duration = 30 SECONDS
 
 /obj/item/clothing/suit/armor/reactive/weather/reactive_activation(mob/living/carbon/human/owner, atom/movable/hitby, attack_text = "the attack", damage = 0)
-	owner.visible_message(span_danger("The reactive armor alters the weather around [owner], shielding [owner.p_them()] from [attack_text]!"))
+	act_message(owner, null, others = span_danger("The reactive armor alters the weather around %U%, shielding %THEM% from [attack_text]!"))
 	play_sfx(src, SFX_EFFECTS_LIGHTNINGBOLT, 0.33)
 
 	new /obj/effect/effect/smoke/bad(get_turf(loc))
@@ -373,7 +373,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/armor/reactive, INTERACT_USE("Toggle
 	decoy.ai_brain?.give_destination(rand_turf)
 	owner.alpha = 0
 	in_stealth = TRUE
-	owner.visible_message(span_danger("[owner] is hit by [attack_text] in the chest!"))
+	act_message(owner, null, others = span_danger("%U% is hit by [attack_text] in the chest!"))
 	om_after(src, stealth_time, PROC_REF(end_stealth), owner)
 	decoy.say("*sidestep")
 	om_after(src, stealth_time, PROC_REF(destroy_illusion), decoy)

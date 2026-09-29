@@ -664,10 +664,10 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/aerogelgoggles, \
 	//Look it's really not that fancy. It's not ACTUALLY unique scrip data.
 	if(prescription)
 		name = "[initial(name)] (pr)"
-		user.visible_message("[user] replaces the lenses in \the [src] with a new prescription.")
+		act_message(user, src, others = "%U% replaces the lenses in %T% with a new prescription.")
 	else
 		name = "[initial(name)]"
-		user.visible_message("[user] replaces the prescription lenses in \the [src] with generics.")
+		act_message(user, src, others = "%U% replaces the prescription lenses in %T% with generics.")
 
 	play_sfx(src, SFX_ITEMS_SCREWDRIVER)
 
@@ -706,7 +706,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/aerogelgoggles, \
 			to_chat(user, span_warning("The person's eyes can't be covered!"))
 			return
 
-		T.visible_message("[user] begins making measurements for prescription lenses for [target].","[user] begins measuring your eyes. Hold still!")
+		act_message(T, user, MSG_SELF("%T% begins measuring your eyes. Hold still!"), \
+			MSG_OTHERS("%T% begins making measurements for prescription lenses for [target]."))
 		om_task_start(/datum/om/task/timed/glasses_kit/measure, user, T, kit = src)
 
 	else
@@ -736,7 +737,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/aerogelgoggles, \
 	var/mob/living/carbon/human/T = target
 	T.flash_eyes()
 	kit.scrip_loaded = 1
-	T.visible_message("[actor] finishes making prescription lenses for [T].", span_warning("Gah, that's bright!"))
+	act_message(T, null, MSG_SELF(span_warning("Gah, that's bright!")), MSG_OTHERS("[actor] finishes making prescription lenses for %U%."))
 
 /obj/item/clothing/glasses/sunglasses/sechud/tactical
 	item_flags = AIRTIGHT
