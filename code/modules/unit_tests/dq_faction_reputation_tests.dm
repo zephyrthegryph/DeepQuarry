@@ -95,7 +95,7 @@
 
 	var/personal_key = "[account.account_number]"
 	var/datum/faction_reputation_ledger/personal_ledger = GLOB.station_faction_relations.personal_ledgers[personal_key]
-	GLOB.station_faction_relations.personal_ledgers -= personal_key
+	own_take_member(GLOB.station_faction_relations, "personal_ledgers", personal_key)
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, account)
 	qdel(second_body)
 	qdel(first_body)
@@ -150,8 +150,8 @@
 	TEST_ASSERT(GLOB.station_faction_relations.refresh_agent_tier(record), "qualified accredited agent did not reach trusted status")
 	TEST_ASSERT("agent_red_exfiltration" in SScontracts.agent_contract_definition_ids(record), "trusted non-Syndicate agent was not offered a faction-appropriate red mandate")
 	var/personal_key = "[account.account_number]"
-	GLOB.station_faction_relations.agent_records -= personal_key
-	GLOB.station_faction_relations.personal_ledgers -= personal_key
+	own_take_member(GLOB.station_faction_relations, "agent_records", personal_key)
+	own_take_member(GLOB.station_faction_relations, "personal_ledgers", personal_key)
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, account)
 	qdel(record)
 	qdel(test_agent)

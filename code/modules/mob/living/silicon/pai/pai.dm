@@ -20,6 +20,7 @@
 	var/obj/machinery/camera/current = null
 
 	var/ram = 100	// Used as currency to purchase different abilities
+	/// Installed software: id -> TRUE. The definitions are GLOB.pai_software_by_key[id].
 	var/list/software = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
 	var/userDNA		// The DNA string of our assigned user
 

@@ -180,10 +180,11 @@ GLOBAL_DATUM_INIT(pai_service, /datum/world_service/pai, new)
 		return
 
 	// Time delay if the ghost cancels your invite.
-	if(check_is_delayed(REF(ghost)))
+	var/ghost_key = REF(ghost) // keyed by ref text: a ghost-less timestamp table, not a relation
+	if(check_is_delayed(ghost_key))
 		to_chat(inquirer, span_notice("This pAI is responding to a request, but may become available again shortly..."))
 		return
-	asked[REF(ghost)] = world.time
+	asked[ghost_key] = world.time
 
 	// Can't play, still respawning
 	var/time_till_respawn = ghost.time_till_respawn()

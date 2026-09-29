@@ -228,7 +228,8 @@
 		baby.untamable = untamable
 	baby.untamable_inheirit = untamable_inheirit
 	baby.faction = faction
-	baby.friends = friends?.Copy()
+	for(var/mob/living/friend as anything in friends)
+		rel_add(baby, "friends", friend)
 
 	if(no_step != 1)
 		step_away(baby, src)

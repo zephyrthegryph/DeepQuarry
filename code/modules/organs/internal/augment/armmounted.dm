@@ -165,16 +165,15 @@
 
 	toolspeed = 0.8
 
-	/// Tool path -> the tool this augment carries, built in Initialize() from tool_types().
+	/// Tool path -> each stowed tool this augment carries (owned), built in Initialize() from
+	/// tool_types(). The deployed tool is owned by integrated_object instead, and moves back here
+	/// when another is picked (select_integrated_tool()).
 	var/list/integrated_tools
 
-	var/list/integrated_tools_by_name
-
+	/// Tool name -> its radial image; also the list of names augment_action() offers.
 	var/list/integrated_tool_images
 
 	var/list/synths
-
-// integrated_tools_by_name indexes the same tools by name.
 
 /// The tools this augment carries (constant per type).
 /obj/item/organ/internal/augment/armmounted/shoulder/multiple/proc/tool_types()
@@ -197,49 +196,63 @@
 /obj/item/organ/internal/augment/armmounted/shoulder/multiple/Initialize(mapload)
 	. = ..()
 
-	own_take_all(src, "integrated_tools")
 	for(var/path in tool_types())
-		own_take_member(src, "integrated_tools", path)
+		if(integrated_object && istype(integrated_object, path))
+			continue
+		own_put(src, "integrated_tools", path, new path(src))
 
-	if(integrated_object)
-		integrated_tools[integrated_object_type] = integrated_object
-
-	if(integrated_tools && integrated_tools.len)
-
-		own_take_all(src, "integrated_tools_by_name")
-
-		integrated_tool_images = list()
-
-		var/list/synth_paths = synth_types()
-		for(var/datumpath in synth_paths)
-			own_add(src, "synths", new datumpath)
-
-		for(var/path in integrated_tools)
-			if(!integrated_tools[path])
-				own_put(src, "integrated_tools", path, new path(src))
-			var/obj/item/I = integrated_tools[path]
-			I.canremove = FALSE
-			I.toolspeed = toolspeed
-			rel_set(I, "my_augment", src)
-			I.name = "integrated [I.name]"
-
-		for(var/tool in integrated_tools)
-			var/obj/item/Tool = integrated_tools[tool]
-			if(istype(Tool, /obj/item/stack))
-				var/obj/item/stack/S = Tool
-				for(var/datum/matter_synth/MS as anything in synths)
-					rel_add(S, "synths", MS)
-				S.uses_charge = length(synths)
-			own_put(src, "integrated_tools_by_name", Tool.name, Tool)
-			integrated_tool_images[Tool.name] = image(icon = Tool.icon, icon_state = Tool.icon_state)
-
-/// Deploys `tool` as the integrated object. Every tool stays in integrated_tools, so the one put
-/// away is detached (not disposed of) before the new one is adopted.
-/obj/item/organ/internal/augment/armmounted/shoulder/multiple/proc/select_integrated_tool(obj/item/tool)
-	if(integrated_object == tool)
+	var/list/tools = all_integrated_tools()
+	if(!length(tools))
 		return
-	own_take(src, "integrated_object")
-	own_set(src, "integrated_object", tool)
+
+	integrated_tool_images = list()
+
+	var/list/synth_paths = synth_types()
+	for(var/datumpath in synth_paths)
+		own_add(src, "synths", new datumpath)
+
+	for(var/obj/item/I as anything in tools)
+		I.canremove = FALSE
+		I.toolspeed = toolspeed
+		rel_set(I, "my_augment", src)
+		I.name = "integrated [I.name]"
+
+	for(var/obj/item/Tool as anything in tools)
+		if(istype(Tool, /obj/item/stack))
+			var/obj/item/stack/S = Tool
+			for(var/datum/matter_synth/MS as anything in synths)
+				rel_add(S, "synths", MS)
+			S.uses_charge = length(synths)
+		integrated_tool_images[Tool.name] = image(icon = Tool.icon, icon_state = Tool.icon_state)
+
+/// Every tool this augment carries: the stowed ones and the deployed one.
+/obj/item/organ/internal/augment/armmounted/shoulder/multiple/proc/all_integrated_tools()
+	. = own_values(src, "integrated_tools")
+	if(integrated_object)
+		. |= integrated_object
+
+/// The carried tool called `tool_name`, or null.
+/obj/item/organ/internal/augment/armmounted/shoulder/multiple/proc/integrated_tool_named(tool_name)
+	for(var/obj/item/tool as anything in all_integrated_tools())
+		if(tool.name == tool_name)
+			return tool
+	return null
+
+/// Deploys `tool` as the integrated object. The one put away moves back into integrated_tools
+/// (never disposed of), then the chosen one moves out of it into integrated_object.
+/obj/item/organ/internal/augment/armmounted/shoulder/multiple/proc/select_integrated_tool(obj/item/tool)
+	if(!tool || integrated_object == tool)
+		return
+	var/tool_key = null
+	for(var/key in integrated_tools)
+		if(integrated_tools[key] == tool)
+			tool_key = key
+			break
+	if(isnull(tool_key))
+		return
+	if(integrated_object)
+		own_transfer(src, "integrated_object", src, "integrated_tools", null, integrated_object.type)
+	own_transfer(src, "integrated_tools", src, "integrated_object", tool_key)
 
 /obj/item/organ/internal/augment/armmounted/shoulder/multiple/handle_organ_proc_special()
 	..()
@@ -257,7 +270,7 @@
 
 	var/list/options = list()
 
-	for(var/Iname in integrated_tools_by_name)
+	for(var/Iname in integrated_tool_images)
 		options[Iname] = integrated_tool_images[Iname]
 
 	if(tool_picked)
@@ -267,7 +280,7 @@
 
 	if(length(options) == 1)
 		for(var/key in options)
-			select_integrated_tool(integrated_tools_by_name[key])
+			select_integrated_tool(integrated_tool_named(key))
 		return ..()
 
 	om_ask(owner, /datum/om/prompt/choice/radial, PROC_REF(integrated_tool_chosen), choices = options, anchor = owner)
@@ -276,7 +289,7 @@
 /obj/item/organ/internal/augment/armmounted/shoulder/multiple/proc/integrated_tool_chosen(datum/om/prompt/choice/radial/ask)
 	if(!owner || ask.answerer != owner || is_broken())
 		return
-	select_integrated_tool(integrated_tools_by_name[ask.choice])
+	select_integrated_tool(integrated_tool_named(ask.choice))
 	tool_picked = TRUE
 	augment_action()
 

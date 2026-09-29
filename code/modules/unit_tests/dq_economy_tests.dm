@@ -314,10 +314,10 @@
 	TEST_ASSERT(GLOB.supply_service.cancel_personal_order(order, account, requester), "owner could not cancel a pending personal order")
 	TEST_ASSERT_EQUAL(account.money, starting_balance, "personal order refund did not restore the purchaser")
 	TEST_ASSERT_EQUAL(order.status, SUP_ORDER_DENIED, "cancelled personal order did not enter denied state")
-	GLOB.supply_service.order_history -= order
+	own_take_member(GLOB.supply_service, "order_history", order)
 	for(var/datum/supply_order/admin_order in GLOB.supply_service.adm_order_history)
 		if(admin_order.ordernum == order.ordernum)
-			GLOB.supply_service.adm_order_history -= admin_order
+			own_take_member(GLOB.supply_service, "adm_order_history", admin_order)
 			qdel(admin_order)
 			break
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, account)
@@ -376,7 +376,7 @@
 	GLOB.supply_service.service_invoice_counter = invoice_counter_before
 	GLOB.supply_service.currency_refunded = refunds_before
 	GLOB.supply_service.currency_internal_refunded = internal_refunds_before
-	GLOB.supply_service.service_invoices -= invoice
+	own_take_member(GLOB.supply_service, "service_invoices", invoice)
 	service.monthly_income = service_income_before
 	service.monthly_expenses = service_expenses_before
 	service.total_revenue = service_revenue_before
@@ -452,7 +452,7 @@
 	TEST_ASSERT_EQUAL(staff.money, 0, "refund did not reclaim the staff gratuity")
 	TEST_ASSERT_EQUAL(invoice.state, "Refunded", "refund did not become the invoice's terminal state")
 
-	GLOB.supply_service.service_invoices -= invoice
+	own_take_member(GLOB.supply_service, "service_invoices", invoice)
 	GLOB.supply_service.service_invoice_counter = invoice_counter_before
 	GLOB.supply_service.currency_refunded = refunds_before
 	GLOB.supply_service.currency_internal_refunded = internal_refunds_before
@@ -496,7 +496,7 @@
 	operator.job = JOB_BARTENDER
 	TEST_ASSERT(GLOB.supply_service.refund_service_invoice(invoice, service, "Anonymous refund test", operator), "authorized Service employee could not refund an anonymous sale")
 	TEST_ASSERT_EQUAL(service.money, service_money_before, "authorized anonymous refund did not reverse provider revenue")
-	GLOB.supply_service.service_invoices -= invoice
+	own_take_member(GLOB.supply_service, "service_invoices", invoice)
 	GLOB.supply_service.service_invoice_counter = invoice_counter_before
 	GLOB.supply_service.currency_refunded = refunds_before
 	GLOB.supply_service.currency_internal_refunded = internal_refunds_before
@@ -654,7 +654,7 @@
 
 	while(length(GLOB.supply_service.service_invoices) > invoice_count_before)
 		var/datum/service_invoice/invoice = GLOB.supply_service.service_invoices[length(GLOB.supply_service.service_invoices)]
-		GLOB.supply_service.service_invoices -= invoice
+		own_take_member(GLOB.supply_service, "service_invoices", invoice)
 		qdel(invoice)
 	GLOB.supply_service.service_invoice_counter = invoice_counter_before
 	GLOB.supply_service.currency_refunded = refunds_before
@@ -899,8 +899,8 @@
 		if(candidate.ordernum == order.ordernum)
 			admin_order = candidate
 			break
-	GLOB.supply_service.order_history -= order
-	GLOB.supply_service.adm_order_history -= admin_order
+	own_take_member(GLOB.supply_service, "order_history", order)
+	own_take_member(GLOB.supply_service, "adm_order_history", admin_order)
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, account)
 	qdel(admin_order)
 	qdel(order)
@@ -952,7 +952,7 @@
 	record.faction_id = REPUTATION_FACTION_SYNDICATE
 	rel_set(record, "agent_mind", owner_mind)
 	record.tier = FACTION_AGENT_TIER_ACCREDITED
-	GLOB.station_faction_relations.agent_records["[owner_account.account_number]"] = record
+	own_put(GLOB.station_faction_relations, "agent_records", "[owner_account.account_number]", record)
 	TEST_ASSERT(GLOB.supply_service.market_counterparty_visible(syndicate_broker, owner), "accredited agent could not see their principal market")
 	TEST_ASSERT(GLOB.supply_service.market_true_identity_visible(syndicate_broker, owner), "principal account could not identify its own counterparty")
 	TEST_ASSERT(!GLOB.supply_service.market_counterparty_visible(syndicate_broker, collaborator), "unsigned Cargo contact could see the private feed")
@@ -1013,8 +1013,8 @@
 		if(candidate_order.ordernum == funded_order.ordernum)
 			funded_admin_order = candidate_order
 			break
-	GLOB.supply_service.order_history -= funded_order
-	GLOB.supply_service.adm_order_history -= funded_admin_order
+	own_take_member(GLOB.supply_service, "order_history", funded_order)
+	own_take_member(GLOB.supply_service, "adm_order_history", funded_admin_order)
 	SScontracts.active_contracts -= funding_contract
 	qdel(funded_admin_order)
 	qdel(funded_order)
@@ -1056,9 +1056,9 @@
 	for(var/datum/contract_offer_candidate/offer_candidate in SScontracts.offer_candidates.Copy())
 		if(offer_candidate.context?["suspect_account"] == owner_account.account_number)
 			SScontracts.withdraw_candidate(offer_candidate, "Covert market test cleanup")
-	GLOB.station_faction_relations.agent_records -= "[owner_account.account_number]"
+	own_take_member(GLOB.station_faction_relations, "agent_records", "[owner_account.account_number]")
 	SScontracts.active_contracts -= test_contract
-	GLOB.supply_service.market_transactions -= transaction
+	own_take_member(GLOB.supply_service, "market_transactions", transaction)
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, owner_account)
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, collaborator_account)
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, auditor_account)
@@ -1101,7 +1101,7 @@
 	record.account_number = principal_account.account_number
 	record.faction_id = REPUTATION_FACTION_ECLIPSE
 	record.tier = FACTION_AGENT_TIER_ACCREDITED
-	GLOB.station_faction_relations.agent_records["[principal_account.account_number]"] = record
+	own_put(GLOB.station_faction_relations, "agent_records", "[principal_account.account_number]", record)
 	var/datum/contract/faction_agent/contract = new
 	contract.definition_id = "agent_confidential_brokerage"
 	contract.title = "Physical freight integration"
@@ -1168,7 +1168,7 @@
 	TEST_ASSERT(document.payload["cooperation_paid"], "Security scan did not settle the physical cooperation declaration")
 
 	GLOB.supply_service.release_agent_contract_market(contract)
-	GLOB.station_faction_relations.agent_records -= "[principal_account.account_number]"
+	own_take_member(GLOB.station_faction_relations, "agent_records", "[principal_account.account_number]")
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, principal_account)
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, contact_account)
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, auditor_account)

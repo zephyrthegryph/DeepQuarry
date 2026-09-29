@@ -516,6 +516,17 @@ GLOBAL_VAR(dq_test_select_names)
 			own_add(src, "allocated", thing)
 	return thing
 
+/// Adds `thing` to dest's owned list `var_name`, detaching it first from whatever owns it now
+/// (the test's `allocated`, most often). own_move() would own_set() an empty list var.
+/datum/unit_test/proc/adopt_into_list(datum/thing, datum/dest, var_name)
+	var/datum/current = owner_of(thing)
+	if(current)
+		if(islist(current.vars[thing.own_slot]))
+			own_take_member(current, thing.own_slot, thing)
+		else
+			own_take(current, thing.own_slot)
+	return own_add(dest, var_name, thing)
+
 /// own()s everything currently on `T` (landmarks excepted): for a test whose subject
 /// deliberately leaves its products on the floor (deconstruction salvage, a finished build).
 /datum/unit_test/proc/own_turf_contents(turf/T)

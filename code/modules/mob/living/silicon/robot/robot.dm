@@ -1854,7 +1854,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 	// TODO: Update to new antagonist system.
 	if(mind && !mind.special_role)
 		mind.special_role = "traitor"
-		LAZYOR(GLOB.traitors.current_antagonists, mind)
+		rel_add(GLOB.traitors, "current_antagonists", mind)
 	build_traitor_hud()
 
 /mob/living/silicon/robot/proc/build_traitor_hud()

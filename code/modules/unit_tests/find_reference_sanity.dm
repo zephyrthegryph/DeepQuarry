@@ -44,7 +44,7 @@ REL(/atom/movable/ref_test, self_ref)
 	//Set up for the first round of tests
 	rel_set(testbed, "test", victim)
 	rel_add(testbed, "test_list", victim)
-	testbed.test_assoc_list["baseline"] = victim
+	testbed.test_assoc_list["baseline"] = victim // ALLOW(ownership): ref-tracking fixture; the test plants raw references for the reference finder to discover
 
 	var/refcount = refcount(victim)
 	TEST_ASSERT_EQUAL(refcount, 6, "Should be: test references: 3 + baseline references: 3 (victim var, the allocated list and loc)")
@@ -63,7 +63,7 @@ REL(/atom/movable/ref_test, self_ref)
 	//Second round, bit harder this time
 	testbed.overlays += victim
 	testbed.vis_contents += victim
-	testbed.test_assoc_list[victim] = TRUE
+	testbed.test_assoc_list[victim] = TRUE // ALLOW(ownership): ref-tracking fixture; the test plants raw references for the reference finder to discover
 
 	var/refcount = refcount(victim)
 	TEST_ASSERT_EQUAL(refcount, 6, "Should be: test references: 3 + baseline references: 3 (victim var, the allocated list and loc)")
@@ -83,7 +83,7 @@ REL(/atom/movable/ref_test, self_ref)
 	//Let's get a bit esoteric
 	rel_set(victim, "self_ref", victim)
 	var/list/to_find = list(victim)
-	testbed.test_list += list(to_find)
+	testbed.test_list += list(to_find) // ALLOW(ownership): ref-tracking fixture; the test plants raw references for the reference finder to discover
 	var/list/to_find_assoc = list(victim)
 	testbed.test_assoc_list["Nesting"] = to_find_assoc
 

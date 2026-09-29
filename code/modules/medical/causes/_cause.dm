@@ -46,7 +46,7 @@
 
 
 /datum/affliction_trigger/proc/setup()
-	produces = list()
+	own_clear(src, "produces", OWN_DELETE)
 
 
 /datum/affliction_trigger/New()
