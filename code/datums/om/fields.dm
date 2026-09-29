@@ -23,6 +23,8 @@
 	var/channel = 0
 	/// OM_DERIVE_FIELD(): computed by the proc named `field`; no var, no setter.
 	var/derived = FALSE
+	/// OM_DERIVE_FIELD(): its inputs, field names and raw channels (its channel is their union).
+	var/list/inputs
 
 /datum/om/registry
 	/// type path -> field name -> channel (every field_def whose `of` is an ancestor, merged).
@@ -42,10 +44,7 @@
 			var/datum/om/field_def/D = def_path
 			if(initial(D.field))
 				field_defs += def_path
-	F = list()
-	for(var/datum/om/field_def/D as anything in field_defs)
-		if(ispath(path, initial(D.of)))
-			F[initial(D.field)] |= initial(D.channel)
+	F = om_field_table(path)
 	fields_by_type[path] = F
 	return F
 
@@ -130,3 +129,59 @@
 			var/channel = table["[bit]"]
 			. |= channel ? channel : fallback
 		bit <<= 1
+
+/// Declared fields of `path` (and its ancestors), field name -> channel, with derived fields
+/// resolved to the union of their inputs' channels. Usable before the registry exists (the
+/// declared-periodic service build reads it); the registry caches it per type in fields_of().
+/proc/om_field_table(path)
+	RETURN_TYPE(/list)
+	var/static/list/plain_defs
+	var/static/list/derived_defs
+	if(!plain_defs)
+		plain_defs = list()
+		derived_defs = list()
+		for(var/def_path in subtypesof(/datum/om/field_def))
+			var/datum/om/field_def/D = def_path
+			if(!initial(D.field))
+				continue
+			if(initial(D.derived))
+				derived_defs += new def_path // inputs is a list: read from an instance
+			else
+				plain_defs += def_path
+	var/list/F = list()
+	for(var/datum/om/field_def/D as anything in plain_defs)
+		if(ispath(path, initial(D.of)))
+			F[initial(D.field)] |= initial(D.channel)
+	var/list/mine = list()
+	for(var/datum/om/field_def/D as anything in derived_defs)
+		if(ispath(path, D.of))
+			mine += D
+	// Derived fields may read other derived fields: resolve until nothing changes.
+	for(var/pass in 1 to max(1, length(mine)))
+		var/changed = FALSE
+		for(var/datum/om/field_def/D as anything in mine)
+			var/channel = F[D.field]
+			for(var/input in D.inputs)
+				channel |= isnum(input) ? input : F[input]
+			if(channel != F[D.field])
+				F[D.field] = channel
+				changed = TRUE
+		if(!changed)
+			break
+	return F
+
+/// Boot check: every derived field's inputs are declared fields of its type (or raw channels).
+/proc/om_check_derived_inputs()
+	. = list()
+	for(var/def_path in subtypesof(/datum/om/field_def))
+		var/datum/om/field_def/proto = def_path
+		if(!initial(proto.field) || !initial(proto.derived))
+			continue
+		var/datum/om/field_def/D = new def_path
+		var/list/F = om_field_table(D.of)
+		if(!length(D.inputs))
+			. += "OM_DERIVE_FIELD([D.of], [D.field]) declares no inputs"
+		for(var/input in D.inputs)
+			if(!isnum(input) && !F[input])
+				. += "OM_DERIVE_FIELD([D.of], [D.field]) reads [input], which [D.of] does not declare as a field"
+		qdel(D)

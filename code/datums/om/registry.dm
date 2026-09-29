@@ -99,6 +99,8 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 	build_tasks()
 	build_services()
 	check_field_reads()
+	for(var/problem in om_check_derived_inputs())
+		error(problem)
 
 // ---------------------------------------------------------------- bundles
 

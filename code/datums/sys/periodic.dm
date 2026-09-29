@@ -80,21 +80,15 @@ GLOBAL_LIST_INIT(sys_periodic_defs, build_sys_periodic_defs())
 /// `path` or an ancestor (the same merge as om_registry().fields_of(), which is not available
 /// yet while the registry builds its services).
 /proc/sys_periodic_field_info(path, name)
-	var/static/list/field_defs
-	if(!field_defs)
-		field_defs = list()
+	var/static/list/derived_names
+	if(!derived_names)
+		derived_names = list()
 		for(var/def_path in subtypesof(/datum/om/field_def))
 			var/datum/om/field_def/F = def_path
-			if(initial(F.field))
-				field_defs += def_path
-	var/channel = 0
-	var/is_derived = FALSE
-	for(var/datum/om/field_def/F as anything in field_defs)
-		if(initial(F.field) == name && ispath(path, initial(F.of)))
-			channel |= initial(F.channel)
 			if(initial(F.derived))
-				is_derived = TRUE
-	return list(channel, is_derived)
+				derived_names[initial(F.field)] = TRUE
+	var/list/table = om_field_table(path)
+	return list(table[name] || 0, derived_names[name] ? TRUE : FALSE)
 
 /// TRUE when every field of D holds on E.
 /proc/sys_periodic_def_holds(datum/E, datum/sys_periodic_def/D)

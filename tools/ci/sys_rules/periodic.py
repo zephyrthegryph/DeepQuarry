@@ -30,6 +30,8 @@ RULES = {
                       "(doc/rewrite/systems.md section 5)",
     "om_after_rearm": "DECLARE_REPEAT(type, delay, proc, \"field\") instead of a self-re-arming "
                       "om_after() (doc/rewrite/systems.md section 5)",
+    "derived_hand_raise": "declare the derived field's inputs (OM_DERIVE_FIELD(T, F, list(\"input\", ...))) as "
+                          "fields; their setters raise it (doc/rewrite/systems.md section 5)",
     "periodic_toggle": "declare the state (DECLARE_PERIODIC_WHILE / DECLARE_REPEAT) and let its "
                        "setter start/stop the work (doc/rewrite/systems.md section 5)",
 }
@@ -233,12 +235,71 @@ def _scan_toggle(name, stmts, hits):
             hits.append(number)
 
 
+DERIVE = re.compile(r"^OM_DERIVE_FIELD\(\s*(/[\w/]+)\s*,\s*(\w+)\s*,\s*(.*)\)\s*(?://.*)?$")
+RAISE = re.compile(r"om_changed\(\s*src\s*,")
+
+
+def _derived_inputs(files):
+    """type path -> set of input field names of the derived fields it (or an ancestor) declares."""
+    out = {}
+    for _rel, lines in files:
+        for line in lines:
+            m = DERIVE.match(line.strip())
+            if m:
+                out.setdefault(m.group(1), set()).update(re.findall(r"\"(\w+)\"", m.group(3)))
+                out[m.group(1)].add("")  # marks a type with derived fields
+    return out
+
+
+def _inputs_for(path, derived):
+    names = set()
+    for root, inputs in derived.items():
+        if path == root or path.startswith(root + "/"):
+            names |= inputs
+    return names
+
+
+def _scan_hand_raise(lines, derived, hits, rel):
+    """om_changed(src, ...) in a proc of a type with derived fields, when it is a hand refresh:
+    a CHANGE_EXPLICIT raise, or any raise within two statements of a write of a derived input."""
+    path = None
+    for number, line in enumerate(lines, 1):
+        if line and not line[0].isspace():
+            m = HEAD.match(line)
+            path = m.group(1) if m else None
+            if path and "/proc" in path:
+                path = path.split("/proc")[0]
+            continue
+        if not path:
+            continue
+        code = line.split("//", 1)[0]
+        if not RAISE.search(code):
+            continue
+        inputs = _inputs_for(path, derived)
+        if not inputs:
+            continue
+        if "CHANGE_EXPLICIT" in code:
+            hits.append((rel, number))
+            continue
+        names = inputs - {""}
+        near = [lines[i].split("//", 1)[0].strip() for i in range(max(0, number - 3), min(len(lines), number + 2)) if i != number - 1]
+        for c in near:
+            m = WRITE.match(c)
+            word = m and (m.group(1) or m.group(2) or m.group(3))
+            if word and word in names:
+                hits.append((rel, number))
+                break
+
+
 def scan(files):
     out = {rule: [] for rule in RULES}
+    derived = _derived_inputs(files)
     for rel, lines in files:
         if rel.startswith(SKIP):
             continue
         text = "\n".join(lines)
+        if "om_changed" in text and derived:
+            _scan_hand_raise(lines, derived, out["derived_hand_raise"], rel)
         if not any(k in text for k in ("PROCESS_KILL", "om_after", "om_task_periodic", "MACHINE_WAKE", "MACHINE_SLEEP")):
             continue
         for name, params, body in _procs(lines):
