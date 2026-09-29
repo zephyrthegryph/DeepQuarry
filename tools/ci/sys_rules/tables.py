@@ -24,7 +24,7 @@ NOT_WORTH = re.compile(r"ALLOW\(instance_list\):.*not worth it", re.I)
 # paths, nested list(), operators. Any lowercase identifier (a var or proc call) disqualifies.
 STRING = re.compile(r'"(?:[^"\\[]|\.)*"')
 PATH = re.compile(r"(?<![\w/])/[a-z_][\w/]*")
-IDENT = re.compile(r"(?<![\w.])[A-Za-z_]\w*")
+IDENT = re.compile(r"(?<![\w])[A-Za-z_]\w*")
 DEFINE = re.compile(r"^[A-Z][A-Z0-9_]+$")
 LITERALS = {"null", "TRUE", "FALSE", "list", "alist"}
 
@@ -88,6 +88,29 @@ def proc_body(lines, index):
     return out
 
 
+RETURN_ANY = re.compile(r"^\s+return\b\s*(.*)$")
+
+
+def all_returns_constant(lines, header_index):
+    """Every value-returning `return` in the proc returns a constant list literal (a constant
+    getter or switch table). A proc that builds its result on some path returns a fresh list
+    that its callers own; its constant fallback branch is not a table."""
+    for k in proc_body(lines, header_index):
+        code = lines[k].split("//", 1)[0]
+        match = RETURN_ANY.match(code)
+        if not match:
+            continue
+        value = match.group(1).strip()
+        if value in ("", "null", "FALSE", "TRUE", "0", "1"):
+            continue
+        if not value.startswith(("list(", "alist(")):
+            return False
+        text, _ = gather(lines, k, code.index(value[:5]))
+        if not constant(text) or gather.tail:
+            return False
+    return True
+
+
 def scan(files):
     out = {rule: [] for rule in RULES}
     global_lists = set()
@@ -102,6 +125,7 @@ def scan(files):
             if line.strip() and not line.startswith(("\t", " ")):
                 in_proc = bool(PROC_HDR.match(line)) and not line.lstrip().startswith("//")
                 header = line if in_proc else None
+                header_index = number - 1
             if NOT_WORTH.search(line):
                 out["not_worth_it_annotation"].append((rel, number))
             if not in_proc:
@@ -120,7 +144,7 @@ def scan(files):
                 continue
             if RETURN_LIST.match(code):
                 text, end = gather(lines, number - 1, line.index("list("))
-                if constant(text) and not gather.tail:
+                if constant(text) and not gather.tail and all_returns_constant(lines, header_index):
                     if not code.lstrip().startswith("return") and any(
                             DOT_WRITE.search(lines[k].split("//", 1)[0]) for k in proc_body(lines, end)):
                         continue  # `. = list(...)` seeding a result the proc then fills in
