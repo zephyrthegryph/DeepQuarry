@@ -37,7 +37,7 @@
 	TEST_ASSERT_NULL(cap_writable_text(F), "nothing written yet")
 	TEST_ASSERT(!length(F.caps_examine(H)), "no examine line yet")
 	refresh_flush()
-	TEST_ASSERT(!("words" in F.look_overlays), "no writing overlay yet")
+	TEST_ASSERT(!dx_look_shows(F, "words"), "no writing overlay yet")
 
 	var/html = cap_writable_add(F, "\[b\]Hi\[/b\]", pen, H)
 	TEST_ASSERT_NOTNULL(html, "the pencode was written")
@@ -46,7 +46,7 @@
 	TEST_ASSERT_EQUAL(cap_writable_space(F), 10, "two visible characters used")
 	TEST_ASSERT_EQUAL(F.caps_examine(H)[1], "It reads: [cap_writable_text(F)]", "examine reads it up close")
 	refresh_flush()
-	TEST_ASSERT("words" in F.look_overlays, "draw shows the writing overlay")
+	TEST_ASSERT(dx_look_shows(F, "words"), "draw shows the writing overlay")
 
 	cap_writable_add(F, "abcdefghijklmnop", crayon, H)
 	TEST_ASSERT(findtext(cap_writable_text(F), "Comic Sans MS"), "a crayon writes in crayon")

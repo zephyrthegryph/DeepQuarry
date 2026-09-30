@@ -252,22 +252,22 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 		return S.type
 	return system
 
-/// `E` joins `system`, held by `source` (a capability key, a datum, text), optionally under `role` (indexed for
-/// members_of(system, role)). Returns TRUE on first membership.
+/// `E` joins `system` (a /datum/system, its type, a capability type, or any datum used as a system), held by
+/// `source` (a capability key, a datum, text), optionally under `role` (indexed for members_of(system, role)).
+/// Returns TRUE on first membership.
 /proc/join(system, datum/E, source = "join", role = null)
 	if(!system || !E || QDELING(E))
 		return FALSE
-	if(isdatum(system))
-		var/datum/holder = system
-		if(QDELING(holder))
-			return FALSE
+	var/datum/owner = rx_member_owner(system)
+	if(owner && QDELING(owner))
+		return FALSE
 	. = member_join(system, E, source, role)
 	if(!.)
 		return
-	if(isdatum(system))
-		rx_ledger_publish(system, RELK_MEMBER, E)
-	if(istype(system, /datum/system))
-		var/datum/system/S = system
+	if(owner)
+		rx_ledger_publish(owner, RELK_MEMBER, E)
+	if(istype(owner, /datum/system))
+		var/datum/system/S = owner
 		S.on_join(E)
 
 /// `source` withdraws E from system (`all`: every source). Returns TRUE when E is no longer a member.
@@ -277,11 +277,22 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 	. = member_leave(system, E, source, all)
 	if(!.)
 		return
-	if(isdatum(system))
-		rx_ledger_publish(system, RELK_MEMBER, E)
-	if(istype(system, /datum/system))
-		var/datum/system/S = system
+	var/datum/owner = rx_member_owner(system)
+	if(owner)
+		rx_ledger_publish(owner, RELK_MEMBER, E)
+	if(istype(owner, /datum/system))
+		var/datum/system/S = owner
 		S.on_leave(E)
+
+/// The datum a membership key stands for, when there is one: the system itself, the registered singleton of a
+/// /datum/system type, or the datum used as a system. A capability type has none.
+/proc/rx_member_owner(system)
+	RETURN_TYPE(/datum)
+	if(isdatum(system))
+		return system
+	if(ispath(system, /datum/system))
+		return system_table()[system]
+	return null
 
 /// TRUE when `E` is a member of `system` through any source.
 /proc/is_member(system, datum/E)

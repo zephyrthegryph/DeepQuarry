@@ -44,7 +44,7 @@
 	TEST_ASSERT(A.secured, "secured once attached")
 	TEST_ASSERT_EQUAL(F.caps_examine(H)[1], "\A [A] is attached to it.", "examine names it")
 	refresh_flush()
-	TEST_ASSERT("rigged" in F.look_overlays, "draw shows the attached overlay")
+	TEST_ASSERT(dx_look_shows(F, "rigged"), "draw shows the attached overlay")
 
 	B.set_secured(FALSE)
 	TEST_ASSERT_EQUAL(attach.why_not(H, F, B), "something is already attached to it", "one assembly at a time")
@@ -64,7 +64,7 @@
 	TEST_ASSERT(A.loc != F, "it left the holder")
 	TEST_ASSERT(!A.secured, "unsecured again, ready to attach elsewhere")
 	refresh_flush()
-	TEST_ASSERT(!("rigged" in F.look_overlays), "the overlay is gone")
+	TEST_ASSERT(!dx_look_shows(F, "rigged"), "the overlay is gone")
 	A.pulse(0)
 	TEST_ASSERT_EQUAL(LAZYLEN(F.pulses), 1, "a detached assembly no longer pulses the holder")
 

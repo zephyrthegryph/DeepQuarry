@@ -352,7 +352,7 @@ GLOBAL_LIST_INIT(action_defs, init_action_defs())
 	var/datum/interaction/capability/E = gesture_entry_for(actor, over, item, GESTURE_DRAG)
 	if(!E)
 		return FALSE
-	INVOKE_ASYNC(GLOBAL_PROC_REF(gesture_attempt), E, actor, over, item)
+	INVOKE_ASYNC(GLOBAL_PROC, GLOBAL_PROC_REF(gesture_attempt), E, actor, over, item)
 	return TRUE
 
 // ---- radial and screentip data ----

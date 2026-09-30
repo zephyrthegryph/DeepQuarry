@@ -14,6 +14,10 @@
 /obj/machinery/power/apc/dx_test/ui_allowed(mob/user, action)
 	return ui_ok
 
+/// The test floor is a floor tile, not plating: the cable steps don't ask for it off.
+/obj/machinery/power/apc/dx_test/floor_exposed(mob/user, obj/item/held)
+	return TRUE
+
 /// A test APC with a full cell, both allocated (so the test block takes both back).
 /datum/unit_test/proc/dx_apc_make(turf/T)
 	var/obj/machinery/power/apc/dx_test/A = allocate(/obj/machinery/power/apc/dx_test, T)

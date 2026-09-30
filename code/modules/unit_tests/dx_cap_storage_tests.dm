@@ -9,7 +9,7 @@
 
 /// Whether A's applied look carries the overlay `name`.
 /proc/dxs_has_layer(atom/A, name)
-	return (name in A.look_overlays) ? TRUE : FALSE
+	return dx_look_shows(A, name) ? TRUE : FALSE
 
 /// A tool belt: tools and medical things, two at most, up to normal size.
 /obj/cap_fixture/storage_belt/capabilities()

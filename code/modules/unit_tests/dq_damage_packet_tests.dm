@@ -111,7 +111,11 @@
 	TEST_ASSERT(!packet.add_injury(INJURY_CELLULAR, 5), "cellular injury has no packet kind")
 	packet.release()
 	var/datum/damage_packet/again = damage_packet()
-	TEST_ASSERT(again == packet, "a released packet should be reused")
+	if(GLOB.pool_poison)
+		TEST_ASSERT(again != packet, "a released packet is poisoned in test builds: never handed out again")
+	else
+		TEST_ASSERT(again == packet, "a released packet should be reused")
+	TEST_ASSERT(!length(again.amounts), "and the next packet is clean")
 	TEST_ASSERT_EQUAL(again.total(), 0, "a reused packet should come back empty")
 	TEST_ASSERT_EQUAL(again.penetration, 0, "a reused packet should come back without penetration")
 	TEST_ASSERT_NULL(again.zone, "a reused packet should come back without a zone")

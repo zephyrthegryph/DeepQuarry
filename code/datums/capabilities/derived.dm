@@ -536,7 +536,7 @@ GLOBAL_VAR_INIT(derived_write_expected, FALSE)
 /// baseline): mark the entities that read a factor that changed.
 /proc/derived_factors_recomputed(datum/D, list/before, list/after)
 	var/datum/derived_table/T = GLOB.derived_tables[D.type]
-	if(!T?.factor_ids)
+	if(!T || !T.factor_ids) // 0 marks a type with no table: ?. does not see through it
 		return
 	var/mask = 0
 	for(var/i in 1 to length(T.factor_ids))
