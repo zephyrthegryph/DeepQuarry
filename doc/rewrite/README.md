@@ -49,6 +49,7 @@ beside the old forms.
 | [construction.md](construction.md) | Primitives, joints, ladder presets, conservation test |
 | [pools.md](pools.md) | `/datum/pooled`, reset, poison |
 | [scheduling_and_kernel.md](scheduling_and_kernel.md) | `kernel_tick` phases, systems, work, urgent requests |
+| [life_sequences.md](life_sequences.md) | Sequences (entity-major kernel work: steps as procs, `after` edges, `should_run`, parking as membership), Mob Life's landing spot, the S1-S4 waves |
 | [rust.md](rust.md) | `vg_frame`, outbox, watches, no mirrors |
 | [dx_conventions.md](dx_conventions.md) | The rules and CI lints |
 | [migration_guide.md](migration_guide.md) | The API as built, and every old form with its replacement |

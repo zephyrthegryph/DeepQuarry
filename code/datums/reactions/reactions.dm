@@ -15,6 +15,8 @@
 //
 // Delivery contracts (handler is a PROC_REF on the holder, or a GLOBAL_PROC_REF):
 //   on_change(reads, handler)   handler(list/keys): once per drain (rx_drain) however many reads changed.
+//               at_most = N     ... and at most once per N deciseconds per holder: changes inside the window are held
+//                               and delivered once, with every key they named, when it ends (rx_at_most_admit()).
 //   on_notice(type, handler)    handler(datum/notice/N): every occurrence, in publish order, never coalesced.
 //   before_op(key|type, handler) handler(ctx): synchronous before commit; a non-null return vetoes (a reason).
 //   after_op(key|type, handler)  handler(ctx): synchronous after commit; the return is ignored.
@@ -51,6 +53,8 @@
 	var/budget
 	/// every(): the LANE_* whose share pays for it (null: LANE_SIMULATION).
 	var/lane
+	/// on_change(): deciseconds; deliveries to one holder are at least this far apart (0: every drain).
+	var/at_most = 0
 	/// The shared work item this reaction registered (every / urgent on_cross / on_notice, from a type table), or null.
 	var/datum/work_item/reaction/work
 	/// every(): the type whose reactions() declared it (the work item is keyed by it and the handler), or null.
@@ -94,9 +98,16 @@
 /proc/on_notice(type, handler)
 	return rx_make(RXN_NOTICE, type, null, handler)
 
-/// One of `reads` (var names, or native() specs) changed: handler(list/keys), once per drain.
-/proc/on_change(list/reads, handler)
-	return rx_make(RXN_CHANGE, null, rx_reads_of(reads), handler)
+/// One of `reads` (var names, or native() specs) changed: handler(list/keys), once per drain. `at_most`
+/// (deciseconds) coalesces further: after a delivery, changes within that window wait and arrive together, once,
+/// when it ends (a HUD refresh needs the latest state, not every step of a walk). A static reaction only: observe()
+/// delivers every drain whatever its trigger says.
+/proc/on_change(list/reads, handler, at_most = 0)
+	var/datum/reaction/R = rx_make(RXN_CHANGE, null, rx_reads_of(reads), handler)
+	if(at_most > 0)
+		R.at_most = at_most
+		R.sig = "[R.sig]|at_most:[at_most]"
+	return R
 
 /// `read` moved to another band of `bands` (ascending thresholds): handler(band, previous_band).
 /proc/on_cross(read, list/bands, handler, urgent = FALSE)
@@ -199,6 +210,8 @@
 	var/list/everys = list()
 	/// The membership keys a holder of this type joins at init for its per-instance every() work (rx_enrol()).
 	var/list/holder_keys
+	/// sig -> on_change reaction with at_most (a held delivery finds its reaction when its window ends).
+	var/list/at_most_by_sig
 
 /// type -> /datum/rx_table, or 0 for a type that reacts to nothing and reads nothing.
 GLOBAL_LIST_EMPTY(rx_tables)
@@ -254,6 +267,9 @@ GLOBAL_LIST_EMPTY(rx_tables)
 				LAZYINITLIST(T.by_key[read])
 				T.by_key[read] += R
 				T.read_keys[read] = TRUE
+			if(R.at_most)
+				// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
+				LAZYSET(T.at_most_by_sig, R.sig, R)
 		if(RXN_BEFORE_OP)
 			rx_table_add_op(T.before_keyed, T.before_typed, R)
 		if(RXN_AFTER_OP)

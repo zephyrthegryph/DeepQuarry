@@ -13,6 +13,15 @@
 #define LIFE_PHASE_OUTPUT 4000
 #define LIFE_PHASE_TAIL 5000
 
+// --- Anchors: the same bands on the Life sequence (/datum/sequence/life, doc/rewrite/life_sequences.md) ---
+// Named no-op steps. A step says which band it runs in with `after = LIFE_BODY`; an anchor is passed only
+// when no step is ready, so everything in a band runs before the next band begins.
+#define LIFE_INPUT "LIFE_INPUT"
+#define LIFE_BODY "LIFE_BODY"
+#define LIFE_MIND "LIFE_MIND"
+#define LIFE_OUTPUT "LIFE_OUTPUT"
+#define LIFE_TAIL "LIFE_TAIL"
+
 // --- Wakes (doc/rewrite/life_on_om.md §5) ----------------------------------------------------
 /// Channels that wake every Life stage: set_stat, Login and Logout, explicit wakes (the old
 /// "wake all"). Stages list only the channels specific to them in `wake_on`.

@@ -162,6 +162,9 @@ GLOBAL_VAR_INIT(rx_draining, FALSE)
 				try
 					if(istype(target, /datum/reaction))
 						var/datum/reaction/R = target
+						// at_most: inside its window the keys are held for one delivery when it ends.
+						if(R.at_most && !rx_at_most_admit(E, R, keys))
+							continue
 						rx_call(E, R.handler, keys)
 					else
 						var/datum/rx_listener/L = target
@@ -170,6 +173,59 @@ GLOBAL_VAR_INIT(rx_draining, FALSE)
 				catch(var/exception/e)
 					stack_trace("rx_drain: [E.type]: [e] ([e.file]:[e.line])")
 	GLOB.rx_draining = FALSE
+
+/**
+ * on_change(at_most =): TRUE when `R` may deliver to `E` now (its window since the last delivery is over), and then
+ * `keys` also carries what was held. Otherwise the keys are held and one keyed timer delivers them, together, when
+ * the window ends. Time is the scheduler's (world time; a test scheduler's injected time).
+ */
+/proc/rx_at_most_admit(datum/E, datum/reaction/R, list/keys)
+	var/datum/rx_state/S = rx_of(E)
+	var/now = om_scheduler().now()
+	var/sig = R.sig
+	var/last = S.at_most_last?[sig]
+	if(!isnull(last) && now < last + R.at_most)
+		var/list/held = S.at_most_held?[sig]
+		if(!held)
+			held = list()
+			LAZYSET(S.at_most_held, sig, held)
+		held |= keys
+		var/timer_key = "at_most:[sig]"
+		if(!after_pending(E, timer_key))
+			// World time (a stasis pause must not hold a presentation refresh back); the holder is found by ref when
+			// it fires, so the timer keeps nothing alive.
+			rx_after(E, last + R.at_most - now, TYPE_PROC_REF(/datum, rx_at_most_release), timer_key, CLOCK_WORLD, list(sig))
+		return FALSE
+	LAZYSET(S.at_most_last, sig, now)
+	var/list/held = S.at_most_held?[sig]
+	if(held)
+		// The window ended before its timer ran: this delivery takes what it held.
+		keys |= held
+		S.at_most_held -= sig
+		if(!length(S.at_most_held))
+			S.at_most_held = null
+		cancel_after(E, "at_most:[sig]")
+	return TRUE
+
+/// An at_most window ended: what it held is queued for the next drain (the window is open again).
+/datum/proc/rx_at_most_release(sig)
+	if(QDELETED(src))
+		return
+	var/datum/rx_state/S = rx
+	var/list/held = S?.at_most_held?[sig]
+	if(!held)
+		return
+	S.at_most_held -= sig
+	if(!length(S.at_most_held))
+		S.at_most_held = null
+	if(S.at_most_last)
+		S.at_most_last -= sig
+	var/datum/rx_table/T = rx_table_of(src)
+	var/datum/reaction/R = T?.at_most_by_sig?[sig]
+	if(!R)
+		return
+	for(var/key in held)
+		rx_pend(src, R, key)
 
 // ---------------------------------------------------------------- band crossings
 

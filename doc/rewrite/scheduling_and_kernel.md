@@ -47,7 +47,9 @@ its cost, and the kernel never schedules it.
 
 A work item has membership (`members = <capability type>` runs it per member), a trigger, its
 observed inputs, a `phase`, ordering edges (`after =`), and a `budget`. A **pipeline** is only a
-named ordered group of work items: stages become work items with after-edges inside a phase.
+named ordered group of work items: stages become work items with after-edges inside a phase. The one case that
+needs entity-major execution, Mob Life, is a **sequence** ([life_sequences.md](life_sequences.md)): one work item
+that runs an ordered step list per member.
 A stage's `should_run` with declared reads replaces `idle`/`wake_on`/`rewake_delay`; adapters keep
 the 294 existing stages running without migrating them.
 
@@ -148,6 +150,12 @@ whose member left mid-step, so the member swapped into it is not skipped. A hots
 the interval elapsed since the sweep began), so every member keeps its phase and a large set costs a slice per tick rather
 than a spike once per interval. A sweep that fell behind catches up by at most `KERNEL_SPREAD_CATCHUP` passes' share per
 pass; the next sweep begins one interval after the last began, or at once if it ran late. Cost is counted once per sweep.
+
+**Sequences.** Entity-major work (ordered steps per member sharing a frame, fixed step with catch-up, a bio clock) is
+a `/datum/sequence` with one sweep item: steps are procs on the entity type ordered by `after =` edges, `should_run`
+replaces `idle`, parking is membership and wakes come through `publish_change()` / `om_changed()`
+([life_sequences.md](life_sequences.md)). Mob Life moves onto `/datum/sequence/life` in waves S1-S4, after which
+`pipeline.dm` is deleted.
 
 **Stages.** The 13 periodic stages and the 2 hotspot stages moved. The 228 life stage definitions and 23 machine stage
 definitions (plus the test and bench fixtures) still run on the object-model engine: a frame is per entity (shared
