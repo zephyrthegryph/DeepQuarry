@@ -1140,7 +1140,7 @@
 	return
 
 /// heat event (verdigris/domains/heat/src/laws.rs). Generated no-op default; override on SSvg.
-/datum/controller/subsystem/vg/proc/on_heat_port_heat(port, joules)
+/datum/system/native/proc/on_heat_port_heat(port, joules)
 	return
 
 /// power event (verdigris/domains/power/src/laws.rs). Generated no-op default; override on SSvg.
