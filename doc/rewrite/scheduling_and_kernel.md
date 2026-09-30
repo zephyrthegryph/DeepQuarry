@@ -1,6 +1,7 @@
 # Scheduling, systems and the kernel
 
-Status: **[in progress]** on `rewrite/f-kernel` (owner W5), on top of `rewrite/kernel`. The detailed
+Status: **[in progress]** on `rewrite/f-kernel` (owner W5), on top of `rewrite/kernel`; the host loop, the system
+conversions and the first stage moves landed on `rewrite/g3-kernel` (section 7). The detailed
 design and its measurements are in [kernel.md](kernel.md); this chapter is the foundation-level
 contract and overrides kernel.md where they differ (see section 6). Overview:
 [foundation.md](foundation.md).
@@ -105,3 +106,47 @@ measured separately, and a short safety resample remains for critical occupied s
 | kernel.md: `member_should_run`/`member_step` | `every(..., members = <capability>)` |
 | kernel.md: rosters and `world_services()` | `MEMBER` relations |
 | `archive/systems.md`, `archive/life_on_om.md` | this chapter; Life detail stays in `doc/mob_life_architecture.md` |
+
+## 7. Where it stands (branch rewrite/g3-kernel)
+
+**The kernel is the host loop.** `kernel().loop()` (`code/controllers/kernel/loop.dm`) replaced the MC `Loop`; there is
+no subsystem queue (`CheckQueue`, `RunQueue`, `SoftReset`, `enqueue()` and the queue links are deleted). One loop
+generation runs at a time (`loop_gen`); `Recreate_kernel()` supersedes it and starts a fresh one without touching the
+systems or subsystems, rate limited like `Recreate_MC()` was. The failsafe watches `kernel().last_tick` and the kernel's
+stack-end detector, and its emergency path calls `Recreate_kernel()`; "Restart Controller" restarts the kernel;
+"Debug Controller" lists the kernel and the systems. `Master` is a shim: it keeps boot (`Initialize`, the init DAG over
+subsystems and systems), the run level, and the values code reads from it (`iteration`, `last_run`, `sleep_delta`,
+`tickdrift`, `current_ticklimit`, `current_runlevel`, `processing`, `init_stage_completed`, ...), which the kernel loop
+writes with the meaning they had.
+
+**Host services** are the subsystems that still exist, all `SS_KERNEL_HOSTED`: phase K runs input, verb_manager, the tgui
+transport, dbcore and the profiler (sqlite, assets, early_assets, atoms, overlays and behaviours have no fire); phase G
+runs garbage (`host_phase`). A host on a longer wait than a tick gets at most `KERNEL_HOST_SLICE` percent of a tick, a
+ticker the whole phase. A runtime in a host is caught and counted like a phase fault.
+
+**Systems.** `SYSTEM_DEF(x)` declares `/datum/system/x` and keeps `SSx` as the name of its instance (the kernel creates
+every pure system in `Master.New`, before the globals), so the 7-433 call sites per system did not move. Converted:
+access, admin_verbs, air, contracts, holomaps, internal_wiki, job, lighting, mapping, media_tracks, nerdle, persistence,
+robot_sprites, shuttles, ticker, speech_controller, and vg, which dissolved into `/datum/system/native` (`SSvg` is the
+native system; the entity table is `code/datums/native/entities.dm`). `Initialize()` became `initialize()`,
+`dependencies` became `needs` (the boot DAG orders both kinds of node; `init_stage` keeps the stage the subsystem had),
+`Shutdown()` became `on_shutdown()`, `Recover()` is gone (nothing recreates a system). A system with a `fire()` body
+(air, lighting, ticker) declares `every(wait, PROC_REF(fire_step), when = PROC_REF(fire_ready), lane = ...)` in
+`reactions()`: `fire_step()` calls the old body with `resumed`, turns `MC_TICK_CHECK` pauses into `STEP_YIELD`, and keeps
+`times_fired`/`fire_cost`/`ticks`. Air and the ticker run on the simulation lane, lighting on the presentation lane (so
+it is shed under overload, as a ticker at L3 would be). The speech controller is a phase K work item over a
+`/datum/verb_lane` (the queue SSverb_manager shares).
+
+**Periodic work is kernel work.** The twelve `PERIODIC_*` / `CADENCE_*` pipelines are `/datum/cadence` definitions, each
+with one sweep item (`/datum/work_item/cadence`, phase P, the cadence's lane, run levels and clock); `om_task_periodic()`
+joins the cadence's membership and `om_task_periodic_stop()` / `PROCESS_KILL` leaves it. A sweep looks again at a slot
+whose member left mid-step, so the member swapped into it is not skipped. A hotspot's burn is an `every()` on
+`/obj/effect/hotspot`.
+
+**Stages.** The 13 periodic stages and the 2 hotspot stages moved. The 228 life stage definitions and 23 machine stage
+definitions (plus the test and bench fixtures) still run on the object-model engine: a frame is per entity (shared
+facts, `F.abort()`, plans per entity type and variant, idle bits, parking, relevance, the missed-wake audit,
+`om_stage_run_now()`), which a stage-major work item does not reproduce. `kernel_stage_adapter_graph` adapts every one of
+them with `stage_work_item()` and validates their after-edges in one graph, which is the gate before a pipeline moves.
+Stages will move when a pipeline can keep its frame (facts, abort, parking) on the kernel side; until then
+`code/datums/om/pipeline.dm` stays.

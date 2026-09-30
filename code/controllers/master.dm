@@ -287,7 +287,6 @@ UI_ACT_PROC(/datum/controller/master, ui_act_view_variables)
 	return TRUE
 
 /datum/controller/master/proc/check_and_perform_fast_update()
-	PRIVATE_PROC(TRUE)
 	set waitfor = FALSE // ALLOW(scheduler): MC code
 
 	if(!overview_fast_update)

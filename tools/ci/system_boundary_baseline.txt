@@ -1,10 +1,6 @@
 # System boundary ratchet (tools/ci/system_boundary_lint.py). `<rule>:<file>:<owner> <count>`; only shrinks.
 # Regenerate the file with --generate only when the rules change; otherwise --update lowers ceilings.
 B1:code/ATMOSPHERICS/SSair.dm:SSmapping 9
-B1:code/ATMOSPHERICS/components/omni_devices/filter.dm:SSvg 1
-B1:code/ATMOSPHERICS/components/omni_devices/mixer.dm:SSvg 1
-B1:code/ATMOSPHERICS/components/trinary_devices/filter.dm:SSvg 1
-B1:code/ATMOSPHERICS/components/trinary_devices/mixer.dm:SSvg 1
 B1:code/ATMOSPHERICS/gasmixtures/gas_types.dm:SSmapping 1
 B1:code/__defines/machinery.dm:SSair 3
 B1:code/__defines/radiation.dm:GLOB.radiation_service 1
@@ -22,7 +18,7 @@ B1:code/controllers/subsystems/internal_wiki.dm:GLOB.supply_service 3
 B1:code/controllers/subsystems/lighting.dm:GLOB.planet_service 5
 B1:code/controllers/subsystems/profiler.dm:GLOB.machine_service 19
 B1:code/controllers/subsystems/profiler.dm:GLOB.mob_service 1
-B1:code/controllers/subsystems/profiler.dm:SSair 19
+B1:code/controllers/subsystems/profiler.dm:SSair 18
 B1:code/controllers/subsystems/ticker.dm:GLOB.emergency_shuttle_service 1
 B1:code/datums/behaviours/sellable.dm:GLOB.supply_service 2
 B1:code/datums/datum.dm:SSgarbage 1
@@ -48,7 +44,6 @@ B1:code/game/area/areas.dm:SSlighting 1
 B1:code/game/atom/atom_materialize.dm:SSatoms 3
 B1:code/game/atom/atoms_initializing_EXPENSIVE.dm:SSatoms 1
 B1:code/game/atoms_movable.dm:SSticker 2
-B1:code/game/atoms_movable.dm:SSvg 3
 B1:code/game/gamemodes/calamity/calamity.dm:GLOB.antag_service 2
 B1:code/game/gamemodes/cult/narsie.dm:GLOB.emergency_shuttle_service 1
 B1:code/game/gamemodes/cult/runes.dm:SSticker 1
@@ -315,6 +310,5 @@ B3:code/modules/contracts/faction_agent_contracts.dm:contracts 6
 B3:code/modules/contracts/medical_case_report.dm:contracts 3
 B3:code/modules/contracts/medical_trial.dm:contracts 2
 B3:code/modules/contracts/opportunity_broker.dm:contracts 6
-B3:code/modules/heat/heat.dm:air 2
 B3:code/modules/holomap/generate_holomap.dm:holomaps 9
 B3:code/modules/power/power_bridge.dm:machines 4

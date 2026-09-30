@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "The kernel owns the host loop: the MC queue is gone, host services run in phases K and G, the failsafe watches the kernel and Recreate_kernel() restarts it"
+  - refactor: "Air, lighting, ticker, shuttles, job, contracts, persistence, holomaps, media tracks, nerdle, robot sprites, mapping, access, admin verbs, the wiki and the speech controller are kernel systems; SSvg is the native system"
+  - refactor: "Periodic work (process lanes) and hotspot burning run as kernel work items instead of object-model pipelines"
