@@ -57,7 +57,7 @@
 /// Share of the kernel's budget reserved for phase U.
 #define KERNEL_URGENT_SHARE 0.1
 /// Elapsed ticks a native frame may cover in one call (a long stall does not step the world for minutes).
-#define KERNEL_NATIVE_MAX_CATCHUP 10
+#define KERNEL_NATIVE_MAX_CATCHUP NATIVE_MAX_CATCHUP
 /// A work item that faults this many runs in a row is parked and admins are told.
 #define KERNEL_FAULT_PARK 5
 

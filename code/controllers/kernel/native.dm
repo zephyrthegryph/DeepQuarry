@@ -1,16 +1,17 @@
-/// Phase N (kernel.dm): the one native frame per tick. STUB for the Rust owner (W4): this file is replaced by
-/// `vg_frame(elapsed, budget)` and the `/datum/system/native` delivery.
+/// Phase N (kernel.dm): the one native frame per kernel tick.
 ///
-/// Until then the frame is what the kernel already owns: the OM world wheel (timers, keys, rate crossings, native
-/// watches; vg_world_step). The other native drivers still run where they always did: SSvg fires vg_world_tick,
-/// vg_entity_tick_all and vg_drain_events every 0.5 s, and SSair fires the gas phases and vg_heat_tick. Moving those
-/// three calls into this proc (and deleting the two subsystems' drivers) is the native cutover, not a kernel change.
+/// The frame is `/datum/system/native` (code/datums/native/system.dm): vg_frame paces the Rust world and its
+/// scheduler (timers, keys, rate crossings, watches, gas and heat drains) and the system delivers the records
+/// it returns. This proc is the kernel's single call into it; nothing else steps the frame on a live server
+/// (SSvg is SS_NO_FIRE). Tests that step Rust by hand use native_system().drain().
 
-/// One native frame. `elapsed` is deciseconds since the last frame, capped at KERNEL_NATIVE_MAX_CATCHUP ticks;
-/// `budget` is the wake budget the frame may deliver.
+/// One native frame. `elapsed` is deciseconds since the last frame (the kernel caps it at
+/// KERNEL_NATIVE_MAX_CATCHUP ticks); `budget` is the per-tick wake budget the frame may deliver. Runs at most
+/// once per wheel tick, and never on a scheduler running injected time.
 /proc/native_frame(elapsed, budget)
 	var/datum/om/scheduler/sched = kernel().sched
-	if(!sched)
+	if(!sched || !sched.world_frame_begin(om_world_tick_of(world.time)))
 		return
-	sched.world_budget = budget
-	sched.world_step()
+	var/start = TICK_USAGE_REAL
+	native_system().step(elapsed, budget)
+	sched.world_last_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - start)

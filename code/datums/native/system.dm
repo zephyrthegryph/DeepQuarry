@@ -65,14 +65,15 @@
 		native = system(/datum/system/native)
 	return native
 
-/// One tick's frame: `tick` is the wheel tick now (om_world_tick_of(world.time)); `budget` the
-/// normal/background wakes to take. Returns TRUE when a frame ran.
-/datum/system/native/proc/frame(tick, budget = NATIVE_WAKE_BUDGET)
+/// The kernel's frame (phase N): `elapsed_ds` deciseconds since the last one become wheel ticks (at least one,
+/// at most NATIVE_MAX_CATCHUP), and `budget` (normal/background wakes per tick) scales with them, so a late
+/// tick takes the skipped ticks' share. Returns TRUE when a frame ran.
+/datum/system/native/proc/step(elapsed_ds, budget = NATIVE_WAKE_BUDGET)
 	if(tick_lag_sent != world.tick_lag)
 		send_tick_lag()
-	var/elapsed = max(tick - last_tick, 0)
-	last_tick = tick
-	return run_frame(elapsed, budget)
+	var/ticks = clamp(CEILING(elapsed_ds / world.tick_lag, 1), 1, NATIVE_MAX_CATCHUP)
+	last_tick = om_world_tick_of(world.time)
+	return run_frame(ticks, budget * ticks)
 
 /// Runs a frame for `elapsed` wheel ticks (0: no pacing, only drain: tests that stepped Rust by hand).
 /datum/system/native/proc/run_frame(elapsed, budget = NATIVE_WAKE_BUDGET)
@@ -163,7 +164,7 @@
 	if(!entity)
 		return
 	var/datum/target = SSvg.entity_lookup(entity)
-	if(target?.om_rec)
+	if(target && !QDELETED(target))
 		native_publish_notice(target, header, box.Copy(p, p + count))
 
 /// CROSSED (`watch`, `band`): the watch's own delivery.
@@ -187,41 +188,76 @@
 
 // ---------------------------------------------------------------- delivery seam
 
-/// `E`'s value under `key` (a Rust channel mask, or a DM CHANGE_* channel) changed.
-/// Today: raises the OM channel. Integration: publish_change(E, key).
+/// NATIVE_KEY / channel value -> the name `native("...")` specs use for it. Register a Rust-owned value once
+/// with native_key_name_add(); a key without a name publishes to no reaction (only the OM bridge sees it).
+GLOBAL_LIST_EMPTY(native_key_names)
+
+/// Names the Rust key `key` (a NATIVE_KEY or a channel mask) `name`, the text `native(name)` reads.
+/proc/native_key_name_add(key, name)
+	GLOB.native_key_names[num2text(key, 12)] = name
+
+/// The `native("...")` name of `key`, or null.
+/proc/native_key_name(key)
+	return GLOB.native_key_names[num2text(key, 12)]
+
+/// `E`'s value under `key` (a Rust channel mask, or a DM CHANGE_* channel) changed. Reactions hear it through
+/// publish_change() under the key's `native("...")` name (READERS demand-gates it). The om_changed() call is
+/// the bridge for OM-era readers that key on channel bits: om_listen listeners, declared appearances, caches
+/// and periodic work (code/datums/om/entity.dm om_dispatch_change).
 /proc/native_publish_change(datum/E, key)
 	if(QDELETED(E) || !key)
 		return FALSE
 	GLOB.native_deliveries[NATIVE_SRC_OTHER]++
+	var/name = native_key_name(key)
+	if(name && rx_readers(E, name))
+		publish_change(E, name)
 	om_changed(E, key)
 	return TRUE
 
-/// Something of `kind` (an event header) happened to `E`, with `args`.
-/// Today: an OM event; integration: PUBLISH(E, notice_type, args...).
+/// Something of `kind` (an event header) happened to `E`, with `args`. Published as a /datum/notice/native:
+/// nothing is allocated unless E's reactions or an observer want that type.
 /proc/native_publish_notice(datum/E, kind, list/args)
 	if(QDELETED(E))
 		return FALSE
-	om_emit(E, new /datum/om/event/native_notice(kind, args))
+	PUBLISH(E, /datum/notice/native, kind, args)
 	return TRUE
 
-/// A native watch crossed `band` with `detail` (the record's numbers): a world watch queues on its lane,
-/// a heat watch calls its owner, a threshold-set crossing calls it per entry.
-/// Today: the watch's own callback. Integration: on_cross(watch, band, ...).
+/// A native watch crossed `band` with `detail` (the record's numbers). A watch declared by a reaction
+/// (`rx_reaction`, set by native_watch_for_reaction()) delivers through rx_crossed() on its holder (bands,
+/// hysteresis, urgent path); any other watch calls its owner's own callback (a world watch queues on its lane,
+/// a heat watch picks the wake or set-crossing form).
 /proc/native_crossed(datum/native_watch/watch, band, list/detail)
 	if(QDELETED(watch) || !watch.handle)
 		return FALSE
+	if(watch.rx_reaction)
+		var/datum/holder = om_resolve(watch.owner_ref)
+		if(!holder)
+			qdel(watch)
+			return FALSE
+		GLOB.native_deliveries[watch.delivery_source]++
+		rx_crossed(holder, watch.rx_reaction, band, watch.rx_listener)
+		return TRUE
 	return watch.crossed(band, detail)
 
-/// An OM event carrying a native notice, for entities with a record.
-/datum/om/event/native_notice
-	coalesce = FALSE
-	var/kind
-	var/list/args
+/// Marks `watch` as the Rust side of the on_cross reaction `R` (and the observer `L`, when dynamic) on its
+/// owner: its crossings deliver through rx_crossed().
+/proc/native_watch_for_reaction(datum/native_watch/watch, datum/reaction/R, datum/rx_listener/L)
+	watch.rx_reaction = R
+	watch.rx_listener = L
+	return watch
 
-/datum/om/event/native_notice/New(kind, list/args)
-	..()
+/// A native notice: the event header and the record's fields.
+/datum/notice/native
+	/// The NATIVE_NOTICE_* header (or generated event code).
+	var/kind
+
+/datum/notice/native/fill(kind, list/args)
 	src.kind = kind
-	src.args = args
+	data = args
+
+/datum/notice/native/reset()
+	..()
+	kind = null
 
 // ---------------------------------------------------------------- declared pushes
 
