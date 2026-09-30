@@ -467,8 +467,9 @@ GLOBAL_LIST_EMPTY(refresh_drift)
 /proc/refresh_sweep_step(budget = 50)
 	// H3 / review 2 M3: test builds sweep everything strictly (drift fails the run). Production checks
 	// only atoms a player can see or has open, at a small budget; skipping a far atom costs a scan,
-	// not a check, so a full cycle over the near atoms takes seconds.
-#if defined(UNIT_TESTS)
+	// not a check, so a full cycle over the near atoms takes seconds. A benchmark build (which also
+	// defines UNIT_TESTS) measures the production audit, not the test sweep.
+#if defined(UNIT_TESTS) && !defined(BENCHMARK)
 	var/scan_budget = budget
 #else
 	budget = min(budget, 10)
@@ -493,7 +494,7 @@ GLOBAL_LIST_EMPTY(refresh_drift)
 		// update_icon() on this same lane marks it: its refresh is pending, not missed.
 		if(A.refresh_queued || A.appearance_queued)
 			continue
-#if !defined(UNIT_TESTS)
+#if !defined(UNIT_TESTS) || defined(BENCHMARK)
 		if(!LAZYLEN(A.open_tguis) && !refresh_near(A, client_turfs))
 			continue
 #endif
