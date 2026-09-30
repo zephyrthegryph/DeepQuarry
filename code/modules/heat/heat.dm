@@ -342,6 +342,7 @@ GLOBAL_LIST_INIT(heat_coupling_none, list(HEAT_TARGET_NONE, 0))
 
 /datum/native_watch/heat/unregister()
 	if(!isnull(token))
+		// ALLOW(api): the heat port is the one place that binds heat channels to the Rust world watch
 		vg_world_cancel(token)
 	token = null
 	body = null

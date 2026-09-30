@@ -7,6 +7,7 @@
 /// A holder with a per-instance every() gated by a var, and a second one ordered after the first.
 /datum/rxw_pump
 	var/on = FALSE
+	// ALLOW(instance_list): test fixture, a handful of instances per test run
 	var/list/steps = list()
 	// ALLOW(instance_list): test fixture, a handful of instances per test run
 	var/list/late = list()
