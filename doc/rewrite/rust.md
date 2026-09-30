@@ -22,7 +22,9 @@ then returns **one outbox page** of records:
 DM `/datum/system/native` (kernel phase N, [scheduling_and_kernel.md](scheduling_and_kernel.md))
 calls `vg_frame` and dispatches the page. The old drivers and drains (SSvg world tick, SSair drains,
 heat tick, `world_step`, gas observation drains) become internal or are deleted: there is exactly
-one driver and one drain.
+one driver and one drain. **Status:** wired. `native_frame()` (phase N) runs `native_system().kernel_frame()` once
+per wheel tick; CHANGED/NOTICE/CROSSED reach `publish_change` (named keys, `native_key_name_add`), `PUBLISH(/datum/notice/native)`
+and `rx_crossed` (watches declared with `native_watch_for_reaction`); OM channel bits keep a thin `om_changed` bridge.
 
 ## 2. Reading native values
 
@@ -49,7 +51,7 @@ DM holds handles, not copies. Deleted mirrors and their replacements:
 | Grid view easing | Client/UI side |
 | SSvg repair sweep | Test-only drift audit |
 | Radiation shielding copies | `TRACKED` + generated `rust_push` |
-| `update_rust_device` / power_sync hand pushes | Generated `rust_push` from declared reads ([reactions.md](reactions.md)) |
+| `update_rust_device` / power_sync hand pushes | Generated `rust_push` from declared reads ([reactions.md](reactions.md)). Done for the pipe devices (pump, volume pump, passive gate, vent pump, vent scrubber: TRACKED vars + `rust_device_rev`); power_sync and the radiation shielding flush remain (the flush is a batched world-service call, only `set_rad_insulation` is a registered setter) |
 
 ## 5. Gas and rates
 
