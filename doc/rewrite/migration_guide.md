@@ -82,6 +82,24 @@ TRACKED(/obj/item/laser_pointer, energy, CHANGE_ITEM_CHARGE)     // a declared v
 
 **Lint and audit.** `tools/ci/derived_reads_lint.py` parses each derived proc body and fails when it reads a var of the type that the matching declaration doesn't list (`src.x`, or a bare `x` the type declares). `--fix` adds the missing reads to the source `derived()` block (a dev tool; it doesn't generate anything at build). It also flags a declared var that isn't tracked, derived or a relation, and a hop through a non-relation. Legacy code is in `tools/ci/derived_reads_baseline.txt` (shrink-only). `tracked_lint.py` counts every write to a tracked or derived var outside its setter. The sampled `REFRESH DRIFT` audit is the one audit: it re-derives the look, hidden verbs, `should_run()` and every `derive()` value, compares them with what is applied, and names the likely undeclared read (in test builds: the tracked vars whose change was dropped since the last full refresh).
 
+## A2b. Reactions, notices and the ledger [built: rewrite/f-reactions]
+
+Reference: `dx_conventions.md`, "Reactions". Deliberate differences from the plan text: relation kind constants are
+`RELK_REF/RELK_PAIRED/RELK_OWNED` (`REF` is a macro); `every(when = ...)` (`while` is a DM keyword); the keyed or
+world-clock timer is `rx_after(...)` because `after()` is variadic and DM rejects named args on a variadic proc.
+
+| Old | New |
+|---|---|
+| `om_after(E, d, proc, args...)`, `after(...)` | unchanged; wrappers over `rx_after()` |
+| `after_slot(E, slot, ...)` | unchanged (slots stay in om's `timer_slots` for OWN_TIMER); schedules through `rx_after()` |
+| a hand `changed()` plus polling a var | `on_change(list(nameof(v)), PROC_REF(h))` in `reactions()` |
+| `om_emit(E, new /datum/om/event/x)` for an occurrence | `PUBLISH(E, /datum/notice/x, args...)` + `on_notice()` |
+| `om_hook(source, event, ...)` | `observe(source, on_notice(type, h), listener, PROC_REF(h))` |
+| hand-kept grant counters and source lists | `grant(target, what, source, duration)` / `revoke()` |
+| `system.members` / `cap_system` rosters | `join(system, E, source)` / `members_of(system)` [rosters not yet deleted] |
+| `rel_one(nameof(v), back = ...)` | still valid; `rel_one(nameof(v), type, kind = RELK_PAIRED, back = ...)` |
+| `derived()` reads | still valid; folded into `reactions()` for `READERS` |
+
 ## A3. Capabilities
 
 ```dm

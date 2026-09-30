@@ -101,6 +101,7 @@
 #include "code\__defines\cap_bits.dm"
 #include "code\__defines\capabilities.dm"
 #include "code\__defines\derived.dm"
+#include "code\__defines\reactions.dm"
 #include "code\__defines\type_list.dm"
 #include "code\__defines\kernel.dm"
 #include "code\__defines\lifecycle_decl.dm"
@@ -865,6 +866,10 @@
 #include "code\datums\ownership\views.dm"
 #include "code\datums\ownership\registry_types.dm"
 #include "code\datums\ownership\shared.dm"
+#include "code\datums\reactions\delivery.dm"
+#include "code\datums\reactions\reactions.dm"
+#include "code\datums\reactions\state.dm"
+#include "code\datums\reactions\timer.dm"
 #include "code\datums\ownership\table.dm"
 #include "code\datums\ownership\transfer.dm"
 #include "code\datums\om_events\atom_events.dm"
@@ -5572,6 +5577,7 @@
 #include "code\modules\combat_ai\ports\solargrub.dm"
 #include "code\modules\combat_ai\ports\three_phases.dm"
 #include "code\modules\combat_ai\ports\ysbryd.dm"
+#include "code\_generated\reads.dm"
 // END DQ MODULAR INCLUDES
 // END_INCLUDE
 

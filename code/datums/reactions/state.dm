@@ -1,0 +1,278 @@
+// State and change (code/__defines/reactions.dm).
+//
+// publish_change(E, key) announces that E's `key` changed. It is demand-gated: TRACKED setters (through
+// changed()), timed_set and the ownership accessors call it only when READERS(E, key) says someone reads
+// that key, so an unread var costs one assoc lookup. Readers are static (the type's reactions() table,
+// which folds in capability reactions, derived() and the generated reads) or dynamic (observe()).
+//
+// The relation ledger holds the internal relation kinds (GRANT, LISTENER, MEMBER, TIMER, CONTAINED) on the
+// same holder-centred footing as the declared REF / PAIRED / OWNED views. Every entry counts its sources:
+// the relation is present while any source holds it, so two systems granting the same thing revoke
+// independently. Writes publish both ends.
+
+/// Everything a datum holds for the reaction layer, allocated on first use (most datums never have one).
+/datum/rx_state
+	/// kind -> what -> source -> count (rx_ledger_*).
+	var/list/ledger
+	/// /datum/rx_listener records observing THIS datum.
+	var/list/listeners
+	/// /datum/rx_listener records where this datum is the listener.
+	var/list/listening
+	/// key -> number of dynamic change/cross observers reading it (READERS).
+	var/list/observed
+	/// notice type -> number of dynamic observers wanting it (WANTS).
+	var/list/notice_types
+	/// on_cross read -> the last band delivered.
+	var/list/bands
+	/// join(): system -> number of memberships this datum holds in it.
+	var/list/joined
+	/// after(key = ...): key -> list(timer id, token, clock) of the pending keyed timer.
+	var/list/timer_ids
+
+/datum
+	/// The reaction layer's per-datum state, or null (see /datum/rx_state).
+	var/tmp/datum/rx_state/rx
+
+/// D's reaction state, made when first needed.
+/proc/rx_of(datum/D)
+	RETURN_TYPE(/datum/rx_state)
+	if(!D.rx)
+		D.rx = new
+	return D.rx
+
+/// The relation key a ledger kind publishes on its holder (and "<key>_of" on the partner it names).
+GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener", "rel_member", "rel_timer", "rel_contained"))
+
+// ---------------------------------------------------------------- READERS
+
+/// TRUE when a static reaction of E's type, a generated / derived() read, or a dynamic observer reads `key`.
+/proc/rx_readers(datum/E, key)
+	var/datum/rx_table/T = GLOB.rx_tables?[E.type]
+	if(isnull(T))
+		T = rx_table_build(E)
+	if(T && T.read_keys[key])
+		return TRUE
+	return !!E.rx?.observed?[key]
+
+/**
+ * `key` of `E` changed. Delivers to the type's on_change / on_cross reactions and to observe()rs of the key
+ * (coalesced: a handler runs once per drain however many of its reads changed; see rx_drain()).
+ */
+/proc/publish_change(datum/E, key)
+	if(!E || QDELING(E) || !islist(GLOB?.rx_tables))
+		return
+	var/datum/rx_table/T = GLOB.rx_tables[E.type]
+	if(isnull(T))
+		T = rx_table_build(E)
+	if(T)
+		var/list/hits = T.by_key[key]
+		for(var/datum/reaction/R as anything in hits)
+			rx_pend(E, R, key)
+		var/list/crossing = T.crosses[key]
+		for(var/datum/reaction/R as anything in crossing)
+			rx_cross_check(E, R)
+	var/datum/rx_state/S = E.rx
+	if(S?.listeners)
+		for(var/datum/rx_listener/L as anything in S.listeners.Copy())
+			var/datum/reaction/R = L.trigger
+			if(R.kind == RXN_CHANGE && (key in R.reads))
+				rx_pend(E, L, key)
+			else if(R.kind == RXN_CROSS && R.key == key)
+				rx_cross_check(E, R, L)
+
+// ---------------------------------------------------------------- the relation ledger
+
+/// Adds `source` as a holder of `what` under `kind` on `holder`, n times. Returns TRUE when `what` was not
+/// present before (its first source). Publishes both ends.
+/proc/rx_ledger_add(datum/holder, kind, what, source, n = 1)
+	if(isnum(what))
+		what = "[what]" // a number would index the list, not key it
+	if(isnum(source))
+		source = "[source]"
+	var/datum/rx_state/S = rx_of(holder)
+	if(!S.ledger)
+		S.ledger = list()
+	var/list/whats = S.ledger["[kind]"]
+	if(!whats)
+		whats = list()
+		S.ledger["[kind]"] = whats
+	var/list/sources = whats[what]
+	. = FALSE
+	if(!sources)
+		sources = list()
+		whats[what] = sources
+		. = TRUE
+	sources[source] = (sources[source] || 0) + n
+	if(.)
+		rx_ledger_publish(holder, kind, what)
+
+/// Removes n counts of `source` from `what`. Returns TRUE when `what` has no source left (it is gone).
+/proc/rx_ledger_remove(datum/holder, kind, what, source, n = 1)
+	if(isnum(what))
+		what = "[what]"
+	if(isnum(source))
+		source = "[source]"
+	var/list/whats = holder.rx?.ledger?["[kind]"]
+	var/list/sources = whats?[what]
+	if(!sources || !sources[source])
+		return FALSE
+	var/left = sources[source] - n
+	if(left > 0)
+		sources[source] = left
+		return FALSE
+	sources -= source
+	if(length(sources))
+		return FALSE
+	whats -= what
+	if(!length(whats))
+		holder.rx.ledger -= "[kind]"
+	rx_ledger_publish(holder, kind, what)
+	return TRUE
+
+/// Drops every hold `source` has under `kind` on `holder`. Returns the number of whats that vanished.
+/proc/rx_ledger_clear_source(datum/holder, kind, source)
+	if(isnum(source))
+		source = "[source]"
+	var/list/whats = holder.rx?.ledger?["[kind]"]
+	. = 0
+	for(var/what in whats?.Copy())
+		var/list/sources = whats[what]
+		if(!sources?[source])
+			continue
+		if(rx_ledger_remove(holder, kind, what, source, sources[source]))
+			.++
+
+/// TRUE while any source holds `what` under `kind` on `holder`.
+/proc/rx_ledger_has(datum/holder, kind, what)
+	if(isnum(what))
+		what = "[what]"
+	return !!holder.rx?.ledger?["[kind]"]?[what]
+
+/// How many counts across every source hold `what`.
+/proc/rx_ledger_count(datum/holder, kind, what)
+	if(isnum(what))
+		what = "[what]"
+	. = 0
+	var/list/sources = holder.rx?.ledger?["[kind]"]?[what]
+	for(var/source in sources)
+		. += sources[source]
+
+/// The sources holding `what` (a fresh list).
+/proc/rx_ledger_sources(datum/holder, kind, what)
+	if(isnum(what))
+		what = "[what]"
+	var/list/sources = holder.rx?.ledger?["[kind]"]?[what]
+	return sources ? sources.Copy() : list()
+
+/// Every `what` present under `kind` (a fresh list of keys).
+/proc/rx_ledger_whats(datum/holder, kind)
+	var/list/whats = holder.rx?.ledger?["[kind]"]
+	var/list/out = list()
+	for(var/what in whats)
+		out += what
+	return out
+
+/// A relation write publishes the holder's key, and the partner's when `what` is a datum.
+/proc/rx_ledger_publish(datum/holder, kind, what)
+	var/key = GLOB.rx_kind_keys[kind]
+	if(!key)
+		return
+	if(READERS(holder, key))
+		publish_change(holder, key)
+	if(isdatum(what))
+		var/datum/partner = what
+		if(!QDELING(partner))
+			var/partner_key = "[key]_of"
+			if(READERS(partner, partner_key))
+				publish_change(partner, partner_key)
+
+// ---------------------------------------------------------------- grants
+
+/**
+ * `source` grants `what` (a capability type, a bit name, a permission) to `target`, for `duration`
+ * deciseconds of target's clock when given, else until revoke(). The grant is present while any source
+ * holds it. Returns TRUE when it was not present before.
+ */
+/proc/grant(datum/target, what, source = "grant", duration)
+	if(!target || QDELING(target))
+		return FALSE
+	. = rx_ledger_add(target, RELK_GRANT, what, source)
+	if(duration)
+		rx_after(target, duration, GLOBAL_PROC_REF(rx_grant_expire), "grant:[what]:[source]", CLOCK_OWN, list(target, what, source))
+
+/// Withdraws `source`'s hold on `what`. Returns TRUE when the grant is gone (no source left).
+/proc/revoke(datum/target, what, source = "grant")
+	if(!target)
+		return FALSE
+	return rx_ledger_remove(target, RELK_GRANT, what, source)
+
+/proc/rx_grant_expire(datum/target, what, source)
+	if(target && !QDELETED(target))
+		revoke(target, what, source)
+
+/// TRUE while `what` is granted to `target` by any source.
+/proc/granted(datum/target, what)
+	return rx_ledger_has(target, RELK_GRANT, what)
+
+// ---------------------------------------------------------------- membership
+
+/// `E` joins `system`, held by `source` (a capability key, a datum, text). Returns TRUE on first membership.
+/proc/join(datum/system, datum/E, source = "join")
+	if(!system || !E || QDELING(system) || QDELING(E))
+		return FALSE
+	. = rx_ledger_add(system, RELK_MEMBER, E, source)
+	var/datum/rx_state/S = rx_of(E)
+	if(!S.joined)
+		S.joined = list()
+	S.joined[system] = (S.joined[system] || 0) + 1
+
+/// `source` withdraws E from system. Returns TRUE when E is no longer a member.
+/proc/leave(datum/system, datum/E, source = "join")
+	if(!system || !E)
+		return FALSE
+	var/list/sources = system.rx?.ledger?["[RELK_MEMBER]"]?[E]
+	if(!sources?[source])
+		return FALSE
+	var/count = sources[source]
+	. = rx_ledger_remove(system, RELK_MEMBER, E, source, count)
+	var/left = (E.rx?.joined?[system] || 0) - count
+	if(left > 0)
+		E.rx.joined[system] = left
+	else if(E.rx?.joined)
+		E.rx.joined -= system
+		if(!length(E.rx.joined))
+			E.rx.joined = null
+
+/// The members of `system`.
+/proc/members_of(datum/system)
+	return rx_ledger_whats(system, RELK_MEMBER)
+
+/// TRUE when `E` is a member of `system` through any source.
+/proc/is_member(datum/system, datum/E)
+	return rx_ledger_has(system, RELK_MEMBER, E)
+
+// ---------------------------------------------------------------- teardown
+
+/// Phase 4 of a datum's destruction (own_teardown): every listener record it is an end of goes, it leaves
+/// every system it joined, and its ledger is dropped. Both ends are cleaned, so nothing keeps it alive.
+/proc/rx_teardown(datum/D)
+	var/datum/rx_state/S = D.rx
+	if(!S)
+		return
+	for(var/datum/rx_listener/L as anything in S.listeners?.Copy())
+		rx_listener_remove(L)
+	for(var/datum/rx_listener/L as anything in S.listening?.Copy())
+		rx_listener_remove(L)
+	for(var/datum/system as anything in S.joined?.Copy())
+		var/list/sources = system.rx?.ledger?["[RELK_MEMBER]"]?[D]
+		for(var/source in sources?.Copy())
+			leave(system, D, source)
+	var/list/members = S.ledger?["[RELK_MEMBER]"]
+	for(var/member in members?.Copy())
+		if(!isdatum(member))
+			continue
+		var/list/sources = members[member]
+		for(var/source in sources?.Copy())
+			leave(D, member, source)
+	GLOB.rx_pending -= D
+	D.rx = null

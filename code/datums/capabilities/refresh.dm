@@ -87,6 +87,9 @@ OWN_TIMER(/datum, periodic_interval)
 		if(!GLOB.derived_write_expected)
 			stack_trace(write_msg)
 #endif
+	// Demand-gated: a var nobody reads (no reaction, generated read, derived() entry or observer) publishes nothing.
+	if(var_name && READERS(E, var_name))
+		publish_change(E, var_name)
 	refresh_trace_note(E, channel)
 	// Sources watching E through a relation view (rel_one/rel_many(watch = ...)) re-derive too. Only on
 	// E's first mark this frame, so two entities watching each other stop after one round.
@@ -236,6 +239,7 @@ GLOBAL_VAR_INIT(derive_probe_found, 0)
 
 /// Runs queued refreshes within the lane budget. TRUE when the queue is empty.
 /proc/refresh_drain(datum/om/scheduler/sched)
+	rx_drain() // change reactions (on_change / on_cross / observe) run before the outputs
 	var/list/Q = GLOB.refresh_queue
 	// review 2 M4: each entity refreshes at most once per drain; one re-queued by its own refresh (or
 	// by a chain that comes back to it) waits for the next frame instead of spinning here.

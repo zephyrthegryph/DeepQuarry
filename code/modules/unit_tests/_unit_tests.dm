@@ -98,6 +98,7 @@
 #include "dx_core_tests.dm"
 #include "dx_granted_verbs_tests.dm"
 #include "dx_deps_tests.dm"
+#include "dx_reactions_tests.dm"
 #include "dx_condition_tests.dm"
 #include "decl_tests.dm"
 #include "disease_tests.dm"

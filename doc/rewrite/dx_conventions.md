@@ -91,6 +91,37 @@ Write it the way DM already works:
 - **Periodic work:** `periodic_cadence = CADENCE_*` or `periodic_interval = N`, with `should_run()` and
   `periodic_step(delta)`.
 
+## Reactions
+
+One vocabulary for "something happened" (code in `code/datums/reactions/`, defines in `code/__defines/reactions.dm`):
+
+- **`publish_change(E, key)`** announces that `E`'s `key` changed. It is **demand-gated**: `changed()` (so every
+  TRACKED setter, `timed_set` and ownership accessor) and every relation-view write call it only when
+  `READERS(E, key)` holds, i.e. the type's `reactions()` table, a generated read, a `derived()` entry or an
+  `observe()` reads that key. A var nobody reads costs one assoc lookup.
+- **`reactions()`** is a per-type table proc (`SHOULD_CALL_PARENT`), composed from the type's own list, each
+  capability's `reactions()`, the generated reads (`code/_generated/reads.dm`, written by
+  `python tools/ci/derived_reads_lint.py --fix-generated`; CI fails when stale) and its `derived()` entries
+  (`drawn_from`, `ui_from`, `runs_while`, `rust_push`, `derive` stay valid and are folded in).
+- **Triggers:** `on_change(reads, handler)`, `on_notice(type, handler)`, `before_op(key_or_type, handler)`,
+  `after_op(...)`, `on_cross(read, bands, handler, urgent =)`, `every(interval, handler, when =, members =,
+  phase =, after =, budget =)`. `native("key")` names a Rust-owned value wherever a read is named.
+- **Contracts:** `on_change` handlers run once per drain (`rx_drain()`, at the start of every refresh drain) with
+  the list of keys that changed. `before_op` runs synchronously before commit and a non-null return vetoes;
+  `after_op` after. `on_cross` delivers `(band, previous_band)` (the first sight is a baseline). Notices
+  (`PUBLISH(src, /datum/notice/x, args...)`) are occurrences: ordered, never coalesced, never suppressed in
+  bulk; one published from inside a handler is queued behind it; a chain over `RX_NOTICE_LIMIT` is reported
+  and cut. `/datum/om/event` now defaults to `coalesce = FALSE` and `skip_in_bulk = FALSE` for the same reason.
+- **Runtime:** `observe(source, trigger, listener, handler)` / `unobserve(source, trigger, listener)`. Stored as
+  a LISTENER relation; both ends drop it when either dies.
+- **Relations:** `rel_one/rel_many(var, type, kind = RELK_REF|RELK_PAIRED|RELK_OWNED)` on the existing store,
+  plus internal kinds in a per-holder ledger with **source counts** (`RELK_GRANT`, `LISTENER`, `MEMBER`,
+  `TIMER`, `CONTAINED`): `grant(target, what, source, duration)` / `revoke`, `join(system, E, source)` /
+  `leave`. A relation is present while any source holds it. Writes publish both ends.
+- **Time:** `rx_after(owner, delay, handler, key, clock, args)` is the one timer (a `key` replaces a pending
+  timer of that key; `cancel_after`, `after_pending`; `clock = CLOCK_WORLD` for real time). The old `after()`,
+  `om_after()` and `after_slot()` schedule through it.
+
 ## Time
 
 - `COOLDOWN_*` for "not more than once per N".

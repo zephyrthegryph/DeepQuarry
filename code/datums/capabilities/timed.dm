@@ -91,7 +91,7 @@ GLOBAL_VAR_INIT(timed_token_seq, 0)
  *	after(src, vend_delay, PROC_REF(finish_vend), product, user)
  */
 /proc/after(datum/E, delay, proc_ref, ...)
-	return om_after_list(E, delay, proc_ref, length(args) > 3 ? args.Copy(4) : null, nulls_for_gone = TRUE)
+	return rx_after(E, delay, proc_ref, null, CLOCK_OWN, length(args) > 3 ? args.Copy(4) : null, TRUE)
 
 /// after() for a pure effect that makes no sense once any datum argument is gone: the call is dropped
 /// (counted and logged by the scheduler). DM rejects an undeclared named argument on a variadic proc, so

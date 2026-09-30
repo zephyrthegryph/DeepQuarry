@@ -266,8 +266,7 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 /// global proc (/proc/x) gets `call_args`; a type proc is called on E. Returns the timer id
 /// (for om_cancel_timer()), or 0 if E or an argument is already gone. E null: the global owner.
 /proc/om_after(datum/E, delay, proc_ref, ...)
-	var/list/call_args = length(args) > 3 ? args.Copy(4) : null
-	return om_after_list(E, delay, proc_ref, call_args, TRUE)
+	return rx_after(E, delay, proc_ref, null, CLOCK_OWN, length(args) > 3 ? args.Copy(4) : null, TRUE)
 
 /// om_after()'s body. nulls_for_gone (the default for om_after()/after()): a captured datum argument
 /// deleted before the timer fires, or already deleted when it is scheduled, is passed as null and the
