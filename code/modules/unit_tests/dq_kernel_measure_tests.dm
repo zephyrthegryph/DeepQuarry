@@ -49,8 +49,6 @@
 	TEST_ASSERT_EQUAL(km_system_key_for_path(/datum/om/behaviour/ai_brain/tactical), "ai_brain", "a subtype of a folder's type")
 	TEST_ASSERT_EQUAL(km_system_key_for_path(/datum/om/behaviour/sleeper/light), "lighting", "the light sleeper")
 	TEST_ASSERT_EQUAL(km_system_key_for_path(/datum/om/behaviour/climbable/cliff), "object_behaviours", "datums/behaviours")
-	TEST_ASSERT_EQUAL(km_system_key_for_path(/datum/cadence/continuous/projectiles), "projectiles", "the more specific row comes first")
-	TEST_ASSERT_EQUAL(km_system_key_for_path(/datum/cadence/slow), "periodic", "the other periodic pipelines")
 	TEST_ASSERT_EQUAL(km_system_key_for_path(/datum/om/behaviour/internal/timers), "om_core", "the scheduler's own behaviours")
 	// Rule 3: the family fallback.
 	TEST_ASSERT_EQUAL(km_system_key_for_path(/datum/om/behaviour/world/statpanels), "statpanels", "world/<x> is <x>")
@@ -496,17 +494,17 @@
 
 /datum/unit_test/dq_km_subsystems_are_systems/Run()
 	var/datum/tick_meter/M = new(8)
-	var/air_idx = km_bind_subsystem(SSair)
-	TEST_ASSERT_EQUAL(km_systems().key_of(air_idx), "mc_[replacetext(lowertext(SSair.name), " ", "_")]", "a subsystem's system is mc_<name in snake case>")
+	var/air_idx = km_bind_subsystem(SSgarbage)
+	TEST_ASSERT_EQUAL(km_systems().key_of(air_idx), "mc_[replacetext(lowertext(SSgarbage.name), " ", "_")]", "a subsystem's system is mc_<name in snake case>")
 	TEST_ASSERT_EQUAL(km_systems().kinds[air_idx], KM_KIND_MC, "of the MC kind")
-	TEST_ASSERT_EQUAL(km_bind_subsystem(SSair), air_idx, "binding is stable")
+	TEST_ASSERT_EQUAL(km_bind_subsystem(SSgarbage), air_idx, "binding is stable")
 	TEST_ASSERT_EQUAL(km_bind_subsystem(SSverb_manager), km_systems().index_by_key["mc_verb_manager"], "a name with a space is snake case")
 	// SSbehaviours is decomposed: the MC charging it adds nothing.
 	TEST_ASSERT_EQUAL(SSbehaviours.system_idx, KM_SYS_DECOMPOSED, "Behaviours is charged through the systems it runs")
 	M.charge_subsystem(SSbehaviours, 30)
 	TEST_ASSERT_EQUAL(M.n_touched, 0, "so the MC's own charge for it is dropped")
 	// Input subsystems also count toward the tick's input cost.
-	M.charge_subsystem(SSair, 10)
+	M.charge_subsystem(SSgarbage, 10)
 	TEST_ASSERT_EQUAL(M.input_ms, 0, "an ordinary subsystem is not input")
 	M.charge_subsystem(SSinput, 4)
 	M.charge_subsystem(SSverb_manager, 6)

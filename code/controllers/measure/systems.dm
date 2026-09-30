@@ -128,16 +128,14 @@
 		// code/game/machinery/, code/datums/om/world_lanes.dm (the machines lane).
 		"machines" = list(/datum/om/pipeline/machine, /datum/om/behaviour/world/machines),
 		// code/ATMOSPHERICS/: fire and the shutoff valve.
-		"atmos" = list(/obj/effect/hotspot, /datum/om/behaviour/sleeper/shutoff_valve),
+		"atmos" = list(/datum/om/behaviour/sleeper/shutoff_valve),
 		// code/modules/combat_ai/: strategic and tactical brains, and the sleeper that wakes them.
 		"ai_brain" = list(/datum/om/behaviour/ai_brain, /datum/om/behaviour/sleeper/ai_brain),
 		// code/datums/entity_state/disabilities/.
 		"disabilities" = list(/datum/om/behaviour/disability),
 		// code/datums/entity_state/ (animations, dry).
 		"entity_state" = list(/datum/om/behaviour/dizzy_shake, /datum/om/behaviour/jittery_shake, /datum/om/behaviour/dry),
-		// code/datums/om/periodic.dm: the projectile pipeline is its own system, the other periodic pipelines share one.
-		"projectiles" = list(/datum/cadence/continuous/projectiles),
-		"periodic" = list(/datum/cadence),
+		// Periodic cadences and hotspots are kernel work items now (code/datums/om/periodic.dm): the kernel meters them.
 		// code/modules/vore/.
 		"vore" = list(/datum/om/behaviour/belly_cycle, /datum/om/behaviour/spontaneous_vore),
 		// code/modules/materials/, code/modules/material_science/.

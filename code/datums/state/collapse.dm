@@ -158,6 +158,10 @@ GLOBAL_LIST_INIT(state_refscan_flat, list("vis_contents"))
 /// when the thing re-materializes. `internal_refs`: the subtree's references to it, when already counted.
 /proc/state_accounted_refs(datum/node, list/internal, internal_refs)
 	. = (isnull(internal_refs) ? state_internal_refs(node, internal) : internal_refs) + rel_incoming_refs(node)
+	// A queued refresh (changed()) holds it in GLOB.refresh_queue until the drain: framework bookkeeping, which
+	// skips a collapsed entity, not an outside holder.
+	if(node.refresh_queued)
+		.++
 	if(ismovable(node))
 		var/atom/movable/movable = node
 		if(movable.loc)

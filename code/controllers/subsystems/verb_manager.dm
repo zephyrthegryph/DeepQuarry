@@ -180,6 +180,7 @@ SUBSYSTEM_DEF(verb_manager)
 	wait = 1
 	flags = SS_TICKER | SS_NO_INIT | SS_KERNEL_HOSTED
 	priority = FIRE_PRIORITY_DELAYED_VERBS
+	counts_as_input = TRUE
 	runlevels = RUNLEVEL_LOBBY | RUNLEVELS_DEFAULT
 
 	/// The queue SSverb_manager runs every tick.
