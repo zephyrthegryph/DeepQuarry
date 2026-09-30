@@ -148,7 +148,7 @@ GLOBAL_LIST_INIT(path_default_damage_sealed, list(
 	if(!def)
 		return 0
 	if(effect == PATH_EFFECT_GAS)
-		return def.passes_gas() ? 1 : 0
+		return def.passes_gas() ? dq_bay_share(holder, def, effect) : 0
 	if(!def.reaches_mobs && isliving(child) && effect != PATH_EFFECT_RADIATION)
 		return 0
 	var/share
@@ -161,6 +161,10 @@ GLOBAL_LIST_INIT(path_default_damage_sealed, list(
 			share = def.radiation_transmission
 		else
 			CRASH("unknown path effect [effect]")
+	if(share <= 0)
+		return 0
+	// A slot in a compartment also crosses that bay's boundary (operations/routes.dm).
+	share *= dq_bay_share(holder, def, effect)
 	if(share <= 0)
 		return 0
 	if(def.is_inside())

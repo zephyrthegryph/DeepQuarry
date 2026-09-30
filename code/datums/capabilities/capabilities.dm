@@ -27,6 +27,9 @@
 	. = list()
 	var/list/at_key = list()
 	for(var/entry in built)
+		if(istype(entry, /datum/capability/refine))
+			cap_apply_refine(., at_key, entry)
+			continue
 		if(!istype(entry, /datum/capability))
 			. += entry
 			continue
@@ -35,10 +38,23 @@
 		// position (a bundle's plain panel is replaced by maintenance_hatch()'s gated one).
 		var/slot = at_key["[C.key]"]
 		if(slot)
+			// An op key declared twice is an init error, unless the later one says replace = TRUE
+			// (or is a refine(), handled above): two ops of one key silently shadowing each other is a bug.
+			if(cap_op_key_conflict(C, .[slot]))
+				stack_trace("duplicate op key '[cap_op_of(C).key]' in one capabilities() list: use refine() or replace = TRUE")
 			.[slot] = C
 			continue
 		. += C
 		at_key["[C.key]"] = length(.)
+
+/// Applies refine() R to the op it names in list `into` (at_key: key -> position).
+/proc/cap_apply_refine(list/into, list/at_key, datum/capability/refine/R)
+	var/slot = at_key["op:[R.base_key]"]
+	if(!slot)
+		stack_trace("refine('[R.base_key]') refines an op nothing declared")
+		return
+	var/datum/capability/refined = cap_intern(cap_op_refined(into[slot], R))
+	into[slot] = refined
 
 /// The shared capability equal to C (same type, same saved settings), registering C if it's new.
 /proc/cap_intern(datum/capability/C)
@@ -91,6 +107,8 @@ GLOBAL_LIST_EMPTY(caps_interned)
 	if(was == A.cap_state)
 		return FALSE
 	changed(A, CHANGE_CAPABILITY)
+	// Waiting operations watch cap_state through their requirements' reads (operations/op_ctx.dm).
+	op_reads_changed(A, OP_KEY_CAP_STATE)
 	return TRUE
 
 /// The per-instance data datum of capability C on A, created on first use (C.data_type).
@@ -364,6 +382,11 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 	return applies ? call(target, applies)() : TRUE
 
 /datum/interaction/capability/why_not(mob/actor, atom/target, obj/item/held)
+	if(op)
+		// A cap_op() entry: the resolver predicate on the physical route (reach, selectors), then the op
+		// context's ordered stages, whose target stage is cap_gate_reason() (operations/op_ctx.dm).
+		var/why = GLOB.op_route_now == ROUTE_PHYSICAL ? ..() : null
+		return op_entry_reason(src, actor, target, held, why)
 	. = ..()
 	if(.)
 		return
@@ -374,10 +397,20 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 	// Menu is built: FALSE stops the entry (the input is used).
 	if(!target.before_entry(actor, src, held))
 		return UI_REFUSED
+	var/datum/op_ctx/octx
+	if(op)
+		octx = op_ctx_take(actor, target, held, op, GLOB.op_route_now)
+		octx.entry = src
+		if(!op_before(octx))
+			octx.release()
+			return UI_REFUSED
 	var/datum/dispatch_context/ctx = new(actor, target, held, src)
 	. = cap_dispatch(ctx)
 	if(isnull(.))
 		. = TRUE // a handler that returned nothing (or went async to ask) handled it
+	if(octx)
+		op_after(octx)
+		octx.release()
 
 /// The atom whose capability this entry is, for a dispatch: the target, except a use_at entry (the held item).
 /datum/interaction/capability/proc/holder_of(datum/dispatch_context/ctx)
@@ -546,23 +579,6 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 	C.locked_by = locked_by
 	C.log = log
 	return C
-
-/// An empty-hand action: hand("Toggle", PROC_REF(toggle)). Handler (mob/user).
-/proc/cap_hand(name, handler, behind = NONE, locked_by = NONE, needs, else_say, works_broken = FALSE, works_unpowered = FALSE, log, list/form, priority, stance, name_proc, applies, blocked_by = NONE, delay, cooldown)
-	return cap_entry("hand", name, handler, behind, locked_by, needs, else_say, works_broken, works_unpowered, log, form, null, null, delay, priority, stance, name_proc, applies, blocked_by, cooldown)
-
-/// A tool action: tool("Unbolt", TOOL_WRENCH, PROC_REF(unbolt), delay = 2 SECONDS). Handler (mob/user, obj/item/held).
-/// `fuel`: welder fuel (or other tool resource) used; `volume`: the tool sound's volume (0 for none).
-/proc/cap_tool(name, quality, handler, delay, behind = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log, list/form, priority, name_proc, applies, blocked_by = NONE, fuel = 0, volume, cooldown)
-	return cap_entry("tool", name, handler, behind, locked_by, needs, else_say, works_broken, works_unpowered, log, form, null, quality, delay, priority, null, name_proc, applies, blocked_by, fuel = fuel, volume = volume, cooldown = cooldown)
-
-/// Using a held item of `held_type` on the holder, which keeps the item. Handler (mob/user, obj/item/held).
-/proc/cap_use_on(name, held_type, handler, behind = NONE, locked_by = NONE, needs, else_say, works_broken = FALSE, works_unpowered = FALSE, log, list/form, priority, stance, name_proc, applies, blocked_by = NONE, delay, cooldown)
-	return cap_entry("use_on", name, handler, behind, locked_by, needs, else_say, works_broken, works_unpowered, log, form, held_type, null, delay, priority, stance, name_proc, applies, blocked_by, cooldown)
-
-/// Putting a held item of `held_type` into the holder (the handler adopts it: own_set moves it).
-/proc/cap_insert(name, held_type, handler, behind = NONE, locked_by = NONE, needs, else_say, works_broken = FALSE, works_unpowered = TRUE, log, list/form, priority, name_proc, applies, blocked_by = NONE, delay, cooldown)
-	return cap_entry("insert", name, handler, behind, locked_by, needs, else_say, works_broken, works_unpowered, log, form, held_type, null, delay, priority, null, name_proc, applies, blocked_by, cooldown)
 
 // ---- periodic work from capabilities (cadence / cap_should_run / cap_periodic_step) ----
 

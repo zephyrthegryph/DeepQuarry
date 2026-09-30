@@ -309,6 +309,20 @@ The decision table. **Read it before writing anything with a timer.**
 - **[planned]** (plan §2.10): a shared `chk_*` library (`chk_alive`, `chk_conscious`, `chk_capable`, `chk_unrestrained`, `chk_adjacent`, `chk_near_subject`, `chk_held`, `chk_carried`, `chk_hand_free`, `chk_on_turf`), and `ask_*` re-validation running the same `needs`.
 - **Until it lands:** convert `REQ_ON`/`REQ_TARGET_STATE` to `needs = PROC_REF(<the same proc>)`, drop reach/adjacent/inventory clauses (the dispatcher applies them), and leave `ASK_*` alone.
 
+## A11a. Operations [built: rewrite/f-ops]
+
+Nothing needs migrating: `cap_hand`/`cap_tool`/`cap_use_on`/`cap_insert` keep their arguments and behaviour (they are
+presets of `cap_op`). For new or reworked code:
+
+- A gated action becomes `cap_op(name, handler, needs = req_..., action = ACT_X)`; put a contract on a whole kind of
+  op with `cap_require(OP_STRUCTURAL, needs = ...)` instead of repeating `needs` on each entry.
+- `needs = PROC_REF(x)` still works; `req_proc(PROC_REF(x), reads = list(...))` is the same check that also says what
+  it reads (so a timed op cancels early).
+- Replace a copied op with `refine(key, delay = ...)`; a duplicate op key is an init error.
+- A control that a remote console or UI may also work: `cap_control(...)`, or `via = ROUTE_PHYSICAL | ROUTE_UI`.
+- Open parts of a machine through `compartment(BAY_X, ...)` and `at = BAY_X`, not ad-hoc `behind` bits.
+- Gestures: answer an action (`action = ACT_LOCK`); do not read click modifiers.
+
 ## A12. Systems and the kernel [planned]
 
 - **Definition:** a system is `/datum/system/x` in `code/modules/x/`. It has private state (`VAR_PRIVATE`), `needs = list(...)` (boot order), `periodic_cadence` + `should_run()` + `periodic_step(dt)`, `member_should_run(A)` / `member_step(A, dt)` for atoms that joined through `cap_system()`, `emits` + `events()`, `latency_class`, and an `api.dm` that other folders may call.

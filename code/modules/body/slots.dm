@@ -92,6 +92,7 @@
 
 /datum/om/relation/slot/body/hand
 	exposure = SLOT_EXPOSURE_EXTERNAL
+	provides = AFF_HOLD | AFF_MANIPULATE | AFF_HOLD_SMALL | AFF_INTERFACE
 
 /datum/om/relation/slot/body/hand/left
 	redraw = /mob/proc/update_inv_l_hand
