@@ -212,7 +212,7 @@ export function scan(root: string): { binds: Bind[]; defines: Define[] } {
 
 // --- Components (doc/rewrite/rust_bindings.md §2, §3): #[vg::component],
 // #[vg::query] and #[vg::events]. Everything DM-facing this scan produces
-// (kind defines, init_* vars, get_*/set_*/push_* wrappers, query and event
+// (kind defines, init_* vars, NATIVE_* write keys, get_*/push_* wrappers, query and event
 // dispatch, and the class-3 integrity hook) goes into TYPES_DM. ------------
 
 type FieldRole = 'config' | 'state' | 'input' | 'computed';
@@ -723,6 +723,14 @@ function renderComponentsDm(root: string, components: Component[], domainEvents:
     }
     dm += '\n';
 
+    // Binding metadata for the write side: the key native_write() takes. There is no generated setter: the
+    // DM var is TRACKED (one setter, TRACKED's), a rust_push read schedules push_to_rust(), and that pushes
+    // the var with native_write(src, NATIVE_<STRUCT>_<FIELD>, value[, index]).
+    for (const f of configFields) {
+      dm += `#define NATIVE_${upper}_${f.name.toUpperCase()} NATIVE_KEY(${codeDefine}, ${fid(f)})\n`;
+    }
+    dm += '\n';
+
     const unitComment = (f: ComponentField) => (f.unit ? ` // ${f.unit}` : '');
     const getter = (f: ComponentField, index: string) =>
       `vg_component_get(vg_entity, ${codeDefine}, ${fid(f)}, ${index})${unitComment(f)}`;
@@ -734,13 +742,9 @@ function renderComponentsDm(root: string, components: Component[], domainEvents:
       dm += `/// ${f.unit ?? 'unitless'};${range}\n`;
       if (f.array) {
         dm += `${procHeader(root, dmType, `get_${f.name}`, 'index')}\n\treturn ${getter(f, 'index')}\n\n`;
-        dm += `/// Returns the stored value, then runs the type's declared push (rust_pushed()).\n`;
-        dm += `${procHeader(root, dmType, `set_${f.name}`, 'index, value')}\n\t. = vg_component_set(vg_entity, ${codeDefine}, ${fid(f)}, index, value)\n\trust_pushed()\n\n`;
         continue;
       }
       dm += `${procHeader(root, dmType, `get_${f.name}`, '')}\n\treturn ${getter(f, '0')}\n\n`;
-      dm += `/// Returns the stored value, then runs the type's declared push (rust_pushed()).\n`;
-      dm += `${procHeader(root, dmType, `set_${f.name}`, 'value')}\n\t. = vg_component_set(vg_entity, ${codeDefine}, ${fid(f)}, -1, value)\n\trust_pushed()\n\n`;
     }
     for (const f of [...stateFields, ...computedFields]) {
       const what = f.role === 'computed' ? 'computed readout' : 'state';

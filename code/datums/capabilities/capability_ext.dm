@@ -13,10 +13,10 @@
 	/// The holder var this capability draws (a slot showing its item): a change to that child marks the
 	/// holder too (H2: owners are marked only for children they draw). Null: none.
 	var/draws_var
-	/// /datum/cap_system types the holder joins while it exists (section 6).
+	/// /datum/system types the holder joins while it exists (section 6).
 	var/list/joins
 
-/// Systems this capability's holders join, as /datum/cap_system types. Default: `joins`.
+/// Systems this capability's holders join, as /datum/system types. Default: `joins`.
 /datum/capability/proc/systems()
 	return joins
 
@@ -130,31 +130,22 @@ GLOBAL_LIST_EMPTY(caps_order_cache)
 
 // ---- system membership (section 6) ----
 
-/// A system capability holders join: iterate `members` instead of scanning atoms. A cap_system is a
-/// /datum/system (controllers/kernel/system.dm): membership is the kernel's O(1) join and swap-remove,
-/// and the singleton comes from the system registry.
-/datum/cap_system
-	parent_type = /datum/system
-	abstract_type = /datum/cap_system
-
-/// The singleton of a cap_system type.
-/proc/cap_system(path)
-	RETURN_TYPE(/datum/cap_system)
-	return system(path)
+// A capability's `joins` names /datum/system types (controllers/kernel/system.dm): membership is the kernel's
+// O(1) join and swap-remove in the one MEMBER store, and the singleton comes from the system registry.
 
 /// A holder joins every system its capability names, held by that capability (so two capabilities naming the same
 /// system are two sources, and it leaves when the last goes), and the capability's own type key when some work item
 /// runs per member of it (kernel_register_work(..., members = capability type)).
 /proc/cap_join_systems(atom/A, datum/capability/C)
 	for(var/path in C.systems())
-		var/datum/cap_system/S = cap_system(path)
+		var/datum/system/S = system(path)
 		S.kernel_join(A, C, C.system_role())
 	if(kernel().cap_wanted[C.type])
 		member_join(C.type, A, C)
 
 /proc/cap_leave_systems(atom/A, datum/capability/C)
 	for(var/path in C.systems())
-		var/datum/cap_system/S = cap_system(path)
+		var/datum/system/S = system(path)
 		S.kernel_leave(A, C)
 	if(kernel().cap_wanted[C.type])
 		member_leave(C.type, A, C)

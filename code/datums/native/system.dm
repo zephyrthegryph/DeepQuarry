@@ -270,11 +270,16 @@ GLOBAL_LIST_EMPTY(native_key_names)
 
 // ---------------------------------------------------------------- declared pushes
 
-/// A generated setter of a Rust config field (`set_<field>()` in _bindings_types.dm) ran: the type's declared
-/// push. Override where the field also feeds Rust state the binding does not own (a device law, a network's
-/// share): the override re-publishes it, so no caller pushes by hand after a setter.
-/atom/movable/proc/rust_pushed()
-	return
+/// Writes `value` to the Rust config field `key` (a generated NATIVE_<STRUCT>_<FIELD>) of `E` (a bound atom or an
+/// entity number); `index` selects an element of an array field. Returns the stored value (Rust clamps or
+/// rejects). This is the one write door: a DM var that mirrors a field is TRACKED with a rust_push read,
+/// and its push_to_rust() calls this; a Rust-only field has one hand-written setter that calls it.
+/proc/native_write(E, key, value, index = -1)
+	var/entity = isnum(E) ? E : native_entity_of(E)
+	if(!entity)
+		return null
+	. = vg_component_set(entity, NATIVE_KEY_CODE(key), NATIVE_KEY_FIELD(key), index, value)
+	native_read_invalidate(entity)
 
 // ---------------------------------------------------------------- reads
 

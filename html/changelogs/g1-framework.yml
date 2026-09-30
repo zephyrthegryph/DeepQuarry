@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "One setter generator: Rust config fields are written through native_write(); mirroring DM vars are TRACKED with a rust_push read"
+  - refactor: "Refused ops answer the click with their typed refusal; one lock op (CAP_LOCK) with credential providers; cap_system replaced by /datum/system membership"
+  - bugfix: "Declaring a capability or membership no longer wakes its holder at init; every() replacement by handler; automatic every() enrolment"

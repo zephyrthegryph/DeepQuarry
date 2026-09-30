@@ -26,7 +26,7 @@ Thus, the two variables affect pump operation are set in New():
 	desc = "A pump that moves gas from one place to another."
 
 	// R10 (doc/rewrite/rust_bindings.md §14): target_pressure and power_rating
-	// are Rust-owned config, reached only through get_/set_target_pressure()
+	// are Rust-owned config, reached only through get_/set_target_pressure() (hand setters below over native_write())
 	// and get_/set_power_rating() (code/__defines/verdigris/_bindings_types.dm).
 	// There is no target_pressure var any more. power_rating is still declared
 	// on the shared /obj/machinery/atmospherics ancestor (other, not-yet-migrated
@@ -84,6 +84,21 @@ Thus, the two variables affect pump operation are set in New():
 		return
 	rust_set_device(1, 2)
 	rust_set_device_flow(0, RUST_FLOW_POWER, get_power_rating(), RUST_DIR_FORCED, RUST_SIDE_B, RUST_STOP_AT_LEAST, get_target_pressure())
+
+/// The three Rust-owned config fields have no DM var (rust_bindings.md section 1), so each has one hand
+/// setter: write the field (native_write(), the one write door), then re-publish the law. Rust clamps
+/// the value; the stored value is returned.
+/obj/machinery/atmospherics/binary/pump/proc/set_target_pressure(value)
+	. = native_write(src, NATIVE_PUMP_TARGET_PRESSURE, value)
+	rust_device_dirty()
+
+/obj/machinery/atmospherics/binary/pump/proc/set_power_rating(value)
+	. = native_write(src, NATIVE_PUMP_POWER_RATING, value)
+	rust_device_dirty()
+
+/obj/machinery/atmospherics/binary/pump/set_on(value)
+	. = native_write(src, NATIVE_PUMP_ON, value)
+	rust_device_dirty()
 
 /// operable comes from anchored and integrity (rust_bindings.md §7's classes
 /// 3-5) through the generated wiring: the atom_break()/atom_fix() hook pushes

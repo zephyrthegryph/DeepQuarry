@@ -61,15 +61,15 @@
 	TEST_ASSERT_NULL(cap_of(A, /datum/capability/powered), "no dark layer")
 	TEST_ASSERT_EQUAL(A.machine_wires, /datum/wires/apc, "the wiring is a type var")
 	TEST_ASSERT_EQUAL(A.machine_board, /obj/item/module/power_control, "so is the board")
-	for(var/key in list(CAP_LOCK, CAP_LOCK_SWIPE, CAP_EMAG, "open_interface", "replace_cover", "reset_apc"))
+	for(var/key in list(CAP_LOCK, CAP_EMAG, "open_interface", "replace_cover", "reset_apc"))
 		TEST_ASSERT_NOTNULL(dx_apc_op(A, key), "the op [key] is declared")
 	TEST_ASSERT_EQUAL(dx_apc_op(A, CAP_LOCK).op.action, ACT_LOCK, "the lock op answers ACT_LOCK (an alt-click), with no alt entry point")
 	TEST_ASSERT_EQUAL(dx_apc_op(A, CAP_EMAG).duration, 0.6 SECONDS, "the emag op is refined to its old wait")
 	TEST_ASSERT(is_locked(A), "the ID lock starts engaged (cap_state default)")
-	TEST_ASSERT(A in cap_system_members(/datum/cap_system/power, POWER_ROLE_AREA_SUPPLY), "powered_by() joined the power system as an area supply")
-	TEST_ASSERT_EQUAL(cap_system_role(A, /datum/cap_system/power), POWER_ROLE_AREA_SUPPLY, "with its role")
+	TEST_ASSERT(A in system(/datum/system/power).members_with_role(POWER_ROLE_AREA_SUPPLY), "powered_by() joined the power system as an area supply")
+	TEST_ASSERT_EQUAL(member_role(/datum/system/power, A), POWER_ROLE_AREA_SUPPLY, "with its role")
 	qdel(A)
-	TEST_ASSERT(!(A in cap_system_members(/datum/cap_system/power, POWER_ROLE_AREA_SUPPLY)), "and left it on deletion")
+	TEST_ASSERT(!(A in system(/datum/system/power).members_with_role(POWER_ROLE_AREA_SUPPLY)), "and left it on deletion")
 
 /// What the APC declares in reactions() is only what it hears; its relations are its links.
 /datum/unit_test/dx_apc_relations_and_reactions/Run()
@@ -135,8 +135,8 @@
 	var/obj/machinery/power/apc/dx_test/A = dx_apc_make(T)
 	var/obj/item/card/id/card = allocate(/obj/item/card/id, T)
 	card.access = list(ACCESS_ENGINE_EQUIP)
-	var/datum/interaction/capability/swipe = dx_apc_op(A, CAP_LOCK_SWIPE)
-	var/datum/interaction/capability/toggle = dx_apc_op(A, CAP_LOCK)
+	var/datum/interaction/capability/swipe = dx_apc_op(A, CAP_LOCK) // the one lock op: a held card, or the actor's own access
+	var/datum/interaction/capability/toggle = swipe
 	cap_set(A, CAP_COVER_OPEN, TRUE)
 	TEST_ASSERT_EQUAL(dx_apc_why(A, H, card, swipe), "close the cover first", "no swipe with the cover open")
 	cap_set(A, CAP_COVER_OPEN, FALSE)
@@ -145,7 +145,7 @@
 	cap_set(A, CAP_PANEL_OPEN, FALSE)
 	TEST_ASSERT_NULL(dx_apc_why(A, H, card, swipe), "the swipe is offered with the hatch shut")
 	TEST_ASSERT_NULL(dx_apc_why(A, H, null, toggle), "and so is the toggle by the actor's own access")
-	TEST_ASSERT(dispatch_succeeded(A.cap_lock_swipe(H, card)), "an engineering ID unlocks it")
+	TEST_ASSERT(dispatch_succeeded(A.cap_lock_toggle(H, card)), "an engineering ID unlocks it")
 	TEST_ASSERT(!is_locked(A), "unlocked")
 	cap_set(A, CAP_EMAGGED, TRUE)
 	TEST_ASSERT(dx_apc_why(A, H, card, swipe), "an emagged panel is unresponsive")
@@ -162,7 +162,7 @@
 	TEST_ASSERT_EQUAL(dx_apc_why(A, H, card, swipe), "Nothing happens", "nothing while unwired")
 	A.stat_remove(MAINT)
 	card.access = list()
-	TEST_ASSERT_EQUAL(A.cap_lock_swipe(H, card), UI_REFUSED, "no access, no lock")
+	TEST_ASSERT_EQUAL(A.cap_lock_toggle(H, card), UI_REFUSED, "no access, no lock")
 
 /// The emag op: a contract in front of it, an effect refined in, and the shared commit after it.
 /datum/unit_test/dx_apc_emag/Run()
@@ -384,3 +384,9 @@
 	TEST_ASSERT(L in APC.area_lights(), "the APC reads its lights through the relation")
 	qdel(L)
 	TEST_ASSERT(!(L in area_members(A, POWER_ROLE_LIGHTING)), "a deleted light leaves it")
+	// A console joins through its capability like the light, and declaring that wakes nothing at init.
+	var/obj/machinery/computer/C = allocate(/obj/machinery/computer, T)
+	TEST_ASSERT(C in area_members(A, POWER_ROLE_COMPUTER), "a console is a member of its area with the computer role")
+	TEST_ASSERT(test_machine_idle(C), "declaring the membership did not wake the console at init")
+	qdel(C)
+	TEST_ASSERT(!(C in area_members(A, POWER_ROLE_COMPUTER)), "a deleted console leaves it")

@@ -188,7 +188,9 @@ GLOBAL_LIST_EMPTY(caps_interned)
 	if(rx_type_enrols(src))
 		rx_enrol(src) // per-instance every() work (reactions/work.dm)
 	if(flags || periodic_cadence || periodic_interval)
-		changed(src)
+		// The first refresh is queued, nothing changed: changed() would raise CHANGE_EXPLICIT, which every machine's
+		// pipeline wakes on (wake_all), so declaring a capability or a membership woke its holder at init.
+		refresh_mark(src, DEP_ALL)
 
 /// TYPE_DERIVES_* known so far for A's type. A type seen for the first time is TYPE_DERIVES_PENDING
 /// (plus CAPS when it has capabilities) until its first refresh fills in LOOK and VERBS.
@@ -404,6 +406,13 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 	if(name_proc)
 		return call(target, name_proc)(actor)
 	return name
+
+/// A plain click reaches an op with a `click_with` rule only holding one of those items (a card swiped across a
+/// lock); every other gesture and route reaches it with whatever is in hand.
+/datum/interaction/capability/is_meant(mob/actor, atom/target, obj/item/held)
+	if(op?.click_with && GLOB.op_gesture_now == GESTURE_CLICK && !(held && is_type_in_list(held, op.click_with)))
+		return FALSE
+	return ..()
 
 /datum/interaction/capability/applies_to(atom/target)
 	// A holder can suspend all its capability entries (a frozen airlock): the input falls through to

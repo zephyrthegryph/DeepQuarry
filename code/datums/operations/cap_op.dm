@@ -45,6 +45,9 @@
 	var/list/needs
 	/// The old gating arguments as requirements (behind, blocked_by, locked_by): reads for early cancel.
 	var/list/gating
+	/// Item types (a list) that a plain click (GESTURE_CLICK) must hold to reach this op: a card swiped across a lock.
+	/// Other gestures reach it with whatever is in hand. Null: no such rule.
+	var/list/click_with
 	/// Made by a preset: skips the actor-state stage and takes no provider unless asked.
 	var/legacy = FALSE
 	/// Declared with replace = TRUE: may replace an earlier op with the same key.
@@ -75,9 +78,10 @@
  *	at		BAY_*: the compartment it works through.
  *	log		LOG_GAME / LOG_ADMIN.
  *	replace	TRUE to replace an earlier op of the same key instead of raising the init error.
+ *	click_with	item types a plain click must hold to reach the op (a swipe); passes_held: the handler also gets `held`.
  * The remaining arguments are the old gating arguments of cap_hand()/cap_tool()/...
  */
-/proc/cap_op(name, handler, using, by, via, action, needs, delay, cost, start_msg, kind = OP_CONTROL, key, at, log, replace = FALSE, shape, legacy = FALSE, behind = NONE, blocked_by = NONE, locked_by = NONE, else_say, works_broken, works_unpowered, list/form, priority, stance, name_proc, applies, cooldown, volume)
+/proc/cap_op(name, handler, using, by, via, action, needs, delay, cost, start_msg, kind = OP_CONTROL, key, at, log, replace = FALSE, shape, legacy = FALSE, behind = NONE, blocked_by = NONE, locked_by = NONE, else_say, works_broken, works_unpowered, list/form, priority, stance, name_proc, applies, cooldown, volume, list/click_with, passes_held)
 	var/list/spec = list(
 		"name" = name, "handler" = handler, "using" = using, "by" = by, "via" = via, "action" = action,
 		"needs" = needs, "delay" = delay, "cost" = cost, "start_msg" = start_msg, "kind" = kind, "key" = key,
@@ -85,7 +89,7 @@
 		"blocked_by" = blocked_by, "locked_by" = locked_by, "else_say" = else_say,
 		"works_broken" = works_broken, "works_unpowered" = works_unpowered, "form" = form,
 		"priority" = priority, "stance" = stance, "name_proc" = name_proc, "applies" = applies,
-		"cooldown" = cooldown, "volume" = volume,
+		"cooldown" = cooldown, "volume" = volume, "click_with" = click_with, "passes_held" = passes_held,
 	)
 	return cap_op_build(spec)
 
@@ -149,6 +153,9 @@
 	op.cost = spec["cost"] || 0
 	op.start_msg = spec["start_msg"]
 	op.handler = spec["handler"]
+	op.click_with = spec["click_with"]
+	if(spec["passes_held"])
+		E.passes_held = TRUE
 	op.needs = reqs
 	op.gating = req_from_gating(spec["behind"], spec["blocked_by"], spec["locked_by"])
 	op.replaces = spec["replace"]
@@ -261,6 +268,9 @@
 
 /// The route the current call reaches the target by; perform_action() sets it around a call.
 GLOBAL_VAR_INIT(op_route_now, ROUTE_PHYSICAL)
+/// The GESTURE_* an action lookup is resolving for (resolve_gesture() sets it), or null when the lookup is not a
+/// gesture's (a radial pick, the UI, a verb). An op's `click_with` rule reads it.
+GLOBAL_VAR(op_gesture_now)
 
 /// Whether a phrase from a reason type reads inside "Name: <reason>.".
 /proc/req_reason_phrase(reason_type, datum/op_ctx/ctx)

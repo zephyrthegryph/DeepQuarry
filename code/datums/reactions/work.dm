@@ -9,7 +9,7 @@
 //                           - per member of `members = <capability>` (handler(dt) on the member, or handler(member, dt)
 //                             on the system when the declaring type is a /datum/system),
 //                           - once per live instance of the declaring type (instances join the membership store under
-//                             "rx:<signature>" at init, rx_enrol(), and leave when they are destroyed),
+//                             "rx:<declaring type>:<handler>" at init, rx_enrol(), and leave when they are destroyed),
 //                           - or once, on the system, for a memberless every() declared on a /datum/system.
 //   on_cross(urgent = TRUE) an urgent item: the crossing is requested with request_urgent(holder, item, deadline)
 //                           (deduped per holder, run from the kernel's reserved slice, carrying the latest band in the
@@ -34,7 +34,7 @@ GLOBAL_LIST_EMPTY(rx_work_by_sig)
 	/// The membership key a holder of the declaring type joins (per-instance every()), or null.
 	var/enrol_key
 
-/// Builds the item for `R`, declared by `owner_type`.
+/// Builds the item for `R`, declared by `owner_type` (for an every() on a holder, the type whose reactions() declared it).
 /datum/work_item/reaction/New(datum/reaction/R, owner_type)
 	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	reaction = R
@@ -51,7 +51,7 @@ GLOBAL_LIST_EMPTY(rx_work_by_sig)
 			if(R.after_of)
 				run_after = islist(R.after_of) ? R.after_of : list(R.after_of)
 			if(!member_key && holder_run)
-				enrol_key = "rx:[R.sig]"
+				enrol_key = "rx:[owner_type]:[R.handler]"
 				member_key = enrol_key
 		if(RXN_CROSS)
 			if(R.urgent)
@@ -136,11 +136,20 @@ GLOBAL_LIST_EMPTY(rx_work_by_sig)
 /// Registers the work item of `R` for the table `T` (a type's composed reactions) and links the reaction to it. The
 /// first table to declare a signature registers the item under its owner type; the rest share it.
 /proc/rx_register_work(datum/rx_table/T, datum/reaction/R)
-	var/datum/work_item/reaction/W = GLOB.rx_work_by_sig[R.sig]
+	// An every() is keyed by (owner type, handler): the declaring type for a holder (a subtype that does not
+	// re-declare it shares the item, one that does owns another), the system's own type for a system. The other kinds
+	// are one item per signature.
+	var/owner = T.owner_type
+	var/work_sig = R.sig
+	if(R.kind == RXN_EVERY)
+		if(R.declared_by && !ispath(T.owner_type, /datum/system))
+			owner = R.declared_by
+		work_sig = "[owner]|[R.handler]"
+	var/datum/work_item/reaction/W = GLOB.rx_work_by_sig[work_sig]
 	if(!W)
-		W = new(R, T.owner_type)
-		GLOB.rx_work_by_sig[R.sig] = W
-		kernel_register_work(T.owner_type, W)
+		W = new(R, owner)
+		GLOB.rx_work_by_sig[work_sig] = W
+		kernel_register_work(owner, W)
 	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	R.work = W
 	if(W.enrol_key)
@@ -180,9 +189,12 @@ GLOBAL_LIST_EMPTY(rx_enrol_cache)
 	flags[type] = (flags[type] || 0) | kinds
 	GLOB.rx_enrol_cache.Cut()
 
-/// TRUE when atoms like `A` declare per-instance every() work, by their type or by one of their capabilities.
-/proc/rx_type_enrols(atom/A)
-	var/cached = GLOB.rx_enrol_cache[A.type]
+/// TRUE when `D` declares per-instance every() work, by its type or (an atom) by one of its capabilities. Cached per
+/// type; FALSE while the globals are still being built.
+/proc/rx_type_enrols(datum/D)
+	if(!islist(GLOB?.rx_enrol_cache) || !islist(GLOB?.rx_boot_type_table))
+		return FALSE
+	var/cached = GLOB.rx_enrol_cache[D.type]
 	if(!isnull(cached))
 		return cached
 	cached = FALSE
@@ -190,17 +202,17 @@ GLOBAL_LIST_EMPTY(rx_enrol_cache)
 	for(var/listed in flags)
 		if(!(flags[listed] & RXB_EVERY))
 			continue
-		if(ispath(A.type, listed))
+		if(ispath(D.type, listed))
 			cached = TRUE
 			break
-		if(ispath(listed, /datum/capability))
-			for(var/datum/capability/C as anything in caps_of(A))
+		if(isatom(D) && ispath(listed, /datum/capability))
+			for(var/datum/capability/C as anything in caps_of(D))
 				if(ispath(C.type, listed))
 					cached = TRUE
 					break
 			if(cached)
 				break
-	GLOB.rx_enrol_cache[A.type] = cached
+	GLOB.rx_enrol_cache[D.type] = cached
 	return cached
 
 /// Joins every already-initialized holder of capability `key` to its membership key (a work item began to sweep

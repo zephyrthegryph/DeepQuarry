@@ -102,8 +102,8 @@
 
 /datum/unit_test/dx_work_every_when/Run()
 	var/datum/controller/kernel/K = kernel()
-	var/datum/rxw_pump/P = new
-	rx_enrol(P)
+	rx_boot_register(/datum/rxw_pump)
+	var/datum/rxw_pump/P = new // enrolled by being made: its type declares every()
 	var/datum/work_item/reaction/W = rxw_item(P, RXN_EVERY, 1)
 	var/datum/work_item/reaction/late = rxw_item(P, RXN_EVERY, 2)
 	TEST_ASSERT(W && late, "both every() reactions registered work items")
@@ -133,8 +133,8 @@
 
 /datum/unit_test/dx_work_every_when_proc/Run()
 	var/datum/controller/kernel/K = kernel()
+	rx_boot_register(/datum/rxw_gate)
 	var/datum/rxw_gate/G = new
-	rx_enrol(G)
 	var/datum/work_item/reaction/W = rxw_item(G, RXN_EVERY)
 	var/now = rxw_now()
 	K.run_item(W, WORK_TEST_LIMIT, now)
@@ -144,18 +144,56 @@
 	TEST_ASSERT_EQUAL(length(G.steps), 1, "and TRUE: it runs")
 	qdel(G)
 
+/// A subtype that re-declares an every() handler replaces the inherited declaration: one item per (owner type,
+/// handler), and an instance is enrolled in its own type's item only, so the handler never runs twice.
+/datum/rxw_pump/quick
+
+/datum/rxw_pump/quick/reactions()
+	. = ..()
+	. += every(0.5 SECONDS, PROC_REF(pump_step), when = nameof(on))
+
+/datum/unit_test/dx_work_every_redeclared
+
+/datum/unit_test/dx_work_every_redeclared/Run()
+	rx_boot_register(/datum/rxw_pump)
+	var/datum/rxw_pump/base = new
+	var/datum/rxw_pump/quick/fast = new
+	var/datum/rx_table/base_table = rx_table_of(base)
+	var/datum/rx_table/fast_table = rx_table_of(fast)
+	var/steps_in_base = 0
+	for(var/datum/reaction/R as anything in base_table.everys)
+		if(R.handler == TYPE_PROC_REF(/datum/rxw_pump, pump_step))
+			steps_in_base++
+	var/steps_in_fast = 0
+	var/datum/work_item/reaction/fast_item
+	for(var/datum/reaction/R as anything in fast_table.everys)
+		if(R.handler == TYPE_PROC_REF(/datum/rxw_pump, pump_step))
+			steps_in_fast++
+			fast_item = R.work
+	TEST_ASSERT_EQUAL(steps_in_base, 1, "the base type declares the handler once")
+	TEST_ASSERT_EQUAL(steps_in_fast, 1, "the subtype's re-declaration replaced the inherited one, not added to it")
+	var/datum/work_item/reaction/base_item
+	for(var/datum/reaction/R as anything in base_table.everys)
+		if(R.handler == TYPE_PROC_REF(/datum/rxw_pump, pump_step))
+			base_item = R.work
+	TEST_ASSERT(fast_item != base_item, "the subtype owns its own work item")
+	TEST_ASSERT_EQUAL(fast_item.interval, 0.5 SECONDS, "with the subtype's interval")
+	TEST_ASSERT(member_is(base_item.enrol_key, base) && !member_is(base_item.enrol_key, fast), "the base instance is in the base item only")
+	TEST_ASSERT(member_is(fast_item.enrol_key, fast) && !member_is(fast_item.enrol_key, base), "the subtype instance is in its own item only")
+	qdel(base)
+	qdel(fast)
+
 /// A memberless every() runs once per live instance of the declaring type, and an instance that is destroyed
 /// leaves the membership store and the item's execution tokens.
 /datum/unit_test/dx_work_every_per_instance
 
 /datum/unit_test/dx_work_every_per_instance/Run()
 	var/datum/controller/kernel/K = kernel()
+	rx_boot_register(/datum/rxw_pump)
 	var/datum/rxw_pump/A = new
 	var/datum/rxw_pump/B = new
 	A.on = TRUE
 	B.on = TRUE
-	rx_enrol(A)
-	rx_enrol(B)
 	var/datum/work_item/reaction/W = rxw_item(A, RXN_EVERY)
 	TEST_ASSERT(W.enrol_key, "a memberless every() on a holder has an enrolment key")
 	TEST_ASSERT(member_is(W.enrol_key, A) && member_is(W.enrol_key, B), "each instance joined the key")

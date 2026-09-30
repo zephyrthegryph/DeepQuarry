@@ -34,7 +34,7 @@ subtypes build their own `/datum/reaction`, and all of them point at the same it
 
 | Declaration | Item | Handler call |
 |---|---|---|
-| `every(...)` on a holder type | Scheduled; the holder joins the membership key `"rx:<signature>"` at init (`rx_enrol()`), leaves when destroyed. | `handler(dt)` on each live instance |
+| `every(...)` on a holder type | Scheduled; the holder joins the membership key `"rx:<declaring type>:<handler>"` at init (`rx_enrol()`), leaves when destroyed. The item is keyed by (declaring type, handler): a subtype that re-declares the handler replaces the inherited every() (its table keeps the last) and owns its own item. | `handler(dt)` on each live instance |
 | `every(..., members = <capability>)` on a holder type | Scheduled; runs per holder of the capability (holders join the capability key at init). | `handler(dt)` on each holder |
 | `every(...)` on a `/datum/system` | Scheduled, on the system's singleton. | `handler(dt)`, or `handler(member, dt)` with `members =` |
 | `on_cross(..., urgent = TRUE)` | Urgent; never on the cadence. `rx_crossed` calls `request_urgent(holder, item, deadline)`, the holder's `rx.cross_pending` carries the latest band and the first previous band, and `perform()` calls the handler. A crossing that ends where it began delivers nothing. | `handler(band, previous_band)` on the holder |
@@ -43,7 +43,7 @@ subtypes build their own `/datum/reaction`, and all of them point at the same it
 `when` is the item's `run_when`: a var name (truthy on the holder, or on the system for a system
 item) or a proc that answers TRUE (`PROC_REF`, on the holder or, for a system item, on the system,
 called with the member when there is one). `phase`, `after`, `budget` and `lane` are the item's.
-`every()` on a non-atom, non-system datum enrols only if it calls `rx_enrol(D)` itself.
+Enrolment is automatic for any datum whose type is on the boot list (`/datum/New()` for a non-atom, `caps_init()` for an atom); nothing calls `rx_enrol()` by hand.
 
 **Boot pass.** `python tools/ci/derived_reads_lint.py --fix-generated` also writes
 `rx_boot_types()` (each type whose `reactions()` declares `every` / `on_cross` / `on_notice`, with

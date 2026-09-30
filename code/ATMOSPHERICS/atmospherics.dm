@@ -389,10 +389,6 @@ TRACKED(/obj/machinery/atmospherics, rust_device_rev, CHANGE_MACHINE_SETTINGS)
 /obj/machinery/atmospherics/proc/rust_device_dirty()
 	set_rust_device_rev(rust_device_rev + 1)
 
-/// A generated setter of a Rust-owned config field ran (target_pressure, on, power_rating...): the law changed.
-/obj/machinery/atmospherics/rust_pushed()
-	rust_device_dirty()
-
 /// A power-mode change re-derives the device law (a device that is off is unregistered).
 /obj/machinery/atmospherics/set_use_power(new_use_power)
 	. = ..()

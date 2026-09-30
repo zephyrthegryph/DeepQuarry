@@ -56,10 +56,10 @@ TRACKED(/obj/cap_fixture/dx_review, tracked_value, CHANGE_EFFECTS)
 		labels += C.label
 	TEST_ASSERT_EQUAL(jointext(labels, ","), "a2,b,c", "replace() keeps the position")
 
-/datum/cap_system/dx_review
+/datum/system/dx_review
 
 /datum/capability/dx_review/joining
-	joins = list(/datum/cap_system/dx_review)
+	joins = list(/datum/system/dx_review)
 
 /// A runtime extra joins the type's list, its systems and its menu; removing it undoes all three.
 /datum/unit_test/dx_review_extras_and_systems/Run()
@@ -69,10 +69,10 @@ TRACKED(/obj/cap_fixture/dx_review, tracked_value, CHANGE_EFFECTS)
 	TEST_ASSERT(!add_capability(F, X), "the same key can't attach twice")
 	TEST_ASSERT(X in caps_all(F), "caps_all() includes the extra")
 	TEST_ASSERT(!(X in caps_of(F)), "the type's list is untouched")
-	TEST_ASSERT(F in cap_system(/datum/cap_system/dx_review).member_list(), "the holder joined the extra's system")
+	TEST_ASSERT(F in system(/datum/system/dx_review).member_list(), "the holder joined the extra's system")
 	TEST_ASSERT("extra" in F.caps_examine(null), "the extra's examine line shows")
 	TEST_ASSERT(remove_capability(F, /datum/capability/dx_review/joining), "the extra detaches")
-	TEST_ASSERT(!(F in cap_system(/datum/cap_system/dx_review).member_list()), "the holder left the system")
+	TEST_ASSERT(!(F in system(/datum/system/dx_review).member_list()), "the holder left the system")
 	TEST_ASSERT(!("extra" in F.caps_examine(null)), "the examine line is gone")
 
 /obj/cap_fixture/dx_review_menu

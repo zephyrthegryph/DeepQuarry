@@ -73,12 +73,12 @@ The excerpt is the real code, trimmed to the declarations:
     . += maintenance_hatch(cover_holds = PROC_REF(cover_holds), panel_needs_cover_closed = TRUE, emag_say = "...")
     . += cell_bay(nameof(cell), at = BAY_HATCH, needs = PROC_REF(cell_bay_ready), size = ITEMSIZE_NORMAL)
     . += power_channels()
-    . += powered_by(/datum/cap_system/power, role = POWER_ROLE_AREA_SUPPLY)
+    . += powered_by(/datum/system/power, role = POWER_ROLE_AREA_SUPPLY)
     . += cap_construction(
         ladder_options(at = BAY_HATCH, undo_delay = 5 SECONDS, dismantle = list(TOOL_WELDER, /obj/item/frame/apc, 1, PROC_REF(frame_ruined), /obj/item/stack/material/steel)),
         stage("frame", desc = "..."), apc_board_stage(), apc_wired_stage(), apc_secured_stage())   // build_insert / build_wire / build_fasten
     . += apc_ops()                                          // cap_control("Open interface"), the cover, the multitool reset
-    . += cap_require(list(CAP_LOCK, CAP_LOCK_SWIPE), needs = list(req_clear(CAP_EMAGGED), req_proc(PROC_REF(not_hacked)), req_wire(WIRE_IDSCAN), req_proc(PROC_REF(is_working))))
+    . += cap_require(CAP_LOCK, needs = list(req_clear(CAP_EMAGGED), req_proc(PROC_REF(not_hacked)), req_wire(WIRE_IDSCAN), req_proc(PROC_REF(is_working))))
     . += cap_require(CAP_EMAG, needs = req_proc(PROC_REF(emag_ok)))
     . += refine(CAP_EMAG, delay = 0.6 SECONDS, effect = PROC_REF(on_emag))
 
@@ -100,8 +100,8 @@ The excerpt is the real code, trimmed to the declarations:
     look.glow("channel-3", "[charging]")                   // explicit glows
 ```
 
-The lock is two ops declared by the hatch (`CAP_LOCK`, ACT_LOCK, the actor's own access, an alt-click; `CAP_LOCK_SWIPE`, an ID
-in hand) and the emag one op (`CAP_EMAG`, its handler is the effect; the shared commit is an `after_op` reaction of the emag
+The lock is one op declared by the hatch (`CAP_LOCK`, ACT_LOCK: an alt-click with anything in hand, or a plain click holding a card
+the lock takes; the credential is a provider found like a hand, `cap_lock_credential()`: held card, worn ID/PDA, silicon access) and the emag one op (`CAP_EMAG`, its handler is the effect; the shared commit is an `after_op` reaction of the emag
 capability). The area's lights and consoles are MEMBER relations of the area (`powered_by(POWERED_BY_AREA, role = POWER_ROLE_LIGHTING)`);
 the APC reads them with `area_members(area, role)` instead of scanning the area.
 
