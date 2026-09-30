@@ -174,7 +174,10 @@ One vocabulary for "something happened" (code in `code/datums/reactions/`, defin
 - `timed_set(src, nameof(var), value, for_time =)` for a value that reverts. The revert happens only if
   the value is unchanged. Never store an end time next to it.
 - `after(src, N, PROC_REF(x))` for a delayed action.
-- A periodic cadence for repeating work.
+- A periodic cadence for repeating work: `periodic_cadence` + `should_run()` + `periodic_step(dt)`, or a kernel
+  work item (`every()`, produced as a `/datum/work_item`) with a phase, `after` edges and a lane. Never a
+  self-re-arming `after()`.
+- `request_urgent(member, work, deadline)` to pull one member's declared-urgent work ahead of its cadence.
 
 ## Prompts and UI
 

@@ -87,7 +87,7 @@
 
 /// Telemetry (kernel/system.dm metrics()): the cost counters the profiler and the stat panel read.
 /datum/world_service/metrics()
-	return alist("name" = name, "members" = length(members), "initialized" = initialized, "total_ms" = total_ms, "steps" = steps, "cost" = cost, "tick_usage" = current_ms, "overran" = resuming)
+	return alist("name" = name, "members" = member_count(), "initialized" = initialized, "total_ms" = total_ms, "steps" = steps, "cost" = cost, "tick_usage" = current_ms, "overran" = resuming, "reactions" = kernel().work_cost_of(type))
 
 /// One line for the admin status/profiler readouts (was the subsystem's stat_entry()).
 /datum/world_service/proc/stat_line()
@@ -110,27 +110,15 @@
 		cost = MC_AVERAGE(cost, current_ms)
 	return done
 
-/// Every world service with a lane, for the profiler and the admin readouts.
+/// Every world service, for the profiler and the admin readouts, in registration order. Derived from the system
+/// registry (system_table()): a service registers itself when its singleton is created, so there is no hand-kept list.
 /proc/world_services()
-	return list(
-		GLOB.machine_service, GLOB.mob_service, GLOB.plant_service,
-		// Fold wave F3.
-		GLOB.radiation_service, GLOB.motiontracker_service, GLOB.pai_service, GLOB.mail_service,
-		GLOB.chemistry_service, GLOB.sound_service, GLOB.instrument_service, GLOB.circuit_service,
-		GLOB.xenoarch_service, GLOB.event_service,
-		// Fold wave F4.
-		GLOB.solar_service, GLOB.nightshift_service, GLOB.planet_service, GLOB.skybox_service,
-		GLOB.poi_service, GLOB.starmover_service, GLOB.turf_cascade_service, GLOB.explosion_service,
-		GLOB.inactivity_service, GLOB.transfer_service, GLOB.radio_service, GLOB.antag_service,
-		// Former feature subsystems (large).
-		GLOB.research_service, GLOB.supply_service, GLOB.transcore_service, GLOB.emergency_shuttle_service,
-		GLOB.expedition_service, GLOB.flight_service,
-		// Former feature subsystems (small) and client plumbing.
-		GLOB.character_setup_service, GLOB.lobby_monitor_service, GLOB.player_tips_service,
-		GLOB.vote_service, GLOB.persist_service,
-		GLOB.runechat_service, GLOB.chat_service, GLOB.asset_loading_service, GLOB.vis_overlays_service,
-		GLOB.ping_service, GLOB.time_track_service, GLOB.statpanels_service, GLOB.server_maint_service,
-	)
+	. = list()
+	var/list/table = system_table()
+	for(var/path in table)
+		if(ispath(path, /datum/world_service))
+			. += table[path]
+	return .
 
 /// Attaches every world service's lane to the live scheduler's global owner (SSbehaviours init).
 /proc/_om_start_world_lanes()

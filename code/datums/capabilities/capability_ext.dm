@@ -142,13 +142,23 @@ GLOBAL_LIST_EMPTY(caps_order_cache)
 	RETURN_TYPE(/datum/cap_system)
 	return system(path)
 
+/// A holder joins every system its capability names, held by that capability (so two capabilities naming the same
+/// system are two sources, and it leaves when the last goes), and the capability's own type key when some work item
+/// runs per member of it (kernel_register_work(..., members = capability type)).
 /proc/cap_join_systems(atom/A, datum/capability/C)
 	for(var/path in C.systems())
 		var/datum/cap_system/S = cap_system(path)
-		S.kernel_join(A)
+		S.kernel_join(A, C, C.system_role())
+	if(kernel().cap_wanted[C.type])
+		member_join(C.type, A, C)
 
 /proc/cap_leave_systems(atom/A, datum/capability/C)
 	for(var/path in C.systems())
 		var/datum/cap_system/S = cap_system(path)
-		S.kernel_leave(A)
+		S.kernel_leave(A, C)
+	if(kernel().cap_wanted[C.type])
+		member_leave(C.type, A, C)
 
+/// The role the holder plays in the systems this capability names (indexed by members_of(system, role)), or null.
+/datum/capability/proc/system_role()
+	return null

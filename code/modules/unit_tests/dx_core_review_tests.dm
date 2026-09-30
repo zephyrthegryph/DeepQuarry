@@ -69,10 +69,10 @@ TRACKED(/obj/cap_fixture/dx_review, tracked_value, CHANGE_EFFECTS)
 	TEST_ASSERT(!add_capability(F, X), "the same key can't attach twice")
 	TEST_ASSERT(X in caps_all(F), "caps_all() includes the extra")
 	TEST_ASSERT(!(X in caps_of(F)), "the type's list is untouched")
-	TEST_ASSERT(F in cap_system(/datum/cap_system/dx_review).members, "the holder joined the extra's system")
+	TEST_ASSERT(F in cap_system(/datum/cap_system/dx_review).member_list(), "the holder joined the extra's system")
 	TEST_ASSERT("extra" in F.caps_examine(null), "the extra's examine line shows")
 	TEST_ASSERT(remove_capability(F, /datum/capability/dx_review/joining), "the extra detaches")
-	TEST_ASSERT(!(F in cap_system(/datum/cap_system/dx_review).members), "the holder left the system")
+	TEST_ASSERT(!(F in cap_system(/datum/cap_system/dx_review).member_list()), "the holder left the system")
 	TEST_ASSERT(!("extra" in F.caps_examine(null)), "the examine line is gone")
 
 /obj/cap_fixture/dx_review_menu

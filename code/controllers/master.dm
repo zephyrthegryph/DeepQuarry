@@ -424,8 +424,10 @@ UI_ACT_PROC(/datum/controller/master, ui_act_view_variables)
 		log_world("ERROR: MC: boot: [boot_error]")
 	var/list/boot_nodes = subsystems + boot_systems
 
-	var/list/cycle = list()
-	var/list/sorted_nodes = boot_dependency_order(boot_nodes, deps_by_node, cycle)
+	// The same validator orders the kernel's work items (kernel/graph.dm).
+	var/datum/graph_check/boot_graph = graph_validate(boot_nodes, deps_by_node)
+	var/list/cycle = boot_graph.cycle
+	var/list/sorted_nodes = boot_graph.order
 	for(var/i in 1 to length(subsystems))
 		var/datum/controller/subsystem/subsystem = subsystems[i]
 		subsystem.ordering_id = i
@@ -651,7 +653,7 @@ UI_ACT_PROC(/datum/controller/master, ui_act_view_variables)
 	var/timer = world.time
 	for (var/thing in subsystems)
 		var/datum/controller/subsystem/SS = thing
-		if (SS.flags & SS_NO_FIRE)
+		if (SS.flags & (SS_NO_FIRE|SS_KERNEL_HOSTED))
 			continue
 		if (SS.init_stage > init_stage)
 			continue
@@ -786,6 +788,12 @@ UI_ACT_PROC(/datum/controller/master, ui_act_view_variables)
 			subsystems_to_check = current_runlevel_subsystems
 		else
 			subsystems_to_check = tickersubsystems
+
+		// The kernel tick (kernel/kernel.dm): phases K, N, U, D, P, R, G. The MC queue gets what it leaves.
+		if (init_stage == INITSTAGE_MAX)
+			kernel().tick(TICK_USAGE + (TICK_LIMIT_RUNNING - TICK_USAGE) * KERNEL_TICK_SHARE, init_stage)
+		else
+			kernel().tick(current_ticklimit, init_stage)
 
 		if (CheckQueue(subsystems_to_check) <= 0) //error processing queue
 			stack_trace("MC: CheckQueue failed. Current error_level is [round(error_level, 0.25)]")

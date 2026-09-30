@@ -31,11 +31,7 @@
 	/// Event types this system raises.
 	var/list/emits
 
-	// ---- members (kernel_join / kernel_leave)
-	/// Every member atom, in join order. Membership is O(1) to add and remove (swap-remove).
-	var/list/members
-	/// member -> index in `members`.
-	var/list/member_index
+	// ---- members (kernel_join / kernel_leave; the store is controllers/kernel/membership.dm, MEMBER relations)
 	/// TRUE once the boot pass has run on_members_ready(). Members joining before it wait for that pass.
 	var/members_ready = FALSE
 
@@ -196,15 +192,16 @@
 	periodic_cadence = S.member_cadence
 
 /datum/system_member_driver/should_run()
-	return !periodic_parked && length(system.members) && system.periodic_runlevel_ok()
+	return !periodic_parked && system.member_count() && system.periodic_runlevel_ok()
 
 /datum/system_member_driver/periodic_step(delta)
-	while(cursor <= length(system.members))
-		var/atom/A = system.members[cursor]
+	var/list/members = system.member_list()
+	while(cursor <= length(members))
+		var/atom/A = members[cursor]
 		cursor++
 		if(!QDELETED(A) && system.member_should_run(A))
 			system.member_step(A, delta)
-		if(TICK_USAGE > Master.current_ticklimit && cursor <= length(system.members))
+		if(TICK_USAGE > Master.current_ticklimit && cursor <= length(members))
 			return STEP_YIELD
 	cursor = 1
 	return STEP_DONE
@@ -268,40 +265,36 @@ OWN_TIMER(/datum/system_member_driver, step_yield)
 /datum/system/proc/on_leave(atom/A)
 	return
 
-/// Adds `A`. Returns TRUE when it was not a member already.
-/datum/system/proc/kernel_join(atom/A)
-	if(!A || (member_index && member_index[A]))
+/// Adds `A` (held by `source`; null is the anonymous source), optionally under `role`. Returns TRUE when it was not a
+/// member already. A second source on an existing member only records the source.
+/datum/system/proc/kernel_join(atom/A, source = null, role = null)
+	if(!member_join(type, A, source, role))
 		return FALSE
-	LAZYINITLIST(members)
-	LAZYINITLIST(member_index)
-	members += A
-	member_index[A] = length(members)
 	on_join(A)
 	return TRUE
 
-/// Removes `A` in O(1): the last member takes its slot. Returns TRUE when it was a member.
-/datum/system/proc/kernel_leave(atom/A)
-	var/index = member_index?[A]
-	if(!index)
+/// Removes `source`'s hold on `A` (null: the anonymous source; `all`: every source) in O(1): the last member takes
+/// its slot. Returns TRUE when `A` left the system.
+/datum/system/proc/kernel_leave(atom/A, source = null, all = FALSE)
+	if(!member_leave(type, A, source, all))
 		return FALSE
-	var/last = length(members)
-	var/atom/moved = members[last]
-	members[index] = moved
-	member_index[moved] = index
-	members.len = last - 1
-	member_index -= A
-	if(!length(members))
-		members = null
-		member_index = null
 	on_leave(A)
 	return TRUE
 
 /datum/system/proc/is_member(atom/A)
-	return !!member_index?[A]
+	return member_is(type, A)
+
+/// The members, in join order. The store's own list: read it, never write it.
+/datum/system/proc/member_list()
+	return members_of(type)
+
+/// How many members the system has.
+/datum/system/proc/member_count()
+	return members_total(type)
 
 // ---- telemetry
 
 /// Telemetry for the profiler, the stat panel and time_track: an alist of numbers and short strings.
 /// The only channel other code reads a system's cost through.
 /datum/system/proc/metrics()
-	return alist("name" = name, "members" = length(members), "initialized" = initialized, "cost" = 0, "tick_usage" = 0, "overran" = 0)
+	return alist("name" = name, "members" = member_count(), "initialized" = initialized, "cost" = 0, "tick_usage" = 0, "overran" = 0, "reactions" = kernel().work_cost_of(type))

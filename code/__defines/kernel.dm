@@ -32,3 +32,43 @@
 #define KERNEL_LATENCY_BINS 32
 /// A waiter with no timeout.
 #define WAITER_NO_TIMEOUT 0
+
+// ---- the kernel tick (code/controllers/kernel/kernel.dm): phases run in this order every tick.
+/// K: hosted input subsystems (input, verb_manager), capped at KERNEL_INPUT_CAP.
+#define KERNEL_PHASE_K 1
+/// N: native. One Rust frame: native_frame(elapsed, budget).
+#define KERNEL_PHASE_N 2
+/// U: urgent requests, from a reserved slice of the tick (request_urgent()).
+#define KERNEL_PHASE_U 3
+/// D: deadlines (timers, deadline wakes, timed_set reverts) and deadline-phase work items.
+#define KERNEL_PHASE_D 4
+/// P: the lanes: the borrow pass, then each lane's queued wakes, rings and work items, by lane share.
+#define KERNEL_PHASE_P 5
+/// R: leftovers, lane order.
+#define KERNEL_PHASE_R 6
+/// G: garbage (hosted), whatever is left, with a floor per second.
+#define KERNEL_PHASE_G 7
+#define KERNEL_PHASE_COUNT 7
+/// Phase letters, indexed by KERNEL_PHASE_*.
+#define KERNEL_PHASE_LETTERS list("K", "N", "U", "D", "P", "R", "G")
+
+/// Share of the tick's remaining budget the kernel takes; the MC's other subsystems get the rest.
+#define KERNEL_TICK_SHARE 0.6
+/// Share of the kernel's budget reserved for phase U.
+#define KERNEL_URGENT_SHARE 0.1
+/// Elapsed ticks a native frame may cover in one call (a long stall does not step the world for minutes).
+#define KERNEL_NATIVE_MAX_CATCHUP 10
+/// A work item that faults this many runs in a row is parked and admins are told.
+#define KERNEL_FAULT_PARK 5
+
+// ---- work items: interval 0 runs every tick.
+#define WORK_EVERY_TICK 0
+
+/// Garbage gets at least KERNEL_GARBAGE_FLOOR percent of a tick once every KERNEL_GARBAGE_FLOOR_PERIOD, whatever else ran.
+#define KERNEL_GARBAGE_FLOOR 2
+#define KERNEL_GARBAGE_FLOOR_PERIOD (1 SECONDS)
+
+#ifdef UNIT_TESTS
+/// An absolute tick usage no test world reaches (the boot ticks a test runs in are thousands of percent).
+#define WORK_TEST_LIMIT 1e9
+#endif
