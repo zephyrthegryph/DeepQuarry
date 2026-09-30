@@ -143,3 +143,14 @@ TOPIC_ACTION(/datum/dq_topic_probe/child, "pick", PROC_REF(topic_child_pick), TO
 	handler_args[TOPIC_HREF] = href
 	TEST_ASSERT_EQUAL(P.om_topic_ask(null, handler_args, "k1", /datum/om/prompt/number, list()), "42", "a re-run answer is read from the raw href_list")
 	qdel(P)
+
+/// admin_can() is the single rights primitive: a null or holder-less subject holds no rights, check_rights_for()
+/// is its alias, and a denial through admin_require() is refused (and audited) without reading usr.
+/datum/unit_test/dq_admin_can
+	var/client/fake_client
+
+/datum/unit_test/dq_admin_can/Run()
+	TEST_ASSERT(!admin_can(null, R_ADMIN), "admin_can(null) must deny")
+	TEST_ASSERT(!admin_can(null, R_NONE), "admin_can(null, R_NONE) must deny: no client is not an admin")
+	TEST_ASSERT(!check_rights_for(null, R_ADMIN), "check_rights_for must alias admin_can")
+	TEST_ASSERT(!admin_require(null, R_BAN, "dq_admin_can test"), "admin_require(null) must deny")
