@@ -97,6 +97,11 @@ Delivery rules:
 - Registrations have deterministic order, automatic teardown and tracing. A reentrant notice that
   deletes its source stops delivery safely.
 
+Notices every atom can publish (code/datums/reactions/notices.dm): `/datum/notice/hit` (`attacker`, `item`: an item was used on it
+and nothing answered, from `/atom/proc/attackby`) and `/datum/notice/slashed` (`attacker`: a human touched it with an empty hand
+and nothing answered, from `/atom/proc/attack_hand`; the listener decides whether the attacker can shred it). The APC listens
+to both (`on_notice(/datum/notice/hit, ...)`) instead of overriding `attackby` / `attack_hand`.
+
 | Question | Use |
 |---|---|
 | It happened; who cares? | `PUBLISH` / `on_notice` |

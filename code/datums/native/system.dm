@@ -65,15 +65,19 @@
 		native = system(/datum/system/native)
 	return native
 
-/// The kernel's frame (phase N): `elapsed_ds` deciseconds since the last one become wheel ticks (at least one,
-/// at most NATIVE_MAX_CATCHUP), and `budget` (normal/background wakes per tick) scales with them, so a late
-/// tick takes the skipped ticks' share. Returns TRUE when a frame ran.
+/// The kernel's frame (phase N). Rust's scheduler clock is the wheel tick itself (timers and keys carry absolute ticks,
+/// om_world_tick_of()), so the frame is told how many ticks passed since the last one: the whole tick count on the first
+/// frame (that is what aligns the clocks), one tick on a normal one, more after a hitch. Rust bounds how much game time
+/// it paces from that. `elapsed_ds` (the kernel caps it at NATIVE_MAX_CATCHUP ticks) only scales the wake `budget`
+/// (normal/background wakes per tick), so a late tick takes the skipped ticks' share. Returns TRUE when a frame ran.
 /datum/system/native/proc/kernel_frame(elapsed_ds, budget = NATIVE_WAKE_BUDGET)
 	if(tick_lag_sent != world.tick_lag)
 		send_tick_lag()
-	var/ticks = clamp(CEILING(elapsed_ds / world.tick_lag, 1), 1, NATIVE_MAX_CATCHUP)
-	last_tick = om_world_tick_of(world.time)
-	return run_frame(ticks, budget * ticks)
+	var/tick_now = om_world_tick_of(world.time)
+	var/ticks = max(tick_now - last_tick, 1)
+	last_tick = tick_now
+	var/budget_ticks = clamp(CEILING(elapsed_ds / world.tick_lag, 1), 1, NATIVE_MAX_CATCHUP)
+	return run_frame(ticks, budget * budget_ticks)
 
 /// Runs a frame for `elapsed` wheel ticks (0: no pacing, only drain: tests that stepped Rust by hand).
 /datum/system/native/proc/run_frame(elapsed, budget = NATIVE_WAKE_BUDGET)
