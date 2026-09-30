@@ -29,7 +29,7 @@
 	name = "Server Base";
 	nitrogen = 500;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/survivalpod/superpose/SurvivalScience)
 "eX" = (
@@ -44,7 +44,7 @@
 	name = "Server Base";
 	nitrogen = 500;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/survivalpod/superpose/SurvivalScience)
 "fo" = (
@@ -351,7 +351,7 @@
 	name = "Server Base";
 	nitrogen = 500;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/survivalpod/superpose/SurvivalScience)
 "Gx" = (
@@ -608,7 +608,7 @@
 	name = "Server Base";
 	nitrogen = 500;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/survivalpod/superpose/SurvivalScience)
 "Yk" = (

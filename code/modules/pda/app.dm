@@ -39,11 +39,11 @@
 
 	if(blink && !(src in pda().notifying_programs))
 		pda().add_overlay("pda-r")
-		rel_add(pda(), "notifying_programs", src)
+		rel_add(pda(), nameof(/obj/item/pda::notifying_programs), src)
 
 /datum/data/pda/proc/unnotify()
 	if(src in pda().notifying_programs)
-		rel_remove(pda(), "notifying_programs", src)
+		rel_remove(pda(), nameof(/obj/item/pda::notifying_programs), src)
 		if(!length(pda().notifying_programs))
 			pda().cut_overlay("pda-r")
 
@@ -66,7 +66,7 @@
 /datum/data/pda/app/start()
 	if(pda().current_app())
 		pda().current_app().stop()
-	rel_set(pda(), "current_app", src)
+	rel_set(pda(), nameof(/obj/item/pda::current_app), src)
 	return 1
 
 /datum/data/pda/app/proc/update_ui(mob/user, list/data)
@@ -91,9 +91,9 @@
 		pda().scanmode().name = "Enable [pda().scanmode().base_name]"
 
 	if(pda().scanmode() == src)
-		rel_clear(pda(), "scanmode")
+		rel_clear(pda(), nameof(/obj/item/pda::scanmode))
 	else
-		rel_set(pda(), "scanmode", src)
+		rel_set(pda(), nameof(/obj/item/pda::scanmode), src)
 		name = "Disable [base_name]"
 
 	pda().update_shortcuts()

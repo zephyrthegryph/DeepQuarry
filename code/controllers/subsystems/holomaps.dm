@@ -2,10 +2,10 @@
 // Holo-Minimaps Generation Subsystem handles initialization of the holo minimaps.
 // Look in code/modules/holomap/generate_holomap.dm to find generateHoloMinimaps()
 //
-SUBSYSTEM_DEF(holomaps)
+SYSTEM_DEF(holomaps)
 	name = "HoloMiniMaps"
-	flags = SS_NO_FIRE
-	dependencies = list(
+	init_stage = INITSTAGE_MAIN
+	needs = list(
 		/datum/controller/subsystem/atoms
 	)
 	var/static/holomaps_initialized = FALSE
@@ -13,19 +13,16 @@ SUBSYSTEM_DEF(holomaps)
 	var/static/list/extraMiniMaps = list()
 	var/static/list/station_holomaps = list()
 
-/datum/controller/subsystem/holomaps/Recover()
-	flags |= SS_NO_INIT // Make extra sure we don't initialize twice.
 
-/datum/controller/subsystem/holomaps/Initialize()
+/datum/system/holomaps/initialize()
 	generateHoloMinimaps()
-	return SS_INIT_SUCCESS
 
-/datum/controller/subsystem/holomaps/stat_entry(msg)
+/datum/system/holomaps/stat_entry(msg)
 	if (!GLOB.Debug2)
 		return // Only show up in stat panel if debugging is enabled.
 	. = ..()
 
-/datum/controller/subsystem/holomaps/proc/dump_nanomap_icons()
+/datum/system/holomaps/proc/dump_nanomap_icons()
 	. = list()
 
 	for(var/z = 1 to world.maxz)

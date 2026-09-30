@@ -73,7 +73,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/computer/message_monitor, TYPE_PROC_REF(/
 	//Is the server isn't linked to a server, and there's a server available, default it to the first one in the list.
 	if(!linkedServer())
 		if(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS) && REGISTRY_COUNT(REGISTRY_MESSAGE_SERVERS) > 0)
-			rel_set(src, "linkedServer", REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS)[1])
+			rel_set(src, nameof(linkedServer), REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS)[1])
 
 DECLARE_UI(/obj/machinery/computer/message_monitor, "MessageMonitor")
 
@@ -177,7 +177,7 @@ UI_DATA_REPLACE(/obj/machinery/computer/message_monitor, "customsender:text", "c
 
 /obj/machinery/computer/message_monitor/proc/ResetMessage()
 	customsender 	= "System Administrator"
-	rel_clear(src, "customrecepient")
+	rel_clear(src, nameof(customrecepient))
 	custommessage 	= "This is a test, please ignore."
 	customjob 		= "Admin"
 
@@ -208,7 +208,7 @@ UI_ACT_PROC(/obj/machinery/computer/message_monitor, ui_act_find)
 	if(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS) && REGISTRY_COUNT(REGISTRY_MESSAGE_SERVERS) > 1)
 		om_ask(ui.user, /datum/om/prompt/choice, PROC_REF(server_selected), title = "Select a server.", message = "Please select a server.", choices = REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS), requires = PROMPT_USABLE, ui_refresh = src)
 	else if(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS) && REGISTRY_COUNT(REGISTRY_MESSAGE_SERVERS) > 0)
-		rel_set(src, "linkedServer", REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS)[1])
+		rel_set(src, nameof(/obj/machinery/computer/message_monitor::linkedServer), REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS)[1])
 		set_temp("NOTICE: Only Single Server Detected - Server selected.", "average")
 	else
 		temp = noserver
@@ -243,7 +243,7 @@ UI_ACT_PROC(/obj/machinery/computer/message_monitor, ui_act_del_pda)
 	if(!linkedServer() || linkedServer().stat & (NOPOWER|BROKEN))
 		temp = noserver
 		return TRUE
-	own_clear(linkedServer(), "pda_msgs", OWN_DELETE)
+	own_clear(linkedServer(), nameof(/obj/machinery/message_server::pda_msgs), OWN_DELETE)
 	set_temp("NOTICE: Logs cleared.", "average")
 	. = TRUE
 //Clears the request console logs - KEY REQUIRED
@@ -255,7 +255,7 @@ UI_ACT_PROC(/obj/machinery/computer/message_monitor, ui_act_del_rc)
 	if(!linkedServer() || linkedServer().stat & (NOPOWER|BROKEN))
 		temp = noserver
 		return TRUE
-	own_clear(linkedServer(), "rc_msgs", OWN_DELETE)
+	own_clear(linkedServer(), nameof(/obj/machinery/message_server::rc_msgs), OWN_DELETE)
 	set_temp("NOTICE: Logs cleared.", "average")
 	. = TRUE
 //Change the password - KEY REQUIRED
@@ -280,10 +280,10 @@ UI_ACT_PROC(/obj/machinery/computer/message_monitor, ui_act_delete)
 		return TRUE
 	if(params["type"] == "pda")
 		if(params["id"] in linkedServer().pda_msgs)
-			own_remove(linkedServer(), "pda_msgs", params["id"])
+			own_remove(linkedServer(), nameof(/obj/machinery/message_server::pda_msgs), params["id"])
 	else
 		if(params["id"] in linkedServer().rc_msgs)
-			own_remove(linkedServer(), "rc_msgs", params["id"])
+			own_remove(linkedServer(), nameof(/obj/machinery/message_server::rc_msgs), params["id"])
 	set_temp("NOTICE: Log Deleted!", "average")
 	. = TRUE
 //Fake messaging selection - KEY REQUIRED
@@ -322,7 +322,7 @@ UI_ACT_PROC(/obj/machinery/computer/message_monitor, ui_act_set_recipient)
 	var/datum/data/pda/app/messenger/M = P.find_program(/datum/data/pda/app/messenger)
 	if(!M || M.toff)
 		return FALSE
-	rel_set(src, "customrecepient", P)
+	rel_set(src, nameof(/obj/machinery/computer/message_monitor::customrecepient), P)
 	. = TRUE
 
 UI_ACT(/obj/machinery/computer/message_monitor, "set_message", ui_act_set_message, UI_ARG_TEXT("val"))
@@ -401,7 +401,7 @@ UI_ACT_PROC(/obj/machinery/computer/message_monitor, ui_act_deltoken)
 	. = TRUE
 
 /obj/machinery/computer/message_monitor/proc/server_selected(datum/om/prompt/choice/ask)
-	rel_set(src, "linkedServer", ask.choice)
+	rel_set(src, nameof(linkedServer), ask.choice)
 	set_temp("NOTICE: Server selected.", "alert")
 
 /obj/machinery/computer/message_monitor/proc/current_key_entered(datum/om/prompt/text/ask)

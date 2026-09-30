@@ -61,9 +61,9 @@
 #define VIRGO3B_MOL_PHORON		(VIRGO3B_MOL_PER_TURF * VIRGO3B_PER_PHORON)
 
 //Turfmakers
-#define VIRGO3B_SET_ATMOS	nitrogen=VIRGO3B_MOL_N2;oxygen=VIRGO3B_MOL_O2;carbon_dioxide=VIRGO3B_MOL_CO2;phoron=VIRGO3B_MOL_PHORON;temperature=VIRGO3B_AVG_TEMP
-#define VIRGO3B_TURF_CREATE(x)	x/virgo3b/nitrogen=VIRGO3B_MOL_N2;x/virgo3b/oxygen=VIRGO3B_MOL_O2;x/virgo3b/carbon_dioxide=VIRGO3B_MOL_CO2;x/virgo3b/phoron=VIRGO3B_MOL_PHORON;x/virgo3b/temperature=VIRGO3B_AVG_TEMP;x/virgo3b/outdoors=TRUE;x/virgo3b/update_graphic(list/graphic_add = null, list/graphic_remove = null) return 0
-#define VIRGO3B_TURF_CREATE_UN(x)	x/virgo3b/nitrogen=VIRGO3B_MOL_N2;x/virgo3b/oxygen=VIRGO3B_MOL_O2;x/virgo3b/carbon_dioxide=VIRGO3B_MOL_CO2;x/virgo3b/phoron=VIRGO3B_MOL_PHORON;x/virgo3b/temperature=VIRGO3B_AVG_TEMP
+#define VIRGO3B_SET_ATMOS	nitrogen=VIRGO3B_MOL_N2;oxygen=VIRGO3B_MOL_O2;carbon_dioxide=VIRGO3B_MOL_CO2;phoron=VIRGO3B_MOL_PHORON;initial_temperature=VIRGO3B_AVG_TEMP
+#define VIRGO3B_TURF_CREATE(x)	x/virgo3b/nitrogen=VIRGO3B_MOL_N2;x/virgo3b/oxygen=VIRGO3B_MOL_O2;x/virgo3b/carbon_dioxide=VIRGO3B_MOL_CO2;x/virgo3b/phoron=VIRGO3B_MOL_PHORON;x/virgo3b/initial_temperature=VIRGO3B_AVG_TEMP;x/virgo3b/outdoors=TRUE;x/virgo3b/update_graphic(list/graphic_add = null, list/graphic_remove = null) return 0
+#define VIRGO3B_TURF_CREATE_UN(x)	x/virgo3b/nitrogen=VIRGO3B_MOL_N2;x/virgo3b/oxygen=VIRGO3B_MOL_O2;x/virgo3b/carbon_dioxide=VIRGO3B_MOL_CO2;x/virgo3b/phoron=VIRGO3B_MOL_PHORON;x/virgo3b/initial_temperature=VIRGO3B_AVG_TEMP
 
 //Atmosphere properties
 #define VIRGO3BB_ONE_ATMOSPHERE	101.325 //kPa
@@ -84,9 +84,9 @@
 #define VIRGO3BB_MOL_PHORON		(VIRGO3BB_MOL_PER_TURF * VIRGO3BB_PER_PHORON)
 
 //Turfmakers
-#define VIRGO3BB_SET_ATMOS	nitrogen=VIRGO3BB_MOL_N2;oxygen=VIRGO3BB_MOL_O2;carbon_dioxide=VIRGO3BB_MOL_CO2;phoron=VIRGO3BB_MOL_PHORON;temperature=VIRGO3BB_AVG_TEMP
-#define VIRGO3BB_TURF_CREATE(x)	x/virgo3b_better/nitrogen=VIRGO3BB_MOL_N2;x/virgo3b_better/oxygen=VIRGO3BB_MOL_O2;x/virgo3b_better/carbon_dioxide=VIRGO3BB_MOL_CO2;x/virgo3b_better/phoron=VIRGO3BB_MOL_PHORON;x/virgo3b_better/temperature=VIRGO3BB_AVG_TEMP;x/virgo3b_better/outdoors=TRUE;x/virgo3b_better/update_graphic(list/graphic_add = null, list/graphic_remove = null) return 0
-#define VIRGO3BB_TURF_CREATE_UN(x)	x/virgo3b_better/nitrogen=VIRGO3BB_MOL_N2;x/virgo3b_better/oxygen=VIRGO3BB_MOL_O2;x/virgo3b_better/carbon_dioxide=VIRGO3BB_MOL_CO2;x/virgo3b_better/phoron=VIRGO3BB_MOL_PHORON;x/virgo3b_better/temperature=VIRGO3BB_AVG_TEMP
+#define VIRGO3BB_SET_ATMOS	nitrogen=VIRGO3BB_MOL_N2;oxygen=VIRGO3BB_MOL_O2;carbon_dioxide=VIRGO3BB_MOL_CO2;phoron=VIRGO3BB_MOL_PHORON;initial_temperature=VIRGO3BB_AVG_TEMP
+#define VIRGO3BB_TURF_CREATE(x)	x/virgo3b_better/nitrogen=VIRGO3BB_MOL_N2;x/virgo3b_better/oxygen=VIRGO3BB_MOL_O2;x/virgo3b_better/carbon_dioxide=VIRGO3BB_MOL_CO2;x/virgo3b_better/phoron=VIRGO3BB_MOL_PHORON;x/virgo3b_better/initial_temperature=VIRGO3BB_AVG_TEMP;x/virgo3b_better/outdoors=TRUE;x/virgo3b_better/update_graphic(list/graphic_add = null, list/graphic_remove = null) return 0
+#define VIRGO3BB_TURF_CREATE_UN(x)	x/virgo3b_better/nitrogen=VIRGO3BB_MOL_N2;x/virgo3b_better/oxygen=VIRGO3BB_MOL_O2;x/virgo3b_better/carbon_dioxide=VIRGO3BB_MOL_CO2;x/virgo3b_better/phoron=VIRGO3BB_MOL_PHORON;x/virgo3b_better/initial_temperature=VIRGO3BB_AVG_TEMP
 
 //Atmosphere properties
 #define VIRGO2_ONE_ATMOSPHERE	312.1 //kPa
@@ -107,8 +107,8 @@
 #define VIRGO2_MOL_PHORON		(VIRGO2_MOL_PER_TURF * VIRGO2_PER_PHORON)
 
 //Turfmakers
-#define VIRGO2_SET_ATMOS	nitrogen=VIRGO2_MOL_N2;oxygen=VIRGO2_MOL_O2;carbon_dioxide=VIRGO2_MOL_CO2;phoron=VIRGO2_MOL_PHORON;temperature=VIRGO2_AVG_TEMP
-#define VIRGO2_TURF_CREATE(x)	x/virgo2/nitrogen=VIRGO2_MOL_N2;x/virgo2/oxygen=VIRGO2_MOL_O2;x/virgo2/carbon_dioxide=VIRGO2_MOL_CO2;x/virgo2/phoron=VIRGO2_MOL_PHORON;x/virgo2/temperature=VIRGO2_AVG_TEMP;x/virgo2/color="#eacd7c"
+#define VIRGO2_SET_ATMOS	nitrogen=VIRGO2_MOL_N2;oxygen=VIRGO2_MOL_O2;carbon_dioxide=VIRGO2_MOL_CO2;phoron=VIRGO2_MOL_PHORON;initial_temperature=VIRGO2_AVG_TEMP
+#define VIRGO2_TURF_CREATE(x)	x/virgo2/nitrogen=VIRGO2_MOL_N2;x/virgo2/oxygen=VIRGO2_MOL_O2;x/virgo2/carbon_dioxide=VIRGO2_MOL_CO2;x/virgo2/phoron=VIRGO2_MOL_PHORON;x/virgo2/initial_temperature=VIRGO2_AVG_TEMP;x/virgo2/color="#eacd7c"
 
 //Atmosphere properties
 #define CRYOGAIA_ONE_ATMOSPHERE	101.13 //kPa
@@ -129,6 +129,6 @@
 #define CRYOGAIA_MOL_PHORON		(CRYOGAIA_MOL_PER_TURF * CRYOGAIA_PER_PHORON)
 
 //Turfmakers
-#define CRYOGAIA_SET_ATMOS	nitrogen=CRYOGAIA_MOL_N2;oxygen=CRYOGAIA_MOL_O2;carbon_dioxide=CRYOGAIA_MOL_CO2;phoron=CRYOGAIA_MOL_PHORON;temperature=CRYOGAIA_AVG_TEMP
-#define CRYOGAIA_TURF_CREATE(x)	x/cryogaia/nitrogen=CRYOGAIA_MOL_N2;x/cryogaia/oxygen=CRYOGAIA_MOL_O2;x/cryogaia/carbon_dioxide=CRYOGAIA_MOL_CO2;x/cryogaia/phoron=CRYOGAIA_MOL_PHORON;x/cryogaia/temperature=CRYOGAIA_AVG_TEMP;x/cryogaia/outdoors=TRUE;x/cryogaia/update_graphic(list/graphic_add = null, list/graphic_remove = null) return 0
-#define CRYOGAIA_TURF_CREATE_UN(x)	x/cryogaia/nitrogen=CRYOGAIA_MOL_N2;x/cryogaia/oxygen=CRYOGAIA_MOL_O2;x/cryogaia/carbon_dioxide=CRYOGAIA_MOL_CO2;x/cryogaia/phoron=CRYOGAIA_MOL_PHORON;x/cryogaia/temperature=CRYOGAIA_AVG_TEMP
+#define CRYOGAIA_SET_ATMOS	nitrogen=CRYOGAIA_MOL_N2;oxygen=CRYOGAIA_MOL_O2;carbon_dioxide=CRYOGAIA_MOL_CO2;phoron=CRYOGAIA_MOL_PHORON;initial_temperature=CRYOGAIA_AVG_TEMP
+#define CRYOGAIA_TURF_CREATE(x)	x/cryogaia/nitrogen=CRYOGAIA_MOL_N2;x/cryogaia/oxygen=CRYOGAIA_MOL_O2;x/cryogaia/carbon_dioxide=CRYOGAIA_MOL_CO2;x/cryogaia/phoron=CRYOGAIA_MOL_PHORON;x/cryogaia/initial_temperature=CRYOGAIA_AVG_TEMP;x/cryogaia/outdoors=TRUE;x/cryogaia/update_graphic(list/graphic_add = null, list/graphic_remove = null) return 0
+#define CRYOGAIA_TURF_CREATE_UN(x)	x/cryogaia/nitrogen=CRYOGAIA_MOL_N2;x/cryogaia/oxygen=CRYOGAIA_MOL_O2;x/cryogaia/carbon_dioxide=CRYOGAIA_MOL_CO2;x/cryogaia/phoron=CRYOGAIA_MOL_PHORON;x/cryogaia/initial_temperature=CRYOGAIA_AVG_TEMP

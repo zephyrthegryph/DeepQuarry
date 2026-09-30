@@ -1,0 +1,5 @@
+author: "foundation-a"
+delete-after: true
+changes:
+  - refactor: "Reactions run on the kernel: every(), urgent on_cross and on_notice are work items; the notice pool is a /datum/pooled."
+  - code_imp: "rel_one/rel_many validate the declared type on every write; state-invalidation om events opt in to coalescing."

@@ -13,19 +13,19 @@
 /datum/tgui_ban_panel/New(user, pckey, datum/admins/admind)//user can either be a client or a mob due to byondcode(tm)
 	if (istype(user, /client))
 		var/client/user_client = user
-		rel_set(src, "holder", user_client) //if its a client, assign it to holder
+		rel_set(src, nameof(holder), user_client) //if its a client, assign it to holder
 	else
 		var/mob/user_mob = user
-		rel_set(src, "holder", user_mob.client) //if its a mob, assign the mob's client to holder
+		rel_set(src, nameof(holder), user_mob.client) //if its a mob, assign the mob's client to holder
 	playerckey = pckey
-	rel_set(src, "admin_datum", admind)
+	rel_set(src, nameof(admin_datum), admind)
 	database_lookup()
 
 DECLARE_UI_STATE(/datum/tgui_ban_panel, ADMIN_STATE(R_BAN))
 
 /datum/tgui_ban_panel/tgui_close()
-	rel_clear(src, "holder")
-	rel_clear(src, "admin_datum")
+	rel_clear(src, nameof(holder))
+	rel_clear(src, nameof(admin_datum))
 	qdel(src)
 
 DECLARE_UI(/datum/tgui_ban_panel, "BanPanel", UI_TITLE("Ban Panel"))

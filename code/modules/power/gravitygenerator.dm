@@ -183,14 +183,14 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/gravity_generator/main, MACHINE_PIPELI
 			continue
 		var/obj/machinery/gravity_generator/part/part = new(T)
 		if(count == 5) // Middle
-			rel_set(src, "middle", part)
+			rel_set(src, nameof(middle), part)
 		if(count <= 3) // Their sprite is the top part of the generator
 			part.set_density(FALSE)
 			part.plane = MOB_PLANE
 			part.layer = ABOVE_MOB_LAYER
 		part.sprite_number = count
-		rel_set(part, "main_part", src)
-		own_add(src, "parts", part)
+		rel_set(part, nameof(part.main_part), src)
+		own_add(src, nameof(parts), part)
 		part.update_icon()
 
 /obj/machinery/gravity_generator/main/proc/connected_parts()

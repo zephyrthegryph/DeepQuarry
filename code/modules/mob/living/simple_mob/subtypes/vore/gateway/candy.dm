@@ -50,7 +50,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/bluecabold, /mob/living/pro
 /mob/living/simple_mob/vore/candy/bluecabold/Login()
 	. = ..()
 	if(!riding_datum)
-		own_set(src, "riding_datum", new /datum/riding/simple_mob(src))
+		own_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
 	movement_cooldown = 1
 
 /mob/living/simple_mob/vore/candy/bluecabold/load_default_bellies()
@@ -74,7 +74,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/redcabold, /mob/living/proc
 /mob/living/simple_mob/vore/candy/redcabold/Login()
 	. = ..()
 	if(!riding_datum)
-		own_set(src, "riding_datum", new /datum/riding/simple_mob(src))
+		own_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
 	movement_cooldown = 1
 
 /mob/living/simple_mob/vore/candy/redcabold/load_default_bellies()
@@ -98,7 +98,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/yellowcabold, /mob/living/p
 /mob/living/simple_mob/vore/candy/yellowcabold/Login()
 	. = ..()
 	if(!riding_datum)
-		own_set(src, "riding_datum", new /datum/riding/simple_mob(src))
+		own_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
 	movement_cooldown = 1
 
 /mob/living/simple_mob/vore/candy/yellowcabold/load_default_bellies()
@@ -122,7 +122,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/orangecabold, /mob/living/p
 /mob/living/simple_mob/vore/candy/orangecabold/Login()
 	. = ..()
 	if(!riding_datum)
-		own_set(src, "riding_datum", new /datum/riding/simple_mob(src))
+		own_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
 	movement_cooldown = 1
 
 /mob/living/simple_mob/vore/candy/orangecabold/load_default_bellies()
@@ -146,7 +146,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/purplecabold, /mob/living/p
 /mob/living/simple_mob/vore/candy/purplecabold/Login()
 	. = ..()
 	if(!riding_datum)
-		own_set(src, "riding_datum", new /datum/riding/simple_mob(src))
+		own_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
 	movement_cooldown = 1
 
 /mob/living/simple_mob/vore/candy/purplecabold/load_default_bellies()
@@ -170,7 +170,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/marshmellowserpent, /mob/li
 /mob/living/simple_mob/vore/candy/marshmellowserpent/Login()
 	. = ..()
 	if(!riding_datum)
-		own_set(src, "riding_datum", new /datum/riding/simple_mob(src))
+		own_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
 	movement_cooldown = 1
 
 /mob/living/simple_mob/vore/candy/marshmellowserpent/load_default_bellies()
@@ -663,7 +663,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/worm, /mob/living/proc/togg
 /mob/living/simple_mob/vore/candy/worm/Login()
 	. = ..()
 	if(!riding_datum)
-		own_set(src, "riding_datum", new /datum/riding/simple_mob(src))
+		own_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
 	movement_cooldown = 1
 
 /mob/living/simple_mob/vore/candy/worm/redcabold/load_default_bellies()
@@ -687,7 +687,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/peppermint, /mob/living/pro
 /mob/living/simple_mob/vore/candy/peppermint/Login()
 	. = ..()
 	if(!riding_datum)
-		own_set(src, "riding_datum", new /datum/riding/simple_mob(src))
+		own_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
 	movement_cooldown = 1
 
 /mob/living/simple_mob/vore/candy/peppermint/load_default_bellies()

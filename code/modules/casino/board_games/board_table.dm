@@ -46,8 +46,8 @@ EXTEND_INTERACTIONS(/obj/structure/casino_table/board_game, \
 		return
 	new_game = possible_games[new_game]
 	if(game_ui)
-		own_clear(src, "game_ui", OWN_DELETE)
-	own_set(src, "game_ui", new new_game(src))
+		own_clear(src, nameof(game_ui), OWN_DELETE)
+	own_set(src, nameof(game_ui), new new_game(src))
 	icon_state = game_ui.table_icon
 
 /datum/board_game
@@ -60,7 +60,7 @@ DECLARE_UI_STATE(/datum/board_game, GLOB.tgui_board_game_state)
 
 /datum/board_game/New(atom/holder)
 	. = ..()
-	rel_set(src, "parent", holder)
+	rel_set(src, nameof(parent), holder)
 
 /datum/board_game/tgui_host(mob/user)
 	return parent()

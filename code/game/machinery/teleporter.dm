@@ -34,12 +34,12 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/teleporter, "teleport_control", /d
 			break
 
 	if(istype(station))
-		rel_set(station, "com", hub)
-		rel_set(teleport_control, "hub", hub)
+		rel_set(station, nameof(station.com), hub)
+		rel_set(teleport_control, nameof(teleport_control.hub), hub)
 
 	if(istype(hub))
-		rel_set(hub, "com", src)
-		rel_set(teleport_control, "station", station)
+		rel_set(hub, nameof(hub.com), src)
+		rel_set(teleport_control, nameof(teleport_control.station), station)
 
 
 /obj/machinery/computer/teleporter/declare_interactions(list/into)
@@ -91,7 +91,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/teleporter, "teleport_control", /d
 		else
 			for(var/mob/O in hearers(src, null))
 				O.show_message(span_notice("Locked In"), 2)
-			rel_set(teleport_control, "locked", L)
+			rel_set(teleport_control, nameof(teleport_control.locked), L)
 			one_time_use = 1
 
 		add_fingerprint(user)
@@ -191,7 +191,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/teleporter, "teleport_control", /d
 
 		if(com().one_time_use) //Make one-time-use cards only usable one time!
 			com().one_time_use = 0
-			rel_clear(com().teleport_control, "locked")
+			rel_clear(com().teleport_control, nameof(/datum/cinematic::locked))
 	else
 		fx_sparks(src, 5)
 		accurate = 1

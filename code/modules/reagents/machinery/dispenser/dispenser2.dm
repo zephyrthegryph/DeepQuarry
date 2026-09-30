@@ -62,17 +62,16 @@
 			to_chat(user, span_warning("\The [src] already contains a cartridge with that label!"))
 		return
 
+	if(!own_put(src, nameof(src.cartridges), C.label, C, user = user, into = TRUE))
+		return
 	if(user)
-		user.drop_from_inventory(C)
 		to_chat(user, span_notice("You add \the [C] to \the [src]."))
 
-	C.forceMove(src)
-	own_put(src, "cartridges", C.label, C)
 	sortTim(cartridges, GLOBAL_PROC_REF(cmp_text_asc)) // in place: the owned list keeps its identity
 	SStgui.update_uis(src)
 
 /obj/machinery/chemical_dispenser/proc/remove_cartridge(label)
-	. = own_take_member(src, "cartridges", label)
+	. = own_take_member(src, nameof(cartridges), label)
 	SStgui.update_uis(src)
 
 /obj/machinery/chemical_dispenser/declare_interactions(list/into)
@@ -116,9 +115,8 @@
 	return TRUE
 
 /obj/machinery/chemical_dispenser/proc/interaction_set_container(mob/user, obj/item/reagent_containers/RC, datum/interaction/interaction)
-	user.drop_from_inventory(RC)
-	RC.forceMove(src)
-	own_set(src, "container", RC) // CONTAINED: in contents first
+	if(!own_set(src, nameof(src.container), RC, user = user))
+		return TRUE
 	to_chat(user, span_notice("You set \the [RC] on \the [src]."))
 	return TRUE
 
@@ -215,7 +213,7 @@ UI_ACT_PROC(/obj/machinery/chemical_dispenser, ui_act_ejectbeaker)
 		container.forceMove(get_turf(src))
 		if(Adjacent(ui.user)) // So the AI doesn't get a beaker somehow.
 			ui.user.put_in_hands(container)
-		own_take(src, "container")
+		own_take(src, nameof(/datum/cooking_item::container))
 	. = TRUE
 
 UI_ACT(/obj/machinery/chemical_dispenser, "import_config", ui_act_import_config, UI_ARG_LIST("config"))
@@ -331,5 +329,7 @@ UI_ACT_PROC(/obj/machinery/chemical_dispenser, ui_act_remove_recipe)
 	tgui_interact(user)
 	return TRUE
 
-OWN(/obj/machinery/chemical_dispenser, container, OWN_CONTAINED)
+/obj/machinery/chemical_dispenser/ownership()
+	. = ..()
+	. += owns(nameof(container), policy = OWN_CONTAINED)
 // Label -> installed cartridge (in contents); they go with the machine.

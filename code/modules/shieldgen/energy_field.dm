@@ -35,7 +35,7 @@
 /obj/effect/energy_field/Initialize(mapload, new_gen)
 	. = ..()
 	update_integrity(0) // Fields start down; the generator charges them.
-	rel_set(src, "my_gen", new_gen)
+	rel_set(src, nameof(my_gen), new_gen)
 	if(nearby_active_shield_diffuser(src))
 		return INITIALIZE_HINT_QDEL
 	update_nearby_tiles()

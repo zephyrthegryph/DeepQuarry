@@ -81,7 +81,7 @@
 /datum/event2/event/mob_spawning/proc/spawn_one_mob(new_loc, mob_type)
 	var/mob/living/simple_mob/M = new mob_type(new_loc)
 	om_hook(M, /datum/om/event/qdeleting, src, PROC_REF(on_mob_destruction))
-	rel_add(src, "spawned_mobs", M)
+	rel_add(src, nameof(spawned_mobs), M)
 	return M
 
 // Counts living simple_mobs spawned by this event.
@@ -95,5 +95,5 @@
 /datum/event2/event/mob_spawning/proc/on_mob_destruction(datum/source, datum/om/event/qdeleting/event)
 	EVENT_HANDLER
 	var/mob/M = source
-	rel_remove(src, "spawned_mobs", M)
+	rel_remove(src, nameof(spawned_mobs), M)
 	om_unhook(M, /datum/om/event/qdeleting, src)

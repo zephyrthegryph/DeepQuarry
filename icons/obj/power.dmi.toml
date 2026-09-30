@@ -417,147 +417,147 @@ dirs = 4
 frames = 1
 
 [[state]]
-name = "apco3-1"
+name = "charge-1"
 dirs = 4
 frames = 6
 delays = [1, 1, 1, 1, 1, 2]
 
 [[state]]
-name = "apco3-0"
+name = "charge-0"
 dirs = 4
 frames = 2
 delays = [10, 20]
 
 [[state]]
-name = "apco3-2"
+name = "charge-2"
 dirs = 4
 frames = 2
 delays = [10]
 
 [[state]]
-name = "apc-spark"
+name = "sparks"
 dirs = 4
 frames = 7
 delays = [1]
 
 [[state]]
-name = "apcewires"
+name = "panel-open"
 dirs = 4
 frames = 1
 
 [[state]]
-name = "apcemag"
+name = "emagged"
 dirs = 4
 frames = 2
 delays = [5]
 
 [[state]]
-name = "apc1"
+name = "cover-open"
 dirs = 4
 frames = 1
 
 [[state]]
-name = "apc1-nocover"
+name = "apc0-cover-removed"
 dirs = 4
 frames = 1
 
 [[state]]
-name = "apc1-b-nocover"
+name = "apc0-cover-removed-broken"
 dirs = 4
 frames = 1
 
 [[state]]
-name = "apc2"
+name = "cell"
 dirs = 4
 frames = 1
 
 [[state]]
-name = "apc2-b-nocover"
+name = "apc0-cover-removed-broken-cell"
 dirs = 4
 frames = 1
 
 [[state]]
-name = "apc2-nocover"
+name = "apc0-cover-removed-cell"
 dirs = 4
 frames = 1
 
 [[state]]
-name = "apc-b"
+name = "broken"
 dirs = 4
 frames = 1
 
 [[state]]
-name = "apcmaint"
+name = "maintenance"
 dirs = 4
 frames = 1
 
 [[state]]
-name = "apcox-0"
+name = "unlocked"
 dirs = 4
 frames = 1
 
 [[state]]
-name = "apcox-1"
+name = "locked"
 dirs = 4
 frames = 1
 
 [[state]]
-name = "apco0-0"
+name = "channel-0-0"
 dirs = 4
 frames = 1
 
 [[state]]
-name = "apco0-1"
+name = "channel-0-1"
 dirs = 4
 frames = 1
 
 [[state]]
-name = "apco0-2"
+name = "channel-0-2"
 dirs = 4
 frames = 1
 
 [[state]]
-name = "apco0-3"
+name = "channel-0-3"
 dirs = 4
 frames = 1
 
 [[state]]
-name = "apco1-0"
+name = "channel-1-0"
 dirs = 4
 frames = 1
 
 [[state]]
-name = "apco1-1"
+name = "channel-1-1"
 dirs = 4
 frames = 1
 
 [[state]]
-name = "apco1-2"
+name = "channel-1-2"
 dirs = 4
 frames = 1
 
 [[state]]
-name = "apco1-3"
+name = "channel-1-3"
 dirs = 4
 frames = 1
 
 [[state]]
-name = "apco2-0"
+name = "channel-2-0"
 dirs = 4
 frames = 1
 
 [[state]]
-name = "apco2-1"
+name = "channel-2-1"
 dirs = 4
 frames = 1
 
 [[state]]
-name = "apco2-2"
+name = "channel-2-2"
 dirs = 4
 frames = 1
 
 [[state]]
-name = "apco2-3"
+name = "channel-2-3"
 dirs = 4
 frames = 1
 

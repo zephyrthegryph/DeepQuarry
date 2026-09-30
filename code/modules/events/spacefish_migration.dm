@@ -86,7 +86,7 @@
 /datum/event/spacefish_migration/proc/spawn_one_fish(loc)
 	var/mob/living/simple_mob/animal/M = new fish_type(loc)
 	om_hook(M, /datum/om/event/qdeleting, src, PROC_REF(on_fish_destruction))
-	own_add(src, "spawned_fish", M)
+	own_add(src, nameof(spawned_fish), M)
 	return M
 
 // Counts living fish spawned by this event.
@@ -99,7 +99,7 @@
 // If fish is bomphed, remove it from the list.
 /datum/event/spacefish_migration/proc/on_fish_destruction(mob/M, datum/om/event/qdeleting/event)
 	EVENT_HANDLER
-	own_take_member(src, "spawned_fish", M)
+	own_take_member(src, nameof(spawned_fish), M)
 	om_unhook(M, /datum/om/event/qdeleting, src)
 
 /datum/event/spacefish_migration/end()

@@ -89,18 +89,18 @@
 			errors += "unknown effect kind [effect_kind]"
 	if(exit_proc && once)
 		errors += "exit_proc needs once = FALSE"
-	own_set(src, "predicate", new /datum/predicate)
+	own_set(src, nameof(predicate), new /datum/predicate)
 	predicate.name = "rule [name || type]"
 	predicate.spec = condition
 	if(!predicate.compile())
 		errors += predicate.errors
-		own_clear(src, "predicate", OWN_DELETE)
+		own_clear(src, nameof(predicate), OWN_DELETE)
 	else
 		var/datum/rule_compiler/compiler = new(src)
 		compiler.visit(predicate.root)
 		// The rule takes the triggers the (transient) compiler built.
 		for(var/datum/rule_trigger/trigger as anything in compiler.triggers?.Copy())
-			own_add(src, "triggers", own_take_member(compiler, "triggers", trigger))
+			own_add(src, nameof(triggers), own_take_member(compiler, nameof(compiler.triggers), trigger))
 		errors += compiler.errors
 		if(!length(triggers))
 			errors += "has no trigger: no clause reads a channel-backed or DM-owned property"
@@ -226,10 +226,10 @@
 			var/datum/rule_trigger/trigger = new
 			trigger.kind = RULE_TRIGGER_BAND
 			trigger.property = band.property
-			rel_set(trigger, "provider", provider)
+			rel_set(trigger, nameof(trigger.provider), provider)
 			trigger.lo = band.lo
 			trigger.hi = band.hi
-			own_add(src, "triggers", trigger)
+			own_add(src, nameof(triggers), trigger)
 		else if(dm_key(band.property))
 			add_key(band.property)
 		return
@@ -243,10 +243,10 @@
 			var/datum/rule_trigger/trigger = new
 			trigger.kind = RULE_TRIGGER_DIFFERENCE
 			trigger.property = rel.property
-			rel_set(trigger, "provider", a)
+			rel_set(trigger, nameof(trigger.provider), a)
 			trigger.property_b = rel.property_b
-			rel_set(trigger, "provider_b", b)
-			own_add(src, "triggers", trigger)
+			rel_set(trigger, nameof(trigger.provider_b), b)
+			own_add(src, nameof(triggers), trigger)
 			return
 		if(b || dm_key(rel.property_b))
 			// Dynamic on the right: flip it so the dynamic side is on the left.
@@ -275,7 +275,7 @@
 	var/datum/rule_trigger/trigger = new
 	trigger.kind = provider ? RULE_TRIGGER_THRESHOLD : RULE_TRIGGER_KEY
 	trigger.property = property
-	rel_set(trigger, "provider", provider)
+	rel_set(trigger, nameof(trigger.provider), provider)
 	trigger.op = op
 	trigger.value = value
 	trigger.value_property = value_property
@@ -284,7 +284,7 @@
 		error("threshold [property] against [value_property]: the level must be a static property")
 	if(provider && (op == PRED_CMP_EQ || op == PRED_CMP_NE))
 		error("[property] compared with == or !=; a watch needs a threshold or a band")
-	own_add(src, "triggers", trigger)
+	own_add(src, nameof(triggers), trigger)
 
 /datum/rule_compiler/proc/add_key(property)
 	var/key_kind = dm_key(property)
@@ -297,7 +297,7 @@
 	trigger.kind = RULE_TRIGGER_KEY
 	trigger.property = property
 	trigger.key_kind = key_kind
-	own_add(src, "triggers", trigger)
+	own_add(src, nameof(triggers), trigger)
 
 /// a op b  <=>  b (mirror op) a.
 /proc/dq_rule_mirror_cmp(op)

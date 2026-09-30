@@ -20,10 +20,17 @@
 
 use vg_core::field::law::{Cell, Neighbors};
 use vg_core::law::{Law, LawCtx, Period, Settle};
+use vg_core::query::Global;
 use vg_core::units::Seconds;
 use vg_core::vg;
 
 use crate::cell::{TurfGas, NO_REACTION};
+use crate::device::{self, Flow, StepReport};
+use crate::gas::constants::MINIMUM_MOLES_TO_FILTER;
+use crate::gas::ids::GAS_COUNT;
+use crate::gas::mixture::Mixture;
+use crate::pipes::PipeGas;
+use crate::power_budget::{self, FilterOutput, MixSource};
 
 /// A pressure difference above this (kPa, already scaled) is a
 /// `PressureJump` (spacewind) -- `world.rs::PRESSURE_EVENT`, ported
@@ -145,6 +152,255 @@ impl Law for SpacewindLaw {
 					delta: moved,
 				});
 			}
+		}
+		Settle::Active
+	}
+}
+
+/// How often the pipe devices' flow law runs: every frame of the World's pacer. The pacer's fixed step is
+/// 0.5 s (`WorldConfig::dt`), which is the device period the flows were always tuned to.
+pub const PIPE_DEVICE_PERIOD: Period = Period::Frame;
+
+/// One side of a device edge: a pipe region's gas or a turf's, with its volume. Devices that meet on one region (a
+/// vent and a scrubber on one pipe network) or one turf share the side, so each sees what the ones before it did.
+#[derive(Clone, Debug, PartialEq)]
+pub struct DeviceSide {
+	pub gas: PipeGas,
+	pub volume: f64,
+}
+
+/// One pipe device edge's work for a step: its flows and valve, and which two [`DeviceJobs::sides`] it moves gas
+/// between (staged by the FFI layer, which owns the turf side and the region payloads, and stepped by
+/// [`PipeDeviceStep`]). A turf device has the turf as side `a` (a vent pump, a scrubber), wherever the graph stores
+/// the cell.
+#[derive(Clone, Debug, PartialEq)]
+pub struct DeviceJob {
+	/// The device's `vg_entity` value (reports are about it).
+	pub entity: f32,
+	pub flows: Vec<Flow>,
+	pub valve_open: bool,
+	/// Indexes into [`DeviceJobs::sides`]; never equal.
+	pub a: usize,
+	pub b: usize,
+	/// What the steps since staging did: moles moved `a` to `b`, the power drawn by the latest step that drew any,
+	/// whether a stop target was reached.
+	pub moles: f64,
+	pub power_w: f32,
+	pub target_reached: bool,
+}
+
+impl DeviceJob {
+	/// Runs every flow, then the valve gate, on the pair of `sides` for `dt` seconds, folding into the job's report.
+	pub fn step(&mut self, sides: &mut [DeviceSide], dt: f32) {
+		let (mut a, mut b) = (sides[self.a].gas, sides[self.b].gas);
+		let (vol_a, vol_b) = (sides[self.a].volume, sides[self.b].volume);
+		let mut total = StepReport::default();
+		for flow in &self.flows {
+			let r = device::step(flow, &mut a, vol_a, &mut b, vol_b, dt);
+			total.moles += r.moles;
+			total.power_w += r.power_w;
+			total.target_reached |= r.target_reached;
+		}
+		if self.valve_open {
+			total.moles += device::step_valve(true, &mut a, vol_a, &mut b, vol_b).moles;
+		}
+		sides[self.a].gas = a;
+		sides[self.b].gas = b;
+		self.moles += total.moles;
+		if total.power_w != 0.0 {
+			self.power_w = total.power_w;
+		}
+		self.target_reached |= total.target_reached;
+	}
+
+	/// Whether the steps moved gas or drew power (a settled device changes nothing and reports nothing).
+	#[must_use]
+	pub fn moved(&self) -> bool {
+		self.moles != 0.0 || self.power_w != 0.0
+	}
+}
+
+/// What a [`BudgetJob`] computes.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum BudgetKind {
+	/// A filter: the hub is the source, each leg takes its masked gases, the clean leg the rest.
+	Filter,
+	/// A mixer: the legs are the inputs, the hub the output.
+	Mix,
+}
+
+/// One leg of a [`BudgetJob`]: the side across its edge from the hub and what it takes or gives.
+#[derive(Clone, Debug, PartialEq)]
+pub struct BudgetLeg {
+	pub side: usize,
+	/// A filter output's gases (`1 << gas id`).
+	pub mask: u32,
+	/// The filter leg that takes every gas no mask claims.
+	pub clean: bool,
+	/// A mixer input's share.
+	pub ratio: f32,
+}
+
+/// A filter's or mixer's whole flow, computed in Rust from live gas each step: the requested moles, the entropy/power
+/// budget (`power_budget`) and the split across the legs, all on the shared [`DeviceJobs::sides`]. The device only
+/// declares `rate`, `power_w`, `efficiency` and its legs.
+#[derive(Clone, Debug, PartialEq)]
+pub struct BudgetJob {
+	pub kind: BudgetKind,
+	/// The entity the report is about (the first leg's device).
+	pub entity: f32,
+	/// Index into [`DeviceJobs::sides`] of the region every leg meets (the filter's source, the mixer's output).
+	pub hub: usize,
+	pub legs: Vec<BudgetLeg>,
+	/// Requested volume flow, L/s.
+	pub rate: f32,
+	/// Available power, W (`0`: unlimited).
+	pub power_w: f32,
+	pub efficiency: f32,
+	/// What the steps since staging did: total moles moved, the power drawn by the latest step that drew any.
+	pub moles: f64,
+	pub power_draw: f32,
+}
+
+fn mixture_of(side: &DeviceSide) -> Mixture {
+	Mixture::from_parts(&side.gas.moles_f32(), side.gas.temperature_now(), side.volume as f32, false)
+}
+
+impl BudgetJob {
+	/// Whether the steps moved gas (a settled device reports nothing).
+	#[must_use]
+	pub fn moved(&self) -> bool {
+		self.moles != 0.0
+	}
+
+	/// One step on the shared sides: the same maths `filter_gas_multi()` / `mix_gas()` ran in DM, then the gas moves.
+	pub fn step(&mut self, sides: &mut [DeviceSide]) {
+		let (moved, power) = match self.kind {
+			BudgetKind::Filter => self.step_filter(sides),
+			BudgetKind::Mix => self.step_mix(sides),
+		};
+		if moved > 0.0 {
+			self.moles += f64::from(moved);
+			self.power_draw = power;
+		}
+	}
+
+	fn step_filter(&self, sides: &mut [DeviceSide]) -> (f32, f32) {
+		let hub_mix = mixture_of(&sides[self.hub]);
+		let hub_total: f32 = hub_mix.moles_array().iter().sum();
+		let volume = sides[self.hub].volume as f32;
+		if volume <= 0.0 {
+			return (0.0, 0.0);
+		}
+		let requested = self.rate / volume * hub_total;
+		if requested <= MINIMUM_MOLES_TO_FILTER {
+			return (0.0, 0.0);
+		}
+		let Some(clean) = self.legs.iter().find(|l| l.clean) else {
+			return (0.0, 0.0);
+		};
+		let outputs: Vec<&BudgetLeg> = self.legs.iter().filter(|l| !l.clean).collect();
+		let sink_mixes: Vec<Mixture> = outputs.iter().map(|l| mixture_of(&sides[l.side])).collect();
+		let outs: Vec<FilterOutput<'_>> = outputs
+			.iter()
+			.zip(&sink_mixes)
+			.map(|(l, sink)| FilterOutput { mask: l.mask, sink })
+			.collect();
+		let clean_mix = mixture_of(&sides[clean.side]);
+		let Some(plan) = power_budget::filter_transfer_multi(
+			&hub_mix,
+			&outs,
+			&clean_mix,
+			Some(requested),
+			(self.power_w > 0.0).then_some(self.power_w),
+			self.efficiency,
+			MINIMUM_MOLES_TO_FILTER,
+		) else {
+			return (0.0, 0.0);
+		};
+		let considered = plan.clean_moles + plan.moles.iter().sum::<f32>();
+		if considered <= 0.0 {
+			return (0.0, 0.0);
+		}
+		let mut hub = sides[self.hub].gas;
+		let mut claimed = 0_u32;
+		for (leg, share) in outputs.iter().zip(&plan.moles) {
+			claimed |= leg.mask;
+			let n = f64::from(plan.total_transfer_moles * share / considered);
+			hub.transfer_masked(&mut sides[leg.side].gas, leg.mask, n);
+		}
+		let rest = !claimed & (((1_u64 << GAS_COUNT) - 1) as u32);
+		let n = f64::from(plan.total_transfer_moles * plan.clean_moles / considered);
+		hub.transfer_masked(&mut sides[clean.side].gas, rest, n);
+		sides[self.hub].gas = hub;
+		(plan.total_transfer_moles, plan.power_draw)
+	}
+
+	fn step_mix(&self, sides: &mut [DeviceSide]) -> (f32, f32) {
+		let mut requested = 0.0_f32;
+		let mixes: Vec<Mixture> = self.legs.iter().map(|l| mixture_of(&sides[l.side])).collect();
+		for (leg, mix) in self.legs.iter().zip(&mixes) {
+			let volume = sides[leg.side].volume as f32;
+			if volume > 0.0 {
+				requested += self.rate * leg.ratio / volume * mix.moles_array().iter().sum::<f32>();
+			}
+		}
+		if requested <= MINIMUM_MOLES_TO_FILTER {
+			return (0.0, 0.0);
+		}
+		let sources: Vec<MixSource<'_>> = self
+			.legs
+			.iter()
+			.zip(&mixes)
+			.map(|(l, mixture)| MixSource { mixture, ratio: l.ratio })
+			.collect();
+		let sink = mixture_of(&sides[self.hub]);
+		let Some(plan) = power_budget::mix_transfer(
+			&sources,
+			&sink,
+			Some(requested),
+			(self.power_w > 0.0).then_some(self.power_w),
+			self.efficiency,
+			MINIMUM_MOLES_TO_FILTER,
+		) else {
+			return (0.0, 0.0);
+		};
+		let mut hub = sides[self.hub].gas;
+		for (leg, moles) in self.legs.iter().zip(&plan.moles) {
+			if *moles > 0.0 {
+				let mut from = sides[leg.side].gas;
+				from.transfer_masked(&mut hub, 0, f64::from(*moles));
+				sides[leg.side].gas = from;
+			}
+		}
+		sides[self.hub].gas = hub;
+		(plan.total_transfer_moles, plan.power_draw)
+	}
+}
+
+/// Every pipe device's [`DeviceJob`] (and every filter's or mixer's [`BudgetJob`]) for the coming steps, over the sides
+/// they share (a main-owned global the FFI layer stages before the World's step and applies after it, as heat does with
+/// its mixture probes). Jobs step in order, each on what the ones before it left.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct DeviceJobs {
+	pub sides: Vec<DeviceSide>,
+	pub jobs: Vec<DeviceJob>,
+	pub budgets: Vec<BudgetJob>,
+}
+
+vg_core::law! {
+	/// The pipe devices' flow law: every device edge's flows and valve, once per [`PIPE_DEVICE_PERIOD`] of the
+	/// World's pacer (`device::step`'s maths, unchanged). The law is the only stepper: `vg_frame` no longer keeps a
+	/// device clock of its own.
+	pub PipeDeviceStep("gas_pipe_devices"): () => Global<DeviceJobs>, every PIPE_DEVICE_PERIOD, |ctx, dt| {
+		#[allow(clippy::cast_possible_truncation)]
+		let dt = dt.0 as f32;
+		let DeviceJobs { sides, jobs, budgets } = &mut ctx.writes.0;
+		for job in jobs.iter_mut() {
+			job.step(sides, dt);
+		}
+		for budget in budgets.iter_mut() {
+			budget.step(sides);
 		}
 		Settle::Active
 	}
@@ -321,5 +577,211 @@ mod tests {
 		let mut ctx = LawCtx::new(&reads, &mut writes, &mut fx);
 		SpacewindLaw::step(&mut ctx, Seconds(1.0));
 		assert!(fx.events.is_empty(), "equal pressures: no spacewind");
+	}
+
+	fn device_side(moles: f32) -> DeviceSide {
+		let mut amounts = [0.0_f32; crate::cell::Q];
+		amounts[GAS_OXYGEN] = moles;
+		amounts[crate::cell::N] = moles * 20.0 * 293.15;
+		DeviceSide {
+			gas: PipeGas::from_amounts(&amounts, 293.15),
+			volume: 200.0,
+		}
+	}
+
+	fn pump_job(from: usize, to: usize) -> DeviceJob {
+		DeviceJob {
+			entity: 5.0,
+			flows: vec![Flow {
+				gases: 0,
+				rate: device::Rate::Volume(100.0),
+				direction: device::Direction::Forced,
+				stop: None,
+				limit: None,
+			}],
+			valve_open: false,
+			a: from,
+			b: to,
+			moles: 0.0,
+			power_w: 0.0,
+			target_reached: false,
+		}
+	}
+
+	fn total_moles(sides: &[DeviceSide]) -> f64 {
+		sides.iter().map(|s| s.gas.total()).sum()
+	}
+
+	#[test]
+	fn pipe_device_step_moves_gas_and_conserves_it_across_the_pair() {
+		assert_eq!(PipeDeviceStep::PERIOD, PIPE_DEVICE_PERIOD);
+		let reads = ();
+		let jobs = DeviceJobs {
+			sides: vec![device_side(200.0), device_side(0.0)],
+			jobs: vec![pump_job(0, 1)],
+			budgets: vec![],
+		};
+		let mut writes = Global(jobs);
+		let mut fx = cell_fx(0);
+		let mut ctx = LawCtx::new(&reads, &mut writes, &mut fx);
+		let settle = PipeDeviceStep::step(&mut ctx, Seconds(0.5));
+		assert_eq!(settle, Settle::Active);
+		let jobs = &writes.0;
+		assert!(jobs.jobs[0].moved(), "a flow with a source moves something");
+		assert!(jobs.jobs[0].moles > 0.0, "a to b: {}", jobs.jobs[0].moles);
+		assert!(
+			(total_moles(&jobs.sides) - 200.0).abs() < 1e-3,
+			"gas is conserved across the pair: {}",
+			total_moles(&jobs.sides)
+		);
+	}
+
+	#[test]
+	fn pipe_device_step_accumulates_over_steps_and_an_empty_source_reports_nothing() {
+		let reads = ();
+		let jobs = DeviceJobs {
+			sides: vec![device_side(200.0), device_side(0.0), device_side(0.0), device_side(0.0)],
+			jobs: vec![pump_job(0, 1), pump_job(2, 3)],
+			budgets: vec![],
+		};
+		let mut writes = Global(jobs);
+		let mut fx = cell_fx(0);
+		let mut ctx = LawCtx::new(&reads, &mut writes, &mut fx);
+		let _ = PipeDeviceStep::step(&mut ctx, Seconds(0.5));
+		let after_one = writes.0.jobs[0].moles;
+		let mut ctx = LawCtx::new(&reads, &mut writes, &mut fx);
+		let _ = PipeDeviceStep::step(&mut ctx, Seconds(0.5));
+		assert!(writes.0.jobs[0].moles > after_one, "the report sums over steps");
+		assert!(!writes.0.jobs[1].moved(), "nothing to move: nothing to report");
+	}
+
+	#[test]
+	fn devices_on_one_side_each_see_what_the_ones_before_them_did() {
+		// Two pumps drain one source (side 0) into two sinks: the second finds less there, and the source never goes
+		// negative or is counted twice.
+		let reads = ();
+		let jobs = DeviceJobs {
+			sides: vec![device_side(10.0), device_side(0.0), device_side(0.0)],
+			jobs: vec![pump_job(0, 1), pump_job(0, 2)],
+			budgets: vec![],
+		};
+		let mut writes = Global(jobs);
+		let mut fx = cell_fx(0);
+		for _ in 0..20 {
+			let mut ctx = LawCtx::new(&reads, &mut writes, &mut fx);
+			let _ = PipeDeviceStep::step(&mut ctx, Seconds(0.5));
+		}
+		let jobs = &writes.0;
+		assert!(jobs.sides[0].gas.total() >= 0.0);
+		assert!(jobs.jobs[0].moles > 0.0 && jobs.jobs[1].moles > 0.0);
+		assert!(
+			(total_moles(&jobs.sides) - 10.0).abs() < 1e-3,
+			"one source shared by two devices is conserved: {}",
+			total_moles(&jobs.sides)
+		);
+		assert!(
+			(jobs.jobs[0].moles + jobs.jobs[1].moles - (10.0 - jobs.sides[0].gas.total())).abs() < 1e-3,
+			"what the source lost is what the jobs report"
+		);
+	}
+
+	fn mixed_side(oxygen: f32, co2: f32, volume: f64) -> DeviceSide {
+		let mut amounts = [0.0_f32; crate::cell::Q];
+		amounts[GAS_OXYGEN] = oxygen;
+		amounts[crate::gas::ids::GAS_CARBON_DIOXIDE] = co2;
+		amounts[crate::cell::N] = (oxygen + co2) * 20.0 * 293.15;
+		DeviceSide {
+			gas: PipeGas::from_amounts(&amounts, 293.15),
+			volume,
+		}
+	}
+
+	fn budget(kind: BudgetKind, hub: usize, legs: Vec<BudgetLeg>) -> BudgetJob {
+		BudgetJob {
+			kind,
+			entity: 9.0,
+			hub,
+			legs,
+			rate: 200.0,
+			power_w: 0.0,
+			efficiency: 1.0,
+			moles: 0.0,
+			power_draw: 0.0,
+		}
+	}
+
+	#[test]
+	fn a_filter_budget_job_sends_the_masked_gas_to_its_leg_and_the_rest_to_clean() {
+		let co2 = 1_u32 << crate::gas::ids::GAS_CARBON_DIOXIDE;
+		let mut writes = Global(DeviceJobs {
+			sides: vec![mixed_side(100.0, 100.0, 200.0), mixed_side(0.0, 0.0, 200.0), mixed_side(0.0, 0.0, 200.0)],
+			jobs: vec![],
+			budgets: vec![budget(
+				BudgetKind::Filter,
+				0,
+				vec![
+					BudgetLeg { side: 1, mask: co2, clean: false, ratio: 0.0 },
+					BudgetLeg { side: 2, mask: 0, clean: true, ratio: 0.0 },
+				],
+			)],
+		});
+		let reads = ();
+		let mut fx = cell_fx(0);
+		let mut ctx = LawCtx::new(&reads, &mut writes, &mut fx);
+		let _ = PipeDeviceStep::step(&mut ctx, Seconds(0.5));
+		let jobs = &writes.0;
+		assert!(jobs.budgets[0].moved(), "a filter with gas to filter moves some");
+		assert!(jobs.sides[1].gas.moles[crate::gas::ids::GAS_CARBON_DIOXIDE] > 0.0, "the masked gas went to its leg");
+		assert_eq!(jobs.sides[1].gas.moles[GAS_OXYGEN], 0.0, "and only that gas");
+		assert!(jobs.sides[2].gas.moles[GAS_OXYGEN] > 0.0, "the rest went to the clean leg");
+		assert_eq!(jobs.sides[2].gas.moles[crate::gas::ids::GAS_CARBON_DIOXIDE], 0.0);
+		assert!((total_moles(&jobs.sides) - 200.0).abs() < 1e-3, "conserved: {}", total_moles(&jobs.sides));
+		assert!((jobs.budgets[0].moles - (200.0 - jobs.sides[0].gas.total())).abs() < 1e-3, "the report is what left the hub");
+	}
+
+	#[test]
+	fn a_mix_budget_job_takes_from_its_inputs_by_ratio_into_the_hub() {
+		let mut writes = Global(DeviceJobs {
+			sides: vec![mixed_side(0.0, 0.0, 300.0), mixed_side(100.0, 0.0, 200.0), mixed_side(0.0, 100.0, 200.0)],
+			jobs: vec![],
+			budgets: vec![budget(
+				BudgetKind::Mix,
+				0,
+				vec![
+					BudgetLeg { side: 1, mask: 0, clean: false, ratio: 0.5 },
+					BudgetLeg { side: 2, mask: 0, clean: false, ratio: 0.5 },
+				],
+			)],
+		});
+		let reads = ();
+		let mut fx = cell_fx(0);
+		let mut ctx = LawCtx::new(&reads, &mut writes, &mut fx);
+		let _ = PipeDeviceStep::step(&mut ctx, Seconds(0.5));
+		let jobs = &writes.0;
+		let (o2, co2) = (jobs.sides[0].gas.moles[GAS_OXYGEN], jobs.sides[0].gas.moles[crate::gas::ids::GAS_CARBON_DIOXIDE]);
+		assert!(o2 > 0.0 && (o2 - co2).abs() < 1e-3, "equal shares in: {o2} {co2}");
+		assert!((total_moles(&jobs.sides) - 200.0).abs() < 1e-3, "conserved");
+		assert!(jobs.budgets[0].moved());
+	}
+
+	#[test]
+	fn a_budget_job_with_nothing_to_move_reports_nothing() {
+		let mut writes = Global(DeviceJobs {
+			sides: vec![mixed_side(0.0, 0.0, 200.0), mixed_side(0.0, 0.0, 200.0), mixed_side(0.0, 0.0, 200.0)],
+			jobs: vec![],
+			budgets: vec![budget(
+				BudgetKind::Filter,
+				0,
+				vec![
+					BudgetLeg { side: 1, mask: 1, clean: false, ratio: 0.0 },
+					BudgetLeg { side: 2, mask: 0, clean: true, ratio: 0.0 },
+				],
+			)],
+		});
+		let reads = ();
+		let mut fx = cell_fx(0);
+		let mut ctx = LawCtx::new(&reads, &mut writes, &mut fx);
+		let _ = PipeDeviceStep::step(&mut ctx, Seconds(0.5));
+		assert!(!writes.0.budgets[0].moved());
 	}
 }

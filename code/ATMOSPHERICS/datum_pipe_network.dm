@@ -1,11 +1,7 @@
 /datum/pipe_network
-	/// Compatibility read view: list(air) while the network has air, else null. Derived from
-	/// the owned `air` by sync_gases(); written nowhere else.
-	var/list/gases
 	/// The sole gas inventory for every fixed port and pipeline in this network. Owned: the
 	/// member ports' air1/air2/... and pipelines' air are PROTO views naming it (atmos_air_set()).
 	var/datum/gas_mixture/air
-	var/volume = 0	//caches the total volume for atmos machines to use in gas calculations
 
 	/// Membership rosters: two-sided with each member's network_memberships.
 	var/list/obj/machinery/atmospherics/normal_members
@@ -41,35 +37,34 @@
 	// lists until after the callbacks made the entire graph one GC cycle.
 	var/list/old_line_members = line_members?.Copy()
 	var/list/old_normal_members = normal_members?.Copy()
-	var/network_volume = volume
+	// A retired Rust wrapper has no members (and its mixture may already be released): no gas to split, no volume to read.
+	var/network_volume = (length(old_line_members) || length(old_normal_members)) ? volume() : 0
 	for(var/datum/pipeline/line_member in old_line_members)
 		line_member.detach_network_air(src, air, network_volume)
 	for(var/obj/machinery/atmospherics/normal_member in old_normal_members)
 		normal_member.detach_network_air(src, air, network_volume)
 	// The rosters and each line's `network` view are relations (cleared in phase 4); a
 	// member's reassign_network() is the domain consequence (its network1/2 slot).
-	rel_clear(src, "leaks")
+	rel_clear(src, nameof(leaks))
 	external_air_volumes = null
 	for(var/obj/machinery/atmospherics/normal_member in old_normal_members)
 		normal_member.reassign_network(src, null)
-	own_clear(src, "air", OWN_DELETE)
-	sync_gases()
-	volume = 0
+	own_clear(src, nameof(air), OWN_DELETE)
 
-/// Keeps the compatibility `gases` view equal to list(air).
-/datum/pipe_network/proc/sync_gases()
-	gases = air ? list(air) : null // ALLOW(ownership): a derived read-only copy of the owned `air`, rewritten whenever air changes
+/// The network's total volume in litres: read from the Rust mixture, which is the only copy.
+/datum/pipe_network/proc/volume()
+	return air ? air.return_volume() : 0
 
 /datum/pipe_network/proc/add_normal_member(obj/machinery/atmospherics/member)
 	if(!member || QDELETED(member))
 		return FALSE
-	rel_add(src, "normal_members", member)
+	rel_add(src, nameof(normal_members), member)
 	return TRUE
 
 /datum/pipe_network/proc/add_line_member(datum/pipeline/member)
 	if(!member || QDELETED(member))
 		return FALSE
-	rel_add(src, "line_members", member)
+	rel_add(src, nameof(line_members), member)
 	return TRUE
 
 /// One reconciliation pass for a dirty network, run by SSair's pipenet phase (SSair.dm
@@ -91,7 +86,7 @@
 		for(var/obj/machinery/atmospherics/pipe/leak as anything in leaks)
 			var/datum/gas_mixture/environment = leak.loc?.return_air()
 			if(QDELETED(leak) || !leak.leaking || !leak.parent?.air || !environment)
-				rel_remove(src, "leaks", leak)
+				rel_remove(src, nameof(leaks), leak)
 				continue
 			valid_leaks += leak
 			// List union (`+=`) removes duplicate datum values. Several holes in the
@@ -131,28 +126,28 @@
 	var/list/giver_leaks = giver.leaks?.Copy()
 	var/list/giver_external = giver.external_air_volumes
 
+	var/giver_volume = giver.volume()
+	var/combined_volume = volume() + giver_volume
 	if(!air)
-		own_set(src, "air", new /datum/gas_mixture(max(volume, 1)))
-		sync_gases()
+		own_set(src, nameof(air), new /datum/gas_mixture(max(giver_volume, 1)))
 	if(giver.air)
 		air.merge(giver.air)
-	volume += giver.volume
-	air.set_volume(max(volume, 1))
+	air.set_volume(max(combined_volume, 1))
 
 	for(var/obj/machinery/atmospherics/pipe/giver_leak as anything in giver_leaks)
-		rel_add(src, "leaks", giver_leak)
+		rel_add(src, nameof(leaks), giver_leak)
 
 	for(var/obj/machinery/atmospherics/normal_member in giver_normal_members)
 		normal_member.bind_network_air(giver, air)
-		rel_remove(giver, "normal_members", normal_member)
-		rel_add(src, "normal_members", normal_member)
+		rel_remove(giver, nameof(giver.normal_members), normal_member)
+		rel_add(src, nameof(normal_members), normal_member)
 		normal_member.reassign_network(giver, src)
 
 	for(var/datum/pipeline/line_member in giver_line_members)
 		line_member.bind_network_air(giver, air)
-		rel_remove(giver, "line_members", line_member)
-		rel_add(src, "line_members", line_member)
-		rel_set(line_member, "network", src)
+		rel_remove(giver, nameof(giver.line_members), line_member)
+		rel_add(src, nameof(line_members), line_member)
+		rel_set(line_member, nameof(line_member.network), src)
 
 	if(length(giver_external))
 		if(!external_air_volumes)
@@ -164,13 +159,10 @@
 	// The receiving network now owns every transferred member.  Leaving the
 	// donor's lists populated retained a second copy of the whole pipenet forever.
 	STOP_PROCESSING_PIPENET(giver)
-	rel_clear(giver, "leaks")
+	rel_clear(giver, nameof(giver.leaks))
 	giver.external_air_volumes = null
-	own_clear(giver, "air", OWN_DELETE)
-	giver.sync_gases()
-	giver.volume = 0
+	own_clear(giver, nameof(air), OWN_DELETE)
 	qdel(giver)
-	sync_gases()
 	mark_topology_dirty()
 	return 1
 
@@ -179,7 +171,7 @@
 	// port. Pool them once, bind every port to one authoritative mixture, and
 	// delete the obsolete handles. Routine processing never redistributes gas.
 	var/list/old_gases = list()
-	volume = 0
+	var/total_volume = 0
 
 	for(var/obj/machinery/atmospherics/normal_member in normal_members)
 		var/result = normal_member.return_network_air(src)
@@ -191,18 +183,17 @@
 		old_gases |= line_member.air
 
 	for(var/datum/gas_mixture/member_air in old_gases)
-		volume += member_air.return_volume()
+		total_volume += member_air.return_volume()
 
-	var/datum/gas_mixture/network_air = new(max(volume, 1))
+	var/datum/gas_mixture/network_air = new(max(total_volume, 1))
 	for(var/datum/gas_mixture/member_air in old_gases)
 		network_air.merge(member_air)
-	network_air.set_volume(max(volume, 1))
+	network_air.set_volume(max(total_volume, 1))
 	// A previous authoritative mixture is among old_gases (merged above): detach it so
 	// own_set() doesn't dispose of it while members still name it; it goes below.
 	if(air)
-		own_take(src, "air")
-	own_set(src, "air", network_air)
-	sync_gases()
+		own_take(src, nameof(air))
+	own_set(src, nameof(air), network_air)
 	// Binding deletes each port's private mixture (atmos_air_set()); what is left over
 	// (the previous network mixture) is unowned now and released here.
 	for(var/datum/pipeline/line_member in line_members)
@@ -219,20 +210,18 @@
 /datum/pipe_network/proc/attach_external_air(atom/movable/owner, datum/gas_mixture/external_air)
 	if(!owner || !external_air || external_air == air || external_air_volumes?[owner])
 		return FALSE
+	var/base_volume = volume()
 	if(!air)
-		own_set(src, "air", new /datum/gas_mixture(1))
-		sync_gases()
+		own_set(src, nameof(air), new /datum/gas_mixture(1))
 	var/external_volume = external_air.return_volume()
 	air.merge(external_air)
-	volume += external_volume
-	air.set_volume(max(volume, 1))
+	air.set_volume(max(base_volume + external_volume, 1))
 	if(!external_air_volumes)
 		external_air_volumes = list()
 	external_air_volumes[owner] = external_volume // ALLOW(ownership): reservoir -> volume numbers, drained by detach_external_air() in lifecycle_unbind(); the reservoir owns its own air
 	owner.set_port_network_air(air)
 	if(!QDELETED(external_air) && !owner_of(external_air))
 		qdel(external_air)
-	sync_gases()
 	mark_dirty()
 	return TRUE
 
@@ -240,10 +229,10 @@
 	if(!owner || !external_air_volumes?[owner] || !air)
 		return FALSE
 	var/external_volume = external_air_volumes[owner]
-	var/datum/gas_mixture/detached = air.remove_ratio(min(external_volume / max(volume, 1), 1))
+	var/current_volume = volume()
+	var/datum/gas_mixture/detached = air.remove_ratio(min(external_volume / max(current_volume, 1), 1))
 	detached.set_volume(max(external_volume, 1))
-	volume = max(volume - external_volume, 0)
-	air.set_volume(max(volume, 1))
+	air.set_volume(max(current_volume - external_volume, 1))
 	external_air_volumes.Remove(owner)
 	if(!length(external_air_volumes))
 		external_air_volumes = null
@@ -275,6 +264,8 @@
 	return
 
 // Rosters: two-sided with each member's network_memberships (ownership.md §4.1).
-REL_PAIR_LIST(/datum/pipe_network, normal_members, network_memberships)
-REL_PAIR_LIST(/datum/pipe_network, line_members, network_memberships)
+/datum/pipe_network/relations()
+	. = ..()
+	. += rel_many(nameof(normal_members), back = nameof(/obj/machinery/atmospherics::network_memberships))
+	. += rel_many(nameof(line_members), back = nameof(/datum/pipeline::network_memberships))
 

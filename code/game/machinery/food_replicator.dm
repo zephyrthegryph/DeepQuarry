@@ -43,7 +43,7 @@
 	if(T)
 		if(container)
 			container.forceMove(T)
-			own_take(src, "container")
+			own_take(src, nameof(container))
 	QDEL_NULL_LIST(products)
 	return ..()
 
@@ -153,9 +153,8 @@
 	effect = /obj/machinery/food_replicator/proc/interaction_insert_container
 
 /obj/machinery/food_replicator/proc/interaction_insert_container(mob/user, obj/item/reagent_containers/glass/O, datum/interaction/interaction)
-	user.drop_item()
-	O.forceMove(src)
-	own_set(src, "container", O)
+	if(!own_set(src, nameof(src.container), O, user = user))
+		return TRUE
 	balloon_alert(user, "placed \the [O] in \the [src]")
 	return TRUE
 
@@ -236,7 +235,7 @@ DECLARE_APPEARANCE(/obj/machinery/food_replicator, "printing", list("1" = list(A
 /obj/machinery/food_replicator/proc/remove_beaker()
 	if(container)
 		container.forceMove(get_turf(src))
-		own_take(src, "container")
+		own_take(src, nameof(container))
 		return TRUE
 	return FALSE
 
@@ -253,4 +252,6 @@ DECLARE_APPEARANCE(/obj/machinery/food_replicator, "printing", list("1" = list(A
 	set_stat(BROKEN)
 	explosion(src, 0, 0, 2)
 
-OWN(/obj/machinery/food_replicator, container, OWN_CONTAINED)
+/obj/machinery/food_replicator/ownership()
+	. = ..()
+	. += owns(nameof(container), policy = OWN_CONTAINED)

@@ -63,13 +63,13 @@ UI_ACT_PROC(/obj/item/starcaster_news, ui_act_prg_openarticle)
 
 	for(var/datum/computer_file/data/news_article/N in GLOB.ntnet_global.available_news)
 		if(N.uid == params["uid"])
-			own_set(src, "loaded_article_owned", N.clone())
+			own_set(src, nameof(/obj/item/starcaster_news::loaded_article_owned), N.clone())
 			break
 
 UI_ACT(/obj/item/starcaster_news, "PRG_reset", ui_act_prg_reset)
 UI_ACT_PROC(/obj/item/starcaster_news, ui_act_prg_reset)
 	. = TRUE
-	own_clear(src, "loaded_article_owned", OWN_DELETE) // our private clone
+	own_clear(src, nameof(/obj/item/starcaster_news::loaded_article_owned), OWN_DELETE) // our private clone
 
 UI_ACT(/obj/item/starcaster_news, "PRG_toggle_archived", ui_act_prg_toggle_archived)
 UI_ACT_PROC(/obj/item/starcaster_news, ui_act_prg_toggle_archived)

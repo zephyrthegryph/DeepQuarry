@@ -56,71 +56,44 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/trinary/mixer, TYPE_PROC_REF
 	air2.set_volume(ATMOS_DEFAULT_VOLUME_MIXER)
 	air3.set_volume(ATMOS_DEFAULT_VOLUME_MIXER * 1.5)
 
-/// The gas -> share list mix_gas() takes, built from the current port air.
-/obj/machinery/atmospherics/trinary/mixer/proc/mixing_inputs()
-	var/list/inputs = list()
-	inputs[air1] = node1_concentration
-	inputs[air2] = node2_concentration
-	return inputs
-
-/// R10/M2 bridge (rust_architecture.md §8.5 step 6's filter/mixer slice):
-/// a mixer is two input flows (port1->port3, port2->port3), each a plain
-/// `DeviceFlow` row (mask 0: every gas) with `RUST_FLOW_MOLES`, ratio-
-/// scaled by `vg_mix_transfer()` -- the entropy-limited power budget that
-/// used to gate `mix_gas()`, unchanged maths, now in Rust
-/// (`verdigris/domains/gas/src/power_budget.rs`). The actual gas movement
-/// is Rust's own device-edge step, same as every other pipe device.
-/obj/machinery/atmospherics/trinary/mixer/machine_step()
-	..()
-
+/// A mixer is a Rust budget group (rust_set_budget_leg()): two input legs (port 1 and port 2 into port 3) with their shares.
+/// The requested moles from the inputs' live gas, the entropy/power budget and the split are computed in Rust each device
+/// step (power_budget.rs); this only declares the settings.
+/obj/machinery/atmospherics/trinary/mixer/push_to_rust()
+	if(QDELETED(src))
+		return
 	last_power_draw = 0
 	last_flow_rate = 0
-
-	if((!operable()) || !use_power)
+	if(!operable() || !use_power || !node1 || !node2 || !node3) // ALLOW(derived_reads): set_use_power() and power_change() bump rust_device_rev, as do port binds and disconnect() (nodes, ports, modes)
 		rust_unregister_device_n("in1")
 		rust_unregister_device_n("in2")
-		return PROCESS_KILL
+		return
+	var/available_power = material_pump_power(power_rating) // ALLOW(derived_reads): fixed by the material
+	var/efficiency = ATMOS_FILTER_EFFICIENCY * (material_pump_efficiency() / 0.8) // ALLOW(derived_reads): fixed by the material
+	rust_set_budget_leg("in1", 1, 3, RUST_FLOW_MIX, 0, RUST_ROLE_OUTPUT, node1_concentration, set_flow_rate, available_power, efficiency)
+	rust_set_budget_leg("in2", 2, 3, RUST_FLOW_MIX, 0, RUST_ROLE_OUTPUT, node2_concentration, set_flow_rate, available_power, efficiency)
 
-	//Figure out the amount of moles to transfer
-	var/requested = mix_transfer_moles()
-	if(requested <= MINIMUM_MOLES_TO_FILTER)
-		rust_unregister_device_n("in1")
-		rust_unregister_device_n("in2")
-		hibernate_until_input_changes()
-		return PROCESS_KILL
+/// A step's result: the moles the group moved and the power it drew, billed.
+/obj/machinery/atmospherics/trinary/mixer/rust_device_stepped(moles, power_w, target_reached)
+	last_power_draw = power_w
+	if(power_w > 0)
+		use_power(power_w)
+	last_flow_rate = moles
 
-	var/available_power = material_pump_power(power_rating)
-	var/efficiency = ATMOS_FILTER_EFFICIENCY * (material_pump_efficiency() / 0.8)
-	var/list/result = vg_mix_transfer(mixing_inputs(), air3, requested, available_power, efficiency)
-	if(!result)
-		rust_unregister_device_n("in1")
-		rust_unregister_device_n("in2")
-		return 1
+/// A port bound: its region exists in Rust, so the legs can be registered once the last one is.
+/obj/machinery/atmospherics/trinary/mixer/rust_bind_pipe_port(index, datum/pipe_network/new_network, datum/gas_mixture/network_air)
+	. = ..()
+	if(index == 3)
+		rust_device_dirty()
 
-	var/power_draw = result[2]
-	var/in1_moles = result[3]
-	var/in2_moles = result[4]
-	var/dt = SSvg.wait / (1 SECONDS)
+TRACKED(/obj/machinery/atmospherics/trinary/mixer, set_flow_rate, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/atmospherics/trinary/mixer, node1_concentration, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/atmospherics/trinary/mixer, node2_concentration, CHANGE_MACHINE_SETTINGS)
 
-	last_power_draw = power_draw
-	use_power(power_draw)
-
-	rust_set_device_n("in1", 1, 3)
-	rust_set_device_flow_n("in1", 0, RUST_FLOW_MOLES, in1_moles / dt, RUST_DIR_FORCED, RUST_SIDE_A, RUST_STOP_NONE, 0)
-
-	rust_set_device_n("in2", 2, 3)
-	rust_set_device_flow_n("in2", 0, RUST_FLOW_MOLES, in2_moles / dt, RUST_DIR_FORCED, RUST_SIDE_A, RUST_STOP_NONE, 0)
-
-	if(network1 && node1_concentration)
-		network1.mark_dirty()
-
-	if(network2 && node2_concentration)
-		network2.mark_dirty()
-
-	if(network3)
-		network3.mark_dirty()
-
-	return 1
+/// The Rust group is pushed (once per frame) when any of these change.
+/obj/machinery/atmospherics/trinary/mixer/derived()
+	. = ..()
+	. += rust_push(nameof(rust_device_rev), nameof(set_flow_rate), nameof(node1_concentration), nameof(node2_concentration))
 
 DECLARE_UI(/obj/machinery/atmospherics/trinary/mixer, "AtmosMixer")
 
@@ -143,7 +116,6 @@ UI_ACT_PROC(/obj/machinery/atmospherics/trinary/mixer, ui_act_power)
 	set_use_power(!use_power)
 	. = TRUE
 	update_icon()
-	MACHINE_WAKE(src) // settings: re-evaluate the mix now
 
 UI_ACT(/obj/machinery/atmospherics/trinary/mixer, "pressure", ui_act_pressure, UI_ARG_VALUE("pressure"))
 UI_ACT_PROC(/obj/machinery/atmospherics/trinary/mixer, ui_act_pressure)
@@ -154,27 +126,24 @@ UI_ACT_PROC(/obj/machinery/atmospherics/trinary/mixer, ui_act_pressure)
 	else if(isnum(pressure))
 		. = TRUE
 	if(.)
-		set_flow_rate = clamp(pressure, 0, min(air1.return_volume(), air2.return_volume()))
+		set_set_flow_rate(clamp(pressure, 0, min(air1.return_volume(), air2.return_volume())))
 	update_icon()
-	MACHINE_WAKE(src) // settings: re-evaluate the mix now
 
 UI_ACT(/obj/machinery/atmospherics/trinary/mixer, "node1", ui_act_node1, UI_ARG_NUM("concentration"))
 UI_ACT_PROC(/obj/machinery/atmospherics/trinary/mixer, ui_act_node1)
 	var/value = params["concentration"]
-	node1_concentration = max(0, min(1, value / 100))
-	node2_concentration = 1.0 - node1_concentration
+	set_node1_concentration(max(0, min(1, value / 100)))
+	set_node2_concentration(1.0 - node1_concentration)
 	. = TRUE
 	update_icon()
-	MACHINE_WAKE(src) // settings: re-evaluate the mix now
 
 UI_ACT(/obj/machinery/atmospherics/trinary/mixer, "node2", ui_act_node2, UI_ARG_NUM("concentration"))
 UI_ACT_PROC(/obj/machinery/atmospherics/trinary/mixer, ui_act_node2)
 	var/value = params["concentration"]
-	node2_concentration = max(0, min(1, value / 100))
-	node1_concentration = 1.0 - node2_concentration
+	set_node2_concentration(max(0, min(1, value / 100)))
+	set_node1_concentration(1.0 - node2_concentration)
 	. = TRUE
 	update_icon()
-	MACHINE_WAKE(src) // settings: re-evaluate the mix now
 
 //
 // "T" Orientation - Inputs are on oposite sides instead of adjacent
@@ -195,29 +164,6 @@ UI_ACT_PROC(/obj/machinery/atmospherics/trinary/mixer, ui_act_node2)
 	dir = SOUTH
 	initialize_directions = SOUTH|NORTH|EAST
 	mirrored = TRUE
-
-/obj/machinery/atmospherics/trinary/mixer/proc/mix_transfer_moles()
-	return (set_flow_rate*node1_concentration/air1.return_volume())*air1.total_moles() + (set_flow_rate*node2_concentration/air2.return_volume())*air2.total_moles()
-
-/// Nothing to mix: park until the inputs hold enough to move (the same test machine_step()
-/// makes). Power and settings changes wake it through their own channels.
-/obj/machinery/atmospherics/trinary/mixer/proc/hibernate_until_input_changes()
-	om_watch_arm_condition(src, "gas", list(air1?.arena_id(), air2?.arena_id()), GAS_DEPENDENCY_COMPOSITION | GAS_DEPENDENCY_PRESSURE, om_callable(src, PROC_REF(gas_wake_condition)), wake_callback = om_callable(src, PROC_REF(wake_from_gas)))
-
-/obj/machinery/atmospherics/trinary/mixer/proc/gas_wake_condition()
-	return use_power && operable() && mix_transfer_moles() > MINIMUM_MOLES_TO_FILTER
-
-/obj/machinery/atmospherics/trinary/mixer/proc/wake_from_gas()
-	om_watch_disarm(src, "gas")
-	MACHINE_WAKE(src)
-
-/obj/machinery/atmospherics/trinary/mixer/step_has_work()
-	return gas_wake_condition()
-
-/// Setup at spawn: arm what wakes it (machine_pipeline.dm, materialize_wakes()).
-/obj/machinery/atmospherics/trinary/mixer/arm_wakes()
-	..()
-	hibernate_until_input_changes()
 
 /// A mixer missing a node can't run: it switches off when it loses one (the redraw used to do this).
 /obj/machinery/atmospherics/trinary/mixer/disconnect(obj/machinery/atmospherics/reference)

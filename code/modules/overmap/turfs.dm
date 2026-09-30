@@ -39,7 +39,7 @@ GLOBAL_LIST_EMPTY(map_sectors)
 		while(istype(T, /turf/unsimulated/map))
 			T = get_step(T, map_is_to_my) //Could be a wall if the map is only 1 turf big
 			if(istype(T, /turf/unsimulated/map/edge))
-				rel_set(src, "wrap_buddy", T)
+				rel_set(src, nameof(wrap_buddy), T)
 				break
 
 /turf/unsimulated/map/edge/Bumped(atom/movable/AM)

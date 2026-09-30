@@ -15,7 +15,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/implant/neural, PERIODIC_SLOW, "monitoring_brai
 		var/mob/living/carbon/human/H = source
 		if(H.species.has_organ[O_BRAIN])
 			var/obj/item/organ/internal/brain/possible_brain = H.organ_in(O_BRAIN)
-			rel_set(src, "my_brain", possible_brain) //Organs will take damage all the same.
+			rel_set(src, nameof(my_brain), possible_brain) //Organs will take damage all the same.
 			if(istype(possible_brain) && my_brain().can_assist())		//If the brain is infact a brain, and not something special like an MMI.
 				my_brain().implant_assist(target_state)
 		if(HAS_SYNTHETIC_BIOLOGY(H) && H.get_FBP_type() != FBP_CYBORG)		//If this on an FBP, it's just an extra inefficient attachment to whatever their brain is.
@@ -104,7 +104,7 @@ DAMAGE_REACTION(/obj/item/implant/neural, DAMAGE_EMP, PROC_REF(neural_implant_em
 			H.status_at_least(EFFECT_CONFUSED, 30)
 			H.status_adjust(EFFECT_BLINDED, 5)
 		my_brain().owner?.injure(INJURY_NEURAL, 15, my_brain(), src)
-		rel_clear(src, "my_brain")
+		rel_clear(src, nameof(my_brain))
 	return
 
 /// Relation view: my brain (reads null once it is gone).

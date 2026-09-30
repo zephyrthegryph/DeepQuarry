@@ -150,7 +150,7 @@ UI_ACT_PROC(/obj/machinery/computer/HolodeckControl, ui_act_gravity)
 DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/HolodeckControl, PROC_REF(on_emag), null)
 /obj/machinery/computer/HolodeckControl/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	play_sfx(src, SFX_EFFECTS_SPARKS4)
-	rel_set(src, "last_to_emag", user) //emag again to change the owner
+	rel_set(src, nameof(last_to_emag), user) //emag again to change the owner
 	if (!emagged)
 		set_emagged(1)
 		safety_disabled = 1
@@ -174,8 +174,8 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/HolodeckControl, PROC_REF(on_ema
 	for(var/mob/living/simple_mob/animal/space/carp/holodeck/C in holographic_mobs)
 		C.set_safety(!safety_disabled)
 		if (last_to_emag())
-			rel_clear(C, "friends")
-			rel_add(C, "friends", last_to_emag())
+			rel_clear(C, nameof(C.friends))
+			rel_add(C, nameof(C.friends), last_to_emag())
 
 /obj/machinery/computer/HolodeckControl/Initialize(mapload)
 	. = ..()
@@ -186,8 +186,10 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/HolodeckControl, PROC_REF(on_ema
 
 //This could all be done better, but it works for now.
 // the holodeck shuts down.
-REL_LIST(/obj/machinery/computer/HolodeckControl, holographic_objs)
-REL_LIST(/obj/machinery/computer/HolodeckControl, holographic_mobs)
+/obj/machinery/computer/HolodeckControl/relations()
+	. = ..()
+	. += rel_many(nameof(holographic_objs))
+	. += rel_many(nameof(holographic_mobs))
 
 /obj/machinery/computer/HolodeckControl/on_destroy(force)
 	emergencyShutdown()
@@ -215,7 +217,7 @@ DAMAGE_REACTION(/obj/machinery/computer/HolodeckControl, DAMAGE_EXPLOSION, PROC_
 
 	for(var/mob/living/simple_mob/animal/space/carp/holodeck/C in holographic_mobs)
 		if (get_area(C.loc) != linkedholodeck())
-			rel_remove(src, "holographic_mobs", C)
+			rel_remove(src, nameof(holographic_mobs), C)
 			C.derez()
 
 	if(!operable())
@@ -238,7 +240,7 @@ DAMAGE_REACTION(/obj/machinery/computer/HolodeckControl, DAMAGE_EXPLOSION, PROC_
 				T.hotspot_expose(1000,500,1)
 
 /obj/machinery/computer/HolodeckControl/proc/derez(obj/obj , silent = 1)
-	rel_remove(src, "holographic_objs", obj)
+	rel_remove(src, nameof(holographic_objs), obj)
 
 	if(obj == null)
 		return
@@ -306,7 +308,7 @@ DAMAGE_REACTION(/obj/machinery/computer/HolodeckControl, DAMAGE_EXPLOSION, PROC_
 		derez(item)
 
 	for(var/mob/living/simple_mob/animal/space/carp/holodeck/C in holographic_mobs)
-		rel_remove(src, "holographic_mobs", C)
+		rel_remove(src, nameof(holographic_mobs), C)
 		C.derez()
 
 	for(var/obj/effect/decal/cleanable/blood/B in linkedholodeck())
@@ -320,7 +322,7 @@ DAMAGE_REACTION(/obj/machinery/computer/HolodeckControl, DAMAGE_EXPLOSION, PROC_
 	// program or a shutdown. They are world objects players can carry, so they are not owned here;
 	// one destroyed elsewhere just leaves the roster.
 	for(var/obj/holo_obj in A.copy_contents_to(linkedholodeck(), 1))
-		rel_add(src, "holographic_objs", holo_obj)
+		rel_add(src, nameof(holographic_objs), holo_obj)
 	for(var/obj/holo_obj in holographic_objs)
 		holo_obj.alpha *= 0.8 //give holodeck objs a slight transparency
 
@@ -346,11 +348,11 @@ DAMAGE_REACTION(/obj/machinery/computer/HolodeckControl, DAMAGE_EXPLOSION, PROC_
 		if(L.name=="Atmospheric Test Start")
 			om_after(src, 2 SECONDS, PROC_REF(atmos_test_ignite), get_turf(L))
 		if(L.name=="Holocarp Spawn")
-			rel_add(src, "holographic_mobs", new /mob/living/simple_mob/animal/space/carp/holodeck(L.loc))
+			rel_add(src, nameof(holographic_mobs), new /mob/living/simple_mob/animal/space/carp/holodeck(L.loc))
 
 		if(L.name=="Holocarp Spawn Random")
 			if(prob(4)) //With 4 spawn points, carp should only appear 15% of the time.
-				rel_add(src, "holographic_mobs", new /mob/living/simple_mob/animal/space/carp/holodeck(L.loc))
+				rel_add(src, nameof(holographic_mobs), new /mob/living/simple_mob/animal/space/carp/holodeck(L.loc))
 		qdel(L)
 
 		update_projections()

@@ -45,7 +45,7 @@
 	if(isspace(loc) || delete_me)
 		return INITIALIZE_HINT_QDEL
 
-	rel_set(src, "linked_node", node)
+	rel_set(src, nameof(linked_node), node)
 //	if(newcolor)
 // color = newcolor // No coloration.
 
@@ -63,7 +63,7 @@
 	for (var/obj/effect/alien/weeds/W in range(1,T))
 		W.updateWeedOverlays()
 
-	rel_clear(src, "linked_node")
+	rel_clear(src, nameof(linked_node))
 	..()
 
 /obj/effect/alien/weeds/node
@@ -89,7 +89,7 @@
 				continue
 			qdel(existing)
 
-	rel_set(src, "linked_node", src)
+	rel_set(src, nameof(linked_node), src)
 
 // Only the node processes in a subsystem, the rest are process()'d by the node
 DECLARE_PERIODIC(/obj/effect/alien/weeds/node, PERIODIC_SLOW)
@@ -161,7 +161,7 @@ DECLARE_PERIODIC(/obj/effect/alien/weeds/node, PERIODIC_SLOW)
 	for(var/obj/effect/alien/weeds/W as anything in nearby_weeds)
 
 		if(!W.linked_node())
-			rel_set(W, "linked_node", src)
+			rel_set(W, nameof(W.linked_node), src)
 
 // W.color = W.linked_node.set_color // No coloration.
 
@@ -248,7 +248,7 @@ EXTEND_INTERACTIONS(/obj/effect/alien/weeds, \
 
 /obj/effect/alien/acid/Initialize(mapload, target)
 	. = ..()
-	own_set(src, "target", target)
+	own_set(src, nameof(target), target)
 
 	if(isturf(target)) // Turf take twice as long to take down.
 		target_strength = 8

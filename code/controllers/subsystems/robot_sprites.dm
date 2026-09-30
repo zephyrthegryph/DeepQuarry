@@ -1,20 +1,19 @@
-SUBSYSTEM_DEF(robot_sprites)
+SYSTEM_DEF(robot_sprites)
 	name = "Robot Sprites"
-	dependencies = list(
+	init_stage = INITSTAGE_MAIN
+	needs = list(
 		/datum/controller/subsystem/garbage
 	)
-	flags = SS_NO_FIRE
 	var/list/all_cyborg_sprites = list()
 	var/list/cyborg_sprites_by_module = list()
 	var/list/whitelisted_sprites_by_module = list()
 	var/list/all_test_sprites = list()
 
-/datum/controller/subsystem/robot_sprites/Initialize()
+/datum/system/robot_sprites/initialize()
 	initialize_borg_sprites()
 	load_test_sprites()
-	return SS_INIT_SUCCESS
 
-/datum/controller/subsystem/robot_sprites/proc/initialize_borg_sprites()
+/datum/system/robot_sprites/proc/initialize_borg_sprites()
 
 	var/list/all_paths = typesof(/datum/robot_sprite)
 
@@ -60,7 +59,7 @@ SUBSYSTEM_DEF(robot_sprites)
 					cyborg_sprites_by_module[RS.module_type] = list()
 				cyborg_sprites_by_module[RS.module_type] |= RS
 
-/datum/controller/subsystem/robot_sprites/proc/get_module_sprites(module, mob/living/silicon/robot/wlcheck)
+/datum/system/robot_sprites/proc/get_module_sprites(module, mob/living/silicon/robot/wlcheck)
 	. = list()
 
 	if(!module || !(module in cyborg_sprites_by_module))
@@ -73,7 +72,7 @@ SUBSYSTEM_DEF(robot_sprites)
 
 	return
 
-/datum/controller/subsystem/robot_sprites/proc/get_module_sprites_len(module, mob/living/silicon/robot/wlcheck)
+/datum/system/robot_sprites/proc/get_module_sprites_len(module, mob/living/silicon/robot/wlcheck)
 	if(!module || (!(module in cyborg_sprites_by_module) && !(module in whitelisted_sprites_by_module)))
 		return 0
 
@@ -87,7 +86,7 @@ SUBSYSTEM_DEF(robot_sprites)
 
 	return length(sprite_list)
 
-/datum/controller/subsystem/robot_sprites/proc/get_default_module_sprite(module)
+/datum/system/robot_sprites/proc/get_default_module_sprite(module)
 
 	var/list/module_sprites = get_module_sprites(module)
 
@@ -104,7 +103,7 @@ SUBSYSTEM_DEF(robot_sprites)
 
 	return chosen_sprite
 
-/datum/controller/subsystem/robot_sprites/proc/get_whitelisted_sprites(ckey, spritename, module)
+/datum/system/robot_sprites/proc/get_whitelisted_sprites(ckey, spritename, module)
 	. = list()
 
 	ckey = null // CHOMPDisable, removing custom robot sprites
@@ -119,7 +118,7 @@ SUBSYSTEM_DEF(robot_sprites)
 	return
 
 // This is mostly for sprite testing, don't use it in active productions!
-/datum/controller/subsystem/robot_sprites/proc/load_test_sprites()
+/datum/system/robot_sprites/proc/load_test_sprites()
 	var/list/test_sprites = list()
 	// file name must be robot_xxy.dmi -> testborg_64x32
 	var/path = "icons/mob/robot/testdir/"
@@ -299,7 +298,7 @@ SUBSYSTEM_DEF(robot_sprites)
 					cyborg_sprites_by_module[RS.module_type] = list()
 				cyborg_sprites_by_module[RS.module_type] |= RS
 
-/datum/controller/subsystem/robot_sprites/proc/clear_test_sprites()
+/datum/system/robot_sprites/proc/clear_test_sprites()
 	// Clears all our test sprites, allows spriters to reload the dmis after edits ingame
 	for(var/datum/robot_sprite/RS in all_test_sprites)
 		if(islist(RS.module_type))
@@ -320,6 +319,6 @@ SUBSYSTEM_DEF(robot_sprites)
 		all_test_sprites -= RS
 		qdel(RS)
 
-/datum/controller/subsystem/robot_sprites/proc/reload_test_sprites()
+/datum/system/robot_sprites/proc/reload_test_sprites()
 	clear_test_sprites()
 	load_test_sprites()

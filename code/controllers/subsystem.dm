@@ -40,6 +40,10 @@
 	/// Which stage does this subsystem init at. Earlier stages can fire while later stages init.
 	var/init_stage = INITSTAGE_MAIN
 
+	/// The kernel phase that fires a SS_KERNEL_HOSTED subsystem: KERNEL_PHASE_K (before the rest of the tick) or
+	/// KERNEL_PHASE_G (garbage: whatever the tick has left).
+	var/host_phase = KERNEL_PHASE_K
+
 	/// This var is set to `INITIALIZATION_INNEW_REGULAR` after the subsystem has been initialized.
 	var/initialized = FALSE
 
@@ -124,16 +128,8 @@
 	/// Time the subsystem entered the queue, (for timing and priority reasons)
 	var/queued_time = 0
 
-	/// Priority at the time the subsystem entered the queue. Needed to avoid changes in priority (by admins and the like) from breaking things.
-	var/queued_priority
-
 	/// How many times we suspect a subsystem type has crashed the MC, 3 strikes and you're out!
 	var/static/list/failure_strikes
-
-	/// Next subsystem in the queue of subsystems to run this tick
-	var/datum/controller/subsystem/queue_next_static
-	/// Previous subsystem in the queue of subsystems to run this tick
-	var/datum/controller/subsystem/queue_prev_static
 
 	/// String to store an applicable error message for a subsystem crashing, used to help debug crashes in contexts such as Continuous Integration/Unit Tests
 	var/initialization_failure_message = null
@@ -173,10 +169,7 @@
 		state = SS_IDLE
 	if (state == SS_PAUSING)
 		slept_count++
-		var/QT = queued_time
-		enqueue()
 		state = SS_PAUSED
-		queued_time = QT
 
 ///previously, this would have been named 'process()' but that name is used everywhere for different things!
 ///fire() seems more suitable. This is the procedure that gets called every 'wait' deciseconds.
@@ -187,7 +180,6 @@
 
 // ALLOW(lifecycle): engine: a subsystem leaves the MC's queue and roster.
 /datum/controller/subsystem/Destroy()
-	dequeue()
 	can_fire = 0
 	flags |= SS_NO_FIRE
 	if (Master)
@@ -217,79 +209,6 @@
 	else
 		next_fire = queued_time + wait + (world.tick_lag * (tick_overrun/100))
 
-///Queue it to run.
-/// (we loop thru a linked list until we get to the end or find the right point)
-/// (this lets us sort our run order correctly without having to re-sort the entire already sorted list)
-/datum/controller/subsystem/proc/enqueue()
-	var/SS_priority = priority
-	var/SS_flags = flags
-	var/datum/controller/subsystem/queue_node
-	var/queue_node_priority
-	var/queue_node_flags
-
-	for (queue_node = Master.queue_head(); queue_node; queue_node = queue_node.queue_next())
-		queue_node_priority = queue_node.queued_priority
-		queue_node_flags = queue_node.flags
-
-		if ((queue_node_flags & (SS_TICKER|SS_BACKGROUND)) == SS_TICKER)
-			if ((SS_flags & (SS_TICKER|SS_BACKGROUND)) != SS_TICKER)
-				continue
-			if (queue_node_priority < SS_priority)
-				break
-
-		else if (queue_node_flags & SS_BACKGROUND)
-			if (!(SS_flags & SS_BACKGROUND))
-				break
-			if (queue_node_priority < SS_priority)
-				break
-
-		else
-			if (SS_flags & SS_BACKGROUND)
-				continue
-			if (SS_flags & SS_TICKER)
-				break
-			if (queue_node_priority < SS_priority)
-				break
-
-	queued_time = world.time // ALLOW(sys_world_time_write): MC scheduler internals (next_fire/queued_time drive Master, like master.dm)
-	queued_priority = SS_priority
-	state = SS_QUEUED
-	if (SS_flags & SS_BACKGROUND) //update our running total
-		Master.queue_priority_count_bg += SS_priority
-	else
-		Master.queue_priority_count += SS_priority
-
-	queue_next_static = queue_node
-	if (!queue_node)//we stopped at the end, add to tail
-		queue_prev_static = Master.queue_tail()
-		if (Master.queue_tail())
-			Master.queue_tail().queue_next_static = src
-		else //empty queue, we also need to set the head
-			Master.queue_head_static = src
-		Master.queue_tail_static = src
-
-	else if (queue_node == Master.queue_head())//insert at start of list
-		Master.queue_head().queue_prev_static = src
-		Master.queue_head_static = src
-		queue_prev_static = null
-	else
-		queue_node.queue_prev().queue_next_static = src
-		queue_prev_static = queue_node.queue_prev()
-		queue_node.queue_prev_static = src
-
-/datum/controller/subsystem/proc/dequeue()
-	if (queue_next())
-		queue_next().queue_prev_static = queue_prev()
-	if (queue_prev())
-		queue_prev().queue_next_static = queue_next()
-	if (Master && (src == Master.queue_tail()))
-		Master.queue_tail_static = queue_prev()
-	if (Master && (src == Master.queue_head()))
-		Master.queue_head_static = queue_next()
-	queued_time = 0
-	if (state == SS_QUEUED)
-		state = SS_IDLE
-
 /datum/controller/subsystem/proc/pause()
 	. = 1
 	switch(state)
@@ -313,6 +232,10 @@
 	else
 		msg = "OFFLINE\t[msg]"
 	return msg
+
+/// Telemetry (kernel/system.dm metrics()): the counters the profiler and the stat panel read.
+/datum/controller/subsystem/proc/metrics()
+	return alist("name" = name, "cost" = cost, "tick_usage" = tick_usage, "overran" = tick_overrun, "times_fired" = times_fired, "state" = state)
 
 /datum/controller/subsystem/proc/state_letter()
 	switch (state)
@@ -351,14 +274,4 @@
 			//this is so the subsystem doesn't rapid fire to make up missed ticks causing more lag
 			if (var_value)
 				update_nextfire(reset_time = TRUE)
-		if (NAMEOF(src, queued_priority)) //editing this breaks things.
-			return FALSE
 	. = ..()
-
-/// A shared definition/flyweight (implicitly shared), never cleared.
-/datum/controller/subsystem/proc/queue_next() as /datum/controller/subsystem
-	return queue_next_static
-
-/// A shared definition/flyweight (implicitly shared), never cleared.
-/datum/controller/subsystem/proc/queue_prev() as /datum/controller/subsystem
-	return queue_prev_static

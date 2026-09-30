@@ -32,22 +32,22 @@
 
 	else
 		if(power_region)
-			rel_clear(src, "active_field")
+			rel_clear(src, nameof(active_field))
 			disconnect_from_network()
 		return PROCESS_KILL
 
 /obj/machinery/power/hydromagnetic_trap/proc/Search()//let's not have +100 instances of the same field in active_field.
 	things_in_range = range(7, src)
-	rel_clear(src, "fields_in_range") // rebuild fresh each tick so in-range fields don't accumulate as duplicates
+	rel_clear(src, nameof(fields_in_range)) // rebuild fresh each tick so in-range fields don't accumulate as duplicates
 	for (var/obj/effect/fusion_em_field/FFF in things_in_range)
-		rel_add(src, "fields_in_range", FFF)
+		rel_add(src, nameof(fields_in_range), FFF)
 
 	listclearnulls(active_field)
 	listclearnulls(fields_in_range)
 
 	for (var/obj/effect/fusion_em_field/FFF in fields_in_range)
 		if(get_dist(src, FFF) > 7)
-			rel_remove(src, "fields_in_range", FFF)
+			rel_remove(src, nameof(fields_in_range), FFF)
 			continue
 
 		if (length(active_field) > 0)
@@ -59,7 +59,7 @@
 /obj/machinery/power/hydromagnetic_trap/proc/Link() //discover our EM field
 	var/obj/effect/fusion_em_field/FFF
 	for(FFF in fields_in_range)
-		rel_add(src, "active_field", FFF)
+		rel_add(src, nameof(active_field), FFF)
 		set_active(1)
 	return
 

@@ -35,9 +35,9 @@
 	to_chat(user, "You remove the faceplate from the [src]")
 	var/obj/structure/frame/A = new /obj/structure/frame(loc)
 	var/obj/item/circuitboard/board = circuit
-	own_set(A, "frame_type", frame_type_copy(board.board_type)) // the board owns its frame type; the frame takes a copy
+	own_set(A, nameof(A.frame_type), frame_type_copy(board.board_type)) // the board owns its frame type; the frame takes a copy
 	board.forceMove(A)
-	own_move(board, A, "circuit") // the board goes from this machine to the frame
+	own_move(board, A, nameof(A.circuit)) // the board goes from this machine to the frame
 	A.need_circuit = FALSE
 	A.pixel_x = pixel_x
 	A.pixel_y = pixel_y
@@ -49,7 +49,7 @@
 			C.forceMove(A)
 			continue
 		C.forceMove(loc)
-	own_transfer(src, "forensic_data", A, "forensic_data") //carry crime data over.
+	own_transfer(src, nameof(forensic_data), A, nameof(A.forensic_data)) //carry crime data over.
 	A.state = FRAME_WIRED
 	A.update_icon()
 	qdel(src)
@@ -84,9 +84,9 @@
 				//This is not the device that made the initial request. It is the device confirming the request.
 				if(event_source())
 					event_source().confirmed = 1
-					rel_set(event_source(), "event_confirmed_by", user)
+					rel_set(event_source(), nameof(/obj/machinery/keycard_auth::event_confirmed_by), user)
 			else if(screen == 2)
-				rel_set(src, "event_triggered_by", user)
+				rel_set(src, nameof(event_triggered_by), user)
 				broadcast_request(user) //This is the device making the initial event request. It needs to broadcast to other devices
 	return TRUE
 
@@ -156,10 +156,10 @@ UI_ACT_PROC(/obj/machinery/keycard_auth, ui_act_reset)
 	event = ""
 	screen = 1
 	confirmed = 0
-	rel_clear(src, "event_source")
+	rel_clear(src, nameof(event_source))
 	icon_state = "auth_off"
-	rel_clear(src, "event_triggered_by")
-	rel_clear(src, "event_confirmed_by")
+	rel_clear(src, nameof(event_triggered_by))
+	rel_clear(src, nameof(event_confirmed_by))
 
 /obj/machinery/keycard_auth/proc/broadcast_request(mob/user)
 	icon_state = "auth_on"
@@ -182,7 +182,7 @@ UI_ACT_PROC(/obj/machinery/keycard_auth, ui_act_reset)
 /obj/machinery/keycard_auth/proc/receive_request(obj/machinery/keycard_auth/source)
 	if(!operable())
 		return
-	rel_set(src, "event_source", source)
+	rel_set(src, nameof(event_source), source)
 	// Busy for the confirmation window: a hold claims the device and closes the window when it ends.
 	om_release_busy(src, "new request")
 	set_active(1)
@@ -190,7 +190,7 @@ UI_ACT_PROC(/obj/machinery/keycard_auth, ui_act_reset)
 	om_hold_busy(src, confirm_delay, PROC_REF(receive_window_closed))
 
 /obj/machinery/keycard_auth/proc/receive_window_closed()
-	rel_clear(src, "event_source")
+	rel_clear(src, nameof(event_source))
 	icon_state = "auth_off"
 	set_active(0)
 

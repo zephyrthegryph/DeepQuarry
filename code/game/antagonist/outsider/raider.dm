@@ -124,7 +124,7 @@ GLOBAL_DATUM(raiders, /datum/antagonist/raider)
 
 	var/i = 1
 	var/max_objectives = pick(2,2,2,2,3,3,3,4)
-	own_clear(src, "global_objectives", OWN_DELETE)
+	own_clear(src, nameof(global_objectives), OWN_DELETE)
 	while(i<= max_objectives)
 		var/list/goals = list("kidnap","loot","salvage")
 		var/goal = pick(goals)
@@ -138,11 +138,11 @@ GLOBAL_DATUM(raiders, /datum/antagonist/raider)
 		else
 			O = new /datum/objective/heist/salvage()
 		O.choose_target()
-		own_add(src, "global_objectives", O)
+		own_add(src, nameof(global_objectives), O)
 
 		i++
 
-	own_add(src, "global_objectives", new /datum/objective/heist/preserve_crew)
+	own_add(src, nameof(global_objectives), new /datum/objective/heist/preserve_crew)
 	return 1
 
 /datum/antagonist/raider/check_victory()
@@ -251,15 +251,13 @@ GLOBAL_DATUM(raiders, /datum/antagonist/raider)
 		var/obj/item/secondary = new /obj/item/gun/projectile/pirate(T)
 		if(!HAS_TAG(primary, TAG_HOLSTERABLE))
 			holster = new new_holster(T)
-			secondary.forceMove(holster)
-			own_set(holster, "holstered", secondary)
+			own_set(holster, nameof(holster.holstered), secondary, into = TRUE)
 		else
 			player.equip_to_slot_or_del(secondary, SLOT_ID_BELT)
 
 	if(HAS_TAG(primary, TAG_HOLSTERABLE))
 		holster = new new_holster(T)
-		primary.forceMove(holster)
-		own_set(holster, "holstered", primary)
+		own_set(holster, nameof(holster.holstered), primary, into = TRUE)
 	else if(!player.get_equipped_item(SLOT_ID_BELT) && HAS_TAG(primary, TAG_WEAR_BELT))
 		player.equip_to_slot_or_del(primary, SLOT_ID_BELT)
 	else if(!player.get_equipped_item(SLOT_ID_BACK) && HAS_TAG(primary, TAG_WEAR_BACK))
@@ -313,7 +311,7 @@ GLOBAL_DATUM(raiders, /datum/antagonist/raider)
 	player.equip_to_slot_or_del(new /obj/item/tank/vox(player), SLOT_ID_BACK)
 	player.equip_to_slot_or_del(new /obj/item/flashlight(player), SLOT_ID_POCKET_R)
 
-	rel_set(player, "internal", locate_within(player, /obj/item/tank))
+	rel_set(player, nameof(player.internal), locate_within(player, /obj/item/tank))
 	if(istype(player.internal,/obj/item/tank) && player.internals)
 		player.internals.icon_state = "internal1"
 

@@ -116,7 +116,7 @@
 
 /obj/item/entopic_debug/Initialize(mapload)
 	. = ..()
-	own_set(src, "ent_debug", new /datum/entopic(aholder = src, aicon = icon, aicon_state = "holo_Jin"))
+	own_set(src, nameof(ent_debug), new /datum/entopic(aholder = src, aicon = icon, aicon_state = "holo_Jin"))
 
 /proc/entopic_icon_helper(atom/A,holo = TRUE)
 	ASSERT(A)

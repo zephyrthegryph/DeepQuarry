@@ -17,10 +17,10 @@
 	if(!subject)
 		return
 	if(subject.mind)
-		rel_set(src, "subject_mind", subject.mind)
+		rel_set(src, nameof(subject_mind), subject.mind)
 		account_number = subject.mind.initial_account()?.account_number
 	display_name = subject.real_name
-	rel_set(src, "body", subject)
+	rel_set(src, nameof(body), subject)
 
 /datum/contract_subject_identity/proc/current_mob() as /mob/living
 	if(subject_mind)
@@ -55,7 +55,7 @@
 	EXPIRY_STAMP(src, created_at, CLOCK_WORLD)
 	payload = _payload ? deepCopyList(_payload) : list()
 
-/datum/controller/subsystem/contracts/proc/subject_identity(mob/living/subject) as /datum/contract_subject_identity
+/datum/system/contracts/proc/subject_identity(mob/living/subject) as /datum/contract_subject_identity
 	if(!subject)
 		return null
 	var/body_key = "body:[REF(subject)]"
@@ -77,16 +77,16 @@
 		identity.update(subject)
 	return identity
 
-/datum/controller/subsystem/contracts/proc/resolve_subject(subject_id) as /mob/living
+/datum/system/contracts/proc/resolve_subject(subject_id) as /mob/living
 	var/datum/contract_subject_identity/identity = subject_identities[subject_id]
 	return identity?.current_mob()
 
-/datum/controller/subsystem/contracts/proc/find_mob_by_account(account_number) as /mob/living
+/datum/system/contracts/proc/find_mob_by_account(account_number) as /mob/living
 	for(var/mob/living/subject in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(subject.mind?.initial_account()?.account_number == account_number)
 			return subject
 
-/datum/controller/subsystem/contracts/proc/register_evidence(kind, subject_id, creator_account, atom/source, list/payload)
+/datum/system/contracts/proc/register_evidence(kind, subject_id, creator_account, atom/source, list/payload)
 	if(!kind)
 		return null
 	var/id = "DQ-EV-[next_evidence_id++]"
@@ -101,14 +101,14 @@
 	), "evidence-registered:[id]", source)
 	return id
 
-/datum/controller/subsystem/contracts/proc/retain_evidence(evidence_id)
+/datum/system/contracts/proc/retain_evidence(evidence_id)
 	var/datum/contract_evidence/evidence = evidence_by_id[evidence_id]
 	if(!evidence)
 		return FALSE
 	evidence.reference_count++
 	return TRUE
 
-/datum/controller/subsystem/contracts/proc/release_evidence(evidence_id)
+/datum/system/contracts/proc/release_evidence(evidence_id)
 	var/datum/contract_evidence/evidence = evidence_by_id[evidence_id]
 	if(!evidence)
 		return
@@ -116,13 +116,13 @@
 	if(!evidence.reference_count && !evidence.consumed_by)
 		unregister_evidence(evidence)
 
-/datum/controller/subsystem/contracts/proc/unregister_evidence(datum/contract_evidence/evidence)
+/datum/system/contracts/proc/unregister_evidence(datum/contract_evidence/evidence)
 	if(!evidence || evidence_by_id[evidence.id] != evidence)
 		return
 	evidence_by_id -= evidence.id
 	qdel(evidence)
 
-/datum/controller/subsystem/contracts/proc/void_evidence(evidence_id, reason)
+/datum/system/contracts/proc/void_evidence(evidence_id, reason)
 	var/datum/contract_evidence/evidence = evidence_by_id[evidence_id]
 	if(!evidence || evidence.consumed_by)
 		return FALSE
@@ -131,7 +131,7 @@
 		unregister_evidence(evidence)
 	return TRUE
 
-/datum/controller/subsystem/contracts/proc/bind_evidence_subject(evidence_id, subject_id)
+/datum/system/contracts/proc/bind_evidence_subject(evidence_id, subject_id)
 	var/datum/contract_evidence/evidence = evidence_by_id[evidence_id]
 	if(!evidence || evidence.consumed_by || (evidence.subject_id && evidence.subject_id != subject_id))
 		return FALSE
@@ -139,7 +139,7 @@
 	return TRUE
 
 /// Atomic consume: either every supplied record is available and bound, or none are consumed.
-/datum/controller/subsystem/contracts/proc/consume_evidence(list/evidence_ids, contract_id)
+/datum/system/contracts/proc/consume_evidence(list/evidence_ids, contract_id)
 	if(!evidence_available(evidence_ids) || !contract_id)
 		return FALSE
 	var/list/unique_ids = list()
@@ -157,7 +157,7 @@
 	), "evidence-consumed:[contract_id]:[jointext(unique_ids, ",")]" )
 	return TRUE
 
-/datum/controller/subsystem/contracts/proc/evidence_available(list/evidence_ids)
+/datum/system/contracts/proc/evidence_available(list/evidence_ids)
 	if(!length(evidence_ids))
 		return FALSE
 	var/list/unique_ids = list()
@@ -170,7 +170,7 @@
 		unique_ids += evidence_id
 	return TRUE
 
-/datum/controller/subsystem/contracts/proc/evidence_summary(contract_id)
+/datum/system/contracts/proc/evidence_summary(contract_id)
 	var/registered = 0
 	var/consumed = 0
 	for(var/id in evidence_by_id)
@@ -180,7 +180,7 @@
 			consumed++
 	return list("registered" = registered, "consumed" = consumed)
 
-/datum/controller/subsystem/contracts/proc/authenticated_scan_payload(obj/item/paper/paper)
+/datum/system/contracts/proc/authenticated_scan_payload(obj/item/paper/paper)
 	var/evidence_id = paper?.medical_scan_evidence?["evidence_id"]
 	var/datum/contract_evidence/evidence = evidence_by_id[evidence_id]
 	if(!evidence || evidence.kind != CONTRACT_EVIDENCE_MEDICAL_SCAN || evidence.consumed_by || evidence.void_reason)
@@ -189,10 +189,10 @@
 	result["evidence_id"] = evidence.id
 	return result
 
-/datum/controller/subsystem/contracts/proc/schedule_contract_evidence_prune(contract_id)
+/datum/system/contracts/proc/schedule_contract_evidence_prune(contract_id)
 	om_after(src, CONTRACT_EVIDENCE_RETENTION, PROC_REF(prune_contract_evidence), contract_id)
 
-/datum/controller/subsystem/contracts/proc/prune_contract_evidence(contract_id)
+/datum/system/contracts/proc/prune_contract_evidence(contract_id)
 	for(var/evidence_id in evidence_by_id.Copy())
 		var/datum/contract_evidence/evidence = evidence_by_id[evidence_id]
 		if(evidence.consumed_by == contract_id || evidence.payload?["contract_id"] == contract_id)

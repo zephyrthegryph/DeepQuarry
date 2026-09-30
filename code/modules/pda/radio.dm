@@ -20,7 +20,7 @@
 /obj/item/radio/integrated/Initialize(mapload)
 	..()
 	if(istype(loc?.loc, /obj/item/pda))
-		rel_set(src, "hostpda", loc.loc)
+		rel_set(src, nameof(hostpda), loc.loc)
 	return INITIALIZE_HINT_LATELOAD
 
 /obj/item/radio/integrated/LateInitialize()
@@ -35,7 +35,7 @@
 		return
 
 	var/datum/signal/signal = new()
-	rel_set(signal, "source", src)
+	rel_set(signal, nameof(signal.source), src)
 	signal.transmission_method = TRANSMISSION_RADIO
 	signal.data[key] = value
 	if(key2)
@@ -48,7 +48,7 @@
 
 /obj/item/radio/integrated/receive_signal(datum/signal/signal)
 	if(bot_type && isbot(signal.source()) && signal.data["type"] == bot_type)
-		rel_add(src, "botlist", signal.source())
+		rel_add(src, nameof(botlist), signal.source())
 
 		if(active() == signal.source())
 			var/list/b = signal.data
@@ -74,7 +74,7 @@
 /obj/item/radio/integrated/signal/set_frequency(new_frequency)
 	GLOB.radio_service.remove_object(src, frequency)
 	frequency = new_frequency
-	rel_set(src, "radio_connection", GLOB.radio_service.add_object(src, frequency))
+	rel_set(src, nameof(radio_connection), GLOB.radio_service.add_object(src, frequency))
 
 /obj/item/radio/integrated/signal/proc/send_signal(message="ACTIVATE")
 	if(!COOLDOWN_FINISHED(src, transmission_cooldown))
@@ -86,7 +86,7 @@
 	GLOB.lastsignalers.Add("[time] <B>:</B> [usr.key] used [src] @ location ([T.x],[T.y],[T.z]) <B>:</B> [format_frequency(frequency)]/[code]")
 
 	var/datum/signal/signal = new
-	rel_set(signal, "source", src)
+	rel_set(signal, nameof(signal.source), src)
 	signal.encryption = code
 	signal.data["message"] = message
 

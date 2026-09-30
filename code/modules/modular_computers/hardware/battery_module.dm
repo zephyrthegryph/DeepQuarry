@@ -62,9 +62,9 @@
 
 /obj/item/computer_hardware/battery_module/Initialize(mapload, cell_type)
 	if(ispath(cell_type))
-		own_set(src, "battery", new cell_type(src))
+		own_set(src, nameof(battery), new cell_type(src))
 	else
-		own_set(src, "battery", new/obj/item/cell(src))
+		own_set(src, nameof(battery), new/obj/item/cell(src))
 	battery.maxcharge = battery_rating
 	battery.charge = 0
 	. = ..()

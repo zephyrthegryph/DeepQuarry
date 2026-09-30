@@ -12,7 +12,7 @@
 		if(istype(src, /obj/item/pda))
 			var/obj/item/pda/P = src
 			if(P.id)
-				own_take(P, "id")
+				own_take(P, nameof(P.id))
 
 		for(var/mob/living/voice/V in possessed_voice) // Delete voices.
 			V.ghostize(0) // Prevent Reenter Corpse sending observers to the shadow realm
@@ -82,7 +82,7 @@
 		if(istype(src, /obj/item/pda))
 			var/obj/item/pda/P = src
 			if(P.id)
-				own_take(P, "id")
+				own_take(P, nameof(P.id))
 		for(var/mob/living/M in contents)//Drop mobs from objects(shoes) before deletion
 			if(item_storage)
 				M.forceMove(item_storage)
@@ -194,7 +194,7 @@
 	for(var/mob/living/M in contents)
 		if(item_storage)
 			M.forceMove(item_storage)
-	rel_clear(src, "held_mob")
+	rel_clear(src, nameof(held_mob))
 
 	. = ..()
 

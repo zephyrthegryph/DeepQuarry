@@ -55,7 +55,7 @@ DECLARE_INTERACTIONS(/obj/dq_req_probe, \
 	TEST_ASSERT_NULL(dq_req_reason("has_parts", list(REQ_FIELD("parts")), H, probe), "a filled list passes")
 
 	var/obj/item/tool/wrench/wrench = allocate(/obj/item/tool/wrench, probe)
-	rel_set(probe, "fitted", wrench)
+	rel_set(probe, nameof(probe.fitted), wrench)
 	TEST_ASSERT_EQUAL(dq_req_reason("no_fitted", list(REQ_FIELD_NOT("fitted")), H, probe), "it already has \a [wrench]", "an atom in the way is named")
 
 	TEST_ASSERT_NULL(dq_req_reason("mode_one", list(REQ_FIELD_EQ("mode", 1)), H, probe), "REQ_FIELD_EQ passes on the value")

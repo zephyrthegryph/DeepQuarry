@@ -117,9 +117,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/flamethrower, TYPE_PROC_REF(/atom, appearance_
 		var/obj/item/assembly/igniter/I = W
 		if(I.secured)	return INTERACTION_HANDLED_PASS
 		if(igniter)		return INTERACTION_HANDLED_PASS
-		user.drop_item()
-		I.forceMove(src)
-		own_set(src, "igniter", I)
+		if(!own_set(src, nameof(src.igniter), I, user = user))
+			return INTERACTION_HANDLED_PASS
 		update_icon()
 		return INTERACTION_HANDLED_PASS
 
@@ -127,9 +126,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/flamethrower, TYPE_PROC_REF(/atom, appearance_
 		if(ptank)
 			to_chat(user, span_notice("There appears to already be a phoron tank loaded in [src]!"))
 			return INTERACTION_HANDLED_PASS
-		user.drop_item()
-		own_set(src, "ptank", W)
-		W.forceMove(src)
+		if(!own_set(src, nameof(src.ptank), W, user = user))
+			return INTERACTION_HANDLED_PASS
 		update_icon()
 		return INTERACTION_HANDLED_PASS
 
@@ -141,13 +139,13 @@ DECLARE_APPEARANCE_PROC(/obj/item/flamethrower, TYPE_PROC_REF(/atom, appearance_
 	var/turf/T = get_turf(src)
 	if(weldtool)
 		weldtool.forceMove(T)
-		own_take(src, "weldtool")
+		own_take(src, nameof(weldtool))
 	if(igniter)
 		igniter.forceMove(T)
-		own_take(src, "igniter")
+		own_take(src, nameof(igniter))
 	if(ptank)
 		ptank.forceMove(T)
-		own_take(src, "ptank")
+		own_take(src, nameof(ptank))
 	new /obj/item/stack/rods(T)
 	qdel(src)
 	return ITEM_INTERACT_SUCCESS
@@ -216,7 +214,7 @@ UI_ACT_PROC(/obj/item/flamethrower, ui_act_remove)
 	if(!ptank)
 		return FALSE
 	usr.put_in_hands(ptank)
-	own_take(src, "ptank")
+	own_take(src, nameof(/obj/item/flamethrower::ptank))
 	set_lit(0)
 	update_icon()
 	return TRUE

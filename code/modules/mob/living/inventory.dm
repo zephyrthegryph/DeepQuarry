@@ -188,20 +188,20 @@
 		return FALSE
 
 	if(!inventory_panel)
-		own_set(src, "inventory_panel", new inventory_panel_type(src))
+		own_set(src, nameof(inventory_panel), new inventory_panel_type(src))
 	inventory_panel.tgui_interact(user, custom_state = state)
 
 	return TRUE
 
 /datum/inventory_panel
 	var/mob/living/host
-	var/tgui_id = "InventoryPanel"
+	tgui_id = "InventoryPanel"
 
 /datum/inventory_panel/New(mob/living/new_host)
 	if(!istype(new_host))
 		qdel(src)
 		return
-	rel_set(src, "host", new_host)
+	rel_set(src, nameof(host), new_host)
 	. = ..()
 
 /datum/inventory_panel/tgui_host(mob/user)
@@ -356,4 +356,6 @@ UI_DATA_REPLACE(/datum/inventory_panel/human, "merge:ui_data_datum_inventory_pan
 
 	return data
 
-REL(/mob/living, internal) // the equipped (or pump-supplied) tank we breathe from; the slot owns it
+/mob/living/relations()
+	. = ..()
+	. += rel_one(nameof(internal)) // the equipped (or pump-supplied) tank we breathe from; the slot owns it

@@ -2,8 +2,12 @@ SUBSYSTEM_DEF(atoms)
 	name = "Atoms"
 	dependencies = list(
 		/datum/controller/subsystem/garbage,
-		/datum/controller/subsystem/mapping,
-		/datum/controller/subsystem/job
+		/datum/system/mapping,
+		/datum/system/job,
+		// Mapload resleeving machines register with the transcore databases (was a SStranscore dependency).
+		/datum/world_service/transcore,
+		// Planets register their floors and walls as turfs initialize (fold wave F4; was SSplanets).
+		/datum/world_service/planets,
 	)
 	flags = SS_NO_FIRE
 
@@ -45,17 +49,13 @@ SUBSYSTEM_DEF(atoms)
 
 /datum/controller/subsystem/atoms/Initialize()
 	EXPIRY_STAMP(src, init_start_time, CLOCK_WORLD)
-	// Mapload resleeving machines register with the transcore databases (was a SStranscore dependency).
-	boot_world_service(GLOB.transcore_service)
-	// Planets register their floors and walls as turfs initialize (fold wave F4; was SSplanets).
-	boot_world_service(GLOB.planet_service)
 
 	atom_initialized = INITIALIZATION_INNEW_MAPLOAD
 	InitializeAtoms()
 	atom_initialized = INITIALIZATION_INNEW_REGULAR
 
-	// Services that set up on the initialized map declare boot_after = SSatoms (pai, xenoarch,
-	// events, night shift, antagonists, radio, crew transfer); the MC boots them next.
+	// Services that set up on the initialized map declare needs = list(/datum/controller/subsystem/atoms) (pai, xenoarch,
+	// events, night shift, antagonists, radio, crew transfer); the boot DAG boots them next.
 	validate_property_registry()
 	// Map load and the initial materialize batch are done: validate the ownership table of every
 	// mapped and registered type now, not on first use (doc/rewrite/ownership.md sec 8).
@@ -133,7 +133,7 @@ SUBSYSTEM_DEF(atoms)
 	testing("[length(queued_deletions)] atoms were queued for deletion.")
 	for (var/atom/queued as anything in queued_deletions?.Copy())
 		qdel(queued)
-	rel_clear(src, "queued_deletions")
+	rel_clear(src, nameof(queued_deletions))
 
 	#ifdef PROFILE_MAPLOAD_INIT_ATOM
 	rustg_file_write(json_encode(mapload_init_times), "[GLOB.log_directory]/init_times.json")
@@ -260,14 +260,16 @@ SUBSYSTEM_DEF(atoms)
 		// Atoms SS has already completed, just kill it now.
 		qdel(target)
 	else
-		rel_add(src, "queued_deletions", target)
+		rel_add(src, nameof(queued_deletions), target)
 
 /datum/controller/subsystem/atoms/Shutdown()
 	var/initlog = InitLog()
 	if(initlog)
 		text2file(initlog, "[GLOB.log_directory]-initialize.log")
 
-REL_LIST(/datum/controller/subsystem/atoms, queued_deletions)
+/datum/controller/subsystem/atoms/relations()
+	. = ..()
+	. += rel_many(nameof(queued_deletions))
 
 /// Atoms to delete once init finishes: a relation list view (a member deleted early leaves it).
 /datum/controller/subsystem/atoms/var/list/atom/queued_deletions

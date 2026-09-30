@@ -53,7 +53,6 @@
 	var/interval = 0
 	EXPIRY_DECLARE(time_end)
 	/// om_after() timer that ends the emission at time_end, or 0.
-	var/tmp/emission_timer = 0
 	EXPIRY_DECLARE(last_activation)
 	EXPIRY_DECLARE(last_process)
 	var/tmp/obj/item/anobattery/inserted_battery
@@ -62,7 +61,7 @@
 	var/tmp/mob/last_user_touched
 
 /obj/item/anodevice/equipped(mob/user, slot)
-	rel_set(src, "last_user_touched", user)
+	rel_set(src, nameof(last_user_touched), user)
 	..()
 
 OM_FIELD(/obj/item/anodevice, activated, FALSE, CHANGE_EXPLICIT)
@@ -81,7 +80,7 @@ DECLARE_INTERACTIONS(/obj/item/anodevice, \
 			to_chat(user, span_blue("You insert the battery."))
 			user.drop_item()
 			I.forceMove(src)
-			rel_set(src, "inserted_battery", I)
+			rel_set(src, nameof(inserted_battery), I)
 			UpdateSprite()
 	else
 		return FALSE
@@ -156,7 +155,7 @@ UI_ACT(/obj/item/anodevice, "ejectbattery", ui_act_ejectbattery)
 UI_ACT_PROC(/obj/item/anodevice, ui_act_ejectbattery)
 	if(inserted_battery())
 		inserted_battery().forceMove(get_turf(src))
-		rel_clear(src, "inserted_battery")
+		rel_clear(src, nameof(/obj/item/anodevice::inserted_battery))
 		UpdateSprite()
 	shutdown_emission()
 	return TRUE
@@ -172,7 +171,7 @@ UI_ACT_PROC(/obj/item/anodevice, ui_act_ejectbattery)
 			//update the effect loc
 			var/turf/T = get_turf(src)
 			if(T != archived_loc())
-				rel_set(src, "archived_loc", T)
+				rel_set(src, nameof(archived_loc), T)
 				inserted_battery().battery_effect.UpdateMove()
 
 			//if someone is holding the device, do the effect on them
@@ -225,22 +224,17 @@ UI_ACT_PROC(/obj/item/anodevice, ui_act_ejectbattery)
 /// (Re)starts the emission's run: it ends `duration` from now (emission_timer_fired()).
 /obj/item/anodevice/proc/arm_emission_timer()
 	EXPIRY_SET(src, time_end, duration, CLOCK_WORLD)
-	if(emission_timer)
-		om_cancel_timer(src, emission_timer)
-	emission_timer = om_after(src, duration + 1, PROC_REF(emission_timer_fired))
+	rx_after(src, duration + 1, PROC_REF(emission_timer_fired), key = "emission") // replaces a pending one
 
-/// om_after() callback: the set duration has run out.
+/// The keyed timer: the set duration has run out.
 /obj/item/anodevice/proc/emission_timer_fired()
-	emission_timer = 0
 	if(!activated)
 		return
 	src.loc.visible_message(span_blue("[icon2html(src,viewers(src))] [src] chimes."), span_blue("[icon2html(src,viewers(src))] You hear something chime."))
 	shutdown_emission()
 
 /obj/item/anodevice/proc/shutdown_emission()
-	if(emission_timer)
-		om_cancel_timer(src, emission_timer)
-		emission_timer = 0
+	cancel_after(src, "emission")
 	if(activated)
 		set_activated(0)
 		if(inserted_battery()?.battery_effect?.activated)

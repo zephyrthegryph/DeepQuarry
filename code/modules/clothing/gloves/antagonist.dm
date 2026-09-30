@@ -57,11 +57,11 @@
 		slot = SLOT_ID_POCKET_R
 	else
 		return
-	rel_set(src, "theirs", victim.get_equipped_item(slot_id))
+	rel_set(src, nameof(theirs), victim.get_equipped_item(slot_id))
 	if(istype(theirs))
 		wait(1 SECOND, PROC_REF(take))
 	else
-		rel_clear(src, "theirs")
+		rel_clear(src, nameof(theirs))
 		give()
 
 /datum/om/flow/pickpocket/proc/open_storage()
@@ -75,16 +75,16 @@
 	if(victim.get_equipped_item(slot_id) != theirs)
 		return
 	victim.drop_from_inventory(theirs)
-	rel_set(src, "took", theirs)
-	rel_clear(src, "theirs")
+	rel_set(src, nameof(took), theirs)
+	rel_clear(src, nameof(theirs))
 	give()
 
 /// Slipping your own pocket item into theirs: a second of holding still.
 /datum/om/flow/pickpocket/proc/give()
 	var/mob/living/carbon/human/user = actor
-	rel_set(src, "mine", user.get_equipped_item(slot_id))
+	rel_set(src, nameof(mine), user.get_equipped_item(slot_id))
 	if(!istype(mine))
-		rel_clear(src, "mine")
+		rel_clear(src, nameof(mine))
 		swapped(FALSE)
 		return
 	giving = TRUE

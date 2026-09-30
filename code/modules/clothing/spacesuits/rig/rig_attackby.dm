@@ -1,9 +1,7 @@
 /obj/item/rig/proc/install_module_done(mob/living/user, obj/item/rig_module/mod)
-	if(!user.unEquip(mod))
-		return
 	to_chat(user, "You install \the [mod] into \the [src].")
-	mod.forceMove(src)
-	own_add(src, "installed_modules", mod)
+	if(!own_add(src, nameof(src.installed_modules), mod, user = user))
+		return
 	mod.installed(src)
 	update_icon()
 
@@ -66,11 +64,9 @@ EXTEND_INTERACTIONS(/obj/item/rig, \
 				to_chat(user, "\The [src] already has a tank installed.")
 				return INTERACTION_HANDLED_PASS
 
-			if(!user.unEquip(W))
-				return INTERACTION_HANDLED_PASS
 
-			own_set(src, "air_supply", W)
-			W.forceMove(src)
+			if(!own_set(src, nameof(src.air_supply), W, user = user))
+				return INTERACTION_HANDLED_PASS
 			to_chat(user, "You slot [W] into [src] and tighten the connecting valve.")
 			return INTERACTION_HANDLED_PASS
 
@@ -95,11 +91,9 @@ EXTEND_INTERACTIONS(/obj/item/rig, \
 
 		else if(!cell && istype(W,/obj/item/cell))
 
-			if(!user.unEquip(W))
-				return INTERACTION_HANDLED_PASS
 			to_chat(user, "You jack \the [W] into \the [src]'s battery mount.")
-			W.forceMove(src)
-			own_set(src, "cell", W)
+			if(!own_set(src, nameof(src.cell), W, user = user))
+				return INTERACTION_HANDLED_PASS
 			return INTERACTION_HANDLED_PASS
 
 		return INTERACTION_HANDLED_PASS
@@ -140,7 +134,7 @@ EXTEND_INTERACTIONS(/obj/item/rig, \
 		return ITEM_INTERACT_BLOCKING
 	var/obj/item/tank/removed_tank = air_supply
 	user.put_in_hands(removed_tank)
-	own_take(src, "air_supply")
+	own_take(src, nameof(air_supply))
 	to_chat(user, "You detach and remove \the [removed_tank].")
 	return ITEM_INTERACT_SUCCESS
 
@@ -167,7 +161,7 @@ EXTEND_INTERACTIONS(/obj/item/rig, \
 		for(var/obj/item/rig_module/module in installed_modules)
 			module.deactivate()
 		user.put_in_hands(cell)
-		own_take(src, "cell")
+		own_take(src, nameof(cell))
 		return ITEM_INTERACT_SUCCESS
 	var/list/possible_removals = list()
 	for(var/obj/item/rig_module/module in installed_modules)
@@ -183,7 +177,7 @@ EXTEND_INTERACTIONS(/obj/item/rig, \
 	if(!removed)
 		return ITEM_INTERACT_BLOCKING
 	to_chat(user, "You detach \the [removed] from \the [src].")
-	own_take_member(src, "installed_modules", removed)
+	own_take_member(src, nameof(installed_modules), removed)
 	removed.forceMove(get_turf(src))
 	removed.removed()
 	update_icon()

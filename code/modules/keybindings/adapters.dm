@@ -148,6 +148,8 @@ TYPE_TABLE_DECLARE(/datum/input_adapter, adapter_click_table, TYPE_TABLE_GET(GLO
 		return // should stop you from dragging through windows
 	if(user.is_incorporeal())
 		return
+	if(try_gesture_drag(user, dragged, over))
+		return
 	INVOKE_ASYNC(over, TYPE_PROC_REF(/atom, MouseDrop_T), dragged, user, src_location, over_location, src_control, over_control, params) // ALLOW(scheduler): MouseDrop_T overrides may prompt/do_after
 
 /// A category key: the best interaction of that category on the target.
@@ -235,7 +237,7 @@ TYPE_TABLE_DECLARE(/datum/input_adapter, adapter_click_table, TYPE_TABLE_GET(GLO
 			var/resolved = W.resolve_attackby(A, user, click_parameters = params)
 			// A consumed result means resolve_attackby did something; skip afterattack.
 			if(!ITEM_INTERACT_CONSUMED(resolved) && A && W)
-				W.afterattack(A, user, 1, params, user.input_stance()) // 1 indicates adjacency
+				W.after_click(A, user, 1, params, user.input_stance()) // 1 indicates adjacency
 		else
 			if(ismob(A)) // No instant mob attacking
 				user.setClickCooldown(user.get_attack_speed())
@@ -248,7 +250,7 @@ TYPE_TABLE_DECLARE(/datum/input_adapter, adapter_click_table, TYPE_TABLE_GET(GLO
 		if(W)
 			var/resolved = W.resolve_attackby(A, user)
 			if(!ITEM_INTERACT_CONSUMED(resolved) && A && W)
-				W.afterattack(A, user, 1, params, user.input_stance()) // 1: clicking something Adjacent
+				W.after_click(A, user, 1, params, user.input_stance()) // 1: clicking something Adjacent
 		else
 			if(ismob(A)) // No instant mob attacking
 				user.setClickCooldown(user.get_attack_speed())
@@ -274,7 +276,7 @@ TYPE_TABLE_DECLARE(/datum/input_adapter, adapter_click_table, TYPE_TABLE_GET(GLO
 					// Return 1 in attackby() to prevent afterattack() effects (when safely moving items for example)
 					var/resolved = W.resolve_attackby(A, user, click_parameters = params)
 					if(!ITEM_INTERACT_CONSUMED(resolved) && A && W)
-						W.afterattack(A, user, 1, params, user.input_stance()) // 1: clicking something Adjacent
+						W.after_click(A, user, 1, params, user.input_stance()) // 1: clicking something Adjacent
 				else
 					if(ismob(A)) // No instant mob attacking
 						user.setClickCooldown(user.get_attack_speed())
@@ -283,7 +285,7 @@ TYPE_TABLE_DECLARE(/datum/input_adapter, adapter_click_table, TYPE_TABLE_GET(GLO
 				return
 			else // non-adjacent click
 				if(W)
-					W.afterattack(A, user, 0, params, user.input_stance()) // 0: not Adjacent
+					W.after_click(A, user, 0, params, user.input_stance()) // 0: not Adjacent
 				else
 					user.RangedAttack(A, params, user.input_stance())
 
@@ -339,7 +341,7 @@ TYPE_TABLE_DECLARE(/datum/input_adapter, adapter_click_table, TYPE_TABLE_GET(GLO
 		return TRUE
 	var/obj/item/tk_grab/grab = new(O)
 	user.put_in_active_hand(grab)
-	rel_set(grab, "host", user)
+	rel_set(grab, nameof(grab.host), user)
 	grab.focus_object(O)
 	return TRUE
 
@@ -512,7 +514,7 @@ TYPE_TABLE(/datum/input_adapter/ai, adapter_click_table, list( \
 		// No adjacency checks
 		var/resolved = W.resolve_attackby(A, user, click_parameters = params)
 		if(!ITEM_INTERACT_CONSUMED(resolved) && A && W)
-			W.afterattack(A, user, 1, params, user.input_stance())
+			W.after_click(A, user, 1, params, user.input_stance())
 		return
 
 	if(!isturf(user.loc))
@@ -524,10 +526,10 @@ TYPE_TABLE(/datum/input_adapter/ai, adapter_click_table, list( \
 			OM_EMIT(user, /datum/om/event/before/robot_item_attack, W, user, params) // we ATTEMPTED to attack someone.
 			var/resolved = W.resolve_attackby(A, user, click_parameters = params)
 			if(!ITEM_INTERACT_CONSUMED(resolved) && A && W)
-				W.afterattack(A, user, 1, params, user.input_stance())
+				W.after_click(A, user, 1, params, user.input_stance())
 			return
 		else
-			W.afterattack(A, user, 0, params, user.input_stance())
+			W.after_click(A, user, 0, params, user.input_stance())
 			return
 
 /**

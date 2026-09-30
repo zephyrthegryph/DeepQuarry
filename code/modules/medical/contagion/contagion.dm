@@ -141,7 +141,7 @@ REGISTRY_MEMBERSHIP(/datum/affliction/contagion, REGISTRY_ACTIVE_DISEASES)
 
 /datum/affliction/contagion/on_added()
 	..()
-	rel_set(src, "host", owner)
+	rel_set(src, nameof(host), owner)
 	// Starts its DECLARE_PERIODIC_WHILE (a non-atom has no materialize) once it has a host, and
 	// again on each body it is handed on to (starting re-evaluates; it doesn't stack).
 	lifecycle_decls_init(src)
@@ -154,7 +154,7 @@ REGISTRY_MEMBERSHIP(/datum/affliction/contagion, REGISTRY_ACTIVE_DISEASES)
 		End()
 	..()
 	registry_leave(REGISTRY_ACTIVE_DISEASES, src)
-	rel_clear(src, "host")
+	rel_clear(src, nameof(host))
 
 /datum/affliction/contagion/proc/try_infect(mob/living/infectee, make_copy = TRUE)
 	return infect(infectee, make_copy)

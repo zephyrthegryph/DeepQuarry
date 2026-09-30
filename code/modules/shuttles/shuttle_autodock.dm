@@ -42,7 +42,7 @@
 
 	//Optional transition area
 	if(landmark_transition_tag)
-		rel_set(src, "landmark_transition", SSshuttles.get_landmark(landmark_transition_tag))
+		rel_set(src, nameof(landmark_transition), SSshuttles.get_landmark(landmark_transition_tag))
 
 // Its docking controllers are relation views (cleared by the framework); the qdeleting hook goes
 // with the OM teardown.
@@ -72,19 +72,19 @@
 		return
 	if(shuttle_docking_controller)
 		om_unhook(shuttle_docking_controller, /datum/om/event/qdeleting, src)
-	rel_set(src, "shuttle_docking_controller", controller)
+	rel_set(src, nameof(shuttle_docking_controller), controller)
 	if(shuttle_docking_controller)
 		om_hook(shuttle_docking_controller, /datum/om/event/qdeleting, src, PROC_REF(docking_controller_deleted))
 
 /// The active controller is a relation view: it reads null once the controller is deleted, so it
 /// needs no qdeleting hook.
 /datum/shuttle/autodock/proc/set_active_docking_controller(datum/embedded_program/docking/controller)
-	rel_set(src, "active_docking_controller", controller)
+	rel_set(src, nameof(active_docking_controller), controller)
 
 /datum/shuttle/autodock/proc/docking_controller_deleted(datum/source, datum/om/event/qdeleting/event)
 	EVENT_HANDLER
 	if(shuttle_docking_controller == source)
-		rel_clear(src, "shuttle_docking_controller")
+		rel_clear(src, nameof(shuttle_docking_controller))
 /*
 	Docking stuff
 */
@@ -155,8 +155,8 @@
 	update_docking_target(next_location())
 	dock()
 
-	rel_clear(src, "next_location")
-	rel_clear(src, "in_use")	//release lock
+	rel_clear(src, nameof(next_location))
+	rel_clear(src, nameof(in_use))	//release lock
 
 /datum/shuttle/autodock/proc/get_travel_time()
 	return move_time
@@ -164,7 +164,7 @@
 /datum/shuttle/autodock/proc/process_launch()
 	if(!next_location() || !next_location().is_valid(src) || current_location().cannot_depart(src))
 		set_process_state(IDLE_STATE)
-		rel_clear(src, "in_use")
+		rel_clear(src, nameof(in_use))
 		return
 	if (get_travel_time() && landmark_transition())
 		. = long_jump(next_location(), landmark_transition(), get_travel_time())
@@ -191,7 +191,7 @@
 /datum/shuttle/autodock/proc/launch(user)
 	if (!can_launch()) return
 
-	rel_set(src, "in_use", user)	//obtain an exclusive lock on the shuttle
+	rel_set(src, nameof(in_use), user)	//obtain an exclusive lock on the shuttle
 
 	set_process_state(WAIT_LAUNCH)
 	undock()
@@ -200,7 +200,7 @@
 /datum/shuttle/autodock/proc/force_launch(user)
 	if (!can_force()) return
 
-	rel_set(src, "in_use", user)	//obtain an exclusive lock on the shuttle
+	rel_set(src, nameof(in_use), user)	//obtain an exclusive lock on the shuttle
 
 	set_process_state(FORCE_LAUNCH)
 
@@ -210,7 +210,7 @@
 
 	moving_status = SHUTTLE_IDLE
 	set_process_state(WAIT_FINISH)
-	rel_clear(src, "in_use")
+	rel_clear(src, nameof(in_use))
 
 	//whatever we were doing with docking: stop it, then redock
 	force_undock()

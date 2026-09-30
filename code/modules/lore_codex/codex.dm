@@ -13,7 +13,7 @@
 
 /obj/item/book/codex/Initialize(mapload)
 	// the tree is shared by every codex of this root type (the codex_trees shared cache holds it): we only view it
-	rel_set(src, "tree", CACHED_KEY(codex_trees, root_type, src, root_type))
+	rel_set(src, nameof(tree), CACHED_KEY(codex_trees, root_type, src, root_type))
 	. = ..()
 
 /// One codex_tree per root type, shared by every codex of that type for the round (never invalidated,
@@ -28,7 +28,7 @@ EXTEND_INTERACTIONS(/obj/item/book/codex, INTERACT_USE("Read", PROC_REF(interact
 /// Old attack_self.
 /obj/item/book/codex/proc/interaction_read_codex(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!tree)
-		rel_set(src, "tree", CACHED_KEY(codex_trees, root_type, src, root_type))
+		rel_set(src, nameof(tree), CACHED_KEY(codex_trees, root_type, src, root_type))
 	icon_state = "[initial(icon_state)]-open"
 	tree.display(user)
 

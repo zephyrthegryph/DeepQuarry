@@ -107,7 +107,7 @@
 	for(var/i = 1 to number_of_blobs)
 		var/turf/T = DEFAULTPICK(open_turfs, null)
 		var/obj/structure/blob/core/new_blob = new spawn_blob_type(T)
-		rel_add(src, "blobs", new_blob)
+		rel_add(src, nameof(blobs), new_blob)
 		LAZYREMOVE(open_turfs, T) // So we can't put two cores on the same tile if doing multiblob.
 		log_game("Spawned [new_blob.overmind.blob_type.name] blob at [get_area(new_blob)].")
 
@@ -118,7 +118,7 @@
 /datum/event2/event/blob/end()
 	for(var/obj/structure/blob/core/B as anything in blobs?.Copy())
 		qdel(B)
-	rel_clear(src, "blobs")
+	rel_clear(src, nameof(blobs))
 
 /datum/event2/event/blob/announce()
 	if(!ended) // Don't announce if the blobs die early.
@@ -153,4 +153,6 @@
 
 		GLOB.command_announcement.Announce(lines.Join("\n"), "Hazardous Biomass - URGENT!", new_sound = ANNOUNCER_MSG_BIOHAZARD_FIVE)
 
-REL_LIST(/datum/event2/event/blob, blobs)
+/datum/event2/event/blob/relations()
+	. = ..()
+	. += rel_many(nameof(blobs))

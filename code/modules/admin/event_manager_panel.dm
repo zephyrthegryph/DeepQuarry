@@ -13,7 +13,7 @@
 // the event service forgets its manager panel.
 /datum/event_manager_panel/lifecycle_dematerialize()
 	if(GLOB.event_service?.tgui_event_manager_panel == src)
-		rel_clear(GLOB.event_service, "tgui_event_manager_panel")
+		rel_clear(GLOB.event_service, nameof(/datum/world_service/events::tgui_event_manager_panel))
 	..()
 
 DECLARE_UI_STATE(/datum/event_manager_panel, ADMIN_STATE(R_ADMIN|R_EVENT))
@@ -196,7 +196,7 @@ UI_ACT_PROC(/datum/event_manager_panel, ui_act_clear_event)
 		return
 	if(EC.next_event())
 		log_and_message_admins("has dequeued the [GLOB.severity_to_string[EC.severity]] event '[EC.next_event().name]'.", user)
-		rel_clear(EC, "next_event")
+		rel_clear(EC, nameof(/datum/event_container::next_event))
 	return TRUE
 
 UI_ACT(/datum/event_manager_panel, "view_events", ui_act_view_events, UI_ARG_REF("ref", "proc:event_containers", /datum/event_container))
@@ -205,13 +205,13 @@ UI_ACT_PROC(/datum/event_manager_panel, ui_act_view_events)
 	var/datum/event_container/EC = params["ref"]
 	if(!EC)
 		return
-	rel_set(service, "selected_event_container", EC)
+	rel_set(service, nameof(/datum/world_service/events::selected_event_container), EC)
 	return TRUE
 
 UI_ACT(/datum/event_manager_panel, "back", ui_act_back)
 UI_ACT_PROC(/datum/event_manager_panel, ui_act_back)
 	var/datum/world_service/events/service = GLOB.event_service
-	rel_clear(service, "selected_event_container")
+	rel_clear(service, nameof(/datum/world_service/events::selected_event_container))
 	return TRUE
 
 UI_ACT(/datum/event_manager_panel, "stop_event", ui_act_stop_event, UI_ARG_REF("ref", "proc:active_events", /datum/event))
@@ -295,7 +295,7 @@ UI_ACT_PROC(/datum/event_manager_panel, ui_act_remove_event)
 	var/answer = act_ask(user, action, params, ui, "remove", /datum/om/prompt/choice/alert, message = "This will remove the event from rotation. Continue?", title = "Removing Event!", choices = list("Yes","No"))
 	if(answer != "Yes")
 		return
-	rel_remove(EC, "available_events", EM)
+	rel_remove(EC, nameof(/datum/event_container::available_events), EM)
 	log_and_message_admins("has removed the [GLOB.severity_to_string[EM.severity]] event '[EM.name]'.", user)
 	return TRUE
 
@@ -311,10 +311,10 @@ UI_ACT_PROC(/datum/event_manager_panel, ui_act_add_event)
 		return
 	NE.severity = EC.severity
 	// The container adopts the drafted meta; the service starts a fresh draft below.
-	own_transfer(service, "new_event", EC, "event_pool")
-	rel_add(EC, "available_events", NE)
+	own_transfer(service, nameof(/datum/world_service/events::new_event), EC, nameof(/datum/event_container::event_pool))
+	rel_add(EC, nameof(/datum/event_container::available_events), NE)
 	log_and_message_admins("has added \a [GLOB.severity_to_string[NE.severity]] event '[NE.name]' of type [NE.event_type] with weight [NE.weight].", user)
-	own_set(service, "new_event", new /datum/event_meta)
+	own_set(service, nameof(/datum/world_service/events::new_event), new /datum/event_meta)
 	return TRUE
 
 /datum/world_service/events

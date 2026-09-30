@@ -53,7 +53,7 @@
 	var/obj/item/card/id/head_id = new(console)
 	head_id.rank = JOB_CHIEF_ENGINEER
 	head_id.assignment = JOB_CHIEF_ENGINEER
-	own_set(console, "scan", head_id)
+	own_set(console, nameof(console.scan), head_id)
 	TEST_ASSERT(console.can_view_department(DEPARTMENT_ENGINEERING), "Chief Engineer could not view Engineering finances")
 	TEST_ASSERT(!console.can_view_department(DEPARTMENT_MEDICAL), "Chief Engineer could view Medical finances")
 	TEST_ASSERT(!console.can_allocate_station_budget(), "Chief Engineer could allocate Station funds")
@@ -118,7 +118,7 @@
 	var/datum/mind/employee_mind = new("budget_plan_employee")
 	var/datum/money_account/employee_account = new
 	employee_account.account_number = 812345
-	rel_set(employee_mind, "initial_account", employee_account)
+	rel_set(employee_mind, nameof(employee_mind.initial_account), employee_account)
 	employee_mind.transfer_to(employee)
 	registry_join(REGISTRY_PLAYERS, employee)
 	GLOB.supply_service.allocation_policy = "equal"
@@ -172,7 +172,7 @@
 		var/datum/money_account/account = new
 		account.owner_name = "Employee [index]"
 		account.account_number = 810000 + index
-		rel_set(employee_mind, "initial_account", account)
+		rel_set(employee_mind, nameof(employee_mind.initial_account), account)
 		employee_mind.transfer_to(employee)
 		registry_join(REGISTRY_PLAYERS, employee)
 		employees += employee
@@ -239,7 +239,7 @@
 	var/obj/machinery/account_database/terminal = new(test_turf)
 	var/obj/item/card/id/authorizer = new(terminal)
 	authorizer.registered_name = "Account Test Captain"
-	own_set(terminal, "held_card", authorizer)
+	own_set(terminal, nameof(terminal.held_card), authorizer)
 	var/list/preexisting_packages = list()
 	for(var/obj/item/smallDelivery/existing_package in turf_contents_of_type(test_turf, /obj/item/smallDelivery))
 		preexisting_packages += existing_package
@@ -304,7 +304,7 @@
 	account.account_number = 812345
 	account.money = GLOB.supply_service.pack_price(pack) + 10
 	registry_join(REGISTRY_MONEY_ACCOUNTS, account)
-	rel_set(requester_mind, "initial_account", account)
+	rel_set(requester_mind, nameof(requester_mind.initial_account), account)
 	requester_mind.transfer_to(requester)
 	var/starting_balance = account.money
 	var/datum/supply_order/order = GLOB.supply_service.create_order(pack, requester, "Personal test order", TRUE)
@@ -314,10 +314,10 @@
 	TEST_ASSERT(GLOB.supply_service.cancel_personal_order(order, account, requester), "owner could not cancel a pending personal order")
 	TEST_ASSERT_EQUAL(account.money, starting_balance, "personal order refund did not restore the purchaser")
 	TEST_ASSERT_EQUAL(order.status, SUP_ORDER_DENIED, "cancelled personal order did not enter denied state")
-	own_take_member(GLOB.supply_service, "order_history", order)
+	own_take_member(GLOB.supply_service, nameof(/datum/world_service/supply::order_history), order)
 	for(var/datum/supply_order/admin_order in GLOB.supply_service.adm_order_history)
 		if(admin_order.ordernum == order.ordernum)
-			own_take_member(GLOB.supply_service, "adm_order_history", admin_order)
+			own_take_member(GLOB.supply_service, nameof(/datum/world_service/supply::adm_order_history), admin_order)
 			qdel(admin_order)
 			break
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, account)
@@ -376,7 +376,7 @@
 	GLOB.supply_service.service_invoice_counter = invoice_counter_before
 	GLOB.supply_service.currency_refunded = refunds_before
 	GLOB.supply_service.currency_internal_refunded = internal_refunds_before
-	own_take_member(GLOB.supply_service, "service_invoices", invoice)
+	own_take_member(GLOB.supply_service, nameof(/datum/world_service/supply::service_invoices), invoice)
 	service.monthly_income = service_income_before
 	service.monthly_expenses = service_expenses_before
 	service.total_revenue = service_revenue_before
@@ -423,7 +423,7 @@
 	var/obj/item/retail_scanner/civilian/terminal = new(test_turf)
 	var/mob/living/carbon/human/user = new(test_turf)
 	user.job = JOB_ENGINEER
-	rel_set(terminal, "linked_account", service)
+	rel_set(terminal, nameof(terminal.linked_account), service)
 	TEST_ASSERT(!service_checkout_confirmation_valid(terminal, user, 1, 1, 100, 101, customer.account_number, customer.account_number, service, service), "changed ticket amount survived confirmation validation")
 	TEST_ASSERT(!service_checkout_confirmation_valid(terminal, user, 1, 2, 100, 100, customer.account_number, customer.account_number, service, service), "equal-value itemization change survived confirmation validation")
 	TEST_ASSERT(!service_checkout_confirmation_valid(terminal, user, 1, 1, 100, 100, customer.account_number, impostor.account_number, service, service), "changed ID survived confirmation validation")
@@ -452,7 +452,7 @@
 	TEST_ASSERT_EQUAL(staff.money, 0, "refund did not reclaim the staff gratuity")
 	TEST_ASSERT_EQUAL(invoice.state, "Refunded", "refund did not become the invoice's terminal state")
 
-	own_take_member(GLOB.supply_service, "service_invoices", invoice)
+	own_take_member(GLOB.supply_service, nameof(/datum/world_service/supply::service_invoices), invoice)
 	GLOB.supply_service.service_invoice_counter = invoice_counter_before
 	GLOB.supply_service.currency_refunded = refunds_before
 	GLOB.supply_service.currency_internal_refunded = internal_refunds_before
@@ -496,7 +496,7 @@
 	operator.job = JOB_BARTENDER
 	TEST_ASSERT(GLOB.supply_service.refund_service_invoice(invoice, service, "Anonymous refund test", operator), "authorized Service employee could not refund an anonymous sale")
 	TEST_ASSERT_EQUAL(service.money, service_money_before, "authorized anonymous refund did not reverse provider revenue")
-	own_take_member(GLOB.supply_service, "service_invoices", invoice)
+	own_take_member(GLOB.supply_service, nameof(/datum/world_service/supply::service_invoices), invoice)
 	GLOB.supply_service.service_invoice_counter = invoice_counter_before
 	GLOB.supply_service.currency_refunded = refunds_before
 	GLOB.supply_service.currency_internal_refunded = internal_refunds_before
@@ -546,7 +546,7 @@
 	second_provider.department_id = DEPARTMENT_CARGO
 	registry_join(REGISTRY_MONEY_ACCOUNTS, first_provider)
 	registry_join(REGISTRY_MONEY_ACCOUNTS, second_provider)
-	rel_set(scanner, "linked_account", first_provider)
+	rel_set(scanner, nameof(scanner.linked_account), first_provider)
 	scanner.service_staff_account_number = 884003
 	scanner.service_staff_name = "Previous worker"
 	TEST_ASSERT(scanner.ui_act_link_account(null, list("name" = second_provider.account_number, "pin" = second_provider.remote_access_pin)), "scanner rejected a valid provider relink")
@@ -561,7 +561,7 @@
 	TEST_ASSERT_EQUAL(register.transaction_amount, 45, "register total diverged from its itemization")
 	TEST_ASSERT(!register.ui_act_custom_order(null, list("purpose" = "Repair", "amount" = 1, "price" = 20)), "register accepted one item label with conflicting prices")
 	TEST_ASSERT_EQUAL(service_ticket_total(register.item_list, register.price_list), register.transaction_amount, "register itemization and payable total did not reconcile")
-	rel_set(register, "linked_account", first_provider)
+	rel_set(register, nameof(register.linked_account), first_provider)
 	register.service_staff_account_number = 884003
 	register.service_staff_name = "Previous worker"
 	TEST_ASSERT(register.ui_act_link_account(null, list("name" = second_provider.account_number, "pin" = second_provider.remote_access_pin)), "register rejected a valid provider relink")
@@ -597,16 +597,16 @@
 	registry_join(REGISTRY_MONEY_ACCOUNTS, customer_account)
 	var/mob/living/carbon/human/customer = new(test_turf)
 	var/datum/mind/customer_mind = own(new /datum/mind("service_lifecycle")) // the test deletes it: a dropped mind leaves its owned identity stamped with a dead owner
-	rel_set(customer_mind, "initial_account", customer_account)
+	rel_set(customer_mind, nameof(customer_mind.initial_account), customer_account)
 	customer_mind.transfer_to(customer)
 	var/obj/item/card/id/customer_id = new(customer)
 	customer_id.registered_name = customer_account.owner_name
 	customer_id.associated_account_number = customer_account.account_number
 	var/obj/item/pda/customer_pda = new(customer)
-	own_set(customer_pda, "id", customer_id)
+	own_set(customer_pda, nameof(customer_pda.id), customer_id)
 
 	var/obj/machinery/cash_register/civilian/register = new(test_turf)
-	rel_set(register, "linked_account", service)
+	rel_set(register, nameof(register.linked_account), service)
 	register.transaction_amount = 25
 	register.transaction_purpose = "Lifecycle meal"
 	register.item_list["meal"] = 1
@@ -654,7 +654,7 @@
 
 	while(length(GLOB.supply_service.service_invoices) > invoice_count_before)
 		var/datum/service_invoice/invoice = GLOB.supply_service.service_invoices[length(GLOB.supply_service.service_invoices)]
-		own_take_member(GLOB.supply_service, "service_invoices", invoice)
+		own_take_member(GLOB.supply_service, nameof(/datum/world_service/supply::service_invoices), invoice)
 		qdel(invoice)
 	GLOB.supply_service.service_invoice_counter = invoice_counter_before
 	GLOB.supply_service.currency_refunded = refunds_before
@@ -771,7 +771,7 @@
 
 	// The same provenance supplies a crew-facing price through Research's departmental checkout scanner.
 	var/obj/item/retail_scanner/science/scanner = new(test_turf)
-	rel_set(scanner, "linked_account", research)
+	rel_set(scanner, nameof(scanner.linked_account), research)
 	var/mob/living/carbon/human/customer = new(test_turf)
 	var/obj/item/card/id/customer_id = new(customer)
 	customer_id.associated_account_number = producer.account_number
@@ -884,7 +884,7 @@
 	account.owner_name = "Market Order Tester"
 	registry_join(REGISTRY_MONEY_ACCOUNTS, account)
 	var/datum/mind/test_mind = new("market_order_tester")
-	rel_set(test_mind, "initial_account", account)
+	rel_set(test_mind, nameof(test_mind.initial_account), account)
 	var/mob/living/carbon/human/test_buyer = new(test_turf)
 	test_mind.transfer_to(test_buyer)
 	var/stock_before = test_listing.stock
@@ -899,8 +899,8 @@
 		if(candidate.ordernum == order.ordernum)
 			admin_order = candidate
 			break
-	own_take_member(GLOB.supply_service, "order_history", order)
-	own_take_member(GLOB.supply_service, "adm_order_history", admin_order)
+	own_take_member(GLOB.supply_service, nameof(/datum/world_service/supply::order_history), order)
+	own_take_member(GLOB.supply_service, nameof(/datum/world_service/supply::adm_order_history), admin_order)
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, account)
 	qdel(admin_order)
 	qdel(order)
@@ -928,7 +928,7 @@
 	owner_account.money = 10000
 	registry_join(REGISTRY_MONEY_ACCOUNTS, owner_account)
 	var/datum/mind/owner_mind = new("covert_principal_tester")
-	rel_set(owner_mind, "initial_account", owner_account)
+	rel_set(owner_mind, nameof(owner_mind.initial_account), owner_account)
 	var/mob/living/carbon/human/owner = new(test_turf)
 	owner_mind.transfer_to(owner)
 
@@ -938,7 +938,7 @@
 	collaborator_account.department_id = DEPARTMENT_CARGO
 	registry_join(REGISTRY_MONEY_ACCOUNTS, collaborator_account)
 	var/datum/mind/collaborator_mind = new("covert_cargo_tester")
-	rel_set(collaborator_mind, "initial_account", collaborator_account)
+	rel_set(collaborator_mind, nameof(collaborator_mind.initial_account), collaborator_account)
 	var/mob/living/carbon/human/collaborator = new(test_turf)
 	collaborator_mind.transfer_to(collaborator)
 	var/obj/item/card/id/collaborator_id = new(collaborator)
@@ -950,9 +950,9 @@
 	var/datum/faction_agent_record/record = new
 	record.account_number = owner_account.account_number
 	record.faction_id = REPUTATION_FACTION_SYNDICATE
-	rel_set(record, "agent_mind", owner_mind)
+	rel_set(record, nameof(record.agent_mind), owner_mind)
 	record.tier = FACTION_AGENT_TIER_ACCREDITED
-	own_put(GLOB.station_faction_relations, "agent_records", "[owner_account.account_number]", record)
+	own_put(GLOB.station_faction_relations, nameof(/datum/station_faction_relations::agent_records), "[owner_account.account_number]", record)
 	TEST_ASSERT(GLOB.supply_service.market_counterparty_visible(syndicate_broker, owner), "accredited agent could not see their principal market")
 	TEST_ASSERT(GLOB.supply_service.market_true_identity_visible(syndicate_broker, owner), "principal account could not identify its own counterparty")
 	TEST_ASSERT(!GLOB.supply_service.market_counterparty_visible(syndicate_broker, collaborator), "unsigned Cargo contact could see the private feed")
@@ -1016,8 +1016,8 @@
 		if(candidate_order.ordernum == funded_order.ordernum)
 			funded_admin_order = candidate_order
 			break
-	own_take_member(GLOB.supply_service, "order_history", funded_order)
-	own_take_member(GLOB.supply_service, "adm_order_history", funded_admin_order)
+	own_take_member(GLOB.supply_service, nameof(/datum/world_service/supply::order_history), funded_order)
+	own_take_member(GLOB.supply_service, nameof(/datum/world_service/supply::adm_order_history), funded_admin_order)
 	SScontracts.active_contracts -= funding_contract
 	qdel(funded_admin_order)
 	qdel(funded_order)
@@ -1035,7 +1035,7 @@
 	auditor_account.owner_name = "Market Auditor"
 	registry_join(REGISTRY_MONEY_ACCOUNTS, auditor_account)
 	var/datum/mind/auditor_mind = new("market_auditor")
-	rel_set(auditor_mind, "initial_account", auditor_account)
+	rel_set(auditor_mind, nameof(auditor_mind.initial_account), auditor_account)
 	var/mob/living/carbon/human/auditor = new(test_turf)
 	auditor_mind.transfer_to(auditor)
 	var/obj/item/card/id/auditor_id = new(auditor)
@@ -1059,9 +1059,9 @@
 	for(var/datum/contract_offer_candidate/offer_candidate in SScontracts.offer_candidates.Copy())
 		if(offer_candidate.context?["suspect_account"] == owner_account.account_number)
 			SScontracts.withdraw_candidate(offer_candidate, "Covert market test cleanup")
-	own_take_member(GLOB.station_faction_relations, "agent_records", "[owner_account.account_number]")
+	own_take_member(GLOB.station_faction_relations, nameof(/datum/station_faction_relations::agent_records), "[owner_account.account_number]")
 	SScontracts.active_contracts -= test_contract
-	own_take_member(GLOB.supply_service, "market_transactions", transaction)
+	own_take_member(GLOB.supply_service, nameof(/datum/world_service/supply::market_transactions), transaction)
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, owner_account)
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, collaborator_account)
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, auditor_account)
@@ -1092,7 +1092,7 @@
 	contact_account.department_id = DEPARTMENT_CARGO
 	registry_join(REGISTRY_MONEY_ACCOUNTS, contact_account)
 	var/datum/mind/contact_mind = new("physical_cargo_tester")
-	rel_set(contact_mind, "initial_account", contact_account)
+	rel_set(contact_mind, nameof(contact_mind.initial_account), contact_account)
 	var/mob/living/carbon/human/contact = new(test_turf)
 	contact_mind.transfer_to(contact)
 	var/obj/item/card/id/contact_id = new(contact)
@@ -1104,7 +1104,7 @@
 	record.account_number = principal_account.account_number
 	record.faction_id = REPUTATION_FACTION_ECLIPSE
 	record.tier = FACTION_AGENT_TIER_ACCREDITED
-	own_put(GLOB.station_faction_relations, "agent_records", "[principal_account.account_number]", record)
+	own_put(GLOB.station_faction_relations, nameof(/datum/station_faction_relations::agent_records), "[principal_account.account_number]", record)
 	var/datum/contract/faction_agent/contract = new
 	contract.definition_id = "agent_confidential_brokerage"
 	contract.title = "Physical freight integration"
@@ -1125,7 +1125,7 @@
 
 	var/obj/item/paper/charter = create_contract_document(test_turf, "test operation charter", "<span class=\"paper_field\"></span>", contract.id, CONTRACT_DOCUMENT_AGENT_CHARTER, contract.issuer_name, list("agent_contract_id" = contract.id, "principal_account" = principal_account.account_number, "faction_id" = contract.agent_faction))
 	var/datum/mind/principal_mind = new("physical_principal_tester")
-	rel_set(principal_mind, "initial_account", principal_account)
+	rel_set(principal_mind, nameof(principal_mind.initial_account), principal_account)
 	var/mob/living/carbon/human/principal = new(test_turf)
 	principal_mind.transfer_to(principal)
 	var/datum/contract_document/charter_document = charter.contract_document
@@ -1153,7 +1153,7 @@
 	auditor_account.owner_name = "Physical Evidence Tester"
 	registry_join(REGISTRY_MONEY_ACCOUNTS, auditor_account)
 	var/datum/mind/auditor_mind = new("physical_evidence_tester")
-	rel_set(auditor_mind, "initial_account", auditor_account)
+	rel_set(auditor_mind, nameof(auditor_mind.initial_account), auditor_account)
 	var/mob/living/carbon/human/auditor = new(test_turf)
 	auditor_mind.transfer_to(auditor)
 	var/obj/item/card/id/auditor_id = new(auditor)
@@ -1171,7 +1171,7 @@
 	TEST_ASSERT(document.payload["cooperation_paid"], "Security scan did not settle the physical cooperation declaration")
 
 	GLOB.supply_service.release_agent_contract_market(contract)
-	own_take_member(GLOB.station_faction_relations, "agent_records", "[principal_account.account_number]")
+	own_take_member(GLOB.station_faction_relations, nameof(/datum/station_faction_relations::agent_records), "[principal_account.account_number]")
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, principal_account)
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, contact_account)
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, auditor_account)
@@ -1205,7 +1205,7 @@
 		"cargo_percent" = 20,
 		"producer_percentages" = list(),
 	)
-	own_set(crate, "shipping_ledger", ledger)
+	own_set(crate, nameof(crate.shipping_ledger), ledger)
 	crate.shipping_ledger_snapshot = crate.freight_snapshot()
 	TEST_ASSERT(crate.shipping_ledger_valid(), "an unchanged sealed freight ledger was rejected")
 	var/datum/exported_crate/export = new
@@ -1216,7 +1216,7 @@
 	TEST_ASSERT(!crate.apply_shipping_ledger(export), "tampered freight retained authenticated routing")
 	TEST_ASSERT(!ledger.shipping_ledger_data["valid"], "tampered freight ledger was not visibly voided")
 	ledger.shipping_ledger_data["valid"] = TRUE
-	own_set(crate, "shipping_ledger", ledger)
+	own_set(crate, nameof(crate.shipping_ledger), ledger)
 	crate.shipping_ledger_snapshot = crate.freight_snapshot()
 	crate.open()
 	TEST_ASSERT(!ledger.shipping_ledger_data["valid"], "opening certified freight did not void its paper ledger")
@@ -1229,7 +1229,7 @@
 	customer.money = 500
 	registry_join(REGISTRY_MONEY_ACCOUNTS, customer)
 	var/datum/mind/customer_mind = new("storefront_unit_customer")
-	rel_set(customer_mind, "initial_account", customer)
+	rel_set(customer_mind, nameof(customer_mind.initial_account), customer)
 	var/turf/customer_turf = test_turf
 	var/mob/living/carbon/human/customer_mob = new(customer_turf)
 	customer_mind.transfer_to(customer_mob)

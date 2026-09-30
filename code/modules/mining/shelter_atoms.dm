@@ -651,12 +651,12 @@ DECLARE_INTERACTIONS(/obj/item/survivalcapsule, INTERACT_USE("Deploy", PROC_REF(
 	effect = /obj/machinery/button/remote/airlock/survival_pod/proc/interaction_glass
 
 /obj/machinery/button/remote/airlock/survival_pod/proc/interaction_glass(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!door())
+	if(!linked_door())
 		var/turf/dT = get_step(src,dir)
-		rel_set(src, "door", locate_within(dT, /obj/machinery/door/airlock/voidcraft/survival_pod))
-	if(door())
-		door().glass = !door().glass
-		door().opacity = !door().opacity
+		rel_set(src, nameof(src.door), locate_within(dT, /obj/machinery/door/airlock/voidcraft/survival_pod))
+	if(linked_door())
+		linked_door().glass = !linked_door().glass
+		linked_door().opacity = !linked_door().opacity
 	return TRUE
 
 //Subtype that actually bolts doors!
@@ -678,14 +678,14 @@ DECLARE_INTERACTIONS(/obj/item/survivalcapsule, INTERACT_USE("Deploy", PROC_REF(
 
 /obj/machinery/button/remote/airlock/survival_pod/bolts/proc/interaction_bolts(mob/user, obj/item/held, datum/interaction/interaction)
 	interaction_glass(user, held, interaction)
-	if(door())
-		if(door().locked)
-			door().unlock()
-			door().stop_blocking_light()
+	if(linked_door())
+		if(is_bolted(linked_door()))
+			linked_door().unlock()
+			linked_door().stop_blocking_light()
 		else
-			door().lock()
+			linked_door().lock()
 			// Block light when bolted, since the door is effectively functioning like polarized glass
-			door().start_blocking_light()
+			linked_door().start_blocking_light()
 	return TRUE
 
 // Capsule-specific light switch
@@ -712,7 +712,7 @@ DECLARE_INTERACTIONS(/obj/item/survivalcapsule, INTERACT_USE("Deploy", PROC_REF(
 	play_sfx(src, SFX_MACHINES_BUTTON, volume = 100)
 	if(!target_light())
 		var/turf/dT = get_step(src, dir)
-		rel_set(src, "target_light", locate_within(dT, /obj/machinery/light))
+		rel_set(src, nameof(target_light), locate_within(dT, /obj/machinery/light))
 	if(target_light())
 		target_light().on = on
 		target_light().update()
@@ -950,7 +950,7 @@ EXTEND_INTERACTIONS(/obj/item/gps/computer, INTERACT_HAND_UNGATED(null, PROC_REF
 	return template_static
 
 /// Accessor for the door var.
-/obj/machinery/button/remote/airlock/survival_pod/proc/door() as /obj/machinery/door/airlock/voidcraft/survival_pod
+/obj/machinery/button/remote/airlock/survival_pod/proc/linked_door() as /obj/machinery/door/airlock/voidcraft/survival_pod
 	return door
 
 /// Accessor for the target_light var.

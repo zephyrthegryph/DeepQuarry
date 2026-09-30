@@ -9,6 +9,7 @@
 //! (`rust_architecture.md` §8.5 step 6); this module is the first slice.
 
 mod binds;
+pub(crate) use binds::take_observations;
 pub(crate) mod mix;
 mod parser;
 
@@ -281,7 +282,7 @@ fn turf_of(cell: ByondValue) -> Result<ByondValue> {
 // §8.5 step 6), on the world's one grid; its air-block masks are the grid's
 // `BlockKind::Air` layer and its z links the grid's. The gas laws turn
 // the field's state into typed events (`GasEvent`), which reach DM through
-// `vg_drain_events()` like every other domain's.
+// the frame outbox (NOTICE records) like every other domain's.
 
 /// Seconds of gas simulated per frame (`SSvg`'s `wait`, the world's `dt`).
 const FRAME_DT: f32 = 0.5;

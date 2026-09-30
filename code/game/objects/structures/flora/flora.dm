@@ -329,9 +329,8 @@
 /obj/structure/flora/pottedplant/proc/attackby_timed_done2(datum/om/task/timed/pottedplant_attackby/task)
 	var/obj/item/I = task.I
 	var/mob/user = task.actor
-	user.drop_from_inventory(I, src)
-	I.forceMove(src)
-	own_set(src, "stored_item", I)
+	if(!own_set(src, nameof(src.stored_item), I, user = user))
+		return
 	act_message(user, src, others = "[icon2html(src,viewers(src))] [icon2html(I,viewers(src))] %U% places [I] into %T%.")
 
 /obj/structure/flora/pottedplant/proc/attackby_timed_failed2(datum/om/task/timed/pottedplant_attackby/task)
@@ -354,7 +353,7 @@
 /obj/structure/flora/pottedplant/proc/attack_hand_timed_done(mob/user)
 	to_chat(user, span_filter_notice("You find [icon2html(stored_item, user.client)] [stored_item] in [src]!"))
 	stored_item.forceMove(get_turf(src))
-	own_take(src, "stored_item")
+	own_take(src, nameof(stored_item))
 
 /obj/structure/flora/pottedplant/large
 	name = "large potted plant"
@@ -810,4 +809,6 @@ APPEARANCE_TEMPLATE(/obj/structure/flora/sif/frostbelle, "{initial(icon_state)}{
 	desc = "A bunch of mossy rocks."
 	icon_state = "rocks2"
 
-OWN(/obj/structure/flora/pottedplant, stored_item, OWN_CONTAINED)
+/obj/structure/flora/pottedplant/ownership()
+	. = ..()
+	. += owns(nameof(stored_item), policy = OWN_CONTAINED)

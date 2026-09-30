@@ -45,11 +45,11 @@
 			var/turf/get_dat_turf = get_turf(src)
 			tf_mob_holder.forceMove(get_dat_turf)
 		// the holder's old bellies go (it owns them)
-		own_clear(tf_mob_holder, "vore_organs", OWN_DELETE)
+		own_clear(tf_mob_holder, nameof(tf_mob_holder.vore_organs), OWN_DELETE)
 		tf_mob_holder.mob_belly_transfer(src)
 	if(tf_mob_holder)
 		set_tf_mob_holder(null)
-	own_clear(src, "hud_list", OWN_DELETE)
+	own_clear(src, nameof(hud_list), OWN_DELETE)
 	// Deleting a part detaches it, and the detach hook empties these caches
 	// (code/modules/body/parts/attach.dm). Copies: they shrink as we go.
 	for(var/OR in organs?.Copy())
@@ -899,7 +899,7 @@
 //Add an entry to overlays, assuming it exists
 /mob/living/proc/apply_hud(cache_index, image/I)
 	if(I)
-		own_put(src, "hud_list", cache_index, I) // the mob owns its HUD images; a replaced one is deleted
+		own_put(src, nameof(hud_list), cache_index, I) // the mob owns its HUD images; a replaced one is deleted
 	if((. = hud_list[cache_index]))
 		add_overlay(.)
 
@@ -1051,7 +1051,7 @@
 
 /datum/character_setup_button/New(mob/living/M)
 	..()
-	rel_set(src, "owner", M)
+	rel_set(src, nameof(owner), M)
 	om_hook(owner, /datum/om/event/mob_client_login, src, PROC_REF(on_client_login))
 	if(owner.client)
 		create_mob_button(owner)
@@ -1062,13 +1062,13 @@
 		owner?.client?.screen -= screen_icon
 		var/datum/hud/button_hud = owner_of(screen_icon)
 		if(istype(button_hud))
-			own_remove(button_hud, "other_important", screen_icon)
+			own_remove(button_hud, nameof(button_hud.other_important), screen_icon)
 	..()
 
 /// Gives the mob its character setup HUD button if it has none.
 /mob/living/proc/add_character_setup_button()
 	if(!character_setup_button)
-		own_set(src, "character_setup_button", new /datum/character_setup_button(src))
+		own_set(src, nameof(character_setup_button), new /datum/character_setup_button(src))
 	return character_setup_button
 
 /datum/character_setup_button/proc/on_client_login(datum/source, datum/om/event/mob_client_login/event)
@@ -1081,8 +1081,8 @@
 	// (the old hud deleted its own, which cleared this relation).
 	if(!screen_icon)
 		var/atom/movable/screen/character_setup/button = new
-		own_add(HUD, "other_important", button)
-		rel_set(src, "screen_icon", button)
+		own_add(HUD, nameof(HUD.other_important), button)
+		rel_set(src, nameof(screen_icon), button)
 		om_hook(screen_icon, /datum/om/event/click, src, PROC_REF(character_setup_click))
 	if(ispAI(user))
 		screen_icon.icon = 'icons/mob/pai_hud.dmi'
@@ -1145,7 +1145,7 @@
 		// Note, this should be refactored to drop priority overlays
 		// ALLOW(decl): priority overlay from a global, gated on has_huds
 		add_overlay(GLOB.backplane,TRUE) //Strap this on here, to block HUDs from appearing in rightclick menus: http://www.byond.com/forum/?post=2336679
-		own_clear(src, "hud_list", OWN_DELETE)
+		own_clear(src, nameof(hud_list), OWN_DELETE)
 		hud_list = new /list(TOTAL_HUDS) // ALLOW(ownership): a fresh slot table (nulls only); its images are adopted through own_put()
 		make_hud_overlays()
 
@@ -1159,8 +1159,8 @@
 
 	selected_image = image(icon = GLOB.buildmode_hud, loc = src, icon_state = "ai_sel")
 
-	own_set(src, "deaf_loop", new /datum/looping_sound/mob/deafened(list(src), FALSE)) // ALLOW(decl): looping_sound takes constructor args
-	own_set(src, "firesoundloop", new /datum/looping_sound/mob/on_fire(list(src), FALSE)) // ALLOW(decl): looping_sound takes constructor args
+	own_set(src, nameof(deaf_loop), new /datum/looping_sound/mob/deafened(list(src), FALSE)) // ALLOW(decl): looping_sound takes constructor args
+	own_set(src, nameof(firesoundloop), new /datum/looping_sound/mob/on_fire(list(src), FALSE)) // ALLOW(decl): looping_sound takes constructor args
 	// stunnedloop = new(list(src), FALSE)
 	if(firesoundloop) // Partly safety, partly so we can have different probs for randomization
 		if(prob(40)) // Randomize our end_sound. Can't really do this easily in looping_sound without some work

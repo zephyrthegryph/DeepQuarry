@@ -112,7 +112,7 @@ TYPE_TABLE(/mob/living/simple_mob/vore/gryphon, get_ai_behaviors, list( \
 	var/mob/old_victim = G.dq_maybe_eating
 	if(victim != old_victim)
 		G.dq_eat_attempts = 0
-	rel_set(G, "dq_maybe_eating", victim)
+	rel_set(G, nameof(G.dq_maybe_eating), victim)
 	// Teasing messages at the legacy thresholds.
 	if(G.dq_eat_attempts == 5)
 		to_chat(victim, span_danger("\The [G] licks its beak"))
@@ -134,7 +134,7 @@ TYPE_TABLE(/mob/living/simple_mob/vore/gryphon, get_ai_behaviors, list( \
 	if(!istype(G))
 		return
 	G.dq_eat_attempts = 0
-	rel_clear(G, "dq_maybe_eating")
+	rel_clear(G, nameof(G.dq_maybe_eating))
 
 /// True if `victim` is the only attackable target the gryphon can see.
 /proc/dq_gryphon_alone_with(datum/ai_brain/brain, mob/living/simple_mob/vore/gryphon/G, mob/living/victim)

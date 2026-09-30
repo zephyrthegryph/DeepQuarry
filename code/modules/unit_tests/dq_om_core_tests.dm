@@ -311,7 +311,7 @@
 	var/datum/om/scheduler/sched
 
 /datum/unit_test/om/Run()
-	rel_set(src, "sched", om_test_begin())
+	rel_set(src, nameof(sched), om_test_begin())
 	var/list/made = list()
 	try
 		run_om(made)
@@ -937,27 +937,6 @@
 	om_start(host)
 	TEST_ASSERT(om_has_grant(host, GRANT_TRAIT, "test_trait"), "decl self_grants")
 
-// ---------------------------------------------------------------- F: rates
-
-/datum/unit_test/om/rates_thresholds
-
-/datum/unit_test/om/rates_thresholds/run_om(list/made)
-	var/datum/om_test_entity/E = entity(made)
-	om_attach(E, /datum/om/behaviour/test/waker)
-	var/datum/om/rate/R = om_rate_new(E, "charge", 0, 2, CHANGE_DATUM_A, list(10))
-	TEST_ASSERT_EQUAL(R.time_until(10), 50, "time_until in deciseconds")
-	scheduler_advance(4)
-	TEST_ASSERT_EQUAL(E.wakes, 0, "no crossing yet")
-	TEST_ASSERT(abs(R.now() - 8) < 0.01, "value at time")
-	scheduler_advance(1.5)
-	TEST_ASSERT_EQUAL(E.wakes, 1, "crossing publishes the channel once")
-	R.set_rate(-4)
-	TEST_ASSERT(abs(R.now() - 11) < 0.25, "set_rate settles first")
-	scheduler_advance(1)
-	TEST_ASSERT_EQUAL(E.wakes, 2, "crossing back down")
-	var/list/stream = om_ui_rate(R)
-	TEST_ASSERT_EQUAL(stream["rate"], -4, "rate streaming helper")
-
 // ---------------------------------------------------------------- G: events
 
 /// Regression: subtype events reach handlers of the parent type.
@@ -1171,9 +1150,9 @@
 	var/datum/om_test_entity/cached/E = entity(made, /datum/om_test_entity/cached)
 	var/datum/om_test_entity/other = entity(made)
 	om_rec_of(E)
-	rel_set(E, "on_change_cache", other)
-	rel_set(E, "on_event_cache", other)
-	rel_set(E, "on_relation_cache", other)
+	rel_set(E, nameof(E.on_change_cache), other)
+	rel_set(E, nameof(E.on_event_cache), other)
+	rel_set(E, nameof(E.on_relation_cache), other)
 	om_changed(E, CHANGE_CONTENTS)
 	TEST_ASSERT(E.on_change_cache == other, "an unrelated channel leaves the cache")
 	om_changed(E, CHANGE_EXPLICIT)

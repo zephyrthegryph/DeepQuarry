@@ -22,13 +22,12 @@
 //! generically.
 //!
 //! Turf<->pipe devices (a vent pump or scrubber) still bridge the pipe
-//! network and `vg-gas`'s own turf field, each with its own storage
-//! (`rust_architecture.md` step 6 is what turns the turf field into a real
-//! `FieldKind` and this into a `RegionCell<Pipes, TurfGas>` device law);
-//! for now [`pipe_step_devices`] calls `crate::gas` for the
-//! turf side directly, the same cross-crate shape heat's `GasExchange`
-//! already uses for the same reason (gas is not on the shared `World`
-//! yet).
+//! network and `vg-gas`'s own turf field, each with its own storage. The flows
+//! themselves are a real World law ([`vg_gas::laws::PipeDeviceStep`], on its own
+//! `Period`): [`stage_devices`] builds every device's job (the turf side read
+//! through `crate::gas`) into the main-owned [`DeviceJobs`] global before the
+//! World's step and [`apply_devices`] writes the result back after it, the
+//! same cross-domain shape heat uses for its mixture probes.
 
 // vg_pipe_device_set/set_turf's argument count is inherent to the DM call
 // convention (an id/two endpoints plus a flow law's four parameters,
@@ -48,8 +47,10 @@ use vg_core::entity::EntityId;
 use vg_core::network::{Endpoint, RegionId, Side};
 use vg_core::slot::RawHandle;
 use vg_core::world::World;
-use vg_gas::device::{self, Flow, StepReport};
+use vg_gas::device::Flow;
 use vg_gas::kind::device::{DeviceFlow, DeviceValve};
+use vg_gas::kind::device::{rate_kind, role};
+use vg_gas::laws::{BudgetJob, BudgetKind, BudgetLeg, DeviceJob, DeviceJobs, DeviceSide};
 use vg_gas::pipes::{PipeGas, Pipes};
 
 use crate::entity;
@@ -378,6 +379,25 @@ fn pipe_device_set(id: ByondValue, port_a: ByondValue, port_b: ByondValue) -> Re
     Ok(ok.into())
 }
 
+/// [`pipe_device_set`] for every `device, port_a, port_b` triple in the flat
+/// list `triples`, in one call (round-start device registration). Returns how
+/// many succeeded; a bad row is skipped, not an error.
+#[auxmacros::bind("/proc/vg_pipe_device_set_list")]
+fn pipe_device_set_list(triples: ByondValue) -> Result<ByondValue> {
+    let values = triples.get_list_values()?;
+    if values.len() % 3 != 0 {
+        bail!("triples must be a flat device, port_a, port_b list");
+    }
+    let mut ok = 0u32;
+    for t in values.chunks_exact(3) {
+        if pipe_device_set(t[0], t[1], t[2]).is_ok_and(|v| v.is_true()) {
+            ok += 1;
+        }
+    }
+    #[allow(clippy::cast_precision_loss)]
+    Ok(ByondValue::from(ok as f32))
+}
+
 /// Registers (or replaces) a device edge between a port and a turf (a vent
 /// pump or scrubber): `turf_mixture_handle` is the turf's gas-mixture
 /// handle, not a port id. See [`pipe_device_set`]'s own docs on flows.
@@ -421,7 +441,7 @@ fn pipe_device_remove(id: ByondValue) -> Result<ByondValue> {
 /// `DeviceFlow` bind order (a filter's passthrough plus its filtered flow, a
 /// mixer's two inputs).
 ///
-/// Built once per [`pipe_step_devices`] call: one pass over the flow rows and
+/// Built once per [`stage_devices`] call: one pass over the flow rows and
 /// one over the valve rows, O(devices + rows). The previous per-device lookup
 /// rescanned every row for every device (O(devices x rows)), which on
 /// Southern Cross (~thousands of vents/scrubbers) cost ~130 ms per SSair fire.
@@ -429,13 +449,24 @@ fn pipe_device_remove(id: ByondValue) -> Result<ByondValue> {
 struct DeviceLaws {
     flows: Vec<Flow>,
     valve_open: bool,
+    /// The device has a leg of a budget group (filters and mixers), stepped as that group and not as a plain flow.
+    in_group: bool,
 }
 
-fn device_law_index(w: &World) -> HashMap<u32, DeviceLaws> {
+/// Every budget leg of the world, by group: `(device entity index, row)`.
+type BudgetGroups = HashMap<u32, Vec<(u32, DeviceFlow)>>;
+
+fn device_law_index(w: &World) -> (HashMap<u32, DeviceLaws>, BudgetGroups) {
     let mut index: HashMap<u32, DeviceLaws> = HashMap::new();
+    let mut groups = BudgetGroups::new();
     for e in w.entities_with::<DeviceFlow>() {
         if let Some(row) = w.read::<DeviceFlow>(e) {
-            index.entry(row.device).or_default().flows.push(row.flow());
+            if row.is_budget() {
+                index.entry(row.device).or_default().in_group = true;
+                groups.entry(row.group).or_default().push((row.device, row));
+            } else {
+                index.entry(row.device).or_default().flows.push(row.flow());
+            }
         }
     }
     for e in w.entities_with::<DeviceValve>() {
@@ -445,183 +476,260 @@ fn device_law_index(w: &World) -> HashMap<u32, DeviceLaws> {
             }
         }
     }
-    index
+    (index, groups)
 }
 
-/// Runs every device edge's flow(s)/valve once for `dt` seconds -- region
-/// <-> region edges directly, region<->turf edges (a vent pump/scrubber)
-/// through `crate::gas`'s turf accessors (this module's own docs) --
-/// and returns a flat `device handle, moles, power_w, target_reached` list
-/// per device that moved something or drew power.
-#[auxmacros::bind("/proc/vg_pipe_step_devices")]
-fn pipe_step_devices(dt: ByondValue) -> Result<ByondValue> {
-    let dt = num(&dt)?;
-    let mut out = Vec::new();
-    with_world(|w| {
-        let devices: Vec<EntityId> = w
-            .network::<Pipes>()
-            .map(|h| h.devices().map(|(_, e)| e).collect())
-            .unwrap_or_default();
-        let laws = device_law_index(w);
-        for e in devices {
-            let Some(law) = laws.get(&e.index()) else {
-                continue;
-            };
-            let (flows, valve_open) = (&law.flows, law.valve_open);
-            if flows.is_empty() && !valve_open {
-                continue;
-            }
-            let Ok(host) = w.network::<Pipes>() else {
-                continue;
-            };
-            let Some(dev_id) = host.device_of(e) else {
-                continue;
-            };
-            let Ok(dev) = host.network().device(dev_id) else {
-                continue;
-            };
-            let (ea, eb) = (dev.a, dev.b);
-            drop(host);
-            let report = match (ea, eb) {
-                (Endpoint::Node(_), Endpoint::Node(_)) => {
-                    step_region_region(w, e, flows, valve_open, dt)
-                }
-                // A turf device's flow treats the turf as side `a` (vent
-                // pump, scrubber), wherever the graph stores the cell.
-                (Endpoint::Cell(cell), Endpoint::Node(_))
-                | (Endpoint::Node(_), Endpoint::Cell(cell)) => {
-                    step_region_turf(w, e, cell, flows, valve_open, dt)
-                }
-                _ => None,
-            };
-            if let Some(report) = report {
-                if report.moles != 0.0 || report.power_w != 0.0 {
-                    out.extend([
-                        entity::entity_value(e),
-                        report.moles as f32,
-                        report.power_w,
-                        if report.target_reached { 1.0 } else { 0.0 },
-                    ]);
-                }
-            }
+/// The gas mixture of the pipe region port `port` (a packed entity id) is in now: its DM-facing handle follows the port
+/// through every merge (the surviving region) and split (the side the port is on).
+pub(crate) fn port_mixture(w: &World, port: u32) -> Option<MixRef> {
+    let entity = EntityId::from_bits(port)?;
+    let region = w.network::<Pipes>().ok()?.region_of(entity)?;
+    let slot = REGION_SLOTS.with(|s| s.borrow_mut().slot_for(region.raw().bits()));
+    Some(MixRef::Pipe(slot))
+}
+
+/// Who owns a staged side, and what it held when it was read (a side is written back only if the step changed it).
+enum SideOwner {
+    /// A pipe region's payload.
+    Region { id: RegionId<Pipes>, before: PipeGas },
+    /// A turf's gas, written back as the difference from `before`.
+    Turf { cell: u32, before: PipeGas },
+}
+
+thread_local! {
+    /// The owners of the sides last staged, in side order.
+    static STAGED: RefCell<Vec<SideOwner>> = const { RefCell::new(Vec::new()) };
+}
+
+/// The sides staged so far, looked up by what they are (a region, a turf cell), so devices that meet on one share it.
+#[derive(Default)]
+struct Staging {
+    sides: Vec<DeviceSide>,
+    owners: Vec<SideOwner>,
+    regions: HashMap<u32, usize>,
+    turfs: HashMap<u32, usize>,
+}
+
+impl Staging {
+    /// The side of region `id`, reading its payload and volume on first use.
+    fn region(&mut self, w: &World, id: RegionId<Pipes>) -> Option<usize> {
+        let key = id.raw().bits();
+        if let Some(&at) = self.regions.get(&key) {
+            return Some(at);
         }
-        list(out)
+        let host = w.network::<Pipes>().ok()?;
+        let region = host.network().region(id).ok()?;
+        let gas = *region.payload();
+        let at = self.sides.len();
+        self.sides.push(DeviceSide {
+            gas,
+            volume: *region.summary(),
+        });
+        self.owners.push(SideOwner::Region { id, before: gas });
+        self.regions.insert(key, at);
+        Some(at)
+    }
+
+    /// The side of turf `cell`, read through `crate::gas`'s accessors on first use.
+    fn turf(&mut self, w: &World, cell: u32) -> Option<usize> {
+        if let Some(&at) = self.turfs.get(&cell) {
+            return Some(at);
+        }
+        let (gas, volume) = crate::gas::turf_device_probe(w, cell)?;
+        let at = self.sides.len();
+        self.sides.push(DeviceSide { gas, volume });
+        self.owners.push(SideOwner::Turf { cell, before: gas });
+        self.turfs.insert(cell, at);
+        Some(at)
+    }
+}
+
+/// Stages every device edge's flows, valve and the two sides' gas as the [`DeviceJobs`] global, for the World's next
+/// step ([`PipeDeviceStep`] runs them, once per its period): region <-> region edges from the pipe network, region <->
+/// turf edges (a vent pump/scrubber) with the turf read through `crate::gas`'s accessors (this module's own docs).
+/// Devices on one region or turf share its side. [`apply_devices`] takes the result after the step.
+pub(crate) fn stage_devices(w: &mut World) -> Result<()> {
+    let mut staging = Staging::default();
+    let mut jobs = Vec::new();
+    let devices: Vec<EntityId> = w
+        .network::<Pipes>()
+        .map(|h| h.devices().map(|(_, e)| e).collect())
+        .unwrap_or_default();
+    let (laws, groups) = device_law_index(w);
+    // A budget leg's device: its entity and the regions across its edge.
+    let mut legs: HashMap<u32, (EntityId, RegionId<Pipes>, RegionId<Pipes>)> = HashMap::new();
+    for e in devices {
+        let Some(law) = laws.get(&e.index()) else {
+            continue;
+        };
+        if law.flows.is_empty() && !law.valve_open && !law.in_group {
+            continue;
+        }
+        let Ok(host) = w.network::<Pipes>() else {
+            continue;
+        };
+        let Some(dev_id) = host.device_of(e) else {
+            continue;
+        };
+        let Ok(dev) = host.network().device(dev_id) else {
+            continue;
+        };
+        let (ea, eb) = (dev.a, dev.b);
+        let resolve = |endpoint| match host.network().resolve(endpoint) {
+            Side::Region(r) => Some(r),
+            _ => None,
+        };
+        // A turf device's flow treats the turf as side `a` (vent pump, scrubber), wherever the graph stores the
+        // cell.
+        let ends = match (ea, eb) {
+            (Endpoint::Node(_), Endpoint::Node(_)) => match (resolve(ea), resolve(eb)) {
+                (Some(ra), Some(rb)) if ra != rb => Some((Err(ra), rb)),
+                _ => None,
+            },
+            (Endpoint::Cell(cell), node @ Endpoint::Node(_))
+            | (node @ Endpoint::Node(_), Endpoint::Cell(cell)) => resolve(node).map(|r| (Ok(cell), r)),
+            _ => None,
+        };
+        drop(host);
+        let Some((first, region_b)) = ends else {
+            continue;
+        };
+        if law.in_group
+            && let Err(region_a) = first
+        {
+            legs.insert(e.index(), (e, region_a, region_b));
+        }
+        if law.flows.is_empty() && !law.valve_open {
+            continue;
+        }
+        let a = match first {
+            Ok(cell) => staging.turf(w, cell),
+            Err(region_a) => staging.region(w, region_a),
+        };
+        let b = staging.region(w, region_b);
+        if let (Some(a), Some(b)) = (a, b) {
+            jobs.push(DeviceJob {
+                entity: entity::entity_value(e),
+                flows: law.flows.clone(),
+                valve_open: law.valve_open,
+                a,
+                b,
+                moles: 0.0,
+                power_w: 0.0,
+                target_reached: false,
+            });
+        }
+    }
+    let mut budgets = Vec::new();
+    for rows in groups.values() {
+        budgets.extend(stage_budget(w, &mut staging, rows, &legs));
+    }
+    let Staging { sides, owners, .. } = staging;
+    STAGED.with_borrow_mut(|s| *s = owners);
+    w.set_global(DeviceJobs { sides, jobs, budgets })
+        .map_err(|e| eyre!("{e}"))
+}
+
+/// One budget group (a filter's or mixer's legs) as a [`BudgetJob`]: the hub is the region the legs share (a filter's source
+/// is side `a` of its edges, a mixer's output side `b`), each leg the region across its edge.
+fn stage_budget(
+    w: &World,
+    staging: &mut Staging,
+    rows: &[(u32, DeviceFlow)],
+    legs: &HashMap<u32, (EntityId, RegionId<Pipes>, RegionId<Pipes>)>,
+) -> Option<BudgetJob> {
+    let (_, first) = rows.first()?;
+    let kind = if first.rate_kind == rate_kind::MIX {
+        BudgetKind::Mix
+    } else {
+        BudgetKind::Filter
+    };
+    let hub_of = |&(_, a, b): &(EntityId, RegionId<Pipes>, RegionId<Pipes>)| match kind {
+        BudgetKind::Filter => (a, b),
+        BudgetKind::Mix => (b, a),
+    };
+    let (hub_region, _) = hub_of(legs.get(&first.device)?);
+    let hub = staging.region(w, hub_region)?;
+    let mut staged = Vec::new();
+    let mut entity = 0.0;
+    for (device, row) in rows {
+        let Some(edge) = legs.get(device) else {
+            continue;
+        };
+        let (hub_here, leg_region) = hub_of(edge);
+        if hub_here != hub_region {
+            continue;
+        }
+        let Some(side) = staging.region(w, leg_region) else {
+            continue;
+        };
+        if staged.is_empty() {
+            entity = entity::entity_value(edge.0);
+        }
+        staged.push(BudgetLeg {
+            side,
+            mask: row.gases,
+            clean: row.role == role::CLEAN,
+            ratio: row.ratio,
+        });
+    }
+    (!staged.is_empty()).then_some(BudgetJob {
+        kind,
+        entity,
+        hub,
+        legs: staged,
+        rate: first.rate,
+        power_w: first.power_w,
+        efficiency: first.efficiency,
+        moles: 0.0,
+        power_draw: 0.0,
     })
 }
 
-/// Runs every flow then the valve gate on `(a, b)` in sequence, folding
-/// into one report: total moles moved (signed a->b), power drawn, and
-/// whether any stop target was reached this tick.
-fn step_all(
-    flows: &[Flow],
-    valve_open: bool,
-    a: &mut PipeGas,
-    vol_a: f64,
-    b: &mut PipeGas,
-    vol_b: f64,
-    dt: f32,
-) -> StepReport {
-    let mut total = StepReport::default();
-    for flow in flows {
-        let r = device::step(flow, a, vol_a, b, vol_b, dt);
-        total.moles += r.moles;
-        total.power_w += r.power_w;
-        total.target_reached |= r.target_reached;
-    }
-    if valve_open {
-        let r = device::step_valve(true, a, vol_a, b, vol_b);
-        total.moles += r.moles;
-    }
-    total
-}
-
-fn step_region_region(
-    w: &mut World,
-    device_e: EntityId,
-    flows: &[Flow],
-    valve_open: bool,
-    dt: f32,
-) -> Option<StepReport> {
-    let (ra, rb, vol_a, vol_b, mut pa, mut pb) = {
-        let host = w.network::<Pipes>().ok()?;
-        let dev_id = host.device_of(device_e)?;
-        let dev = host.network().device(dev_id).ok()?;
-        let (Endpoint::Node(na), Endpoint::Node(nb)) = (dev.a, dev.b) else {
-            return None;
-        };
-        let (Side::Region(ra), Side::Region(rb)) = (
-            host.network().resolve(Endpoint::Node(na)),
-            host.network().resolve(Endpoint::Node(nb)),
-        ) else {
-            return None;
-        };
-        if ra == rb {
-            return None;
+/// Writes the stepped sides back (region payloads, each turf's difference) and returns a flat `device handle, moles,
+/// power_w, target_reached` list per device that moved something or drew power (each becomes a
+/// `NATIVE_NOTICE_PIPE_DEVICE` notice). Clears the global; a side the step did not change is not written.
+pub(crate) fn apply_devices(w: &mut World) -> Vec<f32> {
+    let done = w
+        .global::<DeviceJobs>()
+        .map(|j| j.clone())
+        .unwrap_or_default();
+    let owners = STAGED.with_borrow_mut(std::mem::take);
+    let _ = w.set_global(DeviceJobs::default());
+    for (side, owner) in done.sides.iter().zip(owners) {
+        match owner {
+            SideOwner::Region { id, before } => {
+                if side.gas != before {
+                    let gas = side.gas;
+                    let _ = w.edit_network::<Pipes>(move |host| {
+                        if let Ok(p) = host.payload_mut(id) {
+                            *p = gas;
+                        }
+                    });
+                }
+            }
+            SideOwner::Turf { cell, before } => {
+                if side.gas != before {
+                    crate::gas::turf_device_apply(w, cell, &before, &side.gas);
+                }
+            }
         }
-        let region_a = host.network().region(ra).ok()?;
-        let region_b = host.network().region(rb).ok()?;
-        (
-            ra,
-            rb,
-            *region_a.summary(),
-            *region_b.summary(),
-            *region_a.payload(),
-            *region_b.payload(),
-        )
-    };
-    let report = step_all(flows, valve_open, &mut pa, vol_a, &mut pb, vol_b, dt);
-    if report.moles != 0.0 || report.power_w != 0.0 {
-        let _ = w.edit_network::<Pipes>(move |host| {
-            if let Ok(p) = host.payload_mut(ra) {
-                *p = pa;
-            }
-            if let Ok(p) = host.payload_mut(rb) {
-                *p = pb;
-            }
-        });
     }
-    Some(report)
-}
-
-fn step_region_turf(
-    w: &mut World,
-    device_e: EntityId,
-    cell: u32,
-    flows: &[Flow],
-    valve_open: bool,
-    dt: f32,
-) -> Option<StepReport> {
-    let (region, vol_region, mut region_gas) = {
-        let host = w.network::<Pipes>().ok()?;
-        let dev_id = host.device_of(device_e)?;
-        let dev = host.network().device(dev_id).ok()?;
-        let ((Endpoint::Node(node), _) | (_, Endpoint::Node(node))) = (dev.a, dev.b) else {
-            return None;
-        };
-        let Side::Region(region) = host.network().resolve(Endpoint::Node(node)) else {
-            return None;
-        };
-        let r = host.network().region(region).ok()?;
-        (region, *r.summary(), *r.payload())
-    };
-    let (turf_before, vol_cell) = crate::gas::turf_device_probe(w, cell)?;
-    let mut turf_gas = turf_before;
-    let report = step_all(
-        flows,
-        valve_open,
-        &mut turf_gas,
-        vol_cell,
-        &mut region_gas,
-        vol_region,
-        dt,
-    );
-    if report.moles != 0.0 || report.power_w != 0.0 {
-        let _ = w.edit_network::<Pipes>(move |host| {
-            if let Ok(p) = host.payload_mut(region) {
-                *p = region_gas;
-            }
-        });
-        crate::gas::turf_device_apply(w, cell, &turf_before, &turf_gas);
+    let mut out = Vec::new();
+    for budget in &done.budgets {
+        if budget.moved() {
+            out.extend([budget.entity, budget.moles as f32, budget.power_draw, 0.0]);
+        }
     }
-    Some(report)
+    for job in &done.jobs {
+        if job.moved() {
+            out.extend([
+                job.entity,
+                job.moles as f32,
+                job.power_w,
+                if job.target_reached { 1.0 } else { 0.0 },
+            ]);
+        }
+    }
+    out
 }

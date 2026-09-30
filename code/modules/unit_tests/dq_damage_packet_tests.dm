@@ -20,9 +20,9 @@
 	zone = packet.zone
 	flags = packet.flags
 	armor_flag = packet.armor_flag
-	rel_set(src, "source", packet.source)
-	rel_set(src, "attacker", packet.attacker)
-	rel_set(src, "weapon", packet.weapon)
+	rel_set(src, nameof(source), packet.source)
+	rel_set(src, nameof(attacker), packet.attacker)
+	rel_set(src, nameof(weapon), packet.weapon)
 
 
 /// Only `kind` carries damage, and exactly `amount` of it.
@@ -49,8 +49,8 @@
 
 /obj/machinery/dq_damage_probe/damage_sink(datum/damage_packet/packet)
 	received++
-	own_clear(src, "last", OWN_DELETE)
-	own_set(src, "last", new /datum/dq_packet_record(packet))
+	own_clear(src, nameof(last), OWN_DELETE)
+	own_set(src, nameof(last), new /datum/dq_packet_record(packet))
 	return 0
 
 
@@ -65,8 +65,8 @@
 
 /mob/living/simple_mob/dq_damage_probe/damage_sink(datum/damage_packet/packet)
 	received++
-	own_clear(src, "last", OWN_DELETE)
-	own_set(src, "last", new /datum/dq_packet_record(packet))
+	own_clear(src, nameof(last), OWN_DELETE)
+	own_set(src, nameof(last), new /datum/dq_packet_record(packet))
 	return 0
 
 
@@ -76,8 +76,8 @@
 	var/mob/living/simple_mob/dq_damage_probe/mob_probe
 
 /datum/unit_test/dq_damage_packet/proc/make_probes()
-	rel_set(src, "probe", allocate(/obj/machinery/dq_damage_probe))
-	rel_set(src, "mob_probe", allocate(/mob/living/simple_mob/dq_damage_probe))
+	rel_set(src, nameof(probe), allocate(/obj/machinery/dq_damage_probe))
+	rel_set(src, nameof(mob_probe), allocate(/mob/living/simple_mob/dq_damage_probe))
 
 /datum/unit_test/dq_damage_packet/proc/make_projectile(kind, damage, pen = 0)
 	var/obj/item/projectile/P = allocate(/obj/item/projectile)
@@ -111,7 +111,10 @@
 	TEST_ASSERT(!packet.add_injury(INJURY_CELLULAR, 5), "cellular injury has no packet kind")
 	packet.release()
 	var/datum/damage_packet/again = damage_packet()
-	TEST_ASSERT(again == packet, "a released packet should be reused")
+	if(GLOB.pool_poison)
+		TEST_ASSERT(again != packet, "a released packet is poisoned in test builds: never handed out again")
+	else
+		TEST_ASSERT(again == packet, "a released packet should be reused")
 	TEST_ASSERT_EQUAL(again.total(), 0, "a reused packet should come back empty")
 	TEST_ASSERT_EQUAL(again.penetration, 0, "a reused packet should come back without penetration")
 	TEST_ASSERT_NULL(again.zone, "a reused packet should come back without a zone")

@@ -52,7 +52,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/clipboard, TYPE_PROC_REF(/atom, appearance_ove
 		user.drop_item()
 		W.forceMove(src)
 		if(istype(W, /obj/item/paper))
-			rel_set(src, "toppaper", W)
+			rel_set(src, nameof(toppaper), W)
 		to_chat(user, span_notice("You clip the [W] onto \the [src]."))
 		update_icon()
 
@@ -65,7 +65,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/clipboard, TYPE_PROC_REF(/atom, appearance_ove
 /obj/item/clipboard/afterattack(turf/T as turf, mob/user)
 	for(var/obj/item/paper/P in turf_contents_of_type(T, /obj/item/paper))
 		P.forceMove(src)
-		rel_set(src, "toppaper", P)
+		rel_set(src, nameof(toppaper), P)
 		update_icon()
 		to_chat(user, span_notice("You clip the [P] onto \the [src]."))
 
@@ -132,7 +132,7 @@ UI_ACT_PROC(/obj/item/clipboard, ui_act_remove_pen)
 	if(haspen() && haspen().loc == src)
 		haspen().forceMove(usr.loc)
 		usr.put_in_hands(haspen())
-		rel_clear(src, "haspen")
+		rel_clear(src, nameof(/obj/item/clipboard::haspen))
 		update_icon()
 	return TRUE
 
@@ -143,7 +143,7 @@ UI_ACT_PROC(/obj/item/clipboard, ui_act_add_pen)
 		if(istype(W, /obj/item/pen))
 			usr.drop_item()
 			W.forceMove(src)
-			rel_set(src, "haspen", W)
+			rel_set(src, nameof(/obj/item/clipboard::haspen), W)
 			to_chat(usr, span_notice("You slot the pen into \the [src]."))
 			update_icon()
 	return TRUE
@@ -168,7 +168,7 @@ UI_ACT_PROC(/obj/item/clipboard, ui_act_remove)
 		O.forceMove(usr.loc)
 		usr.put_in_hands(O)
 		if(O == toppaper())
-			rel_set(src, "toppaper", locate_within(src, /obj/item/paper))
+			rel_set(src, nameof(/obj/item/clipboard::toppaper), locate_within(src, /obj/item/paper))
 		update_icon()
 	return TRUE
 

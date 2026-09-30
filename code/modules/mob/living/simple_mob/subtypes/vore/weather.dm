@@ -189,19 +189,19 @@ DECLARE_REPEAT(/mob/living/simple_mob/vore/boss_jellyfish, 4 SECONDS, chain_atta
 		Beam(A, icon_state = "sat_beam", time = 3.5 SECONDS, maxdistance = INFINITY)
 		om_after(src, 4 SECONDS, PROC_REF(sniper_shot), A)
 	else if(vitality() < 0.25) //phase 4 where it teleports then chains 3 attacks
-		rel_set(src, "chain_target", A)
+		rel_set(src, nameof(chain_target), A)
 		set_chain_number(3)
 		om_after(src, 3 SECONDS, PROC_REF(astral_sea_warp), A)
 		icon_state = "jellyfish_blue"
 		icon_living = "jellyfish_blue"
 	else if(vitality() < 0.5) //teleports then chains 2 attacks
-		rel_set(src, "chain_target", A)
+		rel_set(src, nameof(chain_target), A)
 		set_chain_number(2)
 		om_after(src, 3 SECONDS, PROC_REF(astral_sea_warp), A)
 		icon_state = "jellyfish_blue"
 		icon_living = "jellyfish_blue"
 	else if(vitality() < 0.75) //teleports then attacks
-		rel_set(src, "chain_target", A)
+		rel_set(src, nameof(chain_target), A)
 		set_chain_number(1)
 		icon_state = "jellyfish_blue"
 		icon_living = "jellyfish_blue"

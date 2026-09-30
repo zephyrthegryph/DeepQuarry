@@ -96,16 +96,16 @@ DECLARE_REPEAT(/obj/machinery/door/airlock, 1 SECOND, command_step, "cur_command
 			return density
 
 		if("unlock")
-			return !locked
+			return !is_bolted(src)
 
 		if("lock")
-			return locked
+			return is_bolted(src)
 
 		if("secure_open")
-			return (locked && !density)
+			return (is_bolted(src) && !density)
 
 		if("secure_close")
-			return (locked && density)
+			return (is_bolted(src) && density)
 
 		if("update")
 			return TRUE // We just want the send_status() call from check_completion()
@@ -114,7 +114,7 @@ DECLARE_REPEAT(/obj/machinery/door/airlock, 1 SECOND, command_step, "cur_command
 
 /obj/machinery/door/airlock/proc/send_status(bumped = FALSE, force = FALSE)
 	if(radio_connection())
-		if(!force && !bumped && density == last_reported_density && locked == last_reported_locked)
+		if(!force && !bumped && density == last_reported_density && is_bolted(src) == last_reported_locked)
 			return
 		var/datum/signal/signal = new
 		signal.transmission_method = TRANSMISSION_RADIO //radio signal
@@ -122,20 +122,20 @@ DECLARE_REPEAT(/obj/machinery/door/airlock, 1 SECOND, command_step, "cur_command
 		signal.data["timestamp"] = EXPIRY_AT(src, CLOCK_WORLD, 0)
 
 		signal.data["door_status"] = density?("closed"):("open")
-		signal.data["lock_status"] = locked?("locked"):("unlocked")
+		signal.data["lock_status"] = is_bolted(src) ? "locked" : "unlocked"
 
 		if (bumped)
 			signal.data["bumped_with_access"] = 1
 
 		radio_connection().post_signal(src, signal, range = AIRLOCK_CONTROL_RANGE, radio_filter = RADIO_AIRLOCK)
 		last_reported_density = density
-		last_reported_locked = locked
+		last_reported_locked = is_bolted(src)
 
 /obj/machinery/door/airlock/open(surpress_send)
 	. = ..()
 	if(!surpress_send) send_status()
 
-/obj/machinery/door/airlock/close(forced= FALSE, ignore_safties = FALSE, crush_damage = DOOR_CRUSH_DAMAGE)
+/obj/machinery/door/airlock/close(forced= FALSE, ignore_safties = FALSE, crush_damage)
 	. = ..()
 	if(!forced) send_status()
 
@@ -148,14 +148,14 @@ DECLARE_REPEAT(/obj/machinery/door/airlock, 1 SECOND, command_step, "cur_command
 	return
 
 /obj/machinery/door/airlock/proc/set_frequency(new_frequency)
-	rel_clear(src, "radio_connection")
+	rel_clear(src, nameof(radio_connection))
 	GLOB.radio_service.remove_object(src, frequency)
 	frequency = new_frequency
 	last_reported_density = -1
 	last_reported_locked = -1
 
 	if(new_frequency)
-		rel_set(src, "radio_connection", GLOB.radio_service.add_object(src, new_frequency, RADIO_AIRLOCK))
+		rel_set(src, nameof(radio_connection), GLOB.radio_service.add_object(src, new_frequency, RADIO_AIRLOCK))
 
 /obj/machinery/airlock_sensor
 	maintenance_flags = MACHINE_MAINT_STANDARD
@@ -253,7 +253,7 @@ DECLARE_APPEARANCE(/obj/machinery/airlock_sensor, "panel_open", list("1" = list(
 /obj/machinery/airlock_sensor/proc/set_frequency(new_frequency)
 	GLOB.radio_service.remove_object(src, frequency)
 	frequency = new_frequency
-	rel_set(src, "radio_connection", GLOB.radio_service.add_object(src, frequency, RADIO_AIRLOCK))
+	rel_set(src, nameof(radio_connection), GLOB.radio_service.add_object(src, frequency, RADIO_AIRLOCK))
 
 /obj/machinery/airlock_sensor/Initialize(mapload)
 	. = ..()
@@ -392,7 +392,7 @@ DECLARE_APPEARANCE(/obj/machinery/access_button, "panel_open", list("1" = list(A
 /obj/machinery/access_button/proc/set_frequency(new_frequency)
 	GLOB.radio_service.remove_object(src, frequency)
 	frequency = new_frequency
-	rel_set(src, "radio_connection", GLOB.radio_service.add_object(src, frequency, RADIO_AIRLOCK))
+	rel_set(src, nameof(radio_connection), GLOB.radio_service.add_object(src, frequency, RADIO_AIRLOCK))
 
 /obj/machinery/access_button/Initialize(mapload)
 	. = ..()
@@ -424,4 +424,6 @@ DECLARE_APPEARANCE(/obj/machinery/access_button, "panel_open", list("1" = list(A
 	return radio_connection
 
 // Remote door buttons find airlocks by id_tag (REL_KEYED sources).
-KEYED_TARGET(/obj/machinery/door/airlock, id_tag)
+/obj/machinery/door/airlock/relations()
+	. = ..()
+	. += rel_key(nameof(id_tag))

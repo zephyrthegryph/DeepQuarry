@@ -48,7 +48,7 @@ OWN_TIMER(/obj/machinery/camera, camera_timer_token)
 		resistance_flags |= BOMB_PROOF
 	om_hook(src, list(/datum/om/event/machinery_power_lost, /datum/om/event/machinery_power_restored), src, PROC_REF(on_power_signal))
 	set_wires(new /datum/wires/camera(src))
-	own_set(src, "assembly", new /obj/item/camera_assembly(src))
+	own_set(src, nameof(assembly), new /obj/item/camera_assembly(src))
 	assembly.state = 4
 	LAZYOR(client_huds, GLOB.global_hud.whitense)
 
@@ -114,7 +114,7 @@ OWN_TIMER(/obj/machinery/camera, camera_timer_token)
 	camera_timer_at = deadline
 	if(deadline)
 		om_attach(src, /datum/om/behaviour/sleeper/timed)
-		om_after_slot(src, "camera_timer_token", max(deadline - world.time, 0), PROC_REF(camera_timer_fired))
+		after_slot(src, "camera_timer_token", max(deadline - world.time, 0), PROC_REF(camera_timer_fired))
 
 /obj/machinery/camera/proc/camera_timer_fired()
 	camera_timer_at = 0
@@ -304,7 +304,7 @@ DAMAGE_REACTION(/obj/machinery/camera, DAMAGE_EMP, PROC_REF(camera_emp))
 			assembly.state = 1
 			to_chat(user, span_notice("You cut \the [src] free from the wall."))
 			new /obj/item/stack/cable_coil(loc, 2)
-		own_take(src, "assembly")
+		own_take(src, nameof(assembly))
 	qdel(src)
 	return ITEM_INTERACT_SUCCESS
 

@@ -109,8 +109,8 @@
 			continue
 		HideFrom(viewer)
 	if(remove_from)
-		rel_remove(remove_from, "actions", src) // We aren't always properly inserted into the viewers list, gotta make sure that action's cleared
-	own_clear(src, "viewers", OWN_DELETE) // whatever HideFrom() couldn't reach
+		rel_remove(remove_from, nameof(/mob::actions), src) // We aren't always properly inserted into the viewers list, gotta make sure that action's cleared
+	own_clear(src, nameof(viewers), OWN_DELETE) // whatever HideFrom() couldn't reach
 
 	// While the owner relation is being torn down (either end deleted) the edge is already gone.
 	var/mob/owner = action_owner() || remove_from
@@ -272,7 +272,7 @@
 	if(our_hud && button_for(our_hud)) // Already have a copy of us? go away
 		return
 
-	rel_add(viewer, "actions", src) // Move this in
+	rel_add(viewer, nameof(/mob::actions), src) // Move this in
 	ShowTo(viewer)
 
 /// Adds our action button to the screen of the passed viewer.
@@ -284,8 +284,8 @@
 	var/atom/movable/screen/movable/action_button/button = create_button()
 	SetId(button, viewer)
 
-	rel_set(button, "our_hud", our_hud)
-	own_add(src, "viewers", button)
+	rel_set(button, nameof(button.our_hud), our_hud)
+	own_add(src, nameof(viewers), button)
 	if(viewer.client)
 		viewer.client.screen += button
 
@@ -296,14 +296,14 @@
 /datum/action/proc/HideFrom(mob/viewer)
 	var/datum/hud/our_hud = viewer.hud_used
 	var/atom/movable/screen/movable/action_button/button = button_for(our_hud)
-	rel_remove(viewer, "actions", src)
+	rel_remove(viewer, nameof(/mob::actions), src)
 	if(button)
-		own_remove(src, "viewers", button)
+		own_remove(src, nameof(viewers), button)
 
 /// Creates an action button movable for the passed mob, and returns it.
 /datum/action/proc/create_button()
 	var/atom/movable/screen/movable/action_button/button = new()
-	rel_set(button, "linked_action", src)
+	rel_set(button, nameof(button.linked_action), src)
 	build_button_icon(button, ALL, TRUE)
 	return button
 

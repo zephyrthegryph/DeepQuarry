@@ -179,7 +179,7 @@ text.
 
 ## 3. Slots
 
-A slot is a relation (`/datum/om/relation/slot`, `object_model_core.md` §7) that
+A slot is a relation (`/datum/om/relation/slot`, `archive/object_model_core.md` §7) that
 also owns loc: linking a thing into a slot is a ledger move, and it is also an
 `om_link` to the holder, so a slot gets a relation's `changes` channels and
 `contributes`/`grants` rows for free, on top of what a container needs. There
@@ -561,7 +561,7 @@ that lint or its allowlist.
 
 - **Parts become tier numbers**: `list(manipulator = 1, capacitor = 2)`. `RefreshParts()` reads the numbers, and real parts are created only on deconstruction or an RPED swap. That's about 3–6 parts on each of ~746 mapped machines.
 - **The circuit board is its type path** until the machine is dismantled. That's about 2,300 boards, each with a `/datum/frame`.
-- **Cells, wires and radio connections** are created on first use. Wires become a bitmask plus per-type definitions ([interactions.md §11](interactions.md#11-wires)).
+- **Cells, wires and radio connections** are created on first use. Wires become a bitmask plus per-type definitions ([archive/interactions.md §11](archive/interactions.md#11-wires)).
 - The 93 `in component_parts` checks and the sleeper's partial eject go away.
 
 ## 6. Equipment
@@ -572,7 +572,7 @@ that lint or its allowlist.
 - Species gating becomes a constraint on the item type (body plan and fit), not `hud.equip_slots` plus `species_restricted` lists.
 
 **Inventory actions**
-- Equipping, unequipping, picking up, dropping and throwing are all ledger moves ([interactions.md](interactions.md)).
+- Equipping, unequipping, picking up, dropping and throwing are all ledger moves ([archive/interactions.md](archive/interactions.md)).
 - `equipped()` and `dropped()` become slot signals.
 - Items held in an external slot are always real. Their own internal slots (pockets, backpacks) can be latent.
 
@@ -585,7 +585,7 @@ that lint or its allowlist.
 | Pressure protection | From the sealed layers |
 | Slowdown | Sum |
 | Vision and hearing modifiers | Flags |
-| Body factors from equipment | Declared by items, read by the body model ("Equipment: modifiers declare factors", `doc/health_system_review.md` §5.11) |
+| Body factors from equipment | Declared by items, read by the body model ("Equipment: modifiers declare factors", `doc/rewrite/archive/health_system_review.md` §5.11) |
 
 Today `get_heat_protection_flags` scans six slots every `Life()`, and `getarmor_organ` adds up clothing on every hit. Aggregates replace both.
 

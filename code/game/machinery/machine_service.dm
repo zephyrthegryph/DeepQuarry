@@ -33,7 +33,7 @@ GLOBAL_DATUM_INIT(machine_service, /datum/world_service/machines, new)
 	var/last_pump_commit_operations = 0
 	var/last_pump_commit_turfs = 0
 
-	/// Gas dependency observations (vg_drain_dirty_gas_observations()) retained while a step yields.
+	/// Gas dependency observations (the frame's CHANGED records of gas watches, native_system().take_gas_changes()) retained while a step yields.
 	var/list/pending_dirty_gas_mixtures
 	var/pending_dirty_gas_index = 1
 	var/gas_dirty_last = 0
@@ -151,14 +151,18 @@ GLOBAL_DATUM_INIT(machine_service, /datum/world_service/machines, new)
 	last_pump_commit_suspended_ms = max(last_pump_commit_wall_ms - last_pump_commit_ms, 0)
 	pending_pump_transfers.Cut()
 
-/// Hands this batch of gas dependency observations to their native watches
+/// Hands this batch of gas dependency observations (from the frame's outbox) to their native watches
 /// (/datum/native_watch/gas, code/datums/om/native.dm). The OM watch layer owns one
 /// native watch per watched mixture (code/datums/om/watch.dm), which fans the record
 /// out to every om_watch armed on that mixture (om_watch_dispatch_gas()).
 /datum/world_service/machines/proc/wake_dirty_gas_subscribers(budgeted = FALSE)
 	var/scan_started = TICK_USAGE
 	if(!pending_dirty_gas_mixtures)
-		pending_dirty_gas_mixtures = vg_drain_dirty_gas_observations()
+#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
+		// Tests drive Rust by hand, not through OM ticks: what the next frame would have delivered is delivered now.
+		native_system().drain()
+#endif
+		pending_dirty_gas_mixtures = native_system().take_gas_changes() || list()
 		pending_dirty_gas_index = 1
 		gas_dirty_last = length(pending_dirty_gas_mixtures) / GAS_DEPENDENCY_OBSERVATION_STRIDE
 		gas_woken_last = 0

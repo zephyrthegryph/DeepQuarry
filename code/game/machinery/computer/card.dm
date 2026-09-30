@@ -48,14 +48,10 @@
 	effect = /obj/machinery/computer/card/proc/interaction_insert_id
 
 /obj/machinery/computer/card/proc/interaction_insert_id(mob/user, obj/item/card/id/id_card, datum/interaction/interaction)
-	if(!scan && (ACCESS_CHANGE_IDS in id_card.GetAccess()) && (user.unEquip(id_card) || (id_card.loc == user && istype(user,/mob/living/silicon/robot)))) //Grippers. Again. ~Mechoid
-		user.drop_item()
-		id_card.forceMove(src)
-		own_set(src, "scan", id_card)
+	if(!scan && (ACCESS_CHANGE_IDS in id_card.GetAccess()))
+		own_set(src, nameof(src.scan), id_card, user = user)
 	else if(!modify)
-		user.drop_item()
-		id_card.forceMove(src)
-		own_set(src, "modify", id_card)
+		own_set(src, nameof(src.modify), id_card, user = user)
 
 	SStgui.update_uis(src)
 	attack_hand(user)
@@ -74,13 +70,13 @@
 		scan.forceMove(get_turf(src))
 		if(!user.get_active_hand() && ishuman(user))
 			user.put_in_hands(scan)
-		own_take(src, "scan")
+		own_take(src, nameof(scan))
 	else if(modify)
 		to_chat(user, "You remove \the [modify] from \the [src].")
 		modify.forceMove(get_turf(src))
 		if(!user.get_active_hand() && ishuman(user))
 			user.put_in_hands(modify)
-		own_take(src, "modify")
+		own_take(src, nameof(modify))
 	else
 		to_chat(user, "There is nothing to remove from the console.")
 	return TRUE
@@ -174,15 +170,14 @@ UI_ACT_PROC(/obj/machinery/computer/card, ui_act_modify)
 			modify.forceMove(get_turf(src))
 			if(!ui.user.get_active_hand())
 				ui.user.put_in_hands(modify)
-			own_take(src, "modify")
+			own_take(src, nameof(/obj/machinery/computer/card::modify))
 		else
 			modify.forceMove(get_turf(src))
-			own_take(src, "modify")
+			own_take(src, nameof(/obj/machinery/computer/card::modify))
 	else
 		var/obj/item/I = ui.user.get_active_hand()
-		if(istype(I, /obj/item/card/id) && ui.user.unEquip(I))
-			I.forceMove(src)
-			own_set(src, "modify", I)
+		if(istype(I, /obj/item/card/id))
+			own_set(src, nameof(src.modify), I, user = ui.user)
 	. = TRUE
 	if(modify)
 		modify.name = "[modify.registered_name]'s ID Card ([modify.assignment])"
@@ -194,16 +189,14 @@ UI_ACT_PROC(/obj/machinery/computer/card, ui_act_scan)
 			scan.forceMove(get_turf(src))
 			if(!ui.user.get_active_hand())
 				ui.user.put_in_hands(scan)
-			own_take(src, "scan")
+			own_take(src, nameof(/obj/item/extrapolator::scan))
 		else
 			scan.forceMove(get_turf(src))
-			own_take(src, "scan")
+			own_take(src, nameof(/obj/item/extrapolator::scan))
 	else
 		var/obj/item/I = ui.user.get_active_hand()
 		if(istype(I, /obj/item/card/id))
-			ui.user.drop_item()
-			I.forceMove(src)
-			own_set(src, "scan", I)
+			own_set(src, nameof(src.scan), I, user = ui.user)
 	. = TRUE
 	if(modify)
 		modify.name = "[modify.registered_name]'s ID Card ([modify.assignment])"
@@ -335,5 +328,7 @@ UI_ACT_PROC(/obj/machinery/computer/card, ui_act_terminate)
 		for(var/A in modify.access)
 			P.info += "  [SSaccess.get_access_desc(A)]"
 
-OWN(/obj/machinery/computer/card, scan, OWN_CONTAINED)
-OWN(/obj/machinery/computer/card, modify, OWN_CONTAINED)
+/obj/machinery/computer/card/ownership()
+	. = ..()
+	. += owns(nameof(scan), policy = OWN_CONTAINED)
+	. += owns(nameof(modify), policy = OWN_CONTAINED)

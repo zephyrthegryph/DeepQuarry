@@ -43,7 +43,7 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/omni, null, list(APPEARANCE_ANY =
 				new_port.mode = tag_west
 		if(new_port.mode > 0)
 			initialize_directions |= d
-		own_add(src, "ports", new_port)
+		own_add(src, nameof(ports), new_port)
 
 	build_icons()
 
@@ -64,61 +64,15 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/omni, TYPE_PROC_REF(/atom, a
 /obj/machinery/atmospherics/omni/proc/error_check()
 	return
 
-/// Wake tracing for omni devices (off by default): define DQ_TRACE_OMNI_WAKE to log every
-/// arm/clear/wake/step decision, for chasing OM_AUDIT missed wakes.
-#ifdef DQ_TRACE_OMNI_WAKE
-#define OMNI_WAKE_TRACE(M, what) log_world("OMNI_WAKE_TRACE [REF(M)] [M.name] t=[world.time] [what] stat=[M.stat] use_power=[M.use_power] active=[M.step_active] armed=[om_watch_armed(M)]")
-#else
-#define OMNI_WAKE_TRACE(M, what)
-#endif
-
-/// Steps while switched on and operable; hibernate_until_gas_changes() parks it between gas changes.
-DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/atmospherics/omni, MACHINE_PIPELINE, list("use_power", "operable"))
-
-/obj/machinery/atmospherics/omni/machine_step()
-	OMNI_WAKE_TRACE(src, "step")
-	last_power_draw = 0
-	last_flow_rate = 0
-
-	if(error_check())
-		set_use_power(USE_POWER_OFF)
-
-	if((!operable()) || !use_power)
-		return 0
-	return 1
-
-/obj/machinery/atmospherics/omni/power_change()
-	. = ..()
-	OMNI_WAKE_TRACE(src, "power_change changed=[.]")
-	if(.)
-		wake_for_state_change()
-
-/// Arms its eligibility rule (code/datums/om/watch.dm om_watch_arm_condition()) over every port
-/// mixture: it wakes only once it is on, powered and can_process_gas() says there is enough to
-/// move -- not on every revision of every port.
-/obj/machinery/atmospherics/omni/proc/hibernate_until_gas_changes()
-	var/list/mixture_ids = list()
-	for(var/datum/omni_port/P as anything in ports)
-		var/id = P.air?.arena_id()
-		if(!isnull(id))
-			mixture_ids |= id
-	// Every caller is machine_step(), which returns PROCESS_KILL right after: that parks it.
-	om_watch_arm_condition(src, "gas", mixture_ids, GAS_DEPENDENCY_ALL, om_callable(src, PROC_REF(gas_wake_condition)), wake_callback = om_callable(src, PROC_REF(wake_for_state_change)))
-	OMNI_WAKE_TRACE(src, "hibernate mixtures=[length(mixture_ids)]")
-
-/obj/machinery/atmospherics/omni/proc/clear_gas_dependencies()
-	om_watch_disarm(src, "gas")
-
-/obj/machinery/atmospherics/omni/proc/gas_wake_condition()
-	return use_power && operable() && can_process_gas()
-
-/obj/machinery/atmospherics/omni/proc/can_process_gas()
-	return TRUE
-
+/// An omni device's flow is a Rust budget group (filter.dm, mixer.dm push_to_rust()): anything that changes its ports,
+/// modes or shares marks the device dirty and the group is pushed once this frame.
 /obj/machinery/atmospherics/omni/proc/wake_for_state_change()
-	clear_gas_dependencies()
-	MACHINE_WAKE(src) // refused unless on and operable (the declaration above)
-	OMNI_WAKE_TRACE(src, "wake_for_state_change")
+	rust_device_dirty()
+
+/// A port bound: its region exists in Rust, so the legs can be registered.
+/obj/machinery/atmospherics/omni/rust_bind_pipe_port(index, datum/pipe_network/new_network, datum/gas_mixture/network_air)
+	. = ..()
+	rust_device_dirty()
 
 /obj/machinery/atmospherics/omni/wrench_act(mob/user, obj/item/W)
 	if(!can_unwrench())
@@ -245,6 +199,8 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/atmospherics/omni, MACHINE_PIPELINE, l
 
 /obj/machinery/atmospherics/omni/proc/update_ports()
 	sort_ports()
+	if(error_check())
+		set_use_power(USE_POWER_OFF) // a device that cannot run (missing ports, bad shares) switches itself off
 	update_port_icons()
 	for(var/datum/omni_port/P in ports)
 		P.update = 0
@@ -265,7 +221,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/atmospherics/omni, MACHINE_PIPELINE, l
 			continue
 		for(var/obj/machinery/atmospherics/target in get_step(src, P.dir))
 			if(can_be_node(target, 1))
-				rel_set(P, "node", target)
+				rel_set(P, nameof(P.node), target)
 				break
 
 	for(var/datum/omni_port/P in ports)
@@ -283,7 +239,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/atmospherics/omni, MACHINE_PIPELINE, l
 /obj/machinery/atmospherics/omni/reassign_network(datum/pipe_network/old_network, datum/pipe_network/new_network)
 	for(var/datum/omni_port/P in ports)
 		if(P.network == old_network)
-			rel_set(P, "network", new_network)
+			rel_set(P, nameof(P.network), new_network)
 
 	return 1
 
@@ -299,19 +255,19 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/atmospherics/omni, MACHINE_PIPELINE, l
 /obj/machinery/atmospherics/omni/bind_network_air(datum/pipe_network/reference, datum/gas_mixture/network_air)
 	for(var/datum/omni_port/P in ports)
 		if(P.network == reference)
-			atmos_air_set(P, "air", network_air)
+			atmos_air_set(P, nameof(P.air), network_air)
 
 /obj/machinery/atmospherics/omni/detach_network_air(datum/pipe_network/reference, datum/gas_mixture/network_air, network_volume)
 	for(var/datum/omni_port/P in ports)
 		if(P.network == reference && P.air == network_air)
-			atmos_air_set(P, "air", detached_pipenet_air(network_air, 200, network_volume))
+			atmos_air_set(P, nameof(P.air), detached_pipenet_air(network_air, 200, network_volume))
 
 /obj/machinery/atmospherics/omni/disconnect(obj/machinery/atmospherics/reference)
 	wake_for_state_change()
 	for(var/datum/omni_port/P in ports)
 		if(reference == P.node)
 			rust_release_network_wrapper(P.network)
-			rel_clear(P, "node")
+			rel_clear(P, nameof(P.node))
 			P.update = 1
 			break
 
@@ -336,14 +292,6 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/atmospherics/omni, MACHINE_PIPELINE, l
 
 	else
 		to_chat(user, span_warning("Access denied."))
-
-/obj/machinery/atmospherics/omni/step_has_work()
-	return gas_wake_condition()
-
-/// Setup at spawn: arm what wakes it (machine_pipeline.dm, materialize_wakes()).
-/obj/machinery/atmospherics/omni/arm_wakes()
-	..()
-	hibernate_until_gas_changes()
 
 // Ports are ours; each points back as `master`, and the filter/mixer subtypes hold them again
 // (input, output, atmos_filters, inputs), so the port lets go of its master when deleted.

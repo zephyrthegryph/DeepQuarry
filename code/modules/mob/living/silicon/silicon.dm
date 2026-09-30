@@ -62,7 +62,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 		return
 	if(idcard)
 		return
-	own_set(src, "idcard", new idcard_type(src))
+	own_set(src, nameof(idcard), new idcard_type(src))
 	set_id_info(idcard)
 
 /mob/living/silicon/proc/SetName(pickedName as text)
@@ -315,16 +315,16 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 		return
 	if(was_raised)
 		// Raised alarms are always set
-		rel_remove(Q, "cleared", alarm)
-		rel_add(Q, "raised", alarm)
+		rel_remove(Q, nameof(Q.cleared), alarm)
+		rel_add(Q, nameof(Q.raised), alarm)
 	else
 		// Alarms that were raised but then cleared before the next notice are instead removed
 		if((alarm in Q.raised) || (alarm in Q.cleared))
-			rel_remove(Q, "raised", alarm)
-			rel_remove(Q, "cleared", alarm)
+			rel_remove(Q, nameof(Q.raised), alarm)
+			rel_remove(Q, nameof(Q.cleared), alarm)
 		// And alarms that have only been cleared thus far are set as such
 		else
-			rel_add(Q, "cleared", alarm)
+			rel_add(Q, nameof(Q.cleared), alarm)
 
 /mob/living/silicon/proc/process_queued_alarms()
 	if(next_alarm_notice && (COOLDOWN_FINISHED(src, next_alarm_notice)))
@@ -355,8 +355,8 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 
 		for(var/key in queued_alarms)
 			var/datum/silicon_alarm_queue/Q = queued_alarms[key]
-			rel_clear(Q, "raised")
-			rel_clear(Q, "cleared")
+			rel_clear(Q, nameof(Q.raised))
+			rel_clear(Q, nameof(Q.cleared))
 
 /// A silicon's pending alarm notices for one alarm handler: what was raised and what was cleared
 /// since the last notice. Owned by the silicon; the alarms themselves belong to their handler.
@@ -369,8 +369,10 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 	..()
 	src.category = category
 
-REL_LIST(/datum/silicon_alarm_queue, raised)
-REL_LIST(/datum/silicon_alarm_queue, cleared)
+/datum/silicon_alarm_queue/relations()
+	. = ..()
+	. += rel_many(nameof(raised))
+	. += rel_many(nameof(cleared))
 
 /mob/living/silicon/proc/raised_alarm(datum/alarm/A)
 	to_chat(src, span_filter_warning("[A.alarm_name()]!"))
@@ -398,7 +400,7 @@ REL_LIST(/datum/silicon_alarm_queue, cleared)
 
 /mob/living/silicon/reset_perspective(atom/new_eye)
 	. = ..()
-	rel_clear(src, "cameraFollow")
+	rel_clear(src, nameof(cameraFollow))
 
 /mob/living/silicon/flash_eyes(intensity = FLASH_PROTECTION_MODERATE, override_blindness_check = FALSE, affect_silicon = FALSE, visual = FALSE, type = /atom/movable/screen/fullscreen/flash)
 	if(affect_silicon)

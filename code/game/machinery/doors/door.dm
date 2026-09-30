@@ -16,7 +16,6 @@ OWN_TIMER(/obj/machinery/door, door_timer_token)
 	var/closed_layer = DOOR_CLOSED_LAYER
 
 	var/visible = 1
-	var/p_open = 0
 	var/operating = 0
 	var/autoclose = 0
 	var/glass = 0
@@ -106,7 +105,7 @@ OWN_TIMER(/obj/machinery/door, door_timer_token)
 	door_timer_at = deadline
 	if(deadline)
 		om_attach(src, /datum/om/behaviour/sleeper/timed)
-		om_after_slot(src, "door_timer_token", max(deadline - world.time, 0), PROC_REF(door_timer_fired))
+		after_slot(src, "door_timer_token", max(deadline - world.time, 0), PROC_REF(door_timer_fired))
 
 /obj/machinery/door/proc/door_timer_fired()
 	door_timer_at = 0
@@ -140,7 +139,7 @@ OWN_TIMER(/obj/machinery/door, door_timer_token)
 /obj/machinery/door/proc/sleep_until_autoclose_blocker_moves(atom/movable/blocker)
 	if(!blocker)
 		return
-	rel_add(src, "autoclose_blockers", blocker)
+	rel_add(src, nameof(autoclose_blockers), blocker)
 	om_hook(blocker, list(/datum/om/event/moved, /datum/om/event/qdeleting), src, PROC_REF(on_autoclose_blocker_changed))
 	close_door_at = 0
 	schedule_door_timer()
@@ -148,7 +147,7 @@ OWN_TIMER(/obj/machinery/door, door_timer_token)
 /obj/machinery/door/proc/clear_autoclose_blockers()
 	for(var/atom/movable/blocker as anything in autoclose_blockers)
 		om_unhook(blocker, list(/datum/om/event/moved, /datum/om/event/qdeleting), src)
-	rel_clear(src, "autoclose_blockers")
+	rel_clear(src, nameof(autoclose_blockers))
 
 /obj/machinery/door/proc/on_autoclose_blocker_changed(datum/source, datum/om/event/event)
 	EVENT_HANDLER
@@ -167,7 +166,7 @@ OWN_TIMER(/obj/machinery/door, door_timer_token)
 
 /obj/machinery/door/Bumped(atom/AM)
 	. = ..()
-	if(p_open || operating)
+	if(panel_is_open(src) || operating)
 		return
 
 	if(ismob(AM))
@@ -360,7 +359,7 @@ DAMAGE_REACTION_AFTER(/obj/machinery/door, DAMAGE_THROWN, PROC_REF(door_thrown_a
 
 /obj/machinery/door/crowbar_act(mob/user, obj/item/tool)
 	if(!reinforcing)
-		return NONE
+		return ..() // the door's crowbar interactions (an airlock's cap_pry())
 	var/obj/item/stack/material/plasteel/reinforcing_sheet = new /obj/item/stack/material/plasteel(get_turf(src), reinforcing)
 	reinforcing = 0
 	to_chat(user, span_notice("You remove \the [reinforcing_sheet]."))
@@ -379,6 +378,12 @@ DAMAGE_REACTION_AFTER(/obj/machinery/door, DAMAGE_THROWN, PROC_REF(door_thrown_a
 
 		use_tool(user, tool, src, delay = 1 SECOND, quality = TOOL_WELDER, volume = 50, amount = 0, start_self = "You start welding the plasteel into place.", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
 		return ITEM_INTERACT_SUCCESS
+
+	// The door's welder interactions first (an airlock's cap_weld_shut(), offered only where welding it
+	// shut wins over repairing it), then the repair.
+	. = ..()
+	if(.)
+		return
 
 	if(get_integrity() < max_integrity)
 		if(!density)
@@ -439,7 +444,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/door, PROC_REF(on_emag), null)
 
 /obj/machinery/door/examine(mob/user)
 	. = ..()
-	if(has_stat(BROKEN))
+	if(has_stat(BROKEN) && !cap_of(src, /datum/capability/breakable)) // cap_breakable() says it itself
 		. += "It is broken!"
 
 /// What a door does when it breaks, after the base machinery break.
@@ -466,12 +471,12 @@ APPEARANCE_TEMPLATE(/obj/machinery/door, "door{density}")
 /obj/machinery/door/proc/do_animate(animation)
 	switch(animation)
 		if("opening")
-			if(p_open)
+			if(panel_is_open(src))
 				flick("o_doorc0", src)
 			else
 				flick("doorc0", src)
 		if("closing")
-			if(p_open)
+			if(panel_is_open(src))
 				flick("o_doorc1", src)
 			else
 				flick("doorc1", src)
@@ -522,25 +527,11 @@ APPEARANCE_TEMPLATE(/obj/machinery/door, "door{density}")
 		autoclose_in(next_close_wait())
 	return TRUE
 
+/// How long the door waits open before closing itself: its cap_door_timing(), or the stock timing.
 /obj/machinery/door/proc/next_close_wait()
-	var/lowest_temp = T20C
-	var/highest_temp = T0C
-	for(var/D in GLOB.cardinal)
-		var/turf/target = get_step(loc, D)
-		if(target && !target.density)
-			var/datum/gas_mixture/airmix = target.return_air()
-			if(!airmix)
-				continue
-			var/airmix_temp = airmix.return_temperature()
-			if(airmix_temp < lowest_temp)
-				lowest_temp = airmix_temp
-			if(airmix_temp > highest_temp)
-				highest_temp = airmix_temp
-	// Fast close to keep in the heat
-	var/open_speed = 150
-	if(abs(highest_temp - lowest_temp) >= 5)
-		open_speed = 15
-	return (normalspeed ? open_speed : 5)
+	var/static/datum/capability/door_timing/stock = new
+	var/datum/capability/door_timing/T = cap_of(src, /datum/capability/door_timing) || stock
+	return T.wait_for(src)
 
 /obj/machinery/door/proc/close(forced = 0, ignore_safties = FALSE, crush_damage = DOOR_CRUSH_DAMAGE)
 	if(!can_close(forced))

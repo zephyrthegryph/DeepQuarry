@@ -56,7 +56,7 @@
 		return
 
 	if(L.buckle_mob(src, forced = TRUE))
-		rel_set(src, "victim", L)
+		rel_set(src, nameof(victim), L)
 		update_icon()
 		ai_busy_begin() // Don't want the AI to interfere with eatting.
 		play_sfx(src, SFX_METROID_METROIDATTACH)
@@ -74,7 +74,7 @@
 		span_notice("\The [src] slides off of [victim]!"),
 		span_notice("\The [src] slides off of you!")
 		)
-	rel_clear(src, "victim")
+	rel_clear(src, nameof(victim))
 	update_icon()
 	om_after(src, 3 SECONDS, PROC_REF(ai_brain_resume)) // Resume normal operations.
 

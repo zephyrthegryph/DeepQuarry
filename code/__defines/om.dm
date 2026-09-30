@@ -77,6 +77,18 @@
 #define CHANGE_DATUM_C (1<<10)
 #define CHANGE_DATUM_D (1<<11)
 
+// Rust -> DM change delivery sources (code/datums/om/native_adapter.dm).
+#define NATIVE_SRC_GAS_EVENT 1
+#define NATIVE_SRC_GAS_WATCH 2
+#define NATIVE_SRC_WORLD_WATCH 3
+#define NATIVE_SRC_HEAT 4
+#define NATIVE_SRC_POWER 5
+#define NATIVE_SRC_OTHER 6
+#define NATIVE_SRC_COUNT 6
+
+/// A turf's visible gas changed (Rust visual event, delivered by native_changed()).
+#define CHANGE_TURF_GAS_VISUAL CHANGE_DATUM_A
+
 /// The one guarded setter call. Content writes om_changed(E, bits); this form
 /// is for hot setters that want the listen-mask test inlined.
 #define OM_CHANGED(E, bits) if((E).om_listen & (bits)) { om_dispatch_change(E, bits) }
@@ -119,6 +131,9 @@
 /// verb_source() names: shared sources for verb grants nothing else owns.
 #define VERB_SOURCE_CONFIG "config"
 #define VERB_SOURCE_ADMIN "admin"
+/// A capability on an atom while any source grants it (code/datums/capabilities/condition.dm): a temporary
+/// condition with behaviour, `om_grant_for(A, GRANT_CAPABILITY, /datum/capability/condition/x, source, time)`.
+#define GRANT_CAPABILITY "grant_capability"
 #define GRANT_ACCESS "grant_access"
 #define GRANT_TRAIT "grant_trait"
 
@@ -369,24 +384,26 @@
 
 // ---------------------------------------------------------------- periodic work (code/datums/om/periodic.dm)
 
-/// Starts `E`'s periodic work on pipeline type `P` (idempotent). Wakes it if parked.
+/// Starts `E`'s periodic work on cadence type `P` (idempotent): it joins the cadence and the kernel steps it.
 #define om_task_periodic(E, P) _om_periodic_start(E, P)
-/// Ends `E`'s periodic work: its stage idles and it parks. Does nothing when it isn't running.
+/// Ends `E`'s periodic work: it leaves its cadence and costs nothing. Does nothing when it isn't running.
 #define om_task_periodic_stop(E) _om_periodic_stop(E)
-/// TRUE while `E` has periodic work on any pipeline.
+/// TRUE while `E` has periodic work on any cadence.
 #define om_task_periodic_running(E) (!isnull((E).periodic_pipe))
 
-#define PERIODIC_SLOW /datum/om/pipeline/periodic/slow
-#define PERIODIC_SECOND /datum/om/pipeline/periodic/second
-#define PERIODIC_FAST /datum/om/pipeline/periodic/fast
-#define PERIODIC_PLANTS /datum/om/pipeline/periodic/plants
-#define PERIODIC_PROJECTILES /datum/om/pipeline/periodic/continuous/projectiles
-#define PERIODIC_INSTRUMENTS /datum/om/pipeline/periodic/continuous/instruments
-#define PERIODIC_STATUS_EFFECTS /datum/om/pipeline/periodic/continuous/status_effects
-#define PERIODIC_TAB_ITEMS /datum/om/pipeline/periodic/continuous/tab_items
-#define PERIODIC_THROWING /datum/om/pipeline/periodic/continuous/throwing
-#define PERIODIC_REFLECTORS /datum/om/pipeline/periodic/reflectors
-#define PERIODIC_LOOT_ICONS /datum/om/pipeline/periodic/loot_icons
+/// The source a periodic member holds its cadence membership under (member_join()).
+#define PERIODIC_SOURCE "periodic"
+#define PERIODIC_SLOW /datum/cadence/slow
+#define PERIODIC_SECOND /datum/cadence/second
+#define PERIODIC_FAST /datum/cadence/fast
+#define PERIODIC_PLANTS /datum/cadence/plants
+#define PERIODIC_PROJECTILES /datum/cadence/continuous/projectiles
+#define PERIODIC_INSTRUMENTS /datum/cadence/continuous/instruments
+#define PERIODIC_STATUS_EFFECTS /datum/cadence/continuous/status_effects
+#define PERIODIC_TAB_ITEMS /datum/cadence/continuous/tab_items
+#define PERIODIC_THROWING /datum/cadence/continuous/throwing
+#define PERIODIC_REFLECTORS /datum/cadence/reflectors
+#define PERIODIC_LOOT_ICONS /datum/cadence/loot_icons
 
 /// A lazy (data-only) world service, initialized on first use (code/datums/om/world_lanes.dm).
 /// `NAME` is its GLOB var. Each lazy service has a typed accessor proc built on this, e.g.

@@ -35,7 +35,7 @@
 		return
 	om_detach(src, climbable_type)
 	climbable_type = null
-	rel_clear(src, "climbers")
+	rel_clear(src, nameof(climbers))
 
 /datum/om/behaviour/climbable/on_start(obj/O)
 	om_grant(O, GRANT_VERB, /obj/proc/climb_on, O)
@@ -44,7 +44,7 @@
 /datum/om/behaviour/climbable/on_stop(obj/O)
 	om_revoke(O, GRANT_VERB, /obj/proc/climb_on, O)
 	remove_trait(O, TRAIT_CLIMBABLE, CLIMBABLE_TRAIT_SOURCE)
-	rel_clear(O, "climbers")
+	rel_clear(O, nameof(/obj::climbers))
 
 /datum/om/behaviour/climbable/on_climb_start(obj/O, datum/om/event/climb_start/event)
 	var/mob/living/H = event.user
@@ -67,10 +67,10 @@
 
 /datum/om/behaviour/climbable/proc/add_climber(obj/O, mob/living/user)
 	if(!QDELETED(user))
-		rel_add(O, "climbers", user)
+		rel_add(O, nameof(/obj::climbers), user)
 
 /datum/om/behaviour/climbable/proc/remove_climber(obj/O, mob/living/user)
-	rel_remove(O, "climbers", user)
+	rel_remove(O, nameof(/obj::climbers), user)
 
 /// om_after() target: runs the climb on the object's current climbable behaviour.
 /obj/proc/climbable_do_climb(mob/living/user)
@@ -317,4 +317,6 @@
 /datum/om/behaviour/proc/on_climb_shake(datum/E, datum/om/event/climb_shake/event)
 	return
 
-REL_LIST(/obj, climbers)
+/obj/relations()
+	. = ..()
+	. += rel_many(nameof(climbers))

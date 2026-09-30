@@ -11,7 +11,7 @@
 /atom/proc/init_forensic_data()
 	RETURN_TYPE(/datum/forensics_crime)
 	SHOULD_NOT_OVERRIDE(TRUE)
-	if(!forensic_data && !own_set(src, "forensic_data", new /datum/forensics_crime()))
+	if(!forensic_data && !own_set(src, nameof(forensic_data), new /datum/forensics_crime()))
 		// Refused by the teardown guard (we are being destroyed, ownership/guard.dm): callers get a
 		// detached record, so their writes land nowhere instead of on a null.
 		return new /datum/forensics_crime()

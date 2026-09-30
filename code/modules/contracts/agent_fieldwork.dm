@@ -17,7 +17,7 @@
 			return "deniable lead"
 	return "registered contact"
 
-/datum/controller/subsystem/contracts/proc/agent_contract_for_market_key(reservation_key) as /datum/contract/faction_agent
+/datum/system/contracts/proc/agent_contract_for_market_key(reservation_key) as /datum/contract/faction_agent
 	if(!reservation_key)
 		return null
 	for(var/datum/contract/faction_agent/contract in active_contracts + grace_contracts)
@@ -25,7 +25,7 @@
 			return contract
 	return null
 
-/datum/controller/subsystem/contracts/proc/agent_contact_contract(account_number, faction_id, reservation_key) as /datum/contract/faction_agent
+/datum/system/contracts/proc/agent_contact_contract(account_number, faction_id, reservation_key) as /datum/contract/faction_agent
 	if(!account_number)
 		return null
 	for(var/datum/contract/faction_agent/contract in active_contracts + grace_contracts)

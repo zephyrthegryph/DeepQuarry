@@ -53,7 +53,7 @@ EXTEND_INTERACTIONS(/obj/structure/closet/body_bag/cryobag/robobag, \
 	if(corptag)
 		corptag.forceMove(get_turf(user))
 		to_chat(user, span_notice("You remove \the [corptag] from \the [src]."))
-		own_take(src, "corptag")
+		own_take(src, nameof(corptag))
 		update_icon()
 		return TRUE
 	return FALSE
@@ -66,7 +66,7 @@ EXTEND_INTERACTIONS(/obj/structure/closet/body_bag/cryobag/robobag, \
 	var/turf/T = get_turf(src)
 	if(corptag && T)
 		corptag.forceMove(T)
-		own_take(src, "corptag")
+		own_take(src, nameof(corptag))
 	..()
 
 /obj/structure/closet/body_bag/cryobag/robobag/Entered(atom/movable/AM)
@@ -93,15 +93,19 @@ EXTEND_INTERACTIONS(/obj/structure/closet/body_bag/cryobag/robobag, \
 			if(corptag)
 				var/old_tag = corptag
 				corptag.forceMove(get_turf(src))
-				own_take(src, "corptag")
-				user.unEquip(W)
+				own_take(src, nameof(src.corptag))
+				if(!user.unEquip(W))
+					return FALSE
 				W.moveToNullspace()
-				own_set(src, "corptag", W)
+				// ALLOW(sys_manual_transfer): the tag is kept in nullspace, not in the bag's interior
+				own_set(src, nameof(src.corptag), W, into = FALSE)
 				to_chat(user, span_notice("You swap \the [old_tag] for \the [corptag]."))
 			else
-				user.unEquip(W)
+				if(!user.unEquip(W))
+					return FALSE
 				W.moveToNullspace()
-				own_set(src, "corptag", W)
+				// ALLOW(sys_manual_transfer): the tag is kept in nullspace, not in the bag's interior
+				own_set(src, nameof(src.corptag), W, into = FALSE)
 				to_chat(user, span_notice("You attach \the [corptag] to \the [src]."))
 			update_icon()
 

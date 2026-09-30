@@ -1,13 +1,13 @@
 # Mob Life and Processing Architecture
 
-Review date: 2026-09-22. Companion to `doc/health_system_review.md`. Scope: how every
+Review date: 2026-09-22. Companion to `doc/rewrite/archive/health_system_review.md`. Scope: how every
 living mob is processed each cycle (`Life()`), whether that processing is event-driven,
 how the big case-based procedures should be broken up, and the redesign of cyborgs,
 drones, the AI, proteans and prometheans.
 
 > **Scheduling superseded (2026-09-25).** Life no longer runs from SSmobs or a `Life()` proc:
 > it runs on the object-model core, and wake bits became change channels. Sections 4.3,
-> 4.8 and 4.9 describe the old scheduler; [rewrite/life_on_om.md](rewrite/life_on_om.md)
+> 4.8 and 4.9 describe the old scheduler; [rewrite/life_on_om.md](rewrite/archive/life_on_om.md)
 > is authoritative for when systems run, sleep and wake. The content model (systems,
 > families, variants, gates, segments) described here still holds.
 
@@ -737,7 +737,7 @@ files.
 
 ## 8. Unified roadmap
 
-This replaces section 7 of `doc/health_system_review.md`. Every phase:
+This replaces section 7 of `doc/rewrite/archive/health_system_review.md`. Every phase:
 - compiles clean and keeps the suite green
 - deletes what it replaces
 - adds its lint rules and a changelog

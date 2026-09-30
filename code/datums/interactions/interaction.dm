@@ -129,7 +129,7 @@
 	var/list/spec = selector_spec()
 	if(!length(spec))
 		return null
-	rel_set(src, "compiled_selector", dq_predicate_for("interaction_selector:[predicate_key()]", spec, "interaction [id] selector")) // a shared cached predicate
+	rel_set(src, nameof(compiled_selector), dq_predicate_for("interaction_selector:[predicate_key()]", spec, "interaction [id] selector")) // a shared cached predicate
 	return compiled_selector
 
 /// Whether the player meant this interaction: the right tool or item, and its offered_when clauses hold.
@@ -144,7 +144,7 @@
 	var/list/spec = full_spec()
 	if(!length(spec))
 		return null
-	rel_set(src, "compiled", dq_predicate_for("interaction:[predicate_key()]", spec, "interaction [id]")) // a shared cached predicate
+	rel_set(src, nameof(compiled), dq_predicate_for("interaction:[predicate_key()]", spec, "interaction [id]")) // a shared cached predicate
 	return compiled
 
 /// Whether this interaction is offered on this target at all. Cheap: no reasons, no actor.
@@ -175,6 +175,10 @@
 /// The template shown when a timed interaction starts, or null.
 /datum/interaction/proc/start_feedback_for(mob/actor, atom/target, obj/item/held)
 	return start_feedback
+
+/// Inline start lines, list(self, others), for a timed interaction with no start_feedback template; or null.
+/datum/interaction/proc/start_lines(mob/actor, atom/target, obj/item/held)
+	return null
 
 /**
  * Pays the cost through the tool pipeline (use_tool(), tools.dm): quality and
@@ -251,6 +255,7 @@
 	if(!run_effect(actor, target, held))
 		return null
 	if(!QDELETED(target))
+		changed(target) // an interaction is a dispatched call (dx_conventions.md §1)
 		target.interaction_ran(actor, src)
 	log_input("Interaction: [key_name(actor)] did [id] ([shown_name]) on [target] ([target.type]).")
 	act_message_t(actor, target, msg_type, held)
@@ -356,6 +361,8 @@ DECLARE_SHARED_CACHE(interaction_candidates, GLOBAL_PROC_REF(build_interaction_c
 	var/list/candidates
 	var/list/entries = list()
 	target.declare_interactions(entries)
+	// Capability entries, in capabilities() order (code/datums/capabilities/).
+	entries += cap_interactions(target)
 	candidates = list()
 	for(var/entry in entries)
 		var/datum/interaction/interaction = istype(entry, /datum/interaction) ? entry : GLOB.interactions_by_type[entry]

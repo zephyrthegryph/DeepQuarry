@@ -335,21 +335,21 @@
 	initial_gas_mix = AIRLESS_ATMOS
 	oxygen = 0
 	nitrogen = 0
-	temperature = T20C
+	initial_temperature = T20C
 
 /turf/simulated/floor/airless
 	name = "plating"
 	initial_gas_mix = AIRLESS_ATMOS
 	oxygen = 0
 	nitrogen = 0
-	temperature = T20C
+	initial_temperature = T20C
 
 /turf/simulated/floor/tiled/airless
 	name = "floor"
 	initial_gas_mix = AIRLESS_ATMOS
 	oxygen = 0
 	nitrogen = 0
-	temperature = T20C
+	initial_temperature = T20C
 
 
 /turf/simulated/floor/greengrid/nitrogen

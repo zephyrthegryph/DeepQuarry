@@ -19,16 +19,18 @@
  * like SSinput can start at the same time they were supposed to, leading to a smoother experience for the player since ticks aren't riddled with
  * minor hangs over and over again.
  */
-SUBSYSTEM_DEF(verb_manager)
-	name = "Verb Manager"
-	wait = 1
-	flags = SS_TICKER | SS_NO_INIT
-	priority = FIRE_PRIORITY_DELAYED_VERBS
-	runlevels = RUNLEVEL_LOBBY | RUNLEVELS_DEFAULT
+/// One verb queue: the state and the rules of a host that runs delayed verbs (SSverb_manager, SSspeech_controller). The host
+/// owns the lane and calls run_verb_queue() every tick; _queue_verb() finds the lane of whatever host it is handed.
+/datum/verb_lane
+	var/name = "verb lane"
+	/// Ticks between runs of the host (the verbs-per-second average reads it).
+	var/wait = 1
+	/// RUNLEVEL_* bits the lane queues in.
+	var/runlevels = RUNLEVEL_LOBBY | RUNLEVELS_DEFAULT
 
 	///list of callbacks to procs called from verbs or verblike procs that were executed when the server was overloaded and had to delay to the next tick.
-	///this list is ran through every tick, and the subsystem does not yield until this queue is finished.
-	var/list/datum/callback/verb_callback/verb_queue = list()
+	///this list is ran through every tick, and the host does not yield until this queue is finished.
+	var/list/datum/callback/verb_callback/verb_queue = list() // ALLOW(instance_list): a lane is a singleton per host
 
 	///running average of how many verb callbacks are executed every second. used for the stat entry
 	var/verbs_executed_per_second = 0
@@ -39,10 +41,7 @@ SUBSYSTEM_DEF(verb_manager)
 	///if this is true all verbs immediately execute and don't queue. in case the mc is fucked or something
 	var/FOR_ADMINS_IF_VERBS_FUCKED_immediately_execute_all_verbs = FALSE
 
-	///used for subtypes to determine if they use their own stats for the stat entry
-	var/use_default_stats = TRUE
-
-	///if TRUE this will... message admins every time a verb is queued to this subsystem for the next tick with stats.
+	///if TRUE this will... message admins every time a verb is queued to this lane for the next tick with stats.
 	///for obvious reasons don't make this be TRUE on the code level this is for admins to turn on
 	var/message_admins_on_queue = FALSE
 
@@ -50,12 +49,13 @@ SUBSYSTEM_DEF(verb_manager)
 	var/always_queue = FALSE
 
 /**
- * queue a callback for the given verb/verblike proc and any given arguments to the specified verb subsystem, so that they process in the next tick.
+ * queue a callback for the given verb/verblike proc and any given arguments to the specified verb host (SSverb_manager or
+ * SSspeech_controller), so that they process in the next tick.
  * intended to only work with verbs or verblike procs called directly from client input, use as part of TRY_QUEUE_VERB() and co.
  *
  * returns TRUE if the queuing was successful, FALSE otherwise.
  */
-/proc/_queue_verb(datum/callback/verb_callback/incoming_callback, tick_check, datum/controller/subsystem/verb_manager/subsystem_to_use = SSverb_manager, ...)
+/proc/_queue_verb(datum/callback/verb_callback/incoming_callback, tick_check, datum/host = SSverb_manager, ...)
 	if(QDELETED(incoming_callback))
 		var/destroyed_string
 		if(!incoming_callback)
@@ -77,7 +77,7 @@ SUBSYSTEM_DEF(verb_manager)
 	//to happen as if it was actually from player input if its called on a mob.
 #ifdef UNIT_TESTS
 	if(QDELETED(usr) && ismob(callback_target))
-		rel_set(incoming_callback, "user", callback_target)
+		rel_set(incoming_callback, nameof(/datum/callback::user), callback_target)
 		var/datum/callback/new_us = CALLBACK(arglist(list(GLOBAL_PROC, GLOBAL_PROC_REF(_queue_verb)) + args.Copy()))
 		return world.push_usr(callback_target, new_us)
 
@@ -89,37 +89,50 @@ SUBSYSTEM_DEF(verb_manager)
 
 #endif
 
-	if(!istype(subsystem_to_use))
-		stack_trace("_queue_verb() returned false because it was given an invalid subsystem to queue for!")
+	var/datum/verb_lane/lane = verb_lane_of(host)
+	if(!lane)
+		stack_trace("_queue_verb() returned false because it was given an invalid host to queue for!")
 		return FALSE
 
-	if((TICK_USAGE < tick_check) && !subsystem_to_use.always_queue)
+	if((TICK_USAGE < tick_check) && !lane.always_queue)
 		return FALSE
 
 	var/list/args_to_check = args.Copy()
-	args_to_check.Cut(2, 4)//cut out tick_check and subsystem_to_use
+	args_to_check.Cut(2, 4)//cut out tick_check and host
 
-	//any subsystem can use the additional arguments to refuse queuing
-	if(!subsystem_to_use.can_queue_verb(arglist(args_to_check)))
+	//any lane can use the additional arguments to refuse queuing
+	if(!lane.can_queue_verb(arglist(args_to_check)))
 		return FALSE
 
-	return subsystem_to_use.queue_verb(incoming_callback)
+	return lane.queue_verb(incoming_callback)
+
+/// The verb lane a host owns: SSverb_manager's or SSspeech_controller's, or the lane itself.
+/proc/verb_lane_of(datum/host)
+	RETURN_TYPE(/datum/verb_lane)
+	if(istype(host, /datum/verb_lane))
+		return host
+	if(istype(host, /datum/controller/subsystem/verb_manager))
+		var/datum/controller/subsystem/verb_manager/manager = host
+		return manager.lane
+	if(istype(host, /datum/system/speech_controller))
+		var/datum/system/speech_controller/speech = host
+		return speech.lane
+	return null
 
 /**
- * subsystem-specific check for whether a callback can be queued.
- * intended so that subsystem subtypes can verify whether
+ * lane-specific check for whether a callback can be queued.
+ * intended so that lanes can verify whether
  *
- * subtypes may include additional arguments here if they need them! you just need to include them properly
+ * lanes may include additional arguments here if they need them! you just need to include them properly
  * in TRY_QUEUE_VERB() and co.
  */
-/datum/controller/subsystem/verb_manager/proc/can_queue_verb(datum/callback/verb_callback/incoming_callback)
+/datum/verb_lane/proc/can_queue_verb(datum/callback/verb_callback/incoming_callback)
 	if(always_queue && !FOR_ADMINS_IF_VERBS_FUCKED_immediately_execute_all_verbs)
 		return TRUE
 
 	if((usr.client?.holder && !can_queue_admin_verbs) \
-	|| (!initialized && !(flags & SS_NO_INIT)) \
 	|| FOR_ADMINS_IF_VERBS_FUCKED_immediately_execute_all_verbs \
-	|| !(runlevels & Master.current_runlevel))
+	|| !(runlevels & (1 << (Master.current_runlevel - 1))))
 		return FALSE
 
 	return TRUE
@@ -130,20 +143,17 @@ SUBSYSTEM_DEF(verb_manager)
  *
  * returns TRUE if the queuing was successful, FALSE otherwise.
  */
-/datum/controller/subsystem/verb_manager/proc/queue_verb(datum/callback/verb_callback/incoming_callback)
+/datum/verb_lane/proc/queue_verb(datum/callback/verb_callback/incoming_callback)
 	. = FALSE //errored
 	if(message_admins_on_queue)
 		message_admins("[name] verb queuing: tick usage: [TICK_USAGE]%, proc: [incoming_callback.delegate], object: [incoming_callback.target_object()], usr: [usr]")
 	verb_queue += incoming_callback
 	return TRUE
 
-/datum/controller/subsystem/verb_manager/fire(resumed)
-	run_verb_queue()
-
-/// runs through all of this subsystems queue of verb callbacks.
+/// runs through all of this lane's queue of verb callbacks.
 /// goes through the entire verb queue without yielding.
-/// used so you can flush the queue outside of fire() without interfering with anything else subtype subsystems might do in fire().
-/datum/controller/subsystem/verb_manager/proc/run_verb_queue()
+/// used so you can flush the queue outside of the host's run without interfering with anything else it does.
+/datum/verb_lane/proc/run_verb_queue()
 	var/executed_verbs = 0
 
 	for(var/datum/callback/verb_callback/verb_callback as anything in verb_queue)
@@ -156,9 +166,29 @@ SUBSYSTEM_DEF(verb_manager)
 
 	verb_queue.Cut()
 	verbs_executed_per_second = MC_AVG_SECONDS(verbs_executed_per_second, executed_verbs, wait SECONDS)
-	//note that wait SECONDS is incorrect if this is called outside of fire() but because byond is garbage i need to add a timer to rustg to find a valid solution
+	//note that wait SECONDS is incorrect if this is called outside of the host's run but because byond is garbage i need to add a timer to rustg to find a valid solution
+
+/// The stat panel text of the lane.
+/datum/verb_lane/proc/stat_text()
+	return "V/S: [round(verbs_executed_per_second, 0.01)]"
+
+SUBSYSTEM_DEF(verb_manager)
+	name = "Verb Manager"
+	wait = 1
+	flags = SS_TICKER | SS_NO_INIT | SS_KERNEL_HOSTED
+	priority = FIRE_PRIORITY_DELAYED_VERBS
+	runlevels = RUNLEVEL_LOBBY | RUNLEVELS_DEFAULT
+
+	/// The queue SSverb_manager runs every tick.
+	var/datum/verb_lane/lane
+
+/datum/controller/subsystem/verb_manager/PreInit()
+	lane = new
+	lane.name = name
+
+/datum/controller/subsystem/verb_manager/fire(resumed)
+	lane.run_verb_queue()
 
 /datum/controller/subsystem/verb_manager/stat_entry(msg)
 	. = ..()
-	if(use_default_stats)
-		. += "V/S: [round(verbs_executed_per_second, 0.01)]"
+	. += lane.stat_text()

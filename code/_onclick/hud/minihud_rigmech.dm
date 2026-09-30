@@ -14,19 +14,19 @@
 	needs_processing = TRUE
 
 /datum/mini_hud/rig/New(datum/hud/other, obj/item/rig/owner)
-	rel_set(src, "owner_rig", owner)
+	rel_set(src, nameof(owner_rig), owner)
 	// screenobjs owns every element; power/health/air/airtoggle are views into it.
-	rel_set(src, "power", own_add(src, "screenobjs", new /atom/movable/screen/rig/power ()))
-	rel_set(src, "health", own_add(src, "screenobjs", new /atom/movable/screen/rig/health ()))
-	rel_set(src, "air", own_add(src, "screenobjs", new /atom/movable/screen/rig/air ()))
-	rel_set(src, "airtoggle", own_add(src, "screenobjs", new /atom/movable/screen/rig/airtoggle ()))
-	own_add(src, "screenobjs", new /atom/movable/screen/rig/deco1)
-	own_add(src, "screenobjs", new /atom/movable/screen/rig/deco2)
-	own_add(src, "screenobjs", new /atom/movable/screen/rig/deco1_f)
-	own_add(src, "screenobjs", new /atom/movable/screen/rig/deco2_f)
+	rel_set(src, nameof(power), own_add(src, nameof(screenobjs), new /atom/movable/screen/rig/power ()))
+	rel_set(src, nameof(health), own_add(src, nameof(screenobjs), new /atom/movable/screen/rig/health ()))
+	rel_set(src, nameof(air), own_add(src, nameof(screenobjs), new /atom/movable/screen/rig/air ()))
+	rel_set(src, nameof(airtoggle), own_add(src, nameof(screenobjs), new /atom/movable/screen/rig/airtoggle ()))
+	own_add(src, nameof(screenobjs), new /atom/movable/screen/rig/deco1)
+	own_add(src, nameof(screenobjs), new /atom/movable/screen/rig/deco2)
+	own_add(src, nameof(screenobjs), new /atom/movable/screen/rig/deco1_f)
+	own_add(src, nameof(screenobjs), new /atom/movable/screen/rig/deco2_f)
 
 	for(var/atom/movable/screen/S as anything in screenobjs)
-		rel_set(S, "master_ref", owner_rig())
+		rel_set(S, nameof(S.master_ref), owner_rig())
 	..()
 
 /datum/mini_hud/rig/periodic_step()
@@ -56,19 +56,19 @@
 	needs_processing = TRUE
 
 /datum/mini_hud/mech/New(datum/hud/other, obj/mecha/owner)
-	rel_set(src, "owner_mech", owner)
+	rel_set(src, nameof(owner_mech), owner)
 	// screenobjs owns every element; power/health/air/airtoggle are views into it.
-	rel_set(src, "power", own_add(src, "screenobjs", new /atom/movable/screen/mech/power ()))
-	rel_set(src, "health", own_add(src, "screenobjs", new /atom/movable/screen/mech/health ()))
-	rel_set(src, "air", own_add(src, "screenobjs", new /atom/movable/screen/mech/air ()))
-	rel_set(src, "airtoggle", own_add(src, "screenobjs", new /atom/movable/screen/mech/airtoggle ()))
-	own_add(src, "screenobjs", new /atom/movable/screen/mech/deco1)
-	own_add(src, "screenobjs", new /atom/movable/screen/mech/deco2)
-	own_add(src, "screenobjs", new /atom/movable/screen/mech/deco1_f)
-	own_add(src, "screenobjs", new /atom/movable/screen/mech/deco2_f)
+	rel_set(src, nameof(power), own_add(src, nameof(screenobjs), new /atom/movable/screen/mech/power ()))
+	rel_set(src, nameof(health), own_add(src, nameof(screenobjs), new /atom/movable/screen/mech/health ()))
+	rel_set(src, nameof(air), own_add(src, nameof(screenobjs), new /atom/movable/screen/mech/air ()))
+	rel_set(src, nameof(airtoggle), own_add(src, nameof(screenobjs), new /atom/movable/screen/mech/airtoggle ()))
+	own_add(src, nameof(screenobjs), new /atom/movable/screen/mech/deco1)
+	own_add(src, nameof(screenobjs), new /atom/movable/screen/mech/deco2)
+	own_add(src, nameof(screenobjs), new /atom/movable/screen/mech/deco1_f)
+	own_add(src, nameof(screenobjs), new /atom/movable/screen/mech/deco2_f)
 
 	for(var/atom/movable/screen/S as anything in screenobjs)
-		rel_set(S, "master_ref", owner_mech())
+		rel_set(S, nameof(S.master_ref), owner_mech())
 	..()
 
 // the mech owns us as its minihud; owner_mech is a plain relation back.

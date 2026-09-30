@@ -106,7 +106,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 	if(!human)
 		return
 	om_unhook(human, /datum/om/event/mob_death, src)
-	rel_clear(src, "human") // the pair clears human.nif too
+	rel_clear(src, nameof(human)) // the pair clears human.nif too
 
 /// Saves the NIF's data when the implanted human dies. The save does savefile I/O, so it
 /// runs right after the event instead of inside it (handlers must not sleep).
@@ -135,10 +135,10 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 		if(!bioadap && (H.species.flags & NO_DNA)) //NO_DNA is the default 'too complicated' flag
 			return FALSE
 
-		rel_set(src, "human", H) // the pair sets H.nif too
+		rel_set(src, nameof(human), H) // the pair sets H.nif too
 		stat = NIF_INSTALLING
 		om_grant(H, GRANT_VERB, /mob/living/carbon/human/proc/set_nif_examine, src)
-		own_set(src, "menu_ref", new /datum/nif_menu(H))
+		own_set(src, nameof(menu_ref), new /datum/nif_menu(H))
 		if(starting_software)
 			for(var/path in starting_software)
 				new path(src)
@@ -162,7 +162,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 		if(!istype(parent))
 			return FALSE
 		forceMove(parent)
-		rel_add(parent, "implants", src)
+		rel_add(parent, nameof(parent.implants), src)
 		om_after(src, 1, PROC_REF(quick_install), H)
 		return TRUE
 
@@ -180,12 +180,12 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 /obj/item/nif/proc/unimplant(mob/living/carbon/human/H)
 	var/datum/nifsoft/soulcatcher/SC = imp_check(NIF_SOULCATCHER)
 	if(SC) //Clean up stored people, this is dirty but the easiest way.
-		own_clear(SC, "brainmobs", OWN_DELETE)
+		own_clear(SC, nameof(SC.brainmobs), OWN_DELETE)
 	stat = NIF_PREINSTALL
 	vis_update()
 	if(H)
 		om_revoke(H, GRANT_VERB, /mob/living/carbon/human/proc/set_nif_examine, src)
-	own_clear(src, "menu_ref", OWN_DELETE)
+	own_clear(src, nameof(menu_ref), OWN_DELETE)
 	unregister_human()
 	install_done = null
 	update_icon()
@@ -470,11 +470,11 @@ APPEARANCE_TEMPLATE(/obj/item/nif, "nif_{appearance_nif_state}")
 			return FALSE
 
 	wear(new_soft.wear)
-	own_put(src, "nifsofts", new_soft.list_pos, new_soft)
+	own_put(src, nameof(nifsofts), new_soft.list_pos, new_soft)
 	power_usage += new_soft.p_drain
 
 	if(new_soft.tick_flags == NIF_ALWAYSTICK)
-		rel_add(src, "nifsofts_life", new_soft)
+		rel_add(src, nameof(nifsofts_life), new_soft)
 
 	return TRUE
 
@@ -494,7 +494,7 @@ APPEARANCE_TEMPLATE(/obj/item/nif, "nif_{appearance_nif_state}")
 	// Detach it from its slot (the list shifts), then pad the slot back: nifsofts is a
 	// positional table indexed by list_pos.
 	var/slot = old_soft.list_pos
-	own_take_member(src, "nifsofts", old_soft)
+	own_take_member(src, nameof(nifsofts), old_soft)
 	if(!nifsofts)
 		nifsofts = new /list(TOTAL_NIF_SOFTWARE) // ALLOW(ownership): a fresh positional slot table (nulls only)
 	else if(length(nifsofts) < TOTAL_NIF_SOFTWARE)
@@ -502,7 +502,7 @@ APPEARANCE_TEMPLATE(/obj/item/nif, "nif_{appearance_nif_state}")
 	power_usage -= old_soft.p_drain
 
 	if(old_soft.tick_flags == NIF_ALWAYSTICK)
-		rel_remove(src, "nifsofts_life", old_soft)
+		rel_remove(src, nameof(nifsofts_life), old_soft)
 
 	if(old_soft.active)
 		old_soft.deactivate(force = TRUE)
@@ -532,7 +532,7 @@ APPEARANCE_TEMPLATE(/obj/item/nif, "nif_{appearance_nif_state}")
 		return FALSE
 
 	if(soft.tick_flags == NIF_ACTIVETICK)
-		rel_add(src, "nifsofts_life", soft)
+		rel_add(src, nameof(nifsofts_life), soft)
 
 	power_usage += soft.a_drain
 
@@ -545,7 +545,7 @@ APPEARANCE_TEMPLATE(/obj/item/nif, "nif_{appearance_nif_state}")
 		human << click_sound
 
 	if(soft.tick_flags == NIF_ACTIVETICK)
-		rel_remove(src, "nifsofts_life", soft)
+		rel_remove(src, nameof(nifsofts_life), soft)
 
 	power_usage -= soft.a_drain
 
@@ -730,7 +730,7 @@ APPEARANCE_TEMPLATE(/obj/item/nif, "nif_{appearance_nif_state}")
 	var/obj/item/organ/external/eo = task.eo
 	user.unEquip(src)
 	forceMove(eo)
-	rel_add(eo, "implants", src)
+	rel_add(eo, nameof(eo.implants), src)
 	implant(T)
 	play_sfx(T, SFX_EFFECTS_SLIME_SQUISH)
 
@@ -760,5 +760,9 @@ APPEARANCE_TEMPLATE(/obj/item/nif, "nif_{appearance_nif_state}")
 	// No mid-round save: NIF data persists on death, round end and leaving the round.
 
 // The implanted human and its NIF name each other (the NIF lives in an organ's implants).
-REL_PAIR(/obj/item/nif, human, nif)
-REL_PAIR(/mob/living/carbon/human, nif, human)
+/obj/item/nif/relations()
+	. = ..()
+	. += rel_one(nameof(human), back = nameof(/mob/living/carbon/human::nif))
+/mob/living/carbon/human/relations()
+	. = ..()
+	. += rel_one(nameof(nif), back = nameof(/obj/item/nif::human))

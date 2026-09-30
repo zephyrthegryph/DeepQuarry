@@ -50,7 +50,7 @@ DECLARE_PERIODIC_WHILE(/datum/hose, PERIODIC_FAST, "hose_formed")
 			play_sfx(A, SFX_EFFECTS_CRATE_CLOSE)
 			play_sfx(A, SFX_EFFECTS_PLOP)
 		node1.remove_hose()
-		rel_clear(src, "node1")
+		rel_clear(src, nameof(node1))
 	if(node2)
 		var/atom/A = node2.get_carrier()
 		if(A)
@@ -59,7 +59,7 @@ DECLARE_PERIODIC_WHILE(/datum/hose, PERIODIC_FAST, "hose_formed")
 			play_sfx(A, SFX_EFFECTS_CRATE_CLOSE)
 			play_sfx(A, SFX_EFFECTS_PLOP)
 		node2.remove_hose()
-		rel_clear(src, "node2")
+		rel_clear(src, nameof(node2))
 	// Drop hose at one of the locations if no user is specified
 	if((user || drop_locs.len) && initial_distance)
 		new /obj/item/stack/hose(user ? get_turf(user) : pick(drop_locs), initial_distance)
@@ -68,8 +68,8 @@ DECLARE_PERIODIC_WHILE(/datum/hose, PERIODIC_FAST, "hose_formed")
 
 /datum/hose/proc/set_hose(datum/hose_connector/target1, datum/hose_connector/target2, distancetonode)
 	if(target1 && target2)
-		rel_set(src, "node1", target1)
-		rel_set(src, "node2", target2)
+		rel_set(src, nameof(node1), target1)
+		rel_set(src, nameof(node2), target2)
 
 	node1.connect(src)
 	node2.connect(src)
@@ -94,7 +94,7 @@ DECLARE_PERIODIC_WHILE(/datum/hose, PERIODIC_FAST, "hose_formed")
 /datum/hose/proc/update_beam()
 	if(!node1 && !node2) // We've already disconnected, clear beam
 		if(current_beam)
-			own_clear(src, "current_beam", OWN_DELETE)
+			own_clear(src, nameof(current_beam), OWN_DELETE)
 		return FALSE
 	if(get_dist(get_turf(node1.get_carrier()), get_turf(node2.get_carrier())) > initial_distance)	// The hose didn't form. Something's fucky.
 		qdel(src)
@@ -113,7 +113,7 @@ DECLARE_PERIODIC_WHILE(/datum/hose, PERIODIC_FAST, "hose_formed")
 			new_col = reagent_node2.get_color()
 
 		// We are in the beam!
-		own_set(src, "current_beam", A.Beam(B, icon_state = "hose", beam_color = new_col, maxdistance = (HOSE_MAX_DISTANCE + 1), beam_type = /obj/effect/ebeam/hose))
+		own_set(src, nameof(current_beam), A.Beam(B, icon_state = "hose", beam_color = new_col, maxdistance = (HOSE_MAX_DISTANCE + 1), beam_type = /obj/effect/ebeam/hose))
 
 	return TRUE
 

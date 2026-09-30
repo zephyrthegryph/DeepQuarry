@@ -20,12 +20,12 @@ GLOBAL_LIST_EMPTY(current_pending_diseases)
 			else
 				stack_trace("Disease Outbreak: Invalid Event Level [severity]. Expected: 1-2")
 				virus = /datum/affliction/contagion/cold
-		own_set(src, "chosen_disease", new virus)
+		own_set(src, nameof(chosen_disease), new virus)
 	else
 		if(severity == EVENT_LEVEL_MAJOR)
-			own_set(src, "chosen_disease", create_virus(severity * pick(2,3))) //50% chance for a major disease instead of a moderate one
+			own_set(src, nameof(chosen_disease), create_virus(severity * pick(2,3))) //50% chance for a major disease instead of a moderate one
 		else
-			own_set(src, "chosen_disease", create_virus(severity * 2))
+			own_set(src, nameof(chosen_disease), create_virus(severity * 2))
 
 	chosen_disease.set_virus_modifiers(chosen_disease.virus_modifiers | CARRIER)
 
@@ -65,9 +65,9 @@ GLOBAL_LIST_EMPTY(current_pending_diseases)
 /datum/event/disease_outbreak/proc/create_virus(max_severity = 6)
 	var/datum/affliction/contagion/engineered/A = new /datum/affliction/contagion/engineered
 	var/list/payload_symptoms = A.GenerateSymptomsBySeverity(max_severity - 1, max_severity, 2) //Choose "Payload" symptoms
-	own_clear(A, "symptoms", OWN_DELETE)
+	own_clear(A, nameof(A.symptoms), OWN_DELETE)
 	for(var/datum/viral_trait/payload_symptom as anything in payload_symptoms)
-		own_add(A, "symptoms", payload_symptom)
+		own_add(A, nameof(A.symptoms), payload_symptom)
 	A.AssignProperties(A.GenerateProperties())
 	var/list/symptoms_to_try = transmissable_symptoms.Copy()
 	while(length(symptoms_to_try))

@@ -31,7 +31,7 @@
 	visible_message(span_notice("[src] beeps as it finishes printing '[queued_assembly().name]'."))
 
 	// Clear printing state
-	rel_clear(src, "queued_assembly")
+	rel_clear(src, nameof(queued_assembly))
 	is_printing = FALSE
 	print_end_time = 0
 
@@ -487,7 +487,7 @@ UI_ACT_PROC(/obj/item/integrated_circuit_printer, ui_act_build)
 	assembly.update_icon()
 
 	// Start the printing process
-	rel_set(src, "queued_assembly", assembly)
+	rel_set(src, nameof(queued_assembly), assembly)
 	is_printing = TRUE
 	EXPIRY_SET(src, print_end_time, print_time, CLOCK_WORLD)
 

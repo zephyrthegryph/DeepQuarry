@@ -68,7 +68,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power, REGISTRY_POWER_MACHINES)
 /obj/machinery/power/proc/add_avail(amount)
 	if(!power_region || amount <= 0 || !vg_entity)
 		return FALSE
-	set_pulse(amount)
+	native_write(src, NATIVE_PRODUCER_PULSE, amount)
 	return TRUE
 
 /// A persistent supply rate (W): it stays until changed, so a steady
@@ -79,7 +79,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power, REGISTRY_POWER_MACHINES)
 		return
 	power_supply_rate = amount
 	if(vg_entity)
-		set_supply(amount)
+		native_write(src, NATIVE_PRODUCER_SUPPLY, amount)
 
 /obj/machinery/power/proc/clear_power_supply()
 	set_power_supply(0)
@@ -165,7 +165,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power, REGISTRY_POWER_MACHINES)
 /// After this machine's node went to Rust (alone or in a batch): its supply and resend hook.
 /obj/machinery/power/proc/power_node_sent()
 	if(power_supply_rate)
-		set_supply(power_supply_rate)
+		native_write(src, NATIVE_PRODUCER_SUPPLY, power_supply_rate)
 	power_registered()
 
 /// Hook: the node was (re)sent to Rust; storage machines resend their state.

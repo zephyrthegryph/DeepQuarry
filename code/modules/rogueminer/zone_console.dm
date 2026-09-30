@@ -25,7 +25,7 @@
 
 /obj/machinery/computer/roguezones/Initialize(mapload)
 	. = ..()
-	rel_set(src, "shuttle_control", locate(/obj/machinery/computer/shuttle_control/belter))
+	rel_set(src, nameof(shuttle_control), locate(/obj/machinery/computer/shuttle_control/belter))
 	return INITIALIZE_HINT_LATELOAD
 
 /obj/machinery/computer/roguezones/LateInitialize()
@@ -126,17 +126,17 @@ UI_ACT_PROC(/obj/machinery/computer/roguezones, ui_act_recall_shuttle)
 
 	//Update shuttle destination.
 	var/datum/shuttle/autodock/ferry/S = SSshuttles.shuttles["Belter"]
-	rel_set(S, "landmark_offsite", ZM_target.myshuttle_landmark())
-	rel_set(S, "next_location", S.get_location_waypoint(!S.location))
+	rel_set(S, nameof(S.landmark_offsite), ZM_target.myshuttle_landmark())
+	rel_set(S, nameof(S.next_location), S.get_location_waypoint(!S.location))
 
 	//Re-enable shuttle.
 	shuttle_control().shuttle_tag = "Belter"
 
 	//Update rm_previous
-	rel_set(GLOB.rm_controller, "previous_zone", GLOB.rm_controller.current_zone())
+	rel_set(GLOB.rm_controller, nameof(/datum/controller/rogue::previous_zone), GLOB.rm_controller.current_zone())
 
 	//Update rm_current
-	rel_set(GLOB.rm_controller, "current_zone", ZM_target)
+	rel_set(GLOB.rm_controller, nameof(/datum/controller/rogue::current_zone), ZM_target)
 
 	//Unset scanning
 	scanning = 0

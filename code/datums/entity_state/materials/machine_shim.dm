@@ -16,15 +16,15 @@
 
 /datum/using_machine_shim/New(mob/new_owner, obj/machinery/machine)
 	..()
-	rel_set(src, "owner", new_owner)
-	own_set(owner, "machine_shim", src)
+	rel_set(src, nameof(owner), new_owner)
+	own_set(owner, nameof(owner.machine_shim), src)
 	// Mob
 	om_stage_add(host_mob(), /datum/om/stage/life/trait/using_machine_shim)
 	om_hook(host_mob(), /datum/om/event/movable_attempted_move, src, PROC_REF(on_mob_moved))
 	om_hook(host_mob(), /datum/om/event/mob_logout, src, PROC_REF(on_mob_logout))
 
 	// Machine
-	rel_set(src, "linked_machine", machine)
+	rel_set(src, nameof(linked_machine), machine)
 	om_hook(linked_machine(), /datum/om/event/qdeleting, src, PROC_REF(on_machine_qdelete))
 	linked_machine().in_use = TRUE
 

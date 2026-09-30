@@ -41,7 +41,7 @@ REGISTRY_MEMBERSHIP(/obj/item/retail_scanner, REGISTRY_TRANSACTION_DEVICES)
 	if(locate_within(loc, /obj/structure/table))
 		pixel_y = 3
 	if(GLOB.economy_init && account_to_connect)
-		rel_set(src, "linked_account", GLOB.department_accounts[account_to_connect])
+		rel_set(src, nameof(linked_account), GLOB.department_accounts[account_to_connect])
 
 // Always face the user when put on a table
 /obj/item/retail_scanner/afterattack(atom/movable/AM, mob/user, proximity)
@@ -131,7 +131,7 @@ UI_ACT_PROC(/obj/item/retail_scanner, ui_act_link_account)
 			visible_message("[icon2html(src, viewers(src))]" + span_warning("Account has been suspended."))
 			return FALSE
 		var/provider_changed = linked_account != new_account
-		rel_set(src, "linked_account", new_account)
+		rel_set(src, nameof(/obj/item/eftpos::linked_account), new_account)
 		if(provider_changed)
 			reset_memory()
 		else
@@ -268,7 +268,7 @@ UI_ACT_PROC(/obj/item/retail_scanner, ui_act_reset_log)
 			return INTERACTION_HANDLED_PASS
 		if(!user.drop_from_inventory(form, src))
 			return INTERACTION_HANDLED_PASS
-		rel_add(src, "freight_form_paper", form)
+		rel_add(src, nameof(freight_form_paper), form)
 		to_chat(user, span_notice("You load [form] into [src]'s freight printer."))
 		return INTERACTION_HANDLED_PASS
 	// Check for a method of paying (ID, PDA, e-wallet, cash, ect.)
@@ -296,7 +296,7 @@ UI_ACT_PROC(/obj/item/retail_scanner, ui_act_reset_log)
 	if(confirm_item == I && confirm_revision == ticket_revision)
 		return 1
 	else
-		rel_set(src, "confirm_item", I)
+		rel_set(src, nameof(confirm_item), I)
 		confirm_revision = ticket_revision
 		src.visible_message("[icon2html(src, viewers(src))]<b>Total price:</b> [transaction_amount] Thaler\s. Swipe again to confirm.")
 		play_sfx(src, SFX_MACHINES_TWOBEEP, 0.5, vary = FALSE)
@@ -426,7 +426,7 @@ UI_ACT_PROC(/obj/item/retail_scanner, ui_act_reset_log)
 
 /obj/item/retail_scanner/proc/ticket_changed()
 	ticket_revision++
-	rel_clear(src, "confirm_item")
+	rel_clear(src, nameof(confirm_item))
 	confirm_revision = 0
 
 /obj/item/retail_scanner/proc/get_current_transaction()

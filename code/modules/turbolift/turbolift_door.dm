@@ -56,7 +56,11 @@
 	return floor
 
 // Interior doors: two-sided with the lift's doors list.
-REL_PAIR(/obj/machinery/door/airlock/lift, lift, doors)
-REL_PAIR_LIST(/datum/turbolift, doors, lift)
+/obj/machinery/door/airlock/lift/relations()
+	. = ..()
+	. += rel_one(nameof(lift), back = nameof(/datum/turbolift::doors))
+/datum/turbolift/relations()
+	. = ..()
+	. += rel_many(nameof(doors), back = nameof(/obj/machinery/door/airlock/lift::lift))
 // Exterior doors: a floor lists its doors (airlocks and firedoors) in a one-sided REL_LIST
 // (turbolift_floor.dm), and each door names its floor in a one-sided view.

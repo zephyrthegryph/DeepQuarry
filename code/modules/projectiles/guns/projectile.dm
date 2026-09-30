@@ -43,19 +43,19 @@
 	if(starts_loaded)
 		if(ispath(ammo_type) && (load_method & (SINGLE_CASING|SPEEDLOADER)))
 			for(var/i in 1 to max_shells)
-				own_add(src, "loaded", new ammo_type(src))
+				own_add(src, nameof(loaded), new ammo_type(src))
 			if(random_start_ammo)
 				for(var/i in 1 to rand(0, max_shells))
 					if(!length(loaded))
 						break
-					own_remove(src, "loaded", loaded[1])
+					own_remove(src, nameof(loaded), loaded[1])
 		if(ispath(magazine_type) && (load_method & MAGAZINE))
-			own_set(src, "ammo_magazine", new magazine_type(src))
+			own_set(src, nameof(ammo_magazine), new magazine_type(src))
 			allowed_magazines += /obj/item/ammo_magazine/smart
 			if(random_start_ammo)
 				var/ammo_cut = rand(0,ammo_magazine.max_ammo)
 				for(var/i in 1 to min(ammo_cut, length(ammo_magazine.stored_ammo)))
-					own_remove(ammo_magazine, "stored_ammo", ammo_magazine.stored_ammo[1])
+					own_remove(ammo_magazine, nameof(ammo_magazine.stored_ammo), ammo_magazine.stored_ammo[1])
 
 	update_icon()
 
@@ -63,13 +63,13 @@
 	if(!manual_chamber) // Manual Chambering
 		//get the next casing
 		if(length(loaded))
-			rel_set(src, "chambered", loaded[1]) //load next casing.
+			rel_set(src, nameof(chambered), loaded[1]) //load next casing.
 			if(handle_casings != HOLD_CASINGS)
-				own_take_member(src, "loaded", chambered)
+				own_take_member(src, nameof(loaded), chambered)
 		else if(ammo_magazine && length(ammo_magazine.stored_ammo))
-			rel_set(src, "chambered", ammo_magazine.stored_ammo[length(ammo_magazine.stored_ammo)])
+			rel_set(src, nameof(chambered), ammo_magazine.stored_ammo[length(ammo_magazine.stored_ammo)])
 			if(handle_casings != HOLD_CASINGS)
-				own_take_member(ammo_magazine, "stored_ammo", chambered)
+				own_take_member(ammo_magazine, nameof(ammo_magazine.stored_ammo), chambered)
 	if(manual_chamber && auto_loading_type && CHECK_BITFIELD(auto_loading_type,OPEN_BOLT) && bolt_open)
 		chamber_bullet() // Manual Chambering
 
@@ -109,12 +109,12 @@
 				play_sfx(src, SFX_CASING_SOUND)
 		if(CYCLE_CASINGS) //cycle the casing back to the end.
 			if(ammo_magazine)
-				own_add(ammo_magazine, "stored_ammo", chambered)
+				own_add(ammo_magazine, nameof(ammo_magazine.stored_ammo), chambered)
 			else
-				own_add(src, "loaded", chambered)
+				own_add(src, nameof(loaded), chambered)
 
 	if(handle_casings != HOLD_CASINGS)
-		rel_clear(src, "chambered")
+		rel_clear(src, nameof(chambered))
 
 	var/mob/living/M = loc // TGMC Ammo HUD
 	if(istype(M)) // TGMC Ammo HUD
@@ -131,7 +131,7 @@
 		act_message(user, src, MSG_SELF(span_notice("You remove [ammo_magazine] from %T%.")), MSG_OTHERS("%U% removes [ammo_magazine] from %T%."))
 		play_sfx(src, SFX_WEAPONS_EMPTY)
 		ammo_magazine.update_icon()
-		own_take(src, "ammo_magazine")
+		own_take(src, nameof(ammo_magazine))
 		user.hud_used?.update_ammo_hud(user, src)
 	else if(length(loaded))
 		//presumably, if it can be speed-loaded, it can be speed-unloaded.
@@ -142,11 +142,11 @@
 				for(var/obj/item/ammo_casing/C in loaded)
 					C.forceMove(T)
 					count++
-				own_take_all(src, "loaded")
+				own_take_all(src, nameof(loaded))
 			if(count)
 				act_message(user, src, MSG_SELF(span_notice("You unload [count] round\s from %T%.")), MSG_OTHERS("%U% unloads %T%."))
 		else if(load_method & SINGLE_CASING)
-			var/obj/item/ammo_casing/C = own_take_member(src, "loaded", loaded[length(loaded)])
+			var/obj/item/ammo_casing/C = own_take_member(src, nameof(loaded), loaded[length(loaded)])
 			user.put_in_hands(C)
 			act_message(user, src, MSG_SELF(span_notice("You remove \a [C] from %T%.")), MSG_OTHERS("%U% removes \a [C] from %T%."))
 		play_sfx(src, SFX_WEAPONS_EMPTY)
@@ -193,7 +193,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 		if(auto_eject_sound)
 			playsound(src, auto_eject_sound, 40, 1)
 		ammo_magazine.update_icon()
-		own_take(src, "ammo_magazine")
+		own_take(src, nameof(ammo_magazine))
 		update_icon() //make sure to do this after unsetting ammo_magazine
 		user.hud_used?.update_ammo_hud(user, src)
 
@@ -476,12 +476,12 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 	if(length(loaded))
 		to_chamber = loaded[1] //load next casing.
 		if(handle_casings != HOLD_CASINGS)
-			own_take_member(src, "loaded", to_chamber)
+			own_take_member(src, nameof(loaded), to_chamber)
 	else if(ammo_magazine && length(ammo_magazine.stored_ammo))
 		to_chamber = ammo_magazine.stored_ammo[length(ammo_magazine.stored_ammo)]
 		if(handle_casings != HOLD_CASINGS)
-			own_take_member(ammo_magazine, "stored_ammo", to_chamber)
-	rel_set(src, "chambered", to_chamber)
+			own_take_member(ammo_magazine, nameof(ammo_magazine.stored_ammo), to_chamber)
+	rel_set(src, nameof(chambered), to_chamber)
 	if(to_chamber)
 		return TRUE
 	else
@@ -537,7 +537,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 		return STEP_DONE
 	var/obj/item/ammo_casing/rd = H.stored_ammo[length(H.stored_ammo)]
 	rd.forceMove(src)
-	own_transfer(H, "stored_ammo", src, "loaded", rd)
+	own_transfer(H, nameof(H.stored_ammo), src, nameof(loaded), rd)
 	moveElement(loaded, length(loaded), 1) //to the head of the list
 	play_sfx(src, SFX_WEAPONS_EMPTY)
 	H.update_icon()
@@ -582,9 +582,8 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 				if(manual_chamber && CHECK_BITFIELD(auto_loading_type,OPEN_BOLT) && bolt_open)
 					to_chat(user, span_warning("This is an open bolt gun. Make sure you close the bolt before inserting a new magazine."))
 					return
-				user.remove_from_mob(AM)
-				AM.forceMove(src)
-				own_set(src, "ammo_magazine", AM)
+				if(!own_set(src, nameof(src.ammo_magazine), AM, user = user))
+					return
 				act_message(user, src, MSG_SELF(span_notice("You insert [AM] into %T%.")), MSG_OTHERS("%U% inserts [AM] into %T%."))
 				if(manual_chamber && CHECK_BITFIELD(auto_loading_type,CHAMBER_ON_RELOAD) && bolt_open && !chambered)
 					chamber_bullet()
@@ -604,7 +603,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 						break
 					if(C.caliber == caliber)
 						C.forceMove(src)
-						own_transfer(AM, "stored_ammo", src, "loaded", C) //should probably go inside an ammo_magazine proc, but I guess less proc calls this way...
+						own_transfer(AM, nameof(AM.stored_ammo), src, nameof(loaded), C) //should probably go inside an ammo_magazine proc, but I guess less proc calls this way...
 						count++
 				if(count)
 					act_message(user, src, MSG_SELF(span_notice("You load [count] round\s into %T%.")), MSG_OTHERS("%U% reloads %T%."))
@@ -643,9 +642,8 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 			to_chat(user, span_warning("[src] is full."))
 			return
 
-		user.remove_from_mob(C)
-		C.forceMove(src)
-		own_add(src, "loaded", C)
+		if(!own_add(src, nameof(src.loaded), C, user = user))
+			return
 		moveElement(loaded, length(loaded), 1) //to the head of the list
 		act_message(user, src, MSG_SELF(span_notice("You insert \a [C] into %T%.")), MSG_OTHERS("%U% inserts \a [C] into %T%."))
 		play_sfx(src, SFX_WEAPONS_EMPTY)
@@ -697,7 +695,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 	if(chambered)
 		return
 	act_message(user, src, MSG_SELF(span_notice("You slide %I% into %T%'s chamber.")), MSG_OTHERS(span_notice(message)), item = C)
-	rel_set(src, "chambered", C)
+	rel_set(src, nameof(chambered), C)
 	user.hud_used.update_ammo_hud(user, src)
 	user.remove_from_mob(C)
 	C.forceMove(src)
@@ -728,7 +726,12 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 #undef BOLT_CASING_EJECTED
 #undef BOLT_CASING_CHAMBERED
 
-OWN(/obj/item/gun/projectile, ammo_magazine, OWN_CONTAINED)
-// chambered names a casing in the gun (loaded) or its magazine (stored_ammo): a relation view.
-REL(/obj/item/gun/projectile, chambered)
+/obj/item/gun/projectile/ownership()
+	. = ..()
+	. += owns(nameof(ammo_magazine), policy = OWN_CONTAINED)
+
+/obj/item/gun/projectile/relations()
+	. = ..()
+	// chambered names a casing in the gun (loaded) or its magazine (stored_ammo): a relation view.
+	. += rel_one(nameof(chambered))
 

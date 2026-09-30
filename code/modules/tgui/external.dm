@@ -31,7 +31,10 @@
  * return list Data to be sent to the UI.
  */
 /datum/proc/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	return ui_declared_data(src, user, ui, state) // UI_DATA fields
+	. = ui_declared_data(src, user, ui, state) // UI_DATA fields
+	if(isatom(src))
+		var/atom/A = src
+		A.caps_ui_data(user, .) // capabilities add theirs (code/datums/capabilities/)
 
 /**
  * public
@@ -95,6 +98,10 @@
 	// If UI is not interactive or usr calling Topic is not the UI user, bail.
 	if(!ui || ui.status != STATUS_INTERACTIVE)
 		return TRUE
+	// A named action proc, ui_<action>(mob/user, named args...) (code/datums/capabilities/ui_actions.dm).
+	var/list/named = ui_named_dispatch(src, action, params, ui)
+	if(named)
+		return named[2]
 	// The declared UI model: the UI_ACT row for `action` parses and validates params, then runs.
 	return ui_dispatch(src, action, params, ui, state)
 

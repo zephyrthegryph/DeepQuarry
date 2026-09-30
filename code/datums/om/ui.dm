@@ -30,22 +30,6 @@
 		if(target)
 			om_ui_bind(session, target, row["watch"] || CHANGE_GENERIC_MASK)
 
-/// The rates a ui row streams, as name -> list(value, rate, at).
-/proc/om_ui_stream(datum/E)
-	. = list()
-	var/datum/om/rec/rec = E?.om_rec
-	if(!rec)
-		return
-	for(var/list/row as anything in rec.table.ui)
-		for(var/name in row["stream_rates"])
-			var/datum/om/rate/R = om_rate_named(E, name)
-			if(R)
-				.[name] = om_ui_rate(R)
-
-/// Rate streaming: the client interpolates value + rate * (now - at).
-/proc/om_ui_rate(datum/om/rate/R)
-	return list("value" = R.now(), "rate" = R.per_second, "at" = R.sched_now())
-
 /// Called on the session when a bound target changed. /datum/tgui pushes an update.
 /datum/proc/om_ui_push()
 	return

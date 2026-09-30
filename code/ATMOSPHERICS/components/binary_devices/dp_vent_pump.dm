@@ -1,5 +1,3 @@
-#define DEFAULT_PRESSURE_DELTA 10000
-
 #define EXTERNAL_PRESSURE_BOUND ONE_ATMOSPHERE
 #define INTERNAL_PRESSURE_BOUND 0
 #define PRESSURE_CHECKS 1
@@ -31,7 +29,7 @@
 
 	var/external_pressure_bound = EXTERNAL_PRESSURE_BOUND
 	var/input_pressure_min = INTERNAL_PRESSURE_BOUND
-	var/output_pressure_max = DEFAULT_PRESSURE_DELTA
+	var/output_pressure_max = 10000
 
 	var/frequency = ZERO_FREQ
 	var/id = null
@@ -52,12 +50,13 @@
 	icon = null
 
 /obj/machinery/atmospherics/binary/dp_vent_pump/disconnect(obj/machinery/atmospherics/reference)
-	wake_for_state_change()
+	rust_device_dirty()
 	return ..()
 
+/// Its turf is the device's other side: a new one is a new edge.
 /obj/machinery/atmospherics/binary/dp_vent_pump/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
-	wake_for_state_change()
+	rust_device_dirty()
 
 /obj/machinery/atmospherics/binary/dp_vent_pump/high_volume
 	name = "Large Dual Port Air Vent"
@@ -109,108 +108,79 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/binary/dp_vent_pump, TYPE_PR
 	update_icon()
 	update_underlays()
 
-/// Steps while switched on and operable; hibernate_until_gas_changes() parks it between gas changes.
-DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/atmospherics/binary/dp_vent_pump, MACHINE_PIPELINE, list("use_power", "operable"))
+/// Its flow law is a Rust device edge (the same shape as the vent pump's): the port it works through and the
+/// turf are its two sides. rust_bind_pipe_port fires once per port, so the second one is the earliest both are live.
+/obj/machinery/atmospherics/binary/dp_vent_pump/rust_bind_pipe_port(index, datum/pipe_network/new_network, datum/gas_mixture/network_air)
+	. = ..()
+	if(index == 2)
+		rust_device_dirty()
 
-/obj/machinery/atmospherics/binary/dp_vent_pump/machine_step()
-	..()
-
-	last_power_draw = 0
-	last_flow_rate = 0
-
-	var/datum/gas_mixture/environment = loc.return_air()
-
-	var/power_draw = -1
-
-	//Figure out the target pressure difference
-	var/pressure_delta = get_pressure_delta(environment)
-
-	if(pressure_delta > 0.5)
-		if(pump_direction) //internal -> external
-			if (node1 && (environment.return_temperature() || air1.return_temperature()))
-				var/transfer_moles = calculate_transfer_moles(air1, environment, pressure_delta)
-				power_draw = pump_gas(src, air1, environment, transfer_moles, power_rating)
-
-				if(power_draw >= 0 && network1)
-					network1.mark_dirty()
-		else //external -> internal
-			if (node2 && (environment.return_temperature() || air2.return_temperature()))
-				var/transfer_moles = calculate_transfer_moles(environment, air2, pressure_delta, (network2)? network2.volume : 0)
-
-				//limit flow rate from turfs
-				transfer_moles = min(transfer_moles, environment.total_moles()*air2.return_volume()/environment.return_volume())	//group_multiplier gets divided out here
-				power_draw = pump_gas(src, environment, air2, transfer_moles, power_rating)
-
-				if(power_draw >= 0 && network2)
-					network2.mark_dirty()
-
-	if (power_draw >= 0)
-		last_power_draw = power_draw
-		use_power(power_draw)
-		// pump_gas mutated loc's air directly; re-enroll the turf so
-		// SSair re-processes it and the gas overlay updates.
-		if(isturf(loc))
-			var/turf/open/T = loc
-			if(istype(T))
-				T.update_visuals()
-				T.air_update_turf(FALSE, FALSE)
-	else
-		hibernate_until_gas_changes()
-		return PROCESS_KILL
-
-	return 1
-
-/// Arms its eligibility rule (code/datums/om/watch.dm om_watch_arm_condition()) over the three
-/// mixtures it pumps between -- its turf and both ports -- and stops polling. It wakes only when
-/// process() would move gas: a pressure delta past its deadband and a source worth pumping from.
-/obj/machinery/atmospherics/binary/dp_vent_pump/proc/hibernate_until_gas_changes()
-	var/datum/gas_mixture/environment = loc.return_air()
-	var/list/mixture_ids = list()
-	for(var/datum/gas_mixture/air as anything in list(environment, air1, air2))
-		var/id = air?.arena_id()
-		if(!isnull(id))
-			mixture_ids |= id
-	// Every caller is machine_step(), which returns PROCESS_KILL right after (or arm_wakes() at setup): that parks it.
-	om_watch_arm_condition(src, "gas", mixture_ids, GAS_DEPENDENCY_PRESSURE | GAS_DEPENDENCY_COMPOSITION, om_callable(src, PROC_REF(gas_wake_condition)), wake_callback = om_callable(src, PROC_REF(wake_for_state_change)))
-
-/obj/machinery/atmospherics/binary/dp_vent_pump/proc/gas_wake_condition()
-	if(!use_power || (!operable()))
-		return FALSE
-	var/datum/gas_mixture/environment = loc?.return_air()
-	if(!environment || get_pressure_delta(environment) <= 0.5)
-		return FALSE
-	var/datum/gas_mixture/source = pump_direction ? air1 : environment
-	return source && source.total_moles() >= MINIMUM_MOLES_TO_PUMP
-
-/obj/machinery/atmospherics/binary/dp_vent_pump/proc/clear_gas_dependencies()
-	om_watch_disarm(src, "gas")
-
-/obj/machinery/atmospherics/binary/dp_vent_pump/proc/wake_for_state_change()
-	clear_gas_dependencies()
-	MACHINE_WAKE(src)
-
-/obj/machinery/atmospherics/binary/dp_vent_pump/set_use_power(new_use_power)
-	if(use_power == new_use_power)
+/// Publishes (or unpublishes) the vent's Rust device edge: releasing it pushes port 1's gas out to the turf, siphoning it
+/// pulls the turf's into port 2, both at `power_rating` (device.rs's Power rate) and stopping where the enabled
+/// checks say. The turf is side `a`: the external bound is the stop (released gas fills the turf up to it, siphoning
+/// drains it down to it) and the input / output check of the port side the limit (a cap only).
+/obj/machinery/atmospherics/binary/dp_vent_pump/push_to_rust()
+	if(QDELETED(src))
 		return
-	wake_for_state_change()
-	return ..()
-
-/obj/machinery/atmospherics/binary/dp_vent_pump/proc/get_pressure_delta(datum/gas_mixture/environment)
-	var/pressure_delta = DEFAULT_PRESSURE_DELTA
-	var/environment_pressure = environment.return_pressure()
-
-	if(pump_direction) //internal -> external
+	// ALLOW(derived_reads): set_use_power() and power_change() bump rust_device_rev, as does a port bind or disconnect() (node1, node2)
+	if(!use_power || !operable() || !isturf(loc) || !(pump_direction ? node1 : node2))
+		rust_unregister_device()
+		return
+	var/datum/gas_mixture/environment = loc.return_air()
+	if(!environment)
+		rust_unregister_device()
+		return
+	var/stop_side = RUST_SIDE_A
+	var/stop_cmp = RUST_STOP_NONE
+	var/stop_kpa = 0
+	var/limit_side = RUST_SIDE_B
+	var/limit_cmp = RUST_STOP_NONE
+	var/limit_kpa = 0
+	if(pump_direction) // internal -> external
 		if(pressure_checks & PRESSURE_CHECK_EXTERNAL)
-			pressure_delta = min(pressure_delta, external_pressure_bound - environment_pressure) //increasing the pressure here
+			stop_cmp = RUST_STOP_AT_LEAST
+			stop_kpa = external_pressure_bound
 		if(pressure_checks & PRESSURE_CHECK_INPUT)
-			pressure_delta = min(pressure_delta, air1.return_pressure() - input_pressure_min) //decreasing the pressure here
-	else //external -> internal
+			limit_cmp = RUST_STOP_AT_MOST
+			limit_kpa = input_pressure_min
+	else // external -> internal
 		if(pressure_checks & PRESSURE_CHECK_EXTERNAL)
-			pressure_delta = min(pressure_delta, environment_pressure - external_pressure_bound) //decreasing the pressure here
+			stop_cmp = RUST_STOP_AT_MOST
+			stop_kpa = external_pressure_bound
 		if(pressure_checks & PRESSURE_CHECK_OUTPUT)
-			pressure_delta = min(pressure_delta, output_pressure_max - air2.return_pressure()) //increasing the pressure here
+			limit_cmp = RUST_STOP_AT_LEAST
+			limit_kpa = output_pressure_max
+	if(stop_cmp == RUST_STOP_NONE)
+		if(limit_cmp != RUST_STOP_NONE)
+			// Only a port-side check: it is the stop.
+			stop_side = limit_side
+			stop_cmp = limit_cmp
+			stop_kpa = limit_kpa
+			limit_cmp = RUST_STOP_NONE
+		else
+			// No check at all: the turf fills without bound (releasing) or drains to nothing (siphoning).
+			stop_cmp = pump_direction ? RUST_STOP_AT_LEAST : RUST_STOP_AT_MOST
+			stop_kpa = pump_direction ? 1e30 : 0
+	rust_set_turf_device(pump_direction ? 1 : 2, environment)
+	rust_set_device_flow(0, RUST_FLOW_POWER, power_rating, RUST_DIR_FORCED, stop_side, stop_cmp, stop_kpa, limit_side, limit_cmp, limit_kpa) // ALLOW(derived_reads): power_rating is fixed by the type
 
-	return pressure_delta
+/// A step's result: the flow and the power it drew, billed.
+/obj/machinery/atmospherics/binary/dp_vent_pump/rust_device_stepped(moles, power_w, target_reached)
+	last_flow_rate = abs(moles)
+	last_power_draw = power_w
+	if(power_w > 0)
+		use_power(power_w)
+
+TRACKED(/obj/machinery/atmospherics/binary/dp_vent_pump, pump_direction, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/atmospherics/binary/dp_vent_pump, external_pressure_bound, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/atmospherics/binary/dp_vent_pump, input_pressure_min, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/atmospherics/binary/dp_vent_pump, output_pressure_max, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/atmospherics/binary/dp_vent_pump, pressure_checks, CHANGE_MACHINE_SETTINGS)
+
+/// The Rust device law is pushed (once per frame) when any of these change.
+/obj/machinery/atmospherics/binary/dp_vent_pump/derived()
+	. = ..()
+	. += rust_push(nameof(rust_device_rev), nameof(pump_direction), nameof(external_pressure_bound), nameof(input_pressure_min), nameof(output_pressure_max), nameof(pressure_checks))
 
 //Radio remote control
 
@@ -218,7 +188,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/atmospherics/binary/dp_vent_pump, MACH
 	GLOB.radio_service.remove_object(src, frequency)
 	frequency = new_frequency
 	if(frequency)
-		rel_set(src, "radio_connection", GLOB.radio_service.add_object(src, frequency, radio_filter = RADIO_ATMOSIA))
+		rel_set(src, nameof(radio_connection), GLOB.radio_service.add_object(src, frequency, radio_filter = RADIO_ATMOSIA))
 
 /obj/machinery/atmospherics/binary/dp_vent_pump/proc/broadcast_status()
 	if(!radio_connection)
@@ -226,7 +196,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/atmospherics/binary/dp_vent_pump, MACH
 
 	var/datum/signal/signal = new
 	signal.transmission_method = TRANSMISSION_RADIO //radio signal
-	rel_set(signal, "source", src)
+	rel_set(signal, nameof(signal.source), src)
 
 	signal.data = list(
 		"tag" = id,
@@ -248,12 +218,6 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/atmospherics/binary/dp_vent_pump, MACH
 	if(Adjacent(user))
 		. += "A small gauge in the corner reads [round(last_flow_rate, 0.1)] L/s; [round(last_power_draw)] W"
 
-/obj/machinery/atmospherics/binary/dp_vent_pump/power_change()
-	. = ..()
-	if(.)
-		// process() hibernates on NOPOWER; re-evaluate when power returns.
-		wake_for_state_change()
-
 /obj/machinery/atmospherics/binary/dp_vent_pump/receive_signal(datum/signal/signal)
 	if(!signal.data["tag"] || (signal.data["tag"] != id) || (signal.data["sigtype"]!="command"))
 		return 0
@@ -264,37 +228,34 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/atmospherics/binary/dp_vent_pump, MACH
 		set_use_power(!use_power)
 
 	if(signal.data["direction"])
-		pump_direction = text2num(signal.data["direction"])
+		set_pump_direction(text2num(signal.data["direction"]))
 
 	if(signal.data["checks"])
-		pressure_checks = text2num(signal.data["checks"])
+		set_pressure_checks(text2num(signal.data["checks"]))
 
 	if(signal.data["purge"])
-		pressure_checks &= ~1
-		pump_direction = 0
+		set_pressure_checks(pressure_checks & ~1)
+		set_pump_direction(0)
 
 	if(signal.data["stabalize"])
-		pressure_checks |= 1
-		pump_direction = 1
+		set_pressure_checks(pressure_checks | 1)
+		set_pump_direction(1)
 
 	if(signal.data["set_input_pressure"])
-		input_pressure_min = between(0,	text2num(signal.data["set_input_pressure"]), ONE_ATMOSPHERE*50)
+		set_input_pressure_min(between(0, text2num(signal.data["set_input_pressure"]), ONE_ATMOSPHERE*50))
 
 	if(signal.data["set_output_pressure"])
-		output_pressure_max = between(0, text2num(signal.data["set_output_pressure"]), ONE_ATMOSPHERE*50)
+		set_output_pressure_max(between(0, text2num(signal.data["set_output_pressure"]), ONE_ATMOSPHERE*50))
 
 	if(signal.data["set_external_pressure"])
-		external_pressure_bound = between(0, text2num(signal.data["set_external_pressure"]), ONE_ATMOSPHERE*50)
+		set_external_pressure_bound(between(0, text2num(signal.data["set_external_pressure"]), ONE_ATMOSPHERE*50))
 
 	if(signal.data["status"])
 		om_after(src, 2, PROC_REF(broadcast_status))
 		return //do not update_icon
-	wake_for_state_change()
 
 	om_after(src, 2, PROC_REF(broadcast_status))
 	update_icon()
-
-#undef DEFAULT_PRESSURE_DELTA
 
 #undef EXTERNAL_PRESSURE_BOUND
 #undef INTERNAL_PRESSURE_BOUND
@@ -303,12 +264,3 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/atmospherics/binary/dp_vent_pump, MACH
 #undef PRESSURE_CHECK_EXTERNAL
 #undef PRESSURE_CHECK_INPUT
 #undef PRESSURE_CHECK_OUTPUT
-
-/obj/machinery/atmospherics/binary/dp_vent_pump/step_has_work()
-	return gas_wake_condition()
-
-/// Setup at spawn: arm what wakes it (machine_pipeline.dm, materialize_wakes()).
-/obj/machinery/atmospherics/binary/dp_vent_pump/arm_wakes()
-	..()
-	hibernate_until_gas_changes()
-

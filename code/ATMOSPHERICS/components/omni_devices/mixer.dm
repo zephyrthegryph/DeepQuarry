@@ -28,8 +28,6 @@
 	var/max_flow_rate = 200
 	var/set_flow_rate = 200
 
-	var/list/mixing_inputs = list() // ALLOW(instance_list): atmos area (M1a): omni mixer pipe device; listed in memory_lists_audit.md, not edited here
-
 /obj/machinery/atmospherics/omni/mixer/Initialize(mapload)
 	. = ..()
 
@@ -68,18 +66,16 @@
 		output.air.set_volume(ATMOS_DEFAULT_VOLUME_MIXER * 0.75 * length(inputs))
 		output.concentration = 1
 
-	rebuild_mixing_inputs()
-
 /// Derived view: output and the input ports, recomputed from the owned ports' modes.
 /obj/machinery/atmospherics/omni/mixer/proc/rebuild_port_roles()
-	rel_clear(src, "output")
-	rel_clear(src, "inputs")
+	rel_clear(src, nameof(output))
+	rel_clear(src, nameof(inputs))
 	for(var/datum/omni_port/P as anything in ports)
 		switch(P.mode)
 			if(ATM_INPUT)
-				rel_add(src, "inputs", P)
+				rel_add(src, nameof(inputs), P)
 			if(ATM_OUTPUT)
-				rel_set(src, "output", P)
+				rel_set(src, nameof(output), P)
 
 /obj/machinery/atmospherics/omni/mixer/proc/mapper_set()
 	return (tag_north_con || tag_south_con || tag_east_con || tag_west_con)
@@ -100,79 +96,38 @@
 
 	return 0
 
-/// R10/M2 bridge (rust_architecture.md §8.5 step 6's filter/mixer slice):
-/// the omni mixer's N-way generalization of the trinary mixer's two input
-/// flows -- one plain `DeviceFlow` (mask 0: every gas) per input port,
-/// `RUST_FLOW_MOLES`, ratio-scaled by `vg_mix_transfer()` (already N-way,
-/// no separate Rust function needed here). The actual gas movement is
-/// Rust's own device-edge step.
-/obj/machinery/atmospherics/omni/mixer/machine_step()
-	if(!..())
-		return PROCESS_KILL // off or unpowered: its power and settings channels wake it
-
-	// Ports are rebound to their pipe region's air whenever the topology
-	// commits (the old datum is deleted), so the gas -> concentration list is
-	// rebuilt from the ports' current air every step, never kept across one.
-	rebuild_mixing_inputs()
-	//Figure out the amount of moles to transfer
-	var/requested = 0
-	for (var/datum/omni_port/P in inputs)
-		requested += (set_flow_rate*P.concentration/P.air.return_volume())*P.air.total_moles()
-	if(requested <= MINIMUM_MOLES_TO_FILTER)
-		unregister_omni_mixer_edges()
-		hibernate_until_gas_changes()
-		return PROCESS_KILL
-
-	var/available_power = material_pump_power(power_rating)
-	var/efficiency = ATMOS_FILTER_EFFICIENCY * (material_pump_efficiency() / 0.8)
-	var/list/result = vg_mix_transfer(mixing_inputs, output.air, requested, available_power, efficiency)
-	if(!result)
-		unregister_omni_mixer_edges()
-		hibernate_until_gas_changes()
-		return PROCESS_KILL
-
-	var/power_draw = result[2]
-	var/dt = SSvg.wait / (1 SECONDS)
-
-	last_power_draw = power_draw
-	use_power(power_draw)
-
-	// result[3..] is one moles figure per `mixing_inputs` entry, in that
-	// same order, REGARDLESS of concentration (mix_transfer() gives every
-	// source a slot, zero-ratio or not) -- so this must walk every port in
-	// lockstep with it, not skip zero-concentration ones.
-	var/i = 3
+/// The omni mixer is a Rust budget group (rust_set_budget_leg()): one input leg per input port into the output, each with its
+/// concentration. The requested moles from the inputs' live gas, the entropy/power budget and the split are computed in Rust
+/// each device step (power_budget.rs); this only declares the ports and settings.
+/obj/machinery/atmospherics/omni/mixer/push_to_rust()
+	if(QDELETED(src))
+		return
+	last_power_draw = 0
+	last_flow_rate = 0
+	rust_unregister_all_devices_n()
+	if(!operable() || !use_power || !output || length(inputs) < 2) // ALLOW(derived_reads): set_use_power() and power_change() bump rust_device_rev, as do port binds and disconnect() (nodes, ports, modes)
+		return
+	var/available_power = material_pump_power(power_rating) // ALLOW(derived_reads): fixed by the material
+	var/efficiency = ATMOS_FILTER_EFFICIENCY * (material_pump_efficiency() / 0.8) // ALLOW(derived_reads): fixed by the material
+	var/output_index = ports.Find(output) // ALLOW(derived_reads): set_use_power() and power_change() bump rust_device_rev, as do port binds and disconnect() (nodes, ports, modes)
 	for(var/datum/omni_port/P in inputs)
-		var/slot = "in_[P]"
-		var/moles = result[i++]
-		if(!P.concentration || !moles)
-			rust_unregister_device_n(slot)
+		if(!P.concentration)
 			continue
-		rust_set_device_n(slot, ports.Find(P), ports.Find(output))
-		rust_set_device_flow_n(slot, 0, RUST_FLOW_MOLES, moles / dt, RUST_DIR_FORCED, RUST_SIDE_A, RUST_STOP_NONE, 0)
+		rust_set_budget_leg("in_[P]", ports.Find(P), output_index, RUST_FLOW_MIX, 0, RUST_ROLE_OUTPUT, P.concentration, set_flow_rate, available_power, efficiency)
 
-	for(var/datum/omni_port/P in inputs)
-		if(P.concentration && P.network)
-			P.network.mark_dirty()
+/// A step's result: the moles the group moved and the power it drew, billed.
+/obj/machinery/atmospherics/omni/mixer/rust_device_stepped(moles, power_w, target_reached)
+	last_power_draw = power_w
+	if(power_w > 0)
+		use_power(power_w)
+	last_flow_rate = moles
 
-	if(output.network)
-		output.network.mark_dirty()
+TRACKED(/obj/machinery/atmospherics/omni/mixer, set_flow_rate, CHANGE_MACHINE_SETTINGS)
 
-	return 1
-
-/obj/machinery/atmospherics/omni/mixer/proc/unregister_omni_mixer_edges()
-	for(var/datum/omni_port/P in inputs)
-		rust_unregister_device_n("in_[P]")
-
-/obj/machinery/atmospherics/omni/mixer/can_process_gas()
-	var/transfer_moles = 0
-	for(var/datum/omni_port/P in inputs)
-		// Runs inside SSmachines' dirty-batch drain; a port whose mixture was
-		// torn down (topology rebuild, deconstruction) must not runtime here.
-		if(!P.air)
-			continue
-		transfer_moles += (set_flow_rate * P.concentration / P.air.return_volume()) * P.air.total_moles()
-	return transfer_moles > MINIMUM_MOLES_TO_FILTER
+/// The Rust group is pushed (once per frame) when the rate or (through wake_for_state_change()) a port or share changes.
+/obj/machinery/atmospherics/omni/mixer/derived()
+	. = ..()
+	. += rust_push(nameof(rust_device_rev), nameof(set_flow_rate))
 
 DECLARE_UI(/obj/machinery/atmospherics/omni/mixer, "OmniMixer")
 
@@ -243,7 +198,7 @@ UI_ACT_PROC(/obj/machinery/atmospherics/omni/mixer, ui_act_set_flow_rate)
 	var/new_flow_rate = act_ask(ui.user, action, params, ui, "k237", /datum/om/prompt/number, message = "Enter new flow rate limit (0-[max_flow_rate]L/s)", title = "Flow Rate Control", default = set_flow_rate, max = max_flow_rate)
 	if(isnull(new_flow_rate))
 		return
-	set_flow_rate = between(0, new_flow_rate, max_flow_rate)
+	set_set_flow_rate(between(0, new_flow_rate, max_flow_rate))
 	wake_for_state_change()
 	update_icon()
 
@@ -313,7 +268,6 @@ UI_ACT_PROC(/obj/machinery/atmospherics/omni/mixer, ui_act_switch_conlock)
 			P.update = 1
 
 	update_ports()
-	rebuild_mixing_inputs()
 
 /obj/machinery/atmospherics/omni/mixer/proc/change_concentration(port = NORTH, mob/user)
 	tag_north_con = null
@@ -358,17 +312,13 @@ UI_ACT_PROC(/obj/machinery/atmospherics/omni/mixer, ui_act_switch_conlock)
 		else if(!P.con_lock)
 			P.concentration = remain_con
 
-	rebuild_mixing_inputs()
-
-/obj/machinery/atmospherics/omni/mixer/proc/rebuild_mixing_inputs()
-	mixing_inputs.Cut()
-	for(var/datum/omni_port/P in inputs)
-		mixing_inputs[P.air] = P.concentration
 
 /obj/machinery/atmospherics/omni/mixer/proc/con_lock(port = NORTH)
 	for(var/datum/omni_port/P in inputs)
 		if(P.dir == port)
 			P.con_lock = !P.con_lock
 
-REL(/obj/machinery/atmospherics/omni/mixer, output)
-REL_LIST(/obj/machinery/atmospherics/omni/mixer, inputs)
+/obj/machinery/atmospherics/omni/mixer/relations()
+	. = ..()
+	. += rel_one(nameof(output))
+	. += rel_many(nameof(inputs))

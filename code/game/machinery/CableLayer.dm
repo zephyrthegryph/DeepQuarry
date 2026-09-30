@@ -9,7 +9,7 @@
 	on = 0
 
 /obj/machinery/cablelayer/Initialize(mapload)
-	own_set(src, "cable", new /obj/item/stack/cable_coil(src, max_cable))
+	own_set(src, nameof(cable), new /obj/item/stack/cable_coil(src, max_cable))
 	. = ..()
 
 /obj/machinery/cablelayer/Moved(atom/old_loc, direction, forced = FALSE)
@@ -99,7 +99,7 @@
 		if(to_load)
 			to_load = min(CC.get_amount(), to_load)
 			if(!cable)
-				own_set(src, "cable", new /obj/item/stack/cable_coil(src, to_load))
+				own_set(src, nameof(cable), new /obj/item/stack/cable_coil(src, to_load))
 			else
 				cable.add(to_load)
 			CC.use(to_load)
@@ -114,11 +114,11 @@
 		return
 	cable.use(amount)
 	if(QDELETED(cable))
-		own_take(src, "cable")
+		own_take(src, nameof(cable))
 	return 1
 
 /obj/machinery/cablelayer/proc/reset()
-	rel_clear(src, "last_piece")
+	rel_clear(src, nameof(last_piece))
 
 /obj/machinery/cablelayer/proc/dismantleFloor(turf/new_turf)
 	if(istype(new_turf, /turf/simulated/floor))
@@ -152,10 +152,12 @@
 		last_piece().update_icon()
 		last_piece().power_register()
 	NC.power_register()
-	rel_set(src, "last_piece", NC)
+	rel_set(src, nameof(last_piece), NC)
 	return 1
 
-OWN(/obj/machinery/cablelayer, cable, OWN_CONTAINED)
+/obj/machinery/cablelayer/ownership()
+	. = ..()
+	. += owns(nameof(cable), policy = OWN_CONTAINED)
 
 /// last piece (a relation view: it reads null once the target is deleted).
 /obj/machinery/cablelayer/proc/last_piece() as /obj/structure/cable

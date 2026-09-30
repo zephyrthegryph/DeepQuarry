@@ -121,9 +121,9 @@ UI_ACT_PROC(/datum/board_game/nine_mens, ui_act_be_player_one)
 	if(game_state != GAME_SETUP)
 		return FALSE
 	if(player_one == ui.user)
-		rel_clear(src, "player_one")
+		rel_clear(src, nameof(/datum/board_game/checkers::player_one))
 		return TRUE
-	rel_set(src, "player_one", ui.user)
+	rel_set(src, nameof(/datum/board_game/checkers::player_one), ui.user)
 	return TRUE
 
 UI_ACT(/datum/board_game/nine_mens, "be_player_two", ui_act_be_player_two)
@@ -131,9 +131,9 @@ UI_ACT_PROC(/datum/board_game/nine_mens, ui_act_be_player_two)
 	if(game_state != GAME_SETUP)
 		return FALSE
 	if(player_two == ui.user)
-		rel_clear(src, "player_two")
+		rel_clear(src, nameof(/datum/board_game/checkers::player_two))
 		return TRUE
-	rel_set(src, "player_two", ui.user)
+	rel_set(src, nameof(/datum/board_game/checkers::player_two), ui.user)
 	return TRUE
 
 UI_ACT(/datum/board_game/nine_mens, "swap_players", ui_act_swap_players)
@@ -143,8 +143,8 @@ UI_ACT_PROC(/datum/board_game/nine_mens, ui_act_swap_players)
 	if(!player_one || !player_two)
 		return FALSE
 	var/mob/temp_player = player_one
-	rel_set(src, "player_one", player_two)
-	rel_set(src, "player_two", temp_player)
+	rel_set(src, nameof(/datum/board_game/checkers::player_one), player_two)
+	rel_set(src, nameof(/datum/board_game/checkers::player_two), temp_player)
 
 UI_ACT(/datum/board_game/nine_mens, "clear_game", ui_act_clear_game)
 UI_ACT_PROC(/datum/board_game/nine_mens, ui_act_clear_game)
@@ -181,8 +181,8 @@ UI_ACT_PROC(/datum/board_game/nine_mens, ui_act_play_again_swapped)
 		return FALSE
 	reset()
 	var/mob/temp_player = player_one
-	rel_set(src, "player_one", player_two)
-	rel_set(src, "player_two", temp_player)
+	rel_set(src, nameof(/datum/board_game/checkers::player_one), player_two)
+	rel_set(src, nameof(/datum/board_game/checkers::player_two), temp_player)
 	EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
 	return TRUE
 
@@ -218,8 +218,8 @@ UI_ACT_PROC(/datum/board_game/nine_mens, ui_act_game_action)
 		current_board[i] = null
 	if(full)
 		game_state = GAME_SETUP
-		rel_clear(src, "player_one")
-		rel_clear(src, "player_two")
+		rel_clear(src, nameof(player_one))
+		rel_clear(src, nameof(player_two))
 	else
 		game_state = GAME_PLAYER_ONE
 

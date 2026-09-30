@@ -51,7 +51,7 @@
 		if(!D)
 			D = new()
 			D.weapon = W.weapon
-			own_put(src, "wdata", V, D)
+			own_put(src, nameof(wdata), V, D)
 
 		if(!LAZYACCESS(D.organs_scanned, O.name))
 			if(D.organ_names == "")
@@ -64,7 +64,7 @@
 
 	for(var/V in O.trace_chemicals)
 		if(O.trace_chemicals[V] > 0 && !LAZYFIND(chemtraces, V))
-			own_add(src, "chemtraces", V)
+			own_add(src, nameof(chemtraces), V)
 
 /// Requirement: only a conscious human can print the data.
 /obj/item/autopsy_scanner/proc/can_print_data(mob/user, atom/target, obj/item/held)
@@ -162,8 +162,8 @@
 
 	if(target_name != M.name)
 		target_name = M.name
-		own_set(src, "wdata", list())
-		own_set(src, "chemtraces", list())
+		own_set(src, nameof(wdata), list())
+		own_set(src, nameof(chemtraces), list())
 		src.timeofdeath = null
 		to_chat(user, span_notice("A new patient has been registered. Purging data for previous patient."))
 

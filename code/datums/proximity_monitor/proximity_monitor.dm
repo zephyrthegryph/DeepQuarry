@@ -32,18 +32,18 @@
 	if(hasprox_receiver())
 		om_unhook(hasprox_receiver(), /datum/om/event/qdeleting, src)
 	if(new_receiver)
-		rel_set(src, "hasprox_receiver", new_receiver)
+		rel_set(src, nameof(hasprox_receiver), new_receiver)
 		if(new_receiver != new_host)
 			om_hook(new_receiver, /datum/om/event/qdeleting, src, PROC_REF(on_host_or_receiver_del))
 	else if(hasprox_receiver() == host()) //Default case
-		rel_set(src, "hasprox_receiver", new_host)
-	rel_set(src, "host", new_host)
+		rel_set(src, nameof(hasprox_receiver), new_host)
+	rel_set(src, nameof(host), new_host)
 	om_hook(new_host, /datum/om/event/qdeleting, src, PROC_REF(on_host_or_receiver_del))
 	var/static/list/containers_connections = list(/datum/om/event/moved = PROC_REF(on_moved), /datum/om/event/before/movable_z_changed = PROC_REF(on_z_change))
 	if(containers_connector && !QDELETED(containers_connector))
 		containers_connector.update(host(), containers_connections)
 	else if(ismovable(host()))
-		own_set(src, "containers_connector", new /datum/connect_containers(src, host(), containers_connections))
+		own_set(src, nameof(containers_connector), new /datum/connect_containers(src, host(), containers_connections))
 	om_hook(host(), /datum/om/event/moved, src, PROC_REF(on_moved))
 	om_hook(host(), /datum/om/event/before/movable_z_changed, src, PROC_REF(on_z_change))
 	set_range(current_range, TRUE)
@@ -66,7 +66,7 @@
 	if(range_connector && !QDELETED(range_connector))
 		range_connector.update(host(), loc_connections, current_range, works_in_containers)
 		return
-	own_set(src, "range_connector", new /datum/connect_range(src, host(), loc_connections, current_range, works_in_containers))
+	own_set(src, nameof(range_connector), new /datum/connect_range(src, host(), loc_connections, current_range, works_in_containers))
 
 /datum/proximity_monitor/proc/on_moved(atom/movable/source, datum/om/event/moved/event)
 	EVENT_HANDLER

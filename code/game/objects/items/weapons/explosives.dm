@@ -72,7 +72,7 @@ DECLARE_INTERACTIONS(/obj/item/plastique, \
 	if(!(in_range(user, target)))
 		return
 	user.drop_item()
-	rel_set(src, "target", target_ref())
+	rel_set(src, nameof(target), target_ref())
 	moveToNullspace()
 
 	if (ismob(target))
@@ -88,9 +88,9 @@ DECLARE_INTERACTIONS(/obj/item/plastique, \
 
 /obj/item/plastique/proc/explode(location)
 	if(!target_ref())
-		rel_set(src, "target", get_atom_on_turf(src))
+		rel_set(src, nameof(target), get_atom_on_turf(src))
 	if(!target_ref())
-		rel_set(src, "target", src)
+		rel_set(src, nameof(target), src)
 	if(location)
 		explosion(location, blast_dev, blast_heavy, blast_light, blast_flash)
 
@@ -142,9 +142,9 @@ EXTEND_INTERACTIONS(/obj/item/plastique/seismic, INTERACT_ITEM(null, PROC_REF(se
 
 /obj/item/plastique/seismic/locked/explode(location)
 	if(!target_ref())
-		rel_set(src, "target", get_atom_on_turf(src))
+		rel_set(src, nameof(target), get_atom_on_turf(src))
 	if(!target_ref())
-		rel_set(src, "target", src)
+		rel_set(src, nameof(target), src)
 
 	var/turf/T = get_turf(target_ref())
 	if((T.z in using_map.station_levels) || (T.z in using_map.admin_levels))

@@ -23,14 +23,12 @@ DECLARE_INTERACTIONS(/obj/item/transfer_valve, \
 			return TRUE
 
 		if(!tank_one)
-			user.drop_item()
-			item.forceMove(src)
-			own_set(src, "tank_one", item)
+			if(!own_set(src, nameof(src.tank_one), item, user = user))
+				return TRUE
 			to_chat(user, span_notice("You attach the tank to the transfer valve."))
 		else if(!tank_two)
-			user.drop_item()
-			item.forceMove(src)
-			own_set(src, "tank_two", item)
+			if(!own_set(src, nameof(src.tank_two), item, user = user))
+				return TRUE
 			to_chat(user, span_notice("You attach the tank to the transfer valve."))
 			message_admins("[key_name_admin(user)] attached both tanks to a transfer valve. [ADMIN_JMP(location)]")
 			log_game("[key_name_admin(user)] attached both tanks to a transfer valve.")
@@ -46,17 +44,16 @@ DECLARE_INTERACTIONS(/obj/item/transfer_valve, \
 		if(attached_device)
 			to_chat(user, span_warning("There is already an device attached to the valve, remove it first."))
 			return TRUE
-		user.remove_from_mob(item)
-		A.forceMove(src)
-		own_set(src, "attached_device", A)
+		if(!own_set(src, nameof(src.attached_device), A, user = user))
+			return TRUE
 		to_chat(user, span_notice("You attach the [item] to the valve controls and secure it."))
-		rel_set(A, "holder", src)
+		rel_set(A, nameof(A.holder), src)
 		A.toggle_secure()	//this calls update_icon(), which calls update_icon() on the holder (i.e. the bomb).
 
 		GLOB.bombers += "[key_name(user)] attached a [item] to a transfer valve."
 		message_admins("[key_name_admin(user)] attached a [item] to a transfer valve. [ADMIN_JMP(location)]")
 		log_game("[key_name_admin(user)] attached a [item] to a transfer valve.")
-		rel_set(src, "attacher", user)
+		rel_set(src, nameof(attacher), user)
 		SStgui.update_uis(src) // update all UIs attached to src
 	return TRUE
 
@@ -130,8 +127,8 @@ UI_ACT_PROC(/obj/item/transfer_valve, ui_act_remove_device)
 	. = TRUE
 	if(attached_device)
 		attached_device.forceMove(get_turf(src))
-		rel_clear(attached_device, "holder")
-		own_take(src, "attached_device")
+		rel_clear(attached_device, nameof(/client::holder))
+		own_take(src, nameof(/obj/item/transfer_valve::attached_device))
 		update_icon()
 	if(.)
 		update_icon()
@@ -164,10 +161,10 @@ DECLARE_APPEARANCE_PROC(/obj/item/transfer_valve, TYPE_PROC_REF(/atom, appearanc
 /obj/item/transfer_valve/proc/remove_tank(obj/item/tank/T)
 	if(tank_one == T)
 		split_gases()
-		own_take(src, "tank_one")
+		own_take(src, nameof(tank_one))
 	else if(tank_two == T)
 		split_gases()
-		own_take(src, "tank_two")
+		own_take(src, nameof(tank_two))
 	else
 		return
 
@@ -245,9 +242,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/transfer_valve, TYPE_PROC_REF(/atom, appearanc
 /obj/item/transfer_valve/proc/c_state()
 	return
 
-OWN(/obj/item/transfer_valve, tank_one, OWN_CONTAINED)
-OWN(/obj/item/transfer_valve, tank_two, OWN_CONTAINED)
-OWN(/obj/item/transfer_valve, attached_device, OWN_CONTAINED)
+/obj/item/transfer_valve/ownership()
+	. = ..()
+	. += owns(nameof(tank_one), policy = OWN_CONTAINED)
+	. += owns(nameof(tank_two), policy = OWN_CONTAINED)
+	. += owns(nameof(attached_device), policy = OWN_CONTAINED)
 
 /// Relation view: attacher (reads null once it is gone).
 /obj/item/transfer_valve/proc/attacher() as /mob

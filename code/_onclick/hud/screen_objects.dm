@@ -155,7 +155,7 @@ DECLARE_INTERACTIONS(/atom/movable/screen/grab, 	INTERACT_HAND_UNGATED("Nothing"
 	if(!overlay_object)
 		overlay_object = new
 		overlay_object.icon_state = "[choice]"
-		own_put(src, "hover_overlays_cache", choice, overlay_object)
+		own_put(src, nameof(hover_overlays_cache), choice, overlay_object)
 	vis_contents += overlay_object
 
 /obj/effect/overlay/zone_sel
@@ -313,7 +313,7 @@ DECLARE_APPEARANCE_PROC(/atom/movable/screen/zone_sel, TYPE_PROC_REF(/atom, appe
 				var/mob/living/carbon/C = usr
 				if(!C.stat && !C.has_status(EFFECT_STUNNED) && !C.has_status(EFFECT_PARALYZED) && !C.restrained())
 					if(C.internal)
-						rel_clear(C, "internal") // a relation: the tank stays in its inventory slot
+						rel_clear(C, nameof(C.internal)) // a relation: the tank stays in its inventory slot
 						to_chat(C, span_notice("No longer running on internals."))
 						if(C.internals)
 							C.internals.icon_state = "internal0"
@@ -419,7 +419,7 @@ DECLARE_APPEARANCE_PROC(/atom/movable/screen/zone_sel, TYPE_PROC_REF(/atom, appe
 
 							if(best)
 								to_chat(C, span_notice("You are now running on internals from [tankcheck[best]] [from] your [nicename[best]]."))
-								rel_set(C, "internal", tankcheck[best])
+								rel_set(C, nameof(C.internal), tankcheck[best])
 
 							if(C.internal)
 								if(C.internals)
@@ -716,7 +716,7 @@ DECLARE_APPEARANCE_PROC(/atom/movable/screen/inventory/hand, TYPE_PROC_REF(/atom
 
 /atom/movable/screen/component_button/Initialize(mapload, atom/movable/screen/new_parent)
 	. = ..()
-	rel_set(src, "parent", new_parent)
+	rel_set(src, nameof(parent), new_parent)
 
 /atom/movable/screen/component_button/Click(params)
 	if(parent())
@@ -790,7 +790,7 @@ DECLARE_DEFAULT_CHILD(/atom/movable/screen/movable/mapper_holder, "mapbutton", /
 
 /atom/movable/screen/movable/mapper_holder/Initialize(mapload, newowner)
 	. = ..()
-	rel_set(src, "owner", newowner)
+	rel_set(src, nameof(owner), newowner)
 
 	frame.icon_state = initial(frame.icon_state)+owner().hud_frame_hint
 
@@ -817,11 +817,11 @@ DECLARE_DEFAULT_CHILD(/atom/movable/screen/movable/mapper_holder, "mapbutton", /
 	bg.vis_contents.Add(map)
 
 	if(extras && !extras_holder())
-		rel_set(src, "extras_holder", extras)
+		rel_set(src, nameof(extras_holder), extras)
 		vis_contents += extras_holder()
 	if(!extras && extras_holder())
 		vis_contents -= extras_holder()
-		rel_clear(src, "extras_holder")
+		rel_clear(src, nameof(extras_holder))
 
 /atom/movable/screen/movable/mapper_holder/proc/powerClick()
 	if(running)
@@ -840,7 +840,7 @@ DECLARE_DEFAULT_CHILD(/atom/movable/screen/movable/mapper_holder, "mapbutton", /
 	frame.cut_overlay("powlight")
 	bg.vis_contents.Cut()
 	vis_contents.Remove(mask_ping, mask_full, extras_holder())
-	rel_clear(src, "extras_holder")
+	rel_clear(src, nameof(extras_holder))
 	running = FALSE
 	if(inform)
 		owner().stop_updates()
@@ -858,7 +858,7 @@ DECLARE_DEFAULT_CHILD(/atom/movable/screen/movable/mapper_holder, "mapbutton", /
 
 /atom/movable/screen/mapper/Initialize(mapload)
 	. = ..()
-	rel_set(src, "parent", loc)
+	rel_set(src, nameof(parent), loc)
 
 // Holds the actual map image
 /atom/movable/screen/mapper/map

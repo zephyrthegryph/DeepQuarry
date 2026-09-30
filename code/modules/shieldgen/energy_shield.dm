@@ -75,7 +75,7 @@
 		return
 
 	if(gen())
-		rel_add(gen(), "damaged_segments", src)
+		rel_add(gen(), nameof(/obj/machinery/power/shield_generator::damaged_segments), src)
 	disabled_for += duration
 
 	set_density(0)
@@ -99,7 +99,7 @@
 		update_visuals()
 		update_nearby_tiles() //Force ZAS update
 		update_explosion_resistance()
-		rel_remove(gen(), "damaged_segments", src)
+		rel_remove(gen(), nameof(/obj/machinery/power/shield_generator::damaged_segments), src)
 
 /obj/effect/shield/proc/diffuse(duration)
 	// The shield is trying to counter diffusers. Cause lasting stress on the shield.
@@ -109,7 +109,7 @@
 
 	diffused_for = max(duration, 0)
 	if(gen())
-		rel_add(gen(), "damaged_segments", src)
+		rel_add(gen(), nameof(/obj/machinery/power/shield_generator::damaged_segments), src)
 
 	set_density(0)
 	update_visuals()

@@ -69,10 +69,10 @@ DECLARE_REPEAT(/obj/machinery/computer/telecomms/traffic, 0.5 SECONDS, update_id
 /// The typer let go of the keyboard: a viewer (if any) takes over, else nobody is editing.
 /obj/machinery/computer/telecomms/traffic/proc/pass_editor()
 	if(length(viewingcode) > 0)
-		rel_set(src, "editingcode", DEFAULTPICK(viewingcode, null))
+		rel_set(src, nameof(editingcode), DEFAULTPICK(viewingcode, null))
 		LAZYREMOVE(viewingcode, editingcode())
 	else
-		rel_clear(src, "editingcode")
+		rel_clear(src, nameof(editingcode))
 
 
 // structured TGUI Traffic Control (see
@@ -93,7 +93,7 @@ DECLARE_REPEAT(/obj/machinery/computer/telecomms/traffic, 0.5 SECONDS, update_id
 	screen = 1
 	for(var/obj/machinery/telecomms/T in servers)
 		if(T.id == id)
-			rel_set(src, "SelectedServer", T)
+			rel_set(src, nameof(SelectedServer), T)
 			break
 	updateUsrDialog(user)
 
@@ -109,7 +109,7 @@ DECLARE_REPEAT(/obj/machinery/computer/telecomms/traffic, 0.5 SECONDS, update_id
 	switch(op)
 
 		if("release")
-			rel_clear(src, "servers")
+			rel_clear(src, nameof(servers))
 			screen = 0
 
 		if("mainmenu")
@@ -122,7 +122,7 @@ DECLARE_REPEAT(/obj/machinery/computer/telecomms/traffic, 0.5 SECONDS, update_id
 			else
 				for(var/obj/machinery/telecomms/server/T in range(25, src))
 					if(T.network == network)
-						rel_add(src, "servers", T)
+						rel_add(src, nameof(servers), T)
 
 				if(!length(servers))
 					temp = span_red("- FAILED: UNABLE TO LOCATE SERVERS IN \[[network]\] -")
@@ -136,8 +136,8 @@ DECLARE_REPEAT(/obj/machinery/computer/telecomms/traffic, 0.5 SECONDS, update_id
 			if(user in viewingcode) return
 
 			if(!editingcode())
-				rel_set(src, "lasteditor", user)
-				rel_set(src, "editingcode", user)
+				rel_set(src, nameof(lasteditor), user)
+				rel_set(src, nameof(editingcode), user)
 				winshow(editingcode(), "Telecomms IDE", 1) // show the IDE
 				winset(editingcode(), "tcscode", "is-disabled=false")
 				winset(editingcode(), "tcscode", "text=\"\"")
@@ -169,7 +169,7 @@ DECLARE_REPEAT(/obj/machinery/computer/telecomms/traffic, 0.5 SECONDS, update_id
 
 			network = newnet
 			screen = 0
-			rel_clear(src, "servers")
+			rel_clear(src, nameof(servers))
 			temp = span_blue("- NEW NETWORK TAG SET IN ADDRESS \[[network]\] -")
 
 DECLARE_EMAG(/obj/machinery/computer/telecomms/traffic, PROC_REF(on_emag), null, null)

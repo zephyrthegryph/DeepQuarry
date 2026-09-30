@@ -8,6 +8,12 @@ set -uo pipefail
 cd "$(dirname "$0")/../.."
 PY="${PYTHON:-python3}"
 failed=()
+# Fixture selftests first: a lint whose own fixtures fail can't be trusted to ratchet.
+for lint in ui_actions_lint.py sys_lint.py cap_bits_lint.py doc_snippets.py pool_lint.py; do
+	if ! "$PY" "tools/ci/$lint" --selftest; then
+		failed+=("$lint --selftest")
+	fi
+done
 for lint in \
 	allow_annotations.py \
 	scheduler_lints.py \
@@ -38,13 +44,30 @@ for lint in \
 	organ_slots_lint.py \
 	cache_lint.py \
 	stance_examine_lint.py \
-	sys_lint.py; do
+	ui_actions_lint.py \
+	sys_lint.py \
+	tracked_lint.py \
+	pool_lint.py \
+	derived_reads_lint.py \
+	cap_bits_lint.py \
+	system_boundary_lint.py \
+	doc_snippets.py; do
 	echo "::group::$lint"
 	if ! "$PY" "tools/ci/$lint"; then
 		failed+=("$lint")
 	fi
 	echo "::endgroup::"
 done
+echo "::group::tracked_lint.py --selftest"
+if ! "$PY" tools/ci/tracked_lint.py --selftest; then
+	failed+=("tracked_lint.py --selftest")
+fi
+echo "::endgroup::"
+echo "::group::derived_reads_lint.py --selftest"
+if ! "$PY" tools/ci/derived_reads_lint.py --selftest; then
+	failed+=("derived_reads_lint.py --selftest")
+fi
+echo "::endgroup::"
 if [ ${#failed[@]} -gt 0 ]; then
 	echo "Ratchet lints failed: ${failed[*]}"
 	exit 1

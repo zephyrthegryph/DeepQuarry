@@ -19,7 +19,7 @@
 	. = ..()
 	if(!LAZYLEN(network))
 		network = get_default_networks()
-	own_set(src, "camera", new camera_datum_type(src, network))
+	own_set(src, nameof(camera), new camera_datum_type(src, network))
 
 /obj/machinery/computer/security/proc/get_default_networks()
 	. = using_map.station_networks.Copy()
@@ -109,7 +109,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/security/telescreen/entertainment,
 
 	add_overlay(MAT_GLASS)
 
-	rel_set(src, "pinboard", add_vis_overlay(icon, "pinboard", layer = 0.1, alpha = 255, add_appearance_flags = KEEP_TOGETHER, add_vis_flags = VIS_INHERIT_ID|VIS_INHERIT_PLANE, unique = TRUE))
+	rel_set(src, nameof(pinboard), add_vis_overlay(icon, "pinboard", layer = 0.1, alpha = 255, add_appearance_flags = KEEP_TOGETHER, add_vis_flags = VIS_INHERIT_ID|VIS_INHERIT_PLANE, unique = TRUE))
 	pinboard.add_filter("screen cutter", 1, alpha_mask_filter(icon = mask))
 	/*
 	pinboard = new()
@@ -167,7 +167,7 @@ APPEARANCE_NONE(/obj/machinery/computer/security/telescreen/entertainment)
 		stop_showing()
 	if(has_stat(NOPOWER))
 		return
-	rel_set(src, "showing", thing)
+	rel_set(src, nameof(showing), thing)
 	if(pinboard)
 		pinboard.vis_contents = list(thing)
 
@@ -175,7 +175,7 @@ APPEARANCE_NONE(/obj/machinery/computer/security/telescreen/entertainment)
 	// Reverse of the above
 	if(pinboard)
 		pinboard.vis_contents = null
-	rel_clear(src, "showing")
+	rel_clear(src, nameof(showing))
 
 /obj/machinery/computer/security/telescreen/entertainment/proc/maybe_stop_showing(atom/thing)
 	if(showing == thing)

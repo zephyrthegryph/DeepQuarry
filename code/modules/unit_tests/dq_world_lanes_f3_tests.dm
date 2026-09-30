@@ -138,7 +138,7 @@
 /datum/unit_test/dq_world_lanes_f3_reflector
 
 /datum/unit_test/dq_world_lanes_f3_reflector/Run()
-	var/datum/om/pipeline/periodic/reflectors/P = om_registry().behaviour(PERIODIC_REFLECTORS)
+	var/datum/cadence/P = cadence_def(PERIODIC_REFLECTORS)
 	TEST_ASSERT_EQUAL(P.clock, CLOCK_MACHINE, "the reflector lane is not on the machine clock")
 	TEST_ASSERT_EQUAL(P.every, 0.5 SECONDS, "the reflector lane lost SSreflector's cadence")
 	var/obj/structure/reflector/box/B = allocate(/obj/structure/reflector/box, run_loc_floor_bottom_left)
@@ -153,7 +153,7 @@
 /datum/unit_test/dq_world_lanes_f3_loot_lane
 
 /datum/unit_test/dq_world_lanes_f3_loot_lane/Run()
-	var/datum/om/pipeline/periodic/loot_icons/P = om_registry().behaviour(PERIODIC_LOOT_ICONS)
+	var/datum/cadence/P = cadence_def(PERIODIC_LOOT_ICONS)
 	TEST_ASSERT(P.runlevels & RUNLEVEL_LOBBY, "the loot icon lane does not run in the lobby")
 	TEST_ASSERT_EQUAL(P.every, 0.5 SECONDS, "the loot icon lane lost SSlooting's cadence")
 
@@ -172,6 +172,6 @@
 	TEST_ASSERT(E in GLOB.event_service.active_events(), "a new event is not active")
 	E.kill()
 	TEST_ASSERT(!(E in GLOB.event_service.active_events()), "a killed event is still active")
-	own_remove(GLOB.event_service, "finished_events", E) // the service owns finished events
+	own_remove(GLOB.event_service, nameof(/datum/world_service/events::finished_events), E) // the service owns finished events
 
 #endif

@@ -369,7 +369,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/zorgoia, \
 					AI.lose_target()  // sleep-style state — drop current target
 					if(prob(tame_chance))
 						AI.set_hostile(FALSE)
-						rel_set(src, "friend", M)
+						rel_set(src, nameof(friend), M)
 						AI.set_follow(friend)
 						if(tamed != 1)
 							tamed = 1
@@ -383,7 +383,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/zorgoia, \
 					audible_emote("growls disapprovingly at [M].")
 					if(M == friend)
 						AI.lose_follow()
-						rel_clear(src, "friend")
+						rel_clear(src, nameof(friend))
 					return TRUE
 			return FALSE
 
@@ -395,7 +395,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/zorgoia, /mob/living/proc/toggle_
 /mob/living/simple_mob/vore/zorgoia/Login()
 	. = ..()
 	if(!riding_datum)
-		own_set(src, "riding_datum", new /datum/riding/simple_mob(src))
+		own_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
 	movement_cooldown = 0
 
 /mob/living/simple_mob/vore/zorgoia/on_death(gibbed) //are they going to be ok?

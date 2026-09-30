@@ -48,20 +48,20 @@
 
 	var/turf/affected_turf = LAZYACCESS(target_turfs, 1)
 	theme.apply_theme(affected_turf, show_effect = TRUE)
-	rel_remove(src, "target_turfs", affected_turf)
+	rel_remove(src, nameof(target_turfs), affected_turf)
 
 /obj/effect/anomaly/dimensional/proc/prepare_area(new_theme_path)
 	if(!new_theme_path)
 		new_theme_path = pick(subtypesof(/datum/dimension_theme))
 
-	own_set(src, "theme", new new_theme_path)
+	own_set(src, nameof(theme), new new_theme_path)
 
 	apply_theme_icon()
 
-	rel_clear(src, "target_turfs")
+	rel_clear(src, nameof(target_turfs))
 	for(var/turf/turf in spiral_range_turfs(range, src))
 		if(theme.can_convert(turf))
-			rel_add(src, "target_turfs", turf)
+			rel_add(src, nameof(target_turfs), turf)
 
 /obj/effect/anomaly/dimensional/proc/apply_theme_icon()
 	overlays -= theme_icon

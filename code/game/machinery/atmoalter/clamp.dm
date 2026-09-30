@@ -16,9 +16,9 @@
 /obj/machinery/clamp/Initialize(mapload, obj/machinery/atmospherics/pipe/simple/to_attach = null)
 	. = ..()
 	if(istype(to_attach))
-		rel_set(src, "target", to_attach)
+		rel_set(src, nameof(target), to_attach)
 	else
-		rel_set(src, "target", locate_within(loc, /obj/machinery/atmospherics/pipe/simple))
+		rel_set(src, nameof(target), locate_within(loc, /obj/machinery/atmospherics/pipe/simple))
 	if(target_ref())
 		update_networks()
 		dir = target_ref().dir
@@ -54,10 +54,10 @@
 		var/obj/machinery/atmospherics/pipe/node2 = target_ref().node2
 		if(istype(node1))
 			var/datum/pipeline/P1 = node1.parent
-			rel_set(src, "network_node1", P1.network)
+			rel_set(src, nameof(network_node1), P1.network)
 		if(istype(node2))
 			var/datum/pipeline/P2 = node2.parent
-			rel_set(src, "network_node2", P2.network)
+			rel_set(src, nameof(network_node2), P2.network)
 
 // a closed clamp reopens its pipe.
 /obj/machinery/clamp/on_destroy(force)

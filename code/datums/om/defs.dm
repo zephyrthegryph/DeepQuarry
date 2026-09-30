@@ -160,9 +160,12 @@
 	abstract_type = /datum/om/event
 	/// before_* events are synchronous and may return EVENT_VETO.
 	var/before = FALSE
-	/// Re-entrant emits of the same type to the same entity keep only the latest.
-	var/coalesce = TRUE
-	/// Dropped inside bulk_begin()/bulk_end().
+	/// Re-entrant emits of the same type to the same entity keep only the latest. Off by default: an event is an
+	/// occurrence (something happened, once), so every one is delivered, in order. Only a state-like event whose
+	/// latest value is all that matters opts in.
+	var/coalesce = FALSE
+	/// Dropped inside bulk_begin()/bulk_end(). Off by default: occurrences are never suppressed in bulk; only a
+	/// cosmetic event opts in.
 	var/skip_in_bulk = FALSE
 	/// Delivered at once even inside another delivery (never queued), like a direct call.
 	/// Hooked (om_hook) cross-entity events are sync so their listeners see the state

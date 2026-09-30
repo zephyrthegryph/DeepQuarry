@@ -229,11 +229,9 @@
 		to_chat(user, span_notice("You wire the airlock."))
 /obj/structure/door_assembly/proc/attackby_timed_done2(obj/item/W, mob/user)
 	if(!src) return
-	user.drop_item()
-	W.forceMove(src)
 	to_chat(user, span_notice("You installed the airlock electronics!"))
 	src.state = 2
-	own_set(src, "electronics", W)
+	own_set(src, nameof(src.electronics), W, user = user)
 /obj/structure/door_assembly/proc/attackby_timed_done3(mob/user, obj/item/stack/S)
 	if(!(!glass))
 		return
@@ -326,7 +324,7 @@
 	to_chat(user, span_notice("You removed the airlock electronics!"))
 	src.state = 1
 	electronics.forceMove(src.loc)
-	own_take(src, "electronics")
+	own_take(src, nameof(electronics))
 
 /obj/structure/door_assembly/screwdriver_act(mob/user, obj/item/W)
 	if(state != 2)
@@ -369,4 +367,6 @@
 		return PROJECTILE_CONTINUE
 	return ..()
 
-OWN(/obj/structure/door_assembly, electronics, OWN_CONTAINED)
+/obj/structure/door_assembly/ownership()
+	. = ..()
+	. += owns(nameof(electronics), policy = OWN_CONTAINED)

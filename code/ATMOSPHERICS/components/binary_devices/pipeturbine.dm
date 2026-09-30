@@ -31,8 +31,8 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/atmospherics/pipeturbine, MACHINE_PIPE
 
 /obj/machinery/atmospherics/pipeturbine/Initialize(mapload, newdir)
 	. = ..()
-	atmos_air_set(src, "air_in", new /datum/gas_mixture(200))
-	atmos_air_set(src, "air_out", new /datum/gas_mixture(800))
+	atmos_air_set(src, nameof(air_in), new /datum/gas_mixture(200))
+	atmos_air_set(src, nameof(air_out), new /datum/gas_mixture(800))
 	air_in.set_volume(200)
 	air_out.set_volume(800)
 	volume_ratio = air_in.return_volume() / (air_in.return_volume() + air_out.return_volume())
@@ -137,8 +137,8 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/pipeturbine, "appearance_speed", 
 			node2.disconnect(src)
 			rust_release_network_wrapper(network2)
 
-		rel_clear(src, "node1")
-		rel_clear(src, "node2")
+		rel_clear(src, nameof(node1))
+		rel_clear(src, nameof(node2))
 
 	return ITEM_INTERACT_SUCCESS
 
@@ -155,12 +155,12 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/pipeturbine, "appearance_speed", 
 
 	for(var/obj/machinery/atmospherics/target in get_step(src,node1_connect))
 		if(target.initialize_directions & get_dir(target,src))
-			rel_set(src, "node1", target)
+			rel_set(src, nameof(node1), target)
 			break
 
 	for(var/obj/machinery/atmospherics/target in get_step(src,node2_connect))
 		if(target.initialize_directions & get_dir(target,src))
-			rel_set(src, "node2", target)
+			rel_set(src, nameof(node2), target)
 			break
 
 /obj/machinery/atmospherics/pipeturbine/return_network(obj/machinery/atmospherics/reference)
@@ -174,9 +174,9 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/pipeturbine, "appearance_speed", 
 
 /obj/machinery/atmospherics/pipeturbine/reassign_network(datum/pipe_network/old_network, datum/pipe_network/new_network)
 	if(network1 == old_network)
-		rel_set(src, "network1", new_network)
+		rel_set(src, nameof(network1), new_network)
 	if(network2 == old_network)
-		rel_set(src, "network2", new_network)
+		rel_set(src, nameof(network2), new_network)
 
 	return 1
 
@@ -192,24 +192,24 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/pipeturbine, "appearance_speed", 
 
 /obj/machinery/atmospherics/pipeturbine/bind_network_air(datum/pipe_network/reference, datum/gas_mixture/network_air)
 	if(network1 == reference)
-		atmos_air_set(src, "air_in", network_air)
+		atmos_air_set(src, nameof(air_in), network_air)
 	if(network2 == reference)
-		atmos_air_set(src, "air_out", network_air)
+		atmos_air_set(src, nameof(air_out), network_air)
 
 /obj/machinery/atmospherics/pipeturbine/detach_network_air(datum/pipe_network/reference, datum/gas_mixture/network_air, network_volume)
 	if(network1 == reference && air_in == network_air)
-		atmos_air_set(src, "air_in", detached_pipenet_air(network_air, 200, network_volume))
+		atmos_air_set(src, nameof(air_in), detached_pipenet_air(network_air, 200, network_volume))
 	if(network2 == reference && air_out == network_air)
-		atmos_air_set(src, "air_out", detached_pipenet_air(network_air, 800, network_volume))
+		atmos_air_set(src, nameof(air_out), detached_pipenet_air(network_air, 800, network_volume))
 
 /obj/machinery/atmospherics/pipeturbine/disconnect(obj/machinery/atmospherics/reference)
 	if(reference==node1)
 		rust_release_network_wrapper(network1)
-		rel_clear(src, "node1")
+		rel_clear(src, nameof(node1))
 
 	else if(reference==node2)
 		rust_release_network_wrapper(network2)
-		rel_clear(src, "node2")
+		rel_clear(src, nameof(node2))
 
 	return null
 
@@ -238,13 +238,13 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/power/turbinemotor, MACHINE_PIPELINE, 
 	make_rotatable()
 
 /obj/machinery/power/turbinemotor/proc/updateConnection()
-	rel_clear(src, "turbine")
+	rel_clear(src, nameof(turbine))
 	if(src.loc && anchored)
-		rel_set(src, "turbine", locate_within(get_step(src,dir), /obj/machinery/atmospherics/pipeturbine))
+		rel_set(src, nameof(turbine), locate_within(get_step(src,dir), /obj/machinery/atmospherics/pipeturbine))
 		if(!turbine)
 			return
 		if (turbine.has_stat(BROKEN) || !turbine.anchored || turn(turbine.dir,180) != dir)
-			rel_clear(src, "turbine")
+			rel_clear(src, nameof(turbine))
 
 /// Converts its turbine's spin while there is any; parked otherwise, the turbine's own step wakes
 /// it (pipeturbine machine_step()).
@@ -260,7 +260,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/power/turbinemotor, MACHINE_PIPELINE, 
 /obj/machinery/power/turbinemotor/wrench_act(mob/user, obj/item/W)
 	set_anchored(!anchored)
 	playsound(src, W.usesound, 50, 1)
-	rel_clear(src, "turbine")
+	rel_clear(src, nameof(turbine))
 	to_chat(user, span_notice("You [anchored ? "secure" : "unsecure"] the bolts holding \the [src] to the floor."))
 	updateConnection()
 	return ITEM_INTERACT_SUCCESS
@@ -279,6 +279,8 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/power/turbinemotor, MACHINE_PIPELINE, 
 	if(air_in && air_out)
 		om_watch_arm_condition(src, "gas", list(air_in.arena_id(), air_out.arena_id()), GAS_DEPENDENCY_PRESSURE, om_callable(src, PROC_REF(gas_wake_condition)), wake_callback = om_callable(src, PROC_REF(wake_from_gas)))
 
-PROTO(/obj/machinery/atmospherics/pipeturbine, air_in)
-PROTO(/obj/machinery/atmospherics/pipeturbine, air_out)
+/obj/machinery/atmospherics/pipeturbine/ownership()
+	. = ..()
+	. += proto(nameof(air_in))
+	. += proto(nameof(air_out))
 

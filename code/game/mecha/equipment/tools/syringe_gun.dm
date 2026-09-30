@@ -28,7 +28,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, P
 /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/Initialize(mapload)
 	. = ..()
 	flags |= NOREACT
-	own_take_all(src, "syringes")
+	own_take_all(src, nameof(syringes))
 	known_reagents = list(REAGENT_ID_INAPROVALINE=REAGENT_INAPROVALINE,REAGENT_ID_ANTITOXIN=REAGENT_ANTITOXIN)
 	set_processed_reagents(list())
 
@@ -67,7 +67,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, P
 	var/obj/item/reagent_containers/syringe/S = syringes[1]
 	S.forceMove(get_turf(chassis))
 	reagents.trans_to_obj(S, min(S.volume, reagents.total_volume))
-	own_take_member(src, "syringes", S)
+	own_take_member(src, nameof(syringes), S)
 	S.icon = 'icons/obj/chemical.dmi'
 	S.icon_state = "syringeproj"
 	play_sfx(src, SFX_ITEMS_SYRINGEPROJ)
@@ -234,7 +234,7 @@ UI_ACT_PROC(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, ui_act_purge
 				return 0
 		S.reagents.trans_to_obj(src, S.reagents.total_volume)
 		S.forceMove(src)
-		own_move(S, src, "syringes")
+		own_move(S, src, nameof(syringes))
 		occupant_message("Syringe loaded.")
 		update_equip_info()
 		return 1
@@ -364,7 +364,7 @@ TYPE_TABLE_DECLARE(/obj/item/mecha_parts/mecha_equipment/crisis_drone, drone_tre
 		var/target_urgency = 0
 
 		if(!valid_target(Target))
-			rel_clear(src, "Target")
+			rel_clear(src, nameof(Target))
 
 		if(Target)
 			target_urgency = treatable_urgency(Target)
@@ -376,19 +376,19 @@ TYPE_TABLE_DECLARE(/obj/item/mecha_parts/mecha_equipment/crisis_drone, drone_tre
 			var/urgency = treatable_urgency(Potential)
 
 			if(urgency > target_urgency)
-				rel_set(src, "Target", Potential)
+				rel_set(src, nameof(Target), Potential)
 				target_urgency = urgency
 
 		if(MyBeam && !valid_target(MyBeam.target()))
-			own_clear(src, "MyBeam", OWN_DELETE)
+			own_clear(src, nameof(MyBeam), OWN_DELETE)
 
 		if(Target)
 			if(MyBeam && MyBeam.target() != Target)
-				own_clear(src, "MyBeam", OWN_DELETE)
+				own_clear(src, nameof(MyBeam), OWN_DELETE)
 
 			if(valid_target(Target))
 				if(!MyBeam)
-					own_set(src, "MyBeam", chassis.Beam(Target,icon='icons/effects/beam.dmi',icon_state=beam_state,time=3 SECONDS,maxdistance=max_distance,beam_type = /obj/effect/ebeam,beam_sleep_time=2))
+					own_set(src, nameof(MyBeam), chassis.Beam(Target,icon='icons/effects/beam.dmi',icon_state=beam_state,time=3 SECONDS,maxdistance=max_distance,beam_type = /obj/effect/ebeam,beam_sleep_time=2))
 				heal_target(Target)
 
 	else
@@ -428,9 +428,9 @@ TYPE_TABLE_DECLARE(/obj/item/mecha_parts/mecha_equipment/crisis_drone, drone_tre
 		chassis.visible_message(span_notice("\The [chassis]'s [src] buzzes as its drone returns to port."))
 		toggle_drone()
 	if(!isnull(Target))
-		rel_clear(src, "Target")
+		rel_clear(src, nameof(Target))
 	if(MyBeam)
-		own_clear(src, "MyBeam", OWN_DELETE)
+		own_clear(src, nameof(MyBeam), OWN_DELETE)
 
 /obj/item/mecha_parts/mecha_equipment/crisis_drone/proc/unique_patient_checks(mob/living/L)	// Anything special for subtypes. Does it only work on Robots? Fleshies? A species?
 	. = TRUE

@@ -75,7 +75,7 @@ GLOBAL_LIST_INIT(contrast_colors, list("#ff0000", "#00ff00", "#0000ff", "#ffff00
 
 
 // === SSmapping multi-z helpers (CHOMP doesn't expose these as GLOB lists) ===
-/datum/controller/subsystem/mapping
+/datum/system/mapping
 	var/list/z_list = list() // ALLOW(instance_list): d: subsystem singleton; one entry per z-level
 	var/max_plane_offset = 0
 	var/list/multiz_levels = list() // ALLOW(instance_list): d: subsystem singleton; one entry per z-level
@@ -131,7 +131,7 @@ GLOBAL_LIST_INIT(contrast_colors, list("#ff0000", "#00ff00", "#0000ff", "#ffff00
 
 // SSair admin TGUI procs override the fork's tgui_state/tgui_interact/tgui_data/
 // tgui_act base (code/modules/tgui/external.dm) directly on
-// /datum/controller/subsystem/air in the vendored SSair.dm — no stubs needed here.
+// /datum/system/air in the vendored SSair.dm — no stubs needed here.
 
 
 // get_rebuild_targets — used to be needed by /tg/'s centralized pipenet

@@ -13,7 +13,7 @@ GLOBAL_DATUM(planet_thor, /datum/planet/thor)
 /datum/planet/thor/New()
 	..()
 	GLOB.planet_thor = src
-	own_set(src, "weather_holder", new /datum/weather_holder/thor(src))
+	own_set(src, nameof(weather_holder), new /datum/weather_holder/thor(src))
 
 /datum/planet/thor/update_sun()
 	..()
@@ -765,7 +765,7 @@ GLOBAL_DATUM(planet_thor, /datum/planet/thor)
 
 /obj/machinery/power/smes/buildable/offmap_spawn/empty/Initialize(mapload)
 	. = ..()
-	charge = 0
+	set_stored_charge(0)
 	RCon = TRUE
 	input_level = input_level_max
 	output_level = output_level_max

@@ -193,7 +193,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/flash, TYPE_PROC_REF(/atom, appearance_overlay
 		animation.layer = user.layer + 1
 		animation.icon_state = "blank"
 		animation.icon = 'icons/mob/mob.dmi'
-		rel_set(animation, "master", user)
+		rel_set(animation, nameof(animation.master), user)
 		flick("blspell", animation)
 		animation.expire(5)
 
@@ -284,7 +284,7 @@ DECLARE_INTERACTIONS(/obj/item/flash, INTERACT_USE("Flash", PROC_REF(interaction
 		animation.layer = user.layer + 1
 		animation.icon_state = "blank"
 		animation.icon = 'icons/mob/mob.dmi'
-		rel_set(animation, "master", user)
+		rel_set(animation, nameof(animation.master), user)
 		flick("blspell", animation)
 		animation.expire(5)
 

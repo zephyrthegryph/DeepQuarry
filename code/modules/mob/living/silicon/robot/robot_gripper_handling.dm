@@ -142,7 +142,7 @@ DECLARE_INTERACTIONS(/obj/item/gripper, \
 			update_ref(selected_pocket)
 			return TRUE
 
-		rel_set(src, "current_pocket", selected_pocket)
+		rel_set(src, nameof(current_pocket), selected_pocket)
 		update_ref(null)
 		return TRUE
 
@@ -275,14 +275,14 @@ DECLARE_INTERACTIONS(/obj/item/gripper, \
 		I.forceMove(selected_pocket)
 
 	to_chat(user, "You collect \the [I].")
-	rel_set(src, "current_pocket", selected_pocket)
+	rel_set(src, nameof(current_pocket), selected_pocket)
 	update_ref(I)
 	return TRUE
 
 /obj/item/gripper/proc/handle_afterattack_special(atom/target, mob/living/user)
 	if(istype(target, /obj/machinery/power/apc))
 		var/obj/machinery/power/apc/A = target
-		if(!A.opened)
+		if(!cover_is_open(A))
 			return TRUE
 
 		if(!A.cell || dq_constraint_refusal(src, CONSTRAINT_HOLD, A.cell, user))
@@ -291,8 +291,8 @@ DECLARE_INTERACTIONS(/obj/item/gripper, \
 		if(!grab_cell(A.cell, user))
 			return TRUE
 
-		own_take(A, "cell")
-		A.charging = FALSE
+		var/obj/item/cell/taken = own_take(A, nameof(A.cell))
+		A.slot_ejected(nameof(A.cell), taken, user)
 		A.update_icon()
 
 		act_message(user, A, MSG_SELF("You remove the power cell."), MSG_OTHERS(span_danger("%U% removes the power cell from %T%!")))
@@ -345,7 +345,7 @@ DECLARE_INTERACTIONS(/obj/item/gripper, \
 	if(!P)
 		P = pick(pockets)
 
-	rel_set(src, "current_pocket", P)
+	rel_set(src, nameof(current_pocket), P)
 
 /// Clears the currently wrapped item and selects the pocket
 /obj/item/gripper/proc/clear_and_select_pocket()
@@ -483,6 +483,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/gripper, TYPE_PROC_REF(/atom, appearance_overl
 	cell.update_icon()
 	cell.forceMove(P)
 
-	rel_set(src, "current_pocket", P)
+	rel_set(src, nameof(current_pocket), P)
 	update_ref(cell)
 	return TRUE

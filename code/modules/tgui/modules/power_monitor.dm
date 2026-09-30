@@ -62,7 +62,7 @@ UI_ACT_PROC(/datum/tgui_module/power_monitor, ui_act_setsensor)
 	return FALSE
 
 /datum/tgui_module/power_monitor/proc/refresh_sensors()
-	rel_clear(src, "grid_sensors")
+	rel_clear(src, nameof(grid_sensors))
 
 	// Handle ultranested programs
 	var/turf/T = get_turf(tgui_host())
@@ -79,7 +79,7 @@ UI_ACT_PROC(/datum/tgui_module/power_monitor, ui_act_setsensor)
 			if(S.name_tag == "#UNKN#") // Default name. Shouldn't happen!
 				WARNING("Powernet sensor with unset ID Tag! [S.x]X [S.y]Y [S.z]Z")
 			else
-				rel_add(src, "grid_sensors", S)
+				rel_add(src, nameof(grid_sensors), S)
 
 /datum/tgui_module/power_monitor/ntos
 	ntos = TRUE

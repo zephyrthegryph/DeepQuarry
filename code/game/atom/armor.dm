@@ -252,7 +252,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/armor)
 /// its type's.
 /atom/proc/set_armor(datum/armor/new_armor)
 	var/datum/armor/type_armor = dq_armor_from_spec(armor_spec)
-	rel_set(src, "armor_override", (!new_armor || new_armor == type_armor) ? null : new_armor)
+	rel_set(src, nameof(armor_override), (!new_armor || new_armor == type_armor) ? null : new_armor)
 	armor_changed()
 
 /// Set one armour key on this instance.

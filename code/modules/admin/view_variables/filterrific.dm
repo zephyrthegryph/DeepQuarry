@@ -2,7 +2,7 @@
 	var/tmp/atom/target
 
 /datum/filter_editor/New(atom/target)
-	rel_set(src, "target", target)
+	rel_set(src, nameof(target), target)
 
 DECLARE_UI_STATE(/datum/filter_editor, ADMIN_STATE(R_VAREDIT))
 

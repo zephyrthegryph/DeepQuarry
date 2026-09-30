@@ -56,8 +56,8 @@
 		qdel(src)
 		return
 	// The owner adopts us; its previous handler is deleted by own_set().
-	rel_set(src, "owner", new_owner)
-	own_set(new_owner, "experiment_handler", src)
+	rel_set(src, nameof(/datum/action_group::owner), new_owner)
+	own_set(new_owner, nameof(/atom/movable::experiment_handler), src)
 
 	src.allowed_experiments = allowed_experiments
 	src.blacklisted_experiments = blacklisted_experiments
@@ -293,7 +293,7 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
 	if (new_web == linked_web())
 		return
 	selected_experiment()?.on_unselected(src)
-	rel_clear(src, "selected_experiment")
+	rel_clear(src, nameof(selected_experiment))
 	linked_web_static = new_web
 
 /**
@@ -301,7 +301,7 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
  */
 /datum/experiment_handler/proc/unlink_techweb()
 	selected_experiment()?.on_unselected(src)
-	rel_clear(src, "selected_experiment")
+	rel_clear(src, nameof(selected_experiment))
 	linked_web_static = null
 
 /**
@@ -313,7 +313,7 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
 /datum/experiment_handler/proc/link_experiment(datum/experiment/experiment)
 	if (can_select_experiment(experiment))
 		unlink_experiment()
-		rel_set(src, "selected_experiment", experiment)
+		rel_set(src, nameof(selected_experiment), experiment)
 		selected_experiment().on_selected(src)
 
 /**
@@ -321,7 +321,7 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
  */
 /datum/experiment_handler/proc/unlink_experiment()
 	selected_experiment()?.on_unselected(src)
-	rel_clear(src, "selected_experiment")
+	rel_clear(src, nameof(selected_experiment))
 
 /**
  * Checks if an experiment is valid to be selected by this handler

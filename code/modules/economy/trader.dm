@@ -33,12 +33,12 @@
 			var/t = pickweight(start_products || list())
 			var/i = new t(src)
 			LAZYREMOVE(start_products, t)
-			own_add(src, "products", i)
+			own_add(src, nameof(products), i)
 			pick_inventory_quantity --
 	else
 		for(var/item in start_products)
 			var/obj/p = new item(src)
-			own_add(src, "products", p)
+			own_add(src, nameof(products), p)
 			LAZYREMOVE(start_products, item)
 	if(move_trader)
 		move_trader()
@@ -114,7 +114,7 @@ DECLARE_INTERACTIONS(/obj/trader, 	INTERACT_HAND("Trade", PROC_REF(interaction_t
 
 /datum/om/flow/trader_trade/proc/product_picked(datum/om/prompt/choice/ask)
 	var/obj/trader/trader = target
-	rel_set(src, "product", ask.choice)
+	rel_set(src, nameof(product), ask.choice)
 	if(!istype(product) || !(product in trader.products))
 		to_chat(actor, span_notice("You decided not to get anything."))
 		trader.trading = FALSE
@@ -150,9 +150,9 @@ DECLARE_INTERACTIONS(/obj/trader, 	INTERACT_HAND("Trade", PROC_REF(interaction_t
 					qdel(d)
 	input.forceMove(get_turf(user))
 	user.put_in_hands(input)
-	own_take_member(trader, "products", input) // no-op once it left our contents
+	own_take_member(trader, nameof(trader.products), input) // no-op once it left our contents
 	trader.deduct_value(p)
-	rel_clear(src, "product")
+	rel_clear(src, nameof(product))
 	stage = "change"
 	om_ask(user, /datum/om/prompt/choice, PROC_REF(change_answered), buttons = TRUE, title = "[trader]", message = "Would you like your change back, or would you like it to remain banked for later use? (Anyone can use banked funds)", choices = list("Keep it banked","I want my change"), timeout = 10 SECONDS)
 
@@ -185,13 +185,13 @@ DECLARE_INTERACTIONS(/obj/trader, 	INTERACT_HAND("Trade", PROC_REF(interaction_t
 					return INTERACTION_HANDLED_PASS
 				user.drop_item()
 				w.forceMove(src.contents)
-				rel_add(src, "bank", w)
+				rel_add(src, nameof(bank), w)
 				act_message(src, user, others = span_notice("%U% accepts %T%'s [w]."))
 		if("item")
 			if(istype(O, /obj))
 				user.drop_item()
 				O.forceMove(src.contents)
-				rel_add(src, "bank", O)
+				rel_add(src, nameof(bank), O)
 				act_message(src, user, others = span_notice("%U% accepts %T%'s [O]."))
 	return INTERACTION_HANDLED_PASS
 
@@ -228,7 +228,7 @@ DECLARE_INTERACTIONS(/obj/trader, 	INTERACT_HAND("Trade", PROC_REF(interaction_t
 					a.worth -= amount
 					a.update_icon()
 					if(a.worth <= 0)
-						rel_remove(src, "bank", a)
+						rel_remove(src, nameof(bank), a)
 						qdel(a)
 		if("item")
 			// Guard against a non-positive item worth, which would never decrement v
@@ -272,12 +272,12 @@ DECLARE_INTERACTIONS(/obj/trader, 	INTERACT_HAND("Trade", PROC_REF(interaction_t
 			for(var/obj/c in bank)
 				u_get_refund = TRUE
 				c.forceMove(get_turf(loc))
-				rel_remove(src, "bank", c)
+				rel_remove(src, nameof(bank), c)
 		if("item")
 			for(var/obj/c in bank)
 				u_get_refund = TRUE
 				c.forceMove(get_turf(loc))
-				rel_remove(src, "bank", c)
+				rel_remove(src, nameof(bank), c)
 	if(u_get_refund)
 		visible_message(span_notice("\The [src] drops the banked [welcome_accepts_name]."))
 	else
@@ -424,4 +424,6 @@ DECLARE_INTERACTIONS(/obj/trader, 	INTERACT_HAND("Trade", PROC_REF(interaction_t
 // The stock the trader spawned into itself at Initialize().
 
 /// Stock items sit in the trader's contents; one leaving (sold) drops out of the list.
-OWN(/obj/trader, products, OWN_CONTAINED)
+/obj/trader/ownership()
+	. = ..()
+	. += owns(nameof(products), policy = OWN_CONTAINED)

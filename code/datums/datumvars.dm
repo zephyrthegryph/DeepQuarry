@@ -11,8 +11,16 @@
 /datum/proc/vv_edit_var(var_name, var_value)
 	if(var_name == NAMEOF(src, vars))
 		return FALSE
-	vars[var_name] = var_value // ALLOW(api): VV: admins edit any var by name
 	datum_flags |= DF_VAR_EDITED
+	// A var with a registered setter is edited through it, so everything that reacts to the change
+	// reacts to an admin's edit too (dx_conventions.md §1).
+	// Only a registered setter (TRACKED or SETTER): a proc merely named set_<x> may be a verb or take
+	// other arguments.
+	if(hascall(src, "__setter_[var_name]"))
+		call(src, "set_[var_name]")(var_value)
+		return TRUE
+	vars[var_name] = var_value // ALLOW(api): VV: admins edit any var by name
+	changed(src)
 	return TRUE
 
 /datum/proc/vv_get_var(var_name)

@@ -23,7 +23,7 @@ APPEARANCE_TEMPLATE(/obj/item/integrated_electronics/wirer, "wirer-{mode}")
 		to_chat(user, span_warning("\The [io.holder()] needs to be secured inside an assembly first."))
 		return
 	if(mode == WIRE)
-		rel_set(src, "selected_io", io)
+		rel_set(src, nameof(selected_io), io)
 		to_chat(user, span_notice("You attach a data wire to \the [selected_io.holder()]'s [selected_io.name] data channel."))
 		mode = WIRING
 		update_icon()
@@ -38,20 +38,20 @@ APPEARANCE_TEMPLATE(/obj/item/integrated_electronics/wirer, "wirer-{mode}")
 		if(io.holder().assembly() && io.holder().assembly() != selected_io.holder().assembly())
 			to_chat(user, span_warning("Both \the [io.holder()] and \the [selected_io.holder()] need to be inside the same assembly."))
 			return
-		rel_add(selected_io, "linked", io)
-		rel_add(io, "linked", selected_io)
+		rel_add(selected_io, nameof(selected_io.linked), io)
+		rel_add(io, nameof(io.linked), selected_io)
 
 		to_chat(user, span_notice("You connect \the [selected_io.holder()]'s [selected_io.name] to \the [io.holder()]'s [io.name]."))
 		mode = WIRE
 		update_icon()
 		selected_io.holder().interact(user) // This is to update the UI.
-		rel_clear(src, "selected_io")
+		rel_clear(src, nameof(selected_io))
 
 	else if(mode == UNWIRE)
-		rel_set(src, "selected_io", io)
+		rel_set(src, nameof(selected_io), io)
 		if(!LAZYLEN(io.linked))
 			to_chat(user, span_warning("There is nothing connected to \the [selected_io] data channel."))
-			rel_clear(src, "selected_io")
+			rel_clear(src, nameof(selected_io))
 			return
 		to_chat(user, span_notice("You prepare to detach a data wire from \the [selected_io.holder()]'s [selected_io.name] data channel."))
 		mode = UNWIRING
@@ -64,12 +64,12 @@ APPEARANCE_TEMPLATE(/obj/item/integrated_electronics/wirer, "wirer-{mode}")
 			the same pin is rather moot."))
 			return
 		if(selected_io in io.linked)
-			rel_remove(io, "linked", selected_io)
-			rel_remove(selected_io, "linked", io)
+			rel_remove(io, nameof(io.linked), selected_io)
+			rel_remove(selected_io, nameof(selected_io.linked), io)
 			to_chat(user, span_notice("You disconnect \the [selected_io.holder()]'s [selected_io.name] from \
 			\the [io.holder()]'s [io.name]."))
 			selected_io.holder().interact(user) // This is to update the UI.
-			rel_clear(src, "selected_io")
+			rel_clear(src, nameof(selected_io))
 			mode = UNWIRE
 			update_icon()
 		else
@@ -88,14 +88,14 @@ DECLARE_INTERACTIONS(/obj/item/integrated_electronics/wirer, INTERACT_USE(null, 
 		if(WIRING)
 			if(selected_io)
 				to_chat(user, span_notice("You decide not to wire the data channel."))
-			rel_clear(src, "selected_io")
+			rel_clear(src, nameof(selected_io))
 			mode = WIRE
 		if(UNWIRE)
 			mode = WIRE
 		if(UNWIRING)
 			if(selected_io)
 				to_chat(user, span_notice("You decide not to disconnect the data channel."))
-			rel_clear(src, "selected_io")
+			rel_clear(src, nameof(selected_io))
 			mode = UNWIRE
 	update_icon()
 	to_chat(user, span_notice("You set \the [src] to [mode]."))
@@ -222,15 +222,15 @@ DECLARE_APPEARANCE_PROC(/obj/item/multitool, TYPE_PROC_REF(/atom, appearance_ove
 			to_chat(user, span_warning("Both \the [io.holder()] and \the [selected_io().holder()] need to be inside the same assembly."))
 			return
 		var/datum/integrated_io/selected = selected_io()
-		rel_add(selected, "linked", io)
-		rel_add(io, "linked", selected)
+		rel_add(selected, nameof(selected.linked), io)
+		rel_add(io, nameof(io.linked), selected)
 
 		to_chat(user, span_notice("You connect \the [selected_io().holder()]'s [selected_io().name] to \the [io.holder()]'s [io.name]."))
 		selected_io().holder().interact(user) // This is to update the UI.
-		rel_clear(src, "selected_io")
+		rel_clear(src, nameof(selected_io))
 
 	else
-		rel_set(src, "selected_io", io)
+		rel_set(src, nameof(selected_io), io)
 		to_chat(user, span_notice("You link \the multitool to \the [selected_io().holder()]'s [selected_io().name] data channel."))
 
 	update_icon()
@@ -245,8 +245,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/multitool, TYPE_PROC_REF(/atom, appearance_ove
 		to_chat(user, span_warning("These data pins aren't connected!"))
 		return
 	else
-		rel_remove(io1, "linked", io2)
-		rel_remove(io2, "linked", io1)
+		rel_remove(io1, nameof(io1.linked), io2)
+		rel_remove(io2, nameof(io2.linked), io1)
 		to_chat(user, span_notice("You clip the data connection between the [io1.holder().displayed_name]'s \
 		[io1.name] and the [io2.holder().displayed_name]'s [io2.name]."))
 		io1.holder().interact(user) // This is to update the UI.

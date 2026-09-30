@@ -65,6 +65,17 @@ GLOBAL_VAR(dq_lifecycle_snapshot_var_keys)
 				continue
 			if(islist(subsystem.vars[name]))
 				keys["[subsystem.type].[name]"] = list(subsystem, name)
+	// The gameplay systems replaced subsystems that were walked here: their registries and queues are covered the same way.
+	// The native system's per-frame scratch lists churn by design, so only its entity tables count.
+	for(var/datum/system/system as anything in kernel_pure_systems())
+		var/native = istype(system, /datum/system/native)
+		for(var/name in system.vars)
+			if(name == "vars")
+				continue
+			if(native && !(name in list("bound", "entities_by_index")))
+				continue
+			if(islist(system.vars[name]))
+				keys["[system.type].[name]"] = list(system, name)
 	GLOB.dq_lifecycle_snapshot_var_keys = keys
 	return keys
 

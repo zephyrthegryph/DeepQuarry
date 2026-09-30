@@ -154,9 +154,8 @@ DECLARE_INTERACTIONS(/obj/item/melee/energy, \
 	if(use_cell)
 		if(istype(W, cell_type))
 			if(!bcell)
-				user.drop_item()
-				W.forceMove(src)
-				own_set(src, "bcell", W)
+				if(!own_set(src, nameof(src.bcell), W, user = user))
+					return FALSE
 				to_chat(user, span_notice("You install a cell in [src]."))
 				update_icon()
 			else
@@ -176,7 +175,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/energy, \
 		return ..()
 	bcell.update_icon()
 	bcell.forceMove(get_turf(loc))
-	own_take(src, "bcell")
+	own_take(src, nameof(bcell))
 	to_chat(user, span_notice("You remove the cell from \the [src]."))
 	deactivate()
 	update_icon()
@@ -474,8 +473,8 @@ EXTEND_INTERACTIONS(/obj/item/melee/energy/blade, INTERACT_USE("Dismiss", PROC_R
 				for(var/obj/item/organ/external/organ in host.organs)
 					for(var/obj/item/O in organ.implants)
 						if(O == src)
-							rel_remove(organ, "implants", src)
-			rel_remove(host, "pinned", src)
+							rel_remove(organ, nameof(organ.implants), src)
+			rel_remove(host, nameof(host.pinned), src)
 			LAZYREMOVE(host.embedded, src)
 			host.drop_from_inventory(src)
 		expire(1)
@@ -588,7 +587,9 @@ DECLARE_APPEARANCE_PROC(/obj/item/melee/energy/sword/altevian, TYPE_PROC_REF(/at
 	. = ..()
 	om_after(src, 0, PROC_REF(check_held))
 
-OWN(/obj/item/melee/energy, bcell, OWN_CONTAINED)
+/obj/item/melee/energy/ownership()
+	. = ..()
+	. += owns(nameof(bcell), policy = OWN_CONTAINED)
 DECLARE_START_TIMER(/obj/item/melee/energy/blade, 0, PROC_REF(check_held))
 
 /// Relation view: creator (reads null once it is gone).

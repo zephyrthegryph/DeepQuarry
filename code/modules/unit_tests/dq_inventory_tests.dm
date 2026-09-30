@@ -229,7 +229,7 @@
 /datum/unit_test/dq_inventory_robot_modules/Run()
 	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, test_floor())
 	if(!R.module)
-		own_set(R, "module", new /obj/item/robot_module/robot/standard(R))
+		own_set(R, nameof(R.module), new /obj/item/robot_module/robot/standard(R))
 	var/obj/item/tool = null
 	for(var/obj/item/I in R.module.modules)
 		tool = I

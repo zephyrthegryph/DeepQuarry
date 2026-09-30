@@ -1238,7 +1238,7 @@
 /area/survivalpod)
 "acH" = (
 /obj/machinery/vending/engivend{
-	emagged = 1;
+	cap_state = 16;
 	req_access = null;
 	req_log_access = null
 	},
@@ -2917,9 +2917,9 @@
 /area/survivalpod/superpose/HydroCave)
 "axk" = (
 /obj/machinery/door/airlock/hatch{
+	cap_state = 128;
 	icon_state = "door_locked";
 	id_tag = "estrella_side_hatch";
-	locked = 1;
 	req_access = null;
 	req_one_access = null
 	},
@@ -3032,7 +3032,7 @@
 	name = "Server Base";
 	nitrogen = 500;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/survivalpod/superpose/ScienceShip)
 "aBY" = (
@@ -3315,9 +3315,9 @@
 /area/survivalpod/superpose/HydroCave)
 "aOw" = (
 /obj/machinery/door/airlock/hatch{
+	cap_state = 128;
 	icon_state = "door_locked";
 	id_tag = "estrella_back_hatch";
-	locked = 1;
 	req_one_access = null
 	},
 /obj/machinery/button/remote/airlock{
@@ -6421,9 +6421,9 @@
 /area/template_noop)
 "dlp" = (
 /obj/machinery/door/airlock/hatch{
+	cap_state = 128;
 	icon_state = "door_locked";
 	id_tag = "engine_access_hatch";
-	locked = 1;
 	req_access = list(11)
 	},
 /turf/simulated/floor,
@@ -6778,8 +6778,8 @@
 /area/survivalpod/superpose/GrandLibrary)
 "dxM" = (
 /obj/machinery/vending/medical{
+	cap_state = 16;
 	dir = 4;
-	emagged = 1;
 	pixel_x = 5;
 	req_access = list(777)
 	},
@@ -8248,7 +8248,7 @@
 	name = "Server Base";
 	nitrogen = 500;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/survivalpod/superpose/CrashedInfestedShip)
 "erV" = (
@@ -8826,8 +8826,8 @@
 /area/survivalpod/superpose/MethLab)
 "eKE" = (
 /obj/machinery/door/airlock/engineering{
+	cap_state = 128;
 	icon_state = "door_locked";
-	locked = 1;
 	name = "Cargo Bay"
 	},
 /turf/simulated/shuttle/floor{
@@ -9321,7 +9321,7 @@
 	name = "Server Base";
 	nitrogen = 500;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/template_noop)
 "fcs" = (
@@ -9830,7 +9830,7 @@
 	name = "Server Base";
 	nitrogen = 500;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/template_noop)
 "fxs" = (
@@ -10277,11 +10277,11 @@
 /area/survivalpod)
 "fKG" = (
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	desc = "It opens and closes. It is stamped with the logo of Major Bill's Transportation";
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = null;
-	locked = 1;
 	name = "MBT-540"
 	},
 /obj/item/tape/medical{
@@ -10935,10 +10935,10 @@
 	req_one_access = null
 	},
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	frequency = null;
 	icon_state = "door_locked";
 	id_tag = null;
-	locked = 1;
 	name = "Ship Hatch";
 	req_access = null
 	},
@@ -11773,7 +11773,7 @@
 	name = "Server Base";
 	nitrogen = 500;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/survivalpod/superpose/CrashedInfestedShip)
 "gKR" = (
@@ -12329,8 +12329,8 @@
 /area/survivalpod/superpose/TradingShip)
 "hhG" = (
 /obj/machinery/vending/nifsoft_shop{
+	cap_state = 16;
 	categories = 3;
-	emagged = 1;
 	name = "Hacked NIFSoft Shop"
 	},
 /turf/simulated/shuttle/wall/voidcraft/blue,
@@ -12647,8 +12647,8 @@
 /area/survivalpod/superpose/CultShip)
 "huV" = (
 /obj/machinery/door/airlock/command{
-	icon_state = "door_locked";
-	locked = 1
+	cap_state = 128;
+	icon_state = "door_locked"
 	},
 /turf/simulated/shuttle/floor{
 	icon_state = "floor_white"
@@ -13343,7 +13343,7 @@
 	name = "Server Base";
 	nitrogen = 500;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/template_noop)
 "hTE" = (
@@ -13540,7 +13540,7 @@
 	name = "Server Base";
 	nitrogen = 500;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/survivalpod/superpose/ScienceShip)
 "ibw" = (
@@ -13642,7 +13642,7 @@
 	name = "Server Base";
 	nitrogen = 500;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/survivalpod/superpose/CrashedInfestedShip)
 "igl" = (
@@ -14398,7 +14398,7 @@
 	name = "Server Base";
 	nitrogen = 500;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/template_noop)
 "iNu" = (
@@ -15367,7 +15367,7 @@
 	name = "Server Base";
 	nitrogen = 500;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/template_noop)
 "jAI" = (
@@ -15813,10 +15813,10 @@
 /area/survivalpod/superpose/HydroCave)
 "jQk" = (
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	frequency = null;
 	icon_state = "door_locked";
 	id_tag = null;
-	locked = 1;
 	name = "Ship Hatch";
 	req_access = null
 	},
@@ -17221,7 +17221,7 @@
 	name = "Server Base";
 	nitrogen = 500;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/survivalpod/superpose/CrashedInfestedShip)
 "kVd" = (
@@ -17346,7 +17346,7 @@
 	name = "Server Base";
 	nitrogen = 500;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/template_noop)
 "kYZ" = (
@@ -17820,7 +17820,7 @@
 	name = "Server Base";
 	nitrogen = 500;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/survivalpod/superpose/ScienceShip)
 "liR" = (
@@ -18845,7 +18845,7 @@
 /area/survivalpod/superpose/TradingShip)
 "lNF" = (
 /obj/machinery/vending/tool{
-	emagged = 1
+	cap_state = 16
 	},
 /turf/simulated/shuttle/floor/black,
 /area/survivalpod/superpose/TradingShip)
@@ -19425,7 +19425,7 @@
 /area/survivalpod/superpose/HydroCave)
 "mhg" = (
 /obj/machinery/vending/engivend{
-	emagged = 1
+	cap_state = 16
 	},
 /turf/simulated/shuttle/floor/black,
 /area/survivalpod/superpose/TradingShip)
@@ -19731,7 +19731,7 @@
 	name = "Server Base";
 	nitrogen = 500;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/template_noop)
 "mtA" = (
@@ -19803,7 +19803,7 @@
 /area/survivalpod/superpose/HydroCave)
 "mwW" = (
 /obj/machinery/vending/engivend{
-	emagged = 1;
+	cap_state = 16;
 	req_access = list(777);
 	req_log_access = null
 	},
@@ -19943,7 +19943,7 @@
 	name = "Server Base";
 	nitrogen = 500;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/survivalpod/superpose/CrashedInfestedShip)
 "mDX" = (
@@ -20429,7 +20429,7 @@
 /area/survivalpod/superpose/OldHotel)
 "mUW" = (
 /obj/machinery/vending/engivend{
-	emagged = 1;
+	cap_state = 16;
 	req_access = null;
 	req_log_access = null
 	},
@@ -20601,9 +20601,9 @@
 /area/survivalpod/superpose/LoneHome)
 "nbf" = (
 /obj/machinery/door/airlock/hatch{
+	cap_state = 128;
 	icon_state = "door_locked";
 	id_tag = "estrella_back_hatch";
-	locked = 1;
 	req_one_access = null
 	},
 /turf/simulated/floor/tiled/techmaint,
@@ -20982,7 +20982,7 @@
 	name = "Server Base";
 	nitrogen = 500;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/template_noop)
 "nqx" = (
@@ -21608,7 +21608,7 @@
 	name = "Server Base";
 	nitrogen = 500;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/survivalpod/superpose/ScienceShip)
 "nNO" = (
@@ -22325,10 +22325,10 @@
 "orZ" = (
 /obj/machinery/atmospherics/pipe/simple/visible,
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	frequency = null;
 	icon_state = "door_locked";
 	id_tag = null;
-	locked = 1;
 	name = "Ship Hatch";
 	req_access = null
 	},
@@ -23252,11 +23252,11 @@
 /area/survivalpod/superpose/CrashedQurantineShip)
 "oPi" = (
 /obj/machinery/door/airlock/multi_tile/metal/mait{
+	cap_state = 128;
 	dir = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "estrella_outer";
-	locked = 1;
 	name = "External Access"
 	},
 /obj/machinery/door/firedoor/border_only,
@@ -25907,11 +25907,11 @@
 /area/template_noop)
 "pDj" = (
 /obj/machinery/door/airlock/multi_tile/metal/mait{
+	cap_state = 128;
 	dir = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "estrella_inner";
-	locked = 1;
 	name = "Internal Access"
 	},
 /obj/machinery/atmospherics/pipe/simple/visible{
@@ -27817,10 +27817,10 @@
 /area/template_noop)
 "qYf" = (
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	frequency = null;
 	icon_state = "door_locked";
 	id_tag = null;
-	locked = 1;
 	name = "Ship Hatch";
 	req_access = null
 	},
@@ -29557,7 +29557,7 @@
 	name = "Server Base";
 	nitrogen = 500;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/survivalpod/superpose/ScienceShip)
 "suW" = (
@@ -30143,7 +30143,7 @@
 /area/template_noop)
 "sPt" = (
 /obj/machinery/vending/tool{
-	emagged = 1;
+	cap_state = 16;
 	req_log_access = null
 	},
 /turf/simulated/floor/plating,
@@ -30366,7 +30366,7 @@
 	name = "Server Base";
 	nitrogen = 500;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/template_noop)
 "tbq" = (
@@ -31960,7 +31960,7 @@
 	name = "Server Base";
 	nitrogen = 500;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/survivalpod/superpose/ScienceShip)
 "ukX" = (
@@ -31999,7 +31999,7 @@
 	name = "Server Base";
 	nitrogen = 500;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/template_noop)
 "ulH" = (
@@ -32102,7 +32102,7 @@
 	name = "Server Base";
 	nitrogen = 500;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/survivalpod/superpose/CrashedInfestedShip)
 "upA" = (
@@ -32683,7 +32683,7 @@
 	name = "Server Base";
 	nitrogen = 500;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/survivalpod/superpose/CrashedInfestedShip)
 "uOD" = (
@@ -34104,7 +34104,7 @@
 	name = "Server Base";
 	nitrogen = 500;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/survivalpod/superpose/CrashedInfestedShip)
 "vWP" = (
@@ -34382,9 +34382,9 @@
 /area/survivalpod/superpose/GrandLibrary)
 "wkp" = (
 /obj/machinery/door/airlock/multi_tile/metal/mait{
+	cap_state = 128;
 	icon_state = "door_locked";
 	id_tag = "SP-CargoHatch";
-	locked = 1;
 	name = "Rear Hatch"
 	},
 /obj/machinery/button/remote/airlock{
@@ -34806,7 +34806,7 @@
 	name = "Server Base";
 	nitrogen = 500;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/template_noop)
 "wym" = (
@@ -35673,7 +35673,7 @@
 	name = "Server Base";
 	nitrogen = 500;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/template_noop)
 "xbO" = (
@@ -35967,7 +35967,7 @@
 /area/template_noop)
 "xiw" = (
 /obj/machinery/vending/tool{
-	emagged = 1;
+	cap_state = 16;
 	req_access = list(777);
 	req_log_access = null
 	},

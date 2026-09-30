@@ -120,7 +120,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/aggressive/corrupthound, /mob/liv
 /mob/living/simple_mob/vore/aggressive/corrupthound/Login()
 	. = ..()
 	if(!riding_datum)
-		own_set(src, "riding_datum", new /datum/riding/simple_mob(src))
+		own_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
 	movement_cooldown = 0
 
 /mob/living/simple_mob/vore/aggressive/corrupthound/space/Process_Spacemove(check_drift = 0)
@@ -362,7 +362,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/retaliate/corrupthound/janihound,
 /mob/living/simple_mob/vore/retaliate/corrupthound/janihound/Login()
 	. = ..()
 	if(!riding_datum)
-		own_set(src, "riding_datum", new /datum/riding/simple_mob(src))
+		own_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
 	movement_cooldown = 3
 
 /mob/living/simple_mob/vore/retaliate/corrupthound/janihound/space/Process_Spacemove(check_drift = 0)

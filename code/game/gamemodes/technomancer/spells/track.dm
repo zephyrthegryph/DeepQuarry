@@ -30,7 +30,7 @@ DECLARE_REPEAT(/obj/item/spell/track, 0.5 SECONDS, track, "tracking")
 		set_tracking(FALSE)
 		icon_state = "track"
 		to_chat(user, span_notice("You stop tracking for \the [tracked()]'s whereabouts."))
-		rel_clear(src, "tracked")
+		rel_clear(src, nameof(tracked))
 		return
 
 	var/can_track_non_allies = 0
@@ -48,7 +48,7 @@ DECLARE_REPEAT(/obj/item/spell/track, 0.5 SECONDS, track, "tracking")
 
 /obj/item/spell/track/proc/track_target_chosen(datum/om/prompt/choice/carried_item/ask)
 	if(ask.choice)
-		rel_set(src, "tracked", ask.choice)
+		rel_set(src, nameof(tracked), ask.choice)
 		set_tracking(TRUE)
 		track()
 

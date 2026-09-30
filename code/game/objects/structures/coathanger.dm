@@ -27,7 +27,7 @@
 	act_message(user, src, MSG_SELF("You take [coat()] off %T%"), MSG_OTHERS("%U% takes [coat()] off %T%."))
 	if(!user.put_in_active_hand(coat()))
 		coat().forceMove(get_turf(user))
-	rel_clear(src, "coat")
+	rel_clear(src, nameof(coat))
 	update_icon()
 	return TRUE
 
@@ -44,7 +44,7 @@
 			can_hang = 1
 	if (can_hang && !coat())
 		act_message(user, src, MSG_SELF("You hang [W] on %T%"), MSG_OTHERS("%U% hangs [W] on %T%."))
-		rel_set(src, "coat", W)
+		rel_set(src, nameof(coat), W)
 		user.drop_from_inventory(coat(), src)
 		update_icon()
 	else
@@ -59,7 +59,7 @@
 
 	if (can_hang && !coat())
 		src.visible_message("[mover] lands on \the [src].")
-		rel_set(src, "coat", mover)
+		rel_set(src, nameof(coat), mover)
 		coat().forceMove(src)
 		update_icon()
 		return 0

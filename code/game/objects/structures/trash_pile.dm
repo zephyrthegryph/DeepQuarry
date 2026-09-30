@@ -99,13 +99,13 @@ DECLARE_DEFAULT_CHILD(/obj/structure/trash_pile, "mouse_nest", /obj/structure/mo
 /obj/structure/trash_pile/proc/exit_answered(datum/om/prompt/confirm/trash_pile_exit/ask)
 	var/mob/living/L = ask.answerer
 	if(L == hider())
-		rel_clear(src, "hider")
+		rel_clear(src, nameof(hider))
 	L.forceMove(get_turf(src))
 
 /obj/structure/trash_pile/proc/hide_answered(datum/om/prompt/confirm/trash_pile_hide/ask)
 	var/mob/living/L = ask.answerer
 	L.forceMove(src)
-	rel_set(src, "hider", L)
+	rel_set(src, nameof(hider), L)
 
 /// Old attack_ghost: offer to spawn as a mouse. Never fell through to the default.
 /obj/structure/trash_pile/proc/trash_pile_ghost_mouse(mob/observer/user, obj/item/held, datum/interaction/interaction)
@@ -191,7 +191,7 @@ DECLARE_DEFAULT_CHILD(/obj/structure/trash_pile, "mouse_nest", /obj/structure/mo
 		//If there was a hider, chance to reveal them
 		to_chat(hider(),span_danger("You've been discovered!"))
 		hider().forceMove(get_turf(src))
-		rel_clear(src, "hider")
+		rel_clear(src, nameof(hider))
 		to_chat(user,span_danger("Some sort of creature leaps out of \the [src]!"))
 	else
 		loot_search(src, user, searchedby, 5)

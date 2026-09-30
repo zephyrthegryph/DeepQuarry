@@ -3,37 +3,37 @@
 /turf/simulated/floor/outdoors/mud/sif/planetuse
 	oxygen		= MOLES_O2SIF
 	nitrogen	= MOLES_N2SIF
-	temperature	= TEMPERATURE_SIF
+	initial_temperature	= TEMPERATURE_SIF
 
 /turf/simulated/floor/outdoors/rocks/sif/planetuse
 	oxygen		= MOLES_O2SIF
 	nitrogen	= MOLES_N2SIF
-	temperature	= TEMPERATURE_SIF
+	initial_temperature	= TEMPERATURE_SIF
 
 
 /turf/simulated/floor/plating/sif/planetuse
 	oxygen		= MOLES_O2SIF
 	nitrogen	= MOLES_N2SIF
-	temperature	= TEMPERATURE_SIF
+	initial_temperature	= TEMPERATURE_SIF
 	outdoors = OUTDOORS_YES
 
 
 /turf/simulated/floor/outdoors/grass/sif/planetuse
 	oxygen		= MOLES_O2SIF
 	nitrogen	= MOLES_N2SIF
-	temperature	= TEMPERATURE_SIF
+	initial_temperature	= TEMPERATURE_SIF
 
 
 /turf/simulated/floor/outdoors/dirt/sif/planetuse
 	oxygen		= MOLES_O2SIF
 	nitrogen	= MOLES_N2SIF
-	temperature	= TEMPERATURE_SIF
+	initial_temperature	= TEMPERATURE_SIF
 
 
 /turf/simulated/floor/outdoors/mud/sif/planetuse
 	oxygen		= MOLES_O2SIF
 	nitrogen	= MOLES_N2SIF
-	temperature	= TEMPERATURE_SIF
+	initial_temperature	= TEMPERATURE_SIF
 
 // PoI compatability, to stop active edges.
 // In hindsight it would've been better to do this first instead of making a billion /sif subtypes above,
@@ -43,53 +43,53 @@
 /turf/simulated/mineral
 	oxygen		= MOLES_O2SIF
 	nitrogen	= MOLES_N2SIF
-	temperature	= TEMPERATURE_SIF
+	initial_temperature	= TEMPERATURE_SIF
 
 /turf/simulated/floor/outdoors
 	oxygen		= MOLES_O2SIF
 	nitrogen	= MOLES_N2SIF
-	temperature	= TEMPERATURE_SIF
+	initial_temperature	= TEMPERATURE_SIF
 
 /turf/simulated/floor/water
 	oxygen		= MOLES_O2SIF
 	nitrogen	= MOLES_N2SIF
-	temperature	= TEMPERATURE_SIF
+	initial_temperature	= TEMPERATURE_SIF
 
 
 /turf/simulated/shuttle/floor/voidcraft/external
 	oxygen		= MOLES_O2SIF
 	nitrogen	= MOLES_N2SIF
-	temperature	= TEMPERATURE_SIF
+	initial_temperature	= TEMPERATURE_SIF
 
 
 /turf/simulated/shuttle/floor/voidcraft/external/light
 	oxygen		= MOLES_O2SIF
 	nitrogen	= MOLES_N2SIF
-	temperature	= TEMPERATURE_SIF
+	initial_temperature	= TEMPERATURE_SIF
 
 /turf/simulated/floor/plating/external
 	oxygen		= MOLES_O2SIF
 	nitrogen	= MOLES_N2SIF
-	temperature	= TEMPERATURE_SIF
+	initial_temperature	= TEMPERATURE_SIF
 
 
 /turf/simulated/sky
 	oxygen		= MOLES_O2SIF
 	nitrogen	= MOLES_N2SIF
-	temperature	= TEMPERATURE_ALTSIF
+	initial_temperature	= TEMPERATURE_ALTSIF
 
 // Space mineral tiles are now not the default, so they get demoted to subtype status.
 
 /turf/simulated/mineral/vacuum
 	oxygen = 0
 	nitrogen = 0
-	temperature = TCMB
+	initial_temperature = TCMB
 
 
 /turf/simulated/mineral/floor/vacuum
 	oxygen = 0
 	nitrogen = 0
-	temperature = TCMB
+	initial_temperature = TCMB
 
 
 // Step trigger to fall down to planet Sif

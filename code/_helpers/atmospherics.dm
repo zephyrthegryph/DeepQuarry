@@ -46,12 +46,10 @@
 		return atmosanalyzer_scan(src, src.parent.air, user)
 
 // This one is strange. The connector is not guaranteed to have a network (if you placed it down by itself)
-// 'gases' is also a list. But the atmos analyzer wants you to give it a gas mixture.
-// The 'gases' list holds ONE gas mixture.
+// The network's one gas mixture is its `air`.
 /obj/machinery/atmospherics/portables_connector/atmosanalyze(mob/user)
-	if(network && network.gases)
-		var/list/datum/gas_mixture/analyzed_gas = network.gases[1]
-		return atmosanalyzer_scan(src, analyzed_gas, user)
+	if(network && network.air)
+		return atmosanalyzer_scan(src, network.air, user)
 
 /obj/machinery/atmospherics/unary/atmosanalyze(mob/user)
 	return atmosanalyzer_scan(src, src.air_contents, user)

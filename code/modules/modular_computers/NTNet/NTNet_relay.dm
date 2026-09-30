@@ -102,10 +102,10 @@ UI_ACT_PROC(/obj/machinery/ntnet_relay, ui_act_purge)
 	assign_uid()
 	default_apply_parts()
 	if(GLOB.ntnet_global)
-		rel_add(GLOB.ntnet_global, "relays", src)
+		rel_add(GLOB.ntnet_global, nameof(/datum/ntnet::relays), src)
 		NTNet_static = GLOB.ntnet_global // a registered singleton: shared
 		GLOB.ntnet_global.add_log("New quantum relay activated. Current amount of linked relays: [length(NTNet().relays)]")
-	own_set(src, "soundloop", new /datum/looping_sound/tcomms(list(src), FALSE))
+	own_set(src, nameof(soundloop), new /datum/looping_sound/tcomms(list(src), FALSE))
 	if(prob(60)) // 60% chance to change the midloop
 		if(prob(40))
 			soundloop.mid_sounds = list('sound/machines/tcomms/tcomms_02.ogg' = 1)

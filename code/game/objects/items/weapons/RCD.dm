@@ -181,7 +181,7 @@ TYPE_TABLE_DECLARE(/obj/item/rcd, rcd_modes, list(RCD_FLOORWALL, RCD_AIRLOCK, RC
 
 /obj/item/rcd/electric/Initialize(mapload)
 	if(make_cell)
-		own_set(src, "cell", new /obj/item/cell/high(src)) // ALLOW(decl): only when make_cell
+		own_set(src, nameof(cell), new /obj/item/cell/high(src)) // ALLOW(decl): only when make_cell
 	return ..()
 
 
@@ -350,11 +350,11 @@ APPEARANCE_TEMPLATE(/obj/item/rcd, "{initial(icon_state)}{appearance_matter_empt
 APPEARANCE_LEVEL(/obj/item/rcd, "appearance_matter_percent", 10, "{initial(icon_state)}_charge%d")
 
 /obj/item/rcd/proc/perform_effect(atom/A, time_taken)
-	own_put(src, "effects", A, new /obj/effect/constructing_effect(get_turf(A), time_taken, TYPE_TABLE_GET(src, rcd_modes)[mode_index]))
+	own_put(src, nameof(effects), A, new /obj/effect/constructing_effect(get_turf(A), time_taken, TYPE_TABLE_GET(src, rcd_modes)[mode_index]))
 
 /obj/item/rcd/proc/cleanup_effect(atom/A)
 	if(A in effects)
-		own_put(src, "effects", A, null) // drops the key and disposes of (deletes) the owned effect
+		own_put(src, nameof(effects), A, null) // drops the key and disposes of (deletes) the owned effect
 
 /obj/item/rcd/proc/check_menu(mob/living/user)
 	if(!istype(user))

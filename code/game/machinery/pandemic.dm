@@ -143,7 +143,7 @@ UI_DATA_REPLACE(/obj/machinery/computer/pandemic, "merge:ui_data_obj_machinery_c
 	if(!beaker)
 		return
 	beaker.forceMove(loc)
-	own_take(src, "beaker")
+	own_take(src, nameof(beaker))
 	icon_state = "pandemic0"
 
 /obj/machinery/computer/pandemic/proc/print_form(datum/affliction/contagion/engineered/D, mob/living/user)
@@ -242,9 +242,8 @@ UI_DATA_REPLACE(/obj/machinery/computer/pandemic, "merge:ui_data_obj_machinery_c
 /obj/machinery/computer/pandemic/proc/interaction_insert_beaker(mob/user, obj/item/I, datum/interaction/interaction)
 	if(!operable())
 		return TRUE
-	user.drop_item()
-	I.forceMove(src)
-	own_set(src, "beaker", I) // CONTAINED: in contents first
+	if(!own_set(src, nameof(src.beaker), I, user = user))
+		return TRUE
 	to_chat(user, span_notice("You add \the [I] to the machine."))
 	update_tgui_static_data(user)
 	icon_state = "pandemic1"
@@ -400,4 +399,6 @@ UI_DATA_REPLACE(/obj/machinery/computer/pandemic, "merge:ui_data_obj_machinery_c
 	play_sfx(src, SFX_MACHINES_PING, 0.6, vary = TRUE)
 	return TRUE
 
-OWN(/obj/machinery/computer/pandemic, beaker, OWN_CONTAINED)
+/obj/machinery/computer/pandemic/ownership()
+	. = ..()
+	. += owns(nameof(beaker), policy = OWN_CONTAINED)

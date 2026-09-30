@@ -5,8 +5,8 @@
 	var/mob/living/silicon/ai/user = src
 	// Setup Variables
 	malfunctioning = 1
-	own_set(src, "research", new/datum/malf_research())
-	rel_set(research, "owner", src)
+	own_set(src, nameof(research), new/datum/malf_research())
+	rel_set(research, nameof(research.owner), src)
 	recalc_cpu()
 
 	om_grant(src, GRANT_VERB, /datum/game_mode/malfunction/verb/ai_select_hardware, src)
@@ -33,9 +33,9 @@
 	if(hardware)
 		om_revoke_all_of(src, GRANT_VERB, hardware)
 	om_revoke_each(src, GRANT_VERB, list(/datum/game_mode/malfunction/verb/ai_select_hardware, /datum/game_mode/malfunction/verb/ai_select_research, /datum/game_mode/malfunction/verb/ai_help, /datum/game_mode/malfunction/verb/ai_destroy_station), src)
-	own_clear(src, "research", OWN_DELETE)
+	own_clear(src, nameof(research), OWN_DELETE)
 	// Fix hacked APCs (a pair: clearing our side clears each APC's hacker)
-	rel_clear(src, "hacked_apcs")
+	rel_clear(src, nameof(hacked_apcs))
 	// Let them know.
 	to_chat(user, "You are no longer malfunctioning. Your abilities have been removed.")
 
@@ -137,4 +137,4 @@
 
 // Cleaner proc for creating powersupply for an AI.
 /mob/living/silicon/ai/proc/create_powersupply()
-	own_set(src, "psupply", new/obj/machinery/ai_powersupply(src))
+	own_set(src, nameof(psupply), new/obj/machinery/ai_powersupply(src))

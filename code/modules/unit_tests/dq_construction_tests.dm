@@ -309,7 +309,7 @@
 	var/obj/item/tool/screwdriver/screwdriver = dq_fast_tool(/obj/item/tool/screwdriver, T)
 	TEST_ASSERT(!length(construction_edges_for(mech)), "an operating exosuit offers no steps")
 	if(!mech.cell)
-		own_set(mech, "cell", new /obj/item/cell/high(mech))
+		own_set(mech, nameof(mech.cell), new /obj/item/cell/high(mech))
 	var/obj/item/cell/cell = mech.cell
 	mech.state = MECHA_BOLTS_SECURED
 
@@ -324,7 +324,7 @@
 	TEST_ASSERT_EQUAL(cell.loc, mech.loc, "on the floor")
 
 	cell.forceMove(mech)
-	own_set(mech, "cell", cell)
+	own_set(mech, nameof(mech.cell), cell)
 	var/list/back = list(list(screwdriver, MECHA_CELL_OPEN), list(crowbar, MECHA_PANEL_LOOSE), list(wrench, MECHA_BOLTS_SECURED))
 	for(var/list/step in back)
 		var/obj/item/tool = step[1]
@@ -368,8 +368,8 @@
 	var/obj/item/tool/crowbar/crowbar = dq_fast_tool(/obj/item/tool/crowbar, T)
 	var/obj/item/weldingtool/welder = dq_fueled_welder(T)
 	var/obj/item/stack/rods/loot = allocate(/obj/item/stack/rods, wreck)
-	rel_clear(wreck, "crowbar_salvage")
-	rel_add(wreck, "crowbar_salvage", loot)
+	rel_clear(wreck, nameof(wreck.crowbar_salvage))
+	rel_add(wreck, nameof(wreck.crowbar_salvage), loot)
 	H.put_in_active_hand(crowbar)
 	wreck.tool_interaction(H, crowbar)
 	TEST_ASSERT_EQUAL(loot.loc, get_turf(H), "the crowbar pries out what the wreck held")

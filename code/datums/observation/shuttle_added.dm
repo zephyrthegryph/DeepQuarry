@@ -11,7 +11,7 @@
 *  Shuttle Added Handling *
 *****************************/
 
-/datum/controller/subsystem/shuttles/initialize_shuttle()
+/datum/system/shuttles/initialize_shuttle()
 	. = ..()
 	if(.)
 		OM_EMIT(SSshuttles, /datum/om/event/observer_shuttle_added, .)

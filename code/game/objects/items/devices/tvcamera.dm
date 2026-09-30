@@ -61,7 +61,7 @@ DECLARE_INTERACTIONS(/obj/item/tvcamera, INTERACT_USE(null, PROC_REF(interaction
 	if(showing)
 		hide_tvs(showing)
 
-	rel_set(src, "showing", thing)
+	rel_set(src, nameof(showing), thing)
 	showing_name = "[thing]"
 	for(var/obj/machinery/computer/security/telescreen/entertainment/ES as anything in REGISTRY_MEMBERS(REGISTRY_ENTERTAINMENT_SCREENS))
 		ES.show_thing(thing)
@@ -71,7 +71,7 @@ DECLARE_INTERACTIONS(/obj/item/tvcamera, INTERACT_USE(null, PROC_REF(interaction
 		return
 	for(var/obj/machinery/computer/security/telescreen/entertainment/ES as anything in REGISTRY_MEMBERS(REGISTRY_ENTERTAINMENT_SCREENS))
 		ES.maybe_stop_showing(showing)
-	rel_clear(src, "showing")
+	rel_clear(src, nameof(showing))
 	showing_name = null
 
 /obj/item/tvcamera/Moved(atom/old_loc, direction, forced = FALSE, movetime)
@@ -184,7 +184,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/bodycam, INTERACT_USE(null, PRO
 	if(showing)
 		hide_bodycamera_tvs(showing)
 
-	rel_set(src, "showing", thing)
+	rel_set(src, nameof(showing), thing)
 	showing_name = "[thing]"
 	for(var/obj/machinery/computer/security/telescreen/bodycamera/ES as anything in REGISTRY_MEMBERS(REGISTRY_BODYCAMERA_SCREENS))
 		ES.show_thing(thing, src)
@@ -194,7 +194,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/bodycam, INTERACT_USE(null, PRO
 		return
 	for(var/obj/machinery/computer/security/telescreen/bodycamera/ES as anything in REGISTRY_MEMBERS(REGISTRY_BODYCAMERA_SCREENS))
 		ES.maybe_stop_showing(showing)
-	rel_clear(src, "showing")
+	rel_clear(src, nameof(showing))
 	showing_name = null
 
 /obj/item/clothing/accessory/bodycam/Moved(atom/old_loc, direction, forced = FALSE, movetime)

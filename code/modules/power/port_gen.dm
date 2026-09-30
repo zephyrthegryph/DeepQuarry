@@ -612,20 +612,20 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/port_gen/pacman/super/potato, TYPE_
 			var/obj/item/stock_parts/capacitor/C = locate_in_list(component_parts, /obj/item/stock_parts/capacitor)
 			if(isnull(C))
 				break
-			own_take_member(src, "component_parts", C)
+			own_take_member(src, nameof(component_parts), C)
 			qdel(C)
 	if(locate_in_list(parts_found, /obj/item/stock_parts/micro_laser))
 		while(TRUE)
 			var/obj/item/stock_parts/micro_laser/M = locate_in_list(component_parts, /obj/item/stock_parts/micro_laser)
 			if(isnull(M))
 				break
-			own_take_member(src, "component_parts", M)
+			own_take_member(src, nameof(component_parts), M)
 			qdel(M)
 
 	// Rebuild from mapper's parts
 	for(var/i = 1, i <= parts_found.len, i++)
 		var/obj/item/W = parts_found[i]
-		own_add(src, "component_parts", W)
+		own_add(src, nameof(component_parts), W)
 		W.move_into(src, CONTAINER_SLOT_INTERNALS)
 	RefreshParts()
 
@@ -750,7 +750,7 @@ APPEARANCE_NONE(/obj/machinery/power/rtg/fake_gen)
 /obj/machinery/power/rtg/abductor/proc/interaction_eject_cell(mob/user, obj/item/held, datum/interaction/interaction)
 	cell.forceMove(get_turf(src))
 	user.put_in_active_hand(cell)
-	own_take(src, "cell")
+	own_take(src, nameof(cell))
 	state_change = TRUE
 	RefreshParts()
 	update_icon()
@@ -781,9 +781,8 @@ APPEARANCE_NONE(/obj/machinery/power/rtg/fake_gen)
 	return !cell
 
 /obj/machinery/power/rtg/abductor/proc/interaction_insert_cell(mob/user, obj/item/I, datum/interaction/interaction)
-	user.remove_from_mob(I)
-	I.forceMove(src)
-	own_set(src, "cell", I)
+	if(!own_set(src, nameof(src.cell), I, user = user))
+		return TRUE
 	RefreshParts()
 	update_icon()
 	play_sfx(src, SFX_EFFECTS_METAL_CLOSE)
@@ -1187,4 +1186,6 @@ DAMAGE_REACTION(/obj/machinery/power/rtg/antimatter_core, DAMAGE_EXPLOSION, PROC
 /obj/machinery/power/port_gen/step_start_condition()
 	return active
 
-OWN(/obj/machinery/power/rtg/abductor, cell, OWN_CONTAINED)
+/obj/machinery/power/rtg/abductor/ownership()
+	. = ..()
+	. += owns(nameof(cell), policy = OWN_CONTAINED)

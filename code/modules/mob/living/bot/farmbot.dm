@@ -28,7 +28,7 @@
 		newTank = new /obj/structure/reagent_dispensers/watertank(src)
 	var/obj/structure/reagent_dispensers/watertank/W = newTank
 	W.forceMove(src)
-	own_move(W, src, "tank") // handed over from the arm assembly, when built from one
+	own_move(W, src, nameof(tank)) // handed over from the arm assembly, when built from one
 
 DECLARE_UI(/mob/living/bot/farmbot, "Farmbot")
 
@@ -145,18 +145,18 @@ UI_ACT_PROC(/mob/living/bot/farmbot, ui_act_replacenutri)
 /mob/living/bot/farmbot/lookForTargets()
 	if(emagged)
 		for(var/mob/living/carbon/human/H in view(7, src))
-			rel_set(src, "target", H)
+			rel_set(src, nameof(target), H)
 			times_idle = 0 // Idle shutoff time
 			return
 	else
 		for(var/obj/machinery/portable_atmospherics/hydroponics/tray in view(7, src))
 			if(confirmTarget(tray))
-				rel_set(src, "target", tray)
+				rel_set(src, nameof(target), tray)
 				times_idle = 0 // Idle shutoff time
 				return
 		if(!target && refills_water && tank && tank.reagents?.total_volume < tank.reagents.maximum_volume) // runtime
 			for(var/obj/structure/sink/source in view(7, src))
-				rel_set(src, "target", source)
+				rel_set(src, nameof(target), source)
 				times_idle = 0 // Idle shutoff time
 				return
 	if(++times_idle == 150) turn_off() // Idle shutoff time
@@ -166,8 +166,8 @@ UI_ACT_PROC(/mob/living/bot/farmbot, ui_act_replacenutri)
 		return
 	target_path = om_pathfinder().default_bot_pathfinding(src, get_turf(target), 1, 32)
 	if(!target_path)
-		rel_add(src, "ignore_list", target)
-		rel_clear(src, "target")
+		rel_add(src, nameof(ignore_list), target)
+		rel_clear(src, nameof(target))
 		target_path = list()
 	return
 
@@ -304,7 +304,7 @@ UI_ACT_PROC(/mob/living/bot/farmbot, ui_act_replacenutri)
 
 	if(tank)
 		tank.forceMove(Tsec)
-		own_take(src, "tank")
+		own_take(src, nameof(tank))
 
 	if(prob(50))
 		new /obj/item/robot_parts/l_arm(Tsec)
@@ -364,11 +364,11 @@ UI_ACT_PROC(/mob/living/bot/farmbot, ui_act_replacenutri)
 /obj/item/farmbot_arm_assembly/Initialize(mapload, theTank)
 	. = ..()
 	if(!theTank) // If an admin spawned it, it won't have a watertank it, so lets make one for em!
-		own_set(src, "tank", new /obj/structure/reagent_dispensers/watertank(src))
+		own_set(src, nameof(tank), new /obj/structure/reagent_dispensers/watertank(src))
 	else
 		var/obj/O = theTank
 		O.forceMove(src)
-		own_move(O, src, "tank")
+		own_move(O, src, nameof(tank))
 
 EXTEND_INTERACTIONS(/obj/structure/reagent_dispensers/watertank, INTERACT_ITEM(null, PROC_REF(watertank_interaction_item)))
 
@@ -446,5 +446,9 @@ DECLARE_INTERACTIONS(/obj/item/farmbot_arm_assembly, \
 	act_message(src, null, others = span_warning("%U% buzzes oddly."))
 	emagged = 1
 
-OWN(/obj/item/farmbot_arm_assembly, tank, OWN_CONTAINED)
-OWN(/mob/living/bot/farmbot, tank, OWN_CONTAINED)
+/obj/item/farmbot_arm_assembly/ownership()
+	. = ..()
+	. += owns(nameof(tank), policy = OWN_CONTAINED)
+/mob/living/bot/farmbot/ownership()
+	. = ..()
+	. += owns(nameof(tank), policy = OWN_CONTAINED)

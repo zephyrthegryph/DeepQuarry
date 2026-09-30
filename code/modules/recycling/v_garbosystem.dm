@@ -24,14 +24,14 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/v_garbosystem, MACHINE_PIPELINE, list(
 	. = ..()
 	add_hose_connector(/datum/hose_connector/output)
 	for(var/dir in GLOB.cardinal)
-		rel_set(src, "crusher", locate(/obj/machinery/recycling/crusher, get_step(src, dir)))
+		rel_set(src, nameof(crusher), locate(/obj/machinery/recycling/crusher, get_step(src, dir)))
 		if(src.crusher())
 			crusher().hand_fed = FALSE
 			break
 	for(var/dir in GLOB.cardinal)
-		rel_set(src, "button", locate(/obj/machinery/button/garbosystem, get_step(src, dir)))
+		rel_set(src, nameof(button), locate(/obj/machinery/button/garbosystem, get_step(src, dir)))
 		if(src.button())
-			rel_set(button(), "grinder", src)
+			rel_set(button(), nameof(/obj/machinery/button/garbosystem::grinder), src)
 			break
 	return
 

@@ -33,7 +33,7 @@
 				if(account.suspended)
 					error = "This account has been suspended. Please contact the system administrator for assistance."
 					return 0
-				rel_set(src, "current_account", account)
+				rel_set(src, nameof(current_account), account)
 				return 1
 			else
 				error = "Invalid Password"
@@ -61,8 +61,8 @@
 		read_message_count = allmails.len
 
 /datum/tgui_module/email_client/proc/log_out()
-	rel_clear(src, "current_account")
-	own_take(src, "downloading")
+	rel_clear(src, nameof(current_account))
+	own_take(src, nameof(downloading))
 	download_progress = 0
 	last_message_count = 0
 	read_message_count = 0
@@ -206,8 +206,8 @@ UI_DATA(/datum/tgui_module/email_client, "merge:ui_data_datum_tgui_module_email_
 	msg_title = ""
 	msg_body = ""
 	msg_recipient = ""
-	own_take(src, "msg_attachment")
-	rel_clear(src, "current_message")
+	own_take(src, nameof(msg_attachment))
+	rel_clear(src, nameof(current_message))
 
 /datum/tgui_module/email_client/proc/relayed_process(netspeed)
 	download_speed = netspeed
@@ -218,7 +218,7 @@ UI_DATA(/datum/tgui_module/email_client, "merge:ui_data_datum_tgui_module_email_
 		var/obj/item/modular_computer/MC = tgui_host()
 		if(!istype(MC) || !MC.hard_drive || !MC.hard_drive.check_functionality())
 			error = "Error uploading file. Are you using a functional and NTOSv2-compliant device?"
-			own_take(src, "downloading")
+			own_take(src, nameof(downloading))
 			download_progress = 0
 			return 1
 
@@ -226,7 +226,7 @@ UI_DATA(/datum/tgui_module/email_client, "merge:ui_data_datum_tgui_module_email_
 			error = "File successfully downloaded to local device."
 		else
 			error = "Error saving file: I/O Error: The hard drive may be full or nonfunctional."
-		own_take(src, "downloading")
+		own_take(src, nameof(downloading))
 		download_progress = 0
 	return 1
 
@@ -327,15 +327,15 @@ UI_ACT_PROC(/datum/tgui_module/email_client, ui_act_delete)
 	if(!istype(M))
 		return 1
 	if(folder == "Deleted")
-		rel_remove(current_account(), "deleted", M)
+		rel_remove(current_account(), nameof(/datum/computer_file/data/email_account::deleted), M)
 		qdel(M)
 	else
 		var/datum/computer_file/data/email_account/mailbox = current_account()
-		rel_add(mailbox, "deleted", M)
-		rel_remove(mailbox, "inbox", M)
-		rel_remove(mailbox, "spam", M)
+		rel_add(mailbox, nameof(/datum/computer_file/data/email_account::deleted), M)
+		rel_remove(mailbox, nameof(/datum/computer_file/data/email_account::inbox), M)
+		rel_remove(mailbox, nameof(/datum/computer_file/data/email_account::spam), M)
 	if(current_message() == M)
-		rel_clear(src, "current_message")
+		rel_clear(src, nameof(/datum/tgui_module/email_client::current_message))
 	return 1
 
 UI_ACT(/datum/tgui_module/email_client, "send", ui_act_send)
@@ -350,7 +350,7 @@ UI_ACT_PROC(/datum/tgui_module/email_client, ui_act_send)
 	message.title = msg_title
 	message.stored_data = msg_body
 	message.source = current_account().login
-	own_set(message, "attachment", msg_attachment)
+	own_set(message, nameof(/datum/computer_file/data/email_message::attachment), msg_attachment)
 	if(!current_account().send_mail(msg_recipient, message))
 		error = "Error sending email: this address doesn't exist."
 		return 1
@@ -381,7 +381,7 @@ UI_ACT(/datum/tgui_module/email_client, "view", ui_act_view, UI_ARG_NUM("view"))
 UI_ACT_PROC(/datum/tgui_module/email_client, ui_act_view)
 	var/datum/computer_file/data/email_message/M = find_message_by_fuid(params["view"])
 	if(istype(M))
-		rel_set(src, "current_message", M)
+		rel_set(src, nameof(/datum/tgui_module/email_client::current_message), M)
 	return 1
 
 UI_ACT(/datum/tgui_module/email_client, "changepassword", ui_act_changepassword)
@@ -450,7 +450,7 @@ UI_ACT_PROC(/datum/tgui_module/email_client, ui_act_save)
 UI_ACT(/datum/tgui_module/email_client, "addattachment", ui_act_addattachment)
 UI_ACT_PROC(/datum/tgui_module/email_client, ui_act_addattachment)
 	var/obj/item/modular_computer/MC = tgui_host()
-	own_take(src, "msg_attachment")
+	own_take(src, nameof(/datum/tgui_module/email_client::msg_attachment))
 
 	if(!istype(MC) || !MC.hard_drive || !MC.hard_drive.check_functionality())
 		error = "Error uploading file. Are you using a functional and NTOSv2-compliant device?"
@@ -476,16 +476,16 @@ UI_ACT_PROC(/datum/tgui_module/email_client, ui_act_addattachment)
 		if(CF.unsendable)
 			continue
 		if(CF.filename == picked_file)
-			own_set(src, "msg_attachment", CF.clone())
+			own_set(src, nameof(/datum/tgui_module/email_client::msg_attachment), CF.clone())
 			break
 	if(!istype(msg_attachment))
-		own_take(src, "msg_attachment")
+		own_take(src, nameof(/datum/tgui_module/email_client::msg_attachment))
 		error = "Unknown error when uploading attachment."
 		return 1
 
 	if(msg_attachment.size > 32)
 		error = "Error uploading attachment: File exceeds maximal permitted file size of 32GQ."
-		own_take(src, "msg_attachment")
+		own_take(src, nameof(/datum/tgui_module/email_client::msg_attachment))
 	else
 		error = "File [msg_attachment.filename].[msg_attachment.filetype] has been successfully uploaded."
 	return 1
@@ -499,19 +499,19 @@ UI_ACT_PROC(/datum/tgui_module/email_client, ui_act_downloadattachment)
 		error = "Error downloading file. Are you using a functional and NTOSv2-compliant device?"
 		return 1
 
-	own_set(src, "downloading", current_message().attachment.clone())
+	own_set(src, nameof(/datum/tgui_module/email_client::downloading), current_message().attachment.clone())
 	download_progress = 0
 	return 1
 
 UI_ACT(/datum/tgui_module/email_client, "canceldownload", ui_act_canceldownload)
 UI_ACT_PROC(/datum/tgui_module/email_client, ui_act_canceldownload)
-	own_take(src, "downloading")
+	own_take(src, nameof(/datum/tgui_module/email_client::downloading))
 	download_progress = 0
 	return 1
 
 UI_ACT(/datum/tgui_module/email_client, "remove_attachment", ui_act_remove_attachment)
 UI_ACT_PROC(/datum/tgui_module/email_client, ui_act_remove_attachment)
-	own_take(src, "msg_attachment")
+	own_take(src, nameof(/datum/tgui_module/email_client::msg_attachment))
 	return 1
 
 

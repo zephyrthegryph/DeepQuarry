@@ -41,7 +41,7 @@ C11/C13 changed shape: `invalidate()` now raises `om_changed` on every call.
   the `lingering_poison` affliction. `add_modifier()`/`has_`/`remove_` forward body-effect paths.
   Ratchet: `tools/ci/check_grep.sh` caps `/datum/modifier` types at 165.
 - **MED-6:** the w5 life stages listed under "w5 hibernation rules still polling" in
-  `doc/rewrite/reconciliation.md` have idle rules and rewake backstops.
+  `doc/rewrite/archive/reconciliation.md` have idle rules and rewake backstops.
 
 ## Destinations
 

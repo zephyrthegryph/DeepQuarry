@@ -57,10 +57,10 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/shield_generator, TYPE_PROC_REF(/at
 	set_wires(new /datum/wires/shield_generator(src))
 	default_apply_parts()
 
-	own_take_all(src, "mode_list")
+	own_take_all(src, nameof(mode_list))
 	for(var/st in subtypesof(/datum/shield_mode))
 		var/datum/shield_mode/SM = new st()
-		own_add(src, "mode_list", SM)
+		own_add(src, nameof(mode_list), SM)
 	toggle_flag(initial_shield_modes)
 
 // its field shuts down.
@@ -87,7 +87,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/shield_generator, TYPE_PROC_REF(/at
 
 // Shuts down the shield, removing all shield segments and unlocking generator settings.
 /obj/machinery/power/shield_generator/proc/shutdown_field()
-	own_clear(src, "field_segments", OWN_DELETE)
+	own_clear(src, nameof(field_segments), OWN_DELETE)
 
 	running = SHIELD_OFF
 	current_energy = 0
@@ -98,7 +98,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/shield_generator, TYPE_PROC_REF(/at
 
 // Generates the field objects. Deletes existing field, if applicable.
 /obj/machinery/power/shield_generator/proc/regenerate_field()
-	own_clear(src, "field_segments", OWN_DELETE)
+	own_clear(src, nameof(field_segments), OWN_DELETE)
 	var/list/shielded_turfs
 
 	if(check_flag(MODEFLAG_HULL))
@@ -108,9 +108,9 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/shield_generator, TYPE_PROC_REF(/at
 
 	for(var/turf/T in shielded_turfs)
 		var/obj/effect/shield/S = new(T)
-		rel_set(S, "gen", src)
+		rel_set(S, nameof(S.gen), src)
 		S.flags_updated()
-		own_add(src, "field_segments", S)
+		own_add(src, nameof(field_segments), S)
 
 	//Hull shield chaos icon generation
 	if(check_flag(MODEFLAG_HULL))
@@ -755,4 +755,6 @@ UI_ACT_PROC(/obj/machinery/power/shield_generator, ui_act_switch_idle)
 	hacked = TRUE
 
 // Segments currently down and regenerating (they leave the list when they die).
-REL_LIST(/obj/machinery/power/shield_generator, damaged_segments)
+/obj/machinery/power/shield_generator/relations()
+	. = ..()
+	. += rel_many(nameof(damaged_segments))

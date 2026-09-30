@@ -35,44 +35,44 @@ GLOBAL_DATUM(ninjas, /datum/antagonist/ninja)
 		switch(pick(objective_list))
 			if(1)//Kill
 				var/datum/objective/assassinate/ninja_objective = new
-				rel_set(ninja_objective, "owner", ninja)
-				rel_set(ninja_objective, "target", ninja_objective.find_target())
+				rel_set(ninja_objective, nameof(ninja_objective.owner), ninja)
+				rel_set(ninja_objective, nameof(ninja_objective.target), ninja_objective.find_target())
 				if(ninja_objective.target != "Free Objective")
-					own_add(ninja, "objectives", ninja_objective)
+					own_add(ninja, nameof(ninja.objectives), ninja_objective)
 				else
 					i++
 				objective_list -= 1 // No more than one kill objective
 			if(2)//Steal
 				var/datum/objective/steal/ninja_objective = new
-				rel_set(ninja_objective, "owner", ninja)
-				rel_set(ninja_objective, "target", ninja_objective.find_target())
-				own_add(ninja, "objectives", ninja_objective)
+				rel_set(ninja_objective, nameof(ninja_objective.owner), ninja)
+				rel_set(ninja_objective, nameof(ninja_objective.target), ninja_objective.find_target())
+				own_add(ninja, nameof(ninja.objectives), ninja_objective)
 			if(3)//Protect
 				var/datum/objective/protect/ninja_objective = new
-				rel_set(ninja_objective, "owner", ninja)
-				rel_set(ninja_objective, "target", ninja_objective.find_target())
+				rel_set(ninja_objective, nameof(ninja_objective.owner), ninja)
+				rel_set(ninja_objective, nameof(ninja_objective.target), ninja_objective.find_target())
 				if(ninja_objective.target != "Free Objective")
-					own_add(ninja, "objectives", ninja_objective)
+					own_add(ninja, nameof(ninja.objectives), ninja_objective)
 				else
 					i++
 					objective_list -= 3
 			if(4)//Harm
 				var/datum/objective/harm/ninja_objective = new
-				rel_set(ninja_objective, "owner", ninja)
-				rel_set(ninja_objective, "target", ninja_objective.find_target())
+				rel_set(ninja_objective, nameof(ninja_objective.owner), ninja)
+				rel_set(ninja_objective, nameof(ninja_objective.target), ninja_objective.find_target())
 				if(ninja_objective.target != "Free Objective")
-					own_add(ninja, "objectives", ninja_objective)
+					own_add(ninja, nameof(ninja.objectives), ninja_objective)
 				else
 					i++
 					objective_list -= 4
 
 	var/datum/objective/ninja_highlander/ninja_obj = new
-	rel_set(ninja_obj, "owner", ninja)
-	own_add(ninja, "objectives", ninja_obj)
+	rel_set(ninja_obj, nameof(ninja_obj.owner), ninja)
+	own_add(ninja, nameof(ninja.objectives), ninja_obj)
 
 	var/datum/objective/survive/ninja_objective = new
-	rel_set(ninja_objective, "owner", ninja)
-	own_add(ninja, "objectives", ninja_objective)
+	rel_set(ninja_objective, nameof(ninja_objective.owner), ninja)
+	own_add(ninja, nameof(ninja.objectives), ninja_objective)
 
 /datum/antagonist/ninja/greet(datum/mind/player)
 
@@ -114,7 +114,7 @@ GLOBAL_DATUM(ninjas, /datum/antagonist/ninja)
 	if(istype(player.get_equipped_item(SLOT_ID_BACK),/obj/item/rig))
 		var/obj/item/rig/rig = player.get_equipped_item(SLOT_ID_BACK)
 		if(rig.air_supply)
-			rel_set(player, "internal", rig.air_supply)
+			rel_set(player, nameof(player.internal), rig.air_supply)
 
 	om_after(player, 1 SECOND, TYPE_PROC_REF(/mob/living/carbon/human, ninja_internals_check))
 

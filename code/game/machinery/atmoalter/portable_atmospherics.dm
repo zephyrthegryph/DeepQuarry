@@ -17,7 +17,7 @@
 
 /obj/machinery/portable_atmospherics/Initialize(mapload)
 	..()
-	atmos_air_set(src, "air_contents", new /datum/gas_mixture)
+	atmos_air_set(src, nameof(air_contents), new /datum/gas_mixture)
 	air_contents.set_volume(volume)
 	air_contents.set_temperature(T20C)
 	return INITIALIZE_HINT_LATELOAD
@@ -76,7 +76,7 @@ DAMAGE_REACTION(/obj/machinery/portable_atmospherics, DAMAGE_BLOB, TYPE_PROC_REF
 	return air_contents
 
 /obj/machinery/portable_atmospherics/set_port_network_air(datum/gas_mixture/new_air)
-	atmos_air_set(src, "air_contents", new_air)
+	atmos_air_set(src, nameof(air_contents), new_air)
 	return TRUE
 
 
@@ -90,7 +90,7 @@ DAMAGE_REACTION(/obj/machinery/portable_atmospherics, DAMAGE_BLOB, TYPE_PROC_REF
 		return 0
 
 	//Perform the connection
-	rel_set(src, "connected_port", new_port)
+	rel_set(src, nameof(connected_port), new_port)
 	om_changed(src, CHANGE_MACHINE_SETTINGS)
 	connected_port().connected_device = src
 	connected_port().on = 1 //Activate port updates
@@ -112,10 +112,10 @@ DAMAGE_REACTION(/obj/machinery/portable_atmospherics, DAMAGE_BLOB, TYPE_PROC_REF
 	set_anchored(FALSE)
 
 	var/obj/machinery/atmospherics/portables_connector/old_port = connected_port()
-	rel_clear(old_port, "connected_device")
+	rel_clear(old_port, nameof(old_port.connected_device))
 	old_port.set_on(0)
 	MACHINE_SLEEP(old_port)
-	rel_clear(src, "connected_port")
+	rel_clear(src, nameof(connected_port))
 	om_changed(src, CHANGE_MACHINE_SETTINGS)
 
 	return 1
@@ -150,9 +150,8 @@ DAMAGE_REACTION(/obj/machinery/portable_atmospherics, DAMAGE_BLOB, TYPE_PROC_REF
 	if(holding)
 		return TRUE
 	var/obj/item/tank/T = W
-	user.drop_item()
-	T.forceMove(src)
-	own_set(src, "holding", T)
+	if(!own_set(src, nameof(src.holding), T, user = user))
+		return TRUE
 	update_icon()
 	return TRUE
 
@@ -216,10 +215,9 @@ DAMAGE_REACTION(/obj/machinery/portable_atmospherics, DAMAGE_BLOB, TYPE_PROC_REF
 /obj/machinery/portable_atmospherics/powered/proc/interaction_insert_cell(mob/user, obj/item/I, datum/interaction/interaction)
 	var/obj/item/cell/C = I
 
-	user.drop_item()
 	C.add_fingerprint(user)
-	C.forceMove(src)
-	own_set(src, "cell", C) // CONTAINED: in contents first
+	if(!own_set(src, nameof(src.cell), C, user = user))
+		return TRUE
 	act_message(user, src, MSG_SELF(span_notice("You open the panel on %T% and insert [C].")), \
 		MSG_OTHERS(span_notice("%U% opens the panel on %T% and inserts [C].")))
 	power_change()
@@ -236,7 +234,7 @@ DAMAGE_REACTION(/obj/machinery/portable_atmospherics, DAMAGE_BLOB, TYPE_PROC_REF
 	playsound(src, tool.usesound, 50, TRUE)
 	cell.add_fingerprint(user)
 	cell.forceMove(loc)
-	own_take(src, "cell")
+	own_take(src, nameof(cell))
 	power_change()
 	return ITEM_INTERACT_SUCCESS
 
@@ -256,11 +254,15 @@ DAMAGE_REACTION(/obj/machinery/portable_atmospherics, DAMAGE_BLOB, TYPE_PROC_REF
 	log_admin("[usr] ([usr.ckey]) opened '[src.name]' containing [gases].")
 	message_admins("[usr] ([usr.ckey]) opened '[src.name]' containing [gases].")
 
-OWN(/obj/machinery/portable_atmospherics/powered, cell, OWN_CONTAINED)
+/obj/machinery/portable_atmospherics/powered/ownership()
+	. = ..()
+	. += owns(nameof(cell), policy = OWN_CONTAINED)
 
 /// connected port (a relation view: it reads null once the target is deleted).
 /obj/machinery/portable_atmospherics/proc/connected_port() as /obj/machinery/atmospherics/portables_connector
 	return connected_port
 
 // air_contents is a private mixture, or a connected port network's mixture while connected (set_port_network_air()): PROTO.
-PROTO(/obj/machinery/portable_atmospherics, air_contents)
+/obj/machinery/portable_atmospherics/ownership()
+	. = ..()
+	. += proto(nameof(air_contents))

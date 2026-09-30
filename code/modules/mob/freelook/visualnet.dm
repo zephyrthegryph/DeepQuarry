@@ -28,7 +28,7 @@ REGISTRY_MEMBERSHIP(/datum/visualnet, REGISTRY_VISUAL_NETS)
 	y &= ~0xf
 	var/key = "[x],[y],[z]"
 	if(!LAZYACCESS(chunks, key))
-		own_put(src, "chunks", key, new chunk_type(null, x, y, z))
+		own_put(src, nameof(chunks), key, new chunk_type(null, x, y, z))
 
 	return LAZYACCESS(chunks, key)
 

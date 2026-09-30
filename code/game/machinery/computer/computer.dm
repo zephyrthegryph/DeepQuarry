@@ -19,6 +19,12 @@
 	clicksound = SFX_KEYBOARD
 	integrity_failure = 0.5
 
+/// A console is a MEMBER relation of the area it stands in (role POWER_ROLE_COMPUTER): an APC overload reads them
+/// through area_members(area, POWER_ROLE_COMPUTER). The membership follows the console into another area.
+/obj/machinery/computer/capabilities()
+	. = ..()
+	. += powered_by(POWERED_BY_AREA, role = POWER_ROLE_COMPUTER)
+
 /obj/machinery/computer/Initialize(mapload)
 	. = ..()
 	power_change()

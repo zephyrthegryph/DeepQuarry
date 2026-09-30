@@ -78,7 +78,7 @@
 
 			//Actually spawning
 			var/obj/structure/picnic_blanket_deployed/side = new /obj/structure/picnic_blanket_deployed(T)
-			own_add(src, "attached_blankets", side)
+			own_add(src, nameof(attached_blankets), side)
 			side.blanket_type = SIDE
 			side.name = name //Making sure side blankets inherit our vars if they got edited at runtime
 			side.desc = desc

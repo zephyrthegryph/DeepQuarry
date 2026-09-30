@@ -34,8 +34,8 @@
 // SHOCK.JS UI                          //
 //////////////////////////////////////////
 /datum/tgui_shock/New(client/client, id)
-	rel_set(src, "client", client)
-	own_set(src, "window", new /datum/tgui_window(client, id))
+	rel_set(src, nameof(client), client)
+	own_set(src, nameof(window), new /datum/tgui_window(client, id))
 	window.subscribe(src, PROC_REF(on_message))
 	window.is_browser = TRUE
 

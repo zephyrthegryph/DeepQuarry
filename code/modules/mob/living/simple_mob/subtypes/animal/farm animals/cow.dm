@@ -26,8 +26,8 @@
 /mob/living/simple_mob/animal/passive/cow/Initialize(mapload)
 	. = ..()
 
-	own_set(src, "udder", new /datum/reagents(50)) // ALLOW(decl): holder takes constructor args
-	rel_set(udder, "my_atom", src)
+	own_set(src, nameof(udder), new /datum/reagents(50)) // ALLOW(decl): holder takes constructor args
+	rel_set(udder, nameof(udder.my_atom), src)
 
 	add_hose_connector(/datum/hose_connector/output/cow) // Moo?
 

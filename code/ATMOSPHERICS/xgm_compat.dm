@@ -229,7 +229,7 @@
 // Rust owns turf adjacency (built from DM air-block masks), so ask it: two turfs
 // share air only if both are registered face neighbours and neither blocks the
 // shared face.
-/datum/controller/subsystem/air/proc/air_blocked(turf/A, turf/B)
+/datum/system/air/proc/air_blocked(turf/A, turf/B)
 	if(!A || !B)
 		return TRUE
 	if(A == B)
@@ -242,7 +242,7 @@
 
 // ZAS: SSair.mark_for_update(T) — schedule a turf for zone-graph rebuild.
 // Republish the turf's air-block mask and re-register it.
-/datum/controller/subsystem/air/proc/mark_for_update(turf/T)
+/datum/system/air/proc/mark_for_update(turf/T)
 	if(!T)
 		return
 	T.air_update_turf(TRUE, FALSE)

@@ -110,12 +110,12 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/syringe, INTERACT_HAND_DEFAULT(
 /obj/item/reagent_containers/syringe/proc/set_contamination(hash, list/contagions)
 	for(var/datum/syringe_contamination/old as anything in viruses?.Copy())
 		if(old.hash == hash)
-			own_remove(src, "viruses", old)
+			own_remove(src, nameof(viruses), old)
 	var/datum/syringe_contamination/C = new
 	C.hash = hash
 	for(var/datum/affliction/contagion/D as anything in contagions)
-		own_add(C, "contagions", D)
-	own_add(src, "viruses", C)
+		own_add(C, nameof(C.contagions), D)
+	own_add(src, nameof(viruses), C)
 
 /// The contagion copies a syringe carries from one target (keyed by that target's hash).
 /datum/syringe_contamination

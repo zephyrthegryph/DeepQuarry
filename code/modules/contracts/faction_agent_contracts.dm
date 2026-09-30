@@ -182,7 +182,7 @@
 	for(var/datum/contract_requirement/requirement in contract.requirements?.Copy())
 		if(requirement.name in list("Signed operating charter", "Signed operational contact"))
 			continue
-		own_remove(contract, "requirements", requirement)
+		own_remove(contract, nameof(contract.requirements), requirement)
 	contract.configure_red_operation(profile_id)
 	var/list/brief = agent_red_brief(contract.agent_faction)
 	contract.title = brief["title"]
@@ -259,7 +259,7 @@
 			return "Salvage"
 	return "Manufactured Goods"
 
-/datum/controller/subsystem/contracts/proc/agent_contract_definition_ids(datum/faction_agent_record/record) as /list
+/datum/system/contracts/proc/agent_contract_definition_ids(datum/faction_agent_record/record) as /list
 	var/static/list/base_definition_ids = list(
 		"agent_cross_department_portfolio",
 		"agent_reciprocal_trade",
@@ -272,7 +272,7 @@
 		definition_ids += "agent_red_exfiltration"
 	return definition_ids
 
-/datum/controller/subsystem/contracts/proc/queue_agent_vetting(account_number, faction_id)
+/datum/system/contracts/proc/queue_agent_vetting(account_number, faction_id)
 	var/datum/faction_agent_record/record = GLOB.station_faction_relations.get_agent_record(account_number)
 	if(!record || record.faction_id != faction_id || record.tier != FACTION_AGENT_TIER_CANDIDATE)
 		return FALSE
@@ -286,7 +286,7 @@
 		"offer_kind" = CONTRACT_OFFER_OPPORTUNITY,
 	), "Authenticated candidate vetting", "agent-vetting:[faction_id]:[account_number]:[sequence]", 120)
 
-/datum/controller/subsystem/contracts/proc/queue_agent_offers(account_number, faction_id)
+/datum/system/contracts/proc/queue_agent_offers(account_number, faction_id)
 	var/datum/faction_agent_record/record = GLOB.station_faction_relations.get_agent_record(account_number)
 	if(!record || record.faction_id != faction_id || record.tier < FACTION_AGENT_TIER_ACCREDITED)
 		return FALSE
@@ -317,7 +317,7 @@
 		), "Confidential commission for an accredited faction agent", "agent:[faction_id]:[account_number]:[sequence]", 100)
 	return TRUE
 
-/datum/controller/subsystem/contracts/proc/queue_covert_market_investigation(suspect_account)
+/datum/system/contracts/proc/queue_covert_market_investigation(suspect_account)
 	if(!suspect_account)
 		return FALSE
 	for(var/datum/contract/contract in offered_contracts + active_contracts + grace_contracts)
@@ -329,7 +329,7 @@
 		"offer_kind" = CONTRACT_OFFER_OPPORTUNITY,
 	), "Forensic threshold reached in encrypted market telemetry", "covert-investigation:[suspect_account]", 90)
 
-/datum/controller/subsystem/contracts/proc/handle_covert_market_investigation_closed(datum/contract/contract)
+/datum/system/contracts/proc/handle_covert_market_investigation_closed(datum/contract/contract)
 	var/suspect_account = contract.offer_context?["suspect_account"]
 	var/datum/faction_agent_record/record = GLOB.station_faction_relations.get_agent_record(suspect_account)
 	if(!record)
@@ -346,7 +346,7 @@
 			agent_contract.advance_discovery(AGENT_DISCOVERY_PROVEN, "Security completed a correlated investigation and burned the route.", 20)
 			agent_contract.fail("Security correlated the principal and freight contact, burning the authenticated market route.")
 
-/datum/controller/subsystem/contracts/proc/handle_agent_contract_closed(datum/contract/faction_agent/contract)
+/datum/system/contracts/proc/handle_agent_contract_closed(datum/contract/faction_agent/contract)
 	var/datum/faction_agent_record/record = GLOB.station_faction_relations.get_agent_record(contract.owner_account_number)
 	if(!record || record.faction_id != contract.agent_faction)
 		return

@@ -180,7 +180,7 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/wt550, "wt550{appearance_
 
 /obj/item/gun/projectile/automatic/z8/Initialize(mapload)
 	. = ..()
-	own_set(src, "launcher", new /obj/item/gun/launcher/grenade/underslung(src))
+	own_set(src, nameof(launcher), new /obj/item/gun/launcher/grenade/underslung(src))
 
 /// Old attackby.
 /obj/item/gun/projectile/automatic/z8/gun_item(mob/user, obj/item/I, datum/interaction/interaction)

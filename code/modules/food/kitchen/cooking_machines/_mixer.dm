@@ -23,13 +23,13 @@ fundamental differences
 
 /obj/machinery/appliance/mixer/Initialize(mapload)
 	. = ..()
-	own_add(src, "cooking_objs", new /datum/cooking_item(new /obj/item/reagent_containers/cooking_container(src)))
+	own_add(src, nameof(cooking_objs), new /datum/cooking_item(new /obj/item/reagent_containers/cooking_container(src)))
 	set_cooking(FALSE)
 	selected_option = DEFAULTPICK(output_options, null)
 	var/datum/cooking_item/CI = LAZYACCESS(cooking_objs, 1)
 	CI.combine_target = selected_option
 
-	own_set(src, "mixer_loop", new /datum/looping_sound/mixer(list(src), FALSE))
+	own_set(src, nameof(mixer_loop), new /datum/looping_sound/mixer(list(src), FALSE))
 
 
 //Mixers cannot-not do combining mode. So the default option is removed from this. A combine target must be chosen

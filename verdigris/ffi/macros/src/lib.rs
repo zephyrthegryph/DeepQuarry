@@ -89,11 +89,14 @@ fn wrap_bind(
     let sig = &input.sig;
     let block = &input.block;
     let context = format!("in verdigris bind `{}`", sig.ident);
+    let name = sig.ident.to_string();
     quote! {
         #[#inner(#attr)]
         #(#attrs)*
         #vis #sig {
-            ::auxcallback::panic_guard::run_guarded(#context, move || #block)
+            static __VG_BIND_STATS: ::auxcallback::panic_guard::BindStats =
+                ::auxcallback::panic_guard::BindStats::new(#name);
+            ::auxcallback::panic_guard::run_counted(&__VG_BIND_STATS, #context, move || #block)
         }
     }
     .into()

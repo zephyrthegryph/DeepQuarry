@@ -14,7 +14,7 @@
 
 /obj/item/buttonofnormal/pickup(mob/user)
 	if(!capsuleowner())
-		rel_set(src, "capsuleowner", user)
+		rel_set(src, nameof(capsuleowner), user)
 
 DECLARE_INTERACTIONS(/obj/item/buttonofnormal, \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \
@@ -49,7 +49,7 @@ DECLARE_INTERACTIONS(/obj/item/buttonofnormal, \
 		icon_state = "mobcap[colorindex]"
 		update_icon()
 	if(istype(W, /obj/item/card/id))
-		rel_clear(src, "capsuleowner")
+		rel_clear(src, nameof(capsuleowner))
 	return FALSE
 
 /obj/item/buttonofnormal/proc/nonrandom() //Secret ball randmoizer rig code

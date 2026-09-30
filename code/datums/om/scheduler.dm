@@ -102,6 +102,11 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	var/harness_deadline_cap = 0
 	/// Current phase's absolute tick usage limit and call cap.
 	var/limit = 0
+	/// The open pass (pass_begin): when it started, its budget, the scheduler time it covers, and whether all due work finished.
+	var/pass_start = 0
+	var/pass_avail = 0
+	var/pass_t = 0
+	var/pass_done = TRUE
 	var/cap = 0
 	var/calls = 0
 	/// Borrow threshold: a ring whose oldest due slot is this fraction of max_interval late borrows.
@@ -302,61 +307,88 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 
 /// One scheduler pass. `tick_limit` is an absolute world.tick_usage (live:
 /// Master.current_ticklimit). Returns TRUE if all due work finished.
+///
+/// The pass is a sequence of pieces (pass_begin ... pass_end). run_pass() runs them all back to back; the
+/// kernel tick (controllers/kernel/kernel.dm) runs the same pieces itself, between its own phases.
 /datum/om/scheduler/proc/run_pass(tick_limit)
-	var/start = TICK_USAGE
-	var/t = now()
+	pass_begin(tick_limit)
+	pass_deadlines(tick_limit)
+	pass_borrow(tick_limit)
+	pass_lanes(tick_limit)
+	pass_leftovers(tick_limit)
+	return pass_end()
+
+/// Opens a pass: the clock, the runlevel and this pass's budget. Zeroes the per-pass world wake counts, so it
+/// runs before the tick's native frame (kernel phase N).
+/datum/om/scheduler/proc/pass_begin(tick_limit)
+	pass_start = TICK_USAGE
+	pass_t = now()
 	runs++
 	if(isnull(manual_time))
 		var/level = Master.current_runlevel
 		runlevel = level ? (1 << (level - 1)) : 0
-	var/avail = max(tick_limit - start, 0)
-	var/done = TRUE
-
-	// 0. The Rust world step: timers, keys, rate crossings and native watches.
+	pass_avail = max(tick_limit - pass_start, 0)
+	pass_done = TRUE
 	if(world_pass_delivered)
 		for(var/lane in 1 to OM_LANE_COUNT)
 			world_pass_delivered[lane] = 0
-	world_step()
 
-	// 1. Deadlines.
-	limit = start + avail * OM_DEADLINE_SHARE
+/// 1. Deadlines, within OM_DEADLINE_SHARE of the pass's budget.
+/datum/om/scheduler/proc/pass_deadlines(tick_limit)
+	limit = pass_start + pass_avail * OM_DEADLINE_SHARE
 	cap = harness_deadline_cap
 	calls = 0
-	if(!run_deadlines(t))
-		done = FALSE
+	if(!run_deadlines(pass_t))
+		pass_done = FALSE
 
-	// 2. Borrow pass for rings near their staleness bound.
+/// 2. Borrow pass for rings near their staleness bound.
+/datum/om/scheduler/proc/pass_borrow(tick_limit)
 	limit = tick_limit
 	for(var/lane in 1 to OM_LANE_COUNT)
 		cap = harness_caps ? harness_caps[lane] : 0
 		calls = 0
 		for(var/datum/om/ring/R as anything in lane_rings[lane])
 			try
-				if(ring_urgent(R, t))
-					run_ring(R, t)
+				if(ring_urgent(R, pass_t))
+					run_ring(R, pass_t)
 			catch(var/exception/borrow_e)
 				report_caught(borrow_e, "lane [lane] borrow pass ([R.behaviour()?.name]): [borrow_e] ([borrow_e.file]:[borrow_e.line])")
 
-	// 3. Lanes with guaranteed shares.
+/// 3. Lanes with guaranteed shares.
+/datum/om/scheduler/proc/pass_lanes(tick_limit)
 	for(var/lane in 1 to OM_LANE_COUNT)
-		limit = min(TICK_USAGE + avail * lane_share[lane], tick_limit)
-		cap = harness_caps ? harness_caps[lane] : 0
-		calls = 0
-		if(!run_lane_guarded(lane, t))
-			done = FALSE
+		pass_lane(lane, tick_limit)
 
-	// 4. Leftover budget.
-	if(!done && TICK_USAGE < tick_limit && !harness_caps)
-		done = TRUE
+/// One lane's share of the pass.
+/datum/om/scheduler/proc/pass_lane(lane, tick_limit)
+	// L3 lanes are shed under an overrun streak (kernel/latency.dm); the borrow pass above still
+	// serves any ring near its staleness bound, and the floor admits one pass a second.
+	if(!kernel_admit_lane(lane))
+		return
+	limit = min(TICK_USAGE + pass_avail * lane_share[lane], tick_limit)
+	cap = harness_caps ? harness_caps[lane] : 0
+	calls = 0
+	if(!run_lane_guarded(lane, pass_t))
+		pass_done = FALSE
+
+/// 4. Leftover budget.
+/datum/om/scheduler/proc/pass_leftovers(tick_limit)
+	if(!pass_done && TICK_USAGE < tick_limit && !harness_caps)
+		pass_done = TRUE
 		limit = tick_limit
 		cap = 0
-		if(!run_deadlines(t))
-			done = FALSE
+		if(!run_deadlines(pass_t))
+			pass_done = FALSE
 		for(var/lane in 1 to OM_LANE_COUNT)
-			if(!run_lane_guarded(lane, t))
-				done = FALSE
-	last_run_ms = TICK_USAGE_TO_MS(start)
-	return done
+			if(kernel_latency().sheds_lane(lane))
+				continue
+			if(!run_lane_guarded(lane, pass_t))
+				pass_done = FALSE
+
+/// Closes the pass. Returns TRUE if all due work finished.
+/datum/om/scheduler/proc/pass_end()
+	last_run_ms = TICK_USAGE_TO_MS(pass_start)
+	return pass_done
 
 /datum/om/scheduler/proc/out_of_budget()
 	if(TICK_USAGE > limit)

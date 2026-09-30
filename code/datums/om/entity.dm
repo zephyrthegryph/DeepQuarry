@@ -72,7 +72,6 @@
 	var/list/dv
 	/// Stride 4: clock idx, rate, local time (ds), settled at (ds).
 	var/list/clocks
-	var/list/rates
 	var/list/tasks
 	/// Step accumulators (seconds), indexed by the behaviour's step_idx. Grown on first use.
 	var/list/steps
@@ -360,6 +359,10 @@
 /proc/om_changed(datum/E, bits)
 	if(E.om_listen & bits)
 		om_dispatch_change(E, bits)
+	// One change API (dx_conventions.md §1): any raise on an atom whose type derives something (a look,
+	// hidden verbs, capabilities, periodic work) queues its refresh, as changed() does.
+	if(isatom(E) && !E.refresh_queued && (GLOB.type_derives_cache[E.type] || E.periodic_cadence || E.periodic_interval))
+		refresh_mark(E, DEP_ALL, bits)
 
 /proc/om_dispatch_change(datum/E, bits)
 	if((bits & shared_cache_change_mask) && E == GLOB.om_world)
@@ -587,7 +590,6 @@
 	rec.timer_slots = null
 	rec.timer_soonest = null
 	rec.dv = null
-	rec.rates = null
 	E.om_listen = 0
 	// Break the rec <-> entity cycle; wheel and queue entries hold the rec
 	// and skip it once torn down.

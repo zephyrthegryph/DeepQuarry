@@ -203,10 +203,11 @@ if $grep -n "^/(mob|datum/species|datum/trait)[a-zA-Z0-9_/]*/(proc/)?handle_($LI
 fi;
 
 part "pipelines: idle and park state in one place"
-# Only the core pipeline runner (code/datums/om/pipeline.dm) changes whether a stage is idle or
+# Only the core pipeline runner (code/datums/om/pipeline.dm) and the kernel's work engine
+# (code/controllers/kernel/, a faulting work item parks) change whether a stage is idle or
 # an entity is parked; producers raise a change channel with om_changed()
 # (doc/rewrite/object_model_core.md §4.10).
-if $grep -n '\.(asleep|parked|parked_index|idle_frames)\s*[|&+-]?=[^=]|\.bits\[[^]]*\]\s*[|&]?=[^=]' "${code_files[@]}" | grep -v '^code/datums/om/' | grep -v '^code/modules/unit_tests/' | grep -v 'var/'; then
+if $grep -n '\.(asleep|parked|parked_index|idle_frames)\s*[|&+-]?=[^=]|\.bits\[[^]]*\]\s*[|&]?=[^=]' "${code_files[@]}" | grep -v '^code/datums/om/' | grep -v '^code/controllers/kernel/' | grep -v '^code/modules/unit_tests/' | grep -v 'var/'; then
 	echo
 	echo -e "${RED}ERROR: direct write to a pipeline's idle or park state. Raise a channel with om_changed().${NC}"
 	FAILED=1
@@ -231,7 +232,7 @@ part "stored timer handles"
 # timer slot instead (om_after_slot()/om_cancel_timer_slot()/om_timer_slot_pending(), code/datums/om/timer.dm),
 # which the OM keeps right by construction. A local `var/x = om_after(...)` (a test holding an id
 # for one proc) is fine; storing the id anywhere else, or returning it from a helper, is not.
-if $grep -nE '([]A-Za-z0-9_.)][[:space:]]*[-+]?=|(^|[^[:alnum:]_])return|LAZYSET\(|LAZYADD\(|list\()[[:space:]]*om_after(_replace|_unique)?\(' "${code_files[@]}" | grep -vE '^code/datums/om/|var/[[:alnum:]_]+[[:space:]]*=[[:space:]]*om_after'; then
+if $grep -n '([]A-Za-z0-9_.)][[:space:]]*[-+]?=|(^|[^[:alnum:]_])return|LAZYSET\(|LAZYADD\(|list\()[[:space:]]*om_after(_replace|_unique)?\(' "${code_files[@]}" | grep -vE '^code/datums/om/|var/[[:alnum:]_]+[[:space:]]*=[[:space:]]*om_after'; then
 	echo
 	echo -e "${RED}ERROR: a timer id from om_after() is stored or returned. Use an owned timer: OWN_TIMER(type, name) + om_after_slot(E, \"name\", ...), om_cancel_timer_slot(), om_timer_slot_pending().${NC}"
 	FAILED=1
@@ -308,6 +309,16 @@ if $grep -n '^/[A-Za-z0-9_/]*/return_temperature\(' "${code_files[@]}" | grep -v
 	FAILED=1
 fi;
 
+part "one temperature API: a turf keeps no live temperature of its own"
+# /turf/initial_temperature is a SEED (read once when the heat cell and the air are built). The live temperature
+# is the heat field's: get_temperature() / add_heat() / set_temperature(). A `.temperature` on a turf is the
+# retired DM mirror.
+if $grep -n '\b(T|turf|target_turf|new_turf|floor|modeled_location|loc_as_turf|simulated_turf|exterior_turf)\.temperature' "${code_files[@]}" | sed 's#//.*##' | grep -E '\.temperature'; then
+	echo
+	echo -e "${RED}ERROR: a turf has no temperature var. Read get_temperature(), write add_heat()/set_temperature(); initial_temperature is only the seed.${NC}"
+	FAILED=1
+fi;
+
 part "input: modifier ladders"
 # Click modifiers (shift, ctrl, alt, middle, right, extra buttons) are read in one
 # place: the input router (code/modules/keybindings/router.dm), which turns them
@@ -361,7 +372,7 @@ part "interactions: no legacy handlers or object verbs (I7)"
 # enforce the handlers and actor procs; this bans object verbs. The allowlist holds
 # verbs that are really a mob's own abilities, run through an item they carry.
 i7_verb_allowlist='code/game/mecha/equipment/tools/(passenger|sleeper)\.dm|code/game/objects/items/devices/communicator/integrated\.dm|code/modules/assembly/holder\.dm|code/modules/clothing/spacesuits/rig/modules/specific/ai_container\.dm|code/modules/mob/living/silicon/robot/subtypes/thinktank/thinktank_module\.dm|code/modules/pda/ai\.dm'
-if $grep -n "^/(obj|turf)(/[A-Za-z0-9_]+)*/verb/[A-Za-z0-9_]+\(" "${code_files[@]}" | grep -vE "^(code/modules/unit_tests/|$i7_verb_allowlist):"; then
+if $grep -n "^/(obj|turf)(/[A-Za-z0-9_]+)*/verb/[A-Za-z0-9_]+\(" "${code_files[@]}" | grep -vE "^(code/modules/unit_tests/[^:]*|$i7_verb_allowlist):"; then
 	echo
 	echo -e "${RED}ERROR: object verbs are interactions now. Declare an INTERACT_VERB (code/__defines/interactions.dm) instead.${NC}"
 	FAILED=1
@@ -417,7 +428,7 @@ part "physiology: no asphyxia injury"
 # not an injury. Express the cause as a mechanism: an airway / breathing restriction, breath
 # quality, a factor (BF_O2_CARRIAGE, BF_TISSUE_UPTAKE, ...) or, with no mechanism at all,
 # add_oxygen_debt(). Read it with oxygen_debt().
-if $grep -n '(INJURY_ASPHYXIA|INJURY_CATEGORY_ASPHYXIA|BF_INCOMING_ASPHYXIA)' "${code_files[@]}"; then
+if $grep -n '\b(INJURY_ASPHYXIA|INJURY_CATEGORY_ASPHYXIA|BF_INCOMING_ASPHYXIA)\b' "${code_files[@]}"; then
 	echo
 	echo -e "${RED}ERROR: asphyxia injury detected. Model the mechanism (restriction, breath quality, factor) or use add_oxygen_debt() / oxygen_debt().${NC}"
 	FAILED=1
@@ -527,7 +538,7 @@ fi;
 part "equip slot ids"
 # Equip slots are SLOT_ID_* text ids on the body slot ledger (code/modules/body/slots.dm).
 # The numeric slot_* defines and their per-slot lookups are gone.
-if $grep -n '(slot_(l_hand|r_hand|back|belt|wear_id|s_store|l_store|r_store|glasses|wear_mask|gloves|head|shoes|wear_suit|w_uniform|l_ear|r_ear|legs|tie|handcuffed|legcuffed|in_backpack)[^"]|(SLOT_TOTAL|get_inventory_slot|get_item_by_slot|dq_slot_num|dq_slot_id))' "${code_files[@]}"; then
+if $grep -n '(\bslot_(l_hand|r_hand|back|belt|wear_id|s_store|l_store|r_store|glasses|wear_mask|gloves|head|shoes|wear_suit|w_uniform|l_ear|r_ear|legs|tie|handcuffed|legcuffed|in_backpack)\b[^"]|\b(SLOT_TOTAL|get_inventory_slot|get_item_by_slot|dq_slot_num|dq_slot_id)\b)' "${code_files[@]}"; then
 	echo
 	echo -e "${RED}ERROR: a numeric equip slot. Use SLOT_ID_* ids and get_equipped_item()/inventory_slot_id().${NC}"
 	FAILED=1

@@ -56,7 +56,7 @@
 	deadline_duration = 35 MINUTES
 	title = "Rare Case: [target_condition_name]"
 	description = "The registry has identified a clinically uncommon presentation of [target_condition_name]. With [target_name]'s consent, submit a baseline body scan, treat the condition, wait at least one minute, submit a follow-up scan demonstrating at least 50% improvement, and include the completed case narrative."
-	rel_set(src, "evidence_requirement", new /datum/contract_requirement/event_count(CONTRACT_EVENT_RARE_CASE_ACCEPTED, 1, null, null, TRUE, CONTRACT_EVIDENCE_SCOPE_CONTRACT))
+	rel_set(src, nameof(evidence_requirement), new /datum/contract_requirement/event_count(CONTRACT_EVENT_RARE_CASE_ACCEPTED, 1, null, null, TRUE, CONTRACT_EVIDENCE_SCOPE_CONTRACT))
 	evidence_requirement.name = "Authenticated longitudinal case packet"
 	evidence_requirement.description = "Fax the signed consent, completed case narrative, and genuine baseline/follow-up body-scanner reports to [CONTRACT_FAX_CASE_REGISTRY]."
 	add_requirement(evidence_requirement)
@@ -88,7 +88,7 @@
 	if(state != CONTRACT_ACTIVE || consent_time || SScontracts.subject_identity(subject)?.id != target_ref || !target_condition())
 		return FALSE
 	EXPIRY_STAMP(src, consent_time, CLOCK_WORLD)
-	rel_set(src, "consent_record", paper)
+	rel_set(src, nameof(consent_record), paper)
 	return TRUE
 
 /datum/contract/medical_case_report/proc/print_consent_revocation(turf/location, issuer_account)
@@ -250,7 +250,7 @@ GLOBAL_LIST_INIT(medical_rare_case_types, list(
 	report.audit(CONTRACT_AUDIT_EVIDENCE, "Consumed longitudinal case evidence [english_list(evidence_ids)].")
 	return TRUE
 
-/datum/controller/subsystem/contracts/proc/consider_rare_medical_case(mob/living/carbon/human/subject)
+/datum/system/contracts/proc/consider_rare_medical_case(mob/living/carbon/human/subject)
 	if(!subject || subject.stat == DEAD || !subject.mind?.assigned_role)
 		withdraw_rare_case_offers(subject)
 		return
@@ -275,7 +275,7 @@ GLOBAL_LIST_INIT(medical_rare_case_types, list(
 			"condition_name" = condition.name,
 		), "A qualifying rare clinical presentation was detected", "medical_rare_case_report:[subject_id]:[condition.type]", 90)
 
-/datum/controller/subsystem/contracts/proc/rare_case_contract_exists(subject_ref, condition_type)
+/datum/system/contracts/proc/rare_case_contract_exists(subject_ref, condition_type)
 	for(var/datum/contract/medical_case_report/report in offered_contracts)
 		if(report.target_ref == subject_ref && report.target_condition_type == condition_type)
 			return TRUE
@@ -286,7 +286,7 @@ GLOBAL_LIST_INIT(medical_rare_case_types, list(
 		return TRUE
 	return FALSE
 
-/datum/controller/subsystem/contracts/proc/withdraw_rare_case_offers(mob/living/carbon/human/subject)
+/datum/system/contracts/proc/withdraw_rare_case_offers(mob/living/carbon/human/subject)
 	if(!subject)
 		return
 	for(var/datum/contract/medical_case_report/report in offered_contracts.Copy())

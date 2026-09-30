@@ -56,8 +56,8 @@
 	var/datum/expedition_site/site = new(z, EXP_DIFF_LOW, get_turf(materialization.entry()))
 	site.name = spec.name
 	site.generation_seed = seed
-	own_set(site, "station_spec", spec)
-	own_set(site, "station_materialization", materialization)
+	own_set(site, nameof(site.station_spec), spec)
+	own_set(site, nameof(site.station_materialization), materialization)
 	if(!site.initialize_generated_station_utilities())
 		materialization.degradation_events += "utility initialization failed"
 	if(!site.initialize_generated_station_runtime())
@@ -72,7 +72,7 @@
 	site.status = EXP_STATUS_ACTIVE
 	EXPIRY_STAMP(site, deployed_at, CLOCK_WORLD)
 	EXPIRY_STAMP(site, last_occupied, CLOCK_WORLD)
-	own_put(src, "sites", "[z]", site)
+	own_put(src, nameof(sites), "[z]", site)
 	demand()
 	return site
 

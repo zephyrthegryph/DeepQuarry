@@ -31,7 +31,7 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 /obj/item/dq_destroy_transaction_phase_probe/Initialize(mapload)
 	. = ..()
 	om_hook(src, /datum/om/event/qdeleting, src, PROC_REF(on_qdeleting))
-	own_set(src, "child", new /datum/dq_destroy_transaction_owned_child(src))
+	own_set(src, nameof(child), new /datum/dq_destroy_transaction_owned_child(src))
 
 /obj/item/dq_destroy_transaction_phase_probe/proc/on_qdeleting(datum/source, datum/om/event/qdeleting/event)
 	EVENT_HANDLER
@@ -94,7 +94,9 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 /datum/dq_destroy_transaction_pair_fixture
 	var/datum/dq_destroy_transaction_pair_fixture/partner
 
-REL_PAIR(/datum/dq_destroy_transaction_pair_fixture, partner, partner)
+/datum/dq_destroy_transaction_pair_fixture/relations()
+	. = ..()
+	. += rel_one(nameof(partner), back = nameof(/datum/dq_destroy_transaction_pair_fixture::partner))
 
 // ---- Tests: phase ordering ----
 
@@ -279,7 +281,7 @@ REL_PAIR(/datum/dq_destroy_transaction_pair_fixture, partner, partner)
 /datum/unit_test/dq_destroy_transaction_pair_symmetry/Run()
 	var/datum/dq_destroy_transaction_pair_fixture/A = allocate(/datum/dq_destroy_transaction_pair_fixture)
 	var/datum/dq_destroy_transaction_pair_fixture/B = allocate(/datum/dq_destroy_transaction_pair_fixture)
-	rel_set(A, "partner", B)
+	rel_set(A, nameof(A.partner), B)
 	TEST_ASSERT_EQUAL(A.partner, B, "linked")
 	TEST_ASSERT_EQUAL(B.partner, A, "both ways")
 
@@ -294,7 +296,9 @@ REL_PAIR(/datum/dq_destroy_transaction_pair_fixture, partner, partner)
 	var/datum/dq_destroy_transaction_reentrant_pair/partner
 	var/qdel_partner_on_signal = FALSE
 
-REL_PAIR(/datum/dq_destroy_transaction_reentrant_pair, partner, partner)
+/datum/dq_destroy_transaction_reentrant_pair/relations()
+	. = ..()
+	. += rel_one(nameof(partner), back = nameof(/datum/dq_destroy_transaction_reentrant_pair::partner))
 
 /datum/dq_destroy_transaction_reentrant_pair/proc/watch()
 	om_hook(src, /datum/om/event/qdeleting, src, PROC_REF(on_qdeleting))
@@ -309,7 +313,7 @@ REL_PAIR(/datum/dq_destroy_transaction_reentrant_pair, partner, partner)
 /datum/unit_test/dq_destroy_transaction_pair_reentrancy/Run()
 	var/datum/dq_destroy_transaction_reentrant_pair/A = allocate(/datum/dq_destroy_transaction_reentrant_pair)
 	var/datum/dq_destroy_transaction_reentrant_pair/B = allocate(/datum/dq_destroy_transaction_reentrant_pair)
-	rel_set(A, "partner", B)
+	rel_set(A, nameof(A.partner), B)
 	A.watch()
 	A.qdel_partner_on_signal = TRUE
 
@@ -325,7 +329,9 @@ REL_PAIR(/datum/dq_destroy_transaction_reentrant_pair, partner, partner)
 	var/datum/dq_destroy_transaction_pair_fixture/partner
 	var/reset_after_links = FALSE
 
-REL_PAIR(/datum/dq_destroy_transaction_scrub_fixture, partner, partner)
+/datum/dq_destroy_transaction_scrub_fixture/relations()
+	. = ..()
+	. += rel_one(nameof(partner), back = nameof(/datum/dq_destroy_transaction_pair_fixture::partner))
 
 /// Re-sets the fixture's declared pair var from phase 6 (effects), after phase 4
 /// cleared it: only phase 8's scrub can null it again.
@@ -333,7 +339,7 @@ REL_PAIR(/datum/dq_destroy_transaction_scrub_fixture, partner, partner)
 
 /datum/destroy_effects_data/dq_destroy_transaction_scrub_reset/apply(datum/D)
 	var/datum/dq_destroy_transaction_scrub_fixture/fixture = D
-	rel_set(fixture, "partner", new /datum/dq_destroy_transaction_pair_fixture)
+	rel_set(fixture, nameof(fixture.partner), new /datum/dq_destroy_transaction_pair_fixture)
 	fixture.reset_after_links = TRUE
 	return null
 
@@ -450,8 +456,8 @@ REL_PAIR(/datum/dq_destroy_transaction_scrub_fixture, partner, partner)
 	var/datum/dq_destroy_transaction_pair_fixture/B = allocate(/datum/dq_destroy_transaction_pair_fixture)
 	var/datum/dq_destroy_transaction_pair_fixture/C = allocate(/datum/dq_destroy_transaction_pair_fixture)
 	var/datum/dq_destroy_transaction_pair_fixture/D = allocate(/datum/dq_destroy_transaction_pair_fixture)
-	rel_set(A, "partner", B)
-	rel_set(C, "partner", D)
+	rel_set(A, nameof(A.partner), B)
+	rel_set(C, nameof(C.partner), D)
 
 	// A and B are doomed together; C is doomed with its partner D surviving.
 	qdel_batch(list(A, B, C))

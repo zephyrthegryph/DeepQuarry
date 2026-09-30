@@ -42,11 +42,11 @@
 		if(air1_temperature > 0 && last_pressure_delta > 5)
 
 			//Calculate necessary moles to transfer using PV = nRT
-			recent_moles_transferred = (last_pressure_delta*network1.volume/(air1_temperature * R_IDEAL_GAS_EQUATION))/3 //uses the volume of the whole network, not just itself
-			volume_capacity_used = min( (last_pressure_delta*network1.volume/3)/(input_starting_pressure*air1_volume) , 1) //how much of the gas in the input air volume is consumed
+			recent_moles_transferred = (last_pressure_delta*network1.volume()/(air1_temperature * R_IDEAL_GAS_EQUATION))/3 //uses the volume of the whole network, not just itself
+			volume_capacity_used = min( (last_pressure_delta*network1.volume()/3)/(input_starting_pressure*air1_volume) , 1) //how much of the gas in the input air volume is consumed
 
 			//Calculate energy generated from kinetic turbine
-			stored_energy += 1/ADIABATIC_EXPONENT * min(last_pressure_delta * network1.volume , input_starting_pressure*air1_volume) * (1 - volume_ratio**ADIABATIC_EXPONENT) * kinetic_efficiency
+			stored_energy += 1/ADIABATIC_EXPONENT * min(last_pressure_delta * network1.volume() , input_starting_pressure*air1_volume) * (1 - volume_ratio**ADIABATIC_EXPONENT) * kinetic_efficiency
 
 			//Actually transfer the gas
 			removed = air1.remove(recent_moles_transferred)
@@ -125,8 +125,8 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/binary/circulator, TYPE_PROC
 			node2.disconnect(src)
 			rust_release_network_wrapper(network2)
 
-		rel_clear(src, "node1")
-		rel_clear(src, "node2")
+		rel_clear(src, nameof(node1))
+		rel_clear(src, nameof(node2))
 
 	for(var/obj/machinery/power/generator/generator in range(1, src))
 		generator.reconnect()

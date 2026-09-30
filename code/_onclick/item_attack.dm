@@ -174,6 +174,8 @@ avoid code duplication. This includes items that may sometimes act as a standard
 	dq_interaction_restore_attack_modifier(user, saved_modifier)
 	if(answered)
 		return (INTERACTION_TRY_PASS in outcome) ? FALSE : answered.consumes_input
+	if(W && user)
+		PUBLISH(src, /datum/notice/hit, user, W)
 	if(om_wants(src, /datum/om/event/before/attackby) && om_emit(src, new /datum/om/event/before/attackby(W, user, click_parameters)) == EVENT_VETO)
 		return TRUE
 	return FALSE

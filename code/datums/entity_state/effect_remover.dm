@@ -23,7 +23,7 @@
 		stack_trace("[type] was instantiated without any valid removable effects!")
 		return
 
-	rel_set(src, "owner", new_owner)
+	rel_set(src, nameof(owner), new_owner)
 	src.on_clear_callback = on_clear_callback
 	src.effects_we_clear = typecacheof(effects_we_clear)
 	src.time_to_remove = time_to_remove

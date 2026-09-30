@@ -69,7 +69,7 @@ DECLARE_PERIODIC(/obj/item/vampiric, PERIODIC_SLOW)
 		if((M in view(7,src)) && M.vitality() > 0.6)
 			if(prob(50))
 				bloodcall(M)
-				rel_add(src, "nearby_mobs", M)
+				rel_add(src, nameof(nearby_mobs), M)
 
 	//suck up some blood to gain power
 	if(ELAPSED(src, last_eat, CLOCK_WORLD) > eat_interval)
@@ -99,7 +99,7 @@ DECLARE_PERIODIC(/obj/item/vampiric, PERIODIC_SLOW)
 
 	if(charges >= 1)
 		if(length(shadow_wights) < 5 && prob(5))
-			own_add(src, "shadow_wights", new /obj/effect/shadow_wight(src.loc))
+			own_add(src, nameof(shadow_wights), new /obj/effect/shadow_wight(src.loc))
 			play_sfx(src, SFX_EFFECTS_GHOST)
 			charges -= 0.1
 
@@ -116,11 +116,11 @@ DECLARE_PERIODIC(/obj/item/vampiric, PERIODIC_SLOW)
 
 		var/obj/effect/shadow_wight/W = LAZYACCESS(shadow_wights, wight_check_index)
 		if(isnull(W))
-			own_take_member(src, "shadow_wights", W)
+			own_take_member(src, nameof(shadow_wights), W)
 		else if(isnull(W.loc))
-			own_take_member(src, "shadow_wights", W)
+			own_take_member(src, nameof(shadow_wights), W)
 		else if(get_dist(W, src) > 10)
-			own_take_member(src, "shadow_wights", W)
+			own_take_member(src, nameof(shadow_wights), W)
 
 /obj/item/vampiric/hear_talk(mob/M, list/message_pieces, verb)
 	..()
@@ -131,7 +131,7 @@ DECLARE_PERIODIC(/obj/item/vampiric, PERIODIC_SLOW)
 	EXPIRY_STAMP(src, last_bloodcall, CLOCK_WORLD)
 	if(istype(M))
 		play_sfx(src, SFX_HALLUCINATIONS_WAIL)
-		rel_add(src, "nearby_mobs", M)
+		rel_add(src, nameof(nearby_mobs), M)
 
 		var/target = length(M.organs_by_name) ? pick(M.organs_by_name) : null
 		M.injure(INJURY_CUT, rand(5, 10), target, src)
@@ -159,7 +159,7 @@ DECLARE_PERIODIC(/obj/effect/decal/cleanable/blood/splatter/animated, PERIODIC_S
 	if(target_turf() && src.loc != target_turf())
 		step_towards(src,target_turf())
 		if(src.loc == loc_last_process)
-			rel_clear(src, "target_turf")
+			rel_clear(src, nameof(target_turf))
 		loc_last_process = src.loc
 
 		//leave some drips behind

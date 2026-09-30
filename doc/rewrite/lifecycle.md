@@ -60,7 +60,7 @@ place the ordering hazards now scattered through code comments are encoded:
 | 1 | **Unbind.** Every R10 entity binding (`vg_entity_unbind`), heat bodies and pipe/cable topology, through the declared `bindings`. Must precede dematerialize. | vg bindings | ~20 atmos/heat Destroy blocks and the hard-ordered heat release in `/atom/Destroy` |
 | 2 | **Dematerialize.** Leave registries (L3) and drop rule bindings, as today. Every remaining `GLOB.x += src` moves into a registry declaration. | registries | ~72 list removals |
 | 3 | **Contents.** Resolve every slot's **declared destroy policy** (§3). This is depth-first post-order through nested holders: children before parents. No holder-managed or leftover `contents` loops remain. | containment ledger | hand spills, `QDEL_LIST` of parts, machinery `component_parts` loops, the movable `contents` sweep |
-| 4 | **Links.** `lifecycle_prerelease()`, the type's `on_destroy()` and behaviours' `on_entity_destroy(E)`, then dispose of every owned value by policy and clear every relation on both ends (§4, [ownership.md](ownership.md)). | links framework | ~400 null/QDEL_NULL/pair bodies |
+| 4 | **Links.** `lifecycle_prerelease()`, the type's `on_destroy()` and behaviours' `on_entity_destroy(E)`, then dispose of every owned value by policy and clear every relation on both ends (§4, [archive/ownership.md](archive/ownership.md)). | links framework | ~400 null/QDEL_NULL/pair bodies |
 | 5 | **Teardown.** Stop every processor (START_PROCESSING records its subsystem on the datum); timers, reactor, components, signals and tgui (already in `/datum/Destroy`); `client.screen` release; OM timers and task steps owned by the datum (`om_teardown_rest`); arguments naming it are handles and stop resolving; grants auto-revoke (source lifetime). | core | ~150 stop/deltimer/unregister/close_uis bodies |
 | 6 | **Effects.** Declared `destroy_effects` data: message, sound, debris type, neighbour update. | effects | ~60 effect bodies |
 | 7 | **Core `Destroy()`.** The core chain (`/atom/movable`, `/atom`, `/datum`). A `Destroy()` override anywhere else is banned outright (`lifecycle_counts_lint.py`); the only other `Destroy()` definitions are `/client` and the MC's `/datum/controller` tree. The GC hint is the type's `destroy_hint` var. | type | every per-type `Destroy()` |
@@ -124,7 +124,7 @@ Destroy) is **removed**.
 ## 4. Declared references
 
 Every object-typed var is one of own / shared / proto / relation. The model, its accessors,
-declarations and checks are specified in [ownership.md](ownership.md); this section only says how
+declarations and checks are specified in [archive/ownership.md](archive/ownership.md); this section only says how
 the transaction uses it.
 
 | Phase | What ownership does |
@@ -212,7 +212,7 @@ qdel and Destroy() ratchets, weakrefs) includes them. They use the same phases:
 | Step | Scope | Owner |
 |---|---|---|
 | LC1 | `destroy_transaction()` in `qdel` with phases 0–8; `SLOT_DROP_HOLDER` removed and policies for every slot; nested children-first resolution; `TRANSFER(resolver)`; processor recording and auto-stop; screen release | ledger-joint (replaces J1) |
-| LC2 | Links framework (superseded by the ownership model, [ownership.md](ownership.md): own / shared / proto / relations, `ownership_lint.py`) | ledger-joint, own |
+| LC2 | Links framework (superseded by the ownership model, [archive/ownership.md](archive/ownership.md): own / shared / proto / relations, `ownership_lint.py`) | ledger-joint, own |
 | LC3 | Verbs: `consume`, `replace_with`, `lifetime`/`expire`, `slot_clear`, `delete_on_death`, plus the `destroy_effects` data | ledger-joint |
 | LC4 | Mechanical sweeps: delete the ~200 redundant overrides; convert overrides and qdel sites domain by domain; ratchet the lints to the floor | conversion agents, after the core systems land |
 

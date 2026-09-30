@@ -10,7 +10,7 @@
 
 /obj/structure/musician/Initialize(mapload)
 	. = ..()
-	own_set(src, "song", new /datum/song/stationary(src, allowed_instrument_ids))
+	own_set(src, nameof(song), new /datum/song/stationary(src, allowed_instrument_ids))
 	allowed_instrument_ids = null
 
 

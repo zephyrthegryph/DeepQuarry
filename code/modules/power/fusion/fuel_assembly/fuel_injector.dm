@@ -27,7 +27,9 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/fusion_fuel_injector, MACHINE_PIPELINE, "i
 	default_apply_parts()
 	make_rotatable()
 
-OWN(/obj/machinery/fusion_fuel_injector, cur_assembly, OWN_SPILL)
+/obj/machinery/fusion_fuel_injector/ownership()
+	. = ..()
+	. += owns(nameof(cur_assembly), policy = OWN_SPILL)
 
 /obj/machinery/fusion_fuel_injector/mapped
 	anchored = TRUE
@@ -82,13 +84,13 @@ OWN(/obj/machinery/fusion_fuel_injector, cur_assembly, OWN_SPILL)
 	else
 		act_message(user, src, others = span_infoplain(span_bold("%U%") + " inserts \a [held] into %T%."))
 
-	user.drop_from_inventory(held)
-	held.forceMove(src)
-	var/obj/item/fuel_assembly/old_assembly = own_take(src, "cur_assembly") // swapped out to the user
+	var/obj/item/fuel_assembly/old_assembly = own_take(src, nameof(src.cur_assembly)) // swapped out to the user
+	if(!own_set(src, nameof(src.cur_assembly), held, user = user))
+		own_set(src, nameof(src.cur_assembly), old_assembly)
+		return TRUE
 	if(old_assembly)
 		old_assembly.forceMove(get_turf(src))
 		user.put_in_hands(old_assembly)
-	own_set(src, "cur_assembly", held)
 	if(istype(held,/obj/item/fuel_assembly/blitz))
 		visible_message(span_warning("The fuel injector begins to shake and whirr violently as it tries to accept the blitz rod!"))
 		om_after(src, 3 SECONDS, PROC_REF(blitz_boom))
@@ -137,7 +139,7 @@ OWN(/obj/machinery/fusion_fuel_injector, cur_assembly, OWN_SPILL)
 
 /obj/machinery/fusion_fuel_injector/proc/interaction_fuel_injector_take(mob/user, obj/item/held, datum/interaction/interaction)
 	if(cur_assembly)
-		var/obj/item/fuel_assembly/removed = own_take(src, "cur_assembly")
+		var/obj/item/fuel_assembly/removed = own_take(src, nameof(cur_assembly))
 		removed.forceMove(get_turf(src))
 		user.put_in_hands(removed)
 		act_message(user, src, others = span_infoplain(span_bold("%U%") + " removes \the [removed] from %T%."))

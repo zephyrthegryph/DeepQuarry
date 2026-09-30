@@ -63,7 +63,7 @@
 
 /mob/living/simple_mob/animal/sif/sakimm/proc/drop_hat(mob/user)
 	if(hat)
-		var/obj/item/clothing/head/old_hat = own_take(src, "hat")
+		var/obj/item/clothing/head/old_hat = own_take(src, nameof(hat))
 		old_hat.forceMove(get_turf(user))
 		update_icon()
 		if(user == src)
@@ -94,9 +94,8 @@
 		if(user == src)
 			if(istype(get_active_hand(), /obj/item/clothing/head))
 				var/obj/item/clothing/head/new_hat = get_active_hand()
-				drop_from_inventory(new_hat, src)
-				new_hat.forceMove(src)
-				own_set(src, "hat", new_hat)
+				if(!own_set(src, nameof(src.hat), new_hat, user = user, slot = SLOT_ID_BODY)) // out of the paw, onto the head
+					return
 				to_chat(user, span_notice("You put on the hat."))
 				update_icon()
 			return
@@ -120,7 +119,9 @@
 	emote_see = list("sniffs","looks around", "rubs its hands")
 	emote_hear = list("chitters", "clicks")
 
-OWN(/mob/living/simple_mob/animal/sif/sakimm, hat, OWN_SPILL)
+/mob/living/simple_mob/animal/sif/sakimm/ownership()
+	. = ..()
+	. += owns(nameof(hat), policy = OWN_SPILL)
 
 DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/sif/sakimm, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /mob/living/simple_mob/animal/sif/sakimm/appearance_overlays()

@@ -1,7 +1,7 @@
 # Medical frameworks: clocks, ownership, nullspace, exposure
 
 > **Status after the reconciliation (2026-09-27, `rewrite/reconcile`).** The object-model core
-> ([rewrite/object_model_core.md](rewrite/object_model_core.md)) is authoritative where this
+> ([rewrite/object_model_core.md](rewrite/archive/object_model_core.md)) is authoritative where this
 > document overlaps it:
 > - **§1 Holder-provided clocks is superseded.** There is one clock system: OM clock domains
 >   (`CLOCK_BIO`), whose rate comes from `EFFECT_CLOCK_BIO_MULT`/`_INHIBIT` contributions
@@ -16,7 +16,7 @@
 > - §3 (nullspace) and §4 (exposure) are not implemented; they remain design input, to be
 >   expressed on OM pipelines, contributions and relations.
 >
-> See [rewrite/reconciliation.md](rewrite/reconciliation.md).
+> See [rewrite/reconciliation.md](rewrite/archive/reconciliation.md).
 
 
 Status: design, approved in outline by the user. No gameplay code lands with this document.

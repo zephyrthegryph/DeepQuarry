@@ -1775,6 +1775,13 @@ impl World {
         self.sim.shutdown();
     }
 
+    /// Whether [`tick`](Self::tick) with `elapsed` more seconds would owe a step now (a caller that stages per-step
+    /// data does it only then). A worker frame still running can still defer the step.
+    #[must_use]
+    pub fn step_due(&self, elapsed: Seconds) -> bool {
+        self.owed > 0 || self.pacer.carry() + elapsed.0.max(0.0) >= self.pacer.dt().0
+    }
+
     pub fn step_blocking(&mut self) {
         self.sim.wait_for_frame();
         self.begin_tick();
@@ -2424,7 +2431,7 @@ impl World {
     /// Appends a typed event as though a [`Law`] on this `World` had
     /// [`emit`](crate::law::LawCtx::emit)ted it -- for a domain whose
     /// engine isn't on this `World` yet (still its own driver, `gas`'s
-    /// `GasWorld`/turf field) but whose events are, so `vg_drain_events()`
+    /// `GasWorld`/turf field) but whose events are, so the frame outbox
     /// is the one path DM ever sees a typed event through
     /// (`rust_architecture.md` §4.8, §2: "no other `Vec<f32>` encoding
     /// anywhere"). `entity`: the `vg_entity` value the event is about, or

@@ -74,7 +74,7 @@ UI_DATA_REPLACE(/datum/computer_file/program/newsbrowser, "message:text", "showi
 /datum/computer_file/program/newsbrowser/kill_program()
 	..()
 	requires_ntnet = TRUE
-	own_clear(src, "loaded_article", OWN_DELETE)
+	own_clear(src, nameof(loaded_article), OWN_DELETE)
 	download_progress = 0
 	downloading = FALSE
 	show_archived = FALSE
@@ -87,7 +87,7 @@ UI_ACT_PROC(/datum/computer_file/program/newsbrowser, ui_act_prg_openarticle)
 
 	for(var/datum/computer_file/data/news_article/N in GLOB.ntnet_global.available_news)
 		if(N.uid == params["uid"])
-			own_set(src, "loaded_article", N.clone())
+			own_set(src, nameof(/datum/computer_file/program/newsbrowser::loaded_article), N.clone())
 			downloading = 1
 			break
 
@@ -97,7 +97,7 @@ UI_ACT_PROC(/datum/computer_file/program/newsbrowser, ui_act_prg_reset)
 	downloading = 0
 	download_progress = 0
 	requires_ntnet = 1
-	own_clear(src, "loaded_article", OWN_DELETE)
+	own_clear(src, nameof(/datum/computer_file/program/newsbrowser::loaded_article), OWN_DELETE)
 
 UI_ACT(/datum/computer_file/program/newsbrowser, "PRG_clearmessage", ui_act_prg_clearmessage)
 UI_ACT_PROC(/datum/computer_file/program/newsbrowser, ui_act_prg_clearmessage)

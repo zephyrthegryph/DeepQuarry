@@ -901,7 +901,7 @@ TOPIC_ACTION(/obj/item/rcd, "access", PROC_REF(topic_access), TOPIC_TEXT("access
 				return FALSE // No more airlock stacking.
 			to_chat(user, span_notice("You build an airlock."))
 			var/obj/machinery/door/airlock/A = new the_rcd.airlock_type(src)
-			own_set(A, "electronics", new/obj/item/airlock_electronics(A))
+			own_set(A, nameof(A.electronics), new/obj/item/airlock_electronics(A))
 			A.electronics.req_access = null
 			A.electronics.req_one_access = null
 			A.electronics.one_access = null
@@ -1044,7 +1044,7 @@ TOPIC_ACTION(/obj/item/rcd, "access", PROC_REF(topic_access), TOPIC_TEXT("access
 	if(selected_windoor_type == "secure")
 		A.max_integrity = 300
 		A.update_integrity(A.max_integrity)
-	own_set(A, "electronics", new/obj/item/airlock_electronics(A))
+	own_set(A, nameof(A.electronics), new/obj/item/airlock_electronics(A))
 	A.electronics.req_access = null
 	A.electronics.req_one_access = null
 	A.electronics.one_access = null

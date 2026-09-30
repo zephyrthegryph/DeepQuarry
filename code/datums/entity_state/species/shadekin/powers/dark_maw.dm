@@ -75,9 +75,9 @@ DECLARE_PERIODIC_WHILE(/obj/effect/abstract/dark_maw, PERIODIC_SLOW, "armed")
 		return INITIALIZE_HINT_QDEL
 	var/datum/shadekin/SK
 	if(user && isliving(user))
-		rel_set(src, "owner", user)
+		rel_set(src, nameof(owner), user)
 		if(owner().vore_selected)
-			rel_set(src, "target", owner().vore_selected)
+			rel_set(src, nameof(target), owner().vore_selected)
 		om_hook(owner(), /datum/om/event/qdeleting, src, PROC_REF(drop_everything_and_delete))
 		has_signal = TRUE
 		SK = owner().get_shadekin_state()
@@ -104,7 +104,7 @@ DECLARE_PERIODIC_WHILE(/obj/effect/abstract/dark_maw, PERIODIC_SLOW, "armed")
 		expire(3 SECONDS)
 	else
 		if(SK)
-			rel_add(SK, "active_dark_maws", src)
+			rel_add(SK, nameof(SK.active_dark_maws), src)
 		flick("dark_maw", src)
 		set_armed(TRUE)
 

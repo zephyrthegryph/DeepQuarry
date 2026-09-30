@@ -67,7 +67,7 @@ REFLECTS(/obj/structure/dq_reflect_probe/burn_only, list(BURN), "reflect_chance"
 	P.injury_kind = injury_kind
 	P.damage = damage
 	P.nodamage = !damage
-	rel_set(P, "starting", run_loc_floor_bottom_left)
+	rel_set(P, nameof(P.starting), run_loc_floor_bottom_left)
 	return P
 
 /// Entry triggers fire once per hit, before the sink (or after it, for the AFTER phase); a
@@ -169,7 +169,7 @@ REFLECTS(/obj/structure/dq_reflect_probe/burn_only, list(BURN), "reflect_chance"
 
 	var/mob/living/simple_mob/slime/xenobio/silver/slime = allocate(/mob/living/simple_mob/slime/xenobio/silver)
 	var/obj/item/projectile/beam/B = allocate(/obj/item/projectile/beam, run_loc_floor_bottom_left)
-	rel_set(B, "starting", run_loc_floor_bottom_left)
+	rel_set(B, nameof(B.starting), run_loc_floor_bottom_left)
 	TEST_ASSERT_EQUAL(slime.bullet_act(B), PROJECTILE_CONTINUE, "a silver slime reflects beams")
 
 /// A mob that blocks every projectile by declaration (a shield, an immunity).

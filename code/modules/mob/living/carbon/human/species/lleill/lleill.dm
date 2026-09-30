@@ -194,11 +194,11 @@ TYPE_TABLE(/datum/species/lleill, shared_table_vars, list("assisted_langs", "una
 	..()
 	for(var/power in lleill_abilities)
 		var/datum/power/lleill/LP = new power(src)
-		own_add(src, "lleill_ability_datums", LP)
+		own_add(src, nameof(lleill_ability_datums), LP)
 
 /datum/species/lleill/proc/add_lleill_abilities(mob/living/carbon/human/H)
 	if(!H.ability_master || !istype(H.ability_master, /atom/movable/screen/movable/ability_master/lleill))
-		own_set(H, "ability_master", new /atom/movable/screen/movable/ability_master/lleill(H)) // replaces (deletes) a non-lleill master
+		own_set(H, nameof(H.ability_master), new /atom/movable/screen/movable/ability_master/lleill(H)) // replaces (deletes) a non-lleill master
 	for(var/datum/power/lleill/P in lleill_ability_datums)
 		if(!(P.verbpath in H.verbs))
 			om_grant(H, GRANT_VERB, P.verbpath, src)

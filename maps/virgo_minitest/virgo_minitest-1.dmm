@@ -228,10 +228,10 @@
 /area/tcommsat/computer)
 "aH" = (
 /obj/machinery/door/airlock/maintenance_hatch{
+	cap_state = 128;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "server_access_outer";
-	locked = 1;
 	name = "Telecoms Server Access";
 	req_access = list(61)
 	},
@@ -397,10 +397,10 @@
 /area/tcommsat/chamber)
 "aV" = (
 /obj/machinery/door/airlock/maintenance_hatch{
+	cap_state = 128;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "server_access_inner";
-	locked = 1;
 	name = "Telecoms Server Access";
 	req_access = list(61)
 	},
@@ -488,7 +488,7 @@
 	name = "Mainframe Base";
 	nitrogen = 100;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/tcommsat/chamber)
 "bg" = (
@@ -504,7 +504,7 @@
 	name = "Mainframe Base";
 	nitrogen = 100;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/tcommsat/chamber)
 "bh" = (
@@ -516,7 +516,7 @@
 	name = "Mainframe Base";
 	nitrogen = 100;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/tcommsat/chamber)
 "bi" = (
@@ -540,7 +540,7 @@
 	name = "Mainframe Base";
 	nitrogen = 100;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/tcommsat/chamber)
 "bk" = (
@@ -551,7 +551,7 @@
 	name = "Mainframe Base";
 	nitrogen = 100;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/tcommsat/chamber)
 "bl" = (
@@ -563,7 +563,7 @@
 	name = "Mainframe Base";
 	nitrogen = 100;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/tcommsat/chamber)
 "bm" = (
@@ -582,7 +582,7 @@
 	name = "Mainframe Base";
 	nitrogen = 100;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/tcommsat/chamber)
 "bn" = (
@@ -604,7 +604,7 @@
 	name = "Mainframe Base";
 	nitrogen = 100;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/tcommsat/chamber)
 "bo" = (
@@ -614,7 +614,7 @@
 /turf/simulated/floor/tiled/dark{
 	nitrogen = 100;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/tcommsat/chamber)
 "bp" = (
@@ -627,7 +627,7 @@
 	name = "Mainframe Base";
 	nitrogen = 100;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/tcommsat/chamber)
 "bq" = (
@@ -658,7 +658,7 @@
 /turf/simulated/floor/tiled/dark{
 	nitrogen = 100;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/tcommsat/chamber)
 "bv" = (
@@ -666,7 +666,7 @@
 /turf/simulated/floor/tiled/dark{
 	nitrogen = 100;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/tcommsat/chamber)
 "bw" = (
@@ -729,7 +729,7 @@
 /turf/simulated/floor/tiled/dark{
 	nitrogen = 100;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/tcommsat/chamber)
 "bD" = (
@@ -737,7 +737,7 @@
 /turf/simulated/floor/tiled/dark{
 	nitrogen = 100;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/tcommsat/chamber)
 "bE" = (
@@ -745,7 +745,7 @@
 /turf/simulated/floor/tiled/dark{
 	nitrogen = 100;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/tcommsat/chamber)
 "bF" = (
@@ -753,7 +753,7 @@
 /turf/simulated/floor/tiled/dark{
 	nitrogen = 100;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/tcommsat/chamber)
 "bG" = (
@@ -761,7 +761,7 @@
 /turf/simulated/floor/tiled/dark{
 	nitrogen = 100;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/tcommsat/chamber)
 "bH" = (
@@ -802,7 +802,7 @@
 	name = "Mainframe Base";
 	nitrogen = 100;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/tcommsat/chamber)
 "bM" = (
@@ -842,7 +842,7 @@
 	name = "Mainframe Base";
 	nitrogen = 100;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/tcommsat/chamber)
 "bQ" = (
@@ -850,7 +850,7 @@
 /turf/simulated/floor/tiled/dark{
 	nitrogen = 100;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/tcommsat/chamber)
 "bR" = (
@@ -858,7 +858,7 @@
 /turf/simulated/floor/tiled/dark{
 	nitrogen = 100;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/tcommsat/chamber)
 "bS" = (
@@ -866,7 +866,7 @@
 /turf/simulated/floor/tiled/dark{
 	nitrogen = 100;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/tcommsat/chamber)
 "bT" = (
@@ -875,7 +875,7 @@
 	name = "Mainframe Base";
 	nitrogen = 100;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/tcommsat/chamber)
 "bU" = (
@@ -884,7 +884,7 @@
 	name = "Mainframe Base";
 	nitrogen = 100;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/tcommsat/chamber)
 "bV" = (
@@ -893,7 +893,7 @@
 	name = "Mainframe Base";
 	nitrogen = 100;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/tcommsat/chamber)
 "bW" = (
@@ -902,7 +902,7 @@
 	name = "Mainframe Base";
 	nitrogen = 100;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/tcommsat/chamber)
 "bX" = (
@@ -910,7 +910,7 @@
 /turf/simulated/floor/tiled/dark{
 	nitrogen = 100;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/tcommsat/chamber)
 "bY" = (
@@ -918,7 +918,7 @@
 /turf/simulated/floor/tiled/dark{
 	nitrogen = 100;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/tcommsat/chamber)
 "bZ" = (
@@ -926,7 +926,7 @@
 /turf/simulated/floor/tiled/dark{
 	nitrogen = 100;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/tcommsat/chamber)
 "ca" = (
@@ -940,7 +940,7 @@
 	name = "Mainframe Base";
 	nitrogen = 100;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/tcommsat/chamber)
 "cb" = (
@@ -962,7 +962,7 @@
 /turf/simulated/floor/tiled/dark{
 	nitrogen = 100;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/tcommsat/chamber)
 "ce" = (
@@ -970,7 +970,7 @@
 /turf/simulated/floor/tiled/dark{
 	nitrogen = 100;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/tcommsat/chamber)
 "cf" = (
@@ -978,7 +978,7 @@
 /turf/simulated/floor/tiled/dark{
 	nitrogen = 100;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/tcommsat/chamber)
 "cg" = (
@@ -986,7 +986,7 @@
 /turf/simulated/floor/tiled/dark{
 	nitrogen = 100;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/tcommsat/chamber)
 "ch" = (
@@ -1036,7 +1036,7 @@
 /turf/simulated/floor/tiled/dark{
 	nitrogen = 100;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/tcommsat/chamber)
 "cm" = (
@@ -1044,7 +1044,7 @@
 /turf/simulated/floor/tiled/dark{
 	nitrogen = 100;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/tcommsat/chamber)
 "cn" = (
@@ -1055,7 +1055,7 @@
 /turf/simulated/floor/tiled/dark{
 	nitrogen = 100;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/tcommsat/chamber)
 "co" = (
@@ -1066,7 +1066,7 @@
 /turf/simulated/floor/tiled/dark{
 	nitrogen = 100;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/tcommsat/chamber)
 "cp" = (
@@ -1074,7 +1074,7 @@
 /turf/simulated/floor/tiled/dark{
 	nitrogen = 100;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/tcommsat/chamber)
 "cq" = (
@@ -1084,7 +1084,7 @@
 /turf/simulated/floor/tiled/dark{
 	nitrogen = 100;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/tcommsat/chamber)
 "cr" = (
@@ -1094,7 +1094,7 @@
 /turf/simulated/floor/tiled/dark{
 	nitrogen = 100;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/tcommsat/chamber)
 "cs" = (
@@ -1102,7 +1102,7 @@
 /turf/simulated/floor/tiled/dark{
 	nitrogen = 100;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/tcommsat/chamber)
 "ct" = (
@@ -1110,7 +1110,7 @@
 /turf/simulated/floor/tiled/dark{
 	nitrogen = 100;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/tcommsat/chamber)
 "cu" = (
@@ -1132,7 +1132,7 @@
 	name = "Mainframe Base";
 	nitrogen = 100;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/tcommsat/chamber)
 "cw" = (
@@ -1145,7 +1145,7 @@
 	name = "Mainframe Base";
 	nitrogen = 100;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/tcommsat/chamber)
 "cx" = (
@@ -1166,7 +1166,7 @@
 	name = "Mainframe Base";
 	nitrogen = 100;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/tcommsat/chamber)
 "cy" = (
@@ -2897,7 +2897,7 @@
 	name = "Mainframe Base";
 	nitrogen = 100;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/tcommsat/chamber)
 "gG" = (
@@ -2953,10 +2953,10 @@
 /area/bridge)
 "gR" = (
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	frequency = 1379;
 	icon_state = "door_locked";
-	id_tag = "webdemo_docker_hatch";
-	locked = 1
+	id_tag = "webdemo_docker_hatch"
 	},
 /turf/simulated/shuttle/floor,
 /area/shuttle/webdemo)
@@ -3026,10 +3026,10 @@
 /area/shuttle/multidemo)
 "hg" = (
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	frequency = 1379;
 	icon_state = "door_locked";
-	id_tag = "station_dock1_hatch";
-	locked = 1
+	id_tag = "station_dock1_hatch"
 	},
 /turf/simulated/floor/tiled,
 /area/bridge)
@@ -3082,10 +3082,10 @@
 /area/shuttle/multidemo)
 "ho" = (
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	frequency = 1379;
 	icon_state = "door_locked";
-	id_tag = "ferrydemo_shuttle_hatch";
-	locked = 1
+	id_tag = "ferrydemo_shuttle_hatch"
 	},
 /turf/simulated/shuttle/floor,
 /area/shuttle/ferrydemo)
@@ -3106,10 +3106,10 @@
 /area/space)
 "hr" = (
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	frequency = 1379;
 	icon_state = "door_locked";
-	id_tag = "multidemo_shuttle_hatch";
-	locked = 1
+	id_tag = "multidemo_shuttle_hatch"
 	},
 /turf/simulated/shuttle/floor,
 /area/shuttle/multidemo)
@@ -4222,10 +4222,10 @@
 /area/space)
 "pZ" = (
 /obj/machinery/door/airlock/glass_external{
+	cap_state = 128;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "eng_south_inner";
-	locked = 1;
 	name = "Engine South Airlock Interior"
 	},
 /obj/machinery/atmospherics/pipe/simple/hidden{
@@ -4266,10 +4266,10 @@
 /area/submap/pa_room)
 "ql" = (
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	frequency = 1379;
 	icon_state = "door_locked";
-	id_tag = "overmapdemo_docker_hatch";
-	locked = 1
+	id_tag = "overmapdemo_docker_hatch"
 	},
 /turf/simulated/shuttle/floor/voidcraft/light,
 /area/shuttle/overmapdemo)
@@ -4390,7 +4390,7 @@
 	name = "Mainframe Base";
 	nitrogen = 100;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/tcommsat/chamber)
 "rL" = (
@@ -4411,10 +4411,10 @@
 	req_one_access = list(10,11,13)
 	},
 /obj/machinery/door/airlock/glass_external{
+	cap_state = 128;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "eng_north_outer";
-	locked = 1;
 	name = "Engine North Airlock Exterior"
 	},
 /obj/structure/cable/cyan{
@@ -4917,10 +4917,10 @@
 	req_one_access = list(10,11,13)
 	},
 /obj/machinery/door/airlock/glass_external{
+	cap_state = 128;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "eng_south_outer";
-	locked = 1;
 	name = "Engine South Airlock Exterior"
 	},
 /obj/structure/cable/cyan{
@@ -4938,9 +4938,9 @@
 /area/engineering/workshop)
 "xB" = (
 /obj/machinery/door/airlock/hatch{
+	cap_state = 128;
 	icon_state = "door_locked";
 	id_tag = "engine_access_hatch";
-	locked = 1;
 	req_access = list(11)
 	},
 /turf/simulated/floor/reinforced,
@@ -6796,10 +6796,10 @@
 /area/engineering/engine_monitoring)
 "SN" = (
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	frequency = 1379;
 	icon_state = "door_locked";
-	id_tag = "station_dock2_hatch";
-	locked = 1
+	id_tag = "station_dock2_hatch"
 	},
 /turf/simulated/floor/tiled,
 /area/bridge)
@@ -6921,10 +6921,10 @@
 /area/shuttle/overmapdemo)
 "Un" = (
 /obj/machinery/door/airlock/glass_external{
+	cap_state = 128;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "eng_north_inner";
-	locked = 1;
 	name = "Engine North Airlock Interior"
 	},
 /obj/machinery/atmospherics/pipe/simple/hidden{

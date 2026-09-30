@@ -242,7 +242,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 		return
 	else if(spitting)
 		var/obj/item/projectile/P = new spit_projectile(get_turf(src))
-		rel_set(P, "firer", src)
+		rel_set(P, nameof(P.firer), src)
 		P.old_style_target(A)
 		P.fire()
 		play_sfx(src, SFX_WEAPONS_ALIEN_SPITACID)

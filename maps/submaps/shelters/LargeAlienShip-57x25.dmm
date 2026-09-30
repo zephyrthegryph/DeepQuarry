@@ -26,7 +26,7 @@
 	name = "Server Base";
 	nitrogen = 500;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/survivalpod/superpose/LargeAlienShip)
 "aA" = (
@@ -103,7 +103,7 @@
 	name = "Server Base";
 	nitrogen = 500;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/survivalpod/superpose/LargeAlienShip)
 "bH" = (
@@ -239,7 +239,7 @@
 	name = "Server Base";
 	nitrogen = 500;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/survivalpod/superpose/LargeAlienShip)
 "dZ" = (
@@ -321,7 +321,7 @@
 	name = "Server Base";
 	nitrogen = 500;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/survivalpod/superpose/LargeAlienShip)
 "fK" = (
@@ -379,7 +379,7 @@
 /area/survivalpod/superpose/LargeAlienShip)
 "hw" = (
 /obj/machinery/vending/engivend{
-	emagged = 1;
+	cap_state = 16;
 	req_access = list(777);
 	req_log_access = null
 	},
@@ -1199,7 +1199,7 @@
 	name = "Server Base";
 	nitrogen = 500;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/survivalpod/superpose/LargeAlienShip)
 "yI" = (
@@ -1304,8 +1304,8 @@
 /area/survivalpod/superpose/LargeAlienShip)
 "AP" = (
 /obj/machinery/vending/medical{
+	cap_state = 16;
 	dir = 4;
-	emagged = 1;
 	pixel_x = 5;
 	req_access = list(777)
 	},
@@ -1347,7 +1347,7 @@
 	name = "Server Base";
 	nitrogen = 500;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/survivalpod/superpose/LargeAlienShip)
 "Cp" = (
@@ -1415,7 +1415,7 @@
 	name = "Server Base";
 	nitrogen = 500;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/survivalpod/superpose/LargeAlienShip)
 "DJ" = (
@@ -1699,7 +1699,7 @@
 	name = "Server Base";
 	nitrogen = 500;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/survivalpod/superpose/LargeAlienShip)
 "JU" = (
@@ -2127,12 +2127,12 @@
 	icon_state = "0-2"
 	},
 /obj/machinery/power/apc/hyper{
+	cap_state = 0;
 	coverlocked = 0;
 	dir = 4;
 	environ = 1;
 	equipment = 1;
 	lighting = 1;
-	locked = 0;
 	pixel_x = 23
 	},
 /turf/simulated/floor/tiled/techmaint,
@@ -2152,7 +2152,7 @@
 /area/survivalpod/superpose/LargeAlienShip)
 "WX" = (
 /obj/machinery/vending/tool{
-	emagged = 1;
+	cap_state = 16;
 	req_access = list(777);
 	req_log_access = null
 	},

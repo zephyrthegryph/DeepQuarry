@@ -25,8 +25,8 @@ use byondapi::prelude::*;
 use eyre::{Result, bail, eyre};
 use vg_core::field::{FieldKey, Geom};
 use vg_core::grid::Dir;
-use vg_core::outbox::{Lane, Subscriber, WatchId};
-use vg_core::watch::{Cmp, Cond, Edge, Level, SetEntry};
+use vg_core::outbox::{Lane, Subscriber, Wake, WatchId};
+use vg_core::watch::{Cond, SetEntry};
 use vg_core::world::{KindId, WorldBuilder};
 use vg_heat::components::gas_kind;
 use vg_heat::laws::{BodyBodyExchange, RegulatorHeatPump, SolidBodyExchange};
@@ -35,7 +35,7 @@ use vg_heat::{
 };
 
 use crate::entity;
-use crate::world::{list, num, whole, with_world};
+use crate::world::{list, num, with_world};
 
 thread_local! {
     static FIELD: Cell<Option<FieldKey<SolidHeat>>> = const { Cell::new(None) };
@@ -74,6 +74,10 @@ pub const HEAT_TARGET_TURF_AIR: i32 = 2;
 pub const HEAT_TARGET_MIXTURE: i32 = 3;
 /// @dm-define HEAT_TARGET_BODY
 pub const HEAT_TARGET_BODY: i32 = 4;
+/// The gas of the pipe region a pipe port (an entity handle) is in: a pipeline's persistent coupling, which follows the
+/// region through merges and splits.
+/// @dm-define HEAT_TARGET_PIPE_PORT
+pub const HEAT_TARGET_PIPE_PORT: i32 = 5;
 
 /// `HEAT_CELL_*` kinds DM sends for a turf.
 /// @dm-define HEAT_CELL_SOLID
@@ -453,7 +457,7 @@ fn heat_turf_properties(turf: ByondValue) -> Result<ByondValue> {
 fn coupling_kind_for(target_kind: i32) -> Result<i32> {
     match target_kind {
         HEAT_TARGET_NONE | HEAT_TARGET_SOLID | HEAT_TARGET_TURF_AIR | HEAT_TARGET_MIXTURE
-        | HEAT_TARGET_BODY => Ok(target_kind),
+        | HEAT_TARGET_BODY | HEAT_TARGET_PIPE_PORT => Ok(target_kind),
         other => bail!("bad heat target kind {other}"),
     }
 }
@@ -510,7 +514,7 @@ fn wake_cell_couplings(w: &mut vg_core::world::World, cell: u32) {
 /// naming it as the other side) -- an external write to the body itself
 /// (`heat_body_add`/`power`/`capacity`/`phase`/`set_temperature`/
 /// `release`), so a coupling that had settled and gone to sleep notices.
-fn wake_body_couplings(w: &mut vg_core::world::World, body: u32) {
+pub(crate) fn wake_body_couplings(w: &mut vg_core::world::World, body: u32) {
     let owned = COUPLINGS.with(|c| {
         c.borrow()
             .iter()
@@ -701,6 +705,23 @@ fn set_coupling(
                 COUPLINGS.with(|c| c.borrow_mut().insert((body_i, slot), (1, e)));
                 track_coupling_owner(e, body_e);
             }
+            HEAT_TARGET_PIPE_PORT => {
+                let port = entity::decode(num(target_ref)?)?;
+                let e = w
+                    .bind_value(
+                        None,
+                        GasCoupling {
+                            body: body_i,
+                            kind: gas_kind::PIPE_PORT,
+                            target: port.bits(),
+                            conductance: conductance.into(),
+                            slot,
+                        },
+                    )
+                    .map_err(|e| eyre!("{e}"))?;
+                COUPLINGS.with(|c| c.borrow_mut().insert((body_i, slot), (1, e)));
+                track_coupling_owner(e, body_e);
+            }
             HEAT_TARGET_BODY => {
                 let other = entity::decode(num(target_ref)?)?;
                 let e = w
@@ -850,8 +871,7 @@ pub(crate) fn configure_bodies(
             let temperature = if flags.temperature_set {
                 b.energy / b.capacity.max(f64::MIN_POSITIVE)
             } else {
-                spec.temperature.max(f64::from(vg_heat::consts::TCMB))
-                    + flags.added / spec.capacity
+                spec.temperature.max(f64::from(vg_heat::consts::TCMB)) + flags.added / spec.capacity
             };
             b.capacity = spec.capacity;
             b.energy = spec.capacity * temperature;
@@ -1289,272 +1309,91 @@ fn field_id<C: vg_core::component::Component>(name: &str) -> Result<vg_core::com
 
 /// Watch kinds, matching the pre-existing `HEAT_WATCH_*` defines.
 /// @dm-define HEAT_WATCH_ABOVE
+#[allow(dead_code)] // a DM define only
 pub const HEAT_WATCH_ABOVE: i32 = 0;
 /// @dm-define HEAT_WATCH_BELOW
+#[allow(dead_code)] // a DM define only
 pub const HEAT_WATCH_BELOW: i32 = 1;
 /// @dm-define HEAT_WATCH_BAND
+#[allow(dead_code)] // a DM define only
 pub const HEAT_WATCH_BAND: i32 = 2;
 /// @dm-define HEAT_WATCH_SET
+#[allow(dead_code)] // a DM define only
 pub const HEAT_WATCH_SET: i32 = 3;
 
-/// A DM watch handle: `index` and `generation` as their own numbers (no
-/// packing), so neither is ever truncated -- `WatchId::generation` is a
-/// full `u32`, wider than a single `f32` could carry alongside `index`
-/// without losing bits. `heat_watch` returns `list(index, generation)`;
-/// every other watch bind takes them back as two arguments plus `on_body`
-/// (also no longer packed into a spare bit), matching `Wake`/`WatchId`'s
-/// own shape exactly instead of DM's own encoding of it.
-fn watch_id(index: &ByondValue, generation: &ByondValue) -> Result<WatchId> {
-    Ok(WatchId {
-        index: whole(index, "watch index")?,
-        generation: whole(generation, "watch generation")?,
-    })
-}
+/// The turf solid's cells as a watch port: code [`HEAT_CELLS`], every cell a
+/// turf ref (a `get_ref()` number). Body watches use the ordinary world
+/// kind port; both go through the generic `vg_world_watch_*` binds.
+/// @dm-define VG_HEAT_CELLS
+pub const HEAT_CELLS: u32 = 0x0FFE;
 
-fn channel_of(
-    chans: &[vg_core::channel::ChannelInfo],
-    name: &str,
-) -> Result<vg_core::channel::ChannelId> {
-    #[allow(clippy::cast_possible_truncation)]
-    chans
-        .iter()
-        .position(|c| c.name == name)
-        .map(|i| vg_core::channel::ChannelId(i as u8))
-        .ok_or_else(|| eyre!("no {name} channel"))
-}
+/// The solid field's watch port in the domain registry.
+pub(crate) struct HeatCells;
 
-#[auxmacros::bind("/proc/heat_watch")]
-fn heat_watch(
-    on_body: ByondValue,
-    target_ref: ByondValue,
-    subscriber: ByondValue,
-    lane: ByondValue,
-    kind: ByondValue,
-    level: ByondValue,
-    both: ByondValue,
-) -> Result<ByondValue> {
-    let on_body = on_body.is_true();
-    let both = both.is_true();
-    #[allow(clippy::cast_possible_truncation)]
-    let kind = num(&kind)? as i32;
-    let lane = Lane::from_id({
-        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-        {
-            num(&lane)? as u8
-        }
-    })
-    .unwrap_or(Lane::Normal);
-    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-    let subscriber: Subscriber = num(&subscriber)? as u32;
+impl vg_core::registry::DomainRegistry for HeatCells {
+    fn channels(&self) -> Vec<vg_core::channel::ChannelInfo> {
+        with_world(|w| w.cell_channels::<SolidHeat>().map_err(|e| eyre!("{e}"))).unwrap_or_default()
+    }
 
-    let id = with_world(|w| {
-        if on_body {
-            let e = entity::decode(num(&target_ref)?)?;
-            let kind_id = kind_of(w, "HeatBody")?;
-            let chans = w.channels(kind_id).map_err(|e| eyre!("{e}"))?;
-            let ch = channel_of(&chans, "temperature")?;
-            let cell = e.index();
-            let cond = watch_cond(kind, &level, both, ch, vg_core::channel::Unit::Kelvin, cell)?;
-            w.watch(kind_id, subscriber, lane, &cond)
+    fn watch(&mut self, sub: Subscriber, lane: Lane, cond: &Cond) -> Result<(u8, WatchId), String> {
+        with_world(|w| {
+            w.watch_cells::<SolidHeat>(sub, lane, cond)
                 .map_err(|e| eyre!("{e}"))
-        } else {
-            let cell = target_ref.get_ref()?;
-            let ch = vg_heat::solid::solid_ch::TEMPERATURE;
-            let cond = watch_cond(kind, &level, both, ch, vg_core::channel::Unit::Kelvin, cell)?;
-            w.watch_cells::<SolidHeat>(subscriber, lane, &cond)
-                .map_err(|e| eyre!("{e}"))
-        }
-    })?;
-    #[allow(clippy::cast_precision_loss)]
-    list([id.index as f32, id.generation as f32])
-}
+        })
+        .map(|id| (0, id))
+        .map_err(|e| e.to_string())
+    }
 
-fn watch_cond(
-    kind: i32,
-    level: &ByondValue,
-    both: bool,
-    ch: vg_core::channel::ChannelId,
-    unit: vg_core::channel::Unit,
-    cell: u32,
-) -> Result<Cond> {
-    let k = |v: f32| vg_core::channel::Quantity::new(v, unit);
-    Ok(match kind {
-        HEAT_WATCH_ABOVE => {
-            let mut l = Level::above(ch, k(num(level)?));
-            if both {
-                l = l.both_edges();
-            }
-            Cond::Threshold { cell, level: l }
-        }
-        HEAT_WATCH_BELOW => {
-            let mut l = Level::below(ch, k(num(level)?));
-            if both {
-                l = l.both_edges();
-            }
-            Cond::Threshold { cell, level: l }
-        }
-        HEAT_WATCH_BAND => {
-            let values = level.get_list_values()?;
-            let mut levels = Vec::with_capacity(values.len());
-            for v in &values {
-                levels.push(num(v)?);
-            }
-            Cond::Band {
-                cell,
-                ch,
-                unit,
-                levels,
-                hysteresis: None,
-            }
-        }
-        HEAT_WATCH_SET => Cond::ThresholdSet { cell, ch },
-        other => bail!("bad heat watch kind {other}"),
-    })
-}
+    fn unwatch(&mut self, _port: u8, id: WatchId) {
+        let _ = with_world(|w| Ok(w.unwatch_cells::<SolidHeat>(id)));
+    }
 
-#[auxmacros::bind("/proc/heat_watch_set_add")]
-fn heat_watch_set_add(
-    on_body: ByondValue,
-    index: ByondValue,
-    watch_generation: ByondValue,
-    payload: ByondValue,
-    generation: ByondValue,
-    cmp: ByondValue,
-    limit: ByondValue,
-    both: ByondValue,
-) -> Result<ByondValue> {
-    let id = watch_id(&index, &watch_generation)?;
-    let on_body = on_body.is_true();
-    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-    let (payload, generation) = (num(&payload)? as u32, num(&generation)? as u32);
-    let cmp = if num(&cmp)? as i32 == HEAT_WATCH_BELOW {
-        Cmp::Below
-    } else {
-        Cmp::Above
-    };
-    let entry = SetEntry {
-        payload,
-        generation,
-        cmp,
-        limit: vg_core::channel::Quantity::new(num(&limit)?, vg_core::channel::Unit::Kelvin),
-        hysteresis: None,
-        edge: if both.is_true() {
-            Edge::Both
-        } else {
-            Edge::Enter
-        },
-    };
-    with_world(|w| {
-        if on_body {
-            w.add_watch_entry(kind_of(w, "HeatBody")?, id, entry)
-        } else {
+    fn add_entry(&mut self, _port: u8, id: WatchId, entry: SetEntry) -> Result<(), String> {
+        with_world(|w| {
             w.add_field_watch_entry::<SolidHeat>(id, entry)
-        }
-        .map_err(|e| eyre!("{e}"))
-    })?;
-    Ok(ByondValue::null())
+                .map_err(|e| eyre!("{e}"))
+        })
+        .map_err(|e| e.to_string())
+    }
+
+    fn remove_entry(&mut self, _port: u8, id: WatchId, payload: u32) {
+        let _ = with_world(|w| Ok(w.remove_field_watch_entry::<SolidHeat>(id, payload)));
+    }
+
+    /// Cell watch wakes, the source the cell's ref (low 24 bits).
+    fn take_wakes(&mut self, out: &mut Vec<Wake>) {
+        let _ = with_world(|w| {
+            let mut wakes = Vec::new();
+            w.drain_field_wakes::<SolidHeat>(&mut wakes);
+            out.extend(wakes.into_iter().map(|wk| Wake {
+                source: wk.source & 0x00ff_ffff,
+                ..wk
+            }));
+            Ok(())
+        });
+    }
 }
 
-#[auxmacros::bind("/proc/heat_watch_set_remove")]
-fn heat_watch_set_remove(
-    on_body: ByondValue,
-    index: ByondValue,
-    watch_generation: ByondValue,
-    payload: ByondValue,
-) -> Result<ByondValue> {
-    let id = watch_id(&index, &watch_generation)?;
-    let on_body = on_body.is_true();
-    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-    let payload = num(&payload)? as u32;
+/// Takes every `ThresholdSet` crossing since the last call as
+/// `(subscriber, payload, entered, generation)`, then retires the bodies
+/// whose couplings settled. `owners` maps a watch table index to its
+/// subscriber (from the wakes drained in the same frame: every crossing also
+/// wakes its watch). The frame calls this before it takes the world's events
+/// (settling is read off them).
+pub(crate) fn take_crossings(
+    owners: &HashMap<u32, Subscriber>,
+) -> Result<Vec<(Subscriber, u32, bool, u32)>> {
     with_world(|w| {
-        if on_body {
-            w.remove_watch_entry(kind_of(w, "HeatBody")?, id, payload)
-        } else {
-            w.remove_field_watch_entry::<SolidHeat>(id, payload)
-        }
-        .map_err(|e| eyre!("{e}"))
-    })
-    .ok();
-    Ok(ByondValue::null())
-}
-
-#[auxmacros::bind("/proc/heat_unwatch")]
-fn heat_unwatch(
-    on_body: ByondValue,
-    index: ByondValue,
-    watch_generation: ByondValue,
-) -> Result<ByondValue> {
-    let id = watch_id(&index, &watch_generation)?;
-    let on_body = on_body.is_true();
-    with_world(|w| {
-        if on_body {
-            let _ = w.unwatch(kind_of(w, "HeatBody")?, id);
-        } else {
-            let _ = w.unwatch_cells::<SolidHeat>(id);
-        }
-        Ok(())
-    })
-    .ok();
-    Ok(ByondValue::null())
-}
-
-// ------------------------------------------------------------------- tick
-
-/// Takes every wake and `ThresholdSet` crossing collected since the last
-/// call, as one flat list: `[wake count]`, then `[subscriber, watch, reason,
-/// source]` per wake, then `[subscriber, payload, entered, generation]` per
-/// crossing. The subscriber is the watch's DM handle
-/// (`code/datums/om/native.dm`); a crossing's comes from its watch's wake in
-/// the same batch (every crossing also wakes its watch). The world itself is
-/// driven by `SSvg`'s `vg_world_tick()`; this bind only drains.
-#[auxmacros::bind("/proc/heat_take_wakes")]
-fn heat_take_wakes() -> Result<ByondValue> {
-    let mut flat = Vec::new();
-    with_world(|w| {
-        let mut wakes = Vec::new();
-        if let Ok(body) = kind_of(w, "HeatBody") {
-            w.drain_kind_wakes(body, &mut wakes);
-        }
-        w.drain_field_wakes::<SolidHeat>(&mut wakes);
-        let owners: HashMap<u32, Subscriber> = wakes
-            .iter()
-            .map(|wk| (wk.watch.index, wk.subscriber))
-            .collect();
-        flat.push(wakes.len() as f32);
-        for wk in &wakes {
-            flat.extend_from_slice(&[
-                wk.subscriber as f32,
-                wk.watch.index as f32,
-                wk.reason as f32,
-                (wk.source & 0x00ff_ffff) as f32,
-            ]);
-        }
+        let mut out = Vec::new();
         for c in w.drain_threshold_crossings() {
             let Some(&sub) = owners.get(&c.watch) else {
                 continue;
             };
-            flat.extend_from_slice(&[
-                sub as f32,
-                c.payload as f32,
-                if c.entered { 1.0 } else { 0.0 },
-                c.generation as f32,
-            ]);
+            out.push((sub, c.payload, c.entered, c.generation));
         }
         drain_settled_bodies(w);
-        Ok(())
-    })?;
-    let list = ByondValue::new_list()?;
-    let values: Vec<ByondValue> = flat.into_iter().map(ByondValue::from).collect();
-    list.write_list(&values)?;
-    Ok(list)
-}
-
-/// Kept for DM ABI stability (SSair's `process_turf_heat()` still calls
-/// it): returns whether any wakes/crossings are waiting. Never steps a
-/// frame itself -- see [`heat_take_wakes`]'s doc.
-#[auxmacros::bind("/datum/controller/subsystem/air/proc/heat_tick")]
-fn heat_tick(_seconds: ByondValue) -> Result<ByondValue> {
-    Ok(ByondValue::from(1.0f32))
+        Ok(out)
+    })
 }
 
 /// `list(TCMB, T0C, T20C, space sky temperature, Stefan-Boltzmann constant,
@@ -1609,24 +1448,35 @@ fn turf_gas_heat(w: &mut vg_core::world::World, cell: u32, joules: f64) {
     }
 }
 
+/// The mixture a [`GasCoupling::probe_key`] names: an arena mixture by id, or the pipe region a port (a packed entity id with
+/// [`gas_kind::PORT_KEY`] set) is in now.
+pub(crate) fn probe_mixture(w: &vg_core::world::World, key: u32) -> Option<crate::gas::mix::MixRef> {
+    if key & gas_kind::PORT_KEY == 0 {
+        return crate::gas::mix::MixRef::from_id(key);
+    }
+    crate::pipes::port_mixture(w, key & !gas_kind::PORT_KEY)
+}
+
 /// Every gas mixture a heat body couples to, as the exchange law reads it
 /// (`vg_heat::laws::MixtureProbes`). Loads mixtures, so call it outside the
 /// world borrow.
 pub(crate) fn mixture_probes() -> vg_heat::laws::MixtureProbes {
-    let targets: Vec<u32> = with_world(|w| {
+    // A coupling's key resolves to its mixture here, so a pipeline's port coupling is read from the region the port is in
+    // now (after any merge or split), not from where it once was.
+    let targets: Vec<(u32, Option<crate::gas::mix::MixRef>)> = with_world(|w| {
         Ok(w.entities_with::<GasCoupling>()
             .into_iter()
             .filter_map(|e| w.read::<GasCoupling>(e))
-            .filter(|c| c.kind == gas_kind::MIXTURE)
-            .map(|c| c.target)
+            .filter(|c| c.kind != gas_kind::TURF)
+            .map(|c| (c.probe_key(), probe_mixture(w, c.probe_key())))
             .collect())
     })
     .unwrap_or_default();
     let mut probes: Vec<(u32, f32, f32, bool)> = targets
         .into_iter()
-        .filter_map(|id| {
-            let m = crate::gas::mix::load(crate::gas::mix::MixRef::from_id(id)?)?;
-            Some((id, m.get_temperature(), m.heat_capacity(), m.is_immutable()))
+        .filter_map(|(key, mixture)| {
+            let m = crate::gas::mix::load(mixture?)?;
+            Some((key, m.get_temperature(), m.heat_capacity(), m.is_immutable()))
         })
         .collect();
     probes.sort_unstable_by_key(|p| p.0);
@@ -1638,9 +1488,12 @@ pub(crate) fn mixture_probes() -> vg_heat::laws::MixtureProbes {
 /// in `events`). Call it outside the world borrow.
 pub(crate) fn apply_mixture_heat(events: &vg_core::event::EventSink) {
     for (_, e) in events.decoded::<vg_heat::laws::HeatEvent>() {
-        if let vg_heat::laws::HeatEvent::MixtureHeat { target, joules } = e
-            && let Some(r) = crate::gas::mix::MixRef::from_id(target)
-        {
+        let (key, joules) = match e {
+            vg_heat::laws::HeatEvent::MixtureHeat { target, joules } => (target, joules),
+            vg_heat::laws::HeatEvent::PortHeat { port, joules } => (gas_kind::PORT_KEY | port, joules),
+            vg_heat::laws::HeatEvent::Settled => continue,
+        };
+        if let Some(r) = with_world(|w| Ok(probe_mixture(w, key))).ok().flatten() {
             let mut d = [0.0f32; vg_gas::cell::Q];
             d[vg_gas::cell::N] = joules;
             crate::gas::mix::add_amounts(r, &d, 0.0);
@@ -1652,6 +1505,98 @@ pub(crate) fn apply_mixture_heat(events: &vg_core::event::EventSink) {
 mod tests {
     use super::*;
     use crate::gas::mix::{self, MixRef};
+    use vg_core::watch::{Cmp, Edge};
+
+    /// A pipeline's persistent coupling names a port, so the gas it heats is always that of the region the port is in now.
+    #[test]
+    fn a_pipeline_port_coupling_follows_its_region_through_merge_and_split() {
+        use vg_gas::pipes::{PipeGas, Pipes};
+        with_world(|_| Ok(())).unwrap();
+        let (a, b, body) = with_world(|w| {
+            // Burn some entity slots first: a port whose id is not tiny is what the event's f32 wire must carry exactly.
+            for _ in 0..5_000 {
+                let _ = w.entities_mut().bind().unwrap();
+            }
+            let a = w.entities_mut().bind().unwrap();
+            let b = w.entities_mut().bind().unwrap();
+            let mut gas = PipeGas::default();
+            gas.moles[vg_gas::gas::ids::GAS_OXYGEN] = 50.0;
+            gas.energy = 50.0 * 20.0 * 280.0;
+            w.edit_network::<Pipes>(move |host| {
+                let _ = host.bind_node(a, 0, 0, 100.0);
+                let _ = host.bind_node(b, 0, 0, 100.0);
+                let region = host.region_of(a).expect("bound");
+                let _ = host.set_payload(region, gas);
+            })
+            .map_err(|e| eyre!("{e}"))?;
+            w.commit_network::<Pipes>();
+            let body = w
+                .bind_value(
+                    None,
+                    HeatBody {
+                        capacity: 1_000.0,
+                        energy: 1_000.0 * 600.0,
+                        ..Default::default()
+                    },
+                )
+                .map_err(|e| eyre!("{e}"))?;
+            w.bind_value(
+                None,
+                GasCoupling {
+                    body: body.index(),
+                    kind: gas_kind::PIPE_PORT,
+                    target: a.bits(),
+                    conductance: 5.0,
+                    slot: 1,
+                },
+            )
+            .map_err(|e| eyre!("{e}"))?;
+            Ok((a, b, body))
+        })
+        .unwrap();
+        let key = gas_kind::PORT_KEY | a.bits();
+        let resolve = |e: vg_core::entity::EntityId| with_world(|w| Ok(probe_mixture(w, gas_kind::PORT_KEY | e.bits()))).unwrap();
+        let apart = (resolve(a).expect("a is in a region"), resolve(b).expect("b is in a region"));
+        assert_ne!(apart.0, apart.1, "two ports, two pipelines");
+
+        // Merge: the coupling resolves to the one surviving region, the same as the other port's.
+        with_world(|w| {
+            w.edit_network::<Pipes>(move |host| host.connect_entities(a, b).unwrap())
+                .map_err(|e| eyre!("{e}"))?;
+            w.commit_network::<Pipes>();
+            Ok(())
+        })
+        .unwrap();
+        assert_eq!(resolve(a), resolve(b), "merged: the coupling follows the surviving region");
+        assert!(mix::load(resolve(a).unwrap()).unwrap().total_moles() > 49.0, "and its gas is the merged pipeline's");
+
+        // Split: the coupling stays with the port's side; the other port is alone again.
+        with_world(|w| {
+            w.edit_network::<Pipes>(move |host| host.disconnect_entities(a, b))
+                .map_err(|e| eyre!("{e}"))?;
+            w.commit_network::<Pipes>();
+            Ok(())
+        })
+        .unwrap();
+        assert_ne!(resolve(a), resolve(b), "split: two pipelines again");
+
+        // The exchange heats the gas of the region the port is in now.
+        let before = mix::load(resolve(a).unwrap()).unwrap().get_temperature();
+        for _ in 0..10 {
+            let probes = mixture_probes();
+            assert!(probes.0.iter().any(|p| p.0 == key), "the port's coupling is probed under its key");
+            let events = with_world(|w| {
+                w.set_global(probes).map_err(|e| eyre!("{e}"))?;
+                w.step_blocking();
+                Ok(w.drain_events())
+            })
+            .unwrap();
+            apply_mixture_heat(&events);
+        }
+        let after = mix::load(resolve(a).unwrap()).unwrap().get_temperature();
+        assert!(after > before + 1.0, "the hot body warmed the pipeline: {before} -> {after}");
+        let _ = body;
+    }
 
     #[test]
     fn a_body_warms_a_tank() {
@@ -1719,6 +1664,18 @@ mod tests {
         b.energy = 1_000.0 * t;
         w.put(e, b).unwrap();
         wake_body_couplings(w, e.index());
+    }
+
+    fn channel_of(
+        chans: &[vg_core::channel::ChannelInfo],
+        name: &str,
+    ) -> Result<vg_core::channel::ChannelId> {
+        #[allow(clippy::cast_possible_truncation)]
+        chans
+            .iter()
+            .position(|c| c.name == name)
+            .map(|i| vg_core::channel::ChannelId(i as u8))
+            .ok_or_else(|| eyre!("no {name} channel"))
     }
 
     #[test]
@@ -1801,8 +1758,18 @@ mod tests {
             let outcome = configure_bodies(
                 w,
                 &[
-                    BodySpec { e: plain, capacity: 500.0, temperature: 290.0, keep: false },
-                    BodySpec { e: written, capacity: 2_000.0, temperature: 290.0, keep: true },
+                    BodySpec {
+                        e: plain,
+                        capacity: 500.0,
+                        temperature: 290.0,
+                        keep: false,
+                    },
+                    BodySpec {
+                        e: written,
+                        capacity: 2_000.0,
+                        temperature: 290.0,
+                        keep: true,
+                    },
                 ],
             );
             let still_reserved = is_reserved(plain) || is_reserved(written);
@@ -1819,7 +1786,10 @@ mod tests {
         assert!((plain_b.energy / plain_b.capacity - 290.0).abs() < 1e-6);
         assert!(!plain_b.keep);
         assert!((written_b.capacity - 2_000.0).abs() < 1e-9);
-        assert!((written_b.energy / written_b.capacity - 350.0).abs() < 1e-6, "{written_b:?}");
+        assert!(
+            (written_b.energy / written_b.capacity - 350.0).abs() < 1e-6,
+            "{written_b:?}"
+        );
         assert!(!written_b.keep, "an explicit keep write survives configure");
         assert!(!still_reserved);
     }
@@ -1832,15 +1802,26 @@ mod tests {
             // Released while pending: its handle stops resolving.
             RESERVED.with_borrow_mut(|r| r.remove(&bodies[1].index()));
             let _ = w.despawn(bodies[1]);
-            assert!(w.read::<HeatBody>(bodies[1]).is_none(), "a released handle is dead");
-            let spec = |e| BodySpec { e, capacity: 10.0, temperature: 300.0, keep: false };
+            assert!(
+                w.read::<HeatBody>(bodies[1]).is_none(),
+                "a released handle is dead"
+            );
+            let spec = |e| BodySpec {
+                e,
+                capacity: 10.0,
+                temperature: 300.0,
+                keep: false,
+            };
             let first = configure_bodies(w, &[spec(bodies[0]), spec(bodies[1]), spec(foreign)]);
             // Configuring twice is a no-op the second time.
             let second = configure_bodies(w, &[spec(bodies[0])]);
             // A fresh reserve never hands back a handle equal to the dead one.
             let fresh = reserve_bodies(w, 1)?;
             assert_ne!(fresh[0], bodies[1], "a stale handle never names a new body");
-            assert!(w.read::<HeatBody>(bodies[1]).is_none(), "the stale handle stays dead");
+            assert!(
+                w.read::<HeatBody>(bodies[1]).is_none(),
+                "the stale handle stays dead"
+            );
             // The foreign body was not touched.
             let f = w.read::<HeatBody>(foreign).unwrap();
             assert!((f.capacity - 1_000.0).abs() < 1e-9);
@@ -1856,7 +1837,15 @@ mod tests {
         let t = with_world(|w| {
             let e = reserve_bodies(w, 1)?[0];
             note_reserved(e, |r| r.added += 1_000.0);
-            configure_bodies(w, &[BodySpec { e, capacity: 100.0, temperature: 300.0, keep: true }]);
+            configure_bodies(
+                w,
+                &[BodySpec {
+                    e,
+                    capacity: 100.0,
+                    temperature: 300.0,
+                    keep: true,
+                }],
+            );
             let b = w.read::<HeatBody>(e).unwrap();
             Ok(b.energy / b.capacity)
         })

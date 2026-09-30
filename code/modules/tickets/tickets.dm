@@ -163,7 +163,7 @@ GLOBAL_DATUM_INIT(tickets, /datum/tickets, new)
 	if(C.current_ticket())
 		if(!only_alert)
 			C.current_ticket().AddInteraction("Client reconnected.")
-		rel_set(C.current_ticket(), "initiator", C)
+		rel_set(C.current_ticket(), nameof(/datum/ticket::initiator), C)
 		C.current_ticket().initiator().mob?.throw_alert("open ticket", /atom/movable/screen/alert/open_ticket)
 
 //Dissasociate ticket
@@ -172,7 +172,7 @@ GLOBAL_DATUM_INIT(tickets, /datum/tickets, new)
 		var/datum/ticket/T = C.current_ticket()
 		T.AddInteraction("Client disconnected.")
 		T.initiator()?.mob?.clear_alert("open ticket")
-		rel_clear(T, "initiator")
+		rel_clear(T, nameof(T.initiator))
 		T = null
 
 //Get a ticket given a ckey
@@ -266,7 +266,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 
 	level = ticket_level
 
-	rel_set(src, "initiator", C)
+	rel_set(src, nameof(initiator), C)
 	initiator_ckey = initiator().ckey
 	initiator_key_name = key_name(initiator(), FALSE, TRUE)
 	if(initiator().current_ticket())	//This is a bug
@@ -277,7 +277,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 
 	var/parsed_message = keywords_lookup(msg)
 
-	own_set(src, "statclick", new /obj/effect/statclick/ticket(null, src))
+	own_set(src, nameof(statclick), new /obj/effect/statclick/ticket(null, src))
 	_interactions = list()
 
 	if(is_bwoink)
@@ -404,7 +404,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 		to_chat(usr, span_warning("This user already has an active ticket, cannot reopen this one."))
 		return
 
-	own_set(src, "statclick", new /obj/effect/statclick/ticket(null, src))
+	own_set(src, nameof(statclick), new /obj/effect/statclick/ticket(null, src))
 	switch(state)
 		if(AHELP_CLOSED)
 			feedback_dec("ticket_close")
@@ -432,8 +432,8 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 	if(state != AHELP_ACTIVE)
 		return
 	EXPIRY_STAMP(src, closed_at, CLOCK_WORLD)
-	own_clear(src, "statclick", OWN_DELETE)
-	own_take_member(GLOB.tickets, "active_tickets", src) // Close()/Resolve() re-adopt it via ListInsert()
+	own_clear(src, nameof(statclick), OWN_DELETE)
+	own_take_member(GLOB.tickets, nameof(/datum/tickets::active_tickets), src) // Close()/Resolve() re-adopt it via ListInsert()
 	if(initiator() && initiator().current_ticket() == src)
 		initiator().current_ticket_id = null
 
@@ -631,7 +631,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 
 INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket)
 /obj/effect/statclick/ticket/Initialize(mapload, datum/ticket/T)
-	rel_set(src, "ticket_datum", T)
+	rel_set(src, nameof(ticket_datum), T)
 	. = ..()
 
 /obj/effect/statclick/ticket/update()

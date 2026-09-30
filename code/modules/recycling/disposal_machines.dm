@@ -138,7 +138,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	if(!air_contents || !environment || environment.return_temperature() <= 0 || environment.total_moles() < MINIMUM_MOLES_TO_PUMP)
 		return FALSE
 	var/transfer_moles = min(environment.total_moles(), (PUMP_MAX_FLOW_RATE / environment.return_volume()) * environment.total_moles())
-	var/specific_power = calculate_specific_power(environment, air_contents) / ATMOS_PUMP_EFFICIENCY
+	var/specific_power = vg_specific_power(environment, air_contents) / ATMOS_PUMP_EFFICIENCY
 	if(specific_power > 0)
 		transfer_moles = min(transfer_moles, active_power_usage / specific_power)
 	return transfer_moles >= MINIMUM_MOLES_TO_PUMP
@@ -672,7 +672,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/disposal, TYPE_PROC_REF(/atom, appearance
 		if(length(slot_contents(CONTAINER_SLOT_DISPOSAL)))
 			packet_expel(src, flushed_items, air_contents)
 
-	own_set(src, "air_contents", new /datum/gas_mixture(PRESSURE_TANK_VOLUME)) // new empty gas resv. Disposal packet takes ownership of the original one!
+	own_set(src, nameof(air_contents), new /datum/gas_mixture(PRESSURE_TANK_VOLUME)) // new empty gas resv. Disposal packet takes ownership of the original one!
 	flushing = FALSE
 
 	// now reset disposal state
@@ -693,7 +693,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/disposal, TYPE_PROC_REF(/atom, appearance
 			// A station-wide restoration otherwise wakes every empty bin in the
 			// same tick, their combined pump surge drops the grid, and all of them
 			// go back to sleep without charging. Spread retries across the cycle.
-			om_after_slot(src, "power_retry_timer", rand(1 SECOND, 30 SECONDS), PROC_REF(retry_charge_after_power_restore))
+			after_slot(src, "power_retry_timer", rand(1 SECOND, 30 SECONDS), PROC_REF(retry_charge_after_power_restore))
 
 /obj/machinery/disposal/proc/retry_charge_after_power_restore()
 	if(mode == DISPOSALMODE_CHARGING && operable() && can_pressurize_from(loc.return_air()))

@@ -13,6 +13,8 @@ pub const GAS_MIN_MOLES: f32 = 0.0001;
 /// this, a filter/mixer's power-budget calc ([`crate::power_budget`])
 /// treats a gas, or a computed transfer, as not worth moving.
 pub const MINIMUM_MOLES_TO_FILTER: f32 = 0.04;
+/// DM's `MINIMUM_MOLES_TO_PUMP`: below this a pump treats the source as empty.
+pub const MINIMUM_MOLES_TO_PUMP: f32 = 0.01;
 /// Heat capacities below which heat will be considered 0.
 pub const MINIMUM_HEAT_CAPACITY: f32 = 0.0003;
 

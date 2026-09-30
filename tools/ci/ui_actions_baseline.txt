@@ -1,0 +1,1 @@
+# ui_actions_lint C1/C2 baseline (design review C1, C2); shrink-only, target 0

@@ -1,0 +1,2 @@
+# Legacy derived-proc reads a type's derived() doesn't declare (tools/ci/derived_reads_lint.py).
+# rule<TAB>file<TAB>normalized line. Shrink-only: after a sweep, `python tools/ci/derived_reads_lint.py --update`.

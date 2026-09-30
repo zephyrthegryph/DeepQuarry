@@ -124,7 +124,7 @@ DECLARE_INTERACTIONS(/obj/item/resonator, INTERACT_USE(null, PROC_REF(interactio
 	transform = matrix()*0.75
 	animate(src, transform = matrix()*1.5, time = timetoburst)
 	// Queue the actual bursting
-	rel_set(src, "creator", new_creator)
+	rel_set(src, nameof(creator), new_creator)
 	om_after(src, timetoburst, PROC_REF(burst))
 
 /obj/effect/resonance/proc/burst()

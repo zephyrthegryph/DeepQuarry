@@ -57,7 +57,7 @@
 
 /obj/item/commcard/engineering/Initialize(mapload)
 	..()
-	own_add(src, "internal_devices", new /obj/item/halogen_counter(src))
+	own_add(src, nameof(internal_devices), new /obj/item/halogen_counter(src))
 	return INITIALIZE_HINT_LATELOAD
 
 /obj/item/commcard/engineering/LateInitialize()
@@ -80,7 +80,7 @@
 
 /obj/item/commcard/atmos/Initialize(mapload)
 	. = ..()
-	own_add(src, "internal_devices", new /obj/item/analyzer(src))
+	own_add(src, nameof(internal_devices), new /obj/item/analyzer(src))
 
 // Medical Cartridge:
 // Devices
@@ -95,8 +95,8 @@
 
 /obj/item/commcard/medical/Initialize(mapload)
 	. = ..()
-	own_add(src, "internal_devices", new /obj/item/healthanalyzer(src))
-	own_add(src, "internal_devices", new /obj/item/halogen_counter(src))
+	own_add(src, nameof(internal_devices), new /obj/item/healthanalyzer(src))
+	own_add(src, nameof(internal_devices), new /obj/item/halogen_counter(src))
 
 /obj/item/commcard/medical/get_data()
 	return list(list("field" = "med_records", "value" = get_med_records()))
@@ -114,7 +114,7 @@
 
 /obj/item/commcard/medical/chemistry/Initialize(mapload)
 	. = ..()
-	own_add(src, "internal_devices", new /obj/item/reagent_scanner(src))
+	own_add(src, nameof(internal_devices), new /obj/item/reagent_scanner(src))
 
 // Detective Cartridge:
 // Devices
@@ -201,7 +201,7 @@
 
 /obj/item/commcard/signal/Initialize(mapload)
 	. = ..()
-	own_add(src, "internal_devices", new /obj/item/assembly/signaler(src))
+	own_add(src, nameof(internal_devices), new /obj/item/assembly/signaler(src))
 
 /obj/item/commcard/signal/get_data()
 	return list(
@@ -223,8 +223,8 @@
 
 /obj/item/commcard/signal/science/Initialize(mapload)
 	. = ..()
-	own_add(src, "internal_devices", new /obj/item/reagent_scanner(src))
-	own_add(src, "internal_devices", new /obj/item/analyzer(src))
+	own_add(src, nameof(internal_devices), new /obj/item/reagent_scanner(src))
+	own_add(src, nameof(internal_devices), new /obj/item/analyzer(src))
 
 // Supply Cartridge:
 // Templates
@@ -392,9 +392,9 @@
 
 /obj/item/commcard/head/rd/Initialize(mapload)
 	. = ..()
-	own_add(src, "internal_devices", new /obj/item/analyzer(src))
-	own_add(src, "internal_devices", new /obj/item/reagent_scanner(src))
-	own_add(src, "internal_devices", new /obj/item/assembly/signaler(src))
+	own_add(src, nameof(internal_devices), new /obj/item/analyzer(src))
+	own_add(src, nameof(internal_devices), new /obj/item/reagent_scanner(src))
+	own_add(src, nameof(internal_devices), new /obj/item/assembly/signaler(src))
 
 /obj/item/commcard/head/rd/get_data()
 	var/list/data = ..()
@@ -422,9 +422,9 @@
 
 /obj/item/commcard/head/cmo/Initialize(mapload)
 	. = ..()
-	own_add(src, "internal_devices", new /obj/item/healthanalyzer(src))
-	own_add(src, "internal_devices", new /obj/item/reagent_scanner(src))
-	own_add(src, "internal_devices", new /obj/item/halogen_counter(src))
+	own_add(src, nameof(internal_devices), new /obj/item/healthanalyzer(src))
+	own_add(src, nameof(internal_devices), new /obj/item/reagent_scanner(src))
+	own_add(src, nameof(internal_devices), new /obj/item/halogen_counter(src))
 
 /obj/item/commcard/head/cmo/get_data()
 	var/list/data = ..()
@@ -451,8 +451,8 @@
 
 /obj/item/commcard/head/ce/Initialize(mapload)
 	..()
-	own_add(src, "internal_devices", new /obj/item/analyzer(src))
-	own_add(src, "internal_devices", new /obj/item/halogen_counter(src))
+	own_add(src, nameof(internal_devices), new /obj/item/analyzer(src))
+	own_add(src, nameof(internal_devices), new /obj/item/halogen_counter(src))
 	return INITIALIZE_HINT_LATELOAD
 
 /obj/item/commcard/head/ce/LateInitialize()
@@ -505,11 +505,11 @@
 
 /obj/item/commcard/head/captain/Initialize(mapload)
 	. = ..()
-	own_add(src, "internal_devices", new /obj/item/analyzer(src))
-	own_add(src, "internal_devices", new /obj/item/healthanalyzer(src))
-	own_add(src, "internal_devices", new /obj/item/reagent_scanner(src))
-	own_add(src, "internal_devices", new /obj/item/halogen_counter(src))
-	own_add(src, "internal_devices", new /obj/item/assembly/signaler(src))
+	own_add(src, nameof(internal_devices), new /obj/item/analyzer(src))
+	own_add(src, nameof(internal_devices), new /obj/item/healthanalyzer(src))
+	own_add(src, nameof(internal_devices), new /obj/item/reagent_scanner(src))
+	own_add(src, nameof(internal_devices), new /obj/item/halogen_counter(src))
+	own_add(src, nameof(internal_devices), new /obj/item/assembly/signaler(src))
 
 /obj/item/commcard/head/captain/get_data()
 	var/list/data = ..()
@@ -601,7 +601,7 @@
 
 /obj/item/commcard/explorer/Initialize(mapload)
 	. = ..()
-	own_add(src, "internal_devices", new /obj/item/gps/explorer(src))
+	own_add(src, nameof(internal_devices), new /obj/item/gps/explorer(src))
 
 /obj/item/commcard/explorer/get_data()
 	var/list/gps_lists = get_GPS_lists()

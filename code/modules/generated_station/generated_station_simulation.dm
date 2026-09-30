@@ -9,7 +9,7 @@
 
 /datum/generated_station_department_runtime/New(datum/generated_station_department_instance/new_department)
 	..()
-	rel_set(src, "department", new_department)
+	rel_set(src, nameof(department), new_department)
 	stockpiles = list()
 	minimum_stockpiles = list()
 
@@ -40,12 +40,12 @@ REGISTRY_MEMBERSHIP(/datum/generated_station_simulation, REGISTRY_GENERATED_STAT
 
 /datum/generated_station_simulation/New(datum/generated_station_spec/new_spec)
 	..()
-	rel_set(src, "spec", new_spec)
-	own_take_all(src, "departments")
+	rel_set(src, nameof(spec), new_spec)
+	own_take_all(src, nameof(departments))
 	capabilities = list()
 	power_areas = list()
 	for(var/datum/generated_station_department_instance/department in spec()?.departments)
-		own_put(src, "departments", department.id, new /datum/generated_station_department_runtime(department))
+		own_put(src, nameof(departments), department.id, new /datum/generated_station_department_runtime(department))
 	configure_default_resources()
 	// Joins the runtime registry (filed by station id) now that the spec is set; the destroy
 	// transaction leaves it in phase 2.

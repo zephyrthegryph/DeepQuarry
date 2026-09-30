@@ -94,7 +94,7 @@
 	if(atom_integrity == new_value)
 		return
 	atom_integrity = new_value
-	om_changed(src, CHANGE_INTEGRITY) // the get_integrity derived field (appearance providers watch it)
+	changed(src, CHANGE_INTEGRITY) // damage is a dispatched change: derived procs (draw) re-run; OM observers hear it
 	on_update_integrity(old_value, new_value)
 	dq_rules_publish(src, RULE_KEY_INTEGRITY)
 	return new_value
@@ -134,10 +134,12 @@
 /// Called after the atom takes damage and integrity is below integrity_failure level
 /atom/proc/atom_break(damage_flag)
 	SHOULD_CALL_PARENT(TRUE)
+	caps_set_broken(TRUE) // the breakable capability's CAP_BROKEN
 
 /// Called when integrity is repaired above the breaking point having been broken before
 /atom/proc/atom_fix()
 	SHOULD_CALL_PARENT(TRUE)
+	caps_set_broken(FALSE)
 
 ///what happens when the atom's integrity reaches zero.
 /atom/proc/atom_destruction(damage_flag)

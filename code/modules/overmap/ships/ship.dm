@@ -59,7 +59,7 @@ DECLARE_REGISTRY(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJECTS)
 	SSshuttles.ships += src
 	position_x = 0
 	position_y = 0
-	rel_set(src, "vector", add_vis_overlay("vector", dir = SOUTH, layer = 10, unique = TRUE))
+	rel_set(src, nameof(vector), add_vis_overlay("vector", dir = SOUTH, layer = 10, unique = TRUE))
 	vector_overlay().vis_flags = (VIS_INHERIT_PLANE|VIS_INHERIT_ID)
 	GLOB.flight_service?.register_vessel(src)
 
@@ -67,7 +67,7 @@ DECLARE_REGISTRY(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJECTS)
 /obj/effect/overmap/visitable/ship/lifecycle_dematerialize()
 	SSshuttles.ships -= src
 	if(GLOB.flight_service && flight_vessel_id)
-		var/datum/flight_vessel/vessel = own_take_member(GLOB.flight_service, "vessels", flight_vessel_id)
+		var/datum/flight_vessel/vessel = own_take_member(GLOB.flight_service, nameof(/datum/world_service/flight::vessels), flight_vessel_id)
 		if(vessel)
 			GLOB.flight_service.vessel_by_ship -= REF(src)
 			qdel(vessel)
@@ -272,7 +272,7 @@ DECLARE_APPEARANCE_PROC(/obj/effect/overmap/visitable/ship, TYPE_PROC_REF(/atom,
 		S.attempt_hook_up(src)
 	for(var/datum/ship_engine/E in REGISTRY_MEMBERS(REGISTRY_SHIP_ENGINES))
 		if(check_ownership(E.holder()))
-			rel_add(src, "engines", E)
+			rel_add(src, nameof(engines), E)
 
 /obj/effect/overmap/visitable/ship/proc/get_landed_info()
 	return "This ship cannot land."

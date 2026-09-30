@@ -32,22 +32,22 @@
 	if(reference == node1)
 		if(istype(node1, /obj/machinery/atmospherics/pipe))
 			rust_invalidate_pipeline_wrapper(parent)
-		rel_clear(src, "node1")
+		rel_clear(src, nameof(node1))
 
 	if(reference == node2)
 		if(istype(node2, /obj/machinery/atmospherics/pipe))
 			rust_invalidate_pipeline_wrapper(parent)
-		rel_clear(src, "node2")
+		rel_clear(src, nameof(node2))
 
 	if(reference == node3)
 		if(istype(node3, /obj/machinery/atmospherics/pipe))
 			rust_invalidate_pipeline_wrapper(parent)
-		rel_clear(src, "node3")
+		rel_clear(src, nameof(node3))
 
 	if(reference == node4)
 		if(istype(node4, /obj/machinery/atmospherics/pipe))
 			rust_invalidate_pipeline_wrapper(parent)
-		rel_clear(src, "node4")
+		rel_clear(src, nameof(node4))
 
 	update_icon()
 	handle_leaking()
@@ -96,22 +96,22 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/pipe/manifold4w, TYPE_PROC_R
 
 	for(var/obj/machinery/atmospherics/target in get_step(src, NORTH))
 		if (can_be_node(target, 1))
-			rel_set(src, "node1", target)
+			rel_set(src, nameof(node1), target)
 			break
 
 	for(var/obj/machinery/atmospherics/target in get_step(src, SOUTH))
 		if (can_be_node(target, 2))
-			rel_set(src, "node2", target)
+			rel_set(src, nameof(node2), target)
 			break
 
 	for(var/obj/machinery/atmospherics/target in get_step(src, EAST))
 		if (can_be_node(target, 3))
-			rel_set(src, "node3", target)
+			rel_set(src, nameof(node3), target)
 			break
 
 	for(var/obj/machinery/atmospherics/target in get_step(src, WEST))
 		if (can_be_node(target, 4))
-			rel_set(src, "node4", target)
+			rel_set(src, nameof(node4), target)
 			break
 
 	if(!node1 && !node2 && !node3 && !node4)

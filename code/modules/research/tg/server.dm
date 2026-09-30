@@ -28,17 +28,17 @@ EMP_DISABLE(/obj/machinery/rnd/server, 60 SECONDS, "emp_until")
 	if(!stored_research)
 		var/datum/techweb/science_web = locate_in_list(GLOB.research_service.techwebs, /datum/techweb/science)
 		connect_techweb(science_web)
-	rel_add(stored_research, "techweb_servers", src)
+	rel_add(stored_research, nameof(stored_research.techweb_servers), src)
 	name += " [num2hex(rand(1,65535), -1)]" //gives us a random four-digit hex number as part of the name. Y'know, for fluff.
 	refresh_working()
 
 /// A server moving to another web leaves the old web's server list.
 /obj/machinery/rnd/server/connect_techweb(datum/techweb/new_techweb)
 	if(stored_research && stored_research != new_techweb)
-		rel_remove(stored_research, "techweb_servers", src)
+		rel_remove(stored_research, nameof(stored_research.techweb_servers), src)
 	. = ..()
 	if(stored_research)
-		rel_add(stored_research, "techweb_servers", src)
+		rel_add(stored_research, nameof(stored_research.techweb_servers), src)
 
 APPEARANCE_TEMPLATE(/obj/machinery/rnd/server, "{base_icon_state}-{appearance_suffix}")
 

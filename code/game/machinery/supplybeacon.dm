@@ -37,7 +37,6 @@ DECLARE_INTERACTIONS(/obj/item/supply_beacon, INTERACT_USE(null, PROC_REF(intera
 	stat = 0
 
 	/// om_after() timer that sends the drop once the beacon has stayed powered for drop_delay, or 0.
-	var/tmp/drop_timer = 0
 	var/drop_delay = 450
 	var/drop_type
 
@@ -111,9 +110,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/power/supply_beacon, MACHINE_PIPELINE,
 		icon_state = "beacon"
 	set_light(0)
 	set_use_power(USE_POWER_OFF)
-	if(drop_timer)
-		om_cancel_timer(src, drop_timer)
-		drop_timer = 0
+	cancel_after(src, "drop")
 	if(user) to_chat(user, span_notice("You deactivate the beacon."))
 
 // an active beacon deactivates.
@@ -126,12 +123,11 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/power/supply_beacon, MACHINE_PIPELINE,
 	if(draw_power(500) < 500)
 		deactivate()
 		return
-	if(!drop_timer)
-		drop_timer = om_after(src, drop_delay, PROC_REF(drop_timer_fired))
+	if(!after_pending(src, "drop"))
+		rx_after(src, drop_delay, PROC_REF(drop_timer_fired), key = "drop")
 
-/// om_after() callback: the beacon stayed powered for drop_delay, so the pod is sent.
+/// The keyed timer: the beacon stayed powered for drop_delay, so the pod is sent.
 /obj/machinery/power/supply_beacon/proc/drop_timer_fired()
-	drop_timer = 0
 	if(expended || !use_power)
 		return
 	deactivate(permanent = 1)

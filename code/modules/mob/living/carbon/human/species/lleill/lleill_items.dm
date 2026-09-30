@@ -97,7 +97,7 @@
 /datum/reagent/glamour_twinkling/affect_blood(mob/living/carbon/human/target, removed)
 	if(target.species.darksight < 10)
 		to_chat(target, span_warning("You can suddenly see much better than before."))
-		proto_private(target, "species") // per-mob change: never mutate the shared species
+		proto_private(target, nameof(target.species)) // per-mob change: never mutate the shared species
 		target.species.darksight = 10
 	if(target.disabilities & NEARSIGHTED)
 		target.disabilities &= ~NEARSIGHTED
@@ -165,8 +165,8 @@ DECLARE_INTERACTIONS(/obj/item/glamour_face, INTERACT_USE(null, PROC_REF(interac
 		H.icon_state = chosen_target.icon_state
 		H.copy_overlays(chosen_target, TRUE)
 		H.resize(chosen_target.size_multiplier, ignore_prefs = TRUE)
-		rel_set(src, "homunculus", H)
-		rel_set(H, "owner", src)
+		rel_set(src, nameof(homunculus), H)
+		rel_set(H, nameof(H.owner), src)
 
 /obj/item/glamour_face/proc/homunculus_action_chosen(datum/om/prompt/choice/ask)
 	var/mob/user = ask.answerer
@@ -260,7 +260,7 @@ DECLARE_INTERACTIONS(/obj/item/glamour_face, INTERACT_USE(null, PROC_REF(interac
 	if(M != connected_mob && connected_mob)
 		to_chat(connected_mob, span_warning("\The [src] has been destroyed by \the [M]."))
 	if(istype(L) && istype(L.species, /datum/species/lleill))
-		own_take_member(L, "teleporters", src)
+		own_take_member(L, nameof(L.teleporters), src)
 	qdel(src)
 
 DECLARE_INTERACTIONS(/obj/structure/glamour_ring, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
@@ -308,7 +308,7 @@ DECLARE_INTERACTIONS(/obj/structure/glamour_ring, INTERACT_HAND_UNGATED(null, PR
 /obj/structure/glamour_ring/proc/attack_hand_glamour_ring_done(datum/om/task/timed/glamour_ring_attack_hand_glamour_ring/task)
 	if(!task.lleill_mob)
 		return
-	var/datum/species/lleill/LL = proto_private(task.lleill_mob, "species") // per-mob change: never mutate the shared species
+	var/datum/species/lleill/LL = proto_private(task.lleill_mob, nameof(/datum/dna::species)) // per-mob change: never mutate the shared species
 	if(!istype(LL))
 		return
 	COOLDOWN_START(LL, ring_cooldown, 10 MINUTES)

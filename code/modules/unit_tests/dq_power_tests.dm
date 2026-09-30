@@ -91,7 +91,7 @@
 	// `avail` is a per-step law result (ProducerCredit et al, verdigris/domains/power/src/laws.rs),
 	// not pushed on every write. One blocking world step settles the merged
 	// region's ledger before GLOB.machine_service.process_power() re-polls it (a paced
-	// vg_world_tick() does nothing while the previous worker frame runs).
+	// vg_frame() does not step while the previous worker frame runs).
 	vg_world_run_steps(1)
 	GLOB.machine_service.process_power()
 	TEST_ASSERT_EQUAL(power_avail(left.power_region), 1000, "the merged network does not carry the supply")
@@ -143,17 +143,18 @@
 	// Cut off, nearly empty, with a load.
 	A.disconnect_from_network()
 	A.area().use_power_static(2000, EQUIP)
-	A.operating = TRUE
-	A.chargemode = TRUE
+	A.set_operating(TRUE)
+	A.set_chargemode(TRUE)
 	A.equipment = POWERCHAN_ON_AUTO
 	A.lighting = POWERCHAN_ON_AUTO
 	A.environ = POWERCHAN_ON_AUTO
 	A.cell.charge = A.cell.maxcharge * 0.001
-	A.sync_cell_charge()
-	A.set_channels(0, A.equipment)
-	A.set_channels(1, A.lighting)
-	A.set_channels(2, A.environ)
+	A.seat_cell_charge(TRUE) // the seated cell's charge becomes Rust's again
+	native_write(A, NATIVE_APC_CHANNELS, A.equipment, 0)
+	native_write(A, NATIVE_APC_CHANNELS, A.lighting, 1)
+	native_write(A, NATIVE_APC_CHANNELS, A.environ, 2)
 	A.update()
+	refresh_flush()
 	var/drained = FALSE
 	for(var/i in 1 to 20)
 		dq_power_test_step()
@@ -185,8 +186,9 @@
 	T.set_power_supply(0)
 	A.area().use_power_static(-2000, EQUIP)
 	A.cell.charge = old_charge
-	A.sync_cell_charge()
+	A.seat_cell_charge(TRUE) // the seated cell's charge becomes Rust's again
 	A.update()
+	refresh_flush()
 	om_unhook(M, list(/datum/om/event/machinery_power_lost, /datum/om/event/machinery_power_restored), src)
 	GLOB.machine_service.process_power()
 
@@ -202,16 +204,17 @@
 	T.connect_to_network()
 	T.set_power_supply(1000000)
 	A.cell.charge = A.cell.maxcharge
-	A.sync_cell_charge()
+	A.seat_cell_charge(TRUE) // the seated cell's charge becomes Rust's again
 	A.update()
+	refresh_flush()
 	var/obj/machinery/power/smes/S
 	for(var/obj/machinery/power/smes/candidate as anything in REGISTRY_MEMBERS(REGISTRY_SMES))
 		if(!candidate.has_stat(BROKEN))
 			S = candidate
 			break
-	var/old_smes = S ? list(S.charge, S.input_attempt, S.output_attempt) : null
+	var/old_smes = S ? list(S.stored_charge(), S.input_attempt, S.output_attempt) : null
 	if(S)
-		S.charge = S.capacity
+		S.set_stored_charge(S.capacity)
 		S.input_attempt = FALSE
 		S.output_attempt = FALSE
 		S.power_sync()
@@ -227,7 +230,7 @@
 	if(S)
 		TEST_ASSERT_EQUAL(S.power_event_count, smes_events, "an idle SMES kept hearing power events")
 		TEST_ASSERT(!machine_stepping(S), "an idle SMES is polling")
-		S.charge = old_smes[1]
+		S.set_stored_charge(old_smes[1])
 		S.input_attempt = old_smes[2]
 		S.output_attempt = old_smes[3]
 		S.power_sync()
@@ -255,9 +258,10 @@
 	var/list/data = sensor.return_reading_data()
 	TEST_ASSERT_EQUAL(data["total_avail"], sensor.reading_to_text(5000), "the monitor reads the wrong supply")
 	TEST_ASSERT_NULL(data["error"], "the monitor reports no network")
+	// The grid keeps no eased copy (a monitor eases what it shows): a draw is booked on the ledger at once.
 	sensor.draw_power(1200)
+	TEST_ASSERT(power_load(sensor.power_region) > 0, "the ledger did not book a draw (load [power_load(sensor.power_region)] avail [power_avail(sensor.power_region)])")
 	dq_power_test_step()
-	TEST_ASSERT(power_view_load(sensor.power_region) > 0, "the monitor's smoothed load ignores a draw")
 	qdel(cables[2])
 	dq_power_test_step()
 	TEST_ASSERT(!sensor.power_region || power_avail(sensor.power_region) == 0, "a cut sensor still reads the supply")

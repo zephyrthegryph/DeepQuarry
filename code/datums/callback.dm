@@ -49,12 +49,12 @@
 
 /datum/callback/New(thingtocall, proctocall, ...)
 	if (thingtocall && thingtocall != GLOBAL_PROC) // object starts as GLOBAL_PROC
-		rel_set(src, "object", thingtocall)
+		rel_set(src, nameof(object), thingtocall)
 	delegate = proctocall
 	if (length(args) > 2)
 		arguments = args.Copy(3)
 	if(usr)
-		rel_set(src, "user", usr)
+		rel_set(src, nameof(user), usr)
 
 /world/proc/ImmediateInvokeAsync(thingtocall, proctocall, ...)
 	set waitfor = FALSE // ALLOW(scheduler): INVOKE_ASYNC primitive (goes with the last INVOKE_ASYNC caller)

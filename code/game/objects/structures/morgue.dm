@@ -24,12 +24,12 @@
 
 
 /obj/structure/morgue/proc/get_occupants()
-	rel_clear(src, "occupants")
+	rel_clear(src, nameof(occupants))
 	for(var/mob/living/carbon/human/H in contents)
-		rel_add(src, "occupants", H)
+		rel_add(src, nameof(occupants), H)
 	for(var/obj/structure/closet/body_bag/B in contents)
 		for(var/mob/living/carbon/human/bagged as anything in B.get_occupants())
-			rel_add(src, "occupants", bagged)
+			rel_add(src, nameof(occupants), bagged)
 
 /obj/structure/morgue/proc/update(broadcast=0)
 	if (src.connected)
@@ -88,12 +88,12 @@
 		if (!( A.anchored ))
 			A.forceMove(src)
 	play_sfx(src, SFX_ITEMS_DECONSTRUCT)
-	own_clear(src, "connected", OWN_DELETE)
+	own_clear(src, nameof(connected), OWN_DELETE)
 
 /obj/structure/morgue/proc/open()
 	play_sfx(src, SFX_ITEMS_DECONSTRUCT)
-	own_set(src, "connected", new /obj/structure/m_tray( src.loc ))
-	rel_set(connected, "connected", src)
+	own_set(src, nameof(connected), new /obj/structure/m_tray( src.loc ))
+	rel_set(connected, nameof(connected.connected), src)
 	step(src.connected, src.dir)
 	src.connected.layer = OBJ_LAYER
 	var/turf/T = get_step(src, src.dir)
@@ -104,7 +104,7 @@
 		src.connected.icon_state = "morguet"
 		src.connected.set_dir(src.dir)
 	else
-		own_clear(src, "connected", OWN_DELETE)
+		own_clear(src, nameof(connected), OWN_DELETE)
 
 
 /// Old attackby: relabel with a pen.
@@ -186,7 +186,7 @@
 			//Foreach goto(26)
 		var/obj/structure/morgue/M = connected
 		add_fingerprint(user)
-		own_clear(M, "connected", OWN_DELETE) // the morgue owns this tray: deletes src
+		own_clear(M, nameof(M.connected), OWN_DELETE) // the morgue owns this tray: deletes src
 		M.update()
 	return TRUE
 
@@ -256,11 +256,11 @@ REGISTRY_MEMBERSHIP(/obj/structure/morgue/crematorium, REGISTRY_CREMATORIUMS)
 			if (!( A.anchored ))
 				A.forceMove(src)
 		play_sfx(src, SFX_ITEMS_DECONSTRUCT)
-		own_clear(src, "connected", OWN_DELETE)
+		own_clear(src, nameof(connected), OWN_DELETE)
 	else if (src.locked == 0)
 		play_sfx(src, SFX_ITEMS_DECONSTRUCT)
-		own_set(src, "connected", new /obj/structure/m_tray/c_tray( src.loc ))
-		rel_set(connected, "connected", src)
+		own_set(src, nameof(connected), new /obj/structure/m_tray/c_tray( src.loc ))
+		rel_set(connected, nameof(connected.connected), src)
 		step(src.connected, dir)
 		src.connected.layer = OBJ_LAYER
 		var/turf/T = get_step(src, dir)
@@ -270,7 +270,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/morgue/crematorium, REGISTRY_CREMATORIUMS)
 				A.forceMove(src.connected.loc)
 			src.connected.icon_state = "cremat"
 		else
-			own_clear(src, "connected", OWN_DELETE)
+			own_clear(src, nameof(connected), OWN_DELETE)
 	src.add_fingerprint(user)
 	update()
 	return TRUE
@@ -297,8 +297,8 @@ REGISTRY_MEMBERSHIP(/obj/structure/morgue/crematorium, REGISTRY_CREMATORIUMS)
 /obj/structure/morgue/crematorium/relaymove(mob/user as mob)
 	if (user.stat || locked)
 		return
-	own_set(src, "connected", new /obj/structure/m_tray/c_tray( src.loc ))
-	rel_set(connected, "connected", src)
+	own_set(src, nameof(connected), new /obj/structure/m_tray/c_tray( src.loc ))
+	rel_set(connected, nameof(connected.connected), src)
 	step(src.connected, EAST)
 	src.connected.layer = OBJ_LAYER
 	var/turf/T = get_step(src, EAST)
@@ -308,7 +308,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/morgue/crematorium, REGISTRY_CREMATORIUMS)
 			A.forceMove(src.connected.loc)
 		src.connected.icon_state = "cremat"
 	else
-		own_clear(src, "connected", OWN_DELETE)
+		own_clear(src, nameof(connected), OWN_DELETE)
 	return
 
 /obj/structure/morgue/crematorium/proc/cremation_done()

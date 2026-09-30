@@ -37,7 +37,7 @@
 	if(active && !drilling_turf())
 		if(ismineralturf(A))
 			var/turf/simulated/mineral/M = A
-			rel_set(src, "drilling_turf", get_turf(src))
+			rel_set(src, nameof(drilling_turf), get_turf(src))
 			src.visible_message(span_bold("\The [src]") + " begins to drill into \the [M].")
 			set_anchored(TRUE)
 			om_after(src, drill_time, PROC_REF(finish_drilling), M)
@@ -46,7 +46,7 @@
 	if(get_turf(src) == drilling_turf() && active)
 		M.GetDrilled()
 		src.forceMove(M)
-	rel_clear(src, "drilling_turf")
+	rel_clear(src, nameof(drilling_turf))
 	set_anchored(FALSE)
 
 /// Accessor for the drilling_turf var.

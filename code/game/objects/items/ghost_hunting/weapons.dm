@@ -109,7 +109,7 @@ APPEARANCE_TEMPLATE(/obj/item/ghost_catcher, "{initial(icon_state)}{appearance_b
 
 	play_sfx(src, SFX_MACHINES_BEEP)
 
-	rel_set(src, "grabbed_entity", target)
+	rel_set(src, nameof(grabbed_entity), target)
 	if(isliving(target))
 		var/mob/living/target_mob = target
 		target_mob.status_at_least(EFFECT_WEAKENED, 3)
@@ -147,7 +147,7 @@ APPEARANCE_TEMPLATE(/obj/item/ghost_catcher, "{initial(icon_state)}{appearance_b
 		target.filters -= effects[2]
 	if(user?.client) // If for some reason they logged out mid-scan the box will be gone anyways.
 		delete_box(effects[3], user.client)
-	rel_clear(src, "grabbed_entity")
+	rel_clear(src, nameof(grabbed_entity))
 	COOLDOWN_START(src, ghost_cooldown, 10 SECONDS) // Arbitrary cooldown to prevent spam. Adjust as needed.
 
 /obj/item/ghost_catcher/proc/grab_timed_out(datum/om/task/timed/ghost_grab/task)

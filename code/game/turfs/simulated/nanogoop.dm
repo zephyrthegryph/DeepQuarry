@@ -19,7 +19,7 @@ REGISTRY_MEMBERSHIP(/turf/simulated/floor/water/digestive_enzymes/nanites, REGIS
 	reagent_type = REAGENT_ID_LIQUIDPROTEAN
 	oxygen		= MOLES_O2STANDARD
 	nitrogen	= MOLES_N2STANDARD
-	temperature = T20C
+	initial_temperature = T20C
 	var/digesting = FALSE
 	var/digest_synth = FALSE
 	var/digest_robot = FALSE
@@ -38,7 +38,7 @@ REGISTRY_MEMBERSHIP(/turf/simulated/floor/water/digestive_enzymes/nanites, REGIS
 		if(!get_area(tolink))
 			continue
 		if(get_area(tolink) == get_area(src))
-			rel_set(src, "linkedsmes", tolink)
+			rel_set(src, nameof(linkedsmes), tolink)
 
 EXTEND_INTERACTIONS(/turf/simulated/floor/water/digestive_enzymes/nanites, \
 	INTERACT_HAND_UNGATED("Interface", PROC_REF(nanites_hand)), \
@@ -111,22 +111,22 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water/digestive_enzymes/nanites, \
 				om_task_timed(checker, 3 SECONDS, src, src, PROC_REF(toggle_all), list(FALSE))
 
 /turf/simulated/floor/water/digestive_enzymes/nanites/proc/interface_on(mob/user, choice2)
-	rel_set(src, "moblink", user)
+	rel_set(src, nameof(moblink), user)
 	switch(choice2)
 		if("None")
-			rel_set(src, "moblink", user)
+			rel_set(src, nameof(moblink), user)
 			toggle_all(TRUE)
 		if("All")
-			rel_set(src, "moblink", user)
+			rel_set(src, nameof(moblink), user)
 			toggle_all(TRUE, TRUE, TRUE, TRUE)
 		if("Organics and Cyborgs")
-			rel_set(src, "moblink", user)
+			rel_set(src, nameof(moblink), user)
 			toggle_all(TRUE, TRUE, TRUE)
 		if("Organics and Synthetics")
-			rel_set(src, "moblink", user)
+			rel_set(src, nameof(moblink), user)
 			toggle_all(TRUE, TRUE, FALSE, TRUE)
 		if("Only Organics")
-			rel_set(src, "moblink", user)
+			rel_set(src, nameof(moblink), user)
 			toggle_all(TRUE, TRUE)
 
 /// Old attack_ai. Cyborgs (shells included) never reached it: turfs send their Use to
@@ -150,19 +150,19 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water/digestive_enzymes/nanites, \
 			to_chat(user, span_warning("With you in control, \the [src] will not attempt to recycle your body, no matter the setting you pick"))
 			switch(choice2)
 				if("None")
-					rel_set(src, "moblink", user)
+					rel_set(src, nameof(moblink), user)
 					toggle_all(TRUE)
 				if("All")
-					rel_set(src, "moblink", user)
+					rel_set(src, nameof(moblink), user)
 					toggle_all(TRUE, TRUE, TRUE, TRUE)
 				if("Organics and Cyborgs")
-					rel_set(src, "moblink", user)
+					rel_set(src, nameof(moblink), user)
 					toggle_all(TRUE, TRUE, TRUE)
 				if("Organics and Synthetics")
-					rel_set(src, "moblink", user)
+					rel_set(src, nameof(moblink), user)
 					toggle_all(TRUE, TRUE, FALSE, TRUE)
 				if("Only Organics")
-					rel_set(src, "moblink", user)
+					rel_set(src, nameof(moblink), user)
 					toggle_all(TRUE, TRUE)
 
 		if("Off")
@@ -304,7 +304,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water/digestive_enzymes/nanites, \
 	var/mob/living/nutrienttarget = moblink
 	var/obj/machinery/power/smes/smes = linkedsmes
 	if(smes)
-		smes.charge += (amt * 20)
+		smes.adjust_stored_charge(amt * 20)
 		return
 	if(nutrienttarget)
 		if(ishuman(nutrienttarget))
@@ -326,9 +326,9 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water/digestive_enzymes/nanites, \
 	var/mob/living/nutrienttarget = moblink
 	for(var/turf/simulated/floor/water/digestive_enzymes/nanites/nanites in REGISTRY_MEMBERS(REGISTRY_NANITE_TURFS))
 		if(nanites.id == id)
-			rel_clear(nanites, "moblink")
+			rel_clear(nanites, nameof(nanites.moblink))
 			if(on)
-				rel_set(nanites, "moblink", nutrienttarget)
+				rel_set(nanites, nameof(nanites.moblink), nutrienttarget)
 			nanites.select_state(on, digest, robot, synth)
 
 /turf/simulated/floor/water/digestive_enzymes/nanites/proc/select_state(on = TRUE, digest = FALSE, robot = FALSE, synth = FALSE)

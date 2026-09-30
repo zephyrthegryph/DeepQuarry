@@ -346,14 +346,14 @@ TYPE_TABLE(/datum/cargo_market_counterparty/veymed, buyer_profiles, list(/datum/
 	var/market_generation = 0
 
 /datum/world_service/supply/proc/initialize_cargo_market()
-	own_clear(src, "market_counterparties", OWN_DELETE)
-	own_clear(src, "market_listings", OWN_DELETE)
-	own_clear(src, "market_bids", OWN_DELETE)
-	own_clear(src, "market_transactions", OWN_DELETE)
-	own_take_all(src, "market_counterparties")
-	own_take_all(src, "market_listings")
-	own_take_all(src, "market_bids")
-	own_take_all(src, "market_transactions")
+	own_clear(src, nameof(market_counterparties), OWN_DELETE)
+	own_clear(src, nameof(market_listings), OWN_DELETE)
+	own_clear(src, nameof(market_bids), OWN_DELETE)
+	own_clear(src, nameof(market_transactions), OWN_DELETE)
+	own_take_all(src, nameof(market_counterparties))
+	own_take_all(src, nameof(market_listings))
+	own_take_all(src, nameof(market_bids))
+	own_take_all(src, nameof(market_transactions))
 	next_market_id = 1
 	market_generation = 0
 	for(var/counterparty_type as anything in subtypesof(/datum/cargo_market_counterparty))
@@ -361,7 +361,7 @@ TYPE_TABLE(/datum/cargo_market_counterparty/veymed, buyer_profiles, list(/datum/
 			continue
 		var/datum/cargo_market_counterparty/counterparty = new counterparty_type
 		counterparty.rotate_cover()
-		own_put(src, "market_counterparties", counterparty.id, counterparty)
+		own_put(src, nameof(market_counterparties), counterparty.id, counterparty)
 	refresh_cargo_market()
 
 /datum/world_service/supply/proc/cargo_market_standing(datum/cargo_market_counterparty/counterparty)
@@ -390,12 +390,12 @@ TYPE_TABLE(/datum/cargo_market_counterparty/veymed, buyer_profiles, list(/datum/
 	for(var/listing_id in listing_ids)
 		var/datum/cargo_market_listing/existing_listing = market_listings?[listing_id]
 		if(!(existing_listing.reservation_key && existing_listing.stock > 0 && BEFORE(src, existing_listing.expires_at, CLOCK_WORLD)))
-			own_put(src, "market_listings", listing_id, null) // disposes of the owned listing
+			own_put(src, nameof(market_listings), listing_id, null) // disposes of the owned listing
 	var/list/bid_ids = market_bids?.Copy()
 	for(var/bid_id in bid_ids)
 		var/datum/cargo_market_bid/existing_bid = market_bids?[bid_id]
 		if(!(existing_bid.reservation_key && !existing_bid.completed_at && BEFORE(src, existing_bid.expires_at, CLOCK_WORLD)))
-			own_put(src, "market_bids", bid_id, null) // disposes of the owned bid
+			own_put(src, nameof(market_bids), bid_id, null) // disposes of the owned bid
 	market_generation++
 	var/expiry = world.time + CARGO_MARKET_REFRESH_INTERVAL
 	for(var/counterparty_id in market_counterparties)
@@ -418,7 +418,7 @@ TYPE_TABLE(/datum/cargo_market_counterparty/veymed, buyer_profiles, list(/datum/
 			listing.stock = rand(1, 4)
 			listing.expires_at = expiry
 			listing.cover_name = counterparty.active_cover_name
-			own_put(src, "market_listings", listing.id, listing)
+			own_put(src, nameof(market_listings), listing.id, listing)
 		var/list/profile_paths = TYPE_TABLE_COPY(counterparty, buyer_profiles)
 		for(var/bid_index in 1 to min(CARGO_MARKET_BIDS_PER_PARTY, length(profile_paths)))
 			var/profile_path = pick_n_take(profile_paths)
@@ -426,12 +426,12 @@ TYPE_TABLE(/datum/cargo_market_counterparty/veymed, buyer_profiles, list(/datum/
 			var/datum/cargo_market_bid/bid = new
 			bid.id = "MKT-B-[next_market_id++]"
 			bid.counterparty_id = counterparty.id
-			own_set(bid, "profile", profile)
+			own_set(bid, nameof(bid.profile), profile)
 			bid.target_units = rand(profile.minimum_units, profile.maximum_units)
 			bid.price_multiplier = cargo_market_buyer_multiplier(counterparty, profile)
 			bid.expires_at = expiry
 			bid.cover_name = counterparty.active_cover_name
-			own_put(src, "market_bids", bid.id, bid)
+			own_put(src, nameof(market_bids), bid.id, bid)
 	next_market_refresh = expiry
 
 /datum/world_service/supply/proc/process_cargo_market()
@@ -614,10 +614,10 @@ TYPE_TABLE(/datum/cargo_market_counterparty/veymed, buyer_profiles, list(/datum/
 		transaction.trace_strength = CLAMP(round((8 + sqrt(max(0, transaction.value)) / 3 + (reservation_key ? 5 : 0)) * risk_multiplier), 1, CARGO_MARKET_TRACE_LIMIT)
 		GLOB.station_faction_relations.add_agent_exposure(transaction.principal_account, counterparty.faction_id, max(1, round(transaction.trace_strength / 5)), "Encrypted market traffic accumulated forensic metadata.", transaction.id)
 	log_game("Cargo market [transaction.id]: [transaction_type] [transaction.value] Thalers with [counterparty?.name || counterparty_id] by account [account_number || "unknown"] (cover: [transaction.cover_name || "none"], reservation: [reservation_key || "none"]).")
-	own_add(src, "market_transactions", transaction)
+	own_add(src, nameof(market_transactions), transaction)
 	if(length(market_transactions) > CARGO_MARKET_TRANSACTION_LIMIT)
 		var/datum/cargo_market_transaction/oldest = market_transactions?[1]
-		own_remove(src, "market_transactions", oldest)
+		own_remove(src, nameof(market_transactions), oldest)
 	return transaction
 
 /datum/world_service/supply/proc/apply_market_demand(obj/item, datum/exported_crate/export, list/export_row)
@@ -738,7 +738,7 @@ TYPE_TABLE(/datum/cargo_market_counterparty/veymed, buyer_profiles, list(/datum/
 	listing.cover_name = counterparty.active_cover_name
 	listing.reservation_key = reservation_key
 	listing.reserved_account = reserved_account
-	own_put(src, "market_listings", listing.id, listing)
+	own_put(src, nameof(market_listings), listing.id, listing)
 	return listing
 
 /datum/world_service/supply/proc/create_reserved_market_bid(datum/cargo_market_counterparty/counterparty, profile_id, reserved_account, reservation_key, expires_at, target_units = 12)
@@ -747,14 +747,14 @@ TYPE_TABLE(/datum/cargo_market_counterparty/veymed, buyer_profiles, list(/datum/
 	var/datum/cargo_market_bid/bid = new
 	bid.id = "MKT-B-[next_market_id++]"
 	bid.counterparty_id = counterparty.id
-	own_set(bid, "profile", profile)
+	own_set(bid, nameof(bid.profile), profile)
 	bid.target_units = max(profile.minimum_units, target_units)
 	bid.price_multiplier = cargo_market_buyer_multiplier(counterparty, profile)
 	bid.expires_at = expires_at
 	bid.cover_name = counterparty.active_cover_name
 	bid.reservation_key = reservation_key
 	bid.reserved_account = reserved_account
-	own_put(src, "market_bids", bid.id, bid)
+	own_put(src, nameof(market_bids), bid.id, bid)
 	return bid
 
 /datum/world_service/supply/proc/reserve_agent_contract_market(datum/contract/faction_agent/contract)

@@ -46,6 +46,10 @@ OM_FIELD(/obj/item/assembly, secured, TRUE, CHANGE_EXPLICIT)
 		holder().process_activation(src, 1, 0)
 	if(holder() && (wires_type & WIRE_PULSE_SPECIAL))
 		holder().process_activation(src, 0, 1)
+	if(!holder() && isobj(loc) && (wires_type & WIRE_PULSE))
+		var/obj/host = loc
+		if(host.attached_assembly == src) // attached through the assembly capability
+			cap_assembly_pulsed(host, src)
 	return 1
 
 /obj/item/assembly/proc/activate()
@@ -60,7 +64,7 @@ OM_FIELD(/obj/item/assembly, secured, TRUE, CHANGE_EXPLICIT)
 	return secured
 
 /obj/item/assembly/proc/attach_assembly(obj/item/assembly/A, mob/user)
-	rel_set(src, "holder", new/obj/item/assembly_holder(get_turf(src)))
+	rel_set(src, nameof(holder), new/obj/item/assembly_holder(get_turf(src)))
 	if(holder().attach(A,src,user))
 		to_chat(user, span_notice("You attach \the [A] to \the [src]!"))
 		return TRUE

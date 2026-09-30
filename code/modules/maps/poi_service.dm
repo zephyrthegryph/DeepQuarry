@@ -1,13 +1,13 @@
 // The points of interest world service (fold wave F4; was SSpoints_of_interest). POI loader
 // landmarks queue here as they initialize. The MC loads the boot queue right after SSholomaps
-// (boot_after; air and persistence boot after it). A POI loaded mid-round is placed by
+// (needs; air and persistence boot after it). A POI loaded mid-round is placed by
 // /datum/om/behaviour/world/pois (code/datums/om/world_lanes.dm), parked while the queue is empty.
 GLOBAL_LIST_EMPTY(global_used_pois)
 GLOBAL_DATUM_INIT(poi_service, /datum/world_service/pois, new)
 
 /datum/world_service/pois
 	name = "Points of Interest"
-	boot_after = /datum/controller/subsystem/holomaps
+	needs = list(/datum/system/holomaps)
 	lane = /datum/om/behaviour/world/pois
 	on_demand = TRUE
 	var/list/obj/effect/landmark/poi_loader/poi_queue = list()
@@ -33,7 +33,7 @@ GLOBAL_DATUM_INIT(poi_service, /datum/world_service/pois, new)
 
 /// Queues a POI loader; the lane places it (or the boot load does, before initialize()).
 /datum/world_service/pois/proc/enqueue(obj/effect/landmark/poi_loader/loader)
-	rel_add(src, "poi_queue", loader)
+	rel_add(src, nameof(poi_queue), loader)
 	demand()
 
 /datum/world_service/pois/stat_line()
@@ -64,7 +64,7 @@ GLOBAL_DATUM_INIT(poi_service, /datum/world_service/pois, new)
 /// We select and fire the next PoI in the list.
 /datum/world_service/pois/proc/load_next_poi()
 	var/obj/effect/landmark/poi_loader/poi_to_load = poi_queue[1]
-	rel_remove(src, "poi_queue", poi_to_load)
+	rel_remove(src, nameof(poi_queue), poi_to_load)
 	//We then fire it!
 	load_poi(poi_to_load)
 

@@ -21,12 +21,12 @@
 	else
 		results += "[desc_panel_image("crowbar")]to open or close if unpowered/broken, and unbolted."
 
-	if(welded)
+	if(is_welded(src))
 		results += "[desc_panel_image("welder")]to unweld, allowing it to open again."
 	else
 		results += "[desc_panel_image("welder")]to weld, preventing it from opening."
 
-	if(p_open)
+	if(panel_is_open(src))
 		results += "[desc_panel_image("screwdriver")]to close the wire panel."
 		results += "[desc_panel_image("wirecutters")]to cut an internal wire while hacking."
 		results += "[desc_panel_image("multitool")]to pulse an internal wire while hacking."

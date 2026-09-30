@@ -26,12 +26,12 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 
 //These don't perform any checks and need to be wrapped by checks
 /obj/item/sleevemate/proc/clear_mind()
-	rel_clear(src, "stored_mind")
+	rel_clear(src, nameof(stored_mind))
 	update_icon()
 
 /obj/item/sleevemate/proc/get_mind(mob/living/M)
 	ASSERT(M.mind)
-	rel_set(src, "stored_mind", M.mind)
+	rel_set(src, nameof(stored_mind), M.mind)
 	stored_mind().get_identity() // make sure the identity rides the stored mind
 	log_game("MIND: [stored_mind().key] ([stored_mind().name]) stored in [src] from [M]")
 	soulcatcher_pref_flags = M.soulcatcher_pref_flags

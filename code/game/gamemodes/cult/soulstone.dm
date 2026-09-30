@@ -130,7 +130,7 @@ DECLARE_INTERACTIONS(/obj/structure/constructshell, INTERACT_ITEM(null, PROC_REF
 	var/atom/movable/overlay/animation = new /atom/movable/overlay( T.loc )
 	animation.icon_state = "blank"
 	animation.icon = 'icons/mob/mob.dmi'
-	rel_set(animation, "master", T)
+	rel_set(animation, nameof(animation.master), T)
 	flick("dust-h", animation)
 	qdel(animation)
 

@@ -166,7 +166,7 @@ DECLARE_PERIODIC(/obj/effect/decal/cleanable/greenglow, PERIODIC_SLOW)
 	// diseases: adopted by /obj/effect/decal/cleanable/Initialize (as _age)
 	if(prob(65))
 		var/datum/affliction/contagion/engineered/new_disease = new /datum/affliction/contagion/engineered/random(rand(2, 4), rand(7, 9), 4)
-		own_add(src, "viruses", new_disease)
+		own_add(src, nameof(viruses), new_disease)
 
 /obj/effect/decal/cleanable/vomit/old/Crossed(mob/living/carbon/human/perp)
 	return // Don't spread our viruses
@@ -182,7 +182,7 @@ DECLARE_PERIODIC(/obj/effect/decal/cleanable/greenglow, PERIODIC_SLOW)
 	// diseases: adopted by /obj/effect/decal/cleanable/Initialize (as _age)
 	if(prob(75))
 		var/datum/affliction/contagion/engineered/new_disease = new /datum/affliction/contagion/engineered/random(rand(2, 4), rand(7, 9), 4)
-		own_add(src, "viruses", new_disease)
+		own_add(src, nameof(viruses), new_disease)
 	dry()
 
 /obj/effect/decal/cleanable/blood/old/Crossed(mob/living/carbon/human/perp)

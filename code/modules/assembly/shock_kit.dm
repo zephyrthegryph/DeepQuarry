@@ -16,10 +16,10 @@
 			T = T.loc
 		part1.forceMove(T)
 		part2.forceMove(T)
-		rel_clear(part1, "master")
-		rel_clear(part2, "master")
-		own_take(src, "part1")
-		own_take(src, "part2")
+		rel_clear(part1, nameof(part1.master))
+		rel_clear(part2, nameof(part2.master))
+		own_take(src, nameof(part1))
+		own_take(src, nameof(part2))
 		qdel(src)
 		return ITEM_INTERACT_SUCCESS
 	return ITEM_INTERACT_BLOCKING

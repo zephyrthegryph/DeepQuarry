@@ -219,4 +219,4 @@ GLOBAL_LIST_INIT(all_perks, init_perks())
 		if(!P.category)
 			P.category = T.category
 		.[path] = P
-		own_put(T, "perks", path, P)
+		own_put(T, nameof(T.perks), path, P)

@@ -112,7 +112,7 @@ TYPE_TABLE(/mob/living/bot/medbot/mysterious, synthesized_reagents, list(REAGENT
 
 	for(var/mob/living/carbon/human/H in view(7, src)) // Time to find a patient!
 		if(confirmTarget(H))
-			rel_set(src, "target", H)
+			rel_set(src, nameof(target), H)
 			if(COOLDOWN_FINISHED(src, newpatient_speak_cooldown))
 				if(vocal)
 					var/message_options = list(
@@ -151,7 +151,7 @@ TYPE_TABLE(/mob/living/bot/medbot/mysterious, synthesized_reagents, list(REAGENT
 	bot_work(3 SECONDS, H, PROC_REF(UnarmedAttack_medbot_done), list(H, t))
 
 	if(H.stat == DEAD) // This is down here because this proc won't be called again due to losing a target because of parent AI loop.
-		rel_clear(src, "target")
+		rel_clear(src, nameof(target))
 		if(vocal)
 			var/death_messages = list(
 				"No! Stay with me!" = SFX_VOICE_MEDBOT_MNO,
@@ -166,7 +166,7 @@ TYPE_TABLE(/mob/living/bot/medbot/mysterious, synthesized_reagents, list(REAGENT
 	else
 		t = confirmTarget(H)
 		if(!t)
-			rel_clear(src, "target")
+			rel_clear(src, nameof(target))
 			if(vocal)
 				var/possible_messages = list(
 					"All patched up!" = SFX_VOICE_MEDBOT_MPATCHEDUP,
@@ -268,9 +268,8 @@ DECLARE_UI(/mob/living/bot/medbot, "Medbot")
 /// Old attackby: load a beaker; anything else falls to the bot's item handling.
 /mob/living/bot/medbot/proc/medbot_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
 
-	user.drop_item()
-	O.forceMove(src)
-	own_set(src, "reagent_glass", O)
+	if(!own_set(src, nameof(src.reagent_glass), O, user = user))
+		return TRUE
 	to_chat(user, span_notice("You insert [O]."))
 	return TRUE
 
@@ -324,7 +323,7 @@ UI_ACT_PROC(/mob/living/bot/medbot, ui_act_eject)
 		return TRUE
 	if(reagent_glass)
 		reagent_glass.forceMove(get_turf(src))
-		own_take(src, "reagent_glass")
+		own_take(src, nameof(/mob/living/bot/medbot::reagent_glass))
 	. = TRUE
 
 UI_ACT(/mob/living/bot/medbot, "togglevoice", ui_act_togglevoice)
@@ -350,13 +349,13 @@ UI_ACT_PROC(/mob/living/bot/medbot, ui_act_declaretreatment)
 			to_chat(user, span_warning("You short out [src]'s reagent synthesis circuits."))
 		act_message(src, null, others = span_warning("%U% buzzes oddly!"))
 		flick("medibot_spark", src)
-		rel_clear(src, "target")
+		rel_clear(src, nameof(target))
 		om_release_busy(src, "emagged")
 		emagged = 1
 		on = 1
 		update_icons()
 		. = 1
-	rel_add(src, "ignore_list", user)
+	rel_add(src, nameof(ignore_list), user)
 
 /mob/living/bot/medbot/explode()
 	on = 0
@@ -371,7 +370,7 @@ UI_ACT_PROC(/mob/living/bot/medbot, ui_act_declaretreatment)
 
 	if(reagent_glass)
 		reagent_glass.forceMove(Tsec)
-		own_take(src, "reagent_glass")
+		own_take(src, nameof(reagent_glass))
 
 	if(emagged && prob(25))
 		play_sfx(src, SFX_VOICE_MEDBOT_MINSULT)
@@ -578,4 +577,6 @@ DECLARE_INTERACTIONS(/obj/item/firstaid_arm_assembly, INTERACT_ITEM(null, PROC_R
 #undef MEDBOT_MIN_URGENCY
 #undef MEDBOT_MAX_URGENCY
 
-OWN(/mob/living/bot/medbot, reagent_glass, OWN_CONTAINED)
+/mob/living/bot/medbot/ownership()
+	. = ..()
+	. += owns(nameof(reagent_glass), policy = OWN_CONTAINED)

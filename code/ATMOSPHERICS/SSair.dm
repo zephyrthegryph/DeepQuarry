@@ -1,16 +1,15 @@
-SUBSYSTEM_DEF(air)
+SYSTEM_DEF(air)
 	name = "Atmospherics"
-	dependencies = list(
-		/datum/controller/subsystem/mapping,
+	init_stage = INITSTAGE_MAIN
+	needs = list(
+		/datum/system/mapping,
 		/datum/controller/subsystem/atoms,
-		// The machine world service initializes at the top of Initialize() (it was
+		// The machine world service initializes at the top of initialize() (it was
 		// SSmachines, which depended on points_of_interest; POIs now load at the end of SSholomaps).
-		/datum/controller/subsystem/holomaps,
+		/datum/system/holomaps,
 	)
-	priority = FIRE_PRIORITY_AIR
 	wait = 0.5 SECONDS
-	ss_flags = SS_BACKGROUND
-	runlevels = RUNLEVEL_GAME | RUNLEVEL_POSTGAME
+	periodic_runlevels = RUNLEVEL_GAME | RUNLEVEL_POSTGAME
 
 	var/phase_cost = 0
 
@@ -25,11 +24,9 @@ SUBSYSTEM_DEF(air)
 	var/cost_highpressure = 0
 	var/cost_superconductivity = 0
 	var/cost_pipenets = 0
-	/// Pipenet-stage breakdown (ms, MC average): topology commit and the Rust device-edge step.
+	/// Pipenet-stage breakdown (ms, MC average): topology commit (the device step is a frame period; cost_pipe_devices stays 0).
 	var/cost_pipe_commit = 0
 	var/cost_pipe_devices = 0
-	/// Device-edge results the last fire's step returned (devices that moved gas or drew power).
-	var/pipe_devices_reported_last = 0
 	var/cost_rebuilds = 0
 	/// Main-thread cost of the gas tick and its events, in milliseconds.
 	var/cost_gas_events = 0
@@ -41,8 +38,8 @@ SUBSYSTEM_DEF(air)
 
 	/// Turf gas runs on the Rust gas field (verdigris/domains/gas, M1b): each
 	/// fire pins the newest frame, starts the next, and pushes its events
-	/// (reactions, visuals, spacewind) as typed events -- vg_drain_events()
-	/// dispatches them to SSvg's on_gas_cell_*() overrides, same as every
+	/// (reactions, visuals, spacewind) as typed events -- the native system
+	/// (code/datums/native/system.dm) dispatches them to SSvg's on_gas_cell_*() overrides, same as every
 	/// other domain's events (rust_architecture.md §4.8).
 	/// Gas frames started so far (vg_gas_stats()[1]).
 	var/gas_frames = 0
@@ -53,7 +50,7 @@ SUBSYSTEM_DEF(air)
 	var/gas_visuals_last = 0
 	var/gas_pressure_last = 0
 
-	// hotspots stays as a registry (counts, admin panel); they burn on /datum/om/pipeline/hotspot. networks stays
+	// hotspots stays as a registry (counts, admin panel); they burn as kernel work items (LINDA_fire.dm). networks stays
 	// (pipe network wrappers). The rebuild/expansion queues below are unchanged.
 	var/list/hotspots = list()
 	var/list/networks = list()
@@ -76,7 +73,7 @@ SUBSYSTEM_DEF(air)
 
 	//Special functions lists
 	// Turf heat is the heat domain (vg-heat, code/modules/heat/heat.dm): the
-	// SSAIR_SUPERCONDUCTIVITY fire() step below calls process_turf_heat().
+	// SSAIR_SUPERCONDUCTIVITY fire() step below is a marker only: the frame steps heat.
 	// high_pressure_delta moved up next to the auxmos tunables (auxmos appends to it).
 	// atom_process removed; see cost_atoms comment.
 	/// Reactions which will contribute to a hotspot's size.
@@ -94,7 +91,7 @@ SUBSYSTEM_DEF(air)
 	var/list/gas_handbook
 
 
-/datum/controller/subsystem/air/stat_entry(msg)
+/datum/system/air/stat_entry(msg)
 	var/list/diag = vg_auxmos_diagnostics()
 	var/list/stats = vg_gas_stats()
 	msg += "\n  Cost:{"
@@ -113,13 +110,13 @@ SUBSYSTEM_DEF(air)
 
 
 /// Milliseconds per Initialize() phase (name -> ms), for the boot profile.
-/datum/controller/subsystem/air/var/list/init_phase_ms
+/datum/system/air/var/list/init_phase_ms
 
-/datum/controller/subsystem/air/proc/init_phase_mark(name)
+/datum/system/air/proc/init_phase_mark(name)
 	init_phase_ms[name] = rustg_time_milliseconds("ssair_init_phase")
 	rustg_time_reset("ssair_init_phase")
 
-/datum/controller/subsystem/air/Initialize()
+/datum/system/air/initialize()
 	init_phase_ms = list()
 	rustg_time_reset("ssair_init_phase")
 	map_loading = FALSE
@@ -177,10 +174,14 @@ SUBSYSTEM_DEF(air)
 #endif
 	// atmos_handbooks_init() removed. /tg/'s gas handbook is an
 	// in-game wiki UI that DQ doesn't ship; the call had nothing to do.
-	return SS_INIT_SUCCESS
 
 
-/datum/controller/subsystem/air/fire(resumed = FALSE)
+/// The atmospherics pass runs every `wait` (it was SSair's SS_BACKGROUND fire()).
+/datum/system/air/reactions()
+	. = ..()
+	. += every(0.5 SECONDS, PROC_REF(fire_step), when = PROC_REF(fire_ready), lane = LANE_SIMULATION)
+
+/datum/system/air/fire(resumed = FALSE)
 	var/timer = TICK_USAGE_REAL
 #ifdef BENCHMARK
 	// The Rust heap peaks in the first frames after init (init_and_turfs.md sec 0.2a).
@@ -210,16 +211,15 @@ SUBSYSTEM_DEF(air)
 		currentpart = SSAIR_TURFS
 
 	// === Turf gas (the TurfGas field on the shared Rust World) ===
-	// The world is stepped by SSvg (vg_world_tick()); its reaction, visual and
-	// spacewind notifications are typed events, dispatched to SSvg's
-	// on_gas_cell_*() overrides below by vg_drain_events().
+	// The world is stepped by the native system's frame (once a tick, from the
+	// OM scheduler); its reaction, visual and spacewind notifications are typed
+	// events, dispatched to SSvg's on_gas_cell_*() overrides below.
 	if(currentpart == SSAIR_TURFS)
 		timer = TICK_USAGE_REAL
 		gas_events_last = 0
 		gas_reactions_last = 0
 		gas_visuals_last = 0
 		gas_pressure_last = 0
-		vg_drain_events()
 		gas_frames++
 		phase_cost = TICK_USAGE_REAL - timer
 		// Dispatch no longer has a cost separate from the tick itself (both
@@ -244,11 +244,9 @@ SUBSYSTEM_DEF(air)
 		resumed = FALSE
 		currentpart = SSAIR_SUPERCONDUCTIVITY
 
-	// The heat domain: turf<->turf conduction, radiation to space, turf<->air and
-	// heat bodies run as frames on vg-heat's pool. process_turf_heat() only
-	// collects the finished frame, starts the next, and dispatches watch wakes.
+	// The heat domain (turf<->turf conduction, radiation to space, turf<->air and
+	// heat bodies) runs in the Rust world; its watch wakes leave in the frame.
 	if(currentpart == SSAIR_SUPERCONDUCTIVITY)
-		process_turf_heat()
 		resumed = FALSE
 
 	// SSAIR_PROCESS_ATOMS step removed; see cost_atoms comment.
@@ -256,76 +254,63 @@ SUBSYSTEM_DEF(air)
 	currentpart = SSAIR_PIPENETS
 	SStgui.update_uis(SSair) //Lightning fast debugging motherfucker
 
-/datum/controller/subsystem/air/Recover()
-	// active_turfs / excited_groups / active_super_conductivity are gone (arena-side).
-	hotspots = SSair.hotspots
-	networks = SSair.networks
-	rebuild_queue = SSair.rebuild_queue
-	expansion_queue = SSair.expansion_queue
-	pipe_init_dirs_cache = SSair.pipe_init_dirs_cache
-	gas_reactions = SSair.gas_reactions
-	atmos_gen = SSair.atmos_gen
-	planetary = SSair.planetary
-	high_pressure_delta = SSair.high_pressure_delta
-	currentrun = SSair.currentrun
-	queued_for_activation = SSair.queued_for_activation
-
 /// Test hook: runs `frames` gas frames to completion, deterministically (no
-/// wall clock), and dispatches their events like fire() does (`vg_drain_
-/// events()` -- see the SSAIR_TURFS step's own docs).
-/datum/controller/subsystem/air/proc/run_gas_frames(frames = 1)
+/// wall clock), and dispatches their events like the frame does (the native
+/// system's drain()).
+/datum/system/air/proc/run_gas_frames(frames = 1)
 	gas_events_last = 0
 	gas_reactions_last = 0
 	gas_visuals_last = 0
 	gas_pressure_last = 0
 	vg_world_run_steps(frames)
-	vg_drain_events()
+	native_system().drain()
 	gas_frames += frames
 	process_high_pressure_delta()
 
 /// A turf's gas may react (`GasEvent::CellReactionReady`,
 /// verdigris/domains/gas/src/laws.rs): the same `air.react(turf)` the old
 /// flat-encoded `GAS_EVENT_REACT` dispatched.
-/datum/controller/subsystem/vg/on_gas_cell_reaction_ready(cell, reaction)
+/datum/system/native/on_gas_cell_reaction_ready(cell, reaction)
 	SSair.gas_events_last++
 	var/turf/open/T = vg_turf_of(cell)
 	if(!istype(T))
 		return
 	SSair.gas_reactions_last++
+	native_fired(NATIVE_SRC_GAS_EVENT)
 	if(T.air)
 		T.air.react(T)
 
 /// A turf's visible gas changed (`GasEvent::CellVisualChange`): the same
 /// `set_visuals()` the old `GAS_EVENT_VISUAL` dispatched.
-/datum/controller/subsystem/vg/on_gas_cell_visual_change(cell, vis)
+/datum/system/native/on_gas_cell_visual_change(cell, vis)
 	SSair.gas_events_last++
 	var/turf/open/T = vg_turf_of(cell)
 	if(!istype(T))
 		return
 	SSair.gas_visuals_last++
 	T.set_visuals()
+	native_changed(T, CHANGE_TURF_GAS_VISUAL, NATIVE_SRC_GAS_EVENT)
 
 /// Spacewind: `cell`'s pressure differs from open neighbour `neighbor`'s by
 /// more than the threshold (`GasEvent::PressureJump`): the same
 /// `consider_pressure_difference(other, value)` the old `GAS_EVENT_PRESSURE`
 /// dispatched.
-/datum/controller/subsystem/vg/on_gas_pressure_jump(cell, neighbor, delta)
+/datum/system/native/on_gas_pressure_jump(cell, neighbor, delta)
 	SSair.gas_events_last++
 	var/turf/open/T = vg_turf_of(cell)
 	var/turf/open/other = vg_turf_of(neighbor)
 	if(!istype(T) || !istype(other))
 		return
 	SSair.gas_pressure_last++
+	native_fired(NATIVE_SRC_GAS_EVENT)
 	T.consider_pressure_difference(other, delta)
 
-/datum/controller/subsystem/air/proc/process_pipenets(resumed = FALSE)
+/datum/system/air/proc/process_pipenets(resumed = FALSE)
 	if (!resumed)
 		var/stage_timer = TICK_USAGE_REAL
 		rust_commit_pending_pipenets()
 		cost_pipe_commit = MC_AVERAGE(cost_pipe_commit, TICK_DELTA_TO_MS(TICK_USAGE_REAL - stage_timer))
-		stage_timer = TICK_USAGE_REAL
-		rust_step_pipe_devices()
-		cost_pipe_devices = MC_AVERAGE(cost_pipe_devices, TICK_DELTA_TO_MS(TICK_USAGE_REAL - stage_timer))
+		// The pipe devices step inside the frame (a period on it), not here.
 		src.currentrun = networks.Copy()
 	//cache for sanic speed (lists are references anyways)
 	var/list/currentrun = src.currentrun
@@ -349,7 +334,7 @@ SUBSYSTEM_DEF(air)
 // process_super_conductivity removed — LINDA's DM superconduction engine is
 // deleted; auxmos' Rust heat subsystem is not wired.
 
-/datum/controller/subsystem/air/proc/process_high_pressure_delta(resumed = FALSE)
+/datum/system/air/proc/process_high_pressure_delta(resumed = FALSE)
 	while (high_pressure_delta.len)
 		var/turf/open/T = high_pressure_delta[high_pressure_delta.len]
 		high_pressure_delta.len--
@@ -378,7 +363,7 @@ SUBSYSTEM_DEF(air)
 
 ///Legacy API: a turf's air changed and should be reconsidered. Pushes its air
 ///ref to the Rust arena. (Was: add to the DM active-turf list.)
-/datum/controller/subsystem/air/proc/add_to_active(turf/open/activate, blockchanges = FALSE)
+/datum/system/air/proc/add_to_active(turf/open/activate, blockchanges = FALSE)
 	if(!activate)
 		return
 	// During mapload we can't register turfs whose air isn't set up yet; queue
@@ -394,23 +379,23 @@ SUBSYSTEM_DEF(air)
 
 ///Legacy API: remove a turf's air from arena processing (Read: it became a wall
 ///or is being torn down). flag < 0 unregisters.
-/datum/controller/subsystem/air/proc/remove_from_active(turf/open/T)
+/datum/system/air/proc/remove_from_active(turf/open/T)
 	if(!T)
 		return
 	T.update_air_ref(-1)
 
 ///Legacy API alias — the arena has no separate "sleep" state; treat it as a
 ///normal re-register (auxmos will drop it from processing once it's equalized).
-/datum/controller/subsystem/air/proc/sleep_active_turf(turf/open/T)
+/datum/system/air/proc/sleep_active_turf(turf/open/T)
 	if(!T)
 		return
 	T.update_air_ref(0)
 
-/datum/controller/subsystem/air/StartLoadingMap()
+/datum/system/air/StartLoadingMap()
 	LAZYINITLIST(queued_for_activation)
 	map_loading = TRUE
 
-/datum/controller/subsystem/air/StopLoadingMap()
+/datum/system/air/StopLoadingMap()
 	map_loading = FALSE
 	// Turfs deferred during a mid-round map load (submaps, expedition z-levels).
 	// Now that the whole batch exists, register each with its air-block mask; Rust
@@ -424,7 +409,7 @@ SUBSYSTEM_DEF(air)
 /// on to Rust, which only links turfs vertically across linked z-levels.
 /// No-op on single-z maps, where HasAbove/HasBelow return 0 for every z.
 /// Re-runnable when the z-level layout changes.
-/datum/controller/subsystem/air/proc/build_multiz_atmos_levels()
+/datum/system/air/proc/build_multiz_atmos_levels()
 	if(!SSmapping)
 		return
 	if(length(SSmapping.multiz_levels) < world.maxz)
@@ -442,7 +427,7 @@ SUBSYSTEM_DEF(air)
 /// Update only a newly-added dynamic level and its immediate boundary. A full
 /// rebuild is appropriate during round initialization, but mid-round template
 /// loads must not replace authored traits on unrelated shuttle/sector levels.
-/datum/controller/subsystem/air/proc/update_dynamic_multiz_atmos_level(z)
+/datum/system/air/proc/update_dynamic_multiz_atmos_level(z)
 	if(!SSmapping || z < 1 || z > world.maxz)
 		return
 	if(length(SSmapping.multiz_levels) < world.maxz)
@@ -457,7 +442,7 @@ SUBSYSTEM_DEF(air)
 /// Sends Rust one UP|DOWN link mask per z-level from SSmapping.multiz_levels.
 /// Rust re-syncs vertical adjacency across the whole map, so call it only when
 /// the z-level layout changes.
-/datum/controller/subsystem/air/proc/push_z_links()
+/datum/system/air/proc/push_z_links()
 	var/list/links = new /list(world.maxz)
 	for(var/z in 1 to world.maxz)
 		var/list/traits = length(SSmapping.multiz_levels) >= z ? SSmapping.multiz_levels[z] : null
@@ -467,7 +452,7 @@ SUBSYSTEM_DEF(air)
 		links[z] = (traits[Z_LEVEL_UP] ? UP : NONE) | (traits[Z_LEVEL_DOWN] ? DOWN : NONE)
 	vg_set_z_links(links)
 
-/datum/controller/subsystem/air/proc/setup_allturfs()
+/datum/system/air/proc/setup_allturfs()
 	times_fired++
 
 	// Round-start turf init: register every eligible turf's air in the Rust arena
@@ -503,7 +488,7 @@ SUBSYSTEM_DEF(air)
 // /obj/machinery, and /obj/machinery/Initialize populates it during SSatoms.
 // SSair runs after SSatoms (mapping/atoms deps), so by the time this fires
 // every atmos device exists with init_dir() done; it's safe to wire nodes.
-/datum/controller/subsystem/air/proc/setup_atmos_machinery()
+/datum/system/air/proc/setup_atmos_machinery()
 	for (var/obj/machinery/atmospherics/AM in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		AM.atmos_init()
 	setup_rust_pipenets()
@@ -512,7 +497,7 @@ SUBSYSTEM_DEF(air)
 
 GLOBAL_LIST_EMPTY(colored_turfs)
 GLOBAL_LIST_EMPTY(colored_images)
-/datum/controller/subsystem/air/proc/setup_turf_visuals()
+/datum/system/air/proc/setup_turf_visuals()
 	for(var/sharp_color in GLOB.contrast_colors)
 		var/list/add_to = list()
 		GLOB.colored_turfs += list(add_to)
@@ -533,14 +518,14 @@ GLOBAL_LIST_EMPTY(colored_images)
 // construction.dm:226) and atmospherics.dm's /obj/machinery/atmospherics/get_init_dirs.
 // LINDA's variant was unused.
 
-/datum/controller/subsystem/air/proc/generate_atmos()
+/datum/system/air/proc/generate_atmos()
 	atmos_gen = list()
 	for(var/T in subtypesof(/datum/atmosphere))
 		var/datum/atmosphere/atmostype = T
 		atmos_gen[initial(atmostype.id)] = new atmostype
 
 /// Takes a gas string, returns the matching mutable gas_mixture
-/datum/controller/subsystem/air/proc/parse_gas_string(gas_string, gastype = /datum/gas_mixture)
+/datum/system/air/proc/parse_gas_string(gas_string, gastype = /datum/gas_mixture)
 	var/cache_key = "[gas_string]-[gastype]"
 	var/datum/gas_mixture/cached = strings_to_mix[cache_key]
 
@@ -574,7 +559,7 @@ GLOBAL_LIST_EMPTY(colored_images)
 		return canonical_mix
 	return canonical_mix.copy()
 
-/datum/controller/subsystem/air/proc/preprocess_gas_string(gas_string)
+/datum/system/air/proc/preprocess_gas_string(gas_string)
 	if(!atmos_gen)
 		generate_atmos()
 	if(!atmos_gen[gas_string])
@@ -583,7 +568,7 @@ GLOBAL_LIST_EMPTY(colored_images)
 	return mix.gas_string
 
 /// Parses the semicolon-delimited mapping format without URL-decoding its values.
-/datum/controller/subsystem/air/proc/gas_string_to_list(gas_string)
+/datum/system/air/proc/gas_string_to_list(gas_string)
 	var/list/parsed = list()
 	for(var/entry in splittext(gas_string, ";"))
 		var/separator = findtext(entry, "=")
@@ -602,14 +587,14 @@ GLOBAL_LIST_EMPTY(colored_images)
 // These were previously declared as ui_* procs, so the framework never called them
 // and the panel was dead. Renamed to the fork convention + opened by an admin verb
 // (code/modules/admin/verbs/debug.dm: "Debug Atmospherics").
-DECLARE_UI_STATE(/datum/controller/subsystem/air, ADMIN_STATE(R_DEBUG))
+DECLARE_UI_STATE(/datum/system/air, ADMIN_STATE(R_DEBUG))
 
-DECLARE_UI(/datum/controller/subsystem/air, "AtmosControlPanel", UI_TITLE("Atmospherics Debug"))
+DECLARE_UI(/datum/system/air, "AtmosControlPanel", UI_TITLE("Atmospherics Debug"))
 
-UI_DATA_REPLACE(/datum/controller/subsystem/air, "frozen=can_fire:num", "fire_count=times_fired:num", "merge:ui_data_datum_controller_subsystem_air{excited_groups:list,active_size:num,hotspots_size:num,excited_size:unknown,conducting_size:num,show_all:unknown,display_max:bool,showing_user:unknown}")
+UI_DATA_REPLACE(/datum/system/air, "frozen=can_fire:num", "fire_count=times_fired:num", "merge:ui_data_datum_controller_subsystem_air{excited_groups:list,active_size:num,hotspots_size:num,excited_size:unknown,conducting_size:num,show_all:unknown,display_max:bool,showing_user:unknown}")
 
-/// The computed part of /datum/controller/subsystem/air's window data (declared on its UI_DATA row).
-/datum/controller/subsystem/air/proc/ui_data_datum_controller_subsystem_air(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// The computed part of /datum/system/air's window data (declared on its UI_DATA row).
+/datum/system/air/proc/ui_data_datum_controller_subsystem_air(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	// Excited groups + active-turf/superconduction lists live in the Rust arena
 	// now and aren't enumerable from DM. Surface the per-tick auxmos counters the
@@ -628,34 +613,34 @@ UI_DATA_REPLACE(/datum/controller/subsystem/air, "frozen=can_fire:num", "fire_co
 	data["showing_user"] = user.hud_used.atmos_debug_overlays
 	return data
 
-/datum/controller/subsystem/air/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+/datum/system/air/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
 	if(!..())
 		return FALSE
 	if(!user || !check_rights_for(user.client, R_DEBUG))
 		return FALSE
 	return TRUE
 
-UI_ACT(/datum/controller/subsystem/air, "move-to-target", ui_act_move_to_target, UI_ARG_REF("spot", null, /turf))
-UI_ACT_PROC(/datum/controller/subsystem/air, ui_act_move_to_target)
+UI_ACT(/datum/system/air, "move-to-target", ui_act_move_to_target, UI_ARG_REF("spot", null, /turf))
+UI_ACT_PROC(/datum/system/air, ui_act_move_to_target)
 	var/turf/target = params["spot"]
 	if(!target)
 		return
 	user.forceMove(target)
 
-UI_ACT(/datum/controller/subsystem/air, "toggle-freeze", ui_act_toggle_freeze)
-UI_ACT_PROC(/datum/controller/subsystem/air, ui_act_toggle_freeze)
+UI_ACT(/datum/system/air, "toggle-freeze", ui_act_toggle_freeze)
+UI_ACT_PROC(/datum/system/air, ui_act_toggle_freeze)
 	can_fire = !can_fire
 	return TRUE
 // toggle_show_group / toggle_show_all removed — excited groups live in the
 // Rust arena and have no DM turf_list to display/hide.
 
-UI_ACT(/datum/controller/subsystem/air, "toggle_show_all", ui_act_toggle_show_all)
-UI_ACT_PROC(/datum/controller/subsystem/air, ui_act_toggle_show_all)
+UI_ACT(/datum/system/air, "toggle_show_all", ui_act_toggle_show_all)
+UI_ACT_PROC(/datum/system/air, ui_act_toggle_show_all)
 	display_all_groups = !display_all_groups
 	return TRUE
 
-UI_ACT(/datum/controller/subsystem/air, "toggle_user_display", ui_act_toggle_user_display)
-UI_ACT_PROC(/datum/controller/subsystem/air, ui_act_toggle_user_display)
+UI_ACT(/datum/system/air, "toggle_user_display", ui_act_toggle_user_display)
+UI_ACT_PROC(/datum/system/air, ui_act_toggle_user_display)
 	user.hud_used.atmos_debug_overlays = !user.hud_used.atmos_debug_overlays
 	if(user.hud_used.atmos_debug_overlays)
 		user.client.images += GLOB.colored_images
