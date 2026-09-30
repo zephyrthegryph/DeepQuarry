@@ -79,6 +79,13 @@ Pipelines + Other Objects -> Pipe network
 /// port) becomes the holder's private copy. The private copy it replaces is deleted; a
 /// network's shared mixture is only let go (the network owns it).
 /proc/atmos_air_set(datum/holder, var_name, datum/gas_mixture/value)
+	. = atmos_air_assign(holder, var_name, value)
+	// A gas watch (watches_gas) follows its port to whichever mixture it now has.
+	var/atom/A = holder
+	if(istype(A) && A.cap_data)
+		gas_watch_rearm(A)
+
+/proc/atmos_air_assign(datum/holder, var_name, datum/gas_mixture/value)
 	var/datum/gas_mixture/old = holder.vars[var_name]
 	if(old == value)
 		return value

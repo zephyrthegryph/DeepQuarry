@@ -72,6 +72,7 @@
 		GRANT_CAPABILITY = list("combine" = COMBINE_SUM_PER_KEY, "type" = /datum/om/effect/grant_capability),
 		GRANT_ACCESS = list("combine" = COMBINE_SUM_PER_KEY),
 		GRANT_TRAIT = list("combine" = COMBINE_SUM_PER_KEY),
+		GRANT_CADENCE = list("combine" = COMBINE_SUM_PER_KEY, "type" = /datum/om/effect/grant_cadence),
 	)
 
 // ---------------------------------------------------------------- relations

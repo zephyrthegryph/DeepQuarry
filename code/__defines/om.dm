@@ -136,6 +136,17 @@
 #define GRANT_CAPABILITY "grant_capability"
 #define GRANT_ACCESS "grant_access"
 #define GRANT_TRAIT "grant_trait"
+/// A system's publication cadence: the id names a step length (cadence.dm), and the
+/// system runs at the shortest one any live grant names.
+#define GRANT_CADENCE "grant_cadence"
+
+// Cadence ids for GRANT_CADENCE. Shortest step wins; the system's own step (CADENCE_BASE_DT) applies with none held.
+/// A canister rupture, hull breach or pressure-jump storm: gas publishes every 0.1 s.
+#define CADENCE_GAS_FAST "gas_fast"
+/// Something visibly moving but not violent: gas publishes every 0.25 s.
+#define CADENCE_GAS_BRISK "gas_brisk"
+/// The world's step with no cadence grant held, seconds.
+#define CADENCE_BASE_DT 0.5
 
 // Status and stat presets.
 // Mob statuses (doc/rewrite/life_on_om.md §7): timed contributions a mob holds on itself,

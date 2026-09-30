@@ -283,6 +283,7 @@
 #include "dq_wires_tests.dm"
 #include "dq_quick_fix_tests.dm"
 #include "dq_om_world_watch_tests.dm"
+#include "dq_live_sim_tests.dm"
 #include "dq_om_fields_tests.dm"
 #include "dx_ui_validators_tests.dm"
 #include "dq_om_key_tests.dm"
