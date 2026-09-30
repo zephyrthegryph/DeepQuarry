@@ -49,7 +49,7 @@
 	TEST_ASSERT_EQUAL(chk_near_subject(H, B, null), "you are too far away", "near subject refuses at range")
 	H.set_stat(UNCONSCIOUS)
 	TEST_ASSERT_EQUAL(chk_conscious(H, B, null), "you are not conscious", "conscious refuses")
-	TEST_ASSERT_EQUAL(chk_capable(H, B, null), TRUE, "capable matches incapacitated(): unconscious alone is chk_conscious's job")
+	TEST_ASSERT_EQUAL(chk_capable(H, B, null), "you can't do that right now", "capable refuses the unconscious (stat is part of it)")
 	TEST_ASSERT_EQUAL(chk_alive(H, B, null), TRUE, "unconscious is still alive")
 	H.set_stat(DEAD)
 	TEST_ASSERT_EQUAL(chk_alive(H, B, null), "you are dead", "alive refuses when dead")

@@ -203,14 +203,17 @@
 
 /datum/unit_test/dq_state_collapse_blockers/Run()
 	var/obj/item/paper/lone = new(test_floor())
+	refresh_flush() // a fresh atom sits in the refresh queue until it flushes: a reference the blockers would list
 	var/list/blockers = lone.state_collapse_blockers(1)
 	TEST_ASSERT_EQUAL(length(blockers), 0, "a paper with no outside references should collapse: [jointext(blockers, "; ")]")
 	qdel(lone)
 
 	var/obj/item/storage/box/box = new(test_floor())
+	refresh_flush()
 	blockers = box.state_collapse_blockers(1)
 	TEST_ASSERT_EQUAL(length(blockers), 0, "an empty box with no outside references should collapse: [jointext(blockers, "; ")]")
 	new /obj/item/paper(box)
+	refresh_flush()
 	blockers = box.state_collapse_blockers(1)
 	TEST_ASSERT_EQUAL(length(blockers), 0, "a box of paper with no outside references should collapse: [jointext(blockers, "; ")]")
 

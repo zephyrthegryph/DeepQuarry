@@ -28,6 +28,7 @@
 /datum/unit_test/find_reference_sanity/Run()
 	var/atom/movable/ref_test/victim = allocate(/atom/movable/ref_test)
 	var/atom/movable/ref_holder/testbed = allocate(/atom/movable/ref_holder)
+	refresh_flush() // a fresh atom sits in the refresh queue until it flushes: a reference the counts below would see
 	SSgarbage.should_save_refs = TRUE
 
 	//Sanity check
@@ -43,6 +44,7 @@
 /datum/unit_test/find_reference_baseline/Run()
 	var/atom/movable/ref_test/victim = allocate(/atom/movable/ref_test)
 	var/atom/movable/ref_holder/testbed = allocate(/atom/movable/ref_holder)
+	refresh_flush() // a fresh atom sits in the refresh queue until it flushes: a reference the counts below would see
 	SSgarbage.should_save_refs = TRUE
 
 	//Set up for the first round of tests
@@ -62,6 +64,7 @@
 /datum/unit_test/find_reference_exotic/Run()
 	var/atom/movable/ref_test/victim = allocate(/atom/movable/ref_test)
 	var/atom/movable/ref_holder/testbed = allocate(/atom/movable/ref_holder)
+	refresh_flush() // a fresh atom sits in the refresh queue until it flushes: a reference the counts below would see
 	SSgarbage.should_save_refs = TRUE
 
 	//Second round, bit harder this time
@@ -82,6 +85,7 @@
 /datum/unit_test/find_reference_esoteric/Run()
 	var/atom/movable/ref_test/victim = allocate(/atom/movable/ref_test)
 	var/atom/movable/ref_holder/testbed = allocate(/atom/movable/ref_holder)
+	refresh_flush() // a fresh atom sits in the refresh queue until it flushes: a reference the counts below would see
 	SSgarbage.should_save_refs = TRUE
 
 	//Let's get a bit esoteric
@@ -104,6 +108,7 @@
 /datum/unit_test/find_reference_null_key_entry/Run()
 	var/atom/movable/ref_test/victim = allocate(/atom/movable/ref_test)
 	var/atom/movable/ref_holder/testbed = allocate(/atom/movable/ref_holder)
+	refresh_flush() // a fresh atom sits in the refresh queue until it flushes: a reference the counts below would see
 	SSgarbage.should_save_refs = TRUE
 
 	//Calm before the storm
@@ -117,6 +122,7 @@
 /datum/unit_test/find_reference_assoc_investigation/Run()
 	var/atom/movable/ref_test/victim = allocate(/atom/movable/ref_test)
 	var/atom/movable/ref_holder/testbed = allocate(/atom/movable/ref_holder)
+	refresh_flush() // a fresh atom sits in the refresh queue until it flushes: a reference the counts below would see
 	SSgarbage.should_save_refs = TRUE
 
 	//Let's do some more complex assoc list investigation
@@ -136,6 +142,7 @@
 /datum/unit_test/find_reference_static_investigation/Run()
 	var/atom/movable/ref_test/victim = allocate(/atom/movable/ref_test)
 	var/atom/movable/ref_holder/testbed = allocate(/atom/movable/ref_holder)
+	refresh_flush() // a fresh atom sits in the refresh queue until it flushes: a reference the counts below would see
 	pass(testbed)
 	SSgarbage.should_save_refs = TRUE
 

@@ -227,6 +227,7 @@
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	var/obj/machinery/power/apc/dx_test/A = dx_apc_make(T)
+	var/obj/item/module/power_control/board = allocate(/obj/item/module/power_control, A) // the board this APC was "built" with
 	var/datum/construction_ladder/ladder = ladder_of(A)
 	var/list/problems = ladder.validate()
 	TEST_ASSERT(!length(problems), "the APC's ladder is valid: [jointext(problems, "; ")]")
@@ -245,7 +246,6 @@
 	TEST_ASSERT_NULL(A.terminal, "the terminal went with the cable")
 	TEST_ASSERT(locate(/obj/item/stack/cable_coil) in T.contents, "the ladder gave the cable back")
 	TEST_ASSERT(A.board_unfastened(), "the board is in and not fastened")
-	var/obj/item/module/power_control/board = locate() in A.contents
 	TEST_ASSERT(ladder_walk(H, A, ladder_step(A, "board", "frame"), null), "the board comes out by hand")
 	TEST_ASSERT_EQUAL(ladder.state_of(A), "frame", "back on the bare frame")
 	TEST_ASSERT(board.loc == T, "the same board dropped out")

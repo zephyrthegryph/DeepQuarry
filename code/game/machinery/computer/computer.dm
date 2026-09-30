@@ -19,17 +19,24 @@
 	clicksound = SFX_KEYBOARD
 	integrity_failure = 0.5
 
-/// A console is a MEMBER relation of the area it stands in (role POWER_ROLE_COMPUTER): an APC overload reads them
-/// through members_of(area, POWER_ROLE_COMPUTER).
-/obj/machinery/computer/capabilities()
-	. = ..()
-	. += powered_by(POWERED_BY_AREA, role = POWER_ROLE_COMPUTER)
-
 /obj/machinery/computer/Initialize(mapload)
 	. = ..()
+	// A console is a MEMBER relation of the area it stands in (role POWER_ROLE_COMPUTER): an APC overload reads them
+	// through area_members(area, POWER_ROLE_COMPUTER). Joined here, not through a capability: a console has none, and
+	// adding one would make every console re-derive at init (and wake) for no reason.
+	join(get_area(src), src, "computer", POWER_ROLE_COMPUTER)
 	power_change()
 	update_icon()
 	make_climbable()
+
+/// The console's area membership follows it into another area.
+/obj/machinery/computer/area_changed(area/old_area, area/new_area)
+	if(old_area != new_area)
+		if(old_area)
+			leave(old_area, src, "computer", all = TRUE)
+		if(new_area)
+			join(new_area, src, "computer", POWER_ROLE_COMPUTER)
+	return ..()
 
 DAMAGE_REACTION(/obj/machinery/computer, DAMAGE_EMP, PROC_REF(computer_emp))
 /// An EMP may break the computer.

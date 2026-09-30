@@ -106,6 +106,7 @@
 	var/obj/item/dq_latency_test_box/box = new(floor)
 	var/obj/item/dq_latency_test_item/item = new(box)
 	dq_ledger(box) // build the ledger, register with the sweep
+	refresh_flush() // a fresh atom sits in the refresh queue until it flushes: a reference the eligibility check would see
 	item.latent_touched_at = world.time - (box.latent_idle_delay * 2)
 
 	var/was_enabled = CONFIG_GET(flag/latency_policy_enabled)

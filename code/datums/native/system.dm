@@ -74,7 +74,7 @@
 	if(tick_lag_sent != world.tick_lag)
 		send_tick_lag()
 	var/tick_now = om_world_tick_of(world.time)
-	var/ticks = max(tick_now - last_tick, 1)
+	var/ticks = max(tick_now - last_tick, 0) // never more than passed: Rust's clock must not run ahead of the wheel tick
 	last_tick = tick_now
 	var/budget_ticks = clamp(CEILING(elapsed_ds / world.tick_lag, 1), 1, NATIVE_MAX_CATCHUP)
 	return run_frame(ticks, budget * budget_ticks)
