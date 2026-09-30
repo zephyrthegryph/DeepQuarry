@@ -148,6 +148,8 @@ TYPE_TABLE_DECLARE(/datum/input_adapter, adapter_click_table, TYPE_TABLE_GET(GLO
 		return // should stop you from dragging through windows
 	if(user.is_incorporeal())
 		return
+	if(try_gesture_drag(user, dragged, over))
+		return
 	INVOKE_ASYNC(over, TYPE_PROC_REF(/atom, MouseDrop_T), dragged, user, src_location, over_location, src_control, over_control, params) // ALLOW(scheduler): MouseDrop_T overrides may prompt/do_after
 
 /// A category key: the best interaction of that category on the target.
