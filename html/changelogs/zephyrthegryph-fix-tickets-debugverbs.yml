@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Adminhelp, Mentorhelp and Mentor-PM text is now escaped before staff see it, so a player can no longer inject HTML into the staff ticket log and chat."
+  - bugfix: "Generate Procedural Station, Generate Expedition Site, Generate Expedition Mission and Show Generated Station Architecture are admin verbs now and no longer appear in every player's Debug tab."
+  - code_imp: "Removed the duplicate legacy Reload Configuration proc and moved the admin chat verbs onto the ADMIN_CATEGORY_CHAT define."

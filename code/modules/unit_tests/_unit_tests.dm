@@ -182,6 +182,7 @@
 #include "dq_ai_om_tests.dm"
 #include "dq_economy_tests.dm"
 #include "dq_contract_tests.dm"
+#include "dq_debug_verb_gate_tests.dm"
 #include "dq_expedition_tests.dm"
 #include "dq_faction_reputation_tests.dm"
 #include "dq_flight_operations_tests.dm"
