@@ -1,8 +1,10 @@
+> **Archived.** Superseded by the foundation design (doc/rewrite/README.md); still accurate for code not yet converted, until the f-* branches merge. Replaced by [scheduling_and_kernel.md](../scheduling_and_kernel.md) (systems, membership as relations, kernel_tick); the tgui/UI parts are covered in [reactions.md](../reactions.md) (`ui_from`) and [operations_and_actions.md](../operations_and_actions.md).
+
 # Generic systems (wave "sys")
 
 Status: **design, authoritative for the API.** Branch `rewrite/sys`. Read
 [om_in_10_minutes.md](om_in_10_minutes.md), [declarative_lifecycle.md](declarative_lifecycle.md),
-[caching.md](caching.md) and [interactions.md](interactions.md) first. References (handles,
+[../caching.md](../caching.md) and [interactions.md](interactions.md) first. References (handles,
 relations, rosters) belong to the ownership rewrite (`rewrite/own`, [ownership.md](ownership.md));
 nothing here designs a reference kind.
 

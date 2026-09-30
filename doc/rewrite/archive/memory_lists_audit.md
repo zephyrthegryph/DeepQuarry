@@ -1,3 +1,5 @@
+> **Archived.** Historical record (audit/report/brief); not maintained. Instance-list audit after wave 0 (MEM1-MEM9); rules live in AGENTS.md section 3a.
+
 # Instance list audit (memlists)
 
 A type-level `var/list/foo = list(...)` gives every instance its own list at

@@ -1,11 +1,13 @@
+> **Archived.** Superseded by the foundation design (doc/rewrite/README.md); still accurate for code not yet converted, until the f-* branches merge. Sequencing now lives in [README.md](../README.md) (branch status) and the unified plan (`doc/rewrite/completion_plan.md` where present).
+
 # Migration plan: ownership, scheduling and the Rust core
 
 Status: **authoritative order and estimates**, as of 2026-09-26. This file owns the *order*; the designs live in:
 - [object_model_core.md](object_model_core.md): §4.10 pipelines, §4.11 one scheduler, §7 relations and slots;
-- [lifecycle.md](lifecycle.md): destruction as a transaction, and LC-refs;
-- [containment.md](containment.md): slots, latent contents;
-- [rust_architecture.md](rust_architecture.md) §8: the Rust consolidation;
-- [roadmap.md](roadmap.md): item IDs.
+- [../lifecycle.md](../lifecycle.md): destruction as a transaction, and LC-refs;
+- [../containment.md](../containment.md): slots, latent contents;
+- [../rust_architecture.md](../rust_architecture.md) §8: the Rust consolidation;
+- [../roadmap.md](../roadmap.md): item IDs.
 
 ## 1. The end state
 
@@ -93,7 +95,7 @@ Phases run in order; tracks inside a phase run in parallel, one agent per track,
 **Gate 3 (final):** merge to master; full suite, hard-delete run and benchmark; then the user's manual playtest.
 
 ### Phase 4: boot and bulk-destroy speed
-Design and measurements: [init_and_turfs.md](init_and_turfs.md). Southern Cross boots in about 121 s (Atoms 67 s, Atmospherics 36 s, Lighting 7 s); a devastation-7 blast in the Brig costs about 14 s of main-thread work, and most explosion boots on the full map die of Rust address-space exhaustion.
+Design and measurements: [../init_and_turfs.md](../init_and_turfs.md). Southern Cross boots in about 121 s (Atoms 67 s, Atmospherics 36 s, Lighting 7 s); a devastation-7 blast in the Brig costs about 14 s of main-thread work, and most explosion boots on the full map die of Rust address-space exhaustion.
 
 | Track | Work | Saves | Estimate |
 |---|---|---|---|

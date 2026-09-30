@@ -1,3 +1,5 @@
+> **Archived.** Historical record (audit/report/brief); not maintained. The signal-to-event migration map; the migration is done and the DCS is deleted.
+
 # Signal migration map
 
 Historical: the migration this map drove is done and the DCS is deleted (object_model_core.md sec 10). The generator is gone; the events live in `code/datums/om_events/signal_events.dm`.

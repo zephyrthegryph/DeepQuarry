@@ -1,9 +1,11 @@
+> **Archived.** Superseded by the foundation design (doc/rewrite/README.md); still accurate for code not yet converted, until the f-* branches merge. Life as a scheduler of hibernating systems is now described in [scheduling_and_kernel.md](../scheduling_and_kernel.md) and `doc/mob_life_architecture.md`.
+
 # Mob Life on the object-model core
 
 Status: **implemented on `rewrite/om-pipeline`** (first on `rewrite/life-om` as a Life-specific
 frame loop; that loop is now the core's pipeline runner). Builds on
 [object_model_core.md](object_model_core.md) (the API; pipelines are §4.10, timed statuses §8.1)
-and replaces the scheduling half of [../mob_life_architecture.md](../mob_life_architecture.md)
+and replaces the scheduling half of [../mob_life_architecture.md](../../mob_life_architecture.md)
 §4.3 and §4.8-4.9. Life is declarations and stage bodies: three pipelines, a frame whose facts
 are the old gates, and the stages (the old life systems, families and variants). Everything
 that decides **when** a stage runs belongs to the core.

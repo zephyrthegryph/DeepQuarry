@@ -1,3 +1,5 @@
+> **Archived.** Superseded by the foundation design (doc/rewrite/README.md); still accurate for code not yet converted, until the f-* branches merge. Replaced by [operations_and_actions.md](../operations_and_actions.md) (operations, actions, bind profiles) and [construction.md](../construction.md) (ladders as primitives and joints).
+
 # Interactions and input (track I)
 
 Every interaction is a definition, not a proc override. So every interaction can be listed, can say why it isn't available, and can be bound to a key. Physical inputs map to a small set of abstract actions, and the interaction code never mentions mouse buttons or modifier keys.
@@ -106,7 +108,7 @@ Every interaction is a definition, not a proc override. So every interaction can
 |---|---|
 | `id`, `name`, `category` | Identity and grouping |
 | `priority`, `default_action` | Which interaction Use or Alternate picks |
-| `requires` | A predicate with reasons ([rules.md §2](rules.md#2-predicates)): tool quality and tier, a free hand, reach, which actors, access, target state |
+| `requires` | A predicate with reasons ([../rules.md §2](../rules.md#2-predicates)): tool quality and tier, a free hand, reach, which actors, access, target state |
 | `cost` | A duration through the tool pipeline (§9), plus fuel, charge or resources |
 | `effect` | A proc on the target, or a data transform |
 | `feedback` | Messages, sounds and balloon alerts, generated from the definition unless overridden |
@@ -149,7 +151,7 @@ DECLARE_INTERACTIONS(/obj/item/binoculars, \
 )
 ```
 
-Not `interactions = list(...)` as a type-level var default: DM reallocates a list-valued var's default per *instance* (the list-allocation anti-pattern, [AGENTS.md §3a](../../AGENTS.md)), which would cost memory per item in the world - the opposite of the goal. A `var/static/list` local to the getter is allocated once, ever, and is what AGENTS.md already prescribes for a per-subtype constant table. `get_interactions()` is a proc override like any other, so it costs nothing extra either. `DECLARE_INTERACTIONS(type, specs...)` (`code/__defines/interactions.dm`) generates exactly that getter, so a type writes only its specs; a multi-line call ends each line with a backslash, because DM does not continue a macro call across lines at its top paren depth.
+Not `interactions = list(...)` as a type-level var default: DM reallocates a list-valued var's default per *instance* (the list-allocation anti-pattern, [AGENTS.md §3a](../../../AGENTS.md)), which would cost memory per item in the world - the opposite of the goal. A `var/static/list` local to the getter is allocated once, ever, and is what AGENTS.md already prescribes for a per-subtype constant table. `get_interactions()` is a proc override like any other, so it costs nothing extra either. `DECLARE_INTERACTIONS(type, specs...)` (`code/__defines/interactions.dm`) generates exactly that getter, so a type writes only its specs; a multi-line call ends each line with a backslash, because DM does not continue a macro call across lines at its top paren depth.
 
 **Compiling.** `declare_interactions()` (interaction.dm) calls `get_interactions()` and turns each spec into a `/datum/interaction/generic` singleton via `dq_interaction_from_spec()` (`code/datums/interactions/compact.dm`), interned by the spec list's own reference identity, not its printed content: `PROC_REF(x)` is `nameof(.proc/x)`, a bare proc name with no type prefix, so two unrelated types that happen to name their effect proc the same thing (`interaction_self` is a common choice) would collide on a string key. A spec is stable across calls that share it - a `get_interactions()` override returns a `var/static/list`, computed once per *declaring* proc and handed back unchanged by every subtype that inherits it without overriding the getter (the assembly hierarchy's shared `assembly_self` spec) - and distinct for two types that each build their own list, even when the content looks similar (`aicard` and `bodysnatcher` both naming their own `interaction_self`). Generated interactions carry a real `id` (derived from the kind and the effect proc, deduplicated against a collision with an md5 suffix) and plug into `GLOB.interactions_by_type`'s sibling registry the same way, so the resolver, the Menu, examine, screentips and keybinds need no changes to support them - `interaction_candidates()` accepts either a `/datum/interaction` type path (full form) or a live instance (compact form) in the same list.
 
@@ -232,11 +234,11 @@ A plain `get_interactions()` override is for a type with no compact-declaring an
 - **Type declarations.**
 - **Behaviours:**
   - **Maintainable** machines get open panel, anchor, deconstruct and repair. This replaces `maintenance_flags` and its four `*_act` procs in `machinery.dm:183-230`.
-  - **Slot holders** get insert and eject for each slot ([containment.md](containment.md)).
+  - **Slot holders** get insert and eject for each slot ([../containment.md](../containment.md)).
   - **tgui** gives open UI (Configure).
   - **Construction graphs** give the next step (§10).
   - **Wires** give hack (§11).
-- **Abilities** are interactions on oneself ([rules.md §5](rules.md#5-abilities)).
+- **Abilities** are interactions on oneself ([../rules.md §5](../rules.md#5-abilities)).
 - **Surgery** is built on this by the body rewrite (their phase 9).
 
 ## 7. Resolver and the Menu action

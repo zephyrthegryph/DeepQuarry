@@ -1,3 +1,5 @@
+> **Archived.** Superseded by the foundation design (doc/rewrite/README.md); still accurate for code not yet converted, until the f-* branches merge. Replaced by [state_and_relations.md](../state_and_relations.md) (TRACKED, relations, pools), [reactions.md](../reactions.md) (events, hooks, derived, timers) and [scheduling_and_kernel.md](../scheduling_and_kernel.md) (scheduler, pipelines, rates).
+
 # Object model core API
 
 Status: **authoritative** for the core API. It supersedes the API parts of
@@ -746,7 +748,7 @@ reason. `om_unlink(...)`, `om_related(E, rel)` (targets, E is source),
   `active_if` passes, re-checked when its `depends_on` channels change on
   either end, and released when the edge goes.
 - **Slots are relations.** `/datum/om/relation/slot` (`code/datums/containment/slot_def.dm`,
-  containment.md §3) is a relation that also owns loc: linking a thing into a
+  ../containment.md §3) is a relation that also owns loc: linking a thing into a
   slot (a ledger move -- enter, exit, reslot) links it to the holder by that
   same relation, so a slot gets everything above for free (`changes`
   channels, contributes/grants, and its own `on_link()`/`on_unlink()` as the
@@ -856,7 +858,7 @@ deadline wheel; nothing polls. `om_ui_rate(R)` returns
   `trait_gained` / `trait_lost`.
 - **No DCS.** Signals, components, elements and SSdcs are deleted; `tools/ci/dcs_lints.py`
   bans their API outright. A component became a behaviour with state on the entity, or a
-  plain datum the entity owns (written with `own_set()`, doc/rewrite/ownership.md).
+  plain datum the entity owns (written with `own_set()`, doc/rewrite/archive/ownership.md).
 - **Checks:** `/datum/om/check/x/why_not(actor, target)` returns null or a
   reason; `depends_on` lists the channels that can flip it; `arg` is the
   parameter. `om_why_not(spec, actor, target)`, `om_can(...)`,
@@ -1225,7 +1227,7 @@ qdel(M)
 | Wait for a deadline | `om_after()` / `om_deadline()` | comparing `world.time` with a stored deadline in periodic work | `check_deadline_polling.py` |
 | Remember an object | a relation view (`rel_set`), or `om_callable()` for a deferred call | `weakref`; a handle in content | `ownership_lint.py` (`handle`) |
 | Hold an object reference | own / shared / proto / relation ([ownership.md](ownership.md)), or a declared cache | a raw write to an owned or relation var; two kinds on one var | `ownership_lint.py` |
-| Reuse a scratch object on a hot path | `POOL_DECLARE(type)`, `pool_take(type)` / `obj.release()`, with its per-use fields declared `POOL_RESET(type, var)` ([lifecycle.md §4.1](lifecycle.md#41-pools)) | a hand-written `GLOB` free list and release proc that clears fields by hand | review |
+| Reuse a scratch object on a hot path | `POOL_DECLARE(type)`, `pool_take(type)` / `obj.release()`, with its per-use fields declared `POOL_RESET(type, var)` ([../lifecycle.md §4.1](../lifecycle.md#41-pools)) | a hand-written `GLOB` free list and release proc that clears fields by hand | review |
 | Delete something | a lifecycle verb (`code/datums/lifecycle/verbs.dm`): `consume()`, `replace_with()`, `expire()` or a lifetime, `slot_clear()`, `delete_on_death`; plain `qdel()` only when no verb fits | `del()`; a new `qdel()` where a verb fits | `scheduler_lints.py` (`del`), `lifecycle_counts_lint.py` (`qdel(` sites per file) |
 | Keep a set of live instances | an OM registry (`REGISTRY_MEMBERS()`) | a `GLOB` list of instances; a list allocated per instance | `registry_lint.py`, `instance_list_lint.py` |
 | React to something happening now | an OM event, `OM_EMIT(E, /datum/om/event/x, args...)`; a `/datum/om/event/before/x` to refuse it or return a result; `om_hook()` to react to another entity's event (§10). Deferred or state-driven reactions use a channel, a watch or `om_after()` (§4.4, §4.11) | `RegisterSignal()`/`SEND_SIGNAL()`, `AddComponent()`, `AddElement()`, `COMSIG_*`: deleted, banned outright | `dcs_lints.py` (no ceiling) |

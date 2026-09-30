@@ -1,3 +1,5 @@
+> **Archived.** Historical record (audit/report/brief); not maintained. Benchmark of Life on the OM scheduler, 2026-09-25; re-measure with `tools/build/build.sh bench`.
+
 # Life on the object model: benchmark
 
 Measured 2026-09-25 on the development machine (Windows 11, BYOND 516.1687),

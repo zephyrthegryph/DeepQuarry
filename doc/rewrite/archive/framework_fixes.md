@@ -1,3 +1,5 @@
+> **Archived.** Historical record (audit/report/brief); not maintained. Review pass 2 decisions; folded into [migration_guide.md](../migration_guide.md) and the foundation chapters.
+
 ## 9. Framework fixes from review pass 2 (binding)
 
 This section is binding. It records every fix from the second review: six Sonnet reviews plus the live-bug check. Where it disagrees with an earlier section or with the migration guide, **this section wins**. The guide gets updated to match it. The framework is not finished until every row in 9.3 is collapsed to its single form. The migration waves start only after 9.1–9.4 are built.

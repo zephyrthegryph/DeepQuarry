@@ -1,11 +1,12 @@
 # DeepQuarry migration guide
 
 This is the single document an agent needs to convert code to the new framework. It contains:
+- **Part F:** the foundation design's old-to-new table (read first).
 - **Part A:** the framework as designed, with the exact API.
 - **Part B:** the catalogue of every old form, each with its new form, a real before/after, and the traps.
 - **Part C:** how to run a conversion and what to report.
 
-Nothing else is required reading. `doc/rewrite/dx_conventions.md` and the design pages are background. `doc/rewrite/framework_fixes.md` (§9) is binding: where it disagrees with this guide, it wins, and this guide is corrected to match.
+Nothing else is required reading. `doc/rewrite/dx_conventions.md` and the design pages are background. `doc/rewrite/archive/framework_fixes.md` (§9) was binding for the DX framework; its decisions are folded into this guide. Where the foundation design ([foundation.md](foundation.md)) differs from Part A or B, **Part F wins**; Parts A and B describe the API as built and stay correct until the `rewrite/f-*` branches merge and a folder is converted.
 
 **Status markers.** Every API below is tagged with its state on `rewrite/dx-framework`:
 - **[built]:** merged and tested; use it.
@@ -18,6 +19,66 @@ Nothing else is required reading. `doc/rewrite/dx_conventions.md` and the design
 - **UI actions** are `act_<action>`, not `ui_<action>`, because `ui_*` is the framework's hook namespace. Client action names are normalised centrally: hyphen and camelCase become snake_case.
 
 Where a design page uses an older name, this guide wins.
+
+---
+
+# Part F: foundation forms (read first)
+
+The foundation design ([foundation.md](foundation.md)) replaces several Part A and Part B forms.
+Everything on the right is **[in progress]** on the branch shown; the left column is **[built]**
+and remains valid (and is how existing code is written) until that branch merges. Do not convert
+call sites to a right-hand form before its branch has merged; the F batch adds the new forms beside
+the old ones and does not migrate callers.
+
+## F1. Old form to new form
+
+| Old form [built] | New form | Branch | Chapter |
+|---|---|---|---|
+| `om_after(E, delay, proc)`, `after_slot(...)` | `after(owner, delay, handler, key=, clock=)`; the old procs are wrappers over it | f-reactions | [reactions.md](reactions.md) |
+| `om_hook(source, event, listener, proc)` / `om_hooked()` | `observe(source, trigger, listener, handler)` / `unobserve()` (dynamic), or `reactions()` (static) | f-reactions | [reactions.md](reactions.md) |
+| `DAMAGE_REACTION(type, kind, proc)` / `DAMAGE_REACTION_AFTER` | `on_notice(/datum/notice/<damage kind>, handler)` in `reactions()` (a hit is an occurrence) | f-reactions | [reactions.md](reactions.md) |
+| `derived()` with `runs_while`, `drawn_from`, `ui_from`, `derive`, `rust_push` | `reactions()`: the same sugar over `on_change`, plus generated reads. Old `derived()` entries are folded in | f-reactions | [reactions.md](reactions.md) |
+| `ownership()` / `OWN(type, var, policy)` | `relations()` with `rel_one`/`rel_many` and `kind = OWNED` | f-reactions | [state_and_relations.md](state_and_relations.md) |
+| `relations()` with `rel_one`/`rel_many` untyped | the same table with `kind = REF \| PAIRED \| OWNED` | f-reactions | [state_and_relations.md](state_and_relations.md) |
+| `TRACKED(type, var, channel)`, `changed(E, channel, var)` | `TRACKED(type, var)` (publishes only when read), `publish_change(E, key)` | f-reactions | [state_and_relations.md](state_and_relations.md) |
+| Event/`om_emit` occurrences, `signal`-style notifications | `PUBLISH(src, /datum/notice/x, ...)` and `on_notice` | f-reactions | [reactions.md](reactions.md) |
+| `periodic_cadence` + `should_run()` + `periodic_step(dt)`; `DECLARE_PERIODIC_WHILE`; `DECLARE_REPEAT`; pipelines and stages | `every(interval, handler, while=, members=, phase=, after=, budget=)`; stages are work items with `after` edges | f-reactions / f-kernel | [reactions.md](reactions.md), [scheduling_and_kernel.md](scheduling_and_kernel.md) |
+| `idle` / `wake_on` / `rewake_delay` on a stage | `should_run` with declared reads (adapters keep old stages running) | f-kernel | [scheduling_and_kernel.md](scheduling_and_kernel.md) |
+| `update_rust_device()`, `push_to_rust()` hand pushes, `power_sync` | generated `rust_push(reads...)` | f-rust | [rust.md](rust.md) |
+| Mirrors: `turf.temperature`, APC `sync_cell_charge`, gas observation drains | `native_read(E, key)`, `native(key...)`, one `vg_frame` outbox | f-rust | [rust.md](rust.md) |
+| Reactor watch/token, per-domain watches | one World watch facility + `on_cross` | f-rust | [rust.md](rust.md) |
+| `cap_entry_point(cap_hand(...), INTERACTION_ENTRY_ALT, ...)`, per-entry alt-click, `INTERACT_*` | `cap_op(..., action = ACT_X)`; gestures bind to actions in a bind profile | f-ops | [operations_and_actions.md](operations_and_actions.md) |
+| `behind = COVER \| PANEL` bits | compartments: `compartment(BAY_X, door =, route_gate =)` and `at = BAY_X` on operations, slots, ladders | f-ops | [operations_and_actions.md](operations_and_actions.md) |
+| `needs = PROC_REF(x)` + `else_say`, `works_broken`, `works_unpowered`, `locked_by`, `blocked_by` | requirements: `req_*`, `all_of`/`any_of`/`none_of`, `cap_require(ops =, needs =)` (old arguments still map to them) | f-ops | [operations_and_actions.md](operations_and_actions.md) |
+| `cap_hand` / `cap_tool` / `cap_use_on` / `cap_insert` / `cap_control` | presets over `cap_op(name, handler, using=, by=, via=, action=, needs=, delay=, cost=, kind=, key=, at=, log=)` | f-ops | [operations_and_actions.md](operations_and_actions.md) |
+| Same-key redeclaration silently replacing | init error unless via `refine(key, ...)` or `replace` | f-ops | [operations_and_actions.md](operations_and_actions.md) |
+| Global "can hold" / `has_hands` booleans | affordances (`AFF_*`) from slot providers; routes (`ROUTE_*`) | f-ops | [operations_and_actions.md](operations_and_actions.md) |
+| `layer =` on capability constructors, `CAP_NO_LAYER` | icon naming convention: `look.variant`, `look.part`, `look.glow`; standard names in `look_names.dm` | f-look | [look.md](look.md) |
+| Hand-written construction stage entries, `apc_steps` | `cap_construction` with `insert`, `wire`, `fasten`, `weld` and joints `fit`, `plate`, `parts`; presets `machine_frame`, `computer_frame`, `wall_frame`, `girder`, `mech_chassis` | f-look | [construction.md](construction.md) |
+| `POOL_DECLARE` / `POOL_RESET`, storing packets via `ownership()` | `/datum/pooled`: automatic reset, `take`/`release`, `snapshot()` | f-look | [pools.md](pools.md) |
+| `system.members`, `cap_system` roles, `world_services()` | `MEMBER` relations, `join(system, E, source)` | f-kernel | [scheduling_and_kernel.md](scheduling_and_kernel.md) |
+| MC `Loop` for gameplay, `SSbehaviours` | `kernel_tick()` phases K, N, U, D, P, R, G; `request_urgent(member, work, deadline)` | f-kernel | [scheduling_and_kernel.md](scheduling_and_kernel.md) |
+
+## F2. Choosing the form
+
+| You want | Write |
+|---|---|
+| Something happened; others may care | `PUBLISH` a notice; consumers `on_notice` |
+| A value changed; recompute a view | `TRACKED` setter; `reactions()` `on_change` sugar |
+| Veto or adjust an operation | `before_op` |
+| A native value crossed a line | `on_cross` (`urgent =` if the latency matters) |
+| Do later / repeatedly | `after` / `every` |
+| A player gesture | an action (`ACT_*`) that resolves to a `cap_op` |
+| A feature with parts, gating, entries | a capability |
+| A link between datums | `relations()` with the right kind |
+
+## F3. Traps
+
+- The foundation forms are not usable in converted code until their branch merges; use the left
+  column and the status markers in Parts A and B.
+- Do not migrate call sites as part of the F batch. Add the new API beside the old one.
+- `on_notice` is for occurrences; do not model a state as a notice, and do not coalesce notices.
+- A handler receiving a pooled datum (notice, `op_ctx`, damage packet) must not keep it.
 
 ---
 
@@ -49,6 +110,8 @@ Where a design page uses an older name, this guide wins.
 **Dispatched calls** (these mark their target automatically, and re-derive everything): capability entries, `act_*` UI actions, timers, `timed_set` reverts, periodic steps, prompt answers, construction steps, ownership transfers, reagent and integrity changes, and verbs. The background sweep catches missed marks: in test builds it **fails** with the type and var; in production it corrects within seconds.
 
 ## A2a. Declared dependencies [built: rewrite/dx-deps]
+
+> Foundation: becomes `reactions()` with generated reads (F1); the sugar names stay.
 
 `should_run()`, `draw()` (with `hidden_verbs()`), `tgui_data()` and `push_to_rust()` are derived from state. A type says what each reads in `derived()`, a per-type block built once and cached like `capabilities()` (`SHOULD_CALL_PARENT`, pure: read no instance state):
 
@@ -147,12 +210,14 @@ Every constructor below also takes the standard gating arguments `behind`, `bloc
 
 **Capabilities may own UI actions** [built]: `/datum/capability/<x>/proc/act_<action>(mob/user, atom/holder, ...args)` plus `ui_logged()` on the capability; the dispatcher resolves it on the holder's capabilities when the holder has no `act_<action>` itself. Capability UI data arrives under `data["caps"][<key>]`.
 
-[planned] (framework_fixes.md §9.5; don't invent them):
+[planned] (archive/framework_fixes.md §9.5; don't invent them):
 - **Machines:** `machine_board`/`machine_wires` type vars read by `machine_basics()`; `refine(key, ...)` to adjust one part of a bundle; `service_panel(access)`; `cap_occupant(max, types, enter_delay, eject_on)` with `occupants(src)` and derived `occupant_count`; `cap_access(req_access)`; parts: `cap_parts(list(/obj/item/stock_parts/x = n))` with `derive_part_rating()` (replaces `RefreshParts`); `look.loop(sound)`; `cap_slot(..., eject_tool = TOOL_X)`.
 - **Derived values:** `derived()` with `runs_while`/`drawn_from`/`ui_from`/`derive(...)`, and `rust_push(reads...)` replacing hand `update_rust_device()` calls (§9.2).
 - **Vore:** `cap_interior(transmit, escape_delay, on_enter, on_exit)`; `settings()` rows (`setting_choice/number/text/bool/color`) with one `act_set_setting(user, key, value)`.
 
 ## A5. Look
+
+> Foundation: `layer =` is replaced by the naming convention (`look.variant`/`part`/`glow`), F1 and [look.md](look.md).
 
 ```dm
 /obj/machinery/thing/draw(datum/look/look)
@@ -172,6 +237,8 @@ Every constructor below also takes the standard gating arguments `behind`, `bloc
 **Never** call `update_icon()`, `queue_icon_update()` or `update_appearance()`, and never override `update_icon`. **Standard state names:** `broken`, `cover_open`, `panel_open`, `wires`, `locked`, `sparks`, `emagged`, `dark`. The icon-state rename tool [built] maps legacy states to them in `dmi.toml` and updates the code.
 
 ## A6. Periodic work and verbs
+
+> Foundation: periodic work becomes `every(...)` (F1); verbs are unchanged.
 
 ```dm
 /obj/machinery/thing
@@ -248,9 +315,11 @@ Verbs:
 
 [built]: re-validation re-runs the entry's `needs`, or the `needs =` passed to the `ask_*`; `third_party = TRUE` checks only the answerer (a consent prompt). `ask_number` returns null on cancel, so 0 is a valid answer: test with `isnull()`.
 
-[planned] (framework_fixes.md §9.1, option A): handlers that ask or await run as kernel-tracked tasks, cancelled when the holder is deleted, the user disconnects or the target goes; `as = ASK_THIRD_PARTY`/`ASK_CONSENT`, `timeout =`, `default =`, `yes =`/`no =` labels, `validate =`, `ask_form(...)`, `task_why()`, `await_sql`/`await_http`/`await_job` returning `/datum/io_result`, `start_task()`, `await_action()`, `test_answers()`. Until then use the built `ask_*` above.
+[planned] (archive/framework_fixes.md §9.1, option A): handlers that ask or await run as kernel-tracked tasks, cancelled when the holder is deleted, the user disconnects or the target goes; `as = ASK_THIRD_PARTY`/`ASK_CONSENT`, `timeout =`, `default =`, `yes =`/`no =` labels, `validate =`, `ask_form(...)`, `task_why()`, `await_sql`/`await_http`/`await_job` returning `/datum/io_result`, `start_task()`, `await_action()`, `test_answers()`. Until then use the built `ask_*` above.
 
 ## A9. Time
+
+> Foundation: `after()` is the one timer and `every()` the one repeating form; `om_after` and `after_slot` become wrappers (F1).
 
 The decision table. **Read it before writing anything with a timer.**
 
@@ -258,7 +327,7 @@ The decision table. **Read it before writing anything with a timer.**
 |---|---|---|
 | "Not more than once per N" | `COOLDOWN_DECLARE(x)` + `COOLDOWN_START(src, x, N)` / `COOLDOWN_FINISHED(src, x)` | [built] |
 | A var that reverts after N | `timed_set(src, nameof(var), value, for_time = N)`, read the var directly, `time_left(src, nameof(var))` for a countdown, `timed_cancel(...)` | [built] |
-| A temporary condition **with behaviour** (EMP'd, failed, jammed, on fire) | a timed grant of a capability: `om_grant_for(src, GRANT_CAPABILITY, /datum/capability/condition/x, source, N)` (becoming `grant_for()`, framework_fixes.md §9.3) | [built] (`condition.dm`) |
+| A temporary condition **with behaviour** (EMP'd, failed, jammed, on fire) | a timed grant of a capability: `om_grant_for(src, GRANT_CAPABILITY, /datum/capability/condition/x, source, N)` (becoming `grant_for()`, archive/framework_fixes.md §9.3) | [built] (`condition.dm`) |
 | Do something once, later | `after(src, N, PROC_REF(x), args...)`; owned by src (dropped if src is gone). A datum argument deleted meanwhile **arrives as null** and the call still runs (counted, logged), so cleanup always happens: check your args. `after_if_alive(...)` drops the call instead, for a pure effect | [built] |
 | One pending "do later" per name (re-arming replaces it) | `after_slot(src, "name", N, PROC_REF(x))` | [built] |
 | Something repeating while a condition holds | a cadence: `should_run()` + `periodic_step(dt)`, **never** a timer that re-arms itself | [built] |
@@ -274,6 +343,8 @@ The decision table. **Read it before writing anything with a timer.**
 
 ## A10. Ownership, relations and lifetime
 
+> Foundation: `ownership()` and `OWN` become `relations()` entries of kind `OWNED`; relation kinds are `REF`/`PAIRED`/`OWNED` (F1).
+
 | You want | Write | Status |
 |---|---|---|
 | A owns B (B moves and dies with A) | `OWN(type, var, policy)` and `own_set(src, nameof(var), B)`, which takes B from its hand, slot or container, moves it in and adopts it. Replacing disposes of the old value by policy | [built] |
@@ -287,11 +358,15 @@ The decision table. **Read it before writing anything with a timer.**
 
 ## A11. Requirements
 
+> Foundation: requirements are `/datum/req` flyweights with typed refusal reasons and `cap_require` (F1, [operations_and_actions.md](operations_and_actions.md)).
+
 - **[built]** `needs = PROC_REF(x)` + `else_say` on capability entries.
 - **[planned]** (plan §2.10): a shared `chk_*` library (`chk_alive`, `chk_conscious`, `chk_capable`, `chk_unrestrained`, `chk_adjacent`, `chk_near_subject`, `chk_held`, `chk_carried`, `chk_hand_free`, `chk_on_turf`), and `ask_*` re-validation running the same `needs`.
 - **Until it lands:** convert `REQ_ON`/`REQ_TARGET_STATE` to `needs = PROC_REF(<the same proc>)`, drop reach/adjacent/inventory clauses (the dispatcher applies them), and leave `ASK_*` alone.
 
 ## A12. Systems and the kernel [planned]
+
+> Foundation: [in progress] on `rewrite/f-kernel`; see [scheduling_and_kernel.md](scheduling_and_kernel.md).
 
 - **Definition:** a system is `/datum/system/x` in `code/modules/x/`. It has private state (`VAR_PRIVATE`), `needs = list(...)` (boot order), `periodic_cadence` + `should_run()` + `periodic_step(dt)`, `member_should_run(A)` / `member_step(A, dt)` for atoms that joined through `cap_system()`, `emits` + `events()`, `latency_class`, and an `api.dm` that other folders may call.
 - **Replaces:** `SUBSYSTEM_DEF`, `/datum/world_service`, `GLOB.x_service`, `boot_after`/`order_after`, `init_order`, `fire()`.
@@ -520,7 +595,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/button/remote, "doorctrl{appearance_powered?0
 // AFTER
 /obj/machinery/button/remote/draw(datum/look/look)
 	..()
-	look.state(power_state == POWER_UNPOWERED ? "doorctrl-p" : "doorctrl0")   // power_state [planned], framework_fixes.md §9.3
+	look.state(power_state == POWER_UNPOWERED ? "doorctrl-p" : "doorctrl0")   // power_state [planned], archive/framework_fixes.md §9.3
 ```
 
 **Traps:**
@@ -528,7 +603,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/button/remote, "doorctrl{appearance_powered?0
 - Never set `icon_state` directly in gameplay code.
 - For the capability layers, use standard state names; run the rename tool for legacy ones.
 
-**Power reads:** there is no `is_powered()`. The one read is the derived `power_state` (`POWER_BROKEN`/`POWER_UNPOWERED`/`POWER_OFF`/`POWER_IDLE`/`POWER_ACTIVE`) [planned, framework_fixes.md §9.3]; until it lands, `cap_powered(src)` [built].
+**Power reads:** there is no `is_powered()`. The one read is the derived `power_state` (`POWER_BROKEN`/`POWER_UNPOWERED`/`POWER_OFF`/`POWER_IDLE`/`POWER_ACTIVE`) [planned, archive/framework_fixes.md §9.3]; until it lands, `cap_powered(src)` [built].
 
 ## B6. Manual refresh → delete
 
@@ -583,7 +658,7 @@ UI_ACT_PROC(/datum/round_status_panel, ui_act_call_shuttle)
 | `tgui_input_text/number/list`, `tgui_alert`, native `input()`/`alert()` | `ask_text`, `ask_number`, `ask_list`, `ask_yes_no` |
 | forms of several prompts in a row | `form = list(text_field(...), number_field(...), choice_field(...))` on the entry; `ask_form(...)` inside a handler [planned, §9.1] |
 
-The re-run machinery (`om_ask`, `act_ask`/`rerun_ask`, `prompt_flow`/`flow_execute`, `/datum/om/flow`, `om_prompt_answer`/`test_prompts`) still exists in old code; framework_fixes.md §9.1 deletes all of it. Convert to the inline form, never add to it.
+The re-run machinery (`om_ask`, `act_ask`/`rerun_ask`, `prompt_flow`/`flow_execute`, `/datum/om/flow`, `om_prompt_answer`/`test_prompts`) still exists in old code; archive/framework_fixes.md §9.1 deletes all of it. Convert to the inline form, never add to it.
 
 **Traps:**
 - Code before `ask_*` runs once; there's no re-run.
@@ -615,7 +690,7 @@ The re-run machinery (`om_ask`, `act_ask`/`rerun_ask`, `prompt_flow`/`flow_execu
 | `EXPIRY_ON_LAPSE(type, var, clock, proc)` | "do X when it ends" | `timed_set(..., revert_to = ...)` for a value, or a timed grant whose capability's removal does X |
 | `LEFT_UNTIL` | countdown | `time_left(src, nameof(flag))` |
 
-**Temporary state: one form per intent** (framework_fixes.md §9.3):
+**Temporary state: one form per intent** (archive/framework_fixes.md §9.3):
 
 | The state is | Write | Not |
 |---|---|---|
@@ -806,7 +881,7 @@ About 3,270 direct calls remain: 725 `qdel(src)` and about 2,500 `qdel(local)`. 
 ... rel_link(src, nameof(throwing), TT)
 ```
 
-`relations()` and the REL* migration are built (doc/rewrite/ownership.md §4.1); the typed
+`relations()` and the REL* migration are built (doc/rewrite/archive/ownership.md §4.1); the typed
 `/datum/om/relation` types are not converted yet (`python tools/dx/convert_relations.py --dry-run`
 lists each with its proposed entry and what blocks it). Meanwhile:
 - Declare links in `relations()` and write them with `rel_link(src, nameof(x), y)` (always `nameof()`, never a string), **one side only**.
@@ -815,7 +890,7 @@ lists each with its proposed entry and what blocks it). Meanwhile:
 
 ## B18. Ownership declarations → one form [built]
 
-The 16 declaration macros (`OWN` 211, `REL_LIST` 91, `REL_PAIR` 77, `REL` 48, `REL_PAIR_LIST` 34, `PROTO` 27, …) are gone. Declare in `ownership()` (`owns(nameof(var), policy = ...)`, `shares(nameof(var))`, `proto(nameof(var))`) and `relations()` (`rel_one`, `rel_many`, `rel_key`); see doc/rewrite/ownership.md §1.2. `sys/dx_ownership_forms` bans the old macros, the interim `declare_ownership(decl)`, and string var names in accessors. (`OWN_TIMER` and `DECLARE_SHARED_CACHE` are separate and stay.)
+The 16 declaration macros (`OWN` 211, `REL_LIST` 91, `REL_PAIR` 77, `REL` 48, `REL_PAIR_LIST` 34, `PROTO` 27, …) are gone. Declare in `ownership()` (`owns(nameof(var), policy = ...)`, `shares(nameof(var))`, `proto(nameof(var))`) and `relations()` (`rel_one`, `rel_many`, `rel_key`); see doc/rewrite/archive/ownership.md §1.2. `sys/dx_ownership_forms` bans the old macros, the interim `declare_ownership(decl)`, and string var names in accessors. (`OWN_TIMER` and `DECLARE_SHARED_CACHE` are separate and stay.)
 
 ## B19. Base-type vars and per-instance lists
 
@@ -941,7 +1016,7 @@ New code must **not** add a sixth path. Until the adapter lands, use the existin
 | Mob AI | behaviours stay flyweight `/datum/ai_behavior`; declaration moves to `cap_ai_behaviors()` [planned]; no new `ports/` files | §2.4 |
 | Vore | outside callers use `vore/api.dm` [planned]; no new outside `/obj/belly` references | §2.5 |
 
-## B30. Mob Life stages [planned: framework_fixes.md §9.5 Life]
+## B30. Mob Life stages [planned: archive/framework_fixes.md §9.5 Life]
 
 The target model: one `/datum/system/life` with an ordered stage plan. Each stage declares what it reads in `derived()`, runs while `should_run(mob)` holds, and steps with `step(mob, dt)` returning `STEP_*`.
 

@@ -1,3 +1,5 @@
+> **Archived.** Historical record (audit/report/brief); not maintained. Quick-win bug and memory list (track F); the fixes landed on their own branches.
+
 # Fixes and quick wins (track F)
 
 This track covers work that doesn't wait for the new architecture. Each fix here is small and local, and each one lands on its own with a regression test or a before/after benchmark.
