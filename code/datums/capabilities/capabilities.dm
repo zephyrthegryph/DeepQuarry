@@ -277,6 +277,15 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
  * behind (needs the bits SET), blocked_by (needs them CLEAR: "only while the cover is closed"),
  * locked_by, needs (global chk_* refs or holder procs: library/checks.dm), then every capability's gate() (the cover, the lock, a slot's rules).
  */
+/**
+ * Why an entry used at compartment `bay` (BAY_*) on `holder` is refused right now, or null. A stub: it
+ * answers null until the operations layer's compartments exist.
+ * TODO(W6 integration): ask the holder's boundary capability, passes(route, ctx) (W2's compartment
+ * contract, foundation_spec.md "Routes: ... Compartments"), for the ctx's route, and return its reason.
+ */
+/proc/op_at_reason(atom/holder, bay, datum/ctx)
+	return null
+
 /proc/cap_gate_reason(atom/A, mob/user, obj/item/held, datum/interaction/capability/entry)
 	if(!entry.works_broken && is_broken(A))
 		return "it's broken"
@@ -298,6 +307,10 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 		return "you can't do that in its current state"
 	if(entry.locked_by && (A.cap_state & entry.locked_by))
 		return "it's locked"
+	if(entry.at)
+		var/at_reason = op_at_reason(A, entry.at, null)
+		if(at_reason)
+			return at_reason
 	var/needs_reason = cap_needs_reason(A, user, held, entry.needs, entry.else_say)
 	if(needs_reason)
 		return needs_reason
@@ -325,6 +338,8 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 	var/works_broken = FALSE
 	var/works_unpowered = FALSE
 	var/log
+	/// The compartment (BAY_*) this entry is used at, or null: the dispatcher asks op_at_reason().
+	var/at
 	/// Deciseconds after a success before this entry works again on the same holder (a per-holder,
 	/// per-entry cooldown owned by the framework: no COOLDOWN_DECLARE trio in the type).
 	var/cooldown
@@ -469,10 +484,11 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 	if(!C.works_unpowered)
 		E.works_unpowered = FALSE
 	E.log ||= C.log
+	E.at ||= C.at
 
 /// Sets the standard gating arguments on capability C (every library constructor calls it with its
 /// own same-named arguments). Returns C.
-/proc/cap_gating(datum/capability/C, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
+/proc/cap_gating(datum/capability/C, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log, at)
 	C.behind = behind
 	C.blocked_by = blocked_by
 	C.locked_by = locked_by
@@ -481,6 +497,7 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 	C.works_broken = works_broken
 	C.works_unpowered = works_unpowered
 	C.log = log
+	C.at = at
 	return C
 
 // ---- the bespoke entries: small capabilities ----

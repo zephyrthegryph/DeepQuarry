@@ -6,8 +6,8 @@
 //	. += cell_bay(nameof(cell))
 
 /// The cell bay bundle for holder var `slot_var` (nameof(cell)).
-/proc/cell_bay(slot_var, accepts = /obj/item/cell, layer = LOOK_CELL)
-	return list(cap_layer_order(cap_slot(slot_var, accepts, behind = COVER, layer = layer, eject_via = SLOT_VIA_HAND, name = "Insert power cell", eject_name = "Remove power cell", insert_msg = "You insert %I%.", eject_msg = "You remove %I%.", full_msg = "%T% already has a power cell installed.", slot_type = /datum/capability/slot/cell_bay), 50))
+/proc/cell_bay(slot_var, accepts = /obj/item/cell, layer = LOOK_CELL, at)
+	return list(cap_layer_order(cap_slot(slot_var, accepts, at = at, behind = COVER, layer = layer, eject_via = SLOT_VIA_HAND, name = "Insert power cell", eject_name = "Remove power cell", insert_msg = "You insert %I%.", eject_msg = "You remove %I%.", full_msg = "%T% already has a power cell installed.", slot_type = /datum/capability/slot/cell_bay), 50))
 
 /datum/capability/slot/cell_bay
 

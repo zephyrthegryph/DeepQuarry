@@ -471,7 +471,7 @@ APPEARANCE_NONE(/obj/machinery/door/airlock)
 		else if(damaged && powered)
 			look.overlay("sparks_damaged")
 	else
-		look.hide("panel_open")
+		look.hide(LOOK_PANEL_OPEN)
 		look.hide("welded")
 		look.state(open_state())
 		look.overlay("sparks_open", when = has_stat(BROKEN) && powered)

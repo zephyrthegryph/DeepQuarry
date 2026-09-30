@@ -89,7 +89,9 @@ GLOBAL_VAR_INIT(pool_poison, FALSE)
 		.[name] = islist(value) ? json_encode(value) : value
 
 /// The fields of a pooled datum a release resets: var name -> POOL_RESET_VALUE / POOL_RESET_LIST
-/// (a list New() allocated). Built once per type from a fresh instance.
+/// (a list New() allocated). A list var keeps its list and gets the contents a fresh instance had (empty for one New()
+/// allocates, the declared items for `var/list/x = list(1, 2)`: DM reports no compile-time initial for a list).
+/// Built once per type from a fresh instance.
 /proc/pool_reset_plan(datum/pooled/D)
 	var/static/list/plans = list()
 	var/list/plan = plans[D.type]
@@ -106,12 +108,28 @@ GLOBAL_VAR_INIT(pool_poison, FALSE)
 		if(base_vars[name])
 			continue
 		var/current = D.vars[name]
-		if(islist(current) && isnull(initial(D.vars[name])))
+		if(islist(current))
 			plan[name] = POOL_RESET_LIST
+			GLOB.pool_list_templates["[D.type]:[name]"] = pool_deep_copy(current)
 		else
 			plan[name] = POOL_RESET_VALUE
 	plans[D.type] = plan
 	return plan
+
+/// type:var -> the list contents a fresh instance had (pool_reset_plan()).
+GLOBAL_LIST_EMPTY(pool_list_templates)
+
+/// A copy of `source` with nested lists copied too.
+/proc/pool_deep_copy(list/source)
+	. = list()
+	for(var/key in source)
+		var/value = isnum(key) ? null : source[key]
+		if(islist(key))
+			key = pool_deep_copy(key)
+		if(isnull(value))
+			. += list(key)
+		else
+			.[key] = islist(value) ? pool_deep_copy(value) : value
 
 /// A pooled `type` ready to use: `take(/datum/damage_packet)`. Give it back with .release().
 /proc/take(type)
@@ -201,7 +219,9 @@ GLOBAL_VAR_INIT(pool_poison, FALSE)
 		for(var/name in pool.plan)
 			if(pool.plan[name] == POOL_RESET_LIST)
 				var/list/kept = D.vars[name]
-				kept?.Cut()
+				if(kept)
+					kept.Cut()
+					kept += pool_deep_copy(GLOB.pool_list_templates["[D.type]:[name]"])
 			else
 				D.vars[name] = initial(D.vars[name]) // ALLOW(api): pool_release(): a /datum/pooled goes back to its declared initial values
 		var/datum/pooled/P = D

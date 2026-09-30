@@ -180,7 +180,7 @@ Every constructor below also takes the standard gating arguments `behind`, `bloc
 | `<base>-<part>[-<v>]` | a part drawn for this sprite only | `look.part("panel", "open")` |
 | `<part>[-<v>]` | a part every sprite of the icon shares (`panel-open`, `broken`, `charge-3`) | `look.part(...)` |
 
-`look.variant(name)` replaces the base with `<base>-name` when the icon has it; `look.part(name, value)` draws the first of `<base>-name[-value]` then `name[-value]` (nothing if neither exists; `value` TRUE is a plain part, FALSE/null draws nothing); `look.glow(name, value)` upgrades a part you already added to emissive, so glow states are never separate names. `_` and `-` are the same when a name is looked up, so an old `panel_open` still resolves as `panel-open` until it is renamed. `look.hide("panel_open")` hides a part by either spelling. Icon states are read once per icon file (`look_states_of()`); nothing calls `icon_states()` per draw.
+`look.variant(name)` replaces the base with `<base>-name` when the icon has it; `look.part(name, value)` draws the first of `<base>-name[-value]` then `name[-value]` (nothing if neither exists; `value` TRUE is a plain part, FALSE/null draws nothing); `look.glow(name, value)` upgrades a part you already added to emissive, so glow states are never separate names. Names are exact and dashed: a legacy `panel_open` state is not found until it is renamed (`rename_states.py --standard`, below). `look.hide("panel-open")` hides a part by its full name, or `look.hide("panel")` every value of it. Icon states are read once per icon file (`look_states_of()`); nothing calls `icon_states()` per draw.
 
 Library capabilities draw their layer as a part, so a type's icon just needs the standard states: `broken`, `cover-open`, `panel-open`, `wires`, `locked`, `dark`, `lid`, `cell`, `bolts`, `welded`, `emergency`. `look_missing_standard_parts(A)` lists what a type's icon lacks; a type says what it knowingly lacks with `look_lacks()` and opts in to the unit test's enforcement with `look_checked()` (a checked type with a gap fails the test). The rename tool maps legacy states to the convention:
 
@@ -188,6 +188,7 @@ Library capabilities draw their layer as a part, so a type's icon just needs the
 python tools/dq_icons/rename_states.py icons/obj/power.dmi.toml --map apc_frame=frame --refs code/modules/power   # dry run
 python tools/dq_icons/rename_states.py icons/obj/power.dmi.toml --map-file renames.txt --apply
 python tools/dq_icons/rename_states.py icons/obj/power.dmi.toml --check                                          # states off the convention
+python tools/dq_icons/rename_states.py icons/obj/power.dmi.toml --standard --refs code/modules/power             # legacy names -> standard (panel_open, apco*, <base>-panel), states plus quoted references
 ```
 
 ## A6. Periodic work and verbs
@@ -1129,14 +1130,14 @@ A ladder is what the player does, not stages with hand-written undo, refund, mes
 . += cap_construction(
 	ladder_options(sprite = "frame", undo_delay = 1 SECONDS, dismantle = list(TOOL_WRENCH, /obj/item/stack/material/steel, 2)),
 	stage("frame", desc = "A bare frame."),
-	fit(/obj/item/circuitboard/apc),          // a part, pried out again with a crowbar
-	wire(5),                                  // 5 cable; wirecutters cut it out and give it back
-	fasten(TOOL_SCREWDRIVER, name = "closed"),
-	plate(/obj/item/stack/material/steel, 2), // 2 sheets welded on; the welder cuts them off and refunds them
+	build_fit(/obj/item/circuitboard/apc),          // a part, pried out again with a crowbar
+	build_wire(5),                                  // 5 cable; wirecutters cut it out and give it back
+	build_fasten(TOOL_SCREWDRIVER, name = "closed"),
+	build_plate(/obj/item/stack/material/steel, 2), // 2 sheets welded on; the welder cuts them off and refunds them
 )
 ```
 
-Primitives: `insert(part)` (in and out by hand), `wire(n)`, `fasten(tool)`, `weld()`. Joints: `fit(part)`, `plate(sheets, n, name =)`, `parts(list)`. Presets (lists of stages: pass them to `cap_construction()`): `mech_chassis(result, sprite =, parts =, steps =)`, `machine_frame()`, `computer_frame()`, `wall_frame(board)`, `girder()`. Derived: the undo (the fastener table), the refund (what the build consumed), the messages (the verb table), the stage icons (`sprite` + the stage's position), the delays (per-tool defaults; `undo_delay` overrides every undo), stage names (numbered when two are alike). The ladder owns the stage: ask `built_past(A, "wired")`, keep no stage var. `ladder_options(at = BAY_X)` names the compartment the steps are done in. Not migrated yet: mech and girder content, the old `/datum/construction_graph` users. A holder type that defines its own `weld()` / `insert()` / `wire()` proc shadows the primitives inside its own procs; call `global.weld()` there.
+Primitives: `build_insert(part)` (in and out by hand), `build_wire(n)`, `build_fasten(tool)`, `build_weld()`. Joints: `build_fit(part)`, `build_plate(sheets, n, name =)`, `build_parts(list)`. Presets (lists of stages: pass them to `cap_construction()`): `mech_chassis(result, sprite =, parts =, steps =)`, `machine_frame()`, `computer_frame()`, `wall_frame(board)`, `girder()`. Derived: the undo (the fastener table), the refund (what the build consumed), the messages (the verb table), the stage icons (`sprite` + the stage's position), the delays (per-tool defaults; `undo_delay` overrides every undo), stage names (numbered when two are alike). The ladder owns the stage: ask `built_past(A, "wired")`, keep no stage var. `ladder_options(at = BAY_X)` names the compartment the steps are done in. Not migrated yet: mech and girder content, the old `/datum/construction_graph` users. The `build_` prefix keeps a holder's own `weld()` / `insert()` / `wire()` procs from shadowing them.
 
 ## A16. Pools [built: `rewrite/f-look`]
 

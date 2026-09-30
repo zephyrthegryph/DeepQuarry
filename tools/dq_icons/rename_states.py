@@ -17,6 +17,11 @@ A file that names the icon is the safe scope; use --anywhere only for a state na
 
     --map-file FILE     one `old new` pair per line ('#' comments) instead of / besides --map
     --check             list states that do not follow the convention (lowercase, dash separated)
+    --standard          derive the renames from the legacy names in the icon (no --map needed):
+                          panel_open, cover_open ...  -> panel-open, cover-open   (standard part, dashed)
+                          apco<channel>-<mode>        -> channel-<channel>-<mode>
+                          <base>-panel                -> <base>-panel-open
+                        A legacy name whose standard name already exists is reported and skipped.
 """
 from __future__ import annotations
 
@@ -48,6 +53,44 @@ def read_toml_states(lines: list[str]) -> list[tuple[int, str]]:
                 found.append((index, m.group(2)))
                 in_state = False
     return found
+
+
+STANDARD_TOKENS = {"panel", "cover", "broken", "locked", "wires", "dark", "lid", "cell", "bolts", "welded",
+                   "emergency", "power", "charge", "channel"}
+APC_CHANNEL = re.compile(r"^apco(\d+)-(\d+)$")
+BASE_PANEL = re.compile(r"^(.+)-panel$")
+
+
+def standard_name(name: str) -> str | None:
+    """The standard name for a legacy state name, or None when it needs no rename."""
+    m = APC_CHANNEL.match(name)
+    if m:
+        return "channel-%s-%s" % (m.group(1), m.group(2))
+    m = BASE_PANEL.match(name)
+    if m:
+        return "%s-panel-open" % m.group(1)
+    parts = re.split(r"[_-]", name)
+    if parts and parts[0].lower() in STANDARD_TOKENS:
+        new = "-".join(p.lower() for p in parts)
+        return new if new != name else None
+    return None
+
+
+def standard_pairs(toml_path: Path) -> tuple[dict[str, str], list[str]]:
+    """old -> new for every legacy state in the icon, and the ones skipped (target taken)."""
+    names = [n for _, n in read_toml_states(toml_path.read_text(encoding="utf-8").splitlines())]
+    taken = set(names)
+    pairs: dict[str, str] = {}
+    skipped: list[str] = []
+    for name in names:
+        new = standard_name(name)
+        if not new:
+            continue
+        if new in taken or new in pairs.values():
+            skipped.append("%s -> %s (target exists)" % (name, new))
+            continue
+        pairs[name] = new
+    return pairs, skipped
 
 
 def parse_pairs(map_args: list[str], map_file: str | None) -> dict[str, str]:
@@ -138,6 +181,7 @@ def main(argv: list[str]) -> int:
     ap.add_argument("--refs", action="append", default=[], help="directory or file to rewrite references in")
     ap.add_argument("--anywhere", action="store_true", help="rewrite in files that do not mention the icon")
     ap.add_argument("--apply", action="store_true", help="write the changes (default: dry run)")
+    ap.add_argument("--standard", action="store_true", help="derive renames from legacy names (see above)")
     ap.add_argument("--check", action="store_true", help="list states off the naming convention and exit")
     args = ap.parse_args(argv)
 
@@ -151,6 +195,12 @@ def main(argv: list[str]) -> int:
         return 0
 
     pairs = parse_pairs(args.map, args.map_file)
+    if args.standard:
+        derived, skipped = standard_pairs(toml_path)
+        for note in skipped:
+            print("skipped: " + note)
+        for old, new in derived.items():
+            pairs.setdefault(old, new)
     if not pairs:
         ap.error("nothing to rename: give --map old=new or --map-file")
     new_lines, problems = plan_toml(toml_path, pairs)

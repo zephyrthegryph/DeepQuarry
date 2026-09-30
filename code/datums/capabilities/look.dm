@@ -65,20 +65,18 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 	LAZYADD(overlays, icon ? look_image(icon, name) : name)
 
 /// Drops a layer a capability drew (the holder's own draw() knows its sprite has no such state in
-/// this state): every overlay, glow or part named `name` added so far (a part by its name, or by name-value). Names compare with "_" and "-"
-/// the same ("panel_open" hides the part "panel-open").
+/// this state): every overlay, glow or part named `name` added so far (a part by its name, or by name-value).
 /datum/look/proc/hide(name)
 	touched = TRUE
-	var/norm = look_norm_name(name)
 	if(overlays)
 		for(var/entry in overlays.Copy())
-			if(istext(entry) && look_norm_name(entry) == norm)
+			if(istext(entry) && entry == name)
 				overlays -= entry
 		if(!length(overlays))
 			overlays = null
 	if(glows)
 		for(var/entry in glows.Copy())
-			if(look_norm_name(entry) == norm)
+			if(entry == name)
 				glows -= entry
 		if(!length(glows))
 			glows = null
@@ -86,7 +84,7 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 		var/list/kept
 		for(var/list/entry in parts)
 			var/full = isnull(entry[2]) ? entry[1] : "[entry[1]]-[entry[2]]"
-			if(look_norm_name(entry[1]) != norm && look_norm_name(full) != norm)
+			if(entry[1] != name && full != name)
 				LAZYADD(kept, list(entry))
 		parts = kept
 
@@ -104,8 +102,7 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 /**
  * A named part drawn over the base: `value` is TRUE for a plain part ("panel"), or a value (text or
  * number) for "panel-open"; null / FALSE / "" draws nothing. It resolves when the look is applied to the
- * first state the holder's icon has of "<base>-name[-value]" then "name[-value]" ("_" and "-" are the
- * same in a name, so an old "panel_open" state still resolves). A part with no state draws nothing.
+ * first state the holder's icon has of "<base>-name[-value]" then "name[-value]". A part with no state draws nothing.
  */
 /datum/look/proc/part(name, value = TRUE)
 	touched = TRUE
@@ -131,9 +128,8 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 	if(isnull(name) || isnull(value) || value == 0 || value == "")
 		return
 	var/wanted = (value == TRUE) ? null : "[value]"
-	var/norm = look_norm_name(name)
 	for(var/list/entry in parts)
-		if(look_norm_name(entry[1]) == norm && (isnull(wanted) || entry[2] == wanted))
+		if(entry[1] == name && (isnull(wanted) || entry[2] == wanted))
 			entry[3] = TRUE
 			return
 	LAZYADD(glows, name)
@@ -172,25 +168,18 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 /proc/look_icon_has_state(icon, state)
 	return !!look_states_of(icon)[state]
 
-/// A part name with "_" and "-" the same (the standard form is dashed).
-/proc/look_norm_name(name)
-	return replacetext("[name]", "_", "-")
-
 /**
  * The state of part `name` (with `value`) in `icon` for base state `base`: the first of
- * "<base>-name[-value]", "name[-value]" that exists, in the dashed form then the legacy underscore form.
- * Null when the icon has none.
+ * "<base>-name[-value]", "name[-value]" that exists. Null when the icon has none. Names are exact:
+ * tools/dq_icons/rename_states.py --standard moves legacy states to the standard names.
  */
 /proc/look_resolve_part(icon, base, name, value)
 	var/list/states = look_states_of(icon)
 	var/full = isnull(value) ? "[name]" : "[name]-[value]"
-	var/dashed = replacetext(full, "_", "-")
-	var/legacy = replacetext(full, "-", "_")
-	for(var/form in list(dashed, legacy))
-		if(base && states["[base]-[form]"])
-			return "[base]-[form]"
-		if(states[form])
-			return form
+	if(base && states["[base]-[full]"])
+		return "[base]-[full]"
+	if(states[full])
+		return full
 	return null
 
 /**
@@ -412,7 +401,7 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 		if(!state)
 #ifdef UNIT_TESTS
 			LAZYINITLIST(GLOB.look_missing_parts["[A.type]"])
-			GLOB.look_missing_parts["[A.type]"] |= look_norm_name(entry[2] ? "[entry[1]]-[entry[2]]" : entry[1])
+			GLOB.look_missing_parts["[A.type]"] |= (entry[2] ? "[entry[1]]-[entry[2]]" : entry[1])
 #endif
 			continue
 		LAZYADD(added, state)

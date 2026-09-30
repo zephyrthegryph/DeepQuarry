@@ -41,9 +41,9 @@
 	TEST_ASSERT_EQUAL(A.icon_state, "fix-lit", "the base takes the variant the icon has and ignores the one it lacks")
 	TEST_ASSERT(("panel-open" in A.look_overlays), "part(name, value) resolves name-value: [json_encode(A.look_overlays)]")
 	TEST_ASSERT(("charge-3" in A.look_overlays), "a numeric value resolves")
-	TEST_ASSERT(("legacy_thing" in A.look_overlays), "a dashed name still finds an old underscore state")
+	TEST_ASSERT(!("legacy_thing" in A.look_overlays), "names are exact: an underscore state is not found")
 	TEST_ASSERT(!("nothere" in A.look_overlays), "a part with no state draws nothing")
-	TEST_ASSERT_EQUAL(length(A.look_overlays), 4, "three parts and the emissive of the glowing one")
+	TEST_ASSERT_EQUAL(length(A.look_overlays), 3, "two parts and the emissive of the glowing one")
 	TEST_ASSERT(length(GLOB.look_missing_parts["[A.type]"]), "the missing part is recorded in test builds")
 
 	// A base-prefixed part wins over the shared one.
@@ -54,11 +54,14 @@
 	second.apply_to(B)
 	TEST_ASSERT(("fix-panel-open" in B.look_overlays) && !("panel-open" in B.look_overlays), "<base>-part wins over the shared part")
 
-	// hide() compares "_" and "-" alike; glow() of an unknown name is the old overlay that glows.
+	// hide() is exact; glow() of an unknown name is the old overlay that glows.
 	var/datum/look/third = new
 	third.part("panel", "open")
-	third.hide("panel_open")
-	TEST_ASSERT_NULL(third.parts, "hide() removes a part by either spelling")
+	third.hide("panel-open")
+	TEST_ASSERT_NULL(third.parts, "hide() removes a part by its full name")
+	third.part("panel", "open")
+	third.hide("panel")
+	TEST_ASSERT_NULL(third.parts, "or every value of it by its name")
 	third.glow("plain")
 	TEST_ASSERT(("plain" in third.glows), "glow() of an unknown name adds a glowing overlay")
 
@@ -114,7 +117,7 @@
 	TEST_ASSERT_EQUAL(length(look_missing_standard_parts(full)), 0, "an icon with every standard part lists nothing")
 	var/obj/cap_fixture/look_probe/legacy = allocate(/obj/cap_fixture/look_probe, T)
 	legacy.icon = look_test_icon(list("fix", "panel_open", "broken"))
-	TEST_ASSERT_EQUAL(length(look_missing_standard_parts(legacy)), 0, "an old underscore state counts until it is renamed")
+	TEST_ASSERT((LOOK_PANEL_OPEN in look_missing_standard_parts(legacy)), "an old underscore state is listed until it is renamed")
 	// Types that opted in (look_checked()) must have every standard part or say they lack it.
 	var/list/failures = list()
 	var/checked = 0
@@ -136,18 +139,18 @@
 /obj/cap_fixture/prim_probe/capabilities()
 	. = ..()
 	. += cap_construction(
-		ladder_options(sprite = "prim_", undo_delay = 1 SECONDS, dismantle = list(TOOL_WRENCH, /obj/item/stack/material/steel, 2)),
+		ladder_options(at = "test_bay", sprite = "prim_", undo_delay = 1 SECONDS, dismantle = list(TOOL_WRENCH, /obj/item/stack/material/steel, 2)),
 		stage("frame", desc = "A bare frame."),
-		insert(/obj/item/stock_parts/capacitor),
-		wire(3),
-		fasten(TOOL_SCREWDRIVER, name = "closed"),
-		plate(/obj/item/stack/material/steel, 2, name = "plated"),
+		build_insert(/obj/item/stock_parts/capacitor),
+		build_wire(3),
+		build_fasten(TOOL_SCREWDRIVER, name = "closed"),
+		build_plate(/obj/item/stack/material/steel, 2, name = "plated"),
 	)
 
 /obj/cap_fixture/prim_mech/capabilities()
 	. = ..()
 	. += cap_construction(mech_chassis(/obj/item/stack/material/steel, sprite = "chassis_", parts = list(/obj/item/stock_parts/capacitor, /obj/item/stock_parts/capacitor),
-		steps = list(weld(name = "reinforced"))))
+		steps = list(build_weld(name = "reinforced"))))
 
 /obj/cap_fixture/prim_machine/capabilities()
 	. = ..()
@@ -187,17 +190,19 @@
 	TEST_ASSERT_EQUAL(plated_stage.icon, "prim_5", "for every stage")
 
 	var/datum/interaction/capability/construction_step/unwire = prim_step(ladder, "wired", "capacitor")
-	TEST_ASSERT_EQUAL(unwire.tool, TOOL_WIRECUTTER, "wire() is undone with wirecutters")
+	TEST_ASSERT_EQUAL(unwire.tool, TOOL_WIRECUTTER, "build_wire() is undone with wirecutters")
 	TEST_ASSERT_EQUAL(unwire.duration, 1 SECONDS, "undo_delay overrides an undo's wait")
 	TEST_ASSERT_EQUAL(unwire.refund_amount, 3, "the refund is what the build consumed")
 	var/datum/interaction/capability/construction_step/screw = prim_step(ladder, "wired", "closed")
-	TEST_ASSERT_EQUAL(screw.tool, TOOL_SCREWDRIVER, "fasten() builds with its tool")
+	TEST_ASSERT_EQUAL(screw.tool, TOOL_SCREWDRIVER, "build_fasten() builds with its tool")
 	TEST_ASSERT_EQUAL(screw.duration, ladder_tool_delay(TOOL_SCREWDRIVER), "a build takes its tool's default delay")
+	TEST_ASSERT_EQUAL(screw.at, "test_bay", "ladder_options(at =) is stored on every step entry")
+	TEST_ASSERT_NULL(op_at_reason(probe, screw.at, null), "the compartment check is a stub that refuses nothing yet")
 	TEST_ASSERT_EQUAL(screw.phrase, "screw %T% shut", "the message comes from the verb table")
 	var/datum/interaction/capability/construction_step/unscrew = prim_step(ladder, "closed", "wired")
 	TEST_ASSERT_EQUAL(unscrew.tool, TOOL_SCREWDRIVER, "the fastener table undoes a screw with a screwdriver")
 	var/datum/interaction/capability/construction_step/uninsert = prim_step(ladder, "capacitor", "frame")
-	TEST_ASSERT(uninsert.by_hand, "insert() is taken back out by hand")
+	TEST_ASSERT(uninsert.by_hand, "build_insert() is taken back out by hand")
 	var/datum/interaction/capability/construction_step/unplate = prim_step(ladder, "plated", "closed")
 	TEST_ASSERT_EQUAL(unplate.tool, TOOL_WELDER, "a plate is cut off with the welder")
 	TEST_ASSERT_EQUAL(unplate.refund_amount, 2, "and gives its sheets back")
@@ -311,6 +316,7 @@
 	var/datum/held
 	var/list/bucket
 	var/list/made_in_new
+	var/list/preset = list(1, 2)
 	var/resets = 0
 
 /datum/pool_probe/New()
@@ -332,6 +338,7 @@
 	probe.held = new /datum
 	probe.bucket = list(1, 2)
 	probe.made_in_new += "x"
+	probe.preset += 3
 	probe.release()
 	TEST_ASSERT_EQUAL(probe.count, 4, "fields go back to their initial values")
 	TEST_ASSERT_EQUAL(probe.label, "fresh", "strings too")
@@ -339,6 +346,9 @@
 	TEST_ASSERT_NULL(probe.bucket, "a list the type never allocated is nulled")
 	TEST_ASSERT(probe.made_in_new == allocated && !length(probe.made_in_new), "a list New() allocated is kept and emptied")
 	TEST_ASSERT_EQUAL(probe.resets, 1, "reset() runs after the automatic reset")
+	TEST_ASSERT_EQUAL(length(probe.preset), 2, "a list with a declared initial value goes back to a copy of it")
+	var/datum/pool_probe/fresh_one = new
+	TEST_ASSERT(probe.preset != fresh_one.preset || length(fresh_one.preset) == 2, "and the declared list itself was not changed")
 	var/list/after = probe.snapshot()
 	TEST_ASSERT_EQUAL(after["count"], 4, "snapshot() lists the reset fields")
 	var/datum/pool_probe/again = take(/datum/pool_probe)
@@ -374,3 +384,13 @@
 	catch // ALLOW(silent_catch): the test expects this crash
 		crashed = TRUE
 	TEST_ASSERT(crashed, "using a released packet crashes")
+
+/// A stage named like one of stage()'s own named arguments keeps its name.
+/datum/unit_test/dq_construction_stage_named_anchored
+
+/datum/unit_test/dq_construction_stage_named_anchored/Run()
+	var/datum/ladder_stage/built = build_fasten(TOOL_WRENCH, name = "anchored", anchored = TRUE)
+	TEST_ASSERT_EQUAL(built.name, "anchored", "a stage named anchored, with anchored set, keeps its name")
+	TEST_ASSERT(built.anchored, "and its anchoring")
+	var/datum/ladder_stage/plain = build_insert(/obj/item/stock_parts/capacitor, name = "icon", icon = "x")
+	TEST_ASSERT_EQUAL(plain.name, "icon", "a part named like an argument keeps its name")

@@ -7,9 +7,9 @@
 //	<part>-<value>		a part with a value (look.part("charge", 3)): "charge-3"
 //	<part>-glow ... the emissive of a part is made by look.glow(part), never a separate state
 //
-// "_" and "-" are the same in a name when it is looked up (an old "panel_open" state resolves as
-// "panel-open"); tools/dq_icons/rename_states.py renames the states themselves. Use these defines, not
-// string literals, for a name more than one type draws.
+// Names are exact and dashed: a legacy "panel_open" state is not found until it is renamed
+// (python tools/dq_icons/rename_states.py <icon>.dmi.toml --standard). Use these defines, not string
+// literals, for a name more than one type draws.
 
 #define LOOK_BROKEN "broken"
 #define LOOK_COVER_OPEN "cover-open"

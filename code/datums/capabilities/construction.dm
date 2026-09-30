@@ -722,6 +722,7 @@
 	if(owner.category)
 		category = owner.category
 	src.step_needs = step_needs
+	at = owner.at
 	if(!read_cost(cost))
 		LAZYADD(owner.row_errors, "[owner.id]: the step from [from] to [destination] has no cost (a cap_tool/cap_insert/cap_use_on/cap_hand entry)")
 	else if(cost[LCOST_HANDLER])
