@@ -202,6 +202,7 @@ GLOBAL_DATUM_INIT(statpanels_service, /datum/world_service/statpanels, new)
 		"graph" = graph,
 		"outliers" = Master.perf_outliers.Copy(),
 		"subsystems" = subsystems,
+		"kernel" = km_panel_data(),
 		"runtime" = list(
 			"cpu" = world.cpu,
 			"instances" = length(world.contents),

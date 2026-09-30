@@ -500,6 +500,7 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 				continue
 			var/datum/om/behaviour/inline/B = new
 			B.mode = "react"
+			B.system_key = km_bundle_key(bundle)
 			B.call_path = proc_path
 			B.wake_on = mask
 			B.name = "[bundle.type]:[proc_path]"
@@ -522,6 +523,7 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 				continue
 			var/datum/om/behaviour/inline/B = new
 			B.mode = "tick"
+			B.system_key = km_bundle_key(bundle)
 			B.call_path = proc_path
 			B.every = row["every"]
 			B.clock = row["clock"]
@@ -540,6 +542,7 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 				continue
 			var/datum/om/behaviour/inline/B = new
 			B.mode = "event"
+			B.system_key = km_bundle_key(bundle)
 			B.call_path = bundle.events[event_path]
 			B.handles = list(event_path)
 			B.name = "[bundle.type]:[event_path]"
@@ -565,6 +568,7 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 		if(istype(P))
 			pipelines += P
 			P.pipe_idx = length(pipelines)
+	km_bind_behaviours(behaviours)
 
 // ---------------------------------------------------------------- stages and pipelines
 

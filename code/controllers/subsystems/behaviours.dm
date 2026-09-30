@@ -15,6 +15,9 @@ SUBSYSTEM_DEF(behaviours)
 	var/last_done = TRUE
 	/// Milliseconds the kernel spent in scheduler passes since boot (benchmarks: life_sweep).
 	var/bench_ms = 0
+	// Its cost is charged to the systems whose behaviours it runs (the scheduler does that as work finishes), and
+	// what no behaviour owns lands on om_core below, so the MC does not charge it as one lump.
+	system_idx = KM_SYS_DECOMPOSED
 	/// The pipeline missed-wake audit (pipeline.dm): next run, and the admin verb's switch.
 	EXPIRY_DECLARE(next_audit)
 	var/audit_forced = FALSE

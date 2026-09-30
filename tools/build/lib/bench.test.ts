@@ -12,6 +12,8 @@ import {
   benchExclusiveLockDir,
   ddSlotBaseDir,
   compareRuns,
+  formatComparison,
+  gateFor,
   loadSimilar,
   statsOf,
   BENCH_RUNS_DIR,
@@ -167,6 +169,95 @@ describe('compareRuns metric-class gating', () => {
     const rows = compareRuns(base, head, 5);
     const row = rows.find((r) => r.metric === 'window_tick_avg');
     expect(row?.verdict).toBe('unchanged');
+  });
+});
+
+describe('bench-compare gates', () => {
+  // Kernel measurement metrics (code/modules/benchmarks/kernel_metrics.dm): input_p99 and breaches may not rise,
+  // and a system's p99_ms rising more than 20% is named. Timing metrics still need similar load to compare.
+  const quiet: LoadContext = { machine_id: 'm', exclusive: false, other_dreamdaemon: 0, other_dm: 0, cargo_rustc: 0, cpu_percent: 15 };
+  const busy: LoadContext = { machine_id: 'm', exclusive: false, other_dreamdaemon: 3, other_dm: 2, cargo_rustc: 4, cpu_percent: 90 };
+
+  function run(summary: BenchRun['summary'], load: LoadContext = quiet): BenchRun {
+    return {
+      id: 'id', timestamp: new Date().toISOString(), commit: 'abc1234567', branch: 'test', dirty_files: 0, host: 'h',
+      platform: 'win32', kind: 'bench', label: null, map: 'virgo_minitest', defines: [], scenarios_requested: [],
+      args: [], iterations: [], failures: [], summary, load,
+    };
+  }
+
+  const timing = (values: number[], unit = 'ms') => statsOf(values, unit, 'lower', 'timing');
+  const verdictOf = (base: BenchRun, head: BenchRun, metric: string) =>
+    compareRuns(base, head, 5).find((r) => r.metric === metric);
+
+  test('gateFor covers the gated metric families only', () => {
+    expect(gateFor('input_p99')).toBeDefined();
+    expect(gateFor('input_p99_ticks')).toBeDefined();
+    expect(gateFor('system.mc_air.breaches')).toBeDefined();
+    expect(gateFor('system.life.p99_ms')).toBeDefined();
+    expect(gateFor('system.life.ms_per_s')).toBeUndefined();
+    expect(gateFor('tick_p99')).toBeUndefined();
+    expect(gateFor('input_p50')).toBeUndefined();
+  });
+
+  test('a rise in input_p99 is a regression even below the generic 5% threshold', () => {
+    const base = run({ idle: { input_p99: timing([10]) } });
+    const head = run({ idle: { input_p99: timing([10.3]) } });
+    const row = verdictOf(base, head, 'input_p99');
+    expect(row?.verdict).toBe('regression');
+    expect(row?.gate).toContain('input_p99');
+    expect(formatComparison(compareRuns(base, head, 5), true)).toContain('gate: input_p99 must not rise');
+  });
+
+  test('a rise under the metric resolution is not a regression', () => {
+    const base = run({ idle: { input_p99: timing([0.005]) } });
+    const head = run({ idle: { input_p99: timing([0.03]) } });
+    expect(verdictOf(base, head, 'input_p99')?.gate).toBeUndefined();
+    expect(verdictOf(base, head, 'input_p99')?.verdict).toBe('unchanged');
+  });
+
+  test('input_p99 falling is not a regression', () => {
+    const base = run({ idle: { input_p99: timing([10]) } });
+    const head = run({ idle: { input_p99: timing([4]) } });
+    const row = verdictOf(base, head, 'input_p99');
+    expect(row?.verdict).toBe('improvement');
+    expect(row?.gate).toBeUndefined();
+  });
+
+  test('a rise within the runs own noise does not trip the gate', () => {
+    const base = run({ idle: { input_p99: timing([8, 10, 12]) } });
+    const head = run({ idle: { input_p99: timing([8.5, 10.5, 12.5]) } });
+    expect(verdictOf(base, head, 'input_p99')?.verdict).toBe('unchanged');
+  });
+
+  test('a breach appearing where there were none is a regression, and equal counts are not', () => {
+    const base = run({ life_sweep: { 'system.life.breaches': timing([0], 'breaches'), 'system.mc_air.breaches': timing([2], 'breaches') } });
+    const head = run({ life_sweep: { 'system.life.breaches': timing([1], 'breaches'), 'system.mc_air.breaches': timing([2], 'breaches') } });
+    const rows = compareRuns(base, head, 5);
+    expect(rows.find((r) => r.metric === 'system.life.breaches')?.verdict).toBe('regression');
+    expect(rows.find((r) => r.metric === 'system.life.breaches')?.gate).toContain('breaches');
+    expect(rows.find((r) => r.metric === 'system.mc_air.breaches')?.verdict).toBe('unchanged');
+  });
+
+  test('a system p99_ms rising over 20% is named by the gate; a smaller rise is only a generic regression', () => {
+    const base = run({ idle: { 'system.life.p99_ms': timing([10]), 'system.machines.p99_ms': timing([10]) } });
+    const head = run({ idle: { 'system.life.p99_ms': timing([12.5]), 'system.machines.p99_ms': timing([11]) } });
+    const rows = compareRuns(base, head, 5);
+    expect(rows.find((r) => r.metric === 'system.life.p99_ms')?.gate).toContain('p99_ms');
+    expect(rows.find((r) => r.metric === 'system.machines.p99_ms')?.verdict).toBe('regression');
+    expect(rows.find((r) => r.metric === 'system.machines.p99_ms')?.gate).toBeUndefined();
+  });
+
+  test('a gated timing metric under dissimilar load is not comparable, not a regression', () => {
+    const base = run({ idle: { input_p99: timing([1]) } }, quiet);
+    const head = run({ idle: { input_p99: timing([50]) } }, busy);
+    expect(verdictOf(base, head, 'input_p99')?.verdict).toBe('not_comparable');
+  });
+
+  test('a metric missing from the base (an older stored run) is new, never a regression', () => {
+    const base = run({ idle: { tick_p99: timing([10], '%') } });
+    const head = run({ idle: { tick_p99: timing([10], '%'), input_p99: timing([40]) } });
+    expect(verdictOf(base, head, 'input_p99')?.verdict).toBe('new');
   });
 });
 

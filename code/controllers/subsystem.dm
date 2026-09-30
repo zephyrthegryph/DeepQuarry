@@ -110,6 +110,13 @@
 	/// Tracks how many times a subsystem has ever slept in fire().
 	var/slept_count = 0
 
+	/// The measurement system this subsystem's runs are charged to, bound on its first run (km_bind_subsystem()).
+	/// KM_SYS_DECOMPOSED: it charges the systems it runs itself instead (SSbehaviours).
+	var/system_idx = 0
+
+	/// Whether this subsystem's runs count as player-input cost in the tick record (SSinput, the verb managers).
+	var/counts_as_input = FALSE
+
 	/// Tracks how many fires the subsystem has consecutively paused on in the current run
 	var/paused_ticks = 0
 

@@ -114,7 +114,8 @@
 /datum/benchmark/idle/Run()
 	wait_for_assets()
 	begin_window()
-	wait_seconds(param("seconds", 60))
+	// A few synthetic clicks and queued verbs every tick, so the input latency record (input_p99) has data.
+	wait_seconds_with_input(param("seconds", 60), param("clicks", 2), param("verbs", 2))
 	end_window("idle")
 	mark("idle_end")
 

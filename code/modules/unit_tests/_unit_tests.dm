@@ -374,6 +374,7 @@
 #include "dx_cap_cell_holder_tests.dm"
 #include "dx_cap_reagent_container_tests.dm"
 #include "dx_cap_storage_tests.dm"
+#include "dq_kernel_measure_tests.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
@@ -385,6 +386,7 @@
 #include "../benchmarks/life_sweep_adapter.dm"
 #include "../benchmarks/dx_refresh.dm"
 #include "../benchmarks/dx_deps.dm"
+#include "../benchmarks/kernel_metrics.dm"
 #include "../balance/balance_benchmark.dm"
 #endif
 #ifdef REFERENCE_TRACKING_DEBUG //Don't try and parse this file if ref tracking isn't turned on. IE: don't parse ref tracking please mr linter

@@ -119,6 +119,7 @@
 	var/list/tick = Master.performance_window(elapsed_seconds, Master.perf_index_of(window_start_position))
 	metric("[prefix]_seconds", elapsed_seconds, "s", "none")
 	metric("[prefix]_tick_avg", tick["avg"], "%")
+	metric("[prefix]_tick_p50", tick["p50"], "%")
 	metric("[prefix]_tick_p95", tick["p95"], "%")
 	metric("[prefix]_tick_p99", tick["p99"], "%")
 	metric("[prefix]_tick_max", tick["max"], "%")
@@ -398,6 +399,9 @@
 			var/runtimes_before = GLOB.total_runtimes
 			var/start = REALTIMEOFDAY
 			log_test("Benchmark [scenario_id]: running")
+			// Every scenario reports the same kernel numbers over its whole run (kernel_metrics.dm).
+			var/datum/km_stats_set/kernel_run = km_meter().open_set(GLOB.om_live_sched)
+			var/kernel_start_position = Master.perf_samples_total + 1
 			try
 				scenario.Run()
 				result["status"] = "passed"
@@ -406,6 +410,10 @@
 				result["error"] = "[error.name] ([error.file]:[error.line])"
 				GLOB.failed_any_test = TRUE
 				log_test("::error::Benchmark [scenario_id] failed: [error.name]")
+			km_meter().close_set(kernel_run)
+			scenario.record_scenario_kernel_metrics(kernel_run, kernel_start_position, start)
+			qdel(kernel_run)
+			km_write_tick_series(scenario_id)
 			result["duration_seconds"] = (REALTIMEOFDAY - start) / 10
 			result["runtimes"] = GLOB.total_runtimes - runtimes_before
 			result["metrics"] = (scenario.metrics || list())

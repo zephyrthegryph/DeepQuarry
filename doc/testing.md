@@ -397,12 +397,13 @@ Juke options take `=`: write `--scenario=a,b`, not `--scenario a,b`.
 | Scenario | Measures | Options (`--arg=name=value`) |
 |---|---|---|
 | `boot_memory` (default) | Process and Rust heap memory after boot, gas mixtures, live instances by kind and top types, compiled type counts, init time. | `top` |
-| `idle` (default) | Tick cost of a quiet round: average and p95/p99/max tick usage, overruns, TPS, per-subsystem cost. | `seconds` (60) |
+| `idle` (default) | Tick cost of a quiet round: average and p95/p99/max tick usage, overruns, TPS, per-subsystem cost, and input latency from a synthetic load of real clicks and queued verbs every tick. | `seconds` (60), `clicks` (2), `verbs` (2) |
 | `atmos_idle` | Atmos cost of the mapped station at rest, with Rust worker maxima. | `cycles` (120) |
 | `atmos_large` | Checkerboard gas equalization on a fresh floor. | `size` (48; 0 = whole level), `cycles` |
 | `major_events` | Explosion, supermatter, mass fire and decompression on fresh fixtures. | `events` (comma list) |
 | `generation` | Expedition station generation and release; `cycles` > 1 is a leak soak. | `cycles`, `seed` |
 | `sm_soak` | Repeated supermatter-scale blasts plus five minutes of recovery. Use the full map. | `blasts` (4), `profile_types` |
+| `kernel_overhead` | What the kernel measurement itself costs: a charge, a tick usage read pair, a histogram add, and a closed tick with every registered system charged. | `calls` (200000) |
 | `rustg_dispatch` | Per-call cost of rust-g `hash_string`, `json_is_valid` and `log_write` through a cached `load_ext()` handle against by-name `call_ext`. On 2026-09-23 (loaded machine, three boots) the handle showed no consistent gain, so `code/__defines/rust_g.dm` still calls by name. | `calls` (20000), `rounds` (5) |
 
 **What gets recorded.** Each invocation is one file in `data/bench/runs/`
@@ -426,6 +427,25 @@ trust — and remember TIMING metrics also need `loadSimilar()` load
 conditions between the two runs, or they show as `not comparable (load)`
 instead of a change.
 
+**Kernel metrics (every scenario).** Whatever a scenario measures, `bench` also
+reports these over its whole run (`code/modules/benchmarks/kernel_metrics.dm`),
+so the same numbers exist everywhere and a change can be judged by the system it
+moved:
+
+| Metric | Meaning |
+|---|---|
+| `tick_p50`, `tick_p95`, `tick_p99`, `overruns`, `overrun_ratio` | Whole-tick usage (%) and the ticks over 100%. |
+| `system.<id>.ms_per_s`, `.p99_ms`, `.late_max`, `.breaches` | Per system (OM behaviour families such as `life` and `machines`, and `mc_<subsystem>`): ms of work per second, p99 of ms per tick over the ticks it ran, worst slot lateness in deciseconds, and slots that started past their max interval. Ids are `code/controllers/measure/systems.dm` keys. |
+| `input_p99`, `input_p99_ticks`, `input_p50`, `click_wait_p99_ms`, `verb_queue_p99_ms`, `input_queue_hwm`, `input_run_depth_p95` | How long clicks and queued verbs waited before being handled (ms and ticks), how deep the verb queue got, and how far into the tick input ran. |
+
+`bench-compare` gates on these regardless of the generic threshold: `input_p99`
+and every `.breaches` may not rise (beyond the runs' own noise, and beyond the
+metric's resolution for input), and a system's `.p99_ms` rising over 20% is named.
+A gated row reads `regression (gate: ...)`. The same records are in the stat
+panel's Kernel view, the "Tick Report" admin verb (the flight recorder of the last
+minute) and `om_diagnostics()["kernel"]`; each `bench` also keeps the per-tick
+series of every scenario under `data/bench/profiles/<run>/`.
+
 **Report.** `data/bench/report.html` is regenerated after every `bench`. It
 shows the latest run against the previous one, a trend line per metric, the
 memory timeline with scenario phases, the ticks that overran, and recent
@@ -443,6 +463,7 @@ and implement `Run()`. The helpers are in `_benchmark.dm`:
 | `mark(name)` | Process and Rust heap memory at this moment. |
 | `param(name, default)` | A `--arg=name=value` option. |
 | `wait_for_assets()`, `wait_fires(SS, n)`, `wait_seconds(n)` | Settle before measuring. |
+| `wait_seconds_with_input(n, clicks, verbs)` | `wait_seconds()` that also sends real synthetic clicks and queued verbs every tick, for scenarios that should report input latency. |
 | `benchmark_census()`, `benchmark_type_counts()` | Live instance and compiled type counts. |
 
 Call `fail(reason)` to abort. A scenario that fails or runtimes still records

@@ -1728,6 +1728,8 @@ export const BenchTarget = new Juke.Target({
       for (let i = 1; i <= warmup + runs; i++) {
         const isWarmup = i <= warmup;
         Juke.logger.info(`Benchmark iteration ${i}/${warmup + runs}${isWarmup ? ' (warm-up, not counted)' : ''}`);
+        // The world writes the flight recorder of each scenario here (code/modules/benchmarks/_benchmark.dm).
+        fs.rmSync('data/bench/kernel_ticks', { recursive: true, force: true });
         const run = await runTestWorld(`${DME_NAME}.bench.dmb`, get(DmVersionParameter), worldParams, true);
         let world: WorldBenchDocument;
         try {
@@ -1747,6 +1749,15 @@ export const BenchTarget = new Juke.Target({
           for (const file of fs.readdirSync('data/logs/ci/profiler')) {
             fs.copyFileSync(`data/logs/ci/profiler/${file}`, `${dest}/${file}`);
             profiles.push(`${dest}/${file}`);
+          }
+        }
+        // The per-tick series (usage, maptick, input cost, top systems) so a regression can be opened tick by tick.
+        if (fs.existsSync('data/bench/kernel_ticks')) {
+          const dest = `data/bench/profiles/${identity.id}/iteration${i}`;
+          fs.mkdirSync(dest, { recursive: true });
+          for (const file of fs.readdirSync('data/bench/kernel_ticks')) {
+            fs.copyFileSync(`data/bench/kernel_ticks/${file}`, `${dest}/kernel_ticks_${file}`);
+            profiles.push(`${dest}/kernel_ticks_${file}`);
           }
         }
         iterations.push({
