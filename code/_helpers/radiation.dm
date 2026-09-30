@@ -80,7 +80,7 @@ SETTER(/atom, rad_insulation)
 /// or `fallback` when the material is unknown.
 /proc/material_rad_insulation(material_id, thickness_mm, fallback = RAD_NO_INSULATION)
 	var/datum/material/M = material_id ? get_material_by_name(material_id) : null
-	return M ? M.material_radiation_transmission(thickness_mm) : fallback
+	return M ? M.radiation_transmission(thickness_mm) : fallback
 
 /// Declared shielding: an atom whose `rad_shield_material` is set derives its
 /// insulation from that material at `rad_shield_thickness_mm`.

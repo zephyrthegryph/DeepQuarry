@@ -38,7 +38,7 @@ Ask Mothblocks if they're around
 #define RAD_FULL_INSULATION 0 // Completely stops radiation from coming through
 
 // Declared shielding thickness (mm) per structure class; the atom's rad_insulation is
-// derived from its material via /datum/material/proc/material_radiation_transmission().
+// derived from its material via /datum/material/proc/radiation_transmission().
 #define RAD_WALL_THICKNESS_MM 250
 #define RAD_DOOR_THICKNESS_MM 60
 #define RAD_GIRDER_THICKNESS_MM 25

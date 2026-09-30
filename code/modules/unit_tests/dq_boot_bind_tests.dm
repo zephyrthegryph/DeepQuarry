@@ -80,7 +80,7 @@
 
 	var/datum/material/steel = get_material_by_name(MAT_STEEL)
 	var/expected = clamp(2.718281828 ** (-(max(0, steel.radiation_resistance + steel.density / 8) * 60 / 100)), 0, 1)
-	TEST_ASSERT(abs(steel.material_radiation_transmission(60) - expected) < 0.000001, "the cached transmission is the formula's")
+	TEST_ASSERT(abs(steel.radiation_transmission(60) - expected) < 0.000001, "the cached transmission is the formula's")
 	var/datum/shared_cache/rad = SHARED_CACHE(material_radiation_transmission)
 	TEST_ASSERT(rad.entry_count() > 0, "and is cached per thickness")
 	steel.material_facts_changed()
