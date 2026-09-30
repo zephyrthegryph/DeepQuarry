@@ -190,11 +190,11 @@ GLOBAL_LIST_EMPTY(rx_enrol_cache)
 	GLOB.rx_enrol_cache.Cut()
 
 /// TRUE when `D` declares per-instance every() work, by its type or (an atom) by one of its capabilities. Cached per
-/// type; FALSE while the globals are still being built.
+/// type once the cache exists.
 /proc/rx_type_enrols(datum/D)
-	if(!islist(GLOB?.rx_enrol_cache) || !islist(GLOB?.rx_boot_type_table))
-		return FALSE
-	var/cached = GLOB.rx_enrol_cache[D.type]
+	// The cache is a global list, which may not exist yet while the first atoms initialize: then nothing is cached.
+	var/list/cache = GLOB?.rx_enrol_cache
+	var/cached = cache?[D.type]
 	if(!isnull(cached))
 		return cached
 	cached = FALSE
@@ -212,7 +212,8 @@ GLOBAL_LIST_EMPTY(rx_enrol_cache)
 					break
 			if(cached)
 				break
-	GLOB.rx_enrol_cache[D.type] = cached
+	if(cache)
+		cache[D.type] = cached
 	return cached
 
 /// Joins every already-initialized holder of capability `key` to its membership key (a work item began to sweep

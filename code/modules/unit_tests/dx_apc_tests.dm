@@ -66,10 +66,11 @@
 	TEST_ASSERT_EQUAL(dx_apc_op(A, CAP_LOCK).op.action, ACT_LOCK, "the lock op answers ACT_LOCK (an alt-click), with no alt entry point")
 	TEST_ASSERT_EQUAL(dx_apc_op(A, CAP_EMAG).duration, 0.6 SECONDS, "the emag op is refined to its old wait")
 	TEST_ASSERT(is_locked(A), "the ID lock starts engaged (cap_state default)")
-	TEST_ASSERT(A in system(/datum/system/power).members_with_role(POWER_ROLE_AREA_SUPPLY), "powered_by() joined the power system as an area supply")
+	var/datum/system/power/power_system = system(/datum/system/power)
+	TEST_ASSERT(A in power_system.members_with_role(POWER_ROLE_AREA_SUPPLY), "powered_by() joined the power system as an area supply")
 	TEST_ASSERT_EQUAL(member_role(/datum/system/power, A), POWER_ROLE_AREA_SUPPLY, "with its role")
 	qdel(A)
-	TEST_ASSERT(!(A in system(/datum/system/power).members_with_role(POWER_ROLE_AREA_SUPPLY)), "and left it on deletion")
+	TEST_ASSERT(!(A in power_system.members_with_role(POWER_ROLE_AREA_SUPPLY)), "and left it on deletion")
 
 /// What the APC declares in reactions() is only what it hears; its relations are its links.
 /datum/unit_test/dx_apc_relations_and_reactions/Run()
