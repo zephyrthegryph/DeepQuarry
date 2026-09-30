@@ -40,6 +40,8 @@
 	var/list/work_errors = list()
 	/// Capability types some item names in `members`: their holders join the membership store in caps_init().
 	var/list/cap_wanted = list()
+	/// Membership key -> the items that sweep it (so a member leaving can drop its execution token).
+	var/list/work_by_members = list()
 
 	// ---- urgent requests (urgent.dm)
 	var/list/urgent_queue = list()
@@ -68,6 +70,9 @@
 	for(var/i in 1 to KERNEL_PHASE_COUNT)
 		phase_ms_last[i] = 0
 		phase_ms_total[i] = 0
+	// Capabilities the generated reaction list runs work per member of: their holders join at init (reactions/work.dm).
+	for(var/cap in rx_boot_members())
+		cap_wanted[cap] = TRUE
 
 /// The kernel.
 /proc/kernel()

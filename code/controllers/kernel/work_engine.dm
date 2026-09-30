@@ -6,7 +6,7 @@
 	if(!W.handler && !istype(W, /datum/work_item/stage))
 		CRASH("kernel_register_work: a work item for [owner_type] has no handler")
 	W.name ||= "[W.handler]"
-	W.key = "[owner_type]:[W.handler]"
+	W.key = W.item_key(owner_type)
 	if(istype(W, /datum/work_item/stage))
 		var/datum/work_item/stage/S = W
 		W.key = "[owner_type]:stage:[S.stage_type]"
@@ -14,14 +14,22 @@
 	if(old)
 		work_all -= old
 		work_by_owner[owner_type] -= old
+		if(old.members)
+			work_by_members[old.members] -= old
 	work_all += W
 	var/list/mine = work_by_owner[owner_type]
 	if(!mine)
 		mine = work_by_owner[owner_type] = list()
 	mine += W
 	work_by_key[W.key] = W
-	if(ispath(W.members, /datum/capability))
+	if(W.members)
+		var/list/watching = work_by_members[W.members]
+		if(!watching)
+			watching = work_by_members[W.members] = list()
+		watching += W
+	if(ispath(W.members, /datum/capability) && !cap_wanted[W.members])
 		cap_wanted[W.members] = TRUE
+		kernel_backfill_members(W.members)
 	work_dirty = TRUE
 	return W
 
@@ -30,6 +38,8 @@
 	for(var/datum/work_item/W as anything in work_by_owner[owner_type])
 		work_all -= W
 		work_by_key -= W.key
+		if(W.members)
+			work_by_members[W.members] -= W
 	work_by_owner -= owner_type
 	work_dirty = TRUE
 
@@ -38,6 +48,11 @@
 	if(work_dirty || !phase_items)
 		rebuild_work_graph()
 	return phase_items[phase]
+
+/// `member` left membership key `key`: the items that sweep the key forget its execution token.
+/datum/controller/kernel/proc/member_left(key, datum/member)
+	for(var/datum/work_item/W as anything in work_by_members[key])
+		W.forget(member)
 
 /// Resolves every `after` edge, validates the graph with the same validator the boot DAG uses (graph_validate),
 /// and orders each phase. Edges to an earlier phase are satisfied already; an edge to a later phase, a target
@@ -49,7 +64,11 @@
 	phase_items = new /list(KERNEL_PHASE_COUNT)
 	var/list/missing = list()
 	var/list/deps = list()
+	var/list/scheduled = list()
 	for(var/datum/work_item/W as anything in work_all)
+		if(!W.event)
+			scheduled += W
+	for(var/datum/work_item/W as anything in scheduled)
 		var/list/resolved = list()
 		if(W.phase < KERNEL_PHASE_K || W.phase > KERNEL_PHASE_G || W.phase == KERNEL_PHASE_U)
 			missing += "[W.key]: phase [W.phase] is not a phase work items run in"
@@ -65,7 +84,7 @@
 				missing += "[W.key]: after [target], which names no work item"
 				continue
 			for(var/datum/work_item/T as anything in found)
-				if(T == W)
+				if(T == W || T.event)
 					continue
 				if(T.phase > W.phase)
 					missing += "[W.key]: after [T.key], which runs later (phase [phase_letter(T.phase)] after [phase_letter(W.phase)])"
@@ -73,10 +92,10 @@
 				if(T.phase == W.phase)
 					resolved += T
 		deps[W] = resolved
-	var/datum/graph_check/G = graph_validate(work_all, deps, missing)
+	var/datum/graph_check/G = graph_validate(scheduled, deps, missing)
 	work_errors = G.errors
 	var/list/ordered = G.order
-	var/list/leftover = work_all - ordered
+	var/list/leftover = scheduled - ordered
 	ordered += leftover
 	for(var/i in 1 to KERNEL_PHASE_COUNT)
 		phase_items[i] = list()

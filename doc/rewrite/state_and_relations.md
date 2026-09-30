@@ -63,7 +63,11 @@ in place until the last source leaves. This applies to GRANT and MEMBER.
 
 **Writing.** `rel_link(src, nameof(var), B)` / `rel_unlink()` (never a string name, never `link()`,
 which is a BYOND built-in). Ownership writes go through the `own_*` accessors today (`own_set`,
-`own_clear`, `consume`, `replace_with`). Typed `rel_one`/`rel_many` with kinds: **[in progress]**.
+`own_clear`, `consume`, `replace_with`). Typed `rel_one`/`rel_many` with kinds: **[built]**. The declared `type` is stored on the entry
+(`OWNE_TYPE`) and every write (`rel_link` / `rel_set` / `rel_add`, `own_set` / `own_add` / `own_put`)
+checks it with `own_type_ok()`: null or an `istype()` of the declared type is written; anything else
+is refused (the accessor returns null) and reported through `OWN_REPORT` (a `stack_trace`, which fails a
+test run; on a server it is logged once per message).
 `relations()` with `back =`, `other_deleted =`, `on_unlink =`, `keyed =`, `watch =`, and the
 ownership store: **[built]**. The old `ownership()` table and `OWN(...)` forms become `relations()`
 entries with kind `OWNED`.

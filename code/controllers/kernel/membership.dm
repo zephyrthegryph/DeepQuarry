@@ -117,7 +117,21 @@
 		keys -= key
 		if(!length(keys))
 			M.keys_of -= member
+	kernel().member_left(key, member)
 	return TRUE
+
+/// Teardown of a destroyed datum's memberships (rx_teardown): it leaves every key it belongs to and, when it is
+/// itself a key (a datum used as a system), every member leaves it. Costs one lookup for a datum with neither.
+/proc/member_teardown(datum/D)
+	var/datum/kernel_membership/M = kernel_membership()
+	if(!istype(M)) // global init: the store's static is not built yet, and nothing has joined
+		return
+	if(M.keys_of[D])
+		for(var/key in member_keys(D))
+			leave(key, D, all = TRUE)
+	if(M.members_by_key[D])
+		for(var/datum/member as anything in members_of(D).Copy())
+			leave(D, member, all = TRUE)
 
 /// True when `member` is in `key`.
 /proc/member_is(key, datum/member)

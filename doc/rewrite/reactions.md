@@ -16,14 +16,46 @@ delivery contract.
 | `after_op(key_or_type, handler)` | After an operation commits. | Ordered; small handlers only, expensive work requests a run. |
 | `on_notice(type, handler)` | When a notice of `type` is published on the source. | Ordered occurrence; never coalesced. |
 | `on_change(list/reads, handler)` | When any read in the list changes. | Coalescible: once per entity per output per frame; sees the final value. |
-| `on_cross(read, bands, handler, urgent=)` | When a value crosses a band edge (hysteresis in Rust for native values). | Threshold; may request urgent work. |
-| `every(interval, handler, while=, members=, phase=, after=, budget=)` | On a cadence, optionally only while a condition reads true. | A scheduled work item on the kernel ([scheduling_and_kernel.md](scheduling_and_kernel.md)). |
+| `on_cross(read, bands, handler, urgent=)` | When a value crosses a band edge (hysteresis in Rust for native values). | Threshold. `urgent = TRUE` is an urgent work item (`request_urgent`, deduped per holder, run from the kernel's U slice); otherwise it runs at the drain. |
+| `every(interval, handler, when=, members=, phase=, after=, budget=, lane=)` | On a cadence, optionally only while a condition reads true. | A scheduled work item on the kernel ([scheduling_and_kernel.md](scheduling_and_kernel.md)); see section 1a. |
 
 `on_change` has sugar that names the output it feeds, replacing the old `derived()` vocabulary:
 `drawn_from(...)` (draw and hidden verbs), `ui_from(...)` (open UIs), `derive(var, reads...)` (a
 cached value computed by `derive_<var>()`), `rust_push(...)` (push to Rust once per frame) and
 `runs_while(...)` (`should_run`). `members = <capability type>` makes an `every` or `on_cross` run
 once per member of that capability.
+
+## 1a. Work on the kernel [built]
+
+`every`, urgent `on_cross` and `on_notice` produce `/datum/work_item/reaction` items
+(`code/datums/reactions/work.dm`), registered with `kernel_register_work()` under the type whose
+table declared them when that table is built. One item exists per reaction signature: a type and its
+subtypes build their own `/datum/reaction`, and all of them point at the same item (`reaction.work`).
+
+| Declaration | Item | Handler call |
+|---|---|---|
+| `every(...)` on a holder type | Scheduled; the holder joins the membership key `"rx:<signature>"` at init (`rx_enrol()`), leaves when destroyed. | `handler(dt)` on each live instance |
+| `every(..., members = <capability>)` on a holder type | Scheduled; runs per holder of the capability (holders join the capability key at init). | `handler(dt)` on each holder |
+| `every(...)` on a `/datum/system` | Scheduled, on the system's singleton. | `handler(dt)`, or `handler(member, dt)` with `members =` |
+| `on_cross(..., urgent = TRUE)` | Urgent; never on the cadence. `rx_crossed` calls `request_urgent(holder, item, deadline)`, the holder's `rx.cross_pending` carries the latest band and the first previous band, and `perform()` calls the handler. A crossing that ends where it began delivers nothing. | `handler(band, previous_band)` on the holder |
+| `on_notice`, non-urgent `on_cross` | Event item (`event = TRUE`): never scheduled; delivery stays synchronous and in order, and each call adds its cost to the item. | as before |
+
+`when` is the item's `run_when`: a var name (truthy on the holder, or on the system for a system
+item) or a proc that answers TRUE (`PROC_REF`, on the holder or, for a system item, on the system,
+called with the member when there is one). `phase`, `after`, `budget` and `lane` are the item's.
+`every()` on a non-atom, non-system datum enrols only if it calls `rx_enrol(D)` itself.
+
+**Boot pass.** `python tools/ci/derived_reads_lint.py --fix-generated` also writes
+`rx_boot_types()` (each type whose `reactions()` declares `every` / `on_cross` / `on_notice`, with
+`RXB_*` kinds) and `rx_boot_members()` (each capability an `every(members = ...)` runs per member of)
+into `code/_generated/reads.dm`; the existing CI freshness check covers both. The kernel reads
+`rx_boot_members()` when it is created, so those holders join at init. `caps_init()` enrols an atom only
+when its type, or one of its capabilities, is listed, so no table is built for a type that declares no
+`every()`. A member key registered after holders exist is backfilled (`kernel_backfill_members()`).
+Tests add their own fixture types with `rx_boot_register(type)`.
+
+Membership is torn down with the datum (`member_teardown()` in `rx_teardown()`), whether or not it has
+reaction state, and the item forgets its execution token (`kernel().member_left()`).
 
 ## 2. Static and dynamic
 
@@ -42,12 +74,13 @@ once per member of that capability.
     . = ..()
     . += on_notice(/datum/notice/emp, PROC_REF(on_emp))
     . += before_op(OP_OPEN, PROC_REF(sealed_door_veto))
-    . += every(2 SECONDS, PROC_REF(charge_step), while = nameof(charging))
+    . += every(2 SECONDS, PROC_REF(charge_step), when = nameof(charging))
 ```
 
 ## 3. Notices: occurrences only
 
-A notice is a typed `/datum/notice` (pooled, see [pools.md](pools.md)) describing something that
+A notice is a typed `/datum/notice` (a `/datum/pooled`, see [pools.md](pools.md): `take_notice()` is
+`take()` plus `fill()`, `publish()` releases it, fields reset from the base) describing something that
 *happened*: an item was taken, a hit landed, a door opened. State ("the charge changed") is not a
 notice; it is a tracked change.
 
@@ -97,3 +130,26 @@ safety fact but must not recursively run a whole Life frame.
 - Handlers are passed as `PROC_REF`, never a string.
 - Requirements for an operation do not live here: see
   [operations_and_actions.md](operations_and_actions.md).
+
+## 7. Event coalescing audit
+
+`/datum/om/event` used to coalesce by default (`coalesce = TRUE`); it is now `FALSE` (an event is an
+occurrence), and `skip_in_bulk` is `FALSE` as before (no event sets it). `om_emit()` consults
+`coalesce` only for an event that is neither `sync` nor `before`, and only while another delivery is in
+progress, so the audit covers exactly the events that are queued. Compared with
+`rewrite/dx-framework`, where the default was TRUE, each event type was classified:
+
+| Event type | Decision | Reason |
+|---|---|---|
+| `material_facts_changed` (`material_composites.dm`) | `coalesce = TRUE` (set explicitly); `skip_in_bulk` stays FALSE | State invalidation: "facts read from a material are stale, recompute", emitted on `GLOB.om_world` in bursts (`material_facts_changed()` from `processed_material.dm`). Only the latest matters. Its shared-cache listeners also clear before the queue, so the flag only merges queued deliveries. |
+| `carry_slip`, `moved_down_stairs`, `picked_up_item`, `stun_effect` (`omen.dm`) | stays `coalesce = FALSE` | Occurrences (a slip, a fall, an item taken, a stun landed). |
+| `climb_start`, `climb_shake` (`climbable.dm`) | stays `coalesce = FALSE` | Occurrences. |
+| `closet_closed` (`bluespace_connection.dm`) | stays `coalesce = FALSE` | Occurrence. |
+| `examine`, `moved`, `hitby` (`atom_events.dm`) | stays `coalesce = FALSE` | Occurrences. |
+| `native_notice` (`native/system.dm`) | stays `coalesce = FALSE` | A native occurrence delivered in order. |
+| the ~150 events of `signal_events.dm` and the other `sync = TRUE` events | no change | Delivered at once, never queued, so coalescing never applied. |
+| every `before/` event | no change | Synchronous (`coalesce = FALSE` on the `before` base). |
+
+No event was converted to a tracked change: `material_facts_changed` is emitted by a proc that has no
+owning var to track. The scheduler's own wake coalescing (`min_interval` behaviours) is a different
+mechanism and is unchanged.

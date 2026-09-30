@@ -151,7 +151,7 @@ One vocabulary for "something happened" (code in `code/datums/reactions/`, defin
   `after_op` after. `on_cross` delivers `(band, previous_band)` (the first sight is a baseline). Notices
   (`PUBLISH(src, /datum/notice/x, args...)`) are occurrences: ordered, never coalesced, never suppressed in
   bulk; one published from inside a handler is queued behind it; a chain over `RX_NOTICE_LIMIT` is reported
-  and cut. `/datum/om/event` now defaults to `coalesce = FALSE` and `skip_in_bulk = FALSE` for the same reason.
+  and cut. `/datum/om/event` now defaults to `coalesce = FALSE` and `skip_in_bulk = FALSE` for the same reason. A state-invalidation event ("recompute", emitted in bursts) sets `coalesce = TRUE` explicitly (audit table in [reactions.md](reactions.md) section 7).
 - **Runtime:** `observe(source, trigger, listener, handler)` / `unobserve(source, trigger, listener)`. Stored as
   a LISTENER relation; both ends drop it when either dies.
 - **Relations:** `rel_one/rel_many(var, type, kind = RELK_REF|RELK_PAIRED|RELK_OWNED)` on the existing store,

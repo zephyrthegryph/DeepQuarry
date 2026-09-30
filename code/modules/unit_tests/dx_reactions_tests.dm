@@ -52,10 +52,6 @@ TRACKED(/datum/rx_fx, level, CHANGE_EXPLICIT)
 /datum/notice/rx_fx/fill(mark)
 	src.mark = mark
 
-/datum/notice/rx_fx/reset()
-	..()
-	mark = null
-
 /// A second notice type nothing listens for.
 /datum/notice/rx_fx_other
 
@@ -119,7 +115,7 @@ TRACKED(/datum/rx_fx, level, CHANGE_EXPLICIT)
 	TEST_ASSERT_EQUAL(jointext(F.notes, ","), "1,2,3,3", "1 first, its two republishes next (2 then 3), then the second 3: none merged")
 	var/datum/notice/rx_fx/N = take_notice(/datum/notice/rx_fx, 7)
 	TEST_ASSERT_EQUAL(N.mark, 7, "a notice is filled by take_notice")
-	rx_release_notice(N)
+	N.release()
 	TEST_ASSERT(isnull(N.mark), "and cleared when released")
 
 /// The relation ledger counts sources: a grant lasts until its last source lets go.
@@ -152,19 +148,25 @@ TRACKED(/datum/rx_fx, level, CHANGE_EXPLICIT)
 	TEST_ASSERT_EQUAL(jointext(F.seen_ops, ","), "before:ok,before:deny,after:ok", "each ran with its context, in order")
 	TEST_ASSERT(isnull(rx_before_op(F, "another_op", null, "deny")), "another op key is not matched")
 
-/// A read moving to another band delivers (band, previous); the first sight is a baseline.
+/// A read moving to another band delivers (band, previous); the first sight is a baseline. The reaction is urgent:
+/// the kernel delivers it (request_urgent), so each crossing is run from the U phase here.
 /datum/unit_test/dx_reactions_cross/Run()
 	var/datum/rx_fx/F = allocate(/datum/rx_fx)
 	F.set_level(5)
+	kernel().run_urgent(WORK_TEST_LIMIT)
 	TEST_ASSERT_EQUAL(length(F.crossings), 0, "the first sight is a baseline")
 	F.set_level(7)
+	kernel().run_urgent(WORK_TEST_LIMIT)
 	TEST_ASSERT_EQUAL(length(F.crossings), 0, "same band: nothing")
 	F.set_level(15)
+	kernel().run_urgent(WORK_TEST_LIMIT)
 	TEST_ASSERT_EQUAL(length(F.crossings), 1, "band 1 entered")
 	TEST_ASSERT_EQUAL(F.crossings[1][1], 1, "the new band")
 	TEST_ASSERT_EQUAL(F.crossings[1][2], 0, "and the previous one")
 	F.set_level(25)
+	kernel().run_urgent(WORK_TEST_LIMIT)
 	F.set_level(3)
+	kernel().run_urgent(WORK_TEST_LIMIT)
 	TEST_ASSERT_EQUAL(length(F.crossings), 3, "each band change is delivered in order")
 	TEST_ASSERT_EQUAL(F.crossings[3][1], 0, "back below the first threshold")
 

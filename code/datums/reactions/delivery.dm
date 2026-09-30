@@ -188,7 +188,7 @@ GLOBAL_VAR_INIT(rx_draining, FALSE)
 /**
  * `E`'s read of the on_cross reaction `R` is now in `band` (the Rust frame's CROSSED lands here too, with
  * the band the native watch reports). Delivers handler(band, previous) when the band differs from the last
- * one seen; urgent crossings run at once, others at the next drain.
+ * one seen; urgent crossings are requested from the kernel (work.dm), others run at the next drain.
  */
 /proc/rx_crossed(datum/E, datum/reaction/R, band, datum/rx_listener/L)
 	var/datum/rx_state/S = rx_of(E)
@@ -203,7 +203,9 @@ GLOBAL_VAR_INIT(rx_draining, FALSE)
 		return
 	S.bands[bands_key] = band
 	if(R.urgent)
-		rx_deliver_cross(E, R, band, previous, L)
+		// A static urgent reaction is a work item: request_urgent() dedups it per holder and the kernel's U phase runs it.
+		if(L || !rx_request_cross(E, R, band, previous))
+			rx_deliver_cross(E, R, band, previous, L)
 	else
 		GLOB.rx_cross_jobs += list(list(E, R, band, previous, L))
 
@@ -217,7 +219,9 @@ GLOBAL_LIST_EMPTY(rx_cross_jobs)
 		if(L.source && L.listener && !QDELETED(L.listener))
 			rx_call(L.listener, L.handler, E, band, previous)
 		return
+	var/started = TICK_USAGE
 	rx_call(E, R.handler, band, previous)
+	R.work?.account(TICK_USAGE_TO_MS(started))
 
 // ---------------------------------------------------------------- operations
 
@@ -267,41 +271,16 @@ GLOBAL_LIST_EMPTY(rx_cross_jobs)
 		return cap_type && ispath(cap_type, R.key)
 	return R.key == key
 
-// ---------------------------------------------------------------- periodic work
-
-/// The every() reactions of D's type (a fresh list): what the kernel schedules for it.
-/proc/rx_everys_of(datum/D)
-	var/datum/rx_table/T = rx_table_of(D)
-	return T ? T.everys.Copy() : list()
-
-/// Runs one every() reaction of `D` for `dt` deciseconds: nothing when its `when` var is falsy; once per
-/// member when it declares `members` (each member is the holder of the call). Returns the number of runs.
-/proc/rx_fire_every(datum/D, datum/reaction/R, dt)
-	if(QDELETED(D))
-		return 0
-	if(R.when && !D.vars[R.when])
-		return 0
-	if(!R.members)
-		rx_call(D, R.handler, dt)
-		return 1
-	. = 0
-	for(var/datum/member as anything in members_of(D))
-		if(QDELETED(member))
-			continue
-		var/matches = isatom(member) ? cap_of_all(member, R.members) : istype(member, R.members)
-		if(!matches)
-			continue
-		rx_call(member, R.handler, dt, D)
-		.++
-
 // ---------------------------------------------------------------- notices
 
 /**
  * An occurrence: something that happened once and must be heard in order (a door opened, a shot hit), as
- * opposed to a state that is. Pooled: take_notice() reuses a released one, and it is released after its
- * delivery, so handlers must not keep it. Subtypes may name their fields and override fill().
+ * opposed to a state that is. Pooled (code/datums/lifecycle/pool.dm): take_notice() takes a released one, and it is
+ * released after its delivery, so handlers must not keep it. Fields go back to their initial values on release;
+ * subtypes name their fields and override fill() (and reset() for what a field cannot express).
  */
 /datum/notice
+	parent_type = /datum/pooled
 	/// Who published it.
 	var/datum/source
 	/// The arguments PUBLISH passed (the default fill()).
@@ -311,39 +290,17 @@ GLOBAL_LIST_EMPTY(rx_cross_jobs)
 /datum/notice/proc/fill(...)
 	data = args.Copy()
 
-/// Clears the notice for reuse.
-/datum/notice/proc/reset()
-	source = null
-	data = null
-
-/// type -> released notices.
-GLOBAL_LIST_EMPTY(rx_notice_pool)
 /// The notices waiting behind the delivery in progress: (source, notice) pairs in publish order.
 GLOBAL_LIST_EMPTY(rx_notice_queue)
 GLOBAL_VAR_INIT(rx_notice_delivering, FALSE)
 
+/// A notice of `type` taken from its pool and filled from the arguments after it. PUBLISH's helper: the
+/// notice is released by publish() once delivered.
 /proc/take_notice(type, ...)
 	RETURN_TYPE(/datum/notice)
-	var/list/pool = GLOB.rx_notice_pool[type]
-	var/datum/notice/N
-	if(length(pool))
-		N = pool[length(pool)]
-		pool.len--
-	else
-		N = new type
+	var/datum/notice/N = take(type)
 	N.fill(arglist(length(args) > 1 ? args.Copy(2) : list()))
 	return N
-
-/proc/rx_release_notice(datum/notice/N)
-	N.reset()
-	var/list/pool = GLOB.rx_notice_pool[N.type]
-	if(!pool)
-		pool = list()
-		GLOB.rx_notice_pool[N.type] = pool
-	if(length(pool) < 32)
-		pool += N
-	else
-		qdel(N)
 
 /// TRUE when a static reaction of E's type, or an observer of E, wants notices of `type`.
 /proc/rx_wants_notice(datum/E, type)
@@ -389,9 +346,11 @@ GLOBAL_VAR_INIT(rx_notice_delivering, FALSE)
 		if(++delivered > RX_NOTICE_LIMIT)
 			stack_trace("publish: more than [RX_NOTICE_LIMIT] notices chained from one delivery (a handler republishes what it hears?); dropping [length(GLOB.rx_notice_queue) + 1]")
 			for(var/list/rest as anything in GLOB.rx_notice_queue)
-				rx_release_notice(rest[2])
+				var/datum/notice/dropped = rest[2]
+				dropped.release()
 			GLOB.rx_notice_queue.Cut()
-			rx_release_notice(next[2])
+			var/datum/notice/cut = next[2]
+			cut.release()
 			break
 		rx_deliver_notice(next[1], next[2])
 	GLOB.rx_notice_delivering = FALSE
@@ -403,10 +362,14 @@ GLOBAL_VAR_INIT(rx_notice_delivering, FALSE)
 			for(var/datum/reaction/R as anything in T.notices)
 				if(!istype(N, R.key))
 					continue
+				var/started = TICK_USAGE
+				var/faulted = FALSE
 				try
 					rx_call(E, R.handler, N)
 				catch(var/exception/e)
+					faulted = TRUE
 					stack_trace("notice [N.type] handler [R.handler] on [E.type]: [e] ([e.file]:[e.line])")
+				R.work?.account(TICK_USAGE_TO_MS(started), faulted) // per-reaction cost; delivery stays synchronous and in order
 		for(var/datum/rx_listener/L as anything in E.rx?.listeners?.Copy())
 			var/datum/reaction/R = L.trigger
 			if(R.kind != RXN_NOTICE || !istype(N, R.key) || !L.listener || QDELETED(L.listener))
@@ -415,4 +378,4 @@ GLOBAL_VAR_INIT(rx_notice_delivering, FALSE)
 				rx_call(L.listener, L.handler, E, N)
 			catch(var/exception/e2)
 				stack_trace("notice [N.type] observer [L.handler] on [L.listener.type]: [e2] ([e2.file]:[e2.line])")
-	rx_release_notice(N)
+	N.release()

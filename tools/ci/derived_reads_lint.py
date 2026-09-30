@@ -68,6 +68,9 @@ SKIP_SITE_DIRS = ("code/modules/unit_tests/",)
 GENERATED_SKIP_DIRS = SKIP_SITE_DIRS + ("code/modules/benchmarks/",)
 GENERATED = os.path.join(ROOT, "code", "_generated", "reads.dm")
 GENERATED_REL = "code/_generated/reads.dm"
+# reactions() constructors that need the kernel: their declaring types are listed in the generated file.
+REACTION_KINDS = {"every": "RXB_EVERY", "on_cross": "RXB_CROSS", "on_notice": "RXB_NOTICE"}
+REACTION_CALL = re.compile(r"(?<![\w.])(every|on_cross|on_notice)\s*\(")
 GENERATED_KIND_CALL = {"runs": "runs_while", "drawn": "drawn_from", "ui": "ui_from", "push": "rust_push"}
 
 # derived proc -> the declaration kind its reads belong to.
@@ -495,8 +498,56 @@ def fix_texts(model, findings):
 
 # ---------------------------------------------------------------- generated reads
 
+def reaction_declarations(model):
+    """({owner: set(RXB flags)}, sorted capability types named by every(members = ...)) of the non-test reactions()."""
+    flags = {}
+    members = set()
+    for proc in model.procs:
+        if proc.name != "reactions" or proc.owner == "/" or proc.rel.startswith(GENERATED_SKIP_DIRS) or proc.rel == GENERATED_REL:
+            continue
+        text = "\n".join(line for _, line in proc.body)
+        pos = 0
+        while True:
+            m = REACTION_CALL.search(text, pos)
+            if not m:
+                break
+            inner, pos = call_args(text, m.end() - 1)
+            flags.setdefault(proc.owner, set()).add(REACTION_KINDS[m.group(1)])
+            if m.group(1) == "every":
+                found = re.search(r"\bmembers\s*=\s*(/[\w/]+)", inner)
+                if found:
+                    members.add(found.group(1))
+    return flags, sorted(members)
+
+
+def boot_text(model):
+    """The tail of code/_generated/reads.dm: rx_boot_types() and rx_boot_members()."""
+    flags, members = reaction_declarations(model)
+    out = ["/// Types whose reactions() declare every() / on_cross() / on_notice(), with the RXB_* kinds (code/datums/reactions/work.dm).",
+           "/proc/rx_boot_types()", "\tRETURN_TYPE(/list)"]
+    if flags:
+        out.append("\treturn list(")
+        for owner in sorted(flags):
+            out.append("\t\t%s = %s," % (owner, " | ".join(sorted(flags[owner]))))
+        out.append("\t)")
+    else:
+        out.append("\treturn list()")
+    out += ["", "/// Capabilities some every(members = ...) runs per member of: their holders join the membership store at init.",
+            "/proc/rx_boot_members()", "\tRETURN_TYPE(/list)"]
+    if members:
+        out.append("\treturn list(")
+        for cap in members:
+            out.append("\t\t%s," % cap)
+        out.append("\t)")
+    else:
+        out.append("\treturn list()")
+    out.append("")
+    return out
+
+
 def generated_text(model):
-    """The text of code/_generated/reads.dm: each non-test, non-capability type's derived-proc reads."""
+    """The text of code/_generated/reads.dm: each non-test, non-capability type's derived-proc reads, then the
+    types whose reactions() declare kernel work (rx_boot_types) and the capabilities their every() runs per member."""
     per_owner = OrderedDict()  # owner -> OrderedDict((kind, derive name) -> [vars])
     for proc in sorted(model.procs, key=lambda p: (p.owner, p.rel, p.start)):
         if proc.owner == "/" or proc.rel.startswith(GENERATED_SKIP_DIRS) or proc.rel == GENERATED_REL or proc.owner.startswith("/datum/capability"):
@@ -535,6 +586,7 @@ def generated_text(model):
             out.append("\t. = ..()")
             out.extend(lines)
             out.append("")
+    out.extend(boot_text(model))
     return "\n".join(out)
 
 
@@ -761,6 +813,10 @@ def selftest():
     ok &= check("generated reads", "/obj/pointer/generated_reads()" in text and "runs_while(nameof(energy), nameof(max_energy))" in text
                 and "drawn_from(nameof(pointing))" in text, text)
     ok &= check("generated is stable", generated_text(model_of({"code/a.dm": FIXTURE_DECLARED})) == text, "")
+    # 10. Types declaring every / on_cross / on_notice, and every(members = cap), are listed for the kernel boot.
+    fixture = "/obj/pump/reactions()\n\t. = ..()\n\t. += every(1 SECONDS, PROC_REF(step), members = /datum/capability/pumped)\n\t. += on_notice(/datum/notice/x, PROC_REF(h))\n"
+    boot = generated_text(model_of({"code/a.dm": fixture}))
+    ok &= check("boot types", "/obj/pump = RXB_EVERY | RXB_NOTICE," in boot and "/datum/capability/pumped," in boot, boot)
     if ok:
         print("derived_reads_lint selftest passed")
         return 0

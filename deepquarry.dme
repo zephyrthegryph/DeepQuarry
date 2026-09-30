@@ -888,6 +888,7 @@
 #include "code\datums\reactions\reactions.dm"
 #include "code\datums\reactions\state.dm"
 #include "code\datums\reactions\timer.dm"
+#include "code\datums\reactions\work.dm"
 #include "code\datums\ownership\table.dm"
 #include "code\datums\ownership\transfer.dm"
 #include "code\datums\om_events\atom_events.dm"

@@ -19,8 +19,14 @@
 //   before_op(key|type, handler) handler(ctx): synchronous before commit; a non-null return vetoes (a reason).
 //   after_op(key|type, handler)  handler(ctx): synchronous after commit; the return is ignored.
 //   on_cross(read, bands, handler, urgent) handler(band, previous_band): when the read moves to another band
-//                               (band 0 is below the first threshold). urgent: at once; else at the drain.
-//   every(interval, handler, ...) declared work: rx_fire_every() runs it (the kernel schedules it).
+//                               (band 0 is below the first threshold). urgent: a request_urgent() work item (the
+//                               kernel's U phase, deduped per holder, carrying the latest band); else at the drain.
+//   every(interval, handler, ...) declared work: a /datum/work_item/reaction on the kernel (work.dm). The handler runs on
+//                               each live instance of the declaring type as handler(dt), on each member of `members`
+//                               (a capability) as handler(dt), or, when the declaring type is a /datum/system, on the
+//                               system as handler(dt) / handler(member, dt). `when` (a var name or a proc) gates it.
+//
+// on_cross and on_notice register a work item too, so metrics() accounts their cost per reaction (work.dm).
 
 /// One declared reaction. Built by the constructors below, shared per type, never written after.
 /datum/reaction
@@ -43,6 +49,10 @@
 	/// every(): the reaction key or name it must follow in its phase.
 	var/after_of
 	var/budget
+	/// every(): the LANE_* whose share pays for it (null: LANE_SIMULATION).
+	var/lane
+	/// The shared work item this reaction registered (every / urgent on_cross / on_notice, from a type table), or null.
+	var/datum/work_item/reaction/work
 	/// Identity for observe()/unobserve() matching.
 	var/sig
 	/// True for a read folded in from derived() / generated_reads(): it feeds READERS, nothing runs.
@@ -95,10 +105,10 @@
 	R.sig = "[R.sig]|[jointext(bands, ",")]"
 	return R
 
-/// Declared periodic work. `when` names a var that must hold; `members` (a capability type) runs it once per
-/// member; `phase` and `after` order it against other work; `budget` caps its cost per run. The kernel
-/// schedules it; rx_fire_every() is the run contract.
-/proc/every(interval, handler, when, members, phase, after, budget)
+/// Declared periodic work. `when` names a var that must hold (or a proc that must answer TRUE); `members` (a
+/// capability type) runs it once per member; `phase` (KERNEL_PHASE_*), `after` (owner types or item keys) and
+/// `lane` order and pay for it; `budget` caps its cost per run. The kernel schedules it (work.dm).
+/proc/every(interval, handler, when, members, phase, after, budget, lane)
 	var/datum/reaction/R = rx_make(RXN_EVERY, null, null, handler)
 	R.interval = interval
 	R.when = when
@@ -106,7 +116,8 @@
 	R.phase = phase
 	R.after_of = after
 	R.budget = budget
-	R.sig = "[R.sig]|[interval]|[when]|[members]"
+	R.lane = lane
+	R.sig = "[R.sig]|[interval]|[when]|[members]|[phase]|[lane]"
 	return R
 
 /// A read of a Rust-owned value: `native("temperature")`. Usable wherever a read is named; the Rust
@@ -168,6 +179,8 @@
 	/// read -> on_cross reactions.
 	var/list/crosses = list()
 	var/list/everys = list()
+	/// The membership keys a holder of this type joins at init for its per-instance every() work (rx_enrol()).
+	var/list/holder_keys
 
 /// type -> /datum/rx_table, or 0 for a type that reacts to nothing and reads nothing.
 GLOBAL_LIST_EMPTY(rx_tables)
@@ -221,13 +234,16 @@ GLOBAL_LIST_EMPTY(rx_tables)
 			rx_table_add_op(T.after_keyed, T.after_typed, R)
 		if(RXN_NOTICE)
 			T.notices += R
+			rx_register_work(T, R)
 		if(RXN_CROSS)
 			for(var/read in R.reads)
 				LAZYINITLIST(T.crosses[read])
 				T.crosses[read] += R
 				T.read_keys[read] = TRUE
+			rx_register_work(T, R)
 		if(RXN_EVERY)
 			T.everys += R
+			rx_register_work(T, R)
 			if(R.when)
 				T.read_keys[R.when] = TRUE
 

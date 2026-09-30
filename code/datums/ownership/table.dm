@@ -75,25 +75,27 @@
  *   (pool_release() resets it to its initial value), `forward` (replace_with() carries it to the
  *   successor: an owned value moves, a relation re-links, anything else is copied).
  */
-/proc/owns(var_name, policy = OWN_DELETE, policy_proc = null, if_var = null, else_policy = OWN_DELETE, keep_after_destroy = FALSE, pool_reset = FALSE, forward = FALSE)
+/proc/owns(var_name, policy = OWN_DELETE, policy_proc = null, if_var = null, else_policy = OWN_DELETE, keep_after_destroy = FALSE, pool_reset = FALSE, forward = FALSE, type = null)
 	var/list/entry = null
 	if(policy_proc)
-		entry = list(OWNK_OWN, policy_proc, null, null, FALSE, null, CLEAR, null)
+		entry = list(OWNK_OWN, policy_proc, null, null, FALSE, null, CLEAR, null, null)
 	else if(if_var)
-		entry = list(OWNK_OWN, isnull(policy) ? OWN_DELETE : policy, if_var, isnull(else_policy) ? OWN_DELETE : else_policy, FALSE, null, CLEAR, null)
+		entry = list(OWNK_OWN, isnull(policy) ? OWN_DELETE : policy, if_var, isnull(else_policy) ? OWN_DELETE : else_policy, FALSE, null, CLEAR, null, null)
 	else if(policy != OWN_NONE)
-		entry = list(OWNK_OWN, policy, null, null, FALSE, null, CLEAR, null)
+		entry = list(OWNK_OWN, policy, null, null, FALSE, null, CLEAR, null, null)
+	if(entry && type)
+		entry[OWNE_TYPE] = type
 	return _own_entry(var_name, entry, keep_after_destroy, pool_reset, forward)
 
 /// Shares: var_name holds a registered singleton or DEF (only an untyped var needs this; a var
 /// typed as a registry type is implicitly shared). Never cleared.
 /proc/shares(var_name, keep_after_destroy = FALSE, pool_reset = FALSE, forward = FALSE)
-	return _own_entry(var_name, list(OWNK_SHARED, null, null, null, FALSE, null, CLEAR, null), keep_after_destroy, pool_reset, forward)
+	return _own_entry(var_name, list(OWNK_SHARED, null, null, null, FALSE, null, CLEAR, null, null), keep_after_destroy, pool_reset, forward)
 
 /// Proto: var_name holds a registered prototype or a private copy the holder owns
 /// (proto_private / proto_set). Teardown deletes private copies only.
 /proc/proto(var_name, keep_after_destroy = FALSE, pool_reset = FALSE, forward = FALSE)
-	return _own_entry(var_name, list(OWNK_PROTO, null, null, null, FALSE, null, CLEAR, null), keep_after_destroy, pool_reset, forward)
+	return _own_entry(var_name, list(OWNK_PROTO, null, null, null, FALSE, null, CLEAR, null, null), keep_after_destroy, pool_reset, forward)
 
 /**
  * A single relation view: var_name names at most one entity, cleared when it dies.
@@ -121,8 +123,8 @@
 	return _rel_kind_decl(var_name, TRUE, type, kind, back, other_deleted, on_unlink, keyed, keyed_target, watch, keep_after_destroy, pool_reset, forward)
 
 /**
- * rel_one() / rel_many() with the declared kind. `type` is the type of what the var holds (documentation and
- * the lint's check; nothing is checked at runtime). `kind`:
+ * rel_one() / rel_many() with the declared kind. `type` is the type of what the var holds (a path; null: untyped).
+ * Every accessor write checks it (own_type_ok()): a value that is not null or an istype() of it is refused and reported. `kind`:
  *   RELK_REF     a plain reference, cleared when the other end dies (the default);
  *   RELK_PAIRED  both ends name each other: needs back =, and one rel_link() writes both sides;
  *   RELK_OWNED   the holder owns the value(s) and deletes them with itself (owns()).
@@ -133,7 +135,7 @@
 		kind = back ? RELK_PAIRED : RELK_REF
 	switch(kind)
 		if(RELK_OWNED)
-			return owns(var_name, keep_after_destroy = keep_after_destroy, pool_reset = pool_reset, forward = forward)
+			return owns(var_name, keep_after_destroy = keep_after_destroy, pool_reset = pool_reset, forward = forward, type = type)
 		if(RELK_PAIRED)
 			if(!back)
 				CRASH("rel_one/rel_many([var_name]): RELK_PAIRED needs back = nameof(/other/type::var)")
@@ -142,7 +144,7 @@
 				CRASH("rel_one/rel_many([var_name]): back = is only for RELK_PAIRED")
 		else
 			CRASH("rel_one/rel_many([var_name]): kind [kind] is not RELK_REF, RELK_PAIRED or RELK_OWNED")
-	return _rel_decl(var_name, is_list, back, other_deleted, on_unlink, keyed, keyed_target, watch, keep_after_destroy, pool_reset, forward)
+	return _rel_decl(var_name, is_list, type, back, other_deleted, on_unlink, keyed, keyed_target, watch, keep_after_destroy, pool_reset, forward)
 
 /// A keyed target: instances of this type are found by keyed relations (rel_one/rel_many with
 /// `keyed_target =` this type) through their var `key_var`.
@@ -151,7 +153,7 @@
 	E.keyed_key = key_var
 	return E
 
-/proc/_rel_decl(var_name, is_list, back, other_deleted, on_unlink, keyed, keyed_target, list/watch, keep_after_destroy, pool_reset, forward)
+/proc/_rel_decl(var_name, is_list, type, back, other_deleted, on_unlink, keyed, keyed_target, list/watch, keep_after_destroy, pool_reset, forward)
 	var/shape = RELS_PLAIN
 	if(back)
 		shape = (is_list && back == var_name) ? RELS_SYMMETRIC : RELS_PAIR
@@ -160,7 +162,7 @@
 		if(!keyed)
 			CRASH("rel_one/rel_many([var_name]): keyed_target needs keyed = nameof(our key var)")
 		extra = list(keyed_target, keyed)
-	var/list/entry = list(OWNK_REL, shape, back, extra, !!is_list, length(watch) ? watch.Copy() : null, other_deleted || CLEAR, on_unlink)
+	var/list/entry = list(OWNK_REL, shape, back, extra, !!is_list, length(watch) ? watch.Copy() : null, other_deleted || CLEAR, on_unlink, type)
 	return _own_entry(var_name, entry, keep_after_destroy, pool_reset, forward)
 
 /// The declarations collected from one type's ownership() and relations() lists.
@@ -366,10 +368,10 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 			return null
 		switch(kind)
 			if(OWNK_OWN)
-				entry = list(OWNK_OWN, OWN_DELETE, null, null, is_list, null, CLEAR, null)
+				entry = list(OWNK_OWN, OWN_DELETE, null, null, is_list, null, CLEAR, null, null)
 				LAZYADD(T.own_vars, var_name)
 			if(OWNK_REL)
-				entry = list(OWNK_REL, RELS_PLAIN, null, null, is_list, null, CLEAR, null)
+				entry = list(OWNK_REL, RELS_PLAIN, null, null, is_list, null, CLEAR, null, null)
 				LAZYADD(T.ref_vars, var_name)
 			else
 				OWN_REPORT("[holder.type].[var_name] is not declared [own_kind_name(kind)]")
@@ -413,3 +415,16 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 	if(!islist(GLOB?.refresh_queue))
 		return
 	changed(holder, CHANGE_EXPLICIT, var_name)
+
+/// TRUE when `value` may be written to holder.var_name under `entry`: null, an untyped declaration, or an istype() of
+/// the declared `type` (rel_one/rel_many(type =)). A mismatch is reported (a stack_trace, which fails a test run)
+/// and the caller refuses the write. `entry` may be null (an undeclared view is untyped).
+/proc/own_type_ok(datum/holder, var_name, list/entry, value)
+	if(isnull(value) || !entry)
+		return TRUE
+	var/type = entry[OWNE_TYPE]
+	if(!type || istype(value, type))
+		return TRUE
+	var/datum/D = value
+	OWN_REPORT("[holder.type].[var_name] is declared [type], refused [isdatum(value) ? "a [D.type]" : "[value]"]")
+	return FALSE

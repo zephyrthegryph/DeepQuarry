@@ -185,6 +185,8 @@ GLOBAL_LIST_EMPTY(caps_interned)
 		refresh_granted_verbs(src) // capability verbs are there from init, not a frame later
 	if(flags & TYPE_DERIVES_DEPS)
 		derived_attach(src)
+	if(rx_type_enrols(src))
+		rx_enrol(src) // per-instance every() work (reactions/work.dm)
 	if(flags || periodic_cadence || periodic_interval)
 		changed(src)
 
