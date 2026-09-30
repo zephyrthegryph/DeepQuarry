@@ -105,7 +105,8 @@
 /datum/unit_test/dq_boot_bind_audit_first_wake
 
 /datum/unit_test/dq_boot_bind_audit_first_wake/Run()
-	var/obj/machinery/atmospherics/omni/mixer/M = allocate(/obj/machinery/atmospherics/omni/mixer, test_floor())
+	// A machine still on the machine pipeline (pipe devices such as the omni mixer are a Rust law now).
+	var/obj/machinery/portable_atmospherics/powered/pump/M = allocate(/obj/machinery/portable_atmospherics/powered/pump, test_floor())
 	var/datum/om/pipeline/machine/P = locate_in_list(om_registry().pipelines, /datum/om/pipeline/machine)
 	TEST_ASSERT(P, "the machine pipeline is registered")
 	// Joining after boot schedules the first wake in the machine's `first_wake` slot (zero delay):
