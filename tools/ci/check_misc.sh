@@ -4,6 +4,9 @@ set -euo pipefail
 RED="\033[0;31m"
 NC="\033[0m"
 
+# Every SKIN_* control id names a real window or control in interface/skin.dmf.
+python3 tools/ci/check_skin_defines.py || { echo -e "${RED}A SKIN_* define names a control that is not in interface/skin.dmf.${NC}"; exit 1; }
+
 # A TEST_FOCUS(...) line makes the unit-test run execute only the focused tests.
 # dq_focus.dm is the scratch file for local focused runs and must be committed
 # empty; anywhere else, TEST_FOCUS must sit inside an #if/#ifdef block so it is

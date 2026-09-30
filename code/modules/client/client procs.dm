@@ -41,6 +41,15 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	*/
 // ALLOW(sys_topic_override): BYOND's href entry point: rate limits, tgui middleware and logging, then the TOPIC_ACTION dispatcher.
 /client/Topic(href, href_list, hsrc)
+	// asset_cache: the ack needs no mob, so it is handled before the usr gate (a body swap
+	// between the send and the ack must not drop it)
+	var/asset_cache_job
+	// ALLOW(sys_topic_raw_dispatch): client/Topic is BYOND's href entry: transport-level keys (asset cache, rate limiter, statbrowser) are read before any datum dispatch.
+	if(href_list["asset_cache_confirm_arrival"])
+		asset_cache_job = asset_cache_confirm_arrival(href_list["asset_cache_confirm_arrival"])
+		if (!asset_cache_job)
+			return
+
 	if(!usr || usr != mob)	//stops us calling Topic for somebody else's client. Also helps prevent usr=null
 		return
 
@@ -53,14 +62,6 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 
 	#endif
 
-	// asset_cache
-	var/asset_cache_job
-	// ALLOW(sys_topic_raw_dispatch): client/Topic is BYOND's href entry: transport-level keys (asset cache, rate limiter, statbrowser) are read before any datum dispatch.
-	if(href_list["asset_cache_confirm_arrival"])
-		asset_cache_job = asset_cache_confirm_arrival(href_list["asset_cache_confirm_arrival"])
-		if (!asset_cache_job)
-			return
-
 	// Rate limiting
 	var/mtl = CONFIG_GET(number/minute_topic_limit)
 	if(!bypass_topic_limit(href_list))
@@ -72,7 +73,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 				topiclimiter[CURRENT_MINUTE] = minute
 				topiclimiter[MINUTE_COUNT] = 0
 			// ALLOW(sys_topic_raw_dispatch): client/Topic is BYOND's href entry: transport-level keys (asset cache, rate limiter, statbrowser) are read before any datum dispatch.
-			if(href_list["window_id"] != "statbrowser")
+			if(href_list["window_id"] != SKIN_STAT_BROWSER)
 				topiclimiter[MINUTE_COUNT] += 1
 			if (topiclimiter[MINUTE_COUNT] > mtl)
 				var/msg = "Your previous action was ignored because you've done too many in a minute."
@@ -111,7 +112,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	log_href("[src] (usr:[usr]\[[COORD(usr)]\]) : [hsrc ? "[hsrc] " : ""][href]")
 
 	//byond bug ID:2256651
-	if (asset_cache_job && (asset_cache_job in completed_asset_jobs))
+	if (asset_cache_job && session && (asset_cache_job in session.completed_asset_jobs))
 		to_chat(src, span_danger("An error has been detected in how your client is receiving resources. Attempting to correct.... (If you keep seeing these messages you might want to close byond and reconnect)"))
 		src << browse("...", "window=asset_cache_browser")
 		return
@@ -240,6 +241,7 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 	///////////
 /client/New(TopicData)
 	TopicData = null //Prevent calls to client.Topic from connect
+	session = new /datum/client_session(src) // ALLOW(ownership): /client is not a datum; it holds this directly
 
 	if(connection != "seeker" && connection != "web")//Invalid connection type.
 		return null
@@ -274,14 +276,14 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 
 	winset(src, null, list("browser-options" = "find,refresh"))
 	// Instantiate stat panel
-	stat_panel = new /datum/tgui_window(src, "statbrowser") // ALLOW(ownership): /client is not a datum; it holds these directly
+	stat_panel = new /datum/tgui_window(src, SKIN_STAT_BROWSER) // ALLOW(ownership): /client is not a datum; it holds these directly
 	stat_panel.subscribe(src, PROC_REF(on_stat_panel_message))
 
 	// Instantiate tgui panel
-	tgui_say = new /datum/tgui_say(src, "tgui_say") // ALLOW(ownership): /client is not a datum; it holds these directly
-	tgui_shocker = new /datum/tgui_shock(src, "tgui_shock") // ALLOW(ownership): /client is not a datum; it holds these directly
+	tgui_say = new /datum/tgui_say(src, SKIN_TGUI_SAY) // ALLOW(ownership): /client is not a datum; it holds these directly
+	tgui_shocker = new /datum/tgui_shock(src, SKIN_TGUI_SHOCK) // ALLOW(ownership): /client is not a datum; it holds these directly
 	initialize_commandbar_spy()
-	tgui_panel = new /datum/tgui_panel(src, "browseroutput") // ALLOW(ownership): /client is not a datum; it holds these directly
+	tgui_panel = new /datum/tgui_panel(src, SKIN_CHAT_BROWSER) // ALLOW(ownership): /client is not a datum; it holds these directly
 
 	GLOB.tickets.ClientLogin(src)
 
@@ -289,7 +291,10 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 	prefs = GLOB.preferences_datums[ckey] // ALLOW(ownership): /client is not a datum; it holds these directly
 	if(prefs)
 		rel_set(prefs, nameof(prefs.client), src)
-		prefs.load_savefile() // just to make sure we have the latest data
+		// A reconnect keeps the in-memory savefile (saves write through it); re-reading it from
+		// disk here was I/O inside client/New for nothing.
+		if(!prefs.savefile)
+			prefs.load_savefile()
 		prefs.apply_all_client_preferences()
 	else
 		prefs = new /datum/preferences(src) // ALLOW(ownership): /client is not a datum; it holds these directly
@@ -321,6 +326,7 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 			//add_system_note("Spoofed-Byond-Version", "Detected as using a spoofed byond version.")
 			log_suspicious_login("Failed Login: [key] - Spoofed byond version")
 			qdel(src)
+			return
 
 		if (num2text(byond_build) in GLOB.blacklisted_builds)
 			log_access("Failed login: [key] - blacklisted byond version")
@@ -365,7 +371,7 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 	connection_realtime = world.realtime
 	connection_timeofday = world.timeofday
 
-	dx_winexists(src, src, "asset_cache_browser", PROC_REF(asset_browser_checked)) // a client round trip
+	dx_winexists(src, src, SKIN_ASSET_CACHE_BROWSER, PROC_REF(asset_browser_checked)) // a client round trip
 
 	if(holder)
 		add_admin_verbs()
@@ -422,14 +428,10 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 	if(fakeConversations)
 		qdel(fakeConversations)
 		fakeConversations = null // ALLOW(ownership): /client is not a datum; it holds these directly
-	qdel(loot_panel)
-	loot_panel = null // ALLOW(ownership): /client is not a datum; it holds these directly
-	// Client-scoped persistent UIs: their /datum/tgui entries would otherwise
-	// linger in SStgui.all_uis for every reconnect.
-	qdel(tooltips)
-	tooltips = null // ALLOW(ownership): /client is not a datum; it holds these directly
-	qdel(media)
-	media = null // ALLOW(ownership): /client is not a datum; it holds these directly
+	// Every connection-scoped datum (panels, tgui windows, say/shock, tooltips, media, loot
+	// panel, interaction menu, keybind editor, ...) is owned by the session.
+	qdel(session)
+	session = null // ALLOW(ownership): /client is not a datum; it holds this directly
 	..()
 	return QDEL_HINT_HARDDEL_NOW
 
@@ -726,7 +728,7 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 
 //Called when the client performs a drag-and-drop operation.
 /client/MouseDrop(start_object,end_object,start_location,end_location,start_control,end_control,params)
-	if(buildmode && start_control == "mapwindow.map" && start_control == end_control)
+	if(buildmode && start_control == SKIN_MAP && start_control == end_control)
 		build_drag(src,buildmode,start_object,end_object,start_location,end_location,start_control,end_control,params)
 	else
 		. = ..()
@@ -812,18 +814,18 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 	fullscreen = !fullscreen
 
 	if (fullscreen)
-		winset(usr, "mainwindow", "on-size=")
-		winset(usr, "mainwindow", "titlebar=false")
-		winset(usr, "mainwindow", "can-resize=false")
-		winset(usr, "mainwindow", "menu=")
-		winset(usr, "mainwindow", "is-maximized=false")
-		winset(usr, "mainwindow", "is-maximized=true")
+		winset(usr, SKIN_MAINWINDOW, "on-size=")
+		winset(usr, SKIN_MAINWINDOW, "titlebar=false")
+		winset(usr, SKIN_MAINWINDOW, "can-resize=false")
+		winset(usr, SKIN_MAINWINDOW, "menu=")
+		winset(usr, SKIN_MAINWINDOW, "is-maximized=false")
+		winset(usr, SKIN_MAINWINDOW, "is-maximized=true")
 	else
-		winset(usr, "mainwindow", "menu=menu")
-		winset(usr, "mainwindow", "titlebar=true")
-		winset(usr, "mainwindow", "can-resize=true")
-		winset(usr, "mainwindow", "is-maximized=false")
-		winset(usr, "mainwindow", "on-size=attempt_auto_fit_viewport") // The attempt_auto_fit_viewport() proc is not implemented yet
+		winset(usr, SKIN_MAINWINDOW, "menu=menu")
+		winset(usr, SKIN_MAINWINDOW, "titlebar=true")
+		winset(usr, SKIN_MAINWINDOW, "can-resize=true")
+		winset(usr, SKIN_MAINWINDOW, "is-maximized=false")
+		winset(usr, SKIN_MAINWINDOW, "on-size=attempt_auto_fit_viewport") // The attempt_auto_fit_viewport() proc is not implemented yet
 	attempt_auto_fit_viewport()
 
 /*we use TGPanel

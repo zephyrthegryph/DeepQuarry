@@ -1,13 +1,7 @@
 
 /// Process asset cache client topic calls for `"asset_cache_confirm_arrival=[INT]"`
 /client/proc/asset_cache_confirm_arrival(job_id)
-	var/asset_cache_job = round(text2num(job_id))
-		//because we skip the limiter, we have to make sure this is a valid arrival and not somebody tricking us into letting them append to a list without limit.
-	if (asset_cache_job > 0 && asset_cache_job <= last_asset_job && !(LAZYACCESS(completed_asset_jobs, "[asset_cache_job]")))
-		LAZYSET(completed_asset_jobs, "[asset_cache_job]", TRUE)
-		last_completed_asset_job = max(last_completed_asset_job, asset_cache_job)
-	else
-		return asset_cache_job || TRUE
+	return session?.confirm_asset_arrival(job_id)
 
 
 /// Process asset cache client topic calls for `"asset_cache_preload_data=[HTML+JSON_STRING]"`
@@ -32,18 +26,3 @@
 		return
 
 	src << browse(json_encode(sent_assets), "file=asset_data.json&display=0")
-
-/// Blocks until all currently sending browse and browse_rsc assets have been sent.
-/// Due to byond limitations, this proc will sleep for 1 client round trip even if the client has no pending asset sends.
-/// This proc will return an untrue value if it had to return before confirming the send, such as timeout or the client going away.
-/client/proc/browse_queue_flush(timeout = 50)
-	var/job = ++last_asset_job
-	var/t = 0
-	var/timeout_time = timeout
-	src << browse({"<script>window.location.href="byond://?asset_cache_confirm_arrival=[job]"</script>"}, "window=asset_cache_browser&file=asset_cache_send_verify.htm")
-
-	while(!LAZYACCESS(completed_asset_jobs, "[job]") && t < timeout_time) // Reception is handled in Topic()
-		stoplag(1) // Lock up the caller until this is received. // ALLOW(scheduler): waits on the client's Topic round trip (external)
-		t++
-	if (t < timeout_time)
-		return TRUE

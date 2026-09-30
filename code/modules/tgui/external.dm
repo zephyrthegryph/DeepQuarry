@@ -56,6 +56,14 @@
 /**
  * public
  *
+ * The om change channels that raise a coalesced push to this datum's open UIs.
+ */
+/datum/proc/tgui_change_mask()
+	return CHANGE_GENERIC_MASK
+
+/**
+ * public
+ *
  * Forces an update on static data. Should be done manually whenever something
  * happens to change static data.
  *
@@ -235,7 +243,7 @@
 /proc/bypass_topic_limit(href_list)
 	// Deviation from TG. Our statbrowser has so many commands that logging in as a borg can cause it to rate limit you. This needs fixing eventually.
 	// ALLOW(sys_topic_raw_dispatch): the tgui message protocol (tgui=1;type=...), not a datum href action; its messages reach tgui_act().
-	if(href_list["window_id"] == "statbrowser")
+	if(href_list["window_id"] == SKIN_STAT_BROWSER)
 		return TRUE
 	// Chunked messages will exceed the limit
 	// ALLOW(sys_topic_raw_dispatch): the tgui message protocol (tgui=1;type=...), not a datum href action; its messages reach tgui_act().
