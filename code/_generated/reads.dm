@@ -75,6 +75,11 @@
 	var/static/list/table
 	if(!table)
 		table = list(
+			/datum/system/air = RXB_EVERY,
+			/datum/system/lighting = RXB_EVERY,
+			/datum/system/speech_controller = RXB_EVERY,
+			/datum/system/ticker = RXB_EVERY,
+			/obj/effect/hotspot = RXB_EVERY,
 			/obj/machinery/power/apc = RXB_NOTICE,
 		)
 	return table

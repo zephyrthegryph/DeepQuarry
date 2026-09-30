@@ -124,6 +124,9 @@
 		return TRUE
 	if(!W.cursor && !W.yielded && W.next_run > now)
 		return TRUE
+	if(!W.admitted_now())
+		// Not in this item's run levels: it is due again next pass, and its sweep (if one was open) resumes then.
+		return TRUE
 	if(!kernel_latency().admit(W.latency_class(), W.key))
 		return TRUE
 	if(TICK_USAGE >= limit_abs)
@@ -135,6 +138,9 @@
 		limit_abs = min(limit_abs, TICK_USAGE + W.budget)
 	var/started = TICK_USAGE
 	var/done = TRUE
+	// A fire() body (system.dm fire_step) and CHECK_TICK read the tick budget from here.
+	var/saved_ticklimit = Master.current_ticklimit
+	Master.current_ticklimit = limit_abs
 	try
 		if(W.members)
 			done = run_item_members(W, owner, limit_abs, now)
@@ -154,6 +160,7 @@
 			var/park_msg = "Kernel: work item [W.key] parked after [W.consecutive_faults] faults in a row."
 			log_world(park_msg)
 			message_admins(park_msg)
+	Master.current_ticklimit = saved_ticklimit
 	var/ms = TICK_USAGE_TO_MS(started)
 	W.total_ms += ms
 	W.current_ms += ms
@@ -209,6 +216,10 @@
 			if(dt > 0)
 				W.perform(owner, M, dt)
 				W.member_runs++
+		// A member that left during its own step (or one the step removed) took a swap-remove: the last member now
+		// sits in its slot. Look at that slot again so the moved member is not skipped this sweep.
+		if(i - 1 > length(members) || members[i - 1] != M)
+			i--
 		if(TICK_USAGE > limit_abs && i <= length(members))
 			W.cursor = i
 			return FALSE

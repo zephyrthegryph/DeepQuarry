@@ -27,6 +27,31 @@
 	/// The one place a system's latency class lives (LATENCY_L0..L3): what sheds its work under overload.
 	var/latency_class = LATENCY_L1
 
+	/// The init stage the system boots in at the earliest (INITSTAGE_*): a gameplay system converted from a subsystem keeps
+	/// the stage it had. kernel_system_stage() takes the later of this and the stages of its subsystem needs.
+	var/init_stage = INITSTAGE_FIRST
+
+	// ---- the fire() shim (a gameplay system converted from a subsystem keeps its fire(resumed) body)
+	/// FALSE parks the system's fire work (an admin toggle, an init that failed), as /datum/controller/subsystem can_fire.
+	var/can_fire = TRUE
+	/// Deciseconds between runs of a fire() body: the interval its every() declares (code that counts time per run reads it).
+	var/wait = 20
+	/// SS_* run state: fire() bodies test it through MC_TICK_CHECK, which pauses the run when the tick budget is spent.
+	var/state = SS_IDLE
+	/// TRUE while a fire() run paused and waits to be resumed (fire(resumed = TRUE)).
+	var/fire_resumed = FALSE
+	/// Completed fire() runs, the last one's world.time, and an EMA of one run's cost in ms.
+	var/times_fired = 0
+	var/last_fire = 0
+	var/fire_cost = 0
+	var/run_ms = 0
+	/// Milliseconds initialize() took at boot (benchmarks).
+	var/init_time_ms = 0
+	/// Passes one completed run took (an EMA), and the tick share it ran past its budget (always 0: work is budgeted).
+	var/ticks = 1
+	var/tick_overrun = 0
+	var/run_slices = 0
+
 	// ---- contract
 	/// Event types this system raises.
 	var/list/emits
@@ -116,6 +141,61 @@
 /datum/system/proc/on_shutdown()
 	return
 
+/// A map is about to load (Master.StartLoadingMap): a system that defers work while one loads overrides these.
+/datum/system/proc/StartLoadingMap()
+	return
+
+/// The map load finished (Master.StopLoadingMap).
+/datum/system/proc/StopLoadingMap()
+	return
+
+// ---- the fire() shim
+
+/// The legacy body of a system that used to be a subsystem: called every `wait` by its every() work item with the
+/// previous run's state in `resumed`. A body that runs out of tick budget pauses through MC_TICK_CHECK and is called
+/// again, resumed, on the next pass. Override it; a system without a body never declares the every().
+/datum/system/proc/fire(resumed = FALSE)
+	return
+
+/// MC_TICK_CHECK's pause: the run stops here and resumes next pass.
+/datum/system/proc/pause()
+	. = 1
+	if(state == SS_RUNNING)
+		state = SS_PAUSED
+
+/// The `when` of a fire() work item: the system is booted, allowed to fire and in a runlevel it runs in.
+/datum/system/proc/fire_ready()
+	return can_fire && initialized && periodic_runlevel_ok()
+
+/// The work item handler of a fire() system: one run (or one resumed slice) of fire(), with the subsystem's accounting.
+/// `dt` is unused: a fire() body keeps its own clock.
+/datum/system/proc/fire_step(dt)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/resumed = fire_resumed
+	var/started = TICK_USAGE
+	state = SS_RUNNING
+	run_slices++
+	fire(resumed)
+	run_ms += TICK_USAGE_TO_MS(started)
+	if(state == SS_PAUSED || state == SS_PAUSING)
+		state = SS_IDLE
+		fire_resumed = TRUE
+		return STEP_YIELD
+	state = SS_IDLE
+	fire_resumed = FALSE
+	times_fired++
+	// ALLOW(sys_world_time_write): the kernel clock: a per-run timestamp of the scheduler itself, not a per-entity expiry
+	last_fire = world.time
+	fire_cost = fire_cost ? MC_AVERAGE_FAST(fire_cost, run_ms) : run_ms
+	ticks = MC_AVERAGE(ticks, run_slices)
+	run_ms = 0
+	run_slices = 0
+	return STEP_DONE
+
+/// The stat panel line (was the subsystem's stat_entry()): override and append to `msg`.
+/datum/system/proc/stat_entry(msg)
+	return msg
+
 // ---- time
 
 // should_run() and periodic_step(dt) are the /datum procs (capabilities/refresh.dm, om/periodic.dm): a
@@ -163,7 +243,7 @@
 	if(periodic_interval)
 		return periodic_interval
 	if(periodic_cadence)
-		var/datum/om/pipeline/periodic/P = periodic_cadence
+		var/datum/cadence/P = periodic_cadence
 		return initial(P.delta)
 	return 0
 
@@ -291,4 +371,4 @@ OWN_TIMER(/datum/system_member_driver, step_yield)
 /// Telemetry for the profiler, the stat panel and time_track: an alist of numbers and short strings.
 /// The only channel other code reads a system's cost through.
 /datum/system/proc/metrics()
-	return alist("name" = name, "members" = member_count(), "initialized" = initialized, "cost" = 0, "tick_usage" = 0, "overran" = 0, "reactions" = kernel().work_cost_of(type))
+	return alist("name" = name, "members" = member_count(), "initialized" = initialized, "cost" = fire_cost, "tick_usage" = 0, "overran" = 0, "times_fired" = times_fired, "reactions" = kernel().work_cost_of(type))

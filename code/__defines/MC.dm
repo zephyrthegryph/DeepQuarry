@@ -103,13 +103,15 @@
 }\
 /datum/controller/subsystem/##X
 
-#define VERB_MANAGER_SUBSYSTEM_DEF(X) GLOBAL_REAL(SS##X, /datum/controller/subsystem/verb_manager/##X);\
-/datum/controller/subsystem/verb_manager/##X/New(){\
-	NEW_SS_GLOBAL(SS##X);\
-	PreInit();\
+/// Declares a gameplay system that keeps its old `SS<X>` global name: SSX is the instance of /datum/system/X, set when the
+/// kernel creates it (kernel_create_systems(), Master.New), so the call sites that read SSX need no migration. Use it where
+/// SUBSYSTEM_DEF was: the body is the system's (initialize(), needs, every() in reactions(), the API procs).
+#define SYSTEM_DEF(X) GLOBAL_REAL(SS##X, /datum/system/##X);\
+/datum/system/##X/New(){\
+	..();\
+	SS##X = src;\
 }\
-/datum/controller/subsystem/verb_manager/##X/fire() {..() /*just so it shows up on the profiler*/} \
-/datum/controller/subsystem/verb_manager/##X
+/datum/system/##X
 
 
 

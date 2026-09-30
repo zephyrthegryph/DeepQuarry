@@ -3,14 +3,13 @@
 	and other information that should be assembled from game files.
 */
 
-SUBSYSTEM_DEF(internal_wiki)
+SYSTEM_DEF(internal_wiki)
 	name = "Wiki"
-	wait = 1
-	dependencies = list(
+	init_stage = INITSTAGE_MAIN
+	needs = list(
 		/datum/controller/subsystem/atoms
 		// Supply packs come from GLOB.supply_service, which boots after SSmapping (before atoms).
 	)
-	flags = SS_NO_FIRE
 
 	VAR_PRIVATE/list/pages = list()
 
@@ -53,11 +52,11 @@ SUBSYSTEM_DEF(internal_wiki)
 	VAR_PRIVATE/list/dono_list = list()
 	VAR_PRIVATE/highest_cached_donator = null
 
-/datum/controller/subsystem/internal_wiki/stat_entry(msg)
+/datum/system/internal_wiki/stat_entry(msg)
 	msg = "P: [length(pages)] | O: [length(ores)] | M: [length(materials)] | S: [length(smashers)] | F: [length(foodrecipe)]  | D: [length(drinkreact)]  | C: [length(chemreact)]  | B: [length(botseeds)] | V: [length(viruses)] | G: [length(genes)] "
 	return ..()
 
-/datum/controller/subsystem/internal_wiki/Initialize()
+/datum/system/internal_wiki/initialize()
 	// Pages are built per category on first read (ensure_category()): the
 	// data is static per build and most rounds never open most categories.
 	// Donation gag
@@ -65,13 +64,12 @@ SUBSYSTEM_DEF(internal_wiki)
 	donation_goal = round(donation_goal,1)
 	cur_donation = rand(0,donation_goal * 0.95)
 	cur_donation = round(cur_donation,1)
-	return SS_INIT_SUCCESS
 
 
 ///////////////////////////////////////////////////////////////////////////////////
 // Donation system, for the joke of course
 ///////////////////////////////////////////////////////////////////////////////////
-/datum/controller/subsystem/internal_wiki/proc/pay_with_card( obj/item/card/id/I, mob/M, obj/device, paying_amount, pin)
+/datum/system/internal_wiki/proc/pay_with_card( obj/item/card/id/I, mob/M, obj/device, paying_amount, pin)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(!purchase_with_id_card(I, M, "Bingle.Co.LLC.UK.M.XM.WMP.AVI.COM", device.name, "Donation", paying_amount, null, pin))
 		return FALSE
@@ -83,7 +81,7 @@ SUBSYSTEM_DEF(internal_wiki)
 	donation_add(paying_amount)
 	return TRUE
 
-/datum/controller/subsystem/internal_wiki/proc/donation_add(paying_amount)
+/datum/system/internal_wiki/proc/donation_add(paying_amount)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	var/old_dono = cur_donation
@@ -94,7 +92,7 @@ SUBSYSTEM_DEF(internal_wiki)
 		if(cur_donation >= donation_goal) // Reached goal!
 			message_admins("Bingle donation goal reached! Winner was [get_highest_donor_name()] with [get_highest_donor_value()]") // TODO - Removed me for something actually interesting
 
-/datum/controller/subsystem/internal_wiki/proc/update_highest_donator(no_cache = FALSE)
+/datum/system/internal_wiki/proc/update_highest_donator(no_cache = FALSE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	if(no_cache)
@@ -122,7 +120,7 @@ SUBSYSTEM_DEF(internal_wiki)
 #define WIKI_CATEGORY_GENE "gene"
 
 /// Builds a category's pages the first time anything reads it.
-/datum/controller/subsystem/internal_wiki/proc/ensure_category(category)
+/datum/system/internal_wiki/proc/ensure_category(category)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	if(built_categories[category])
@@ -152,97 +150,97 @@ SUBSYSTEM_DEF(internal_wiki)
 // Accessors for safely talking with the subsystem
 ///////////////////////////////////////////////////////////////////////////////////
 // get a page from a search
-/datum/controller/subsystem/internal_wiki/proc/get_page_food(search)
+/datum/system/internal_wiki/proc/get_page_food(search)
 	RETURN_TYPE(/datum/internal_wiki/page/food)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	ensure_category(WIKI_CATEGORY_KITCHEN)
 	return foodrecipe[search]
-/datum/controller/subsystem/internal_wiki/proc/get_page_drink(search)
+/datum/system/internal_wiki/proc/get_page_drink(search)
 	RETURN_TYPE(/datum/internal_wiki/page/drink)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	ensure_category(WIKI_CATEGORY_REAGENT)
 	return drinkreact[search]
-/datum/controller/subsystem/internal_wiki/proc/get_page_chem(search)
+/datum/system/internal_wiki/proc/get_page_chem(search)
 	RETURN_TYPE(/datum/internal_wiki/page/chemical)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	ensure_category(WIKI_CATEGORY_REAGENT)
 	return chemreact[search]
-/datum/controller/subsystem/internal_wiki/proc/get_page_seed(search)
+/datum/system/internal_wiki/proc/get_page_seed(search)
 	RETURN_TYPE(/datum/internal_wiki/page/seed)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	ensure_category(WIKI_CATEGORY_SEED)
 	return botseeds[search]
-/datum/controller/subsystem/internal_wiki/proc/get_page_virus(search)
+/datum/system/internal_wiki/proc/get_page_virus(search)
 	RETURN_TYPE(/datum/internal_wiki/page/virus)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	ensure_category(WIKI_CATEGORY_VIRUS)
 	return viruses[search]
-/datum/controller/subsystem/internal_wiki/proc/get_page_gene(search)
+/datum/system/internal_wiki/proc/get_page_gene(search)
 	RETURN_TYPE(/datum/internal_wiki/page/gene)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	ensure_category(WIKI_CATEGORY_GENE)
 	return genes[search]
-/datum/controller/subsystem/internal_wiki/proc/get_page_catalog(search)
+/datum/system/internal_wiki/proc/get_page_catalog(search)
 	RETURN_TYPE(/datum/internal_wiki/page/catalog)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	ensure_category(WIKI_CATEGORY_LORE)
 	return catalogs[search]
-/datum/controller/subsystem/internal_wiki/proc/get_page_material(search)
+/datum/system/internal_wiki/proc/get_page_material(search)
 	RETURN_TYPE(/datum/internal_wiki/page/material)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	ensure_category(WIKI_CATEGORY_MATERIAL)
 	return materials[search]
-/datum/controller/subsystem/internal_wiki/proc/get_page_particle(search)
+/datum/system/internal_wiki/proc/get_page_particle(search)
 	RETURN_TYPE(/datum/internal_wiki/page/smasher)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	ensure_category(WIKI_CATEGORY_SMASHER)
 	return smashers[search]
-/datum/controller/subsystem/internal_wiki/proc/get_page_ore(search)
+/datum/system/internal_wiki/proc/get_page_ore(search)
 	RETURN_TYPE(/datum/internal_wiki/page/ore)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	ensure_category(WIKI_CATEGORY_ORE)
 	return ores[search]
 // Search lists
-/datum/controller/subsystem/internal_wiki/proc/get_appliances()
+/datum/system/internal_wiki/proc/get_appliances()
 	RETURN_TYPE(/list)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	return appliance_list
-/datum/controller/subsystem/internal_wiki/proc/get_searchcache_food(appliance)
+/datum/system/internal_wiki/proc/get_searchcache_food(appliance)
 	RETURN_TYPE(/list)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	ensure_category(WIKI_CATEGORY_KITCHEN)
 	return searchcache_foodrecipe[appliance] || list()
-/datum/controller/subsystem/internal_wiki/proc/get_searchcache_drink()
+/datum/system/internal_wiki/proc/get_searchcache_drink()
 	RETURN_TYPE(/list)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	ensure_category(WIKI_CATEGORY_REAGENT)
 	return searchcache_drinkreact
-/datum/controller/subsystem/internal_wiki/proc/get_searchcache_chem()
+/datum/system/internal_wiki/proc/get_searchcache_chem()
 	RETURN_TYPE(/list)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	ensure_category(WIKI_CATEGORY_REAGENT)
 	return searchcache_chemreact
-/datum/controller/subsystem/internal_wiki/proc/get_searchcache_seed()
+/datum/system/internal_wiki/proc/get_searchcache_seed()
 	RETURN_TYPE(/list)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	ensure_category(WIKI_CATEGORY_SEED)
 	return searchcache_botseeds
-/datum/controller/subsystem/internal_wiki/proc/get_searchcache_viruses()
+/datum/system/internal_wiki/proc/get_searchcache_viruses()
 	RETURN_TYPE(/list)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	ensure_category(WIKI_CATEGORY_VIRUS)
 	return searchcache_viruses
-/datum/controller/subsystem/internal_wiki/proc/get_searchcache_genes()
+/datum/system/internal_wiki/proc/get_searchcache_genes()
 	RETURN_TYPE(/list)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	ensure_category(WIKI_CATEGORY_GENE)
 	return searchcache_genes
-/datum/controller/subsystem/internal_wiki/proc/get_catalogs()
+/datum/system/internal_wiki/proc/get_catalogs()
 	RETURN_TYPE(/list)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	ensure_category(WIKI_CATEGORY_LORE)
 	return catalog_list
-/datum/controller/subsystem/internal_wiki/proc/get_searchcache_catalog(section)
+/datum/system/internal_wiki/proc/get_searchcache_catalog(section)
 	RETURN_TYPE(/list)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	ensure_category(WIKI_CATEGORY_LORE)
@@ -254,43 +252,43 @@ SUBSYSTEM_DEF(internal_wiki)
 		if(C.visible || C.value <= CATALOGUER_REWARD_TRIVIAL)
 			known_entries.Add(PG)
 	return known_entries
-/datum/controller/subsystem/internal_wiki/proc/get_searchcache_material()
+/datum/system/internal_wiki/proc/get_searchcache_material()
 	RETURN_TYPE(/list)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	ensure_category(WIKI_CATEGORY_MATERIAL)
 	return searchcache_material
-/datum/controller/subsystem/internal_wiki/proc/get_searchcache_particle()
+/datum/system/internal_wiki/proc/get_searchcache_particle()
 	RETURN_TYPE(/list)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	ensure_category(WIKI_CATEGORY_SMASHER)
 	return searchcache_smasher
-/datum/controller/subsystem/internal_wiki/proc/get_searchcache_ore()
+/datum/system/internal_wiki/proc/get_searchcache_ore()
 	RETURN_TYPE(/list)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	ensure_category(WIKI_CATEGORY_ORE)
 	return searchcache_ore
 // Donating
-/datum/controller/subsystem/internal_wiki/proc/get_donor_value(key)
+/datum/system/internal_wiki/proc/get_donor_value(key)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(!length(dono_list) || isnull(dono_list[key]))
 		return 0
 	return dono_list[key]
-/datum/controller/subsystem/internal_wiki/proc/get_donation_current()
+/datum/system/internal_wiki/proc/get_donation_current()
 	SHOULD_NOT_OVERRIDE(TRUE)
 	return cur_donation
-/datum/controller/subsystem/internal_wiki/proc/get_donation_goal()
+/datum/system/internal_wiki/proc/get_donation_goal()
 	SHOULD_NOT_OVERRIDE(TRUE)
 	return donation_goal
-/datum/controller/subsystem/internal_wiki/proc/get_highest_donor_name()
+/datum/system/internal_wiki/proc/get_highest_donor_name()
 	SHOULD_NOT_OVERRIDE(TRUE)
 	highest_cached_donator = update_highest_donator(FALSE)
 	return highest_cached_donator
-/datum/controller/subsystem/internal_wiki/proc/get_highest_donor_value()
+/datum/system/internal_wiki/proc/get_highest_donor_value()
 	SHOULD_NOT_OVERRIDE(TRUE)
 	highest_cached_donator = update_highest_donator(FALSE)
 	return get_donor_value(highest_cached_donator)
 // Helpers for formatting wiki data for tgui pages
-/datum/controller/subsystem/internal_wiki/proc/assemble_reaction_data(list/data, datum/reagent/R)
+/datum/system/internal_wiki/proc/assemble_reaction_data(list/data, datum/reagent/R)
 	var/list/reaction_list = chemistry_service().chemical_reactions_by_product[R.id]
 	var/list/distilled_list = chemistry_service().distilled_reactions_by_product[R.id]
 
@@ -454,7 +452,7 @@ SUBSYSTEM_DEF(internal_wiki)
 	if(length(display_reactions) > 0)
 		data["produces"] = display_reactions
 
-/datum/controller/subsystem/internal_wiki/proc/assemble_sintering(sinter)
+/datum/system/internal_wiki/proc/assemble_sintering(sinter)
 	if(sinter == REFINERY_SINTERING_EXPLODE)
 		return "violent detonation"
 	if(sinter == REFINERY_SINTERING_SMOKE)
@@ -463,7 +461,7 @@ SUBSYSTEM_DEF(internal_wiki)
 		return "OH GOD WHY!?"
 	return sinter
 
-/datum/controller/subsystem/internal_wiki/proc/add_icon(list/data, ic, is, col)
+/datum/system/internal_wiki/proc/add_icon(list/data, ic, is, col)
 	var/load_data = list()
 	load_data["icon"] = ic // dmi path
 	load_data["state"] = is // string
@@ -474,7 +472,7 @@ SUBSYSTEM_DEF(internal_wiki)
 ///////////////////////////////////////////////////////////////////////////////////
 // Initilizing data and creating wiki pages
 ///////////////////////////////////////////////////////////////////////////////////
-/datum/controller/subsystem/internal_wiki/proc/init_ore_data()
+/datum/system/internal_wiki/proc/init_ore_data()
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	// assemble ore wiki
@@ -489,7 +487,7 @@ SUBSYSTEM_DEF(internal_wiki)
 		searchcache_ore.Add("[OR.display_name]")
 		pages.Add(P)
 
-/datum/controller/subsystem/internal_wiki/proc/init_material_data()
+/datum/system/internal_wiki/proc/init_material_data()
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	// assemble material wiki
@@ -505,7 +503,7 @@ SUBSYSTEM_DEF(internal_wiki)
 		searchcache_material.Add(id)
 		pages.Add(P)
 
-/datum/controller/subsystem/internal_wiki/proc/init_particle_smasher_data()
+/datum/system/internal_wiki/proc/init_particle_smasher_data()
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	// assemble particle smasher wiki
@@ -522,7 +520,7 @@ SUBSYSTEM_DEF(internal_wiki)
 		pages.Add(P)
 		qdel(R)
 
-/datum/controller/subsystem/internal_wiki/proc/init_reagent_data()
+/datum/system/internal_wiki/proc/init_reagent_data()
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	// assemble chemical reactions wiki
@@ -549,7 +547,7 @@ SUBSYSTEM_DEF(internal_wiki)
 			chemreact[id] = P
 		pages.Add(P)
 
-/datum/controller/subsystem/internal_wiki/proc/init_seed_data()
+/datum/system/internal_wiki/proc/init_seed_data()
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	// seeds and plants
@@ -565,7 +563,7 @@ SUBSYSTEM_DEF(internal_wiki)
 			botseeds["[S.display_name]"] = P
 			pages.Add(P)
 
-/datum/controller/subsystem/internal_wiki/proc/init_virus_data()
+/datum/system/internal_wiki/proc/init_virus_data()
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	// viruses or diseases
@@ -581,7 +579,7 @@ SUBSYSTEM_DEF(internal_wiki)
 		viruses["[initial(D.medical_name)]"] = P
 		pages.Add(P)
 
-/datum/controller/subsystem/internal_wiki/proc/init_gene_data()
+/datum/system/internal_wiki/proc/init_gene_data()
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	// viruses or diseases
@@ -596,7 +594,7 @@ SUBSYSTEM_DEF(internal_wiki)
 		genes["[N]"] = P
 		pages.Add(P)
 
-/datum/controller/subsystem/internal_wiki/proc/init_kitchen_data()
+/datum/system/internal_wiki/proc/init_kitchen_data()
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	// Build the kitchen recipe lists
@@ -751,7 +749,7 @@ SUBSYSTEM_DEF(internal_wiki)
 			FL.Add("[P.title]")
 			pages.Add(P)
 
-/datum/controller/subsystem/internal_wiki/proc/init_lore_data()
+/datum/system/internal_wiki/proc/init_lore_data()
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 
@@ -774,7 +772,7 @@ SUBSYSTEM_DEF(internal_wiki)
 			pages.Add(P)
 		catalog_list.Add(G.name)
 
-/datum/controller/subsystem/internal_wiki/proc/allow_reagent(reagent_id)
+/datum/system/internal_wiki/proc/allow_reagent(reagent_id)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 

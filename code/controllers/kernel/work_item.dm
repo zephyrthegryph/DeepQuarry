@@ -115,6 +115,10 @@
 /datum/work_item/proc/latency_class()
 	return kernel_lane_class(lane)
 
+/// Whether the item may run at all this pass (a whole-item gate, asked before any member: run levels, say).
+/datum/work_item/proc/admitted_now()
+	return TRUE
+
 /// Whether the item (or one member) should run now. The default asks `run_when` on the owner.
 /datum/work_item/proc/runnable(datum/owner, datum/member)
 	if(!run_when)

@@ -387,9 +387,14 @@
 /datum/unit_test/kernel_tick_phases/Run()
 	var/datum/controller/kernel/K = kernel()
 	TEST_ASSERT(SSbehaviours.flags & SS_NO_FIRE, "SSbehaviours dissolved: it no longer fires")
-	for(var/datum/controller/subsystem/hosted as anything in list(SSinput, SSverb_manager, SSgarbage))
+	for(var/datum/controller/subsystem/hosted as anything in list(SSinput, SSverb_manager, SSgarbage, SStgui, SSdbcore, SSprofiler))
 		TEST_ASSERT(hosted.flags & SS_KERNEL_HOSTED, "[hosted.name] is hosted by the kernel")
-		TEST_ASSERT(hosted.state != SS_QUEUED, "[hosted.name] is not in the MC queue")
+		TEST_ASSERT(hosted.state != SS_QUEUED, "[hosted.name] is not in a queue")
+	// There is no MC queue: every subsystem that fires is a kernel host service.
+	for(var/datum/controller/subsystem/S as anything in Master.subsystems)
+		if(S.flags & SS_NO_FIRE)
+			continue
+		TEST_ASSERT(S.flags & SS_KERNEL_HOSTED, "[S.type] fires but is not hosted by the kernel")
 	var/datum/test_work_owner/phases/O = new
 	var/list/handlers = list("note_k", "note_n", "note_d", "note_p", "note_r", "note_g")
 	var/list/phase_of = list(KERNEL_PHASE_K, KERNEL_PHASE_N, KERNEL_PHASE_D, KERNEL_PHASE_P, KERNEL_PHASE_R, KERNEL_PHASE_G)
@@ -403,9 +408,10 @@
 	var/input_before = SSinput.times_fired
 	var/bench_before = SSbehaviours.bench_ms
 	var/runs_before = K.sched?.runs
-	sleep(4)
+	// Phase G runs on leftovers with a floor once a second: the window has to span one.
+	sleep(1 SECONDS + 4)
 	K.unregister_work(/datum/test_work_owner/phases)
-	TEST_ASSERT(K.ticks > ticks_before, "the MC loop runs the kernel tick every tick")
+	TEST_ASSERT(K.ticks > ticks_before, "the kernel loop runs the kernel tick every tick")
 	TEST_ASSERT(SSinput.times_fired > input_before, "phase K fires the hosted input subsystem")
 	TEST_ASSERT(SSbehaviours.bench_ms > bench_before, "the scheduler pass runs from the kernel and is counted")
 	TEST_ASSERT(K.sched.runs > runs_before, "phases D, P and R are scheduler passes")

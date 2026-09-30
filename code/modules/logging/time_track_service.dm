@@ -175,7 +175,7 @@ GLOBAL_DATUM_INIT(time_track_service, /datum/world_service/time_track, new)
 			length(SSair.hotspots),
 			length(SSair.networks),
 			length(SSair.high_pressure_delta),
-			SSair.cost,
+			SSair.fire_cost,
 			SSair.ticks,
 			SSair.tick_overrun,
 			GLOB.machine_service.cost_machinery,

@@ -213,7 +213,7 @@
 		character.forceMove(C.loc)
 
 		// AIize the character, but don't move them yet
-		character = character.AIize(move = FALSE) // Dupe of code in /datum/controller/subsystem/ticker/proc/create_characters() for non-latespawn, unify?
+		character = character.AIize(move = FALSE) // Dupe of code in /datum/system/ticker/proc/create_characters() for non-latespawn, unify?
 
 		AnnounceCyborg(character, rank, "has been transferred to the empty core in \the [character.loc.loc]")
 		SSticker.mode.latespawn(character)

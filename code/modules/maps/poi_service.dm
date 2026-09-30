@@ -7,7 +7,7 @@ GLOBAL_DATUM_INIT(poi_service, /datum/world_service/pois, new)
 
 /datum/world_service/pois
 	name = "Points of Interest"
-	needs = list(/datum/controller/subsystem/holomaps)
+	needs = list(/datum/system/holomaps)
 	lane = /datum/om/behaviour/world/pois
 	on_demand = TRUE
 	var/list/obj/effect/landmark/poi_loader/poi_queue = list()

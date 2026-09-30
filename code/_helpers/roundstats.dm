@@ -28,7 +28,7 @@ GLOBAL_VAR_INIT(items_digested_roundstat, 0)
 GLOBAL_LIST_EMPTY(security_printer_tickets)
 GLOBAL_LIST_EMPTY(refined_chems_sold)
 
-/datum/controller/subsystem/ticker/proc/RoundTrivia()//bazinga
+/datum/system/ticker/proc/RoundTrivia()//bazinga
 	var/list/valid_stats_list = list() //This is to be populated with the good shit
 
 	if(GLOB.lost_limbs_shift_roundstat > 1)

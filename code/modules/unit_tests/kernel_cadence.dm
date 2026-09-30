@@ -19,11 +19,12 @@
 		CADENCE_FAST = 2, CADENCE_SECOND = 10, CADENCE_SLOW = 20, CADENCE_MINUTE = 600,
 	)
 	for(var/path in expected)
-		var/datum/om/pipeline/periodic/P = path
-		TEST_ASSERT(ispath(path, /datum/om/pipeline/periodic), "[path] is a periodic pipeline")
-		TEST_ASSERT_EQUAL(initial(P.delta), expected[path], "[path] step in deciseconds")
-	var/datum/om/pipeline/periodic/minute/M = CADENCE_MINUTE
-	TEST_ASSERT_EQUAL(initial(M.every), 1 MINUTES, "the minute cadence runs once a minute")
+		var/datum/cadence/P = cadence_def(path)
+		TEST_ASSERT(ispath(path, /datum/cadence), "[path] is a cadence")
+		TEST_ASSERT_EQUAL(P.delta, expected[path], "[path] step in deciseconds")
+		TEST_ASSERT(kernel().cadence_items[path], "[path] has its sweep work item on the kernel")
+	var/datum/cadence/minute/M = cadence_def(CADENCE_MINUTE)
+	TEST_ASSERT_EQUAL(M.every, 1 MINUTES, "the minute cadence runs once a minute")
 
 	var/datum/system/plain = new /datum/system/test_cadence_default
 	TEST_ASSERT_EQUAL(plain.step_interval(), 10, "a system runs at its cadence's step")

@@ -24,17 +24,16 @@ ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 # The kernel and the engines that own their own frame (sec 3.6). Everything else is a world
 # service lane (code/datums/om/world_lanes.dm).
 CORE = {
-    "air",            # drives the Rust world step
     "behaviours",     # the OM scheduler
     "dbcore",         # async query pump
     "garbage",
     "input",          # player input must never wait on a lane budget
     "profiler",       # MC profiling: reads subsystem diagnostics, config-driven interval
     "tgui",
-    "ticker",
     "verb_manager",   # and its speech_controller subtype
-    "vg",             # verdigris frame
 }
+# Air, lighting, the ticker and the rest of the gameplay subsystems are /datum/system types now: their fire() bodies run
+# as kernel work items (code/controllers/kernel/system.dm, fire_step()).
 
 FIRE = re.compile(r"^/datum/controller/subsystem/(\w+)(?:/\w+)*/fire\(")
 

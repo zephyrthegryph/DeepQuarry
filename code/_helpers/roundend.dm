@@ -1,4 +1,4 @@
-/datum/controller/subsystem/ticker/proc/declare_completion(was_forced = END_ROUND_AS_NORMAL)
+/datum/system/ticker/proc/declare_completion(was_forced = END_ROUND_AS_NORMAL)
 
 	for(var/datum/callback/roundend_callbacks as anything in round_end_events)
 		roundend_callbacks.InvokeAsync()
@@ -110,7 +110,7 @@
 	#endif
 	om_after(src, report_delay + extra_delay, PROC_REF(standard_reboot))
 
-/datum/controller/subsystem/ticker/proc/standard_reboot()
+/datum/system/ticker/proc/standard_reboot()
 	if(ready_for_reboot)
 		if(mode.station_was_nuked)
 			Reboot("Station destroyed by Nuclear Device.", "nuke")

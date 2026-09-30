@@ -81,7 +81,7 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 	// The old subsystem had no dependencies and initialized in the main stage. Its setup
 	// preallocates a z-level through load_new_z(), which needs the map system up and should
 	// follow the station mapload, so boot right after SSmapping.
-	needs = list(/datum/controller/subsystem/mapping)
+	needs = list(/datum/system/mapping)
 	/// "[z]" -> /datum/expedition_site for every live site (a lookup of live sites, like a keyed
 	/// registry; a released site is owned by its teardown job).
 	var/list/sites = list()

@@ -1,6 +1,7 @@
 SUBSYSTEM_DEF(profiler)
 	name = "Profiler"
 	init_stage = INITSTAGE_FIRST
+	flags = SS_KERNEL_HOSTED
 	runlevels = RUNLEVELS_DEFAULT | RUNLEVEL_LOBBY
 	wait = 30 SECONDS
 	var/fetch_cost = 0
@@ -49,11 +50,11 @@ SUBSYSTEM_DEF(profiler)
 	// Every Rust metric (allocator tags, jobs, ...) in one call.
 	var/list/rust_metrics = verdigris_metrics_list()
 	var/list/subsystems = list(
-		"atmos" = subsystem_diagnostics(SSair),
+		"atmos" = system_diagnostics(SSair),
 		"machines" = world_service_diagnostics(GLOB.machine_service),
 		"mobs" = world_service_diagnostics(GLOB.mob_service),
 		"garbage" = subsystem_diagnostics(SSgarbage),
-		"shuttles" = subsystem_diagnostics(SSshuttles),
+		"shuttles" = system_diagnostics(SSshuttles),
 		"radiation" = world_service_diagnostics(GLOB.radiation_service),
 		"explosions" = world_service_diagnostics(GLOB.explosion_service),
 	)
@@ -151,6 +152,29 @@ GLOBAL_LIST_INIT(profiler_missing_diagnostics, list("missing" = TRUE))
 		"resuming" = target.resuming,
 		"om_lane_ms" = stat ? stat[OM_STAT_MS] : 0,
 		"status" = target.stat_line(),
+	)
+
+/// The same readout for a system that runs a fire() body on a work item (the counters it keeps; the rest read 0).
+/datum/controller/subsystem/profiler/proc/system_diagnostics(datum/system/target)
+	if(!target)
+		return GLOB.profiler_missing_diagnostics
+	return list(
+		"name" = target.name,
+		"active_ema_ms" = target.fire_cost,
+		"wall_ema_ms" = target.fire_cost,
+		"last_wall_ms" = target.run_ms,
+		"last_active_ms" = target.run_ms,
+		"last_suspended_ms" = 0,
+		"last_slices" = target.ticks,
+		"tick_usage" = 0,
+		"tick_overrun" = target.tick_overrun,
+		"allocation_last" = 0,
+		"allocation_average" = 0,
+		"completed_runs" = target.times_fired,
+		"paused_ticks" = target.run_slices,
+		"slept_count" = 0,
+		"postponed_fires" = 0,
+		"state" = target.state,
 	)
 
 /datum/controller/subsystem/profiler/proc/subsystem_diagnostics(datum/controller/subsystem/target)

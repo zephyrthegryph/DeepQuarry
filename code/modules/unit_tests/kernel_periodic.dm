@@ -92,3 +92,5 @@
 	TEST_ASSERT(run_until(CALLBACK(src, PROC_REF(members_stepped), M, a)), "the accepted member was stepped on the member cadence")
 	TEST_ASSERT_NULL(M.stepped?[b], "a member member_should_run() refuses is not stepped")
 	M.park_periodic()
+	qdel(M)
+	qdel(S)

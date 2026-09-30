@@ -10,7 +10,7 @@ GLOBAL_DATUM_INIT(planet_service, /datum/world_service/planets, new)
 	lane = /datum/om/behaviour/world/planets
 	on_demand = TRUE
 	// The map's z-levels exist once mapping has run; SSatoms depends on this service.
-	needs = list(/datum/controller/subsystem/mapping)
+	needs = list(/datum/system/mapping)
 
 	var/static/list/planets = list()
 	var/static/list/z_to_planet = list()

@@ -2,8 +2,8 @@ SUBSYSTEM_DEF(atoms)
 	name = "Atoms"
 	dependencies = list(
 		/datum/controller/subsystem/garbage,
-		/datum/controller/subsystem/mapping,
-		/datum/controller/subsystem/job,
+		/datum/system/mapping,
+		/datum/system/job,
 		// Mapload resleeving machines register with the transcore databases (was a SStranscore dependency).
 		/datum/world_service/transcore,
 		// Planets register their floors and walls as turfs initialize (fold wave F4; was SSplanets).

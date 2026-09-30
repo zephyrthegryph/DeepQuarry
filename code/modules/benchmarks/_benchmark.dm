@@ -30,6 +30,7 @@
 	/// __verdigris_ffi_calls when the window began.
 	var/window_start_ffi_calls = 0
 	var/list/window_subsystem_fires
+	var/list/window_system_fires
 	/// The OM scheduler's world wakes when the window began.
 	var/window_world_wakes = 0
 	/// The machine world service's cumulative step time at the window start (it is no subsystem).
@@ -106,6 +107,7 @@
 	window_om_deadlines = benchmark_om_deadline_count()
 	for(var/datum/controller/subsystem/subsystem as anything in Master.subsystems)
 		window_subsystem_fires[subsystem] = subsystem.times_fired
+	window_system_fires = kernel_system_fire_counts()
 	if(profiling)
 		world.Profile(PROFILE_CLEAR) // each window's dump covers only that window
 		world.Profile(PROFILE_CLEAR, type = "sendmaps")
@@ -146,6 +148,20 @@
 		count_metric("[prefix]_[subsystem.name]_fires", fires, "fires")
 		if(work_items >= 0)
 			count_metric("[prefix]_[subsystem.name]_work_items", work_items, "items")
+	// Systems that run a fire() body (air, lighting, ticker ...) are reported like the subsystems they were.
+	for(var/datum/system/system as anything in window_system_fires)
+		var/fires = system.times_fired - window_system_fires[system]
+		if(!fires)
+			continue
+		subsystems[system.name] = list(
+			"fires" = fires,
+			"avg_cost_ms" = system.fire_cost,
+			"estimated_total_ms" = system.fire_cost * fires,
+			"tick_usage" = 0,
+			"tick_overrun" = system.tick_overrun,
+			"work_items" = -1,
+		)
+		count_metric("[prefix]_[system.name]_fires", fires, "fires")
 	count_metric("[prefix]_total_work_items", total_work_items, "items")
 	detail("[prefix]_subsystems", subsystems)
 	// SSair's main-thread time over the window (M1b's "Air time"), from the same
@@ -321,11 +337,20 @@
 		"datum" = length(typesof(/datum)) - atoms,
 	)
 
+/// system -> times_fired, for every registered system (a window's start reading).
+/proc/kernel_system_fire_counts()
+	. = list()
+	for(var/datum/system/system as anything in kernel_pure_systems())
+		.[system] = system.times_fired
+
 /proc/benchmark_subsystem_init_times()
 	var/list/times = list()
 	for(var/datum/controller/subsystem/subsystem as anything in Master.subsystems)
 		if(subsystem.init_time_ms)
 			times[subsystem.name] = subsystem.init_time_ms
+	for(var/datum/system/system as anything in kernel_pure_systems())
+		if(system.init_time_ms)
+			times[system.name] = system.init_time_ms
 	return times
 
 /proc/RunBenchmarks()

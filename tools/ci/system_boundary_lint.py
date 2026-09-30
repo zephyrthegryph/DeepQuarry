@@ -12,7 +12,7 @@ tools/ci/system_boundary_baseline.txt and only shrink; a justified keep takes
     B6  OM_EMIT* event types under X's folder are in X's `emits` (checked once X declares `emits`)
     B7  a /datum/system folder has an api.dm iff another folder calls the system
 
-The owner of a subsystem or world service is the folder of the file that defines its SUBSYSTEM_DEF /
+The owner of a subsystem or world service is the folder of the file that defines its SUBSYSTEM_DEF / SYSTEM_DEF /
 GLOBAL_DATUM_INIT; of a /datum/system, the folder of the file that declares the type. Unit tests are outside the
 boundary (they read private state through system_debug()).
 
@@ -35,7 +35,7 @@ ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 BASELINE = os.path.join(ROOT, "tools", "ci", "system_boundary_baseline.txt")
 LINT = "system_boundary"
 
-SS_DEF = re.compile(r"^\s*(?:VERB_MANAGER_)?SUBSYSTEM_DEF\((\w+)\)", re.M)
+SS_DEF = re.compile(r"^\s*(?:VERB_MANAGER_)?(?:SUBSYSTEM|SYSTEM)_DEF\((\w+)\)", re.M)
 SERVICE_DEF = re.compile(r"^\s*GLOBAL_DATUM_INIT\((\w+_service),\s*(/datum/world_service[\w/]*)", re.M)
 SYSTEM_TYPE = re.compile(r"^/datum/system/(\w+)\s*$", re.M)
 TYPEDEF = re.compile(r"^(/[\w/]+)\s*$")
@@ -160,6 +160,7 @@ def check(files):
     decls, known = declarations(files)
     # SUBSYSTEM_DEF(x) declares /datum/controller/subsystem/x through a macro.
     known |= {"/datum/controller/subsystem/" + name for name in ss_owner}
+    known |= {"/datum/system/" + name for name in ss_owner}
 
     api_procs = {}
     for typ, owner_dir in system_owner.items():
@@ -210,7 +211,8 @@ def check(files):
                 elif kind == "world_service":
                     owner = next((o[0] for o in service_owner.values() if o[1].endswith("/" + name)), None)
                 else:
-                    owner = system_owner.get("/datum/system/" + name)
+                    # SYSTEM_DEF(x) declares /datum/system/x through a macro, like SUBSYSTEM_DEF(x).
+                    owner = ss_owner.get(name) or system_owner.get("/datum/system/" + name)
                 if owner is not None and not inside(rel, owner):
                     hit("B3:%s:%s" % (rel, name), where)
 

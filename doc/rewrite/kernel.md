@@ -1667,10 +1667,9 @@ What exists in the tree, so the sections above are not read as all-future.
 
 Built on top of the notes above.
 
-- **kernel_tick** (`code/controllers/kernel/kernel.dm`): `kernel().tick(limit, init_stage)` is called once per MC loop
-  iteration, ahead of the MC queue, with `KERNEL_TICK_SHARE` of the remaining budget; the MC's other subsystems
-  (dbcore, tgui transport, assets, atoms, overlays, profiler, air, lighting, ...) keep their queue and get the rest.
-  Phases: **K** hosted `SSinput` / `SSverb_manager` (`SS_KERNEL_HOSTED`, never queued by the MC; use over
+- **kernel_tick** (`code/controllers/kernel/kernel.dm`): `kernel().tick(limit, init_stage)` is called once per tick by
+  the kernel's own loop (`loop.dm`; the MC `Loop` and its queue are gone, see scheduling_and_kernel.md section 7).
+  Phases: **K** hosted `SSinput` / `SSverb_manager` / tgui / dbcore / profiler (`SS_KERNEL_HOSTED`; use over
   `KERNEL_INPUT_CAP` is counted), **N** `native_frame(elapsed, budget)`, **U** urgent slice, **D** deadline wheel then
   deadline-phase work items, **P** borrow pass then each lane (scheduler share, then that lane's work items), **R**
   leftovers, **G** hosted `SSgarbage` with a floor (`KERNEL_GARBAGE_FLOOR` per `KERNEL_GARBAGE_FLOOR_PERIOD`). Each
@@ -1693,10 +1692,7 @@ Built on top of the notes above.
 - **Rosters removed**: `system.members`/`member_index` (now `member_list()`), `cap_system/roles.by_role`
   (`cap_system_members()`), the `world_services()` hand list (derived from the registry, so its order is registration
   order instead of the old hand order).
-- **Deferred subsystem conversions**: air, vg, lighting, ticker, shuttles, job, contracts, persistence, holomaps,
-  media_tracks, nerdle, robot_sprites, speech_controller, mapping, access, admin_verbs, internal_wiki stay
-  `SUBSYSTEM_DEF`. Each is referenced as `SSx` from 7 to 433 sites; converting one is a call-site migration, which this
-  batch's rules forbid, and air/vg/ticker/lighting also wait on the native and cycle-breaking work.
-- **Not done**: the failsafe still watches `Master.iteration` (the kernel keeps `last_tick`); `Recreate_kernel()`
-  does not exist (the MC's recreate reuses the same kernel singleton, whose state is not on the loop); no B1..B7 lint
-  change.
+- **Subsystem conversions** (was deferred here, done on rewrite/g3-kernel): air, vg (into native), lighting, ticker,
+  shuttles, job, contracts, persistence, holomaps, media_tracks, nerdle, robot_sprites, speech_controller, mapping,
+  access, admin_verbs, internal_wiki are `SYSTEM_DEF` systems; `SSx` names the instance. The failsafe watches
+  `kernel().last_tick` and `Recreate_kernel()` exists. See scheduling_and_kernel.md section 7.
