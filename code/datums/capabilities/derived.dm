@@ -564,6 +564,9 @@ GLOBAL_VAR_INIT(derived_write_expected, FALSE)
 		. |= (T.by_var[V.name] || 0)
 		if(GLOB.derived_remote_vars[V.name])
 			derived_notify_remote(D, V.name)
+		// A derive() value is tracked: a reaction that reads it (on_change) hears the change like a setter's.
+		if(READERS(D, V.name))
+			publish_change(D, V.name)
 
 /// The likely undeclared reads behind a drift on A, as text for the audit message.
 /proc/derived_drift_hint(atom/A)

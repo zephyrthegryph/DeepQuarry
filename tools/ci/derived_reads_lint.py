@@ -74,6 +74,7 @@ GENERATED_REL = "code/_generated/reads.dm"
 # reactions() constructors that need the kernel: their declaring types are listed in the generated file.
 REACTION_KINDS = {"every": "RXB_EVERY", "on_cross": "RXB_CROSS", "on_notice": "RXB_NOTICE"}
 REACTION_CALL = re.compile(r"(?<![\w.])(every|on_cross|on_notice)\s*\(")
+RELATION_ENTRY = re.compile(r"\brel_(?:one|many)\(\s*nameof\(\s*(\w+)\s*\)")
 GENERATED_KIND_CALL = {"runs": "runs_while", "drawn": "drawn_from", "ui": "ui_from", "push": "rust_push"}
 
 # derived proc -> the declaration kind its reads belong to.
@@ -342,6 +343,11 @@ class Model:
             owner = proc.owner.rstrip("/") or "/"
             proc = proc._replace(owner=owner)
             self.procs.append(proc)
+            if proc.name == "relations" and owner != "/":
+                # relations() entries: rel_one(nameof(x), ...) / rel_many(nameof(x), ...) declare x a relation.
+                for _number, text in proc.body:
+                    for m in RELATION_ENTRY.finditer(text):
+                        self.relations.setdefault(owner, set()).add(m.group(1))
             if proc.name == "derived" and owner != "/":
                 self.derived_procs[owner] = proc
                 self.entries.setdefault(owner, []).extend(parse_entries(proc))

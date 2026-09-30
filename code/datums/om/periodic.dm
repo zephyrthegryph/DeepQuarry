@@ -189,7 +189,7 @@
 // ---------------------------------------------------------------- the work item
 
 /// One cadence's sweep, on the kernel: runs periodic_step() on every member of the cadence, in join order, once per
-/// `every`. The stage adapter for the periodic stage: it owns itself (no system), asks the old stage's questions
+/// `every`, spread across the interval (run_item_spread()). The stage adapter for the periodic stage: it owns itself (no system), asks the old stage's questions
 /// (is the entity still started here, is a yielded step pending) and does its work (the step, its result, the
 /// derived mark).
 /datum/work_item/cadence
@@ -200,6 +200,9 @@
 	def = cadence_def(path)
 	..("periodic_step", def.every, null, path, KERNEL_PHASE_P, null, 0, def.lane, FALSE, def.clock)
 	name = def.name
+	// A cadence slower than the tick spreads its sweep across the interval, as the old ring did: each member keeps its
+	// phase, and a big cadence costs a slice per tick instead of a spike once per interval.
+	spread = def.every > world.tick_lag
 
 /datum/work_item/cadence/owner()
 	return src

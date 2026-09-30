@@ -60,6 +60,9 @@
 #define KERNEL_NATIVE_MAX_CATCHUP NATIVE_MAX_CATCHUP
 /// A work item that faults this many runs in a row is parked and admins are told.
 #define KERNEL_FAULT_PARK 5
+/// A spread member sweep (work_item.spread) that fell behind catches up by at most this many passes' share per pass,
+/// so a stall is paid back over several ticks instead of in one.
+#define KERNEL_SPREAD_CATCHUP 4
 
 // ---- work items: interval 0 runs every tick.
 #define WORK_EVERY_TICK 0

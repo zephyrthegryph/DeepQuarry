@@ -153,14 +153,14 @@
 	cap_set(A, CAP_EMAGGED, FALSE)
 	// ALLOW(ownership): test fixture setup writes the framework var directly to build the state under test
 	A.hacker = H // any datum will do for "someone else has it"
-	TEST_ASSERT_EQUAL(dx_apc_why(A, H, card, swipe), "Access denied", "an AI that took it over locks the crew out")
+	TEST_ASSERT_EQUAL(dx_apc_why(A, H, card, swipe), "it doesn't respond", "an AI that took it over locks the crew out")
 	// ALLOW(ownership): test fixture setup writes the framework var directly to build the state under test
 	A.hacker = null
 	wires_of(A).cut(WIRE_IDSCAN)
 	TEST_ASSERT(dx_apc_why(A, H, card, swipe), "a cut ID scan wire refuses the swipe")
 	wires_of(A).cut(WIRE_IDSCAN) // cut() toggles
 	A.stat_add(MAINT)
-	TEST_ASSERT_EQUAL(dx_apc_why(A, H, card, swipe), "Nothing happens", "nothing while unwired")
+	TEST_ASSERT_EQUAL(dx_apc_why(A, H, card, swipe), "it isn't working", "nothing while unwired")
 	A.stat_remove(MAINT)
 	card.access = list()
 	TEST_ASSERT_EQUAL(A.cap_lock_toggle(H, card), UI_REFUSED, "no access, no lock")
@@ -286,9 +286,12 @@
 			knocked = TRUE
 			break
 	TEST_ASSERT(knocked, "a broken APC hit hard enough loses its cover")
+	var/datum/interaction/capability/claws = dx_apc_op(A, CAP_CLAW)
+	TEST_ASSERT_NOTNULL(claws, "a breakable machine has the claw op")
+	TEST_ASSERT(!claws.is_meant(H, A, null), "a hand that can't shred isn't offered it")
 	var/before = A.beenhit
 	A.on_slashed(take_notice(/datum/notice/slashed, H))
-	TEST_ASSERT_EQUAL(A.beenhit, before, "a hand that can't shred does nothing")
+	TEST_ASSERT_EQUAL(A.beenhit, before + 1, "a slash that lands counts toward springing the cover")
 
 /// power_channels() owns channel / breaker / nightshift: tgui_act reaches its act_ procs, validated and logged.
 /datum/unit_test/dx_apc_power_channel_actions/Run()
@@ -391,3 +394,81 @@
 	TEST_ASSERT(test_machine_idle(C), "declaring the membership did not wake the console at init")
 	qdel(C)
 	TEST_ASSERT(!(C in area_members(A, POWER_ROLE_COMPUTER)), "a deleted console leaves it")
+
+/// The cover can't close while the board is in and the ladder is short of "secured": on the board and on the cable
+/// alike. On a bare frame or a secured APC it closes.
+/datum/unit_test/dx_apc_cover_board_unfastened/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	var/obj/machinery/power/apc/dx_test/A = dx_apc_make(T)
+	var/datum/interaction/capability/cover = cap_test_entry(A, "cover:[TOOL_CROWBAR]")
+	cap_set(A, CAP_COVER_OPEN, TRUE)
+	var/list/expect = list("frame" = FALSE, "board" = TRUE, "wired" = TRUE, "secured" = FALSE)
+	for(var/stage in expect)
+		ladder_set_stage(A, stage)
+		TEST_ASSERT_EQUAL(!!A.board_unfastened(), expect[stage], "board_unfastened() on [stage]")
+		var/why = dx_apc_why(A, H, null, cover)
+		if(expect[stage])
+			TEST_ASSERT_EQUAL(why, "take the power control board out first", "the cover refuses to close on [stage]")
+		else
+			TEST_ASSERT_NULL(why, "the cover closes on [stage]")
+
+/// Night shift and emergency lighting: the APC writes only its tracked state; the area's lights read it through
+/// their area and redraw themselves.
+/datum/unit_test/dx_apc_lights_read_area/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/area/Ar = get_area(T)
+	var/obj/machinery/power/apc/was_apc = Ar.apc
+	var/obj/machinery/power/apc/dx_test/APC = dx_apc_make(T)
+	rel_set(Ar, nameof(Ar.apc), APC) // the test APC serves the area for the test
+	var/obj/machinery/light/L = allocate(/obj/machinery/light, T)
+	TEST_ASSERT_EQUAL(L.power_area, Ar, "a light relates to its area")
+	var/was_setting = APC.nightshift_setting
+	var/was_lights = APC.nightshift_lights
+	APC.set_nightshift_setting(NIGHTSHIFT_AUTO)
+	APC.set_nightshift(TRUE)
+	refresh_flush()
+	rx_drain()
+	TEST_ASSERT(Ar.lights_nightshift, "its area derives night lighting through its apc relation")
+	TEST_ASSERT(L.nightshift_enabled, "the light derives it through its area")
+	if(L.on)
+		TEST_ASSERT_EQUAL(L.light_range, L.brightness_range_ns, "and redrew itself at night brightness")
+	APC.set_nightshift_setting(NIGHTSHIFT_NEVER)
+	refresh_flush()
+	rx_drain()
+	TEST_ASSERT(!L.nightshift_enabled, "the UI setting overrides the night shift")
+	var/was_emergency = APC.emergency_lights
+	APC.set_emergency_lights(TRUE)
+	refresh_flush()
+	rx_drain()
+	TEST_ASSERT(L.area_emergency_off, "emergency lighting off reaches the light")
+	TEST_ASSERT(!L.has_emergency_power(0), "and it has no emergency power")
+	APC.set_emergency_lights(was_emergency)
+	APC.set_nightshift_setting(was_setting)
+	APC.set_nightshift_lights(was_lights)
+	rel_set(Ar, nameof(Ar.apc), was_apc)
+	refresh_flush()
+	rx_drain()
+	TEST_ASSERT(!L.nightshift_enabled && !L.area_emergency_off, "the light follows the area back")
+
+/// A silicon's touch travels the interface route: the open cover blocks only a hand. The requirement text is
+/// the shared one.
+/datum/unit_test/dx_apc_interface_routes/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	var/obj/machinery/power/apc/dx_test/A = dx_apc_make(T)
+	var/datum/interaction/capability/iface = dx_apc_op(A, "open_interface")
+	TEST_ASSERT(iface.is_meant(H, A, null), "a hand means the interface with the cover shut")
+	cap_set(A, CAP_COVER_OPEN, TRUE)
+	TEST_ASSERT(!iface.is_meant(H, A, null), "the open cover is in a hand's way (the cell behind it is what it reaches)")
+	var/saved = GLOB.op_route_now
+	GLOB.op_route_now = ROUTE_INTERFACE
+	TEST_ASSERT(iface.is_meant(H, A, null), "but not in the interface's")
+	GLOB.op_route_now = saved
+	cap_set(A, CAP_COVER_OPEN, FALSE)
+	A.stat_add(MAINT)
+	TEST_ASSERT_EQUAL(dx_apc_why(A, H, null, iface), req_reason_phrase(/datum/msg/req_not_working), "an unsecured APC isn't working")
+	A.stat_remove(MAINT)
+	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, T)
+	TEST_ASSERT_EQUAL(R.op_route(null), ROUTE_INTERFACE, "a silicon's empty-handed click is the interface route")
+	TEST_ASSERT_EQUAL(H.op_route(null), ROUTE_PHYSICAL, "a human's is physical")

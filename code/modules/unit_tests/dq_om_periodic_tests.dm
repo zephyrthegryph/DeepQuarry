@@ -87,9 +87,18 @@
 	var/datum/controller/kernel/K = kernel()
 	var/datum/work_item/W = K.cadence_items[PERIODIC_SLOW]
 	W.next_run = 0
+	W.cursor = 0 // a fresh sweep
 	var/saved = K.expect_errors
-	K.run_item(W, TICK_LIMIT_RUNNING, world.time + 1000)
+	// The sweep is spread across the interval (run_item_spread()): drive passes until it closes.
+	var/now = world.time + 1000
+	var/runs_before = W.runs
+	for(var/pass in 1 to 1000)
+		K.run_item(W, TICK_USAGE + 100, now) // a whole tick of budget from here: the test's tick may already be spent
+		if(W.runs > runs_before)
+			break
+		now += W.interval
 	K.expect_errors = saved
+	TEST_ASSERT(W.runs > runs_before && !W.cursor, "the sweep closed")
 	for(var/datum/dq_periodic_probe/D as anything in probes)
 		TEST_ASSERT_EQUAL(D.steps, 1, "every member is stepped once in a sweep, even when others leave it")
 	for(var/datum/dq_periodic_probe/D as anything in probes)
@@ -490,3 +499,41 @@
 	TEST_ASSERT(length(eggs.om_rec?.timers), "an egg cluster has no hatch timer")
 
 #endif
+
+/// A spread cadence sweep keeps each member's phase: one pass runs only the share of members due by then, a later pass
+/// the rest, and a pass that fell behind catches up by a bounded share.
+/datum/unit_test/dq_om_periodic_sweep_is_spread
+
+/datum/unit_test/dq_om_periodic_sweep_is_spread/Run()
+	var/datum/controller/kernel/K = kernel()
+	var/datum/work_item/W = K.cadence_items[PERIODIC_SLOW]
+	TEST_ASSERT(W.spread, "a cadence slower than the tick spreads its sweep")
+	var/list/probes = list()
+	for(var/i in 1 to 40)
+		var/datum/dq_periodic_probe/D = allocate(/datum/dq_periodic_probe)
+		D.work = 100
+		probes += D
+		om_task_periodic(D, PERIODIC_SLOW)
+	var/total = members_total(PERIODIC_SLOW)
+	W.next_run = 0
+	W.cursor = 0
+	var/now = world.time + 1000
+	K.run_item(W, TICK_USAGE + 100, now)
+	var/stepped = 0
+	for(var/datum/dq_periodic_probe/D as anything in probes)
+		stepped += D.steps
+	TEST_ASSERT(W.cursor, "one pass leaves the sweep open")
+	TEST_ASSERT(W.cursor - 1 <= CEILING(total * world.tick_lag / W.interval, 1), "the first pass ran only its share ([W.cursor - 1] of [total])")
+	// A long stall: the next pass is far behind, but catches up by a bounded share.
+	var/before = W.cursor
+	K.run_item(W, TICK_USAGE + 100, now + W.interval * 10)
+	TEST_ASSERT(W.cursor == 0 || W.cursor - before <= CEILING(total * world.tick_lag / W.interval, 1) * KERNEL_SPREAD_CATCHUP, "catch-up is bounded ([W.cursor - before])")
+	for(var/pass in 1 to 1000)
+		if(!W.cursor)
+			break
+		now += W.interval
+		K.run_item(W, TICK_USAGE + 100, now)
+	TEST_ASSERT(!W.cursor, "the sweep closes")
+	for(var/datum/dq_periodic_probe/D as anything in probes)
+		TEST_ASSERT_EQUAL(D.steps, 1, "every member stepped once in the sweep")
+		om_task_periodic_stop(D)

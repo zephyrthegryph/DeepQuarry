@@ -302,10 +302,15 @@ GLOBAL_LIST_INIT(action_defs, init_action_defs())
 	RETURN_TYPE(/datum/interaction/capability)
 	if(!actor || !target || !length(caps_of(target)))
 		return null
-	var/list/resolved = resolve_gesture(actor, target, gesture, held, ROUTE_PHYSICAL, explicit_held, TRUE)
+	var/route = actor.op_route(held)
+	var/list/resolved = resolve_gesture(actor, target, gesture, held, route, explicit_held, TRUE)
 	if(!resolved)
 		return null
 	var/datum/interaction/capability/E = resolved[2]
+	// A click is not a request for an op that cannot travel its route at all (a hand-only op under a silicon's
+	// interface click): the click falls through to the resolver instead of being refused.
+	if(E.op && !(E.op.via & route))
+		return null
 	if(quality && E.tool != quality)
 		return null
 	if(no_tool && E.tool)
@@ -317,11 +322,11 @@ GLOBAL_LIST_INIT(action_defs, init_action_defs())
 	// the actor the typed reason from the fixed stage order), never a cue to hand the click to the legacy resolver.
 	return E
 
-/// Runs `E` (from gesture_entry_for()) as a physical-route click. Returns INTERACTION_TRY_* like the resolver:
-/// INTERACTION_TRY_BLOCKED after telling the actor why when a requirement refuses it.
+/// Runs `E` (from gesture_entry_for()) as a click over the actor's route (mob/op_route()). Returns INTERACTION_TRY_*
+/// like the resolver: INTERACTION_TRY_BLOCKED after telling the actor why when a requirement refuses it.
 /proc/gesture_attempt(datum/interaction/capability/E, mob/actor, atom/target, obj/item/held)
 	var/saved = GLOB.op_route_now
-	GLOB.op_route_now = ROUTE_PHYSICAL
+	GLOB.op_route_now = actor ? actor.op_route(held) : ROUTE_PHYSICAL
 	. = E.attempt(actor, target, held)
 	GLOB.op_route_now = saved
 
@@ -453,3 +458,12 @@ GLOBAL_LIST_INIT(action_defs, init_action_defs())
 		to_chat(user, span_warning("There is nothing next to you to [lowertext(action_def_of(id).name)]."))
 		return FALSE
 	return perform_action(user, target, id, ROUTE_VERB)
+
+/// The route a click of this mob travels (ROUTE_*): hands on the target, by default.
+/mob/proc/op_route(obj/item/held)
+	return ROUTE_PHYSICAL
+
+/// A silicon's empty-handed click works the target's interface (an AI at range, a cyborg's touch); what a cyborg
+/// holds in a module is used on it physically.
+/mob/living/silicon/op_route(obj/item/held)
+	return held ? ROUTE_PHYSICAL : ROUTE_INTERFACE

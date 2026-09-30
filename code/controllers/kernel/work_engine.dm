@@ -143,7 +143,7 @@
 	Master.current_ticklimit = limit_abs
 	try
 		if(W.members)
-			done = run_item_members(W, owner, limit_abs, now)
+			done = W.spread ? run_item_spread(W, owner, limit_abs, now) : run_item_members(W, owner, limit_abs, now)
 		else
 			done = run_item_once(W, owner, now)
 		W.consecutive_faults = 0
@@ -164,7 +164,8 @@
 	var/ms = TICK_USAGE_TO_MS(started)
 	W.total_ms += ms
 	W.current_ms += ms
-	if(done)
+	// A spread sweep's slices add up to one run: it is counted when the sweep closes.
+	if(done && !(W.spread && W.cursor))
 		W.runs++
 		W.cost = W.cost ? MC_AVERAGE_FAST(W.cost, W.current_ms) : W.current_ms
 		W.current_ms = 0
@@ -224,4 +225,54 @@
 			W.cursor = i
 			return FALSE
 	W.next_run = now + W.interval
+	return TRUE
+
+/**
+ * A spread member item: one sweep over the members per interval, taken a share at a time. Each pass runs the members
+ * that are due by the end of this tick (the share of the interval that has elapsed since the sweep began), so every
+ * member keeps its phase and a large set costs a slice per tick, not a spike once per interval. A sweep that fell behind
+ * (a stalled tick, a budget cut) catches up by at most KERNEL_SPREAD_CATCHUP passes' share per pass. Returns FALSE only
+ * when it ran out of budget; a pass that ran its share leaves the sweep open (W.cursor) for the next pass.
+ */
+// ALLOW(sys_world_time_write): the kernel clock: a per-sweep timestamp of the scheduler itself, not a per-entity expiry
+/datum/controller/kernel/proc/run_item_spread(datum/work_item/W, datum/owner, limit_abs, now)
+	var/list/members = members_of(W.members)
+	var/count = length(members)
+	if(!W.cursor)
+		if(!count)
+			W.next_run = now + W.interval
+			return TRUE
+		W.cursor = 1
+		W.sweep_began = now
+	var/interval = max(W.interval, world.tick_lag)
+	var/share = CEILING(count * world.tick_lag / interval, 1)
+	var/due = CEILING(count * min(1, (now - W.sweep_began + world.tick_lag) / interval), 1)
+	var/target = min(due, W.cursor - 1 + share * KERNEL_SPREAD_CATCHUP, count)
+	var/i = W.cursor
+	while(i <= target && i <= length(members))
+		var/datum/M = members[i]
+		i++
+		if(QDELETED(M))
+			continue
+		if(!W.token_current(M, now) && W.runnable(owner, M))
+			var/dt = W.take_dt(M, now)
+			if(dt > 0)
+				W.perform(owner, M, dt)
+				W.member_runs++
+		// A member that left during its step took a swap-remove: look at its slot again.
+		if(i - 1 > length(members) || members[i - 1] != M)
+			i--
+			target = min(target, length(members))
+		if(TICK_USAGE > limit_abs && i <= target)
+			W.cursor = i
+			return FALSE
+	if(i <= length(members))
+		// This pass's share is done; the rest of the sweep is due on later passes.
+		W.cursor = i
+		W.next_run = now
+		return TRUE
+	// The sweep is closed: the next begins one interval after this one began (its phase), or now if it ran late.
+	W.cursor = 0
+	W.next_run = max(W.sweep_began + interval, now)
+	W.sweep_began = 0
 	return TRUE

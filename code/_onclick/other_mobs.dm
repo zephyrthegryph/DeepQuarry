@@ -39,8 +39,6 @@
 		return FALSE
 	if(run_interaction_entry(user, src, null, INTERACTION_ENTRY_HAND, null, TRUE))
 		return TRUE
-	if(ishuman(user))
-		PUBLISH(src, /datum/notice/slashed, user)
 	return FALSE
 
 /**

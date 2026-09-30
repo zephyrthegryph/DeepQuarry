@@ -49,3 +49,21 @@
 	cap_set(src, CAP_BROKEN, FALSE)
 	act_message(user, src, self = "You repair %T%.", others = "%U% repairs %T%.")
 	return TRUE
+
+/**
+ * Claws on a breakable machine, CAP_CLAW: an empty-handed swipe by an actor whose claws tear machines (req_claws()).
+ * It is offered only where something hears the slash (req_heard(/datum/notice/slashed)), so on a machine nobody
+ * listens to the touch stays whatever else it is. The op publishes /datum/notice/slashed; the holder's reaction
+ * decides what gives. It wins over the holder's other empty-hand ops by being declared first (machine_basics()).
+ */
+/proc/claw_op()
+	return cap_op("Slash", TYPE_PROC_REF(/atom, claw_slash), using = EMPTY_HAND, offered = list(req_claws(), req_heard(/datum/notice/slashed)), key = CAP_CLAW, kind = OP_CONTROL, works_broken = TRUE, works_unpowered = TRUE)
+
+/// The claw op's handler: the swipe lands (its cooldown, the noise, the prints) and the holder hears it.
+/atom/proc/claw_slash(mob/living/carbon/human/user)
+	user.setClickCooldown(user.get_attack_speed())
+	act_message(user, src, self = span_notice("You slash at %T%!"), others = span_warning("%U% slashes at %T%!"))
+	play_sfx(src, SFX_WEAPONS_SLASH, 2)
+	add_hiddenprint(user)
+	PUBLISH(src, /datum/notice/slashed, user)
+	return TRUE

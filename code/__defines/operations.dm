@@ -60,6 +60,8 @@
 #define CAP_EMAG "emag"
 /// Toggling a lock with a credential (a held card, worn ID/PDA or a silicon's access): ACT_LOCK.
 #define CAP_LOCK "toggle_lock"
+/// The key of claw_op(): a shredder tearing at a breakable machine.
+#define CAP_CLAW "claw"
 
 // ---- op_ctx check stages, in the order they run ----
 #define OP_STAGE_PROVIDER 1

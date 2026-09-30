@@ -365,3 +365,100 @@ GLOBAL_LIST_EMPTY(reqs_interned)
 	if(locked_by)
 		out += req_clear(locked_by)
 	return length(out) ? out : null
+
+// ---- shared machine contracts ----
+
+MSG_DEF_SELF(req_not_working, "It isn't working.")
+MSG_DEF_SELF(req_subverted, "It doesn't respond.")
+MSG_DEF_SELF(req_no_claws, "You can't tear into that.")
+
+/// The target works: not broken and, for a machine, not under maintenance (unsecured electronics).
+/datum/req/working
+	reason = /datum/msg/req_not_working
+
+/datum/req/working/test(datum/op_ctx/ctx)
+	var/atom/A = subject(ctx)
+	if(!istype(A))
+		return reason
+	if(istype(A, /obj/machinery))
+		var/obj/machinery/M = A
+		return M.has_stat(BROKEN | MAINT) ? reason : null
+	return is_broken(A) ? reason : null
+
+/// The target works (req_working()): shared by every op that needs a working machine.
+/proc/req_working()
+	RETURN_TYPE(/datum/req)
+	return req_intern(new /datum/req/working)
+
+/// Nobody has subverted the target: not emagged, not taken over (the holder's is_subverted()).
+/datum/req/not_subverted
+	reason = /datum/msg/req_subverted
+
+/datum/req/not_subverted/test(datum/op_ctx/ctx)
+	var/atom/A = subject(ctx)
+	return istype(A) && A.is_subverted() ? reason : null
+
+/datum/req/not_subverted/reads(datum/op_ctx/ctx)
+	var/atom/A = subject(ctx)
+	return A ? list(list(A, OP_KEY_CAP_STATE)) : null
+
+/proc/req_not_subverted()
+	RETURN_TYPE(/datum/req)
+	return req_intern(new /datum/req/not_subverted)
+
+/// Whether someone has subverted this atom (req_not_subverted()): emagged by default; a holder that can be
+/// taken over another way (an AI hack) adds it.
+/atom/proc/is_subverted()
+	return is_emagged(src)
+
+/// `inner` holds, asked only over the routes in `routes` (a ROUTE_* mask): a cover that blocks hands
+/// (ROUTE_PHYSICAL) but not a silicon's interface.
+/datum/req/on_route
+	var/routes = NONE
+	var/datum/req/inner
+
+/datum/req/on_route/test(datum/op_ctx/ctx)
+	if(!(ctx.route & routes))
+		return null
+	return inner.test(ctx)
+
+/datum/req/on_route/reads(datum/op_ctx/ctx)
+	return (ctx.route & routes) ? inner.reads(ctx) : null
+
+/datum/req/on_route/children()
+	return list(inner)
+
+/proc/req_on_route(routes, datum/req/inner)
+	RETURN_TYPE(/datum/req)
+	var/datum/req/on_route/R = new
+	R.routes = routes
+	R.inner = inner
+	return req_intern(R)
+
+/// The actor has claws that tear machines open (a species that can_shred()).
+/datum/req/claws
+	reason = /datum/msg/req_no_claws
+	of = OP_ACTOR
+
+/datum/req/claws/test(datum/op_ctx/ctx)
+	var/mob/living/carbon/human/H = subject(ctx)
+	return istype(H) && H.species?.can_shred(H, FALSE, 14) ? null : reason
+
+/proc/req_claws()
+	RETURN_TYPE(/datum/req)
+	return req_intern(new /datum/req/claws)
+
+/// Something on the subject listens for notices of `notice_type` (an op that only publishes one means
+/// nothing where nobody hears it).
+/datum/req/heard
+	var/notice_type
+
+/datum/req/heard/test(datum/op_ctx/ctx)
+	var/datum/D = subject(ctx)
+	return D && WANTS(D, notice_type) ? null : reason
+
+/proc/req_heard(notice_type)
+	RETURN_TYPE(/datum/req)
+	var/datum/req/heard/R = new
+	R.notice_type = notice_type
+	return req_intern(R)

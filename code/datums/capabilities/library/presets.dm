@@ -13,7 +13,7 @@
 // built from and dismantled to), machine_wires (its maintenance wiring), req_access (its lock).
 
 /**
- * What every buildable machine has: a wrench to anchor it, breakage with welder repair, a maintenance
+ * What every buildable machine has: a wrench to anchor it, breakage with welder repair (and claws that tear at it), a maintenance
  * panel with deconstruction to its board behind it, and the dark/unpowered state. Their examine lines
  * come with them. `repair`: the repair tool (NONE: no repair entry). `dismantle`: NONE leaves out the machine-frame
  * deconstruction even when a `board` is given. `powered`: FALSE leaves out the dark/unpowered state (a machine whose
@@ -23,6 +23,7 @@
 	. = list(
 		cap_panel(),
 		cap_breakable(repair_tool = repair),
+		claw_op(),
 	)
 	if(powered)
 		. += cap_power()

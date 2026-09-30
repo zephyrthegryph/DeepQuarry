@@ -23,9 +23,8 @@
 	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	item = null
 
-/// A human touched the holder with an empty hand and nothing declared answered it: the claws-out swipe of
-/// a shredder. The listener decides whether this attacker can shred it (species.can_shred()). Published
-/// from /atom/proc/attack_hand.
+/// A shredder's claws tore at the holder: published by the claw op (claw_op(), CAP_CLAW) of a breakable machine,
+/// which is only offered to an actor whose claws can tear it. The listener decides what gives.
 /datum/notice/slashed
 	var/mob/living/carbon/human/attacker
 

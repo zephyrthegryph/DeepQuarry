@@ -54,8 +54,13 @@
 	// ---- runtime state (kernel-owned)
 	/// world.time the item is next due.
 	var/next_run = 0
-	/// Member cursor of a sweep that yielded; 0 when no sweep is open.
+	/// Member cursor of a sweep that yielded (or, for a spread item, of the sweep in progress); 0 when no sweep is open.
 	var/cursor = 0
+	/// TRUE: a member sweep is spread across the interval (each member keeps its phase: the sweep takes the share of
+	/// members that is due each pass, not all of them at once), so a large member set never lands in one tick.
+	var/spread = FALSE
+	/// A spread sweep: when it began (world.time; 0 while none is open).
+	var/sweep_began = 0
 	/// TRUE when a memberless step returned STEP_YIELD: it resumes next pass ahead of its interval.
 	var/yielded = FALSE
 	var/parked = FALSE

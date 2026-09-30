@@ -2,6 +2,11 @@
 // What each type's should_run / draw / hidden_verbs / tgui_data / push_to_rust / derive_<x> read, as implicit
 // reads for READERS() (code/datums/reactions). CI fails when this file is stale.
 
+/area/generated_reads()
+	. = ..()
+	. += derive(nameof(lights_emergency_off), nameof(apc))
+	. += derive(nameof(lights_nightshift), nameof(apc))
+
 /datum/system/generated_reads()
 	. = ..()
 	. += runs_while(nameof(periodic_parked))
@@ -58,10 +63,15 @@
 	. = ..()
 	. += drawn_from(nameof(frozen), nameof(lights), nameof(max_integrity))
 
+/obj/machinery/light/generated_reads()
+	. = ..()
+	. += derive(nameof(area_emergency_off), nameof(power_area))
+	. += derive(nameof(nightshift_enabled), nameof(nightshift_allowed), nameof(power_area))
+
 /obj/machinery/power/apc/generated_reads()
 	. = ..()
 	. += drawn_from(nameof(cell), nameof(charging))
-	. += rust_push(nameof(cell), nameof(chargelevel), nameof(chargemode), nameof(grid_check), nameof(operating), nameof(power_failed), nameof(pushed_cell_ref), nameof(shorted), nameof(vg_entity))
+	. += rust_push(nameof(cell), nameof(chargelevel), nameof(chargemode), nameof(grid_check), nameof(operating), nameof(power_failed), nameof(shorted), nameof(vg_entity))
 	. += ui_from(nameof(chargemode), nameof(charging), nameof(coverlocked), nameof(emergency_lights), nameof(grid_check), nameof(main_status))
 
 /obj/machinery/vending/generated_reads()

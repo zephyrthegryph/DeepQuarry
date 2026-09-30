@@ -255,8 +255,14 @@ OWN_TIMER(/obj/machinery/light, light_timer_token)
 	var/bulb_emergency_pow_mul = 0.75	// the multiplier for determining the light's power in emergency mode
 	var/bulb_emergency_pow_min = 0.5	// the minimum value for the light's power in emergency mode
 
+	/// The night lighting is on here: the area's APC runs night shift and this fixture allows it (derived through
+	/// power_area, never written by hand).
 	var/nightshift_enabled = FALSE
 	var/nightshift_allowed = TRUE
+	/// The area's APC switched emergency lighting off (derived through power_area).
+	var/area_emergency_off = FALSE
+	/// The area this fixture stands in, as a relation: its night-shift and emergency state are read through it.
+	var/tmp/area/power_area
 	var/brightness_range_ns
 	var/brightness_power_ns
 	var/brightness_color_ns
@@ -268,6 +274,35 @@ OWN_TIMER(/obj/machinery/light, light_timer_token)
 /obj/machinery/light/capabilities()
 	. = ..()
 	. += powered_by(POWERED_BY_AREA, role = POWER_ROLE_LIGHTING)
+
+TRACKED(/obj/machinery/light, nightshift_allowed, CHANGE_MACHINE_SETTINGS)
+
+/obj/machinery/light/relations()
+	. = ..()
+	. += rel_one(nameof(power_area), /area)
+
+/// The APC's night-shift and emergency lighting reach a fixture through its area: the area derives them from its APC,
+/// and the fixture from its area. Nothing loops over the lights.
+/obj/machinery/light/derived()
+	. = ..()
+	. += derive(nameof(nightshift_enabled), nameof(nightshift_allowed), rel(nameof(power_area), nameof(/area::lights_nightshift)))
+	. += derive(nameof(area_emergency_off), rel(nameof(power_area), nameof(/area::lights_emergency_off)))
+
+/obj/machinery/light/proc/derive_nightshift_enabled()
+	return nightshift_allowed && power_area?.lights_nightshift
+
+/obj/machinery/light/proc/derive_area_emergency_off()
+	return !!power_area?.lights_emergency_off
+
+/obj/machinery/light/reactions()
+	. = ..()
+	. += on_change(list(nameof(nightshift_enabled), nameof(area_emergency_off)), PROC_REF(area_lighting_changed))
+
+/// The area's night shift or emergency lighting changed: the fixture redraws its light.
+/obj/machinery/light/proc/area_lighting_changed(list/keys)
+	if(QDELETED(src))
+		return
+	update(FALSE)
 
 /// A flicker() run in progress: do_flicker() flicks every flicker_delay() until flicks_left runs out.
 OM_FIELD(/obj/machinery/light, flickering, FALSE, CHANGE_MACHINE_SETTINGS)
@@ -477,14 +512,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/light/flamp, TYPE_PROC_REF(/atom, appeara
 		set_light(0)
 	update_light()
 	update_active_power_usage((light_range * light_power) * LIGHTING_POWER_FACTOR)
-
-/obj/machinery/light/proc/nightshift_mode(state)
-	if(!nightshift_allowed)
-		return
-
-	if(state != nightshift_enabled)
-		nightshift_enabled = state
-		update(FALSE)
 
 /obj/machinery/light/attack_generic(mob/user, damage)
 	if(!damage)
@@ -779,7 +806,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/light/flamp, TYPE_PROC_REF(/atom, appeara
 // returns whether this light has emergency power
 // can also return if it has access to a certain amount of that power
 /obj/machinery/light/proc/has_emergency_power(pwr)
-	if(no_emergency || !has_cell())
+	if(no_emergency || area_emergency_off || !has_cell())
 		return FALSE
 	var/charge = cell ? cell.charge : latent_cell_charge
 	if(pwr ? charge >= pwr : charge)
@@ -1011,6 +1038,8 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/light/flamp, TYPE_PROC_REF(/atom, appeara
 /// Subscribes to the current area's power key (again, if the area changed).
 /obj/machinery/light/proc/subscribe_area_power()
 	var/area/A = get_area(src)
+	if(A != power_area)
+		rel_set(src, nameof(power_area), A)
 	if(A == area_power_token())
 		return
 	if(area_power_token())
