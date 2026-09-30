@@ -1305,35 +1305,35 @@
 	return vg_component_set(entity, VG_KIND_PROBE, VG_PROBE_FIELD_KELVIN, -1, value)
 
 /// gas event (verdigris/domains/gas/src/laws.rs). Generated no-op default; override on SSvg.
-/datum/controller/subsystem/vg/proc/on_gas_cell_reaction_ready(cell, reaction)
+/datum/system/native/proc/on_gas_cell_reaction_ready(cell, reaction)
 	return
 
 /// gas event (verdigris/domains/gas/src/laws.rs). Generated no-op default; override on SSvg.
-/datum/controller/subsystem/vg/proc/on_gas_cell_visual_change(cell, vis)
+/datum/system/native/proc/on_gas_cell_visual_change(cell, vis)
 	return
 
 /// gas event (verdigris/domains/gas/src/laws.rs). Generated no-op default; override on SSvg.
-/datum/controller/subsystem/vg/proc/on_gas_pressure_jump(cell, neighbor, delta)
+/datum/system/native/proc/on_gas_pressure_jump(cell, neighbor, delta)
 	return
 
 /// heat event (verdigris/domains/heat/src/laws.rs). Generated no-op default; override on SSvg.
-/datum/controller/subsystem/vg/proc/on_heat_settled()
+/datum/system/native/proc/on_heat_settled()
 	return
 
 /// heat event (verdigris/domains/heat/src/laws.rs). Generated no-op default; override on SSvg.
-/datum/controller/subsystem/vg/proc/on_heat_mixture_heat(target, joules)
+/datum/system/native/proc/on_heat_mixture_heat(target, joules)
 	return
 
 /// power event (verdigris/domains/power/src/laws.rs). Generated no-op default; override on SSvg.
-/datum/controller/subsystem/vg/proc/on_power_brownout()
+/datum/system/native/proc/on_power_brownout()
 	return
 
 /// power event (verdigris/domains/power/src/laws.rs). Generated no-op default; override on SSvg.
-/datum/controller/subsystem/vg/proc/on_power_restored()
+/datum/system/native/proc/on_power_restored()
 	return
 
 /// power event (verdigris/domains/power/src/laws.rs). Generated no-op default; override on SSvg.
-/datum/controller/subsystem/vg/proc/on_power_apc_channel_changed()
+/datum/system/native/proc/on_power_apc_channel_changed()
 	return
 
 // ---- One entry point per bound atom -------------------------------------

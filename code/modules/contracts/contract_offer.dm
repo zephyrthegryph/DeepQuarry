@@ -46,7 +46,7 @@
 	board_key = _board_key
 	reason = _reason
 
-/datum/controller/subsystem/contracts/proc/record_lifecycle(action, datum/contract/contract, datum/contract_offer_candidate/candidate, reason)
+/datum/system/contracts/proc/record_lifecycle(action, datum/contract/contract, datum/contract_offer_candidate/candidate, reason)
 	var/datum/contract_lifecycle_entry/entry = new(
 		action,
 		contract?.id,
@@ -61,7 +61,7 @@
 		lifecycle_history.Cut(1, 2)
 		qdel(expired)
 
-/datum/controller/subsystem/contracts/proc/find_live_offer(offer_key) as /datum/contract
+/datum/system/contracts/proc/find_live_offer(offer_key) as /datum/contract
 	if(!offer_key)
 		return null
 	for(var/datum/contract/contract in offered_contracts)
@@ -74,12 +74,12 @@
 		if(contract.offer_key == offer_key)
 			return contract
 
-/datum/controller/subsystem/contracts/proc/find_candidate(offer_key) as /datum/contract_offer_candidate
+/datum/system/contracts/proc/find_candidate(offer_key) as /datum/contract_offer_candidate
 	for(var/datum/contract_offer_candidate/candidate in offer_candidates)
 		if(candidate.offer_key == offer_key)
 			return candidate
 
-/datum/controller/subsystem/contracts/proc/withdraw_candidate(datum/contract_offer_candidate/candidate, reason = "The triggering opportunity ended before publication.")
+/datum/system/contracts/proc/withdraw_candidate(datum/contract_offer_candidate/candidate, reason = "The triggering opportunity ended before publication.")
 	if(!candidate || !(candidate in offer_candidates))
 		return FALSE
 	record_lifecycle("candidate-withdrawn", null, candidate, reason)
@@ -87,7 +87,7 @@
 	qdel(candidate)
 	return TRUE
 
-/datum/controller/subsystem/contracts/proc/board_limit(datum/contract_definition/definition)
+/datum/system/contracts/proc/board_limit(datum/contract_definition/definition)
 	switch(definition.scope)
 		if(CONTRACT_SCOPE_STATION)
 			return CONTRACT_BOARD_STATION_LIMIT
@@ -97,10 +97,10 @@
 			return CONTRACT_BOARD_PERSONAL_LIMIT
 	return 0
 
-/datum/controller/subsystem/contracts/proc/definition_term_class(datum/contract_definition/definition)
+/datum/system/contracts/proc/definition_term_class(datum/contract_definition/definition)
 	return definition.expected_duration <= CONTRACT_SHORT_TERM_CUTOFF ? CONTRACT_TERM_SHORT : CONTRACT_TERM_LONG
 
-/datum/controller/subsystem/contracts/proc/definition_live_count(definition_id)
+/datum/system/contracts/proc/definition_live_count(definition_id)
 	var/count = 0
 	for(var/datum/contract/contract in offered_contracts)
 		if(contract.definition_id == definition_id)
@@ -115,7 +115,7 @@
 
 /// Whether `candidate` fits the board now; `ignoring` is left out of the count
 /// (the offer a priority displacement would withdraw).
-/datum/controller/subsystem/contracts/proc/candidate_has_capacity(datum/contract_offer_candidate/candidate, datum/contract_definition/definition, datum/contract/ignoring)
+/datum/system/contracts/proc/candidate_has_capacity(datum/contract_offer_candidate/candidate, datum/contract_definition/definition, datum/contract/ignoring)
 	if(!candidate?.board_key || !definition)
 		return FALSE
 	if(definition_live_count(definition.id) >= definition.max_simultaneous)
@@ -143,7 +143,7 @@
 		return FALSE
 	return TRUE
 
-/datum/controller/subsystem/contracts/proc/make_priority_capacity(datum/contract_offer_candidate/candidate, datum/contract_definition/definition)
+/datum/system/contracts/proc/make_priority_capacity(datum/contract_offer_candidate/candidate, datum/contract_definition/definition)
 	if(candidate_has_capacity(candidate, definition))
 		return TRUE
 	var/datum/contract/displaced
@@ -170,7 +170,7 @@
 /// Submit one currently eligible opportunity. The return value is the live
 /// contract when capacity allowed immediate publication; otherwise the
 /// candidate remains queued and will be reconsidered when the board changes.
-/datum/controller/subsystem/contracts/proc/queue_offer(definition_id, list/context, reason = "Gameplay eligibility event", offer_key, priority = 50) as /datum/contract
+/datum/system/contracts/proc/queue_offer(definition_id, list/context, reason = "Gameplay eligibility event", offer_key, priority = 50) as /datum/contract
 	var/datum/contract_definition/definition = definitions[definition_id]
 	if(!definition)
 		return null
@@ -210,7 +210,7 @@
 		om_after(src, recheck_delay, PROC_REF(reconcile_offer_board), "Candidate timer")
 	return null
 
-/datum/controller/subsystem/contracts/proc/try_materialize_candidate(datum/contract_offer_candidate/candidate) as /datum/contract
+/datum/system/contracts/proc/try_materialize_candidate(datum/contract_offer_candidate/candidate) as /datum/contract
 	if(!candidate || !(candidate in offer_candidates))
 		return null
 	var/datum/contract_definition/definition = definitions[candidate.definition_id]
@@ -239,7 +239,7 @@
 	notify_contract(contract, "New [contract.offer_kind] contract: [contract.title].")
 	return contract
 
-/datum/controller/subsystem/contracts/proc/reconcile_offer_board(reason = "Board capacity changed")
+/datum/system/contracts/proc/reconcile_offer_board(reason = "Board capacity changed")
 	var/made_progress = TRUE
 	while(made_progress)
 		made_progress = FALSE
@@ -256,7 +256,7 @@
 	if(reason)
 		record_lifecycle("board-reconciled", null, null, reason)
 
-/datum/controller/subsystem/contracts/proc/reconcile_offer_eligibility(reason = "Gameplay state changed")
+/datum/system/contracts/proc/reconcile_offer_eligibility(reason = "Gameplay state changed")
 	for(var/datum/contract/contract in offered_contracts.Copy())
 		var/datum/contract_definition/definition = definitions[contract.definition_id]
 		if(definition && !definition.offer_remains_available(contract))
@@ -276,12 +276,12 @@
 			withdraw_candidate(candidate, reason)
 	reconcile_offer_board(reason)
 
-/datum/controller/subsystem/contracts/proc/handle_contract_accepted(datum/contract/contract)
+/datum/system/contracts/proc/handle_contract_accepted(datum/contract/contract)
 	record_lifecycle("accepted", contract, null, "Negotiated version accepted; terms locked.")
 	notify_contract(contract, "Contract [contract.id] accepted: [contract.title].")
 	reconcile_offer_eligibility("Offer accepted; board capacity changed")
 
-/datum/controller/subsystem/contracts/proc/handle_contract_closed(datum/contract/contract)
+/datum/system/contracts/proc/handle_contract_closed(datum/contract/contract)
 	if(!contract?.offer_key)
 		return
 	var/datum/contract_definition/definition = definitions[contract.definition_id]
@@ -305,7 +305,7 @@
 	if(!suppress_offer_reconcile)
 		reconcile_offer_board("Contract closed; board slot released")
 
-/datum/controller/subsystem/contracts/proc/notify_contract(datum/contract/contract, message)
+/datum/system/contracts/proc/notify_contract(datum/contract/contract, message)
 	if(!contract || !message)
 		return
 	for(var/obj/item/pda/device in REGISTRY_MEMBERS(REGISTRY_PDAS))
@@ -322,7 +322,7 @@
 		if(contract.scope == CONTRACT_SCOPE_STATION || department_for_mob(holder) == contract.department)
 			app.notify(message)
 
-/datum/controller/subsystem/contracts/proc/lifecycle_summary()
+/datum/system/contracts/proc/lifecycle_summary()
 	return list(
 		"candidates" = length(offer_candidates),
 		"offered" = length(offered_contracts),

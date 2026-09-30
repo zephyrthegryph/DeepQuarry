@@ -1,9 +1,9 @@
-SUBSYSTEM_DEF(job)
+SYSTEM_DEF(job)
 	name = "Job"
-	dependencies = list(
-		/datum/controller/subsystem/mapping,
+	init_stage = INITSTAGE_MAIN
+	needs = list(
+		/datum/system/mapping,
 	)
-	flags = SS_NO_FIRE
 
 		//List of all jobs
 	var/list/datum/job/occupations = list()
@@ -22,19 +22,18 @@ SUBSYSTEM_DEF(job)
 	var/list/shift_keys = list()
 	var/list/restricted_keys = list()
 
-/datum/controller/subsystem/job/proc/get_all_job_icons() //For all existing HUD icons
+/datum/system/job/proc/get_all_job_icons() //For all existing HUD icons
 	return occupation_with_excludes + GLOB.alt_titles_with_icons + list("Prisoner")
 
-/datum/controller/subsystem/job/Initialize()
+/datum/system/job/initialize()
 	setup_departments()
 	setup_occupations()
 	// begin
 	if(CONFIG_GET(number/job_camp_time_limit))
 		load_camp_lists()
 	// end
-	return SS_INIT_SUCCESS
 
-/datum/controller/subsystem/job/proc/setup_occupations(faction = FACTION_STATION)
+/datum/system/job/proc/setup_occupations(faction = FACTION_STATION)
 	occupations.Cut()
 	var/list/all_jobs = subtypesof(/datum/job)
 	if(!length(all_jobs))
@@ -61,7 +60,7 @@ SUBSYSTEM_DEF(job)
 
 	return TRUE
 
-/datum/controller/subsystem/job/proc/add_to_departments(datum/job/J)
+/datum/system/job/proc/add_to_departments(datum/job/J)
 	// Adds to the regular job lists in the departments, which allow multiple departments for a job.
 	for(var/D in J.departments)
 		var/datum/department/dept = LAZYACCESS(department_datums, D)
@@ -80,40 +79,40 @@ SUBSYSTEM_DEF(job)
 		else
 			LAZYSET(dept.primary_jobs, J.title, J)
 
-/datum/controller/subsystem/job/proc/setup_departments()
+/datum/system/job/proc/setup_departments()
 	for(var/t in subtypesof(/datum/department))
 		var/datum/department/D = new t()
 		department_datums[D.name] = D
 
 	sortTim(department_datums, GLOBAL_PROC_REF(cmp_department_datums), TRUE)
 
-/datum/controller/subsystem/job/proc/get_all_department_datums()
+/datum/system/job/proc/get_all_department_datums()
 	var/list/dept_datums = list()
 	for(var/D in department_datums)
 		dept_datums += department_datums[D]
 	return dept_datums
 
-/datum/controller/subsystem/job/proc/get_job(rank)
+/datum/system/job/proc/get_job(rank)
 	if(!rank)
 		return null
 	return occupations_by_name[rank]
 
-/datum/controller/subsystem/job/proc/get_player_alt_title(mob/new_player/player, rank)
+/datum/system/job/proc/get_player_alt_title(mob/new_player/player, rank)
 	return player.client.prefs.GetPlayerAltTitle(get_job(rank))
 
-/datum/controller/subsystem/job/proc/get_job_type(jobtype)
+/datum/system/job/proc/get_job_type(jobtype)
 	return type_occupations[jobtype]
 
 // Determines if a job title is inside of a specific department.
 // Useful to replace the old `if(job_title in GLOB.command_positions)` code.
-/datum/controller/subsystem/job/proc/is_job_in_department(rank, target_department_name)
+/datum/system/job/proc/is_job_in_department(rank, target_department_name)
 	var/datum/department/D = LAZYACCESS(department_datums, target_department_name)
 	if(istype(D))
 		return LAZYFIND(D.jobs, rank) ? TRUE : FALSE
 	return FALSE
 
 // Returns a list of all job names in a specific department.
-/datum/controller/subsystem/job/proc/get_job_titles_in_department(target_department_name)
+/datum/system/job/proc/get_job_titles_in_department(target_department_name)
 	var/datum/department/D = LAZYACCESS(department_datums, target_department_name)
 	if(istype(D))
 		var/list/job_titles = list()
@@ -126,7 +125,7 @@ SUBSYSTEM_DEF(job)
 
 // Returns a reference to the primary department datum that a job is in.
 // Can receive job datum refs, typepaths, or job title strings.
-/datum/controller/subsystem/job/proc/get_primary_department_of_job(datum/job/J)
+/datum/system/job/proc/get_primary_department_of_job(datum/job/J)
 	if(!istype(J, /datum/job))
 		if(ispath(J))
 			J = get_job_type(J)
@@ -148,18 +147,18 @@ SUBSYSTEM_DEF(job)
 
 	return department_datums[primary_department]
 
-/datum/controller/subsystem/job/proc/get_ping_role(role)
+/datum/system/job/proc/get_ping_role(role)
 	var/datum/job/J = get_job(role)
 	if(J.requestable)
 		return get_primary_department_of_job(J)
 
 // Someday it might be good to port code/game/jobs/job_controller.dm to here and clean it up.
 
-/datum/controller/subsystem/job/proc/job_debug_message(message)
+/datum/system/job/proc/job_debug_message(message)
 	if(debug_messages)
 		log_world("JOB DEBUG: [message]")
 
-/datum/controller/subsystem/job/proc/assign_role(mob/new_player/player, rank, latejoin = FALSE)
+/datum/system/job/proc/assign_role(mob/new_player/player, rank, latejoin = FALSE)
 	job_debug_message("Running AR, Player: [player], Rank: [rank], LJ: [latejoin]")
 	if(player && player.mind && rank)
 		var/datum/job/job = get_job(rank)
@@ -191,21 +190,21 @@ SUBSYSTEM_DEF(job)
 	job_debug_message("AR has failed, Player: [player], Rank: [rank]")
 	return FALSE
 
-/datum/controller/subsystem/job/proc/free_role(rank)	//making additional slot on the fly
+/datum/system/job/proc/free_role(rank)	//making additional slot on the fly
 	var/datum/job/job = get_job(rank)
 	if(job && job.total_positions != -1)
 		job.total_positions++
 		return TRUE
 	return FALSE
 
-/datum/controller/subsystem/job/proc/update_limit(rank, comperator)
+/datum/system/job/proc/update_limit(rank, comperator)
 	var/datum/job/job = get_job(rank)
 	if(job && job.total_positions != -1)
 		job.update_limit(comperator)
 		return TRUE
 	return FALSE
 
-/datum/controller/subsystem/job/proc/find_occupation_candidate(datum/job/job, level, flag)
+/datum/system/job/proc/find_occupation_candidate(datum/job/job, level, flag)
 	job_debug_message("Running FOC, Job: [job], Level: [level], Flag: [flag]")
 	var/list/candidates = list()
 	for(var/mob/new_player/player in unassigned)
@@ -235,7 +234,7 @@ SUBSYSTEM_DEF(job)
 			candidates += player
 	return candidates
 
-/datum/controller/subsystem/job/proc/give_random_job(mob/new_player/player)
+/datum/system/job/proc/give_random_job(mob/new_player/player)
 	job_debug_message("GRJ Giving random job, Player: [player]")
 	for(var/datum/job/job in shuffle(occupations))
 		if(!job)
@@ -271,7 +270,7 @@ SUBSYSTEM_DEF(job)
 			unassigned -= player
 			break
 
-/datum/controller/subsystem/job/proc/reset_occupations()
+/datum/system/job/proc/reset_occupations()
 	for(var/mob/new_player/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if((player) && (player.mind))
 			player.mind.assigned_role = null
@@ -281,7 +280,7 @@ SUBSYSTEM_DEF(job)
 	return
 
 ///This proc is called before the level loop of DivideOccupations() and will try to select a head, ignoring ALL non-head preferences for every level until it locates a head or runs out of levels to check
-/datum/controller/subsystem/job/proc/fill_head_position()
+/datum/system/job/proc/fill_head_position()
 	for(var/level = 1 to 3)
 		for(var/command_position in SSjob.get_job_titles_in_department(DEPARTMENT_COMMAND))
 			var/datum/job/job = get_job(command_position)
@@ -323,7 +322,7 @@ SUBSYSTEM_DEF(job)
 	return FALSE
 
 ///This proc is called at the start of the level loop of DivideOccupations() and will cause head jobs to be checked before any other jobs of the same level
-/datum/controller/subsystem/job/proc/check_head_position(level)
+/datum/system/job/proc/check_head_position(level)
 	for(var/command_position in SSjob.get_job_titles_in_department(DEPARTMENT_COMMAND))
 		var/datum/job/job = get_job(command_position)
 		if(!job)
@@ -338,7 +337,7 @@ SUBSYSTEM_DEF(job)
  *  fills var "assigned_role" for all ready players.
  *  This proc must not have any side effect besides of modifying "assigned_role".
  **/
-/datum/controller/subsystem/job/proc/divide_occupations()
+/datum/system/job/proc/divide_occupations()
 	//Setup new player list and get the jobs list
 	job_debug_message("Running DO")
 	setup_occupations()
@@ -448,7 +447,7 @@ SUBSYSTEM_DEF(job)
 			unassigned -= player
 	return TRUE
 
-/datum/controller/subsystem/job/proc/equip_rank(mob/living/carbon/human/human_mob, rank, joined_late = 0, announce = TRUE)
+/datum/system/job/proc/equip_rank(mob/living/carbon/human/human_mob, rank, joined_late = 0, announce = TRUE)
 	if(!human_mob)
 		return null
 
@@ -700,7 +699,7 @@ SUBSYSTEM_DEF(job)
 	BITSET(human_mob.hud_updateflag, SPECIALROLE_HUD)
 	return human_mob
 
-/datum/controller/subsystem/job/proc/handle_feedback_gathering()
+/datum/system/job/proc/handle_feedback_gathering()
 	for(var/datum/job/job in occupations)
 		var/tmp_str = "|[job.title]|"
 
@@ -741,7 +740,7 @@ SUBSYSTEM_DEF(job)
 /// or carrier) first: `joiner` is the new player whose do_late_spawn() each answer re-runs, and
 /// until the last answer this returns null. Without a joiner those spawnpoints fall back to the
 /// usual ones.
-/datum/controller/subsystem/job/proc/late_spawn(client/spawn_client, rank, mob/new_player/joiner)
+/datum/system/job/proc/late_spawn(client/spawn_client, rank, mob/new_player/joiner)
 
 	var/datum/spawnpoint/spawnpos
 	var/fail_deadly = FALSE
@@ -1051,7 +1050,7 @@ SUBSYSTEM_DEF(job)
 		.["msg"] = "has arrived on the station"
 
 /// A refused vore or item spawn: the one who refused may leave the joiner a message.
-/datum/controller/subsystem/job/proc/late_spawn_declined(client/spawn_client, mob/refuser, title)
+/datum/system/job/proc/late_spawn_declined(client/spawn_client, mob/refuser, title)
 	to_chat(spawn_client, span_warning("[refuser] has declined your spawn request."))
 	om_ask(refuser, /datum/om/prompt/text/late_spawn_decline, PROC_REF(late_spawn_decline_message), title = title, joiner = spawn_client)
 
@@ -1060,32 +1059,32 @@ SUBSYSTEM_DEF(job)
 	message = "Do you want to leave them a message?"
 	var/client/joiner
 
-/datum/controller/subsystem/job/proc/late_spawn_decline_message(datum/om/prompt/text/late_spawn_decline/ask)
+/datum/system/job/proc/late_spawn_decline_message(datum/om/prompt/text/late_spawn_decline/ask)
 	var/mob/refuser = ask.answerer
 	var/client/spawn_client = ask.joiner
 	var/message = ask.text
 	if(message)
 		to_chat(spawn_client, span_notice("[refuser] message : [message]"))
 
-/datum/controller/subsystem/job/proc/m_backup_client(client/target_client)	//Same as m_backup, but takes a client entry. Used for vore late joining.
+/datum/system/job/proc/m_backup_client(client/target_client)	//Same as m_backup, but takes a client entry. Used for vore late joining.
 	if(!ishuman(target_client.mob))
 		return
 	var/mob/living/carbon/human/target_human = target_client.mob
 	GLOB.transcore_service.m_backup(target_human.mind, target_human.nif, TRUE)
 
-/datum/controller/subsystem/job/proc/get_all_jobs()
+/datum/system/job/proc/get_all_jobs()
 	var/list/all_jobs = list()
 	for(var/datum/job/current_job as anything in occupation_with_excludes)
 		all_jobs += current_job.title
 	return all_jobs
 
 // start
-/datum/controller/subsystem/job/proc/load_camp_lists()
+/datum/system/job/proc/load_camp_lists()
 	if(fexists(savepath))
 		restricted_keys = json_decode(file2text(savepath))
 		fdel(savepath)
 
-/datum/controller/subsystem/job/Shutdown(Addr, Natural)
+/datum/system/job/on_shutdown()
 	. = ..()
 	if(fexists(savepath))
 		fdel(savepath)

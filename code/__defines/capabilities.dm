@@ -121,11 +121,11 @@
 
 // ---- periodic cadences (periodic_cadence = CADENCE_*; periodic_step(delta) gets the interval in ds) ----
 /// Every 2 seconds.
-#define CADENCE_SLOW /datum/om/pipeline/periodic/slow
+#define CADENCE_SLOW /datum/cadence/slow
 /// Every second.
-#define CADENCE_SECOND /datum/om/pipeline/periodic/second
+#define CADENCE_SECOND /datum/cadence/second
 /// Every 0.2 seconds (continuous lanes need a reason).
-#define CADENCE_FAST /datum/om/pipeline/periodic/fast
+#define CADENCE_FAST /datum/cadence/fast
 
 /// /datum/capability/condition `blocks`: the condition refuses every other capability entry of its holder.
 #define ALL_ENTRIES "all_entries"
@@ -151,4 +151,4 @@
 /// cap_wall_mount(): pixels from the turf centre into the wall.
 #define WALL_MOUNT_OFFSET 26
 /// Every minute.
-#define CADENCE_MINUTE /datum/om/pipeline/periodic/minute
+#define CADENCE_MINUTE /datum/cadence/minute

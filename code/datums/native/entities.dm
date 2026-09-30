@@ -1,5 +1,5 @@
 /**
- * # SSvg
+ * # The entity table of the native system (SSvg)
  *
  * The entity table of the Rust binding layer (doc/rewrite/rust_bindings.md): which atom or datum a
  * `vg_entity` handle belongs to. It does not drive anything: the one driver of the simulation is the
@@ -18,39 +18,36 @@
  * test sandbox's teardown and the binding fuzz test run after every step, so a missed update fails
  * the test that introduced it.
  */
-SUBSYSTEM_DEF(vg)
-	name = "Verdigris Bindings"
-	wait = 0.5 SECONDS
-	priority = FIRE_PRIORITY_VG
-	flags = SS_NO_FIRE
-	runlevels = RUNLEVEL_LOBBY|RUNLEVELS_DEFAULT
+/// SSvg is the native system (the dissolved subsystem keeps its name: the entity table and the drift audit live on it).
+GLOBAL_REAL(SSvg, /datum/system/native)
 
+/datum/system/native/New()
+	..()
+	SSvg = src
+
+/datum/system/native
 	/// Every atom with a live vg_entity. Membership: register()/unregister(),
 	/// called from on_materialize()/on_dematerialize().
-	var/list/bound = list()
+	var/list/bound = list() // ALLOW(instance_list): singleton system, one instance
 	/// vg_entity's index (see VG_ENTITY_INDEX_MASK) -> the bound atom, for
 	/// event dispatch (§8). 1-indexed like every DM list: slot "[index+1]".
-	var/list/entities_by_index = list()
+	var/list/entities_by_index = list() // ALLOW(instance_list): singleton system, one instance
 
-/datum/controller/subsystem/vg/Recover()
-	bound = SSvg.bound
-	entities_by_index = SSvg.entities_by_index
-
-/datum/controller/subsystem/vg/stat_entry(msg)
+/datum/system/native/stat_entry(msg)
 	msg = "B:[length(bound)]"
 	return ..()
 
 /// `register`/`unregister`: called from on_materialize()/on_dematerialize()
 /// (code/game/atoms_movable.dm), not generated code.
-/datum/controller/subsystem/vg/proc/register(atom/movable/mover)
+/datum/system/native/proc/register(atom/movable/mover)
 	if(!(mover in bound))
-		bound += mover
+		bound += mover // ALLOW(ownership): the entity table is the registry of bound entities, not a holder
 	var/slot = ((mover.vg_entity - 1) & VG_ENTITY_INDEX_MASK) + 1
 	if(length(entities_by_index) < slot)
 		entities_by_index.len = slot
-	entities_by_index[slot] = mover
+	entities_by_index[slot] = mover // ALLOW(ownership): the entity table is the registry of bound entities, not a holder
 
-/datum/controller/subsystem/vg/proc/unregister(atom/movable/mover)
+/datum/system/native/proc/unregister(atom/movable/mover)
 	var/index = bound.Find(mover)
 	if(index)
 		bound.Cut(index, index + 1)
@@ -59,24 +56,24 @@ SUBSYSTEM_DEF(vg)
 		entities_by_index[slot] = null
 
 /// unregister() for a whole doomed set (batched destroy): one pass over `bound`.
-/datum/controller/subsystem/vg/proc/unregister_many(list/movers)
+/datum/system/native/proc/unregister_many(list/movers)
 	bound -= movers
 
 /// Gives `D` (any datum) its own entity handle, bound in `entities_by_index`
 /// like an atom's: `entity_lookup()` finds it. Returns the handle.
-/datum/controller/subsystem/vg/proc/bind_datum(datum/D)
+/datum/system/native/proc/bind_datum(datum/D)
 	var/entity = vg_entity_spawn()
 	track_entity(D, entity)
 	return entity
 
 /// Frees an entity `bind_datum()` gave out.
-/datum/controller/subsystem/vg/proc/unbind_datum(datum/D, entity)
+/datum/system/native/proc/unbind_datum(datum/D, entity)
 	untrack_entity(D, entity)
 	vg_entity_unbind(entity)
 
 /// Records `D` as the datum behind `entity`, an entity some other bind made
 /// (a cable's network node): `entity_lookup()` finds it.
-/datum/controller/subsystem/vg/proc/track_entity(datum/D, entity)
+/datum/system/native/proc/track_entity(datum/D, entity)
 	if(!entity)
 		return
 	var/slot = ((entity - 1) & VG_ENTITY_INDEX_MASK) + 1
@@ -85,7 +82,7 @@ SUBSYSTEM_DEF(vg)
 	entities_by_index[slot] = D
 
 /// Forgets `D` behind `entity` (the entity itself is the caller's to free).
-/datum/controller/subsystem/vg/proc/untrack_entity(datum/D, entity)
+/datum/system/native/proc/untrack_entity(datum/D, entity)
 	if(!entity)
 		return
 	var/slot = ((entity - 1) & VG_ENTITY_INDEX_MASK) + 1
@@ -95,7 +92,7 @@ SUBSYSTEM_DEF(vg)
 /// The atom `entity`'s index belongs to, or null. Event dispatch (§8) still
 /// checks `atom.vg_entity == entity` itself: a recycled index briefly holds
 /// a different, newer entity, and this alone would misdeliver.
-/datum/controller/subsystem/vg/proc/entity_lookup(entity)
+/datum/system/native/proc/entity_lookup(entity)
 	var/slot = ((entity - 1) & VG_ENTITY_INDEX_MASK) + 1
 	if(slot > length(entities_by_index))
 		return null
@@ -108,7 +105,7 @@ SUBSYSTEM_DEF(vg)
  * is a runtime that fails the test that caused it). Returns every finding (empty: no divergence).
  * Test builds only: production never sweeps.
  */
-/datum/controller/subsystem/vg/proc/reconcile_all()
+/datum/system/native/proc/reconcile_all()
 	. = list()
 	for(var/atom/movable/mover as anything in bound.Copy())
 		if(QDELETED(mover) || !mover.vg_entity)
@@ -126,7 +123,7 @@ SUBSYSTEM_DEF(vg)
 /// the raw Rust-side debug list (`vg_entity_debug_list()`). A mismatch here
 /// means an atom bound or unbound without going through vg_bind()/
 /// vg_entity_unbind() — a desync in the binding layer itself.
-/datum/controller/subsystem/vg/proc/entity_census()
+/datum/system/native/proc/entity_census()
 	return list(
 		"dm_bound" = length(bound),
 		"rust_entities" = vg_entity_count(),

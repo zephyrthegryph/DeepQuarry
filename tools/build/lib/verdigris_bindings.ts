@@ -831,7 +831,7 @@ function renderComponentsDm(root: string, components: Component[], domainEvents:
   for (const de of domainEvents) {
     for (const v of de.decl.variants) {
       dm += `/// ${de.domain} event (${de.file}). Generated no-op default; override on SSvg.\n`;
-      dm += `/datum/controller/subsystem/vg/proc/on_${de.domain}_${snake(v.name)}(${v.fields.join(', ')})\n\treturn\n\n`;
+      dm += `/datum/system/native/proc/on_${de.domain}_${snake(v.name)}(${v.fields.join(', ')})\n\treturn\n\n`;
     }
   }
 

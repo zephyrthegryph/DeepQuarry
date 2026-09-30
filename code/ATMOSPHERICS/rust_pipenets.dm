@@ -1,4 +1,4 @@
-/datum/controller/subsystem/air
+/datum/system/air
 	/// Pipe region gas handle -> its /datum/pipe_network wrapper (numeric keys).
 	var/alist/rust_pipe_region_networks = alist()
 	/// Topology changed since the last vg_pipe_commit().
@@ -213,7 +213,7 @@
 /// One topology edit (RUST_PIPE_OP_*), applied to the Rust network now;
 /// rust_commit_pending_pipenets() commits the batch and rebuilds wrappers.
 /// `first`/`second` are port handles (REMOVE_TO_MIXTURE: port, mixture handle).
-/datum/controller/subsystem/air/proc/rust_queue_pipe_operation(opcode, first, second = 0, volume = 0)
+/datum/system/air/proc/rust_queue_pipe_operation(opcode, first, second = 0, volume = 0)
 	rust_pipe_topology_dirty = TRUE
 	switch(opcode)
 		if(RUST_PIPE_OP_UPSERT)
@@ -229,7 +229,7 @@
 		if(RUST_PIPE_OP_REMOVE_TO_MIXTURE)
 			vg_pipe_remove(first, second)
 
-/datum/controller/subsystem/air/proc/rust_commit_pending_pipenets()
+/datum/system/air/proc/rust_commit_pending_pipenets()
 	if(!rust_pipe_topology_dirty)
 		return
 	// Inside a batched destroy the topology commits once, after the batch's
@@ -245,7 +245,7 @@
 /// `id` is the device's entity handle; SET uses `f1`/`f2` as the two port
 /// handles, SET_TURF `f1` the port and `f2` the turf's gas handle. A device's
 /// flow(s) and valve are rows set through the generated component accessors.
-/datum/controller/subsystem/air/proc/rust_queue_device_operation(opcode, id, f1 = 0, f2 = 0)
+/datum/system/air/proc/rust_queue_device_operation(opcode, id, f1 = 0, f2 = 0)
 	switch(opcode)
 		if(RUST_DEVICE_OP_SET)
 			vg_pipe_device_set(id, f1, f2)
@@ -255,7 +255,7 @@
 			vg_pipe_device_remove(id)
 
 /// Kept for callers that batch device edits: they apply as queued.
-/datum/controller/subsystem/air/proc/rust_commit_pending_devices()
+/datum/system/air/proc/rust_commit_pending_devices()
 	return
 
 /// A new device edge handle bound to `machine`.
@@ -428,7 +428,7 @@
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 /// Test hook: steps every pipe device now, as a frame does once a period, and delivers their reports.
-/datum/controller/subsystem/air/proc/rust_step_pipe_devices()
+/datum/system/air/proc/rust_step_pipe_devices()
 	if(!rust_pipe_device_count)
 		return
 	vg_frame_force_devices()
@@ -437,7 +437,7 @@
 
 /// Publish the complete map topology once, then materialize all compatibility
 /// `/datum/pipe_network` wrappers from Rust's atomic connected-region result.
-/datum/controller/subsystem/air/proc/setup_rust_pipenets()
+/datum/system/air/proc/setup_rust_pipenets()
 	rust_pipe_region_networks = alist()
 	rust_queue_pipe_operation(RUST_PIPE_OP_CLEAR, 0, 0)
 	// The whole map's ports and edges go to Rust in one call each
@@ -488,7 +488,7 @@
 /// rebuilds the compatibility wrappers of every region whose membership
 /// changed. Gas never passes through DM: the network pools, splits and
 /// releases it, and each region's air datum is bound to the region's gas handle.
-/datum/controller/subsystem/air/proc/rust_apply_pipe_commit()
+/datum/system/air/proc/rust_apply_pipe_commit()
 	var/list/result = vg_pipe_commit()
 	if(!islist(result))
 		CRASH("Rust pipenet topology did not return a region list")
@@ -523,7 +523,7 @@
 		transition["air"] = region_air
 		rust_materialize_pipe_region(transition)
 
-/datum/controller/subsystem/air/proc/rust_retire_pipe_network(datum/pipe_network/network)
+/datum/system/air/proc/rust_retire_pipe_network(datum/pipe_network/network)
 	if(!network)
 		return
 	STOP_PROCESSING_PIPENET(network)
@@ -549,7 +549,7 @@
 	// The network owns the retired region mixture: destroyed with it.
 	qdel(network)
 
-/datum/controller/subsystem/air/proc/rust_materialize_pipe_region(list/transition)
+/datum/system/air/proc/rust_materialize_pipe_region(list/transition)
 	var/region = transition["region"]
 	var/list/ports = transition["ports"]
 	var/datum/gas_mixture/region_air = transition["air"]

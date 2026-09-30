@@ -1,16 +1,17 @@
 // Handles map-related tasks, mostly here to ensure it does so after the MC initializes.
-SUBSYSTEM_DEF(mapping)
+SYSTEM_DEF(mapping)
 	name = "Mapping"
+	init_stage = INITSTAGE_MAIN
 	//dependencies = list(
-	//	/datum/controller/subsystem/job,
+	//	/datum/system/job,
 		///datum/controller/subsystem/processing/station,
 	//	///datum/controller/subsystem/processing/reagents
 	//)
-	dependencies = list(
+	needs = list(
 		/datum/controller/subsystem/garbage, // was transitive through chemistry
+		/datum/controller/subsystem/early_assets, // early assets declared mapping as a dependent when it was a subsystem
 		// Chemistry and vis_overlays were dependencies; both are world services now that need no boot.
 	)
-	flags = SS_NO_FIRE
 
 	var/list/map_templates = list()
 	var/obj/effect/landmark/engine_loader/engine_loader
@@ -19,11 +20,8 @@ SUBSYSTEM_DEF(mapping)
 	// TODO: Implement Later
 	var/datum/map/current_map
 
-/datum/controller/subsystem/mapping/Recover()
-	flags |= SS_NO_INIT // Make extra sure we don't initialize twice.
-	shelter_templates = SSmapping.shelter_templates
 
-/datum/controller/subsystem/mapping/Initialize()
+/datum/system/mapping/initialize()
 	if(initialized)
 		return
 	world.max_z_changed() // This is to set up the player z-level list, maxz hasn't actually changed (probably)
@@ -41,9 +39,8 @@ SUBSYSTEM_DEF(mapping)
 	if(CONFIG_GET(flag/generate_map)) // Re-order this.
 		// Map-gen is still very specific to the map, however putting it here should ensure it loads in the correct order.
 		using_map.perform_map_generation()
-	return SS_INIT_SUCCESS
 
-/datum/controller/subsystem/mapping/proc/load_map_templates()
+/datum/system/mapping/proc/load_map_templates()
 	for(var/datum/map_template/template as anything in subtypesof(/datum/map_template))
 		if(!(initial(template.mappath))) // If it's missing the actual path its probably a base type or being used for inheritence.
 			continue
@@ -51,7 +48,7 @@ SUBSYSTEM_DEF(mapping)
 		map_templates[template.name] = template
 	return TRUE
 
-/datum/controller/subsystem/mapping/proc/load_engine()
+/datum/system/mapping/proc/load_engine()
 	if(!engine_loader)
 		return
 	var/turf/origin = get_turf(engine_loader)
@@ -82,7 +79,7 @@ SUBSYSTEM_DEF(mapping)
 	engine_loader.annihilate_bounds()
 	chosen.load(origin)
 
-/datum/controller/subsystem/mapping/proc/loadLateMaps()
+/datum/system/mapping/proc/loadLateMaps()
 	var/list/deffo_load = using_map.lateload_z_levels
 	var/list/maybe_load = using_map.lateload_gateway
 	var/list/also_load = using_map.lateload_overmap
@@ -198,7 +195,7 @@ SUBSYSTEM_DEF(mapping)
 
 	// Convert mining_outpost_z to actual Z (Unnecessary atm)
 
-/datum/controller/subsystem/mapping/proc/preloadShelterTemplates()
+/datum/system/mapping/proc/preloadShelterTemplates()
 	for(var/datum/map_template/shelter/shelter_type as anything in subtypesof(/datum/map_template/shelter))
 		if(!(initial(shelter_type.mappath)))
 			continue
@@ -207,7 +204,7 @@ SUBSYSTEM_DEF(mapping)
 		shelter_templates[S.shelter_id] = S
 // Re-enable this
 
-/datum/controller/subsystem/mapping/stat_entry(msg)
+/datum/system/mapping/stat_entry(msg)
 	if (!GLOB.Debug2)
 		return // Only show up in stat panel if debugging is enabled.
 	. = ..()

@@ -1,14 +1,15 @@
-/// The kernel (doc/rewrite/kernel.md sec 1.2, 3.1): one host loop step per tick, in fixed phases. The MC's
-/// Loop calls kernel_tick() once per iteration, ahead of the MC queue, and the kernel gives whatever it leaves to
-/// the MC's remaining subsystems (dbcore, tgui transport, assets, atoms, overlays, profiler, air, lighting ...).
+/// The kernel (doc/rewrite/kernel.md sec 1.2, 3.1): one host loop step per tick, in fixed phases. The host loop
+/// (loop.dm) is the kernel's own: it replaced the MC Loop, and there is no subsystem queue left behind it. What the MC
+/// queue used to run is either a host service the kernel fires in phase K or G (input, verb_manager, speech_controller,
+/// tgui transport, dbcore, profiler, garbage) or a system's work items (air, lighting, ticker, ...).
 ///
-///   K  hosted input subsystems (input, verb_manager), capped and measured
+///   K  host services (input, verb_manager, tgui transport, dbcore, sqlite, assets, atoms, overlays, profiler), capped and measured
 ///   N  native: native_frame(elapsed, budget), the one Rust frame
 ///   U  urgent requests, from a reserved slice (request_urgent())
 ///   D  deadlines (the OM scheduler's deadline wheel) and deadline-phase work items
 ///   P  the borrow pass, then each lane by share: queued wakes, rings, work items
 ///   R  leftovers, lane order
-///   G  garbage (hosted), whatever is left, with a floor per second
+///   G  garbage (a host service), whatever is left, with a floor per second
 ///
 /// SSbehaviours no longer fires: its work (the scheduler pass, the pipeline audit, the bench counter) is here.
 /// The scheduler is the engine; the kernel owns the tick.
@@ -42,6 +43,8 @@
 	var/list/cap_wanted = list()
 	/// Membership key -> the items that sweep it (so a member leaving can drop its execution token).
 	var/list/work_by_members = list()
+	/// Cadence type -> its sweep item (datums/om/periodic.dm): periodic work is membership of a cadence.
+	var/list/cadence_items = list()
 
 	// ---- urgent requests (urgent.dm)
 	var/list/urgent_queue = list()
@@ -77,14 +80,21 @@
 /// The kernel.
 /proc/kernel()
 	RETURN_TYPE(/datum/controller/kernel)
-	var/static/datum/controller/kernel/K = new
+	var/static/datum/controller/kernel/K = kernel_create_live()
+	return K
+
+/// The live kernel, with the periodic cadences' sweep items (datums/om/periodic.dm) registered. A kernel a test makes
+/// with `new` starts empty.
+/proc/kernel_create_live()
+	var/datum/controller/kernel/K = new
+	kernel_register_cadences(K)
 	return K
 
 // ---------------------------------------------------------------- the tick
 
 /// One kernel tick. `tick_limit` is the absolute tick usage the kernel's phases must stay under (K and U may pass
 /// it by their own rules); `init_stage` is the MC loop's stage: a hosted subsystem of a later stage does not run yet.
-/datum/controller/kernel/proc/tick(tick_limit, init_stage = INITSTAGE_MAX)
+/datum/controller/kernel/proc/tick(tick_limit, init_stage = INITSTAGE_MAX, light = FALSE)
 	var/tick_start = TICK_USAGE
 	var/saved_limit = Master.current_ticklimit
 	// ALLOW(sys_world_time_write): the kernel clock: a per-tick timestamp of the scheduler itself, not a per-entity expiry
@@ -93,8 +103,8 @@
 	if(!sched)
 		sched = GLOB.om_live_sched
 	if(!hosted_k)
-		hosted_k = list(SSinput, SSverb_manager)
-		hosted_g = list(SSgarbage)
+		hosted_k = hosts_of(KERNEL_PHASE_K)
+		hosted_g = hosts_of(KERNEL_PHASE_G)
 
 	phase_begin()
 	// K
@@ -105,7 +115,7 @@
 		k_over_cap++
 	phase_note(KERNEL_PHASE_K, k_start)
 
-	if(sched && isnull(sched.manual_time) && sched_runs(init_stage))
+	if(!light && sched && isnull(sched.manual_time) && sched_runs(init_stage))
 		sched.pass_begin(tick_limit)
 		// N
 		var/n_start = TICK_USAGE
@@ -225,13 +235,14 @@
 
 // ---------------------------------------------------------------- hosted subsystems
 
-/// Fires each hosted subsystem that is due, in list order, the way the MC queue would: its own runlevels,
-/// its own timing, a paused run resumed. The MC never queues these (SS_KERNEL_HOSTED).
+/// Fires each host service that is due, in list order: its own runlevels, its own timing, a paused run resumed.
+/// A ticker (input, verb_manager) gets the whole phase limit; a service on a longer wait (tgui, dbcore, profiler,
+/// garbage) gets KERNEL_HOST_SLICE of a tick at most, so a slow host cannot starve the phases after it.
 /datum/controller/kernel/proc/run_hosted_phase(list/subsystems, tick_limit, init_stage)
 	for(var/datum/controller/subsystem/SS as anything in subsystems)
 		if(!SS || !SS.can_fire || SS.init_stage > init_stage)
 			continue
-		if(!(SS.runlevels & Master.current_runlevel))
+		if(!(SS.runlevels & (1 << (Master.current_runlevel - 1))))
 			continue
 		var/paused = (SS.state == SS_PAUSED)
 		// ALLOW(sys_world_time_expiry): the kernel clock: compares the scheduler own timestamps, not an entity expiry
@@ -239,29 +250,38 @@
 			continue
 		if(TICK_USAGE >= tick_limit && SS.state != SS_PAUSED && !(SS.flags & SS_TICKER))
 			continue
-		run_hosted(SS, tick_limit, paused)
+		var/limit = tick_limit
+		if(!(SS.flags & SS_TICKER))
+			limit = min(tick_limit, TICK_USAGE + KERNEL_HOST_SLICE)
+		run_hosted(SS, limit, paused)
 
 /datum/controller/kernel/proc/run_hosted(datum/controller/subsystem/SS, tick_limit, paused)
 	Master.current_ticklimit = tick_limit
-	SS.queued_time = world.time // ALLOW(sys_world_time_write): kernel-hosted subsystem timing, as the MC's RunQueue does
+	SS.queued_time = world.time // ALLOW(sys_world_time_write): kernel-hosted subsystem timing
 	if(!paused)
 		SS.current_run_slices = 0
 	SS.current_run_slices++
 	SS.state = SS_RUNNING
 	var/used = TICK_USAGE
-	var/state = SS.ignite(paused)
+	var/state = SS_IDLE
+	try
+		state = SS.ignite(paused)
+	catch(var/exception/e) // ALLOW(silent_catch): report_fault() reports it through dq_report_caught() unless a test expects faults
+		phase_faults++
+		report_fault(e, "host service [SS.name] runtime: [e] ([e.file]:[e.line])")
 	used = max(TICK_USAGE - used, 0)
+	LAZYSET(Master.perf_tick_breakdown, SS.name, (LAZYACCESS(Master.perf_tick_breakdown, SS.name) || 0) + used)
+	if(used > Master.perf_tick_top_usage)
+		Master.perf_tick_top_usage = used
+		Master.perf_tick_top_name = SS.name
+	if(Master.use_rolling_usage)
+		SS.prune_rolling_usage()
+		SS.rolling_usage += list(DS2TICKS(world.time), used)
 	if(state == SS_RUNNING)
 		state = SS_IDLE
 	SS.state = state
 	if(state == SS_PAUSED)
-		// ignite() queued it on the MC to resume; the kernel resumes it instead.
-		if(SS.flags & SS_BACKGROUND)
-			Master.queue_priority_count_bg -= SS.queued_priority
-		else
-			Master.queue_priority_count -= SS.queued_priority
-		SS.dequeue()
-		SS.state = SS_PAUSED
+		// A paused run resumes on the kernel's next pass.
 		SS.paused_ticks++
 		SS.paused_tick_usage += used
 		return
@@ -277,6 +297,7 @@
 	SS.times_fired++
 	SS.update_nextfire()
 	SS.queued_time = 0
+	SS.tick_overrun = max(0, MC_AVG_FAST_UP_SLOW_DOWN(SS.tick_overrun, used - max(tick_limit - TICK_USAGE + used, 0)))
 
 // ---------------------------------------------------------------- SSbehaviours' remaining duties
 

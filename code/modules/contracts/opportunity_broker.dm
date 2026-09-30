@@ -284,7 +284,7 @@
 			return TRUE
 	return FALSE
 
-/datum/contract_opportunity_rule/proc/trigger(datum/controller/subsystem/contracts/controller, datum/contract_opportunity_window/window, datum/contract_event/event, list/signal_snapshots)
+/datum/contract_opportunity_rule/proc/trigger(datum/system/contracts/controller, datum/contract_opportunity_window/window, datum/contract_event/event, list/signal_snapshots)
 	var/list/context = list(
 		"offer_kind" = CONTRACT_OFFER_OPPORTUNITY,
 		"opportunity_rule" = id,
@@ -326,7 +326,7 @@
 	offer_key = "opportunity:[rule.id]:[window.bucket]"
 	snapshots = deepCopyList(_snapshots)
 
-/datum/controller/subsystem/contracts/proc/initialize_opportunity_broker()
+/datum/system/contracts/proc/initialize_opportunity_broker()
 	opportunity_rules = list()
 	opportunity_rules_by_event = list()
 	opportunity_windows = list()
@@ -348,7 +348,7 @@
 			LAZYINITLIST(opportunity_rules_by_event[signal.event_type])
 			opportunity_rules_by_event[signal.event_type] |= rule
 
-/datum/controller/subsystem/contracts/proc/observe_opportunity_event(datum/contract_event/event)
+/datum/system/contracts/proc/observe_opportunity_event(datum/contract_event/event)
 	// Machinery initialization and pregame setup can legitimately publish
 	// transient state. They are useful to active contracts in tests, but must
 	// never manufacture live-round opportunities.
@@ -389,7 +389,7 @@
 
 /// Snapshots `window` and queues, withdraws or suppresses its offer. `event`
 /// is the fact that last revised it.
-/datum/controller/subsystem/contracts/proc/evaluate_opportunity_window(datum/contract_opportunity_rule/rule, datum/contract_opportunity_window/window, window_key, datum/contract_event/event)
+/datum/system/contracts/proc/evaluate_opportunity_window(datum/contract_opportunity_rule/rule, datum/contract_opportunity_window/window, window_key, datum/contract_event/event)
 	var/list/signal_snapshots = rule.snapshots(window)
 	if(window.latched)
 		if(rule.should_reset(signal_snapshots))
@@ -419,7 +419,7 @@
 		opportunity_history.Cut(1, 2)
 		qdel(expired)
 
-/datum/controller/subsystem/contracts/proc/withdraw_unaccepted_opportunity(datum/contract_opportunity_rule/rule, datum/contract_opportunity_window/window, reason)
+/datum/system/contracts/proc/withdraw_unaccepted_opportunity(datum/contract_opportunity_rule/rule, datum/contract_opportunity_window/window, reason)
 	var/offer_key = "opportunity:[rule.id]:[window.bucket]"
 	var/datum/contract/offer = find_live_offer(offer_key)
 	if(offer?.state == CONTRACT_OFFERED)
@@ -428,7 +428,7 @@
 	if(candidate)
 		withdraw_candidate(candidate, reason)
 
-/datum/controller/subsystem/contracts/proc/opportunity_observability()
+/datum/system/contracts/proc/opportunity_observability()
 	return list(
 		"rules" = length(opportunity_rules),
 		"windows" = length(opportunity_windows),
@@ -438,7 +438,7 @@
 		"history" = length(opportunity_history),
 	)
 
-/datum/controller/subsystem/contracts/proc/opportunity_near_misses()
+/datum/system/contracts/proc/opportunity_near_misses()
 	var/list/result = list()
 	for(var/window_key in opportunity_windows)
 		var/datum/contract_opportunity_window/window = opportunity_windows[window_key]
@@ -575,7 +575,7 @@
 	exposure.minimum_facts = 2
 	exposure.require_diversity("transaction_id", 2)
 
-/datum/contract_opportunity_rule/covert_trade_trace/trigger(datum/controller/subsystem/contracts/controller, datum/contract_opportunity_window/window, datum/contract_event/event, list/signal_snapshots)
+/datum/contract_opportunity_rule/covert_trade_trace/trigger(datum/system/contracts/controller, datum/contract_opportunity_window/window, datum/contract_event/event, list/signal_snapshots)
 	var/suspect_account = event.value("principal_account")
 	var/datum/faction_agent_record/record = GLOB.station_faction_relations?.get_agent_record(suspect_account)
 	if(!record || record.counter_offer_queued)

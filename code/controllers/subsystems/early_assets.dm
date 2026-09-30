@@ -6,7 +6,6 @@
 SUBSYSTEM_DEF(early_assets)
 	name = "Early Assets"
 	dependents = list(
-		/datum/controller/subsystem/mapping,
 		/datum/controller/subsystem/atoms,
 	)
 	init_stage = INITSTAGE_EARLY

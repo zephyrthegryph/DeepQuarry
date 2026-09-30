@@ -50,6 +50,10 @@
 
 /// Types whose reactions() declare every() / on_cross() / on_notice(), with the RXB_* kinds (code/datums/reactions/work.dm).
 GLOBAL_LIST_INIT(rx_boot_type_table, list(
+	/datum/system/air = RXB_EVERY,
+	/datum/system/lighting = RXB_EVERY,
+	/datum/system/ticker = RXB_EVERY,
+	/obj/effect/hotspot = RXB_EVERY,
 	/obj/machinery/power/apc = RXB_NOTICE,
 ))
 /proc/rx_boot_types()

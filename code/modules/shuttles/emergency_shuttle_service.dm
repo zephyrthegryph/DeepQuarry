@@ -13,7 +13,7 @@ GLOBAL_DATUM_INIT(emergency_shuttle_service, /datum/world_service/emergency_shut
 	// announcement datums). SSshuttles is the latest-initializing subsystem it relates to (it
 	// depends on SSatoms and SSair, and builds the shuttle datums this service drives), so boot
 	// right after it; that keeps it after mapload, as INITSTAGE_LAST did.
-	needs = list(/datum/controller/subsystem/shuttles)
+	needs = list(/datum/system/shuttles)
 
 	/// Relation view: the emergency shuttle (set in shuttle_emergency.dm; the shuttle registry owns it).
 	var/datum/shuttle/autodock/ferry/emergency/shuttle

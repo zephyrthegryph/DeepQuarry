@@ -29,7 +29,7 @@
 
 /// The init stage a system boots in: the latest stage among its subsystem needs, else INITSTAGE_FIRST.
 /proc/kernel_system_stage(datum/system/S, list/deps)
-	. = INITSTAGE_FIRST
+	. = S.init_stage
 	for(var/node in deps[S])
 		if(istype(node, /datum/controller/subsystem))
 			var/datum/controller/subsystem/SS = node
@@ -44,8 +44,11 @@
 	if(S.initialized)
 		return
 	var/started = REALTIMEOFDAY
+	// The system's declared work (every() in reactions()) registers with the kernel as its reaction table is built.
+	rx_table_of(S)
 	S.initialize()
 	S.initialized = TRUE
+	S.init_time_ms = (REALTIMEOFDAY - started) * 100
 	log_world("System [S.name] initialized in [(REALTIMEOFDAY - started) / 10]s.")
 
 /// Runs the bulk first-evaluation pass of every system, after the whole DAG has initialized.
@@ -53,3 +56,29 @@
 	for(var/datum/system/S as anything in kernel_systems())
 		S.kernel_members_ready()
 	kernel_start_periodic()
+
+/// The registered systems that are not world services (the converted subsystems and the other pure systems), in
+/// registry order. Systems already created only: nothing here instantiates.
+/proc/kernel_pure_systems()
+	. = list()
+	var/list/table = system_table()
+	for(var/path in table)
+		if(ispath(path, /datum/world_service))
+			continue
+		. += table[path]
+
+/// Server shutdown for the pure systems: on_shutdown() of each one that booted, in reverse registry order.
+/proc/kernel_shutdown_systems()
+	var/list/systems = kernel_pure_systems()
+	reverse_range(systems)
+	for(var/datum/system/S as anything in systems)
+		if(S.initialized)
+			log_world("Shutting down [S.name] system...")
+			S.on_shutdown()
+
+/// Creates every pure system, so the SS<X> globals (SYSTEM_DEF) exist before anything reads them. Called once the GLOB is up
+/// (Master.New); creating a system twice is harmless, the registry keeps the first.
+/proc/kernel_create_systems()
+	for(var/path in subtypesof(/datum/system))
+		if(system_instantiable(path) && !ispath(path, /datum/world_service))
+			system(path)

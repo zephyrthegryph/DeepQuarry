@@ -16,7 +16,7 @@ GLOBAL_DATUM_INIT(supply_service, /datum/world_service/supply, new)
 	// The old subsystem had no dependencies and initialized in the main stage. Its data (supply
 	// packs, the market) is read by map objects and by SSinternal_wiki, so boot it right after
 	// SSmapping, before the atoms initialize; SSinternal_wiki boots it explicitly as well.
-	needs = list(/datum/controller/subsystem/mapping)
+	needs = list(/datum/system/mapping)
 
 	var/points_per_slip = 2
 	var/points_per_money = 0.02 // Legacy export values convert at 1 point = 50 Thalers.

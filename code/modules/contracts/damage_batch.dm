@@ -14,7 +14,7 @@
 ///
 /// Batches nest; only the outermost end flushes.
 
-/datum/controller/subsystem/contracts
+/datum/system/contracts
 	var/contract_batch_depth = 0
 	/// REF(atom) -> /datum/contract_damage_report, in first-hit order.
 	var/list/pending_damage_reports
@@ -53,10 +53,10 @@
 		var/area/source_area = source_turf.loc
 		area_name = source_area?.name
 
-/datum/controller/subsystem/contracts/proc/begin_contract_batch()
+/datum/system/contracts/proc/begin_contract_batch()
 	contract_batch_depth++
 
-/datum/controller/subsystem/contracts/proc/end_contract_batch()
+/datum/system/contracts/proc/end_contract_batch()
 	if(contract_batch_depth <= 0)
 		return
 	if(--contract_batch_depth > 0)
@@ -64,11 +64,11 @@
 	flush_damage_reports()
 	flush_opportunity_windows()
 
-/datum/controller/subsystem/contracts/proc/is_contract_batching()
+/datum/system/contracts/proc/is_contract_batching()
 	return contract_batch_depth > 0
 
 /// Adds one hit to `source`'s pending report for this batch.
-/datum/controller/subsystem/contracts/proc/queue_damage_report(atom/source, amount)
+/datum/system/contracts/proc/queue_damage_report(atom/source, amount)
 	var/key = REF(source)
 	var/datum/contract_damage_report/report = LAZYACCESS(pending_damage_reports, key)
 	if(!report)
@@ -77,7 +77,7 @@
 	report.total_amount += amount
 	report.integrity = source.get_integrity()
 
-/datum/controller/subsystem/contracts/proc/flush_damage_reports()
+/datum/system/contracts/proc/flush_damage_reports()
 	// own_take_all() empties the owned list in place and hands back its values (the reports),
 	// so iterate what it returns, not the var.
 	var/list/reports = own_take_all(src, nameof(pending_damage_reports))
@@ -89,7 +89,7 @@
 		qdel(report)
 	contract_batch_depth--
 
-/datum/controller/subsystem/contracts/proc/publish_damage_report(datum/contract_damage_report/report)
+/datum/system/contracts/proc/publish_damage_report(datum/contract_damage_report/report)
 	if(report.total_amount < CONTRACT_INFRASTRUCTURE_DAMAGE_MINIMUM)
 		return
 	var/key = report.source_ref
@@ -125,7 +125,7 @@
 	publish_event(event)
 
 /// Evaluates every opportunity window the batch revised, once each.
-/datum/controller/subsystem/contracts/proc/flush_opportunity_windows()
+/datum/system/contracts/proc/flush_opportunity_windows()
 	var/list/windows = pending_opportunity_windows
 	pending_opportunity_windows = null
 	pruned_opportunity_windows = null

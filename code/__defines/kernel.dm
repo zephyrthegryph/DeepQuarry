@@ -52,8 +52,8 @@
 /// Phase letters, indexed by KERNEL_PHASE_*.
 #define KERNEL_PHASE_LETTERS list("K", "N", "U", "D", "P", "R", "G")
 
-/// Share of the tick's remaining budget the kernel takes; the MC's other subsystems get the rest.
-#define KERNEL_TICK_SHARE 0.6
+/// The most of a tick one non-ticker host service (tgui, dbcore, profiler, garbage) may take in its phase, in percent.
+#define KERNEL_HOST_SLICE 10
 /// Share of the kernel's budget reserved for phase U.
 #define KERNEL_URGENT_SHARE 0.1
 /// Elapsed ticks a native frame may cover in one call (a long stall does not step the world for minutes).

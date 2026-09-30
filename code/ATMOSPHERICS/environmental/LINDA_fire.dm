@@ -275,7 +275,7 @@
 #define INSUFFICIENT(gas_id) (readings[GAS_READ_MOLES(gas_id)] < 0.5)
 
 /**
- * One burn frame, run by /datum/om/pipeline/hotspot (below) every SSair tick while it exists.
+ * One burn step, run by the kernel (burn_tick(), below) every SSair tick while it exists.
  * Handles the calling of perform_exposure() which handles the bulk of temperature processing.
  * Heating the tile's contents is also done by perform_exposure().
  * Also handles the dying and qdeletion of the hotspot and hotspot creations on adjacent cardinal turfs.
@@ -492,32 +492,18 @@
 
 // ---------------------------------------------------------------- the hotspot pipeline
 
-/// A hotspot burns on its own object-model pipeline instead of SSair's hotspot pass: one frame
-/// every SSair tick (the cadence the pass had) for as long as it exists. It never idles -- a
-/// hotspot that has nothing left to burn deletes itself, which tears its pipeline down.
-/datum/om/decl/hotspot
-	of = /obj/effect/hotspot
-	behaviours = list(/datum/om/pipeline/hotspot)
+/// A hotspot burns as kernel work instead of SSair's hotspot pass: one step every SSair tick (the cadence the pass
+/// had) for as long as it exists, in the game and post-game run levels. It never idles -- a hotspot that has nothing
+/// left to burn deletes itself, which takes it out of the kernel's membership.
+/obj/effect/hotspot/reactions()
+	. = ..()
+	. += every(0.5 SECONDS, PROC_REF(burn_tick), when = PROC_REF(burn_ready), lane = LANE_SIMULATION)
 
-/datum/om/pipeline/hotspot
-	name = "hotspot"
-	every = 0.5 SECONDS
-	lane = LANE_SIMULATION
-	runlevels = RUNLEVEL_GAME | RUNLEVEL_POSTGAME
-	stages = list(/datum/om/stage/hotspot)
-	park_after = 0
+/// The run levels the burn steps in.
+/obj/effect/hotspot/proc/burn_ready()
+	return !!((RUNLEVEL_GAME | RUNLEVEL_POSTGAME) & (1 << (Master.current_runlevel - 1)))
 
-/datum/om/stage/hotspot
-	name = "burn"
-	category = /datum/om/stage/hotspot
-	pipeline = /datum/om/pipeline/hotspot
-	of = /obj/effect/hotspot
-
-/datum/om/stage/hotspot/perform(obj/effect/hotspot/H, datum/om/frame/F)
-	H.burn_step()
-	if(QDELETED(H))
-		return STAGE_ABORT
-
-/datum/om/stage/hotspot/idle(obj/effect/hotspot/H)
-	return FALSE
+/// The kernel work item's handler: one burn step.
+/obj/effect/hotspot/proc/burn_tick(dt)
+	burn_step()
 

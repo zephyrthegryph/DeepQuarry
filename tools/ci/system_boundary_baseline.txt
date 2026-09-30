@@ -299,8 +299,8 @@ B1:code/modules/vote/vote_presets.dm:SSticker 1
 B1:maps/common/common_shuttles_crew.dm:SSshuttles 1
 B1:maps/submaps/engine_submaps/engine.dm:SSmapping 2
 B1:maps/~map_system/maps.dm:GLOB.planet_service 2
-B3:code/ATMOSPHERICS/SSair.dm:vg 3
-B3:code/__defines/verdigris/_bindings_types.dm:vg 8
+B3:code/ATMOSPHERICS/SSair.dm:native 3
+B3:code/__defines/verdigris/_bindings_types.dm:native 8
 B3:code/_helpers/roundend.dm:ticker 2
 B3:code/_helpers/roundstats.dm:ticker 1
 B3:code/datums/lifecycle/declarations.dm:atoms 1

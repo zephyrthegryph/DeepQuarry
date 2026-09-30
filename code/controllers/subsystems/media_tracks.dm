@@ -1,6 +1,5 @@
-SUBSYSTEM_DEF(media_tracks)
+SYSTEM_DEF(media_tracks)
 	name = "Media Tracks"
-	flags = SS_NO_FIRE
 	init_stage = INITSTAGE_EARLY
 
 	/// Every track, including secret
@@ -13,12 +12,11 @@ SUBSYSTEM_DEF(media_tracks)
 	var/list/casino_tracks = list()
 	/// CHOMPstation edit end
 
-/datum/controller/subsystem/media_tracks/Initialize()
+/datum/system/media_tracks/initialize()
 	load_tracks()
 	sort_tracks()
-	return SS_INIT_SUCCESS
 
-/datum/controller/subsystem/media_tracks/proc/load_tracks()
+/datum/system/media_tracks/proc/load_tracks()
 	for(var/filename in CONFIG_GET(str_list/jukebox_track_files))
 		report_progress("Loading jukebox track: [filename]")
 
@@ -62,7 +60,7 @@ SUBSYSTEM_DEF(media_tracks)
 
 			all_tracks += T
 
-/datum/controller/subsystem/media_tracks/proc/sort_tracks()
+/datum/system/media_tracks/proc/sort_tracks()
 	report_progress("Sorting media tracks...")
 	sortTim(all_tracks, GLOBAL_PROC_REF(cmp_media_track_asc))
 
@@ -82,7 +80,7 @@ SUBSYSTEM_DEF(media_tracks)
 			casino_tracks += T
 		/// CHOMPstation edit end
 
-/datum/controller/subsystem/media_tracks/proc/manual_track_add()
+/datum/system/media_tracks/proc/manual_track_add()
 	if(!check_rights(R_DEBUG|R_FUN))
 		return
 
@@ -92,7 +90,7 @@ SUBSYSTEM_DEF(media_tracks)
 /// title, duration, artist, genre and the secret/lobby/casino marks. A cancel ends it.
 /datum/om/flow/media_track_add
 	requires = PROMPT_ADMIN(R_DEBUG|R_FUN)
-	var/datum/controller/subsystem/media_tracks/tracks
+	var/datum/system/media_tracks/tracks
 	var/url
 	var/title
 	var/duration
@@ -172,7 +170,7 @@ SUBSYSTEM_DEF(media_tracks)
  * "lobby": plays in the lobby (true/false)
  * "casino": plays in the casino (true/false)
  */
-/datum/controller/subsystem/media_tracks/proc/manual_track_entered(mob/user, datum/om/flow/media_track_add/answers, casino = FALSE)
+/datum/system/media_tracks/proc/manual_track_entered(mob/user, datum/om/flow/media_track_add/answers, casino = FALSE)
 	var/url = answers.url
 	if(!url)
 		return
@@ -211,13 +209,13 @@ SUBSYSTEM_DEF(media_tracks)
 	report_progress("New media track added by [user.client]: [title]")
 	sort_tracks()
 
-/datum/controller/subsystem/media_tracks/proc/manual_track_remove()
+/datum/system/media_tracks/proc/manual_track_remove()
 	if(!check_rights(R_DEBUG|R_FUN))
 		return
 
 	om_ask(usr, /datum/om/prompt/text/media_track, PROC_REF(manual_track_removal_entered), title = "Remove Track", message = "Input track title or URL to remove (must be exact)")
 
-/datum/controller/subsystem/media_tracks/proc/manual_track_removal_entered(datum/om/prompt/text/media_track/ask)
+/datum/system/media_tracks/proc/manual_track_removal_entered(datum/om/prompt/text/media_track/ask)
 	var/mob/user = ask.answerer
 	var/track = ask.text
 	if(!track)
@@ -233,7 +231,7 @@ SUBSYSTEM_DEF(media_tracks)
 
 	to_chat(user, span_warning("Couldn't find a track matching the specified parameters."))
 
-/datum/controller/subsystem/media_tracks/proc/add_track(mob/user, new_url, new_title, new_duration, new_artist, new_genre, new_secret, new_lobby)
+/datum/system/media_tracks/proc/add_track(mob/user, new_url, new_title, new_duration, new_artist, new_genre, new_secret, new_lobby)
 	if(!check_rights(R_DEBUG|R_FUN))
 		return
 	var/datum/track/T = new(new_url, new_title, new_duration, new_artist, new_genre, new_secret, new_lobby)
@@ -242,7 +240,7 @@ SUBSYSTEM_DEF(media_tracks)
 	sort_tracks()
 	return
 
-/datum/controller/subsystem/media_tracks/proc/remove_track(mob/user, datum/track/T)
+/datum/system/media_tracks/proc/remove_track(mob/user, datum/track/T)
 	if(!check_rights(R_DEBUG|R_FUN))
 		return
 
@@ -255,21 +253,21 @@ SUBSYSTEM_DEF(media_tracks)
 	sort_tracks()
 	return
 
-/datum/controller/subsystem/media_tracks/vv_get_dropdown()
+/datum/system/media_tracks/vv_get_dropdown()
 	. = ..()
 	VV_DROPDOWN_OPTION("", "---")
 	VV_DROPDOWN_OPTION("add_track", "Add New Track")
 	VV_DROPDOWN_OPTION("remove_track", "Remove Track")
 
-VV_TOPIC_ACTION(/datum/controller/subsystem/media_tracks, "add_track", PROC_REF(vv_topic_add_track))
-VV_TOPIC_ACTION(/datum/controller/subsystem/media_tracks, "remove_track", PROC_REF(vv_topic_remove_track))
+VV_TOPIC_ACTION(/datum/system/media_tracks, "add_track", PROC_REF(vv_topic_add_track))
+VV_TOPIC_ACTION(/datum/system/media_tracks, "remove_track", PROC_REF(vv_topic_remove_track))
 
-/datum/controller/subsystem/media_tracks/proc/vv_topic_add_track(mob/user, list/args)
+/datum/system/media_tracks/proc/vv_topic_add_track(mob/user, list/args)
 	manual_track_add()
 	user.client?.debug_variables(src)
 	return TRUE
 
-/datum/controller/subsystem/media_tracks/proc/vv_topic_remove_track(mob/user, list/args)
+/datum/system/media_tracks/proc/vv_topic_remove_track(mob/user, list/args)
 	manual_track_remove()
 	user.client?.debug_variables(src)
 	return TRUE
