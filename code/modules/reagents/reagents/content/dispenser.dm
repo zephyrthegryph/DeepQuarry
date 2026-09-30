@@ -339,6 +339,7 @@
 	industrial_use = REFINERYEXPORT_REASON_PRECURSOR
 
 /datum/reagent/iron
+	treatment_tags = list(TREAT_BLOOD_RESTORE = 1.0)
 	name = REAGENT_IRON
 	id = REAGENT_ID_IRON
 	// explain the clinical role rather than the materials-science

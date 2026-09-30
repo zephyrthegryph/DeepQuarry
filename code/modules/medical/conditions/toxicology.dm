@@ -2,7 +2,7 @@
 //
 // A reagent that deserves its own clinical picture passes one of these as
 // `affliction =` to injure() (toxin reagents set `poison_affliction`; see
-// code/modules/reagents/reagents/toxins.dm). The patient then presents "phoron
+// code/modules/reagents/reagents/content/toxins.dm). The patient then presents "phoron
 // poisoning" rather than a generic toxic load, and the medic treats it by
 // mechanism. All are systemic (INJURY_TOXIN, zone = null), organic-only, and
 // count toward the toxic injury category like generic toxic poisoning.
