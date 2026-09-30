@@ -1,10 +1,12 @@
+> **Archived.** Historical record (audit/report/brief); not maintained. Worker brief for the generic systems wave (rewrite/sys); done.
+
 # Worker brief: generic systems wave
 
 You are a sub-worker of the `rewrite/sys` lead in the DeepQuarry codebase (BYOND/DM SS13).
 
-Read first: `AGENTS.md`, `doc/rewrite/systems.md` (the API you implement is specified there,
-section per system), `doc/rewrite/om_in_10_minutes.md`, `doc/rewrite/declarative_lifecycle.md`,
-`doc/rewrite/caching.md`, `doc/rewrite/interactions.md`.
+Read first: `AGENTS.md`, `doc/rewrite/archive/systems.md` (the API you implement is specified there,
+section per system), `doc/rewrite/archive/om_in_10_minutes.md`, `doc/rewrite/archive/declarative_lifecycle.md`,
+`doc/rewrite/caching.md`, `doc/rewrite/archive/interactions.md`.
 
 ## Setup
 - Create your worktree: `git -C E:/projects/dq-sys worktree add -b rewrite/sys-<name> E:/projects/dq-sys-<name> rewrite/sys`.

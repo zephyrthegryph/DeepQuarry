@@ -1,3 +1,5 @@
+> **Archived.** Historical record (audit/report/brief); not maintained. Health review, 2026-09-22; superseded by `doc/mob_life_architecture.md` section 8 and `doc/body_architecture.md`.
+
 # Health System Review and Consolidation Design
 
 Review date: 2026-09-22. Scope: the body/affliction core (`code/modules/body/`), the

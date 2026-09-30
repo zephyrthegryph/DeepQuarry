@@ -1,7 +1,9 @@
+> **Archived.** Superseded by the foundation design (doc/rewrite/README.md); still accurate for code not yet converted, until the f-* branches merge. Replaced by relation kinds REF/PAIRED/OWNED and `relations()` in [state_and_relations.md](../state_and_relations.md).
+
 # Ownership: own, shared, proto, relations
 
 Status: **authoritative**. This replaced the 20 `REFKIND_*` kinds and `DECLARE_REF()`
-(`lifecycle.md` §4, `object_model.md` §4–5). There is no compatibility layer: the old kinds,
+(`../lifecycle.md` §4, `object_model.md` §4–5). There is no compatibility layer: the old kinds,
 their macros, `WEAK_LIST_*`, `OM_STATIC_TYPE`, `link_set()`, `DuplicateObject()` and the lints that
 enforced them are gone.
 
@@ -28,7 +30,7 @@ proto.dm, shared.dm, registry_types.dm, clone.dm, audit.dm, table.dm), the rich-
 - **O1 One owner.** An owned entity records its owner on itself: `own_holder_ref` (the owner's weak key,
   `own_key()`, so owner and child never form a reference cycle) and `own_slot` (the var). Read with
   `owner_of(D)` / `owner_slot_of(D)`; both re-check that the owner still names D. Movables in
-  contents are owned by their ledger slot (`containment.md`); an `own(..., policy = OWN_CONTAINED)` var
+  contents are owned by their ledger slot (`../containment.md`); an `own(..., policy = OWN_CONTAINED)` var
   names one of them.
 - **O2 Writes only through accessors.** `ownership_lint.py` (`raw_write`) rejects assignment, `+=`,
   `-=`, `|=`, `[k] =`, `Cut/Add/Remove/Insert` and the `QDEL_*` / `LAZY*` list macros on an owned

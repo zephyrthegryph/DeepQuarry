@@ -42,7 +42,7 @@ Constraints, rule conditions and interaction requirements all use this language,
 Constraints attach at three points:
 - **Slot definitions** say what a slot accepts. A holster accepts `holster:small_gun`, and a pocket accepts size 2 or smaller.
 - **Item types** say what they require: a body plan, species fit, size, or a free hand.
-- **Interactions** say what the actor needs ([interactions.md](interactions.md)).
+- **Interactions** say what the actor needs ([archive/interactions.md](archive/interactions.md)).
 
 The ledger's `can_insert` (both sides), equipping and interaction availability all evaluate constraints through one code path, so the answer and the reason are the same everywhere.
 
@@ -133,7 +133,7 @@ An ability is an interaction the actor performs on themselves or a target:
 - **Commit.** The cost and the effect are applied together, only after every requirement passes. An ability can't spend a resource and then fail.
 - **Ongoing state**, if any: rate models and rules.
 
-Abilities appear in the ability list and in the Menu action with their live cost, and can be bound to keys ([interactions.md](interactions.md)).
+Abilities appear in the ability list and in the Menu action with their live cost, and can be bound to keys ([archive/interactions.md](archive/interactions.md)).
 
 ### Worked example: Shadekin phase shift
 

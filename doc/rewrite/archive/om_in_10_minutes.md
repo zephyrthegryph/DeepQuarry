@@ -1,3 +1,5 @@
+> **Archived.** Superseded by the foundation design (doc/rewrite/README.md); still accurate for code not yet converted, until the f-* branches merge. Replaced by [foundation.md](../foundation.md) (vocabulary) and the migration table in [migration_guide.md](../migration_guide.md).
+
 # The object model in 10 minutes
 
 Read this first. It tells you which piece to reach for; the reference is
@@ -165,7 +167,7 @@ services and the Rust world step. Scripts can read `om_diagnostics()`,
 `om_world_diagnostics()` and the profiler's `PERF_PROFILE` log lines. Tests use
 `om_test_begin()` / `scheduler_advance(seconds)` / `om_test_end()` (§4.9).
 
-## 11. Shared caches ([caching.md](caching.md))
+## 11. Shared caches ([../caching.md](../caching.md))
 
 A value built from a key and shared by every caller (an overlay list per connection state,
 facts per material) is a declared cache, not a `var/static/list/cache`:
@@ -188,7 +190,7 @@ refuses new hand-rolled caches.
 |---|---|
 | Full API | [object_model_core.md](object_model_core.md) (§16: "one way to do X") |
 | Time and scheduling | [time_mechanisms.md](time_mechanisms.md) |
-| Destruction and references | [lifecycle.md](lifecycle.md) |
+| Destruction and references | [../lifecycle.md](../lifecycle.md) |
 | Input | [interactions.md](interactions.md) |
-| Containment | [containment.md](containment.md) |
+| Containment | [../containment.md](../containment.md) |
 | Mob Life on pipelines | [life_on_om.md](life_on_om.md) |

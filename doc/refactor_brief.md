@@ -1,7 +1,7 @@
 # Refactor brief (agents)
 
 This brief implements two design documents; read both first:
-- `doc/health_system_review.md`
+- `doc/rewrite/archive/health_system_review.md`
 - `doc/mob_life_architecture.md` (its §8 roadmap is authoritative)
 
 Also read AGENTS.md and `doc/body_architecture.md`.

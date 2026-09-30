@@ -1,10 +1,12 @@
+> **Archived.** Superseded by the foundation design (doc/rewrite/README.md); still accurate for code not yet converted, until the f-* branches merge. Replaced by `capabilities()` / `relations()` / `reactions()` in [foundation.md](../foundation.md); destruction stays in [lifecycle.md](../lifecycle.md).
+
 # Declarative lifecycle: conversion guide
 
 Status: **authoritative** for the declaration primitives. Macros:
 `code/__defines/lifecycle_decl.dm`. Runtime: `code/datums/lifecycle/declarations.dm`.
 Tests: `code/modules/unit_tests/dq_decl_lifecycle_tests.dm`. Backlog lint:
-`tools/ci/decl_lint.py`. Read [lifecycle.md](lifecycle.md) first for the destroy transaction
-and the ownership declarations (doc/rewrite/ownership.md).
+`tools/ci/decl_lint.py`. Read [../lifecycle.md](../lifecycle.md) first for the destroy transaction
+and the ownership declarations (doc/rewrite/archive/ownership.md).
 
 ## 1. The idea
 
@@ -115,7 +117,7 @@ of a var holding the type** (`"cell_type"`). The var's own value wins:
 - a list of paths creates each.
 
 Children are made with `new type(src)` and adopted with `own_set()` / `own_add()`
-(doc/rewrite/ownership.md), so the var is owned (implicitly `OWN_DELETE`, or its declared policy).
+(doc/rewrite/archive/ownership.md), so the var is owned (implicitly `OWN_DELETE`, or its declared policy).
 A var declared as another kind (a relation, a proto) refuses a default child at boot.
 
 ```dm
@@ -188,7 +190,7 @@ DECLARE_APPEARANCE(PATH, "state_var" | null, list(
 - Later layers win for icon_state, colour and icon; overlays add up.
 - The combined result is built once per (type, combination of row keys) and shared: the
   `wall_overlay_images()` pattern, made generic. It lives in the `decl_appearance` shared cache
-  ([caching.md](caching.md)), interned, so types whose layers build the same overlays share one
+  ([../caching.md](../caching.md)), interned, so types whose layers build the same overlays share one
   list, with the cache's stats and test-build mutation guard. The per-type table itself is the
   `lifecycle_decls` shared cache, and binder singletons are `decl_binders`.
 - It is applied at init and by the base `/atom/update_icon()`. A declared type needs no
@@ -267,7 +269,7 @@ DECLARE_BIND(PATH, /datum/decl_binder/my_thing)
   `InitializeAtoms()` ends, right after the cable flush. Outside a batch it binds at once with
   a one-atom list.
 - An atom deleted or dematerialized before the flush drops out of the queue.
-- **Release** runs in destroy phase 1 (before dematerialize, as `lifecycle.md` requires) and on
+- **Release** runs in destroy phase 1 (before dematerialize, as `../lifecycle.md` requires) and on
   a non-destroy dematerialize (collapse to latent).
 
 This is the layer for the bulk-bind work (`rewrite/boot-bind`). A binder whose `bind_list()`
@@ -366,7 +368,7 @@ Workflow per site:
 | `init_bind` | delete `connect_to_network()` in `Initialize()` (dead, see §3.7) | |
 | `init_scheduling` | unconditional `om_task_periodic(src, P)` / `om_attach(src, B)` / constant-delay `om_after(src, D, PROC_REF(p))` → `DECLARE_PERIODIC` / `DECLARE_BEHAVIOUR` / `DECLARE_START_TIMER` | conditional, `rand()` delay, extra args |
 | `init_visuals` | a fixed `icon_state =`/`add_overlay("x")` that follows one var → `DECLARE_APPEARANCE` | computed from several conditions or contents (`// ALLOW(decl): <why>`) |
-| `destroy_qdel_owned` | delete the `qdel(x)`/`QDEL_NULL(x)`: phase 3/4 does it by the var's kind | an ordering the framework can't give (see lifecycle.md §4.2) |
+| `destroy_qdel_owned` | delete the `qdel(x)`/`QDEL_NULL(x)`: phase 3/4 does it by the var's kind | an ordering the framework can't give (see ../lifecycle.md §4.2) |
 | `destroy_drop` | contents `forceMove` loop → `drop_contents = TRUE` | per-item logic in the loop |
 | `destroy_effects` | message/sound/debris lines → `DESTROY_EFFECTS` data | message text built from state |
 | `destroy_registry` / `destroy_scheduling` / `destroy_unbind` | delete: the lifecycle does it | |

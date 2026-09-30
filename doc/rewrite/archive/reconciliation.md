@@ -1,7 +1,9 @@
+> **Archived.** Historical record (audit/report/brief); not maintained. Branch reconciliation against the OM core (rewrite/reconcile, 2026-09-27); done.
+
 # Reconciliation: every open branch, snapshot and worktree against the OM core
 
 Status: **done** on `rewrite/reconcile` (2026-09-27). Rule: our architecture
-(object_model_core.md, lifecycle.md, containment.md, life_on_om.md,
+(object_model_core.md, ../lifecycle.md, ../containment.md, life_on_om.md,
 migration_plan.md) wins; nothing lands as a parallel system. Each source is
 **MERGE** (merged as is, conflicts resolved onto the OM core), **PARTIAL**
 (the parts that fit were ported, the rest dropped), **SUPERSEDED** (already
@@ -93,6 +95,7 @@ fixes below, the 12 plus the 5 compact-interaction tests: 17 passed
 - **Parts (O2).** `/obj/item/Destroy()` cleared `loc` with a raw write for items in a mob, so the mob's ledger never saw a deleted root part leave: its owner, caches and the capacity-1 root slot stayed held, and a species change could not place the new tree. It now uses `moveToNullspace()`. A move within one body can commit the new slot before the old one releases; `on_detached()` now ignores a late detach while the part still resolves to the same owner.
 - **Revive.** `mutations -= HUSK` on a null lazy list made `mutations` the number -7; now `remove_mutation()`.
 - **Combat AI.** The damage test used faction-mates, which the ported retaliation rule ignores on purpose; the test now also asserts that. The spatial wake test raced a re-hibernation; the brain counts `chunk_wakes`.
-- **i7 compact interactions.** Every `/datum/interaction/generic` shared one compiled predicate and selector (cached by type), so compact interactions lost their own requirements; construction edges shared one selector too. Predicates are now keyed per id (`predicate_key()`). Generated specs also get their entry base's requirements back (reach; an item's self-use needs it in hand), and generated ids no longer hash a runtime `ef`. The snapshot runner writes `data/test-snapshots/<test>.txt` on a mismatch; the three i7 snapshots were regenerated from it and reviewed.
+- **i7 compact interactions.** Every `/datum/interaction/generic` shared one compiled predicate and selector (cached by type), so compact interactions lost their own requirements; construction edges shared one selector too. Predicates are now keyed per id (`predicate_key()`). Generated specs also get their entry base's requirements back (reach; an item's self-use needs it in hand), and generated ids no longer hash a runtime `
+ef`. The snapshot runner writes `data/test-snapshots/<test>.txt` on a mismatch; the three i7 snapshots were regenerated from it and reviewed.
 - **Latency sweep (C10).** Sandboxed (unmaterialized) holders no longer register or log; `materialize()` registers and `dematerialize()`/ledger destruction unregister (the list held hard refs forever).
 - **Material tests.** The weakref sweep had rewritten `material_template.resolve()` into `om_resolve()` in two tests.

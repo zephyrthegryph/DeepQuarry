@@ -1,6 +1,8 @@
+> **Archived.** Historical record (audit/report/brief); not maintained. MED-0 review of object_model.md, 2026-09-27; its change requests were applied.
+
 # Object model: medical/body review (MED-0)
 
-Reviewer: DQ Medical lane, 2026-09-27. Reviewed `doc/rewrite/object_model.md` as on
+Reviewer: DQ Medical lane, 2026-09-27. Reviewed `doc/rewrite/archive/object_model.md` as on
 `rewrite/om-integration`, against the medical code on `rewrite/reconcile` (Life already runs
 on OM pipelines, `code/modules/mob/living/life/life_om.dm`; grants in
 `code/datums/om/contribution.dm`). Verdict: **approved with the change requests below.**
@@ -21,7 +23,7 @@ is lifted.
 - **Grants for traits/genes (§5.6).** Trait/gene/perk contributions of `BF_*` factors and
   flags fit the contribution/grant model. `GRANT_TRAIT` exists; revoke-on-source-loss is
   exactly what gene removal and organ/implant removal need.
-- **Survivors leave first, outermost first (§14.1).** Matches `lifecycle.md` phase 0.5:
+- **Survivors leave first, outermost first (§14.1).** Matches `../lifecycle.md` phase 0.5:
   body mind slot, then head, then brain; MMI/ghost spawn while the mob still has a `loc`.
 - **Species and materials as frozen DEFs (§3).** Correct and overdue: the event-headset
   species mutation is the bug class. Per-mob variation belongs in body factors

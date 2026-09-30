@@ -1,3 +1,5 @@
+> **Archived.** Historical record (audit/report/brief); not maintained. State report of the OM core when pipelines landed; the current design is [foundation.md](../foundation.md).
+
 # Object model framework: report
 
 Branch `rewrite/om-pipeline` (on `rewrite/life-om`). This is the state of the object model (OM)

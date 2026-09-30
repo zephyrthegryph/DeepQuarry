@@ -1,8 +1,10 @@
+> **Archived.** Superseded by the foundation design (doc/rewrite/README.md); still accurate for code not yet converted, until the f-* branches merge. Replaced by [state_and_relations.md](../state_and_relations.md), [reactions.md](../reactions.md) and [scheduling_and_kernel.md](../scheduling_and_kernel.md).
+
 # Object model: kinds, ownership, relations, behaviours, scheduling
 
-Status: **authoritative design**. It supersedes `lifecycle.md` §4 (declared
-references). It keeps `lifecycle.md`'s destroy transaction and extends it (§14).
-It sits beside `rust_architecture.md`, which covers the Rust side. Nothing here
+Status: **authoritative design**. It supersedes `../lifecycle.md` §4 (declared
+references). It keeps `../lifecycle.md`'s destroy transaction and extends it (§14).
+It sits beside `../rust_architecture.md`, which covers the Rust side. Nothing here
 migrates existing callers yet. This document defines the frameworks, and
 migration runs later behind ratchets (§21).
 
@@ -362,7 +364,7 @@ every need on an entity is met.
 - **A missing partner is a boot error, not a runtime null.** A heater declared
   without a power source fails validation.
 - **Coupling between heavy simulations happens in Rust,** through coupling laws
-  (`rust_architecture.md` §4.3).
+  (`../rust_architecture.md` §4.3).
 
 ## 8. Requirements: one vocabulary
 
@@ -510,7 +512,7 @@ subscribe to transitions of.
 - **Sources:**
   - **Rust simulation values** (gas, heat, power) are watched *in Rust*, where
     the data lives, through core `watch` and the generic watch registry
-    (`rust_architecture.md` §4.7). Crossings arrive as typed events.
+    (`../rust_architecture.md` §4.7). Crossings arrive as typed events.
   - **DM observable fields** (§18.3) re-evaluate on their change events.
   - **Relations and slots** re-evaluate on link and slot events.
   - **Spatial conditions** re-evaluate on enter/leave from the spatial index.
@@ -646,12 +648,12 @@ Tasks, owned timers and prompts-as-tasks remove nearly all of this.
 
 ## 14. Destruction
 
-`lifecycle.md`'s transaction (LC1, built on `rewrite/ledger-joint`) stays.
+`../lifecycle.md`'s transaction (LC1, built on `rewrite/ledger-joint`) stays.
 This model changes it in five ways:
 
 1. **Survivors leave first,** outermost first, while everything is intact:
    `TRANSFER` and `SPILL` resolve before anything is marked. The mind phase
-   (`lifecycle.md` phase 0.5) becomes one case of this general rule: any
+   (`../lifecycle.md` phase 0.5) becomes one case of this general rule: any
    transfer whose destination is outside the dying tree runs early.
 2. **Then the rest is marked dying.** From this point `link()` to anything in
    the dying set is refused.
@@ -940,7 +942,7 @@ differential tests (old against new on the same inputs), not by inspection.
 | Track | Scope | Depends on |
 |---|---|---|
 | **A: Kinds, ownership, relations** | `object_kind`; the ledger generalised to datum slots; relation kinds (light and rich edges, shapes, `holds_while`, hooks, lifetime policies); `link`/`unlink`/`linked`; derived spatial relations; `DECLARE_REF` from LC2 replaced by own / shared / proto / relations ([ownership.md](ownership.md), built); grants re-expressed as a relation kind; destroy-pipeline changes (§14) | LC1–LC3 (built) |
-| **B: Scheduler** | wakes; owned timers; Poisson timers; the watch evaluator (DM side; Rust side from `rust_architecture.md`); rate fields and contributions; periodic behaviours with staggering; tasks and prompts with stamps; the test clock; the missed-wake audit; MC integration on the Rust reactor | A (edges) |
+| **B: Scheduler** | wakes; owned timers; Poisson timers; the watch evaluator (DM side; Rust side from `../rust_architecture.md`); rate fields and contributions; periodic behaviours with staggering; tasks and prompts with stamps; the test clock; the missed-wake audit; MC integration on the Rust reactor | A (edges) |
 | **C: Archetypes and behaviours** | `declare()` builder; archetype build and validation; bundles; behaviour singletons, config, interfaces, state machines; requirement types and the `/datum/check` library with dependency capture and messages; typed events with static dispatch, phases, delivery modes and bubbling | A; B for triggers |
 | **D: Startup quick wins** | build-time assets; lazy wiki; batched post-load init passes; bench before and after | none; can start now |
 | **E: UI** | `/ui` types, fragments, change-driven sessions, action schemas, generated TS types | C; F for generation |

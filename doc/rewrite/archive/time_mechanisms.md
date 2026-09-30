@@ -1,3 +1,5 @@
+> **Archived.** Superseded by the foundation design (doc/rewrite/README.md); still accurate for code not yet converted, until the f-* branches merge. Replaced by `after()` and `every()` in [reactions.md](../reactions.md) and [scheduling_and_kernel.md](../scheduling_and_kernel.md).
+
 # Which time mechanism?
 
 One page. Every mechanism below runs on the object-model scheduler (SSbehaviours) or is a

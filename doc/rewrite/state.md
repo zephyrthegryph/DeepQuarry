@@ -113,7 +113,7 @@ Ad-hoc global lists (radios, PDAs and the messenger, trackers, cameras, machine 
 - **Declared signals.** Each signal is declared with its argument count, and debug builds assert it. A `SEND_SIGNAL` with the wrong arguments is silent today.
 - **CI audit.** Every `COMSIG_*` must be sent somewhere and listened to somewhere. Today some are defined but never sent: the storage signals, the four machinery signals and the screentip signals. `COMSIG_TURF_CHANGE` is listened for but never sent. Each gets wired up or deleted.
 - **Pooled dispatch.** Sending to several listeners uses a pooled buffer instead of allocating `queued_calls` every time.
-- **Simulation dependencies** go through OM channels and world watches, not signals ([object_model_core.md, section 4.8](object_model_core.md#48-native-rust-watches-and-the-world-step)).
+- **Simulation dependencies** go through OM channels and world watches, not signals ([archive/object_model_core.md, section 4.8](archive/object_model_core.md#48-native-rust-watches-and-the-world-step)).
 
 ## 9. Randomness
 
