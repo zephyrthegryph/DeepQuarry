@@ -41,6 +41,7 @@
 /obj/machinery/power/apc/generated_reads()
 	. = ..()
 	. += drawn_from(nameof(charging))
+	. += rust_push(nameof(cell), nameof(chargelevel), nameof(chargemode), nameof(grid_check), nameof(operating), nameof(power_failed), nameof(pushed_cell), nameof(shorted), nameof(vg_entity))
 	. += ui_from(nameof(chargemode), nameof(charging), nameof(coverlocked), nameof(emergency_lights), nameof(grid_check), nameof(main_status))
 
 /obj/machinery/vending/generated_reads()
