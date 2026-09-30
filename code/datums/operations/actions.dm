@@ -159,6 +159,7 @@ GLOBAL_LIST_INIT(action_defs, init_action_defs())
 /datum/bind_profile/default
 
 /datum/bind_profile/default/table()
+	// ALLOW(sys_static_getter): a memoized per-type table built once on first call
 	var/static/list/binds = list(
 		GESTURE_CLICK = list(ACT_USE),
 		GESTURE_SELF = list(ACT_USE),
