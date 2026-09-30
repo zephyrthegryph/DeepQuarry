@@ -145,6 +145,7 @@
 #include "kernel_await.dm"
 #include "kernel_latency.dm"
 #include "kernel_periodic.dm"
+#include "kernel_work.dm"
 #include "techwebs.dm"
 #include "tgui_create_message.dm"
 #include "trait_tests.dm"

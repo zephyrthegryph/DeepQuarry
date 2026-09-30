@@ -2,4 +2,5 @@
 VERB_MANAGER_SUBSYSTEM_DEF(speech_controller)
 	name = "Speech Controller"
 	wait = 1
+	flags = SS_TICKER | SS_NO_INIT
 	priority = FIRE_PRIORITY_SPEECH_CONTROLLER//has to be high priority, second in priority ONLY to SSinput

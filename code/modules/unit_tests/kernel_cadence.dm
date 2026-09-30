@@ -32,3 +32,13 @@
 	var/datum/system/reactive = new /datum/system/test_cadence_reactive
 	TEST_ASSERT_EQUAL(reactive.step_interval(), 0, "a reactive system has no interval")
 	TEST_ASSERT_NULL(reactive.periodic_cadence, "and no cadence")
+	check_work_item_interval()
+
+/// A work item's cadence is its interval: due when first seen, then once per interval, re-armed from the run.
+/datum/unit_test/kernel_cadence/proc/check_work_item_interval()
+	var/datum/controller/kernel/K = new
+	var/datum/test_work_owner/O = new
+	var/datum/work_item/test_fixture/W = K.register_work(/datum/test_work_owner, test_work_item(O, interval = 20))
+	for(var/now in list(0, 10, 20, 30, 40, 50))
+		K.run_item(W, WORK_TEST_LIMIT, now)
+	TEST_ASSERT_EQUAL(length(O.calls), 3, "a 20 ds work item runs at 0, 20 and 40 of 0..50")

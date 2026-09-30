@@ -23,32 +23,16 @@
 			return C.role
 	return null
 
-/// A system whose members are indexed by role (powered_by()).
+/// The role this capability plays in its system.
+/datum/capability/powered_by/system_role()
+	return role
+
+/// A system whose members are indexed by role (powered_by()). The index is the membership store's (membership.dm).
 /datum/cap_system/roles
-	/// role -> list of members.
-	var/list/by_role = list()
-
-/datum/cap_system/roles/join(atom/A)
-	..()
-	var/role = cap_system_role(A, type)
-	if(isnull(role))
-		return
-	var/list/L = by_role["[role]"]
-	if(!L)
-		L = by_role["[role]"] = list()
-	L |= A
-
-/datum/cap_system/roles/leave(atom/A)
-	..()
-	for(var/role in by_role)
-		var/list/L = by_role[role]
-		L -= A
 
 /// The members of `system` holding `role` (a copy).
 /proc/cap_system_members(system, role)
-	var/datum/cap_system/roles/S = cap_system(system)
-	var/list/L = S.by_role["[role]"]
-	return L ? L.Copy() : list()
+	return members_of(system, role).Copy()
 
 /// The power system: area supplies (APCs); producers and storage later.
 /datum/cap_system/power

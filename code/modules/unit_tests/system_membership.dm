@@ -15,7 +15,7 @@
 
 /datum/system/test_members/on_members_ready()
 	ready_calls++
-	members_at_ready = length(members)
+	members_at_ready = member_count()
 
 /datum/unit_test/system_membership
 
@@ -31,7 +31,7 @@
 	TEST_ASSERT(S.kernel_join(b), "second join is new")
 	TEST_ASSERT(S.kernel_join(c), "third join is new")
 	TEST_ASSERT(!S.kernel_join(b), "a second join of the same atom is refused")
-	TEST_ASSERT_EQUAL(length(S.members), 3, "three members recorded")
+	TEST_ASSERT_EQUAL(length(S.member_list()), 3, "three members recorded")
 	TEST_ASSERT_EQUAL(S.joined, 3, "on_join ran once per new member")
 	TEST_ASSERT_EQUAL(S.ready_calls, 0, "on_members_ready() waits for the boot pass")
 	TEST_ASSERT(S.is_member(a) && S.is_member(b) && S.is_member(c), "is_member sees them")
@@ -41,11 +41,9 @@
 	TEST_ASSERT(S.kernel_leave(a), "leaving removes a member")
 	TEST_ASSERT(!S.kernel_leave(a), "leaving twice is a no-op")
 	TEST_ASSERT(!S.kernel_leave(d), "a non-member cannot leave")
-	TEST_ASSERT_EQUAL(S.members[1], c, "the last member took the vacated slot")
-	TEST_ASSERT_EQUAL(S.member_index[c], 1, "and its index follows")
-	TEST_ASSERT_EQUAL(S.member_index[b], 2, "an untouched member keeps its index")
-	TEST_ASSERT_EQUAL(S.left, 1, "on_leave ran once")
-	TEST_ASSERT_EQUAL(length(S.members), length(S.member_index), "members and index agree")
+	TEST_ASSERT_EQUAL(S.member_list()[1], c, "the last member took the vacated slot")
+	TEST_ASSERT(S.is_member(c) && S.is_member(b), "the others stay members")
+	TEST_ASSERT(!S.is_member(a), "the leaver is gone")
 
 	// The bulk pass runs once and sees every member that joined before it.
 	S.kernel_members_ready()
@@ -56,14 +54,13 @@
 
 	// Late joiners are members at once.
 	TEST_ASSERT(S.kernel_join(d), "a late join is new")
-	TEST_ASSERT_EQUAL(length(S.members), 3, "late joiner recorded")
+	TEST_ASSERT_EQUAL(length(S.member_list()), 3, "late joiner recorded")
 
 	// Emptying the system frees its lists.
 	S.kernel_leave(b)
 	S.kernel_leave(c)
 	S.kernel_leave(d)
-	TEST_ASSERT_NULL(S.members, "an empty system holds no members list")
-	TEST_ASSERT_NULL(S.member_index, "or index")
+	TEST_ASSERT_EQUAL(S.member_count(), 0, "an emptied system has no members")
 	TEST_ASSERT_EQUAL(S.left, 4, "every leave ran on_leave")
 
 	// metrics() is the telemetry channel.

@@ -295,7 +295,13 @@ The decision table. **Read it before writing anything with a timer.**
 
 - **Definition:** a system is `/datum/system/x` in `code/modules/x/`. It has private state (`VAR_PRIVATE`), `needs = list(...)` (boot order), `periodic_cadence` + `should_run()` + `periodic_step(dt)`, `member_should_run(A)` / `member_step(A, dt)` for atoms that joined through `cap_system()`, `emits` + `events()`, `latency_class`, and an `api.dm` that other folders may call.
 - **Replaces:** `SUBSYSTEM_DEF`, `/datum/world_service`, `GLOB.x_service`, `boot_after`/`order_after`, `init_order`, `fire()`.
-- **Until the kernel lands:** don't convert subsystems. Do add `api.dm` procs for what other folders call, and route new callers through them.
+- **Built [rewrite/f-kernel]:** the kernel tick (`code/controllers/kernel/kernel.dm`) runs once per MC iteration in phases K N U D P R G; `SSbehaviours` no longer fires; input, verb_manager and garbage are hosted by the kernel (`SS_KERNEL_HOSTED`), the rest of the MC queue is unchanged.
+- **Work items:** `/datum/work_item` (interval, handler, `runs_while`, members, phase, after, budget, lane, urgent, clock) registered with `kernel_register_work(owner_type, W)`. `every()` and friends produce these. `while` is a reserved word in DM, so the field and the constructor argument are `runs_while`. Handlers are `handler(dt)` or, with `members =`, `handler(member, dt)`, and return `STEP_DONE` / `STEP_YIELD` / `STEP_PARK`.
+- **Ordering:** `after = list(owner_types or item keys)` inside a phase; one validator (`graph_validate()`, `kernel/graph.dm`) serves the boot DAG and the work graph. An edge to an earlier phase is already satisfied; to a later phase or at nothing is an error in `kernel().work_errors`.
+- **Urgent:** `request_urgent(member, work, deadline)` for an item declared `urgent = TRUE`: one pending request per (member, work), runs in phase U from a reserved slice, shares the item's per-member execution token with the cadence so elapsed time is applied once, and `metrics()["urgent"]` counts breaches.
+- **Membership:** `member_join(key, E, source, role)` / `member_leave` / `members_of(key, role)` (`kernel/membership.dm`). `system.members` and `member_index`, `cap_system/roles.by_role` and the hand `world_services()` list are gone: use `S.member_list()`, `cap_system_members()` and the derived `world_services()`.
+- **Stages:** `stage_work_item(stage_type, members, interval)` adapts an existing stage (`should_step(E)` is `!idle(E)`, reads from `reads`). Nothing is migrated.
+- **Still true:** don't convert subsystems to systems by hand: every `SSx` call site would change. The deferred list is in `kernel.md`, Implementation notes (rewrite/f-kernel).
 
 ## A13. Automatic: don't write these
 

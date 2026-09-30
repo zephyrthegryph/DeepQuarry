@@ -1662,3 +1662,41 @@ What exists in the tree, so the sections above are not read as all-future.
   `/datum/om/io/rustg_job` is the I/O kind for a caller-started iconforge job. The 68 legacy `stoplag()` / modal
   wait sites are not converted.
 - **Lint**: `tools/ci/system_boundary_lint.py` (B1-B7, shrink-only baseline).
+
+## Implementation notes (branch rewrite/f-kernel)
+
+Built on top of the notes above.
+
+- **kernel_tick** (`code/controllers/kernel/kernel.dm`): `kernel().tick(limit, init_stage)` is called once per MC loop
+  iteration, ahead of the MC queue, with `KERNEL_TICK_SHARE` of the remaining budget; the MC's other subsystems
+  (dbcore, tgui transport, assets, atoms, overlays, profiler, air, lighting, ...) keep their queue and get the rest.
+  Phases: **K** hosted `SSinput` / `SSverb_manager` (`SS_KERNEL_HOSTED`, never queued by the MC; use over
+  `KERNEL_INPUT_CAP` is counted), **N** `native_frame(elapsed, budget)`, **U** urgent slice, **D** deadline wheel then
+  deadline-phase work items, **P** borrow pass then each lane (scheduler share, then that lane's work items), **R**
+  leftovers, **G** hosted `SSgarbage` with a floor (`KERNEL_GARBAGE_FLOOR` per `KERNEL_GARBAGE_FLOOR_PERIOD`). Each
+  phase is guarded: a runtime is logged, counted (`phase_faults`) and the tick goes on. The scheduler's `run_pass()`
+  is now `pass_begin / pass_deadlines / pass_borrow / pass_lanes / pass_leftovers / pass_end`; run_pass() still runs
+  them all for the test harness, and the kernel runs the same pieces between its phases (`native_hosted` moves
+  `world_step()` to phase N).
+- **SSbehaviours dissolved**: `SS_NO_FIRE`; its pass, pipeline audit (`audit_due()`), `bench_ms`, `cost` and `last_done`
+  are fed by the kernel. It still boots the registry, scheduler and world lanes.
+- **native_frame** (`kernel/native.dm`) is a stub for the Rust owner: it steps the OM world wheel. `vg_world_tick`,
+  `vg_entity_tick_all`, `vg_drain_events` (SSvg) and the gas phases + `vg_heat_tick` (SSair) still run where they did.
+- **Work items** (`work_item.dm`, `work_engine.dm`): see the migration guide A12 for the API. Ordering is per phase
+  with `after` edges resolved to items (owner type = all its items, string = item key) and validated by
+  `graph_validate()`, the same call the boot DAG uses. Cost accounting per item and per owner type is in
+  `kernel().metrics()` and each system's `metrics()["reactions"]`. A memberless item runs on the owner
+  (`system(owner_type)`); an item with `members =` sweeps `members_of(key)` with a resumable cursor.
+  A capability type named in `members` joins holders in `caps_init` only if it was registered before they initialized.
+- **Urgent requests** (`urgent.dm`), **membership relations** (`membership.dm`), **stage adapters** (`stage_work_item`)
+  and **clocks as sources** (`work_clock_now`, entity clocks via `om_clock_now`): as in the migration guide.
+- **Rosters removed**: `system.members`/`member_index` (now `member_list()`), `cap_system/roles.by_role`
+  (`cap_system_members()`), the `world_services()` hand list (derived from the registry, so its order is registration
+  order instead of the old hand order).
+- **Deferred subsystem conversions**: air, vg, lighting, ticker, shuttles, job, contracts, persistence, holomaps,
+  media_tracks, nerdle, robot_sprites, speech_controller, mapping, access, admin_verbs, internal_wiki stay
+  `SUBSYSTEM_DEF`. Each is referenced as `SSx` from 7 to 433 sites; converting one is a call-site migration, which this
+  batch's rules forbid, and air/vg/ticker/lighting also wait on the native and cycle-breaking work.
+- **Not done**: the failsafe still watches `Master.iteration` (the kernel keeps `last_tick`); `Recreate_kernel()`
+  does not exist (the MC's recreate reuses the same kernel singleton, whose state is not on the loop); no B1..B7 lint
+  change.

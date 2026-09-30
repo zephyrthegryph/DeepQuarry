@@ -2,7 +2,7 @@ SUBSYSTEM_DEF(input)
 	name = "Input"
 	wait = 1 // SS_TICKER means this runs every tick
 	init_stage = INITSTAGE_EARLY
-	flags = SS_TICKER | SS_NO_INIT
+	flags = SS_TICKER | SS_NO_INIT | SS_KERNEL_HOSTED
 	priority = FIRE_PRIORITY_INPUT
 	runlevels = RUNLEVELS_DEFAULT | RUNLEVEL_LOBBY
 
