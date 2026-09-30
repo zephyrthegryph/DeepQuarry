@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "The APC is rebuilt on the foundation: bundles, a build ladder, ops with contracts, relations, notices and generated Rust pushes"
+  - refactor: "The area's lights and consoles are member relations of their area; the APC reads them through the relation"
+  - code_imp: "Integrated the reactions, operations, look, kernel and native branches: one membership store behind join/leave, gestures resolve through actions to ops, native frames deliver through publish_change/PUBLISH/rx_crossed"
