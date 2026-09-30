@@ -4,8 +4,8 @@ The foundation is the small set of concepts every gameplay feature is written in
 the object-model (OM) API (`om_*`, `DECLARE_*`, pipelines) and the interaction tables with fewer
 ideas that compose. This page is the overview and the vocabulary; each concept has a chapter.
 
-**Status.** Every foundation API is **[in progress]** on branches `rewrite/f-reactions`,
-`f-ops`, `f-look`, `f-rust` and `f-kernel` (integration on `rewrite/foundation`). Forms that
+**Status.** The foundation APIs were built on branches `rewrite/f-reactions`,
+`f-ops`, `f-look`, `f-rust` and `f-kernel` and integrated on `rewrite/foundation` (the APC is rebuilt on them). Forms that
 exist on `rewrite/dx-framework` today are marked **[built]**. Nothing marked [in progress] or
 [planned] may be used in converted code until its branch merges. Old call sites are **not**
 migrated by the F batch: the new API is added beside the old forms, and old procs become thin
@@ -55,42 +55,55 @@ outbox. Nothing else schedules, listens, or owns.
 7. **Pooled flyweights** for anything allocated per event (notices, op contexts, damage packets).
 8. **Everything is measured.** Per-reaction cost is in `metrics()`; benches gate each wave.
 
-## Target example: the APC on the new system [in progress]
+## Target example: the APC on the new system [built]
 
-The integration step (W6) rebuilds `code/modules/power/apc.dm` in this shape and deletes
-`apc_steps` and its wrappers. Names are the spec's; treat the exact argument lists as provisional
-until the branches merge.
+`code/modules/power/apc.dm` is written in this shape (the integration branch `rewrite/foundation`);
+`apc_steps` and its wrappers (`cap_entry_point`, `cap_entry_costs`, `cap_entry_delay`, `cap_hatch_rules`) are deleted.
+The excerpt is the real code, trimmed to the declarations:
 
 ```text
 /obj/machinery/power/apc
-    // type vars: configuration only
-    cell_type = /obj/item/cell/apc
-    // ...
+    machine_board = /obj/item/module/power_control        // type vars: what it is
+    machine_wires = /datum/wires/apc
+    req_access = list(ACCESS_ENGINE_EQUIP)
 
 /obj/machinery/power/apc/capabilities()
     . = ..()
-    . += wall_machine(board = /obj/item/circuitboard/apc)
-    . += cell_bay(nameof(cell))
+    . += wall_machine(dismantle = NONE, repair = NONE, powered = FALSE)
+    . += maintenance_hatch(cover_holds = PROC_REF(cover_holds), panel_needs_cover_closed = TRUE, emag_say = "...")
+    . += cell_bay(nameof(cell), at = BAY_HATCH, needs = PROC_REF(cell_bay_ready), size = ITEMSIZE_NORMAL)
     . += power_channels()
-    . += cap_construction(insert(/obj/item/circuitboard/apc), wire(5), fasten(TOOL_SCREWDRIVER), ...)
-    . += cap_require(ops = OP_CONTROL, needs = req_part(/obj/item/circuitboard/apc))
-    . = refine(., "toggle_lock", delay = 1 SECONDS, action = ACT_LOCK)
+    . += powered_by(/datum/cap_system/power, role = POWER_ROLE_AREA_SUPPLY)
+    . += cap_construction(
+        ladder_options(at = BAY_HATCH, undo_delay = 5 SECONDS, dismantle = list(TOOL_WELDER, /obj/item/frame/apc, 1, PROC_REF(frame_ruined), /obj/item/stack/material/steel)),
+        stage("frame", desc = "..."), apc_board_stage(), apc_wired_stage(), apc_secured_stage())   // build_insert / build_wire / build_fasten
+    . += apc_ops()                                          // cap_control("Open interface"), the cover, the multitool reset
+    . += cap_require(list(CAP_LOCK, CAP_LOCK_SWIPE), needs = list(req_clear(CAP_EMAGGED), req_proc(PROC_REF(not_hacked)), req_wire(WIRE_IDSCAN), req_proc(PROC_REF(is_working))))
+    . += cap_require(CAP_EMAG, needs = req_proc(PROC_REF(emag_ok)))
+    . += refine(CAP_EMAG, delay = 0.6 SECONDS, effect = PROC_REF(on_emag))
 
 /obj/machinery/power/apc/relations()
     . = ..()
-    . += rel_one(nameof(area), /area, kind = PAIRED)
-    . += rel_one(nameof(cell), /obj/item/cell, kind = OWNED)
+    . += rel_one(nameof(cell), /obj/item/cell, kind = RELK_OWNED, policy = OWN_SPILL)
+    . += rel_one(nameof(terminal), /obj/machinery/power/terminal, kind = RELK_PAIRED, back = nameof(/obj/machinery/power/terminal::master))
 
-/obj/machinery/power/apc/reactions()
+/obj/machinery/power/apc/reactions()                       // only what it hears
     . = ..()
-    . += on_notice(/datum/notice/emp, PROC_REF(on_emp))      // its own notices only
-    // reads, draws, UI and rust pushes are generated from draw()/tgui_data()/push_to_rust()
+    . += on_notice(/datum/notice/hit, PROC_REF(on_hit))
+    . += on_notice(/datum/notice/slashed, PROC_REF(on_slashed))
 
-/obj/machinery/power/apc/draw(datum/look/look)
+/obj/machinery/power/apc/draw(datum/look/look)             // reads, redraws, UI refreshes and Rust pushes are generated
+    look.part("emagged", apc_bluescreen())
     ..()
-    look.part("charge", charge_level)
-    look.glow("charge", charge_level)                         // explicit glows
+    ...
+    look.part("channel-3", "[charging]")
+    look.glow("channel-3", "[charging]")                   // explicit glows
 ```
+
+The lock is two ops declared by the hatch (`CAP_LOCK`, ACT_LOCK, the actor's own access, an alt-click; `CAP_LOCK_SWIPE`, an ID
+in hand) and the emag one op (`CAP_EMAG`, its handler is the effect; the shared commit is an `after_op` reaction of the emag
+capability). The area's lights and consoles are MEMBER relations of the area (`powered_by(POWERED_BY_AREA, role = POWER_ROLE_LIGHTING)`);
+the APC reads them with `area_members(area, role)` instead of scanning the area.
 
 Old forms map to new ones in [migration_guide.md](migration_guide.md) (Part F) and
 [dx_conventions.md](dx_conventions.md). The pre-foundation design is in [archive/](archive/).

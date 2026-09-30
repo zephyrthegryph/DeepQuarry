@@ -49,6 +49,8 @@ bug or an explicit declaration (a consumed catalyst).
 
 ## 4. Status of existing ladders
 
-`apc_steps` and its wrappers are removed by the integration step when the APC is rebuilt on the
-primitives ([foundation.md](foundation.md), the target example). Other ladders keep working through
+`apc_steps` and its wrappers are removed: the APC is built on the primitives (`build_insert`, `build_wire`,
+`build_fasten`, `ladder_options(at = BAY_HATCH, undo_delay =, dismantle =)`; [foundation.md](foundation.md), the example). A
+`dismantle` list may carry a fourth to sixth element (a holder proc saying the holder is ruined, and what it comes apart
+into then). Other ladders keep working through
 the current `stage()` form until they are converted.

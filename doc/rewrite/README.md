@@ -32,7 +32,7 @@ beside the old forms.
 | `rewrite/f-look` | W3 | `look.variant/part/glow`, construction primitives and joints, pools, rename tool | [in progress] |
 | `rewrite/f-rust` | W4 | `vg_frame`, outbox, `native_read`, one watch facility, mirror deletion, gas binds | [in progress] |
 | `rewrite/f-kernel` | W5 | `kernel_tick`, phases, urgent requests, membership as relations, systems | [in progress] |
-| `rewrite/foundation` | W6 | Integration; rebuilds the APC in the target shape; full suite | [planned] |
+| `rewrite/foundation` | W6 | Integration; rebuilds the APC in the target shape; full suite | [built] |
 | `rewrite/f-docs` | - | This documentation set | this branch |
 
 ## Document map
