@@ -44,6 +44,9 @@ scanned (fixtures count calls in their procs). An assignment (`x = ...`, a named
     python tools/ci/derived_reads_lint.py --selftest      # run the built-in fixtures
     python tools/ci/derived_reads_lint.py --fix-generated # rewrite code/_generated/reads.dm (see below)
 
+A type that hand-declares nothing (no derived()) is not held to the rule in the CI run: its reads are generated (below)
+and kept fresh by the same check. The rule still binds a type that declares derived().
+
 Generated reads: every derived proc body's reads (declared or not) are written to code/_generated/reads.dm as
 one `/type/generated_reads()` override per type, in the same drawn_from / ui_from / runs_while / rust_push /
 derive vocabulary. They are implicit reads: they feed READERS() (code/datums/reactions), so TRACKED setters
@@ -371,7 +374,10 @@ class Model:
 
 # ---------------------------------------------------------------- the rules
 
-def analyze(model):
+def analyze(model, generated_covers=False):
+    """The findings. With `generated_covers` (the CI run) a type that declares no derived() at all is not asked
+    to: code/_generated/reads.dm (kept fresh by the same CI check) lists what its derived procs read, so READERS()
+    is complete for it. A type that hand-declares derived() is still held to its declaration."""
     findings = []
 
     def raw_allowed(rel, line):
@@ -383,6 +389,8 @@ def analyze(model):
         kind = PROC_KIND.get(proc.name)
         value = proc.name[len("derive_"):] if proc.name.startswith("derive_") else None
         if not kind and not value:
+            continue
+        if generated_covers and not model.exact(proc.owner):
             continue
         known = model.union(model.vars, proc.owner)
         if value:
@@ -633,7 +641,7 @@ def main(argv):
             handle.write(text)
         print("derived_reads --fix-generated: wrote %s (%d lines)" % (GENERATED_REL, text.count("\n")))
         return 0
-    findings = analyze(model)
+    findings = analyze(model, generated_covers=True)
     if "--report" in argv:
         for f in findings:
             print("%s:%d: [%s] %s" % (f.rel, f.line, f.rule, f.message))

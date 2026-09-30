@@ -195,9 +195,8 @@
 	TEST_ASSERT_EQUAL(length(F.notes), 1, "the notice was not delivered")
 	TEST_ASSERT_EQUAL(F.notes[1][1], 7, "the notice kind is wrong")
 	TEST_ASSERT_EQUAL(length(F.notes[1][2]), 3, "the notice fields are wrong")
-	var/pooled = length(GLOB.rx_notice_pool[/datum/notice/native])
 	native_publish_notice(D, 7, list(1))
-	TEST_ASSERT_EQUAL(length(GLOB.rx_notice_pool[/datum/notice/native]), pooled, "an unwanted notice touched the pool")
+	TEST_ASSERT(!length(D.rx?.listeners), "an unwanted notice reached a deaf datum")
 
 /// A watch declared for a reaction delivers through rx_crossed: the first sight is a baseline, a band change
 /// delivers (urgent: at once) with the previous band, the same band again does not; a watch of no reaction still

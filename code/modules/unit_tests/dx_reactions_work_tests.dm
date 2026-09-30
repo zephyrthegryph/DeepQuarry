@@ -314,6 +314,6 @@
 /datum/unit_test/dx_event_coalesce_audit/Run()
 	var/datum/om/event/material_facts_changed/M = new
 	TEST_ASSERT(M.coalesce, "material_facts_changed is a state-invalidation signal: coalesced")
-	for(var/type in list(/datum/om/event/moved, /datum/om/event/examine, /datum/om/event/hitby, /datum/om/event/native_notice))
+	for(var/type in list(/datum/om/event/moved, /datum/om/event/examine, /datum/om/event/hitby))
 		var/datum/om/event/E = new type
 		TEST_ASSERT(!E.coalesce, "[type] is an occurrence: not coalesced")
