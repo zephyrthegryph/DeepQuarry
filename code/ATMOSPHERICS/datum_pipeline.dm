@@ -5,10 +5,6 @@ OWN_TIMER(/datum/pipeline, engineered_exposure_timer)
 	/// PROTO gas port: the pipe network's authoritative mixture (shared, the network owns it),
 	/// or a private detached share this line owns. Written only by atmos_air_set().
 	var/datum/gas_mixture/air
-	/// Physical volume contributed by this pipeline, retained while its air slot
-	/// is rebound to the larger authoritative network mixture.
-	var/volume
-
 	/// Pipes in this line (two-sided with each pipe's `parent`).
 	var/list/obj/machinery/atmospherics/pipe/members
 	/// Pipes at this line's edges (two-sided with each pipe's `edge_pipelines`). Used for building networks.
@@ -90,9 +86,16 @@ OWN_TIMER(/datum/pipeline, engineered_exposure_timer)
 	if(network == reference)
 		atmos_air_set(src, nameof(air), network_air)
 
+/// Physical volume this line's pipes contribute: derived from the members, never stored.
+/datum/pipeline/proc/physical_volume()
+	var/total = 0
+	for(var/obj/machinery/atmospherics/pipe/member as anything in members)
+		total += member.volume
+	return total
+
 /datum/pipeline/proc/detach_network_air(datum/pipe_network/reference, datum/gas_mixture/network_air, network_volume)
 	if(network == reference && air == network_air)
-		atmos_air_set(src, nameof(air), detached_pipenet_air(network_air, volume, network_volume))
+		atmos_air_set(src, "air", detached_pipenet_air(network_air, physical_volume(), network_volume))
 
 /datum/pipeline/proc/return_network(obj/machinery/atmospherics/reference)
 	// Rust materializes this read-only compatibility wrapper.

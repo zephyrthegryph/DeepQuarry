@@ -426,6 +426,54 @@ fn component_bind(entity: ByondValue, code: ByondValue, init: ByondValue) -> Res
     Ok(ByondValue::from(entity::entity_value(e)))
 }
 
+/// [`component_bind`] for many entities in one call and one world lock.
+/// `fields` is `[field id, ...]`; `rows` is flat, `stride = length(fields) + 1`
+/// values per row: `[entity (0: a new entity), value for each field...]`.
+/// Returns the list of entity handles, in row order. One bad row fails the
+/// whole call (nothing is half-bound past the failing row).
+#[auxmacros::bind("/proc/vg_component_bind_list")]
+fn component_bind_list(
+    code: ByondValue,
+    fields: ByondValue,
+    rows: ByondValue,
+) -> Result<ByondValue> {
+    let field_ids = fields
+        .get_list_values()?
+        .iter()
+        .map(field)
+        .collect::<Result<Vec<_>>>()?;
+    if field_ids.is_empty() {
+        bail!("fields must name at least one field");
+    }
+    let values = rows.get_list_values()?;
+    let stride = field_ids.len() + 1;
+    if values.len() % stride != 0 {
+        bail!("rows must be flat entity, value... records of {stride} values");
+    }
+    // Entities are minted before the world is borrowed (as `component_bind` does).
+    let entities = values
+        .chunks_exact(stride)
+        .map(|row| entity::bind_or_reuse(num(&row[0])?))
+        .collect::<Result<Vec<_>>>()?;
+    let mut handles = Vec::with_capacity(entities.len());
+    with_world(|w| {
+        let k = kind(w, &code)?;
+        for (row, e) in values.chunks_exact(stride).zip(entities.iter().copied()) {
+            let mut init = Vec::with_capacity(field_ids.len());
+            for (f, v) in field_ids.iter().zip(&row[1..]) {
+                init.push((*f, None, f64::from(num(v)?)));
+            }
+            w.bind(Some(e), k, &init).map_err(|err| eyre!("{err}"))?;
+            w.entities_mut()
+                .attach(e, WORLD_DOMAIN, ComponentRef::new(0, e.bits()))
+                .map_err(|err| eyre!("{err}"))?;
+            handles.push(entity::entity_value(e));
+        }
+        Ok(())
+    })?;
+    list(handles)
+}
+
 /// Detaches one component.
 #[auxmacros::bind("/proc/vg_component_detach")]
 fn component_detach(entity: ByondValue, code: ByondValue) -> Result<ByondValue> {

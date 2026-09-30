@@ -25,7 +25,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "92e87bfb0975be2b"
+#define VERDIGRIS_ABI "ebec8dfd1aac071f"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -464,6 +464,17 @@
 	var/static/__f = load_ext(VERDIGRIS, "byond:component_bind_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(entity, code, init)
+
+/// [`component_bind`] for many entities in one call and one world lock.
+/// `fields` is `[field id, ...]`; `rows` is flat, `stride = length(fields) + 1`
+/// values per row: `[entity (0: a new entity), value for each field...]`.
+/// Returns the list of entity handles, in row order. One bad row fails the
+/// whole call (nothing is half-bound past the failing row).
+// /proc/vg_component_bind_list (verdigris/ffi/src/world.rs)
+/proc/vg_component_bind_list(code, fields, rows)
+	var/static/__f = load_ext(VERDIGRIS, "byond:component_bind_list_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(code, fields, rows)
 
 /// Detaches one component.
 // /proc/vg_component_detach (verdigris/ffi/src/world.rs)
@@ -1067,6 +1078,15 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(sources, sink, requested, available_power, efficiency)
 
+/// Args: (src, sink, target_kpa, gases_mask, sink_volume_mod). Read-only: the moles
+/// of `gases_mask` that would bring `sink` (its volume enlarged by
+/// `sink_volume_mod` litres, for a networked sink) to `target_kpa`.
+// /proc/vg_moles_to_pressure (verdigris/ffi/src/gas/binds.rs)
+/proc/vg_moles_to_pressure(src_ref, sink, target_kpa, gases_mask, sink_volume_mod)
+	var/static/__f = load_ext(VERDIGRIS, "byond:moles_to_pressure_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(src_ref, sink, target_kpa, gases_mask, sink_volume_mod)
+
 /// Args: (coefficient). Multiplies all gases by this amount.
 // /datum/gas_mixture/proc/multiply (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_multiply_hook(src_ref, num_val)
@@ -1148,6 +1168,15 @@
 	var/static/__f = load_ext(VERDIGRIS, "byond:pipe_device_set_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(id, port_a, port_b)
+
+/// [`pipe_device_set`] for every `device, port_a, port_b` triple in the flat
+/// list `triples`, in one call (round-start device registration). Returns how
+/// many succeeded; a bad row is skipped, not an error.
+// /proc/vg_pipe_device_set_list (verdigris/ffi/src/pipes.rs)
+/proc/vg_pipe_device_set_list(triples)
+	var/static/__f = load_ext(VERDIGRIS, "byond:pipe_device_set_list_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(triples)
 
 /// Registers (or replaces) a device edge between a port and a turf (a vent
 /// pump or scrubber): `turf_mixture_handle` is the turf's gas-mixture
@@ -1533,6 +1562,17 @@
 	var/static/__f = load_ext(VERDIGRIS, "byond:transfer_ratio_hook_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref, other, ratio)
+
+/// Args: (src, sink, target_kpa, max_moles, gases_mask). Moves gas from `src` into
+/// `sink` until the sink reaches `target_kpa` (an exact ideal-gas solve, with
+/// mixing temperature), never more than `max_moles` (`null` or <= 0: no cap)
+/// and only the gases in `gases_mask` (a `1 << gas_id` bitset, 0: all).
+/// Returns the moles moved. Replaces the DM `gas_pressure_calculate` solvers.
+// /proc/vg_transfer_to_pressure (verdigris/ffi/src/gas/binds.rs)
+/proc/vg_transfer_to_pressure(src_ref, sink, target_kpa, max_moles, gases_mask)
+	var/static/__f = load_ext(VERDIGRIS, "byond:transfer_to_pressure_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(src_ref, sink, target_kpa, max_moles, gases_mask)
 
 /// Diagnostic: whether the turf's gas is still moving (some open edge is
 /// not settled).

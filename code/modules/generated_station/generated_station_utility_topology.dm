@@ -10,7 +10,7 @@
 /obj/machinery/power/smes/generated_station
 	should_be_mapped = TRUE
 	circuit = null
-	charge = 5e6
+	initial_charge = 5e6
 	output_attempt = TRUE
 	output_level = 200000
 
@@ -120,7 +120,7 @@
 	for(var/obj/machinery/power/smes/SMES in power_objects)
 		if(has_source)
 			break
-		if(QDELETED(SMES) || (SMES.has_stat(BROKEN)) || SMES.charge <= 0)
+		if(QDELETED(SMES) || (SMES.has_stat(BROKEN)) || SMES.stored_charge() <= 0)
 			continue
 		for(var/obj/machinery/power/terminal/terminal in SMES.terminals)
 			if(terminal.power_region)

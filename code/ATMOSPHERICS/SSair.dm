@@ -292,6 +292,7 @@ SUBSYSTEM_DEF(air)
 	if(!istype(T))
 		return
 	SSair.gas_reactions_last++
+	native_fired(NATIVE_SRC_GAS_EVENT)
 	if(T.air)
 		T.air.react(T)
 
@@ -304,6 +305,7 @@ SUBSYSTEM_DEF(air)
 		return
 	SSair.gas_visuals_last++
 	T.set_visuals()
+	native_changed(T, CHANGE_TURF_GAS_VISUAL, NATIVE_SRC_GAS_EVENT)
 
 /// Spacewind: `cell`'s pressure differs from open neighbour `neighbor`'s by
 /// more than the threshold (`GasEvent::PressureJump`): the same
@@ -316,6 +318,7 @@ SUBSYSTEM_DEF(air)
 	if(!istype(T) || !istype(other))
 		return
 	SSair.gas_pressure_last++
+	native_fired(NATIVE_SRC_GAS_EVENT)
 	T.consider_pressure_difference(other, delta)
 
 /datum/controller/subsystem/air/proc/process_pipenets(resumed = FALSE)

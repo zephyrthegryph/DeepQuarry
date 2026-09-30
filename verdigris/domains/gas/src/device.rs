@@ -44,6 +44,10 @@ pub enum Rate {
 	/// Isothermal compression power (W): `n R T ln(P2/P1)` bounds the
 	/// moles moved (a pump working against its own target).
 	Power(f32),
+	/// A share (0..=1) of the moles the source can give up (the moles of
+	/// `gases` it holds). A filter or mixer sets only its mask and this
+	/// fraction, so DM never computes a mole rate itself.
+	Fraction(f32),
 	/// No cap besides `stop` and (for [`Direction::Downhill`]) the
 	/// pressure gradient itself.
 	Unlimited,
@@ -295,6 +299,9 @@ impl Flow {
 				} else {
 					f64::INFINITY
 				}
+			}
+			Rate::Fraction(share) => {
+				f64::from(share.clamp(0.0, 1.0)) * from.masked_total(self.gases)
 			}
 			Rate::Unlimited => f64::INFINITY,
 		};
@@ -860,5 +867,29 @@ mod tests {
 			101.325,
 		);
 		assert_eq!(r.flow(), regulator(101.325));
+	}
+
+	#[test]
+	fn fraction_rate_moves_a_share_of_the_masked_gas() {
+		let mut src = atmosphere(100.0, 293.15);
+		let mut sink = PipeGas::default();
+		let mask = 1u32 << GAS_OXYGEN;
+		let oxygen_before = src.moles[GAS_OXYGEN];
+		let flow = Flow {
+			gases: mask,
+			rate: Rate::Fraction(0.25),
+			direction: Direction::Forced,
+			stop: None,
+		};
+		let report = step(&flow, &mut src, 1000.0, &mut sink, 1000.0, 1.0);
+		assert!((report.moles - f64::from(0.25 * oxygen_before)).abs() < 1e-6);
+		assert!((sink.moles[GAS_OXYGEN] - src_share(oxygen_before)).abs() < 1e-6);
+		assert_eq!(sink.moles[GAS_CARBON_DIOXIDE], 0.0);
+		let r = row(mask, rate_kind::FRACTION, 0.25, direction::FORCED, stop_side::A, stop_cmp::NONE, 0.0);
+		assert_eq!(r.flow(), flow);
+	}
+
+	fn src_share(oxygen_before: f64) -> f64 {
+		0.25 * oxygen_before
 	}
 }

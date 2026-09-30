@@ -502,7 +502,7 @@ GLOBAL_LIST_EMPTY(om_gas_native_watches)
 	if(W.wake_callback)
 		om_run(W.wake_callback)
 	if(W.channel)
-		om_changed(entity, W.channel)
+		native_changed(entity, W.channel, NATIVE_SRC_GAS_WATCH)
 
 /// Called from GLOB.machine_service.wake_dirty_gas_subscribers() (code/controllers/subsystems/machines.dm)
 /// for every dirty mixture Rust reports. Walks every watch armed on that mixture and fires the

@@ -52,6 +52,7 @@
 	return serial
 
 /datum/native_watch/world
+	delivery_source = NATIVE_SRC_WORLD_WATCH
 	/// OM lane the owner's proc runs on.
 	var/lane = LANE_SIMULATION
 	/// The Rust subscription token (a timer, key, watch or rate watch).
