@@ -51,6 +51,13 @@
 #define UNIT_TEST_FAILED 1
 #define UNIT_TEST_SKIPPED 2
 
+/// Test tiers (the `tier` var on /datum/unit_test). The normal tier runs on every
+/// integration merge (`dm-test`); exhaustive whole-type sweeps run in CI and
+/// nightly (`dm-test --tier=all`), each with a small normal-tier representative.
+/// A test named with --focus / dq_focused_test.sh runs whatever its tier.
+#define TEST_TIER_NORMAL 0
+#define TEST_TIER_EXHAUSTIVE 1
+
 #define TEST_PRE 0
 #define TEST_DEFAULT 1
 /// After most test steps, used for tests that run long so shorter issues can be noticed faster

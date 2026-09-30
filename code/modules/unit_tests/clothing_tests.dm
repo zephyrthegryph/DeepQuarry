@@ -4,6 +4,7 @@
 /// Test that checks if all clothing is valid
 /datum/unit_test/all_clothing_shall_be_valid
 	is_sweep_test = TRUE
+	tier = TEST_TIER_EXHAUSTIVE
 	/// Set TRUE by get_signal_data when a worn icon_state is missing. Reported as a
 	/// notice (non-failing); see the art-check rationale below.
 	var/signal_failed = FALSE
@@ -206,3 +207,24 @@
 				TEST_NOTICE(src, "[item_path]: Clothing - Testing \"[species]\" state \"[set_state]\" for slot \"[slot_name]\", but it was not in dmi \"[set_icon]\"")
 				signal_failed = TRUE
 				return
+
+/// Normal tier: the clothing checks on one item per slot family (and a hooded
+/// suit, for the hood path). Every clothing type runs in CI and nightly.
+/datum/unit_test/all_clothing_shall_be_valid/representative
+	is_sweep_test = FALSE
+	tier = TEST_TIER_NORMAL
+
+/datum/unit_test/all_clothing_shall_be_valid/representative/curated_types()
+	return list(
+		/obj/item/clothing/under/color/grey,
+		/obj/item/clothing/suit/armor/vest,
+		/obj/item/clothing/suit/storage/hooded/wintercoat,
+		/obj/item/clothing/suit/space/void,
+		/obj/item/clothing/head/helmet,
+		/obj/item/clothing/shoes/black,
+		/obj/item/clothing/gloves/black,
+		/obj/item/clothing/mask/gas,
+		/obj/item/clothing/glasses/meson,
+		/obj/item/clothing/ears/earmuffs,
+		/obj/item/clothing/accessory/armband,
+	)

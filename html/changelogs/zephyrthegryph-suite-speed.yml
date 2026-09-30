@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Unit tests now have tiers: every merge runs the normal tier, and CI and nightly also run the exhaustive whole-type sweeps. Each sweep has a small normal-tier representative."
+  - code_imp: "dm-test runs sharded by default, up to 4 worlds on one build, each in its own run slot and port. --profile-tests writes a per-test proc profile."
+  - code_imp: "Faster slow tests: the property per-type sweep no longer fills a 500k-entry cache, the lifecycle sandbox snapshots and diffs flat lists, and the equip parity sweep builds only the probe items its shard checks."

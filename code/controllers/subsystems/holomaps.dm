@@ -36,7 +36,7 @@ SYSTEM_DEF(holomaps)
 		if(areas)
 			base.Blend(areas, ICON_OVERLAY)
 
-		var/fname = "data/spritesheets/minimap_[z].png"
+		var/fname = "[SPRITESHEET_DIR]minimap_[z].png"
 
 		// Copy to a file
 		fcopy(base, fname)

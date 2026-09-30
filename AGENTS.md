@@ -261,11 +261,18 @@ warning.
   `bash tools/dq_focused_test.sh /datum/unit_test/<name> [...]`. It works from
   a git worktree. It costs the compile plus about 25 seconds.
 - **Run the full suite only at integration** (before merging, or when asked).
-  It costs the compile plus about four minutes.
+  `dm-test` runs the **normal tier**, sharded across up to 4 worlds, in about
+  two to three minutes plus the compile (about five in one world).
+- **Integration merges run the normal tier; CI and nightly run the exhaustive
+  tier too** (`dm-test --tier=all`). Exhaustive tests are whole-type sweeps
+  (`tier = TEST_TIER_EXHAUSTIVE`); each one has a small normal-tier
+  `.../representative`. A focused run names any test, exhaustive or not. See
+  `doc/testing.md` "Tiers".
 
 | What | Command |
 |---|---|
-| Full unit-test suite (test map) | `bin/test.cmd` or `tools/build/build.sh dm-test` |
+| Unit-test suite, normal tier (test map) | `bin/test.cmd` or `tools/build/build.sh dm-test` (`--shards=1` for one world) |
+| Every tier, as CI runs it | `tools/build/build.sh dm-test --tier=all` |
 | Only some tests | `bash tools/dq_focused_test.sh <name> [...]` (bare names, quoted `*` globs, `--repeat=N`; other `--flags` go to dm-test) |
 | Same, on Southern Cross | `bash tools/dq_focused_test.sh --full-map /datum/unit_test/<name>` |
 | DM and TGUI lint | `tools/build/build.sh lint` (other CI checks: `doc/testing.md`) |
@@ -275,7 +282,8 @@ warning.
 | Memory, tick cost, overruns | `bin/bench.cmd` or `tools/build/build.sh bench [--scenario=a,b] [--runs=3]`, then `bench-compare` |
 
 Measure before and after any performance or memory change with `bench`; don't write
-one-off profiling tests or scripts. Add a scenario under `code/modules/benchmarks/`
+one-off profiling tests or scripts. For a slow unit test, `--profile-tests` writes
+BYOND's proc profile per test (`doc/testing.md` "Profiling a slow test"). Add a scenario under `code/modules/benchmarks/`
 instead. Results and history live in `data/bench/` and `data/test-runs/`. If another
 agent's unfinished work breaks the build, `DQ_WIP_TREE=1` lets test and bench builds
 skip their dangling includes.

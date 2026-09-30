@@ -203,6 +203,19 @@
 	var/obj/machinery/power/terminal/T = A.terminal
 	T.connect_to_network()
 	T.set_power_supply(1000000)
+	// A known working state, not whatever the map or an earlier test left: this
+	// test used to pass only when dq_power_apc_cycle had run just before it
+	// (which leaves the APC like this); alone, or in another order under
+	// sharding, the APC never settled.
+	A.connect_to_network()
+	A.operating = TRUE
+	A.chargemode = TRUE
+	A.equipment = POWERCHAN_ON_AUTO
+	A.lighting = POWERCHAN_ON_AUTO
+	A.environ = POWERCHAN_ON_AUTO
+	A.set_channels(0, A.equipment)
+	A.set_channels(1, A.lighting)
+	A.set_channels(2, A.environ)
 	A.cell.charge = A.cell.maxcharge
 	A.seat_cell_charge(TRUE) // the seated cell's charge becomes Rust's again
 	A.update()

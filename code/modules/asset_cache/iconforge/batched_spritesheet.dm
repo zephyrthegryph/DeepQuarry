@@ -61,7 +61,7 @@
 	. = CACHE_INVALID // in the case of any errors, we need to regenerate.
 	if(!fexists("[ASSET_CROSS_ROUND_SMART_CACHE_DIRECTORY]/spritesheet_cache.[name].json"))
 		return CACHE_INVALID
-	if(!fexists("data/spritesheets/spritesheet_[name].css"))
+	if(!fexists("[SPRITESHEET_DIR]spritesheet_[name].css"))
 		return CACHE_INVALID
 	if(isnull(cache_data) || isnull(cache_dmi_hashes_json))
 		cache_data = rustg_file_read("[ASSET_CROSS_ROUND_SMART_CACHE_DIRECTORY]/spritesheet_cache.[name].json")
@@ -198,11 +198,11 @@
 	if(yield || !isnull(job_id))
 		if(isnull(job_id))
 			getting_genned = TRUE
-			job_id = rustg_iconforge_generate_async("data/spritesheets/", name, entries_json, do_cache, FALSE, TRUE)
+			job_id = rustg_iconforge_generate_async(SPRITESHEET_DIR, name, entries_json, do_cache, FALSE, TRUE)
 		UNTIL((data_out = rustg_iconforge_check(job_id)) != RUSTG_JOB_NO_RESULTS_YET)
 		getting_genned = FALSE
 	else
-		data_out = rustg_iconforge_generate("data/spritesheets/", name, entries_json, do_cache, FALSE, TRUE)
+		data_out = rustg_iconforge_generate(SPRITESHEET_DIR, name, entries_json, do_cache, FALSE, TRUE)
 	if (data_out == RUSTG_JOB_ERROR)
 		CRASH("Spritesheet [name] JOB PANIC")
 	else if(!findtext(data_out, "{", 1, 2))
@@ -216,13 +216,13 @@
 
 	for(var/size_id in sizes)
 		var/png_name = "[name]_[size_id].png"
-		var/file_directory = "data/spritesheets/[png_name]"
+		var/file_directory = "[SPRITESHEET_DIR][png_name]"
 		var/file_hash = rustg_hash_file(RUSTG_HASH_MD5, file_directory)
 		SSassets.transport.register_asset(png_name, fcopy_rsc(file_directory), file_hash)
 		if(CONFIG_GET(flag/save_spritesheets))
 			save_to_logs(file_name = png_name, file_location = file_directory)
 	var/css_name = "spritesheet_[name].css"
-	var/file_directory = "data/spritesheets/[css_name]"
+	var/file_directory = "[SPRITESHEET_DIR][css_name]"
 
 	fdel(file_directory)
 	var/css = generate_css()
@@ -309,18 +309,18 @@
 		return FALSE
 	// this is already guaranteed to exist.
 	var/css_name = "spritesheet_[name].css"
-	var/css_file_directory = "data/spritesheets/[css_name]"
+	var/css_file_directory = "[SPRITESHEET_DIR][css_name]"
 
 	// sizes gets filled during should_refresh()
 	for(var/size_id in sizes)
-		var/fname = "data/spritesheets/[name]_[size_id].png"
+		var/fname = "[SPRITESHEET_DIR][name]_[size_id].png"
 		if(!fexists(fname))
 			return FALSE
 
 	var/css_hash = rustg_hash_file(RUSTG_HASH_MD5, css_file_directory)
 	SSassets.transport.register_asset(css_name, fcopy_rsc(css_file_directory), file_hash=css_hash)
 	for(var/size_id in sizes)
-		var/fname = "data/spritesheets/[name]_[size_id].png"
+		var/fname = "[SPRITESHEET_DIR][name]_[size_id].png"
 		var/hash = rustg_hash_file(RUSTG_HASH_MD5, fname)
 		SSassets.transport.register_asset("[name]_[size_id].png", fcopy_rsc(fname), file_hash=hash)
 

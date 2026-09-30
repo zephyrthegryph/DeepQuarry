@@ -58,6 +58,7 @@
 	abstract_type = /datum/unit_test/dq_constraint_parity
 	priority = TEST_LONGER
 	is_sweep_test = TRUE
+	tier = TEST_TIER_EXHAUSTIVE
 	var/mismatches = 0
 	var/list/report
 
@@ -143,17 +144,41 @@
 		qdel(W)
 		CHECK_TICK
 
+/// Seventeen holders: cheap enough to stay whole in the normal tier.
+/datum/unit_test/dq_constraint_parity/holster
+	tier = TEST_TIER_NORMAL
+	is_sweep_test = FALSE
+
 /datum/unit_test/dq_constraint_parity/holster/Run()
 	run_holders("holster", "holster", PROC_REF(holster_takes))
+
+/// The species whose golden rows the equip parity check covers.
+/datum/unit_test/dq_constraint_parity/equip/proc/equip_species()
+	return dq_parity_fixture()["equip_species"]
+
+/// Checks every Nth item of the equip item set (1: all of them).
+/datum/unit_test/dq_constraint_parity/equip/proc/item_stride()
+	return 1
 
 /datum/unit_test/dq_constraint_parity/equip/Run()
 	var/turf/T = run_loc_floor_bottom_left
 	var/list/fixture = dq_parity_fixture()
-	var/list/items = dq_parity_items(fixture["equip_items"], T)
+	var/list/names = fixture["equip_items"]
 	var/list/sensitive = fixture["equip_sensitive"]
 	var/list/rows = fixture["equip"]
+	var/stride = item_stride()
+	// Items are made on first use, index-aligned with the fixture (FALSE where
+	// creation failed), so a shard or a representative only builds the items it
+	// checks. A shard owns item index i when sweep_owns(i - 1): every species'
+	// cells for one item land in the same shard.
+	var/list/items = new /list(length(names))
 	var/cells = 0
-	for(var/species_name in fixture["equip_species"])
+	// Bit order of the golden masks (the old numeric slot order).
+	var/static/list/golden_order = list(SLOT_ID_HAND_L, SLOT_ID_HAND_R, SLOT_ID_BACK, SLOT_ID_BELT, SLOT_ID_ID, SLOT_ID_SUIT_STORAGE, SLOT_ID_POCKET_L, SLOT_ID_POCKET_R, SLOT_ID_EYES, SLOT_ID_MASK, SLOT_ID_GLOVES, SLOT_ID_HEAD, SLOT_ID_SHOES, SLOT_ID_SUIT, SLOT_ID_UNIFORM, SLOT_ID_EAR_L, SLOT_ID_EAR_R, SLOT_ID_LEGS, SLOT_ID_TIE, SLOT_ID_HANDCUFFED, SLOT_ID_LEGCUFFED, SLOT_ID_IN_BACKPACK)
+	for(var/species_name in equip_species())
+		if(!rows["[species_name]|naked"])
+			TEST_FAIL("[species_name] has no golden equip rows")
+			continue
 		var/mob/living/carbon/human/H = new(T, species_name)
 		var/everything = species_name == SPECIES_HUMAN
 		for(var/state in list("naked", "dressed"))
@@ -165,12 +190,21 @@
 				H.equip_to_slot(new /obj/item/storage/backpack(H), SLOT_ID_BACK)
 			var/list/masks = splittext(rows["[species_name]|[state]"], ",")
 			var/list/indices = everything ? null : sensitive
-			// Bit order of the golden masks (the old numeric slot order).
-			var/static/list/golden_order = list(SLOT_ID_HAND_L, SLOT_ID_HAND_R, SLOT_ID_BACK, SLOT_ID_BELT, SLOT_ID_ID, SLOT_ID_SUIT_STORAGE, SLOT_ID_POCKET_L, SLOT_ID_POCKET_R, SLOT_ID_EYES, SLOT_ID_MASK, SLOT_ID_GLOVES, SLOT_ID_HEAD, SLOT_ID_SHOES, SLOT_ID_SUIT, SLOT_ID_UNIFORM, SLOT_ID_EAR_L, SLOT_ID_EAR_R, SLOT_ID_LEGS, SLOT_ID_TIE, SLOT_ID_HANDCUFFED, SLOT_ID_LEGCUFFED, SLOT_ID_IN_BACKPACK)
-			var/count = everything ? length(items) : length(indices)
+			var/count = everything ? length(names) : length(indices)
 			for(var/n in 1 to count)
 				var/index = everything ? n : indices[n] + 1
+				if(((index - 1) % stride) || !sweep_owns(index - 1))
+					continue
 				var/obj/item/I = items[index]
+				if(isnull(I))
+					var/path = text2path(names[index])
+					I = (path && dq_parity_make(path, T)) || FALSE
+					// Off the turf once made: with thousands of probes piled on one
+					// turf every later move scanned them all (doMove was a third of
+					// this test). equip_refusal() doesn't read the item's loc.
+					if(I && !QDELETED(I))
+						I.moveToNullspace()
+					items[index] = I
 				if(!I)
 					continue
 				// Self-deleting items (shoes/none): the legacy backpack took a
@@ -190,16 +224,72 @@
 						if((actual & bit) != (expected & bit))
 							diff += "slot [golden_order[slot]] [(expected & bit) ? "took" : "refused"]"
 					mismatch("[species_name] [state] [I.type]: [jointext(diff, ", ")] before")
+			// Once per state, as before: a CHECK_TICK per item yielded to the MC
+			// thousands of times and made the run half again as long.
 			CHECK_TICK
 		qdel(H)
-	for(var/obj/item/I as anything in items)
+	for(var/obj/item/I in items)
 		qdel(I)
 	// Deleting the probes drops their removable parts where they lay, as in
 	// play (a stun glove's cell, a circuit's attached grenade): clear them.
 	for(var/atom/movable/salvage in contents_of(T))
 		if(!istype(salvage, /obj/effect/landmark))
 			qdel(salvage)
+	TEST_ASSERT(cells > 0 || GLOB.dq_test_shard_count > 1, "no equip cells were checked")
 	finish("equip", cells)
+
+// ---- Normal-tier representatives of the exhaustive parity sweeps ----
+// Each checks a fixed, curated subset of its sweep with the same code, so an
+// integration merge still catches an obviously broken constraint path; the
+// exhaustive sweeps run in CI and nightly (doc/testing.md "Tiers").
+
+/datum/unit_test/dq_constraint_parity/equip/representative
+	tier = TEST_TIER_NORMAL
+	is_sweep_test = FALSE
+
+/datum/unit_test/dq_constraint_parity/equip/representative/equip_species()
+	// A human (the full item set), a small-framed and a vox body plan (their
+	// species-sensitive items), and a non-humanoid.
+	return list(SPECIES_HUMAN, SPECIES_TESHARI, SPECIES_VOX, SPECIES_MONKEY)
+
+/datum/unit_test/dq_constraint_parity/equip/representative/item_stride()
+	return 23
+
+/datum/unit_test/dq_constraint_parity/storage/representative
+	tier = TEST_TIER_NORMAL
+	is_sweep_test = FALSE
+
+/datum/unit_test/dq_constraint_parity/storage/representative/curated_types()
+	return list(
+		/obj/item/storage/backpack,
+		/obj/item/storage/backpack/holding,
+		/obj/item/storage/belt/utility,
+		/obj/item/storage/box,
+		/obj/item/storage/toolbox,
+		/obj/item/storage/wallet,
+		/obj/item/storage/pill_bottle,
+		/obj/item/storage/briefcase,
+		/obj/item/storage/secure/briefcase,
+		/obj/item/storage/backpack/dufflebag,
+		/obj/item/storage/fancy/cigarettes,
+		/obj/item/storage/firstaid,
+	)
+
+/datum/unit_test/dq_constraint_parity/suit_storage/representative
+	tier = TEST_TIER_NORMAL
+	is_sweep_test = FALSE
+
+/datum/unit_test/dq_constraint_parity/suit_storage/representative/curated_types()
+	return list(
+		/obj/item/clothing/suit/storage/hazardvest,
+		/obj/item/clothing/suit/armor/vest,
+		/obj/item/clothing/suit/space/void,
+		/obj/item/clothing/suit/storage/toggle/labcoat,
+		/obj/item/clothing/suit/bio_suit,
+		/obj/item/clothing/suit/fire,
+		/obj/item/clothing/suit/space,
+		/obj/item/clothing/suit/storage/apron,
+	)
 
 // ---- The constraint API ----
 
@@ -275,6 +365,33 @@
 	TEST_ASSERT_NULL(dq_constraint(refit, CONSTRAINT_FIT), "restrict_fit(null) fits anyone")
 
 /// Every constraint declaration compiles (no unknown types, units or tags).
+/datum/unit_test/dq_constraint_declarations_compile
+	is_sweep_test = TRUE
+	tier = TEST_TIER_EXHAUSTIVE
+
+/// Normal tier: the item constraints of a fixed set of holders and wearables
+/// (every declared equip_slot predicate is still checked in full). The whole
+/// fixture runs in CI and nightly.
+/datum/unit_test/dq_constraint_declarations_compile/representative
+	is_sweep_test = FALSE
+	tier = TEST_TIER_NORMAL
+
+/datum/unit_test/dq_constraint_declarations_compile/representative/curated_types()
+	return list(
+		/obj/item/storage/backpack,
+		/obj/item/storage/box,
+		/obj/item/storage/toolbox,
+		/obj/item/storage/wallet,
+		/obj/item/storage/belt/utility,
+		/obj/item/clothing/suit/storage/hazardvest,
+		/obj/item/clothing/suit/space/void,
+		/obj/item/clothing/suit/armor/vest,
+		/obj/item/clothing/glasses/aerogelgoggles,
+		/obj/item/clothing/under/color/grey,
+		/obj/item/clothing/shoes/black,
+		/obj/item/clothing/gloves/black,
+	)
+
 /datum/unit_test/dq_constraint_declarations_compile/Run()
 	var/turf/T = run_loc_floor_bottom_left
 	var/list/kinds = list(CONSTRAINT_HOLD, CONSTRAINT_SUIT_STORAGE, CONSTRAINT_FIT, CONSTRAINT_EQUIP)
@@ -286,7 +403,7 @@
 	for(var/group in list("storage", "suit", "holster"))
 		names |= fixture[group]
 	names |= fixture["equip_items"]
-	for(var/name in names)
+	for(var/name in sweep_types(names))
 		var/path = text2path(name)
 		if(!path)
 			continue

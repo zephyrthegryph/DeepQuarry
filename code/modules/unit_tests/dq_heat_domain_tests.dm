@@ -25,10 +25,25 @@
 		var/turf/simulated/floor/east = get_step(T, EAST)
 		if(!istype(east) || handed_out[east])
 			continue
-		if(T.heat_has_air() && east.heat_has_air())
+		// Real room air on both, not just an air datum: an earlier atmos test can
+		// leave a floor drained or at 2.7 K, and a body there has nothing to relax
+		// toward (seen only once sharding changed which tests ran first).
+		if(T.heat_has_air() && east.heat_has_air() && heat_test_room_air(T) && heat_test_room_air(east))
 			handed_out[T] = TRUE
 			handed_out[east] = TRUE
+			// Handed out at room temperature with their own cells: an earlier test
+			// (a vacuum or space-floor round trip) can leave a floor at 2.7 K,
+			// which only showed up once sharding changed the test order.
+			heat_test_restore(T)
+			heat_test_restore(east)
 			return T
+
+/// Whether `T` holds roughly a standard cell of air near room temperature.
+/proc/heat_test_room_air(turf/simulated/floor/T)
+	var/datum/gas_mixture/air = T.air
+	if(!air)
+		return FALSE
+	return air.total_moles() > MOLES_CELLSTANDARD * 0.5 && abs(air.return_temperature() - T20C) < 10
 
 /// Gives `T` its own heat cell back, at room temperature.
 /proc/heat_test_restore(turf/T)

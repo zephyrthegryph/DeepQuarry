@@ -5128,6 +5128,17 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /// regardless of species — catches "species breath_type undefined", null
 /// derefs in species-specific organ damage paths, etc.
 /datum/unit_test/dq_all_species_handle_breath_safely
+	tier = TEST_TIER_EXHAUSTIVE
+
+/// Normal tier: the breath sweep over a fixed set of body plans. Every species
+/// runs in CI and nightly.
+/datum/unit_test/dq_all_species_handle_breath_safely/representative
+	tier = TEST_TIER_NORMAL
+
+/datum/unit_test/dq_all_species_handle_breath_safely/representative/curated_types()
+	// Not Human: a new human already is one, and set_species() to the current
+	// species is a no-op that returns null, so the sweep never counts it.
+	return list(SPECIES_TAJARAN, SPECIES_VOX, SPECIES_TESHARI, SPECIES_UNATHI, SPECIES_SKRELL, SPECIES_DIONA)
 
 /datum/unit_test/dq_all_species_handle_breath_safely/Run()
 	TEST_ASSERT_NOTNULL(GLOB.all_species, "GLOB.all_species is null")
@@ -5141,7 +5152,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_NOTNULL(T, "no floor for species breath sweep")
 
 	var/species_tested = 0
-	for(var/species_name in GLOB.all_species)
+	for(var/species_name in sweep_types(GLOB.all_species))
 		var/datum/species/S = GLOB.all_species[species_name]
 		if(!S || !istype(S))
 			continue
@@ -5157,8 +5168,11 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 			breath.set_temperature(T20C)
 			life_test_breath(H, breath)
 		qdel(H)
-	TEST_ASSERT(species_tested >= 5, \
-		"only tested [species_tested] species — expected at least 5 (something is wrong with set_species or the species registry)")
+	var/list/curated = curated_types()
+	if(curated)
+		TEST_ASSERT_EQUAL(species_tested, length(curated), "every curated species should set up and breathe")
+	else
+		TEST_ASSERT(species_tested >= 5, "only tested [species_tested] species — expected at least 5 (something is wrong with set_species or the species registry)")
 
 
 /// Atmos analyzer on a vacuum mixture: should not crash, should emit a line

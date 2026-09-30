@@ -56,7 +56,7 @@ Every old construct has a CI lint with a count ratchet, so no count can grow, an
 
 ## 3. Order
 
-Phases run in order; tracks inside a phase run in parallel, one agent per track, split by code folder so that sweeps don't conflict. Each track merges into `rewrite/om-integration` at least daily. Testing is focused tests per slice; the full suite runs only at the gates.
+Phases run in order; tracks inside a phase run in parallel, one agent per track, split by code folder so that sweeps don't conflict. Each track merges into `rewrite/om-integration` at least daily. Testing is focused tests per slice; the full suite runs only at the gates. An integration merge runs the normal tier (`dm-test`); the final gate, CI and nightly also run the exhaustive tier (`dm-test --tier=all`, see `doc/testing.md` "Tiers").
 
 ### Phase 0: foundation (running)
 | Track | Work | Estimate |
@@ -92,7 +92,7 @@ Phases run in order; tracks inside a phase run in parallel, one agent per track,
 | 3c | Organs as keyed internal slots on body parts; C6 machine internals (parts as tiers, boards as types, latent) | 14–20 h |
 | 3d | Latent rollout: mapped storage, lights, ammo, pills, then radios and IDs | 10–14 h |
 
-**Gate 3 (final):** merge to master; full suite, hard-delete run and benchmark; then the user's manual playtest.
+**Gate 3 (final):** merge to master; full suite with every tier (`dm-test --tier=all`), hard-delete run and benchmark; then the user's manual playtest.
 
 ### Phase 4: boot and bulk-destroy speed
 Design and measurements: [../init_and_turfs.md](../init_and_turfs.md). Southern Cross boots in about 121 s (Atoms 67 s, Atmospherics 36 s, Lighting 7 s); a devastation-7 blast in the Brig costs about 14 s of main-thread work, and most explosion boots on the full map die of Rust address-space exhaustion.

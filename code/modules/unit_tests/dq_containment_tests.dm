@@ -106,6 +106,9 @@
 // ---- Conservation fuzz ----
 
 /datum/unit_test/dq_containment_conservation_fuzz
+	tier = TEST_TIER_EXHAUSTIVE
+	/// Random operations to run, each followed by a full conservation check.
+	var/steps = 400
 	var/list/holders = list() // ALLOW(instance_list): d: unit-test fixture; a handful of instances per test run
 	var/list/things = list() // ALLOW(instance_list): d: unit-test fixture; a handful of instances per test run
 	var/list/made = list() // ALLOW(instance_list): d: unit-test fixture; a handful of instances per test run
@@ -126,7 +129,7 @@
 		make_thing(H)
 
 	var/list/op_counts = list()
-	for(var/step in 1 to 400)
+	for(var/step in 1 to steps)
 		var/op = pick(
 			20; "insert",
 			12; "remove",
@@ -149,8 +152,9 @@
 				seen = TRUE
 		TEST_ASSERT(seen, "the fuzz kept a [path] alive")
 	TEST_NOTICE(src, "ops: [json_encode(op_counts)], moves [moves_done], refused [moves_refused]")
-	TEST_ASSERT(moves_done >= 25, "the fuzz exercised real moves ([moves_done])")
-	TEST_ASSERT(moves_refused >= 5, "the fuzz exercised refusals ([moves_refused])")
+	// Scaled from the 400-step run's floors (25 moves, 5 refusals).
+	TEST_ASSERT(moves_done >= round(steps / 16), "the fuzz exercised real moves ([moves_done])")
+	TEST_ASSERT(moves_refused >= max(round(steps / 80), 1), "the fuzz exercised refusals ([moves_refused])")
 
 
 /datum/unit_test/dq_containment_conservation_fuzz/proc/add_holder(path)
@@ -659,3 +663,9 @@
 	TEST_ASSERT_EQUAL(box.slot_item("main"), knife, "slot_item still returns the first (insertion order)")
 	TEST_ASSERT_NULL(box.slot_item("lid"), "an unknown slot: null, not a runtime")
 
+
+/// Normal tier: the same fuzz, deterministic (seeded by its type name), over a
+/// shorter run. The 400-step run is in CI and nightly.
+/datum/unit_test/dq_containment_conservation_fuzz/representative
+	tier = TEST_TIER_NORMAL
+	steps = 120
