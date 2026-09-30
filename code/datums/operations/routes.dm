@@ -77,6 +77,7 @@
 	var/datum/capability/compartment/C = new
 	C.bay = bay
 	C.door = door
+	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	C.route_gate = route_gate
 	C.blocked_routes = blocked_routes
 	C.heat = heat

@@ -11,12 +11,16 @@
 	var/obj/item/item
 
 /datum/notice/hit/fill(mob/attacker, obj/item/item)
+	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	src.attacker = attacker
+	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	src.item = item
 
 /datum/notice/hit/reset()
 	. = ..()
+	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	attacker = null
+	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	item = null
 
 /// A human touched the holder with an empty hand and nothing declared answered it: the claws-out swipe of
@@ -26,8 +30,10 @@
 	var/mob/living/carbon/human/attacker
 
 /datum/notice/slashed/fill(mob/living/carbon/human/attacker)
+	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	src.attacker = attacker
 
 /datum/notice/slashed/reset()
 	. = ..()
+	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	attacker = null

@@ -457,6 +457,7 @@
 		add_edge(branch_edge(LADDER_ANY, extra))
 	if(length(dismantle) >= 2)
 		var/datum/ladder_stage/first = ladder[1]
+		// ALLOW(sys_dx_raw_delay): the literal is a list index (dismantle[1]), not a delay
 		var/datum/ladder_branch/apart = branch(LADDER_DONE, cap_tool(quality = dismantle[1], delay = ladder_tool_delay(dismantle[1])),
 			say = "take %T% apart", become = dismantle[2], amount = length(dismantle) >= 3 ? dismantle[3] : null)
 		if(length(dismantle) >= 5)

@@ -236,6 +236,7 @@ GLOBAL_LIST_EMPTY(pool_list_templates)
 		// Past the cap: the object is destroyed, not kept (and can't be used again).
 		D.pool_state = POOL_STATE_POISONED
 		pool.dropped++
+		// ALLOW(lifecycle): the pool and the native watch table are the lifecycle owners for these objects and delete them directly
 		qdel(D, TRUE)
 		return
 	D.pool_state = POOL_STATE_FREE

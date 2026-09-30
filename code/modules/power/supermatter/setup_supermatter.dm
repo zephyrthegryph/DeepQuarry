@@ -130,6 +130,8 @@ REGISTRY_MEMBERSHIP(/obj/effect/engine_setup, REGISTRY_ENGINE_SETUP_MARKERS)
 	P.set_target_pressure(P.max_pressure_setting)
 	P.set_on(TRUE)
 	P.set_use_power(USE_POWER_IDLE)
+	// ALLOW(sys_update_icon): the device state is not an appearance-watched field; the icon is refreshed procedurally
+	// ALLOW(sys_update_icon_call): the device state is not an appearance-watched field; the icon is refreshed procedurally
 	P.update_icon()
 	return SETUP_OK
 

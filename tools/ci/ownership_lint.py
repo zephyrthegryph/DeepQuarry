@@ -176,7 +176,8 @@ class Index:
         elif func == "shares":
             macro = "SHARED"
         elif func in ("rel_one", "rel_many"):
-            macro = "REL"
+            # kind = RELK_OWNED is an ownership declaration written through rel_one()
+            macro = "OWN" if re.search(r"\bkind\s*=\s*RELK_OWNED\b", opts) else "REL"
         else:
             macro = func.upper()
         self.decls[owner][name] = (macro, opts, r, no)

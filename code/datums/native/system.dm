@@ -130,6 +130,7 @@
 	if(istype(target, /datum/native_watch/gas))
 		var/datum/native_watch/gas/G = target
 		if(G.handle != a || QDELETED(G))
+			// ALLOW(system_boundary): the native system counts dead gas handles on the machine service that owns the gas world
 			GLOB.machine_service.gas_dead_last++
 			return
 		if(!gas_changes)
@@ -234,8 +235,10 @@ GLOBAL_LIST_EMPTY(native_key_names)
 	if(QDELETED(watch) || !watch.handle)
 		return FALSE
 	if(watch.rx_reaction)
+		// ALLOW(ownership): the watch resolves its owner by weak ref each delivery; the ref is a handle, not a held relation
 		var/datum/holder = om_resolve(watch.owner_ref)
 		if(!holder)
+			// ALLOW(lifecycle): the pool and the native watch table are the lifecycle owners for these objects and delete them directly
 			qdel(watch)
 			return FALSE
 		GLOB.native_deliveries[watch.delivery_source]++
@@ -246,7 +249,9 @@ GLOBAL_LIST_EMPTY(native_key_names)
 /// Marks `watch` as the Rust side of the on_cross reaction `R` (and the observer `L`, when dynamic) on its
 /// owner: its crossings deliver through rx_crossed().
 /proc/native_watch_for_reaction(datum/native_watch/watch, datum/reaction/R, datum/rx_listener/L)
+	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	watch.rx_reaction = R
+	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	watch.rx_listener = L
 	return watch
 

@@ -48,6 +48,7 @@
 	R.work = W
 	R.member = member
 	R.deadline = deadline
+	// ALLOW(sys_world_time_write): the kernel clock: a per-tick timestamp of the scheduler itself, not a per-entity expiry
 	R.requested_at = world.time
 	LAZYSET(W.urgent_pending, token, R)
 	queue_urgent(R)
@@ -71,6 +72,7 @@
 		R.work.urgent_pending = null
 
 /// Phase U: runs pending requests, earliest deadline first, until the reserved slice is spent (`limit_abs`).
+// ALLOW(sys_world_time_write): the kernel clock: a per-tick timestamp of the scheduler itself, not a per-entity expiry
 /datum/controller/kernel/proc/run_urgent(limit_abs, now = world.time)
 	if(!length(urgent_queue))
 		return

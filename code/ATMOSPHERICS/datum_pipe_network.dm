@@ -49,7 +49,7 @@
 	external_air_volumes = null
 	for(var/obj/machinery/atmospherics/normal_member in old_normal_members)
 		normal_member.reassign_network(src, null)
-	own_clear(src, "air", OWN_DELETE)
+	own_clear(src, nameof(air), OWN_DELETE)
 
 /// The network's total volume in litres: read from the Rust mixture, which is the only copy.
 /datum/pipe_network/proc/volume()
@@ -129,7 +129,7 @@
 	var/giver_volume = giver.volume()
 	var/combined_volume = volume() + giver_volume
 	if(!air)
-		own_set(src, "air", new /datum/gas_mixture(max(giver_volume, 1)))
+		own_set(src, nameof(air), new /datum/gas_mixture(max(giver_volume, 1)))
 	if(giver.air)
 		air.merge(giver.air)
 	air.set_volume(max(combined_volume, 1))
@@ -161,7 +161,7 @@
 	STOP_PROCESSING_PIPENET(giver)
 	rel_clear(giver, nameof(giver.leaks))
 	giver.external_air_volumes = null
-	own_clear(giver, "air", OWN_DELETE)
+	own_clear(giver, nameof(air), OWN_DELETE)
 	qdel(giver)
 	mark_topology_dirty()
 	return 1
@@ -192,8 +192,8 @@
 	// A previous authoritative mixture is among old_gases (merged above): detach it so
 	// own_set() doesn't dispose of it while members still name it; it goes below.
 	if(air)
-		own_take(src, "air")
-	own_set(src, "air", network_air)
+		own_take(src, nameof(air))
+	own_set(src, nameof(air), network_air)
 	// Binding deletes each port's private mixture (atmos_air_set()); what is left over
 	// (the previous network mixture) is unowned now and released here.
 	for(var/datum/pipeline/line_member in line_members)
@@ -212,7 +212,7 @@
 		return FALSE
 	var/base_volume = volume()
 	if(!air)
-		own_set(src, "air", new /datum/gas_mixture(1))
+		own_set(src, nameof(air), new /datum/gas_mixture(1))
 	var/external_volume = external_air.return_volume()
 	air.merge(external_air)
 	air.set_volume(max(base_volume + external_volume, 1))

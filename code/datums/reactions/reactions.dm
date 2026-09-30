@@ -165,19 +165,29 @@
 /datum/rx_table
 	var/owner_type
 	/// change key -> list of on_change reactions.
+	// ALLOW(instance_list): singleton or per-registration table, one instance per system; not a per-entity list
 	var/list/by_key = list()
 	/// Every key some reaction, generated read or derived() entry reads.
+	// ALLOW(instance_list): singleton or per-registration table, one instance per system; not a per-entity list
 	var/list/read_keys = list()
 	/// op key -> reactions; typed (capability) reactions in the *_typed lists.
+	// ALLOW(instance_list): singleton or per-registration table, one instance per system; not a per-entity list
 	var/list/before_keyed = list()
+	// ALLOW(instance_list): singleton or per-registration table, one instance per system; not a per-entity list
 	var/list/after_keyed = list()
+	// ALLOW(instance_list): singleton or per-registration table, one instance per system; not a per-entity list
 	var/list/before_typed = list()
+	// ALLOW(instance_list): singleton or per-registration table, one instance per system; not a per-entity list
 	var/list/after_typed = list()
+	// ALLOW(instance_list): singleton or per-registration table, one instance per system; not a per-entity list
 	var/list/notices = list()
 	/// notice type -> TRUE/FALSE: does this table want it (cache).
+	// ALLOW(instance_list): singleton or per-registration table, one instance per system; not a per-entity list
 	var/list/notice_cache = list()
 	/// read -> on_cross reactions.
+	// ALLOW(instance_list): singleton or per-registration table, one instance per system; not a per-entity list
 	var/list/crosses = list()
+	// ALLOW(instance_list): singleton or per-registration table, one instance per system; not a per-entity list
 	var/list/everys = list()
 	/// The membership keys a holder of this type joins at init for its per-instance every() work (rx_enrol()).
 	var/list/holder_keys
@@ -233,6 +243,7 @@ GLOBAL_LIST_EMPTY(rx_tables)
 		if(RXN_AFTER_OP)
 			rx_table_add_op(T.after_keyed, T.after_typed, R)
 		if(RXN_NOTICE)
+			// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 			T.notices += R
 			rx_register_work(T, R)
 		if(RXN_CROSS)
@@ -242,6 +253,7 @@ GLOBAL_LIST_EMPTY(rx_tables)
 				T.read_keys[read] = TRUE
 			rx_register_work(T, R)
 		if(RXN_EVERY)
+			// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 			T.everys += R
 			rx_register_work(T, R)
 			if(R.when)

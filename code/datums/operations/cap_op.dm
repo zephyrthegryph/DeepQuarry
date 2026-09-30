@@ -158,6 +158,7 @@
 		op.needs = list(using) + reqs
 	if(op.start_msg)
 		E.start_feedback = op.start_msg
+	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	E.op = op
 	if(!legacy)
 		C.key = "op:[op.key]"
@@ -278,6 +279,7 @@ GLOBAL_VAR_INIT(op_route_now, ROUTE_PHYSICAL)
 	if(why_predicate)
 		return why_predicate
 	var/datum/op_ctx/ctx = op_ctx_take(actor, target, held, E.op, GLOB.op_route_now)
+	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	ctx.entry = E
 	var/why = ctx.check()
 	. = why ? req_reason_phrase(why, ctx) : null
@@ -294,6 +296,7 @@ OWN_TIMER(/mob, op_wait)
 		to_chat(actor, span_warning("You are already busy."))
 		return FALSE
 	var/datum/op_ctx/ctx = op_ctx_take(actor, target, held, op, GLOB.op_route_now)
+	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	ctx.entry = src
 	ctx.check(OP_STAGE_PROVIDER)
 	op_pending_add(ctx)

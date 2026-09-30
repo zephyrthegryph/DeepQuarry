@@ -7,8 +7,10 @@
 	/// The nodes in dependency order (a node comes after everything it depends on). Nodes caught in a cycle are left out.
 	var/list/order
 	/// One cycle's members in cycle order (text), or empty.
+	// ALLOW(instance_list): singleton or per-registration table, one instance per system; not a per-entity list
 	var/list/cycle = list()
 	/// Human-readable problems: an edge that names nothing, a cycle.
+	// ALLOW(instance_list): singleton or per-registration table, one instance per system; not a per-entity list
 	var/list/errors = list()
 
 /// TRUE when the graph has no problem.

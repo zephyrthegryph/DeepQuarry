@@ -62,11 +62,16 @@ GLOBAL_VAR_INIT(op_ctx_seq, 0)
 	var/datum/op_ctx/ctx = take(/datum/op_ctx)
 	ctx.released = FALSE
 	ctx.id = ++GLOB.op_ctx_seq
+	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	ctx.actor = actor
+	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	ctx.target = target
+	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	ctx.held = held
+	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	ctx.op = op
 	ctx.route = route
+	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	ctx.authority = authority
 	return ctx
 
@@ -153,11 +158,13 @@ GLOBAL_VAR_INIT(op_ctx_seq, 0)
 	return null
 
 /datum/op_ctx/proc/stage_provider()
+	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	provider = null
 	if(!op.by)
 		return null
 	if(route == ROUTE_AUTHORITY || route == ROUTE_MIND || !ismob(actor))
 		return null
+	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	provider = ops_provider(actor, op.by)
 	return provider ? null : /datum/msg/req_no_provider
 

@@ -87,6 +87,7 @@
 /datum/controller/kernel/proc/tick(tick_limit, init_stage = INITSTAGE_MAX)
 	var/tick_start = TICK_USAGE
 	var/saved_limit = Master.current_ticklimit
+	// ALLOW(sys_world_time_write): the kernel clock: a per-tick timestamp of the scheduler itself, not a per-entity expiry
 	last_tick = world.time
 	ticks++
 	if(!sched)
@@ -109,6 +110,7 @@
 		// N
 		var/n_start = TICK_USAGE
 		var/elapsed = last_native ? min(world.time - last_native, KERNEL_NATIVE_MAX_CATCHUP * world.tick_lag) : world.tick_lag
+		// ALLOW(sys_world_time_write): the kernel clock: a per-tick timestamp of the scheduler itself, not a per-entity expiry
 		last_native = world.time
 		guarded(KERNEL_PHASE_N, TYPE_PROC_REF(/datum/controller/kernel, run_native), elapsed, sched.world_budget)
 		guarded(KERNEL_PHASE_N, TYPE_PROC_REF(/datum/controller/kernel, run_work_phase), KERNEL_PHASE_N, tick_limit)
@@ -137,8 +139,10 @@
 	// G: whatever is left, with a floor once a second.
 	var/g_start = TICK_USAGE
 	var/g_limit = tick_limit
+	// ALLOW(sys_world_time_expiry): the kernel clock: compares the scheduler own timestamps, not an entity expiry
 	if(world.time - last_g_floor >= KERNEL_GARBAGE_FLOOR_PERIOD)
 		g_limit = max(tick_limit, TICK_USAGE + KERNEL_GARBAGE_FLOOR)
+		// ALLOW(sys_world_time_write): the kernel clock: a per-tick timestamp of the scheduler itself, not a per-entity expiry
 		last_g_floor = world.time
 	run_hosted_phase(hosted_g, g_limit, init_stage)
 	guarded(KERNEL_PHASE_G, TYPE_PROC_REF(/datum/controller/kernel, run_work_phase), KERNEL_PHASE_G, g_limit)
@@ -150,8 +154,10 @@
 /// TRUE when the scheduler passes run this tick: SSbehaviours (the scheduler's boot) has initialized for the loop's
 /// stage, and the runlevel is one it ran in. The rule SSbehaviours' own MC entry had.
 /datum/controller/kernel/proc/sched_runs(init_stage)
+	// ALLOW(system_boundary): the kernel is the scheduler core SSbehaviours delegates to: it reads and updates that subsystem own fire bookkeeping
 	if(!SSbehaviours || SSbehaviours.init_stage > init_stage || !SSbehaviours.can_fire)
 		return FALSE
+	// ALLOW(system_boundary): the kernel is the scheduler core SSbehaviours delegates to: it reads and updates that subsystem own fire bookkeeping
 	return !!(SSbehaviours.runlevels & Master.current_runlevel)
 
 /// Clears the per-tick phase accounting.
@@ -228,6 +234,7 @@
 		if(!(SS.runlevels & Master.current_runlevel))
 			continue
 		var/paused = (SS.state == SS_PAUSED)
+		// ALLOW(sys_world_time_expiry): the kernel clock: compares the scheduler own timestamps, not an entity expiry
 		if(!paused && SS.next_fire > world.time)
 			continue
 		if(TICK_USAGE >= tick_limit && SS.state != SS_PAUSED && !(SS.flags & SS_TICKER))
@@ -265,6 +272,7 @@
 	SS.active_cost_last = TICK_DELTA_TO_MS(used)
 	SS.paused_ticks = 0
 	SS.paused_tick_usage = 0
+	// ALLOW(sys_world_time_write): the kernel clock: a per-tick timestamp of the scheduler itself, not a per-entity expiry
 	SS.last_fire = world.time
 	SS.times_fired++
 	SS.update_nextfire()
@@ -276,14 +284,20 @@
 /datum/controller/kernel/proc/note_behaviours(pass_ms)
 	if(!SSbehaviours)
 		return
+	// ALLOW(system_boundary): the kernel is the scheduler core SSbehaviours delegates to: it reads and updates that subsystem own fire bookkeeping
 	SSbehaviours.bench_ms += pass_ms
+	// ALLOW(system_boundary): the kernel is the scheduler core SSbehaviours delegates to: it reads and updates that subsystem own fire bookkeeping
 	SSbehaviours.last_done = sched.pass_done
+	// ALLOW(system_boundary): the kernel is the scheduler core SSbehaviours delegates to: it reads and updates that subsystem own fire bookkeeping
 	SSbehaviours.cost = SSbehaviours.cost ? MC_AVERAGE_FAST(SSbehaviours.cost, pass_ms) : pass_ms
+	// ALLOW(system_boundary): the kernel is the scheduler core SSbehaviours delegates to: it reads and updates that subsystem own fire bookkeeping
 	SSbehaviours.times_fired++
+	// ALLOW(sys_world_time_write, system_boundary): the kernel clock: a per-tick timestamp of the scheduler itself, not a per-entity expiry; the kernel is the scheduler core SSbehaviours delegates to: it reads and updates that subsystem own fire bookkeeping
 	SSbehaviours.last_fire = world.time
 
 /// The pipeline missed-wake audit (pipeline.dm), on its interval.
 /datum/controller/kernel/proc/run_audits()
+	// ALLOW(system_boundary): the kernel is the scheduler core SSbehaviours delegates to: it reads and updates that subsystem own fire bookkeeping
 	if(!SSbehaviours || !SSbehaviours.audit_due())
 		return
 	om_pipeline_audit(sched, OM_AUDIT_PARKED_SAMPLE, OM_AUDIT_AWAKE_SAMPLE)

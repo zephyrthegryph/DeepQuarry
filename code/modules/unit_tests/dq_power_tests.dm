@@ -149,6 +149,7 @@
 	A.lighting = POWERCHAN_ON_AUTO
 	A.environ = POWERCHAN_ON_AUTO
 	A.cell.charge = A.cell.maxcharge * 0.001
+	// ALLOW(ownership): test fixture setup writes the framework var directly to build the state under test
 	A.pushed_cell = null // the seated cell's charge becomes Rust's again at the next push
 	A.set_channels(0, A.equipment)
 	A.set_channels(1, A.lighting)
@@ -186,6 +187,7 @@
 	T.set_power_supply(0)
 	A.area().use_power_static(-2000, EQUIP)
 	A.cell.charge = old_charge
+	// ALLOW(ownership): test fixture setup writes the framework var directly to build the state under test
 	A.pushed_cell = null // the seated cell's charge becomes Rust's again at the next push
 	A.update()
 	refresh_flush()
@@ -204,6 +206,7 @@
 	T.connect_to_network()
 	T.set_power_supply(1000000)
 	A.cell.charge = A.cell.maxcharge
+	// ALLOW(ownership): test fixture setup writes the framework var directly to build the state under test
 	A.pushed_cell = null // the seated cell's charge becomes Rust's again at the next push
 	A.update()
 	refresh_flush()
