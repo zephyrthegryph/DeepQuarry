@@ -93,7 +93,7 @@
 // port's region exists in Rust, the earliest point it can bind to a turf.
 /obj/machinery/atmospherics/unary/vent_pump/rust_bind_pipe_port(index, datum/pipe_network/new_network, datum/gas_mixture/network_air)
 	. = ..()
-	update_rust_device()
+	rust_device_dirty()
 
 /// Publishes (or unpublishes) the vent's Rust device edge. `device.rs`'s
 /// VentPump only bounds the turf ("a") side within `[min_kpa, max_kpa]`;
@@ -102,7 +102,7 @@
 /// PRESSURE_CHECK_INTERNAL (bounding the network side, used only by the
 /// `/siphon/on/atmos` variant) has no equivalent yet, so that one variant
 /// runs unbounded on the turf side until the network-side bound is added.
-/obj/machinery/atmospherics/unary/vent_pump/proc/update_rust_device()
+/obj/machinery/atmospherics/unary/vent_pump/push_to_rust()
 	// disconnect() (called mid-Destroy(), after the port/region is already
 	// torn down) reaches here via invalidate_gas_dependencies(); air_contents
 	// may already be a dead handle at that point.
@@ -122,7 +122,7 @@
 			max_kpa = external_pressure_bound
 		else
 			min_kpa = external_pressure_bound
-	var/max_rate = air_contents.return_volume() * 50
+	var/max_rate = air_contents.return_volume() * 50 // ALLOW(derived_reads): the volume is set once at Initialize
 	rust_set_turf_device(1, environment)
 	if(pump_direction)
 		rust_set_device_flow(0, RUST_FLOW_VOLUME, max_rate, RUST_DIR_FORCED, RUST_SIDE_A, RUST_STOP_AT_LEAST, max_kpa)
@@ -137,13 +137,13 @@
 // Rust device edge instead. Covers every existing call site (welder_act,
 // multitool_act, click_ctrl, power_change) without touching each one.
 /obj/machinery/atmospherics/unary/vent_pump/invalidate_gas_dependencies()
-	update_rust_device()
+	rust_device_dirty()
 
 // The unary base's disconnect() calls invalidate_gas_dependencies() before
 // nulling `node`, so that call sees stale state; re-publish afterwards.
 /obj/machinery/atmospherics/unary/vent_pump/disconnect(obj/machinery/atmospherics/reference)
 	. = ..()
-	update_rust_device()
+	rust_device_dirty()
 
 /obj/machinery/atmospherics/unary/vent_pump/proc/update_area()
 	initial_loc = get_area(loc)
@@ -331,12 +331,12 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/unary/vent_pump, TYPE_PROC_R
 		return 0
 
 	if(signal.data["purge"] != null)
-		pressure_checks &= ~1
-		pump_direction = 0
+		set_pressure_checks(pressure_checks & ~1)
+		set_pump_direction(0)
 
 	if(signal.data["stabalize"] != null)
-		pressure_checks |= 1
-		pump_direction = 1
+		set_pressure_checks(pressure_checks | 1)
+		set_pump_direction(1)
 
 	if(signal.data["power"] != null)
 		set_use_power(text2num(signal.data["power"]))
@@ -346,45 +346,43 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/unary/vent_pump, TYPE_PROC_R
 
 	if(signal.data["checks"] != null)
 		if (signal.data["checks"] == "default")
-			pressure_checks = pressure_checks_default
+			set_pressure_checks(pressure_checks_default)
 		else
-			pressure_checks = text2num(signal.data["checks"])
+			set_pressure_checks(text2num(signal.data["checks"]))
 
 	if(signal.data["checks_toggle"] != null)
-		pressure_checks = (pressure_checks?0:3)
+		set_pressure_checks((pressure_checks?0:3))
 
 	if(signal.data["direction"] != null)
-		pump_direction = text2num(signal.data["direction"])
+		set_pump_direction(text2num(signal.data["direction"]))
 
 	if(signal.data["set_internal_pressure"] != null)
 		if (signal.data["set_internal_pressure"] == "default")
-			internal_pressure_bound = internal_pressure_bound_default
+			set_internal_pressure_bound(internal_pressure_bound_default)
 		else
-			internal_pressure_bound = between(0,text2num(signal.data["set_internal_pressure"]),ONE_ATMOSPHERE*50)
+			set_internal_pressure_bound(between(0,text2num(signal.data["set_internal_pressure"]),ONE_ATMOSPHERE*50))
 
 	if(signal.data["set_external_pressure"] != null)
 		if (signal.data["set_external_pressure"] == "default")
-			external_pressure_bound = external_pressure_bound_default
+			set_external_pressure_bound(external_pressure_bound_default)
 		else
-			external_pressure_bound = between(0,text2num(signal.data["set_external_pressure"]),ONE_ATMOSPHERE*50)
+			set_external_pressure_bound(between(0,text2num(signal.data["set_external_pressure"]),ONE_ATMOSPHERE*50))
 
 	if(signal.data["adjust_internal_pressure"] != null)
-		internal_pressure_bound = between(0,internal_pressure_bound + text2num(signal.data["adjust_internal_pressure"]),ONE_ATMOSPHERE*50)
+		set_internal_pressure_bound(between(0,internal_pressure_bound + text2num(signal.data["adjust_internal_pressure"]),ONE_ATMOSPHERE*50))
 
 	if(signal.data["adjust_external_pressure"] != null)
-		external_pressure_bound = between(0,external_pressure_bound + text2num(signal.data["adjust_external_pressure"]),ONE_ATMOSPHERE*50)
+		set_external_pressure_bound(between(0,external_pressure_bound + text2num(signal.data["adjust_external_pressure"]),ONE_ATMOSPHERE*50))
 
 	if("reset_external_pressure" in signal.data)
-		external_pressure_bound = ONE_ATMOSPHERE
+		set_external_pressure_bound(ONE_ATMOSPHERE)
 
 	if("reset_internal_pressure" in signal.data)
-		internal_pressure_bound = 0
+		set_internal_pressure_bound(0)
 
 	if(signal.data["init"] != null)
 		name = signal.data["init"]
 		return
-
-	update_rust_device()
 
 	if(signal.data["status"] != null)
 		om_after(src, 2, PROC_REF(broadcast_status))
@@ -406,12 +404,12 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/unary/vent_pump, TYPE_PROC_R
 		act_message(user, null, MSG_SELF(span_notice("You weld the vent shut.")), \
 			MSG_OTHERS(span_bold("%U%") + " welds the vent shut."), \
 			MSG_BLIND("You hear welding."))
-		welded = 1
+		set_welded(TRUE)
 		invalidate_gas_dependencies()
 		update_icon()
 	else
 		act_message(user, null, MSG_SELF(span_notice("You unweld the vent.")), MSG_OTHERS(span_notice("%U% unwelds the vent.")), MSG_BLIND("You hear welding."))
-		welded = 0
+		set_welded(FALSE)
 		invalidate_gas_dependencies()
 		update_icon()
 
@@ -477,7 +475,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/unary/vent_pump, TYPE_PROC_R
 			rel_set(tool, nameof(tool.connectable), src)
 
 		if("Direction")
-			pump_direction = !pump_direction
+			set_pump_direction(!pump_direction)
 			invalidate_gas_dependencies()
 			to_chat(user, span_notice("[src] is now [pump_direction ? "pumping in" : "siphoning out"]."))
 			update_icon()
@@ -492,3 +490,13 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/unary/vent_pump, TYPE_PROC_R
 #undef PRESSURE_CHECK_EXTERNAL
 #undef PRESSURE_CHECK_INTERNAL
 
+
+TRACKED(/obj/machinery/atmospherics/unary/vent_pump, pump_direction, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/atmospherics/unary/vent_pump, external_pressure_bound, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/atmospherics/unary/vent_pump, internal_pressure_bound, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/atmospherics/unary/vent_pump, pressure_checks, CHANGE_MACHINE_SETTINGS)
+
+/// The Rust device law is pushed (once per frame) when any of these change.
+/obj/machinery/atmospherics/unary/vent_pump/derived()
+	. = ..()
+	. += rust_push(nameof(rust_device_rev), nameof(pump_direction), nameof(external_pressure_bound), nameof(pressure_checks), nameof(welded))

@@ -18,6 +18,10 @@ Pipelines + Other Objects -> Pipe network
 	power_channel = ENVIRON
 	var/nodealert = 0
 	var/power_rating //the maximum amount of power the machine can use to do work, affects how powerful the machine is, in Watts
+	/// Bumped (rust_device_dirty()) when the device's Rust law changed for a reason that is no DM var of its own:
+	/// a port bound, a neighbour gone, power or a weld. A device's push_to_rust() reads it with the vars its law
+	/// is built from, so the push is one coalesced run per frame.
+	var/rust_device_rev = 0
 
 	unacidable = TRUE
 	layer = ATMOS_LAYER
@@ -378,3 +382,25 @@ Pipelines + Other Objects -> Pipe network
 		unsafe_pressure_release(user, internal_pressure)
 		play_sfx(our_turf, SFX_MACHINES_HISS)
 
+
+TRACKED(/obj/machinery/atmospherics, rust_device_rev, CHANGE_MACHINE_SETTINGS)
+
+/// The device's Rust law needs re-publishing (see rust_device_rev): push_to_rust() runs once this frame.
+/obj/machinery/atmospherics/proc/rust_device_dirty()
+	set_rust_device_rev(rust_device_rev + 1)
+
+/// A generated setter of a Rust-owned config field ran (target_pressure, on, power_rating...): the law changed.
+/obj/machinery/atmospherics/rust_pushed()
+	rust_device_dirty()
+
+/// A power-mode change re-derives the device law (a device that is off is unregistered).
+/obj/machinery/atmospherics/set_use_power(new_use_power)
+	. = ..()
+	if(.)
+		rust_device_dirty()
+
+/// Losing or regaining power changes whether the device runs.
+/obj/machinery/atmospherics/power_change()
+	. = ..()
+	if(.)
+		rust_device_dirty()

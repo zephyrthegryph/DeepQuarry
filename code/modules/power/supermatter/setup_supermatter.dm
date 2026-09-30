@@ -130,7 +130,6 @@ REGISTRY_MEMBERSHIP(/obj/effect/engine_setup, REGISTRY_ENGINE_SETUP_MARKERS)
 	P.set_target_pressure(P.max_pressure_setting)
 	P.set_on(TRUE)
 	P.set_use_power(USE_POWER_IDLE)
-	P.update_rust_device()
 	P.update_icon()
 	return SETUP_OK
 

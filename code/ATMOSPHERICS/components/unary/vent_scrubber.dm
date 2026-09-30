@@ -38,7 +38,7 @@
 	. = ..()
 	var/static/list/default_scrubbing_gas = list(GAS_CO2, GAS_PHORON, GAS_CH4)
 	if(isnull(scrubbing_gas))
-		scrubbing_gas = default_scrubbing_gas
+		set_scrubbing_gas(default_scrubbing_gas)
 	air_contents.set_volume(ATMOS_DEFAULT_VOLUME_FILTER)
 
 	icon = null
@@ -66,16 +66,17 @@
 // port's region exists in Rust, the earliest point it can bind to a turf.
 /obj/machinery/atmospherics/unary/vent_scrubber/rust_bind_pipe_port(index, datum/pipe_network/new_network, datum/gas_mixture/network_air)
 	. = ..()
-	update_rust_device()
+	rust_device_dirty()
 
 /// Publishes (or unpublishes) the scrubber's Rust device edge: turf ("a")
 /// into air_contents ("b"), masked by `scrubbing_gas` unless siphoning.
-/obj/machinery/atmospherics/unary/vent_scrubber/proc/update_rust_device()
+/obj/machinery/atmospherics/unary/vent_scrubber/push_to_rust()
 	// disconnect() (called mid-Destroy(), after the port/region is already
 	// torn down) reaches here via invalidate_gas_dependencies(); air_contents
 	// may already be a dead handle at that point.
 	if(QDELETED(src))
 		return
+	// ALLOW(derived_reads): set_use_power() and power_change() bump rust_device_rev
 	if(!node || !use_power || (!operable()) || welded)
 		rust_unregister_device()
 		return
@@ -101,13 +102,13 @@
 // Rust device edge instead. Covers every existing call site (welder_act,
 // power_change, receive_signal).
 /obj/machinery/atmospherics/unary/vent_scrubber/invalidate_gas_dependencies()
-	update_rust_device()
+	rust_device_dirty()
 
 // The unary base's disconnect() calls invalidate_gas_dependencies() before
 // nulling `node`, so that call sees stale state; re-publish afterwards.
 /obj/machinery/atmospherics/unary/vent_scrubber/disconnect(obj/machinery/atmospherics/reference)
 	. = ..()
-	update_rust_device()
+	rust_device_dirty()
 
 DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/unary/vent_scrubber, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/atmospherics/unary/vent_scrubber/appearance_overlays()
@@ -209,28 +210,28 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/unary/vent_scrubber, TYPE_PR
 		set_use_power(!use_power)
 
 	if(signal.data["panic_siphon"]) //must be before if("scrubbing" thing
-		panic = text2num(signal.data["panic_siphon"])
+		set_panic(text2num(signal.data["panic_siphon"]))
 		if(panic)
 			set_use_power(USE_POWER_IDLE)
-			scrubbing = 0
+			set_scrubbing(0)
 		else
-			scrubbing = 1
+			set_scrubbing(1)
 	if(signal.data["toggle_panic_siphon"] != null)
-		panic = !panic
+		set_panic(!panic)
 		if(panic)
 			set_use_power(USE_POWER_IDLE)
-			scrubbing = 0
+			set_scrubbing(0)
 		else
-			scrubbing = 1
+			set_scrubbing(1)
 
 	if(signal.data["scrubbing"] != null)
-		scrubbing = text2num(signal.data["scrubbing"])
+		set_scrubbing(text2num(signal.data["scrubbing"]))
 		if(scrubbing)
-			panic = 0
+			set_panic(0)
 	if(signal.data["toggle_scrubbing"])
-		scrubbing = !scrubbing
+		set_scrubbing(!scrubbing)
 		if(scrubbing)
-			panic = 0
+			set_panic(0)
 
 	var/list/toggle = list()
 
@@ -270,13 +271,11 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/unary/vent_scrubber, TYPE_PR
 		toggle += GAS_CH4
 
 	if(length(toggle))
-		scrubbing_gas = scrubbing_gas ^ toggle // new list: the default is shared
+		set_scrubbing_gas(scrubbing_gas ^ toggle) // new list: the default is shared
 
 	if(signal.data["init"] != null)
 		name = signal.data["init"]
 		return
-
-	update_rust_device()
 
 	if(signal.data["status"] != null)
 		om_after(src, 2, PROC_REF(broadcast_status))
@@ -303,12 +302,12 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/unary/vent_scrubber, TYPE_PR
 		act_message(user, null, MSG_SELF(span_notice("You weld the vent shut.")), \
 			MSG_OTHERS(span_notice("<b>%U%</b> welds the vent shut.")), \
 			MSG_BLIND("You hear welding."))
-		welded = TRUE
+		set_welded(TRUE)
 		invalidate_gas_dependencies()
 		update_icon()
 	else
 		act_message(user, null, MSG_SELF(span_notice("You unweld the vent.")), MSG_OTHERS(span_notice("%U% unwelds the vent.")), MSG_BLIND("You hear welding."))
-		welded = FALSE
+		set_welded(FALSE)
 		invalidate_gas_dependencies()
 		update_icon()
 
@@ -345,3 +344,12 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/unary/vent_scrubber, TYPE_PR
 	if(welded)
 		. += "It is welded shut."
 
+
+TRACKED(/obj/machinery/atmospherics/unary/vent_scrubber, scrubbing, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/atmospherics/unary/vent_scrubber, panic, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/atmospherics/unary/vent_scrubber, scrubbing_gas, CHANGE_MACHINE_SETTINGS)
+
+/// The Rust device law is pushed (once per frame) when any of these change.
+/obj/machinery/atmospherics/unary/vent_scrubber/derived()
+	. = ..()
+	. += rust_push(nameof(rust_device_rev), nameof(scrubbing), nameof(scrubbing_gas), nameof(welded))

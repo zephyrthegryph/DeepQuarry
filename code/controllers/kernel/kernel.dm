@@ -100,7 +100,6 @@
 	phase_note(KERNEL_PHASE_K, k_start)
 
 	if(sched && isnull(sched.manual_time) && sched_runs(init_stage))
-		sched.native_hosted = TRUE
 		sched.pass_begin(tick_limit)
 		// N
 		var/n_start = TICK_USAGE
@@ -185,7 +184,7 @@
 
 // ---------------------------------------------------------------- phases
 
-/// N: the native frame. The OM world wheel is stepped from native_frame() (native.dm); a live scheduler leaves it to us.
+/// N: the native frame. native_frame() (native.dm) runs the native system's frame.
 /datum/controller/kernel/proc/run_native(elapsed, budget)
 	native_frame(elapsed, budget)
 

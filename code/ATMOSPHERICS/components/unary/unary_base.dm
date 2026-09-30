@@ -172,3 +172,5 @@ OM_FIELD_VIEW(/obj/machinery/atmospherics/unary, obj/machinery/atmospherics, nod
 /obj/machinery/atmospherics/unary/ownership()
 	. = ..()
 	. += proto(nameof(air_contents))
+
+TRACKED(/obj/machinery/atmospherics/unary, welded, CHANGE_MACHINE_SETTINGS)

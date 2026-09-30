@@ -137,3 +137,113 @@
 	TEST_ASSERT(T.get_temperature() > before, "add_heat did not raise the field's temperature")
 	TEST_ASSERT_EQUAL(T.initial_temperature, seed, "add_heat rewrote the seed: a DM copy of the live temperature is back")
 	T.add_heat(-T.heat_capacity * 10)
+
+// ---------------------------------------------------------------- delivery seam to the reactions
+
+/// A datum reacting to Rust-owned values by their `native("...")` names.
+/datum/native_rx_fx
+	var/list/changes = list()
+	var/list/notes = list()
+	var/list/crossings = list()
+
+/datum/native_rx_fx/reactions()
+	. = ..()
+	. += on_change(native("native_rx_value"), PROC_REF(on_value))
+	. += on_notice(/datum/notice/native, PROC_REF(on_native_notice))
+	. += on_cross(native("native_rx_level"), list(10, 20), PROC_REF(on_level), urgent = TRUE)
+
+/datum/native_rx_fx/proc/on_value(list/keys)
+	changes += list(keys.Copy())
+
+/datum/native_rx_fx/proc/on_native_notice(datum/notice/native/N)
+	notes += list(list(N.kind, N.data))
+
+/datum/native_rx_fx/proc/on_level(band, previous)
+	crossings += list(list(band, previous))
+
+/// Something else that reads no native value.
+/datum/native_rx_deaf
+
+/// A CHANGED record's key, named for `native()`, reaches on_change handlers through publish_change; an entity that
+/// nobody reads is not published; the OM bridge still raises the channel.
+/datum/unit_test/dq_native_change_publishes_through_reactions
+
+/datum/unit_test/dq_native_change_publishes_through_reactions/Run()
+	native_key_name_add(4242, "native_rx_value")
+	var/datum/native_rx_fx/F = allocate(/datum/native_rx_fx)
+	var/datum/native_rx_deaf/D = allocate(/datum/native_rx_deaf)
+	TEST_ASSERT(native_publish_change(F, 4242), "the change was refused")
+	TEST_ASSERT_EQUAL(length(F.changes), 0, "handlers wait for the drain")
+	rx_drain()
+	TEST_ASSERT_EQUAL(length(F.changes), 1, "the named change did not reach on_change")
+	TEST_ASSERT_EQUAL(F.changes[1][1], "native_rx_value", "the handler heard the wrong key")
+	native_publish_change(F, 4243) // no name: nobody reads it
+	native_publish_change(D, 4242)
+	rx_drain()
+	TEST_ASSERT_EQUAL(length(F.changes), 1, "an unnamed key published")
+	TEST_ASSERT(!READERS(D, "native_rx_value"), "a datum that reads nothing has a reader")
+
+/// A native notice is a /datum/notice/native: heard by on_notice handlers of the entity, allocated only when wanted.
+/datum/unit_test/dq_native_notice_publishes_through_publish
+
+/datum/unit_test/dq_native_notice_publishes_through_publish/Run()
+	var/datum/native_rx_fx/F = allocate(/datum/native_rx_fx)
+	var/datum/native_rx_deaf/D = allocate(/datum/native_rx_deaf)
+	TEST_ASSERT(WANTS(F, /datum/notice/native), "the reaction did not make the notice wanted")
+	TEST_ASSERT(!WANTS(D, /datum/notice/native), "a deaf datum wants native notices")
+	native_publish_notice(F, 7, list(1, 2, 3))
+	TEST_ASSERT_EQUAL(length(F.notes), 1, "the notice was not delivered")
+	TEST_ASSERT_EQUAL(F.notes[1][1], 7, "the notice kind is wrong")
+	TEST_ASSERT_EQUAL(length(F.notes[1][2]), 3, "the notice fields are wrong")
+	var/pooled = length(GLOB.rx_notice_pool[/datum/notice/native])
+	native_publish_notice(D, 7, list(1))
+	TEST_ASSERT_EQUAL(length(GLOB.rx_notice_pool[/datum/notice/native]), pooled, "an unwanted notice touched the pool")
+
+/// A watch declared for a reaction delivers through rx_crossed: the first sight is a baseline, a band change
+/// delivers (urgent: at once) with the previous band, the same band again does not; a watch of no reaction still
+/// calls its owner's callback.
+/datum/unit_test/dq_native_crossed_delivers_through_rx_crossed
+
+/datum/unit_test/dq_native_crossed_delivers_through_rx_crossed/Run()
+	var/datum/native_rx_fx/F = allocate(/datum/native_rx_fx)
+	var/datum/rx_table/T = rx_table_of(F)
+	var/list/crossing = T.crosses["native_rx_level"]
+	TEST_ASSERT_EQUAL(length(crossing), 1, "the on_cross reaction is not in the table under its native key")
+	var/datum/native_watch/W = new(F, TYPE_PROC_REF(/datum/native_rx_fx, on_level))
+	native_watch_for_reaction(W, crossing[1])
+	TEST_ASSERT(native_crossed(W, 0, list()), "the crossing was refused")
+	TEST_ASSERT_EQUAL(length(F.crossings), 0, "the first sight delivered")
+	native_crossed(W, 2, list())
+	TEST_ASSERT_EQUAL(length(F.crossings), 1, "an urgent band change did not deliver at once")
+	TEST_ASSERT_EQUAL(F.crossings[1][1], 2, "wrong band")
+	TEST_ASSERT_EQUAL(F.crossings[1][2], 0, "wrong previous band")
+	native_crossed(W, 2, list())
+	TEST_ASSERT_EQUAL(length(F.crossings), 1, "the same band delivered twice")
+	qdel(W)
+	var/datum/native_watch/plain = new(F, TYPE_PROC_REF(/datum/native_rx_fx, on_level))
+	native_crossed(plain, 3, list(5))
+	TEST_ASSERT_EQUAL(length(F.crossings), 2, "a non-reaction watch did not call its own callback")
+	qdel(plain)
+
+/// The kernel's phase N runs the native system's frame exactly once per tick, however often it is asked.
+/datum/unit_test/dq_native_kernel_frame_once_per_tick
+
+/datum/unit_test/dq_native_kernel_frame_once_per_tick/Run()
+	var/datum/om/scheduler/sched = kernel().sched
+	TEST_ASSERT_NOTNULL(sched, "the kernel has no scheduler")
+	var/datum/system/native/N = native_system()
+	var/saved_time = sched.manual_time
+	sched.manual_time = null
+	sched.world_step_tick = -1
+	var/frames = N.frames
+	native_frame(world.tick_lag, NATIVE_WAKE_BUDGET)
+	native_frame(world.tick_lag, NATIVE_WAKE_BUDGET)
+	TEST_ASSERT_EQUAL(N.frames, frames + 1, "two calls in one tick ran [N.frames - frames] frames")
+	sched.world_step_tick -= 1 // the next tick
+	native_frame(world.tick_lag * 3, NATIVE_WAKE_BUDGET)
+	TEST_ASSERT_EQUAL(N.frames, frames + 2, "the next tick did not run a frame")
+	sched.manual_time = 5
+	sched.world_step_tick = -1
+	native_frame(world.tick_lag, NATIVE_WAKE_BUDGET)
+	TEST_ASSERT_EQUAL(N.frames, frames + 2, "a scheduler on injected time ran a frame")
+	sched.manual_time = saved_time

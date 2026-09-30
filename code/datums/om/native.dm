@@ -25,6 +25,11 @@
 	var/handle = 0
 	/// NATIVE_SRC_* this watch's deliveries are counted under (native_adapter.dm).
 	var/delivery_source = NATIVE_SRC_OTHER
+	/// The on_cross reaction this watch feeds (native_watch_for_reaction()): its crossings deliver through
+	/// rx_crossed() instead of the owner's callback.
+	var/datum/reaction/rx_reaction
+	/// The observer listener of a dynamic on_cross this watch feeds, if any.
+	var/datum/rx_listener/rx_listener
 
 /datum/native_watch/New(datum/owner, callback)
 	..()

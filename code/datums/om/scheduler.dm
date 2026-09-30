@@ -107,8 +107,6 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	var/pass_avail = 0
 	var/pass_t = 0
 	var/pass_done = TRUE
-	/// TRUE while the kernel runs the Rust world step itself (phase N): run_pass() then skips it.
-	var/native_hosted = FALSE
 	var/cap = 0
 	var/calls = 0
 	/// Borrow threshold: a ring whose oldest due slot is this fraction of max_interval late borrows.
@@ -314,10 +312,6 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 /// kernel tick (controllers/kernel/kernel.dm) runs the same pieces itself, between its own phases.
 /datum/om/scheduler/proc/run_pass(tick_limit)
 	pass_begin(tick_limit)
-	// 0. The Rust world step: timers, keys, rate crossings and native watches. The kernel runs it as
-	// phase N, so a hosted scheduler leaves it out here.
-	if(!native_hosted)
-		world_step()
 	pass_deadlines(tick_limit)
 	pass_borrow(tick_limit)
 	pass_lanes(tick_limit)
@@ -325,7 +319,7 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	return pass_end()
 
 /// Opens a pass: the clock, the runlevel and this pass's budget. Zeroes the per-pass world wake counts, so it
-/// runs before the tick's world_step().
+/// runs before the tick's native frame (kernel phase N).
 /datum/om/scheduler/proc/pass_begin(tick_limit)
 	pass_start = TICK_USAGE
 	pass_t = now()

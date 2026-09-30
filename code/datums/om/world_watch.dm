@@ -2,7 +2,7 @@
 //
 // The Rust world (verdigris/ffi/src/sched.rs) holds the timer wheel, DM-owned
 // keys, rate models and the watches on Rust-owned state (gas, probe cells).
-// The native system steps it once per tick (run_pass() -> world_step() -> the frame);
+// The kernel steps it once per tick (phase N: native_frame() -> the native system's frame);
 // each wake it returns names a subscriber, which is a /datum/native_watch/world:
 // one subscription, its own SSvg handle. The wake is queued on the watch's
 // OM lane and, when that lane runs, the owner's declared proc is called:
@@ -200,20 +200,12 @@
 	var/list/world_traced
 #endif
 
-/// Steps the Rust world to this tick (once per tick): the native system's one frame, whose CHANGED and
-/// CROSSED records for world watches come back to world_enqueue() and wait on their lanes.
-/// Live scheduler only: a test scheduler's injected time is not the wheel's.
-/datum/om/scheduler/proc/world_step()
-	if(!isnull(manual_time))
-		return
-	var/tick = om_world_tick_of(world.time)
-	if(tick <= world_step_tick)
-		return
-	var/start = TICK_USAGE_REAL
-	// The budget is per tick, not per step: a pass that runs after skipped ticks (an overloaded
-	// MC) takes the skipped ticks' share too, so a normal-lane wake is delivered within a bound
-	// of ticks rather than of steps. Capped so one late pass can't take a flood.
-	var/elapsed = world_step_tick < 0 ? 1 : clamp(tick - world_step_tick, 1, OM_WORLD_MAX_CATCHUP)
+/// Opens the world side of the native frame for wheel tick `tick`: the lane queues, the step ticks tests read
+/// and the wake count. FALSE when this tick already had its frame (exactly one frame per tick) or the scheduler
+/// runs on injected time.
+/datum/om/scheduler/proc/world_frame_begin(tick)
+	if(!isnull(manual_time) || tick <= world_step_tick)
+		return FALSE
 	world_previous_step_tick = world_step_tick
 	world_step_tick = tick
 	if(!world_q)
@@ -221,8 +213,7 @@
 		for(var/lane in 1 to OM_LANE_COUNT)
 			world_q[lane] = list()
 	world_last_wakes = 0
-	native_system().frame(tick, world_budget * elapsed)
-	world_last_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - start)
+	return TRUE
 
 /// Queues a world watch's wake on its lane (the native system's CHANGED/CROSSED delivery).
 /datum/om/scheduler/proc/world_enqueue(datum/native_watch/world/W, reason, source, source_kind)

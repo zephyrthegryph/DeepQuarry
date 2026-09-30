@@ -518,7 +518,7 @@ UI_ACT_PROC(/obj/machinery/computer/general_air_control/large_tank_control, ui_a
 
 			var/obj/machinery/atmospherics/unary/vent_pump/pump = tool.connectable()
 			output_tag = pump.id_tag
-			pump.external_pressure_bound = 0
+			pump.set_external_pressure_bound(0)
 			pump.external_pressure_bound_default = 0
 			to_chat(user, span_notice("You have set the outlet!"))
 			return
@@ -669,7 +669,7 @@ UI_ACT_PROC(/obj/machinery/computer/general_air_control/supermatter_core, ui_act
 
 			var/obj/machinery/atmospherics/unary/vent_pump/pump = tool.connectable()
 			output_tag = pump.id_tag
-			pump.external_pressure_bound = 0
+			pump.set_external_pressure_bound(0)
 			pump.external_pressure_bound_default = 0
 			to_chat(user, span_notice("You have set the outlet!"))
 			return
