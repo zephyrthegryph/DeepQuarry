@@ -395,13 +395,8 @@ GLOBAL_VAR_INIT(machine_first_wakes_bulk, TRUE)
 
 // ---------------------------------------------------------------- APCs
 
-/// Rust runs the distributor; a wake resends the settings (a power failure ends through timed_set()).
-/datum/om/stage/machine/power/apc
-	of = /obj/machinery/power/apc
-
-/datum/om/stage/machine/power/apc/perform(obj/machinery/power/apc/M, datum/om/frame/machine/F)
-	M.power_sync()
-	return STAGE_IDLE
+// Rust runs the distributor and the APC's settings reach it through its generated push_to_rust(): the APC has
+// no power stage of its own.
 
 /// The APC draws through draw() (the refresh engine): its present stage has nothing to do. (The
 /// generic one would call update_icon(), whose changed() mark wakes this pipeline again.)

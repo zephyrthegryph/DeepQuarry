@@ -8,13 +8,47 @@
 /datum/capability/powered_by
 	layer_name = CAP_NO_LAYER
 	var/role
+	/// powered_by(POWERED_BY_AREA, ...): the holder is a MEMBER of the area it stands in (join(area, holder,
+	/// source = this capability, role)), not of a cap_system. members_of(area, role) lists them.
+	var/of_area = FALSE
 
+/// `system`: a /datum/cap_system type the holder joins, or POWERED_BY_AREA to be a member of its area.
 /proc/powered_by(system, role)
 	var/datum/capability/powered_by/C = new
-	C.joins = list(system)
+	if(system == POWERED_BY_AREA)
+		C.of_area = TRUE
+	else
+		C.joins = list(system)
 	C.role = role
 	C.key = "powered_by:[system]"
 	return list(C)
+
+/datum/capability/powered_by/on_holder_init(atom/holder, mapload)
+	if(of_area)
+		join(get_area(holder), holder, src, role)
+
+/datum/capability/powered_by/on_holder_destroy(atom/holder)
+	if(of_area)
+		leave(get_area(holder), holder, src, all = TRUE)
+
+/// The holder moved to another area: its membership follows.
+/datum/capability/powered_by/proc/area_changed(atom/holder, area/old_area, area/new_area)
+	if(!of_area)
+		return
+	if(old_area)
+		leave(old_area, holder, src, all = TRUE)
+	if(new_area)
+		join(new_area, holder, src, role)
+
+/// A holder's powered_by(POWERED_BY_AREA) memberships follow it into another area.
+/atom/proc/caps_area_changed(area/old_area, area/new_area)
+	for(var/datum/capability/powered_by/C in caps_all(src))
+		C.area_changed(src, old_area, new_area)
+
+/// The members of `area` holding `role` (a copy: a caller that yields may see members leave meanwhile).
+/proc/area_members(area/A, role)
+	var/list/found = A ? members_of(A, role) : null
+	return found ? found.Copy() : list()
 
 /// The role A holds in `system` (its powered_by() capability), or null.
 /proc/cap_system_role(atom/A, system)

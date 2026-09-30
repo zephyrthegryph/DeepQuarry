@@ -9,12 +9,14 @@
 
 /obj/machinery/cap_fixture_wall_machine
 	name = "wall machine fixture"
+	req_access = list(ACCESS_ENGINE_EQUIP)
+	machine_wires = /datum/wires/smes
 	var/cover_held = TRUE
 
 /obj/machinery/cap_fixture_wall_machine/capabilities()
 	. = ..()
 	. += wall_machine(board = /obj/item/circuitboard)
-	. += maintenance_hatch(/datum/wires/smes, access = ACCESS_ENGINE_EQUIP, cover_locked_while = PROC_REF(cover_holds), panel_needs_cover_closed = TRUE)
+	. += maintenance_hatch(cover_holds = PROC_REF(cover_holds), panel_needs_cover_closed = TRUE)
 
 /obj/machinery/cap_fixture_wall_machine/proc/cover_holds()
 	return cover_held
@@ -65,27 +67,36 @@
 	var/obj/machinery/cap_fixture_computer/no_power/bare = allocate(/obj/machinery/cap_fixture_computer/no_power)
 	TEST_ASSERT(!("[/datum/capability/powered]" in dx_bundle_kinds(bare)), "without() removes a bundle's entry")
 
+/// The entry of `A` whose op has `key`, or null.
+/proc/dx_bundle_op(atom/A, key)
+	for(var/datum/interaction/capability/E as anything in cap_interactions(A))
+		if(E.op?.key == key)
+			return E
+
 /// maintenance_hatch() relations: coverlock, panel only with the cover closed, lock/emag only closed up.
 /datum/unit_test/dx_bundles_hatch_relations/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/machinery/cap_fixture_wall_machine/M = allocate(/obj/machinery/cap_fixture_wall_machine, get_turf(H))
 	var/datum/interaction/capability/cover = dx_bundle_entry(M, /datum/capability/cover)
 	var/datum/interaction/capability/panel = dx_bundle_entry(M, /datum/capability/panel)
-	var/datum/interaction/capability/lock = dx_bundle_entry(M, /datum/capability/lock)
-	var/datum/interaction/capability/emag = dx_bundle_entry(M, /datum/capability/emag)
+	var/datum/interaction/capability/lock = dx_bundle_op(M, CAP_LOCK)
+	var/datum/interaction/capability/emag = dx_bundle_op(M, CAP_EMAG)
 	TEST_ASSERT(cover && panel && lock && emag, "the hatch has its four entries")
-	TEST_ASSERT_EQUAL(cap_gate_reason(M, H, null, cover), "the cover is locked", "the coverlock holds the cover shut")
+	TEST_ASSERT_NOTNULL(compartment_of(M, BAY_HATCH), "and the compartment behind its cover")
+	TEST_ASSERT_EQUAL(op_entry_reason(cover, H, M, null, null), "the cover is locked", "the coverlock holds the cover shut")
 	M.cover_held = FALSE
-	TEST_ASSERT_NULL(cap_gate_reason(M, H, null, cover), "the cover opens once the coverlock releases")
+	TEST_ASSERT_NULL(op_entry_reason(cover, H, M, null, null), "the cover opens once the coverlock releases")
 	cap_set(M, CAP_COVER_OPEN, TRUE)
 	M.cover_held = TRUE
-	TEST_ASSERT_NULL(cap_gate_reason(M, H, null, cover), "closing is always allowed")
-	TEST_ASSERT_EQUAL(cap_gate_reason(M, H, null, panel), "close the cover first", "the wire panel needs the cover closed")
-	TEST_ASSERT_EQUAL(cap_gate_reason(M, H, null, lock), "close the cover first", "the ID lock needs the cover closed")
-	TEST_ASSERT_EQUAL(cap_gate_reason(M, H, null, emag), "close the cover first", "the emag needs the cover closed")
+	TEST_ASSERT_EQUAL(op_entry_reason(cover, H, M, null, null), "the cover is locked", "the holder's proc answers for closing too")
+	M.cover_held = FALSE
+	TEST_ASSERT_NULL(op_entry_reason(cover, H, M, null, null), "closing is allowed when the holder says so")
+	TEST_ASSERT_EQUAL(op_entry_reason(panel, H, M, null, null), "close the cover first", "the wire panel needs the cover closed")
+	TEST_ASSERT_EQUAL(op_entry_reason(lock, H, M, null, null), "close the cover first", "the ID lock needs the cover closed")
+	TEST_ASSERT_EQUAL(op_entry_reason(emag, H, M, null, null), "close the cover first", "the emag needs the cover closed")
 	cap_set(M, CAP_COVER_OPEN, FALSE)
 	cap_set(M, CAP_PANEL_OPEN, TRUE)
-	TEST_ASSERT_EQUAL(cap_gate_reason(M, H, null, lock), "close the maintenance panel first", "the ID lock needs the panel closed")
+	TEST_ASSERT_EQUAL(op_entry_reason(lock, H, M, null, null), "close the maintenance panel first", "the ID lock needs the panel closed")
 
 /// Two types with the same bundle share its interned capability datums (the flyweight).
 /datum/unit_test/dx_bundles_interned/Run()

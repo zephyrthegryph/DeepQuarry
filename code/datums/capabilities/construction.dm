@@ -205,6 +205,9 @@
 	var/quiet = FALSE
 	var/sfx
 	var/done_sfx
+	/// A holder proc that says the holder is ruined now (a broken frame): the step then makes `ruined_become` instead of `become`.
+	var/ruined_when
+	var/list/ruined_become
 
 /// A step leaving a stage that isn't the ladder's next or previous one.
 /proc/branch(destination, datum/capability/entry/cost, uses = 0, say, needs, else_say, when, on_enter, become, amount, next, priority, quiet = FALSE, sfx, done_sfx)
@@ -317,8 +320,9 @@
 /// gate every step.
 /// The holder is marked changed after every step (its appearance refreshes); `on_step` is for other work.
 /// `sprite`: stage icons are derived as "[sprite][position]" for stages that name none. `at`: the compartment the
-/// steps are done in. `undo_delay`: the wait of every undo. `dismantle` = list(tool, result_type, amount): a
-/// branch out of the first stage that takes the holder apart into `result_type`.
+/// steps are done in. `undo_delay`: the wait of every undo. `dismantle` = list(tool, result_type, amount, ruined_proc, ruined_type, ruined_amount): a
+/// branch out of the first stage that takes the holder apart into `result_type`; when the holder's `ruined_proc` answers TRUE (a broken
+/// frame) it comes apart into `ruined_type` instead.
 /proc/ladder_options(start, state_var, state, store, list/anywhere, on_step, on_start, list/starts, stance, category, sprite, at, undo_delay, list/dismantle, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
 	var/datum/ladder_settings/made = new
 	made.start = start
@@ -453,8 +457,12 @@
 		add_edge(branch_edge(LADDER_ANY, extra))
 	if(length(dismantle) >= 2)
 		var/datum/ladder_stage/first = ladder[1]
-		add_edge(branch_edge(first.name, branch(LADDER_DONE, cap_tool(quality = dismantle[1], delay = ladder_tool_delay(dismantle[1])),
-			say = "take %T% apart", become = dismantle[2], amount = length(dismantle) >= 3 ? dismantle[3] : null)))
+		var/datum/ladder_branch/apart = branch(LADDER_DONE, cap_tool(quality = dismantle[1], delay = ladder_tool_delay(dismantle[1])),
+			say = "take %T% apart", become = dismantle[2], amount = length(dismantle) >= 3 ? dismantle[3] : null)
+		if(length(dismantle) >= 5)
+			apart.ruined_when = dismantle[4]
+			apart.ruined_become = length(dismantle) >= 6 && !isnull(dismantle[6]) ? list(dismantle[5], dismantle[6]) : list(dismantle[5])
+		add_edge(branch_edge(first.name, apart))
 
 /// Reads one ladder_options() value; its `anywhere` branches go into `anywhere`.
 /datum/construction_ladder/proc/read_options(datum/ladder_settings/options, list/anywhere)
@@ -505,7 +513,7 @@
 		destination = extra.next ? null : extra.to_stage, cost = extra.cost, say = extra.say,
 		step_needs = extra.needs, when = extra.when, on_enter = extra.on_enter, become = extra.become,
 		next = extra.next, reaches = reaches, step_priority = extra.priority, quiet = extra.quiet,
-		sfx = extra.sfx, done_sfx = extra.done_sfx)
+		sfx = extra.sfx, done_sfx = extra.done_sfx, ruined_when = extra.ruined_when, ruined_become = extra.ruined_become)
 
 /// Each stage's anchoring: the last `anchored` set at or before it; stages before the first get its opposite.
 /datum/construction_ladder/proc/compute_anchoring(list/datum/ladder_stage/ladder)
@@ -697,15 +705,20 @@
 	var/refund_amount = 0
 	/// list(type, args...) the holder is replaced by.
 	var/list/become
+	/// A holder proc saying the holder is ruined; the step then replaces it by `ruined_become` instead.
+	var/ruined_when
+	var/list/ruined_become
 	/// No generated messages (the hook says it).
 	var/quiet = FALSE
 
-/datum/interaction/capability/construction_step/New(datum/construction_ladder/owner, from, destination, list/cost, say, list/step_needs, when, on_enter, list/become, next, list/reaches, step_priority, quiet = FALSE, forward = TRUE, sfx, done_sfx, list/refund)
+/datum/interaction/capability/construction_step/New(datum/construction_ladder/owner, from, destination, list/cost, say, list/step_needs, when, on_enter, list/become, next, list/reaches, step_priority, quiet = FALSE, forward = TRUE, sfx, done_sfx, list/refund, ruined_when, list/ruined_become)
 	rel_set(src, nameof(src.graph), owner)
 	from_state = from
 	to_state = destination
 	src.forward = forward
 	src.become = become
+	src.ruined_when = ruined_when
+	src.ruined_become = ruined_become
 	src.quiet = quiet
 	src.reaches = reaches
 	next_proc = next
@@ -792,7 +805,7 @@
 /// Every holder proc this step names, for validate().
 /datum/interaction/capability/construction_step/proc/holder_procs()
 	. = list()
-	for(var/proc_ref in list(next_proc, when_proc, step_hook))
+	for(var/proc_ref in list(next_proc, when_proc, step_hook, ruined_when))
 		if(proc_ref)
 			. += proc_ref
 	for(var/list/need as anything in step_needs)
@@ -1003,7 +1016,7 @@ GLOBAL_VAR_INIT(dq_ladder_instant, FALSE)
 	if(done_sfx)
 		play_sfx(where || target, done_sfx)
 	if(become && !QDELETED(target) && ismovable(target))
-		var/list/replace_args = list(target) + become
+		var/list/replace_args = list(target) + ((ruined_when && ruined_become && call(target, ruined_when)()) ? ruined_become : become)
 		replace_with(arglist(replace_args))
 	// A turf that changed into something else (a cut-open wall) no longer has the graph's procs.
 	if(graph.after_proc && !QDELETED(target) && hascall(target, graph.after_proc))

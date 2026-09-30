@@ -14,10 +14,14 @@
 	var/list/req_one_access
 	/// What can be swiped.
 	var/list/id_types
+	/// FALSE when the lock's operations are declared beside it (lock_ops(): a hatch refines and contracts them
+	/// by key), so this capability contributes no entries of its own.
+	var/entries = TRUE
 
 /// An access lock: access (all required) and/or req_one_access (any one). id_types: what is swiped.
-/proc/cap_lock(list/access, list/req_one_access, list/id_types = list(/obj/item/card/id, /obj/item/pda), behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log, layer = LOOK_LOCKED)
+/proc/cap_lock(list/access, list/req_one_access, list/id_types = list(/obj/item/card/id, /obj/item/pda), behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log, layer = LOOK_LOCKED, entries = TRUE)
 	var/datum/capability/lock/C = new
+	C.entries = entries
 	C.req_access = access
 	C.req_one_access = req_one_access
 	C.id_types = id_types
@@ -25,6 +29,8 @@
 	return cap_gating(C, behind = behind, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 
 /datum/capability/lock/interactions(atom/holder)
+	if(!entries)
+		return null
 	return list(adopt_entry(cap_use_on("Lock", id_types, TYPE_PROC_REF(/atom, cap_lock_swipe), priority = 10, name_proc = TYPE_PROC_REF(/atom, cap_lock_name)), id = "lock:[jointext(id_types, ",")]"))
 
 /datum/capability/lock/examine(atom/holder, mob/user)
@@ -58,6 +64,34 @@
 /atom/proc/cap_lock_swipe(mob/user, obj/item/held)
 	var/datum/capability/lock/C = cap_of(src, /datum/capability/lock)
 	if(!C.grants(src, held?.GetAccess()))
+		return refuse(user, "Access denied.")
+	var/locking = !is_locked(src)
+	cap_set(src, CAP_LOCKED, locking)
+	act_message(user, src, self = "You [locking ? "lock" : "unlock"] %T%.", others = "%U% [locking ? "locks" : "unlocks"] %T%.")
+	return TRUE
+
+/**
+ * The lock's operations as declared ops (the hatch's lock): swiping an ID held in hand (a plain click, ACT_USE)
+ * and toggling with the actor's own access (an alt-click, ACT_LOCK). They carry the keys CAP_LOCK_SWIPE and
+ * CAP_LOCK, so a holder adds contracts (cap_require(list(CAP_LOCK, CAP_LOCK_SWIPE), needs = ...)) and
+ * refinements (refine(CAP_LOCK, delay = ...)) to them. Pair with cap_lock(entries = FALSE).
+ */
+/proc/lock_ops(list/id_types = list(/obj/item/card/id, /obj/item/pda), behind = NONE, blocked_by = NONE, locked_by = NONE, log)
+	return list(
+		cap_op("Lock", TYPE_PROC_REF(/atom, cap_lock_swipe), using = id_types, key = CAP_LOCK_SWIPE, action = ACT_USE, kind = OP_CONTROL, priority = 10, name_proc = TYPE_PROC_REF(/atom, cap_lock_name), behind = behind, blocked_by = blocked_by, locked_by = locked_by, works_broken = TRUE, works_unpowered = TRUE, log = log),
+		cap_op("Toggle lock", TYPE_PROC_REF(/atom, cap_lock_toggle), key = CAP_LOCK, action = ACT_LOCK, kind = OP_CONTROL, priority = 5, name_proc = TYPE_PROC_REF(/atom, cap_lock_name), behind = behind, blocked_by = blocked_by, locked_by = locked_by, works_broken = TRUE, works_unpowered = TRUE, log = log),
+	)
+
+/// The toggle op's handler: the lock by the actor's own access (an alt-click), where the swipe uses the held card's.
+/atom/proc/cap_lock_toggle(mob/user, obj/item/held)
+	var/datum/capability/lock/C = cap_of(src, /datum/capability/lock)
+	var/permitted
+	if(isobj(src))
+		var/obj/O = src
+		permitted = O.allowed(user)
+	else
+		permitted = C.grants(src, user.GetAccess())
+	if(!permitted)
 		return refuse(user, "Access denied.")
 	var/locking = !is_locked(src)
 	cap_set(src, CAP_LOCKED, locking)

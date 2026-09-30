@@ -35,6 +35,10 @@
 /atom/proc/wires_type_for(default_type)
 	return default_type
 
+/// A machine's wires default to its machine_wires type var (cap_wires() with no type).
+/obj/machinery/wires_type_for(default_type)
+	return default_type || machine_wires
+
 /datum/capability/wires/interactions(atom/holder)
 	return list(
 		adopt_entry(cap_tool("Pulse wires", TOOL_MULTITOOL, TYPE_PROC_REF(/atom, cap_wires_open), priority = 10), id = "wires:multitool"),

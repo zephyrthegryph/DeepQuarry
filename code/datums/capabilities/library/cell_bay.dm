@@ -4,12 +4,26 @@
 // cell_charge_percent(A) (0 with no cell, never null) and the needs proc cap_cell_charged().
 //
 //	. += cell_bay(nameof(cell))
+//	. += cell_bay(nameof(cell), at = BAY_HATCH)		// behind a maintenance_hatch(): the compartment's door is the open cover
 
 /// The cell bay bundle for holder var `slot_var` (nameof(cell)).
-/proc/cell_bay(slot_var, accepts = /obj/item/cell, layer = LOOK_CELL, at)
-	return list(cap_layer_order(cap_slot(slot_var, accepts, at = at, behind = COVER, layer = layer, eject_via = SLOT_VIA_HAND, name = "Insert power cell", eject_name = "Remove power cell", insert_msg = "You insert %I%.", eject_msg = "You remove %I%.", full_msg = "%T% already has a power cell installed.", slot_type = /datum/capability/slot/cell_bay), 50))
+/// `at`: the compartment (BAY_*) the bay is in instead of standing behind a cover. `needs`: a holder proc (mob/user, held) that
+/// answers TRUE or the reason the bay can't be used now. `size`: the ITEMSIZE_* a cell must be to fit.
+/proc/cell_bay(slot_var, accepts = /obj/item/cell, layer = LOOK_CELL, at, needs, size)
+	var/datum/capability/slot/cell_bay/bay = cap_slot(slot_var, accepts, at = at, behind = at ? NONE : COVER, needs = needs, layer = layer, eject_via = SLOT_VIA_HAND, name = "Insert power cell", eject_name = "Remove power cell", insert_msg = "You insert %I%.", eject_msg = "You remove %I%.", full_msg = "%T% already has a power cell installed.", slot_type = /datum/capability/slot/cell_bay)
+	bay.size = size
+	return list(cap_layer_order(bay, 50))
 
 /datum/capability/slot/cell_bay
+	/// The ITEMSIZE_* a cell must be to fit, or null for any.
+	var/size
+
+/// A cell of the wrong size doesn't fit (the input is used, the user told).
+/datum/capability/slot/cell_bay/insert(atom/holder, obj/item/item, mob/user)
+	if(size && ismovable(item) && is_type_in_list(item, islist(accepts) ? accepts : list(accepts)) && item.w_class != size)
+		to_chat(user, span_warning("\The [item] is too [item.w_class < size ? "small" : "large"] to work here."))
+		return UI_REFUSED
+	return ..()
 
 /// The hand eject is for hands: a silicon's touch falls through to the next entry (the window).
 /datum/capability/slot/cell_bay/interactions(atom/holder)

@@ -48,6 +48,16 @@
 #define BAY_INTERIOR "interior"
 #define BAY_CARGO "cargo"
 #define BAY_ENGINE "engine"
+/// A maintenance hatch: what sits behind a cover (a cell bay, a frame's board and wiring). Its door is the open cover.
+#define BAY_HATCH "hatch"
+
+// ---- op keys of the library's lock and emag ops (refine() and cap_require() name them) ----
+/// The emag op of a hatch: refine(CAP_EMAG, ...) edits its wait and effect.
+#define CAP_EMAG "emag"
+/// Toggling a lock with the actor's own access (an alt-click): ACT_LOCK.
+#define CAP_LOCK "toggle_lock"
+/// Swiping an ID card held in hand across the lock.
+#define CAP_LOCK_SWIPE "swipe_lock"
 
 // ---- op_ctx check stages, in the order they run ----
 #define OP_STAGE_PROVIDER 1

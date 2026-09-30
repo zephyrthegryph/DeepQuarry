@@ -5,69 +5,75 @@
 // in place (maintenance_hatch()'s gated panel replaces machine_basics()'s plain one).
 //
 //	/obj/machinery/power/apc/capabilities()
-//		. = wall_machine(board = /obj/item/module/power_control)
-//		. += maintenance_hatch(/datum/wires/apc, access = ACCESS_ENGINE_EQUIP, cover_locked_while = PROC_REF(cover_holds), panel_needs_cover_closed = TRUE)
-//		. += cell_bay(nameof(cell))
+//		. = wall_machine(dismantle = NONE, repair = NONE, powered = FALSE)
+//		. += maintenance_hatch(cover_holds = PROC_REF(cover_holds), panel_needs_cover_closed = TRUE)
+//		. += cell_bay(nameof(cell), at = BAY_HATCH)
+//
+// Bundles read the holder's TYPE vars where a type states a fact once: machine_board (the board it is
+// built from and dismantled to), machine_wires (its maintenance wiring), req_access (its lock).
 
 /**
  * What every buildable machine has: a wrench to anchor it, breakage with welder repair, a maintenance
  * panel with deconstruction to its board behind it, and the dark/unpowered state. Their examine lines
- * come with them.
+ * come with them. `repair`: the repair tool (NONE: no repair entry). `dismantle`: NONE leaves out the machine-frame
+ * deconstruction even when a `board` is given. `powered`: FALSE leaves out the dark/unpowered state (a machine whose
+ * draw() says its own).
  */
-/proc/machine_basics(board, anchored_by = TOOL_WRENCH, repair_tool = TOOL_WELDER)
+/proc/machine_basics(board, anchored_by = TOOL_WRENCH, repair = TOOL_WELDER, dismantle = TRUE, powered = TRUE)
 	. = list(
 		cap_panel(),
-		cap_breakable(repair_tool = repair_tool),
-		cap_power(),
+		cap_breakable(repair_tool = repair),
 	)
+	if(powered)
+		. += cap_power()
 	if(anchored_by)
 		. += cap_anchor(tool = anchored_by)
-	if(board)
+	if(board && dismantle)
 		. += cap_deconstruct(board, behind = PANEL)
 
 /**
  * A wall-mounted machine: machine_basics() without anchoring (it hangs on the wall), plus the wall mount,
  * which faces it away from its wall and offsets it onto the wall.
  */
-/proc/wall_machine(board, offset = 26, repair_tool = TOOL_WELDER)
-	. = machine_basics(board = board, anchored_by = NONE, repair_tool = repair_tool) // NONE: DM substitutes the default for an explicit null
+/proc/wall_machine(board, offset = 26, repair = TOOL_WELDER, dismantle = TRUE, powered = TRUE)
+	. = machine_basics(board = board, anchored_by = NONE, repair = repair, dismantle = dismantle, powered = powered) // NONE: DM substitutes the default for an explicit null
 	. += cap_wall_mount(offset = offset)
 
 /**
  * A maintenance hatch: a cover, the maintenance panel, the wiring behind the panel, an access lock and the
- * emag, with the rules between them built in:
- * - the cover can't be opened while `cover_locked_while` (a proc on the holder, () -> TRUE while locked)
- *   says so, and closing it is always allowed;
+ * emag, with the rules between them built in. It declares the compartment BAY_HATCH, whose door is the open cover:
+ * whatever sits behind the cover (a cell bay, a construction ladder) works `at = BAY_HATCH`.
+ * - `cover_holds` (a proc on the holder, (mob/user, obj/item/held) -> a reason text while the cover must stay as it
+ *   is, null otherwise) refuses the cover's opening AND closing; the reason is the refusal;
  * - with panel_needs_cover_closed, the panel only opens with the cover closed (the APC's wire panel);
  * - the ID lock and the emag only work with the cover and the panel closed ("close the cover first").
- * `access`: the type default (a list or one access); a mapped req_access / req_one_access overrides it.
+ * The wiring is the holder's machine_wires, the lock's access its req_access. The lock and the emag are ops
+ * (lock_ops(), emag_op()) keyed CAP_LOCK_SWIPE / CAP_LOCK / CAP_EMAG: a holder adds contracts with cap_require()
+ * and edits them with refine().
  */
-/proc/maintenance_hatch(wires, access, cover_locked_while, panel_needs_cover_closed = FALSE, cover_tool = TOOL_CROWBAR, removable_cover = FALSE, emag_say, emag_effect, emag_mode = EMAG_ONCE)
+/proc/maintenance_hatch(cover_holds, panel_needs_cover_closed = FALSE, cover_tool = TOOL_CROWBAR, removable_cover = FALSE, emag_say, emag_mode = EMAG_ONCE)
 	var/datum/capability/maintenance_hatch/hatch = new
-	hatch.cover_locked_while = cover_locked_while
-	. = list(hatch)
-	. += cap_cover(open_tool = cover_tool, removable = removable_cover, needs = cover_locked_while ? TYPE_PROC_REF(/atom, hatch_cover_free) : null)
+	hatch.cover_holds = cover_holds
+	. = list(hatch, compartment(BAY_HATCH, door = CAP_COVER_OPEN))
+	. += cap_cover(open_tool = cover_tool, removable = removable_cover)
+	if(cover_holds)
+		. += cap_require(list("open_cover", "remove_cover"), needs = req_proc(TYPE_PROC_REF(/atom, hatch_cover_free)))
 	. += cap_panel(blocked_by = panel_needs_cover_closed ? COVER : NONE)
-	if(wires)
-		. += cap_wires(wires, behind = PANEL)
-	if(access)
-		. += cap_lock(access = islist(access) ? access : list(access), blocked_by = COVER | PANEL)
-	. += cap_emag(say = emag_say, effect = emag_effect, mode = emag_mode, blocked_by = COVER | PANEL)
+	. += cap_wires(null, behind = PANEL)
+	. += cap_lock(blocked_by = COVER | PANEL, entries = FALSE)
+	. += lock_ops(blocked_by = COVER | PANEL)
+	. += emag_op(say = emag_say, mode = emag_mode, blocked_by = COVER | PANEL)
 
 /// The hatch's own settings (no entries): what locks the cover.
 /datum/capability/maintenance_hatch
-	/// A proc on the holder, () -> TRUE while the cover must stay shut (the APC's coverlock).
-	var/cover_locked_while
+	/// A proc on the holder, (mob/user, obj/item/held) -> the reason the cover must stay as it is, or null.
+	var/cover_holds
 
-/// The cover's needs proc under a maintenance hatch: opening is refused while the hatch says the cover
-/// is locked; closing is always allowed.
+/// The requirement of the hatch's cover ops: the holder's cover_holds proc answers for opening and closing alike.
 /atom/proc/hatch_cover_free(mob/user, obj/item/held)
-	if(cover_is_open(src))
-		return TRUE
 	var/datum/capability/maintenance_hatch/hatch = cap_of_all(src, /datum/capability/maintenance_hatch)
-	if(hatch?.cover_locked_while && call(src, hatch.cover_locked_while)())
-		return "the cover is locked"
-	return TRUE
+	var/why = hatch?.cover_holds ? call(src, hatch.cover_holds)(user, held) : null
+	return why ? (istext(why) ? why : "the cover is locked") : TRUE
 
 /**
  * A computer console: breakage (the screen cracks; no welder repair), power, and taking it apart into a

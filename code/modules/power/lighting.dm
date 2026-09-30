@@ -263,6 +263,12 @@ OWN_TIMER(/obj/machinery/light, light_timer_token)
 
 	var/overlay_color = LIGHT_COLOR_INCANDESCENT_TUBE
 
+/// A light fixture is a MEMBER relation of the area it stands in (role POWER_ROLE_LIGHTING): its APC reads its lights
+/// through members_of(area, POWER_ROLE_LIGHTING), not by scanning the area.
+/obj/machinery/light/capabilities()
+	. = ..()
+	. += powered_by(POWERED_BY_AREA, role = POWER_ROLE_LIGHTING)
+
 /// A flicker() run in progress: do_flicker() flicks every flicker_delay() until flicks_left runs out.
 OM_FIELD(/obj/machinery/light, flickering, FALSE, CHANGE_MACHINE_SETTINGS)
 DECLARE_REPEAT(/obj/machinery/light, "flicker_delay", do_flicker, "flickering")

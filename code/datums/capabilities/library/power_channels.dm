@@ -1,7 +1,7 @@
 // power_channels(): an area power controller's channels (equipment, lighting, environment), its main
 // breaker and night-shift lighting (doc/rewrite/dx_conventions.md §2). It owns their UI data
-// (data["caps"]["power"]), the channel indicator glows ("apco<channel>-<mode>" while the holder says
-// power_channels_lit()) and the UI actions act_channel / act_breaker / act_nightshift, so the holder
+// (data["caps"]["power"]), the channel indicator glows (the part "channel-<channel>-<mode>", emissive, while the holder
+// says power_channels_lit()) and the UI actions act_channel / act_breaker / act_nightshift, so the holder
 // writes none of them. State stays on the holder, behind a small interface of well-known procs:
 //	power_channel_mode(channel) / set_power_channel_mode(channel, mode)   POWER_CHANNEL_* / POWERCHAN_*
 //	power_channel_load(channel)                                           watts
@@ -30,7 +30,8 @@ GLOBAL_LIST_INIT(power_channel_titles, list("Equipment", "Lighting", "Environmen
 	if(!holder.power_channels_lit())
 		return
 	for(var/channel in POWER_CHANNEL_EQUIPMENT to POWER_CHANNEL_ENVIRON)
-		look.glow("apco[channel]-[holder.power_channel_mode(channel)]")
+		look.part("channel-[channel]", "[holder.power_channel_mode(channel)]") // a text value: mode 0 is a state too
+		look.glow("channel-[channel]", "[holder.power_channel_mode(channel)]")
 
 /datum/capability/power_channels/ui_data(atom/holder, mob/user, list/data)
 	var/list/channels = list()

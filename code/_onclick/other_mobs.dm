@@ -37,7 +37,11 @@
 /atom/proc/attack_hand(mob/user as mob)
 	if(!user)
 		return FALSE
-	return run_interaction_entry(user, src, null, INTERACTION_ENTRY_HAND, null, TRUE) ? TRUE : FALSE
+	if(run_interaction_entry(user, src, null, INTERACTION_ENTRY_HAND, null, TRUE))
+		return TRUE
+	if(ishuman(user))
+		PUBLISH(src, /datum/notice/slashed, user)
+	return FALSE
 
 /**
  * What a touch passes through before the type's own hand interactions: signal

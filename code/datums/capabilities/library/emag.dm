@@ -14,6 +14,9 @@
 	var/mode = EMAG_ONCE
 	var/already_say
 	var/delay = 0
+	/// TRUE when the emag is declared as an op beside this capability (emag_op(): a holder refines and contracts it
+	/// by CAP_EMAG), so the capability contributes no entry of its own.
+	var/as_op = FALSE
 
 /// An emag: `effect` (a proc on the holder) runs first and may refuse; then `say` to the user, once or
 /// every time (`mode`). `delay`: the wait before the effect. Gating as every library constructor.
@@ -28,6 +31,8 @@
 	return cap_gating(C, behind = behind, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 
 /datum/capability/emag/interactions(atom/holder)
+	if(as_op)
+		return null
 	var/datum/interaction/capability/E = adopt_entry(cap_use_on("Emag", /obj/item/card/emag, TYPE_PROC_REF(/atom, cap_emag_use), works_unpowered = TRUE, priority = 50), id = "emag")
 	E.duration = delay // paid through use_tool() like any timed interaction, before the handler runs
 	return list(E)
@@ -57,3 +62,58 @@
 	if(card.uses < 1)
 		card.spent(user)
 	return TRUE
+
+/**
+ * An emag declared as an op (the hatch's emag): list(the emag capability, the op, its contract). The op is keyed
+ * CAP_EMAG and its HANDLER is the effect, (mob/user, obj/item/card/emag/card) -> TRUE or a reason text, so
+ * `refine(CAP_EMAG, delay = ..., effect = PROC_REF(on_emag))` swaps the wait and the effect and
+ * `cap_require(CAP_EMAG, needs = ...)` adds contracts. What every emag shares runs around it: the card must be
+ * usable and (EMAG_ONCE) the holder not yet emagged before, and after a successful commit CAP_EMAGGED is set, `say`
+ * told and one use spent (emag_committed(), an after_op reaction of the capability).
+ */
+/proc/emag_op(say, effect, mode = EMAG_ONCE, already_say = "It is already emagged.", delay = 0, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, log = LOG_ADMIN, layer = CAP_NO_LAYER)
+	var/datum/capability/emag/C = new
+	C.say = say
+	C.mode = mode
+	C.already_say = already_say
+	C.delay = delay
+	C.layer_name = layer
+	C.as_op = TRUE
+	cap_gating(C, log = log)
+	var/list/pre = list(TYPE_PROC_REF(/atom, emag_op_ok))
+	if(needs)
+		pre += islist(needs) ? needs : list(needs)
+	var/datum/capability/entry/op = cap_op("Emag", effect || TYPE_PROC_REF(/atom, emag_default_effect), using = /obj/item/card/emag, key = CAP_EMAG, action = ACT_USE, kind = OP_STRUCTURAL, delay = delay, priority = 50, needs = pre, else_say = else_say, behind = behind, blocked_by = blocked_by, locked_by = locked_by, works_broken = TRUE, works_unpowered = TRUE, log = log)
+	return list(C, op)
+
+/datum/capability/emag/reactions()
+	. = ..()
+	if(as_op)
+		. += after_op(CAP_EMAG, TYPE_PROC_REF(/atom, emag_committed))
+
+/// The default effect of an emag op: nothing beyond the shared commit.
+/atom/proc/emag_default_effect(mob/user, obj/item/card/emag/card)
+	return TRUE
+
+/// needs: the card has a use left and (EMAG_ONCE) the holder isn't already emagged.
+/atom/proc/emag_op_ok(mob/user, obj/item/held)
+	var/datum/capability/emag/C = cap_of_all(src, /datum/capability/emag)
+	var/obj/item/card/emag/card = held
+	if(!istype(card) || !card.can_emag(user))
+		return "[held] has no uses left."
+	if(C?.mode == EMAG_ONCE && is_emagged(src))
+		return C.already_say
+	return TRUE
+
+/// after_op(CAP_EMAG): the emag went through. Sets the bit, tells the user, spends one use as
+/// /obj/item/card/emag/proc/spend() does (the dispatcher writes the log line).
+/atom/proc/emag_committed(datum/op_ctx/ctx)
+	var/datum/capability/emag/C = cap_of_all(src, /datum/capability/emag)
+	var/obj/item/card/emag/card = ctx.held
+	cap_set(src, CAP_EMAGGED, TRUE)
+	if(C?.say)
+		act_message(ctx.actor, src, self = span_warning(C.say), item = card)
+	if(istype(card))
+		card.uses--
+		if(card.uses < 1)
+			card.spent(ctx.actor)

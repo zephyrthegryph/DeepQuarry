@@ -123,7 +123,10 @@
 		area_changed(old_area, new_area)
 
 /obj/machinery/proc/area_changed(area/old_area, area/new_area)
-	if(old_area == new_area || !power_init_complete)
+	if(old_area == new_area)
+		return
+	caps_area_changed(old_area, new_area) // powered_by(POWERED_BY_AREA) memberships follow the machine
+	if(!power_init_complete)
 		return
 	if(power_subscriber)
 		old_area?.power_unsubscribe(src)

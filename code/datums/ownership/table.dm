@@ -111,29 +111,30 @@
  *   (draw, should_run, hidden_verbs, tgui_data, needs procs) read. While linked, a changed() of the
  *   target (every TRACKED setter raises one) marks the holder changed too.
  */
-/proc/rel_one(var_name, type = null, kind = null, back = null, other_deleted = CLEAR, on_unlink = null, keyed = null, keyed_target = null, list/watch = null, keep_after_destroy = FALSE, pool_reset = FALSE, forward = FALSE)
-	return _rel_kind_decl(var_name, FALSE, type, kind, back, other_deleted, on_unlink, keyed, keyed_target, watch, keep_after_destroy, pool_reset, forward)
+/proc/rel_one(var_name, type = null, kind = null, back = null, other_deleted = CLEAR, on_unlink = null, keyed = null, keyed_target = null, list/watch = null, keep_after_destroy = FALSE, pool_reset = FALSE, forward = FALSE, policy = OWN_DELETE)
+	return _rel_kind_decl(var_name, FALSE, type, kind, back, other_deleted, on_unlink, keyed, keyed_target, watch, keep_after_destroy, pool_reset, forward, policy)
 
 /// A list relation view: var_name lists any number of entities, each dropped when it dies. The
 /// options are rel_one()'s; with `back` naming this same var the membership is symmetric (linking
 /// A to B lists each in the other's var).
-/proc/rel_many(var_name, type = null, kind = null, back = null, other_deleted = CLEAR, on_unlink = null, keyed = null, keyed_target = null, list/watch = null, keep_after_destroy = FALSE, pool_reset = FALSE, forward = FALSE)
-	return _rel_kind_decl(var_name, TRUE, type, kind, back, other_deleted, on_unlink, keyed, keyed_target, watch, keep_after_destroy, pool_reset, forward)
+/proc/rel_many(var_name, type = null, kind = null, back = null, other_deleted = CLEAR, on_unlink = null, keyed = null, keyed_target = null, list/watch = null, keep_after_destroy = FALSE, pool_reset = FALSE, forward = FALSE, policy = OWN_DELETE)
+	return _rel_kind_decl(var_name, TRUE, type, kind, back, other_deleted, on_unlink, keyed, keyed_target, watch, keep_after_destroy, pool_reset, forward, policy)
 
 /**
  * rel_one() / rel_many() with the declared kind. `type` is the type of what the var holds (documentation and
  * the lint's check; nothing is checked at runtime). `kind`:
  *   RELK_REF     a plain reference, cleared when the other end dies (the default);
  *   RELK_PAIRED  both ends name each other: needs back =, and one rel_link() writes both sides;
- *   RELK_OWNED   the holder owns the value(s) and deletes them with itself (owns()).
+ *   RELK_OWNED   the holder owns the value(s) and deletes them with itself (owns()); `policy` is owns()'s
+ *                (OWN_DELETE, or OWN_SPILL for a part that drops out when the holder is destroyed).
  * Giving back = without a kind means RELK_PAIRED. Every write of a view publishes both ends.
  */
-/proc/_rel_kind_decl(var_name, is_list, type, kind, back, other_deleted, on_unlink, keyed, keyed_target, list/watch, keep_after_destroy, pool_reset, forward)
+/proc/_rel_kind_decl(var_name, is_list, type, kind, back, other_deleted, on_unlink, keyed, keyed_target, list/watch, keep_after_destroy, pool_reset, forward, policy = OWN_DELETE)
 	if(isnull(kind))
 		kind = back ? RELK_PAIRED : RELK_REF
 	switch(kind)
 		if(RELK_OWNED)
-			return owns(var_name, keep_after_destroy = keep_after_destroy, pool_reset = pool_reset, forward = forward)
+			return owns(var_name, policy = policy, keep_after_destroy = keep_after_destroy, pool_reset = pool_reset, forward = forward)
 		if(RELK_PAIRED)
 			if(!back)
 				CRASH("rel_one/rel_many([var_name]): RELK_PAIRED needs back = nameof(/other/type::var)")

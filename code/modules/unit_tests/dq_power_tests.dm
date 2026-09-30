@@ -149,11 +149,12 @@
 	A.lighting = POWERCHAN_ON_AUTO
 	A.environ = POWERCHAN_ON_AUTO
 	A.cell.charge = A.cell.maxcharge * 0.001
-	A.sync_cell_charge()
+	A.pushed_cell = null // the seated cell's charge becomes Rust's again at the next push
 	A.set_channels(0, A.equipment)
 	A.set_channels(1, A.lighting)
 	A.set_channels(2, A.environ)
 	A.update()
+	refresh_flush()
 	var/drained = FALSE
 	for(var/i in 1 to 20)
 		dq_power_test_step()
@@ -185,8 +186,9 @@
 	T.set_power_supply(0)
 	A.area().use_power_static(-2000, EQUIP)
 	A.cell.charge = old_charge
-	A.sync_cell_charge()
+	A.pushed_cell = null // the seated cell's charge becomes Rust's again at the next push
 	A.update()
+	refresh_flush()
 	om_unhook(M, list(/datum/om/event/machinery_power_lost, /datum/om/event/machinery_power_restored), src)
 	GLOB.machine_service.process_power()
 
@@ -202,8 +204,9 @@
 	T.connect_to_network()
 	T.set_power_supply(1000000)
 	A.cell.charge = A.cell.maxcharge
-	A.sync_cell_charge()
+	A.pushed_cell = null // the seated cell's charge becomes Rust's again at the next push
 	A.update()
+	refresh_flush()
 	var/obj/machinery/power/smes/S
 	for(var/obj/machinery/power/smes/candidate as anything in REGISTRY_MEMBERS(REGISTRY_SMES))
 		if(!candidate.has_stat(BROKEN))
