@@ -68,7 +68,7 @@
 /// The kernel's frame (phase N): `elapsed_ds` deciseconds since the last one become wheel ticks (at least one,
 /// at most NATIVE_MAX_CATCHUP), and `budget` (normal/background wakes per tick) scales with them, so a late
 /// tick takes the skipped ticks' share. Returns TRUE when a frame ran.
-/datum/system/native/proc/step(elapsed_ds, budget = NATIVE_WAKE_BUDGET)
+/datum/system/native/proc/kernel_frame(elapsed_ds, budget = NATIVE_WAKE_BUDGET)
 	if(tick_lag_sent != world.tick_lag)
 		send_tick_lag()
 	var/ticks = clamp(CEILING(elapsed_ds / world.tick_lag, 1), 1, NATIVE_MAX_CATCHUP)

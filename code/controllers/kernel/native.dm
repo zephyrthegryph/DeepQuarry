@@ -13,5 +13,5 @@
 	if(!sched || !sched.world_frame_begin(om_world_tick_of(world.time)))
 		return
 	var/start = TICK_USAGE_REAL
-	native_system().step(elapsed, budget)
+	native_system().kernel_frame(elapsed, budget)
 	sched.world_last_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - start)
