@@ -576,6 +576,8 @@ UI_ACT_PROC(/datum/controller/master, ui_act_view_variables)
 /datum/controller/master/proc/record_performance_tick(usage)
 	usage = max(usage, 0)
 	kernel_latency().note_tick(usage)
+	// Close the tick's per-system accounting (code/controllers/measure/).
+	km_meter().end_tick(usage, MAPTICK_LAST_INTERNAL_TICK_USAGE)
 	perf_tick_usage += usage
 	perf_tick_realtime += REALTIMEOFDAY
 	perf_samples_total++
@@ -588,6 +590,7 @@ UI_ACT_PROC(/datum/controller/master, ui_act_view_variables)
 	var/previous_worst_usage = LAZYACCESS(perf_worst_tick, "usage") || 0
 	if(usage > previous_worst_usage || usage > 100)
 		var/list/breakdown = performance_tick_breakdown(usage)
+		var/datum/tick_meter/meter = km_meter()
 		var/list/tick_record = list(
 			"world_time" = world.time,
 			"usage" = usage,
@@ -596,6 +599,9 @@ UI_ACT_PROC(/datum/controller/master, ui_act_view_variables)
 			"top_usage" = perf_tick_top_usage,
 			"maptick" = MAPTICK_LAST_INTERNAL_TICK_USAGE,
 			"breakdown" = breakdown,
+			// The same tick by system, from inside Behaviours as well as the MC's own subsystems.
+			"top_systems" = meter.latest_top_systems(),
+			"streak" = meter.streak,
 		)
 		if(usage > previous_worst_usage)
 			perf_worst_tick = tick_record

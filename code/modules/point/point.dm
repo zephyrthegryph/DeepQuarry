@@ -72,7 +72,7 @@
 
 /mob/verb/pointed(atom/A as mob|obj|turf in view())
 	set name = "Point To"
-	set category = "Object"
+	set category = VERB_CAT_OBJECT
 
 	if(istype(A, /obj/effect/temp_visual/point))
 		return FALSE

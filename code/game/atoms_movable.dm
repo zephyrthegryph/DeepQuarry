@@ -322,7 +322,7 @@
 	om_emit_moved(src, old_loc, direction, forced)
 	// Mobs raise CHANGE_MOB_LOC themselves (living_movement.dm).
 	if(om_listen && !ismob(src))
-		om_changed(src, isitem(src) ? CHANGE_ITEM_LOC : CHANGE_EXPLICIT)
+		changed(src, isitem(src) ? CHANGE_ITEM_LOC : CHANGE_EXPLICIT)
 	// Covers Destroy() too, which moves to nullspace.
 	if(rad_insulation != RAD_NO_INSULATION)
 		RAD_SHIELDING_CHANGED(old_loc)
@@ -522,9 +522,9 @@
 		return
 	anchored = state
 	if(ismob(src))
-		om_changed(src, CHANGE_MOB_CAN_MOVE)
+		changed(src, CHANGE_MOB_CAN_MOVE)
 	else if(istype(src, /obj/machinery))
-		om_changed(src, CHANGE_MACHINE_ANCHORED)
+		changed(src, CHANGE_MACHINE_ANCHORED)
 
 /atom/movable/proc/glide_for(movetime)
 	if(movetime)

@@ -19,6 +19,8 @@ for lint in \
 	scheduler_lints.py \
 	ownership_lint.py \
 	lifecycle_counts_lint.py \
+	qdel_src_lint.py \
+	base_vars_lint.py \
 	lifecycle_lint.py \
 	containment_lint.py \
 	latent_lint.py \
@@ -32,6 +34,7 @@ for lint in \
 	breakpoint_lint.py \
 	api_lints.py \
 	cooldown_lint.py \
+	verb_category_lint.py \
 	i7_handler_lint.py \
 	dcs_lints.py \
 	leftovers_lints.py \

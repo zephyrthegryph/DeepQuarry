@@ -2,7 +2,7 @@
 
 /client/verb/configure_shocker()
 	set name = "Configure MultiShock Integration"
-	set category = "OOC.Game Settings"
+	set category = VERB_CAT_OOC_GAME_SETTINGS
 
 	if(tgui_shocker)
 		tgui_shocker.tgui_interact(mob)

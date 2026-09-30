@@ -201,9 +201,9 @@ UI_ACT_PROC(/datum/spawnpanel, ui_act_update_settings)
 
 	if (precise_mode != PRECISE_MODE_OFF && admin_client.holder)
 		rel_set(admin_client.holder, nameof(/mob::click_intercept), src)
-		winset(admin_client, "mapwindow.map", "right-click=true")
+		winset(admin_client, SKIN_MAP, "right-click=true")
 	else
-		winset(admin_client, "mapwindow.map", "right-click=false")
+		winset(admin_client, SKIN_MAP, "right-click=false")
 
 	/* Unimplemented
 	var/mob/holder_mob = admin_client.mob

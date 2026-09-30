@@ -111,8 +111,8 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 	edit_admin_permissions(PERMISSIONS_PAGE_PERMISSIONS)
 
 /datum/admins/proc/add_admin(admin_ckey, admin_key, use_db)
-	if(!check_rights(R_PERMISSIONS) || (use_db && !check_rights(R_DBRANKS)))
-		return
+	if(use_db && !admin_require(owner(), R_DBRANKS, "permissionedit"))
+		return // R_PERMISSIONS is declared by the editrights* topics; only the database half varies
 	if(IsAdminAdvancedProcCall())
 		to_chat(usr, span_adminprefix("Admin Addition blocked: Advanced ProcCall detected."), confidential = TRUE)
 		return
@@ -146,8 +146,8 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 /datum/admins/proc/remove_admin(admin_ckey, admin_key, use_db, datum/admins/target_holder)
 	if(!GLOB.prompt_flow)
 		return prompt_flow(src, PROC_REF(remove_admin), args)
-	if(!check_rights(R_PERMISSIONS) || (use_db && !check_rights(R_DBRANKS)))
-		return
+	if(use_db && !admin_require(owner(), R_DBRANKS, "permissionedit"))
+		return // R_PERMISSIONS is declared by the editrights* topics; only the database half varies
 	if(IsAdminAdvancedProcCall())
 		to_chat(usr, span_adminprefix("Admin Removal blocked: Advanced ProcCall detected."), confidential = TRUE)
 		return
@@ -274,8 +274,8 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 /datum/admins/proc/change_admin_rank(admin_ckey, admin_key, use_db, datum/admins/target_holder, legacy_only, list/picked)
 	if(!picked && !GLOB.prompt_flow)
 		return prompt_flow(src, PROC_REF(change_admin_rank), args)
-	if(!check_rights(R_PERMISSIONS) || (use_db && !check_rights(R_DBRANKS)))
-		return
+	if(use_db && !admin_require(owner(), R_DBRANKS, "permissionedit"))
+		return // R_PERMISSIONS is declared by the editrights* topics; only the database half varies
 	if(IsAdminAdvancedProcCall())
 		to_chat(usr, span_adminprefix("Rank Modification blocked: Advanced ProcCall detected."), confidential = TRUE)
 		return

@@ -66,7 +66,7 @@
 
 /mob/living/simple_animal/cat/fluff/verb/become_friends()
 	set name = "Become Friends"
-	set category = "Abilities.General
+	set category = VERB_CAT_ABILITIES_GENERAL
 	set src in view(1)
 
 	if(!friend)

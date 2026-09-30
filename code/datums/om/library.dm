@@ -72,6 +72,7 @@
 		GRANT_CAPABILITY = list("combine" = COMBINE_SUM_PER_KEY, "type" = /datum/om/effect/grant_capability),
 		GRANT_ACCESS = list("combine" = COMBINE_SUM_PER_KEY),
 		GRANT_TRAIT = list("combine" = COMBINE_SUM_PER_KEY),
+		GRANT_CADENCE = list("combine" = COMBINE_SUM_PER_KEY, "type" = /datum/om/effect/grant_cadence),
 	)
 
 // ---------------------------------------------------------------- relations
@@ -206,7 +207,7 @@
 		return
 	if(ismob(source))
 		var/mob/M = source
-		om_changed(M, CHANGE_MOB_STATUS)
+		changed(M, CHANGE_MOB_STATUS)
 		if(M.pullin)
 			M.pullin.icon_state = "pull1"
 	if(ismob(target))
@@ -216,7 +217,7 @@
 /datum/om/relation/pulling/on_unlink(atom/movable/source, atom/movable/target, datum/om/edge/edge)
 	if(istype(source) && !QDELETED(source) && ismob(source))
 		var/mob/M = source
-		om_changed(M, CHANGE_MOB_STATUS)
+		changed(M, CHANGE_MOB_STATUS)
 		if(M.pullin)
 			M.pullin.icon_state = "pull0"
 

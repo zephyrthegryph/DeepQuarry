@@ -16,7 +16,7 @@ ADMIN_VERB(hide_verbs, R_HOLDER, "Adminverbs - Hide All", "Hide all admin verbs.
 
 /client/proc/show_verbs()
 	set name = "Adminverbs - Show"
-	set category = "Admin.Misc"
+	set category = VERB_CAT_ADMIN_MISC
 
 	if(!check_rights_for(src, R_HOLDER))
 		return

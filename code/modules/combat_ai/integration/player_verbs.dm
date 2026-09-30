@@ -50,7 +50,7 @@ TYPE_TABLE_DECLARE(/datum/ai_behavior, get_player_verb_info, null)
 /mob/living/proc/dq_use_combat_move()
 	set name = "Use Combat Move"
 	set desc = "Trigger one of your AI mob's special moves."
-	set category = "Combat"
+	set category = VERB_CAT_COMBAT
 
 	if(!ai_brain)
 		to_chat(src, span_warning("You don't have any combat moves."))

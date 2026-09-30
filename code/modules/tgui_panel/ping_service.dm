@@ -28,7 +28,7 @@ GLOBAL_DATUM_INIT(ping_service, /datum/world_service/ping, new)
 
 		if(!client?.prefs?.read_preference(/datum/preference/toggle/vchat_enable))
 			winset(client, "output", "on-show=&is-disabled=0&is-visible=1")
-			winset(client, "browseroutput", "is-disabled=1;is-visible=0")
+			winset(client, SKIN_CHAT_BROWSER, "is-disabled=1;is-visible=0")
 			client.tgui_panel.oldchat = TRUE
 
 		if (client?.tgui_panel?.is_ready())

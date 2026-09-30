@@ -1,5 +1,5 @@
 /client/proc/triple_ai()
-	set category = "Fun.Event Kit"
+	set category = VERB_CAT_FUN_EVENT_KIT
 	set name = "Create AI Triumvirate"
 
 	if(SSticker.current_state > GAME_STATE_PREGAME)

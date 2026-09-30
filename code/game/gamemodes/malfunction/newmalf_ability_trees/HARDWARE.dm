@@ -7,7 +7,7 @@
 
 
 /datum/game_mode/malfunction/verb/ai_self_destruct()
-	set category = "Hardware"
+	set category = VERB_CAT_HARDWARE
 	set name = "Destroy Core"
 	set desc = "Activates or deactivates self destruct sequence of your physical mainframe."
 	var/mob/living/silicon/ai/user = usr
@@ -49,7 +49,7 @@
 
 
 /datum/game_mode/malfunction/verb/ai_toggle_apu()
-	set category = "Hardware"
+	set category = VERB_CAT_HARDWARE
 	set name = "Toggle APU Generator"
 	set desc = "Activates or deactivates your APU generator, allowing you to operate even without power."
 	var/mob/living/silicon/ai/user = usr
@@ -67,7 +67,7 @@
 
 
 /datum/game_mode/malfunction/verb/ai_destroy_station()
-	set category = "Hardware"
+	set category = VERB_CAT_HARDWARE
 	set name = "Destroy Station"
 	set desc = "Activates or deactivates self destruct sequence of this station. Sequence takes two minutes, and if you are shut down before timer reaches zero it will be cancelled."
 	var/mob/living/silicon/ai/user = usr

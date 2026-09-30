@@ -34,7 +34,7 @@ UI_DATA_REPLACE(/datum/exonet_log_panel, "merge:ui_data_datum_exonet_log_panel{l
 
 // Show Text Messages verb now opens a structured TGUI panel.
 /mob/observer/dead/verb/show_text_messages()
-	set category = "Ghost.Settings"
+	set category = VERB_CAT_GHOST_SETTINGS
 	set name = "Show Text Messages"
 	set desc = "Allows you to see exonet text messages you've sent and received."
 	if(!dq_exonet_log_panel_cache)

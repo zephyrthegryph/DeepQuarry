@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Live simulation groundwork: the world step length can change at runtime (Pacer::set_dt, vg_world_set_dt), GRANT_CADENCE timed grants pick the gas publication step, om_watch_gas() gives sensors exact threshold crossings, and a useStreamedRate() TGUI hook interpolates streamed rates"
+  - code_imp: "Added ratchet lints for raw qdel(src) and for base-type vars / instance list() initialisers, plus null-safety helpers (null_object_of, must_be, NO_Z)"

@@ -176,6 +176,8 @@
 /* Things that didn't fit anywhere else */
 
 /datum/reagent/adminordrazine //An OP chemical for admins
+	// Admin magic: restores every biology, surgical lesions included.
+	treatment_tags = list(TREAT_RESTORATION = DQ_CHEM_DOSE_CAP)
 	factors = alist(BF_ANALGESIA = 200, BF_STABILIZATION = 15, BF_ANTIMICROBIAL = ANTIBIO_SUPER)
 	name = REAGENT_ADMINORDRAZINE
 	id = REAGENT_ID_ADMINORDRAZINE
@@ -359,6 +361,9 @@
 
 
 /datum/reagent/adrenaline
+	// The code-blue drug: restarts electrical activity in a flatlined heart
+	// and shrinks swollen airway tissue.
+	treatment_tags = list(TREAT_VASOPRESSOR = 1.2, TREAT_STIMULANT = 0.3)
 	name = REAGENT_ADRENALINE
 	id = REAGENT_ID_ADRENALINE
 	description = "Adrenaline is a hormone used as a drug to treat cardiac arrest and other cardiac dysrhythmias resulting in diminished or absent cardiac output."
@@ -688,6 +693,8 @@
 	industrial_use = REFINERYEXPORT_REASON_PRECURSOR
 
 /datum/reagent/coolant
+	// Only synthetic parts respond (TREAT_COOLANT is a synthetic mechanism).
+	treatment_tags = list(TREAT_COOLANT = 1.0)
 	name = REAGENT_COOLANT
 	id = REAGENT_ID_COOLANT
 	description = "Industrial cooling substance."
@@ -1188,6 +1195,14 @@ DECLARE_REAGENTS_TINTED(/obj/item/reagent_containers/pill/phenethylamine, null, 
 		M.extinguish_mob()
 
 /datum/reagent/liquid_protean
+	treatment_tags = list(
+		TREAT_TISSUE_REPAIR = 0.1,
+		TREAT_BURN_CARE = 0.1,
+		TREAT_OXYGENATION = 0.1,
+		TREAT_ANTITOXIN = 0.1,
+		TREAT_PLATING_REPAIR = 0.1,
+		TREAT_WIRING_REPAIR = 0.1,
+	)
 	name = REAGENT_LIQUIDPROTEAN
 	id = REAGENT_ID_LIQUIDPROTEAN
 	description = "This seems to be a small portion of a Protean creature, still slightly wiggling."

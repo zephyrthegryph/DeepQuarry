@@ -1,6 +1,8 @@
-/// Percentage of tick to leave for master controller to run
-#define MAPTICK_MC_MIN_RESERVE 70
 #define MAPTICK_LAST_INTERNAL_TICK_USAGE (world.map_cpu)
+
+/// The tick a BYOND-side cost has recently taken (SendMaps), in percent of a tick: the peak of world.map_cpu,
+/// decaying slowly, measured by the tick meter. Nothing subtracts it from the MC's budget; see verb_manager.dm.
+#define TICK_BYOND_RESERVE (km_meter().byond_reserve())
 
 #define TICK_LIMIT_RUNNING 80
 /// Tick limit used to resume things in stoplag
@@ -8,6 +10,9 @@
 /// Tick limit for MC while running
 #define TICK_LIMIT_MC 70
 #define TICK_LIMIT_MC_INIT_DEFAULT 98
+
+/// Busy-waits until tick usage reaches the target percentage. For the VERB_STRESS_TEST debug build only.
+#define CONSUME_UNTIL(target_usage) while(TICK_USAGE < (target_usage)) { }
 
 /// for general usage of tick_usage
 #define TICK_USAGE world.tick_usage

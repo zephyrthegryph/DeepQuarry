@@ -127,7 +127,7 @@
 
 /mob/living/verb/mob_sleep()
 	set name = "Sleep"
-	set category = "IC.Game"
+	set category = VERB_CAT_IC_GAME
 	var/asleep = sleeping_voluntarily()
 	if(!asleep)
 		om_ask(src, /datum/om/prompt/confirm/voluntary_sleep, PROC_REF(sleep_confirmed))

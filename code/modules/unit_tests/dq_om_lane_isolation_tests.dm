@@ -88,8 +88,8 @@
 		witnesses["[other]"] = W
 
 	// Wakes: the failing gate is drained first, the healthy wake after it.
-	om_changed(bad, CHANGE_DATUM_A)
-	om_changed(good, CHANGE_DATUM_A)
+	changed(bad, CHANGE_DATUM_A)
+	changed(good, CHANGE_DATUM_A)
 	scheduler_advance(3)
 
 	TEST_ASSERT(bad.ticks >= 2, "lane [lane]: a runtiming tick removed its entity from the ring ([bad.ticks] ticks)")
@@ -120,7 +120,7 @@
 	// Fixed: the faulted lane resumes, wakes included.
 	sched.harness_lane_fault = null
 	var/good_ticks = good.ticks
-	om_changed(good, CHANGE_DATUM_A)
+	changed(good, CHANGE_DATUM_A)
 	scheduler_advance(2)
 	TEST_ASSERT(good.ticks > good_ticks, "lane [lane]: the lane did not resume after its fault")
 	TEST_ASSERT_EQUAL(good.wakes, 2, "lane [lane]: wakes queued during or after the fault were lost")

@@ -79,7 +79,7 @@
 	TEST_ASSERT(PD.asleep_on_keys(), "idle point defense did not sleep on the meteor key")
 	TEST_ASSERT_NULL(PD.om_sleep_violation(), "an idle point defense reported a violation")
 	// The meteor key is what /obj/effect/meteor publishes on Initialize and Destroy.
-	var/failure = om_wake_test(PD, om_callable(null, GLOBAL_PROC_REF(om_changed), GLOB.meteor_watch, CHANGE_METEORS))
+	var/failure = om_wake_test(PD, om_callable(null, GLOBAL_PROC_REF(changed), GLOB.meteor_watch, CHANGE_METEORS))
 	TEST_ASSERT(!failure, failure)
 
 /datum/unit_test/dq_om_keys_wake_disposal

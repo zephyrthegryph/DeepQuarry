@@ -27,7 +27,7 @@ TGUI frontend path: tgui\packages\tgui\interfaces\TraitTutorial.tsx
 /mob/living/carbon/human/proc/trait_tutorial()
 	set name = "Explain Custom Traits"
 	set desc = "Click this verb to obtain a detailed tutorial on your selected traits. "
-	set category = "Abilities.General"
+	set category = VERB_CAT_ABILITIES_GENERAL
 	var/list/list_of_traits = species.traits
 	if(!LAZYLEN(list_of_traits)) //Although we shouldn't show up if no traits, leaving this in case someone loses theirs after (re)spawning.
 		to_chat(src, span_notice("You do not have any custom traits!"))

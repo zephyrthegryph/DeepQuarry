@@ -176,7 +176,7 @@ DECLARE_VERB(/mob/living/dominated_brain, /mob/living/dominated_brain/proc/resis
 
 //Welcome to the adapted borer code.
 /mob/proc/dominate_predator()
-	set category = "Abilities.Vore"
+	set category = VERB_CAT_ABILITIES_VORE
 	set name = "Dominate Predator"
 	set desc = "Connect to and dominate the brain of your predator."
 
@@ -284,7 +284,7 @@ DECLARE_VERB(/mob/living/dominated_brain, /mob/living/dominated_brain/proc/resis
 	return
 
 /mob/proc/release_predator()
-	set category = "Abilities.Vore"
+	set category = VERB_CAT_ABILITIES_VORE
 	set name = "Restore Control"
 	set desc = "Release control of your predator's body."
 
@@ -302,7 +302,7 @@ DECLARE_VERB(/mob/living/dominated_brain, /mob/living/dominated_brain/proc/resis
 	om_revoke(src, GRANT_VERB, /mob/proc/release_predator, src)
 
 /mob/living/dominated_brain/proc/resist_control()
-	set category = "Abilities.Vore"
+	set category = VERB_CAT_ABILITIES_VORE
 	set name = "Resist Control"
 	set desc = "Attempt to resist control."
 
@@ -326,7 +326,7 @@ DECLARE_VERB(/mob/living/dominated_brain, /mob/living/dominated_brain/proc/resis
 	to_chat(pred_body, span_notice("The dominant sensation fades away..."))
 
 /mob/living/proc/dominate_prey()
-	set category = "Abilities.Vore"
+	set category = VERB_CAT_ABILITIES_VORE
 	set name = "Dominate Prey"
 	set desc = "Connect to and dominate the brain of your prey."
 
@@ -424,7 +424,7 @@ DECLARE_VERB(/mob/living/dominated_brain, /mob/living/dominated_brain/proc/resis
 	return
 
 /mob/living/dominated_brain/proc/cease_this_foolishness()
-	set category = "Abilities.Vore"
+	set category = VERB_CAT_ABILITIES_VORE
 	set name = "Return to Body"
 	set desc = "If your body is inside of your predator still, attempts to re-insert yourself into it."
 
@@ -449,7 +449,7 @@ DECLARE_VERB(/mob/living/dominated_brain, /mob/living/dominated_brain/proc/resis
 	to_chat(src, span_warning("Your attempt to regain your body has been interrupted..."))
 
 /mob/living/proc/lend_prey_control()
-	set category = "Abilities.Vore"
+	set category = VERB_CAT_ABILITIES_VORE
 	set name = "Give Prey Control"
 	set desc = "Allow prey control of your body."
 

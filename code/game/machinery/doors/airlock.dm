@@ -150,7 +150,7 @@
 
 /// Raises CHANGE_MACHINE_MODE for whatever watches this door (bolts, power, electrification).
 /obj/machinery/door/airlock/proc/publish_door_mode()
-	om_changed(src, CHANGE_MACHINE_MODE)
+	changed(src, CHANGE_MACHINE_MODE)
 
 // Runs in a seperate timer loop, because making every airlock process every tick just to check for unfreezing is a bad idea.
 // Only the airlocks that can freeze (can_freeze()) declare it.
@@ -1318,7 +1318,7 @@ DAMAGE_REACTION(/obj/machinery/door/airlock, DAMAGE_EMP, PROC_REF(airlock_emp))
 
 /mob/living/silicon/robot/proc/ex_reserve_refill()
 	set name = "Refill Extinguisher"
-	set category = "Object"
+	set category = VERB_CAT_OBJECT
 	var/datum/matter_synth/water = water_res()
 	for(var/obj/item/extinguisher/E in module.modules)
 		if(E.reagents.total_volume < E.max_water)

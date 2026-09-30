@@ -196,7 +196,7 @@ DAMAGE_REACTION(/obj/item/mmi, DAMAGE_EMP, PROC_REF(emp_interference))
 			occupant.emp_damage += rand(5,10)
 		if(EMP_HARMLESS)
 			occupant.emp_damage += rand(0,5)
-	om_changed(occupant, CHANGE_MOB_HEALTH) // wake the status stage to work off the interference
+	changed(occupant, CHANGE_MOB_HEALTH) // wake the status stage to work off the interference
 
 /obj/item/mmi/digital
 	var/searching = 0

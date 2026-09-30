@@ -862,7 +862,7 @@
 
 /mob/verb/select_speech_bubble()
 	set name = "Select Speech Bubble"
-	set category = "OOC.Chat Settings"
+	set category = VERB_CAT_OOC_CHAT_SETTINGS
 
 	om_ask(src, /datum/om/prompt/choice, PROC_REF(speech_bubble_chosen), title = "Character Preference", message = "Pick new voice (default for automatic selection)", choices = GLOB.selectable_speech_bubbles)
 

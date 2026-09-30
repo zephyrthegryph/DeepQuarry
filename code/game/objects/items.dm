@@ -451,7 +451,7 @@ OWN_TIMER(/obj/item, tip_timer)
 /obj/item/proc/dropped(mob/user, equipping, slot)
 	SHOULD_CALL_PARENT(TRUE)
 	if(user)
-		om_changed(user, CHANGE_MOB_HANDS)
+		changed(user, CHANGE_MOB_HANDS)
 	// Worn/held items stay real for as long as they're worn or held (C10,
 	// containment.md §4.7): a matching equipped() pinned it, and dropping
 	// out of hands or a slot releases that pin. A safe no-op if it was never
@@ -501,7 +501,7 @@ OWN_TIMER(/obj/item, tip_timer)
 // for items that can be placed in multiple slots
 // note this isn't called during the initial dressing of a player
 /obj/item/proc/equipped(mob/user, slot)
-	om_changed(user, CHANGE_MOB_HANDS)
+	changed(user, CHANGE_MOB_HANDS)
 	// Worn or held: pin it real for as long as that's true (C10, unpinned by
 	// the matching dropped()).
 	latent_pin("equipped")
@@ -707,7 +707,7 @@ GLOBAL_LIST_EMPTY(blood_overlays_by_type)
 
 /mob/living/carbon/verb/showoff()
 	set name = "Show Held Item"
-	set category = "Object"
+	set category = VERB_CAT_OBJECT
 
 	var/obj/item/I = get_active_hand()
 	if(I && !I.abstract)

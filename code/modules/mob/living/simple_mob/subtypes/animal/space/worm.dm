@@ -126,7 +126,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/space/space_worm/head, TYP
 /mob/living/simple_mob/animal/space/space_worm/head/verb/toggle_devour()
 	set name = "Toggle Feeding"
 	set desc = "Extends your teeth for 30 seconds so that you can chew through mobs and structures alike."
-	set category = "Abilities.Worm"
+	set category = VERB_CAT_ABILITIES_WORM
 
 	if(!COOLDOWN_FINISHED(src, maw_cooldown_until))
 		if(open_maw)

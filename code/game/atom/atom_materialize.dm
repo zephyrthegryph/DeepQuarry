@@ -33,6 +33,10 @@
 		return FALSE
 	flags |= ATOM_MATERIALIZED
 	on_materialize()
+	// A refresh raised while it was latent (appearance_queue()) runs now that it is live.
+	if(appearance_queued == APPEARANCE_PENDING_LATENT)
+		appearance_queued = FALSE
+		appearance_queue(src)
 	// A ledger built while sandboxed skipped the latency sweep; join it now.
 	if(ledger && latent_contents)
 		dq_latency_sweep_register(src)
@@ -54,6 +58,10 @@
 				content.dematerialize()
 	flags &= ~ATOM_MATERIALIZED
 	on_dematerialize()
+	// The inverse of materialize(): a refresh it had queued waits again until it is live.
+	if(appearance_queued == TRUE && ismovable(src))
+		GLOB.appearance_queue -= src
+		appearance_queued = APPEARANCE_PENDING_LATENT
 	dq_latency_sweep_unregister(src) // left the live world: no longer a sweep candidate
 	return TRUE
 

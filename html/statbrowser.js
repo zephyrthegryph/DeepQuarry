@@ -493,7 +493,7 @@ function draw_mc_dashboard(metrics) {
 
   const navigation = document.createElement('div');
   navigation.className = 'mc-navigation';
-  for (const [view, label] of [['overview', 'Overview'], ['ticks', 'Ticks'], ['subsystems', 'Subsystems'], ['outliers', 'Outliers'], ['runtime', 'Runtime']]) {
+  for (const [view, label] of [['overview', 'Overview'], ['ticks', 'Ticks'], ['subsystems', 'Subsystems'], ['kernel', 'Kernel'], ['outliers', 'Outliers'], ['runtime', 'Runtime']]) {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = `mc-nav-button${mc_view === view ? ' active' : ''}`;
@@ -681,10 +681,78 @@ function draw_mc_dashboard(metrics) {
     }
   }
   dashboard.appendChild(outlierPanel);
+  dashboard.appendChild(draw_kernel_panel(metrics.kernel));
   for (const panel of dashboard.querySelectorAll('[data-mc-view]')) {
     panel.hidden = panel.dataset.mcView !== mc_view;
   }
   statcontentdiv.appendChild(dashboard);
+}
+
+// The Kernel view: cost per system (OM behaviour families and MC subsystems), sorted by share of overrun time, and
+// the input latency record. Data: km_panel_data() in code/controllers/measure/report.dm.
+function draw_kernel_panel(kernel) {
+  const panel = document.createElement('section');
+  panel.className = 'mc-panel';
+  panel.dataset.mcView = 'kernel';
+  const title = document.createElement('h3');
+  title.textContent = 'Kernel: cost by system';
+  panel.appendChild(title);
+  if (!kernel) {
+    const empty = document.createElement('div');
+    empty.className = 'mc-empty';
+    empty.textContent = 'No kernel data yet.';
+    panel.appendChild(empty);
+    return panel;
+  }
+  const hint = document.createElement('span');
+  hint.className = 'mc-panel-hint';
+  hint.textContent = `${kernel.ticks || 0} ticks over ${mc_number(kernel.elapsed_s, 0)} s · ${kernel.overruns || 0} overruns · streak ${kernel.streak || 0} (max ${kernel.max_streak || 0}) · BYOND reserve ${mc_number(kernel.byond_reserve)}% · p50/p95/p99 are ms per tick over the ticks the system ran`;
+  panel.appendChild(hint);
+
+  const input = kernel.input || {};
+  const inputRow = document.createElement('div');
+  inputRow.className = 'mc-outlier-note';
+  inputRow.textContent = `Input: wait p50 ${mc_number(input.wait_p50_ms, 2)} / p95 ${mc_number(input.wait_p95_ms, 2)} / p99 ${mc_number(input.wait_p99_ms, 2)} ms (${mc_number(input.wait_p99_ticks, 2)} ticks) · ran at tick depth p50 ${input.depth_p50 || 0}% / p95 ${input.depth_p95 || 0}% · ${input.clicks || 0} clicks, ${input.verbs_queued || 0} verbs queued, ${input.verbs_direct || 0} ran at once · queue high water ${input.queue_hwm || 0} (now ${input.queue_now || 0})`;
+  panel.appendChild(inputRow);
+
+  const table = document.createElement('table');
+  table.className = 'mc-performance-table';
+  const header = document.createElement('tr');
+  for (const text of ['System', 'Kind', 'ms/s', 'p50', 'p95', 'p99', 'Late (ds)', 'Breaches', 'Deferred', 'Overrun share']) {
+    const th = document.createElement('th');
+    th.textContent = text;
+    header.appendChild(th);
+  }
+  table.appendChild(header);
+  for (const system of kernel.systems || []) {
+    const row = document.createElement('tr');
+    const values = [
+      system.key,
+      `${system.kind}${system.lane && system.lane !== system.kind ? ` (${system.lane})` : ''}`,
+      mc_number(system.ms_per_s, 2),
+      mc_number(system.p50_ms, 2),
+      mc_number(system.p95_ms, 2),
+      mc_number(system.p99_ms, 2),
+      `${system.late_max_ds || 0}`,
+      `${system.breaches || 0}`,
+      `${system.deferrals || 0}`,
+      `${mc_number(Number(system.overrun_share) * 100, 1)}%`,
+    ];
+    for (const value of values) {
+      const cell = document.createElement('td');
+      cell.textContent = value;
+      row.appendChild(cell);
+    }
+    table.appendChild(row);
+  }
+  panel.appendChild(table);
+  if (kernel.last_overrun) {
+    const last = document.createElement('div');
+    last.className = 'mc-outlier-note';
+    last.textContent = `Last overrun: ${kernel.last_overrun}`;
+    panel.appendChild(last);
+  }
+  return panel;
 }
 
 function remove_tickets() {

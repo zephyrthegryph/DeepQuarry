@@ -1,6 +1,6 @@
 //STRIKE TEAMS
 /client/proc/strike_team()
-	set category = "Fun.Event Kit"
+	set category = VERB_CAT_FUN_EVENT_KIT
 	set name = "Spawn Strike Team"
 	set desc = "Spawns a strike team if you want to run an admin event."
 
@@ -100,7 +100,7 @@ ADMIN_VERB(response_team, R_ADMIN|R_MOD|R_EVENT, "Dispatch Emergency Response Te
 /client/verb/JoinResponseTeam()
 
 	set name = "Join Response Team"
-	set category = "IC.Event"
+	set category = VERB_CAT_IC_EVENT
 
 	if(!MayRespawn(1))
 		to_chat(usr, span_warning("You cannot join the response team at this time."))

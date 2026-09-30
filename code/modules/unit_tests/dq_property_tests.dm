@@ -223,28 +223,77 @@ GLOBAL_LIST_INIT(dq_variants_property_test, list(
 /// kind and in range, and every state var is saved state.
 /datum/unit_test/dq_property_type_values_valid
 	is_sweep_test = TRUE
+	tier = TEST_TIER_EXHAUSTIVE
+
+/// Normal tier: per-type values for a fixed set of types across the provider
+/// families (items, stacks, clothing, machines, structures, mobs, turfs). Every
+/// type runs in CI and nightly.
+/datum/unit_test/dq_property_type_values_valid/representative
+	is_sweep_test = FALSE
+	tier = TEST_TIER_NORMAL
+
+/datum/unit_test/dq_property_type_values_valid/representative/curated_types()
+	return list(
+		/obj/item/paper,
+		/obj/item/tool/wrench,
+		/obj/item/stack/material/steel,
+		/obj/item/stack/rods,
+		/obj/item/clothing/suit/armor/vest,
+		/obj/item/storage/toolbox,
+		/obj/item/reagent_containers/glass/beaker,
+		/obj/machinery/power/smes,
+		/obj/structure/closet,
+		/obj/structure/table,
+		/mob/living/carbon/human,
+	)
 
 /datum/unit_test/dq_property_type_values_valid/Run()
 	var/datum/property_registry/registry = dq_property_registry()
 	var/failures = 0
+	var/spot_checks = 0
 	for(var/id in registry.base_providers)
-		// Nested providers (e.g. /obj and /obj/item) cover overlapping type trees;
-		// resolve each path once per id instead of once per covering provider.
-		var/list/seen = list()
-		for(var/datum/property_provider/provider as anything in LAZYACCESS(registry.base_providers, id))
+		var/list/providers = LAZYACCESS(registry.base_providers, id)
+		for(var/datum/property_provider/provider as anything in providers)
 			if(provider.state_var)
 				var/datum/sample = allocate(provider.applies_to)
 				TEST_ASSERT(dq_property_state_has_var(sample, provider.state_var), "[provider.type] reads [provider.state_var], which is not saved state on [provider.applies_to]")
-			for(var/path in sweep_types(typesof(provider.applies_to)))
-				if(seen[path])
-					continue
-				seen[path] = TRUE
-				var/datum/property_provider/owner = registry.base_provider(path, id)
-				if(!owner)
-					continue
-				var/error = registry.check_value(id, owner.type_value(path, null))
-				if(error && failures++ < 20)
-					TEST_FAIL("[path]: [error]")
+		// Each path's owner is the deepest provider whose applies_to covers it
+		// (the providers covering one path are all its ancestors, so they form
+		// a chain) -- base_provider()'s rule. Compute it for every path in one
+		// pass, shallowest provider first so deeper ones overwrite, instead of
+		// asking base_provider() per path: that fills its per-(path, id) cache
+		// with ~500k string keys, which was ~90% of this test's time.
+		var/list/by_depth = list()
+		for(var/datum/property_provider/provider as anything in providers)
+			var/depth = length(splittext("[provider.applies_to]", "/"))
+			var/list/bucket = LAZYACCESS(by_depth, "[depth]")
+			if(!bucket)
+				bucket = list()
+				by_depth["[depth]"] = bucket
+			bucket += provider
+		var/list/depths = list()
+		for(var/depth_text in by_depth)
+			depths += text2num(depth_text)
+		sortTim(depths, GLOBAL_PROC_REF(cmp_numeric_asc))
+		var/list/owners = list()
+		for(var/depth in depths)
+			for(var/datum/property_provider/provider as anything in by_depth["[depth]"])
+				for(var/path in typesof(provider.applies_to))
+					owners[path] = provider
+		var/index = 0
+		for(var/path in sweep_types(owners))
+			var/datum/property_provider/owner = owners[path]
+			// The shortcut must agree with base_provider(): check a fixed
+			// stride of paths through the real lookup.
+			if(!(index++ % 211))
+				spot_checks++
+				var/datum/property_provider/resolved = registry.base_provider(path, id)
+				if(resolved != owner)
+					TEST_FAIL("[path] [id]: base_provider() gives [resolved?.type], the deepest covering provider is [owner.type]")
+			var/error = registry.check_value(id, owner.type_value(path, null))
+			if(error && failures++ < 20)
+				TEST_FAIL("[path]: [error]")
+	TEST_ASSERT(spot_checks > 0, "no base_provider() spot checks ran")
 	TEST_ASSERT(failures == 0, "[failures] per-type values are invalid")
 
 // ---- Families ----

@@ -44,7 +44,7 @@ GLOBAL_VAR_INIT(player_chunk_watches, 0)
 		GLOB.mob_chunks -= "[id]"
 		qdel(C)
 		return
-	om_changed(C, bits)
+	changed(C, bits)
 
 /// Every chunk within `radius` tiles of `center`.
 /proc/mob_chunks_around(turf/center, radius)

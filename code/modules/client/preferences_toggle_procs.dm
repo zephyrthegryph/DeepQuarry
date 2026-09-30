@@ -1,7 +1,7 @@
 //Toggles for preferences, normal clients
 /client/verb/toggle_be_special(role in GLOB.be_special_flags)
 	set name = "Toggle Special Role Candidacy"
-	set category = "Preferences.Character"
+	set category = VERB_CAT_PREFERENCES_CHARACTER
 	set desc = "Toggles which special roles you would like to be a candidate for, during events."
 
 	var/role_flag = GLOB.be_special_flags[role]

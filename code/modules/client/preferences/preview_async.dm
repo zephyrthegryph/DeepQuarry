@@ -325,7 +325,7 @@
 	return generation
 
 /// Waits for a render's iconforge jobs, then applies them unless the render went stale.
-/// Polls once a tick on om_after() timers (S10b: was a stoplag() loop). The character setup
+/// Polls once a tick on its declared DECLARE_REPEAT (S10b: was a stoplag() loop). The character setup
 /// service owns each poll and the poll names the preferences through a relation view, so the
 /// job PNGs are still cleaned up when the preferences are deleted mid-render.
 /datum/preferences/proc/dq_poll_preview_jobs(generation, list/jobs, list/ready, scale_x, scale_y, had_client)
@@ -333,8 +333,10 @@
 	poll.state = list(generation, jobs, ready, scale_x, scale_y, had_client, list(), world.time + DQ_PREVIEW_JOB_TIMEOUT)
 	rel_set(poll, nameof(poll.prefs), src)
 	own_add(GLOB.character_setup_service, nameof(/datum/world_service/character_setup::preview_polls), poll)
-	poll.set_polling(TRUE) // the declared repeat polls once a tick while this holds
-	poll.poll_step()
+	// The declared repeat polls once a tick while this holds, starting next tick: never in the
+	// caller's frame, so a job that happens to finish at once still lands asynchronously (the
+	// caller keeps the old preview until then) instead of racing the first check.
+	poll.set_polling(TRUE)
 
 /// One in-flight character preview render: owned by the character setup service.
 /datum/dq_preview_poll

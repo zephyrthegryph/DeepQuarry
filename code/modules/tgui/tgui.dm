@@ -25,6 +25,9 @@
 	/// Normal interfaces are event-driven through SStgui.update_uis(); continuous
 	/// monitors must opt in with set_autoupdate(TRUE).
 	var/autoupdate = FALSE
+	/// Set by request_push(): the next coalesced push re-runs tgui_interact (update_uis semantics)
+	/// instead of only re-sending data.
+	var/push_reinteract = FALSE
 	/// If the UI has been initialized yet.
 	var/initialized = FALSE
 	/// Time of opening the window.
@@ -139,36 +142,63 @@
 		window().send_message("ping")
 	#ifdef TGUI_DEV_DIAGNOSTICS
 	startup_profile["shell_ready_ms"] = rustg_time_milliseconds(startup_timer)
-	send_assets(startup_profile, startup_timer)
-	var/list/startup_payload = get_payload(
-		with_data = TRUE,
-		with_static_data = TRUE,
-		startup_profile = startup_profile,
-		startup_timer = startup_timer)
-	startup_profile["payload_ready_ms"] = rustg_time_milliseconds(startup_timer)
-	startup_payload["config"]["startup_profile"] = startup_profile.Copy()
-	window().send_message("update", startup_payload)
-	startup_profile["update_sent_ms"] = rustg_time_milliseconds(startup_timer)
-	startup_profile["interface"] = interface
-	startup_profile["prewarmed"] = window().prewarmed ? TRUE : FALSE
-	startup_profile["native_shell"] = window().native_shell ? TRUE : FALSE
-	startup_profile["generation"] = window().generation
-	startup_profile["browser_profiling"] = client_profiling_enabled() ? TRUE : FALSE
-	log_tgui(user, "Automatic TGUI server startup telemetry: [json_encode(startup_profile)]", window = window())
+	var/needs_flush = send_assets(startup_profile, startup_timer)
 	#else
-	send_assets()
-	window().send_message("update", get_payload(
-		with_data = TRUE,
-		with_static_data = TRUE))
+	var/needs_flush = send_assets()
 	#endif
+	// The assets must have arrived before the first payload, or the page asks for chunks
+	// that aren't there yet. The client's ack (not a poll) releases the payload; a client
+	// that never answers gets it after ASSET_FLUSH_TIMEOUT.
+	var/datum/client_session/session = user.client.session
+	if(needs_flush && session)
+		#ifdef TGUI_DEV_DIAGNOSTICS
+		session.flush_assets(src, PROC_REF(send_open_payload), startup_profile, startup_timer)
+		#else
+		session.flush_assets(src, PROC_REF(send_open_payload))
+		#endif
+	else
+		#ifdef TGUI_DEV_DIAGNOSTICS
+		send_open_payload(startup_profile, startup_timer)
+		#else
+		send_open_payload()
+		#endif
 	SStgui.on_open(src)
+	bind_changes()
 
 	return TRUE
 
+/// The first payload: config, data and static data together. Sent once assets have arrived.
+/datum/tgui/proc/send_open_payload(list/startup_profile, startup_timer)
+	if(closing || QDELETED(src) || !window() || !user?.client)
+		return
+	#ifdef TGUI_DEV_DIAGNOSTICS
+	if(startup_profile)
+		startup_profile["assets_flushed_ms"] = rustg_time_milliseconds(startup_timer)
+		var/list/startup_payload = get_payload(
+			with_data = TRUE,
+			with_static_data = TRUE,
+			startup_profile = startup_profile,
+			startup_timer = startup_timer)
+		startup_profile["payload_ready_ms"] = rustg_time_milliseconds(startup_timer)
+		startup_payload["config"]["startup_profile"] = startup_profile.Copy()
+		window().send_message("update", startup_payload)
+		startup_profile["update_sent_ms"] = rustg_time_milliseconds(startup_timer)
+		startup_profile["interface"] = interface
+		startup_profile["prewarmed"] = window().prewarmed ? TRUE : FALSE
+		startup_profile["native_shell"] = window().native_shell ? TRUE : FALSE
+		startup_profile["generation"] = window().generation
+		startup_profile["browser_profiling"] = client_profiling_enabled() ? TRUE : FALSE
+		log_tgui(user, "Automatic TGUI server startup telemetry: [json_encode(startup_profile)]", window = window())
+		return
+	#endif
+	window().send_message("update", get_payload(
+		with_data = TRUE,
+		with_static_data = TRUE))
+
+/// Queues this UI's assets. Returns TRUE when the caller must wait for the client's ack.
 /datum/tgui/proc/send_assets(list/startup_profile, startup_timer)
 	#ifdef TGUI_DEV_DIAGNOSTICS
 	var/assets_started_ms = startup_profile ? rustg_time_milliseconds(startup_timer) : 0
-	var/flush_started_ms = 0
 	#endif
 
 	var/flush_queue = window().send_asset(get_asset_datum(
@@ -198,19 +228,13 @@
 	// files already sent to this client, so always use the reliable publication path.
 	if(interface_chunks)
 		flush_queue |= SSassets.transport.send_assets(user.client, asset_generation.get_chunk_assets(interface_chunks))
-	if (flush_queue)
-		#ifdef TGUI_DEV_DIAGNOSTICS
-		flush_started_ms = rustg_time_milliseconds(startup_timer)
-		#endif
-		user.client.browse_queue_flush()
 	#ifdef TGUI_DEV_DIAGNOSTICS
 	if(startup_profile)
-		startup_profile["assets_flushed_ms"] = rustg_time_milliseconds(startup_timer)
-		startup_profile["asset_delivery_ms"] = startup_profile["assets_flushed_ms"] - assets_started_ms
+		startup_profile["asset_delivery_ms"] = rustg_time_milliseconds(startup_timer) - assets_started_ms
 		startup_profile["asset_flush_required"] = flush_queue ? TRUE : FALSE
-		startup_profile["asset_flush_ms"] = flush_queue ? startup_profile["assets_flushed_ms"] - flush_started_ms : 0
 		startup_profile["interface_chunk_count"] = length(interface_chunks)
 	#endif
+	return flush_queue ? TRUE : FALSE
 
 /datum/tgui/proc/client_profiling_enabled()
 	return FALSE
@@ -241,6 +265,7 @@
 		if(!QDELETED(src_object()))
 			src_object().tgui_close(user)
 		SStgui.on_close(src)
+		unbind_changes()
 
 		if(user?.client)
 			terminate_byondui_elements()
@@ -341,15 +366,25 @@
 /**
  * private
  *
- * Package the data to send to the UI, as JSON.
- *
- * return list
+ * The per-push config: only what can change between pushes.
  */
-/datum/tgui/proc/get_payload(custom_data, with_data, with_static_data, list/startup_profile, startup_timer)
-	var/list/json_data = list()
+/datum/tgui/proc/slim_config()
+	return list(
+		"title" = title,
+		"status" = status,
+		"refreshing" = FALSE,
+		"mapZLevel" = map_z_level,
+	)
+
+/**
+ * private
+ *
+ * The complete config block, sent once on open, ready and full updates.
+ */
+/datum/tgui/proc/full_config()
 	var/datum/tgui_asset_generation/asset_generation = window()?.asset_generation() || SStgui.get_current_asset_generation()
 	var/list/default_geometry = asset_generation.get_default_geometry(interface)
-	json_data["config"] = list(
+	return list(
 		"chunk_base_url" = asset_generation.get_chunk_base_url(),
 		"title" = title,
 		"status" = status,
@@ -357,7 +392,6 @@
 			"name" = interface,
 			"layout" = user.read_preference(/datum/preference/choiced/tgui_layout),
 		),
-		//"refreshing" = refreshing,
 		"refreshing" = FALSE,
 		"mapZLevel" = map_z_level,
 		"mapInfo" = list(
@@ -391,6 +425,20 @@
 			"observer" = isobserver(user),
 		),
 	)
+
+/**
+ * private
+ *
+ * Package the data to send to the UI, as JSON.
+ *
+ * return list
+ */
+/datum/tgui/proc/get_payload(custom_data, with_data, with_static_data, list/startup_profile, startup_timer)
+	var/list/json_data = list()
+	// The full config block (window, client, preferences, geometry) only goes out with
+	// static data: open, ready and full updates. A data push carries the slim block --
+	// the frontend merges config, so everything not resent keeps its value.
+	json_data["config"] = with_static_data ? full_config() : slim_config()
 	var/data = custom_data || with_data && src_object().tgui_data(user, src, state())
 	#ifdef TGUI_DEV_DIAGNOSTICS
 	if(startup_profile)
@@ -408,6 +456,42 @@
 	if(src_object().tgui_shared_states)
 		json_data["shared"] = src_object().tgui_shared_states
 	return json_data
+
+/**
+ * public
+ *
+ * Asks for a coalesced push. Every request inside one throttle window (OM_UI_THROTTLE)
+ * becomes one push, so 50 update_uis() calls in a tick cost one tgui_data() per UI.
+ *
+ * optional reinteract bool Re-run tgui_interact on the push (update_uis semantics),
+ * rather than only re-sending data.
+ */
+/datum/tgui/proc/request_push(reinteract = TRUE)
+	if(closing || QDELETED(src))
+		return
+	if(reinteract)
+		push_reinteract = TRUE
+	var/datum/om/behaviour/B = om_registry().ui_behaviour
+	om_attach(src, B)
+	om_wake(src, B)
+
+/**
+ * private
+ *
+ * Watches src_object for changes: a change raises one coalesced push, and the object
+ * is at RELEVANCE_WATCHED while the UI is open. Polling is not needed for these.
+ */
+/datum/tgui/proc/bind_changes()
+	var/datum/host = src_object()
+	if(QDELETED(host))
+		return
+	om_ui_bind(src, host, host.tgui_change_mask())
+	om_ui_bind_table(src, host)
+
+/datum/tgui/proc/unbind_changes()
+	var/datum/host = src_object()
+	if(!QDELETED(host))
+		om_ui_unbind(src, host)
 
 /**
  * private
@@ -534,7 +618,7 @@
 	if(QDELETED(src) || QDELETED(src_object()))
 		return
 	if(src_object().tgui_act(act_type, payload, src, state))
-		SStgui.update_uis(src_object())
+		SStgui.update_uis(src_object(), src)
 		if(isatom(src_object()) && !QDELETED(src_object()))
 			var/atom/A = src_object()
 			A.interaction_ran(user, null)

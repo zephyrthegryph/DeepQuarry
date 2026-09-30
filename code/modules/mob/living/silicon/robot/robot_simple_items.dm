@@ -244,7 +244,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/cable_coil/cyborg, INTERACT_USE("Change colo
 
 /obj/item/stack/cable_coil/cyborg/proc/set_colour(mob/user)
 	set name = "Change Colour"
-	set category = "Object"
+	set category = VERB_CAT_OBJECT
 
 	om_ask(user, /datum/om/prompt/choice, PROC_REF(cable_colour_chosen), title = "Cable Colour", message = "Pick new colour.", choices = GLOB.possible_cable_coil_colours, ask_flags = ASK_CARRIED | ASK_CAPABLE)
 

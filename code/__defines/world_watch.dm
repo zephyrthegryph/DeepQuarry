@@ -39,6 +39,10 @@
 
 /// `handle`'s channel `ch` rises to `value` or above. Hysteresis is the channel's.
 #define COND_ABOVE(handle, ch, value) list(WORLD_COND_THRESHOLD, handle, ch, WORLD_CMP_ABOVE, value, -1, FALSE)
+/// COND_ABOVE with the hysteresis given here (in the channel's unit) instead of the channel's.
+#define COND_ABOVE_H(handle, ch, value, hysteresis) list(WORLD_COND_THRESHOLD, handle, ch, WORLD_CMP_ABOVE, value, hysteresis, FALSE)
+/// COND_BELOW with the hysteresis given here instead of the channel's.
+#define COND_BELOW_H(handle, ch, value, hysteresis) list(WORLD_COND_THRESHOLD, handle, ch, WORLD_CMP_BELOW, value, hysteresis, FALSE)
 /// `handle`'s channel `ch` falls to `value` or below.
 #define COND_BELOW(handle, ch, value) list(WORLD_COND_THRESHOLD, handle, ch, WORLD_CMP_BELOW, value, -1, FALSE)
 /// Like COND_ABOVE, but also wakes when the value leaves the condition.

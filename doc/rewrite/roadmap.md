@@ -5,7 +5,7 @@ This roadmap covers every work item, what each depends on, and what "done" means
 ## Rules for every item
 
 - **Wholesale.** Convert every caller and delete what the item replaces in the same change. No shims, and no commented-out code.
-- **Green.** Compile clean. `tools/build/build.sh dm-test` stays green, and so does `cargo test` in `verdigris/` for Rust.
+- **Green.** Compile clean. `tools/build/build.sh dm-test` (the normal tier) stays green on every merge, `dm-test --tier=all` (CI and nightly) stays green too, and so does `cargo test` in `verdigris/` for Rust.
 - **Measured.** Record benchmarks before and after with `tools/build/build.sh bench --runs=3`, compare them with `bench-compare`, and put the numbers in the report.
 - **Enforced.** Add the item's lint rules (see [Guardrails](#guardrails)) and a changelog entry.
 - **Logged.** Keep existing debug logging, and add logging for anything new.

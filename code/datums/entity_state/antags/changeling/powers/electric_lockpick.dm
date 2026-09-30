@@ -9,7 +9,7 @@
 
 //Emag-lite
 /mob/proc/changeling_electric_lockpick()
-	set category = "Changeling"
+	set category = VERB_CAT_CHANGELING
 	set name = "Electric Lockpick (5 + 10/use)"
 	set desc = "Bruteforces open most electrical locking systems, at 10 chemicals per use."
 

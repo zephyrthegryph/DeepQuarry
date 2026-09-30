@@ -51,6 +51,13 @@
 #define UNIT_TEST_FAILED 1
 #define UNIT_TEST_SKIPPED 2
 
+/// Test tiers (the `tier` var on /datum/unit_test). The normal tier runs on every
+/// integration merge (`dm-test`); exhaustive whole-type sweeps run in CI and
+/// nightly (`dm-test --tier=all`), each with a small normal-tier representative.
+/// A test named with --focus / dq_focused_test.sh runs whatever its tier.
+#define TEST_TIER_NORMAL 0
+#define TEST_TIER_EXHAUSTIVE 1
+
 #define TEST_PRE 0
 #define TEST_DEFAULT 1
 /// After most test steps, used for tests that run long so shorter issues can be noticed faster
@@ -176,6 +183,7 @@
 #include "dq_ai_om_tests.dm"
 #include "dq_economy_tests.dm"
 #include "dq_contract_tests.dm"
+#include "dq_debug_verb_gate_tests.dm"
 #include "dq_expedition_tests.dm"
 #include "dq_faction_reputation_tests.dm"
 #include "dq_flight_operations_tests.dm"
@@ -279,11 +287,13 @@
 #include "dq_lifecycle_tests.dm"
 #include "dq_lifecycle_declared_kinds_tests.dm"
 #include "dq_lifecycle_verb_tests.dm"
+#include "dq_verb_framework_tests.dm"
 #include "dq_surgery_tests.dm"
 #include "dq_sys_fields_tests.dm"
 #include "dq_wires_tests.dm"
 #include "dq_quick_fix_tests.dm"
 #include "dq_om_world_watch_tests.dm"
+#include "dq_live_sim_tests.dm"
 #include "dq_om_fields_tests.dm"
 #include "dx_ui_validators_tests.dm"
 #include "dq_om_key_tests.dm"
@@ -338,7 +348,9 @@
 #include "xgm_total_moles_test.dm"
 #include "dq_w6_critical_tests.dm"
 #include "dq_om_core_tests.dm"
+#include "dq_tgui_client_tests.dm"
 #include "dq_shared_cache_tests.dm"
+#include "dq_material_tree_tests.dm"
 #include "dq_sys_hygiene_tests.dm"
 #include "dq_sys_emag_tests.dm"
 #include "dq_sys_requirements_tests.dm"
@@ -374,6 +386,7 @@
 #include "dx_cap_cell_holder_tests.dm"
 #include "dx_cap_reagent_container_tests.dm"
 #include "dx_cap_storage_tests.dm"
+#include "dq_kernel_measure_tests.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
@@ -386,6 +399,7 @@
 #include "../benchmarks/life_sequence.dm"
 #include "../benchmarks/dx_refresh.dm"
 #include "../benchmarks/dx_deps.dm"
+#include "../benchmarks/kernel_metrics.dm"
 #include "../balance/balance_benchmark.dm"
 #endif
 #ifdef REFERENCE_TRACKING_DEBUG //Don't try and parse this file if ref tracking isn't turned on. IE: don't parse ref tracking please mr linter

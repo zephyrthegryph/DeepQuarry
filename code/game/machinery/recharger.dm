@@ -168,7 +168,7 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 	user.drop_item()
 	G.forceMove(src)
 	set_charging(G)
-	om_changed(src, CHANGE_MACHINE_OCCUPANT)
+	changed(src, CHANGE_MACHINE_OCCUPANT)
 	act_message(user, src, MSG_SELF("You insert [charging] into %T%."), MSG_OTHERS("%U% inserts [charging] into %T%."))
 	return TRUE
 
@@ -177,7 +177,7 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 		return TRUE
 	G.forceMove(src)
 	set_charging(G)
-	om_changed(src, CHANGE_MACHINE_OCCUPANT)
+	changed(src, CHANGE_MACHINE_OCCUPANT)
 	act_message(user, src, MSG_SELF("You insert [charging] into %T%."), MSG_OTHERS("%U% inserts [charging] into %T%."))
 	return TRUE
 
@@ -188,7 +188,7 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 		to_chat(user, span_warning("Remove [charging] first!"))
 		return ITEM_INTERACT_BLOCKING
 	set_anchored(!anchored)
-	om_changed(src, CHANGE_MACHINE_ANCHORED)
+	changed(src, CHANGE_MACHINE_ANCHORED)
 	to_chat(user, "You [anchored ? "attached" : "detached"] [src].")
 	playsound(src, tool.usesound, 75, TRUE)
 	return ITEM_INTERACT_SUCCESS
@@ -200,7 +200,7 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 		charging.update_icon()
 		user.put_in_hands(charging)
 		set_charging(null)
-		om_changed(src, CHANGE_MACHINE_OCCUPANT)
+		changed(src, CHANGE_MACHINE_OCCUPANT)
 	return TRUE
 
 /// Old attack_ai: a cyborg next to it takes out what's charging. Nothing for the AI.
@@ -211,7 +211,7 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 			charging.update_icon()
 			charging.forceMove(src.loc)
 			set_charging(null)
-			om_changed(src, CHANGE_MACHINE_OCCUPANT)
+			changed(src, CHANGE_MACHINE_OCCUPANT)
 	return TRUE
 
 /// One frame of charging (the machine pipeline's power/recharger stage decides whether to).

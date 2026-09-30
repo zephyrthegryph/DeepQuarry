@@ -135,7 +135,7 @@
 	else
 		// Lazy: nobody watches the output, but other derived values may read
 		// it; raising the channel only marks them dirty in turn.
-		om_changed(rec.owner, D.channel)
+		changed(rec.owner, D.channel)
 
 /// LANE_DERIVED: recompute queued eager values, inputs first.
 /datum/om/scheduler/proc/run_derived_queue()
@@ -173,7 +173,7 @@
 				report_caught(e, "derived [D.name]: [e]")
 				continue
 			if(islist(old) || old != rec.dv[best + DV_VALUE])
-				om_changed(rec.owner, D.channel)
+				changed(rec.owner, D.channel)
 		if(out_of_budget() && idx < length(Q))
 			derived_queue = Q.Copy(idx + 1) | derived_queue
 			return FALSE
@@ -290,7 +290,7 @@
 	rec.dv[k + DV_AUX] = aux
 	rec.dv[k + DV_AT] = rec.sched.now()
 	if(D.channel && (islist(value) || value != old_value))
-		om_changed(rec.owner, D.channel)
+		changed(rec.owner, D.channel)
 
 #undef DV_ID
 #undef DV_VALUE

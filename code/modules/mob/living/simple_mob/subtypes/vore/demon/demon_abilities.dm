@@ -1,7 +1,7 @@
 /mob/living/simple_mob/vore/demon/verb/blood_crawl()
 	set name = "Bloodcrawl"
 	set desc = "Shift out of reality using blood as your gateway"
-	set category = "Abilities.Demon"
+	set category = VERB_CAT_ABILITIES_DEMON
 
 	var/turf/T = get_turf(src)
 	if(!T.CanPass(src,T) || loc != T)
@@ -74,7 +74,7 @@
 /mob/living/simple_mob/vore/demon/verb/demonic_phase_shift()
 	set name = "Phase Shift"
 	set desc = "Shift out of reality temporarily"
-	set category = "Abilities.Demon"
+	set category = VERB_CAT_ABILITIES_DEMON
 
 
 	var/turf/T = get_turf(src)
@@ -190,7 +190,7 @@
 /mob/living/simple_mob/vore/demon/verb/blood_burst()
 	set name = "Blood burst"
 	set desc = "Spawn bloody remains from your past hunts."
-	set category = "Abilities.Demon"
+	set category = VERB_CAT_ABILITIES_DEMON
 
 	var/turf/T = get_turf(src)
 
@@ -214,7 +214,7 @@
 /mob/living/simple_mob/vore/demon/verb/toggle_laugh()
 	set name = "Toggle Auto Laugh"
 	set desc = "Toggles whether the demon will automatically laugh when interacted with."
-	set category = "Abilities.Demon"
+	set category = VERB_CAT_ABILITIES_DEMON
 
 	enable_autolaugh = !enable_autolaugh
 	if(enable_autolaugh)
@@ -225,7 +225,7 @@
 /mob/living/simple_mob/vore/demon/verb/manual_laugh()
 	set name = "Laugh"
 	set desc = "Plays the laugh track."
-	set category = "Abilities.Demon"
+	set category = VERB_CAT_ABILITIES_DEMON
 
 	if(!enable_autolaugh) //yeah this is kinda sorta dirty but id rather use a bool over something else here to control this.
 		enable_autolaugh = !enable_autolaugh
@@ -237,7 +237,7 @@
 
 /mob/living/simple_mob/vore/demon/verb/sizespell()
 	set name = "Shrink/Grow Prey"
-	set category = "Abilities.Demon"
+	set category = VERB_CAT_ABILITIES_DEMON
 	set desc = "Shrink/Grow someone nearby! (60 second cooldown)"
 	set popup_menu = FALSE // Stop licking by accident! //Yes this is from lick code, sue me.
 
@@ -268,7 +268,7 @@
 /mob/living/simple_mob/vore/demon/verb/toggle_sizespell()
 	set name = "Shrink/Grow Amount"
 	set desc = "Changes the amount you grow/shrink people."
-	set category = "Abilities.Demon"
+	set category = VERB_CAT_ABILITIES_DEMON
 
 	om_ask(src, /datum/om/prompt/number, PROC_REF(sizespell_chosen), title = "Set Size", message = "Put the desired size ([RESIZE_MINIMUM * 100]-[RESIZE_MAXIMUM * 100]%)", default = size_amount * 100, max = RESIZE_MAXIMUM * 100, min = RESIZE_MINIMUM * 100) //Stolen from sizegun code
 
@@ -282,7 +282,7 @@
 
 /mob/living/simple_mob/vore/demon/verb/demon_bite()
 	set name = "Mindbreaker Bite"
-	set category = "Abilities.Demon"
+	set category = VERB_CAT_ABILITIES_DEMON
 	set desc = "Inject mindbreaker into your grabbed prey!"
 	set popup_menu = FALSE // Stop licking by accident! //Yes this is from lick code, sue me.
 

@@ -223,7 +223,7 @@ DECLARE_PERIODIC_WHILE(/datum/hose_connector, PERIODIC_SLOW, "my_hose")
 	set src in oview(1)
 	set name = "Disconnect Hose"
 	set desc = "Quickly disconnect a hose from all machines it is attached to."
-	set category = "Object"
+	set category = VERB_CAT_OBJECT
 
 	var/list/available_sockets = list()
 	var/atom/movable/AM = src

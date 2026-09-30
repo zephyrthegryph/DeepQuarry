@@ -116,7 +116,7 @@ DECLARE_VERB(/obj/item/storage/wallet/poly, /obj/item/storage/wallet/poly/proc/c
 
 /obj/item/storage/wallet/poly/proc/change_color()
 	set name = "Change Wallet Color"
-	set category = "Object"
+	set category = VERB_CAT_OBJECT
 	set desc = "Change the color of the wallet."
 	set src in usr
 

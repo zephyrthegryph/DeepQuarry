@@ -94,7 +94,7 @@
 	cached_skybox_image = I
 
 /obj/effect/overmap/proc/expire_skybox_representation()
-	om_changed(src, CHANGE_EXPLICIT)
+	changed(src, CHANGE_EXPLICIT)
 
 /obj/effect/overmap/proc/update_skybox_representation()
 	expire_skybox_representation()

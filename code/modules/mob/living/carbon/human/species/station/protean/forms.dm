@@ -111,7 +111,7 @@ TYPE_TABLE_DECLARE(/datum/forms, get_form_types, list(/datum/form/human))
 	refresh_appearance()
 	H.update_transform(TRUE)
 	H.update_canmove()
-	om_changed(H, CHANGE_EXPLICIT) // wake the forms life stage for the new form's upkeep
+	changed(H, CHANGE_EXPLICIT) // wake the forms life stage for the new form's upkeep
 	switching = FALSE
 	log_game("FORMS: [key_name(H)] changed form [old.id] -> [next.id] at [AREACOORD(H)]")
 	return TRUE

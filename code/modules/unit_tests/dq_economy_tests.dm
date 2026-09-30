@@ -168,7 +168,7 @@
 	for(var/index in 1 to 2)
 		var/mob/living/carbon/human/employee = new(test_turf)
 		employee.job = JOB_ENGINEER
-		var/datum/mind/employee_mind = new("payroll_test_[index]")
+		var/datum/mind/employee_mind = own(new /datum/mind("payroll_test_[index]")) // the test deletes it: a dropped mind leaves its owned identity stamped with a dead owner
 		var/datum/money_account/account = new
 		account.owner_name = "Employee [index]"
 		account.account_number = 810000 + index
@@ -298,7 +298,7 @@
 		break
 	TEST_ASSERT(pack, "supply subsystem had no packs to order")
 	var/mob/living/carbon/human/requester = new(test_turf)
-	var/datum/mind/requester_mind = new("personal_supply_test")
+	var/datum/mind/requester_mind = own(new /datum/mind("personal_supply_test")) // the test deletes it: a dropped mind leaves its owned identity stamped with a dead owner
 	var/datum/money_account/account = new
 	account.owner_name = "Personal Supply Tester"
 	account.account_number = 812345
@@ -596,7 +596,7 @@
 	customer_account.money = 200
 	registry_join(REGISTRY_MONEY_ACCOUNTS, customer_account)
 	var/mob/living/carbon/human/customer = new(test_turf)
-	var/datum/mind/customer_mind = new("service_lifecycle")
+	var/datum/mind/customer_mind = own(new /datum/mind("service_lifecycle")) // the test deletes it: a dropped mind leaves its owned identity stamped with a dead owner
 	rel_set(customer_mind, nameof(customer_mind.initial_account), customer_account)
 	customer_mind.transfer_to(customer)
 	var/obj/item/card/id/customer_id = new(customer)

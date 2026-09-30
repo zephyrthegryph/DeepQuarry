@@ -10,7 +10,7 @@
 	if(!isnum(new_temperature) || new_temperature == bodytemperature)
 		return
 	bodytemperature = max(new_temperature, 0)
-	om_changed(src, CHANGE_MOB_VITALS)
+	changed(src, CHANGE_MOB_VITALS)
 
 /// Shifts this mob's body temperature by `amount` K, clamping the result to
 /// [min_temp, max_temp]. Returns the change applied.

@@ -1,5 +1,5 @@
 /client/verb/vote()
-	set category = "OOC.Game"
+	set category = VERB_CAT_OOC_GAME
 	set name = "Vote"
 
 	if(GLOB.vote_service.active_vote)

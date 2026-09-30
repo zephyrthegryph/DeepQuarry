@@ -33,8 +33,13 @@
 
 /// The pipe's shell is its heat body: it couples to its turf like any atom's (slot 0) and to its pipeline's gas (slot 1).
 /obj/machinery/atmospherics/pipe/simple/heat_exchanging/thermal_properties()
-	var/share = thermal_conductivity / OPEN_HEAT_TRANSFER_COEFFICIENT
+	var/share = effective_conductivity() / OPEN_HEAT_TRANSFER_COEFFICIENT
 	return list(HE_PIPE_SHELL_CAPACITY * surface, HE_PIPE_SURFACE_CONDUCTANCE * share, THERMAL_EMISSIVITY_DEFAULT)
+
+/// The shell's conductivity: an engineered material's measured conductance through its wall, else the type's.
+/obj/machinery/atmospherics/pipe/simple/heat_exchanging/proc/effective_conductivity()
+	var/datum/material/material = engineered_material()
+	return material ? clamp(material.thermal_conductance(surface, 0.004, T20C) / 10000, 0.001, 1) : thermal_conductivity
 
 /// The pipeline's persistent GasCoupling: slot 1 of the shell's heat body names this pipe's port, not a region, so it heats
 /// the gas of whichever pipeline the port is in through every merge and split (the gas domain resolves it each step).
@@ -44,7 +49,7 @@
 	if(!create_heat_body(TRUE))
 		return
 	HEAT_BODY_RESOLVE(src)
-	vg_heat_body_couple(heat_body, 1, HEAT_TARGET_PIPE_PORT, rust_pipe_port_ids[1], HE_PIPE_GAS_CONDUCTANCE * (thermal_conductivity / OPEN_HEAT_TRANSFER_COEFFICIENT))
+	vg_heat_body_couple(heat_body, 1, HEAT_TARGET_PIPE_PORT, rust_pipe_port_ids[1], HE_PIPE_GAS_CONDUCTANCE * (effective_conductivity() / OPEN_HEAT_TRANSFER_COEFFICIENT))
 
 /// Its port's region exists in Rust from here on: the shell couples to the pipeline.
 /obj/machinery/atmospherics/pipe/simple/heat_exchanging/rust_bind_pipe_port(index, datum/pipe_network/new_network, datum/gas_mixture/network_air)

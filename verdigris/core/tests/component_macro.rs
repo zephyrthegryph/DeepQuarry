@@ -191,3 +191,50 @@ fn a_world_runs_laws_over_component_rows() {
     world.despawn(e).unwrap();
     assert!(!world.has(e, widget));
 }
+
+/// Integrates the step's `dt` into `flow_rate`, so a run reads back the
+/// simulated time the law was given.
+struct Accrue;
+
+impl Law for Accrue {
+    type Reads = Option<Tank>;
+    type Writes = Widget;
+    const NAME: &'static str = "test_accrue";
+
+    fn step(ctx: &mut LawCtx<'_, Option<Tank>, Widget>, dt: Seconds) -> Settle {
+        #[allow(clippy::cast_possible_truncation)]
+        {
+            ctx.writes.flow_rate += dt.0 as f32;
+        }
+        Settle::Active
+    }
+}
+
+#[test]
+fn set_dt_changes_what_laws_integrate_from_the_next_step() {
+    let mut b = WorldBuilder::new(WorldConfig {
+        dt: Seconds(0.5),
+        check_conservation: false,
+        ..WorldConfig::default()
+    });
+    let widget = b.add_component::<Widget>();
+    b.add_component::<Tank>();
+    let _ = b.add_law::<Accrue>();
+    let mut world = b.build().expect("builds");
+    let e = world.bind(None, widget, &[]).unwrap();
+
+    world.step_blocking();
+    world.step_blocking();
+    assert_eq!(world.read::<Widget>(e).unwrap().flow_rate, 1.0);
+    assert!((world.now() - 1.0).abs() < 1e-9);
+
+    assert!(world.set_dt(Seconds(0.1)));
+    assert!(!world.set_dt(Seconds(0.0)), "a bad dt is refused");
+    assert_eq!(world.dt(), Seconds(0.1));
+    for _ in 0..5 {
+        world.step_blocking();
+    }
+    let total = f64::from(world.read::<Widget>(e).unwrap().flow_rate);
+    assert!((total - 1.5).abs() < 1e-4, "five 0.1 s steps: {total}");
+    assert!((world.now() - 1.5).abs() < 1e-9, "the clock follows dt");
+}

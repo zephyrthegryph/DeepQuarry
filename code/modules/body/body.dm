@@ -120,7 +120,7 @@
 	// Only a newly dirtied domain wakes the owner: bits already dirty have woken it and are
 	// still waiting to be consumed.
 	if(gained && owner)
-		om_changed(owner, CHANGE_MOB_HEALTH)
+		changed(owner, CHANGE_MOB_HEALTH)
 
 // --- Affliction bookkeeping -------------------------------------------------
 

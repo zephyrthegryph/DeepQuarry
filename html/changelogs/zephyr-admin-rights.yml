@@ -1,0 +1,5 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - code_imp: "Admin rights go through one primitive, admin_can(); denials are audited once with key, entry point and rights required"
+  - bugfix: "Round Status panel state now covers R_EVENT and R_SERVER admins for the actions they hold"

@@ -70,7 +70,7 @@
 // Resist override, only returning a message that one is stuck for now
 /mob/living/carbon/brain/caught_soul/vore/resist()
 	set name = "Resist"
-	set category = "IC.Game"
+	set category = VERB_CAT_IC_GAME
 
 	to_chat(src, span_warning("There's no way out! You're stuck inside your predator."))
 
@@ -78,7 +78,7 @@
 /mob/proc/enter_soulcatcher()
 	set name = "Enter Soulcatcher"
 	set desc = "Enter your own Soulcatcher."
-	set category = "IC.Vore"
+	set category = VERB_CAT_IC_VORE
 
 	if(!soulgem) // Only sanity...
 		return
@@ -98,7 +98,7 @@
 /mob/proc/nsay_vore_ch()
 	set name = "NSay Vore CH"
 	set desc = "Speak into your Soulcatcher."
-	set category = "IC.Vore"
+	set category = VERB_CAT_IC_VORE
 
 	src.nsay_vore_act()
 
@@ -132,7 +132,7 @@
 /mob/proc/nme_vore_ch()
 	set name = "NMe Vore CH"
 	set desc = "Emote into your Soulcatcher."
-	set category = "IC.Vore"
+	set category = VERB_CAT_IC_VORE
 
 	src.nme_vore_act()
 
@@ -165,7 +165,7 @@
 	var/mob/observer/eye/eyeobj = src?.active_eye()
 	set name = "AR/SR Project"
 	set desc = "Project your form into Augmented Reality for those around your predator with the appearance of your loaded character."
-	set category = "Soulcatcher"
+	set category = VERB_CAT_SOULCATCHER
 
 	if(eyeobj)
 		to_chat(src, span_warning("You're already projecting in SR!"))
@@ -187,7 +187,7 @@
 	var/mob/observer/eye/eyeobj = src?.active_eye()
 	set name = "Jump to Owner"
 	set desc = "Jump your projection back to the owner of the soulcatcher you're inside."
-	set category = "Soulcatcher"
+	set category = VERB_CAT_SOULCATCHER
 
 	if(!eyeobj)
 		to_chat(src, span_warning("You're not projecting into SR!"))
@@ -200,7 +200,7 @@
 	var/mob/observer/eye/eyeobj = src?.active_eye()
 	set name = "Re-enter Soulcatcher"
 	set desc = "Leave SR projection and drop back into the soulcatcher."
-	set category = "Soulcatcher"
+	set category = VERB_CAT_SOULCATCHER
 
 	if(!eyeobj)
 		to_chat(src, span_warning("You're not projecting into SR!"))
@@ -213,7 +213,7 @@
 /mob/living/carbon/brain/caught_soul/vore/nsay_brain()
 	set name = "NSay"
 	set desc = "Speak to your Soulcatcher (circumventing SR speaking)."
-	set category = "Soulcatcher"
+	set category = VERB_CAT_SOULCATCHER
 
 	var/message = rerun_ask(src, "a3", VERB_REF(nsay_brain), args, /datum/om/prompt/text, message = "Type a message to say.", title = "Speak into Soulcatcher", multiline = TRUE)
 	if(isnull(message))
@@ -224,7 +224,7 @@
 /mob/living/carbon/brain/caught_soul/vore/nme_brain()
 	set name = "NMe"
 	set desc = "Emote to your Soulcatcher (circumventing SR speaking)."
-	set category = "Soulcatcher"
+	set category = VERB_CAT_SOULCATCHER
 
 	var/message = rerun_ask(src, "a4", VERB_REF(nme_brain), args, /datum/om/prompt/text, message = "Type an action to perform.", title = "Emote into Soulcatcher", multiline = TRUE)
 	if(isnull(message))
@@ -237,7 +237,7 @@
 	var/mob/observer/eye/eyeobj = src?.active_eye()
 	set name = "Transfer Self"
 	set desc = "Transfer youself while being in your own soulcatcher into a nearby Sleevemate or MMI."
-	set category = "Soulcatcher"
+	set category = VERB_CAT_SOULCATCHER
 
 	if(eyeobj)
 		to_chat(src, span_warning("You can't do that while SR projecting!"))
@@ -261,7 +261,7 @@
 	var/mob/observer/eye/eyeobj = src?.active_eye()
 	set name = "Re-enter Body"
 	set desc = "Return to your body after self capturing."
-	set category = "Soulcatcher"
+	set category = VERB_CAT_SOULCATCHER
 
 	if(eyeobj)
 		to_chat(src, span_warning("You can't do that while SR projecting!"))

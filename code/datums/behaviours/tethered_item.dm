@@ -145,7 +145,7 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /obj/item/proc/toggle_tethered_handheld()
 	set name = "Remove/Replace Handset"
-	set category = "Object"
+	set category = VERB_CAT_OBJECT
 
 	// May only remove tethered while in the usr's direct inventory
 	if(src.loc != usr)

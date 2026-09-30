@@ -102,7 +102,7 @@ at the archive copies for those; each such pointer also names the replacing chap
 ## How the work runs
 
 - The work is delivered in waves ([roadmap.md](roadmap.md)). Every wave compiles clean, keeps the
-  suite green (`tools/build/build.sh dm-test`, plus `cargo test` in `verdigris/` for Rust), deletes
+  suite green (`tools/build/build.sh dm-test`, the normal tier; CI also runs `--tier=all`; plus `cargo test` in `verdigris/` for Rust), deletes
   what it replaces, adds its lint rules and a changelog entry, keeps debug logging, and records
   benchmarks before and after (`tools/build/build.sh bench --runs=3`, `bench-compare`).
 - Agents work in slices and follow `AGENTS.md` and the build lock. If another agent's work leaves

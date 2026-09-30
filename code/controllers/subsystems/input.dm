@@ -5,6 +5,7 @@ SUBSYSTEM_DEF(input)
 	flags = SS_TICKER | SS_NO_INIT | SS_KERNEL_HOSTED
 	priority = FIRE_PRIORITY_INPUT
 	runlevels = RUNLEVELS_DEFAULT | RUNLEVEL_LOBBY
+	counts_as_input = TRUE
 
 /datum/controller/subsystem/input/fire()
 	// Clicks the kernel held back from the last tick run before movement.

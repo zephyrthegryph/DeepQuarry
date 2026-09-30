@@ -51,7 +51,7 @@
 	rel_set(src, nameof(main_air_alarm), new_main)
 	for(var/obj/machinery/alarm/AA in checks)
 		if(AA == new_main)
-			om_changed(AA, CHANGE_MACHINE_SETTINGS)
+			changed(AA, CHANGE_MACHINE_SETTINGS)
 		else
 			AA.invalidate_gas_dependencies()
 		AA.update_icon()

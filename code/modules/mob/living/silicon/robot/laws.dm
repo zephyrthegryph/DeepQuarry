@@ -1,5 +1,5 @@
 /mob/living/silicon/robot/verb/cmd_show_laws()
-	set category = "Abilities.Silicon"
+	set category = VERB_CAT_ABILITIES_SILICON
 	set name = "Show Laws"
 	show_laws()
 
@@ -53,6 +53,6 @@
 	return
 
 /mob/living/silicon/robot/proc/robot_checklaws()
-	set category = "Abilities.Silicon"
+	set category = VERB_CAT_ABILITIES_SILICON
 	set name = "State Laws"
 	subsystem_law_manager()

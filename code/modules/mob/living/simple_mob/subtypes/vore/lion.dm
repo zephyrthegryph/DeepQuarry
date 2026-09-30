@@ -95,7 +95,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/retaliate/lion, TYPE_PROC_RE
 /mob/living/simple_mob/vore/retaliate/lion/proc/set_sex()
 	set name = "Set Sex"
 	set desc = "Set what sprite set you use (male/female)"
-	set category = "Abilities.Settings"
+	set category = VERB_CAT_ABILITIES_SETTINGS
 	om_ask(src, /datum/om/prompt/choice, PROC_REF(sex_chosen), title = "Set Sex", message = "Please select a sex:", choices = list(FEMALE, MALE))
 
 /mob/living/simple_mob/vore/retaliate/lion/proc/sex_chosen(datum/om/prompt/choice/ask)
@@ -116,7 +116,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/retaliate/lion, TYPE_PROC_RE
 /mob/living/simple_mob/vore/retaliate/lion/proc/set_mane_color()
 	set name = "Set Mane Color"
 	set desc = "Set the color of your mane"
-	set category = "Abilities.Settings"
+	set category = VERB_CAT_ABILITIES_SETTINGS
 	om_ask(src, /datum/om/prompt/color, PROC_REF(mane_color_picked), title = "Mane Color", message = "Please pick a mane color:", default = mane_color)
 
 /mob/living/simple_mob/vore/retaliate/lion/proc/mane_color_picked(datum/om/prompt/color/ask)

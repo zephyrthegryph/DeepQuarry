@@ -100,7 +100,7 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 
 /mob/living/simple_mob/animal/passive/cat/verb/become_friends()
 	set name = "Become Friends"
-	set category = "IC.Game"
+	set category = VERB_CAT_IC_GAME
 	set src in view(1)
 
 	var/mob/living/L = usr

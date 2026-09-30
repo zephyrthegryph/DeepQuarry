@@ -2,7 +2,7 @@
 	name = "AI verb holder"
 
 /obj/item/ai_verbs/verb/hardsuit_interface()
-	set category = "Hardsuit"
+	set category = VERB_CAT_HARDSUIT
 	set name = "Open Hardsuit Interface"
 	set src in usr
 

@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Verb tabs are VERB_CAT_* defines instead of raw strings (spelling variants of Debug, Slime and Shapeshift now share one tab)."
+  - code_imp: "Added DEBUG_VERB (debug-build-only, rights-gated, invocation logged) and a shrink-only verb category lint."

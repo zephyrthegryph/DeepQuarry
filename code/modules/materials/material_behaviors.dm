@@ -1,7 +1,7 @@
 // Material behaviours — the working implementation.
 //
 // A material's three active behaviours (luminescence, radioactivity, toxicity)
-// are plain numeric magnitudes on /datum/material (see _materials.dm). This file
+// are plain numeric magnitudes on /datum/material (see material.dm). This file
 // owns: the read API, the item-side application, and the component that actually
 // makes the behaviour happen. It replaces the earlier half-wired component layer
 // (which only carried magnitudes and never irradiated/poisoned anything). The old
@@ -29,7 +29,7 @@
 		return
 	// Geometry-specific consumers can override thickness; ordinary fabricated
 	// items use a five-millimeter representative path through their material.
-	I.set_rad_insulation(material_radiation_transmission(5))
+	I.set_rad_insulation(radiation_transmission(5))
 	I.configure_material_behaviors(luminescence, radioactivity, toxicity, icon_colour)
 	dq_apply_material_responses(I)
 

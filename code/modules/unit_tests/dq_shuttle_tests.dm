@@ -22,6 +22,10 @@
 
 /datum/unit_test/dq_shuttle_active_set_is_event_driven/Run()
 	var/datum/shuttle/shuttle = new /datum/shuttle/unit_test_active_set
+	// It has no landmark, so New() skipped registration and, with it, starting its declared work
+	// (only a registered shuttle runs it: an unregistered one is dropped by its creator). Register
+	// it by hand, as the processing-set line below already does.
+	lifecycle_decls_init(shuttle)
 	shuttle.shuttle_flags_add(SHUTTLE_FLAGS_PROCESS)
 	SSshuttles.process_shuttles |= shuttle
 	shuttle.set_process_state(IDLE_STATE)

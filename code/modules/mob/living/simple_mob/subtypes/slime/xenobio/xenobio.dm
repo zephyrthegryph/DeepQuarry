@@ -142,7 +142,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/slime/xenobio, TYPE_PROC_REF(/ato
 
 // These are verbs so that player slimes can evolve/split.
 /mob/living/simple_mob/slime/xenobio/verb/evolve()
-	set category = "Slime"
+	set category = VERB_CAT_SLIME
 	set desc = "This will let you evolve from baby to adult slime."
 
 	if(stat)
@@ -162,7 +162,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/slime/xenobio, TYPE_PROC_REF(/ato
 		to_chat(src, span_warning("I have already evolved..."))
 
 /mob/living/simple_mob/slime/xenobio/verb/reproduce()
-	set category = "Slime"
+	set category = VERB_CAT_SLIME
 	set desc = "This will make you split into four new slimes."
 
 	if(stat)

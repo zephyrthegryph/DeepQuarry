@@ -205,11 +205,11 @@ fi;
 part "pipelines: idle and park state in one place"
 # Only the core pipeline runner (code/datums/om/pipeline.dm) and the kernel's work engine
 # (code/controllers/kernel/, a faulting work item parks) change whether a stage is idle or
-# an entity is parked; producers raise a change channel with om_changed()
+# an entity is parked; producers raise a change channel with changed()
 # (doc/rewrite/object_model_core.md §4.10).
 if $grep -n '\.(asleep|parked|parked_index|idle_frames)\s*[|&+-]?=[^=]|\.bits\[[^]]*\]\s*[|&]?=[^=]' "${code_files[@]}" | grep -v '^code/datums/om/' | grep -v '^code/controllers/kernel/' | grep -v '^code/modules/unit_tests/' | grep -v 'var/'; then
 	echo
-	echo -e "${RED}ERROR: direct write to a pipeline's idle or park state. Raise a channel with om_changed().${NC}"
+	echo -e "${RED}ERROR: direct write to a pipeline's idle or park state. Raise a channel with changed().${NC}"
 	FAILED=1
 fi;
 
@@ -462,6 +462,35 @@ part "heat: direct bodytemperature writes (H2)"
 if $grep -n '(^|[^A-Za-z0-9_])bodytemperature\s*([-+*/]?=[^=]|\+\+|--)' "${code_files[@]}" 	| $grep -v '^code/modules/heat/heat_mobs\.dm:' 	| $grep -v ':\s*//|var/'; then
 	echo
 	echo -e "${RED}ERROR: bodytemperature written directly. Use add_heat(), adjust_bodytemperature() or set_bodytemperature().${NC}"
+	FAILED=1
+fi;
+
+part "admin rights: shrink-only baseline (one mechanism: admin_can)"
+# Rights are declared once at the entry point (ADMIN_VERB, ADMIN_STATE, TOPIC_RIGHTS) and read through
+# admin_can(client, rights), which never reads usr. Raw `.holder` reads and `rights & R_X` tests belong
+# in modules/admin/holder*; check_rights() is a deprecated usr wrapper. These counts may only go down.
+admin_hits() {
+	$grep_bin -n "$1" "${code_files[@]}" | grep -v 'code/modules/admin/holder' | grep -v 'proc/check_rights' | grep -v 'ALLOW([^)]*check_grep' | wc -l
+}
+admin_check_rights_max=82
+admin_holder_max=327
+admin_rights_and_max=17
+admin_check_rights_count=$(admin_hits 'check_rights\(')
+admin_holder_count=$(admin_hits '\.holder\b')
+admin_rights_and_count=$(admin_hits 'rights & R_')
+if [ "$admin_check_rights_count" -gt "$admin_check_rights_max" ]; then
+	echo
+	echo -e "${RED}ERROR: $admin_check_rights_count check_rights( calls (ratchet: $admin_check_rights_max). Use admin_can(client, rights) or declare the rights on the entry point.${NC}"
+	FAILED=1
+fi;
+if [ "$admin_holder_count" -gt "$admin_holder_max" ]; then
+	echo
+	echo -e "${RED}ERROR: $admin_holder_count raw .holder reads outside modules/admin/holder* (ratchet: $admin_holder_max). Use admin_can(client, rights).${NC}"
+	FAILED=1
+fi;
+if [ "$admin_rights_and_count" -gt "$admin_rights_and_max" ]; then
+	echo
+	echo -e "${RED}ERROR: $admin_rights_and_count 'rights & R_' tests outside modules/admin/holder* (ratchet: $admin_rights_and_max). Use admin_can(client, rights).${NC}"
 	FAILED=1
 fi;
 

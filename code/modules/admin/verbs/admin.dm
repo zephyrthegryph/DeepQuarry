@@ -1,6 +1,6 @@
 /client/proc/admin_teleport()
 	set name = "Admin teleport"
-	set category = "Admin.Game"
+	set category = VERB_CAT_ADMIN_GAME
 	set desc = "Teleports an atom to a set of coordinates or to the contents of another atom"
 	if(!GLOB.prompt_flow) // its questions re-run it (prompt_flow(), prompt_helpers.dm)
 		return prompt_flow(src, PROC_REF(admin_teleport), args)

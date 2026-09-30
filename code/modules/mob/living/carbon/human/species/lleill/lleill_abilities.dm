@@ -12,7 +12,7 @@
 /mob/living/carbon/human/proc/lleill_invisibility()
 	set name = "Invisibility (75)"
 	set desc = "Change your appearance to match your surroundings, becoming completely invisible to the naked eye."
-	set category = "Abilities.Lleill"
+	set category = VERB_CAT_ABILITIES_LLEILL
 
 	var/energy_cost = 75
 
@@ -40,7 +40,7 @@
 /mob/living/carbon/human/proc/lleill_select_shape()
 
 	set name = "Select Body Shape"
-	set category = "Abilities.Lleill"
+	set category = VERB_CAT_ABILITIES_LLEILL
 
 	if(stat || !COOLDOWN_FINISHED(src, last_special))
 		return
@@ -66,7 +66,7 @@
 /mob/living/carbon/human/proc/lleill_select_colour()
 
 	set name = "Select Body Colour"
-	set category = "Abilities.Lleill"
+	set category = VERB_CAT_ABILITIES_LLEILL
 
 	if(stat || !COOLDOWN_FINISHED(src, last_special))
 		return
@@ -101,7 +101,7 @@
 /mob/living/carbon/human/proc/lleill_transmute()
 	set name = "Transmute Object (50)"
 	set desc = "Convert an object into a piece of glamour."
-	set category = "Abilities.Lleill"
+	set category = VERB_CAT_ABILITIES_LLEILL
 
 	var/static/list/transmute_list = list(
 		"Transparent Glamour" = /obj/item/potion_material/glamour_transparent,
@@ -221,7 +221,7 @@
 /mob/living/carbon/human/proc/lleill_rings()
 	set name = "Place/Use Rings"
 	set desc = "Place or teleport to a glamour ring."
-	set category = "Abilities.Lleill"
+	set category = VERB_CAT_ABILITIES_LLEILL
 
 	var/energy_cost_multi = src.teleporters.len
 	var/energy_cost_spawn = (25 * energy_cost_multi)
@@ -311,7 +311,7 @@
 /mob/living/carbon/human/proc/lleill_contact()
 	set name = "Energy Transfer"
 	set desc = "Take the energy of another creature by making physical contact with them, the other party must consent. This will make them feel drained."
-	set category = "Abilities.Lleill"
+	set category = VERB_CAT_ABILITIES_LLEILL
 	if(!ishuman(src))
 		return //If you're not a human you don't have permission to do this.
 
@@ -433,7 +433,7 @@
 /mob/living/carbon/human/proc/lleill_alchemy()
 	set name = "Alchemy (25)"
 	set desc = "Convert a potion material into a potion without the use of a base or alembic."
-	set category = "Abilities.Lleill"
+	set category = VERB_CAT_ABILITIES_LLEILL
 
 	var/energy_cost = 25
 
@@ -498,7 +498,7 @@
 /mob/living/carbon/human/proc/lleill_beast_form()
 	set name = "Beast Form (100)"
 	set desc = "Take the form of a non-humanoid creature."
-	set category = "Abilities.Lleill"
+	set category = VERB_CAT_ABILITIES_LLEILL
 	if(!ishuman(src))
 		return //If you're not a human you don't have permission to do this.
 
@@ -608,7 +608,7 @@
 /mob/living/proc/revert_beast_form()
 	set name = "Revert Beast Form"
 	set desc = "Return to your humanoid form."
-	set category = "Abilities.Lleill"
+	set category = VERB_CAT_ABILITIES_LLEILL
 
 	if(stat)
 		to_chat(src, span_warning("You can't do that in your condition."))
@@ -662,7 +662,7 @@
 /mob/living/carbon/human/proc/hanner_beast_form()
 	set name = "Beast Form (100)"
 	set desc = "Take the form of a non-humanoid creature."
-	set category = "Abilities.Lleill"
+	set category = VERB_CAT_ABILITIES_LLEILL
 	if(!ishuman(src))
 		return //If you're not a human you don't have permission to do this.
 

@@ -205,7 +205,7 @@ DECLARE_VERB(/mob/living/simple_mob/animal/passive/mouse, /mob/living/proc/hide)
 
 /mob/living/simple_mob/animal/passive/mouse/verb/set_mouse_colour()
 	set name = "Set Mouse Colour"
-	set category = "Abilities.Mouse"
+	set category = VERB_CAT_ABILITIES_MOUSE
 	set desc = "Set the colour of your mouse."
 	om_ask(src, /datum/om/prompt/choice, PROC_REF(mouse_colour_chosen), title = "Pick a colour", message = "Set Mouse Colour", choices = list("brown","gray","white","black"))
 

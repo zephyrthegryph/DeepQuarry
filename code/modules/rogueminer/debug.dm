@@ -1,5 +1,5 @@
 /client/proc/debug_rogueminer()
-	set category = "Debug"
+	set category = VERB_CAT_DEBUG
 	set name = "Debug RogueMiner"
 	set desc = "Debug the RogueMiner controller."
 

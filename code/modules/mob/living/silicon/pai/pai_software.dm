@@ -61,7 +61,7 @@
 
 /mob/living/silicon/pai/verb/wipe_software()
 	set name = "Enter Storage"
-	set category = "Abilities.pAI Commands"
+	set category = VERB_CAT_ABILITIES_PAI_COMMANDS
 	set desc = "Upload your personality to the cloud and wipe your software from the card. This is functionally equivalent to cryo or robotic storage, freeing up your job slot."
 
 	// Make sure people don't kill themselves accidentally

@@ -221,7 +221,7 @@
 
 /mob/living/carbon/human/proc/innate_shapeshifting()
 	set name = "Transform Appearance"
-	set category = "Abilities.Superpower"
+	set category = VERB_CAT_ABILITIES_SUPERPOWER
 	var/datum/tgui_module/appearance_changer/innate/I = new(src, src)
 	I.tgui_interact(src)
 

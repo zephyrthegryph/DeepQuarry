@@ -22,7 +22,7 @@
 // Parameters: None
 // Description: Lets synths use their communicators without hands.
 /obj/item/communicator/integrated/verb/activate()
-	set category = "Abilities.AI"
+	set category = VERB_CAT_ABILITIES_AI
 	set name = "Use Communicator"
 	set desc = "Utilizes your built-in communicator."
 	set src in usr

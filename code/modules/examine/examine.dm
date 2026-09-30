@@ -77,7 +77,7 @@
 //mob verbs are faster than object verbs. See http://www.byond.com/forum/?post=1326139&page=2#comment8198716 for why this isn't atom/verb/examine()
 /mob/verb/examinate(atom/A as mob|obj|turf in _validate_atom(A))
 	set name = "Examine"
-	set category = "IC.Game"
+	set category = VERB_CAT_IC_GAME
 
 	if((is_blind(src) || src.stat) && !isobserver(src))
 		to_chat(src, span_notice("Something is there but you can't see it."))
@@ -166,7 +166,7 @@
 /mob/verb/mob_examine()
 	set name = "Mob Examine"
 	set desc = "Allows one to examine mobs they can see, even from inside of bellies and objects."
-	set category = "IC.Game"
+	set category = VERB_CAT_IC_GAME
 	set popup_menu = FALSE
 
 	if((is_blind(src) || src.stat) && !isobserver(src))

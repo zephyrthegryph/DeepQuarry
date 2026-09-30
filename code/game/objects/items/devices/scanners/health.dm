@@ -145,7 +145,7 @@
 
 /obj/item/healthanalyzer/proc/toggle_adv()
 	set name = "Toggle Advanced Scan"
-	set category = "Object"
+	set category = VERB_CAT_OBJECT
 	set src in usr
 
 	showadvscan = !showadvscan

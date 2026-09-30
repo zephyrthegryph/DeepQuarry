@@ -12,7 +12,7 @@ cached_var
     invalidations (`cached_x = null`). Derive it (om_derived() / a DERIVE() row,
     code/datums/om/derived.dm), declare it (declared_cache_vars() with a CACHE_ON_* rule,
     then fill it and let the object-model core clear it; a manual `= null` on a declared cache
-    is still flagged: raise the channel with om_changed()), use a shared cache
+    is still flagged: raise the channel with changed()), use a shared cache
     (DECLARE_SHARED_CACHE), or, when it is not a cache at all, name it for what it holds.
 
 deadline_poll
@@ -33,7 +33,7 @@ deadline = None
 
 RULES = {
     "annotation_boilerplate": "write the real reason for this site, or fix the site (doc/rewrite/systems.md, Hygiene)",
-    "cached_var": "om_derived()/DERIVE(), declared_cache_vars() + om_changed(), a shared cache, or a name for what it holds (Hygiene)",
+    "cached_var": "om_derived()/DERIVE(), declared_cache_vars() + changed(), a shared cache, or a name for what it holds (Hygiene)",
     "deadline_poll": "om_after()/om_deadline() at the moment the deadline is set, not a world.time check in periodic work (Hygiene)",
 }
 

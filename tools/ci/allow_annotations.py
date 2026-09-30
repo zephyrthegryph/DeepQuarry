@@ -52,6 +52,7 @@ LINTS = {
     "spatial": "tools/ci/spatial_lint.py",
     "tracked": "tools/ci/tracked_lint.py (writes to a TRACKED var outside its setter; target 0)",
     "system_boundary": "tools/ci/system_boundary_lint.py (cross-module access to a system's private state)",
+    "verb_category": "tools/ci/verb_category_lint.py (a raw verb category string)",
     "subsystem_fire": "tools/ci/subsystem_fire_lint.py (fire() outside the core allowlist)",
     "ui_actions": "tools/ci/ui_actions_lint.py (act_ parameters no act() sends, or used before validation)",
 }

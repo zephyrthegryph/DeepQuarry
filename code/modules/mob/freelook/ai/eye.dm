@@ -95,7 +95,7 @@
 
 /mob/living/silicon/ai/proc/toggle_acceleration()
 	var/mob/observer/eye/eyeobj = src?.active_eye()
-	set category = "AI.Settings"
+	set category = VERB_CAT_AI_SETTINGS
 	set name = "Toggle Camera Acceleration"
 
 	if(!eyeobj)

@@ -70,6 +70,9 @@
 	/// RUNLEVEL_* mask. Outside these runlevels the behaviour's rings don't run (one test per
 	/// ring per pass, none per entity) and resume without catch-up. 0: every runlevel.
 	var/runlevels = 0
+	/// The measurement system this behaviour's cost is charged to (code/controllers/measure/systems.dm): set to
+	/// override the rule that derives it from the type path.
+	var/system_key
 
 	// ---- compiled by the registry ----
 	var/id = 0
@@ -87,6 +90,8 @@
 	var/compiled_max_interval = 0
 	/// wake_on | requires_mask, the channels this behaviour contributes to listen masks.
 	var/interest = 0
+	/// Index of the measurement system (km_bind_behaviours()); 0 until the registry binds it.
+	var/system_idx = 0
 
 /datum/om/behaviour/proc/tick(datum/E, dt)
 	SHOULD_NOT_SLEEP(TRUE)

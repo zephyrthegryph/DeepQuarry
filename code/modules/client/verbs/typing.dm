@@ -4,7 +4,7 @@
 /client/var/commandbar_typing = FALSE
 
 /client/proc/initialize_commandbar_spy()
-	src << output('html/typing_indicator.html', "commandbar_spy")
+	src << output('html/typing_indicator.html', SKIN_COMMANDBAR_SPY)
 
 /client/proc/handle_commandbar_typing(typed_verb, argument_length)
 	if(!prefs?.read_preference(/datum/preference/toggle/show_typing_indicator))

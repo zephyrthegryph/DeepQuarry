@@ -80,7 +80,7 @@
 
 /*
 /mob/living/silicon/pai/verb/suicide()
-	set category = "Abilities.pAI Commands"
+	set category = VERB_CAT_ABILITIES_PAI_COMMANDS
 	set desc = "Kill yourself and become a ghost (You will receive a confirmation prompt)"
 	set name = "pAI Suicide"
 	var/answer = tgui_alert(src, "REALLY kill yourself? This action can't be undone.", "Suicide", list("Yes","No"))

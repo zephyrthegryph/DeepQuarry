@@ -1,7 +1,7 @@
 /mob/living/carbon/human/proc/telepathy(mob/M as mob in oview())
 	set name = "Project mind"
 	set desc = "Talk telepathically to someone over a distance."
-	set category = "Abilities.General"
+	set category = VERB_CAT_ABILITIES_GENERAL
 
 	om_ask(src, /datum/om/prompt/text/telepathy, PROC_REF(telepathy_entered), title = "Project mind", target = M)
 

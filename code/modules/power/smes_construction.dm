@@ -460,9 +460,9 @@ DECLARE_APPEARANCE(/obj/machinery/power/smes/buildable, "failing", list("1" = li
 /// Remote (AI and RCON) control on or off.
 /obj/machinery/power/smes/buildable/proc/set_rcon(state)
 	RCon = state
-	om_changed(src, CHANGE_MACHINE_SETTINGS)
+	changed(src, CHANGE_MACHINE_SETTINGS)
 
 /// The failsafes on or off.
 /obj/machinery/power/smes/buildable/proc/set_safeties(state)
 	safeties_enabled = state
-	om_changed(src, CHANGE_MACHINE_SETTINGS)
+	changed(src, CHANGE_MACHINE_SETTINGS)

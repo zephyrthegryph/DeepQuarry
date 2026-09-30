@@ -40,7 +40,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/robot, REGISTRY_AI_SHELLS)
 
 // ITION: Ai shell sideloading
 /mob/living/silicon/robot/proc/transfer_shell_act()
-	set category = "Abilities.Silicon" // TGPanel
+	set category = VERB_CAT_ABILITIES_SILICON // TGPanel
 	set name = "Transfer to Shell"
 	transfer_shell()
 
@@ -208,7 +208,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/robot, REGISTRY_AI_SHELLS)
 /mob/living/silicon/robot/proc/undeploy_act()
 	set name = "Release Control"
 	set desc = "Release control of a remote drone."
-	set category = "Abilities.Silicon"
+	set category = VERB_CAT_ABILITIES_SILICON
 
 	undeploy("Remote session terminated.")
 

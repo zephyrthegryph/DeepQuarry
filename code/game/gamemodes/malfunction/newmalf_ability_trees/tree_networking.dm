@@ -39,7 +39,7 @@
 // BEGIN ABILITY VERBS
 
 /datum/game_mode/malfunction/verb/basic_encryption_hack(obj/machinery/power/apc/A as obj in get_unhacked_apcs(src))
-	set category = "Software"
+	set category = VERB_CAT_SOFTWARE
 	set name = "Basic Encryption Hack"
 	set desc = "10 CPU - Basic encryption hack that allows you to overtake APCs on the station."
 	var/price = 10
@@ -85,7 +85,7 @@
 
 
 /datum/game_mode/malfunction/verb/advanced_encryption_hack()
-	set category = "Software"
+	set category = VERB_CAT_SOFTWARE
 	set name = "Advanced Encrypthion Hack"
 	set desc = "75 CPU - Attempts to bypass encryption on the Command Quantum Relay, giving you ability to fake legitimate messages. Has chance of failing."
 	var/price = 75
@@ -121,7 +121,7 @@
 
 
 /datum/game_mode/malfunction/verb/elite_encryption_hack()
-	set category = "Software"
+	set category = VERB_CAT_SOFTWARE
 	set name = "Elite Encryption Hack"
 	set desc = "200 CPU - Allows you to hack station's ALERTCON system, changing alert level. Has high chance of failijng."
 	var/price = 200
@@ -149,7 +149,7 @@
 
 
 /datum/game_mode/malfunction/verb/system_override()
-	set category = "Software"
+	set category = VERB_CAT_SOFTWARE
 	set name = "System Override"
 	set desc = "500 CPU - Begins hacking station's primary firewall, quickly overtaking remaining APC systems. When completed grants access to station's self-destruct mechanism. Network administrators will probably notice this."
 	var/mob/living/silicon/ai/user = usr

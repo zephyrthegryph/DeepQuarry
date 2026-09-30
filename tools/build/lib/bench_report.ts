@@ -97,13 +97,15 @@ ${latest.failures.length ? `<p class="bad">Failures: ${latest.failures.map(escap
       for (const scenario of Object.values(iteration.scenarios ?? {})) {
         for (const [key, value] of Object.entries(scenario.details ?? {})) {
           if (!key.endsWith('_outliers') || !Array.isArray(value) || !value.length) continue;
-          for (const tick of value as { usage: number; top_subsystem: string; world_time: number }[]) {
-            worst.push(`<tr><td>${escape(scenario.id)}</td><td>${escape(key.replace(/_outliers$/, ''))}</td><td class="num">${Math.round(tick.usage)}%</td><td>${escape(tick.top_subsystem)}</td><td class="num">${escape(tick.world_time)}</td></tr>`);
+          for (const tick of value as { usage: number; top_subsystem: string; world_time: number; top_systems?: { key: string; ms: number }[] }[]) {
+            // The systems inside the MC subsystem (Behaviours) that the tick's time went to, when the world recorded them.
+            const systems = (tick.top_systems ?? []).map((s) => `${s.key} ${formatNumber(s.ms)} ms`).join(', ');
+            worst.push(`<tr><td>${escape(scenario.id)}</td><td>${escape(key.replace(/_outliers$/, ''))}</td><td class="num">${Math.round(tick.usage)}%</td><td>${escape(tick.top_subsystem)}</td><td>${escape(systems)}</td><td class="num">${escape(tick.world_time)}</td></tr>`);
           }
         }
       }
       if (worst.length) {
-        sections.push(`<section><h3>Overrun ticks</h3><div class="scroll"><table><thead><tr><th>scenario</th><th>window</th><th>usage</th><th>top subsystem</th><th>world.time</th></tr></thead><tbody>${worst.join('')}</tbody></table></div></section>`);
+        sections.push(`<section><h3>Overrun ticks</h3><div class="scroll"><table><thead><tr><th>scenario</th><th>window</th><th>usage</th><th>top subsystem</th><th>top systems</th><th>world.time</th></tr></thead><tbody>${worst.join('')}</tbody></table></div></section>`);
       }
     }
   } else {

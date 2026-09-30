@@ -7,7 +7,7 @@
 	verbpath = /mob/proc/changeling_darksight
 
 /mob/proc/changeling_darksight()
-	set category = "Changeling"
+	set category = VERB_CAT_CHANGELING
 	set name = "Toggle Darkvision"
 	set desc = "We are able see in the dark."
 

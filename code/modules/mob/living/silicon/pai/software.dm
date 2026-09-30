@@ -5,7 +5,7 @@
 		software[id] = TRUE
 
 /mob/living/silicon/pai/verb/paiInterface()
-	set category = "Abilities.pAI Commands"
+	set category = VERB_CAT_ABILITIES_PAI_COMMANDS
 	set name = "Software Interface"
 
 	tgui_interact(src)

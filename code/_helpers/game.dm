@@ -653,7 +653,7 @@
 			flashed_client = player_mob.client
 	if(!flashed_client || (!flashed_client.prefs.read_preference(/datum/preference/toggle/window_flashing) && !ignorepref))
 		return
-	winset(flashed_client, "mainwindow", "flash=5")
+	winset(flashed_client, SKIN_MAINWINDOW, "flash=5")
 
 /**
  * Get a bounding box of a list of atoms.

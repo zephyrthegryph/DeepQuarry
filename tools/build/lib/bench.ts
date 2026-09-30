@@ -341,7 +341,42 @@ export type Comparison = {
   change_pct: number;
   noise_pct: number;
   verdict: 'regression' | 'improvement' | 'unchanged' | 'new' | 'removed' | 'not_comparable';
+  /** Set when a gate (GATES) decided the verdict: what it requires. */
+  gate?: string;
 };
+
+/**
+ * Metrics that gate a change however small the generic threshold would let it through. Each names a metric
+ * family and what may not happen to it:
+ *  - `no_rise`: the median may not rise (beyond the runs' own noise and `absTolerance`, the resolution below which
+ *    a difference means nothing);
+ *  - `flag_pct`: a rise of more than `pct` percent is flagged.
+ * Only `lower is better` metrics gate. A timing metric still needs both runs to be load-similar to be compared at
+ * all (compareRuns()). The metric names come from code/modules/benchmarks/kernel_metrics.dm.
+ */
+export type Gate = {
+  pattern: RegExp;
+  label: string;
+  rule: 'no_rise' | 'flag_pct';
+  pct?: number;
+  absTolerance?: number;
+};
+
+export const GATES: Gate[] = [
+  // Input latency: the wait of a click or queued verb, from the synthetic load. 0.05 ms is the histogram's first
+  // bin edge (0.02 ms) and change: below it nothing waited.
+  { pattern: /^input_p99$/, label: 'input_p99 must not rise', rule: 'no_rise', absTolerance: 0.05 },
+  { pattern: /^input_p99_ticks$/, label: 'input_p99 must not rise', rule: 'no_rise', absTolerance: 0.001 },
+  // A behaviour whose slot started later than its max interval, per system and in total.
+  { pattern: /(^|\.)breaches$/, label: 'breaches must not rise', rule: 'no_rise' },
+  // A system's p99 ms per tick rising by more than a fifth is named.
+  { pattern: /^system\..+\.p99_ms$/, label: 'system p99_ms rose over 20%', rule: 'flag_pct', pct: 20, absTolerance: 0.05 },
+];
+
+/** The gate covering a metric name (a scenario-level or a windowed one: `idle_input_p99`), if any. */
+export function gateFor(metric: string): Gate | undefined {
+  return GATES.find((gate) => gate.pattern.test(metric));
+}
 
 /**
  * True when two runs' machine load is close enough that a TIMING metric
@@ -408,7 +443,25 @@ export function compareRuns(base: BenchRun, head: BenchRun, thresholdPct: number
         const worse = hs.better === 'lower' ? change > 0 : change < 0;
         verdict = worse ? 'regression' : 'improvement';
       }
-      rows.push({ scenario, metric, unit: hs.unit, class: metricClass, base: bs.median, head: hs.median, change_pct: change, noise_pct: noise, verdict });
+      // A gate overrides the generic threshold: a rise it forbids is a regression however small.
+      let gateLabel: string | undefined;
+      const gate = hs.better === 'lower' ? gateFor(metric) : undefined;
+      if (gate) {
+        const rise = hs.median - bs.median;
+        // Below the metric's resolution a difference in either direction is noise, whatever the generic rule said.
+        if (gate.absTolerance !== undefined && Math.abs(rise) <= gate.absTolerance) verdict = 'unchanged';
+        const beyondNoise = change > noise;
+        const beyondFloor = rise > (gate.absTolerance ?? 0);
+        const beyondPct = gate.rule === 'flag_pct' ? change > (gate.pct ?? 0) : true;
+        if (rise > 0 && beyondNoise && beyondFloor && beyondPct) {
+          verdict = 'regression';
+          gateLabel = gate.label;
+        }
+      }
+      rows.push({
+        scenario, metric, unit: hs.unit, class: metricClass, base: bs.median, head: hs.median,
+        change_pct: change, noise_pct: noise, verdict, ...(gateLabel ? { gate: gateLabel } : {}),
+      });
     }
   }
   return rows;
@@ -434,7 +487,7 @@ export function formatComparison(rows: Comparison[], onlyChanges = false): strin
     `${formatNumber(r.head)} ${r.unit}`,
     Number.isFinite(r.change_pct) ? `${r.change_pct >= 0 ? '+' : ''}${r.change_pct.toFixed(1)}%` : '-',
     Number.isFinite(r.noise_pct) ? `±${r.noise_pct.toFixed(1)}%` : '-',
-    r.verdict === 'not_comparable' ? 'not comparable (load)' : r.verdict,
+    r.verdict === 'not_comparable' ? 'not comparable (load)' : r.gate ? `${r.verdict} (gate: ${r.gate})` : r.verdict,
   ].map((cell) => String(cell ?? '-'))); // a metric missing from one side (class, verdict) prints '-'
   const widths = header.map((h, i) => Math.max(h.length, ...body.map((row) => row[i].length)));
   const line = (cells: string[]) => cells.map((c, i) => c.padEnd(widths[i])).join('  ');

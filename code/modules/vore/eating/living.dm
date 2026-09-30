@@ -531,7 +531,7 @@
 //
 /mob/living/proc/lick(mob/living/tasted in living_mobs_in_view(1, TRUE))
 	set name = "Lick"
-	set category = "IC.Game"
+	set category = VERB_CAT_IC_GAME
 	set desc = "Lick someone nearby!"
 	set popup_menu = FALSE // Stop licking by accident!
 
@@ -589,7 +589,7 @@
 //This is just the above proc but switched about.
 /mob/living/proc/smell(mob/living/smelled in living_mobs(1, TRUE))
 	set name = "Smell"
-	set category = "IC.Game"
+	set category = VERB_CAT_IC_GAME
 	set desc = "Smell someone nearby!"
 	set popup_menu = FALSE
 
@@ -635,7 +635,7 @@
 //
 /mob/living/proc/escapeOOC()
 	set name = "OOC Escape"
-	set category = "OOC.Vore"
+	set category = VERB_CAT_OOC_VORE
 
 	//You're in a belly!
 	if(isbelly(loc))
@@ -921,7 +921,7 @@
 
 /mob/living/proc/glow_toggle()
 	set name = "Glow (Toggle)"
-	set category = "Abilities.General"
+	set category = VERB_CAT_ABILITIES_GENERAL
 	set desc = "Toggle your glowing on/off!"
 
 	if(stat || is_paralyzed() || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || !COOLDOWN_FINISHED(src, last_special))
@@ -936,7 +936,7 @@
 
 /mob/living/proc/glow_color()
 	set name = "Glow (Set Color)"
-	set category = "Abilities.Settings"
+	set category = VERB_CAT_ABILITIES_SETTINGS
 	set desc = "Pick a color for your body's glow."
 
 	//Again, no real need for a check on this. I'm unsure how it could be somehow abused.
@@ -966,7 +966,7 @@
 
 /mob/living/proc/eat_trash()
 	set name = "Eat Trash"
-	set category = "Abilities.Vore"
+	set category = VERB_CAT_ABILITIES_VORE
 	set desc = "Consume held garbage."
 
 	if(stat || is_paralyzed() || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || !COOLDOWN_FINISHED(src, last_special))
@@ -992,14 +992,14 @@
 
 /mob/living/proc/toggle_trash_catching() //Ported from chompstation
 	set name = "Toggle Trash Catching"
-	set category = "Abilities.Vore"
+	set category = VERB_CAT_ABILITIES_VORE
 	set desc = "Toggle Trash Eater throw vore abilities."
 	trash_catching = !trash_catching
 	to_chat(src, span_vwarning("Trash catching [trash_catching ? "enabled" : "disabled"]."))
 
 /mob/living/proc/eat_minerals() //Actual eating abstracted so the user isn't given a prompt due to an argument in this verb.
 	set name = "Eat Minerals"
-	set category = "Abilities.Vore"
+	set category = VERB_CAT_ABILITIES_VORE
 	set desc = "Consume held raw ore, gems and refined minerals. Snack time!"
 
 	handle_eat_minerals()
@@ -1143,7 +1143,7 @@
 
 /mob/living/proc/toggle_stuffing_mode()
 	set name = "Toggle feeding mode"
-	set category = "Abilities.Vore"
+	set category = VERB_CAT_ABILITIES_VORE
 	set desc = "Switch whether you will try to feed other people food whole or normally, bite by bite."
 
 	stuffing_feeder = !stuffing_feeder
@@ -1151,7 +1151,7 @@
 
 /mob/living/proc/switch_scaling()
 	set name = "Switch scaling mode"
-	set category = "Preferences.Game"
+	set category = VERB_CAT_PREFERENCES_GAME
 	set desc = "Switch sharp/fuzzy scaling for current mob."
 	appearance_flags ^= PIXEL_SCALE
 	fuzzy = !fuzzy
@@ -1159,7 +1159,7 @@
 
 /mob/living/proc/center_offset()
 	set name = "Switch center offset mode"
-	set category = "Preferences.Game"
+	set category = VERB_CAT_PREFERENCES_GAME
 	set desc = "Switch sprite center offset to fix even/odd symmetry."
 	offset_override = !offset_override
 	update_transform()
@@ -1251,7 +1251,7 @@ TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes
 
 /mob/living/proc/vorebelly_printout() //Spew the vorepanel belly messages into chat window for copypasting.
 	set name = "X-Print Vorebelly Settings"
-	set category = "Preferences.Vore"
+	set category = VERB_CAT_PREFERENCES_VORE
 	set desc = "Print out your vorebelly messages into chat for copypasting."
 
 	var/result = rerun_ask(src, "a1", PROC_REF(vorebelly_printout), args, /datum/om/prompt/choice/alert, message = "Would you rather open the export panel?", title = "Selected Belly Export", choices = list("Open Panel", "Print to Chat"))
@@ -1513,7 +1513,7 @@ TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes
 
 /mob/living/proc/vore_check_reagents()
 	set name = "Check Belly Liquid (Vore)"
-	set category = "Abilities.Vore"
+	set category = VERB_CAT_ABILITIES_VORE
 	set desc = "Check the amount of liquid in your belly."
 
 	var/obj/belly/RTB = rerun_ask(src, "a1", PROC_REF(vore_check_reagents), args, /datum/om/prompt/choice, message = "Choose which vore belly to check", title = "Select Belly", choices = vore_organs)
@@ -1531,7 +1531,7 @@ TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes
 
 /mob/living/proc/vore_transfer_reagents()
 	set name = "Transfer Liquid (Vore)"
-	set category = "Abilities.Vore"
+	set category = VERB_CAT_ABILITIES_VORE
 	set desc = "Transfer liquid from an organ to another or stomach, or into another person or container."
 	set popup_menu = FALSE
 
@@ -1767,28 +1767,28 @@ TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes
 
 /mob/living/proc/mute_entry()
 	set name = "Mute Vorgan Entrance"
-	set category = "Preferences.Vore"
+	set category = VERB_CAT_PREFERENCES_VORE
 	set desc = "Mute the chatlog messages when something enters a vore belly."
 	mute_entry = !mute_entry
 	to_chat(src, span_vwarning("Entrance logs [mute_entry ? "disabled" : "enabled"]."))
 
 /mob/living/proc/restrict_trasheater()
 	set name = "Restrict Trash Eater"
-	set category = "Abilities.Vore"
+	set category = VERB_CAT_ABILITIES_VORE
 	set desc = "Toggle Trash Eater restriction level."
 	adminbus_trash = !adminbus_trash
 	to_chat(src, span_vwarning("Trash Eater restriction level set to [adminbus_trash ? "everything not blacklisted" : "only whitelisted items"]."))
 
 /mob/living/proc/liquidbelly_visuals()
 	set name = "Toggle Liquidbelly Visuals"
-	set category = "Preferences.Vore"
+	set category = VERB_CAT_PREFERENCES_VORE
 	set desc = "Toggle liquidbelly fullscreen visual effect."
 	liquidbelly_visuals = !liquidbelly_visuals
 	to_chat(src, span_vwarning("Liquidbelly overlays [liquidbelly_visuals ? "enabled" : "disabled"]."))
 
 /mob/living/proc/fix_vore_effects()
 	set name = "Fix Vore Effects"
-	set category = "OOC.Debug"
+	set category = VERB_CAT_OOC_DEBUG
 	set desc = "Fix certain vore effects lingering after you've exited a belly."
 
 	if(!isbelly(src.loc))
@@ -1805,7 +1805,7 @@ TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes
 
 /mob/living/verb/vore_check_nutrition()
 	set name = "Check Nutrition"
-	set category = "Abilities.Vore"
+	set category = VERB_CAT_ABILITIES_VORE
 	set desc = "Check your current nutrition level."
 	to_chat(src, span_vnotice("Current nutrition level: [nutrition]."))
 

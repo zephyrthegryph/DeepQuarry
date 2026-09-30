@@ -100,12 +100,12 @@ GLOBAL_DATUM_INIT(emergency_shuttle_service, /datum/world_service/emergency_shut
 /datum/world_service/emergency_shuttle/proc/set_launch_countdown(seconds)
 	wait_for_launch = TRUE
 	EXPIRY_SET(src, launch_time, (seconds * 10), CLOCK_WORLD)
-	om_changed(GLOB.emergency_shuttle_service, CHANGE_SHUTTLE_SCHEDULE)
+	changed(GLOB.emergency_shuttle_service, CHANGE_SHUTTLE_SCHEDULE)
 	demand()
 
 /datum/world_service/emergency_shuttle/proc/stop_launch_countdown()
 	wait_for_launch = FALSE
-	om_changed(GLOB.emergency_shuttle_service, CHANGE_SHUTTLE_SCHEDULE)
+	changed(GLOB.emergency_shuttle_service, CHANGE_SHUTTLE_SCHEDULE)
 
 //calls the shuttle for an emergency evacuation
 /datum/world_service/emergency_shuttle/proc/call_evac()

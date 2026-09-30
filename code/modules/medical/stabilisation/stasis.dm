@@ -173,7 +173,7 @@
 		own_put(src, nameof(stasis_sources), key, hold)
 		om_hold(src, EFFECT_CLOCK_BIO_INHIBIT, src, level.stasis_depth(), key)
 	invalidate_factors()
-	om_changed(src, CHANGE_MOB_CONDITIONS)
+	changed(src, CHANGE_MOB_CONDITIONS)
 	var/datum/body_effect/old_level = current ? body_effect_def(current) : null
 	var/datum/body_effect/new_level = stasis_type ? body_effect_def(stasis_type) : null
 	log_game("STASIS: [key_name(src)] [old_level ? "left [old_level.name]" : ""][old_level && new_level ? " and " : ""][new_level ? "entered [new_level.name]" : ""] from [source ? "[source] ([source.type])" : "no source"] at [AREACOORD(src)]; BF_STASIS now [factor(BF_STASIS)].")

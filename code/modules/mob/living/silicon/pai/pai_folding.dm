@@ -1,5 +1,5 @@
 /mob/living/silicon/pai/verb/fold_out()
-	set category = "Abilities.pAI Commands"
+	set category = VERB_CAT_ABILITIES_PAI_COMMANDS
 	set name = "Unfold Chassis"
 
 	if(stat || has_status(EFFECT_SLEEPING) || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED))
@@ -74,7 +74,7 @@
 	update_icon()
 
 /mob/living/silicon/pai/verb/fold_up()
-	set category = "Abilities.pAI Commands"
+	set category = VERB_CAT_ABILITIES_PAI_COMMANDS
 	set name = "Collapse Chassis"
 
 	if(stat || has_status(EFFECT_SLEEPING) || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED))

@@ -61,7 +61,7 @@
 /obj/item/mecha_parts/mecha_equipment/tool/passenger/verb/eject()
 	var/mob/living/carbon/occupant = src?.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER)
 	set name = "Eject"
-	set category = "Exosuit Interface"
+	set category = VERB_CAT_EXOSUIT_INTERFACE
 	set src = usr.loc
 	set popup_menu = 0
 

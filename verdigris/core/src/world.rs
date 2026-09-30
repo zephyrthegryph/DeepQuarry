@@ -58,6 +58,8 @@ use std::any::{Any, TypeId};
 use std::cmp::Reverse;
 use std::collections::{BinaryHeap, HashMap};
 use std::fmt;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use crate::activity::Activity;
 use crate::channel::{ChannelInfo, Channels, channel_infos, validate_channels};
@@ -282,7 +284,7 @@ struct LawState {
     activity: Activity,
     /// Network anchors: the revision each item last ran at, by slot index.
     seen: Vec<u64>,
-    /// `(frame due, item)`.
+    /// `(simulated microseconds due, item)`.
     timers: BinaryHeap<Reverse<(u64, u32)>>,
     fx: Effects,
     items: Vec<Item>,
@@ -335,27 +337,29 @@ fn law_task<L: Law>(
     w_state: <L::Writes as Query>::State,
     state: Res<LawState>,
     wakes: Res<FrameWakes>,
-    base_dt: f64,
+    clock: Arc<StepClock>,
 ) -> Task
 where
     L::Reads: Query,
     L::Writes: WriteQuery,
 {
     let period = L::PERIOD.frames();
-    let law_dt = Seconds(base_dt * f64::from(period));
     let mut task_access = access.clone();
     task_access.write(state.id());
     task_access.read(wakes.id());
     let run = move |ctx: &TaskCtx<'_>| {
-        let frame_no = ctx.frame();
-        #[allow(clippy::cast_precision_loss)]
-        let now = frame_no as f64 * base_dt;
+        // One dt and one now for the whole step: the clock only moves
+        // between steps (`World::set_dt`).
+        let base_dt = clock.dt();
+        let law_dt = Seconds(base_dt * f64::from(period));
+        let now = clock.time();
+        let now_us = to_micros(now);
         let woken = ctx.read(wakes);
         let mut guard = ctx.write(state);
         let ls = &mut *guard;
         let mut frame = FrameData::lock(ctx, &access);
         while let Some(&Reverse((due, item))) = ls.timers.peek() {
-            if due > frame_no {
+            if due > now_us {
                 break;
             }
             ls.timers.pop();
@@ -479,13 +483,9 @@ where
             ls.activity.wake_grow(slot_of(i));
         }
         for (at, i) in std::mem::take(&mut ls.fx.timers) {
-            #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-            let due = if base_dt > 0.0 {
-                (at / base_dt).ceil().max(0.0) as u64
-            } else {
-                frame_no + 1
-            };
-            ls.timers.push(Reverse((due.max(frame_no + 1), i)));
+            // Never earlier than the next step.
+            let next = to_micros(now + base_dt).max(now_us + 1);
+            ls.timers.push(Reverse((to_micros(at).max(next), i)));
         }
     };
     let mut task = Task::new(L::NAME, run).every(period);
@@ -960,11 +960,58 @@ struct ConserveSource {
     sum: ConserveFn,
 }
 
+/// The world's step clock, shared with every law task: the simulated seconds
+/// per step (which [`World::set_dt`] can change between steps) and the
+/// simulated time at the start of the step. Written only on the main thread
+/// while no frame runs, so a law sees one `dt` and one `now` for a whole step.
+#[derive(Debug)]
+pub struct StepClock {
+    dt_bits: AtomicU64,
+    time_bits: AtomicU64,
+}
+
+impl StepClock {
+    fn new(dt: f64) -> Self {
+        Self {
+            dt_bits: AtomicU64::new(dt.to_bits()),
+            time_bits: AtomicU64::new(0.0f64.to_bits()),
+        }
+    }
+
+    /// Simulated seconds per step for the step in progress.
+    #[must_use]
+    pub fn dt(&self) -> f64 {
+        f64::from_bits(self.dt_bits.load(Ordering::Acquire))
+    }
+
+    /// Simulated time at the start of the step in progress, s.
+    #[must_use]
+    pub fn time(&self) -> f64 {
+        f64::from_bits(self.time_bits.load(Ordering::Acquire))
+    }
+
+    fn begin_step(&self, dt: f64) {
+        self.dt_bits.store(dt.to_bits(), Ordering::Release);
+    }
+
+    fn end_step(&self) {
+        let t = self.time() + self.dt();
+        self.time_bits.store(t.to_bits(), Ordering::Release);
+    }
+}
+
+/// Simulated seconds as whole microseconds, the unit law timers are kept in
+/// (a step length that changes mid-run cannot be a frame count).
+#[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+fn to_micros(seconds: f64) -> u64 {
+    (seconds * 1e6).round().max(0.0) as u64
+}
+
 type LawBuildFn = Box<
     dyn for<'a> FnOnce(
         &dyn Catalog,
         &mut PhaseBuild<'a>,
-        f64,
+        Arc<StepClock>,
     ) -> Result<(Task, Res<LawState>), LawError>,
 >;
 
@@ -1395,7 +1442,7 @@ impl WorldBuilder {
                     .ok_or_else(|| unregistered(name)),
             }
         });
-        let build: LawBuildFn = Box::new(move |catalog, pb, dt| {
+        let build: LawBuildFn = Box::new(move |catalog, pb, clock| {
             let mut access = Access::default();
             let mut init = QueryInit {
                 catalog,
@@ -1460,7 +1507,7 @@ impl WorldBuilder {
                 Anchor::Global { .. } => PlanAnchor::Global,
             };
             let state = pb.insert(format!("law:{}", L::NAME), LawState::default());
-            let task = law_task::<L>(plan, access, r_state, w_state, state, pb.wakes, dt);
+            let task = law_task::<L>(plan, access, r_state, w_state, state, pb.wakes, clock);
             Ok((task, state))
         });
         self.laws.push(LawDecl {
@@ -1499,7 +1546,7 @@ impl WorldBuilder {
         }
         let mut decls: Vec<Option<(LawDecl, Phase)>> =
             self.laws.drain(..).zip(phases).map(Some).collect();
-        let dt = self.config.dt.0;
+        let clock = Arc::new(StepClock::new(self.config.dt.0));
         let mut main_tasks = Vec::new();
         let mut main_laws = Vec::new();
         let mut worker_laws = Vec::new();
@@ -1531,7 +1578,7 @@ impl WorldBuilder {
                         Phase::Worker => self.worker_wakes,
                     },
                 };
-                let (task, state) = (decl.build)(&catalog, &mut pb, dt)?;
+                let (task, state) = (decl.build)(&catalog, &mut pb, Arc::clone(&clock))?;
                 law_meta.push((decl.name, phase, state));
                 match phase {
                     Phase::Main => {
@@ -1600,6 +1647,7 @@ impl WorldBuilder {
         let kind_count = self.kinds.len();
         Ok(World {
             pacer: Pacer::new(self.config.dt, self.config.backlog_cap),
+            clock,
             config: self.config,
             sim,
             main: self.main,
@@ -1711,6 +1759,7 @@ fn conserve_task(
 pub struct World {
     config: WorldConfig,
     pacer: Pacer,
+    clock: Arc<StepClock>,
     sim: Sim,
     main: Resources,
     main_tasks: Vec<Task>,
@@ -1821,6 +1870,8 @@ impl World {
             return false;
         }
         let frame = self.sim.next_frame();
+        // A new step length takes effect here, between frames, never inside one.
+        self.clock.begin_step(self.pacer.dt().0);
         // Main phase: commits, laws, collect, conservation, watches.
         for n in &mut self.networks {
             if n.phase() == Phase::Main {
@@ -1883,6 +1934,7 @@ impl World {
             violations.append(&mut o.violations);
         });
         if dispatched {
+            self.clock.end_step();
             self.frame = frame + 1;
         }
         dispatched
@@ -1897,9 +1949,23 @@ impl World {
 
     /// Simulated time of the next step, s.
     #[must_use]
-    #[allow(clippy::cast_precision_loss)]
     pub fn now(&self) -> f64 {
-        self.frame as f64 * self.config.dt.0
+        self.clock.time()
+    }
+
+    /// The simulated seconds per step in effect.
+    #[must_use]
+    pub fn dt(&self) -> Seconds {
+        self.pacer.dt()
+    }
+
+    /// Changes the step length: every law integrates the new `dt` from the
+    /// next step on, and law timers (kept in simulated time) keep their
+    /// meaning. Returns `false`, changing nothing, for a non-finite or
+    /// non-positive `dt`. Laws with a longer [`Period`](crate::law::Period)
+    /// run every `n` steps of the new length.
+    pub fn set_dt(&mut self, dt: Seconds) -> bool {
+        self.pacer.set_dt(dt)
     }
 
     /// Steps run so far.
