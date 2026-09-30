@@ -246,7 +246,10 @@
 	var/obj/item/tool/wirecutters/cutters = dq_fast_tool(/obj/item/tool/wirecutters, T)
 	TEST_ASSERT(ladder_walk(H, A, ladder_step(A, "wired", "board"), cutters), "cutting the cable out runs")
 	TEST_ASSERT_NULL(A.terminal, "the terminal went with the cable")
-	TEST_ASSERT(locate(/obj/item/stack/cable_coil) in T.contents, "the ladder gave the cable back")
+	var/obj/item/stack/cable_coil/refund = locate() in T.contents
+	TEST_ASSERT_NOTNULL(refund, "the ladder gave the cable back")
+	TEST_ASSERT_EQUAL(refund?.get_amount(), 10, "all ten lengths")
+	qdel(refund)
 	TEST_ASSERT(A.board_unfastened(), "the board is in and not fastened")
 	TEST_ASSERT(ladder_walk(H, A, ladder_step(A, "board", "frame"), null), "the board comes out by hand")
 	TEST_ASSERT_EQUAL(ladder.state_of(A), "frame", "back on the bare frame")
