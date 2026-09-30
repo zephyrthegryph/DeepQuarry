@@ -60,7 +60,7 @@
 		. += cap_require(list("open_cover", "remove_cover"), needs = req_proc(TYPE_PROC_REF(/atom, hatch_cover_free)))
 	. += cap_panel(blocked_by = panel_needs_cover_closed ? COVER : NONE)
 	. += cap_wires(null, behind = PANEL)
-	. += cap_lock(blocked_by = COVER | PANEL, entries = FALSE)
+	. += cap_lock(blocked_by = COVER | PANEL, entries = FALSE, layer = CAP_NO_LAYER) // the holder draws its own lock indicator
 	. += lock_ops(blocked_by = COVER | PANEL)
 	. += emag_op(say = emag_say, mode = emag_mode, blocked_by = COVER | PANEL)
 
