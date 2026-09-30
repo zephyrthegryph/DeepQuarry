@@ -4056,6 +4056,7 @@
 #include "code\modules\power\port_gen.dm"
 #include "code\modules\power\power.dm"
 #include "code\modules\power\power_grid.dm"
+#include "code\modules\power\power_system.dm"
 #include "code\modules\power\power_bridge.dm"
 #include "code\modules\power\privacy_switch.dm"
 #include "code\modules\power\smes.dm"

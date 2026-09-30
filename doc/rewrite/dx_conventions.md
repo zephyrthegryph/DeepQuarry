@@ -207,8 +207,9 @@ One vocabulary for "something happened" (code in `code/datums/reactions/`, defin
 - **Reading Rust state.** `native_read(E, NATIVE_KEY(code, field))` goes through the frame's cache; a generated
   getter is the same call without the cache. Never keep a DM copy of a Rust value. A turf's temperature is
   `get_temperature()`; `initial_temperature` is a seed.
-- **Writing Rust state.** A generated setter of a config field ends with `rust_pushed()`; override it to re-publish
-  derived Rust state. Do not push by hand after a setter.
+- **Writing Rust state.** There is no generated setter. A DM var that mirrors a Rust config field is `TRACKED`
+  and listed in the type's `rust_push` reads; its `push_to_rust()` writes it with `native_write(src, NATIVE_<STRUCT>_<FIELD>, value[, index])`
+  (the generator emits the `NATIVE_*` key). A Rust-only field has one hand-written setter that calls `native_write()` and re-publishes.
 - **Watching Rust state.** One facility: a watch port (a world kind, the turf solid, gas handles) through
   `vg_world_watch_*`. Wakes leave as `CHANGED` / `CROSSED` records, delivered by `native_crossed()`.
 - **Moving gas.** Use `pump_gas()`, `scrub_gas()`, `calculate_transfer_moles()` or the `vg_*_transfer` binds. Never

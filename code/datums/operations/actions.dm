@@ -161,7 +161,7 @@ GLOBAL_LIST_INIT(action_defs, init_action_defs())
 /datum/bind_profile/default/table()
 	// ALLOW(sys_static_getter): a memoized per-type table built once on first call
 	var/static/list/binds = list(
-		GESTURE_CLICK = list(ACT_USE),
+		GESTURE_CLICK = list(ACT_USE, ACT_LOCK), // a click holding a card the lock takes is a swipe (an op's click_with)
 		GESTURE_SELF = list(ACT_USE),
 		GESTURE_ALT = list(ACT_TOGGLE, ACT_OPEN, ACT_CLOSE, ACT_LOCK, ACT_UNLOCK),
 		GESTURE_CTRL = list(ACT_PULL),
@@ -250,10 +250,14 @@ GLOBAL_LIST_INIT(action_defs, init_action_defs())
 /proc/resolve_gesture(mob/user, atom/target, gesture, obj/item/held, route = ROUTE_PHYSICAL, explicit_held = FALSE, skip_legacy = FALSE)
 	if(isnull(held) && user && !explicit_held)
 		held = user.get_active_hand()
+	var/saved_gesture = GLOB.op_gesture_now
+	GLOB.op_gesture_now = gesture
 	for(var/id in bind_profile_of(user).actions_for(gesture))
 		var/datum/interaction/capability/E = action_entry_for(user, target, id, held, route, skip_legacy)
 		if(E)
+			GLOB.op_gesture_now = saved_gesture
 			return list(id, E)
+	GLOB.op_gesture_now = saved_gesture
 	return null
 
 /// null when action `id` would run for user on target now, else why not (player-facing text).
@@ -291,7 +295,7 @@ GLOBAL_LIST_INIT(action_defs, init_action_defs())
  * the legacy presets). The op entry that `gesture` reaches on `target` for `actor` (the first applicable
  * cap_op() of the first action the actor's bind profile lists), or null. `quality` / `no_tool` narrow it the
  * way the resolver's tool_act path narrows: an entry needing another tool quality (or any tool, with
- * no_tool) is not this click's, and so is one that would be refused now. `adapter` (default: the actor's own) is asked whether this kind of actor
+ * no_tool) is not this click's. An op that would be refused now still is: its refusal is what the player sees. `adapter` (default: the actor's own) is asked whether this kind of actor
  * may do it at all. No side effect: nothing runs.
  */
 /proc/gesture_entry_for(mob/actor, atom/target, obj/item/held, gesture, quality, no_tool = FALSE, datum/input_adapter/adapter, explicit_held = TRUE)
@@ -309,15 +313,12 @@ GLOBAL_LIST_INIT(action_defs, init_action_defs())
 	adapter ||= actor.input_adapter()
 	if(!adapter.allows_interaction(actor, target, E))
 		return null
-	// Only an op that would run now takes the click; a refused one leaves it to the resolver and the
-	// legacy handlers, which say why (or do what the click always did) exactly as before.
-	var/saved = GLOB.op_route_now
-	GLOB.op_route_now = ROUTE_PHYSICAL
-	var/why = E.why_not(actor, target, held)
-	GLOB.op_route_now = saved
-	return why ? null : E
+	// The op takes the click whether or not it would run now: a refusal is the op's answer (gesture_attempt() tells
+	// the actor the typed reason from the fixed stage order), never a cue to hand the click to the legacy resolver.
+	return E
 
-/// Runs `E` (from gesture_entry_for()) as a physical-route click. Returns INTERACTION_TRY_* like the resolver.
+/// Runs `E` (from gesture_entry_for()) as a physical-route click. Returns INTERACTION_TRY_* like the resolver:
+/// INTERACTION_TRY_BLOCKED after telling the actor why when a requirement refuses it.
 /proc/gesture_attempt(datum/interaction/capability/E, mob/actor, atom/target, obj/item/held)
 	var/saved = GLOB.op_route_now
 	GLOB.op_route_now = ROUTE_PHYSICAL

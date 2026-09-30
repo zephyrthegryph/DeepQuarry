@@ -9,6 +9,9 @@
 /datum/var/tmp/has_declarations = FALSE
 
 /datum/New()
-	if(has_declarations && !isatom(src))
-		lifecycle_decls_init(src)
+	if(!isatom(src))
+		if(has_declarations)
+			lifecycle_decls_init(src)
+		if(rx_type_enrols(src))
+			rx_enrol(src) // per-instance every() work: a type that declares it is enrolled by being made
 	return ..()

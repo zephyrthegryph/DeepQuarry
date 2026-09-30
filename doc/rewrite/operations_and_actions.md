@@ -141,7 +141,7 @@ An **action** is the semantic thing a player means, decoupled from the gesture.
 
 Every operation can therefore be listed, explain why it is unavailable (its refusal reason), and be
 bound to a key. `cap_entry_point` and the `INTERACTION_ENTRY_*` entries collapse into
-`cap_op(action = ACT_X)`. [built for the click, alt-click and drag gestures; the resolver and Menu remain the fallback for what is not yet an op]
+`cap_op(action = ACT_X)`. [built for the click, alt-click and drag gestures; the resolver and Menu remain the fallback only for a target with no matching op: an op that is refused answers the click with its own typed refusal, the legacy resolver is never asked]
 
 ## 6. Containment, prompts, waits
 
@@ -163,3 +163,10 @@ points in gameplay code.
 | Explosion hits many targets | Every hit applies in order; views refresh once per entity/output |
 | Reentrant notice deletes its source | Delivery stops safely; occurrences are not coalesced |
 | Two features enrol one entity | Removing one leaves membership until the last contributor leaves |
+
+## Credentials and the lock op [built]
+
+A lock is one op, `CAP_LOCK` (action `ACT_LOCK`), declared by `lock_op()` (the hatch's `lock_ops` and the swipe are gone). An alt-click reaches it
+with anything in hand; a plain click reaches it only while holding a card the lock takes (`click_with`, read with the
+gesture in `GLOB.op_gesture_now`), so a click with a wrench stays the wrench's. The credential is a provider found like a hand
+(`cap_lock_credential()`): the held card, then the actor's own access (worn ID or PDA, a silicon's access). The op takes no slot provider.

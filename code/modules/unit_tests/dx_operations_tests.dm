@@ -585,12 +585,14 @@ TRACKED(/obj/cap_fixture/ops/gauged, unwatched, CHANGE_EXPLICIT)
 	TEST_ASSERT_EQUAL(try_interaction(H, R, null, INPUT_ACTION_ALTERNATE), INTERACTION_TRY_RAN, "alt-click ran an op")
 	TEST_ASSERT_EQUAL(jointext(R.routed, ","), "press", "the toggle op")
 
-	// An op that would be refused now leaves the click to the resolver, which does what it always did.
+	// An op that would be refused now still takes the click: its refusal is what the player sees, and the
+	// legacy resolver is not asked (it only answers targets with no matching op).
 	R.routed = null
+	R.done.Cut()
 	cap_set(R, CAP_LOCKED, TRUE)
-	TEST_ASSERT_NULL(gesture_entry_for(H, R, null, GESTURE_CLICK), "a locked press op does not take the click")
-	TEST_ASSERT_EQUAL(try_interaction(H, R, null, INPUT_ACTION_USE, null, TRUE), INTERACTION_TRY_RAN, "the legacy entry answers")
-	TEST_ASSERT(("dq_test_high" in R.done) && !length(R.routed), "it was the legacy High entry, not the op")
+	TEST_ASSERT_NOTNULL(gesture_entry_for(H, R, null, GESTURE_CLICK), "a locked press op still takes the click")
+	TEST_ASSERT_EQUAL(try_interaction(H, R, null, INPUT_ACTION_USE, null, TRUE), INTERACTION_TRY_BLOCKED, "the op's refusal answers")
+	TEST_ASSERT(!length(R.done) && !length(R.routed), "neither the legacy entry nor the op ran")
 	cap_set(R, CAP_LOCKED, FALSE)
 
 	// The tool-quality narrowing of the tool_act path applies: a crowbar click is not the pen-using drag op's.

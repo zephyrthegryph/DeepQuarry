@@ -190,15 +190,15 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 	if(QDELETED(src) || !vg_entity)
 		return
 	var/working = !has_stat(BROKEN) && !grid_check
-	set_input_enabled(working && input_attempt && !input_pulsed && !input_cut ? 1 : 0)
-	set_output_enabled(working && output_attempt && !output_pulsed && !output_cut ? 1 : 0)
-	set_capacity(capacity)
-	set_input_level(input_level)
-	set_output_level(output_level)
+	native_write(src, NATIVE_SMES_INPUT_ENABLED, working && input_attempt && !input_pulsed && !input_cut ? 1 : 0)
+	native_write(src, NATIVE_SMES_OUTPUT_ENABLED, working && output_attempt && !output_pulsed && !output_cut ? 1 : 0)
+	native_write(src, NATIVE_SMES_CAPACITY, capacity)
+	native_write(src, NATIVE_SMES_INPUT_LEVEL, input_level)
+	native_write(src, NATIVE_SMES_OUTPUT_LEVEL, output_level)
 	var/unit_index = (vg_entity - 1) & VG_ENTITY_INDEX_MASK
 	for(var/obj/machinery/power/terminal/smes_input/term as anything in terminals)
 		if(term.vg_entity)
-			term.set_unit(unit_index)
+			native_write(term, NATIVE_SMESINPUTTERMINAL_UNIT, unit_index)
 
 /// Reads back what Rust's SmesOutputPlan/Apply and SmesInputApply did this
 /// step (verdigris/domains/power/src/laws.rs): the settled charge and the

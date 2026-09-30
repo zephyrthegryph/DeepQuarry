@@ -54,10 +54,8 @@
 // ---- op keys of the library's lock and emag ops (refine() and cap_require() name them) ----
 /// The emag op of a hatch: refine(CAP_EMAG, ...) edits its wait and effect.
 #define CAP_EMAG "emag"
-/// Toggling a lock with the actor's own access (an alt-click): ACT_LOCK.
+/// Toggling a lock with a credential (a held card, worn ID/PDA or a silicon's access): ACT_LOCK.
 #define CAP_LOCK "toggle_lock"
-/// Swiping an ID card held in hand across the lock.
-#define CAP_LOCK_SWIPE "swipe_lock"
 
 // ---- op_ctx check stages, in the order they run ----
 #define OP_STAGE_PROVIDER 1

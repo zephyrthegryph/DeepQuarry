@@ -135,7 +135,7 @@
 #define POWER_CHANNEL_EQUIPMENT 0
 #define POWER_CHANNEL_LIGHTING 1
 #define POWER_CHANNEL_ENVIRON 2
-/// powered_by(/datum/cap_system/power, role =): what the holder is to the power system.
+/// powered_by(/datum/system/power, role =): what the holder is to the power system.
 #define POWER_ROLE_AREA_SUPPLY "area_supply"
 #define POWER_ROLE_PRODUCER "producer"
 #define POWER_ROLE_STORAGE "storage"
@@ -144,7 +144,7 @@
 #define POWER_ROLE_LIGHTING "lighting"
 /// A computer console of an area.
 #define POWER_ROLE_COMPUTER "computer"
-/// powered_by(POWERED_BY_AREA, ...): the holder is a MEMBER relation of the area it stands in, not of a cap_system.
+/// powered_by(POWERED_BY_AREA, ...): the holder is a MEMBER relation of the area it stands in, not of a system.
 #define POWERED_BY_AREA "area"
 /// cell_bay(): at or below this charge (percent) cap_cell_charged() refuses.
 #define CELL_BAY_LOW_PERCENT 15

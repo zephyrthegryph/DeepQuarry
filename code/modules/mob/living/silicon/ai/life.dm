@@ -194,7 +194,7 @@ OWN_TIMER(/mob/living/silicon/ai, power_restore_timer)
 				aiRestorePowerRoutine = AI_POWER_FAILED
 				return
 			to_chat(src, "Receiving control information from APC.")
-			theAPC.operating = 1
+			theAPC.set_operating(1)
 			theAPC.equipment = 3
 			theAPC.update()
 			aiRestorePowerRoutine = AI_POWER_RESTORED

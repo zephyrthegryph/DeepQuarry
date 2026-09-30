@@ -4,7 +4,7 @@
 /// a /datum/system type (a capability's `joins`) or a capability type (a work item's `members =`). It
 /// replaces three hand-kept rosters:
 ///   - `/datum/system/members` + `member_index` (now member_list() / kernel_join() / kernel_leave() wrappers),
-///   - `/datum/cap_system/roles/by_role` (now cap_system_members() / cap_system_role() wrappers),
+///   - the role index of the former capability systems (now members_of(key, role) / member_role()),
 ///   - the `world_services()` hand list (now derived from the registry, world_services() in world_lanes.dm).
 ///
 /// Joining twice from different sources is one membership held by two sources: it ends when the last

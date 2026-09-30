@@ -53,6 +53,8 @@
 	var/lane
 	/// The shared work item this reaction registered (every / urgent on_cross / on_notice, from a type table), or null.
 	var/datum/work_item/reaction/work
+	/// every(): the type whose reactions() declared it (the work item is keyed by it and the handler), or null.
+	var/declared_by
 	/// Identity for observe()/unobserve() matching.
 	var/sig
 	/// True for a read folded in from derived() / generated_reads(): it feeds READERS, nothing runs.
@@ -110,6 +112,12 @@
 /// `lane` order and pay for it; `budget` caps its cost per run. The kernel schedules it (work.dm).
 /proc/every(interval, handler, when, members, phase, after, budget, lane)
 	var/datum/reaction/R = rx_make(RXN_EVERY, null, null, handler)
+	// The declaring type is the one whose reactions() calls this: a subtype that re-declares a handler replaces the
+	// inherited declaration (rx_table_build) and owns its own work item.
+	var/callee/from = callee?.caller
+	var/from_proc = from ? "[from.proc]" : null
+	if(from_proc && copytext(from_proc, -10) == "/reactions")
+		R.declared_by = text2path(copytext(from_proc, 1, -9))
 	R.interval = interval
 	R.when = when
 	R.members = members
@@ -216,7 +224,15 @@ GLOBAL_LIST_EMPTY(rx_tables)
 		return null
 	var/datum/rx_table/T = new
 	T.owner_type = D.type
+	// A subtype that re-declares an every() handler replaces the inherited declaration: the last one of a handler
+	// (the subtype's, reactions() chains parent first) is the table's, so a holder never runs one handler twice.
+	var/list/last_every = list()
 	for(var/datum/reaction/R in own)
+		if(R.kind == RXN_EVERY)
+			last_every[R.handler] = R
+	for(var/datum/reaction/R in own)
+		if(R.kind == RXN_EVERY && last_every[R.handler] != R)
+			continue
 		rx_table_add(T, R)
 	for(var/datum/derived_entry/E in generated + derived)
 		rx_table_add_reads(T, E)

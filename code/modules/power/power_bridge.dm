@@ -44,13 +44,13 @@
 	for(var/area/A as anything in power_dirty_areas)
 		var/obj/machinery/power/apc/apc = A.apc
 		if(apc?.vg_entity)
-			apc.set_static_load(0, A.static_equip)
-			apc.set_static_load(1, A.static_light)
-			apc.set_static_load(2, A.static_environ)
+			native_write(apc, NATIVE_APC_STATIC_LOAD, A.static_equip, 0)
+			native_write(apc, NATIVE_APC_STATIC_LOAD, A.static_light, 1)
+			native_write(apc, NATIVE_APC_STATIC_LOAD, A.static_environ, 2)
 			if(A.oneoff_equip || A.oneoff_light || A.oneoff_environ)
-				apc.set_oneoff(0, A.oneoff_equip)
-				apc.set_oneoff(1, A.oneoff_light)
-				apc.set_oneoff(2, A.oneoff_environ)
+				native_write(apc, NATIVE_APC_ONEOFF, A.oneoff_equip, 0)
+				native_write(apc, NATIVE_APC_ONEOFF, A.oneoff_light, 1)
+				native_write(apc, NATIVE_APC_ONEOFF, A.oneoff_environ, 2)
 		A.oneoff_equip = 0
 		A.oneoff_light = 0
 		A.oneoff_environ = 0

@@ -63,7 +63,7 @@ differently. Each work item's cost is accounted in `metrics()`.
 System membership is `MEMBER` relations created from capabilities and `join(system, E, source)`
 ([state_and_relations.md](state_and_relations.md)). Two features enrolling one entity give a source
 count; membership ends when the last contributor leaves. The three hand-kept rosters
-(`system.members`, `cap_system` roles and the `world_services()` list) are deleted behind
+(`system.members`, the former cap_system roles and the `world_services()` list) are deleted behind
 wrappers.
 
 Gameplay subsystems become `/datum/system` where feasible without behaviour change: air, native

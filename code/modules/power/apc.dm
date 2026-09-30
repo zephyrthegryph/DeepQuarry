@@ -127,6 +127,9 @@
 	var/contract_power_revision = 0
 
 TRACKED(/obj/machinery/power/apc, shorted, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/power/apc, operating, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/power/apc, chargemode, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/power/apc, grid_check, CHANGE_MACHINE_SETTINGS)
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Capabilities
@@ -140,7 +143,7 @@ TRACKED(/obj/machinery/power/apc, shorted, CHANGE_MACHINE_SETTINGS)
 	. += maintenance_hatch(cover_holds = PROC_REF(cover_holds), panel_needs_cover_closed = TRUE, emag_say = "You emag the APC interface.")
 	. += cell_bay(nameof(cell), at = BAY_HATCH, needs = PROC_REF(cell_bay_ready), size = ITEMSIZE_NORMAL)
 	. += power_channels()
-	. += powered_by(/datum/cap_system/power, role = POWER_ROLE_AREA_SUPPLY)
+	. += powered_by(/datum/system/power, role = POWER_ROLE_AREA_SUPPLY)
 	. += cap_construction(
 		ladder_options(at = BAY_HATCH, undo_delay = 5 SECONDS, dismantle = list(TOOL_WELDER, /obj/item/frame/apc, 1, PROC_REF(frame_ruined), /obj/item/stack/material/steel)),
 		stage("frame", desc = "It's just an empty metal frame."),
@@ -150,7 +153,7 @@ TRACKED(/obj/machinery/power/apc, shorted, CHANGE_MACHINE_SETTINGS)
 	)
 	. += apc_ops()
 	// What the lock and the emag additionally need (the hatch declared their ops; refine() edits one in place).
-	. += cap_require(list(CAP_LOCK, CAP_LOCK_SWIPE), needs = list(req_clear(CAP_EMAGGED), req_proc(PROC_REF(not_hacked)), req_wire(WIRE_IDSCAN), req_proc(PROC_REF(is_working))))
+	. += cap_require(CAP_LOCK, needs = list(req_clear(CAP_EMAGGED), req_proc(PROC_REF(not_hacked)), req_wire(WIRE_IDSCAN), req_proc(PROC_REF(is_working))))
 	. += cap_require(CAP_EMAG, needs = req_proc(PROC_REF(emag_ok)))
 	. += refine(CAP_EMAG, delay = 0.6 SECONDS, effect = PROC_REF(on_emag))
 
@@ -455,7 +458,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 		area = get_area(src)
 		rel_set(area(), nameof(/area::apc), src)
 		cap_set(src, CAP_COVER_OPEN, TRUE)
-		operating = 0
+		set_operating(0)
 		name = "[area().name] APC"
 		stat_add(MAINT)
 		return
@@ -506,14 +509,14 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 /obj/machinery/power/apc/push_to_rust()
 	if(QDELETED(src) || !vg_entity)
 		return
-	set_active(area()?.requires_power && !has_stat(BROKEN | MAINT) && !power_failed ? 1 : 0)
-	set_has_cell(cell ? 1 : 0)
-	set_failed(power_failed ? 1 : 0)
-	set_shorted_or_grid_check(shorted || grid_check ? 1 : 0)
-	set_operating(operating)
-	set_chargemode(chargemode)
-	set_chargelevel(chargelevel)
-	set_capacity(cell ? cell.maxcharge : 0)
+	native_write(src, NATIVE_APC_ACTIVE, area()?.requires_power && !has_stat(BROKEN | MAINT) && !power_failed ? 1 : 0)
+	native_write(src, NATIVE_APC_HAS_CELL, cell ? 1 : 0)
+	native_write(src, NATIVE_APC_FAILED, power_failed ? 1 : 0)
+	native_write(src, NATIVE_APC_SHORTED_OR_GRID_CHECK, shorted || grid_check ? 1 : 0)
+	native_write(src, NATIVE_APC_OPERATING, operating)
+	native_write(src, NATIVE_APC_CHARGEMODE, chargemode)
+	native_write(src, NATIVE_APC_CHARGELEVEL, chargelevel)
+	native_write(src, NATIVE_APC_CAPACITY, cell ? cell.maxcharge : 0)
 	if(cell != pushed_cell)
 		// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 		pushed_cell = cell
@@ -682,8 +685,7 @@ SETTER(/obj/machinery/power/apc, power_failed)
 		else
 			return FALSE
 	if(vg_entity)
-		set_channels(channel, value)
-	changed(src)
+		native_write(src, NATIVE_APC_CHANNELS, value, channel)
 	update()
 	return TRUE
 
@@ -694,7 +696,7 @@ SETTER(/obj/machinery/power/apc, power_failed)
 	return operating
 
 /obj/machinery/power/apc/set_power_breaker(on)
-	operating = on ? 1 : 0
+	set_operating(on ? 1 : 0)
 	update()
 	return TRUE
 
@@ -770,7 +772,7 @@ GLOBAL_LIST_INIT(apc_ui_logged, list("lock" = LOG_GAME, "cover" = LOG_GAME, "cha
 	return TRUE
 
 /obj/machinery/power/apc/proc/act_charge(mob/user)
-	chargemode = !chargemode
+	set_chargemode(!chargemode)
 	if(!chargemode)
 		charging = 0
 	return TRUE
@@ -966,7 +968,7 @@ DAMAGE_REACTION(/obj/machinery/power/apc, DAMAGE_BLOB, PROC_REF(apc_blob_rip_wir
 	if(!.)
 		return
 	visible_message(span_warning("[src]'s screen flickers suddenly, then explodes in a rain of sparks and small debris!"))
-	operating = 0
+	set_operating(0)
 	update()
 
 /obj/machinery/power/apc/disconnect_terminal(obj/machinery/power/terminal/term)
@@ -1009,7 +1011,6 @@ DAMAGE_REACTION(/obj/machinery/power/apc, DAMAGE_BLOB, PROC_REF(apc_blob_rip_wir
 		return 0
 	rel_set(src, nameof(hacker), A) // two-sided: lists us in A.hacked_apcs
 	set_locked(1)
-	changed(src)
 	return 1
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1022,17 +1023,17 @@ DAMAGE_REACTION(/obj/machinery/power/apc, DAMAGE_BLOB, PROC_REF(apc_blob_rip_wir
 	equipment = POWERCHAN_ON_AUTO
 	environ = POWERCHAN_ON_AUTO
 	if(vg_entity)
-		set_channels(0, equipment)
-		set_channels(1, lighting)
-		set_channels(2, environ)
+		native_write(src, NATIVE_APC_CHANNELS, equipment, 0)
+		native_write(src, NATIVE_APC_CHANNELS, lighting, 1)
+		native_write(src, NATIVE_APC_CHANNELS, environ, 2)
 	charging = 0
 	chargecount = 0
 	longtermpower = 10
 	main_status = APC_EXTERNAL_POWER_NOTCONNECTED
 
 	// Breaker off; chargemode in default state; all channels on auto.
-	operating = 0
-	chargemode = 1
+	set_operating(0)
+	set_chargemode(1)
 	timed_cancel(src, nameof(power_failed))
 	set_power_failed(FALSE)
 	GLOB.power_alarm.clearAlarm(loc, src)
@@ -1040,7 +1041,6 @@ DAMAGE_REACTION(/obj/machinery/power/apc, DAMAGE_BLOB, PROC_REF(apc_blob_rip_wir
 	// Clear malf AI ownership.
 	rel_clear(src, nameof(hacker)) // two-sided: leaves the AI's hacked_apcs
 	set_emagged(FALSE)
-	changed(src)
 	update()
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1073,13 +1073,8 @@ DAMAGE_REACTION(/obj/machinery/power/apc, DAMAGE_BLOB, PROC_REF(apc_blob_rip_wir
 	set_grid_check(TRUE)
 	om_after(src, 15 MINUTES, PROC_REF(set_grid_check), FALSE)
 
-/// The grid checker suspends (or releases) this APC: Rust and the machine pipeline hear it.
-/obj/machinery/power/apc/proc/set_grid_check(state)
-	if(grid_check == state)
-		return
-	grid_check = state
-	changed(src)
-	om_changed(src, CHANGE_MACHINE_SETTINGS)
+// The grid checker suspends (or releases) this APC: the setter is TRACKED, so Rust (rust_push), the window and the machine
+// pipeline (CHANGE_MACHINE_SETTINGS) hear it.
 
 /obj/machinery/power/apc/proc/set_nightshift(on, automated)
 	set waitfor = FALSE // ALLOW(scheduler): update_nightshift() CHECK_TICKs over the area lights
