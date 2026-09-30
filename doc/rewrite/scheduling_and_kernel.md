@@ -153,7 +153,7 @@ pass; the next sweep begins one interval after the last began, or at once if it 
 
 **Sequences.** Entity-major work (ordered steps per member sharing a frame, fixed step with catch-up, a bio clock) is
 a `/datum/sequence` with one sweep item: steps are procs on the entity type ordered by `after =` edges, `should_run`
-replaces `idle`, parking is membership and wakes come through `publish_change()` / `om_changed()`
+replaces `idle`, parking is membership and wakes come through `publish_change()` / `changed()`
 ([life_sequences.md](life_sequences.md)). Mob Life moves onto `/datum/sequence/life` in waves S1-S4, after which
 `pipeline.dm` is deleted.
 

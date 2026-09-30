@@ -7,7 +7,7 @@
 //
 //   - steps are procs on the entity type, declared in a table proc and ordered by `after =` edges (sequence_table.dm)
 //   - a step sleeps when its should_run() is FALSE after it ran. A wake clears its sleep bit: publish_change() of a
-//     key it reads, om_changed() of a channel it reads, or seq_wake(); the step is asked should_run() again before it
+//     key it reads, changed() of a channel it reads, or seq_wake(); the step is asked should_run() again before it
 //     runs (FALSE: back to sleep without running). Its rewake (after()) wakes it to run: time, not a read, moved it
 //   - conditions gate steps: lazily evaluated, cached per frame. A step blocked only by conditions whose reads wake
 //     it sleeps; one blocked by a condition nothing announces stays awake
@@ -47,7 +47,7 @@ GLOBAL_VAR_INIT(seq_trace, FALSE)
 	var/park_after = 2
 	/// A member below this relevance (om_observe()) is out of the sweep. RELEVANCE_NONE: always relevant.
 	var/min_relevance = RELEVANCE_NONE
-	/// Change channels that wake every step (om_changed()).
+	/// Change channels that wake every step (changed()).
 	var/wake_all = 0
 	/// The proc name (PROC_REF) of the table proc, on the entity and on contributors: returns seq_step()s.
 	var/table_proc
@@ -668,7 +668,7 @@ GLOBAL_VAR_INIT(seq_trace, FALSE)
 		else
 			member_leave(seq.parked_key, E, SEQ_SOURCE)
 
-/// E's listen mask includes every channel its sequences wake on (om_changed() reaches seq_channels()).
+/// E's listen mask includes every channel its sequences wake on (changed() reaches seq_channels()).
 /proc/seq_listen(datum/E)
 	E.om_listen |= seq_listen_mask(E)
 
@@ -843,7 +843,7 @@ GLOBAL_VAR_INIT(seq_trace, FALSE)
 		if(woke)
 			seq_woke(E, state, "[key]")
 
-/// om_changed() / om_dispatch_change() hook: channels `bits` of `E` changed. Wakes every step of E's sequences that
+/// changed() / om_dispatch_change() hook: channels `bits` of `E` changed. Wakes every step of E's sequences that
 /// reads one of them, and follows relevance.
 /proc/seq_channels(datum/E, bits)
 	for(var/datum/seq_state/state as anything in E.seq_states)
@@ -1056,7 +1056,7 @@ GLOBAL_VAR_INIT(seq_trace, FALSE)
 	changed = seq_snapshot_diff(E, state, S)
 #endif
 	var/where = state.parked ? "parked since [DisplayTimeText(world.time - state.parked_at)] ago" : "awake, some steps asleep"
-	var/message = "MOB_HIBERNATE_AUDIT: MISSED WAKE [E] ([E.type]) in [name], [where]: step [S.key] has work but slept.[changed ? " Changed without a publish: [changed]." : ""] Woken by: [S.woken_by || "undeclared"]. A producer changed what it reads without publishing it (publish_change() / om_changed())."
+	var/message = "MOB_HIBERNATE_AUDIT: MISSED WAKE [E] ([E.type]) in [name], [where]: step [S.key] has work but slept.[changed ? " Changed without a publish: [changed]." : ""] Woken by: [S.woken_by || "undeclared"]. A producer changed what it reads without publishing it (publish_change() / changed())."
 	log_runtime(message)
 	log_world(message)
 #if defined(UNIT_TESTS)

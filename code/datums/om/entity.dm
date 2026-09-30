@@ -365,7 +365,7 @@
 		refresh_mark(E, DEP_ALL, bits)
 
 /proc/om_dispatch_change(datum/E, bits)
-	// Sequence steps that read these channels wake (code/controllers/kernel/sequence.dm). om_changed() and the
+	// Sequence steps that read these channels wake (code/controllers/kernel/sequence.dm). changed(), om_raise_change() and the
 	// OM_CHANGED() setters reach here: E's listen mask carries its sequences' channels (seq_listen_mask()).
 	if(E.seq_states)
 		seq_channels(E, bits)

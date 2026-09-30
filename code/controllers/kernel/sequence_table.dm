@@ -31,7 +31,7 @@
 	/// Condition names (the sequence's conditions()) that must hold; "!name": must not.
 	var/list/when
 	/// What should_run() reads: publish_change() keys (text, a native() spec's keys) and change channels (numbers,
-	/// om_changed()). Any of them changing wakes the step.
+	/// changed()). Any of them changing wakes the step.
 	var/list/reads
 	/// Proc name on its target, TRUE while the step has work: should_run() on the entity, should_run(entity) on a
 	/// contributor. Null: always (the step never sleeps on its own). Asked when a woken step is about to run (FALSE:

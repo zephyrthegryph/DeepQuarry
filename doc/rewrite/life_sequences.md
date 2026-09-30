@@ -96,7 +96,7 @@ Wakes:
 - **Keys.** A table registers its keys with `READERS` on the entity's type (`seq_register_reads()`), so TRACKED
   setters, `timed_set` and the ownership accessors publish them. `publish_change(E, key)` ends in
   `seq_publish(E, key)`: the key maps to the positions that read it, their sleep bits clear, a parked member rejoins.
-- **Channels.** `om_changed(E, bits)` (and the `OM_CHANGED()` setters, and `changed()`) reach
+- **Channels.** `changed(E, channel)` (and `om_raise_change()`, the `OM_CHANGED()` setters) reach
   `om_dispatch_change()`, which calls `seq_channels(E, bits)` first: the steps whose reads include one of the bits
   wake. `E.om_listen` carries its sequences' channels (`seq_listen_mask()`, folded into `om_recompute_listen()`), so
   the ~290 producer sites stay unchanged. `wake_all` channels wake every step. `seq_wake(E, path)` is the explicit
@@ -148,7 +148,7 @@ pipeline's `OM_ABORT_FRAME`; `OM_ABORT_REST` has no user and no equivalent). `ad
   `kernel().metrics()["work"][key]["sequence"]` carries them with the frame, park, wake, breach and miss counters.
 
 `life_wake()` / `life_hibernate()` (named by older docs) do not exist on this tree: Life's producers call
-`om_changed()`. The only writers of a state's sleep bits, parking and sweep membership are the procs in
+`changed()`. The only writers of a state's sleep bits, parking and sweep membership are the procs in
 `code/controllers/kernel/sequence.dm`; their field names (`bits`, `asleep`, `parked`, `idle_frames`) are covered by
 `check_grep.sh`'s "idle and park state in one place" rule.
 

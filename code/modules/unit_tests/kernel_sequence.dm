@@ -249,7 +249,7 @@ SEQ_TEST_STEP(cy)
 // ---------------------------------------------------------------- sleep and wake
 
 /// A step sleeps when its should_run() is FALSE after it ran. publish_change() of a key wakes the steps that read
-/// it, om_changed() of a channel the steps that read that, a wake_all channel every step. The sequence's reads
+/// it, changed() of a channel the steps that read that, a wake_all channel every step. The sequence's reads
 /// are READERS on the type, so a TRACKED setter publishes them.
 /datum/unit_test/kernel_sequence_sleep_wake
 
@@ -279,8 +279,8 @@ SEQ_TEST_STEP(cy)
 	seq_run_frame_now(E, SEQ_TEST)
 	TEST_ASSERT(seq_step_asleep(E, SEQ_TEST, "heat"), "with no work left it sleeps")
 
-	om_changed(E, CHANGE_DATUM_C)
-	TEST_ASSERT(!seq_step_asleep(E, SEQ_TEST, "chan"), "om_changed() of a channel wakes the step that reads it")
+	changed(E, CHANGE_DATUM_C)
+	TEST_ASSERT(!seq_step_asleep(E, SEQ_TEST, "chan"), "changed() of a channel wakes the step that reads it")
 	TEST_ASSERT(seq_step_asleep(E, SEQ_TEST, "heat"), "and not the others")
 	E.set_heat(2)
 	TEST_ASSERT(!seq_step_asleep(E, SEQ_TEST, "heat"), "a TRACKED setter publishes the read (READERS)")
@@ -288,7 +288,7 @@ SEQ_TEST_STEP(cy)
 	E.heat = 0
 	E.log.Cut()
 	seq_run_frame_now(E, SEQ_TEST)
-	om_changed(E, CHANGE_EXPLICIT)
+	changed(E, CHANGE_EXPLICIT)
 	TEST_ASSERT_EQUAL(S.asleep, 0, "a wake_all channel wakes every step")
 
 /// A woken step is asked should_run() before it runs: FALSE sends it back to sleep without running; TRUE runs it.
