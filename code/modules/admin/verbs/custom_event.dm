@@ -21,7 +21,7 @@ ADMIN_VERB(cmd_admin_change_custom_event, R_ADMIN|R_FUN|R_SERVER|R_EVENT, "Chang
 
 // normal verb for players to view info
 /client/verb/cmd_view_custom_event()
-	set category = "OOC.Game"
+	set category = VERB_CAT_OOC_GAME
 	set name = "Custom Event Info"
 
 	if(!GLOB.custom_event_msg || GLOB.custom_event_msg == "")

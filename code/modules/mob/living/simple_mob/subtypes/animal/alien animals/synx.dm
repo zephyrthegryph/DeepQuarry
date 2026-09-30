@@ -439,7 +439,7 @@ DECLARE_VERB(/mob/living/simple_mob/animal/synx, /mob/living/simple_mob/animal/s
 /mob/living/simple_mob/proc/contort()
 	set name = "contort"
 	set desc = "Allows to hide beneath tables or certain items. Toggled on or off."
-	set category = "Abilities.Synx"
+	set category = VERB_CAT_ABILITIES_SYNX
 
 	if(stat == DEAD || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || restrained())
 		return
@@ -460,7 +460,7 @@ DECLARE_VERB(/mob/living/simple_mob/animal/synx, /mob/living/simple_mob/animal/s
 /mob/living/simple_mob/animal/synx/proc/disguise()
 	set name = "Toggle Form"
 	set desc = "Switch between amorphous and humanoid forms."
-	set category = "Abilities.Synx"
+	set category = VERB_CAT_ABILITIES_SYNX
 
 	if(stat == DEAD || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || restrained())
 		return
@@ -485,7 +485,7 @@ DECLARE_VERB(/mob/living/simple_mob/animal/synx, /mob/living/simple_mob/animal/s
 /mob/living/simple_mob/animal/synx/proc/randomspeech()
 	set name = "speak"
 	set desc = "Take a sentence you heard and speak it."
-	set category = "Abilities.Synx"
+	set category = VERB_CAT_ABILITIES_SYNX
 	if(speak && voices)
 		handle_mimic()
 	else
@@ -504,7 +504,7 @@ DECLARE_VERB(/mob/living/simple_mob/animal/synx, /mob/living/simple_mob/animal/s
 /mob/living/simple_mob/animal/synx/proc/sonar_ping()
 	set name = "Listen In"
 	set desc = "Allows you to listen in to movement and noises around you."
-	set category = "Abilities.Synx"
+	set category = VERB_CAT_ABILITIES_SYNX
 
 	if(incapacitated())
 		to_chat(src, span_warning("You need to recover before you can use this ability."))
@@ -552,7 +552,7 @@ DECLARE_VERB(/mob/living/simple_mob/animal/synx, /mob/living/simple_mob/animal/s
 /mob/living/simple_mob/animal/synx/proc/distend_stomach()
 	set name = "Distend Stomach"
 	set desc = "Allows you to throw up your stomach, giving your attacks burn damage at the cost of your stomach contents going everywhere. Yuck."
-	set category = "Abilities.Synx"
+	set category = VERB_CAT_ABILITIES_SYNX
 
 	if(transformed)
 		to_chat(src,span_warning("Your limbs are in the way!")) //Kind of a weak excuse but since you already can't transform when your stomach is out, this avoids situations calling a sprite that doesn't exist and lightens my workload on making and implementing them
@@ -660,7 +660,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/synx, TYPE_PROC_REF(/atom,
 /mob/living/simple_mob/animal/synx/proc/set_style()
 	set name = "Set Style"
 	set desc = "Customise your icons."
-	set category = "Abilities.Synx"
+	set category = VERB_CAT_ABILITIES_SYNX
 
 	var/list/options = list("Body","Horns","Marks","Eyes")
 	for(var/option in options)
@@ -756,7 +756,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/synx, TYPE_PROC_REF(/atom,
 /*/mob/living/simple_mob/animal/synx/proc/honk()
 	set name = "HONK"
 	set desc = "TAAA RAINBOW"
-	set category = "Abilities.Synx"
+	set category = VERB_CAT_ABILITIES_SYNX
 	icon_state = "synx_pet_rainbow"
 	icon_living = "synx_pet_rainbow"
 	play_sfx(src.loc, SFX_ITEMS_BIKEHORN)
@@ -920,19 +920,19 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/synx, TYPE_PROC_REF(/atom,
 /mob/living/simple_mob/animal/synx/ai/pet/debug/proc/rename()
 	set name = "rename"
 	set desc = "Renames the synx"
-	set category = "DEBUG"
+	set category = VERB_CAT_DEBUG
 	om_ask(usr, /datum/om/prompt/text/synx_debug_var, PROC_REF(debug_var_entered), title = "Renaming", message = "What would you like to change name to?", var_name = "name")
 
 /mob/living/simple_mob/animal/synx/ai/pet/debug/proc/redesc()
 	set name = "redesc"
 	set desc = "Redescribes the synx"
-	set category = "DEBUG"
+	set category = VERB_CAT_DEBUG
 	om_ask(usr, /datum/om/prompt/text/synx_debug_var, PROC_REF(debug_var_entered), title = "Redescribing", message = "What would you like to change desc to?", var_name = "desc")
 
 /mob/living/simple_mob/animal/synx/ai/pet/debug/proc/resprite()
 	set name = "resprite"
 	set desc = "Resprite the synx"
-	set category = "DEBUG"
+	set category = VERB_CAT_DEBUG
 	om_ask(usr, /datum/om/prompt/text/synx_debug_var, PROC_REF(debug_var_entered), title = "Respriting", message = "What would you like to change icon_state to?", var_name = "icon_state")
 
 /// A debug synx var edit. `var_name` is the var set.

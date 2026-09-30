@@ -90,7 +90,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/sect_queen, /mob/living/simple_mo
 /mob/living/simple_mob/vore/sect_queen/proc/set_abdomen_color()
 	set name = "Set Glow Color"
 	set desc = "Customize your eyes and abdomen glow color."
-	set category = "Abilities.Sect Queen"
+	set category = VERB_CAT_ABILITIES_SECT_QUEEN
 
 	om_ask(src, /datum/om/prompt/color, PROC_REF(abdomen_color_picked), title = "Glow Color", message = "Please select color.", default = custom_eye_color)
 

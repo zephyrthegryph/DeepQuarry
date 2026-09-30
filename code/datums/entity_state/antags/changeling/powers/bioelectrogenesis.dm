@@ -11,7 +11,7 @@
 
 //Recharge whatever's in our hand, or shock people.
 /mob/living/carbon/human/proc/changeling_bioelectrogenesis()
-	set category = "Changeling"
+	set category = VERB_CAT_CHANGELING
 	set name = "Bioelectrogenesis (20 + 10/shock)"
 	set desc = "Recharges anything in your hand, or shocks people."
 

@@ -833,7 +833,7 @@
 
 /client/verb/show_generated_station_architecture()
 	set name = "Show Generated Station Architecture"
-	set category = "Debug"
+	set category = VERB_CAT_DEBUG
 	if(!check_rights(R_DEBUG))
 		return
 	var/datum/expedition_site/found_site

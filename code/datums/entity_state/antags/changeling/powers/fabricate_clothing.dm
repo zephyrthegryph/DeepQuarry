@@ -10,7 +10,7 @@
 
 //Grows biological versions of chameleon clothes.
 /mob/proc/changeling_fabricate_clothing()
-	set category = "Changeling"
+	set category = VERB_CAT_CHANGELING
 	set name = "Fabricate Clothing (10)"
 
 	if(changeling_generic_equip_all_slots(GLOB.changeling_fabricated_clothing, cost = 10))

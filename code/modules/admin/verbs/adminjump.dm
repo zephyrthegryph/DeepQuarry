@@ -177,7 +177,7 @@ ADMIN_VERB(Getkey, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Get Key",  "Key to teleport."
 	feedback_add_details("admin_verb","GK") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 /client/proc/sendmob()
-	set category = "Admin.Game"
+	set category = VERB_CAT_ADMIN_GAME
 	set name = "Send Mob"
 	if(!check_rights(R_ADMIN|R_MOD|R_DEBUG|R_EVENT))
 		return
@@ -239,7 +239,7 @@ ADMIN_VERB(Getkey, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Get Key",  "Key to teleport."
 	cmd_admin_move_atom(ask.moved, ask.tx, ask.ty, ask.tz)
 
 /client/proc/cmd_admin_move_atom(atom/movable/AM, tx as num, ty as num, tz as num)
-	set category = "Admin.Game"
+	set category = VERB_CAT_ADMIN_GAME
 	set name = "Move Atom to Coordinate"
 
 	if(!check_rights(R_ADMIN|R_DEBUG|R_EVENT))

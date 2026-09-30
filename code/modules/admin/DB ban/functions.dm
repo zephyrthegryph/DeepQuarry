@@ -340,7 +340,7 @@
 
 
 /client/proc/DB_ban_panel()
-	set category = "Admin.Moderation"
+	set category = VERB_CAT_ADMIN_MODERATION
 	set name = "Banning Panel"
 	set desc = "Edit admin permissions"
 

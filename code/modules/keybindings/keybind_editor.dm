@@ -14,7 +14,7 @@
 
 /client/verb/edit_keybindings()
 	set name = "Keybindings"
-	set category = "OOC.Settings"
+	set category = VERB_CAT_OOC_SETTINGS
 	set desc = "Rebind keys and choose what right-click does."
 
 	if(!prefs)

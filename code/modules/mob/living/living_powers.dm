@@ -8,7 +8,7 @@
 /mob/living/proc/hide()
 	set name = "Hide"
 	set desc = "Allows to hide beneath tables or certain items. Toggled on or off."
-	set category = "Abilities.General"
+	set category = VERB_CAT_ABILITIES_GENERAL
 
 	if(stat == DEAD || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || restrained() || src?.buckled_to() || LAZYLEN(src?.grabbed_by_list()) || has_buckled_mobs()) //VORE EDIT: Check for has_buckled_mobs() (taur riding)
 		return
@@ -24,7 +24,7 @@
 /mob/living/proc/toggle_selfsurgery()
 	set name = "Allow Self Surgery"
 	set desc = "Toggles the 'safeties' on self-surgery, allowing you to do so."
-	set category = "Object"
+	set category = VERB_CAT_OBJECT
 
 	allow_self_surgery = !allow_self_surgery
 
@@ -34,7 +34,7 @@
 /mob/living/proc/toggle_patting_defence()
 	set name = "Toggle Reflexive Biting"
 	set desc = "Toggles the automatic biting for if someone pats you on the head or boops your nose."
-	set category = "Abilities.General"
+	set category = VERB_CAT_ABILITIES_GENERAL
 
 	if(touch_reaction_flags & SPECIES_TRAIT_PATTING_DEFENCE)
 		touch_reaction_flags &= ~(SPECIES_TRAIT_PATTING_DEFENCE)
@@ -46,7 +46,7 @@
 /mob/living/proc/toggle_personal_space()
 	set name = "Toggle Personal Space"
 	set desc = "Toggles dodging any attempts to hug or pat you."
-	set category = "Abilities.General"
+	set category = VERB_CAT_ABILITIES_GENERAL
 
 	if(touch_reaction_flags & SPECIES_TRAIT_PERSONAL_BUBBLE)
 		touch_reaction_flags &= ~(SPECIES_TRAIT_PERSONAL_BUBBLE)
@@ -58,7 +58,7 @@
 /mob/living/proc/toggle_pickup_dodge()
 	set name = "Toggle Pickup Dodge"
 	set desc = "Toggles dodging any attempts to pick you up."
-	set category = "Abilities.General"
+	set category = VERB_CAT_ABILITIES_GENERAL
 
 	if(touch_reaction_flags & SPECIES_TRAIT_PICKUP_DODGE)
 		touch_reaction_flags &= ~(SPECIES_TRAIT_PICKUP_DODGE)
@@ -70,7 +70,7 @@
 /mob/living/proc/toggle_thorns()
 	set name = "Toggle Thorns"
 	set desc = "Toggles defensive thorns across your body."
-	set category = "Abilities.General"
+	set category = VERB_CAT_ABILITIES_GENERAL
 
 	if(touch_reaction_flags & SPECIES_TRAIT_THORNS)
 		touch_reaction_flags &= ~(SPECIES_TRAIT_THORNS)
@@ -82,7 +82,7 @@
 /mob/living/proc/toggle_sparkles()
 	set name = "Toggle Sparkles"
 	set desc = "Toggle fancy glowing sparkles!"
-	set category = "Abilities.Sparkledog"
+	set category = VERB_CAT_ABILITIES_SPARKLEDOG
 
 	if(!glow_toggle)
 		set_glow_range(3)
@@ -109,7 +109,7 @@
 /mob/living/proc/healing_rainbows()
 	set name = "Firin Mah Lazor"
 	set desc = "Fire a glowing beam of rainbows at another person to heal them!"
-	set category = "Abilities.Sparkledog"
+	set category = VERB_CAT_ABILITIES_SPARKLEDOG
 
 	if(src.stat)
 		to_chat(src, span_warning("You can't vomit rainbows in this condition!"))

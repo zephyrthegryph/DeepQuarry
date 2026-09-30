@@ -214,7 +214,7 @@ Works together with spawning an observer, noted above.
 This is the proc mobs get to turn into a ghost. Forked from ghostize due to compatibility issues.
 */
 /mob/living/verb/ghost()
-	set category = "OOC.Game"
+	set category = VERB_CAT_OOC_GAME
 	set name = "Ghost"
 	set desc = "Relinquish your life and enter the land of the dead."
 
@@ -259,7 +259,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 			. += "[eta_status]"
 
 /mob/observer/dead/verb/reenter_corpse()
-	set category = "Ghost.Game"
+	set category = VERB_CAT_GHOST_GAME
 	set name = "Re-enter Corpse"
 	if(!client)	return
 	if(!(mind && mind.current && can_reenter_corpse))
@@ -296,7 +296,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 	return 1
 
 /mob/observer/dead/verb/toggle_medHUD()
-	set category = "Ghost.Settings"
+	set category = VERB_CAT_GHOST_SETTINGS
 	set name = "Toggle MedicHUD"
 	set desc = "Toggles Medical HUD allowing you to see how everyone is doing"
 
@@ -306,7 +306,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 	to_chat(src, span_boldnotice("Medical HUD [medHUD ? "Enabled" : "Disabled"]"))
 
 /mob/observer/dead/verb/toggle_secHUD()
-	set category = "Ghost.Settings"
+	set category = VERB_CAT_GHOST_SETTINGS
 	set name = "Toggle Security HUD"
 	set desc = "Toggles Security HUD allowing you to see people's displayed ID's job, wanted status, etc"
 
@@ -319,7 +319,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 	to_chat(src, span_boldnotice("Security HUD [secHUD ? "Enabled" : "Disabled"]"))
 
 /mob/observer/dead/verb/toggle_antagHUD()
-	set category = "Ghost.Settings"
+	set category = VERB_CAT_GHOST_SETTINGS
 	set name = "Toggle AntagHUD"
 	set desc = "Toggles AntagHUD allowing you to see who is the antagonist"
 
@@ -377,7 +377,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 
 /mob/observer/dead/verb/dead_tele(areaname as anything in jumpable_areas())
 	set name = "Teleport"
-	set category = "Ghost.Game"
+	set category = VERB_CAT_GHOST_GAME
 	set desc = "Teleport to a location."
 
 	if(!isobserver(src))
@@ -409,7 +409,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 
 /mob/observer/dead/verb/follow(mobname as anything in jumpable_mobs())
 	set name = "Follow"
-	set category = "Ghost.Game"
+	set category = VERB_CAT_GHOST_GAME
 	set desc = "Follow and haunt a mob."
 
 	if(!isobserver(src))
@@ -571,7 +571,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 	return (T && T.holy) && (is_manifest || (mind in GLOB.cult.current_antagonists))
 
 /mob/observer/dead/verb/jumptomob() //Moves the ghost instead of just changing the ghosts's eye -Nodrak
-	set category = "Ghost.Game"
+	set category = VERB_CAT_GHOST_GAME
 	set name = "Jump to Mob"
 	set desc = "Teleport to a mob"
 	set popup_menu = FALSE
@@ -613,7 +613,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 
 /mob/observer/dead/verb/analyze_air()
 	set name = "Analyze Air"
-	set category = "Ghost.Game"
+	set category = VERB_CAT_GHOST_GAME
 
 	if(!isobserver(src)) return
 
@@ -642,7 +642,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 /*
 /mob/observer/dead/verb/check_radiation()
 	set name = "Check Radiation"
-	set category = "Ghost.Game"
+	set category = VERB_CAT_GHOST_GAME
 
 	var/turf/t = get_turf(src)
 	if(t)
@@ -651,7 +651,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 */
 /mob/observer/dead/verb/view_manfiest()
 	set name = "Show Crew Manifest"
-	set category = "Ghost.Game"
+	set category = VERB_CAT_GHOST_GAME
 
 	var/datum/tgui_module/crew_manifest/self_deleting/S = new(src)
 	S.tgui_interact(src)
@@ -668,7 +668,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 //Used for drawing on walls with blood puddles as a spooky ghost.
 /mob/observer/dead/verb/bloody_doodle()
 
-	set category = "Ghost.Game"
+	set category = VERB_CAT_GHOST_GAME
 	set name = "Write in blood"
 	set desc = "If the round is sufficiently spooky, write a short message in blood on the floor or a wall. Remember, no IC in OOC or OOC in IC."
 
@@ -801,7 +801,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 
 	set name = "Toggle Interactions"
 	set desc = "Allows you to toggle if you wish for the corporeal world to interact with you!"
-	set category = "Ghost.Settings"
+	set category = VERB_CAT_GHOST_SETTINGS
 	toggle_ghost_interactions()
 
 /mob/observer/dead/proc/toggle_ghost_interactions()
@@ -816,7 +816,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 
 	set name = "Toggle Visibility"
 	set desc = "Allows you to turn (in)visible (almost) at will."
-	set category = "Ghost.Settings"
+	set category = VERB_CAT_GHOST_SETTINGS
 	toggle_ghost_visibility()
 
 /mob/observer/dead/proc/toggle_ghost_visibility(forced = FALSE)
@@ -840,7 +840,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 	toggle_icon("cult")
 
 /mob/observer/dead/verb/toggle_anonsay()
-	set category = "Ghost.Settings"
+	set category = VERB_CAT_GHOST_SETTINGS
 	set name = "Toggle Anonymous Chat"
 	set desc = "Toggles showing your key in dead chat."
 
@@ -859,7 +859,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 /mob/observer/dead/verb/toggle_ghostsee()
 	set name = "Toggle Ghost Vision"
 	set desc = "Toggles your ability to see things only ghosts can see, like other ghosts"
-	set category = "Ghost.Settings"
+	set category = VERB_CAT_GHOST_SETTINGS
 	ghostvision = !ghostvision
 	updateghostsight()
 	to_chat(src, span_filter_notice("You [ghostvision ? "now" : "no longer"] have ghost vision."))
@@ -867,7 +867,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 /mob/observer/dead/verb/toggle_darkness()
 	set name = "Toggle Darkness"
 	set desc = "Toggles your ability to see lighting overlays, and the darkness they create."
-	set category = "Ghost.Settings"
+	set category = VERB_CAT_GHOST_SETTINGS
 
 	var/static/list/darkness_names = list("normal darkness levels", "30% darkness removed", "70% darkness removed", "no darkness")
 	var/static/list/darkness_levels = list(255, 178, 76, 0)
@@ -921,7 +921,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 
 /mob/observer/dead/verb/ghost_whisper()
 	set name = "Spectral Whisper"
-	set category = "IC.Subtle"
+	set category = VERB_CAT_IC_SUBTLE
 
 	if(is_manifest)  //Only able to whisper if it's hit with a tome.
 		var/list/options = list()
@@ -966,7 +966,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 	return 1
 
 /mob/observer/dead/verb/choose_ghost_sprite()
-	set category = "Ghost.Settings"
+	set category = VERB_CAT_GHOST_SETTINGS
 	set name = "Choose Sprite"
 
 	ask_ghost_sprite(icon_state)
@@ -1020,7 +1020,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 	return FALSE
 
 /mob/observer/dead/verb/paialert()
-	set category = "Ghost.Message"
+	set category = VERB_CAT_GHOST_MESSAGE
 	set name = "Blank pAI alert"
 	set desc = "Flash an indicator light on available blank pAI devices for a smidgen of hope."
 
@@ -1080,11 +1080,11 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 
 /mob/observer/dead/verb/respawn()
 	set name = "Respawn"
-	set category = "Ghost.Join"
+	set category = VERB_CAT_GHOST_JOIN
 	src.abandon_mob()
 
 /mob/observer/dead/verb/backup_ping()
-	set category = "Ghost.Join"
+	set category = VERB_CAT_GHOST_JOIN
 	set name = "Notify Transcore"
 	set desc = "If your past-due backup notification was missed or ignored, you can use this to send a new one."
 
@@ -1112,7 +1112,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 		to_chat(src,span_warning("No backup record could be found, sorry."))
 // Revert Removal
 /mob/observer/dead/verb/backup_delay()
-	set category = "Ghost.Settings"
+	set category = VERB_CAT_GHOST_SETTINGS
 	set name = "Cancel Transcore Notification"
 	set desc = "You can use this to avoid automatic backup notification happening. Manual notification can still be used."
 
@@ -1131,7 +1131,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 		to_chat(src,span_warning("No backup record could be found, sorry."))
 
 /mob/observer/dead/verb/findghostpod() //Moves the ghost instead of just changing the ghosts's eye -Nodrak
-	set category = "Ghost.Join"
+	set category = VERB_CAT_GHOST_JOIN
 	set name = "Ghost Spawn"
 	set desc = "Open Ghost Spawn Menu"
 
@@ -1145,7 +1145,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 	menu.tgui_interact(src)
 
 /mob/observer/dead/verb/findautoresleever()
-	set category = "Ghost.Join"
+	set category = VERB_CAT_GHOST_JOIN
 	set name = "Find Auto Resleever"
 	set desc = "Find a Auto Resleever"
 	set popup_menu = FALSE

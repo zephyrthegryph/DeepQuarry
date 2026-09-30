@@ -289,7 +289,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 
 /mob/verb/mode()
 	set name = "Activate Held Object"
-	set category = "Object"
+	set category = VERB_CAT_OBJECT
 	set src = usr
 
 	return
@@ -297,7 +297,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 /mob/verb/memory()
 	set name = "Notes"
 	set desc = "View notes stored for this round only."
-	set category = "IC.Notes"
+	set category = VERB_CAT_IC_NOTES
 	if(mind)
 		mind.show_memory(src)
 	else
@@ -306,7 +306,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 /mob/verb/add_memory(msg as message)
 	set name = "Add Note"
 	set desc = "Add notes stored for this round only."
-	set category = "IC.Notes"
+	set category = VERB_CAT_IC_NOTES
 
 	msg = sanitize(msg)
 
@@ -387,7 +387,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 
 /mob/verb/abandon_mob()
 	set name = "Return to Menu"
-	set category = "OOC.Game"
+	set category = VERB_CAT_OOC_GAME
 	if(istype(src, /mob/new_player))
 		to_chat(src, span_boldnotice("You are already in the lobby!"))
 		return
@@ -502,7 +502,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 
 /client/verb/changes()
 	set name = "Changelog"
-	set category = "OOC.Resources"
+	set category = VERB_CAT_OOC_RESOURCES
 
 	if(!GLOB.changelog_tgui)
 		GLOB.changelog_tgui = new /datum/changelog()
@@ -513,7 +513,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 
 /mob/verb/observe()
 	set name = "Observe"
-	set category = "OOC.Game"
+	set category = VERB_CAT_OOC_GAME
 	var/is_admin = 0
 
 	if(check_rights_for(client, R_ADMIN|R_EVENT))
@@ -555,7 +555,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 
 /mob/verb/cancel_camera()
 	set name = "Cancel Camera View"
-	set category = "OOC.Game"
+	set category = VERB_CAT_OOC_GAME
 	reset_perspective()
 
 TOPIC_ACTION(/mob, "flavor_more", PROC_REF(topic_flavor_more))
@@ -593,7 +593,7 @@ TOPIC_ACTION(/mob, "flavor_change", PROC_REF(topic_flavor_change))
 /mob/verb/stop_pulling()
 
 	set name = "Stop Pulling"
-	set category = "IC.Game"
+	set category = VERB_CAT_IC_GAME
 
 	var/atom/movable/pulling = src?.pulling_target()
 	if(pulling)
@@ -910,7 +910,7 @@ TOPIC_ACTION(/mob, "flavor_change", PROC_REF(topic_flavor_change))
 	return 1
 
 /mob/proc/yank_out_object()
-	set category = "Object"
+	set category = VERB_CAT_OBJECT
 	set name = "Yank out object"
 	set desc = "Remove an embedded item at the cost of bleeding and pain."
 	set src in view(1)
@@ -989,7 +989,7 @@ OM_FIELD_SETTER(/mob, stat, CHANGE_MOB_STAT)
 /mob/verb/face_direction()
 
 	set name = "Face Direction"
-	set category = "IC.Game"
+	set category = VERB_CAT_IC_GAME
 	set src = usr
 
 	set_face_dir()

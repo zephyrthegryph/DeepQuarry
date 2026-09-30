@@ -1,7 +1,7 @@
 /client/proc/smite(mob/living/carbon/human/target in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 	set name = "Smite"
 	set desc = "Abuse a player with various 'special treatments' from a list."
-	set category = "Fun.Do Not"
+	set category = VERB_CAT_FUN_DO_NOT
 	if(!check_rights(R_FUN))
 		return
 

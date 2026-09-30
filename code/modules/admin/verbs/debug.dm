@@ -705,7 +705,7 @@ ADMIN_VERB(reload_configuration, R_DEBUG, "Reload Configuration", "Reloads the c
 
 
 /datum/admins/proc/quick_authentic_nif()
-	set category = "Fun.Add Nif"
+	set category = VERB_CAT_FUN_ADD_NIF
 	set name = "Quick Auth NIF"
 	set desc = "Spawns an authentic NIF into someone in quick-implant mode."
 
@@ -739,7 +739,7 @@ ADMIN_VERB(reload_configuration, R_DEBUG, "Reload Configuration", "Reloads the c
 
 
 /client/proc/reload_configuration()
-	set category = "Debug.Server"
+	set category = VERB_CAT_DEBUG_SERVER
 	set name = "Reload Configuration"
 	set desc = "Force config reload to world default"
 	if(!check_rights(R_DEBUG))

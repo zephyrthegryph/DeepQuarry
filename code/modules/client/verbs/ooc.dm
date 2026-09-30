@@ -1,7 +1,7 @@
 
 /client/verb/ooc(msg as text)
 	set name = "OOC"
-	set category = "OOC.Chat"
+	set category = VERB_CAT_OOC_CHAT
 
 
 	if(!mob)	return
@@ -82,7 +82,7 @@
 /client/verb/looc(msg as text)
 	set name = "LOOC"
 	set desc = "Local OOC, seen only by those in view."
-	set category = "OOC.Chat"
+	set category = VERB_CAT_OOC_CHAT
 
 	if(!mob)
 		return
@@ -194,7 +194,7 @@
 
 /client/verb/fit_viewport()
 	set name = "Fit Viewport"
-	set category = "OOC.Client Settings"
+	set category = VERB_CAT_OOC_CLIENT_SETTINGS
 	set desc = "Fit the width of the map window to match the viewport"
 
 	// Fetch aspect ratio

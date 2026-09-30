@@ -125,7 +125,7 @@
 
 /mob/living/carbon/human/proc/taur_mount(mob/living/M in living_mobs(1))
 	set name = "Taur Mount/Dismount"
-	set category = "Abilities.General"
+	set category = VERB_CAT_ABILITIES_GENERAL
 	set desc = "Let people ride on you."
 
 	if(LAZYLEN(src?.buckled_mob_list()) && riding_datum)

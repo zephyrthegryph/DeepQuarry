@@ -43,7 +43,7 @@ DECLARE_VERB_IF(/obj/item/clothing/head/helmet/space, /obj/item/clothing/head/he
 /obj/item/clothing/head/helmet/space/proc/toggle_camera()
 	set name = "Toggle Helmet Camera"
 	set desc = "Turn your helmet's camera on or off."
-	set category = "Hardsuit"
+	set category = VERB_CAT_HARDSUIT
 	set src in usr
 	if(usr.stat || usr.restrained() || usr.incapacitated())
 		return

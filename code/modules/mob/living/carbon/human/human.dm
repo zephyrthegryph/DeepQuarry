@@ -815,7 +815,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 
 /mob/living/carbon/human/proc/morph()
 	set name = "Morph"
-	set category = "Superpower"
+	set category = VERB_CAT_SUPERPOWER
 
 	if(stat!=CONSCIOUS)
 		return
@@ -925,7 +925,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 
 /mob/living/carbon/human/proc/remotesay()
 	set name = "Project mind"
-	set category = "Abilities.Superpower"
+	set category = VERB_CAT_ABILITIES_SUPERPOWER
 
 	if(stat != CONSCIOUS)
 		return
@@ -974,7 +974,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 
 /mob/living/carbon/human/proc/remoteobserve()
 	set name = "Remote View"
-	set category = "Abilities.Superpower"
+	set category = VERB_CAT_ABILITIES_SUPERPOWER
 
 	if(stat != CONSCIOUS)
 		return
@@ -1202,7 +1202,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 					organ.set_status(organ.status | ORGAN_BLEEDING)
 
 /mob/living/carbon/human/verb/check_pulse()
-	set category = "Object"
+	set category = VERB_CAT_OBJECT
 	set name = "Check pulse"
 	set desc = "Approximately count somebody's pulse. Requires you to stand still at least 6 seconds."
 	set src in view(1)
@@ -1379,7 +1379,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 	species.update_vore_belly_def_variant()
 
 /mob/living/carbon/human/proc/bloody_doodle()
-	set category = "IC.Game"
+	set category = VERB_CAT_IC_GAME
 	set name = "Write in blood"
 	set desc = "Use blood on your hands to write a short message on the floor or a wall, murder mystery style."
 
@@ -1578,7 +1578,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 		return TRUE
 
 /mob/living/carbon/human/proc/relocate()
-	set category = "Object"
+	set category = VERB_CAT_OBJECT
 	set name = "Relocate Joint"
 	set desc = "Pop a joint back into place. Extremely painful."
 	set src in view(1)
@@ -1703,7 +1703,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 /mob/living/carbon/human/verb/toggle_underwear()
 	set name = "Toggle Underwear"
 	set desc = "Shows/hides selected parts of your underwear."
-	set category = "Object"
+	set category = VERB_CAT_OBJECT
 
 	if(stat) return
 	om_ask(src, /datum/om/prompt/choice, PROC_REF(toggle_underwear_chosen), message = "Choose underwear:", title = "Show/hide underwear", choices = GLOB.global_underwear.categories, ask_flags = ASK_CONSCIOUS)
@@ -1721,7 +1721,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 /mob/living/carbon/human/verb/pull_punches()
 	set name = "Pull Punches"
 	set desc = "Try not to hurt them."
-	set category = "IC.Game"
+	set category = VERB_CAT_IC_GAME
 
 	if(stat) return
 	var/pulling = FALSE
@@ -1932,7 +1932,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 
 /mob/living/carbon/human/verb/flip_lying()
 	set name = "Flip Resting Direction"
-	set category = "Abilities.General"
+	set category = VERB_CAT_ABILITIES_GENERAL
 	set desc = "Switch your horizontal direction while prone."
 
 	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || !COOLDOWN_FINISHED(src, last_special))
@@ -1952,14 +1952,14 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 
 /mob/living/carbon/human/verb/hide_headset()
 	set name = "Show/Hide Headset"
-	set category = "IC.Settings"
+	set category = VERB_CAT_IC_SETTINGS
 	set desc = "Toggle headset worn icon visibility."
 	hide_headset = !hide_headset
 	update_inv_ears()
 
 /mob/living/carbon/human/verb/hide_glasses()
 	set name = "Show/Hide Glasses"
-	set category = "IC.Settings"
+	set category = VERB_CAT_IC_SETTINGS
 	set desc = "Toggle glasses worn icon visibility."
 	hide_glasses = !hide_glasses
 	update_inv_glasses()
@@ -2044,7 +2044,7 @@ VV_TOPIC_ACTION(/mob/living/carbon/human, VK_HK_TURN_ROBOT, PROC_REF(vv_topic_tu
 
 /mob/living/carbon/human/proc/synth_reag_toggle()
 	set name = "Toggle Reagent Processing"
-	set category = "Abilities.Vore"
+	set category = VERB_CAT_ABILITIES_VORE
 	set desc = "Toggle reagent processing as synth."
 	synth_reag_processing = !synth_reag_processing
 
@@ -2052,7 +2052,7 @@ VV_TOPIC_ACTION(/mob/living/carbon/human, VK_HK_TURN_ROBOT, PROC_REF(vv_topic_tu
 /mob/living/carbon/human/verb/create_area()
 	set name = "Create Area"
 	set desc = "Create an area in a enclosed space, making it able to be powered by an APC."
-	set category = "IC.Game"
+	set category = VERB_CAT_IC_GAME
 
 	if(stat || !COOLDOWN_FINISHED(src, last_special))
 		to_chat(usr, span_warning("You recently tried to create an area. Wait a while before using it again."))

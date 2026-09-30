@@ -134,7 +134,7 @@ UI_DATA_REPLACE(/obj/machinery/computer/pandemic, "merge:ui_data_obj_machinery_c
 
 /obj/machinery/computer/pandemic/proc/eject_beaker()
 	set name = "Eject Beaker"
-	set category = "Object"
+	set category = VERB_CAT_OBJECT
 	set src in oview(1)
 
 	if(usr.stat != 0)

@@ -78,7 +78,7 @@
 
 /client/verb/generate_procedural_station()
 	set name = "Generate Procedural Station"
-	set category = "Debug"
+	set category = VERB_CAT_DEBUG
 
 	if(!check_rights(R_DEBUG))
 		return
@@ -100,7 +100,7 @@
 	to_chat(usr, span_notice("Generated station seed [seed] on z[site.z_level]; moved you to its docking entry. The expedition lifecycle will recycle it after it is vacated."))
 /client/verb/generate_expedition_site()
 	set name = "Generate Expedition Site"
-	set category = "Debug"
+	set category = VERB_CAT_DEBUG
 
 	if(!check_rights(R_DEBUG))
 		return
@@ -118,7 +118,7 @@
 // pad to play it through.
 /client/verb/generate_expedition_mission()
 	set name = "Generate Expedition Mission"
-	set category = "Debug"
+	set category = VERB_CAT_DEBUG
 
 	if(!check_rights(R_DEBUG))
 		return

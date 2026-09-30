@@ -22,7 +22,7 @@
 	factors = alist(BF_MELEE_DAMAGE = 0.5, BF_INCOMING_ALL = 1.35, BF_ENDURANCE_MULT = 0.5)
 
 /mob/proc/changeling_enfeebling_string()
-	set category = "Changeling"
+	set category = VERB_CAT_CHANGELING
 	set name = "Enfeebling Sting (30)"
 	set desc = "Reduces the maximum health of a victim for a few minutes.."
 

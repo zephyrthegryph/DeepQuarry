@@ -737,7 +737,7 @@ APPEARANCE_TEMPLATE(/obj/item/nif, "nif_{appearance_nif_state}")
 /mob/living/carbon/human/proc/set_nif_examine()
 	set name = "NIF Appearance"
 	set desc = "If your NIF alters your appearance in some way, describe it here."
-	set category = "OOC.Game Settings"
+	set category = VERB_CAT_OOC_GAME_SETTINGS
 
 	if(!nif)
 		// The NIF granted this verb; its unimplant or deletion already revoked it.

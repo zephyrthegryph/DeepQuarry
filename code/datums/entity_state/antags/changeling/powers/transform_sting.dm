@@ -8,7 +8,7 @@
 	verbpath = /mob/proc/changeling_transformation_sting
 
 /mob/proc/changeling_transformation_sting()
-	set category = "Changeling"
+	set category = VERB_CAT_CHANGELING
 	set name = "Transformation sting (40)"
 	set desc="Sting target"
 

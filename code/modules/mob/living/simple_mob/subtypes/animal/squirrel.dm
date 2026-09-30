@@ -211,7 +211,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/squirrel, TYPE_PROC_REF(/ato
 
 /mob/living/simple_mob/vore/squirrel/verb/squirrel_color()
 	set name = "Pick Color"
-	set category = "Abilities.Settings"
+	set category = VERB_CAT_ABILITIES_SETTINGS
 	set desc = "You can set your color!"
 	if(picked_color)
 		to_chat(src, span_notice("You have already picked a color! If you picked the wrong color, ask an admin to change your picked_color variable to 0."))

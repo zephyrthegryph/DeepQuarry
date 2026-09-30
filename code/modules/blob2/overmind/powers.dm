@@ -6,7 +6,7 @@
 	return TRUE
 
 /mob/observer/blob/verb/transport_core()
-	set category = "Blob"
+	set category = VERB_CAT_BLOB
 	set name = "Jump to Core"
 	set desc = "Move your camera to your core."
 
@@ -43,7 +43,7 @@
 	return N
 
 /mob/observer/blob/verb/create_shield_power()
-	set category = "Blob"
+	set category = VERB_CAT_BLOB
 	set name = "Create Shield Blob (15)"
 	set desc = "Create a shield blob, which is hard to kill."
 	create_shield()
@@ -52,7 +52,7 @@
 	createSpecial(15, blob_type.shield_type, 0, 0, T)
 
 /mob/observer/blob/verb/create_resource()
-	set category = "Blob"
+	set category = VERB_CAT_BLOB
 	set name = "Create Resource Blob (40)"
 	set desc = "Create a resource tower which will generate resources for you."
 
@@ -62,7 +62,7 @@
 	createSpecial(40, blob_type.resource_type, 4, 1)
 
 /mob/observer/blob/verb/auto_resource()
-	set category = "Blob"
+	set category = VERB_CAT_BLOB
 	set name = "Auto Resource Blob (40)"
 	set desc = "Automatically places a resource tower near a node or your core, at a sufficent distance."
 
@@ -95,7 +95,7 @@
 
 
 /mob/observer/blob/verb/create_factory()
-	set category = "Blob"
+	set category = VERB_CAT_BLOB
 	set name = "Create Factory Blob (60)"
 	set desc = "Create a spore tower that will spawn spores to harass your enemies."
 
@@ -105,7 +105,7 @@
 	createSpecial(60, blob_type.factory_type, 7, 1)
 
 /mob/observer/blob/verb/auto_factory()
-	set category = "Blob"
+	set category = VERB_CAT_BLOB
 	set name = "Auto Factory Blob (60)"
 	set desc = "Automatically places a resource tower near a node or your core, at a sufficent distance."
 
@@ -139,7 +139,7 @@
 
 
 /mob/observer/blob/verb/create_node()
-	set category = "Blob"
+	set category = VERB_CAT_BLOB
 	set name = "Create Node Blob (100)"
 	set desc = "Create a node, which will expand blobs around it, and power nearby factory and resource blobs."
 
@@ -149,7 +149,7 @@
 	createSpecial(100, blob_type.node_type, 5, 0)
 
 /mob/observer/blob/verb/auto_node()
-	set category = "Blob"
+	set category = VERB_CAT_BLOB
 	set name = "Auto Node Blob (100)"
 	set desc = "Automatically places a node blob at a sufficent distance."
 
@@ -181,7 +181,7 @@
 
 
 /mob/observer/blob/verb/expand_blob_power()
-	set category = "Blob"
+	set category = VERB_CAT_BLOB
 	set name = "Expand/Attack Blob (4)"
 	set desc = "Attempts to create a new blob in this tile. If the tile isn't clear, instead attacks it, damaging mobs and objects."
 	var/turf/T = get_turf(src)
@@ -207,7 +207,7 @@
 	B.expand(T)
 
 /mob/observer/blob/verb/auto_attack()
-	set category = "Blob"
+	set category = VERB_CAT_BLOB
 	set name = "Auto Attack (4)"
 	set desc = "Automatically tries to kill whatever's attacking you."
 

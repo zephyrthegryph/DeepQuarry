@@ -14,7 +14,7 @@
 
 /mob/proc/insidePanel()
 	set name = "Vore Panel"
-	set category = "IC.Vore"
+	set category = VERB_CAT_IC_VORE
 
 	if(SSticker.current_state == GAME_STATE_STARTUP)
 		return

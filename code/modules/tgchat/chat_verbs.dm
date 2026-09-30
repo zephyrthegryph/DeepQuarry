@@ -1,5 +1,5 @@
 /client/verb/export_chat()
-	set category = "OOC.Chat"
+	set category = VERB_CAT_OOC_CHAT
 	set name = "Export Chatlog"
 	set desc = "Allows to trigger the chat export"
 

@@ -354,7 +354,7 @@ OM_FIELD(/datum/changeling, camo_draining, FALSE, CHANGE_DATUM_A)
 
 /mob/proc/EvolutionMenu()
 	set name = "-Evolution Menu-"
-	set category = "Changeling"
+	set category = VERB_CAT_CHANGELING
 	set desc = "Adapt yourself carefully."
 
 	var/datum/changeling/comp = is_changeling(src)

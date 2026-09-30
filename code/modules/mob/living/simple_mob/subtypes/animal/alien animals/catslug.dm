@@ -258,7 +258,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/catslug, TYPE_P
 		//legacy .wander reference removed (no equivalent on /datum/ai_brain).
 /mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_color()
 	set name = "Pick Color"
-	set category = "Abilities.Settings"
+	set category = VERB_CAT_ABILITIES_SETTINGS
 	set desc = "You can set your color!"
 	if(picked_color)
 		to_chat(src, span_notice("You have already picked a color! If you picked the wrong color, ask an admin to change your picked_color variable to 0."))
@@ -1040,7 +1040,7 @@ DECLARE_VERB(/mob/living/simple_mob/vore/alienanimals/catslug/suslug, /mob/livin
 
 /mob/living/simple_mob/vore/alienanimals/catslug/suslug/proc/assussinate()
 	set name = "Kill Innocent"
-	set category = "Abilities.Catslug"
+	set category = VERB_CAT_ABILITIES_CATSLUG
 	set desc = "Kill an innocent suslug!"
 	if(!is_impostor)
 		to_chat(src, span_notice("You are not an impostor! You can't kill like that!"))

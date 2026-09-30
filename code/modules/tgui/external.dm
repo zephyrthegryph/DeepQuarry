@@ -199,7 +199,7 @@
 /client/verb/tgui_fix_white()
 	set desc = "Only use this if you have a broken TGUI window occupying your screen!"
 	set name = "Fix TGUI"
-	set category = "OOC.Debug"
+	set category = VERB_CAT_OOC_DEBUG
 
 	if(alert(src, "Only use this verb if you have a white TGUI window stuck on your screen.", "Fix TGUI", "Continue", "Nevermind") != "Continue") // ALLOW(scheduler): fixes broken tgui windows, so it cannot use a tgui prompt
 		return

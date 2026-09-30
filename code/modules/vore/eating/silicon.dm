@@ -16,7 +16,7 @@
 /mob/living/silicon/ai/verb/holo_nom()
 	var/mob/observer/eye/eyeobj = src?.active_eye()
 	set name = "Hardlight Nom"
-	set category = "AI.Vore"
+	set category = VERB_CAT_AI_VORE
 	set desc = "Wrap up a person in hardlight holograms."
 
 	// Wrong state

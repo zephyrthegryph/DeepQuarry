@@ -2,7 +2,7 @@
 /client/verb/wiki(query as text)
 	set name = "wiki"
 	set desc = "Type what you want to know about.  This will open the wiki on your web browser."
-	set category = "OOC.Resources"
+	set category = VERB_CAT_OOC_RESOURCES
 	if(CONFIG_GET(string/wikiurl))
 		if(query)
 			if(CONFIG_GET(string/wikisearchurl))

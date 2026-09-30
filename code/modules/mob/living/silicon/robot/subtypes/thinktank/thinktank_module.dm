@@ -26,7 +26,7 @@
 /obj/item/robot_module/robot/platform/verb/set_eye_colour()
 	set name = "Set Eye Colour"
 	set desc = "Select an eye colour to use."
-	set category = "Abilities.Silicon"
+	set category = VERB_CAT_ABILITIES_SILICON
 	set src in usr
 
 	// A cancel answers "": the default colour.

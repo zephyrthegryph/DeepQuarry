@@ -1318,7 +1318,7 @@ DAMAGE_REACTION(/obj/machinery/door/airlock, DAMAGE_EMP, PROC_REF(airlock_emp))
 
 /mob/living/silicon/robot/proc/ex_reserve_refill()
 	set name = "Refill Extinguisher"
-	set category = "Object"
+	set category = VERB_CAT_OBJECT
 	var/datum/matter_synth/water = water_res()
 	for(var/obj/item/extinguisher/E in module.modules)
 		if(E.reagents.total_volume < E.max_water)

@@ -35,6 +35,9 @@ SYSTEM_DEF(admin_verbs)
 			qdel(verb_singleton, force = TRUE)
 			continue
 
+		if(verb_singleton.debug_only && verb_singleton.permissions == R_NONE)
+			CRASH("Debug verb '[verb_type]' must require a permission; R_NONE exposes it to every admin.")
+
 		admin_verbs_by_type[verb_type] = verb_singleton
 		if(verb_singleton.visibility_flag)
 			if(!(verb_singleton.visibility_flag in admin_verbs_by_visibility_flag))
@@ -105,6 +108,9 @@ SYSTEM_DEF(admin_verbs)
 	if(!admin.holder.check_for_rights(verb_singleton.permissions))
 		to_chat(admin, span_adminnotice("You lack the permissions to do this."))
 		return
+
+	if(verb_singleton.debug_only)
+		log_admin("DEBUG VERB: [key_name(admin)] invoked '[verb_singleton.name]' ([verb_type])")
 
 	var/old_usr = usr
 	usr = admin.mob

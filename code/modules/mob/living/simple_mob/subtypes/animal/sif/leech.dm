@@ -211,7 +211,7 @@ DECLARE_VERB(/mob/living/simple_mob/animal/sif/leech, /mob/living/proc/hide)
 		self.leave_host()
 
 /mob/living/simple_mob/animal/sif/leech/verb/infest()
-	set category = "Abilities.Leech"
+	set category = VERB_CAT_ABILITIES_LEECH
 	set name = "Infest"
 	set desc = "Infest a suitable humanoid host."
 
@@ -319,7 +319,7 @@ DECLARE_VERB(/mob/living/simple_mob/animal/sif/leech, /mob/living/proc/hide)
 	return
 
 /mob/living/simple_mob/animal/sif/leech/verb/uninfest()
-	set category = "Abilities.Leech"
+	set category = VERB_CAT_ABILITIES_LEECH
 	set name = "Uninfest"
 	set desc = "Leave your current host."
 
@@ -342,7 +342,7 @@ DECLARE_VERB(/mob/living/simple_mob/animal/sif/leech, /mob/living/proc/hide)
 	rel_clear(src, nameof(host))
 
 /mob/living/simple_mob/animal/sif/leech/verb/inject_victim()
-	set category = "Abilities.Leech"
+	set category = VERB_CAT_ABILITIES_LEECH
 	set name = "Incapacitate Potential Host"
 	set desc = "Inject an organic host with an incredibly painful mixture of chemicals."
 
@@ -395,7 +395,7 @@ DECLARE_VERB(/mob/living/simple_mob/animal/sif/leech, /mob/living/proc/hide)
 	H.status_at_least(EFFECT_PARALYZED, 4)
 
 /mob/living/simple_mob/animal/sif/leech/verb/medicate_host()
-	set category = "Abilities.Leech"
+	set category = VERB_CAT_ABILITIES_LEECH
 	set name = "Produce Chemicals (50)"
 	set desc = "Inject your host with possibly beneficial chemicals, to keep the blood flowing."
 
@@ -422,7 +422,7 @@ DECLARE_VERB(/mob/living/simple_mob/animal/sif/leech, /mob/living/proc/hide)
 		to_chat(src, span_alien("We injected \the [host] with five units of [chem]."))
 
 /mob/living/simple_mob/animal/sif/leech/verb/feed_on_organ()
-	set category = "Abilities.Leech"
+	set category = VERB_CAT_ABILITIES_LEECH
 	set name = "Feed on Organ"
 	set desc = "Extend probosci to feed on a piece of your host's organs."
 

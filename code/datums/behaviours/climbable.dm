@@ -255,7 +255,7 @@
 /obj/proc/climb_on()
 	set name = "Climb structure"
 	set desc = "Climbs onto a structure."
-	set category = "Object"
+	set category = VERB_CAT_OBJECT
 	set src in oview(1)
 
 	om_emit(src, new /datum/om/event/climb_start(usr))

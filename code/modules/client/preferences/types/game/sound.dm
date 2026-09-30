@@ -232,7 +232,7 @@ UI_ACT_PROC(/datum/volume_panel, ui_act_adjust_volume)
 
 /client/verb/volume_panel()
 	set name = "Volume Panel"
-	set category = "Preferences.Sounds"
+	set category = VERB_CAT_PREFERENCES_SOUNDS
 	set desc = "Allows you to adjust volume levels on the fly."
 
 	if(!volume_panel)

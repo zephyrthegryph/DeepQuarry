@@ -54,7 +54,7 @@
 
 /client/verb/change_volume()
 	set name = "Set Volume"
-	set category = "OOC.Client Settings"
+	set category = VERB_CAT_OOC_CLIENT_SETTINGS
 	set desc = "Set jukebox volume"
 	set_new_volume(usr)
 

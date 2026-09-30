@@ -421,7 +421,7 @@ ADMIN_VERB(togglepersistence, R_SERVER, "Toggle Persistent Data", "Whether persi
 	feedback_add_details("admin_verb","TPD") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 /datum/admins/proc/togglemaploadpersistence()
-	set category = "Server.Config"
+	set category = VERB_CAT_SERVER_CONFIG
 	set desc="Whether mapload persistent data will be saved from now on."
 	set name="Toggle Mapload Persistent Data"
 	CONFIG_SET(flag/persistence_ignore_mapload, !CONFIG_GET(flag/persistence_ignore_mapload))
@@ -479,7 +479,7 @@ ADMIN_VERB(adrev, R_SERVER, "Toggle Revive", "Toggle admin revives.", ADMIN_CATE
 	feedback_add_details("admin_verb","TAR") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 /datum/admins/proc/unprison(mob/M in REGISTRY_MEMBERS(REGISTRY_MOBS))
-	set category = "Admin.Moderation"
+	set category = VERB_CAT_ADMIN_MODERATION
 	set name = "Unprison"
 	if (M.z == 2)
 		if (CONFIG_GET(flag/allow_admin_jump))
@@ -652,7 +652,7 @@ ADMIN_VERB(toggleguests, R_HOST, "Toggle guests", "Guests can't enter.", ADMIN_C
 	feedback_add_details("admin_verb","TGU") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 /client/proc/update_mob_sprite(mob/living/carbon/human/H as mob)
-	set category = "Admin.Game"
+	set category = VERB_CAT_ADMIN_GAME
 	set name = "Update Mob Sprite"
 	set desc = "Should fix any mob sprite update errors."
 

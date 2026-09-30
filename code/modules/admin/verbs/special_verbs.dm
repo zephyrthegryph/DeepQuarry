@@ -2,7 +2,7 @@
 
 /client/proc/readmin()
 	set name = "Readmin"
-	set category = "Admin.Misc"
+	set category = VERB_CAT_ADMIN_MISC
 	set desc = "Regain your admin powers."
 
 	var/datum/admins/A = GLOB.deadmins[ckey]

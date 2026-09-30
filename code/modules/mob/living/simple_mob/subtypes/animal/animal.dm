@@ -29,7 +29,7 @@ TYPE_TABLE(/datum/decl/mob_organ_names/quadruped, mob_organ_hit_zones, list("hea
 
 /mob/living/simple_mob/animal/verb/set_flavour_text()
 	set name = "Set Flavour Text"
-	set category = "IC.Settings"
+	set category = VERB_CAT_IC_SETTINGS
 	set desc = "Set your flavour text."
 	set src = usr
 	om_ask(src, /datum/om/prompt/text, PROC_REF(flavour_text_entered), title = "Flavour Text", message = "Please describe yourself.", default = flavor_text, multiline = TRUE)

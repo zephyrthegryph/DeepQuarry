@@ -1,7 +1,7 @@
 //Verbs after this point.
 /mob/living/carbon/alien/diona/proc/merge()
 
-	set category = "Abilities.Diona"
+	set category = VERB_CAT_ABILITIES_DIONA
 	set name = "Merge with gestalt"
 	set desc = "Merge with another diona."
 
@@ -53,7 +53,7 @@
 
 /mob/living/carbon/alien/diona/proc/split()
 
-	set category = "Abilities.Diona"
+	set category = VERB_CAT_ABILITIES_DIONA
 	set name = "Split from gestalt"
 	set desc = "Split away from your gestalt as a lone nymph."
 

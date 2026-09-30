@@ -59,6 +59,7 @@
 #include "code\__defines\action.dm"
 #include "code\__defines\addictions.dm"
 #include "code\__defines\admin.dm"
+#include "code\__defines\verb_categories.dm"
 #include "code\__defines\admin_verb.dm"
 #include "code\__defines\airlock_control.dm"
 #include "code\__defines\alerts.dm"

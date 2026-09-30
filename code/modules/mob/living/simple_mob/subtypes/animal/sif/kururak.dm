@@ -144,7 +144,7 @@
 	return ..()
 
 /mob/living/simple_mob/animal/sif/kururak/verb/do_flash()
-	set category = "Abilities.Kururak"
+	set category = VERB_CAT_ABILITIES_KURURAK
 	set name = "Tail Blind"
 	set desc = "Disorient a creature within range."
 
@@ -235,7 +235,7 @@
 			R.flash_eyes()
 
 /mob/living/simple_mob/animal/sif/kururak/verb/do_strike()
-	set category = "Abilities.Kururak"
+	set category = VERB_CAT_ABILITIES_KURURAK
 	set name = "Rending Strike"
 	set desc = "Strike viciously at an entity within range."
 
@@ -307,7 +307,7 @@
 /mob/living/simple_mob/animal/sif/kururak/verb/rally_pack()	// Mostly for telling other players to follow you. AI Kururaks will auto-follow, if set to.
 	set name = "Rally Pack"
 	set desc = "Tries to command your fellow pack members to follow you."
-	set category = "Abilities.Kururak"
+	set category = VERB_CAT_ABILITIES_KURURAK
 
 	if(has_body_effect(/datum/body_effect/ace))
 		for(var/mob/living/simple_mob/animal/sif/kururak/K in hearers(7, src))
