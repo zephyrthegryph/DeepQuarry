@@ -2340,11 +2340,11 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	// Wire up the remaining process preconditions: powered and unobstructed.
 	V.set_use_power(USE_POWER_IDLE)
 	V.stat_remove(NOPOWER | BROKEN)
-	V.welded = FALSE
-	V.pump_direction = 1 // release
-	V.external_pressure_bound = ONE_ATMOSPHERE * 2 // ambitious target
-	V.internal_pressure_bound = 0
-	V.update_rust_device()
+	V.set_welded(FALSE)
+	V.set_pump_direction(1) // release
+	V.set_external_pressure_bound(ONE_ATMOSPHERE * 2) // ambitious target
+	V.set_internal_pressure_bound(0)
+	V.push_to_rust()
 	TEST_ASSERT(V.air_contents.arena_id() != turf_air.arena_id(), "vent supply and turf unexpectedly share one Rust mixture")
 	TEST_ASSERT(V.air_contents.total_moles() > 499, "vent supply lost its seeded nitrogen before processing")
 	TEST_ASSERT(V.get_pressure_delta(turf_air) > 0.5, "vent pressure predicate is not actionable after setup")
@@ -2428,12 +2428,12 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	// to itself.
 	S.set_use_power(USE_POWER_IDLE)
 	S.stat_remove(NOPOWER | BROKEN)
-	S.welded = FALSE
-	S.scrubbing = 1
-	S.scrubbing_gas = list(GAS_PHORON)
+	S.set_welded(FALSE)
+	S.set_scrubbing(1)
+	S.set_scrubbing_gas(list(GAS_PHORON))
 	S.rust_register_pipe_topology() // allocates ports, registers the device edge
 	rel_set(S, nameof(S.node), S)
-	S.update_rust_device()
+	S.push_to_rust()
 
 	var/initial_turf_phoron = turf_air.get_moles(/datum/gas/plasma)
 	var/initial_turf_o2 = turf_air.get_moles(/datum/gas/oxygen)
@@ -3248,8 +3248,8 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 
 	var/obj/machinery/atmospherics/binary/passive_gate/G = new(T)
 	TEST_ASSERT_NOTNULL(G, "passive_gate construction failed")
-	G.unlocked = TRUE
-	G.regulate_mode = 0  // REGULATE_NONE — free flow (Rust: Regulate::Equalize)
+	G.set_unlocked(TRUE)
+	G.set_regulate_mode(0) // REGULATE_NONE — free flow (Rust: Regulate::Equalize)
 	G.rust_register_pipe_topology() // allocates ports, binds air1/air2, registers the device edge
 	TEST_ASSERT_NOTNULL(G.air1, "passive_gate has no air1")
 	TEST_ASSERT_NOTNULL(G.air2, "passive_gate has no air2")
@@ -3258,7 +3258,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	G.air1.adjust_gas(/datum/gas/oxygen, 500)
 	G.air1.set_temperature(T20C)
 	G.air2.set_temperature(T20C)
-	G.update_rust_device()
+	G.push_to_rust()
 
 	var/air1_before = G.air1.total_moles()
 	var/air2_before = G.air2.total_moles()
@@ -3655,26 +3655,26 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	var/obj/machinery/atmospherics/unary/vent_pump/V = new(T)
 	V.set_use_power(USE_POWER_IDLE)
 	V.stat_remove(NOPOWER | BROKEN)
-	V.welded = FALSE
-	V.pump_direction = 1
-	V.external_pressure_bound = ONE_ATMOSPHERE * 1.5
-	V.internal_pressure_bound = 0
+	V.set_welded(FALSE)
+	V.set_pump_direction(1)
+	V.set_external_pressure_bound(ONE_ATMOSPHERE * 1.5)
+	V.set_internal_pressure_bound(0)
 	V.rust_register_pipe_topology()
 	rel_set(V, nameof(V.node), V)
 	V.air_contents.adjust_gas(/datum/gas/nitrogen, 500)
 	V.air_contents.set_temperature(T20C)
-	V.update_rust_device()
+	V.push_to_rust()
 
 	// Scrubber configured for CO2.
 	var/obj/machinery/atmospherics/unary/vent_scrubber/S = new(T)
 	S.set_use_power(USE_POWER_IDLE)
 	S.stat_remove(NOPOWER | BROKEN)
-	S.welded = FALSE
-	S.scrubbing = 1
-	S.scrubbing_gas = list(GAS_CO2)
+	S.set_welded(FALSE)
+	S.set_scrubbing(1)
+	S.set_scrubbing_gas(list(GAS_CO2))
 	S.rust_register_pipe_topology()
 	rel_set(S, nameof(S.node), S)
-	S.update_rust_device()
+	S.push_to_rust()
 
 	var/initial_co2 = turf_air.get_moles(/datum/gas/carbon_dioxide)
 	var/initial_n2 = turf_air.get_moles(/datum/gas/nitrogen)
@@ -3966,7 +3966,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 
 	var/obj/machinery/atmospherics/unary/vent_pump/V = new(T)
 	V.set_use_power(USE_POWER_IDLE)
-	V.external_pressure_bound = T.air.return_pressure() + 50
+	V.set_external_pressure_bound(T.air.return_pressure() + 50)
 	V.air_contents.adjust_moles(/datum/gas/oxygen, 10)
 	native_system().drain()
 	native_system().take_gas_changes()
@@ -4457,11 +4457,11 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	P.set_use_power(USE_POWER_OFF)
 	P.set_target_pressure(ONE_ATMOSPHERE)
 	P.rust_register_pipe_topology()
-	P.update_rust_device()
+	P.push_to_rust()
 	TEST_ASSERT(!machine_stepping(P), "powered-off binary pump should never be a DM process() subscriber")
 	P.set_use_power(USE_POWER_IDLE)
 	P.set_on(TRUE)
-	P.update_rust_device()
+	P.push_to_rust()
 	TEST_ASSERT(!machine_stepping(P), "enabling a binary pump must not add DM process() scheduling")
 	P.air1.adjust_moles(/datum/gas/oxygen, 10)
 	for(var/i in 1 to 10)
@@ -4719,11 +4719,11 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	// edge stepped every gas tick from SSair, not a DM process() subscriber,
 	// so it is machine_stepping(never) regardless of state.
 	var/obj/machinery/atmospherics/binary/passive_gate/gate = new(T)
-	gate.unlocked = FALSE
-	gate.update_rust_device()
+	gate.set_unlocked(FALSE)
+	gate.push_to_rust()
 	TEST_ASSERT(!machine_stepping(gate), "closed passive gate should never be a DM process() subscriber")
-	gate.unlocked = TRUE
-	gate.update_rust_device()
+	gate.set_unlocked(TRUE)
+	gate.push_to_rust()
 	TEST_ASSERT(!machine_stepping(gate), "opening a passive gate must not add DM process() scheduling")
 	var/obj/machinery/atmospherics/binary/dp_vent_pump/dual_vent = new(T)
 	dual_vent.set_use_power(USE_POWER_OFF)
@@ -5323,7 +5323,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	Pump.air1.adjust_gas(/datum/gas/nitrogen, 200)
 	Pump.air1.set_temperature(T20C)
 	Pump.air2.set_temperature(T20C)
-	Pump.update_rust_device()
+	Pump.push_to_rust()
 
 	var/air1_before = Pump.air1.get_moles(/datum/gas/nitrogen)
 	var/air2_before = Pump.air2.get_moles(/datum/gas/nitrogen)
@@ -5383,19 +5383,19 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/obj/machinery/atmospherics/unary/vent_pump/V = new(T)
 	V.set_use_power(USE_POWER_IDLE)
 	V.stat_remove(NOPOWER | BROKEN)
-	V.welded = FALSE
-	V.pump_direction = 1
-	V.external_pressure_bound = ONE_ATMOSPHERE * 1.5
-	V.internal_pressure_bound = 0
+	V.set_welded(FALSE)
+	V.set_pump_direction(1)
+	V.set_external_pressure_bound(ONE_ATMOSPHERE * 1.5)
+	V.set_internal_pressure_bound(0)
 	V.rust_register_pipe_topology()
 	rel_set(V, nameof(V.node), V)
 
 	var/obj/machinery/atmospherics/unary/vent_scrubber/S = new(T)
 	S.set_use_power(USE_POWER_IDLE)
 	S.stat_remove(NOPOWER | BROKEN)
-	S.welded = FALSE
-	S.scrubbing = 1
-	S.scrubbing_gas = list(GAS_CO2)
+	S.set_welded(FALSE)
+	S.set_scrubbing(1)
+	S.set_scrubbing_gas(list(GAS_CO2))
 	S.rust_register_pipe_topology()
 	rel_set(S, nameof(S.node), S)
 
@@ -5408,8 +5408,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_EQUAL(V.air_contents.arena_id(), S.air_contents.arena_id(), "vent and scrubber did not land in the same pipe region")
 	shared.adjust_gas(/datum/gas/nitrogen, 1000)
 	shared.set_temperature(T20C)
-	V.update_rust_device()
-	S.update_rust_device()
+	V.push_to_rust()
+	S.push_to_rust()
 
 	var/initial_shared_n2 = shared.get_moles(/datum/gas/nitrogen)
 	var/initial_shared_co2 = shared.get_moles(/datum/gas/carbon_dioxide)
@@ -6623,7 +6623,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	// volume_pump should still transfer.
 	V.air2.adjust_gas(/datum/gas/nitrogen, 100)
 	V.air2.set_temperature(T20C)
-	V.update_rust_device()
+	V.push_to_rust()
 
 	var/air1_initial = V.air1.total_moles()
 	var/air2_initial = V.air2.total_moles()
@@ -6729,12 +6729,12 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	// port to itself.
 	S.set_use_power(USE_POWER_IDLE)
 	S.stat_remove(NOPOWER | BROKEN)
-	S.welded = FALSE
-	S.scrubbing = 0  // SIPHON mode
-	S.scrubbing_gas = list() // siphon doesn't consult this
+	S.set_welded(FALSE)
+	S.set_scrubbing(0) // SIPHON mode
+	S.set_scrubbing_gas(list()) // siphon doesn't consult this
 	S.rust_register_pipe_topology()
 	rel_set(S, nameof(S.node), S)
-	S.update_rust_device()
+	S.push_to_rust()
 
 	var/initial_n2 = turf_air.get_moles(/datum/gas/nitrogen)
 	var/initial_o2 = turf_air.get_moles(/datum/gas/oxygen)
@@ -7604,3 +7604,38 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	for(var/datum/gas_mixture/air in omni.mixing_inputs)
 		TEST_ASSERT(!QDELETED(air), "the omni mixer lists a deleted port air")
 	TEST_ASSERT(QDELETED(omni_old), "rebinding did not delete the omni port's old air")
+
+/// The pipe devices' Rust law is a generated push: a write to a var the law reads queues push_to_rust() once (DEP_PUSH),
+/// a var it does not read queues nothing, and no device has a hand update_rust_device().
+/datum/unit_test/dq_pipe_device_law_push_is_generated
+
+/datum/unit_test/dq_pipe_device_law_push_is_generated/Run()
+	// ALLOW(spatial): world search
+	var/turf/simulated/floor/T = locate() in world
+	TEST_ASSERT_NOTNULL(T, "no floor for the device push test")
+	var/obj/machinery/atmospherics/binary/passive_gate/G = allocate(/obj/machinery/atmospherics/binary/passive_gate, T)
+	refresh_flush()
+	G.set_target_pressure(G.target_pressure + 1)
+	TEST_ASSERT(G.refresh_queued & DEP_PUSH, "a gate's target pressure did not queue its push")
+	refresh_flush()
+	G.flowing = !G.flowing
+	TEST_ASSERT_EQUAL(G.refresh_queued, 0, "an unread write queued work")
+	var/obj/machinery/atmospherics/unary/vent_pump/V = allocate(/obj/machinery/atmospherics/unary/vent_pump, T)
+	refresh_flush()
+	V.set_external_pressure_bound(V.external_pressure_bound + 1)
+	TEST_ASSERT(V.refresh_queued & DEP_PUSH, "a vent's external bound did not queue its push")
+	refresh_flush()
+	V.rust_device_dirty()
+	TEST_ASSERT(V.refresh_queued & DEP_PUSH, "a dirty mark did not queue the vent's push")
+	var/obj/machinery/atmospherics/unary/vent_scrubber/S = allocate(/obj/machinery/atmospherics/unary/vent_scrubber, T)
+	refresh_flush()
+	S.set_scrubbing(!S.scrubbing)
+	TEST_ASSERT(S.refresh_queued & DEP_PUSH, "a scrubber's mode did not queue its push")
+	var/obj/machinery/atmospherics/binary/volume_pump/VP = allocate(/obj/machinery/atmospherics/binary/volume_pump, T)
+	refresh_flush()
+	VP.set_transfer_rate(VP.transfer_rate + 1)
+	TEST_ASSERT(VP.refresh_queued & DEP_PUSH, "a volume pump's rate did not queue its push")
+	var/obj/machinery/atmospherics/binary/pump/P = allocate(/obj/machinery/atmospherics/binary/pump, T)
+	refresh_flush()
+	P.set_target_pressure(ONE_ATMOSPHERE * 2)
+	TEST_ASSERT(P.refresh_queued & DEP_PUSH, "a pump's generated setter did not queue its push")

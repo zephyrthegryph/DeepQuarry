@@ -66,7 +66,10 @@
 /datum/radiation_pulse_information/proc/remaining_targets()
 	return max(length(targets) - next_target + 1, 0)
 
-/// Sets rad_insulation and marks the shielding layer dirty if the value changed.
+/// Sets rad_insulation and marks the shielding layer dirty if the value changed. The registered setter of
+/// rad_insulation (admin var edits and tracked_lint go through it); the batch flush to Rust stays in the radiation
+/// world service (flush_shielding), one FFI call for every dirty turf.
+SETTER(/atom, rad_insulation)
 /atom/proc/set_rad_insulation(new_insulation)
 	if(rad_insulation == new_insulation)
 		return

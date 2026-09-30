@@ -10,6 +10,26 @@
 	. = ..()
 	. += runs_while(nameof(periodic_parked), nameof(system))
 
+/obj/machinery/atmospherics/binary/passive_gate/generated_reads()
+	. = ..()
+	. += rust_push(nameof(regulate_mode), nameof(set_flow_rate), nameof(target_pressure), nameof(unlocked))
+
+/obj/machinery/atmospherics/binary/pump/generated_reads()
+	. = ..()
+	. += rust_push(nameof(vg_entity))
+
+/obj/machinery/atmospherics/binary/volume_pump/generated_reads()
+	. = ..()
+	. += rust_push(nameof(overclocked), nameof(power_rating), nameof(transfer_rate), nameof(use_power))
+
+/obj/machinery/atmospherics/unary/vent_pump/generated_reads()
+	. = ..()
+	. += rust_push(nameof(air_contents), nameof(external_pressure_bound), nameof(pressure_checks), nameof(pump_direction))
+
+/obj/machinery/atmospherics/unary/vent_scrubber/generated_reads()
+	. = ..()
+	. += rust_push(nameof(scrubbing), nameof(scrubbing_gas), nameof(use_power), nameof(welded))
+
 /obj/machinery/computer/supplycomp/generated_reads()
 	. = ..()
 	. += ui_from(nameof(authorization), nameof(can_order_contraband))

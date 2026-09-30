@@ -63,15 +63,10 @@ Thus, the two variables affect pump operation are set in New():
 /obj/machinery/atmospherics/binary/pump/rust_bind_pipe_port(index, datum/pipe_network/new_network, datum/gas_mixture/network_air)
 	. = ..()
 	if(index == 2)
-		update_rust_device()
-
-/// The declared push (code/datums/native/system.dm): a set_target_pressure()/set_power_rating()/set_on() re-publishes the
-/// device law. No caller pushes by hand after a setter.
-/obj/machinery/atmospherics/binary/pump/rust_pushed()
-	update_rust_device()
+		rust_device_dirty()
 
 /**
- * R10/M2 bridge: target_pressure, power_rating and on are Rust-owned config
+ * The generated push (rust_push(rust_device_rev), coalesced once per frame): target_pressure, power_rating and on are Rust-owned config
  * on the binding layer's own Pump component (get_/set_target_pressure() etc,
  * code/__defines/verdigris/_bindings_types.dm) — that is their one store.
  * This reads them through those generated getters and republishes them to
@@ -80,7 +75,8 @@ Thus, the two variables affect pump operation are set in New():
  * component (doc/rewrite/rust_bindings.md §14 step 2). No var is duplicated:
  * this is a read-then-forward, not a second copy.
  */
-/obj/machinery/atmospherics/binary/pump/proc/update_rust_device()
+/obj/machinery/atmospherics/binary/pump/push_to_rust()
+	// ALLOW(derived_reads): the entity is bound at materialize; a port bind bumps rust_device_rev
 	if(!vg_entity)
 		return
 	if((!operable()) || !get_on())
@@ -232,11 +228,6 @@ UI_ACT_PROC(/obj/machinery/atmospherics/binary/pump, ui_act_set_press)
 	add_fingerprint(ui.user)
 	update_icon()
 
-/obj/machinery/atmospherics/binary/pump/power_change()
-	. = ..()
-	if(.)
-		update_rust_device()
-
 /obj/machinery/atmospherics/binary/pump/on_pump_target_reached()
 	update_icon()
 
@@ -341,3 +332,8 @@ APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/binary/pump, "{base_icon}-{appea
 
 APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/binary/pump/high_power, "{appearance_running?on:off}")
 
+
+/// The Rust device law is pushed (once per frame) when any of these change.
+/obj/machinery/atmospherics/binary/pump/derived()
+	. = ..()
+	. += rust_push(nameof(rust_device_rev))

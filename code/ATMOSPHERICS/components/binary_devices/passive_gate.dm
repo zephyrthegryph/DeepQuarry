@@ -48,9 +48,9 @@
 /obj/machinery/atmospherics/binary/passive_gate/rust_bind_pipe_port(index, datum/pipe_network/new_network, datum/gas_mixture/network_air)
 	. = ..()
 	if(index == 2)
-		update_rust_device()
+		rust_device_dirty()
 
-/obj/machinery/atmospherics/binary/passive_gate/proc/update_rust_device()
+/obj/machinery/atmospherics/binary/passive_gate/push_to_rust()
 	if(!unlocked)
 		rust_unregister_device()
 		flowing = FALSE
@@ -72,7 +72,7 @@
 		update_icon()
 
 /obj/machinery/atmospherics/binary/passive_gate/disconnect(obj/machinery/atmospherics/reference)
-	update_rust_device()
+	rust_device_dirty()
 	return ..()
 
 APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/binary/passive_gate, "{appearance_flow?on:off}")
@@ -134,24 +134,23 @@ APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/binary/passive_gate, "{appearanc
 		return 0
 
 	if("power" in signal.data)
-		unlocked = text2num(signal.data["power"])
+		set_unlocked(text2num(signal.data["power"]))
 
 	if("power_toggle" in signal.data)
-		unlocked = !unlocked
+		set_unlocked(!unlocked)
 
 	if("set_target_pressure" in signal.data)
-		target_pressure = between(0, text2num(signal.data["set_target_pressure"]), max_pressure_setting)
+		set_target_pressure(between(0, text2num(signal.data["set_target_pressure"]), max_pressure_setting))
 
 	if("set_regulate_mode" in signal.data)
-		regulate_mode = text2num(signal.data["set_regulate_mode"])
+		set_regulate_mode(text2num(signal.data["set_regulate_mode"]))
 
 	if("set_flow_rate" in signal.data)
-		set_flow_rate = between(0, text2num(signal.data["set_flow_rate"]), air1.return_volume())
+		set_set_flow_rate(between(0, text2num(signal.data["set_flow_rate"]), air1.return_volume()))
 
 	if("status" in signal.data)
 		om_after(src, 2, PROC_REF(broadcast_status))
 		return //do not update_icon
-	update_rust_device()
 
 	om_after(src, 2, PROC_REF(broadcast_status))
 	update_icon()
@@ -208,22 +207,18 @@ UI_DATA_REPLACE(/obj/machinery/atmospherics/binary/passive_gate, "merge:ui_data_
 UI_ACT(/obj/machinery/atmospherics/binary/passive_gate, "toggle_valve", ui_act_toggle_valve)
 UI_ACT_PROC(/obj/machinery/atmospherics/binary/passive_gate, ui_act_toggle_valve)
 	. = TRUE
-	unlocked = !unlocked
+	set_unlocked(!unlocked)
 	update_icon()
-	if(.)
-		update_rust_device()
 	add_fingerprint(ui.user)
 
 UI_ACT(/obj/machinery/atmospherics/binary/passive_gate, "regulate_mode", ui_act_regulate_mode, UI_ARG_TEXT("mode"))
 UI_ACT_PROC(/obj/machinery/atmospherics/binary/passive_gate, ui_act_regulate_mode)
 	. = TRUE
 	switch(params["mode"])
-		if("off") regulate_mode = REGULATE_NONE
-		if("input") regulate_mode = REGULATE_INPUT
-		if("output") regulate_mode = REGULATE_OUTPUT
+		if("off") set_regulate_mode(REGULATE_NONE)
+		if("input") set_regulate_mode(REGULATE_INPUT)
+		if("output") set_regulate_mode(REGULATE_OUTPUT)
 	update_icon()
-	if(.)
-		update_rust_device()
 	add_fingerprint(ui.user)
 
 UI_ACT(/obj/machinery/atmospherics/binary/passive_gate, "set_press", ui_act_set_press, UI_ARG_TEXT("press"))
@@ -231,17 +226,15 @@ UI_ACT_PROC(/obj/machinery/atmospherics/binary/passive_gate, ui_act_set_press)
 	. = TRUE
 	switch(params["press"])
 		if("min")
-			target_pressure = 0
+			set_target_pressure(0)
 		if("max")
-			target_pressure = max_pressure_setting
+			set_target_pressure(max_pressure_setting)
 		if("set")
 			var/new_pressure = act_ask(ui.user, action, params, ui, "k236", /datum/om/prompt/number, message = "Enter new output pressure (0-[max_pressure_setting]kPa)", title = "Pressure Control", default = src.target_pressure, max = max_pressure_setting)
 			if(isnull(new_pressure))
 				return
-			src.target_pressure = between(0, new_pressure, max_pressure_setting)
+			set_target_pressure(between(0, new_pressure, max_pressure_setting))
 	update_icon()
-	if(.)
-		update_rust_device()
 	add_fingerprint(ui.user)
 
 UI_ACT(/obj/machinery/atmospherics/binary/passive_gate, "set_flow_rate", ui_act_set_flow_rate, UI_ARG_TEXT("press"))
@@ -249,17 +242,15 @@ UI_ACT_PROC(/obj/machinery/atmospherics/binary/passive_gate, ui_act_set_flow_rat
 	. = TRUE
 	switch(params["press"])
 		if("min")
-			set_flow_rate = 0
+			set_set_flow_rate(0)
 		if("max")
-			set_flow_rate = air1.return_volume()
+			set_set_flow_rate(air1.return_volume())
 		if("set")
 			var/new_flow_rate = act_ask(ui.user, action, params, ui, "k247", /datum/om/prompt/number, message = "Enter new flow rate limit (0-[air1.return_volume()]L/s)", title = "Flow Rate Control", default = src.set_flow_rate, max = air1.return_volume())
 			if(isnull(new_flow_rate))
 				return
-			src.set_flow_rate = between(0, new_flow_rate, air1.return_volume())
+			set_set_flow_rate(between(0, new_flow_rate, air1.return_volume()))
 	update_icon()
-	if(.)
-		update_rust_device()
 	add_fingerprint(ui.user)
 
 /obj/machinery/atmospherics/binary/passive_gate/wrench_act(mob/user, obj/item/W)
@@ -287,3 +278,13 @@ UI_ACT_PROC(/obj/machinery/atmospherics/binary/passive_gate, ui_act_set_flow_rat
 	unlocked = 1
 	icon_state = "on"
 
+
+TRACKED(/obj/machinery/atmospherics/binary/passive_gate, unlocked, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/atmospherics/binary/passive_gate, target_pressure, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/atmospherics/binary/passive_gate, set_flow_rate, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/atmospherics/binary/passive_gate, regulate_mode, CHANGE_MACHINE_SETTINGS)
+
+/// The Rust device law is pushed (once per frame) when any of these change.
+/obj/machinery/atmospherics/binary/passive_gate/derived()
+	. = ..()
+	. += rust_push(nameof(rust_device_rev), nameof(unlocked), nameof(target_pressure), nameof(set_flow_rate), nameof(regulate_mode))
