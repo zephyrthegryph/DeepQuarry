@@ -19,15 +19,36 @@
 	. += cap_op("Bayed", TYPE_PROC_REF(/obj/cap_fixture/ops, fx_op), at = BAY_INTERIOR, action = ACT_EJECT, key = "bayed")
 	. += compartment(BAY_INTERIOR, door = CAP_PANEL_OPEN, heat = 0.25, gas = FALSE)
 
+/obj/cap_fixture/ops/reactions()
+	. = ..()
+	. += before_op("latch", PROC_REF(fx_before))
+	. += after_op("latch", PROC_REF(fx_after))
+	. += before_op("slow", PROC_REF(fx_before))
+	. += after_op("slow", PROC_REF(fx_after))
+
+/// Records the hook order; refuses with `veto` (a reason) when it is set.
+/obj/cap_fixture/ops/proc/fx_before(datum/op_ctx/ctx)
+	LAZYADD(hook_log, "before|[ctx.op.key]|[ctx.actor == null ? "noactor" : "actor"]")
+	return veto
+
+/obj/cap_fixture/ops/proc/fx_after(datum/op_ctx/ctx)
+	LAZYADD(hook_log, "after|[ctx.op.key]")
+
 /obj/cap_fixture/ops/proc/fx_op(mob/user)
 	LAZYADD(calls, "op")
-	return TRUE
+	return !handler_refuses
 
 /obj/cap_fixture/ops/proc/fx_gate(mob/user, obj/item/held)
 	return calls_allowed ? TRUE : "the gears are jammed"
 
 /obj/cap_fixture/ops
 	var/calls_allowed = FALSE
+	/// Set to make the op handlers refuse (a falsy return), to prove after_op waits for a commit.
+	var/handler_refuses = FALSE
+	/// What the before_op / after_op reactions saw, in order.
+	var/list/hook_log
+	/// A refusal reason (a /datum/msg type or text) the before_op reaction answers with.
+	var/veto
 
 /// The same fixture with the slow op made slower and the press op rerouted by refine().
 /obj/cap_fixture/ops/refined
@@ -101,14 +122,15 @@
 	var/obj/cap_fixture/ops/F = allocate(/obj/cap_fixture/ops, T)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 
+	var/live_before = op_ctx_live_count()
 	var/datum/op_ctx/first = op_ctx_take(H, F, null, dx_op_of(F, "latch"))
 	var/first_id = first.id
-	TEST_ASSERT(first.id > 0 && GLOB.op_ctx_live["[first.id]"] == first, "a taken context is live")
+	TEST_ASSERT(first.id > 0 && op_ctx_live_count() == live_before + 1, "a taken context is live in the pool's accounting")
 	first.release()
 	TEST_ASSERT(first.released && isnull(first.actor) && isnull(first.target), "release() resets every field")
+	TEST_ASSERT_EQUAL(op_ctx_live_count(), live_before, "and the pool counts it back")
 	var/datum/op_ctx/second = op_ctx_take(H, F, null, dx_op_of(F, "latch"))
-	TEST_ASSERT(second == first, "the pool hands the same datum out again")
-	TEST_ASSERT(second.id != first_id && !second.released, "with a fresh id, live again")
+	TEST_ASSERT(second.id != first_id && !second.released, "the next take has a fresh id, live again")
 	second.release()
 
 	// Provider first: no slot gives the affordance, so the route and the needs are never asked.
@@ -156,8 +178,9 @@
 	TEST_ASSERT_NULL(ctx.check(), "the contract does not touch other kinds")
 	ctx.release()
 
-	// A released context is poisoned: a second release is a bug.
-	TEST_ASSERT(GLOB.op_ctx_live["[first_id]"] != first, "the released context is no longer live under its old id")
+	// A released context is poisoned in test builds: touching it is a bug.
+	TEST_ASSERT_EQUAL(first.pool_state, POOL_STATE_POISONED, "a released context is poisoned, never handed out again")
+	TEST_ASSERT_EQUAL(op_ctx_live_count(), live_before, "no context leaked by this test")
 
 // ---- cap_op, presets, refine ----
 
@@ -265,6 +288,51 @@
 	cap_set(F, CAP_BROKEN, FALSE)
 	ctx.release()
 
+/// A holder whose one internal slot sits in a bay with a leaky boundary, and the same holder with no bay.
+/obj/item/dx_bay_holder
+	name = "bay holder"
+	w_class = ITEMSIZE_NORMAL
+	max_integrity = 10000
+
+/obj/item/dx_bay_holder/capabilities()
+	. = ..()
+	. += compartment(BAY_INTERIOR, heat = 0.25, radiation = 0.5, gas = FALSE)
+
+/datum/om/relation/slot/dx_bay_holder_slot
+	holder = /obj/item/dx_bay_holder
+	slot_id = "bay"
+	exposure = SLOT_EXPOSURE_INTERNAL
+	at = BAY_INTERIOR
+
+/obj/item/dx_plain_holder
+	name = "plain holder"
+	w_class = ITEMSIZE_NORMAL
+	max_integrity = 10000
+
+/datum/om/relation/slot/dx_bay_holder_plain_slot
+	holder = /obj/item/dx_plain_holder
+	slot_id = "bay"
+	exposure = SLOT_EXPOSURE_INTERNAL
+
+/// A compartment's transmission() scales the path share of a slot that names its bay (containment/paths.dm).
+/datum/unit_test/dx_op_bay_paths
+
+/datum/unit_test/dx_op_bay_paths/Run()
+	var/turf/T = test_floor()
+	var/obj/item/dx_bay_holder/bayed = allocate(/obj/item/dx_bay_holder, T)
+	var/obj/item/dx_plain_holder/plain = allocate(/obj/item/dx_plain_holder, T)
+	var/obj/item/dq_path_probe/in_bay = allocate(/obj/item/dq_path_probe, T)
+	var/obj/item/dq_path_probe/in_plain = allocate(/obj/item/dq_path_probe, T)
+	TEST_ASSERT(in_bay.move_into(bayed), "the probe goes into the bayed holder")
+	TEST_ASSERT(in_plain.move_into(plain), "and the other into the plain one")
+	var/heat_plain = dq_path_step(plain, in_plain, PATH_EFFECT_HEAT)
+	var/rad_plain = dq_path_step(plain, in_plain, PATH_EFFECT_RADIATION)
+	TEST_ASSERT(heat_plain > 0 && rad_plain > 0, "the plain slot lets heat and radiation through")
+	TEST_ASSERT(abs(dq_path_step(bayed, in_bay, PATH_EFFECT_HEAT) - heat_plain * 0.25) < 0.001, "heat crosses the bay at its declared 0.25 of the slot's share")
+	TEST_ASSERT(abs(dq_path_step(bayed, in_bay, PATH_EFFECT_RADIATION) - rad_plain * 0.5) < 0.001, "radiation at 0.5")
+	TEST_ASSERT_EQUAL(dq_path_step(plain, in_plain, PATH_EFFECT_GAS), 1, "gas reaches the plain slot")
+	TEST_ASSERT_EQUAL(dq_path_step(bayed, in_bay, PATH_EFFECT_GAS), 0, "the bay's boundary stops gas")
+
 // ---- actions ----
 
 /datum/unit_test/dx_op_actions
@@ -306,18 +374,46 @@
 	TEST_ASSERT(by_id[ACT_EJECT]["reason"], "with its reason")
 	TEST_ASSERT(!by_id[ACT_REPAIR], "actions nothing answers are not listed")
 
-	GLOB.op_hook_trace.Cut()
+	F.hook_log = null
 	TEST_ASSERT(perform_action(H, F, ACT_LOCK), "perform_action runs the op")
 	TEST_ASSERT_EQUAL(length(F.calls), 1, "the handler ran once")
-	TEST_ASSERT_EQUAL(jointext(GLOB.op_hook_trace, ","), "before|latch,after|latch", "op_before and op_after fired around the commit")
+	TEST_ASSERT_EQUAL(jointext(F.hook_log, ","), "before|latch|actor,after|latch", "the before_op and after_op reactions fired around the commit")
+	// A before_op reaction that answers with a reason stops the commit and the actor is told.
+	F.calls = null
+	F.hook_log = null
+	var/live_then = op_ctx_live_count()
+	F.veto = "the latch is jammed by a reaction"
+	perform_action(H, F, ACT_LOCK)
+	TEST_ASSERT_NULL(F.calls, "the handler never ran")
+	TEST_ASSERT_EQUAL(jointext(F.hook_log, ","), "before|latch|actor", "after_op did not fire for a stopped op")
+	TEST_ASSERT_EQUAL(op_ctx_live_count(), live_then, "the context was released")
+	F.veto = /datum/msg/req_sealed
+	perform_action(H, F, ACT_LOCK)
+	TEST_ASSERT_NULL(F.calls, "a /datum/msg reason vetoes too")
+	F.veto = null
+	F.calls = null
+	F.hook_log = null
+	TEST_ASSERT(perform_action(H, F, ACT_LOCK), "and it runs again once the reaction lets go")
+	// after_op fires only for a commit: a handler that refuses does not count.
+	F.calls = null
+	F.hook_log = null
+	F.handler_refuses = TRUE
+	perform_action(H, F, ACT_LOCK)
+	TEST_ASSERT_EQUAL(length(F.calls), 1, "the handler ran")
+	TEST_ASSERT_EQUAL(jointext(F.hook_log, ","), "before|latch|actor", "but a refused handler is not a commit: no after_op")
+	F.handler_refuses = FALSE
 	TEST_ASSERT_EQUAL(GLOB.op_route_now, ROUTE_PHYSICAL, "the route override is restored")
 
-	// The UI route: act("action", {id}).
+	// The UI route: act("action", {id}) is a UI action of the capability layer, reached through tgui_act.
 	F.calls = null
-	var/datum/dispatch_context/ctx = new(H, F)
-	TEST_ASSERT(dispatch_succeeded(dispatch_call(ctx, F, "act_action", list("user" = H, "id" = ACT_CLOSE), "action")), "the UI route reaches an op that accepts it")
+	var/datum/tgui/ui = ui_test_window(F)
+	ui.user = H
+	TEST_ASSERT(F.tgui_act("action", list("id" = ACT_CLOSE), ui), "the UI route reaches an op that accepts it")
 	TEST_ASSERT_EQUAL(length(F.calls), 1, "and ran its handler")
-	TEST_ASSERT(!dispatch_succeeded(dispatch_call(ctx, F, "act_action", list("user" = H, "id" = "nonsense"), "action")), "an unknown id is refused")
+	TEST_ASSERT(!F.tgui_act("action", list("id" = "nonsense"), ui), "an unknown id is refused")
+	TEST_ASSERT(!F.tgui_act("action", list("id" = ACT_PRY), ui), "an action whose op refuses the UI route is refused")
+	TEST_ASSERT(!hascall(F, "act_action"), "no atom carries act_action: it lives on the capability")
+	TEST_ASSERT(!hascall(H, "act_action"), "not even a mob")
 
 	// The command bar.
 	F.calls = null
@@ -361,7 +457,148 @@
 	TEST_ASSERT(perform_action(H, F, ACT_TOGGLE), "starts a third time")
 	pending_id = GLOB.op_pending[1]
 	om_cancel_timer_slot(H, "op_wait")
-	GLOB.op_hook_trace.Cut()
+	F.hook_log = null
 	op_wait_done(pending_id)
 	TEST_ASSERT_EQUAL(length(F.calls), 1, "the handler ran after the wait")
-	TEST_ASSERT_EQUAL(jointext(GLOB.op_hook_trace, ","), "before|slow,after|slow", "with the hooks around it")
+	TEST_ASSERT_EQUAL(jointext(F.hook_log, ","), "before|slow|actor,after|slow", "with the hooks around it")
+
+// ---- pending operations: early cancel through publish_change, and teardown ----
+
+/// The ops fixture plus a timed op that refuses while `gauge` is at 10 or more; `gauge` is a TRACKED var.
+/obj/cap_fixture/ops/gauged
+	name = "gauged fixture"
+	var/gauge = 0
+	var/unwatched = 0
+
+TRACKED(/obj/cap_fixture/ops/gauged, gauge, CHANGE_EXPLICIT)
+TRACKED(/obj/cap_fixture/ops/gauged, unwatched, CHANGE_EXPLICIT)
+
+/obj/cap_fixture/ops/gauged/capabilities()
+	. = ..()
+	. += cap_op("Gauged", TYPE_PROC_REF(/obj/cap_fixture/ops, fx_op), action = ACT_UNLOCK, delay = 3 SECONDS, needs = req_proc(TYPE_PROC_REF(/obj/cap_fixture/ops/gauged, fx_gauge_ok), list(nameof(/obj/cap_fixture/ops/gauged::gauge))), key = "gauged")
+
+/obj/cap_fixture/ops/gauged/proc/fx_gauge_ok(mob/user, obj/item/held)
+	return gauge < 10 ? TRUE : "the gauge reads too high"
+
+/datum/unit_test/dx_op_publish_cancel
+
+/datum/unit_test/dx_op_publish_cancel/Run()
+	var/turf/T = test_floor()
+	var/obj/cap_fixture/ops/gauged/G = allocate(/obj/cap_fixture/ops/gauged, T)
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	var/key = nameof(/obj/cap_fixture/ops/gauged::gauge)
+	GLOB.op_cancelled_log.Cut()
+
+	TEST_ASSERT(!READERS(G, key), "nothing reads the gauge before an operation waits on it")
+	G.set_gauge(3)
+	TEST_ASSERT(!G.rx?.observed, "an unread write registers nothing")
+	TEST_ASSERT_EQUAL(length(GLOB.op_cancelled_log), 0, "and cancels nothing")
+
+	TEST_ASSERT(perform_action(H, G, ACT_UNLOCK), "the gauged op starts")
+	TEST_ASSERT(om_timer_slot_pending(H, "op_wait"), "and waits")
+	TEST_ASSERT(READERS(G, key), "a pending op watching a TRACKED var counts as a reader of it")
+	TEST_ASSERT_EQUAL(length(GLOB.op_watchers), 1, "and is in the watch index")
+	G.set_unwatched(7)
+	TEST_ASSERT(om_timer_slot_pending(H, "op_wait"), "a var it does not read leaves the wait alone")
+	G.set_gauge(4)
+	TEST_ASSERT(om_timer_slot_pending(H, "op_wait"), "a read that changed but still holds leaves the wait alone")
+	G.set_gauge(50)
+	TEST_ASSERT(!om_timer_slot_pending(H, "op_wait"), "a watched var that breaks the requirement cancels the wait at once")
+	TEST_ASSERT_EQUAL(GLOB.op_cancelled_log[length(GLOB.op_cancelled_log)], "gauged|[/datum/msg/req_refused]", "recorded with its reason")
+	TEST_ASSERT(!READERS(G, key), "the reader count went back to zero with the wait")
+	TEST_ASSERT_EQUAL(length(GLOB.op_pending) + length(GLOB.op_watchers), 0, "nothing pending or watched is left")
+	TEST_ASSERT_NULL(G.calls, "the handler never ran")
+	G.set_gauge(0)
+	TEST_ASSERT_EQUAL(length(GLOB.op_cancelled_log), 1, "and with nothing watching, a write cancels nothing")
+
+/datum/unit_test/dx_op_teardown
+
+/datum/unit_test/dx_op_teardown/Run()
+	var/turf/T = test_floor()
+	var/live0 = op_ctx_live_count()
+
+	// The target is deleted while the op waits.
+	var/obj/cap_fixture/ops/gauged/G = allocate(/obj/cap_fixture/ops/gauged, T)
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	TEST_ASSERT(perform_action(H, G, ACT_UNLOCK), "the op starts")
+	TEST_ASSERT_EQUAL(length(GLOB.op_pending), 1, "one waits")
+	qdel(G)
+	TEST_ASSERT_EQUAL(length(GLOB.op_pending), 0, "deleting the target cancels it")
+	TEST_ASSERT_EQUAL(length(GLOB.op_watchers), 0, "and clears the watch index")
+	TEST_ASSERT(!om_timer_slot_pending(H, "op_wait"), "and the actor's wait timer")
+	TEST_ASSERT_EQUAL(op_ctx_live_count(), live0, "and the context went back to the pool")
+	TEST_ASSERT_NULL(H.rx?.pending_ops, "the actor forgot it")
+
+	// The actor is deleted while the op waits.
+	var/obj/cap_fixture/ops/gauged/G2 = allocate(/obj/cap_fixture/ops/gauged, T)
+	var/mob/living/carbon/human/H2 = allocate(/mob/living/carbon/human, T)
+	TEST_ASSERT(perform_action(H2, G2, ACT_UNLOCK), "an op starts for another actor")
+	TEST_ASSERT_EQUAL(length(GLOB.op_pending), 1, "one waits")
+	qdel(H2)
+	TEST_ASSERT_EQUAL(length(GLOB.op_pending), 0, "deleting the actor cancels it")
+	TEST_ASSERT_EQUAL(length(GLOB.op_watchers), 0, "and clears the watch index")
+	TEST_ASSERT_EQUAL(op_ctx_live_count(), live0, "the context went back to the pool")
+	TEST_ASSERT_NULL(G2.rx?.pending_ops, "and the target forgot it")
+	TEST_ASSERT_NULL(G2.calls, "the handler never ran")
+
+// ---- the input router: gesture -> actions -> op, the resolver only for what no op answers ----
+
+/// A probe that has a legacy INTERACT entry (the High one, click) AND cap_op()s for the click, alt and drag gestures.
+/obj/dq_interaction_probe/routed
+	name = "routed probe"
+	var/list/routed
+
+/obj/dq_interaction_probe/routed/capabilities()
+	. = ..()
+	. += cap_op("Route press", TYPE_PROC_REF(/obj/dq_interaction_probe/routed, route_press), action = ACT_USE, needs = req_clear(CAP_LOCKED), key = "route_press")
+	. += cap_op("Route toggle", TYPE_PROC_REF(/obj/dq_interaction_probe/routed, route_press), action = ACT_TOGGLE, key = "route_toggle")
+	. += cap_op("Route put", TYPE_PROC_REF(/obj/dq_interaction_probe/routed, route_put), using = /obj/item/pen, action = ACT_DROP_ONTO, key = "route_put")
+
+/obj/dq_interaction_probe/routed/proc/route_press(mob/user)
+	LAZYADD(routed, "press")
+	return TRUE
+
+/obj/dq_interaction_probe/routed/proc/route_put(mob/user, obj/item/held)
+	LAZYADD(routed, "put:[held.type]")
+	return TRUE
+
+/datum/unit_test/dx_op_input_router
+
+/datum/unit_test/dx_op_input_router/Run()
+	var/turf/T = test_floor()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	var/obj/dq_interaction_probe/routed/R = allocate(/obj/dq_interaction_probe/routed, T)
+	var/obj/dq_interaction_probe/legacy = allocate(/obj/dq_interaction_probe, T)
+
+	// A plain click on a target with a cap_op runs the op, not the legacy entry that would also answer it.
+	TEST_ASSERT_NOTNULL(gesture_entry_for(H, R, null, GESTURE_CLICK), "a click reaches the op")
+	TEST_ASSERT_EQUAL(try_interaction(H, R, null, INPUT_ACTION_USE, null, TRUE), INTERACTION_TRY_RAN, "the click ran")
+	TEST_ASSERT_EQUAL(jointext(R.routed, ","), "press", "through the op")
+	TEST_ASSERT_EQUAL(length(R.done), 0, "the legacy entry was not asked")
+
+	// Alt-click is ACT_TOGGLE in the default profile.
+	R.routed = null
+	TEST_ASSERT_EQUAL(try_interaction(H, R, null, INPUT_ACTION_ALTERNATE), INTERACTION_TRY_RAN, "alt-click ran an op")
+	TEST_ASSERT_EQUAL(jointext(R.routed, ","), "press", "the toggle op")
+
+	// An op that would be refused now leaves the click to the resolver, which does what it always did.
+	R.routed = null
+	cap_set(R, CAP_LOCKED, TRUE)
+	TEST_ASSERT_NULL(gesture_entry_for(H, R, null, GESTURE_CLICK), "a locked press op does not take the click")
+	TEST_ASSERT_EQUAL(try_interaction(H, R, null, INPUT_ACTION_USE, null, TRUE), INTERACTION_TRY_RAN, "the legacy entry answers")
+	TEST_ASSERT(("dq_test_high" in R.done) && !length(R.routed), "it was the legacy High entry, not the op")
+	cap_set(R, CAP_LOCKED, FALSE)
+
+	// The tool-quality narrowing of the tool_act path applies: a crowbar click is not the pen-using drag op's.
+	var/obj/item/pen/pen = allocate(/obj/item/pen, T)
+	TEST_ASSERT_NULL(gesture_entry_for(H, R, pen, GESTURE_DRAG, TOOL_CROWBAR), "another tool quality refuses the op")
+	// A drag onto the target reaches ACT_DROP_ONTO with the dragged item as what is put there.
+	R.routed = null
+	var/datum/input_adapter/adapter = H.input_adapter()
+	adapter.drag(H, pen, R, null, null, null, null, "")
+	TEST_ASSERT_EQUAL(jointext(R.routed, ","), "put:/obj/item/pen", "a drag ran the drop-onto op with the dragged item")
+
+	// A fixture with only legacy INTERACT entries is untouched by the router.
+	TEST_ASSERT_NULL(gesture_entry_for(H, legacy, null, GESTURE_CLICK), "no op on it: the router has nothing")
+	TEST_ASSERT_EQUAL(try_interaction(H, legacy, null, INPUT_ACTION_USE, null, TRUE), INTERACTION_TRY_RAN, "the resolver runs it as before")
+	TEST_ASSERT_EQUAL(jointext(legacy.done, ","), "dq_test_high", "the same entry as before")

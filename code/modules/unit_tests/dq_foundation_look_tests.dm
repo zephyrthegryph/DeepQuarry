@@ -197,7 +197,7 @@
 	TEST_ASSERT_EQUAL(screw.tool, TOOL_SCREWDRIVER, "build_fasten() builds with its tool")
 	TEST_ASSERT_EQUAL(screw.duration, ladder_tool_delay(TOOL_SCREWDRIVER), "a build takes its tool's default delay")
 	TEST_ASSERT_EQUAL(screw.at, "test_bay", "ladder_options(at =) is stored on every step entry")
-	TEST_ASSERT_NULL(op_at_reason(probe, screw.at, null), "the compartment check is a stub that refuses nothing yet")
+	TEST_ASSERT_NULL(op_at_reason(probe, screw.at, null), "a holder that declares no such bay lets a context-less entry through")
 	TEST_ASSERT_EQUAL(screw.phrase, "screw %T% shut", "the message comes from the verb table")
 	var/datum/interaction/capability/construction_step/unscrew = prim_step(ladder, "closed", "wired")
 	TEST_ASSERT_EQUAL(unscrew.tool, TOOL_SCREWDRIVER, "the fastener table undoes a screw with a screwdriver")

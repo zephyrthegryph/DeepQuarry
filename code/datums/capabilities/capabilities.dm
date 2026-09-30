@@ -296,13 +296,24 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
  * locked_by, needs (global chk_* refs or holder procs: library/checks.dm), then every capability's gate() (the cover, the lock, a slot's rules).
  */
 /**
- * Why an entry used at compartment `bay` (BAY_*) on `holder` is refused right now, or null. A stub: it
- * answers null until the operations layer's compartments exist.
- * TODO(W6 integration): ask the holder's boundary capability, passes(route, ctx) (W2's compartment
- * contract, foundation_spec.md "Routes: ... Compartments"), for the ctx's route, and return its reason.
+ * Why an operation used at compartment `bay` (BAY_*) on `holder` is refused right now, or null: the ONE
+ * place the boundary is asked (op_ctx stage 2 and cap_gate_reason() both come here). Asks the holder's
+ * boundary capability, passes(ctx.route, ctx), with the operation context. With no context (a caller that
+ * has no attempt to describe) the question is asked of a short-lived context of the holder itself.
+ * A holder that declares no such bay refuses an op (fails closed) and lets a context-less legacy entry through.
  */
-/proc/op_at_reason(atom/holder, bay, datum/ctx)
-	return null
+/proc/op_at_reason(atom/holder, bay, datum/op_ctx/ctx)
+	var/datum/capability/compartment/boundary = compartment_of(holder, bay)
+	if(!boundary)
+		return ctx?.op ? /datum/msg/req_sealed : null
+	var/datum/op_ctx/asked = ctx
+	if(!asked)
+		asked = op_ctx_take(null, holder)
+	asked.reason = null
+	if(!boundary.passes(asked.route, asked))
+		. = asked.reason || /datum/msg/req_sealed
+	if(asked != ctx)
+		asked.release()
 
 /proc/cap_gate_reason(atom/A, mob/user, obj/item/held, datum/interaction/capability/entry)
 	if(!entry.works_broken && is_broken(A))
@@ -325,8 +336,11 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 		return "you can't do that in its current state"
 	if(entry.locked_by && (A.cap_state & entry.locked_by))
 		return "it's locked"
-	if(entry.at)
-		var/at_reason = op_at_reason(A, entry.at, null)
+	if(entry.at && !entry.op)
+		// An op entry's compartment is asked in its context's route stage; only legacy entries ask here.
+		var/datum/op_ctx/asked = op_ctx_take(user, A, held, null, GLOB.op_route_now)
+		var/at_reason = op_at_reason(A, entry.at, asked)
+		asked.release()
 		if(at_reason)
 			return at_reason
 	var/needs_reason = cap_needs_reason(A, user, held, entry.needs, entry.else_say)
@@ -416,15 +430,21 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 	if(op)
 		octx = op_ctx_take(actor, target, held, op, GLOB.op_route_now)
 		octx.entry = src
-		if(!op_before(octx))
+		var/veto = op_before(octx)
+		if(!isnull(veto))
+			op_refusal_told(octx, veto)
 			octx.release()
 			return UI_REFUSED
 	var/datum/dispatch_context/ctx = new(actor, target, held, src)
 	. = cap_dispatch(ctx)
+	var/asked = isnull(.) && length(form)
 	if(isnull(.))
 		. = TRUE // a handler that returned nothing (or went async to ask) handled it
 	if(octx)
-		op_after(octx)
+		// after_op reactions run only for an operation that committed: not a refused handler, and not one
+		// still asking its form (its handler finishes later, on its own).
+		if(!asked && dispatch_succeeded(.))
+			op_after(octx)
 		octx.release()
 
 /// The atom whose capability this entry is, for a dispatch: the target, except a use_at entry (the held item).

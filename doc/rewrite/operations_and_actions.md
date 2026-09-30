@@ -1,6 +1,6 @@
 # Operations, requirements and actions
 
-Status: **[in progress]** on `rewrite/f-ops` (owner W2) unless marked [built]. The design source is
+Status: **[built]** on `rewrite/f-ops` and wired to the reaction layer, pools and the input router at foundation integration (`rewrite/foundation-b`), unless marked otherwise. The design source is
 the Codex proposal, kept verbatim in [archive/unified_operations_work.md](archive/unified_operations_work.md);
 this chapter is the maintained form. Overview: [foundation.md](foundation.md).
 
@@ -38,11 +38,11 @@ operation needs. **Re-checked** when offered, immediately before commit, and aft
 (prompt or do-after). A pending operation also **cancels early** when the reads of its
 requirements change. Early cancel is an optimisation; commit re-validation is the guarantee.
 Old gating arguments (`behind`, `blocked_by`, `locked_by`, `needs`, `works_broken`,
-`works_unpowered`) keep working and map onto requirements. [built as gating; `req` API in progress]
+`works_unpowered`) keep working and map onto requirements. [built]
 
 ## 3. Operation context and dispatch
 
-`/datum/op_ctx` (pooled, [pools.md](pools.md)): actor, target, held tool, operation, provider
+`/datum/op_ctx` (a `/datum/pooled`, [pools.md](pools.md): `op_ctx_take()` / `release()`, fields reset automatically, poisoned on release in test builds; `op_ctx_live_count()` reads the pool's live count): actor, target, held tool, operation, provider
 (and port), route, authority, id. It carries the whole context through prompts, including the
 original actor when the prompt is shown to another player.
 
@@ -55,6 +55,19 @@ Dispatcher:
 5. Run `before_op` reactions; recheck if they changed the proposal; commit without sleeping.
    The effect enforces its own structural invariants.
 6. Publish tracked changes and the `after_op` reactions; presentation is queued.
+
+**Reactions.** `op_before(ctx)` calls the target's `before_op` reactions (`rx_before_op`, keyed by the op's key,
+then by the capability type that built its entry, `ctx.capability_type()`) and its observers. A non-null answer
+(a `/datum/msg` type or text) is a refusal: the commit stops, the actor is told, the context is released.
+`op_after(ctx)` calls the `after_op` reactions only for an operation that committed (its handler did not refuse;
+a form entry that is still asking has not committed yet, so it does not fire either).
+
+**Pending waits.** A timed op registers its context as pending. Each `(datum, key)` its requirements read counts
+as a dynamic reader of that key while it waits (`rx_watch_adjust`), so `publish_change()` is called for it and
+reaches `op_reads_changed()`; a write nobody reads still publishes nothing. The context is also registered on the
+actor, target, held item, provider item and watched datums (`rx_state.pending_ops`), and `rx_teardown()` cancels it
+when any of them is deleted (timer cancelled, context released, `GLOB.op_pending` / `GLOB.op_watchers` cleaned).
+Datums that never wait on an op carry nothing.
 
 **Defining operations.**
 
@@ -100,7 +113,10 @@ dragging all consult the same route resolver ([containment.md](containment.md)).
 **Compartments** model a bay with its own access rules: `compartment(BAY_X, door = CAP_KEY,
 route_gate = req)`. Operations, slots and ladders take `at = BAY_X`, replacing `behind =` bit
 gating. A boundary capability answers `passes(route, ctx)` and `transmission(effect)` (hooks into
-`containment/paths.dm`).
+`containment/paths.dm`: `dq_path_step` multiplies a slot's share by `dq_bay_share()` when the slot has `at`).
+The boundary is asked in ONE place, `op_at_reason(holder, bay, ctx)`: the op context's route stage and
+`cap_gate_reason()` (for legacy entries with `at`) both call it. A holder that declares no such bay refuses an op
+(fails closed) and lets a context-less legacy entry through.
 
 ## 5. Actions and bind profiles
 
@@ -113,11 +129,19 @@ An **action** is the semantic thing a player means, decoupled from the gesture.
   `ACT_USE`; a drag is `ACT_DROP_ONTO`. **There is no `alt_action`**; alt-click is just a gesture
   whose profile entry lists (say) `ACT_LOCK` before `ACT_EXAMINE`.
 - `perform_action(mob, target, ACT_X)` and `test_action(...)` for code; radial/screentip data for
-  UI; the UI route `act("action", {id})`; a command-bar verb for the keyboard.
+  UI; the UI route `act("action", {id})`, a UI action of the capability layer (`/datum/capability/entry/proc/
+  act_action`, found by the dispatcher on any holder of op entries; no atom has one); a command-bar verb.
+- **The router.** `try_interaction()` (the click path of use, alternate and tool_act) asks `try_gesture()` first:
+  `INPUT_ACTION_USE` is `GESTURE_CLICK`, `INPUT_ACTION_ALTERNATE` is `GESTURE_ALT` (`GESTURE_RIGHT` for a tool's
+  secondary click), and `adapter.drag()` asks `try_gesture_drag()` (`GESTURE_DRAG`, the dragged item as `held`)
+  before `MouseDrop_T`. `gesture_entry_for()` resolves gesture, actions, then the first real `cap_op()` (not a
+  `cap_hand`/`cap_tool`/`cap_use_on`/`cap_insert` preset) that would run now; that entry runs. When no op answers,
+  or the op would be refused, nothing changes: the interaction resolver and the legacy handlers run as before,
+  so unmigrated `INTERACT_*` content and the presets keep their ordering, ties and Menu.
 
 Every operation can therefore be listed, explain why it is unavailable (its refusal reason), and be
 bound to a key. `cap_entry_point` and the `INTERACTION_ENTRY_*` entries collapse into
-`cap_op(action = ACT_X)`. [in progress; today's interaction resolver and menu are [built]]
+`cap_op(action = ACT_X)`. [built for the click, alt-click and drag gestures; the resolver and Menu remain the fallback for what is not yet an op]
 
 ## 6. Containment, prompts, waits
 

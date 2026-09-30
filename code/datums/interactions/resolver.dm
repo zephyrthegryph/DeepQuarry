@@ -157,7 +157,8 @@
 	return sorted
 
 /**
- * Runs the best interaction for an action. Returns INTERACTION_TRY_RAN,
+ * Runs the best interaction for an action: the router's op first (try_gesture()), then the resolver's own
+ * entries. Returns INTERACTION_TRY_RAN,
  * INTERACTION_TRY_MENU when several tie (the Menu opens), INTERACTION_TRY_BLOCKED
  * when the one the player meant is blocked (they are told why), or null when
  * nothing answers: the caller then falls back to the legacy handlers.
@@ -169,6 +170,11 @@
 /proc/try_interaction(mob/actor, atom/target, obj/item/held, action, quality, no_tool = FALSE, datum/input_adapter/adapter)
 	if(!actor || !target)
 		return null
+	// The router first: gesture -> actions -> op (operations/actions.dm). Only what no op answers is resolved
+	// below, from the interaction entries that were never migrated to ops.
+	var/routed = try_gesture(actor, target, held, action, quality, no_tool, adapter)
+	if(!isnull(routed))
+		return routed
 	// Narrowed before any why_not(): only this action (and quality) is resolved, converted legacy
 	// handlers (I7, run from their own entry procs, run_interaction_entry()) are skipped, and
 	// the blocked list is only built below when nothing is available.

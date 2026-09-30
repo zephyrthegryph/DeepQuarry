@@ -26,6 +26,9 @@
 	var/list/bands
 	/// after(key = ...): key -> list(timer id, token, clock) of the pending keyed timer.
 	var/list/timer_ids
+	/// Pending operation contexts (/datum/op_ctx) this datum is an end of (actor, target, held, a watched
+	/// datum): rx_teardown() cancels them, so a wait never outlives what it is about (operations/op_ctx.dm).
+	var/list/pending_ops
 
 /datum
 	/// The reaction layer's per-datum state, or null (see /datum/rx_state).
@@ -52,6 +55,24 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 		return TRUE
 	return !!E.rx?.observed?[key]
 
+/// A pending operation watching (E, key) counts as a dynamic reader of it while it waits (delta +1 / -1), so
+/// publish_change() is called for it and reaches op_reads_changed(). Same table observe() counts in.
+/proc/rx_watch_adjust(datum/E, key, delta)
+	var/datum/rx_state/S = E.rx
+	if(!S)
+		if(delta < 0)
+			return
+		S = rx_of(E)
+	if(!S.observed)
+		S.observed = list()
+	var/n = (S.observed[key] || 0) + delta
+	if(n > 0)
+		S.observed[key] = n
+	else
+		S.observed -= key
+	if(!length(S.observed))
+		S.observed = null
+
 /**
  * `key` of `E` changed. Delivers to the type's on_change / on_cross reactions and to observe()rs of the key
  * (coalesced: a handler runs once per drain however many of its reads changed; see rx_drain()).
@@ -77,6 +98,9 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 				rx_pend(E, L, key)
 			else if(R.kind == RXN_CROSS && R.key == key)
 				rx_cross_check(E, R, L)
+	// A pending operation watching this read re-checks now (a cheap no-op while nothing is pending).
+	if(length(GLOB.op_watchers))
+		op_reads_changed(E, key)
 
 // ---------------------------------------------------------------- the relation ledger
 
@@ -269,6 +293,9 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 	var/datum/rx_state/S = D.rx
 	if(!S)
 		return
+	// Operations waiting on this datum (as actor, target, held, provider or watched read) are cancelled first.
+	for(var/datum/op_ctx/ctx as anything in S.pending_ops?.Copy())
+		op_cancel(ctx, /datum/msg/req_cancelled)
 	for(var/datum/rx_listener/L as anything in S.listeners?.Copy())
 		rx_listener_remove(L)
 	for(var/datum/rx_listener/L as anything in S.listening?.Copy())

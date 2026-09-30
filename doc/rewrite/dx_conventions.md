@@ -89,9 +89,9 @@ Write it the way DM already works:
   `DECLARE_PERIODIC_WHILE` in new code.
 - **Verbs.** `type_verbs()` is per-type; `hidden_verbs()` hides by state; both go through the verb store.
 
-## Operations [built: rewrite/f-ops]
+## Operations [built]
 
-One operation is one attempt: `/datum/op_ctx` (pooled: `op_ctx_take()` / `release()`) holds actor, target, held,
+One operation is one attempt: `/datum/op_ctx` (a `/datum/pooled`: `op_ctx_take()` / `release()`) holds actor, target, held,
 op, provider, route, authority and id. Code: `code/datums/operations/`, defines `code/__defines/operations.dm`.
 
 - **Requirements** are flyweights (`/datum/req`): `test(ctx)` returns null or a reason (a `/datum/msg` type),
@@ -120,8 +120,13 @@ op, provider, route, authority and id. Code: `code/datums/operations/`, defines 
   silicon,observer}` map `GESTURE_*` to a priority list of actions. `perform_action(mob, target, ACT_X, route=)`,
   `test_action(...)` (null or the reason), `resolve_gesture()`, `action_options()` (radial rows),
   `screentip_for()`, the UI route `act("action", {id})` (`/atom/proc/act_action`) and the "Act" verb.
-- **Reactions:** `op_before(ctx)` (FALSE stops the commit) and `op_after(ctx)` are the hook points W1's
-  `before_op`/`after_op` reactions wire to.
+- **Reactions:** `op_before(ctx)` runs the target's `before_op` reactions (by op key, then capability type); a
+  non-null answer is a refusal reason that stops the commit and is told to the actor. `op_after(ctx)` runs
+  `after_op` reactions only after a committed op.
+- **Pending waits** watch the reads of their requirements through `publish_change()` (a read counts as observed
+  while an op waits) and are cancelled when the actor, target, held item or a watched datum is deleted.
+- **The UI action** `act("action", {id})` is a capability-layer action (`/datum/capability/entry/proc/act_action`),
+  not an atom proc. **Clicks** go gesture, action, op through `try_gesture()` before the interaction resolver.
 
 
 ## Relations

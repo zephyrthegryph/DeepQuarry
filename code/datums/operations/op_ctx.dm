@@ -3,8 +3,8 @@
 // One /datum/op_ctx describes one attempt at one operation: who (actor), on what (target), with
 // what (held), which operation (op), through which provider (the slot that gives the actor the
 // affordance the op needs; active hand first), over which route, and on whose authority. Contexts
-// are pooled: take them with op_ctx_take(), give them back with release(); a released context is
-// poisoned in test builds (any use CRASHes).
+// are pooled (/datum/pooled): take them with op_ctx_take(), give them back with release(); a released
+// context is poisoned in test builds (any use CRASHes).
 //
 // check() runs the requirement stages in one fixed order, and stops at the first failure:
 //   1 provider           the actor has a slot providing the affordance (op.by)
@@ -20,18 +20,14 @@
 // A pending (waiting) operation also watches the reads of its requirements and cancels early when
 // one is published (op_reads_changed()).
 //
-// Reactions: op_before(ctx) runs just before the commit (FALSE stops it) and op_after(ctx) right
-// after; W1's before_op/after_op reactions attach to these two procs.
+// Reactions: op_before(ctx) runs just before the commit and returns a refusal reason (or null); op_after(ctx)
+// runs right after. They call the target's before_op / after_op reactions (reactions/delivery.dm).
 
 GLOBAL_VAR_INIT(op_ctx_seq, 0)
-/// Free contexts, reused by op_ctx_take().
-GLOBAL_LIST_EMPTY(op_ctx_pool)
-/// Contexts alive right now (taken, not released): id -> ctx. The pool's leak check reads it.
-GLOBAL_LIST_EMPTY(op_ctx_live)
-/// How many free contexts the pool keeps.
-#define OP_CTX_POOL_MAX 32
 
 /datum/op_ctx
+	parent_type = /datum/pooled
+	pool_max_free = 32
 	/// The mob acting.
 	var/mob/actor
 	var/datum/target
@@ -54,18 +50,16 @@ GLOBAL_LIST_EMPTY(op_ctx_live)
 	var/failed_stage = 0
 	/// (datum, key) pairs a pending wait watches: list(list(datum, key), ...).
 	var/list/watch
+	/// The datums this pending wait is registered on for teardown and for watching: actor, target, held, the
+	/// provider's item, every watched datum (op_pending_add / op_pending_forget).
+	var/list/ends
 	/// Set once release() ran; touching a released context is a bug (CRASH in test builds).
 	var/released = FALSE
 
-/// A pooled context for one attempt.
+/// A pooled context for one attempt (a /datum/pooled: released fields return to their initial values).
 /proc/op_ctx_take(mob/actor, datum/target, obj/item/held, datum/op_def/op, route = ROUTE_PHYSICAL, datum/authority)
 	RETURN_TYPE(/datum/op_ctx)
-	var/datum/op_ctx/ctx
-	if(length(GLOB.op_ctx_pool))
-		ctx = GLOB.op_ctx_pool[length(GLOB.op_ctx_pool)]
-		GLOB.op_ctx_pool.len--
-	else
-		ctx = new
+	var/datum/op_ctx/ctx = take(/datum/op_ctx)
 	ctx.released = FALSE
 	ctx.id = ++GLOB.op_ctx_seq
 	ctx.actor = actor
@@ -74,11 +68,16 @@ GLOBAL_LIST_EMPTY(op_ctx_live)
 	ctx.op = op
 	ctx.route = route
 	ctx.authority = authority
-	GLOB.op_ctx_live["[ctx.id]"] = ctx
 	return ctx
 
-/// Gives the context back: every field returns to its initial value, and the context waits in the pool.
-/datum/op_ctx/proc/release()
+/// How many contexts are taken and not yet released (the pool's own accounting; a leak check reads it).
+/proc/op_ctx_live_count()
+	var/datum/object_pool/pool = GLOB.object_pools[/datum/op_ctx]
+	return pool ? pool.out : 0
+
+/// Gives the context back: a pending wait is dropped, every field returns to its initial value
+/// (the pool does it), and the context waits in the pool (poisoned in test builds).
+/datum/op_ctx/release()
 	if(released)
 #ifdef UNIT_TESTS
 		CRASH("op_ctx released twice")
@@ -86,23 +85,12 @@ GLOBAL_LIST_EMPTY(op_ctx_live)
 		return
 #endif
 	op_pending_forget(src)
-	GLOB.op_ctx_live -= "[id]"
-	actor = null
-	target = null
-	held = null
-	op = null
-	entry = null
-	provider = null
-	authority = null
-	route = initial(route)
-	detail = null
-	reason = null
-	failed_stage = 0
-	watch = null
-	id = 0
+	..()
+
+/// Runs after the pool reset every field: marks the context released.
+/datum/op_ctx/reset()
+	..()
 	released = TRUE
-	if(length(GLOB.op_ctx_pool) < OP_CTX_POOL_MAX)
-		GLOB.op_ctx_pool += src
 
 /// The test-build poison: reading a released context stops the test that did.
 /datum/op_ctx/proc/assert_live()
@@ -179,11 +167,7 @@ GLOBAL_LIST_EMPTY(op_ctx_live)
 	if(route == ROUTE_PHYSICAL && isatom(target) && !GLOB.interaction_entry_actors[actor] && !dq_interaction_reach(actor, target, held))
 		return /datum/msg/req_out_of_reach
 	if(op.at && isatom(target))
-		var/datum/capability/compartment/bay = compartment_of(target, op.at)
-		if(!bay)
-			return /datum/msg/req_sealed
-		if(!bay.passes(route, src))
-			return reason || /datum/msg/req_sealed
+		return op_at_reason(target, op.at, src)
 	return null
 
 /datum/op_ctx/proc/stage_actor()
@@ -299,31 +283,54 @@ GLOBAL_LIST_EMPTY(op_pending)
 /// "[REF(datum)]|[key]" -> list of pending contexts watching that read.
 GLOBAL_LIST_EMPTY(op_watchers)
 
-/// Registers ctx as waiting and watching its reads.
+/// Registers ctx as waiting: it watches its requirements' reads (each counts as a dynamic reader of its key, so
+/// publish_change() reaches op_reads_changed()) and is registered on every datum it is about, so that one
+/// being deleted cancels it (rx_teardown). Datums that never wait on an operation carry nothing.
 /proc/op_pending_add(datum/op_ctx/ctx)
 	GLOB.op_pending["[ctx.id]"] = ctx
 	ctx.watch = ctx.collect_reads()
+	var/list/ends = list()
+	for(var/datum/D in list(ctx.actor, ctx.target, ctx.held, ctx.provider_atom()))
+		ends |= D
 	for(var/list/pair as anything in ctx.watch)
-		var/index = "[REF(pair[1])]|[pair[2]]"
+		var/datum/watched = pair[1]
+		if(!QDELETED(watched))
+			ends |= watched
+			rx_watch_adjust(watched, pair[2], 1)
+		var/index = "[REF(watched)]|[pair[2]]"
 		var/list/on = GLOB.op_watchers[index]
 		if(!on)
 			on = list()
 			GLOB.op_watchers[index] = on
 		on |= ctx
+	for(var/datum/D as anything in ends)
+		if(QDELING(D))
+			ends -= D
+			continue
+		LAZYADD(rx_of(D).pending_ops, ctx)
+	ctx.ends = ends
 
-/// Drops ctx from the pending set and the watch index.
+/// Drops ctx from the pending set, the watch index and every datum it was registered on.
 /proc/op_pending_forget(datum/op_ctx/ctx)
 	if(!GLOB.op_pending["[ctx.id]"])
 		return
 	GLOB.op_pending -= "[ctx.id]"
 	for(var/list/pair as anything in ctx.watch)
-		var/index = "[REF(pair[1])]|[pair[2]]"
+		var/datum/watched = pair[1]
+		if(!QDELETED(watched))
+			rx_watch_adjust(watched, pair[2], -1)
+		var/index = "[REF(watched)]|[pair[2]]"
 		var/list/on = GLOB.op_watchers[index]
 		if(!on)
 			continue
 		on -= ctx
 		if(!length(on))
 			GLOB.op_watchers -= index
+	for(var/datum/D as anything in ctx.ends)
+		var/datum/rx_state/S = D.rx
+		if(S)
+			LAZYREMOVE(S.pending_ops, ctx)
+	ctx.ends = null
 	ctx.watch = null
 
 /// A read (E, key) was published: every pending operation watching it re-checks now and cancels
@@ -348,7 +355,8 @@ GLOBAL_LIST_EMPTY(op_watchers)
 	var/text = req_reason_text(reason_type || /datum/msg/req_cancelled, ctx)
 	if(actor)
 		om_cancel_timer_slot(actor, "op_wait")
-		to_chat(actor, span_warning(text))
+		if(!QDELETED(actor))
+			to_chat(actor, span_warning(text))
 	if(ctx.op)
 		GLOB.op_cancelled_log += "[ctx.op.key]|[reason_type]"
 	ctx.release()
@@ -376,20 +384,29 @@ GLOBAL_LIST_EMPTY(op_cancelled_log)
 	E.cost_paid(actor, target, held)
 	GLOB.op_route_now = saved
 
-/// The reactions' hook points. op_before(ctx) runs just before an operation commits and returns
-/// FALSE to stop it; op_after(ctx) runs right after it committed. W1's before_op/after_op
-/// reactions are wired to these two procs at integration; until then they only trace in tests.
+/// The capability type that owns the context's op (what before_op / after_op reactions of a capability
+/// type match): the capability that built its entry, else null (a key match still works).
+/datum/op_ctx/proc/capability_type()
+	return entry?.cap?.type
+
+/**
+ * The reactions' hook points. op_before(ctx) runs just before an operation commits: the target's
+ * before_op reactions (by op key, then by capability type) and its observers. Returns null to proceed, or the
+ * first non-null answer, a reason (a /datum/msg type or text), which stops the commit. op_after(ctx)
+ * runs right after it committed.
+ */
 /proc/op_before(datum/op_ctx/ctx)
-#ifdef UNIT_TESTS
-	GLOB.op_hook_trace += "before|[ctx.op?.key]"
-#endif
-	return TRUE
+	if(!ctx.op || !ctx.target)
+		return null
+	return rx_before_op(ctx.target, ctx.op.key, ctx.capability_type(), ctx)
 
 /proc/op_after(datum/op_ctx/ctx)
-#ifdef UNIT_TESTS
-	GLOB.op_hook_trace += "after|[ctx.op?.key]"
-#endif
-	return
+	if(!ctx.op || !ctx.target || QDELETED(ctx.target))
+		return
+	rx_after_op(ctx.target, ctx.op.key, ctx.capability_type(), ctx)
 
-/// Declared in every build so the linter, which reads tests without UNIT_TESTS, resolves it.
-GLOBAL_LIST_EMPTY(op_hook_trace)
+/// Tells the actor why a before_op reaction stopped the operation (`reason`: a /datum/msg type or text).
+/proc/op_refusal_told(datum/op_ctx/ctx, reason)
+	var/text = ispath(reason) ? req_reason_text(reason, ctx) : "[reason]"
+	if(text && ctx.actor)
+		to_chat(ctx.actor, span_warning(text))

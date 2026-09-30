@@ -402,7 +402,7 @@ The decision table. **Read it before writing anything with a timer.**
 - **[planned]** (plan §2.10): a shared `chk_*` library (`chk_alive`, `chk_conscious`, `chk_capable`, `chk_unrestrained`, `chk_adjacent`, `chk_near_subject`, `chk_held`, `chk_carried`, `chk_hand_free`, `chk_on_turf`), and `ask_*` re-validation running the same `needs`.
 - **Until it lands:** convert `REQ_ON`/`REQ_TARGET_STATE` to `needs = PROC_REF(<the same proc>)`, drop reach/adjacent/inventory clauses (the dispatcher applies them), and leave `ASK_*` alone.
 
-## A11a. Operations [built: rewrite/f-ops]
+## A11a. Operations [built]
 
 Nothing needs migrating: `cap_hand`/`cap_tool`/`cap_use_on`/`cap_insert` keep their arguments and behaviour (they are
 presets of `cap_op`). For new or reworked code:
@@ -414,7 +414,12 @@ presets of `cap_op`). For new or reworked code:
 - Replace a copied op with `refine(key, delay = ...)`; a duplicate op key is an init error.
 - A control that a remote console or UI may also work: `cap_control(...)`, or `via = ROUTE_PHYSICAL | ROUTE_UI`.
 - Open parts of a machine through `compartment(BAY_X, ...)` and `at = BAY_X`, not ad-hoc `behind` bits.
-- Gestures: answer an action (`action = ACT_LOCK`); do not read click modifiers.
+- Gestures: answer an action (`action = ACT_LOCK`); do not read click modifiers. A real `cap_op()` (not a
+  `cap_hand`/`cap_tool` preset) whose action the actor's bind profile lists for the gesture is run by the click
+  router before the interaction resolver; an op that would be refused leaves the click to the legacy path.
+- Veto or follow an op with `before_op(key | capability type, handler)` / `after_op(...)` in `reactions()`; the
+  handler gets the `op_ctx` and must not keep it. `after_op` fires only for a committed op.
+- `act_action` is a capability UI action, not an atom proc: do not call `atom.act_action`.
 
 ## A12. Systems and the kernel [planned]
 

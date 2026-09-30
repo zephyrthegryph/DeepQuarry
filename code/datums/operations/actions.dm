@@ -11,7 +11,7 @@
 //	test_action(mob, target, ACT_X)      null when it would run, else why not
 //	action_options(mob, target)          the radial menu's data
 //	screentip_for(mob, target, gesture)  the screentip line for a gesture
-// plus the UI route (act("action", {id}) on any atom's window) and the "Act" command-bar verb.
+// plus the UI route (act("action", {id}) on the window of any holder of op entries) and the "Act" command-bar verb.
 // An action's ops are the cap_op() entries of the target with op.action == the action.
 
 // ---- definitions ----
@@ -216,21 +216,22 @@ GLOBAL_LIST_INIT(action_defs, init_action_defs())
 
 // ---- resolution ----
 
-/// The cap_op() entries of `target` that answer action `id`, in capability order.
-/proc/action_entries(atom/target, id)
+/// The cap_op() entries of `target` that answer action `id`, in capability order (skip_legacy: not the
+/// cap_hand / cap_tool / cap_use_on / cap_insert presets, which keep the resolver's own ordering).
+/proc/action_entries(atom/target, id, skip_legacy = FALSE)
 	. = list()
 	for(var/datum/interaction/capability/E as anything in cap_interactions(target))
-		if(E.op?.action == id && E.applies_to(target))
+		if(E.op?.action == id && (!skip_legacy || !E.op.legacy) && E.applies_to(target))
 			. += E
 
 /// The entry to run for action `id` on target: the first that the held item selects and that
 /// would run now; else the first the held item selects (so the refusal explains itself); else null.
-/proc/action_entry_for(mob/user, atom/target, id, obj/item/held, route = ROUTE_PHYSICAL)
+/proc/action_entry_for(mob/user, atom/target, id, obj/item/held, route = ROUTE_PHYSICAL, skip_legacy = FALSE)
 	RETURN_TYPE(/datum/interaction/capability)
 	var/datum/interaction/capability/meant
 	var/saved = GLOB.op_route_now
 	GLOB.op_route_now = route
-	for(var/datum/interaction/capability/E as anything in action_entries(target, id))
+	for(var/datum/interaction/capability/E as anything in action_entries(target, id, skip_legacy))
 		if(!E.is_meant(user, target, held))
 			continue
 		meant ||= E
@@ -241,12 +242,13 @@ GLOBAL_LIST_INIT(action_defs, init_action_defs())
 	return meant
 
 /// Gesture -> actions -> the first applicable op: list(action id, entry), or null when nothing on the
-/// target answers the gesture.
-/proc/resolve_gesture(mob/user, atom/target, gesture, obj/item/held, route = ROUTE_PHYSICAL)
-	if(isnull(held) && user)
+/// target answers the gesture. `explicit_held`: `held` is exactly what is meant (null: nothing), not to be
+/// replaced by the actor's active hand. `skip_legacy`: only the real cap_op() entries.
+/proc/resolve_gesture(mob/user, atom/target, gesture, obj/item/held, route = ROUTE_PHYSICAL, explicit_held = FALSE, skip_legacy = FALSE)
+	if(isnull(held) && user && !explicit_held)
 		held = user.get_active_hand()
 	for(var/id in bind_profile_of(user).actions_for(gesture))
-		var/datum/interaction/capability/E = action_entry_for(user, target, id, held, route)
+		var/datum/interaction/capability/E = action_entry_for(user, target, id, held, route, skip_legacy)
 		if(E)
 			return list(id, E)
 	return null
@@ -277,6 +279,81 @@ GLOBAL_LIST_INIT(action_defs, init_action_defs())
 	GLOB.op_route_now = route
 	. = E.attempt(user, target, held) == INTERACTION_TRY_RAN
 	GLOB.op_route_now = saved
+
+// ---- the input router ----
+
+/**
+ * The entry point of the click router: input goes gesture -> actions -> op, and only what no op answers
+ * falls back to the interaction resolver (interactions_for() / try_interaction(): INTERACT_* entries and
+ * the legacy presets). The op entry that `gesture` reaches on `target` for `actor` (the first applicable
+ * cap_op() of the first action the actor's bind profile lists), or null. `quality` / `no_tool` narrow it the
+ * way the resolver's tool_act path narrows: an entry needing another tool quality (or any tool, with
+ * no_tool) is not this click's, and so is one that would be refused now. `adapter` (default: the actor's own) is asked whether this kind of actor
+ * may do it at all. No side effect: nothing runs.
+ */
+/proc/gesture_entry_for(mob/actor, atom/target, obj/item/held, gesture, quality, no_tool = FALSE, datum/input_adapter/adapter, explicit_held = TRUE)
+	RETURN_TYPE(/datum/interaction/capability)
+	if(!actor || !target || !length(caps_of(target)))
+		return null
+	var/list/resolved = resolve_gesture(actor, target, gesture, held, ROUTE_PHYSICAL, explicit_held, TRUE)
+	if(!resolved)
+		return null
+	var/datum/interaction/capability/E = resolved[2]
+	if(quality && E.tool != quality)
+		return null
+	if(no_tool && E.tool)
+		return null
+	adapter ||= actor.input_adapter()
+	if(!adapter.allows_interaction(actor, target, E))
+		return null
+	// Only an op that would run now takes the click; a refused one leaves it to the resolver and the
+	// legacy handlers, which say why (or do what the click always did) exactly as before.
+	var/saved = GLOB.op_route_now
+	GLOB.op_route_now = ROUTE_PHYSICAL
+	var/why = E.why_not(actor, target, held)
+	GLOB.op_route_now = saved
+	return why ? null : E
+
+/// Runs `E` (from gesture_entry_for()) as a physical-route click. Returns INTERACTION_TRY_* like the resolver.
+/proc/gesture_attempt(datum/interaction/capability/E, mob/actor, atom/target, obj/item/held)
+	var/saved = GLOB.op_route_now
+	GLOB.op_route_now = ROUTE_PHYSICAL
+	. = E.attempt(actor, target, held)
+	GLOB.op_route_now = saved
+
+/// The gesture a resolver action (INPUT_ACTION_USE / INPUT_ACTION_ALTERNATE, with or without a tool quality:
+/// the secondary click of a tool) stands for; null for actions that are not gestures.
+/proc/gesture_of_action(action, quality)
+	switch(action)
+		if(INPUT_ACTION_USE)
+			return GESTURE_CLICK
+		if(INPUT_ACTION_ALTERNATE)
+			return quality ? GESTURE_RIGHT : GESTURE_ALT
+	return null
+
+/**
+ * A click through the router: the op the gesture reaches, run. Returns the attempt's result
+ * (INTERACTION_TRY_RAN / _BLOCKED, ...) or null when no op answers, and the caller falls back to the resolver.
+ * try_interaction() asks this first, so every click path (use, alternate, tool_act) goes gesture -> op.
+ */
+/proc/try_gesture(mob/actor, atom/target, obj/item/held, action, quality, no_tool = FALSE, datum/input_adapter/adapter)
+	var/gesture = gesture_of_action(action, quality)
+	if(!gesture)
+		return null
+	var/datum/interaction/capability/E = gesture_entry_for(actor, target, held, gesture, quality, no_tool, adapter)
+	if(!E)
+		return null
+	return gesture_attempt(E, actor, target, held)
+
+/// A drag: `dragged` dropped onto `over` reaches ACT_DROP_ONTO / ACT_INSERT ops of `over` (the dragged item is
+/// what is put there). TRUE when an op took it (it runs async: it may ask something), FALSE to fall back to MouseDrop_T.
+/proc/try_gesture_drag(mob/actor, atom/dragged, atom/over)
+	var/obj/item/item = istype(dragged, /obj/item) ? dragged : null
+	var/datum/interaction/capability/E = gesture_entry_for(actor, over, item, GESTURE_DRAG)
+	if(!E)
+		return FALSE
+	INVOKE_ASYNC(GLOBAL_PROC_REF(gesture_attempt), E, actor, over, item)
+	return TRUE
 
 // ---- radial and screentip data ----
 
@@ -333,12 +410,15 @@ GLOBAL_LIST_INIT(action_defs, init_action_defs())
 
 // ---- the UI route: act("action", {id}) ----
 
-/// A client's act("action", {id: "lock"}) on any atom's window: runs the action over ROUTE_UI.
-/atom/proc/act_action(mob/user, id)
+/// A client's act("action", {id: "lock"}) on an atom's window: runs the action over ROUTE_UI. It is a UI
+/// action of the capability layer, not of every atom: every holder with a cap_op() carries op entries
+/// (this capability type), and the dispatcher (ui_named_dispatch) finds act_action on the first of them.
+/// Runs on the shared flyweight; `holder` is the atom whose window it is.
+/datum/capability/entry/proc/act_action(mob/user, id, atom/holder)
 	id = ui_choice(ui_text(id, 64), GLOB.action_defs)
 	if(isnull(id))
 		return refuse(user, "That isn't something you can do.")
-	if(!perform_action(user, src, id, ROUTE_UI))
+	if(!perform_action(user, holder, id, ROUTE_UI))
 		return UI_REFUSED
 	return TRUE
 
