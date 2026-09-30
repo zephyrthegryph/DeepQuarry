@@ -29,7 +29,7 @@ OM_FIELD_SETTER(/obj/machinery, heat_body, CHANGE_MACHINE_SETTINGS)
 		return FALSE
 	heat_body = value
 	if(istype(src, /obj/machinery))
-		om_changed(src, CHANGE_MACHINE_SETTINGS) // the declared field's machine channel
+		changed(src, CHANGE_MACHINE_SETTINGS) // the declared field's machine channel
 	return TRUE
 
 // ---------------------------------------------------------------- the API

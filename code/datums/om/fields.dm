@@ -107,7 +107,7 @@
 	if(!channel)
 		CRASH("om_set: [E.type].[name] is not a declared field")
 	E.vars[name] = value
-	om_changed(E, channel)
+	changed(E, channel)
 	return TRUE
 
 /// Raises the declared channel of `E`'s field `name` after an in-place change the setter can't
@@ -116,7 +116,7 @@
 	var/channel = om_field_channel(E, name)
 	if(!channel)
 		CRASH("om_field_changed: [E.type].[name] is not a declared field")
-	om_changed(E, channel)
+	changed(E, channel)
 
 /// OM_FLAG_FIELD_BITS() helper: the union of the channels of the `changed` bits in `table`
 /// ("[bit]" = channel); a changed bit with no row adds `fallback`.
@@ -299,5 +299,5 @@
 		var/datum/om/rec/hrec = holder?.om_rec
 		if(hrec)
 			LAZYREMOVE(hrec.relay_out, E)
-			om_changed(holder, CHANGE_RELATED) // what it read is going away
+			changed(holder, CHANGE_RELATED) // what it read is going away
 	rec.relay_in = null

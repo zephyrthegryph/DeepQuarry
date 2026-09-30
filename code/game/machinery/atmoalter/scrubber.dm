@@ -34,7 +34,7 @@ DAMAGE_REACTION(/obj/machinery/portable_atmospherics/powered/scrubber, DAMAGE_EM
 	if(prob(50/packet.severity))
 		set_on(!on)
 		if(on)
-			om_changed(src, CHANGE_MACHINE_SETTINGS)
+			changed(src, CHANGE_MACHINE_SETTINGS)
 
 DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/powered/scrubber, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/portable_atmospherics/powered/scrubber/appearance_overlays()
@@ -137,7 +137,7 @@ UI_ACT(/obj/machinery/portable_atmospherics/powered/scrubber, "power", ui_act_po
 UI_ACT_PROC(/obj/machinery/portable_atmospherics/powered/scrubber, ui_act_power)
 	set_on(!on)
 	if(on)
-		om_changed(src, CHANGE_MACHINE_SETTINGS)
+		changed(src, CHANGE_MACHINE_SETTINGS)
 	. = TRUE
 	update_icon()
 

@@ -70,7 +70,7 @@ DECLARE_SHARED_CACHE_EX(sc_test_intern, GLOBAL_PROC_REF(sc_test_build_same), SC_
 	TEST_ASSERT(CACHED(sc_test_event, "e") != e, "the event cleared the cache")
 	var/list/c = CACHED(sc_test_change, "c")
 	TEST_ASSERT(CACHED(sc_test_change, "c") == c, "cached")
-	om_changed(GLOB.om_world, CHANGE_DATUM_D)
+	changed(GLOB.om_world, CHANGE_DATUM_D)
 	TEST_ASSERT(CACHED(sc_test_change, "c") != c, "the world channel cleared the cache")
 
 /// Bounded caches evict, interning shares identical lists, and a mutation is caught.

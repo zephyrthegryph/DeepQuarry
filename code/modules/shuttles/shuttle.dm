@@ -492,9 +492,9 @@ DECLARE_PERIODIC_WHILE(/datum/shuttle, PERIODIC_SLOW, "shuttle_working")
 /// Wakes the status displays that show this shuttle's schedule (KEY_SHUTTLE_SCHEDULE).
 /datum/shuttle/proc/publish_schedule()
 	if(src == GLOB.emergency_shuttle_service?.shuttle)
-		om_changed(GLOB.emergency_shuttle_service, CHANGE_SHUTTLE_SCHEDULE)
+		changed(GLOB.emergency_shuttle_service, CHANGE_SHUTTLE_SCHEDULE)
 	else if(src == GLOB.supply_service?.shuttle)
-		om_changed(GLOB.supply_service, CHANGE_SHUTTLE_SCHEDULE)
+		changed(GLOB.supply_service, CHANGE_SHUTTLE_SCHEDULE)
 
 /// Set current_location_tag, not this: New() resolves the tag into the landmark.
 /datum/shuttle/proc/current_location() as /obj/effect/shuttle_landmark

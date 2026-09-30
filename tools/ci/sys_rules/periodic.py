@@ -236,7 +236,7 @@ def _scan_toggle(name, stmts, hits):
 
 
 DERIVE = re.compile(r"^OM_DERIVE_FIELD\(\s*(/[\w/]+)\s*,\s*(\w+)\s*,\s*(.*)\)\s*(?://.*)?$")
-RAISE = re.compile(r"om_changed\(\s*src\s*,")
+RAISE = re.compile(r"changed\(\s*src\s*,")
 
 
 def _derived_inputs(files):
@@ -269,7 +269,7 @@ def _inputs_for(path, derived):
 
 
 def _scan_hand_raise(lines, derived, hits, rel):
-    """om_changed(src, ...) in a proc of a type with derived fields, when it is a hand refresh:
+    """changed(src, ...) in a proc of a type with derived fields, when it is a hand refresh:
     a CHANGE_EXPLICIT raise, or any raise within two statements of a write of a derived input."""
     path = None
     for number, line in enumerate(lines, 1):
@@ -307,7 +307,7 @@ def scan(files):
         if rel.startswith(SKIP):
             continue
         text = "\n".join(lines)
-        if "om_changed" in text and derived:
+        if "changed" in text and derived:
             _scan_hand_raise(lines, derived, out["derived_hand_raise"], rel)
         if not any(k in text for k in ("PROCESS_KILL", "om_after", "om_task_periodic", "MACHINE_WAKE", "MACHINE_SLEEP")):
             continue

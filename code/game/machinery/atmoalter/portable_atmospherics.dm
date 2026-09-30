@@ -45,7 +45,7 @@
 	var/mixture_id = air_contents?.arena_id()
 	if(isnull(mixture_id))
 		return
-	// The machine pipeline wakes on om_changed() (machine_pipeline.dm).
+	// The machine pipeline wakes on changed() (machine_pipeline.dm).
 	var/list/wake = om_callable(src, PROC_REF(wake_om_pipeline))
 	om_watch_arm_revision(src, "gas", mixture_id, GAS_DEPENDENCY_ALL, wake_callback = wake, current_revision = air_contents.revision())
 
@@ -56,11 +56,11 @@
 	clear_gas_dependency()
 	MACHINE_WAKE(src)
 
-/// OM machine pipeline (machine_pipeline.dm): a gas crossing raises om_changed() so the pipeline
+/// OM machine pipeline (machine_pipeline.dm): a gas crossing raises changed() so the pipeline
 /// stage reschedules itself, same as a settings/power change.
 /obj/machinery/portable_atmospherics/proc/wake_om_pipeline()
 	clear_gas_dependency()
-	om_changed(src, CHANGE_MACHINE_GAS)
+	changed(src, CHANGE_MACHINE_GAS)
 
 DAMAGE_REACTION(/obj/machinery/portable_atmospherics, DAMAGE_BLOB, TYPE_PROC_REF(/atom, damage_reaction_qdel))
 
@@ -91,7 +91,7 @@ DAMAGE_REACTION(/obj/machinery/portable_atmospherics, DAMAGE_BLOB, TYPE_PROC_REF
 
 	//Perform the connection
 	rel_set(src, nameof(connected_port), new_port)
-	om_changed(src, CHANGE_MACHINE_SETTINGS)
+	changed(src, CHANGE_MACHINE_SETTINGS)
 	connected_port().connected_device = src
 	connected_port().on = 1 //Activate port updates
 	MACHINE_WAKE(connected_port())
@@ -116,7 +116,7 @@ DAMAGE_REACTION(/obj/machinery/portable_atmospherics, DAMAGE_BLOB, TYPE_PROC_REF
 	old_port.set_on(0)
 	MACHINE_SLEEP(old_port)
 	rel_clear(src, nameof(connected_port))
-	om_changed(src, CHANGE_MACHINE_SETTINGS)
+	changed(src, CHANGE_MACHINE_SETTINGS)
 
 	return 1
 

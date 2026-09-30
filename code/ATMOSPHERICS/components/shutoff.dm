@@ -5,7 +5,7 @@
 /// new construction) GLOB.new_pipe_networks wakes every valve. Wakes merge per drain, so a bulk
 /// blast needs no batching of its own.
 /proc/wake_automatic_shutoff_valves(datum/pipe_network/network)
-	om_changed(network || GLOB.new_pipe_networks, CHANGE_PIPE_LEAKS)
+	changed(network || GLOB.new_pipe_networks, CHANGE_PIPE_LEAKS)
 
 /// Raises CHANGE_PIPE_LEAKS for changes whose network is not known yet (new construction).
 GLOBAL_DATUM_INIT(new_pipe_networks, /datum, new)

@@ -242,7 +242,7 @@ HARMLESS_CALLS = (
     "to_chat", "visible_message", "audible_message", "balloon_alert", "balloon_alert_to_viewers",
     "playsound", "play_sfx", "log_game", "log_admin", "log_and_message_admins", "message_admins",
     "investigate_log", "add_fingerprint", "use_power", "use_power_oneoff", "MACHINE_WAKE",
-    "om_changed", "SStgui.update_uis", "update_uis", "say", "atom_say", "flick", "add_hiddenprint",
+    "changed", "SStgui.update_uis", "update_uis", "say", "atom_say", "flick", "add_hiddenprint",
 )
 HARMLESS = re.compile(r"^\s*(?:(?:src|user|usr|\w+)\.)?(?:" + "|".join(re.escape(c) for c in HARMLESS_CALLS) + r")\s*\(.*\)\s*$")
 

@@ -308,7 +308,7 @@
 		return FALSE
 	density = !!new_density // Sanitize to be strictly 0 or 1
 	if(istype(src, /obj/machinery))
-		om_changed(src, CHANGE_MACHINE_SETTINGS) // the declared field's channel (machinery_fields.dm)
+		changed(src, CHANGE_MACHINE_SETTINGS) // the declared field's channel (machinery_fields.dm)
 	return TRUE
 
 // Called to set the atom's invisibility and usd to add behavior to invisibility changes.

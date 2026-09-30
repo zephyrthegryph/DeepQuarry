@@ -20,7 +20,7 @@ GLOBAL_LIST_INIT(native_deliveries, new /list(NATIVE_SRC_COUNT))
 	if(!channel || QDELETED(target))
 		return FALSE
 	GLOB.native_deliveries[source]++
-	om_changed(target, channel)
+	om_raise_change(target, channel)
 	return TRUE
 
 /// Counts a Rust drain delivering a callback to owner code (no channel to raise).

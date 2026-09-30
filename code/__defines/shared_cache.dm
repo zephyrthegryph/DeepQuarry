@@ -24,7 +24,7 @@
 #define SC_NEVER null
 /// Cleared when an event of `path` (or a subtype) is emitted on GLOB.om_world.
 #define SC_ON_EVENT(path) list("event", path)
-/// Cleared when any of `bits` is raised on GLOB.om_world (om_changed(GLOB.om_world, bits)).
+/// Cleared when any of `bits` is raised on GLOB.om_world (changed(GLOB.om_world, bits)).
 #define SC_ON_WORLD_CHANGE(bits) list("change", bits)
 /// Cleared only by INVALIDATE_SHARED_CACHE() (an explicit version bump).
 #define SC_EXPLICIT list("explicit")

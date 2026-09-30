@@ -85,7 +85,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/conveyor, MACHINE_PIPELINE, list("oper
 	if(new_operating == operating)
 		return // No change
 	operating = new_operating
-	om_changed(src, CHANGE_MACHINE_SETTINGS)
+	changed(src, CHANGE_MACHINE_SETTINGS)
 	if(operating == FORWARDS)
 		movedir = forwards
 	else if(operating == BACKWARDS)

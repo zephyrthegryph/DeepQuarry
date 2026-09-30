@@ -191,7 +191,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/dq_appearance_provider, TYPE_PROC_REF(/at
 	TEST_ASSERT_EQUAL(dq_sys_appearance_overlays(P, "dot2"), 0, "overlays the provider no longer returns are cut")
 	TEST_ASSERT_EQUAL(dq_sys_appearance_overlays(P, "dot1"), 1, "a kept overlay is drawn once, not stacked")
 	P.count = 3
-	om_changed(P, CHANGE_NEIGHBOURS)
+	changed(P, CHANGE_NEIGHBOURS)
 	TEST_ASSERT(P.appearance_queued, "a declared channel queues the provider")
 	appearance_flush()
 	TEST_ASSERT_EQUAL(dq_sys_appearance_overlays(P, "dot3"), 1, "the queued refresh re-ran the provider")

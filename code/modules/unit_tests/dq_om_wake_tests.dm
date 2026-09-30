@@ -232,7 +232,7 @@
 		TEST_ASSERT(!failure, failure)
 
 /datum/unit_test/dq_om_wake_status_display/proc/publish_evac()
-	om_changed(GLOB.emergency_shuttle_service, CHANGE_SHUTTLE_SCHEDULE)
+	changed(GLOB.emergency_shuttle_service, CHANGE_SHUTTLE_SCHEDULE)
 
 /datum/looping_sound/dq_test
 	mid_sounds = list('sound/machines/button.ogg' = 1)

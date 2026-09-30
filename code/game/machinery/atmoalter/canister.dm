@@ -411,7 +411,7 @@ UI_ACT_PROC(/obj/machinery/portable_atmospherics/canister, ui_act_valve)
 			release_log += "Valve was " + span_bold("opened") + " by [ui.user] ([ui.user.ckey]), starting the transfer into the " + span_red(span_bold("air")) + "<br>"
 			log_open()
 	set_valve_open(!valve_open)
-	om_changed(src, CHANGE_MACHINE_SETTINGS)
+	changed(src, CHANGE_MACHINE_SETTINGS)
 	. = TRUE
 	add_fingerprint(ui.user)
 	update_icon()

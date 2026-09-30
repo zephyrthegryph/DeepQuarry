@@ -115,7 +115,7 @@
 	if(!.)
 		return
 	BITSET(hud_updateflag, HEALTH_HUD)
-	om_changed(src, CHANGE_MOB_HEALTH)
+	changed(src, CHANGE_MOB_HEALTH)
 	if(!(flags & (INJURE_SILENT | INJURE_CONTINUOUS)))
 		flash_weak_pain()
 	body.on_status_changed()
@@ -245,7 +245,7 @@
 	. = body.mend(tag, amount, target)
 	if(.)
 		BITSET(hud_updateflag, HEALTH_HUD)
-		om_changed(src, CHANGE_MOB_HEALTH)
+		changed(src, CHANGE_MOB_HEALTH)
 
 /// B14 / P2-S12: the one writer that takes radiation OUT of a mob — acute
 /// dose and accumulated dose together (anti-radiation treatment, restoration).
@@ -284,7 +284,7 @@
 	body?.clear_afflictions()
 	body?.restore()
 	BITSET(hud_updateflag, HEALTH_HUD)
-	om_changed(src, CHANGE_MOB_HEALTH)
+	changed(src, CHANGE_MOB_HEALTH)
 
 
 // --- Questions ----------------------------------------------------------------------

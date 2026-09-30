@@ -205,11 +205,11 @@ fi;
 part "pipelines: idle and park state in one place"
 # Only the core pipeline runner (code/datums/om/pipeline.dm) and the kernel's work engine
 # (code/controllers/kernel/, a faulting work item parks) change whether a stage is idle or
-# an entity is parked; producers raise a change channel with om_changed()
+# an entity is parked; producers raise a change channel with changed()
 # (doc/rewrite/object_model_core.md §4.10).
 if $grep -n '\.(asleep|parked|parked_index|idle_frames)\s*[|&+-]?=[^=]|\.bits\[[^]]*\]\s*[|&]?=[^=]' "${code_files[@]}" | grep -v '^code/datums/om/' | grep -v '^code/controllers/kernel/' | grep -v '^code/modules/unit_tests/' | grep -v 'var/'; then
 	echo
-	echo -e "${RED}ERROR: direct write to a pipeline's idle or park state. Raise a channel with om_changed().${NC}"
+	echo -e "${RED}ERROR: direct write to a pipeline's idle or park state. Raise a channel with changed().${NC}"
 	FAILED=1
 fi;
 

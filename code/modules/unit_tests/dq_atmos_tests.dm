@@ -4411,7 +4411,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 		GLOB.machine_service.wake_dirty_gas_subscribers()
 		if(canister.gas_dependency_wake_count > canister_wakes)
 			break
-	// The watch fired and queued a pipeline wake (om_changed() enqueues; the frame runs on the
+	// The watch fired and queued a pipeline wake (changed() enqueues; the frame runs on the
 	// scheduler's next pass, so .parked can't be read synchronously here).
 	TEST_ASSERT_EQUAL(canister.gas_dependency_wake_count, canister_wakes + 1, "emptying a closed connected canister did not wake it exactly once")
 	canister.air_contents.adjust_moles(/datum/gas/oxygen, 1000)
@@ -4839,7 +4839,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT(test_machine_idle(point_defense), "point defense polled with no meteors")
 	TEST_ASSERT(point_defense.react_sleep_tokens, "point defense did not subscribe before sleeping")
 	om_trace(point_defense)
-	om_changed(GLOB.meteor_watch, CHANGE_METEORS)
+	changed(GLOB.meteor_watch, CHANGE_METEORS)
 	for(var/i in 1 to 40)
 		om_test_ticks(1)
 		if(om_traced_count(point_defense))

@@ -570,13 +570,13 @@ UI_ACT_PROC(/obj/machinery/power/smes, ui_act_output)
 	input_attempt = do_input
 	if(!input_attempt)
 		inputting = 0
-	om_changed(src, CHANGE_MACHINE_SETTINGS)
+	changed(src, CHANGE_MACHINE_SETTINGS)
 
 /obj/machinery/power/smes/proc/outputting(do_output)
 	output_attempt = do_output
 	if(!output_attempt)
 		outputting = 0
-	om_changed(src, CHANGE_MACHINE_SETTINGS)
+	changed(src, CHANGE_MACHINE_SETTINGS)
 
 /obj/machinery/power/smes/atom_destruction(damage_flag)
 	visible_message(span_filter_notice(span_danger("\The [src] explodes in large shower of sparks and smoke!")))
@@ -637,7 +637,7 @@ DAMAGE_REACTION(/obj/machinery/power/smes, DAMAGE_EMP, PROC_REF(smes_emp_scrambl
 // Description: Sets input setting on this SMES. Trims it if limits are exceeded.
 /obj/machinery/power/smes/proc/set_input(new_input = 0)
 	input_level = between(0, new_input, input_level_max)
-	om_changed(src, CHANGE_MACHINE_SETTINGS)
+	changed(src, CHANGE_MACHINE_SETTINGS)
 	update_icon()
 
 // Proc: set_output()
@@ -645,7 +645,7 @@ DAMAGE_REACTION(/obj/machinery/power/smes, DAMAGE_EMP, PROC_REF(smes_emp_scrambl
 // Description: Sets output setting on this SMES. Trims it if limits are exceeded.
 /obj/machinery/power/smes/proc/set_output(new_output = 0)
 	output_level = between(0, new_output, output_level_max)
-	om_changed(src, CHANGE_MACHINE_SETTINGS)
+	changed(src, CHANGE_MACHINE_SETTINGS)
 	update_icon()
 
 /obj/machinery/power/smes/buildable/hybrid

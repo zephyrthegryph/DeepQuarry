@@ -103,7 +103,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 
 /obj/machinery/disposal/proc/wake_for_state_change()
 	clear_gas_dependency()
-	om_changed(src, CHANGE_MACHINE_SETTINGS)
+	changed(src, CHANGE_MACHINE_SETTINGS)
 	MACHINE_WAKE(src)
 
 // The intake subscription is keyed by the mixture of the turf we sit on; after a

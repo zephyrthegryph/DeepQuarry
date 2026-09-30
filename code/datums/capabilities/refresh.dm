@@ -66,7 +66,7 @@ OWN_TIMER(/datum, periodic_interval)
 /proc/changed(datum/E, channel = CHANGE_EXPLICIT, var_name)
 	if(!E || QDELING(E))
 		return
-	// OM observers only: om_changed()'s own refresh hook would mark every output, undoing the mask below.
+	// OM observers only: om_raise_change()'s own refresh hook would mark every output, undoing the mask below.
 	if(E.om_listen & channel)
 		om_dispatch_change(E, channel)
 	// The look applying itself (set_light, vis_contents) is presentation, not a state change.

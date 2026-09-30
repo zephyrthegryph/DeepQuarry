@@ -138,7 +138,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/meteor, REGISTRY_METEORS)
 /obj/effect/meteor/Initialize(mapload)
 	. = ..()
 	z_original = z
-	om_changed(GLOB.meteor_watch, CHANGE_METEORS)
+	changed(GLOB.meteor_watch, CHANGE_METEORS)
 	SpinAnimation()
 
 /obj/effect/meteor/Move()
@@ -158,7 +158,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/meteor, REGISTRY_METEORS)
 
 // the meteor count changes for whoever watches the storm.
 /obj/effect/meteor/on_destroy(force)
-	om_changed(GLOB.meteor_watch, CHANGE_METEORS)
+	changed(GLOB.meteor_watch, CHANGE_METEORS)
 	..()
 
 /obj/effect/meteor/Bump(atom/A)

@@ -97,7 +97,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/cell_charger, TYPE_PROC_REF(/atom, appear
 	user.drop_item()
 	W.forceMove(src)
 	set_charging(W)
-	om_changed(src, CHANGE_MACHINE_OCCUPANT)
+	changed(src, CHANGE_MACHINE_OCCUPANT)
 	act_message(user, src, MSG_SELF("You insert [charging] into %T%."), MSG_OTHERS("%U% inserts [charging] into %T%."))
 	chargelevel = -1
 	update_icon()
@@ -108,7 +108,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/cell_charger, TYPE_PROC_REF(/atom, appear
 		to_chat(user, span_warning("Remove [charging] first!"))
 		return ITEM_INTERACT_BLOCKING
 	set_anchored(!anchored)
-	om_changed(src, CHANGE_MACHINE_ANCHORED)
+	changed(src, CHANGE_MACHINE_ANCHORED)
 	to_chat(user, "You [anchored ? "attach" : "detach"] [src] [anchored ? "to" : "from"] the ground")
 	playsound(src, tool.usesound, 75, TRUE)
 	return ITEM_INTERACT_SUCCESS
@@ -130,7 +130,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/cell_charger, TYPE_PROC_REF(/atom, appear
 
 		set_charging(null)
 		chargelevel = -1
-		om_changed(src, CHANGE_MACHINE_OCCUPANT)
+		changed(src, CHANGE_MACHINE_OCCUPANT)
 		update_icon()
 	return TRUE
 
@@ -142,7 +142,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/cell_charger, TYPE_PROC_REF(/atom, appear
 			charging.forceMove(src.loc)
 			charging.update_icon()
 			set_charging(null)
-			om_changed(src, CHANGE_MACHINE_OCCUPANT)
+			changed(src, CHANGE_MACHINE_OCCUPANT)
 			update_icon()
 	return TRUE
 

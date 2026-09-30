@@ -294,7 +294,7 @@ OWN_TIMER(/mob/living, body_effect)
 			return FALSE
 	var/stacks = (def.stacks == MODIFIER_STACK_ALLOWED) ? current + 1 : 1
 	om_hold(src, EFFECT_BODY_EFFECTS, src, stacks, path)
-	om_changed(src, CHANGE_MOB_CONDITIONS)
+	changed(src, CHANGE_MOB_CONDITIONS)
 	if(duration)
 		LAZYINITLIST(body_effect_timers)
 		LAZYADD(body_effect_timers[path], body_effect_new_stack(def, path, duration))
@@ -386,7 +386,7 @@ OWN_TIMER(/mob/living, body_effect)
 	body_effect_cancel(def, "[path]#tick")
 	if(!om_release(src, EFFECT_BODY_EFFECTS, src, path))
 		return
-	om_changed(src, CHANGE_MOB_CONDITIONS)
+	changed(src, CHANGE_MOB_CONDITIONS)
 	if(def.on_expired_text && !silent)
 		to_chat(src, def.on_expired_text)
 	// A persistent trait leaves the character only when deliberately removed from a living
