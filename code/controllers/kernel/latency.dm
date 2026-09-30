@@ -41,6 +41,7 @@
 #endif
 
 /proc/kernel_latency()
+	RETURN_TYPE(/datum/kernel_latency)
 	var/static/datum/kernel_latency/state = new
 	return state
 

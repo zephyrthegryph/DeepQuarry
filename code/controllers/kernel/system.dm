@@ -268,18 +268,12 @@ OWN_TIMER(/datum/system_member_driver, step_yield)
 /// Adds `A` (held by `source`; null is the anonymous source), optionally under `role`. Returns TRUE when it was not a
 /// member already. A second source on an existing member only records the source.
 /datum/system/proc/kernel_join(atom/A, source = null, role = null)
-	if(!member_join(type, A, source, role))
-		return FALSE
-	on_join(A)
-	return TRUE
+	return join(src, A, source || A, role)
 
 /// Removes `source`'s hold on `A` (null: the anonymous source; `all`: every source) in O(1): the last member takes
-/// its slot. Returns TRUE when `A` left the system.
+/// its slot. Returns TRUE when `A` left the system. Wraps leave().
 /datum/system/proc/kernel_leave(atom/A, source = null, all = FALSE)
-	if(!member_leave(type, A, source, all))
-		return FALSE
-	on_leave(A)
-	return TRUE
+	return leave(src, A, source || A, all)
 
 /datum/system/proc/is_member(atom/A)
 	return member_is(type, A)

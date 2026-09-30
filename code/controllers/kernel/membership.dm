@@ -34,6 +34,7 @@
 /// in `key` before, so on_join() should run. A second source on an existing member only records the source.
 /// `role` (optional) indexes the member for members_of(key, role); a later join may change it.
 /proc/member_join(key, datum/member, source = null, role = null)
+	key = member_key(key)
 	var/datum/kernel_membership/M = kernel_membership()
 	if(!key || !member)
 		return FALSE
@@ -85,6 +86,7 @@
 /// Removes `source`'s hold on `member` in `key` (null: the anonymous source; `all`: every source). Returns TRUE
 /// when the member left `key` (its last source went), so on_leave() should run.
 /proc/member_leave(key, datum/member, source = null, all = FALSE)
+	key = member_key(key)
 	var/datum/kernel_membership/M = kernel_membership()
 	var/list/index = M.index_by_key[key]
 	var/at = index?[member]
@@ -119,12 +121,15 @@
 
 /// True when `member` is in `key`.
 /proc/member_is(key, datum/member)
+	key = member_key(key)
 	var/datum/kernel_membership/M = kernel_membership()
 	return !!M.index_by_key[key]?[member]
 
 /// The members of `key`, in join order. The store's own list: read it, never write it. With `role`, the members
 /// holding that role instead.
 /proc/members_of(key, role = null)
+	RETURN_TYPE(/list)
+	key = member_key(key)
 	var/datum/kernel_membership/M = kernel_membership()
 	if(isnull(role))
 		return M.members_by_key[key] || list()
@@ -133,11 +138,13 @@
 
 /// How many members `key` has.
 /proc/members_total(key)
+	key = member_key(key)
 	var/datum/kernel_membership/M = kernel_membership()
 	return length(M.members_by_key[key])
 
 /// The role `member` holds in `key`, or null.
 /proc/member_role(key, datum/member)
+	key = member_key(key)
 	var/datum/kernel_membership/M = kernel_membership()
 	return M.role_by_key[key]?[member]
 

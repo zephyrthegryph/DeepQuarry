@@ -113,6 +113,7 @@ GLOBAL_LIST_EMPTY(reqs_interned)
 
 /// The subject (the held item by default) is of `type` (a path, or a list of paths).
 /proc/req(type, of = OP_HELD)
+	RETURN_TYPE(/datum/req)
 	var/datum/req/of_type/R = new
 	R.types = type
 	R.of = of
@@ -152,6 +153,7 @@ GLOBAL_LIST_EMPTY(reqs_interned)
 
 /// Every CAP_* bit in `bits` is set on the target (the panel is open).
 /proc/req_set(bits, of = OP_TARGET)
+	RETURN_TYPE(/datum/req)
 	var/datum/req/state_set/R = new
 	R.bits = bits
 	R.of = of
@@ -159,6 +161,7 @@ GLOBAL_LIST_EMPTY(reqs_interned)
 
 /// None of the CAP_* bits in `bits` is set on the target (not locked).
 /proc/req_clear(bits, of = OP_TARGET)
+	RETURN_TYPE(/datum/req)
 	var/datum/req/state_clear/R = new
 	R.bits = bits
 	R.of = of
@@ -180,6 +183,7 @@ GLOBAL_LIST_EMPTY(reqs_interned)
 	return O.allowed(ctx.actor) ? null : reason
 
 /proc/req_access()
+	RETURN_TYPE(/datum/req)
 	return req_intern(new /datum/req/access)
 
 // ---- req_wire ----
@@ -218,6 +222,7 @@ GLOBAL_LIST_EMPTY(reqs_interned)
 	return reason
 
 /proc/req_part(type)
+	RETURN_TYPE(/datum/req)
 	var/datum/req/part/R = new
 	R.part_type = type
 	return req_intern(R)
@@ -316,18 +321,21 @@ GLOBAL_LIST_EMPTY(reqs_interned)
 
 /// Holds when every part does. Takes requirements or lists of them.
 /proc/all_of(...)
+	RETURN_TYPE(/datum/req)
 	var/datum/req/all/R = new
 	R.parts = req_list(args)
 	return req_intern(R)
 
 /// Holds when any part does; the first reason otherwise.
 /proc/any_of(...)
+	RETURN_TYPE(/datum/req)
 	var/datum/req/any/R = new
 	R.parts = req_list(args)
 	return req_intern(R)
 
 /// Holds while no part does.
 /proc/none_of(...)
+	RETURN_TYPE(/datum/req)
 	var/datum/req/none/R = new
 	R.parts = req_list(args)
 	return req_intern(R)

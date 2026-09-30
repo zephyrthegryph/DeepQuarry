@@ -71,6 +71,7 @@
 
 /// The kernel.
 /proc/kernel()
+	RETURN_TYPE(/datum/controller/kernel)
 	var/static/datum/controller/kernel/K = new
 	return K
 

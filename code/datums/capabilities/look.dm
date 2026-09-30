@@ -123,9 +123,9 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
  * emissive (with a `value`, the part of that value); with none, `name` is an overlay state that glows
  * (the old form). `value` is TRUE (or any value) to do it, FALSE or null not to.
  */
-/datum/look/proc/glow(name, value = TRUE)
+/datum/look/proc/glow(name, value = TRUE, when = TRUE)
 	touched = TRUE
-	if(isnull(name) || isnull(value) || value == 0 || value == "")
+	if(!when || isnull(name) || isnull(value) || value == 0 || value == "")
 		return
 	var/wanted = (value == TRUE) ? null : "[value]"
 	for(var/list/entry in parts)
@@ -144,10 +144,8 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 /// icon file text -> assoc set of its icon_states. An icon's states never change in a round, so each
 /// file is read once; a look resolving parts costs list lookups, not icon_states() calls.
 GLOBAL_LIST_EMPTY(look_icon_states)
-#ifdef UNIT_TESTS
-/// "[type]" -> the part names a look asked for that the type's icon has no state for.
+/// "[type]" -> the part names a look asked for that the type's icon has no state for (filled in test builds).
 GLOBAL_LIST_EMPTY(look_missing_parts)
-#endif
 
 /// The set of state names `icon` (a file) has.
 /proc/look_states_of(icon)

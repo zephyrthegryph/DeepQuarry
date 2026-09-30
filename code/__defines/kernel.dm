@@ -68,7 +68,5 @@
 #define KERNEL_GARBAGE_FLOOR 2
 #define KERNEL_GARBAGE_FLOOR_PERIOD (1 SECONDS)
 
-#ifdef UNIT_TESTS
 /// An absolute tick usage no test world reaches (the boot ticks a test runs in are thousands of percent).
 #define WORK_TEST_LIMIT 1e9
-#endif

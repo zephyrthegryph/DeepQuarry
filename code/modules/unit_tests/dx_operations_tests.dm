@@ -283,7 +283,8 @@
 	var/list/resolved = resolve_gesture(H, F, GESTURE_CLICK)
 	TEST_ASSERT_NOTNULL(resolved, "a click resolves on the fixture")
 	TEST_ASSERT_EQUAL(resolved[1], ACT_USE, "to ACT_USE")
-	TEST_ASSERT_EQUAL(resolved[2].name, "Press", "and the op that answers it")
+	var/datum/op_def/answered = resolved[2]
+	TEST_ASSERT_EQUAL(answered.name, "Press", "and the op that answers it")
 	resolved = resolve_gesture(H, F, GESTURE_ALT)
 	TEST_ASSERT_EQUAL(resolved[1], ACT_TOGGLE, "alt-click takes the first action in the profile's priority list that has an op")
 	TEST_ASSERT_EQUAL(screentip_for(H, F, GESTURE_ALT), "Alt-click: Slow", "the screentip names it")

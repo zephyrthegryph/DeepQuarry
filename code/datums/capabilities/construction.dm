@@ -111,6 +111,7 @@
 
 /// The construction ladder `target` follows, or null.
 /proc/ladder_of(atom/target)
+	RETURN_TYPE(/datum/construction_ladder)
 	if(!target)
 		return null
 	var/datum/capability/construction/C = cap_of(target, /datum/capability/construction)

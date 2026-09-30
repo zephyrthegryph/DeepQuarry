@@ -24,8 +24,6 @@
 	var/list/notice_types
 	/// on_cross read -> the last band delivered.
 	var/list/bands
-	/// join(): system -> number of memberships this datum holds in it.
-	var/list/joined
 	/// after(key = ...): key -> list(timer id, token, clock) of the pending keyed timer.
 	var/list/timer_ids
 
@@ -216,40 +214,52 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 
 // ---------------------------------------------------------------- membership
 
-/// `E` joins `system`, held by `source` (a capability key, a datum, text). Returns TRUE on first membership.
-/proc/join(datum/system, datum/E, source = "join")
-	if(!system || !E || QDELING(system) || QDELING(E))
-		return FALSE
-	. = rx_ledger_add(system, RELK_MEMBER, E, source)
-	var/datum/rx_state/S = rx_of(E)
-	if(!S.joined)
-		S.joined = list()
-	S.joined[system] = (S.joined[system] || 0) + 1
+// MEMBER relations live in the kernel's one membership store (controllers/kernel/membership.dm). A key is what
+// members belong to: a /datum/system's type (its singleton is the owner), a capability type, or any datum used as
+// a system. join() / leave() are the relation API: they add the source, publish both ends (rel_member on the
+// system, rel_member_of on the member) and run the system's on_join() / on_leave() hook.
 
-/// `source` withdraws E from system. Returns TRUE when E is no longer a member.
-/proc/leave(datum/system, datum/E, source = "join")
+/// The membership key of `system`: a /datum/system stands for its type, anything else for itself.
+/proc/member_key(system)
+	if(istype(system, /datum/system))
+		var/datum/system/S = system
+		return S.type
+	return system
+
+/// `E` joins `system`, held by `source` (a capability key, a datum, text), optionally under `role` (indexed for
+/// members_of(system, role)). Returns TRUE on first membership.
+/proc/join(system, datum/E, source = "join", role = null)
+	if(!system || !E || QDELING(E))
+		return FALSE
+	if(isdatum(system))
+		var/datum/holder = system
+		if(QDELING(holder))
+			return FALSE
+	. = member_join(system, E, source, role)
+	if(!.)
+		return
+	if(isdatum(system))
+		rx_ledger_publish(system, RELK_MEMBER, E)
+	if(istype(system, /datum/system))
+		var/datum/system/S = system
+		S.on_join(E)
+
+/// `source` withdraws E from system (`all`: every source). Returns TRUE when E is no longer a member.
+/proc/leave(system, datum/E, source = "join", all = FALSE)
 	if(!system || !E)
 		return FALSE
-	var/list/sources = system.rx?.ledger?["[RELK_MEMBER]"]?[E]
-	if(!sources?[source])
-		return FALSE
-	var/count = sources[source]
-	. = rx_ledger_remove(system, RELK_MEMBER, E, source, count)
-	var/left = (E.rx?.joined?[system] || 0) - count
-	if(left > 0)
-		E.rx.joined[system] = left
-	else if(E.rx?.joined)
-		E.rx.joined -= system
-		if(!length(E.rx.joined))
-			E.rx.joined = null
-
-/// The members of `system`.
-/proc/members_of(datum/system)
-	return rx_ledger_whats(system, RELK_MEMBER)
+	. = member_leave(system, E, source, all)
+	if(!.)
+		return
+	if(isdatum(system))
+		rx_ledger_publish(system, RELK_MEMBER, E)
+	if(istype(system, /datum/system))
+		var/datum/system/S = system
+		S.on_leave(E)
 
 /// TRUE when `E` is a member of `system` through any source.
-/proc/is_member(datum/system, datum/E)
-	return rx_ledger_has(system, RELK_MEMBER, E)
+/proc/is_member(system, datum/E)
+	return member_is(system, E)
 
 // ---------------------------------------------------------------- teardown
 
@@ -263,16 +273,9 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 		rx_listener_remove(L)
 	for(var/datum/rx_listener/L as anything in S.listening?.Copy())
 		rx_listener_remove(L)
-	for(var/datum/system as anything in S.joined?.Copy())
-		var/list/sources = system.rx?.ledger?["[RELK_MEMBER]"]?[D]
-		for(var/source in sources?.Copy())
-			leave(system, D, source)
-	var/list/members = S.ledger?["[RELK_MEMBER]"]
-	for(var/member in members?.Copy())
-		if(!isdatum(member))
-			continue
-		var/list/sources = members[member]
-		for(var/source in sources?.Copy())
-			leave(D, member, source)
+	for(var/key in member_keys(D))
+		leave(key, D, all = TRUE)
+	for(var/datum/member as anything in members_of(D).Copy())
+		leave(D, member, all = TRUE)
 	GLOB.rx_pending -= D
 	D.rx = null
