@@ -534,19 +534,21 @@ def boot_text(model):
     out = ["/// Types whose reactions() declare every() / on_cross() / on_notice(), with the RXB_* kinds (code/datums/reactions/work.dm).",
            "/proc/rx_boot_types()", "\tRETURN_TYPE(/list)"]
     if flags:
-        out.append("\treturn list(")
+        out.append("\tvar/static/list/types = list(")
         for owner in sorted(flags):
             out.append("\t\t%s = %s," % (owner, " | ".join(sorted(flags[owner]))))
         out.append("\t)")
+        out.append("\treturn types")
     else:
         out.append("\treturn list()")
     out += ["", "/// Capabilities some every(members = ...) runs per member of: their holders join the membership store at init.",
             "/proc/rx_boot_members()", "\tRETURN_TYPE(/list)"]
     if members:
-        out.append("\treturn list(")
+        out.append("\tvar/static/list/caps = list(")
         for cap in members:
             out.append("\t\t%s," % cap)
         out.append("\t)")
+        out.append("\treturn caps")
     else:
         out.append("\treturn list()")
     out.append("")
