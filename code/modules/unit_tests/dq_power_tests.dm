@@ -213,9 +213,9 @@
 	A.equipment = POWERCHAN_ON_AUTO
 	A.lighting = POWERCHAN_ON_AUTO
 	A.environ = POWERCHAN_ON_AUTO
-	A.set_channels(0, A.equipment)
-	A.set_channels(1, A.lighting)
-	A.set_channels(2, A.environ)
+	native_write(A, NATIVE_APC_CHANNELS, A.equipment, 0)
+	native_write(A, NATIVE_APC_CHANNELS, A.lighting, 1)
+	native_write(A, NATIVE_APC_CHANNELS, A.environ, 2)
 	A.cell.charge = A.cell.maxcharge
 	A.seat_cell_charge(TRUE) // the seated cell's charge becomes Rust's again
 	A.update()

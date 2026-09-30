@@ -94,7 +94,9 @@
 	/// Arena id of the mixture `watch` is on (a number, not a reference to the mixture).
 	var/armed_id
 
-OWN(/datum/gas_watch_state, watch, OWN_DELETE)
+/datum/gas_watch_state/relations()
+	. = ..()
+	. += rel_one(nameof(watch), /datum/native_watch/world, kind = RELK_OWNED, policy = OWN_DELETE)
 
 /// Points the watch at the mixture at the port now: nothing changes when it is the one already
 /// watched. A port that lost its mixture drops the watch.

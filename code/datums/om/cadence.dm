@@ -60,6 +60,7 @@
 
 /// The cadence datum to hold GRANT_CADENCE grants on.
 /datum/system/native/proc/get_step_cadence()
+	RETURN_TYPE(/datum/step_cadence)
 	if(!step_cadence)
 		step_cadence = new
 	return step_cadence

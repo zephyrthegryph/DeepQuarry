@@ -49,8 +49,8 @@
 	TEST_ASSERT_EQUAL(km_system_key_for_path(/datum/om/behaviour/ai_brain/tactical), "ai_brain", "a subtype of a folder's type")
 	TEST_ASSERT_EQUAL(km_system_key_for_path(/datum/om/behaviour/sleeper/light), "lighting", "the light sleeper")
 	TEST_ASSERT_EQUAL(km_system_key_for_path(/datum/om/behaviour/climbable/cliff), "object_behaviours", "datums/behaviours")
-	TEST_ASSERT_EQUAL(km_system_key_for_path(/datum/om/pipeline/periodic/continuous/projectiles), "projectiles", "the more specific row comes first")
-	TEST_ASSERT_EQUAL(km_system_key_for_path(/datum/om/pipeline/periodic/slow), "periodic", "the other periodic pipelines")
+	TEST_ASSERT_EQUAL(km_system_key_for_path(/datum/cadence/continuous/projectiles), "projectiles", "the more specific row comes first")
+	TEST_ASSERT_EQUAL(km_system_key_for_path(/datum/cadence/slow), "periodic", "the other periodic pipelines")
 	TEST_ASSERT_EQUAL(km_system_key_for_path(/datum/om/behaviour/internal/timers), "om_core", "the scheduler's own behaviours")
 	// Rule 3: the family fallback.
 	TEST_ASSERT_EQUAL(km_system_key_for_path(/datum/om/behaviour/world/statpanels), "statpanels", "world/<x> is <x>")
@@ -463,14 +463,14 @@
 	var/mob/observer/dead/clicker = allocate(/mob/observer/dead, run_loc_floor_bottom_left)
 	var/datum/tick_meter/live_meter = km_meter()
 	var/datum/tick_meter/probe = new(8)
-	var/queue_before = length(SSverb_manager.verb_queue)
+	var/queue_before = length(SSverb_manager.lane.verb_queue)
 	var/synthetic_before = GLOB.km_synthetic.verbs_run
 	// Nothing below sleeps, so the MC cannot call end_tick() on the wrong meter meanwhile.
 	km_holder().meter = probe // ALLOW(ownership): the test swaps the live meter for a probe for these few statements
 	for(var/i in 1 to 3)
 		km_synthetic_verb()
-	var/queued_now = length(SSverb_manager.verb_queue) - queue_before
-	SSverb_manager.run_verb_queue()
+	var/queued_now = length(SSverb_manager.lane.verb_queue) - queue_before
+	SSverb_manager.lane.run_verb_queue()
 	km_synthetic_click(clicker, run_loc_floor_bottom_left)
 	km_synthetic_click(clicker, run_loc_floor_bottom_left)
 	km_holder().meter = live_meter // ALLOW(ownership): put back before anything is asserted

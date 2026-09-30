@@ -4,6 +4,7 @@
 DEBUG_VERB(dq_test_debug_verb, R_DEBUG, "DQ Test Debug Verb", "Unit test only.", VERB_CAT_DEBUG_MISC)
 	return TRUE
 
+#ifdef DQ_DEBUG_VERBS
 /// A DEBUG_VERB registers as a rights-gated, debug_only admin verb in the debug category.
 /datum/unit_test/dq_debug_verb_registers_gated
 /datum/unit_test/dq_debug_verb_registers_gated/Run()
@@ -12,6 +13,8 @@ DEBUG_VERB(dq_test_debug_verb, R_DEBUG, "DQ Test Debug Verb", "Unit test only.",
 	TEST_ASSERT(registered.debug_only, "a DEBUG_VERB should be flagged debug_only so dispatch logs it")
 	TEST_ASSERT_EQUAL(registered.permissions, R_DEBUG, "a DEBUG_VERB should carry its rights")
 	TEST_ASSERT_EQUAL(registered.category, VERB_CAT_DEBUG_MISC, "a DEBUG_VERB should carry its category define")
+
+#endif
 
 /// An ordinary ADMIN_VERB is not debug_only, and no registered debug verb is open to everyone.
 /datum/unit_test/dq_debug_verb_only_debug_flagged

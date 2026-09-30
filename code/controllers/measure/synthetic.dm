@@ -2,7 +2,7 @@
 //
 // A benchmark world has no clients, so nothing would ever record input latency. These drive the real paths: a
 // click goes through the real /atom/Click (the router's stamps), a verb through the real verb queue
-// (SSverb_manager.queue_verb() and run_verb_queue()), so what the meter records is what a player's input would.
+// (SSverb_manager.lane.queue_verb() and run_verb_queue()), so what the meter records is what a player's input would.
 // Compiled into test and benchmark builds only.
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
@@ -26,6 +26,6 @@ GLOBAL_DATUM_INIT(km_synthetic, /datum/km_synthetic, new)
 
 /// Queues a no-op verb on SSverb_manager the way a verb sent while the tick is busy is, whatever the usage now.
 /proc/km_synthetic_verb()
-	SSverb_manager.queue_verb(VERB_CALLBACK(GLOB.km_synthetic, TYPE_PROC_REF(/datum/km_synthetic, verb_noop)))
+	SSverb_manager.lane.queue_verb(VERB_CALLBACK(GLOB.km_synthetic, TYPE_PROC_REF(/datum/km_synthetic, verb_noop)))
 
 #endif

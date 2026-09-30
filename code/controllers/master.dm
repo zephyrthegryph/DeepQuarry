@@ -590,6 +590,7 @@ UI_ACT_PROC(/datum/controller/master, ui_act_view_variables)
 	var/previous_worst_usage = LAZYACCESS(perf_worst_tick, "usage") || 0
 	if(usage > previous_worst_usage || usage > 100)
 		var/list/breakdown = performance_tick_breakdown(usage)
+		var/datum/tick_meter/meter = km_meter()
 		var/list/tick_record = list(
 			"world_time" = world.time,
 			"usage" = usage,

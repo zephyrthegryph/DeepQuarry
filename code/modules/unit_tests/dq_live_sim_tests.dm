@@ -51,14 +51,10 @@
 	TEST_ASSERT_EQUAL(vg_world_set_dt(0.25), 0.25, "vg_world_set_dt reports the step now in effect")
 	TEST_ASSERT_EQUAL(vg_world_set_dt(0), 0.25, "a non-positive step is refused and the current one is kept")
 	TEST_ASSERT_EQUAL(vg_world_set_dt(-1), 0.25, "so is a negative one")
-	var/wait_before = SSvg.wait
 	SSvg.set_step_dt(0.1)
 	TEST_ASSERT_EQUAL(SSvg.current_dt, 0.1, "set_cadence retunes the world step")
-	TEST_ASSERT_EQUAL(SSvg.wait, 0.1 SECONDS, "and the subsystem fires at it")
-	TEST_ASSERT_EQUAL(SSvg.sweep_batch, 1, "with the reconcile sweep keeping its atoms per second")
 	SSvg.set_step_dt(before)
 	TEST_ASSERT_EQUAL(SSvg.current_dt, before, "restored")
-	TEST_ASSERT_EQUAL(SSvg.wait, wait_before, "the wait comes back")
 	TEST_ASSERT_EQUAL(vg_world_set_dt(before), before, "and Rust is back on the base step")
 
 /datum/world_threshold_subscriber

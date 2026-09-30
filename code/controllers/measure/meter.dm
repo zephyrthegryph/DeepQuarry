@@ -463,5 +463,6 @@
 /// Total length of every verb queue (SSverb_manager and its speech subtype).
 /proc/km_verb_queue_length()
 	. = 0
-	for(var/datum/controller/subsystem/verb_manager/manager in Master.subsystems)
-		. += length(manager.verb_queue)
+	. += length(verb_lane_of(SSverb_manager)?.verb_queue)
+	var/datum/verb_lane/speech = verb_lane_of(system(/datum/system/speech_controller))
+	. += length(speech?.verb_queue)
