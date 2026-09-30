@@ -1,13 +1,13 @@
 // The access lock capability (doc/rewrite/dx_conventions.md §2). State: CAP_LOCKED. Swiping an ID
 // (or anything whose GetAccess() carries the access) toggles it; entries declaring locked_by = LOCK
-// refuse while it is engaged (cap_gate_reason()). Layer: "locked". Accessor: is_locked().
+// refuse while it is engaged (cap_gate_reason()). Layer: LOOK_LOCKED. Accessor: is_locked().
 // The constructor's access is the TYPE DEFAULT (design review H1): a holder whose own req_access /
 // req_one_access is set (map edits vary it per instance) is read instead.
 //
 //	. += cap_lock(access = list(ACCESS_ENGINE))
 
 /datum/capability/lock
-	layer_name = "locked"
+	layer_name = LOOK_LOCKED
 	/// Every one of these is required (has_access()).
 	var/list/req_access
 	/// At least one of these is required.
@@ -16,7 +16,7 @@
 	var/list/id_types
 
 /// An access lock: access (all required) and/or req_one_access (any one). id_types: what is swiped.
-/proc/cap_lock(list/access, list/req_one_access, list/id_types = list(/obj/item/card/id, /obj/item/pda), behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log, layer = "locked")
+/proc/cap_lock(list/access, list/req_one_access, list/id_types = list(/obj/item/card/id, /obj/item/pda), behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log, layer = LOOK_LOCKED)
 	var/datum/capability/lock/C = new
 	C.req_access = access
 	C.req_one_access = req_one_access
@@ -34,7 +34,7 @@
 	draw_layer(look, when = is_locked(holder))
 
 /datum/capability/lock/ui_data(atom/holder, mob/user, list/data)
-	data["locked"] = is_locked(holder)
+	data[LOOK_LOCKED] = is_locked(holder)
 
 /// Whether `accesses` opens this lock on holder: the holder's own req_access / req_one_access when
 /// either is set, else the capability's type default.

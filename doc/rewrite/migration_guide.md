@@ -169,7 +169,26 @@ Every constructor below also takes the standard gating arguments `behind`, `bloc
 - Image overlays are part of the change key.
 - An identical result costs almost nothing.
 
-**Never** call `update_icon()`, `queue_icon_update()` or `update_appearance()`, and never override `update_icon`. **Standard state names:** `broken`, `cover_open`, `panel_open`, `wires`, `locked`, `sparks`, `emagged`, `dark`. The icon-state rename tool [built] maps legacy states to them in `dmi.toml` and updates the code.
+**Never** call `update_icon()`, `queue_icon_update()` or `update_appearance()`, and never override `update_icon`.
+
+[built: `rewrite/f-look`] **One naming convention for states** (`code/__defines/look_names.dm`):
+
+| State | Meaning | Built by |
+|---|---|---|
+| `<base>` | the base sprite | `look.state()` / the mapped `icon_state` |
+| `<base>-<variant>` | the base, in a variant (`airlock-lit`) | `look.variant("lit", when = on)` |
+| `<base>-<part>[-<v>]` | a part drawn for this sprite only | `look.part("panel", "open")` |
+| `<part>[-<v>]` | a part every sprite of the icon shares (`panel-open`, `broken`, `charge-3`) | `look.part(...)` |
+
+`look.variant(name)` replaces the base with `<base>-name` when the icon has it; `look.part(name, value)` draws the first of `<base>-name[-value]` then `name[-value]` (nothing if neither exists; `value` TRUE is a plain part, FALSE/null draws nothing); `look.glow(name, value)` upgrades a part you already added to emissive, so glow states are never separate names. `_` and `-` are the same when a name is looked up, so an old `panel_open` still resolves as `panel-open` until it is renamed. `look.hide("panel_open")` hides a part by either spelling. Icon states are read once per icon file (`look_states_of()`); nothing calls `icon_states()` per draw.
+
+Library capabilities draw their layer as a part, so a type's icon just needs the standard states: `broken`, `cover-open`, `panel-open`, `wires`, `locked`, `dark`, `lid`, `cell`, `bolts`, `welded`, `emergency`. `look_missing_standard_parts(A)` lists what a type's icon lacks; a type says what it knowingly lacks with `look_lacks()` and opts in to the unit test's enforcement with `look_checked()` (a checked type with a gap fails the test). The rename tool maps legacy states to the convention:
+
+```
+python tools/dq_icons/rename_states.py icons/obj/power.dmi.toml --map apc_frame=frame --refs code/modules/power   # dry run
+python tools/dq_icons/rename_states.py icons/obj/power.dmi.toml --map-file renames.txt --apply
+python tools/dq_icons/rename_states.py icons/obj/power.dmi.toml --check                                          # states off the convention
+```
 
 ## A6. Periodic work and verbs
 
@@ -1101,3 +1120,34 @@ TRACKED(/obj/item/laser_pointer, pointing, CHANGE_EFFECTS)
 - `add_fingerprint` (the dispatcher);
 - direct `icon_state` writes and the reset timer (a timed var plus `draw`);
 - `set_recharging`, `OM_FIELD(recharging)` and `DECLARE_PERIODIC_WHILE` (`should_run()` derives it from `energy`).
+
+## A15. Construction primitives [built: `rewrite/f-look`]
+
+A ladder is what the player does, not stages with hand-written undo, refund, message, icon and delay:
+
+```dm
+. += cap_construction(
+	ladder_options(sprite = "frame", undo_delay = 1 SECONDS, dismantle = list(TOOL_WRENCH, /obj/item/stack/material/steel, 2)),
+	stage("frame", desc = "A bare frame."),
+	fit(/obj/item/circuitboard/apc),          // a part, pried out again with a crowbar
+	wire(5),                                  // 5 cable; wirecutters cut it out and give it back
+	fasten(TOOL_SCREWDRIVER, name = "closed"),
+	plate(/obj/item/stack/material/steel, 2), // 2 sheets welded on; the welder cuts them off and refunds them
+)
+```
+
+Primitives: `insert(part)` (in and out by hand), `wire(n)`, `fasten(tool)`, `weld()`. Joints: `fit(part)`, `plate(sheets, n, name =)`, `parts(list)`. Presets (lists of stages: pass them to `cap_construction()`): `mech_chassis(result, sprite =, parts =, steps =)`, `machine_frame()`, `computer_frame()`, `wall_frame(board)`, `girder()`. Derived: the undo (the fastener table), the refund (what the build consumed), the messages (the verb table), the stage icons (`sprite` + the stage's position), the delays (per-tool defaults; `undo_delay` overrides every undo), stage names (numbered when two are alike). The ladder owns the stage: ask `built_past(A, "wired")`, keep no stage var. `ladder_options(at = BAY_X)` names the compartment the steps are done in. Not migrated yet: mech and girder content, the old `/datum/construction_graph` users. A holder type that defines its own `weld()` / `insert()` / `wire()` proc shadows the primitives inside its own procs; call `global.weld()` there.
+
+## A16. Pools [built: `rewrite/f-look`]
+
+```dm
+/datum/damage_packet
+	parent_type = /datum/pooled
+	var/zone                 // any var: reset to its initial value on release
+	var/list/amounts         // a list New() allocates is kept and emptied
+
+var/datum/damage_packet/P = take(/datum/damage_packet)
+... P.release()
+```
+
+A pooled type declares nothing per field and has no `ownership()`. `reset()` is the hook for what a field cannot say; `pool_max_free` caps the free list (extras are destroyed); `snapshot()` lists the reset fields; poison is on in every test build, so a holder that keeps a released object crashes on its next use. `tools/ci/pool_lint.py` rejects `new` of a pooled type and a `take()` in a file that never releases. `POOL_DECLARE` and `DECLARE_REF(..., TRANSIENT)` still work for the old form.

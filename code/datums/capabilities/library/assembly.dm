@@ -56,7 +56,7 @@
 
 /datum/capability/assembly/draw(atom/holder, datum/look/look)
 	var/obj/O = holder
-	look.overlay(attached_state, when = istype(O) && !isnull(O.attached_assembly))
+	look.part(attached_state, !!(istype(O) && !isnull(O.attached_assembly)))
 
 /datum/capability/assembly/ui_data(atom/holder, mob/user, list/data)
 	var/obj/O = holder

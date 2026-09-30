@@ -67,7 +67,11 @@
 /// POOL_ASSERT_LIVE on it crashes.
 #define POOL_STATE_POISONED 3
 
-/// Makes PATH a pooled type: take one with pool_take(PATH), give it back with
+/// pool_reset_plan() values: a field reset to its initial value, and a list New() allocated (kept, emptied).
+#define POOL_RESET_VALUE 1
+#define POOL_RESET_LIST 2
+
+/// (Legacy form; new pooled types are subtypes of /datum/pooled.) Makes PATH a pooled type: take one with pool_take(PATH), give it back with
 /// pool_release(obj) or obj.release(). Pooled objects refuse a normal qdel.
 #define POOL_DECLARE(PATH) PATH/is_pooled() { return TRUE; }; PATH/proc/release() { pool_release(src); }; PATH/Destroy(force) { if(!force) { pool_refused_qdel(src); return QDEL_HINT_LETMELIVE; } return ..(); }
 

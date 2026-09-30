@@ -120,9 +120,10 @@ POOL_DECLARE(/datum/pool_test_item)
 /datum/unit_test/dq_pool/damage_packet/Run()
 	var/was_poison = pool_set_poison(FALSE)
 	var/datum/damage_packet/probe = new
-	var/list/transient = own_table_of(probe).pool_reset_vars
+	var/list/plan = pool_reset_plan(probe)
 	for(var/name in list("source", "attacker", "weapon"))
-		TEST_ASSERT(name in transient, "damage packet [name] is POOL_RESET")
+		TEST_ASSERT(name in plan, "damage packet [name] is reset on release")
+	TEST_ASSERT_EQUAL(plan["amounts"], POOL_RESET_LIST, "the amounts list is kept and emptied")
 	var/datum/other = new /datum
 	var/datum/damage_packet/packet = damage_packet(other, other, other, BP_TORSO, DAMAGE_PACKET_SILENT, 7, NORTH)
 	packet.add(DAMAGE_BLUNT, 4)

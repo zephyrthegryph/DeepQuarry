@@ -22,10 +22,10 @@
 //                            is splashed over the holder instead of poured.
 // Held-side API for any target: A.cap_reagent_splash_onto(user, target) splashes A's contents.
 // Examine: the volume and a closed lid. Look: gauge "fill" (0..4 by total/maximum volume) and
-// overlay "lid" while a lid is on. The reagents mark the holder changed (holder.dm update_total()).
+// overlay LOOK_LID while a lid is on. The reagents mark the holder changed (holder.dm update_total()).
 
 /datum/capability/reagent_container
-	layer_name = "lid"
+	layer_name = LOOK_LID
 	data_type = /datum/cap_reagent_data
 	/// The reagent holder's volume, made at init when the holder has none.
 	var/volume = 30
@@ -54,7 +54,7 @@
  * choices (first is the default); lid: has a lid; pourable / fillable / splashable: what other
  * containers can do with it; cycle_transfer: Set transfer amount steps instead of asking.
  */
-/proc/cap_reagent_container(volume = 30, list/transfer_amounts = list(5, 10, 15, 30), lid = FALSE, pourable = TRUE, fillable = TRUE, splashable = TRUE, cycle_transfer = FALSE, fill_levels = 4, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log, layer = "lid")
+/proc/cap_reagent_container(volume = 30, list/transfer_amounts = list(5, 10, 15, 30), lid = FALSE, pourable = TRUE, fillable = TRUE, splashable = TRUE, cycle_transfer = FALSE, fill_levels = 4, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log, layer = LOOK_LID)
 	var/datum/capability/reagent_container/C = new
 	C.layer_name = layer
 	C.volume = volume

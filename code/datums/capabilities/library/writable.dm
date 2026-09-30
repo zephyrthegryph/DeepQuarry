@@ -52,7 +52,7 @@
 	return list("It reads: [text]")
 
 /datum/capability/writable/draw(atom/holder, datum/look/look)
-	look.overlay(written_state, when = !isnull(cap_writable_text(holder)))
+	look.part(written_state, !!(!isnull(cap_writable_text(holder))))
 
 /datum/capability/writable/ui_data(atom/holder, mob/user, list/data)
 	data["written"] = cap_writable_text(holder)

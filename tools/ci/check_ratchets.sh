@@ -9,7 +9,7 @@ cd "$(dirname "$0")/../.."
 PY="${PYTHON:-python3}"
 failed=()
 # Fixture selftests first: a lint whose own fixtures fail can't be trusted to ratchet.
-for lint in ui_actions_lint.py sys_lint.py cap_bits_lint.py doc_snippets.py; do
+for lint in ui_actions_lint.py sys_lint.py cap_bits_lint.py doc_snippets.py pool_lint.py; do
 	if ! "$PY" "tools/ci/$lint" --selftest; then
 		failed+=("$lint --selftest")
 	fi
@@ -47,6 +47,7 @@ for lint in \
 	ui_actions_lint.py \
 	sys_lint.py \
 	tracked_lint.py \
+	pool_lint.py \
 	derived_reads_lint.py \n	cap_bits_lint.py \n	system_boundary_lint.py \n	doc_snippets.py; do
 	echo "::group::$lint"
 	if ! "$PY" "tools/ci/$lint"; then

@@ -1,17 +1,17 @@
 // The wires capability (doc/rewrite/dx_conventions.md §2): owns one /datum/wires (the existing wire
 // system, code/datums/wires/) per holder, made on first use and kept in the holder's cap_data. A
-// multitool or wirecutters on the exposed wires opens the wires window. Layer: "wires" while exposed.
+// multitool or wirecutters on the exposed wires opens the wires window. Layer: LOOK_WIRES while exposed.
 // Accessors: wires_exposed(), wires_of().
 //
 //	. += cap_wires(/datum/wires/apc, behind = PANEL)
 
 /datum/capability/wires
-	layer_name = "wires"
+	layer_name = LOOK_WIRES
 	/// The /datum/wires subtype made for each holder.
 	var/wires_type
 
 /// Wires of `wires_type`, reachable while everything in `behind` is open.
-/proc/cap_wires(wires_type, behind = PANEL, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log, layer = "wires")
+/proc/cap_wires(wires_type, behind = PANEL, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log, layer = LOOK_WIRES)
 	var/datum/capability/wires/C = new
 	C.wires_type = wires_type
 	C.layer_name = layer

@@ -79,7 +79,7 @@
 
 /datum/capability/condition/draw(atom/holder, datum/look/look)
 	..()
-	look.overlay(layer_name || "[key]")
+	look.part(layer_name || "[key]")
 
 /datum/capability/condition/hidden_verbs(atom/holder)
 	return hides_verbs
