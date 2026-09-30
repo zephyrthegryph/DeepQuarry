@@ -734,13 +734,13 @@ function renderComponentsDm(root: string, components: Component[], domainEvents:
       dm += `/// ${f.unit ?? 'unitless'};${range}\n`;
       if (f.array) {
         dm += `${procHeader(root, dmType, `get_${f.name}`, 'index')}\n\treturn ${getter(f, 'index')}\n\n`;
-        dm += `/// Returns the stored value.\n`;
-        dm += `${procHeader(root, dmType, `set_${f.name}`, 'index, value')}\n\treturn vg_component_set(vg_entity, ${codeDefine}, ${fid(f)}, index, value)\n\n`;
+        dm += `/// Returns the stored value, then runs the type's declared push (rust_pushed()).\n`;
+        dm += `${procHeader(root, dmType, `set_${f.name}`, 'index, value')}\n\t. = vg_component_set(vg_entity, ${codeDefine}, ${fid(f)}, index, value)\n\trust_pushed()\n\n`;
         continue;
       }
       dm += `${procHeader(root, dmType, `get_${f.name}`, '')}\n\treturn ${getter(f, '0')}\n\n`;
-      dm += `/// Returns the stored value.\n`;
-      dm += `${procHeader(root, dmType, `set_${f.name}`, 'value')}\n\treturn vg_component_set(vg_entity, ${codeDefine}, ${fid(f)}, -1, value)\n\n`;
+      dm += `/// Returns the stored value, then runs the type's declared push (rust_pushed()).\n`;
+      dm += `${procHeader(root, dmType, `set_${f.name}`, 'value')}\n\t. = vg_component_set(vg_entity, ${codeDefine}, ${fid(f)}, -1, value)\n\trust_pushed()\n\n`;
     }
     for (const f of [...stateFields, ...computedFields]) {
       const what = f.role === 'computed' ? 'computed readout' : 'state';
@@ -853,21 +853,15 @@ function renderComponentsDm(root: string, components: Component[], domainEvents:
   }
   dm += `\treturn mismatches\n\n`;
 
-  // The one event path (rust_architecture.md §4.8): one FFI call returns
-  // every typed event of the step as `header, entity, len, payload...`.
-  dm += `/// Drains and dispatches every typed event since the last call (§4.8).\n`;
-  dm += `/// SSvg calls this once per tick after vg_world_tick(). Component events\n`;
-  dm += `/// go to the bound atom (checked against vg_entity: a detached component's\n`;
-  dm += `/// late event is dropped); domain events go to SSvg's handlers.\n`;
-  dm += `/proc/vg_drain_events()\n`;
-  dm += `\tvar/list/flat = vg_world_events()\n`;
-  dm += `\tvar/i = 1\n`;
-  dm += `\twhile(i + 2 <= length(flat))\n`;
-  dm += `\t\tvar/header = flat[i]\n`;
-  dm += `\t\tvar/entity = flat[i + 1]\n`;
-  dm += `\t\tvar/len = flat[i + 2]\n`;
-  dm += `\t\tvar/p = i + 3\n`;
-  dm += `\t\ti = p + len\n`;
+  // The one event path (rust_architecture.md §4.8): the frame's outbox carries
+  // every typed event as a NOTICE record (`vg_frame`, ffi/src/frame.rs); the
+  // native system (code/datums/native/system.dm) hands each to this decoder.
+  dm += `/// Dispatches one typed event, a NOTICE record of the frame outbox (§4.8):\n`;
+  dm += `/// \`header\` and \`entity\` from the record, its fields at \`flat[p]\` on. Component\n`;
+  dm += `/// events go to the bound atom (checked against vg_entity: a detached\n`;
+  dm += `/// component's late event is dropped); domain events go to SSvg's handlers.\n`;
+  dm += `/// Returns TRUE when the header is one of the generated events.\n`;
+  dm += `/proc/vg_dispatch_notice(header, entity, list/flat, p)\n`;
   const arms: string[] = [];
   for (const comp of components) {
     const lower = snake(comp.structName);
@@ -877,7 +871,7 @@ function renderComponentsDm(root: string, components: Component[], domainEvents:
         const header = eventHeader(ids, comp.domain, comp.kind, id);
         const args = v.fields.map((_, k) => `flat[p + ${k}]`).join(', ');
         arms.push(
-          `\t\t\tif(${header})\n\t\t\t\tvar/atom/movable/mover = SSvg.entity_lookup(entity)\n\t\t\t\tif(mover && mover.vg_entity == entity)\n\t\t\t\t\tvar${comp.dmType}/target = mover\n\t\t\t\t\ttarget.on_${lower}_${snake(v.name)}(${args})\n`,
+          `\t\tif(${header})\n\t\t\tvar/atom/movable/mover = SSvg.entity_lookup(entity)\n\t\t\tif(mover && mover.vg_entity == entity)\n\t\t\t\tvar${comp.dmType}/target = mover\n\t\t\t\ttarget.on_${lower}_${snake(v.name)}(${args})\n\t\t\treturn TRUE\n`,
         );
       });
   }
@@ -885,13 +879,13 @@ function renderComponentsDm(root: string, components: Component[], domainEvents:
     de.decl.variants.forEach((v, id) => {
       const header = eventHeader(ids, de.domain, 0, id);
       const args = v.fields.map((_, k) => `flat[p + ${k}]`).join(', ');
-      arms.push(`\t\t\tif(${header})\n\t\t\t\tSSvg.on_${de.domain}_${snake(v.name)}(${args})\n`);
+      arms.push(`\t\tif(${header})\n\t\t\tSSvg.on_${de.domain}_${snake(v.name)}(${args})\n\t\t\treturn TRUE\n`);
     });
   }
   if (arms.length) {
-    dm += `\t\tswitch(header)\n${arms.join('')}`;
+    dm += `\tswitch(header)\n${arms.join('')}`;
   }
-  dm += '\n';
+  dm += `\treturn FALSE\n\n`;
   return dm;
 }
 

@@ -127,7 +127,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/trinary/atmos_filter, TYPE_P
 	var/unfilterable_moles = result[3]
 	var/power_draw = result[4]
 	var/considered_moles = filterable_moles + unfilterable_moles
-	var/dt = SSvg.wait / (1 SECONDS)
+	var/dt = NATIVE_PIPE_DEVICE_PERIOD
 
 	last_flow_rate = (total_transfer_moles/air1.total_moles())*air1.return_volume()
 	last_power_draw = power_draw

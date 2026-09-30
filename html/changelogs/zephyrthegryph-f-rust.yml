@@ -1,0 +1,7 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "One Rust driver, vg_frame(), and one outbox of CHANGED/NOTICE/CROSSED records delivered by /datum/system/native; the separate world tick, event, watch-step, heat and gas drains are gone from DM"
+  - refactor: "Heat watches use the generic world watch ports; gas pumps and scrubbers, pipe leaks and pipe heat exchange run their maths and moves in Rust; DM filter/mixer/specific-power procs deleted"
+  - refactor: "Turf temperature is a seed (initial_temperature); the live value is the heat field's. The SSvg repair sweep is a test-only drift audit; the power grid keeps no eased view copy"
+  - code_imp: "native_read() with a per-frame cache; generated setters end in rust_pushed(); dq_rx_rate_* wrappers removed in favour of om_rate_*"

@@ -503,9 +503,9 @@ generates any bind, so a domain crate needs no `byondapi`
 - **Events are wired end to end.** Laws emit typed events;
   `vg_world_events()` returns every event of the step as one list
   (`header, entity, len, payload...`), and the generated
-  `vg_drain_events()` decodes it: component events call the bound atom's
+  `vg_dispatch_notice()` decodes each NOTICE record of the frame outbox: component events call the bound atom's
   `on_<kind>_<event>(fields...)` after checking `vg_entity`, domain events
   (`#[vg::events(domain = power)]`) call `SSvg.on_<domain>_<event>(...)`.
-  `SSvg.fire()` paces the world first (`vg_world_tick`).
+  The native system's frame paces the world first (`vg_frame`, one call per tick).
 - `vg_entity_is_valid(entity, domain, kind)` answers for world kinds by the
   same code, and for hosts not yet on the world through their entity slot.

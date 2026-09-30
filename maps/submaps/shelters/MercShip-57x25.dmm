@@ -41,7 +41,7 @@
 	name = "Server Base";
 	nitrogen = 500;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/survivalpod/superpose/MercShip)
 "aE" = (
@@ -298,7 +298,7 @@
 	name = "Server Base";
 	nitrogen = 500;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/survivalpod/superpose/MercShip)
 "dW" = (
@@ -414,7 +414,7 @@
 	name = "Server Base";
 	nitrogen = 500;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/survivalpod/superpose/MercShip)
 "fK" = (
@@ -1753,7 +1753,7 @@
 	name = "Server Base";
 	nitrogen = 500;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/survivalpod/superpose/MercShip)
 "BM" = (
@@ -1848,7 +1848,7 @@
 	name = "Server Base";
 	nitrogen = 500;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/survivalpod/superpose/MercShip)
 "DJ" = (
@@ -2089,7 +2089,7 @@
 	name = "Server Base";
 	nitrogen = 500;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/survivalpod/superpose/MercShip)
 "JW" = (

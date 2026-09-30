@@ -63,6 +63,13 @@
 	native_fired(delivery_source)
 	call(owner, callback)(arglist(list(src) + arguments))
 
+/// The frame reported this watch crossing `band` (`detail` is the record's numbers): by default the
+/// owner's callback runs with them. World watches queue on their lane, heat watches pick the wake or
+/// set-crossing form (native_crossed(), code/datums/native/system.dm).
+/datum/native_watch/proc/crossed(band, list/detail)
+	fire(detail)
+	return TRUE
+
 /// Finds the live watch behind `handle`, or null.
 /proc/om_native_watch_of(handle)
 	var/datum/native_watch/W = SSvg.entity_lookup(handle)

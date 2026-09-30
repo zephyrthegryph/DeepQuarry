@@ -65,6 +65,11 @@ Thus, the two variables affect pump operation are set in New():
 	if(index == 2)
 		update_rust_device()
 
+/// The declared push (code/datums/native/system.dm): a set_target_pressure()/set_power_rating()/set_on() re-publishes the
+/// device law. No caller pushes by hand after a setter.
+/obj/machinery/atmospherics/binary/pump/rust_pushed()
+	update_rust_device()
+
 /**
  * R10/M2 bridge: target_pressure, power_rating and on are Rust-owned config
  * on the binding layer's own Pump component (get_/set_target_pressure() etc,
@@ -161,8 +166,6 @@ UI_DATA_REPLACE(/obj/machinery/atmospherics/binary/pump, "merge:ui_data_obj_mach
 	if(signal.data["set_output_pressure"])
 		set_target_pressure(between(0, text2num(signal.data["set_output_pressure"]), ONE_ATMOSPHERE*50))
 
-	update_rust_device()
-
 	if(signal.data["status"])
 		om_after(src, 2, PROC_REF(broadcast_status))
 		return //do not update_icon
@@ -201,7 +204,6 @@ UI_DATA_REPLACE(/obj/machinery/atmospherics/binary/pump, "merge:ui_data_obj_mach
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	to_chat(user, span_notice("You set the [name] to max output"))
 	set_target_pressure(max_pressure_setting)
-	update_rust_device()
 	add_fingerprint(user)
 	return TRUE
 
@@ -210,8 +212,6 @@ UI_ACT_PROC(/obj/machinery/atmospherics/binary/pump, ui_act_power)
 	set_use_power(!use_power)
 	set_on(!!use_power)
 	. = TRUE
-	if(.)
-		update_rust_device()
 	add_fingerprint(ui.user)
 	update_icon()
 
@@ -229,8 +229,6 @@ UI_ACT_PROC(/obj/machinery/atmospherics/binary/pump, ui_act_set_press)
 				return
 			set_target_pressure(between(0, new_pressure, max_pressure_setting))
 	. = TRUE
-	if(.)
-		update_rust_device()
 	add_fingerprint(ui.user)
 	update_icon()
 
@@ -318,7 +316,6 @@ APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/binary/pump, "{base_icon}-{appea
 
 	set_use_power(!use_power)
 	set_on(!!use_power)
-	update_rust_device()
 	update_icon()
 	add_fingerprint(user)
 	to_chat(user, span_notice("You toggle the [name] [use_power ? "on" : "off"]."))

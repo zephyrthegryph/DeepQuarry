@@ -20,7 +20,7 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache) // ALLOW(cache): also read/written in co
 	opacity = 1
 	density = TRUE
 	blocks_air = 1
-	temperature = T0C
+	initial_temperature = T0C
 	can_dirty = FALSE
 
 	var/floor_name = "sand"
@@ -735,12 +735,12 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 /turf/simulated/mineral/vacuum
 	oxygen = 0
 	nitrogen = 0
-	temperature	= TCMB
+	initial_temperature	= TCMB
 
 /turf/simulated/mineral/floor/vacuum
 	oxygen = 0
 	nitrogen = 0
-	temperature	= TCMB
+	initial_temperature	= TCMB
 
 
 /// Accessor for a shared definition.

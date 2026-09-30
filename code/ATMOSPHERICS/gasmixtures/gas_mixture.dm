@@ -144,8 +144,9 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache()) // ALLOW(cache): constant 
  * A gas dependency watch (code/datums/om/native.dm): `mixture_id` changing
  * in any GAS_DEPENDENCY_* bit of `mask` calls `callback` on the owner as
  * (watch, mixture_id, change_mask, list/observation, observation_index); the
- * observation record (from the mixture id on) is described at
- * vg_drain_dirty_gas_observations().
+ * observation record (from the mixture id on) is `drain_observations()` in
+ * verdigris/ffi/src/gas/mix.rs; it reaches DM as a CHANGED record of the frame
+ * (native system).
  */
 /datum/native_watch/gas
 	var/mixture_id

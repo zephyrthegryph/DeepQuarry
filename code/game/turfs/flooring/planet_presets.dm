@@ -31,5 +31,5 @@
 /turf/simulated/floor/lava/external
 	oxygen		= MOLES_O2SIF
 	nitrogen	= MOLES_N2SIF
-	temperature	= TEMPERATURE_SIF
+	initial_temperature	= TEMPERATURE_SIF
 

@@ -15,8 +15,7 @@
 //! | `vg_component_get_many(entity, code, fields)` | a list, one number per field id (query groups) |
 //! | `vg_component_set(entity, code, field, index, value)` | a validated write (`index` < 0: whole field) |
 //! | `vg_component_adjust(entity, code, field, index, delta)` | take reconciliation on a conserved field; returns the shortfall |
-//! | `vg_world_tick(seconds)` | pacing: runs a step when one is owed |
-//! | `vg_world_events()` | every typed event since the last call, in `vg_core::event` wire form |
+//! | `vg_frame(elapsed, budget)` | the one driver (see [`crate::frame`]) |
 //! | `vg_world_violations()` | conservation violations since the last call, as text |
 //! | `vg_world_laws()` | per-law activity statistics, as text |
 //!
@@ -175,15 +174,16 @@ fn build() -> Result<World> {
         Box::new(WorldEntities),
     );
     for (kind, schema) in world.schemas() {
-        // Heat's bodies are watched through heat's own binds, which drain
-        // that kind's wakes (`crate::heat`).
-        if world.kind_of::<vg_heat::HeatBody>() == Some(kind) {
-            continue;
-        }
         let code =
             vg_core::world::kind_code(vg_core::component::domain_id(schema.domain), schema.kind);
         registry::register_domain(world_kind_domain(code), Box::new(WorldKind { kind }));
     }
+    // The turf solid's cells as a watch port (heat watches use the same
+    // generic watch binds as every other watchable).
+    registry::register_domain(
+        world_kind_domain(crate::heat::HEAT_CELLS),
+        Box::new(crate::heat::HeatCells),
+    );
     // Gas handles (turf cells, main and pipe mixtures) as a watch port.
     registry::register_domain(
         world_kind_domain(crate::sched::GAS_HANDLES),
@@ -334,6 +334,23 @@ impl DomainRegistry for WorldKind {
 
     fn unwatch(&mut self, _port: u8, id: WatchId) {
         let _ = with_world(|w| Ok(w.unwatch(self.kind, id)));
+    }
+
+    fn add_entry(
+        &mut self,
+        _port: u8,
+        id: WatchId,
+        entry: vg_core::watch::SetEntry,
+    ) -> Result<(), String> {
+        with_world(|w| {
+            w.add_watch_entry(self.kind, id, entry)
+                .map_err(|e| eyre!("{e}"))
+        })
+        .map_err(|e| e.to_string())
+    }
+
+    fn remove_entry(&mut self, _port: u8, id: WatchId, payload: u32) {
+        let _ = with_world(|w| Ok(w.remove_watch_entry(self.kind, id, payload)));
     }
 
     /// This kind's watch wakes, with DM's `vg_entity` value as the source
@@ -598,26 +615,23 @@ fn component_adjust(
 }
 
 /// Pacing: feeds `seconds` of game time to the world's pacer and runs a
-/// step when one is owed. Returns whether a step ran.
-#[auxmacros::bind("/proc/vg_world_tick")]
-fn world_tick(seconds: ByondValue) -> Result<ByondValue> {
-    let s = f64::from(num(&seconds)?);
+/// step when one is owed. Returns whether a step ran. Driven by
+/// [`crate::frame`] only.
+pub(crate) fn pace(seconds: f64) -> Result<bool> {
     let probes = crate::heat::mixture_probes();
-    let ran = with_world(|w| {
+    with_world(|w| {
         w.set_global(probes).map_err(|e| eyre!("{e}"))?;
-        Ok(w.tick(Seconds(s)))
-    })?;
-    Ok(ByondValue::from(if ran { 1.0f32 } else { 0.0 }))
+        Ok(w.tick(Seconds(seconds)))
+    })
 }
 
 /// Every typed event since the last call, as `vg_core::event`'s wire form
-/// (`header, entity, len, payload...` per record). The generated DM
-/// `vg_drain_events()` decodes it and dispatches each record.
-#[auxmacros::bind("/proc/vg_world_events")]
-fn world_events() -> Result<ByondValue> {
+/// (`header, entity, len, payload...` per record). Taken by
+/// [`crate::frame`], which turns each into a NOTICE record.
+pub(crate) fn take_events() -> Result<Vec<f32>> {
     let mut events = with_world(|w| Ok(w.drain_events()))?;
     crate::heat::apply_mixture_heat(&events);
-    list(events.take())
+    Ok(events.take())
 }
 
 /// Conservation violations since the last call, as text (empty: none).

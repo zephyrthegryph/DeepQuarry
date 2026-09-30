@@ -91,7 +91,7 @@
 	// `avail` is a per-step law result (ProducerCredit et al, verdigris/domains/power/src/laws.rs),
 	// not pushed on every write. One blocking world step settles the merged
 	// region's ledger before GLOB.machine_service.process_power() re-polls it (a paced
-	// vg_world_tick() does nothing while the previous worker frame runs).
+	// vg_frame() does not step while the previous worker frame runs).
 	vg_world_run_steps(1)
 	GLOB.machine_service.process_power()
 	TEST_ASSERT_EQUAL(power_avail(left.power_region), 1000, "the merged network does not carry the supply")
@@ -255,9 +255,10 @@
 	var/list/data = sensor.return_reading_data()
 	TEST_ASSERT_EQUAL(data["total_avail"], sensor.reading_to_text(5000), "the monitor reads the wrong supply")
 	TEST_ASSERT_NULL(data["error"], "the monitor reports no network")
+	// The grid keeps no eased copy (a monitor eases what it shows): a draw is booked on the ledger at once.
 	sensor.draw_power(1200)
+	TEST_ASSERT(power_load(sensor.power_region) > 0, "the ledger did not book a draw (load [power_load(sensor.power_region)] avail [power_avail(sensor.power_region)])")
 	dq_power_test_step()
-	TEST_ASSERT(power_view_load(sensor.power_region) > 0, "the monitor's smoothed load ignores a draw")
 	qdel(cables[2])
 	dq_power_test_step()
 	TEST_ASSERT(!sensor.power_region || power_avail(sensor.power_region) == 0, "a cut sensor still reads the supply")

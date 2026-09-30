@@ -90,25 +90,28 @@
 /obj/machinery/atmospherics/binary/pump/proc/get_target_pressure()
 	return vg_component_get(vg_entity, VG_KIND_PUMP, VG_PUMP_FIELD_TARGET_PRESSURE, 0) // kPa
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /obj/machinery/atmospherics/binary/pump/proc/set_target_pressure(value)
-	return vg_component_set(vg_entity, VG_KIND_PUMP, VG_PUMP_FIELD_TARGET_PRESSURE, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_PUMP, VG_PUMP_FIELD_TARGET_PRESSURE, -1, value)
+	rust_pushed()
 
 /// W; clamped to VG_PUMP_POWER_RATING_MIN..MAX.
 /obj/machinery/atmospherics/binary/pump/proc/get_power_rating()
 	return vg_component_get(vg_entity, VG_KIND_PUMP, VG_PUMP_FIELD_POWER_RATING, 0) // W
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /obj/machinery/atmospherics/binary/pump/proc/set_power_rating(value)
-	return vg_component_set(vg_entity, VG_KIND_PUMP, VG_PUMP_FIELD_POWER_RATING, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_PUMP, VG_PUMP_FIELD_POWER_RATING, -1, value)
+	rust_pushed()
 
 /// unitless;.
 /obj/machinery/atmospherics/binary/pump/proc/get_on()
 	return vg_component_get(vg_entity, VG_KIND_PUMP, VG_PUMP_FIELD_ON, 0)
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /obj/machinery/atmospherics/binary/pump/set_on(value)
-	return vg_component_set(vg_entity, VG_KIND_PUMP, VG_PUMP_FIELD_ON, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_PUMP, VG_PUMP_FIELD_ON, -1, value)
+	rust_pushed()
 
 /// mol/s, read-only (state).
 /obj/machinery/atmospherics/binary/pump/proc/get_flow_rate()
@@ -325,41 +328,46 @@
 /atom/movable/vg_heat_body/proc/get_capacity()
 	return vg_component_get(vg_entity, VG_KIND_HEATBODY, VG_HEATBODY_FIELD_CAPACITY, 0) // J/K
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /atom/movable/vg_heat_body/proc/set_capacity(value)
-	return vg_component_set(vg_entity, VG_KIND_HEATBODY, VG_HEATBODY_FIELD_CAPACITY, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_HEATBODY, VG_HEATBODY_FIELD_CAPACITY, -1, value)
+	rust_pushed()
 
 /// W; clamped to VG_HEATBODY_POWER_MIN..MAX.
 /atom/movable/vg_heat_body/proc/get_power()
 	return vg_component_get(vg_entity, VG_KIND_HEATBODY, VG_HEATBODY_FIELD_POWER, 0) // W
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /atom/movable/vg_heat_body/proc/set_power(value)
-	return vg_component_set(vg_entity, VG_KIND_HEATBODY, VG_HEATBODY_FIELD_POWER, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_HEATBODY, VG_HEATBODY_FIELD_POWER, -1, value)
+	rust_pushed()
 
 /// K; clamped to VG_HEATBODY_PHASE_TEMPERATURE_MIN..MAX.
 /atom/movable/vg_heat_body/proc/get_phase_temperature()
 	return vg_component_get(vg_entity, VG_KIND_HEATBODY, VG_HEATBODY_FIELD_PHASE_TEMPERATURE, 0) // K
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /atom/movable/vg_heat_body/proc/set_phase_temperature(value)
-	return vg_component_set(vg_entity, VG_KIND_HEATBODY, VG_HEATBODY_FIELD_PHASE_TEMPERATURE, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_HEATBODY, VG_HEATBODY_FIELD_PHASE_TEMPERATURE, -1, value)
+	rust_pushed()
 
 /// J; clamped to VG_HEATBODY_PHASE_LATENT_MIN..MAX.
 /atom/movable/vg_heat_body/proc/get_phase_latent()
 	return vg_component_get(vg_entity, VG_KIND_HEATBODY, VG_HEATBODY_FIELD_PHASE_LATENT, 0) // J
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /atom/movable/vg_heat_body/proc/set_phase_latent(value)
-	return vg_component_set(vg_entity, VG_KIND_HEATBODY, VG_HEATBODY_FIELD_PHASE_LATENT, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_HEATBODY, VG_HEATBODY_FIELD_PHASE_LATENT, -1, value)
+	rust_pushed()
 
 /// unitless;.
 /atom/movable/vg_heat_body/proc/get_keep()
 	return vg_component_get(vg_entity, VG_KIND_HEATBODY, VG_HEATBODY_FIELD_KEEP, 0)
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /atom/movable/vg_heat_body/proc/set_keep(value)
-	return vg_component_set(vg_entity, VG_KIND_HEATBODY, VG_HEATBODY_FIELD_KEEP, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_HEATBODY, VG_HEATBODY_FIELD_KEEP, -1, value)
+	rust_pushed()
 
 /// J, read-only (state).
 /atom/movable/vg_heat_body/proc/get_energy()
@@ -418,33 +426,37 @@
 /atom/movable/vg_heat_solid_coupling/proc/get_body()
 	return vg_component_get(vg_entity, VG_KIND_SOLIDCOUPLING, VG_SOLIDCOUPLING_FIELD_BODY, 0)
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /atom/movable/vg_heat_solid_coupling/proc/set_body(value)
-	return vg_component_set(vg_entity, VG_KIND_SOLIDCOUPLING, VG_SOLIDCOUPLING_FIELD_BODY, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_SOLIDCOUPLING, VG_SOLIDCOUPLING_FIELD_BODY, -1, value)
+	rust_pushed()
 
 /// unitless;.
 /atom/movable/vg_heat_solid_coupling/get_cell()
 	return vg_component_get(vg_entity, VG_KIND_SOLIDCOUPLING, VG_SOLIDCOUPLING_FIELD_CELL, 0)
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /atom/movable/vg_heat_solid_coupling/proc/set_cell(value)
-	return vg_component_set(vg_entity, VG_KIND_SOLIDCOUPLING, VG_SOLIDCOUPLING_FIELD_CELL, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_SOLIDCOUPLING, VG_SOLIDCOUPLING_FIELD_CELL, -1, value)
+	rust_pushed()
 
 /// W/K; clamped to VG_SOLIDCOUPLING_CONDUCTANCE_MIN..MAX.
 /atom/movable/vg_heat_solid_coupling/proc/get_conductance()
 	return vg_component_get(vg_entity, VG_KIND_SOLIDCOUPLING, VG_SOLIDCOUPLING_FIELD_CONDUCTANCE, 0) // W/K
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /atom/movable/vg_heat_solid_coupling/proc/set_conductance(value)
-	return vg_component_set(vg_entity, VG_KIND_SOLIDCOUPLING, VG_SOLIDCOUPLING_FIELD_CONDUCTANCE, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_SOLIDCOUPLING, VG_SOLIDCOUPLING_FIELD_CONDUCTANCE, -1, value)
+	rust_pushed()
 
 /// unitless;.
 /atom/movable/vg_heat_solid_coupling/proc/get_slot()
 	return vg_component_get(vg_entity, VG_KIND_SOLIDCOUPLING, VG_SOLIDCOUPLING_FIELD_SLOT, 0)
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /atom/movable/vg_heat_solid_coupling/proc/set_slot(value)
-	return vg_component_set(vg_entity, VG_KIND_SOLIDCOUPLING, VG_SOLIDCOUPLING_FIELD_SLOT, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_SOLIDCOUPLING, VG_SOLIDCOUPLING_FIELD_SLOT, -1, value)
+	rust_pushed()
 
 /atom/movable/vg_heat_solid_coupling/vg_bind_heat(entity)
 	return vg_component_bind(entity, VG_KIND_SOLIDCOUPLING, list(VG_SOLIDCOUPLING_FIELD_BODY, init_body, VG_SOLIDCOUPLING_FIELD_CELL, init_cell, VG_SOLIDCOUPLING_FIELD_CONDUCTANCE, init_conductance, VG_SOLIDCOUPLING_FIELD_SLOT, init_slot))
@@ -474,33 +486,37 @@
 /atom/movable/vg_heat_body_coupling/proc/get_body()
 	return vg_component_get(vg_entity, VG_KIND_BODYCOUPLING, VG_BODYCOUPLING_FIELD_BODY, 0)
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /atom/movable/vg_heat_body_coupling/proc/set_body(value)
-	return vg_component_set(vg_entity, VG_KIND_BODYCOUPLING, VG_BODYCOUPLING_FIELD_BODY, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_BODYCOUPLING, VG_BODYCOUPLING_FIELD_BODY, -1, value)
+	rust_pushed()
 
 /// unitless;.
 /atom/movable/vg_heat_body_coupling/proc/get_other()
 	return vg_component_get(vg_entity, VG_KIND_BODYCOUPLING, VG_BODYCOUPLING_FIELD_OTHER, 0)
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /atom/movable/vg_heat_body_coupling/proc/set_other(value)
-	return vg_component_set(vg_entity, VG_KIND_BODYCOUPLING, VG_BODYCOUPLING_FIELD_OTHER, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_BODYCOUPLING, VG_BODYCOUPLING_FIELD_OTHER, -1, value)
+	rust_pushed()
 
 /// W/K; clamped to VG_BODYCOUPLING_CONDUCTANCE_MIN..MAX.
 /atom/movable/vg_heat_body_coupling/proc/get_conductance()
 	return vg_component_get(vg_entity, VG_KIND_BODYCOUPLING, VG_BODYCOUPLING_FIELD_CONDUCTANCE, 0) // W/K
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /atom/movable/vg_heat_body_coupling/proc/set_conductance(value)
-	return vg_component_set(vg_entity, VG_KIND_BODYCOUPLING, VG_BODYCOUPLING_FIELD_CONDUCTANCE, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_BODYCOUPLING, VG_BODYCOUPLING_FIELD_CONDUCTANCE, -1, value)
+	rust_pushed()
 
 /// unitless;.
 /atom/movable/vg_heat_body_coupling/proc/get_slot()
 	return vg_component_get(vg_entity, VG_KIND_BODYCOUPLING, VG_BODYCOUPLING_FIELD_SLOT, 0)
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /atom/movable/vg_heat_body_coupling/proc/set_slot(value)
-	return vg_component_set(vg_entity, VG_KIND_BODYCOUPLING, VG_BODYCOUPLING_FIELD_SLOT, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_BODYCOUPLING, VG_BODYCOUPLING_FIELD_SLOT, -1, value)
+	rust_pushed()
 
 /atom/movable/vg_heat_body_coupling/vg_bind_heat(entity)
 	return vg_component_bind(entity, VG_KIND_BODYCOUPLING, list(VG_BODYCOUPLING_FIELD_BODY, init_body, VG_BODYCOUPLING_FIELD_OTHER, init_other, VG_BODYCOUPLING_FIELD_CONDUCTANCE, init_conductance, VG_BODYCOUPLING_FIELD_SLOT, init_slot))
@@ -532,41 +548,46 @@
 /atom/movable/vg_heat_gas_coupling/proc/get_body()
 	return vg_component_get(vg_entity, VG_KIND_GASCOUPLING, VG_GASCOUPLING_FIELD_BODY, 0)
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /atom/movable/vg_heat_gas_coupling/proc/set_body(value)
-	return vg_component_set(vg_entity, VG_KIND_GASCOUPLING, VG_GASCOUPLING_FIELD_BODY, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_GASCOUPLING, VG_GASCOUPLING_FIELD_BODY, -1, value)
+	rust_pushed()
 
 /// unitless;.
 /atom/movable/vg_heat_gas_coupling/proc/get_kind()
 	return vg_component_get(vg_entity, VG_KIND_GASCOUPLING, VG_GASCOUPLING_FIELD_KIND, 0)
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /atom/movable/vg_heat_gas_coupling/proc/set_kind(value)
-	return vg_component_set(vg_entity, VG_KIND_GASCOUPLING, VG_GASCOUPLING_FIELD_KIND, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_GASCOUPLING, VG_GASCOUPLING_FIELD_KIND, -1, value)
+	rust_pushed()
 
 /// unitless;.
 /atom/movable/vg_heat_gas_coupling/proc/get_target()
 	return vg_component_get(vg_entity, VG_KIND_GASCOUPLING, VG_GASCOUPLING_FIELD_TARGET, 0)
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /atom/movable/vg_heat_gas_coupling/proc/set_target(value)
-	return vg_component_set(vg_entity, VG_KIND_GASCOUPLING, VG_GASCOUPLING_FIELD_TARGET, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_GASCOUPLING, VG_GASCOUPLING_FIELD_TARGET, -1, value)
+	rust_pushed()
 
 /// W/K; clamped to VG_GASCOUPLING_CONDUCTANCE_MIN..MAX.
 /atom/movable/vg_heat_gas_coupling/proc/get_conductance()
 	return vg_component_get(vg_entity, VG_KIND_GASCOUPLING, VG_GASCOUPLING_FIELD_CONDUCTANCE, 0) // W/K
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /atom/movable/vg_heat_gas_coupling/proc/set_conductance(value)
-	return vg_component_set(vg_entity, VG_KIND_GASCOUPLING, VG_GASCOUPLING_FIELD_CONDUCTANCE, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_GASCOUPLING, VG_GASCOUPLING_FIELD_CONDUCTANCE, -1, value)
+	rust_pushed()
 
 /// unitless;.
 /atom/movable/vg_heat_gas_coupling/proc/get_slot()
 	return vg_component_get(vg_entity, VG_KIND_GASCOUPLING, VG_GASCOUPLING_FIELD_SLOT, 0)
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /atom/movable/vg_heat_gas_coupling/proc/set_slot(value)
-	return vg_component_set(vg_entity, VG_KIND_GASCOUPLING, VG_GASCOUPLING_FIELD_SLOT, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_GASCOUPLING, VG_GASCOUPLING_FIELD_SLOT, -1, value)
+	rust_pushed()
 
 /atom/movable/vg_heat_gas_coupling/vg_bind_heat(entity)
 	return vg_component_bind(entity, VG_KIND_GASCOUPLING, list(VG_GASCOUPLING_FIELD_BODY, init_body, VG_GASCOUPLING_FIELD_KIND, init_kind, VG_GASCOUPLING_FIELD_TARGET, init_target, VG_GASCOUPLING_FIELD_CONDUCTANCE, init_conductance, VG_GASCOUPLING_FIELD_SLOT, init_slot))
@@ -614,73 +635,82 @@
 /atom/movable/vg_heat_regulator/proc/get_controlled()
 	return vg_component_get(vg_entity, VG_KIND_REGULATOR, VG_REGULATOR_FIELD_CONTROLLED, 0)
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /atom/movable/vg_heat_regulator/proc/set_controlled(value)
-	return vg_component_set(vg_entity, VG_KIND_REGULATOR, VG_REGULATOR_FIELD_CONTROLLED, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_REGULATOR, VG_REGULATOR_FIELD_CONTROLLED, -1, value)
+	rust_pushed()
 
 /// unitless;.
 /atom/movable/vg_heat_regulator/proc/get_other()
 	return vg_component_get(vg_entity, VG_KIND_REGULATOR, VG_REGULATOR_FIELD_OTHER, 0)
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /atom/movable/vg_heat_regulator/proc/set_other(value)
-	return vg_component_set(vg_entity, VG_KIND_REGULATOR, VG_REGULATOR_FIELD_OTHER, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_REGULATOR, VG_REGULATOR_FIELD_OTHER, -1, value)
+	rust_pushed()
 
 /// K; clamped to VG_REGULATOR_TARGET_MIN..MAX.
 /atom/movable/vg_heat_regulator/proc/get_target()
 	return vg_component_get(vg_entity, VG_KIND_REGULATOR, VG_REGULATOR_FIELD_TARGET, 0) // K
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /atom/movable/vg_heat_regulator/proc/set_target(value)
-	return vg_component_set(vg_entity, VG_KIND_REGULATOR, VG_REGULATOR_FIELD_TARGET, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_REGULATOR, VG_REGULATOR_FIELD_TARGET, -1, value)
+	rust_pushed()
 
 /// W; clamped to VG_REGULATOR_MAX_POWER_MIN..MAX.
 /atom/movable/vg_heat_regulator/proc/get_max_power()
 	return vg_component_get(vg_entity, VG_KIND_REGULATOR, VG_REGULATOR_FIELD_MAX_POWER, 0) // W
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /atom/movable/vg_heat_regulator/proc/set_max_power(value)
-	return vg_component_set(vg_entity, VG_KIND_REGULATOR, VG_REGULATOR_FIELD_MAX_POWER, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_REGULATOR, VG_REGULATOR_FIELD_MAX_POWER, -1, value)
+	rust_pushed()
 
 /// unitless;.
 /atom/movable/vg_heat_regulator/proc/get_mode()
 	return vg_component_get(vg_entity, VG_KIND_REGULATOR, VG_REGULATOR_FIELD_MODE, 0)
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /atom/movable/vg_heat_regulator/proc/set_mode(value)
-	return vg_component_set(vg_entity, VG_KIND_REGULATOR, VG_REGULATOR_FIELD_MODE, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_REGULATOR, VG_REGULATOR_FIELD_MODE, -1, value)
+	rust_pushed()
 
 /// unitless; clamped to VG_REGULATOR_CARNOT_FRACTION_MIN..MAX.
 /atom/movable/vg_heat_regulator/proc/get_carnot_fraction()
 	return vg_component_get(vg_entity, VG_KIND_REGULATOR, VG_REGULATOR_FIELD_CARNOT_FRACTION, 0)
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /atom/movable/vg_heat_regulator/proc/set_carnot_fraction(value)
-	return vg_component_set(vg_entity, VG_KIND_REGULATOR, VG_REGULATOR_FIELD_CARNOT_FRACTION, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_REGULATOR, VG_REGULATOR_FIELD_CARNOT_FRACTION, -1, value)
+	rust_pushed()
 
 /// unitless; clamped to VG_REGULATOR_MAX_COP_MIN..MAX.
 /atom/movable/vg_heat_regulator/proc/get_max_cop()
 	return vg_component_get(vg_entity, VG_KIND_REGULATOR, VG_REGULATOR_FIELD_MAX_COP, 0)
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /atom/movable/vg_heat_regulator/proc/set_max_cop(value)
-	return vg_component_set(vg_entity, VG_KIND_REGULATOR, VG_REGULATOR_FIELD_MAX_COP, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_REGULATOR, VG_REGULATOR_FIELD_MAX_COP, -1, value)
+	rust_pushed()
 
 /// unitless;.
 /atom/movable/vg_heat_regulator/proc/get_resistive_heating()
 	return vg_component_get(vg_entity, VG_KIND_REGULATOR, VG_REGULATOR_FIELD_RESISTIVE_HEATING, 0)
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /atom/movable/vg_heat_regulator/proc/set_resistive_heating(value)
-	return vg_component_set(vg_entity, VG_KIND_REGULATOR, VG_REGULATOR_FIELD_RESISTIVE_HEATING, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_REGULATOR, VG_REGULATOR_FIELD_RESISTIVE_HEATING, -1, value)
+	rust_pushed()
 
 /// K; clamped to VG_REGULATOR_DEADBAND_MIN..MAX.
 /atom/movable/vg_heat_regulator/proc/get_deadband()
 	return vg_component_get(vg_entity, VG_KIND_REGULATOR, VG_REGULATOR_FIELD_DEADBAND, 0) // K
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /atom/movable/vg_heat_regulator/proc/set_deadband(value)
-	return vg_component_set(vg_entity, VG_KIND_REGULATOR, VG_REGULATOR_FIELD_DEADBAND, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_REGULATOR, VG_REGULATOR_FIELD_DEADBAND, -1, value)
+	rust_pushed()
 
 /atom/movable/vg_heat_regulator/vg_bind_heat(entity)
 	return vg_component_bind(entity, VG_KIND_REGULATOR, list(VG_REGULATOR_FIELD_CONTROLLED, init_controlled, VG_REGULATOR_FIELD_OTHER, init_other, VG_REGULATOR_FIELD_TARGET, init_target, VG_REGULATOR_FIELD_MAX_POWER, init_max_power, VG_REGULATOR_FIELD_MODE, init_mode, VG_REGULATOR_FIELD_CARNOT_FRACTION, init_carnot_fraction, VG_REGULATOR_FIELD_MAX_COP, init_max_cop, VG_REGULATOR_FIELD_RESISTIVE_HEATING, init_resistive_heating, VG_REGULATOR_FIELD_DEADBAND, init_deadband))
@@ -738,81 +768,91 @@
 /atom/movable/vg_heat_mob/proc/get_capacity()
 	return vg_component_get(vg_entity, VG_KIND_MOBHEAT, VG_MOBHEAT_FIELD_CAPACITY, 0) // J/K
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /atom/movable/vg_heat_mob/proc/set_capacity(value)
-	return vg_component_set(vg_entity, VG_KIND_MOBHEAT, VG_MOBHEAT_FIELD_CAPACITY, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_MOBHEAT, VG_MOBHEAT_FIELD_CAPACITY, -1, value)
+	rust_pushed()
 
 /// W; clamped to VG_MOBHEAT_METABOLIC_WATTS_MIN..MAX.
 /atom/movable/vg_heat_mob/proc/get_metabolic_watts()
 	return vg_component_get(vg_entity, VG_KIND_MOBHEAT, VG_MOBHEAT_FIELD_METABOLIC_WATTS, 0) // W
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /atom/movable/vg_heat_mob/proc/set_metabolic_watts(value)
-	return vg_component_set(vg_entity, VG_KIND_MOBHEAT, VG_MOBHEAT_FIELD_METABOLIC_WATTS, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_MOBHEAT, VG_MOBHEAT_FIELD_METABOLIC_WATTS, -1, value)
+	rust_pushed()
 
 /// unitless;.
 /atom/movable/vg_heat_mob/proc/get_coolant()
 	return vg_component_get(vg_entity, VG_KIND_MOBHEAT, VG_MOBHEAT_FIELD_COOLANT, 0)
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /atom/movable/vg_heat_mob/proc/set_coolant(value)
-	return vg_component_set(vg_entity, VG_KIND_MOBHEAT, VG_MOBHEAT_FIELD_COOLANT, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_MOBHEAT, VG_MOBHEAT_FIELD_COOLANT, -1, value)
+	rust_pushed()
 
 /// W/K; clamped to VG_MOBHEAT_INSULATION_MIN..MAX.
 /atom/movable/vg_heat_mob/proc/get_insulation()
 	return vg_component_get(vg_entity, VG_KIND_MOBHEAT, VG_MOBHEAT_FIELD_INSULATION, 0) // W/K
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /atom/movable/vg_heat_mob/proc/set_insulation(value)
-	return vg_component_set(vg_entity, VG_KIND_MOBHEAT, VG_MOBHEAT_FIELD_INSULATION, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_MOBHEAT, VG_MOBHEAT_FIELD_INSULATION, -1, value)
+	rust_pushed()
 
 /// K; clamped to VG_MOBHEAT_AMBIENT_MIN..MAX.
 /atom/movable/vg_heat_mob/proc/get_ambient()
 	return vg_component_get(vg_entity, VG_KIND_MOBHEAT, VG_MOBHEAT_FIELD_AMBIENT, 0) // K
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /atom/movable/vg_heat_mob/proc/set_ambient(value)
-	return vg_component_set(vg_entity, VG_KIND_MOBHEAT, VG_MOBHEAT_FIELD_AMBIENT, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_MOBHEAT, VG_MOBHEAT_FIELD_AMBIENT, -1, value)
+	rust_pushed()
 
 /// K; clamped to VG_MOBHEAT_SETPOINT_MIN..MAX.
 /atom/movable/vg_heat_mob/proc/get_setpoint()
 	return vg_component_get(vg_entity, VG_KIND_MOBHEAT, VG_MOBHEAT_FIELD_SETPOINT, 0) // K
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /atom/movable/vg_heat_mob/proc/set_setpoint(value)
-	return vg_component_set(vg_entity, VG_KIND_MOBHEAT, VG_MOBHEAT_FIELD_SETPOINT, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_MOBHEAT, VG_MOBHEAT_FIELD_SETPOINT, -1, value)
+	rust_pushed()
 
 /// W; clamped to VG_MOBHEAT_SWEAT_CAPACITY_W_MIN..MAX.
 /atom/movable/vg_heat_mob/proc/get_sweat_capacity_w()
 	return vg_component_get(vg_entity, VG_KIND_MOBHEAT, VG_MOBHEAT_FIELD_SWEAT_CAPACITY_W, 0) // W
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /atom/movable/vg_heat_mob/proc/set_sweat_capacity_w(value)
-	return vg_component_set(vg_entity, VG_KIND_MOBHEAT, VG_MOBHEAT_FIELD_SWEAT_CAPACITY_W, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_MOBHEAT, VG_MOBHEAT_FIELD_SWEAT_CAPACITY_W, -1, value)
+	rust_pushed()
 
 /// W; clamped to VG_MOBHEAT_SHIVER_CAPACITY_W_MIN..MAX.
 /atom/movable/vg_heat_mob/proc/get_shiver_capacity_w()
 	return vg_component_get(vg_entity, VG_KIND_MOBHEAT, VG_MOBHEAT_FIELD_SHIVER_CAPACITY_W, 0) // W
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /atom/movable/vg_heat_mob/proc/set_shiver_capacity_w(value)
-	return vg_component_set(vg_entity, VG_KIND_MOBHEAT, VG_MOBHEAT_FIELD_SHIVER_CAPACITY_W, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_MOBHEAT, VG_MOBHEAT_FIELD_SHIVER_CAPACITY_W, -1, value)
+	rust_pushed()
 
 /// unitless; clamped to VG_MOBHEAT_TIME_SCALE_MIN..MAX.
 /atom/movable/vg_heat_mob/proc/get_time_scale()
 	return vg_component_get(vg_entity, VG_KIND_MOBHEAT, VG_MOBHEAT_FIELD_TIME_SCALE, 0)
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /atom/movable/vg_heat_mob/proc/set_time_scale(value)
-	return vg_component_set(vg_entity, VG_KIND_MOBHEAT, VG_MOBHEAT_FIELD_TIME_SCALE, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_MOBHEAT, VG_MOBHEAT_FIELD_TIME_SCALE, -1, value)
+	rust_pushed()
 
 /// W; clamped to VG_MOBHEAT_EXTERNAL_WATTS_MIN..MAX.
 /atom/movable/vg_heat_mob/proc/get_external_watts(index)
 	return vg_component_get(vg_entity, VG_KIND_MOBHEAT, VG_MOBHEAT_FIELD_EXTERNAL_WATTS, index) // W
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /atom/movable/vg_heat_mob/proc/set_external_watts(index, value)
-	return vg_component_set(vg_entity, VG_KIND_MOBHEAT, VG_MOBHEAT_FIELD_EXTERNAL_WATTS, index, value)
+	. = vg_component_set(vg_entity, VG_KIND_MOBHEAT, VG_MOBHEAT_FIELD_EXTERNAL_WATTS, index, value)
+	rust_pushed()
 
 /// K, read-only (state).
 /atom/movable/vg_heat_mob/get_temperature()
@@ -844,17 +884,19 @@
 /obj/machinery/power/proc/get_supply()
 	return vg_component_get(vg_entity, VG_KIND_PRODUCER, VG_PRODUCER_FIELD_SUPPLY, 0) // W
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /obj/machinery/power/proc/set_supply(value)
-	return vg_component_set(vg_entity, VG_KIND_PRODUCER, VG_PRODUCER_FIELD_SUPPLY, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_PRODUCER, VG_PRODUCER_FIELD_SUPPLY, -1, value)
+	rust_pushed()
 
 /// W; clamped to VG_PRODUCER_PULSE_MIN..MAX.
 /obj/machinery/power/proc/get_pulse()
 	return vg_component_get(vg_entity, VG_KIND_PRODUCER, VG_PRODUCER_FIELD_PULSE, 0) // W
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /obj/machinery/power/proc/set_pulse(value)
-	return vg_component_set(vg_entity, VG_KIND_PRODUCER, VG_PRODUCER_FIELD_PULSE, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_PRODUCER, VG_PRODUCER_FIELD_PULSE, -1, value)
+	rust_pushed()
 
 /obj/machinery/power/vg_bind_power(entity)
 	return vg_component_bind(entity, VG_KIND_PRODUCER, list(VG_PRODUCER_FIELD_SUPPLY, init_supply, VG_PRODUCER_FIELD_PULSE, init_pulse))
@@ -921,145 +963,163 @@
 /obj/machinery/power/apc/proc/get_active()
 	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_ACTIVE, 0)
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /obj/machinery/power/apc/set_active(value)
-	return vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_ACTIVE, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_ACTIVE, -1, value)
+	rust_pushed()
 
 /// unitless;.
 /obj/machinery/power/apc/proc/get_has_cell()
 	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_HAS_CELL, 0)
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /obj/machinery/power/apc/proc/set_has_cell(value)
-	return vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_HAS_CELL, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_HAS_CELL, -1, value)
+	rust_pushed()
 
 /// unitless;.
 /obj/machinery/power/apc/proc/get_failed()
 	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_FAILED, 0)
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /obj/machinery/power/apc/proc/set_failed(value)
-	return vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_FAILED, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_FAILED, -1, value)
+	rust_pushed()
 
 /// unitless;.
 /obj/machinery/power/apc/proc/get_shorted_or_grid_check()
 	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_SHORTED_OR_GRID_CHECK, 0)
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /obj/machinery/power/apc/proc/set_shorted_or_grid_check(value)
-	return vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_SHORTED_OR_GRID_CHECK, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_SHORTED_OR_GRID_CHECK, -1, value)
+	rust_pushed()
 
 /// unitless;.
 /obj/machinery/power/apc/proc/get_operating()
 	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_OPERATING, 0)
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /obj/machinery/power/apc/proc/set_operating(value)
-	return vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_OPERATING, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_OPERATING, -1, value)
+	rust_pushed()
 
 /// unitless;.
 /obj/machinery/power/apc/proc/get_chargemode()
 	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_CHARGEMODE, 0)
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /obj/machinery/power/apc/proc/set_chargemode(value)
-	return vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_CHARGEMODE, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_CHARGEMODE, -1, value)
+	rust_pushed()
 
 /// unitless; clamped to VG_APC_CHARGELEVEL_MIN..MAX.
 /obj/machinery/power/apc/proc/get_chargelevel()
 	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_CHARGELEVEL, 0)
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /obj/machinery/power/apc/proc/set_chargelevel(value)
-	return vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_CHARGELEVEL, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_CHARGELEVEL, -1, value)
+	rust_pushed()
 
 /// J; clamped to VG_APC_CAPACITY_MIN..MAX.
 /obj/machinery/power/apc/proc/get_capacity()
 	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_CAPACITY, 0) // J
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /obj/machinery/power/apc/proc/set_capacity(value)
-	return vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_CAPACITY, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_CAPACITY, -1, value)
+	rust_pushed()
 
 /// unitless;.
 /obj/machinery/power/apc/proc/get_rate()
 	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_RATE, 0)
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /obj/machinery/power/apc/proc/set_rate(value)
-	return vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_RATE, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_RATE, -1, value)
+	rust_pushed()
 
 /// unitless;.
 /obj/machinery/power/apc/proc/get_channels(index)
 	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_CHANNELS, index)
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /obj/machinery/power/apc/proc/set_channels(index, value)
-	return vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_CHANNELS, index, value)
+	. = vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_CHANNELS, index, value)
+	rust_pushed()
 
 /// W; clamped to VG_APC_STATIC_LOAD_MIN..MAX.
 /obj/machinery/power/apc/proc/get_static_load(index)
 	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_STATIC_LOAD, index) // W
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /obj/machinery/power/apc/proc/set_static_load(index, value)
-	return vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_STATIC_LOAD, index, value)
+	. = vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_STATIC_LOAD, index, value)
+	rust_pushed()
 
 /// W; clamped to VG_APC_ONEOFF_MIN..MAX.
 /obj/machinery/power/apc/proc/get_oneoff(index)
 	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_ONEOFF, index) // W
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /obj/machinery/power/apc/proc/set_oneoff(index, value)
-	return vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_ONEOFF, index, value)
+	. = vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_ONEOFF, index, value)
+	rust_pushed()
 
 /// unitless; clamped to VG_APC_POLICY_FULL_ABOVE_PCT_MIN..MAX.
 /obj/machinery/power/apc/proc/get_policy_full_above_pct()
 	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_POLICY_FULL_ABOVE_PCT, 0)
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /obj/machinery/power/apc/proc/set_policy_full_above_pct(value)
-	return vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_POLICY_FULL_ABOVE_PCT, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_POLICY_FULL_ABOVE_PCT, -1, value)
+	rust_pushed()
 
 /// unitless; clamped to VG_APC_POLICY_PARTIAL_BELOW_PCT_MIN..MAX.
 /obj/machinery/power/apc/proc/get_policy_partial_below_pct()
 	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_POLICY_PARTIAL_BELOW_PCT, 0)
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /obj/machinery/power/apc/proc/set_policy_partial_below_pct(value)
-	return vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_POLICY_PARTIAL_BELOW_PCT, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_POLICY_PARTIAL_BELOW_PCT, -1, value)
+	rust_pushed()
 
 /// unitless;.
 /obj/machinery/power/apc/proc/get_policy_full_allow(index)
 	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_POLICY_FULL_ALLOW, index)
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /obj/machinery/power/apc/proc/set_policy_full_allow(index, value)
-	return vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_POLICY_FULL_ALLOW, index, value)
+	. = vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_POLICY_FULL_ALLOW, index, value)
+	rust_pushed()
 
 /// unitless;.
 /obj/machinery/power/apc/proc/get_policy_partial_allow(index)
 	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_POLICY_PARTIAL_ALLOW, index)
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /obj/machinery/power/apc/proc/set_policy_partial_allow(index, value)
-	return vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_POLICY_PARTIAL_ALLOW, index, value)
+	. = vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_POLICY_PARTIAL_ALLOW, index, value)
+	rust_pushed()
 
 /// unitless;.
 /obj/machinery/power/apc/proc/get_policy_min_allow(index)
 	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_POLICY_MIN_ALLOW, index)
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /obj/machinery/power/apc/proc/set_policy_min_allow(index, value)
-	return vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_POLICY_MIN_ALLOW, index, value)
+	. = vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_POLICY_MIN_ALLOW, index, value)
+	rust_pushed()
 
 /// unitless;.
 /obj/machinery/power/apc/proc/get_policy_neutral_allow(index)
 	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_POLICY_NEUTRAL_ALLOW, index)
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /obj/machinery/power/apc/proc/set_policy_neutral_allow(index, value)
-	return vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_POLICY_NEUTRAL_ALLOW, index, value)
+	. = vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_POLICY_NEUTRAL_ALLOW, index, value)
+	rust_pushed()
 
 /// J, read-only (state).
 /obj/machinery/power/apc/proc/get_charge()
@@ -1127,49 +1187,55 @@
 /obj/machinery/power/smes/proc/get_input_enabled()
 	return vg_component_get(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_INPUT_ENABLED, 0)
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /obj/machinery/power/smes/proc/set_input_enabled(value)
-	return vg_component_set(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_INPUT_ENABLED, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_INPUT_ENABLED, -1, value)
+	rust_pushed()
 
 /// unitless;.
 /obj/machinery/power/smes/proc/get_output_enabled()
 	return vg_component_get(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_OUTPUT_ENABLED, 0)
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /obj/machinery/power/smes/proc/set_output_enabled(value)
-	return vg_component_set(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_OUTPUT_ENABLED, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_OUTPUT_ENABLED, -1, value)
+	rust_pushed()
 
 /// W; clamped to VG_SMES_INPUT_LEVEL_MIN..MAX.
 /obj/machinery/power/smes/proc/get_input_level()
 	return vg_component_get(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_INPUT_LEVEL, 0) // W
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /obj/machinery/power/smes/proc/set_input_level(value)
-	return vg_component_set(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_INPUT_LEVEL, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_INPUT_LEVEL, -1, value)
+	rust_pushed()
 
 /// W; clamped to VG_SMES_OUTPUT_LEVEL_MIN..MAX.
 /obj/machinery/power/smes/proc/get_output_level()
 	return vg_component_get(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_OUTPUT_LEVEL, 0) // W
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /obj/machinery/power/smes/proc/set_output_level(value)
-	return vg_component_set(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_OUTPUT_LEVEL, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_OUTPUT_LEVEL, -1, value)
+	rust_pushed()
 
 /// J; clamped to VG_SMES_CAPACITY_MIN..MAX.
 /obj/machinery/power/smes/proc/get_capacity()
 	return vg_component_get(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_CAPACITY, 0) // J
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /obj/machinery/power/smes/proc/set_capacity(value)
-	return vg_component_set(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_CAPACITY, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_CAPACITY, -1, value)
+	rust_pushed()
 
 /// unitless;.
 /obj/machinery/power/smes/proc/get_rate()
 	return vg_component_get(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_RATE, 0)
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /obj/machinery/power/smes/proc/set_rate(value)
-	return vg_component_set(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_RATE, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_RATE, -1, value)
+	rust_pushed()
 
 /// J, read-only (state).
 /obj/machinery/power/smes/proc/get_charge()
@@ -1200,9 +1266,10 @@
 /obj/machinery/power/terminal/smes_input/proc/get_unit()
 	return vg_component_get(vg_entity, VG_KIND_SMESINPUTTERMINAL, VG_SMESINPUTTERMINAL_FIELD_UNIT, 0)
 
-/// Returns the stored value.
+/// Returns the stored value, then runs the type's declared push (rust_pushed()).
 /obj/machinery/power/terminal/smes_input/proc/set_unit(value)
-	return vg_component_set(vg_entity, VG_KIND_SMESINPUTTERMINAL, VG_SMESINPUTTERMINAL_FIELD_UNIT, -1, value)
+	. = vg_component_set(vg_entity, VG_KIND_SMESINPUTTERMINAL, VG_SMESINPUTTERMINAL_FIELD_UNIT, -1, value)
+	rust_pushed()
 
 /obj/machinery/power/terminal/smes_input/vg_bind_power(entity)
 	return vg_component_bind(entity, VG_KIND_SMESINPUTTERMINAL, list(VG_SMESINPUTTERMINAL_FIELD_UNIT, init_unit))
@@ -1300,44 +1367,48 @@
 		mismatches += vg_reconcile_test_domain()
 	return mismatches
 
-/// Drains and dispatches every typed event since the last call (§4.8).
-/// SSvg calls this once per tick after vg_world_tick(). Component events
-/// go to the bound atom (checked against vg_entity: a detached component's
-/// late event is dropped); domain events go to SSvg's handlers.
-/proc/vg_drain_events()
-	var/list/flat = vg_world_events()
-	var/i = 1
-	while(i + 2 <= length(flat))
-		var/header = flat[i]
-		var/entity = flat[i + 1]
-		var/len = flat[i + 2]
-		var/p = i + 3
-		i = p + len
-		switch(header)
-			if(256)
-				var/atom/movable/mover = SSvg.entity_lookup(entity)
-				if(mover && mover.vg_entity == entity)
-					var/obj/machinery/atmospherics/binary/pump/target = mover
-					target.on_pump_target_reached()
-			if(257)
-				var/atom/movable/mover = SSvg.entity_lookup(entity)
-				if(mover && mover.vg_entity == entity)
-					var/obj/machinery/atmospherics/binary/pump/target = mover
-					target.on_pump_starved()
-			if(0)
-				SSvg.on_gas_cell_reaction_ready(flat[p + 0], flat[p + 1])
-			if(1)
-				SSvg.on_gas_cell_visual_change(flat[p + 0], flat[p + 1])
-			if(2)
-				SSvg.on_gas_pressure_jump(flat[p + 0], flat[p + 1], flat[p + 2])
-			if(131072)
-				SSvg.on_heat_settled()
-			if(131073)
-				SSvg.on_heat_mixture_heat(flat[p + 0], flat[p + 1])
-			if(65536)
-				SSvg.on_power_brownout()
-			if(65537)
-				SSvg.on_power_restored()
-			if(65538)
-				SSvg.on_power_apc_channel_changed()
+/// Dispatches one typed event, a NOTICE record of the frame outbox (§4.8):
+/// `header` and `entity` from the record, its fields at `flat[p]` on. Component
+/// events go to the bound atom (checked against vg_entity: a detached
+/// component's late event is dropped); domain events go to SSvg's handlers.
+/// Returns TRUE when the header is one of the generated events.
+/proc/vg_dispatch_notice(header, entity, list/flat, p)
+	switch(header)
+		if(256)
+			var/atom/movable/mover = SSvg.entity_lookup(entity)
+			if(mover && mover.vg_entity == entity)
+				var/obj/machinery/atmospherics/binary/pump/target = mover
+				target.on_pump_target_reached()
+			return TRUE
+		if(257)
+			var/atom/movable/mover = SSvg.entity_lookup(entity)
+			if(mover && mover.vg_entity == entity)
+				var/obj/machinery/atmospherics/binary/pump/target = mover
+				target.on_pump_starved()
+			return TRUE
+		if(0)
+			SSvg.on_gas_cell_reaction_ready(flat[p + 0], flat[p + 1])
+			return TRUE
+		if(1)
+			SSvg.on_gas_cell_visual_change(flat[p + 0], flat[p + 1])
+			return TRUE
+		if(2)
+			SSvg.on_gas_pressure_jump(flat[p + 0], flat[p + 1], flat[p + 2])
+			return TRUE
+		if(131072)
+			SSvg.on_heat_settled()
+			return TRUE
+		if(131073)
+			SSvg.on_heat_mixture_heat(flat[p + 0], flat[p + 1])
+			return TRUE
+		if(65536)
+			SSvg.on_power_brownout()
+			return TRUE
+		if(65537)
+			SSvg.on_power_restored()
+			return TRUE
+		if(65538)
+			SSvg.on_power_apc_channel_changed()
+			return TRUE
+	return FALSE
 

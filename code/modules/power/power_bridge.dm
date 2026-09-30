@@ -3,9 +3,9 @@
 // accessors in code/__defines/verdigris/_bindings_types.dm).
 //
 // Rust owns the cable graph, the per-region ledger, the APC distributor and
-// SMES charge, run as ordinary `vg_core::world::World` laws -- `SSvg.fire()`
-// (code/controllers/subsystems/vg.dm) already feeds them elapsed time via
-// `vg_world_tick()` and dispatches their events via `vg_drain_events()`,
+// SMES charge, run as ordinary `vg_core::world::World` laws -- the native system's
+// frame (`vg_frame()`, code/datums/native/system.dm) already feeds them elapsed time
+// and dispatches their events (`vg_dispatch_notice()`),
 // exactly as gas's laws are. DM:
 //   - every power machine (APC, SMES, producer/generator/solar/...) is a
 //     `#[vg::component]` on `/obj/machinery/power` or a subtype, bound
@@ -58,7 +58,7 @@
 
 /// One power step: send area loads, commit topology, refresh every known
 /// region's numbers and the machines/material overlay that read them.
-/// Rust's own tick (`SSvg.fire()`) runs independently -- this only
+/// Rust's own tick (the native frame) runs independently -- this only
 /// publishes its results to DM's cache (`power_grids`) and drives the
 /// machinery-tick-cadence bookkeeping (SMES icons, APC displays) that isn't
 /// itself simulated in Rust.

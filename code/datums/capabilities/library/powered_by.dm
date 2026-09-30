@@ -28,7 +28,7 @@
 	/// role -> list of members.
 	var/list/by_role = list()
 
-/datum/cap_system/roles/join(atom/A)
+/datum/cap_system/roles/on_join(atom/A)
 	..()
 	var/role = cap_system_role(A, type)
 	if(isnull(role))
@@ -38,7 +38,7 @@
 		L = by_role["[role]"] = list()
 	L |= A
 
-/datum/cap_system/roles/leave(atom/A)
+/datum/cap_system/roles/on_leave(atom/A)
 	..()
 	for(var/role in by_role)
 		var/list/L = by_role[role]

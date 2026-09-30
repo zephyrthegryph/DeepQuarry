@@ -29,7 +29,11 @@
 	var/heat_capacity = 1
 
 	//Properties for both
-	var/temperature = T20C      // Initial turf temperature.
+	/// The temperature this turf starts at: a seed, read once when its heat cell and its air are built (the map, a
+	/// type, or set_temperature() write it). The live temperature is the heat field's: read get_temperature(),
+	/// write add_heat()/set_temperature(). DM keeps no other copy (tools/ci/check_grep.sh rejects a turf
+	/// `.temperature`).
+	var/initial_temperature = T20C
 	var/blocks_air = 0          // Does this turf contain air/let air through?
 
 	// General properties.

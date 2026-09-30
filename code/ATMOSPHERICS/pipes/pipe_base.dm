@@ -202,7 +202,7 @@
 	var/datum/gas_mixture/environment = loc.return_air()
 	if(!environment)
 		return FALSE
-	parent.mingle_with_turf(loc, volume)
+	parent.leak_into(loc, volume)
 	if(!leak_needs_equalization(parent.air, environment))
 		hibernate_stable_leak()
 		return FALSE

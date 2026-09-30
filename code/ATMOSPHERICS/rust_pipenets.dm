@@ -426,23 +426,14 @@
 /obj/machinery/atmospherics/proc/rust_device_stepped(moles, power_w, target_reached)
 	return
 
-/// Runs every device edge's flow law for this tick and dispatches results
-/// (`SSair.fire()`, from `process_pipenets`).
+#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
+/// Test hook: steps every pipe device now, as a frame does once a period, and delivers their reports.
 /datum/controller/subsystem/air/proc/rust_step_pipe_devices()
 	if(!rust_pipe_device_count)
 		return
-	var/dt = wait / 10
-	var/list/result = vg_pipe_step_devices(dt)
-	pipe_devices_reported_last = length(result) / 4
-	var/cursor = 1
-	while(cursor <= length(result))
-		var/id = result[cursor++]
-		var/moles = result[cursor++]
-		var/power_w = result[cursor++]
-		var/target_reached = result[cursor++]
-		var/obj/machinery/atmospherics/device = SSvg.entity_lookup(id)
-		if(istype(device) && device.rust_owns_device(id))
-			device.rust_device_stepped(moles, power_w, target_reached)
+	vg_frame_force_devices()
+	native_system().drain()
+#endif
 
 /// Publish the complete map topology once, then materialize all compatibility
 /// `/datum/pipe_network` wrappers from Rust's atomic connected-region result.

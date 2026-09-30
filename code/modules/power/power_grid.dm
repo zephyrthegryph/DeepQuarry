@@ -3,7 +3,7 @@
 // (`/obj/machinery/power/var/power_region`, 0 = none) and everything else asks
 // the procs below with that number. Rust (verdigris/domains/power) owns the
 // topology and the ledger; DM keeps only what Rust deliberately does not:
-// display smoothing, the monitor warning, and which machines sit on a region
+// the monitor warning, and which machines sit on a region
 // (so readers can walk them), in one flat list per region in
 // `GLOB.machine_service.power_grids`.
 //
@@ -20,18 +20,16 @@
 
 #define PGRID_AVAIL 1
 #define PGRID_LOAD 2
-#define PGRID_VIEWAVAIL 3
-#define PGRID_VIEWLOAD 4
-#define PGRID_BROWNOUT 5
+#define PGRID_BROWNOUT 3
 /// TRUE while a timed power_warn() is showing (cleared by power_warn_expire()).
-#define PGRID_PROBLEM_TIMED 6
+#define PGRID_PROBLEM_TIMED 4
 /// The material overlay's own standing warning.
-#define PGRID_MATERIAL_PROBLEM 7
+#define PGRID_MATERIAL_PROBLEM 5
 /// The warning state last announced on CHANGE_POWER_GRID_STATE.
-#define PGRID_PROBLEM_SHOWN 8
+#define PGRID_PROBLEM_SHOWN 6
 /// Machines bound to the region.
-#define PGRID_NODES 9
-#define PGRID_FIELDS 9
+#define PGRID_NODES 7
+#define PGRID_FIELDS 7
 
 /// The state list of region `id`, made on first use (null for 0).
 /proc/power_grid(id)
@@ -43,8 +41,6 @@
 	grid = new /list(PGRID_FIELDS)
 	grid[PGRID_AVAIL] = 0
 	grid[PGRID_LOAD] = 0
-	grid[PGRID_VIEWAVAIL] = 0
-	grid[PGRID_VIEWLOAD] = 0
 	grid[PGRID_BROWNOUT] = FALSE
 	grid[PGRID_PROBLEM_TIMED] = FALSE
 	grid[PGRID_MATERIAL_PROBLEM] = FALSE
@@ -77,10 +73,8 @@
 	var/old_load = grid[PGRID_LOAD]
 	grid[PGRID_AVAIL] = info[1]
 	grid[PGRID_LOAD] = info[2]
-	// Rust reports raw numbers only (rust_core.md §15); monitors read these
-	// eased 80/20 per step.
-	grid[PGRID_VIEWAVAIL] = round(0.8 * grid[PGRID_VIEWAVAIL] + 0.2 * info[1])
-	grid[PGRID_VIEWLOAD] = round(0.8 * grid[PGRID_VIEWLOAD] + 0.2 * info[2])
+	// Rust reports raw numbers only (rust_core.md §15). Smoothing is the reader's: a monitor's UI eases
+	// what it shows on the client, DM keeps no eased copy.
 	var/bits = 0
 	var/brown = !!info[3]
 	if(brown != grid[PGRID_BROWNOUT])
@@ -121,13 +115,13 @@
 /proc/power_surplus(id)
 	return max(power_netexcess(id), 0)
 
+/// What a monitor shows for supply: the raw ledger value (the UI eases it client-side).
 /proc/power_view_avail(id)
-	var/list/grid = power_grid(id)
-	return grid ? grid[PGRID_VIEWAVAIL] : 0
+	return power_avail(id)
 
+/// What a monitor shows for load: the raw ledger value.
 /proc/power_view_load(id)
-	var/list/grid = power_grid(id)
-	return grid ? grid[PGRID_VIEWLOAD] : 0
+	return power_load(id)
 
 /proc/power_brownout(id)
 	var/list/grid = power_grid(id)
@@ -372,8 +366,6 @@
 
 #undef PGRID_AVAIL
 #undef PGRID_LOAD
-#undef PGRID_VIEWAVAIL
-#undef PGRID_VIEWLOAD
 #undef PGRID_BROWNOUT
 #undef PGRID_PROBLEM_TIMED
 #undef PGRID_MATERIAL_PROBLEM

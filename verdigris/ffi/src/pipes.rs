@@ -472,9 +472,10 @@ fn device_law_index(w: &World) -> HashMap<u32, DeviceLaws> {
 /// through `crate::gas`'s turf accessors (this module's own docs) --
 /// and returns a flat `device handle, moles, power_w, target_reached` list
 /// per device that moved something or drew power.
-#[auxmacros::bind("/proc/vg_pipe_step_devices")]
-fn pipe_step_devices(dt: ByondValue) -> Result<ByondValue> {
-    let dt = num(&dt)?;
+///
+/// Driven by [`crate::frame`] at the device period (each report becomes a
+/// `NATIVE_NOTICE_PIPE_DEVICE` notice); there is no DM bind.
+pub(crate) fn pipe_step_devices(dt: f32) -> Result<Vec<f32>> {
     let mut out = Vec::new();
     with_world(|w| {
         let devices: Vec<EntityId> = w
@@ -524,7 +525,7 @@ fn pipe_step_devices(dt: ByondValue) -> Result<ByondValue> {
                 }
             }
         }
-        list(out)
+        Ok(out)
     })
 }
 

@@ -87,7 +87,7 @@ SUBSYSTEM_DEF(profiler)
 			"pressure_deltas" = length(SSair.high_pressure_delta),
 			"pipenets" = length(SSair.networks),
 			"pipe_devices" = SSair.rust_pipe_device_count,
-			"pipe_devices_reported" = SSair.pipe_devices_reported_last,
+			"pipe_devices_reported" = native_system().pipe_devices_last,
 			"rebuild" = length(SSair.rebuild_queue),
 			"expansion" = length(SSair.expansion_queue),
 		),

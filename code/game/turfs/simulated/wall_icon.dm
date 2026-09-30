@@ -17,7 +17,7 @@
 		construction_stage = null
 	// The material cap is the wall's integrity; the wall keeps the damage it already has.
 	// A wall is geometry around a material, not a hard-coded thermal type.
-	var/material_temperature = SSair?.initialized ? get_temperature() : temperature
+	var/material_temperature = SSair?.initialized ? get_temperature() : initial_temperature
 	var/list/facts = wall_material_facts(material_temperature)
 	var/missing = max_integrity - get_integrity()
 	max_integrity = facts[WALL_FACT_INTEGRITY]

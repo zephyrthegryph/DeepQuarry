@@ -15,7 +15,7 @@ use std::collections::BTreeMap;
 use crate::channel::ChannelInfo;
 use crate::entity::ComponentRef;
 use crate::outbox::{Lane, Subscriber, Wake, WatchId};
-use crate::watch::Cond;
+use crate::watch::{Cond, SetEntry};
 
 /// Registry ids at and above this are world component kinds:
 /// `WORLD_KIND_BASE | kind_code` ([`crate::world::kind_code`]).
@@ -61,6 +61,16 @@ pub trait DomainRegistry {
         Err("this domain has no watch port".to_owned())
     }
     fn unwatch(&mut self, port: u8, id: WatchId) {}
+    /// Adds (or replaces, by payload) an entry of a `ThresholdSet` watch.
+    ///
+    /// # Errors
+    /// A description of why it was refused (the default: sets are not
+    /// supported by this host).
+    fn add_entry(&mut self, port: u8, id: WatchId, entry: SetEntry) -> Result<(), String> {
+        Err("this domain has no threshold sets".to_owned())
+    }
+    /// Removes a `ThresholdSet` entry.
+    fn remove_entry(&mut self, port: u8, id: WatchId, payload: u32) {}
     /// Moves the wakes produced since the last call into `out`.
     fn take_wakes(&mut self, out: &mut Vec<Wake>) {}
 }

@@ -5,7 +5,7 @@
 	icon_state = "4-8"
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "ad" = (
@@ -22,7 +22,7 @@
 /mob/living/simple_mob/mechanical/hivebot/swarm,
 /obj/random/junk,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "ar" = (
@@ -31,21 +31,21 @@
 	},
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "au" = (
 /obj/structure/table/standard,
 /obj/item/folder/red,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "ay" = (
 /obj/machinery/door/firedoor,
 /obj/machinery/door/airlock/research,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_tox)
 "aI" = (
@@ -62,7 +62,7 @@
 /obj/machinery/light,
 /mob/living/simple_mob/mechanical/hivebot/tank/armored/anti_melee,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "aR" = (
@@ -77,14 +77,14 @@
 /mob/living/simple_mob/mechanical/hivebot/swarm,
 /obj/random/junk,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "bc" = (
 /obj/structure/transit_tube/station,
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "bd" = (
@@ -92,7 +92,7 @@
 	icon_state = "2-4"
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "bf" = (
@@ -112,7 +112,7 @@
 	name = "Bridge"
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_bridge)
 "bq" = (
@@ -121,7 +121,7 @@
 	},
 /obj/random/junk,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_power)
 "bw" = (
@@ -130,7 +130,7 @@
 	},
 /mob/living/simple_mob/mechanical/hivebot/tank/armored/anti_melee,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "by" = (
@@ -142,7 +142,7 @@
 "bA" = (
 /obj/random/trash,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_hydro_sec)
 "bC" = (
@@ -152,7 +152,7 @@
 	},
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "bF" = (
@@ -160,7 +160,7 @@
 /obj/random/maintenance/research,
 /obj/random/maintenance/research,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_tox)
 "bH" = (
@@ -168,7 +168,7 @@
 	dir = 4
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_alpha)
 "bJ" = (
@@ -187,7 +187,7 @@
 	},
 /obj/item/paper/cryo_awaken,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "bP" = (
@@ -204,7 +204,7 @@
 /obj/machinery/atmospherics/pipe/simple/hidden/supply,
 /obj/machinery/door/firedoor,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "bX" = (
@@ -214,7 +214,7 @@
 /obj/machinery/door/firedoor,
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "bZ" = (
@@ -247,7 +247,7 @@
 	pixel_x = -24
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "ck" = (
@@ -293,13 +293,13 @@
 "cG" = (
 /obj/effect/decal/cleanable/cobweb2,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "cI" = (
 /obj/structure/transit_tube/station,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "cK" = (
@@ -315,7 +315,7 @@
 	},
 /obj/machinery/power/smes,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_power)
 "cY" = (
@@ -324,7 +324,7 @@
 	},
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "da" = (
@@ -332,7 +332,7 @@
 /obj/item/reagent_containers/chem_disp_cartridge/oxygen,
 /obj/item/reagent_containers/chem_disp_cartridge/water,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_tox)
 "di" = (
@@ -345,7 +345,7 @@
 	name = "Broken Computer"
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_power)
 "ds" = (
@@ -370,7 +370,7 @@
 /obj/machinery/door/firedoor,
 /obj/machinery/door/airlock/research,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_tox)
 "dK" = (
@@ -381,7 +381,7 @@
 	icon_state = "4-8"
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "dR" = (
@@ -403,7 +403,7 @@
 /obj/random/maintenance,
 /obj/item/flashlight,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "dZ" = (
@@ -417,7 +417,7 @@
 /obj/structure/table/standard,
 /obj/item/book/manual/nuclear,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_tox)
 "eg" = (
@@ -426,7 +426,7 @@
 	},
 /obj/random/junk,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "eq" = (
@@ -436,7 +436,7 @@
 /obj/machinery/door/firedoor,
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "er" = (
@@ -446,7 +446,7 @@
 /mob/living/simple_mob/mechanical/hivebot/ranged_damage/strong/guard,
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "et" = (
@@ -468,21 +468,21 @@
 /obj/effect/floor_decal/rust,
 /obj/random/junk,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "eM" = (
 /obj/structure/table/standard,
 /obj/machinery/recharger,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "eN" = (
 /obj/structure/table/standard,
 /obj/item/seeds/harebell,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_hydro_sec)
 "eS" = (
@@ -499,7 +499,7 @@
 /obj/random/gun/random,
 /obj/random/junk,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "eY" = (
@@ -507,7 +507,7 @@
 	icon_state = "1-4"
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "fc" = (
@@ -518,7 +518,7 @@
 /mob/living/simple_mob/mechanical/hivebot/swarm,
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "ff" = (
@@ -535,7 +535,7 @@
 /mob/living/simple_mob/mechanical/hivebot/swarm,
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "ft" = (
@@ -556,7 +556,7 @@
 	dir = 5
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "fH" = (
@@ -584,7 +584,7 @@
 /obj/effect/floor_decal/rust,
 /obj/random/junk,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "fY" = (
@@ -618,7 +618,7 @@
 	icon_state = "1-2"
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "gD" = (
@@ -637,7 +637,7 @@
 /area/submap/oldstation_charlie)
 "gL" = (
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_bridge)
 "gP" = (
@@ -647,7 +647,7 @@
 "gQ" = (
 /obj/machinery/atmospherics/pipe/simple/hidden/supply,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_power)
 "gX" = (
@@ -657,7 +657,7 @@
 	},
 /obj/item/paper/solar,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_power)
 "gY" = (
@@ -670,7 +670,7 @@
 /obj/machinery/door/firedoor,
 /obj/machinery/door/airlock/science,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "ha" = (
@@ -679,7 +679,7 @@
 	pixel_x = -24
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "hf" = (
@@ -687,7 +687,7 @@
 /obj/item/reagent_containers/chem_disp_cartridge/sodium,
 /obj/item/reagent_containers/chem_disp_cartridge/sugar,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_tox)
 "hg" = (
@@ -696,7 +696,7 @@
 	},
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "hh" = (
@@ -710,7 +710,7 @@
 /mob/living/simple_mob/mechanical/hivebot/tank/armored/anti_melee,
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "hk" = (
@@ -752,7 +752,7 @@
 	dir = 8
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "hN" = (
@@ -772,13 +772,13 @@
 /obj/structure/table/standard,
 /obj/item/dice/d8,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_bridge)
 "hU" = (
 /obj/machinery/door/airlock/security,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "hW" = (
@@ -787,7 +787,7 @@
 	},
 /mob/living/simple_mob/mechanical/hivebot/swarm,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "ih" = (
@@ -802,7 +802,7 @@
 /area/submap/oldstation_power)
 "ij" = (
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "im" = (
@@ -812,7 +812,7 @@
 /obj/machinery/door/firedoor,
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "in" = (
@@ -823,7 +823,7 @@
 	dir = 1
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_bridge)
 "iD" = (
@@ -833,7 +833,7 @@
 /mob/living/simple_mob/mechanical/hivebot/tank/armored/anti_melee,
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "iP" = (
@@ -849,7 +849,7 @@
 	dir = 4
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "iX" = (
@@ -862,7 +862,7 @@
 "ja" = (
 /obj/machinery/seed_extractor,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_hydro_sec)
 "ji" = (
@@ -870,13 +870,13 @@
 	icon_state = "1-4"
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "jj" = (
 /obj/structure/transit_tube/station,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "jA" = (
@@ -923,7 +923,7 @@
 	},
 /obj/machinery/door/firedoor,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "jV" = (
@@ -933,7 +933,7 @@
 	},
 /mob/living/simple_mob/mechanical/hivebot/swarm,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "jX" = (
@@ -945,7 +945,7 @@
 /obj/structure/table/standard,
 /obj/item/reagent_containers/chem_disp_cartridge/radium,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_tox)
 "kj" = (
@@ -964,7 +964,7 @@
 	icon_state = "1-2"
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "kt" = (
@@ -992,7 +992,7 @@
 	dir = 8
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_bridge)
 "kC" = (
@@ -1001,14 +1001,14 @@
 	},
 /obj/effect/floor_decal/corner/green/border,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_hydro_sec)
 "kJ" = (
 /obj/machinery/atmospherics/pipe/simple/hidden/supply,
 /obj/random/trash,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "kN" = (
@@ -1020,7 +1020,7 @@
 	},
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "kR" = (
@@ -1033,7 +1033,7 @@
 	dir = 8
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_bridge)
 "li" = (
@@ -1051,7 +1051,7 @@
 	},
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "ls" = (
@@ -1065,7 +1065,7 @@
 /area/submap/oldstation_bridge)
 "lv" = (
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_tox)
 "lw" = (
@@ -1083,7 +1083,7 @@
 /mob/living/simple_mob/mechanical/hivebot/ranged_damage/strong/guard,
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "lD" = (
@@ -1157,7 +1157,7 @@
 	icon_state = "2-8"
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "mQ" = (
@@ -1165,7 +1165,7 @@
 	icon_state = "1-2"
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_power)
 "mT" = (
@@ -1178,7 +1178,7 @@
 	},
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "ng" = (
@@ -1189,13 +1189,13 @@
 	dir = 4
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_power)
 "ni" = (
 /obj/item/stack/medical/bruise_pack,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "nr" = (
@@ -1203,14 +1203,14 @@
 /obj/machinery/door/airlock/science,
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "ns" = (
 /obj/machinery/atmospherics/pipe/manifold4w/hidden/supply,
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_tox)
 "nt" = (
@@ -1246,7 +1246,7 @@
 "nO" = (
 /obj/random/trash,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "nU" = (
@@ -1254,7 +1254,7 @@
 /obj/item/clothing/suit/armor/pcarrier/blue/sol,
 /obj/item/clothing/suit/armor/pcarrier/blue/sol,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "nW" = (
@@ -1265,7 +1265,7 @@
 /obj/item/reagent_containers/chem_disp_cartridge/dylovene,
 /obj/item/reagent_containers/chem_disp_cartridge/ethanol,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_tox)
 "oi" = (
@@ -1289,7 +1289,7 @@
 /area/submap/oldstation_kitchen)
 "ol" = (
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "oo" = (
@@ -1312,7 +1312,7 @@
 /obj/effect/floor_decal/rust,
 /obj/random/junk,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_power)
 "ox" = (
@@ -1327,7 +1327,7 @@
 	dir = 4
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "oG" = (
@@ -1336,7 +1336,7 @@
 	pixel_x = 24
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "oM" = (
@@ -1351,7 +1351,7 @@
 "oZ" = (
 /obj/effect/decal/cleanable/blood/oil,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "pc" = (
@@ -1361,7 +1361,7 @@
 /obj/effect/decal/cleanable/generic,
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "pi" = (
@@ -1381,7 +1381,7 @@
 	},
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "po" = (
@@ -1413,7 +1413,7 @@
 	pixel_x = -24
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_power)
 "pU" = (
@@ -1428,7 +1428,7 @@
 	},
 /mob/living/simple_mob/mechanical/hivebot/tank/armored/anti_melee,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "qq" = (
@@ -1440,7 +1440,7 @@
 /obj/structure/table/standard,
 /obj/item/reagent_containers/chem_disp_cartridge/fluorine,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_tox)
 "qx" = (
@@ -1451,33 +1451,33 @@
 /obj/machinery/atmospherics/pipe/simple/hidden/supply,
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "qG" = (
 /obj/item/clothing/head/welding,
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_power)
 "qK" = (
 /obj/machinery/door/firedoor,
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "qQ" = (
 /obj/machinery/atmospherics/pipe/simple/hidden/supply,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "qR" = (
 /obj/random/trash,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_bridge)
 "qU" = (
@@ -1490,7 +1490,7 @@
 /mob/living/simple_mob/mechanical/hivebot/ranged_damage/siege/fragmentation,
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_tox)
 "ra" = (
@@ -1499,7 +1499,7 @@
 	},
 /mob/living/simple_mob/mechanical/hivebot/tank/armored/anti_melee,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "rb" = (
@@ -1518,7 +1518,7 @@
 	},
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "rf" = (
@@ -1548,13 +1548,13 @@
 /mob/living/simple_mob/mechanical/hivebot/swarm,
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "ru" = (
 /obj/effect/decal/cleanable/cobweb,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "rw" = (
@@ -1562,7 +1562,7 @@
 /obj/item/reagent_containers/chem_disp_cartridge/sacid,
 /obj/item/reagent_containers/chem_disp_cartridge/sulfur,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_tox)
 "rC" = (
@@ -1588,7 +1588,7 @@
 	},
 /obj/machinery/door/firedoor,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "rO" = (
@@ -1600,14 +1600,14 @@
 	dir = 8
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "sd" = (
 /obj/machinery/atmospherics/pipe/simple/hidden/supply,
 /obj/random/trash,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_bridge)
 "se" = (
@@ -1624,7 +1624,7 @@
 	},
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "sl" = (
@@ -1633,7 +1633,7 @@
 	name = "Broken Computer"
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "sm" = (
@@ -1669,7 +1669,7 @@
 	},
 /obj/item/reagent_containers/chem_disp_cartridge/phosphorus,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_tox)
 "sB" = (
@@ -1678,7 +1678,7 @@
 	},
 /mob/living/simple_mob/mechanical/hivebot/tank/armored/anti_melee,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "sC" = (
@@ -1686,7 +1686,7 @@
 	dir = 1
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "sF" = (
@@ -1708,7 +1708,7 @@
 /obj/effect/floor_decal/rust,
 /obj/random/junk,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "sJ" = (
@@ -1726,13 +1726,13 @@
 	dir = 8
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_bridge)
 "sM" = (
 /obj/effect/landmark/loot_spawn/low,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_power)
 "td" = (
@@ -1745,7 +1745,7 @@
 	name = "Hydroponics"
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_hydro_sec)
 "tj" = (
@@ -1758,7 +1758,7 @@
 /obj/machinery/door/firedoor,
 /mob/living/simple_mob/mechanical/hivebot/swarm,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "to" = (
@@ -1774,7 +1774,7 @@
 	icon_state = "4-8"
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "tq" = (
@@ -1784,7 +1784,7 @@
 /mob/living/simple_mob/mechanical/hivebot/ranged_damage/strong/guard,
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "tC" = (
@@ -1814,7 +1814,7 @@
 	},
 /obj/random/trash,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "ub" = (
@@ -1826,7 +1826,7 @@
 /obj/random/maintenance,
 /obj/item/flashlight,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "uh" = (
@@ -1840,7 +1840,7 @@
 /obj/machinery/door/airlock/command,
 /obj/structure/barricade,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "uq" = (
@@ -1848,7 +1848,7 @@
 	dir = 9
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_bridge)
 "uv" = (
@@ -1870,7 +1870,7 @@
 	dir = 4
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_bridge)
 "uF" = (
@@ -1881,7 +1881,7 @@
 /obj/item/gun/energy/gun/compact,
 /obj/item/gun/energy/gun/compact,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "uK" = (
@@ -1897,7 +1897,7 @@
 	icon_state = "2-8"
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "uS" = (
@@ -1906,7 +1906,7 @@
 /obj/effect/floor_decal/rust,
 /obj/random/junk,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "uT" = (
@@ -1927,7 +1927,7 @@
 	icon_state = "2-8"
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "vr" = (
@@ -1993,7 +1993,7 @@
 	pixel_y = -32
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "vC" = (
@@ -2004,7 +2004,7 @@
 /mob/living/simple_mob/mechanical/hivebot/swarm,
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "vJ" = (
@@ -2017,7 +2017,7 @@
 /obj/effect/floor_decal/rust,
 /obj/random/junk,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "wf" = (
@@ -2045,7 +2045,7 @@
 	},
 /obj/random/trash,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "wK" = (
@@ -2053,14 +2053,14 @@
 	icon_state = "1-8"
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "wM" = (
 /obj/structure/table/standard,
 /obj/item/megaphone/super,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_bridge)
 "wP" = (
@@ -2070,13 +2070,13 @@
 "wT" = (
 /obj/structure/table/standard,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_power)
 "wY" = (
 /obj/random/junk,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_bridge)
 "wZ" = (
@@ -2120,7 +2120,7 @@
 	start_charge = 0
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_power)
 "xE" = (
@@ -2139,7 +2139,7 @@
 	dir = 4
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_bridge)
 "xH" = (
@@ -2154,7 +2154,7 @@
 	icon_state = "2-8"
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_power)
 "xL" = (
@@ -2163,7 +2163,7 @@
 	},
 /obj/structure/closet/crate,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "xO" = (
@@ -2190,7 +2190,7 @@
 /mob/living/simple_mob/mechanical/hivebot/swarm,
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "yc" = (
@@ -2200,7 +2200,7 @@
 	dir = 1
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_bridge)
 "yt" = (
@@ -2208,14 +2208,14 @@
 	dir = 8
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "yz" = (
 /obj/machinery/atmospherics/pipe/simple/hidden/supply,
 /obj/effect/decal/cleanable/generic,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "yG" = (
@@ -2231,7 +2231,7 @@
 "yK" = (
 /mob/living/simple_mob/mechanical/hivebot/swarm,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_tox)
 "yL" = (
@@ -2239,7 +2239,7 @@
 /obj/effect/floor_decal/rust,
 /obj/random/junk,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "yM" = (
@@ -2248,7 +2248,7 @@
 	},
 /obj/machinery/door/firedoor,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "yT" = (
@@ -2270,7 +2270,7 @@
 	pixel_x = -28
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_tox)
 "zf" = (
@@ -2281,7 +2281,7 @@
 /obj/item/stock_parts/matter_bin,
 /obj/item/stock_parts/scanning_module,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_tox)
 "zk" = (
@@ -2290,7 +2290,7 @@
 	},
 /obj/random/junk,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "zy" = (
@@ -2300,7 +2300,7 @@
 	dir = 1
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_bridge)
 "zE" = (
@@ -2311,13 +2311,13 @@
 	dir = 8
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "zR" = (
 /obj/effect/landmark/loot_spawn/low,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "zU" = (
@@ -2331,13 +2331,13 @@
 	name = "Broken Computer"
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "zX" = (
 /obj/random/maintenance/research,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_tox)
 "Ad" = (
@@ -2350,7 +2350,7 @@
 	},
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "Am" = (
@@ -2374,14 +2374,14 @@
 	name = "Cryogenics"
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "AO" = (
 /obj/structure/table/standard,
 /obj/machinery/atmospherics/unary/vent_pump/on,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_hydro_sec)
 "AU" = (
@@ -2399,7 +2399,7 @@
 	dir = 1
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_bridge)
 "Bc" = (
@@ -2408,7 +2408,7 @@
 "Be" = (
 /obj/machinery/atmospherics/pipe/simple/hidden/supply,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_tox)
 "Bm" = (
@@ -2416,7 +2416,7 @@
 	dir = 1
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_tox)
 "Bv" = (
@@ -2431,7 +2431,7 @@
 	},
 /obj/effect/landmark/loot_spawn/low,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "BC" = (
@@ -2444,7 +2444,7 @@
 	},
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "BF" = (
@@ -2457,7 +2457,7 @@
 	},
 /mob/living/simple_mob/mechanical/hivebot/swarm,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "BN" = (
@@ -2466,7 +2466,7 @@
 	},
 /obj/random/junk,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "BX" = (
@@ -2478,7 +2478,7 @@
 	name = "Theta Station Access"
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "Cb" = (
@@ -2497,7 +2497,7 @@
 /obj/item/solar_assembly,
 /obj/item/solar_assembly,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_power)
 "Cd" = (
@@ -2529,7 +2529,7 @@
 "Cr" = (
 /obj/random/junk,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "Cs" = (
@@ -2550,7 +2550,7 @@
 	dir = 4
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "CC" = (
@@ -2560,19 +2560,19 @@
 /obj/structure/table/standard,
 /obj/item/pen,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "CR" = (
 /obj/random/trash,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_power)
 "CX" = (
 /obj/random/junk,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_power)
 "Dg" = (
@@ -2600,7 +2600,7 @@
 /obj/machinery/door/firedoor,
 /obj/machinery/door/airlock/science,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "Du" = (
@@ -2616,7 +2616,7 @@
 	dir = 8
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "Dx" = (
@@ -2628,7 +2628,7 @@
 "DE" = (
 /obj/effect/floor_decal/corner/green/border,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_hydro_sec)
 "DG" = (
@@ -2652,14 +2652,14 @@
 /obj/random/maintenance/research,
 /obj/random/maintenance/research,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_tox)
 "Eb" = (
 /obj/effect/floor_decal/rust,
 /obj/random/trash,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_power)
 "Er" = (
@@ -2674,7 +2674,7 @@
 /obj/effect/floor_decal/rust,
 /obj/random/junk,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "Eu" = (
@@ -2682,7 +2682,7 @@
 	dir = 1
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_hydro_sec)
 "Ev" = (
@@ -2697,7 +2697,7 @@
 /obj/structure/table/standard,
 /obj/item/reagent_containers/chem_disp_cartridge/potassium,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_tox)
 "EB" = (
@@ -2712,12 +2712,12 @@
 	},
 /mob/living/simple_mob/mechanical/hivebot/swarm,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "EO" = (
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_hydro_sec)
 "EV" = (
@@ -2734,14 +2734,14 @@
 /obj/effect/floor_decal/rust,
 /obj/random/junk,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "Fl" = (
 /obj/machinery/atmospherics/pipe/simple/hidden/supply,
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_tox)
 "Fs" = (
@@ -2763,7 +2763,7 @@
 	icon_state = "1-8"
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "Fw" = (
@@ -2788,7 +2788,7 @@
 	},
 /obj/random/junk,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "FM" = (
@@ -2796,7 +2796,7 @@
 	dir = 8
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_power)
 "FO" = (
@@ -2805,7 +2805,7 @@
 	},
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "FQ" = (
@@ -2835,7 +2835,7 @@
 /obj/effect/floor_decal/rust,
 /obj/random/junk,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "Gi" = (
@@ -2858,7 +2858,7 @@
 	icon_state = "2-4"
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "GB" = (
@@ -2870,7 +2870,7 @@
 /obj/effect/decal/remains/human,
 /obj/effect/decal/cleanable/cobweb,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "GF" = (
@@ -2882,7 +2882,7 @@
 	},
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "GL" = (
@@ -2904,7 +2904,7 @@
 	},
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "GO" = (
@@ -2919,7 +2919,7 @@
 /obj/machinery/atmospherics/unary/vent_pump/on,
 /obj/item/coin,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_bridge)
 "He" = (
@@ -2927,7 +2927,7 @@
 	dir = 4
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "Hm" = (
@@ -2936,7 +2936,7 @@
 	name = "Engineering"
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_power)
 "Hn" = (
@@ -2956,7 +2956,7 @@
 /obj/item/flash,
 /obj/item/flash,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "HK" = (
@@ -2971,7 +2971,7 @@
 /mob/living/simple_mob/mechanical/hivebot/swarm,
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "HR" = (
@@ -2982,7 +2982,7 @@
 "Ib" = (
 /obj/effect/landmark/loot_spawn/low,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "Ii" = (
@@ -2998,7 +2998,7 @@
 	},
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "Im" = (
@@ -3017,7 +3017,7 @@
 	},
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "Iz" = (
@@ -3031,21 +3031,21 @@
 /obj/random/junk,
 /obj/random/junk,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_power)
 "ID" = (
 /obj/machinery/door/firedoor,
 /mob/living/simple_mob/mechanical/hivebot/swarm,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "IE" = (
 /obj/structure/table/standard,
 /obj/machinery/recharger,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_tox)
 "IF" = (
@@ -3060,7 +3060,7 @@
 /obj/item/folder/white,
 /obj/item/reagent_containers/glass/beaker,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_tox)
 "IX" = (
@@ -3075,7 +3075,7 @@
 /obj/item/solar_assembly,
 /obj/item/solar_assembly,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "Jj" = (
@@ -3085,7 +3085,7 @@
 /obj/machinery/atmospherics/pipe/simple/hidden/supply,
 /mob/living/simple_mob/mechanical/hivebot/ranged_damage/strong/guard,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "Jt" = (
@@ -3094,7 +3094,7 @@
 	},
 /obj/structure/transit_tube/station,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "Ju" = (
@@ -3103,7 +3103,7 @@
 	dir = 4
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_bridge)
 "Jx" = (
@@ -3121,7 +3121,7 @@
 	},
 /obj/random/trash,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "JF" = (
@@ -3131,7 +3131,7 @@
 /obj/machinery/door/firedoor,
 /obj/machinery/door/airlock/science,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "JT" = (
@@ -3148,13 +3148,13 @@
 "Kv" = (
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "Kz" = (
 /obj/machinery/atmospherics/pipe/simple/hidden/supply,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_bridge)
 "KC" = (
@@ -3181,14 +3181,14 @@
 	dir = 5
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_power)
 "KZ" = (
 /obj/machinery/atmospherics/pipe/simple/hidden/supply,
 /obj/random/junk,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "Lc" = (
@@ -3209,7 +3209,7 @@
 /obj/machinery/door/firedoor,
 /obj/random/junk,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "Lj" = (
@@ -3263,7 +3263,7 @@
 	},
 /obj/random/trash,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_hydro_sec)
 "Lq" = (
@@ -3285,7 +3285,7 @@
 /mob/living/simple_mob/mechanical/hivebot/swarm,
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "LG" = (
@@ -3295,7 +3295,7 @@
 	},
 /obj/item/storage/backpack,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "LN" = (
@@ -3314,7 +3314,7 @@
 /obj/structure/table/standard,
 /obj/item/book/manual/wiki/security_space_law,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "LT" = (
@@ -3326,34 +3326,34 @@
 	},
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "Ma" = (
 /obj/random/maintenance/research,
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_tox)
 "Mc" = (
 /obj/item/clothing/shoes/magboots,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_power)
 "Md" = (
 /obj/structure/table/standard,
 /obj/item/paper,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "Mi" = (
 /obj/effect/floor_decal/rust,
 /obj/random/junk,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_tox)
 "Mp" = (
@@ -3370,7 +3370,7 @@
 /obj/machinery/atmospherics/pipe/simple/hidden/supply,
 /mob/living/simple_mob/mechanical/hivebot/tank/armored/anti_melee,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_tox)
 "Mx" = (
@@ -3385,7 +3385,7 @@
 	name = "Broken Computer"
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "MI" = (
@@ -3398,14 +3398,14 @@
 "MK" = (
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "MM" = (
 /obj/structure/table/standard,
 /obj/item/reagent_containers/food/drinks/cans/cola,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "MN" = (
@@ -3413,7 +3413,7 @@
 /obj/item/broken_bottle,
 /obj/item/soap/deluxe,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_tox)
 "MT" = (
@@ -3437,7 +3437,7 @@
 "Nb" = (
 /mob/living/simple_mob/mechanical/hivebot/ranged_damage/siege/fragmentation,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_tox)
 "Nf" = (
@@ -3451,7 +3451,7 @@
 /obj/machinery/atmospherics/pipe/simple/hidden/supply,
 /obj/random/junk,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "Nq" = (
@@ -3459,26 +3459,26 @@
 	name = "Beta Station Access"
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "Ns" = (
 /obj/machinery/atmospherics/pipe/simple/hidden/supply,
 /mob/living/simple_mob/mechanical/hivebot/swarm,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "Nx" = (
 /obj/machinery/door/firedoor,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "NH" = (
 /obj/machinery/light/small,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "NJ" = (
@@ -3497,7 +3497,7 @@
 	dir = 8
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "NP" = (
@@ -3509,7 +3509,7 @@
 	},
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "NZ" = (
@@ -3521,13 +3521,13 @@
 	dir = 4
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "Oh" = (
 /obj/structure/table/standard,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_bridge)
 "Op" = (
@@ -3537,7 +3537,7 @@
 /obj/item/stock_parts/micro_laser,
 /obj/item/stack/cable_coil,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_tox)
 "Ov" = (
@@ -3557,7 +3557,7 @@
 /area/submap/oldstation_alpha)
 "OD" = (
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_power)
 "OE" = (
@@ -3569,7 +3569,7 @@
 "OH" = (
 /obj/machinery/door/firedoor,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "OI" = (
@@ -3595,7 +3595,7 @@
 "Ps" = (
 /obj/machinery/atmospherics/pipe/simple/hidden/supply,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "Pu" = (
@@ -3605,7 +3605,7 @@
 /mob/living/simple_mob/mechanical/hivebot/swarm,
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_tox)
 "Py" = (
@@ -3623,7 +3623,7 @@
 	},
 /obj/random/trash,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "PP" = (
@@ -3634,7 +3634,7 @@
 /mob/living/simple_mob/mechanical/hivebot/swarm,
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "PZ" = (
@@ -3651,7 +3651,7 @@
 	start_charge = 0
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "Qe" = (
@@ -3664,13 +3664,13 @@
 /obj/random/maintenance,
 /obj/item/flashlight,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "Qn" = (
 /obj/machinery/door/airlock,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_bridge)
 "Qp" = (
@@ -3693,7 +3693,7 @@
 	},
 /obj/item/folder/red,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "QA" = (
@@ -3705,7 +3705,7 @@
 /obj/item/reagent_containers/chem_disp_cartridge/carbon,
 /obj/item/reagent_containers/chem_disp_cartridge/calcium,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_tox)
 "QE" = (
@@ -3739,13 +3739,13 @@
 	dir = 8
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_tox)
 "Ro" = (
 /obj/machinery/atmospherics/unary/cryo_cell,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "Ru" = (
@@ -3800,7 +3800,7 @@
 	},
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_power)
 "Sa" = (
@@ -3821,7 +3821,7 @@
 	dir = 5
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_bridge)
 "Sh" = (
@@ -3835,7 +3835,7 @@
 	icon_state = "1-2"
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_power)
 "Ss" = (
@@ -3866,7 +3866,7 @@
 	icon_state = "4-8"
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "SW" = (
@@ -3885,7 +3885,7 @@
 "Tg" = (
 /mob/living/simple_mob/mechanical/hivebot/swarm,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "Tl" = (
@@ -3911,13 +3911,13 @@
 /obj/item/reagent_containers/chem_disp_cartridge/copper,
 /obj/item/reagent_containers/chem_disp_cartridge/diethylamine,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_tox)
 "Tw" = (
 /mob/living/simple_mob/mechanical/hivebot/ranged_damage/strong/guard,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "TC" = (
@@ -3929,7 +3929,7 @@
 /mob/living/simple_mob/mechanical/hivebot/tank/armored/anti_melee,
 /obj/random/junk,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "TE" = (
@@ -3938,7 +3938,7 @@
 	},
 /obj/effect/floor_decal/corner/green/border,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_hydro_sec)
 "TH" = (
@@ -3949,7 +3949,7 @@
 	dir = 8
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "TK" = (
@@ -3957,7 +3957,7 @@
 	dir = 4
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_tox)
 "TL" = (
@@ -3990,7 +3990,7 @@
 	pixel_y = 2
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "TR" = (
@@ -4008,14 +4008,14 @@
 "TZ" = (
 /obj/random/trash,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_tox)
 "Ud" = (
 /obj/machinery/atmospherics/pipe/simple/hidden/supply,
 /obj/machinery/door/firedoor,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "Uh" = (
@@ -4030,7 +4030,7 @@
 	dir = 8
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_bridge)
 "Us" = (
@@ -4042,7 +4042,7 @@
 "UB" = (
 /obj/effect/decal/cleanable/ash,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_power)
 "UC" = (
@@ -4050,7 +4050,7 @@
 /obj/effect/floor_decal/rust,
 /obj/random/junk,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "UF" = (
@@ -4078,7 +4078,7 @@
 /obj/machinery/door/firedoor,
 /obj/machinery/door/airlock/research,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_tox)
 "UO" = (
@@ -4086,7 +4086,7 @@
 	dir = 1
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "UR" = (
@@ -4100,7 +4100,7 @@
 /obj/effect/floor_decal/rust,
 /obj/random/junk,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "UT" = (
@@ -4109,13 +4109,13 @@
 	pixel_y = -32
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "Vb" = (
 /obj/structure/reagent_dispensers/watertank/high,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_hydro_sec)
 "Vc" = (
@@ -4123,7 +4123,7 @@
 	dir = 4
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "Vk" = (
@@ -4157,7 +4157,7 @@
 /obj/machinery/power/smes,
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_power)
 "Wf" = (
@@ -4201,7 +4201,7 @@
 	},
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_power)
 "WC" = (
@@ -4222,7 +4222,7 @@
 /obj/machinery/atmospherics/pipe/simple/hidden/supply,
 /obj/machinery/atmospherics/unary/cryo_cell,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "WZ" = (
@@ -4243,7 +4243,7 @@
 "Xd" = (
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_tox)
 "Xm" = (
@@ -4253,7 +4253,7 @@
 /obj/effect/floor_decal/rust,
 /obj/random/junk,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "Xq" = (
@@ -4291,7 +4291,7 @@
 	},
 /obj/random/trash,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "XO" = (
@@ -4305,7 +4305,7 @@
 	icon_state = "4-8"
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "Yd" = (
@@ -4319,7 +4319,7 @@
 	dir = 8
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "Ye" = (
@@ -4330,7 +4330,7 @@
 	icon_state = "1-2"
 	},
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "Yg" = (
@@ -4345,7 +4345,7 @@
 /mob/living/simple_mob/mechanical/hivebot/swarm,
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "Yl" = (
@@ -4356,7 +4356,7 @@
 "Yn" = (
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_power)
 "Yo" = (
@@ -4391,7 +4391,7 @@
 /obj/machinery/door/airlock/science,
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 "YA" = (
@@ -4428,7 +4428,7 @@
 /obj/effect/floor_decal/rust,
 /obj/random/junk,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "Zf" = (
@@ -4441,7 +4441,7 @@
 /obj/machinery/atmospherics/unary/vent_pump/on,
 /obj/item/clothing/mask/breath,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_power)
 "Zr" = (
@@ -4496,7 +4496,7 @@
 	},
 /obj/effect/floor_decal/rust,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_beta)
 "ZZ" = (
@@ -4506,7 +4506,7 @@
 /mob/living/simple_mob/mechanical/hivebot/swarm,
 /obj/random/junk,
 /turf/simulated/floor/tiled/asteroid_steel{
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/submap/oldstation_charlie)
 

@@ -156,6 +156,7 @@
 #include "dq_c6_machine_parts_tests.dm"
 #include "dq_atmos_tests.dm"
 #include "dq_rust_integration_tests.dm"
+#include "dq_native_tests.dm"
 #include "dq_gas_arena_leak_tests.dm"
 #include "dq_vg_binding_tests.dm"
 #include "dq_heat_domain_tests.dm"

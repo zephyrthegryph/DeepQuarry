@@ -262,7 +262,7 @@ fn power_unbind_node_list(entities: ByondValue) -> Result<ByondValue> {
     Ok(ByondValue::null())
 }
 
-/// Commits pending topology now, instead of at the next `vg_world_tick`
+/// Commits pending topology now, instead of at the next `vg_frame`
 /// (an explosion or a construction burst wants its region split/merge
 /// reflected before the next machinery tick reads it).
 #[auxmacros::bind("/proc/vg_power_commit")]

@@ -140,3 +140,6 @@
 #define RUST_STOP_NONE 0
 #define RUST_STOP_AT_LEAST 1
 #define RUST_STOP_AT_MOST 2
+
+/// Heat capacity (J/K) of a body that never changes temperature (a special-temperature surface) for pipe heat exchange.
+#define PIPE_HEAT_RESERVOIR_CAPACITY 1e12

@@ -37,7 +37,8 @@
 	// lists until after the callbacks made the entire graph one GC cycle.
 	var/list/old_line_members = line_members?.Copy()
 	var/list/old_normal_members = normal_members?.Copy()
-	var/network_volume = volume()
+	// A retired Rust wrapper has no members (and its mixture may already be released): no gas to split, no volume to read.
+	var/network_volume = (length(old_line_members) || length(old_normal_members)) ? volume() : 0
 	for(var/datum/pipeline/line_member in old_line_members)
 		line_member.detach_network_air(src, air, network_volume)
 	for(var/obj/machinery/atmospherics/normal_member in old_normal_members)
