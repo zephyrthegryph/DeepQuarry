@@ -38,6 +38,9 @@ pub mod rate_kind {
 	/// filter/mixer slice) -- not a function of the source's own density
 	/// the way `VOLUME`/`POWER` are, so it needs its own kind.
 	pub const MOLES: u8 = 3;
+	/// A share (0..=1) of the moles the source holds in `gases`
+	/// (`Rate::Fraction`): DM sets the mask and the share, Rust does the rest.
+	pub const FRACTION: u8 = 4;
 }
 
 /// [`DeviceFlow::direction`]'s wire values.
@@ -109,6 +112,7 @@ impl DeviceFlow {
 			rate_kind::POWER => Rate::Power(self.rate),
 			rate_kind::UNLIMITED => Rate::Unlimited,
 			rate_kind::MOLES => Rate::Moles(self.rate),
+			rate_kind::FRACTION => Rate::Fraction(self.rate),
 			_ => Rate::Volume(self.rate),
 		};
 		let direction = if self.direction == direction::DOWNHILL {

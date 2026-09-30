@@ -47,17 +47,14 @@ fn atmos_callback_handle(remaining: ByondValue) -> Result<ByondValue> {
 }
 
 /// Drains dependency notifications and captures the control-relevant gas
-/// state in one call, so sleeping devices evaluate thresholds without
-/// crossing the FFI once per value. Flat stride: watch handle, mixture id,
-/// mask, revision, pressure,
-/// temperature, volume, o2, co2, plasma, methane, n2o, volatile_fuel,
-/// miasma, zauker, total_moles.
-#[auxmacros::bind("/proc/drain_dirty_gas_observations")]
-fn drain_dirty_gas_observations() -> Result<ByondValue> {
-    let values = mix::drain_observations();
-    let list = ByondValue::new_list()?;
-    list.write_list(&values.into_iter().map(ByondValue::from).collect::<Vec<_>>())?;
-    Ok(list)
+/// state in one pass, so sleeping devices evaluate thresholds without
+/// crossing the FFI once per value. Flat stride (`GAS_OBSERVATION_STRIDE`):
+/// watch handle, mixture id, mask, revision, pressure, temperature, volume,
+/// o2, co2, plasma, methane, n2o, volatile_fuel, miasma, zauker, total_moles.
+/// Taken by [`crate::frame`], which reports each as a CHANGED record; there is
+/// no DM bind.
+pub(crate) fn take_observations() -> Vec<f32> {
+    mix::drain_observations()
 }
 
 /// DM watch `handle` (a `/datum/native_watch/gas`) watches mixture `id`
@@ -552,6 +549,58 @@ fn transfer_hook(src: ByondValue, other: ByondValue, moles: ByondValue) -> Resul
     })
 }
 
+/// Args: (src, sink, target_kpa, max_moles, gases_mask). Moves gas from `src` into
+/// `sink` until the sink reaches `target_kpa` (an exact ideal-gas solve, with
+/// mixing temperature), never more than `max_moles` (`null` or <= 0: no cap)
+/// and only the gases in `gases_mask` (a `1 << gas_id` bitset, 0: all).
+/// Returns the moles moved. Replaces the DM `gas_pressure_calculate` solvers.
+#[auxmacros::bind("/proc/vg_transfer_to_pressure")]
+fn transfer_to_pressure(
+    src: ByondValue,
+    sink: ByondValue,
+    target_kpa: ByondValue,
+    max_moles: ByondValue,
+    gases_mask: ByondValue,
+) -> Result<ByondValue> {
+    let target = target_kpa.get_number()?;
+    let cap = if max_moles.is_null() {
+        f32::INFINITY
+    } else {
+        let m = max_moles.get_number()?;
+        if m > 0.0 { m } else { f32::INFINITY }
+    };
+    #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
+    let mask = gases_mask.get_number().unwrap_or(0.0) as u32;
+    with_mixes_mut(&src, &sink, |from, to| {
+        let needed = from.moles_to_pressure(to, target, mask, 0.0).min(cap);
+        Ok(ByondValue::from(
+            from.transfer_masked_into(to, mask, needed),
+        ))
+    })
+}
+
+/// Args: (src, sink, target_kpa, gases_mask, sink_volume_mod). Read-only: the moles
+/// of `gases_mask` that would bring `sink` (its volume enlarged by
+/// `sink_volume_mod` litres, for a networked sink) to `target_kpa`.
+#[auxmacros::bind("/proc/vg_moles_to_pressure")]
+fn moles_to_pressure(
+    src: ByondValue,
+    sink: ByondValue,
+    target_kpa: ByondValue,
+    gases_mask: ByondValue,
+    sink_volume_mod: ByondValue,
+) -> Result<ByondValue> {
+    let target = target_kpa.get_number()?;
+    #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
+    let mask = gases_mask.get_number().unwrap_or(0.0) as u32;
+    let vol_mod = sink_volume_mod.get_number().unwrap_or(0.0);
+    let (a, b) = (MixRef::of(&src)?, MixRef::of(&sink)?);
+    let (from, to) = (mix::load_or_err(a)?, mix::load_or_err(b)?);
+    Ok(ByondValue::from(
+        from.moles_to_pressure(&to, target, mask, vol_mod),
+    ))
+}
+
 /// Flat operation list: source handle, sink handle, requested moles. Returns
 /// one actual mole count per operation after shared-source clamping.
 #[auxmacros::bind("/proc/auxmos_batch_transfer")]
@@ -992,6 +1041,179 @@ fn filter_transfer_multi(
     let list = ByondValue::new_list()?;
     list.write_list(&flat)?;
     Ok(list)
+}
+
+/// An optional number argument (`null` is `None`).
+fn opt_number(v: &ByondValue) -> Result<Option<f32>> {
+    (!v.is_null())
+        .then(|| v.get_number())
+        .transpose()
+        .map_err(Into::into)
+}
+
+/// [`pump`] mode: an active pump that moves the gas.
+/// @dm-define VG_PUMP_ACTIVE
+#[allow(dead_code)] // a DM define only
+pub const PUMP_ACTIVE: i32 = 0;
+/// [`pump`] mode: a passive (pressure-equalising) pump that moves the gas.
+/// @dm-define VG_PUMP_PASSIVE
+pub const PUMP_PASSIVE: i32 = 1;
+/// [`pump`] mode: an active pump that only plans; the caller queues the move.
+/// @dm-define VG_PUMP_PLAN
+pub const PUMP_PLAN: i32 = 2;
+
+/// One gas pump (`pump_gas()` and `pump_gas_passive()`'s whole maths).
+/// Args: (source, sink, requested, available_power, efficiency, mode).
+/// `requested`/`available_power` are `null` for uncapped; `efficiency` is
+/// `ATMOS_PUMP_EFFICIENCY * material_pump_efficiency() / 0.8` (the caller's
+/// material hook, applied before the call). `mode`: 0 an active pump that
+/// moves the gas, 1 a passive (pressure-equalising) one that moves it, 2 an
+/// active pump that only plans (the caller queues the move).
+/// Returns `list(moles, power_draw, flow_volume)`, or `null` when nothing
+/// should move (`pump_gas()`'s `-1`).
+#[auxmacros::bind("/proc/vg_pump")]
+fn pump(
+    source: ByondValue,
+    sink: ByondValue,
+    requested: ByondValue,
+    available_power: ByondValue,
+    efficiency: ByondValue,
+    mode: ByondValue,
+) -> Result<ByondValue> {
+    let requested = opt_number(&requested)?;
+    let available_power = opt_number(&available_power)?;
+    let efficiency = efficiency.get_number()?;
+    #[allow(clippy::cast_possible_truncation)]
+    let mode = mode.get_number()? as i32;
+    let passive = mode == PUMP_PASSIVE;
+    let plan_only = mode == PUMP_PLAN;
+    let plan = with_mixes_mut(&source, &sink, |from, to| {
+        let plan = power_budget::pump_plan(
+            from,
+            to,
+            requested,
+            available_power,
+            efficiency,
+            constants::MINIMUM_MOLES_TO_PUMP,
+            passive,
+        );
+        if let (Some(p), false) = (plan, plan_only) {
+            to.merge(&from.remove(p.moles));
+        }
+        Ok(plan)
+    })?;
+    let Some(plan) = plan else {
+        return Ok(ByondValue::null());
+    };
+    let list = ByondValue::new_list()?;
+    list.write_list(&[
+        ByondValue::from(plan.moles),
+        ByondValue::from(plan.power_draw),
+        ByondValue::from(plan.flow_volume),
+    ])?;
+    Ok(list)
+}
+
+/// One scrubber pass (`scrub_gas()`'s whole maths and movement): moves the
+/// gases of `mask` (`1 << gas_id`) from `source` to `sink`, each in
+/// proportion to its share, within `requested` moles and `available_power`.
+/// Args: (source, sink, mask, requested, available_power, efficiency).
+/// Returns `list(moles, power_draw, flow_volume)`, or `null` when the budget
+/// allows nothing (the trace of a nearly-clean mix still moves).
+#[auxmacros::bind("/proc/vg_scrub")]
+fn scrub(
+    source: ByondValue,
+    sink: ByondValue,
+    mask: ByondValue,
+    requested: ByondValue,
+    available_power: ByondValue,
+    efficiency: ByondValue,
+) -> Result<ByondValue> {
+    let requested = opt_number(&requested)?;
+    let available_power = opt_number(&available_power)?;
+    let efficiency = efficiency.get_number()?;
+    #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
+    let mask = mask.get_number()? as u32;
+    let plan = with_mixes_mut(&source, &sink, |from, to| {
+        let (plan, trace) = power_budget::scrub_plan(
+            from,
+            to,
+            mask,
+            requested,
+            available_power,
+            efficiency,
+            constants::MINIMUM_MOLES_TO_FILTER,
+        );
+        for (g, n) in trace {
+            from.transfer_masked_into(to, 1 << g, n);
+        }
+        if let Some(p) = &plan {
+            for &(g, n) in &p.gases {
+                from.transfer_masked_into(to, 1 << g, n);
+            }
+        }
+        Ok(plan)
+    })?;
+    let Some(plan) = plan else {
+        return Ok(ByondValue::null());
+    };
+    let list = ByondValue::new_list()?;
+    list.write_list(&[
+        ByondValue::from(plan.moles),
+        ByondValue::from(plan.power_draw),
+        ByondValue::from(plan.flow_volume),
+    ])?;
+    Ok(list)
+}
+
+/// `calculate_specific_power()`: the power (W/mol) to move one mole of
+/// `source`'s mixture into `sink`.
+#[auxmacros::bind("/proc/vg_specific_power")]
+fn specific_power(source: ByondValue, sink: ByondValue) -> Result<ByondValue> {
+    let (a, b) = (MixRef::of(&source)?, MixRef::of(&sink)?);
+    let (from, to) = (mix::load_or_err(a)?, mix::load_or_err(b)?);
+    Ok(ByondValue::from(power_budget::pump_specific_power(
+        &from, &to,
+    )))
+}
+
+/// Heat exchange between the share of a pipe mixture in contact and another
+/// body: `pipeline.temperature_interact()`'s one formula. Args: (air,
+/// other_air, share_volume, conductivity, other_temperature, other_capacity).
+/// With an `other_air` mixture its temperature and capacity are read (the
+/// last two are ignored) and it gains what `air` loses; otherwise the last
+/// two describe the other body (a wall's solid). Returns the joules that
+/// left `air` (the caller credits a wall's heat cell).
+#[auxmacros::bind("/proc/vg_thermal_exchange")]
+fn thermal_exchange(
+    air: ByondValue,
+    other_air: ByondValue,
+    share_volume: ByondValue,
+    conductivity: ByondValue,
+    other_temperature: ByondValue,
+    other_capacity: ByondValue,
+) -> Result<ByondValue> {
+    let share = share_volume.get_number()?;
+    let k = conductivity.get_number()?;
+    if other_air.is_null() {
+        let (t, c) = (
+            other_temperature.get_number()?,
+            other_capacity.get_number()?,
+        );
+        let heat = with_mix_mut(&air, |a| {
+            Ok(power_budget::thermal_exchange(a, share, k, t, c))
+        })?;
+        return Ok(ByondValue::from(heat));
+    }
+    let heat = with_mixes_mut(&air, &other_air, |a, b| {
+        let (t, c) = (b.get_temperature(), b.heat_capacity());
+        let heat = power_budget::thermal_exchange(a, share, k, t, c);
+        if heat != 0.0 && c > 0.0 {
+            b.adjust_heat(heat);
+        }
+        Ok(heat)
+    })?;
+    Ok(ByondValue::from(heat))
 }
 
 /// The gases whose registry `flags` include `flag`.

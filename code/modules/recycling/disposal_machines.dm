@@ -138,7 +138,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	if(!air_contents || !environment || environment.return_temperature() <= 0 || environment.total_moles() < MINIMUM_MOLES_TO_PUMP)
 		return FALSE
 	var/transfer_moles = min(environment.total_moles(), (PUMP_MAX_FLOW_RATE / environment.return_volume()) * environment.total_moles())
-	var/specific_power = calculate_specific_power(environment, air_contents) / ATMOS_PUMP_EFFICIENCY
+	var/specific_power = vg_specific_power(environment, air_contents) / ATMOS_PUMP_EFFICIENCY
 	if(specific_power > 0)
 		transfer_moles = min(transfer_moles, active_power_usage / specific_power)
 	return transfer_moles >= MINIMUM_MOLES_TO_PUMP

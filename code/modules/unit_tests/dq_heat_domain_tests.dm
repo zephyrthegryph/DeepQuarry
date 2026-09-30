@@ -114,11 +114,11 @@
 	var/datum/native_watch/heat/set_watch = heat_watch_set(listener, T, TYPE_PROC_REF(/datum/heat_test_subscriber, on_crossing))
 	set_watch.add_entry(1, 1, 350)
 	vg_world_run_steps(2)
-	SSair.dispatch_heat_wakes()
+	native_system().drain()
 	var/before = listener.wakes
 	T.add_heat(1000 * 150)
 	vg_world_run_steps(2)
-	SSair.dispatch_heat_wakes()
+	native_system().drain()
 	var/after = listener.wakes
 	var/crossings = listener.crossings
 	qdel(watch)

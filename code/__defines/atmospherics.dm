@@ -120,6 +120,7 @@
 /// entropy-limited power-budget figure computed once per tick
 /// (`vg_pipe_filter_rate()`/`vg_pipe_mix_rate()`), not a volume or a power.
 #define RUST_FLOW_MOLES 3
+#define RUST_FLOW_FRACTION 4
 /// Every registered gas's bit set (`GAS_COUNT` gases, `verdigris/domains/gas/src/gas/ids.rs`):
 /// a filter's "everything not filtered" flow masks this with `~filtered_mask`
 /// to get a non-negative complement (DM's `~` is a 32-bit signed complement,
@@ -139,3 +140,6 @@
 #define RUST_STOP_NONE 0
 #define RUST_STOP_AT_LEAST 1
 #define RUST_STOP_AT_MOST 2
+
+/// Heat capacity (J/K) of a body that never changes temperature (a special-temperature surface) for pipe heat exchange.
+#define PIPE_HEAT_RESERVOIR_CAPACITY 1e12

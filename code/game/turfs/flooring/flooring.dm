@@ -959,7 +959,7 @@ DECLARE_SHARED_CACHE(flooring_edge_overlays, GLOBAL_PROC_REF(build_flooring_edge
 	icon_base = "grass-dark"
 
 /turf/simulated/floor/tiled/freezer/cold
-	temperature = T0C - 5
+	initial_temperature = T0C - 5
 
 /turf/simulated/floor/redgrid
 	name = "processing strata"

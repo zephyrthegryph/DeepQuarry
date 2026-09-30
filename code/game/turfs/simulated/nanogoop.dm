@@ -19,7 +19,7 @@ REGISTRY_MEMBERSHIP(/turf/simulated/floor/water/digestive_enzymes/nanites, REGIS
 	reagent_type = REAGENT_ID_LIQUIDPROTEAN
 	oxygen		= MOLES_O2STANDARD
 	nitrogen	= MOLES_N2STANDARD
-	temperature = T20C
+	initial_temperature = T20C
 	var/digesting = FALSE
 	var/digest_synth = FALSE
 	var/digest_robot = FALSE
@@ -304,7 +304,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water/digestive_enzymes/nanites, \
 	var/mob/living/nutrienttarget = moblink
 	var/obj/machinery/power/smes/smes = linkedsmes
 	if(smes)
-		smes.charge += (amt * 20)
+		smes.adjust_stored_charge(amt * 20)
 		return
 	if(nutrienttarget)
 		if(ishuman(nutrienttarget))

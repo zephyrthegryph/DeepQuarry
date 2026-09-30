@@ -13,7 +13,7 @@
 	icon = 'icons/obj/cellrack.dmi'
 	icon_state = "rack"
 	capacity = 0
-	charge = 0
+	initial_charge = 0
 	output_attempt = FALSE
 	input_attempt = FALSE
 
@@ -73,7 +73,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/smes/batteryrack, TYPE_PROC_REF(/at
 	newmaxcharge /= CELLRATE		// Convert to Joules
 	newmaxcharge *= SMESRATE		// And to SMES charge units (which are for some reason different than CELLRATE)
 	capacity = newmaxcharge
-	charge = between(0, charge, newmaxcharge)
+	set_stored_charge(between(0, stored_charge(), newmaxcharge))
 
 // Sets input/output depending on our "mode" var.
 /obj/machinery/power/smes/batteryrack/proc/update_io(newmode)
@@ -164,11 +164,12 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/smes/batteryrack, TYPE_PROC_REF(/at
 
 /// A rack re-reads its cells and balances them every frame, so it never idles.
 /obj/machinery/power/smes/batteryrack/power_step()
-	charge = 0
+	var/cell_charge = 0
 	for(var/obj/item/cell/C in internal_cells)
-		charge += C.charge
-	charge /= CELLRATE		// Convert to Joules
-	charge *= SMESRATE		// And to SMES charge units (which are for some reason different than CELLRATE)
+		cell_charge += C.charge
+	cell_charge /= CELLRATE		// Convert to Joules
+	cell_charge *= SMESRATE		// And to SMES charge units (which are for some reason different than CELLRATE)
+	set_stored_charge(cell_charge)
 
 	..()
 	. = null
@@ -248,8 +249,12 @@ UI_DATA_REPLACE(/obj/machinery/power/smes/batteryrack, "transfer_max=max_transfe
 	var/list/data = list()
 
 	data["mode"] = mode
-	data["output_load"] = round(output_used)
-	data["input_load"] = round(input_available)
+	data["transfer_max"] = max_transfer_rate
+	data["output_load"] = 0
+	data["input_load"] = 0
+	data["equalise"] = equalise
+	data["blink_tick"] = ui_tick
+	data["cells_max"] = max_cells
 	data["cells_cur"] = length(internal_cells)
 	var/list/cells = list()
 	var/cell_index = 0

@@ -110,7 +110,7 @@
 	var/considered_moles = clean_moles
 	for(var/i in 4 to length(result))
 		considered_moles += result[i]
-	var/dt = SSvg.wait / (1 SECONDS)
+	var/dt = NATIVE_PIPE_DEVICE_PERIOD
 
 	last_power_draw = power_draw
 	use_power(power_draw)

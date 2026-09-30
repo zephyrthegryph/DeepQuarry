@@ -629,7 +629,7 @@ field and computed readout). `kind/pump.rs` is 26 lines.
 `header, entity, len, payload...` per record, `header = domain << 16 | kind
 << 8 | variant`. `World::drain_events` returns every law's events of the
 step; `vg_world_events()` hands them to DM; the generator writes
-`vg_drain_events()`, which dispatches component events to the bound atom
+`vg_dispatch_notice()` (called per NOTICE record of the `vg_frame` outbox), which dispatches component events to the bound atom
 (`on_pump_starved()`) and domain events to `SSvg.on_power_brownout()`.
 
 #### Watches and probes
@@ -690,7 +690,7 @@ grid and is deleted when gas and heat port.
 - `world.rs`: the World, the **registration list** (`register`: the one
   place every domain's declarations are added), and the generic binds:
   `vg_component_bind/detach/has/get/get_many/set/adjust`,
-  `vg_world_tick/events/violations/laws`. There are no per-component binds.
+  `vg_frame` (the one driver; `vg_world_violations`/`vg_world_laws` for diagnostics). There are no per-component binds.
 - `entity.rs` works on the world's entity table.
 - `vg-gas` no longer depends on `vg-ffi`; `vg-ffi` depends on the domains
   and registers gas's turf watch port.

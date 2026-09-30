@@ -85,6 +85,17 @@ OWN_TIMER(/obj/machinery/power/sensor, record_timer)
 	// than enrolling every sensor for a one-call wake-and-kill machinery pass.
 	machine_step()
 
+/// What this monitor shows for the grid's load: the mean of the live ledger value and its last few history samples.
+/// The grid keeps no eased copy of its own (power_grid.dm); smoothing what a reading shows is the reader's.
+/obj/machinery/power/sensor/proc/shown_load()
+	var/total = power_load(power_region)
+	var/count = 1
+	var/list/demand = history["demand"]
+	for(var/i in max(length(demand) - 2, 1) to length(demand))
+		total += demand[i]
+		count++
+	return total / count
+
 // This tracks historical usage, for TGUI power monitors
 /obj/machinery/power/sensor/proc/record()
 	if(COOLDOWN_FINISHED(src, next_record))
@@ -214,7 +225,7 @@ UI_DATA_REPLACE(/obj/machinery/power/sensor, "name=name_tag:text", "stored=recor
 	out += "<br><b>TOTAL AVAILABLE: [reading_to_text(power_avail(power_region))]</b>"
 	out += "<br><b>APC LOAD: [reading_to_text(total_apc_load)]</b>"
 	out += "<br><b>OTHER LOAD: [reading_to_text(max(power_load(power_region) - total_apc_load, 0))]</b>"
-	out += "<br><b>TOTAL GRID LOAD: [reading_to_text(power_view_load(power_region))] ([power_avail(power_region) ? round((power_load(power_region) / power_avail(power_region)) * 100) : 0]%)</b>"
+	out += "<br><b>TOTAL GRID LOAD: [reading_to_text(shown_load())] ([power_avail(power_region) ? round((shown_load() / power_avail(power_region)) * 100) : 0]%)</b>"
 
 	if(power_problem(power_region))
 		out += "<br><b>WARNING: Abnormal grid activity detected!</b>"
@@ -269,11 +280,12 @@ UI_DATA_REPLACE(/obj/machinery/power/sensor, "name=name_tag:text", "stored=recor
 	data["apc_data"] = APC_data
 	data["total_avail"] = reading_to_text(max(power_avail(power_region), 0))
 	data["total_used_apc"] = reading_to_text(max(total_apc_load, 0))
-	data["total_used_other"] = reading_to_text(max(power_view_load(power_region) - total_apc_load, 0))
-	data["total_used_all"] = reading_to_text(max(power_view_load(power_region), 0))
+	var/shown = shown_load()
+	data["total_used_other"] = reading_to_text(max(shown - total_apc_load, 0))
+	data["total_used_all"] = reading_to_text(max(shown, 0))
 	// Prevents runtimes when avail is 0 (division by zero)
 	if(power_avail(power_region))
-		data["load_percentage"] = round((power_view_load(power_region) / power_avail(power_region)) * 100)
+		data["load_percentage"] = round((shown / power_avail(power_region)) * 100)
 	else
 		data["load_percentage"] = 100
 	data["alarm"] = power_problem(power_region) ? 1 : 0

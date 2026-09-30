@@ -25,8 +25,8 @@ use byondapi::prelude::*;
 use eyre::{Result, bail, eyre};
 use vg_core::field::{FieldKey, Geom};
 use vg_core::grid::Dir;
-use vg_core::outbox::{Lane, Subscriber, WatchId};
-use vg_core::watch::{Cmp, Cond, Edge, Level, SetEntry};
+use vg_core::outbox::{Lane, Subscriber, Wake, WatchId};
+use vg_core::watch::{Cond, SetEntry};
 use vg_core::world::{KindId, WorldBuilder};
 use vg_heat::components::gas_kind;
 use vg_heat::laws::{BodyBodyExchange, RegulatorHeatPump, SolidBodyExchange};
@@ -35,7 +35,7 @@ use vg_heat::{
 };
 
 use crate::entity;
-use crate::world::{list, num, whole, with_world};
+use crate::world::{list, num, with_world};
 
 thread_local! {
     static FIELD: Cell<Option<FieldKey<SolidHeat>>> = const { Cell::new(None) };
@@ -510,7 +510,7 @@ fn wake_cell_couplings(w: &mut vg_core::world::World, cell: u32) {
 /// naming it as the other side) -- an external write to the body itself
 /// (`heat_body_add`/`power`/`capacity`/`phase`/`set_temperature`/
 /// `release`), so a coupling that had settled and gone to sleep notices.
-fn wake_body_couplings(w: &mut vg_core::world::World, body: u32) {
+pub(crate) fn wake_body_couplings(w: &mut vg_core::world::World, body: u32) {
     let owned = COUPLINGS.with(|c| {
         c.borrow()
             .iter()
@@ -850,8 +850,7 @@ pub(crate) fn configure_bodies(
             let temperature = if flags.temperature_set {
                 b.energy / b.capacity.max(f64::MIN_POSITIVE)
             } else {
-                spec.temperature.max(f64::from(vg_heat::consts::TCMB))
-                    + flags.added / spec.capacity
+                spec.temperature.max(f64::from(vg_heat::consts::TCMB)) + flags.added / spec.capacity
             };
             b.capacity = spec.capacity;
             b.energy = spec.capacity * temperature;
@@ -1289,272 +1288,91 @@ fn field_id<C: vg_core::component::Component>(name: &str) -> Result<vg_core::com
 
 /// Watch kinds, matching the pre-existing `HEAT_WATCH_*` defines.
 /// @dm-define HEAT_WATCH_ABOVE
+#[allow(dead_code)] // a DM define only
 pub const HEAT_WATCH_ABOVE: i32 = 0;
 /// @dm-define HEAT_WATCH_BELOW
+#[allow(dead_code)] // a DM define only
 pub const HEAT_WATCH_BELOW: i32 = 1;
 /// @dm-define HEAT_WATCH_BAND
+#[allow(dead_code)] // a DM define only
 pub const HEAT_WATCH_BAND: i32 = 2;
 /// @dm-define HEAT_WATCH_SET
+#[allow(dead_code)] // a DM define only
 pub const HEAT_WATCH_SET: i32 = 3;
 
-/// A DM watch handle: `index` and `generation` as their own numbers (no
-/// packing), so neither is ever truncated -- `WatchId::generation` is a
-/// full `u32`, wider than a single `f32` could carry alongside `index`
-/// without losing bits. `heat_watch` returns `list(index, generation)`;
-/// every other watch bind takes them back as two arguments plus `on_body`
-/// (also no longer packed into a spare bit), matching `Wake`/`WatchId`'s
-/// own shape exactly instead of DM's own encoding of it.
-fn watch_id(index: &ByondValue, generation: &ByondValue) -> Result<WatchId> {
-    Ok(WatchId {
-        index: whole(index, "watch index")?,
-        generation: whole(generation, "watch generation")?,
-    })
-}
+/// The turf solid's cells as a watch port: code [`HEAT_CELLS`], every cell a
+/// turf ref (a `get_ref()` number). Body watches use the ordinary world
+/// kind port; both go through the generic `vg_world_watch_*` binds.
+/// @dm-define VG_HEAT_CELLS
+pub const HEAT_CELLS: u32 = 0x0FFE;
 
-fn channel_of(
-    chans: &[vg_core::channel::ChannelInfo],
-    name: &str,
-) -> Result<vg_core::channel::ChannelId> {
-    #[allow(clippy::cast_possible_truncation)]
-    chans
-        .iter()
-        .position(|c| c.name == name)
-        .map(|i| vg_core::channel::ChannelId(i as u8))
-        .ok_or_else(|| eyre!("no {name} channel"))
-}
+/// The solid field's watch port in the domain registry.
+pub(crate) struct HeatCells;
 
-#[auxmacros::bind("/proc/heat_watch")]
-fn heat_watch(
-    on_body: ByondValue,
-    target_ref: ByondValue,
-    subscriber: ByondValue,
-    lane: ByondValue,
-    kind: ByondValue,
-    level: ByondValue,
-    both: ByondValue,
-) -> Result<ByondValue> {
-    let on_body = on_body.is_true();
-    let both = both.is_true();
-    #[allow(clippy::cast_possible_truncation)]
-    let kind = num(&kind)? as i32;
-    let lane = Lane::from_id({
-        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-        {
-            num(&lane)? as u8
-        }
-    })
-    .unwrap_or(Lane::Normal);
-    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-    let subscriber: Subscriber = num(&subscriber)? as u32;
+impl vg_core::registry::DomainRegistry for HeatCells {
+    fn channels(&self) -> Vec<vg_core::channel::ChannelInfo> {
+        with_world(|w| w.cell_channels::<SolidHeat>().map_err(|e| eyre!("{e}"))).unwrap_or_default()
+    }
 
-    let id = with_world(|w| {
-        if on_body {
-            let e = entity::decode(num(&target_ref)?)?;
-            let kind_id = kind_of(w, "HeatBody")?;
-            let chans = w.channels(kind_id).map_err(|e| eyre!("{e}"))?;
-            let ch = channel_of(&chans, "temperature")?;
-            let cell = e.index();
-            let cond = watch_cond(kind, &level, both, ch, vg_core::channel::Unit::Kelvin, cell)?;
-            w.watch(kind_id, subscriber, lane, &cond)
+    fn watch(&mut self, sub: Subscriber, lane: Lane, cond: &Cond) -> Result<(u8, WatchId), String> {
+        with_world(|w| {
+            w.watch_cells::<SolidHeat>(sub, lane, cond)
                 .map_err(|e| eyre!("{e}"))
-        } else {
-            let cell = target_ref.get_ref()?;
-            let ch = vg_heat::solid::solid_ch::TEMPERATURE;
-            let cond = watch_cond(kind, &level, both, ch, vg_core::channel::Unit::Kelvin, cell)?;
-            w.watch_cells::<SolidHeat>(subscriber, lane, &cond)
-                .map_err(|e| eyre!("{e}"))
-        }
-    })?;
-    #[allow(clippy::cast_precision_loss)]
-    list([id.index as f32, id.generation as f32])
-}
+        })
+        .map(|id| (0, id))
+        .map_err(|e| e.to_string())
+    }
 
-fn watch_cond(
-    kind: i32,
-    level: &ByondValue,
-    both: bool,
-    ch: vg_core::channel::ChannelId,
-    unit: vg_core::channel::Unit,
-    cell: u32,
-) -> Result<Cond> {
-    let k = |v: f32| vg_core::channel::Quantity::new(v, unit);
-    Ok(match kind {
-        HEAT_WATCH_ABOVE => {
-            let mut l = Level::above(ch, k(num(level)?));
-            if both {
-                l = l.both_edges();
-            }
-            Cond::Threshold { cell, level: l }
-        }
-        HEAT_WATCH_BELOW => {
-            let mut l = Level::below(ch, k(num(level)?));
-            if both {
-                l = l.both_edges();
-            }
-            Cond::Threshold { cell, level: l }
-        }
-        HEAT_WATCH_BAND => {
-            let values = level.get_list_values()?;
-            let mut levels = Vec::with_capacity(values.len());
-            for v in &values {
-                levels.push(num(v)?);
-            }
-            Cond::Band {
-                cell,
-                ch,
-                unit,
-                levels,
-                hysteresis: None,
-            }
-        }
-        HEAT_WATCH_SET => Cond::ThresholdSet { cell, ch },
-        other => bail!("bad heat watch kind {other}"),
-    })
-}
+    fn unwatch(&mut self, _port: u8, id: WatchId) {
+        let _ = with_world(|w| Ok(w.unwatch_cells::<SolidHeat>(id)));
+    }
 
-#[auxmacros::bind("/proc/heat_watch_set_add")]
-fn heat_watch_set_add(
-    on_body: ByondValue,
-    index: ByondValue,
-    watch_generation: ByondValue,
-    payload: ByondValue,
-    generation: ByondValue,
-    cmp: ByondValue,
-    limit: ByondValue,
-    both: ByondValue,
-) -> Result<ByondValue> {
-    let id = watch_id(&index, &watch_generation)?;
-    let on_body = on_body.is_true();
-    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-    let (payload, generation) = (num(&payload)? as u32, num(&generation)? as u32);
-    let cmp = if num(&cmp)? as i32 == HEAT_WATCH_BELOW {
-        Cmp::Below
-    } else {
-        Cmp::Above
-    };
-    let entry = SetEntry {
-        payload,
-        generation,
-        cmp,
-        limit: vg_core::channel::Quantity::new(num(&limit)?, vg_core::channel::Unit::Kelvin),
-        hysteresis: None,
-        edge: if both.is_true() {
-            Edge::Both
-        } else {
-            Edge::Enter
-        },
-    };
-    with_world(|w| {
-        if on_body {
-            w.add_watch_entry(kind_of(w, "HeatBody")?, id, entry)
-        } else {
+    fn add_entry(&mut self, _port: u8, id: WatchId, entry: SetEntry) -> Result<(), String> {
+        with_world(|w| {
             w.add_field_watch_entry::<SolidHeat>(id, entry)
-        }
-        .map_err(|e| eyre!("{e}"))
-    })?;
-    Ok(ByondValue::null())
+                .map_err(|e| eyre!("{e}"))
+        })
+        .map_err(|e| e.to_string())
+    }
+
+    fn remove_entry(&mut self, _port: u8, id: WatchId, payload: u32) {
+        let _ = with_world(|w| Ok(w.remove_field_watch_entry::<SolidHeat>(id, payload)));
+    }
+
+    /// Cell watch wakes, the source the cell's ref (low 24 bits).
+    fn take_wakes(&mut self, out: &mut Vec<Wake>) {
+        let _ = with_world(|w| {
+            let mut wakes = Vec::new();
+            w.drain_field_wakes::<SolidHeat>(&mut wakes);
+            out.extend(wakes.into_iter().map(|wk| Wake {
+                source: wk.source & 0x00ff_ffff,
+                ..wk
+            }));
+            Ok(())
+        });
+    }
 }
 
-#[auxmacros::bind("/proc/heat_watch_set_remove")]
-fn heat_watch_set_remove(
-    on_body: ByondValue,
-    index: ByondValue,
-    watch_generation: ByondValue,
-    payload: ByondValue,
-) -> Result<ByondValue> {
-    let id = watch_id(&index, &watch_generation)?;
-    let on_body = on_body.is_true();
-    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-    let payload = num(&payload)? as u32;
+/// Takes every `ThresholdSet` crossing since the last call as
+/// `(subscriber, payload, entered, generation)`, then retires the bodies
+/// whose couplings settled. `owners` maps a watch table index to its
+/// subscriber (from the wakes drained in the same frame: every crossing also
+/// wakes its watch). The frame calls this before it takes the world's events
+/// (settling is read off them).
+pub(crate) fn take_crossings(
+    owners: &HashMap<u32, Subscriber>,
+) -> Result<Vec<(Subscriber, u32, bool, u32)>> {
     with_world(|w| {
-        if on_body {
-            w.remove_watch_entry(kind_of(w, "HeatBody")?, id, payload)
-        } else {
-            w.remove_field_watch_entry::<SolidHeat>(id, payload)
-        }
-        .map_err(|e| eyre!("{e}"))
-    })
-    .ok();
-    Ok(ByondValue::null())
-}
-
-#[auxmacros::bind("/proc/heat_unwatch")]
-fn heat_unwatch(
-    on_body: ByondValue,
-    index: ByondValue,
-    watch_generation: ByondValue,
-) -> Result<ByondValue> {
-    let id = watch_id(&index, &watch_generation)?;
-    let on_body = on_body.is_true();
-    with_world(|w| {
-        if on_body {
-            let _ = w.unwatch(kind_of(w, "HeatBody")?, id);
-        } else {
-            let _ = w.unwatch_cells::<SolidHeat>(id);
-        }
-        Ok(())
-    })
-    .ok();
-    Ok(ByondValue::null())
-}
-
-// ------------------------------------------------------------------- tick
-
-/// Takes every wake and `ThresholdSet` crossing collected since the last
-/// call, as one flat list: `[wake count]`, then `[subscriber, watch, reason,
-/// source]` per wake, then `[subscriber, payload, entered, generation]` per
-/// crossing. The subscriber is the watch's DM handle
-/// (`code/datums/om/native.dm`); a crossing's comes from its watch's wake in
-/// the same batch (every crossing also wakes its watch). The world itself is
-/// driven by `SSvg`'s `vg_world_tick()`; this bind only drains.
-#[auxmacros::bind("/proc/heat_take_wakes")]
-fn heat_take_wakes() -> Result<ByondValue> {
-    let mut flat = Vec::new();
-    with_world(|w| {
-        let mut wakes = Vec::new();
-        if let Ok(body) = kind_of(w, "HeatBody") {
-            w.drain_kind_wakes(body, &mut wakes);
-        }
-        w.drain_field_wakes::<SolidHeat>(&mut wakes);
-        let owners: HashMap<u32, Subscriber> = wakes
-            .iter()
-            .map(|wk| (wk.watch.index, wk.subscriber))
-            .collect();
-        flat.push(wakes.len() as f32);
-        for wk in &wakes {
-            flat.extend_from_slice(&[
-                wk.subscriber as f32,
-                wk.watch.index as f32,
-                wk.reason as f32,
-                (wk.source & 0x00ff_ffff) as f32,
-            ]);
-        }
+        let mut out = Vec::new();
         for c in w.drain_threshold_crossings() {
             let Some(&sub) = owners.get(&c.watch) else {
                 continue;
             };
-            flat.extend_from_slice(&[
-                sub as f32,
-                c.payload as f32,
-                if c.entered { 1.0 } else { 0.0 },
-                c.generation as f32,
-            ]);
+            out.push((sub, c.payload, c.entered, c.generation));
         }
         drain_settled_bodies(w);
-        Ok(())
-    })?;
-    let list = ByondValue::new_list()?;
-    let values: Vec<ByondValue> = flat.into_iter().map(ByondValue::from).collect();
-    list.write_list(&values)?;
-    Ok(list)
-}
-
-/// Kept for DM ABI stability (SSair's `process_turf_heat()` still calls
-/// it): returns whether any wakes/crossings are waiting. Never steps a
-/// frame itself -- see [`heat_take_wakes`]'s doc.
-#[auxmacros::bind("/datum/controller/subsystem/air/proc/heat_tick")]
-fn heat_tick(_seconds: ByondValue) -> Result<ByondValue> {
-    Ok(ByondValue::from(1.0f32))
+        Ok(out)
+    })
 }
 
 /// `list(TCMB, T0C, T20C, space sky temperature, Stefan-Boltzmann constant,
@@ -1652,6 +1470,7 @@ pub(crate) fn apply_mixture_heat(events: &vg_core::event::EventSink) {
 mod tests {
     use super::*;
     use crate::gas::mix::{self, MixRef};
+    use vg_core::watch::{Cmp, Edge};
 
     #[test]
     fn a_body_warms_a_tank() {
@@ -1719,6 +1538,18 @@ mod tests {
         b.energy = 1_000.0 * t;
         w.put(e, b).unwrap();
         wake_body_couplings(w, e.index());
+    }
+
+    fn channel_of(
+        chans: &[vg_core::channel::ChannelInfo],
+        name: &str,
+    ) -> Result<vg_core::channel::ChannelId> {
+        #[allow(clippy::cast_possible_truncation)]
+        chans
+            .iter()
+            .position(|c| c.name == name)
+            .map(|i| vg_core::channel::ChannelId(i as u8))
+            .ok_or_else(|| eyre!("no {name} channel"))
     }
 
     #[test]
@@ -1801,8 +1632,18 @@ mod tests {
             let outcome = configure_bodies(
                 w,
                 &[
-                    BodySpec { e: plain, capacity: 500.0, temperature: 290.0, keep: false },
-                    BodySpec { e: written, capacity: 2_000.0, temperature: 290.0, keep: true },
+                    BodySpec {
+                        e: plain,
+                        capacity: 500.0,
+                        temperature: 290.0,
+                        keep: false,
+                    },
+                    BodySpec {
+                        e: written,
+                        capacity: 2_000.0,
+                        temperature: 290.0,
+                        keep: true,
+                    },
                 ],
             );
             let still_reserved = is_reserved(plain) || is_reserved(written);
@@ -1819,7 +1660,10 @@ mod tests {
         assert!((plain_b.energy / plain_b.capacity - 290.0).abs() < 1e-6);
         assert!(!plain_b.keep);
         assert!((written_b.capacity - 2_000.0).abs() < 1e-9);
-        assert!((written_b.energy / written_b.capacity - 350.0).abs() < 1e-6, "{written_b:?}");
+        assert!(
+            (written_b.energy / written_b.capacity - 350.0).abs() < 1e-6,
+            "{written_b:?}"
+        );
         assert!(!written_b.keep, "an explicit keep write survives configure");
         assert!(!still_reserved);
     }
@@ -1832,15 +1676,26 @@ mod tests {
             // Released while pending: its handle stops resolving.
             RESERVED.with_borrow_mut(|r| r.remove(&bodies[1].index()));
             let _ = w.despawn(bodies[1]);
-            assert!(w.read::<HeatBody>(bodies[1]).is_none(), "a released handle is dead");
-            let spec = |e| BodySpec { e, capacity: 10.0, temperature: 300.0, keep: false };
+            assert!(
+                w.read::<HeatBody>(bodies[1]).is_none(),
+                "a released handle is dead"
+            );
+            let spec = |e| BodySpec {
+                e,
+                capacity: 10.0,
+                temperature: 300.0,
+                keep: false,
+            };
             let first = configure_bodies(w, &[spec(bodies[0]), spec(bodies[1]), spec(foreign)]);
             // Configuring twice is a no-op the second time.
             let second = configure_bodies(w, &[spec(bodies[0])]);
             // A fresh reserve never hands back a handle equal to the dead one.
             let fresh = reserve_bodies(w, 1)?;
             assert_ne!(fresh[0], bodies[1], "a stale handle never names a new body");
-            assert!(w.read::<HeatBody>(bodies[1]).is_none(), "the stale handle stays dead");
+            assert!(
+                w.read::<HeatBody>(bodies[1]).is_none(),
+                "the stale handle stays dead"
+            );
             // The foreign body was not touched.
             let f = w.read::<HeatBody>(foreign).unwrap();
             assert!((f.capacity - 1_000.0).abs() < 1e-9);
@@ -1856,7 +1711,15 @@ mod tests {
         let t = with_world(|w| {
             let e = reserve_bodies(w, 1)?[0];
             note_reserved(e, |r| r.added += 1_000.0);
-            configure_bodies(w, &[BodySpec { e, capacity: 100.0, temperature: 300.0, keep: true }]);
+            configure_bodies(
+                w,
+                &[BodySpec {
+                    e,
+                    capacity: 100.0,
+                    temperature: 300.0,
+                    keep: true,
+                }],
+            );
             let b = w.read::<HeatBody>(e).unwrap();
             Ok(b.energy / b.capacity)
         })

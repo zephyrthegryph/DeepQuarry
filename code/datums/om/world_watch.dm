@@ -2,8 +2,8 @@
 //
 // The Rust world (verdigris/ffi/src/sched.rs) holds the timer wheel, DM-owned
 // keys, rate models and the watches on Rust-owned state (gas, probe cells).
-// The OM scheduler steps it once per tick (run_pass() -> world_step()); each
-// wake it returns names a subscriber, which is a /datum/native_watch/world:
+// The native system steps it once per tick (run_pass() -> world_step() -> the frame);
+// each wake it returns names a subscriber, which is a /datum/native_watch/world:
 // one subscription, its own SSvg handle. The wake is queued on the watch's
 // OM lane and, when that lane runs, the owner's declared proc is called:
 //
@@ -52,6 +52,7 @@
 	return serial
 
 /datum/native_watch/world
+	delivery_source = NATIVE_SRC_WORLD_WATCH
 	/// OM lane the owner's proc runs on.
 	var/lane = LANE_SIMULATION
 	/// The Rust subscription token (a timer, key, watch or rate watch).
@@ -67,6 +68,14 @@
 	if(handle)
 		vg_world_clear(handle)
 	token = null
+
+/// A native record for this watch: queue it on the owner's lane (the world_q the scheduler drains).
+/datum/native_watch/world/crossed(band, list/detail)
+	var/datum/om/scheduler/sched = GLOB.om_live_sched
+	if(!sched)
+		return FALSE
+	sched.world_enqueue(src, detail[2], detail[3], detail[4])
+	return TRUE
 
 /// TRUE while the Rust subscription is live.
 /datum/native_watch/world/proc/is_live()
@@ -191,7 +200,8 @@
 	var/list/world_traced
 #endif
 
-/// Steps the Rust world to this tick (once per tick) and queues its wakes on their lanes.
+/// Steps the Rust world to this tick (once per tick): the native system's one frame, whose CHANGED and
+/// CROSSED records for world watches come back to world_enqueue() and wait on their lanes.
 /// Live scheduler only: a test scheduler's injected time is not the wheel's.
 /datum/om/scheduler/proc/world_step()
 	if(!isnull(manual_time))
@@ -206,21 +216,29 @@
 	var/elapsed = world_step_tick < 0 ? 1 : clamp(tick - world_step_tick, 1, OM_WORLD_MAX_CATCHUP)
 	world_previous_step_tick = world_step_tick
 	world_step_tick = tick
-	var/list/wakes = vg_world_step(tick, world_budget * elapsed)
 	if(!world_q)
 		world_q = new /list(OM_LANE_COUNT)
 		for(var/lane in 1 to OM_LANE_COUNT)
 			world_q[lane] = list()
-	var/count = length(wakes)
-	world_last_wakes = count / WORLD_WAKE_STRIDE
-	for(var/i in 1 to count step WORLD_WAKE_STRIDE)
-		var/datum/native_watch/world/W = om_native_watch_of(wakes[i])
-		if(!istype(W))
-			world_dropped++
-			continue
-		var/list/Q = world_q[W.lane]
-		Q.Add(W, wakes[i + 2], wakes[i + 3], wakes[i + 4])
+	world_last_wakes = 0
+	native_system().frame(tick, world_budget * elapsed)
 	world_last_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - start)
+
+/// Queues a world watch's wake on its lane (the native system's CHANGED/CROSSED delivery).
+/datum/om/scheduler/proc/world_enqueue(datum/native_watch/world/W, reason, source, source_kind)
+	if(!world_q)
+		world_q = new /list(OM_LANE_COUNT)
+		for(var/lane in 1 to OM_LANE_COUNT)
+			world_q[lane] = list()
+	world_last_wakes++
+	var/list/Q = world_q[W.lane]
+	Q.Add(W, reason, source, source_kind)
+
+/// A record named a watch that is gone: counted like any dropped wake.
+/proc/om_world_dropped()
+	var/datum/om/scheduler/sched = GLOB.om_live_sched
+	if(sched)
+		sched.world_dropped++
 
 /// Runs `lane`'s queued world wakes. FALSE when the budget ran out (resumed next run).
 /datum/om/scheduler/proc/run_world_wakes(lane)

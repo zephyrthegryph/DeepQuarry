@@ -9,6 +9,7 @@ mod abi;
 pub mod allocator;
 mod bulk;
 pub mod entity;
+pub mod frame;
 mod gas;
 mod heat;
 mod heat_regulator;

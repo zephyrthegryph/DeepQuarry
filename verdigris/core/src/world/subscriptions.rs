@@ -171,6 +171,15 @@ impl World {
         self.record(sub, Subscription::Watch { code, port, id })
     }
 
+    /// The watch a subscription entity holds: `(code, port, id)`.
+    #[must_use]
+    pub fn sched_watch_of(&self, e: EntityId) -> Option<(u32, u8, WatchId)> {
+        match self.sub_record(e)? {
+            (_, Subscription::Watch { code, port, id }) => Some((code, port, id)),
+            _ => None,
+        }
+    }
+
     /// Adds a rate model (times in ticks); the entity names it.
     ///
     /// # Errors

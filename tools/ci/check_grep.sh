@@ -308,6 +308,16 @@ if $grep -n '^/[A-Za-z0-9_/]*/return_temperature\(' "${code_files[@]}" | grep -v
 	FAILED=1
 fi;
 
+part "one temperature API: a turf keeps no live temperature of its own"
+# /turf/initial_temperature is a SEED (read once when the heat cell and the air are built). The live temperature
+# is the heat field's: get_temperature() / add_heat() / set_temperature(). A `.temperature` on a turf is the
+# retired DM mirror.
+if $grep -n '\b(T|turf|target_turf|new_turf|floor|modeled_location|loc_as_turf|simulated_turf|exterior_turf)\.temperature' "${code_files[@]}" | sed 's#//.*##' | grep -E '\.temperature'; then
+	echo
+	echo -e "${RED}ERROR: a turf has no temperature var. Read get_temperature(), write add_heat()/set_temperature(); initial_temperature is only the seed.${NC}"
+	FAILED=1
+fi;
+
 part "input: modifier ladders"
 # Click modifiers (shift, ctrl, alt, middle, right, extra buttons) are read in one
 # place: the input router (code/modules/keybindings/router.dm), which turns them
@@ -417,7 +427,7 @@ part "physiology: no asphyxia injury"
 # not an injury. Express the cause as a mechanism: an airway / breathing restriction, breath
 # quality, a factor (BF_O2_CARRIAGE, BF_TISSUE_UPTAKE, ...) or, with no mechanism at all,
 # add_oxygen_debt(). Read it with oxygen_debt().
-if $grep -n '(INJURY_ASPHYXIA|INJURY_CATEGORY_ASPHYXIA|BF_INCOMING_ASPHYXIA)' "${code_files[@]}"; then
+if $grep -n '\b(INJURY_ASPHYXIA|INJURY_CATEGORY_ASPHYXIA|BF_INCOMING_ASPHYXIA)\b' "${code_files[@]}"; then
 	echo
 	echo -e "${RED}ERROR: asphyxia injury detected. Model the mechanism (restriction, breath quality, factor) or use add_oxygen_debt() / oxygen_debt().${NC}"
 	FAILED=1
@@ -527,7 +537,7 @@ fi;
 part "equip slot ids"
 # Equip slots are SLOT_ID_* text ids on the body slot ledger (code/modules/body/slots.dm).
 # The numeric slot_* defines and their per-slot lookups are gone.
-if $grep -n '(slot_(l_hand|r_hand|back|belt|wear_id|s_store|l_store|r_store|glasses|wear_mask|gloves|head|shoes|wear_suit|w_uniform|l_ear|r_ear|legs|tie|handcuffed|legcuffed|in_backpack)[^"]|(SLOT_TOTAL|get_inventory_slot|get_item_by_slot|dq_slot_num|dq_slot_id))' "${code_files[@]}"; then
+if $grep -n '(\bslot_(l_hand|r_hand|back|belt|wear_id|s_store|l_store|r_store|glasses|wear_mask|gloves|head|shoes|wear_suit|w_uniform|l_ear|r_ear|legs|tie|handcuffed|legcuffed|in_backpack)\b[^"]|\b(SLOT_TOTAL|get_inventory_slot|get_item_by_slot|dq_slot_num|dq_slot_id)\b)' "${code_files[@]}"; then
 	echo
 	echo -e "${RED}ERROR: a numeric equip slot. Use SLOT_ID_* ids and get_equipped_item()/inventory_slot_id().${NC}"
 	FAILED=1

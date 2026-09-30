@@ -189,6 +189,21 @@ One vocabulary for "something happened" (code in `code/datums/reactions/`, defin
 - **Validation.** Validate every parameter first with `ui_number` / `ui_text` / `ui_choice` / `ui_ref` /
   `ui_bool`. `ui_actions_lint.py` checks that TSX and DM agree.
 
+## Rust
+
+- **One driver, one outbox.** DM calls `vg_frame()` once a tick (through the native system). Nothing else drains
+  Rust: no `vg_world_tick`, no `vg_drain_*`, no heat or gas drains.
+- **Reading Rust state.** `native_read(E, NATIVE_KEY(code, field))` goes through the frame's cache; a generated
+  getter is the same call without the cache. Never keep a DM copy of a Rust value. A turf's temperature is
+  `get_temperature()`; `initial_temperature` is a seed.
+- **Writing Rust state.** A generated setter of a config field ends with `rust_pushed()`; override it to re-publish
+  derived Rust state. Do not push by hand after a setter.
+- **Watching Rust state.** One facility: a watch port (a world kind, the turf solid, gas handles) through
+  `vg_world_watch_*`. Wakes leave as `CHANGED` / `CROSSED` records, delivered by `native_crossed()`.
+- **Moving gas.** Use `pump_gas()`, `scrub_gas()`, `calculate_transfer_moles()` or the `vg_*_transfer` binds. Never
+  write the entropy or power maths in DM.
+- **Rates.** `om_rate_*` only.
+
 ## Style
 
 - One proc-reference form: `PROC_REF`, `TYPE_PROC_REF`, `GLOBAL_PROC_REF`.

@@ -132,7 +132,7 @@
 		return PROCESS_KILL
 
 	var/power_draw = result[2]
-	var/dt = SSvg.wait / (1 SECONDS)
+	var/dt = NATIVE_PIPE_DEVICE_PERIOD
 
 	last_power_draw = power_draw
 	use_power(power_draw)

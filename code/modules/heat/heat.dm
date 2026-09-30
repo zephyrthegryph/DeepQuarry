@@ -163,11 +163,10 @@ GLOBAL_LIST_INIT(heat_coupling_none, list(HEAT_TARGET_NONE, 0))
 
 // ------------------------------------------------------------------ turfs
 
-/// A turf's temperature is its solid's (the heat field), or its temperature
-/// var when it is not in the field.
+/// A turf's temperature is its solid's (the heat field), or its seed while it is not in the field yet.
 /turf/get_temperature()
-	var/temperature = vg_heat_turf_temperature(src)
-	return isnull(temperature) ? src.temperature : temperature
+	var/live = vg_heat_turf_temperature(src)
+	return isnull(live) ? initial_temperature : live
 
 /// Something on a turf sees the turf's air, or its solid when it has none.
 /turf/get_interior_temperature()
@@ -181,9 +180,10 @@ GLOBAL_LIST_INIT(heat_coupling_none, list(HEAT_TARGET_NONE, 0))
 		return 0
 	return vg_heat_add_turf(src, joules) ? joules : 0
 
-/// Sets the solid temperature (DM authority: map load, holodeck programs, admin).
+/// Sets the solid temperature (DM authority: map load, holodeck programs, admin). The seed follows, so a turf
+/// registered after this starts there.
 /turf/proc/set_temperature(new_temperature)
-	temperature = new_temperature
+	initial_temperature = new_temperature
 	return vg_heat_set_turf_temperature(src, new_temperature)
 
 /turf/thermal_properties()
@@ -211,17 +211,17 @@ GLOBAL_LIST_INIT(heat_coupling_none, list(HEAT_TARGET_NONE, 0))
 	return !blocks_air && !isnull(air)
 
 /// Pushes this turf's thermal values into the heat field. A new cell starts at
-/// the turf's temperature var; an existing one keeps its temperature.
+/// the turf's seed (initial_temperature); an existing one keeps its temperature.
 /turf/proc/update_heat_cell()
 	var/list/properties = thermal_properties()
-	return vg_heat_set_turf(src, heat_cell_kind(), properties[THERMAL_CAPACITY], properties[THERMAL_CONDUCTANCE], properties[THERMAL_EMISSIVITY], temperature, heat_has_air())
+	return vg_heat_set_turf(src, heat_cell_kind(), properties[THERMAL_CAPACITY], properties[THERMAL_CONDUCTANCE], properties[THERMAL_EMISSIVITY], initial_temperature, heat_has_air())
 
 /// Bulk form of update_heat_cell for round-start setup: one FFI call.
 /proc/heat_register_turfs(list/turfs)
 	var/list/records = list()
 	for(var/turf/T as anything in turfs)
 		var/list/properties = T.thermal_properties()
-		records += list(T, T.heat_cell_kind(), properties[THERMAL_CAPACITY], properties[THERMAL_CONDUCTANCE], properties[THERMAL_EMISSIVITY], T.temperature, T.heat_has_air())
+		records += list(T, T.heat_cell_kind(), properties[THERMAL_CAPACITY], properties[THERMAL_CONDUCTANCE], properties[THERMAL_EMISSIVITY], T.initial_temperature, T.heat_has_air())
 	return vg_heat_set_turfs_bulk(records)
 
 // ------------------------------------------------------ gas containers
@@ -250,17 +250,16 @@ GLOBAL_LIST_INIT(heat_coupling_none, list(HEAT_TARGET_NONE, 0))
  * rest (reading its surroundings, unwatched).
  */
 /datum/native_watch/heat
+	delivery_source = NATIVE_SRC_HEAT
 	var/atom/target
 	var/kind
 	var/level
 	var/both_edges = FALSE
 	var/lane = HEAT_LANE_NORMAL
 	var/keep_body = TRUE
-	/// Registered with Rust (the watch table's index and generation below).
-	var/live = FALSE
-	var/live_index
-	var/live_generation
-	/// The body `live` is on.
+	/// The Rust subscription (a world watch token, vg_world_cancel()): non-null while registered.
+	var/token
+	/// The body the watch is on.
 	var/body
 	/// ThresholdSet entries: payload -> list(generation, limit, above, both_edges).
 	var/list/entries
@@ -285,6 +284,25 @@ GLOBAL_LIST_INIT(heat_coupling_none, list(HEAT_TARGET_NONE, 0))
 	. = ..()
 	. += rel_many(nameof(heat_watches), back = nameof(/datum/native_watch/heat::target))
 
+/// The watch port and cell of this watch's target: a body's world kind and entity, or the turf solid
+/// (VG_HEAT_CELLS) and the turf.
+/datum/native_watch/heat/proc/port_code()
+	return isturf(target) ? VG_HEAT_CELLS : VG_KIND_HEATBODY
+
+/datum/native_watch/heat/proc/port_cell()
+	return isturf(target) ? target : body
+
+/// The temperature channel of `port_code()` (a channel index Rust owns).
+/proc/heat_temperature_channel(code)
+	var/static/list/channels
+	if(!channels)
+		channels = list()
+	var/found = channels["[code]"]
+	if(isnull(found))
+		found = vg_world_channel(code, "temperature")
+		channels["[code]"] = found
+	return found
+
 /datum/native_watch/heat/register()
 	if(!isturf(target))
 		HEAT_BODY_RESOLVE(target)
@@ -297,49 +315,69 @@ GLOBAL_LIST_INIT(heat_coupling_none, list(HEAT_TARGET_NONE, 0))
 		body = target.heat_body
 		if(isnull(body))
 			return TRUE // at rest: relinked when the target gets a body
-	var/list/id = vg_heat_watch(!isturf(target), isturf(target) ? target : body, handle, lane, kind, level, both_edges)
-	if(isnull(id))
+	var/code = port_code()
+	var/channel = heat_temperature_channel(code)
+	var/rust_lane = lane
+	switch(kind)
+		if(HEAT_WATCH_ABOVE)
+			token = vg_world_watch_threshold(code, handle, rust_lane, port_cell(), channel, WORLD_CMP_ABOVE, level, -1, both_edges)
+		if(HEAT_WATCH_BELOW)
+			token = vg_world_watch_threshold(code, handle, rust_lane, port_cell(), channel, WORLD_CMP_BELOW, level, -1, both_edges)
+		if(HEAT_WATCH_BAND)
+			token = vg_world_watch_band(code, handle, rust_lane, port_cell(), channel, level, -1)
+		if(HEAT_WATCH_SET)
+			token = vg_world_watch_set(code, handle, rust_lane, port_cell(), channel)
+	if(isnull(token))
 		body = null
 		return FALSE
-	live = TRUE
-	live_index = id[1]
-	live_generation = id[2]
 	for(var/payload in entries)
 		var/list/entry = entries[payload]
-		vg_heat_watch_set_add(!isturf(target), live_index, live_generation, text2num(payload), entry[1], entry[3] ? HEAT_WATCH_ABOVE : HEAT_WATCH_BELOW, entry[2], entry[4])
+		vg_world_watch_set_add(token, channel, text2num(payload), entry[1], entry[3] ? WORLD_CMP_ABOVE : WORLD_CMP_BELOW, entry[2], entry[4])
 	return TRUE
 
 /datum/native_watch/heat/unregister()
-	if(live)
-		vg_heat_unwatch(!isturf(target), live_index, live_generation)
-	live = FALSE
+	if(!isnull(token))
+		vg_world_cancel(token)
+	token = null
 	body = null
 	rel_clear(src, nameof(target)) // two-sided: the target's heat_watches lets go too
 
 /// The target's body changed (created, or released at rest): follow it.
 /datum/native_watch/heat/proc/relink()
-	if(isturf(target) || QDELETED(target) || (live && body == target.heat_body))
+	if(isturf(target) || QDELETED(target) || (!isnull(token) && body == target.heat_body))
 		return
-	if(live)
-		vg_heat_unwatch(TRUE, live_index, live_generation)
-		live = FALSE
+	if(!isnull(token))
+		vg_world_cancel(token)
+		token = null
 		body = null
 	register()
 
 /// Adds (or replaces) a ThresholdSet entry: crossing `limit` upwards (`above`) or downwards.
 /datum/native_watch/heat/proc/add_entry(payload, generation, limit, above = TRUE, both_edges = FALSE)
 	LAZYSET(entries, "[payload]", list(generation, limit, above, both_edges))
-	if(live)
-		vg_heat_watch_set_add(!isturf(target), live_index, live_generation, payload, generation, above ? HEAT_WATCH_ABOVE : HEAT_WATCH_BELOW, limit, both_edges)
+	if(!isnull(token))
+		vg_world_watch_set_add(token, heat_temperature_channel(port_code()), payload, generation, above ? WORLD_CMP_ABOVE : WORLD_CMP_BELOW, limit, both_edges)
 
 /datum/native_watch/heat/proc/remove_entry(payload)
 	LAZYREMOVE(entries, "[payload]")
-	if(live)
-		vg_heat_watch_set_remove(!isturf(target), live_index, live_generation, payload)
+	if(!isnull(token))
+		vg_world_watch_set_remove(token, payload)
 
 /// Whether the watch is registered with Rust right now (tests).
 /datum/native_watch/heat/proc/is_live()
-	return live
+	return !isnull(token)
+
+/// The frame's record for this watch. A threshold or band wake calls the owner as (reason, source); a
+/// ThresholdSet's crossing calls it as (payload, entered, generation), and its plain wakes (every
+/// crossing also wakes the watch) are dropped.
+/datum/native_watch/heat/crossed(band, list/detail)
+	if(length(detail) == NATIVE_CROSSED_SET_DETAIL)
+		fire(list(band, detail[1], detail[2]))
+		return TRUE
+	if(kind == HEAT_WATCH_SET)
+		return FALSE
+	fire(list(detail[2], detail[3]))
+	return TRUE
 
 /// Watches `target`'s temperature for crossing `limit` (upwards if `above`);
 /// `callback` runs on `owner` as (watch, reason, source). A turf watches its
@@ -359,33 +397,3 @@ GLOBAL_LIST_INIT(heat_coupling_none, list(HEAT_TARGET_NONE, 0))
 /proc/heat_watch_set(datum/owner, atom/target, callback, lane = HEAT_LANE_NORMAL)
 	var/datum/native_watch/heat/W = new(owner, callback)
 	return W.start(target, HEAT_WATCH_SET, 0, FALSE, lane, TRUE)
-
-// ------------------------------------------------------------------ ticks
-
-/datum/controller/subsystem/air/var/heat_last_tick = 0
-
-/// Advances the heat domain by the game time since the last call, then hands
-/// any watch wakes to their subscribers.
-/datum/controller/subsystem/air/proc/process_turf_heat()
-	var/now = world.time
-	var/elapsed = heat_last_tick ? (now - heat_last_tick) / (1 SECONDS) : wait / (1 SECONDS)
-	heat_last_tick = now
-	if(vg_heat_tick(elapsed) > 0)
-		dispatch_heat_wakes()
-
-/// Delivers collected heat wakes and ThresholdSet crossings to their watches.
-/// Wire: [wake count], then [watch handle, index, reason, source] per wake,
-/// then [watch handle, payload, entered, generation] per crossing.
-/datum/controller/subsystem/air/proc/dispatch_heat_wakes()
-	var/list/flat = vg_heat_take_wakes()
-	var/wakes = length(flat) ? flat[1] : 0
-	var/i = 2
-	for(var/n in 1 to wakes)
-		var/datum/native_watch/heat/W = om_native_watch_of(flat[i])
-		// A set's wakes arrive as its crossings, below.
-		if(W && W.kind != HEAT_WATCH_SET)
-			W.fire(list(flat[i + 2], flat[i + 3]))
-		i += 4
-	while(i + 3 <= length(flat))
-		om_native_dispatch(flat[i], list(flat[i + 1], flat[i + 2], flat[i + 3]))
-		i += 4

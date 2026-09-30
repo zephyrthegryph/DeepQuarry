@@ -87,7 +87,7 @@ SUBSYSTEM_DEF(profiler)
 			"pressure_deltas" = length(SSair.high_pressure_delta),
 			"pipenets" = length(SSair.networks),
 			"pipe_devices" = SSair.rust_pipe_device_count,
-			"pipe_devices_reported" = SSair.pipe_devices_reported_last,
+			"pipe_devices_reported" = native_system().pipe_devices_last,
 			"rebuild" = length(SSair.rebuild_queue),
 			"expansion" = length(SSair.expansion_queue),
 		),
@@ -224,4 +224,11 @@ GLOBAL_LIST_INIT(profiler_missing_diagnostics, list("missing" = TRUE))
 		decoded = json_decode(text)
 	catch // ALLOW(silent_catch): malformed input is the expected failure; the caller handles null
 		return null
+	// DM-side counters ride along: deliveries through native_changed() and errors per bind.
+	if(islist(decoded))
+		var/list/deliveries = native_delivery_stats()
+		for(var/name in deliveries)
+			decoded[name] = deliveries[name]
+		for(var/bind in GLOB.vg_bind_errors)
+			decoded["dm.errors.[bind]"] = GLOB.vg_bind_errors[bind]
 	return decoded

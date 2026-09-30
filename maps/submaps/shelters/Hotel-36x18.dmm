@@ -474,7 +474,7 @@
 /turf/simulated/floor/outdoors/dirt{
 	can_atmos_pass = 0;
 	outdoors = 0;
-	temperature = 300
+	initial_temperature = 300
 	},
 /area/survivalpod/superpose/hotel)
 "CS" = (

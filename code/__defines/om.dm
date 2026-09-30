@@ -77,6 +77,18 @@
 #define CHANGE_DATUM_C (1<<10)
 #define CHANGE_DATUM_D (1<<11)
 
+// Rust -> DM change delivery sources (code/datums/om/native_adapter.dm).
+#define NATIVE_SRC_GAS_EVENT 1
+#define NATIVE_SRC_GAS_WATCH 2
+#define NATIVE_SRC_WORLD_WATCH 3
+#define NATIVE_SRC_HEAT 4
+#define NATIVE_SRC_POWER 5
+#define NATIVE_SRC_OTHER 6
+#define NATIVE_SRC_COUNT 6
+
+/// A turf's visible gas changed (Rust visual event, delivered by native_changed()).
+#define CHANGE_TURF_GAS_VISUAL CHANGE_DATUM_A
+
 /// The one guarded setter call. Content writes om_changed(E, bits); this form
 /// is for hot setters that want the listen-mask test inlined.
 #define OM_CHANGED(E, bits) if((E).om_listen & (bits)) { om_dispatch_change(E, bits) }

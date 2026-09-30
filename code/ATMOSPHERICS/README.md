@@ -73,14 +73,14 @@ routes through a generated `vg_*` proc, so the DM gas API (`return_air`,
 **SSair.** Each fire runs `vg_gas_tick()`: pin the newest frame, start the next
 on the gas pool (never waiting), and push the frame's notifications as typed
 `GasEvent`s (`verdigris/domains/gas/src/laws.rs`) onto the shared World;
-`vg_drain_events()` dispatches them to `SSvg`'s `on_gas_cell_reaction_ready()`
+the native system's frame (`vg_frame()`, one NOTICE record each; `vg_dispatch_notice()` decodes it) dispatches them to `SSvg`'s `on_gas_cell_reaction_ready()`
 (`air.react(turf)`), `on_gas_cell_visual_change()` (`set_visuals()`) and
 `on_gas_pressure_jump()` (spacewind) -- the one typed-event path every other
 domain's events already take (`rust_architecture.md` §4.8), not a bespoke flat
 list DM parses itself. A cell index in an event's payload is a bare number
 (the generic wire is numbers only); `vg_turf_of(cell)` resolves it. A frame is
 0.5 s of gas. Tests step the field deterministically with
-`SSair.run_gas_frames(n)` (`vg_gas_run_frames` + `vg_drain_events()`) instead
+`SSair.run_gas_frames(n)` (`vg_world_run_steps` + the native system's `drain()`) instead
 of waiting on the clock.
 
 **Air-block masks are geometry.** A mask change is one geometry command, seen at

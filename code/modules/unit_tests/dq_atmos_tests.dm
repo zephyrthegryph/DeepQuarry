@@ -36,7 +36,8 @@
 /proc/dq_atmos_test_drain_dependency_queue()
 	while(!GLOB.machine_service.wake_dirty_gas_subscribers())
 		stoplag()
-	vg_drain_dirty_gas_observations()
+	native_system().drain()
+	native_system().take_gas_changes()
 
 /// Publish a synthetic fixture through the same Rust-authoritative port graph
 /// used by map setup. Allocate every port before queueing edges so fixture order
@@ -2264,15 +2265,13 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 /datum/unit_test/dq_pipenet_reconcile_air_equalizes/Run()
 	var/datum/pipe_network/net = new
 	var/datum/pipeline/line_a = new
-	atmos_air_set(line_a, nameof(line_a.air), new /datum/gas_mixture(70))
-	line_a.volume = 70
-	rel_set(line_a, nameof(line_a.network), net)
+	atmos_air_set(line_a, "air", new /datum/gas_mixture(70))
+	rel_set(line_a, "network", net)
 	line_a.air.adjust_gas(/datum/gas/oxygen, 100)
 	line_a.air.set_temperature(T20C)
 	var/datum/pipeline/line_b = new
-	atmos_air_set(line_b, nameof(line_b.air), new /datum/gas_mixture(70))
-	line_b.volume = 70
-	rel_set(line_b, nameof(line_b.network), net)
+	atmos_air_set(line_b, "air", new /datum/gas_mixture(70))
+	rel_set(line_b, "network", net)
 	line_b.air.set_temperature(T0C + 80)
 	var/initial_total = line_a.air.total_moles() + line_b.air.total_moles()
 	var/initial_thermal = line_a.air.thermal_energy() + line_b.air.thermal_energy()
@@ -2282,7 +2281,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 
 	TEST_ASSERT(line_a.air == net.air && line_b.air == net.air, \
 		"connected pipelines did not share the authoritative network mixture")
-	TEST_ASSERT_EQUAL(length(net.gases), 1, "pipenet compatibility gas list contains member mirrors")
+	TEST_ASSERT_EQUAL(net.volume(), net.air.return_volume(), "pipenet volume is not read through the authoritative mixture")
 	var/final_total = net.air.total_moles()
 	var/final_thermal = net.air.thermal_energy()
 	TEST_ASSERT(abs(final_total - initial_total) < 0.5, \
@@ -3444,19 +3443,19 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 // Heat-exchange pipes
 // =====================================================================
 
-/// /datum/pipeline.temperature_interact transfers heat between a pipeline's
+/// /datum/pipeline.exchange_heat_with_turf transfers heat between a pipeline's
 /// air mixture and an adjacent turf — the mechanism HE pipes use to dump or
 /// extract heat through the world. Direct test via a programmatic pipeline
 /// avoids the HE pipe's two-segment auto-connection requirement.
-/datum/unit_test/dq_pipeline_temperature_interact_with_turf
+/datum/unit_test/dq_pipeline_exchange_heat_with_turf
 
-/datum/unit_test/dq_pipeline_temperature_interact_with_turf/Run()
+/datum/unit_test/dq_pipeline_exchange_heat_with_turf/Run()
 	var/turf/simulated/floor/T = null
 	for(var/turf/simulated/floor/cand in world)
 		if(cand.air && !cand.blocks_air)
 			T = cand
 			break
-	TEST_ASSERT_NOTNULL(T, "no floor for temperature_interact test")
+	TEST_ASSERT_NOTNULL(T, "no floor for the heat exchange test")
 
 	var/datum/gas_mixture/turf_air = T.return_air()
 	for(var/datum/gas/g as anything in turf_air.get_gases())
@@ -3473,7 +3472,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	var/initial_turf_temp = turf_air.return_temperature()
 	var/initial_pipe_temp = P.air.return_temperature()
 
-	P.temperature_interact(T, P.air.return_volume(), OPEN_HEAT_TRANSFER_COEFFICIENT)
+	P.exchange_heat_with_turf(T, P.air.return_volume(), OPEN_HEAT_TRANSFER_COEFFICIENT)
 
 	var/final_turf_temp = turf_air.return_temperature()
 	var/final_pipe_temp = P.air.return_temperature()
@@ -3969,7 +3968,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	V.set_use_power(USE_POWER_IDLE)
 	V.external_pressure_bound = T.air.return_pressure() + 50
 	V.air_contents.adjust_moles(/datum/gas/oxygen, 10)
-	vg_drain_dirty_gas_observations()
+	native_system().drain()
+	native_system().take_gas_changes()
 	// A vent pump's flow law is a Rust device edge: it has no DM step, so no gas change wakes it.
 	V.register_gas_dependencies()
 	var/vent_wakes = V.gas_dependency_wake_count
@@ -4189,7 +4189,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	// alarm rather than harmless drift.
 	T.air.set_temperature(T20C)
 	dq_atmos_test_drain_dependency_queue()
-	vg_drain_dirty_gas_observations()
+	native_system().drain()
+	native_system().take_gas_changes()
 	var/obj/machinery/door/firedoor/F = new(T)
 	F.set_density(TRUE)
 	TEST_ASSERT(test_machine_idle(F), "stable closed firedoor retained timed polling")
@@ -5772,67 +5773,34 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 // closed-door atmos block
 // =====================================================================
 
-/// filter_gas_multi is the heart of the omni filter machine — given a source
-/// gas mixture, a per-gas-id sink map (filtering), and a single clean sink
-/// for everything else, it should route each target gas to its declared sink
-/// and dump untargeted gases into the clean sink. Validates the real routing
-/// math without bringing up the omni port plumbing.
-/datum/unit_test/dq_filter_gas_multi_routes_target_gas
+/// The omni filter's Rust budget (vg_filter_transfer_multi, the maths filter_gas_multi() used to be): given a
+/// source, a per-output gas mask and a clean sink, it splits the moles by each output's mask and the rest to the
+/// clean sink.
+/datum/unit_test/dq_filter_transfer_multi_routes_target_gas
 
-/datum/unit_test/dq_filter_gas_multi_routes_target_gas/Run()
+/datum/unit_test/dq_filter_transfer_multi_routes_target_gas/Run()
 	var/datum/gas_mixture/source = new(CELL_VOLUME)
 	source.adjust_gas(/datum/gas/plasma, 100)
 	source.adjust_gas(/datum/gas/oxygen, 100)
 	source.set_temperature(T20C)
-
-	// Per-gas filter sinks: plasma gets its own bin, oxygen falls through to clean.
 	var/datum/gas_mixture/plasma_sink = new(CELL_VOLUME)
 	plasma_sink.set_temperature(T20C)
 	var/datum/gas_mixture/clean_sink = new(CELL_VOLUME)
 	clean_sink.set_temperature(T20C)
+	var/list/outputs = list()
+	outputs[plasma_sink] = 1 << GAS_IDX(GAS_PLASMA)
+	var/list/result = vg_filter_transfer_multi(source, outputs, clean_sink, source.total_moles(), null, 1)
+	TEST_ASSERT_NOTNULL(result, "vg_filter_transfer_multi refused a full mix with unlimited power")
+	// list(total, power, clean_moles, output_1_moles)
+	TEST_ASSERT(abs(result[1] - 200) < 0.5, "total transfer [result[1]], expected 200")
+	TEST_ASSERT(abs(result[4] - 100) < 0.5, "the plasma output was budgeted [result[4]], expected 100")
+	TEST_ASSERT(abs(result[3] - 100) < 0.5, "the clean output was budgeted [result[3]], expected 100")
 
-	// XGM-compat: filter_gas_multi keys the filtering list by string gas id
-	// (from gas_ids()), not by type path. Use GAS_PLASMA (= "plasma") here.
-	var/list/filtering = list()
-	filtering[GAS_PLASMA] = plasma_sink
+/// The omni mixer's Rust budget (vg_mix_transfer, the maths mix_gas() used to be): a 0.7:0.3 split of a
+/// requested total.
+/datum/unit_test/dq_mix_transfer_combines_at_target_ratio
 
-	var/initial_total = source.total_moles()
-	// Unlimited power, transfer everything in one call.
-	var/power_draw = filter_gas_multi(null, filtering, source, clean_sink, source.total_moles(), null)
-	TEST_ASSERT(power_draw >= 0, "filter_gas_multi returned -1 (refused) with full mix and unlimited power")
-
-	// Plasma should have moved to its own sink.
-	var/plasma_in_filter = plasma_sink.get_moles(/datum/gas/plasma)
-	var/plasma_in_clean = clean_sink.get_moles(/datum/gas/plasma)
-	TEST_ASSERT(plasma_in_filter > 90, \
-		"filter sink got [plasma_in_filter] plasma, expected >90 (routing broken)")
-	TEST_ASSERT(plasma_in_clean < 1, \
-		"clean sink got [plasma_in_clean] plasma — plasma leaked into the clean output")
-
-	// Oxygen should have ended up in the clean sink.
-	var/o2_in_clean = clean_sink.get_moles(/datum/gas/oxygen)
-	var/o2_in_filter = plasma_sink.get_moles(/datum/gas/oxygen)
-	TEST_ASSERT(o2_in_clean > 90, \
-		"clean sink got [o2_in_clean] O2, expected >90 (clean routing broken)")
-	TEST_ASSERT(o2_in_filter < 1, \
-		"filter sink got [o2_in_filter] O2 — O2 leaked into the plasma output")
-
-	// Source should be nearly drained.
-	TEST_ASSERT(source.total_moles() < 1, \
-		"source still has [source.total_moles()] moles after full transfer — leak in remove()")
-
-	// Conservation across both sinks.
-	var/sinks_total = plasma_sink.total_moles() + clean_sink.total_moles()
-	TEST_ASSERT(abs(sinks_total - initial_total) < 0.5, \
-		"filter_gas_multi lost mass: [initial_total] → [sinks_total]")
-
-
-/// mix_gas is the heart of the omni mixer machine — it pulls from each input
-/// at the configured ratio and merges into the sink. Validate that a 0.7:0.3
-/// split actually delivers gases in that ratio to the output.
-/datum/unit_test/dq_mix_gas_combines_at_target_ratio
-
-/datum/unit_test/dq_mix_gas_combines_at_target_ratio/Run()
+/datum/unit_test/dq_mix_transfer_combines_at_target_ratio/Run()
 	var/datum/gas_mixture/source_a = new(CELL_VOLUME)
 	source_a.adjust_gas(/datum/gas/oxygen, 1000)
 	source_a.set_temperature(T20C)
@@ -5841,27 +5809,15 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	source_b.set_temperature(T20C)
 	var/datum/gas_mixture/sink = new(CELL_VOLUME)
 	sink.set_temperature(T20C)
-
 	var/list/mix_sources = list()
 	mix_sources[source_a] = 0.7
 	mix_sources[source_b] = 0.3
-
-	var/power_draw = mix_gas(null, mix_sources, sink, 100, null)
-	TEST_ASSERT(power_draw >= 0, "mix_gas refused with valid inputs at 100 moles target")
-
-	var/sink_o2 = sink.get_moles(/datum/gas/oxygen)
-	var/sink_n2 = sink.get_moles(/datum/gas/nitrogen)
-	var/sink_total = sink.total_moles()
-	TEST_ASSERT(sink_total > 95 && sink_total < 105, \
-		"mix_gas delivered [sink_total] moles, expected ~100")
-
-	// Within 5% of the configured ratio.
-	var/actual_o2_ratio = sink_o2 / sink_total
-	var/actual_n2_ratio = sink_n2 / sink_total
-	TEST_ASSERT(abs(actual_o2_ratio - 0.7) < 0.05, \
-		"O2 ratio off target: expected 0.7, got [actual_o2_ratio]")
-	TEST_ASSERT(abs(actual_n2_ratio - 0.3) < 0.05, \
-		"N2 ratio off target: expected 0.3, got [actual_n2_ratio]")
+	var/list/result = vg_mix_transfer(mix_sources, sink, 100, null, 1)
+	TEST_ASSERT_NOTNULL(result, "vg_mix_transfer refused valid inputs at 100 moles")
+	// list(total, power, source_1_moles, source_2_moles)
+	TEST_ASSERT(abs(result[1] - 100) < 0.5, "mixed [result[1]] moles, expected ~100")
+	TEST_ASSERT(abs(result[3] - 70) < 0.5, "source A was budgeted [result[3]], expected 70")
+	TEST_ASSERT(abs(result[4] - 30) < 0.5, "source B was budgeted [result[4]], expected 30")
 
 
 /// The LINDA fuel-consumption pathway thrust_burn uses: remove_ratio drains
@@ -6214,8 +6170,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	atmos_air_set(line, nameof(line.air), new /datum/gas_mixture(70))
 	rel_set(line, nameof(line.network), donor)
 	donor.add_line_member(line)
-	own_set(donor, nameof(donor.air), new /datum/gas_mixture(line.air.return_volume()))
-	donor.volume = line.air.return_volume()
+	own_set(donor, "air", new /datum/gas_mixture(line.air.return_volume()))
 
 	TEST_ASSERT(receiver.merge(donor), "pipenet merge rejected a valid donor")
 	TEST_ASSERT(line.network == receiver, "merged pipeline did not transfer to the receiving network")
@@ -6225,7 +6180,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT(QDELETED(donor), "merged donor network remained alive")
 	TEST_ASSERT_NULL(donor.line_members, "merged donor retained its pipeline membership list")
 	TEST_ASSERT_NULL(donor.normal_members, "merged donor retained its machinery membership list")
-	TEST_ASSERT_NULL(donor.gases, "merged donor retained its gas list")
+	TEST_ASSERT_EQUAL(donor.volume(), 0, "merged donor retained volume")
 
 	qdel(receiver)
 	TEST_ASSERT_NULL(line.network, "destroyed receiving network remained referenced by its pipeline")
@@ -6281,13 +6236,24 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_reconcile_air_three_pipes_conserves_mass/Run()
 	var/datum/pipe_network/net = new
 	var/list/lines = list()
+	var/list/pipes = list()
+	var/turf/pipe_turf
+	for(var/turf/simulated/floor/cand in world)
+		if(cand.air && !cand.blocks_air)
+			pipe_turf = cand
+			break
+	TEST_ASSERT_NOTNULL(pipe_turf, "no floor for the three-pipeline test")
 	var/initial_total = 0
 	var/initial_thermal = 0
 	for(var/i = 1 to 3)
 		var/datum/pipeline/line = new
-		atmos_air_set(line, nameof(line.air), new /datum/gas_mixture(70))
-		line.volume = 70
-		rel_set(line, nameof(line.network), net)
+		atmos_air_set(line, "air", new /datum/gas_mixture(70))
+		// A line's physical volume is its member pipes' (never a stored number): give it one.
+		var/obj/machinery/atmospherics/pipe/simple/member = new(pipe_turf)
+		member.volume = 70
+		rel_set(member, "parent", line)
+		pipes += member
+		rel_set(line, "network", net)
 		line.air.adjust_gas(i == 1 ? /datum/gas/oxygen : /datum/gas/nitrogen, i * 25)
 		line.air.set_temperature(T20C + i * 20)
 		initial_total += line.air.total_moles()
@@ -6314,6 +6280,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT(abs(split_thermal - initial_thermal) < initial_thermal * 0.05, "topology split lost energy")
 	for(var/datum/pipeline/line as anything in lines)
 		qdel(line)
+	for(var/obj/machinery/atmospherics/pipe/member as anything in pipes)
+		qdel(member)
 
 
 // =====================================================================
@@ -7125,7 +7093,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /// The heat domain's turf field is wired end-to-end. A heat-eligible turf
 /// (thermal_conductivity > 0 and heat_capacity > 0) must report its solid heat
 /// cell's temperature through get_temperature(): the value
-/// update_heat_cell() seeded from turf.temperature when SSair registered the turf.
+/// update_heat_cell() seeded from turf.initial_temperature when SSair registered the turf.
 /// It fails if the heat feature is dropped from the DLL, the registration path
 /// (setup_allturfs -> heat_register_turfs, update_air_ref -> update_heat_cell)
 /// breaks, or the heat world is not configured before turfs register.
@@ -7216,9 +7184,11 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/mixture_id = air.arena_id()
 	var/datum/dq_gas_dependency_probe/probe = new
 	var/datum/native_watch/gas/W = gas_dependency_watch(probe, mixture_id, GAS_DEPENDENCY_ALL, TYPE_PROC_REF(/datum/dq_gas_dependency_probe, on_dependency))
-	vg_drain_dirty_gas_observations()
+	native_system().drain()
+	native_system().take_gas_changes()
 	air.adjust_moles(/datum/gas/oxygen, 1)
-	var/list/observation = vg_drain_dirty_gas_observations()
+	native_system().drain()
+	var/list/observation = native_system().take_gas_changes()
 	TEST_ASSERT_EQUAL(length(observation), GAS_DEPENDENCY_OBSERVATION_STRIDE, "dirty gas observation did not use the documented atomic stride")
 	TEST_ASSERT_EQUAL(observation[1], W.handle, "dirty gas observation named the wrong watch")
 	TEST_ASSERT_EQUAL(observation[2], mixture_id, "dirty gas observation returned the wrong arena mixture")

@@ -25,11 +25,9 @@ SUBSYSTEM_DEF(air)
 	var/cost_highpressure = 0
 	var/cost_superconductivity = 0
 	var/cost_pipenets = 0
-	/// Pipenet-stage breakdown (ms, MC average): topology commit and the Rust device-edge step.
+	/// Pipenet-stage breakdown (ms, MC average): topology commit (the device step is a frame period; cost_pipe_devices stays 0).
 	var/cost_pipe_commit = 0
 	var/cost_pipe_devices = 0
-	/// Device-edge results the last fire's step returned (devices that moved gas or drew power).
-	var/pipe_devices_reported_last = 0
 	var/cost_rebuilds = 0
 	/// Main-thread cost of the gas tick and its events, in milliseconds.
 	var/cost_gas_events = 0
@@ -41,8 +39,8 @@ SUBSYSTEM_DEF(air)
 
 	/// Turf gas runs on the Rust gas field (verdigris/domains/gas, M1b): each
 	/// fire pins the newest frame, starts the next, and pushes its events
-	/// (reactions, visuals, spacewind) as typed events -- vg_drain_events()
-	/// dispatches them to SSvg's on_gas_cell_*() overrides, same as every
+	/// (reactions, visuals, spacewind) as typed events -- the native system
+	/// (code/datums/native/system.dm) dispatches them to SSvg's on_gas_cell_*() overrides, same as every
 	/// other domain's events (rust_architecture.md §4.8).
 	/// Gas frames started so far (vg_gas_stats()[1]).
 	var/gas_frames = 0
@@ -76,7 +74,7 @@ SUBSYSTEM_DEF(air)
 
 	//Special functions lists
 	// Turf heat is the heat domain (vg-heat, code/modules/heat/heat.dm): the
-	// SSAIR_SUPERCONDUCTIVITY fire() step below calls process_turf_heat().
+	// SSAIR_SUPERCONDUCTIVITY fire() step below is a marker only: the frame steps heat.
 	// high_pressure_delta moved up next to the auxmos tunables (auxmos appends to it).
 	// atom_process removed; see cost_atoms comment.
 	/// Reactions which will contribute to a hotspot's size.
@@ -210,16 +208,15 @@ SUBSYSTEM_DEF(air)
 		currentpart = SSAIR_TURFS
 
 	// === Turf gas (the TurfGas field on the shared Rust World) ===
-	// The world is stepped by SSvg (vg_world_tick()); its reaction, visual and
-	// spacewind notifications are typed events, dispatched to SSvg's
-	// on_gas_cell_*() overrides below by vg_drain_events().
+	// The world is stepped by the native system's frame (once a tick, from the
+	// OM scheduler); its reaction, visual and spacewind notifications are typed
+	// events, dispatched to SSvg's on_gas_cell_*() overrides below.
 	if(currentpart == SSAIR_TURFS)
 		timer = TICK_USAGE_REAL
 		gas_events_last = 0
 		gas_reactions_last = 0
 		gas_visuals_last = 0
 		gas_pressure_last = 0
-		vg_drain_events()
 		gas_frames++
 		phase_cost = TICK_USAGE_REAL - timer
 		// Dispatch no longer has a cost separate from the tick itself (both
@@ -244,11 +241,9 @@ SUBSYSTEM_DEF(air)
 		resumed = FALSE
 		currentpart = SSAIR_SUPERCONDUCTIVITY
 
-	// The heat domain: turf<->turf conduction, radiation to space, turf<->air and
-	// heat bodies run as frames on vg-heat's pool. process_turf_heat() only
-	// collects the finished frame, starts the next, and dispatches watch wakes.
+	// The heat domain (turf<->turf conduction, radiation to space, turf<->air and
+	// heat bodies) runs in the Rust world; its watch wakes leave in the frame.
 	if(currentpart == SSAIR_SUPERCONDUCTIVITY)
-		process_turf_heat()
 		resumed = FALSE
 
 	// SSAIR_PROCESS_ATOMS step removed; see cost_atoms comment.
@@ -271,15 +266,15 @@ SUBSYSTEM_DEF(air)
 	queued_for_activation = SSair.queued_for_activation
 
 /// Test hook: runs `frames` gas frames to completion, deterministically (no
-/// wall clock), and dispatches their events like fire() does (`vg_drain_
-/// events()` -- see the SSAIR_TURFS step's own docs).
+/// wall clock), and dispatches their events like the frame does (the native
+/// system's drain()).
 /datum/controller/subsystem/air/proc/run_gas_frames(frames = 1)
 	gas_events_last = 0
 	gas_reactions_last = 0
 	gas_visuals_last = 0
 	gas_pressure_last = 0
 	vg_world_run_steps(frames)
-	vg_drain_events()
+	native_system().drain()
 	gas_frames += frames
 	process_high_pressure_delta()
 
@@ -292,6 +287,7 @@ SUBSYSTEM_DEF(air)
 	if(!istype(T))
 		return
 	SSair.gas_reactions_last++
+	native_fired(NATIVE_SRC_GAS_EVENT)
 	if(T.air)
 		T.air.react(T)
 
@@ -304,6 +300,7 @@ SUBSYSTEM_DEF(air)
 		return
 	SSair.gas_visuals_last++
 	T.set_visuals()
+	native_changed(T, CHANGE_TURF_GAS_VISUAL, NATIVE_SRC_GAS_EVENT)
 
 /// Spacewind: `cell`'s pressure differs from open neighbour `neighbor`'s by
 /// more than the threshold (`GasEvent::PressureJump`): the same
@@ -316,6 +313,7 @@ SUBSYSTEM_DEF(air)
 	if(!istype(T) || !istype(other))
 		return
 	SSair.gas_pressure_last++
+	native_fired(NATIVE_SRC_GAS_EVENT)
 	T.consider_pressure_difference(other, delta)
 
 /datum/controller/subsystem/air/proc/process_pipenets(resumed = FALSE)
@@ -323,9 +321,7 @@ SUBSYSTEM_DEF(air)
 		var/stage_timer = TICK_USAGE_REAL
 		rust_commit_pending_pipenets()
 		cost_pipe_commit = MC_AVERAGE(cost_pipe_commit, TICK_DELTA_TO_MS(TICK_USAGE_REAL - stage_timer))
-		stage_timer = TICK_USAGE_REAL
-		rust_step_pipe_devices()
-		cost_pipe_devices = MC_AVERAGE(cost_pipe_devices, TICK_DELTA_TO_MS(TICK_USAGE_REAL - stage_timer))
+		// The pipe devices step inside the frame (a period on it), not here.
 		src.currentrun = networks.Copy()
 	//cache for sanic speed (lists are references anyways)
 	var/list/currentrun = src.currentrun

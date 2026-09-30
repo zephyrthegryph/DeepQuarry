@@ -344,6 +344,13 @@
 	rust_valve_entity = vg_bind_device_valve(rust_valve_entity, device_index, open)
 	return rust_valve_entity != 0
 
+/// Binds many DeviceFlow rows in one FFI call (round-start registration; runtime edits stay
+/// single via rust_set_device_flow()). `rows` is flat, nine values per row: row entity (0: a new
+/// one), device entity index, gases, rate_kind (RUST_FLOW_*), rate, direction, stop_side,
+/// stop_cmp, stop_kpa. Returns the row entity handles in row order.
+/proc/rust_bind_device_flow_list(list/rows)
+	return vg_component_bind_list(VG_KIND_DEVICEFLOW, list(VG_DEVICEFLOW_FIELD_DEVICE, VG_DEVICEFLOW_FIELD_GASES, VG_DEVICEFLOW_FIELD_RATE_KIND, VG_DEVICEFLOW_FIELD_RATE, VG_DEVICEFLOW_FIELD_DIRECTION, VG_DEVICEFLOW_FIELD_STOP_SIDE, VG_DEVICEFLOW_FIELD_STOP_CMP, VG_DEVICEFLOW_FIELD_STOP_KPA), rows)
+
 /obj/machinery/atmospherics/proc/rust_unregister_device()
 	if(rust_flow_entity)
 		vg_entity_unbind(rust_flow_entity)
@@ -419,23 +426,14 @@
 /obj/machinery/atmospherics/proc/rust_device_stepped(moles, power_w, target_reached)
 	return
 
-/// Runs every device edge's flow law for this tick and dispatches results
-/// (`SSair.fire()`, from `process_pipenets`).
+#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
+/// Test hook: steps every pipe device now, as a frame does once a period, and delivers their reports.
 /datum/controller/subsystem/air/proc/rust_step_pipe_devices()
 	if(!rust_pipe_device_count)
 		return
-	var/dt = wait / 10
-	var/list/result = vg_pipe_step_devices(dt)
-	pipe_devices_reported_last = length(result) / 4
-	var/cursor = 1
-	while(cursor <= length(result))
-		var/id = result[cursor++]
-		var/moles = result[cursor++]
-		var/power_w = result[cursor++]
-		var/target_reached = result[cursor++]
-		var/obj/machinery/atmospherics/device = SSvg.entity_lookup(id)
-		if(istype(device) && device.rust_owns_device(id))
-			device.rust_device_stepped(moles, power_w, target_reached)
+	vg_frame_force_devices()
+	native_system().drain()
+#endif
 
 /// Publish the complete map topology once, then materialize all compatibility
 /// `/datum/pipe_network` wrappers from Rust's atomic connected-region result.
@@ -554,13 +552,10 @@
 /datum/controller/subsystem/air/proc/rust_materialize_pipe_region(list/transition)
 	var/region = transition["region"]
 	var/list/ports = transition["ports"]
-	var/volume = transition["volume"]
 	var/datum/gas_mixture/region_air = transition["air"]
 	var/datum/pipe_network/network = new
 	network.rust_authoritative = TRUE
-	own_set(network, nameof(network.air), region_air)
-	network.sync_gases()
-	network.volume = volume
+	own_set(network, "air", region_air)
 	network.update = FALSE
 	rust_pipe_region_networks[region] = network
 
@@ -582,14 +577,12 @@
 
 	if(length(region_pipes))
 		var/datum/pipeline/pipeline = new
-		atmos_air_set(pipeline, nameof(pipeline.air), region_air)
-		pipeline.volume = 0
-		rel_clear(pipeline, nameof(pipeline.leaks))
-		rel_set(pipeline, nameof(pipeline.network), network)
+		atmos_air_set(pipeline, "air", region_air)
+		rel_clear(pipeline, "leaks")
+		rel_set(pipeline, "network", network)
 		for(var/obj/machinery/atmospherics/pipe/pipe as anything in region_pipes)
 			rel_set(pipe, nameof(pipe.parent), pipeline) // two-sided: adds the pipe to pipeline.members
 			MACHINE_WAKE(pipe) // a pipe with DM work (HE pipes) re-evaluates on joining; others don't listen
-			pipeline.volume += pipe.volume
 			if(pipe.leaking)
 				rel_add(pipeline, nameof(pipeline.leaks), pipe)
 				rel_add(network, nameof(network.leaks), pipe)

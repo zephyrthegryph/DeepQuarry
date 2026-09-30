@@ -13,14 +13,14 @@
 	var/list/smes_charges = list()
 	var/list/generators = list()
 	for(var/obj/machinery/power/smes/SMES in topology.power_objects)
-		smes_charges[SMES] = SMES.charge
-		SMES.charge = 0
+		smes_charges[SMES] = SMES.stored_charge()
+		SMES.set_stored_charge(0)
 	for(var/obj/machinery/power/generator/generated_station/generator in topology.power_objects)
 		generators += generator
 		generator.stat_add(BROKEN)
 	TEST_ASSERT(!topology.power_available(), "Generated microgrid remained available after every source was depleted")
 	for(var/obj/machinery/power/smes/SMES as anything in smes_charges)
-		SMES.charge = smes_charges[SMES]
+		SMES.set_stored_charge(smes_charges[SMES])
 	for(var/obj/machinery/power/generator/generated_station/generator as anything in generators)
 		generator.stat_remove(BROKEN)
 	TEST_ASSERT(topology.power_available(), "Generated microgrid did not recover after restoring its physical sources")

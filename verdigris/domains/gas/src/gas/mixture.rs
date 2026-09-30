@@ -336,6 +336,87 @@ impl Mixture {
 		let cap = self.heat_capacity();
 		self.set_temperature((cap * self.temperature + heat) / cap);
 	}
+
+	/// `mask` (a `1 << gas_id` bitset; 0 means every gas) as the gas indices it names.
+	#[must_use]
+	pub fn mask_indices(mask: u32) -> Vec<GasIDX> {
+		(0..N.min(32))
+			.filter(|i| mask == 0 || mask & (1 << i) != 0)
+			.collect()
+	}
+
+	/// Total moles of the gases in `mask` (0: every gas).
+	#[must_use]
+	pub fn masked_moles(&self, mask: u32) -> f32 {
+		Self::mask_indices(mask)
+			.into_iter()
+			.map(|i| self.moles[i])
+			.sum()
+	}
+
+	/// The moles of `mask`'s gases that, moved from `self` into `sink` (whose
+	/// volume is enlarged by `sink_volume_mod` litres, for a sink that shares
+	/// a pipe network), bring the sink to exactly `target_kpa`, or 0 when it
+	/// is already there. Solves the ideal-gas mixing equation by bisection
+	/// instead of the old DM quadratic-with-Newton-fallback, so it cannot
+	/// fail to converge. Capped at the moles `self` holds in `mask`.
+	#[must_use]
+	pub fn moles_to_pressure(&self, sink: &Self, target_kpa: f32, mask: u32, sink_volume_mod: f32) -> f32 {
+		let idx = Self::mask_indices(mask);
+		let avail = f64::from(self.masked_moles(mask));
+		let src_cap: f64 = idx
+			.iter()
+			.map(|&i| f64::from(self.moles[i]) * f64::from(SPECIFIC_HEATS[i]))
+			.sum();
+		let t_src = f64::from(self.temperature);
+		if avail <= 0.0 || src_cap <= 0.0 || t_src <= 0.0 {
+			return 0.0;
+		}
+		let vol = f64::from((sink.volume + sink_volume_mod).max(1e-3));
+		let r = f64::from(R_IDEAL_GAS_EQUATION);
+		let target = f64::from(target_kpa);
+		let n1 = f64::from(sink.total_moles());
+		let (c1, t1) = (f64::from(sink.heat_capacity()), f64::from(sink.temperature));
+		let w1 = c1 * t1;
+		// Per-mole heat capacity and energy of the incoming gas.
+		let (c_mol, w_mol) = (src_cap / avail, src_cap * t_src / avail);
+		let pressure_after = |n: f64| {
+			let temp = (w1 + n * w_mol) / (c1 + n * c_mol).max(1e-9);
+			(n1 + n) * r * temp / vol
+		};
+		if pressure_after(0.0) >= target {
+			return 0.0;
+		}
+		if pressure_after(avail) <= target {
+			return avail as f32;
+		}
+		let (mut lo, mut hi) = (0.0_f64, avail);
+		for _ in 0..48 {
+			let mid = 0.5 * (lo + hi);
+			if pressure_after(mid) < target {
+				lo = mid;
+			} else {
+				hi = mid;
+			}
+		}
+		(0.5 * (lo + hi)) as f32
+	}
+
+	/// Moves up to `moles` of `mask`'s gases into `sink` (with their heat);
+	/// returns the moles moved.
+	pub fn transfer_masked_into(&mut self, sink: &mut Self, mask: u32, moles: f32) -> f32 {
+		let avail = self.masked_moles(mask);
+		let moles = moles.min(avail);
+		if moles <= 0.0 || avail <= 0.0 {
+			return 0.0;
+		}
+		if mask == 0 {
+			sink.merge(&self.remove(moles));
+		} else {
+			self.transfer_gases_to(moles / avail, &Self::mask_indices(mask), sink);
+		}
+		moles
+	}
 }
 
 #[cfg(test)]
@@ -371,5 +452,28 @@ mod tests {
 		let new_two = removed.remove_ratio(0.5);
 		assert!(removed.compare(&new_two) >= MINIMUM_MOLES_DELTA_TO_MOVE);
 		assert_eq!((removed.get_moles(0), new_two.get_moles(0)), (11.0, 5.5));
+	}
+
+	#[test]
+	fn moles_to_pressure_lands_on_target() {
+		let mut src = Mixture::from_vol(1000.0);
+		src.set_moles(0, 80.0);
+		src.set_moles(1, 20.0);
+		src.set_temperature(350.0);
+		let mut sink = Mixture::from_vol(200.0);
+		sink.set_moles(0, 10.0);
+		sink.set_temperature(293.15);
+		let n = src.moles_to_pressure(&sink, 300.0, 0, 0.0);
+		assert!(n > 0.0);
+		let moved = src.transfer_masked_into(&mut sink, 0, n);
+		assert!((moved - n).abs() < 1e-3);
+		assert!((sink.return_pressure() - 300.0).abs() < 0.5, "{}", sink.return_pressure());
+		// Already at or above target: nothing moves.
+		assert_eq!(src.moles_to_pressure(&sink, 300.0, 0, 0.0), 0.0);
+		// Masked: only gas 1 moves.
+		let before = src.get_moles(0);
+		let n = src.moles_to_pressure(&sink, 400.0, 1 << 1, 0.0);
+		let _ = src.transfer_masked_into(&mut sink, 1 << 1, n);
+		assert_eq!(src.get_moles(0), before);
 	}
 }

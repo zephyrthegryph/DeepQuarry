@@ -158,11 +158,11 @@
 				return
 		else if (istype(N, /obj/machinery/power/smes/buildable)) // SMES. These explode in a very very very big boom. Similar to magnetic containment failure when messing with coils.
 			var/obj/machinery/power/smes/buildable/S = N
-			if(S.charge && S.RCon)
-				explosion_intensity = 4 + round(S.charge / 1000000)
+			if(S.stored_charge() && S.RCon)
+				explosion_intensity = 4 + round(S.stored_charge() / 1000000)
 			else
 				// Different error texts
-				if(!S.charge)
+				if(!S.stored_charge())
 					to_chat(user, span_notice("ERROR: SMES Depleted. Unable to overload. Please charge SMES unit and try again."))
 				else
 					to_chat(user, span_notice("ERROR: SMES RCon error - Unable to reach destination. Please verify wire connection."))

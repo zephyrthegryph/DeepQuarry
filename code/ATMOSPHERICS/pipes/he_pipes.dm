@@ -128,14 +128,14 @@
 	else
 		var/can_hibernate = !leaking && !has_buckled_mobs()
 		if(leaking)
-			parent.mingle_with_turf(loc, volume)
+			parent.leak_into(loc, volume)
 		var/datum/gas_mixture/pipe_air = return_air()
 		var/pipe_temperature = pipe_air.return_temperature()
 		if(istype(loc, /turf/simulated/))
 			var/turf/simulated/loc_as_turf = loc
 			var/environment_temperature = 0
 			if(loc_as_turf.blocks_air)
-				environment_temperature = loc_as_turf.temperature
+				environment_temperature = loc_as_turf.get_temperature()
 				can_hibernate = FALSE
 			else
 				var/datum/gas_mixture/environment = loc_as_turf.return_air()
@@ -144,7 +144,7 @@
 				can_hibernate = FALSE
 				var/datum/material/material = engineered_material()
 				var/effective_conductivity = material ? clamp(material.material_thermal_conductance(surface, 0.004, pipe_temperature) / 10000, 0.001, 1) : thermal_conductivity
-				parent.temperature_interact(loc, volume, effective_conductivity)
+				parent.exchange_heat_with_turf(loc, volume, effective_conductivity)
 		else if(istype(loc, /turf/space/))
 			if(abs(pipe_temperature - TCMB) > minimum_temperature_difference)
 				can_hibernate = FALSE

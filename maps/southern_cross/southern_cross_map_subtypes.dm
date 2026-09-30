@@ -7,7 +7,7 @@
 // coil count stay as map edits.
 
 /obj/machinery/power/smes/buildable/auxiliary_main
-	charge = 1e7
+	initial_charge = 1e7
 	input_level = 500000
 	output_level = 500000
 
@@ -15,13 +15,13 @@
 	input_attempt = TRUE
 
 /obj/machinery/power/smes/buildable/engine_core
-	charge = 2e6
+	initial_charge = 2e6
 	input_attempt = TRUE
 	input_level = 100000
 	output_level = 200000
 
 /obj/machinery/power/smes/buildable/engine_main
-	charge = 1e7
+	initial_charge = 1e7
 	input_attempt = TRUE
 	input_level = 750000
 	output_level = 750000
@@ -30,34 +30,34 @@
 	input_attempt = TRUE
 
 /obj/machinery/power/smes/buildable/power_shuttle/active
-	charge = 4e6
+	initial_charge = 4e6
 	input_attempt = TRUE
 	inputting = TRUE
 	outputting = TRUE
 
 /obj/machinery/power/smes/buildable/power_shuttle/charging
-	charge = 2e6
+	initial_charge = 2e6
 	input_attempt = TRUE
 	inputting = TRUE
 
 /obj/machinery/power/smes/buildable/precharged
-	charge = 2e6
+	initial_charge = 2e6
 	input_attempt = TRUE
 
 /obj/machinery/power/smes/buildable/precharged_large
-	charge = 5e6
+	initial_charge = 5e6
 	input_attempt = TRUE
 	input_level = 200000
 	output_level = 200000
 
 /obj/machinery/power/smes/buildable/reactor_auxiliary
-	charge = 2e6
+	initial_charge = 2e6
 	input_attempt = TRUE
 	input_level = 500000
 	output_level = 350000
 
 /obj/machinery/power/smes/buildable/reactor_main
-	charge = 2e6
+	initial_charge = 2e6
 	input_attempt = TRUE
 	input_level = 750000
 	output_level = 750000
@@ -68,10 +68,10 @@
 	output_level = 100000
 
 /obj/machinery/power/smes/buildable/substation_research
-	charge = 1e7
+	initial_charge = 1e7
 
 /obj/machinery/power/smes/buildable/telecommunications_satellite
-	charge = 6e6
+	initial_charge = 6e6
 	input_attempt = TRUE
 	inputting = TRUE
 	output_level = 250000

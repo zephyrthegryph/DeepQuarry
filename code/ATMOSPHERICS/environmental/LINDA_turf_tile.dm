@@ -111,7 +111,7 @@
 	// Air template as type-table data (doc/rewrite/init_and_turfs.md sec 3.1): a turf whose gas
 	// string and temperature are its type's copies one mixture built once per type, instead of
 	// building a "[string]-[type]" cache key and re-checking the temperature per turf.
-	if(initial_gas_mix == initial(initial_gas_mix) && temperature == initial(temperature))
+	if(initial_gas_mix == initial(initial_gas_mix) && initial_temperature == initial(initial_temperature))
 		var/static/list/air_templates = list()
 		var/datum/gas_mixture/template = air_templates[type]
 		if(!template)
@@ -125,10 +125,10 @@
 	PRIVATE_PROC(TRUE)
 	var/datum/gas_mixture/mix = SSair.parse_gas_string(initial_gas_mix, /datum/gas_mixture/turf)
 
-	//acounts for changes in temperature
+	//acounts for changes in temperature: the seed, once
 	var/turf/parent = parent_type
-	if(temperature != initial(temperature) || temperature != initial(parent.temperature))
-		mix.set_temperature(temperature) // arena-backed write (no DM mirror under the opaque-handle model)
+	if(initial_temperature != initial(initial_temperature) || initial_temperature != initial(parent.initial_temperature))
+		mix.set_temperature(initial_temperature) // arena-backed write (no DM mirror under the opaque-handle model)
 
 	return mix
 

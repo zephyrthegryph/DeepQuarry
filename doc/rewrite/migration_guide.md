@@ -938,38 +938,41 @@ After the kernel: `SUBSYSTEM_DEF(x)` becomes `/datum/system/x`, `Initialize()` b
 - **Writes:** a command proc in the owner's `api.dm`, or an event the owner handles.
 - **Baseline:** 1,657 accesses (242 writes), shrink-only.
 
-## B25. Rust: no DM copies, no DM re-implementations
+## B25. Rust: no DM copies, no DM re-implementations [built on `rewrite/f-rust`]
 
-**Mirrors to delete:**
+**Mirrors deleted or reduced:**
 
 | DM copy | New |
 |---|---|
-| `pipe_network.volume` (and DM arithmetic on it, `datum_pipe_network.dm:139,171,182,194,227,245`) | `volume()` → `air.return_volume()`; `air.set_volume()` is the only write |
-| `pipeline.volume`, `pipe_network.gases`, `sync_gases()` | delete |
-| `turf.temperature` (`turf.dm:32`) | rename to `initial_temperature` (the map seed); runtime reads use `get_temperature()` |
-| SMES `charge`, `input_available`, `output_used`, … (`smes.dm:27-40,191-215`) | read `get_charge()` and similar live in `tgui_data`/`draw`; a Rust power event calls `changed()` |
-| grid `PGRID_*` and the eased view values (`power_grid.dm:67-95`) | read live; easing moves to the client (streamed rate) |
-| DM inputs to Rust components (`SSvg` drift sweep, `vg.dm:2-14`) | a `TRACKED` setter that writes through; the sweep becomes a test-only assert |
+| `pipe_network.volume`, `pipeline.volume`, `pipe_network.gases`, `sync_gases()` | deleted; `volume()` reads `air.return_volume()` [built, rust-integration] |
+| `turf.temperature` | `initial_temperature`, a **seed** read once when the heat cell and the air are built. The live temperature is `get_temperature()`; `set_temperature()`/`add_heat()` write it. `check_grep.sh` rejects a turf `.temperature` [built] |
+| grid `PGRID_VIEWAVAIL` / `PGRID_VIEWLOAD` (the eased view values) | deleted; `power_view_avail()` / `power_view_load()` return the raw ledger value and the monitor UI eases what it shows on the client [built; the TSX easing is not written, see below] |
+| DM inputs to Rust components (`SSvg` drift sweep) | the sweep is gone from production: `SSvg` is `SS_NO_FIRE`, `reconcile_all()` and `vg_reconcile_all()` exist only in test builds (the sandbox teardown and the binding fuzz test) [built] |
+| hand pushes after a generated setter | a generated setter (`set_<field>()` of a Rust config field) ends with `rust_pushed()`. A type overrides it to re-publish state Rust does not own; nobody pushes by hand after a setter. Built for the pump (`pump.dm`) [built] |
+| SMES `charge`, `input_available`, `output_used` | unchanged [planned] |
+| APC `sync_cell_charge()`, the radiation shielding flush, `power_sync()`, the other four devices' `update_rust_device()` | these push **DM-owned vars** (not Rust config fields), so the generated-setter hook cannot reach them. They become `TRACKED` + `rust_push` once W1's reactions land [planned] |
 
-**DM maths Rust already owns.** Exact callers on `integrate/b17`:
+**Gas moves are Rust.** `pump_gas()`, `pump_gas_passive()`, `queue_pump_gas()` and `scrub_gas()` are thin wrappers: they apply the machine's material hooks (`material_pump_efficiency()`, `material_pump_power()`, `record_material_pumping()`) and feed the flow meter, and `vg_pump()` / `vg_scrub()` do the maths **and** the move in one call (`verdigris/domains/gas/src/power_budget.rs`). `calculate_transfer_moles()` is one Rust solve (`vg_moles_to_pressure`). Deleted: `filter_gas()`, `filter_gas_multi()`, `mix_gas()`, `calculate_specific_power()` (now `vg_specific_power()`), `calculate_specific_power_gas()`, `calculate_equalize_moles()`. The trinary filter, omni filter and both mixers already call `vg_filter_transfer*` and `vg_mix_transfer`.
 
-| DM proc | Production callers | New |
+`mingle_with_turf()` is `pipeline.leak_into()`, one `vg_batch_mingle_hook` call. `temperature_interact()` is `pipeline.exchange_heat_with_turf()`, whose every branch (open turf, wall, special-temperature surface, unsimulated turf) is `vg_thermal_exchange()`, the one Rust formula. A pipe as a heat body coupled to the turf (the heat domain's `GasCoupling`) is the eventual form; it needs a body whose capacity follows its gas.
+
+**Rate models.** There is one DM API: `om_rate_*`. The `dq_rx_rate_*` wrappers are deleted (rules call `om_rate_*`). There is one Rust implementation, `vg_core::rate::RateModel`.
+
+## B26. Rust → DM changes: one door, the frame outbox [built on `rewrite/f-rust`]
+
+One call per tick, `vg_frame(elapsed, budget)`, steps the Rust world (laws, heat, gas, power), ticks the hosts, steps the pipe devices on their own period and the scheduler (timers, rate crossings, keys, every watch port), and returns **one outbox page**:
+
+| record | meaning | goes to |
 |---|---|---|
-| `pump_gas()` | `outlet_injector.dm:97`, `dp_vent_pump.dm:132,142`, `disposal_machines.dm:633`, `atmoalter/pump.dm:103,105,302,304` | `vg_transfer_to_pressure()` [planned bind], or bind the device to the Rust flow law |
-| `scrub_gas()` | `algae_generator.dm:95`, `atmoalter/scrubber.dm:77,241` | Rust scrub flow law |
-| `calculate_transfer_moles()` | `dp_vent_pump.dm:131,138`, `machine_pipeline.dm:565`, `bomb_tester.dm:347` | folded into the bind |
-| `filter_gas()`, `filter_gas_multi()`, `mix_gas()` | **tests only** (the trinary filter, omni filter and mixer already run in Rust, but compute their rates in DM: `filter.dm:85-140`, `mixer.dm:59-112`) | delete the DM procs and point their tests at the Rust path; `Rate::Fraction` so DM stops computing rates |
-| `pump_gas_to()`, `release_gas_to()`, `gas_pressure_calculate()` (+ `quadratic`/`approximate`) | **none: dead code** | delete |
-| `mingle_with_turf()`, `temperature_interact()` | `pipe_base.dm:205` (leaking pipe), `he_pipes.dm:131,147` | the Rust batch mingle and heat coupling |
+| `NATIVE_REC_CHANGED (entity, key)` | a value changed (gas observation, a change watch) | `native_publish_change()`, the machine service's gas queue, or a world watch's lane |
+| `NATIVE_REC_NOTICE (entity, kind, args)` | a typed event, or a pipe device's step | the generated `on_<component>_<event>()`, `native_publish_notice()`, `device.rust_device_stepped()` |
+| `NATIVE_REC_CROSSED (watch, band, detail)` | a watch crossed a band (heat threshold, band, set entry; world watches; timers, rates, keys) | `native_crossed()` |
 
-## B26. Rust → DM changes: one adapter [planned]
+`/datum/system/native` (`code/datums/native/system.dm`) delivers them; the OM scheduler calls its `frame()` once per tick (`world_step()`). `native_read(E, key)` reads a Rust-owned value through a per-frame cache that a CHANGED record for the entity clears. The three `native_*` procs are the seam to the reaction framework: today they raise OM channels/events and call the watch's own callback; at integration they call `publish_change`, `PUBLISH` and `on_cross`.
 
-The five patterns (typed events in `SSair`, gas-dirty observations in `machine_service`, world watches, heat wakes, and polling in power/SMES) become one drain adapter:
-- it resolves a page of cells or entities in one call;
-- it calls `changed(atom, channel)`;
-- look, UI and `should_run()` follow automatically.
+The old drivers and drains are gone from DM: `vg_world_tick`, `vg_world_events`, `vg_world_step`, `vg_entity_tick_all`, `vg_heat_tick`, `vg_heat_take_wakes`, `vg_pipe_step_devices`, `vg_drain_dirty_gas_observations`, `vg_drain_events` (now `vg_dispatch_notice`, called by the native system per NOTICE). Heat watches are ordinary watch ports: a body uses its world kind (`VG_KIND_HEATBODY`), the turf solid `VG_HEAT_CELLS`, both through the generic `vg_world_watch_*` binds (and `vg_world_watch_set*` for the heat ledger's threshold sets); the bespoke `vg_heat_watch*` binds are deleted.
 
-New code must **not** add a sixth path. Until the adapter lands, use the existing gas-dependency watch or world watch (`om_world_when`/`om_world_on_change`). Never poll in a step.
+Tests that step Rust by hand call `vg_world_run_steps(n)` and then `native_system().drain()` (delivers what Rust holds without pacing); `SSair.rust_step_pipe_devices()` is the test hook that forces a device period.
 
 ## B27. TGUI pushes and payloads
 
