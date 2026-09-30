@@ -565,8 +565,6 @@ dx_raw_overlays	code/modules/point/point.dm	thought_bubble.overlays += pointed_a
 dx_raw_overlays	code/modules/point/point.dm	thought_bubble.overlays += point_visual
 dx_raw_overlays	code/modules/point/point.dm	add_overlay(thought_bubble)
 dx_raw_overlays	code/modules/point/point.dm	cut_overlay(thought_bubble)
-dx_raw_overlays	code/modules/power/apc_icon_renderer.dm	apc.cut_overlays()
-dx_raw_overlays	code/modules/power/apc_icon_renderer.dm	apc.add_overlay(new_overlays)
 dx_raw_overlays	code/modules/power/cells/power_cells.dm	add_overlay("[icon_state]_100")
 dx_raw_overlays	code/modules/power/cells/power_cells.dm	cut_overlays()
 dx_raw_overlays	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	add_overlay(list(I, image(icon, "fuel_assembly_bracket")))

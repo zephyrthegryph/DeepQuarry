@@ -143,6 +143,12 @@ joins the cadence's membership and `om_task_periodic_stop()` / `PROCESS_KILL` le
 whose member left mid-step, so the member swapped into it is not skipped. A hotspot's burn is an `every()` on
 `/obj/effect/hotspot`.
 
+**Spread sweeps.** A cadence slower than the tick sets `work_item.spread`: its sweep is spread across the interval
+(`run_item_spread()`, the old ring's phase property). Each pass runs the members due by the end of that tick (the share of
+the interval elapsed since the sweep began), so every member keeps its phase and a large set costs a slice per tick rather
+than a spike once per interval. A sweep that fell behind catches up by at most `KERNEL_SPREAD_CATCHUP` passes' share per
+pass; the next sweep begins one interval after the last began, or at once if it ran late. Cost is counted once per sweep.
+
 **Stages.** The 13 periodic stages and the 2 hotspot stages moved. The 228 life stage definitions and 23 machine stage
 definitions (plus the test and bench fixtures) still run on the object-model engine: a frame is per entity (shared
 facts, `F.abort()`, plans per entity type and variant, idle bits, parking, relevance, the missed-wake audit,

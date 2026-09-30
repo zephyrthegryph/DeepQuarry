@@ -170,3 +170,14 @@ A lock is one op, `CAP_LOCK` (action `ACT_LOCK`), declared by `lock_op()` (the h
 with anything in hand; a plain click reaches it only while holding a card the lock takes (`click_with`, read with the
 gesture in `GLOB.op_gesture_now`), so a click with a wrench stays the wrench's. The credential is a provider found like a hand
 (`cap_lock_credential()`): the held card, then the actor's own access (worn ID or PDA, a silicon's access). The op takes no slot provider.
+
+## Shared requirements and routes [built]
+
+Machine contracts are shared flyweights with standard reasons, not per-type procs: `req_working()` (not broken, not under
+maintenance; `/datum/msg/req_not_working`, "It isn't working."), `req_not_subverted()` (the holder's `is_subverted()`: emagged, or
+an AI hack on the APC; `req_subverted`, "It doesn't respond."), `req_on_route(routes, req)` (ask `req` only over those routes: an
+open cover blocks a hand, `ROUTE_PHYSICAL`, but not a silicon's interface), `req_claws()` and `req_heard(notice)`.
+
+A click travels the actor's route, `mob/op_route(held)`: `ROUTE_PHYSICAL` by default, `ROUTE_INTERFACE` for a silicon's empty-handed
+click. An op that does not accept the click's route at all is not what the click means: the router falls through to the resolver.
+Every breakable machine carries `claw_op()` (`CAP_CLAW`, from `machine_basics()`), which publishes `/datum/notice/slashed`.

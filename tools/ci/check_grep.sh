@@ -203,10 +203,11 @@ if $grep -n "^/(mob|datum/species|datum/trait)[a-zA-Z0-9_/]*/(proc/)?handle_($LI
 fi;
 
 part "pipelines: idle and park state in one place"
-# Only the core pipeline runner (code/datums/om/pipeline.dm) changes whether a stage is idle or
+# Only the core pipeline runner (code/datums/om/pipeline.dm) and the kernel's work engine
+# (code/controllers/kernel/, a faulting work item parks) change whether a stage is idle or
 # an entity is parked; producers raise a change channel with om_changed()
 # (doc/rewrite/object_model_core.md §4.10).
-if $grep -n '\.(asleep|parked|parked_index|idle_frames)\s*[|&+-]?=[^=]|\.bits\[[^]]*\]\s*[|&]?=[^=]' "${code_files[@]}" | grep -v '^code/datums/om/' | grep -v '^code/modules/unit_tests/' | grep -v 'var/'; then
+if $grep -n '\.(asleep|parked|parked_index|idle_frames)\s*[|&+-]?=[^=]|\.bits\[[^]]*\]\s*[|&]?=[^=]' "${code_files[@]}" | grep -v '^code/datums/om/' | grep -v '^code/controllers/kernel/' | grep -v '^code/modules/unit_tests/' | grep -v 'var/'; then
 	echo
 	echo -e "${RED}ERROR: direct write to a pipeline's idle or park state. Raise a channel with om_changed().${NC}"
 	FAILED=1
@@ -231,7 +232,7 @@ part "stored timer handles"
 # timer slot instead (om_after_slot()/om_cancel_timer_slot()/om_timer_slot_pending(), code/datums/om/timer.dm),
 # which the OM keeps right by construction. A local `var/x = om_after(...)` (a test holding an id
 # for one proc) is fine; storing the id anywhere else, or returning it from a helper, is not.
-if $grep -nE '([]A-Za-z0-9_.)][[:space:]]*[-+]?=|(^|[^[:alnum:]_])return|LAZYSET\(|LAZYADD\(|list\()[[:space:]]*om_after(_replace|_unique)?\(' "${code_files[@]}" | grep -vE '^code/datums/om/|var/[[:alnum:]_]+[[:space:]]*=[[:space:]]*om_after'; then
+if $grep -n '([]A-Za-z0-9_.)][[:space:]]*[-+]?=|(^|[^[:alnum:]_])return|LAZYSET\(|LAZYADD\(|list\()[[:space:]]*om_after(_replace|_unique)?\(' "${code_files[@]}" | grep -vE '^code/datums/om/|var/[[:alnum:]_]+[[:space:]]*=[[:space:]]*om_after'; then
 	echo
 	echo -e "${RED}ERROR: a timer id from om_after() is stored or returned. Use an owned timer: OWN_TIMER(type, name) + om_after_slot(E, \"name\", ...), om_cancel_timer_slot(), om_timer_slot_pending().${NC}"
 	FAILED=1
@@ -371,7 +372,7 @@ part "interactions: no legacy handlers or object verbs (I7)"
 # enforce the handlers and actor procs; this bans object verbs. The allowlist holds
 # verbs that are really a mob's own abilities, run through an item they carry.
 i7_verb_allowlist='code/game/mecha/equipment/tools/(passenger|sleeper)\.dm|code/game/objects/items/devices/communicator/integrated\.dm|code/modules/assembly/holder\.dm|code/modules/clothing/spacesuits/rig/modules/specific/ai_container\.dm|code/modules/mob/living/silicon/robot/subtypes/thinktank/thinktank_module\.dm|code/modules/pda/ai\.dm'
-if $grep -n "^/(obj|turf)(/[A-Za-z0-9_]+)*/verb/[A-Za-z0-9_]+\(" "${code_files[@]}" | grep -vE "^(code/modules/unit_tests/|$i7_verb_allowlist):"; then
+if $grep -n "^/(obj|turf)(/[A-Za-z0-9_]+)*/verb/[A-Za-z0-9_]+\(" "${code_files[@]}" | grep -vE "^(code/modules/unit_tests/[^:]*|$i7_verb_allowlist):"; then
 	echo
 	echo -e "${RED}ERROR: object verbs are interactions now. Declare an INTERACT_VERB (code/__defines/interactions.dm) instead.${NC}"
 	FAILED=1

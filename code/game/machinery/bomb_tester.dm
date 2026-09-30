@@ -27,7 +27,6 @@
 	var/simulating = 0
 	EXPIRY_DECLARE(simulation_started)
 	/// om_after() timer that ends the running simulation, or 0.
-	var/tmp/simulation_timer = 0
 	var/simulation_delay = 20 SECONDS
 
 	var/simulation_results
@@ -225,7 +224,7 @@ UI_ACT_PROC(/obj/machinery/bomb_tester, ui_act_start_sim)
 	simulating = 1
 	set_use_power(USE_POWER_ACTIVE)
 	EXPIRY_STAMP(src, simulation_started, CLOCK_WORLD)
-	simulation_timer = om_after(src, simulation_delay, PROC_REF(simulation_timer_fired))
+	rx_after(src, simulation_delay, PROC_REF(simulation_timer_fired), key = "simulation")
 	update_icon()
 	switch(sim_mode)
 		if(MODE_SINGLE)
@@ -349,16 +348,13 @@ UI_ACT_PROC(/obj/machinery/bomb_tester, ui_act_start_sim)
 	if(intervals == 10)
 		simulation_results += "<hr>Final Result: No detonation."
 
-/// om_after() callback: the simulation's run time is up.
+/// The keyed timer: the simulation's run time is up.
 /obj/machinery/bomb_tester/proc/simulation_timer_fired()
-	simulation_timer = 0
 	if(simulating)
 		simulation_finish()
 
 /obj/machinery/bomb_tester/proc/simulation_finish(cancelled = 0)
-	if(simulation_timer)
-		om_cancel_timer(src, simulation_timer)
-		simulation_timer = 0
+	cancel_after(src, "simulation")
 	simulating = 0
 	set_use_power(USE_POWER_IDLE)
 	if(test_canister() && test_canister().anchored && !test_canister().connected_port())

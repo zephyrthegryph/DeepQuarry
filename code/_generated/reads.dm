@@ -82,6 +82,7 @@
 /proc/rx_boot_types()
 	RETURN_TYPE(/list)
 	// Built on first call: a static or global initializer may not have run yet when the first atoms initialize.
+	// ALLOW(sys_static_getter): built on first call; a global list may not exist yet while the first atoms initialize
 	var/static/list/table
 	if(!table)
 		table = list(
@@ -97,6 +98,7 @@
 /// Capabilities some every(members = ...) runs per member of: their holders join the membership store at init.
 /proc/rx_boot_members()
 	RETURN_TYPE(/list)
+	// ALLOW(sys_static_getter): built on first call; a global list may not exist yet while the first atoms initialize
 	var/static/list/table
 	if(!table)
 		table = list()

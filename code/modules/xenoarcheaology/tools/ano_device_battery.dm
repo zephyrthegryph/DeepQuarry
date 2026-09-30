@@ -53,7 +53,6 @@
 	var/interval = 0
 	EXPIRY_DECLARE(time_end)
 	/// om_after() timer that ends the emission at time_end, or 0.
-	var/tmp/emission_timer = 0
 	EXPIRY_DECLARE(last_activation)
 	EXPIRY_DECLARE(last_process)
 	var/tmp/obj/item/anobattery/inserted_battery
@@ -225,22 +224,17 @@ UI_ACT_PROC(/obj/item/anodevice, ui_act_ejectbattery)
 /// (Re)starts the emission's run: it ends `duration` from now (emission_timer_fired()).
 /obj/item/anodevice/proc/arm_emission_timer()
 	EXPIRY_SET(src, time_end, duration, CLOCK_WORLD)
-	if(emission_timer)
-		om_cancel_timer(src, emission_timer)
-	emission_timer = om_after(src, duration + 1, PROC_REF(emission_timer_fired))
+	rx_after(src, duration + 1, PROC_REF(emission_timer_fired), key = "emission") // replaces a pending one
 
-/// om_after() callback: the set duration has run out.
+/// The keyed timer: the set duration has run out.
 /obj/item/anodevice/proc/emission_timer_fired()
-	emission_timer = 0
 	if(!activated)
 		return
 	src.loc.visible_message(span_blue("[icon2html(src,viewers(src))] [src] chimes."), span_blue("[icon2html(src,viewers(src))] You hear something chime."))
 	shutdown_emission()
 
 /obj/item/anodevice/proc/shutdown_emission()
-	if(emission_timer)
-		om_cancel_timer(src, emission_timer)
-		emission_timer = 0
+	cancel_after(src, "emission")
 	if(activated)
 		set_activated(0)
 		if(inserted_battery()?.battery_effect?.activated)

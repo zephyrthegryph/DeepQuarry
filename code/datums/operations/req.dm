@@ -432,6 +432,7 @@ MSG_DEF_SELF(req_no_claws, "You can't tear into that.")
 	RETURN_TYPE(/datum/req)
 	var/datum/req/on_route/R = new
 	R.routes = routes
+	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	R.inner = inner
 	return req_intern(R)
 

@@ -78,12 +78,12 @@ The excerpt is the real code, trimmed to the declarations:
     . += cap_construction(
         ladder_options(at = BAY_HATCH, undo_delay = 5 SECONDS, dismantle = ladder_dismantle(tool = TOOL_WELDER, becomes = /obj/item/frame/apc, amount = 1, when_ruined = PROC_REF(frame_ruined), ruined_becomes = /obj/item/stack/material/steel)),
         stage("frame", desc = "..."),
-        build_insert(machine_board, name = "board", on_enter = PROC_REF(board_seated)),
+        build_insert(/obj/item/module/power_control, name = "board", on_enter = PROC_REF(board_seated)),
         build_wire(10, name = "wired", needs = PROC_REF(floor_exposed), undo_needs = PROC_REF(floor_exposed), on_enter = PROC_REF(terminal_wired), on_leave = PROC_REF(terminal_cut)),
         build_fasten(TOOL_SCREWDRIVER, name = "secured", needs = PROC_REF(cell_out), else_say = "...", undo_needs = PROC_REF(cell_out), undo_else_say = "...", on_enter = ..., on_leave = ...))
-    . += apc_ops()                                          // cap_control("Open interface"), the cover, the multitool reset
-    . += cap_require(CAP_LOCK, needs = list(req_clear(CAP_EMAGGED), req_proc(PROC_REF(not_hacked)), req_wire(WIRE_IDSCAN), req_proc(PROC_REF(is_working))))
-    . += cap_require(CAP_EMAG, needs = req_proc(PROC_REF(emag_ok)))
+    . += apc_ops()   // cap_control("Open interface", offered = req_on_route(ROUTE_PHYSICAL, req_clear(CAP_COVER_OPEN)), needs = req_working()), new cover, reset
+    . += cap_require(CAP_LOCK, needs = list(req_not_subverted(), req_wire(WIRE_IDSCAN), req_working()))
+    . += cap_require(CAP_EMAG, needs = list(req_not_subverted(), req_working()))
     . += refine(CAP_EMAG, delay = 0.6 SECONDS, effect = PROC_REF(on_emag))
 
 /obj/machinery/power/apc/relations()
@@ -94,13 +94,15 @@ The excerpt is the real code, trimmed to the declarations:
 /obj/machinery/power/apc/reactions()                       // only what it hears
     . = ..()
     . += on_notice(/datum/notice/hit, PROC_REF(on_hit))
-    . += on_notice(/datum/notice/slashed, PROC_REF(on_slashed))
+    . += on_notice(/datum/notice/slashed, PROC_REF(on_slashed))   // the claw op of machine_basics() publishes it
+    . += on_change(list(nameof(cell)), PROC_REF(cell_changed))      // a seated cell's charge becomes Rust's
 
 /obj/machinery/power/apc/draw(datum/look/look)             // reads, redraws, UI refreshes and Rust pushes are generated
     look.part("emagged", apc_bluescreen())
     ..()
     ...
-    look.glow("charge", "[charging]")                      // a glow draws its part: apc-charge-N, else charge-N
+    else if(is_lit(src))                                   // the one lit predicate (screen_override() covers cover/panel)
+        look.glow("charge", "[charging]")                  // a glow draws its part: apc-charge-N, else charge-N
 ```
 
 An op that is meant only with an empty hand says `using = EMPTY_HAND`; what else decides whether it is meant at all is
@@ -112,7 +114,10 @@ the `emagged` part; the APC adds only its bluescreen, charge lamp and light.
 The lock is one op declared by the hatch (`CAP_LOCK`, ACT_LOCK: an alt-click with anything in hand, or a plain click holding a card
 the lock takes; the credential is a provider found like a hand, `cap_lock_credential()`: held card, worn ID/PDA, silicon access) and the emag one op (`CAP_EMAG`, its handler is the effect; the shared commit is an `after_op` reaction of the emag
 capability). The area's lights and consoles are MEMBER relations of the area (`powered_by(POWERED_BY_AREA, role = POWER_ROLE_LIGHTING)`);
-the APC reads them with `area_members(area, role)` instead of scanning the area.
+the APC reads them with `area_members(area, role)` instead of scanning the area. Night shift and emergency lighting go the
+other way: the APC only writes its tracked `nightshift_lights` / `nightshift_setting` / `emergency_lights`; the area derives
+`lights_nightshift` / `lights_emergency_off` through its `apc` relation, and each light derives its own state through its
+`power_area` relation and redraws in an `on_change()` reaction. `push_to_rust()` writes nothing.
 
 Old forms map to new ones in [migration_guide.md](migration_guide.md) (Part F) and
 [dx_conventions.md](dx_conventions.md). The pre-foundation design is in [archive/](archive/).

@@ -540,6 +540,7 @@ def boot_text(model):
     out = []
     out.append("/// Types whose reactions() declare every() / on_cross() / on_notice(), with the RXB_* kinds (code/datums/reactions/work.dm).")
     out += ["/proc/rx_boot_types()", "	RETURN_TYPE(/list)", "	// Built on first call: a static or global initializer may not have run yet when the first atoms initialize."]
+    out.append("	// ALLOW(sys_static_getter): built on first call; a global list may not exist yet while the first atoms initialize")
     out.append("	var/static/list/table")
     out.append("	if(!table)")
     if flags:
@@ -552,6 +553,7 @@ def boot_text(model):
     out += ["	return table", ""]
     out.append("/// Capabilities some every(members = ...) runs per member of: their holders join the membership store at init.")
     out += ["/proc/rx_boot_members()", "	RETURN_TYPE(/list)"]
+    out.append("	// ALLOW(sys_static_getter): built on first call; a global list may not exist yet while the first atoms initialize")
     out.append("	var/static/list/table")
     out.append("	if(!table)")
     if members:

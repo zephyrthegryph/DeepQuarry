@@ -1,54 +1,53 @@
 # doc_snippets baseline (tools/ci/doc_snippets.py): doc_unknown_name is a ratchet (target 0);
 # doc_legacy_block lists the complete blocks that predate the lint and aren't compiled (first line).
-doc_unknown_name	doc/rewrite/declarative_lifecycle.md	OWN(PATH, var, OWN_SPILL) // how it dies: only when not the default OWN_DELETE
+doc_unknown_name	doc/rewrite/kernel.md	sched.native_step() // the ONE Rust driver (section 3.3)
+doc_unknown_name	doc/rewrite/kernel.md	run_garbage(limit) // tg GC, whatever is left, floor per second
+doc_unknown_name	doc/rewrite/kernel.md	record_performance_tick(TICK_USAGE)
+doc_unknown_name	doc/rewrite/kernel.md	if(SS.can_fire && SS.due())
+doc_unknown_name	doc/rewrite/kernel.md	boot_world_services_after(subsystem.type)
+doc_unknown_name	doc/rewrite/kernel.md	machine_first_wakes_flush()
+doc_unknown_name	doc/rewrite/kernel.md	boot_world_service(GLOB.transcore_service)
+doc_unknown_name	doc/rewrite/kernel.md	boot_world_service(GLOB.planet_service)
+doc_unknown_name	doc/rewrite/kernel.md	deps[S] = resolve_needs(S) // needs + others' needed_by; unknown path = boot error
+doc_unknown_name	doc/rewrite/kernel.md	attach_rings(S) // system cadence + member cadence rings
+doc_unknown_name	doc/rewrite/kernel.md	native_dispatch(vg_drain_events()) // the ONLY drain; typed events -> OM_EMIT_WORLD
+doc_unknown_name	doc/rewrite/kernel.md	native_dispatch(vg_drain_events()) // the ONLY drain; typed events -> OM_EMIT_WORLD
+doc_unknown_name	doc/rewrite/kernel.md	return alist("gas" = vg_gas_stats(), "heat" = vg_heat_stats(), "laws" = vg_world_laws())
+doc_unknown_name	doc/rewrite/kernel.md	return process_pipenets() // STEP_YIELD while budget runs out
+doc_unknown_name	doc/rewrite/kernel.md	M.set_step_waiting_power(FALSE)
+doc_unknown_name	doc/rewrite/kernel.md	M.set_step_active(TRUE)
+doc_unknown_name	doc/rewrite/kernel.md	M.set_step_waiting_power(FALSE)
+doc_unknown_name	doc/rewrite/kernel.md	M.set_step_active(FALSE)
+doc_unknown_name	doc/rewrite/kernel.md	. += floor_machine() // includes powered(): joins /datum/system/power
+doc_unknown_name	doc/rewrite/kernel.md	. += slot(nameof(cell), /obj/item/cell, behind = COVER)
+doc_unknown_name	doc/rewrite/kernel.md	flush_pump_transfers()
+doc_unknown_name	doc/rewrite/kernel.md	return wake_dirty_gas_subscribers() // STEP_YIELD mid-batch, as today
+doc_unknown_name	doc/rewrite/kernel.md	return L.loc && !L.transforming && life_any_stage_wants(L) // == today's "not every stage idle"
+doc_unknown_name	doc/rewrite/kernel.md	run_life_frame(L, dt) // the existing pipeline runner, unchanged inside
+doc_unknown_name	doc/rewrite/kernel.md	return L.client && life_present_dirty(L)
+doc_unknown_name	doc/rewrite/kernel.md	system(/datum/system/db).mass_insert(format_table_name("death"), take_rows())
+doc_unknown_name	doc/rewrite/kernel.md	system(/datum/system/db).mass_insert(format_table_name("death"), take_rows())
+doc_unknown_name	doc/rewrite/kernel.md	return length(teardown_z) || has_generation_queued() // was on_demand + has_work()
+doc_unknown_name	doc/rewrite/kernel.md	if(system(/datum/system/flight).destination_busy(site.flight_destination_id))
+doc_unknown_name	doc/rewrite/kernel.md	if(site.z_level > 0 && players_on_z(site.z_level))
+doc_unknown_name	doc/rewrite/kernel.md	release_site(site, "assignment abandoned") // emits site_released; flight unregisters its OWN destination
+doc_unknown_name	doc/rewrite/kernel.md	rebuild_registry()
+doc_unknown_name	doc/rewrite/kernel.md	register_expedition(site) // replay: works whichever booted first
 doc_unknown_name	doc/rewrite/lifecycle.md	POOL_RESET(/datum/damage_packet, source)
 doc_unknown_name	doc/rewrite/lifecycle.md	POOL_RESET(/datum/damage_packet, attacker)
 doc_unknown_name	doc/rewrite/migration_guide.md	set_name(name)
 doc_unknown_name	doc/rewrite/migration_guide.md	if(do_after(user, 6, target = src))
 doc_unknown_name	doc/rewrite/migration_guide.md	look.gauge("can-o", level = pressure_band(), levels = 4) // can-o0..can-o3
-doc_unknown_name	doc/rewrite/migration_guide.md	look.state(is_powered(src) ? "doorctrl0" : "doorctrl-p")
 doc_unknown_name	doc/rewrite/migration_guide.md	var/why_not = shuttle_api_why_cant_call()
 doc_unknown_name	doc/rewrite/migration_guide.md	shuttle_api_call_evac(caller = user)
 doc_unknown_name	doc/rewrite/migration_guide.md	release_or_move_site(site, new_name = descriptor_name) // emits site_moved
 doc_unknown_name	doc/rewrite/migration_guide.md	set_recharging(TRUE)
 doc_unknown_name	doc/rewrite/migration_guide.md	set_recharging(FALSE)
-doc_unknown_name	doc/rewrite/object_model.md	A.include(/bundle/cell_powered)
-doc_unknown_name	doc/rewrite/object_model.md	A.include(/bundle/switchable)
-doc_unknown_name	doc/rewrite/object_model.md	A.ui(/ui/space_heater)
-doc_unknown_name	doc/rewrite/object_model.md	A.slot(slot, accepts = /obj/item/cell, on_destroy = SPILL)
-doc_unknown_name	doc/rewrite/object_model.md	A.ui_fragment(/ui_fragment/slot_cell, slot = slot)
-doc_unknown_name	doc/rewrite/object_model.md	C.can_reach(user, target)
-doc_unknown_name	doc/rewrite/object_model.md	C.holding(user, tool)
-doc_unknown_name	doc/rewrite/object_model.md	alarm.set_alert_level(band == BAND_OK ? ALERT_NONE : ALERT_WARNING)
-doc_unknown_name	doc/rewrite/object_model.md	A.rate("fuel", min = 0, max = 20, on_empty = /event/fuel_empty)
-doc_unknown_name	doc/rewrite/object_model.md	rate_contribute(W, "fuel", src, config_of(W, "per_second"))
-doc_unknown_name	doc/rewrite/object_model.md	rate_contribute(W, "fuel", src, config_of(W, "per_second"))
-doc_unknown_name	doc/rewrite/object_model.md	W.set_lit(FALSE)
-doc_unknown_name	doc/rewrite/object_model.md	C.can_reach(user, target)
-doc_unknown_name	doc/rewrite/object_model.md	C.holding(user, tool)
-doc_unknown_name	doc/rewrite/object_model.md	C.tool_active(tool)
-doc_unknown_name	doc/rewrite/object_model.md	C.require(!door.welded, "[door] is already welded.")
-doc_unknown_name	doc/rewrite/object_model.md	start_task(/task/tool_use/weld_door, user, door, tool) // returns the task, or the failure reason
-doc_unknown_name	doc/rewrite/object_model.md	C.can_reach(user, V)
-doc_unknown_name	doc/rewrite/object_model.md	C.unchanged(V) // V's revision when the prompt opened
-doc_unknown_name	doc/rewrite/object_model.md	C.require(entry.amount > 0, "[entry.name] is sold out.")
-doc_unknown_name	doc/rewrite/object_model.md	D.set("target", heater.get_target())
-doc_unknown_name	doc/rewrite/object_model.md	D.set("charge", C.percent())
-doc_unknown_name	doc/rewrite/object_model_core.md	om_prompt(src, src, list("kind" = "list", "message" = "Please select a species to emulate.", "title" = "Shapeshifter Body", "choices" = species.get_valid_shapeshifter_forms(src), "requires" = PROMPT_CONSCIOUS), PROC_REF(shapeshifter_shape_chosen))
-doc_unknown_name	doc/rewrite/object_model_core.md	om_prompt(src, C, list("message" = "Would you like to be leased by [user]? ...", "title" = "Become Leashed", "choices" = list("No","Yes"), "target" = user, "requires" = PROMPT_ADJACENT, "data" = list("holder" = user)), PROC_REF(leash_accepted))
-doc_unknown_name	doc/rewrite/om_framework_report.md	if(life_asleep_total && (bits[LIFE_ASLEEP_WORD(i)] & LIFE_ASLEEP_BIT(i)))
-doc_unknown_name	doc/rewrite/om_framework_report.md	if(life_asleep_total && (bits[LIFE_ASLEEP_WORD(i)] & LIFE_ASLEEP_BIT(i)))
+doc_unknown_name	doc/rewrite/migration_guide.md	set_energy(energy - 1)
+doc_unknown_name	doc/rewrite/migration_guide.md	set_energy(min(energy + 1, max_energy))
 doc_unknown_name	doc/rewrite/rules.md	REQ_COMPONENT(/datum/component/shadekin),
 doc_unknown_name	doc/rewrite/rules.md	REQ_AREA_ALLOWS(AREA_BLOCK_PHASE_SHIFT) /* admins bypass */,
 doc_unknown_name	doc/rewrite/rules.md	var/watchers = PERCEPTION_OBSERVERS(user, 7) // one shared query, computed once
-doc_unknown_name	doc/rewrite/systems.md	SLOT_INTERACTIONS(/obj/machinery/recharger, SLOT_CHARGING, list(/obj/item/cell, /obj/item/gun/energy), \
-doc_unknown_name	doc/rewrite/systems.md	SLOT_INSERT_MSG("You insert %ITEM% into %SRC%."), SLOT_REQUIRE(REQ_FIELD("operable")))
-doc_unknown_name	doc/rewrite/systems.md	SLOT_INSERT_MSG("You insert %ITEM% into %SRC%."), SLOT_REQUIRE(REQ_FIELD("operable")))
-doc_unknown_name	doc/rewrite/systems.md	EXAMINE_LINE(/obj/machinery/recharger, "on", list("1" = "It is charging.", "0" = "It is idle."))
-doc_unknown_name	doc/rewrite/systems.md	EXAMINE_SLOT(/obj/machinery/recharger, SLOT_CHARGING)
-doc_unknown_name	doc/rewrite/systems.md	EXAMINE_REAGENTS(/obj/item/reagent_containers/glass)
-doc_unknown_name	doc/rewrite/systems.md	EXAMINE_CHARGE(/obj/item/gun/energy, "power_supply")
-doc_unknown_name	doc/rewrite/systems.md	EXAMINE_IF(/obj/machinery, "panel_open", "The maintenance panel is open.")
 doc_legacy_block	doc/rewrite/caching.md	(_scs_n[k] || _sc_n.miss(k))
 doc_legacy_block	doc/rewrite/caching.md	/proc/build_window_overlays(icon_file, basestate, connections)
 doc_legacy_block	doc/rewrite/declarative_lifecycle.md	// Before

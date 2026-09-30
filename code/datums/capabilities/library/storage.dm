@@ -105,7 +105,7 @@
 	return (isobj(O) && !isnull(O.hold_max_total)) ? O.hold_max_total : max_total
 
 /// The category rule: whether holder's mask takes I at all (size and space aside).
-/datum/capability/storage/proc/can_hold(atom/holder, obj/item/I)
+/datum/capability/storage/proc/accepts_item(atom/holder, obj/item/I)
 	var/mask = holds_for(holder)
 	if(mask == HOLDS_ANY)
 		return TRUE
@@ -137,7 +137,7 @@
 			return verdict
 		if(!isnull(verdict))
 			return verdict ? null : "\the [holder] can't hold \the [I]"
-	if(!can_hold(holder, I))
+	if(!accepts_item(holder, I))
 		return "\the [holder] can't hold \the [I]"
 	return null
 

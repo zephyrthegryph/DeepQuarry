@@ -155,7 +155,7 @@ TRACKED(/obj/machinery/power/apc, emergency_lights, CHANGE_MACHINE_SETTINGS)
 		ladder_options(at = BAY_HATCH, undo_delay = 5 SECONDS, dismantle = ladder_dismantle(tool = TOOL_WELDER, becomes = /obj/item/frame/apc, amount = 1, when_ruined = PROC_REF(frame_ruined), ruined_becomes = /obj/item/stack/material/steel)),
 		stage("frame", desc = "It's just an empty metal frame."),
 		// The power control board goes in (a new APC boots) and comes out by hand.
-		build_insert(machine_board, name = "board", desc = "The electronics are installed, but not wired.", on_enter = PROC_REF(board_seated)),
+		build_insert(/obj/item/module/power_control, name = "board", desc = "The electronics are installed, but not wired.", on_enter = PROC_REF(board_seated)),
 		// Ten cable lengths make the terminal (the floor plating must be off); wirecutters cut it out again.
 		build_wire(10, name = "wired", desc = "The frame is wired and the electronics are in, but not fastened.", needs = PROC_REF(floor_exposed), undo_needs = PROC_REF(floor_exposed), on_enter = PROC_REF(terminal_wired), on_leave = PROC_REF(terminal_cut)),
 		// A screwdriver secures the electronics (the APC works), with the cell out both ways.

@@ -98,9 +98,15 @@ Delivery rules:
   deletes its source stops delivery safely.
 
 Notices every atom can publish (code/datums/reactions/notices.dm): `/datum/notice/hit` (`attacker`, `item`: an item was used on it
-and nothing answered, from `/atom/proc/attackby`) and `/datum/notice/slashed` (`attacker`: a human touched it with an empty hand
-and nothing answered, from `/atom/proc/attack_hand`; the listener decides whether the attacker can shred it). The APC listens
-to both (`on_notice(/datum/notice/hit, ...)`) instead of overriding `attackby` / `attack_hand`.
+and nothing answered, from `/atom/proc/attackby`) and `/datum/notice/slashed` (`attacker`: a shredder's claws tore at it, published
+by the claw op `claw_op()` (`CAP_CLAW`) that every breakable machine declares through `machine_basics()`; the op is offered only
+to an actor with claws, `req_claws()`, and only where something hears the notice, `req_heard()`). The APC listens to both
+(`on_notice(/datum/notice/hit, ...)`) instead of overriding `attackby` / `attack_hand`.
+
+A `derive()` value is tracked: when the framework recomputes it and it changed, `publish_change()` runs for it, so an
+`on_change()` reaction can read it. That is how a value reached through two relation hops reaches a handler: the APC's
+tracked `nightshift_lights` is read by its area's `derive(lights_nightshift, rel(apc, ...))`, and each light's
+`derive(nightshift_enabled, rel(power_area, /area::lights_nightshift))` feeds its `on_change()` redraw.
 
 | Question | Use |
 |---|---|
