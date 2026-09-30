@@ -24,6 +24,34 @@
 	buckle_lying = 1
 
 	// BubbleWrap
+/// A shell's thermal mass per m^2 of its surface (J/K): small beside its gas, so the gas and the surroundings stay coupled.
+#define HE_PIPE_SHELL_CAPACITY 10
+/// Shell-to-gas conductance (W/K) at the open-air conductivity.
+#define HE_PIPE_GAS_CONDUCTANCE 100
+/// Shell-to-surroundings conductance (W/K) at the open-air conductivity.
+#define HE_PIPE_SURFACE_CONDUCTANCE 50
+
+/// The pipe's shell is its heat body: it couples to its turf like any atom's (slot 0) and to its pipeline's gas (slot 1).
+/obj/machinery/atmospherics/pipe/simple/heat_exchanging/thermal_properties()
+	var/share = thermal_conductivity / OPEN_HEAT_TRANSFER_COEFFICIENT
+	return list(HE_PIPE_SHELL_CAPACITY * surface, HE_PIPE_SURFACE_CONDUCTANCE * share, THERMAL_EMISSIVITY_DEFAULT)
+
+/// The pipeline's persistent GasCoupling: slot 1 of the shell's heat body names this pipe's port, not a region, so it heats
+/// the gas of whichever pipeline the port is in through every merge and split (the gas domain resolves it each step).
+/obj/machinery/atmospherics/pipe/simple/heat_exchanging/proc/couple_to_pipeline()
+	if(QDELETED(src) || !length(rust_pipe_port_ids) || !rust_pipe_port_ids[1])
+		return
+	if(!create_heat_body(TRUE))
+		return
+	HEAT_BODY_RESOLVE(src)
+	vg_heat_body_couple(heat_body, 1, HEAT_TARGET_PIPE_PORT, rust_pipe_port_ids[1], HE_PIPE_GAS_CONDUCTANCE * (thermal_conductivity / OPEN_HEAT_TRANSFER_COEFFICIENT))
+
+/// Its port's region exists in Rust from here on: the shell couples to the pipeline.
+/obj/machinery/atmospherics/pipe/simple/heat_exchanging/rust_bind_pipe_port(index, datum/pipe_network/new_network, datum/gas_mixture/network_air)
+	. = ..()
+	if(index == 1)
+		couple_to_pipeline()
+
 /obj/machinery/atmospherics/pipe/simple/heat_exchanging/Initialize(mapload)
 	. = ..()
 // BubbleWrap END
@@ -141,10 +169,8 @@
 				var/datum/gas_mixture/environment = loc_as_turf.return_air()
 				environment_temperature = environment.return_temperature()
 			if((abs(environment_temperature-pipe_temperature) > minimum_temperature_difference) || (loc_as_turf.special_temperature))
+				// The shell's heat body (couple_to_pipeline()) does the exchange; this step keeps it from parking while it runs.
 				can_hibernate = FALSE
-				var/datum/material/material = engineered_material()
-				var/effective_conductivity = material ? clamp(material.material_thermal_conductance(surface, 0.004, pipe_temperature) / 10000, 0.001, 1) : thermal_conductivity
-				parent.exchange_heat_with_turf(loc, volume, effective_conductivity)
 		else if(istype(loc, /turf/space/))
 			if(abs(pipe_temperature - TCMB) > minimum_temperature_difference)
 				can_hibernate = FALSE

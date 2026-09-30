@@ -25,7 +25,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "30fdcb8a365eaae2"
+#define VERDIGRIS_ABI "d584b4574b513efa"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -192,6 +192,11 @@
 /// defines exactly (unchanged DM proc surface).
 // verdigris/ffi/src/heat.rs
 #define HEAT_TARGET_NONE 0
+
+/// The gas of the pipe region a pipe port (an entity handle) is in: a pipeline's persistent coupling, which follows the
+/// region through merges and splits.
+// verdigris/ffi/src/heat.rs
+#define HEAT_TARGET_PIPE_PORT 5
 
 // verdigris/ffi/src/heat.rs
 #define HEAT_TARGET_SOLID 1

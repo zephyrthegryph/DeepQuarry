@@ -51,14 +51,14 @@ DM holds handles, not copies. Deleted mirrors and their replacements:
 | Grid view easing | Client/UI side |
 | SSvg repair sweep | Test-only drift audit |
 | Radiation shielding copies | `TRACKED` + generated `rust_push` |
-| `update_rust_device` / power_sync hand pushes | Generated `rust_push` from declared reads ([reactions.md](reactions.md)). Done for the pipe devices (pump, volume pump, passive gate, vent pump, dual-port vent, vent scrubber: TRACKED vars + `rust_device_rev`; filters, mixers and the omni/trinary devices still recompute their mole rates from live gas each `machine_step()`, so their flows are not a static declared read); power_sync and the radiation shielding flush remain (the flush is a batched world-service call, only `set_rad_insulation` is a registered setter) |
+| `update_rust_device` / power_sync hand pushes | Generated `rust_push` from declared reads ([reactions.md](reactions.md)). Done for the pipe devices (pump, volume pump, passive gate, vent pump, dual-port vent, vent scrubber: TRACKED vars + `rust_device_rev`; filters, mixers and the omni/trinary devices too: their legs are a Rust budget group, `BudgetJob`, whose requested moles, entropy/power budget and split are computed from live gas each device step, and DM declares only `set_flow_rate`, shares and modes); power_sync and the radiation shielding flush remain (the flush is a batched world-service call, only `set_rad_insulation` is a registered setter) |
 
 ## 5. Gas and rates
 
 All gas moves through Rust transfer binds. DM `pump_gas`, `scrub_gas`, `filter_gas(_multi)`,
 `mix_gas` and `calculate_transfer_moles` maths are deleted; callers use thin wrappers over the
 binds. `mingle_with_turf` and `temperature_interact` become batch mingle plus heat coupling. One
-rate implementation per side: DM's `om_rate_*` (`world_watch.dm`, Rust-backed) is the only one; the second `/datum/om/rate` model (thresholds published through a deadline) is deleted. Pipe contact heat (`vg_thermal_exchange`) runs through the heat domain's `GasCoupling` kernel (`GasCoupling::exchange`, `conductance_for_fraction`), not a formula of its own. Gas **reactions**
+rate implementation per side: DM's `om_rate_*` (`world_watch.dm`, Rust-backed) is the only one; the second `/datum/om/rate` model (thresholds published through a deadline) is deleted. Pipe contact heat runs through the heat domain's `GasCoupling`: a heat-exchange pipe's shell body holds a persistent `PIPE_PORT` coupling that names its port, so it follows the region through merges and splits (`vg_thermal_exchange` uses the same kernel). Gas **reactions**
 remain in DM. `/datum/gas_mixture` remains an opaque handle (read with `return_temperature()` etc.).
 
 Bindings are regenerated (`tools/build/build.sh verdigris-bindings`), `cargo test` runs in

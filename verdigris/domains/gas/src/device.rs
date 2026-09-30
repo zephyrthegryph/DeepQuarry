@@ -829,6 +829,11 @@ mod tests {
 			limit_side: stop_side::A,
 			limit_cmp: stop_cmp::NONE,
 			limit_kpa: 0.0,
+			group: 0,
+			role: 0,
+			ratio: 0.0,
+			power_w: 0.0,
+			efficiency: 1.0,
 		}
 	}
 

@@ -182,7 +182,9 @@ GLOBAL_LIST_EMPTY(rx_enrol_cache)
 
 /// TRUE when atoms like `A` declare per-instance every() work, by their type or by one of their capabilities.
 /proc/rx_type_enrols(atom/A)
-	var/cached = GLOB.rx_enrol_cache[A.type]
+	// The cache is a global list, which may not exist yet while the first atoms initialize: then nothing is cached.
+	var/list/cache = GLOB.rx_enrol_cache
+	var/cached = cache?[A.type]
 	if(!isnull(cached))
 		return cached
 	cached = FALSE
@@ -200,7 +202,8 @@ GLOBAL_LIST_EMPTY(rx_enrol_cache)
 					break
 			if(cached)
 				break
-	GLOB.rx_enrol_cache[A.type] = cached
+	if(cache)
+		cache[A.type] = cached
 	return cached
 
 /// Joins every already-initialized holder of capability `key` to its membership key (a work item began to sweep

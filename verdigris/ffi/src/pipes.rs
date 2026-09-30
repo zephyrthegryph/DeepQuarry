@@ -49,7 +49,8 @@ use vg_core::slot::RawHandle;
 use vg_core::world::World;
 use vg_gas::device::Flow;
 use vg_gas::kind::device::{DeviceFlow, DeviceValve};
-use vg_gas::laws::{DeviceJob, DeviceJobs, DeviceSide};
+use vg_gas::kind::device::{rate_kind, role};
+use vg_gas::laws::{BudgetJob, BudgetKind, BudgetLeg, DeviceJob, DeviceJobs, DeviceSide};
 use vg_gas::pipes::{PipeGas, Pipes};
 
 use crate::entity;
@@ -448,13 +449,24 @@ fn pipe_device_remove(id: ByondValue) -> Result<ByondValue> {
 struct DeviceLaws {
     flows: Vec<Flow>,
     valve_open: bool,
+    /// The device has a leg of a budget group (filters and mixers), stepped as that group and not as a plain flow.
+    in_group: bool,
 }
 
-fn device_law_index(w: &World) -> HashMap<u32, DeviceLaws> {
+/// Every budget leg of the world, by group: `(device entity index, row)`.
+type BudgetGroups = HashMap<u32, Vec<(u32, DeviceFlow)>>;
+
+fn device_law_index(w: &World) -> (HashMap<u32, DeviceLaws>, BudgetGroups) {
     let mut index: HashMap<u32, DeviceLaws> = HashMap::new();
+    let mut groups = BudgetGroups::new();
     for e in w.entities_with::<DeviceFlow>() {
         if let Some(row) = w.read::<DeviceFlow>(e) {
-            index.entry(row.device).or_default().flows.push(row.flow());
+            if row.is_budget() {
+                index.entry(row.device).or_default().in_group = true;
+                groups.entry(row.group).or_default().push((row.device, row));
+            } else {
+                index.entry(row.device).or_default().flows.push(row.flow());
+            }
         }
     }
     for e in w.entities_with::<DeviceValve>() {
@@ -464,7 +476,16 @@ fn device_law_index(w: &World) -> HashMap<u32, DeviceLaws> {
             }
         }
     }
-    index
+    (index, groups)
+}
+
+/// The gas mixture of the pipe region port `port` (a packed entity id) is in now: its DM-facing handle follows the port
+/// through every merge (the surviving region) and split (the side the port is on).
+pub(crate) fn port_mixture(w: &World, port: u32) -> Option<MixRef> {
+    let entity = EntityId::from_bits(port)?;
+    let region = w.network::<Pipes>().ok()?.region_of(entity)?;
+    let slot = REGION_SLOTS.with(|s| s.borrow_mut().slot_for(region.raw().bits()));
+    Some(MixRef::Pipe(slot))
 }
 
 /// Who owns a staged side, and what it held when it was read (a side is written back only if the step changed it).
@@ -534,12 +555,14 @@ pub(crate) fn stage_devices(w: &mut World) -> Result<()> {
         .network::<Pipes>()
         .map(|h| h.devices().map(|(_, e)| e).collect())
         .unwrap_or_default();
-    let laws = device_law_index(w);
+    let (laws, groups) = device_law_index(w);
+    // A budget leg's device: its entity and the regions across its edge.
+    let mut legs: HashMap<u32, (EntityId, RegionId<Pipes>, RegionId<Pipes>)> = HashMap::new();
     for e in devices {
         let Some(law) = laws.get(&e.index()) else {
             continue;
         };
-        if law.flows.is_empty() && !law.valve_open {
+        if law.flows.is_empty() && !law.valve_open && !law.in_group {
             continue;
         }
         let Ok(host) = w.network::<Pipes>() else {
@@ -571,6 +594,14 @@ pub(crate) fn stage_devices(w: &mut World) -> Result<()> {
         let Some((first, region_b)) = ends else {
             continue;
         };
+        if law.in_group
+            && let Err(region_a) = first
+        {
+            legs.insert(e.index(), (e, region_a, region_b));
+        }
+        if law.flows.is_empty() && !law.valve_open {
+            continue;
+        }
         let a = match first {
             Ok(cell) => staging.turf(w, cell),
             Err(region_a) => staging.region(w, region_a),
@@ -589,10 +620,70 @@ pub(crate) fn stage_devices(w: &mut World) -> Result<()> {
             });
         }
     }
+    let mut budgets = Vec::new();
+    for rows in groups.values() {
+        budgets.extend(stage_budget(w, &mut staging, rows, &legs));
+    }
     let Staging { sides, owners, .. } = staging;
     STAGED.with_borrow_mut(|s| *s = owners);
-    w.set_global(DeviceJobs { sides, jobs })
+    w.set_global(DeviceJobs { sides, jobs, budgets })
         .map_err(|e| eyre!("{e}"))
+}
+
+/// One budget group (a filter's or mixer's legs) as a [`BudgetJob`]: the hub is the region the legs share (a filter's source
+/// is side `a` of its edges, a mixer's output side `b`), each leg the region across its edge.
+fn stage_budget(
+    w: &World,
+    staging: &mut Staging,
+    rows: &[(u32, DeviceFlow)],
+    legs: &HashMap<u32, (EntityId, RegionId<Pipes>, RegionId<Pipes>)>,
+) -> Option<BudgetJob> {
+    let (_, first) = rows.first()?;
+    let kind = if first.rate_kind == rate_kind::MIX {
+        BudgetKind::Mix
+    } else {
+        BudgetKind::Filter
+    };
+    let hub_of = |&(_, a, b): &(EntityId, RegionId<Pipes>, RegionId<Pipes>)| match kind {
+        BudgetKind::Filter => (a, b),
+        BudgetKind::Mix => (b, a),
+    };
+    let (hub_region, _) = hub_of(legs.get(&first.device)?);
+    let hub = staging.region(w, hub_region)?;
+    let mut staged = Vec::new();
+    let mut entity = 0.0;
+    for (device, row) in rows {
+        let Some(edge) = legs.get(device) else {
+            continue;
+        };
+        let (hub_here, leg_region) = hub_of(edge);
+        if hub_here != hub_region {
+            continue;
+        }
+        let Some(side) = staging.region(w, leg_region) else {
+            continue;
+        };
+        if staged.is_empty() {
+            entity = entity::entity_value(edge.0);
+        }
+        staged.push(BudgetLeg {
+            side,
+            mask: row.gases,
+            clean: row.role == role::CLEAN,
+            ratio: row.ratio,
+        });
+    }
+    (!staged.is_empty()).then_some(BudgetJob {
+        kind,
+        entity,
+        hub,
+        legs: staged,
+        rate: first.rate,
+        power_w: first.power_w,
+        efficiency: first.efficiency,
+        moles: 0.0,
+        power_draw: 0.0,
+    })
 }
 
 /// Writes the stepped sides back (region payloads, each turf's difference) and returns a flat `device handle, moles,
@@ -625,6 +716,11 @@ pub(crate) fn apply_devices(w: &mut World) -> Vec<f32> {
         }
     }
     let mut out = Vec::new();
+    for budget in &done.budgets {
+        if budget.moved() {
+            out.extend([budget.entity, budget.moles as f32, budget.power_draw, 0.0]);
+        }
+    }
     for job in &done.jobs {
         if job.moved() {
             out.extend([

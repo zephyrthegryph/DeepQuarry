@@ -262,7 +262,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/engine_setup, REGISTRY_ENGINE_SETUP_MARKERS)
 			else
 				log_and_message_admins("## WARNING: Inapropriate filter coolant type set at [x] [y] [z]!")
 				return SETUP_WARNING
-		F.rebuild_filtering_list()
+		F.wake_for_state_change()
 
 	F.set_use_power(USE_POWER_IDLE)
 	return SETUP_OK

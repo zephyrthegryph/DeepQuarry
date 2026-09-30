@@ -32,6 +32,12 @@ pub mod gas_kind {
     pub const TURF: u8 = 0;
     /// A gas mixture by arena id (a pipe network, a tank, a canister).
     pub const MIXTURE: u8 = 1;
+    /// The gas of the pipe region a pipe port (entity) is in (the coupling's `target` is the port's packed entity id).
+    /// A pipeline's persistent coupling: it names a port, not a region, so it follows the region the port is in through
+    /// every merge and split.
+    pub const PIPE_PORT: u8 = 2;
+    /// Set in a [`GasCoupling::probe_key`] that names a pipe port rather than an arena mixture.
+    pub const PORT_KEY: u32 = 0x8000_0000;
 }
 
 /// A heat body: an object, machine or container's node
@@ -168,6 +174,17 @@ impl LinksTo2 for GasCoupling {
 }
 
 impl GasCoupling {
+    /// The key this coupling's gas is probed and heated under ([`crate::laws::MixtureProbes`]): its mixture id, or its
+    /// port's packed entity id with [`gas_kind::PORT_KEY`] set.
+    #[must_use]
+    pub fn probe_key(&self) -> u32 {
+        if self.kind == gas_kind::PIPE_PORT {
+            gas_kind::PORT_KEY | self.target
+        } else {
+            self.target
+        }
+    }
+
     /// The conductance (W/K) at which a contact between a gas of `gas_capacity` J/K and something of
     /// `other_capacity` J/K exchanges `fraction` (0..1) of their temperature difference over `dt` seconds
     /// (`fraction` of one or more: they equalize). What a caller that thinks in shares per exchange (a pipe's

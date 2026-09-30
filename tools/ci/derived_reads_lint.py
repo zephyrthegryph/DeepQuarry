@@ -533,23 +533,29 @@ def boot_text(model):
     flags, members = reaction_declarations(model)
     out = []
     out.append("/// Types whose reactions() declare every() / on_cross() / on_notice(), with the RXB_* kinds (code/datums/reactions/work.dm).")
+    out += ["/proc/rx_boot_types()", "	RETURN_TYPE(/list)", "	// Built on first call: a static or global initializer may not have run yet when the first atoms initialize."]
+    out.append("	var/static/list/table")
+    out.append("	if(!table)")
     if flags:
-        out.append("GLOBAL_LIST_INIT(rx_boot_type_table, list(")
+        out.append("		table = list(")
         for owner in sorted(flags):
-            out.append("\t%s = %s," % (owner, " | ".join(sorted(flags[owner]))))
-        out.append("))")
+            out.append("			%s = %s," % (owner, " | ".join(sorted(flags[owner]))))
+        out.append("		)")
     else:
-        out.append("GLOBAL_LIST_INIT(rx_boot_type_table, list())")
-    out += ["/proc/rx_boot_types()", "\tRETURN_TYPE(/list)", "\treturn GLOB.rx_boot_type_table", ""]
+        out.append("		table = list()")
+    out += ["	return table", ""]
     out.append("/// Capabilities some every(members = ...) runs per member of: their holders join the membership store at init.")
+    out += ["/proc/rx_boot_members()", "	RETURN_TYPE(/list)"]
+    out.append("	var/static/list/table")
+    out.append("	if(!table)")
     if members:
-        out.append("GLOBAL_LIST_INIT(rx_boot_member_table, list(")
+        out.append("		table = list(")
         for cap in members:
-            out.append("\t%s," % cap)
-        out.append("))")
+            out.append("			%s," % cap)
+        out.append("		)")
     else:
-        out.append("GLOBAL_LIST_INIT(rx_boot_member_table, list())")
-    out += ["/proc/rx_boot_members()", "\tRETURN_TYPE(/list)", "\treturn GLOB.rx_boot_member_table"]
+        out.append("		table = list()")
+    out.append("	return table")
     out.append("")
     return out
 

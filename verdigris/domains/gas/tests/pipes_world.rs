@@ -217,6 +217,7 @@ fn the_pipe_device_law_steps_staged_jobs_when_the_world_steps() {
 		.set_global(DeviceJobs {
 			sides,
 			jobs: vec![job],
+			budgets: vec![],
 		})
 		.unwrap();
 	world.step_blocking();

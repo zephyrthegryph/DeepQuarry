@@ -121,6 +121,13 @@
 /// (`vg_pipe_filter_rate()`/`vg_pipe_mix_rate()`), not a volume or a power.
 #define RUST_FLOW_MOLES 3
 #define RUST_FLOW_FRACTION 4
+/// A filter / mixer leg of a budget group: the group's moles are computed in Rust each step from live gas under the
+/// entropy and power budget (`rust_set_budget_leg()`, verdigris/domains/gas/src/laws.rs `BudgetJob`).
+#define RUST_FLOW_FILTER 5
+#define RUST_FLOW_MIX 6
+/// A filter leg that takes the gases in its mask / the one that takes every gas no mask claims.
+#define RUST_ROLE_OUTPUT 0
+#define RUST_ROLE_CLEAN 1
 /// Every registered gas's bit set (`GAS_COUNT` gases, `verdigris/domains/gas/src/gas/ids.rs`):
 /// a filter's "everything not filtered" flow masks this with `~filtered_mask`
 /// to get a non-negative complement (DM's `~` is a 32-bit signed complement,
