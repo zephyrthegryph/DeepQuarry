@@ -1,12 +1,12 @@
 /// Work items: the kernel's one unit of scheduled work (doc/rewrite/kernel.md sec 1.2, "The unit of work").
 ///
-/// A work item is "call `handler` on the owner every `interval`, while `runs_while` holds, for each member of
+/// A work item is "call `handler` on the owner every `interval`, while `run_when` holds, for each member of
 /// `members`". The `every()` / `on_cross()` / `on_notice()` reaction constructors (owner: the state/change
 /// framework) produce these and hand them to kernel_register_work(); the kernel owns everything after that:
 /// phase, ordering, budget, lane, clock, urgent requests, cost accounting and fault isolation.
 ///
-/// Field names follow every(interval, handler, while=, members=, phase=, after=, budget=): `while` is a
-/// reserved word in DM (not usable as a var or an argument name), so the condition is `runs_while`.
+/// Field names follow every(interval, handler, when=, members=, phase=, after=, budget=): `while` is a
+/// reserved word in DM, so the constructor argument is `when` and the field is `run_when`.
 ///
 /// Handler convention (procs on the owner, named with PROC_REF):
 ///   no members:  handler(dt)            dt in deciseconds since the item's last run (on its clock)
@@ -27,7 +27,7 @@
 	/// The proc, on the owner, that does the work (PROC_REF).
 	var/handler
 	/// Optional proc on the owner: the item runs only while it returns TRUE. A FALSE answer costs one call.
-	var/runs_while
+	var/run_when
 	/// A capability or system type: the item runs once per member (membership.dm), not once. Null: runs once.
 	var/members
 	/// KERNEL_PHASE_* the item runs in. U is reserved for urgent requests.
@@ -41,6 +41,9 @@
 	var/lane = LANE_SIMULATION
 	/// TRUE when request_urgent() may pull one member's run forward.
 	var/urgent = FALSE
+	/// TRUE for an item its declarer runs itself (an on_notice handler, a non-urgent crossing): it is registered for
+	/// cost accounting (metrics(), account()) and never enters a phase list.
+	var/event = FALSE
 	/// The clock dt is measured on: CLOCK_WORLD, or CLOCK_BIO / CLOCK_MACHINE on the member (a stasis pause
 	/// pauses it). Each clock is a source: the kernel only asks it how much time has passed.
 	var/clock = CLOCK_WORLD
@@ -57,7 +60,7 @@
 	var/yielded = FALSE
 	var/parked = FALSE
 	var/runs = 0
-	/// Runs where runs_while answered FALSE.
+	/// Runs where run_when answered FALSE.
 	var/skips = 0
 	var/faults = 0
 	var/consecutive_faults = 0
@@ -75,11 +78,11 @@
 	/// Tick of the first sweep run this phase pass (cost accounting for one sweep).
 	var/sweep_started_at = 0
 
-/datum/work_item/New(handler, interval = WORK_EVERY_TICK, runs_while = null, members = null, phase = KERNEL_PHASE_P, list/after = null, budget = 0, lane = LANE_SIMULATION, urgent = FALSE, clock = CLOCK_WORLD)
+/datum/work_item/New(handler, interval = WORK_EVERY_TICK, when = null, members = null, phase = KERNEL_PHASE_P, list/after = null, budget = 0, lane = LANE_SIMULATION, urgent = FALSE, clock = CLOCK_WORLD)
 	..()
 	src.handler = handler
 	src.interval = interval
-	src.runs_while = runs_while
+	src.run_when = when
 	src.members = members
 	src.phase = phase
 	src.after = after
@@ -87,6 +90,22 @@
 	src.lane = lane
 	src.urgent = urgent
 	src.clock = clock
+
+/// The key the item is filed under: "[owner_type]:[handler]". Adapters and reactions override it.
+/datum/work_item/proc/item_key(owner_type)
+	return "[owner_type]:[handler]"
+
+/// Adds one run's cost to the item (an event item, whose declarer runs the handler itself).
+/datum/work_item/proc/account(ms, faulted = FALSE)
+	runs++
+	total_ms += ms
+	cost = cost ? MC_AVERAGE_FAST(cost, ms) : ms
+	if(faulted)
+		faults++
+
+/// `member` left the item's membership key: its execution token goes with it (a token holds a reference).
+/datum/work_item/proc/forget(datum/member)
+	last_at?.Remove(member)
 
 /// The datum whose handler runs: the singleton of `owner_type`. Overridden by adapters.
 /datum/work_item/proc/owner()
@@ -96,13 +115,13 @@
 /datum/work_item/proc/latency_class()
 	return kernel_lane_class(lane)
 
-/// Whether the item (or one member) should run now. The default asks `runs_while` on the owner.
+/// Whether the item (or one member) should run now. The default asks `run_when` on the owner.
 /datum/work_item/proc/runnable(datum/owner, datum/member)
-	if(!runs_while)
+	if(!run_when)
 		return TRUE
 	if(member)
-		return !!call(owner, runs_while)(member)
-	return !!call(owner, runs_while)()
+		return !!call(owner, run_when)(member)
+	return !!call(owner, run_when)()
 
 /// Does the work for one invocation (`member` null for a memberless item). Returns the step protocol.
 /datum/work_item/proc/perform(datum/owner, datum/member, dt)

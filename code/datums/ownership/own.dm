@@ -198,6 +198,8 @@
 		return value
 	if(!isnull(value) && !own_guard(holder, value, "own_set([var_name])")) // the one teardown guard (guard.dm)
 		return null
+	if(!own_type_ok(holder, var_name, entry, value))
+		return null
 	if(!isnull(value) && !own_bring_in(holder, var_name, value, entry, user, into, slot, force))
 		return null
 	if(entry && isdatum(value) && !own_stamp(value, holder, var_name))
@@ -232,6 +234,8 @@
 	if(isnull(value))
 		return null
 	if(!own_guard(holder, value, "own_add([var_name])")) // the one teardown guard (guard.dm)
+		return null
+	if(!own_type_ok(holder, var_name, entry, value))
 		return null
 	if(!own_bring_in(holder, var_name, value, entry, user, into, slot, force))
 		return null
@@ -268,6 +272,8 @@
 /proc/own_put(datum/holder, var_name, key, datum/value, mob/user = null, into = null, slot = null, force = FALSE, log = null)
 	var/list/entry = own_entry_of_kind(holder, var_name, OWNK_OWN, TRUE)
 	if(!isnull(value) && !own_guard(holder, value, "own_put([var_name])")) // the one teardown guard (guard.dm)
+		return null
+	if(!own_type_ok(holder, var_name, entry, value))
 		return null
 	var/list/L = holder.vars[var_name]
 	if(!islist(L) && isnull(value))

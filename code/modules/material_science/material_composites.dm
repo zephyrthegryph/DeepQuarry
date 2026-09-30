@@ -32,8 +32,10 @@
 	return max(0, aggression * temperature_factor * (100 - corrosion_resistance) / 100)
 
 /// Emitted on GLOB.om_world when a material's physical vars change after facts were read from
-/// it (material_facts_changed()). Shared caches of material-derived facts clear on it.
+/// it (material_facts_changed()). Shared caches of material-derived facts clear on it. A state-invalidation
+/// signal ("recompute"), emitted in bursts: only the latest matters, so it coalesces.
 /datum/om/event/material_facts_changed
+	coalesce = TRUE
 
 /// A material's stable cache identity (MATERIAL_CACHE_ID()): its registry id when it is the
 /// registered material of that name (every static material, and processed alloys, whose

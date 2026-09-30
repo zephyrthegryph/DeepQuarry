@@ -24,6 +24,8 @@
 	var/list/notice_types
 	/// on_cross read -> the last band delivered.
 	var/list/bands
+	/// urgent on_cross reaction sig -> list(band, previous_band) waiting for its work item's run (work.dm).
+	var/list/cross_pending
 	/// after(key = ...): key -> list(timer id, token, clock) of the pending keyed timer.
 	var/list/timer_ids
 	/// Pending operation contexts (/datum/op_ctx) this datum is an end of (actor, target, held, a watched
@@ -290,6 +292,7 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 /// Phase 4 of a datum's destruction (own_teardown): every listener record it is an end of goes, it leaves
 /// every system it joined, and its ledger is dropped. Both ends are cleaned, so nothing keeps it alive.
 /proc/rx_teardown(datum/D)
+	member_teardown(D) // a member with no reaction state still leaves what it joined
 	var/datum/rx_state/S = D.rx
 	if(!S)
 		return
@@ -300,9 +303,5 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 		rx_listener_remove(L)
 	for(var/datum/rx_listener/L as anything in S.listening?.Copy())
 		rx_listener_remove(L)
-	for(var/key in member_keys(D))
-		leave(key, D, all = TRUE)
-	for(var/datum/member as anything in members_of(D).Copy())
-		leave(D, member, all = TRUE)
 	GLOB.rx_pending -= D
 	D.rx = null

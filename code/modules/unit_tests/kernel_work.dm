@@ -53,8 +53,8 @@
 	return fixture
 
 /// Makes a fixture item; `handler` defaults to record().
-/proc/test_work_item(datum/test_work_owner/O, handler = null, interval = 10, runs_while = null, members = null, phase = KERNEL_PHASE_P, list/after = null, lane = LANE_SIMULATION, urgent = FALSE)
-	var/datum/work_item/test_fixture/W = new(handler || TYPE_PROC_REF(/datum/test_work_owner, record), interval, runs_while, members, phase, after, 0, lane, urgent)
+/proc/test_work_item(datum/test_work_owner/O, handler = null, interval = 10, when = null, members = null, phase = KERNEL_PHASE_P, list/after = null, lane = LANE_SIMULATION, urgent = FALSE)
+	var/datum/work_item/test_fixture/W = new(handler || TYPE_PROC_REF(/datum/test_work_owner, record), interval, when, members, phase, after, 0, lane, urgent)
 	W.fixture = O
 	return W
 
@@ -85,12 +85,12 @@
 	TEST_ASSERT_EQUAL(length(O.calls), 3, "a late pass still runs it")
 	TEST_ASSERT_EQUAL(O.dts[3], 15, "with the real elapsed time, not the nominal one")
 
-	// runs_while gates without running.
+	// run_when gates without running.
 	var/datum/test_work_owner/G = new
 	G.gate = FALSE
-	var/datum/work_item/test_fixture/gated = K.register_work(/datum/test_work_owner/gated, test_work_item(G, runs_while = TYPE_PROC_REF(/datum/test_work_owner, is_open)))
+	var/datum/work_item/test_fixture/gated = K.register_work(/datum/test_work_owner/gated, test_work_item(G, when = TYPE_PROC_REF(/datum/test_work_owner, is_open)))
 	K.run_item(gated, WORK_TEST_LIMIT, 100)
-	TEST_ASSERT_EQUAL(length(G.calls), 0, "runs_while FALSE: the handler does not run")
+	TEST_ASSERT_EQUAL(length(G.calls), 0, "run_when FALSE: the handler does not run")
 	TEST_ASSERT_EQUAL(gated.skips, 1, "and the skip is counted")
 	G.gate = TRUE
 	K.run_item(gated, WORK_TEST_LIMIT, 110)

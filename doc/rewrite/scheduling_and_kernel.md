@@ -32,10 +32,17 @@ A `/datum/system` owns domain state and a public API (`api.dm`). It contributes 
 which are reactions ([reactions.md](reactions.md)):
 
 ```text
-every(interval, handler, while=, members=, phase=, after=, budget=)
+every(interval, handler, when=, members=, phase=, after=, budget=, lane=)
 on_cross(read, bands, handler, urgent=)
 on_notice(type, handler)
 ```
+
+The reaction constructors produce `/datum/work_item/reaction` items (`code/datums/reactions/work.dm`;
+how each kind is registered, enrolled and called is in [reactions.md](reactions.md) section 1a). On a
+work item `while` is a reserved word in DM, so the constructor argument is `when` and the field is
+`run_when`; `runs_while(...)` (the `should_run` reads sugar) is a different thing. An `on_notice` or
+non-urgent `on_cross` item is an *event item* (`event = TRUE`): it is registered so `metrics()` accounts
+its cost, and the kernel never schedules it.
 
 A work item has membership (`members = <capability type>` runs it per member), a trigger, its
 observed inputs, a `phase`, ordering edges (`after =`), and a `budget`. A **pipeline** is only a

@@ -47,3 +47,13 @@
 /obj/machinery/vending/generated_reads()
 	. = ..()
 	. += ui_from(nameof(categories), nameof(coin), nameof(has_prices), nameof(product_records))
+
+/// Types whose reactions() declare every() / on_cross() / on_notice(), with the RXB_* kinds (code/datums/reactions/work.dm).
+/proc/rx_boot_types()
+	RETURN_TYPE(/list)
+	return list()
+
+/// Capabilities some every(members = ...) runs per member of: their holders join the membership store at init.
+/proc/rx_boot_members()
+	RETURN_TYPE(/list)
+	return list()

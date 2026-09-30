@@ -182,6 +182,8 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 	if(entry[OWNE_LIST])
 		OWN_REPORT("rel_set on list view [source.type].[var_name]: use rel_add/rel_remove")
 		return null
+	if(!own_type_ok(source, var_name, entry, target))
+		return null
 	var/datum/old = source.vars[var_name] // unchanged since the check above (_rel_entry writes no var)
 	if(old)
 		_rel_detach(source, var_name, old, entry)
@@ -196,6 +198,8 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 		return null
 	if(!entry[OWNE_LIST])
 		OWN_REPORT("rel_add on single view [source.type].[var_name]: use rel_set")
+		return null
+	if(!own_type_ok(source, var_name, entry, target))
 		return null
 	if(!own_guard(source, target, "rel_add([var_name])")) // the one teardown guard (guard.dm)
 		return null

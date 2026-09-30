@@ -53,7 +53,7 @@
 /// Symmetric membership: both ends list each other in the same var.
 #define RELS_SYMMETRIC 2
 
-// ---- table entry layout: list(kind, arg, partner, extra, is_list, watch, other_deleted, on_unlink) ----
+// ---- table entry layout: list(kind, arg, partner, extra, is_list, watch, other_deleted, on_unlink, type) ----
 #define OWNE_KIND 1
 /// OWN: policy, or a proc name (policy_proc). REL: shape. PROTO/SHARED: null.
 #define OWNE_ARG 2
@@ -70,6 +70,8 @@
 #define OWNE_OTHER_DELETED 7
 /// REL: the holder proc name (on_unlink = PROC_REF(x)) called with the other end when a link goes, or null.
 #define OWNE_ON_UNLINK 8
+/// REL/OWN: the declared type of the value(s) (rel_one/rel_many(type =)), or null. Writes of anything else are refused.
+#define OWNE_TYPE 9
 
 /// Registry singletons: PATH and subtypes are shared. GETTER(D) returns the registered
 /// instance D stands for (so D is registered iff GETTER(D) == D).
