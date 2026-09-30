@@ -142,8 +142,11 @@
 
 /// A datum reacting to Rust-owned values by their `native("...")` names.
 /datum/native_rx_fx
+	// ALLOW(instance_list): test fixture, a handful of instances per test run
 	var/list/changes = list()
+	// ALLOW(instance_list): test fixture, a handful of instances per test run
 	var/list/notes = list()
+	// ALLOW(instance_list): test fixture, a handful of instances per test run
 	var/list/crossings = list()
 
 /datum/native_rx_fx/reactions()

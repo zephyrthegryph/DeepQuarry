@@ -183,6 +183,7 @@ TRACKED(/obj/machinery/power/apc, shorted, CHANGE_MACHINE_SETTINGS)
 	var/datum/capability/entry/interface = cap_control("Open interface", PROC_REF(open_interface), needs = PROC_REF(interface_ready), action = ACT_USE, works_broken = TRUE, works_unpowered = TRUE, key = "open_interface")
 	// An empty hand (or a silicon's touch), while the interface is what a touch means: with the cover open the
 	// cell is what a hand reaches, and a shredder's claws slash (its slashed notice).
+	// ALLOW(sys_old_requirement): the interface entry needs an empty hand plus a target-state check that the requirement macros do not combine
 	interface.entry.offered_when = list(REQ_EMPTY_HANDED, REQ_TARGET_STATE(/obj/machinery/power/apc/proc/interface_offered))
 	. += interface
 	. += cap_op("Replace damaged cover", PROC_REF(replace_cover), using = /obj/item/frame/apc, at = BAY_HATCH, delay = 5 SECONDS, needs = PROC_REF(cover_replaceable), start_msg = /datum/msg/start/apc/replace_cover, kind = OP_STRUCTURAL, key = "replace_cover", works_broken = TRUE, works_unpowered = TRUE, priority = 20)
@@ -514,6 +515,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 	set_chargelevel(chargelevel)
 	set_capacity(cell ? cell.maxcharge : 0)
 	if(cell != pushed_cell)
+		// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 		pushed_cell = cell
 		if(cell)
 			adjust_charge(cell.charge - get_charge())

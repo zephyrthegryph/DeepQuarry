@@ -316,6 +316,7 @@
 	var/datum/held
 	var/list/bucket
 	var/list/made_in_new
+	// ALLOW(instance_list): test fixture, a handful of instances per test run
 	var/list/preset = list(1, 2)
 	var/resets = 0
 
@@ -335,6 +336,7 @@
 	var/list/allocated = probe.made_in_new
 	probe.count = 9
 	probe.label = "used"
+	// ALLOW(ownership): test fixture setup writes the framework var directly to build the state under test
 	probe.held = new /datum
 	probe.bucket = list(1, 2)
 	probe.made_in_new += "x"

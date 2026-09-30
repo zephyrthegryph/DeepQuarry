@@ -40,6 +40,7 @@
 /proc/rx_of(datum/D)
 	RETURN_TYPE(/datum/rx_state)
 	if(!D.rx)
+		// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 		D.rx = new
 	return D.rx
 
@@ -315,4 +316,5 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 	for(var/datum/rx_listener/L as anything in S.listening?.Copy())
 		rx_listener_remove(L)
 	GLOB.rx_pending -= D
+	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	D.rx = null

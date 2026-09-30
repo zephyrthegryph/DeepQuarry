@@ -33,7 +33,9 @@
 		listener.rx.listening -= L
 		if(!length(listener.rx.listening))
 			listener.rx.listening = null
+	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	L.source = null
+	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	L.listener = null
 
 /proc/rx_observed_adjust(datum/source, datum/reaction/R, delta)
@@ -73,17 +75,22 @@
 		if(known.listener == listener && known.trigger.sig == trigger.sig && known.handler == handler)
 			return known
 	var/datum/rx_listener/L = new
+	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	L.source = source
+	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	L.trigger = trigger
+	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	L.listener = listener
 	L.handler = handler
 	var/datum/rx_state/S = rx_of(source)
 	if(!S.listeners)
 		S.listeners = list()
+	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	S.listeners += L
 	var/datum/rx_state/LS = rx_of(listener)
 	if(!LS.listening)
 		LS.listening = list()
+	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	LS.listening += L
 	rx_observed_adjust(source, trigger, 1)
 	rx_ledger_add(source, RELK_LISTENER, listener, trigger.sig)
@@ -333,6 +340,7 @@ GLOBAL_VAR_INIT(rx_notice_delivering, FALSE)
 /proc/publish(datum/E, datum/notice/N)
 	if(!E || !N)
 		return
+	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	N.source = E
 	if(GLOB.rx_notice_delivering)
 		GLOB.rx_notice_queue += list(list(E, N))

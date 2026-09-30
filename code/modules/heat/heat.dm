@@ -320,18 +320,23 @@ GLOBAL_LIST_INIT(heat_coupling_none, list(HEAT_TARGET_NONE, 0))
 	var/rust_lane = lane
 	switch(kind)
 		if(HEAT_WATCH_ABOVE)
+			// ALLOW(api): the heat port is the one place that binds heat channels to the Rust world watch
 			token = vg_world_watch_threshold(code, handle, rust_lane, port_cell(), channel, WORLD_CMP_ABOVE, level, -1, both_edges)
 		if(HEAT_WATCH_BELOW)
+			// ALLOW(api): the heat port is the one place that binds heat channels to the Rust world watch
 			token = vg_world_watch_threshold(code, handle, rust_lane, port_cell(), channel, WORLD_CMP_BELOW, level, -1, both_edges)
 		if(HEAT_WATCH_BAND)
+			// ALLOW(api): the heat port is the one place that binds heat channels to the Rust world watch
 			token = vg_world_watch_band(code, handle, rust_lane, port_cell(), channel, level, -1)
 		if(HEAT_WATCH_SET)
+			// ALLOW(api): the heat port is the one place that binds heat channels to the Rust world watch
 			token = vg_world_watch_set(code, handle, rust_lane, port_cell(), channel)
 	if(isnull(token))
 		body = null
 		return FALSE
 	for(var/payload in entries)
 		var/list/entry = entries[payload]
+		// ALLOW(api): the heat port is the one place that binds heat channels to the Rust world watch
 		vg_world_watch_set_add(token, channel, text2num(payload), entry[1], entry[3] ? WORLD_CMP_ABOVE : WORLD_CMP_BELOW, entry[2], entry[4])
 	return TRUE
 
@@ -347,6 +352,7 @@ GLOBAL_LIST_INIT(heat_coupling_none, list(HEAT_TARGET_NONE, 0))
 	if(isturf(target) || QDELETED(target) || (!isnull(token) && body == target.heat_body))
 		return
 	if(!isnull(token))
+		// ALLOW(api): the heat port is the one place that binds heat channels to the Rust world watch
 		vg_world_cancel(token)
 		token = null
 		body = null
@@ -356,11 +362,13 @@ GLOBAL_LIST_INIT(heat_coupling_none, list(HEAT_TARGET_NONE, 0))
 /datum/native_watch/heat/proc/add_entry(payload, generation, limit, above = TRUE, both_edges = FALSE)
 	LAZYSET(entries, "[payload]", list(generation, limit, above, both_edges))
 	if(!isnull(token))
+		// ALLOW(api): the heat port is the one place that binds heat channels to the Rust world watch
 		vg_world_watch_set_add(token, heat_temperature_channel(port_code()), payload, generation, above ? WORLD_CMP_ABOVE : WORLD_CMP_BELOW, limit, both_edges)
 
 /datum/native_watch/heat/proc/remove_entry(payload)
 	LAZYREMOVE(entries, "[payload]")
 	if(!isnull(token))
+		// ALLOW(api): the heat port is the one place that binds heat channels to the Rust world watch
 		vg_world_watch_set_remove(token, payload)
 
 /// Whether the watch is registered with Rust right now (tests).

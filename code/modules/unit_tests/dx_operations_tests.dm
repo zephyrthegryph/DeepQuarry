@@ -98,6 +98,7 @@
 	ctx.route = ROUTE_PHYSICAL
 
 	TEST_ASSERT_EQUAL(req(/obj/item/pen).test(ctx), /datum/msg/req_wrong_item, "no held item: not a pen")
+	// ALLOW(ownership): test fixture setup writes the framework var directly to build the state under test
 	ctx.held = allocate(/obj/item/pen, T)
 	TEST_ASSERT_NULL(req(/obj/item/pen).test(ctx), "holding a pen")
 	TEST_ASSERT_NULL(req(list(/obj/item/paper, /obj/item/pen)).test(ctx), "a list of types")
@@ -158,15 +159,16 @@
 	ctx.release()
 
 	// Actor state third: an unconscious actor is refused by an ordinary op, allowed an emergency one.
-	H.stat = UNCONSCIOUS
+	H.set_stat(UNCONSCIOUS)
 	ctx = op_ctx_take(H, F, null, dx_op_of(F, "press"))
 	TEST_ASSERT_EQUAL(ctx.check(), /datum/msg/req_not_capable, "an unconscious actor can't")
 	TEST_ASSERT_EQUAL(ctx.failed_stage, OP_STAGE_ACTOR, "at the actor stage")
 	ctx.release()
-	H.stat = CONSCIOUS
+	H.set_stat(CONSCIOUS)
 
 	// Capability contract fifth: cap_require(OP_STRUCTURAL) covers the structural op only.
 	ctx = op_ctx_take(H, F, null, dx_op_of(F, "rip"))
+	// ALLOW(ownership): test fixture setup writes the framework var directly to build the state under test
 	ctx.entry = dx_cap_entry(F, "Rip out")
 	TEST_ASSERT_EQUAL(ctx.check(), /datum/msg/req_wrong_state, "the structural contract applies")
 	TEST_ASSERT_EQUAL(ctx.failed_stage, OP_STAGE_CAPS, "at the capability stage")
@@ -262,6 +264,7 @@
 	TEST_ASSERT_EQUAL(bay.transmission(PATH_EFFECT_RADIATION), 1, "radiation is unchanged")
 
 	var/datum/op_ctx/ctx = op_ctx_take(H, F, null, dx_op_of(F, "bayed"))
+	// ALLOW(ownership): test fixture setup writes the framework var directly to build the state under test
 	ctx.entry = dx_cap_entry(F, "Bayed")
 	TEST_ASSERT_EQUAL(ctx.check(), /datum/msg/req_sealed, "the closed door keeps the physical route out")
 	TEST_ASSERT_EQUAL(ctx.failed_stage, OP_STAGE_ROUTE, "at the route stage")
@@ -407,6 +410,7 @@
 	// The UI route: act("action", {id}) is a UI action of the capability layer, reached through tgui_act.
 	F.calls = null
 	var/datum/tgui/ui = ui_test_window(F)
+	// ALLOW(ownership): test fixture setup writes the framework var directly to build the state under test
 	ui.user = H
 	TEST_ASSERT(F.tgui_act("action", list("id" = ACT_CLOSE), ui), "the UI route reaches an op that accepts it")
 	TEST_ASSERT_EQUAL(length(F.calls), 1, "and ran its handler")

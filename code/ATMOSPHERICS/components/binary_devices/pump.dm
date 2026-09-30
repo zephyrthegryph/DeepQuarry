@@ -307,6 +307,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/binary/pump, "{base_icon}-{appea
 
 	set_use_power(!use_power)
 	set_on(!!use_power)
+	// ALLOW(sys_update_icon): the device state is not an appearance-watched field; the icon is refreshed procedurally
 	update_icon()
 	add_fingerprint(user)
 	to_chat(user, span_notice("You toggle the [name] [use_power ? "on" : "off"]."))

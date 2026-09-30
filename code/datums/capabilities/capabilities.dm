@@ -431,6 +431,7 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 	var/datum/op_ctx/octx
 	if(op)
 		octx = op_ctx_take(actor, target, held, op, GLOB.op_route_now)
+		// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 		octx.entry = src
 		var/veto = op_before(octx)
 		if(!isnull(veto))

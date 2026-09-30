@@ -36,6 +36,7 @@ GLOBAL_LIST_EMPTY(rx_work_by_sig)
 
 /// Builds the item for `R`, declared by `owner_type`.
 /datum/work_item/reaction/New(datum/reaction/R, owner_type)
+	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	reaction = R
 	holder_run = !ispath(owner_type, /datum/system)
 	var/member_key = R.members
@@ -118,11 +119,13 @@ GLOBAL_LIST_EMPTY(rx_work_by_sig)
 
 /// A crossing is a discrete event, not an interval of time: it carries no execution token (last_at) and always
 /// reports a positive dt to the urgent runner.
+// ALLOW(sys_world_time_write): the kernel clock: a per-tick timestamp of the scheduler itself, not a per-entity expiry
 /datum/work_item/reaction/take_dt(datum/member, now = world.time)
 	if(reaction.kind == RXN_CROSS)
 		return world.tick_lag
 	return ..()
 
+// ALLOW(sys_world_time_write): the kernel clock: a per-tick timestamp of the scheduler itself, not a per-entity expiry
 /datum/work_item/reaction/token_current(datum/member, now = world.time)
 	if(reaction.kind == RXN_CROSS)
 		return FALSE
@@ -138,6 +141,7 @@ GLOBAL_LIST_EMPTY(rx_work_by_sig)
 		W = new(R, T.owner_type)
 		GLOB.rx_work_by_sig[R.sig] = W
 		kernel_register_work(T.owner_type, W)
+	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	R.work = W
 	if(W.enrol_key)
 		LAZYOR(T.holder_keys, W.enrol_key)
@@ -161,6 +165,7 @@ GLOBAL_LIST_EMPTY(rx_work_by_sig)
 /// type -> RXB_* kinds its reactions() declare: the generated list plus rx_boot_register() additions.
 /proc/rx_boot_flags()
 	RETURN_TYPE(/list)
+	// ALLOW(sys_static_getter): a memoized per-type table built once on first call
 	var/static/list/flags
 	if(!flags)
 		flags = rx_boot_types().Copy()

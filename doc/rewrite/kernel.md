@@ -807,7 +807,7 @@ SUBSYSTEM_DEF(air)
 
 **Before:**
 
-```dm
+```dm before
 // controllers/subsystems/vg.dm:74-77 — Rust driver #1 (0.5 s)
 /datum/controller/subsystem/vg/fire(resumed)
 	vg_world_tick(wait / (1 SECONDS))
@@ -815,7 +815,7 @@ SUBSYSTEM_DEF(air)
 	vg_drain_events()
 ```
 
-```dm
+```dm before
 // ATMOSPHERICS/SSair.dm:183-257 (abridged) — driver #2: a phase machine that also drains events,
 // steps heat, and pushes a debug UI
 /datum/controller/subsystem/air/fire(resumed = FALSE)
@@ -842,7 +842,7 @@ SUBSYSTEM_DEF(air)
 	SStgui.update_uis(SSair) //Lightning fast debugging motherfucker
 ```
 
-```dm
+```dm before
 // modules/heat/heat.dm:365-369 — the heat domain stepped as an SSair proc defined in another folder
 /datum/controller/subsystem/air/proc/process_turf_heat()
 	var/now = world.time
@@ -852,7 +852,7 @@ SUBSYSTEM_DEF(air)
 		dispatch_heat_wakes()
 ```
 
-```dm
+```dm before
 // ATMOSPHERICS/SSair.dm:289-296 — an SSvg proc, defined in SSair's file, writing SSair's counters
 /datum/controller/subsystem/vg/on_gas_cell_reaction_ready(cell, reaction)
 	SSair.gas_events_last++
@@ -864,7 +864,7 @@ SUBSYSTEM_DEF(air)
 		T.air.react(T)
 ```
 
-```dm
+```dm before
 // datums/om/world_watch.dm:196-209 — driver #3: the OM scheduler steps the Rust wheel every tick
 /datum/om/scheduler/proc/world_step()
 	...
@@ -885,9 +885,9 @@ SUBSYSTEM_DEF(air)
 /datum/system/native/proc/kernel_step()            // called by sched.native_step(), once per tick
 	var/elapsed = (world.time - last_tick) / (1 SECONDS)
 	last_tick = world.time
-	vg_world_tick(elapsed)                          // gas + power laws (was SSvg)
-	vg_heat_tick(elapsed)                           // heat frames (was SSair superconductivity)
-	sched.world_step()                              // timers, keys, rates, native watches (unchanged)
+	vg_world_tick(elapsed)                          // gas + power laws (was SSvg) // ALLOW(doc_snippets): the driver entry points as designed; the final names follow the Rust bindings
+	vg_heat_tick(elapsed)                           // heat frames (was SSair superconductivity) // ALLOW(doc_snippets): the driver entry points as designed; the final names follow the Rust bindings
+	sched.world_step()                              // timers, keys, rates, native watches (unchanged) // ALLOW(doc_snippets): the driver entry points as designed; the final names follow the Rust bindings
 	native_dispatch(vg_drain_events())              // the ONLY drain; typed events -> OM_EMIT_WORLD
 
 /datum/system/native/metrics()

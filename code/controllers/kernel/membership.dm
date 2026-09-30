@@ -13,16 +13,22 @@
 
 /datum/kernel_membership
 	/// key -> list of members, in join order (the list a system's member_list() returns; read only).
+	// ALLOW(instance_list): singleton or per-registration table, one instance per system; not a per-entity list
 	var/list/members_by_key = list()
 	/// key -> assoc member -> index in members_by_key[key].
+	// ALLOW(instance_list): singleton or per-registration table, one instance per system; not a per-entity list
 	var/list/index_by_key = list()
 	/// key -> assoc member -> assoc source -> TRUE (sources holding this membership).
+	// ALLOW(instance_list): singleton or per-registration table, one instance per system; not a per-entity list
 	var/list/sources_by_key = list()
 	/// key -> assoc member -> role.
+	// ALLOW(instance_list): singleton or per-registration table, one instance per system; not a per-entity list
 	var/list/role_by_key = list()
 	/// key -> assoc role text -> list of members holding it (role-indexed keys only).
+	// ALLOW(instance_list): singleton or per-registration table, one instance per system; not a per-entity list
 	var/list/roles_by_key = list()
 	/// member -> list of keys it belongs to, for teardown and systems_of().
+	// ALLOW(instance_list): singleton or per-registration table, one instance per system; not a per-entity list
 	var/list/keys_of = list()
 
 /// The one membership store.

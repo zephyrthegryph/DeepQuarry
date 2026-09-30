@@ -186,6 +186,7 @@ GLOBAL_LIST_INIT(action_defs, init_action_defs())
 /datum/bind_profile/observer
 
 /datum/bind_profile/observer/table()
+	// ALLOW(sys_static_getter): a memoized per-type table built once on first call
 	var/static/list/binds = list(
 		GESTURE_CLICK = list(ACT_EXAMINE),
 		GESTURE_ALT = list(ACT_EXAMINE),
@@ -352,6 +353,7 @@ GLOBAL_LIST_INIT(action_defs, init_action_defs())
 	var/datum/interaction/capability/E = gesture_entry_for(actor, over, item, GESTURE_DRAG)
 	if(!E)
 		return FALSE
+	// ALLOW(scheduler): a gesture attempt runs prompts and do_afters, so it is detached from the click that started it
 	INVOKE_ASYNC(GLOBAL_PROC, GLOBAL_PROC_REF(gesture_attempt), E, actor, over, item)
 	return TRUE
 

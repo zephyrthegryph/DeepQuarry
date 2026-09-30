@@ -555,7 +555,7 @@
 	var/datum/gas_mixture/region_air = transition["air"]
 	var/datum/pipe_network/network = new
 	network.rust_authoritative = TRUE
-	own_set(network, "air", region_air)
+	own_set(network, nameof(network.air), region_air)
 	network.update = FALSE
 	rust_pipe_region_networks[region] = network
 
@@ -578,8 +578,8 @@
 	if(length(region_pipes))
 		var/datum/pipeline/pipeline = new
 		atmos_air_set(pipeline, "air", region_air)
-		rel_clear(pipeline, "leaks")
-		rel_set(pipeline, "network", network)
+		rel_clear(pipeline, nameof(pipeline.leaks))
+		rel_set(pipeline, nameof(pipeline.network), network)
 		for(var/obj/machinery/atmospherics/pipe/pipe as anything in region_pipes)
 			rel_set(pipe, nameof(pipe.parent), pipeline) // two-sided: adds the pipe to pipeline.members
 			MACHINE_WAKE(pipe) // a pipe with DM work (HE pipes) re-evaluates on joining; others don't listen

@@ -106,6 +106,7 @@
 /// Runs the due items of `phase`, in order. `lane` (phase P) restricts the run to that lane. `limit_abs` is the
 /// absolute tick usage to stay under; an item that runs out of budget mid-sweep resumes next pass. Returns TRUE
 /// when nothing was left unfinished. `now` is the time due dates are compared against (tests inject it).
+// ALLOW(sys_world_time_write): the kernel clock: a per-tick timestamp of the scheduler itself, not a per-entity expiry
 /datum/controller/kernel/proc/work_run_phase(phase, limit_abs, lane = 0, now = world.time)
 	. = TRUE
 	for(var/datum/work_item/W as anything in items_of_phase(phase))
@@ -117,6 +118,7 @@
 				return
 
 /// Runs one item if it is due and its latency class is admitted. Returns FALSE when it ran out of budget with work left.
+// ALLOW(sys_world_time_write): the kernel clock: a per-tick timestamp of the scheduler itself, not a per-entity expiry
 /datum/controller/kernel/proc/run_item(datum/work_item/W, limit_abs, now = world.time)
 	if(W.parked)
 		return TRUE

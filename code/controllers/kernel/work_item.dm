@@ -132,6 +132,7 @@
 /// Deciseconds since this item last ran for `member` (or on its own), on the item's clock, and stamps now as
 /// the last run. Returns 0 when it already ran at this instant (a urgent run and the cadence in one tick):
 /// nothing to apply twice.
+// ALLOW(sys_world_time_write): the kernel clock: a per-tick timestamp of the scheduler itself, not a per-entity expiry
 /datum/work_item/proc/take_dt(datum/member, now = world.time)
 	var/token = member || src
 	now = work_clock_now(clock, member, now)
@@ -142,6 +143,7 @@
 	return max(now - prev, 0)
 
 /// TRUE when this member already ran at the current instant on its clock (its execution token is current).
+// ALLOW(sys_world_time_write): the kernel clock: a per-tick timestamp of the scheduler itself, not a per-entity expiry
 /datum/work_item/proc/token_current(datum/member, now = world.time)
 	var/prev = last_at?[member || src]
 	return !isnull(prev) && prev >= work_clock_now(clock, member, now)
@@ -160,6 +162,7 @@
 
 /// Now on `clock`, for `member`. CLOCK_WORLD is world.time; an entity clock is the member's own (om_clock_now()),
 /// which stands still while the member is paused. A member without that clock reads world time.
+// ALLOW(sys_world_time_write): the kernel clock: a per-tick timestamp of the scheduler itself, not a per-entity expiry
 /proc/work_clock_now(clock, datum/member, now = world.time)
 	if(clock == CLOCK_WORLD || !member)
 		return now
