@@ -49,14 +49,15 @@
 	. += ui_from(nameof(categories), nameof(coin), nameof(has_prices), nameof(product_records))
 
 /// Types whose reactions() declare every() / on_cross() / on_notice(), with the RXB_* kinds (code/datums/reactions/work.dm).
+GLOBAL_LIST_INIT(rx_boot_type_table, list(
+	/obj/machinery/power/apc = RXB_NOTICE,
+))
 /proc/rx_boot_types()
 	RETURN_TYPE(/list)
-	var/static/list/types = list(
-		/obj/machinery/power/apc = RXB_NOTICE,
-	)
-	return types
+	return GLOB.rx_boot_type_table
 
 /// Capabilities some every(members = ...) runs per member of: their holders join the membership store at init.
+GLOBAL_LIST_INIT(rx_boot_member_table, list())
 /proc/rx_boot_members()
 	RETURN_TYPE(/list)
-	return list()
+	return GLOB.rx_boot_member_table

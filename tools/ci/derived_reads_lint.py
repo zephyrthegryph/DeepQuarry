@@ -531,26 +531,25 @@ def reaction_declarations(model):
 def boot_text(model):
     """The tail of code/_generated/reads.dm: rx_boot_types() and rx_boot_members()."""
     flags, members = reaction_declarations(model)
-    out = ["/// Types whose reactions() declare every() / on_cross() / on_notice(), with the RXB_* kinds (code/datums/reactions/work.dm).",
-           "/proc/rx_boot_types()", "\tRETURN_TYPE(/list)"]
+    out = []
+    out.append("/// Types whose reactions() declare every() / on_cross() / on_notice(), with the RXB_* kinds (code/datums/reactions/work.dm).")
     if flags:
-        out.append("\tvar/static/list/types = list(")
+        out.append("GLOBAL_LIST_INIT(rx_boot_type_table, list(")
         for owner in sorted(flags):
-            out.append("\t\t%s = %s," % (owner, " | ".join(sorted(flags[owner]))))
-        out.append("\t)")
-        out.append("\treturn types")
+            out.append("\t%s = %s," % (owner, " | ".join(sorted(flags[owner]))))
+        out.append("))")
     else:
-        out.append("\treturn list()")
-    out += ["", "/// Capabilities some every(members = ...) runs per member of: their holders join the membership store at init.",
-            "/proc/rx_boot_members()", "\tRETURN_TYPE(/list)"]
+        out.append("GLOBAL_LIST_INIT(rx_boot_type_table, list())")
+    out += ["/proc/rx_boot_types()", "\tRETURN_TYPE(/list)", "\treturn GLOB.rx_boot_type_table", ""]
+    out.append("/// Capabilities some every(members = ...) runs per member of: their holders join the membership store at init.")
     if members:
-        out.append("\tvar/static/list/caps = list(")
+        out.append("GLOBAL_LIST_INIT(rx_boot_member_table, list(")
         for cap in members:
-            out.append("\t\t%s," % cap)
-        out.append("\t)")
-        out.append("\treturn caps")
+            out.append("\t%s," % cap)
+        out.append("))")
     else:
-        out.append("\treturn list()")
+        out.append("GLOBAL_LIST_INIT(rx_boot_member_table, list())")
+    out += ["/proc/rx_boot_members()", "\tRETURN_TYPE(/list)", "\treturn GLOB.rx_boot_member_table"]
     out.append("")
     return out
 
