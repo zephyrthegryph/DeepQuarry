@@ -70,6 +70,40 @@ Write it the way DM already works:
 - **Runtime-attached capabilities:** `add_capability()` / `remove_capability()`.
 - **System membership:** `joins` / `systems()`.
 
+## Operations [built: rewrite/f-ops]
+
+One operation is one attempt: `/datum/op_ctx` (pooled: `op_ctx_take()` / `release()`) holds actor, target, held,
+op, provider, route, authority and id. Code: `code/datums/operations/`, defines `code/__defines/operations.dm`.
+
+- **Requirements** are flyweights (`/datum/req`): `test(ctx)` returns null or a reason (a `/datum/msg` type),
+  `reads(ctx)` the `(datum, key)` pairs the answer depends on. Constructors: `req(type)`, `req_set(bits)`,
+  `req_clear(bits)`, `req_access()`, `req_wire(wire)`, `req_part(type)`, `req_proc(proc, reads=)`, `all_of`,
+  `any_of`, `none_of`. Declare a requirement once; identical declarations share one datum.
+- **`cap_op(name, handler, using=, by=, via=, action=, needs=, delay=, cost=, start_msg=, kind=, key=, at=, log=)`**
+  builds an entry. `using`: null (empty hand), a `TOOL_*`, an item type or a `/datum/req`. `by`: the `AFF_*` bits a
+  provider slot must give (default `AFF_MANIPULATE`). `via`: accepted `ROUTE_*` (default physical). `kind`:
+  `OP_CONTROL`, `OP_STRUCTURAL`, `OP_EMERGENCY`. `cap_hand`, `cap_tool`, `cap_use_on`, `cap_insert` are presets
+  (legacy: no provider, no actor-state stage, the old gating arguments and defaults); `cap_control` is the strict
+  control preset (`AFF_CONTROL`, physical or interface route).
+- **Check order** (`ctx.check()`), first failure wins: provider, route (reach and the bay's boundary), actor state,
+  target contract (`behind`/`locked_by`/`needs` procs), capability contracts (`cap_require`), op needs.
+  It runs before the wait, at the end of the wait and at commit. A waiting op also watches its requirements' reads
+  and cancels early when one is published (`op_reads_changed(datum, key)`; `cap_set()` publishes `OP_KEY_CAP_STATE`).
+- **`cap_require(ops = key|kind|list|null, needs = ...)`**: an additive contract on the holder's ops.
+- **`refine(key, delay=, effect=, input=, action=)`** edits an op declared earlier. Declaring one non-legacy op key
+  twice in a list is an init error unless the second says `replace = TRUE`.
+- **Affordances:** `slot.provides` (`AFF_HOLD`, `AFF_MANIPULATE`, `AFF_HOLD_SMALL`, `AFF_INTERFACE`); hands provide
+  all four. `ops_provider()` picks the slot, active hand first.
+- **Compartments:** `compartment(BAY_X, door = CAP_KEY|bits|req, route_gate = req, heat=, damage=, radiation=, gas=)`.
+  Ops take `at = BAY_X`; slots take `at`; `passes(route, ctx)` gates the op, `transmission(effect)` scales the
+  slot's path share in `containment/paths.dm`.
+- **Actions:** `/datum/action_def/<x>` (id `ACT_*`, name, binds, radial_icon, category); `/datum/bind_profile/{default,
+  silicon,observer}` map `GESTURE_*` to a priority list of actions. `perform_action(mob, target, ACT_X, route=)`,
+  `test_action(...)` (null or the reason), `resolve_gesture()`, `action_options()` (radial rows),
+  `screentip_for()`, the UI route `act("action", {id})` (`/atom/proc/act_action`) and the "Act" verb.
+- **Reactions:** `op_before(ctx)` (FALSE stops the commit) and `op_after(ctx)` are the hook points W1's
+  `before_op`/`after_op` reactions wire to.
+
 ## Derived procs
 
 - **The procs:** `draw(look)`, `should_run()`, `hidden_verbs()`, `tgui_data()` and

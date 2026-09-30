@@ -302,6 +302,7 @@
 #include "dx_cap_edible_tests.dm"
 #include "dx_cap_embed_tests.dm"
 #include "dx_cap_entries_tests.dm"
+#include "dx_operations_tests.dm"
 #include "dx_cap_item_entries_tests.dm"
 #include "dx_cap_flip_tests.dm"
 #include "dx_cap_label_tests.dm"
