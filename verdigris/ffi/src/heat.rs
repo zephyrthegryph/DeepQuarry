@@ -74,6 +74,10 @@ pub const HEAT_TARGET_TURF_AIR: i32 = 2;
 pub const HEAT_TARGET_MIXTURE: i32 = 3;
 /// @dm-define HEAT_TARGET_BODY
 pub const HEAT_TARGET_BODY: i32 = 4;
+/// The gas of the pipe region a pipe port (an entity handle) is in: a pipeline's persistent coupling, which follows the
+/// region through merges and splits.
+/// @dm-define HEAT_TARGET_PIPE_PORT
+pub const HEAT_TARGET_PIPE_PORT: i32 = 5;
 
 /// `HEAT_CELL_*` kinds DM sends for a turf.
 /// @dm-define HEAT_CELL_SOLID
@@ -453,7 +457,7 @@ fn heat_turf_properties(turf: ByondValue) -> Result<ByondValue> {
 fn coupling_kind_for(target_kind: i32) -> Result<i32> {
     match target_kind {
         HEAT_TARGET_NONE | HEAT_TARGET_SOLID | HEAT_TARGET_TURF_AIR | HEAT_TARGET_MIXTURE
-        | HEAT_TARGET_BODY => Ok(target_kind),
+        | HEAT_TARGET_BODY | HEAT_TARGET_PIPE_PORT => Ok(target_kind),
         other => bail!("bad heat target kind {other}"),
     }
 }
@@ -693,6 +697,23 @@ fn set_coupling(
                             body: body_i,
                             kind: gas_kind::MIXTURE,
                             target,
+                            conductance: conductance.into(),
+                            slot,
+                        },
+                    )
+                    .map_err(|e| eyre!("{e}"))?;
+                COUPLINGS.with(|c| c.borrow_mut().insert((body_i, slot), (1, e)));
+                track_coupling_owner(e, body_e);
+            }
+            HEAT_TARGET_PIPE_PORT => {
+                let port = entity::decode(num(target_ref)?)?;
+                let e = w
+                    .bind_value(
+                        None,
+                        GasCoupling {
+                            body: body_i,
+                            kind: gas_kind::PIPE_PORT,
+                            target: port.bits(),
                             conductance: conductance.into(),
                             slot,
                         },
@@ -1427,24 +1448,35 @@ fn turf_gas_heat(w: &mut vg_core::world::World, cell: u32, joules: f64) {
     }
 }
 
+/// The mixture a [`GasCoupling::probe_key`] names: an arena mixture by id, or the pipe region a port (a packed entity id with
+/// [`gas_kind::PORT_KEY`] set) is in now.
+pub(crate) fn probe_mixture(w: &vg_core::world::World, key: u32) -> Option<crate::gas::mix::MixRef> {
+    if key & gas_kind::PORT_KEY == 0 {
+        return crate::gas::mix::MixRef::from_id(key);
+    }
+    crate::pipes::port_mixture(w, key & !gas_kind::PORT_KEY)
+}
+
 /// Every gas mixture a heat body couples to, as the exchange law reads it
 /// (`vg_heat::laws::MixtureProbes`). Loads mixtures, so call it outside the
 /// world borrow.
 pub(crate) fn mixture_probes() -> vg_heat::laws::MixtureProbes {
-    let targets: Vec<u32> = with_world(|w| {
+    // A coupling's key resolves to its mixture here, so a pipeline's port coupling is read from the region the port is in
+    // now (after any merge or split), not from where it once was.
+    let targets: Vec<(u32, Option<crate::gas::mix::MixRef>)> = with_world(|w| {
         Ok(w.entities_with::<GasCoupling>()
             .into_iter()
             .filter_map(|e| w.read::<GasCoupling>(e))
-            .filter(|c| c.kind == gas_kind::MIXTURE)
-            .map(|c| c.target)
+            .filter(|c| c.kind != gas_kind::TURF)
+            .map(|c| (c.probe_key(), probe_mixture(w, c.probe_key())))
             .collect())
     })
     .unwrap_or_default();
     let mut probes: Vec<(u32, f32, f32, bool)> = targets
         .into_iter()
-        .filter_map(|id| {
-            let m = crate::gas::mix::load(crate::gas::mix::MixRef::from_id(id)?)?;
-            Some((id, m.get_temperature(), m.heat_capacity(), m.is_immutable()))
+        .filter_map(|(key, mixture)| {
+            let m = crate::gas::mix::load(mixture?)?;
+            Some((key, m.get_temperature(), m.heat_capacity(), m.is_immutable()))
         })
         .collect();
     probes.sort_unstable_by_key(|p| p.0);
@@ -1456,9 +1488,12 @@ pub(crate) fn mixture_probes() -> vg_heat::laws::MixtureProbes {
 /// in `events`). Call it outside the world borrow.
 pub(crate) fn apply_mixture_heat(events: &vg_core::event::EventSink) {
     for (_, e) in events.decoded::<vg_heat::laws::HeatEvent>() {
-        if let vg_heat::laws::HeatEvent::MixtureHeat { target, joules } = e
-            && let Some(r) = crate::gas::mix::MixRef::from_id(target)
-        {
+        let (key, joules) = match e {
+            vg_heat::laws::HeatEvent::MixtureHeat { target, joules } => (target, joules),
+            vg_heat::laws::HeatEvent::PortHeat { port, joules } => (gas_kind::PORT_KEY | port, joules),
+            vg_heat::laws::HeatEvent::Settled => continue,
+        };
+        if let Some(r) = with_world(|w| Ok(probe_mixture(w, key))).ok().flatten() {
             let mut d = [0.0f32; vg_gas::cell::Q];
             d[vg_gas::cell::N] = joules;
             crate::gas::mix::add_amounts(r, &d, 0.0);
@@ -1471,6 +1506,97 @@ mod tests {
     use super::*;
     use crate::gas::mix::{self, MixRef};
     use vg_core::watch::{Cmp, Edge};
+
+    /// A pipeline's persistent coupling names a port, so the gas it heats is always that of the region the port is in now.
+    #[test]
+    fn a_pipeline_port_coupling_follows_its_region_through_merge_and_split() {
+        use vg_gas::pipes::{PipeGas, Pipes};
+        with_world(|_| Ok(())).unwrap();
+        let (a, b, body) = with_world(|w| {
+            // Burn some entity slots first: a port whose id is not tiny is what the event's f32 wire must carry exactly.
+            for _ in 0..5_000 {
+                let _ = w.entities_mut().bind().unwrap();
+            }
+            let a = w.entities_mut().bind().unwrap();
+            let b = w.entities_mut().bind().unwrap();
+            let mut gas = PipeGas::default();
+            gas.moles[vg_gas::gas::ids::GAS_OXYGEN] = 50.0;
+            gas.energy = 50.0 * 20.0 * 280.0;
+            w.edit_network::<Pipes>(move |host| {
+                let _ = host.bind_node(a, 0, 0, 100.0);
+                let _ = host.bind_node(b, 0, 0, 100.0);
+                let region = host.region_of(a).expect("bound");
+                let _ = host.set_payload(region, gas);
+            })
+            .map_err(|e| eyre!("{e}"))?;
+            w.commit_network::<Pipes>();
+            let body = w
+                .bind_value(
+                    None,
+                    HeatBody {
+                        capacity: 1_000.0,
+                        energy: 1_000.0 * 600.0,
+                        ..Default::default()
+                    },
+                )
+                .map_err(|e| eyre!("{e}"))?;
+            w.bind_value(
+                None,
+                GasCoupling {
+                    body: body.index(),
+                    kind: gas_kind::PIPE_PORT,
+                    target: a.bits(),
+                    conductance: 5.0,
+                    slot: 1,
+                },
+            )
+            .map_err(|e| eyre!("{e}"))?;
+            Ok((a, b, body))
+        })
+        .unwrap();
+        let key = gas_kind::PORT_KEY | a.bits();
+        let resolve = |e: vg_core::entity::EntityId| with_world(|w| Ok(probe_mixture(w, gas_kind::PORT_KEY | e.bits()))).unwrap();
+        let apart = (resolve(a).expect("a is in a region"), resolve(b).expect("b is in a region"));
+        assert_ne!(apart.0, apart.1, "two ports, two pipelines");
+
+        // Merge: the coupling resolves to the one surviving region, the same as the other port's.
+        with_world(|w| {
+            w.edit_network::<Pipes>(move |host| host.connect_entities(a, b).unwrap())
+                .map_err(|e| eyre!("{e}"))?;
+            w.commit_network::<Pipes>();
+            Ok(())
+        })
+        .unwrap();
+        assert_eq!(resolve(a), resolve(b), "merged: the coupling follows the surviving region");
+        assert!(mix::load(resolve(a).unwrap()).unwrap().total_moles() > 49.0, "and its gas is the merged pipeline's");
+
+        // Split: the coupling stays with the port's side; the other port is alone again.
+        with_world(|w| {
+            w.edit_network::<Pipes>(move |host| host.disconnect_entities(a, b))
+                .map_err(|e| eyre!("{e}"))?;
+            w.commit_network::<Pipes>();
+            Ok(())
+        })
+        .unwrap();
+        assert_ne!(resolve(a), resolve(b), "split: two pipelines again");
+
+        // The exchange heats the gas of the region the port is in now.
+        let before = mix::load(resolve(a).unwrap()).unwrap().get_temperature();
+        for _ in 0..10 {
+            let probes = mixture_probes();
+            assert!(probes.0.iter().any(|p| p.0 == key), "the port's coupling is probed under its key");
+            let events = with_world(|w| {
+                w.set_global(probes).map_err(|e| eyre!("{e}"))?;
+                w.step_blocking();
+                Ok(w.drain_events())
+            })
+            .unwrap();
+            apply_mixture_heat(&events);
+        }
+        let after = mix::load(resolve(a).unwrap()).unwrap().get_temperature();
+        assert!(after > before + 1.0, "the hot body warmed the pipeline: {before} -> {after}");
+        let _ = body;
+    }
 
     #[test]
     fn a_body_warms_a_tank() {

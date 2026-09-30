@@ -3,12 +3,11 @@
 // calls `effect` on the holder, (mob/user, obj/item/card/emag/card), FIRST: it may refuse by returning
 // FALSE (or a reason text), and then no bit is set and no use is spent. Otherwise the bit is set, the
 // user told `say` (act_message tokens) and one use spent. EMAG_ONCE refuses a second swipe with
-// already_say. Draws nothing by default and gates nothing. Accessor: is_emagged().
+// already_say. Draws nothing by default (an emag declared as an op draws the part LOOK_EMAGGED while the holder is closed up) and gates nothing. Accessor: is_emagged().
 //
 //	. += cap_emag(say = "You short out %T%'s access lock.", effect = PROC_REF(on_emag), behind = PANEL, delay = 2 SECONDS)
 
 /datum/capability/emag
-	layer_name = CAP_NO_LAYER
 	var/say
 	var/effect
 	var/mode = EMAG_ONCE
@@ -20,14 +19,13 @@
 
 /// An emag: `effect` (a proc on the holder) runs first and may refuse; then `say` to the user, once or
 /// every time (`mode`). `delay`: the wait before the effect. Gating as every library constructor.
-/proc/cap_emag(say, effect, mode = EMAG_ONCE, already_say = "It is already emagged.", delay = 0, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log = LOG_ADMIN, layer = CAP_NO_LAYER)
+/proc/cap_emag(say, effect, mode = EMAG_ONCE, already_say = "It is already emagged.", delay = 0, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log = LOG_ADMIN)
 	var/datum/capability/emag/C = new
 	C.say = say
 	C.effect = effect
 	C.mode = mode
 	C.already_say = already_say
 	C.delay = delay
-	C.layer_name = layer
 	return cap_gating(C, behind = behind, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 
 /datum/capability/emag/interactions(atom/holder)
@@ -38,7 +36,11 @@
 	return list(E)
 
 /datum/capability/emag/draw(atom/holder, datum/look/look)
-	draw_layer(look, when = is_emagged(holder))
+	if(as_op)
+		look.part(LOOK_EMAGGED, is_emagged(holder) && !(blocked_by & holder.cap_state))
+
+/datum/capability/emag/look_parts()
+	return as_op ? list(LOOK_EMAGGED) : null
 
 /atom/proc/cap_emag_use(mob/user, obj/item/held)
 	var/datum/capability/emag/C = cap_of_all(src, /datum/capability/emag)
@@ -71,19 +73,18 @@
  * usable and (EMAG_ONCE) the holder not yet emagged before, and after a successful commit CAP_EMAGGED is set, `say`
  * told and one use spent (emag_committed(), an after_op reaction of the capability).
  */
-/proc/emag_op(say, effect, mode = EMAG_ONCE, already_say = "It is already emagged.", delay = 0, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, log = LOG_ADMIN, layer = CAP_NO_LAYER)
+/proc/emag_op(say, effect, mode = EMAG_ONCE, already_say = "It is already emagged.", delay = 0, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, log = LOG_ADMIN)
 	var/datum/capability/emag/C = new
 	C.say = say
 	C.mode = mode
 	C.already_say = already_say
 	C.delay = delay
-	C.layer_name = layer
 	C.as_op = TRUE
-	cap_gating(C, log = log)
+	cap_gating(C, blocked_by = blocked_by, log = log)
 	var/list/pre = list(TYPE_PROC_REF(/atom, emag_op_ok))
 	if(needs)
 		pre += islist(needs) ? needs : list(needs)
-	var/datum/capability/entry/op = cap_op("Emag", effect || TYPE_PROC_REF(/atom, emag_default_effect), using = /obj/item/card/emag, key = CAP_EMAG, action = ACT_USE, kind = OP_STRUCTURAL, delay = delay, priority = 50, needs = pre, else_say = else_say, behind = behind, blocked_by = blocked_by, locked_by = locked_by, works_broken = TRUE, works_unpowered = TRUE, log = log)
+	var/datum/capability/entry/op = cap_op("Emag", effect || TYPE_PROC_REF(/atom, emag_default_effect), using = /obj/item/card/emag, key = CAP_EMAG, action = ACT_USE, kind = OP_STRUCTURAL, delay = delay, priority = 50, needs = pre, else_say = else_say, behind = behind, blocked_by = blocked_by, locked_by = locked_by, log = log)
 	return list(C, op)
 
 /datum/capability/emag/reactions()
@@ -105,14 +106,22 @@
 		return C.already_say
 	return TRUE
 
+/// What the user is told when an emag declared as an op goes through: the type's `emag_msg` (machinery), else the capability's `say`.
+/atom/proc/emag_message()
+	return null
+
+/obj/machinery/emag_message()
+	return emag_msg
+
 /// after_op(CAP_EMAG): the emag went through. Sets the bit, tells the user, spends one use as
 /// /obj/item/card/emag/proc/spend() does (the dispatcher writes the log line).
 /atom/proc/emag_committed(datum/op_ctx/ctx)
 	var/datum/capability/emag/C = cap_of_all(src, /datum/capability/emag)
 	var/obj/item/card/emag/card = ctx.held
 	cap_set(src, CAP_EMAGGED, TRUE)
-	if(C?.say)
-		act_message(ctx.actor, src, self = span_warning(C.say), item = card)
+	var/say = emag_message() || C?.say
+	if(say)
+		act_message(ctx.actor, src, self = span_warning(say), item = card)
 	if(istype(card))
 		card.uses--
 		if(card.uses < 1)

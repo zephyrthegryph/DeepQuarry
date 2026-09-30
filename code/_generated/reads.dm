@@ -10,6 +10,10 @@
 	. = ..()
 	. += runs_while(nameof(periodic_parked), nameof(system))
 
+/obj/machinery/atmospherics/binary/dp_vent_pump/generated_reads()
+	. = ..()
+	. += rust_push(nameof(external_pressure_bound), nameof(input_pressure_min), nameof(node1), nameof(node2), nameof(output_pressure_max), nameof(power_rating), nameof(pressure_checks), nameof(pump_direction), nameof(use_power))
+
 /obj/machinery/atmospherics/binary/passive_gate/generated_reads()
 	. = ..()
 	. += rust_push(nameof(regulate_mode), nameof(set_flow_rate), nameof(target_pressure), nameof(unlocked))
@@ -21,6 +25,22 @@
 /obj/machinery/atmospherics/binary/volume_pump/generated_reads()
 	. = ..()
 	. += rust_push(nameof(overclocked), nameof(power_rating), nameof(transfer_rate), nameof(use_power))
+
+/obj/machinery/atmospherics/omni/atmos_filter/generated_reads()
+	. = ..()
+	. += rust_push(nameof(atmos_filters), nameof(input), nameof(output), nameof(ports), nameof(power_rating), nameof(set_flow_rate), nameof(use_power))
+
+/obj/machinery/atmospherics/omni/mixer/generated_reads()
+	. = ..()
+	. += rust_push(nameof(inputs), nameof(output), nameof(ports), nameof(power_rating), nameof(set_flow_rate), nameof(use_power))
+
+/obj/machinery/atmospherics/trinary/atmos_filter/generated_reads()
+	. = ..()
+	. += rust_push(nameof(node1), nameof(node2), nameof(node3), nameof(power_rating), nameof(set_flow_rate), nameof(use_power))
+
+/obj/machinery/atmospherics/trinary/mixer/generated_reads()
+	. = ..()
+	. += rust_push(nameof(node1), nameof(node1_concentration), nameof(node2), nameof(node2_concentration), nameof(node3), nameof(power_rating), nameof(set_flow_rate), nameof(use_power))
 
 /obj/machinery/atmospherics/unary/vent_pump/generated_reads()
 	. = ..()
@@ -40,8 +60,8 @@
 
 /obj/machinery/power/apc/generated_reads()
 	. = ..()
-	. += drawn_from(nameof(charging))
-	. += rust_push(nameof(cell), nameof(chargelevel), nameof(chargemode), nameof(grid_check), nameof(operating), nameof(power_failed), nameof(pushed_cell), nameof(shorted), nameof(vg_entity))
+	. += drawn_from(nameof(cell), nameof(charging))
+	. += rust_push(nameof(cell), nameof(chargelevel), nameof(chargemode), nameof(grid_check), nameof(operating), nameof(power_failed), nameof(pushed_cell_ref), nameof(shorted), nameof(vg_entity))
 	. += ui_from(nameof(chargemode), nameof(charging), nameof(coverlocked), nameof(emergency_lights), nameof(grid_check), nameof(main_status))
 
 /obj/machinery/vending/generated_reads()
@@ -49,15 +69,20 @@
 	. += ui_from(nameof(categories), nameof(coin), nameof(has_prices), nameof(product_records))
 
 /// Types whose reactions() declare every() / on_cross() / on_notice(), with the RXB_* kinds (code/datums/reactions/work.dm).
-GLOBAL_LIST_INIT(rx_boot_type_table, list(
-	/obj/machinery/power/apc = RXB_NOTICE,
-))
 /proc/rx_boot_types()
 	RETURN_TYPE(/list)
-	return GLOB.rx_boot_type_table
+	// Built on first call: a static or global initializer may not have run yet when the first atoms initialize.
+	var/static/list/table
+	if(!table)
+		table = list(
+			/obj/machinery/power/apc = RXB_NOTICE,
+		)
+	return table
 
 /// Capabilities some every(members = ...) runs per member of: their holders join the membership store at init.
-GLOBAL_LIST_INIT(rx_boot_member_table, list())
 /proc/rx_boot_members()
 	RETURN_TYPE(/list)
-	return GLOB.rx_boot_member_table
+	var/static/list/table
+	if(!table)
+		table = list()
+	return table

@@ -36,10 +36,12 @@ pub enum HeatEvent {
     /// environment: its excess energy already moved there this step; the
     /// FFI layer drops its coupling entities and despawns it.
     Settled,
-    /// A body coupled to a gas mixture (a tank, a pipe network) moved
-    /// `joules` into it (negative: out of it); the FFI layer, which owns
+    /// A body coupled to a gas mixture (a tank, a canister; `target` is its arena id) moved `joules` into it (negative: out of it); the FFI layer, which owns
     /// mixtures, applies it.
     MixtureHeat { target: u32, joules: f32 },
+    /// A body coupled to a pipe port moved `joules` into (negative: out of) the gas of the region the port is in. The port's
+    /// packed entity id is below 2^24, so it survives the event's `f32` wire exactly (a probe key does not).
+    PortHeat { port: u32, joules: f32 },
 }
 
 /// Adds `joules` to a body's energy, clamped at its TCMB floor.
@@ -294,11 +296,12 @@ vg_core::law! {
     /// applied by the FFI layer from [`HeatEvent::MixtureHeat`].
     pub BodyMixtureExchange("heat_body_mixture_exchange"): (GasCoupling, vg_core::query::Global<MixtureProbes>) => Foreign<GasCoupling, HeatBody>, |ctx, dt| {
         let (now, c) = (ctx.now(), ctx.reads.0.clone());
-        if c.kind != crate::components::gas_kind::MIXTURE {
+        if c.kind == crate::components::gas_kind::TURF {
             return Settle::Sleep;
         }
+        let key = c.probe_key();
         let probes = &ctx.reads.1 .0 .0;
-        let Ok(i) = probes.binary_search_by_key(&c.target, |p| p.0) else {
+        let Ok(i) = probes.binary_search_by_key(&key, |p| p.0) else {
             return Settle::Active;
         };
         let (_, t, cap, reservoir) = probes[i];
@@ -309,9 +312,20 @@ vg_core::law! {
         let step = couple(body, &mut env, c.conductance, c.slot == 0, now, dt);
         if env.deposited != 0.0 {
             #[allow(clippy::cast_possible_truncation)]
-            ctx.emit(HeatEvent::MixtureHeat { target: c.target, joules: env.deposited as f32 });
+            if c.kind == crate::components::gas_kind::PIPE_PORT {
+                ctx.emit(HeatEvent::PortHeat { port: c.target, joules: env.deposited as f32 });
+            } else {
+                ctx.emit(HeatEvent::MixtureHeat { target: c.target, joules: env.deposited as f32 });
+            }
         }
-        finish(ctx, step)
+        let settle = finish(ctx, step);
+        // A pipeline's gas changes under it (devices, other exchanges) and nothing wakes a sleeping coupling for that:
+        // a port coupling keeps stepping.
+        if c.kind == crate::components::gas_kind::PIPE_PORT && settle == Settle::Sleep {
+            Settle::Active
+        } else {
+            settle
+        }
     }
 }
 

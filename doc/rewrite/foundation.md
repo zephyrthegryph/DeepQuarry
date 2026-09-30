@@ -65,18 +65,22 @@ The excerpt is the real code, trimmed to the declarations:
 /obj/machinery/power/apc
     machine_board = /obj/item/module/power_control        // type vars: what it is
     machine_wires = /datum/wires/apc
+    emag_msg = "You emag the APC interface."              // what the hatch's emag op tells the user
     req_access = list(ACCESS_ENGINE_EQUIP)
 
 /obj/machinery/power/apc/capabilities()
     . = ..()
     . += wall_machine(dismantle = NONE, repair = NONE, powered = FALSE)
-    . += maintenance_hatch(cover_holds = PROC_REF(cover_holds), panel_needs_cover_closed = TRUE, emag_say = "...")
+    . += maintenance_hatch(cover_holds = PROC_REF(cover_holds), panel_needs_cover_closed = TRUE)
     . += cell_bay(nameof(cell), at = BAY_HATCH, needs = PROC_REF(cell_bay_ready), size = ITEMSIZE_NORMAL)
     . += power_channels()
     . += powered_by(/datum/system/power, role = POWER_ROLE_AREA_SUPPLY)
     . += cap_construction(
-        ladder_options(at = BAY_HATCH, undo_delay = 5 SECONDS, dismantle = list(TOOL_WELDER, /obj/item/frame/apc, 1, PROC_REF(frame_ruined), /obj/item/stack/material/steel)),
-        stage("frame", desc = "..."), apc_board_stage(), apc_wired_stage(), apc_secured_stage())   // build_insert / build_wire / build_fasten
+        ladder_options(at = BAY_HATCH, undo_delay = 5 SECONDS, dismantle = ladder_dismantle(tool = TOOL_WELDER, becomes = /obj/item/frame/apc, amount = 1, when_ruined = PROC_REF(frame_ruined), ruined_becomes = /obj/item/stack/material/steel)),
+        stage("frame", desc = "..."),
+        build_insert(machine_board, name = "board", on_enter = PROC_REF(board_seated)),
+        build_wire(10, name = "wired", needs = PROC_REF(floor_exposed), undo_needs = PROC_REF(floor_exposed), on_enter = PROC_REF(terminal_wired), on_leave = PROC_REF(terminal_cut)),
+        build_fasten(TOOL_SCREWDRIVER, name = "secured", needs = PROC_REF(cell_out), else_say = "...", undo_needs = PROC_REF(cell_out), undo_else_say = "...", on_enter = ..., on_leave = ...))
     . += apc_ops()                                          // cap_control("Open interface"), the cover, the multitool reset
     . += cap_require(CAP_LOCK, needs = list(req_clear(CAP_EMAGGED), req_proc(PROC_REF(not_hacked)), req_wire(WIRE_IDSCAN), req_proc(PROC_REF(is_working))))
     . += cap_require(CAP_EMAG, needs = req_proc(PROC_REF(emag_ok)))
@@ -96,9 +100,14 @@ The excerpt is the real code, trimmed to the declarations:
     look.part("emagged", apc_bluescreen())
     ..()
     ...
-    look.part("channel-3", "[charging]")
-    look.glow("channel-3", "[charging]")                   // explicit glows
+    look.glow("charge", "[charging]")                      // a glow draws its part: apc-charge-N, else charge-N
 ```
+
+An op that is meant only with an empty hand says `using = EMPTY_HAND`; what else decides whether it is meant at all is
+`offered = req_proc(...)` (the input falls through to the next interaction instead of being refused). A structural op
+(`kind = OP_STRUCTURAL`) works broken and unpowered without saying so. The hatch's lock draws as a lamp (`locked` /
+`unlocked`, glowing) while `is_lit(A)` (powered, not broken, no `screen_override()`) and closed up, and its emag op as
+the `emagged` part; the APC adds only its bluescreen, charge lamp and light.
 
 The lock is one op declared by the hatch (`CAP_LOCK`, ACT_LOCK: an alt-click with anything in hand, or a plain click holding a card
 the lock takes; the credential is a provider found like a hand, `cap_lock_credential()`: held card, worn ID/PDA, silicon access) and the emag one op (`CAP_EMAG`, its handler is the effect; the shared commit is an `after_op` reaction of the emag

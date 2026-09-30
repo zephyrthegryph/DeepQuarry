@@ -19,7 +19,9 @@ A file that names the icon is the safe scope; use --anywhere only for a state na
     --check             list states that do not follow the convention (lowercase, dash separated)
     --standard          derive the renames from the legacy names in the icon (no --map needed):
                           panel_open, cover_open ...  -> panel-open, cover-open   (standard part, dashed)
-                          apco<channel>-<mode>        -> channel-<channel>-<mode>
+                          apco<0-2>-<mode>            -> channel-<0-2>-<mode>   (the equipment/lighting/environ channels)
+                          apco3-<n>                   -> charge-<n>             (apco3 is the charge lamp, not a channel)
+                          apc<0-2>-nocover / -b-nocover, apcmaint -> apc0-cover-removed[-broken][-cell], maintenance
                           <base>-panel                -> <base>-panel-open
                         A legacy name whose standard name already exists is reported and skipped.
 """
@@ -57,15 +59,26 @@ def read_toml_states(lines: list[str]) -> list[tuple[int, str]]:
 
 STANDARD_TOKENS = {"panel", "cover", "broken", "locked", "wires", "dark", "lid", "cell", "bolts", "welded",
                    "emergency", "power", "charge", "channel"}
-APC_CHANNEL = re.compile(r"^apco(\d+)-(\d+)$")
+APC_CHANNEL = re.compile(r"^apco([0-2])-(\d+)$")
+APC_CHARGE = re.compile(r"^apco3-(\d+)$")
+APC_COVERLESS = re.compile(r"^apc([12])(-b)?-nocover$")
 BASE_PANEL = re.compile(r"^(.+)-panel$")
 
 
 def standard_name(name: str) -> str | None:
     """The standard name for a legacy state name, or None when it needs no rename."""
+    m = APC_CHARGE.match(name)
+    if m:
+        return "charge-%s" % m.group(1)
     m = APC_CHANNEL.match(name)
     if m:
         return "channel-%s-%s" % (m.group(1), m.group(2))
+    m = APC_COVERLESS.match(name)
+    if m:
+        # apc1 has no cell in it, apc2 has one; "-b-" is the broken frame. Variants chain on the apc0 base.
+        return "apc0-cover-removed%s%s" % ("-broken" if m.group(2) else "", "-cell" if m.group(1) == "2" else "")
+    if name == "apcmaint":
+        return "maintenance"
     m = BASE_PANEL.match(name)
     if m:
         return "%s-panel-open" % m.group(1)

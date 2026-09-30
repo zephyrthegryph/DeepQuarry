@@ -12,7 +12,7 @@
 			return E
 	return null
 
-/// Whether A's draw() shows `name` now: as an overlay, a glow, or a part (look.part(), which the library draws; a
+/// Whether A's draw() shows `name` now: as an overlay or a part (look.part(), which the library draws; a
 /// part resolves to an icon state only when the fixture's icon has it, so the test reads the look, not the applied
 /// overlays). The standard part names are dashed ("cover-open"): the legacy underscore spelling is accepted.
 /proc/dx_look_shows(atom/A, name)
@@ -20,7 +20,7 @@
 	var/datum/look/L = GLOB.look_builder
 	L.reset()
 	A.draw(L)
-	. = (name in L.glows) || (name in L.overlays)
+	. = (name in L.overlays)
 	for(var/list/entry in L.parts)
 		if(entry[1] == name || (!isnull(entry[2]) && "[entry[1]]-[entry[2]]" == name))
 			. = TRUE

@@ -150,7 +150,7 @@
 	A.environ = POWERCHAN_ON_AUTO
 	A.cell.charge = A.cell.maxcharge * 0.001
 	// ALLOW(ownership): test fixture setup writes the framework var directly to build the state under test
-	A.pushed_cell = null // the seated cell's charge becomes Rust's again at the next push
+	A.pushed_cell_ref = null // the seated cell's charge becomes Rust's again at the next push
 	native_write(A, NATIVE_APC_CHANNELS, A.equipment, 0)
 	native_write(A, NATIVE_APC_CHANNELS, A.lighting, 1)
 	native_write(A, NATIVE_APC_CHANNELS, A.environ, 2)
@@ -188,7 +188,7 @@
 	A.area().use_power_static(-2000, EQUIP)
 	A.cell.charge = old_charge
 	// ALLOW(ownership): test fixture setup writes the framework var directly to build the state under test
-	A.pushed_cell = null // the seated cell's charge becomes Rust's again at the next push
+	A.pushed_cell_ref = null // the seated cell's charge becomes Rust's again at the next push
 	A.update()
 	refresh_flush()
 	om_unhook(M, list(/datum/om/event/machinery_power_lost, /datum/om/event/machinery_power_restored), src)
@@ -207,7 +207,7 @@
 	T.set_power_supply(1000000)
 	A.cell.charge = A.cell.maxcharge
 	// ALLOW(ownership): test fixture setup writes the framework var directly to build the state under test
-	A.pushed_cell = null // the seated cell's charge becomes Rust's again at the next push
+	A.pushed_cell_ref = null // the seated cell's charge becomes Rust's again at the next push
 	A.update()
 	refresh_flush()
 	var/obj/machinery/power/smes/S

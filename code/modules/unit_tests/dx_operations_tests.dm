@@ -608,3 +608,50 @@ TRACKED(/obj/cap_fixture/ops/gauged, unwatched, CHANGE_EXPLICIT)
 	TEST_ASSERT_NULL(gesture_entry_for(H, legacy, null, GESTURE_CLICK), "no op on it: the router has nothing")
 	TEST_ASSERT_EQUAL(try_interaction(H, legacy, null, INPUT_ACTION_USE, null, TRUE), INTERACTION_TRY_RAN, "the resolver runs it as before")
 	TEST_ASSERT_EQUAL(jointext(legacy.done, ","), "dq_test_high", "the same entry as before")
+
+// ---- offered, EMPTY_HAND and the structural defaults ----
+
+/// An op meant only with an empty hand while the fixture says so, and two structural ops.
+/obj/cap_fixture/ops/offered
+	name = "offered fixture"
+	/// What the op's offered req_proc answers.
+	var/offer = TRUE
+
+/obj/cap_fixture/ops/offered/capabilities()
+	. = ..()
+	. += cap_op("Hands only", TYPE_PROC_REF(/obj/cap_fixture/ops, fx_op), using = EMPTY_HAND, offered = req_proc(PROC_REF(fx_offer)), action = ACT_USE, key = "hands")
+
+/obj/cap_fixture/ops/offered/proc/fx_offer(mob/user, obj/item/held)
+	return offer
+
+/// `using = EMPTY_HAND` and `offered =` decide whether an op is meant at all: the input falls through, no refusal.
+/datum/unit_test/dx_op_offered
+
+/datum/unit_test/dx_op_offered/Run()
+	var/turf/T = test_floor()
+	var/obj/cap_fixture/ops/offered/F = allocate(/obj/cap_fixture/ops/offered, T)
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	var/obj/item/pen/pen = allocate(/obj/item/pen, T)
+	var/datum/capability/entry/C = cap_of(F, "op:hands")
+	var/datum/op_def/op = cap_op_of(C)
+	TEST_ASSERT_EQUAL(length(op.offered), 2, "the empty hand and the proc")
+	TEST_ASSERT(EMPTY_HAND == req_empty_hand(), "the empty hand is one flyweight")
+	TEST_ASSERT(C.entry.is_meant(H, F, null), "an empty hand, and the holder offers it: meant")
+	TEST_ASSERT(!C.entry.is_meant(H, F, pen), "a held item is not the empty hand: not meant")
+	F.offer = FALSE
+	TEST_ASSERT(!C.entry.is_meant(H, F, null), "the holder does not offer it: not meant")
+	var/datum/op_ctx/ctx = op_ctx_take(H, F, pen, op)
+	TEST_ASSERT_EQUAL(req_empty_hand().test(ctx), /datum/msg/req_hand_full, "a held item fails the requirement at commit")
+	ctx.release()
+	TEST_ASSERT_NOTNULL(C.entry.offered_reason(H, F, null), "offered_reason() names why it is not meant: no refusal, the input falls through")
+
+/// A structural op works broken and unpowered without saying so; a control does not.
+/datum/unit_test/dx_op_structural_defaults
+
+/datum/unit_test/dx_op_structural_defaults/Run()
+	var/turf/T = test_floor()
+	var/obj/cap_fixture/ops/F = allocate(/obj/cap_fixture/ops, T)
+	var/datum/capability/entry/structural = cap_of(F, "op:rip")
+	var/datum/capability/entry/control = cap_of(F, "op:press")
+	TEST_ASSERT(structural.entry.works_unpowered && structural.entry.works_broken, "a structural op needs neither power nor a whole holder")
+	TEST_ASSERT(!control.entry.works_unpowered && !control.entry.works_broken, "a control op needs both")

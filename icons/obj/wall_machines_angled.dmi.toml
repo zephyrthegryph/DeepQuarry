@@ -26,12 +26,12 @@ frames = 2
 delays = [5]
 
 [[state]]
-name = "apcmaint"
+name = "maintenance"
 dirs = 4
 frames = 1
 
 [[state]]
-name = "apc1-b-nocover"
+name = "apc0-cover-removed-broken"
 dirs = 4
 frames = 1
 
@@ -41,7 +41,7 @@ dirs = 4
 frames = 1
 
 [[state]]
-name = "apc1-nocover"
+name = "apc0-cover-removed"
 dirs = 4
 frames = 1
 
@@ -51,12 +51,12 @@ dirs = 4
 frames = 1
 
 [[state]]
-name = "apc2-nocover"
+name = "apc0-cover-removed-cell"
 dirs = 4
 frames = 1
 
 [[state]]
-name = "apc2-b-nocover"
+name = "apc0-cover-removed-broken-cell"
 dirs = 4
 frames = 1
 
@@ -66,19 +66,19 @@ dirs = 4
 frames = 1
 
 [[state]]
-name = "channel-3-0"
+name = "charge-0"
 dirs = 4
 frames = 5
 delays = [1, 1, 1, 1, 50]
 
 [[state]]
-name = "channel-3-1"
+name = "charge-1"
 dirs = 4
 frames = 6
 delays = [1]
 
 [[state]]
-name = "channel-3-2"
+name = "charge-2"
 dirs = 4
 frames = 2
 delays = [10]

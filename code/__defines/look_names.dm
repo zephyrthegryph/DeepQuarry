@@ -15,6 +15,8 @@
 #define LOOK_COVER_OPEN "cover-open"
 #define LOOK_PANEL_OPEN "panel-open"
 #define LOOK_LOCKED "locked"
+#define LOOK_UNLOCKED "unlocked"
+#define LOOK_EMAGGED "emagged"
 #define LOOK_DARK "dark"
 #define LOOK_POWER "power"
 #define LOOK_LID "lid"

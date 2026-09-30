@@ -57,6 +57,8 @@
 	/// vent pump, vent scrubber) use this; a multi-port device (filter,
 	/// mixer) uses `rust_device_ids`/the `_n` procs below instead.
 	var/rust_device_id = 0
+	/// The budget group this machine's filter / mixer legs share (rust_set_budget_leg()); 0 until it has one.
+	var/rust_budget_group = 0
 	/// This device's one flow law, if it has one: the bare `DeviceFlow`
 	/// row's entity handle (`rust_architecture.md` §8.5 step 6's
 	/// pipe-device redesign) -- not a DM object, never placed on the map;
@@ -326,11 +328,12 @@
 /// `dm` type (`DeviceFlow`, `verdigris/domains/gas/src/kind/device.rs`),
 /// taking the entity number directly instead of a per-type instance.
 /// The row names its device by the device entity's slot index.
-/obj/machinery/atmospherics/proc/rust_set_device_flow(gases, rate_kind, rate, direction, stop_side = RUST_SIDE_A, stop_cmp = RUST_STOP_NONE, stop_kpa = 0)
+/// `limit_*`: a second target that only caps the flow (device.rs `Flow::limit`); `limit_cmp` RUST_STOP_NONE: none.
+/obj/machinery/atmospherics/proc/rust_set_device_flow(gases, rate_kind, rate, direction, stop_side = RUST_SIDE_A, stop_cmp = RUST_STOP_NONE, stop_kpa = 0, limit_side = RUST_SIDE_A, limit_cmp = RUST_STOP_NONE, limit_kpa = 0)
 	if(!rust_device_id)
 		return FALSE
 	var/device_index = vg_entity_index(rust_device_id)
-	rust_flow_entity = vg_bind_device_flow(rust_flow_entity, device_index, gases, rate_kind, rate, direction, stop_side, stop_cmp, stop_kpa)
+	rust_flow_entity = vg_bind_device_flow(rust_flow_entity, device_index, gases, rate_kind, rate, direction, stop_side, stop_cmp, stop_kpa, limit_side, limit_cmp, limit_kpa, 0, 0, 0, 0, 1)
 	return rust_flow_entity != 0
 
 /// Sets (creating the row on first use) `machine`'s device edge's valve
@@ -392,15 +395,28 @@
 
 /// `rust_set_device_flow()`'s N-edge counterpart: sets (creating on first
 /// use) `slot`'s one flow law.
-/obj/machinery/atmospherics/proc/rust_set_device_flow_n(slot, gases, rate_kind, rate, direction, stop_side = RUST_SIDE_A, stop_cmp = RUST_STOP_NONE, stop_kpa = 0)
+/obj/machinery/atmospherics/proc/rust_set_device_flow_n(slot, gases, rate_kind, rate, direction, stop_side = RUST_SIDE_A, stop_cmp = RUST_STOP_NONE, stop_kpa = 0, limit_side = RUST_SIDE_A, limit_cmp = RUST_STOP_NONE, limit_kpa = 0, group = 0, role = 0, ratio = 0, power_w = 0, efficiency = 1)
 	LAZYINITLIST(rust_device_ids)
 	var/id = rust_device_ids[slot]
 	if(!id)
 		return FALSE
 	var/device_index = vg_entity_index(id)
 	LAZYINITLIST(rust_flow_entities)
-	rust_flow_entities[slot] = vg_bind_device_flow(rust_flow_entities[slot], device_index, gases, rate_kind, rate, direction, stop_side, stop_cmp, stop_kpa)
+	rust_flow_entities[slot] = vg_bind_device_flow(rust_flow_entities[slot] || 0, device_index, gases, rate_kind, rate, direction, stop_side, stop_cmp, stop_kpa, limit_side, limit_cmp, limit_kpa, group, role, ratio, power_w, efficiency)
 	return rust_flow_entities[slot] != 0
+
+/// One leg of a filter's or mixer's budget group: the device edge between two ports and a RUST_FLOW_FILTER / RUST_FLOW_MIX
+/// flow on it. The group's legs are stepped together in Rust (requested moles from the hub's live gas, the entropy/power
+/// budget, the split across the legs): `rate` is the requested volume flow (L/s), `power_w` the available power and
+/// `efficiency` the pumping efficiency; a filter leg takes the gases in `gases` (role RUST_ROLE_OUTPUT) or the rest
+/// (RUST_ROLE_CLEAN), a mixer leg is an input with share `ratio`. A filter's hub is port a, a mixer's port b.
+/obj/machinery/atmospherics/proc/rust_set_budget_leg(slot, port_index_a, port_index_b, rate_kind, gases, role, ratio, rate, power_w, efficiency)
+	if(!rust_set_device_n(slot, port_index_a, port_index_b))
+		return FALSE
+	if(!rust_budget_group)
+		var/static/serial = 0
+		rust_budget_group = ++serial
+	return rust_set_device_flow_n(slot, gases, rate_kind, rate, RUST_DIR_FORCED, RUST_SIDE_A, RUST_STOP_NONE, 0, RUST_SIDE_A, RUST_STOP_NONE, 0, rust_budget_group, role, ratio, power_w, efficiency)
 
 /// `rust_unregister_device()`'s N-edge counterpart: removes just `slot`.
 /obj/machinery/atmospherics/proc/rust_unregister_device_n(slot)

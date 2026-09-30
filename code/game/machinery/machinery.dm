@@ -123,6 +123,8 @@ OWN_TIMER(/obj/machinery, first_wake)
 	var/machine_board
 	/// The /datum/wires subtype of its maintenance wiring: maintenance_hatch() and cap_wires() read it.
 	var/machine_wires
+	/// What the user is told when an emag declared as an op (maintenance_hatch()) goes through.
+	var/emag_msg
 	/// Bitfield of MACHINE_MAINT_*: which Maintainable interactions this machine offers (machinery_maintenance.dm).
 	var/maintenance_flags = NONE
 	/// Time spent securing or unsecuring this machine; zero is immediate.

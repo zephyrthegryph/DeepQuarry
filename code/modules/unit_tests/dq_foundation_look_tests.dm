@@ -54,7 +54,7 @@
 	second.apply_to(B)
 	TEST_ASSERT(("fix-panel-open" in B.look_overlays) && !("panel-open" in B.look_overlays), "<base>-part wins over the shared part")
 
-	// hide() is exact; glow() of an unknown name is the old overlay that glows.
+	// hide() is exact; glow() with no part of that name adds the part, glowing.
 	var/datum/look/third = new
 	third.part("panel", "open")
 	third.hide("panel-open")
@@ -63,7 +63,9 @@
 	third.hide("panel")
 	TEST_ASSERT_NULL(third.parts, "or every value of it by its name")
 	third.glow("plain")
-	TEST_ASSERT(("plain" in third.glows), "glow() of an unknown name adds a glowing overlay")
+	TEST_ASSERT_EQUAL(length(third.parts), 1, "glow() with no part adds the part")
+	var/list/plain = third.parts[1]
+	TEST_ASSERT(plain[1] == "plain" && plain[3], "the added part glows")
 
 	// The change key sees parts, values and variants.
 	var/datum/look/one = new
@@ -139,7 +141,7 @@
 /obj/cap_fixture/prim_probe/capabilities()
 	. = ..()
 	. += cap_construction(
-		ladder_options(at = "test_bay", sprite = "prim_", undo_delay = 1 SECONDS, dismantle = list(TOOL_WRENCH, /obj/item/stack/material/steel, 2)),
+		ladder_options(at = "test_bay", sprite = "prim_", undo_delay = 1 SECONDS, dismantle = ladder_dismantle(tool = TOOL_WRENCH, becomes = /obj/item/stack/material/steel, amount = 2)),
 		stage("frame", desc = "A bare frame."),
 		build_insert(/obj/item/stock_parts/capacitor),
 		build_wire(3),

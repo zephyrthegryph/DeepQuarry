@@ -1,0 +1,7 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "The APC ladder, ops, lock, emag and screen are declared in the foundation forms with no ALLOW escapes: ladder primitives take needs/on_enter/on_leave, ladder_dismantle(), EMPTY_HAND and offered ops, emag_msg, is_lit(), and glow draws its own part"
+  - imageadd: "APC charge lamp states are charge-N, the coverless frames apc0-cover-removed variants, and the maintenance overlay is maintenance"
+  - refactor: "The pipe devices are a World law on the pacer's period instead of a fixed-period step inside the frame; the dual-port vent is a Rust device edge with a second stop target"
+  - refactor: "The second DM rate model (/datum/om/rate) is deleted in favour of the Rust-backed om_rate_* models; pipe contact heat runs through the heat domain's GasCoupling kernel"

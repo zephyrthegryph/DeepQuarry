@@ -43,6 +43,9 @@
 	var/handler
 	/// The op's own requirements (a list of /datum/req), the last stage.
 	var/list/needs
+	/// What makes the op meant at all (`offered =`, an empty hand): while one fails the input falls through to the next
+	/// interaction, as if the op were not there. Unlike `needs`, a failure is no refusal.
+	var/list/offered
 	/// The old gating arguments as requirements (behind, blocked_by, locked_by): reads for early cancel.
 	var/list/gating
 	/// Item types (a list) that a plain click (GESTURE_CLICK) must hold to reach this op: a card swiped across a lock.
@@ -70,6 +73,8 @@
  *	action	the ACT_* it answers (default ACT_USE).
  *	needs	a /datum/req or list of them (the op's own needs); old-style proc refs are passed to the
  *			target contract as before.
+ *	offered	a /datum/req or list: while one fails the op is not meant (the input falls through); not a refusal.
+ *			`using = EMPTY_HAND` is offered too. Kind OP_STRUCTURAL works broken and unpowered unless it says not.
  *	delay	deciseconds; the wait re-checks everything when it ends and cancels early when a requirement's read changes.
  *	cost	tool resource used (welder fuel).
  *	start_msg	a /datum/msg type shown when a timed op starts.
@@ -81,7 +86,7 @@
  *	click_with	item types a plain click must hold to reach the op (a swipe); passes_held: the handler also gets `held`.
  * The remaining arguments are the old gating arguments of cap_hand()/cap_tool()/...
  */
-/proc/cap_op(name, handler, using, by, via, action, needs, delay, cost, start_msg, kind = OP_CONTROL, key, at, log, replace = FALSE, shape, legacy = FALSE, behind = NONE, blocked_by = NONE, locked_by = NONE, else_say, works_broken, works_unpowered, list/form, priority, stance, name_proc, applies, cooldown, volume, list/click_with, passes_held)
+/proc/cap_op(name, handler, using, by, via, action, needs, delay, cost, start_msg, kind = OP_CONTROL, key, at, log, replace = FALSE, shape, legacy = FALSE, behind = NONE, blocked_by = NONE, locked_by = NONE, else_say, works_broken, works_unpowered, list/form, priority, stance, name_proc, applies, cooldown, volume, list/click_with, passes_held, offered)
 	var/list/spec = list(
 		"name" = name, "handler" = handler, "using" = using, "by" = by, "via" = via, "action" = action,
 		"needs" = needs, "delay" = delay, "cost" = cost, "start_msg" = start_msg, "kind" = kind, "key" = key,
@@ -89,7 +94,7 @@
 		"blocked_by" = blocked_by, "locked_by" = locked_by, "else_say" = else_say,
 		"works_broken" = works_broken, "works_unpowered" = works_unpowered, "form" = form,
 		"priority" = priority, "stance" = stance, "name_proc" = name_proc, "applies" = applies,
-		"cooldown" = cooldown, "volume" = volume, "click_with" = click_with, "passes_held" = passes_held,
+		"cooldown" = cooldown, "volume" = volume, "click_with" = click_with, "passes_held" = passes_held, "offered" = offered,
 	)
 	return cap_op_build(spec)
 
@@ -122,10 +127,11 @@
 	// Shape defaults (the old constructors' own).
 	var/works_broken = spec["works_broken"]
 	var/works_unpowered = spec["works_unpowered"]
+	var/structural = spec["kind"] == OP_STRUCTURAL
 	if(isnull(works_broken))
-		works_broken = shape == OP_SHAPE_TOOL
+		works_broken = structural || shape == OP_SHAPE_TOOL
 	if(isnull(works_unpowered))
-		works_unpowered = shape == OP_SHAPE_TOOL || shape == OP_SHAPE_INSERT
+		works_unpowered = structural || shape == OP_SHAPE_TOOL || shape == OP_SHAPE_INSERT
 	var/held_type
 	var/quality
 	if(shape == OP_SHAPE_TOOL)
@@ -157,12 +163,15 @@
 	if(spec["passes_held"])
 		E.passes_held = TRUE
 	op.needs = reqs
+	op.offered = req_list(spec["offered"])
 	op.gating = req_from_gating(spec["behind"], spec["blocked_by"], spec["locked_by"])
 	op.replaces = spec["replace"]
 	op.spec = spec
 	if(istype(using, /datum/req))
 		// A requirement as the thing used: the op needs it of the held item (checked in the needs stage).
 		op.needs = list(using) + reqs
+		if(istype(using, /datum/req/empty_hand))
+			op.offered = list(using) + op.offered
 	if(op.start_msg)
 		E.start_feedback = op.start_msg
 	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
@@ -200,8 +209,8 @@
 
 /// A control: an empty hand (or any provider with AFF_CONTROL) working the holder's interface, over
 /// the physical or the interface route. Handler (mob/user). Strict: needs a capable actor.
-/proc/cap_control(name, handler, needs, action = ACT_USE, delay, kind = OP_CONTROL, key, at, log, behind = NONE, blocked_by = NONE, locked_by = NONE, else_say, works_broken = FALSE, works_unpowered = FALSE, list/form, priority, name_proc, applies, cooldown)
-	return cap_op(name, handler, by = AFF_CONTROL, via = ROUTE_PHYSICAL | ROUTE_INTERFACE, action = action, needs = needs, delay = delay, kind = kind, key = key, at = at, log = log, shape = OP_SHAPE_HAND, behind = behind, blocked_by = blocked_by, locked_by = locked_by, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, form = form, priority = priority, name_proc = name_proc, applies = applies, cooldown = cooldown)
+/proc/cap_control(name, handler, needs, action = ACT_USE, delay, kind = OP_CONTROL, key, at, log, behind = NONE, blocked_by = NONE, locked_by = NONE, else_say, works_broken, works_unpowered, list/form, priority, name_proc, applies, cooldown, using, offered)
+	return cap_op(name, handler, using = using, offered = offered, by = AFF_CONTROL, via = ROUTE_PHYSICAL | ROUTE_INTERFACE, action = action, needs = needs, delay = delay, kind = kind, key = key, at = at, log = log, shape = OP_SHAPE_HAND, behind = behind, blocked_by = blocked_by, locked_by = locked_by, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, form = form, priority = priority, name_proc = name_proc, applies = applies, cooldown = cooldown)
 
 // ---- cap_require ----
 

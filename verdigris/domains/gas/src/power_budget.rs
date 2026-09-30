@@ -522,35 +522,6 @@ pub fn scrub_plan(
 	)
 }
 
-/// Heat exchange between `air` (the share of it, `share_volume` of its own
-/// volume, in contact) and something else at `other_temperature` with
-/// `other_capacity` J/K (another mixture's, or a wall's): moves
-/// `conductivity * dT * series capacity` joules, `air` losing what the
-/// other gains. Returns the joules that left `air` (negative: it gained).
-/// `pipeline.temperature_interact()`'s one formula.
-#[must_use]
-pub fn thermal_exchange(
-	air: &mut Mixture,
-	share_volume: f32,
-	conductivity: f32,
-	other_temperature: f32,
-	other_capacity: f32,
-) -> f32 {
-	let total = air.heat_capacity();
-	if air.volume <= 0.0 || total <= 0.0 {
-		return 0.0;
-	}
-	let partial = total * (share_volume / air.volume);
-	if !(other_capacity > 0.0 && partial > 0.0) {
-		return 0.0;
-	}
-	let heat = conductivity
-		* (air.get_temperature() - other_temperature)
-		* (partial * other_capacity / (partial + other_capacity));
-	air.adjust_heat(-heat);
-	heat
-}
-
 #[cfg(test)]
 mod tests {
 	use super::*;
@@ -770,23 +741,5 @@ mod tests {
 		assert!(plan.is_none());
 		assert_eq!(trace.len(), 1);
 		assert!((trace[0].1 - 0.01).abs() < 1e-6);
-	}
-
-	#[test]
-	fn thermal_exchange_conserves_energy_between_two_mixtures() {
-		let mut a = air(100.0, 0.0, 0.0, 400.0);
-		let b = air(100.0, 0.0, 0.0, 300.0);
-		let (total_before, other_before) = (a.thermal_energy(), b.thermal_energy());
-		let heat = thermal_exchange(&mut a, 2500.0, 0.5, b.get_temperature(), b.heat_capacity());
-		assert!(heat > 0.0);
-		assert!((a.thermal_energy() - (total_before - heat)).abs() < 1.0);
-		assert!((other_before + heat) > other_before);
-	}
-
-	#[test]
-	fn thermal_exchange_with_nothing_to_exchange_with_moves_nothing() {
-		let mut a = air(100.0, 0.0, 0.0, 400.0);
-		assert_eq!(thermal_exchange(&mut a, 2500.0, 0.5, 300.0, 0.0), 0.0);
-		assert_eq!(a.get_temperature(), 400.0);
 	}
 }

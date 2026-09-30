@@ -137,6 +137,18 @@ GLOBAL_LIST_EMPTY(caps_interned)
 	return !!(A.cap_state & CAP_EMAGGED)
 /proc/is_broken(atom/A)
 	return !!(A.cap_state & CAP_BROKEN)
+/**
+ * Whether A's screen or lamps show: it has power, isn't broken and nothing overrides its display
+ * (screen_override()). What a lamp or glow draws behind, so every machine answers it the same way.
+ */
+/proc/is_lit(atom/A)
+	return A.cap_powered() && !is_broken(A) && !A.screen_override()
+
+/// TRUE while something other than power or damage keeps the screen from showing its normal display: a
+/// bluescreen from a hack or an emag, unsecured electronics. Types with such a state override it; is_lit() reads it.
+/atom/proc/screen_override()
+	return FALSE
+
 /// The wires capability's wires are exposed when everything they sit behind is open; without one,
 /// the CAP_WIRES_EXPOSED bit answers.
 /proc/wires_exposed(atom/A)
@@ -421,12 +433,29 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 		return FALSE
 	return applies ? call(target, applies)() : TRUE
 
+/// Why the op is not meant here (its first failing `offered` requirement), or null. Not a refusal: is_meant() falls through on it.
+/datum/interaction/capability/proc/offered_reason(mob/actor, atom/target, obj/item/held)
+	if(!length(op?.offered))
+		return null
+	var/datum/op_ctx/asked = op_ctx_take(actor, target, held, op, GLOB.op_route_now)
+	for(var/datum/req/R as anything in op.offered)
+		var/why = R.test(asked)
+		if(why)
+			. = req_reason_phrase(why, asked)
+			break
+	asked.release()
+
+/datum/interaction/capability/is_meant(mob/actor, atom/target, obj/item/held)
+	. = ..()
+	if(. && length(op?.offered) && offered_reason(actor, target, held))
+		return FALSE
+
 /datum/interaction/capability/why_not(mob/actor, atom/target, obj/item/held)
 	if(op)
 		// A cap_op() entry: the resolver predicate on the physical route (reach, selectors), then the op
 		// context's ordered stages, whose target stage is cap_gate_reason() (operations/op_ctx.dm).
 		var/why = GLOB.op_route_now == ROUTE_PHYSICAL ? ..() : null
-		return op_entry_reason(src, actor, target, held, why)
+		return op_entry_reason(src, actor, target, held, why || offered_reason(actor, target, held))
 	. = ..()
 	if(.)
 		return

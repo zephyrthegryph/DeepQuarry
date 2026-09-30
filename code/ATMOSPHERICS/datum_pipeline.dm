@@ -116,37 +116,6 @@ OWN_TIMER(/datum/pipeline, engineered_exposure_timer)
 		network.mark_dirty()
 	return length(residual) && residual[1]
 
-/// Heat exchange between the pipe's share (`share_volume` litres of it in contact) and the turf: an open
-/// turf's air, a wall's solid heat cell (credited with what the pipe loses), a special-temperature
-/// surface, or an unsimulated turf. Every branch is the one Rust formula (vg_thermal_exchange).
-/datum/pipeline/proc/exchange_heat_with_turf(turf/target, share_volume, thermal_conductivity)
-	if(!air)
-		return FALSE
-	if(istype(target, /turf/simulated))
-		var/turf/simulated/modeled_location = target
-		if(modeled_location.special_temperature)
-			// The whole pipe relaxes toward the surface: a body of unbounded capacity.
-			vg_thermal_exchange(air, null, air.return_volume(), thermal_conductivity, modeled_location.special_temperature, PIPE_HEAT_RESERVOIR_CAPACITY)
-			if(air.return_temperature() < TCMB)
-				air.set_temperature(TCMB)
-			if(network)
-				network.mark_dirty()
-		if(modeled_location.blocks_air)
-			if(modeled_location.heat_capacity > 0)
-				var/heat = vg_thermal_exchange(air, null, share_volume, thermal_conductivity, modeled_location.get_temperature(), modeled_location.heat_capacity)
-				// The same joules into the wall's solid heat cell.
-				if(heat)
-					modeled_location.add_heat(heat)
-		else
-			var/datum/gas_mixture/sharer_air = modeled_location.air
-			if(!sharer_air)
-				return TRUE
-			vg_thermal_exchange(air, sharer_air, share_volume, thermal_conductivity, 0, 0)
-		return TRUE
-	if(target.heat_capacity > 0)
-		vg_thermal_exchange(air, null, share_volume, thermal_conductivity, target.get_temperature(), target.heat_capacity)
-	return TRUE
-
 /datum/pipeline/proc/radiate_heat_to_space(surface, thermal_conductivity)
 	var/gas_density = air.total_moles()/air.return_volume()
 	thermal_conductivity *= min(gas_density / ( RADIATOR_OPTIMUM_PRESSURE/(R_IDEAL_GAS_EQUATION*GAS_CRITICAL_TEMPERATURE) ), 1) //mult by density ratio

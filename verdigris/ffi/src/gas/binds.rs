@@ -6,6 +6,8 @@ use eyre::Result;
 use vg_gas::gas::constants::{GAS_MIN_MOLES, MINIMUM_MOLES_DELTA_TO_MOVE};
 use vg_gas::gas::{self, Mixture, constants, gas_idx_from_string};
 use vg_gas::power_budget;
+use vg_heat::components::gas_kind;
+use vg_heat::GasCoupling;
 
 use super::mix::{self, MixRef, with_mix, with_mix_mut, with_mixes_mut, with_mixes2};
 use super::parser;
@@ -1177,8 +1179,49 @@ fn specific_power(source: ByondValue, sink: ByondValue) -> Result<ByondValue> {
     )))
 }
 
+/// A pipe mixture's contact with another thermal body, as the heat domain's [`GasCoupling`] makes it: the
+/// conductance that exchanges `conductivity` of the temperature difference in one second between the `share_volume`
+/// of `air` in contact and the other body, run through the coupling's own exchange kernel. Returns the joules that
+/// left `air` (negative: it gained); `air` is changed by them.
+fn pipe_contact(
+    air: &mut Mixture,
+    share_volume: f32,
+    conductivity: f32,
+    other_temperature: f32,
+    other_capacity: f32,
+) -> f32 {
+    let total = air.heat_capacity();
+    if air.volume <= 0.0 || total <= 0.0 {
+        return 0.0;
+    }
+    let partial = total * (share_volume / air.volume);
+    if !(other_capacity > 0.0 && partial > 0.0) {
+        return 0.0;
+    }
+    let coupling = GasCoupling {
+        body: 0,
+        kind: gas_kind::MIXTURE,
+        target: 0,
+        conductance: GasCoupling::conductance_for_fraction(
+            f64::from(conductivity),
+            partial,
+            other_capacity,
+            1.0,
+        ),
+        slot: 1,
+    };
+    let heat = coupling.exchange(
+        (air.get_temperature(), partial),
+        (other_temperature, other_capacity),
+        1.0,
+    );
+    air.adjust_heat(-heat);
+    heat
+}
+
 /// Heat exchange between the share of a pipe mixture in contact and another
-/// body: `pipeline.temperature_interact()`'s one formula. Args: (air,
+/// body: `pipeline.temperature_interact()`'s one exchange, the heat domain's
+/// `GasCoupling` kernel ([`pipe_contact`]). Args: (air,
 /// other_air, share_volume, conductivity, other_temperature, other_capacity).
 /// With an `other_air` mixture its temperature and capacity are read (the
 /// last two are ignored) and it gains what `air` loses; otherwise the last
@@ -1201,13 +1244,13 @@ fn thermal_exchange(
             other_capacity.get_number()?,
         );
         let heat = with_mix_mut(&air, |a| {
-            Ok(power_budget::thermal_exchange(a, share, k, t, c))
+            Ok(pipe_contact(a, share, k, t, c))
         })?;
         return Ok(ByondValue::from(heat));
     }
     let heat = with_mixes_mut(&air, &other_air, |a, b| {
         let (t, c) = (b.get_temperature(), b.heat_capacity());
-        let heat = power_budget::thermal_exchange(a, share, k, t, c);
+        let heat = pipe_contact(a, share, k, t, c);
         if heat != 0.0 && c > 0.0 {
             b.adjust_heat(heat);
         }
@@ -1226,4 +1269,36 @@ fn gases_with_flag(flag: u32) -> Vec<usize> {
             .map(|(i, _)| i)
             .collect()
     })
+}
+
+#[cfg(test)]
+mod pipe_contact_tests {
+    use super::*;
+
+    fn air(moles: f32, kelvin: f32) -> Mixture {
+        let mut m = Mixture::from_vol(2500.0);
+        m.set_moles(0, moles);
+        m.set_temperature(kelvin);
+        m
+    }
+
+    #[test]
+    fn a_pipe_contact_moves_its_share_of_the_series_difference_and_books_the_heat() {
+        let mut a = air(100.0, 400.0);
+        let before = a.thermal_energy();
+        let other = air(100.0, 300.0);
+        let (ta, tb) = (a.get_temperature(), other.get_temperature());
+        let (ca, cb) = (a.heat_capacity(), other.heat_capacity());
+        let heat = pipe_contact(&mut a, 2500.0, 0.5, tb, cb);
+        let series = ca * cb / (ca + cb);
+        assert!((heat - 0.5 * (ta - tb) * series).abs() < 1.0, "half the difference: {heat}");
+        assert!((a.thermal_energy() - (before - heat)).abs() < 1.0);
+    }
+
+    #[test]
+    fn a_contact_with_nothing_to_exchange_with_moves_nothing() {
+        let mut a = air(100.0, 400.0);
+        assert_eq!(pipe_contact(&mut a, 2500.0, 0.5, 300.0, 0.0), 0.0);
+        assert_eq!(a.get_temperature(), 400.0);
+    }
 }

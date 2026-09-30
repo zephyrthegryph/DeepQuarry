@@ -2395,6 +2395,74 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	qdel(P)
 
 
+/// A dual-port vent's flow law is a Rust device edge (dp_vent_pump.dm's push_to_rust()): releasing pushes its input
+/// port's gas into the turf up to the external bound, and the input check caps what leaves the port.
+/datum/unit_test/dq_dp_vent_pump_releases_to_turf
+
+/datum/unit_test/dq_dp_vent_pump_releases_to_turf/Run()
+	var/list/run = dq_atmos_test_find_clear_pipe_run(2)
+	TEST_ASSERT_NOTNULL(run, "no clear two-tile pipe run for the dual-port vent test")
+	var/turf/simulated/floor/T = run[2]
+	var/turf/simulated/floor/pipe_turf = run[1]
+	var/direction = get_dir(pipe_turf, T) // node2 faces away from the pipe: only the input port is connected
+	var/axis_directions = direction | REVERSE_DIR(direction)
+	dq_atmos_test_isolate_pair(T, pipe_turf)
+
+	var/datum/gas_mixture/turf_air = T.return_air()
+	for(var/datum/gas/g as anything in turf_air.get_gases())
+		turf_air.set_moles(g, 0)
+	turf_air.set_temperature(T20C)
+	// The sealed neighbour shares with the vent's turf every frame: start it empty too.
+	var/datum/gas_mixture/neighbour_air = pipe_turf.return_air()
+	for(var/datum/gas/g as anything in neighbour_air.get_gases())
+		neighbour_air.set_moles(g, 0)
+	neighbour_air.set_temperature(T20C)
+
+	var/obj/machinery/atmospherics/binary/dp_vent_pump/V = new(T)
+	V.dir = direction
+	V.initialize_directions = axis_directions
+	var/obj/machinery/atmospherics/pipe/simple/P = new(pipe_turf)
+	P.dir = axis_directions
+	P.initialize_directions = axis_directions
+	V.atmos_init()
+	P.atmos_init()
+	dq_atmos_test_publish_rust_pipenets(list(V, P))
+	TEST_ASSERT_NOTNULL(V.node1, "the dual-port vent did not connect to its input pipe")
+
+	V.air1.adjust_gas(/datum/gas/nitrogen, 500)
+	V.air1.set_temperature(T20C)
+	V.set_use_power(USE_POWER_IDLE)
+	V.stat_remove(NOPOWER | BROKEN)
+	V.set_pump_direction(1) // release
+	V.set_external_pressure_bound(ONE_ATMOSPHERE * 2)
+	V.set_pressure_checks(1 | 2) // the external bound and the input minimum (dp_vent_pump.dm)
+	// The input check: the port is not drained below 50 kPa under where it is now.
+	var/start_pressure = V.air1.return_pressure()
+	V.set_input_pressure_min(start_pressure - 50)
+	V.push_to_rust()
+	TEST_ASSERT(V.rust_device_id, "an enabled, connected dual-port vent registered its device edge")
+
+	var/initial_turf_n2 = turf_air.get_moles(/datum/gas/nitrogen) + neighbour_air.get_moles(/datum/gas/nitrogen)
+	var/initial_pipe_n2 = V.air1.get_moles(/datum/gas/nitrogen)
+	for(var/i in 1 to 10)
+		SSair.rust_step_pipe_devices()
+		SSair.run_gas_frames(1)
+	var/gained = turf_air.get_moles(/datum/gas/nitrogen) + neighbour_air.get_moles(/datum/gas/nitrogen) - initial_turf_n2
+	var/lost = initial_pipe_n2 - V.air1.get_moles(/datum/gas/nitrogen)
+	TEST_ASSERT(gained > 0.5, "the dual-port vent pushed no N2 into the turf: [gained]")
+	TEST_ASSERT(abs(gained - lost) < 1 + 0.1 * lost, "conservation: the port lost [lost], the turf (and its sealed neighbour) gained [gained]")
+	TEST_ASSERT(V.air1.return_pressure() >= start_pressure - 50 - 5, "the input check floors the port: [V.air1.return_pressure()] kPa from [start_pressure]")
+	TEST_ASSERT(V.last_flow_rate >= 0, "the step reported its flow")
+
+	// Off, the edge goes away.
+	V.set_use_power(USE_POWER_OFF)
+	V.push_to_rust()
+	TEST_ASSERT(!V.rust_device_id, "a switched-off dual-port vent unregistered its edge")
+
+	qdel(V)
+	qdel(P)
+
+
 /// Vent scrubber integration: pollute a turf with phoron, run a scrubber
 /// configured to filter PHORON, verify turf phoron drops and scrubber's
 /// air_contents phoron rises.
@@ -3443,45 +3511,41 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 // Heat-exchange pipes
 // =====================================================================
 
-/// /datum/pipeline.exchange_heat_with_turf transfers heat between a pipeline's
-/// air mixture and an adjacent turf — the mechanism HE pipes use to dump or
-/// extract heat through the world. Direct test via a programmatic pipeline
-/// avoids the HE pipe's two-segment auto-connection requirement.
-/datum/unit_test/dq_pipeline_exchange_heat_with_turf
+/// A pipeline's persistent GasCoupling (a heat body coupled to a pipe port, what a heat-exchange pipe's shell is): the hot
+/// body heats the gas of the region the port is in, every world step, with no DM call per exchange.
+/datum/unit_test/dq_pipeline_port_coupling_heats_the_pipeline
 
-/datum/unit_test/dq_pipeline_exchange_heat_with_turf/Run()
-	var/turf/simulated/floor/T = null
-	for(var/turf/simulated/floor/cand in world)
-		if(cand.air && !cand.blocks_air)
-			T = cand
-			break
-	TEST_ASSERT_NOTNULL(T, "no floor for the heat exchange test")
-
-	var/datum/gas_mixture/turf_air = T.return_air()
-	for(var/datum/gas/g as anything in turf_air.get_gases())
-		turf_air.set_moles(g, 0)
-	turf_air.adjust_gas(/datum/gas/nitrogen, MOLES_N2STANDARD)
-	turf_air.set_temperature(T20C)
-
-	// Manually-built pipeline (sidesteps HE pipe two-node auto-connection).
-	var/datum/pipeline/P = new
-	atmos_air_set(P, nameof(P.air), new /datum/gas_mixture(70))
-	P.air.adjust_gas(/datum/gas/nitrogen, 50)
-	P.air.set_temperature(T0C + 500) // hot
-
-	var/initial_turf_temp = turf_air.return_temperature()
-	var/initial_pipe_temp = P.air.return_temperature()
-
-	P.exchange_heat_with_turf(T, P.air.return_volume(), OPEN_HEAT_TRANSFER_COEFFICIENT)
-
-	var/final_turf_temp = turf_air.return_temperature()
-	var/final_pipe_temp = P.air.return_temperature()
-	TEST_ASSERT(final_turf_temp > initial_turf_temp, \
-		"turf air didn't heat from hot pipe: [initial_turf_temp] → [final_turf_temp]")
-	TEST_ASSERT(final_pipe_temp < initial_pipe_temp, \
-		"hot pipe didn't cool giving heat to turf: [initial_pipe_temp] → [final_pipe_temp]")
-
+/datum/unit_test/dq_pipeline_port_coupling_heats_the_pipeline/Run()
+	var/list/run = dq_atmos_test_find_clear_pipe_run(2)
+	TEST_ASSERT_NOTNULL(run, "no clear pipe run for the port coupling test")
+	var/turf/simulated/floor/T = run[1]
+	var/turf/simulated/floor/pipe_turf = run[2]
+	var/axis_directions = get_dir(T, pipe_turf) | REVERSE_DIR(get_dir(T, pipe_turf))
+	var/obj/machinery/atmospherics/pipe/simple/P = new(T)
+	P.dir = axis_directions
+	P.initialize_directions = axis_directions
+	var/obj/machinery/atmospherics/pipe/simple/Q = new(pipe_turf)
+	Q.dir = axis_directions
+	Q.initialize_directions = axis_directions
+	P.atmos_init()
+	Q.atmos_init()
+	dq_atmos_test_publish_rust_pipenets(list(P, Q))
+	TEST_ASSERT(length(P.rust_pipe_port_ids) && P.rust_pipe_port_ids[1], "the pipe has a Rust port")
+	TEST_ASSERT_NOTNULL(P.parent, "the pipe joined a pipeline")
+	var/datum/gas_mixture/air = P.parent.air
+	air.adjust_gas(/datum/gas/nitrogen, 50)
+	air.set_temperature(T20C)
+	var/before = air.return_temperature()
+	var/body = vg_heat_body_create(200, T0C + 300, HEAT_TARGET_PIPE_PORT, P.rust_pipe_port_ids[1], 50, TRUE)
+	TEST_ASSERT_NOTNULL(body, "the heat body was made")
+	var/body_before = vg_heat_body_temperature(body)
+	for(var/i in 1 to 10)
+		vg_frame_force_devices()
+		native_system().drain()
+	TEST_ASSERT(air.return_temperature() > before + 1, "the coupled body did not heat its pipeline: [before] -> [air.return_temperature()] (body [body_before] -> [vg_heat_body_temperature(body)])")
+	vg_heat_body_release(body)
 	qdel(P)
+	qdel(Q)
 
 
 // =====================================================================
@@ -4725,17 +4789,15 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	gate.set_unlocked(TRUE)
 	gate.push_to_rust()
 	TEST_ASSERT(!machine_stepping(gate), "opening a passive gate must not add DM process() scheduling")
+	// The dual-port vent's flow law is a Rust device edge too (dp_vent_pump.dm's push_to_rust()): never a DM process()
+	// subscriber, off or on.
 	var/obj/machinery/atmospherics/binary/dp_vent_pump/dual_vent = new(T)
 	dual_vent.set_use_power(USE_POWER_OFF)
-	// Declared: steps only while use_power and operable (DECLARE_PERIODIC_WHILE_ALL in dp_vent_pump.dm).
+	dual_vent.push_to_rust()
 	TEST_ASSERT(!machine_stepping(dual_vent), "switched-off dual-port vent remained scheduled")
-	// Off, it needs no gas watch: switching it on is the declared wake (below).
-	var/dual_vent_wakes = dual_vent.machine_wake_count
 	dual_vent.set_use_power(USE_POWER_IDLE)
-	if(dual_vent.operable())
-		TEST_ASSERT(dual_vent.machine_wake_count > dual_vent_wakes, "enabling an operable dual-port vent did not wake it")
-	else
-		TEST_ASSERT_EQUAL(dual_vent.machine_wake_count, dual_vent_wakes, "enabling an unpowered dual-port vent woke it")
+	dual_vent.push_to_rust()
+	TEST_ASSERT(!machine_stepping(dual_vent), "enabling a dual-port vent must not add DM process() scheduling")
 	var/obj/machinery/disposal/disposal = new(T)
 	disposal.air_contents.clear()
 	var/datum/gas_mixture/disposal_environment = T.return_air()
@@ -5627,53 +5689,73 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_NOTNULL(M, "atmos_mixer construct failed")
 	qdel(M)
 
-/datum/unit_test/dq_omni_devices_hibernate_without_input
+/// A trinary mixer is a Rust budget group: pushed once, it draws from both inputs by share into its output each device step,
+/// the requested moles and the entropy/power budget computed in Rust from the live regions, and bills the power it drew.
+/datum/unit_test/dq_trinary_mixer_mixes_in_rust
 
-/datum/unit_test/dq_omni_devices_hibernate_without_input/Run()
+/datum/unit_test/dq_trinary_mixer_mixes_in_rust/Run()
+	var/list/run = dq_atmos_test_find_clear_pipe_run(2)
+	TEST_ASSERT_NOTNULL(run, "no clear turf for the mixer test")
+	var/turf/T = run[1]
+	var/obj/machinery/atmospherics/trinary/mixer/M = allocate(/obj/machinery/atmospherics/trinary/mixer, T)
+	var/list/obj/machinery/atmospherics/pipe/simple/pipes = list()
+	for(var/i in 1 to 3)
+		pipes += allocate(/obj/machinery/atmospherics/pipe/simple, T)
+	M.rust_register_pipe_topology(FALSE)
+	for(var/obj/machinery/atmospherics/pipe/simple/P as anything in pipes)
+		P.rust_register_pipe_topology(FALSE)
+	for(var/i in 1 to 3)
+		SSair.rust_queue_pipe_operation(RUST_PIPE_OP_CONNECT, M.rust_pipe_port_ids[i], pipes[i].rust_pipe_port_ids[1])
+	SSair.rust_commit_pending_pipenets()
+	rel_set(M, nameof(M.node1), pipes[1])
+	rel_set(M, nameof(M.node2), pipes[2])
+	rel_set(M, nameof(M.node3), pipes[3])
+	TEST_ASSERT(M.air1.arena_id() != M.air2.arena_id() && M.air2.arena_id() != M.air3.arena_id(), "the mixer's ports are three regions")
+	M.air1.adjust_gas(/datum/gas/oxygen, 100)
+	M.air1.set_temperature(T20C)
+	M.air2.adjust_gas(/datum/gas/nitrogen, 100)
+	M.air2.set_temperature(T20C)
+	M.set_use_power(USE_POWER_IDLE)
+	M.stat_remove(NOPOWER | BROKEN)
+	M.set_set_flow_rate(M.air1.return_volume())
+	M.push_to_rust()
+	TEST_ASSERT(length(M.rust_device_ids) == 2, "both input legs registered: [length(M.rust_device_ids)]")
+	var/before = M.air1.total_moles() + M.air2.total_moles() + M.air3.total_moles()
+	for(var/i in 1 to 6)
+		SSair.rust_step_pipe_devices()
+	var/o2 = M.air3.get_moles(/datum/gas/oxygen)
+	var/n2 = M.air3.get_moles(/datum/gas/nitrogen)
+	TEST_ASSERT(o2 > 0 && n2 > 0, "the output got both gases: [o2] O2, [n2] N2")
+	TEST_ASSERT(abs(o2 - n2) < 0.1 * max(o2, n2), "at the 50/50 share: [o2] O2, [n2] N2")
+	TEST_ASSERT(abs((M.air1.total_moles() + M.air2.total_moles() + M.air3.total_moles()) - before) < 0.5, "mixing conserves moles")
+	M.set_use_power(USE_POWER_OFF)
+	M.push_to_rust()
+	TEST_ASSERT(!length(M.rust_device_ids), "a switched-off mixer unregistered its legs")
+
+/// Omni filters and mixers are Rust budget groups: no DM step, and their settings change pushes the group (once per frame).
+/datum/unit_test/dq_omni_devices_are_rust_budget_groups
+
+/datum/unit_test/dq_omni_devices_are_rust_budget_groups/Run()
 	var/turf/T = locate(1, 1, 1)
 	var/obj/machinery/atmospherics/omni/atmos_filter/F = new(T)
-	var/input_mode = F.mode_return_switch("in")
-	var/output_mode = F.mode_return_switch("out")
-	var/filter_mode = F.mode_return_switch(GASNAME_O2)
-	var/none_mode = F.mode_return_switch("None")
-	var/port_index = 0
-	for(var/datum/omni_port/P in F.ports)
-		port_index++
-		P.mode = port_index == 1 ? input_mode : (port_index == 2 ? output_mode : filter_mode)
-		P.update = TRUE
-	F.sort_ports()
 	F.set_use_power(USE_POWER_IDLE)
 	F.stat_remove(NOPOWER | BROKEN)
-	TEST_ASSERT(test_machine_idle(F), "empty omni filter retained timed polling")
-	TEST_ASSERT(om_watch_armed(F), "empty omni filter did not capture gas dependencies")
-	var/filter_wakes = F.machine_wake_count
-	F.input.air.adjust_gas(/datum/gas/oxygen, 10)
-	for(var/i in 1 to 4096)
-		GLOB.machine_service.wake_dirty_gas_subscribers()
-		if(F.machine_wake_count > filter_wakes)
-			break
-	TEST_ASSERT(F.machine_wake_count > filter_wakes, "fed omni filter did not become actionable")
+	TEST_ASSERT(!machine_stepping(F), "an omni filter is never a DM process() subscriber")
+	refresh_flush()
+	F.set_set_flow_rate(F.set_flow_rate - 1)
+	TEST_ASSERT(F.refresh_queued & DEP_PUSH, "an omni filter's flow rate did not queue its push")
+	refresh_flush()
+	F.wake_for_state_change()
+	TEST_ASSERT(F.refresh_queued & DEP_PUSH, "a port or mode change did not queue the omni filter's push")
 	qdel(F)
 
 	var/obj/machinery/atmospherics/omni/mixer/M = new(T)
-	port_index = 0
-	for(var/datum/omni_port/P in M.ports)
-		port_index++
-		P.mode = port_index <= 2 ? input_mode : (port_index == 3 ? output_mode : none_mode)
-		P.update = TRUE
-	M.sort_ports()
 	M.set_use_power(USE_POWER_IDLE)
 	M.stat_remove(NOPOWER | BROKEN)
-	TEST_ASSERT(test_machine_idle(M), "empty omni mixer retained timed polling")
-	TEST_ASSERT(om_watch_armed(M), "empty omni mixer did not capture gas dependencies")
-	var/datum/omni_port/first_input = M.inputs[1]
-	var/mixer_wakes = M.machine_wake_count
-	first_input.air.adjust_gas(/datum/gas/oxygen, 10)
-	for(var/i in 1 to 4096)
-		GLOB.machine_service.wake_dirty_gas_subscribers()
-		if(M.machine_wake_count > mixer_wakes)
-			break
-	TEST_ASSERT(M.machine_wake_count > mixer_wakes, "fed omni mixer did not become actionable")
+	TEST_ASSERT(!machine_stepping(M), "an omni mixer is never a DM process() subscriber")
+	refresh_flush()
+	M.set_set_flow_rate(M.set_flow_rate - 1)
+	TEST_ASSERT(M.refresh_queued & DEP_PUSH, "an omni mixer's flow rate did not queue its push")
 	qdel(M)
 
 /datum/unit_test/dq_stable_open_pipe_hibernates
@@ -7559,28 +7641,18 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	qdel(M)
 	qdel(P)
 
-	// A trinary filter with nothing to filter: a trace below MINIMUM_MOLES_TO_FILTER is not a wake.
+	// A trinary filter's flow is a Rust budget group: never a DM step, and its settings queue its push.
 	var/obj/machinery/atmospherics/trinary/atmos_filter/F = new(T)
 	F.stat_remove(BROKEN | NOPOWER)
 	F.set_use_power(USE_POWER_IDLE)
-	F.air1.clear()
-	TEST_ASSERT(test_machine_idle(F), "an empty filter kept running")
-	TEST_ASSERT(om_watch_armed(F, "gas"), "empty filter did not arm its input watch")
-	var/filter_wakes = F.gas_dependency_wake_count
-	F.air1.adjust_moles(/datum/gas/oxygen, MINIMUM_MOLES_TO_FILTER / 10)
-	deliver(F, filter_wakes)
-	TEST_ASSERT_EQUAL(F.gas_dependency_wake_count, filter_wakes, "a trace below the filtering minimum woke a filter")
-	// An unconnected filter's update_icon() switches it off; hold it on as a connected one would be.
-	F.set_use_power(USE_POWER_IDLE)
-	F.air1.adjust_moles(/datum/gas/oxygen, 10)
-	deliver(F, filter_wakes)
-	var/datum/om_watch/filter_watch = om_watch_lookup(F, "gas")
-	TEST_ASSERT_EQUAL(F.gas_dependency_wake_count, filter_wakes + 1, "enough input to filter did not wake the filter exactly once 		(stat [F.stat], use_power [F.use_power], condition [F.gas_wake_condition()], watched [json_encode(filter_watch?.mixture_ids)], air1 [F.air1.arena_id()])")
+	TEST_ASSERT(!machine_stepping(F), "a filter is never a DM process() subscriber")
+	refresh_flush()
+	F.set_filter_type(1)
+	TEST_ASSERT(F.refresh_queued & DEP_PUSH, "a filter's gas setting did not queue its push")
 	qdel(F)
 
-/// A pipe topology commit rebinds a device's port air and deletes the old
-/// datum. Mixers and filters must use the current air, never a list keyed by
-/// the old datum ("no gas mixture behind handle" in total_moles_hook).
+/// A pipe topology commit rebinds a device's port air and deletes the old datum. Filters and mixers keep no list keyed by
+/// it (their moles are computed in Rust from the live regions), and a rebind re-pushes them.
 /datum/unit_test/dq_atmos_mixers_follow_rebound_port_air
 
 /datum/unit_test/dq_atmos_mixers_follow_rebound_port_air/Run()
@@ -7590,20 +7662,15 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	new_air.adjust_gas(GAS_ID_OXYGEN, 10)
 	mixer.rust_bind_pipe_port(1, null, new_air)
 	TEST_ASSERT(QDELETED(old_air), "rebinding did not delete the old port air")
-	var/list/inputs = mixer.mixing_inputs()
-	TEST_ASSERT(inputs[new_air] == mixer.node1_concentration, "the mixer's inputs are not keyed by its current air")
-	TEST_ASSERT(!(old_air in inputs), "the mixer still lists its deleted port air")
-	TEST_ASSERT(mixer.mix_transfer_moles() > 0, "the mixer lost its input share after a rebind")
+	mixer.push_to_rust()
 
 	var/obj/machinery/atmospherics/omni/mixer/omni = allocate(/obj/machinery/atmospherics/omni/mixer)
 	var/datum/omni_port/port = omni.ports[1]
 	var/datum/gas_mixture/omni_old = port.air
 	var/datum/gas_mixture/omni_new = new(200)
 	omni.rust_bind_pipe_port(1, null, omni_new)
-	omni.rebuild_mixing_inputs()
-	for(var/datum/gas_mixture/air in omni.mixing_inputs)
-		TEST_ASSERT(!QDELETED(air), "the omni mixer lists a deleted port air")
 	TEST_ASSERT(QDELETED(omni_old), "rebinding did not delete the omni port's old air")
+	omni.push_to_rust()
 
 /// The pipe devices' Rust law is a generated push: a write to a var the law reads queues push_to_rust() once (DEP_PUSH),
 /// a var it does not read queues nothing, and no device has a hand update_rust_device().

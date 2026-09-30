@@ -139,11 +139,13 @@ fn register(b: &mut WorldBuilder) -> Fields {
     let _ = b.add_law::<SmesInputApply>().after::<PowerSettle>();
 
     // Pipes (`rust_architecture.md` §6, §8.5, step 5): a main-owned network,
-    // its region payloads pooled gas (`vg_gas::pipes::PipeGas`). Devices
-    // step imperatively from `crate::pipes::pipe_step_devices` (DM's own
-    // `wait`-scaled dt, not the World's fixed law cadence -- see that
-    // module's docs), not a registered `Law`.
+    // its region payloads pooled gas (`vg_gas::pipes::PipeGas`). The devices
+    // are one law, `PipeDeviceStep`, on the pacer's period (0.5 s): their jobs
+    // are staged before each step and written back after it
+    // (`crate::pipes::stage_devices` / `apply_devices`).
     b.add_network::<vg_gas::pipes::Pipes>(Ownership::Main);
+    b.add_global(Ownership::Main, vg_gas::laws::DeviceJobs::default());
+    let _ = b.add_law::<vg_gas::laws::PipeDeviceStep>();
     b.conserve_network::<vg_gas::pipes::Pipes>();
     b.conserve("pipe_moles", Tolerance::default());
     b.conserve("pipe_energy", Tolerance::default());
@@ -162,7 +164,7 @@ fn build() -> Result<World> {
     // `wait` moved from 10 seconds to 0.5, and this `dt` moved with it
     // (`rust_architecture.md` §8.5 step 6).
     let mut b = WorldBuilder::new(WorldConfig {
-        dt: vg_core::units::Seconds(0.5),
+        dt: vg_core::units::Seconds(f64::from(crate::frame::PIPE_DEVICE_PERIOD)),
         ..WorldConfig::default()
     });
     let fields = register(&mut b);
@@ -615,13 +617,28 @@ fn component_adjust(
 }
 
 /// Pacing: feeds `seconds` of game time to the world's pacer and runs a
-/// step when one is owed. Returns whether a step ran. Driven by
-/// [`crate::frame`] only.
-pub(crate) fn pace(seconds: f64) -> Result<bool> {
+/// step when one is owed. The pipe devices' jobs are staged only when a step is due and written back after it;
+/// returns the report of the step (`device handle, moles, power_w, target_reached` per device that moved gas or
+/// drew power). With `force`, a step runs now whatever the pacer owes (a deterministic step for a test that built
+/// a device by hand). Driven by [`crate::frame`] only.
+pub(crate) fn pace(seconds: f64, force: bool) -> Result<Vec<f32>> {
     let probes = crate::heat::mixture_probes();
     with_world(|w| {
         w.set_global(probes).map_err(|e| eyre!("{e}"))?;
-        Ok(w.tick(Seconds(seconds)))
+        let due = force || w.step_due(Seconds(seconds));
+        if due {
+            crate::pipes::stage_devices(w)?;
+        }
+        if force {
+            w.step_blocking();
+        } else {
+            let _ = w.tick(Seconds(seconds));
+        }
+        Ok(if due {
+            crate::pipes::apply_devices(w)
+        } else {
+            Vec::new()
+        })
     })
 }
 

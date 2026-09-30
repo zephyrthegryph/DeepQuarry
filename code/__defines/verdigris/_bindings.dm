@@ -25,7 +25,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "2147ed83938f14c2"
+#define VERDIGRIS_ABI "d584b4574b513efa"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -193,6 +193,11 @@
 // verdigris/ffi/src/heat.rs
 #define HEAT_TARGET_NONE 0
 
+/// The gas of the pipe region a pipe port (an entity handle) is in: a pipeline's persistent coupling, which follows the
+/// region through merges and splits.
+// verdigris/ffi/src/heat.rs
+#define HEAT_TARGET_PIPE_PORT 5
+
 // verdigris/ffi/src/heat.rs
 #define HEAT_TARGET_SOLID 1
 
@@ -225,8 +230,8 @@
 // verdigris/ffi/src/frame.rs
 #define NATIVE_NOTICE_PIPE_DEVICE 0x00FF0001
 
-/// Seconds between pipe device steps (the devices' flow laws run once per
-/// period with the time accumulated since the last one).
+/// Seconds of one World step, which is the period of the pipe devices' flow law (`PipeDeviceStep`, one run per
+/// step).
 // verdigris/ffi/src/frame.rs
 #define NATIVE_PIPE_DEVICE_PERIOD 0.5
 
@@ -726,9 +731,9 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)()
 
-/// Test hook: makes the next frame step the pipe devices, for a full
-/// [`PIPE_DEVICE_PERIOD`] (a deterministic step for a DM test that built a
-/// device by hand; the world is not paced by it).
+/// Test hook: makes the next frame step the world once, so the pipe devices' law
+/// runs for a full [`PIPE_DEVICE_PERIOD`] (a deterministic step for a DM test that
+/// built a device by hand).
 // /proc/frame_force_devices (verdigris/ffi/src/frame.rs)
 /proc/vg_frame_force_devices()
 	var/static/__f = load_ext(VERDIGRIS, "byond:frame_force_devices_ffi")
@@ -1571,7 +1576,8 @@
 	return call_ext(__f)(src_ref)
 
 /// Heat exchange between the share of a pipe mixture in contact and another
-/// body: `pipeline.temperature_interact()`'s one formula. Args: (air,
+/// body: `pipeline.temperature_interact()`'s one exchange, the heat domain's
+/// `GasCoupling` kernel ([`pipe_contact`]). Args: (air,
 /// other_air, share_volume, conductivity, other_temperature, other_capacity).
 /// With an `other_air` mixture its temperature and capacity are read (the
 /// last two are ignored) and it gains what `air` loses; otherwise the last

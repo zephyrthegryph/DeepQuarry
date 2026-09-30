@@ -58,25 +58,27 @@
 	return slash ? copytext(text, slash + 1) : text
 
 /// build_insert(part): the part goes in by hand and comes out by hand. `name`: the stage's name.
-/proc/build_insert(part, name, desc, icon, delay = 1 SECONDS, needs, else_say)
+/proc/build_insert(part, name, desc, icon, delay = 1 SECONDS, needs, else_say, undo_needs, undo_else_say, on_enter, on_leave)
 	return stage(name = name || ladder_type_word(part), build = cap_insert(held_type = part, delay = delay), undo = cap_hand(delay = delay),
-		desc = desc, icon = icon, needs = needs, else_say = else_say)
+		desc = desc, icon = icon, needs = needs, else_say = else_say, undo_needs = undo_needs, undo_else_say = undo_else_say, on_enter = on_enter, on_leave = on_leave)
 
 /// build_wire(n): n cable units go in; wirecutters cut them out and give them back.
-/proc/build_wire(amount = 1, name = "wired", desc, icon)
+/proc/build_wire(amount = 1, name = "wired", desc, icon, needs, else_say, undo_needs, undo_else_say, on_enter, on_leave)
 	return stage(name = name, build = cap_use_on(held_type = /obj/item/stack/cable_coil, delay = ladder_tool_delay(TOOL_WIRECUTTER)), uses = amount,
-		undo = cap_tool(quality = TOOL_WIRECUTTER, delay = ladder_tool_delay(TOOL_WIRECUTTER)), desc = desc, icon = icon)
+		undo = cap_tool(quality = TOOL_WIRECUTTER, delay = ladder_tool_delay(TOOL_WIRECUTTER)), desc = desc, icon = icon,
+		needs = needs, else_say = else_say, undo_needs = undo_needs, undo_else_say = undo_else_say, on_enter = on_enter, on_leave = on_leave)
 
 // DM quirk behind `name = name || ...` in every stage() call here: a positional string equal to the name of
 // a named argument in the same call ("anchored" beside `anchored = ...`) is read as that argument's key and
 // the positional parameter comes out empty. The name is therefore always passed by name.
 
 /// build_fasten(tool): a tool step. Its undo is ladder_undo_tool(tool). `fuel` is welder fuel.
-/proc/build_fasten(tool, name, desc, icon, anchored, fuel = 0, delay, needs, else_say)
+/proc/build_fasten(tool, name, desc, icon, anchored, fuel = 0, delay, needs, else_say, undo_needs, undo_else_say, on_enter, on_leave)
 	var/undo_tool = ladder_undo_tool(tool)
 	var/datum/ladder_stage/made = stage(name = name || "fastened with [tool]", build = cap_tool(quality = tool, delay = delay || ladder_tool_delay(tool), fuel = fuel),
 		undo = cap_tool(quality = undo_tool, delay = delay || ladder_tool_delay(undo_tool), fuel = fuel),
-		desc = desc, icon = icon, anchored = anchored, needs = needs, else_say = else_say)
+		desc = desc, icon = icon, anchored = anchored, needs = needs, else_say = else_say, undo_needs = undo_needs, undo_else_say = undo_else_say,
+		on_enter = on_enter, on_leave = on_leave)
 	return made
 
 /// build_weld(): build_fasten(TOOL_WELDER) with the welder's usual fuel.

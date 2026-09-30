@@ -280,6 +280,11 @@
 	made.done_sfx = done_sfx
 	return made
 
+/// A dismantle branch (ladder_options(dismantle =)): the first stage can be taken apart with `tool` into `becomes` (`amount` of it);
+/// when the holder's `when_ruined` proc answers TRUE (a broken frame) it comes apart into `ruined_becomes` (`ruined_amount`) instead.
+/proc/ladder_dismantle(tool, becomes, amount, when_ruined, ruined_becomes, ruined_amount)
+	return list(tool, becomes, amount, when_ruined, ruined_becomes, ruined_amount)
+
 /// Graph-wide options (any element of cap_construction()'s list).
 /datum/ladder_settings
 	var/state_var
