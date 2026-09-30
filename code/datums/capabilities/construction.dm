@@ -64,7 +64,7 @@
  */
 /proc/cap_construction(...)
 	var/datum/capability/construction/made = new
-	made.declaration = args.Copy()
+	made.declaration = ladder_flatten_declaration(args)
 	made.works_broken = TRUE
 	made.works_unpowered = TRUE
 	for(var/datum/ladder_settings/options in made.declaration)
@@ -289,6 +289,14 @@
 	var/start
 	var/stance
 	var/category
+	/// Prefix of the derived stage icons ("[sprite][position]").
+	var/sprite
+	/// The compartment the steps are done at (BAY_*, when the operations layer defines it).
+	var/at
+	/// Wait of every undo step, overriding the tool defaults.
+	var/undo_delay
+	/// list(tool quality, result type, amount): a branch out of the first stage that takes the holder apart.
+	var/list/dismantle
 	// The standard gating, applied to the capability (cap_gating()).
 	var/behind = NONE
 	var/blocked_by = NONE
@@ -307,7 +315,10 @@
 /// reinforced wall). `stance` and `category` apply to every step; the standard gating arguments
 /// gate every step.
 /// The holder is marked changed after every step (its appearance refreshes); `on_step` is for other work.
-/proc/ladder_options(start, state_var, state, store, list/anywhere, on_step, on_start, list/starts, stance, category, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
+/// `sprite`: stage icons are derived as "[sprite][position]" for stages that name none. `at`: the compartment the
+/// steps are done in. `undo_delay`: the wait of every undo. `dismantle` = list(tool, result_type, amount): a
+/// branch out of the first stage that takes the holder apart into `result_type`.
+/proc/ladder_options(start, state_var, state, store, list/anywhere, on_step, on_start, list/starts, stance, category, sprite, at, undo_delay, list/dismantle, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
 	var/datum/ladder_settings/made = new
 	made.start = start
 	made.starts = starts
@@ -319,6 +330,10 @@
 	made.on_start = on_start
 	made.stance = stance
 	made.category = category
+	made.sprite = sprite
+	made.at = at
+	made.undo_delay = undo_delay
+	made.dismantle = dismantle
 	made.behind = behind
 	made.blocked_by = blocked_by
 	made.locked_by = locked_by
@@ -360,6 +375,11 @@
 	/// Every step's stance and category, when set.
 	var/stance
 	var/category
+	/// ladder_options(sprite, at, undo_delay, dismantle): see there.
+	var/sprite
+	var/at
+	var/undo_delay
+	var/list/dismantle
 	/// Stages a holder can be made in besides the first.
 	var/list/starts
 	/// All steps, as shared singletons (owned).
@@ -385,10 +405,13 @@
 	edge_ids = list()
 	var/list/datum/ladder_stage/ladder = list()
 	var/list/anywhere = list()
+	// Options first: they may come anywhere in the declaration but shape every stage (the sprite prefix).
+	for(var/datum/ladder_settings/options in owner.declaration)
+		read_options(options, anywhere)
 	for(var/i in 1 to length(owner.declaration))
 		var/entry = owner.declaration[i]
 		if(istype(entry, /datum/ladder_settings))
-			read_options(entry, anywhere)
+			continue
 		else if(istype(entry, /datum/ladder_stage))
 			var/datum/ladder_stage/stage = entry
 			if(stage_by_name["[stage.name]"])
@@ -397,6 +420,8 @@
 			ladder += stage
 			states += stage.name
 			stage_by_name["[stage.name]"] = i
+			if(!stage.icon && sprite)
+				stage.icon = "[sprite][length(states)]"
 			if(stage.icon)
 				draws_icons = TRUE
 		else
@@ -413,14 +438,22 @@
 				cost = stage.build, say = stage.say, step_needs = stage.needs, when = stage.when,
 				step_priority = stage.priority, quiet = stage.quiet, sfx = stage.sfx, done_sfx = stage.done_sfx))
 		if(before && stage.undo)
+			var/list/undo_cost = stage.undo
+			if(!isnull(undo_delay) && undo_cost)
+				undo_cost = undo_cost.Copy()
+				undo_cost[LCOST_DELAY] = undo_delay
 			add_edge(new /datum/interaction/capability/construction_step(owner = src, from = stage.name, destination = before.name,
-				cost = stage.undo, say = stage.undo_say, step_needs = stage.undo_needs, when = stage.undo_when,
+				cost = undo_cost, say = stage.undo_say, step_needs = stage.undo_needs, when = stage.undo_when,
 				step_priority = stage.priority, quiet = stage.quiet, forward = FALSE,
 				refund = stage.refund ? stage.build : null))
 		for(var/datum/ladder_branch/extra as anything in stage.also)
 			add_edge(branch_edge(stage.name, extra))
 	for(var/datum/ladder_branch/extra as anything in anywhere)
 		add_edge(branch_edge(LADDER_ANY, extra))
+	if(length(dismantle) >= 2)
+		var/datum/ladder_stage/first = ladder[1]
+		add_edge(branch_edge(first.name, branch(LADDER_DONE, cap_tool(quality = dismantle[1], delay = ladder_tool_delay(dismantle[1])),
+			say = "take %T% apart", become = dismantle[2], amount = length(dismantle) >= 3 ? dismantle[3] : null)))
 
 /// Reads one ladder_options() value; its `anywhere` branches go into `anywhere`.
 /datum/construction_ladder/proc/read_options(datum/ladder_settings/options, list/anywhere)
@@ -445,6 +478,15 @@
 		stance = options.stance
 	if(options.category)
 		category = options.category
+	if(options.sprite)
+		sprite = options.sprite
+		draws_icons = TRUE
+	if(options.at)
+		at = options.at
+	if(!isnull(options.undo_delay))
+		undo_delay = options.undo_delay
+	if(options.dismantle)
+		dismantle = options.dismantle
 
 /// The stage named `name`, or null.
 /datum/construction_ladder/proc/stage_named(name)
@@ -680,6 +722,7 @@
 	if(owner.category)
 		category = owner.category
 	src.step_needs = step_needs
+	at = owner.at
 	if(!read_cost(cost))
 		LAZYADD(owner.row_errors, "[owner.id]: the step from [from] to [destination] has no cost (a cap_tool/cap_insert/cap_use_on/cap_hand entry)")
 	else if(cost[LCOST_HANDLER])

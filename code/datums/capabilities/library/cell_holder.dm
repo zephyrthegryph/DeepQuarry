@@ -20,7 +20,7 @@
  * The cell holder for holder var `var_name` (nameof(var)) holding one `cell_type`. Takes the standard
  * gating arguments (an APC: behind = COVER).
  */
-/proc/cap_cell_holder(var_name, cell_type = /obj/item/cell, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log, layer = "cell")
+/proc/cap_cell_holder(var_name, cell_type = /obj/item/cell, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log, layer = LOOK_CELL)
 	return cap_slot(var_name, cell_type, behind = behind, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log, layer = layer, name = "Insert cell", eject_name = "Remove cell", eject_via = SLOT_VIA_HAND, slot_type = /datum/capability/slot/cell_holder, insert_msg = "You insert %I% into %T%.", eject_msg = "You take %I% out of %T%.", full_msg = "%T% already has %I% in it.")
 
 /datum/capability/slot/cell_holder/examine(atom/holder, mob/user)

@@ -45,10 +45,10 @@ GLOBAL_LIST_INIT(cap_all_stances, list(I_HELP, I_DISARM, I_GRAB, I_HURT))
 
 /datum/capability/bolts
 	/// The layer drawn while bolted, or null when the holder's draw() shows it (a door_locked state).
-	var/layer = "bolts"
+	var/layer = LOOK_BOLTS
 
 /// Door bolts. layer: the overlay while bolted (null: the holder draws the state itself).
-/proc/cap_bolts(layer = "bolts", behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
+/proc/cap_bolts(layer = LOOK_BOLTS, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
 	var/datum/capability/bolts/C = new
 	C.layer = layer
 	cap_gating(C, behind = behind, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
@@ -56,7 +56,7 @@ GLOBAL_LIST_INIT(cap_all_stances, list(I_HELP, I_DISARM, I_GRAB, I_HURT))
 
 /datum/capability/bolts/draw(atom/holder, datum/look/look)
 	if(layer)
-		look.overlay(layer, when = is_bolted(holder))
+		look.part(layer, !!(is_bolted(holder)))
 
 /datum/capability/bolts/ui_data(atom/holder, mob/user, list/data)
 	data["bolted"] = is_bolted(holder)
@@ -121,10 +121,10 @@ GLOBAL_LIST_INIT(cap_all_stances, list(I_HELP, I_DISARM, I_GRAB, I_HURT))
 	var/tool_quality = TOOL_WELDER
 	var/applies
 	var/help_applies
-	var/layer = "welded"
+	var/layer = LOOK_WELDED
 
 /// Weld shut with `tool`. applies / help_applies: holder procs, () -> whether welding is offered.
-/proc/cap_weld_shut(tool = TOOL_WELDER, applies, help_applies, layer = "welded", behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
+/proc/cap_weld_shut(tool = TOOL_WELDER, applies, help_applies, layer = LOOK_WELDED, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
 	var/datum/capability/weld_shut/C = new
 	C.tool_quality = tool
 	C.applies = applies
@@ -153,7 +153,7 @@ GLOBAL_LIST_INIT(cap_all_stances, list(I_HELP, I_DISARM, I_GRAB, I_HURT))
 
 /datum/capability/weld_shut/draw(atom/holder, datum/look/look)
 	if(layer)
-		look.overlay(layer, when = is_welded(holder))
+		look.part(layer, !!(is_welded(holder)))
 
 /datum/capability/weld_shut/ui_data(atom/holder, mob/user, list/data)
 	data["welded"] = is_welded(holder)
@@ -230,10 +230,10 @@ GLOBAL_LIST_INIT(cap_all_stances, list(I_HELP, I_DISARM, I_GRAB, I_HURT))
 // check reads emergency_access_on()). Toggled by the door's controls. Layer: `layer` while engaged.
 
 /datum/capability/emergency_access
-	var/layer = "emergency"
+	var/layer = LOOK_EMERGENCY
 
 /// Emergency access. layer: the overlay while engaged (null: nothing drawn).
-/proc/cap_emergency_access(layer = "emergency", behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
+/proc/cap_emergency_access(layer = LOOK_EMERGENCY, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
 	var/datum/capability/emergency_access/C = new
 	C.layer = layer
 	cap_gating(C, behind = behind, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
@@ -252,7 +252,7 @@ GLOBAL_LIST_INIT(cap_all_stances, list(I_HELP, I_DISARM, I_GRAB, I_HURT))
 
 /datum/capability/emergency_access/draw(atom/holder, datum/look/look)
 	if(layer)
-		look.overlay(layer, when = emergency_access_on(holder))
+		look.part(layer, !!(emergency_access_on(holder)))
 
 /datum/capability/emergency_access/ui_data(atom/holder, mob/user, list/data)
 	data["emergency"] = emergency_access_on(holder)

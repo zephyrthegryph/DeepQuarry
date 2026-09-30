@@ -1,15 +1,15 @@
 // The maintenance panel capability (doc/rewrite/dx_conventions.md §2). State: CAP_PANEL_OPEN.
-// Other entries declare `behind = PANEL`. Layer: "panel_open". Accessor: panel_is_open().
+// Other entries declare `behind = PANEL`. Layer: LOOK_PANEL_OPEN. Accessor: panel_is_open().
 //
 //	. += cap_panel(tool = TOOL_SCREWDRIVER, behind = COVER)
 
 /datum/capability/panel
-	layer_name = "panel_open"
+	layer_name = LOOK_PANEL_OPEN
 	var/tool_quality
 	var/delay = 0
 
 /// A maintenance panel toggled with `tool`; behind = COVER puts it behind a cover.
-/proc/cap_panel(tool = TOOL_SCREWDRIVER, delay = 0, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log, layer = "panel_open")
+/proc/cap_panel(tool = TOOL_SCREWDRIVER, delay = 0, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log, layer = LOOK_PANEL_OPEN)
 	var/datum/capability/panel/C = new
 	C.tool_quality = tool
 	C.delay = delay

@@ -61,12 +61,12 @@
  * none), ui_key; slot_type: a /datum/capability/slot subtype for a library capability built on
  * the slot (cap_cell_holder()).
  */
-/proc/cap_slot(var_name, accepts = /obj/item, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log, layer = CAP_NO_LAYER, eject_needs, eject_else_say = "you can't do that right now", name, eject_name, insert_msg = "You insert %I% into %T%.", eject_msg = "You remove %I% from %T%.", full_msg = "%T% already holds %I%.", swap_msg = "You swap %I% out of %T%.", eject_via = SLOT_VIA_ALT, eject_drop = FALSE, ungated = FALSE, when_full = SLOT_FULL_REFUSE, no_insert = FALSE, examine_held = null, examine_empty = null, ui_key = "", slot_type = /datum/capability/slot)
+/proc/cap_slot(var_name, accepts = /obj/item, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log, layer = CAP_NO_LAYER, eject_needs, eject_else_say = "you can't do that right now", name, eject_name, insert_msg = "You insert %I% into %T%.", eject_msg = "You remove %I% from %T%.", full_msg = "%T% already holds %I%.", swap_msg = "You swap %I% out of %T%.", eject_via = SLOT_VIA_ALT, eject_drop = FALSE, ungated = FALSE, when_full = SLOT_FULL_REFUSE, no_insert = FALSE, examine_held = null, examine_empty = null, ui_key = "", slot_type = /datum/capability/slot, at)
 	var/datum/capability/slot/cap = new slot_type
 	cap.slot_var = var_name
 	cap.key = "slot:[var_name]"
 	cap.accepts = accepts
-	cap_gating(cap, behind = behind, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
+	cap_gating(cap, behind = behind, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log, at = at)
 	cap.layer_name = layer
 	if(layer && layer != CAP_NO_LAYER)
 		cap.draws_var = var_name // it draws its item: a change to the item marks the holder

@@ -15,6 +15,10 @@
 	var/layer
 	var/list/overlays
 	var/list/glows
+	/// Names from look.variant(): each replaces the base state by "<base>-name" when the icon has it.
+	var/list/variants
+	/// list(name, value or null, glows) per look.part(): resolved against the icon when applied.
+	var/list/parts
 	/// name -> filter params (look.add_look_filter()).
 	var/list/filters
 	var/list/vis
@@ -39,6 +43,8 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 	layer = null
 	overlays = null
 	glows = null
+	variants = null
+	parts = null
 	filters = null
 	vis = null
 	flick_state = null
@@ -59,17 +65,50 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 	LAZYADD(overlays, icon ? look_image(icon, name) : name)
 
 /// Drops a layer a capability drew (the holder's own draw() knows its sprite has no such state in
-/// this state): every overlay or glow named `name` added so far.
+/// this state): every overlay, glow or part named `name` added so far (a part by its name, or by name-value).
 /datum/look/proc/hide(name)
 	touched = TRUE
 	if(overlays)
-		overlays -= name
+		for(var/entry in overlays.Copy())
+			if(istext(entry) && entry == name)
+				overlays -= entry
 		if(!length(overlays))
 			overlays = null
 	if(glows)
-		glows -= name
+		for(var/entry in glows.Copy())
+			if(entry == name)
+				glows -= entry
 		if(!length(glows))
 			glows = null
+	if(parts)
+		var/list/kept
+		for(var/list/entry in parts)
+			var/full = isnull(entry[2]) ? entry[1] : "[entry[1]]-[entry[2]]"
+			if(entry[1] != name && full != name)
+				LAZYADD(kept, list(entry))
+		parts = kept
+
+/**
+ * The base state gets a variant: with the icon having "<base>-name" the base is replaced by it (a
+ * lit or open sprite of the same thing). Variants apply in the order given; a variant the icon has no
+ * state for changes nothing. Only `when` is true.
+ */
+/datum/look/proc/variant(name, when = TRUE)
+	touched = TRUE
+	if(!when || isnull(name))
+		return
+	LAZYADD(variants, "[name]")
+
+/**
+ * A named part drawn over the base: `value` is TRUE for a plain part ("panel"), or a value (text or
+ * number) for "panel-open"; null / FALSE / "" draws nothing. It resolves when the look is applied to the
+ * first state the holder's icon has of "<base>-name[-value]" then "name[-value]". A part with no state draws nothing.
+ */
+/datum/look/proc/part(name, value = TRUE)
+	touched = TRUE
+	if(isnull(name) || isnull(value) || value == 0 || value == "")
+		return
+	LAZYADD(parts, list(list("[name]", (value == TRUE) ? null : "[value]", FALSE)))
 
 /// A gauge overlay: "[name][step]" for level (0..1) quantised to 0..levels. Null level: nothing.
 /datum/look/proc/gauge(name, level, levels = 4)
@@ -79,17 +118,99 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 	var/step = clamp(round(level * levels), 0, levels)
 	LAZYADD(overlays, "[name][step]")
 
-/// An overlay that also glows in the dark (the state plus its emissive), only `when` is true.
-/datum/look/proc/glow(name, when = TRUE)
+/**
+ * Makes a part glow in the dark: with a part of that name already added (look.part()) it is upgraded to
+ * emissive (with a `value`, the part of that value); with none, `name` is an overlay state that glows
+ * (the old form). `value` is TRUE (or any value) to do it, FALSE or null not to.
+ */
+/datum/look/proc/glow(name, value = TRUE)
 	touched = TRUE
-	if(!when || isnull(name))
+	if(isnull(name) || isnull(value) || value == 0 || value == "")
 		return
+	var/wanted = (value == TRUE) ? null : "[value]"
+	for(var/list/entry in parts)
+		if(entry[1] == name && (isnull(wanted) || entry[2] == wanted))
+			entry[3] = TRUE
+			return
 	LAZYADD(glows, name)
 
 /// Another icon file for the base state.
 /datum/look/proc/set_icon(file)
 	icon = file
 	touched = TRUE
+
+// ---- part names and the per-icon state cache ----
+
+/// icon file text -> assoc set of its icon_states. An icon's states never change in a round, so each
+/// file is read once; a look resolving parts costs list lookups, not icon_states() calls.
+GLOBAL_LIST_EMPTY(look_icon_states)
+#ifdef UNIT_TESTS
+/// "[type]" -> the part names a look asked for that the type's icon has no state for.
+GLOBAL_LIST_EMPTY(look_missing_parts)
+#endif
+
+/// The set of state names `icon` (a file) has.
+/proc/look_states_of(icon)
+	RETURN_TYPE(/list)
+	var/key = isfile(icon) ? "[icon]" : null
+	var/list/found = key ? GLOB.look_icon_states[key] : null
+	if(found)
+		return found
+	found = list()
+	if(icon)
+		for(var/state in icon_states(icon))
+			found[state] = TRUE
+	if(key)
+		GLOB.look_icon_states[key] = found
+	return found
+
+/// Whether `icon` has a state named `state`.
+/proc/look_icon_has_state(icon, state)
+	return !!look_states_of(icon)[state]
+
+/**
+ * The state of part `name` (with `value`) in `icon` for base state `base`: the first of
+ * "<base>-name[-value]", "name[-value]" that exists. Null when the icon has none. Names are exact:
+ * tools/dq_icons/rename_states.py --standard moves legacy states to the standard names.
+ */
+/proc/look_resolve_part(icon, base, name, value)
+	var/list/states = look_states_of(icon)
+	var/full = isnull(value) ? "[name]" : "[name]-[value]"
+	if(base && states["[base]-[full]"])
+		return "[base]-[full]"
+	if(states[full])
+		return full
+	return null
+
+/**
+ * The standard parts of `A`'s look that its icon has no state for (from the capabilities' look_parts()),
+ * less what A says it knowingly lacks (look_lacks()). What the unit test lists.
+ */
+/proc/look_missing_standard_parts(atom/A)
+	. = list()
+	var/list/lacks = A.look_lacks()
+	var/base = initial(A.icon_state)
+	for(var/datum/capability/C as anything in caps_all(A))
+		for(var/part_name in C.look_parts())
+			if(part_name in lacks)
+				continue
+			if(!look_resolve_part(A.icon, base, part_name, null))
+				. |= part_name
+
+/// The standard part names this atom's type knowingly has no sprite for (an allowlist for the
+/// missing-parts test). Override to declare them.
+/atom/proc/look_lacks()
+	return null
+
+/// TRUE for a type whose standard parts the unit test enforces (types opt in as their sprites are named).
+/atom/proc/look_checked()
+	return FALSE
+
+/// The standard part names this capability draws (its layer). Null draws none.
+/datum/capability/proc/look_parts()
+	if(!layer_name || layer_name == CAP_NO_LAYER)
+		return null
+	return list(layer_name)
 
 /// The shared image for an overlay drawn from another icon file (look.overlay(icon =)).
 /proc/look_image(icon, name)
@@ -160,6 +281,10 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 		overlay_keys += look_part_key(entry)
 	parts += jointext(overlay_keys, ",")
 	parts += jointext(glows || list(), ",")
+	if(variants)
+		parts += "variants:[jointext(variants, ",")]"
+	for(var/list/entry in src.parts)
+		parts += "part:[entry[1]]:[entry[2]]:[entry[3]]"
 	if(filters)
 		for(var/name in filters)
 			parts += "[name]=[json_encode(filters[name])]"
@@ -209,8 +334,17 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 		now |= LOOK_SET_ICON
 	else if(was & LOOK_SET_ICON)
 		A.icon = initial(A.icon)
-	if(!isnull(icon_state))
-		A.icon_state = icon_state
+	// The base state, then variants ("<base>-lit") the icon has: only what the look asked is touched.
+	var/base = icon_state
+	if(isnull(base))
+		base = (was & LOOK_SET_ICON_STATE) ? initial(A.icon_state) : A.icon_state
+	var/resolved = base
+	for(var/name in variants)
+		var/candidate = "[resolved]-[name]"
+		if(look_icon_has_state(A.icon, candidate))
+			resolved = candidate
+	if(!isnull(icon_state) || resolved != base)
+		A.icon_state = resolved
 		now |= LOOK_SET_ICON_STATE
 	else if(was & LOOK_SET_ICON_STATE)
 		A.icon_state = initial(A.icon_state)
@@ -262,6 +396,17 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 	for(var/name in glows)
 		LAZYADD(added, name)
 		LAZYADD(added, emissive_appearance(A.icon, name))
+	for(var/list/entry in parts)
+		var/state = look_resolve_part(A.icon, resolved, entry[1], entry[2])
+		if(!state)
+#ifdef UNIT_TESTS
+			LAZYINITLIST(GLOB.look_missing_parts["[A.type]"])
+			GLOB.look_missing_parts["[A.type]"] |= (entry[2] ? "[entry[1]]-[entry[2]]" : entry[1])
+#endif
+			continue
+		LAZYADD(added, state)
+		if(entry[3])
+			LAZYADD(added, emissive_appearance(A.icon, state))
 	if(added)
 		A.add_overlay(added) // ALLOW(sys_dx_raw_overlays): the look builder owns its overlays
 		A.look_overlays = added

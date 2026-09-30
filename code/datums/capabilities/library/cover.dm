@@ -1,7 +1,7 @@
 // The cover capability (doc/rewrite/dx_conventions.md §2): a hatch or front plate that opens by
 // hand or with a tool. State: CAP_COVER_OPEN, and CAP_COVER_REMOVED once a removable cover is pried
 // off (the APC's "cover removed": it stays open and can't be closed). Other entries declare
-// `behind = COVER` to be reachable only while it is open (cap_gate_reason()). Layer: "cover_open".
+// `behind = COVER` to be reachable only while it is open (cap_gate_reason()). Layer: LOOK_COVER_OPEN.
 // Accessors: cover_is_open(), cover_removed().
 //
 //	. += cap_cover(open_tool = TOOL_CROWBAR, locked_by = LOCK)
@@ -9,7 +9,7 @@
 //	. += cap_cover(removable = TRUE, needs = PROC_REF(coverlock_ok), else_say = "the cover is locked")
 
 /datum/capability/cover
-	layer_name = "cover_open"
+	layer_name = LOOK_COVER_OPEN
 	/// TOOL_* needed to open and close it, or BY_HAND.
 	var/open_tool
 	var/delay = 0
@@ -18,7 +18,7 @@
 
 /// A cover. open_tool: TOOL_* or BY_HAND (null can't be passed: DM would substitute the default).
 /// removable: a crowbar on harm intent removes it. Gating as every library constructor.
-/proc/cap_cover(open_tool = TOOL_CROWBAR, delay = 0, removable = FALSE, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log, layer = "cover_open")
+/proc/cap_cover(open_tool = TOOL_CROWBAR, delay = 0, removable = FALSE, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log, layer = LOOK_COVER_OPEN)
 	var/datum/capability/cover/C = new
 	C.open_tool = open_tool
 	C.delay = delay

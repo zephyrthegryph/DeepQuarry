@@ -29,7 +29,7 @@
 /datum/capability/proc/draw_layer(datum/look/look, when = TRUE)
 	if(!layer_name || layer_name == CAP_NO_LAYER)
 		return
-	look.overlay(layer_name, when = when)
+	look.part(layer_name, !!when)
 
 /// needs: the actor can reach the holder (adjacent, silicon remote use, or a legacy entry).
 /atom/proc/cap_in_reach(mob/user, obj/item/held)

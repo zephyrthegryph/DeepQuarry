@@ -156,6 +156,18 @@ One vocabulary for "something happened" (code in `code/datums/reactions/`, defin
   timer of that key; `cancel_after`, `after_pending`; `clock = CLOCK_WORLD` for real time). The old `after()`,
   `om_after()` and `after_slot()` schedule through it.
 
+## Look, construction and pools
+
+- **State names** follow one convention (`code/__defines/look_names.dm`): `<base>`, `<base>-<variant>`,
+  `<base>-<part>[-<v>]`, `<part>[-<v>]`; Names are exact (dashed); `rename_states.py --standard` migrates legacy states. `draw(look)` uses
+  `look.variant()`, `look.part()` and `look.glow()`; library capabilities draw parts. A type may declare
+  `look_lacks()`; `look_checked()` opts it in to the missing-parts test.
+- **Construction** ladders are declared with primitives (`build_insert`, `build_wire`, `build_fasten`, `build_weld`), joints (`build_fit`,
+  `build_plate`, `build_parts`) and presets (`mech_chassis`, `machine_frame`, ...); undo, refund, messages, icons and
+  delays are derived, and the ladder owns the stage (`built_past()`).
+- **Pools:** a pooled type is `parent_type = /datum/pooled`; `take(type)` / `release()`; fields reset
+  automatically; no per-field declarations.
+
 ## Time
 
 - `COOLDOWN_*` for "not more than once per N".
