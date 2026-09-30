@@ -64,6 +64,7 @@
 	clicksound = SFX_SWITCH
 	machine_board = /obj/item/module/power_control
 	machine_wires = /datum/wires/apc
+	emag_msg = "You emag the APC interface."
 	req_access = list(ACCESS_ENGINE_EQUIP)
 	blocks_emissive = EMISSIVE_BLOCK_NONE
 	vis_flags = VIS_HIDE // They have an emissive that looks bad in openspace due to their wall-mounted nature
@@ -109,8 +110,8 @@
 	var/power_alarm_raised = FALSE
 	/// Power events applied (tests check that a settled APC hears none).
 	var/power_event_count = 0
-	/// The cell whose charge became Rust's Apc.charge last (push_to_rust() reconciles a newly seated cell once).
-	var/tmp/obj/item/cell/pushed_cell
+	/// The reference text of the cell whose charge became Rust's Apc.charge last (push_to_rust() reconciles a newly seated cell once).
+	var/tmp/pushed_cell_ref
 
 	// ── channel state ────────────────────────────────────────────────────────
 	// Rust reports these after every power step; push_to_rust() sends edits.
@@ -137,16 +138,19 @@ TRACKED(/obj/machinery/power/apc, shorted, CHANGE_MACHINE_SETTINGS)
 	// A wall machine that isn't dismantled into a machine frame (its ladder cuts it from the wall), has no
 	// repair step (a new cover does) and no dark sprite (draw() says its own).
 	. += wall_machine(dismantle = NONE, repair = NONE, powered = FALSE)
-	. += maintenance_hatch(cover_holds = PROC_REF(cover_holds), panel_needs_cover_closed = TRUE, emag_say = "You emag the APC interface.")
+	. += maintenance_hatch(cover_holds = PROC_REF(cover_holds), panel_needs_cover_closed = TRUE)
 	. += cell_bay(nameof(cell), at = BAY_HATCH, needs = PROC_REF(cell_bay_ready), size = ITEMSIZE_NORMAL)
 	. += power_channels()
 	. += powered_by(/datum/cap_system/power, role = POWER_ROLE_AREA_SUPPLY)
 	. += cap_construction(
-		ladder_options(at = BAY_HATCH, undo_delay = 5 SECONDS, dismantle = list(TOOL_WELDER, /obj/item/frame/apc, 1, PROC_REF(frame_ruined), /obj/item/stack/material/steel)),
+		ladder_options(at = BAY_HATCH, undo_delay = 5 SECONDS, dismantle = ladder_dismantle(tool = TOOL_WELDER, becomes = /obj/item/frame/apc, amount = 1, when_ruined = PROC_REF(frame_ruined), ruined_becomes = /obj/item/stack/material/steel)),
 		stage("frame", desc = "It's just an empty metal frame."),
-		apc_board_stage(),
-		apc_wired_stage(),
-		apc_secured_stage(),
+		// The power control board goes in (a new APC boots) and comes out by hand.
+		build_insert(machine_board, name = "board", desc = "The electronics are installed, but not wired.", on_enter = PROC_REF(board_seated)),
+		// Ten cable lengths make the terminal (the floor plating must be off); wirecutters cut it out again.
+		build_wire(10, name = "wired", desc = "The frame is wired and the electronics are in, but not fastened.", needs = PROC_REF(floor_exposed), undo_needs = PROC_REF(floor_exposed), on_enter = PROC_REF(terminal_wired), on_leave = PROC_REF(terminal_cut)),
+		// A screwdriver secures the electronics (the APC works), with the cell out both ways.
+		build_fasten(TOOL_SCREWDRIVER, name = "secured", needs = PROC_REF(cell_out), else_say = "remove the power cell first", undo_needs = PROC_REF(cell_out), undo_else_say = "remove the power cell first", on_enter = PROC_REF(electronics_secured), on_leave = PROC_REF(electronics_unsecured)),
 	)
 	. += apc_ops()
 	// What the lock and the emag additionally need (the hatch declared their ops; refine() edits one in place).
@@ -154,40 +158,14 @@ TRACKED(/obj/machinery/power/apc, shorted, CHANGE_MACHINE_SETTINGS)
 	. += cap_require(CAP_EMAG, needs = req_proc(PROC_REF(emag_ok)))
 	. += refine(CAP_EMAG, delay = 0.6 SECONDS, effect = PROC_REF(on_emag))
 
-/// The frame's board stage: the power control board goes in (a new APC boots), comes out by hand.
-/obj/machinery/power/apc/proc/apc_board_stage()
-	var/datum/ladder_stage/stage = build_insert(machine_board, name = "board", desc = "The electronics are installed, but not wired.")
-	stage.on_enter = PROC_REF(board_seated)
-	return stage
-
-/// The cable stage: ten lengths make the terminal (the floor plating must be off); wirecutters cut it out again.
-/obj/machinery/power/apc/proc/apc_wired_stage()
-	var/datum/ladder_stage/stage = build_wire(10, name = "wired", desc = "The frame is wired and the electronics are in, but not fastened.")
-	stage.needs = ladder_need(PROC_REF(floor_exposed))
-	stage.undo_needs = ladder_need(PROC_REF(floor_exposed))
-	stage.on_enter = PROC_REF(terminal_wired)
-	stage.on_leave = PROC_REF(terminal_cut)
-	return stage
-
-/// The fastener stage: a screwdriver secures the electronics (the APC works), with the cell out both ways.
-/obj/machinery/power/apc/proc/apc_secured_stage()
-	var/datum/ladder_stage/stage = build_fasten(TOOL_SCREWDRIVER, name = "secured", needs = PROC_REF(cell_out), else_say = "remove the power cell first")
-	stage.undo_needs = ladder_need(PROC_REF(cell_out), "remove the power cell first")
-	stage.on_enter = PROC_REF(electronics_secured)
-	stage.on_leave = PROC_REF(electronics_unsecured)
-	return stage
-
 /// The APC's own ops: the interface, a new cover, the multitool reset.
 /obj/machinery/power/apc/proc/apc_ops()
 	. = list()
-	var/datum/capability/entry/interface = cap_control("Open interface", PROC_REF(open_interface), needs = PROC_REF(interface_ready), action = ACT_USE, works_broken = TRUE, works_unpowered = TRUE, key = "open_interface")
 	// An empty hand (or a silicon's touch), while the interface is what a touch means: with the cover open the
 	// cell is what a hand reaches, and a shredder's claws slash (its slashed notice).
-	// ALLOW(sys_old_requirement): the interface entry needs an empty hand plus a target-state check that the requirement macros do not combine
-	interface.entry.offered_when = list(REQ_EMPTY_HANDED, REQ_TARGET_STATE(/obj/machinery/power/apc/proc/interface_offered))
-	. += interface
-	. += cap_op("Replace damaged cover", PROC_REF(replace_cover), using = /obj/item/frame/apc, at = BAY_HATCH, delay = 5 SECONDS, needs = PROC_REF(cover_replaceable), start_msg = /datum/msg/start/apc/replace_cover, kind = OP_STRUCTURAL, key = "replace_cover", works_broken = TRUE, works_unpowered = TRUE, priority = 20)
-	. += cap_op("Reset", PROC_REF(reset_apc), using = TOOL_MULTITOOL, at = BAY_HATCH, delay = 5 SECONDS, needs = PROC_REF(cell_out_for_reset), applies = PROC_REF(is_subverted), start_msg = /datum/msg/start/apc/reset, kind = OP_STRUCTURAL, key = "reset_apc")
+	. += cap_control("Open interface", PROC_REF(open_interface), using = EMPTY_HAND, offered = req_proc(PROC_REF(interface_offered)), needs = PROC_REF(interface_ready), key = "open_interface")
+	. += cap_op("Replace damaged cover", PROC_REF(replace_cover), using = /obj/item/frame/apc, at = BAY_HATCH, delay = 5 SECONDS, needs = PROC_REF(cover_replaceable), start_msg = /datum/msg/start/apc/replace_cover, kind = OP_STRUCTURAL, key = "replace_cover")
+	. += cap_op("Reset", PROC_REF(reset_apc), using = TOOL_MULTITOOL, at = BAY_HATCH, delay = 5 SECONDS, needs = PROC_REF(cell_out_for_reset), offered = req_proc(PROC_REF(is_subverted)), start_msg = /datum/msg/start/apc/reset, kind = OP_STRUCTURAL, key = "reset_apc")
 
 MSG_DEF(start/apc/replace_cover, "You begin to replace the damaged APC cover...", "%U% begins replacing the damaged APC cover with a new one.")
 MSG_DEF(start/apc/reset, "You begin resetting the APC...", "%U% connects %I% to the APC and begins resetting it.")
@@ -288,7 +266,7 @@ MSG_DEF(start/apc/reset, "You begin resetting the APC...", "%U% connects %I% to 
 
 /// Offered (a touch means the interface) unless the cover is open (a hand reaches the cell) or the toucher is
 /// a shredder (its claws slash).
-/obj/machinery/power/apc/proc/interface_offered(mob/actor, atom/target, obj/item/held)
+/obj/machinery/power/apc/proc/interface_offered(mob/actor, obj/item/held)
 	if(cover_is_open(src) && !issilicon(actor))
 		return FALSE
 	return !actor_shreds(actor)
@@ -514,9 +492,9 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 	set_chargemode(chargemode)
 	set_chargelevel(chargelevel)
 	set_capacity(cell ? cell.maxcharge : 0)
-	if(cell != pushed_cell)
-		// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
-		pushed_cell = cell
+	var/seated_ref = cell ? REF(cell) : null
+	if(seated_ref != pushed_cell_ref)
+		pushed_cell_ref = seated_ref
 		if(cell)
 			adjust_charge(cell.charge - get_charge())
 	area()?.power_loads_changed()
@@ -624,32 +602,35 @@ SETTER(/obj/machinery/power/apc, power_failed)
 		else if(is_emagged(src))
 			. += "The panel is flashing an error."
 
-/// Closed, whole, wired, and not subverted or failed: the screen and its indicators show.
+/// The screen and its indicators show: closed up and lit (powered, whole, not subverted, failed or unsecured).
 /obj/machinery/power/apc/proc/apc_all_good()
-	return !cover_is_open(src) && !panel_is_open(src) && !is_broken(src) && !has_stat(BROKEN | MAINT) && !is_emagged(src) && !hacker && !power_failed
+	return !cover_is_open(src) && !panel_is_open(src) && is_lit(src)
+
+/// The APC's own supply keeps its screen up whatever its area's power does.
+/obj/machinery/power/apc/cap_powered()
+	return TRUE
+
+/// Subverted, failed or unsecured: not the normal display (is_lit() reads it).
+/obj/machinery/power/apc/screen_override()
+	return has_stat(BROKEN | MAINT) || is_emagged(src) || hacker || power_failed
 
 /// The screen shows the fault bluescreen (subverted or failed, with the cover and panel shut).
 /obj/machinery/power/apc/proc/apc_bluescreen()
 	return !cover_is_open(src) && !panel_is_open(src) && (is_emagged(src) || hacker || power_failed)
 
-// The library draws the cover, wire panel, wires, broken and the cell behind an open cover, and
-// power_channels() the channel glows; the APC adds its screen: the bluescreen under everything, the lock and
-// charge indicators with explicit glows, and its light.
+// The library draws the cover, wire panel, wires, broken, the emagged screen, the lock lamp and the cell behind
+// an open cover, and power_channels() the channel glows; the APC adds the bluescreen under everything (a hack or
+// failure, which the emag part does not know), the coverless frame, the charge lamp and its light.
 /obj/machinery/power/apc/draw(datum/look/look)
 	look.part("emagged", apc_bluescreen()) // hacked, failed or emagged: the bluescreen, under the rest
 	..()
-	if(cover_removed(src))
-		look.state("apc[cell ? 2 : 1]-nocover")
-	else if(cover_is_open(src) && has_stat(MAINT | BROKEN))
-		look.overlay("apcmaint")
+	look.variant("cover-removed", when = cover_removed(src))
+	look.variant("cell", when = cover_removed(src) && cell)
+	look.part("maintenance", cover_is_open(src) && !cover_removed(src) && has_stat(MAINT | BROKEN))
 	if(apc_bluescreen())
 		look.light(2, 0.25, "#0000FF")
 	else if(apc_all_good())
-		var/lock_state = is_locked(src) ? "locked" : "unlocked"
-		look.part(lock_state)
-		look.glow(lock_state)
-		look.part("channel-3", "[charging]")
-		look.glow("channel-3", "[charging]")
+		look.glow("charge", "[charging]")
 		var/static/list/charge_colors = list("#F86060", "#A8B0F8", "#82FF4C")
 		look.light(2, 0.25, charge_colors[clamp(charging, 0, 2) + 1])
 
@@ -1082,11 +1063,10 @@ DAMAGE_REACTION(/obj/machinery/power/apc, DAMAGE_BLOB, PROC_REF(apc_blob_rip_wir
 	om_changed(src, CHANGE_MACHINE_SETTINGS)
 
 /obj/machinery/power/apc/proc/set_nightshift(on, automated)
-	set waitfor = FALSE // ALLOW(scheduler): update_nightshift() CHECK_TICKs over the area lights
 	if(automated && istype(area(), /area/shuttle))
 		return
 	nightshift_lights = on
-	update_nightshift()
+	INVOKE_ASYNC(src, PROC_REF(update_nightshift)) // it CHECK_TICKs over the area lights
 
 /obj/machinery/power/apc/proc/update_nightshift()
 	var/new_state = nightshift_lights

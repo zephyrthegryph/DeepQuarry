@@ -47,11 +47,12 @@
  *   is, null otherwise) refuses the cover's opening AND closing; the reason is the refusal;
  * - with panel_needs_cover_closed, the panel only opens with the cover closed (the APC's wire panel);
  * - the ID lock and the emag only work with the cover and the panel closed ("close the cover first").
- * The wiring is the holder's machine_wires, the lock's access its req_access. The lock and the emag are ops
+ * The wiring is the holder's machine_wires, the lock's access its req_access, what the emag tells the user its emag_msg.
+ * The lock shows as a lamp and the emag as the emagged screen while the holder is closed up. The lock and the emag are ops
  * (lock_ops(), emag_op()) keyed CAP_LOCK_SWIPE / CAP_LOCK / CAP_EMAG: a holder adds contracts with cap_require()
  * and edits them with refine().
  */
-/proc/maintenance_hatch(cover_holds, panel_needs_cover_closed = FALSE, cover_tool = TOOL_CROWBAR, removable_cover = FALSE, emag_say, emag_mode = EMAG_ONCE)
+/proc/maintenance_hatch(cover_holds, panel_needs_cover_closed = FALSE, cover_tool = TOOL_CROWBAR, removable_cover = FALSE, emag_mode = EMAG_ONCE)
 	var/datum/capability/maintenance_hatch/hatch = new
 	hatch.cover_holds = cover_holds
 	. = list(hatch, compartment(BAY_HATCH, door = CAP_COVER_OPEN))
@@ -60,9 +61,9 @@
 		. += cap_require(list("open_cover", "remove_cover"), needs = req_proc(TYPE_PROC_REF(/atom, hatch_cover_free)))
 	. += cap_panel(blocked_by = panel_needs_cover_closed ? COVER : NONE)
 	. += cap_wires(null, behind = PANEL)
-	. += cap_lock(blocked_by = COVER | PANEL, entries = FALSE, layer = CAP_NO_LAYER) // the holder draws its own lock indicator
+	. += cap_lock(blocked_by = COVER | PANEL, entries = FALSE, lamp = TRUE)
 	. += lock_ops(blocked_by = COVER | PANEL)
-	. += emag_op(say = emag_say, mode = emag_mode, blocked_by = COVER | PANEL)
+	. += emag_op(mode = emag_mode, blocked_by = COVER | PANEL)
 
 /// The hatch's own settings (no entries): what locks the cover.
 /datum/capability/maintenance_hatch

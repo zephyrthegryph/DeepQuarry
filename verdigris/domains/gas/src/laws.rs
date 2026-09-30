@@ -20,10 +20,13 @@
 
 use vg_core::field::law::{Cell, Neighbors};
 use vg_core::law::{Law, LawCtx, Period, Settle};
+use vg_core::query::Global;
 use vg_core::units::Seconds;
 use vg_core::vg;
 
 use crate::cell::{TurfGas, NO_REACTION};
+use crate::device::{self, Flow, StepReport};
+use crate::pipes::PipeGas;
 
 /// A pressure difference above this (kPa, already scaled) is a
 /// `PressureJump` (spacewind) -- `world.rs::PRESSURE_EVENT`, ported
@@ -145,6 +148,93 @@ impl Law for SpacewindLaw {
 					delta: moved,
 				});
 			}
+		}
+		Settle::Active
+	}
+}
+
+/// How often the pipe devices' flow law runs: every frame of the World's pacer. The pacer's fixed step is
+/// 0.5 s (`WorldConfig::dt`), which is the device period the flows were always tuned to.
+pub const PIPE_DEVICE_PERIOD: Period = Period::Frame;
+
+/// One side of a device edge: a pipe region's gas or a turf's, with its volume. Devices that meet on one region (a
+/// vent and a scrubber on one pipe network) or one turf share the side, so each sees what the ones before it did.
+#[derive(Clone, Debug, PartialEq)]
+pub struct DeviceSide {
+	pub gas: PipeGas,
+	pub volume: f64,
+}
+
+/// One pipe device edge's work for a step: its flows and valve, and which two [`DeviceJobs::sides`] it moves gas
+/// between (staged by the FFI layer, which owns the turf side and the region payloads, and stepped by
+/// [`PipeDeviceStep`]). A turf device has the turf as side `a` (a vent pump, a scrubber), wherever the graph stores
+/// the cell.
+#[derive(Clone, Debug, PartialEq)]
+pub struct DeviceJob {
+	/// The device's `vg_entity` value (reports are about it).
+	pub entity: f32,
+	pub flows: Vec<Flow>,
+	pub valve_open: bool,
+	/// Indexes into [`DeviceJobs::sides`]; never equal.
+	pub a: usize,
+	pub b: usize,
+	/// What the steps since staging did: moles moved `a` to `b`, the power drawn by the latest step that drew any,
+	/// whether a stop target was reached.
+	pub moles: f64,
+	pub power_w: f32,
+	pub target_reached: bool,
+}
+
+impl DeviceJob {
+	/// Runs every flow, then the valve gate, on the pair of `sides` for `dt` seconds, folding into the job's report.
+	pub fn step(&mut self, sides: &mut [DeviceSide], dt: f32) {
+		let (mut a, mut b) = (sides[self.a].gas, sides[self.b].gas);
+		let (vol_a, vol_b) = (sides[self.a].volume, sides[self.b].volume);
+		let mut total = StepReport::default();
+		for flow in &self.flows {
+			let r = device::step(flow, &mut a, vol_a, &mut b, vol_b, dt);
+			total.moles += r.moles;
+			total.power_w += r.power_w;
+			total.target_reached |= r.target_reached;
+		}
+		if self.valve_open {
+			total.moles += device::step_valve(true, &mut a, vol_a, &mut b, vol_b).moles;
+		}
+		sides[self.a].gas = a;
+		sides[self.b].gas = b;
+		self.moles += total.moles;
+		if total.power_w != 0.0 {
+			self.power_w = total.power_w;
+		}
+		self.target_reached |= total.target_reached;
+	}
+
+	/// Whether the steps moved gas or drew power (a settled device changes nothing and reports nothing).
+	#[must_use]
+	pub fn moved(&self) -> bool {
+		self.moles != 0.0 || self.power_w != 0.0
+	}
+}
+
+/// Every pipe device's [`DeviceJob`] for the coming steps, over the sides they share (a main-owned global the FFI
+/// layer stages before the World's step and applies after it, as heat does with its mixture probes). Jobs step in
+/// order, each on what the ones before it left.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct DeviceJobs {
+	pub sides: Vec<DeviceSide>,
+	pub jobs: Vec<DeviceJob>,
+}
+
+vg_core::law! {
+	/// The pipe devices' flow law: every device edge's flows and valve, once per [`PIPE_DEVICE_PERIOD`] of the
+	/// World's pacer (`device::step`'s maths, unchanged). The law is the only stepper: `vg_frame` no longer keeps a
+	/// device clock of its own.
+	pub PipeDeviceStep("gas_pipe_devices"): () => Global<DeviceJobs>, every PIPE_DEVICE_PERIOD, |ctx, dt| {
+		#[allow(clippy::cast_possible_truncation)]
+		let dt = dt.0 as f32;
+		let DeviceJobs { sides, jobs } = &mut ctx.writes.0;
+		for job in jobs.iter_mut() {
+			job.step(sides, dt);
 		}
 		Settle::Active
 	}
@@ -321,5 +411,108 @@ mod tests {
 		let mut ctx = LawCtx::new(&reads, &mut writes, &mut fx);
 		SpacewindLaw::step(&mut ctx, Seconds(1.0));
 		assert!(fx.events.is_empty(), "equal pressures: no spacewind");
+	}
+
+	fn device_side(moles: f32) -> DeviceSide {
+		let mut amounts = [0.0_f32; crate::cell::Q];
+		amounts[GAS_OXYGEN] = moles;
+		amounts[crate::cell::N] = moles * 20.0 * 293.15;
+		DeviceSide {
+			gas: PipeGas::from_amounts(&amounts, 293.15),
+			volume: 200.0,
+		}
+	}
+
+	fn pump_job(from: usize, to: usize) -> DeviceJob {
+		DeviceJob {
+			entity: 5.0,
+			flows: vec![Flow {
+				gases: 0,
+				rate: device::Rate::Volume(100.0),
+				direction: device::Direction::Forced,
+				stop: None,
+				limit: None,
+			}],
+			valve_open: false,
+			a: from,
+			b: to,
+			moles: 0.0,
+			power_w: 0.0,
+			target_reached: false,
+		}
+	}
+
+	fn total_moles(sides: &[DeviceSide]) -> f64 {
+		sides.iter().map(|s| s.gas.total()).sum()
+	}
+
+	#[test]
+	fn pipe_device_step_moves_gas_and_conserves_it_across_the_pair() {
+		assert_eq!(PipeDeviceStep::PERIOD, PIPE_DEVICE_PERIOD);
+		let reads = ();
+		let jobs = DeviceJobs {
+			sides: vec![device_side(200.0), device_side(0.0)],
+			jobs: vec![pump_job(0, 1)],
+		};
+		let mut writes = Global(jobs);
+		let mut fx = cell_fx(0);
+		let mut ctx = LawCtx::new(&reads, &mut writes, &mut fx);
+		let settle = PipeDeviceStep::step(&mut ctx, Seconds(0.5));
+		assert_eq!(settle, Settle::Active);
+		let jobs = &writes.0;
+		assert!(jobs.jobs[0].moved(), "a flow with a source moves something");
+		assert!(jobs.jobs[0].moles > 0.0, "a to b: {}", jobs.jobs[0].moles);
+		assert!(
+			(total_moles(&jobs.sides) - 200.0).abs() < 1e-3,
+			"gas is conserved across the pair: {}",
+			total_moles(&jobs.sides)
+		);
+	}
+
+	#[test]
+	fn pipe_device_step_accumulates_over_steps_and_an_empty_source_reports_nothing() {
+		let reads = ();
+		let jobs = DeviceJobs {
+			sides: vec![device_side(200.0), device_side(0.0), device_side(0.0), device_side(0.0)],
+			jobs: vec![pump_job(0, 1), pump_job(2, 3)],
+		};
+		let mut writes = Global(jobs);
+		let mut fx = cell_fx(0);
+		let mut ctx = LawCtx::new(&reads, &mut writes, &mut fx);
+		let _ = PipeDeviceStep::step(&mut ctx, Seconds(0.5));
+		let after_one = writes.0.jobs[0].moles;
+		let mut ctx = LawCtx::new(&reads, &mut writes, &mut fx);
+		let _ = PipeDeviceStep::step(&mut ctx, Seconds(0.5));
+		assert!(writes.0.jobs[0].moles > after_one, "the report sums over steps");
+		assert!(!writes.0.jobs[1].moved(), "nothing to move: nothing to report");
+	}
+
+	#[test]
+	fn devices_on_one_side_each_see_what_the_ones_before_them_did() {
+		// Two pumps drain one source (side 0) into two sinks: the second finds less there, and the source never goes
+		// negative or is counted twice.
+		let reads = ();
+		let jobs = DeviceJobs {
+			sides: vec![device_side(10.0), device_side(0.0), device_side(0.0)],
+			jobs: vec![pump_job(0, 1), pump_job(0, 2)],
+		};
+		let mut writes = Global(jobs);
+		let mut fx = cell_fx(0);
+		for _ in 0..20 {
+			let mut ctx = LawCtx::new(&reads, &mut writes, &mut fx);
+			let _ = PipeDeviceStep::step(&mut ctx, Seconds(0.5));
+		}
+		let jobs = &writes.0;
+		assert!(jobs.sides[0].gas.total() >= 0.0);
+		assert!(jobs.jobs[0].moles > 0.0 && jobs.jobs[1].moles > 0.0);
+		assert!(
+			(total_moles(&jobs.sides) - 10.0).abs() < 1e-3,
+			"one source shared by two devices is conserved: {}",
+			total_moles(&jobs.sides)
+		);
+		assert!(
+			(jobs.jobs[0].moles + jobs.jobs[1].moles - (10.0 - jobs.sides[0].gas.total())).abs() < 1e-3,
+			"what the source lost is what the jobs report"
+		);
 	}
 }

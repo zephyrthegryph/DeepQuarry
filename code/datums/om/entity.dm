@@ -72,7 +72,6 @@
 	var/list/dv
 	/// Stride 4: clock idx, rate, local time (ds), settled at (ds).
 	var/list/clocks
-	var/list/rates
 	var/list/tasks
 	/// Step accumulators (seconds), indexed by the behaviour's step_idx. Grown on first use.
 	var/list/steps
@@ -591,7 +590,6 @@
 	rec.timer_slots = null
 	rec.timer_soonest = null
 	rec.dv = null
-	rec.rates = null
 	E.om_listen = 0
 	// Break the rec <-> entity cycle; wheel and queue entries hold the rec
 	// and skip it once torn down.

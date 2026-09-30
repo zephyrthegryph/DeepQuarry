@@ -116,6 +116,10 @@ pub struct Flow {
 	pub rate: Rate,
 	pub direction: Direction,
 	pub stop: Option<Target>,
+	/// A second target that only caps the flow (a dual-port vent's input or output check beside its external
+	/// bound): gas still moves toward `stop`, never past this one. It must ask for the same direction as `stop`,
+	/// else the flow halts; with no `stop` it is ignored.
+	pub limit: Option<Target>,
 }
 
 /// What a step did, for DM's stalled/target-reached/filter-saturated events
@@ -196,6 +200,36 @@ fn equalize(a: &mut PipeGas, vol_a: f64, b: &mut PipeGas, vol_b: f64) -> f64 {
 	from.transfer_masked(to, 0, moles) * sign
 }
 
+/// The moles `target` still wants and which side they leave (`true`: `a`), or `None` when it is met. AtLeast fills
+/// `side` (the source is the other one); AtMost drains it (the source is `side` itself). `needed` is exact: it is
+/// `pV = nRT` solved on the TARGET side's own fixed volume for the moles that land it exactly on `kpa`, using the
+/// flow's temperature (the source's, which is the target's own temperature on an AtMost drain, since target and
+/// source are the same side there).
+fn target_need(
+	target: &Target,
+	a: &PipeGas,
+	vol_a: f64,
+	b: &PipeGas,
+	vol_b: f64,
+	pa: f32,
+	pb: f32,
+) -> Option<(bool, f64)> {
+	let side_is_a = target.side == Side::A;
+	let side_p = if side_is_a { pa } else { pb };
+	let gap = match target.cmp {
+		Cmp::AtLeast => target.kpa - side_p,
+		Cmp::AtMost => side_p - target.kpa,
+	};
+	if gap <= 0.01 {
+		return None;
+	}
+	let dest_is_a = side_is_a == matches!(target.cmp, Cmp::AtLeast);
+	let t_flow = (if dest_is_a { b } else { a }).temperature_now().max(1.0);
+	let vol_side = if side_is_a { vol_a } else { vol_b };
+	let needed = f64::from(gap) * vol_side / (f64::from(R_IDEAL_GAS_EQUATION) * f64::from(t_flow));
+	Some((!dest_is_a, needed))
+}
+
 impl Flow {
 	/// See the struct docs for how `stop` picks source/destination.
 	fn step(
@@ -220,33 +254,24 @@ impl Flow {
 		// near-vacuum looks like almost no work.
 		let (from_is_a, needed, target_kpa) = match self.stop {
 			Some(target) => {
-				let side_is_a = target.side == Side::A;
-				let side_p = if side_is_a { pa } else { pb };
-				let gap = match target.cmp {
-					Cmp::AtLeast => target.kpa - side_p,
-					Cmp::AtMost => side_p - target.kpa,
+				let reached = StepReport {
+					target_reached: true,
+					..Default::default()
 				};
-				if gap <= 0.01 {
-					return StepReport {
-						target_reached: true,
-						..Default::default()
-					};
+				let Some((from_is_a, mut needed)) = target_need(&target, a, vol_a, b, vol_b, pa, pb)
+				else {
+					return reached;
+				};
+				if let Some(limit) = &self.limit {
+					// The limit caps the moles, and must want the gas to go the same way.
+					match target_need(limit, a, vol_a, b, vol_b, pa, pb) {
+						Some((limit_from_is_a, limit_needed)) if limit_from_is_a == from_is_a => {
+							needed = needed.min(limit_needed);
+						}
+						_ => return reached,
+					}
 				}
-				// AtLeast fills `side` (source is the other one); AtMost
-				// drains it (source is `side` itself). Either way `needed` is
-				// exact: it's `pV = nRT` solved on the TARGET side's own
-				// fixed volume for the moles that land it exactly on `kpa`,
-				// using the flow's temperature (the source's - which is the
-				// target's own temperature too, on an AtMost drain, since
-				// target and source are the same side there).
-				let dest_is_a = side_is_a == matches!(target.cmp, Cmp::AtLeast);
-				let t_flow = (if dest_is_a { &*b } else { &*a })
-					.temperature_now()
-					.max(1.0);
-				let vol_side = if side_is_a { vol_a } else { vol_b };
-				let needed = f64::from(gap) * vol_side
-					/ (f64::from(R_IDEAL_GAS_EQUATION) * f64::from(t_flow));
-				(!dest_is_a, needed, Some(target.kpa))
+				(from_is_a, needed, Some(target.kpa))
 			}
 			None => match self.direction {
 				Direction::Forced => (true, f64::INFINITY, None),
@@ -352,6 +377,7 @@ mod tests {
 				cmp: Cmp::AtLeast,
 				kpa: target_kpa,
 			}),
+			limit: None,
 		}
 	}
 
@@ -365,6 +391,7 @@ mod tests {
 				cmp: Cmp::AtLeast,
 				kpa: max_output_kpa,
 			}),
+			limit: None,
 		}
 	}
 
@@ -378,6 +405,7 @@ mod tests {
 				cmp: Cmp::AtLeast,
 				kpa: target_kpa,
 			}),
+			limit: None,
 		}
 	}
 
@@ -391,6 +419,7 @@ mod tests {
 				cmp: Cmp::AtMost,
 				kpa: target_kpa,
 			}),
+			limit: None,
 		}
 	}
 
@@ -400,6 +429,7 @@ mod tests {
 			rate: Rate::Volume(max_rate_l_s),
 			direction: Direction::Downhill,
 			stop: None,
+			limit: None,
 		}
 	}
 
@@ -416,6 +446,7 @@ mod tests {
 				cmp: Cmp::AtLeast,
 				kpa: max_kpa,
 			}),
+			limit: None,
 		}
 	}
 
@@ -429,6 +460,7 @@ mod tests {
 				cmp: Cmp::AtMost,
 				kpa: min_kpa,
 			}),
+			limit: None,
 		}
 	}
 
@@ -438,6 +470,7 @@ mod tests {
 			rate: Rate::Volume(rate_l_s),
 			direction: Direction::Forced,
 			stop: None,
+			limit: None,
 		}
 	}
 
@@ -451,6 +484,7 @@ mod tests {
 				cmp: Cmp::AtLeast,
 				kpa: release_kpa,
 			}),
+			limit: None,
 		}
 	}
 
@@ -648,6 +682,47 @@ mod tests {
 	}
 
 	#[test]
+	fn a_limit_caps_the_flow_before_the_stop_is_met() {
+		// Releasing from the network (b) into the turf (a) toward an unreachable turf bound, with the network's
+		// own floor as the limit: it drains to the floor and halts there (a dual-port vent's input check).
+		let mut turf = atmosphere(10.0, 293.0);
+		let mut network = atmosphere(100_000.0, 293.0);
+		let mut params = vent_release(1_000_000.0, 10_000.0);
+		params.limit = Some(Target {
+			side: Side::B,
+			cmp: Cmp::AtMost,
+			kpa: 2_000.0,
+		});
+		let start = network.pressure(100_000.0);
+		assert!(start > 2_000.0, "{start}");
+		let mut last = StepReport::default();
+		for _ in 0..500 {
+			last = step(&params, &mut turf, 2500.0, &mut network, 100_000.0, 1.0);
+		}
+		let end = network.pressure(100_000.0);
+		assert!((end - 2_000.0).abs() < 2.0, "the network drained to its floor: {end}");
+		assert!(last.target_reached, "and the flow halts there");
+		assert!(turf.pressure(2500.0) > 10.0, "what left the network went to the turf");
+	}
+
+	#[test]
+	fn a_limit_that_wants_the_other_way_halts_the_flow() {
+		// The stop fills the turf; the limit would fill the network instead: they disagree, so nothing moves.
+		let mut turf = atmosphere(10.0, 293.0);
+		let mut network = atmosphere(100_000.0, 293.0);
+		let mut params = vent_release(1_000_000.0, 10_000.0);
+		params.limit = Some(Target {
+			side: Side::B,
+			cmp: Cmp::AtLeast,
+			kpa: 1_000_000.0,
+		});
+		let before = network.total();
+		let report = step(&params, &mut turf, 2500.0, &mut network, 100_000.0, 1.0);
+		assert!(report.target_reached);
+		assert_eq!(network.total(), before);
+	}
+
+	#[test]
 	fn vent_pump_siphon_bounded_by_min_pressure() {
 		let mut turf = atmosphere(100_000.0, 293.0);
 		let mut network = PipeGas::default();
@@ -751,6 +826,9 @@ mod tests {
 			stop_side,
 			stop_cmp,
 			stop_kpa,
+			limit_side: stop_side::A,
+			limit_cmp: stop_cmp::NONE,
+			limit_kpa: 0.0,
 		}
 	}
 
@@ -880,6 +958,7 @@ mod tests {
 			rate: Rate::Fraction(0.25),
 			direction: Direction::Forced,
 			stop: None,
+			limit: None,
 		};
 		let report = step(&flow, &mut src, 1000.0, &mut sink, 1000.0, 1.0);
 		assert!((report.moles - f64::from(0.25 * oxygen_before)).abs() < 1e-6);

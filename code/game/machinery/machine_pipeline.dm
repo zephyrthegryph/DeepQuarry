@@ -24,14 +24,13 @@
 		/obj/machinery/portable_atmospherics/powered/pump,
 		/obj/machinery/portable_atmospherics/powered/scrubber,
 		// Atmospherics devices with DM-side work (the "machine_step" section below). Devices whose
-		// flow law is a Rust device edge (vent pumps and scrubbers, pumps, valves, passive gates)
+		// flow law is a Rust device edge (vent pumps, dual-port vents and scrubbers, pumps, valves, passive gates)
 		// and plain pipes have no DM work at all and don't join.
 		/obj/machinery/atmospherics/unary/freezer,
 		/obj/machinery/atmospherics/unary/heater,
 		/obj/machinery/atmospherics/unary/heat_exchanger,
 		/obj/machinery/atmospherics/unary/outlet_injector,
 		/obj/machinery/atmospherics/unary/cryo_cell,
-		/obj/machinery/atmospherics/binary/dp_vent_pump,
 		/obj/machinery/atmospherics/binary/algae_farm,
 		/obj/machinery/atmospherics/omni,
 		/obj/machinery/atmospherics/trinary/atmos_filter,

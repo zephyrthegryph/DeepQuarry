@@ -1,12 +1,14 @@
 // The access lock capability (doc/rewrite/dx_conventions.md §2). State: CAP_LOCKED. Swiping an ID
 // (or anything whose GetAccess() carries the access) toggles it; entries declaring locked_by = LOCK
-// refuse while it is engaged (cap_gate_reason()). Layer: LOOK_LOCKED. Accessor: is_locked().
+// refuse while it is engaged (cap_gate_reason()). Draws the part LOOK_LOCKED while locked, or as a `lamp` the
+// locked/unlocked glow while the holder is lit and closed up. Accessor: is_locked().
 // The constructor's access is the TYPE DEFAULT (design review H1): a holder whose own req_access /
 // req_one_access is set (map edits vary it per instance) is read instead.
 //
 //	. += cap_lock(access = list(ACCESS_ENGINE))
 
 /datum/capability/lock
+	/// The key its UI data sits under (caps_ui_data()); what it draws is draw() (the part LOOK_LOCKED, or the lamp).
 	layer_name = LOOK_LOCKED
 	/// Every one of these is required (has_access()).
 	var/list/req_access
@@ -17,15 +19,17 @@
 	/// FALSE when the lock's operations are declared beside it (lock_ops(): a hatch refines and contracts them
 	/// by key), so this capability contributes no entries of its own.
 	var/entries = TRUE
+	/// TRUE: the lock shows as a lamp (LOOK_LOCKED / LOOK_UNLOCKED, glowing) while the holder is lit and none of blocked_by is open.
+	var/lamp = FALSE
 
 /// An access lock: access (all required) and/or req_one_access (any one). id_types: what is swiped.
-/proc/cap_lock(list/access, list/req_one_access, list/id_types = list(/obj/item/card/id, /obj/item/pda), behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log, layer = LOOK_LOCKED, entries = TRUE)
+/proc/cap_lock(list/access, list/req_one_access, list/id_types = list(/obj/item/card/id, /obj/item/pda), behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log, entries = TRUE, lamp = FALSE)
 	var/datum/capability/lock/C = new
 	C.entries = entries
 	C.req_access = access
 	C.req_one_access = req_one_access
 	C.id_types = id_types
-	C.layer_name = layer
+	C.lamp = lamp
 	return cap_gating(C, behind = behind, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 
 /datum/capability/lock/interactions(atom/holder)
@@ -37,7 +41,13 @@
 	return list(is_locked(holder) ? "It is locked." : "It is unlocked.")
 
 /datum/capability/lock/draw(atom/holder, datum/look/look)
-	draw_layer(look, when = is_locked(holder))
+	if(!lamp)
+		look.part(LOOK_LOCKED, is_locked(holder))
+	else if(is_lit(holder) && !(blocked_by & holder.cap_state))
+		look.glow(is_locked(holder) ? LOOK_LOCKED : LOOK_UNLOCKED)
+
+/datum/capability/lock/look_parts()
+	return lamp ? list(LOOK_LOCKED, LOOK_UNLOCKED) : list(LOOK_LOCKED)
 
 /datum/capability/lock/ui_data(atom/holder, mob/user, list/data)
 	data[LOOK_LOCKED] = is_locked(holder)

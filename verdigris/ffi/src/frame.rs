@@ -2,12 +2,12 @@
 //!
 //! DM makes exactly one call into the simulation per tick. In it Rust
 //!
-//! 1. paces the [`World`](vg_core::world::World) (laws, heat, gas, power),
+//! 1. paces the [`World`](vg_core::world::World) (laws, heat, gas, power and
+//!    the pipe devices: `PipeDeviceStep` is a law on the pacer's period,
+//!    [`PIPE_DEVICE_PERIOD`] seconds per step),
 //! 2. ticks the hosts that are not on the world's pacer,
-//! 3. steps the pipe devices on their own [`PIPE_DEVICE_PERIOD`] (a period
-//!    on the frame, not a separate DM driver),
-//! 4. runs the scheduler (timers, rate crossings, keys, every watch port), and
-//! 5. hands back **one outbox page** of records.
+//! 3. runs the scheduler (timers, rate crossings, keys, every watch port), and
+//! 4. hands back **one outbox page** of records.
 //!
 //! Nothing else drains the simulation: the old `vg_world_tick`,
 //! `vg_world_events`, `vg_world_step`, `vg_entity_tick_all`,
@@ -39,7 +39,7 @@ use eyre::{Result, bail};
 use vg_core::timer::Tick;
 
 use crate::world::{list, num, whole};
-use crate::{entity, gas, heat, pipes, sched, world};
+use crate::{entity, gas, heat, sched, world};
 
 /// Record kind: something changed (`entity`, `key`).
 /// @dm-define NATIVE_REC_CHANGED
@@ -56,8 +56,8 @@ pub const REC_CROSSED: u32 = 3;
 /// @dm-define NATIVE_NOTICE_PIPE_DEVICE
 pub const NOTICE_PIPE_DEVICE: u32 = 0x00FF_0001;
 
-/// Seconds between pipe device steps (the devices' flow laws run once per
-/// period with the time accumulated since the last one).
+/// Seconds of one World step, which is the period of the pipe devices' flow law (`PipeDeviceStep`, one run per
+/// step).
 /// @dm-define NATIVE_PIPE_DEVICE_PERIOD
 pub const PIPE_DEVICE_PERIOD: f32 = 0.5;
 
@@ -75,14 +75,14 @@ struct Clock {
     tick_seconds: f64,
     /// The wheel tick the scheduler is at: the sum of every `elapsed`.
     now: Tick,
-    /// Game time not yet given to the pipe devices.
-    device_dt: f64,
+    /// The next frame steps the world once, whatever the pacer owes ([`frame_force_devices`]).
+    force_step: bool,
     frames: u64,
 }
 
 thread_local! {
     static CLOCK: RefCell<Clock> = const {
-        RefCell::new(Clock { tick_seconds: 0.05, now: 0, device_dt: 0.0, frames: 0 })
+        RefCell::new(Clock { tick_seconds: 0.05, now: 0, force_step: false, frames: 0 })
     };
 }
 
@@ -105,12 +105,12 @@ fn frame_count() -> Result<ByondValue> {
     Ok(ByondValue::from(CLOCK.with_borrow(|c| c.frames) as f32))
 }
 
-/// Test hook: makes the next frame step the pipe devices, for a full
-/// [`PIPE_DEVICE_PERIOD`] (a deterministic step for a DM test that built a
-/// device by hand; the world is not paced by it).
+/// Test hook: makes the next frame step the world once, so the pipe devices' law
+/// runs for a full [`PIPE_DEVICE_PERIOD`] (a deterministic step for a DM test that
+/// built a device by hand).
 #[auxmacros::bind("/proc/frame_force_devices")]
 fn frame_force_devices() -> Result<ByondValue> {
-    CLOCK.with_borrow_mut(|c| c.device_dt = f64::from(PIPE_DEVICE_PERIOD));
+    CLOCK.with_borrow_mut(|c| c.force_step = true);
     Ok(ByondValue::null())
 }
 
@@ -134,22 +134,22 @@ fn record(out: &mut Vec<f32>, kind: u32, a: f32, b: f32, payload: &[f32]) {
 
 /// The frame itself, callable without DM (tests).
 pub(crate) fn run(elapsed: u32, budget: usize) -> Result<Vec<f32>> {
-    let (seconds, now, device_dt) = CLOCK.with_borrow_mut(|c| {
+    let (seconds, now, force) = CLOCK.with_borrow_mut(|c| {
         c.now = c.now.saturating_add(Tick::from(elapsed));
         c.frames += 1;
         let seconds = (f64::from(elapsed) * c.tick_seconds).min(MAX_PACE_SECONDS);
-        c.device_dt += seconds;
-        (seconds, c.now, c.device_dt)
+        (seconds, c.now, std::mem::take(&mut c.force_step))
     });
     let mut out: Vec<f32> = Vec::new();
 
-    // 1-2. The world and the hosts not yet on it.
-    if elapsed > 0 {
-        world::pace(seconds)?;
+    // 1-2. The world (the pipe devices are a law of it) and the hosts not yet on it.
+    let mut devices = Vec::new();
+    if elapsed > 0 || force {
+        devices = world::pace(seconds, force)?;
     }
     entity::tick_hosts();
 
-    // 4. The scheduler: every watch port's wakes, timers, rates, keys.
+    // 3. The scheduler: every watch port's wakes, timers, rates, keys.
     let (wakes, owners) = sched::step(now, budget)?;
 
     // Set-watch crossings, and the retiring of settled heat bodies (read off
@@ -173,20 +173,16 @@ pub(crate) fn run(elapsed: u32, budget: usize) -> Result<Vec<f32>> {
         at = end;
     }
 
-    // Pipe devices, once per period.
-    if device_dt >= f64::from(PIPE_DEVICE_PERIOD) {
-        CLOCK.with_borrow_mut(|c| c.device_dt = 0.0);
-        let report = pipes::pipe_step_devices(device_dt as f32)?;
-        #[allow(clippy::cast_precision_loss)]
-        for r in report.chunks_exact(4) {
-            record(
-                &mut out,
-                REC_NOTICE,
-                r[0],
-                NOTICE_PIPE_DEVICE as f32,
-                &[r[1], r[2], r[3]],
-            );
-        }
+    // What the pipe devices' law did this frame (one report per device that moved gas or drew power).
+    #[allow(clippy::cast_precision_loss)]
+    for r in devices.chunks_exact(4) {
+        record(
+            &mut out,
+            REC_NOTICE,
+            r[0],
+            NOTICE_PIPE_DEVICE as f32,
+            &[r[1], r[2], r[3]],
+        );
     }
 
     // Gas dependency observations -> changes.

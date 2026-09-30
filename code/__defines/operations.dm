@@ -31,6 +31,10 @@
 /// A last resort anyone alive can try (an emergency release): the actor-state stage only refuses the dead.
 #define OP_EMERGENCY "emergency"
 
+/// cap_op(using = EMPTY_HAND): the op is meant only with nothing in hand (the input falls through to the item's own
+/// interactions otherwise), and the hand is checked again at commit.
+#define EMPTY_HAND req_empty_hand()
+
 // ---- requirement subjects (req(of =)) ----
 #define OP_ACTOR "actor"
 #define OP_TARGET "target"

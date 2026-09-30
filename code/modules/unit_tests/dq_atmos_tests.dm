@@ -2395,6 +2395,74 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	qdel(P)
 
 
+/// A dual-port vent's flow law is a Rust device edge (dp_vent_pump.dm's push_to_rust()): releasing pushes its input
+/// port's gas into the turf up to the external bound, and the input check caps what leaves the port.
+/datum/unit_test/dq_dp_vent_pump_releases_to_turf
+
+/datum/unit_test/dq_dp_vent_pump_releases_to_turf/Run()
+	var/list/run = dq_atmos_test_find_clear_pipe_run(2)
+	TEST_ASSERT_NOTNULL(run, "no clear two-tile pipe run for the dual-port vent test")
+	var/turf/simulated/floor/T = run[2]
+	var/turf/simulated/floor/pipe_turf = run[1]
+	var/direction = get_dir(pipe_turf, T) // node2 faces away from the pipe: only the input port is connected
+	var/axis_directions = direction | REVERSE_DIR(direction)
+	dq_atmos_test_isolate_pair(T, pipe_turf)
+
+	var/datum/gas_mixture/turf_air = T.return_air()
+	for(var/datum/gas/g as anything in turf_air.get_gases())
+		turf_air.set_moles(g, 0)
+	turf_air.set_temperature(T20C)
+	// The sealed neighbour shares with the vent's turf every frame: start it empty too.
+	var/datum/gas_mixture/neighbour_air = pipe_turf.return_air()
+	for(var/datum/gas/g as anything in neighbour_air.get_gases())
+		neighbour_air.set_moles(g, 0)
+	neighbour_air.set_temperature(T20C)
+
+	var/obj/machinery/atmospherics/binary/dp_vent_pump/V = new(T)
+	V.dir = direction
+	V.initialize_directions = axis_directions
+	var/obj/machinery/atmospherics/pipe/simple/P = new(pipe_turf)
+	P.dir = axis_directions
+	P.initialize_directions = axis_directions
+	V.atmos_init()
+	P.atmos_init()
+	dq_atmos_test_publish_rust_pipenets(list(V, P))
+	TEST_ASSERT_NOTNULL(V.node1, "the dual-port vent did not connect to its input pipe")
+
+	V.air1.adjust_gas(/datum/gas/nitrogen, 500)
+	V.air1.set_temperature(T20C)
+	V.set_use_power(USE_POWER_IDLE)
+	V.stat_remove(NOPOWER | BROKEN)
+	V.set_pump_direction(1) // release
+	V.set_external_pressure_bound(ONE_ATMOSPHERE * 2)
+	V.set_pressure_checks(1 | 2) // the external bound and the input minimum (dp_vent_pump.dm)
+	// The input check: the port is not drained below 50 kPa under where it is now.
+	var/start_pressure = V.air1.return_pressure()
+	V.set_input_pressure_min(start_pressure - 50)
+	V.push_to_rust()
+	TEST_ASSERT(V.rust_device_id, "an enabled, connected dual-port vent registered its device edge")
+
+	var/initial_turf_n2 = turf_air.get_moles(/datum/gas/nitrogen) + neighbour_air.get_moles(/datum/gas/nitrogen)
+	var/initial_pipe_n2 = V.air1.get_moles(/datum/gas/nitrogen)
+	for(var/i in 1 to 10)
+		SSair.rust_step_pipe_devices()
+		SSair.run_gas_frames(1)
+	var/gained = turf_air.get_moles(/datum/gas/nitrogen) + neighbour_air.get_moles(/datum/gas/nitrogen) - initial_turf_n2
+	var/lost = initial_pipe_n2 - V.air1.get_moles(/datum/gas/nitrogen)
+	TEST_ASSERT(gained > 0.5, "the dual-port vent pushed no N2 into the turf: [gained]")
+	TEST_ASSERT(abs(gained - lost) < 1 + 0.1 * lost, "conservation: the port lost [lost], the turf (and its sealed neighbour) gained [gained]")
+	TEST_ASSERT(V.air1.return_pressure() >= start_pressure - 50 - 5, "the input check floors the port: [V.air1.return_pressure()] kPa from [start_pressure]")
+	TEST_ASSERT(V.last_flow_rate >= 0, "the step reported its flow")
+
+	// Off, the edge goes away.
+	V.set_use_power(USE_POWER_OFF)
+	V.push_to_rust()
+	TEST_ASSERT(!V.rust_device_id, "a switched-off dual-port vent unregistered its edge")
+
+	qdel(V)
+	qdel(P)
+
+
 /// Vent scrubber integration: pollute a turf with phoron, run a scrubber
 /// configured to filter PHORON, verify turf phoron drops and scrubber's
 /// air_contents phoron rises.
@@ -4725,17 +4793,15 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	gate.set_unlocked(TRUE)
 	gate.push_to_rust()
 	TEST_ASSERT(!machine_stepping(gate), "opening a passive gate must not add DM process() scheduling")
+	// The dual-port vent's flow law is a Rust device edge too (dp_vent_pump.dm's push_to_rust()): never a DM process()
+	// subscriber, off or on.
 	var/obj/machinery/atmospherics/binary/dp_vent_pump/dual_vent = new(T)
 	dual_vent.set_use_power(USE_POWER_OFF)
-	// Declared: steps only while use_power and operable (DECLARE_PERIODIC_WHILE_ALL in dp_vent_pump.dm).
+	dual_vent.push_to_rust()
 	TEST_ASSERT(!machine_stepping(dual_vent), "switched-off dual-port vent remained scheduled")
-	// Off, it needs no gas watch: switching it on is the declared wake (below).
-	var/dual_vent_wakes = dual_vent.machine_wake_count
 	dual_vent.set_use_power(USE_POWER_IDLE)
-	if(dual_vent.operable())
-		TEST_ASSERT(dual_vent.machine_wake_count > dual_vent_wakes, "enabling an operable dual-port vent did not wake it")
-	else
-		TEST_ASSERT_EQUAL(dual_vent.machine_wake_count, dual_vent_wakes, "enabling an unpowered dual-port vent woke it")
+	dual_vent.push_to_rust()
+	TEST_ASSERT(!machine_stepping(dual_vent), "enabling a dual-port vent must not add DM process() scheduling")
 	var/obj/machinery/disposal/disposal = new(T)
 	disposal.air_contents.clear()
 	var/datum/gas_mixture/disposal_environment = T.return_air()

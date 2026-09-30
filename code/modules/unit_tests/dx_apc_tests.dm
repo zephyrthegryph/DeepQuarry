@@ -345,7 +345,7 @@
 	L.reset()
 	A.draw(L)
 	TEST_ASSERT_EQUAL(dx_apc_part(L, "locked"), "glow", "all good: the lock glows")
-	TEST_ASSERT_EQUAL(dx_apc_part(L, "channel-3", A.charging), "glow", "the charge indicator glows")
+	TEST_ASSERT_EQUAL(dx_apc_part(L, "charge", A.charging), "glow", "the charge indicator glows")
 	TEST_ASSERT(A.operating ? (dx_apc_part(L, "channel-0", A.equipment) == "glow") : TRUE, "power_channels() draws the channel glows while operating")
 	TEST_ASSERT_NOTNULL(L.light_spec, "the screen lights")
 	L.reset()
@@ -368,7 +368,7 @@
 	cap_set(A, CAP_COVER_OPEN | CAP_COVER_REMOVED, TRUE)
 	L.reset()
 	A.draw(L)
-	TEST_ASSERT_EQUAL(L.icon_state, "apc2-nocover", "the cover knocked off shows the coverless frame with its cell")
+	TEST_ASSERT(("cover-removed" in L.variants) && ("cell" in L.variants), "the cover knocked off shows the coverless frame with its cell")
 	TEST_ASSERT_NULL(dx_apc_part(L, "cover-open"), "no open cover over it")
 	L.reset()
 

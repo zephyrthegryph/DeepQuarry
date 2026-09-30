@@ -22,7 +22,7 @@ For a base icon state `<base>` (for example `apc`):
 |---|---|---|
 | `look.variant(name, when=)` | `<base>-<name>` if it exists, replacing the base | A whole-sprite alternative (`apc-broken`, `apc-open`). |
 | `look.part(name, value_or_when)` | `<base>-<name>[-<v>]`, else `<name>[-<v>]` | An overlay part; a numeric or enum value picks the suffix (`apc-charge-3`, else `charge-3`). |
-| `look.glow(name, value)` | Upgrades an existing part to emissive | Screens, lights, indicators. Glows are explicit in `draw()`; nothing glows by default. |
+| `look.glow(name, value)` | Draws the part emissive (it adds the part, or upgrades the one already added) | Screens, lights, indicators. Glows are explicit in `draw()`; nothing glows by default. A part named twice draws once. |
 
 Type-specific states win over shared ones, so a shared `panel_open` part works for every machine
 and one machine overrides it by shipping `<base>-panel_open`. Standard part names live in
@@ -30,8 +30,8 @@ and one machine overrides it by shipping `<base>-panel_open`. Standard part name
 `emagged`, `dark`, plus glow and gauge names). A per-icon state-set cache makes lookup free after
 the first draw. `look.hide` keeps working.
 
-Library capabilities switch to parts, so `cap_cover`, `cap_panel`, `cap_lock`, `cap_power` etc. no
-longer take `layer =`. `CAP_NO_LAYER` and `layer=` are the old form; see
+Library capabilities switch to parts, so `cap_cover`, `cap_panel`, `cap_lock`, `cap_emag`, `cap_power` etc. no
+longer take `layer =` (the lock takes `lamp =`: it shows as a glowing `locked` / `unlocked` lamp while the holder is lit, see `is_lit(A)`). `CAP_NO_LAYER` and `layer=` are the old form; see
 [migration_guide.md](migration_guide.md) Part F.
 
 ## 3. Checks and tooling
@@ -39,7 +39,8 @@ longer take `layer =`. `CAP_NO_LAYER` and `layer=` are the old form; see
 - **Unit test:** for each type, lists the standard parts it should have and lacks. A per-type
   `look_lacks()` allowlist records intentional gaps (a machine with no panel art).
 - **Rename tool:** `tools/dq_icons/rename_states.py` renames states in `dmi.toml` and updates
-  string references in code and maps in one pass. It has not been run on content except the APC.
+  string references in code and maps in one pass. It has not been run on content except the APC (`apco3-*` is the APC's charge lamp, `charge-<n>`; only `apco0-2` are channels; the coverless frames
+  are `apc0-cover-removed[-broken][-cell]` variants and `apcmaint` is the `maintenance` part).
   `icons/gen/` is never hand-edited.
 
 ## 4. Example
@@ -48,7 +49,6 @@ longer take `layer =`. `CAP_NO_LAYER` and `layer=` are the old form; see
 /obj/machinery/power/apc/draw(datum/look/look)
     ..()                                    // capabilities draw first: broken, cover_open, panel_open, wires, emagged
     look.variant("off", when = !operating)
-    look.part("charge", charge_level)       // apc-charge-N, else charge-N
-    look.glow("charge", charge_level)       // explicit emissive
+    look.glow("charge", charge_level)       // apc-charge-N, else charge-N, emissive
     look.light(2, 0.25, COLOR_GREEN)
 ```

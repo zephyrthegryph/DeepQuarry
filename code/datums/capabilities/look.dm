@@ -14,7 +14,6 @@
 	var/plane
 	var/layer
 	var/list/overlays
-	var/list/glows
 	/// Names from look.variant(): each replaces the base state by "<base>-name" when the icon has it.
 	var/list/variants
 	/// list(name, value or null, glows) per look.part(): resolved against the icon when applied.
@@ -42,7 +41,6 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 	plane = null
 	layer = null
 	overlays = null
-	glows = null
 	variants = null
 	parts = null
 	filters = null
@@ -65,7 +63,7 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 	LAZYADD(overlays, icon ? look_image(icon, name) : name)
 
 /// Drops a layer a capability drew (the holder's own draw() knows its sprite has no such state in
-/// this state): every overlay, glow or part named `name` added so far (a part by its name, or by name-value).
+/// this state): every overlay or part named `name` added so far (a part by its name, or by name-value).
 /datum/look/proc/hide(name)
 	touched = TRUE
 	if(overlays)
@@ -74,12 +72,6 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 				overlays -= entry
 		if(!length(overlays))
 			overlays = null
-	if(glows)
-		for(var/entry in glows.Copy())
-			if(entry == name)
-				glows -= entry
-		if(!length(glows))
-			glows = null
 	if(parts)
 		var/list/kept
 		for(var/list/entry in parts)
@@ -108,7 +100,11 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 	touched = TRUE
 	if(isnull(name) || isnull(value) || value == 0 || value == "")
 		return
-	LAZYADD(parts, list(list("[name]", (value == TRUE) ? null : "[value]", FALSE)))
+	var/shown = (value == TRUE) ? null : "[value]"
+	for(var/list/entry in parts)
+		if(entry[1] == "[name]" && entry[2] == shown)
+			return // drawn already (a type and its capabilities can both name a part)
+	LAZYADD(parts, list(list("[name]", shown, FALSE)))
 
 /// A gauge overlay: "[name][step]" for level (0..1) quantised to 0..levels. Null level: nothing.
 /datum/look/proc/gauge(name, level, levels = 4)
@@ -119,9 +115,9 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 	LAZYADD(overlays, "[name][step]")
 
 /**
- * Makes a part glow in the dark: with a part of that name already added (look.part()) it is upgraded to
- * emissive (with a `value`, the part of that value); with none, `name` is an overlay state that glows
- * (the old form). `value` is TRUE (or any value) to do it, FALSE or null not to.
+ * Draws a part that glows in the dark: the part `name` (with a `value`, the part of that value), emissive. A
+ * part of that name already added (look.part()) is upgraded, so a glow never needs the part beside it. `value` is
+ * TRUE (or any value) to do it, FALSE or null not to.
  */
 /datum/look/proc/glow(name, value = TRUE, when = TRUE)
 	touched = TRUE
@@ -132,7 +128,7 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 		if(entry[1] == name && (isnull(wanted) || entry[2] == wanted))
 			entry[3] = TRUE
 			return
-	LAZYADD(glows, name)
+	LAZYADD(parts, list(list("[name]", wanted, TRUE)))
 
 /// Another icon file for the base state.
 /datum/look/proc/set_icon(file)
@@ -278,7 +274,6 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 	for(var/entry in overlays)
 		overlay_keys += look_part_key(entry)
 	parts += jointext(overlay_keys, ",")
-	parts += jointext(glows || list(), ",")
 	if(variants)
 		parts += "variants:[jointext(variants, ",")]"
 	for(var/list/entry in src.parts)
@@ -391,9 +386,6 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 	var/list/added
 	for(var/name in overlays)
 		LAZYADD(added, name)
-	for(var/name in glows)
-		LAZYADD(added, name)
-		LAZYADD(added, emissive_appearance(A.icon, name))
 	for(var/list/entry in parts)
 		var/state = look_resolve_part(A.icon, resolved, entry[1], entry[2])
 		if(!state)

@@ -96,6 +96,14 @@ pub struct DeviceFlow {
 	pub stop_cmp: u8,
 	#[vg(config, unit = "kPa", default = 0.0)]
 	pub stop_kpa: f32,
+	/// The second target that only caps the flow ([`Flow::limit`]): [`stop_side`] (`NONE` [`stop_cmp`]: none).
+	#[vg(config, default = 0)]
+	pub limit_side: u8,
+	/// [`stop_cmp`].
+	#[vg(config, default = 0)]
+	pub limit_cmp: u8,
+	#[vg(config, unit = "kPa", default = 0.0)]
+	pub limit_kpa: f32,
 }
 
 impl LinksTo for DeviceFlow {
@@ -120,24 +128,29 @@ impl DeviceFlow {
 		} else {
 			Direction::Forced
 		};
-		let stop = (self.stop_cmp != stop_cmp::NONE).then_some(Target {
-			side: if self.stop_side == stop_side::B {
-				Side::B
-			} else {
-				Side::A
-			},
-			cmp: if self.stop_cmp == stop_cmp::AT_MOST {
-				Cmp::AtMost
-			} else {
-				Cmp::AtLeast
-			},
-			kpa: self.stop_kpa,
-		});
+		let target = |side: u8, cmp: u8, kpa: f32| {
+			(cmp != stop_cmp::NONE).then_some(Target {
+				side: if side == stop_side::B {
+					Side::B
+				} else {
+					Side::A
+				},
+				cmp: if cmp == stop_cmp::AT_MOST {
+					Cmp::AtMost
+				} else {
+					Cmp::AtLeast
+				},
+				kpa,
+			})
+		};
+		let stop = target(self.stop_side, self.stop_cmp, self.stop_kpa);
+		let limit = target(self.limit_side, self.limit_cmp, self.limit_kpa);
 		Flow {
 			gases: self.gases,
 			rate,
 			direction,
 			stop,
+			limit,
 		}
 	}
 }
@@ -177,6 +190,9 @@ mod tests {
 			stop_side: stop_side::B,
 			stop_cmp: stop_cmp::AT_LEAST,
 			stop_kpa: 101.325,
+			limit_side: stop_side::A,
+			limit_cmp: stop_cmp::NONE,
+			limit_kpa: 0.0,
 		};
 		assert_eq!(
 			row.flow(),
@@ -189,6 +205,7 @@ mod tests {
 					cmp: Cmp::AtLeast,
 					kpa: 101.325
 				}),
+				limit: None,
 			}
 		);
 	}
@@ -204,6 +221,9 @@ mod tests {
 			stop_side: stop_side::A,
 			stop_cmp: stop_cmp::NONE,
 			stop_kpa: 0.0,
+			limit_side: stop_side::A,
+			limit_cmp: stop_cmp::NONE,
+			limit_kpa: 0.0,
 		};
 		assert_eq!(row.flow().stop, None);
 	}
@@ -219,7 +239,35 @@ mod tests {
 			stop_side: stop_side::A,
 			stop_cmp: stop_cmp::NONE,
 			stop_kpa: 0.0,
+			limit_side: stop_side::A,
+			limit_cmp: stop_cmp::NONE,
+			limit_kpa: 0.0,
 		};
 		assert_eq!(row.flow().direction, Direction::Downhill);
+	}
+
+	#[test]
+	fn a_limit_row_decodes_to_the_second_target() {
+		let row = DeviceFlow {
+			device: 0,
+			gases: 0,
+			rate_kind: rate_kind::POWER,
+			rate: 7500.0,
+			direction: direction::FORCED,
+			stop_side: stop_side::A,
+			stop_cmp: stop_cmp::AT_LEAST,
+			stop_kpa: 101.325,
+			limit_side: stop_side::B,
+			limit_cmp: stop_cmp::AT_MOST,
+			limit_kpa: 20.0,
+		};
+		assert_eq!(
+			row.flow().limit,
+			Some(Target {
+				side: Side::B,
+				cmp: Cmp::AtMost,
+				kpa: 20.0
+			})
+		);
 	}
 }

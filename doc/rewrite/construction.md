@@ -50,7 +50,9 @@ bug or an explicit declaration (a consumed catalyst).
 ## 4. Status of existing ladders
 
 `apc_steps` and its wrappers are removed: the APC is built on the primitives (`build_insert`, `build_wire`,
-`build_fasten`, `ladder_options(at = BAY_HATCH, undo_delay =, dismantle =)`; [foundation.md](foundation.md), the example). A
-`dismantle` list may carry a fourth to sixth element (a holder proc saying the holder is ruined, and what it comes apart
-into then). Other ladders keep working through
+`build_fasten`, `ladder_options(at = BAY_HATCH, undo_delay =, dismantle =)`; [foundation.md](foundation.md), the example).
+The primitives take `needs`, `else_say`, `undo_needs`, `undo_else_say`, `on_enter` and `on_leave` as arguments, so a ladder is
+declared inline in `capabilities()` with no post-hoc field writes. `dismantle` is
+`ladder_dismantle(tool =, becomes =, amount =, when_ruined =, ruined_becomes =, ruined_amount =)`: a holder proc saying
+the holder is ruined, and what it comes apart into then. Other ladders keep working through
 the current `stage()` form until they are converted.

@@ -326,11 +326,12 @@
 /// `dm` type (`DeviceFlow`, `verdigris/domains/gas/src/kind/device.rs`),
 /// taking the entity number directly instead of a per-type instance.
 /// The row names its device by the device entity's slot index.
-/obj/machinery/atmospherics/proc/rust_set_device_flow(gases, rate_kind, rate, direction, stop_side = RUST_SIDE_A, stop_cmp = RUST_STOP_NONE, stop_kpa = 0)
+/// `limit_*`: a second target that only caps the flow (device.rs `Flow::limit`); `limit_cmp` RUST_STOP_NONE: none.
+/obj/machinery/atmospherics/proc/rust_set_device_flow(gases, rate_kind, rate, direction, stop_side = RUST_SIDE_A, stop_cmp = RUST_STOP_NONE, stop_kpa = 0, limit_side = RUST_SIDE_A, limit_cmp = RUST_STOP_NONE, limit_kpa = 0)
 	if(!rust_device_id)
 		return FALSE
 	var/device_index = vg_entity_index(rust_device_id)
-	rust_flow_entity = vg_bind_device_flow(rust_flow_entity, device_index, gases, rate_kind, rate, direction, stop_side, stop_cmp, stop_kpa)
+	rust_flow_entity = vg_bind_device_flow(rust_flow_entity, device_index, gases, rate_kind, rate, direction, stop_side, stop_cmp, stop_kpa, limit_side, limit_cmp, limit_kpa)
 	return rust_flow_entity != 0
 
 /// Sets (creating the row on first use) `machine`'s device edge's valve
@@ -392,14 +393,14 @@
 
 /// `rust_set_device_flow()`'s N-edge counterpart: sets (creating on first
 /// use) `slot`'s one flow law.
-/obj/machinery/atmospherics/proc/rust_set_device_flow_n(slot, gases, rate_kind, rate, direction, stop_side = RUST_SIDE_A, stop_cmp = RUST_STOP_NONE, stop_kpa = 0)
+/obj/machinery/atmospherics/proc/rust_set_device_flow_n(slot, gases, rate_kind, rate, direction, stop_side = RUST_SIDE_A, stop_cmp = RUST_STOP_NONE, stop_kpa = 0, limit_side = RUST_SIDE_A, limit_cmp = RUST_STOP_NONE, limit_kpa = 0)
 	LAZYINITLIST(rust_device_ids)
 	var/id = rust_device_ids[slot]
 	if(!id)
 		return FALSE
 	var/device_index = vg_entity_index(id)
 	LAZYINITLIST(rust_flow_entities)
-	rust_flow_entities[slot] = vg_bind_device_flow(rust_flow_entities[slot], device_index, gases, rate_kind, rate, direction, stop_side, stop_cmp, stop_kpa)
+	rust_flow_entities[slot] = vg_bind_device_flow(rust_flow_entities[slot], device_index, gases, rate_kind, rate, direction, stop_side, stop_cmp, stop_kpa, limit_side, limit_cmp, limit_kpa)
 	return rust_flow_entities[slot] != 0
 
 /// `rust_unregister_device()`'s N-edge counterpart: removes just `slot`.

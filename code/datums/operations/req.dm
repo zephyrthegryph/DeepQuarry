@@ -15,6 +15,7 @@
 
 MSG_DEF_SELF(req_failed, "You can't do that.")
 MSG_DEF_SELF(req_refused, "%DETAIL%")
+MSG_DEF_SELF(req_hand_full, "You need an empty hand for that.")
 MSG_DEF_SELF(req_no_provider, "You have nothing to do that with.")
 MSG_DEF_SELF(req_no_route, "You can't do that that way.")
 MSG_DEF_SELF(req_out_of_reach, "You can't reach it.")
@@ -118,6 +119,19 @@ GLOBAL_LIST_EMPTY(reqs_interned)
 	R.types = type
 	R.of = of
 	return req_intern(R)
+
+// ---- req_empty_hand ----
+
+/// The actor holds nothing.
+/datum/req/empty_hand
+	reason = /datum/msg/req_hand_full
+
+/datum/req/empty_hand/test(datum/op_ctx/ctx)
+	return ctx.held ? reason : null
+
+/proc/req_empty_hand()
+	RETURN_TYPE(/datum/req)
+	return req_intern(new /datum/req/empty_hand)
 
 // ---- req_set / req_clear ----
 

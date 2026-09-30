@@ -115,6 +115,7 @@ fn a_device_edge_moves_gas_between_regions_and_conserves() {
 			cmp: Cmp::AtLeast,
 			kpa: 101.325,
 		}),
+		limit: None,
 	}; // pump
 	world
 		.edit_network::<Pipes>(move |host| {
@@ -174,4 +175,58 @@ fn a_device_edge_moves_gas_between_regions_and_conserves() {
 		(after - before).abs() < 1e-3,
 		"conserves mass: {before} vs {after}"
 	);
+}
+
+#[test]
+fn the_pipe_device_law_steps_staged_jobs_when_the_world_steps() {
+	use vg_gas::laws::{DeviceJob, DeviceJobs, DeviceSide, PipeDeviceStep};
+
+	let mut b = builder();
+	b.add_global(Ownership::Main, DeviceJobs::default());
+	let _ = b.add_law::<PipeDeviceStep>();
+	let mut world = b.build().expect("builds: the law's global and phase are registered");
+
+	let job = DeviceJob {
+		entity: 1.0,
+		flows: vec![Flow {
+			gases: 0,
+			rate: Rate::Volume(200.0),
+			direction: Direction::Forced,
+			stop: None,
+			limit: None,
+		}],
+		valve_open: false,
+		a: 0,
+		b: 1,
+		moles: 0.0,
+		power_w: 0.0,
+		target_reached: false,
+	};
+	let sides = vec![
+		DeviceSide {
+			gas: gas(500.0, 293.0),
+			volume: 1000.0,
+		},
+		DeviceSide {
+			gas: PipeGas::default(),
+			volume: 1000.0,
+		},
+	];
+	let total_before: f64 = sides.iter().map(|s| s.gas.total()).sum();
+	world
+		.set_global(DeviceJobs {
+			sides,
+			jobs: vec![job],
+		})
+		.unwrap();
+	world.step_blocking();
+	world.step_blocking();
+
+	let done = world.global::<DeviceJobs>().unwrap().clone();
+	assert_eq!(done.jobs.len(), 1);
+	assert!(done.jobs[0].moved(), "two steps moved gas: {:?}", done.jobs[0].moles);
+	assert!(done.sides[1].gas.total() > 0.0, "it landed on side b");
+	let total_after: f64 = done.sides.iter().map(|s| s.gas.total()).sum();
+	assert!((total_after - total_before).abs() < 1e-3, "the pair conserves gas");
+	assert!(world.violations().is_empty(), "{:?}", world.violations());
 }

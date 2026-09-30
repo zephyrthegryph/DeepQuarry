@@ -22,7 +22,7 @@ then returns **one outbox page** of records:
 DM `/datum/system/native` (kernel phase N, [scheduling_and_kernel.md](scheduling_and_kernel.md))
 calls `vg_frame` and dispatches the page. The old drivers and drains (SSvg world tick, SSair drains,
 heat tick, `world_step`, gas observation drains) become internal or are deleted: there is exactly
-one driver and one drain. **Status:** wired. `native_frame()` (phase N) runs `native_system().kernel_frame()` once
+one driver and one drain. **Status:** wired. The pipe devices are a real World law, `PipeDeviceStep` (`domains/gas/src/laws.rs`, `PERIOD = Period::Frame`: one run per 0.5 s pacer step). `vg_frame` keeps no device clock: `pace()` stages every device's job (`stage_devices`) into the main-owned `DeviceJobs` global when a step is due, the law runs `device::step` over them, and `apply_devices` writes the payloads and the turf delta back and returns the `NATIVE_NOTICE_PIPE_DEVICE` reports (`frame_force_devices` makes the next frame step the world once). `native_frame()` (phase N) runs `native_system().kernel_frame()` once
 per wheel tick; CHANGED/NOTICE/CROSSED reach `publish_change` (named keys, `native_key_name_add`), `PUBLISH(/datum/notice/native)`
 and `rx_crossed` (watches declared with `native_watch_for_reaction`); OM channel bits keep a thin `om_changed` bridge.
 
@@ -51,14 +51,14 @@ DM holds handles, not copies. Deleted mirrors and their replacements:
 | Grid view easing | Client/UI side |
 | SSvg repair sweep | Test-only drift audit |
 | Radiation shielding copies | `TRACKED` + generated `rust_push` |
-| `update_rust_device` / power_sync hand pushes | Generated `rust_push` from declared reads ([reactions.md](reactions.md)). Done for the pipe devices (pump, volume pump, passive gate, vent pump, vent scrubber: TRACKED vars + `rust_device_rev`); power_sync and the radiation shielding flush remain (the flush is a batched world-service call, only `set_rad_insulation` is a registered setter) |
+| `update_rust_device` / power_sync hand pushes | Generated `rust_push` from declared reads ([reactions.md](reactions.md)). Done for the pipe devices (pump, volume pump, passive gate, vent pump, dual-port vent, vent scrubber: TRACKED vars + `rust_device_rev`; filters, mixers and the omni/trinary devices still recompute their mole rates from live gas each `machine_step()`, so their flows are not a static declared read); power_sync and the radiation shielding flush remain (the flush is a batched world-service call, only `set_rad_insulation` is a registered setter) |
 
 ## 5. Gas and rates
 
 All gas moves through Rust transfer binds. DM `pump_gas`, `scrub_gas`, `filter_gas(_multi)`,
 `mix_gas` and `calculate_transfer_moles` maths are deleted; callers use thin wrappers over the
 binds. `mingle_with_turf` and `temperature_interact` become batch mingle plus heat coupling. One
-rate implementation per side (DM `om_rate_*` and `dq_rx_rate_*` merge into one). Gas **reactions**
+rate implementation per side: DM's `om_rate_*` (`world_watch.dm`, Rust-backed) is the only one; the second `/datum/om/rate` model (thresholds published through a deadline) is deleted. Pipe contact heat (`vg_thermal_exchange`) runs through the heat domain's `GasCoupling` kernel (`GasCoupling::exchange`, `conductance_for_fraction`), not a formula of its own. Gas **reactions**
 remain in DM. `/datum/gas_mixture` remains an opaque handle (read with `return_temperature()` etc.).
 
 Bindings are regenerated (`tools/build/build.sh verdigris-bindings`), `cargo test` runs in

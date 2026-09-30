@@ -311,7 +311,7 @@
 
 /datum/om/bundle/ui_live
 	ui = list(
-		list("watch" = 0xFFFFFF, "stream_rates" = list()),
+		list("watch" = 0xFFFFFF),
 	)
 
 /// Refreshes the vitals HUD when vitals change (calls E.om_refresh_vitals_hud()).

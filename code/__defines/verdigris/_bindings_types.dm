@@ -188,12 +188,15 @@
 #define VG_DEVICEFLOW_FIELD_STOP_SIDE 5
 #define VG_DEVICEFLOW_FIELD_STOP_CMP 6
 #define VG_DEVICEFLOW_FIELD_STOP_KPA 7
+#define VG_DEVICEFLOW_FIELD_LIMIT_SIDE 8
+#define VG_DEVICEFLOW_FIELD_LIMIT_CMP 9
+#define VG_DEVICEFLOW_FIELD_LIMIT_KPA 10
 
 /// Creates (`entity` 0) or replaces (otherwise) a bare DeviceFlow
 /// row and returns its entity handle -- never a DM object (this
 /// component declares no `dm` type).
-/proc/vg_bind_device_flow(entity, device, gases, rate_kind, rate, direction, stop_side, stop_cmp, stop_kpa)
-	return vg_component_bind(entity, VG_KIND_DEVICEFLOW, list(VG_DEVICEFLOW_FIELD_DEVICE, device, VG_DEVICEFLOW_FIELD_GASES, gases, VG_DEVICEFLOW_FIELD_RATE_KIND, rate_kind, VG_DEVICEFLOW_FIELD_RATE, rate, VG_DEVICEFLOW_FIELD_DIRECTION, direction, VG_DEVICEFLOW_FIELD_STOP_SIDE, stop_side, VG_DEVICEFLOW_FIELD_STOP_CMP, stop_cmp, VG_DEVICEFLOW_FIELD_STOP_KPA, stop_kpa))
+/proc/vg_bind_device_flow(entity, device, gases, rate_kind, rate, direction, stop_side, stop_cmp, stop_kpa, limit_side, limit_cmp, limit_kpa)
+	return vg_component_bind(entity, VG_KIND_DEVICEFLOW, list(VG_DEVICEFLOW_FIELD_DEVICE, device, VG_DEVICEFLOW_FIELD_GASES, gases, VG_DEVICEFLOW_FIELD_RATE_KIND, rate_kind, VG_DEVICEFLOW_FIELD_RATE, rate, VG_DEVICEFLOW_FIELD_DIRECTION, direction, VG_DEVICEFLOW_FIELD_STOP_SIDE, stop_side, VG_DEVICEFLOW_FIELD_STOP_CMP, stop_cmp, VG_DEVICEFLOW_FIELD_STOP_KPA, stop_kpa, VG_DEVICEFLOW_FIELD_LIMIT_SIDE, limit_side, VG_DEVICEFLOW_FIELD_LIMIT_CMP, limit_cmp, VG_DEVICEFLOW_FIELD_LIMIT_KPA, limit_kpa))
 
 /// unitless;.
 /proc/get_device_flow_device(entity)
@@ -258,6 +261,30 @@
 /// Returns the stored value.
 /proc/set_device_flow_stop_kpa(entity, value)
 	return vg_component_set(entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_STOP_KPA, -1, value)
+
+/// unitless;.
+/proc/get_device_flow_limit_side(entity)
+	return vg_component_get(entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_LIMIT_SIDE, 0)
+
+/// Returns the stored value.
+/proc/set_device_flow_limit_side(entity, value)
+	return vg_component_set(entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_LIMIT_SIDE, -1, value)
+
+/// unitless;.
+/proc/get_device_flow_limit_cmp(entity)
+	return vg_component_get(entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_LIMIT_CMP, 0)
+
+/// Returns the stored value.
+/proc/set_device_flow_limit_cmp(entity, value)
+	return vg_component_set(entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_LIMIT_CMP, -1, value)
+
+/// kPa;.
+/proc/get_device_flow_limit_kpa(entity)
+	return vg_component_get(entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_LIMIT_KPA, 0) // kPa
+
+/// Returns the stored value.
+/proc/set_device_flow_limit_kpa(entity, value)
+	return vg_component_set(entity, VG_KIND_DEVICEFLOW, VG_DEVICEFLOW_FIELD_LIMIT_KPA, -1, value)
 
 // ---- DeviceValve (gas kind 4, owner main; verdigris/domains/gas/src/kind/device.rs) ----
 

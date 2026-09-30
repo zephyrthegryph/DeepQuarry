@@ -39,7 +39,7 @@
 	var/list/stages
 	/// name -> task row (see task.dm).
 	var/list/tasks
-	/// UI binding rows: list(list(target = /type/proc/x, watch = mask, stream_rates = list(names))).
+	/// UI binding rows: list(list(target = /type/proc/x, watch = mask)).
 	var/list/ui
 	/// effect id -> value (number or FROM_VAR) the entity holds on itself while started.
 	var/list/self_effects

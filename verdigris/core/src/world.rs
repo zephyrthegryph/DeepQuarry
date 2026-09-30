@@ -1775,6 +1775,13 @@ impl World {
         self.sim.shutdown();
     }
 
+    /// Whether [`tick`](Self::tick) with `elapsed` more seconds would owe a step now (a caller that stages per-step
+    /// data does it only then). A worker frame still running can still defer the step.
+    #[must_use]
+    pub fn step_due(&self, elapsed: Seconds) -> bool {
+        self.owed > 0 || self.pacer.carry() + elapsed.0.max(0.0) >= self.pacer.dt().0
+    }
+
     pub fn step_blocking(&mut self) {
         self.sim.wait_for_frame();
         self.begin_tick();

@@ -10,7 +10,7 @@
 //     logged). after_if_alive() opts a pure effect out: its call is dropped instead (counted
 //     in sched.timers_dropped).
 // No datum per timer: a timer is five slots in the owner's record, and the owner has one
-// deadline on the wheel (the soonest of its timers), as tasks and rates do.
+// deadline on the wheel (the soonest of its timers), as tasks do.
 //
 // The behaviour-keyed deadline underneath is om_deadline() (deadline.dm).
 //
