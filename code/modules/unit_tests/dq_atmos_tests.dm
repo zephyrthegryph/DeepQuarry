@@ -789,7 +789,9 @@ GLOBAL_DATUM(dq_preboot_gas_probe, /datum/gas_mixture)
 		var/final_pressure = alarm_turf.air.return_pressure()
 		var/final_temperature = alarm_turf.air.return_temperature()
 		var/final_turf_temperature = alarm_turf.get_temperature()
-		if(final_pressure < alarm_pressures[alarm_index] * 0.98 || final_temperature < alarm_temperatures[alarm_index] * 0.98)
+		// Vents regulate to ONE_ATMOSPHERE, so a room that starts over-pressurised
+		// settles toward it; only loss below the regulated baseline is a leak.
+		if(final_pressure < min(alarm_pressures[alarm_index], ONE_ATMOSPHERE) * 0.98 ||final_temperature < alarm_temperatures[alarm_index] * 0.98)
 			alarm_pressure_losses += "[get_area(alarm_turf)] at [alarm_turf.x],[alarm_turf.y],[alarm_turf.z]: [alarm_pressures[alarm_index]] -> [final_pressure] kPa, gas [alarm_temperatures[alarm_index]] -> [final_temperature] K, turf [alarm_turf_temperatures[alarm_index]] -> [final_turf_temperature] K"
 	var/alarm_loss_report = jointext(alarm_pressure_losses, "; ")
 	TEST_ASSERT(!length(alarm_pressure_losses), "station air alarms rapidly lost pressure: [alarm_loss_report]")

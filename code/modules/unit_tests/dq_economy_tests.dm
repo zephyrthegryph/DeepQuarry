@@ -24,7 +24,6 @@
 /datum/unit_test/dq_economy_service_requires_funding
 
 /datum/unit_test/dq_economy_service_requires_funding/Run()
-	var/datum/money_account/original_medical = GLOB.department_accounts[DEPARTMENT_MEDICAL]
 	var/datum/money_account/provider = new
 	var/datum/money_account/customer = new
 	provider.owner_name = "Medical test budget"
@@ -32,8 +31,9 @@
 	provider.money = 0
 	customer.owner_name = "Patient"
 	customer.money = 0
+	set_global("department_accounts", GLOB.department_accounts.Copy())
 	GLOB.department_accounts[DEPARTMENT_MEDICAL] = provider
-	var/station_before = GLOB.station_account.money
+	var/station_before = set_var(GLOB.station_account, "money", GLOB.station_account.money)
 	TEST_ASSERT(charge_department_service(customer, DEPARTMENT_MEDICAL, 20, "Test care"), "service charge failed")
 	TEST_ASSERT_EQUAL(provider.money, 20, "poor-patient subsidy did not reach Medical")
 	TEST_ASSERT_EQUAL(GLOB.station_account.money, station_before - 20, "station subsidy was not conserved")
@@ -41,8 +41,6 @@
 	provider.service_subsidy = 0
 	TEST_ASSERT(!department_service_quote(customer, DEPARTMENT_MEDICAL, 120), "underfunded service purchase produced a quote")
 	TEST_ASSERT(!charge_department_service(customer, DEPARTMENT_MEDICAL, 120, "Unaffordable care"), "underfunded service purchase was accepted")
-	GLOB.station_account.money = station_before
-	GLOB.department_accounts[DEPARTMENT_MEDICAL] = original_medical
 	qdel(provider)
 	qdel(customer)
 
@@ -64,11 +62,9 @@
 	var/list/data = console.tgui_data(null)
 	TEST_ASSERT(length(data["department_finances"]), "Captain finance payload contained no department accounts")
 	var/datum/money_account/engineering_budget = GLOB.department_accounts[DEPARTMENT_ENGINEERING]
-	var/old_wage_multiplier = engineering_budget.wage_multiplier
-	var/old_allocation = engineering_budget.monthly_allocation
-	var/old_allocation_percent = engineering_budget.allocation_percent
-	var/old_allocation_configured = engineering_budget.allocation_configured
-	var/old_allocation_policy = GLOB.supply_service.allocation_policy
+	for(var/budget_var in list("wage_multiplier", "monthly_allocation", "allocation_percent", "allocation_configured"))
+		set_var(engineering_budget, budget_var, engineering_budget.vars[budget_var])
+	var/old_allocation_policy = set_var(GLOB.supply_service, "allocation_policy", GLOB.supply_service.allocation_policy)
 	TEST_ASSERT(console.set_department_wage(DEPARTMENT_ENGINEERING, 1.25), "valid department wage policy was rejected")
 	TEST_ASSERT_EQUAL(engineering_budget.wage_multiplier, 1.25, "department wage policy did not update")
 	TEST_ASSERT(console.set_department_allocation_percent(DEPARTMENT_ENGINEERING, 25), "valid recurring allocation share was rejected")
@@ -92,27 +88,17 @@
 			service_finance_row = department_row
 			break
 	TEST_ASSERT(islist(service_finance_row?["service_invoices"]), "Service finance UI omitted the invoice accounting breakdown")
-	engineering_budget.wage_multiplier = old_wage_multiplier
-	engineering_budget.monthly_allocation = old_allocation
-	engineering_budget.allocation_percent = old_allocation_percent
-	engineering_budget.allocation_configured = old_allocation_configured
-	GLOB.supply_service.allocation_policy = old_allocation_policy
 	qdel(console)
 
 /datum/unit_test/dq_department_budget_plan_is_immediate_and_funded
 
 /datum/unit_test/dq_department_budget_plan_is_immediate_and_funded/Run()
 	var/list/original_players = dq_test_players_clear()
-	var/original_policy = GLOB.supply_service.allocation_policy
-	var/list/original_allocations = list()
-	var/list/original_percentages = list()
-	var/list/original_overrides = list()
 	for(var/department in GLOB.department_accounts)
 		var/datum/money_account/budget = GLOB.department_accounts[department]
-		original_allocations[department] = budget.monthly_allocation
-		original_percentages[department] = budget.allocation_percent
-		original_overrides[department] = budget.allocation_configured
-		budget.allocation_configured = FALSE
+		set_var(budget, "monthly_allocation", budget.monthly_allocation)
+		set_var(budget, "allocation_percent", budget.allocation_percent)
+		set_var(budget, "allocation_configured", FALSE)
 	var/mob/living/carbon/human/employee = new(run_loc_floor_bottom_left)
 	employee.job = JOB_ENGINEER
 	var/datum/mind/employee_mind = new("budget_plan_employee")
@@ -121,7 +107,7 @@
 	rel_set(employee_mind, nameof(employee_mind.initial_account), employee_account)
 	employee_mind.transfer_to(employee)
 	registry_join(REGISTRY_PLAYERS, employee)
-	GLOB.supply_service.allocation_policy = "equal"
+	set_var(GLOB.supply_service, "allocation_policy", "equal")
 	var/list/plan = GLOB.supply_service.department_budget_plan()
 	var/list/departments = plan["departments"]
 	var/list/engineering = departments[DEPARTMENT_ENGINEERING]
@@ -141,12 +127,6 @@
 	TEST_ASSERT_EQUAL(engineering["requested"], engineering["payroll"] + round(plan["operating_pool"] * 0.25), "department percentage override did not replace only its recurring operating share")
 	TEST_ASSERT(engineering["overridden"], "budget preview did not identify the department override")
 	dq_test_players_restore(original_players)
-	GLOB.supply_service.allocation_policy = original_policy
-	for(var/department in GLOB.department_accounts)
-		var/datum/money_account/budget = GLOB.department_accounts[department]
-		budget.monthly_allocation = original_allocations[department]
-		budget.allocation_percent = original_percentages[department]
-		budget.allocation_configured = original_overrides[department]
 	qdel(employee_mind)
 	qdel(employee)
 	qdel(employee_account)
@@ -156,12 +136,12 @@
 /datum/unit_test/dq_payroll_uses_all_available_funds_fairly/Run()
 	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
 	var/list/original_players = dq_test_players_clear()
-	var/datum/money_account/original_budget = GLOB.department_accounts[DEPARTMENT_ENGINEERING]
 	var/datum/money_account/test_budget = new
 	test_budget.owner_name = "Test Engineering"
 	test_budget.department_id = DEPARTMENT_ENGINEERING
 	test_budget.is_budget_account = TRUE
 	test_budget.money = 31
+	set_global("department_accounts", GLOB.department_accounts.Copy())
 	GLOB.department_accounts[DEPARTMENT_ENGINEERING] = test_budget
 	var/list/employees = list()
 	var/list/accounts = list()
@@ -185,7 +165,6 @@
 	TEST_ASSERT_EQUAL(total_paid, 31, "payroll did not spend every available Thaler")
 	TEST_ASSERT_EQUAL(test_budget.money + test_budget.savings, 0, "payroll left spendable funds while wages were unpaid")
 	dq_test_players_restore(original_players)
-	GLOB.department_accounts[DEPARTMENT_ENGINEERING] = original_budget
 	for(var/mob/living/carbon/human/employee as anything in employees)
 		qdel(employee)
 	for(var/datum/money_account/account as anything in accounts)
@@ -230,12 +209,11 @@
 
 /datum/unit_test/dq_manual_account_creation_is_conservative/Run()
 	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
-	var/datum/money_account/original_station = GLOB.station_account
 	var/datum/money_account/test_station = new
 	test_station.owner_name = "Test Station"
 	test_station.money = 100
 	test_station.suspended = TRUE
-	GLOB.station_account = test_station
+	set_global("station_account", test_station)
 	var/obj/machinery/account_database/terminal = new(test_turf)
 	var/obj/item/card/id/authorizer = new(terminal)
 	authorizer.registered_name = "Account Test Captain"
@@ -258,7 +236,6 @@
 	TEST_ASSERT_EQUAL(GLOB.supply_service.currency_created, created_before, "internal account activation was counted as external creation")
 	TEST_ASSERT_EQUAL(GLOB.supply_service.currency_destroyed, destroyed_before, "internal account activation was counted as external destruction")
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, account)
-	GLOB.station_account = original_station
 	for(var/obj/item/smallDelivery/new_package in turf_contents_of_type(test_turf, /obj/item/smallDelivery))
 		if(!(new_package in preexisting_packages))
 			qdel(new_package)
@@ -599,7 +576,7 @@
 	var/datum/mind/customer_mind = own(new /datum/mind("service_lifecycle")) // the test deletes it: a dropped mind leaves its owned identity stamped with a dead owner
 	rel_set(customer_mind, nameof(customer_mind.initial_account), customer_account)
 	customer_mind.transfer_to(customer)
-	var/obj/item/card/id/customer_id = new(customer)
+	var/obj/item/card/id/customer_id = own(new /obj/item/card/id(customer)) // the PDA spills its ID when deleted
 	customer_id.registered_name = customer_account.owner_name
 	customer_id.associated_account_number = customer_account.account_number
 	var/obj/item/pda/customer_pda = new(customer)
