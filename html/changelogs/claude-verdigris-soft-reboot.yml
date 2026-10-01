@@ -1,0 +1,4 @@
+author: "Claude"
+delete-after: true
+changes:
+  - bugfix: "Atmospherics, heat and power no longer stop working after a soft server reboot (the Rust library now restarts with the new world)."
