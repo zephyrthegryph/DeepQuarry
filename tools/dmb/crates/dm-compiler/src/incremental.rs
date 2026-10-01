@@ -22,7 +22,7 @@ pub struct EmissionCheckpoint {
 }
 #[derive(Clone, Debug)]
 pub struct ProcedureSource {
-    pub source: String,
+    pub source: std::sync::Arc<str>,
     pub digest: String,
     pub patchable: bool,
 }
@@ -85,8 +85,32 @@ pub struct IncrementalSession {
     inputs: BTreeMap<String, ProcedureInput>,
     bytes: usize,
     cache_root: Option<PathBuf>,
+    baseline_identity: Option<String>,
+    reference_counts: Option<(String, Vec<usize>)>,
 }
 impl IncrementalSession {
+    /// The caller supplies the exact immutable DMB content digest, never an ABI
+    /// digest or table count. Different full builds may share ABI and counts.
+    pub fn set_baseline_identity(&mut self, identity: String) {
+        if self.baseline_identity.as_ref() != Some(&identity) {
+            self.reference_counts = None;
+        }
+        self.baseline_identity = Some(identity);
+    }
+
+    fn list_reference_counts(&mut self, dmb: &Dmb) -> Vec<usize> {
+        if let Some((identity, counts)) = &self.reference_counts {
+            if Some(identity) == self.baseline_identity.as_ref() && counts.len() == dmb.lists.len()
+            {
+                return counts.clone();
+            }
+        }
+        let counts = list_reference_counts(dmb);
+        if let Some(identity) = &self.baseline_identity {
+            self.reference_counts = Some((identity.clone(), counts.clone()));
+        }
+        counts
+    }
     pub fn set_cache_root(&mut self, root: PathBuf) {
         self.cache_root = Some(root);
     }
@@ -182,6 +206,8 @@ pub struct IncrementalEmission {
     pub dmb: Dmb,
     pub checkpoint: EmissionCheckpoint,
     pub changed_procs: usize,
+    /// Every list record mutated by this emission, including appended records.
+    pub changed_lists: Vec<u32>,
     pub total_procs: usize,
 }
 
@@ -241,98 +267,148 @@ pub fn try_emit_outline(
                 .or_insert(id as u32);
         }
     }
-    for path in &changes {
-        let old = checkpoint.procedures.get(path).unwrap();
-        let source = outline.procedures.get(path).unwrap();
-        let mut bindings = old.bindings.clone();
-        bindings.shared = Some(Arc::clone(&shared));
-        crate::bootstrap::restore_owner_bindings(&dmb, &old.owner_path, &mut bindings)?;
-        let compiled = session.compile(path, &source.source, bindings, Arc::clone(&shared))?;
-        let mut ledger = Ledger::default();
-        for (symbol, id) in &base {
-            if symbol.table != Table::String {
-                ledger
-                    .bind_alias(symbol.clone(), *id)
-                    .map_err(|error| error.to_string())?;
+    let mut changed_lists = std::collections::BTreeSet::new();
+    let mut references = session.list_reference_counts(&dmb);
+    let cache_root = session.cache_root.clone();
+    let mut emit_changes = |mut pool: Option<
+        &mut crate::bootstrap::procedure_pipeline::LoweringPool,
+    >|
+     -> Result<(), String> {
+        for batch in changes.chunks(2) {
+            let mut prepared = Vec::with_capacity(2);
+            let mut serial = Vec::with_capacity(2);
+            for (ordinal, path) in batch.iter().enumerate() {
+                let old = checkpoint.procedures.get(path).unwrap();
+                let source = outline.procedures.get(path).unwrap();
+                let mut bindings = old.bindings.clone();
+                bindings.shared = Some(Arc::clone(&shared));
+                crate::bootstrap::restore_owner_bindings(&dmb, &old.owner_path, &mut bindings)?;
+                if let Some(pool) = pool.as_deref_mut() {
+                    let item = dm_syntax::parse_proc_at_span(
+                        &source.source,
+                        dm_syntax::Span::new(0, source.source.len()),
+                    )
+                    .map_err(|error| format!("incremental procedure syntax: {error:?}"))?;
+                    pool.submit(ordinal, item.children, bindings);
+                } else {
+                    serial.push(crate::bootstrap::procedure_pipeline::LoweringResult {
+                        ordinal,
+                        compiled: session
+                            .compile(path, &source.source, bindings.clone(), Arc::clone(&shared))
+                            .map_err(|reason| {
+                                vec![dm_codegen_byond::LowerError {
+                                    statement: path.clone(),
+                                    reason,
+                                }]
+                            }),
+                        bindings,
+                    });
+                }
+                prepared.push(path);
             }
-        }
-        for key in &compiled.strings {
-            let id = intern(&mut dmb, compiled.string_bytes(key));
-            ledger
-                .bind_alias(Symbol::new(Table::String, key), id)
-                .map_err(|error| error.to_string())?;
-        }
-        for class in &compiled.class_paths {
-            let symbol = Symbol::new(Table::Class, class);
-            if ledger.id(&symbol).is_none() {
-                let id = crate::bootstrap::incremental_class_link_id(&dmb, class)
-                    .ok_or_else(|| format!("incremental type unavailable: {class}"))?;
-                ledger
-                    .bind_alias(symbol, id)
-                    .map_err(|error| error.to_string())?;
-            }
-        }
-        let linked = link_proc(&compiled.code, &ledger).map_err(|error| error.to_string())?;
-        if linked.words.len() > u16::MAX as usize {
-            return Err(format!("{path}: code exceeds DMB list limit"));
-        }
-        let proc_id = old.proc_id as usize;
-        let proc_ = dmb
-            .procs
-            .get(proc_id)
-            .ok_or("checkpoint procedure ID missing")?;
-        let old_code = proc_.code_locals_args[0];
-        let old_locals = proc_.code_locals_args[1];
-        let same_locals = dmb.lists.get(old_locals as usize).is_some_and(|locals| {
-            locals.len() == compiled.local_names.len()
-                && locals.iter().zip(&compiled.local_names).all(|(id, name)| {
-                    dmb.variables
-                        .get(*id as usize)
-                        .and_then(|variable| dmb.string(variable.name))
-                        == Some(name.as_bytes())
-                })
-        });
-        let locals = if same_locals {
-            old_locals
-        } else {
-            let mut ids = Vec::new();
-            for local in &compiled.local_names {
-                let name = intern(&mut dmb, local.as_bytes());
-                let id = u32::try_from(dmb.variables.len())
-                    .map_err(|_| "variable table exceeds 32 bits")?;
-                dmb.variables.push(Variable {
-                    kind: 0,
-                    value: 0,
-                    name,
+            let results = if let Some(pool) = pool.as_deref_mut() {
+                pool.receive_batch(prepared.len())
+            } else {
+                serial
+            };
+            for (path, result) in prepared.into_iter().zip(results) {
+                let old = checkpoint.procedures.get(path).unwrap();
+                let source = outline.procedures.get(path).unwrap();
+                let compiled = result
+                    .compiled
+                    .map_err(|errors| format!("incremental lowering {path}: {errors:?}"))?;
+                let mut ledger = Ledger::default();
+                bind_referenced_baseline_symbols(&compiled.code, &base, &mut ledger)?;
+                for key in &compiled.strings {
+                    let id = intern(&mut dmb, compiled.string_bytes(key));
+                    ledger
+                        .bind_alias(Symbol::new(Table::String, key), id)
+                        .map_err(|error| error.to_string())?;
+                }
+                for class in &compiled.class_paths {
+                    let symbol = Symbol::new(Table::Class, class);
+                    if ledger.id(&symbol).is_none() {
+                        let id = crate::bootstrap::incremental_class_link_id(&dmb, class)
+                            .ok_or_else(|| format!("incremental type unavailable: {class}"))?;
+                        ledger
+                            .bind_alias(symbol, id)
+                            .map_err(|error| error.to_string())?;
+                    }
+                }
+                let linked =
+                    link_proc(&compiled.code, &ledger).map_err(|error| error.to_string())?;
+                if linked.words.len() > u16::MAX as usize {
+                    return Err(format!("{path}: code exceeds DMB list limit"));
+                }
+                let proc_id = old.proc_id as usize;
+                let proc_ = dmb
+                    .procs
+                    .get(proc_id)
+                    .ok_or("checkpoint procedure ID missing")?;
+                let old_code = proc_.code_locals_args[0];
+                let old_locals = proc_.code_locals_args[1];
+                let same_locals = dmb.lists.get(old_locals as usize).is_some_and(|locals| {
+                    locals.len() == compiled.local_names.len()
+                        && locals.iter().zip(&compiled.local_names).all(|(id, name)| {
+                            dmb.variables
+                                .get(*id as usize)
+                                .and_then(|variable| dmb.string(variable.name))
+                                == Some(name.as_bytes())
+                        })
                 });
-                ids.push(id);
+                let locals = if same_locals {
+                    old_locals
+                } else {
+                    let mut ids = Vec::new();
+                    for local in &compiled.local_names {
+                        let name = intern(&mut dmb, local.as_bytes());
+                        let id = u32::try_from(dmb.variables.len())
+                            .map_err(|_| "variable table exceeds 32 bits")?;
+                        dmb.variables.push(Variable {
+                            kind: 0,
+                            value: 0,
+                            name,
+                        });
+                        ids.push(id);
+                    }
+                    append_list(&mut dmb, ids)
+                };
+                // Unshared code retains its table ID even when its word count changes.
+                // The indexed output writer can splice this position-independent record.
+                let shared_code = references.get(old_code as usize).copied().unwrap_or(0) != 1;
+                let code = if !shared_code && dmb.lists.get(old_code as usize).is_some() {
+                    dmb.lists[old_code as usize] = linked.words;
+                    old_code
+                } else {
+                    append_list(&mut dmb, linked.words)
+                };
+                changed_lists.insert(code);
+                if locals != old_locals {
+                    changed_lists.insert(locals);
+                }
+                let proc_ = &mut dmb.procs[proc_id];
+                proc_.code_locals_args[0] = code;
+                proc_.code_locals_args[1] = locals;
+                if code != old_code {
+                    replace_list_reference(&mut references, old_code, code);
+                }
+                if locals != old_locals {
+                    replace_list_reference(&mut references, old_locals, locals);
+                }
+                checkpoint.procedures.get_mut(path).unwrap().source_digest = source.digest.clone();
             }
-            append_list(&mut dmb, ids)
-        };
-        // Same-size unshared code can retain its physical slot for binary patching.
-        let shared_code = dmb
-            .procs
-            .iter()
-            .enumerate()
-            .any(|(id, proc_)| id != proc_id && proc_.code_locals_args.contains(&old_code))
-            || dmb.classes.iter().any(|class| {
-                class.lists_and_procs.contains(&old_code) || class.overrides == old_code
-            });
-        let code = if !shared_code
-            && dmb
-                .lists
-                .get(old_code as usize)
-                .is_some_and(|words| words.len() == linked.words.len())
-        {
-            dmb.lists[old_code as usize] = linked.words;
-            old_code
-        } else {
-            append_list(&mut dmb, linked.words)
-        };
-        let proc_ = &mut dmb.procs[proc_id];
-        proc_.code_locals_args[0] = code;
-        proc_.code_locals_args[1] = locals;
-        checkpoint.procedures.get_mut(path).unwrap().source_digest = source.digest.clone();
+        }
+        Ok(())
+    };
+    if changes.len() > 1 {
+        let (result, _) = crate::bootstrap::procedure_pipeline::with_lowering_pool(
+            cache_root.as_deref(),
+            crate::bootstrap::procedure_pipeline::worker_count(),
+            |pool| emit_changes(Some(pool)),
+        );
+        result?;
+    } else {
+        emit_changes(None)?;
     }
     crate::promote_object_ids(&mut dmb);
     dmb.validate_references()
@@ -342,9 +418,76 @@ pub fn try_emit_outline(
         dmb,
         checkpoint,
         changed_procs: changes.len(),
+        changed_lists: changed_lists.into_iter().collect(),
         total_procs,
     }))
 }
+fn bind_referenced_baseline_symbols(
+    code: &dm_codegen_byond::SymbolicProc,
+    baseline: &BTreeMap<Symbol, u32>,
+    ledger: &mut Ledger,
+) -> Result<(), String> {
+    let mut used = std::collections::BTreeSet::new();
+    code.for_each_reference(|table, name| {
+        if table != Table::String {
+            used.insert(Symbol::new(table, name));
+        }
+    });
+    for symbol in used {
+        if let Some(id) = baseline.get(&symbol) {
+            ledger
+                .bind_alias(symbol, *id)
+                .map_err(|error| error.to_string())?;
+        }
+    }
+    Ok(())
+}
+
+fn list_reference_counts(dmb: &Dmb) -> Vec<usize> {
+    let mut counts = vec![0usize; dmb.lists.len()];
+    let mut mark = |id: u32| {
+        if id != 0xffff {
+            if let Some(count) = counts.get_mut(id as usize) {
+                *count += 1;
+            }
+        }
+    };
+    for proc in &dmb.procs {
+        for &id in &proc.code_locals_args {
+            mark(id);
+        }
+    }
+    for class in &dmb.classes {
+        for id in [
+            class.verb_list_id(),
+            class.proc_list_id(),
+            class.initialized_variable_list_id(),
+            class.defining_variable_list_id(),
+            class.overriding_variable_list_id(),
+        ] {
+            mark(id);
+        }
+    }
+    for run in &dmb.grid {
+        mark(run.contents);
+    }
+    mark(dmb.world.ids[3]);
+    mark(dmb.variable_footer);
+    counts
+}
+
+fn replace_list_reference(counts: &mut Vec<usize>, previous: u32, next: u32) {
+    if previous != 0xffff {
+        if let Some(count) = counts.get_mut(previous as usize) {
+            *count = count.saturating_sub(1);
+        }
+    }
+    if next != 0xffff {
+        counts.resize(counts.len().max(next as usize + 1), 0);
+        counts[next as usize] += 1;
+    }
+}
+
 fn append_list(dmb: &mut Dmb, words: Vec<u32>) -> u32 {
     if dmb.lists.len() == 0xffff {
         dmb.lists.push(Vec::new());
@@ -376,6 +519,82 @@ fn intern(dmb: &mut Dmb, bytes: &[u8]) -> u32 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn incremental_ledger_binds_only_referenced_baseline_symbols() {
+        let ast = dm_syntax::parse("/proc/changed()\n    return answer()\n");
+        let compiled = dm_codegen_byond::compile_simple_proc_with_bindings(
+            &ast.items[0].children,
+            &LowerBindings {
+                global_procs: std::collections::BTreeSet::from(["answer".into()]),
+                ..LowerBindings::default()
+            },
+        )
+        .unwrap();
+        let mut baseline = BTreeMap::new();
+        compiled.code.for_each_reference(|table, name| {
+            if table != Table::String {
+                baseline.insert(Symbol::new(table, name), 7);
+            }
+        });
+        let unused = Symbol::new(Table::Proc, "/proc/unrelated");
+        baseline.insert(unused.clone(), 9);
+        let mut selective = Ledger::default();
+        bind_referenced_baseline_symbols(&compiled.code, &baseline, &mut selective).unwrap();
+        assert!(selective.id(&unused).is_none());
+        let mut exhaustive = Ledger::default();
+        for (symbol, id) in baseline {
+            exhaustive.bind_alias(symbol, id).unwrap();
+        }
+        assert_eq!(
+            link_proc(&compiled.code, &selective).unwrap().words,
+            link_proc(&compiled.code, &exhaustive).unwrap().words
+        );
+    }
+
+    #[test]
+    fn multiple_dirty_bodies_lower_and_commit_without_changing_other_ids() {
+        let old = "/proc/first()\n    return 1\n/proc/second()\n    return 2\n/proc/unchanged()\n    return 7\n";
+        let base = baseline(old);
+        let checkpoint = base.checkpoint.unwrap();
+        let unchanged = checkpoint.procedures["/proc/unchanged"].proc_id as usize;
+        let old_unchanged = base.dmb.procs[unchanged].clone();
+        let first = checkpoint.procedures["/proc/first"].proc_id as usize;
+        let second = checkpoint.procedures["/proc/second"].proc_id as usize;
+        let old_first_code = base.dmb.procs[first].code_locals_args[0];
+        let old_second_code = base.dmb.procs[second].code_locals_args[0];
+        let new = old
+            .replace("return 1", "return 11")
+            .replace("return 2", "return 22");
+        let mut session = IncrementalSession::default();
+        session.set_baseline_identity(digest(&base.dmb.to_bytes().unwrap()));
+        let result = try_emit(&new, base.dmb, checkpoint, &mut session)
+            .unwrap()
+            .unwrap();
+        assert_eq!(result.changed_procs, 2);
+        assert_eq!(result.dmb.procs[unchanged], old_unchanged);
+        assert_eq!(result.dmb.procs[first].code_locals_args[0], old_first_code);
+        assert_eq!(
+            result.dmb.procs[second].code_locals_args[0],
+            old_second_code
+        );
+        assert!(result.changed_lists.contains(&old_first_code));
+        assert!(result.changed_lists.contains(&old_second_code));
+        result.dmb.validate_references().unwrap();
+    }
+
+    #[test]
+    fn reference_count_cache_requires_exact_baseline_identity() {
+        let base = baseline("/proc/first()\n    return 1\n");
+        let mut session = IncrementalSession::default();
+        session.set_baseline_identity("first-content-digest".into());
+        let expected = session.list_reference_counts(&base.dmb);
+        assert!(session.reference_counts.is_some());
+        assert_eq!(session.list_reference_counts(&base.dmb), expected);
+        session.set_baseline_identity("different-content-digest".into());
+        assert!(session.reference_counts.is_none());
+        assert_eq!(session.list_reference_counts(&base.dmb), expected);
+    }
     use std::path::Path;
     const SCHEMA: &[u8] = include_bytes!("../../../fixtures/native_template.bin");
     fn baseline(source: &str) -> crate::bootstrap::CompiledProject {

@@ -167,6 +167,9 @@ dependencies = [
 [[package]]
 name = "dm-host"
 version = "0.1.0"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "dm-ir"
@@ -177,6 +180,7 @@ name = "dm-output"
 version = "0.1.0"
 dependencies = [
  "byond-dmb",
+ "dm-host",
  "serde",
  "serde_json",
  "sha2",

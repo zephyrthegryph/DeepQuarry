@@ -3,18 +3,25 @@
 //! Salsa databases belong to individual worktree sessions. Only immutable,
 //! content-addressed artifacts are safe to share between sessions.
 
+#[cfg(test)]
+use dm_compiler::bootstrap::resolved_resource_requests;
 use dm_compiler::bootstrap::{
-    compile_preprocessed_project_with_resources, resolved_resource_disk_path,
-    resolved_resource_requests,
+    compile_preprocessed_project_with_resources_prepared, resolved_resource_disk_path,
+    resolved_resource_requests_with_literals,
 };
 use dm_compiler::{load_map_set_from_paths, CompilerSession, ProjectSession};
-use dm_output::generation::{current_generation, publish_generation, verify_generation_digest};
+use dm_output::generation::{
+    current_generation, publish_generation_reusing_archive, publish_generation_with_archive,
+    verified_archive, verify_generation_digest, VerifiedArchive,
+};
 use dm_output::{
     apply_pair_in_place, plan_pair, recover_pair, validate_byond_pair, PairPlan, PatchPolicy,
 };
 use dm_preprocess::PreprocessedProject;
 use dm_resources::{ResourceRequest, ResourceSet};
 use dm_syntax::AstFile;
+mod input_proof;
+use input_proof::InputProof;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
@@ -205,7 +212,7 @@ impl ArtifactKey {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 struct IncrementalRecord {
     version: u32,
     abi_digest: String,
@@ -216,11 +223,51 @@ struct IncrementalRecord {
 }
 struct PreparedBuild {
     dmb: byond_dmb::dmb::Dmb,
+    serialized_dmb: Option<Vec<u8>>,
+    list_spans: Option<Vec<std::ops::Range<usize>>>,
+    list_image: Option<dm_output::list_image::ListImage>,
     rsc_bytes: Vec<u8>,
+    archive: Option<VerifiedArchive>,
     emitted_procs: usize,
     lowered_procs: usize,
     reused_procs: usize,
     checkpoint: Option<dm_compiler::incremental::EmissionCheckpoint>,
+}
+
+struct RetainedWorld {
+    family: PathBuf,
+    record: IncrementalRecord,
+    checkpoint: dm_compiler::incremental::EmissionCheckpoint,
+    dmb: byond_dmb::dmb::Dmb,
+    indexed: dm_output::list_image::ListImage,
+}
+
+fn world_resident_bytes(dmb: &byond_dmb::dmb::Dmb, image: &[u8], checkpoint_bytes: usize) -> usize {
+    // JSON checkpoint size is charged twice to cover owned strings/maps and
+    // their allocations. DMB records and list/string buffers are charged directly.
+    checkpoint_bytes.saturating_mul(2)
+        + image.len()
+        + dmb.lists.capacity() * std::mem::size_of::<Vec<u32>>()
+        + dmb
+            .lists
+            .iter()
+            .map(|list| list.capacity() * 4)
+            .sum::<usize>()
+        + dmb.strings.capacity() * std::mem::size_of::<byond_dmb::dmb::DmString>()
+        + dmb
+            .strings
+            .iter()
+            .map(|string| string.data.capacity())
+            .sum::<usize>()
+        + dmb.classes.capacity() * std::mem::size_of::<byond_dmb::dmb::Class>()
+        + dmb.procs.capacity() * std::mem::size_of::<byond_dmb::dmb::Proc>()
+        + dmb.variables.capacity() * std::mem::size_of::<byond_dmb::dmb::Variable>()
+        + dmb.mobs.capacity() * std::mem::size_of::<byond_dmb::dmb::MobType>()
+        + dmb.grid.capacity() * std::mem::size_of::<byond_dmb::dmb::GridRun>()
+        + dmb.instances.capacity() * std::mem::size_of::<byond_dmb::dmb::Instance>()
+        + dmb.map_objects.capacity() * std::mem::size_of::<byond_dmb::dmb::MapObject>()
+        + dmb.resources.capacity() * std::mem::size_of::<byond_dmb::dmb::ResourceRef>()
+        + dmb.lists.len() * std::mem::size_of::<std::ops::Range<usize>>()
 }
 
 impl ContentStore {
@@ -570,6 +617,12 @@ pub struct Coordinator {
     build_cache: HashMap<BuildCacheKey, BuildResult>,
     build_inputs: HashMap<SessionKey, CachedBuildInputs>,
     incremental: dm_compiler::incremental::IncrementalSession,
+    // One bounded discovery cache per worker; switching projects releases it.
+    discovery_cache: Option<(PathBuf, project_discovery::DiscoveryCache)>,
+    outline_cache: Option<(PathBuf, dm_compiler::frontend::OutlineSession)>,
+    retained_world: Option<RetainedWorld>,
+    #[cfg(test)]
+    retained_world_hits: usize,
     clock: u64,
     limits: CoordinatorLimits,
 }
@@ -607,15 +660,26 @@ struct BuildCacheKey {
     output_root: PathBuf,
 }
 
+#[cfg(test)]
+thread_local! {
+    static RESOLUTION_WALKS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+    static RESOURCE_RESOLUTIONS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+}
+
 struct BuildInputSnapshot {
     project_digest: String,
     diagnostics: Vec<String>,
     resources_digest: String,
     maps_digest: String,
+    map_set: Arc<dm_compiler::maps::MapSet>,
     source_digests: BTreeMap<PathBuf, [u8; 32]>,
     missing_dependencies: Vec<PathBuf>,
     resource_requests: Vec<ResourceRequest>,
+    source_resource_literals: Vec<String>,
     preprocessed: PreprocessedProject,
+    proof: std::cell::RefCell<Option<InputProof>>,
+    asset_proof: std::cell::RefCell<Option<InputProof>>,
+    source_proof: std::cell::RefCell<Option<InputProof>>,
 }
 
 struct CachedBuildInputs {
@@ -623,11 +687,189 @@ struct CachedBuildInputs {
     last_used: u64,
 }
 
-const MAX_BUILD_INPUT_BYTES: usize = 64 * 1024 * 1024;
+/// A compact, content-addressed receipt lets a new CLI process validate an
+/// unchanged build without restoring the expanded project or compiler graph.
+#[derive(Serialize, Deserialize)]
+struct BuildReceipt {
+    proof: InputProof,
+    missing_dependencies: Vec<PathBuf>,
+    resource_paths: Vec<(String, PathBuf)>,
+    file_dirs: Vec<PathBuf>,
+    source_digest: String,
+    result: BuildResult,
+}
+
+fn receipt_key(key: &SessionKey, builtins: &str, output: &Path) -> Option<ArtifactKey> {
+    let context = serde_json::to_vec(&(key, output)).ok()?;
+    Some(ArtifactKey {
+        stage: "build-receipt".into(),
+        format_version: 1,
+        compiler_version: key.compiler_version.clone(),
+        target: Some(key.target.clone()),
+        input_digests: vec![builtins.into(), format!("{:x}", Sha256::digest(context))],
+        dependency_digests: vec![],
+    })
+}
+
+impl BuildReceipt {
+    fn current(&self, project: &Path) -> bool {
+        if let Some(current) = self.proof.namespace_current() {
+            return current;
+        }
+        self.proof.current()
+            && !self.missing_dependencies.iter().any(|path| path.exists())
+            && self.resource_paths.iter().all(|(name, disk)| {
+                proven_resource_resolution_current(project, name, disk, &self.file_dirs)
+            })
+    }
+}
+
+/// The file proof has already established that `selected` still names the same
+/// existing file. Only search candidates with higher precedence can shadow it.
+fn proven_resource_resolution_current(
+    project: &Path,
+    name: &str,
+    selected: &Path,
+    file_dirs: &[PathBuf],
+) -> bool {
+    let root = project.parent().unwrap_or_else(|| Path::new("."));
+    let direct = root.join(name);
+    if direct == selected {
+        return true;
+    }
+    if direct.is_file() {
+        return false;
+    }
+    for directory in file_dirs.iter().rev() {
+        let candidate = root.join(directory).join(name);
+        if candidate == selected {
+            return true;
+        }
+        if candidate.is_file() {
+            return false;
+        }
+    }
+    false
+}
+
+impl ContentStore {
+    fn load_receipt(&self, key: &ArtifactKey) -> io::Result<Option<BuildReceipt>> {
+        let directory = self.root.join("build-receipts-v1").join(key.digest()?);
+        let mut paths = match fs::read_dir(directory) {
+            Ok(entries) => entries
+                .filter_map(Result::ok)
+                .map(|entry| entry.path())
+                .filter(|path| {
+                    path.extension()
+                        .is_some_and(|extension| extension == "json")
+                })
+                .collect::<Vec<_>>(),
+            Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(None),
+            Err(error) => return Err(error),
+        };
+        paths.sort();
+        for path in paths.iter().rev().take(4) {
+            let Some(bytes) = fs::metadata(path)
+                .ok()
+                .filter(|m| m.len() <= 4096)
+                .and_then(|_| fs::read(path).ok())
+            else {
+                continue;
+            };
+            let Ok(pointer) = serde_json::from_slice::<ArtifactPointer>(&bytes) else {
+                continue;
+            };
+            if pointer.key != *key {
+                continue;
+            }
+            let Ok(bytes) = self.get_bounded(
+                "build-receipt-v1",
+                &pointer.payload_digest,
+                16 * 1024 * 1024,
+            ) else {
+                continue;
+            };
+            if let Ok(receipt) = serde_json::from_slice(&bytes) {
+                return Ok(Some(receipt));
+            }
+        }
+        Ok(None)
+    }
+
+    fn store_receipt(&self, key: &ArtifactKey, receipt: &BuildReceipt) -> io::Result<()> {
+        let bytes = serde_json::to_vec(receipt).map_err(io::Error::other)?;
+        let payload_digest = self.put("build-receipt-v1", &bytes)?;
+        let directory = self.root.join("build-receipts-v1").join(key.digest()?);
+        fs::create_dir_all(&directory)?;
+        let stamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_nanos();
+        let name = format!(
+            "{stamp:040}-{}-{}.json",
+            std::process::id(),
+            TEMP_SEQUENCE.fetch_add(1, Ordering::Relaxed)
+        );
+        let temporary = directory.join(format!("{name}.tmp"));
+        let destination = directory.join(name);
+        let mut file = fs::OpenOptions::new()
+            .create_new(true)
+            .write(true)
+            .open(&temporary)?;
+        file.write_all(
+            &serde_json::to_vec(&ArtifactPointer {
+                key: key.clone(),
+                payload_digest,
+            })
+            .map_err(io::Error::other)?,
+        )?;
+        file.sync_all()?;
+        drop(file);
+        fs::rename(temporary, destination)?;
+        let mut paths = fs::read_dir(&directory)?
+            .filter_map(Result::ok)
+            .map(|entry| entry.path())
+            .filter(|path| {
+                path.extension()
+                    .is_some_and(|extension| extension == "json")
+            })
+            .collect::<Vec<_>>();
+        paths.sort();
+        let excess = paths.len().saturating_sub(4);
+        for path in paths.into_iter().take(excess) {
+            let _ = fs::remove_file(path);
+        }
+        Ok(())
+    }
+}
+
+// The expanded-source limit is 64 MiB. Leave room for its dependency/resource
+// tables and strong proofs rather than evicting a valid near-limit project.
+const MAX_BUILD_INPUT_BYTES: usize = 96 * 1024 * 1024;
 
 impl BuildInputSnapshot {
     fn resident_bytes(&self) -> usize {
-        self.preprocessed.text.capacity()
+        self.source_resource_literals.capacity() * std::mem::size_of::<String>()
+            + self
+                .source_resource_literals
+                .iter()
+                .map(String::capacity)
+                .sum::<usize>()
+            + self.preprocessed.text.capacity()
+            + self
+                .map_set
+                .files
+                .iter()
+                .map(|(path, text)| path.as_os_str().len() * 2 + text.capacity() + 64)
+                .sum::<usize>()
+            + self.preprocessed.units.capacity() * std::mem::size_of::<dm_preprocess::Unit>()
+            + self
+                .preprocessed
+                .units
+                .iter()
+                .map(|unit| unit.path.as_os_str().len() * 2)
+                .sum::<usize>()
+            + self.preprocessed.unit_digests.capacity() * 32
             + self
                 .resource_requests
                 .iter()
@@ -663,29 +905,170 @@ impl BuildInputSnapshot {
             + self.project_digest.capacity()
             + self.resources_digest.capacity()
             + self.maps_digest.capacity()
+            + self
+                .proof
+                .borrow()
+                .as_ref()
+                .map_or(0, InputProof::resident_bytes)
+            + self
+                .asset_proof
+                .borrow()
+                .as_ref()
+                .map_or(0, InputProof::resident_bytes)
+            + self
+                .source_proof
+                .borrow()
+                .as_ref()
+                .map_or(0, InputProof::resident_bytes)
     }
     /// Recheck exact source and asset bytes without preprocessing or scanning
     /// the expanded DM text again. A new FILE_DIR shadow also invalidates it.
     fn still_current(&self, project: &Path) -> bool {
-        if self.source_digests.iter().any(|(path, expected)| {
-            dm_preprocess::read_source_file(path)
-                .map(|text| Sha256::digest(text.as_bytes()).as_slice() != expected)
-                .unwrap_or(true)
-        }) || self.missing_dependencies.iter().any(|path| path.exists())
+        if let Some(proof) = self.proof.borrow().as_ref() {
+            return proof
+                .namespace_current()
+                .unwrap_or_else(|| proof.current() && self.resolutions_current(project, true));
+        }
+        // Capture before exact reads, then compare after them. Capturing only
+        // afterwards could accidentally bless an edit made during verification.
+        let previous_assets = self.asset_proof.borrow().clone();
+        let validated_sources = self.source_proof.borrow().clone();
+        let proof = if let Some(sources) = &validated_sources {
+            let assets = previous_assets.clone().or_else(|| {
+                InputProof::capture(
+                    self.preprocessed.map_includes.iter().cloned().chain(
+                        self.resource_requests
+                            .iter()
+                            .map(|request| request.disk_path.clone()),
+                    ),
+                )
+            });
+            assets.and_then(|assets| sources.clone().combined(&assets))
+        } else if let Some(assets) = &previous_assets {
+            InputProof::capture(self.source_digests.keys().cloned())
+                .and_then(|sources| sources.combined(assets))
+        } else {
+            InputProof::capture(
+                self.source_digests
+                    .keys()
+                    .cloned()
+                    .chain(self.preprocessed.map_includes.iter().cloned())
+                    .chain(
+                        self.resource_requests
+                            .iter()
+                            .map(|request| request.disk_path.clone()),
+                    ),
+            )
+        };
+        // An inherited namespace proof covers the same resource lookup candidates
+        // and missing includes. Validate it before doing any per-path resolution walk.
+        let mut proof = proof;
+        if let Some(candidate) = proof.as_mut() {
+            let mut namespace_candidates = self.missing_dependencies.clone();
+            let root = project.parent().unwrap_or_else(|| Path::new("."));
+            for request in &self.resource_requests {
+                namespace_candidates.push(root.join(&request.archive_name));
+                for directory in &self.preprocessed.file_dirs {
+                    namespace_candidates.push(root.join(directory).join(&request.archive_name));
+                }
+            }
+            if candidate.reuse_namespace(&namespace_candidates) {
+                *self.asset_proof.borrow_mut() = candidate.subset(
+                    self.preprocessed.map_includes.iter().cloned().chain(
+                        self.resource_requests
+                            .iter()
+                            .map(|request| request.disk_path.clone()),
+                    ),
+                );
+                *self.proof.borrow_mut() = proof;
+                *self.source_proof.borrow_mut() = None;
+                return true;
+            }
+        }
+        if (!(validated_sources.is_some() && proof.is_some())
+            && self.source_digests.iter().any(|(path, expected)| {
+                dm_preprocess::read_source_file(path)
+                    .map(|text| Sha256::digest(text.as_bytes()).as_slice() != expected)
+                    .unwrap_or(true)
+            }))
+            || self.missing_dependencies.iter().any(|path| path.exists())
         {
             return false;
         }
-        let maps = match load_map_set_from_paths(project, &self.preprocessed.map_includes) {
-            Ok(maps) => maps,
-            Err(_) => return false,
+        // The final combined proof validates the original asset stamps. No
+        // asset metadata scan is needed before validating source bytes.
+        let assets_current = previous_assets.is_some() && proof.is_some();
+        let maps = if assets_current {
+            None
+        } else {
+            Some(
+                match load_map_set_from_paths(project, &self.preprocessed.map_includes) {
+                    Ok(maps) => maps,
+                    Err(_) => return false,
+                },
+            )
         };
-        if hex_digest(&maps.fingerprint) != self.maps_digest {
+        if maps.is_some_and(|maps| hex_digest(&maps.fingerprint) != self.maps_digest) {
+            return false;
+        }
+        if !self.resolutions_current(project, false) {
+            return false;
+        }
+        let valid = assets_current
+            || ResourceSet::fingerprint_requests(self.resource_requests.clone())
+                .is_ok_and(|fingerprint| hex_digest(&fingerprint) == self.resources_digest);
+        if valid {
+            if let Some(mut proof) = proof {
+                // Establishment compares every expected file stamp under an
+                // exclusive barrier. A successful journal avoids repeating the
+                // same full metadata scan before returning the validated proof.
+                let mut namespace_candidates = self.missing_dependencies.clone();
+                let root = project.parent().unwrap_or_else(|| Path::new("."));
+                for request in &self.resource_requests {
+                    namespace_candidates.push(root.join(&request.archive_name));
+                    for directory in &self.preprocessed.file_dirs {
+                        namespace_candidates.push(root.join(directory).join(&request.archive_name));
+                    }
+                }
+                proof.enable_namespace_journal(&namespace_candidates);
+                // Establishing a change cursor cannot bless a resolution change
+                // between the earlier resolution scan and that cursor.
+                if !self.resolutions_current(project, true) || !proof.current() {
+                    return false;
+                }
+                let assets = proof.subset(
+                    self.preprocessed.map_includes.iter().cloned().chain(
+                        self.resource_requests
+                            .iter()
+                            .map(|request| request.disk_path.clone()),
+                    ),
+                );
+                *self.asset_proof.borrow_mut() = assets;
+                *self.proof.borrow_mut() = Some(proof);
+                *self.source_proof.borrow_mut() = None;
+            }
+        }
+        valid
+    }
+
+    fn resolutions_current(&self, project: &Path, proven: bool) -> bool {
+        #[cfg(test)]
+        RESOLUTION_WALKS.with(|count| count.set(count.get() + 1));
+        if self.missing_dependencies.iter().any(|path| path.exists()) {
             return false;
         }
         let mut resolved_names = BTreeSet::new();
         if self.resource_requests.iter().any(|request| {
             if !resolved_names.insert((&request.archive_name, &request.disk_path)) {
                 return false;
+            }
+            if proven {
+                return !proven_resource_resolution_current(
+                    project,
+                    &request.archive_name,
+                    &request.disk_path,
+                    &self.preprocessed.file_dirs,
+                );
             }
             resolved_resource_disk_path(
                 project,
@@ -695,8 +1078,7 @@ impl BuildInputSnapshot {
         }) {
             return false;
         }
-        ResourceSet::fingerprint_requests(self.resource_requests.clone())
-            .is_ok_and(|fingerprint| hex_digest(&fingerprint) == self.resources_digest)
+        true
     }
 }
 
@@ -816,6 +1198,9 @@ impl Coordinator {
         world_name: &str,
         resources: &str,
         maps: &str,
+        archive_hint: Option<&VerifiedArchive>,
+        prepared_maps: &dm_compiler::maps::MapSet,
+        prepared_resources: &[ResourceRequest],
     ) -> Result<PreparedBuild, String> {
         self.incremental
             .set_cache_root(dm_compiler::lower_cache::default_cache_root(project));
@@ -838,41 +1223,94 @@ impl Coordinator {
         candidates.sort();
         candidates.reverse();
         candidates.truncate(32);
-        if !candidates.is_empty() {
-            let outline = dm_compiler::bootstrap::incremental_source_outline(&preprocessed.text)?;
-            for path in candidates {
-                let Some(record) = fs::metadata(&path)
-                    .ok()
-                    .filter(|metadata| metadata.len() <= 4096)
-                    .and_then(|_| fs::read(&path).ok())
-                    .and_then(|bytes| serde_json::from_slice::<IncrementalRecord>(&bytes).ok())
-                else {
-                    continue;
+        let retained = self
+            .retained_world
+            .take()
+            .filter(|world| world.family == directory);
+        if retained.is_some() || !candidates.is_empty() {
+            // Expanded-source chunks are pure content/compiler artifacts. Keep
+            // the same bounded frontend across worktrees and builtin families.
+            if self.outline_cache.is_none() {
+                self.outline_cache = Some((
+                    self.blobs.root.clone(),
+                    dm_compiler::frontend::OutlineSession::new(Some(self.blobs.root.clone())),
+                ));
+            }
+            let frontend = &mut self.outline_cache.as_mut().unwrap().1;
+            let outline = frontend.update(preprocessed)?;
+            if std::env::var_os("DM_BUILD_TRACE").is_some() {
+                eprintln!(
+                    "DM_BUILD_TRACE incremental frontend: {:?}, {} retained bytes",
+                    frontend.stats(),
+                    frontend.resident_bytes()
+                );
+            }
+            enum Candidate {
+                Live(RetainedWorld),
+                Disk(PathBuf),
+            }
+            let candidates = retained
+                .into_iter()
+                .map(Candidate::Live)
+                .chain(candidates.into_iter().map(Candidate::Disk));
+            for candidate in candidates {
+                let live_candidate = matches!(&candidate, Candidate::Live(_));
+                let (record, checkpoint, dmb, mut indexed) = match candidate {
+                    Candidate::Live(world) => {
+                        if world.record.abi_digest != outline.abi_digest {
+                            continue;
+                        }
+                        let indexed = world.indexed;
+                        if std::env::var_os("DM_BUILD_TRACE").is_some() {
+                            eprintln!("DM_BUILD_TRACE retained linked world hit");
+                        }
+                        (world.record, world.checkpoint, world.dmb, indexed)
+                    }
+                    Candidate::Disk(path) => {
+                        let Some(record) = fs::metadata(&path)
+                            .ok()
+                            .filter(|metadata| metadata.len() <= 4096)
+                            .and_then(|_| fs::read(&path).ok())
+                            .and_then(|bytes| {
+                                serde_json::from_slice::<IncrementalRecord>(&bytes).ok()
+                            })
+                        else {
+                            continue;
+                        };
+                        if record.version != 1 || record.abi_digest != outline.abi_digest {
+                            continue;
+                        }
+                        let Ok(bytes) = self.blobs.get_bounded(
+                            "native-checkpoint-v1",
+                            &record.checkpoint_digest,
+                            64 * 1024 * 1024,
+                        ) else {
+                            continue;
+                        };
+                        let Some(checkpoint) = dm_compiler::incremental::decode_checkpoint(&bytes)
+                        else {
+                            continue;
+                        };
+                        drop(bytes);
+                        let Ok(bytes) = self.blobs.get_bounded(
+                            "project-dmb-v1",
+                            &record.dmb_digest,
+                            256 * 1024 * 1024,
+                        ) else {
+                            continue;
+                        };
+                        let Ok((dmb, spans)) =
+                            byond_dmb::dmb::Dmb::from_bytes_with_list_spans(&bytes)
+                        else {
+                            continue;
+                        };
+                        let indexed = dm_output::list_image::ListImage::capture(bytes, &dmb, spans)
+                            .map_err(|error| error.to_string())?;
+                        (record, checkpoint, dmb, indexed)
+                    }
                 };
-                if record.version != 1 || record.abi_digest != outline.abi_digest {
-                    continue;
-                }
-                let Ok(bytes) = self.blobs.get_bounded(
-                    "native-checkpoint-v1",
-                    &record.checkpoint_digest,
-                    64 * 1024 * 1024,
-                ) else {
-                    continue;
-                };
-                let Some(checkpoint) = dm_compiler::incremental::decode_checkpoint(&bytes) else {
-                    continue;
-                };
-                drop(bytes);
-                let Ok(bytes) =
-                    self.blobs
-                        .get_bounded("project-dmb-v1", &record.dmb_digest, 256 * 1024 * 1024)
-                else {
-                    continue;
-                };
-                let Ok(dmb) = byond_dmb::dmb::Dmb::from_bytes(&bytes) else {
-                    continue;
-                };
-                drop(bytes);
+                self.incremental
+                    .set_baseline_identity(record.dmb_digest.clone());
                 let result = dm_compiler::incremental::try_emit_outline(
                     outline.clone(),
                     dmb,
@@ -882,11 +1320,20 @@ impl Coordinator {
                 let Ok(Some(emission)) = result else {
                     continue;
                 };
-                let Ok(rsc_bytes) =
-                    self.blobs
-                        .get_bounded("project-rsc-v1", &record.rsc_digest, 512 * 1024 * 1024)
-                else {
-                    continue;
+                let archive = archive_hint
+                    .filter(|archive| archive.digest() == record.rsc_digest)
+                    .cloned();
+                let rsc_bytes = if archive.is_some() {
+                    Vec::new()
+                } else {
+                    let Ok(bytes) = self.blobs.get_bounded(
+                        "project-rsc-v1",
+                        &record.rsc_digest,
+                        512 * 1024 * 1024,
+                    ) else {
+                        continue;
+                    };
+                    bytes
                 };
                 if std::env::var_os("DM_BUILD_TRACE").is_some() {
                     eprintln!(
@@ -895,9 +1342,44 @@ impl Coordinator {
                         record.emitted_procs.saturating_sub(emission.changed_procs)
                     );
                 }
+                #[cfg(test)]
+                if live_candidate {
+                    self.retained_world_hits += 1;
+                }
+                #[cfg(not(test))]
+                let _ = live_candidate;
+                let serialized_dmb = indexed
+                    .serialize_changed(&emission.dmb, &emission.changed_lists)
+                    .map_err(|error| error.to_string())?;
+                if std::env::var_os("DM_BUILD_TRACE").is_some() {
+                    eprintln!(
+                        "DM_BUILD_TRACE indexed DMB serialization: {}",
+                        serialized_dmb.is_some()
+                    );
+                }
+                let list_spans = if serialized_dmb.is_some() {
+                    Some(
+                        indexed
+                            .updated_spans(&emission.dmb)
+                            .map_err(|error| error.to_string())?,
+                    )
+                } else {
+                    None
+                };
+                let list_image = if let (Some(bytes), Some(spans)) = (&serialized_dmb, &list_spans)
+                {
+                    indexed.rebase(bytes.clone(), spans.clone());
+                    Some(indexed)
+                } else {
+                    None
+                };
                 return Ok(PreparedBuild {
+                    serialized_dmb,
+                    list_spans,
+                    list_image,
                     dmb: emission.dmb,
                     rsc_bytes,
+                    archive,
                     emitted_procs: record.emitted_procs,
                     lowered_procs: emission.changed_procs,
                     reused_procs: record.emitted_procs.saturating_sub(emission.changed_procs),
@@ -905,11 +1387,20 @@ impl Coordinator {
                 });
             }
         }
-        let compiled = compile_preprocessed_project_with_resources(
+        if self.outline_cache.is_none() {
+            self.outline_cache = Some((
+                self.blobs.root.clone(),
+                dm_compiler::frontend::OutlineSession::new(Some(self.blobs.root.clone())),
+            ));
+        }
+        let compiled = compile_preprocessed_project_with_resources_prepared(
             project,
             preprocessed,
             builtins,
             world_name,
+            &mut self.outline_cache.as_mut().unwrap().1,
+            prepared_maps,
+            prepared_resources,
         )?;
         if hex_digest(&compiled.resource_fingerprint) != resources
             || hex_digest(&compiled.map_fingerprint) != maps
@@ -917,11 +1408,15 @@ impl Coordinator {
             return Err("project map/resource inputs changed during build; retry".into());
         }
         Ok(PreparedBuild {
+            serialized_dmb: None,
+            list_spans: None,
+            list_image: None,
             emitted_procs: compiled.emitted.len(),
             lowered_procs: compiled.lowering_cache_stats.misses,
             reused_procs: compiled.lowering_cache_stats.hits,
             dmb: compiled.dmb,
             rsc_bytes: compiled.rsc_bytes,
+            archive: None,
             checkpoint: compiled.checkpoint,
         })
     }
@@ -933,7 +1428,7 @@ impl Coordinator {
         dmb_digest: &str,
         rsc_digest: &str,
         emitted_procs: usize,
-    ) -> io::Result<()> {
+    ) -> io::Result<usize> {
         let started = Instant::now();
         let bytes =
             dm_compiler::incremental::encode_checkpoint(checkpoint).map_err(io::Error::other)?;
@@ -945,6 +1440,7 @@ impl Coordinator {
                 started.elapsed().as_secs_f64()
             );
         }
+        let checkpoint_size = bytes.len();
         let checkpoint_digest = self.blobs.put("native-checkpoint-v1", &bytes)?;
         let record = IncrementalRecord {
             version: 1,
@@ -989,7 +1485,7 @@ impl Coordinator {
         for old in records.into_iter().take(excess) {
             let _ = fs::remove_file(old);
         }
-        Ok(())
+        Ok(checkpoint_size)
     }
 
     pub fn new(cache_root: impl Into<PathBuf>) -> io::Result<Self> {
@@ -1011,6 +1507,11 @@ impl Coordinator {
             projects: HashMap::new(),
             blobs: ContentStore::new(cache_root)?,
             incremental: Default::default(),
+            discovery_cache: None,
+            outline_cache: None,
+            retained_world: None,
+            #[cfg(test)]
+            retained_world_hits: 0,
             syntax_cache: HashMap::new(),
             build_cache: HashMap::new(),
             build_inputs: HashMap::new(),
@@ -1399,10 +1900,156 @@ impl Coordinator {
             Ok(path) => path,
             Err(error) => return failed_project(error.to_string()),
         };
+        // Verify the published generation before validating retained inputs. If
+        // both match, the exact source/resource/shadow check is the final operation
+        // needed before returning; another identical scan cannot improve freshness.
+        if let (Some(entry), Some(root)) = (self.build_inputs.get(&key), &output_root) {
+            let snapshot = &entry.snapshot;
+            let retained_key = BuildCacheKey {
+                project_digest: snapshot.project_digest.clone(),
+                builtins_digest: builtins_digest.clone(),
+                resources_digest: snapshot.resources_digest.clone(),
+                maps_digest: snapshot.maps_digest.clone(),
+                world_name: world_name.clone(),
+                target: key.target.clone(),
+                defines: key.defines.clone(),
+                build_mode: key.build_mode.clone(),
+                compiler_version: key.compiler_version.clone(),
+                output_root: root.clone(),
+            };
+            if let Some(cached) = self.build_cache.get(&retained_key).cloned() {
+                let output_matches =
+                    current_generation(root)
+                        .ok()
+                        .flatten()
+                        .is_some_and(|generation| {
+                            generation.id == cached.generation
+                                && generation.dmb == cached.dmb
+                                && generation.rsc == cached.rsc
+                                && verify_generation_digest(root, &generation).is_ok()
+                        });
+                if output_matches {
+                    let verify_started = Instant::now();
+                    let stable = snapshot.still_current(&key.project);
+                    trace_build(trace, "retained input validation", verify_started);
+                    if stable {
+                        let mut result = cached;
+                        result.cache_hit = true;
+                        result.lowered_procs = 0;
+                        result.reused_procs = result.emitted_procs;
+                        let source_digest = snapshot.project_digest.clone();
+                        self.build_inputs.get_mut(&key).unwrap().last_used = self.clock;
+                        return Response {
+                            ok: true,
+                            item_count: result.emitted_procs,
+                            diagnostics: vec![],
+                            source_digest: Some(source_digest),
+                            shared_syntax_hit: true,
+                            error: None,
+                            build: Some(result),
+                        };
+                    }
+                }
+            }
+        }
+        let receipt_key = output_root
+            .as_ref()
+            .and_then(|root| receipt_key(&key, &builtins_digest, root));
+        let mut disk_input_proof = None;
+        // The CAS verifies receipt bytes; output validation still verifies the
+        // actual published pair. A corrupt/missing receipt is simply a miss.
+        if let (Some(root), Some(receipt_key)) = (&output_root, &receipt_key) {
+            if let Ok(Some(receipt)) = self.blobs.load_receipt(receipt_key) {
+                // A stale source receipt still contains authenticated earlier file
+                // barriers. Reuse only per-file unchanged proofs, never its result.
+                disk_input_proof = Some(receipt.proof.clone());
+                if current_generation(root)
+                    .ok()
+                    .flatten()
+                    .is_some_and(|generation| {
+                        generation.id == receipt.result.generation
+                            && generation.dmb == receipt.result.dmb
+                            && generation.rsc == receipt.result.rsc
+                            && verify_generation_digest(root, &generation).is_ok()
+                    })
+                    && receipt.current(&key.project)
+                {
+                    let mut result = receipt.result;
+                    result.cache_hit = true;
+                    result.lowered_procs = 0;
+                    result.reused_procs = result.emitted_procs;
+                    return Response {
+                        ok: true,
+                        item_count: result.emitted_procs,
+                        diagnostics: vec![],
+                        source_digest: Some(receipt.source_digest),
+                        shared_syntax_hit: true,
+                        error: None,
+                        build: Some(result),
+                    };
+                }
+            }
+        }
         let project_root = key.project.parent().unwrap_or(&key.worktree);
-        let source_snapshot = || -> io::Result<BuildInputSnapshot> {
+        let previous_inventory = self.build_inputs.get(&key).map(|entry| {
+            (
+                entry.snapshot.source_resource_literals.clone(),
+                entry.snapshot.preprocessed.file_dirs.clone(),
+                entry.snapshot.preprocessed.skin_includes.clone(),
+                entry.snapshot.preprocessed.map_includes.clone(),
+                entry.snapshot.map_set.fingerprint,
+            )
+        });
+        let previous_assets = self.build_inputs.get(&key).and_then(|entry| {
+            let snapshot = &entry.snapshot;
+            let proof = snapshot.asset_proof.borrow().clone()?;
+            Some({
+                (
+                    proof,
+                    snapshot.resource_requests.clone(),
+                    snapshot.resources_digest.clone(),
+                    snapshot.preprocessed.map_includes.clone(),
+                )
+            })
+        });
+        let previous_map_set = self
+            .build_inputs
+            .get(&key)
+            .map(|entry| Arc::clone(&entry.snapshot.map_set));
+        let previous_source_digests = self
+            .build_inputs
+            .get(&key)
+            .map(|entry| entry.snapshot.source_digests.clone())
+            .unwrap_or_default();
+        let previous_input_proof = self
+            .build_inputs
+            .get(&key)
+            .and_then(|entry| entry.snapshot.proof.borrow().clone())
+            .or(disk_input_proof);
+        let unchanged_sources = previous_input_proof
+            .as_ref()
+            .map(InputProof::unchanged_paths)
+            .unwrap_or_default();
+        let mut discovery_cache = self
+            .discovery_cache
+            .take()
+            .filter(|(project, _)| project == &key.project)
+            .map(|(_, cache)| cache)
+            .unwrap_or_else(|| project_discovery::DiscoveryCache::load(&key.project));
+        let mut frontend = self.outline_cache.take().unwrap_or_else(|| {
+            (
+                self.blobs.root.clone(),
+                dm_compiler::frontend::OutlineSession::new(Some(self.blobs.root.clone())),
+            )
+        });
+        let mut source_snapshot = || -> io::Result<BuildInputSnapshot> {
             let discovery_started = Instant::now();
-            let (discovery, sources) = discover_consistent_project(&key.project, &defines)?;
+            let (discovery, sources, source_proof) = discovery_cache.discover_with_previous(
+                &key.project,
+                &defines,
+                &unchanged_sources,
+                previous_input_proof.as_ref(),
+            )?;
             trace_build(trace, "project discovery/preprocessing", discovery_started);
             let limit = std::env::var("DM_BUILD_MAX_SOURCE_BYTES")
                 .ok()
@@ -1431,47 +2078,130 @@ impl Coordinator {
                 .collect();
             let mut source_digests = BTreeMap::new();
             let hash_started = Instant::now();
-            hash.update(b"dm-project-inputs-v1\0");
+            hash.update(b"dm-project-inputs-v2\0");
             for (path, text) in sources {
                 let relative = path.strip_prefix(project_root).unwrap_or(&path);
                 let name = relative.to_string_lossy();
                 hash.update((name.len() as u64).to_le_bytes());
                 hash.update(name.as_bytes());
                 hash.update((text.len() as u64).to_le_bytes());
-                hash.update(text.as_bytes());
-                source_digests.insert(path, Sha256::digest(text.as_bytes()).into());
+                let digest = if unchanged_sources.contains(&path) {
+                    previous_source_digests
+                        .get(&path)
+                        .copied()
+                        .unwrap_or_else(|| Sha256::digest(text.as_bytes()).into())
+                } else {
+                    Sha256::digest(text.as_bytes()).into()
+                };
+                hash.update(digest);
+                source_digests.insert(path, digest);
             }
             trace_build(trace, "source hashing", hash_started);
             let resources_started = Instant::now();
-            let maps = load_map_set_from_paths(&key.project, &discovery.map_includes)
-                .map_err(io::Error::other)?;
+            let maps = match previous_map_set.as_ref().filter(|_| {
+                previous_assets
+                    .as_ref()
+                    .is_some_and(|(proof, _, _, paths)| {
+                        *paths == discovery.map_includes && proof.current()
+                    })
+            }) {
+                Some(maps) => Arc::clone(maps),
+                None => Arc::new(
+                    load_map_set_from_paths(&key.project, &discovery.map_includes)
+                        .map_err(io::Error::other)?,
+                ),
+            };
             trace_build(trace, "active map loading", resources_started);
             let requests_started = Instant::now();
-            let resource_requests = resolved_resource_requests(
-                &key.project,
-                &discovery.text,
-                &maps,
-                &discovery.skin_includes,
-                &discovery.file_dirs,
-            )
-            .map_err(io::Error::other)?;
+            let verified_hints = previous_assets
+                .as_ref()
+                .filter(|(proof, _, _, _)| proof.current());
+            let literals = frontend
+                .1
+                .resource_literals(&discovery.text)
+                .map_err(io::Error::other)?;
+            let reusable_inventory = previous_inventory.as_ref().is_some_and(
+                |(old_literals, dirs, skins, map_paths, map_fingerprint)| {
+                    *old_literals == literals
+                        && *dirs == discovery.file_dirs
+                        && *skins == discovery.skin_includes
+                        && *map_paths == discovery.map_includes
+                        && *map_fingerprint == maps.fingerprint
+                },
+            ) && previous_assets
+                .as_ref()
+                .is_some_and(|(proof, _, _, _)| proof.namespace_current() == Some(true));
+            let resource_requests = if reusable_inventory {
+                previous_assets.as_ref().unwrap().1.clone()
+            } else {
+                #[cfg(test)]
+                RESOURCE_RESOLUTIONS.with(|count| count.set(count.get() + 1));
+                resolved_resource_requests_with_literals(
+                    &key.project,
+                    &literals,
+                    &maps,
+                    &discovery.skin_includes,
+                    &discovery.file_dirs,
+                    verified_hints.map_or(&[], |(_, requests, _, _)| requests.as_slice()),
+                )
+                .map_err(io::Error::other)?
+            };
             trace_build(trace, "resource request scan", requests_started);
             let asset_hash_started = Instant::now();
-            let resources = ResourceSet::fingerprint_requests(resource_requests.clone())?;
+            let reusable_assets =
+                previous_assets
+                    .as_ref()
+                    .filter(|(proof, requests, _, map_includes)| {
+                        *map_includes == discovery.map_includes
+                            && requests.len() == resource_requests.len()
+                            && requests.iter().zip(&resource_requests).all(|(old, new)| {
+                                old.archive_name == new.archive_name
+                                    && old.disk_path == new.disk_path
+                            })
+                            && proof.current()
+                    });
+            let resources_digest = if let Some((_, _, digest, _)) = reusable_assets {
+                digest.clone()
+            } else {
+                hex_digest(&ResourceSet::fingerprint_requests(
+                    resource_requests.clone(),
+                )?)
+            };
             trace_build(trace, "resource byte hashing", asset_hash_started);
-            let resources_digest = hex_digest(&resources);
             let maps_digest = hex_digest(&maps.fingerprint);
             trace_build(trace, "map/resource fingerprinting", resources_started);
             Ok(BuildInputSnapshot {
+                proof: Default::default(),
+                source_proof: std::cell::RefCell::new(source_proof),
+                asset_proof: std::cell::RefCell::new(
+                    reusable_assets
+                        .map(|(proof, _, _, _)| proof.clone())
+                        .or_else(|| {
+                            previous_input_proof
+                                .as_ref()?
+                                .subset(
+                                    discovery.map_includes.iter().cloned().chain(
+                                        resource_requests
+                                            .iter()
+                                            .map(|request| request.disk_path.clone()),
+                                    ),
+                                )
+                                .filter(InputProof::current)
+                        }),
+                ),
                 project_digest: format!("{:x}", hash.finalize()),
                 diagnostics: diagnostics.clone(),
                 resources_digest,
                 maps_digest,
+                map_set: maps,
                 source_digests,
                 missing_dependencies,
                 resource_requests,
+                source_resource_literals: literals,
                 preprocessed: PreprocessedProject {
                     text: discovery.text,
+                    units: discovery.units,
+                    unit_digests: discovery.unit_digests,
                     map_includes: discovery.map_includes,
                     skin_includes: discovery.skin_includes,
                     file_dirs: discovery.file_dirs,
@@ -1479,61 +2209,7 @@ impl Coordinator {
                 },
             })
         };
-        let mut retained = self.build_inputs.remove(&key);
-        // Verify the published generation before validating retained inputs. If
-        // both match, the exact source/resource/shadow check is the final operation
-        // needed before returning; another identical scan cannot improve freshness.
-        if let (Some(entry), Some(root)) = (&retained, &output_root) {
-            let snapshot = &entry.snapshot;
-            let retained_key = BuildCacheKey {
-                project_digest: snapshot.project_digest.clone(),
-                builtins_digest: builtins_digest.clone(),
-                resources_digest: snapshot.resources_digest.clone(),
-                maps_digest: snapshot.maps_digest.clone(),
-                world_name: world_name.clone(),
-                target: key.target.clone(),
-                defines: key.defines.clone(),
-                build_mode: key.build_mode.clone(),
-                compiler_version: key.compiler_version.clone(),
-                output_root: root.clone(),
-            };
-            if let Some(cached) = self.build_cache.get(&retained_key).cloned() {
-                let output_matches =
-                    current_generation(root)
-                        .ok()
-                        .flatten()
-                        .is_some_and(|generation| {
-                            generation.id == cached.generation
-                                && verify_generation_digest(root, &generation).is_ok()
-                        });
-                if output_matches {
-                    let verify_started = Instant::now();
-                    let stable = snapshot.still_current(&key.project);
-                    trace_build(trace, "retained input validation", verify_started);
-                    if stable {
-                        let mut result = cached;
-                        result.cache_hit = true;
-                        result.lowered_procs = 0;
-                        result.reused_procs = result.emitted_procs;
-                        let entry = retained.take().unwrap();
-                        let source_digest = entry.snapshot.project_digest.clone();
-                        self.remember_build_inputs(key, entry.snapshot);
-                        return Response {
-                            ok: true,
-                            item_count: result.emitted_procs,
-                            diagnostics: vec![],
-                            source_digest: Some(source_digest),
-                            shared_syntax_hit: true,
-                            error: None,
-                            build: Some(result),
-                        };
-                    }
-                    // Changed inputs require fresh discovery, rather than a stale
-                    // response or a second unsuccessful retained-input check.
-                    retained = None;
-                }
-            }
-        }
+        let retained = self.build_inputs.remove(&key);
         let inputs_started = Instant::now();
         let snapshot = if let Some(retained) =
             retained.filter(|entry| entry.snapshot.still_current(&key.project))
@@ -1546,6 +2222,12 @@ impl Coordinator {
                 Err(error) => return failed_project(error.to_string()),
             }
         };
+        drop(source_snapshot);
+        self.outline_cache = Some(frontend);
+        // DiscoveryCache bounds original-source and expansion data to 128 MiB.
+        if discovery_cache.resident_bytes() <= 224 * 1024 * 1024 {
+            self.discovery_cache = Some((key.project.clone(), discovery_cache));
+        }
         let project_digest = &snapshot.project_digest;
         let resources_digest = &snapshot.resources_digest;
         let maps_digest = &snapshot.maps_digest;
@@ -1664,11 +2346,16 @@ impl Coordinator {
             None => None,
         };
         trace_build(trace, "artifact CAS lookup", cache_started);
+        let mut reused_archive = None;
         let (dmb_bytes, rsc_bytes, emitted_procs, cache_hit, lowered_procs, reused_procs) =
             if let Some((dmb, rsc, count)) = cached_pair {
                 (dmb, rsc, count, true, 0, count)
             } else {
                 let compile_started = Instant::now();
+                let archive_hint = output_root.as_ref().and_then(|root| {
+                    let generation = current_generation(root).ok().flatten()?;
+                    verified_archive(root, &generation).ok()
+                });
                 let prepared = match self.prepare_native_build(
                     &artifact,
                     &key.project,
@@ -1677,6 +2364,9 @@ impl Coordinator {
                     &world_name,
                     resources_digest,
                     maps_digest,
+                    archive_hint.as_ref(),
+                    &snapshot.map_set,
+                    &snapshot.resource_requests,
                 ) {
                     Ok(prepared) => prepared,
                     Err(error) => return failed_project(error),
@@ -1694,15 +2384,24 @@ impl Coordinator {
                 let pending_checkpoint = prepared.checkpoint;
                 let dmb = prepared.dmb;
                 let rsc_bytes = prepared.rsc_bytes;
-                let dmb_bytes = match dmb.to_bytes() {
-                    Ok(bytes) => bytes,
-                    Err(error) => return failed_project(error.to_string()),
+                reused_archive = prepared.archive;
+                let (dmb_bytes, list_spans) = match (prepared.serialized_dmb, prepared.list_spans) {
+                    (Some(bytes), Some(spans)) => (bytes, spans),
+                    _ => match dmb.to_bytes_with_list_spans() {
+                        Ok(pair) => pair,
+                        Err(error) => return failed_project(error.to_string()),
+                    },
                 };
-                drop(dmb);
                 let cache_write_started = Instant::now();
-                let write_pair = || -> io::Result<()> {
+                let mut retained_record = None;
+                let mut checkpoint_size = None;
+                let mut write_pair = || -> io::Result<()> {
                     let dmb_digest = self.blobs.put("project-dmb-v1", &dmb_bytes)?;
-                    let rsc_digest = self.blobs.put("project-rsc-v1", &rsc_bytes)?;
+                    let rsc_digest = if let Some(archive) = &reused_archive {
+                        archive.digest().to_owned()
+                    } else {
+                        self.blobs.put("project-rsc-v1", &rsc_bytes)?
+                    };
                     if let Some(checkpoint) = &pending_checkpoint {
                         let checkpoint_result = self.store_incremental_checkpoint(
                             &artifact,
@@ -1711,13 +2410,26 @@ impl Coordinator {
                             &rsc_digest,
                             emitted_procs,
                         );
-                        if let Err(error) = checkpoint_result {
-                            if std::env::var_os("DM_BUILD_TRACE").is_some() {
-                                eprintln!(
+                        match checkpoint_result {
+                            Ok(size) => checkpoint_size = Some(size),
+                            Err(error) => {
+                                if std::env::var_os("DM_BUILD_TRACE").is_some() {
+                                    eprintln!(
                                     "DM_BUILD_TRACE incremental checkpoint unavailable: {error}"
                                 );
+                                }
                             }
                         }
+                    }
+                    if let Some(checkpoint) = &pending_checkpoint {
+                        retained_record = Some(IncrementalRecord {
+                            version: 1,
+                            abi_digest: checkpoint.abi_digest.clone(),
+                            checkpoint_digest: String::new(),
+                            dmb_digest: dmb_digest.clone(),
+                            rsc_digest: rsc_digest.clone(),
+                            emitted_procs,
+                        });
                     }
                     let manifest = CachedPairManifest {
                         version: PAIR_MANIFEST_VERSION,
@@ -1735,6 +2447,43 @@ impl Coordinator {
                     return failed_project(error.to_string());
                 }
                 trace_build(trace, "artifact CAS write", cache_write_started);
+                if let (Some(checkpoint), Some(record), Some(checkpoint_size)) =
+                    (pending_checkpoint, retained_record, checkpoint_size)
+                {
+                    let indexed = match prepared.list_image {
+                        Some(indexed) => indexed,
+                        None => {
+                            match dm_output::list_image::ListImage::from_verified_serialization(
+                                dmb_bytes.clone(),
+                                &dmb,
+                                list_spans,
+                            ) {
+                                Ok(indexed) => indexed,
+                                Err(error) => return failed_project(error.to_string()),
+                            }
+                        }
+                    };
+                    let resident =
+                        world_resident_bytes(&dmb, &[], checkpoint_size) + indexed.resident_bytes();
+                    if resident <= 320 * 1024 * 1024 {
+                        self.retained_world = Some(RetainedWorld {
+                            family: match self.incremental_directory(&artifact) {
+                                Ok(path) => path,
+                                Err(error) => return failed_project(error.to_string()),
+                            },
+                            record,
+                            checkpoint,
+                            dmb,
+                            indexed,
+                        });
+                    }
+                    if trace {
+                        eprintln!(
+                            "DM_BUILD_TRACE retained linked world: {resident} bytes, retained {}",
+                            self.retained_world.is_some()
+                        );
+                    }
+                }
                 (
                     dmb_bytes,
                     rsc_bytes,
@@ -1751,8 +2500,30 @@ impl Coordinator {
             return failed_project("project sources changed during build; retry".into());
         }
         let (generation_id, dmb_path, rsc_path) = if let Some(root) = output_root {
+            let previous_archive = current_generation(&root)
+                .ok()
+                .flatten()
+                .map(|generation| generation.rsc);
             let publish_started = Instant::now();
-            let generation = match publish_generation(&root, &dmb_bytes, &rsc_bytes) {
+            let published = if let Some(archive) = &reused_archive {
+                match publish_generation_with_archive(&root, &dmb_bytes, archive) {
+                    Ok(generation) => Ok(generation),
+                    Err(_) => self
+                        .blobs
+                        .get_bounded("project-rsc-v1", archive.digest(), 512 * 1024 * 1024)
+                        .and_then(|bytes| {
+                            publish_generation_reusing_archive(&root, &dmb_bytes, &bytes, None)
+                        }),
+                }
+            } else {
+                publish_generation_reusing_archive(
+                    &root,
+                    &dmb_bytes,
+                    &rsc_bytes,
+                    previous_archive.as_deref(),
+                )
+            };
+            let generation = match published {
                 Ok(generation) => generation,
                 Err(error) => return failed_project(error.to_string()),
             };
@@ -1783,6 +2554,23 @@ impl Coordinator {
             self.build_cache.insert(cache_key, result.clone());
         }
         let source_digest = project_digest.clone();
+        if let (Some(receipt_key), Some(proof)) = (receipt_key, snapshot.proof.borrow().clone()) {
+            let receipt = BuildReceipt {
+                proof,
+                missing_dependencies: snapshot.missing_dependencies.clone(),
+                resource_paths: snapshot
+                    .resource_requests
+                    .iter()
+                    .map(|request| (request.archive_name.clone(), request.disk_path.clone()))
+                    .collect(),
+                file_dirs: snapshot.preprocessed.file_dirs.clone(),
+                source_digest: source_digest.clone(),
+                result: result.clone(),
+            };
+            // Optional acceleration must never turn a successful build into
+            // a failure if the cache is unavailable or concurrently changed.
+            let _ = self.blobs.store_receipt(&receipt_key, &receipt);
+        }
         self.remember_build_inputs(key.clone(), snapshot);
         Response {
             ok: true,
@@ -1798,6 +2586,12 @@ impl Coordinator {
     fn remember_build_inputs(&mut self, key: SessionKey, mut snapshot: BuildInputSnapshot) {
         snapshot.preprocessed.text.shrink_to_fit();
         let size = snapshot.resident_bytes();
+        if std::env::var_os("DM_BUILD_TRACE").is_some() {
+            eprintln!(
+                "DM_BUILD_TRACE retained inputs: {} bytes, limit {} bytes",
+                size, MAX_BUILD_INPUT_BYTES
+            );
+        }
         if size > MAX_BUILD_INPUT_BYTES {
             return;
         }
@@ -1968,6 +2762,168 @@ mod tests {
     }
 
     #[test]
+    fn proven_resource_resolution_checks_only_higher_priority_shadows() {
+        let root = std::env::temp_dir().join(format!(
+            "dm-proof-shadow-{}-{}",
+            std::process::id(),
+            TEMP_SEQUENCE.fetch_add(1, Ordering::Relaxed)
+        ));
+        fs::create_dir_all(root.join("low")).unwrap();
+        fs::create_dir_all(root.join("high")).unwrap();
+        let project = root.join("world.dme");
+        let dirs = vec![PathBuf::from("low"), PathBuf::from("high")];
+        let selected = root.join("low/icon.dmi");
+        fs::write(&selected, "asset").unwrap();
+        assert!(proven_resource_resolution_current(
+            &project, "icon.dmi", &selected, &dirs
+        ));
+        fs::write(root.join("high/icon.dmi"), "shadow").unwrap();
+        assert!(!proven_resource_resolution_current(
+            &project, "icon.dmi", &selected, &dirs
+        ));
+        let selected = root.join("high/icon.dmi");
+        assert!(proven_resource_resolution_current(
+            &project, "icon.dmi", &selected, &dirs
+        ));
+        fs::write(root.join("icon.dmi"), "direct").unwrap();
+        assert!(!proven_resource_resolution_current(
+            &project, "icon.dmi", &selected, &dirs
+        ));
+        assert!(proven_resource_resolution_current(
+            &project,
+            "icon.dmi",
+            &root.join("icon.dmi"),
+            &dirs
+        ));
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn cold_build_receipt_bypasses_discovery_and_rejects_edits_and_corruption() {
+        let root = std::env::temp_dir().join(format!(
+            "dm-cold-receipt-{}-{}",
+            std::process::id(),
+            TEMP_SEQUENCE.fetch_add(1, Ordering::Relaxed)
+        ));
+        fs::create_dir_all(&root).unwrap();
+        let manifest = root.join("world.dme");
+        let source = root.join("code.dm");
+        let builtins = root.join("builtins.dmb");
+        fs::write(&manifest, "#include \"code.dm\"\n").unwrap();
+        fs::write(&source, "/proc/value() return 7\n").unwrap();
+        fs::write(
+            &builtins,
+            include_bytes!("../../../fixtures/native_template.bin"),
+        )
+        .unwrap();
+        let key = SessionKey::new(&root, &manifest, "516.1687", vec![], "build").unwrap();
+        let request = || Request::BuildProject {
+            key: key.clone(),
+            builtins: builtins.clone(),
+            output_root: root.join("output"),
+        };
+        let cache = root.join("cache");
+        let mut daemon = Coordinator::new(&cache).unwrap();
+        let first = daemon.handle(request());
+        assert!(first.ok, "{first:?}");
+        // A retained generation must precede the cold receipt path. Give the
+        // otherwise valid receipt distinguishable statistics; the live worker
+        // must use its bounded in-memory result, without decoding that receipt.
+        let hot_receipt_key = receipt_key(
+            &key,
+            &format!("{:x}", Sha256::digest(fs::read(&builtins).unwrap())),
+            &root.join("output").canonicalize().unwrap(),
+        )
+        .unwrap();
+        let mut receipt = daemon
+            .blobs
+            .load_receipt(&hot_receipt_key)
+            .unwrap()
+            .unwrap();
+        let emitted = receipt.result.emitted_procs;
+        receipt.result.emitted_procs += 99;
+        daemon
+            .blobs
+            .store_receipt(&hot_receipt_key, &receipt)
+            .unwrap();
+        let hot = daemon.handle(request());
+        assert!(hot.ok, "{hot:?}");
+        let hot = hot.build.unwrap();
+        assert!(hot.cache_hit);
+        assert_eq!(hot.emitted_procs, emitted);
+        assert_eq!(hot.lowered_procs, 0);
+        assert_eq!(hot.reused_procs, emitted);
+        receipt.result.emitted_procs = emitted;
+        daemon
+            .blobs
+            .store_receipt(&hot_receipt_key, &receipt)
+            .unwrap();
+        drop(daemon);
+        let preprocess = dm_compiler::preprocess_cache_path(&manifest).with_extension("index.json");
+        fs::remove_file(&preprocess).unwrap();
+        let mut restarted = Coordinator::new(&cache).unwrap();
+        let reused = restarted.handle(request());
+        assert!(reused.ok && reused.build.unwrap().cache_hit);
+        assert!(
+            !preprocess.exists(),
+            "cold receipt must bypass preprocessing"
+        );
+        assert!(
+            restarted.build_inputs.is_empty(),
+            "receipt requires no expanded project resident memory"
+        );
+        let time = fs::metadata(&source).unwrap().modified().unwrap();
+        fs::write(&source, "/proc/value() return 8\n").unwrap();
+        fs::File::options()
+            .write(true)
+            .open(&source)
+            .unwrap()
+            .set_times(fs::FileTimes::new().set_modified(time))
+            .unwrap();
+        let changed = restarted.handle(request());
+        assert!(changed.ok && !changed.build.unwrap().cache_hit);
+        drop(restarted);
+        fs::remove_file(&preprocess).unwrap();
+        let mut restarted = Coordinator::new(&cache).unwrap();
+        let reused = restarted.handle(request());
+        assert!(reused.ok && reused.build.unwrap().cache_hit);
+        assert!(
+            !preprocess.exists(),
+            "latest edited receipt must be persisted"
+        );
+        let key = receipt_key(
+            &key,
+            &format!("{:x}", Sha256::digest(fs::read(&builtins).unwrap())),
+            &root.join("output").canonicalize().unwrap(),
+        )
+        .unwrap();
+        let receipt_directory = cache.join("build-receipts-v1").join(key.digest().unwrap());
+        for path in fs::read_dir(receipt_directory)
+            .unwrap()
+            .filter_map(Result::ok)
+            .map(|entry| entry.path())
+        {
+            let pointer: ArtifactPointer =
+                serde_json::from_slice(&fs::read(path).unwrap()).unwrap();
+            fs::write(
+                cache
+                    .join("build-receipt-v1")
+                    .join(&pointer.payload_digest[..2])
+                    .join(pointer.payload_digest),
+                b"damaged",
+            )
+            .unwrap();
+        }
+        let recovered = restarted.handle(request());
+        assert!(recovered.ok, "{recovered:?}");
+        assert!(
+            preprocess.exists(),
+            "corrupt receipt must fall back to discovery"
+        );
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
     fn build_snapshot_rejects_same_length_source_edit_and_new_resource_shadow() {
         use super::*;
         let root = std::env::temp_dir().join(format!(
@@ -1989,12 +2945,19 @@ mod tests {
             disk_path: root.join("assets/icon.dmi"),
         }];
         let maps = load_map_set_from_paths(&project, &[]).unwrap();
-        let snapshot = BuildInputSnapshot {
+        let mut snapshot = BuildInputSnapshot {
+            proof: Default::default(),
+            source_proof: Default::default(),
+            asset_proof: Default::default(),
             project_digest: String::new(),
             diagnostics: vec![],
             resources_digest: hex_digest(
                 &ResourceSet::fingerprint_requests(requests.clone()).unwrap(),
             ),
+            map_set: Arc::new(dm_compiler::maps::MapSet {
+                files: vec![],
+                fingerprint: [0; 32],
+            }),
             maps_digest: hex_digest(&maps.fingerprint),
             source_digests: [(
                 source.clone(),
@@ -2003,6 +2966,7 @@ mod tests {
             .into(),
             missing_dependencies: vec![],
             resource_requests: requests,
+            source_resource_literals: vec![],
             preprocessed: PreprocessedProject {
                 file_dirs: vec![PathBuf::from("assets")],
                 ..Default::default()
@@ -2010,6 +2974,40 @@ mod tests {
         };
         assert!(snapshot.still_current(&project));
         fs::write(&source, "/proc/a() return 8\n").unwrap();
+        assert!(!snapshot.still_current(&project));
+        let previous = snapshot.proof.borrow().clone().unwrap();
+        let mut refreshed = InputProof::capture([source.clone()]).unwrap();
+        refreshed.inherit_unchanged(&previous);
+        *snapshot.source_proof.borrow_mut() = Some(refreshed);
+        *snapshot.proof.borrow_mut() = None;
+        snapshot.source_digests.insert(
+            source.clone(),
+            Sha256::digest(fs::read(&source).unwrap()).into(),
+        );
+        let walks = RESOLUTION_WALKS.with(|count| count.get());
+        assert!(snapshot.still_current(&project));
+        if snapshot
+            .proof
+            .borrow()
+            .as_ref()
+            .unwrap()
+            .namespace_current()
+            == Some(true)
+        {
+            assert_eq!(
+                RESOLUTION_WALKS.with(|count| count.get()),
+                walks,
+                "refreshed body proof must skip resource resolution walks"
+            );
+        }
+        fs::write(root.join("icon.dmi"), b"shadow").unwrap();
+        assert!(!snapshot.still_current(&project));
+        fs::remove_file(root.join("icon.dmi")).unwrap();
+        fs::rename(
+            root.join("assets/icon.dmi"),
+            root.join("assets/renamed.dmi"),
+        )
+        .unwrap();
         assert!(!snapshot.still_current(&project));
         fs::write(&source, "/proc/a() return 7\n").unwrap();
         fs::write(root.join("icon.dmi"), b"shadow").unwrap();
@@ -2217,6 +3215,151 @@ mod tests {
     }
 
     #[test]
+    fn retained_body_edit_avoids_disk_decode_and_updates_growth_spans() {
+        let root = std::env::temp_dir().join(format!(
+            "dm-live-world-{}-{}",
+            std::process::id(),
+            TEMP_SEQUENCE.fetch_add(1, Ordering::Relaxed)
+        ));
+        fs::create_dir_all(&root).unwrap();
+        let manifest = root.join("world.dme");
+        let source = root.join("code.dm");
+        let schema = root.join("schema.dmb");
+        let cache = root.join("cache");
+        fs::write(&manifest, "#include \"code.dm\"\n").unwrap();
+        fs::write(
+            &source,
+            "/proc/a()\n    return 1\n/proc/b()\n    return 7\n",
+        )
+        .unwrap();
+        fs::write(
+            &schema,
+            include_bytes!("../../../fixtures/native_template.bin"),
+        )
+        .unwrap();
+        let request = || Request::BuildProject {
+            key: SessionKey::new(&root, &manifest, "516.1687", vec![], "build").unwrap(),
+            builtins: schema.clone(),
+            output_root: root.join("output"),
+        };
+        let mut daemon = Coordinator::new(&cache).unwrap();
+        let first = daemon.handle(request());
+        assert!(first.ok, "{first:?}");
+        let old_digest = daemon
+            .retained_world
+            .as_ref()
+            .unwrap()
+            .record
+            .dmb_digest
+            .clone();
+        // A disk decode cannot succeed, but the retained immutable world can.
+        fs::remove_file(
+            cache
+                .join("project-dmb-v1")
+                .join(&old_digest[..2])
+                .join(&old_digest),
+        )
+        .unwrap();
+        for body in ["    sleep(1)\n    return 9", "    return 3"] {
+            fs::write(
+                &source,
+                format!("/proc/a()\n{body}\n/proc/b()\n    return 7\n"),
+            )
+            .unwrap();
+            let response = daemon.handle(request());
+            assert!(response.ok, "{response:?}");
+            let result = response.build.unwrap();
+            assert_eq!((result.lowered_procs, result.reused_procs), (1, 1));
+            let world = daemon.retained_world.as_ref().unwrap();
+            assert_eq!(world.indexed.bytes(), world.dmb.to_bytes().unwrap());
+            let (_, spans) =
+                byond_dmb::dmb::Dmb::from_bytes_with_list_spans(world.indexed.bytes()).unwrap();
+            assert_eq!(world.indexed.spans(), spans);
+        }
+        assert_eq!(daemon.retained_world_hits, 2);
+        assert!(
+            world_resident_bytes(
+                &daemon.retained_world.as_ref().unwrap().dmb,
+                daemon.retained_world.as_ref().unwrap().indexed.bytes(),
+                0
+            ) < 320 * 1024 * 1024
+        );
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn body_generation_reuses_archive_without_resource_cas_blob() {
+        let root = std::env::temp_dir().join(format!(
+            "dm-live-archive-{}-{}",
+            std::process::id(),
+            TEMP_SEQUENCE.fetch_add(1, Ordering::Relaxed)
+        ));
+        fs::create_dir_all(&root).unwrap();
+        let manifest = root.join("world.dme");
+        let source = root.join("code.dm");
+        let schema = root.join("schema.dmb");
+        let cache = root.join("cache");
+        let output = root.join("output");
+        fs::write(&manifest, "#include \"code.dm\"\n").unwrap();
+        fs::write(
+            &source,
+            "/proc/a()\n    return 1\n/proc/b()\n    return 7\n",
+        )
+        .unwrap();
+        fs::write(
+            &schema,
+            include_bytes!("../../../fixtures/native_template.bin"),
+        )
+        .unwrap();
+        let request = || Request::BuildProject {
+            key: SessionKey::new(&root, &manifest, "516.1687", vec![], "build").unwrap(),
+            builtins: schema.clone(),
+            output_root: output.clone(),
+        };
+        let mut daemon = Coordinator::new(&cache).unwrap();
+        let first = daemon.handle(request());
+        assert!(first.ok, "{first:?}");
+        let original = current_generation(&output).unwrap().unwrap();
+        let old_archive = fs::read(&original.rsc).unwrap();
+        let digest = daemon
+            .retained_world
+            .as_ref()
+            .unwrap()
+            .record
+            .rsc_digest
+            .clone();
+        let blob = cache
+            .join("project-rsc-v1")
+            .join(&digest[..2])
+            .join(&digest);
+        fs::remove_file(&blob).unwrap();
+        fs::write(
+            &source,
+            "/proc/a()\n    sleep(1)\n    return 9\n/proc/b()\n    return 7\n",
+        )
+        .unwrap();
+        let response = daemon.handle(request());
+        assert!(response.ok, "{response:?}");
+        let result = response.build.unwrap();
+        assert_eq!((result.lowered_procs, result.reused_procs), (1, 1));
+        assert!(
+            !blob.exists(),
+            "body generation must not reconstruct the RSC CAS blob"
+        );
+        let generation = current_generation(&output).unwrap().unwrap();
+        assert_ne!(original.id, generation.id);
+        assert_eq!(fs::read(&generation.rsc).unwrap(), old_archive);
+        assert!(verified_archive(&output, &generation).is_ok());
+        let world = daemon.retained_world.as_ref().unwrap();
+        assert_eq!(
+            fs::read(&generation.dmb).unwrap(),
+            world.dmb.to_bytes().unwrap()
+        );
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
     fn cold_body_edit_uses_linked_checkpoint_and_preserves_proc_ids() {
         use super::*;
         let root = std::env::temp_dir().join(format!(
@@ -2268,7 +3411,10 @@ mod tests {
         let after = byond_dmb::dmb::Dmb::from_bytes(&fs::read(&edited.dmb).unwrap()).unwrap();
         assert_eq!(after.procs[b], before.procs[b]);
         assert_eq!(after.procs[a].strings, before.procs[a].strings);
-        assert!(after.procs[a].code_locals_args[0] as usize >= before.lists.len());
+        assert_eq!(
+            after.procs[a].code_locals_args[0], before.procs[a].code_locals_args[0],
+            "unshared code retains its stable list ID across growth"
+        );
         assert_eq!(
             after.procs[a].code_locals_args[2],
             before.procs[a].code_locals_args[2]
@@ -3253,7 +4399,8 @@ mod tests {
             .preprocessed
             .text
             .contains("return 7"));
-        let preprocess_cache = dm_compiler::preprocess_cache_path(&manifest);
+        let preprocess_cache =
+            dm_compiler::preprocess_cache_path(&manifest).with_extension("index.json");
         fs::remove_file(&preprocess_cache).unwrap();
         let repeated = daemon.handle(request());
         assert!(repeated.ok);
@@ -3273,6 +4420,13 @@ mod tests {
             fs::read(repaired.build.unwrap().dmb).unwrap(),
             published_bytes
         );
+        let namespace_reusable = daemon.build_inputs[&key]
+            .snapshot
+            .asset_proof
+            .borrow()
+            .as_ref()
+            .is_some_and(|proof| proof.namespace_current() == Some(true));
+        let resolutions = RESOURCE_RESOLUTIONS.with(|count| count.get());
         let source_time = fs::metadata(&source).unwrap().modified().unwrap();
         fs::write(
             &source,
@@ -3287,6 +4441,29 @@ mod tests {
             .unwrap();
         let source_changed = daemon.handle(request());
         assert!(source_changed.ok && !source_changed.build.unwrap().cache_hit);
+        if namespace_reusable {
+            assert_eq!(
+                RESOURCE_RESOLUTIONS.with(|count| count.get()),
+                resolutions,
+                "body-only edit must reuse verified resource inventory"
+            );
+        }
+        fs::write(root.join("assets/new.txt"), b"new").unwrap();
+        fs::write(&source, "/var/asset = 'new.txt'\n/proc/value() return 8\n").unwrap();
+        let inventory_changed = daemon.handle(request());
+        assert!(inventory_changed.ok, "{inventory_changed:?}");
+        assert!(daemon.build_inputs[&key]
+            .snapshot
+            .resource_requests
+            .iter()
+            .any(|request| request.archive_name == "new.txt"));
+        // Restore the original resource before testing its data and shadow changes.
+        fs::write(
+            &source,
+            "/var/asset = 'asset.txt'\n/proc/value() return 8\n",
+        )
+        .unwrap();
+        assert!(daemon.handle(request()).ok);
         let asset_time = fs::metadata(&asset).unwrap().modified().unwrap();
         fs::write(&asset, b"other").unwrap();
         fs::File::options()

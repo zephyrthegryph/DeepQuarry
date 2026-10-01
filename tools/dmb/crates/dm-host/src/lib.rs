@@ -3,6 +3,9 @@
 
 use std::io;
 
+pub mod file_stamp;
+pub mod journal;
+
 /// Windows' main-thread stack is too small for normal compiler expression trees.
 /// Use a fixed worker reservation while the process memory budget remains enforced.
 pub fn run_on_compiler_thread<T: Send + 'static>(

@@ -31,6 +31,31 @@ opt-level = 2
 [profile.dev.package.dm-compiler]
 opt-level = 2
 
+# Input proof checks and artifact coordination run on every edit and no-op.
+[profile.dev.package.dm-compiled]
+opt-level = 2
+
+[profile.dev.package.dm-output]
+opt-level = 2
+
+# Binary decoding, table linking and serialization also run on every body edit.
+[profile.dev.package.byond-dmb]
+opt-level = 2
+
+[profile.dev.package.dm-resources]
+opt-level = 2
+
+[profile.dev.package.dm-semantics]
+opt-level = 2
+
+[profile.dev.package.dm-ir]
+opt-level = 2
+
+# Optimizing the large fixture test harness costs gigabytes and minutes in LLVM.
+# Production compiler binaries keep the optimized binary-format dependency.
+[profile.test.package.byond-dmb]
+opt-level = 0
+
 [dependencies]
 md5 = "0.7"
 serde = { version = "1", features = ["derive"] }

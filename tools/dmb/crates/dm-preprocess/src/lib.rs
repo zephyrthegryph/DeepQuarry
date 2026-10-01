@@ -51,6 +51,8 @@ pub struct Unit {
 pub struct PreprocessedProject {
     pub text: String,
     pub units: Vec<Unit>,
+    /// Exact expanded content identities, in the same order as `units`.
+    pub unit_digests: Vec<[u8; 32]>,
     pub origins: Vec<Origin>,
     pub dependencies: BTreeSet<PathBuf>,
     /// Active DMM includes in source order, after conditional evaluation.
@@ -79,6 +81,19 @@ pub struct Macro {
 
 pub trait SourceProvider {
     fn read(&self, path: &Path) -> Result<String, String>;
+
+    /// Identity of the exact text returned by the preceding read. Snapshot
+    /// providers can reuse their recorded digest; ordinary providers hash bytes.
+    fn fingerprint_read(&self, _path: &Path, source: &str) -> [u8; 32] {
+        Sha256::digest(source.as_bytes()).into()
+    }
+
+    /// Exact source-content identity. Providers retaining a verified input snapshot
+    /// can return its saved digest without cloning and hashing the entire source.
+    fn fingerprint(&self, path: &Path) -> Result<[u8; 32], String> {
+        self.read(path)
+            .map(|source| Sha256::digest(source.as_bytes()).into())
+    }
 }
 
 /// DM sources may contain legacy Windows-1252 bytes alongside UTF-8 text.
@@ -130,15 +145,17 @@ impl SourceProvider for FileSystem {
     }
 }
 
-/// Reusable expansion results for include files without nested includes. A
-/// cached expansion is keyed by a cryptographic fingerprint of the incoming
-/// macro state and the exact source contents. Edits in earlier includes only
-/// invalidate later entries when they change the macro environment. Each
-/// entry stores the definitions it changes, rather than two full macro maps.
+/// Bounded reusable file and include-subtree expansions. Exact source identities
+/// and incoming macro dependencies gate replay. Leaf units track only relevant
+/// transitive macro names; nested units conservatively checkpoint the whole
+/// environment and their exact source closure. Entries retain ordered source
+/// origins and macro/FILE_DIR side effects rather than copying full macro maps.
 #[derive(Default)]
 pub struct PreprocessCache {
     entries: BTreeMap<PathBuf, Vec<CachedUnit>>,
     resident_bytes: usize,
+    disk: Option<(PathBuf, BTreeMap<PathBuf, Vec<String>>)>,
+    dirty: BTreeSet<PathBuf>,
     pub hits: usize,
     pub misses: usize,
 }
@@ -147,19 +164,26 @@ struct CachedUnit {
     source_digest: [u8; 32],
     source_len: usize,
     input_digest: [u8; 32],
+    macro_dependencies: Option<Vec<String>>,
+    dependencies: BTreeMap<PathBuf, [u8; 32]>,
+    map_includes: Vec<PathBuf>,
+    skin_includes: Vec<PathBuf>,
+    manifest_lines: Vec<(String, PathBuf, usize)>,
     output_text: String,
     origins: Vec<DiskOrigin>,
     units: Vec<Unit>,
+    unit_digests: Vec<[u8; 32]>,
     diagnostics: Vec<Diagnostic>,
     macro_changes: BTreeMap<String, Option<Macro>>,
     file_dir_changes: Vec<FileDirChange>,
 }
 
-const CACHE_FORMAT_VERSION: u32 = 8;
+const CACHE_FORMAT_VERSION: u32 = 9;
 const MAX_CACHED_LEAF_BYTES: usize = 512 * 1024;
 const MAX_CACHED_ORIGINS: usize = 8192;
 const MAX_CACHED_PATHS: usize = 8192;
-const MAX_CACHE_RESIDENT_BYTES: usize = 64 * 1024 * 1024;
+// Keep the station's current include closure resident across ordinary edits.
+const MAX_CACHE_RESIDENT_BYTES: usize = 160 * 1024 * 1024;
 const MAX_CACHE_FILE_BYTES: u64 = 128 * 1024 * 1024;
 
 fn macro_hash(name: &str, definition: &Macro) -> [u8; 32] {
@@ -214,9 +238,15 @@ struct DiskEntry {
     source_digest: [u8; 32],
     source_len: usize,
     input_digest: [u8; 32],
+    macro_dependencies: Option<Vec<String>>,
+    dependencies: BTreeMap<PathBuf, [u8; 32]>,
+    map_includes: Vec<PathBuf>,
+    skin_includes: Vec<PathBuf>,
+    manifest_lines: Vec<(String, PathBuf, usize)>,
     output_text: String,
     origins: Vec<DiskOrigin>,
     units: Vec<DiskUnit>,
+    unit_digests: Vec<[u8; 32]>,
     diagnostics: Vec<Diagnostic>,
     macro_changes: BTreeMap<String, Option<Macro>>,
     file_dir_changes: Vec<FileDirChange>,
@@ -226,7 +256,7 @@ struct DiskEntry {
 /// serializing it for every expanded line made the disk cache much larger
 /// than its bounded resident size. The current path is restored on replay.
 #[derive(Clone, Serialize, Deserialize)]
-struct DiskOrigin(usize, usize);
+struct DiskOrigin(usize, usize, Option<PathBuf>);
 
 #[derive(Serialize, Deserialize)]
 struct DiskUnit {
@@ -242,8 +272,14 @@ impl From<&CachedUnit> for DiskEntry {
             source_digest: entry.source_digest,
             source_len: entry.source_len,
             input_digest: entry.input_digest,
+            macro_dependencies: entry.macro_dependencies.clone(),
+            dependencies: entry.dependencies.clone(),
+            map_includes: entry.map_includes.clone(),
+            skin_includes: entry.skin_includes.clone(),
+            manifest_lines: entry.manifest_lines.clone(),
             output_text: entry.output_text.clone(),
             origins: entry.origins.clone(),
+            unit_digests: entry.unit_digests.clone(),
             units: entry
                 .units
                 .iter()
@@ -267,8 +303,14 @@ impl From<DiskEntry> for CachedUnit {
             source_digest: entry.source_digest,
             source_len: entry.source_len,
             input_digest: entry.input_digest,
+            macro_dependencies: entry.macro_dependencies,
+            dependencies: entry.dependencies,
+            map_includes: entry.map_includes,
+            skin_includes: entry.skin_includes,
+            manifest_lines: entry.manifest_lines,
             output_text: entry.output_text,
             origins: entry.origins,
+            unit_digests: entry.unit_digests,
             units: entry
                 .units
                 .into_iter()
@@ -286,6 +328,21 @@ impl From<DiskEntry> for CachedUnit {
 }
 
 impl CachedUnit {
+    fn valid_digests(&self) -> bool {
+        self.units.len() == self.unit_digests.len()
+            && self
+                .units
+                .iter()
+                .zip(&self.unit_digests)
+                .all(|(unit, digest)| {
+                    self.output_text
+                        .get(unit.output_span.start..unit.output_span.end)
+                        .is_some_and(|text| {
+                            <[u8; 32]>::from(Sha256::digest(text.as_bytes())) == *digest
+                        })
+                })
+    }
+
     fn resident_bytes(&self) -> usize {
         let paths = self
             .units
@@ -311,7 +368,29 @@ impl CachedUnit {
                         + 128
                 })
                 .sum::<usize>();
-        self.output_text.len()
+        self.dependencies
+            .iter()
+            .map(|(path, _)| path.as_os_str().len() + 96)
+            .sum::<usize>()
+            + self
+                .map_includes
+                .iter()
+                .chain(&self.skin_includes)
+                .map(|path| path.as_os_str().len() + 32)
+                .sum::<usize>()
+            + self
+                .origins
+                .iter()
+                .filter_map(|origin| origin.2.as_ref())
+                .map(|path| path.as_os_str().len())
+                .sum::<usize>()
+            + self.macro_dependencies.as_ref().map_or(0, |names| {
+                names
+                    .iter()
+                    .map(|name| name.len() + std::mem::size_of::<String>())
+                    .sum::<usize>()
+            })
+            + self.output_text.len()
             + paths
             + changes
             + self
@@ -325,7 +404,7 @@ impl CachedUnit {
                 })
                 .sum::<usize>()
             + self.origins.len() * std::mem::size_of::<DiskOrigin>()
-            + self.units.len() * std::mem::size_of::<Unit>()
+            + self.units.len() * (std::mem::size_of::<Unit>() + 32)
             + self.diagnostics.len() * std::mem::size_of::<Diagnostic>()
             + self
                 .diagnostics
@@ -336,11 +415,202 @@ impl CachedUnit {
     }
 }
 
+#[derive(Serialize, Deserialize)]
+struct CacheIndex {
+    version: u32,
+    compiler_fingerprint: String,
+    entries: BTreeMap<PathBuf, Vec<String>>,
+}
+
+fn write_atomic(path: &Path, bytes: &[u8], durable: bool) -> Result<(), String> {
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent).map_err(|error| error.to_string())?;
+    }
+    let sequence = CACHE_TEMP_SEQUENCE.fetch_add(1, Ordering::Relaxed);
+    let temp = path.with_extension(format!("tmp-{}-{sequence}", std::process::id()));
+    let result = (|| {
+        let mut file = fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&temp)?;
+        file.write_all(bytes)?;
+        if durable {
+            file.sync_all()?;
+        }
+        drop(file);
+        atomic_replace_mode(&temp, path, durable)
+    })();
+    if result.is_err() {
+        let _ = fs::remove_file(&temp);
+    }
+    result.map_err(|error: std::io::Error| error.to_string())
+}
+
 impl PreprocessCache {
+    /// Load a small index, then decode expansion chunks only when their files
+    /// are visited. Chunks are immutable SHA-256 addressed and shared by worktrees.
+    pub fn load_incremental(path: &Path) -> Self {
+        let index_path = path.with_extension("index.json");
+        let Ok(metadata) = fs::metadata(&index_path) else {
+            return Self::load(path);
+        };
+        if metadata.len() > 4 * 1024 * 1024 {
+            return Self::default();
+        }
+        let Ok(bytes) = fs::read(&index_path) else {
+            return Self::default();
+        };
+        let Ok(index) = serde_json::from_slice::<CacheIndex>(&bytes) else {
+            return Self::default();
+        };
+        if index.version != CACHE_FORMAT_VERSION
+            || index.compiler_fingerprint != cache_compiler_fingerprint()
+            || index.entries.len() > MAX_CACHED_PATHS
+        {
+            return Self::default();
+        }
+        if index.entries.values().any(|keys| {
+            keys.len() > 2
+                || keys
+                    .iter()
+                    .any(|key| key.len() != 64 || !key.bytes().all(|byte| byte.is_ascii_hexdigit()))
+        }) {
+            return Self::default();
+        }
+        Self {
+            disk: Some((path.with_extension("parts"), index.entries)),
+            ..Default::default()
+        }
+    }
+
+    fn load_unit(&mut self, path: &Path) {
+        if self.entries.contains_key(path) {
+            return;
+        }
+        let Some((directory, index)) = &self.disk else {
+            return;
+        };
+        let Some(keys) = index.get(path) else {
+            return;
+        };
+        let mut units = Vec::new();
+        for key in keys {
+            let chunk = directory.join(key);
+            if !fs::metadata(&chunk).is_ok_and(|metadata| metadata.len() <= 8 * 1024 * 1024) {
+                continue;
+            }
+            let Ok(bytes) = fs::read(&chunk) else {
+                continue;
+            };
+            if bytes.len() > 8 * 1024 * 1024 || format!("{:x}", Sha256::digest(&bytes)) != *key {
+                continue;
+            }
+            if let Ok(entry) = serde_json::from_slice::<DiskEntry>(&bytes) {
+                let unit = CachedUnit::from(entry);
+                if unit.output_text.len() <= MAX_CACHED_LEAF_BYTES
+                    && unit.origins.len() <= MAX_CACHED_ORIGINS
+                    && unit.units.len() <= MAX_CACHED_ORIGINS
+                    && unit.dependencies.len() <= MAX_CACHED_PATHS
+                    && unit.valid_digests()
+                {
+                    units.push(unit);
+                }
+            }
+        }
+        if !units.is_empty() {
+            self.resident_bytes += path.as_os_str().len()
+                + units.iter().map(CachedUnit::resident_bytes).sum::<usize>();
+            self.entries.insert(path.to_path_buf(), units);
+            self.enforce_budget(MAX_CACHE_RESIDENT_BYTES);
+        }
+    }
+
+    /// Publish only changed file expansion chunks, followed by an atomic small
+    /// index. A concurrent worktree can replace the index with its own valid
+    /// version; source/environment fingerprints still gate every replay.
+    pub fn save_incremental(&mut self, path: &Path) -> Result<(), String> {
+        let directory = path.with_extension("parts");
+        fs::create_dir_all(&directory).map_err(|error| error.to_string())?;
+        let mut index = self
+            .disk
+            .as_ref()
+            .map(|(_, index)| index.clone())
+            .unwrap_or_default();
+        let paths: Vec<_> = if self.disk.is_some() {
+            self.dirty.iter().cloned().collect()
+        } else {
+            self.entries.keys().cloned().collect()
+        };
+        // Two bounded workers overlap immutable chunk encoding and filesystem
+        // publication. Each retains only one serialized expansion at a time;
+        // the deterministic index is committed after both workers succeed.
+        let entries = &self.entries;
+        let publish = |files: &[PathBuf]| -> Result<BTreeMap<PathBuf, Vec<String>>, String> {
+            let mut published = BTreeMap::new();
+            for file in files {
+                let Some(units) = entries.get(file) else {
+                    continue;
+                };
+                let mut keys = Vec::new();
+                for entry in units {
+                    let bytes = serde_json::to_vec(&DiskEntry::from(entry))
+                        .map_err(|error| error.to_string())?;
+                    if bytes.len() > 8 * 1024 * 1024 {
+                        continue;
+                    }
+                    let key = format!("{:x}", Sha256::digest(&bytes));
+                    let chunk = directory.join(&key);
+                    if !fs::read(&chunk).is_ok_and(|old| old == bytes) {
+                        write_atomic(&chunk, &bytes, false)?;
+                    }
+                    keys.push(key);
+                }
+                published.insert(file.clone(), keys);
+            }
+            Ok(published)
+        };
+        if paths.len() < 32 {
+            index.extend(publish(&paths)?);
+        } else {
+            let (first, second) = paths.split_at(paths.len() / 2);
+            let published = std::thread::scope(|scope| {
+                let worker = scope.spawn(|| publish(first));
+                let second = publish(second);
+                let first = worker
+                    .join()
+                    .map_err(|_| "preprocess chunk publisher panicked".to_owned())?;
+                Ok::<_, String>((first?, second?))
+            })?;
+            index.extend(published.0);
+            index.extend(published.1);
+        }
+        while index.len() > MAX_CACHED_PATHS {
+            index.pop_first();
+        }
+        let bytes = serde_json::to_vec(&CacheIndex {
+            version: CACHE_FORMAT_VERSION,
+            compiler_fingerprint: cache_compiler_fingerprint(),
+            entries: index.clone(),
+        })
+        .map_err(|error| error.to_string())?;
+        write_atomic(&path.with_extension("index.json"), &bytes, true)?;
+        self.disk = Some((directory, index));
+        self.dirty.clear();
+        Ok(())
+    }
+
     pub fn resident_bytes(&self) -> usize {
         self.resident_bytes
     }
     fn enforce_budget(&mut self, limit: usize) {
+        // Remove historical variants before evicting another current file.
+        if self.resident_bytes > limit {
+            for entries in self.entries.values_mut() {
+                while entries.len() > 1 && self.resident_bytes > limit {
+                    self.resident_bytes -= entries.remove(0).resident_bytes();
+                }
+            }
+        }
         while self.resident_bytes > limit {
             let Some(path) = self.entries.keys().next().cloned() else {
                 break;
@@ -399,11 +669,18 @@ impl PreprocessCache {
                 .map(|(path, entries)| {
                     (
                         path,
-                        entries.into_iter().take(2).map(CachedUnit::from).collect(),
+                        entries
+                            .into_iter()
+                            .take(2)
+                            .map(CachedUnit::from)
+                            .filter(CachedUnit::valid_digests)
+                            .collect(),
                     )
                 })
                 .collect(),
             resident_bytes: 0,
+            disk: None,
+            dirty: BTreeSet::new(),
             hits: 0,
             misses: 0,
         };
@@ -461,14 +738,20 @@ impl PreprocessCache {
 
     pub fn clear(&mut self) {
         self.entries.clear();
+        self.disk = None;
+        self.dirty.clear();
         self.resident_bytes = 0;
         self.hits = 0;
         self.misses = 0;
     }
 }
 
-#[cfg(windows)]
 fn atomic_replace(source: &Path, destination: &Path) -> std::io::Result<()> {
+    atomic_replace_mode(source, destination, true)
+}
+
+#[cfg(windows)]
+fn atomic_replace_mode(source: &Path, destination: &Path, durable: bool) -> std::io::Result<()> {
     use std::os::windows::ffi::OsStrExt;
     #[link(name = "Kernel32")]
     unsafe extern "system" {
@@ -482,7 +765,13 @@ fn atomic_replace(source: &Path, destination: &Path) -> std::io::Result<()> {
         .collect();
     // Same-directory move with replacement leaves readers seeing either the
     // previous complete file or the new complete file.
-    let ok = unsafe { MoveFileExW(source.as_ptr(), destination.as_ptr(), 0x1 | 0x8) };
+    let ok = unsafe {
+        MoveFileExW(
+            source.as_ptr(),
+            destination.as_ptr(),
+            0x1 | if durable { 0x8 } else { 0 },
+        )
+    };
     if ok == 0 {
         Err(std::io::Error::last_os_error())
     } else {
@@ -491,7 +780,7 @@ fn atomic_replace(source: &Path, destination: &Path) -> std::io::Result<()> {
 }
 
 #[cfg(not(windows))]
-fn atomic_replace(source: &Path, destination: &Path) -> std::io::Result<()> {
+fn atomic_replace_mode(source: &Path, destination: &Path, _durable: bool) -> std::io::Result<()> {
     fs::rename(source, destination)
 }
 
@@ -527,10 +816,13 @@ fn preprocess_project_inner<P: SourceProvider>(
         stack: Vec::new(),
         output_line: 1,
         macro_digest: [0; 32],
+        macro_hashes: BTreeMap::new(),
         file_dir_changes: Vec::new(),
         file_dir_definitions: Vec::new(),
         project_dir: normalize(project.parent().unwrap_or(Path::new("")).to_path_buf()),
         manifest_lines: Vec::new(),
+        reads: Vec::new(),
+        macro_changes: Vec::new(),
     };
     for (name, replacement) in [
         ("EXCEPTION", "new /exception(message, __FILE__, __LINE__)"),
@@ -630,10 +922,13 @@ struct Context<'a, P: SourceProvider> {
     stack: Vec<PathBuf>,
     output_line: usize,
     macro_digest: [u8; 32],
+    macro_hashes: BTreeMap<String, [u8; 32]>,
     file_dir_changes: Vec<FileDirChange>,
     file_dir_definitions: Vec<Macro>,
     project_dir: PathBuf,
     manifest_lines: Vec<(String, std::sync::Arc<PathBuf>, usize)>,
+    reads: Vec<(PathBuf, [u8; 32])>,
+    macro_changes: Vec<(String, Option<Macro>)>,
 }
 
 impl<P: SourceProvider> Context<'_, P> {
@@ -652,11 +947,15 @@ impl<P: SourceProvider> Context<'_, P> {
     }
 
     fn set_macro(&mut self, name: String, definition: Option<Macro>) {
-        if let Some(previous) = self.output.final_macros.remove(&name) {
-            xor_digest(&mut self.macro_digest, macro_hash(&name, &previous));
+        self.macro_changes.push((name.clone(), definition.clone()));
+        self.output.final_macros.remove(&name);
+        if let Some(previous) = self.macro_hashes.remove(&name) {
+            xor_digest(&mut self.macro_digest, previous);
         }
         if let Some(definition) = definition {
-            xor_digest(&mut self.macro_digest, macro_hash(&name, &definition));
+            let hash = macro_hash(&name, &definition);
+            xor_digest(&mut self.macro_digest, hash);
+            self.macro_hashes.insert(name.clone(), hash);
             self.output.final_macros.insert(name, definition);
         }
     }
@@ -711,32 +1010,36 @@ impl<P: SourceProvider> Context<'_, P> {
                 return;
             }
         };
+        let exact_source_digest = self.provider.fingerprint_read(&path, &source);
+        self.reads.push((path.clone(), exact_source_digest));
         let cache_key = path
             .strip_prefix(&self.project_dir)
             .unwrap_or(&path)
             .to_path_buf();
-        // Only leaf includes are cached. A parent with nested includes depends
-        // on multiple independently changing files and is replayed normally.
+        if let Some(cache) = self.cache.as_deref_mut() {
+            cache.load_unit(&cache_key);
+        }
+        let nested = has_include_directive(&source);
+        // Nested units carry exact transitive source fingerprints and all side effects.
         let cacheable = source.len() <= MAX_CACHED_LEAF_BYTES
-            && !has_include_directive(&source)
             && !path
                 .extension()
                 .is_some_and(|e| e.eq_ignore_ascii_case("dme"))
             && self.cache.as_ref().is_some_and(|cache| {
                 cache.entries.contains_key(&cache_key) || cache.entries.len() < MAX_CACHED_PATHS
             });
-        let mut input_hasher = Sha256::new();
-        input_hasher.update(self.macro_digest);
+        // FILE_DIR affects resource resolution and remains an ordered checkpoint.
+        let mut directory_hasher = Sha256::new();
         for (directory, definition) in self.output.file_dirs.iter().zip(&self.file_dir_definitions)
         {
             let name = directory.to_string_lossy();
-            input_hasher.update((name.len() as u64).to_le_bytes());
-            input_hasher.update(name.as_bytes());
-            input_hasher.update(macro_hash("FILE_DIR", definition));
+            directory_hasher.update((name.len() as u64).to_le_bytes());
+            directory_hasher.update(name.as_bytes());
+            directory_hasher.update(macro_hash("FILE_DIR", definition));
         }
-        let input_digest: [u8; 32] = input_hasher.finalize().into();
+        let directory_digest: [u8; 32] = directory_hasher.finalize().into();
         let source_digest: [u8; 32] = if cacheable {
-            Sha256::digest(source.as_bytes()).into()
+            exact_source_digest
         } else {
             [0; 32]
         };
@@ -746,7 +1049,21 @@ impl<P: SourceProvider> Context<'_, P> {
                     entries.iter().find(|entry| {
                         entry.source_len == source.len()
                             && entry.source_digest == source_digest
-                            && entry.input_digest == input_digest
+                            && entry.dependencies.iter().all(|(relative, digest)| {
+                                let dependency = normalize(self.project_dir.join(relative));
+                                !self.stack.contains(&dependency)
+                                    && self
+                                        .provider
+                                        .fingerprint(&dependency)
+                                        .is_ok_and(|current| current == *digest)
+                            })
+                            && entry.input_digest
+                                == dependency_digest(
+                                    entry.macro_dependencies.as_deref(),
+                                    &self.macro_hashes,
+                                    self.macro_digest,
+                                    directory_digest,
+                                )
                     })
                 }) {
                     let macro_changes = entry.macro_changes.clone();
@@ -754,12 +1071,41 @@ impl<P: SourceProvider> Context<'_, P> {
                     let byte_start = self.output.text.len();
                     let line_start = self.output_line;
                     let origin_path = Arc::new(path.clone());
+                    for (relative, digest) in &entry.dependencies {
+                        let dependency = normalize(self.project_dir.join(relative));
+                        self.output.dependencies.insert(dependency.clone());
+                        self.reads.push((dependency, *digest));
+                    }
+                    self.output.map_includes.extend(
+                        entry
+                            .map_includes
+                            .iter()
+                            .map(|path| self.project_dir.join(path)),
+                    );
+                    self.output.skin_includes.extend(
+                        entry
+                            .skin_includes
+                            .iter()
+                            .map(|path| self.project_dir.join(path)),
+                    );
+                    self.manifest_lines.extend(entry.manifest_lines.iter().map(
+                        |(text, relative, line)| {
+                            (
+                                text.clone(),
+                                Arc::new(self.project_dir.join(relative)),
+                                *line,
+                            )
+                        },
+                    ));
                     self.output.text.push_str(&entry.output_text);
                     self.output
                         .origins
                         .extend(entry.origins.iter().map(|origin| Origin {
                             output_line: origin.0 + line_start - 1,
-                            path: origin_path.clone(),
+                            path: origin.2.as_ref().map_or_else(
+                                || origin_path.clone(),
+                                |relative| Arc::new(self.project_dir.join(relative)),
+                            ),
                             source_line: origin.1,
                         }));
                     self.output
@@ -767,13 +1113,16 @@ impl<P: SourceProvider> Context<'_, P> {
                         .extend(entry.units.iter().cloned().map(|mut unit| {
                             unit.output_span.start += byte_start;
                             unit.output_span.end += byte_start;
-                            unit.path = path.clone();
+                            unit.path = self.project_dir.join(&unit.path);
                             unit
                         }));
                     self.output
+                        .unit_digests
+                        .extend_from_slice(&entry.unit_digests);
+                    self.output
                         .diagnostics
                         .extend(entry.diagnostics.iter().cloned().map(|mut diagnostic| {
-                            diagnostic.path = path.clone();
+                            diagnostic.path = self.project_dir.join(&diagnostic.path);
                             diagnostic
                         }));
                     self.output_line += entry.origins.len();
@@ -789,7 +1138,20 @@ impl<P: SourceProvider> Context<'_, P> {
                 cache.misses += 1;
             }
         }
-        let mut macro_changes = BTreeMap::new();
+        let macro_dependencies = (cacheable && !nested)
+            .then(|| macro_dependencies(&source, &self.output.final_macros))
+            .flatten();
+        let input_digest = dependency_digest(
+            macro_dependencies.as_deref(),
+            &self.macro_hashes,
+            self.macro_digest,
+            directory_digest,
+        );
+        let macro_change_start = self.macro_changes.len();
+        let read_start = self.reads.len();
+        let map_start = self.output.map_includes.len();
+        let skin_start = self.output.skin_includes.len();
+        let manifest_start = self.manifest_lines.len();
         let origin_start = self.output.origins.len();
         let unit_start_index = self.output.units.len();
         let diagnostic_start = self.output.diagnostics.len();
@@ -956,7 +1318,13 @@ impl<P: SourceProvider> Context<'_, P> {
                             {
                                 self.output.dependencies.insert(child.clone());
                                 match self.provider.read(&child) {
-                                    Ok(_) => self.output.skin_includes.push(child),
+                                    Ok(text) => {
+                                        self.reads.push((
+                                            child.clone(),
+                                            self.provider.fingerprint_read(&child, &text),
+                                        ));
+                                        self.output.skin_includes.push(child);
+                                    }
                                     Err(error) => {
                                         self.error_as(&child, 1, DiagnosticKind::Io, error)
                                     }
@@ -983,9 +1351,6 @@ impl<P: SourceProvider> Context<'_, P> {
                                     ));
                                 }
                             }
-                            if cacheable {
-                                macro_changes.insert(name.clone(), Some(def.clone()));
-                            }
                             self.set_macro(name, Some(def));
                         }
                         Err(e) => self.error_as(&path, source_line, DiagnosticKind::Macro, e),
@@ -1000,9 +1365,6 @@ impl<P: SourceProvider> Context<'_, P> {
                         } else {
                             None
                         };
-                        if cacheable {
-                            macro_changes.insert(name.clone(), restored.clone());
-                        }
                         self.set_macro(name, restored);
                     }
                     "error" => self.error_as(&path, source_line, DiagnosticKind::UserError, rest),
@@ -1069,6 +1431,9 @@ impl<P: SourceProvider> Context<'_, P> {
             );
         }
         let unit_end = self.output.text.len();
+        self.output
+            .unit_digests
+            .push(Sha256::digest(self.output.text[unit_start..unit_end].as_bytes()).into());
         self.output.units.push(Unit {
             path: path.clone(),
             output_span: Span::new(unit_start, unit_end),
@@ -1076,8 +1441,11 @@ impl<P: SourceProvider> Context<'_, P> {
         });
         self.stack.pop();
         if let Some(cache) = self.cache.as_deref_mut().filter(|_| cacheable) {
-            if unit_end - unit_start > MAX_CACHED_LEAF_BYTES
+            if (nested && self.output.diagnostics.len() != diagnostic_start)
+                || unit_end - unit_start > MAX_CACHED_LEAF_BYTES
                 || self.output.origins.len() - origin_start > MAX_CACHED_ORIGINS
+                || self.output.units.len() - unit_start_index > MAX_CACHED_ORIGINS
+                || self.reads.len() - read_start > MAX_CACHED_PATHS
             {
                 return;
             }
@@ -1085,11 +1453,62 @@ impl<P: SourceProvider> Context<'_, P> {
                 source_digest,
                 source_len: source.len(),
                 input_digest,
+                macro_dependencies,
+                dependencies: self.reads[read_start..]
+                    .iter()
+                    .map(|(path, digest)| {
+                        (
+                            path.strip_prefix(&self.project_dir)
+                                .unwrap_or(path)
+                                .to_path_buf(),
+                            *digest,
+                        )
+                    })
+                    .collect(),
+                map_includes: self.output.map_includes[map_start..]
+                    .iter()
+                    .map(|path| {
+                        path.strip_prefix(&self.project_dir)
+                            .unwrap_or(path)
+                            .to_path_buf()
+                    })
+                    .collect(),
+                skin_includes: self.output.skin_includes[skin_start..]
+                    .iter()
+                    .map(|path| {
+                        path.strip_prefix(&self.project_dir)
+                            .unwrap_or(path)
+                            .to_path_buf()
+                    })
+                    .collect(),
+                manifest_lines: self.manifest_lines[manifest_start..]
+                    .iter()
+                    .map(|(text, path, line)| {
+                        (
+                            text.clone(),
+                            path.strip_prefix(&self.project_dir)
+                                .unwrap_or(path.as_ref())
+                                .to_path_buf(),
+                            *line,
+                        )
+                    })
+                    .collect(),
                 output_text: self.output.text[unit_start..unit_end].to_owned(),
+                unit_digests: self.output.unit_digests[unit_start_index..].to_vec(),
                 origins: self.output.origins[origin_start..]
                     .iter()
                     .map(|origin| {
-                        DiskOrigin(origin.output_line - line_start + 1, origin.source_line)
+                        DiskOrigin(
+                            origin.output_line - line_start + 1,
+                            origin.source_line,
+                            (origin.path.as_ref() != &path).then(|| {
+                                origin
+                                    .path
+                                    .strip_prefix(&self.project_dir)
+                                    .unwrap_or(origin.path.as_ref())
+                                    .to_path_buf()
+                            }),
+                        )
                     })
                     .collect(),
                 units: self.output.units[unit_start_index..]
@@ -1098,15 +1517,35 @@ impl<P: SourceProvider> Context<'_, P> {
                     .map(|mut unit| {
                         unit.output_span.start -= unit_start;
                         unit.output_span.end -= unit_start;
+                        unit.path = unit
+                            .path
+                            .strip_prefix(&self.project_dir)
+                            .unwrap_or(&unit.path)
+                            .to_path_buf();
                         unit
                     })
                     .collect(),
-                diagnostics: self.output.diagnostics[diagnostic_start..].to_vec(),
-                macro_changes,
+                diagnostics: self.output.diagnostics[diagnostic_start..]
+                    .iter()
+                    .cloned()
+                    .map(|mut diagnostic| {
+                        diagnostic.path = diagnostic
+                            .path
+                            .strip_prefix(&self.project_dir)
+                            .unwrap_or(&diagnostic.path)
+                            .to_path_buf();
+                        diagnostic
+                    })
+                    .collect(),
+                macro_changes: self.macro_changes[macro_change_start..]
+                    .iter()
+                    .cloned()
+                    .collect(),
                 file_dir_changes: self.file_dir_changes[file_dir_change_start..].to_vec(),
             };
             let key_bytes = cache_key.as_os_str().len();
             let is_new_key = !cache.entries.contains_key(&cache_key);
+            cache.dirty.insert(cache_key.clone());
             let entries = cache.entries.entry(cache_key).or_default();
             if is_new_key {
                 cache.resident_bytes += key_bytes;
@@ -1119,6 +1558,84 @@ impl<P: SourceProvider> Context<'_, P> {
             cache.enforce_budget(MAX_CACHE_RESIDENT_BYTES);
         }
     }
+}
+
+/// Conservative identifier closure includes strings/interpolations, directive operands,
+/// undefined names, and identifiers in transitive replacement text. Token pasting can
+/// synthesize arbitrary names, so those files retain the whole environment checkpoint.
+fn macro_dependencies(source: &str, macros: &BTreeMap<String, Macro>) -> Option<Vec<String>> {
+    fn identifiers(text: &str, names: &mut BTreeSet<String>) -> bool {
+        let mut chars = text.char_indices().peekable();
+        while let Some((start, character)) = chars.next() {
+            if character == '#' && text[start + 1..].trim_start().starts_with('#') {
+                return false;
+            }
+            if character == '_' || character.is_alphabetic() {
+                let mut end = start + character.len_utf8();
+                while let Some(&(index, next)) = chars.peek() {
+                    if next == '_' || next.is_alphabetic() || next.is_ascii_digit() {
+                        end = index + next.len_utf8();
+                        chars.next();
+                    } else {
+                        break;
+                    }
+                }
+                names.insert(text[start..end].to_owned());
+            }
+        }
+        true
+    }
+    let mut names = BTreeSet::new();
+    if !identifiers(source, &mut names) || names.len() > 8192 {
+        return None;
+    }
+    let mut visited = BTreeSet::new();
+    loop {
+        let pending: Vec<_> = names.difference(&visited).cloned().collect();
+        if pending.is_empty() {
+            break;
+        }
+        for name in pending {
+            visited.insert(name.clone());
+            if let Some(definition) = macros.get(&name) {
+                if !identifiers(&definition.replacement, &mut names) {
+                    return None;
+                }
+            }
+        }
+        // Bound metadata and adversarial replacement closures.
+        if names.len() > 8192 {
+            return None;
+        }
+    }
+    Some(names.into_iter().collect())
+}
+
+fn dependency_digest(
+    names: Option<&[String]>,
+    macro_hashes: &BTreeMap<String, [u8; 32]>,
+    full: [u8; 32],
+    directories: [u8; 32],
+) -> [u8; 32] {
+    let mut hasher = Sha256::new();
+    hasher.update(directories);
+    if let Some(names) = names {
+        hasher.update(b"selective\0");
+        for name in names {
+            hasher.update((name.len() as u64).to_le_bytes());
+            hasher.update(name.as_bytes());
+            if let Some(hash) = macro_hashes.get(name) {
+                hasher.update([1]);
+                hasher.update(hash);
+            } else {
+                hasher.update([0]);
+            }
+        }
+    } else {
+        hasher.update(b"complete\0");
+        hasher.update(full);
+    }
+    hasher.finalize().into()
 }
 
 fn has_include_directive(source: &str) -> bool {
@@ -2250,7 +2767,7 @@ mod tests {
         let second =
             preprocess_project_cached(Path::new("game.dme"), &files, &BTreeMap::new(), &mut cache);
         assert_eq!(first, second);
-        assert!(!cache.entries.contains_key(Path::new("parent.dm")));
+        assert!(cache.entries.contains_key(Path::new("parent.dm")));
         assert!(cache.entries.contains_key(Path::new("child.dm")));
     }
 
@@ -2307,6 +2824,63 @@ mod tests {
         assert_eq!(cache.resident_bytes, one_entry_budget);
         cache.clear();
         assert_eq!(cache.resident_bytes, 0);
+    }
+
+    #[test]
+    fn resident_budget_drops_history_before_current_files() {
+        let files = fixture(&[
+            ("game.dme", "#include \"a.dm\"\n#include \"b.dm\"\n"),
+            ("a.dm", "/obj/a\n"),
+            ("b.dm", "/obj/b\n"),
+        ]);
+        let mut cache = PreprocessCache::default();
+        preprocess_project_cached(Path::new("game.dme"), &files, &BTreeMap::new(), &mut cache);
+        let current_budget = cache.resident_bytes;
+        let historical = CachedUnit::from(DiskEntry::from(&cache.entries[Path::new("b.dm")][0]));
+        cache.resident_bytes += historical.resident_bytes();
+        cache
+            .entries
+            .get_mut(Path::new("b.dm"))
+            .unwrap()
+            .push(historical);
+        cache.enforce_budget(current_budget);
+        assert_eq!(cache.entries.len(), 2);
+        assert!(cache.entries.values().all(|entries| entries.len() == 1));
+        assert_eq!(cache.resident_bytes, current_budget);
+    }
+
+    #[test]
+    fn parallel_chunk_publication_replays_all_files() {
+        let mut files = BTreeMap::new();
+        let mut manifest = String::new();
+        for index in 0..40 {
+            let file = format!("leaf_{index}.dm");
+            manifest.push_str(&format!("#include \"{file}\"\n"));
+            files.insert(PathBuf::from(file), format!("/obj/leaf_{index}\n"));
+        }
+        files.insert(PathBuf::from("game.dme"), manifest);
+        let files = Memory(files);
+        let mut cache = PreprocessCache::default();
+        let first =
+            preprocess_project_cached(Path::new("game.dme"), &files, &BTreeMap::new(), &mut cache);
+        let directory = std::env::temp_dir().join(format!(
+            "dm-preprocess-parallel-{}-{}",
+            std::process::id(),
+            CACHE_TEMP_SEQUENCE.fetch_add(1, Ordering::Relaxed)
+        ));
+        fs::create_dir_all(&directory).unwrap();
+        let path = directory.join("cache.json");
+        cache.save_incremental(&path).unwrap();
+        let mut restored = PreprocessCache::load_incremental(&path);
+        let replay = preprocess_project_cached(
+            Path::new("game.dme"),
+            &files,
+            &BTreeMap::new(),
+            &mut restored,
+        );
+        assert_eq!(first, replay);
+        assert_eq!(restored.hits, 40);
+        fs::remove_dir_all(directory).unwrap();
     }
 
     #[test]
@@ -2586,6 +3160,100 @@ mod tests {
     }
 
     #[test]
+    fn macro_dependency_closure_preserves_unrelated_files_and_tracks_undefined_names() {
+        let mut files = fixture(&[
+            (
+                "game.dme",
+                "#include \"defs.dm\"\n#include \"a.dm\"\n#include \"b.dm\"\n",
+            ),
+            (
+                "defs.dm",
+                "#define ALIAS VALUE\n#define VALUE 7\n#define OTHER 1\n",
+            ),
+            ("a.dm", "/proc/a()\n return ALIAS + FUTURE\n"),
+            ("b.dm", "/proc/b()\n return OTHER\n"),
+        ]);
+        let mut cache = PreprocessCache::default();
+        preprocess_project_cached(Path::new("game.dme"), &files, &BTreeMap::new(), &mut cache);
+        files.0.insert(
+            PathBuf::from("defs.dm"),
+            "#define ALIAS VALUE\n#define VALUE 8\n#define OTHER 1\n".into(),
+        );
+        let changed =
+            preprocess_project_cached(Path::new("game.dme"), &files, &BTreeMap::new(), &mut cache);
+        assert_eq!(
+            changed,
+            preprocess_project(Path::new("game.dme"), &files, &BTreeMap::new())
+        );
+        assert_eq!(
+            cache.hits, 1,
+            "unrelated OTHER consumer must reuse its expansion"
+        );
+        files.0.insert(
+            PathBuf::from("defs.dm"),
+            "#define ALIAS VALUE\n#define VALUE 8\n#define OTHER 1\n#define FUTURE 3\n".into(),
+        );
+        let changed =
+            preprocess_project_cached(Path::new("game.dme"), &files, &BTreeMap::new(), &mut cache);
+        assert_eq!(
+            changed,
+            preprocess_project(Path::new("game.dme"), &files, &BTreeMap::new())
+        );
+        assert!(changed.text.contains("8 + 3"));
+    }
+
+    #[test]
+    fn dependency_fingerprint_supports_unicode_and_falls_back_for_spaced_paste() {
+        let definition = Macro {
+            parameters: None,
+            variadic: false,
+            replacement: "7".into(),
+        };
+        let macros = BTreeMap::from([("\u{00c5}NSWER".into(), definition)]);
+        assert!(macro_dependencies("return \u{00c5}NSWER", &macros)
+            .unwrap()
+            .contains(&"\u{00c5}NSWER".to_string()));
+        assert!(macro_dependencies("#define CAT(a,b) a # # b", &macros).is_none());
+        let (_, pasted) = parse_define("PASTE(a,b) a##b").unwrap();
+        let macros = BTreeMap::from([("PASTE".into(), pasted)]);
+        assert!(macro_dependencies("PASTE(A,B)", &macros).is_none());
+    }
+
+    #[test]
+    fn nested_cache_replays_child_origins_macro_effects_and_rejects_child_edit() {
+        let mut files = fixture(&[
+            ("game.dme", "#include \"parent.dm\"\n#include \"tail.dm\"\n"),
+            (
+                "parent.dm",
+                "#include \"child.dm\"\n/proc/parent()\n return CHILD\n",
+            ),
+            (
+                "child.dm",
+                "#define CHILD 7\n/proc/child()\n return CHILD\n",
+            ),
+            ("tail.dm", "/proc/tail()\n return CHILD\n"),
+        ]);
+        let mut cache = PreprocessCache::default();
+        let first =
+            preprocess_project_cached(Path::new("game.dme"), &files, &BTreeMap::new(), &mut cache);
+        let repeated =
+            preprocess_project_cached(Path::new("game.dme"), &files, &BTreeMap::new(), &mut cache);
+        assert_eq!(first, repeated);
+        assert_eq!(cache.hits, 2, "parent subtree and tail replay once each");
+        files.0.insert(
+            PathBuf::from("child.dm"),
+            "#define CHILD 9\n/proc/child()\n return CHILD\n".into(),
+        );
+        let changed =
+            preprocess_project_cached(Path::new("game.dme"), &files, &BTreeMap::new(), &mut cache);
+        assert_eq!(
+            changed,
+            preprocess_project(Path::new("game.dme"), &files, &BTreeMap::new())
+        );
+        assert!(changed.text.contains("return 9"));
+    }
+
+    #[test]
     fn changed_leaf_reuses_unchanged_include_expansions() {
         let mut files = fixture(&[
             (
@@ -2719,6 +3387,88 @@ mod tests {
         fs::write(&path, &bytes[..bytes.len() / 2]).unwrap();
         assert!(PreprocessCache::load(&path).entries.is_empty());
         fs::remove_file(path).unwrap();
+    }
+
+    #[test]
+    fn sharded_cache_is_lazy_rewrites_only_changed_chunks_and_checks_corruption() {
+        let mut files = fixture(&[
+            ("game.dme", "#include \"a.dm\"\n#include \"b.dm\"\n"),
+            ("a.dm", "/proc/a()\n return 1\n"),
+            ("b.dm", "/proc/b()\n return 2\n"),
+        ]);
+        let directory = std::env::temp_dir().join(format!(
+            "dm-shards-{}-{}",
+            std::process::id(),
+            CACHE_TEMP_SEQUENCE.fetch_add(1, Ordering::Relaxed)
+        ));
+        fs::create_dir_all(&directory).unwrap();
+        let path = directory.join("cache.json");
+        let mut cache = PreprocessCache::default();
+        preprocess_project_cached(Path::new("game.dme"), &files, &BTreeMap::new(), &mut cache);
+        cache.save_incremental(&path).unwrap();
+        let first_index: CacheIndex =
+            serde_json::from_slice(&fs::read(path.with_extension("index.json")).unwrap()).unwrap();
+        let b_key = first_index.entries[Path::new("b.dm")][0].clone();
+        let b_path = path.with_extension("parts").join(&b_key);
+        let b_time = fs::metadata(&b_path).unwrap().modified().unwrap();
+        let mut restored = PreprocessCache::load_incremental(&path);
+        assert!(restored.entries.is_empty(), "load decodes only the index");
+        files
+            .0
+            .insert(PathBuf::from("a.dm"), "/proc/a()\n return 3\n".into());
+        let changed = preprocess_project_cached(
+            Path::new("game.dme"),
+            &files,
+            &BTreeMap::new(),
+            &mut restored,
+        );
+        assert_eq!(
+            changed,
+            preprocess_project(Path::new("game.dme"), &files, &BTreeMap::new())
+        );
+        assert_eq!(restored.hits, 1);
+        restored.save_incremental(&path).unwrap();
+        assert_eq!(fs::metadata(&b_path).unwrap().modified().unwrap(), b_time);
+        fs::write(&b_path, b"corrupt").unwrap();
+        let mut restarted = PreprocessCache::load_incremental(&path);
+        let again = preprocess_project_cached(
+            Path::new("game.dme"),
+            &files,
+            &BTreeMap::new(),
+            &mut restarted,
+        );
+        assert_eq!(again, changed);
+        assert_eq!(restarted.misses, 1);
+        restarted.save_incremental(&path).unwrap();
+        let mut index: CacheIndex =
+            serde_json::from_slice(&fs::read(path.with_extension("index.json")).unwrap()).unwrap();
+        let old = path
+            .with_extension("parts")
+            .join(&index.entries[Path::new("b.dm")][0]);
+        let mut chunk: serde_json::Value = serde_json::from_slice(&fs::read(old).unwrap()).unwrap();
+        chunk["unit_digests"][0] = serde_json::to_value([0u8; 32]).unwrap();
+        let bytes = serde_json::to_vec(&chunk).unwrap();
+        let changed_key = format!("{:x}", Sha256::digest(&bytes));
+        fs::write(path.with_extension("parts").join(&changed_key), bytes).unwrap();
+        index.entries.get_mut(Path::new("b.dm")).unwrap()[0] = changed_key;
+        fs::write(
+            path.with_extension("index.json"),
+            serde_json::to_vec(&index).unwrap(),
+        )
+        .unwrap();
+        let mut mismatched_digest = PreprocessCache::load_incremental(&path);
+        let exact = preprocess_project_cached(
+            Path::new("game.dme"),
+            &files,
+            &BTreeMap::new(),
+            &mut mismatched_digest,
+        );
+        assert_eq!(exact, changed);
+        assert_eq!(
+            mismatched_digest.misses, 1,
+            "a checksum-valid chunk with incorrect semantic content identity must be rejected"
+        );
+        fs::remove_dir_all(directory).unwrap();
     }
 
     #[test]
@@ -3012,6 +3762,29 @@ mod tests {
             "var/a = (\"foo\" ||foo)\nvar/b = \"Value [7] and [(\"bar\" ||bar)]\"\n"
         );
     }
+    #[test]
+    fn cached_dm_subtree_preserves_deferred_manifest_startup() {
+        let files = fixture(&[
+            ("game.dme", "#include \"parent.dm\"\n"),
+            (
+                "parent.dm",
+                "#include \"startup.dme\"\n/proc/body()\n return 1\n",
+            ),
+            (
+                "startup.dme",
+                "/world/proc/_()\n var/static/_ = world.Genesis()\n",
+            ),
+        ]);
+        let mut cache = PreprocessCache::default();
+        let first =
+            preprocess_project_cached(Path::new("game.dme"), &files, &BTreeMap::new(), &mut cache);
+        let repeated =
+            preprocess_project_cached(Path::new("game.dme"), &files, &BTreeMap::new(), &mut cache);
+        assert_eq!(first, repeated);
+        assert!(repeated.text.contains("world.Genesis()"));
+        assert_eq!(cache.hits, 1);
+    }
+
     #[test]
     fn included_dme_preserves_active_startup_dm_and_cache_replay() {
         let files = fixture(&[

@@ -9,7 +9,8 @@ use std::ops::Range;
 mod audit;
 mod statements;
 pub use audit::{
-    audit_source_streaming, for_each_parsed_chunk, parse_proc_at_span, ChunkReport, StreamingAudit,
+    audit_source_streaming, for_each_parsed_chunk, for_each_source_chunk,
+    for_each_source_chunk_with_limits, parse_proc_at_span, ChunkReport, StreamingAudit,
 };
 pub use statements::{
     parse_body_items, parse_proc_body, ForControl, ForInitializer, ParsedBody, Statement,

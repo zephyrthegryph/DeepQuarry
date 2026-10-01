@@ -10,9 +10,10 @@ use std::cell::RefCell;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
+pub mod frontend;
 pub mod lower_cache;
-mod proc_parse_cache;
 pub mod maps;
+mod proc_parse_cache;
 pub use maps::{load_map_set, load_map_set_from_paths, MapSet};
 
 pub const TARGET_VERSION: u32 = 516;
@@ -220,6 +221,7 @@ pub struct ProjectSession {
     preprocess_cache: RefCell<dm_preprocess::PreprocessCache>,
     preprocessed: RefCell<Option<PreprocessedProject>>,
     cache_path: Option<PathBuf>,
+    outline_session: RefCell<frontend::OutlineSession>,
 }
 
 impl ProjectSession {
@@ -241,6 +243,7 @@ impl ProjectSession {
             preprocess_cache: RefCell::new(dm_preprocess::PreprocessCache::default()),
             preprocessed: RefCell::new(None),
             cache_path: None,
+            outline_session: RefCell::new(frontend::OutlineSession::default()),
         }
     }
 
@@ -257,14 +260,17 @@ impl ProjectSession {
         }
         let files = CollectingFiles(RefCell::new(BTreeMap::new()));
         let cache_path = preprocess_cache_path(&root);
-        let mut cache = dm_preprocess::PreprocessCache::load(&cache_path);
+        let mut cache = dm_preprocess::PreprocessCache::load_incremental(&cache_path);
         let preprocessed =
             dm_preprocess::preprocess_project_cached(&root, &files, &defines, &mut cache);
         if cache.misses > 0 {
-            let _ = cache.save(&cache_path);
+            let _ = cache.save_incremental(&cache_path);
         }
         let mut session = Self::new(root, files.0.into_inner(), defines);
         session.cache_path = Some(cache_path);
+        *session.outline_session.borrow_mut() = frontend::OutlineSession::new(Some(
+            lower_cache::project_cache_root(session.project.root(&session.db)),
+        ));
         *session.preprocess_cache.borrow_mut() = cache;
         *session.preprocessed.borrow_mut() = Some(preprocessed);
         session
@@ -337,9 +343,9 @@ impl ProjectSession {
             &mut self.preprocess_cache.borrow_mut(),
         );
         if let Some(path) = &self.cache_path {
-            let cache = self.preprocess_cache.borrow();
+            let mut cache = self.preprocess_cache.borrow_mut();
             if cache.misses > misses_before {
-                let _ = cache.save(path);
+                let _ = cache.save_incremental(path);
             }
         }
         *self.preprocessed.borrow_mut() = Some(preprocessed.clone());
@@ -349,6 +355,23 @@ impl ProjectSession {
     pub fn preprocess_cache_stats(&self) -> (usize, usize) {
         let cache = self.preprocess_cache.borrow();
         (cache.hits, cache.misses)
+    }
+
+    /// Reuse syntax identities across edits without retaining procedure token
+    /// trees. Declaration changes still invalidate the semantic linking guard.
+    pub fn source_outline(&self) -> Result<incremental::SourceOutline, String> {
+        let preprocessed = self.preprocess_incremental();
+        if !preprocessed.diagnostics.is_empty() {
+            return Err(format!(
+                "preprocessing diagnostics: {:?}",
+                preprocessed.diagnostics
+            ));
+        }
+        self.outline_session.borrow_mut().update(&preprocessed)
+    }
+
+    pub fn outline_cache_stats(&self) -> frontend::OutlineStats {
+        self.outline_session.borrow().stats()
     }
 
     pub fn parse(&self) -> &AstFile {
@@ -518,6 +541,42 @@ mod tests {
     }
 
     #[test]
+    fn project_outline_reuses_syntax_and_invalidates_macro_dependents() {
+        let root = PathBuf::from("fixture.dme");
+        let file = PathBuf::from("part.dm");
+        let mut session = ProjectSession::new(
+            root.clone(),
+            BTreeMap::from([
+                (
+                    root.clone(),
+                    "#define VALUE 1\n#include \"part.dm\"\n".into(),
+                ),
+                (file, "/proc/example()\n\treturn VALUE\n".into()),
+            ]),
+            BTreeMap::new(),
+        );
+        let first = session.source_outline().unwrap();
+        let repeated = session.source_outline().unwrap();
+        assert_eq!(first.abi_digest, repeated.abi_digest);
+        assert_eq!(session.outline_cache_stats().parsed_chunks, 0);
+        assert!(session.outline_cache_stats().memory_hits > 0);
+        session.update_source(root, "#define VALUE 2\n#include \"part.dm\"\n".into());
+        let changed = session.source_outline().unwrap();
+        assert_eq!(changed.abi_digest, first.abi_digest);
+        assert_ne!(
+            changed.procedures.values().next().unwrap().digest,
+            first.procedures.values().next().unwrap().digest
+        );
+        assert!(changed
+            .procedures
+            .values()
+            .next()
+            .unwrap()
+            .source
+            .contains("return 2"));
+    }
+
+    #[test]
     fn incremental_project_reuses_unedited_includes() {
         let root = PathBuf::from("fixture.dme");
         let a = PathBuf::from("a.dm");
@@ -634,10 +693,21 @@ pub(crate) fn native_reserved_string_id(id: u32) -> bool {
 
 /// Object table widths are a property of the final image, including maps.
 pub(crate) fn promote_object_ids(dmb: &mut byond_dmb::dmb::Dmb) {
-    if [dmb.classes.len(), dmb.mobs.len(), dmb.strings.len(), dmb.lists.len(),
-        dmb.procs.len(), dmb.variables.len(), dmb.proc_references.len(),
-        dmb.instances.len(), dmb.map_objects.len(), dmb.resources.len()]
-        .into_iter().any(|count| count > u16::MAX as usize) {
+    if [
+        dmb.classes.len(),
+        dmb.mobs.len(),
+        dmb.strings.len(),
+        dmb.lists.len(),
+        dmb.procs.len(),
+        dmb.variables.len(),
+        dmb.proc_references.len(),
+        dmb.instances.len(),
+        dmb.map_objects.len(),
+        dmb.resources.len(),
+    ]
+    .into_iter()
+    .any(|count| count > u16::MAX as usize)
+    {
         dmb.header.flags |= 0x4000_0000;
     }
 }
@@ -645,19 +715,34 @@ pub(crate) fn promote_object_ids(dmb: &mut byond_dmb::dmb::Dmb) {
 pub(crate) fn reserve_class_sentinel(dmb: &mut byond_dmb::dmb::Dmb) {
     if dmb.classes.len() == 0xffff {
         dmb.classes.push(byond_dmb::dmb::Class {
-            initial_ids: [0xffff;6], direction:2, interface:1, extended_interface:None,
-            text:0xffff, maptext:0xffff, maptext_geometry:[0;4], suffix:0xffff, flags:0,
-            lists_and_procs:[0xffff;6], layer_bits:(-1.0f32).to_bits(),
-            transform_flag:0, transform:None, color_matrix_flag:0, color_matrix:None,
-            overrides:0xffff,
+            initial_ids: [0xffff; 6],
+            direction: 2,
+            interface: 1,
+            extended_interface: None,
+            text: 0xffff,
+            maptext: 0xffff,
+            maptext_geometry: [0; 4],
+            suffix: 0xffff,
+            flags: 0,
+            lists_and_procs: [0xffff; 6],
+            layer_bits: (-1.0f32).to_bits(),
+            transform_flag: 0,
+            transform: None,
+            color_matrix_flag: 0,
+            color_matrix: None,
+            overrides: 0xffff,
         });
     }
 }
 pub(crate) fn reserve_proc_sentinel(dmb: &mut byond_dmb::dmb::Dmb) {
     if dmb.procs.len() == 0xffff {
         dmb.procs.push(byond_dmb::dmb::Proc {
-            strings:[0xffff;4], source_parameter:255, source_kind:0, flags:4,
-            extended_flags:None, code_locals_args:[0xffff;3],
+            strings: [0xffff; 4],
+            source_parameter: 255,
+            source_kind: 0,
+            flags: 4,
+            extended_flags: None,
+            code_locals_args: [0xffff; 3],
         });
     }
 }

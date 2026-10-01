@@ -1,12 +1,14 @@
 //! Local prototype daemon. The transport is intentionally small; compiler
 //! sessions and the CAS live in the library so IPC can change independently.
 
-use dm_compiled::{default_cache_root, Coordinator, Request, Response};
+use dm_compiled::{default_cache_root, Request};
 use std::env;
-use std::io::{BufRead, BufReader, Read, Write};
+use std::io::{BufRead, BufReader, Read};
 use std::net::{Ipv4Addr, SocketAddrV4, TcpListener};
 use std::path::PathBuf;
 use std::time::Duration;
+
+mod parallel;
 
 const MAX_REQUEST_BYTES: u64 = 32 * 1024 * 1024;
 
@@ -23,7 +25,8 @@ fn read_request(reader: impl Read) -> Result<Request, String> {
 }
 
 fn main() {
-    if let Err(error) = dm_host::run_on_compiler_thread(|| run().map_err(|error| error.to_string())) {
+    if let Err(error) = dm_host::run_on_compiler_thread(|| run().map_err(|error| error.to_string()))
+    {
         eprintln!("dm-compiled: {error}");
         std::process::exit(1);
     }
@@ -40,8 +43,9 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         return Err("usage: dm-compiled [PORT [CACHE_DIRECTORY]]".into());
     }
     let listener = TcpListener::bind(SocketAddrV4::new(Ipv4Addr::LOCALHOST, port))?;
-    let mut coordinator = Coordinator::new(cache)?;
-    eprintln!("dm-compiled listening on {port}");
+    let workers = parallel::worker_count(env::var("DM_DAEMON_WORKERS").ok().as_deref())?;
+    let mut pool = parallel::WorkerPool::new(cache, workers)?;
+    eprintln!("dm-compiled listening on {port} with {workers} compiler workers");
     for incoming in listener.incoming() {
         let mut stream = match incoming {
             Ok(stream) => stream,
@@ -52,23 +56,14 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         };
         stream.set_read_timeout(Some(Duration::from_secs(15)))?;
         stream.set_write_timeout(Some(Duration::from_secs(15)))?;
-        let response = match read_request(stream.try_clone()?) {
-            Ok(request) => coordinator.handle(request),
-            Err(error) => Response {
-                ok: false,
-                item_count: 0,
-                diagnostics: vec![],
-                source_digest: None,
-                shared_syntax_hit: false,
-                error: Some(error),
-                build: None,
-            },
-        };
-        if let Err(error) = serde_json::to_writer(&mut stream, &response)
-            .map_err(std::io::Error::other)
-            .and_then(|()| stream.write_all(b"\n"))
-        {
-            eprintln!("dm-compiled response error: {error}");
+        match read_request(stream.try_clone()?) {
+            Ok(Request::Ping) => parallel::write_response(&mut stream, &parallel::response(None)),
+            Ok(request) => {
+                if let Err((mut job, error)) = pool.submit(parallel::Job { stream, request }) {
+                    parallel::write_response(&mut job.stream, &parallel::response(Some(error)));
+                }
+            }
+            Err(error) => parallel::write_response(&mut stream, &parallel::response(Some(error))),
         }
     }
     Ok(())

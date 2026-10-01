@@ -26,7 +26,34 @@ pub fn for_each_parsed_chunk(
     max_chunk_bytes: usize,
     mut visit: impl FnMut(&AstFile, usize),
 ) -> ChunkReport {
-    let limit = max_chunk_bytes.max(1);
+    for_each_source_chunk(source, max_chunk_bytes, |text, offset| {
+        let ast = parse(text);
+        visit(&ast, offset);
+    })
+}
+
+/// Visit independent structural chunks without allocating tokens or parsing.
+/// Boundaries are identical to `for_each_parsed_chunk` and preserve declaration
+/// nesting, multiline literals, and include footprint declarations.
+pub fn for_each_source_chunk(
+    source: &str,
+    max_chunk_bytes: usize,
+    visit: impl FnMut(&str, usize),
+) -> ChunkReport {
+    for_each_source_chunk_with_limits(source, max_chunk_bytes, max_chunk_bytes, visit)
+}
+
+/// Separate cache granularity from the maximum supported declaration size.
+/// A single declaration can exceed `target_chunk_bytes` while remaining bounded
+/// by `max_declaration_bytes`.
+pub fn for_each_source_chunk_with_limits(
+    source: &str,
+    target_chunk_bytes: usize,
+    max_declaration_bytes: usize,
+    mut visit: impl FnMut(&str, usize),
+) -> ChunkReport {
+    let limit = max_declaration_bytes.max(1);
+    let target = target_chunk_bytes.max(1).min(limit);
     let mut report = ChunkReport::default();
     let mut chunk_start = 0usize;
     let mut chunk_end = 0usize;
@@ -35,10 +62,9 @@ pub fn for_each_parsed_chunk(
         if source[start..end].trim().is_empty() {
             return;
         }
-        let ast = parse(&source[start..end]);
         report.parsed_chunks += 1;
         report.parsed_bytes += end - start;
-        visit(&ast, start);
+        visit(&source[start..end], start);
     };
     let mut on_boundary = |boundary: usize| {
         if boundary <= declaration_start {
@@ -57,7 +83,7 @@ pub fn for_each_parsed_chunk(
             chunk_start = boundary;
             chunk_end = boundary;
         } else {
-            if chunk_end > chunk_start && boundary - chunk_start > limit {
+            if chunk_end > chunk_start && boundary - chunk_start > target {
                 parse_chunk(chunk_start, chunk_end, &mut report);
                 chunk_start = declaration_start;
             }

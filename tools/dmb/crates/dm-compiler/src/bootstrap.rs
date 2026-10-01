@@ -7,8 +7,10 @@
 mod const_eval;
 #[path = "native_constants.rs"]
 mod native_constants;
+#[path = "procedure_pipeline.rs"]
+pub(crate) mod procedure_pipeline;
 #[path = "resource_scan.rs"]
-mod resource_scan;
+pub(crate) mod resource_scan;
 
 use byond_dmb::bytecode::opcode;
 use byond_dmb::dmb::{DmString, Dmb, Instance, MobType, Proc, Variable};
@@ -18,7 +20,9 @@ use dm_codegen_byond::{
 };
 use dm_preprocess::PreprocessedProject;
 use dm_resources::{ResourceRequest, ResourceSet};
-use dm_syntax::{lex, parse, Item, ItemKind, TokenKind};
+#[cfg(test)]
+use dm_syntax::lex;
+use dm_syntax::{parse, Item, ItemKind, TokenKind};
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::path::Path;
 use std::sync::Arc;
@@ -35,6 +39,104 @@ struct PendingProc<'a> {
     owner: Option<u32>,
     owner_path: String,
     verb: bool,
+}
+
+/// This cache belongs to one completed declaration snapshot. Class variable
+/// declarations and shared member types are immutable during proc emission.
+/// Retain at most 64 owner frames and 4 MiB of conservative resident estimates.
+struct OwnerBindingCache {
+    frames: HashMap<u32, LowerBindings>,
+    bytes: usize,
+    byte_limit: usize,
+    entry_limit: usize,
+}
+
+impl OwnerBindingCache {
+    fn new(byte_limit: usize, entry_limit: usize) -> Self {
+        Self {
+            frames: HashMap::new(),
+            bytes: 0,
+            byte_limit,
+            entry_limit,
+        }
+    }
+
+    fn populate(
+        &mut self,
+        owner: u32,
+        dmb: &Dmb,
+        shared: &SharedLowerBindings,
+        bindings: &mut LowerBindings,
+    ) {
+        if let Some(frame) = self.frames.get(&owner) {
+            bindings.fields.clone_from(&frame.fields);
+            bindings.field_types.clone_from(&frame.field_types);
+            return;
+        }
+        let mut frame = LowerBindings::default();
+        collect_owner_fields(owner, dmb, shared, &mut frame);
+        let bytes = frame
+            .fields
+            .iter()
+            .map(|name| name.len() * 2 + 96)
+            .sum::<usize>()
+            + frame
+                .field_types
+                .iter()
+                .map(|(name, ty)| (name.len() + ty.len()) * 2 + 160)
+                .sum::<usize>()
+            + 512;
+        if bytes <= self.byte_limit && self.entry_limit > 0 {
+            if self.frames.len() >= self.entry_limit
+                || self.bytes.saturating_add(bytes) > self.byte_limit
+            {
+                self.frames.clear();
+                self.bytes = 0;
+            }
+            self.bytes += bytes;
+            self.frames.insert(owner, frame.clone());
+        }
+        bindings.fields = frame.fields;
+        bindings.field_types = frame.field_types;
+    }
+}
+
+fn collect_owner_fields(
+    mut class_id: u32,
+    dmb: &Dmb,
+    shared: &SharedLowerBindings,
+    bindings: &mut LowerBindings,
+) {
+    loop {
+        if let Some(path) = dmb.string(dmb.classes[class_id as usize].path_string_id()) {
+            seed_builtin_fields(&String::from_utf8_lossy(path), bindings);
+            if let Some(types) = shared
+                .member_types
+                .get(String::from_utf8_lossy(path).as_ref())
+            {
+                for (name, path) in types {
+                    bindings
+                        .field_types
+                        .entry(name.clone())
+                        .or_insert_with(|| path.clone());
+                }
+            }
+        }
+        if let Some(declarations) = dmb.class_variable_declarations(class_id as usize) {
+            for (id, _) in declarations {
+                if let Some(name) = dmb.string(dmb.variables[id as usize].name) {
+                    bindings
+                        .fields
+                        .insert(String::from_utf8_lossy(name).into_owned());
+                }
+            }
+        }
+        let parent = dmb.classes[class_id as usize].parent_class_id();
+        if parent == 0xffff {
+            break;
+        }
+        class_id = parent;
+    }
 }
 
 struct TypeMetadataState {
@@ -364,6 +466,27 @@ pub fn compile_preprocessed_project_with_resources(
     builtin_image: &[u8],
     world_name: &str,
 ) -> Result<CompiledProject, String> {
+    let mut frontend = crate::frontend::OutlineSession::new(Some(
+        crate::lower_cache::project_cache_root(dme_path),
+    ));
+    compile_preprocessed_project_with_resources_cached(
+        dme_path,
+        preprocessed,
+        builtin_image,
+        world_name,
+        &mut frontend,
+    )
+}
+
+/// Reuse bounded content-addressed syntax fragments and seed the same frontend
+/// session that later incremental body edits consult.
+pub fn compile_preprocessed_project_with_resources_cached(
+    dme_path: &Path,
+    preprocessed: &PreprocessedProject,
+    builtin_image: &[u8],
+    world_name: &str,
+    frontend: &mut crate::frontend::OutlineSession,
+) -> Result<CompiledProject, String> {
     let pipeline_started = std::time::Instant::now();
     if !preprocessed.diagnostics.is_empty() {
         return Err(format!(
@@ -379,6 +502,60 @@ pub fn compile_preprocessed_project_with_resources(
         &preprocessed.skin_includes,
         &preprocessed.file_dirs,
     )?;
+    compile_preprocessed_project_with_loaded_resources(
+        dme_path,
+        preprocessed,
+        builtin_image,
+        world_name,
+        frontend,
+        &maps,
+        &resources,
+        pipeline_started,
+    )
+}
+
+/// Compile caller-verified map and resource inventories without rediscovering them.
+/// The caller must verify the same inputs again before publishing the output.
+pub fn compile_preprocessed_project_with_resources_prepared(
+    dme_path: &Path,
+    preprocessed: &PreprocessedProject,
+    builtin_image: &[u8],
+    world_name: &str,
+    frontend: &mut crate::frontend::OutlineSession,
+    maps: &crate::maps::MapSet,
+    resource_requests: &[ResourceRequest],
+) -> Result<CompiledProject, String> {
+    let pipeline_started = std::time::Instant::now();
+    if !preprocessed.diagnostics.is_empty() {
+        return Err(format!(
+            "preprocessing failed: {:?}",
+            preprocessed.diagnostics
+        ));
+    }
+    let resources =
+        ResourceSet::load(resource_requests.iter().cloned()).map_err(|error| error.to_string())?;
+    compile_preprocessed_project_with_loaded_resources(
+        dme_path,
+        preprocessed,
+        builtin_image,
+        world_name,
+        frontend,
+        maps,
+        &resources,
+        pipeline_started,
+    )
+}
+
+fn compile_preprocessed_project_with_loaded_resources(
+    dme_path: &Path,
+    preprocessed: &PreprocessedProject,
+    builtin_image: &[u8],
+    world_name: &str,
+    frontend: &mut crate::frontend::OutlineSession,
+    maps: &crate::maps::MapSet,
+    resources: &ResourceSet,
+    pipeline_started: std::time::Instant,
+) -> Result<CompiledProject, String> {
     let mut lowering_cache = crate::lower_cache::ProcLoweringCache::open(
         crate::lower_cache::default_cache_root(dme_path),
     );
@@ -389,14 +566,16 @@ pub fn compile_preprocessed_project_with_resources(
         );
     }
     let mut checkpoint = None;
-    let (mut dmb, emitted, rsc_bytes) = emit_global_procs_mode(
+    let (mut dmb, emitted, rsc_bytes) = emit_global_procs_mode_with_frontend(
         &preprocessed.text,
         builtin_image,
         world_name,
-        Some(&resources),
+        Some(resources),
         &mut lowering_cache,
         None,
         Some(&mut checkpoint),
+        procedure_pipeline::worker_count(),
+        Some(frontend),
     )?;
     if let Some(skin) = preprocessed.skin_includes.last() {
         let root = dme_path.parent().unwrap_or_else(|| Path::new("."));
@@ -414,7 +593,7 @@ pub fn compile_preprocessed_project_with_resources(
             as u32;
     }
     let map_started = std::time::Instant::now();
-    crate::maps::emit_maps_with_resources(&mut dmb, &maps, &resources)?;
+    crate::maps::emit_maps_with_resources(&mut dmb, maps, resources)?;
     if std::env::var_os("DM_BUILD_TRACE").is_some() {
         eprintln!(
             "DM_BUILD_TRACE project map emission {:.3}s; total {:.3}s",
@@ -561,40 +740,114 @@ fn resource_requests(
     skins: &[std::path::PathBuf],
     file_dirs: &[std::path::PathBuf],
 ) -> Result<Vec<ResourceRequest>, String> {
+    resource_requests_with_hints(dme_path, preprocessed_source, maps, skins, file_dirs, &[])
+}
+
+fn resource_requests_with_hints(
+    dme_path: &Path,
+    preprocessed_source: &str,
+    maps: &crate::maps::MapSet,
+    skins: &[std::path::PathBuf],
+    file_dirs: &[std::path::PathBuf],
+    verified_hints: &[ResourceRequest],
+) -> Result<Vec<ResourceRequest>, String> {
+    resource_requests_with_optional_literals(
+        dme_path,
+        preprocessed_source,
+        maps,
+        skins,
+        file_dirs,
+        verified_hints,
+        None,
+    )
+}
+
+/// Resolve the ordered inventory collected by a verified frontend snapshot.
+/// Hints require the same current-file proof as the source-scanning variant.
+pub fn resolved_resource_requests_with_literals(
+    dme_path: &Path,
+    literals: &[String],
+    maps: &crate::maps::MapSet,
+    skins: &[std::path::PathBuf],
+    file_dirs: &[std::path::PathBuf],
+    verified_hints: &[ResourceRequest],
+) -> Result<Vec<ResourceRequest>, String> {
+    resource_requests_with_optional_literals(
+        dme_path,
+        "",
+        maps,
+        skins,
+        file_dirs,
+        verified_hints,
+        Some(literals),
+    )
+}
+
+fn resource_requests_with_optional_literals<'src>(
+    dme_path: &Path,
+    preprocessed_source: &'src str,
+    maps: &'src crate::maps::MapSet,
+    skins: &[std::path::PathBuf],
+    file_dirs: &[std::path::PathBuf],
+    verified_hints: &[ResourceRequest],
+    literals: Option<&'src [String]>,
+) -> Result<Vec<ResourceRequest>, String> {
     let root = dme_path.parent().unwrap_or_else(|| Path::new("."));
+    // Only the direct project path outranks every FILE_DIR candidate. Reusing
+    // fallback paths would hide newly introduced higher-priority candidates.
+    let direct_hints: HashMap<_, _> = verified_hints
+        .iter()
+        .filter(|hint| hint.disk_path == root.join(hint.archive_name.replace('\\', "/")))
+        .map(|hint| (hint.archive_name.replace('\\', "/"), &hint.disk_path))
+        .collect();
+    let resolve = |archive_name: &str| {
+        direct_hints.get(archive_name).map_or_else(
+            || resolve_resource_path(root, archive_name, file_dirs),
+            |path| (**path).clone(),
+        )
+    };
     let mut requests = Vec::new();
     // Resolution depends only on the normalized authored name and this snapshot's
     // FILE_DIR stack. Repeated literals need neither another filesystem search
     // nor another retained request. Distinct aliases remain distinct RSC names.
     let mut literal_names = std::collections::HashSet::new();
-    resource_scan::visit_resources(preprocessed_source, &mut |literal| {
+    // Repeated authored literals need no normalized String allocation. Keep
+    // borrowed source slices; aliases still deduplicate by normalized RSC name.
+    let mut authored_literals = std::collections::HashSet::new();
+    let mut record_literal = |literal: &'src str| {
+        if !authored_literals.insert(literal) {
+            return;
+        }
         let archive_name = literal.trim_matches('\'').replace('\\', "/");
         if !literal_names.insert(archive_name.clone()) {
             return;
         }
         requests.push(ResourceRequest {
-            disk_path: resolve_resource_path(root, &archive_name, file_dirs),
+            disk_path: resolve(&archive_name),
             archive_name,
         });
-    });
+    };
+    if let Some(literals) = literals {
+        for literal in literals {
+            record_literal(literal);
+        }
+    } else {
+        resource_scan::visit_resources(preprocessed_source, &mut record_literal);
+    }
     for (_, source) in &maps.files {
-        requests.extend(
-            lex(source)
-                .tokens
-                .into_iter()
-                .filter(|token| token.kind == TokenKind::Resource)
-                .filter_map(|token| {
-                    let archive_name = token.text.trim_matches('\'').replace('\\', "/");
-                    literal_names.insert(archive_name).then_some(token)
-                })
-                .map(|token| {
-                    let archive_name = token.text.trim_matches('\'').replace('\\', "/");
-                    ResourceRequest {
-                        disk_path: resolve_resource_path(root, &archive_name, file_dirs),
-                        archive_name,
-                    }
-                }),
-        );
+        resource_scan::visit_literal_resources(source, &mut |literal| {
+            if !authored_literals.insert(literal) {
+                return;
+            }
+            let archive_name = literal.trim_matches('\'').replace('\\', "/");
+            if !literal_names.insert(archive_name.clone()) {
+                return;
+            }
+            requests.push(ResourceRequest {
+                disk_path: resolve(&archive_name),
+                archive_name,
+            });
+        });
     }
     for skin in skins {
         let archive_name = skin_archive_name(root, skin)?;
@@ -628,7 +881,7 @@ fn resource_requests(
                 continue;
             }
             requests.push(ResourceRequest {
-                disk_path: resolve_resource_path(root, &archive_name, file_dirs),
+                disk_path: resolve(&archive_name),
                 archive_name,
             });
         }
@@ -646,6 +899,101 @@ pub fn resolved_resource_requests(
     file_dirs: &[std::path::PathBuf],
 ) -> Result<Vec<ResourceRequest>, String> {
     resource_requests(dme_path, preprocessed_source, maps, skins, file_dirs)
+}
+
+/// Resolve a new source inventory using resource paths already verified current
+/// by the caller's asset proof. Only direct project paths skip filesystem probes;
+/// FILE_DIR fallbacks always resolve afresh to detect newly shadowing files.
+///
+/// The caller must verify the hinted files still exist before invoking this API.
+/// Use `resolved_resource_requests` when no current asset proof is available.
+pub fn resolved_resource_requests_with_hints(
+    dme_path: &Path,
+    preprocessed_source: &str,
+    maps: &crate::maps::MapSet,
+    skins: &[std::path::PathBuf],
+    file_dirs: &[std::path::PathBuf],
+    verified_hints: &[ResourceRequest],
+) -> Result<Vec<ResourceRequest>, String> {
+    resource_requests_with_hints(
+        dme_path,
+        preprocessed_source,
+        maps,
+        skins,
+        file_dirs,
+        verified_hints,
+    )
+}
+
+#[cfg(test)]
+mod resource_resolution_hint_tests {
+    use super::*;
+
+    #[test]
+    fn verified_direct_hints_preserve_inventory_and_new_fallback_shadowing() {
+        let root = std::env::temp_dir().join(format!(
+            "dm-resource-hints-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(root.join("low")).unwrap();
+        std::fs::create_dir_all(root.join("high")).unwrap();
+        std::fs::write(root.join("old.png"), "old").unwrap();
+        std::fs::write(root.join("low/fallback.png"), "low").unwrap();
+        std::fs::write(root.join("test.dmf"), "icon = 'old.png'\n").unwrap();
+        let dme = root.join("test.dme");
+        let maps = crate::maps::MapSet {
+            files: vec![(root.join("test.dmm"),
+                r#"'old.png' 'mapped.png' "[f('not-a-map-resource.png')]" @'raw.png' /* 'comment.png' */"#.into())],
+            fingerprint: [0; 32],
+        };
+        std::fs::write(root.join("mapped.png"), "map").unwrap();
+        let dirs = vec!["low".into(), "high".into()];
+        let skins = vec![root.join("test.dmf")];
+        let hints =
+            resolved_resource_requests(&dme, "'old.png' 'fallback.png'", &maps, &skins, &dirs)
+                .unwrap();
+        assert_eq!(hints[1].disk_path, root.join("low/fallback.png"));
+        std::fs::write(root.join("high/fallback.png"), "new higher priority").unwrap();
+        std::fs::write(root.join("new.png"), "new").unwrap();
+        let source = "'old.png' 'new.png' 'old.png' 'fallback.png'";
+        let expected = resolved_resource_requests(&dme, source, &maps, &skins, &dirs).unwrap();
+        let actual =
+            resolved_resource_requests_with_hints(&dme, source, &maps, &skins, &dirs, &hints)
+                .unwrap();
+        assert_eq!(actual, expected);
+        let mut literals = Vec::new();
+        resource_scan::visit_resources(source, &mut |literal| literals.push(literal.to_owned()));
+        assert_eq!(
+            resolved_resource_requests_with_literals(&dme, &literals, &maps, &skins, &dirs, &hints)
+                .unwrap(),
+            expected
+        );
+        assert_eq!(actual[2].disk_path, root.join("high/fallback.png"));
+        assert_eq!(
+            actual
+                .iter()
+                .map(|request| request.archive_name.as_str())
+                .collect::<Vec<_>>(),
+            [
+                "old.png",
+                "new.png",
+                "fallback.png",
+                "mapped.png",
+                "test.dmf"
+            ]
+        );
+        // A direct project resource supersedes every old fallback hint too.
+        std::fs::write(root.join("fallback.png"), "direct").unwrap();
+        let actual =
+            resolved_resource_requests_with_hints(&dme, source, &maps, &skins, &dirs, &hints)
+                .unwrap();
+        assert_eq!(actual[2].disk_path, root.join("fallback.png"));
+        std::fs::remove_dir_all(root).unwrap();
+    }
 }
 
 /// Re-resolve an archived name to detect a new file that shadows a previously
@@ -1492,10 +1840,18 @@ pub fn incremental_source_outline(
     source_outline_from_snapshot(source, &ast)
 }
 
-fn source_outline_from_snapshot(
-    source: &str,
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+pub(crate) struct OutlineDescriptor {
+    pub start: usize,
+    pub end: usize,
+    pub header_end: usize,
+    pub path: String,
+    pub safe_signature: bool,
+}
+
+pub(crate) fn outline_descriptors(
     ast: &dm_syntax::AstFile,
-) -> Result<crate::incremental::SourceOutline, String> {
+) -> Result<Vec<OutlineDescriptor>, String> {
     fn collect<'a>(
         items: &'a [Item],
         owner: &str,
@@ -1540,30 +1896,48 @@ fn source_outline_from_snapshot(
     let mut declarations = Vec::new();
     collect(&ast.items, "", &mut declarations)?;
     declarations.sort_by_key(|(item, _, _, _)| item.span.start);
+    Ok(declarations
+        .into_iter()
+        .map(|(item, path, _, safe_signature)| OutlineDescriptor {
+            start: item.span.start,
+            end: item.span.end,
+            header_end: item.header_span.end.min(item.span.end),
+            path,
+            safe_signature,
+        })
+        .collect())
+}
+
+fn source_outline_from_snapshot(
+    source: &str,
+    ast: &dm_syntax::AstFile,
+) -> Result<crate::incremental::SourceOutline, String> {
+    let declarations = outline_descriptors(ast)?;
     let mut counts = HashMap::<String, usize>::new();
-    for (_, path, _, _) in &declarations {
-        *counts.entry(path.clone()).or_default() += 1;
+    for declaration in &declarations {
+        *counts.entry(declaration.path.clone()).or_default() += 1;
     }
     use sha2::Digest;
     let mut abi = sha2::Sha256::new();
     let mut previous = 0;
     let mut procedures = BTreeMap::new();
-    for (item, path, _, safe_signature) in declarations {
-        if item.span.start < previous || item.span.end > source.len() {
+    for declaration in declarations {
+        let OutlineDescriptor {
+            start,
+            end,
+            header_end,
+            path,
+            safe_signature,
+        } = declaration;
+        if start < previous || end > source.len() {
             return Err("overlapping or invalid procedure spans in incremental outline".into());
         }
-        abi.update(source[previous..item.span.start].as_bytes());
-        let raw = &source[item.span.start..item.span.end];
-        let unsafe_body = lex(raw).tokens.iter().any(|token| {
-            matches!(
-                token.text.as_str(),
-                "static" | "const" | "set" | "global" | "{"
-            ) || token.kind == TokenKind::Resource
-        });
+        abi.update(source[previous..start].as_bytes());
+        let raw = &source[start..end];
+        let unsafe_body = procedure_body_requires_full_emission(raw);
         let patchable = safe_signature && !unsafe_body && counts[&path] == 1;
         if patchable {
-            let header_end = item.header_span.end.min(item.span.end);
-            abi.update(source[item.span.start..header_end].as_bytes());
+            abi.update(source[start..header_end].as_bytes());
             // Frame each omitted body, so adjacent declarations cannot alias.
             abi.update(b"\0BODY\0");
         } else {
@@ -1572,18 +1946,30 @@ fn source_outline_from_snapshot(
         procedures.insert(
             path,
             crate::incremental::ProcedureSource {
-                source: raw.to_owned(),
+                source: std::sync::Arc::from(raw),
                 digest: crate::incremental::digest(raw.as_bytes()),
                 patchable,
             },
         );
-        previous = item.span.end;
+        previous = end;
     }
     abi.update(source[previous..].as_bytes());
     Ok(crate::incremental::SourceOutline {
         abi_digest: format!("{:x}", abi.finalize()),
         procedures,
     })
+}
+
+pub(crate) fn procedure_body_requires_full_emission(source: &str) -> bool {
+    let mut unsafe_body = false;
+    dm_syntax::visit_tokens(source, |token| {
+        unsafe_body |= token.kind == TokenKind::Resource
+            || matches!(
+                token.text(source),
+                "static" | "const" | "set" | "global" | "{"
+            );
+    });
+    unsafe_body
 }
 
 /// Recover inherited lexical fields without storing them for every procedure.
@@ -1687,7 +2073,7 @@ fn normalize_variable_header(header: &str) -> String {
     }
 }
 
-fn declaration_snapshot(source: &str) -> Result<dm_syntax::AstFile, String> {
+pub(crate) fn declaration_snapshot(source: &str) -> Result<dm_syntax::AstFile, String> {
     let limit = std::env::var("DM_BUILD_MAX_PARSE_CHUNK_BYTES")
         .ok()
         .and_then(|value| value.parse::<usize>().ok())
@@ -2192,8 +2578,54 @@ fn emit_global_procs_mode(
     world_name: &str,
     resources: Option<&ResourceSet>,
     lowering_cache: &mut crate::lower_cache::ProcLoweringCache,
+    audit: Option<&mut InitializerAudit>,
+    capture: Option<&mut Option<crate::incremental::EmissionCheckpoint>>,
+) -> Result<(Dmb, Vec<EmittedProc>, Vec<u8>), String> {
+    emit_global_procs_mode_with_workers(
+        source,
+        builtin_image,
+        world_name,
+        resources,
+        lowering_cache,
+        audit,
+        capture,
+        procedure_pipeline::worker_count(),
+    )
+}
+
+fn emit_global_procs_mode_with_workers(
+    source: &str,
+    builtin_image: &[u8],
+    world_name: &str,
+    resources: Option<&ResourceSet>,
+    lowering_cache: &mut crate::lower_cache::ProcLoweringCache,
+    audit: Option<&mut InitializerAudit>,
+    capture: Option<&mut Option<crate::incremental::EmissionCheckpoint>>,
+    workers: usize,
+) -> Result<(Dmb, Vec<EmittedProc>, Vec<u8>), String> {
+    emit_global_procs_mode_with_frontend(
+        source,
+        builtin_image,
+        world_name,
+        resources,
+        lowering_cache,
+        audit,
+        capture,
+        workers,
+        None,
+    )
+}
+
+fn emit_global_procs_mode_with_frontend(
+    source: &str,
+    builtin_image: &[u8],
+    world_name: &str,
+    resources: Option<&ResourceSet>,
+    lowering_cache: &mut crate::lower_cache::ProcLoweringCache,
     mut audit: Option<&mut InitializerAudit>,
     capture: Option<&mut Option<crate::incremental::EmissionCheckpoint>>,
+    workers: usize,
+    frontend: Option<&mut crate::frontend::OutlineSession>,
 ) -> Result<(Dmb, Vec<EmittedProc>, Vec<u8>), String> {
     let build_started = std::time::Instant::now();
     let trace = |stage: &str| {
@@ -2205,11 +2637,21 @@ fn emit_global_procs_mode(
         }
     };
     trace("declaration snapshot start");
-    let mut ast = declaration_snapshot(source)?;
-    let outline = capture
-        .as_ref()
-        .map(|_| source_outline_from_snapshot(source, &ast))
-        .transpose()?;
+    let (mut ast, cached_outline) = if let Some(frontend) = frontend {
+        let (ast, outline) = frontend.compact_snapshot(source)?;
+        (ast, Some(outline))
+    } else {
+        (declaration_snapshot(source)?, None)
+    };
+    let outline = if capture.is_some() {
+        Some(if let Some(outline) = cached_outline {
+            outline
+        } else {
+            source_outline_from_snapshot(source, &ast)?
+        })
+    } else {
+        None
+    };
     let mut captured_procedures = BTreeMap::new();
     trace("declaration snapshot complete");
     let modified = collect_modified_types(source)?;
@@ -2807,456 +3249,582 @@ fn emit_global_procs_mode(
         }
         dmb.classes[id].flags |= bits;
     }
-    for (ordinal, pending) in pending.into_iter().enumerate() {
-        if ordinal % 5000 == 0 {
-            trace(&format!(
-                "procedure lowering {ordinal}/{procedure_count}: {}",
-                pending.item.header
-            ));
-        }
-        let mut parsed_item = parse_cache
-            .parse(source, pending.item.span)
-            .map_err(|diagnostic| format!("procedure syntax: {diagnostic:?}"))?;
-        rewrite_modified_items(std::slice::from_mut(&mut parsed_item), &modified);
-        let item = &parsed_item;
-        let (path, params) = member_signature(item, &pending.owner_path, pending.verb)?;
-        let repeated = !proc_paths.insert(path.as_bytes().to_vec());
-        let explicit_definition = item
-            .header
-            .split_once('(')
-            .is_some_and(|(header, _)| header.contains("/proc/") || header.contains("/verb/"));
-        if repeated && (explicit_definition || !generated_proc_paths.contains(&path)) {
-            return Err(format!("duplicate procedure definition: {path}"));
-        }
-        generated_proc_paths.insert(path.clone());
-        let mut bindings = LowerBindings {
-            current_proc_path: Some(path.clone()),
-            current_type_path: (!pending.owner_path.is_empty()).then(|| pending.owner_path.clone()),
-            parameters: params.iter().map(|param| param.name.clone()).collect(),
-            parameter_type_flags: params.iter().map(|param| param.type_flags).collect(),
-            parameter_types: params
-                .iter()
-                .filter_map(|param| {
-                    param
-                        .type_path
-                        .as_ref()
-                        .map(|path| (param.name.clone(), path.clone()))
-                })
-                .collect(),
-            parameter_value_sources: params.iter().map(|param| param.value_source).collect(),
-            parameter_defaults: params.iter().map(|param| param.default.clone()).collect(),
-            shared: Some(Arc::clone(&shared_bindings)),
-            ..LowerBindings::default()
-        };
-        if pending.owner_path == "/world" {
-            seed_builtin_fields("/world", &mut bindings);
-        }
-        if let Some(mut class_id) = pending.owner {
-            loop {
-                if let Some(path) = dmb.string(dmb.classes[class_id as usize].path_string_id()) {
-                    seed_builtin_fields(&String::from_utf8_lossy(path), &mut bindings);
-                    if let Some(types) = shared_bindings
-                        .member_types
-                        .get(&String::from_utf8_lossy(path).to_string())
-                    {
-                        for (name, path) in types {
-                            bindings
-                                .field_types
-                                .entry(name.clone())
-                                .or_insert_with(|| path.clone());
-                        }
-                    }
-                }
-                if let Some(declarations) = dmb.class_variable_declarations(class_id as usize) {
-                    for (id, _) in declarations {
-                        if let Some(name) = dmb.string(dmb.variables[id as usize].name) {
-                            bindings
-                                .fields
-                                .insert(String::from_utf8_lossy(name).into_owned());
-                        }
-                    }
-                }
-                let parent = dmb.classes[class_id as usize].parent_class_id();
-                if parent == 0xffff {
-                    break;
-                }
-                class_id = parent;
-            }
-        }
-        let inherited = pending.owner.and_then(|owner| {
-            find_inherited_proc(&dmb, owner, path.rsplit('/').next().unwrap(), pending.verb)
-        });
-        let inherited_metadata = if let Some(owner) = pending.owner {
-            resolve_pending_parent_metadata(
-                &dmb,
-                owner,
-                path.rsplit('/').next().unwrap(),
-                pending.verb,
-                source,
-                &metadata_sources,
-                &mut resolved_metadata,
-                &mut parse_cache,
-            )?
-        } else {
-            None
-        };
-        let (metadata, mut body) = if let Some(base) = inherited_metadata {
-            proc_metadata_from_base(&item.children, base)?
-        } else {
-            proc_metadata(&item.children, inherited.map(|proc| (&dmb, proc)))?
-        };
-        if let Some(owner) = pending.owner {
-            resolved_metadata.insert(
-                (
-                    owner,
-                    path.rsplit('/').next().unwrap().to_owned(),
-                    pending.verb,
-                ),
-                metadata.clone(),
-            );
-        }
-        let mut static_declarations = Vec::new();
-        let mut static_ids = HashMap::new();
-        let mut local_const_ids = HashMap::new();
-        extract_static_declarations(&mut body, &mut static_declarations);
-        let local_names: HashSet<String> = static_declarations
-            .iter()
-            .filter_map(|declaration| {
-                declaration
-                    .split('=')
-                    .next()?
-                    .trim()
-                    .rsplit('/')
-                    .next()
-                    .map(|name| name.split('[').next().unwrap().to_owned())
-            })
-            .collect();
-        for declaration in static_declarations {
-            let sized_array = is_sized_array_declaration(&declaration);
-            let normalized =
-                normalize_array_declaration(&declaration, &dmb, pending.owner, &strings)?;
-            let declaration = normalized.unwrap_or(declaration);
-            let declaration = if let Some((header, expression)) = declaration.split_once('=') {
-                let context = HashMap::from([
-                    ("__PROC__".to_owned(), path.clone()),
-                    (
-                        "__TYPE__".to_owned(),
-                        if pending.owner_path.is_empty() {
-                            "null".to_owned()
-                        } else {
-                            pending.owner_path.clone()
-                        },
-                    ),
-                ]);
-                format!(
-                    "{header}= {}",
-                    qualify_expression_with_aliases(expression.trim(), &context)
-                )
-            } else {
-                declaration
-            };
-            let raw = declaration.strip_prefix("var/").unwrap();
-            let (raw_name, initial) = raw
-                .split_once('=')
-                .map_or((raw.trim(), None), |(name, value)| {
-                    (name.trim(), Some(value.trim()))
-                });
-            let mut parts = raw_name.trim().split('/').collect::<Vec<_>>();
-            let name = parts.pop().unwrap_or("");
-            if name.is_empty() || static_ids.contains_key(name) {
-                return Err(format!(
-                    "{path}: duplicate or unsupported static local: {declaration}"
-                ));
-            }
-            let is_const = parts.contains(&"const") || declaration.starts_with("var/const/");
-            let folded = initial.and_then(|expression| {
-                const_eval::evaluate(expression, |name| {
-                    if let Some(id) = local_const_ids.get(name) {
-                        constant_from_variable(&dmb, *id, &strings)
-                    } else if local_names.contains(name) {
-                        None
-                    } else {
-                        fold_constant(name, &dmb, pending.owner, &strings)
-                    }
-                })
-            });
-            let initial_value = if let Some(value) = folded {
-                encode_constant(value, &mut dmb, &mut strings)
-            } else {
-                constant_variable_value_scoped(
-                    initial,
-                    &declaration,
-                    &mut dmb,
-                    &mut strings,
-                    &resource_ids,
-                    pending.owner,
-                    &local_names,
-                )
-            };
-            let (kind, value, dynamic) = match initial_value {
-                Ok((kind, value)) => (kind, value, None),
-                Err(error) if is_const => {
-                    return Err(format!("{path}: invalid static const initializer: {error}"))
-                }
-                Err(_) if initial.is_some() => {
-                    let expression =
-                        normalize_dynamic_expression(initial.unwrap(), &parts, &declaration)?;
-                    let global_constructor_count = pending_dynamic
-                        .iter()
-                        .filter(|entry| {
-                            entry.owner.is_none()
-                                && !entry.name.starts_with("__dm_static_")
-                                && entry.expression.starts_with("new ")
-                        })
-                        .count() as u32;
-                    let constructor_count = pending_dynamic
-                        .iter()
-                        .filter(|entry| {
-                            entry.owner.is_none() && entry.expression.starts_with("new ")
-                        })
-                        .count() as u32;
-                    let (kind, value) = if expression.starts_with("new ") {
-                        // Native DM records the initializer sequence once a
-                        // global constructor has established it. Standalone
-                        // static constructors leave this slot zero.
-                        (
-                            62,
-                            if global_constructor_count == 0 {
-                                0
-                            } else {
-                                constructor_count + 1
-                            },
-                        )
-                    } else {
-                        (0, 0)
+    let procedure_cache_root = lowering_cache.cache_root().map(Path::to_path_buf);
+    let mut pending = pending.into_iter().enumerate().peekable();
+    let mut owner_bindings = OwnerBindingCache::new(4 * 1024 * 1024, 64);
+    let (lowering_result, worker_stats) = procedure_pipeline::with_lowering_pool(
+        procedure_cache_root.as_deref(),
+        workers,
+        |pool| -> Result<(), String> {
+            while pending.peek().is_some() {
+                // The fixed batch width is independent of worker count, so
+                // static-slot allocation and ordered linking produce identical
+                // table IDs with one or two workers. Only two AST jobs are live.
+                let mut prepared = Vec::with_capacity(2);
+                for _ in 0..2 {
+                    let Some((ordinal, pending)) = pending.next() else {
+                        break;
                     };
-                    (kind, value, Some(expression))
-                }
-                Err(error) => return Err(format!("{path}: {error}")),
-            };
-            let variable_id = dmb.variables.len() as u32;
-            let initializer_name = format!("__dm_static_{variable_id}");
-            let name_id = strings.intern(&mut dmb, name);
-            dmb.variables.push(Variable {
-                kind,
-                value,
-                name: name_id,
-            });
-            let footer = dmb.variable_footer;
-            if footer == 0xffff {
-                dmb.variable_footer =
-                    append_list(&mut dmb, vec![variable_id, if is_const { 3 } else { 1 }]);
-            } else {
-                dmb.lists[footer as usize].extend([variable_id, if is_const { 3 } else { 1 }]);
-            }
-            initializer_globals.insert(initializer_name.clone(), variable_id);
-            static_ids.insert(name.to_owned(), variable_id);
-            bindings.globals.insert(name.into());
-            bindings.fields.remove(name);
-            if let Some((_, path)) = declared_variable_type(&declaration) {
-                bindings.global_types.insert(name.into(), path);
-            }
-            if is_const {
-                local_const_ids.insert(name.to_owned(), variable_id);
-            }
-            if let Some(expression) = dynamic {
-                pending_dynamic.push(PendingDynamic {
-                    owner: None,
-                    name: initializer_name,
-                    expression,
-                    sized_array,
-                });
-            }
-        }
-        let local_aliases: HashMap<_, _> = static_ids
-            .iter()
-            .map(|(name, id)| (name.clone(), format!("__dm_static_{id}")))
-            .collect();
-        for assignment in &mut pending_dynamic {
-            if static_ids
-                .values()
-                .any(|id| assignment.name == format!("__dm_static_{id}"))
-            {
-                assignment.expression =
-                    qualify_expression_with_aliases(&assignment.expression, &local_aliases);
-                if let Some(owner) = pending.owner {
-                    assignment.expression =
-                        qualify_static_expression(&assignment.expression, owner, &dmb);
-                }
-            }
-        }
-        let simple = lowering_cache
-            .compile(&body, &bindings)
-            .map_err(|errors| format!("{path}: {errors:?}"))?;
-        let mut ledger = Ledger::default();
-        bind_builtin_global_vars(&mut dmb, &mut strings, &mut ledger)
-            .map_err(|error| format!("{path}: {error}"))?;
-        bind_modified_instances(&strings, &mut ledger, &simple.code)
-            .map_err(|error| format!("{path}: {error}"))?;
-        for value in &simple.strings {
-            let id = strings.intern_bytes(&mut dmb, simple.string_bytes(value));
-            ledger
-                .bind(Symbol::new(Table::String, value), id)
-                .map_err(|error| error.to_string())?;
-        }
-        for path in &simple.class_paths {
-            let id = class_link_id(&dmb, &class_paths, path)
-                .ok_or_else(|| format!("{path}: unresolved constructor type"))?;
-            bind_class_link(&mut ledger, path, id)?;
-        }
-        for path in &simple.resources {
-            let id = resource_ids
-                .get(path)
-                .ok_or_else(|| format!("{path}: resource literal was not loaded"))?;
-            ledger
-                .bind_alias(Symbol::new(Table::Resource, path), *id)
-                .map_err(|error| format!("procedure resource {path}: {error}"))?;
-        }
-        bind_scope_references(
-            &simple.code,
-            &mut ledger,
-            &initializer_globals,
-            Some(&static_ids),
-            &global_proc_ids,
-        )
-        .map_err(|error| format!("{path}: {error}"))?;
-        let linked =
-            link_proc(&simple.code, &ledger).map_err(|error| format!("{path}: {error}"))?;
-        if linked.words.len() > u16::MAX as usize {
-            return Err(format!("{path}: code exceeds DMB list limit"));
-        }
-        let path_id = strings.intern(&mut dmb, &path);
-        let name = path.rsplit('/').next().unwrap_or(&path).replace('_', " ");
-        let display_id = strings.intern_bytes(
-            &mut dmb,
-            metadata.name.as_deref().unwrap_or(name.as_bytes()),
-        );
-        let description_id = metadata.description.as_ref().map_or(0xffff, |description| {
-            strings.intern_bytes(&mut dmb, description)
-        });
-        let category_id = metadata
-            .category
-            .as_ref()
-            .map_or(0xffff, |category| strings.intern_bytes(&mut dmb, category));
-        let code_id = append_list(&mut dmb, linked.words.clone());
-        let local_ids = simple
-            .local_names
-            .iter()
-            .map(|name| append_null_variable(&mut dmb, &mut strings, name))
-            .collect();
-        let locals_id = append_list(&mut dmb, local_ids);
-        let mut arg_words = Vec::new();
-        for (index, mut arg) in simple.argument_metadata().into_iter().enumerate() {
-            if let Some(expression) = &params[index].source_expression {
-                let mut source_bindings = bindings.clone();
-                source_bindings.parameter_defaults.clear();
-                source_bindings.parameter_value_sources.clear();
-                // Native source helpers run in the owner invocation's argument
-                // frame. Both the selected candidate and sibling parameters use
-                // their original Arg indices, despite the helper's empty arg table.
-                let source = format!("/proc/__argument_source()\n    return {expression}\n");
-                let ast = parse(&source);
-                if !ast.diagnostics.is_empty() {
-                    return Err(format!("argument source syntax: {:?}", ast.diagnostics));
-                }
-                let helper = lowering_cache
-                    .compile(&ast.items[0].children, &source_bindings)
-                    .map_err(|errors| format!("argument source {expression}: {errors:?}"))?;
-                let mut referenced_statics = BTreeMap::new();
-                helper.code.for_each_reference(|table, name| {
-                    if table == Table::Variable {
-                        if let Some(id) = static_ids.get(name) {
-                            referenced_statics.insert(name.to_owned(), *id);
+                    if ordinal % 5000 == 0 {
+                        trace(&format!(
+                            "procedure lowering {ordinal}/{procedure_count}: {}",
+                            pending.item.header
+                        ));
+                    }
+                    let mut parsed_item = parse_cache
+                        .parse(source, pending.item.span)
+                        .map_err(|diagnostic| format!("procedure syntax: {diagnostic:?}"))?;
+                    rewrite_modified_items(std::slice::from_mut(&mut parsed_item), &modified);
+                    let item = &parsed_item;
+                    let (path, params) = member_signature(item, &pending.owner_path, pending.verb)?;
+                    let repeated = !proc_paths.insert(path.as_bytes().to_vec());
+                    let explicit_definition =
+                        item.header.split_once('(').is_some_and(|(header, _)| {
+                            header.contains("/proc/") || header.contains("/verb/")
+                        });
+                    if repeated && (explicit_definition || !generated_proc_paths.contains(&path)) {
+                        return Err(format!("duplicate procedure definition: {path}"));
+                    }
+                    generated_proc_paths.insert(path.clone());
+                    let mut bindings = LowerBindings {
+                        current_proc_path: Some(path.clone()),
+                        current_type_path: (!pending.owner_path.is_empty())
+                            .then(|| pending.owner_path.clone()),
+                        parameters: params.iter().map(|param| param.name.clone()).collect(),
+                        parameter_type_flags: params.iter().map(|param| param.type_flags).collect(),
+                        parameter_types: params
+                            .iter()
+                            .filter_map(|param| {
+                                param
+                                    .type_path
+                                    .as_ref()
+                                    .map(|path| (param.name.clone(), path.clone()))
+                            })
+                            .collect(),
+                        parameter_value_sources: params
+                            .iter()
+                            .map(|param| param.value_source)
+                            .collect(),
+                        parameter_defaults: params
+                            .iter()
+                            .map(|param| param.default.clone())
+                            .collect(),
+                        shared: Some(Arc::clone(&shared_bindings)),
+                        ..LowerBindings::default()
+                    };
+                    if pending.owner_path == "/world" {
+                        seed_builtin_fields("/world", &mut bindings);
+                    }
+                    if let Some(class_id) = pending.owner {
+                        owner_bindings.populate(class_id, &dmb, &shared_bindings, &mut bindings);
+                    }
+                    let inherited = pending.owner.and_then(|owner| {
+                        find_inherited_proc(
+                            &dmb,
+                            owner,
+                            path.rsplit('/').next().unwrap(),
+                            pending.verb,
+                        )
+                    });
+                    let inherited_metadata = if let Some(owner) = pending.owner {
+                        resolve_pending_parent_metadata(
+                            &dmb,
+                            owner,
+                            path.rsplit('/').next().unwrap(),
+                            pending.verb,
+                            source,
+                            &metadata_sources,
+                            &mut resolved_metadata,
+                            &mut parse_cache,
+                        )?
+                    } else {
+                        None
+                    };
+                    let (metadata, mut body) = if let Some(base) = inherited_metadata {
+                        proc_metadata_from_base(&item.children, base)?
+                    } else {
+                        proc_metadata(&item.children, inherited.map(|proc| (&dmb, proc)))?
+                    };
+                    if let Some(owner) = pending.owner {
+                        resolved_metadata.insert(
+                            (
+                                owner,
+                                path.rsplit('/').next().unwrap().to_owned(),
+                                pending.verb,
+                            ),
+                            metadata.clone(),
+                        );
+                    }
+                    let mut static_declarations = Vec::new();
+                    let mut static_ids = HashMap::new();
+                    let mut local_const_ids = HashMap::new();
+                    extract_static_declarations(&mut body, &mut static_declarations);
+                    let local_names: HashSet<String> = static_declarations
+                        .iter()
+                        .filter_map(|declaration| {
+                            declaration
+                                .split('=')
+                                .next()?
+                                .trim()
+                                .rsplit('/')
+                                .next()
+                                .map(|name| name.split('[').next().unwrap().to_owned())
+                        })
+                        .collect();
+                    for declaration in static_declarations {
+                        let sized_array = is_sized_array_declaration(&declaration);
+                        let normalized = normalize_array_declaration(
+                            &declaration,
+                            &dmb,
+                            pending.owner,
+                            &strings,
+                        )?;
+                        let declaration = normalized.unwrap_or(declaration);
+                        let declaration =
+                            if let Some((header, expression)) = declaration.split_once('=') {
+                                let context = HashMap::from([
+                                    ("__PROC__".to_owned(), path.clone()),
+                                    (
+                                        "__TYPE__".to_owned(),
+                                        if pending.owner_path.is_empty() {
+                                            "null".to_owned()
+                                        } else {
+                                            pending.owner_path.clone()
+                                        },
+                                    ),
+                                ]);
+                                format!(
+                                    "{header}= {}",
+                                    qualify_expression_with_aliases(expression.trim(), &context)
+                                )
+                            } else {
+                                declaration
+                            };
+                        let raw = declaration.strip_prefix("var/").unwrap();
+                        let (raw_name, initial) = raw
+                            .split_once('=')
+                            .map_or((raw.trim(), None), |(name, value)| {
+                                (name.trim(), Some(value.trim()))
+                            });
+                        let mut parts = raw_name.trim().split('/').collect::<Vec<_>>();
+                        let name = parts.pop().unwrap_or("");
+                        if name.is_empty() || static_ids.contains_key(name) {
+                            return Err(format!(
+                                "{path}: duplicate or unsupported static local: {declaration}"
+                            ));
+                        }
+                        let is_const =
+                            parts.contains(&"const") || declaration.starts_with("var/const/");
+                        let folded = initial.and_then(|expression| {
+                            const_eval::evaluate(expression, |name| {
+                                if let Some(id) = local_const_ids.get(name) {
+                                    constant_from_variable(&dmb, *id, &strings)
+                                } else if local_names.contains(name) {
+                                    None
+                                } else {
+                                    fold_constant(name, &dmb, pending.owner, &strings)
+                                }
+                            })
+                        });
+                        let initial_value = if let Some(value) = folded {
+                            encode_constant(value, &mut dmb, &mut strings)
+                        } else {
+                            constant_variable_value_scoped(
+                                initial,
+                                &declaration,
+                                &mut dmb,
+                                &mut strings,
+                                &resource_ids,
+                                pending.owner,
+                                &local_names,
+                            )
+                        };
+                        let (kind, value, dynamic) = match initial_value {
+                            Ok((kind, value)) => (kind, value, None),
+                            Err(error) if is_const => {
+                                return Err(format!(
+                                    "{path}: invalid static const initializer: {error}"
+                                ))
+                            }
+                            Err(_) if initial.is_some() => {
+                                let expression = normalize_dynamic_expression(
+                                    initial.unwrap(),
+                                    &parts,
+                                    &declaration,
+                                )?;
+                                let global_constructor_count = pending_dynamic
+                                    .iter()
+                                    .filter(|entry| {
+                                        entry.owner.is_none()
+                                            && !entry.name.starts_with("__dm_static_")
+                                            && entry.expression.starts_with("new ")
+                                    })
+                                    .count()
+                                    as u32;
+                                let constructor_count = pending_dynamic
+                                    .iter()
+                                    .filter(|entry| {
+                                        entry.owner.is_none()
+                                            && entry.expression.starts_with("new ")
+                                    })
+                                    .count()
+                                    as u32;
+                                let (kind, value) = if expression.starts_with("new ") {
+                                    // Native DM records the initializer sequence once a
+                                    // global constructor has established it. Standalone
+                                    // static constructors leave this slot zero.
+                                    (
+                                        62,
+                                        if global_constructor_count == 0 {
+                                            0
+                                        } else {
+                                            constructor_count + 1
+                                        },
+                                    )
+                                } else {
+                                    (0, 0)
+                                };
+                                (kind, value, Some(expression))
+                            }
+                            Err(error) => return Err(format!("{path}: {error}")),
+                        };
+                        let variable_id = dmb.variables.len() as u32;
+                        let initializer_name = format!("__dm_static_{variable_id}");
+                        let name_id = strings.intern(&mut dmb, name);
+                        dmb.variables.push(Variable {
+                            kind,
+                            value,
+                            name: name_id,
+                        });
+                        let footer = dmb.variable_footer;
+                        if footer == 0xffff {
+                            dmb.variable_footer = append_list(
+                                &mut dmb,
+                                vec![variable_id, if is_const { 3 } else { 1 }],
+                            );
+                        } else {
+                            dmb.lists[footer as usize]
+                                .extend([variable_id, if is_const { 3 } else { 1 }]);
+                        }
+                        initializer_globals.insert(initializer_name.clone(), variable_id);
+                        static_ids.insert(name.to_owned(), variable_id);
+                        bindings.globals.insert(name.into());
+                        bindings.fields.remove(name);
+                        if let Some((_, path)) = declared_variable_type(&declaration) {
+                            bindings.global_types.insert(name.into(), path);
+                        }
+                        if is_const {
+                            local_const_ids.insert(name.to_owned(), variable_id);
+                        }
+                        if let Some(expression) = dynamic {
+                            pending_dynamic.push(PendingDynamic {
+                                owner: None,
+                                name: initializer_name,
+                                expression,
+                                sized_array,
+                            });
                         }
                     }
-                });
-                // The VM evaluates sources in their owning object context. Deduplicate
-                // equivalent symbolic code, retaining proc-static slot identity.
-                let key =
-                    crate::lower_cache::shared_binding_fingerprint(&(&helper, referenced_statics));
-                let reference_index = if let Some(id) = argument_source_indices.get(&key) {
-                    *id
-                } else {
-                    let reference_index = dmb.proc_references.len();
-                    if reference_index > u8::MAX as usize {
-                        return Err("too many distinct argument source procedures".into());
+                    let local_aliases: HashMap<_, _> = static_ids
+                        .iter()
+                        .map(|(name, id)| (name.clone(), format!("__dm_static_{id}")))
+                        .collect();
+                    for assignment in &mut pending_dynamic {
+                        if static_ids
+                            .values()
+                            .any(|id| assignment.name == format!("__dm_static_{id}"))
+                        {
+                            assignment.expression = qualify_expression_with_aliases(
+                                &assignment.expression,
+                                &local_aliases,
+                            );
+                            if let Some(owner) = pending.owner {
+                                assignment.expression =
+                                    qualify_static_expression(&assignment.expression, owner, &dmb);
+                            }
+                        }
                     }
-                    dmb.proc_references.push(0xffff);
-                    pending_argument_sources.push((reference_index, helper, static_ids.clone()));
-                    argument_source_indices.insert(key, reference_index);
-                    reference_index
-                };
-                arg.value_source = ((reference_index as u32) << 8) | 0x40;
+                    pool.submit(ordinal, body, bindings);
+                    prepared.push((ordinal, pending, path, params, metadata, static_ids));
+                }
+                let results = pool.receive_batch(prepared.len());
+                for ((ordinal, pending, path, params, metadata, static_ids), result) in
+                    prepared.into_iter().zip(results)
+                {
+                    assert_eq!(ordinal, result.ordinal, "lowered procedure order");
+                    let bindings = result.bindings;
+                    let simple = result
+                        .compiled
+                        .map_err(|errors| format!("{path}: {errors:?}"))?;
+                    let mut ledger = Ledger::default();
+                    bind_builtin_global_vars(&mut dmb, &mut strings, &mut ledger)
+                        .map_err(|error| format!("{path}: {error}"))?;
+                    bind_modified_instances(&strings, &mut ledger, &simple.code)
+                        .map_err(|error| format!("{path}: {error}"))?;
+                    for value in &simple.strings {
+                        let id = strings.intern_bytes(&mut dmb, simple.string_bytes(value));
+                        ledger
+                            .bind(Symbol::new(Table::String, value), id)
+                            .map_err(|error| error.to_string())?;
+                    }
+                    for path in &simple.class_paths {
+                        let id = class_link_id(&dmb, &class_paths, path)
+                            .ok_or_else(|| format!("{path}: unresolved constructor type"))?;
+                        bind_class_link(&mut ledger, path, id)?;
+                    }
+                    for path in &simple.resources {
+                        let id = resource_ids
+                            .get(path)
+                            .ok_or_else(|| format!("{path}: resource literal was not loaded"))?;
+                        ledger
+                            .bind_alias(Symbol::new(Table::Resource, path), *id)
+                            .map_err(|error| format!("procedure resource {path}: {error}"))?;
+                    }
+                    bind_scope_references(
+                        &simple.code,
+                        &mut ledger,
+                        &initializer_globals,
+                        Some(&static_ids),
+                        &global_proc_ids,
+                    )
+                    .map_err(|error| format!("{path}: {error}"))?;
+                    let linked = link_proc(&simple.code, &ledger)
+                        .map_err(|error| format!("{path}: {error}"))?;
+                    if linked.words.len() > u16::MAX as usize {
+                        return Err(format!("{path}: code exceeds DMB list limit"));
+                    }
+                    let path_id = strings.intern(&mut dmb, &path);
+                    let name = path.rsplit('/').next().unwrap_or(&path).replace('_', " ");
+                    let display_id = strings.intern_bytes(
+                        &mut dmb,
+                        metadata.name.as_deref().unwrap_or(name.as_bytes()),
+                    );
+                    let description_id =
+                        metadata.description.as_ref().map_or(0xffff, |description| {
+                            strings.intern_bytes(&mut dmb, description)
+                        });
+                    let category_id = metadata
+                        .category
+                        .as_ref()
+                        .map_or(0xffff, |category| strings.intern_bytes(&mut dmb, category));
+                    let code_id = append_list(&mut dmb, linked.words.clone());
+                    let local_ids = simple
+                        .local_names
+                        .iter()
+                        .map(|name| append_null_variable(&mut dmb, &mut strings, name))
+                        .collect();
+                    let locals_id = append_list(&mut dmb, local_ids);
+                    let mut arg_words = Vec::new();
+                    let mut arguments = simple
+                        .argument_metadata()
+                        .into_iter()
+                        .enumerate()
+                        .peekable();
+                    while arguments.peek().is_some() {
+                        let batch: Vec<_> = arguments.by_ref().take(2).collect();
+                        let mut submitted = 0;
+                        for (index, _) in &batch {
+                            if let Some(expression) = &params[*index].source_expression {
+                                let mut source_bindings = bindings.clone();
+                                source_bindings.parameter_defaults.clear();
+                                source_bindings.parameter_value_sources.clear();
+                                // Native source helpers run in the owner invocation's argument
+                                // frame. Both the selected candidate and sibling parameters use
+                                // their original Arg indices, despite the helper's empty arg table.
+                                let source =
+                                    format!("/proc/__argument_source()\n    return {expression}\n");
+                                let mut ast = parse(&source);
+                                if !ast.diagnostics.is_empty() {
+                                    return Err(format!(
+                                        "argument source syntax: {:?}",
+                                        ast.diagnostics
+                                    ));
+                                }
+                                let body = std::mem::take(&mut ast.items[0].children);
+                                pool.submit(*index, body, source_bindings);
+                                submitted += 1;
+                            }
+                        }
+                        let mut helpers = HashMap::new();
+                        for result in pool.receive_batch(submitted) {
+                            let expression =
+                                params[result.ordinal].source_expression.as_deref().unwrap();
+                            let helper = result.compiled.map_err(|errors| {
+                                format!("argument source {expression}: {errors:?}")
+                            })?;
+                            helpers.insert(result.ordinal, helper);
+                        }
+                        for (index, mut arg) in batch {
+                            if params[index].source_expression.is_some() {
+                                let helper = helpers
+                                    .remove(&index)
+                                    .expect("prepared argument source helper");
+                                let mut referenced_statics = BTreeMap::new();
+                                helper.code.for_each_reference(|table, name| {
+                                    if table == Table::Variable {
+                                        if let Some(id) = static_ids.get(name) {
+                                            referenced_statics.insert(name.to_owned(), *id);
+                                        }
+                                    }
+                                });
+                                // The VM evaluates sources in their owning object context. Deduplicate
+                                // equivalent symbolic code, retaining proc-static slot identity.
+                                let key = crate::lower_cache::shared_binding_fingerprint(&(
+                                    &helper,
+                                    referenced_statics,
+                                ));
+                                let reference_index = if let Some(id) =
+                                    argument_source_indices.get(&key)
+                                {
+                                    *id
+                                } else {
+                                    let reference_index = dmb.proc_references.len();
+                                    if reference_index > u8::MAX as usize {
+                                        return Err(
+                                            "too many distinct argument source procedures".into()
+                                        );
+                                    }
+                                    dmb.proc_references.push(0xffff);
+                                    pending_argument_sources.push((
+                                        reference_index,
+                                        helper,
+                                        static_ids.clone(),
+                                    ));
+                                    argument_source_indices.insert(key, reference_index);
+                                    reference_index
+                                };
+                                arg.value_source = ((reference_index as u32) << 8) | 0x40;
+                            }
+                            let variable_id =
+                                append_null_variable(&mut dmb, &mut strings, &arg.name);
+                            arg_words.extend([
+                                arg.type_flags,
+                                arg.value_source,
+                                variable_id,
+                                arg.reserved,
+                            ]);
+                        }
+                    }
+                    let args_id = append_list(&mut dmb, arg_words);
+                    crate::reserve_proc_sentinel(&mut dmb);
+                    let proc_index = dmb.procs.len();
+                    dmb.procs.push(Proc {
+                        strings: [path_id, display_id, description_id, category_id],
+                        source_parameter: metadata.source_parameter,
+                        source_kind: metadata.source_kind,
+                        flags: if metadata.flags & !0xff != 0 || metadata.invisibility.is_some() {
+                            0x80 | metadata.flags as u8 & 0x7f
+                        } else {
+                            metadata.flags as u8 & 0x7f
+                        },
+                        extended_flags: (metadata.flags & !0xff != 0
+                            || metadata.invisibility.is_some())
+                        .then_some((metadata.flags | 0x80, metadata.invisibility.unwrap_or(255))),
+                        code_locals_args: [code_id, locals_id, args_id],
+                    });
+                    if let Some(class_id) = pending.owner {
+                        let slot = if pending.verb { 0 } else { 1 };
+                        let list_id = dmb.classes[class_id as usize].lists_and_procs[slot];
+                        if list_id == 0xffff {
+                            let list = append_list(&mut dmb, vec![proc_index as u32]);
+                            dmb.classes[class_id as usize].lists_and_procs[slot] = list;
+                        } else {
+                            dmb.lists[list_id as usize].push(proc_index as u32);
+                        }
+                    } else if pending.owner_path == "/world" {
+                        let list_id = dmb.world.ids[3];
+                        if list_id == 0xffff {
+                            dmb.world.ids[3] = append_list(&mut dmb, vec![proc_index as u32]);
+                        } else {
+                            dmb.lists[list_id as usize].insert(0, proc_index as u32);
+                        }
+                    }
+                    if let Some(outline) = &outline {
+                        if let Some(entry) = outline.procedures.get(&path) {
+                            let frame = LowerBindings {
+                                current_proc_path: bindings.current_proc_path.clone(),
+                                current_type_path: bindings.current_type_path.clone(),
+                                parameters: bindings.parameters.clone(),
+                                parameter_type_flags: bindings.parameter_type_flags.clone(),
+                                parameter_value_sources: bindings.parameter_value_sources.clone(),
+                                parameter_defaults: bindings.parameter_defaults.clone(),
+                                parameter_types: bindings.parameter_types.clone(),
+                                globals: bindings.globals.clone(),
+                                global_types: bindings.global_types.clone(),
+                                global_procs: bindings.global_procs.clone(),
+                                ..LowerBindings::default()
+                            };
+                            captured_procedures.insert(
+                                path.clone(),
+                                crate::incremental::ProcedureCheckpoint {
+                                    proc_id: proc_index as u32,
+                                    owner_path: pending.owner_path.clone(),
+                                    source_digest: entry.digest.clone(),
+                                    bindings: frame,
+                                    patchable: entry.patchable,
+                                },
+                            );
+                        }
+                    }
+                    emitted.push(EmittedProc {
+                        path,
+                        proc_index,
+                        words: linked.words,
+                    });
+                }
             }
-            let variable_id = append_null_variable(&mut dmb, &mut strings, &arg.name);
-            arg_words.extend([arg.type_flags, arg.value_source, variable_id, arg.reserved]);
-        }
-        let args_id = append_list(&mut dmb, arg_words);
-        crate::reserve_proc_sentinel(&mut dmb);
-        let proc_index = dmb.procs.len();
-        dmb.procs.push(Proc {
-            strings: [path_id, display_id, description_id, category_id],
-            source_parameter: metadata.source_parameter,
-            source_kind: metadata.source_kind,
-            flags: if metadata.flags & !0xff != 0 || metadata.invisibility.is_some() {
-                0x80 | metadata.flags as u8 & 0x7f
-            } else {
-                metadata.flags as u8 & 0x7f
-            },
-            extended_flags: (metadata.flags & !0xff != 0 || metadata.invisibility.is_some())
-                .then_some((metadata.flags | 0x80, metadata.invisibility.unwrap_or(255))),
-            code_locals_args: [code_id, locals_id, args_id],
-        });
-        if let Some(class_id) = pending.owner {
-            let slot = if pending.verb { 0 } else { 1 };
-            let list_id = dmb.classes[class_id as usize].lists_and_procs[slot];
-            if list_id == 0xffff {
-                let list = append_list(&mut dmb, vec![proc_index as u32]);
-                dmb.classes[class_id as usize].lists_and_procs[slot] = list;
-            } else {
-                dmb.lists[list_id as usize].push(proc_index as u32);
+            trace("procedure lowering complete; dynamic initializers start");
+            emit_dynamic_initializers_with_pool(
+                &mut dmb,
+                pending_dynamic,
+                &mut strings,
+                &class_paths,
+                &resource_ids,
+                &initializer_globals,
+                &global_proc_ids,
+                &shared_bindings,
+                lowering_cache,
+                true,
+                Some(pool),
+            )?;
+            for declaration in &modified.declarations {
+                let alias = declaration.header.trim();
+                let owner = class_paths[&modified.parents[alias]];
+                let pending = declaration
+                    .children
+                    .iter()
+                    .map(|child| {
+                        let (name, expression) =
+                            child.header.split_once('=').expect("modified assignment");
+                        PendingDynamic {
+                            owner: Some(owner),
+                            name: name.trim().into(),
+                            expression: expression.trim().into(),
+                            sized_array: false,
+                        }
+                    })
+                    .collect();
+                let ids = emit_dynamic_initializers_with_pool(
+                    &mut dmb,
+                    pending,
+                    &mut strings,
+                    &class_paths,
+                    &resource_ids,
+                    &initializer_globals,
+                    &global_proc_ids,
+                    &shared_bindings,
+                    lowering_cache,
+                    false,
+                    Some(pool),
+                )?;
+                let instance = strings.4[alias] as usize;
+                dmb.instances[instance].initializer = ids.first().copied().unwrap_or(0xffff);
             }
-        } else if pending.owner_path == "/world" {
-            let list_id = dmb.world.ids[3];
-            if list_id == 0xffff {
-                dmb.world.ids[3] = append_list(&mut dmb, vec![proc_index as u32]);
-            } else {
-                dmb.lists[list_id as usize].insert(0, proc_index as u32);
-            }
-        }
-        if let Some(outline) = &outline {
-            if let Some(entry) = outline.procedures.get(&path) {
-                let frame = LowerBindings {
-                    current_proc_path: bindings.current_proc_path.clone(),
-                    current_type_path: bindings.current_type_path.clone(),
-                    parameters: bindings.parameters.clone(),
-                    parameter_type_flags: bindings.parameter_type_flags.clone(),
-                    parameter_value_sources: bindings.parameter_value_sources.clone(),
-                    parameter_defaults: bindings.parameter_defaults.clone(),
-                    parameter_types: bindings.parameter_types.clone(),
-                    globals: bindings.globals.clone(),
-                    global_types: bindings.global_types.clone(),
-                    global_procs: bindings.global_procs.clone(),
-                    ..LowerBindings::default()
-                };
-                captured_procedures.insert(
-                    path.clone(),
-                    crate::incremental::ProcedureCheckpoint {
-                        proc_id: proc_index as u32,
-                        owner_path: pending.owner_path.clone(),
-                        source_digest: entry.digest.clone(),
-                        bindings: frame,
-                        patchable: entry.patchable,
-                    },
-                );
-            }
-        }
-        emitted.push(EmittedProc {
-            path,
-            proc_index,
-            words: linked.words,
-        });
-    }
+            Ok(())
+        },
+    );
+    lowering_cache.merge_stats(worker_stats);
+    lowering_result?;
     if emitted
         .iter()
         .any(|p| p.path == "/client/Import" || p.path == "/client/proc/Import")
@@ -3269,50 +3837,6 @@ fn emit_global_procs_mode(
         eprintln!("DM_BUILD_TRACE procedure parse cache: {} hits, {} misses, {} corrupt; read/decode {:.3}s, parse {:.3}s", stats.hits, stats.misses, stats.corrupt, stats.read_time.as_secs_f64(), stats.parse_time.as_secs_f64());
     }
     drop(parse_cache);
-    trace("procedure lowering complete; dynamic initializers start");
-    emit_dynamic_initializers(
-        &mut dmb,
-        pending_dynamic,
-        &mut strings,
-        &class_paths,
-        &resource_ids,
-        &initializer_globals,
-        &global_proc_ids,
-        &shared_bindings,
-        lowering_cache,
-        true,
-    )?;
-    for declaration in &modified.declarations {
-        let alias = declaration.header.trim();
-        let owner = class_paths[&modified.parents[alias]];
-        let pending = declaration
-            .children
-            .iter()
-            .map(|child| {
-                let (name, expression) = child.header.split_once('=').expect("modified assignment");
-                PendingDynamic {
-                    owner: Some(owner),
-                    name: name.trim().into(),
-                    expression: expression.trim().into(),
-                    sized_array: false,
-                }
-            })
-            .collect();
-        let ids = emit_dynamic_initializers(
-            &mut dmb,
-            pending,
-            &mut strings,
-            &class_paths,
-            &resource_ids,
-            &initializer_globals,
-            &global_proc_ids,
-            &shared_bindings,
-            lowering_cache,
-            false,
-        )?;
-        let instance = strings.4[alias] as usize;
-        dmb.instances[instance].initializer = ids.first().copied().unwrap_or(0xffff);
-    }
     for (reference_index, simple, static_ids) in pending_argument_sources {
         let mut ledger = Ledger::default();
         bind_builtin_global_vars(&mut dmb, &mut strings, &mut ledger)?;
@@ -3701,7 +4225,7 @@ fn literal_initializer(expression: &str, dmb: &Dmb, strings: &StringIndex) -> bo
             .is_some_and(|expr| literal(expr, dmb, strings))
 }
 
-fn emit_dynamic_initializers(
+fn emit_dynamic_initializers_with_pool(
     dmb: &mut Dmb,
     pending: Vec<PendingDynamic>,
     strings: &mut StringIndex,
@@ -3712,6 +4236,7 @@ fn emit_dynamic_initializers(
     project_bindings: &Arc<SharedLowerBindings>,
     lowering_cache: &mut crate::lower_cache::ProcLoweringCache,
     attach: bool,
+    mut pool: Option<&mut procedure_pipeline::LoweringPool>,
 ) -> Result<Vec<u32>, String> {
     let mut generated = Vec::new();
     let phase_started = std::time::Instant::now();
@@ -3731,195 +4256,226 @@ fn emit_dynamic_initializers(
             groups.push((assignment.owner, vec![assignment]));
         }
     }
-    for (owner, assignments) in groups {
-        let assignments = if owner.is_none() {
-            let mut phased = assignments
-                .into_iter()
-                .map(|assignment| {
-                    let dynamic = !assignment.sized_array
-                        && !literal_initializer(&assignment.expression, dmb, strings);
-                    (dynamic, assignment)
-                })
-                .collect::<Vec<_>>();
-            phased.sort_by_key(|(dynamic, _)| *dynamic);
-            phased
-                .into_iter()
-                .map(|(_, assignment)| assignment)
-                .collect::<Vec<_>>()
-        } else {
-            assignments
-        };
-        let parse_started = std::time::Instant::now();
-        let mut source = String::from("/proc/__initializer()\n");
-        for assignment in &assignments {
-            source.push_str(&format!(
-                "    {} = {}\n",
-                assignment.name, assignment.expression
-            ));
-        }
-        let ast = parse(&source);
-        if !ast.diagnostics.is_empty() {
-            return Err(format!("dynamic initializer syntax: {:?}", ast.diagnostics));
-        }
-        parse_time += parse_started.elapsed();
-        let bindings_started = std::time::Instant::now();
-        let mut bindings = LowerBindings {
-            globals: referenced_initializer_globals(&source, globals),
-            shared: Some(Arc::clone(&shared)),
-            ..LowerBindings::default()
-        };
-        if let Some(mut class_id) = owner {
-            loop {
-                if let Some(path) = dmb.string(dmb.classes[class_id as usize].path_string_id()) {
-                    let path = String::from_utf8_lossy(path);
-                    seed_builtin_fields(&path, &mut bindings);
-                    if let Some(fields) = shared.member_types.get(path.as_ref()) {
-                        for (name, ty) in fields {
-                            bindings
-                                .field_types
-                                .entry(name.clone())
-                                .or_insert_with(|| ty.clone());
-                        }
-                    }
-                }
-                if let Some(declarations) = dmb.class_variable_declarations(class_id as usize) {
-                    for (id, _) in declarations {
-                        if let Some(name) = dmb.string(dmb.variables[id as usize].name) {
-                            bindings
-                                .fields
-                                .insert(String::from_utf8_lossy(name).into_owned());
-                        }
-                    }
-                }
-                let parent = dmb.classes[class_id as usize].parent_class_id();
-                if parent == 0xffff {
-                    break;
-                }
-                class_id = parent;
-            }
-        }
-        binding_time += bindings_started.elapsed();
-        let lowering_started = std::time::Instant::now();
-        let mut simple = lowering_cache
-            .compile(&ast.items[0].children, &bindings)
-            .map_err(|errors| format!("dynamic initializer: {errors:?}"))?;
-        lowering_time += lowering_started.elapsed();
-        let linking_started = std::time::Instant::now();
-        for item in &mut simple.code.items {
-            if let CodeItem::Instruction(instruction) = item {
-                if owner.is_some() && instruction.opcode == opcode::SET_VAR {
-                    if let [Word::Variable(VariableWord::Field(field))] =
-                        instruction.operands.as_slice()
-                    {
-                        instruction.operands = vec![Word::Variable(VariableWord::SetCache(
-                            Box::new(VariableWord::Src),
-                            Box::new(VariableWord::SetCache(
-                                Box::new(VariableWord::Src),
-                                Box::new(VariableWord::Field(field.clone())),
-                            )),
-                        ))];
-                    }
-                }
-            }
-        }
-        // Initializers finish with End, without a value-return epilogue.
-        let code = &mut simple.code.items;
-        if code.len() >= 3
-            && matches!(&code[code.len() - 3], CodeItem::Instruction(ins) if ins.opcode == opcode::PUSH_VAL && ins.operands == [Word::Value(ValueWord::Null)])
-            && matches!(&code[code.len() - 2], CodeItem::Instruction(ins) if ins.opcode == opcode::RET)
-            && matches!(&code[code.len() - 1], CodeItem::Instruction(ins) if ins.opcode == opcode::END)
-        {
-            code.truncate(code.len() - 3);
-            code.push(CodeItem::Instruction(CodeInstruction {
-                opcode: opcode::END,
-                operands: vec![],
-            }));
-        } else if !matches!(
-            code.last(),
-            Some(CodeItem::Instruction(CodeInstruction {
-                opcode: opcode::END,
-                ..
-            }))
-        ) {
-            return Err("dynamic initializer contains an unsupported return path".into());
-        }
-        let mut ledger = Ledger::default();
-        bind_builtin_global_vars(dmb, strings, &mut ledger)?;
-        bind_modified_instances(&strings, &mut ledger, &simple.code)?;
-        for key in &simple.strings {
-            ledger
-                .bind(
-                    Symbol::new(Table::String, key),
-                    strings.intern_bytes(dmb, simple.string_bytes(key)),
-                )
-                .map_err(|error| error.to_string())?;
-        }
-        for path in &simple.class_paths {
-            let id = class_link_id(dmb, classes, path)
-                .ok_or_else(|| format!("unresolved initializer type: {path}"))?;
-            bind_class_link(&mut ledger, path, id)?;
-        }
-        for path in &simple.resources {
-            let id = *resources
-                .get(path)
-                .ok_or_else(|| format!("unresolved initializer resource: {path}"))?;
-            ledger
-                .bind_alias(Symbol::new(Table::Resource, path), id)
-                .map_err(|error| {
-                    format!("dynamic initializer {owner:?}, resource {path}: {error}")
-                })?;
-        }
-        bind_scope_references(&simple.code, &mut ledger, globals, None, global_procs)?;
-        let words = link_proc(&simple.code, &ledger)
-            .map_err(|error| {
-                format!(
-                    "dynamic initializer {owner:?} ({} of {} assignments): {error}",
-                    assignments
-                        .iter()
-                        .take(3)
-                        .map(|assignment| assignment.name.as_str())
-                        .collect::<Vec<_>>()
-                        .join(", "),
-                    assignments.len()
-                )
-            })?
-            .words;
-        let code_id = append_list(dmb, words);
-        let local_ids = simple
-            .local_names
-            .iter()
-            .map(|name| append_null_variable(dmb, strings, name))
-            .collect();
-        let local_id = append_list(dmb, local_ids);
-        let empty_args = append_list(dmb, vec![]);
-        crate::reserve_proc_sentinel(dmb);
-        let proc_id = dmb.procs.len() as u32;
-        dmb.procs.push(Proc {
-            strings: [0xffff; 4],
-            source_parameter: 255,
-            source_kind: 0,
-            // Native initializers wait for yielding callees before creation continues.
-            flags: 4,
-            extended_flags: None,
-            code_locals_args: [code_id, local_id, empty_args],
-        });
-        generated.push(proc_id);
-        linking_time += linking_started.elapsed();
-        if !attach {
-            continue;
-        }
-        if let Some(class_id) = owner {
-            if dmb.classes[class_id as usize].initializer_proc_id() != 0xffff {
-                return Err(format!(
-                    "class {class_id} already has an initializer procedure"
+    let mut groups = groups.into_iter().enumerate().peekable();
+    while groups.peek().is_some() {
+        let mut prepared = Vec::with_capacity(2);
+        let mut serial_results = Vec::with_capacity(2);
+        for _ in 0..2 {
+            let Some((ordinal, (owner, assignments))) = groups.next() else {
+                break;
+            };
+            let assignments = if owner.is_none() {
+                let mut phased = assignments
+                    .into_iter()
+                    .map(|assignment| {
+                        let dynamic = !assignment.sized_array
+                            && !literal_initializer(&assignment.expression, dmb, strings);
+                        (dynamic, assignment)
+                    })
+                    .collect::<Vec<_>>();
+                phased.sort_by_key(|(dynamic, _)| *dynamic);
+                phased
+                    .into_iter()
+                    .map(|(_, assignment)| assignment)
+                    .collect::<Vec<_>>()
+            } else {
+                assignments
+            };
+            let parse_started = std::time::Instant::now();
+            let mut source = String::from("/proc/__initializer()\n");
+            for assignment in &assignments {
+                source.push_str(&format!(
+                    "    {} = {}\n",
+                    assignment.name, assignment.expression
                 ));
             }
-            dmb.classes[class_id as usize].lists_and_procs[2] = proc_id;
-        } else {
-            if dmb.world.global_initializer_proc_id() != 0xffff {
-                return Err("world already has a global initializer procedure".into());
+            let mut ast = parse(&source);
+            if !ast.diagnostics.is_empty() {
+                return Err(format!("dynamic initializer syntax: {:?}", ast.diagnostics));
             }
-            dmb.world.ids[4] = proc_id;
+            parse_time += parse_started.elapsed();
+            let bindings_started = std::time::Instant::now();
+            let mut bindings = LowerBindings {
+                globals: referenced_initializer_globals(&source, globals),
+                shared: Some(Arc::clone(&shared)),
+                ..LowerBindings::default()
+            };
+            if let Some(mut class_id) = owner {
+                loop {
+                    if let Some(path) = dmb.string(dmb.classes[class_id as usize].path_string_id())
+                    {
+                        let path = String::from_utf8_lossy(path);
+                        seed_builtin_fields(&path, &mut bindings);
+                        if let Some(fields) = shared.member_types.get(path.as_ref()) {
+                            for (name, ty) in fields {
+                                bindings
+                                    .field_types
+                                    .entry(name.clone())
+                                    .or_insert_with(|| ty.clone());
+                            }
+                        }
+                    }
+                    if let Some(declarations) = dmb.class_variable_declarations(class_id as usize) {
+                        for (id, _) in declarations {
+                            if let Some(name) = dmb.string(dmb.variables[id as usize].name) {
+                                bindings
+                                    .fields
+                                    .insert(String::from_utf8_lossy(name).into_owned());
+                            }
+                        }
+                    }
+                    let parent = dmb.classes[class_id as usize].parent_class_id();
+                    if parent == 0xffff {
+                        break;
+                    }
+                    class_id = parent;
+                }
+            }
+            binding_time += bindings_started.elapsed();
+            let lowering_started = std::time::Instant::now();
+            let body = std::mem::take(&mut ast.items[0].children);
+            if let Some(pool) = pool.as_deref_mut() {
+                pool.submit(ordinal, body, bindings);
+            } else {
+                let compiled = lowering_cache.compile(&body, &bindings);
+                serial_results.push(procedure_pipeline::LoweringResult {
+                    ordinal,
+                    bindings,
+                    compiled,
+                });
+            }
+            lowering_time += lowering_started.elapsed();
+            prepared.push((ordinal, owner, assignments));
+        }
+        let lowering_started = std::time::Instant::now();
+        let results = if let Some(pool) = pool.as_deref_mut() {
+            pool.receive_batch(prepared.len())
+        } else {
+            serial_results
+        };
+        lowering_time += lowering_started.elapsed();
+        for ((ordinal, owner, assignments), result) in prepared.into_iter().zip(results) {
+            assert_eq!(ordinal, result.ordinal, "initializer lowering order");
+            let mut simple = result
+                .compiled
+                .map_err(|errors| format!("dynamic initializer: {errors:?}"))?;
+            let linking_started = std::time::Instant::now();
+            for item in &mut simple.code.items {
+                if let CodeItem::Instruction(instruction) = item {
+                    if owner.is_some() && instruction.opcode == opcode::SET_VAR {
+                        if let [Word::Variable(VariableWord::Field(field))] =
+                            instruction.operands.as_slice()
+                        {
+                            instruction.operands = vec![Word::Variable(VariableWord::SetCache(
+                                Box::new(VariableWord::Src),
+                                Box::new(VariableWord::SetCache(
+                                    Box::new(VariableWord::Src),
+                                    Box::new(VariableWord::Field(field.clone())),
+                                )),
+                            ))];
+                        }
+                    }
+                }
+            }
+            // Initializers finish with End, without a value-return epilogue.
+            let code = &mut simple.code.items;
+            if code.len() >= 3
+                && matches!(&code[code.len() - 3], CodeItem::Instruction(ins) if ins.opcode == opcode::PUSH_VAL && ins.operands == [Word::Value(ValueWord::Null)])
+                && matches!(&code[code.len() - 2], CodeItem::Instruction(ins) if ins.opcode == opcode::RET)
+                && matches!(&code[code.len() - 1], CodeItem::Instruction(ins) if ins.opcode == opcode::END)
+            {
+                code.truncate(code.len() - 3);
+                code.push(CodeItem::Instruction(CodeInstruction {
+                    opcode: opcode::END,
+                    operands: vec![],
+                }));
+            } else if !matches!(
+                code.last(),
+                Some(CodeItem::Instruction(CodeInstruction {
+                    opcode: opcode::END,
+                    ..
+                }))
+            ) {
+                return Err("dynamic initializer contains an unsupported return path".into());
+            }
+            let mut ledger = Ledger::default();
+            bind_builtin_global_vars(dmb, strings, &mut ledger)?;
+            bind_modified_instances(&strings, &mut ledger, &simple.code)?;
+            for key in &simple.strings {
+                ledger
+                    .bind(
+                        Symbol::new(Table::String, key),
+                        strings.intern_bytes(dmb, simple.string_bytes(key)),
+                    )
+                    .map_err(|error| error.to_string())?;
+            }
+            for path in &simple.class_paths {
+                let id = class_link_id(dmb, classes, path)
+                    .ok_or_else(|| format!("unresolved initializer type: {path}"))?;
+                bind_class_link(&mut ledger, path, id)?;
+            }
+            for path in &simple.resources {
+                let id = *resources
+                    .get(path)
+                    .ok_or_else(|| format!("unresolved initializer resource: {path}"))?;
+                ledger
+                    .bind_alias(Symbol::new(Table::Resource, path), id)
+                    .map_err(|error| {
+                        format!("dynamic initializer {owner:?}, resource {path}: {error}")
+                    })?;
+            }
+            bind_scope_references(&simple.code, &mut ledger, globals, None, global_procs)?;
+            let words = link_proc(&simple.code, &ledger)
+                .map_err(|error| {
+                    format!(
+                        "dynamic initializer {owner:?} ({} of {} assignments): {error}",
+                        assignments
+                            .iter()
+                            .take(3)
+                            .map(|assignment| assignment.name.as_str())
+                            .collect::<Vec<_>>()
+                            .join(", "),
+                        assignments.len()
+                    )
+                })?
+                .words;
+            let code_id = append_list(dmb, words);
+            let local_ids = simple
+                .local_names
+                .iter()
+                .map(|name| append_null_variable(dmb, strings, name))
+                .collect();
+            let local_id = append_list(dmb, local_ids);
+            let empty_args = append_list(dmb, vec![]);
+            crate::reserve_proc_sentinel(dmb);
+            let proc_id = dmb.procs.len() as u32;
+            dmb.procs.push(Proc {
+                strings: [0xffff; 4],
+                source_parameter: 255,
+                source_kind: 0,
+                // Native initializers wait for yielding callees before creation continues.
+                flags: 4,
+                extended_flags: None,
+                code_locals_args: [code_id, local_id, empty_args],
+            });
+            generated.push(proc_id);
+            linking_time += linking_started.elapsed();
+            if !attach {
+                continue;
+            }
+            if let Some(class_id) = owner {
+                if dmb.classes[class_id as usize].initializer_proc_id() != 0xffff {
+                    return Err(format!(
+                        "class {class_id} already has an initializer procedure"
+                    ));
+                }
+                dmb.classes[class_id as usize].lists_and_procs[2] = proc_id;
+            } else {
+                if dmb.world.global_initializer_proc_id() != 0xffff {
+                    return Err("world already has a global initializer procedure".into());
+                }
+                dmb.world.ids[4] = proc_id;
+            }
         }
     }
     if attach && std::env::var_os("DM_BUILD_TRACE").is_some() {
@@ -6203,6 +6759,105 @@ fn parse_parameters(source: &str) -> Result<Vec<ParsedParameter>, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn owner_binding_cache_preserves_frames_and_respects_budgets() {
+        let (dmb, _) = emit_global_procs(
+            "/datum/base\n    var/value = 7\n/datum/child\n    parent_type = /datum/base\n    var/other = 8\n",
+            BUILTINS,
+            "owner-cache",
+        ).unwrap();
+        let owner = dmb
+            .classes
+            .iter()
+            .position(|class| {
+                dmb.string(class.path_string_id()) == Some(b"/datum/child".as_slice())
+            })
+            .unwrap() as u32;
+        let shared = SharedLowerBindings::default();
+        let mut expected = LowerBindings::default();
+        collect_owner_fields(owner, &dmb, &shared, &mut expected);
+        let mut cache = OwnerBindingCache::new(4 * 1024 * 1024, 1);
+        let mut first = LowerBindings::default();
+        cache.populate(owner, &dmb, &shared, &mut first);
+        assert_eq!(first.fields, expected.fields);
+        assert_eq!(first.field_types, expected.field_types);
+        // A proc-local static shadows a field only in its job's cloned frame.
+        assert!(first.fields.remove("value"));
+        let mut second = LowerBindings::default();
+        cache.populate(owner, &dmb, &shared, &mut second);
+        assert_eq!(second.fields, expected.fields);
+        assert!(second.fields.contains("value"));
+        assert!(cache.bytes <= cache.byte_limit);
+        assert!(cache.frames.len() <= cache.entry_limit);
+        let mut tiny = OwnerBindingCache::new(1, 1);
+        tiny.populate(owner, &dmb, &shared, &mut second);
+        assert!(tiny.frames.is_empty());
+        assert_eq!(tiny.bytes, 0);
+        assert_eq!(second.fields, expected.fields);
+    }
+
+    #[test]
+    fn parallel_lowering_preserves_static_slots_inherited_metadata_and_output_bytes() {
+        let source = "/var/list/global_table = list(first())\n/datum/base\n    var/value = 7\n    var/list/base_table = list(first())\n/datum/base/proc/get()\n    set name = \"Base Name\"\n    var/static/count = 1\n    return count + value\n/datum/child\n    parent_type = /datum/base\n    var/list/child_table = list(second())\n/datum/child/get()\n    return ..() + 2\n/proc/first()\n    var/static/seed = 3\n    return seed++\n/proc/second()\n    var/const/bias = 2\n    return bias\n/proc/with_sources(value in list(1, 2), sibling in list(3, 4))\n    return value + sibling\n";
+        let build = |workers| {
+            emit_global_procs_mode_with_workers(
+                source,
+                BUILTINS,
+                "parallel-proof",
+                None,
+                &mut crate::lower_cache::ProcLoweringCache::disabled(),
+                None,
+                None,
+                workers,
+            )
+            .unwrap()
+        };
+        let (serial, serial_procs, serial_resources) = build(1);
+        let (parallel, parallel_procs, parallel_resources) = build(2);
+        assert_eq!(serial.to_bytes().unwrap(), parallel.to_bytes().unwrap());
+        assert_eq!(serial_procs, parallel_procs);
+        assert_eq!(serial_resources, parallel_resources);
+        assert!(parallel.world.global_initializer_proc_id() != 0xffff);
+        assert_eq!(parallel.proc_references.len(), 2);
+        let find = |dmb: &Dmb, path: &[u8]| {
+            dmb.procs
+                .iter()
+                .find(|proc| dmb.string(proc.strings[0]) == Some(path))
+                .unwrap()
+                .strings[1]
+        };
+        let base = find(&parallel, b"/datum/base/proc/get");
+        let child = find(&parallel, b"/datum/child/get");
+        assert_eq!(parallel.string(base), parallel.string(child));
+        assert_eq!(parallel.string(child), Some(b"Base Name".as_slice()));
+    }
+
+    #[test]
+    fn streaming_body_guard_matches_allocating_lexer() {
+        let fixtures = [
+            include_str!("../../../fixtures/v516_builtins.dm"),
+            include_str!("../../../fixtures/mob_sight.dm"),
+            "/proc/run(α)\n    return α + 1 // static const set global { 'ignored'\n",
+            "/proc/run()\n    return \"static [global.foo] [f('hidden.dmi')] {\"\n",
+            "/proc/run()\n    var/static/value = 1\n",
+            "/proc/run()\n    var/const/value = 1\n",
+            "/proc/run()\n    set name = \"name\"\n",
+            "/proc/run()\n    return global.value\n",
+            "/proc/run() { return 1 }\n",
+            "/proc/run()\n    return 'icons/α.dmi'\n",
+            "/proc/run()\n    return @'not-a-resource'\n",
+        ];
+        for source in fixtures {
+            let expected = lex(source).tokens.iter().any(|token| {
+                matches!(
+                    token.text.as_str(),
+                    "static" | "const" | "set" | "global" | "{"
+                ) || token.kind == TokenKind::Resource
+            });
+            assert_eq!(procedure_body_requires_full_emission(source), expected);
+        }
+    }
     #[test]
     fn implicit_ancestors_inherit_finalized_headers_and_overrides() {
         let native = Dmb::from_bytes(include_bytes!(

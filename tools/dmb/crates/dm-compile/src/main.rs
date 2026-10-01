@@ -1,9 +1,7 @@
 //! Developer entry point for the new compiler prototype.
 
 use dm_compiled::{default_cache_root, Coordinator, Request, Response, SessionKey};
-use dm_compiler::bootstrap::{
-    compile_project_with_resources_and_defines, emit_global_procs, replace_existing_procs,
-};
+use dm_compiler::bootstrap::{emit_global_procs, replace_existing_procs};
 use dm_compiler::{CompilerSession, ProjectSession};
 use dm_output::{apply_pair_in_place, plan_pair, validate_byond_pair, PairPlan, PatchPolicy};
 use std::collections::BTreeMap;
@@ -385,40 +383,27 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             if let Some(error) = response.error { return Err(error.into()); }
             if !response.ok { return Err("project diagnostics emitted".into()); }
             let build = response.build.ok_or("daemon returned no patch result")?;
-            println!("patched {} and {} (output cache {})", build.dmb.display(), build.rsc.display(), if build.cache_hit { "hit" } else { "miss" });
+            println!("patched {} and {} (output cache {}, {} lowered, {} reused)", build.dmb.display(), build.rsc.display(), if build.cache_hit { "hit" } else { "miss" }, build.lowered_procs, build.reused_procs);
             Ok(())
         }
         Some("build-project-patch") => {
             let usage = "usage: dm-compile build-project-patch PROJECT.dme BUILTINS.dmb OUTPUT.dmb OUTPUT.rsc --exclusive";
             let project = PathBuf::from(args.next().ok_or(usage)?);
-            let builtins = PathBuf::from(args.next().ok_or(usage)?);
-            let dmb_path = PathBuf::from(args.next().ok_or(usage)?);
-            let rsc_path = PathBuf::from(args.next().ok_or(usage)?);
+            let builtins = PathBuf::from(args.next().ok_or(usage)?).canonicalize()?;
+            let dmb = PathBuf::from(args.next().ok_or(usage)?).canonicalize()?;
+            let rsc = PathBuf::from(args.next().ok_or(usage)?).canonicalize()?;
             if args.next().as_deref() != Some("--exclusive") {
                 return Err(usage.into());
             }
             let defines = parse_defines(args)?;
-            let world_name = project.file_stem().and_then(|stem| stem.to_str()).ok_or("project filename has no world name")?;
-            let output = compile_project_with_resources_and_defines(&project, &fs::read(builtins)?, world_name, &defines)?;
-            let new_dmb = output.dmb.to_bytes()?;
-            validate_byond_pair(&new_dmb, &output.rsc_bytes)?;
-            let old_dmb = fs::read(&dmb_path)?;
-            let old_rsc = fs::read(&rsc_path)?;
-            match plan_pair(&old_dmb, &old_rsc, &new_dmb, &output.rsc_bytes, PatchPolicy::default()) {
-                PairPlan::Unchanged => println!("output is unchanged"),
-                plan @ PairPlan::Patch { .. } => {
-                    let changed_bytes = match &plan {
-                        PairPlan::Patch { dmb, rsc, .. } => dmb.iter().chain(rsc.iter())
-                            .flat_map(|patch| patch.spans.iter())
-                            .map(|span| span.after.len()).sum::<usize>(),
-                        _ => 0,
-                    };
-                    let journal = dmb_path.with_extension("dmb.undo-journal");
-                    apply_pair_in_place(&dmb_path, &rsc_path, &journal, &plan)?;
-                    println!("patched {} in place ({} bytes written)", dmb_path.display(), changed_bytes);
-                }
-                PairPlan::Rebuild { .. } => return Err("output layout changed; use build-project for a new generation".into()),
-            }
+            let key = SessionKey::new(env::current_dir()?, &project, "516.1687", defines.into_iter().collect(), "build")?;
+            let mut coordinator = Coordinator::new(default_cache_root(&project))?;
+            let response = coordinator.handle(Request::BuildProjectPatch { key, builtins, dmb, rsc, exclusive: true });
+            for diagnostic in &response.diagnostics { eprintln!("{diagnostic}"); }
+            if let Some(error) = response.error { return Err(error.into()); }
+            if !response.ok { return Err("project diagnostics emitted".into()); }
+            let build = response.build.ok_or("build returned no patch result")?;
+            println!("patched {} and {} (output cache {}, {} lowered, {} reused)", build.dmb.display(), build.rsc.display(), if build.cache_hit { "hit" } else { "miss" }, build.lowered_procs, build.reused_procs);
             Ok(())
         }
         Some("patch-global-procs") => {

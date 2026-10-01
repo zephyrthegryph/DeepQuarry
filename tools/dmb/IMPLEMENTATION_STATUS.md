@@ -1,7 +1,33 @@
 # Native compiler integration status
 
-Updated September 30, 2026. This describes the native Rust frontend, separately
+Updated October 1, 2026. This describes the native Rust frontend, separately
 from the earlier OpenDream-output translator.
+
+## Iteration and concurrency checkpoint
+
+The compiler now persists build receipts for fresh CLI reuse, verifies ordinary
+Windows input writes through file identities and NTFS change journals, and
+retains warm build results ahead of disk receipt loading. Asset validation shares
+the full input proof baseline. CLI patch builds use the same persisted compiler
+checkpoints as daemon builds.
+
+The daemon runs two bounded workers by default, assigning each worktree to a
+worker. Procedure parsing and symbolic lowering use a bounded worker pool,
+with ordered linking. Nested preprocessing expansions, compact AST fragments,
+linked-world checkpoints and dirty-file validation proofs survive small edits.
+The indexed serializer handles changed code-list lengths, and unchanged archives
+can be published through verified references without rereading their payloads.
+The Windows memory limit remains 2 GiB for the entire daemon. See
+[performance measurements](PERFORMANCE.md) and [worker architecture](PARALLEL.md).
+The Build50 figures below describe the earlier checkpoint.
+
+The iteration integration gate passes all 1,199 Rust workspace tests. Measured
+full-project test configuration: 3.24 s ordinary body edit, 32 ms daemon no-op,
+152 ms fresh CLI no-op, 11.72 s fresh CLI body edit, and 3.83 s for two concurrent
+body edits. The two-worktree daemon remained below its aggregate 2 GiB ceiling.
+The binary-format test harness uses an unoptimized test profile to avoid excessive
+LLVM memory during fixture compilation; normal compiler binaries remain optimized.
+This iteration did not launch DreamDaemon or repeat the game runtime suite.
 
 ## Full continuous-suite comparison
 

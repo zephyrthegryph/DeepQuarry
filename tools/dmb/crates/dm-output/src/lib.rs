@@ -6,6 +6,7 @@
 //! provide that proof without materializing every unchanged record.
 
 pub mod generation;
+pub mod list_image;
 
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -606,7 +607,10 @@ fn verify_patch_source(path: &Path, patch: &FilePatch) -> io::Result<()> {
 /// Roll back an interrupted pair patch. The journal contains only changed spans;
 /// it is meaningful only while both files retain their original lengths.
 fn acquire_pair_lock(journal_path: &Path) -> io::Result<File> {
-    let lock = OpenOptions::new().read(true).write(true).create(true)
+    let lock = OpenOptions::new()
+        .read(true)
+        .write(true)
+        .create(true)
         .open(journal_path.with_extension("lock"))?;
     lock.try_lock()?;
     Ok(lock)
@@ -624,8 +628,12 @@ fn recover_pair_locked(dmb_path: &Path, rsc_path: &Path, journal_path: &Path) ->
         return Err(invalid("unsupported undo journal version"));
     }
     // Prove both original files can be reconstructed before writing either.
-    if let Some(p) = &journal.dmb { verify_recovery_source(dmb_path, p)?; }
-    if let Some(p) = &journal.rsc { verify_recovery_source(rsc_path, p)?; }
+    if let Some(p) = &journal.dmb {
+        verify_recovery_source(dmb_path, p)?;
+    }
+    if let Some(p) = &journal.rsc {
+        verify_recovery_source(rsc_path, p)?;
+    }
     if let Some(p) = &journal.dmb {
         restore_spans(dmb_path, p)?;
     }
@@ -645,7 +653,9 @@ fn verify_recovery_source(path: &Path, patch: &FilePatch) -> io::Result<()> {
     let mut position = 0u64;
     let mut buffer = [0u8; 64 * 1024];
     for span in &patch.spans {
-        let end = span.offset.checked_add(span.before.len() as u64)
+        let end = span
+            .offset
+            .checked_add(span.before.len() as u64)
             .ok_or_else(|| invalid("undo span overflow"))?;
         if span.before.len() != span.after.len() || span.offset < position || end > patch.old_len {
             return Err(invalid("invalid or overlapping undo span"));
@@ -663,7 +673,12 @@ fn verify_recovery_source(path: &Path, patch: &FilePatch) -> io::Result<()> {
     Ok(())
 }
 
-fn hash_file_segment(file: &mut File, mut bytes: u64, hash: &mut Sha256, buffer: &mut [u8]) -> io::Result<()> {
+fn hash_file_segment(
+    file: &mut File,
+    mut bytes: u64,
+    hash: &mut Sha256,
+    buffer: &mut [u8],
+) -> io::Result<()> {
     while bytes != 0 {
         let count = bytes.min(buffer.len() as u64) as usize;
         file.read_exact(&mut buffer[..count])?;
@@ -857,7 +872,14 @@ mod tests {
 
     #[test]
     fn recovery_is_locked_and_preflights_both_files_before_writing() {
-        let directory = std::env::temp_dir().join(format!("dm-recovery-preflight-{}-{}", std::process::id(), std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+        let directory = std::env::temp_dir().join(format!(
+            "dm-recovery-preflight-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
         fs::create_dir(&directory).unwrap();
         let dmb = directory.join("world.dmb");
         let rsc = directory.join("world.rsc");
@@ -866,9 +888,17 @@ mod tests {
         let new_dmb = b"header-B-tail";
         let old_rsc = b"asset-X-tail";
         let new_rsc = b"asset-Y-tail";
-        let FilePlan::Patch(dmb_patch) = plan_file(old_dmb, new_dmb, PatchPolicy::default()) else { panic!() };
-        let FilePlan::Patch(rsc_patch) = plan_file(old_rsc, new_rsc, PatchPolicy::default()) else { panic!() };
-        let mut journal = UndoJournal { version:1, dmb:Some(dmb_patch), rsc:Some(rsc_patch) };
+        let FilePlan::Patch(dmb_patch) = plan_file(old_dmb, new_dmb, PatchPolicy::default()) else {
+            panic!()
+        };
+        let FilePlan::Patch(rsc_patch) = plan_file(old_rsc, new_rsc, PatchPolicy::default()) else {
+            panic!()
+        };
+        let mut journal = UndoJournal {
+            version: 1,
+            dmb: Some(dmb_patch),
+            rsc: Some(rsc_patch),
+        };
         fs::write(&dmb, new_dmb).unwrap();
         fs::write(&rsc, new_rsc).unwrap();
         fs::write(&journal_path, serde_json::to_vec(&journal).unwrap()).unwrap();
@@ -879,7 +909,11 @@ mod tests {
         drop(lock);
         fs::write(&rsc, b"other-Y-tail").unwrap();
         assert!(recover_pair(&dmb, &rsc, &journal_path).is_err());
-        assert_eq!(fs::read(&dmb).unwrap(), new_dmb, "failed RSC preflight must not roll back DMB");
+        assert_eq!(
+            fs::read(&dmb).unwrap(),
+            new_dmb,
+            "failed RSC preflight must not roll back DMB"
+        );
         assert_eq!(fs::read(&rsc).unwrap(), b"other-Y-tail");
         fs::write(&rsc, new_rsc).unwrap();
         let original_offset = journal.rsc.as_ref().unwrap().spans[0].offset;

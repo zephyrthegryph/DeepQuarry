@@ -127,6 +127,12 @@ impl ProcLoweringCache {
         self.stats
     }
 
+    pub(crate) fn merge_stats(&mut self, stats: CacheStats) {
+        self.stats.hits += stats.hits;
+        self.stats.misses += stats.misses;
+        self.stats.corrupt_entries += stats.corrupt_entries;
+    }
+
     pub(crate) fn cache_root(&self) -> Option<&Path> {
         self.root.as_deref()
     }
@@ -304,7 +310,7 @@ fn cache_key(body: &[Item], bindings: &LowerBindings) -> String {
                     .iter()
                     .filter_map(|(class, members)| {
                         members
-                            .get(&name)
+                            .get(name)
                             .map(|declared_type| (class.as_str(), declared_type.as_str()))
                     })
                     .collect();
@@ -313,20 +319,20 @@ fn cache_key(body: &[Item], bindings: &LowerBindings) -> String {
                     .iter()
                     .filter_map(|(class, members)| {
                         members
-                            .get(&name)
+                            .get(name)
                             .map(|path| (class.as_str(), path.as_str()))
                     })
                     .collect();
                 let instances: BTreeMap<&str, &str> = s
                     .modified_instances
                     .iter()
-                    .filter(|(alias, _)| alias.rsplit('/').next() == Some(name.as_str()))
+                    .filter(|(alias, _)| alias.rsplit('/').next() == Some(name))
                     .map(|(alias, base)| (alias.as_str(), base.as_str()))
                     .collect();
                 let known: BTreeSet<&str> = s
                     .known_member_procs
                     .iter()
-                    .filter(|(_, names)| names.contains(&name))
+                    .filter(|(_, names)| names.contains(name))
                     .map(|(class, _)| class.as_str())
                     .collect();
                 let globals: BTreeMap<&str, &str> = s
@@ -334,14 +340,14 @@ fn cache_key(body: &[Item], bindings: &LowerBindings) -> String {
                     .iter()
                     .filter_map(|(class, members)| {
                         members
-                            .get(&name)
+                            .get(name)
                             .map(|symbol| (class.as_str(), symbol.as_str()))
                     })
                     .collect();
                 let fields: BTreeSet<&str> = s
                     .known_member_fields
                     .iter()
-                    .filter(|(_, names)| names.contains(&name))
+                    .filter(|(_, names)| names.contains(name))
                     .map(|(class, _)| class.as_str())
                     .collect();
                 if declarations.is_empty()
@@ -371,40 +377,39 @@ fn cache_key(body: &[Item], bindings: &LowerBindings) -> String {
         hash_optional_bytes(
             &mut hash,
             shared
-                .and_then(|s| s.member_type_fingerprints.get(&name))
+                .and_then(|s| s.member_type_fingerprints.get(name))
                 .or(fallback_member_digest.as_ref())
                 .map(|s| s.as_bytes()),
         );
         hash.update([
             u8::from(
-                bindings.fields.contains(&name) || shared.is_some_and(|s| s.fields.contains(&name)),
+                bindings.fields.contains(name) || shared.is_some_and(|s| s.fields.contains(name)),
             ),
             u8::from(
-                bindings.globals.contains(&name)
-                    || shared.is_some_and(|s| s.globals.contains(&name)),
+                bindings.globals.contains(name) || shared.is_some_and(|s| s.globals.contains(name)),
             ),
             u8::from(
-                bindings.global_procs.contains(&name)
-                    || shared.is_some_and(|s| s.global_procs.contains(&name)),
+                bindings.global_procs.contains(name)
+                    || shared.is_some_and(|s| s.global_procs.contains(name)),
             ),
         ]);
         hash_optional_bytes(
             &mut hash,
             bindings
                 .field_types
-                .get(&name)
-                .or_else(|| shared?.field_types.get(&name))
+                .get(name)
+                .or_else(|| shared?.field_types.get(name))
                 .map(|s| s.as_bytes()),
         );
         hash_optional_bytes(
             &mut hash,
             bindings
                 .global_types
-                .get(&name)
-                .or_else(|| shared?.global_types.get(&name))
+                .get(name)
+                .or_else(|| shared?.global_types.get(name))
                 .map(|s| s.as_bytes()),
         );
-        let number = shared.and_then(|s| s.numeric_constants.get(&name));
+        let number = shared.and_then(|s| s.numeric_constants.get(name));
         hash.update([u8::from(number.is_some())]);
         if let Some(number) = number {
             hash.update(number.to_le_bytes());
@@ -412,7 +417,7 @@ fn cache_key(body: &[Item], bindings: &LowerBindings) -> String {
         hash_optional_bytes(
             &mut hash,
             shared
-                .and_then(|s| s.string_constants.get(&name))
+                .and_then(|s| s.string_constants.get(name))
                 .map(|s| s.as_bytes()),
         );
     }
@@ -458,21 +463,21 @@ fn hash_optional_bytes(hash: &mut Sha256, bytes: Option<&[u8]>) {
     }
 }
 
-fn collect_text_names(text: &str, names: &mut BTreeSet<String>) {
-    let mut name = String::new();
-    for c in text.chars() {
-        if c == '_' || c.is_alphabetic() || (!name.is_empty() && c.is_alphanumeric()) {
-            name.push(c);
-        } else if !name.is_empty() {
-            names.insert(std::mem::take(&mut name));
+fn collect_text_names<'a>(text: &'a str, names: &mut BTreeSet<&'a str>) {
+    let mut start = None;
+    for (offset, c) in text.char_indices() {
+        if c == '_' || c.is_alphabetic() || (start.is_some() && c.is_alphanumeric()) {
+            start.get_or_insert(offset);
+        } else if let Some(start) = start.take() {
+            names.insert(&text[start..offset]);
         }
     }
-    if !name.is_empty() {
-        names.insert(name);
+    if let Some(start) = start {
+        names.insert(&text[start..]);
     }
 }
 
-fn collect_names(body: &[Item], names: &mut BTreeSet<String>) {
+fn collect_names<'a>(body: &'a [Item], names: &mut BTreeSet<&'a str>) {
     for item in body {
         collect_text_names(&item.header, names);
         collect_names(&item.children, names);
@@ -546,6 +551,47 @@ fn atomic_write(path: &Path, bytes: &[u8]) -> std::io::Result<()> {
 mod tests {
     use super::*;
     use dm_syntax::{parse, Span};
+
+    #[test]
+    fn borrowed_names_match_owned_identifier_classification_and_order() {
+        fn owned_names(text: &str) -> BTreeSet<String> {
+            let mut names = BTreeSet::new();
+            let mut name = String::new();
+            for c in text.chars() {
+                if c == '_' || c.is_alphabetic() || (!name.is_empty() && c.is_alphanumeric()) {
+                    name.push(c);
+                } else if !name.is_empty() {
+                    names.insert(std::mem::take(&mut name));
+                }
+            }
+            if !name.is_empty() {
+                names.insert(name);
+            }
+            names
+        }
+        let mut text = String::from(
+            "/obj/item/proc/example(foo_2, αβ = 3, é = \"[foo_2]\") foo_2 foo_2 123abc abc123 _ ²name name² e\u{301} 'icons/path.dmi'\n",
+        );
+        let mut state = 17u32;
+        for _ in 0..8192 {
+            state = state.wrapping_mul(1664525).wrapping_add(1013904223);
+            if let Some(c) = char::from_u32(state % 0x110000) {
+                text.push(c);
+            }
+        }
+        let expected = owned_names(&text);
+        let mut actual = BTreeSet::new();
+        collect_text_names(&text, &mut actual);
+        assert_eq!(
+            actual.iter().copied().collect::<Vec<_>>(),
+            expected.iter().map(String::as_str).collect::<Vec<_>>()
+        );
+        for name in actual {
+            let start = name.as_ptr() as usize;
+            assert!(start >= text.as_ptr() as usize);
+            assert!(start + name.len() <= text.as_ptr() as usize + text.len());
+        }
+    }
 
     #[test]
     fn framed_records_reject_wrong_keys_torn_payloads_and_corruption() {

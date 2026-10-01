@@ -4,6 +4,9 @@ param(
     [string]$ProjectRoot = (Resolve-Path "$PSScriptRoot/../../..").Path,
     [string]$MirrorRoot = "",
     [string]$DaemonAddress = "",
+    [string]$ProjectFile = 'deepquarry.dme',
+    [switch]$ReuseMirror,
+    [switch]$PrepareOnly,
     [string[]]$Defines = @('-DCITESTING')
 )
 $ErrorActionPreference = 'Stop'
@@ -11,7 +14,7 @@ $ProjectRoot = (Resolve-Path -LiteralPath $ProjectRoot).Path
 $Compiler = (Resolve-Path -LiteralPath $Compiler).Path
 $Builtins = (Resolve-Path -LiteralPath $Builtins).Path
 if (!$MirrorRoot) { $MirrorRoot = Join-Path $ProjectRoot "tools/dmb/target/body-edit-$([Guid]::NewGuid().ToString('N'))" }
-if (Test-Path -LiteralPath $MirrorRoot) { throw 'Mirror directory must be new.' }
+if ((Test-Path -LiteralPath $MirrorRoot) -and !$ReuseMirror) { throw 'Mirror directory must be new unless -ReuseMirror is supplied.' }
 $editedRelative = 'code/datums/interactions/tools.dm'
 $original = Join-Path $ProjectRoot $editedRelative
 $before = [IO.File]::ReadAllText($original)
@@ -42,12 +45,25 @@ function New-MirrorBranch([string]$source, [string]$destination, [string[]]$rema
         }
     }
 }
-New-MirrorBranch $ProjectRoot $MirrorRoot ($editedRelative.Split('/'))
+if (!$ReuseMirror) {
+    New-MirrorBranch $ProjectRoot $MirrorRoot ($editedRelative.Split('/'))
+} else {
+    $mirrorFile = Get-Item -LiteralPath (Join-Path $MirrorRoot $editedRelative)
+    if ($mirrorFile.LinkType -or ($mirrorFile.Attributes -band [IO.FileAttributes]::ReparsePoint)) {
+        throw 'The edited mirror file must be a private copy.'
+    }
+    [IO.File]::WriteAllText($mirrorFile.FullName, $before, [Text.UTF8Encoding]::new($false))
+}
 $gitDirectory = (& git -C $ProjectRoot rev-parse --absolute-git-dir).Trim()
 if ($LASTEXITCODE -ne 0) { throw 'Cannot determine shared Git cache directory.' }
 # The daemon resolves cache roots in its own process, so the client's GIT_DIR
 # environment alone is insufficient. This pointer is used only for Git discovery.
 [IO.File]::WriteAllText((Join-Path $MirrorRoot '.git'), "gitdir: $gitDirectory`n", [Text.UTF8Encoding]::new($false))
+if ($PrepareOnly) {
+    if ([IO.File]::ReadAllText($original) -cne $before) { throw 'Original source changed during mirror preparation.' }
+    Write-Host "Prepared private measurement mirror at $MirrorRoot"
+    return
+}
 $savedGitDirectory = $env:GIT_DIR
 $savedTrace = $env:DM_BUILD_TRACE
 try {
@@ -56,15 +72,15 @@ try {
     Push-Location $MirrorRoot
     try {
         $output = Join-Path $MirrorRoot 'timing-output'
-        foreach ($phase in @('baseline', 'changed-body', 'unchanged')) {
+        foreach ($phase in @('baseline', 'changed-body', 'unchanged', 'fresh-cli-unchanged')) {
             if ($phase -eq 'changed-body') {
                 [IO.File]::WriteAllText((Join-Path $MirrorRoot $editedRelative), [regex]::Replace($before, $pattern, '${1}2'), [Text.UTF8Encoding]::new($false))
             }
             $clock = [Diagnostics.Stopwatch]::StartNew()
-            if ($DaemonAddress) {
-                & $Compiler build-project-daemon $DaemonAddress deepquarry.dme $Builtins $output @Defines 2>&1 | Tee-Object -FilePath (Join-Path $MirrorRoot "$phase.log")
+            if ($DaemonAddress -and $phase -ne 'fresh-cli-unchanged') {
+                & $Compiler build-project-daemon $DaemonAddress $ProjectFile $Builtins $output @Defines 2>&1 | Tee-Object -FilePath (Join-Path $MirrorRoot "$phase.log")
             } else {
-                & $Compiler build-project deepquarry.dme $Builtins $output @Defines 2>&1 | Tee-Object -FilePath (Join-Path $MirrorRoot "$phase.log")
+                & $Compiler build-project $ProjectFile $Builtins $output @Defines 2>&1 | Tee-Object -FilePath (Join-Path $MirrorRoot "$phase.log")
             }
             if ($LASTEXITCODE -ne 0) { throw "$phase build failed." }
             $clock.Stop()

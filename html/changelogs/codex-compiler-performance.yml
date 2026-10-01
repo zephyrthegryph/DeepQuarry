@@ -1,0 +1,4 @@
+author: "codex"
+delete-after: true
+changes:
+  - code_imp: "Improved native Rust compiler iteration with persistent syntax and include caches, parallel bytecode lowering, bounded parallel worktree workers, and incremental output serialization."

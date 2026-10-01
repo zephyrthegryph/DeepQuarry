@@ -1018,35 +1018,48 @@ impl<'a> ResourceLookup<'a> {
 
 /// Attach borrowed assets while retaining only references to archive payloads.
 /// Distinct spellings of identical content share a table and archive entry.
-pub fn attach_resource_refs<'a>(dmb: &mut Dmb, resources: impl IntoIterator<Item=&'a crate::rsc::NamedResource>)
-    -> io::Result<(Vec<ResourceId>, Vec<&'a crate::rsc::NamedResource>)>
-{
+pub fn attach_resource_refs<'a>(
+    dmb: &mut Dmb,
+    resources: impl IntoIterator<Item = &'a crate::rsc::NamedResource>,
+) -> io::Result<(Vec<ResourceId>, Vec<&'a crate::rsc::NamedResource>)> {
     let mut references = HashMap::new();
-    for (id,resource) in dmb.resources.iter().enumerate() {
-        references.entry((resource.id,resource.kind)).or_insert(id as u32);
+    for (id, resource) in dmb.resources.iter().enumerate() {
+        references
+            .entry((resource.id, resource.kind))
+            .or_insert(id as u32);
     }
     let mut archive: Vec<&crate::rsc::NamedResource> = Vec::new();
-    let mut entries: HashMap<(u32,u8),usize> = HashMap::new();
+    let mut entries: HashMap<(u32, u8), usize> = HashMap::new();
     let mut ids = Vec::new();
     for resource in resources {
-        if resource.content_id()? != resource.id { return Err(invalid("RSC resource ID does not match asset content")); }
-        let key = (resource.id,resource.kind);
+        if resource.content_id()? != resource.id {
+            return Err(invalid("RSC resource ID does not match asset content"));
+        }
+        let key = (resource.id, resource.kind);
         if let Some(&entry) = entries.get(&key) {
-            if archive[entry].asset_bytes()? != resource.asset_bytes()? { return Err(invalid("RSC resource ID collision")); }
+            if archive[entry].asset_bytes()? != resource.asset_bytes()? {
+                return Err(invalid("RSC resource ID collision"));
+            }
         } else {
-            entries.insert(key,archive.len());
+            entries.insert(key, archive.len());
             archive.push(resource);
         }
-        let index = if let Some(&index) = references.get(&key) { index } else {
-            let index = u32::try_from(dmb.resources.len()).map_err(|_| invalid("resource index exceeds u32"))?;
+        let index = if let Some(&index) = references.get(&key) {
+            index
+        } else {
+            let index = u32::try_from(dmb.resources.len())
+                .map_err(|_| invalid("resource index exceeds u32"))?;
             ResourceId::from_raw(index).ok_or_else(|| invalid("reserved resource index"))?;
-            dmb.resources.push(ResourceRef { id:resource.id,kind:resource.kind });
-            references.insert(key,index);
+            dmb.resources.push(ResourceRef {
+                id: resource.id,
+                kind: resource.kind,
+            });
+            references.insert(key, index);
             index
         };
         ids.push(ResourceId::from_raw(index).ok_or_else(|| invalid("reserved resource index"))?);
     }
-    Ok((ids,archive))
+    Ok((ids, archive))
 }
 
 /// Keeps resource tables indexed while inserting a batch of assets.
@@ -1256,6 +1269,72 @@ impl Dmb {
         Ok(old_count.saturating_sub(self.lists.len()))
     }
 
+    /// Validate list mutations against an already validated image. The caller
+    /// must prove all non-list tables and list count are unchanged. Arbitrary
+    /// structural edits require `validate_references` instead.
+    pub fn validate_changed_lists(&self, changed: &[u32]) -> io::Result<()> {
+        if changed.is_empty() {
+            return Ok(());
+        }
+        let changed: std::collections::HashSet<u32> = changed.iter().copied().collect();
+        if changed.iter().any(|&id| id as usize >= self.lists.len()) {
+            return Err(invalid("changed list ID out of range"));
+        }
+        // Class/global payloads have several distinct schemas. These edits are
+        // uncommon and keep the complete validator as their correctness gate.
+        if changed.contains(&self.variable_footer)
+            || changed.contains(&self.world.ids[3])
+            || self.classes.iter().any(|class| {
+                [
+                    class.lists_and_procs[0],
+                    class.lists_and_procs[1],
+                    class.lists_and_procs[3],
+                    class.lists_and_procs[4],
+                    class.overrides,
+                ]
+                .iter()
+                .any(|id| changed.contains(id))
+            })
+        {
+            return self.validate_references();
+        }
+        for (index, proc_) in self.procs.iter().enumerate() {
+            if self.is_reserved_proc_slot(index) {
+                continue;
+            }
+            if changed.contains(&proc_.code_locals_args[1]) {
+                let locals = self
+                    .lists
+                    .get(proc_.code_locals_args[1] as usize)
+                    .ok_or_else(|| invalid("proc locals list missing"))?;
+                if locals
+                    .iter()
+                    .any(|&id| id != NONE && id as usize >= self.variables.len())
+                {
+                    return Err(invalid("proc locals list contains invalid VarID"));
+                }
+            }
+            if changed.contains(&proc_.code_locals_args[2]) {
+                let arguments = self
+                    .proc_arguments(index)
+                    .ok_or_else(|| invalid("malformed proc argument list"))?;
+                if arguments.iter().any(|arg| {
+                    arg.variable_id != NONE && arg.variable_id as usize >= self.variables.len()
+                }) {
+                    return Err(invalid("proc argument contains invalid VarID"));
+                }
+                if arguments.iter().any(|arg| {
+                    arg.source_expression_index().is_some_and(|reference| {
+                        usize::from(reference) >= self.proc_references.len()
+                    })
+                }) {
+                    return Err(invalid("proc argument expression reference out of range"));
+                }
+            }
+        }
+        Ok(())
+    }
+
     pub fn validate_references(&self) -> io::Result<()> {
         fn in_table(id: u32, len: usize) -> bool {
             id == NONE || (id as usize) < len
@@ -1375,7 +1454,11 @@ impl Dmb {
             }
         }
         for instance in &self.instances {
-            let descriptors = if instance.kind == 8 { self.mobs.len() } else { self.classes.len() };
+            let descriptors = if instance.kind == 8 {
+                self.mobs.len()
+            } else {
+                self.classes.len()
+            };
             if !in_table(instance.class, descriptors)
                 || !in_table(instance.initializer, self.procs.len())
             {
@@ -1616,6 +1699,14 @@ impl Dmb {
     /// Reads a BYOND 516 DMB. Older or newer versions must be implemented
     /// deliberately; their version-gated field layouts differ.
     pub fn from_bytes(data: &[u8]) -> io::Result<Self> {
+        Self::from_bytes_with_list_spans(data).map(|(dmb, _)| dmb)
+    }
+
+    /// Decode while recording exact serialized list records. List words use
+    /// object-width encoding and have no position-dependent cipher or offsets.
+    pub fn from_bytes_with_list_spans(
+        data: &[u8],
+    ) -> io::Result<(Self, Vec<std::ops::Range<usize>>)> {
         let mut r = Reader {
             data,
             at: 0,
@@ -1720,12 +1811,15 @@ impl Dmb {
         if r.u32()? != string_hash {
             return Err(invalid("string table checksum mismatch"));
         }
+        let mut list_spans = Vec::new();
         let lists = r.table(|r| {
+            let start = r.at;
             let count = r.u16()? as usize;
             let mut list = Vec::with_capacity(count);
             for _ in 0..count {
                 list.push(r.object()?);
             }
+            list_spans.push(start..r.at);
             Ok(list)
         })?;
         let procs = r.table(Proc::read)?;
@@ -1763,34 +1857,48 @@ impl Dmb {
         if r.at != data.len() {
             return Err(invalid("trailing DMB bytes"));
         }
-        Ok(Self {
-            header,
-            dimensions,
-            grid,
-            classes,
-            mobs,
-            strings,
-            lists,
-            procs,
-            variables,
-            variable_footer,
-            proc_references,
-            instances,
-            map_objects,
-            world,
-            resources,
-        })
+        Ok((
+            Self {
+                header,
+                dimensions,
+                grid,
+                classes,
+                mobs,
+                strings,
+                lists,
+                procs,
+                variables,
+                variable_footer,
+                proc_references,
+                instances,
+                map_objects,
+                world,
+                resources,
+            },
+            list_spans,
+        ))
     }
 
     /// Serializes decoded v516 records, recomputing string offsets and checksum.
     pub fn to_bytes(&self) -> io::Result<Vec<u8>> {
+        self.to_bytes_with_list_spans().map(|(bytes, _)| bytes)
+    }
+
+    /// Serialize and produce the exact list-record index in the same pass.
+    pub fn to_bytes_with_list_spans(&self) -> io::Result<(Vec<u8>, Vec<std::ops::Range<usize>>)> {
         if self.header.version_line != b"world bin v516\n"
             || !self
                 .header
                 .compatibility_line
                 .starts_with(b"min compatibility v")
             || !self.header.compatibility_line.ends_with(b"\n")
-            || self.header.compatibility_line.iter().filter(|&&byte| byte == b'\n').count() != 1
+            || self
+                .header
+                .compatibility_line
+                .iter()
+                .filter(|&&byte| byte == b'\n')
+                .count()
+                != 1
             || (self.header.flags & 0x8000_0000 != 0) != self.header.extended_flags.is_some()
         {
             return Err(invalid("unsupported DMB header"));
@@ -1862,9 +1970,12 @@ impl Dmb {
             // Native world.executor text may contain newlines. The reader stops
             // at a version line followed by a compatibility line, so reject
             // that ambiguous sentinel rather than valid multiline text.
-            if !line.starts_with(b"#!") || !line.ends_with(b"\n")
-                || line.windows(b"\nworld bin v516\nmin compatibility v".len())
-                    .any(|part| part == b"\nworld bin v516\nmin compatibility v") {
+            if !line.starts_with(b"#!")
+                || !line.ends_with(b"\n")
+                || line
+                    .windows(b"\nworld bin v516\nmin compatibility v".len())
+                    .any(|part| part == b"\nworld bin v516\nmin compatibility v")
+            {
                 return Err(invalid("invalid executor shebang"));
             }
             w.raw(line);
@@ -1918,11 +2029,14 @@ impl Dmb {
             string_hash = nqcrc(string_hash, &[0]);
         }
         w.u32(string_hash);
+        let mut list_spans = Vec::with_capacity(self.lists.len());
         w.table(&self.lists, |w, list| {
+            let start = w.at();
             w.u16(list.len() as u16);
             for &value in list {
                 w.object(value);
             }
+            list_spans.push(start..w.at());
         })?;
         w.table(&self.procs, |w, item| item.write(w))?;
         w.table(&self.variables, |w, item| {
@@ -1953,7 +2067,7 @@ impl Dmb {
         if w.object_overflow {
             return Err(invalid("object ID exceeds selected 16-bit width"));
         }
-        Ok(w.bytes)
+        Ok((w.bytes, list_spans))
     }
 }
 
@@ -1964,15 +2078,20 @@ mod tests {
 
     #[test]
     fn writer_rejects_unterminated_and_multiline_header_fields() {
-        for line in [b"min compatibility v516 516".as_slice(), b"min compatibility v516 516\nextra\n"] {
-            let mut dmb = Dmb::from_bytes(include_bytes!("../fixtures/native_template.bin")).unwrap();
+        for line in [
+            b"min compatibility v516 516".as_slice(),
+            b"min compatibility v516 516\nextra\n",
+        ] {
+            let mut dmb =
+                Dmb::from_bytes(include_bytes!("../fixtures/native_template.bin")).unwrap();
             dmb.header.compatibility_line = line.to_vec();
             assert!(dmb.to_bytes().is_err());
         }
         let mut dmb = Dmb::from_bytes(include_bytes!("../fixtures/native_template.bin")).unwrap();
         dmb.header.executor_line = Some(b"#!/usr/bin/env DreamDaemon".to_vec());
         assert!(dmb.to_bytes().is_err());
-        dmb.header.executor_line = Some(b"#!cmd\nworld bin v516\nmin compatibility v516 516\n".to_vec());
+        dmb.header.executor_line =
+            Some(b"#!cmd\nworld bin v516\nmin compatibility v516 516\n".to_vec());
         assert!(dmb.to_bytes().is_err());
     }
 
@@ -2131,6 +2250,38 @@ mod tests {
             },
             resources: vec![ResourceRef { id: 23, kind: 6 }],
         }
+    }
+
+    #[test]
+    fn list_delta_validator_checks_affected_local_and_argument_schemas() {
+        let mut dmb = minimal();
+        dmb.variables.push(Variable {
+            kind: 0,
+            value: 0,
+            name: 0,
+        });
+        dmb.lists.extend([vec![0], Vec::new()]);
+        dmb.procs.push(Proc {
+            strings: [0; 4],
+            source_parameter: 0,
+            source_kind: 0,
+            flags: 0,
+            extended_flags: None,
+            code_locals_args: [0, 1, 2],
+        });
+        dmb.validate_references().unwrap();
+        dmb.lists[0] = vec![0, 42, 0];
+        dmb.validate_changed_lists(&[0]).unwrap();
+        dmb.lists[1] = vec![1];
+        assert!(dmb.validate_changed_lists(&[1]).is_err());
+        assert!(dmb.validate_references().is_err());
+        dmb.lists[1] = vec![0];
+        dmb.lists[2] = vec![7];
+        assert!(dmb.validate_changed_lists(&[2]).is_err());
+        assert!(dmb.validate_changed_lists(&[u32::MAX]).is_err());
+        dmb.lists[2].clear();
+        dmb.validate_changed_lists(&[0, 1, 2]).unwrap();
+        dmb.validate_references().unwrap();
     }
 
     #[test]

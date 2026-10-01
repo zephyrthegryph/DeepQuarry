@@ -6,6 +6,7 @@ license = "GPL-3.0-only"
 description = "Indexed BYOND output and conservative binary patch planning"
 
 [dependencies]
+dm-host = { path = "../dm-host" }
 byond-dmb = { path = "../.." }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

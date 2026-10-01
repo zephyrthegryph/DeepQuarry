@@ -4,6 +4,8 @@
 
 See [implementation status](IMPLEMENTATION_STATUS.md) for verified native
 frontend coverage, measured cache performance, and remaining integration work.
+See [iteration performance](PERFORMANCE.md) for cache validation and timings,
+and [parallel workers](PARALLEL.md) for bounded daemon concurrency.
 
 The `crates/` workspace contains a DM preprocessor, parser, semantic model,
 BYOND code generator, daemon coordinator, and output publisher. For a small
@@ -40,8 +42,9 @@ The daemon patch command writes only changed spans to the live DMB/RSC pair;
 it does not publish a second complete output generation. The shared disk cache
 stores DMB and RSC as separate content-addressed blobs, linked by a small
 manifest. A code-only edit writes a new DMB blob and reuses an identical RSC
-blob across builds and worktrees. The existing RSC is read to verify its digest,
-but is not rewritten. A cache hit reads both blobs to verify their digests.
+blob across builds and worktrees. Verification of published output can reuse a
+persisted proof of unchanged files; missing or invalid proofs require digest
+verification. Patch builds verify their exclusively owned live output pair.
 Set `DM_BUILD_TRACE=1` on the daemon process to print timing for discovery,
 hashing, resource fingerprinting, cache lookup, compilation, and output work.
 
@@ -68,12 +71,13 @@ macro state, so a changed include can reuse unaffected siblings. The leaf
 cache has bounded path, macro, and byte budgets; large macro environments
 are preprocessed without retaining a snapshot for every include.
 Its versioned cache is saved at
-`<git-common-dir>/dm-compiled-cache/preprocess-v3/<project-id>.json` and loaded by new CLI
+`<git-common-dir>/dm-compiled-cache/preprocess-v3/` as per-project indexes and
+content-addressed expansion shards, and loaded by new CLI
 processes. The project ID comes from the Git-relative DME path: matching worktrees
 share a cache, while separate project manifests keep separate entries.
 Standalone projects use `.dm-cache/` beside the DME. Macro fingerprints and
 changed definitions replace full macro snapshots; retained preprocessing cache
-data is capped at 64 MiB. Cached inputs retain a SHA-256 digest and byte length;
+data is capped at 160 MiB. Cached inputs retain a SHA-256 digest and byte length;
 source origins retain compact line offsets and share their path allocations.
 Procedure cache records are closed and atomically renamed without a disk
 barrier per procedure. Missing or damaged records are rebuilt after validation;
@@ -83,7 +87,10 @@ at 16 MiB before building a whole-project AST; set `DM_CHECK_MAX_SOURCE_BYTES`
 to an explicit byte limit when testing a larger parser input. This cap does
 not apply to project builds. Project builds have a separate 64 MiB default
 limit, configurable with `DM_BUILD_MAX_SOURCE_BYTES`. They parse procedure bodies
-individually. Both CLI and daemon additionally use a
+individually. Daemon build-input snapshots have a separate aggregate 96 MiB
+budget that includes dependency tables and strong metadata proofs, so projects
+near the expanded-source limit can still retain their input snapshots.
+Both CLI and daemon additionally use a
 Windows process memory ceiling of 2 GiB; `DM_MEMORY_LIMIT_MB` changes it
 (`0` explicitly disables the ceiling). `dm-compile preprocess PROJECT.dme`
 checks preprocessing without constructing the full-project AST.
