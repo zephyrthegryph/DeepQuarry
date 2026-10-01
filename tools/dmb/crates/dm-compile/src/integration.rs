@@ -273,7 +273,21 @@ fn diagnostic(project: &Path, message: &str) -> String {
         let tail = &message[index + 1..];
         if let Some((line, text)) = tail.split_once(':') {
             if !line.is_empty() && line.bytes().all(|byte| byte.is_ascii_digit()) {
-                return format!("{}:{}:error: {}", &message[..index], line, text.trim());
+                let text = text.trim();
+                for severity in ["error", "warning"] {
+                    if let Some(text) = text
+                        .strip_prefix(severity)
+                        .and_then(|text| text.strip_prefix(':'))
+                    {
+                        return format!(
+                            "{}:{}:{severity}: {}",
+                            &message[..index],
+                            line,
+                            text.trim_start()
+                        );
+                    }
+                }
+                return format!("{}:{}:error: {}", &message[..index], line, text);
             }
         }
     }
@@ -829,6 +843,14 @@ mod tests {
         assert_eq!(
             diagnostic(Path::new("probe.dme"), "bad.dm:9:error: invalid"),
             "bad.dm:9:error: invalid"
+        );
+        assert_eq!(
+            diagnostic(Path::new("probe.dme"), "bad.dm:9: error: invalid"),
+            "bad.dm:9:error: invalid"
+        );
+        assert_eq!(
+            diagnostic(Path::new("probe.dme"), "bad.dm:9: warning: unused"),
+            "bad.dm:9:warning: unused"
         );
         assert_eq!(
             diagnostic(Path::new("probe.dme"), "unsupported expression"),
