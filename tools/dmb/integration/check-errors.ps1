@@ -66,9 +66,12 @@ try {
         $byondTiming = Wait-CompilerRun $byondRun $TimeoutSeconds $AggregateMemoryMb
         $byondDiagnostics = @(Diagnostics $byondPrefix)
         $byondOk = $byondTiming.exit_code -eq 0 -and $byondDiagnostics.Count -eq 0 -and (Test-Path -LiteralPath ([IO.Path]::ChangeExtension($project, 'dmb')) -PathType Leaf)
-        # Only located compiler diagnostics prove a source failure. A crash or
-        # nonzero exit without them is unclassified, never source parity.
-        $byondKind = if ($byondOk) { $null } elseif ($byondTiming.exit_code -lt 0) { 'internal' } elseif ($byondDiagnostics.Count) { 'source' } else { 'unclassified' }
+        # BYOND 516.1687 returns -1 for normal source errors on Windows. Require
+        # its completed compile summary as well as located diagnostics: an
+        # abnormal exit after a partial diagnostic stream is not source parity.
+        $byondText = [IO.File]::ReadAllText("$byondPrefix.stdout.log") + [IO.File]::ReadAllText("$byondPrefix.stderr.log")
+        $byondFinished = [regex]::IsMatch($byondText, '(?m)^.*\.dmb - [1-9]\d* errors?, \d+ warnings\b') -and [regex]::IsMatch($byondText, '(?m)^Total time:')
+        $byondKind = if ($byondOk) { $null } elseif ($byondTiming.exit_code -in @(-1, 1) -and $byondDiagnostics.Count -and $byondFinished) { 'source' } elseif ($byondTiming.exit_code -lt -1) { 'internal' } else { 'unclassified' }
         $nativePrefix = Join-Path $directory 'native'
         $nativeReport = Join-Path $directory 'native.json'
         $nativeRun = Start-CompilerRun $Compiler $directory (@('integrated-build', $project, '--mode', 'native', '--strict', '--builtins', $Builtins, '--report', $nativeReport) + $Defines) $nativePrefix @{ DM_COMPILER_CACHE_ROOT = (Join-Path $directory 'private-cache'); DQ_NATIVE_DAEMON = $null; DQ_NATIVE_TARGET = '516.1687'; DQ_COMPILER_STRICT = '1' } $ClientMemoryMb
@@ -79,7 +82,7 @@ try {
         if ($native.fallback) { $report.fallback_count++ }
         $sameStatus = $nativeOk -eq $byondOk
         $sameSourceClass = !$nativeOk -and !$byondOk -and $native.failure.kind -eq 'source' -and $byondKind -eq 'source'
-        $row = [pscustomobject]@{ fixture = $fixture.name; expected_success = $fixture.expected_success; status_matches = $sameStatus; source_failure_classification_matches = $sameSourceClass; diagnostic_equivalence = 'not_evaluated'; byond = @{ ok = $byondOk; exit_code = $byondTiming.exit_code; failure_kind = $byondKind; runtime_seconds = $byondTiming.runtime_seconds; diagnostics = $byondDiagnostics; stdout = "$byondPrefix.stdout.log"; stderr = "$byondPrefix.stderr.log" }; native = @{ ok = $nativeOk; exit_code = $nativeTiming.exit_code; failure = $native.failure; fallback = $native.fallback; runtime_seconds = $nativeTiming.runtime_seconds; diagnostics = $nativeDiagnostics; stdout = "$nativePrefix.stdout.log"; stderr = "$nativePrefix.stderr.log" }; gate_passed = $sameStatus -and ($byondOk -eq $fixture.expected_success) -and ($byondOk -or $sameSourceClass) -and !$native.fallback }
+        $row = [pscustomobject]@{ fixture = $fixture.name; expected_success = $fixture.expected_success; status_matches = $sameStatus; source_failure_classification_matches = $sameSourceClass; diagnostic_equivalence = 'not_evaluated'; byond = @{ ok = $byondOk; exit_code = $byondTiming.exit_code; failure_kind = $byondKind; completed_error_summary = $byondFinished; runtime_seconds = $byondTiming.runtime_seconds; diagnostics = $byondDiagnostics; stdout = "$byondPrefix.stdout.log"; stderr = "$byondPrefix.stderr.log" }; native = @{ ok = $nativeOk; exit_code = $nativeTiming.exit_code; failure = $native.failure; fallback = $native.fallback; runtime_seconds = $nativeTiming.runtime_seconds; diagnostics = $nativeDiagnostics; stdout = "$nativePrefix.stdout.log"; stderr = "$nativePrefix.stderr.log" }; gate_passed = $sameStatus -and ($byondOk -eq $fixture.expected_success) -and ($byondOk -or $sameSourceClass) -and !$native.fallback }
         $rows.Add($row)
         Save-Report
     }
