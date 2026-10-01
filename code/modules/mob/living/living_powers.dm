@@ -1,6 +1,6 @@
 /mob/living/proc/reveal(silent, message = span_warning("You have been revealed! You are no longer hidden."))
 	if(status_flags & HIDING)
-		status_flags &= ~HIDING
+		set_status_flags(status_flags & ~HIDING)
 		reset_plane_and_layer()
 		if(!silent && message)
 			to_chat(src, message)
@@ -16,7 +16,7 @@
 	if(status_flags & HIDING)
 		reveal(FALSE, span_notice("You have stopped hiding."))
 	else
-		status_flags |= HIDING
+		set_status_flags(status_flags | HIDING)
 		layer = HIDING_LAYER //Just above cables with their 2.44
 		plane = OBJ_PLANE
 		to_chat(src,span_notice("You are now hiding."))

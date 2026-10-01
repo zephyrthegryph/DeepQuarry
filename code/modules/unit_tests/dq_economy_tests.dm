@@ -759,12 +759,12 @@
 	var/turf/fabricator_exit = get_step(test_turf, EAST)
 	var/old_exit_density = fabricator_exit.density
 	mech_fabricator.drop_direction = EAST
-	fabricator_exit.density = TRUE
+	fabricator_exit.set_density(TRUE)
 	mech_fabricator.current_producer_account = producer.account_number
 	TEST_ASSERT(!mech_fabricator.dispense_built_part(test_design), "obstructed mech-fabricator unexpectedly dispensed its output")
 	TEST_ASSERT_EQUAL(mech_fabricator.stored_part.economic_producer_account, producer.account_number, "obstructed mech-fabricator output lost producer provenance")
 	var/obj/item/stored_mech_part = mech_fabricator.stored_part
-	fabricator_exit.density = old_exit_density
+	fabricator_exit.set_density(old_exit_density)
 	mech_fabricator.machine_step()
 	TEST_ASSERT_EQUAL(stored_mech_part.loc, fabricator_exit, "mech-fabricator did not release its provenance-tagged stored output")
 

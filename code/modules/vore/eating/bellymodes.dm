@@ -387,13 +387,13 @@
 	if(L.nutrition <= 110)
 		if(drainmode == DR_SLEEP && ishuman(L)) //Slowly put prey to sleep
 			if(L.tiredness <= 105)
-				L.tiredness = (L.tiredness + 6 * delta_factor)
+				L.set_tiredness((L.tiredness + 6 * delta_factor))
 			if(L.tiredness <= 90 && L.tiredness >= 75)
 				to_chat(L, span_warning("You are about to fall unconscious!"))
 				to_chat(owner, span_warning("[L] is about to fall unconscious!"))
 		if(drainmode == DR_FAKE && ishuman(L)) //Slowly bring prey to the edge of sleep without crossing it
 			if(L.tiredness <= 93)
-				L.tiredness = (L.tiredness + 6 * delta_factor)
+				L.set_tiredness((L.tiredness + 6 * delta_factor))
 		if(drainmode == DR_WEIGHT && ishuman(L)) //Slowly drain your prey's weight and add it to your own
 			if(L.weight > 70)
 				L.weight -= (0.01 * L.weight_loss * delta_factor)

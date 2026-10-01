@@ -71,7 +71,7 @@
 			death()
 		return
 	if(stat == DEAD && return_from_death("brain tissue recovered", tissue, REVIVE_IGNORE_WINDOW) == TRUE)
-		blinded = 0
+		set_blinded(0)
 	update_canmove()
 
 /mob/living/carbon/brain/say_understands(other)//Goddamn is this hackish, but this say code is so odd

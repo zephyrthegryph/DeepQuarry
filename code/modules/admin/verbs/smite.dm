@@ -241,7 +241,7 @@ GLOBAL_VAR(redspace_abduction_z)
 
 	var/size_of_square = 26
 	var/halfbox = round(size_of_square*0.5)
-	target.transforming = TRUE
+	target.set_transforming(TRUE)
 	to_chat(target,span_danger("You feel a strange tug, deep inside. You're frozen in momentarily..."))
 	to_chat(user,span_notice("Beginning vis_contents copy to abduction site, player mob is frozen."))
 	om_after(target, 1 SECOND, GLOBAL_PROC_REF(redspace_abduction_copy), target, user, size_of_square, halfbox)
@@ -259,8 +259,8 @@ GLOBAL_VAR(redspace_abduction_z)
 			var/turf/T_dest = locate(x,y,GLOB.redspace_abduction_z)
 			T_dest.vis_contents.Cut()
 			T_dest.vis_contents += T_src
-			T_dest.density = T_src.density
-			T_dest.opacity = T_src.opacity
+			T_dest.set_density(T_src.density)
+			T_dest.set_opacity(T_src.opacity)
 			CHECK_TICK
 
 	//Feather the edges
@@ -268,39 +268,39 @@ GLOBAL_VAR(redspace_abduction_z)
 		for(var/y = llc_y to llc_y+size_of_square)
 			if(prob(50))
 				var/turf/T = locate(x,y,GLOB.redspace_abduction_z)
-				T.density = FALSE
-				T.opacity = FALSE
+				T.set_density(FALSE)
+				T.set_opacity(FALSE)
 				T.vis_contents.Cut()
 
 	for(var/x = llc_x+size_of_square-1 to llc_x+size_of_square) //Right
 		for(var/y = llc_y to llc_y+size_of_square)
 			if(prob(50))
 				var/turf/T = locate(x,y,GLOB.redspace_abduction_z)
-				T.density = FALSE
-				T.opacity = FALSE
+				T.set_density(FALSE)
+				T.set_opacity(FALSE)
 				T.vis_contents.Cut()
 
 	for(var/x = llc_x to llc_x+size_of_square) //Top
 		for(var/y = llc_y+size_of_square-1 to llc_y+size_of_square)
 			if(prob(50))
 				var/turf/T = locate(x,y,GLOB.redspace_abduction_z)
-				T.density = FALSE
-				T.opacity = FALSE
+				T.set_density(FALSE)
+				T.set_opacity(FALSE)
 				T.vis_contents.Cut()
 
 	for(var/x = llc_x to llc_x+size_of_square) //Bottom
 		for(var/y = llc_y to llc_y+1)
 			if(prob(50))
 				var/turf/T = locate(x,y,GLOB.redspace_abduction_z)
-				T.density = FALSE
-				T.opacity = FALSE
+				T.set_density(FALSE)
+				T.set_opacity(FALSE)
 				T.vis_contents.Cut()
 
 	target.forceMove(locate(target.x,target.y,GLOB.redspace_abduction_z))
 	to_chat(target,span_danger("The tug relaxes, but everything around you looks... slightly off."))
 	to_chat(user, span_notice("The mob has been moved. ([admin_jump_link(target, check_rights_for(usr.client, R_HOLDER))])"))
 
-	target.transforming = FALSE
+	target.set_transforming(FALSE)
 
 /proc/fake_autosave(mob/living/target, client/user, wide)
 	if(!istype(target) || !target.client)
@@ -350,7 +350,7 @@ GLOBAL_VAR(redspace_abduction_z)
 /proc/shadekin_smite_step(mob/living/simple_mob/shadekin/shadekin, mob/living/target, controller_ckey, step)
 	if(QDELETED(shadekin))
 		if(target)
-			target.transforming = FALSE
+			target.set_transforming(FALSE)
 		return
 	switch(step)
 		if(2)
@@ -364,7 +364,7 @@ GLOBAL_VAR(redspace_abduction_z)
 		if(6)
 			shadekin.phase_in(get_turf(shadekin), shadekin.get_shadekin_state())
 			if(target)
-				target.transforming = FALSE //Undo cheap hack
+				target.set_transforming(FALSE) //Undo cheap hack
 			if(controller_ckey) //Put admin in mob
 				shadekin.ckey = controller_ckey
 			else //Permakin'd

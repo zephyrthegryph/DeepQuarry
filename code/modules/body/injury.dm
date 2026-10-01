@@ -114,7 +114,7 @@
 	. = body.receive_injury(kind, amount, zone, source, affliction, flags)
 	if(!.)
 		return
-	BITSET(hud_updateflag, HEALTH_HUD)
+	flag_hud_update(HEALTH_HUD)
 	changed(src, CHANGE_MOB_HEALTH)
 	PUBLISH_CHANGE(src, MOB_KEY_HEALTH)
 	if(!(flags & (INJURE_SILENT | INJURE_CONTINUOUS)))
@@ -245,7 +245,7 @@
 	amount *= factor(BF_HEALING_RECEIVED)
 	. = body.mend(tag, amount, target)
 	if(.)
-		BITSET(hud_updateflag, HEALTH_HUD)
+		flag_hud_update(HEALTH_HUD)
 		changed(src, CHANGE_MOB_HEALTH)
 		PUBLISH_CHANGE(src, MOB_KEY_HEALTH)
 
@@ -285,7 +285,7 @@
 /mob/living/proc/fully_heal()
 	body?.clear_afflictions()
 	body?.restore()
-	BITSET(hud_updateflag, HEALTH_HUD)
+	flag_hud_update(HEALTH_HUD)
 	changed(src, CHANGE_MOB_HEALTH)
 	PUBLISH_CHANGE(src, MOB_KEY_HEALTH)
 

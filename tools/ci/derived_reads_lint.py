@@ -84,10 +84,37 @@ KIND_CALL = {"runs": "runs_while", "drawn": "drawn_from", "ui": "ui_from", "push
 # Reads that need no declaration: capability bits are set through cap_set(), which marks the holder.
 EXEMPT_VARS = {"cap_state", "cap_data"}
 
+# Presentation reactions (doc/rewrite/reactions.md "Generated reads"): an on_change() handler whose output is a
+# presentation pass declares its reads like a derived output. Every src var the roots and their helpers read is
+# generated as `reaction_reads(PROC_REF(handler), ...)` on the type that defines the proc; the composed table adds
+# those reads to the hand-declared on_change() with the same handler. A var with a PUBLISHED_BY(T, var, KEY) line is
+# generated as KEY (its producer publishes that key). Helpers are the procs on /mob types whose name matches
+# REACTION_HELPERS, called from a root or another helper.
+REACTION_OUTPUTS = OrderedDict([
+    ("hud", {"handler": "life_hud_changed", "roots": ("life_hud", "life_hud_health_icons", "life_hud_darksight")}),
+    ("vision", {"handler": "life_vision_changed", "roots": ("life_vision",)}),
+    ("canmove", {"handler": "life_canmove_changed", "roots": ("life_canmove", "update_canmove")}),
+])
+REACTION_OWNER_ROOT = "/mob"
+REACTION_HELPERS = re.compile(r"^(?:life_hud|life_vision|life_canmove|update_canmove|hud_available|process_glasses|"
+                              r"process_nifsoft_vision|pain_knockout_fraction|set_fullscreen|life_placed)")
+# Vars a presentation pass owns (it writes them; they are its output or its cache, not an input).
+REACTION_OUTPUT_VARS = {
+    "hud": {"dsoverlay", "health_doll_key", "healths", "damageoverlaytemp", "global_hud_claims", "alerts", "screens",
+            "hud_list", "hud_used", "belly_overlay_tgui", "card", "borer_chem_display", "pai_fold_display"},
+    "vision": {"plane_holder", "global_hud_claims", "hud_used", "seer"},
+    "canmove": {"canmove", "lying", "lying_prev", "passtable_crawl_checked", "passtable_reset", "pass_flags"},
+}
+REACTION_HELPER_CALL = re.compile(r"(?<![\w.])(?:src\.)?([A-Za-z_]\w*)\s*\(")
+PUBLISHED_BY_LINE = re.compile(r"^PUBLISHED_BY\(\s*(/[\w/]+)\s*,\s*(\w+)\s*,\s*(\w+)\s*\)")
+OM_FIELD_LINE = re.compile(r"^(?:OM_FIELD|OM_FLAG_FIELD|OM_FLAG_FIELD_BITS|OM_FIELD_SETTER)\(\s*(/[\w/]+)\s*,\s*(\w+)")
+OM_FIELD_TYPED_LINE = re.compile(r"^OM_FIELD_TYPED\(\s*(/[\w/]+)\s*,\s*[\w/]+\s*,\s*(\w+)")
+
 HINTS = {
     "undeclared_read": "declare it in derived() (`--fix` adds it), or keep with // ALLOW(derived_reads): <reason>",
     "declared_untracked": "make it TRACKED / SETTER, a derive() value or a declared relation (OWN / REL)",
     "hop_not_relation": "declare the link var REL / REL_LIST / OWN; a hop only follows a declared relation",
+    "reaction_read_untracked": "make the var TRACKED / SETTER / an OM field or a relation, or name the key its producer publishes with PUBLISHED_BY(T, var, KEY)",
     "exact_on_state_changed": "use push_to_rust() with rust_push(...): an exact type is not woken for on_state_changed",
 }
 
@@ -111,8 +138,9 @@ READ = re.compile(r"(?<![\w.:/])(?:src\.)?([A-Za-z_]\w*)\b(?!\s*\()(?!\s*::)(?!\
 
 # ---------------------------------------------------------------- parsing
 
-def parse_vars(lines):
-    """{type: set(var names)} declared in one file's code_only() lines."""
+def parse_vars(lines, typed=None):
+    """{type: set(var names)} declared in one file's code_only() lines. `typed` (a dict) collects the object-typed
+    ones ({type: set}): their writes go through the ownership accessors, which publish the var."""
     found = {}
     cur = None
     in_proc = False
@@ -144,6 +172,7 @@ def parse_vars(lines):
                 name = decl_name(segs[k + 1:])
                 if name:
                     found.setdefault("/" + "/".join(segs[:k]), set()).add(name)
+                    note_typed(typed, "/" + "/".join(segs[:k]), segs[k + 1:], name)
                 continue
             cur = full.rstrip("/")
             continue
@@ -155,6 +184,7 @@ def parse_vars(lines):
                 name = decl_name(m.group(1).split("/"))
                 if name:
                     found.setdefault(cur, set()).add(name)
+                    note_typed(typed, cur, m.group(1).split("/"), name)
             continue
         block_indent = None
         if indent != 1 and not raw.startswith("    "):
@@ -167,7 +197,20 @@ def parse_vars(lines):
             name = decl_name(m.group(1).strip("/").split("/"))
             if name:
                 found.setdefault(cur, set()).add(name)
+                note_typed(typed, cur, m.group(1).strip("/").split("/"), name)
     return found
+
+
+OBJECT_ROOTS = {"datum", "obj", "mob", "atom", "turf", "area", "client", "image", "list"}
+
+
+def note_typed(typed, owner, segs, name):
+    """Records `name` as object-typed (a datum, atom or list declaration) in `typed`."""
+    if typed is None:
+        return
+    segs = [s for s in segs if s and s not in MODIFIERS]
+    if len(segs) > 1 and segs[0] in OBJECT_ROOTS:
+        typed.setdefault(owner, set()).add(name)
 
 
 def decl_name(segs):
@@ -323,12 +366,14 @@ class Model:
         self.procs = []
         self.entries = {}    # type -> [Entry]
         self.derived_procs = {}  # type -> Proc
+        self.published = {}  # type -> {var: key}
+        self.object_vars = {}  # type -> {object-typed var}: written through the ownership accessors, which publish
 
     def add(self, rel, raw):
         self.raw[rel] = raw
         code = code_only(raw)
         lines = code.split("\n")
-        for owner, names in parse_vars(lines).items():
+        for owner, names in parse_vars(lines, self.object_vars).items():
             self.vars.setdefault(owner, set()).update(names)
         for line in lines:
             if line.startswith("#"):
@@ -339,6 +384,12 @@ class Model:
             m = RELATION_LINE.match(line)
             if m:
                 self.relations.setdefault(m.group(1), set()).add(m.group(2))
+            m = OM_FIELD_LINE.match(line) or OM_FIELD_TYPED_LINE.match(line)
+            if m:
+                self.tracked.setdefault(m.group(1), set()).add(m.group(2))
+            m = PUBLISHED_BY_LINE.match(line)
+            if m:
+                self.published.setdefault(m.group(1), {})[m.group(2)] = m.group(3)
         for proc in parse_procs(rel, code):
             owner = proc.owner.rstrip("/") or "/"
             proc = proc._replace(owner=owner)
@@ -373,6 +424,13 @@ class Model:
                 if e.kind == kind:
                     out |= e.local
         return out
+
+    def published_key(self, path, name):
+        for ancestor in reversed(chain(path)):
+            key = self.published.get(ancestor, {}).get(name)
+            if key:
+                return key
+        return None
 
     def exact(self, path):
         return any(self.entries.get(a) for a in chain(path))
@@ -441,7 +499,52 @@ def analyze(model, generated_covers=False):
                 if not far_ok:
                     findings.append(Finding(e.rel, e.line, "declared_untracked", owner, None, "%s::%s" % (far_type, name), e.kind,
                                             "%s reads %s::%s through a hop, which is not TRACKED, derived or a relation" % (owner, far_type, name)))
+    findings.extend(reaction_findings(model))
     findings.sort(key=lambda f: (f.rel, f.line, f.rule, f.var or ""))
+    return findings
+
+
+# ---------------------------------------------------------------- presentation reactions
+
+def reaction_reads(model):
+    """[(kind, handler, proc, {var: first line})] for every proc of a presentation reaction (REACTION_OUTPUTS)."""
+    byname = {}
+    for proc in model.procs:
+        if proc.owner.startswith(REACTION_OWNER_ROOT) and not proc.rel.startswith(GENERATED_SKIP_DIRS) and proc.rel != GENERATED_REL:
+            byname.setdefault(proc.name, []).append(proc)
+    out = []
+    for kind, spec in REACTION_OUTPUTS.items():
+        names = set(spec["roots"])
+        todo = list(names)
+        while todo:
+            for proc in byname.get(todo.pop(), ()):
+                for _number, text in proc.body:
+                    for m in REACTION_HELPER_CALL.finditer(text):
+                        name = m.group(1)
+                        if name not in names and name in byname and REACTION_HELPERS.match(name):
+                            names.add(name)
+                            todo.append(name)
+        skip = REACTION_OUTPUT_VARS.get(kind, set())
+        for name in sorted(names):
+            for proc in byname.get(name, ()):
+                known = model.union(model.vars, proc.owner)
+                reads = OrderedDict((v, line) for v, line in body_reads(proc, known).items() if v not in skip)
+                out.append((kind, spec["handler"], proc, reads))
+    return out
+
+
+def reaction_findings(model):
+    """reaction_read_untracked: a presentation reaction reads a var nothing publishes."""
+    findings = []
+    for kind, _handler, proc, reads in reaction_reads(model):
+        tracked = model.union(model.tracked, proc.owner) | model.union(model.relations, proc.owner) |             model.union(model.object_vars, proc.owner)
+        for name, line in reads.items():
+            if name in tracked or name in EXEMPT_VARS or model.published_key(proc.owner, name):
+                continue
+            if allowed(model.raw[proc.rel].split("\n"), line, LINT):
+                continue
+            findings.append(Finding(proc.rel, line, "reaction_read_untracked", proc.owner, proc.name, name, kind,
+                                    "%s.%s (the %s reaction) reads %s, which nothing publishes" % (proc.owner, proc.name, kind, name)))
     return findings
 
 
@@ -588,15 +691,23 @@ def generated_text(model):
         for name in body_reads(proc, known):
             if name not in slot:
                 slot.append(name)
+    reaction_slots = OrderedDict()  # owner -> handler -> [reads]
+    for _kind, handler, proc, reads in reaction_reads(model):
+        slot = reaction_slots.setdefault(proc.owner, OrderedDict()).setdefault(handler, [])
+        for name in reads:
+            key = model.published_key(proc.owner, name)
+            read = key if key else "nameof(%s)" % name
+            if read not in slot:
+                slot.append(read)
     out = [
         "// GENERATED by tools/ci/derived_reads_lint.py --fix-generated. Do not edit by hand.",
         "// What each type's should_run / draw / hidden_verbs / tgui_data / push_to_rust / derive_<x> read, as implicit",
         "// reads for READERS() (code/datums/reactions). CI fails when this file is stale.",
         "",
     ]
-    for owner in sorted(per_owner):
+    for owner in sorted(set(per_owner) | set(reaction_slots)):
         lines = []
-        for (kind, value), names in sorted(per_owner[owner].items(), key=lambda kv: (kv[0][0], kv[0][1] or "")):
+        for (kind, value), names in sorted(per_owner.get(owner, {}).items(), key=lambda kv: (kv[0][0], kv[0][1] or "")):
             if not names:
                 continue
             args = ", ".join("nameof(%s)" % n for n in sorted(names))
@@ -604,6 +715,9 @@ def generated_text(model):
                 lines.append("\t. += derive(nameof(%s), %s)" % (value, args))
             else:
                 lines.append("\t. += %s(%s)" % (GENERATED_KIND_CALL[kind], args))
+        for handler, reads in sorted(reaction_slots.get(owner, {}).items()):
+            if reads:
+                lines.append("\t. += reaction_reads(PROC_REF(%s), %s)" % (handler, ", ".join(sorted(reads))))
         if lines:
             out.append("%s/generated_reads()" % owner)
             out.append("\t. = ..()")

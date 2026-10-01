@@ -9,6 +9,9 @@ Rules (every one must reach 0):
                 receiver is typed as a machine or vehicle. Use operable() for "powered and
                 working", has_stat(BITS) for one condition, stat_add()/stat_remove()/set_stat()
                 to change it.
+  stat_owned    A write of NOPOWER or BROKEN (stat_add / stat_remove / set_stat naming the bit) outside its owner
+                (G8): NOPOWER is the power capability's state, written only by set_powered() (power_change()), and
+                BROKEN the integrity state, written only by atom_break() / atom_fix() (which publish it).
   stat_helper   The old duplicate readers inoperable() / is_operational(): use operable().
   field_write   A direct write to a declared core field (on, active, state, mode, locked,
                 emagged, stat, anchored, density, use_power) anywhere but its setter: use set_<field>()
@@ -24,6 +27,7 @@ import field_write_lint as fwl  # noqa: E402
 
 RULES = {
     "stat_bits": "operable() / has_stat(BITS) to read, stat_add()/stat_remove()/set_stat() to write (systems.md section 2)",
+    "stat_owned": "set_powered() for NOPOWER, atom_break() / atom_fix() for BROKEN (G8: they publish the state)",
     "stat_helper": "operable() is the one reader; inoperable()/is_operational() are gone (systems.md section 2)",
     "field_write": "set_<field>() (stat_add()/stat_remove() for bits); no direct writes to a core field (systems.md section 2)",
 }
@@ -37,6 +41,10 @@ DOTTED_STAT = re.compile(r"(?<![\w])(\w+)\??\.stat\b(?!\s*\()")
 BIT_AFTER = re.compile(r"^\s*(?:&(?!&)|\|(?!\|)|\^)")
 BIT_BEFORE = re.compile(r"(?:[^&]&|[^|]\||\^)\s*\(?\s*$")
 HELPER = re.compile(r"\b(?:inoperable|is_operational)\s*\(")
+OWNED_WRITE = re.compile(r"\b(?:stat_add|stat_remove|set_stat)\s*\([^)]*\b(?:NOPOWER|BROKEN)\b")
+# (file, proc name) of the owners allowed to write the owned bits.
+OWNED_WRITERS = {("code/game/machinery/machinery_power.dm", "set_powered"), ("code/game/machinery/machinery.dm", "atom_break"),
+                 ("code/game/machinery/machinery.dm", "atom_fix")}
 LOCAL_STAT = re.compile(r"\bvar/(?:[\w/]+/)?stat\b")
 
 
@@ -56,6 +64,15 @@ def scan(files):
                     out["stat_helper"].append((rel, no))
             for no, field, _ in fwl.violations(fields, rel, text):
                 out["field_write"].append((rel, no))
+        if not rel.startswith("code/modules/unit_tests/"):
+            proc_name = None
+            for no, line in enumerate(code_lines, 1):
+                if line and not line[0].isspace():
+                    m = fwl.PROC_DEF_RE.match(line)
+                    proc_name = re.match(r"^[\w/]*?/(\w+)\s*\(", line).group(1) if m and not line.startswith("#") and re.match(r"^[\w/]*?/(\w+)\s*\(", line) else None
+                    continue
+                if OWNED_WRITE.search(line) and (rel, proc_name) not in OWNED_WRITERS:
+                    out["stat_owned"].append((rel, no))
         if rel in RUNTIME:
             continue
         owner, locals_, stat_local = None, {}, False

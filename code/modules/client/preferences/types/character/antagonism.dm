@@ -83,4 +83,4 @@ TYPE_TABLE(/datum/preference/choiced/human/vantag_preference, pref_choices, GLOB
 	return VANTAG_NONE
 
 /datum/preference/choiced/human/vantag_preference/apply_to_human(mob/living/carbon/human/target, value)
-	target.vantag_pref = value
+	target.set_vantag_pref(value)

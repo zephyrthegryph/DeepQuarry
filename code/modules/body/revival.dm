@@ -85,7 +85,7 @@
 		brain.set_damage(0)
 		brain.reset_defib_window()
 	remove_mutation(HUSK)
-	status_flags &= ~DISFIGURED
+	set_status_flags(status_flags & ~DISFIGURED)
 	can_defib = TRUE
 	update_icons_body()
 
@@ -136,14 +136,13 @@
 	reload_fullscreen()
 	reset_perspective()
 	update_canmove()
-	BITSET(hud_updateflag, HEALTH_HUD)
-	BITSET(hud_updateflag, STATUS_HUD)
-	BITSET(hud_updateflag, LIFE_HUD)
+	flag_hud_update(HEALTH_HUD)
+	flag_hud_update(STATUS_HUD)
+	flag_hud_update(LIFE_HUD)
 
 	// 6. Subtype contributions, then everything else.
 	on_revived(reason, source)
-	refresh_hud()
-	refresh_vision()
+	// The HUD and sight redraw by themselves: set_stat() published nameof(stat), flag_hud_update() MOB_KEY_HUD_FLAGS.
 	update_icon()
 	// set_stat() raised CHANGE_MOB_STAT, which wakes every Life stage (LIFE_WAKE_ALL).
 	OM_EMIT(src, /datum/om/event/living_revived, source, reason)

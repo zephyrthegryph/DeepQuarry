@@ -637,6 +637,7 @@ GLOBAL_LIST_INIT(organ_rel_size, list(
 
 //Recalculates what planes this mob can see using their plane_holder, for humans this is checking slots, for others, could be whatever.
 /mob/proc/recalculate_vis()
+	PUBLISH_CHANGE(src, MOB_KEY_VIEW) // vision gear toggled: the sight reaction re-reads it
 	if(!plane_holder || !vis_enabled)
 		return
 	var/stomach_vision = client?.prefs.read_preference(/datum/preference/toggle/tummy_sprites)

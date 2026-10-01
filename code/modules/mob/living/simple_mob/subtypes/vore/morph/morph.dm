@@ -382,7 +382,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/morph, TYPE_PROC_REF(/atom, 
 	prey_body.forceMove(get_turf(parent_morph))
 	prey_body.muffled = FALSE
 	prey_body.absorbed = FALSE
-	absorbed = TRUE
+	set_absorbed(TRUE)
 	// Both keep their own identity while in the other's seat.
 	move_player_mind(prey_mind, src, "taken over by morph [parent_morph]", share = TRUE)
 	move_player_mind(parent_morph.original_mind, prey_body, "morph took over [prey_body]", share = TRUE)

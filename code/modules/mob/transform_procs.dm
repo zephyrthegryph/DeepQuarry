@@ -6,7 +6,7 @@
 			continue
 		drop_from_inventory(W)
 	regenerate_icons()
-	transforming = 1
+	set_transforming(1)
 	canmove = 0
 	status_set(EFFECT_STUNNED, 1)
 	icon = null
@@ -23,7 +23,7 @@
 
 /mob/living/carbon/human/proc/monkeyize_1(atom/movable/overlay/animation)
 
-	transforming = 0
+	set_transforming(0)
 	status_set(EFFECT_STUNNED, 0)
 	update_canmove()
 	invisibility = initial(invisibility)
@@ -65,7 +65,7 @@
 		return
 	for(var/obj/item/W in contents_of(src))
 		drop_from_inventory(W)
-	transforming = 1
+	set_transforming(1)
 	canmove = 0
 	icon = null
 	invisibility = INVISIBILITY_ABSTRACT
@@ -151,7 +151,7 @@
 	for(var/obj/item/W in contents_of(src))
 		drop_from_inventory(W)
 	regenerate_icons()
-	transforming = 1
+	set_transforming(1)
 	canmove = 0
 	icon = null
 	invisibility = INVISIBILITY_ABSTRACT
@@ -201,7 +201,7 @@
 	for(var/obj/item/W in contents_of(src))
 		drop_from_inventory(W)
 	regenerate_icons()
-	transforming = 1
+	set_transforming(1)
 	canmove = 0
 	icon = null
 	invisibility = INVISIBILITY_ABSTRACT
@@ -225,7 +225,7 @@
 	for(var/obj/item/W in contents_of(src))
 		drop_from_inventory(W)
 	regenerate_icons()
-	transforming = 1
+	set_transforming(1)
 	canmove = 0
 	icon = null
 	invisibility = INVISIBILITY_ABSTRACT
@@ -258,7 +258,7 @@
 		drop_from_inventory(W)
 
 	regenerate_icons()
-	transforming = 1
+	set_transforming(1)
 	canmove = 0
 	icon = null
 	invisibility = INVISIBILITY_ABSTRACT

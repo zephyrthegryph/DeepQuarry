@@ -38,7 +38,7 @@ TYPE_TABLE(/obj/item/storage/vore_egg, hold_spec, list(HOLD_MAX_SIZE(0)))
 	animate_shake()
 	drop_contents()
 	if(user.transforming) //this is actually godawful and transforming should never be used as it skips life ticks
-		user.transforming = FALSE //but if something does still use transforming (Bad, please do not.), we want it to be removed from them.
+		user.set_transforming(FALSE) //but if something does still use transforming (Bad, please do not.), we want it to be removed from them.
 
 /obj/item/storage/vore_egg/unathi
 	name = "unathi egg"

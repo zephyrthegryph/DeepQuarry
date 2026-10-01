@@ -672,6 +672,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 	apply_layer(GLOVES_LAYER)
 
 /mob/living/carbon/human/update_inv_glasses()
+	PUBLISH_CHANGE(src, MOB_KEY_EQUIPMENT) // a worn item's state changed (goggles flipped, visor on): sight and the HUD re-read it
 	if(QDESTROYING(src))
 		return
 
@@ -790,6 +791,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 	apply_layer(SUIT_STORE_LAYER)
 
 /mob/living/carbon/human/update_inv_head()
+	PUBLISH_CHANGE(src, MOB_KEY_EQUIPMENT) // a worn item's state changed (goggles flipped, visor on): sight and the HUD re-read it
 	if(QDESTROYING(src))
 		return
 
@@ -863,6 +865,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 	stack_trace("Someone called update_inv_pockets even though it's dumb")
 
 /mob/living/carbon/human/update_inv_wear_mask()
+	PUBLISH_CHANGE(src, MOB_KEY_EQUIPMENT) // a worn item's state changed (goggles flipped, visor on): sight and the HUD re-read it
 	if(QDESTROYING(src))
 		return
 
@@ -876,6 +879,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 	apply_layer(FACEMASK_LAYER)
 
 /mob/living/carbon/human/update_inv_back()
+	PUBLISH_CHANGE(src, MOB_KEY_EQUIPMENT) // a worn item's state changed (goggles flipped, visor on): sight and the HUD re-read it
 	if(QDESTROYING(src))
 		return
 

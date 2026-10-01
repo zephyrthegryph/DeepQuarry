@@ -753,14 +753,14 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/at
 	if(QDELETED(A) || !isturf(get_turf(A)))
 		ai_busy_end()
 		return
-	status_flags |= LEAPING
+	set_status_flags(status_flags | LEAPING)
 	flying  = 1		//So we can thunk into things
 	dq_set_hovering(src, 1)	// So we don't hurt ourselves running off cliffs
 	act_message(src, A, null, MSG_OTHERS(span_danger("%U% charges at %T%!")))
 	throw_at(A, 7, 2)
 	playsound(src, charge_sound, 75, 1)
 	if(status_flags & LEAPING)
-		status_flags &= ~LEAPING
+		set_status_flags(status_flags & ~LEAPING)
 	flying = 0
 	dq_set_hovering(src, 0)
 

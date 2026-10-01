@@ -259,9 +259,29 @@ GLOBAL_LIST_EMPTY(rx_tables)
 			continue
 		rx_table_add(T, R)
 	for(var/datum/derived_entry/E in generated + derived)
-		rx_table_add_reads(T, E)
+		if(E.kind == DKIND_REACTION)
+			rx_table_add_reaction_reads(T, own, E)
+		else
+			rx_table_add_reads(T, E)
 	GLOB.rx_tables[D.type] = T
 	return T
+
+/// reaction_reads(handler, ...): each read also runs the type's on_change() reactions with that handler (the same
+/// reaction datum, so the reads coalesce with its declared ones: one pend per drain).
+/proc/rx_table_add_reaction_reads(datum/rx_table/T, list/own, datum/derived_entry/E)
+	var/found = FALSE
+	for(var/datum/reaction/R in own)
+		if(R.kind != RXN_CHANGE || R.handler != E.name)
+			continue
+		found = TRUE
+		for(var/read in E.reads)
+			if(!istext(read))
+				continue
+			LAZYINITLIST(T.by_key[read])
+			T.by_key[read] |= R
+			T.read_keys[read] = TRUE
+	if(!found)
+		stack_trace("reaction_reads([E.name]) on [T.owner_type]: no on_change() reaction of the type has that handler")
 
 /proc/rx_table_add_reads(datum/rx_table/T, datum/derived_entry/E)
 	for(var/read in E.reads)

@@ -68,6 +68,13 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 /proc/tracked_changed(datum/E, var_name)
 	changed(E, 0, var_name)
 
+/// BRIDGE (removed with S4): tracked_changed() for a hand-written setter of a var an OM stage still reads by channel.
+/// The channel is the one E's type declares for the var (OM_FIELD_SETTER in machinery_fields.dm: a machine's anchored
+/// raises CHANGE_MACHINE_ANCHORED, a mob's CHANGE_MOB_CAN_MOVE, any other atom none), so the setter needs no istype().
+/proc/tracked_bridged_changed(datum/E, var_name)
+	var/list/fields = om_registry().fields_of(E.type)
+	changed(E, fields[var_name] || 0, var_name)
+
 /// A pending operation watching (E, key) counts as a dynamic reader of it while it waits (delta +1 / -1), so
 /// publish_change() is called for it and reaches op_reads_changed(). Same table observe() counts in.
 /proc/rx_watch_adjust(datum/E, key, delta)

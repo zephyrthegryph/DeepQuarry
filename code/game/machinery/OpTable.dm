@@ -85,7 +85,7 @@ EXTEND_INTERACTIONS(/obj/machinery/optable, \
 	var/mob/puller = C?.pulled_by_mob()
 	if(puller)
 		puller.stop_pulling()
-	C.resting = 1
+	C.set_resting(1)
 	C.update_canmove() // Sync `lying` now so check_victim() does not race the next Life() tick.
 	C.forceMove(get_turf(src))
 	latent_materialize_all() // a walk needs real things (C5)

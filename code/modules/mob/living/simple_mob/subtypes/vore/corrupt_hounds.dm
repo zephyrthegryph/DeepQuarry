@@ -111,7 +111,7 @@
 
 /mob/living/simple_mob/vore/aggressive/corrupthound/on_death(gibbed)
 	.=..()
-	resting = 0
+	set_resting(0)
 	icon_state = icon_dead
 
 DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/aggressive/corrupthound, /mob/living/simple_mob/proc/animal_mount)
@@ -353,7 +353,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/aggressive/corrupthound, /mob/liv
 
 /mob/living/simple_mob/vore/retaliate/corrupthound/janihound/on_death(gibbed)
 	.=..()
-	resting = 0
+	set_resting(0)
 	icon_state = icon_dead
 
 DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/retaliate/corrupthound/janihound, /mob/living/simple_mob/proc/animal_mount)

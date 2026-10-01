@@ -65,7 +65,7 @@
 /mob/living/simple_mob/animal/giant_spider/hunter/proc/hunter_leap(atom/A)
 
 	// Do the actual leap.
-	status_flags |= LEAPING // Lets us pass over everything.
+	set_status_flags(status_flags | LEAPING) // Lets us pass over everything.
 	visible_message(span_danger("\The [src] leaps at \the [A]!"))
 	throw_at(get_step(get_turf(A), get_turf(src)), special_attack_max_range+1, 1, src)
 	playsound(src, leap_sound, 75, 1)
@@ -75,7 +75,7 @@
 /mob/living/simple_mob/animal/giant_spider/hunter/proc/hunter_land()
 
 	if(status_flags & LEAPING)
-		status_flags &= ~LEAPING // Revert special passage ability.
+		set_status_flags(status_flags & ~LEAPING) // Revert special passage ability.
 
 	var/turf/T = get_turf(src) // Where we landed. This might be different than A's turf.
 

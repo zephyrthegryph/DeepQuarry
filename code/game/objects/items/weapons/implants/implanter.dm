@@ -68,8 +68,8 @@ DECLARE_INTERACTIONS(/obj/item/implanter, INTERACT_SELF("Toggle", PROC_REF(impla
 
 		if(ishuman(M))
 			var/mob/living/carbon/human/H = M
-			BITSET(H.hud_updateflag, IMPLOYAL_HUD)
-			BITSET(H.hud_updateflag, BACKUP_HUD) // Backup HUD updates
+			H.flag_hud_update(IMPLOYAL_HUD)
+			H.flag_hud_update(BACKUP_HUD) // Backup HUD updates
 
 	own_take(src, nameof(imp))
 	update()

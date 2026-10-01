@@ -32,7 +32,7 @@
 		pulledby.stop_pulling()
 	stop_pulling()
 	canmove = FALSE
-	is_shifting = TRUE
+	set_is_shifting(TRUE)
 
 	//Shifting in
 	if(shifted_out)
@@ -104,7 +104,7 @@
 		pulledby.stop_pulling()
 	stop_pulling()
 	canmove = FALSE
-	is_shifting = TRUE
+	set_is_shifting(TRUE)
 
 	shifted_out = TRUE
 	automatic_custom_emote(VISIBLE_MESSAGE,"phases out!")
@@ -135,7 +135,7 @@
 	force_max_speed = initial(force_max_speed)
 	var/original_canmove = canmove
 	canmove = FALSE
-	is_shifting = TRUE
+	set_is_shifting(TRUE)
 
 	//Cosmetics mostly
 	flick("phasein",src)
@@ -148,7 +148,7 @@
 	update_icon()
 	alpha = 127
 
-	is_shifting = FALSE
+	set_is_shifting(FALSE)
 	canmove = original_canmove
 	incorporeal_move = TRUE
 	set_density(FALSE)
@@ -157,7 +157,7 @@
 	om_after(src, 30 SECONDS, PROC_REF(phase_shift_wears_off))
 /// Phase-in animation done: maybe grab someone on arrival.
 /mob/living/simple_mob/vore/demon/proc/demon_phased_in(original_canmove, from_temporary)
-	is_shifting = FALSE
+	set_is_shifting(FALSE)
 	canmove = original_canmove
 
 	if(from_temporary)
@@ -322,7 +322,7 @@
 	force_max_speed = initial(force_max_speed)
 	var/original_canmove = canmove
 	canmove = FALSE
-	is_shifting = TRUE
+	set_is_shifting(TRUE)
 
 	//Cosmetics mostly
 	flick("phasein",src)
@@ -331,7 +331,7 @@
 
 /// The end of the phase-in animation.
 /mob/living/simple_mob/vore/demon/proc/phase_in_lands(original_canmove)
-	is_shifting = FALSE
+	set_is_shifting(FALSE)
 	canmove = original_canmove
 
 	var/turf/NT = get_turf(src)

@@ -553,7 +553,7 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 		if(ML.forced_psay)
 			ML.forced_psay = FALSE
 		if(ML.absorbed)
-			ML.absorbed = FALSE
+			ML.set_absorbed(FALSE)
 			handle_absorb_langs(ML, owner)
 			if(ishuman(M) && ishuman(OW))
 				var/mob/living/carbon/human/Prey = M
@@ -761,7 +761,7 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 
 // Handle a mob being absorbed
 /obj/belly/proc/absorb_living(mob/living/M)
-	M.absorbed = TRUE
+	M.set_absorbed(TRUE)
 	if(M.ckey)
 		handle_absorb_langs(M, owner)
 		GLOB.prey_absorbed_roundstat++
@@ -826,7 +826,7 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 
 // Handle a mob being unabsorbed
 /obj/belly/proc/unabsorb_living(mob/living/M)
-	M.absorbed = FALSE
+	M.set_absorbed(FALSE)
 	handle_absorb_langs(M, owner)
 	to_chat(M, span_vnotice(belly_format_string(unabsorb_messages_prey, M, use_absorbed_count = TRUE)))
 	to_chat(owner, span_vnotice(belly_format_string(unabsorb_messages_owner, M, use_absorbed_count = TRUE)))

@@ -532,13 +532,13 @@ DAMAGE_REACTION(/mob/living/silicon/pai, DAMAGE_EMP, PROC_REF(emp_scramble))
 
 	// Pass lying down or getting up to our pet human, if we're in a rig.
 	if(istype(src.loc,/obj/item/paicard))
-		resting = 0
+		set_resting(0)
 		var/obj/item/rig/rig = src.get_rig()
 		if(istype(rig))
 			rig.force_rest(src)
 			return
 	else
-		resting = !resting
+		set_resting(!resting)
 		update_icon()
 	to_chat(src, span_notice("You are now [resting ? "resting" : "getting up"]."))
 

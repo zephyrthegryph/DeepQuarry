@@ -177,7 +177,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/scel, /mob/living/proc/target_lun
 		return FALSE
 
 	// Do the actual leap.
-	status_flags |= LEAPING // Lets us pass over everything.
+	set_status_flags(status_flags | LEAPING) // Lets us pass over everything.
 	visible_message(span_critical("\The [src] leaps at \the [L]!"))
 	throw_at(get_step(L, get_turf(src)), special_attack_max_range+1, 1, src)
 	playsound(src, leap_sound, 75, 1)
@@ -187,7 +187,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/scel, /mob/living/proc/target_lun
 /mob/living/simple_mob/vore/scel/proc/lunge_2(mob/living/L)
 
 	if(status_flags & LEAPING)
-		status_flags &= ~LEAPING // Revert special passage ability.
+		set_status_flags(status_flags & ~LEAPING) // Revert special passage ability.
 
 	ai_busy_end()
 	if(Adjacent(L))	//We leapt at them but we didn't manage to hit them, let's see if we're next to them

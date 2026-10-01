@@ -8,7 +8,7 @@
 	dq_destroy_collect_begin()
 	if(stat != DEAD)
 		death(1)
-	transforming = 1
+	set_transforming(1)
 	canmove = 0
 	icon = null
 	invisibility = INVISIBILITY_ABSTRACT
@@ -132,9 +132,7 @@
 		if(healths)
 			healths.overlays = null
 			healths.icon_state = "health6"
-		update_icon()
-		refresh_hud()
-		refresh_vision()
+		update_icon() // the HUD and sight follow set_stat(DEAD) by themselves (it published nameof(stat))
 
 	// 8. Antagonist bookkeeping.
 	SSticker?.mode?.check_win()

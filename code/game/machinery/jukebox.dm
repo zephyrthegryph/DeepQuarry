@@ -36,7 +36,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/media/jukebox, MACHINE_PIPELINE, "playing"
 	own_set(src, nameof(wires), new/datum/wires/jukebox(src))
 	update_icon()
 	if(!LAZYLEN(getTracksList()))
-		stat_add(BROKEN)
+		atom_break()
 	make_climbable()
 
 /obj/machinery/media/jukebox/proc/getTracksList()
@@ -127,10 +127,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/media/jukebox, MACHINE_PIPELINE, "playing"
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/media/jukebox/power_change()
-	if(!powered(power_channel) || !anchored)
-		stat_add(NOPOWER)
-	else
-		stat_remove(NOPOWER)
+	set_powered(powered(power_channel) && anchored)
 
 	if(!operable() && playing)
 		StopPlaying()

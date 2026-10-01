@@ -644,7 +644,7 @@
 		if(confirm != "Okay" || loc != B)
 			return
 		//Actual escaping
-		absorbed = FALSE	//Make sure we're not absorbed
+		set_absorbed(FALSE) //Make sure we're not absorbed
 		muffled = FALSE		//Removes Muffling
 		forceMove(get_turf(src)) //Just move me up to the turf, let's not cascade through bellies, there's been a problem, let's just leave.
 		status_set(EFFECT_SLEEPING, 0) //Wake up instantly if asleep
@@ -1789,7 +1789,7 @@ TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes
 		if(sure != "Continue")
 			return
 
-		absorbed = FALSE
+		set_absorbed(FALSE)
 		muffled = FALSE
 		clear_fullscreen("belly")
 		belly_overlay_tgui?.hide() // hide TGUI belly overlay
