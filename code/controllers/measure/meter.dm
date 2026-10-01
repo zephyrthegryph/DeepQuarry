@@ -331,8 +331,26 @@
 			else
 				top3 = idx
 				ms3 = ms
+		// system_stats.record() and km_hist.add() inlined: this runs per touched system per open set every tick.
+		var/bin = KM_HIST_BIN(ms)
 		for(var/datum/km_stats_set/S as anything in sets)
-			S.stats_for(idx).record(ms, overrun, late)
+			var/datum/system_stats/stats = S.systems[idx] || S.stats_for(idx)
+			var/datum/km_hist/hist = stats.hist
+			hist.bins[bin] = hist.bins[bin] + 1
+			if(!hist.count || ms < hist.min_seen)
+				hist.min_seen = ms
+			if(ms > hist.max_seen)
+				hist.max_seen = ms
+			hist.count++
+			stats.ticks++
+			stats.ms_lo += ms
+			if(stats.ms_lo >= KM_FLUSH_MS)
+				stats.ms_lo -= KM_FLUSH_MS
+				stats.ms_hi += KM_FLUSH_MS
+			if(overrun)
+				stats.overrun_ms += ms
+			if(late > stats.late_max)
+				stats.late_max = late
 	for(var/datum/km_stats_set/S as anything in sets)
 		if(isnull(S.started_real))
 			S.mark_start()

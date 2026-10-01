@@ -43,7 +43,7 @@ GLOBAL_VAR_INIT(rx_timer_seq, 0)
 	holder.rx.timer_ids -= key
 	if(!length(holder.rx.timer_ids))
 		holder.rx.timer_ids = null
-	rx_ledger_clear_source(holder, RELK_TIMER, pending[2])
+	rx_ledger_remove(holder, RELK_TIMER, key, pending[2]) // the key is the timer's one `what`: no scan of the ledger
 	return om_cancel_timer(pending[3] == CLOCK_WORLD ? om_global_owner() : holder, pending[1])
 
 /// TRUE while a timer of `key` is pending on `owner`.
@@ -68,7 +68,7 @@ GLOBAL_VAR_INIT(rx_timer_seq, 0)
 		holder.rx.timer_ids -= key
 		if(!length(holder.rx.timer_ids))
 			holder.rx.timer_ids = null
-		rx_ledger_clear_source(holder, RELK_TIMER, token)
+		rx_ledger_remove(holder, RELK_TIMER, key, token)
 	if(om_proc_is_global(handler))
 		call(handler)(arglist(handler_args || list()))
 	else
