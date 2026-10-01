@@ -71,19 +71,19 @@
 
 /datum/capability/storage/interactions(atom/holder)
 	. = list()
-	. += adopt_entry(cap_insert("Put in", /obj/item, TYPE_PROC_REF(/atom, cap_storage_put_in), needs = TYPE_PROC_REF(/atom, cap_storage_insert_reason), works_broken = TRUE, works_unpowered = TRUE, priority = 1), id = "storage:put_in", pass_cap = TRUE)
-	. += adopt_entry(cap_hand("Take out", TYPE_PROC_REF(/atom, cap_storage_take_out), needs = TYPE_PROC_REF(/atom, cap_storage_has_items), else_say = "it's empty", works_broken = TRUE, works_unpowered = TRUE, form = list(choice_field("choice", TYPE_PROC_REF(/atom, cap_storage_choices), message = "Take out what?"))), id = "storage:take_out", category = INTERACTION_CAT_OPEN, empty_handed = TRUE, pass_cap = TRUE)
+	. += adopt_entry(cap_insert("Put in", /obj/item, GLOBAL_PROC_REF(cap_storage_put_in), needs = GLOBAL_PROC_REF(cap_storage_insert_reason), works_broken = TRUE, works_unpowered = TRUE, priority = 1), id = "storage:put_in", pass_cap = TRUE)
+	. += adopt_entry(cap_hand("Take out", GLOBAL_PROC_REF(cap_storage_take_out), needs = GLOBAL_PROC_REF(cap_storage_has_items), else_say = "it's empty", works_broken = TRUE, works_unpowered = TRUE, form = list(choice_field("choice", GLOBAL_PROC_REF(cap_storage_choices), message = "Take out what?"))), id = "storage:take_out", category = INTERACTION_CAT_OPEN, empty_handed = TRUE, pass_cap = TRUE)
 	if(quick_empty)
-		. += adopt_entry(cap_hand("Empty out", TYPE_PROC_REF(/atom, cap_storage_empty_out), needs = TYPE_PROC_REF(/atom, cap_storage_has_items), else_say = "it's empty", works_broken = TRUE, works_unpowered = TRUE), id = "storage:empty_out", category = INTERACTION_CAT_EJECT, empty_handed = TRUE, pass_cap = TRUE)
+		. += adopt_entry(cap_hand("Empty out", GLOBAL_PROC_REF(cap_storage_empty_out), needs = GLOBAL_PROC_REF(cap_storage_has_items), else_say = "it's empty", works_broken = TRUE, works_unpowered = TRUE), id = "storage:empty_out", category = INTERACTION_CAT_EJECT, empty_handed = TRUE, pass_cap = TRUE)
 
 /datum/capability/storage/examine(atom/holder, mob/user)
-	var/count = length(holder.storage_items())
+	var/count = length(storage_items(holder))
 	if(!count)
 		return list("It is empty.")
 	return list("It holds [count] thing\s.")
 
 /datum/capability/storage/ui_data(atom/holder, mob/user, list/data)
-	data["storage_count"] = length(holder.storage_items())
+	data["storage_count"] = length(storage_items(holder))
 	data["storage_space"] = list("used" = holder.slot_used(CONTAINER_SLOT_STORAGE), "max" = total_for(holder))
 
 // ---- the rules (per-instance vars override the constructor defaults, H1) ----
@@ -123,7 +123,7 @@
 	if(actor && actor.isEquipped(I) && !actor.canUnEquip(I))
 		return "you can't let go of \the [I]"
 	var/limit = slots_for(holder)
-	if(!isnull(limit) && length(holder.storage_items()) >= limit)
+	if(!isnull(limit) && length(storage_items(holder)) >= limit)
 		return "\the [holder] is full"
 	if(I.w_class > w_class_for(holder))
 		return "\the [I] is too big for \the [holder]"
@@ -132,7 +132,7 @@
 		if(I.w_class >= bag.w_class && (istype(I, /obj/item/storage) || cap_of(I, /datum/capability/storage)))
 			return "it's a container as big as \the [holder]"
 	if(can_hold_proc)
-		var/verdict = call(holder, can_hold_proc)(I, actor)
+		var/verdict = holder_call(holder, can_hold_proc, I, actor)
 		if(istext(verdict))
 			return verdict
 		if(!isnull(verdict))
@@ -172,94 +172,94 @@
 // ---- the holder API ----
 
 /// Everything in this atom's storage slot, in order (a copy).
-/atom/proc/storage_items()
-	return slot_contents(CONTAINER_SLOT_STORAGE)
+/proc/storage_items(atom/holder)
+	return holder.slot_contents(CONTAINER_SLOT_STORAGE)
 
 /// Why I can't go into this atom's storage right now, or null.
-/atom/proc/storage_refusal(obj/item/I, mob/user)
-	return dq_ledger_refusal(I, src, CONTAINER_SLOT_STORAGE, user)
+/proc/storage_refusal(atom/holder, obj/item/I, mob/user)
+	return dq_ledger_refusal(I, holder, CONTAINER_SLOT_STORAGE, user)
 
 /// Puts I into this atom's storage: out of a hand or inventory, off the floor or out of another
 /// holder, as one ledger move. TRUE when it went in.
-/atom/proc/storage_insert(obj/item/I, mob/user)
-	if(storage_refusal(I, user))
+/proc/storage_insert(atom/holder, obj/item/I, mob/user)
+	if(storage_refusal(holder, I, user))
 		return FALSE
 	var/mob/wearer = ismob(I.loc) ? I.loc : null
 	if(wearer)
 		// Still mob inventory (C3): the mob clears its slot and hands the item over.
-		wearer.remove_from_mob(I, src)
-		if(I.loc != src)
+		wearer.remove_from_mob(I, holder)
+		if(I.loc != holder)
 			return FALSE
 		I.dropped(wearer)
-		var/datum/ledger/L = dq_ledger(src)
+		var/datum/ledger/L = dq_ledger(holder)
 		var/list/entry = L?.entries[I]
 		if(entry && entry[LEDGER_E_SLOT] != CONTAINER_SLOT_STORAGE)
-			I.move_into(src, CONTAINER_SLOT_STORAGE, user)
-	else if(!I.move_into(src, CONTAINER_SLOT_STORAGE, user))
+			I.move_into(holder, CONTAINER_SLOT_STORAGE, user)
+	else if(!I.move_into(holder, CONTAINER_SLOT_STORAGE, user))
 		return FALSE
-	I.on_enter_storage(src)
-	changed(src)
+	I.on_enter_storage(holder)
+	changed(holder)
 	return TRUE
 
 /// Takes I out of this atom's storage to `destination` (null: the floor). TRUE when it came out.
-/atom/proc/storage_remove(obj/item/I, atom/destination, mob/user)
-	if(!istype(I) || I.loc != src)
+/proc/storage_remove(atom/holder, obj/item/I, atom/destination, mob/user)
+	if(!istype(I) || I.loc != holder)
 		return FALSE
-	destination ||= drop_location()
-	if(!destination || !slot_remove(I, destination, user))
+	destination ||= holder.drop_location()
+	if(!destination || !holder.slot_remove(I, destination, user))
 		return FALSE
 	I.reset_plane_and_layer()
-	I.on_exit_storage(src)
-	changed(src)
+	I.on_exit_storage(holder)
+	changed(holder)
 	return TRUE
 
 // ---- entry handlers and needs (procs on the holder) ----
 
-/atom/proc/cap_storage_insert_reason(mob/user, obj/item/held)
+/proc/cap_storage_insert_reason(mob/user, atom/holder, obj/item/held)
 	if(!held)
 		return FALSE
-	return storage_refusal(held, user) || TRUE
+	return storage_refusal(holder, held, user) || TRUE
 
-/atom/proc/cap_storage_has_items(mob/user, obj/item/held)
-	return length(storage_items()) > 0
+/proc/cap_storage_has_items(mob/user, atom/holder, obj/item/held)
+	return length(storage_items(holder)) > 0
 
 /// Take out choices: name -> item.
-/atom/proc/cap_storage_choices(mob/user)
+/proc/cap_storage_choices(atom/holder, mob/user)
 	. = list()
-	for(var/obj/item/I as anything in storage_items())
+	for(var/obj/item/I as anything in storage_items(holder))
 		.[avoid_assoc_duplicate_keys(I.name, .)] = I
 
-/atom/proc/cap_storage_put_in(mob/user, obj/item/held, datum/capability/storage/cap)
+/proc/cap_storage_put_in(atom/holder, mob/user, obj/item/held, datum/capability/storage/cap)
 	var/datum/capability/storage/C = cap
-	if(!storage_insert(held, user))
-		return refuse(user, "\The [held] won't go in \the [src].")
+	if(!storage_insert(holder, held, user))
+		return refuse(user, "\The [held] won't go in \the [holder].")
 	if(C?.use_sound)
-		playsound(src, C.use_sound, 50, FALSE, -5)
-	act_message(user, src, self = "You put %I% into %T%.", others = "%U% puts %I% into %T%.", item = held)
+		playsound(holder, C.use_sound, 50, FALSE, -5)
+	act_message(user, holder, self = "You put %I% into %T%.", others = "%U% puts %I% into %T%.", item = held)
 	return TRUE
 
 /// choice: the name picked from cap_storage_choices(); re-resolved here, since the item may be gone.
-/atom/proc/cap_storage_take_out(mob/user, choice, datum/capability/storage/cap)
-	var/list/choices = cap_storage_choices(user)
+/proc/cap_storage_take_out(atom/holder, mob/user, choice, datum/capability/storage/cap)
+	var/list/choices = cap_storage_choices(holder, user)
 	var/obj/item/I = choices[choice]
 	if(!I)
-		return refuse(user, "That isn't in \the [src] any more.")
-	if(!storage_remove(I, get_turf(user), user))
+		return refuse(user, "That isn't in \the [holder] any more.")
+	if(!storage_remove(holder, I, get_turf(user), user))
 		return refuse(user, "You can't take \the [I] out.")
 	user.put_in_hands(I)
 	var/datum/capability/storage/C = cap
 	if(C?.use_sound)
-		playsound(src, C.use_sound, 50, FALSE, -5)
-	act_message(user, src, self = "You take %I% out of %T%.", others = "%U% takes %I% out of %T%.", item = I)
+		playsound(holder, C.use_sound, 50, FALSE, -5)
+	act_message(user, holder, self = "You take %I% out of %T%.", others = "%U% takes %I% out of %T%.", item = I)
 	return TRUE
 
-/atom/proc/cap_storage_empty_out(mob/user, datum/capability/storage/cap)
-	var/turf/T = get_turf(src)
+/proc/cap_storage_empty_out(atom/holder, mob/user, datum/capability/storage/cap)
+	var/turf/T = get_turf(holder)
 	var/count = 0
-	for(var/obj/item/I as anything in storage_items())
-		if(storage_remove(I, T, user))
+	for(var/obj/item/I as anything in storage_items(holder))
+		if(storage_remove(holder, I, T, user))
 			count++
 	if(!count)
-		return refuse(user, "Nothing comes out of \the [src].")
-	act_message(user, src, self = "You empty %T%.", others = "%U% empties %T%.")
+		return refuse(user, "Nothing comes out of \the [holder].")
+	act_message(user, holder, self = "You empty %T%.", others = "%U% empties %T%.")
 	return TRUE

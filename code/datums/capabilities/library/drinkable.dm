@@ -30,9 +30,9 @@
 	return C
 
 /datum/capability/drinkable/interactions(atom/holder)
-	var/datum/interaction/capability/drink = adopt_entry(cap_hand("Drink", TYPE_PROC_REF(/obj/item, cap_drinkable_drink), needs = TYPE_PROC_REF(/obj/item, cap_drinkable_can_drink), works_broken = TRUE, works_unpowered = TRUE))
+	var/datum/interaction/capability/drink = adopt_entry(cap_hand("Drink", GLOBAL_PROC_REF(cap_drinkable_drink), needs = GLOBAL_PROC_REF(cap_drinkable_can_drink), works_broken = TRUE, works_unpowered = TRUE))
 	drink.entry = INTERACTION_ENTRY_SELF // using it in hand drinks from it
-	var/datum/interaction/capability/give = adopt_entry(cap_hand("Give a drink", TYPE_PROC_REF(/obj/item, cap_drinkable_give), needs = TYPE_PROC_REF(/obj/item, cap_drinkable_can_drink), works_broken = TRUE, works_unpowered = TRUE))
+	var/datum/interaction/capability/give = adopt_entry(cap_hand("Give a drink", GLOBAL_PROC_REF(cap_drinkable_give), needs = GLOBAL_PROC_REF(cap_drinkable_can_drink), works_broken = TRUE, works_unpowered = TRUE))
 	give.default_action = null // Menu only
 	return list(drink, give)
 
@@ -57,34 +57,34 @@
 	play_sfx(drinker, C.drink_sound)
 	changed(I, CHANGE_CAPABILITY)
 
-/obj/item/proc/cap_drinkable_can_drink(mob/user, obj/item/held)
-	var/datum/capability/drinkable/C = cap_of(src, /datum/capability/drinkable)
-	if(C.needs_open && !is_open_container())
+/proc/cap_drinkable_can_drink(mob/user, obj/item/holder, obj/item/held)
+	var/datum/capability/drinkable/C = cap_of(holder, /datum/capability/drinkable)
+	if(C.needs_open && !holder.is_open_container())
 		return "open it first"
-	if(!reagents?.total_volume)
+	if(!holder.reagents?.total_volume)
 		return "it's empty"
 	return TRUE
 
-/obj/item/proc/cap_drinkable_drink(mob/user, obj/item/held)
-	var/reason = consume_refusal(user, user, src)
+/proc/cap_drinkable_drink(obj/item/holder, mob/user, obj/item/held)
+	var/reason = consume_refusal(user, user, holder)
 	if(reason)
 		return refuse(user, capitalize("[reason]."))
-	user.setClickCooldown(user.get_attack_speed(src)) // a limit on how fast people can drink
-	act_message(user, src, self = span_notice("You swallow a gulp from %T%."), others = span_notice("%U% drinks from %T%."))
-	cap_drinkable_take_sip(src, user)
+	user.setClickCooldown(user.get_attack_speed(holder)) // a limit on how fast people can drink
+	act_message(user, holder, self = span_notice("You swallow a gulp from %T%."), others = span_notice("%U% drinks from %T%."))
+	cap_drinkable_take_sip(holder, user)
 	return TRUE
 
-/obj/item/proc/cap_drinkable_give(mob/user, obj/item/held)
-	var/mob/living/target = consume_pick_target(user, src)
+/proc/cap_drinkable_give(obj/item/holder, mob/user, obj/item/held)
+	var/mob/living/target = consume_pick_target(user, holder)
 	if(!target)
 		return UI_REFUSED
-	var/reason = consume_refusal(user, target, src)
+	var/reason = consume_refusal(user, target, holder)
 	if(reason)
 		return refuse(user, capitalize("[reason]."))
-	var/datum/capability/drinkable/C = cap_of(src, /datum/capability/drinkable)
-	user.setClickCooldown(user.get_attack_speed(src))
-	act_message(user, target, self = span_notice("You try to give %T% a drink from \the [src]."), others = span_warning("%U% tries to give %T% a drink from \the [src]."))
-	om_task_timed(user, C.feed_time, target, src, PROC_REF(cap_drinkable_given), list(user, target))
+	var/datum/capability/drinkable/C = cap_of(holder, /datum/capability/drinkable)
+	user.setClickCooldown(user.get_attack_speed(holder))
+	act_message(user, target, self = span_notice("You try to give %T% a drink from \the [holder]."), others = span_warning("%U% tries to give %T% a drink from \the [holder]."))
+	om_task_timed(user, C.feed_time, target, holder, TYPE_PROC_REF(/obj/item, cap_drinkable_given), list(user, target))
 	return TRUE
 
 /// The timed drink finished: target takes a sip.

@@ -32,21 +32,21 @@
 	O.make_climbable(kind, instance_delay, vaulting)
 
 /datum/capability/climb/interactions(atom/holder)
-	var/datum/interaction/capability/E = adopt_entry(cap_hand("Climb", TYPE_PROC_REF(/obj, cap_climb_start), needs = TYPE_PROC_REF(/obj, cap_climb_ok), works_broken = TRUE, works_unpowered = TRUE))
+	var/datum/interaction/capability/E = adopt_entry(cap_hand("Climb", GLOBAL_PROC_REF(cap_climb_start), needs = GLOBAL_PROC_REF(cap_climb_ok), works_broken = TRUE, works_unpowered = TRUE))
 	E.default_action = null // Menu only: a click keeps doing the holder's own thing, a drag climbs
 	return list(E)
 
 /// needs: the holder is still climbable (a table flipped by the cap_flip() capability stays climbable).
-/obj/proc/cap_climb_ok(mob/user, obj/item/held)
-	if(!climbable_type)
+/proc/cap_climb_ok(mob/user, obj/holder, obj/item/held)
+	if(!holder.climbable_type)
 		return "it can't be climbed"
 	if(!isliving(user))
 		return "you can't climb"
-	if(user in climbers)
+	if(user in holder.climbers)
 		return "you're already climbing it"
 	return TRUE
 
 /// Starts the climb through the behaviour's own event (its checks, the timed climb, the messages).
-/obj/proc/cap_climb_start(mob/user, obj/item/held)
-	om_emit(src, new /datum/om/event/climb_start(user))
+/proc/cap_climb_start(obj/holder, mob/user, obj/item/held)
+	om_emit(holder, new /datum/om/event/climb_start(user))
 	return TRUE

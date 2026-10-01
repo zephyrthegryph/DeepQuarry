@@ -18,23 +18,23 @@
 
 /datum/capability/rotate/interactions(atom/holder)
 	. = list()
-	var/needs = needs_unanchored ? TYPE_PROC_REF(/atom/movable, cap_rotate_free) : null
+	var/needs = needs_unanchored ? GLOBAL_PROC_REF(cap_rotate_free) : null
 	if(clockwise)
-		var/datum/interaction/capability/E = adopt_entry(cap_hand("Rotate clockwise", TYPE_PROC_REF(/atom/movable, cap_rotate_clockwise), needs = needs, works_broken = TRUE, works_unpowered = TRUE))
+		var/datum/interaction/capability/E = adopt_entry(cap_hand("Rotate clockwise", GLOBAL_PROC_REF(cap_rotate_clockwise), needs = needs, works_broken = TRUE, works_unpowered = TRUE))
 		E.default_action = INPUT_ACTION_ALTERNATE
 		. += E
 	if(counter)
-		var/datum/interaction/capability/E = adopt_entry(cap_hand("Rotate counter-clockwise", TYPE_PROC_REF(/atom/movable, cap_rotate_counter), needs = needs, works_broken = TRUE, works_unpowered = TRUE))
+		var/datum/interaction/capability/E = adopt_entry(cap_hand("Rotate counter-clockwise", GLOBAL_PROC_REF(cap_rotate_counter), needs = needs, works_broken = TRUE, works_unpowered = TRUE))
 		E.default_action = clockwise ? null : INPUT_ACTION_ALTERNATE
 		. += E
 
-/atom/movable/proc/cap_rotate_free(mob/user, obj/item/held)
-	return anchored ? "it's fastened in place" : TRUE
+/proc/cap_rotate_free(mob/user, atom/movable/holder, obj/item/held)
+	return holder.anchored ? "it's fastened in place" : TRUE
 
-/atom/movable/proc/cap_rotate_clockwise(mob/user, obj/item/held)
-	set_dir(turn(dir, -90))
+/proc/cap_rotate_clockwise(atom/movable/holder, mob/user, obj/item/held)
+	holder.set_dir(turn(holder.dir, -90))
 	return TRUE
 
-/atom/movable/proc/cap_rotate_counter(mob/user, obj/item/held)
-	set_dir(turn(dir, 90))
+/proc/cap_rotate_counter(atom/movable/holder, mob/user, obj/item/held)
+	holder.set_dir(turn(holder.dir, 90))
 	return TRUE

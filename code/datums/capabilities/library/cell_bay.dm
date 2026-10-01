@@ -52,5 +52,5 @@
 	return istype(cell) ? cell.percent() : 0
 
 /// needs: the cell holds more than CELL_BAY_LOW_PERCENT.
-/atom/proc/cap_cell_charged(mob/user, obj/item/held)
-	return cell_charge_percent(src) > CELL_BAY_LOW_PERCENT ? TRUE : "its power cell is too low"
+/proc/cap_cell_charged(atom/holder, mob/user, obj/item/held)
+	return cell_charge_percent(holder) > CELL_BAY_LOW_PERCENT ? TRUE : "its power cell is too low"

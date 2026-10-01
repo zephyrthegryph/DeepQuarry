@@ -141,23 +141,29 @@ pub(crate) fn run(elapsed: u32, budget: usize) -> Result<Vec<f32>> {
         (seconds, c.now, std::mem::take(&mut c.force_step))
     });
     let mut out: Vec<f32> = Vec::new();
+    let mut timer = PhaseTimer::start();
 
     // 1-2. The world (the pipe devices are a law of it) and the hosts not yet on it.
     let mut devices = Vec::new();
     if elapsed > 0 || force {
         devices = world::pace(seconds, force)?;
     }
+    timer.lap("pace");
     entity::tick_hosts();
+    timer.lap("hosts");
 
     // 3. The scheduler: every watch port's wakes, timers, rates, keys.
     let (wakes, owners) = sched::step(now, budget)?;
+    timer.lap("sched");
 
     // Set-watch crossings, and the retiring of settled heat bodies (read off
     // the events, so before they are taken).
     let crossings = heat::take_crossings(&owners)?;
+    timer.lap("crossings");
 
     // 3. Typed events -> notices.
     let events = world::take_events()?;
+    timer.lap("events");
     let mut at = 0;
     while at + 3 <= events.len() {
         #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
@@ -187,6 +193,7 @@ pub(crate) fn run(elapsed: u32, budget: usize) -> Result<Vec<f32>> {
 
     // Gas dependency observations -> changes.
     let observations = gas::take_observations();
+    timer.lap("observations");
     for o in observations.chunks_exact(gas::mix::GAS_OBSERVATION_STRIDE) {
         record(&mut out, REC_CHANGED, o[0], o[2], &o[1..]);
     }
@@ -222,7 +229,29 @@ pub(crate) fn run(elapsed: u32, budget: usize) -> Result<Vec<f32>> {
             &[f32::from(u8::from(entered)), generation as f32],
         );
     }
+    timer.lap("outbox");
     Ok(out)
+}
+
+/// Cumulative wall time of each frame phase (`frame.us.<phase>` counters in the metrics registry, read by
+/// `verdigris_metrics_list()` and every bench mark), so a change in the frame's cost names the phase that moved.
+struct PhaseTimer {
+    at: std::time::Instant,
+}
+
+impl PhaseTimer {
+    fn start() -> Self {
+        crate::metrics::registry().counter("frame.count").inc();
+        Self { at: std::time::Instant::now() }
+    }
+
+    fn lap(&mut self, phase: &str) {
+        let now = std::time::Instant::now();
+        #[allow(clippy::cast_possible_truncation)]
+        let us = (now - self.at).as_micros() as u64;
+        crate::metrics::registry().counter(&format!("frame.us.{phase}")).add(us);
+        self.at = now;
+    }
 }
 
 #[cfg(test)]

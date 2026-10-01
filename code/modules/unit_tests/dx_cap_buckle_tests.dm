@@ -24,10 +24,10 @@
 	TEST_ASSERT_NOTNULL(grab_entry, "the Buckle entry")
 	TEST_ASSERT_EQUAL(grab_entry.held_type, /obj/item/grab, "Buckle takes a grabbed mob")
 	TEST_ASSERT_EQUAL(release.why_not(H, F, null), "nobody is buckled to it", "Unbuckle refuses when empty")
-	TEST_ASSERT(!length(F.caps_examine(H)), "no examine line when empty")
+	TEST_ASSERT(!length(caps_examine(F, H)), "no examine line when empty")
 
 	TEST_ASSERT(F.buckle_mob(sitter, forced = TRUE), "the existing system buckles")
-	TEST_ASSERT(("[sitter] is buckled to it." in F.caps_examine(H)), "examine names who is buckled")
+	TEST_ASSERT(("[sitter] is buckled to it." in caps_examine(F, H)), "examine names who is buckled")
 	TEST_ASSERT_NULL(release.why_not(H, F, null), "Unbuckle is available")
 	TEST_ASSERT(release.perform(H, F, null), "Unbuckle performs")
 	TEST_ASSERT_NULL(sitter.buckled_to(), "the sitter is free")

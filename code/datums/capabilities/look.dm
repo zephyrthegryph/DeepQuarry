@@ -197,7 +197,7 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 	return null
 
 /// TRUE for a type whose standard parts the unit test enforces (types opt in as their sprites are named).
-/atom/proc/look_checked()
+/proc/look_checked(atom/holder)
 	return FALSE
 
 /// The standard part names this capability draws (its layer). Null draws none.

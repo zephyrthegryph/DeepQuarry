@@ -51,13 +51,25 @@
 	/// rel_key(): instances are keyed targets found through this var.
 	var/keyed_key
 
+/// Interned: an identical declaration made anywhere in the tree (an ancestor's relations() that every
+/// subtype's per-type list repeats, such as /atom's light_sources and heat_watches) is ONE datum and one
+/// entry list, not one per type. Entries are read-only after they are returned, so sharing them is safe.
 /proc/_own_entry(var_name, list/entry, keep_after_destroy, pool_reset, forward)
-	var/datum/own_entry/E = new
+	var/static/list/interned = list()
+	var/list/parts = list("[var_name]", "[!!keep_after_destroy][!!pool_reset][!!forward]")
+	for(var/value in entry) // flat: numbers, text, paths, null, and flat lists (extra, watch)
+		parts += islist(value) ? "\[[jointext(value, ",")]\]" : "[value]"
+	var/key = jointext(parts, "|")
+	var/datum/own_entry/E = interned[key]
+	if(E)
+		return E
+	E = new
 	E.var_name = var_name
 	E.entry = entry
 	E.keep_after_destroy = !!keep_after_destroy
 	E.pool_reset = !!pool_reset
 	E.forward = !!forward
+	interned[key] = E
 	return E
 
 /**

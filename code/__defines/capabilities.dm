@@ -73,6 +73,10 @@
  *		var/target_pressure = ONE_ATMOSPHERE
  *	TRACKED(/obj/machinery/pump, target_pressure, CHANGE_MACHINE_SETTINGS)
  */
+/// TRUE for a GLOBAL_PROC_REF() (a /proc/ path), FALSE for a type proc ref: holder_call() and dispatch_call() pass a
+/// global proc the holder as an argument instead of calling it on the holder.
+#define IS_GLOBAL_PROC_REF(P) (copytext("[P]", 1, 7) == "/proc/")
+
 #define TRACKED(T, V, CHANNEL) ##T/proc/set_##V(value) { if(V == value) { return FALSE }; V = value; changed(src, CHANNEL, #V); return TRUE };SETTER(T, V)
 
 /**

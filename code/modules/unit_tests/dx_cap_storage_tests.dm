@@ -70,7 +70,7 @@
 	TEST_ASSERT(put_in.perform(H, belt, kit), "a medical item fits by storage_class")
 	TEST_ASSERT_EQUAL(kit.loc, belt, "the kit is inside")
 	TEST_ASSERT_EQUAL(put_in.why_not(H, belt, kit2), "\the [belt] is full", "the count limit refuses a third")
-	TEST_ASSERT("It holds 2 things." in belt.caps_examine(H), "examine counts the contents")
+	TEST_ASSERT("It holds 2 things." in caps_examine(belt, H), "examine counts the contents")
 
 /// Take out into the hand, Empty out onto the floor, and the empty-state gating.
 /datum/unit_test/dx_cap_storage_take_and_empty/Run()
@@ -85,18 +85,18 @@
 	TEST_ASSERT_NOTNULL(empty_out, "storage offers Empty out")
 	TEST_ASSERT_EQUAL(take_out.why_not(H, belt, null), "it's empty", "Take out refuses while empty")
 	TEST_ASSERT_EQUAL(empty_out.why_not(H, belt, null), "it's empty", "Empty out refuses while empty")
-	TEST_ASSERT("It is empty." in belt.caps_examine(H), "examine says it is empty")
-	TEST_ASSERT(belt.storage_insert(screwdriver, H), "storage_insert() puts the screwdriver in")
-	TEST_ASSERT(belt.storage_insert(wrench, H), "and the wrench")
+	TEST_ASSERT("It is empty." in caps_examine(belt, H), "examine says it is empty")
+	TEST_ASSERT(storage_insert(belt, screwdriver, H), "storage_insert(src) puts the screwdriver in")
+	TEST_ASSERT(storage_insert(belt, wrench, H), "and the wrench")
 	TEST_ASSERT_NULL(take_out.why_not(H, belt, null), "Take out is available with contents")
-	var/list/choices = belt.cap_storage_choices(H)
+	var/list/choices = cap_storage_choices(belt, H)
 	TEST_ASSERT_EQUAL(length(choices), 2, "both things are choices")
-	TEST_ASSERT(belt.cap_storage_take_out(H, choice = screwdriver.name, cap = cap_of(belt, /datum/capability/storage)), "the form's handler takes the screwdriver out")
+	TEST_ASSERT(cap_storage_take_out(belt, H, choice = screwdriver.name, cap = cap_of(belt, /datum/capability/storage)), "the form's handler takes the screwdriver out")
 	TEST_ASSERT(H.is_in_hands(screwdriver), "the screwdriver is in the hand")
-	TEST_ASSERT_EQUAL(belt.cap_storage_take_out(H, choice = "no such thing", cap = cap_of(belt, /datum/capability/storage)), UI_REFUSED, "a stale choice is refused")
+	TEST_ASSERT_EQUAL(cap_storage_take_out(belt, H, choice = "no such thing", cap = cap_of(belt, /datum/capability/storage)), UI_REFUSED, "a stale choice is refused")
 	TEST_ASSERT(empty_out.perform(H, belt, null), "Empty out runs")
 	TEST_ASSERT_EQUAL(wrench.loc, T, "the wrench lands on the floor")
-	TEST_ASSERT(!length(belt.storage_items()), "nothing is left inside")
+	TEST_ASSERT(!length(storage_items(belt)), "nothing is left inside")
 
 /// locked_by = LOCK, the capacity in units, and the ledger refusal message.
 /datum/unit_test/dx_cap_storage_locked_and_space/Run()
@@ -128,20 +128,20 @@
 	var/obj/item/cap_fixture_item/special = allocate(/obj/item/cap_fixture_item, T)
 	var/obj/item/cap_fixture_item/medical/kit = allocate(/obj/item/cap_fixture_item/medical, T)
 	special.name = "exception"
-	TEST_ASSERT_NOTNULL(picky.storage_refusal(plain, H), "a plain item is refused by the medical rule")
-	TEST_ASSERT_NULL(picky.storage_refusal(special, H), "the holder's can_hold_proc lets its exception in")
-	TEST_ASSERT_NULL(picky.storage_refusal(kit, H), "a medical item fits")
+	TEST_ASSERT_NOTNULL(storage_refusal(picky, plain, H), "a plain item is refused by the medical rule")
+	TEST_ASSERT_NULL(storage_refusal(picky, special, H), "the holder's can_hold_proc lets its exception in")
+	TEST_ASSERT_NULL(storage_refusal(picky, kit, H), "a medical item fits")
 	picky.hold_mask = HOLDS_ANY
-	TEST_ASSERT_NULL(picky.storage_refusal(plain, H), "a per-instance hold_mask replaces the capability's holds")
+	TEST_ASSERT_NULL(storage_refusal(picky, plain, H), "a per-instance hold_mask replaces the capability's holds")
 	picky.hold_slots = 0
-	TEST_ASSERT_EQUAL(picky.storage_refusal(plain, H), "\the [picky] is full", "a per-instance hold_slots replaces the count limit")
+	TEST_ASSERT_EQUAL(storage_refusal(picky, plain, H), "\the [picky] is full", "a per-instance hold_slots replaces the count limit")
 
 /// Destroying the holder spills its contents through the slot's drop policy.
 /datum/unit_test/dx_cap_storage_spill/Run()
 	var/turf/T = run_loc_floor_bottom_left
 	var/obj/cap_fixture/storage_lockbox/box = allocate(/obj/cap_fixture/storage_lockbox, T)
 	var/obj/item/cap_fixture_item/one = allocate(/obj/item/cap_fixture_item, T)
-	TEST_ASSERT(box.storage_insert(one, null), "the item goes in with no user")
+	TEST_ASSERT(storage_insert(box, one, null), "the item goes in with no user")
 	qdel(box)
 	TEST_ASSERT(!QDELETED(one), "the contents survive the holder")
 	TEST_ASSERT_EQUAL(one.loc, T, "and land where the holder was")

@@ -424,7 +424,7 @@ DAMAGE_REACTION(/obj/machinery/vending, DAMAGE_EXPLOSION, PROC_REF(vending_blast
 		return refuse(user, null)
 	if(!coin)
 		return refuse(user, "There is no coin in this machine.")
-	slot_eject(nameof(coin), user)
+	slot_eject(src, nameof(coin), user)
 	return TRUE
 
 /// Why `user` can't start a purchase right now (text, for them), or null. A denied ID flicks and

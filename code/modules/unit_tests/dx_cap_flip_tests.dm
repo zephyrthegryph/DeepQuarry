@@ -22,14 +22,14 @@
 	TEST_ASSERT_NOTNULL(back, "the put back entry")
 	TEST_ASSERT_NULL(over.default_action, "Menu only")
 	TEST_ASSERT_EQUAL(back.why_not(H, table, null), "it is not flipped", "nothing to put back")
-	TEST_ASSERT(!length(table.caps_examine(H)), "no examine line upright")
+	TEST_ASSERT(!length(caps_examine(table, H)), "no examine line upright")
 
 	TEST_ASSERT_NULL(over.why_not(H, table, null), "an upright table can flip")
 	TEST_ASSERT(over.perform(H, table, null), "flips")
 	TEST_ASSERT_EQUAL(table.flipped, 1, "flipped")
 	TEST_ASSERT_EQUAL(table.dir, SOUTH, "away from the user")
 	TEST_ASSERT_EQUAL(GLOB.dispatch_last_record["log"], LOG_GAME, "logged")
-	TEST_ASSERT("It has been flipped on its side." in table.caps_examine(H), "examine says flipped")
+	TEST_ASSERT("It has been flipped on its side." in caps_examine(table, H), "examine says flipped")
 	TEST_ASSERT_EQUAL(over.why_not(H, table, null), "it is already flipped", "can't flip twice")
 
 	TEST_ASSERT_NULL(back.why_not(H, table, null), "can be put back")

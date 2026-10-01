@@ -50,7 +50,7 @@
 	TEST_ASSERT_NOTNULL(cap_of(V, /datum/capability/wires), "wires")
 	TEST_ASSERT_NOTNULL(cap_of(V, /datum/capability/emag), "an emag")
 	TEST_ASSERT_NOTNULL(cap_of(V, /datum/capability/anchor), "an anchor")
-	TEST_ASSERT_NOTNULL(V.slot_capability(nameof(V.coin)), "the coin slot")
+	TEST_ASSERT_NOTNULL(slot_capability(V, nameof(V.coin)), "the coin slot")
 	for(var/name in list("Refill", "Insert coin", "Stock", "Use", "Check vending logs"))
 		TEST_ASSERT_NOTNULL(dx_vending_entry(V, name), "an entry named [name]")
 	TEST_ASSERT(hascall(V, "finish_vend"), "the delayed vend is finish_vend")
@@ -84,7 +84,7 @@
 	TEST_ASSERT(!V.tgui_act("remove_coin", list(), ui), "an empty slot refuses")
 
 	// A premium purchase swallows the coin.
-	TEST_ASSERT(V.slot_insert(nameof(V.coin), C, H), "the coin goes in from code")
+	TEST_ASSERT(slot_insert(V, nameof(V.coin), C, H), "the coin goes in from code")
 	var/datum/stored_item/vending_product/premium
 	var/premium_key
 	for(var/key in 1 to length(V.product_records))

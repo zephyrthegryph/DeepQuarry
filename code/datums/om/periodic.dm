@@ -231,7 +231,7 @@
 	// A type that declares its dependencies needs no blanket mark: what it reads is written through
 	// tracked setters, which mark exactly the outputs that read it.
 	if(E.periodic_cadence && !derived_is_exact(E))
-		changed(E)
+		refresh_dispatched(E)
 	return STEP_DONE
 
 /// Registers a work item per cadence with the kernel. Called when the kernel is created.

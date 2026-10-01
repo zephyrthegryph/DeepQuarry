@@ -24,8 +24,8 @@
 
 /datum/capability/buckle/interactions(atom/holder)
 	return list(
-		adopt_entry(cap_use_on("Buckle", /obj/item/grab, TYPE_PROC_REF(/atom/movable, cap_buckle_grabbed), works_broken = TRUE, works_unpowered = TRUE)),
-		adopt_entry(cap_hand("Unbuckle", TYPE_PROC_REF(/atom/movable, cap_buckle_release), needs = TYPE_PROC_REF(/atom/movable, cap_buckle_occupied), else_say = "nobody is buckled to it", works_broken = TRUE, works_unpowered = TRUE)),
+		adopt_entry(cap_use_on("Buckle", /obj/item/grab, GLOBAL_PROC_REF(cap_buckle_grabbed), works_broken = TRUE, works_unpowered = TRUE)),
+		adopt_entry(cap_hand("Unbuckle", GLOBAL_PROC_REF(cap_buckle_release), needs = GLOBAL_PROC_REF(cap_buckle_occupied), else_say = "nobody is buckled to it", works_broken = TRUE, works_unpowered = TRUE)),
 	)
 
 /datum/capability/buckle/examine(atom/holder, mob/user)
@@ -37,26 +37,26 @@
 		names += "[L]"
 	return list("[english_list(names)] [length(names) > 1 ? "are" : "is"] buckled to it.")
 
-/atom/movable/proc/cap_buckle_occupied(mob/user, obj/item/held)
-	return !!has_buckled_mobs()
+/proc/cap_buckle_occupied(mob/user, atom/movable/holder, obj/item/held)
+	return !!holder.has_buckled_mobs()
 
-/atom/movable/proc/cap_buckle_grabbed(mob/user, obj/item/grab/held)
+/proc/cap_buckle_grabbed(atom/movable/holder, mob/user, obj/item/grab/held)
 	var/mob/living/M = held?.grab_target()
 	if(!istype(M))
 		return refuse(user, "You aren't holding anyone.")
-	if(!user_buckle_mob(M, user))
+	if(!holder.user_buckle_mob(M, user))
 		return UI_REFUSED // user_buckle_mob() said why
 	return TRUE
 
-/atom/movable/proc/cap_buckle_release(mob/user, obj/item/held)
-	var/list/mobs = buckled_mob_list()
+/proc/cap_buckle_release(atom/movable/holder, mob/user, obj/item/held)
+	var/list/mobs = holder.buckled_mob_list()
 	var/mob/living/M
 	if(length(mobs) == 1)
 		M = mobs[1]
 	else
 		M = ask_mob(user, "Who do you wish to unbuckle?", mobs, "Unbuckle")
-		if(!M || !(M in buckled_mob_list()))
+		if(!M || !(M in holder.buckled_mob_list()))
 			return UI_REFUSED
-	if(!user_unbuckle_mob(M, user))
+	if(!holder.user_unbuckle_mob(M, user))
 		return UI_REFUSED
 	return TRUE

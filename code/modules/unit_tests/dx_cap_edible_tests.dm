@@ -31,14 +31,14 @@
 	TEST_ASSERT_NOTNULL(eat, "the Eat entry")
 	TEST_ASSERT_EQUAL(eat.entry, INTERACTION_ENTRY_SELF, "using it in hand eats")
 	TEST_ASSERT_NULL(feed.default_action, "Feed is Menu only")
-	TEST_ASSERT(!length(F.caps_examine(H)), "unbitten, no examine line")
+	TEST_ASSERT(!length(caps_examine(F, H)), "unbitten, no examine line")
 
 	var/before = H.ingested.get_reagent_amount(REAGENT_ID_SUGAR)
 	eat.perform(H, F, F)
 	TEST_ASSERT_EQUAL(cap_edible_bites_taken(F), 1, "one bite")
 	TEST_ASSERT_EQUAL(F.reagents.total_volume, 8, "a bite moves bite_size units")
 	TEST_ASSERT(H.ingested.get_reagent_amount(REAGENT_ID_SUGAR) > before, "into the eater's stomach")
-	TEST_ASSERT_EQUAL(F.caps_examine(H)[1], span_notice("It was bitten by someone!"), "examine counts the bite")
+	TEST_ASSERT_EQUAL(caps_examine(F, H)[1], span_notice("It was bitten by someone!"), "examine counts the bite")
 
 	// A covered mouth refuses.
 	var/obj/item/clothing/mask/gas/mask = allocate(/obj/item/clothing/mask/gas, T)
@@ -53,7 +53,7 @@
 	F.cap_edible_fed(H, friend)
 	TEST_ASSERT_EQUAL(cap_edible_bites_taken(F), 2, "the friend took a bite")
 	TEST_ASSERT(friend.ingested.get_reagent_amount(REAGENT_ID_SUGAR) > 0, "into the friend's stomach")
-	TEST_ASSERT_EQUAL(F.caps_examine(H)[1], span_notice("It was bitten 2 times!"), "examine counts the bites")
+	TEST_ASSERT_EQUAL(caps_examine(F, H)[1], span_notice("It was bitten 2 times!"), "examine counts the bites")
 
 	// The last of `bites` finishes it and leaves the trash in hand.
 	H.put_in_hands(F)

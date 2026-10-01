@@ -124,7 +124,7 @@
 	var/list/failures = list()
 	var/checked = 0
 	for(var/atom/movable/M in world)
-		if(!M.look_checked())
+		if(!look_checked(M))
 			continue
 		checked++
 		var/list/lacking = look_missing_standard_parts(M)

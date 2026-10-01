@@ -66,7 +66,7 @@
 	TEST_ASSERT(!cap_test_has_layer(A, "cover_open"), "CAP_NO_LAYER draws nothing")
 	TEST_ASSERT(!cap_test_has_layer(A, CAP_NO_LAYER), "not even a layer named CAP_NO_LAYER")
 	var/list/data = list()
-	A.caps_ui_data(H, data)
+	caps_ui_data(A, H, data)
 	TEST_ASSERT_NULL(data["locked"], "no top-level capability keys (M11)")
 	TEST_ASSERT_NOTNULL(data["caps"], "capability data is nested under caps")
 	TEST_ASSERT_EQUAL(data["caps"]["hatch"]?["open"], TRUE, "keyed by the capability's layer")
@@ -89,7 +89,7 @@
 	TEST_ASSERT(dispatch_succeeded(cap_dispatch(new /datum/dispatch_context(H, A, crowbar, remove))), "removing runs")
 	TEST_ASSERT(cover_removed(A) && cover_is_open(A), "removed and open")
 	TEST_ASSERT_EQUAL(toggle.why_not(H, A, null), "the cover has been removed", "a removed cover can't be closed")
-	TEST_ASSERT("Its cover has been removed." in A.caps_examine(H), "examine says so")
+	TEST_ASSERT("Its cover has been removed." in caps_examine(A, H), "examine says so")
 
 /// The emag effect runs first and may refuse: no bit, no use spent. The delay is the entry's timed cost.
 /datum/unit_test/dx_cap_library_emag_refusal/Run()
@@ -117,10 +117,10 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	var/obj/cap_fixture/lib_slot/A = allocate(/obj/cap_fixture/lib_slot, T)
 	var/obj/item/cell/cell = allocate(/obj/item/cell, T)
-	var/datum/capability/slot/S = A.slot_capability(nameof(A.cell))
+	var/datum/capability/slot/S = slot_capability(A, nameof(A.cell))
 	TEST_ASSERT_EQUAL(S.draws_var, nameof(A.cell), "a slot with a layer draws its var")
 	var/obj/item/cap_slot_probe/probe = allocate(/obj/item/cap_slot_probe, T)
-	var/datum/capability/slot/plain = probe.slot_capability(nameof(probe.cell))
+	var/datum/capability/slot/plain = slot_capability(probe, nameof(probe.cell))
 	TEST_ASSERT_NULL(plain.draws_var, "a slot without a layer draws nothing")
 	TEST_ASSERT_EQUAL(plain.layer_name, CAP_NO_LAYER, "its layer is CAP_NO_LAYER")
 	var/datum/interaction/capability/insert

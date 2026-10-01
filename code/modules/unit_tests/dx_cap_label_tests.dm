@@ -39,8 +39,8 @@
 	TEST_ASSERT(apply.perform(H, F, labeller), "the labeller labels")
 	TEST_ASSERT_EQUAL(F.name, "fixture (Sugar)", "the label is in the name")
 	TEST_ASSERT_EQUAL(labeller.labels_left, left - 1, "one label used")
-	TEST_ASSERT(("It has a label reading \"Sugar\"." in F.caps_examine(H)), "examine reads the label")
-	TEST_ASSERT_EQUAL(length(F.caps_examine(H)), 1, "said once although both label capabilities are declared")
+	TEST_ASSERT(("It has a label reading \"Sugar\"." in caps_examine(F, H)), "examine reads the label")
+	TEST_ASSERT_EQUAL(length(caps_examine(F, H)), 1, "said once although both label capabilities are declared")
 
 	labeller.label = "Sugarcane syrup"
 	TEST_ASSERT(apply.perform(H, F, labeller), "relabels")
@@ -51,4 +51,4 @@
 	TEST_ASSERT(remove.perform(H, F, null), "Remove label performs")
 	TEST_ASSERT_EQUAL(F.name, "fixture", "the name is restored")
 	TEST_ASSERT_NULL(cap_label_of(F), "no label left")
-	TEST_ASSERT(!length(F.caps_examine(H)), "no examine line")
+	TEST_ASSERT(!length(caps_examine(F, H)), "no examine line")

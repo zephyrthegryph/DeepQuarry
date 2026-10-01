@@ -22,7 +22,7 @@
 /datum/capability/breakable/interactions(atom/holder)
 	if(!repair_tool)
 		return null
-	return list(adopt_entry(cap_tool("Repair", repair_tool, TYPE_PROC_REF(/atom, cap_breakable_repair), delay = repair_delay, needs = TYPE_PROC_REF(/atom, cap_breakable_is_broken), else_say = "it isn't broken", works_broken = TRUE, works_unpowered = TRUE, priority = 10), id = "breakable:[repair_tool]"))
+	return list(adopt_entry(cap_tool("Repair", repair_tool, GLOBAL_PROC_REF(cap_breakable_repair), delay = repair_delay, needs = GLOBAL_PROC_REF(cap_breakable_is_broken), else_say = "it isn't broken", works_broken = TRUE, works_unpowered = TRUE, priority = 10), id = "breakable:[repair_tool]"))
 
 /datum/capability/breakable/examine(atom/holder, mob/user)
 	if(is_broken(holder))
@@ -36,18 +36,18 @@
 	data[LOOK_BROKEN] = is_broken(holder)
 
 /// atom_break() / atom_fix() report here: a breakable holder mirrors it into CAP_BROKEN.
-/atom/proc/caps_set_broken(broken)
-	if(cap_of(src, /datum/capability/breakable))
-		cap_set(src, CAP_BROKEN, broken)
+/proc/caps_set_broken(atom/holder, broken)
+	if(cap_of(holder, /datum/capability/breakable))
+		cap_set(holder, CAP_BROKEN, broken)
 
-/atom/proc/cap_breakable_is_broken(mob/user, obj/item/held)
-	return is_broken(src)
+/proc/cap_breakable_is_broken(mob/user, atom/holder, obj/item/held)
+	return is_broken(holder)
 
-/atom/proc/cap_breakable_repair(mob/user, obj/item/held)
-	if(uses_integrity && get_integrity() < max_integrity)
-		repair_damage(max_integrity - get_integrity()) // back above the failure point: atom_fix() runs
-	cap_set(src, CAP_BROKEN, FALSE)
-	act_message(user, src, self = "You repair %T%.", others = "%U% repairs %T%.")
+/proc/cap_breakable_repair(atom/holder, mob/user, obj/item/held)
+	if(holder.uses_integrity && holder.get_integrity() < holder.max_integrity)
+		holder.repair_damage(holder.max_integrity - holder.get_integrity()) // back above the failure point: atom_fix() runs
+	cap_set(holder, CAP_BROKEN, FALSE)
+	act_message(user, holder, self = "You repair %T%.", others = "%U% repairs %T%.")
 	return TRUE
 
 /**
@@ -57,13 +57,13 @@
  * decides what gives. It wins over the holder's other empty-hand ops by being declared first (machine_basics()).
  */
 /proc/claw_op()
-	return cap_op("Slash", TYPE_PROC_REF(/atom, claw_slash), using = EMPTY_HAND, offered = list(req_claws(), req_heard(/datum/notice/slashed)), key = CAP_CLAW, kind = OP_CONTROL, works_broken = TRUE, works_unpowered = TRUE)
+	return cap_op("Slash", GLOBAL_PROC_REF(claw_slash), using = EMPTY_HAND, offered = list(req_claws(), req_heard(/datum/notice/slashed)), key = CAP_CLAW, kind = OP_CONTROL, works_broken = TRUE, works_unpowered = TRUE)
 
 /// The claw op's handler: the swipe lands (its cooldown, the noise, the prints) and the holder hears it.
-/atom/proc/claw_slash(mob/living/carbon/human/user)
+/proc/claw_slash(atom/holder, mob/living/carbon/human/user)
 	user.setClickCooldown(user.get_attack_speed())
-	act_message(user, src, self = span_notice("You slash at %T%!"), others = span_warning("%U% slashes at %T%!"))
-	play_sfx(src, SFX_WEAPONS_SLASH, 2)
-	add_hiddenprint(user)
-	PUBLISH(src, /datum/notice/slashed, user)
+	act_message(user, holder, self = span_notice("You slash at %T%!"), others = span_warning("%U% slashes at %T%!"))
+	play_sfx(holder, SFX_WEAPONS_SLASH, 2)
+	holder.add_hiddenprint(user)
+	PUBLISH(holder, /datum/notice/slashed, user)
 	return TRUE

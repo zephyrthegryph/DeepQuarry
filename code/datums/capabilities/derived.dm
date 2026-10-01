@@ -53,12 +53,35 @@
 /datum/derived_factor
 	var/id
 
-/proc/derived_entry(kind, name, list/reads)
-	var/datum/derived_entry/E = new
+/// Interned like own entries: a base type's derived() repeated in every subtype's per-type list is one datum.
+/// Entries are read-only once returned (derived_entry_implicit() makes the implicit twin instead of writing).
+/proc/derived_entry(kind, name, list/reads, implicit = FALSE)
+	var/static/list/interned = list()
+	var/list/parts = list("[kind]", "[name]", "[!!implicit]")
+	for(var/read in reads)
+		if(istype(read, /datum/derived_hop))
+			var/datum/derived_hop/H = read
+			parts += "hop:[H.link]>[H.remote]>[H.each]"
+		else if(istype(read, /datum/derived_factor))
+			var/datum/derived_factor/F = read
+			parts += "factor:[F.id]"
+		else
+			parts += "[read]"
+	var/key = jointext(parts, "|")
+	var/datum/derived_entry/E = interned[key]
+	if(E)
+		return E
+	E = new
 	E.kind = kind
 	E.name = name
 	E.reads = reads
+	E.implicit = !!implicit
+	interned[key] = E
 	return E
+
+/// The implicit (capability-contributed) form of `E`.
+/proc/derived_entry_implicit(datum/derived_entry/E)
+	return E.implicit ? E : derived_entry(E.kind, E.name, E.reads, TRUE)
 
 /// should_run() reads these: a change re-checks it and wakes or parks the cadence.
 /proc/runs_while(...)
@@ -116,8 +139,7 @@
 	for(var/datum/capability/C as anything in caps_of(src))
 		var/list/mine = C.derived_reads(src)
 		for(var/datum/derived_entry/E as anything in mine)
-			E.implicit = TRUE
-			. += E
+			. += derived_entry_implicit(E)
 
 /// The entries a capability contributes to its holder's derived(): drawn_from / ui_from / runs_while
 /// of the holder vars its draw(), ui_data() and cap_should_run() read. Pure.
@@ -370,14 +392,14 @@ GLOBAL_VAR_INIT(derived_write_expected, FALSE)
 /**
  * An entity whose type declares dependencies joins the relation index: what its hop links name right
  * now is indexed (links made before the table existed), and later links are seen by the relation layer.
- * Atoms are attached by caps_init() when their type derives deps; a non-atom datum calls this once from
+ * Atoms are attached by caps_init(src) when their type derives deps; a non-atom datum calls this once from
  * New() (and changed(src) for its first refresh).
  */
 /proc/derived_attach(datum/D)
 	var/datum/derived_table/T = derived_table_of(D)
 	if(!T)
 		return
-#if defined(UNIT_TESTS)
+#if defined(UNIT_TESTS) && !defined(BENCHMARK)
 	// The second instance of a type rebuilds derived() and compares: it must not read instance state.
 	type_list(D, TYPE_PROC_REF(/datum, derived))
 #endif
@@ -522,7 +544,7 @@ GLOBAL_VAR_INIT(derived_write_expected, FALSE)
 	if(!T)
 		return DEP_ALL
 	. = T.by_var[var_name] || 0
-#if defined(UNIT_TESTS)
+#if defined(UNIT_TESTS) && !defined(BENCHMARK)
 	if(!.)
 		var/ref_text = REF(E)
 		var/list/seen = GLOB.derived_ignored[ref_text]

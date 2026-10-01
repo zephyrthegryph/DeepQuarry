@@ -22,13 +22,13 @@
 	TEST_ASSERT_EQUAL(E.tool, TOOL_WRENCH, "a wrench by default")
 	TEST_ASSERT_EQUAL(E.log, LOG_GAME, "logged by default")
 	TEST_ASSERT_EQUAL(E.display_name(H, F), "Anchor", "named for its state")
-	TEST_ASSERT("It is unanchored." in F.caps_examine(H), "examine says unanchored")
+	TEST_ASSERT("It is unanchored." in caps_examine(F, H), "examine says unanchored")
 
 	TEST_ASSERT(E.perform(H, F, wrench), "the wrench anchors it")
 	TEST_ASSERT(F.anchored, "anchored")
 	TEST_ASSERT_EQUAL(GLOB.dq_tool_last_use["delay"], 2 SECONDS, "it takes 2 s unscaled")
 	TEST_ASSERT_EQUAL(E.display_name(H, F), "Unanchor", "renamed for the new state")
-	TEST_ASSERT("It is anchored." in F.caps_examine(H), "examine says anchored")
+	TEST_ASSERT("It is anchored." in caps_examine(F, H), "examine says anchored")
 	TEST_ASSERT(E.perform(H, F, wrench), "the wrench frees it")
 	TEST_ASSERT(!F.anchored, "unanchored")
 

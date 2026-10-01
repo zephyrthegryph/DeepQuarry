@@ -16,11 +16,11 @@
 
 	var/obj/item/cap_fixture/barbed/B = allocate(/obj/item/cap_fixture/barbed, T)
 	TEST_ASSERT_EQUAL(B.embed_chance, 70, "the chance is written before Initialize() derives one")
-	TEST_ASSERT("It looks like it would lodge in a wound." in B.caps_examine(H), "examine says it lodges")
+	TEST_ASSERT("It looks like it would lodge in a wound." in caps_examine(B, H), "examine says it lodges")
 
 	var/obj/item/cap_fixture/slick/S = allocate(/obj/item/cap_fixture/slick, T)
 	TEST_ASSERT_EQUAL(S.embed_chance, 0, "chance 0 never embeds (not derived from force)")
-	TEST_ASSERT(!length(S.caps_examine(H)), "no examine line when it can't embed")
+	TEST_ASSERT(!length(caps_examine(S, H)), "no examine line when it can't embed")
 
 	var/obj/item/cap_fixture/plain = allocate(/obj/item/cap_fixture, T)
 	TEST_ASSERT(plain.embed_chance > 0, "without the capability the chance is still derived from force")

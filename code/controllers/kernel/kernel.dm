@@ -36,6 +36,8 @@
 	var/list/work_by_key = list()
 	/// phase -> items in dependency order, rebuilt when the graph changes.
 	var/list/phase_items
+	/// Phase P's items by lane (LANE_* -> items in dependency order), rebuilt with phase_items.
+	var/list/phase_lane_items
 	var/work_dirty = TRUE
 	/// Problems the last graph validation found (a missing target, a cycle, an edge into a later phase).
 	var/list/work_errors = list()
@@ -110,7 +112,8 @@
 	// K
 	var/k_start = TICK_USAGE
 	run_hosted_phase(hosted_k, tick_limit, init_stage)
-	guarded(KERNEL_PHASE_K, TYPE_PROC_REF(/datum/controller/kernel, run_work_phase), KERNEL_PHASE_K, tick_limit)
+	if(length(items_of_phase(KERNEL_PHASE_K)))
+		guarded(KERNEL_PHASE_K, TYPE_PROC_REF(/datum/controller/kernel, run_work_phase), KERNEL_PHASE_K, tick_limit)
 	if(TICK_USAGE - k_start > KERNEL_INPUT_CAP)
 		k_over_cap++
 	phase_note(KERNEL_PHASE_K, k_start)
@@ -123,7 +126,8 @@
 		// ALLOW(sys_world_time_write): the kernel clock: a per-tick timestamp of the scheduler itself, not a per-entity expiry
 		last_native = world.time
 		guarded(KERNEL_PHASE_N, TYPE_PROC_REF(/datum/controller/kernel, run_native), elapsed, sched.world_budget)
-		guarded(KERNEL_PHASE_N, TYPE_PROC_REF(/datum/controller/kernel, run_work_phase), KERNEL_PHASE_N, tick_limit)
+		if(length(items_of_phase(KERNEL_PHASE_N)))
+			guarded(KERNEL_PHASE_N, TYPE_PROC_REF(/datum/controller/kernel, run_work_phase), KERNEL_PHASE_N, tick_limit)
 		phase_note(KERNEL_PHASE_N, n_start)
 		// U
 		var/u_start = TICK_USAGE
@@ -141,7 +145,8 @@
 		var/r_start = TICK_USAGE
 		guarded(KERNEL_PHASE_R, TYPE_PROC_REF(/datum/controller/kernel, run_leftover_phase), tick_limit)
 		phase_note(KERNEL_PHASE_R, r_start)
-		var/pass_ms = TICK_USAGE_TO_MS(tick_start)
+		// The scheduler pass is N through R: phase K's host services (input, verbs, tgui, ...) are not part of it.
+		var/pass_ms = TICK_USAGE_TO_MS(sched.pass_start)
 		sched.pass_end()
 		note_behaviours(pass_ms)
 		run_audits()
@@ -155,7 +160,8 @@
 		// ALLOW(sys_world_time_write): the kernel clock: a per-tick timestamp of the scheduler itself, not a per-entity expiry
 		last_g_floor = world.time
 	run_hosted_phase(hosted_g, g_limit, init_stage)
-	guarded(KERNEL_PHASE_G, TYPE_PROC_REF(/datum/controller/kernel, run_work_phase), KERNEL_PHASE_G, g_limit)
+	if(length(items_of_phase(KERNEL_PHASE_G)))
+		guarded(KERNEL_PHASE_G, TYPE_PROC_REF(/datum/controller/kernel, run_work_phase), KERNEL_PHASE_G, g_limit)
 	phase_note(KERNEL_PHASE_G, g_start)
 
 	last_tick_ms = TICK_USAGE_TO_MS(tick_start)
@@ -219,6 +225,9 @@
 	sched.pass_borrow(tick_limit)
 	for(var/lane in 1 to OM_LANE_COUNT)
 		sched.pass_lane(lane, tick_limit)
+		// A lane with no work items (most of them) costs no admission check and no engine call.
+		if(!length(phase_lane_items?[lane]) && !work_dirty)
+			continue
 		if(!kernel_admit_lane(lane))
 			continue
 		var/lane_limit = min(TICK_USAGE + sched.pass_avail * sched.lane_share[lane], tick_limit)

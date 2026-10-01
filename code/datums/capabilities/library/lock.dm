@@ -69,44 +69,44 @@
 		return FALSE
 	return has_access(need_all, need_one, accesses)
 
-/atom/proc/cap_lock_name(mob/user)
-	return is_locked(src) ? "Unlock" : "Lock"
+/proc/cap_lock_name(atom/holder, mob/user)
+	return is_locked(holder) ? "Unlock" : "Lock"
 
 /**
  * The lock's one operation, CAP_LOCK (action ACT_LOCK): toggle the lock with a credential. A holder adds contracts
  * (cap_require(CAP_LOCK, needs = ...)) and refinements (refine(CAP_LOCK, delay = ...)) to it by key. An alt-click
  * reaches it with anything in hand; a plain click reaches it only with a card the lock accepts in hand (a swipe,
  * `click_with`), so a click with a wrench is still the wrench's. The hatch declares it beside cap_lock(entries = FALSE).
- * It takes no provider slot: the credential is found by cap_lock_credential(), so a silicon can lock with its own access.
+ * It takes no provider slot: the credential is found by cap_lock_credential(src), so a silicon can lock with its own access.
  */
 /proc/lock_op(list/id_types = list(/obj/item/card/id, /obj/item/pda), behind = NONE, blocked_by = NONE, locked_by = NONE, log, works_broken = TRUE, works_unpowered = TRUE)
-	return cap_op("Lock", TYPE_PROC_REF(/atom, cap_lock_toggle), key = CAP_LOCK, action = ACT_LOCK, by = NONE, kind = OP_CONTROL, priority = 10, name_proc = TYPE_PROC_REF(/atom, cap_lock_name), behind = behind, blocked_by = blocked_by, locked_by = locked_by, works_broken = works_broken, works_unpowered = works_unpowered, log = log, click_with = id_types, passes_held = TRUE)
+	return cap_op("Lock", GLOBAL_PROC_REF(cap_lock_toggle), key = CAP_LOCK, action = ACT_LOCK, by = NONE, kind = OP_CONTROL, priority = 10, name_proc = GLOBAL_PROC_REF(cap_lock_name), behind = behind, blocked_by = blocked_by, locked_by = locked_by, works_broken = works_broken, works_unpowered = works_unpowered, log = log, click_with = id_types, passes_held = TRUE)
 
 /**
  * The credential provider that opens this lock for `actor`, or null. Credentials are providers, tried like hands:
  * the card held in the hand (when the lock takes that kind of card), then what the actor carries on them (a worn
  * ID or PDA), then the actor themself (a silicon's access). The first that grants is the provider.
  */
-/atom/proc/cap_lock_credential(mob/actor, obj/item/held)
-	var/datum/capability/lock/C = cap_of(src, /datum/capability/lock)
+/proc/cap_lock_credential(atom/holder, mob/actor, obj/item/held)
+	var/datum/capability/lock/C = cap_of(holder, /datum/capability/lock)
 	if(!C || !actor)
 		return null
-	if(held && is_type_in_list(held, C.id_types) && C.grants(src, held.GetAccess()))
+	if(held && is_type_in_list(held, C.id_types) && C.grants(holder, held.GetAccess()))
 		return held
 	// The actor's own access: the holder's own requirement when it sets one (a map edit, req_access), else the lock's.
-	var/obj/O = isobj(src) ? src : null
+	var/obj/O = isobj(holder) ? holder : null
 	var/permitted
 	if(O && (length(O.req_access) || length(O.req_one_access)))
 		permitted = O.allowed(actor)
 	else
-		permitted = C.grants(src, actor.GetAccess())
+		permitted = C.grants(holder, actor.GetAccess())
 	return permitted ? actor : null
 
 /// The lock op's handler: toggle the lock with the first credential provider that grants it.
-/atom/proc/cap_lock_toggle(mob/user, obj/item/held)
-	if(!cap_lock_credential(user, held))
+/proc/cap_lock_toggle(atom/holder, mob/user, obj/item/held)
+	if(!cap_lock_credential(holder, user, held))
 		return refuse(user, "Access denied.")
-	var/locking = !is_locked(src)
-	cap_set(src, CAP_LOCKED, locking)
-	act_message(user, src, self = "You [locking ? "lock" : "unlock"] %T%.", others = "%U% [locking ? "locks" : "unlocks"] %T%.")
+	var/locking = !is_locked(holder)
+	cap_set(holder, CAP_LOCKED, locking)
+	act_message(user, holder, self = "You [locking ? "lock" : "unlock"] %T%.", others = "%U% [locking ? "locks" : "unlocks"] %T%.")
 	return TRUE

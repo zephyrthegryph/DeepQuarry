@@ -30,7 +30,7 @@
 /proc/dx_flat_caps_data(atom/A, mob/user)
 	. = list()
 	var/list/data = list()
-	A.caps_ui_data(user, data)
+	caps_ui_data(A, user, data)
 	var/list/caps = data["caps"]
 	for(var/key in caps)
 		var/list/part = caps[key]
@@ -53,7 +53,7 @@
 
 	TEST_ASSERT(set_emergency_access(A, TRUE), "emergency access engages")
 	TEST_ASSERT(A.cap_state & CAP_EMERGENCY_ACCESS, "its bit is set")
-	TEST_ASSERT("Its emergency access mode is engaged." in A.caps_examine(H), "examine says so")
+	TEST_ASSERT("Its emergency access mode is engaged." in caps_examine(A, H), "examine says so")
 	var/list/data = list()
 	for(var/datum/capability/C as anything in caps_all(A))
 		C.ui_data(A, H, data)
@@ -74,15 +74,15 @@
 	TEST_ASSERT_EQUAL(weld.display_name(H, A), "Weld shut", "named Weld shut")
 	TEST_ASSERT_NULL(pry.why_not(H, A, bar), "an unbolted, unwelded fixture pries")
 
-	TEST_ASSERT(A.cap_weld_toggle(H, null), "the weld toggles")
+	TEST_ASSERT(cap_weld_toggle(A, H, null), "the weld toggles")
 	TEST_ASSERT(is_welded(A), "welded")
 	TEST_ASSERT_EQUAL(weld.display_name(H, A), "Unweld", "named Unweld while welded")
-	TEST_ASSERT("It has been welded shut." in A.caps_examine(H), "examine says welded")
+	TEST_ASSERT("It has been welded shut." in caps_examine(A, H), "examine says welded")
 	refresh_flush()
 	TEST_ASSERT(cap_test_has_layer(A, "welded"), "the welded layer is drawn")
 	TEST_ASSERT_EQUAL(pry.why_not(H, A, bar), "it's welded shut", "prying a welded fixture is refused")
 
-	A.cap_weld_toggle(H, null)
+	cap_weld_toggle(A, H, null)
 	A.set_bolted(TRUE)
 	TEST_ASSERT_EQUAL(pry.why_not(H, A, bar), "its bolts prevent it from being forced", "prying a bolted fixture is refused")
 
@@ -139,10 +139,10 @@
 	TEST_ASSERT(A.unlock(TRUE), "a forced unlock raises them")
 	TEST_ASSERT(!is_bolted(A), "unbolted")
 
-	TEST_ASSERT(A.cap_weld_toggle(H, null), "the weld toggles")
+	TEST_ASSERT(cap_weld_toggle(A, H, null), "the weld toggles")
 	TEST_ASSERT(is_welded(A), "welded")
-	TEST_ASSERT("It has been welded shut." in A.caps_examine(H), "examine says welded")
-	A.cap_weld_toggle(H, null)
+	TEST_ASSERT("It has been welded shut." in caps_examine(A, H), "examine says welded")
+	cap_weld_toggle(A, H, null)
 	TEST_ASSERT(!is_welded(A), "unwelded")
 
 	A.lock()
@@ -207,7 +207,7 @@
 	TEST_ASSERT(look_image('icons/turf/overlays.dmi', "snowairlock") in A.look_overlays, "the frost is drawn from the turf overlays")
 	A.frozen = FALSE
 	changed(A)
-	A.cap_weld_toggle(H, null)
+	cap_weld_toggle(A, H, null)
 	refresh_flush()
 	TEST_ASSERT(!(look_image('icons/turf/overlays.dmi', "snowairlock") in A.look_overlays), "the frost is gone")
 	TEST_ASSERT(cap_test_has_layer(A, "welded"), "the welded layer is drawn")

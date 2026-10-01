@@ -181,8 +181,8 @@ TRACKED(/obj/cap_fixture/dx_periodic, gating, CHANGE_EFFECTS)
 	var/list/child_caps = caps_of(C)
 	TEST_ASSERT_NULL(cap_of(C, /datum/capability/dx_test/a), "without() dropped the parent's entry by type")
 	TEST_ASSERT(istype(child_caps[1], /datum/capability/dx_test/b) && istype(child_caps[3], /datum/capability/dx_test/c), "without() keeps the order, . += appends")
-	TEST_ASSERT_EQUAL(jointext(A.caps_examine(null), ","), "alpha,beta", "examine follows list order")
-	TEST_ASSERT_EQUAL(jointext(C.caps_examine(null), ","), "beta,gamma", "the child's examine follows its list")
+	TEST_ASSERT_EQUAL(jointext(caps_examine(A, null), ","), "alpha,beta", "examine follows list order")
+	TEST_ASSERT_EQUAL(jointext(caps_examine(C, null), ","), "beta,gamma", "the child's examine follows its list")
 
 // ---------------------------------------------------------------- 2/3. TRACKED, changed(), refresh
 

@@ -6,7 +6,7 @@
 //   life_bench_ms()      milliseconds spent so far in the subsystem that runs Life
 //   life_bench_scheduler() a label
 // One boot measures every configuration in turn: spawn, settle, measure a window, delete.
-//   tools/build/build.sh bench --scenario=life_sweep -DOM_NO_STAGE_PROFILE [--arg=seconds=40]
+//   tools/build/build.sh bench --scenario=life_sweep -DOM_NO_STAGE_PROFILE [--arg=seconds=40] [--arg=configs=h32,mix]
 
 /datum/benchmark/life_sweep
 	id = "life_sweep"
@@ -32,7 +32,12 @@
 		"h512" = list(512, 0, 0),
 		"mix" = list(64, 96, 288),
 	)
+	// --arg=configs=h32,mix runs only those (all of them by default).
+	var/only = param("configs", "")
+	var/list/wanted = length(only) ? splittext(only, ",") : null
 	for(var/name in configs)
+		if(wanted && !(name in wanted))
+			continue
 		var/list/config = configs[name]
 		run_config(name, turfs, config[1], config[2], config[3], seconds)
 

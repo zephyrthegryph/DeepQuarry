@@ -46,11 +46,11 @@
 	return list("It can turn aside [what].")
 
 /// The shield step for items with a block capability: TRUE when it stopped the hit.
-/obj/item/proc/cap_block_hit(mob/user, damage, atom/damage_source, mob/attacker, attack_text = "the attack")
-	var/datum/capability/block/C = cap_of(src, /datum/capability/block)
-	if(!C || !C.can_block(src, user, damage_source, attacker))
+/proc/cap_block_hit(obj/item/holder, mob/user, damage, atom/damage_source, mob/attacker, attack_text = "the attack")
+	var/datum/capability/block/C = cap_of(holder, /datum/capability/block)
+	if(!C || !C.can_block(holder, user, damage_source, attacker))
 		return FALSE
 	if(!prob(C.chance))
 		return FALSE
-	act_message(user, src, others = span_danger("%U% [C.verb] [attack_text] with %T%!"))
+	act_message(user, holder, others = span_danger("%U% [C.verb] [attack_text] with %T%!"))
 	return TRUE

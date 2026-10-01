@@ -20,7 +20,7 @@
 	TEST_ASSERT(stamp_entry.is_meant(H, F, stamp), "a stamp selects it")
 	TEST_ASSERT(stamp_entry.is_meant(H, F, seal), "so does a seal ring")
 	TEST_ASSERT(!stamp_entry.is_meant(H, F, pen), "a pen doesn't")
-	TEST_ASSERT(!length(F.caps_examine(H)), "no stamps, no examine line")
+	TEST_ASSERT(!length(caps_examine(F, H)), "no stamps, no examine line")
 
 	stamp_entry.perform(H, F, clown_stamp)
 	TEST_ASSERT_EQUAL(length(cap_stamps_of(F)), 0, "the clown's stamp refuses a non-clown")
@@ -28,7 +28,7 @@
 	stamp_entry.perform(H, F, stamp)
 	TEST_ASSERT_EQUAL(length(cap_stamps_of(F)), 1, "stamped")
 	TEST_ASSERT_EQUAL(cap_stamps_of(F)[1], "This form has been stamped with the rubber stamp.", "the stamp line names the stamp")
-	TEST_ASSERT_EQUAL(F.caps_examine(H)[1], span_italics("This form has been stamped with the rubber stamp."), "examine shows it")
+	TEST_ASSERT_EQUAL(caps_examine(F, H)[1], span_italics("This form has been stamped with the rubber stamp."), "examine shows it")
 	refresh_flush()
 	TEST_ASSERT("paper_[stamp.icon_state]" in F.look_overlays, "draw shows the stamp mark")
 

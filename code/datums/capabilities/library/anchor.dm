@@ -23,7 +23,7 @@
 	return cap_gating(C, behind = behind, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 
 /datum/capability/anchor/interactions(atom/holder)
-	return list(adopt_entry(cap_tool("Anchor", tool_quality, TYPE_PROC_REF(/atom/movable, cap_anchor_toggle), delay = delay, needs = needs_floor ? TYPE_PROC_REF(/atom/movable, cap_anchor_floor_ok) : null, name_proc = TYPE_PROC_REF(/atom/movable, cap_anchor_name))))
+	return list(adopt_entry(cap_tool("Anchor", tool_quality, GLOBAL_PROC_REF(cap_anchor_toggle), delay = delay, needs = needs_floor ? GLOBAL_PROC_REF(cap_anchor_floor_ok) : null, name_proc = GLOBAL_PROC_REF(cap_anchor_name))))
 
 /datum/capability/anchor/examine(atom/holder, mob/user)
 	var/atom/movable/AM = holder
@@ -31,23 +31,23 @@
 		return null
 	return list(AM.anchored ? "It is anchored." : "It is unanchored.")
 
-/atom/movable/proc/cap_anchor_name(mob/user)
-	return anchored ? "Unanchor" : "Anchor"
+/proc/cap_anchor_name(atom/movable/holder, mob/user)
+	return holder.anchored ? "Unanchor" : "Anchor"
 
 /// needs: unanchoring always works; anchoring wants a floor under it.
-/atom/movable/proc/cap_anchor_floor_ok(mob/user, obj/item/held)
-	if(anchored)
+/proc/cap_anchor_floor_ok(mob/user, atom/movable/holder, obj/item/held)
+	if(holder.anchored)
 		return TRUE
-	if(!isturf(loc))
+	if(!isturf(holder.loc))
 		return "it has to be on the floor"
-	if(isspace(loc) || isopenspace(loc))
+	if(isspace(holder.loc) || isopenspace(holder.loc))
 		return "there's no floor to anchor it to"
 	return TRUE
 
-/atom/movable/proc/cap_anchor_toggle(mob/user, obj/item/held)
-	set_anchored(!anchored)
-	if(anchored)
-		act_message(user, src, self = span_notice("You anchor %T%."), others = span_notice("%U% anchors %T%."), item = held)
+/proc/cap_anchor_toggle(atom/movable/holder, mob/user, obj/item/held)
+	holder.set_anchored(!holder.anchored)
+	if(holder.anchored)
+		act_message(user, holder, self = span_notice("You anchor %T%."), others = span_notice("%U% anchors %T%."), item = held)
 	else
-		act_message(user, src, self = span_notice("You unanchor %T%."), others = span_notice("%U% unanchors %T%."), item = held)
+		act_message(user, holder, self = span_notice("You unanchor %T%."), others = span_notice("%U% unanchors %T%."), item = held)
 	return TRUE

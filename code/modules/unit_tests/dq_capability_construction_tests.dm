@@ -83,7 +83,7 @@
 	TEST_ASSERT(!length(problems), "valid: [jointext(problems, "; ")]")
 	TEST_ASSERT_EQUAL(ladder.state_of(probe), "start", "a new holder is on the first stage")
 	TEST_ASSERT(length(cap_interactions(probe)) >= 5, "the steps are the capability's interactions")
-	var/text = jointext(probe.caps_examine(H), "\n")
+	var/text = jointext(caps_examine(probe, H), "\n")
 	TEST_ASSERT(findtext(text, "A probe at the start."), "examine comes from the capability: [text]")
 	TEST_ASSERT(findtext(text, "Next: add 3 "), "examine lists the next step: [text]")
 

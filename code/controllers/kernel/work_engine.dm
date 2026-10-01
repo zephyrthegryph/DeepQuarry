@@ -99,9 +99,14 @@
 	ordered += leftover
 	for(var/i in 1 to KERNEL_PHASE_COUNT)
 		phase_items[i] = list()
+	phase_lane_items = new /list(OM_LANE_COUNT)
+	for(var/lane in 1 to OM_LANE_COUNT)
+		phase_lane_items[lane] = list()
 	for(var/datum/work_item/W as anything in ordered)
 		if(W.phase >= KERNEL_PHASE_K && W.phase <= KERNEL_PHASE_G)
 			phase_items[W.phase] += W
+			if(W.phase == KERNEL_PHASE_P && W.lane >= 1 && W.lane <= OM_LANE_COUNT)
+				phase_lane_items[W.lane] += W
 
 /// Runs the due items of `phase`, in order. `lane` (phase P) restricts the run to that lane. `limit_abs` is the
 /// absolute tick usage to stay under; an item that runs out of budget mid-sweep resumes next pass. Returns TRUE
@@ -109,7 +114,11 @@
 // ALLOW(sys_world_time_write): the kernel clock: a per-tick timestamp of the scheduler itself, not a per-entity expiry
 /datum/controller/kernel/proc/work_run_phase(phase, limit_abs, lane = 0, now = world.time)
 	. = TRUE
-	for(var/datum/work_item/W as anything in items_of_phase(phase))
+	var/list/items = items_of_phase(phase)
+	// Phase P runs once per lane: each pass walks only that lane's items (rebuild_work_graph() files them).
+	if(lane && phase == KERNEL_PHASE_P)
+		items = phase_lane_items[lane]
+	for(var/datum/work_item/W as anything in items)
 		if(lane && W.lane != lane)
 			continue
 		if(!run_item(W, limit_abs, now))

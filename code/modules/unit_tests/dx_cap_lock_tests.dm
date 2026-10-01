@@ -14,7 +14,7 @@
 	var/obj/item/card/id/bad = allocate(/obj/item/card/id, T)
 	good.access = list(ACCESS_SECURITY)
 	bad.access = list()
-	var/datum/interaction/capability/swipe = cap_test_entry(A, "hand:Lock:[TYPE_PROC_REF(/atom, cap_lock_toggle)]")
+	var/datum/interaction/capability/swipe = cap_test_entry(A, "hand:Lock:cap_lock_toggle")
 	var/datum/interaction/capability/cover_entry = cap_test_entry(A, "cover:[BY_HAND]")
 	TEST_ASSERT_NOTNULL(swipe, "the lock offers a swipe entry")
 	TEST_ASSERT(swipe.is_meant(H, A, good), "an ID is meant")
@@ -23,7 +23,7 @@
 	TEST_ASSERT(swipe.is_meant(H, A, good), "a click holding an ID is a swipe")
 	TEST_ASSERT(!swipe.is_meant(H, A, null), "a plain click with an empty hand is not")
 	GLOB.op_gesture_now = null
-	TEST_ASSERT("It is unlocked." in A.caps_examine(H), "examine says unlocked")
+	TEST_ASSERT("It is unlocked." in caps_examine(A, H), "examine says unlocked")
 	TEST_ASSERT_EQUAL(swipe.display_name(H, A), "Lock", "named Lock while unlocked")
 
 	// No access: refused with the reason, nothing changes.
@@ -36,7 +36,7 @@
 	TEST_ASSERT(is_locked(A), "locked")
 	TEST_ASSERT(A.cap_state & CAP_LOCKED, "the bit is set")
 	TEST_ASSERT_EQUAL(swipe.display_name(H, A), "Unlock", "named Unlock while locked")
-	TEST_ASSERT("It is locked." in A.caps_examine(H), "examine says locked")
+	TEST_ASSERT("It is locked." in caps_examine(A, H), "examine says locked")
 	TEST_ASSERT_EQUAL(cover_entry.why_not(H, A, null), "it's locked", "a locked_by = LOCK entry refuses")
 	refresh_flush()
 	TEST_ASSERT(cap_test_has_layer(A, "locked"), "the locked layer is drawn")
@@ -53,7 +53,7 @@
 	var/obj/cap_fixture/lock/A = allocate(/obj/cap_fixture/lock, T)
 	var/obj/item/card/id/good = allocate(/obj/item/card/id, T)
 	good.access = list(ACCESS_SECURITY)
-	var/datum/interaction/capability/swipe = cap_test_entry(A, "hand:Lock:[TYPE_PROC_REF(/atom, cap_lock_toggle)]")
+	var/datum/interaction/capability/swipe = cap_test_entry(A, "hand:Lock:cap_lock_toggle")
 	cap_set(A, CAP_BROKEN, TRUE)
 	TEST_ASSERT_EQUAL(swipe.why_not(H, A, good), "it's broken", "a broken lock refuses")
 
@@ -67,7 +67,7 @@
 	sec.access = list(ACCESS_SECURITY)
 	eng.access = list(ACCESS_ENGINE)
 	A.req_access = list(ACCESS_ENGINE)
-	var/datum/interaction/capability/swipe = cap_test_entry(A, "hand:Lock:[TYPE_PROC_REF(/atom, cap_lock_toggle)]")
+	var/datum/interaction/capability/swipe = cap_test_entry(A, "hand:Lock:cap_lock_toggle")
 	TEST_ASSERT_EQUAL(cap_dispatch(new /datum/dispatch_context(H, A, sec, swipe)), UI_REFUSED, "the type default no longer opens it")
 	TEST_ASSERT(!is_locked(A), "still unlocked")
 	TEST_ASSERT_NOTEQUAL(cap_dispatch(new /datum/dispatch_context(H, A, eng, swipe)), UI_REFUSED, "the instance's access does")

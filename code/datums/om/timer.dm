@@ -772,9 +772,10 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 			om_guarded_call(E, proc_ref, captured, is_global)
 		catch(var/exception/e)
 			dq_report_caught(e, "om timer [proc_ref] on [E]")
-		// A timer is a dispatched call: its owner may have changed (dx_conventions.md §1).
+		// A timer is a dispatched call: its owner may have changed (dx_conventions.md §1). Its derived procs
+		// re-run; no channel is raised (refresh_dispatched()).
 		if(!istype(E, /datum/om/global_owner))
-			changed(E)
+			refresh_dispatched(E)
 	om_timers_reschedule(rec)
 
 // ---------------------------------------------------------------- keyed timers

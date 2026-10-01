@@ -63,7 +63,7 @@
 	if(proximity)
 		resolved = W.resolve_attackby(A, user)
 	if(!ITEM_INTERACT_CONSUMED(resolved))
-		W.after_click(A, user, proximity)
+		after_click(W, A, user, proximity)
 
 /// cap_use_self: offered only while the item is in the user's hand; the handler runs through attack_self.
 /datum/unit_test/dx_cap_use_self

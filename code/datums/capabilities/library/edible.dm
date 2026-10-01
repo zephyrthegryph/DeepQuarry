@@ -40,9 +40,9 @@
 	return C
 
 /datum/capability/edible/interactions(atom/holder)
-	var/datum/interaction/capability/eat = adopt_entry(cap_hand("Eat", TYPE_PROC_REF(/obj/item, cap_edible_eat), needs = TYPE_PROC_REF(/obj/item, cap_edible_can_eat), works_broken = TRUE, works_unpowered = TRUE))
+	var/datum/interaction/capability/eat = adopt_entry(cap_hand("Eat", GLOBAL_PROC_REF(cap_edible_eat), needs = GLOBAL_PROC_REF(cap_edible_can_eat), works_broken = TRUE, works_unpowered = TRUE))
 	eat.entry = INTERACTION_ENTRY_SELF // using it in hand eats it
-	var/datum/interaction/capability/feed = adopt_entry(cap_hand("Feed", TYPE_PROC_REF(/obj/item, cap_edible_feed), works_broken = TRUE, works_unpowered = TRUE))
+	var/datum/interaction/capability/feed = adopt_entry(cap_hand("Feed", GLOBAL_PROC_REF(cap_edible_feed), works_broken = TRUE, works_unpowered = TRUE))
 	feed.default_action = null // Menu only
 	return list(eat, feed)
 
@@ -126,31 +126,31 @@
 
 // ---- handlers ----
 
-/obj/item/proc/cap_edible_can_eat(mob/user, obj/item/held)
-	if(cap_edible_finished(src))
+/proc/cap_edible_can_eat(mob/user, obj/item/holder, obj/item/held)
+	if(cap_edible_finished(holder))
 		return "there's none of it left"
 	return TRUE
 
-/obj/item/proc/cap_edible_eat(mob/user, obj/item/held)
-	var/reason = consume_refusal(user, user, src)
+/proc/cap_edible_eat(obj/item/holder, mob/user, obj/item/held)
+	var/reason = consume_refusal(user, user, holder)
 	if(reason)
 		return refuse(user, capitalize("[reason]."))
-	user.setClickCooldown(user.get_attack_speed(src)) // a limit on how fast people can eat
-	act_message(user, src, self = span_notice("You take a bite of %T%."), others = span_notice("%U% takes a bite of %T%."))
-	cap_edible_bite(src, user, user)
+	user.setClickCooldown(user.get_attack_speed(holder)) // a limit on how fast people can eat
+	act_message(user, holder, self = span_notice("You take a bite of %T%."), others = span_notice("%U% takes a bite of %T%."))
+	cap_edible_bite(holder, user, user)
 	return TRUE
 
-/obj/item/proc/cap_edible_feed(mob/user, obj/item/held)
-	var/mob/living/target = consume_pick_target(user, src)
+/proc/cap_edible_feed(obj/item/holder, mob/user, obj/item/held)
+	var/mob/living/target = consume_pick_target(user, holder)
 	if(!target)
 		return UI_REFUSED
-	var/reason = consume_refusal(user, target, src)
+	var/reason = consume_refusal(user, target, holder)
 	if(reason)
 		return refuse(user, capitalize("[reason]."))
-	var/datum/capability/edible/C = cap_of(src, /datum/capability/edible)
-	user.setClickCooldown(user.get_attack_speed(src))
-	act_message(user, target, self = span_notice("You try to feed %T% \the [src]."), others = span_warning("%U% tries to feed %T% \the [src]."))
-	om_task_timed(user, C.feed_time, target, src, PROC_REF(cap_edible_fed), list(user, target))
+	var/datum/capability/edible/C = cap_of(holder, /datum/capability/edible)
+	user.setClickCooldown(user.get_attack_speed(holder))
+	act_message(user, target, self = span_notice("You try to feed %T% \the [holder]."), others = span_warning("%U% tries to feed %T% \the [holder]."))
+	om_task_timed(user, C.feed_time, target, holder, TYPE_PROC_REF(/obj/item, cap_edible_fed), list(user, target))
 	return TRUE
 
 /// The timed feed finished: target takes a bite.

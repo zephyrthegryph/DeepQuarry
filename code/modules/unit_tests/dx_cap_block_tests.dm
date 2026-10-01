@@ -28,7 +28,7 @@
 	H.set_dir(NORTH)
 
 	var/obj/item/cap_fixture/blocker/B = allocate(/obj/item/cap_fixture/blocker, floor)
-	TEST_ASSERT("It can turn aside blows." in B.caps_examine(H), "examine describes the block")
+	TEST_ASSERT("It can turn aside blows." in caps_examine(B, H), "examine describes the block")
 	TEST_ASSERT(H.put_in_r_hand(B), "held")
 	TEST_ASSERT(H.check_shields(10, null, ahead, BP_TORSO, "the test") > 0, "a held blocker stops a hit from the front")
 	TEST_ASSERT_EQUAL(H.check_shields(10, null, sneak, BP_TORSO, "the test"), 0, "but not from behind")
@@ -42,7 +42,7 @@
 	H.drop_from_inventory(N, floor)
 
 	var/obj/item/cap_fixture/blocker/wielded/W = allocate(/obj/item/cap_fixture/blocker/wielded, floor)
-	TEST_ASSERT("Held in both hands, it can turn aside blows and shots." in W.caps_examine(H), "examine names the wielding")
+	TEST_ASSERT("Held in both hands, it can turn aside blows and shots." in caps_examine(W, H), "examine names the wielding")
 	TEST_ASSERT(H.put_in_r_hand(W), "held")
 	TEST_ASSERT_EQUAL(H.check_shields(10, null, ahead, BP_TORSO, "the test"), 0, "needs_wielded: one hand doesn't block")
 	TEST_ASSERT(W.attack_self(H), "wield it")

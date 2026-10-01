@@ -183,12 +183,12 @@
 	var/obj/item/item = holder.vars[slot_var]
 	if(!item)
 		return null
-	var/refusal = holder.slot_eject_refusal(slot_var, item, user)
+	var/refusal = slot_eject_refusal(holder, slot_var, item, user)
 	if(refusal)
 		if(refusal != SLOT_REFUSED_SILENT)
 			to_chat(user, span_warning(refusal))
 		return null
-	holder.slot_ejecting(slot_var, item, user)
+	slot_ejecting(holder, slot_var, item, user)
 	own_take(holder, slot_var)
 	if(item.loc == holder || isnull(item.loc)) // a holder may keep it out of its contents (in nullspace)
 		if(user && !eject_drop && !drop)
@@ -211,8 +211,8 @@
 	name = slot.name
 	held_type = slot.accepts
 	default_action = INPUT_ACTION_USE
-	handler = TYPE_PROC_REF(/atom, cap_slot_do_insert)
-	needs = TYPE_PROC_REF(/atom, cap_in_reach)
+	handler = GLOBAL_PROC_REF(cap_slot_do_insert)
+	needs = GLOBAL_PROC_REF(cap_in_reach)
 	..()
 
 /// Generated Eject, one per SLOT_VIA_* input: runs /atom/proc/cap_slot_do_eject through cap_dispatch().
@@ -226,22 +226,22 @@
 	src.entry = entry
 	cap = slot
 	name = slot.eject_name
-	handler = TYPE_PROC_REF(/atom, cap_slot_do_eject)
+	handler = GLOBAL_PROC_REF(cap_slot_do_eject)
 	var/list/need_procs = list()
 	switch(entry)
 		if(INTERACTION_ENTRY_ALT)
 			default_action = INPUT_ACTION_ALTERNATE
-			need_procs += TYPE_PROC_REF(/atom, cap_in_reach)
+			need_procs += GLOBAL_PROC_REF(cap_in_reach)
 		if(INTERACTION_ENTRY_SELF)
 			default_action = INPUT_ACTION_USE
 			if(item_holder)
-				need_procs += TYPE_PROC_REF(/atom, cap_in_hand)
+				need_procs += GLOBAL_PROC_REF(cap_in_hand)
 		if(null)
 			default_action = null // chosen from the Menu
-			need_procs += TYPE_PROC_REF(/atom, cap_in_reach)
+			need_procs += GLOBAL_PROC_REF(cap_in_reach)
 		else
 			default_action = INPUT_ACTION_USE
-			need_procs += TYPE_PROC_REF(/atom, cap_in_reach)
+			need_procs += GLOBAL_PROC_REF(cap_in_reach)
 			empty_handed = TRUE
 			behind_gate = !slot.ungated
 	if(slot.eject_needs)
@@ -268,18 +268,18 @@
 	return E.cap
 
 /// The insert entry's handler (cap_dispatch()).
-/atom/proc/cap_slot_do_insert(mob/user, obj/item/held)
+/proc/cap_slot_do_insert(atom/holder, mob/user, obj/item/held)
 	var/datum/capability/slot/slot = cap_slot_dispatched()
-	return slot?.insert(src, held, user)
+	return slot?.insert(holder, held, user)
 
 /// The eject entries' handler (cap_dispatch()). A refusal uses the input too.
-/atom/proc/cap_slot_do_eject(mob/user, obj/item/held)
+/proc/cap_slot_do_eject(atom/holder, mob/user, obj/item/held)
 	var/datum/capability/slot/slot = cap_slot_dispatched()
-	return slot?.eject(src, user) ? TRUE : UI_REFUSED
+	return slot?.eject(holder, user) ? TRUE : UI_REFUSED
 
 /// The slot capability of this atom for var `slot_var` (nameof()), or null.
-/atom/proc/slot_capability(slot_var)
-	for(var/datum/capability/slot/cap in caps_of(src))
+/proc/slot_capability(atom/holder, slot_var)
+	for(var/datum/capability/slot/cap in caps_of(holder))
 		if(cap.slot_var == slot_var)
 			return cap
 	return null
@@ -294,11 +294,11 @@
 	return
 
 /// Why `item` can't come out of slot `slot` right now (text), SLOT_REFUSED_SILENT, or null.
-/atom/proc/slot_eject_refusal(slot, obj/item/item, mob/user)
+/proc/slot_eject_refusal(atom/holder, slot, obj/item/item, mob/user)
 	return null
 
 /// `item` is about to come out of slot `slot` (still in, the var still set).
-/atom/proc/slot_ejecting(slot, obj/item/item, mob/user)
+/proc/slot_ejecting(atom/holder, slot, obj/item/item, mob/user)
 	return
 
 /// `item` came out of slot `slot` (already in the actor's hands or on the floor).
@@ -306,17 +306,17 @@
 	return
 
 /// Ejects slot `slot_var` (nameof()) from code. Returns the item or null.
-/atom/proc/slot_eject(slot_var, mob/user, drop = FALSE, message)
-	var/datum/capability/slot/cap = slot_capability(slot_var)
-	return cap?.eject(src, user, drop, message)
+/proc/slot_eject(atom/holder, slot_var, mob/user, drop = FALSE, message)
+	var/datum/capability/slot/cap = slot_capability(holder, slot_var)
+	return cap?.eject(holder, user, drop, message)
 
 /// Inserts `item` into slot `slot_var` (nameof()) from code. TRUE when it went in.
-/atom/proc/slot_insert(slot_var, obj/item/item, mob/user)
-	var/datum/capability/slot/cap = slot_capability(slot_var)
+/proc/slot_insert(atom/holder, slot_var, obj/item/item, mob/user)
+	var/datum/capability/slot/cap = slot_capability(holder, slot_var)
 	if(!cap)
 		return FALSE
-	cap.insert(src, item, user)
-	return vars[slot_var] == item
+	cap.insert(holder, item, user)
+	return holder.vars[slot_var] == item
 
 /// A held item for tgui data: {name, ref}, or null.
 /proc/slot_ui(obj/item/item)

@@ -17,7 +17,7 @@
 	return cap_gating(C, behind = behind, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 
 /datum/capability/panel/interactions(atom/holder)
-	return list(adopt_entry(cap_tool("Open maintenance panel", tool_quality, TYPE_PROC_REF(/atom, cap_panel_toggle), delay = delay, priority = 10, name_proc = TYPE_PROC_REF(/atom, cap_panel_name)), id = "panel:[tool_quality]"))
+	return list(adopt_entry(cap_tool("Open maintenance panel", tool_quality, TYPE_PROC_REF(/atom, cap_panel_toggle), delay = delay, priority = 10, name_proc = GLOBAL_PROC_REF(cap_panel_name)), id = "panel:[tool_quality]"))
 
 /datum/capability/panel/examine(atom/holder, mob/user)
 	if(panel_is_open(holder))
@@ -30,8 +30,8 @@
 /datum/capability/panel/ui_data(atom/holder, mob/user, list/data)
 	data["open"] = panel_is_open(holder)
 
-/atom/proc/cap_panel_name(mob/user)
-	return panel_is_open(src) ? "Close maintenance panel" : "Open maintenance panel"
+/proc/cap_panel_name(atom/holder, mob/user)
+	return panel_is_open(holder) ? "Close maintenance panel" : "Open maintenance panel"
 
 /atom/proc/cap_panel_toggle(mob/user, obj/item/held)
 	var/opening = !panel_is_open(src)

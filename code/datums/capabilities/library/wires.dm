@@ -41,8 +41,8 @@
 
 /datum/capability/wires/interactions(atom/holder)
 	return list(
-		adopt_entry(cap_tool("Pulse wires", TOOL_MULTITOOL, TYPE_PROC_REF(/atom, cap_wires_open), priority = 10), id = "wires:multitool"),
-		adopt_entry(cap_tool("Cut wires", TOOL_WIRECUTTER, TYPE_PROC_REF(/atom, cap_wires_open), priority = 10), id = "wires:wirecutter"),
+		adopt_entry(cap_tool("Pulse wires", TOOL_MULTITOOL, GLOBAL_PROC_REF(cap_wires_open), priority = 10), id = "wires:multitool"),
+		adopt_entry(cap_tool("Cut wires", TOOL_WIRECUTTER, GLOBAL_PROC_REF(cap_wires_open), priority = 10), id = "wires:wirecutter"),
 	)
 
 /datum/capability/wires/draw(atom/holder, datum/look/look)
@@ -54,7 +54,7 @@
 		LAZYREMOVE(holder.cap_data, key)
 		qdel(W)
 
-/atom/proc/cap_wires_open(mob/user, obj/item/held)
-	var/datum/wires/W = wires_of(src)
+/proc/cap_wires_open(atom/holder, mob/user, obj/item/held)
+	var/datum/wires/W = wires_of(holder)
 	W.Interact(user)
 	return TRUE

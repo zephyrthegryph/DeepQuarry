@@ -8,7 +8,7 @@
 /proc/type_list(datum/D, proc_ref, post)
 	RETURN_TYPE(/list)
 	var/list/result = CACHED_KEY(type_lists, "[D.type]|[proc_ref]", D, proc_ref, post)
-#ifdef UNIT_TESTS
+#if defined(UNIT_TESTS) && !defined(BENCHMARK)
 	type_list_purity_check(D, proc_ref, result, post)
 #endif
 	return result

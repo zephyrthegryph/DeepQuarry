@@ -42,7 +42,7 @@
 	TEST_ASSERT_EQUAL(E.why_not(H, F, F), "you need to be carrying it", "only while carried")
 	TEST_ASSERT_NOTNULL(dx_verb_named(F, "Toggle Hood"), "the native verb, renamed")
 	TEST_ASSERT_EQUAL(toggle_is_on(F, "hood"), FALSE, "starts off")
-	TEST_ASSERT("Its hood is down." in F.caps_examine(H), "examine off")
+	TEST_ASSERT("Its hood is down." in caps_examine(F, H), "examine off")
 
 	TEST_ASSERT(H.put_in_r_hand(F), "held")
 	TEST_ASSERT(F.attack_self(H), "self-use toggles")
@@ -51,7 +51,7 @@
 	TEST_ASSERT_EQUAL(F.applied, TRUE, "apply() ran with on")
 	TEST_ASSERT_EQUAL(F.icon_state, "fixture_t", "drawn at once (the worn sprite reads it)")
 	TEST_ASSERT_EQUAL(GLOB.dispatch_last_record["log"], LOG_GAME, "the declared log level")
-	TEST_ASSERT("Its hood is up." in F.caps_examine(H), "examine on")
+	TEST_ASSERT("Its hood is up." in caps_examine(F, H), "examine on")
 	var/list/data = dx_cap_ui_data(F, H, /datum/capability/toggle_state)
 	TEST_ASSERT(data["hood"], "UI data")
 
@@ -62,7 +62,7 @@
 	F.stuck = FALSE
 
 	// The verb runs the same entry.
-	F.cap_toggle_verb_run(H, CAP_TOGGLE_1)
+	cap_toggle_verb_run(F, H, CAP_TOGGLE_1)
 	TEST_ASSERT(!cap_has(F, CAP_TOGGLE_1), "the verb toggles it off")
 	TEST_ASSERT_EQUAL(F.applied, FALSE, "apply() ran with off")
 	refresh_flush()
@@ -87,7 +87,7 @@
 	refresh_flush()
 	TEST_ASSERT_EQUAL(J.icon_state, "closed", "off_state drawn")
 	TEST_ASSERT(H.put_in_l_hand(J), "held")
-	J.cap_toggle_verb_run(H, CAP_TOGGLE_2)
+	cap_toggle_verb_run(J, H, CAP_TOGGLE_2)
 	TEST_ASSERT(cap_has(J, CAP_TOGGLE_2), "its own bit")
 	TEST_ASSERT(!cap_has(J, CAP_TOGGLE_1), "not the first toggle's bit")
 	TEST_ASSERT_EQUAL(J.icon_state, "open", "on_state drawn")

@@ -69,9 +69,9 @@
 // Common needs procs, (mob/user, obj/item/held) on any holder.
 
 /// needs: a lit welder in hand.
-/atom/proc/cap_needs_lit_welder(mob/user, obj/item/held)
+/proc/cap_needs_lit_welder(mob/user, atom/holder, obj/item/held)
 	return tool_ready(held, TOOL_WELDER)
 
 /// needs: a multitool with something in its buffer.
-/atom/proc/cap_needs_buffer(mob/user, obj/item/held)
+/proc/cap_needs_buffer(atom/holder, mob/user, obj/item/held)
 	return tool_ready(held, TOOL_MULTITOOL, needs_buffer = TRUE)

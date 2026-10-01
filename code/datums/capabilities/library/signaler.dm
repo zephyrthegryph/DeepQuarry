@@ -42,9 +42,9 @@
 	return C
 
 /datum/capability/signaler/interactions(atom/holder)
-	var/datum/interaction/capability/send = adopt_entry(cap_hand("Send signal", TYPE_PROC_REF(/obj, cap_signaler_send), works_unpowered = TRUE))
-	var/datum/interaction/capability/set_freq = adopt_entry(cap_hand("Set frequency", TYPE_PROC_REF(/obj, cap_signaler_set_frequency), works_unpowered = TRUE, form = list(number_field("frequency", min_value = RADIO_LOW_FREQ, max_value = RADIO_HIGH_FREQ, message = "Frequency, [RADIO_LOW_FREQ] to [RADIO_HIGH_FREQ] ([format_frequency(RSD_FREQ)] is [RSD_FREQ]):", title = "Signaler", default = frequency))))
-	var/datum/interaction/capability/set_code = adopt_entry(cap_hand("Set code", TYPE_PROC_REF(/obj, cap_signaler_set_code), works_unpowered = TRUE, form = list(number_field("code", min_value = 1, max_value = 100, message = "Code, 1 to 100:", title = "Signaler", default = code))))
+	var/datum/interaction/capability/send = adopt_entry(cap_hand("Send signal", GLOBAL_PROC_REF(cap_signaler_send), works_unpowered = TRUE))
+	var/datum/interaction/capability/set_freq = adopt_entry(cap_hand("Set frequency", GLOBAL_PROC_REF(cap_signaler_set_frequency), works_unpowered = TRUE, form = list(number_field("frequency", min_value = RADIO_LOW_FREQ, max_value = RADIO_HIGH_FREQ, message = "Frequency, [RADIO_LOW_FREQ] to [RADIO_HIGH_FREQ] ([format_frequency(RSD_FREQ)] is [RSD_FREQ]):", title = "Signaler", default = frequency))))
+	var/datum/interaction/capability/set_code = adopt_entry(cap_hand("Set code", GLOBAL_PROC_REF(cap_signaler_set_code), works_unpowered = TRUE, form = list(number_field("code", min_value = 1, max_value = 100, message = "Code, 1 to 100:", title = "Signaler", default = code))))
 	for(var/datum/interaction/capability/E as anything in list(send, set_freq, set_code))
 		E.default_action = null // Menu entries: an empty hand keeps doing the holder's own thing
 	return list(send, set_freq, set_code)
@@ -125,31 +125,31 @@
 	if(!C || !signal || signal.encryption != cap_signaler_code(O) || is_jammed(O))
 		return FALSE
 	if(C.on_signal)
-		call(O, C.on_signal)(signal)
+		holder_call(O, C.on_signal, signal)
 	changed(O, CHANGE_CAPABILITY)
 	return TRUE
 
-/obj/proc/cap_signaler_send(mob/user)
-	var/reason = cap_signaler_signal(src)
+/proc/cap_signaler_send(obj/holder, mob/user)
+	var/reason = cap_signaler_signal(holder)
 	if(reason)
-		return refuse(user, "\The [src] doesn't signal: [reason].")
-	to_chat(user, span_notice("You send a signal on [format_frequency(cap_signaler_frequency(src))], code [cap_signaler_code(src)]."))
+		return refuse(user, "\The [holder] doesn't signal: [reason].")
+	to_chat(user, span_notice("You send a signal on [format_frequency(cap_signaler_frequency(holder))], code [cap_signaler_code(holder)]."))
 	return TRUE
 
-/obj/proc/cap_signaler_set_frequency(mob/user, frequency)
+/proc/cap_signaler_set_frequency(obj/holder, mob/user, frequency)
 	frequency = ui_number(frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ, 1)
 	if(isnull(frequency))
 		return refuse(user, "That isn't a frequency.")
-	var/now = cap_signaler_tune(src, frequency)
-	to_chat(user, span_notice("You tune \the [src] to [format_frequency(now)]."))
+	var/now = cap_signaler_tune(holder, frequency)
+	to_chat(user, span_notice("You tune \the [holder] to [format_frequency(now)]."))
 	return TRUE
 
-/obj/proc/cap_signaler_set_code(mob/user, code)
+/proc/cap_signaler_set_code(obj/holder, mob/user, code)
 	code = ui_number(code, 1, 100, 1)
 	if(isnull(code))
 		return refuse(user, "That isn't a code.")
-	var/now = cap_signaler_set_code_to(src, code)
-	to_chat(user, span_notice("You set \the [src]'s code to [now]."))
+	var/now = cap_signaler_set_code_to(holder, code)
+	to_chat(user, span_notice("You set \the [holder]'s code to [now]."))
 	return TRUE
 
 #undef SIGNALER_COOLDOWN

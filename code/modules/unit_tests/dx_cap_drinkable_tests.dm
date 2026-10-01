@@ -31,7 +31,7 @@
 	TEST_ASSERT_EQUAL(drink.entry, INTERACTION_ENTRY_SELF, "using it in hand drinks")
 	TEST_ASSERT_NULL(give.default_action, "Give a drink is Menu only")
 	TEST_ASSERT_EQUAL(dx_cap_entry(S, "Drink").why_not(H, S, S), "open it first", "a closed container refuses")
-	TEST_ASSERT(!length(F.caps_examine(H)), "full: no empty line")
+	TEST_ASSERT(!length(caps_examine(F, H)), "full: no empty line")
 
 	TEST_ASSERT_EQUAL(cap_drinkable_sip(F, H), 4, "a sip is `sip` units")
 	drink.perform(H, F, F)
@@ -46,4 +46,4 @@
 	TEST_ASSERT_EQUAL(F.reagents.total_volume, 0, "the last of it")
 	TEST_ASSERT_EQUAL(drink.why_not(H, F, F), "it's empty", "an empty container refuses")
 	TEST_ASSERT_EQUAL(give.why_not(H, F, null), "it's empty", "and won't be given")
-	TEST_ASSERT_EQUAL(F.caps_examine(H)[1], "It's empty.", "examine says so")
+	TEST_ASSERT_EQUAL(caps_examine(F, H)[1], "It's empty.", "examine says so")

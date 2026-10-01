@@ -140,7 +140,7 @@ GLOBAL_LIST_INIT(cap_all_stances, list(I_HELP, I_DISARM, I_GRAB, I_HURT))
 /datum/capability/weld_shut/interactions(atom/holder)
 	. = list()
 	for(var/stance in GLOB.cap_all_stances)
-		var/datum/capability/entry/wrapper = cap_tool("Weld shut", tool_quality, TYPE_PROC_REF(/atom, cap_weld_toggle), works_broken = TRUE, works_unpowered = TRUE, log = log, name_proc = TYPE_PROC_REF(/atom, cap_weld_name))
+		var/datum/capability/entry/wrapper = cap_tool("Weld shut", tool_quality, GLOBAL_PROC_REF(cap_weld_toggle), works_broken = TRUE, works_unpowered = TRUE, log = log, name_proc = GLOBAL_PROC_REF(cap_weld_name))
 		var/datum/interaction/capability/E = adopt_entry(wrapper, id = "weld_shut:[tool_quality]:[stance]")
 		// The handler plays the welder's sound itself, louder, as the old weld did.
 		cap_entry_setup(E, stance = stance, applies = (stance == I_HELP && help_applies) ? help_applies : applies, tool_volume = 0)
@@ -158,18 +158,18 @@ GLOBAL_LIST_INIT(cap_all_stances, list(I_HELP, I_DISARM, I_GRAB, I_HURT))
 /datum/capability/weld_shut/ui_data(atom/holder, mob/user, list/data)
 	data["welded"] = is_welded(holder)
 
-/atom/proc/cap_weld_name(mob/user)
-	return is_welded(src) ? "Unweld" : "Weld shut"
+/proc/cap_weld_name(atom/holder, mob/user)
+	return is_welded(holder) ? "Unweld" : "Weld shut"
 
-/atom/proc/cap_weld_toggle(mob/user, obj/item/held)
+/proc/cap_weld_toggle(atom/holder, mob/user, obj/item/held)
 	var/obj/item/weldingtool/welder = held?.get_welder()
 	if(welder && !welder.remove_fuel(0, user))
 		return refuse(user, "[held] needs to be lit.")
-	var/welding = !is_welded(src)
-	cap_set(src, CAP_WELDED, welding)
+	var/welding = !is_welded(holder)
+	cap_set(holder, CAP_WELDED, welding)
 	if(held?.usesound)
-		playsound(src, held.usesound, 75, 1)
-	act_message(user, src, self = welding ? "You weld %T% shut." : "You unweld %T%.", others = welding ? "%U% welds %T% shut." : "%U% unwelds %T%.")
+		playsound(holder, held.usesound, 75, 1)
+	act_message(user, holder, self = welding ? "You weld %T% shut." : "You unweld %T%.", others = welding ? "%U% welds %T% shut." : "%U% unwelds %T%.")
 	return TRUE
 
 // ============================================================================

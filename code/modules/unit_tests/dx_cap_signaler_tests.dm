@@ -35,7 +35,7 @@
 	TEST_ASSERT_EQUAL(cap_signaler_code(M), 9, "a mapped code wins")
 	TEST_ASSERT(dx_listens_on(F, 1451), "it joined the radio on its frequency")
 	TEST_ASSERT(dx_listens_on(M, 1453), "the mapped one on its own")
-	TEST_ASSERT_EQUAL(F.caps_examine(H)[1], "It is set to 145.1, code 7.", "examine shows the setting")
+	TEST_ASSERT_EQUAL(caps_examine(F, H)[1], "It is set to 145.1, code 7.", "examine shows the setting")
 
 	var/datum/interaction/capability/send = dx_cap_entry(F, "Send signal")
 	var/datum/interaction/capability/set_freq = dx_cap_entry(F, "Set frequency")

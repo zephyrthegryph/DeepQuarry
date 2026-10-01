@@ -26,11 +26,11 @@
 /proc/cap_use_self(name, handler, behind = NONE, locked_by = NONE, needs, else_say, works_broken = FALSE, works_unpowered = FALSE, log, list/form, priority, name_proc, applies, blocked_by = NONE, delay, cooldown, in_inventory = FALSE, entry_type = /datum/interaction/capability)
 	var/datum/capability/entry/C = new
 	var/datum/interaction/capability/E = new entry_type
-	var/list/all_needs = list(in_inventory ? TYPE_PROC_REF(/atom, cap_in_inventory) : TYPE_PROC_REF(/atom, cap_in_hand))
+	var/list/all_needs = list(in_inventory ? GLOBAL_PROC_REF(cap_in_inventory) : GLOBAL_PROC_REF(cap_in_hand))
 	if(needs)
 		all_needs += needs
 	E.name = name
-	E.id = "use_self:[name]:[handler]"
+	E.id = "use_self:[name]:[own_proc_name(handler)]"
 	E.handler = handler
 	E.behind = behind
 	E.blocked_by = blocked_by
@@ -59,8 +59,8 @@
 	return C
 
 /// needs: the holder (an item) is on the actor: held or worn.
-/atom/proc/cap_in_inventory(mob/user, obj/item/held)
-	return dq_interaction_in_inventory(user, src, held) ? TRUE : "you need to be carrying it"
+/proc/cap_in_inventory(mob/user, atom/holder, obj/item/held)
+	return dq_interaction_in_inventory(user, holder, held) ? TRUE : "you need to be carrying it"
 
 /// The held item used on another atom. Handler on the item: (mob/user, atom/target, ...form answers).
 /// range 1 is adjacent only; a larger range also fires at a target up to that many tiles away (the old
@@ -70,7 +70,7 @@
 	var/datum/capability/entry/use_at/C = new
 	var/datum/interaction/capability/use_at/E = new
 	E.name = name
-	E.id = "use_at:[name]:[handler]"
+	E.id = "use_at:[name]:[own_proc_name(handler)]"
 	E.handler = handler
 	E.range = range
 	E.target_types = target_types
@@ -153,29 +153,29 @@
 
 /// The item's use_at entries for a click on `target`, or a used-up input: TRUE when one answered (or told
 /// the user why it could not). FALSE lets the legacy afterattack() run.
-/obj/item/proc/cap_use_at_try(atom/target, mob/user, proximity)
-	if(!length(caps_all(src)) || caps_suspended())
+/proc/cap_use_at_try(obj/item/holder, atom/target, mob/user, proximity)
+	if(!length(caps_all(holder)) || caps_suspended(holder))
 		return FALSE
-	for(var/datum/capability/C as anything in caps_all(src))
+	for(var/datum/capability/C as anything in caps_all(holder))
 		if(!istype(C, /datum/capability/entry/use_at))
 			continue
 		var/datum/capability/entry/use_at/U = C
 		var/datum/interaction/capability/use_at/E = U.entry
 		if(!istype(E) || !E.matches(user, target, proximity))
 			continue
-		if(E.applies && !call(src, E.applies)())
+		if(E.applies && !holder_call(holder, E.applies))
 			continue
-		var/reason = E.why_not(user, target, src)
+		var/reason = E.why_not(user, target, holder)
 		if(reason)
-			E.tell_blocked(user, src, reason)
+			E.tell_blocked(user, holder, reason)
 			return TRUE
-		var/result = E.run_effect(user, target, src)
+		var/result = E.run_effect(user, target, holder)
 		if(result != FALSE)
 			return TRUE
 	return FALSE
 
 /// Where afterattack() used to be called from a click: the item's use_at entries, else afterattack().
-/obj/item/proc/after_click(atom/target, mob/user, proximity_flag, click_parameters, stance = I_HURT)
-	if(cap_use_at_try(target, user, proximity_flag))
+/proc/after_click(obj/item/holder, atom/target, mob/user, proximity_flag, click_parameters, stance = I_HURT)
+	if(cap_use_at_try(holder, target, user, proximity_flag))
 		return
-	afterattack(target, user, proximity_flag, click_parameters, stance)
+	holder.afterattack(target, user, proximity_flag, click_parameters, stance)

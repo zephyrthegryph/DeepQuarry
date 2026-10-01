@@ -42,9 +42,9 @@
 		join(new_area, holder, src, role)
 
 /// A holder's powered_by(POWERED_BY_AREA) memberships follow it into another area.
-/atom/proc/caps_area_changed(area/old_area, area/new_area)
-	for(var/datum/capability/powered_by/C in caps_all(src))
-		C.area_changed(src, old_area, new_area)
+/proc/caps_area_changed(atom/holder, area/old_area, area/new_area)
+	for(var/datum/capability/powered_by/C in caps_all(holder))
+		C.area_changed(holder, old_area, new_area)
 
 /// The members of `area` holding `role` (a copy: a caller that yields may see members leave meanwhile).
 /proc/area_members(area/A, role)
