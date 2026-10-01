@@ -351,7 +351,7 @@
 /datum/unit_test/om/sleeping_callee_is_caught/run_om(list/made)
 	var/datum/om/scheduler/sched = om_scheduler()
 	var/datum/om_test_entity/E = entity(made)
-	GLOB.om_expect_sleep = TRUE
+	set_global("om_expect_sleep", TRUE)
 	var/before = sched.callees_slept
 	om_after(E, 1 SECONDS, /datum/om_test_entity/proc/sleepy_hit, "sleepy")
 	om_after(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, "after")

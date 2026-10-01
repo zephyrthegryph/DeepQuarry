@@ -93,7 +93,7 @@
 /datum/unit_test/dq_department_budget_plan_is_immediate_and_funded
 
 /datum/unit_test/dq_department_budget_plan_is_immediate_and_funded/Run()
-	var/list/original_players = dq_test_players_clear()
+	players_clear()
 	for(var/department in GLOB.department_accounts)
 		var/datum/money_account/budget = GLOB.department_accounts[department]
 		set_var(budget, "monthly_allocation", budget.monthly_allocation)
@@ -126,7 +126,6 @@
 	engineering = departments[DEPARTMENT_ENGINEERING]
 	TEST_ASSERT_EQUAL(engineering["requested"], engineering["payroll"] + round(plan["operating_pool"] * 0.25), "department percentage override did not replace only its recurring operating share")
 	TEST_ASSERT(engineering["overridden"], "budget preview did not identify the department override")
-	dq_test_players_restore(original_players)
 	qdel(employee_mind)
 	qdel(employee)
 	qdel(employee_account)
@@ -135,7 +134,7 @@
 
 /datum/unit_test/dq_payroll_uses_all_available_funds_fairly/Run()
 	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
-	var/list/original_players = dq_test_players_clear()
+	players_clear()
 	var/datum/money_account/test_budget = new
 	test_budget.owner_name = "Test Engineering"
 	test_budget.department_id = DEPARTMENT_ENGINEERING
@@ -164,7 +163,6 @@
 		total_paid += account.money
 	TEST_ASSERT_EQUAL(total_paid, 31, "payroll did not spend every available Thaler")
 	TEST_ASSERT_EQUAL(test_budget.money + test_budget.savings, 0, "payroll left spendable funds while wages were unpaid")
-	dq_test_players_restore(original_players)
 	for(var/mob/living/carbon/human/employee as anything in employees)
 		qdel(employee)
 	for(var/datum/money_account/account as anything in accounts)
@@ -266,10 +264,10 @@
 /datum/unit_test/dq_personal_supply_order_payment_and_refund/Run()
 	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
 	var/datum/supply_pack/pack
-	var/destroyed_before = GLOB.supply_service.currency_destroyed
-	var/refunded_before = GLOB.supply_service.currency_refunded
-	var/sink_refunded_before = GLOB.supply_service.currency_sink_refunded
-	var/old_supply_sink = GLOB.supply_service.currency_sinks["Supply procurement"]
+	set_var(GLOB.supply_service, "currency_destroyed", GLOB.supply_service.currency_destroyed)
+	set_var(GLOB.supply_service, "currency_refunded", GLOB.supply_service.currency_refunded)
+	set_var(GLOB.supply_service, "currency_sink_refunded", GLOB.supply_service.currency_sink_refunded)
+	set_var(GLOB.supply_service, "currency_sinks", GLOB.supply_service.currency_sinks.Copy())
 	for(var/pack_name in GLOB.supply_service.supply_pack)
 		pack = GLOB.supply_service.supply_pack[pack_name]
 		break
@@ -298,13 +296,6 @@
 			qdel(admin_order)
 			break
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, account)
-	GLOB.supply_service.currency_destroyed = destroyed_before
-	GLOB.supply_service.currency_refunded = refunded_before
-	GLOB.supply_service.currency_sink_refunded = sink_refunded_before
-	if(isnull(old_supply_sink))
-		GLOB.supply_service.currency_sinks -= "Supply procurement"
-	else
-		GLOB.supply_service.currency_sinks["Supply procurement"] = old_supply_sink
 	qdel(order)
 	qdel(requester)
 	qdel(account)
@@ -314,16 +305,16 @@
 /datum/unit_test/dq_service_checkout_uses_service_billing/Run()
 	var/datum/money_account/service = GLOB.department_accounts[DEPARTMENT_CIVILIAN]
 	var/service_before = service.money
-	var/service_income_before = service.monthly_income
-	var/service_expenses_before = service.monthly_expenses
-	var/service_revenue_before = service.total_revenue
-	var/service_total_expenses_before = service.total_expenses
+	set_var(service, "monthly_income", service.monthly_income)
+	set_var(service, "monthly_expenses", service.monthly_expenses)
+	set_var(service, "total_revenue", service.total_revenue)
+	set_var(service, "total_expenses", service.total_expenses)
 	var/station_before = GLOB.station_account.money
-	var/old_subsidy_policy = service.service_subsidy
-	var/subsidies_before = GLOB.supply_service.service_subsidies
-	var/invoice_counter_before = GLOB.supply_service.service_invoice_counter
-	var/refunds_before = GLOB.supply_service.currency_refunded
-	var/internal_refunds_before = GLOB.supply_service.currency_internal_refunded
+	set_var(service, "service_subsidy", service.service_subsidy)
+	set_var(GLOB.supply_service, "service_subsidies", GLOB.supply_service.service_subsidies)
+	set_var(GLOB.supply_service, "service_invoice_counter", GLOB.supply_service.service_invoice_counter)
+	set_var(GLOB.supply_service, "currency_refunded", GLOB.supply_service.currency_refunded)
+	set_var(GLOB.supply_service, "currency_internal_refunded", GLOB.supply_service.currency_internal_refunded)
 	var/datum/money_account/customer = new
 	customer.owner_name = "Hungry Tester"
 	customer.account_number = 823456
@@ -348,16 +339,7 @@
 	TEST_ASSERT_EQUAL(service.money, service_before, "Service refund did not restore department funds")
 	TEST_ASSERT_EQUAL(GLOB.station_account.money, station_before, "Service refund did not restore subsidy funds")
 	TEST_ASSERT_EQUAL(customer.money, 150, "Service refund did not restore personal payment")
-	service.service_subsidy = old_subsidy_policy
-	GLOB.supply_service.service_subsidies = subsidies_before
-	GLOB.supply_service.service_invoice_counter = invoice_counter_before
-	GLOB.supply_service.currency_refunded = refunds_before
-	GLOB.supply_service.currency_internal_refunded = internal_refunds_before
 	own_take_member(GLOB.supply_service, nameof(/datum/world_service/supply::service_invoices), invoice)
-	service.monthly_income = service_income_before
-	service.monthly_expenses = service_expenses_before
-	service.total_revenue = service_revenue_before
-	service.total_expenses = service_total_expenses_before
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, customer)
 	qdel(invoice)
 	qdel(customer)
@@ -557,14 +539,14 @@
 /datum/unit_test/dq_service_real_machine_and_pda_lifecycle/Run()
 	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
 	var/datum/money_account/service = GLOB.department_accounts[DEPARTMENT_CIVILIAN]
-	var/service_money_before = service.money
-	var/service_income_before = service.monthly_income
-	var/service_expenses_before = service.monthly_expenses
-	var/service_revenue_before = service.total_revenue
-	var/service_total_expenses_before = service.total_expenses
-	var/refunds_before = GLOB.supply_service.currency_refunded
-	var/internal_refunds_before = GLOB.supply_service.currency_internal_refunded
-	var/invoice_counter_before = GLOB.supply_service.service_invoice_counter
+	var/service_money_before = set_var(service, "money", service.money)
+	var/service_income_before = set_var(service, "monthly_income", service.monthly_income)
+	var/service_expenses_before = set_var(service, "monthly_expenses", service.monthly_expenses)
+	var/service_revenue_before = set_var(service, "total_revenue", service.total_revenue)
+	var/service_total_expenses_before = set_var(service, "total_expenses", service.total_expenses)
+	var/refunds_before = set_var(GLOB.supply_service, "currency_refunded", GLOB.supply_service.currency_refunded)
+	var/internal_refunds_before = set_var(GLOB.supply_service, "currency_internal_refunded", GLOB.supply_service.currency_internal_refunded)
+	var/invoice_counter_before = set_var(GLOB.supply_service, "service_invoice_counter", GLOB.supply_service.service_invoice_counter)
 	var/invoice_count_before = length(GLOB.supply_service.service_invoices)
 
 	var/datum/money_account/customer_account = new
@@ -633,14 +615,6 @@
 		var/datum/service_invoice/invoice = GLOB.supply_service.service_invoices[length(GLOB.supply_service.service_invoices)]
 		own_take_member(GLOB.supply_service, nameof(/datum/world_service/supply::service_invoices), invoice)
 		qdel(invoice)
-	GLOB.supply_service.service_invoice_counter = invoice_counter_before
-	GLOB.supply_service.currency_refunded = refunds_before
-	GLOB.supply_service.currency_internal_refunded = internal_refunds_before
-	service.money = service_money_before
-	service.monthly_income = service_income_before
-	service.monthly_expenses = service_expenses_before
-	service.total_revenue = service_revenue_before
-	service.total_expenses = service_total_expenses_before
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, customer_account)
 	qdel(register)
 	qdel(customer_pda)
@@ -1269,11 +1243,13 @@
 		H.equip_to_slot_or_del(new /obj/item/clothing/under/color/grey(H), SLOT_ID_UNIFORM)
 	H.equip_to_slot(id, SLOT_ID_ID)
 
-/// Empties REGISTRY_PLAYERS for a test; returns who was in it.
-/proc/dq_test_players_clear()
-	. = REGISTRY_COPY(REGISTRY_PLAYERS)
-	for(var/mob/M as anything in .)
+/// Empties REGISTRY_PLAYERS for the rest of this test; teardown puts it back
+/// (defer_cleanup(), so a failed assert can't leave the registry empty).
+/datum/unit_test/proc/players_clear()
+	var/list/original = REGISTRY_COPY(REGISTRY_PLAYERS)
+	for(var/mob/M as anything in original)
 		registry_leave(REGISTRY_PLAYERS, M)
+	defer_cleanup(null, GLOBAL_PROC_REF(dq_test_players_restore), original)
 
 /// Puts REGISTRY_PLAYERS back to `original` (dq_test_players_clear()'s result).
 /proc/dq_test_players_restore(list/original)

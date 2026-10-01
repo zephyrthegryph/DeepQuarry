@@ -646,12 +646,12 @@
 	scheduler_advance(LIFE_CYCLE_SECONDS * 3)
 	TEST_ASSERT_EQUAL(life_test_frames(H), before, "and runs no frame, with nothing tested per frame")
 	GLOB.living_players_by_zlevel[z] += H
+	defer_cleanup(null, GLOBAL_PROC_REF(life_test_drop_living_player), z, H)
 	life_z_occupancy_changed(z)
 	TEST_ASSERT_EQUAL(om_relevance(H), RELEVANCE_NEAR, "a living player arriving makes the z-level's low-priority mobs relevant")
 	scheduler_advance(LIFE_CYCLE_SECONDS * 2)
 	TEST_ASSERT(life_test_frames(H) > before, "so they run again")
-	GLOB.living_players_by_zlevel[z] -= H
-	life_z_occupancy_changed(z)
+	life_test_drop_living_player(z, H)
 	TEST_ASSERT_EQUAL(om_relevance(H), RELEVANCE_NONE, "and the last one leaving parks them")
 	H.set_low_priority(FALSE)
 	TEST_ASSERT(!(H in P.members), "a mob that isn't low priority leaves the presence")
@@ -1232,3 +1232,10 @@
 	qdel(stasis_source)
 
 #endif
+
+/// Takes a test mob back out of its z-level's living players (a no-op once it has left).
+/proc/life_test_drop_living_player(z, mob/living/H)
+	if(!(H in GLOB.living_players_by_zlevel[z]))
+		return
+	GLOB.living_players_by_zlevel[z] -= H
+	life_z_occupancy_changed(z)
