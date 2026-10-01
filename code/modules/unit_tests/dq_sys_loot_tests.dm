@@ -121,9 +121,10 @@ DECLARE_LOOT(/loot/unit_test/parent/child, LOOT_ALL(/obj/item/tool/crowbar))
 
 /datum/unit_test/dq_sys_resolver_landmark/Run()
 	var/turf/T = test_floor()
+	defer_cleanup(null, GLOBAL_PROC_REF(dq_test_drop_blobstart), T)
 	TEST_ASSERT(map_resolve_path(/obj/effect/landmark, T, list("name" = "blobstart")), "a blobstart landmark resolves")
 	TEST_ASSERT(T in GLOB.blobstart, "its turf is a blobstart registry row")
-	GLOB.blobstart -= T
+	dq_test_drop_blobstart(T)
 	TEST_ASSERT(!map_resolve_path(/obj/effect/landmark, T, list("name" = "JoinLate")), "a JoinLate landmark stays an atom")
 	TEST_ASSERT(!map_resolve_path(/obj/effect/landmark/event_trigger, T, list("name" = "blobstart")), "a landmark subtype with its own work stays an atom")
 
@@ -139,3 +140,7 @@ DECLARE_LOOT(/loot/unit_test/parent/child, LOOT_ALL(/obj/item/tool/crowbar))
 	TEST_ASSERT_EQUAL(edits?["pixel_y"], 7, "a changed offset is an edit")
 	TEST_ASSERT(!("desc" in edits), "an unchanged var is not an edit")
 	TEST_ASSERT(!map_loading(), "no load is running during a unit test")
+
+/// Takes a test turf back out of the blobstart registry.
+/proc/dq_test_drop_blobstart(turf/T)
+	GLOB.blobstart -= T

@@ -10,7 +10,7 @@
 /datum/seed_pile/ownership()
 	. = ..()
 	. += owns(nameof(seeds), policy = OWN_SPILL)
-	. += proto(nameof(seed_type_static))
+	. += rel_one(nameof(seed_type_static), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)
 
 /datum/seed_pile/New(obj/item/seeds/O, ID)
 	name = O.name

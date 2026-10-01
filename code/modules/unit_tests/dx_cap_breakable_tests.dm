@@ -31,7 +31,7 @@
 	A.atom_break()
 	TEST_ASSERT(is_broken(A), "atom_break() sets CAP_BROKEN")
 	TEST_ASSERT_EQUAL(poke.why_not(H, A, null), "it's broken", "other entries refuse while broken")
-	TEST_ASSERT("It is broken." in A.caps_examine(H), "examine says broken")
+	TEST_ASSERT("It is broken." in caps_examine(A, H), "examine says broken")
 	refresh_flush()
 	TEST_ASSERT(cap_test_has_layer(A, "broken"), "the broken layer is drawn")
 	TEST_ASSERT_NULL(repair.why_not(H, A, wrench), "the repair works while broken")

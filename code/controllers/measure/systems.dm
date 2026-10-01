@@ -134,10 +134,10 @@
 		// code/datums/entity_state/disabilities/.
 		"disabilities" = list(/datum/om/behaviour/disability),
 		// code/datums/entity_state/ (animations, dry).
-		"entity_state" = list(/datum/om/behaviour/dizzy_shake, /datum/om/behaviour/jittery_shake, /datum/om/behaviour/dry),
+		"entity_state" = list(/datum/om/behaviour/dizzy_shake, /datum/om/behaviour/jittery_shake),
 		// Periodic cadences and hotspots are kernel work items now (code/datums/om/periodic.dm): the kernel meters them.
 		// code/modules/vore/.
-		"vore" = list(/datum/om/behaviour/belly_cycle, /datum/om/behaviour/spontaneous_vore),
+		"vore" = list(/datum/om/behaviour/belly_cycle),
 		// code/modules/materials/, code/modules/material_science/.
 		"materials" = list(/datum/om/behaviour/material_emission, /datum/om/behaviour/material_service),
 		// code/modules/heat/.

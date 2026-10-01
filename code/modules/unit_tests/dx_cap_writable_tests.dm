@@ -35,7 +35,7 @@
 	TEST_ASSERT(!write.is_meant(H, F, paper), "paper doesn't")
 	TEST_ASSERT_NULL(write.why_not(H, F, pen), "there is room to write")
 	TEST_ASSERT_NULL(cap_writable_text(F), "nothing written yet")
-	TEST_ASSERT(!length(F.caps_examine(H)), "no examine line yet")
+	TEST_ASSERT(!length(caps_examine(F, H)), "no examine line yet")
 	refresh_flush()
 	TEST_ASSERT(!dx_look_shows(F, "words"), "no writing overlay yet")
 
@@ -44,7 +44,7 @@
 	TEST_ASSERT(findtext(cap_writable_text(F), "<B>Hi</B>"), "pencode is rendered by the paper parser")
 	TEST_ASSERT(findtext(cap_writable_text(F), "color=black"), "in the pen's colour")
 	TEST_ASSERT_EQUAL(cap_writable_space(F), 10, "two visible characters used")
-	TEST_ASSERT_EQUAL(F.caps_examine(H)[1], "It reads: [cap_writable_text(F)]", "examine reads it up close")
+	TEST_ASSERT_EQUAL(caps_examine(F, H)[1], "It reads: [cap_writable_text(F)]", "examine reads it up close")
 	refresh_flush()
 	TEST_ASSERT(dx_look_shows(F, "words"), "draw shows the writing overlay")
 
@@ -97,7 +97,7 @@
 	dx_cap_entry(F, "Stamp").perform(H, F, stamp)
 	TEST_ASSERT_EQUAL(F.name, "fixture (Form 12)", "writing and stamping leave the name alone")
 
-	var/list/lines = F.caps_examine(H)
+	var/list/lines = caps_examine(F, H)
 	TEST_ASSERT_EQUAL(length(lines), 3, "writing, stamp and label each say one line")
 	TEST_ASSERT(findtext(lines[1], "It reads:"), "writing first (declaration order)")
 	TEST_ASSERT(findtext(lines[2], "This document has been stamped with the rubber stamp."), "then the stamp")

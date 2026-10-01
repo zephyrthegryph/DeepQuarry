@@ -13,7 +13,7 @@
 	TEST_ASSERT(!proto_is_private(M, nameof(M.species)), "a registered species is shared, not the mob's own")
 
 	var/list/capture = list()
-	GLOB.dq_lifecycle_report_capture = capture
+	set_global("dq_lifecycle_report_capture", capture)
 	var/list/traits = list(/datum/trait/neutral/addiction_coffee = null)
 	var/datum/species/first = M.species.produceCopy(traits.Copy(), M, SPECIES_HUMAN, TRUE)
 	TEST_ASSERT(proto_is_private(M, nameof(M.species)), "produceCopy's result is the mob's private copy")
@@ -28,7 +28,7 @@
 		E.data.get_species_bodytype(M)
 	M.regenerate_icons()
 	M.set_species(SPECIES_HUMAN)
-	GLOB.dq_lifecycle_report_capture = null
+	set_global("dq_lifecycle_report_capture", null)
 	TEST_ASSERT(QDELETED(second), "set_species deleted the mob's previous private copy")
 	TEST_ASSERT(!QDELETED(GLOB.all_species[SPECIES_HUMAN]) && !QDELETED(singleton), "singletons are never deleted")
 	qdel(singleton)

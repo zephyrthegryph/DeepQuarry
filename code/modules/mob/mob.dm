@@ -985,6 +985,7 @@ OM_FIELD_SETTER(/mob, stat, CHANGE_MOB_STAT)
 	stat = new_stat
 	if(.)
 		changed(src, CHANGE_MOB_STAT)
+		PUBLISH_CHANGE(src, nameof(stat))
 
 /mob/verb/face_direction()
 

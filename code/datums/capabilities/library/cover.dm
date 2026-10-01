@@ -29,14 +29,14 @@
 /// "remove_cover" (a crowbar in harm: the hostile ACT_ATTACK, above the opening).
 /datum/capability/cover/interactions(atom/holder)
 	. = list()
-	var/present = TYPE_PROC_REF(/atom, cap_cover_present)
+	var/present = GLOBAL_PROC_REF(cap_cover_present)
 	if(open_tool && open_tool != BY_HAND)
-		. += adopt_entry(lib_op("Open cover", TYPE_PROC_REF(/atom, cap_cover_toggle), OP_SHAPE_TOOL, using = open_tool, key = "open_cover", delay = delay, needs = present, priority = OP_PRIORITY_PART, name_proc = TYPE_PROC_REF(/atom, cap_cover_name)), id = "cover:[open_tool]")
+		. += adopt_entry(lib_op("Open cover", GLOBAL_PROC_REF(cap_cover_toggle), OP_SHAPE_TOOL, using = open_tool, key = "open_cover", delay = delay, needs = present, priority = OP_PRIORITY_PART, name_proc = GLOBAL_PROC_REF(cap_cover_name)), id = "cover:[open_tool]")
 	else
 		// A removed cover is not what an empty hand means: the touch falls through.
-		. += adopt_entry(lib_op("Open cover", TYPE_PROC_REF(/atom, cap_cover_toggle), OP_SHAPE_HAND, key = "open_cover", offered = req_proc(present), works_broken = TRUE, works_unpowered = TRUE, name_proc = TYPE_PROC_REF(/atom, cap_cover_name)), id = "cover:[open_tool]")
+		. += adopt_entry(lib_op("Open cover", GLOBAL_PROC_REF(cap_cover_toggle), OP_SHAPE_HAND, key = "open_cover", offered = req_proc(present), works_broken = TRUE, works_unpowered = TRUE, name_proc = GLOBAL_PROC_REF(cap_cover_name)), id = "cover:[open_tool]")
 	if(removable)
-		. += adopt_entry(lib_op("Remove cover", TYPE_PROC_REF(/atom, cap_cover_remove), OP_SHAPE_TOOL, using = TOOL_CROWBAR, key = "remove_cover", action = ACT_ATTACK, delay = delay, needs = present, priority = OP_PRIORITY_PART * 2, stance = I_HURT), id = "cover:remove")
+		. += adopt_entry(lib_op("Remove cover", GLOBAL_PROC_REF(cap_cover_remove), OP_SHAPE_TOOL, using = TOOL_CROWBAR, key = "remove_cover", action = ACT_ATTACK, delay = delay, needs = present, priority = OP_PRIORITY_PART * 2, stance = I_HURT), id = "cover:remove")
 
 /datum/capability/cover/examine(atom/holder, mob/user)
 	if(cover_removed(holder))
@@ -56,20 +56,20 @@
 /proc/cover_removed(atom/A)
 	return !!(A.cap_state & CAP_COVER_REMOVED)
 
-/atom/proc/cap_cover_name(mob/user)
-	return cover_is_open(src) ? "Close cover" : "Open cover"
+/proc/cap_cover_name(atom/holder, mob/user)
+	return cover_is_open(holder) ? "Close cover" : "Open cover"
 
 /// needs: the cover is still there.
-/atom/proc/cap_cover_present(mob/user, obj/item/held)
-	return cover_removed(src) ? "the cover has been removed" : TRUE
+/proc/cap_cover_present(mob/user, atom/holder, obj/item/held)
+	return cover_removed(holder) ? "the cover has been removed" : TRUE
 
-/atom/proc/cap_cover_toggle(mob/user, obj/item/held)
-	var/opening = !cover_is_open(src)
-	cap_set(src, CAP_COVER_OPEN, opening)
-	act_message(user, src, self = "You [opening ? "open" : "close"] the cover of %T%.", others = "%U% [opening ? "opens" : "closes"] the cover of %T%.")
+/proc/cap_cover_toggle(atom/holder, mob/user, obj/item/held)
+	var/opening = !cover_is_open(holder)
+	cap_set(holder, CAP_COVER_OPEN, opening)
+	act_message(user, holder, self = "You [opening ? "open" : "close"] the cover of %T%.", others = "%U% [opening ? "opens" : "closes"] the cover of %T%.")
 	return TRUE
 
-/atom/proc/cap_cover_remove(mob/user, obj/item/held)
-	cap_set(src, CAP_COVER_OPEN | CAP_COVER_REMOVED, TRUE)
-	act_message(user, src, self = span_warning("You pry the cover off %T%."), others = span_warning("%U% pries the cover off %T%."), item = held)
+/proc/cap_cover_remove(atom/holder, mob/user, obj/item/held)
+	cap_set(holder, CAP_COVER_OPEN | CAP_COVER_REMOVED, TRUE)
+	act_message(user, holder, self = span_warning("You pry the cover off %T%."), others = span_warning("%U% pries the cover off %T%."), item = held)
 	return TRUE

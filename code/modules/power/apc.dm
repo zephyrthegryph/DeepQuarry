@@ -130,13 +130,13 @@
 	/// Monotonic revision for correction-aware contract power telemetry.
 	var/contract_power_revision = 0
 
-TRACKED(/obj/machinery/power/apc, shorted, CHANGE_MACHINE_SETTINGS)
-TRACKED(/obj/machinery/power/apc, operating, CHANGE_MACHINE_SETTINGS)
-TRACKED(/obj/machinery/power/apc, chargemode, CHANGE_MACHINE_SETTINGS)
-TRACKED(/obj/machinery/power/apc, grid_check, CHANGE_MACHINE_SETTINGS)
-TRACKED(/obj/machinery/power/apc, nightshift_lights, CHANGE_MACHINE_SETTINGS)
-TRACKED(/obj/machinery/power/apc, nightshift_setting, CHANGE_MACHINE_SETTINGS)
-TRACKED(/obj/machinery/power/apc, emergency_lights, CHANGE_MACHINE_SETTINGS)
+TRACKED_BRIDGED(/obj/machinery/power/apc, shorted, CHANGE_MACHINE_SETTINGS)
+TRACKED_BRIDGED(/obj/machinery/power/apc, operating, CHANGE_MACHINE_SETTINGS)
+TRACKED_BRIDGED(/obj/machinery/power/apc, chargemode, CHANGE_MACHINE_SETTINGS)
+TRACKED_BRIDGED(/obj/machinery/power/apc, grid_check, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/power/apc, nightshift_lights)
+TRACKED(/obj/machinery/power/apc, nightshift_setting)
+TRACKED(/obj/machinery/power/apc, emergency_lights)
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Capabilities
@@ -191,13 +191,17 @@ MSG_DEF(start/apc/reset, "You begin resetting the APC...", "%U% connects %I% to 
 	. = ..()
 	. += rel_many(nameof(hacked_apcs), back = nameof(/obj/machinery/power/apc::hacker))
 
-/// Only what the APC hears: a swing at it, a shredder's claws and a newly seated cell. (Its pushes to Rust, its
-/// redraws and its window refreshes are generated from what push_to_rust(), draw() and tgui_data() read.)
+/// Only what the APC hears: a swing at it, a shredder's claws, a newly seated cell and what hits it (a pulse, a
+/// blast, a blob). (Its pushes to Rust, its redraws and its window refreshes are generated from what
+/// push_to_rust(), draw() and tgui_data() read.)
 /obj/machinery/power/apc/reactions()
 	. = ..()
 	. += on_notice(/datum/notice/hit, PROC_REF(on_hit))
 	. += on_notice(/datum/notice/slashed, PROC_REF(on_slashed))
 	. += on_change(list(nameof(cell)), PROC_REF(cell_changed))
+	. += before_op(damage(DAMAGE_EMP), PROC_REF(apc_emp_fail))
+	. += before_op(damage(DAMAGE_EXPLOSION), PROC_REF(apc_blast_wake))
+	. += before_op(damage(DAMAGE_BLOB), PROC_REF(apc_blob_rip_wires))
 
 
 // ---- the hatch and the frame ----
@@ -434,7 +438,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 /obj/machinery/power/apc/on_destroy(force)
 	if(power_alarm_raised)
 		GLOB.power_alarm.clearAlarm(loc, src)
-	changed(src, CHANGE_MACHINE_MODE)
+	changed(src)
 	apply_area_power()
 	if(area())
 		rel_clear(area(), nameof(/area::apc))
@@ -446,7 +450,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 
 /// Something about the APC changed (settings, cell, damage): the push to Rust follows (generated).
 /obj/machinery/power/apc/proc/wake_for_power_dependency()
-	changed(src, CHANGE_MACHINE_MODE)
+	changed(src)
 
 /// The APC is not a network node: its terminal is.
 /obj/machinery/power/apc/disconnect_from_network()
@@ -898,10 +902,6 @@ GLOBAL_LIST_INIT(apc_ui_logged, list("lock" = LOG_GAME, "cover" = LOG_GAME, "cha
 // Damage / destruction
 // ─────────────────────────────────────────────────────────────────────────────
 
-DAMAGE_REACTION(/obj/machinery/power/apc, DAMAGE_EMP, PROC_REF(apc_emp_fail))
-DAMAGE_REACTION(/obj/machinery/power/apc, DAMAGE_EXPLOSION, PROC_REF(apc_blast_wake))
-DAMAGE_REACTION(/obj/machinery/power/apc, DAMAGE_BLOB, PROC_REF(apc_blob_rip_wires))
-
 /// A blob tears the wiring out instead of damaging the frame.
 /obj/machinery/power/apc/proc/apc_blob_rip_wires(datum/damage_packet/packet)
 	wires_of(src).cut_all()
@@ -945,7 +945,7 @@ DAMAGE_REACTION(/obj/machinery/power/apc, DAMAGE_BLOB, PROC_REF(apc_blob_rip_wir
 		var/delay = 0
 		for(var/obj/machinery/light/L as anything in area_lights())
 			if(prob(chance))
-				rx_after(L, delay, TYPE_PROC_REF(/obj/machinery/light, surge_break), key = "surge_break")
+				after(L, delay, TYPE_PROC_REF(/obj/machinery/light, surge_break), key = "surge_break")
 			delay++
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1031,7 +1031,7 @@ DAMAGE_REACTION(/obj/machinery/power/apc, DAMAGE_BLOB, PROC_REF(apc_blob_rip_wir
 	if(is_critical)
 		return
 	set_grid_check(TRUE)
-	rx_after(src, 15 MINUTES, PROC_REF(set_grid_check), key = "grid_check", handler_args = list(FALSE))
+	after(src, 15 MINUTES, PROC_REF(set_grid_check), key = "grid_check", with = list(FALSE))
 
 // The grid checker suspends (or releases) this APC: the setter is TRACKED, so Rust (rust_push), the window and the machine
 // pipeline (CHANGE_MACHINE_SETTINGS) hear it.

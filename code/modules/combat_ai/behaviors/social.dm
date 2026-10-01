@@ -68,5 +68,4 @@
 		if(!ally.ai_brain)
 			continue
 		ally.ai_brain.add_personal(target, DQ_DISPOSITION_HOSTILE, 60 SECONDS, "ally distress")
-		OM_EMIT(ally, /datum/om/event/dqai_ally_distress, owner, target)
 	return DQ_BEHAVIOR_DONE

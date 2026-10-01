@@ -176,7 +176,7 @@
 	// appearance. Here, at the root of the chain, so a subtype's code after `. = ..()` sees it.
 	lifecycle_decls_init(src)
 	// Capabilities' per-instance state, then the first look (code/datums/capabilities/).
-	caps_init(mapload)
+	caps_init(src, mapload)
 
 	/*
 	if (light_system == COMPLEX_LIGHT && light_power && light_range)

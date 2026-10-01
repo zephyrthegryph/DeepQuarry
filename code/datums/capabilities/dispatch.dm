@@ -81,7 +81,13 @@ GLOBAL_DATUM(dispatch_context_now, /datum/dispatch_context)
 	var/result
 	var/failed = FALSE
 	try
-		result = call(runs_on || target, proc_ref)(arglist(named))
+		if(!runs_on && IS_GLOBAL_PROC_REF(proc_ref))
+			// A global handler takes the holder as its `holder` argument (holder_call()).
+			var/list/with_holder = named ? named.Copy() : list()
+			with_holder["holder"] = target
+			result = call(proc_ref)(arglist(with_holder))
+		else
+			result = call(runs_on || target, proc_ref)(arglist(named))
 	catch(var/exception/e)
 		failed = TRUE
 		var/msg = "dispatch: [target.type].[proc_ref] ([action_name]) by [key_name(ctx.user)] failed: [e] ([e.file]:[e.line])"
@@ -164,3 +170,17 @@ GLOBAL_VAR(refuse_capture)
 		message_admins(line)
 	else
 		log_game(line)
+
+/**
+ * Calls a holder proc ref with `...`: a type proc of `holder` (call(holder, proc_ref)(...)), or a global proc that
+ * takes the holder as its first argument (call(proc_ref)(holder, ...)). Capability handlers, name procs and
+ * predicates are global procs of that form rather than procs on /atom: BYOND gives every type a slot for every
+ * proc it inherits, so a proc declared on /atom costs each of the ~22k atom types memory (about 0.55 MB a proc),
+ * while a global proc costs one entry. dispatch_call() passes a global handler the holder as `holder`.
+ */
+/proc/holder_call(datum/holder, proc_ref, ...)
+	if(IS_GLOBAL_PROC_REF(proc_ref))
+		var/list/call_args = args.Copy(2)
+		call_args[1] = holder
+		return call(proc_ref)(arglist(call_args))
+	return call(holder, proc_ref)(arglist(args.Copy(3)))

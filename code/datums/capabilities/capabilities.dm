@@ -15,10 +15,27 @@
 	RETURN_TYPE(/list)
 	return list()
 
+/// The one-line declarations of this type (CAPABILITY(T, entry), code/__defines/capabilities.dm): each line adds
+/// one entry after ..(). Collected after capabilities() when the type's table is built (caps_build()), so a
+/// data-only subtype stays one line and never collides with a capabilities() override in the same file.
+/atom/proc/declared_capabilities(list/into)
+	SHOULD_CALL_PARENT(TRUE)
+	SHOULD_NOT_SLEEP(TRUE)
+	return
+
+/// The type's capability declarations: capabilities() (parents first), then its CAPABILITY() lines (parents first).
+/// type_list()'s builder: built once per type, interned by caps_intern_list().
+/proc/caps_build(atom/A)
+	. = A.capabilities()
+	var/list/declared = list()
+	A.declared_capabilities(declared)
+	if(length(declared))
+		. += declared
+
 /// The cached capability list of A's type. Shared: never write into it.
 /proc/caps_of(atom/A)
 	RETURN_TYPE(/list)
-	return type_list(A, TYPE_PROC_REF(/atom, capabilities), GLOBAL_PROC_REF(caps_intern_list))
+	return type_list(A, GLOBAL_PROC_REF(caps_build), GLOBAL_PROC_REF(caps_intern_list))
 
 /// Interns every capability of a freshly built list: identical constructor calls anywhere in the tree
 /// (a type and each subtype that calls ..(), or two types with the same settings) share ONE datum, so
@@ -194,23 +211,23 @@ GLOBAL_LIST_EMPTY(caps_interned)
 /// Called from /atom/Initialize() and table_initialize() after the declarations. Nothing derived is
 /// probed here (review 2 H9: a draw() may read what the subtype's Initialize() sets up after ..()):
 /// the first instance of each type is always queued, and its refresh records what the type derives.
-/atom/proc/caps_init(mapload)
-	var/flags = type_derive_flags(src)
+/proc/caps_init(atom/holder, mapload)
+	var/flags = type_derive_flags(holder)
 	if(flags & TYPE_DERIVES_TYPE_VERBS)
-		verb_store_refresh(src, type_verbs_always(src)) // login entries wait for Login (type_verbs.dm)
+		verb_store_refresh(holder, type_verbs_always(holder)) // login entries wait for Login (type_verbs.dm)
 	if(flags & TYPE_DERIVES_CAPS)
-		for(var/datum/capability/C as anything in caps_of(src))
-			C.on_holder_init(src, mapload)
-			cap_join_systems(src, C)
-		refresh_granted_verbs(src) // capability verbs are there from init, not a frame later
+		for(var/datum/capability/C as anything in caps_of(holder))
+			C.on_holder_init(holder, mapload)
+			cap_join_systems(holder, C)
+		refresh_granted_verbs(holder) // capability verbs are there from init, not a frame later
 	if(flags & TYPE_DERIVES_DEPS)
-		derived_attach(src)
-	if(rx_type_enrols(src))
-		rx_enrol(src) // per-instance every() work (reactions/work.dm)
-	if(flags || periodic_cadence || periodic_interval)
+		derived_attach(holder)
+	if(rx_type_enrols(holder))
+		rx_enrol(holder) // per-instance every() work (reactions/work.dm)
+	if(flags || holder.periodic_cadence || holder.periodic_interval)
 		// The first refresh is queued, nothing changed: changed() would raise CHANGE_EXPLICIT, which every machine's
 		// pipeline wakes on (wake_all), so declaring a capability or a membership woke its holder at init.
-		refresh_mark(src, DEP_ALL)
+		refresh_mark(holder, DEP_ALL)
 
 /// TYPE_DERIVES_* known so far for A's type. A type seen for the first time is TYPE_DERIVES_PENDING
 /// (plus CAPS when it has capabilities) until its first refresh fills in LOOK and VERBS.
@@ -247,39 +264,39 @@ GLOBAL_LIST_EMPTY(caps_interned)
 GLOBAL_LIST_EMPTY(type_derives_cache)
 
 /// Runs every capability's on_destroy and drops the data. Called from /atom/Destroy().
-/atom/proc/caps_destroy()
-	if(timed_until)
-		timed_cancel_all(src)
-	var/flags = GLOB.type_derives_cache[type]
-	if(!isnull(flags) && !(flags & TYPE_DERIVES_CAPS) && !cap_data && !cap_extras)
+/proc/caps_destroy(atom/holder)
+	if(holder.timed_until)
+		timed_cancel_all(holder)
+	var/flags = GLOB.type_derives_cache[holder.type]
+	if(!isnull(flags) && !(flags & TYPE_DERIVES_CAPS) && !holder.cap_data && !holder.cap_extras)
 		return
-	var/list/caps = caps_all(src)
+	var/list/caps = caps_all(holder)
 	for(var/datum/capability/C as anything in caps)
-		C.on_holder_destroy(src)
-		cap_leave_systems(src, C)
-	cap_extras = null
-	for(var/key in cap_data)
-		var/datum/D = cap_data[key]
+		C.on_holder_destroy(holder)
+		cap_leave_systems(holder, C)
+	holder.cap_extras = null
+	for(var/key in holder.cap_data)
+		var/datum/D = holder.cap_data[key]
 		if(isdatum(D))
 			qdel(D)
-	cap_data = null
+	holder.cap_data = null
 
 
 /// Examine lines from every capability, in list order (appended by /atom/examine()).
-/atom/proc/caps_examine(mob/user)
+/proc/caps_examine(atom/holder, mob/user)
 	. = list()
-	for(var/datum/capability/C as anything in caps_ordered(src, CAP_ORDER_EXAMINE))
-		var/list/lines = C.examine(src, user)
+	for(var/datum/capability/C as anything in caps_ordered(holder, CAP_ORDER_EXAMINE))
+		var/list/lines = C.examine(holder, user)
 		if(lines)
 			. += lines
 
 /// Adds every capability's UI data under data["caps"][C.ui_key()], one list per capability, so no
 /// capability key collides with the holder's own (M11). /datum/tgui_data() callers merge it through ..().
-/atom/proc/caps_ui_data(mob/user, list/data)
+/proc/caps_ui_data(atom/holder, mob/user, list/data)
 	var/list/caps
-	for(var/datum/capability/C as anything in caps_all(src))
+	for(var/datum/capability/C as anything in caps_all(holder))
 		var/list/mine = list()
-		C.ui_data(src, user, mine)
+		C.ui_data(holder, user, mine)
 		if(!length(mine))
 			continue
 		caps ||= list()
@@ -288,10 +305,10 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 		data["caps"] = caps
 
 /// Every capability's hidden verbs plus the type's own hidden_verbs().
-/atom/proc/caps_hidden_verbs()
+/proc/caps_hidden_verbs(atom/holder)
 	. = list()
-	for(var/datum/capability/C as anything in caps_all(src))
-		var/list/hidden = C.hidden_verbs(src)
+	for(var/datum/capability/C as anything in caps_all(holder))
+		var/list/hidden = C.hidden_verbs(holder)
 		if(hidden)
 			. |= hidden
 
@@ -437,7 +454,7 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 
 /datum/interaction/capability/display_name(mob/actor, atom/target)
 	if(name_proc)
-		return call(target, name_proc)(actor)
+		return holder_call(target, name_proc, actor)
 	return name
 
 /// A plain click reaches an op with a `click_with` rule only holding one of those items (a card swiped across a
@@ -450,9 +467,9 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 /datum/interaction/capability/applies_to(atom/target)
 	// A holder can suspend all its capability entries (a frozen airlock): the input falls through to
 	// whatever comes next (an attack), as if the entries weren't there.
-	if(target.caps_suspended())
+	if(caps_suspended(target))
 		return FALSE
-	return applies ? call(target, applies)() : TRUE
+	return applies ? holder_call(target, applies) : TRUE
 
 /// Why the op is not meant here (its first failing `offered` requirement), or null. Not a refusal: is_meant() falls through on it.
 /datum/interaction/capability/proc/offered_reason(mob/actor, atom/target, obj/item/held)
@@ -533,7 +550,7 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 
 /// TRUE while none of this atom's capability entries are offered at all (a frozen airlock): input
 /// falls through to the next handler instead of being refused.
-/atom/proc/caps_suspended()
+/proc/caps_suspended(atom/holder)
 	return FALSE
 
 /// Runs the entry's form and handler for ctx, async when it prompts (dispatch_call()). The handler runs
@@ -670,7 +687,7 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 	var/datum/capability/entry/C = new
 	var/datum/interaction/capability/E = new
 	E.name = name
-	E.id = "[entry_kind]:[name]:[handler]"
+	E.id = "[entry_kind]:[name]:[own_proc_name(handler)]" // the bare proc name: a global handler keeps the id a holder proc had
 	E.handler = handler
 	E.behind = behind
 	E.blocked_by = blocked_by

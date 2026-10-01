@@ -97,6 +97,7 @@
 			/datum/system/ui_push = RXB_EVERY,
 			/obj/effect/hotspot = RXB_EVERY,
 			/obj/item/broken_gun = RXB_INIT,
+			/obj/item/clothing/shoes/dry_galoshes = RXB_NOTICE,
 			/obj/machinery/power/apc = RXB_NOTICE,
 		)
 	return table

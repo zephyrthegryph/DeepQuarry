@@ -460,6 +460,14 @@ GLOBAL_VAR(dq_test_select_names)
 	/// flake involving rand()/pick() is reproducible.
 	var/tmp/seed
 
+	/// list(datum, var name, original value) per var set_var() changed; restored on destroy.
+	var/tmp/list/saved_vars
+	/// Original config values set_config() changed, each boxed in a one-element
+	/// list (so a saved null is still a saved value); restored on destroy.
+	var/tmp/list/saved_configs
+	/// om_callable() specs defer_cleanup() queued; run last-first on destroy.
+	var/tmp/list/deferred_cleanups
+
 /// A stable, deterministic seed for a test's own name: same input, same
 /// output, forever, regardless of process or run order -- unlike rand()'s own
 /// state, which drifts with everything that ran before it.
@@ -488,6 +496,11 @@ GLOBAL_VAR(dq_test_select_names)
 		for(var/entry in curated)
 			if(!LAZYACCESS(curated_matched, "[entry]"))
 				Fail("curated entry [entry] was not in the sweep (renamed or removed? update curated_types())", __FILE__, __LINE__)
+	// End the test's world in the tick Run() returns. RunUnitTest() only notices run_finished
+	// on its next poll and then restores atmos before deleting the test, and OM work still
+	// pending on the test's entities (a mob's telegraphed strike is an om_after on its clock)
+	// would otherwise fire in that gap, with nothing left to own what it makes.
+	end_test_world()
 	run_finished = TRUE
 
 /// A normal-tier representative's fixed subset of an exhaustive sweep, or null
@@ -530,10 +543,79 @@ GLOBAL_VAR(dq_test_select_names)
 	. += rel_many(nameof(allocated))
 
 /datum/unit_test/on_destroy(force)
+	end_test_world() // already done unless Run() timed out
+	restore_test_overrides()
+	..()
+
+/// Runs the deferred cleanups, then deletes everything allocate()d; their timers and tasks die
+/// with them. Called as Run() returns and again on destroy (a no-op the second time).
+/datum/unit_test/proc/end_test_world()
+	run_deferred_cleanups()
 	for(var/datum/thing as anything in allocated?.Copy())
 		if(!QDELETED(thing))
 			qdel(thing)
-	..()
+
+/// Sets `target.vars[name]` for the rest of this test. The first change to each var records its
+/// original value, and on_destroy() puts it back (last change first). A failing TEST_ASSERT
+/// (which returns from Run()) or a runtime then can't leak the change into later tests.
+/// Returns `value`.
+/datum/unit_test/proc/set_var(datum/target, name, value)
+	if(!(name in target.vars))
+		CRASH("set_var: [target.type] has no var [name]")
+	var/already = FALSE
+	for(var/list/entry as anything in saved_vars)
+		if(entry[1] == target && entry[2] == name)
+			already = TRUE
+			break
+	if(!already)
+		LAZYADD(saved_vars, list(list(target, name, target.vars[name])))
+	target.vars[name] = value
+	return value
+
+/// set_var() on GLOB: sets GLOB.<name> for the rest of this test.
+/datum/unit_test/proc/set_global(name, value)
+	return set_var(GLOB, name, value)
+
+/// Sets a config entry (a /datum/config_entry path) for the rest of this test; restored like
+/// set_var(). Returns `value`.
+/datum/unit_test/proc/set_config(entry_type, value)
+	if(!LAZYACCESS(saved_configs, entry_type))
+		LAZYSET(saved_configs, entry_type, list(global.config.Get(entry_type)))
+	global.config.Set(entry_type, value)
+	return value
+
+/// Calls `target`'s `proc_ref` with `...` when the test is torn down (last queued first, before
+/// allocate()d things are deleted and set_var() changes restored, and before the block's leak check),
+/// even if a TEST_ASSERT returned from Run() early or Run() runtimed. For cleanup that isn't a
+/// qdel(): releasing a site, unregistering from a global list. A null target calls a global proc.
+/datum/unit_test/proc/defer_cleanup(datum/target, proc_ref, ...)
+	var/list/spec = om_callable(arglist(args))
+	if(spec)
+		LAZYADD(deferred_cleanups, list(spec))
+
+/datum/unit_test/proc/run_deferred_cleanups()
+	var/list/pending = deferred_cleanups
+	deferred_cleanups = null
+	for(var/i in length(pending) to 1 step -1)
+		try
+			om_run(pending[i])
+		catch(var/exception/e)
+			// Teardown runs after the test's result is logged: fail the run, not just the test.
+			log_world("::error::UNIT TEST CLEANUP RUNTIME: [type]: [e.name] at [e.file]:[e.line]")
+			GLOB.failed_any_test = TRUE
+
+/// Puts back everything set_var()/set_global()/set_config() changed.
+/datum/unit_test/proc/restore_test_overrides()
+	for(var/i in length(saved_vars) to 1 step -1)
+		var/list/entry = saved_vars[i]
+		var/datum/target = entry[1]
+		if(!QDELETED(target))
+			target.vars[entry[2]] = entry[3]
+	for(var/entry_type in saved_configs)
+		var/list/box = saved_configs[entry_type]
+		global.config.Set(entry_type, box[1])
+	saved_vars = null
+	saved_configs = null
 
 /datum/unit_test/proc/Run()
 	TEST_FAIL("[type]/Run() called parent or not implemented")
@@ -767,6 +849,7 @@ GLOBAL_VAR(dq_test_select_names)
 	var/duration = 0
 	var/tick_start_index = 0
 	var/runtimes_before = GLOB.total_runtimes
+	var/list/sites_before = GLOB.expedition_service?.sites?.Copy()
 	var/list/tick_stats
 	// Generated-station coverage is temporarily disabled while that subsystem is
 	// being redesigned. Keep the cases compiled and visible as skipped so they
@@ -847,6 +930,9 @@ GLOBAL_VAR(dq_test_select_names)
 	// A test must delete everything it creates (allocate(), or its own qdel()s). Whatever
 	// is still on its block once `allocated` is gone fails the test.
 	var/leak = release_unit_test_block(block, test)
+	var/site_leak = unit_test_site_leak(sites_before, test_path)
+	if(site_leak)
+		leak = leak ? "[leak]\n\t[site_leak]" : site_leak
 	if(leak && !skip_test)
 		GLOB.failed_any_test = TRUE
 		if(final_status == UNIT_TEST_PASSED)
@@ -856,6 +942,26 @@ GLOBAL_VAR(dq_test_select_names)
 		log_test("\t[leak]")
 
 	test_results[test_path] = list("status" = final_status, "message" = message, "name" = test_path, "duration_ds" = duration, "runtimes" = GLOB.total_runtimes - runtimes_before, "ticks" = tick_stats)
+
+/// Expedition sites are global (each holds a whole z-level) and outlive the test block, so a test
+/// that generates one must release it, through defer_cleanup() so a failing assert can't skip
+/// it. Returns a leak message for sites still live that weren't before the test, releasing them so
+/// later tests start without them.
+/proc/unit_test_site_leak(list/sites_before, test_path)
+	var/datum/world_service/expedition/service = GLOB.expedition_service
+	if(!service)
+		return
+	var/list/leaked = list()
+	for(var/key in service.sites)
+		if(!(key in sites_before))
+			leaked += key
+	if(!length(leaked))
+		return
+	for(var/key in leaked)
+		var/datum/expedition_site/site = service.sites[key]
+		if(site)
+			service.release_site(site, "unit test [test_path] leaked it")
+	return "UNIT TEST LEAK: [test_path] left [length(leaked)] expedition site(s) live (z [leaked.Join(", ")]); release them with defer_cleanup()"
 
 /// Builds (and returns) a list of atoms that we shouldn't initialize in generic testing, like Create and Destroy.
 /// It is appreciated to add the reason why the atom shouldn't be initialized if you add it to this list.

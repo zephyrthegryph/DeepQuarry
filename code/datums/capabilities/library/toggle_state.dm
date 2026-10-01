@@ -85,7 +85,7 @@
 
 /datum/capability/toggle_state/interactions(atom/holder)
 	// The op "toggle_<name>": the self-use, the Menu and the native verb reach it.
-	var/datum/capability/entry/wrapper = cap_use_self(verb_name, TYPE_PROC_REF(/obj/item, cap_toggle_run), works_broken = TRUE, works_unpowered = TRUE, in_inventory = TRUE, entry_type = /datum/interaction/capability/toggle, key = "toggle_[name]")
+	var/datum/capability/entry/wrapper = cap_use_self(verb_name, GLOBAL_PROC_REF(cap_toggle_run), works_broken = TRUE, works_unpowered = TRUE, in_inventory = TRUE, entry_type = /datum/interaction/capability/toggle, key = "toggle_[name]")
 	return list(adopt_entry(wrapper, "self:toggle:[bit]"))
 
 /datum/capability/toggle_state/verbs()
@@ -98,7 +98,7 @@
 	return is_available(holder) ? null : list(verb_ref)
 
 /datum/capability/toggle_state/proc/is_available(atom/holder)
-	return !available || call(holder, available)()
+	return !available || holder_call(holder, available)
 
 /datum/capability/toggle_state/proc/state_for(atom/holder, on)
 	if(on)
@@ -136,37 +136,37 @@
 	return null
 
 /// The entry handler: flips the toggle the running entry belongs to.
-/obj/item/proc/cap_toggle_run(mob/user, obj/item/held)
+/proc/cap_toggle_run(obj/item/holder, mob/user, obj/item/held)
 	var/datum/interaction/capability/E = GLOB.dispatch_context_now?.entry
 	var/datum/capability/toggle_state/C = E?.cap
 	if(!istype(C))
 		return FALSE
-	return cap_toggle_set(C, !cap_has(src, C.bit), user)
+	return cap_toggle_set(holder, C, !cap_has(holder, C.bit), user)
 
 /// Turns toggle C on or off for user: apply() may refuse, then the bit flips, the look and worn
 /// sprite update, and the message goes out. TRUE when it changed.
-/obj/item/proc/cap_toggle_set(datum/capability/toggle_state/C, on, mob/user)
+/proc/cap_toggle_set(obj/item/holder, datum/capability/toggle_state/C, on, mob/user)
 	on = !!on
-	if(cap_has(src, C.bit) == on)
+	if(cap_has(holder, C.bit) == on)
 		return FALSE
 	if(C.apply)
-		var/result = call(src, C.apply)(on, user)
+		var/result = holder_call(holder, C.apply, on, user)
 		if(istext(result))
 			return refuse(user, result)
 		if(!result)
 			return UI_REFUSED
-	cap_set(src, C.bit, on)
-	refresh_look(src) // the worn sprite below reads icon_state now, not at the end of the frame
-	if(istype(src, /obj/item/clothing))
-		var/obj/item/clothing/worn = src
+	cap_set(holder, C.bit, on)
+	refresh_look(holder) // the worn sprite below reads icon_state now, not at the end of the frame
+	if(istype(holder, /obj/item/clothing))
+		var/obj/item/clothing/worn = holder
 		worn.update_clothing_icon()
 	else
-		update_held_icon()
+		holder.update_held_icon()
 	if(user)
 		var/self = on ? C.self_on : C.self_off
 		var/others = on ? C.others_on : C.others_off
 		if(self || others)
-			act_message(user, src, self = self ? span_notice(self) : null, others = others ? span_notice(others) : null)
+			act_message(user, holder, self = self ? span_notice(self) : null, others = others ? span_notice(others) : null)
 	return TRUE
 
 // The native verbs, renamed per toggle by cap_toggle_state(). Each runs the toggle's entry.
@@ -174,24 +174,24 @@
 	set name = "Toggle"
 	set category = VERB_CAT_OBJECT
 	set src in usr
-	cap_toggle_verb_run(usr, CAP_TOGGLE_1)
+	cap_toggle_verb_run(src, usr, CAP_TOGGLE_1)
 
 /obj/item/proc/cap_toggle_verb_2()
 	set name = "Toggle"
 	set category = VERB_CAT_OBJECT
 	set src in usr
-	cap_toggle_verb_run(usr, CAP_TOGGLE_2)
+	cap_toggle_verb_run(src, usr, CAP_TOGGLE_2)
 
 /obj/item/proc/cap_toggle_verb_3()
 	set name = "Toggle"
 	set category = VERB_CAT_OBJECT
 	set src in usr
-	cap_toggle_verb_run(usr, CAP_TOGGLE_3)
+	cap_toggle_verb_run(src, usr, CAP_TOGGLE_3)
 
 /// Runs the toggle entry for `bit` as user, through the interaction pipeline (gating, refusals, log).
-/obj/item/proc/cap_toggle_verb_run(mob/user, bit)
-	for(var/datum/interaction/capability/toggle/E in cap_interactions(src))
+/proc/cap_toggle_verb_run(obj/item/holder, mob/user, bit)
+	for(var/datum/interaction/capability/toggle/E in cap_interactions(holder))
 		var/datum/capability/toggle_state/C = E.cap
 		if(C.bit == bit)
-			return E.attempt(user, src, src)
+			return E.attempt(user, holder, holder)
 	return FALSE

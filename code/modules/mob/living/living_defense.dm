@@ -203,7 +203,7 @@
 	var/speed = throwingdatum?.speed || THROWFORCE_SPEED_DIVISOR
 	var/mob/living/thrower = throwingdatum?.get_thrower()
 
-	if(om_wants(src, /datum/om/event/before/hit_by_thrown) && om_emit(src, new /datum/om/event/before/hit_by_thrown(source, thrower, speed)) == EVENT_VETO)
+	if(guard(src, GUARD_THROWN_HIT, thrower, source, speed))
 		return
 
 	if(isitem(source))

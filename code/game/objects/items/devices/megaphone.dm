@@ -169,6 +169,6 @@ TYPE_TABLE(/obj/item/megaphone/super, megaphone_insults, list("HONK?!", "HONK!",
 /// name them. Only while carried (the old REQ_IN_INVENTORY): the cap_in_inventory() need.
 /obj/item/megaphone/super/capabilities()
 	. = ..()
-	. += cap_op("Change Volume", PROC_REF(adjust_volume), action = ACT_NONE, needs = TYPE_PROC_REF(/atom, cap_in_inventory), key = "change_volume")
-	. += cap_op("Change... Pronunciation?", PROC_REF(adjust_font), action = ACT_NONE, needs = TYPE_PROC_REF(/atom, cap_in_inventory), key = "change_font")
-	. += cap_op("Change... Tune?", PROC_REF(adjust_color), action = ACT_NONE, needs = TYPE_PROC_REF(/atom, cap_in_inventory), key = "change_color")
+	. += cap_op("Change Volume", PROC_REF(adjust_volume), action = ACT_NONE, needs = GLOBAL_PROC_REF(cap_in_inventory), key = "change_volume")
+	. += cap_op("Change... Pronunciation?", PROC_REF(adjust_font), action = ACT_NONE, needs = GLOBAL_PROC_REF(cap_in_inventory), key = "change_font")
+	. += cap_op("Change... Tune?", PROC_REF(adjust_color), action = ACT_NONE, needs = GLOBAL_PROC_REF(cap_in_inventory), key = "change_color")

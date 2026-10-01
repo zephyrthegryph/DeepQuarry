@@ -26,7 +26,7 @@
 	var/tracked_value = 0
 	var/timed_flag = FALSE
 
-TRACKED(/obj/cap_fixture/dx_review, tracked_value, CHANGE_EFFECTS)
+TRACKED_BRIDGED(/obj/cap_fixture/dx_review, tracked_value, CHANGE_EFFECTS)
 
 /obj/cap_fixture/dx_review/capabilities()
 	. = ..()
@@ -49,7 +49,7 @@ TRACKED(/obj/cap_fixture/dx_review, tracked_value, CHANGE_EFFECTS)
 	for(var/datum/capability/dx_review/C as anything in caps_ordered(F, CAP_ORDER_DRAW))
 		labels += C.label
 	TEST_ASSERT_EQUAL(jointext(labels, ","), "a,c,b", "layer_order = 100 draws b last")
-	TEST_ASSERT_EQUAL(jointext(F.caps_examine(null), ","), "b,a,c", "examine_order = -1 lists b first")
+	TEST_ASSERT_EQUAL(jointext(caps_examine(F, null), ","), "b,a,c", "examine_order = -1 lists b first")
 	var/obj/cap_fixture/dx_review/replaced/R = allocate(/obj/cap_fixture/dx_review/replaced)
 	labels = list()
 	for(var/datum/capability/dx_review/C as anything in caps_of(R))
@@ -71,10 +71,10 @@ TRACKED(/obj/cap_fixture/dx_review, tracked_value, CHANGE_EFFECTS)
 	TEST_ASSERT(!(X in caps_of(F)), "the type's list is untouched")
 	var/datum/system/dx_review/review_system = system(/datum/system/dx_review)
 	TEST_ASSERT(F in review_system.member_list(), "the holder joined the extra's system")
-	TEST_ASSERT("extra" in F.caps_examine(null), "the extra's examine line shows")
+	TEST_ASSERT("extra" in caps_examine(F, null), "the extra's examine line shows")
 	TEST_ASSERT(remove_capability(F, /datum/capability/dx_review/joining), "the extra detaches")
 	TEST_ASSERT(!(F in review_system.member_list()), "the holder left the system")
-	TEST_ASSERT(!("extra" in F.caps_examine(null)), "the examine line is gone")
+	TEST_ASSERT(!("extra" in caps_examine(F, null)), "the examine line is gone")
 
 /obj/cap_fixture/dx_review_menu
 
@@ -163,14 +163,14 @@ TRACKED(/obj/cap_fixture/dx_review, tracked_value, CHANGE_EFFECTS)
 
 /// H5: an entity that marks itself during its own refresh is reported.
 /datum/unit_test/dx_review_self_mark/Run()
-	GLOB.refresh_self_mark_expected = TRUE
+	set_global("refresh_self_mark_expected", TRUE)
 	var/before = length(GLOB.refresh_self_marks)
 	var/obj/cap_fixture/dx_review_selfmark/F = allocate(/obj/cap_fixture/dx_review_selfmark)
 	changed(F)
 	// One drain, not refresh_flush(): the fixture re-marks itself forever, which flush reports as a
 	// runaway after its pass cap. One pass is enough for the detector, and the re-mark waits (deferred).
 	refresh_drain(null)
-	GLOB.refresh_self_mark_expected = FALSE
+	set_global("refresh_self_mark_expected", FALSE)
 	TEST_ASSERT(length(GLOB.refresh_self_marks) > before, "the self-mark detector reported it")
 	TEST_ASSERT(F.refresh_queued, "the self re-mark waits for the next drain instead of spinning")
 	F.refresh_queued = FALSE
@@ -278,7 +278,7 @@ TRACKED(/obj/cap_fixture/dx_review, tracked_value, CHANGE_EFFECTS)
 /// The UI data one capability of A contributes (tgui_data nests it under data["caps"][ui_key()]).
 /proc/dx_cap_ui_data(atom/A, mob/user, cap_type)
 	var/list/data = list()
-	A.caps_ui_data(user, data)
+	caps_ui_data(A, user, data)
 	var/datum/capability/C = cap_of_all(A, cap_type)
 	var/list/caps = data["caps"]
 	return (C && caps) ? (caps[C.ui_key()] || list()) : list()

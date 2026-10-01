@@ -899,6 +899,7 @@
 #include "code\datums\om\world_lanes.dm"
 #include "code\datums\ownership\audit.dm"
 #include "code\datums\ownership\clone.dm"
+#include "code\datums\ownership\flyweight.dm"
 #include "code\datums\ownership\guard.dm"
 #include "code\datums\ownership\own.dm"
 #include "code\datums\ownership\proto.dm"
@@ -907,6 +908,7 @@
 #include "code\datums\ownership\shared.dm"
 #include "code\datums\reactions\after_init.dm"
 #include "code\datums\reactions\delivery.dm"
+#include "code\datums\reactions\guard.dm"
 #include "code\datums\reactions\notices.dm"
 #include "code\datums\reactions\reactions.dm"
 #include "code\datums\reactions\state.dm"
@@ -4860,7 +4862,6 @@
 #include "code\_global_vars\list\names.dm"
 #include "code\datums\http.dm"
 #include "code\datums\tgs_event_handler.dm"
-#include "code\datums\entity_state\dry.dm"
 #include "code\datums\entity_state\squeak.dm"
 #include "code\datums\crafting\items.dm"
 #include "code\datums\crafting\recipes.dm"
@@ -5626,6 +5627,7 @@
 #include "code\modules\combat_ai\ports\solargrub.dm"
 #include "code\modules\combat_ai\ports\three_phases.dm"
 #include "code\modules\combat_ai\ports\ysbryd.dm"
+#include "code\_generated\om_notices.dm"
 #include "code\_generated\reads.dm"
 // END DQ MODULAR INCLUDES
 // END_INCLUDE

@@ -53,11 +53,62 @@ EMP_DISABLE(/obj/machinery/dq_reaction_probe, 30 SECONDS, "emp_until")
 
 REFLECTS(/obj/structure/dq_reflect_probe, list(/obj/item/projectile), 100)
 
-/// Reflects only burn, with a chance read from a var.
+/// Reflects only burn, with a chance answered by a holder proc.
 /obj/structure/dq_reflect_probe/burn_only
 	var/reflect_chance = 100
 
-REFLECTS(/obj/structure/dq_reflect_probe/burn_only, list(BURN), "reflect_chance")
+CAPABILITY(/obj/structure/dq_reflect_probe/burn_only, reflects(list(BURN), PROC_REF(current_reflect_chance)))
+
+/obj/structure/dq_reflect_probe/burn_only/proc/current_reflect_chance()
+	return reflect_chance
+
+/// The foundation form, written out: damage reactions in reactions(), one blocking.
+/obj/structure/dq_damage_rx_probe
+	name = "damage reaction probe"
+	max_integrity = 100
+	var/before_seen = 0
+	var/after_seen = 0
+	var/block = FALSE
+
+/obj/structure/dq_damage_rx_probe/reactions()
+	. = ..()
+	. += before_op(damage(DAMAGE_BLUNT), PROC_REF(on_blunt))
+	. += after_op(damage(DAMAGE_BLUNT), PROC_REF(after_blunt))
+
+/obj/structure/dq_damage_rx_probe/proc/on_blunt(datum/damage_packet/packet)
+	before_seen++
+	return block ? DAMAGE_REACTION_BLOCK : null
+
+/obj/structure/dq_damage_rx_probe/proc/after_blunt(datum/damage_packet/packet)
+	after_seen++
+
+/// before_op(damage(kind)) / after_op(damage(kind)) in reactions(): read from the composed table by receive_damage();
+/// a block stops the sink and the after rows; a repeated declaration runs once.
+/datum/unit_test/sys_damage_reactions/foundation_form
+
+/datum/unit_test/sys_damage_reactions/foundation_form/Run()
+	var/obj/structure/dq_damage_rx_probe/probe = allocate(/obj/structure/dq_damage_rx_probe)
+	TEST_ASSERT_EQUAL(length(damage_rows_of(probe)), 2, "one row per declared damage reaction")
+	var/full = probe.get_integrity()
+	probe.deal_damage(DAMAGE_BLUNT, 10)
+	TEST_ASSERT_EQUAL(probe.before_seen, 1, "the before_op row ran")
+	TEST_ASSERT_EQUAL(probe.after_seen, 1, "the after_op row ran after the sink")
+	TEST_ASSERT(probe.get_integrity() < full, "the sink applied the hit")
+	probe.block = TRUE
+	var/now = probe.get_integrity()
+	probe.deal_damage(DAMAGE_BLUNT, 10)
+	TEST_ASSERT_EQUAL(probe.before_seen, 2, "the before_op row ran again")
+	TEST_ASSERT_EQUAL(probe.get_integrity(), now, "a block stops the sink")
+	TEST_ASSERT_EQUAL(probe.after_seen, 1, "and the after rows")
+	probe.deal_damage(DAMAGE_THERMAL, 10)
+	TEST_ASSERT_EQUAL(probe.before_seen, 2, "a kind trigger ignores other kinds")
+	var/obj/machinery/dq_reaction_probe/machine = allocate(/obj/machinery/dq_reaction_probe)
+	TEST_ASSERT(cap_of(machine, /datum/capability/emp_disable), "EMP_DISABLE is the emp_disable() capability")
+	var/emp_rows = 0
+	for(var/list/row as anything in damage_rows_of(machine))
+		if(row[1] == DAMAGE_EMP)
+			emp_rows++
+	TEST_ASSERT_EQUAL(emp_rows, 2, "the capability contributes its damage reaction beside the type's own")
 
 /datum/unit_test/sys_damage_reactions
 	abstract_type = /datum/unit_test/sys_damage_reactions
@@ -122,8 +173,10 @@ REFLECTS(/obj/structure/dq_reflect_probe/burn_only, list(BURN), "reflect_chance"
 	TEST_ASSERT_EQUAL(probe.emp_until, until, "an EMP while down doesn't extend the outage")
 	TEST_ASSERT_EQUAL(probe.disable_changes, 1, "nor re-runs the down hook")
 
+	TEST_ASSERT(after_pending(probe, EMP_DISABLE_KEY), "the lapse is a keyed world-clock after()")
+	TEST_ASSERT_EQUAL(after_left(probe, EMP_DISABLE_KEY), 30 SECONDS / EMP_MEDIUM, "due when the outage ends")
 	probe.emp_until = world.time - 1
-	expiry_lapse_fire(probe, "emp_until")
+	emp_disable_lapse_due(probe)
 	TEST_ASSERT(!probe.has_stat(EMPED), "the lapse clears EMPED")
 	TEST_ASSERT_EQUAL(probe.emp_until, 0, "and the field")
 	TEST_ASSERT_EQUAL(probe.disable_changes, 2, "emp_disable_changed(FALSE) ran")
@@ -150,7 +203,8 @@ REFLECTS(/obj/structure/dq_reflect_probe/burn_only, list(BURN), "reflect_chance"
 	TEST_ASSERT(!burn.reflect_projectile(projectile(INJURY_BLUNT, 20)), "a kind list of BURN ignores brute rounds")
 	TEST_ASSERT(burn.reflect_projectile(projectile(INJURY_BURN, 20)), "and reflects burn rounds")
 	burn.reflect_chance = 0
-	TEST_ASSERT(!burn.reflect_projectile(projectile(INJURY_BURN, 20)), "the chance is read from the named var")
+	TEST_ASSERT(!burn.reflect_projectile(projectile(INJURY_BURN, 20)), "the chance is answered by the holder proc")
+	TEST_ASSERT(cap_of(any, /datum/capability/reflects), "REFLECTS is the reflects() capability")
 
 /// Migrated real types: a mob family's explosion reaction blocks its ladder, and the
 /// reflecting slimes bounce beams.

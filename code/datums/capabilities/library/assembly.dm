@@ -38,14 +38,14 @@
 /// detach tool's click, or ACT_NONE by hand: an empty hand keeps doing the holder's own thing) and "trigger_assembly"
 /// (ACT_NONE: the Menu, radial or command bar).
 /datum/capability/assembly/interactions(atom/holder)
-	var/datum/interaction/capability/attach = adopt_entry(lib_op("Attach", TYPE_PROC_REF(/obj, cap_assembly_attach), OP_SHAPE_INSERT, using = attach_types, key = "attach_assembly", needs = TYPE_PROC_REF(/obj, cap_assembly_can_attach), works_broken = TRUE, works_unpowered = TRUE))
+	var/datum/interaction/capability/attach = adopt_entry(lib_op("Attach", GLOBAL_PROC_REF(cap_assembly_attach), OP_SHAPE_INSERT, using = attach_types, key = "attach_assembly", needs = GLOBAL_PROC_REF(cap_assembly_can_attach), works_broken = TRUE, works_unpowered = TRUE))
 	var/datum/capability/entry/detach_wrapper
 	if(detach_tool)
-		detach_wrapper = lib_op("Detach assembly", TYPE_PROC_REF(/obj, cap_assembly_detach), OP_SHAPE_TOOL, using = detach_tool, key = "detach_assembly", needs = TYPE_PROC_REF(/obj, cap_assembly_present), else_say = "nothing is attached to it")
+		detach_wrapper = lib_op("Detach assembly", GLOBAL_PROC_REF(cap_assembly_detach), OP_SHAPE_TOOL, using = detach_tool, key = "detach_assembly", needs = GLOBAL_PROC_REF(cap_assembly_present), else_say = "nothing is attached to it")
 	else
-		detach_wrapper = lib_op("Detach assembly", TYPE_PROC_REF(/obj, cap_assembly_detach), OP_SHAPE_HAND, key = "detach_assembly", action = ACT_NONE, needs = TYPE_PROC_REF(/obj, cap_assembly_present), else_say = "nothing is attached to it", works_broken = TRUE, works_unpowered = TRUE)
+		detach_wrapper = lib_op("Detach assembly", GLOBAL_PROC_REF(cap_assembly_detach), OP_SHAPE_HAND, key = "detach_assembly", action = ACT_NONE, needs = GLOBAL_PROC_REF(cap_assembly_present), else_say = "nothing is attached to it", works_broken = TRUE, works_unpowered = TRUE)
 	var/datum/interaction/capability/detach = adopt_entry(detach_wrapper)
-	var/datum/interaction/capability/trigger = adopt_entry(lib_op("Trigger", TYPE_PROC_REF(/obj, cap_assembly_trigger), OP_SHAPE_HAND, key = "trigger_assembly", action = ACT_NONE, needs = TYPE_PROC_REF(/obj, cap_assembly_present), else_say = "nothing is attached to it", works_broken = TRUE, works_unpowered = TRUE))
+	var/datum/interaction/capability/trigger = adopt_entry(lib_op("Trigger", GLOBAL_PROC_REF(cap_assembly_trigger), OP_SHAPE_HAND, key = "trigger_assembly", action = ACT_NONE, needs = GLOBAL_PROC_REF(cap_assembly_present), else_say = "nothing is attached to it", works_broken = TRUE, works_unpowered = TRUE))
 	return list(attach, detach, trigger)
 
 /datum/capability/assembly/examine(atom/holder, mob/user)
@@ -66,11 +66,11 @@
 /proc/cap_assembly_cap(atom/A)
 	return cap_of(A, /datum/capability/assembly)
 
-/obj/proc/cap_assembly_present(mob/user, obj/item/held)
-	return !isnull(attached_assembly)
+/proc/cap_assembly_present(mob/user, obj/holder, obj/item/held)
+	return !isnull(holder.attached_assembly)
 
-/obj/proc/cap_assembly_can_attach(mob/user, obj/item/assembly/held)
-	if(attached_assembly)
+/proc/cap_assembly_can_attach(mob/user, obj/holder, obj/item/assembly/held)
+	if(holder.attached_assembly)
 		return "something is already attached to it"
 	if(!istype(held))
 		return "that isn't an assembly"
@@ -91,27 +91,27 @@
 	changed(O, CHANGE_CAPABILITY)
 	return TRUE
 
-/obj/proc/cap_assembly_attach(mob/user, obj/item/assembly/held)
-	if(!cap_assembly_put(src, held, user))
-		return refuse(user, "You can't attach \the [held] to \the [src].")
-	act_message(user, src, self = span_notice("You attach \the [held] to %T%."), others = span_notice("%U% attaches \the [held] to %T%."), item = held)
+/proc/cap_assembly_attach(obj/holder, mob/user, obj/item/assembly/held)
+	if(!cap_assembly_put(holder, held, user))
+		return refuse(user, "You can't attach \the [held] to \the [holder].")
+	act_message(user, holder, self = span_notice("You attach \the [held] to %T%."), others = span_notice("%U% attaches \the [held] to %T%."), item = held)
 	return TRUE
 
-/obj/proc/cap_assembly_detach(mob/user, obj/item/held)
-	var/obj/item/assembly/A = own_take(src, nameof(/obj::attached_assembly))
+/proc/cap_assembly_detach(obj/holder, mob/user, obj/item/held)
+	var/obj/item/assembly/A = own_take(holder, nameof(/obj::attached_assembly))
 	if(!A)
-		return refuse(user, "Nothing is attached to \the [src].")
+		return refuse(user, "Nothing is attached to \the [holder].")
 	if(A.secured)
 		A.toggle_secure()
-	A.forceMove(drop_location())
+	A.forceMove(holder.drop_location())
 	user?.put_in_hands(A)
-	act_message(user, src, self = span_notice("You detach \the [A] from %T%."), others = span_notice("%U% detaches \the [A] from %T%."), item = held)
+	act_message(user, holder, self = span_notice("You detach \the [A] from %T%."), others = span_notice("%U% detaches \the [A] from %T%."), item = held)
 	return TRUE
 
-/obj/proc/cap_assembly_trigger(mob/user, obj/item/held)
-	if(!attached_assembly.activate())
-		return refuse(user, "\The [attached_assembly] isn't ready.")
-	act_message(user, src, self = span_notice("You trigger %T%."), others = span_notice("%U% triggers %T%."))
+/proc/cap_assembly_trigger(obj/holder, mob/user, obj/item/held)
+	if(!holder.attached_assembly.activate())
+		return refuse(user, "\The [holder.attached_assembly] isn't ready.")
+	act_message(user, holder, self = span_notice("You trigger %T%."), others = span_notice("%U% triggers %T%."))
 	return TRUE
 
 /// The attached assembly A pulsed: run the capability's on_pulse on O. Called from
@@ -121,6 +121,6 @@
 	if(!C || O.attached_assembly != A)
 		return FALSE
 	if(C.on_pulse)
-		call(O, C.on_pulse)(A)
+		holder_call(O, C.on_pulse, A)
 	changed(O, CHANGE_CAPABILITY)
 	return TRUE

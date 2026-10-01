@@ -491,10 +491,10 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/unary/vent_pump, TYPE_PROC_R
 #undef PRESSURE_CHECK_INTERNAL
 
 
-TRACKED(/obj/machinery/atmospherics/unary/vent_pump, pump_direction, CHANGE_MACHINE_SETTINGS)
-TRACKED(/obj/machinery/atmospherics/unary/vent_pump, external_pressure_bound, CHANGE_MACHINE_SETTINGS)
-TRACKED(/obj/machinery/atmospherics/unary/vent_pump, internal_pressure_bound, CHANGE_MACHINE_SETTINGS)
-TRACKED(/obj/machinery/atmospherics/unary/vent_pump, pressure_checks, CHANGE_MACHINE_SETTINGS)
+TRACKED_BRIDGED(/obj/machinery/atmospherics/unary/vent_pump, pump_direction, CHANGE_MACHINE_SETTINGS)
+TRACKED_BRIDGED(/obj/machinery/atmospherics/unary/vent_pump, external_pressure_bound, CHANGE_MACHINE_SETTINGS)
+TRACKED_BRIDGED(/obj/machinery/atmospherics/unary/vent_pump, internal_pressure_bound, CHANGE_MACHINE_SETTINGS)
+TRACKED_BRIDGED(/obj/machinery/atmospherics/unary/vent_pump, pressure_checks, CHANGE_MACHINE_SETTINGS)
 
 /// The Rust device law is pushed (once per frame) when any of these change.
 /obj/machinery/atmospherics/unary/vent_pump/derived()

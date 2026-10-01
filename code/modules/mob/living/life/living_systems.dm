@@ -12,7 +12,7 @@
 //	[placed]                   TF holder, VR derez
 //	subtype tails (carbon germs, human, alien, simple mob, bot), then type_post variants
 //
-// canmove, HUD and vision are on_channel() reactions on /mob/living ("Reactive output" below).
+// canmove, HUD and vision are on_change() reactions on /mob/living ("Reactive output" below).
 //
 // Idle rules: each stage's idle() says when it has nothing to do, and `woken_by` names the
 // producers that raise the channels in its `wake_on`. A family root's rule covers only the root:
@@ -478,8 +478,9 @@
 // --- Output -----------------------------------------------------------------------------------
 
 // --- Reactive output: canmove, HUD and sight (doc/rewrite/life_sequences.md S2) -------------------
-// Three on_channel() reactions on /mob/living, not Life steps: each runs when one of its channels is
-// raised (changed(src, CHANGE_MOB_*)), coalesced per drain. HUD and sight run at most every
+// Three on_change() reactions on /mob/living, not Life steps: each runs when one of its keys is published
+// (the mob's tracked stat, or a MOB_KEY_* fact its producer publishes: PUBLISH_CHANGE), coalesced per drain.
+// HUD and sight run at most every
 // LIFE_PRESENT_MIN_INTERVAL (a walking player raises a location change most ticks and the HUD needs only
 // the latest state). The HUD reaction's `when` is life_hud_wanted(): a mob without a client queues
 // nothing. Rewakes (darksight re-adapting, a fading overlay, a remote-view listener) are keyed after()
@@ -489,19 +490,22 @@
 /// a robot's HUD and sight run from its robot_interface step).
 #define LIFE_CANMOVE_SETS (LIFE_SET_LIVING | LIFE_SET_ROBOT)
 #define LIFE_PRESENT_SETS (LIFE_SET_LIVING | LIFE_SET_AI | LIFE_SET_PAI)
-/// What wakes each reaction (the old stages' wake_on plus their pipeline's wake_all).
-#define LIFE_CANMOVE_CHANNELS (CHANGE_MOB_STATUS | CHANGE_MOB_STAT | CHANGE_EXPLICIT)
-#define LIFE_HUD_CHANNELS (CHANGE_MOB_HEALTH | CHANGE_MOB_STATUS | CHANGE_MOB_LOC | CHANGE_MOB_EQUIPMENT | LIFE_WAKE_ALL)
-#define LIFE_VISION_CHANNELS (CHANGE_MOB_STATUS | CHANGE_MOB_EQUIPMENT | CHANGE_MOB_CONDITIONS | CHANGE_MOB_HEALTH | LIFE_WAKE_ALL)
+// What each reaction reads: the facts its old stages woke on (their wake_on channels plus their pipeline's
+// wake_all), as change keys. The catch-all CHANGE_EXPLICIT is gone: a hand change that should redraw calls
+// refresh_hud() / refresh_vision(), or its producer publishes the fact.
 /// after() keys of the rewakes.
 #define LIFE_HUD_REWAKE "life_hud"
 #define LIFE_VISION_REWAKE "life_vision"
 
 /mob/living/reactions()
 	. = ..()
-	. += on_channel(LIFE_CANMOVE_CHANNELS, PROC_REF(life_canmove_changed), when = PROC_REF(life_canmove_wanted))
-	. += on_channel(LIFE_HUD_CHANNELS, PROC_REF(life_hud_changed), at_most = LIFE_PRESENT_MIN_INTERVAL, when = PROC_REF(life_hud_wanted))
-	. += on_channel(LIFE_VISION_CHANNELS, PROC_REF(life_vision_changed), at_most = LIFE_PRESENT_MIN_INTERVAL, when = PROC_REF(life_vision_wanted))
+	. += on_change(list(MOB_KEY_STATUS, nameof(stat)), PROC_REF(life_canmove_changed), when = PROC_REF(life_canmove_wanted))
+	. += on_change(list(MOB_KEY_HEALTH, MOB_KEY_STATUS, MOB_KEY_LOC, MOB_KEY_EQUIPMENT, MOB_KEY_CLIENT, nameof(stat), \
+		nameof(sdisabilities), nameof(ear_damage)), \
+		PROC_REF(life_hud_changed), at_most = LIFE_PRESENT_MIN_INTERVAL, when = PROC_REF(life_hud_wanted))
+	. += on_change(list(MOB_KEY_STATUS, MOB_KEY_EQUIPMENT, MOB_KEY_CONDITIONS, MOB_KEY_HEALTH, MOB_KEY_CLIENT, nameof(stat), \
+		nameof(sdisabilities), nameof(cameraFollow), nameof(tf_mob_holder), nameof(virtual_reality_mob)), \
+		PROC_REF(life_vision_changed), at_most = LIFE_PRESENT_MIN_INTERVAL, when = PROC_REF(life_vision_wanted))
 
 /// Not transforming and somewhere (the Life frame's "placed").
 /mob/living/proc/life_placed()
@@ -542,7 +546,7 @@
 	life_hud()
 	var/delay = life_hud_idle() ? life_hud_rewake_delay() : LIFE_CYCLE
 	if(delay > 0 && client)
-		rx_after(src, delay, PROC_REF(life_hud_rewake), LIFE_HUD_REWAKE, CLOCK_WORLD)
+		after(src, delay, PROC_REF(life_hud_rewake), key = LIFE_HUD_REWAKE, clock = CLOCK_WORLD)
 
 /mob/living/proc/life_hud_rewake()
 	if(QDELETED(src) || !life_hud_wanted())
@@ -560,7 +564,7 @@
 	life_vision()
 	var/delay = life_vision_idle() ? life_vision_rewake_delay() : LIFE_CYCLE
 	if(delay > 0)
-		rx_after(src, delay, PROC_REF(life_vision_rewake), LIFE_VISION_REWAKE, CLOCK_WORLD)
+		after(src, delay, PROC_REF(life_vision_rewake), key = LIFE_VISION_REWAKE, clock = CLOCK_WORLD)
 
 /mob/living/proc/life_vision_rewake()
 	if(QDELETED(src) || !life_vision_wanted())

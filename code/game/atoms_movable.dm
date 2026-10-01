@@ -361,7 +361,7 @@
 // Make sure you know what you're doing if you call this, this is intended to only be called by byond directly.
 // You probably want CanPass()
 /atom/movable/Cross(atom/movable/AM)
-	if(om_cross_vetoed(src, AM))
+	if(guard(src, GUARD_CROSS, AM))
 		return FALSE
 	return CanPass(AM, loc)
 

@@ -78,7 +78,7 @@
 	// threshold crossing (e.g. the overheating rule never firing).
 	dematerialize()
 	// ---- end L2 ----
-	caps_destroy()
+	caps_destroy(src)
 	if(!isnull(heat_body))
 		release_heat_body()
 	if(reagents)

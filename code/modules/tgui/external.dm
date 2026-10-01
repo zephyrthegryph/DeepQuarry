@@ -34,7 +34,7 @@
 	. = ui_declared_data(src, user, ui, state) // UI_DATA fields
 	if(isatom(src))
 		var/atom/A = src
-		A.caps_ui_data(user, .) // capabilities add theirs (code/datums/capabilities/)
+		caps_ui_data(A, user, .) // capabilities add theirs (code/datums/capabilities/)
 
 /**
  * public

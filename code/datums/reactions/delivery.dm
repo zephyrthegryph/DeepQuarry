@@ -174,34 +174,6 @@ GLOBAL_VAR_INIT(rx_draining, FALSE)
 					stack_trace("rx_drain: [E.type]: [e] ([e.file]:[e.line])")
 	GLOB.rx_draining = FALSE
 
-/// The OM channel mask `E`'s on_channel() reactions read (0: none). om_recompute_listen() folds it into om_listen.
-/proc/rx_chan_mask_of(datum/E)
-	var/datum/rx_table/T = rx_table_of(E)
-	return T ? T.chan_mask : 0
-
-/**
- * om_dispatch_change() hook: channels `bits` of `E` were raised. Queues each on_channel() reaction that reads one of
- * them, with a CHANNEL_KEY() per raised bit, unless its `when` excludes the holder now (then nothing is queued).
- */
-/proc/rx_channels(datum/E, bits, datum/rx_table/T)
-	for(var/datum/reaction/R as anything in T.chan_reactions)
-		var/hit = R.chan_bits & bits
-		if(!hit)
-			continue
-		var/when = R.when
-		if(when)
-			if(istext(when) && (when in E.vars))
-				if(!E.vars[when])
-					continue
-			else if(!call(E, when)())
-				continue
-		for(var/b in 0 to 23)
-			var/bit = 1 << b
-			if(hit & bit)
-				rx_pend(E, R, CHANNEL_KEY(bit))
-			if(bit > hit)
-				break
-
 /**
  * on_change(at_most =): TRUE when `R` may deliver to `E` now (its window since the last delivery is over), and then
  * `keys` also carries what was held. Otherwise the keys are held and one keyed timer delivers them, together, when
@@ -222,7 +194,7 @@ GLOBAL_VAR_INIT(rx_draining, FALSE)
 		if(!after_pending(E, timer_key))
 			// World time (a stasis pause must not hold a presentation refresh back); the holder is found by ref when
 			// it fires, so the timer keeps nothing alive.
-			rx_after(E, last + R.at_most - now, TYPE_PROC_REF(/datum, rx_at_most_release), timer_key, CLOCK_WORLD, list(sig))
+			after(E, last + R.at_most - now, TYPE_PROC_REF(/datum, rx_at_most_release), key = timer_key, clock = CLOCK_WORLD, with = list(sig))
 		return FALSE
 	LAZYSET(S.at_most_last, sig, now)
 	var/list/held = S.at_most_held?[sig]

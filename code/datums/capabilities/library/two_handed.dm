@@ -44,7 +44,7 @@
 
 /datum/capability/two_handed/interactions(atom/holder)
 	// The op "wield": the self-use (Z) wields and unwields.
-	var/datum/capability/entry/wrapper = cap_use_self("Wield", TYPE_PROC_REF(/obj/item, cap_two_handed_toggle), works_broken = TRUE, works_unpowered = TRUE, needs = TYPE_PROC_REF(/obj/item, cap_two_handed_can_wield), name_proc = TYPE_PROC_REF(/obj/item, cap_two_handed_name), key = "wield")
+	var/datum/capability/entry/wrapper = cap_use_self("Wield", GLOBAL_PROC_REF(cap_two_handed_toggle), works_broken = TRUE, works_unpowered = TRUE, needs = GLOBAL_PROC_REF(cap_two_handed_can_wield), name_proc = GLOBAL_PROC_REF(cap_two_handed_name), key = "wield")
 	return list(adopt_entry(wrapper))
 
 /datum/capability/two_handed/on_holder_init(atom/holder, mapload)
@@ -65,67 +65,67 @@
 /datum/capability/two_handed/ui_data(atom/holder, mob/user, list/data)
 	data["wielded"] = cap_has(holder, CAP_WIELDED)
 
-/obj/item/proc/cap_two_handed_name(mob/user)
-	return cap_has(src, CAP_WIELDED) ? "Unwield" : "Wield"
+/proc/cap_two_handed_name(obj/item/holder, mob/user)
+	return cap_has(holder, CAP_WIELDED) ? "Unwield" : "Wield"
 
 /// needs: unwielding always works; wielding wants the other hand free and a body big enough.
-/obj/item/proc/cap_two_handed_can_wield(mob/user, obj/item/held)
-	if(cap_has(src, CAP_WIELDED))
+/proc/cap_two_handed_can_wield(mob/user, obj/item/holder, obj/item/held)
+	if(cap_has(holder, CAP_WIELDED))
 		return TRUE
 	var/mob/living/L = user
 	if(!istype(L))
 		return "you have no hands"
-	if(!L.can_wield_item(src))
+	if(!L.can_wield_item(holder))
 		return "it's too big for you to wield"
-	if(!is_held_twohanded(L))
+	if(!holder.is_held_twohanded(L))
 		return "you need your other hand free"
 	return TRUE
 
-/obj/item/proc/cap_two_handed_toggle(mob/user, obj/item/held)
-	if(cap_has(src, CAP_WIELDED))
-		cap_two_handed_set(FALSE, user)
-		act_message(user, src, self = span_notice("You are now carrying %T% with one hand."), others = span_notice("%U% lets go of %T% with one hand."))
+/proc/cap_two_handed_toggle(obj/item/holder, mob/user, obj/item/held)
+	if(cap_has(holder, CAP_WIELDED))
+		cap_two_handed_set(holder, FALSE, user)
+		act_message(user, holder, self = span_notice("You are now carrying %T% with one hand."), others = span_notice("%U% lets go of %T% with one hand."))
 	else
-		cap_two_handed_set(TRUE, user)
-		act_message(user, src, self = span_notice("You grab %T% with both hands."), others = span_notice("%U% grabs %T% with both hands."))
+		cap_two_handed_set(holder, TRUE, user)
+		act_message(user, holder, self = span_notice("You grab %T% with both hands."), others = span_notice("%U% grabs %T% with both hands."))
 	return TRUE
 
 /// Wields (on) or unwields the item for user: force, the CAP_WIELDED bit, the in-hand sprite, and the
 /// hook that unwields it when user fills the other hand. TRUE when the state changed.
-/obj/item/proc/cap_two_handed_set(on, mob/user)
-	var/datum/capability/two_handed/C = cap_of(src, /datum/capability/two_handed)
-	if(!C || cap_has(src, CAP_WIELDED) == !!on)
+/proc/cap_two_handed_set(obj/item/holder, on, mob/user)
+	var/datum/capability/two_handed/C = cap_of(holder, /datum/capability/two_handed)
+	if(!C || cap_has(holder, CAP_WIELDED) == !!on)
 		return FALSE
-	var/datum/cap_two_handed_data/D = cap_data(src, C)
+	var/datum/cap_two_handed_data/D = cap_data(holder, C)
 	if(on)
-		D.force_unwielded = force
-		force = C.wielded_force(force)
+		D.force_unwielded = holder.force
+		holder.force = C.wielded_force(holder.force)
 		if(user)
-			om_hook(user, /datum/om/event/mob_equipped_item, src, TYPE_PROC_REF(/obj/item, cap_two_handed_other_hand))
+			om_hook(user, /datum/om/event/mob_equipped_item, holder, TYPE_PROC_REF(/obj/item, cap_two_handed_other_hand))
 	else
 		if(!isnull(D.force_unwielded))
-			force = D.force_unwielded
+			holder.force = D.force_unwielded
 		D.force_unwielded = null
 		if(user)
-			om_unhook(user, /datum/om/event/mob_equipped_item, src)
-	cap_set(src, CAP_WIELDED, on)
+			om_unhook(user, /datum/om/event/mob_equipped_item, holder)
+	cap_set(holder, CAP_WIELDED, on)
 	if(C.icon_base)
-		item_state = "[C.icon_base][on ? 1 : 0]"
+		holder.item_state = "[C.icon_base][on ? 1 : 0]"
 	var/sound = on ? C.wield_sound : C.unwield_sound
 	if(sound)
-		playsound(src, sound, 50, TRUE)
-	update_held_icon()
+		playsound(holder, sound, 50, TRUE)
+	holder.update_held_icon()
 	return TRUE
 
 /obj/item/proc/cap_two_handed_dropped(datum/source, datum/om/event/item_dropped/event)
 	EVENT_HANDLER
-	cap_two_handed_set(FALSE, event.user)
+	cap_two_handed_set(src, FALSE, event.user)
 
 /// Equipped into a slot that isn't a hand (a back, a belt): unwielded.
 /obj/item/proc/cap_two_handed_equipped(datum/source, datum/om/event/item_equipped/event)
 	EVENT_HANDLER
 	if(event.slot != SLOT_ID_HAND_L && event.slot != SLOT_ID_HAND_R)
-		cap_two_handed_set(FALSE, event.equipper)
+		cap_two_handed_set(src, FALSE, event.equipper)
 
 /// The wielder put something else in a hand: the other hand is no longer free.
 /obj/item/proc/cap_two_handed_other_hand(datum/source, datum/om/event/mob_equipped_item/event)
@@ -133,4 +133,4 @@
 	if(event.equipped_item == src)
 		return
 	if(event.slot == SLOT_ID_HAND_L || event.slot == SLOT_ID_HAND_R)
-		cap_two_handed_set(FALSE, source)
+		cap_two_handed_set(src, FALSE, source)

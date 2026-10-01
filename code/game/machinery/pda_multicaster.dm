@@ -115,7 +115,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/pda_multicaster, "{initial(icon_state)}{on?:_
 	. = ..()
 	update_power()
 
-EMP_DISABLE(/obj/machinery/pda_multicaster, 300 SECONDS, "emp_until")
+CAPABILITY(/obj/machinery/pda_multicaster, emp_disable(300 SECONDS))
 
 /obj/machinery/pda_multicaster/emp_disable_changed(disabled)
 	..()

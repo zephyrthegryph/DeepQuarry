@@ -170,5 +170,4 @@ TYPE_TABLE(/mob/living/simple_mob/animal/sif/kururak, get_ai_behaviors, list( \
 		if(!ally.ai_brain)
 			continue
 		ally.ai_brain.add_personal(target, DQ_DISPOSITION_HOSTILE, 60 SECONDS, "pack rally")
-		OM_EMIT(ally, /datum/om/event/dqai_ally_distress, K, target)
 	return DQ_BEHAVIOR_DONE

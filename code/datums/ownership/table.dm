@@ -33,10 +33,6 @@
 	RETURN_TYPE(/list)
 	return list()
 
-/// OWN_TIMER names: the timers this type owns (code/datums/om/timer.dm).
-/datum/proc/declared_timer_slots()
-	return list()
-
 /// One declaration entry, made by owns()/shares()/proto()/rel_one()/rel_many()/rel_key(). Shared
 /// per type (never write one after it is returned).
 /datum/own_entry
@@ -54,14 +50,28 @@
 	/// list(path = count)) for a list var, or the name of a var holding either. Null: none.
 	var/starts
 
+/// Interned: an identical declaration made anywhere in the tree (an ancestor's relations() that every
+/// subtype's per-type list repeats, such as /atom's light_sources and heat_watches) is ONE datum and one
+/// entry list, not one per type. Entries are read-only after they are returned, so sharing them is safe.
 /proc/_own_entry(var_name, list/entry, keep_after_destroy, pool_reset, forward, starts)
-	var/datum/own_entry/E = new
+	var/static/list/interned = list()
+	var/list/parts = list("[var_name]", "[!!keep_after_destroy][!!pool_reset][!!forward]", "[starts]")
+	for(var/value in entry) // flat: numbers, text, paths, null, and flat lists (extra, watch)
+		parts += islist(value) ? "\[[jointext(value, ",")]\]" : "[value]"
+	// A list of starting occupants (list(path = count)) is not keyed here: such an entry is never shared.
+	var/key = islist(starts) ? null : jointext(parts, "|")
+	var/datum/own_entry/E = key && interned[key]
+	if(E)
+		return E
+	E = new
 	E.var_name = var_name
 	E.entry = entry
 	E.keep_after_destroy = !!keep_after_destroy
 	E.pool_reset = !!pool_reset
 	E.forward = !!forward
 	E.starts = starts
+	if(key)
+		interned[key] = E
 	return E
 
 /**
@@ -85,6 +95,10 @@
  *   kind (the first own_set() learns OWN_DELETE): that is what DECLARE_DEFAULT_CHILD expands to.
  */
 /proc/owns(var_name, policy = OWN_DELETE, policy_proc = null, if_var = null, else_policy = OWN_DELETE, keep_after_destroy = FALSE, pool_reset = FALSE, forward = FALSE, type = null, starts = null)
+	if(policy == OWN_PRIVATE_COPY)
+		if(!isnull(starts))
+			CRASH("owns([var_name]): OWN_PRIVATE_COPY holds a prototype or a private copy of one; it has no starting occupant")
+		return proto(var_name, keep_after_destroy, pool_reset, forward)
 	var/list/entry = null
 	if(policy_proc)
 		entry = list(OWNK_OWN, policy_proc, null, null, FALSE, null, CLEAR, null, null)
@@ -96,13 +110,13 @@
 		entry[OWNE_TYPE] = type
 	return _own_entry(var_name, entry, keep_after_destroy, pool_reset, forward, starts)
 
-/// Shares: var_name holds a registered singleton or DEF (only an untyped var needs this; a var
-/// typed as a registry type is implicitly shared). Never cleared.
-/proc/shares(var_name, keep_after_destroy = FALSE, pool_reset = FALSE, forward = FALSE)
-	return _own_entry(var_name, list(OWNK_SHARED, null, null, null, FALSE, null, CLEAR, null, null), keep_after_destroy, pool_reset, forward)
+// There is no shares(): a var holding a registered singleton, a DEF or another flyweight is declared by its type
+// (`var/datum/sys_periodic_def/while_def`). A registry type (REGISTRY_TYPE) or a flyweight type (flyweight_types(),
+// ownership/flyweight.dm) needs no declaration: the ownership lint and the destroy leak check skip it.
 
-/// Proto: var_name holds a registered prototype or a private copy the holder owns
-/// (proto_private / proto_set). Teardown deletes private copies only.
+/// The OWN_PRIVATE_COPY entry (rel_one/owns(policy = OWN_PRIVATE_COPY)): var_name holds a registered prototype or a
+/// private copy the holder owns (proto_private / proto_set). Teardown deletes private copies only. Internal: write
+/// `rel_one(nameof(v), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)`.
 /proc/proto(var_name, keep_after_destroy = FALSE, pool_reset = FALSE, forward = FALSE)
 	return _own_entry(var_name, list(OWNK_PROTO, null, null, null, FALSE, null, CLEAR, null, null), keep_after_destroy, pool_reset, forward)
 
@@ -137,7 +151,8 @@
  *   RELK_REF     a plain reference, cleared when the other end dies (the default);
  *   RELK_PAIRED  both ends name each other: needs back =, and one rel_link() writes both sides;
  *   RELK_OWNED   the holder owns the value(s) and deletes them with itself (owns()); `policy` is owns()'s
- *                (OWN_DELETE, or OWN_SPILL for a part that drops out when the holder is destroyed), and
+ *                (OWN_DELETE, or OWN_SPILL for a part that drops out when the holder is destroyed, or
+ *                OWN_PRIVATE_COPY for a var holding a registered prototype or a private copy of one), and
  *                `starts` its starting occupant (owns(starts =)):
  *                  rel_one(nameof(cell), /obj/item/cell, kind = RELK_OWNED, policy = OWN_SPILL, starts = nameof(cell_type))
  * Giving back = without a kind means RELK_PAIRED. Every write of a view publishes both ends.
@@ -247,8 +262,6 @@
 	/// keep_after_destroy / pool_reset names.
 	var/list/keep_vars
 	var/list/pool_reset_vars
-	/// OWN_TIMER names (owned timers), or null.
-	var/list/timer_slots
 	/// TRUE when the type declares nothing to tear down (the fast path).
 	var/empty = TRUE
 	/// TRUE when materialize/dematerialize has keyed-link work (keyed views, or a keyed target).
@@ -321,8 +334,6 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 		LAZYSET(T.start_vars, var_name, decl.starts[var_name])
 	if(T.keyed_key && !(T.keyed_key in D.vars))
 		OWN_REPORT("[D.type] is a keyed target through var '[T.keyed_key]', which it doesn't have")
-	var/list/slots = D.declared_timer_slots()
-	T.timer_slots = length(slots) ? slots : null
 	T.empty = !(T.own_vars || T.ref_vars || T.proto_vars)
 	T.materialize_work = !!(T.keyed_vars || T.keyed_key)
 	own_validate_table(D, T)

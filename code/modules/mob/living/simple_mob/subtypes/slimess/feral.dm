@@ -122,7 +122,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/slime/feral/dark_purple, INTERACT_ITE
 	coretype = /obj/item/slime_extract/silver
 	shiny = TRUE
 
-REFLECTS(/mob/living/simple_mob/slime/feral/silver, list(/obj/item/projectile/beam, /obj/item/projectile/energy), 100)
+CAPABILITY(/mob/living/simple_mob/slime/feral/silver, reflects(list(/obj/item/projectile/beam, /obj/item/projectile/energy), 100))
 
 /mob/living/simple_mob/slime/feral/bluespace
 	desc = "Trapping this slime in a cell is generally futile, as it can teleport at will."

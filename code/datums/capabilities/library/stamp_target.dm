@@ -36,7 +36,7 @@
 
 /datum/capability/stamp_target/interactions(atom/holder)
 	// "stamp": a click with a stamp or a seal ring; with no room left, it refuses.
-	var/datum/interaction/capability/stamp = adopt_entry(lib_op("Stamp", TYPE_PROC_REF(/atom, cap_stamp_apply), OP_SHAPE_USE_ON, using = list(/obj/item/stamp, /obj/item/clothing/accessory/ring/seal), key = "stamp", needs = TYPE_PROC_REF(/atom, cap_stamp_has_room), else_say = "there's no room left for another stamp", works_broken = TRUE, works_unpowered = TRUE))
+	var/datum/interaction/capability/stamp = adopt_entry(lib_op("Stamp", GLOBAL_PROC_REF(cap_stamp_apply), OP_SHAPE_USE_ON, using = list(/obj/item/stamp, /obj/item/clothing/accessory/ring/seal), key = "stamp", needs = GLOBAL_PROC_REF(cap_stamp_has_room), else_say = "there's no room left for another stamp", works_broken = TRUE, works_unpowered = TRUE))
 	return list(stamp)
 
 /datum/capability/stamp_target/examine(atom/holder, mob/user)
@@ -77,16 +77,16 @@
 	changed(A, CHANGE_CAPABILITY)
 	return TRUE
 
-/atom/proc/cap_stamp_has_room(mob/user, obj/item/held)
-	var/datum/capability/stamp_target/C = cap_of(src, /datum/capability/stamp_target)
-	var/datum/cap_stamp_data/D = cap_data?[C.key]
+/proc/cap_stamp_has_room(mob/user, atom/holder, obj/item/held)
+	var/datum/capability/stamp_target/C = cap_of(holder, /datum/capability/stamp_target)
+	var/datum/cap_stamp_data/D = holder.cap_data?[C.key]
 	return isnull(C.max_stamps) || LAZYLEN(D?.lines) < C.max_stamps
 
-/atom/proc/cap_stamp_apply(mob/user, obj/item/held)
+/proc/cap_stamp_apply(atom/holder, mob/user, obj/item/held)
 	if(!stamp_usable_by(held, user))
 		return refuse(user, "You are totally unable to use the stamp. HONK!")
-	if(!cap_stamp_add(src, held))
-		return refuse(user, "There's no room left on \the [src] for another stamp.")
-	play_sfx(src, SFX_BUREAUCRACY_STAMP)
-	act_message(user, src, self = span_notice("You stamp %T% with \the [held]."), others = span_notice("%U% stamps %T% with \the [held]."), item = held)
+	if(!cap_stamp_add(holder, held))
+		return refuse(user, "There's no room left on \the [holder] for another stamp.")
+	play_sfx(holder, SFX_BUREAUCRACY_STAMP)
+	act_message(user, holder, self = span_notice("You stamp %T% with \the [held]."), others = span_notice("%U% stamps %T% with \the [held]."), item = held)
 	return TRUE

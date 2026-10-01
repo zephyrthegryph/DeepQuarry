@@ -48,9 +48,6 @@ I think I covered everything.
 ///		Main type
 ///
 
-OWN_TIMER(/mob/living/simple_mob/vore/bigdragon, firebreathtimer)
-OWN_TIMER(/mob/living/simple_mob/vore/bigdragon, chargetimer)
-
 /mob/living/simple_mob/vore/bigdragon
 	drag_buckle = FALSE
 	name = "large dragon"

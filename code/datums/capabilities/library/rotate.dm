@@ -17,26 +17,26 @@
 
 /datum/capability/rotate/interactions(atom/holder)
 	. = list()
-	var/needs = needs_unanchored ? TYPE_PROC_REF(/atom/movable, cap_rotate_free) : null
+	var/needs = needs_unanchored ? GLOBAL_PROC_REF(cap_rotate_free) : null
 	// Alt-click turns it (ACT_TOGGLE, the alternate use); the other way is ACT_NONE when both are offered. Fastened in
 	// place it is not what an alt-click means (offered): the alt-click falls through.
 	var/datum/req/free = needs ? req_proc(needs) : null
 	if(clockwise)
-		var/datum/interaction/capability/E = adopt_entry(lib_op("Rotate clockwise", TYPE_PROC_REF(/atom/movable, cap_rotate_clockwise), OP_SHAPE_HAND, key = "rotate_clockwise", action = ACT_TOGGLE, offered = free, works_broken = TRUE, works_unpowered = TRUE))
+		var/datum/interaction/capability/E = adopt_entry(lib_op("Rotate clockwise", GLOBAL_PROC_REF(cap_rotate_clockwise), OP_SHAPE_HAND, key = "rotate_clockwise", action = ACT_TOGGLE, offered = free, works_broken = TRUE, works_unpowered = TRUE))
 		E.default_action = INPUT_ACTION_ALTERNATE
 		. += E
 	if(counter)
-		var/datum/interaction/capability/E = adopt_entry(lib_op("Rotate counter-clockwise", TYPE_PROC_REF(/atom/movable, cap_rotate_counter), OP_SHAPE_HAND, key = "rotate_counter", action = clockwise ? ACT_NONE : ACT_TOGGLE, offered = free, works_broken = TRUE, works_unpowered = TRUE))
+		var/datum/interaction/capability/E = adopt_entry(lib_op("Rotate counter-clockwise", GLOBAL_PROC_REF(cap_rotate_counter), OP_SHAPE_HAND, key = "rotate_counter", action = clockwise ? ACT_NONE : ACT_TOGGLE, offered = free, works_broken = TRUE, works_unpowered = TRUE))
 		E.default_action = clockwise ? null : INPUT_ACTION_ALTERNATE
 		. += E
 
-/atom/movable/proc/cap_rotate_free(mob/user, obj/item/held)
-	return anchored ? "it's fastened in place" : TRUE
+/proc/cap_rotate_free(mob/user, atom/movable/holder, obj/item/held)
+	return holder.anchored ? "it's fastened in place" : TRUE
 
-/atom/movable/proc/cap_rotate_clockwise(mob/user, obj/item/held)
-	set_dir(turn(dir, -90))
+/proc/cap_rotate_clockwise(atom/movable/holder, mob/user, obj/item/held)
+	holder.set_dir(turn(holder.dir, -90))
 	return TRUE
 
-/atom/movable/proc/cap_rotate_counter(mob/user, obj/item/held)
-	set_dir(turn(dir, 90))
+/proc/cap_rotate_counter(atom/movable/holder, mob/user, obj/item/held)
+	holder.set_dir(turn(holder.dir, 90))
 	return TRUE

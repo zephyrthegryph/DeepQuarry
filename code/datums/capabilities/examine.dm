@@ -11,4 +11,4 @@
 /atom/proc/examine_lines(mob/user)
 	SHOULD_CALL_PARENT(TRUE)
 	RETURN_TYPE(/list)
-	return caps_examine(user)
+	return caps_examine(src, user)

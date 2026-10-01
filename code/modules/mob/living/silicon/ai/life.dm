@@ -3,8 +3,6 @@
 // backup capacitor. The power-loss routine is a timer-driven state machine
 // (aiRestorePowerRoutine = AI_POWER_*), not a sleeping spawn.
 
-OWN_TIMER(/mob/living/silicon/ai, power_restore_timer)
-
 /mob/living/silicon/ai
 
 /mob/living/silicon/ai

@@ -732,7 +732,7 @@
 		if(!O.CanFallThru(src, landing))
 			return TRUE
 
-	if(om_wants(src, /datum/om/event/before/falling_down) && om_emit(src, new /datum/om/event/before/falling_down(landing, drop_mob)) == EVENT_VETO)
+	if(guard(src, GUARD_FALL, drop_mob, null, landing))
 		return
 
 	if(drop_mob && drop_mob != src)

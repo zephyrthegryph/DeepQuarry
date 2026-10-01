@@ -103,5 +103,5 @@
 
 /obj/machinery/atmospherics/binary/ownership()
 	. = ..()
-	. += proto(nameof(air1))
-	. += proto(nameof(air2))
+	. += rel_one(nameof(air1), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)
+	. += rel_one(nameof(air2), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)

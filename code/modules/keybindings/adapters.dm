@@ -237,7 +237,7 @@ TYPE_TABLE_DECLARE(/datum/input_adapter, adapter_click_table, TYPE_TABLE_GET(GLO
 			var/resolved = W.resolve_attackby(A, user, click_parameters = params)
 			// A consumed result means resolve_attackby did something; skip afterattack.
 			if(!ITEM_INTERACT_CONSUMED(resolved) && A && W)
-				W.after_click(A, user, 1, params, user.input_stance()) // 1 indicates adjacency
+				after_click(W, A, user, 1, params, user.input_stance()) // 1 indicates adjacency
 		else
 			if(ismob(A)) // No instant mob attacking
 				user.setClickCooldown(user.get_attack_speed())
@@ -250,7 +250,7 @@ TYPE_TABLE_DECLARE(/datum/input_adapter, adapter_click_table, TYPE_TABLE_GET(GLO
 		if(W)
 			var/resolved = W.resolve_attackby(A, user)
 			if(!ITEM_INTERACT_CONSUMED(resolved) && A && W)
-				W.after_click(A, user, 1, params, user.input_stance()) // 1: clicking something Adjacent
+				after_click(W, A, user, 1, params, user.input_stance()) // 1: clicking something Adjacent
 		else
 			if(ismob(A)) // No instant mob attacking
 				user.setClickCooldown(user.get_attack_speed())
@@ -276,7 +276,7 @@ TYPE_TABLE_DECLARE(/datum/input_adapter, adapter_click_table, TYPE_TABLE_GET(GLO
 					// Return 1 in attackby() to prevent afterattack() effects (when safely moving items for example)
 					var/resolved = W.resolve_attackby(A, user, click_parameters = params)
 					if(!ITEM_INTERACT_CONSUMED(resolved) && A && W)
-						W.after_click(A, user, 1, params, user.input_stance()) // 1: clicking something Adjacent
+						after_click(W, A, user, 1, params, user.input_stance()) // 1: clicking something Adjacent
 				else
 					if(ismob(A)) // No instant mob attacking
 						user.setClickCooldown(user.get_attack_speed())
@@ -285,7 +285,7 @@ TYPE_TABLE_DECLARE(/datum/input_adapter, adapter_click_table, TYPE_TABLE_GET(GLO
 				return
 			else // non-adjacent click
 				if(W)
-					W.after_click(A, user, 0, params, user.input_stance()) // 0: not Adjacent
+					after_click(W, A, user, 0, params, user.input_stance()) // 0: not Adjacent
 				else
 					user.RangedAttack(A, params, user.input_stance())
 
@@ -526,7 +526,7 @@ TYPE_TABLE(/datum/input_adapter/ai, adapter_click_table, list( \
 		// No adjacency checks
 		var/resolved = W.resolve_attackby(A, user, click_parameters = params)
 		if(!ITEM_INTERACT_CONSUMED(resolved) && A && W)
-			W.after_click(A, user, 1, params, user.input_stance())
+			after_click(W, A, user, 1, params, user.input_stance())
 		return
 
 	if(!isturf(user.loc))
@@ -538,10 +538,10 @@ TYPE_TABLE(/datum/input_adapter/ai, adapter_click_table, list( \
 			OM_EMIT(user, /datum/om/event/before/robot_item_attack, W, user, params) // we ATTEMPTED to attack someone.
 			var/resolved = W.resolve_attackby(A, user, click_parameters = params)
 			if(!ITEM_INTERACT_CONSUMED(resolved) && A && W)
-				W.after_click(A, user, 1, params, user.input_stance())
+				after_click(W, A, user, 1, params, user.input_stance())
 			return
 		else
-			W.after_click(A, user, 0, params, user.input_stance())
+			after_click(W, A, user, 0, params, user.input_stance())
 			return
 
 /**

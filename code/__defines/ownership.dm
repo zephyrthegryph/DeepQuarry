@@ -38,6 +38,9 @@
 #define OWN_CONTAINED 3
 /// Released at teardown, not destroyed or moved: the value outlives the owner (a mind's body).
 #define OWN_KEEP 4
+/// rel_one(..., kind = RELK_OWNED, policy = OWN_PRIVATE_COPY): the var holds a registered prototype or a private
+/// copy of one (proto_private() / proto_set()); teardown deletes private copies only (the former proto()).
+#define OWN_PRIVATE_COPY 5
 
 // ---- what a relation does when the entity at its other end is deleted (other_deleted =) ----
 /// The view drops the dead entity (the default).
@@ -77,13 +80,6 @@
 /// instance D stands for (so D is registered iff GETTER(D) == D).
 #define REGISTRY_TYPE(PATH, GETTER) ##PATH/registry_getter() { return GETTER; }
 
-// ---- owned timers ----
-/// NAME is a timer the entity owns: at most one pending per (entity, NAME), scheduled with
-/// after_slot(E, "NAME", ...), read with om_timer_slot_pending()/om_timer_slot_left(),
-/// cancelled with om_cancel_timer_slot(), and released by teardown with the entity's other
-/// owned things. A keyed family ("NAME:key") is declared once by NAME. Timer ids are never
-/// stored in vars (check_grep "stored timer handles").
-#define OWN_TIMER(PATH, NAME) ##PATH/declared_timer_slots() { . = ..(); . += #NAME; }
 
 /// own_key(D) with the cached key read inline (D must be a typed datum var): the hot paths call it
 /// for every link, and nearly every call is a hit.

@@ -89,6 +89,29 @@ Compile time is not reduced: `dm-test` never runs DreamChecker (only `dm` and
 nothing they read has changed. Boot before `world/New` (about 19 s, DreamDaemon
 loading the `.rsc` and the compiled-in test map) is outside our control.
 
+### Isolation: restoring shared state
+
+Every test shares one world, and a failing `TEST_ASSERT` returns from `Run()`
+at once, so a restore line after it never runs. Anything a test changes outside
+its own block goes through a harness helper, which undoes it in teardown even
+when the test fails or runtimes:
+
+- `set_global("name", value)`, `set_var(datum, "name", value)` and
+  `set_config(/datum/config_entry/..., value)` record the original on the first
+  change and put it back afterwards. Setting a flag back later in the same test
+  is fine; teardown still restores the value the test started with.
+- `defer_cleanup(target, PROC_REF(x), args...)` runs cleanup that isn't a
+  `qdel()` (releasing a site, unregistering from a global list), last queued
+  first, before `allocate()`d objects are deleted.
+- Put objects on the test's own block (`run_loc_floor_bottom_left`), not at a
+  fixed map coordinate: the leak check only sees the block.
+
+Teardown (the deferred cleanups, then deleting `allocate()`d objects) runs in
+the tick `Run()` returns, so a timer or task still pending on a test's entities
+(a mob's telegraphed attack, say) dies with them instead of landing after the
+test. It then fails a test that leaves objects on its block or an expedition
+site live; the site is released so later tests start clean.
+
 ### Writing fast tests
 
 Drive the thing under test directly instead of sleeping for game time:

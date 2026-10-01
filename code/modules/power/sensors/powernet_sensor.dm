@@ -7,8 +7,6 @@
 // may be used in PDAs or similar applications. Second proc, return_reading_data will return list containing needed data.
 // This is used in NanoUI, for example.
 
-OWN_TIMER(/obj/machinery/power/sensor, record_timer)
-
 /obj/machinery/power/sensor
 	name = "Powernet Sensor"
 	desc = "Small machine which transmits data about specific powernet"

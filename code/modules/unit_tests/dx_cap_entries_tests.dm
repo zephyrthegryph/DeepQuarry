@@ -195,14 +195,14 @@
 	var/obj/cap_fixture/entries/F = allocate(/obj/cap_fixture/entries, T)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 
-	GLOB.dispatch_last_record = list()
+	set_global("dispatch_last_record", list())
 	TEST_ASSERT(dx_cap_entry(F, "Poke").perform(H, F, null), "poke performs")
 	TEST_ASSERT_EQUAL(GLOB.dispatch_last_record["user"], H, "recorded the user (fingerprint)")
 	TEST_ASSERT_EQUAL(GLOB.dispatch_last_record["target"], F, "recorded the target")
 	TEST_ASSERT_EQUAL(GLOB.dispatch_last_record["action"], "Poke", "recorded the action name")
 	TEST_ASSERT_EQUAL(GLOB.dispatch_last_record["log"], LOG_GAME, "at the entry's log level")
 
-	GLOB.dispatch_last_record = list()
+	set_global("dispatch_last_record", list())
 	TEST_ASSERT(dx_cap_entry(F, "Covered").perform(H, F, null) == FALSE, "a refused entry doesn't run")
 	TEST_ASSERT_NULL(GLOB.dispatch_last_record["user"], "and records nothing")
 

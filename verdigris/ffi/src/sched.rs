@@ -221,7 +221,14 @@ pub(crate) fn step(
     })?;
     let t1 = std::time::Instant::now();
     let mut watch_wakes: Vec<Wake> = Vec::new();
-    registry::for_each(|_, d| d.take_wakes(&mut watch_wakes));
+    registry::for_each(|id, d| {
+        let at = std::time::Instant::now();
+        d.take_wakes(&mut watch_wakes);
+        #[allow(clippy::cast_possible_truncation)]
+        crate::metrics::registry()
+            .counter(&format!("frame.us.sched_domain_{id}"))
+            .add(at.elapsed().as_micros() as u64);
+    });
     let owners = watch_wakes
         .iter()
         .map(|wk| (wk.watch.index, wk.subscriber))
@@ -239,6 +246,12 @@ pub(crate) fn step(
         metrics
             .gauge("world_step.sched_us")
             .set(t2.elapsed().as_secs_f64() * 1e6);
+        // Cumulative, so a bench window's cost per part is the difference of two marks.
+        #[allow(clippy::cast_possible_truncation)]
+        {
+            metrics.counter("frame.us.sched_evaluate").add((t1 - t0).as_micros() as u64);
+            metrics.counter("frame.us.sched_step").add(t2.elapsed().as_micros() as u64);
+        }
     }
     let mut out = Vec::with_capacity(wakes.len());
     for (w, e) in wakes {

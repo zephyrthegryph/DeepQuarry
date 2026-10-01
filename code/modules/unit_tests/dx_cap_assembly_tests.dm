@@ -42,7 +42,7 @@
 	TEST_ASSERT_EQUAL(F.attached_assembly, A, "attached (owned in attached_assembly)")
 	TEST_ASSERT_EQUAL(A.loc, F, "inside the holder")
 	TEST_ASSERT(A.secured, "secured once attached")
-	TEST_ASSERT_EQUAL(F.caps_examine(H)[1], "\A [A] is attached to it.", "examine names it")
+	TEST_ASSERT_EQUAL(caps_examine(F, H)[1], "\A [A] is attached to it.", "examine names it")
 	refresh_flush()
 	TEST_ASSERT(dx_look_shows(F, "rigged"), "draw shows the attached overlay")
 
@@ -69,5 +69,5 @@
 	TEST_ASSERT_EQUAL(LAZYLEN(F.pulses), 1, "a detached assembly no longer pulses the holder")
 
 	var/list/data = list()
-	F.caps_ui_data(H, data)
+	caps_ui_data(F, H, data)
 	TEST_ASSERT_NULL(data["attached_assembly"], "ui_data: nothing attached")

@@ -100,7 +100,7 @@ TYPE_DEF = re.compile(r"^/[\w/]+\s*$")
 VAR_DECL = re.compile(r"^var((?:/[A-Za-z_]\w*)+)\s*(?:\[[^\]]*\])?\s*(?:=|$|as\b)")
 HEADER = re.compile(r"^(/?[A-Za-z_][\w/]*)\s*(?:$|=|\()")
 MODIFIERS = {"tmp", "static", "global", "const", "final"}
-TRACKED_LINE = re.compile(r"^(?:TRACKED|SETTER)\(\s*(/[\w/]+)\s*,\s*(\w+)")
+TRACKED_LINE = re.compile(r"^(?:TRACKED|TRACKED_BRIDGED|SETTER)\(\s*(/[\w/]+)\s*,\s*(\w+)")
 RELATION_LINE = re.compile(r"^(?:OWN|OWN_POLICY|OWN_IF|REL|REL_LIST|REL_PAIR|REL_PAIR_LIST|REL_SET|REL_KEYED|REL_KEYED_LIST)\(\s*(/[\w/]+)\s*,\s*(\w+)")
 CALL = re.compile(r"(?<![\w.])(runs_while|drawn_from|ui_from|rust_push|derive)\s*\(")
 NAMEOF = re.compile(r"^nameof\(\s*(?:(/[\w/]+)::)?(\w+)\s*\)$")
@@ -704,8 +704,8 @@ FIXTURE_BASE = """
 	var/pointing = FALSE
 	var/spare = 0
 
-TRACKED(/obj/pointer, energy, CHANGE_EFFECTS)
-TRACKED(/obj/pointer, pointing, CHANGE_EFFECTS)
+TRACKED(/obj/pointer, energy)
+TRACKED(/obj/pointer, pointing)
 
 /obj/pointer/should_run()
 	return energy < max_energy
@@ -746,7 +746,7 @@ FIXTURE_MISC = """
 	var/obj/thing/parent
 	var/list/kids
 
-TRACKED(/obj/thing, level, CHANGE_EFFECTS)
+TRACKED(/obj/thing, level)
 REL(/obj/thing, parent)
 
 /obj/thing/derived()

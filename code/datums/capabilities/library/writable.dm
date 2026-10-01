@@ -41,7 +41,7 @@
 
 /datum/capability/writable/interactions(atom/holder)
 	// "write": a click with a pen or crayon, ahead of a rename by the same pen (WRITABLE_PRIORITY); a full page refuses.
-	var/datum/interaction/capability/write = adopt_entry(lib_op("Write", TYPE_PROC_REF(/atom, cap_writable_write), OP_SHAPE_USE_ON, using = pen_types, key = "write", needs = TYPE_PROC_REF(/atom, cap_writable_has_space), else_say = "there's no room left to write on it", works_broken = TRUE, works_unpowered = TRUE, priority = WRITABLE_PRIORITY))
+	var/datum/interaction/capability/write = adopt_entry(lib_op("Write", TYPE_PROC_REF(/atom, cap_writable_write), OP_SHAPE_USE_ON, using = pen_types, key = "write", needs = GLOBAL_PROC_REF(cap_writable_has_space), else_say = "there's no room left to write on it", works_broken = TRUE, works_unpowered = TRUE, priority = WRITABLE_PRIORITY))
 	return list(write)
 
 /datum/capability/writable/examine(atom/holder, mob/user)
@@ -102,8 +102,8 @@
 	D.used = 0
 	changed(A, CHANGE_CAPABILITY)
 
-/atom/proc/cap_writable_has_space(mob/user, obj/item/held)
-	return cap_writable_space(src) > 0
+/proc/cap_writable_has_space(mob/user, atom/holder, obj/item/held)
+	return cap_writable_space(holder) > 0
 
 /atom/proc/cap_writable_write(mob/user, obj/item/held)
 	var/text = ask_text(user, "What would you like to write?", "Write", max_length = cap_writable_space(src), multiline = TRUE)

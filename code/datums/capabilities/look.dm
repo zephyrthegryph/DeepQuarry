@@ -197,7 +197,7 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 	return null
 
 /// TRUE for a type whose standard parts the unit test enforces (types opt in as their sprites are named).
-/atom/proc/look_checked()
+/proc/look_checked(atom/holder)
 	return FALSE
 
 /// The standard part names this capability draws (its layer). Null draws none.
@@ -454,7 +454,7 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 	changed(A)
 	var/token = "[state]:[++GLOB.look_flash_seq]"
 	LAZYSET(A.look_flash_tokens, state, token)
-	after(A, duration, GLOBAL_PROC_REF(look_flash_end), A, state, token, as_state)
+	after(A, duration, GLOBAL_PROC_REF(look_flash_end), with = list(A, state, token, as_state))
 
 GLOBAL_VAR_INIT(look_flash_seq, 0)
 

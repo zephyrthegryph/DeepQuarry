@@ -557,9 +557,6 @@
 			own_list_emptied(D, var_name)
 	for(var/var_name in T.proto_vars)
 		proto_teardown(D, var_name)
-	// Owned timers go with the rest of what D owns.
-	if(T.timer_slots)
-		om_release_timer_slots(D)
 	rx_teardown(D)
 
 /// Phase 8: an owned var holding a value again was re-set during teardown. Delete it and say so.

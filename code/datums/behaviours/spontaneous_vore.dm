@@ -1,25 +1,33 @@
-/// Spontaneous vore (stumble/drop/throw/slip vore; was /datum/element/spontaneous_vore).
-/// A shared behaviour singleton handling synchronous before/ events: returning EVENT_VETO
-/// cancels the stumble, fall, hit or cross. Each handler checks the mob's preference flags.
-/// Attach with om_attach(L, /datum/om/behaviour/spontaneous_vore) (idempotent).
-/datum/om/behaviour/spontaneous_vore
-	handles = list(/datum/om/event/before/stumbled_into, /datum/om/event/before/falling_down, /datum/om/event/before/hit_by_thrown, /datum/om/event/before/cross)
+/// Spontaneous vore (stumble/drop/throw/slip vore; was /datum/element/spontaneous_vore, then an om behaviour).
+/// Four guards on every living mob (doc/rewrite/reactions.md section 3a): each may refuse the stumble, fall, thrown
+/// hit or crossing because somebody was eaten instead. Each eater checks the mobs' preference flags.
 
-/datum/om/behaviour/spontaneous_vore/on_before_stumbled_into(mob/living/source, datum/om/event/before/stumbled_into/event)
-	return handle_stumble(source, event.bumper) ? EVENT_VETO : null
+/mob/living/reactions()
+	. = ..()
+	. += before_op(GUARD_STUMBLED_INTO, GLOBAL_PROC_REF(spont_vore_stumble))
+	. += before_op(GUARD_FALL, GLOBAL_PROC_REF(spont_vore_fall))
+	. += before_op(GUARD_THROWN_HIT, GLOBAL_PROC_REF(spont_vore_hitby))
+	. += before_op(GUARD_CROSS, GLOBAL_PROC_REF(spont_vore_cross))
 
-/datum/om/behaviour/spontaneous_vore/on_before_falling_down(mob/living/source, datum/om/event/before/falling_down/event)
-	return handle_fall(source, event.landing, event.drop_mob) ? EVENT_VETO : null
+/// GUARD_STUMBLED_INTO: ctx.actor stumbles into ctx.target.
+/proc/spont_vore_stumble(datum/guard_ctx/ctx)
+	return spont_vore_stumble_eat(ctx.target, ctx.actor) ? TRUE : null
 
-/datum/om/behaviour/spontaneous_vore/on_before_hit_by_thrown(mob/living/source, datum/om/event/before/hit_by_thrown/event)
-	return handle_hitby(source, event.hitby, event.thrower, event.speed) ? EVENT_VETO : null
+/// GUARD_FALL: ctx.target lands on ctx.data (a turf), on ctx.actor (the mob there) if any.
+/proc/spont_vore_fall(datum/guard_ctx/ctx)
+	return spont_vore_fall_eat(ctx.target, ctx.data, ctx.actor) ? TRUE : null
 
-/datum/om/behaviour/spontaneous_vore/on_before_cross(mob/living/source, datum/om/event/before/cross/event)
-	return handle_crossed(source, event.crosser) ? EVENT_VETO : null
+/// GUARD_THROWN_HIT: ctx.item (thrown by ctx.actor, at speed ctx.data) hits ctx.target.
+/proc/spont_vore_hitby(datum/guard_ctx/ctx)
+	return spont_vore_hitby_eat(ctx.target, ctx.item, ctx.actor, ctx.data) ? TRUE : null
+
+/// GUARD_CROSS: ctx.actor crosses into ctx.target.
+/proc/spont_vore_cross(datum/guard_ctx/ctx)
+	return spont_vore_cross_eat(ctx.target, ctx.actor) ? TRUE : null
 
 ///Source is the one being bumped into (Owner of this component)
 ///Target is the one bumping into us.
-/datum/om/behaviour/spontaneous_vore/proc/handle_stumble(mob/living/source, mob/living/target)
+/proc/spont_vore_stumble_eat(mob/living/source, mob/living/target)
 
 	//Prevents slipping into ourselves if we have a blobform.
 	if(!isturf(target.loc) || !isturf(source.loc)) //No slipping into things that aren't even on a valid turf.
@@ -34,7 +42,7 @@
 		var/obj/belly/destination_belly = source.get_current_spont_belly(target)
 		source.begin_instant_nom(source, prey = target, pred = source, belly = destination_belly)
 		target.stop_flying()
-		return CANCEL_STUMBLED_INTO
+		return TRUE
 
 	//The person stumbling into us is able to eat us.
 	if(can_stumble_vore(prey = source, pred = target)) //This is if the person stumbling into us is able to be eaten by us! BROKEN!
@@ -43,12 +51,12 @@
 		var/obj/belly/destination_belly = target.get_current_spont_belly(source)
 		source.begin_instant_nom(target, prey = source, pred = target, belly = destination_belly)
 		source.stop_flying()
-		return CANCEL_STUMBLED_INTO
+		return TRUE
 
 //Source is the one dropping (us)
 //Landing is the tile we're falling onto
 //drop_mob is whatever mob is found in the turf we're dropping onto.
-/datum/om/behaviour/spontaneous_vore/proc/handle_fall(mob/living/source, turf/landing, mob/living/drop_mob)
+/proc/spont_vore_fall_eat(mob/living/source, turf/landing, mob/living/drop_mob)
 
 	if(!drop_mob || drop_mob == source)
 		return
@@ -64,7 +72,7 @@
 	if(can_drop_vore(prey = source, pred = drop_mob))
 		drop_mob.feed_grabbed_to_self_falling_nom(drop_mob, prey = source)
 		act_message(drop_mob, source, others = span_vdanger("%U% falls right onto %T%!"))
-		return EVENT_VETO
+		return TRUE
 
 	//pred = source
 	//prey = drop_mob
@@ -73,9 +81,9 @@
 		source.feed_grabbed_to_self_falling_nom(source, prey = drop_mob)
 		source.status_at_least(EFFECT_WEAKENED, 4)
 		act_message(drop_mob, source, others = span_vdanger("%U% falls right into %T%!"))
-		return EVENT_VETO
+		return TRUE
 
-/datum/om/behaviour/spontaneous_vore/proc/handle_hitby(mob/living/source, atom/movable/hitby, mob/thrower, speed)
+/proc/spont_vore_hitby_eat(mob/living/source, atom/movable/hitby, mob/thrower, speed)
 
 	//Handle object throw vore
 	if(isitem(hitby))
@@ -87,7 +95,7 @@
 			if(source.adminbus_trash || is_type_in_list(O, GLOB.edible_trash) && O.trash_eatable && !is_type_in_list(O, GLOB.item_vore_blacklist))
 				act_message(source, null, others = span_vwarning("[O] is thrown directly into %U%'s [lowertext(destination_belly.name)]!"))
 				destination_belly.nom_atom(O)
-				return EVENT_VETO
+				return TRUE
 
 	//Throwing a prey into a pred takes priority. After that it checks to see if the person being thrown is a pred.
 	if(isliving(hitby))
@@ -115,7 +123,7 @@
 				add_attack_logs(thrower,source,"Devoured [thrown_mob.name] via throw vore.")
 			else
 				log_vore("[source] devoured [thrown_mob.name] via throw vore.")
-			return EVENT_VETO //We can stop here. We don't need to calculate damage or anything else. They're eaten.
+			return TRUE //We can stop here. We don't need to calculate damage or anything else. They're eaten.
 
 		// PERSON BEING HIT: CAN BE DROP PREY, ALLOWS THROW VORE, AND IS DEVOURABLE.
 		// PERSON BEING THROWN: CAN BE DROP PRED, ALLOWS THROW VORE.
@@ -131,11 +139,11 @@
 				add_attack_logs(thrower,source,"Was Devoured by [thrown_mob.name] via throw vore.")
 			else
 				log_vore("[source] Was Devoured by [thrown_mob.name] via throw vore.")
-			return EVENT_VETO
+			return TRUE
 
 //source = person standing up
 //crossed = person sliding
-/datum/om/behaviour/spontaneous_vore/proc/handle_crossed(mob/living/source, mob/living/crossed)
+/proc/spont_vore_cross_eat(mob/living/source, mob/living/crossed)
 
 	if(source == crossed || !istype(crossed))
 		return
@@ -147,7 +155,7 @@
 		if(!destination_belly)
 			return
 		source.begin_instant_nom(source, prey = crossed, pred = source, belly = destination_belly)
-		return COMPONENT_BLOCK_CROSS
+		return TRUE
 
 	//The person slipping eats the person being slipped into
 	else if(can_slip_vore(pred = crossed, prey = source))
@@ -156,51 +164,3 @@
 			return
 		source.begin_instant_nom(crossed, prey = source, pred = crossed, belly = destination_belly) //Must be
 		return //We DON'T block it here. Pred can slip onto the prey's tile, no problem.
-
-// ---------------------------------------------------------------- events
-
-/// Veto: `bumper` stumbles into the mob.
-/datum/om/event/before/stumbled_into
-	/// The mob stumbling in.
-	var/bumper
-
-/datum/om/event/before/stumbled_into/New(bumper)
-	src.bumper = bumper
-
-/datum/om/event/before/stumbled_into/dispatch(datum/om/behaviour/B, datum/E)
-	return B.on_before_stumbled_into(E, src)
-
-/datum/om/behaviour/proc/on_before_stumbled_into(datum/E, datum/om/event/before/stumbled_into/event)
-	return
-
-/// Veto: the mob falls onto `landing`, onto `drop_mob` if any.
-/datum/om/event/before/falling_down
-	var/landing
-	var/drop_mob
-
-/datum/om/event/before/falling_down/New(landing, drop_mob)
-	src.landing = landing
-	src.drop_mob = drop_mob
-
-/datum/om/event/before/falling_down/dispatch(datum/om/behaviour/B, datum/E)
-	return B.on_before_falling_down(E, src)
-
-/datum/om/behaviour/proc/on_before_falling_down(datum/E, datum/om/event/before/falling_down/event)
-	return
-
-/// Veto: the mob is hit by thrown `hitby`.
-/datum/om/event/before/hit_by_thrown
-	var/hitby
-	var/thrower
-	var/speed
-
-/datum/om/event/before/hit_by_thrown/New(hitby, thrower, speed)
-	src.hitby = hitby
-	src.thrower = thrower
-	src.speed = speed
-
-/datum/om/event/before/hit_by_thrown/dispatch(datum/om/behaviour/B, datum/E)
-	return B.on_before_hit_by_thrown(E, src)
-
-/datum/om/behaviour/proc/on_before_hit_by_thrown(datum/E, datum/om/event/before/hit_by_thrown/event)
-	return

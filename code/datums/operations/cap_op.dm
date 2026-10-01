@@ -276,9 +276,10 @@
 	var/list/overrides
 
 /// key: the op's key (or a capability's, e.g. CAP_REAGENTS). delay: the new wait. effect: the new handler
-/// (PROC_REF). input: the new `using`. action: the new ACT_*. priority: the new OP_PRIORITY_*. starts / volume: a
-/// capability's starting contents and volume (refine(CAP_REAGENTS, starts = ...) adds to the inherited contents).
-/proc/refine(key, delay, effect, input, action, priority, starts, volume)
+/// (PROC_REF). input: the new `using`. action: the new ACT_*. priority: the new OP_PRIORITY_*. starts / add / volume:
+/// a capability's starting contents and volume: `starts =` REPLACES the inherited contents, `add =` merges into
+/// them (refine(CAP_REAGENTS, add = list(REAGENT_ID_SUGAR = 2))). No field has two meanings.
+/proc/refine(key, delay, effect, input, action, priority, starts, volume, add)
 	var/datum/capability/refine/C = new
 	C.base_key = key
 	var/list/o = list()
@@ -296,6 +297,8 @@
 		o["starts"] = starts
 	if(!isnull(volume))
 		o["volume"] = volume
+	if(!isnull(add))
+		o["add"] = add
 	C.overrides = o
 	C.key = "refine:[key]:[md5(datum_signature(o))]"
 	return C
@@ -342,10 +345,6 @@ GLOBAL_VAR(op_gesture_now)
 	var/why = ctx.check()
 	. = why ? req_reason_phrase(why, ctx) : null
 	ctx.release()
-
-/// Timed ops (no tool pipeline) wait here: the context is registered as pending, watching its
-/// requirements' reads, and op_wait_done() finishes the attempt (which checks everything again).
-OWN_TIMER(/mob, op_wait)
 
 /// Whether this op entry waits through the op wait (a pending context that cancels early on its requirements' reads);
 /// FALSE for an entry that pays its time through the tool pipeline (a construction step, whose start lines it prints).

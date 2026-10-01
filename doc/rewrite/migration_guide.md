@@ -34,14 +34,18 @@ the old ones and does not migrate callers.
 
 | Old form [built] | New form | Branch | Chapter |
 |---|---|---|---|
-| `om_after(E, delay, proc)`, `after_slot(...)` | `after(owner, delay, handler, key=, clock=)`; the old procs are wrappers over it | f-reactions | [reactions.md](reactions.md) |
-| `om_hook(source, event, listener, proc)` / `om_hooked()` | `observe(source, trigger, listener, handler)` / `unobserve()` (dynamic), or `reactions()` (static) | f-reactions | [reactions.md](reactions.md) |
-| `DAMAGE_REACTION(type, kind, proc)` / `DAMAGE_REACTION_AFTER` | `on_notice(/datum/notice/<damage kind>, handler)` in `reactions()` (a hit is an occurrence) | f-reactions | [reactions.md](reactions.md) |
+| `om_after(E, delay, proc, args...)`, `after_slot(E, "name", ...)`, `rx_after(...)`, `OWN_TIMER` | `after(owner, delay, handler, key =, clock =, with = list(args...))` (no varargs); `after_pending` / `cancel_after` / `after_left`; `OWN_TIMER` is deleted (timers are TIMER relations). The old procs are wrappers **[built on master, A1]** | a1 | [reactions.md](reactions.md) §4 |
+| `om_hook(source, event, listener, proc)` / `om_hooked()` | `observe(source, on_notice(/datum/notice/x), listener, handler)` / `unobserve()` (dynamic), or `on_notice` in `reactions()` (static); a `before/*` veto becomes `before_op(GUARD_X, h)` + `guard(E, GUARD_X, ...)`. Per-event targets: F5 **[built on master, A1]** | a1 | [reactions.md](reactions.md) §3, §3a |
+| `DAMAGE_REACTION(type, kind, proc)` / `DAMAGE_REACTION_AFTER`, `REFLECTS`, `EMP_DISABLE` | `before_op(damage(kind), h)` (may block) / `after_op(damage(kind), h)` in `reactions()`; `CAPABILITY(T, reflects(kinds, chance))`, `CAPABILITY(T, emp_disable(duration))`. The macros are thin wrappers **[built on master, A1]** | a1 | [reactions.md](reactions.md) §1b |
 | `derived()` with `runs_while`, `drawn_from`, `ui_from`, `derive`, `rust_push` | `reactions()`: the same sugar over `on_change`, plus generated reads. Old `derived()` entries are folded in | f-reactions | [reactions.md](reactions.md) |
 | `ownership()` / `OWN(type, var, policy)` | `relations()` with `rel_one`/`rel_many` and `kind = OWNED` | f-reactions | [state_and_relations.md](state_and_relations.md) |
 | `relations()` with `rel_one`/`rel_many` untyped | the same table with `kind = REF \| PAIRED \| OWNED` | f-reactions | [state_and_relations.md](state_and_relations.md) |
-| `TRACKED(type, var, channel)`, `changed(E, channel, var)` | `TRACKED(type, var)` (publishes only when read), `publish_change(E, key)` | f-reactions | [state_and_relations.md](state_and_relations.md) |
-| Event/`om_emit` occurrences, `signal`-style notifications | `PUBLISH(src, /datum/notice/x, ...)` and `on_notice` | f-reactions | [reactions.md](reactions.md) |
+| `TRACKED(type, var, channel)`, `changed(E, channel, var)`, `OM_FIELD` | `TRACKED(type, var)` (publishes only when read); `TRACKED_BRIDGED(type, var, CHANNEL)` only while an OM stage `wake_on` or `om_watch()` reads the channel (removed with S4); `PUBLISH_CHANGE(E, key)` for a fact that is not one var. `OM_FIELD` setters publish their var key too **[built on master, A1]** | a1 | [state_and_relations.md](state_and_relations.md) §1 |
+| Event/`om_emit` occurrences, `signal`-style notifications | `PUBLISH(src, /datum/notice/x, ...)` and `on_notice`; the notice types are generated (`code/_generated/om_notices.dm`) with the mapping table `tools/dx/codemods/om_event_map.json` | a1 | [reactions.md](reactions.md) §3 |
+| `on_channel(bits, h)` (S2 bridge) | `on_change(list(keys...), h, at_most =, when =)`; producers publish `MOB_KEY_*` (deleted with the channel bridge) | a1 | [reactions.md](reactions.md) |
+| `om_grant(T, GRANT_VERB / GRANT_VERB_HIDE / GRANT_CAPABILITY, id, src)`, `om_revoke` | `grant(T, verb_path \| hidden_verb(path) \| capability_type, source, duration)` / `revoke()`; `om_attach(E, behaviour)` -> capabilities, `reactions()` or relations (F5) | a1 | [state_and_relations.md](state_and_relations.md) |
+| `shares(nameof(v))`, `proto(nameof(v))` | no declaration: type the var (registry or flyweight type); `rel_one(nameof(v), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)` | a1 | [state_and_relations.md](state_and_relations.md) §2 |
+| a data-only `capabilities()` override | `CAPABILITY(T, entry)` one line; `refine(CAP_REAGENTS, add =)` merges, `starts =` replaces | a1 | [lifecycle.md](lifecycle.md) |
 | `periodic_cadence` + `should_run()` + `periodic_step(dt)`; `DECLARE_PERIODIC_WHILE`; `DECLARE_REPEAT`; pipelines and stages | `every(interval, handler, when=, members=, phase=, after=, budget=)`; stages are work items with `after` edges | f-reactions / f-kernel | [reactions.md](reactions.md), [scheduling_and_kernel.md](scheduling_and_kernel.md) |
 | `idle` / `wake_on` / `rewake_delay` on a stage | `should_run` with declared reads (adapters keep old stages running) | f-kernel | [scheduling_and_kernel.md](scheduling_and_kernel.md) |
 | `update_rust_device()`, `push_to_rust()` hand pushes, `power_sync` | generated `rust_push(reads...)` | f-rust | [rust.md](rust.md) |
@@ -87,6 +91,46 @@ Each `DECLARE_*` lifecycle macro has a foundation form. The macros stay until th
 `DECLARE_REAGENTS` gets two holders (the capability replaces the declared one); convert a whole chain from its root
 (`/obj/item/reagent_containers` is one root with 633 subtypes; `/obj/structure/reagent_dispensers`, converted, is
 the worked example).
+
+## F5. A1 mapping tables [built on master]
+
+**om events** (`tools/dx/codemods/om_event_map.json`, regenerated by `python tools/dx/gen_om_notices.py`, CI checks it):
+each event with a listener maps to a target. 111 after-facts -> a generated `/datum/notice/<name>` (fields = the
+event's payload in New() order); `qdeleting` hooks mostly only clear a reference: declare the relation and delete
+the hook. Vetoes -> guard keys:
+
+| before/* event | Guard key |
+|---|---|
+| `movable_pre_move` | `GUARD_MOVE` |
+| `movable_z_changed` | `GUARD_Z_CHANGE` |
+| `in_range_of_irradiation`, `living_irradiate_effect` | `GUARD_IRRADIATE` |
+| `living_injure` | `GUARD_INJURE` |
+| `living_body_status` | `GUARD_BODY_STATUS` |
+| `attackby`, `attack_self`, `attack_hand`, `atom_tool_act`, `click_alt` | `GUARD_ATTACKBY`, `GUARD_ATTACK_SELF`, `GUARD_ATTACK_HAND`, `GUARD_TOOL_ACT`, `GUARD_CLICK_ALT` (an op's `before_op` once the entry is an op) |
+| `hit_by_thrown`, `cross`, `falling_down`, `stumbled_into` | `GUARD_THROWN_HIT`, `GUARD_CROSS`, `GUARD_FALL`, `GUARD_STUMBLED_INTO` (converted: spontaneous vore) |
+| `item_pre_attack`, `robot_item_attack`, `catch_throw` | `op` (the operation's before_op) |
+| the rest (`human_get_*`, `mob_handle_hud*`, `disposal_*` ...) | `review` (an accumulator: a provider or a capability, judged per site) |
+
+An emit site that reads the result (`reads_result` in the map) cannot become a notice: it is a guard or a review.
+Events with no listener are deleted with their emit sites (A1 deleted 7; `handle_mutations`, `turf_prepare_step_sound`
+and the two `dqai_target_*` are expression emits left for A4).
+
+Worked examples: dry galoshes (`/datum/om/behaviour/dry` + `before/shoes_step_action` -> `on_notice(/datum/notice/shoes_step)`
+in the galoshes' `reactions()`), squeaky shoes (`om_hook` -> `observe(owner, on_notice(...), src, PROC_REF(on_step))`),
+spontaneous vore (an om behaviour attached with `DECLARE_BEHAVIOUR` and `om_attach` -> four `before_op(GUARD_*)` on
+`/mob/living`; call sites `guard(src, GUARD_X, ...)`).
+
+**grants, verbs, attachments, watches:**
+
+| Old | New |
+|---|---|
+| `om_grant(T, GRANT_VERB, /x/proc/y, src)` / `om_revoke` | `grant(T, /x/proc/y, src)` / `revoke()` (example: `rotatable.dm`, `climbable.dm`) |
+| `om_grant(T, GRANT_VERB_HIDE, path, src)` | `grant(T, hidden_verb(path), src)` |
+| `om_grant_for(T, GRANT_CAPABILITY, /datum/capability/x, src, d)` | `grant(T, /datum/capability/x, src, d)` |
+| `om_grant(T, GRANT_ABILITY / GRANT_TRAIT / GRANT_LANGUAGE, ...)` | unchanged until their stores move (A4 review) |
+| `om_attach(E, /datum/om/behaviour/x)` (static, per type) | the behaviour's handlers as `reactions()` / a capability on the type (example: spontaneous vore) |
+| `om_attach` holding per-instance state | a relation to an owned datum (`rel_one(..., kind = RELK_OWNED)`) whose type has the reactions |
+| `om_watch(owner, target, CHANNEL, behaviour)` | `observe(target, on_change(list(keys)), owner, PROC_REF(h))`; needs the target's key published (TRACKED / PUBLISH_CHANGE). The 7 channel watches wake OM sleepers, so they move with S3 (stage engine); gas watches (`om_watch_arm_*`) stay on the gas watch facility |
 
 ## F2. Choosing the form
 
@@ -178,12 +222,12 @@ TRACKED(/obj/item/laser_pointer, energy, CHANGE_ITEM_CHARGE)     // a declared v
 
 Reference: `dx_conventions.md`, "Reactions". Deliberate differences from the plan text: relation kind constants are
 `RELK_REF/RELK_PAIRED/RELK_OWNED` (`REF` is a macro); `every(when = ...)` (`while` is a DM keyword); the keyed or
-world-clock timer is `rx_after(...)` because `after()` is variadic and DM rejects named args on a variadic proc.
+timer is `after(owner, delay, handler, key =, clock =, with =)` (A1 removed the varargs; `rx_after()` is internal).
 
 | Old | New |
 |---|---|
-| `om_after(E, d, proc, args...)`, `after(...)` | unchanged; wrappers over `rx_after()` |
-| `after_slot(E, slot, ...)` | unchanged (slots stay in om's `timer_slots` for OWN_TIMER); schedules through `rx_after()` |
+| `om_after(E, d, proc, args...)` | `after(E, d, proc, with = list(args...))` (om_after stays as a wrapper) |
+| `after_slot(E, slot, d, proc, args...)` | `after(E, d, proc, key = slot, with = list(args...))`; after_slot is a wrapper over the keyed timer |
 | a hand `changed()` plus polling a var | `on_change(list(nameof(v)), PROC_REF(h))` in `reactions()` |
 | `om_emit(E, new /datum/om/event/x)` for an occurrence | `PUBLISH(E, /datum/notice/x, args...)` + `on_notice()` |
 | `om_hook(source, event, ...)` | `observe(source, on_notice(type, h), listener, PROC_REF(h))` |

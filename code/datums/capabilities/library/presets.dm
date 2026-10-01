@@ -59,7 +59,7 @@
 	. = list(hatch, compartment(BAY_HATCH, door = CAP_COVER_OPEN))
 	. += cap_cover(open_tool = cover_tool, removable = removable_cover)
 	if(cover_holds)
-		. += cap_require(list("open_cover", "remove_cover"), needs = req_proc(TYPE_PROC_REF(/atom, hatch_cover_free)))
+		. += cap_require(list("open_cover", "remove_cover"), needs = req_proc(GLOBAL_PROC_REF(hatch_cover_free)))
 	. += cap_panel(needs = panel_needs_cover_closed ? req_clear(COVER) : null)
 	. += cap_wires(null)
 	. += cap_lock(needs = req_clear(COVER | PANEL), entries = FALSE, lamp = TRUE)
@@ -72,9 +72,9 @@
 	var/cover_holds
 
 /// The requirement of the hatch's cover ops: the holder's cover_holds proc answers for opening and closing alike.
-/atom/proc/hatch_cover_free(mob/user, obj/item/held)
-	var/datum/capability/maintenance_hatch/hatch = cap_of_all(src, /datum/capability/maintenance_hatch)
-	var/why = hatch?.cover_holds ? call(src, hatch.cover_holds)(user, held) : null
+/proc/hatch_cover_free(mob/user, atom/holder, obj/item/held)
+	var/datum/capability/maintenance_hatch/hatch = cap_of_all(holder, /datum/capability/maintenance_hatch)
+	var/why = hatch?.cover_holds ? holder_call(holder, hatch.cover_holds, user, held) : null
 	return why ? (istext(why) ? why : "the cover is locked") : TRUE
 
 /**

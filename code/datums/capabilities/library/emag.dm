@@ -33,7 +33,7 @@
 		return null
 	// The op keyed CAP_EMAG, as emag_op()'s: cap_require(CAP_EMAG, ...) contracts it. A card beats any other use of it
 	// (OP_PRIORITY_SUBVERT). The wait is the op wait, before the handler runs.
-	return list(adopt_entry(lib_op("Emag", TYPE_PROC_REF(/atom, cap_emag_use), OP_SHAPE_USE_ON, using = /obj/item/card/emag, key = CAP_EMAG, kind = OP_STRUCTURAL, delay = delay, works_broken = FALSE, works_unpowered = TRUE, priority = OP_PRIORITY_SUBVERT), id = "emag"))
+	return list(adopt_entry(lib_op("Emag", GLOBAL_PROC_REF(cap_emag_use), OP_SHAPE_USE_ON, using = /obj/item/card/emag, key = CAP_EMAG, kind = OP_STRUCTURAL, delay = delay, works_broken = FALSE, works_unpowered = TRUE, priority = OP_PRIORITY_SUBVERT), id = "emag"))
 
 /datum/capability/emag/draw(atom/holder, datum/look/look)
 	if(as_op)
@@ -42,23 +42,23 @@
 /datum/capability/emag/look_parts()
 	return as_op ? list(LOOK_EMAGGED) : null
 
-/atom/proc/cap_emag_use(mob/user, obj/item/held)
-	var/datum/capability/emag/C = cap_of_all(src, /datum/capability/emag)
+/proc/cap_emag_use(atom/holder, mob/user, obj/item/held)
+	var/datum/capability/emag/C = cap_of_all(holder, /datum/capability/emag)
 	var/obj/item/card/emag/card = held
 	if(!istype(card) || !card.can_emag(user))
 		return refuse(user, "[held] has no uses left.")
-	if(C.mode == EMAG_ONCE && is_emagged(src))
+	if(C.mode == EMAG_ONCE && is_emagged(holder))
 		return refuse(user, C.already_say)
 	if(C.effect)
 		// The effect decides first: FALSE (or a reason) refuses, and nothing is set or spent.
-		var/result = call(src, C.effect)(user, card)
+		var/result = holder_call(holder, C.effect, user, card)
 		if(istext(result))
 			return refuse(user, result)
 		if(!isnull(result) && !result)
 			return refuse(user, "Nothing happens.")
-	cap_set(src, CAP_EMAGGED, TRUE)
+	cap_set(holder, CAP_EMAGGED, TRUE)
 	if(C.say)
-		act_message(user, src, self = span_warning(C.say), item = card)
+		act_message(user, holder, self = span_warning(C.say), item = card)
 	// One use, as /obj/item/card/emag/proc/spend() pays it; the dispatcher writes the log line.
 	card.uses--
 	if(card.uses < 1)
@@ -83,10 +83,10 @@
 	// req_set / req_clear in `needs` become the op's state gates (their messages: "close the cover first").
 	var/list/gate = cap_fold_state_needs(needs)
 	cap_gating(C, needs = gate[2] ? req_clear(gate[2]) : null, log = log)
-	var/list/pre = list(TYPE_PROC_REF(/atom, emag_op_ok))
+	var/list/pre = list(GLOBAL_PROC_REF(emag_op_ok))
 	if(gate[4])
 		pre += islist(gate[4]) ? gate[4] : list(gate[4])
-	var/datum/capability/entry/op = cap_op("Emag", effect || TYPE_PROC_REF(/atom, emag_default_effect), using = /obj/item/card/emag, key = CAP_EMAG, action = ACT_USE, kind = OP_STRUCTURAL, delay = delay, priority = OP_PRIORITY_SUBVERT, needs = pre, else_say = else_say, behind = gate[1], blocked_by = gate[2], locked_by = gate[3], log = log)
+	var/datum/capability/entry/op = cap_op("Emag", effect || GLOBAL_PROC_REF(emag_default_effect), using = /obj/item/card/emag, key = CAP_EMAG, action = ACT_USE, kind = OP_STRUCTURAL, delay = delay, priority = OP_PRIORITY_SUBVERT, needs = pre, else_say = else_say, behind = gate[1], blocked_by = gate[2], locked_by = gate[3], log = log)
 	return list(C, op)
 
 /datum/capability/emag/reactions()
@@ -95,16 +95,16 @@
 		. += after_op(CAP_EMAG, TYPE_PROC_REF(/atom, emag_committed))
 
 /// The default effect of an emag op: nothing beyond the shared commit.
-/atom/proc/emag_default_effect(mob/user, obj/item/card/emag/card)
+/proc/emag_default_effect(atom/holder, mob/user, obj/item/card/emag/card)
 	return TRUE
 
 /// needs: the card has a use left and (EMAG_ONCE) the holder isn't already emagged.
-/atom/proc/emag_op_ok(mob/user, obj/item/held)
-	var/datum/capability/emag/C = cap_of_all(src, /datum/capability/emag)
+/proc/emag_op_ok(mob/user, atom/holder, obj/item/held)
+	var/datum/capability/emag/C = cap_of_all(holder, /datum/capability/emag)
 	var/obj/item/card/emag/card = held
 	if(!istype(card) || !card.can_emag(user))
 		return "[held] has no uses left."
-	if(C?.mode == EMAG_ONCE && is_emagged(src))
+	if(C?.mode == EMAG_ONCE && is_emagged(holder))
 		return C.already_say
 	return TRUE
 

@@ -42,8 +42,6 @@
 	qdel(old_stock)
 	return replacement
 
-OWN_TIMER(/obj/machinery/material_furnace, firing_timer)
-
 /obj/machinery/material_furnace
 	name = "controlled-atmosphere alloy furnace"
 	desc = "A sealed furnace for melting, alloying, and heat-treating material sheets. Click it to fire a loaded charge or collect its finished alloy."

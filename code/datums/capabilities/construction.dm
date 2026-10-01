@@ -570,7 +570,7 @@
 /// The holder's stage, or null when it isn't on this graph right now. Pure: reads only.
 /datum/construction_ladder/proc/state_of(atom/target)
 	if(state_get)
-		return call(target, state_get)()
+		return holder_call(target, state_get)
 	if(state_var)
 		return target.vars[state_var]
 	var/datum/ladder_progress/progress = target.cap_data?[cap.key]
@@ -582,7 +582,7 @@
 		return
 	if(state_get)
 		if(state_set)
-			call(target, state_set)(state)
+			holder_call(target, state_set, state)
 		return
 	if(state_var)
 		target.vars[state_var] = state // ALLOW(api): a ladder names the var holding its stage
@@ -864,14 +864,14 @@
 
 /// Offered when the holder is in a stage this step leaves, and its `when` agrees.
 /datum/interaction/capability/construction_step/applies_to(atom/target)
-	if(target.caps_suspended())
+	if(caps_suspended(target))
 		return FALSE
 	var/state = graph.state_of(target)
 	if(isnull(state))
 		return FALSE
 	if(from_state != LADDER_ANY && "[state]" != "[from_state]")
 		return FALSE
-	return when_proc ? call(target, when_proc)() : TRUE
+	return when_proc ? holder_call(target, when_proc) : TRUE
 
 /// Steps are instances: key the shared predicates by step id.
 /datum/interaction/capability/construction_step/predicate_key()
@@ -885,7 +885,7 @@
 	if(.)
 		return
 	for(var/list/need as anything in step_needs)
-		var/answer = call(target, need[1])(actor, held)
+		var/answer = holder_call(target, need[1], actor, held)
 		if(istext(answer))
 			return answer
 		if(!answer)
@@ -903,7 +903,7 @@
 /datum/interaction/capability/construction_step/pay_cost(mob/actor, atom/target, obj/item/held)
 	if(graph.start_proc)
 		// FALSE (not null) stops the step before its cost: a shock, a refusal only known now.
-		var/started = call(target, graph.start_proc)(actor, held)
+		var/started = holder_call(target, graph.start_proc, actor, held)
 		if(!isnull(started) && !started)
 			return FALSE
 	if(start_sfx)
@@ -964,7 +964,7 @@
 /// The stage this step reaches from `state` on `target`.
 /datum/interaction/capability/construction_step/proc/next_state(atom/target, state)
 	if(next_proc)
-		return call(target, next_proc)(state)
+		return holder_call(target, next_proc, state)
 	return to_state
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
@@ -995,7 +995,7 @@ GLOBAL_VAR_INIT(dq_ladder_instant, FALSE)
 	var/datum/ladder_stage/entered = graph.stage_named(after)
 	// on_leave runs while the holder is still in the stage it leaves; FALSE (not null) refuses.
 	if(left?.on_leave && left != entered)
-		var/leaving = call(target, left.on_leave)(actor, held, after)
+		var/leaving = holder_call(target, left.on_leave, actor, held, after)
 		if(QDELETED(target) || (!isnull(leaving) && !leaving))
 			return FALSE
 	var/was_anchored
@@ -1015,7 +1015,7 @@ GLOBAL_VAR_INIT(dq_ladder_instant, FALSE)
 		if(QDELETED(target))
 			break
 		// FALSE (not null: a plain helper returns null) refuses: the stage and anchoring go back.
-		var/result = call(target, hook)(actor, held, before)
+		var/result = holder_call(target, hook, actor, held, before)
 		if(!isnull(result) && !result)
 			if(!QDELETED(target))
 				graph.set_state(target, before)
@@ -1031,11 +1031,11 @@ GLOBAL_VAR_INIT(dq_ladder_instant, FALSE)
 	if(done_sfx)
 		play_sfx(where || target, done_sfx)
 	if(become && !QDELETED(target) && ismovable(target))
-		var/list/replace_args = list(target) + ((ruined_when && ruined_become && call(target, ruined_when)()) ? ruined_become : become)
+		var/list/replace_args = list(target) + ((ruined_when && ruined_become && holder_call(target, ruined_when)) ? ruined_become : become)
 		replace_with(arglist(replace_args))
 	// A turf that changed into something else (a cut-open wall) no longer has the graph's procs.
 	if(graph.after_proc && !QDELETED(target) && hascall(target, graph.after_proc))
-		call(target, graph.after_proc)(actor, before, after)
+		holder_call(target, graph.after_proc, actor, before, after)
 	return TRUE
 
 /// Sets the holder's anchoring for `stage`, when the ladder says it.
@@ -1086,7 +1086,7 @@ GLOBAL_VAR_INIT(dq_ladder_instant, FALSE)
 			octx.release()
 			return UI_REFUSED
 	var/datum/dispatch_context/ctx = new(actor, target, held, src)
-	. = dispatch_call(ctx, target, TYPE_PROC_REF(/atom, traverse_ladder_step), list("user" = actor, "held" = held, "step" = src), name, log)
+	. = dispatch_call(ctx, target, GLOBAL_PROC_REF(traverse_ladder_step), list("user" = actor, "held" = held, "step" = src), name, log)
 	if(isnull(.))
 		. = TRUE
 	if(octx)
@@ -1100,8 +1100,8 @@ GLOBAL_VAR_INIT(dq_ladder_instant, FALSE)
 	return FALSE
 
 /// The handler every construction step dispatches to.
-/atom/proc/traverse_ladder_step(mob/user, obj/item/held, datum/interaction/capability/construction_step/step)
-	return step.traverse(src, user, held)
+/proc/traverse_ladder_step(atom/holder, mob/user, obj/item/held, datum/interaction/capability/construction_step/step)
+	return step.traverse(holder, user, held)
 
 // ---------------------------------------------------------------------------
 // The verb table

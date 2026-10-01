@@ -345,9 +345,9 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/unary/vent_scrubber, TYPE_PR
 		. += "It is welded shut."
 
 
-TRACKED(/obj/machinery/atmospherics/unary/vent_scrubber, scrubbing, CHANGE_MACHINE_SETTINGS)
-TRACKED(/obj/machinery/atmospherics/unary/vent_scrubber, panic, CHANGE_MACHINE_SETTINGS)
-TRACKED(/obj/machinery/atmospherics/unary/vent_scrubber, scrubbing_gas, CHANGE_MACHINE_SETTINGS)
+TRACKED_BRIDGED(/obj/machinery/atmospherics/unary/vent_scrubber, scrubbing, CHANGE_MACHINE_SETTINGS)
+TRACKED_BRIDGED(/obj/machinery/atmospherics/unary/vent_scrubber, panic, CHANGE_MACHINE_SETTINGS)
+TRACKED_BRIDGED(/obj/machinery/atmospherics/unary/vent_scrubber, scrubbing_gas, CHANGE_MACHINE_SETTINGS)
 
 /// The Rust device law is pushed (once per frame) when any of these change.
 /obj/machinery/atmospherics/unary/vent_scrubber/derived()

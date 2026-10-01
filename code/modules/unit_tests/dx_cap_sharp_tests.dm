@@ -19,15 +19,15 @@
 	TEST_ASSERT(B.edge, "edge written at init")
 	TEST_ASSERT(is_sharp(B), "is_sharp() reads it")
 	TEST_ASSERT(has_edge(B), "has_edge() reads it")
-	TEST_ASSERT("It has a keen edge." in B.caps_examine(H), "examine names the edge")
+	TEST_ASSERT("It has a keen edge." in caps_examine(B, H), "examine names the edge")
 
 	var/obj/item/cap_fixture/spike/S = allocate(/obj/item/cap_fixture/spike, T)
 	TEST_ASSERT(S.sharp, "sharp by default")
 	TEST_ASSERT(!S.edge, "no edge by default")
-	TEST_ASSERT("It has a sharp point." in S.caps_examine(H), "examine names the point")
+	TEST_ASSERT("It has a sharp point." in caps_examine(S, H), "examine names the point")
 
 	var/obj/item/cap_fixture/plain = allocate(/obj/item/cap_fixture, T)
-	TEST_ASSERT(!length(plain.caps_examine(H)), "no capability, no line")
+	TEST_ASSERT(!length(caps_examine(plain, H)), "no capability, no line")
 
 	// A capability's argument is only the type default: an instance that already differs keeps its value.
 	plain.reach = 4

@@ -109,12 +109,10 @@
 	refresh_flush() // a fresh atom sits in the refresh queue until it flushes: a reference the eligibility check would see
 	item.latent_touched_at = world.time - (box.latent_idle_delay * 2)
 
-	var/was_enabled = CONFIG_GET(flag/latency_policy_enabled)
-	CONFIG_SET(flag/latency_policy_enabled, FALSE)
+	set_config(/datum/config_entry/flag/latency_policy_enabled, FALSE)
 	TEST_ASSERT(!latent_ok(item), "the kill switch must refuse collapse when off")
-	CONFIG_SET(flag/latency_policy_enabled, TRUE)
+	set_config(/datum/config_entry/flag/latency_policy_enabled, TRUE)
 	TEST_ASSERT(latent_ok(item), "an idle, unpinned, storable item should be latent-eligible once the switch is on ([dq_latency_explain(item)]): [GLOB.latency_last_ineligible]")
-	CONFIG_SET(flag/latency_policy_enabled, was_enabled)
 	qdel(box)
 
 /datum/unit_test/dq_latency_idle_delay
@@ -370,10 +368,10 @@
 	GLOB.latency_sweep_holders.Cut()
 	GLOB.latency_sweep_holders[box] = TRUE
 	GLOB.latency_sweep.cursor = 0
-	GLOB.latency_last_ineligible = ""
+	set_global("latency_last_ineligible", "")
 	GLOB.latency_sweep.periodic_step(2 SECONDS)
 	var/sweep_reason = GLOB.latency_last_ineligible
-	GLOB.latency_sweep_holders = saved
+	set_global("latency_sweep_holders", saved)
 	TEST_ASSERT_EQUAL(L.latent_total, 1, "the sweep should collapse the idle item: sweep said '[sweep_reason]', collapse said '[GLOB.latent_last_refusal]'")
 	TEST_ASSERT_EQUAL(length(box.contents), 0, "the collapsed item is no longer real")
 	qdel(box)
@@ -408,7 +406,7 @@
 	GLOB.latency_sweep_holders[box] = TRUE
 	GLOB.latency_sweep.cursor = 0
 	GLOB.latency_sweep.periodic_step(2 SECONDS)
-	GLOB.latency_sweep_holders = saved
+	set_global("latency_sweep_holders", saved)
 	TEST_ASSERT_EQUAL(L.latent_total, 0, "an item with an outside holder must stay real")
 	TEST_ASSERT_EQUAL(length(box.contents), 1, "the held item is still in the box")
 	outside_holder = null

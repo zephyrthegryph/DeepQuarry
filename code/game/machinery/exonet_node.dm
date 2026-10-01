@@ -74,7 +74,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/exonet_node, "{initial(icon_state)}{on?:_off}
 	update_icon()
 
 // An EMP shuts off the machine for awhile.  Ion anomalies also pulse it to turn it off.
-EMP_DISABLE(/obj/machinery/exonet_node, 300 SECONDS, "emp_until")
+CAPABILITY(/obj/machinery/exonet_node, emp_disable(300 SECONDS))
 
 /obj/machinery/exonet_node/emp_disable_changed(disabled)
 	..()

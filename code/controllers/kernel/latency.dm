@@ -149,7 +149,7 @@
 			input_dropped++
 			continue
 		record_input((world.time - entry[6]) / world.tick_lag)
-		world.push_usr(user, CALLBACK(target, TYPE_PROC_REF(/atom, kernel_click_run), user, entry[3], entry[4], entry[5]))
+		world.push_usr(user, CALLBACK(target, GLOBAL_PROC_REF(kernel_click_run), user, entry[3], entry[4], entry[5]))
 		ran++
 	if(TICK_USAGE - started > KERNEL_INPUT_CAP)
 		input_over_cap++
@@ -166,6 +166,6 @@
 	)
 
 /// A click, as its clicker: the event, then the mob's click handling.
-/atom/proc/kernel_click_run(mob/user, location, control, params)
-	OM_EMIT(src, /datum/om/event/click, location, control, params, user)
-	user.ClickOn(src, params)
+/proc/kernel_click_run(atom/holder, mob/user, location, control, params)
+	OM_EMIT(holder, /datum/om/event/click, location, control, params, user)
+	user.ClickOn(holder, params)

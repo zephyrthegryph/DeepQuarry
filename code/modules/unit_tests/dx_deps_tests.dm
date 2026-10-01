@@ -16,9 +16,9 @@
 	var/should_run_calls = 0
 	var/draw_calls = 0
 
-TRACKED(/obj/cap_fixture/dx_deps_laser, energy, CHANGE_ITEM_CHARGE)
-TRACKED(/obj/cap_fixture/dx_deps_laser, pointing, CHANGE_EFFECTS)
-TRACKED(/obj/cap_fixture/dx_deps_laser, spare, CHANGE_EFFECTS)
+TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_laser, energy, CHANGE_ITEM_CHARGE)
+TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_laser, pointing, CHANGE_EFFECTS)
+TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_laser, spare, CHANGE_EFFECTS)
 
 /obj/cap_fixture/dx_deps_laser/derived()
 	. = ..()
@@ -41,7 +41,7 @@ TRACKED(/obj/cap_fixture/dx_deps_laser, spare, CHANGE_EFFECTS)
 	var/tier = 0
 	var/draw_calls = 0
 
-TRACKED(/obj/cap_fixture/dx_deps_legacy, tier, CHANGE_EFFECTS)
+TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_legacy, tier, CHANGE_EFFECTS)
 
 /obj/cap_fixture/dx_deps_legacy/draw(datum/look/look)
 	..()
@@ -53,8 +53,8 @@ TRACKED(/obj/cap_fixture/dx_deps_legacy, tier, CHANGE_EFFECTS)
 	var/glow = FALSE
 	var/other = 0
 
-TRACKED(/obj/cap_fixture/dx_deps_source, glow, CHANGE_EFFECTS)
-TRACKED(/obj/cap_fixture/dx_deps_source, other, CHANGE_EFFECTS)
+TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_source, glow, CHANGE_EFFECTS)
+TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_source, other, CHANGE_EFFECTS)
 
 /// draw() reads the source's glow through the declared REL view `source`.
 /obj/cap_fixture/dx_deps_watcher
@@ -107,8 +107,8 @@ TRACKED(/obj/cap_fixture/dx_deps_source, other, CHANGE_EFFECTS)
 /obj/cap_fixture/dx_deps_derive/relations()
 	. = ..()
 	. += rel_one(nameof(feed))
-TRACKED(/obj/cap_fixture/dx_deps_derive, a, CHANGE_EFFECTS)
-TRACKED(/obj/cap_fixture/dx_deps_derive, b, CHANGE_EFFECTS)
+TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_derive, a, CHANGE_EFFECTS)
+TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_derive, b, CHANGE_EFFECTS)
 
 /obj/cap_fixture/dx_deps_derive/derived()
 	. = ..()
@@ -157,8 +157,8 @@ TRACKED(/obj/cap_fixture/dx_deps_derive, b, CHANGE_EFFECTS)
 	var/tier = 0
 	var/lie = 0
 
-TRACKED(/obj/cap_fixture/dx_deps_writer, tier, CHANGE_EFFECTS)
-TRACKED(/obj/cap_fixture/dx_deps_writer, lie, CHANGE_EFFECTS)
+TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_writer, tier, CHANGE_EFFECTS)
+TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_writer, lie, CHANGE_EFFECTS)
 
 /obj/cap_fixture/dx_deps_writer/derived()
 	. = ..()
@@ -175,8 +175,8 @@ TRACKED(/obj/cap_fixture/dx_deps_writer, lie, CHANGE_EFFECTS)
 	var/shade = 0
 	var/other = 0
 
-TRACKED(/obj/cap_fixture/dx_deps_sloppy, shade, CHANGE_EFFECTS)
-TRACKED(/obj/cap_fixture/dx_deps_sloppy, other, CHANGE_EFFECTS)
+TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_sloppy, shade, CHANGE_EFFECTS)
+TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_sloppy, other, CHANGE_EFFECTS)
 
 /obj/cap_fixture/dx_deps_sloppy/derived()
 	. = ..()
@@ -193,9 +193,9 @@ TRACKED(/obj/cap_fixture/dx_deps_sloppy, other, CHANGE_EFFECTS)
 	var/noise = 0
 	var/pushes = 0
 
-TRACKED(/obj/cap_fixture/dx_deps_pusher, target, CHANGE_EFFECTS)
-TRACKED(/obj/cap_fixture/dx_deps_pusher, mode, CHANGE_EFFECTS)
-TRACKED(/obj/cap_fixture/dx_deps_pusher, noise, CHANGE_EFFECTS)
+TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_pusher, target, CHANGE_EFFECTS)
+TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_pusher, mode, CHANGE_EFFECTS)
+TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_pusher, noise, CHANGE_EFFECTS)
 
 /obj/cap_fixture/dx_deps_pusher/derived()
 	. = ..()
@@ -218,8 +218,8 @@ TRACKED(/obj/cap_fixture/dx_deps_pusher, noise, CHANGE_EFFECTS)
 	var/gadget = FALSE
 	var/spare = 0
 
-TRACKED(/obj/cap_fixture/dx_deps_cap, gadget, CHANGE_EFFECTS)
-TRACKED(/obj/cap_fixture/dx_deps_cap, spare, CHANGE_EFFECTS)
+TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_cap, gadget, CHANGE_EFFECTS)
+TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_cap, spare, CHANGE_EFFECTS)
 
 /obj/cap_fixture/dx_deps_cap/capabilities()
 	. = ..()
@@ -372,10 +372,10 @@ TRACKED(/obj/cap_fixture/dx_deps_cap, spare, CHANGE_EFFECTS)
 
 /// A hop through a plain var is refused at init with a clear error.
 /datum/unit_test/dx_deps_refuse_plain_hop/Run()
-	GLOB.derived_error_expected = TRUE
+	set_global("derived_error_expected", TRUE)
 	GLOB.derived_errors.Cut()
 	allocate(/obj/cap_fixture/dx_deps_plainhop)
-	GLOB.derived_error_expected = FALSE
+	set_global("derived_error_expected", FALSE)
 	TEST_ASSERT(length(GLOB.derived_errors) > 0, "the hop was refused")
 	TEST_ASSERT(findtext(GLOB.derived_errors[1], "not a declared relation"), "and says why: [GLOB.derived_errors[1]]")
 	GLOB.derived_errors.Cut()
@@ -426,13 +426,13 @@ TRACKED(/obj/cap_fixture/dx_deps_cap, spare, CHANGE_EFFECTS)
 
 /// Outputs must not write state: a tracked write inside draw() is reported.
 /datum/unit_test/dx_deps_output_writes_state/Run()
-	GLOB.derived_write_expected = TRUE
-	GLOB.refresh_self_mark_expected = TRUE
+	set_global("derived_write_expected", TRUE)
+	set_global("refresh_self_mark_expected", TRUE)
 	GLOB.derived_write_violations.Cut()
 	allocate(/obj/cap_fixture/dx_deps_writer)
 	refresh_flush()
-	GLOB.derived_write_expected = FALSE
-	GLOB.refresh_self_mark_expected = FALSE
+	set_global("derived_write_expected", FALSE)
+	set_global("refresh_self_mark_expected", FALSE)
 	TEST_ASSERT(length(GLOB.derived_write_violations) > 0, "the write was reported")
 	TEST_ASSERT(findtext(GLOB.derived_write_violations[1], "lie"), "and names the var: [GLOB.derived_write_violations[1]]")
 	GLOB.derived_write_violations.Cut()
@@ -445,10 +445,10 @@ TRACKED(/obj/cap_fixture/dx_deps_cap, spare, CHANGE_EFFECTS)
 	F.set_shade(1)
 	TEST_ASSERT_EQUAL(F.refresh_queued, 0, "shade is declared nowhere: the change is dropped")
 	refresh_flush()
-	GLOB.refresh_drift_expected = TRUE
+	set_global("refresh_drift_expected", TRUE)
 	GLOB.refresh_drift.Cut()
 	var/found = refresh_check_drift(F)
-	GLOB.refresh_drift_expected = FALSE
+	set_global("refresh_drift_expected", FALSE)
 	TEST_ASSERT(found, "the audit saw the stale look")
 	TEST_ASSERT(length(GLOB.refresh_drift) > 0 && findtext(GLOB.refresh_drift[1], "shade"), "and named the likely undeclared read: [length(GLOB.refresh_drift) ? GLOB.refresh_drift[1] : "no report"]")
 	GLOB.refresh_drift.Cut()

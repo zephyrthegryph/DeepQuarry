@@ -232,8 +232,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/capture_crystal, TYPE_PROC_REF(/atom, appearan
 	if(!cooldown_check())
 		icon_state = "[icon_state]-busy"
 
-OWN_TIMER(/obj/item/capture_crystal, cooldown_icon)
-
 /// Starts the activation cooldown; the busy sprite is fixed once, when it ends.
 /obj/item/capture_crystal/proc/start_activate_cooldown()
 	COOLDOWN_START(src, activate_cooldown_until, activate_cooldown)

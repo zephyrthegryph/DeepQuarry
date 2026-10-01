@@ -28,7 +28,7 @@
 	TEST_ASSERT_EQUAL(E.entry, INTERACTION_ENTRY_SELF, "a self-use entry")
 	TEST_ASSERT_EQUAL(E.display_name(H, A), "Wield", "named for its state")
 	TEST_ASSERT_EQUAL(E.why_not(H, A, A), "it's not in your hand", "wielding needs it in hand")
-	TEST_ASSERT("It can be wielded in both hands." in A.caps_examine(H), "examine says it can be wielded")
+	TEST_ASSERT("It can be wielded in both hands." in caps_examine(A, H), "examine says it can be wielded")
 
 	TEST_ASSERT(H.put_in_r_hand(A), "the human holds it")
 	TEST_ASSERT_NULL(E.why_not(H, A, A), "wieldable with the other hand free")
@@ -40,7 +40,7 @@
 	refresh_flush()
 	TEST_ASSERT_EQUAL(A.icon_state, "axe1", "drawn wielded")
 	TEST_ASSERT_EQUAL(A.item_state, "axe1", "held sprite wielded")
-	TEST_ASSERT("It is held in both hands." in A.caps_examine(H), "examine says wielded")
+	TEST_ASSERT("It is held in both hands." in caps_examine(A, H), "examine says wielded")
 	var/list/data = dx_cap_ui_data(A, H, /datum/capability/two_handed)
 	TEST_ASSERT(data["wielded"], "UI data says wielded")
 

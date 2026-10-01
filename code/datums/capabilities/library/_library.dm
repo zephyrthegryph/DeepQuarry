@@ -85,12 +85,12 @@
 	look.part(layer_name, !!when)
 
 /// needs: the actor can reach the holder (adjacent, silicon remote use, or a legacy entry).
-/atom/proc/cap_in_reach(mob/user, obj/item/held)
-	return dq_interaction_reach(user, src, held) ? TRUE : "you're too far away"
+/proc/cap_in_reach(mob/user, atom/holder, obj/item/held)
+	return dq_interaction_reach(user, holder, held) ? TRUE : "you're too far away"
 
 /// needs: the holder (an item) is in one of the actor's hands.
-/atom/proc/cap_in_hand(mob/user, obj/item/held)
-	return dq_interaction_self_reach(user, src, held) ? TRUE : "it's not in your hand"
+/proc/cap_in_hand(mob/user, atom/holder, obj/item/held)
+	return dq_interaction_self_reach(user, holder, held) ? TRUE : "it's not in your hand"
 
 /proc/is_bolted(atom/A)
 	return !!(A.cap_state & CAP_BOLTED)

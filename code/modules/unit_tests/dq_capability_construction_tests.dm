@@ -3,9 +3,9 @@
 
 /// Runs `step` on `target` with no wait. Returns what perform() returned.
 /datum/unit_test/proc/ladder_walk(mob/actor, atom/target, datum/interaction/capability/construction_step/step, obj/item/held)
-	GLOB.dq_ladder_instant = TRUE
+	set_global("dq_ladder_instant", TRUE)
 	. = step.perform(actor, target, held)
-	GLOB.dq_ladder_instant = FALSE
+	set_global("dq_ladder_instant", FALSE)
 
 /// The step leaving `target`'s stage toward `destination` (a stage name or LADDER_DONE).
 /datum/unit_test/proc/ladder_step(atom/target, from, destination)
@@ -83,7 +83,7 @@
 	TEST_ASSERT(!length(problems), "valid: [jointext(problems, "; ")]")
 	TEST_ASSERT_EQUAL(ladder.state_of(probe), "start", "a new holder is on the first stage")
 	TEST_ASSERT(length(cap_interactions(probe)) >= 5, "the steps are the capability's interactions")
-	var/text = jointext(probe.caps_examine(H), "\n")
+	var/text = jointext(caps_examine(probe, H), "\n")
 	TEST_ASSERT(findtext(text, "A probe at the start."), "examine comes from the capability: [text]")
 	TEST_ASSERT(findtext(text, "Next: add 3 "), "examine lists the next step: [text]")
 

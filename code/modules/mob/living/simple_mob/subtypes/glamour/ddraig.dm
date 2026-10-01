@@ -1,4 +1,3 @@
-OWN_TIMER(/mob/living/simple_mob/vore/ddraig, firebreathtimer)
 
 /mob/living/simple_mob/vore/ddraig
 	name = "ddraig"

@@ -33,13 +33,13 @@
 			poke = E
 	refresh_flush()
 	TEST_ASSERT(!cap_test_has_layer(A, "dark"), "not dark while powered")
-	TEST_ASSERT(!("It is unpowered." in A.caps_examine(H)), "no unpowered line while powered")
+	TEST_ASSERT(!("It is unpowered." in caps_examine(A, H)), "no unpowered line while powered")
 	TEST_ASSERT_NULL(poke.why_not(H, A, null), "entries work while powered")
 	A.has_power = FALSE
 	changed(A)
 	refresh_flush()
 	TEST_ASSERT(cap_test_has_layer(A, "dark"), "dark while unpowered")
-	TEST_ASSERT("It is unpowered." in A.caps_examine(H), "the unpowered line shows")
+	TEST_ASSERT("It is unpowered." in caps_examine(A, H), "the unpowered line shows")
 	TEST_ASSERT_EQUAL(poke.why_not(H, A, null), "it has no power", "entries refuse while unpowered")
 
 /// power_change() marks the machine changed, so its look follows the power.

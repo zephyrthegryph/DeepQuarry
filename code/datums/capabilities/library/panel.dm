@@ -17,7 +17,7 @@
 
 /// One op, "open_maintenance_panel": the tool's click (OP_PRIORITY_PART) opens or closes it.
 /datum/capability/panel/interactions(atom/holder)
-	return list(adopt_entry(lib_op("Open maintenance panel", TYPE_PROC_REF(/atom, cap_panel_toggle), OP_SHAPE_TOOL, using = tool_quality, key = "open_maintenance_panel", delay = delay, priority = OP_PRIORITY_PART, name_proc = TYPE_PROC_REF(/atom, cap_panel_name)), id = "panel:[tool_quality]"))
+	return list(adopt_entry(lib_op("Open maintenance panel", TYPE_PROC_REF(/atom, cap_panel_toggle), OP_SHAPE_TOOL, using = tool_quality, key = "open_maintenance_panel", delay = delay, priority = OP_PRIORITY_PART, name_proc = GLOBAL_PROC_REF(cap_panel_name)), id = "panel:[tool_quality]"))
 
 /datum/capability/panel/examine(atom/holder, mob/user)
 	if(panel_is_open(holder))
@@ -30,8 +30,8 @@
 /datum/capability/panel/ui_data(atom/holder, mob/user, list/data)
 	data["open"] = panel_is_open(holder)
 
-/atom/proc/cap_panel_name(mob/user)
-	return panel_is_open(src) ? "Close maintenance panel" : "Open maintenance panel"
+/proc/cap_panel_name(atom/holder, mob/user)
+	return panel_is_open(holder) ? "Close maintenance panel" : "Open maintenance panel"
 
 /atom/proc/cap_panel_toggle(mob/user, obj/item/held)
 	var/opening = !panel_is_open(src)

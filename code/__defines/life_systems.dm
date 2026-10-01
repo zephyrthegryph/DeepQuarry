@@ -27,6 +27,22 @@
 /// "wake all"). Stages list only the channels specific to them in `wake_on`.
 #define LIFE_WAKE_ALL (CHANGE_MOB_STAT | CHANGE_MOB_CLIENT | CHANGE_EXPLICIT)
 
+// ---- change keys a mob publishes (PUBLISH_CHANGE) for the facts that are not one tracked var ----
+// Read by on_change() reactions (the Life presentation reactions, living_systems.dm). A mob's stat is the tracked
+// var key nameof(stat) (set_stat()).
+/// A status started or ended, a status immunity or godmode or buckling changed, a pull began or ended.
+#define MOB_KEY_STATUS "mob_status"
+/// The body re-derived: injury, affliction, factors, organs (body.invalidate()).
+#define MOB_KEY_HEALTH "mob_health"
+/// The mob moved (its turf or container changed).
+#define MOB_KEY_LOC "mob_loc"
+/// Something was equipped or unequipped.
+#define MOB_KEY_EQUIPMENT "mob_equipment"
+/// A condition changed: body effects, mutations, species senses, stasis.
+#define MOB_KEY_CONDITIONS "mob_conditions"
+/// A client logged in or out.
+#define MOB_KEY_CLIENT "mob_client"
+
 // --- run_if: the old early returns and `if` blocks, as frame facts --------------------------
 /// The /mob/living core after `if(transforming) return` and `if(!loc) return`.
 #define LIFE_RUN_IF_PLACED FACT("placed")
@@ -83,7 +99,7 @@
 #define GERM_RESAMPLE (1 MINUTES)
 /// At most this many Life cycles of germ creep are charged at once.
 #define GERM_CATCHUP_CYCLES 100
-/// The HUD and sight reactions run at most this often (on_channel at_most); changes in between coalesce.
+/// The HUD and sight reactions run at most this often (on_change at_most); changes in between coalesce.
 #define LIFE_PRESENT_MIN_INTERVAL (0.5 SECONDS)
 /// Observer upkeep (ghosts, AI eyes, blob overmind) runs this often.
 #define OBSERVER_UPKEEP_INTERVAL (LIFE_CYCLE)

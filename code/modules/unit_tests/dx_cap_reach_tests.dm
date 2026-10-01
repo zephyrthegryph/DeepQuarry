@@ -12,7 +12,7 @@
 
 	var/obj/item/cap_fixture/pole/P = allocate(/obj/item/cap_fixture/pole, T)
 	TEST_ASSERT_EQUAL(P.reach, 3, "reach written at init")
-	TEST_ASSERT("It can strike from 3 tiles away." in P.caps_examine(H), "examine gives the reach")
+	TEST_ASSERT("It can strike from 3 tiles away." in caps_examine(P, H), "examine gives the reach")
 
 	var/datum/capability/reach/C = cap_reach(tiles = 0)
 	TEST_ASSERT_EQUAL(C.tiles, 1, "reach is at least one tile")

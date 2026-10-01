@@ -105,7 +105,7 @@ TYPE_TABLE_DECLARE(/datum/input_router, primary_table, list(list(list(LEFT_CLICK
 		var/datum/tick_meter/meter = km_meter()
 		var/entry_time = world.time
 		var/dispatch_usage = meter.click_dispatched(entry_time, TICK_USAGE)
-		kernel_click_run(usr, location, control, params)
+		kernel_click_run(src, usr, location, control, params)
 		meter.click_done(entry_time, dispatch_usage)
 
 /atom/DblClick(location, control, params)

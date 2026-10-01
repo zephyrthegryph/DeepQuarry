@@ -8,7 +8,7 @@
 /proc/type_list(datum/D, proc_ref, post)
 	RETURN_TYPE(/list)
 	var/list/result = CACHED_KEY(type_lists, "[D.type]|[proc_ref]", D, proc_ref, post)
-#ifdef UNIT_TESTS
+#if defined(UNIT_TESTS) && !defined(BENCHMARK)
 	type_list_purity_check(D, proc_ref, result, post)
 #endif
 	return result
@@ -18,7 +18,8 @@
 /proc/build_type_list(datum/D, proc_ref, post)
 	var/result
 	try
-		result = call(D, proc_ref)()
+		// A global builder takes the instance (caps_build(A)); a type proc is called on it.
+		result = IS_GLOBAL_PROC_REF(proc_ref) ? call(proc_ref)(D) : call(D, proc_ref)()
 	catch(var/exception/e)
 		// Surface it and don't cache an empty list: the next instance tries again (and fails loudly).
 		CRASH("type_list: [D.type].[proc_ref] failed while building: [e] ([e.file]:[e.line])")

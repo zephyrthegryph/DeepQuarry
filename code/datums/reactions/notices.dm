@@ -23,6 +23,16 @@
 	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	item = null
 
+/// The wearer of these shoes took a step (published by human handle_footstep()).
+/datum/notice/shoes_step
+	var/mob/living/carbon/human/wearer
+	var/m_intent
+
+/datum/notice/shoes_step/fill(mob/living/carbon/human/wearer, m_intent)
+	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
+	src.wearer = wearer
+	src.m_intent = m_intent
+
 /// A shredder's claws tore at the holder: published by the claw op (claw_op(), CAP_CLAW) of a breakable machine,
 /// which is only offered to an actor whose claws can tear it. The listener decides what gives.
 /datum/notice/slashed

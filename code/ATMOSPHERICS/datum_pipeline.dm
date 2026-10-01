@@ -1,6 +1,4 @@
 
-OWN_TIMER(/datum/pipeline, engineered_exposure_timer)
-
 /datum/pipeline
 	/// PROTO gas port: the pipe network's authoritative mixture (shared, the network owns it),
 	/// or a private detached share this line owns. Written only by atmos_air_set().
@@ -135,7 +133,7 @@ OWN_TIMER(/datum/pipeline, engineered_exposure_timer)
 
 /datum/pipeline/ownership()
 	. = ..()
-	. += proto(nameof(air))
+	. += rel_one(nameof(air), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)
 
 /datum/pipeline/relations()
 	. = ..()

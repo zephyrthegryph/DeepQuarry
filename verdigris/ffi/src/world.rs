@@ -622,10 +622,15 @@ fn component_adjust(
 /// drew power). With `force`, a step runs now whatever the pacer owes (a deterministic step for a test that built
 /// a device by hand). Driven by [`crate::frame`] only.
 pub(crate) fn pace(seconds: f64, force: bool) -> Result<Vec<f32>> {
-    let probes = crate::heat::mixture_probes();
+    // The heat exchange law reads the mixture probes only when a step runs: building them walks every gas coupling
+    // and loads its mixture, so a frame that only advances the pacer (most of them: the step is PIPE_DEVICE_PERIOD,
+    // the frame a tick) skips it.
+    let due = force || with_world(|w| Ok(w.step_due(Seconds(seconds))))?;
+    let probes = due.then(crate::heat::mixture_probes);
     with_world(|w| {
-        w.set_global(probes).map_err(|e| eyre!("{e}"))?;
-        let due = force || w.step_due(Seconds(seconds));
+        if let Some(probes) = probes {
+            w.set_global(probes).map_err(|e| eyre!("{e}"))?;
+        }
         if due {
             crate::pipes::stage_devices(w)?;
         }

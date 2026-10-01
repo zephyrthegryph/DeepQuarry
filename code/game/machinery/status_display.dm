@@ -9,7 +9,6 @@
 // Use to show shuttle ETA/ETD times
 // Alert status
 // And arbitrary messages set by comms computer
-OWN_TIMER(/obj/machinery/status_display, refresh_token)
 
 /obj/machinery/status_display
 	icon = 'icons/obj/status_display.dmi'

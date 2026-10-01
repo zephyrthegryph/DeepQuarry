@@ -3,7 +3,7 @@
 
 /obj/cap_fixture/weldable/capabilities()
 	. = ..()
-	. += cap_tool("Weld", TOOL_WELDER, PROC_REF(fx_weld), needs = TYPE_PROC_REF(/atom, cap_needs_lit_welder))
+	. += cap_tool("Weld", TOOL_WELDER, PROC_REF(fx_weld), needs = GLOBAL_PROC_REF(cap_needs_lit_welder))
 
 /obj/cap_fixture/weldable/proc/fx_weld(mob/user, obj/item/held)
 	LAZYADD(calls, "weld")
@@ -57,7 +57,7 @@
 	var/obj/item/multitool/M = allocate(/obj/item/multitool, T)
 	TEST_ASSERT_EQUAL(tool_ready(M, TOOL_MULTITOOL), TRUE, "a multitool is ready without a buffer")
 	TEST_ASSERT_EQUAL(tool_ready(M, TOOL_MULTITOOL, needs_buffer = TRUE), "its buffer is empty", "needs_buffer wants one")
-	TEST_ASSERT_EQUAL(target.cap_needs_buffer(H, M), "its buffer is empty", "the common needs proc")
+	TEST_ASSERT_EQUAL(cap_needs_buffer(target, H, M), "its buffer is empty", "the common needs proc")
 	var/obj/machinery/machine = allocate(/obj/machinery, T)
 	rel_set(M, nameof(M.connectable), machine)
 	TEST_ASSERT_EQUAL(tool_buffer(M), machine, "tool_buffer() reads the buffered machine")

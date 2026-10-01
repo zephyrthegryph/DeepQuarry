@@ -50,7 +50,7 @@
 	TEST_ASSERT_NOTNULL(cap_of(V, /datum/capability/wires), "wires")
 	TEST_ASSERT_NOTNULL(cap_of(V, /datum/capability/emag), "an emag")
 	TEST_ASSERT_NOTNULL(cap_of(V, /datum/capability/anchor), "an anchor")
-	TEST_ASSERT_NOTNULL(V.slot_capability(nameof(V.coin)), "the coin slot")
+	TEST_ASSERT_NOTNULL(slot_capability(V, nameof(V.coin)), "the coin slot")
 	for(var/name in list("Refill", "Insert coin", "Stock", "Use", "Check vending logs"))
 		TEST_ASSERT_NOTNULL(dx_vending_entry(V, name), "an entry named [name]")
 	TEST_ASSERT(hascall(V, "finish_vend"), "the delayed vend is finish_vend")
@@ -84,7 +84,7 @@
 	TEST_ASSERT(!V.tgui_act("remove_coin", list(), ui), "an empty slot refuses")
 
 	// A premium purchase swallows the coin.
-	TEST_ASSERT(V.slot_insert(nameof(V.coin), C, H), "the coin goes in from code")
+	TEST_ASSERT(slot_insert(V, nameof(V.coin), C, H), "the coin goes in from code")
 	var/datum/stored_item/vending_product/premium
 	var/premium_key
 	for(var/key in 1 to length(V.product_records))
@@ -122,7 +122,7 @@
 	var/datum/tgui/ui = dx_vending_window(H, V)
 	var/datum/stored_item/vending_product/R = V.product_records[1]
 	var/before = R.get_amount()
-	GLOB.refuse_capture = list()
+	set_global("refuse_capture", list())
 
 	TEST_ASSERT(!V.tgui_act("vend", list("vend" = 99), ui), "a key past the list is refused (not clamped onto another product)")
 	TEST_ASSERT(!V.tgui_act("vend", list("vend" = 0), ui), "key 0 is refused")
@@ -140,7 +140,7 @@
 	TEST_ASSERT(!V.vend_ready, "the machine is busy until it finishes")
 	TEST_ASSERT(!V.tgui_act("vend", list("vend" = 1), ui), "a second request while busy is refused")
 	var/list/refusals = GLOB.refuse_capture
-	GLOB.refuse_capture = null
+	set_global("refuse_capture", null)
 	var/found_busy = FALSE
 	for(var/list/entry in refusals)
 		if(findtext(entry[2], "busy"))

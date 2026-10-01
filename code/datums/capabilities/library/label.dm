@@ -29,14 +29,14 @@
 
 /// Ops: "label" (a click with a hand labeler) or "rename" (a click with a pen), and "remove_label" (ACT_NONE).
 /datum/capability/label/interactions(atom/holder)
-	return list(adopt_entry(lib_op("Label", TYPE_PROC_REF(/atom, cap_label_apply), OP_SHAPE_USE_ON, using = /obj/item/hand_labeler, key = "label", works_broken = TRUE, works_unpowered = TRUE)), remove_entry())
+	return list(adopt_entry(lib_op("Label", GLOBAL_PROC_REF(cap_label_apply), OP_SHAPE_USE_ON, using = /obj/item/hand_labeler, key = "label", works_broken = TRUE, works_unpowered = TRUE)), remove_entry())
 
 /datum/capability/label/rename/interactions(atom/holder)
-	return list(adopt_entry(lib_op("Rename", TYPE_PROC_REF(/atom, cap_label_rename), OP_SHAPE_USE_ON, using = /obj/item/pen, key = "rename", works_broken = TRUE, works_unpowered = TRUE)), remove_entry())
+	return list(adopt_entry(lib_op("Rename", GLOBAL_PROC_REF(cap_label_rename), OP_SHAPE_USE_ON, using = /obj/item/pen, key = "rename", works_broken = TRUE, works_unpowered = TRUE)), remove_entry())
 
 /// ACT_NONE: an empty hand keeps doing the holder's own thing; the Menu, radial and command bar name it.
 /datum/capability/label/proc/remove_entry()
-	var/datum/interaction/capability/E = adopt_entry(lib_op("Remove label", TYPE_PROC_REF(/atom, cap_label_remove), OP_SHAPE_HAND, key = "remove_label", action = ACT_NONE, needs = TYPE_PROC_REF(/atom, cap_label_present), else_say = "it has no label", works_broken = TRUE, works_unpowered = TRUE))
+	var/datum/interaction/capability/E = adopt_entry(lib_op("Remove label", GLOBAL_PROC_REF(cap_label_remove), OP_SHAPE_HAND, key = "remove_label", action = ACT_NONE, needs = GLOBAL_PROC_REF(cap_label_present), else_say = "it has no label", works_broken = TRUE, works_unpowered = TRUE))
 	E.id = "[E.id]:[key]" // cap_label() and cap_rename() on one type each offer their own
 	return E
 
@@ -73,11 +73,11 @@
 		D.base_name = null
 	changed(A, CHANGE_CAPABILITY)
 
-/atom/proc/cap_label_present(mob/user, obj/item/held)
-	return !isnull(cap_label_of(src))
+/proc/cap_label_present(mob/user, atom/holder, obj/item/held)
+	return !isnull(cap_label_of(holder))
 
-/atom/proc/cap_label_apply(mob/user, obj/item/hand_labeler/held)
-	var/datum/capability/label/C = cap_label_cap(src)
+/proc/cap_label_apply(atom/holder, mob/user, obj/item/hand_labeler/held)
+	var/datum/capability/label/C = cap_label_cap(holder)
 	if(!held.mode)
 		return refuse(user, "Turn \the [held] on first.")
 	if(!held.label)
@@ -86,20 +86,20 @@
 		return refuse(user, "\The [held] has no labels left.")
 	var/text = copytext(held.label, 1, C.max_length + 1)
 	held.labels_left--
-	cap_label_set(src, text)
-	act_message(user, src, self = span_notice("You label %T% as [text]."), others = span_notice("%U% labels %T% as [text]."), item = held)
+	cap_label_set(holder, text)
+	act_message(user, holder, self = span_notice("You label %T% as [text]."), others = span_notice("%U% labels %T% as [text]."), item = held)
 	return TRUE
 
-/atom/proc/cap_label_rename(mob/user, obj/item/held)
-	var/datum/capability/label/C = cap_label_cap(src)
-	var/text = ask_text(user, "What would you like to label it?", "Rename", default = cap_label_of(src), max_length = C.max_length)
+/proc/cap_label_rename(atom/holder, mob/user, obj/item/held)
+	var/datum/capability/label/C = cap_label_cap(holder)
+	var/text = ask_text(user, "What would you like to label it?", "Rename", default = cap_label_of(holder), max_length = C.max_length)
 	if(!text)
 		return UI_REFUSED
-	cap_label_set(src, text)
-	act_message(user, src, self = span_notice("You label %T% as [text]."), others = span_notice("%U% labels %T% as [text]."), item = held)
+	cap_label_set(holder, text)
+	act_message(user, holder, self = span_notice("You label %T% as [text]."), others = span_notice("%U% labels %T% as [text]."), item = held)
 	return TRUE
 
-/atom/proc/cap_label_remove(mob/user, obj/item/held)
-	cap_label_set(src, null)
-	act_message(user, src, self = span_notice("You peel the label off %T%."), others = span_notice("%U% peels the label off %T%."))
+/proc/cap_label_remove(atom/holder, mob/user, obj/item/held)
+	cap_label_set(holder, null)
+	act_message(user, holder, self = span_notice("You peel the label off %T%."), others = span_notice("%U% peels the label off %T%."))
 	return TRUE

@@ -252,5 +252,3 @@
 /datum/looping_sound/relations()
 	. = ..()
 	. += rel_many(nameof(output_atoms))
-
-OWN_TIMER(/datum/looping_sound, loop_token)

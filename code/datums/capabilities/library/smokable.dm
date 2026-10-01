@@ -17,8 +17,6 @@
 /// Units one puff moves.
 #define SMOKABLE_PUFF_UNITS 1
 
-OWN_TIMER(/obj/item, cap_smokable)
-
 /datum/capability/smokable
 	data_type = /datum/cap_smokable_data
 	log = LOG_GAME
@@ -54,10 +52,10 @@ OWN_TIMER(/obj/item, cap_smokable)
 /datum/capability/smokable/interactions(atom/holder)
 	// "light" (a click with a lighter, match...), "take_drag" (the self-use: using it in hand takes a drag) and "put_out"
 	// (ACT_NONE).
-	var/datum/interaction/capability/light = adopt_entry(lib_op("Light", TYPE_PROC_REF(/obj/item, cap_smokable_light), OP_SHAPE_USE_ON, using = light_types, key = "light", needs = TYPE_PROC_REF(/obj/item, cap_smokable_can_light), works_broken = TRUE, works_unpowered = TRUE))
-	var/datum/interaction/capability/drag_entry = adopt_entry(lib_op("Take a drag", TYPE_PROC_REF(/obj/item, cap_smokable_drag), OP_SHAPE_HAND, key = "take_drag", offered = req_self_held(), needs = TYPE_PROC_REF(/obj/item, cap_smokable_is_lit), else_say = "it isn't lit", works_broken = TRUE, works_unpowered = TRUE))
+	var/datum/interaction/capability/light = adopt_entry(lib_op("Light", GLOBAL_PROC_REF(cap_smokable_light), OP_SHAPE_USE_ON, using = light_types, key = "light", needs = GLOBAL_PROC_REF(cap_smokable_can_light), works_broken = TRUE, works_unpowered = TRUE))
+	var/datum/interaction/capability/drag_entry = adopt_entry(lib_op("Take a drag", GLOBAL_PROC_REF(cap_smokable_drag), OP_SHAPE_HAND, key = "take_drag", offered = req_self_held(), needs = GLOBAL_PROC_REF(cap_smokable_is_lit), else_say = "it isn't lit", works_broken = TRUE, works_unpowered = TRUE))
 	drag_entry.entry = INTERACTION_ENTRY_SELF
-	var/datum/interaction/capability/snuff = adopt_entry(lib_op("Put out", TYPE_PROC_REF(/obj/item, cap_smokable_put_out), OP_SHAPE_HAND, key = "put_out", action = ACT_NONE, needs = TYPE_PROC_REF(/obj/item, cap_smokable_is_lit), else_say = "it isn't lit", works_broken = TRUE, works_unpowered = TRUE))
+	var/datum/interaction/capability/snuff = adopt_entry(lib_op("Put out", GLOBAL_PROC_REF(cap_smokable_put_out), OP_SHAPE_HAND, key = "put_out", action = ACT_NONE, needs = GLOBAL_PROC_REF(cap_smokable_is_lit), else_say = "it isn't lit", works_broken = TRUE, works_unpowered = TRUE))
 	return list(light, drag_entry, snuff)
 
 /datum/capability/smokable/examine(atom/holder, mob/user)
@@ -156,42 +154,42 @@ OWN_TIMER(/obj/item, cap_smokable)
 
 // ---- handlers ----
 
-/obj/item/proc/cap_smokable_is_lit(mob/user, obj/item/held)
-	return cap_has(src, CAP_LIT)
+/proc/cap_smokable_is_lit(mob/user, obj/item/holder, obj/item/held)
+	return cap_has(holder, CAP_LIT)
 
-/obj/item/proc/cap_smokable_can_light(mob/user, obj/item/held)
-	if(cap_has(src, CAP_LIT))
+/proc/cap_smokable_can_light(mob/user, obj/item/holder, obj/item/held)
+	if(cap_has(holder, CAP_LIT))
 		return "it's already lit"
-	if(cap_smokable_burn_left(src) <= 0)
+	if(cap_smokable_burn_left(holder) <= 0)
 		return "it's burnt out"
 	if(!held?.is_hot())
 		return "\the [held] isn't lit"
 	return TRUE
 
-/obj/item/proc/cap_smokable_light(mob/user, obj/item/held)
-	var/name_was = name
-	if(!cap_smokable_ignite(src))
-		if(QDELETED(src))
+/proc/cap_smokable_light(obj/item/holder, mob/user, obj/item/held)
+	var/name_was = holder.name
+	if(!cap_smokable_ignite(holder))
+		if(QDELETED(holder))
 			act_message(user, user, self = span_danger("\The [name_was] explodes!"), others = span_danger("%U%'s [name_was] explodes!"))
 			return TRUE
-		return refuse(user, "\The [src] won't light.")
-	act_message(user, src, self = span_notice("You light %T% with \the [held]."), others = span_notice("%U% lights %T% with \the [held]."), item = held)
+		return refuse(user, "\The [holder] won't light.")
+	act_message(user, holder, self = span_notice("You light %T% with \the [held]."), others = span_notice("%U% lights %T% with \the [held]."), item = held)
 	return TRUE
 
-/obj/item/proc/cap_smokable_drag(mob/user, obj/item/held)
+/proc/cap_smokable_drag(obj/item/holder, mob/user, obj/item/held)
 	var/reason = mouth_blocked_reason(user, user)
 	if(reason)
 		return refuse(user, capitalize("[reason]"))
-	var/datum/capability/smokable/C = cap_of(src, /datum/capability/smokable)
-	to_chat(user, span_notice("You take a drag on \the [src]."))
-	play_sfx(src, SFX_ITEMS_CIGS_LIGHTERS_INHALE)
-	reagents?.trans_to_mob(user, C.drag, CHEM_INGEST, 1.5, can_dialysis = FALSE)
-	cap_smokable_burn(src, C.drag * SMOKABLE_PUFF_EVERY)
+	var/datum/capability/smokable/C = cap_of(holder, /datum/capability/smokable)
+	to_chat(user, span_notice("You take a drag on \the [holder]."))
+	play_sfx(holder, SFX_ITEMS_CIGS_LIGHTERS_INHALE)
+	holder.reagents?.trans_to_mob(user, C.drag, CHEM_INGEST, 1.5, can_dialysis = FALSE)
+	cap_smokable_burn(holder, C.drag * SMOKABLE_PUFF_EVERY)
 	return TRUE
 
-/obj/item/proc/cap_smokable_put_out(mob/user, obj/item/held)
-	cap_smokable_extinguish(src)
-	act_message(user, src, self = span_notice("You put out %T%."), others = span_notice("%U% puts out %T%."))
+/proc/cap_smokable_put_out(obj/item/holder, mob/user, obj/item/held)
+	cap_smokable_extinguish(holder)
+	act_message(user, holder, self = span_notice("You put out %T%."), others = span_notice("%U% puts out %T%."))
 	return TRUE
 
 #undef SMOKABLE_PUFF_EVERY

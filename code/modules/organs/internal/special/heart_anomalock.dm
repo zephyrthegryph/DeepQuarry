@@ -1,4 +1,3 @@
-OWN_TIMER(/obj/item/organ/internal/heart/machine/anomalock, lightning_timer)
 
 /obj/item/organ/internal/heart/machine/anomalock
 	name = "voltaic combat cyberheart"

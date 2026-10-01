@@ -19,7 +19,7 @@
 	/// Until when an EMP keeps the server halted (EMP_DISABLE).
 	EXPIRY_DECLARE(emp_until)
 
-EMP_DISABLE(/obj/machinery/rnd/server, 60 SECONDS, "emp_until")
+CAPABILITY(/obj/machinery/rnd/server, emp_disable(60 SECONDS))
 
 /obj/machinery/rnd/server/Initialize(mapload)
 	. = ..()

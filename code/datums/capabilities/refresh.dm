@@ -36,8 +36,6 @@
 /// DECLARE_REPEAT delay): runs every interval while should_run() holds. A type var.
 /datum/var/periodic_interval = null
 
-OWN_TIMER(/datum, periodic_interval)
-
 /// Starts or stops D's custom-interval step to match should_run().
 /proc/periodic_interval_update(datum/D)
 	DERIVED_EVAL_BEGIN
@@ -101,6 +99,18 @@ OWN_TIMER(/datum, periodic_interval)
 		if(!mask)
 			return
 	refresh_mark(E, mask, channel)
+
+/// A dispatched call on E finished (a timer, a periodic step): its derived procs re-run, as changed(E) does, but
+/// no OM channel is raised. Nothing a dispatch can change is unannounced: what it writes through setters raises
+/// its own channels. A blanket CHANGE_EXPLICIT here woke every pipeline that wakes on it (each life frame of a mob
+/// and each machine frame) once per timer, for nothing it reads.
+/proc/refresh_dispatched(datum/E)
+	if(!E || QDELING(E) || E == GLOB.refresh_applying)
+		return
+	refresh_trace_note(E, CHANGE_EXPLICIT)
+	if(E.rel_watchers && !E.refresh_queued)
+		rel_notify_watchers(E)
+	refresh_mark(E, DEP_ALL, CHANGE_EXPLICIT)
 
 /// Queues E for the outputs in `mask`, and its owner up the chain for its look when one of the owner's
 /// capabilities draws E. `channel` reaches on_state_changed() (refresh_bits) with a plain mark.
@@ -190,7 +200,7 @@ GLOBAL_LIST_EMPTY(refresh_traced)
 	if(GLOB.derive_probing && derive_called_by_override(callee.caller, "hidden_verbs"))
 		// ALLOW(sys_dx_reactive_write): the derive probe notes the override; it runs only while GLOB.derive_probing
 		GLOB.derive_probe_found |= TYPE_DERIVES_VERBS
-	return caps_hidden_verbs()
+	return caps_hidden_verbs(src)
 
 /**
  * The verbs this atom has because of what it currently HAS (its capabilities, and for a mob its species
@@ -310,7 +320,7 @@ GLOBAL_VAR_INIT(derive_probe_found, 0)
 		GLOB.derived_evaluating = 0
 		throw e
 	GLOB.refresh_running = outer
-#if defined(UNIT_TESTS)
+#if defined(UNIT_TESTS) && !defined(BENCHMARK)
 	// A full pass re-derived everything: the ignored changes it may have hidden are answered for.
 	if(mask == DEP_ALL && length(GLOB.derived_ignored))
 		GLOB.derived_ignored -= REF(D)
@@ -358,7 +368,7 @@ GLOBAL_VAR_INIT(derive_probe_found, 0)
 /// Queues a push of D's open tgui windows: at most one per window per tick, delivered in the kernel's phase R
 /// (code/modules/tgui/ui_push.dm; tgui_data() runs inside the push, as an output).
 /proc/refresh_ui(datum/D)
-#if defined(UNIT_TESTS)
+#if defined(UNIT_TESTS) && !defined(BENCHMARK)
 	if(derived_is_exact(D))
 		GLOB.derived_ui_flushes[REF(D)] += 1
 #endif

@@ -69,4 +69,4 @@
 	if(uses_integrity)
 		atom_integrity = max_integrity
 	lifecycle_decls_init(src)
-	caps_init(TRUE)
+	caps_init(src, TRUE)
