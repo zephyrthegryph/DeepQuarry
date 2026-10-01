@@ -23,6 +23,7 @@
 	mine += W
 	work_by_key[W.key] = W
 	if(W.members)
+		W.member_list = member_list_for(W.members)
 		var/list/watching = work_by_members[W.members]
 		if(!watching)
 			watching = work_by_members[W.members] = list()
@@ -114,15 +115,23 @@
 // ALLOW(sys_world_time_write): the kernel clock: a per-tick timestamp of the scheduler itself, not a per-entity expiry
 /datum/controller/kernel/proc/work_run_phase(phase, limit_abs, lane = 0, now = world.time)
 	. = TRUE
-	var/list/items = items_of_phase(phase)
+	if(work_dirty || !phase_items)
+		rebuild_work_graph()
 	// Phase P runs once per lane: each pass walks only that lane's items (rebuild_work_graph() files them).
-	if(lane && phase == KERNEL_PHASE_P)
-		items = phase_lane_items[lane]
+	var/list/items = (lane && phase == KERNEL_PHASE_P) ? phase_lane_items[lane] : phase_items[phase]
 	for(var/datum/work_item/W as anything in items)
 		if(lane && W.lane != lane)
 			continue
 		// Not due (run_item() asks the same first): most items most ticks, so they cost no call.
 		if(W.parked || (!W.cursor && !W.yielded && W.next_run > now))
+			continue
+		// A member sweep with nobody to sweep (most cadences most ticks: projectiles, throwing, ...) is closed
+		// here, as run_item_members() and run_item_spread() close it, without a call into the engine.
+		if(W.members && !W.member_list)
+			W.member_list = member_list_for(W.members)
+		if(W.member_list && !W.cursor && !length(W.member_list))
+			W.next_run = now + W.interval
+			W.runs++
 			continue
 		if(!run_item(W, limit_abs, now))
 			. = FALSE
@@ -139,7 +148,9 @@
 	if(!W.admitted_now())
 		// Not in this item's run levels: it is due again next pass, and its sweep (if one was open) resumes then.
 		return TRUE
-	if(!kernel_latency().admit(W.latency_class(), W.key))
+	// The latency gate refuses only while shedding: one var read most ticks instead of three calls.
+	var/datum/kernel_latency/latency = kernel_latency()
+	if(latency.shedding && !latency.admit(W.latency_class(), W.key))
 		return TRUE
 	if(TICK_USAGE >= limit_abs)
 		return FALSE

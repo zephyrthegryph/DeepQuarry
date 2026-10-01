@@ -195,11 +195,11 @@ impl Mirror {
         }
     }
 
-    fn evaluate(&mut self, probes: &CowStore<GasCell>) -> Vec<Wake> {
+    fn evaluate(&mut self, probes: &CowStore<GasCell>, written: &[usize]) -> Vec<Wake> {
         let started = std::time::Instant::now();
         let mut outbox: Outbox<GasCell> = Outbox::default();
         self.port.dispatch(&mut self.state);
-        self.state.evaluate(probes, &mut outbox);
+        self.state.evaluate_chunks(probes, written, &mut outbox);
         self.port.filter(&mut outbox);
         // Cumulative: how often a drain finds changed mirror chunks and evaluates, and what that costs.
         let stats = self.state.stats();
@@ -207,11 +207,17 @@ impl Mirror {
         metrics.counter("gas_watch.mirror_evaluations").inc();
         if stats.changed_chunks > 0 {
             metrics.counter("gas_watch.mirror_full_passes").inc();
-            metrics.counter("gas_watch.mirror_changed_chunks").add(stats.changed_chunks as u64);
-            metrics.counter("gas_watch.mirror_evaluated").add(stats.evaluated as u64);
+            metrics
+                .counter("gas_watch.mirror_changed_chunks")
+                .add(stats.changed_chunks as u64);
+            metrics
+                .counter("gas_watch.mirror_evaluated")
+                .add(stats.evaluated as u64);
         }
         #[allow(clippy::cast_possible_truncation)]
-        metrics.counter("gas_watch.mirror_us").add(started.elapsed().as_micros() as u64);
+        metrics
+            .counter("gas_watch.mirror_us")
+            .add(started.elapsed().as_micros() as u64);
         outbox.wakes().to_vec()
     }
 
@@ -240,6 +246,11 @@ struct Mixes {
     cells: HashMap<(u8, WatchId), Vec<u32>>,
     /// Dependency watches, by DM watch handle: `(mixture id, watch)`.
     dirty: HashMap<Subscriber, (u32, WatchId)>,
+    /// Probe chunks written since the mirrors last evaluated, each once (`written_mark`). The mirrors are
+    /// told which chunks changed instead of diffing the 16k-chunk store against a snapshot, which also
+    /// made every first write to a chunk copy it (the snapshot shared it).
+    written: Vec<usize>,
+    written_mark: Vec<bool>,
 }
 
 impl Default for Mixes {
@@ -255,6 +266,8 @@ impl Default for Mixes {
             watched: HashMap::new(),
             cells: HashMap::new(),
             dirty: HashMap::new(),
+            written: Vec::new(),
+            written_mark: vec![false; layout.chunk_count()],
         }
     }
 }
@@ -287,6 +300,8 @@ pub(crate) fn reset_watches() {
         m.watched = fresh.watched;
         m.cells = fresh.cells;
         m.dirty = fresh.dirty;
+        m.written = fresh.written;
+        m.written_mark = fresh.written_mark;
     });
     forget_turf_mark();
 }
@@ -496,9 +511,15 @@ pub fn store(r: MixRef, before: &Mixture, after: &Mixture) {
 /// chunk (1024 cells) when the watch states' last snapshot still shares it,
 /// even for an equal value, and a changed chunk also makes every watch in it
 /// re-evaluate at the next drain.
-fn set_probe(probes: &mut CowStore<GasCell>, h: u32, cell: GasCell) {
-    if probes.get(h) != Some(cell) {
-        probes.set(h, cell);
+fn set_probe(m: &mut Mixes, h: u32, cell: GasCell) {
+    if m.probes.get(h) != Some(cell) {
+        m.probes.set(h, cell);
+        if let Some((chunk, _)) = m.probes.layout().locate(h)
+            && !m.written_mark[chunk]
+        {
+            m.written_mark[chunk] = true;
+            m.written.push(chunk);
+        }
     }
 }
 
@@ -506,7 +527,7 @@ fn set_probe(probes: &mut CowStore<GasCell>, h: u32, cell: GasCell) {
 fn mirror(r: MixRef, mix: &Mixture) {
     with_mixes(|m| {
         if m.watched.contains_key(&r.id()) {
-            set_probe(&mut m.probes, r.id(), cell_of_mixture(mix));
+            set_probe(m, r.id(), cell_of_mixture(mix));
         }
     });
 }
@@ -698,7 +719,7 @@ fn watch_mirrored(
         for (h, mix) in loaded {
             *m.watched.entry(h).or_default() += 1;
             if let Some(mix) = mix {
-                set_probe(&mut m.probes, h, cell_of_mixture(&mix));
+                set_probe(m, h, cell_of_mixture(&mix));
             }
         }
         m.cells.insert((port, id), ids);
@@ -725,7 +746,14 @@ fn watch_mirrored(
 
 /// Runs both mirror ports' watches once: `(reactor wakes, dependency wakes)`.
 fn evaluate(m: &mut Mixes) -> (Vec<Wake>, Vec<Wake>) {
-    (m.reactor.evaluate(&m.probes), m.deps.evaluate(&m.probes))
+    let written = std::mem::take(&mut m.written);
+    for &c in &written {
+        m.written_mark[c] = false;
+    }
+    (
+        m.reactor.evaluate(&m.probes, &written),
+        m.deps.evaluate(&m.probes, &written),
+    )
 }
 
 /// Removes a watch [`watch`] returned.
@@ -813,7 +841,7 @@ fn take_wakes() -> Vec<Wake> {
     }
     let deps = with_mixes(|m| {
         for (h, c) in fresh {
-            set_probe(&mut m.probes, h, c);
+            set_probe(m, h, c);
         }
         let (reactor, deps) = evaluate(m);
         out.extend(reactor);

@@ -802,7 +802,19 @@ pub struct WatchState<D: Channels> {
     stats: WatchStats,
     /// A watch was added or grew since the last evaluation (a bucket may be fresh).
     fresh_pending: bool,
+    /// Buckets marked fresh since the last evaluation (may hold stale or repeated entries: each is checked).
+    fresh_buckets: Vec<u32>,
+    /// Buckets holding at least one watch with cells in other chunks (`Bucket::remote > 0`), sorted.
+    remote_buckets: Vec<u32>,
+    /// Live watches (kept, so a pass does not count every bucket).
+    watch_count: usize,
+    /// [`evaluate_chunks`](Self::evaluate_chunks) has run once (its first call evaluates everything).
+    primed: bool,
 }
+
+/// At most this many candidate buckets are evaluated in order on the calling thread; more go to the rayon
+/// pool. A pass usually touches a handful of buckets, and waking the pool for them cost more than the work.
+const SERIAL_BUCKETS: usize = 64;
 
 impl<D: Channels> WatchState<D> {
     #[must_use]
@@ -816,6 +828,10 @@ impl<D: Channels> WatchState<D> {
             changed: vec![false; layout.chunk_count()],
             stats: WatchStats::default(),
             fresh_pending: false,
+            fresh_buckets: Vec::new(),
+            remote_buckets: Vec::new(),
+            watch_count: 0,
+            primed: false,
         }
     }
 
@@ -857,8 +873,15 @@ impl<D: Channels> WatchState<D> {
                 let bucket = &mut self.buckets[home as usize];
                 if !w.remote.is_empty() {
                     bucket.remote += 1;
+                    if bucket.remote == 1
+                        && let Err(at) = self.remote_buckets.binary_search(&home)
+                    {
+                        self.remote_buckets.insert(at, home);
+                    }
                 }
                 bucket.fresh = true;
+                self.fresh_buckets.push(home);
+                self.watch_count += 1;
                 self.fresh_pending = true;
                 let index = w.id.index as usize;
                 if self.loc.len() <= index {
@@ -876,8 +899,14 @@ impl<D: Channels> WatchState<D> {
                     return;
                 }
                 let gone = bucket.watches.swap_remove(p as usize);
+                self.watch_count -= 1;
                 if !gone.remote.is_empty() {
                     bucket.remote -= 1;
+                    if bucket.remote == 0
+                        && let Ok(at) = self.remote_buckets.binary_search(&b)
+                    {
+                        self.remote_buckets.remove(at);
+                    }
                 }
                 if let Some(moved) = bucket.watches.get(p as usize) {
                     self.loc[moved.id.index as usize] = Some((b, p));
@@ -892,6 +921,7 @@ impl<D: Channels> WatchState<D> {
                     }
                     let (b, _) = self.loc[id.index as usize].expect("found");
                     self.buckets[b as usize].fresh = true;
+                    self.fresh_buckets.push(b);
                     self.fresh_pending = true;
                 }
             }
@@ -914,14 +944,13 @@ impl<D: Channels> WatchState<D> {
     /// in a chunk that changed since the last evaluation (and every new
     /// watch), writing wakes and events to `out`.
     pub fn evaluate(&mut self, store: &CowStore<D::Value>, out: &mut Outbox<D::Value>) {
-        use rayon::prelude::*;
         for cmd in std::mem::take(&mut self.pending) {
             self.apply(cmd);
         }
         // Nothing new to evaluate and no cell changed since the last pass:
         // every watch would read what it read then, and a watch's result
         // depends only on the cells it reads, so none can fire. Skip the
-        // snapshot, the chunk sweep and the parallel bucket pass, which cost
+        // snapshot, the chunk sweep and the bucket pass, which cost
         // a few hundred microseconds per port per call on the 16k-chunk gas
         // mirrors, several times a tick, while the station idles.
         if !self.fresh_pending
@@ -929,58 +958,145 @@ impl<D: Channels> WatchState<D> {
             && (store.unchanged_since(prev) || store.chunks_differing_from(prev).next().is_none())
         {
             self.stats = WatchStats {
-                watches: self.stats.watches,
+                watches: self.watch_count,
                 ..WatchStats::default()
             };
             return;
         }
+        let changed: Option<Vec<usize>> = self
+            .prev
+            .as_ref()
+            .map(|prev| store.chunks_differing_from(prev).collect());
+        self.evaluate_listed(store, changed.as_deref(), out);
+        self.prev = Some(store.snapshot());
+    }
+
+    /// [`evaluate`](Self::evaluate) for a caller that knows which chunks of
+    /// `store` were written since its last call (`changed`, any order,
+    /// repeats allowed): no snapshot is kept and no chunk sweep is made, so a
+    /// write to the store never copies a chunk a snapshot shares. The first
+    /// call evaluates every watch. The caller must report every written
+    /// chunk, and a state evaluated this way must not also go through
+    /// [`evaluate`](Self::evaluate).
+    pub fn evaluate_chunks(
+        &mut self,
+        store: &CowStore<D::Value>,
+        changed: &[usize],
+        out: &mut Outbox<D::Value>,
+    ) {
+        for cmd in std::mem::take(&mut self.pending) {
+            self.apply(cmd);
+        }
+        if self.primed && !self.fresh_pending && changed.is_empty() {
+            self.stats = WatchStats {
+                watches: self.watch_count,
+                ..WatchStats::default()
+            };
+            return;
+        }
+        let listed = if self.primed { Some(changed) } else { None };
+        self.primed = true;
+        self.evaluate_listed(store, listed, out);
+    }
+
+    /// Evaluates every watch that reads a chunk in `changed` (every chunk
+    /// when `None`), and every fresh watch. Only the candidate buckets are
+    /// visited: the listed chunks, the fresh ones and the ones holding
+    /// cross-chunk watches. A few candidates run here in order; many go to
+    /// the rayon pool.
+    fn evaluate_listed(
+        &mut self,
+        store: &CowStore<D::Value>,
+        changed: Option<&[usize]>,
+        out: &mut Outbox<D::Value>,
+    ) {
+        use rayon::prelude::*;
         self.fresh_pending = false;
-        match &self.prev {
-            None => self.changed.fill(true),
-            Some(prev) => {
-                self.changed.fill(false);
-                for c in store.chunks_differing_from(prev) {
-                    self.changed[c] = true;
+        let chunk_count = self.buckets.len();
+        let mut changed_count = 0;
+        match changed {
+            None => {
+                self.changed.fill(true);
+                changed_count = chunk_count;
+            }
+            Some(list) => {
+                for &c in list {
+                    if c < chunk_count && !self.changed[c] {
+                        self.changed[c] = true;
+                        changed_count += 1;
+                    }
                 }
             }
         }
-        let changed = &self.changed;
-        let reader = Reader::<D> { store };
-        let results: Vec<(usize, Vec<Wake>, Vec<Event>)> = self
-            .buckets
-            .par_iter_mut()
-            .enumerate()
-            .filter(|(i, b)| !b.watches.is_empty() && (changed[*i] || b.fresh || b.remote > 0))
-            .map(|(i, bucket)| {
-                let home = changed[i];
-                bucket.fresh = false;
-                let mut wakes = Vec::new();
-                let mut events = Vec::new();
-                let mut evaluated = 0;
-                for w in &mut bucket.watches {
-                    if !(home || w.fresh || w.remote.iter().any(|&c| changed[c as usize])) {
-                        continue;
-                    }
-                    w.fresh = false;
-                    evaluated += 1;
-                    let mut fired = Fired::default();
-                    w.node.eval(&reader, w.id, &mut fired, &mut events);
-                    if fired.reason != 0 {
-                        wakes.push(Wake {
-                            subscriber: w.subscriber,
-                            lane: w.lane,
-                            reason: fired.reason,
-                            source: fired.source.unwrap_or(0),
-                            watch: w.id,
-                        });
+        // The candidate buckets, each once: changed chunks holding watches,
+        // fresh buckets, and buckets with cross-chunk watches.
+        let mut candidates: Vec<u32> = Vec::new();
+        let many = match changed {
+            None => true,
+            Some(list) => {
+                for &c in list {
+                    if c < chunk_count && !self.buckets[c].watches.is_empty() {
+                        candidates.push(u32::try_from(c).expect("chunk count fits u32"));
                     }
                 }
-                (evaluated, wakes, events)
-            })
-            .collect();
+                for &b in &self.fresh_buckets {
+                    if self.buckets[b as usize].fresh {
+                        candidates.push(b);
+                    }
+                }
+                candidates.extend_from_slice(&self.remote_buckets);
+                candidates.sort_unstable();
+                candidates.dedup();
+                candidates.len() > SERIAL_BUCKETS
+            }
+        };
+        self.fresh_buckets.clear();
+        let changed_flags = &self.changed;
+        let eval_bucket = |bucket: &mut Bucket, home: bool| {
+            bucket.fresh = false;
+            let reader = Reader::<D> { store };
+            let mut wakes = Vec::new();
+            let mut events = Vec::new();
+            let mut evaluated = 0;
+            for w in &mut bucket.watches {
+                if !(home || w.fresh || w.remote.iter().any(|&c| changed_flags[c as usize])) {
+                    continue;
+                }
+                w.fresh = false;
+                evaluated += 1;
+                let mut fired = Fired::default();
+                w.node.eval(&reader, w.id, &mut fired, &mut events);
+                if fired.reason != 0 {
+                    wakes.push(Wake {
+                        subscriber: w.subscriber,
+                        lane: w.lane,
+                        reason: fired.reason,
+                        source: fired.source.unwrap_or(0),
+                        watch: w.id,
+                    });
+                }
+            }
+            (evaluated, wakes, events)
+        };
+        let results: Vec<(usize, Vec<Wake>, Vec<Event>)> = if many {
+            self.buckets
+                .par_iter_mut()
+                .enumerate()
+                .filter(|(i, b)| {
+                    !b.watches.is_empty() && (changed_flags[*i] || b.fresh || b.remote > 0)
+                })
+                .map(|(i, bucket)| eval_bucket(bucket, changed_flags[i]))
+                .collect()
+        } else {
+            let buckets = &mut self.buckets;
+            candidates
+                .iter()
+                .map(|&b| eval_bucket(&mut buckets[b as usize], changed_flags[b as usize]))
+                .collect()
+        };
         let mut stats = WatchStats {
-            watches: self.buckets.iter().map(|b| b.watches.len()).sum(),
-            changed_chunks: self.changed.iter().filter(|&&c| c).count(),
+            watches: self.watch_count,
+            changed_chunks: changed_count,
             ..WatchStats::default()
         };
         for (evaluated, wakes, events) in results {
@@ -994,7 +1110,16 @@ impl<D: Channels> WatchState<D> {
             }
         }
         self.stats = stats;
-        self.prev = Some(store.snapshot());
+        match changed {
+            None => self.changed.fill(false),
+            Some(list) => {
+                for &c in list {
+                    if c < chunk_count {
+                        self.changed[c] = false;
+                    }
+                }
+            }
+        }
     }
 
     /// Applies queued registrations and evaluates only the watches they
