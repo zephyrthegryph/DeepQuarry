@@ -40,7 +40,8 @@
 	return C
 
 /datum/capability/writable/interactions(atom/holder)
-	var/datum/interaction/capability/write = adopt_entry(cap_use_on("Write", pen_types, TYPE_PROC_REF(/atom, cap_writable_write), needs = TYPE_PROC_REF(/atom, cap_writable_has_space), else_say = "there's no room left to write on it", works_broken = TRUE, works_unpowered = TRUE, priority = WRITABLE_PRIORITY))
+	// "write": a click with a pen or crayon, ahead of a rename by the same pen (WRITABLE_PRIORITY); a full page refuses.
+	var/datum/interaction/capability/write = adopt_entry(lib_op("Write", TYPE_PROC_REF(/atom, cap_writable_write), OP_SHAPE_USE_ON, using = pen_types, key = "write", needs = TYPE_PROC_REF(/atom, cap_writable_has_space), else_say = "there's no room left to write on it", works_broken = TRUE, works_unpowered = TRUE, priority = WRITABLE_PRIORITY))
 	return list(write)
 
 /datum/capability/writable/examine(atom/holder, mob/user)

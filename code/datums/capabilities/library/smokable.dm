@@ -52,11 +52,12 @@ OWN_TIMER(/obj/item, cap_smokable)
 	return C
 
 /datum/capability/smokable/interactions(atom/holder)
-	var/datum/interaction/capability/light = adopt_entry(cap_use_on("Light", light_types, TYPE_PROC_REF(/obj/item, cap_smokable_light), needs = TYPE_PROC_REF(/obj/item, cap_smokable_can_light), works_broken = TRUE, works_unpowered = TRUE))
-	var/datum/interaction/capability/drag_entry = adopt_entry(cap_hand("Take a drag", TYPE_PROC_REF(/obj/item, cap_smokable_drag), needs = TYPE_PROC_REF(/obj/item, cap_smokable_is_lit), else_say = "it isn't lit", works_broken = TRUE, works_unpowered = TRUE))
-	drag_entry.entry = INTERACTION_ENTRY_SELF // using it in hand takes a drag
-	var/datum/interaction/capability/snuff = adopt_entry(cap_hand("Put out", TYPE_PROC_REF(/obj/item, cap_smokable_put_out), needs = TYPE_PROC_REF(/obj/item, cap_smokable_is_lit), else_say = "it isn't lit", works_broken = TRUE, works_unpowered = TRUE))
-	snuff.default_action = null // Menu only
+	// "light" (a click with a lighter, match...), "take_drag" (the self-use: using it in hand takes a drag) and "put_out"
+	// (ACT_NONE).
+	var/datum/interaction/capability/light = adopt_entry(lib_op("Light", TYPE_PROC_REF(/obj/item, cap_smokable_light), OP_SHAPE_USE_ON, using = light_types, key = "light", needs = TYPE_PROC_REF(/obj/item, cap_smokable_can_light), works_broken = TRUE, works_unpowered = TRUE))
+	var/datum/interaction/capability/drag_entry = adopt_entry(lib_op("Take a drag", TYPE_PROC_REF(/obj/item, cap_smokable_drag), OP_SHAPE_HAND, key = "take_drag", offered = req_self_held(), needs = TYPE_PROC_REF(/obj/item, cap_smokable_is_lit), else_say = "it isn't lit", works_broken = TRUE, works_unpowered = TRUE))
+	drag_entry.entry = INTERACTION_ENTRY_SELF
+	var/datum/interaction/capability/snuff = adopt_entry(lib_op("Put out", TYPE_PROC_REF(/obj/item, cap_smokable_put_out), OP_SHAPE_HAND, key = "put_out", action = ACT_NONE, needs = TYPE_PROC_REF(/obj/item, cap_smokable_is_lit), else_say = "it isn't lit", works_broken = TRUE, works_unpowered = TRUE))
 	return list(light, drag_entry, snuff)
 
 /datum/capability/smokable/examine(atom/holder, mob/user)

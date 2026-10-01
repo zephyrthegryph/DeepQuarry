@@ -18,10 +18,9 @@
 	return C
 
 /datum/capability/flip/interactions(atom/holder)
-	var/datum/interaction/capability/over = adopt_entry(cap_hand("Flip table", TYPE_PROC_REF(/obj/structure/table, cap_flip_over), needs = TYPE_PROC_REF(/obj/structure/table, cap_flip_can_flip), works_broken = TRUE, works_unpowered = TRUE))
-	var/datum/interaction/capability/back = adopt_entry(cap_hand("Put table back", TYPE_PROC_REF(/obj/structure/table, cap_flip_back), needs = TYPE_PROC_REF(/obj/structure/table, cap_flip_can_put_back), works_broken = TRUE, works_unpowered = TRUE))
-	over.default_action = null // Menu only: a click on a table puts things on it
-	back.default_action = null
+	// ACT_NONE both: a click on a table puts things on it; the Menu, radial and command bar name these.
+	var/datum/interaction/capability/over = adopt_entry(lib_op("Flip table", TYPE_PROC_REF(/obj/structure/table, cap_flip_over), OP_SHAPE_HAND, key = "flip_table", action = ACT_NONE, needs = TYPE_PROC_REF(/obj/structure/table, cap_flip_can_flip), works_broken = TRUE, works_unpowered = TRUE))
+	var/datum/interaction/capability/back = adopt_entry(lib_op("Put table back", TYPE_PROC_REF(/obj/structure/table, cap_flip_back), OP_SHAPE_HAND, key = "put_table_back", action = ACT_NONE, needs = TYPE_PROC_REF(/obj/structure/table, cap_flip_can_put_back), works_broken = TRUE, works_unpowered = TRUE))
 	return list(over, back)
 
 /datum/capability/flip/examine(atom/holder, mob/user)

@@ -265,10 +265,6 @@ old_interaction_decl	code/game/machinery/computer/law.dm	/obj/machinery/computer
 old_interaction_decl	code/game/machinery/computer/law.dm	into += dq_interaction_from_spec(type, INTERACT_OBSERVER("View", TYPE_PROC_REF(/atom, interaction_swallow)))
 old_interaction_decl	code/game/machinery/computer/law.dm	/datum/interaction/machine_item/borgupload_install
 old_interaction_decl	code/game/machinery/computer/law.dm	/datum/interaction/machine_hand/ungated/borgupload_select_borg
-old_interaction_decl	code/game/machinery/computer/medical.dm	EXTEND_INTERACTIONS(/obj/machinery/computer/med_data, \
-old_interaction_decl	code/game/machinery/computer/medical.dm	INTERACT_ITEM(null, PROC_REF(med_data_interaction_item)), \
-old_interaction_decl	code/game/machinery/computer/medical.dm	INTERACT_HAND(null, TYPE_PROC_REF(/atom, interaction_open_ui_fingerprint)), \
-old_interaction_decl	code/game/machinery/computer/medical.dm	INTERACT_VERB("Eject ID Card", PROC_REF(med_data_eject_id)), \
 old_interaction_decl	code/game/machinery/computer/message.dm	/obj/machinery/computer/message_monitor/declare_interactions(list/into)
 old_interaction_decl	code/game/machinery/computer/message.dm	/datum/interaction/machine_hand/ungated/message_monitor_open_ui
 old_interaction_decl	code/game/machinery/computer/pod.dm	/obj/machinery/computer/pod/declare_interactions(list/into)
@@ -657,15 +653,6 @@ old_interaction_decl	code/game/objects/items.dm	INTERACT_VERB("Toggle Digestable
 old_interaction_decl	code/game/objects/items.dm	into += dq_interaction_from_spec(/obj/item, spec)
 old_interaction_decl	code/game/objects/items/antag_spawners.dm	DECLARE_INTERACTIONS(/obj/item/antag_spawner/technomancer_apprentice, INTERACT_USE(null, PROC_REF(interaction_self)))
 old_interaction_decl	code/game/objects/items/antag_spawners.dm	DECLARE_INTERACTIONS(/obj/item/antag_spawner/syndicate_drone, INTERACT_USE(null, PROC_REF(interaction_self)))
-old_interaction_decl	code/game/objects/items/bells.dm	DECLARE_INTERACTIONS(/obj/item/deskbell, \
-old_interaction_decl	code/game/objects/items/bells.dm	INTERACT_HAND_AS(I_HELP, "Ring", PROC_REF(interaction_hand)), \
-old_interaction_decl	code/game/objects/items/bells.dm	INTERACT_HAND_AS(I_DISARM, "Ring", PROC_REF(interaction_hand)), \
-old_interaction_decl	code/game/objects/items/bells.dm	INTERACT_HAND_AS(I_GRAB, "Ring", PROC_REF(interaction_hand)), \
-old_interaction_decl	code/game/objects/items/bells.dm	INTERACT_HAND_AS(I_HURT, "Hammer rudely", PROC_REF(interaction_hand)), \
-old_interaction_decl	code/game/objects/items/bells.dm	INTERACT_ITEM_AS(I_HELP, "Ring", PROC_REF(interaction_item)), \
-old_interaction_decl	code/game/objects/items/bells.dm	INTERACT_ITEM_AS(I_DISARM, "Ring", PROC_REF(interaction_item)), \
-old_interaction_decl	code/game/objects/items/bells.dm	INTERACT_ITEM_AS(I_GRAB, "Ring", PROC_REF(interaction_item)), \
-old_interaction_decl	code/game/objects/items/bells.dm	INTERACT_ITEM_AS(I_HURT, "Hammer rudely", PROC_REF(interaction_item)), \
 old_interaction_decl	code/game/objects/items/blueprints.dm	DECLARE_INTERACTIONS(/obj/item/areaeditor, \
 old_interaction_decl	code/game/objects/items/blueprints.dm	INTERACT_USE("Read", PROC_REF(areaeditor_text)), \
 old_interaction_decl	code/game/objects/items/blueprints.dm	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
@@ -745,11 +732,6 @@ old_interaction_decl	code/game/objects/items/devices/lightreplacer.dm	DECLARE_IN
 old_interaction_decl	code/game/objects/items/devices/lightreplacer.dm	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
 old_interaction_decl	code/game/objects/items/devices/lightreplacer.dm	INTERACT_USE(null, PROC_REF(interaction_self)), \
 old_interaction_decl	code/game/objects/items/devices/lightreplacer.dm	DECLARE_INTERACTIONS(/obj/item/lightpainter, INTERACT_USE(null, PROC_REF(interaction_self)))
-old_interaction_decl	code/game/objects/items/devices/megaphone.dm	DECLARE_INTERACTIONS(/obj/item/megaphone, INTERACT_USE(null, PROC_REF(interaction_self)))
-old_interaction_decl	code/game/objects/items/devices/megaphone.dm	EXTEND_INTERACTIONS(/obj/item/megaphone/super, \
-old_interaction_decl	code/game/objects/items/devices/megaphone.dm	INTERACT_VERB("Change Volume", PROC_REF(turn_volume_dial_effect), REQ_IN_INVENTORY), \
-old_interaction_decl	code/game/objects/items/devices/megaphone.dm	INTERACT_VERB("Change... Pronunciation?", PROC_REF(change_font_effect), REQ_IN_INVENTORY), \
-old_interaction_decl	code/game/objects/items/devices/megaphone.dm	INTERACT_VERB("Change... Tune?", PROC_REF(change_color_effect), REQ_IN_INVENTORY), \
 old_interaction_decl	code/game/objects/items/devices/multitool.dm	DECLARE_INTERACTIONS(/obj/item/multitool, INTERACT_USE(null, PROC_REF(interaction_self)))
 old_interaction_decl	code/game/objects/items/devices/paicard.dm	DECLARE_INTERACTIONS(/obj/item/paicard, \
 old_interaction_decl	code/game/objects/items/devices/paicard.dm	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
@@ -4188,9 +4170,6 @@ old_requirement	code/game/objects/items/devices/floor_painter.dm	INTERACT_VERB("
 old_requirement	code/game/objects/items/devices/floor_painter.dm	INTERACT_VERB("Choose Decal", PROC_REF(choose_decal_effect), REQ_IN_INVENTORY), \
 old_requirement	code/game/objects/items/devices/floor_painter.dm	INTERACT_VERB("Choose Direction", PROC_REF(choose_direction_effect), REQ_IN_INVENTORY), \
 old_requirement	code/game/objects/items/devices/geiger.dm	INTERACT_ALT("Reset", PROC_REF(interaction_alt), REQ_BECAUSE(REQ_FIELD("scanning"), "it must be on to reset its radiation level")), \
-old_requirement	code/game/objects/items/devices/megaphone.dm	INTERACT_VERB("Change Volume", PROC_REF(turn_volume_dial_effect), REQ_IN_INVENTORY), \
-old_requirement	code/game/objects/items/devices/megaphone.dm	INTERACT_VERB("Change... Pronunciation?", PROC_REF(change_font_effect), REQ_IN_INVENTORY), \
-old_requirement	code/game/objects/items/devices/megaphone.dm	INTERACT_VERB("Change... Tune?", PROC_REF(change_color_effect), REQ_IN_INVENTORY), \
 old_requirement	code/game/objects/items/devices/paicard.dm	INTERACT_OBSERVER("Inhabit", PROC_REF(paicard_observer_inhabit), REQ_TARGET_STATE(/obj/item/paicard/proc/can_inhabit)), \
 old_requirement	code/game/objects/items/devices/personal_shield_generator.dm	INTERACT_VERB("Toggle Shield", PROC_REF(toggle_shield_effect), REQ_IN_INVENTORY), \
 old_requirement	code/game/objects/items/devices/personal_shield_generator.dm	INTERACT_VERB("Toggle Gun", PROC_REF(weapon_toggle_effect), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/personal_shield_generator/proc/pred_has_weapon, "it has no gun")), \
@@ -14252,7 +14231,7 @@ old_prompt	code/game/objects/effects/landmarks_events.dm	om_ask(actor, /datum/om
 old_prompt	code/game/objects/effects/spawners/bombspawner.dm	om_ask(actor, /datum/om/prompt/number, PROC_REF(phoron_entered), title = "Phoron", message = "Enter phoron amount (mol):", default = phoron)
 old_prompt	code/game/objects/effects/spawners/bombspawner.dm	om_ask(actor, /datum/om/prompt/number, PROC_REF(oxygen_entered), title = "Oxygen", message = "Enter oxygen amount (mol):", default = oxygen)
 old_prompt	code/game/objects/effects/spawners/bombspawner.dm	om_ask(actor, /datum/om/prompt/number, PROC_REF(carbon_entered), title = "Carbon Dioxide", message = "Enter carbon dioxide amount (mol):", default = carbon)
-old_prompt	code/game/objects/items/bells.dm	om_ask(user, /datum/om/prompt/choice/radial/deskbell, PROC_REF(option_chosen), stance = interaction?.stance || I_HELP, choices = options, anchor = src, require_near = !issilicon(user))
+old_prompt	code/game/objects/items/bells.dm	om_ask(user, /datum/om/prompt/choice/radial/deskbell, PROC_REF(option_chosen), stance = stance, choices = options, anchor = src, require_near = !issilicon(user))
 old_prompt	code/game/objects/items/blueprints.dm	om_ask(user, /datum/om/prompt/number/blueprint_charges, PROC_REF(add_charges), subject = blueprint, title = "[blueprint]", message = "How many charges do you want to add to the [src]?", default = missing_charges, max = blueprint.charges)
 old_prompt	code/game/objects/items/blueprints.dm	om_ask(usr, /datum/om/prompt/text/blueprint_rename_area, PROC_REF(area_renamed), area_to_rename = A)
 old_prompt	code/game/objects/items/blueprints.dm	om_ask(ask.answerer, /datum/om/prompt/text/blueprint_area_name, PROC_REF(create_area_named), subject = ask.subject, editor = src, turfs = ask.turfs)

@@ -23,19 +23,37 @@
 		play_sfx(src, SFX_EFFECTS_DESKBELL)
 	..()
 
-DECLARE_INTERACTIONS(/obj/item/deskbell, \
-	INTERACT_HAND_AS(I_HELP, "Ring", PROC_REF(interaction_hand)), \
-	INTERACT_HAND_AS(I_DISARM, "Ring", PROC_REF(interaction_hand)), \
-	INTERACT_HAND_AS(I_GRAB, "Ring", PROC_REF(interaction_hand)), \
-	INTERACT_HAND_AS(I_HURT, "Hammer rudely", PROC_REF(interaction_hand)), \
-	INTERACT_ITEM_AS(I_HELP, "Ring", PROC_REF(interaction_item)), \
-	INTERACT_ITEM_AS(I_DISARM, "Ring", PROC_REF(interaction_item)), \
-	INTERACT_ITEM_AS(I_GRAB, "Ring", PROC_REF(interaction_item)), \
-	INTERACT_ITEM_AS(I_HURT, "Hammer rudely", PROC_REF(interaction_item)), \
-)
+/**
+ * Were eight INTERACT_*_AS specs, one per stance for the hand and for an item. The stance is a gesture modifier now: the
+ * harm ops answer ACT_ATTACK (a harm click reaches it before ACT_USE), and the ring ops name the stances they answer
+ * (an offered requirement: a harm click passes them over). `entry` keeps attack_hand() and attackby() reaching them
+ * for their other callers. Each op knows its stance, so each has its own handler.
+ */
+/obj/item/deskbell/capabilities()
+	. = ..()
+	. += cap_op("Ring", PROC_REF(ring_by_hand), using = EMPTY_HAND, key = "ring", stance = list(I_HELP, I_DISARM, I_GRAB), entry = INTERACTION_ENTRY_HAND)
+	. += cap_op("Hammer rudely", PROC_REF(hammer_by_hand), using = EMPTY_HAND, key = "hammer", action = ACT_ATTACK, stance = I_HURT, entry = INTERACTION_ENTRY_HAND)
+	. += cap_op("Ring", PROC_REF(ring_with_item), using = /obj/item, key = "ring_with_item", stance = list(I_HELP, I_DISARM, I_GRAB), entry = INTERACTION_ENTRY_ITEM)
+	. += cap_op("Hammer rudely", PROC_REF(hammer_with_item), using = /obj/item, key = "hammer_with_item", action = ACT_ATTACK, stance = I_HURT, entry = INTERACTION_ENTRY_ITEM)
 
-/// Old attack_hand.
-/obj/item/deskbell/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/deskbell/proc/ring_by_hand(mob/user)
+	return bell_radial(user, I_HELP)
+
+/obj/item/deskbell/proc/hammer_by_hand(mob/user)
+	return bell_radial(user, I_HURT)
+
+/obj/item/deskbell/proc/ring_with_item(mob/user, obj/item/held)
+	if(!broken)
+		ring(user, I_HELP)
+	return TRUE
+
+/obj/item/deskbell/proc/hammer_with_item(mob/user, obj/item/held)
+	if(!broken)
+		ring(user, I_HURT)
+	return TRUE
+
+/// The touch: a radial to examine, pick up or ring it (in `stance`: a harm touch hammers).
+/obj/item/deskbell/proc/bell_radial(mob/user, stance)
 
 	//This defines the radials and what call we're assiging to them.
 	var/list/options = list()
@@ -50,7 +68,7 @@ DECLARE_INTERACTIONS(/obj/item/deskbell, \
 		return TRUE
 
 	// A single available option is answered at once (autopick_single_option); otherwise the player picks.
-	om_ask(user, /datum/om/prompt/choice/radial/deskbell, PROC_REF(option_chosen), stance = interaction?.stance || I_HELP, choices = options, anchor = src, require_near = !issilicon(user))
+	om_ask(user, /datum/om/prompt/choice/radial/deskbell, PROC_REF(option_chosen), stance = stance, choices = options, anchor = src, require_near = !issilicon(user))
 	return TRUE
 
 /// The bell's radial remembers the stance it was opened in, so "use" rings (or hammers) accordingly.
@@ -99,14 +117,6 @@ DECLARE_INTERACTIONS(/obj/item/deskbell, \
 	else
 		to_chat(user,span_notice("You are not able to ring [src]."))
 	return 0
-
-/// Old attackby.
-/obj/item/deskbell/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(!istype(W))
-		return INTERACTION_HANDLED_PASS
-	if(!broken)
-		ring(user, interaction.stance)
-	return INTERACTION_HANDLED_PASS
 
 /obj/item/deskbell/wrench_act(mob/user, obj/item/W)
 	if(!isturf(loc))

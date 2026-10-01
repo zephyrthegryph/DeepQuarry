@@ -80,7 +80,7 @@
  * It takes no provider slot: the credential is found by cap_lock_credential(), so a silicon can lock with its own access.
  */
 /proc/lock_op(list/id_types = list(/obj/item/card/id, /obj/item/pda), behind = NONE, blocked_by = NONE, locked_by = NONE, log, works_broken = TRUE, works_unpowered = TRUE)
-	return cap_op("Lock", TYPE_PROC_REF(/atom, cap_lock_toggle), key = CAP_LOCK, action = ACT_LOCK, by = NONE, kind = OP_CONTROL, priority = 10, name_proc = TYPE_PROC_REF(/atom, cap_lock_name), behind = behind, blocked_by = blocked_by, locked_by = locked_by, works_broken = works_broken, works_unpowered = works_unpowered, log = log, click_with = id_types, passes_held = TRUE)
+	return cap_op("Lock", TYPE_PROC_REF(/atom, cap_lock_toggle), key = CAP_LOCK, action = ACT_LOCK, by = NONE, kind = OP_CONTROL, priority = OP_PRIORITY_PART, name_proc = TYPE_PROC_REF(/atom, cap_lock_name), behind = behind, blocked_by = blocked_by, locked_by = locked_by, works_broken = works_broken, works_unpowered = works_unpowered, log = log, click_with = id_types, passes_held = TRUE)
 
 /**
  * The credential provider that opens this lock for `actor`, or null. Credentials are providers, tried like hands:

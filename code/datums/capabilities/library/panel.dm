@@ -16,8 +16,9 @@
 	C.layer_name = layer
 	return cap_gating(C, behind = behind, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 
+/// One op, "open_maintenance_panel": the tool's click (OP_PRIORITY_PART) opens or closes it.
 /datum/capability/panel/interactions(atom/holder)
-	return list(adopt_entry(cap_tool("Open maintenance panel", tool_quality, TYPE_PROC_REF(/atom, cap_panel_toggle), delay = delay, priority = 10, name_proc = TYPE_PROC_REF(/atom, cap_panel_name)), id = "panel:[tool_quality]"))
+	return list(adopt_entry(lib_op("Open maintenance panel", TYPE_PROC_REF(/atom, cap_panel_toggle), OP_SHAPE_TOOL, using = tool_quality, key = "open_maintenance_panel", delay = delay, priority = OP_PRIORITY_PART, name_proc = TYPE_PROC_REF(/atom, cap_panel_name)), id = "panel:[tool_quality]"))
 
 /datum/capability/panel/examine(atom/holder, mob/user)
 	if(panel_is_open(holder))

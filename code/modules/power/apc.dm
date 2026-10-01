@@ -170,9 +170,10 @@ TRACKED(/obj/machinery/power/apc, emergency_lights, CHANGE_MACHINE_SETTINGS)
 /// The APC's own ops: the interface, a new cover, the multitool reset.
 /obj/machinery/power/apc/proc/apc_ops()
 	. = list()
-	// An empty hand or a silicon's touch. The open cover is in the way of a hand (ROUTE_PHYSICAL: the touch falls
-	// through to the cell behind it), not of a silicon's interface; a shredder's claws are the claw op's (declared first).
-	. += cap_control("Open interface", PROC_REF(open_interface), using = EMPTY_HAND, offered = req_on_route(ROUTE_PHYSICAL, req_clear(CAP_COVER_OPEN)), needs = req_working(), key = "open_interface")
+	// An empty hand or a silicon's touch. With the cover open a hand takes the cell out first: the cell bay's hand eject
+	// ("eject_cell") answers the same click at OP_PRIORITY_TAKE_OUT, and the board's hand step at the ladder's priority,
+	// both above this op's; a shredder's claws are the claw op's (OP_PRIORITY_CLAW). Nothing here hides the interface.
+	. += cap_control("Open interface", PROC_REF(open_interface), using = EMPTY_HAND, needs = req_working(), key = "open_interface")
 	. += cap_op("Replace damaged cover", PROC_REF(replace_cover), using = /obj/item/frame/apc, at = BAY_HATCH, delay = 5 SECONDS, needs = PROC_REF(cover_replaceable), start_msg = /datum/msg/start/apc/replace_cover, kind = OP_STRUCTURAL, key = "replace_cover")
 	. += cap_op("Reset", PROC_REF(reset_apc), using = TOOL_MULTITOOL, at = BAY_HATCH, delay = 5 SECONDS, needs = PROC_REF(cell_out_for_reset), offered = req_proc(TYPE_PROC_REF(/atom, is_subverted)), start_msg = /datum/msg/start/apc/reset, kind = OP_STRUCTURAL, key = "reset_apc")
 

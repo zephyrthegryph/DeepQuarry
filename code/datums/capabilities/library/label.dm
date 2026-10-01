@@ -29,16 +29,17 @@
 	C.layer_name = layer
 	return cap_gating(C, behind = behind, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 
+/// Ops: "label" (a click with a hand labeler) or "rename" (a click with a pen), and "remove_label" (ACT_NONE).
 /datum/capability/label/interactions(atom/holder)
-	return list(adopt_entry(cap_use_on("Label", /obj/item/hand_labeler, TYPE_PROC_REF(/atom, cap_label_apply), works_broken = TRUE, works_unpowered = TRUE)), remove_entry())
+	return list(adopt_entry(lib_op("Label", TYPE_PROC_REF(/atom, cap_label_apply), OP_SHAPE_USE_ON, using = /obj/item/hand_labeler, key = "label", works_broken = TRUE, works_unpowered = TRUE)), remove_entry())
 
 /datum/capability/label/rename/interactions(atom/holder)
-	return list(adopt_entry(cap_use_on("Rename", /obj/item/pen, TYPE_PROC_REF(/atom, cap_label_rename), works_broken = TRUE, works_unpowered = TRUE)), remove_entry())
+	return list(adopt_entry(lib_op("Rename", TYPE_PROC_REF(/atom, cap_label_rename), OP_SHAPE_USE_ON, using = /obj/item/pen, key = "rename", works_broken = TRUE, works_unpowered = TRUE)), remove_entry())
 
+/// ACT_NONE: an empty hand keeps doing the holder's own thing; the Menu, radial and command bar name it.
 /datum/capability/label/proc/remove_entry()
-	var/datum/interaction/capability/E = adopt_entry(cap_hand("Remove label", TYPE_PROC_REF(/atom, cap_label_remove), needs = TYPE_PROC_REF(/atom, cap_label_present), else_say = "it has no label", works_broken = TRUE, works_unpowered = TRUE))
+	var/datum/interaction/capability/E = adopt_entry(lib_op("Remove label", TYPE_PROC_REF(/atom, cap_label_remove), OP_SHAPE_HAND, key = "remove_label", action = ACT_NONE, needs = TYPE_PROC_REF(/atom, cap_label_present), else_say = "it has no label", works_broken = TRUE, works_unpowered = TRUE))
 	E.id = "[E.id]:[key]" // cap_label() and cap_rename() on one type each offer their own
-	E.default_action = null // Menu only: an empty hand keeps doing the holder's own thing
 	return E
 
 /datum/capability/label/examine(atom/holder, mob/user)

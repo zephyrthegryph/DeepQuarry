@@ -137,10 +137,12 @@ GLOBAL_LIST_INIT(cap_all_stances, list(I_HELP, I_DISARM, I_GRAB, I_HURT))
 /proc/set_welded(atom/A, on)
 	return cap_set(A, CAP_WELDED, on)
 
+/// One structural op per stance, "weld_shut:<stance>" (each narrowed to its stance, as the old per-stance entries were), so
+/// help_applies can hide the help one alone. A hostile stance's op is still ACT_USE: welding is no attack.
 /datum/capability/weld_shut/interactions(atom/holder)
 	. = list()
 	for(var/stance in GLOB.cap_all_stances)
-		var/datum/capability/entry/wrapper = cap_tool("Weld shut", tool_quality, TYPE_PROC_REF(/atom, cap_weld_toggle), works_broken = TRUE, works_unpowered = TRUE, log = log, name_proc = TYPE_PROC_REF(/atom, cap_weld_name))
+		var/datum/capability/entry/wrapper = lib_op("Weld shut", TYPE_PROC_REF(/atom, cap_weld_toggle), OP_SHAPE_TOOL, using = tool_quality, key = "weld_shut:[stance]", kind = OP_STRUCTURAL, works_broken = TRUE, works_unpowered = TRUE, log = log, name_proc = TYPE_PROC_REF(/atom, cap_weld_name))
 		var/datum/interaction/capability/E = adopt_entry(wrapper, id = "weld_shut:[tool_quality]:[stance]")
 		// The handler plays the welder's sound itself, louder, as the old weld did.
 		cap_entry_setup(E, stance = stance, applies = (stance == I_HELP && help_applies) ? help_applies : applies, tool_volume = 0)
@@ -191,10 +193,12 @@ GLOBAL_LIST_INIT(cap_all_stances, list(I_HELP, I_DISARM, I_GRAB, I_HURT))
 	cap_gating(C, behind = behind, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 	return C
 
+/// One op per stance but harm, "pry:<stance>" (in harm the crowbar strikes instead): the refusals are needs (a tool's
+/// click on a bolted door answers with why).
 /datum/capability/pry/interactions(atom/holder)
 	. = list()
 	for(var/stance in list(I_HELP, I_DISARM, I_GRAB))
-		var/datum/capability/entry/wrapper = cap_tool("Force open or closed", tool_quality, TYPE_PROC_REF(/atom, cap_pry_force), needs = TYPE_PROC_REF(/atom, cap_pry_reason), works_broken = TRUE, works_unpowered = TRUE, log = log, name_proc = TYPE_PROC_REF(/atom, cap_pry_name))
+		var/datum/capability/entry/wrapper = lib_op("Force open or closed", TYPE_PROC_REF(/atom, cap_pry_force), OP_SHAPE_TOOL, using = tool_quality, key = "pry:[stance]", needs = TYPE_PROC_REF(/atom, cap_pry_reason), works_broken = TRUE, works_unpowered = TRUE, log = log, name_proc = TYPE_PROC_REF(/atom, cap_pry_name))
 		var/datum/interaction/capability/E = adopt_entry(wrapper, id = "pry:[tool_quality]:[stance]")
 		cap_entry_setup(E, stance = stance, tool_volume = 0)
 		. += E

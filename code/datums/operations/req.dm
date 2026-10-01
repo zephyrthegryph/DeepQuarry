@@ -133,6 +133,20 @@ GLOBAL_LIST_EMPTY(reqs_interned)
 	RETURN_TYPE(/datum/req)
 	return req_intern(new /datum/req/empty_hand)
 
+// ---- req_self_held ----
+
+/// The target is the held item itself: a self-use (attack_self, the Z key, GESTURE_SELF). Offered by an item's
+/// self-use ops, so a click on the item (held is something else, or nothing) never means them, though both answer ACT_USE.
+/datum/req/self_held
+	reason = /datum/msg/req_wrong_item
+
+/datum/req/self_held/test(datum/op_ctx/ctx)
+	return (ctx.held && ctx.held == ctx.target) ? null : reason
+
+/proc/req_self_held()
+	RETURN_TYPE(/datum/req)
+	return req_intern(new /datum/req/self_held)
+
 // ---- req_set / req_clear ----
 
 /// The subject has every bit of `bits` set in its cap_state.
@@ -245,14 +259,15 @@ GLOBAL_LIST_EMPTY(reqs_interned)
 
 /// A holder proc, (mob/user, obj/item/held) -> TRUE or a refusal text (a cap `needs` check), or a
 /// global chk_* proc (mob/user, atom/holder, obj/item/held). `reads` names what it depends on, as
-/// a list of keys on the target.
+/// a list of keys on the target. `else_say`: the reason when the proc answers FALSE (as a capability's else_say).
 /datum/req/proc_check
 	reason = /datum/msg/req_refused
 	var/proc_ref
 	var/list/read_keys
+	var/else_say
 
 /datum/req/proc_check/test(datum/op_ctx/ctx)
-	var/why = cap_needs_reason(ctx.target, ctx.actor, ctx.held, proc_ref)
+	var/why = cap_needs_reason(ctx.target, ctx.actor, ctx.held, proc_ref, else_say)
 	if(!why)
 		return null
 	ctx.detail = istext(why) ? why : null
@@ -265,11 +280,13 @@ GLOBAL_LIST_EMPTY(reqs_interned)
 	for(var/key in read_keys)
 		. += list(list(ctx.target, key))
 
-/// A holder or chk_* proc as a requirement. reads: keys of the target the proc depends on.
-/proc/req_proc(proc_ref, list/reads)
+/// A holder or chk_* proc as a requirement. reads: keys of the target the proc depends on. else_say: what a FALSE answer
+/// says (a proc that answers text says that instead).
+/proc/req_proc(proc_ref, list/reads, else_say)
 	var/datum/req/proc_check/R = new
 	R.proc_ref = proc_ref
 	R.read_keys = reads
+	R.else_say = else_say
 	return req_intern(R)
 
 // ---- composites ----
@@ -448,6 +465,27 @@ MSG_DEF_SELF(req_no_claws, "You can't tear into that.")
 /proc/req_claws()
 	RETURN_TYPE(/datum/req)
 	return req_intern(new /datum/req/claws)
+
+MSG_DEF_SELF(req_wrong_stance, "Not like that.")
+
+/// The actor's input is in one of `stances` (I_HELP, I_DISARM, I_GRAB, I_HURT): an op declared for some stances
+/// (cap_op(stance = list(...))) offers this, so another stance falls through to the next op. The input layer's reading of
+/// the stance (mob/input_stance()), as the resolver's stance clauses read it.
+/datum/req/stance
+	reason = /datum/msg/req_wrong_stance
+	of = OP_ACTOR
+	var/list/stances
+
+/datum/req/stance/test(datum/op_ctx/ctx)
+	var/mob/M = ctx.actor
+	return (istype(M) && (M.input_stance() in stances)) ? null : reason
+
+/// A stance (I_*) or a list of them.
+/proc/req_stance(stances)
+	RETURN_TYPE(/datum/req)
+	var/datum/req/stance/R = new
+	R.stances = islist(stances) ? stances : list(stances)
+	return req_intern(R)
 
 /// Something on the subject listens for notices of `notice_type` (an op that only publishes one means
 /// nothing where nobody hears it).

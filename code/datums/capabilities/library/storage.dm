@@ -69,12 +69,16 @@
 	C.use_sound = use_sound
 	return cap_gating(C, behind = behind, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 
+/// Ops: "put_in" (a click with an item that fits: one that doesn't is not meant, so the click falls through to the
+/// holder's other uses of it), "take_out" (an empty hand, while it holds something) and "empty_out" (ACT_NONE: the Menu,
+/// radial or command bar; an empty hand's click is Take out).
 /datum/capability/storage/interactions(atom/holder)
 	. = list()
-	. += adopt_entry(cap_insert("Put in", /obj/item, TYPE_PROC_REF(/atom, cap_storage_put_in), needs = TYPE_PROC_REF(/atom, cap_storage_insert_reason), works_broken = TRUE, works_unpowered = TRUE, priority = 1), id = "storage:put_in", pass_cap = TRUE)
-	. += adopt_entry(cap_hand("Take out", TYPE_PROC_REF(/atom, cap_storage_take_out), needs = TYPE_PROC_REF(/atom, cap_storage_has_items), else_say = "it's empty", works_broken = TRUE, works_unpowered = TRUE, form = list(choice_field("choice", TYPE_PROC_REF(/atom, cap_storage_choices), message = "Take out what?"))), id = "storage:take_out", category = INTERACTION_CAT_OPEN, empty_handed = TRUE, pass_cap = TRUE)
+	. += adopt_entry(lib_op("Put in", TYPE_PROC_REF(/atom, cap_storage_put_in), OP_SHAPE_INSERT, using = /obj/item, key = "put_in", offered = req_proc(TYPE_PROC_REF(/atom, cap_storage_insert_reason)), works_broken = TRUE, works_unpowered = TRUE, priority = 1), id = "storage:put_in", pass_cap = TRUE)
+	var/datum/req/has_items = req_proc(TYPE_PROC_REF(/atom, cap_storage_has_items), else_say = "it's empty")
+	. += adopt_entry(lib_op("Take out", TYPE_PROC_REF(/atom, cap_storage_take_out), OP_SHAPE_HAND, key = "take_out", offered = has_items, works_broken = TRUE, works_unpowered = TRUE, form = list(choice_field("choice", TYPE_PROC_REF(/atom, cap_storage_choices), message = "Take out what?"))), id = "storage:take_out", category = INTERACTION_CAT_OPEN, empty_handed = TRUE, pass_cap = TRUE)
 	if(quick_empty)
-		. += adopt_entry(cap_hand("Empty out", TYPE_PROC_REF(/atom, cap_storage_empty_out), needs = TYPE_PROC_REF(/atom, cap_storage_has_items), else_say = "it's empty", works_broken = TRUE, works_unpowered = TRUE), id = "storage:empty_out", category = INTERACTION_CAT_EJECT, empty_handed = TRUE, pass_cap = TRUE)
+		. += adopt_entry(lib_op("Empty out", TYPE_PROC_REF(/atom, cap_storage_empty_out), OP_SHAPE_HAND, key = "empty_out", action = ACT_NONE, offered = has_items, works_broken = TRUE, works_unpowered = TRUE), id = "storage:empty_out", category = INTERACTION_CAT_EJECT, empty_handed = TRUE, pass_cap = TRUE)
 
 /datum/capability/storage/examine(atom/holder, mob/user)
 	var/count = length(holder.storage_items())

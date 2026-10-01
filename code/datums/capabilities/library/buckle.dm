@@ -23,9 +23,10 @@
 #endif
 
 /datum/capability/buckle/interactions(atom/holder)
+	// "unbuckle": with nobody buckled an empty hand did not mean it (the touch falls through).
 	return list(
-		adopt_entry(cap_use_on("Buckle", /obj/item/grab, TYPE_PROC_REF(/atom/movable, cap_buckle_grabbed), works_broken = TRUE, works_unpowered = TRUE)),
-		adopt_entry(cap_hand("Unbuckle", TYPE_PROC_REF(/atom/movable, cap_buckle_release), needs = TYPE_PROC_REF(/atom/movable, cap_buckle_occupied), else_say = "nobody is buckled to it", works_broken = TRUE, works_unpowered = TRUE)),
+		adopt_entry(lib_op("Buckle", TYPE_PROC_REF(/atom/movable, cap_buckle_grabbed), OP_SHAPE_USE_ON, using = /obj/item/grab, key = "buckle", works_broken = TRUE, works_unpowered = TRUE)),
+		adopt_entry(lib_op("Unbuckle", TYPE_PROC_REF(/atom/movable, cap_buckle_release), OP_SHAPE_HAND, key = "unbuckle", offered = req_proc(TYPE_PROC_REF(/atom/movable, cap_buckle_occupied), else_say = "nobody is buckled to it"), works_broken = TRUE, works_unpowered = TRUE)),
 	)
 
 /datum/capability/buckle/examine(atom/holder, mob/user)

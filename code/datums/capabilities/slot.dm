@@ -8,8 +8,8 @@
 //		. = ..()
 //		. += cap_slot(nameof(cell), /obj/item/cell, behind = COVER, layer = "cell")
 //
-// It supplies: an Insert interaction for the accepted types (a full slot refuses "%T% already holds
-// %I%.", passes to the next entry, or swaps), an Eject interaction on the eject_via inputs (offered
+// It supplies: an Insert op for the accepted types (a full slot refuses "%T% already holds
+// %I%.", passes to the next entry, or swaps), an Eject op per eject_via input (offered
 // while the var is set), the examine line, an appearance overlay while filled (layer = "state"; the
 // holder is then marked when its item changes, through draws_var), and UI data
 // (data["caps"][ui_key]["item"] = {name, ref} or null). Insert and eject run through cap_dispatch(),
@@ -92,17 +92,35 @@
 	cap.ui_key_name = ui_key == "" ? var_name : ui_key
 	return cap
 
+/**
+ * The slot's ops, keyed by its var: "insert_<var>" (a click with an accepted item, ACT_USE) and one eject per eject_via
+ * input: "eject_<var>" by hand (a click with an empty hand, ACT_USE at OP_PRIORITY_TAKE_OUT, so it goes ahead of the
+ * holder's own empty-hand use: the APC's cell over its interface), "eject_<var>_alt" (ACT_EJECT, an alt-click),
+ * "eject_<var>_self" (a self-use of an item holder, ACT_USE offering req_self_held()) and "eject_<var>_menu" (ACT_NONE:
+ * the Menu, radial or command bar only).
+ */
 /datum/capability/slot/interactions(atom/holder)
 	. = list()
 	// By the var alone: ids are unique per target, and the built entries are shared by every type
 	// holding this (interned) capability, so the first holder's type must not leak into them.
 	var/slug = dq_interaction_slug("_[slot_var]")
 	if(!no_insert)
-		. += new /datum/interaction/capability/slot_insert(src, "slot_insert[slug]")
+		. += op_attach(new /datum/interaction/capability/slot_insert(src, "slot_insert[slug]"), "insert_[slot_var]")
 	var/static/list/via_entries = list("[SLOT_VIA_ALT]" = INTERACTION_ENTRY_ALT, "[SLOT_VIA_HAND]" = INTERACTION_ENTRY_HAND, "[SLOT_VIA_USE]" = INTERACTION_ENTRY_SELF, "[SLOT_VIA_VERB]" = null)
 	for(var/flag in list(SLOT_VIA_ALT, SLOT_VIA_HAND, SLOT_VIA_USE, SLOT_VIA_VERB))
-		if(eject_via & flag)
-			. += new /datum/interaction/capability/slot_eject(src, "slot_eject[slug]_[flag]", via_entries["[flag]"], ispath(holder.type, /obj/item))
+		if(!(eject_via & flag))
+			continue
+		var/datum/interaction/capability/slot_eject/E = new(src, "slot_eject[slug]_[flag]", via_entries["[flag]"], ispath(holder.type, /obj/item))
+		switch(flag)
+			if(SLOT_VIA_HAND)
+				op_attach(E, "eject_[slot_var]", ACT_USE, OP_PRIORITY_TAKE_OUT)
+			if(SLOT_VIA_ALT)
+				op_attach(E, "eject_[slot_var]_alt", ACT_EJECT)
+			if(SLOT_VIA_USE)
+				op_attach(E, "eject_[slot_var]_self", ACT_USE, offered = req_self_held())
+			if(SLOT_VIA_VERB)
+				op_attach(E, "eject_[slot_var]_menu", ACT_NONE)
+		. += E
 
 /datum/capability/slot/examine(atom/holder, mob/user)
 	var/obj/item/item = holder.vars[slot_var]
