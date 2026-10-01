@@ -13,6 +13,10 @@ use std::path::Path;
 use crate::lower_cache::{CacheStats, ProcLoweringCache};
 use dm_codegen_byond::{LowerBindings, LowerError, SimpleProc};
 
+/// Fixed independently of worker count so table allocation is reproducible.
+/// Bounds completed code and syntax while overlapping more than two bodies.
+pub(crate) const LOWERING_WINDOW: usize = 4;
+
 struct LoweringJob {
     ordinal: usize,
     body: Vec<Item>,
@@ -23,6 +27,7 @@ pub(crate) struct LoweringResult {
     pub ordinal: usize,
     pub bindings: LowerBindings,
     pub compiled: Result<SimpleProc, Vec<LowerError>>,
+    pub(crate) internal_panic: Option<Box<dyn std::any::Any + Send>>,
 }
 
 pub(crate) struct LoweringPool {
@@ -44,14 +49,20 @@ impl LoweringPool {
             .expect("procedure lowering worker stopped");
     }
 
-    /// The caller submits at most two jobs before draining them. A slow first
+    /// The caller submits at most LOWERING_WINDOW jobs before draining. A slow first
     /// job cannot make later completed syntax/code accumulate without bounds.
     pub fn receive_batch(&mut self, count: usize) -> Vec<LoweringResult> {
         let mut results: Vec<_> = (0..count)
             .map(|_| {
-                self.completed
+                let mut result = self.completed
                     .recv()
-                    .expect("procedure lowering worker stopped")
+                    .expect("procedure lowering worker stopped");
+                if let Some(payload) = result.internal_panic.take() {
+                    // Infrastructure failures retain their typed outer panic
+                    // boundary; never disguise a compiler panic as a source error.
+                    std::panic::resume_unwind(payload);
+                }
+                result
             })
             .collect();
         results.sort_by_key(|result| result.ordinal);
@@ -64,39 +75,46 @@ pub(crate) fn with_lowering_pool<R>(
     workers: usize,
     consume: impl FnOnce(&mut LoweringPool) -> R,
 ) -> (R, CacheStats) {
+    let cache = cache_root.map(|root| ProcLoweringCache::open(root.to_path_buf()))
+        .unwrap_or_else(ProcLoweringCache::disabled);
+    with_lowering_cache(&cache, workers, consume)
+}
+
+pub(crate) fn with_lowering_cache<R>(
+    parent: &ProcLoweringCache,
+    workers: usize,
+    consume: impl FnOnce(&mut LoweringPool) -> R,
+) -> (R, CacheStats) {
     std::thread::scope(|scope| {
         let (completed_sender, completed) = std::sync::mpsc::channel();
         let mut senders = Vec::new();
         let mut handles = Vec::new();
-        for ordinal in 0..workers.clamp(1, 2) {
+        for ordinal in 0..workers.clamp(1, LOWERING_WINDOW) {
             let (sender, receiver) = std::sync::mpsc::sync_channel::<LoweringJob>(1);
             senders.push(sender);
             let completed = completed_sender.clone();
+            let mut cache = parent.fork();
             let handle = std::thread::Builder::new()
                 .name(format!("dm-procedure-lower-{ordinal}"))
                 .stack_size(16 * 1024 * 1024)
                 .spawn_scoped(scope, move || {
-                    let mut cache = cache_root
-                        .map(|root| ProcLoweringCache::open(root.to_path_buf()))
-                        .unwrap_or_else(ProcLoweringCache::disabled);
                     while let Ok(job) = receiver.recv() {
                         // A worker panic must report a failed job rather than
                         // leave the ordered coordinator waiting for its ordinal.
-                        let compiled =
+                        let outcome =
                             std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                                 cache.compile(&job.body, &job.bindings)
-                            }))
-                            .unwrap_or_else(|_| {
-                                Err(vec![LowerError {
-                                    statement: "<procedure lowering worker>".into(),
-                                    reason: "procedure lowering panicked".into(),
-                                }])
-                            });
+                            }));
+                        let (compiled, internal_panic) = match outcome {
+                            Ok(compiled) => (compiled, None),
+                            Err(payload) => (Err(Vec::new()), Some(payload)),
+                        };
                         if completed
                             .send(LoweringResult {
                                 ordinal: job.ordinal,
                                 bindings: job.bindings,
                                 compiled,
+                                internal_panic,
                             })
                             .is_err()
                         {
@@ -132,8 +150,8 @@ pub(crate) fn worker_count() -> usize {
     std::env::var("DM_COMPILER_WORKERS")
         .ok()
         .and_then(|value| value.parse::<usize>().ok())
-        .unwrap_or(2)
-        .clamp(1, 2)
+        .unwrap_or_else(|| std::thread::available_parallelism().map_or(2, usize::from).min(LOWERING_WINDOW))
+        .clamp(1, LOWERING_WINDOW)
 }
 
 #[cfg(test)]
@@ -179,6 +197,20 @@ pub(crate) fn with_parsed_procedures<R>(
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn worker_panic_retains_internal_failure_boundary() {
+        let (sender, completed) = std::sync::mpsc::channel();
+        sender.send(super::LoweringResult {
+            ordinal: 0,
+            bindings: dm_codegen_byond::LowerBindings::default(),
+            compiled: Err(Vec::new()),
+            internal_panic: Some(Box::new(761u32)),
+        }).unwrap();
+        let mut pool = super::LoweringPool { senders: Vec::new(), completed, next_worker: 0 };
+        let panic = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| pool.receive_batch(1)))
+            .err().expect("worker panic must reach infrastructure boundary");
+        assert_eq!(*panic.downcast::<u32>().unwrap(), 761);
+    }
     use super::*;
 
     #[test]

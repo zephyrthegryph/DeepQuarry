@@ -6,7 +6,7 @@
 #[cfg(test)]
 use dm_compiler::bootstrap::resolved_resource_requests;
 use dm_compiler::bootstrap::{
-    compile_preprocessed_project_with_resources_prepared, resolved_resource_disk_path,
+    compile_preprocessed_project_with_resources_prepared_mode, resolved_resource_disk_path,
     resolved_resource_requests_with_literals,
 };
 use dm_compiler::{load_map_set_from_paths, CompilerSession, ProjectSession};
@@ -44,6 +44,9 @@ const MAX_BUILD_RESULTS: usize = 256;
 /// The Git common directory is shared by all worktrees of one codebase. Use
 /// it for immutable artifacts, with a project-local fallback outside Git.
 pub fn default_cache_root(project_or_directory: &Path) -> PathBuf {
+    if let Some(root) = std::env::var_os("DM_COMPILER_CACHE_ROOT") {
+        return PathBuf::from(root);
+    }
     let directory = if project_or_directory.is_dir() {
         project_or_directory
     } else {
@@ -156,6 +159,7 @@ impl Sessions {
 /// compiler/target/dependency fingerprint in their key before calling `put`.
 pub struct ContentStore {
     root: PathBuf,
+    metadata: dm_store::Store,
 }
 
 /// Portable key for a pure compiler stage. Every semantic dependency that can
@@ -234,6 +238,13 @@ struct PreparedBuild {
     checkpoint: Option<dm_compiler::incremental::EmissionCheckpoint>,
 }
 
+#[derive(Serialize, Deserialize)]
+struct ArchiveCatalogRecord {
+    version: u32,
+    archive_digest: String,
+    catalog: dm_resources::ResourceCatalog,
+}
+
 struct RetainedWorld {
     family: PathBuf,
     record: IncrementalRecord,
@@ -274,7 +285,8 @@ impl ContentStore {
     pub fn new(root: impl Into<PathBuf>) -> io::Result<Self> {
         let root = root.into();
         fs::create_dir_all(&root)?;
-        Ok(Self { root })
+        let metadata = dm_store::Store::open(root.join("metadata.redb"))?;
+        Ok(Self { root, metadata })
     }
 
     pub fn put(&self, namespace: &str, bytes: &[u8]) -> io::Result<String> {
@@ -394,57 +406,45 @@ impl ContentStore {
     /// Store an artifact without joining its parts into a second allocation.
     /// The bytes, digest, and pointer format match `put_artifact` exactly.
     pub fn put_artifact_parts(&self, key: &ArtifactKey, parts: &[&[u8]]) -> io::Result<String> {
-        let key_digest = key.digest()?;
         let payload_digest = self.put_parts("artifact-payload-v1", parts)?;
-        let directory = self.root.join("artifact-index-v1").join(&key_digest[..2]);
-        fs::create_dir_all(&directory)?;
-        let destination = directory.join(&key_digest);
-        if let Some(existing) = self.get_artifact(key)? {
-            if !parts_equal(&existing, parts) {
-                return Err(io::Error::new(
-                    io::ErrorKind::InvalidData,
-                    "artifact key collision or incomplete dependencies",
-                ));
-            }
-            return Ok(payload_digest);
-        }
-        let pointer = ArtifactPointer {
-            key: key.clone(),
-            payload_digest: payload_digest.clone(),
-        };
-        let temporary = directory.join(format!(
-            "{}.{}.{}.tmp",
-            key_digest,
-            std::process::id(),
-            TEMP_SEQUENCE.fetch_add(1, Ordering::Relaxed)
-        ));
-        let mut file = fs::File::create(&temporary)?;
-        file.write_all(&serde_json::to_vec(&pointer).map_err(io::Error::other)?)?;
-        file.sync_all()?;
-        match fs::hard_link(&temporary, &destination) {
-            Ok(()) => {}
-            Err(error) if error.kind() == io::ErrorKind::AlreadyExists => {
-                let existing = self.get_artifact(key)?.ok_or_else(|| {
-                    io::Error::new(io::ErrorKind::NotFound, "artifact pointer disappeared")
-                })?;
-                if !parts_equal(&existing, parts) {
-                    fs::remove_file(&temporary)?;
-                    return Err(io::Error::new(
-                        io::ErrorKind::InvalidData,
-                        "artifact key collision or incomplete dependencies",
-                    ));
+        let record_key = dm_store::Key::new("artifact-index-v2", key.digest()?);
+        let pointer = ArtifactPointer { key: key.clone(), payload_digest: payload_digest.clone() };
+        let bytes = serde_json::to_vec(&pointer).map_err(io::Error::other)?;
+        for _ in 0..8 {
+            let read = self.metadata.read_many(std::slice::from_ref(&record_key), None)?;
+            if let Some(existing) = &read.values[0] {
+                let existing: ArtifactPointer = serde_json::from_slice(existing)
+                    .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+                if existing.key != *key || existing.payload_digest != payload_digest {
+                    return Err(io::Error::new(io::ErrorKind::InvalidData, "artifact key collision or incomplete dependencies"));
                 }
+                return Ok(payload_digest);
             }
-            Err(error) => {
-                fs::remove_file(&temporary)?;
-                return Err(error);
+            if self.metadata.commit(&read.witnesses,
+                &[dm_store::Change::Put(record_key.clone(), bytes.clone())], None)? == dm_store::Commit::Applied {
+                return Ok(payload_digest);
             }
         }
-        fs::remove_file(&temporary)?;
-        Ok(payload_digest)
+        Err(io::Error::new(io::ErrorKind::WouldBlock, "artifact metadata changed repeatedly; retry"))
     }
 
+
+
     pub fn get_artifact(&self, key: &ArtifactKey) -> io::Result<Option<Vec<u8>>> {
+        let record_key = dm_store::Key::new("artifact-index-v2", key.digest()?);
+        let read = self.metadata.read_many(&[record_key], None)?;
+        if let Some(bytes) = &read.values[0] {
+            let pointer: ArtifactPointer = serde_json::from_slice(bytes)
+                .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+            if pointer.key != *key || !valid_digest(&pointer.payload_digest) {
+                return Err(io::Error::new(io::ErrorKind::InvalidData, "artifact pointer mismatch"));
+            }
+            return self.get("artifact-payload-v1", &pointer.payload_digest).map(Some);
+        }
+        self.legacy_get_artifact(key)
+    }
+
+    fn legacy_get_artifact(&self, key: &ArtifactKey) -> io::Result<Option<Vec<u8>>> {
         let key_digest = key.digest()?;
         let path = self
             .root
@@ -497,6 +497,8 @@ impl ContentStore {
     /// Discard a damaged index entry so a pure stage can regenerate it. Blob
     /// bytes remain content-addressed and are replaced by `put` if damaged.
     fn discard_corrupt_artifact(&self, key: &ArtifactKey) -> io::Result<()> {
+        self.metadata.commit(&[], &[dm_store::Change::Delete(
+            dm_store::Key::new("artifact-index-v2", key.digest()?))], None)?;
         let digest = key.digest()?;
         let path = self
             .root
@@ -527,20 +529,6 @@ fn verify_file_digest(path: &Path, expected: &str) -> io::Result<bool> {
         hash.update(&buffer[..read]);
     }
     Ok(format!("{:x}", hash.finalize()) == expected)
-}
-
-fn parts_equal(bytes: &[u8], parts: &[&[u8]]) -> bool {
-    if parts.iter().map(|part| part.len()).sum::<usize>() != bytes.len() {
-        return false;
-    }
-    let mut offset = 0;
-    for part in parts {
-        if &bytes[offset..offset + part.len()] != *part {
-            return false;
-        }
-        offset += part.len();
-    }
-    true
 }
 
 fn valid_namespace(value: &str) -> bool {
@@ -596,6 +584,10 @@ pub struct BuildResult {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum FailureKind { Source, Internal, Configuration }
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Response {
     pub ok: bool,
     pub item_count: usize,
@@ -603,6 +595,8 @@ pub struct Response {
     pub source_digest: Option<String>,
     pub shared_syntax_hit: bool,
     pub error: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub failure_kind: Option<FailureKind>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub build: Option<BuildResult>,
 }
@@ -754,6 +748,20 @@ fn proven_resource_resolution_current(
 
 impl ContentStore {
     fn load_receipt(&self, key: &ArtifactKey) -> io::Result<Option<BuildReceipt>> {
+        let read = self.metadata.read_many(&[dm_store::Key::new("build-receipts-v2", key.digest()?)], None)?;
+        if let Some(bytes) = &read.values[0] {
+            let pointer: ArtifactPointer = serde_json::from_slice(bytes)
+                .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+            if pointer.key != *key || !valid_digest(&pointer.payload_digest) { return Ok(None); }
+            return match self.get_bounded("build-receipt-v1", &pointer.payload_digest, 16 * 1024 * 1024) {
+                Ok(bytes) => Ok(serde_json::from_slice(&bytes).ok()),
+                Err(_) => Ok(None),
+            };
+        }
+        self.legacy_load_receipt(key)
+    }
+
+    fn legacy_load_receipt(&self, key: &ArtifactKey) -> io::Result<Option<BuildReceipt>> {
         let directory = self.root.join("build-receipts-v1").join(key.digest()?);
         let mut paths = match fs::read_dir(directory) {
             Ok(entries) => entries
@@ -799,48 +807,12 @@ impl ContentStore {
     fn store_receipt(&self, key: &ArtifactKey, receipt: &BuildReceipt) -> io::Result<()> {
         let bytes = serde_json::to_vec(receipt).map_err(io::Error::other)?;
         let payload_digest = self.put("build-receipt-v1", &bytes)?;
-        let directory = self.root.join("build-receipts-v1").join(key.digest()?);
-        fs::create_dir_all(&directory)?;
-        let stamp = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_nanos();
-        let name = format!(
-            "{stamp:040}-{}-{}.json",
-            std::process::id(),
-            TEMP_SEQUENCE.fetch_add(1, Ordering::Relaxed)
-        );
-        let temporary = directory.join(format!("{name}.tmp"));
-        let destination = directory.join(name);
-        let mut file = fs::OpenOptions::new()
-            .create_new(true)
-            .write(true)
-            .open(&temporary)?;
-        file.write_all(
-            &serde_json::to_vec(&ArtifactPointer {
-                key: key.clone(),
-                payload_digest,
-            })
-            .map_err(io::Error::other)?,
-        )?;
-        file.sync_all()?;
-        drop(file);
-        fs::rename(temporary, destination)?;
-        let mut paths = fs::read_dir(&directory)?
-            .filter_map(Result::ok)
-            .map(|entry| entry.path())
-            .filter(|path| {
-                path.extension()
-                    .is_some_and(|extension| extension == "json")
-            })
-            .collect::<Vec<_>>();
-        paths.sort();
-        let excess = paths.len().saturating_sub(4);
-        for path in paths.into_iter().take(excess) {
-            let _ = fs::remove_file(path);
-        }
-        Ok(())
+        let pointer = ArtifactPointer { key: key.clone(), payload_digest };
+        self.metadata.put_many(vec![(dm_store::Key::new("build-receipts-v2", key.digest()?),
+            serde_json::to_vec(&pointer).map_err(io::Error::other)?)], None).map(|_| ())
     }
+
+
 }
 
 // The expanded-source limit is 64 MiB. Leave room for its dependency/resource
@@ -1201,6 +1173,7 @@ impl Coordinator {
         archive_hint: Option<&VerifiedArchive>,
         prepared_maps: &dm_compiler::maps::MapSet,
         prepared_resources: &[ResourceRequest],
+        canonical: bool,
     ) -> Result<PreparedBuild, String> {
         self.incremental
             .set_cache_root(dm_compiler::lower_cache::default_cache_root(project));
@@ -1223,6 +1196,10 @@ impl Coordinator {
         candidates.sort();
         candidates.reverse();
         candidates.truncate(32);
+        if canonical {
+            candidates.clear();
+            self.retained_world = None;
+        }
         let retained = self
             .retained_world
             .take()
@@ -1393,7 +1370,26 @@ impl Coordinator {
                 dm_compiler::frontend::OutlineSession::new(Some(self.blobs.root.clone())),
             ));
         }
-        let compiled = compile_preprocessed_project_with_resources_prepared(
+        let catalog_key = ArtifactKey {
+            stage: "resource-catalog-v1".into(), format_version: 1,
+            compiler_version: artifact.compiler_version.clone(), target: artifact.target.clone(),
+            input_digests: vec![resources.to_owned()], dependency_digests: Vec::new(),
+        };
+        let catalog = if canonical {
+            archive_hint.and_then(|archive| {
+                let bytes = self.blobs.get_artifact(&catalog_key).ok().flatten()?;
+                let record: ArchiveCatalogRecord = serde_json::from_slice(&bytes).ok()?;
+                (record.version == 1 && record.archive_digest == archive.digest()
+                    && hex_digest(&record.catalog.fingerprint) == resources
+                    && record.catalog.validate().is_ok()).then_some(record.catalog)
+            })
+        } else { None };
+        let reused_archive = catalog.as_ref().and(archive_hint).cloned();
+        let compiled = if let Some(catalog) = &catalog {
+            dm_compiler::bootstrap::compile_preprocessed_project_with_resource_catalog(
+                project, preprocessed, builtins, world_name, &mut self.outline_cache.as_mut().unwrap().1,
+                prepared_maps, catalog)?
+        } else { compile_preprocessed_project_with_resources_prepared_mode(
             project,
             preprocessed,
             builtins,
@@ -1401,11 +1397,19 @@ impl Coordinator {
             &mut self.outline_cache.as_mut().unwrap().1,
             prepared_maps,
             prepared_resources,
-        )?;
+            !canonical,
+        )? };
         if hex_digest(&compiled.resource_fingerprint) != resources
             || hex_digest(&compiled.map_fingerprint) != maps
         {
             return Err("project map/resource inputs changed during build; retry".into());
+        }
+        if reused_archive.is_none() {
+            // Store compact metadata only after the canonical archive is fully
+            // constructed. A subsequent build also requires its verified RSC.
+            let record = ArchiveCatalogRecord { version: 1,
+                archive_digest: format!("{:x}", Sha256::digest(&compiled.rsc_bytes)), catalog: compiled.resource_catalog.clone() };
+            if let Ok(bytes) = serde_json::to_vec(&record) { let _ = self.blobs.put_artifact(&catalog_key, &bytes); }
         }
         Ok(PreparedBuild {
             serialized_dmb: None,
@@ -1416,7 +1420,7 @@ impl Coordinator {
             reused_procs: compiled.lowering_cache_stats.hits,
             dmb: compiled.dmb,
             rsc_bytes: compiled.rsc_bytes,
-            archive: None,
+            archive: reused_archive,
             checkpoint: compiled.checkpoint,
         })
     }
@@ -1566,6 +1570,7 @@ impl Coordinator {
                 diagnostics: vec![],
                 source_digest: None,
                 shared_syntax_hit: false,
+                failure_kind: None,
                 error: None,
                 build: None,
             },
@@ -1584,6 +1589,7 @@ impl Coordinator {
                             diagnostics: vec![],
                             source_digest: None,
                             shared_syntax_hit: false,
+                            failure_kind: None,
                             error: Some(error.to_string()),
                             build: None,
                         }
@@ -1636,6 +1642,7 @@ impl Coordinator {
                             diagnostics: vec![],
                             source_digest: Some(digest),
                             shared_syntax_hit: false,
+                            failure_kind: None,
                             error: Some(error.to_string()),
                             build: None,
                         }
@@ -1647,6 +1654,7 @@ impl Coordinator {
                     diagnostics: summary.diagnostics,
                     source_digest: Some(digest),
                     shared_syntax_hit,
+                    failure_kind: None,
                     error: None,
                     build: None,
                 }
@@ -1854,6 +1862,7 @@ impl Coordinator {
             diagnostics,
             source_digest: Some(digest),
             shared_syntax_hit: summary.1,
+            failure_kind: None,
             error: None,
             build: None,
         };
@@ -1898,7 +1907,7 @@ impl Coordinator {
             .transpose()
         {
             Ok(path) => path,
-            Err(error) => return failed_project(error.to_string()),
+            Err(error) => return failed_internal(error),
         };
         // Verify the published generation before validating retained inputs. If
         // both match, the exact source/resource/shadow check is the final operation
@@ -1945,6 +1954,7 @@ impl Coordinator {
                             diagnostics: vec![],
                             source_digest: Some(source_digest),
                             shared_syntax_hit: true,
+                            failure_kind: None,
                             error: None,
                             build: Some(result),
                         };
@@ -1984,6 +1994,7 @@ impl Coordinator {
                         diagnostics: vec![],
                         source_digest: Some(receipt.source_digest),
                         shared_syntax_hit: true,
+                        failure_kind: None,
                         error: None,
                         build: Some(result),
                     };
@@ -2239,6 +2250,7 @@ impl Coordinator {
                 diagnostics: diagnostics.clone(),
                 source_digest: Some(project_digest.clone()),
                 shared_syntax_hit: false,
+                failure_kind: None,
                 error: None,
                 build: None,
             };
@@ -2283,6 +2295,7 @@ impl Coordinator {
                     diagnostics: vec![],
                     source_digest: Some(source_digest),
                     shared_syntax_hit: true,
+                    failure_kind: None,
                     error: None,
                     build: Some(result),
                 };
@@ -2296,7 +2309,7 @@ impl Coordinator {
             &key.compiler_version,
         )) {
             Ok(bytes) => format!("{:x}", Sha256::digest(bytes)),
-            Err(error) => return failed_project(error.to_string()),
+            Err(error) => return failed_internal(error),
         };
         let artifact = ArtifactKey {
             stage: "project-pair".into(),
@@ -2321,11 +2334,11 @@ impl Coordinator {
                 ) =>
             {
                 if let Err(error) = self.blobs.discard_corrupt_artifact(&artifact) {
-                    return failed_project(error.to_string());
+                    return failed_internal(error);
                 }
                 None
             }
-            Err(error) => return failed_project(error.to_string()),
+            Err(error) => return failed_internal(error),
         };
         let cached_pair = match cached_bytes {
             Some(bytes) => match decode_cached_pair(&self.blobs, &bytes) {
@@ -2337,11 +2350,11 @@ impl Coordinator {
                     ) =>
                 {
                     if let Err(error) = self.blobs.discard_corrupt_artifact(&artifact) {
-                        return failed_project(error.to_string());
+                        return failed_internal(error);
                     }
                     None
                 }
-                Err(error) => return failed_project(error.to_string()),
+                Err(error) => return failed_internal(error),
             },
             None => None,
         };
@@ -2367,9 +2380,14 @@ impl Coordinator {
                     archive_hint.as_ref(),
                     &snapshot.map_set,
                     &snapshot.resource_requests,
+                    key.build_mode != "legacy-history",
                 ) {
                     Ok(prepared) => prepared,
-                    Err(error) => return failed_project(error),
+                    Err(error) => {
+                        let authored = dm_compiler::authored_syntax_errors(
+                            &snapshot.preprocessed, key.project.parent().unwrap_or(Path::new(".")));
+                        return failed_project(if authored.is_empty() { error } else { authored.join("\n") });
+                    }
                 };
                 trace_build(trace, "compiler", compile_started);
                 // CAS outputs describe the immutable input snapshot. Full emission
@@ -2389,7 +2407,7 @@ impl Coordinator {
                     (Some(bytes), Some(spans)) => (bytes, spans),
                     _ => match dmb.to_bytes_with_list_spans() {
                         Ok(pair) => pair,
-                        Err(error) => return failed_project(error.to_string()),
+                        Err(error) => return failed_internal(error),
                     },
                 };
                 let cache_write_started = Instant::now();
@@ -2444,7 +2462,7 @@ impl Coordinator {
                     Ok(())
                 };
                 if let Err(error) = write_pair() {
-                    return failed_project(error.to_string());
+                    return failed_internal(error);
                 }
                 trace_build(trace, "artifact CAS write", cache_write_started);
                 if let (Some(checkpoint), Some(record), Some(checkpoint_size)) =
@@ -2459,7 +2477,7 @@ impl Coordinator {
                                 list_spans,
                             ) {
                                 Ok(indexed) => indexed,
-                                Err(error) => return failed_project(error.to_string()),
+                                Err(error) => return failed_internal(error),
                             }
                         }
                     };
@@ -2469,7 +2487,7 @@ impl Coordinator {
                         self.retained_world = Some(RetainedWorld {
                             family: match self.incremental_directory(&artifact) {
                                 Ok(path) => path,
-                                Err(error) => return failed_project(error.to_string()),
+                                Err(error) => return failed_internal(error),
                             },
                             record,
                             checkpoint,
@@ -2525,7 +2543,7 @@ impl Coordinator {
             };
             let generation = match published {
                 Ok(generation) => generation,
-                Err(error) => return failed_project(error.to_string()),
+                Err(error) => return failed_internal(error),
             };
             trace_build(trace, "generation publication", publish_started);
             (generation.id, generation.dmb, generation.rsc)
@@ -2578,6 +2596,7 @@ impl Coordinator {
             diagnostics: vec![],
             source_digest: Some(source_digest),
             shared_syntax_hit: cache_hit,
+            failure_kind: None,
             error: None,
             build: Some(result),
         }
@@ -2655,9 +2674,16 @@ fn failed_project(error: String) -> Response {
         diagnostics: vec![],
         source_digest: None,
         shared_syntax_hit: false,
+        failure_kind: Some(FailureKind::Source),
         error: Some(error),
         build: None,
     }
+}
+
+fn failed_internal(error: impl ToString) -> Response {
+    let mut response = failed_project(error.to_string());
+    response.failure_kind = Some(FailureKind::Internal);
+    response
 }
 
 fn decode_cached_pair(store: &ContentStore, bytes: &[u8]) -> io::Result<(Vec<u8>, Vec<u8>, usize)> {
@@ -2897,14 +2923,10 @@ mod tests {
             &root.join("output").canonicalize().unwrap(),
         )
         .unwrap();
-        let receipt_directory = cache.join("build-receipts-v1").join(key.digest().unwrap());
-        for path in fs::read_dir(receipt_directory)
-            .unwrap()
-            .filter_map(Result::ok)
-            .map(|entry| entry.path())
         {
-            let pointer: ArtifactPointer =
-                serde_json::from_slice(&fs::read(path).unwrap()).unwrap();
+            let read = restarted.blobs.metadata.read_many(&[
+                dm_store::Key::new("build-receipts-v2", key.digest().unwrap())], None).unwrap();
+            let pointer: ArtifactPointer = serde_json::from_slice(read.values[0].as_ref().unwrap()).unwrap();
             fs::write(
                 cache
                     .join("build-receipt-v1")
@@ -3238,7 +3260,7 @@ mod tests {
         )
         .unwrap();
         let request = || Request::BuildProject {
-            key: SessionKey::new(&root, &manifest, "516.1687", vec![], "build").unwrap(),
+            key: SessionKey::new(&root, &manifest, "516.1687", vec![], "legacy-history").unwrap(),
             builtins: schema.clone(),
             output_root: root.join("output"),
         };
@@ -3313,7 +3335,7 @@ mod tests {
         )
         .unwrap();
         let request = || Request::BuildProject {
-            key: SessionKey::new(&root, &manifest, "516.1687", vec![], "build").unwrap(),
+            key: SessionKey::new(&root, &manifest, "516.1687", vec![], "legacy-history").unwrap(),
             builtins: schema.clone(),
             output_root: output.clone(),
         };
@@ -3384,7 +3406,7 @@ mod tests {
         )
         .unwrap();
         let request = || Request::BuildProject {
-            key: SessionKey::new(&root, &manifest, "516.1687", vec![], "build").unwrap(),
+            key: SessionKey::new(&root, &manifest, "516.1687", vec![], "legacy-history").unwrap(),
             builtins: schema.clone(),
             output_root: root.join("output"),
         };
@@ -3832,12 +3854,9 @@ mod tests {
             dependency_digests: vec![],
         };
         let digest = artifact_key.digest().unwrap();
-        let pointer_path = root
-            .join("artifact-index-v1")
-            .join(&digest[..2])
-            .join(&digest);
-        let pointer: ArtifactPointer =
-            serde_json::from_slice(&fs::read(&pointer_path).unwrap()).unwrap();
+        let metadata = dm_store::Store::open(root.join("metadata.redb")).unwrap();
+        let read = metadata.read_many(&[dm_store::Key::new("artifact-index-v2", &digest)], None).unwrap();
+        let pointer: ArtifactPointer = serde_json::from_slice(read.values[0].as_ref().unwrap()).unwrap();
         let payload = root
             .join("artifact-payload-v1")
             .join(&pointer.payload_digest[..2])
@@ -4545,15 +4564,11 @@ mod tests {
 
         // A torn or altered disk payload must cause a recompile, not leave
         // every subsequent build of this source permanently failing.
-        let index_root = cache.join("artifact-index-v1");
-        let shard = fs::read_dir(&index_root)
-            .unwrap()
-            .next()
-            .unwrap()
-            .unwrap()
-            .path();
-        let index = fs::read_dir(shard).unwrap().next().unwrap().unwrap().path();
-        let pointer: ArtifactPointer = serde_json::from_slice(&fs::read(&index).unwrap()).unwrap();
+        let records = restarted.blobs.metadata.snapshot_namespace("artifact-index-v2", 64_000, 16 * 1024 * 1024, None).unwrap();
+        let (index, pointer) = records.records.into_iter().find_map(|(key, bytes)| {
+            let pointer: ArtifactPointer = serde_json::from_slice(&bytes).unwrap();
+            (pointer.key.stage == "project-pair").then_some((key, pointer))
+        }).unwrap();
         let payload_path = cache
             .join("artifact-payload-v1")
             .join(&pointer.payload_digest[..2])
@@ -4575,11 +4590,12 @@ mod tests {
         assert!(!missing_payload.build.unwrap().cache_hit);
         assert!(payload_path.is_file());
 
-        fs::write(&index, b"{").unwrap();
+        restarted.blobs.metadata.put_many(vec![(index.clone(), b"{".to_vec())], None).unwrap();
         let malformed_pointer = restarted.handle(request(root.join("malformed-pointer-output")));
         assert!(malformed_pointer.ok, "{malformed_pointer:?}");
         assert!(!malformed_pointer.build.unwrap().cache_hit);
-        assert!(serde_json::from_slice::<ArtifactPointer>(&fs::read(&index).unwrap()).is_ok());
+        let read = restarted.blobs.metadata.read_many(&[index], None).unwrap();
+        assert!(serde_json::from_slice::<ArtifactPointer>(read.values[0].as_ref().unwrap()).is_ok());
 
         let other_worktree = root.join("other-worktree");
         fs::create_dir_all(&other_worktree).unwrap();

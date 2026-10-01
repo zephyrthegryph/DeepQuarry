@@ -171,7 +171,7 @@ pub fn encode_checkpoint(checkpoint: &EmissionCheckpoint) -> Result<Vec<u8>, Str
     }
     let envelope = CheckpointEnvelope {
         version: 1,
-        compiler: env!("DM_LOWERING_FINGERPRINT").into(),
+        compiler: env!("DM_EMISSION_FINGERPRINT").into(),
         checksum: digest(payload.as_bytes()),
         payload,
     };
@@ -187,15 +187,12 @@ pub fn decode_checkpoint(bytes: &[u8]) -> Option<EmissionCheckpoint> {
     }
     let envelope: CheckpointEnvelope = serde_json::from_slice(bytes).ok()?;
     if envelope.version != 1
-        || envelope.compiler != env!("DM_LOWERING_FINGERPRINT")
+        || envelope.compiler != env!("DM_EMISSION_FINGERPRINT")
         || digest(envelope.payload.as_bytes()) != envelope.checksum
     {
         return None;
     }
-    let mut checkpoint: EmissionCheckpoint = serde_json::from_str(&envelope.payload).ok()?;
-    crate::lower_cache::prepare_member_type_fingerprints(&mut checkpoint.shared);
-    checkpoint.shared.fingerprint =
-        crate::lower_cache::shared_binding_fingerprint(&checkpoint.shared);
+    let checkpoint: EmissionCheckpoint = serde_json::from_str(&envelope.payload).ok()?;
     Some(checkpoint)
 }
 pub fn digest(bytes: &[u8]) -> String {
@@ -293,12 +290,14 @@ pub fn try_emit_outline(
                 } else {
                     serial.push(crate::bootstrap::procedure_pipeline::LoweringResult {
                         ordinal,
+                        internal_panic: None,
                         compiled: session
                             .compile(path, &source.source, bindings.clone(), Arc::clone(&shared))
                             .map_err(|reason| {
                                 vec![dm_codegen_byond::LowerError {
                                     statement: path.clone(),
                                     reason,
+                                    statement_origin: None,
                                 }]
                             }),
                         bindings,

@@ -33,6 +33,7 @@ pub(super) fn response(error: Option<String>) -> Response {
         diagnostics: vec![],
         source_digest: None,
         shared_syntax_hit: false,
+        failure_kind: error.as_ref().map(|_| dm_compiled::FailureKind::Internal),
         error,
         build: None,
     }

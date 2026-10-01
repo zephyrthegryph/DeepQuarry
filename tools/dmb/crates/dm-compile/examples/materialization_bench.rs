@@ -382,6 +382,10 @@ fn run() -> io::Result<()> {
     } else {
         include_bytes!("../../../fixtures/native_template.bin").to_vec()
     };
+    projects = projects
+        .into_iter()
+        .map(fs::canonicalize)
+        .collect::<io::Result<Vec<_>>>()?;
     let fixture = projects.is_empty();
     if fixture {
         let count = if six { 6 } else { 1 };

@@ -8,3 +8,4 @@ description = "Deterministic resource inputs for the Rust DM compiler"
 [dependencies]
 byond-dmb = { path = "../.." }
 sha2 = "0.10"
+serde = { version = "1", features = ["derive"] }

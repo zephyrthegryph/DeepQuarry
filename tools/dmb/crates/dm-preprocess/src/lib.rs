@@ -1311,7 +1311,7 @@ impl<P: SourceProvider> Context<'_, P> {
                                     .push(path.parent().unwrap_or(Path::new("")).join(rel));
                                 continue;
                             }
-                            let child = path.parent().unwrap_or(Path::new("")).join(rel);
+                            let child = normalize(path.parent().unwrap_or(Path::new("")).join(rel));
                             if child
                                 .extension()
                                 .is_some_and(|ext| ext.eq_ignore_ascii_case("dmf"))
@@ -1326,12 +1326,26 @@ impl<P: SourceProvider> Context<'_, P> {
                                         self.output.skin_includes.push(child);
                                     }
                                     Err(error) => {
-                                        self.error_as(&child, 1, DiagnosticKind::Io, error)
+                                        self.error_as(&path, source_line, DiagnosticKind::Io,
+                                            format!("cannot include {}: {error}", child.display()))
                                     }
                                 }
                                 continue;
                             }
-                            self.visit(child);
+                            let first_diagnostic = self.output.diagnostics.len();
+                            self.visit(child.clone());
+                            // A missing include belongs to its directive; errors
+                            // inside a successfully opened child retain their own origin.
+                            for diagnostic in &mut self.output.diagnostics[first_diagnostic..] {
+                                if diagnostic.kind == DiagnosticKind::Io
+                                    && diagnostic.path == child && diagnostic.line == 1
+                                {
+                                    diagnostic.message = format!("cannot include {}: {}",
+                                        child.display(), diagnostic.message);
+                                    diagnostic.path = path.clone();
+                                    diagnostic.line = source_line;
+                                }
+                            }
                         }
                         None => self.error_as(
                             &path,
@@ -3733,6 +3747,10 @@ mod tests {
             .diagnostics
             .iter()
             .any(|d| d.kind == DiagnosticKind::Io));
+        let missing = output.diagnostics.iter().find(|d| d.kind == DiagnosticKind::Io).unwrap();
+        assert_eq!(missing.path, Path::new("game.dme"));
+        assert_eq!(missing.line, 1);
+        assert!(missing.message.contains("missing.dm"));
         assert!(output
             .diagnostics
             .iter()

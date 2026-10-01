@@ -219,7 +219,16 @@ pub fn materialize_generation(
     root: &Path,
     generation: &Generation,
 ) -> io::Result<ConventionalPair> {
-    verify_generation_digest(root, generation)?;
+    // The daemon returns canonical paths (including Windows' extended prefix),
+    // while --output-root may be an ordinary or relative caller spelling.
+    // Resolve both before enforcing the generation's root/id/path contract.
+    let root = root.canonicalize()?;
+    let generation = Generation {
+        id: generation.id.clone(),
+        dmb: generation.dmb.canonicalize()?,
+        rsc: generation.rsc.canonicalize()?,
+    };
+    verify_generation_digest(&root, &generation)?;
     let project = project.canonicalize()?;
     let parent = project
         .parent()
@@ -242,7 +251,7 @@ pub fn materialize_generation(
     let rsc = project.with_extension("rsc");
     recover(&state, &dmb, &rsc)?;
     let expected_dmb = digest_file(&generation.dmb)?;
-    let expected_rsc = verified_archive(root, generation)?.digest().to_owned();
+    let expected_rsc = verified_archive(&root, &generation)?.digest().to_owned();
     let receipt: Option<Receipt> = load(&state.join("receipt.json")).ok();
     let same_dmb = receipt.as_ref().is_some_and(|receipt| {
         receipt.dmb_digest == expected_dmb
@@ -404,6 +413,24 @@ mod tests {
         assert_eq!(fs::read(dmb).unwrap(), b"old dmb");
         assert_eq!(fs::read(rsc).unwrap(), b"old rsc");
         assert!(!state.join("transaction.json").exists());
+        fs::remove_dir_all(root).unwrap();
+    }
+    #[test]
+    fn canonical_daemon_paths_accept_an_ordinary_output_root() {
+        let root = fixture();
+        let mut world = byond_dmb::dmb::Dmb::from_bytes(include_bytes!(
+            "../../../fixtures/native_template.bin"
+        ))
+        .unwrap();
+        world.resources.clear();
+        let output = root.join("output");
+        let published = publish_generation(&output, &world.to_bytes().unwrap(), &[]).unwrap();
+        let canonical = Generation {
+            id: published.id.clone(),
+            dmb: published.dmb.canonicalize().unwrap(),
+            rsc: published.rsc.canonicalize().unwrap(),
+        };
+        materialize_generation(&root.join("project.dme"), &output, &canonical).unwrap();
         fs::remove_dir_all(root).unwrap();
     }
 }

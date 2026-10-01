@@ -1,5 +1,9 @@
 # Persistent incremental DM compiler architecture
 
+See [REVISED_ARCHITECTURE.md](REVISED_ARCHITECTURE.md) for the accepted review changes,
+canonical output policy, transactional persistence and correctness gates. It
+supersedes conflicting output/persistence/rollout proposals below.
+
 Status: proposed implementation architecture. This document designs the next
 performance iteration; it does not claim the structures below are implemented.
 Baseline: ac1af55d1a, October 1, 2026. Read PERFORMANCE.md for the measured

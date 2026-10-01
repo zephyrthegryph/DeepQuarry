@@ -68,7 +68,7 @@ try {
         $byondOk = $byondTiming.exit_code -eq 0 -and $byondDiagnostics.Count -eq 0 -and (Test-Path -LiteralPath ([IO.Path]::ChangeExtension($project, 'dmb')) -PathType Leaf)
         # Only located compiler diagnostics prove a source failure. A crash or
         # nonzero exit without them is unclassified, never source parity.
-        $byondKind = if ($byondOk) { $null } elseif ($byondDiagnostics.Count) { 'source' } elseif ($byondTiming.exit_code -lt 0) { 'internal' } else { 'unclassified' }
+        $byondKind = if ($byondOk) { $null } elseif ($byondTiming.exit_code -lt 0) { 'internal' } elseif ($byondDiagnostics.Count) { 'source' } else { 'unclassified' }
         $nativePrefix = Join-Path $directory 'native'
         $nativeReport = Join-Path $directory 'native.json'
         $nativeRun = Start-CompilerRun $Compiler $directory (@('integrated-build', $project, '--mode', 'native', '--strict', '--builtins', $Builtins, '--report', $nativeReport) + $Defines) $nativePrefix @{ DM_COMPILER_CACHE_ROOT = (Join-Path $directory 'private-cache'); DQ_NATIVE_DAEMON = $null; DQ_NATIVE_TARGET = '516.1687'; DQ_COMPILER_STRICT = '1' } $ClientMemoryMb

@@ -141,13 +141,19 @@ pub fn emit_maps_with_resources(
     maps: &MapSet,
     resources: &ResourceSet,
 ) -> Result<(), String> {
-    emit_maps_inner(dmb, maps, Some(resources))
+    emit_maps_inner(dmb, maps, Some(resources.inputs.iter()
+        .map(|input| (input.archive_name.as_str(), input.named.id, input.named.kind)).collect()))
+}
+
+pub fn emit_maps_with_catalog(dmb: &mut Dmb, maps: &MapSet, resources: &dm_resources::ResourceCatalog) -> Result<(), String> {
+    emit_maps_inner(dmb, maps, Some(resources.entries.iter()
+        .map(|input| (input.archive_name.as_str(), input.id, input.kind)).collect()))
 }
 
 fn emit_maps_inner(
     dmb: &mut Dmb,
     maps: &MapSet,
-    resources: Option<&ResourceSet>,
+    resources: Option<Vec<(&str, u32, u8)>>,
 ) -> Result<(), String> {
     if maps.files.is_empty() {
         return Ok(());
@@ -163,13 +169,13 @@ fn emit_maps_inner(
         .collect();
     let mut resource_ids = HashMap::new();
     if let Some(resources) = resources {
-        for input in &resources.inputs {
+        for (name, resource_id, kind) in resources {
             let id = dmb
                 .resources
                 .iter()
-                .position(|entry| entry.id == input.named.id && entry.kind == input.named.kind)
-                .ok_or_else(|| format!("unattached map resource: {}", input.archive_name))?;
-            resource_ids.insert(input.archive_name.as_str(), id as u32);
+                .position(|entry| entry.id == resource_id && entry.kind == kind)
+                .ok_or_else(|| format!("unattached map resource: {name}"))?;
+            resource_ids.insert(name, id as u32);
         }
     }
     let mut instance_ids = HashMap::<(u8, u32, Option<String>), u32>::new();

@@ -678,7 +678,7 @@ impl StoredChunk {
 
 fn shard_path(root: &Path, digest: &str) -> PathBuf {
     root.join("frontend-outline-v1")
-        .join(env!("DM_LOWERING_FINGERPRINT"))
+        .join(env!("DM_EMISSION_FINGERPRINT"))
         .join(format!("{digest}.json"))
 }
 
@@ -701,7 +701,7 @@ fn read_shard(root: &Path, digest: &str, source: &str) -> Result<Option<StoredCh
     }
     let stored: StoredChunk = serde_json::from_slice(payload).map_err(|error| error.to_string())?;
     if stored.version != 2
-        || stored.compiler != env!("DM_LOWERING_FINGERPRINT")
+        || stored.compiler != env!("DM_EMISSION_FINGERPRINT")
         || stored.source_digest != digest
         || stored.source_len != source.len()
     {
@@ -723,7 +723,7 @@ fn write_shard(
     fs::create_dir_all(parent)?;
     let stored = StoredChunk {
         version: 2,
-        compiler: env!("DM_LOWERING_FINGERPRINT").into(),
+        compiler: env!("DM_EMISSION_FINGERPRINT").into(),
         source_digest: digest.into(),
         source_len,
         nodes: ast.items.iter().map(StoredNode::capture).collect(),

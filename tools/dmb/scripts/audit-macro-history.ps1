@@ -12,6 +12,7 @@ param(
     [ValidateRange(1, 1000)][int]$CommitLimit = 50,
     [ValidateRange(1, 200)][int]$FanoutLimit = 20,
     [string]$Since = '',
+    [switch]$IncludeTooling,
     [Parameter(Mandatory = $true)][string]$Output
 )
 $ErrorActionPreference = 'Stop'
@@ -40,9 +41,11 @@ function Get-Definitions([string[]]$Lines) {
     }
     return $definitions
 }
-$logArguments = @('log', "-n$CommitLimit", '--format=%H')
+$historyPaths = @('*.dm', '*.dme')
+if (!$IncludeTooling) { $historyPaths += ':(exclude)tools/**' }
+$logArguments = @('log', '--first-parent', "-n$CommitLimit", '--format=%H')
 if ($Since) { $logArguments += "--since=$Since" }
-$logArguments += @('--', '*.dm', '*.dme')
+$logArguments += @('--') + $historyPaths
 $commits = @(Invoke-Git $logArguments)
 $frequency = @{}
 $changed = [Collections.Generic.List[object]]::new()
@@ -51,12 +54,12 @@ foreach ($commit in $commits) {
     if ($parents.Count -lt 2) { continue }
     $parent = $parents[1]
     $names = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
-    $files = @(Invoke-Git @('diff', '--name-only', $parent, $commit, '--', '*.dm', '*.dme'))
+    $files = @(Invoke-Git (@('diff', '--name-only', $parent, $commit, '--') + $historyPaths))
     # One batched tree search avoids opening two versions of every ordinary DM
     # file in sweeping commits. Only files actually containing macro directives
     # in either revision require complete-definition comparison.
     $macroFiles = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
-    foreach ($row in @(Invoke-Git @('grep', '-l', '-E', '^[[:space:]]*#[[:space:]]*(define|undef)[[:space:]]', $parent, $commit, '--', '*.dm', '*.dme') -MissingOkay)) {
+    foreach ($row in @(Invoke-Git (@('grep', '-l', '-E', '^[[:space:]]*#[[:space:]]*(define|undef)[[:space:]]', $parent, $commit, '--') + $historyPaths) -MissingOkay)) {
         $null = $macroFiles.Add($row.Substring($row.IndexOf(':') + 1))
     }
     $files = @($files | Where-Object { $macroFiles.Contains($_) })
@@ -76,7 +79,7 @@ foreach ($commit in $commits) {
     }
 }
 $fanout = [Collections.Generic.List[object]]::new()
-foreach ($entry in @($frequency.GetEnumerator() | Sort-Object Value -Descending | Select-Object -First $FanoutLimit)) {
+foreach ($entry in @($frequency.GetEnumerator() | Sort-Object -Property @{Expression='Value';Descending=$true}, @{Expression='Key';Ascending=$true} | Select-Object -First $FanoutLimit)) {
     $paths = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
     $occurrences = 0
     $rows = @(& rg --json --word-regexp --fixed-strings $entry.Key --glob '*.dm' --glob '*.dme' --glob '!tools/**' --glob '!**/target/**' -- $ProjectRoot)
@@ -90,9 +93,12 @@ foreach ($entry in @($frequency.GetEnumerator() | Sort-Object Value -Descending 
     $fanout.Add([pscustomobject]@{ Macro = $entry.Key; ChangedCommits = $entry.Value; LexicalFiles = $paths.Count; LexicalOccurrences = $occurrences; Files = @($paths | Sort-Object) })
 }
 $report = [ordered]@{
-    FormatVersion = 1
+    FormatVersion = 2
+    FirstParent = $true
+    IncludeTooling = [bool]$IncludeTooling
     Head = (@(Invoke-Git @('rev-parse', 'HEAD')))[0]
     CommitsExamined = $commits.Count
+    MacroChangingFraction = if ($commits.Count) { @($changed.Commit | Sort-Object -Unique).Count / $commits.Count } else { 0 }
     MacroChangingCommits = @($changed.Commit | Sort-Object -Unique).Count
     Since = $Since
     Method = 'Complete multiline define/undef comparison against first parent; current lexical fanout includes comments/strings and inactive source.'

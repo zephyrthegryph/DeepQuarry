@@ -40,7 +40,7 @@ $overallPeak = 0L
 $daemonJob = $null
 $fixtureHeader = "/datum/probe_resources`n    var/asset = 'asset.txt'`n/proc/probe()`n    return "
 
-function Git([string]$Directory, [string[]]$Arguments) {
+function Invoke-FixtureGit([string]$Directory, [string[]]$Arguments) {
     $text = & git -C $Directory @Arguments 2>&1
     if ($LASTEXITCODE -ne 0) { throw "Git fixture setup failed: $text" }
 }
@@ -50,12 +50,12 @@ if ($fixture) {
     [IO.File]::WriteAllText((Join-Path $repository 'project.dme'), "#include `"probe.dm`"`n")
     [IO.File]::WriteAllText((Join-Path $repository 'probe.dm'), $fixtureHeader + "7`n")
     [IO.File]::WriteAllText((Join-Path $repository 'asset.txt'), "shared acceptance resource`n")
-    Git $repository @('init', '--quiet')
-    Git $repository @('add', 'project.dme', 'probe.dm', 'asset.txt')
-    Git $repository @('-c', 'user.name=Compiler acceptance', '-c', 'user.email=compiler-test@invalid', 'commit', '--quiet', '-m', 'Small compiler worktree fixture')
+    Invoke-FixtureGit $repository @('init', '--quiet')
+    Invoke-FixtureGit $repository @('add', 'project.dme', 'probe.dm', 'asset.txt')
+    Invoke-FixtureGit $repository @('-c', 'user.name=Compiler acceptance', '-c', 'user.email=compiler-test@invalid', 'commit', '--quiet', '-m', 'Small compiler worktree fixture')
     $Worktrees = @(for ($i = 0; $i -lt 6; $i++) {
         $worktree = Join-Path $OutputRoot "worktree-$i"
-        Git $repository @('worktree', 'add', '--quiet', '--detach', $worktree, 'HEAD')
+        Invoke-FixtureGit $repository @('worktree', 'add', '--quiet', '--detach', $worktree, 'HEAD')
         $worktree
     })
     $ProjectFile = 'project.dme'

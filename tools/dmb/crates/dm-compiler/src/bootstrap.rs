@@ -405,6 +405,7 @@ pub struct CompiledProject {
     pub emitted: Vec<EmittedProc>,
     pub rsc_bytes: Vec<u8>,
     pub resource_fingerprint: [u8; 32],
+    pub resource_catalog: dm_resources::ResourceCatalog,
     pub map_fingerprint: [u8; 32],
     pub lowering_cache_stats: crate::lower_cache::CacheStats,
     pub checkpoint: Option<crate::incremental::EmissionCheckpoint>,
@@ -511,6 +512,7 @@ pub fn compile_preprocessed_project_with_resources_cached(
         &maps,
         &resources,
         pipeline_started,
+        true,
     )
 }
 
@@ -524,6 +526,22 @@ pub fn compile_preprocessed_project_with_resources_prepared(
     frontend: &mut crate::frontend::OutlineSession,
     maps: &crate::maps::MapSet,
     resource_requests: &[ResourceRequest],
+) -> Result<CompiledProject, String> {
+    compile_preprocessed_project_with_resources_prepared_mode(dme_path, preprocessed,
+        builtin_image, world_name, frontend, maps, resource_requests, true)
+}
+
+/// Canonical project assembly reuses symbolic code but never a previous wire
+/// allocation history. Checkpoints are optional and unnecessary for this path.
+pub fn compile_preprocessed_project_with_resources_prepared_mode(
+    dme_path: &Path,
+    preprocessed: &PreprocessedProject,
+    builtin_image: &[u8],
+    world_name: &str,
+    frontend: &mut crate::frontend::OutlineSession,
+    maps: &crate::maps::MapSet,
+    resource_requests: &[ResourceRequest],
+    capture_checkpoint: bool,
 ) -> Result<CompiledProject, String> {
     let pipeline_started = std::time::Instant::now();
     if !preprocessed.diagnostics.is_empty() {
@@ -543,6 +561,7 @@ pub fn compile_preprocessed_project_with_resources_prepared(
         maps,
         &resources,
         pipeline_started,
+        capture_checkpoint,
     )
 }
 
@@ -555,6 +574,7 @@ fn compile_preprocessed_project_with_loaded_resources(
     maps: &crate::maps::MapSet,
     resources: &ResourceSet,
     pipeline_started: std::time::Instant,
+    capture_checkpoint: bool,
 ) -> Result<CompiledProject, String> {
     let mut lowering_cache = crate::lower_cache::ProcLoweringCache::open(
         crate::lower_cache::default_cache_root(dme_path),
@@ -566,16 +586,20 @@ fn compile_preprocessed_project_with_loaded_resources(
         );
     }
     let mut checkpoint = None;
-    let (mut dmb, emitted, rsc_bytes) = emit_global_procs_mode_with_frontend(
+    let source_debug = (!capture_checkpoint && !preprocessed.origins.is_empty()).then(||
+        crate::source_debug::SourceDebugIndex::new(preprocessed, dme_path.parent().unwrap_or_else(|| Path::new("."))));
+    let (mut dmb, emitted, rsc_bytes) = emit_global_procs_mode_with_frontend_catalog(
         &preprocessed.text,
         builtin_image,
         world_name,
         Some(resources),
         &mut lowering_cache,
         None,
-        Some(&mut checkpoint),
+        capture_checkpoint.then_some(&mut checkpoint),
         procedure_pipeline::worker_count(),
         Some(frontend),
+        None,
+        source_debug.as_ref(),
     )?;
     if let Some(skin) = preprocessed.skin_includes.last() {
         let root = dme_path.parent().unwrap_or_else(|| Path::new("."));
@@ -606,10 +630,41 @@ fn compile_preprocessed_project_with_loaded_resources(
         emitted,
         rsc_bytes,
         resource_fingerprint: resources.fingerprint,
+        resource_catalog: resources.catalog().map_err(|error| error.to_string())?,
         map_fingerprint: maps.fingerprint,
         lowering_cache_stats: lowering_cache.stats(),
         checkpoint,
     })
+}
+
+/// Canonical assembly with an unchanged, independently verified archive. This
+/// returns no archive payload: callers must publish the paired verified RSC.
+pub fn compile_preprocessed_project_with_resource_catalog(
+    dme_path: &Path, preprocessed: &PreprocessedProject, builtin_image: &[u8], world_name: &str,
+    frontend: &mut crate::frontend::OutlineSession, maps: &crate::maps::MapSet,
+    resources: &dm_resources::ResourceCatalog,
+) -> Result<CompiledProject, String> {
+    if !preprocessed.diagnostics.is_empty() { return Err("preprocessing diagnostics prevent emission".into()); }
+    resources.validate().map_err(|error| error.to_string())?;
+    let mut lowering_cache = crate::lower_cache::ProcLoweringCache::open(crate::lower_cache::default_cache_root(dme_path));
+    let source_debug = (!preprocessed.origins.is_empty()).then(||
+        crate::source_debug::SourceDebugIndex::new(preprocessed, dme_path.parent().unwrap_or_else(|| Path::new("."))));
+    let (mut dmb, emitted, rsc_bytes) = emit_global_procs_mode_with_frontend_catalog(
+        &preprocessed.text, builtin_image, world_name, None, &mut lowering_cache, None, None,
+        procedure_pipeline::worker_count(), Some(frontend), Some(resources), source_debug.as_ref())?;
+    if let Some(skin) = preprocessed.skin_includes.last() {
+        let root = dme_path.parent().unwrap_or_else(|| Path::new("."));
+        let name = skin_archive_name(root, skin)?;
+        let resource = resources.entries.iter().find(|entry| entry.archive_name == name)
+            .ok_or_else(|| format!("selected skin missing from resource catalog: {name}"))?;
+        dmb.world.hub_channel_skin[2] = dmb.resources.iter()
+            .position(|entry| entry.id == resource.id && entry.kind == resource.kind)
+            .ok_or_else(|| format!("selected skin not attached: {name}"))? as u32;
+    }
+    crate::maps::emit_maps_with_catalog(&mut dmb, maps, resources)?;
+    Ok(CompiledProject { dmb, emitted, rsc_bytes, resource_fingerprint: resources.fingerprint,
+        resource_catalog: resources.clone(), map_fingerprint: maps.fingerprint,
+        lowering_cache_stats: lowering_cache.stats(), checkpoint: None })
 }
 
 /// Resolve and hash literal resources before a daemon cache lookup.
@@ -2386,8 +2441,6 @@ pub fn audit_lowering(
         .map(|(path, scope)| (path.clone(), scope.field_types.clone()))
         .collect();
     shared.parent_types = parent_paths.clone();
-    crate::lower_cache::prepare_member_type_fingerprints(&mut shared);
-    shared.fingerprint = crate::lower_cache::shared_binding_fingerprint(&shared);
     let shared = Arc::new(shared);
     let mut audit = LoweringAudit::default();
     for proc in &index.procs {
@@ -2407,6 +2460,7 @@ pub fn audit_lowering(
                 vec![dm_codegen_byond::LowerError {
                     statement: name.clone(),
                     reason,
+                    statement_origin: None,
                 }]
             };
             let mut item = dm_syntax::parse_proc_at_span(source, span)
@@ -2622,10 +2676,28 @@ fn emit_global_procs_mode_with_frontend(
     world_name: &str,
     resources: Option<&ResourceSet>,
     lowering_cache: &mut crate::lower_cache::ProcLoweringCache,
-    mut audit: Option<&mut InitializerAudit>,
+    audit: Option<&mut InitializerAudit>,
     capture: Option<&mut Option<crate::incremental::EmissionCheckpoint>>,
     workers: usize,
     frontend: Option<&mut crate::frontend::OutlineSession>,
+) -> Result<(Dmb, Vec<EmittedProc>, Vec<u8>), String> {
+    emit_global_procs_mode_with_frontend_catalog(source, builtin_image, world_name, resources,
+        lowering_cache, audit, capture, workers, frontend, None, None)
+}
+
+fn source_error(index: Option<&crate::source_debug::SourceDebugIndex<'_>>, offset: usize,
+    procedure: &str, message: &str) -> String {
+    if let Some((file, line)) = index.and_then(|index| index.resolve(offset)) {
+        format!("{file}:{line}:error: {message}")
+    } else { format!("{procedure}: {message}") }
+}
+
+fn emit_global_procs_mode_with_frontend_catalog(
+    source: &str, builtin_image: &[u8], world_name: &str, resources: Option<&ResourceSet>,
+    lowering_cache: &mut crate::lower_cache::ProcLoweringCache, mut audit: Option<&mut InitializerAudit>,
+    capture: Option<&mut Option<crate::incremental::EmissionCheckpoint>>, workers: usize,
+    frontend: Option<&mut crate::frontend::OutlineSession>, catalog: Option<&dm_resources::ResourceCatalog>,
+    source_debug: Option<&crate::source_debug::SourceDebugIndex<'_>>,
 ) -> Result<(Dmb, Vec<EmittedProc>, Vec<u8>), String> {
     let build_started = std::time::Instant::now();
     let trace = |stage: &str| {
@@ -2658,8 +2730,15 @@ fn emit_global_procs_mode_with_frontend(
     rewrite_modified_items(&mut ast.items, &modified);
 
     let mut dmb = Dmb::from_bytes(builtin_image).map_err(|error| error.to_string())?;
+    if source_debug.is_some() { dmb.header.flags |= 0x0002_0000; }
     let mut resource_ids = HashMap::new();
     let mut archive = Vec::new();
+    if let Some(catalog) = catalog {
+        let ids = catalog.attach(&mut dmb).map_err(|error| error.to_string())?;
+        for (input, id) in catalog.entries.iter().zip(ids) {
+            resource_ids.insert(input.archive_name.clone(), id.index() as u32);
+        }
+    }
     if let Some(resources) = resources {
         let (ids, borrowed_archive) = byond_dmb::dmb::attach_resource_refs(
             &mut dmb,
@@ -2671,7 +2750,7 @@ fn emit_global_procs_mode_with_frontend(
             resource_ids.insert(input.archive_name.clone(), id.index() as u32);
         }
     }
-    if audit.is_some() && resources.is_none() {
+    if audit.is_some() && resources.is_none() && catalog.is_none() {
         // Symbol-only audit: archive bytes and filesystem existence are checked
         // by the separate resource audit. Never publish this placeholder image.
         resource_scan::visit_resources(source, &mut |raw| {
@@ -3186,8 +3265,6 @@ fn emit_global_procs_mode_with_frontend(
         }
     }
     seed_builtin_constants(&mut shared_bindings);
-    crate::lower_cache::prepare_member_type_fingerprints(&mut shared_bindings);
-    shared_bindings.fingerprint = crate::lower_cache::shared_binding_fingerprint(&shared_bindings);
     let shared_bindings = Arc::new(shared_bindings);
     for assignment in &mut pending_dynamic {
         if let Some(&scope) = type_metadata.dynamic_static_scopes.get(&assignment.name) {
@@ -3249,19 +3326,19 @@ fn emit_global_procs_mode_with_frontend(
         }
         dmb.classes[id].flags |= bits;
     }
-    let procedure_cache_root = lowering_cache.cache_root().map(Path::to_path_buf);
     let mut pending = pending.into_iter().enumerate().peekable();
     let mut owner_bindings = OwnerBindingCache::new(4 * 1024 * 1024, 64);
-    let (lowering_result, worker_stats) = procedure_pipeline::with_lowering_pool(
-        procedure_cache_root.as_deref(),
+    let pool_cache = lowering_cache.fork();
+    let (lowering_result, worker_stats) = procedure_pipeline::with_lowering_cache(
+        &pool_cache,
         workers,
         |pool| -> Result<(), String> {
             while pending.peek().is_some() {
                 // The fixed batch width is independent of worker count, so
                 // static-slot allocation and ordered linking produce identical
-                // table IDs with one or two workers. Only two AST jobs are live.
-                let mut prepared = Vec::with_capacity(2);
-                for _ in 0..2 {
+                // table IDs regardless of worker count. AST jobs are bounded.
+                let mut prepared = Vec::with_capacity(procedure_pipeline::LOWERING_WINDOW);
+                for _ in 0..procedure_pipeline::LOWERING_WINDOW {
                     let Some((ordinal, pending)) = pending.next() else {
                         break;
                     };
@@ -3544,33 +3621,64 @@ fn emit_global_procs_mode_with_frontend(
                             }
                         }
                     }
+                    let body_base = dm_codegen_byond::debug::body_span_base(&body);
                     pool.submit(ordinal, body, bindings);
-                    prepared.push((ordinal, pending, path, params, metadata, static_ids));
+                    prepared.push((ordinal, pending, path, params, metadata, static_ids, body_base));
                 }
                 let results = pool.receive_batch(prepared.len());
-                for ((ordinal, pending, path, params, metadata, static_ids), result) in
+                for ((ordinal, pending, path, params, metadata, static_ids, body_base), result) in
                     prepared.into_iter().zip(results)
                 {
                     assert_eq!(ordinal, result.ordinal, "lowered procedure order");
                     let bindings = result.bindings;
-                    let simple = result
+                    let mut simple = result
                         .compiled
-                        .map_err(|errors| format!("{path}: {errors:?}"))?;
+                        .map_err(|errors| errors.iter().map(|error| {
+                            let offset = error.statement_origin.as_ref().and_then(|span| body_base.checked_add(span.start))
+                                .unwrap_or(pending.item.header_span.start);
+                            source_error(source_debug, offset, &path,
+                                &format!("{} ({})", error.reason, error.statement))
+                        }).collect::<Vec<_>>().join("\n"))?;
                     let mut ledger = Ledger::default();
+                    for class_path in &simple.class_paths {
+                        let id = class_link_id(&dmb, &class_paths, class_path).ok_or_else(|| {
+                            let offset = dm_codegen_byond::debug::reference_origin(&simple, Table::Class, class_path)
+                                .and_then(|span| body_base.checked_add(span.start))
+                                .unwrap_or(pending.item.header_span.start);
+                            source_error(source_debug, offset, &path, &format!("unresolved constructor type: {class_path}"))
+                        })?;
+                        bind_class_link(&mut ledger, class_path, id)?;
+                    }
+                    if let Some(index) = source_debug {
+                        simple.code = dm_codegen_byond::debug::with_statement_debug(&simple, |relative| {
+                            let (file, line) = index.resolve(body_base.checked_add(relative)?)?;
+                            Some(dm_codegen_byond::debug::ResolvedStatementOrigin { file, line })
+                        }).map_err(|error| format!("{path}: source attribution: {}", error.0))?;
+                    }
+                    if source_debug.is_some() {
+                        for instruction in &simple.code.items {
+                            if let CodeItem::Instruction(instruction) = instruction {
+                                if instruction.opcode == opcode::DBG_FILE {
+                                    if let Some(Word::Reference(symbol)) = instruction.operands.first() {
+                                        if ledger.id(symbol).is_none() {
+                                            let id = strings.intern(&mut dmb, &symbol.key);
+                                            ledger.bind(symbol.clone(), id).map_err(|error| error.to_string())?;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                     bind_builtin_global_vars(&mut dmb, &mut strings, &mut ledger)
                         .map_err(|error| format!("{path}: {error}"))?;
                     bind_modified_instances(&strings, &mut ledger, &simple.code)
                         .map_err(|error| format!("{path}: {error}"))?;
                     for value in &simple.strings {
                         let id = strings.intern_bytes(&mut dmb, simple.string_bytes(value));
-                        ledger
-                            .bind(Symbol::new(Table::String, value), id)
-                            .map_err(|error| error.to_string())?;
-                    }
-                    for path in &simple.class_paths {
-                        let id = class_link_id(&dmb, &class_paths, path)
-                            .ok_or_else(|| format!("{path}: unresolved constructor type"))?;
-                        bind_class_link(&mut ledger, path, id)?;
+                        let symbol = Symbol::new(Table::String, value);
+                        if ledger.id(&symbol).is_none() {
+                            ledger.bind(symbol, id).map_err(|error| error.to_string())?;
+                        }
                     }
                     for path in &simple.resources {
                         let id = resource_ids
@@ -3621,7 +3729,7 @@ fn emit_global_procs_mode_with_frontend(
                         .enumerate()
                         .peekable();
                     while arguments.peek().is_some() {
-                        let batch: Vec<_> = arguments.by_ref().take(2).collect();
+                        let batch: Vec<_> = arguments.by_ref().take(procedure_pipeline::LOWERING_WINDOW).collect();
                         let mut submitted = 0;
                         for (index, _) in &batch {
                             if let Some(expression) = &params[*index].source_expression {
@@ -3929,8 +4037,9 @@ fn emit_global_procs_mode_with_frontend(
     dmb.validate_references()
         .map_err(|error| error.to_string())?;
     trace("reference validation complete; resource archive serialization start");
-    let rsc_bytes =
-        byond_dmb::rsc::named_archive_bytes(&archive).map_err(|error| error.to_string())?;
+    let rsc_bytes = if catalog.is_some() { Vec::new() } else {
+        byond_dmb::rsc::named_archive_bytes(&archive).map_err(|error| error.to_string())?
+    };
     trace("assembly complete");
     if let (Some(target), Some(outline)) = (capture, outline) {
         let mut symbols = BTreeMap::new();
@@ -4258,9 +4367,9 @@ fn emit_dynamic_initializers_with_pool(
     }
     let mut groups = groups.into_iter().enumerate().peekable();
     while groups.peek().is_some() {
-        let mut prepared = Vec::with_capacity(2);
-        let mut serial_results = Vec::with_capacity(2);
-        for _ in 0..2 {
+        let mut prepared = Vec::with_capacity(procedure_pipeline::LOWERING_WINDOW);
+        let mut serial_results = Vec::with_capacity(procedure_pipeline::LOWERING_WINDOW);
+        for _ in 0..procedure_pipeline::LOWERING_WINDOW {
             let Some((ordinal, (owner, assignments))) = groups.next() else {
                 break;
             };
@@ -4342,6 +4451,7 @@ fn emit_dynamic_initializers_with_pool(
                     ordinal,
                     bindings,
                     compiled,
+                    internal_panic: None,
                 });
             }
             lowering_time += lowering_started.elapsed();
@@ -6700,7 +6810,7 @@ fn parse_parameters(source: &str) -> Result<Vec<ParsedParameter>, String> {
             }
             let root = path.trim_start_matches('/').split('/').next().unwrap_or("");
             let mut flags = match root {
-                "" | "datum" | "client" | "list" | "image" | "matrix" | "regex" | "savefile"
+                "" | "datum" | "client" | "list" | "image" | "matrix" | "regex" | "savefile" | "callee"
                 | "mutable_appearance" | "appearance" | "generator" | "alist" | "database"
                 | "exception" => 0,
                 "icon" | "sound" => 0,
@@ -8396,6 +8506,29 @@ mod tests {
     const SOURCE: &str = include_str!("../../../fixtures/native_compiler/simple.dm");
     const NATIVE: &[u8] = include_bytes!("../../../fixtures/native_compiler/simple.native.bin");
     const BUILTINS: &[u8] = include_bytes!("../../../fixtures/native_template.bin");
+
+    #[test]
+    fn verified_resource_catalog_preserves_canonical_dmb() {
+        let fixture = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/translation/resource_pointer");
+        let resources = ResourceSet::load([ResourceRequest {
+            archive_name: "screen_drag.dmi".into(), disk_path: fixture.join("screen_drag.dmi"),
+        }]).unwrap();
+        let source = "/obj/test\n    icon = 'screen_drag.dmi'\n/proc/probe()\n    return 'screen_drag.dmi'\n";
+        let (full, _, archive) = emit_global_procs_with_resources(source, BUILTINS, "catalog", &resources).unwrap();
+        let catalog = resources.catalog().unwrap();
+        let (cached, _, omitted_archive) = emit_global_procs_mode_with_frontend_catalog(
+            source, BUILTINS, "catalog", None, &mut crate::lower_cache::ProcLoweringCache::disabled(),
+            None, None, 1, None, Some(&catalog), None).unwrap();
+        assert_eq!(full.to_bytes().unwrap(), cached.to_bytes().unwrap());
+        assert!(!archive.is_empty());
+        assert!(omitted_archive.is_empty());
+        let mut corrupt = catalog;
+        let mut alias = corrupt.entries[0].clone();
+        alias.archive_name = "alias.dmi".into();
+        alias.content_digest[0] ^= 1;
+        corrupt.entries.push(alias);
+        assert!(corrupt.validate().is_err());
+    }
 
     #[test]
     fn procedure_flags_match_native_fixture() {

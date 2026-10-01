@@ -40,19 +40,24 @@ $ownedPrefix = $OutputRoot.TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path
 if (!$worktree.StartsWith($ownedPrefix, [StringComparison]::OrdinalIgnoreCase)) { throw 'Worktree must stay inside the owned output root.' }
 $project = [IO.Path]::GetFullPath((Join-Path $worktree $ProjectFile))
 if (!$project.StartsWith($worktree + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) { throw 'ProjectFile must identify a project within the owned worktree.' }
-function Git([string]$Directory, [string[]]$Arguments) {
+$projectParentRelative = [IO.Path]::GetRelativePath($worktree, [IO.Path]::GetDirectoryName($project)).Replace('\', '/')
+$generatedState = if ($projectParentRelative -eq '.') { '.dm-native/**' } else { "$projectParentRelative/.dm-native/**" }
+$projectRelative = [IO.Path]::GetRelativePath($worktree, $project).Replace('\', '/')
+$generatedDmb = [IO.Path]::ChangeExtension($projectRelative, 'dmb')
+$generatedRsc = [IO.Path]::ChangeExtension($projectRelative, 'rsc')
+function Invoke-ReplayGit([string]$Directory, [string[]]$Arguments) {
     $text = & git -C $Directory -c core.longpaths=true @Arguments 2>&1
     if ($LASTEXITCODE -ne 0) { throw "Git replay operation failed: $text" }
     return @($text | ForEach-Object { "$_" })
 }
 if ($Commits.Count) {
-    $revisions = @($Commits | ForEach-Object { @(Git $SourceRoot @('rev-parse', '--verify', '--end-of-options', "$_^{commit}"))[0] })
+    $revisions = @($Commits | ForEach-Object { @(Invoke-ReplayGit $SourceRoot @('rev-parse', '--verify', '--end-of-options', "$_^{commit}"))[0] })
 } else {
-    $revisions = @(Git $SourceRoot @('rev-list', '--first-parent', "--max-count=$Last", 'HEAD'))
+    $revisions = @(Invoke-ReplayGit $SourceRoot @('rev-list', '--first-parent', "--max-count=$Last", 'HEAD'))
     [Array]::Reverse($revisions)
 }
 if (!$revisions.Count) { throw 'No commits selected.' }
-[void](Git $SourceRoot @('worktree', 'add', '--detach', $worktree, $revisions[0]))
+[void](Invoke-ReplayGit $SourceRoot @('worktree', 'add', '--detach', $worktree, $revisions[0]))
 
 # Optional ignored assets are copied once, outside any tracked source path. The
 # result records this overlay: it is not represented as a pristine Git snapshot.
@@ -91,7 +96,7 @@ function Save-Report {
 function Assert-CleanSource {
     # Only generated output directories installed by this driver are excluded.
     # Ordinary checkout still refuses to overwrite ignored/untracked collisions.
-    $changes = @(Git $worktree @('status', '--porcelain', '--untracked-files=all', '--', '.', ':(exclude).dm-native/**'))
+    $changes = @(Invoke-ReplayGit $worktree @('status', '--porcelain', '--untracked-files=all', '--', '.', ":(exclude)$generatedState", ":(exclude)$generatedDmb", ":(exclude)$generatedRsc"))
     if ($changes.Count) { throw "Owned replay source changed unexpectedly; preserving it: $($changes -join '; ')" }
 }
 try {
@@ -99,7 +104,7 @@ try {
     for ($i = 0; $i -lt $revisions.Count; $i++) {
         $revision = $revisions[$i]
         Assert-CleanSource
-        [void](Git $worktree @('checkout', '--detach', '--no-overwrite-ignore', $revision))
+        [void](Invoke-ReplayGit $worktree @('checkout', '--detach', '--no-overwrite-ignore', $revision))
         if (!(Test-Path -LiteralPath $project -PathType Leaf)) { throw "Project is absent at $revision" }
         Write-Host "Native commit replay $($i + 1)/$($revisions.Count): $revision"
         $prefix = Join-Path $OutputRoot "$i-incremental"

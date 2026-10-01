@@ -14,10 +14,29 @@ pub mod frontend;
 pub mod lower_cache;
 pub mod maps;
 mod proc_parse_cache;
+mod semantic_queries;
+mod source_debug;
 pub use maps::{load_map_set, load_map_set_from_paths, MapSet};
 
 pub const TARGET_VERSION: u32 = 516;
 pub const TARGET_BUILD: u32 = 1687;
+
+/// Recover authored lexical diagnostics after a failed structural parse. This
+/// error-only pass is chunk bounded and adds no scan to successful builds.
+pub fn authored_syntax_errors(project: &PreprocessedProject, project_root: &Path) -> Vec<String> {
+    let origins = source_debug::SourceDebugIndex::new(project, project_root);
+    let mut errors = Vec::new();
+    dm_syntax::for_each_source_chunk(&project.text, 1024 * 1024, |source, base| {
+        if errors.len() >= 64 { return; }
+        for error in dm_syntax::lex_spans(source).diagnostics {
+            if errors.len() >= 64 { break; }
+            if let Some((file, line)) = origins.resolve(base + error.span.start) {
+                errors.push(format!("{file}:{line}: error: {}", error.message));
+            }
+        }
+    });
+    errors
+}
 
 /// Native compiler macros must be present even in configurations with no
 /// user-supplied defines. They also select version compatibility branches.
@@ -476,6 +495,22 @@ pub fn project_snapshot_from_disk(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn lexical_failure_is_reported_at_authored_include_location() {
+        let root = std::env::current_dir().unwrap().join("diagnostic-fixture");
+        let project = PreprocessedProject {
+            text: "/proc/broken()\n    return \"unterminated\n".into(),
+            origins: vec![
+                dm_preprocess::Origin { output_line: 1, path: root.join("code/broken.dm").into(), source_line: 17 },
+                dm_preprocess::Origin { output_line: 2, path: root.join("code/broken.dm").into(), source_line: 18 },
+            ],
+            ..Default::default()
+        };
+        let errors = authored_syntax_errors(&project, &root);
+        assert!(!errors.is_empty());
+        assert!(errors.iter().all(|error| error.starts_with("code/broken.dm:18: error:")), "{errors:?}");
+    }
 
     #[test]
     fn unchanged_content_keeps_revision_stable_and_edit_updates_parse() {

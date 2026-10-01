@@ -13,6 +13,9 @@ pub const BUILTIN_GLOBAL_VARS_SYMBOL: &str = "@builtin/global.vars";
 
 mod builtin_catalog;
 mod simple;
+pub mod debug;
+pub mod dependencies;
+pub use dependencies::{capture_binding_reads, BindingFact, BindingWitness, FactValue};
 pub use simple::{
     compile_simple_proc, compile_simple_proc_with_bindings, compile_simple_proc_with_params,
     decode_constant_string_literal, nameof_reference, ArgumentMetadata, LowerBindings, LowerError,
@@ -80,6 +83,8 @@ pub enum VariableWord {
     Usr,
     World,
     Args,
+    Caller,
+    Callee,
     Null,
     Dot,
     Cache,
@@ -450,6 +455,8 @@ fn encode_variable(
         VariableWord::Usr => words.push(0xffcd),
         VariableWord::World => words.push(0xffe5),
         VariableWord::Args => words.push(0xffcf),
+        VariableWord::Caller => words.push(0xfff0),
+        VariableWord::Callee => words.push(0xfff1),
         VariableWord::Null => words.push(0xffe6),
         VariableWord::Dot => words.push(0xffd0),
         VariableWord::Cache => words.push(0xffd8),

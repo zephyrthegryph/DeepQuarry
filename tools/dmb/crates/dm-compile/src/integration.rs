@@ -53,10 +53,15 @@ pub struct Failure {
     kind: FailureKind,
     project: PathBuf,
     message: String,
+    diagnostics: Vec<String>,
 }
 impl std::fmt::Display for Failure {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(formatter, "{}", diagnostic(&self.project, &self.message))
+        write!(formatter, "{}", diagnostic(&self.project, &self.message))?;
+        for message in &self.diagnostics {
+            write!(formatter, "\n{}", diagnostic(&self.project, message))?;
+        }
+        Ok(())
     }
 }
 impl std::error::Error for Failure {}
@@ -79,6 +84,7 @@ impl Options {
             kind,
             project: self.project.clone(),
             message: message.into(),
+            diagnostics: vec![],
         }
     }
 }
@@ -322,20 +328,24 @@ fn native_build(options: &Options) -> Result<Response, Failure> {
         std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| coordinator.handle(request)))
             .map_err(|_| options.failure(FailureKind::Internal, "native compiler panicked"))?
     };
+    if !response.ok {
+        // Only explicitly classified infrastructure failures permit fallback.
+        // Old daemons and unclassified semantic strings remain source failures.
+        let (message, diagnostics) =
+            failure_messages(response.error.as_deref(), &response.diagnostics);
+        let mut failure = options.failure(
+            match response.failure_kind {
+                Some(dm_compiled::FailureKind::Internal) => FailureKind::Internal,
+                Some(dm_compiled::FailureKind::Configuration) => FailureKind::Configuration,
+                _ => FailureKind::Source,
+            },
+            message,
+        );
+        failure.diagnostics = diagnostics;
+        return Err(failure);
+    }
     for message in &response.diagnostics {
         eprintln!("{}", diagnostic(&options.project, message));
-    }
-    if !response.ok {
-        // Legacy compiler Result<String> errors have no proven infrastructure
-        // classification. Treat them as source failures, including unsupported
-        // syntax/semantics, rather than hiding them behind a successful fallback.
-        return Err(options.failure(
-            FailureKind::Source,
-            response
-                .error
-                .clone()
-                .unwrap_or_else(|| "native source diagnostics emitted".into()),
-        ));
     }
     if response.build.is_none() {
         return Err(options.failure(
@@ -344,6 +354,24 @@ fn native_build(options: &Options) -> Result<Response, Failure> {
         ));
     }
     Ok(response)
+}
+
+fn failure_messages(error: Option<&str>, diagnostics: &[String]) -> (String, Vec<String>) {
+    let primary = error
+        .or_else(|| diagnostics.first().map(String::as_str))
+        .unwrap_or("native build failed without a diagnostic");
+    // The caller renders the primary once. Keep each remaining provider record,
+    // including genuinely repeated records from distinct include occurrences.
+    let selected = diagnostics.iter().position(|message| message == primary);
+    (
+        primary.to_owned(),
+        diagnostics
+            .iter()
+            .enumerate()
+            .filter(|(index, _)| Some(*index) != selected)
+            .map(|(_, message)| message.clone())
+            .collect(),
+    )
 }
 
 fn byond_build(options: &Options) -> Result<(), Failure> {
@@ -618,6 +646,7 @@ pub fn run(args: Vec<String>) -> Result<(), Failure> {
         kind: FailureKind::Configuration,
         project: project_hint,
         message,
+        diagnostics: vec![],
     })?;
     let started = Instant::now();
     let gate_path = options
@@ -801,5 +830,23 @@ mod tests {
     fn selector_rejects_unknown_modes() {
         assert_eq!(Mode::parse("native").unwrap(), Mode::Native);
         assert!(Mode::parse("opendream").is_err());
+    }
+    #[test]
+    fn source_diagnostics_are_rendered_once_without_a_generic_extra_error() {
+        let diagnostics = vec![
+            "a.dm:2:error: first".to_owned(),
+            "b.dm:4:error: second".to_owned(),
+        ];
+        let (message, remaining) = failure_messages(None, &diagnostics);
+        let failure = Failure {
+            kind: FailureKind::Source,
+            project: PathBuf::from("project.dme"),
+            message,
+            diagnostics: remaining,
+        };
+        assert_eq!(failure.to_string(), diagnostics.join("\n"));
+        let (message, remaining) = failure_messages(Some(&diagnostics[0]), &diagnostics);
+        assert_eq!(message, diagnostics[0]);
+        assert_eq!(remaining, diagnostics[1..]);
     }
 }

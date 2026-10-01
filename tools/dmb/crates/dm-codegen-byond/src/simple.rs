@@ -14,11 +14,16 @@ use std::sync::Arc;
 pub struct LowerError {
     pub statement: String,
     pub reason: String,
+    #[serde(default)]
+    pub statement_origin: Option<crate::debug::RelativeStatementSpan>,
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
 pub struct SimpleProc {
     pub code: SymbolicProc,
+    /// Body-relative anchors resolved to current preprocessor origins at link.
+    #[serde(default)]
+    pub statement_origins: Vec<crate::debug::StatementOrigin>,
     /// Every literal/field string referenced by `code`, in first-use order.
     pub strings: Vec<String>,
     /// Native format templates use non-UTF-8 control bytes; their symbolic keys
@@ -133,6 +138,94 @@ pub struct SharedLowerBindings {
 
 impl LowerBindings {
     fn has_field(&self, name: &str) -> bool {
+        let result = self.has_field_raw(name);
+        crate::dependencies::observe(crate::BindingFact::Field(name.into()), crate::FactValue::Boolean(result));
+        result
+    }
+    fn has_global(&self, name: &str) -> bool {
+        let result = self.has_global_raw(name);
+        crate::dependencies::observe(crate::BindingFact::Global(name.into()), crate::FactValue::Boolean(result));
+        result
+    }
+    fn has_global_proc(&self, name: &str) -> bool {
+        let result = self.has_global_proc_raw(name);
+        crate::dependencies::observe(crate::BindingFact::GlobalProc(name.into()), crate::FactValue::Boolean(result));
+        result
+    }
+    fn field_type(&self, name: &str) -> Option<&str> {
+        let result = self.field_type_raw(name);
+        crate::dependencies::observe(crate::BindingFact::FieldType(name.into()), crate::FactValue::text(result));
+        result
+    }
+    fn global_type(&self, name: &str) -> Option<&str> {
+        let result = self.global_type_raw(name);
+        crate::dependencies::observe(crate::BindingFact::GlobalType(name.into()), crate::FactValue::text(result));
+        result
+    }
+    fn member_type(&self, owner: &str, name: &str) -> Option<&str> {
+        let result = self.member_type_raw(owner, name);
+        crate::dependencies::observe(crate::BindingFact::MemberType(owner.into(), name.into()), crate::FactValue::text(result));
+        result
+    }
+    fn member_global(&self, owner: &str, name: &str) -> Option<&str> {
+        let result = self.member_global_raw(owner, name);
+        crate::dependencies::observe(crate::BindingFact::MemberGlobal(owner.into(), name.into()), crate::FactValue::text(result));
+        result
+    }
+    fn unique_member_global(&self, name: &str) -> Option<&str> {
+        let result = self.unique_member_global_raw(name);
+        crate::dependencies::observe(crate::BindingFact::UniqueMemberGlobal(name.into()), crate::FactValue::text(result));
+        result
+    }
+    fn member_proc(&self, owner: &str, name: &str) -> Option<&str> {
+        let result = self.member_proc_raw(owner, name);
+        crate::dependencies::observe(crate::BindingFact::MemberProc(owner.into(), name.into()), crate::FactValue::text(result));
+        result
+    }
+    fn has_declared_member_proc(&self, owner: &str, name: &str) -> bool {
+        let result = self.has_declared_member_proc_raw(owner, name);
+        crate::dependencies::observe(crate::BindingFact::DeclaredMemberProc(owner.into(), name.into()), crate::FactValue::Boolean(result));
+        result
+    }
+    fn modified_instance(&self, path: &str) -> Option<&str> {
+        let result = self.shared.as_ref().and_then(|shared| shared.modified_instances.get(path)).map(String::as_str);
+        crate::dependencies::observe(crate::BindingFact::ModifiedInstance(path.into()), crate::FactValue::text(result));
+        result
+    }
+    fn numeric_constant(&self, name: &str) -> Option<u32> {
+        let result = self.shared.as_ref().and_then(|shared| shared.numeric_constants.get(name)).copied();
+        crate::dependencies::observe(crate::BindingFact::NumericConstant(name.into()), result.map_or(crate::FactValue::Absent, crate::FactValue::Bits));
+        result
+    }
+    fn string_constant(&self, name: &str) -> Option<&str> {
+        let result = self.shared.as_ref().and_then(|shared| shared.string_constants.get(name)).map(String::as_str);
+        crate::dependencies::observe(crate::BindingFact::StringConstant(name.into()), crate::FactValue::text(result));
+        result
+    }
+
+    /// Replay the exact fact used by lowering against a new frozen declaration
+    /// skeleton. This path is shared by disk memo validation and tracked inputs.
+    pub fn binding_fact(&self, fact: &crate::BindingFact) -> crate::FactValue {
+        use crate::{BindingFact as F, FactValue as V};
+        match fact {
+            F::Field(n) => V::Boolean(self.has_field_raw(n)),
+            F::Global(n) => V::Boolean(self.has_global_raw(n)),
+            F::GlobalProc(n) => V::Boolean(self.has_global_proc_raw(n)),
+            F::FieldType(n) => V::text(self.field_type_raw(n)),
+            F::GlobalType(n) => V::text(self.global_type_raw(n)),
+            F::MemberType(o, n) => V::text(self.member_type_raw(o, n)),
+            F::MemberGlobal(o, n) => V::text(self.member_global_raw(o, n)),
+            F::UniqueMemberGlobal(n) => V::text(self.unique_member_global_raw(n)),
+            F::MemberProc(o, n) => V::text(self.member_proc_raw(o, n)),
+            F::DeclaredMemberProc(o, n) => V::Boolean(self.has_declared_member_proc_raw(o, n)),
+            F::NumericConstant(n) => self.shared.as_ref().and_then(|s| s.numeric_constants.get(n)).copied().map_or(V::Absent, V::Bits),
+            F::StringConstant(n) => V::text(self.shared.as_ref().and_then(|s| s.string_constants.get(n)).map(String::as_str)),
+            F::ModifiedInstance(n) => V::text(self.shared.as_ref().and_then(|s| s.modified_instances.get(n)).map(String::as_str)),
+            F::SharedPresence => V::Boolean(self.shared.is_some()),
+        }
+    }
+
+    fn has_field_raw(&self, name: &str) -> bool {
         self.fields.contains(name)
             || self
                 .shared
@@ -140,7 +233,7 @@ impl LowerBindings {
                 .is_some_and(|shared| shared.fields.contains(name))
     }
 
-    fn has_global(&self, name: &str) -> bool {
+    fn has_global_raw(&self, name: &str) -> bool {
         self.globals.contains(name)
             || self
                 .shared
@@ -148,7 +241,7 @@ impl LowerBindings {
                 .is_some_and(|shared| shared.globals.contains(name))
     }
 
-    fn has_global_proc(&self, name: &str) -> bool {
+    fn has_global_proc_raw(&self, name: &str) -> bool {
         self.global_procs.contains(name)
             || self
                 .shared
@@ -156,21 +249,21 @@ impl LowerBindings {
                 .is_some_and(|shared| shared.global_procs.contains(name))
     }
 
-    fn field_type(&self, name: &str) -> Option<&str> {
+    fn field_type_raw(&self, name: &str) -> Option<&str> {
         self.field_types
             .get(name)
             .or_else(|| self.shared.as_ref()?.field_types.get(name))
             .map(String::as_str)
     }
 
-    fn global_type(&self, name: &str) -> Option<&str> {
+    fn global_type_raw(&self, name: &str) -> Option<&str> {
         self.global_types
             .get(name)
             .or_else(|| self.shared.as_ref()?.global_types.get(name))
             .map(String::as_str)
     }
 
-    fn member_type(&self, owner: &str, name: &str) -> Option<&str> {
+    fn member_type_raw(&self, owner: &str, name: &str) -> Option<&str> {
         let shared = self.shared.as_ref()?;
         let mut path = shared.modified_instances.get(owner).map(String::as_str).unwrap_or(owner);
         for _ in 0..64 {
@@ -186,7 +279,7 @@ impl LowerBindings {
         None
     }
 
-    fn member_global(&self, owner: &str, name: &str) -> Option<&str> {
+    fn member_global_raw(&self, owner: &str, name: &str) -> Option<&str> {
         let shared = self.shared.as_ref()?;
         let mut path = shared.modified_instances.get(owner).map(String::as_str).unwrap_or(owner);
         for _ in 0..64 {
@@ -198,10 +291,10 @@ impl LowerBindings {
         None
     }
 
-    fn unique_member_global(&self, name: &str) -> Option<&str> {
+    fn unique_member_global_raw(&self, name: &str) -> Option<&str> {
         let shared = self.shared.as_ref()?;
         if shared.known_member_fields.iter().any(|(owner, members)| {
-            members.contains(name) && self.member_global(owner, name).is_none()
+            members.contains(name) && self.member_global_raw(owner, name).is_none()
         }) { return None; }
         let mut found: Option<&str> = None;
         for members in shared.member_globals.values() {
@@ -213,7 +306,7 @@ impl LowerBindings {
         found
     }
 
-    fn member_proc(&self, owner: &str, name: &str) -> Option<&str> {
+    fn member_proc_raw(&self, owner: &str, name: &str) -> Option<&str> {
         let shared = self.shared.as_ref()?;
         let mut path = shared.modified_instances.get(owner).map(String::as_str).unwrap_or(owner);
         for _ in 0..64 {
@@ -229,7 +322,7 @@ impl LowerBindings {
         None
     }
 
-    fn has_declared_member_proc(&self, owner: &str, name: &str) -> bool {
+    fn has_declared_member_proc_raw(&self, owner: &str, name: &str) -> bool {
         let Some(shared) = self.shared.as_ref() else { return false; };
         let mut path=shared.modified_instances.get(owner).map(String::as_str).unwrap_or(owner);
         for _ in 0..64 {
@@ -262,8 +355,11 @@ pub fn compile_simple_proc_with_bindings(
     body: &[Item],
     bindings: &LowerBindings,
 ) -> Result<SimpleProc, Vec<LowerError>> {
+    crate::dependencies::observe(crate::BindingFact::SharedPresence, crate::FactValue::Boolean(bindings.shared.is_some()));
     let mut compiler = Compiler {
         result: SimpleProc::default(),
+        body_span_base: crate::debug::body_span_base(body),
+        current_origin: None,
         bindings,
         locals: Vec::new(),
         local_slots: HashMap::new(),
@@ -298,14 +394,14 @@ pub fn compile_simple_proc_with_bindings(
     compiler.result.argument_names = bindings.parameters.clone();
     compiler.result.argument_type_flags = bindings.parameter_type_flags.clone();
     compiler.result.argument_value_sources = bindings.parameter_value_sources.clone();
-    if let Some(shared) = &bindings.shared {
-        compiler.result.class_paths.retain(|path| !shared.modified_instances.contains_key(path));
+    if bindings.shared.is_some() {
+        compiler.result.class_paths.retain(|path| bindings.modified_instance(path).is_none());
         let mut seen = BTreeSet::new();
         for item in &mut compiler.result.code.items {
             let CodeItem::Instruction(instruction) = item else { continue };
             for operand in &mut instruction.operands {
                 if let Word::Value(ValueWord::ClassPath { path, .. }) = operand {
-                    if shared.modified_instances.contains_key(path) {
+                    if bindings.modified_instance(path).is_some() {
                         let path = path.clone();
                         if seen.insert(path.clone()) {
                             compiler.result.instance_paths.push(path.clone());
@@ -461,6 +557,8 @@ fn is_output_target(expr: &Expr) -> bool {
 
 struct Compiler<'a> {
     result: SimpleProc,
+    body_span_base: usize,
+    current_origin: Option<(usize, usize)>,
     bindings: &'a LowerBindings,
     locals: Vec<String>,
     local_slots: HashMap<String, u32>,
@@ -495,7 +593,10 @@ impl Compiler<'_> {
                     || !name.chars().all(|ch| ch.is_alphanumeric() || ch == '_')
                     || !seen.insert(name.clone())
                 {
-                    return Err(error(&statement.raw_header, "invalid or duplicate label"));
+                    let mut error = error(&statement.raw_header, "invalid or duplicate label");
+                    error.statement_origin = crate::debug::relative_span(statement.header_span, self.body_span_base)
+                        .map(|(start, end)| crate::debug::RelativeStatementSpan { start, end });
+                    return Err(error);
                 }
                 let label = self.label();
                 self.label_try_depths.insert(label.clone(), depth);
@@ -508,6 +609,7 @@ impl Compiler<'_> {
     }
 
     fn typed_statements(&mut self, statements: &[Statement]) -> Result<(), LowerError> {
+        let saved_origin = self.current_origin;
         let saved_slots = self.local_slots.clone();
         let saved_types = self.local_types.clone();
         let saved_labels = self.user_labels.clone();
@@ -517,7 +619,8 @@ impl Compiler<'_> {
         let saved_iterator_depths = self.label_iterator_depths.clone();
         let result = self
             .prepare_user_labels(statements, self.try_depth)
-            .and_then(|()| self.typed_statements_inner(statements));
+            .and_then(|()| self.typed_statements_inner(statements))
+            .map_err(|error| self.locate_error(error));
         self.local_slots = saved_slots;
         self.local_types = saved_types;
         self.user_labels = saved_labels;
@@ -525,11 +628,13 @@ impl Compiler<'_> {
         self.label_breaks = saved_breaks;
         self.label_loop_depths = saved_depths;
         self.label_iterator_depths = saved_iterator_depths;
+        self.current_origin = saved_origin;
         result
     }
 
     fn typed_statements_inner(&mut self, statements: &[Statement]) -> Result<(), LowerError> {
         for statement in statements {
+            self.current_origin = crate::debug::relative_span(statement.header_span, self.body_span_base);
             let scoped_statement = matches!(
                 &statement.kind,
                 StatementKind::For { .. } | StatementKind::Try { .. }
@@ -1354,10 +1459,26 @@ impl Compiler<'_> {
         Ok(())
     }
     fn emit(&mut self, opcode: u32, operands: Vec<Word>) {
+        if let Some((start, end)) = self.current_origin {
+            let starts_block = matches!(self.result.code.items.last(), Some(CodeItem::Label(_)));
+            if starts_block || self.result.statement_origins.last().is_none_or(|mark| (mark.start, mark.end) != (start, end)) {
+                self.result.statement_origins.push(crate::debug::StatementOrigin {
+                    code_item: self.result.code.items.len(), start, end,
+                });
+            }
+        }
         self.result
             .code
             .items
             .push(CodeItem::Instruction(Instruction { opcode, operands }));
+    }
+
+    fn locate_error(&self, mut error: LowerError) -> LowerError {
+        if error.statement_origin.is_none() {
+            error.statement_origin = self.current_origin.map(|(start, end)|
+                crate::debug::RelativeStatementSpan { start, end });
+        }
+        error
     }
 
     fn intern_string(&mut self, value: &str) {
@@ -1445,9 +1566,17 @@ impl Compiler<'_> {
     }
 
     fn statements(&mut self, body: &[Item]) -> Result<(), LowerError> {
+        let saved_origin = self.current_origin;
+        let result = self.statements_inner(body).map_err(|error| self.locate_error(error));
+        self.current_origin = saved_origin;
+        result
+    }
+
+    fn statements_inner(&mut self, body: &[Item]) -> Result<(), LowerError> {
         let mut index = 0;
         while index < body.len() {
             let item = &body[index];
+            self.current_origin = crate::debug::relative_span(item.header_span, self.body_span_base);
             let text = item.header.trim();
             if text.starts_with("if(") || text.starts_with("if (") {
                 let mut last = index + 1;
@@ -1460,6 +1589,7 @@ impl Compiler<'_> {
                 let end_label = self.label();
                 for clause_index in index..last {
                     let clause = &body[clause_index];
+                    self.current_origin = crate::debug::relative_span(clause.header_span, self.body_span_base);
                     let header = clause.header.trim();
                     let condition = if clause_index == index {
                         header
@@ -2211,6 +2341,8 @@ impl Compiler<'_> {
             "usr" => Ok(VariableWord::Usr),
             "world" => Ok(VariableWord::World),
             "args" => Ok(VariableWord::Args),
+            "caller" => Ok(VariableWord::Caller),
+            "callee" => Ok(VariableWord::Callee),
             "." => Ok(VariableWord::Dot),
             _ if self.bindings.has_field(name) => {
                 self.intern_string(name);
@@ -2522,6 +2654,12 @@ impl Compiler<'_> {
                 if name == "usr" {
                     return Some("/mob".into());
                 }
+                if matches!(name.as_str(), "callee" | "caller")
+                    && !self.local_slots.contains_key(name)
+                    && !self.bindings.parameters.iter().any(|parameter| parameter == name)
+                {
+                    return Some("/callee".into());
+                }
                 self.local_types
                     .get(name)
                     .map(String::as_str)
@@ -2554,9 +2692,7 @@ impl Compiler<'_> {
             _ => None,
         };
         inferred.map(|path| {
-            self.bindings.shared.as_ref()
-                .and_then(|shared| shared.modified_instances.get(&path))
-                .cloned().unwrap_or(path)
+            self.bindings.modified_instance(&path).map(str::to_owned).unwrap_or(path)
         })
     }
 
@@ -2991,12 +3127,7 @@ impl Compiler<'_> {
                         }
                         return Ok(());
                     }
-                    if let Some(bits) = self
-                        .bindings
-                        .shared
-                        .as_ref()
-                        .and_then(|shared| shared.numeric_constants.get(name))
-                        .copied()
+                    if let Some(bits) = self.bindings.numeric_constant(name)
                     {
                         let number = f32::from_bits(bits);
                         if number >= 0.0 && number <= u16::MAX as f32 && number.fract() == 0.0 {
@@ -3006,12 +3137,7 @@ impl Compiler<'_> {
                         }
                         return Ok(());
                     }
-                    if let Some(value) = self
-                        .bindings
-                        .shared
-                        .as_ref()
-                        .and_then(|shared| shared.string_constants.get(name))
-                        .cloned()
+                    if let Some(value) = self.bindings.string_constant(name).map(str::to_owned)
                     {
                         self.intern_string(&value);
                         self.emit(
@@ -3060,20 +3186,39 @@ impl Compiler<'_> {
                 );
                 self.result.code.items.extend(safe_labels);
             }
-            ExprKind::SafeMember { object, selector } => {
-                self.expression(object, statement)?;
-                let end = self.label();
-                self.emit(317, vec![Word::Branch(end.clone())]);
-                let variable = self.inferred_expression_type(object)
-                    .and_then(|owner| self.bindings.member_global(&owner, selector))
-                    .map(|symbol| VariableWord::Global(symbol.to_owned()))
-                    .unwrap_or_else(|| VariableWord::Field(selector.clone()));
-                if matches!(variable, VariableWord::Field(_)) { self.intern_string(selector); }
-                self.emit(
-                    opcode::GET_VAR,
-                    vec![Word::Variable(variable)],
-                );
-                self.result.code.items.push(CodeItem::Label(end));
+            ExprKind::SafeMember { .. } => {
+                // A chain restores each intermediate receiver on the way out.
+                // Each null branch skips only cache frames that were pushed:
+                // the innermost target precedes its enclosing PopCache.
+                let mut chain = Vec::new();
+                let mut receiver = expr;
+                while let ExprKind::SafeMember { object, selector } = &receiver.kind {
+                    chain.push((object.as_ref(), selector));
+                    receiver = object;
+                }
+                chain.reverse();
+                self.expression(receiver, statement)?;
+                let mut ends = Vec::with_capacity(chain.len());
+                for (index, (object, selector)) in chain.iter().enumerate() {
+                    let end = self.label();
+                    self.emit(317, vec![Word::Branch(end.clone())]);
+                    if index + 1 < chain.len() {
+                        self.emit(opcode::PUSH_CACHE, vec![]);
+                    }
+                    let variable = self.inferred_expression_type(object)
+                        .and_then(|owner| self.bindings.member_global(&owner, selector))
+                        .map(|symbol| VariableWord::Global(symbol.to_owned()))
+                        .unwrap_or_else(|| VariableWord::Field((*selector).clone()));
+                    if matches!(variable, VariableWord::Field(_)) { self.intern_string(selector); }
+                    self.emit(opcode::GET_VAR, vec![Word::Variable(variable)]);
+                    ends.push(end);
+                }
+                for (index, end) in ends.into_iter().rev().enumerate() {
+                    if index != 0 {
+                        self.emit(opcode::POP_CACHE, vec![]);
+                    }
+                    self.result.code.items.push(CodeItem::Label(end));
+                }
             }
             ExprKind::Index { object, index } => {
                 self.expression(object, statement)?;
@@ -4525,6 +4670,7 @@ fn error(statement: &str, reason: &str) -> LowerError {
     LowerError {
         statement: statement.into(),
         reason: reason.into(),
+        statement_origin: None,
     }
 }
 
@@ -10071,4 +10217,3 @@ mod tests {
         assert_eq!(words, [0x50,99,0x34,0xffda,0,0x33,0xffd9,0,0x33,0xffd9,1,0xfc,0xfd,23,0xffda,0,0x50,10,0x45,0xffda,0,0xf8,12,0xfb,2,0x33,0xffda,0,0x12,0]);
     }
 }
-

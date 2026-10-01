@@ -5,6 +5,7 @@ use byond_dmb::rsc::{NamedResource, ResourceKind};
 #[cfg(test)]
 use byond_dmb::rsc::Entry;
 use sha2::{Digest, Sha256};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::io::{self, Read};
@@ -30,6 +31,54 @@ pub struct ResourceSet {
     pub inputs: Vec<ResourceInput>,
     /// SHA-256 of every archive name and payload, in authored order.
     pub fingerprint: [u8; 32],
+}
+
+/// Payload-free facts used only with an independently verified immutable RSC.
+/// The catalog is produced from loaded, collision-checked inputs; it is not an
+/// alternative proof that an arbitrary resource payload has the claimed ID.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct ResourceDescriptor {
+    pub archive_name: String,
+    pub id: u32,
+    pub kind: u8,
+    pub content_digest: [u8; 32],
+}
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct ResourceCatalog {
+    pub fingerprint: [u8; 32],
+    pub entries: Vec<ResourceDescriptor>,
+}
+impl ResourceCatalog {
+    pub fn validate(&self) -> io::Result<()> {
+        let mut names = HashMap::new();
+        let mut identities = HashMap::new();
+        for entry in &self.entries {
+            validate_archive_name(&entry.archive_name)?;
+            if names.insert(&entry.archive_name, ()).is_some() {
+                return Err(invalid("duplicate resource catalog name"));
+            }
+            if identities.insert((entry.id, entry.kind), entry.content_digest)
+                .is_some_and(|previous| previous != entry.content_digest) {
+                return Err(invalid("resource catalog ID collision"));
+            }
+        }
+        Ok(())
+    }
+    pub fn attach(&self, dmb: &mut byond_dmb::dmb::Dmb) -> io::Result<Vec<byond_dmb::ids::ResourceId>> {
+        self.validate()?;
+        let mut ids: HashMap<_, _> = dmb.resources.iter().enumerate()
+            .map(|(index, entry)| ((entry.id, entry.kind), index as u32)).collect();
+        self.entries.iter().map(|entry| {
+            let key = (entry.id, entry.kind);
+            let index = if let Some(index) = ids.get(&key) { *index } else {
+                let index = u32::try_from(dmb.resources.len()).map_err(|_| invalid("resource index exceeds u32"))?;
+                dmb.resources.push(byond_dmb::dmb::ResourceRef { id: entry.id, kind: entry.kind });
+                ids.insert(key, index);
+                index
+            };
+            byond_dmb::ids::ResourceId::from_raw(index).ok_or_else(|| invalid("reserved resource index"))
+        }).collect()
+    }
 }
 
 fn invalid(message: &'static str) -> io::Error {
@@ -79,6 +128,18 @@ fn kind_for_name(name: &str) -> ResourceKind {
 }
 
 impl ResourceSet {
+    pub fn catalog(&self) -> io::Result<ResourceCatalog> {
+        let entries = self.inputs.iter().map(|input| {
+            if input.named.content_id()? != input.named.id {
+                return Err(invalid("resource content ID mismatch"));
+            }
+            Ok(ResourceDescriptor { archive_name: input.archive_name.clone(), id: input.named.id,
+                kind: input.named.kind, content_digest: input.content_digest })
+        }).collect::<io::Result<Vec<_>>>()?;
+        let catalog = ResourceCatalog { fingerprint: self.fingerprint, entries };
+        catalog.validate()?;
+        Ok(catalog)
+    }
     /// Match the loaded-set identity while retaining only a small read buffer.
     /// Cached build checks need asset identity, not an in-memory RSC payload.
     pub fn fingerprint_requests(

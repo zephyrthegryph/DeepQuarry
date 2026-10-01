@@ -1,20 +1,21 @@
-//! Bounded immutable packs of relative procedure syntax, shared across worktrees.
+//! Bounded transactional procedure syntax, with read-only legacy pack migration.
 use dm_syntax::{Diagnostic, Item, ItemKind, Span};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, HashMap};
-use std::fs::{self, File, OpenOptions};
-use std::io::{Read, Seek, SeekFrom, Write};
+use std::fs::{self, File};
+use std::io::{Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicU64, Ordering};
-use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant};
+#[cfg(test)]
+use std::time::{SystemTime, UNIX_EPOCH};
 
 const MAX_ENTRY: u64 = 2 * 1024 * 1024;
 const MAX_PACK: u64 = 256 * 1024 * 1024;
 const MAX_NODES: usize = 100_000;
 const MAX_INDEX: u64 = 16 * 1024 * 1024;
 const MAX_SEGMENTS: usize = 32;
-static SEGMENT_SEQUENCE: AtomicU64 = AtomicU64::new(0);
+const MAX_PENDING: usize = 16 * 1024 * 1024;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct Entry {
@@ -48,22 +49,26 @@ pub struct ProcParseCache {
     root: Option<PathBuf>,
     entries: HashMap<String, Located>,
     readers: HashMap<PathBuf, File>,
-    writer: Option<(PathBuf, File, u64)>,
-    published: BTreeMap<String, Entry>,
+    store: Option<dm_store::Store>,
+    snapshot: BTreeMap<String, Vec<u8>>,
+    pending: BTreeMap<String, Vec<u8>>,
+    pending_bytes: usize,
     stats: ParseCacheStats,
 }
 impl ProcParseCache {
     pub fn open(lower_root: Option<&Path>) -> Self {
         let root = lower_root.and_then(Path::parent).map(|root| {
             root.join("proc-parse-v1")
-                .join(env!("DM_LOWERING_FINGERPRINT"))
+                .join(env!("DM_PROC_PARSE_FINGERPRINT"))
         });
         let mut cache = Self {
             root,
             entries: HashMap::new(),
             readers: HashMap::new(),
-            writer: None,
-            published: BTreeMap::new(),
+            store: None,
+            snapshot: BTreeMap::new(),
+            pending: BTreeMap::new(),
+            pending_bytes: 0,
             stats: ParseCacheStats::default(),
         };
         let Some(root) = cache.root.as_ref() else {
@@ -72,6 +77,31 @@ impl ProcParseCache {
         if fs::create_dir_all(root).is_err() {
             cache.root = None;
             return cache;
+        }
+        if let Some(base) = lower_root.and_then(Path::parent) {
+            if let Ok(store) = dm_store::Store::open(base.join("proc-parse.redb")) {
+                let started = Instant::now();
+                match store.snapshot_namespace(&Self::namespace(), 64_000, 128 * 1024 * 1024, None)
+                {
+                    Ok(snapshot) => {
+                        if std::env::var_os("DM_BUILD_TRACE").is_some() {
+                            let bytes = snapshot
+                                .records
+                                .iter()
+                                .map(|(key, value)| key.name.len() + value.len())
+                                .sum::<usize>();
+                            eprintln!("DM_BUILD_TRACE parser store snapshot: {} entries, {} bytes, complete {}, {:.3}s", snapshot.records.len(), bytes, snapshot.complete, started.elapsed().as_secs_f64());
+                        }
+                        cache.snapshot = snapshot
+                            .records
+                            .into_iter()
+                            .map(|(key, bytes)| (key.name, bytes))
+                            .collect();
+                    }
+                    Err(_) => cache.stats.corrupt += 1,
+                }
+                cache.store = Some(store);
+            }
         }
         let mut indices: Vec<_> = fs::read_dir(root)
             .into_iter()
@@ -130,6 +160,9 @@ impl ProcParseCache {
         }
         cache
     }
+    fn namespace() -> String {
+        format!("procedure-syntax-v1-{}", env!("DM_PROC_PARSE_FINGERPRINT"))
+    }
     pub fn stats(&self) -> ParseCacheStats {
         self.stats
     }
@@ -140,6 +173,15 @@ impl ProcParseCache {
         let raw = &source[span.range()];
         let key = format!("{:x}", Sha256::digest(raw.as_bytes()));
         let started = Instant::now();
+        if let Some(bytes) = self.pending.get(&key).or_else(|| self.snapshot.get(&key)) {
+            let result = decode(bytes, span.start, raw.len());
+            self.stats.read_time += started.elapsed();
+            if let Some(item) = result {
+                self.stats.hits += 1;
+                return Ok(item);
+            }
+            self.stats.corrupt += 1;
+        }
         if let Some(located) = self.entries.get(&key).cloned() {
             let result = (|| {
                 if !self.readers.contains_key(&located.pack) {
@@ -157,6 +199,9 @@ impl ProcParseCache {
             })();
             self.stats.read_time += started.elapsed();
             if let Some(item) = result {
+                if let Some(bytes) = encode(&item, span.start) {
+                    self.store(key.clone(), bytes);
+                }
                 self.stats.hits += 1;
                 return Ok(item);
             }
@@ -172,96 +217,58 @@ impl ProcParseCache {
         Ok(item)
     }
     fn store(&mut self, key: String, bytes: Vec<u8>) {
-        if bytes.len() as u64 > MAX_ENTRY || self.published.len() >= MAX_NODES {
+        if self.store.is_none() || bytes.len() as u64 > MAX_ENTRY {
             return;
         }
-        let Some(root) = self.root.as_ref() else {
-            return;
-        };
-        if self.writer.is_none() {
-            let nonce = SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .unwrap_or_default()
-                .as_nanos();
-            let sequence = SEGMENT_SEQUENCE.fetch_add(1, Ordering::Relaxed);
-            let path = root.join(format!(
-                "{nonce:040}-{}-{sequence}.pack",
-                std::process::id()
-            ));
-            let Ok(file) = OpenOptions::new().write(true).create_new(true).open(&path) else {
+        let old = self.pending.get(&key).map_or(0, Vec::len);
+        if self
+            .pending_bytes
+            .saturating_sub(old)
+            .saturating_add(bytes.len())
+            > MAX_PENDING
+            || self.pending.len() >= 64_000
+        {
+            if self.flush().is_err() {
                 return;
-            };
-            self.writer = Some((path, file, 0));
+            }
         }
-        let (pack, file, size) = self.writer.as_mut().unwrap();
-        if *size + bytes.len() as u64 > MAX_PACK {
-            return;
+        let len = bytes.len();
+        if let Some(old) = self.pending.insert(key, bytes) {
+            self.pending_bytes -= old.len();
         }
-        let entry = Entry {
-            offset: *size,
-            length: bytes.len() as u64,
-            checksum: format!("{:x}", Sha256::digest(&bytes)),
+        self.pending_bytes += len;
+    }
+    fn flush(&mut self) -> std::io::Result<()> {
+        if self.pending.is_empty() {
+            return Ok(());
+        }
+        let Some(store) = &self.store else {
+            return Ok(());
         };
-        if file.write_all(&bytes).is_err() {
-            return;
+        let changes = self
+            .pending
+            .iter()
+            .map(|(key, bytes)| {
+                dm_store::Change::Put(dm_store::Key::new(Self::namespace(), key), bytes.clone())
+            })
+            .collect::<Vec<_>>();
+        match store.commit(&[], &changes, None)? {
+            dm_store::Commit::Applied => {
+                self.pending.clear();
+                self.pending_bytes = 0;
+                Ok(())
+            }
+            dm_store::Commit::Conflict => Err(std::io::Error::other(
+                "unexpected unwitnessed parser cache conflict",
+            )),
         }
-        *size += entry.length;
-        self.entries.insert(
-            key.clone(),
-            Located {
-                pack: pack.clone(),
-                entry: entry.clone(),
-            },
-        );
-        self.published.insert(key, entry);
     }
 }
 impl Drop for ProcParseCache {
     fn drop(&mut self) {
-        let Some((pack, mut file, _)) = self.writer.take() else {
-            return;
-        };
-        if self.published.is_empty() || file.flush().is_err() {
-            return;
-        }
-        drop(file);
-        let Ok(bytes) = serde_json::to_vec(&self.published) else {
-            return;
-        };
-        if bytes.len() as u64 > MAX_INDEX {
-            return;
-        }
-        let temporary = pack.with_extension("idx.tmp");
-        // Every writer publishes a unique immutable segment. Readers never see
-        // its index before the completed pack; writers cannot clobber each other.
-        if fs::write(&temporary, bytes).is_ok()
-            && fs::rename(temporary, pack.with_extension("idx")).is_ok()
-        {
-            let Some(root) = self.root.as_ref() else {
-                return;
-            };
-            let mut indices: Vec<_> = fs::read_dir(root)
-                .into_iter()
-                .flatten()
-                .filter_map(Result::ok)
-                .filter(|entry| {
-                    entry
-                        .path()
-                        .extension()
-                        .is_some_and(|extension| extension == "idx")
-                })
-                .map(|entry| entry.path())
-                .collect();
-            indices.sort();
-            let mut total = 0u64;
-            for (ordinal, index) in indices.into_iter().rev().enumerate() {
-                let pack = index.with_extension("pack");
-                let size = fs::metadata(&pack).map_or(0, |metadata| metadata.len());
-                total = total.saturating_add(size);
-                if total > MAX_PACK || ordinal >= MAX_SEGMENTS {
-                    let _ = fs::remove_file(index);
-                    let _ = fs::remove_file(pack);
-                }
+        if let Err(error) = self.flush() {
+            if std::env::var_os("DM_BUILD_TRACE").is_some() {
+                eprintln!("DM_BUILD_TRACE parser store flush: {error}");
             }
         }
     }
