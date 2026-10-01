@@ -2,7 +2,7 @@
 //
 // Every accessor that gives an entity something new -- an owned value (own_set/own_add/own_put/
 // own_transfer/own_move), a relation (rel_set/rel_add, om_link), a prototype or shared value
-// (proto_set/proto_private/shared_set), a timer (om_after/after_slot, OWN_TIMER slots), a
+// (proto_set/proto_private/shared_set), a timer (after(), keyed or not), a
 // hook (om_hook), a task (om_task) or a contents slot (the ledger's note_enter) -- asks
 // own_guard() first, and nothing else decides. (Contents adoption refuses a dying holder only
 // from its links phase: its own contents step still adopts, see own_guard().) Releases (own_take, own_remove, own_clear,

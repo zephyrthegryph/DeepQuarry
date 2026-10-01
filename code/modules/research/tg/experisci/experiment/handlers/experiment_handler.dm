@@ -184,15 +184,6 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
 	if(action_experiment(source, event.epicenter, event.devastation_range, event.heavy_impact_range, event.light_impact_range, event.seconds_taken))
 		play_sfx(source, SFX_MACHINES_PING, 0.5)
 
-/// Hooks on a successful autopsy experiment
-/datum/experiment_handler/proc/try_run_autopsy_experiment(obj/source, datum/om/event/autopsy_performed/event)
-	EVENT_HANDLER
-	var/mob/living/target = event.target
-
-	if (action_experiment(source, target))
-		play_sfx(source, SFX_MACHINES_PING, 0.5)
-		source.atom_say("New unique autopsy successfully catalogued.")
-
 
 /**
  * Announces a message to all experiment handlers

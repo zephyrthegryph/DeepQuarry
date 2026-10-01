@@ -8,18 +8,22 @@
 //
 //	/obj/item/reagent_containers/food/snacks/donut/jelly/capabilities()
 //		. = ..()
-//		. += refine(CAP_REAGENTS, starts = list(REAGENT_ID_BERRYJUICE = 5))	// adds to the donut's
+//		. += refine(CAP_REAGENTS, add = list(REAGENT_ID_BERRYJUICE = 5))	// adds to the donut's
+//
+//	CAPABILITY(/obj/item/reagent_containers/food/snacks/donut/chaos, refine(CAP_REAGENTS, starts = list(REAGENT_ID_SPRINKLES = 5)))
+//																		// one line; starts = replaces
 //
 //	/obj/item/reagent_containers/food/snacks/donut/plain/capabilities()
 //		. = ..()
 //		. = without(., CAP_REAGENTS)										// no holder at all
 //
 // Semantics, the old macros' exactly:
-//   - reagents(volume, starts): a holder of `volume` (a number, or nameof() a holder var read per instance at
-//     init) filled with `starts`. A subtype declaring reagents() again replaces the whole capability.
-//   - refine(CAP_REAGENTS, starts =, volume =): the inherited capability with `starts` ADDED to its contents
-//     (DECLARE_REAGENTS' "contents add to the parent's", the old `. = ..(); reagents.add_reagent()` chain) and,
-//     when given, a new volume.
+//   - reagents(volume, starts): a holder of `volume` (a number, or a PROC_REF of a holder proc answering the volume
+//     per instance at init) filled with `starts`. A subtype declaring reagents() again replaces the whole capability.
+//   - refine(CAP_REAGENTS, add =, starts =, volume =): the inherited capability with `add` MERGED into its contents
+//     (DECLARE_REAGENTS' "contents add to the parent's", the old `. = ..(); reagents.add_reagent()` chain), or its
+//     contents REPLACED by `starts`, and, when given, a new volume. Data-only subtypes use the one-line form
+//     CAPABILITY(T, refine(CAP_REAGENTS, ...)) (code/__defines/capabilities.dm).
 //   - `starts_from = list(nameof(reagent_id) = nameof(amount_var))`: a reagent whose id (and amount) come from
 //     holder vars (DECLARE_REAGENT_FROM_VAR). `tint`: colour the holder from its reagents (pills, patches).
 //     `holder`: a /datum/reagents subtype (DECLARE_REAGENTS_TYPED).
@@ -29,7 +33,7 @@
 // sees the reagents right after `. = ..()`, as with the macros.
 
 /datum/capability/reagents
-	/// Units, or the name of a holder var (nameof(volume)) read per instance at init.
+	/// Units, or a PROC_REF of a holder proc answering the units, called per instance at init.
 	var/volume = 0
 	/// list(REAGENT_ID_X = amount) the holder starts with. Shared: never written after construction.
 	var/list/starts
@@ -41,9 +45,10 @@
 	var/tint = FALSE
 
 /**
- * The holder's reagents. volume: units or nameof() a holder var; starts: list(REAGENT_ID_X = amount);
- * holder: the /datum/reagents type; tint: colour from the reagents; starts_from: list(nameof(id var) = amount or
- * nameof(amount var)). Subtypes add with refine(CAP_REAGENTS, starts = ...), drop it with without(., CAP_REAGENTS).
+ * The holder's reagents. volume: units or a PROC_REF of a holder proc answering them; starts: list(REAGENT_ID_X =
+ * amount); holder: the /datum/reagents type; tint: colour from the reagents; starts_from: list(nameof(id var) = amount
+ * or nameof(amount var)). Subtypes merge with refine(CAP_REAGENTS, add = ...), replace with refine(CAP_REAGENTS,
+ * starts = ...), drop it with without(., CAP_REAGENTS).
  */
 /proc/reagents(volume = 0, list/starts = null, holder = /datum/reagents, tint = FALSE, list/starts_from = null)
 	var/datum/capability/reagents/C = new
@@ -54,7 +59,7 @@
 	C.tint = !!tint
 	return C
 
-/// refine(CAP_REAGENTS, ...): `starts` adds to the contents, `volume` replaces the volume.
+/// refine(CAP_REAGENTS, ...): `add` merges into the contents, `starts` replaces them, `volume` replaces the volume.
 /datum/capability/reagents/refined(list/overrides)
 	var/datum/capability/reagents/C = new
 	C.volume = volume
@@ -68,6 +73,9 @@
 			if("volume")
 				C.volume = value
 			if("starts")
+				var/list/given = value
+				C.starts = length(given) ? given.Copy() : null
+			if("add")
 				var/list/merged = C.starts ? C.starts.Copy() : list()
 				for(var/id in value)
 					merged[id] += value[id] || 1
@@ -77,7 +85,8 @@
 	return C
 
 /datum/capability/reagents/on_holder_init(atom/holder, mapload)
-	var/max_volume = istext(volume) ? holder.vars[volume] : volume
+	// A PROC_REF (text) names a holder proc answering the volume: no var is read by name.
+	var/max_volume = isnum(volume) ? volume : holder_call(holder, volume)
 	if(!isnum(max_volume))
 		max_volume = 0
 	holder.create_reagents(max_volume, holder_type)

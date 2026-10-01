@@ -2766,7 +2766,7 @@ TOPIC_ACTION(/obj/mecha, "drop_from_cargo", PROC_REF(topic_drop_from_cargo), TOP
 // cabin_air may be rebound to a connected port's network mixture (set_port_network_air()): PROTO.
 /obj/mecha/ownership()
 	. = ..()
-	. += proto(nameof(cabin_air))
+	. += rel_one(nameof(cabin_air), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)
 
 /// Detaches the component in `slot` (returned unowned; the caller moves or deletes it) and keeps
 /// the empty slot key, since `internal_components` keys double as the mech's slot layout.

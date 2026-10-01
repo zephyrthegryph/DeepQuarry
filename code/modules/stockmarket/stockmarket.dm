@@ -1,4 +1,3 @@
-OWN_TIMER(/datum/stockMarket, process_timer)
 
 /datum/stockMarket
 	var/list/stocks = list() // ALLOW(instance_list): d: stock market singleton state

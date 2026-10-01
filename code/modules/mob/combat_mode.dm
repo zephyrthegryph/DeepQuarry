@@ -47,7 +47,6 @@
 	if(combat_mode == new_mode)
 		return
 	combat_mode = new_mode
-	OM_EMIT(src, /datum/om/event/mob_combat_mode_changed, new_mode)
 	update_combat_mode_hud()
 
 /// Sets the attack variant (an ATTACK_VARIANT_* or null).

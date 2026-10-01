@@ -60,7 +60,7 @@
 		return
 	life_hud_full_refresh()
 	if(client)
-		rx_after(src, max(1 SECONDS, hud_full_refresh_at - world.time), PROC_REF(life_hud_full_refresh_rewake), LIFE_HUD_FULL_REFRESH_REWAKE, CLOCK_WORLD)
+		after(src, max(1 SECONDS, hud_full_refresh_at - world.time), PROC_REF(life_hud_full_refresh_rewake), key = LIFE_HUD_FULL_REFRESH_REWAKE, clock = CLOCK_WORLD)
 
 /mob/living/carbon/human/proc/life_hud_full_refresh_rewake()
 	if(QDELETED(src) || !life_hud_wanted())
@@ -2348,7 +2348,6 @@
 	src.apply_hud(VANTAG_HUD, vantag)
 
 /mob/living/carbon/human/on_fire_stack(seconds_per_tick, datum/status_effect/fire_handler/fire_stacks/fire_handler)
-	OM_EMIT(src, /datum/om/event/human_burning)
 	var/no_protection = FALSE
 	if(has_trait(src, TRAIT_IGNORE_FIRE_PROTECTION))
 		no_protection = TRUE

@@ -35,7 +35,7 @@ from allow_annotations import allowed  # noqa: E402
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 LINT = "tracked"
 
-TRACKED_LINE = re.compile(r"^\s*(?:TRACKED\(\s*(/[\w/]+)\s*,\s*(\w+)\s*,|SETTER\(\s*(/[\w/]+)\s*,\s*(\w+)\s*\))")
+TRACKED_LINE = re.compile(r"^\s*(?:TRACKED(?:_BRIDGED)?\(\s*(/[\w/]+)\s*,\s*(\w+)\s*[,)]|SETTER\(\s*(/[\w/]+)\s*,\s*(\w+)\s*\))")
 DERIVE_VAR = re.compile(r"\bderive\(\s*nameof\(\s*(?:/[\w/]+::)?(\w+)\s*\)")
 # A top-level proc definition: /type/proc/name(, /type/verb/name( or /type/name( (an override).
 PROC_DEF = re.compile(r"^(/[\w/]*?)/(?:(?:proc|verb)/)?(\w+)\s*\((.*)$")
@@ -84,7 +84,7 @@ def parse_procs(code_text):
 
 def tracked_from_text(raw, tracked):
     """Adds the vars `raw` declares tracked (TRACKED lines, derive() values) to {var: {types}}."""
-    if "TRACKED(" in raw or "SETTER(" in raw:
+    if "TRACKED" in raw or "SETTER(" in raw:
         for line in raw.split("\n"):
             if line.lstrip().startswith("#define"):
                 continue
@@ -192,7 +192,7 @@ SELFTEST = {
 /obj/machinery/pump
 	var/target_pressure = 100
 	var/other = 1
-TRACKED(/obj/machinery/pump, target_pressure, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/pump, target_pressure)
 
 /obj/machinery/pump/bigger
 	target_pressure = 200

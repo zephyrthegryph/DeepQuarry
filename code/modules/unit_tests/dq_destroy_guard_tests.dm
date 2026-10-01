@@ -13,9 +13,7 @@
 
 /datum/guard_test_holder/ownership()
 	. = ..()
-	. += proto(nameof(species))
-	. += shares(nameof(shared_species))
-OWN_TIMER(/datum/guard_test_holder, guard_slot)
+	. += rel_one(nameof(species), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)
 
 /datum/guard_test_holder/proc/on_tick()
 	fired++

@@ -281,6 +281,6 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/power/turbinemotor, MACHINE_PIPELINE, 
 
 /obj/machinery/atmospherics/pipeturbine/ownership()
 	. = ..()
-	. += proto(nameof(air_in))
-	. += proto(nameof(air_out))
+	. += rel_one(nameof(air_in), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)
+	. += rel_one(nameof(air_out), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)
 

@@ -235,9 +235,6 @@
 #define PROMETHEAN_PAIN_CAP 70
 #define PROMETHEAN_STARVING_PAIN_CAP 90
 
-/// A trait state, added by the species.
-OWN_TIMER(/datum/trait_state/promethean_biology, still_timer)
-
 /datum/trait_state/promethean_biology
 	life_stage = /datum/om/stage/life/trait/promethean_biology
 	/// Held still for PROMETHEAN_STILLNESS_TIME.

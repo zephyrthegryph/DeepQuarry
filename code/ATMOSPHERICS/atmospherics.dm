@@ -390,7 +390,7 @@ Pipelines + Other Objects -> Pipe network
 		play_sfx(our_turf, SFX_MACHINES_HISS)
 
 
-TRACKED(/obj/machinery/atmospherics, rust_device_rev, CHANGE_MACHINE_SETTINGS)
+TRACKED_BRIDGED(/obj/machinery/atmospherics, rust_device_rev, CHANGE_MACHINE_SETTINGS)
 
 /// The device's Rust law needs re-publishing (see rust_device_rev): push_to_rust() runs once this frame.
 /obj/machinery/atmospherics/proc/rust_device_dirty()

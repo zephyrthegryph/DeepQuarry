@@ -18,8 +18,6 @@
 #define DISPOSALMODE_CHARGING 1
 #define DISPOSALMODE_CHARGED 2
 
-OWN_TIMER(/obj/machinery/disposal, power_retry_timer)
-
 /obj/machinery/disposal
 	name = "disposal unit"
 	desc = "A pneumatic waste disposal unit."

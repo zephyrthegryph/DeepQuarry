@@ -22,7 +22,7 @@
 	// ALLOW(instance_list): test fixture, a handful of instances per test run
 	var/list/busy = list()
 
-TRACKED(/datum/seq_test_entity, heat, CHANGE_DATUM_B)
+TRACKED_BRIDGED(/datum/seq_test_entity, heat, CHANGE_DATUM_B)
 
 /datum/seq_test_entity/seq_plan_key()
 	return plan_key
@@ -691,7 +691,7 @@ SEQ_TEST_STEP(cy)
 	// ALLOW(instance_list): test fixture, a handful of instances per test run
 	var/list/heard = list()
 
-TRACKED(/datum/seq_rx_fixture, level, CHANGE_EXPLICIT)
+TRACKED(/datum/seq_rx_fixture, level)
 
 /datum/seq_rx_fixture/reactions()
 	. = ..()

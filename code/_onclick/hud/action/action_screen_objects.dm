@@ -470,5 +470,3 @@ GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,
 /atom/movable/screen/action_landing/proc/owner() as /datum/action_group
 	return owner
 
-
-OWN_TIMER(/atom/movable/screen/button_palette, color_timer_id)

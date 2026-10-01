@@ -201,12 +201,6 @@
 
 // --- Core dormancy ---------------------------------------------------------------------
 
-/// A nanoform body that lost cohesion retreats into its core. It neither dies
-/// nor acts: it is held alive and unconscious
-/// (consciousness_at_max), its control cluster goes inert, and it is revived
-/// step by step by treatment mechanisms.
-OWN_TIMER(/datum/affliction/core_dormancy, reboot_timer)
-
 /datum/affliction/core_dormancy
 	name = "core dormancy"
 	category = "Synthetic"

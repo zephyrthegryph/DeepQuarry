@@ -224,7 +224,7 @@ UI_ACT_PROC(/obj/machinery/bomb_tester, ui_act_start_sim)
 	simulating = 1
 	set_use_power(USE_POWER_ACTIVE)
 	EXPIRY_STAMP(src, simulation_started, CLOCK_WORLD)
-	rx_after(src, simulation_delay, PROC_REF(simulation_timer_fired), key = "simulation")
+	after(src, simulation_delay, PROC_REF(simulation_timer_fired), key = "simulation")
 	update_icon()
 	switch(sim_mode)
 		if(MODE_SINGLE)

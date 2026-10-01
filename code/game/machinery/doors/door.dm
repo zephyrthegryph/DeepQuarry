@@ -1,4 +1,3 @@
-OWN_TIMER(/obj/machinery/door, door_timer_token)
 
 /obj/machinery/door
 	announce_damage_bands = TRUE

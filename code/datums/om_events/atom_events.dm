@@ -57,26 +57,6 @@
 	if(om_wants(AM, /datum/om/event/moved))
 		om_emit(AM, new /datum/om/event/moved(old_loc, direction, forced))
 
-// ---------------------------------------------------------------- cross
-
-/// Veto: `crosser` tries to cross the movable; EVENT_VETO blocks it.
-/datum/om/event/before/cross
-	/// The movable crossing.
-	var/crosser
-
-/datum/om/event/before/cross/New(crosser)
-	src.crosser = crosser
-
-/datum/om/event/before/cross/dispatch(datum/om/behaviour/B, datum/E)
-	return B.on_before_cross(E, src)
-
-/datum/om/behaviour/proc/on_before_cross(datum/E, datum/om/event/before/cross/event)
-	return
-
-/// TRUE when a behaviour on `AM` vetoes `crosser` crossing it.
-/proc/om_cross_vetoed(atom/movable/AM, atom/movable/crosser)
-	return om_wants(AM, /datum/om/event/before/cross) && om_emit(AM, new /datum/om/event/before/cross(crosser)) == EVENT_VETO
-
 // ---------------------------------------------------------------- attack_self / attackby
 
 /// Veto: `user` uses the item in hand; EVENT_VETO

@@ -67,6 +67,10 @@ HANDLE_OK = ("code/datums/om/", "code/datums/ownership/", "code/datums/state/", 
 ENTITY_ROOTS = ("/datum", "/atom", "/obj", "/mob", "/turf")
 # Values, not entities: never tracked.
 VALUE_TYPES = ("/datum/gas_mixture/__never__",)
+# Flyweights (code/datums/ownership/flyweight.dm, GLOB.flyweight_types; keep in step): shared by type like a
+# registry type, so a var typed as one needs no declaration and is never a raw write.
+FLYWEIGHT_TYPES = ("/datum/capability", "/datum/reaction", "/datum/stack_recipe",
+                   "/datum/stack_recipe_list", "/datum/own_entry", "/datum/derived_entry", "/datum/op_def")
 MODIFIERS = {"tmp", "static", "global", "const", "final"}
 
 PROC_DEF = re.compile(r"^(/[\w/]+?)/(?:(?:proc|verb)/)?(\w+)\s*\((.*)$")
@@ -136,7 +140,7 @@ class Index:
         self.files = {}  # rel -> (raw lines, code lines)
         self.members = {}  # type -> var -> (vtype, is_list)
         self.decls = collections.defaultdict(dict)  # type -> var -> (kind, args, rel, line)
-        self.registry = []
+        self.registry = list(FLYWEIGHT_TYPES)
         self.usage = collections.defaultdict(lambda: collections.defaultdict(set))  # var -> kind -> {(type or None, rel, line)}
         self.name_decls = collections.defaultdict(list)  # var -> [(type, vtype, is_list)]
 
@@ -164,7 +168,9 @@ class Index:
         """One entry in owner's ownership()/relations() list: recorded under the kind's old macro name
         (the checks below key on it). An own() with no policy only annotates: no kind."""
         opts = opts or ""
-        if func == "owns":
+        if func == "owns" and re.search(r"\bpolicy\s*=\s*OWN_PRIVATE_COPY\b", opts):
+            macro = "PROTO"
+        elif func == "owns":
             if "policy_proc" in opts:
                 macro = "OWN_POLICY"
             elif "if_var" in opts:
@@ -177,7 +183,11 @@ class Index:
             macro = "SHARED"
         elif func in ("rel_one", "rel_many"):
             # kind = RELK_OWNED is an ownership declaration written through rel_one()
-            macro = "OWN" if re.search(r"\bkind\s*=\s*RELK_OWNED\b", opts) else "REL"
+            if re.search(r"\bkind\s*=\s*RELK_OWNED\b", opts):
+                # policy = OWN_PRIVATE_COPY is the former proto(): a prototype or a private copy of one
+                macro = "PROTO" if re.search(r"\bpolicy\s*=\s*OWN_PRIVATE_COPY\b", opts) else "OWN"
+            else:
+                macro = "REL"
         else:
             macro = func.upper()
         self.decls[owner][name] = (macro, opts, r, no)

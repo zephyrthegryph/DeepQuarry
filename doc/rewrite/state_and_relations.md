@@ -10,9 +10,11 @@ returns a list. A var that other code depends on is **tracked**.
 
 | API | Meaning | Status |
 |---|---|---|
-| `TRACKED(type, var)` | Generates `set_<var>()`. The setter compares, commits, and **publishes `(src, key)` only when `READERS(src, key)` is non-empty**. CI rejects writes outside the setter. | [built] (with a `channel` argument today); demand-gated publish [in progress] |
+| `TRACKED(type, var)` | Generates `set_<var>()`. The setter compares, commits, and **publishes `(src, key)` only when `READERS(src, key)` is non-empty** (`tracked_changed()`). CI rejects writes outside the setter. | [built, A1] |
+| `TRACKED_BRIDGED(type, var, CHANNEL)` | Bridge: TRACKED that also raises an OM channel, only for a var an OM stage `wake_on` or `om_watch()` still reads (the machine pipeline's CHANGE_MACHINE_SETTINGS). Removed with S4. | [built, A1] |
+| `PUBLISH_CHANGE(E, key)` | Publishes a change key that is not one var (a mob's `MOB_KEY_STATUS`, `MOB_KEY_HEALTH`, ...: the Life presentation reactions read them) when someone reads it. `OM_FIELD` setters publish their var key the same way. | [built, A1] |
 | `SETTER(type, var)` | Registers a hand-written setter with side effects. | [built] |
-| `publish_change(datum/E, key)` | For the rare write outside a setter (raw FFI data, engine callback). Relation writes publish both ends. | [in progress] |
+| `publish_change(datum/E, key)` | For the rare write outside a setter (raw FFI data, engine callback). Relation writes publish both ends. | [built] |
 | `READERS(src, key)` | Union of the static per-type reader mask (composed from `reactions()`) and the instance's dynamic readers (`observe()`). | [in progress] |
 | Generated reads | `code/_generated/reads.dm`, written by `tools/ci/derived_reads_lint.py --fix-generated`; CI checks freshness. The reads of `draw()`, `tgui_data()`, `should_run` and `push_to_rust` bodies become `reactions()` entries. | [in progress] |
 | `native(key...)` | Read spec for a Rust-owned value; delivery is in [rust.md](rust.md). | [in progress] |
@@ -60,6 +62,18 @@ Internal kinds live on the same store and are used by the framework rather than 
 
 **Source counts.** Two features can grant or enrol the same thing; removal by one source leaves it
 in place until the last source leaves. This applies to GRANT and MEMBER.
+
+**Shared values and private copies [built, A1].** There is no `shares()` declaration: a var holding a registered
+singleton (REGISTRY_TYPE) or a flyweight (an interned capability, reaction, recipe table, declaration entry:
+`GLOB.flyweight_types`, code/datums/ownership/flyweight.dm) says so by its type (`var/list/datum/stack_recipe/recipes`);
+the ownership lint and the destroy leak check skip it. A var holding a registered prototype or a private copy of one
+(the former `proto()`) is `rel_one(nameof(seed), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)`: teardown deletes
+private copies only. Relation kinds stay REF / PAIRED / OWNED.
+
+**Grants [built, A1].** `grant(target, what, source, duration)` / `revoke()` / `granted()`: `what` is a verb path (the
+verb store gives the verb while the source holds it), `hidden_verb(path)` (hides it), a capability type (granted
+capability), or any other value (a plain RELK_GRANT ledger entry). A text source is a shared `verb_source()`; a datum
+source's deletion drops its holds.
 
 **Starting occupant [built].** An owned relation may name what it starts with:
 `rel_one(nameof(cell), /obj/item/cell, kind = RELK_OWNED, policy = OWN_SPILL, starts = nameof(cell_type))`.

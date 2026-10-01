@@ -118,8 +118,8 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/trinary/atmos_filter, TYPE_P
 	if(index == 3)
 		rust_device_dirty()
 
-TRACKED(/obj/machinery/atmospherics/trinary/atmos_filter, set_flow_rate, CHANGE_MACHINE_SETTINGS)
-TRACKED(/obj/machinery/atmospherics/trinary/atmos_filter, filter_type, CHANGE_MACHINE_SETTINGS)
+TRACKED_BRIDGED(/obj/machinery/atmospherics/trinary/atmos_filter, set_flow_rate, CHANGE_MACHINE_SETTINGS)
+TRACKED_BRIDGED(/obj/machinery/atmospherics/trinary/atmos_filter, filter_type, CHANGE_MACHINE_SETTINGS)
 
 /// The Rust group is pushed (once per frame) when any of these change.
 /obj/machinery/atmospherics/trinary/atmos_filter/derived()

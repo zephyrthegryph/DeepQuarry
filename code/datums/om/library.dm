@@ -5,7 +5,7 @@
 /// A mob status row (status.dm): timed, unit LIFE_CYCLE, raising CHANGE_MOB_STATUS on start and end,
 /// plus `fields`.
 /proc/om_mob_status_row(list/fields)
-	. = list("kind" = OM_EFFECT_STATUS, "combine" = COMBINE_ANY, "stacking" = STACKING_MAX, "channel" = CHANGE_MOB_STATUS, "unit" = LIFE_CYCLE, "entity_type" = /mob)
+	. = list("kind" = OM_EFFECT_STATUS, "combine" = COMBINE_ANY, "stacking" = STACKING_MAX, "channel" = CHANGE_MOB_STATUS, "publishes" = MOB_KEY_STATUS, "unit" = LIFE_CYCLE, "entity_type" = /mob)
 	for(var/key in fields)
 		.[key] = fields[key]
 
@@ -39,14 +39,14 @@
 			"on_start" = /mob/proc/status_jittery_started, "on_end" = /mob/proc/status_jittery_ended)),
 		// Status immunities: gaining one ends the statuses that name it. Held by mob type decls,
 		// mutations and godmode.
-		EFFECT_IMMUNE_STUN = list("combine" = COMBINE_ANY, "channel" = CHANGE_MOB_STATUS),
-		EFFECT_IMMUNE_WEAKEN = list("combine" = COMBINE_ANY, "channel" = CHANGE_MOB_STATUS),
-		EFFECT_IMMUNE_PARALYZE = list("combine" = COMBINE_ANY, "channel" = CHANGE_MOB_STATUS),
-		EFFECT_IMMUNE_DIZZY = list("combine" = COMBINE_ANY, "channel" = CHANGE_MOB_STATUS),
-		EFFECT_IMMUNE_JITTER = list("combine" = COMBINE_ANY, "channel" = CHANGE_MOB_STATUS),
+		EFFECT_IMMUNE_STUN = list("combine" = COMBINE_ANY, "channel" = CHANGE_MOB_STATUS, "publishes" = MOB_KEY_STATUS),
+		EFFECT_IMMUNE_WEAKEN = list("combine" = COMBINE_ANY, "channel" = CHANGE_MOB_STATUS, "publishes" = MOB_KEY_STATUS),
+		EFFECT_IMMUNE_PARALYZE = list("combine" = COMBINE_ANY, "channel" = CHANGE_MOB_STATUS, "publishes" = MOB_KEY_STATUS),
+		EFFECT_IMMUNE_DIZZY = list("combine" = COMBINE_ANY, "channel" = CHANGE_MOB_STATUS, "publishes" = MOB_KEY_STATUS),
+		EFFECT_IMMUNE_JITTER = list("combine" = COMBINE_ANY, "channel" = CHANGE_MOB_STATUS, "publishes" = MOB_KEY_STATUS),
 		// Godmode: no harm reaches the entity; it holds the incapacitation immunities while on.
-		EFFECT_GODMODE = list("combine" = COMBINE_ANY, "channel" = CHANGE_MOB_STATUS, "implies" = list(EFFECT_IMMUNE_STUN, EFFECT_IMMUNE_WEAKEN, EFFECT_IMMUNE_PARALYZE)),
-		EFFECT_BUCKLED = list("combine" = COMBINE_ANY, "channel" = CHANGE_MOB_STATUS),
+		EFFECT_GODMODE = list("combine" = COMBINE_ANY, "channel" = CHANGE_MOB_STATUS, "publishes" = MOB_KEY_STATUS, "implies" = list(EFFECT_IMMUNE_STUN, EFFECT_IMMUNE_WEAKEN, EFFECT_IMMUNE_PARALYZE)),
+		EFFECT_BUCKLED = list("combine" = COMBINE_ANY, "channel" = CHANGE_MOB_STATUS, "publishes" = MOB_KEY_STATUS),
 		EFFECT_SLOWED = list("combine" = COMBINE_SUM, "channel" = CHANGE_MOB_MOVEMENT),
 		// Composites: defined from other effects, no contributions of their own.
 		EFFECT_CAN_MOVE = list("expr" = NOT_OF(ANY_OF(EFFECT_STUNNED, EFFECT_WEAKENED, EFFECT_PARALYZED, EFFECT_BUCKLED)), "channel" = CHANGE_MOB_CAN_MOVE),
@@ -63,7 +63,7 @@
 		EFFECT_UNPUSHABLE = list("combine" = COMBINE_ANY),
 		EFFECT_ALPHA_MULT = list("combine" = COMBINE_MULTIPLY, "default" = 1),
 		// Body effects (body_effects.dm): factor tables keyed by definition type, value = stacks.
-		EFFECT_BODY_EFFECTS = list("combine" = COMBINE_SUM_PER_KEY, "channel" = CHANGE_MOB_CONDITIONS, "type" = /datum/om/effect/body_effects),
+		EFFECT_BODY_EFFECTS = list("combine" = COMBINE_SUM_PER_KEY, "channel" = CHANGE_MOB_CONDITIONS, "publishes" = MOB_KEY_CONDITIONS, "type" = /datum/om/effect/body_effects),
 		// Grant kinds.
 		GRANT_ABILITY = list("combine" = COMBINE_SUM_PER_KEY),
 		GRANT_LANGUAGE = list("combine" = COMBINE_SUM_PER_KEY),
@@ -208,6 +208,7 @@
 	if(ismob(source))
 		var/mob/M = source
 		changed(M, CHANGE_MOB_STATUS)
+		PUBLISH_CHANGE(M, MOB_KEY_STATUS)
 		if(M.pullin)
 			M.pullin.icon_state = "pull1"
 	if(ismob(target))
@@ -218,6 +219,7 @@
 	if(istype(source) && !QDELETED(source) && ismob(source))
 		var/mob/M = source
 		changed(M, CHANGE_MOB_STATUS)
+		PUBLISH_CHANGE(M, MOB_KEY_STATUS)
 		if(M.pullin)
 			M.pullin.icon_state = "pull0"
 

@@ -141,7 +141,7 @@
 		COOLDOWN_START(src, reply_cooldown, vend_delay + 20 SECONDS)
 
 	use_power(vend_power_usage)	//actuators and stuff
-	after(src, vend_delay, PROC_REF(finish_nifsoft_vend), R, H, user)
+	after(src, vend_delay, PROC_REF(finish_nifsoft_vend), with = list(R, H, user))
 	return 1
 
 //Can't throw intangible software at people.

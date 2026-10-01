@@ -18,7 +18,8 @@
 /proc/build_type_list(datum/D, proc_ref, post)
 	var/result
 	try
-		result = call(D, proc_ref)()
+		// A global builder takes the instance (caps_build(A)); a type proc is called on it.
+		result = IS_GLOBAL_PROC_REF(proc_ref) ? call(proc_ref)(D) : call(D, proc_ref)()
 	catch(var/exception/e)
 		// Surface it and don't cache an empty list: the next instance tries again (and fails loudly).
 		CRASH("type_list: [D.type].[proc_ref] failed while building: [e] ([e.file]:[e.line])")

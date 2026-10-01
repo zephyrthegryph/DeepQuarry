@@ -289,8 +289,6 @@
 // ---- the step protocol (om/periodic.dm calls these for every periodic step)
 
 // Only systems and their member drivers yield; the slot is declared on those types.
-OWN_TIMER(/datum/system, step_yield)
-OWN_TIMER(/datum/system_member_driver, step_yield)
 
 /// Reads one periodic_step() result. TRUE: the step asked to leave the cadence. A yield schedules its own
 /// resume on the next tick.

@@ -447,5 +447,5 @@ GLOBAL_DATUM_INIT(research_service, /datum/world_service/research, new)
 
 /datum/world_service/research/ownership()
 	. = ..()
-	. += proto(nameof(error_design))
-	. += proto(nameof(error_node))
+	. += rel_one(nameof(error_design), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)
+	. += rel_one(nameof(error_node), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)

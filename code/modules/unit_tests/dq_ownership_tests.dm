@@ -13,7 +13,7 @@
 
 /datum/own_test_holder/ownership()
 	. = ..()
-	. += proto(nameof(species))
+	. += rel_one(nameof(species), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)
 
 /datum/own_test_holder/relations()
 	. = ..()
@@ -421,7 +421,7 @@ OM_FIELD_TYPED(/datum/own_test_field_holder, tmp/datum/own_test_child, watched, 
 /datum/own_test_watch_target
 	var/power_level = 0
 	var/label = "x"
-TRACKED(/datum/own_test_watch_target, power_level, CHANGE_EFFECTS)
+TRACKED_BRIDGED(/datum/own_test_watch_target, power_level, CHANGE_EFFECTS)
 
 /datum/own_test_watch_holder
 	var/datum/own_test_watch_target/watched

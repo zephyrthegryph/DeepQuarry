@@ -1,0 +1,2913 @@
+{
+ "/datum/om/event/affliction_severity_changed": {
+  "emits": [
+   "code/modules/body/affliction.dm:217"
+  ],
+  "fields": [
+   "affliction",
+   "old_severity"
+  ],
+  "listeners": [
+   "code/controllers/subsystems/contracts.dm:117"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/affliction_severity_changed",
+  "tests": [
+   "code/modules/unit_tests/dq_medical_damage_model_tests.dm:494"
+  ]
+ },
+ "/datum/om/event/arcade_prizevend": {
+  "emits": [
+   "code/game/machinery/computer/arcade.dm:39"
+  ],
+  "fields": [
+   "user"
+  ],
+  "listeners": [
+   "code/modules/research/tg/experisci/experiment/instances/physical.dm:10",
+   "code/modules/research/tg/experisci/experiment/instances/physical.dm:15"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/arcade_prizevend",
+  "tests": []
+ },
+ "/datum/om/event/atom_after_successful_initialized_on": {
+  "emits": [
+   "code/game/atom/atoms_initializing_EXPENSIVE.dm:84"
+  ],
+  "fields": [
+   "created",
+   "mapload"
+  ],
+  "listeners": [
+   "code/datums/proximity_monitor/proximity_monitor.dm:14"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/atom_after_successful_initialized_on",
+  "tests": []
+ },
+ "/datum/om/event/atom_bumped": {
+  "emits": [
+   "code/game/atom/_atom.dm:127"
+  ],
+  "fields": [
+   "bumped"
+  ],
+  "listeners": [
+   "code/modules/xenoarcheaology/effect_master.dm:89"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/atom_bumped",
+  "tests": []
+ },
+ "/datum/om/event/atom_dir_change": {
+  "emits": [
+   "code/game/atom/_atom.dm:302"
+  ],
+  "fields": [
+   "old_dir",
+   "new_dir"
+  ],
+  "listeners": [
+   "code/datums/entity_state/overlay_lighting.dm:123",
+   "code/datums/entity_state/overlay_lighting.dm:256",
+   "code/datums/entity_state/overlay_lighting.dm:267",
+   "code/datums/entity_state/overlay_lighting.dm:292",
+   "code/datums/entity_state/overlay_lighting.dm:322",
+   "code/datums/entity_state/squeak.dm:130",
+   "code/datums/entity_state/overlay_lighting.dm:155"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/atom_dir_change",
+  "tests": []
+ },
+ "/datum/om/event/atom_emp_act": {
+  "emits": [
+   "code/game/atom/_atom.dm:191"
+  ],
+  "fields": [
+   "severity",
+   "protection"
+  ],
+  "listeners": [
+   "code/modules/organs/internal/special/heart_anomalock.dm:33",
+   "code/modules/organs/internal/special/heart_anomalock.dm:38"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/atom_emp_act",
+  "tests": []
+ },
+ "/datum/om/event/atom_entered": {
+  "emits": [
+   "code/game/atom/_atom.dm:537"
+  ],
+  "fields": [
+   "arrived",
+   "old_loc"
+  ],
+  "listeners": [
+   "code/datums/entity_state/reactive_icon_update.dm:64",
+   "code/datums/entity_state/reactive_icon_update.dm:66",
+   "code/datums/entity_state/squeak.dm:46",
+   "code/modules/mining/machinery/machine_input_output_plates.dm:40",
+   "code/modules/mining/machinery/machine_input_output_plates.dm:44",
+   "code/modules/recycling/conveyor2.dm:41",
+   "code/modules/recycling/conveyor2.dm:60",
+   "code/modules/recycling/conveyor2.dm:63",
+   "code/datums/proximity_monitor/proximity_monitor.dm:12"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/atom_entered",
+  "tests": []
+ },
+ "/datum/om/event/atom_entering": {
+  "emits": [
+   "code/game/atom/_atom.dm:538"
+  ],
+  "fields": [
+   "destination",
+   "old_loc"
+  ],
+  "listeners": [
+   "code/datums/recursive_move.dm:70",
+   "code/datums/recursive_move.dm:75",
+   "code/datums/recursive_move.dm:79",
+   "code/datums/recursive_move.dm:89",
+   "code/datums/recursive_move.dm:96",
+   "code/datums/recursive_move.dm:126",
+   "code/modules/maint_recycler/code/vendor_goodies/remote_scene_tools/remote_scene_tools.dm:106"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/atom_entering",
+  "tests": []
+ },
+ "/datum/om/event/atom_exited": {
+  "emits": [
+   "code/game/atom/_atom.dm:545"
+  ],
+  "fields": [
+   "gone",
+   "new_loc"
+  ],
+  "listeners": [
+   "code/datums/recursive_move.dm:55",
+   "code/datums/recursive_move.dm:93",
+   "code/datums/proximity_monitor/proximity_monitor.dm:13"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/atom_exited",
+  "tests": []
+ },
+ "/datum/om/event/atom_fire_act": {
+  "emits": [
+   "code/game/atom/_atom.dm:330"
+  ],
+  "fields": [
+   "exposed_temperature",
+   "exposed_volume"
+  ],
+  "listeners": [
+   "code/modules/materials/engineering/material_responses.dm:81",
+   "code/game/atom/_atom.dm:327"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/atom_fire_act",
+  "tests": []
+ },
+ "/datum/om/event/atom_propagate_rad_pulse": {
+  "emits": [
+   "code/_helpers/radiation.dm:119"
+  ],
+  "fields": [
+   "pulse_source"
+  ],
+  "listeners": [
+   "code/game/turfs/simulated/floor_types.dm:316",
+   "code/game/turfs/simulated/wall_types.dm:630",
+   "code/modules/materials/engineering/material_responses.dm:82"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/atom_propagate_rad_pulse",
+  "tests": []
+ },
+ "/datum/om/event/atom_update_light_color": {
+  "emits": [
+   "code/modules/lighting/lighting_atom.dm:168"
+  ],
+  "fields": [
+   "old_color"
+  ],
+  "listeners": [
+   "code/datums/entity_state/overlay_lighting.dm:127",
+   "code/datums/entity_state/overlay_lighting.dm:151"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/atom_update_light_color",
+  "tests": []
+ },
+ "/datum/om/event/atom_update_light_flags": {
+  "emits": [
+   "code/modules/lighting/lighting_atom.dm:184"
+  ],
+  "fields": [
+   "old_flags"
+  ],
+  "listeners": [
+   "code/datums/entity_state/overlay_lighting.dm:129",
+   "code/datums/entity_state/overlay_lighting.dm:153"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/atom_update_light_flags",
+  "tests": []
+ },
+ "/datum/om/event/atom_update_light_on": {
+  "emits": [
+   "code/modules/lighting/lighting_atom.dm:176"
+  ],
+  "fields": [
+   "old_value"
+  ],
+  "listeners": [
+   "code/datums/entity_state/overlay_lighting.dm:128",
+   "code/datums/entity_state/overlay_lighting.dm:152"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/atom_update_light_on",
+  "tests": []
+ },
+ "/datum/om/event/atom_update_light_power": {
+  "emits": [
+   "code/modules/lighting/lighting_atom.dm:152"
+  ],
+  "fields": [
+   "old_power"
+  ],
+  "listeners": [
+   "code/datums/entity_state/overlay_lighting.dm:126",
+   "code/datums/entity_state/overlay_lighting.dm:150"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/atom_update_light_power",
+  "tests": []
+ },
+ "/datum/om/event/atom_update_light_range": {
+  "emits": [
+   "code/modules/lighting/lighting_atom.dm:160"
+  ],
+  "fields": [
+   "old_range"
+  ],
+  "listeners": [
+   "code/datums/entity_state/overlay_lighting.dm:125",
+   "code/datums/entity_state/overlay_lighting.dm:149"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/atom_update_light_range",
+  "tests": []
+ },
+ "/datum/om/event/atom_used_in_craft": {
+  "emits": [
+   "code/datums/entity_state/crafting/crafting_external.dm:30"
+  ],
+  "fields": [
+   "result_"
+  ],
+  "listeners": [
+   "code/datums/entity_state/overlay_lighting.dm:130",
+   "code/datums/entity_state/overlay_lighting.dm:554",
+   "code/datums/entity_state/overlay_lighting.dm:555",
+   "code/datums/entity_state/overlay_lighting.dm:154"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/atom_used_in_craft",
+  "tests": []
+ },
+ "/datum/om/event/before/atom_bullet_act": {
+  "emits": [
+   "code/game/atom/_atom.dm:195"
+  ],
+  "fields": [
+   "projectile",
+   "def_zone"
+  ],
+  "listeners": [
+   "code/modules/xenoarcheaology/effect_master.dm:86"
+  ],
+  "reads_result": true,
+  "target": "review",
+  "tests": []
+ },
+ "/datum/om/event/before/atom_ex_act": {
+  "emits": [
+   "code/game/atom/_atom.dm:322"
+  ],
+  "fields": [
+   "severity",
+   "target"
+  ],
+  "listeners": [
+   "code/modules/xenoarcheaology/effect_master.dm:85"
+  ],
+  "reads_result": true,
+  "target": "review",
+  "tests": []
+ },
+ "/datum/om/event/before/atom_extinguish": {
+  "emits": [
+   "code/game/atom/_atom.dm:338"
+  ],
+  "fields": [],
+  "listeners": [
+   "code/datums/status_effects/debuffs/fire_stacks.dm:293",
+   "code/game/atom/_atom.dm:334"
+  ],
+  "reads_result": true,
+  "target": "review",
+  "tests": []
+ },
+ "/datum/om/event/before/atom_pre_emp_act": {
+  "emits": [
+   "code/game/atom/_atom.dm:182"
+  ],
+  "fields": [
+   "severity"
+  ],
+  "listeners": [
+   "code/modules/materials/engineering/material_responses.dm:80",
+   "code/modules/mob/living/silicon/robot/robot.dm:398",
+   "code/modules/mob/living/silicon/robot/robot.dm:409"
+  ],
+  "reads_result": false,
+  "target": "review",
+  "tests": []
+ },
+ "/datum/om/event/before/atom_take_damage": {
+  "emits": [
+   "code/game/atom/atom_defense.dm:44"
+  ],
+  "fields": [
+   "damage_amount",
+   "damage_type",
+   "damage_flag",
+   "sound_effect",
+   "attack_dir",
+   "aurmor_penetration"
+  ],
+  "listeners": [
+   "code/modules/materials/engineering/material_responses.dm:79"
+  ],
+  "reads_result": true,
+  "target": "review",
+  "tests": []
+ },
+ "/datum/om/event/before/atom_tool_act": {
+  "emits": [
+   "code/_onclick/item_attack.dm:115"
+  ],
+  "fields": [
+   "tool_quality",
+   "secondary",
+   "user",
+   "tool"
+  ],
+  "listeners": [
+   "code/modules/body/plans/nanoform.dm:228",
+   "code/modules/body/plans/nanoform.dm:259",
+   "code/modules/materials/engineering/material_diagnostics.dm:30",
+   "code/modules/materials/engineering/material_diagnostics.dm:55"
+  ],
+  "reads_result": true,
+  "target": "GUARD_TOOL_ACT",
+  "tests": []
+ },
+ "/datum/om/event/before/attack_hand": {
+  "emits": [
+   "code/_onclick/other_mobs.dm:50",
+   "code/_onclick/other_mobs.dm:50"
+  ],
+  "fields": [
+   "user"
+  ],
+  "listeners": [
+   "code/modules/xenoarcheaology/effect_master.dm:87",
+   "code/datums/behaviours/burning.dm:21"
+  ],
+  "reads_result": true,
+  "target": "GUARD_ATTACK_HAND",
+  "tests": []
+ },
+ "/datum/om/event/before/attack_self": {
+  "emits": [
+   "code/_onclick/item_attack.dm:33",
+   "code/_onclick/item_attack.dm:33"
+  ],
+  "fields": [
+   "user"
+  ],
+  "listeners": [
+   "code/datums/entity_state/squeak.dm:47",
+   "code/modules/economy/service_invoices.dm:340",
+   "code/modules/research/tg/experisci/experiment/handlers/experiment_handler.dm:74",
+   "code/datums/behaviours/tethered_item.dm:28",
+   "code/modules/research/tg/experisci/experiment/handlers/experiment_handler.dm:253"
+  ],
+  "reads_result": true,
+  "target": "GUARD_ATTACK_SELF",
+  "tests": []
+ },
+ "/datum/om/event/before/attackby": {
+  "emits": [
+   "code/game/objects/items/weapons/storage/storage.dm:462",
+   "code/game/objects/items/weapons/storage/storage.dm:462",
+   "code/game/turfs/simulated/floor_attackby.dm:31",
+   "code/game/turfs/simulated/floor_attackby.dm:31",
+   "code/_onclick/item_attack.dm:179",
+   "code/_onclick/item_attack.dm:179",
+   "code/_onclick/item_attack.dm:221",
+   "code/_onclick/item_attack.dm:221"
+  ],
+  "fields": [
+   "item",
+   "user",
+   "params"
+  ],
+  "listeners": [
+   "code/datums/entity_state/materials/material_container.dm:80",
+   "code/datums/entity_state/materials/material_container.dm:113",
+   "code/datums/entity_state/materials/material_container.dm:115",
+   "code/datums/entity_state/materials/remote_materials.dm:55",
+   "code/modules/body/plans/nanoform.dm:229",
+   "code/modules/body/plans/nanoform.dm:259",
+   "code/modules/materials/engineering/material_diagnostics.dm:31",
+   "code/modules/materials/engineering/material_diagnostics.dm:55",
+   "code/modules/materials/engineering/material_responses.dm:84",
+   "code/modules/xenoarcheaology/effect_master.dm:84",
+   "code/datums/behaviours/tethered_item.dm:28"
+  ],
+  "reads_result": true,
+  "target": "GUARD_ATTACKBY",
+  "tests": []
+ },
+ "/datum/om/event/before/belly_update_vore_fx": {
+  "emits": [
+   "code/modules/vore/eating/belly_obj_liquids.dm:45",
+   "code/modules/vore/eating/belly_obj_liquids.dm:63",
+   "code/modules/vore/eating/belly_obj_liquids.dm:331"
+  ],
+  "fields": [
+   "volume"
+  ],
+  "listeners": [
+   "code/modules/vore/eating/soulcatcher.dm:306",
+   "code/modules/vore/eating/soulcatcher.dm:313",
+   "code/modules/vore/eating/soulcatcher.dm:317",
+   "code/modules/vore/eating/soulcatcher.dm:319"
+  ],
+  "reads_result": false,
+  "target": "review",
+  "tests": []
+ },
+ "/datum/om/event/before/catch_throw": {
+  "emits": [
+   "code/modules/mob/living/carbon/human/human_defense.dm:341",
+   "code/modules/mob/living/carbon/human/human_defense.dm:341"
+  ],
+  "fields": [
+   "source",
+   "speed"
+  ],
+  "listeners": [
+   "code/datums/behaviours/omen.dm:23"
+  ],
+  "reads_result": true,
+  "target": "op",
+  "tests": []
+ },
+ "/datum/om/event/before/click_alt": {
+  "emits": [
+   "code/_onclick/click_alt.dm:16",
+   "code/_onclick/click_alt.dm:75"
+  ],
+  "fields": [
+   "mob"
+  ],
+  "listeners": [
+   "code/modules/research/tg/experisci/experiment/handlers/experiment_handler.dm:76",
+   "code/modules/research/tg/experisci/experiment/handlers/experiment_handler.dm:256"
+  ],
+  "reads_result": true,
+  "target": "GUARD_CLICK_ALT",
+  "tests": []
+ },
+ "/datum/om/event/before/dice_roll": {
+  "emits": [
+   "code/modules/games/dice.dm:128"
+  ],
+  "fields": [
+   "dice",
+   "silent",
+   "roll_result"
+  ],
+  "listeners": [
+   "code/datums/behaviours/omen.dm:22"
+  ],
+  "reads_result": false,
+  "target": "review",
+  "tests": []
+ },
+ "/datum/om/event/before/disposal_flush": {
+  "emits": [
+   "code/game/objects/structures/watercloset.dm:379",
+   "code/modules/recycling/disposal_machines.dm:669"
+  ],
+  "fields": [
+   "items",
+   "gas"
+  ],
+  "listeners": [
+   "code/datums/entity_state/machinery/disposal_connection.dm:25"
+  ],
+  "reads_result": true,
+  "target": "review",
+  "tests": []
+ },
+ "/datum/om/event/before/disposal_send": {
+  "emits": [
+   "code/modules/recycling/disposal_trunk.dm:45"
+  ],
+  "fields": [
+   "holder"
+  ],
+  "listeners": [
+   "code/datums/entity_state/machinery/disposal_connection.dm:51",
+   "code/datums/entity_state/machinery/disposal_connection.dm:58"
+  ],
+  "reads_result": true,
+  "target": "review",
+  "tests": []
+ },
+ "/datum/om/event/before/geiger_counter_scan": {
+  "emits": [
+   "code/game/objects/items/devices/geiger.dm:144"
+  ],
+  "fields": [
+   "user",
+   "geiger_counter"
+  ],
+  "listeners": [
+   "code/datums/entity_state/traits/radiation_effects.dm:127"
+  ],
+  "reads_result": true,
+  "target": "review",
+  "tests": []
+ },
+ "/datum/om/event/before/handle_mutations": {
+  "emits": [
+   "code/modules/mob/living/life/living_systems.dm:198",
+   "code/modules/mob/living/life/living_systems.dm:203"
+  ],
+  "fields": [],
+  "listeners": [],
+  "reads_result": true,
+  "target": "delete",
+  "tests": []
+ },
+ "/datum/om/event/before/handle_radiation": {
+  "emits": [
+   "code/modules/mob/living/carbon/human/life.dm:387",
+   "code/modules/mob/living/life/living_systems.dm:215",
+   "code/modules/mob/living/life/living_systems.dm:220"
+  ],
+  "fields": [],
+  "listeners": [
+   "code/datums/entity_state/traits/radiation_effects.dm:125"
+  ],
+  "reads_result": true,
+  "target": "review",
+  "tests": []
+ },
+ "/datum/om/event/before/human_get_alt_name": {
+  "emits": [
+   "code/modules/mob/living/carbon/human/say.dm:3"
+  ],
+  "fields": [
+   "name_data"
+  ],
+  "listeners": [
+   "code/datums/entity_state/species/shadekin/shadekin.dm:111"
+  ],
+  "reads_result": true,
+  "target": "review",
+  "tests": []
+ },
+ "/datum/om/event/before/human_get_visible_name": {
+  "emits": [
+   "code/modules/mob/living/living.dm:4",
+   "code/modules/mob/living/living.dm:6",
+   "code/modules/mob/living/carbon/human/human.dm:339",
+   "code/modules/mob/living/carbon/human/human.dm:341"
+  ],
+  "fields": [
+   "identity"
+  ],
+  "listeners": [
+   "code/datums/entity_state/species/shadekin/shadekin.dm:112"
+  ],
+  "reads_result": true,
+  "target": "review",
+  "tests": []
+ },
+ "/datum/om/event/before/human_get_voice": {
+  "emits": [
+   "code/modules/mob/living/carbon/human/say.dm:100",
+   "code/modules/mob/living/carbon/human/say.dm:102"
+  ],
+  "fields": [
+   "voice_data"
+  ],
+  "listeners": [
+   "code/datums/entity_state/species/shadekin/shadekin.dm:110"
+  ],
+  "reads_result": true,
+  "target": "review",
+  "tests": []
+ },
+ "/datum/om/event/before/in_range_of_irradiation": {
+  "emits": [
+   "code/modules/radiation/radiation_service.dm:149",
+   "code/modules/radiation/radiation_service.dm:153",
+   "code/modules/radiation/radiation_service.dm:159",
+   "code/modules/radiation/radiation_service.dm:166"
+  ],
+  "fields": [
+   "pulse_information",
+   "insulation_to_target"
+  ],
+  "listeners": [
+   "code/datums/entity_state/geiger_sound.dm:28",
+   "code/datums/entity_state/geiger_sound.dm:73",
+   "code/datums/entity_state/geiger_sound.dm:78",
+   "code/game/objects/items/devices/geiger.dm:30",
+   "code/game/objects/items/devices/geiger.dm:113",
+   "code/game/objects/items/devices/geiger.dm:118",
+   "code/modules/materials/engineering/material_responses.dm:83",
+   "code/modules/power/singularity/collector.dm:26",
+   "code/datums/entity_state/geiger_sound.dm:42"
+  ],
+  "reads_result": false,
+  "target": "GUARD_IRRADIATE",
+  "tests": []
+ },
+ "/datum/om/event/before/item_pre_attack": {
+  "emits": [
+   "code/_onclick/item_attack.dm:52"
+  ],
+  "fields": [
+   "target",
+   "user",
+   "params"
+  ],
+  "listeners": [
+   "code/datums/entity_state/effect_remover.dm:30",
+   "code/modules/research/tg/experisci/handheld_scanner.dm:24"
+  ],
+  "reads_result": true,
+  "target": "op",
+  "tests": []
+ },
+ "/datum/om/event/before/living_body_status": {
+  "emits": [
+   "code/modules/body/body.dm:453",
+   "code/modules/body/body.dm:468",
+   "code/modules/body/body.dm:480",
+   "code/modules/body/plans/machine.dm:44"
+  ],
+  "fields": [],
+  "listeners": [
+   "code/modules/body/plans/nanoform.dm:226",
+   "code/modules/body/plans/nanoform.dm:259"
+  ],
+  "reads_result": true,
+  "target": "GUARD_BODY_STATUS",
+  "tests": [
+   "code/modules/unit_tests/dq_vital_lifecycle_tests.dm:285",
+   "code/modules/unit_tests/dq_vital_lifecycle_tests.dm:291"
+  ]
+ },
+ "/datum/om/event/before/living_injure": {
+  "emits": [
+   "code/modules/body/injury.dm:67",
+   "code/modules/body/injury.dm:69"
+  ],
+  "fields": [
+   "kind",
+   "amount_ref",
+   "zone",
+   "source",
+   "flags"
+  ],
+  "listeners": [
+   "code/game/objects/structures/crates_lockers/closets/statue.dm:32",
+   "code/game/objects/structures/crates_lockers/closets/statue.dm:67",
+   "code/modules/mob/living/carbon/human/species/station/protean/protean_rig.dm:455",
+   "code/modules/mob/living/carbon/human/species/station/protean/protean_rig.dm:460"
+  ],
+  "reads_result": true,
+  "target": "GUARD_INJURE",
+  "tests": [
+   "code/modules/unit_tests/dq_damage_packet_tests.dm:139",
+   "code/modules/unit_tests/dq_damage_packet_tests.dm:158"
+  ]
+ },
+ "/datum/om/event/before/living_irradiate_effect": {
+  "emits": [
+   "code/modules/mob/living/damage_procs.dm:24"
+  ],
+  "fields": [
+   "effect",
+   "stun",
+   "blocked",
+   "check_protection",
+   "rad_protection"
+  ],
+  "listeners": [
+   "code/datums/entity_state/traits/radiation_effects.dm:126"
+  ],
+  "reads_result": true,
+  "target": "GUARD_IRRADIATE",
+  "tests": []
+ },
+ "/datum/om/event/before/living_status_sleep": {
+  "emits": [],
+  "fields": [
+   "amount"
+  ],
+  "listeners": [
+   "code/datums/entity_state/remote_view.dm:76",
+   "code/datums/entity_state/remote_view.dm:208",
+   "code/datums/om/library.dm:22"
+  ],
+  "reads_result": false,
+  "target": "review",
+  "tests": []
+ },
+ "/datum/om/event/before/living_turf_collision": {
+  "emits": [
+   "code/modules/mob/living/living_defense.dm:268"
+  ],
+  "fields": [
+   "t",
+   "speed"
+  ],
+  "listeners": [
+   "code/datums/thrownthing.dm:17",
+   "code/datums/thrownthing.dm:74"
+  ],
+  "reads_result": true,
+  "target": "review",
+  "tests": []
+ },
+ "/datum/om/event/before/mob_handle_hud": {
+  "emits": [
+   "code/modules/mob/living/carbon/human/life.dm:1513",
+   "code/modules/mob/living/life/life_om.dm:147",
+   "code/modules/mob/living/life/living_systems.dm:620"
+  ],
+  "fields": [],
+  "listeners": [
+   "code/datums/entity_state/remote_view.dm:87"
+  ],
+  "reads_result": true,
+  "target": "review",
+  "tests": []
+ },
+ "/datum/om/event/before/mob_handle_hud_health_icon": {
+  "emits": [
+   "code/modules/mob/living/life/living_systems.dm:628"
+  ],
+  "fields": [],
+  "listeners": [
+   "code/datums/entity_state/remote_view.dm:89"
+  ],
+  "reads_result": true,
+  "target": "review",
+  "tests": []
+ },
+ "/datum/om/event/before/mob_relay_movement": {
+  "emits": [
+   "code/modules/mob/mob_movement.dm:217"
+  ],
+  "fields": [
+   "direction"
+  ],
+  "listeners": [
+   "code/datums/entity_state/remote_view.dm:83"
+  ],
+  "reads_result": true,
+  "target": "review",
+  "tests": []
+ },
+ "/datum/om/event/before/movable_bump": {
+  "emits": [
+   "code/game/atoms_movable.dm:384"
+  ],
+  "fields": [
+   "atom"
+  ],
+  "listeners": [
+   "code/datums/entity_state/squeak.dm:46",
+   "code/modules/xenoarcheaology/effect_master.dm:88"
+  ],
+  "reads_result": false,
+  "target": "review",
+  "tests": []
+ },
+ "/datum/om/event/before/movable_pre_move": {
+  "emits": [
+   "code/game/atoms_movable.dm:178"
+  ],
+  "fields": [
+   "new_loc",
+   "direction",
+   "movetime"
+  ],
+  "listeners": [
+   "code/modules/mob/living/carbon/human/species/station/protean/protean_form.dm:211",
+   "code/modules/mob/living/carbon/human/species/station/protean/protean_form.dm:214"
+  ],
+  "reads_result": true,
+  "target": "GUARD_MOVE",
+  "tests": []
+ },
+ "/datum/om/event/before/movable_z_changed": {
+  "emits": [
+   "code/game/atoms_movable.dm:512"
+  ],
+  "fields": [
+   "old_z",
+   "new_z"
+  ],
+  "listeners": [
+   "code/datums/entity_state/remote_view.dm:65",
+   "code/datums/proximity_monitor/proximity_monitor.dm:48",
+   "code/modules/tgui/modules/ntos-only/uav.dm:99",
+   "code/modules/tgui/modules/ntos-only/uav.dm:102",
+   "code/modules/tgui/modules/ntos-only/uav.dm:109",
+   "code/datums/proximity_monitor/proximity_monitor.dm:42"
+  ],
+  "reads_result": false,
+  "target": "GUARD_Z_CHANGE",
+  "tests": []
+ },
+ "/datum/om/event/before/robot_item_attack": {
+  "emits": [
+   "code/modules/keybindings/adapters.dm:538"
+  ],
+  "fields": [
+   "item",
+   "user",
+   "params"
+  ],
+  "listeners": [
+   "code/modules/mob/living/silicon/robot/cloak.dm:132",
+   "code/modules/mob/living/silicon/robot/cloak.dm:137"
+  ],
+  "reads_result": false,
+  "target": "op",
+  "tests": []
+ },
+ "/datum/om/event/before/slot_pre_insert": {
+  "emits": [
+   "code/datums/containment/api.dm:70"
+  ],
+  "fields": [
+   "thing",
+   "slot_id",
+   "actor"
+  ],
+  "listeners": [],
+  "reads_result": true,
+  "target": "review",
+  "tests": [
+   "code/modules/unit_tests/dq_containment_tests.dm:58"
+  ]
+ },
+ "/datum/om/event/before/slot_pre_remove": {
+  "emits": [
+   "code/datums/containment/api.dm:86"
+  ],
+  "fields": [
+   "thing",
+   "slot_id",
+   "actor"
+  ],
+  "listeners": [],
+  "reads_result": true,
+  "target": "review",
+  "tests": [
+   "code/modules/unit_tests/dq_containment_tests.dm:59"
+  ]
+ },
+ "/datum/om/event/before/turf_prepare_step_sound": {
+  "emits": [
+   "code/datums/behaviours/footstep.dm:107"
+  ],
+  "fields": [
+   "steps"
+  ],
+  "listeners": [],
+  "reads_result": true,
+  "target": "delete",
+  "tests": []
+ },
+ "/datum/om/event/before/world_play_cinematic": {
+  "emits": [
+   "code/datums/cinematics/_cinematic.dm:62"
+  ],
+  "fields": [
+   "new_cinematic"
+  ],
+  "listeners": [
+   "code/datums/cinematics/_cinematic.dm:66"
+  ],
+  "reads_result": true,
+  "target": "review",
+  "tests": [
+   "code/modules/unit_tests/nuke_cinematic.dm:38",
+   "code/modules/unit_tests/nuke_cinematic.dm:47"
+  ]
+ },
+ "/datum/om/event/body_afflictions_changed": {
+  "emits": [
+   "code/modules/body/body.dm:148",
+   "code/modules/body/body.dm:164"
+  ],
+  "fields": [
+   "affliction",
+   "added"
+  ],
+  "listeners": [
+   "code/controllers/subsystems/contracts.dm:118"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/body_afflictions_changed",
+  "tests": [
+   "code/modules/unit_tests/dq_medical_damage_model_tests.dm:509"
+  ]
+ },
+ "/datum/om/event/body_part_attached": {
+  "emits": [
+   "code/modules/body/parts/attach.dm:231"
+  ],
+  "fields": [
+   "part"
+  ],
+  "listeners": [],
+  "reads_result": false,
+  "target": "review",
+  "tests": [
+   "code/modules/unit_tests/dq_part_lifecycle_tests.dm:64"
+  ]
+ },
+ "/datum/om/event/body_part_detached": {
+  "emits": [
+   "code/modules/body/parts/attach.dm:285"
+  ],
+  "fields": [
+   "part"
+  ],
+  "listeners": [],
+  "reads_result": false,
+  "target": "review",
+  "tests": [
+   "code/modules/unit_tests/dq_part_lifecycle_tests.dm:63"
+  ]
+ },
+ "/datum/om/event/carbon_slip": {
+  "emits": [
+   "code/modules/mob/living/carbon/carbon.dm:407",
+   "code/modules/mob/living/carbon/carbon.dm:408"
+  ],
+  "fields": [
+   "slipped_on",
+   "stun_duration"
+  ],
+  "listeners": [
+   "code/datums/behaviours/omen.dm:18"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/carbon_slip",
+  "tests": []
+ },
+ "/datum/om/event/click": {
+  "emits": [
+   "code/controllers/kernel/latency.dm:170"
+  ],
+  "fields": [
+   "location",
+   "control",
+   "params",
+   "user"
+  ],
+  "listeners": [
+   "code/datums/entity_state/crafting/crafting.dm:20",
+   "code/modules/mob/living/living.dm:1086",
+   "code/modules/nifsoft/nif_tgui.dm:67",
+   "code/modules/vore/eating/living.dm:1445"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/click",
+  "tests": []
+ },
+ "/datum/om/event/client_click": {
+  "emits": [
+   "code/modules/client/client procs.dm:953"
+  ],
+  "fields": [
+   "target",
+   "location",
+   "control",
+   "params",
+   "user"
+  ],
+  "listeners": [
+   "code/_onclick/hud/action/action_screen_objects.dm:339",
+   "code/_onclick/hud/action/action_screen_objects.dm:357",
+   "code/_onclick/hud/action/action_screen_objects.dm:359"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/client_click",
+  "tests": []
+ },
+ "/datum/om/event/climb_shake": {
+  "emits": [
+   "code/datums/capabilities/library/flip.dm:51",
+   "code/game/objects/structures.dm:33",
+   "code/game/objects/structures/crates_lockers/crates.dm:52",
+   "code/modules/power/solar.dm:162",
+   "code/modules/tables/flipping.dm:52"
+  ],
+  "fields": [
+   "user"
+  ],
+  "listeners": [
+   "code/datums/behaviours/climbable.dm:9"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/climb_shake",
+  "tests": []
+ },
+ "/datum/om/event/climb_start": {
+  "emits": [
+   "code/datums/behaviours/climbable.dm:261",
+   "code/datums/capabilities/library/climb.dm:50",
+   "code/game/objects/buckling.dm:66",
+   "code/game/objects/structures/low_wall.dm:129",
+   "code/game/objects/structures/crates_lockers/__closets.dm:407",
+   "code/modules/vehicles/cargo_train.dm:424"
+  ],
+  "fields": [
+   "user"
+  ],
+  "listeners": [
+   "code/datums/behaviours/climbable.dm:9"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/climb_start",
+  "tests": []
+ },
+ "/datum/om/event/closet_closed": {
+  "emits": [
+   "code/game/objects/structures/crates_lockers/__closets.dm:235",
+   "code/game/objects/structures/crates_lockers/__closets.dm:236"
+  ],
+  "fields": [],
+  "listeners": [
+   "code/datums/behaviours/bluespace_connection.dm:7"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/closet_closed",
+  "tests": []
+ },
+ "/datum/om/event/disposal_link": {
+  "emits": [
+   "code/game/objects/structures/watercloset.dm:52",
+   "code/modules/recycling/disposal_machines.dm:72",
+   "code/modules/recycling/disposal_outlet.dm:27"
+  ],
+  "fields": [
+   "trunk"
+  ],
+  "listeners": [
+   "code/datums/entity_state/machinery/disposal_connection.dm:26"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/disposal_link",
+  "tests": []
+ },
+ "/datum/om/event/disposal_receive": {
+  "emits": [
+   "code/datums/entity_state/machinery/disposal_connection.dm:109"
+  ],
+  "fields": [
+   "items",
+   "gas"
+  ],
+  "listeners": [
+   "code/game/objects/structures/watercloset.dm:50",
+   "code/modules/recycling/disposal_machines.dm:70",
+   "code/modules/recycling/disposal_outlet.dm:25"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/disposal_receive",
+  "tests": []
+ },
+ "/datum/om/event/disposal_unlink": {
+  "emits": [
+   "code/modules/recycling/disposal_machines.dm:93",
+   "code/modules/recycling/disposal_machines.dm:765",
+   "code/modules/recycling/disposal_outlet.dm:31",
+   "code/modules/recycling/disposal_outlet.dm:61",
+   "code/modules/recycling/disposal_trunk.dm:17"
+  ],
+  "fields": [],
+  "listeners": [
+   "code/datums/entity_state/machinery/disposal_connection.dm:27"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/disposal_unlink",
+  "tests": []
+ },
+ "/datum/om/event/do_after_began": {
+  "emits": [
+   "code/datums/om/timed_action.dm:105"
+  ],
+  "fields": [],
+  "listeners": [
+   "code/modules/mob/living/silicon/robot/robot_simple_items.dm:608"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/do_after_began",
+  "tests": []
+ },
+ "/datum/om/event/do_after_ended": {
+  "emits": [
+   "code/datums/om/timed_action.dm:193"
+  ],
+  "fields": [],
+  "listeners": [
+   "code/modules/mob/living/silicon/robot/robot_simple_items.dm:609"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/do_after_ended",
+  "tests": []
+ },
+ "/datum/om/event/dqai_damage_taken": {
+  "emits": [
+   "code/modules/combat_ai/brain/brain.dm:603"
+  ],
+  "fields": [
+   "amount",
+   "injury_kind",
+   "attacker"
+  ],
+  "listeners": [
+   "code/modules/generated_station/generated_station_defenders.dm:18"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/dqai_damage_taken",
+  "tests": []
+ },
+ "/datum/om/event/dqai_target_changed": {
+  "emits": [
+   "code/modules/combat_ai/behaviors/parity.dm:112",
+   "code/modules/combat_ai/brain/brain.dm:450",
+   "code/modules/combat_ai/brain/brain.dm:602",
+   "code/modules/combat_ai/brain/public_api.dm:114"
+  ],
+  "fields": [
+   "new_target",
+   "old_target"
+  ],
+  "listeners": [],
+  "reads_result": false,
+  "target": "delete",
+  "tests": []
+ },
+ "/datum/om/event/dqai_target_lost": {
+  "emits": [
+   "code/modules/combat_ai/brain/brain.dm:460",
+   "code/modules/combat_ai/brain/public_api.dm:24"
+  ],
+  "fields": [
+   "old_target"
+  ],
+  "listeners": [],
+  "reads_result": false,
+  "target": "delete",
+  "tests": []
+ },
+ "/datum/om/event/examine": {
+  "emits": [
+   "code/datums/om_events/atom_events.dm:31",
+   "code/datums/om_events/atom_events.dm:32"
+  ],
+  "fields": [
+   "user",
+   "texts"
+  ],
+  "listeners": [
+   "code/datums/entity_state/machinery/disposal_connection.dm:28",
+   "code/datums/entity_state/materials/material_container.dm:84",
+   "code/datums/entity_state/materials/material_container.dm:108",
+   "code/datums/entity_state/materials/material_container.dm:110",
+   "code/datums/entity_state/reagent_hose/connector.dm:60",
+   "code/modules/materials/engineering/material_diagnostics.dm:32",
+   "code/modules/materials/engineering/material_diagnostics.dm:55",
+   "code/modules/materials/engineering/material_responses.dm:78",
+   "code/datums/behaviours/burning.dm:21",
+   "code/datums/behaviours/climbable.dm:9"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/examine",
+  "tests": [
+   "code/modules/unit_tests/dx_reactions_work_tests.dm:359"
+  ]
+ },
+ "/datum/om/event/ghost_query_complete": {
+  "emits": [
+   "code/datums/ghost_query.dm:32"
+  ],
+  "fields": [],
+  "listeners": [
+   "code/game/objects/items/antag_spawners.dm:22",
+   "code/game/objects/items/antag_spawners.dm:32",
+   "code/game/objects/structures/ghost_pods/ghost_pods.dm:29",
+   "code/game/objects/structures/ghost_pods/ghost_pods.dm:37",
+   "code/game/objects/structures/ghost_pods/ghost_pods.dm:43",
+   "code/modules/blob2/blobs/core.dm:175",
+   "code/modules/blob2/blobs/core.dm:190",
+   "code/modules/mob/living/carbon/brain/MMI.dm:273",
+   "code/modules/mob/living/carbon/brain/MMI.dm:283",
+   "code/modules/mob/living/simple_mob/subtypes/animal/borer/borer_query.dm:6",
+   "code/modules/mob/living/simple_mob/subtypes/animal/borer/borer_query.dm:14"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/ghost_query_complete",
+  "tests": []
+ },
+ "/datum/om/event/handle_disabilities": {
+  "emits": [
+   "code/modules/mob/living/life/living_systems.dm:429",
+   "code/modules/mob/living/life/living_systems.dm:450"
+  ],
+  "fields": [],
+  "listeners": [
+   "code/datums/entity_state/disabilities/_disability.dm:4",
+   "code/datums/entity_state/disabilities/_disability.dm:9"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/handle_disabilities",
+  "tests": []
+ },
+ "/datum/om/event/hitby": {
+  "emits": [
+   "code/game/atom/_atom.dm:362",
+   "code/game/atom/_atom.dm:363"
+  ],
+  "fields": [
+   "source",
+   "throwingdatum"
+  ],
+  "listeners": [
+   "code/datums/behaviours/bluespace_connection.dm:7"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/hitby",
+  "tests": [
+   "code/modules/unit_tests/dx_reactions_work_tests.dm:359"
+  ]
+ },
+ "/datum/om/event/hose_forcepump": {
+  "emits": [
+   "code/modules/power/fusion/core/_core.dm:69",
+   "code/modules/reagents/machinery/pump.dm:86"
+  ],
+  "fields": [],
+  "listeners": [
+   "code/datums/entity_state/reagent_hose/connector.dm:62"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/hose_forcepump",
+  "tests": []
+ },
+ "/datum/om/event/human_dna_finalized": {
+  "emits": [
+   "code/game/machinery/cloning.dm:185",
+   "code/game/machinery/protean_reconstitutor.dm:320",
+   "code/game/machinery/virtual_reality/ar_console.dm:165",
+   "code/game/machinery/virtual_reality/vr_console.dm:379",
+   "code/game/machinery/virtual_reality/vr_procs.dm:94",
+   "code/game/objects/structures/ghost_pods/event.dm:175",
+   "code/game/objects/structures/ghost_pods/unified_ghost_hole.dm:144",
+   "code/modules/admin/verbs/randomverbs.dm:605",
+   "code/modules/mob/living/living.dm:247",
+   "code/modules/mob/new_player/new_player.dm:372",
+   "code/modules/organs/internal/brain.dm:279",
+   "code/modules/resleeving/autoresleever.dm:218",
+   "code/modules/resleeving/machines.dm:32",
+   "code/modules/resleeving/machines.dm:231",
+   "code/modules/tgui/modules/appearance_changer.dm:105",
+   "code/modules/vore/eating/inbelly_spawn.dm:133"
+  ],
+  "fields": [],
+  "listeners": [
+   "code/datums/entity_state/species/xenochimera.dm:20",
+   "code/datums/entity_state/traits/drippy.dm:8"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/human_dna_finalized",
+  "tests": []
+ },
+ "/datum/om/event/instrument_end": {
+  "emits": [
+   "code/modules/instruments/songs/_song.dm:243"
+  ],
+  "fields": [
+   "finished"
+  ],
+  "listeners": [
+   "code/modules/instruments/piano_synth.dm:23"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/instrument_end",
+  "tests": []
+ },
+ "/datum/om/event/instrument_start": {
+  "emits": [
+   "code/modules/instruments/songs/_song.dm:197"
+  ],
+  "fields": [
+   "starting_song",
+   "player"
+  ],
+  "listeners": [
+   "code/modules/instruments/piano_synth.dm:22"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/instrument_start",
+  "tests": []
+ },
+ "/datum/om/event/item_attack": {
+  "emits": [
+   "code/_onclick/item_attack.dm:281"
+  ],
+  "fields": [
+   "target",
+   "user",
+   "target_zone"
+  ],
+  "listeners": [
+   "code/modules/economy/service_invoices.dm:341"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/item_attack",
+  "tests": []
+ },
+ "/datum/om/event/item_dropped": {
+  "emits": [
+   "code/game/objects/items.dm:468"
+  ],
+  "fields": [
+   "user"
+  ],
+  "listeners": [
+   "code/datums/capabilities/library/two_handed.dm:53",
+   "code/datums/entity_state/squeak.dm:49",
+   "code/datums/entity_state/remote_view.dm:347"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/item_dropped",
+  "tests": []
+ },
+ "/datum/om/event/item_equipped": {
+  "emits": [
+   "code/game/objects/items.dm:522"
+  ],
+  "fields": [
+   "equipper",
+   "slot"
+  ],
+  "listeners": [
+   "code/datums/recursive_move.dm:60",
+   "code/datums/recursive_move.dm:93",
+   "code/datums/capabilities/library/two_handed.dm:54",
+   "code/datums/entity_state/squeak.dm:48",
+   "code/datums/entity_state/remote_view.dm:348"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/item_equipped",
+  "tests": []
+ },
+ "/datum/om/event/item_pickup": {
+  "emits": [
+   "code/game/objects/items.dm:477",
+   "code/game/objects/items.dm:478"
+  ],
+  "fields": [
+   "taker"
+  ],
+  "listeners": [
+   "code/modules/lootpanel/search_object.dm:32"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/item_pickup",
+  "tests": []
+ },
+ "/datum/om/event/item_tool_acted": {
+  "emits": [
+   "code/_onclick/item_attack.dm:107"
+  ],
+  "fields": [
+   "target",
+   "user",
+   "tool_quality",
+   "modifiers"
+  ],
+  "listeners": [],
+  "reads_result": false,
+  "target": "review",
+  "tests": [
+   "code/modules/unit_tests/interaction_tests.dm:60",
+   "code/modules/unit_tests/interaction_tests.dm:107"
+  ]
+ },
+ "/datum/om/event/living_aheal": {
+  "emits": [
+   "code/modules/mob/living/living.dm:248"
+  ],
+  "fields": [],
+  "listeners": [
+   "code/datums/status_effects/_status_effect.dm:56"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/living_aheal",
+  "tests": []
+ },
+ "/datum/om/event/living_death_final": {
+  "emits": [
+   "code/modules/mob/death.dm:144"
+  ],
+  "fields": [
+   "gibbed"
+  ],
+  "listeners": [],
+  "reads_result": false,
+  "target": "review",
+  "tests": [
+   "code/modules/unit_tests/dq_vital_lifecycle_tests.dm:18"
+  ]
+ },
+ "/datum/om/event/living_injured": {
+  "emits": [
+   "code/modules/body/injury.dm:123"
+  ],
+  "fields": [
+   "kind",
+   "applied",
+   "zone",
+   "source",
+   "flags"
+  ],
+  "listeners": [
+   "code/modules/combat_ai/brain/brain.dm:84",
+   "code/modules/mob/living/bot/secbot.dm:196",
+   "code/modules/mob/living/silicon/pai/pai.dm:121"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/living_injured",
+  "tests": []
+ },
+ "/datum/om/event/living_injury_explained": {
+  "emits": [
+   "code/modules/body/injury.dm:72",
+   "code/modules/body/injury.dm:157"
+  ],
+  "fields": [
+   "incoming_kind",
+   "landed_kind",
+   "stages",
+   "zone",
+   "source",
+   "flags"
+  ],
+  "listeners": [],
+  "reads_result": false,
+  "target": "review",
+  "tests": [
+   "code/modules/unit_tests/dq_armor_tests.dm:178",
+   "code/modules/unit_tests/dq_armor_tests.dm:189",
+   "code/modules/unit_tests/dq_harm_mitigation_tests.dm:53",
+   "code/modules/unit_tests/dq_harm_mitigation_tests.dm:55",
+   "code/modules/unit_tests/dq_harm_mitigation_tests.dm:113",
+   "code/modules/unit_tests/dq_harm_mitigation_tests.dm:124",
+   "code/modules/unit_tests/dq_harm_mitigation_tests.dm:154",
+   "code/modules/unit_tests/dq_harm_mitigation_tests.dm:185"
+  ]
+ },
+ "/datum/om/event/living_revived": {
+  "emits": [
+   "code/modules/body/revival.dm:149"
+  ],
+  "fields": [
+   "source",
+   "reason"
+  ],
+  "listeners": [
+   "code/controllers/subsystems/contracts.dm:119"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/living_revived",
+  "tests": [
+   "code/modules/unit_tests/dq_denecrotizer_tests.dm:31",
+   "code/modules/unit_tests/dq_denecrotizer_tests.dm:38",
+   "code/modules/unit_tests/dq_denecrotizer_tests.dm:57",
+   "code/modules/unit_tests/dq_denecrotizer_tests.dm:68",
+   "code/modules/unit_tests/dq_vital_lifecycle_tests.dm:19"
+  ]
+ },
+ "/datum/om/event/living_shield_injury": {
+  "emits": [
+   "code/modules/body/injury.dm:90",
+   "code/modules/body/injury.dm:93"
+  ],
+  "fields": [
+   "kind",
+   "amount_ref",
+   "zone",
+   "source",
+   "flags"
+  ],
+  "listeners": [
+   "code/modules/mob/living/silicon/robot/robot.dm:168",
+   "code/modules/mob/_modifiers/modifiers.dm:78",
+   "code/modules/mob/_modifiers/modifiers.dm:82"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/living_shield_injury",
+  "tests": []
+ },
+ "/datum/om/event/living_status_blind": {
+  "emits": [],
+  "fields": [
+   "amount"
+  ],
+  "listeners": [
+   "code/datums/entity_state/remote_view.dm:78",
+   "code/datums/entity_state/remote_view.dm:211",
+   "code/datums/om/library.dm:25"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/living_status_blind",
+  "tests": []
+ },
+ "/datum/om/event/living_status_paralyze": {
+  "emits": [],
+  "fields": [
+   "amount"
+  ],
+  "listeners": [
+   "code/datums/entity_state/remote_view.dm:74",
+   "code/datums/entity_state/remote_view.dm:205",
+   "code/datums/om/library.dm:20"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/living_status_paralyze",
+  "tests": []
+ },
+ "/datum/om/event/living_status_stun": {
+  "emits": [],
+  "fields": [
+   "amount"
+  ],
+  "listeners": [
+   "code/datums/entity_state/remote_view.dm:70",
+   "code/datums/entity_state/remote_view.dm:199",
+   "code/datums/om/library.dm:16"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/living_status_stun",
+  "tests": [
+   "code/modules/unit_tests/dq_life_om_tests.dm:1090",
+   "code/modules/unit_tests/dq_life_om_tests.dm:1096"
+  ]
+ },
+ "/datum/om/event/living_status_weaken": {
+  "emits": [],
+  "fields": [
+   "amount"
+  ],
+  "listeners": [
+   "code/datums/entity_state/remote_view.dm:72",
+   "code/datums/entity_state/remote_view.dm:202",
+   "code/datums/om/library.dm:18"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/living_status_weaken",
+  "tests": []
+ },
+ "/datum/om/event/machinery_broken": {
+  "emits": [
+   "code/game/machinery/machinery.dm:699"
+  ],
+  "fields": [
+   "damage_flag"
+  ],
+  "listeners": [],
+  "reads_result": false,
+  "target": "review",
+  "tests": [
+   "code/modules/unit_tests/dq_breakpoint_tests.dm:67",
+   "code/modules/unit_tests/dq_breakpoint_tests.dm:117",
+   "code/modules/unit_tests/dq_breakpoint_tests.dm:123"
+  ]
+ },
+ "/datum/om/event/machinery_destructive_scan": {
+  "emits": [
+   "code/modules/mob/living/silicon/robot/dogborg/dog_sleeper.dm:632",
+   "code/modules/research/tg/machinery/destructive_analyzer.dm:305"
+  ],
+  "fields": [
+   "scanned_atoms"
+  ],
+  "listeners": [
+   "code/modules/mob/living/silicon/robot/dogborg/dog_sleeper.dm:59",
+   "code/modules/research/tg/machinery/destructive_analyzer.dm:30"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/machinery_destructive_scan",
+  "tests": []
+ },
+ "/datum/om/event/machinery_explosion_detected": {
+  "emits": [
+   "code/game/machinery/doppler_array.dm:56"
+  ],
+  "fields": [
+   "epicenter",
+   "devastation_range",
+   "heavy_impact_range",
+   "light_impact_range",
+   "seconds_taken"
+  ],
+  "listeners": [
+   "code/game/machinery/doppler_array.dm:17"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/machinery_explosion_detected",
+  "tests": []
+ },
+ "/datum/om/event/machinery_power_lost": {
+  "emits": [
+   "code/game/machinery/machinery_power.dm:45"
+  ],
+  "fields": [],
+  "listeners": [
+   "code/game/machinery/camera/camera.dm:48"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/machinery_power_lost",
+  "tests": [
+   "code/modules/unit_tests/dq_power_tests.dm:139",
+   "code/modules/unit_tests/dq_power_tests.dm:192"
+  ]
+ },
+ "/datum/om/event/machinery_power_restored": {
+  "emits": [
+   "code/game/machinery/machinery_power.dm:47"
+  ],
+  "fields": [],
+  "listeners": [
+   "code/game/machinery/camera/camera.dm:48"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/machinery_power_restored",
+  "tests": [
+   "code/modules/unit_tests/dq_power_tests.dm:140",
+   "code/modules/unit_tests/dq_power_tests.dm:192"
+  ]
+ },
+ "/datum/om/event/matcontainer_item_consumed": {
+  "emits": [
+   "code/datums/entity_state/materials/material_container.dm:161"
+  ],
+  "fields": [
+   "item",
+   "primary_mat",
+   "mats_consumed",
+   "material_amount",
+   "context"
+  ],
+  "listeners": [
+   "code/datums/entity_state/materials/material_container.dm:37",
+   "code/datums/entity_state/materials/material_container.dm:139",
+   "code/datums/entity_state/materials/material_container.dm:204",
+   "code/datums/entity_state/materials/material_container.dm:254",
+   "code/game/machinery/autolathe.dm:51",
+   "code/modules/mining/machine_silo.dm:26",
+   "code/modules/research/tg/machinery/mech_fabricator.dm:76",
+   "code/modules/research/tg/machinery/_production.dm:49"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/matcontainer_item_consumed",
+  "tests": []
+ },
+ "/datum/om/event/matcontainer_stack_retrieved": {
+  "emits": [
+   "code/datums/entity_state/materials/material_container.dm:670"
+  ],
+  "fields": [
+   "new_stack",
+   "context"
+  ],
+  "listeners": [
+   "code/datums/entity_state/materials/material_container.dm:37",
+   "code/datums/entity_state/materials/material_container.dm:640",
+   "code/modules/mining/machine_silo.dm:27"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/matcontainer_stack_retrieved",
+  "tests": []
+ },
+ "/datum/om/event/material_facts_changed": {
+  "emits": [
+   "code/modules/materials/engineering/material_composites.dm:29"
+  ],
+  "fields": [],
+  "listeners": [
+   "code/game/turfs/simulated/wall_icon.dm:72",
+   "code/game/turfs/simulated/wall_icon.dm:114",
+   "code/modules/materials/properties.dm:47"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/material_facts_changed",
+  "tests": []
+ },
+ "/datum/om/event/material_surgery": {
+  "emits": [
+   "code/modules/surgery/surgery.dm:478",
+   "code/modules/surgery/surgery.dm:483"
+  ],
+  "fields": [
+   "patient",
+   "zone",
+   "success"
+  ],
+  "listeners": [
+   "code/modules/materials/engineering/material_responses.dm:85"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/material_surgery",
+  "tests": []
+ },
+ "/datum/om/event/mob_apply_damage": {
+  "emits": [],
+  "fields": [
+   "damage",
+   "damagetype",
+   "def_zone",
+   "blocked",
+   "wound_bonus",
+   "exposed_wound_bonus",
+   "sharpness",
+   "attack_direction",
+   "attacking_item"
+  ],
+  "listeners": [
+   "code/modules/mob/living/silicon/robot/cloak.dm:131",
+   "code/modules/mob/living/silicon/robot/cloak.dm:136"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/mob_apply_damage",
+  "tests": []
+ },
+ "/datum/om/event/mob_client_login": {
+  "emits": [
+   "code/modules/mob/login.dm:101"
+  ],
+  "fields": [
+   "client"
+  ],
+  "listeners": [
+   "code/datums/cinematics/_cinematic.dm:75",
+   "code/datums/cinematics/_cinematic.dm:163",
+   "code/datums/entity_state/crafting/crafting.dm:6",
+   "code/modules/mob/living/living.dm:1055",
+   "code/modules/nifsoft/nif_tgui.dm:36",
+   "code/modules/vore/eating/living.dm:1408"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/mob_client_login",
+  "tests": []
+ },
+ "/datum/om/event/mob_death": {
+  "emits": [
+   "code/modules/mob/death.dm:124"
+  ],
+  "fields": [
+   "gibbed"
+  ],
+  "listeners": [
+   "code/datums/entity_state/remote_view.dm:80",
+   "code/datums/entity_state/remote_view.dm:404",
+   "code/modules/contracts/medical_trial.dm:155",
+   "code/modules/contracts/medical_trial.dm:320",
+   "code/modules/generated_station/generated_station_defenders.dm:19",
+   "code/modules/mob/living/silicon/robot/dogborg/robot_belly.dm:32",
+   "code/modules/nifsoft/nif.dm:103",
+   "code/modules/nifsoft/nif.dm:108",
+   "code/datums/entity_state/animations/dizzy.dm:11",
+   "code/datums/entity_state/animations/jittery.dm:11",
+   "code/datums/entity_state/animations/dizzy.dm:37",
+   "code/datums/entity_state/animations/jittery.dm:36"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/mob_death",
+  "tests": [
+   "code/modules/unit_tests/dq_vital_lifecycle_tests.dm:17"
+  ]
+ },
+ "/datum/om/event/mob_dna_mutation": {
+  "emits": [
+   "code/game/dna/dna2_domutcheck.dm:69"
+  ],
+  "fields": [],
+  "listeners": [
+   "code/datums/entity_state/remote_view.dm:402"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/mob_dna_mutation",
+  "tests": []
+ },
+ "/datum/om/event/mob_equipped_item": {
+  "emits": [
+   "code/game/objects/items.dm:523"
+  ],
+  "fields": [
+   "equipped_item",
+   "slot"
+  ],
+  "listeners": [
+   "code/controllers/subsystems/contracts.dm:125",
+   "code/datums/capabilities/library/two_handed.dm:104",
+   "code/datums/capabilities/library/two_handed.dm:110",
+   "code/modules/mob/living/carbon/human/species/station/prometheans.dm:249",
+   "code/modules/mob/living/carbon/human/species/station/prometheans.dm:253"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/mob_equipped_item",
+  "tests": []
+ },
+ "/datum/om/event/mob_granted_action": {
+  "emits": [
+   "code/_onclick/hud/action/action.dm:96"
+  ],
+  "fields": [
+   "action"
+  ],
+  "listeners": [
+   "code/_onclick/hud/action/action_screen_objects.dm:215",
+   "code/_onclick/hud/action/action_screen_objects.dm:226"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/mob_granted_action",
+  "tests": []
+ },
+ "/datum/om/event/mob_handle_hud_darksight": {
+  "emits": [
+   "code/modules/mob/living/life/living_systems.dm:634"
+  ],
+  "fields": [],
+  "listeners": [
+   "code/datums/entity_state/remote_view.dm:91"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/mob_handle_hud_darksight",
+  "tests": []
+ },
+ "/datum/om/event/mob_handle_vision": {
+  "emits": [
+   "code/modules/mob/living/life/life_om.dm:156",
+   "code/modules/mob/living/life/living_systems.dm:667",
+   "code/modules/mob/living/life/living_systems.dm:673"
+  ],
+  "fields": [],
+  "listeners": [
+   "code/datums/entity_state/remote_view.dm:84"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/mob_handle_vision",
+  "tests": []
+ },
+ "/datum/om/event/mob_login": {
+  "emits": [
+   "code/modules/mob/login.dm:54"
+  ],
+  "fields": [],
+  "listeners": [
+   "code/controllers/subsystems/contracts.dm:120",
+   "code/datums/progressbar.dm:65",
+   "code/modules/combat_ai/brain/brain.dm:87",
+   "code/modules/maint_recycler/code/vendor_goodies/remote_scene_tools/remote_scene_tools.dm:50",
+   "code/modules/maint_recycler/code/vendor_goodies/remote_scene_tools/remote_scene_tools.dm:56"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/mob_login",
+  "tests": []
+ },
+ "/datum/om/event/mob_logout": {
+  "emits": [
+   "code/modules/mob/logout.dm:2"
+  ],
+  "fields": [],
+  "listeners": [
+   "code/controllers/subsystems/contracts.dm:121",
+   "code/datums/progressbar.dm:64",
+   "code/datums/entity_state/materials/machine_shim.dm:24",
+   "code/modules/maint_recycler/code/vendor_goodies/remote_scene_tools/remote_scene_tools.dm:51",
+   "code/modules/maint_recycler/code/vendor_goodies/remote_scene_tools/remote_scene_tools.dm:56"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/mob_logout",
+  "tests": [
+   "code/modules/unit_tests/dq_contract_tests.dm:792"
+  ]
+ },
+ "/datum/om/event/mob_medical_issues_changed": {
+  "emits": [
+   "code/modules/contracts/medical_trial.dm:509",
+   "code/modules/contracts/medical_trial.dm:521"
+  ],
+  "fields": [],
+  "listeners": [
+   "code/controllers/subsystems/contracts.dm:116"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/mob_medical_issues_changed",
+  "tests": []
+ },
+ "/datum/om/event/mob_mind_transferred_into": {
+  "emits": [
+   "code/datums/mind.dm:109"
+  ],
+  "fields": [
+   "old_character"
+  ],
+  "listeners": [
+   "code/controllers/subsystems/contracts.dm:122"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/mob_mind_transferred_into",
+  "tests": []
+ },
+ "/datum/om/event/mob_mind_transferred_out_of": {
+  "emits": [
+   "code/datums/mind.dm:108"
+  ],
+  "fields": [
+   "new_character"
+  ],
+  "listeners": [
+   "code/controllers/subsystems/contracts.dm:123"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/mob_mind_transferred_out_of",
+  "tests": []
+ },
+ "/datum/om/event/mob_removed_action": {
+  "emits": [
+   "code/_onclick/hud/action/action.dm:118"
+  ],
+  "fields": [
+   "action"
+  ],
+  "listeners": [
+   "code/_onclick/hud/action/action_screen_objects.dm:216",
+   "code/_onclick/hud/action/action_screen_objects.dm:226"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/mob_removed_action",
+  "tests": []
+ },
+ "/datum/om/event/mob_reset_perspective": {
+  "emits": [
+   "code/modules/mob/mob.dm:264"
+  ],
+  "fields": [],
+  "listeners": [
+   "code/datums/entity_state/remote_view.dm:66",
+   "code/datums/entity_state/remote_view.dm:99"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/mob_reset_perspective",
+  "tests": []
+ },
+ "/datum/om/event/mob_statchange": {
+  "emits": [
+   "code/datums/observation/stat_set.dm:23"
+  ],
+  "fields": [
+   "new_stat",
+   "old_stat"
+  ],
+  "listeners": [
+   "code/game/machinery/camera/motion.dm:23",
+   "code/game/machinery/camera/motion.dm:42",
+   "code/modules/combat_ai/brain/brain.dm:83"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/mob_statchange",
+  "tests": []
+ },
+ "/datum/om/event/mob_unequipped_item": {
+  "emits": [
+   "code/modules/mob/inventory.dm:475"
+  ],
+  "fields": [
+   "item",
+   "target"
+  ],
+  "listeners": [
+   "code/controllers/subsystems/contracts.dm:126"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/mob_unequipped_item",
+  "tests": []
+ },
+ "/datum/om/event/movable_attempted_move": {
+  "emits": [
+   "code/datums/recursive_move.dm:101",
+   "code/datums/recursive_move.dm:114",
+   "code/datums/observation/moved.dm:21",
+   "code/datums/observation/moved.dm:27",
+   "code/game/atom/_atom.dm:536",
+   "code/game/objects/items/devices/tvcamera.dm:119",
+   "code/game/objects/items/devices/tvcamera.dm:215"
+  ],
+  "fields": [
+   "old_loc",
+   "new_loc"
+  ],
+  "listeners": [
+   "code/datums/recursive_move.dm:146",
+   "code/datums/topturfcrossed.dm:16",
+   "code/datums/entity_state/remote_view.dm:94",
+   "code/datums/entity_state/remote_view.dm:466",
+   "code/datums/entity_state/materials/machine_shim.dm:23",
+   "code/game/machinery/machinery_power.dm:87",
+   "code/game/machinery/machinery_power.dm:113",
+   "code/game/mecha/equipment/tools/shield_omni.dm:74",
+   "code/game/objects/items/devices/gps.dm:49",
+   "code/game/objects/items/devices/gps.dm:55",
+   "code/game/objects/items/devices/communicator/phone.dm:379",
+   "code/game/objects/items/devices/communicator/phone.dm:387",
+   "code/game/objects/items/weapons/id cards/cards.dm:289",
+   "code/game/objects/items/weapons/storage/ore_bag.dm:154",
+   "code/game/objects/items/weapons/storage/ore_bag.dm:158",
+   "code/modules/clothing/spacesuits/rig/modules/specific/pat_module.dm:32",
+   "code/modules/clothing/spacesuits/rig/modules/specific/pat_module.dm:40",
+   "code/modules/holomap/station_holomap.dm:138",
+   "code/modules/holomap/station_holomap.dm:175",
+   "code/modules/integrated_electronics/subtypes/output.dm:374",
+   "code/modules/mob/living/bot/secbot.dm:245",
+   "code/modules/mob/living/bot/secbot.dm:252",
+   "code/modules/mob/living/bot/secbot.dm:257",
+   "code/modules/mob/living/silicon/robot/robot_simple_items.dm:754",
+   "code/modules/mob/living/silicon/robot/dogborg/dog_modules.dm:470",
+   "code/modules/nifsoft/software/13_soulcatcher.dm:448",
+   "code/modules/paperwork/paper_sticky.dm:114",
+   "code/modules/reagents/reagent_containers/spray.dm:219",
+   "code/modules/shieldgen/directional_shield.dm:104",
+   "code/modules/tgui/modules/appearance_changer.dm:104",
+   "code/modules/tgui/modules/appearance_changer.dm:767",
+   "code/modules/tgui/modules/appearance_changer.dm:1233",
+   "code/modules/tgui/modules/appearance_changer.dm:1243",
+   "code/modules/tgui/modules/appearance_changer.dm:1247",
+   "code/modules/tgui/modules/appearance_changer.dm:1262",
+   "code/modules/tgui/modules/camera.dm:156",
+   "code/modules/tgui/modules/camera.dm:160",
+   "code/modules/tgui/modules/camera.dm:186",
+   "code/modules/tgui/modules/camera.dm:189",
+   "code/modules/tgui/modules/camera.dm:287",
+   "code/datums/recursive_move.dm:3"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/movable_attempted_move",
+  "tests": []
+ },
+ "/datum/om/event/movable_impact": {
+  "emits": [
+   "code/game/atoms_movable.dm:540"
+  ],
+  "fields": [
+   "hit_atom",
+   "throwingdatum"
+  ],
+  "listeners": [
+   "code/datums/entity_state/squeak.dm:46"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/movable_impact",
+  "tests": []
+ },
+ "/datum/om/event/movable_motiontracker": {
+  "emits": [
+   "code/game/objects/items/devices/scanners/motiontracker_service.dm:78"
+  ],
+  "fields": [
+   "source",
+   "echo_turf_location"
+  ],
+  "listeners": [
+   "code/game/objects/items/devices/scanners/motion_tracker.dm:19",
+   "code/modules/mob/motiontracker.dm:9",
+   "code/modules/mob/motiontracker.dm:15",
+   "code/game/objects/items/devices/scanners/motiontracker_service.dm:22"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/movable_motiontracker",
+  "tests": []
+ },
+ "/datum/om/event/moved": {
+  "emits": [
+   "code/datums/om_events/atom_events.dm:57",
+   "code/datums/om_events/atom_events.dm:58"
+  ],
+  "fields": [
+   "old_loc",
+   "direction",
+   "forced"
+  ],
+  "listeners": [
+   "code/controllers/subsystems/contracts.dm:124",
+   "code/datums/connect_containers.dm:46",
+   "code/datums/connect_containers.dm:51",
+   "code/datums/connect_containers.dm:64",
+   "code/datums/connect_containers.dm:76",
+   "code/datums/connect_range.dm:66",
+   "code/datums/connect_range.dm:71",
+   "code/datums/connect_range.dm:104",
+   "code/datums/connect_range.dm:118",
+   "code/datums/entity_state/geiger_sound.dm:34",
+   "code/datums/entity_state/overlay_lighting.dm:124",
+   "code/datums/entity_state/overlay_lighting.dm:235",
+   "code/datums/entity_state/overlay_lighting.dm:238",
+   "code/datums/entity_state/overlay_lighting.dm:241",
+   "code/datums/entity_state/overlay_lighting.dm:243",
+   "code/datums/entity_state/overlay_lighting.dm:254",
+   "code/datums/entity_state/overlay_lighting.dm:265",
+   "code/datums/entity_state/overlay_lighting.dm:290",
+   "code/datums/entity_state/overlay_lighting.dm:320",
+   "code/datums/entity_state/reactive_icon_update.dm:54",
+   "code/datums/entity_state/reactive_icon_update.dm:56",
+   "code/datums/entity_state/remote_view.dm:63",
+   "code/datums/entity_state/turfslip.dm:18",
+   "code/datums/entity_state/reagent_hose/connector.dm:61",
+   "code/datums/entity_state/traits/gargoyle.dm:56",
+   "code/datums/entity_state/traits/gargoyle.dm:98",
+   "code/datums/entity_state/traits/waddle.dm:17",
+   "code/datums/proximity_monitor/proximity_monitor.dm:31",
+   "code/datums/proximity_monitor/proximity_monitor.dm:47",
+   "code/game/orbit.dm:37",
+   "code/game/orbit.dm:53",
+   "code/game/orbit.dm:73",
+   "code/game/machinery/Beacon.dm:19",
+   "code/game/machinery/Beacon.dm:37",
+   "code/game/machinery/camera/motion.dm:23",
+   "code/game/machinery/camera/motion.dm:42",
+   "code/game/machinery/doors/door.dm:142",
+   "code/game/machinery/doors/door.dm:148",
+   "code/game/objects/effects/countdown.dm:32",
+   "code/game/objects/effects/countdown.dm:43",
+   "code/game/objects/effects/particle_holder.dm:40",
+   "code/game/objects/items/leash.dm:39",
+   "code/game/objects/items/leash.dm:47",
+   "code/game/objects/items/leash.dm:62",
+   "code/game/objects/items/leash.dm:68",
+   "code/modules/materials/engineering/material_service.dm:281",
+   "code/modules/materials/engineering/material_service.dm:396",
+   "code/modules/materials/engineering/material_service.dm:399",
+   "code/modules/mob/living/carbon/human/species/station/prometheans.dm:248",
+   "code/modules/mob/living/carbon/human/species/station/prometheans.dm:253",
+   "code/modules/mob/living/simple_mob/overmap_mob.dm:46",
+   "code/modules/mob/living/simple_mob/overmap_mob.dm:180",
+   "code/modules/xenoarcheaology/effect_master.dm:90",
+   "code/datums/behaviours/absorbent.dm:4",
+   "code/datums/behaviours/cleaning.dm:4",
+   "code/datums/behaviours/climbable.dm:9",
+   "code/datums/behaviours/footstep.dm:7",
+   "code/datums/behaviours/omen.dm:17",
+   "code/datums/behaviours/resize_guard.dm:6",
+   "code/datums/behaviours/slip_prone.dm:6",
+   "code/datums/behaviours/slosh.dm:5",
+   "code/datums/behaviours/swarming.dm:7",
+   "code/datums/behaviours/tethered_item.dm:28",
+   "code/datums/behaviours/tethered_item.dm:31",
+   "code/datums/entity_state/geiger_sound.dm:41",
+   "code/datums/entity_state/overlay_lighting.dm:148",
+   "code/datums/entity_state/remote_view.dm:142",
+   "code/datums/entity_state/remote_view.dm:346",
+   "code/datums/proximity_monitor/proximity_monitor.dm:42",
+   "code/modules/lootpanel/search_object.dm:33"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/moved",
+  "tests": [
+   "code/modules/unit_tests/dq_atmos_tests.dm:4571",
+   "code/modules/unit_tests/dx_reactions_work_tests.dm:359"
+  ]
+ },
+ "/datum/om/event/moved_down_stairs": {
+  "emits": [
+   "code/modules/multiz/stairs.dm:449",
+   "code/modules/multiz/stairs.dm:450",
+   "code/modules/multiz/stairs.dm:490",
+   "code/modules/multiz/stairs.dm:491"
+  ],
+  "fields": [
+   "old_loc"
+  ],
+  "listeners": [
+   "code/datums/behaviours/omen.dm:19"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/moved_down_stairs",
+  "tests": []
+ },
+ "/datum/om/event/obj_deconstruct": {
+  "emits": [
+   "code/game/machinery/machinery.dm:614",
+   "code/game/objects/obj_defense.dm:109"
+  ],
+  "fields": [
+   "disassembled"
+  ],
+  "listeners": [
+   "code/datums/entity_state/materials/material_container.dm:87"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/obj_deconstruct",
+  "tests": []
+ },
+ "/datum/om/event/observer_apc": {
+  "emits": [
+   "code/datums/observation/power_change.dm:23"
+  ],
+  "fields": [],
+  "listeners": [
+   "code/game/objects/items/devices/radio/intercom.dm:24"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/observer_apc",
+  "tests": []
+ },
+ "/datum/om/event/observer_globalmoved": {
+  "emits": [
+   "code/modules/blob2/overmind/types/reactive_spines.dm:64"
+  ],
+  "fields": [],
+  "listeners": [
+   "code/modules/blob2/overmind/types/reactive_spines.dm:57"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/observer_globalmoved",
+  "tests": []
+ },
+ "/datum/om/event/observer_shuttle_added": {
+  "emits": [
+   "code/datums/observation/shuttle_added.dm:17"
+  ],
+  "fields": [
+   "shuttle"
+  ],
+  "listeners": [
+   "code/modules/shuttles/shuttles_web.dm:438"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/observer_shuttle_added",
+  "tests": []
+ },
+ "/datum/om/event/observer_shuttle_moved": {
+  "emits": [
+   "code/modules/shuttles/shuttle.dm:341"
+  ],
+  "fields": [
+   "old_location",
+   "destination"
+  ],
+  "listeners": [
+   "code/modules/overmap/ships/landable.dm:71",
+   "code/modules/overmap/ships/landable.dm:139",
+   "code/modules/overmap/ships/landable.dm:144"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/observer_shuttle_moved",
+  "tests": []
+ },
+ "/datum/om/event/observer_shuttle_pre_move": {
+  "emits": [
+   "code/modules/shuttles/shuttle.dm:325"
+  ],
+  "fields": [
+   "old_location",
+   "destination"
+  ],
+  "listeners": [
+   "code/modules/overmap/ships/landable.dm:70",
+   "code/modules/overmap/ships/landable.dm:159"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/observer_shuttle_pre_move",
+  "tests": []
+ },
+ "/datum/om/event/observer_turf_entered": {
+  "emits": [
+   "code/datums/observation/turf_enterexit.dm:21"
+  ],
+  "fields": [
+   "arrived",
+   "old_loc"
+  ],
+  "listeners": [
+   "code/datums/topturfcrossed.dm:34",
+   "code/datums/topturfcrossed.dm:40",
+   "code/game/atom/_atom.dm:162",
+   "code/game/atom/_atom.dm:170"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/observer_turf_entered",
+  "tests": []
+ },
+ "/datum/om/event/picked_up_item": {
+  "emits": [
+   "code/game/objects/items.dm:479",
+   "code/game/objects/items.dm:480"
+  ],
+  "fields": [
+   "item"
+  ],
+  "listeners": [
+   "code/datums/behaviours/omen.dm:21"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/picked_up_item",
+  "tests": []
+ },
+ "/datum/om/event/popup_cleared": {
+  "emits": [
+   "code/_onclick/hud/map_popups.dm:174"
+  ],
+  "fields": [
+   "window_id"
+  ],
+  "listeners": [
+   "code/_onclick/hud/picture_in_picture.dm:176",
+   "code/_onclick/hud/picture_in_picture.dm:181"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/popup_cleared",
+  "tests": []
+ },
+ "/datum/om/event/qdeleting": {
+  "emits": [
+   "code/datums/lifecycle/transaction.dm:138"
+  ],
+  "fields": [
+   "force"
+  ],
+  "listeners": [
+   "code/datums/chat_message.dm:213",
+   "code/datums/cogbar.dm:41",
+   "code/datums/connect_containers.dm:46",
+   "code/datums/connect_containers.dm:52",
+   "code/datums/connect_range.dm:66",
+   "code/datums/connect_range.dm:72",
+   "code/datums/progressbar.dm:63",
+   "code/datums/recursive_move.dm:56",
+   "code/datums/recursive_move.dm:93",
+   "code/datums/entity_state/mind_host.dm:79",
+   "code/datums/entity_state/mind_host.dm:82",
+   "code/datums/entity_state/overlay_lighting.dm:235",
+   "code/datums/entity_state/overlay_lighting.dm:237",
+   "code/datums/entity_state/overlay_lighting.dm:241",
+   "code/datums/entity_state/overlay_lighting.dm:242",
+   "code/datums/entity_state/overlay_lighting.dm:254",
+   "code/datums/entity_state/overlay_lighting.dm:264",
+   "code/datums/entity_state/overlay_lighting.dm:290",
+   "code/datums/entity_state/overlay_lighting.dm:320",
+   "code/datums/entity_state/remote_view.dm:98",
+   "code/datums/entity_state/materials/machine_shim.dm:28",
+   "code/datums/entity_state/species/shadekin/powers/dark_maw.dm:81",
+   "code/datums/proximity_monitor/proximity_monitor.dm:31",
+   "code/datums/proximity_monitor/proximity_monitor.dm:33",
+   "code/datums/proximity_monitor/proximity_monitor.dm:37",
+   "code/datums/proximity_monitor/proximity_monitor.dm:41",
+   "code/game/atoms_movable.dm:64",
+   "code/game/atoms_movable.dm:139",
+   "code/game/atoms_movable.dm:781",
+   "code/game/machinery/Beacon.dm:19",
+   "code/game/machinery/Beacon.dm:37",
+   "code/game/machinery/atmoalter/meter.dm:24",
+   "code/game/machinery/atmoalter/meter.dm:27",
+   "code/game/machinery/camera/motion.dm:24",
+   "code/game/machinery/camera/motion.dm:42",
+   "code/game/machinery/doors/door.dm:142",
+   "code/game/machinery/doors/door.dm:148",
+   "code/game/objects/items.dm:220",
+   "code/game/objects/items.dm:234",
+   "code/game/objects/effects/particle_holder.dm:37",
+   "code/game/objects/items/devices/radio/radio_service.dm:165",
+   "code/game/objects/items/devices/radio/radio_service.dm:172",
+   "code/game/objects/items/weapons/capture_crystal.dm:308",
+   "code/game/objects/items/weapons/capture_crystal.dm:309",
+   "code/game/objects/items/weapons/capture_crystal.dm:439",
+   "code/game/objects/items/weapons/capture_crystal.dm:440",
+   "code/game/objects/items/weapons/capture_crystal.dm:450",
+   "code/game/objects/structures/extinguisher.dm:21",
+   "code/game/objects/structures/extinguisher.dm:46",
+   "code/game/objects/structures/extinguisher.dm:87",
+   "code/game/objects/structures/extinguisher.dm:100",
+   "code/modules/admin/tag.dm:13",
+   "code/modules/events/carp_migration.dm:77",
+   "code/modules/events/carp_migration.dm:92",
+   "code/modules/events/gnat_migration.dm:73",
+   "code/modules/events/gnat_migration.dm:88",
+   "code/modules/events/jellyfish_migration.dm:73",
+   "code/modules/events/jellyfish_migration.dm:89",
+   "code/modules/events/ray_migration.dm:73",
+   "code/modules/events/ray_migration.dm:88",
+   "code/modules/events/shark_migration.dm:73",
+   "code/modules/events/shark_migration.dm:88",
+   "code/modules/events/spacefish_migration.dm:88",
+   "code/modules/events/spacefish_migration.dm:103",
+   "code/modules/gamemaster/event2/events/mob_spawning.dm:83",
+   "code/modules/gamemaster/event2/events/mob_spawning.dm:99",
+   "code/modules/holomap/station_holomap.dm:139",
+   "code/modules/holomap/station_holomap.dm:175",
+   "code/modules/integrated_electronics/subtypes/manipulation.dm:225",
+   "code/modules/integrated_electronics/subtypes/manipulation.dm:233",
+   "code/modules/lootpanel/contents.dm:3",
+   "code/modules/lootpanel/contents.dm:47",
+   "code/modules/mob/living/silicon/robot/robot.dm:398",
+   "code/modules/mob/living/silicon/robot/robot.dm:410",
+   "code/modules/mob/living/silicon/robot/robot.dm:1581",
+   "code/modules/mob/living/silicon/robot/robot.dm:1587",
+   "code/modules/mob/living/simple_mob/subtypes/vore/dominated_brain.dm:50",
+   "code/modules/mob/living/simple_mob/subtypes/vore/dominated_brain.dm:51",
+   "code/modules/mob/living/simple_mob/subtypes/vore/dominated_brain.dm:61",
+   "code/modules/mob/living/simple_mob/subtypes/vore/dominated_brain.dm:68",
+   "code/modules/nifsoft/nif_tgui.dm:37",
+   "code/modules/overmap/ships/landable.dm:118",
+   "code/modules/shuttles/shuttle_autodock.dm:74",
+   "code/modules/shuttles/shuttle_autodock.dm:77",
+   "code/modules/tooltip/tooltip.dm:94",
+   "code/modules/tooltip/tooltip.dm:95",
+   "code/modules/tooltip/tooltip.dm:167",
+   "code/datums/entity_state/remote_view.dm:345",
+   "code/modules/lootpanel/search_object.dm:34"
+  ],
+  "note": "most hooks only clear a reference: declare the relation and delete the hook",
+  "reads_result": false,
+  "target": "/datum/notice/qdeleting",
+  "tests": [
+   "code/modules/unit_tests/dq_destroy_guard_tests.dm:109",
+   "code/modules/unit_tests/dq_destroy_transaction_tests.dm:33",
+   "code/modules/unit_tests/dq_destroy_transaction_tests.dm:304",
+   "code/modules/unit_tests/dq_state_tests.dm:256",
+   "code/modules/unit_tests/dq_state_tests.dm:263"
+  ]
+ },
+ "/datum/om/event/reagent_expose_obj": {
+  "emits": [
+   "code/modules/reagents/reagents/_reagents.dm:177"
+  ],
+  "fields": [
+   "reagent",
+   "amount"
+  ],
+  "listeners": [
+   "code/modules/xenoarcheaology/effect_master.dm:91"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/reagent_expose_obj",
+  "tests": []
+ },
+ "/datum/om/event/reagents_holder_reacted": {
+  "emits": [
+   "code/modules/reagents/holder/holder.dm:107"
+  ],
+  "fields": [
+   "chemical_reaction"
+  ],
+  "listeners": [],
+  "reads_result": false,
+  "target": "review",
+  "tests": [
+   "code/modules/unit_tests/reagent_tests.dm:123",
+   "code/modules/unit_tests/reagent_tests.dm:157",
+   "code/modules/unit_tests/reagent_tests.dm:164",
+   "code/modules/unit_tests/reagent_tests.dm:167"
+  ]
+ },
+ "/datum/om/event/remote_view_clear": {
+  "emits": [
+   "code/datums/entity_state/remote_view.dm:530",
+   "code/datums/entity_state/remote_view.dm:532",
+   "code/game/objects/items.dm:750",
+   "code/modules/tgui/modules/ntos-only/uav.dm:90",
+   "code/modules/tgui/modules/ntos-only/uav.dm:103",
+   "code/modules/tgui/modules/ntos-only/uav.dm:112"
+  ],
+  "fields": [],
+  "listeners": [
+   "code/datums/entity_state/remote_view.dm:67",
+   "code/datums/entity_state/remote_view.dm:100",
+   "code/datums/entity_state/remote_view.dm:350",
+   "code/datums/entity_state/remote_view.dm:433"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/remote_view_clear",
+  "tests": []
+ },
+ "/datum/om/event/robot_belly_fullness": {
+  "emits": [
+   "code/modules/mob/living/silicon/robot/robot.dm:1351"
+  ],
+  "fields": [
+   "belly_class",
+   "fullness_ref"
+  ],
+  "listeners": [
+   "code/modules/mob/living/silicon/robot/dogborg/robot_belly.dm:34"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/robot_belly_fullness",
+  "tests": []
+ },
+ "/datum/om/event/robot_equipment_changed": {
+  "emits": [
+   "code/modules/mob/living/silicon/robot/inventory.dm:281"
+  ],
+  "fields": [
+   "item"
+  ],
+  "listeners": [
+   "code/modules/mob/living/silicon/robot/dogborg/robot_belly.dm:33"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/robot_equipment_changed",
+  "tests": []
+ },
+ "/datum/om/event/silicon_laws_changed": {
+  "emits": [
+   "code/modules/mob/living/silicon/laws.dm:89"
+  ],
+  "fields": [],
+  "listeners": [
+   "code/modules/mob/living/silicon/robot/robot.dm:1581",
+   "code/modules/mob/living/silicon/robot/robot.dm:1586"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/silicon_laws_changed",
+  "tests": []
+ },
+ "/datum/om/event/slot_inserted": {
+  "emits": [
+   "code/datums/containment/ledger.dm:292",
+   "code/datums/containment/ledger.dm:355"
+  ],
+  "fields": [
+   "thing",
+   "slot_id"
+  ],
+  "listeners": [],
+  "reads_result": false,
+  "target": "review",
+  "tests": [
+   "code/modules/unit_tests/dq_containment_tests.dm:60"
+  ]
+ },
+ "/datum/om/event/slot_removed": {
+  "emits": [
+   "code/datums/containment/ledger.dm:317",
+   "code/datums/containment/ledger.dm:339"
+  ],
+  "fields": [
+   "thing",
+   "slot_id"
+  ],
+  "listeners": [],
+  "reads_result": false,
+  "target": "review",
+  "tests": [
+   "code/modules/unit_tests/dq_containment_tests.dm:61"
+  ]
+ },
+ "/datum/om/event/stun_effect": {
+  "emits": [
+   "code/modules/mob/living/living_defense.dm:95",
+   "code/modules/mob/living/living_defense.dm:96"
+  ],
+  "fields": [
+   "stun_amount",
+   "agony_amount",
+   "def_zone",
+   "used_weapon",
+   "electric"
+  ],
+  "listeners": [
+   "code/datums/behaviours/omen.dm:20"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/stun_effect",
+  "tests": []
+ },
+ "/datum/om/event/techweb_add_design": {
+  "emits": [
+   "code/modules/research/tg/techwebs/_techweb.dm:216"
+  ],
+  "fields": [
+   "researched_design",
+   "custom"
+  ],
+  "listeners": [
+   "code/modules/research/tg/machinery/mech_fabricator.dm:94",
+   "code/modules/research/tg/machinery/mech_fabricator.dm:100",
+   "code/modules/research/tg/machinery/_production.dm:91",
+   "code/modules/research/tg/machinery/_production.dm:96"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/techweb_add_design",
+  "tests": []
+ },
+ "/datum/om/event/techweb_remove_design": {
+  "emits": [
+   "code/modules/research/tg/techwebs/_techweb.dm:238"
+  ],
+  "fields": [
+   "removed_design",
+   "custom"
+  ],
+  "listeners": [
+   "code/modules/research/tg/machinery/mech_fabricator.dm:94",
+   "code/modules/research/tg/machinery/mech_fabricator.dm:100",
+   "code/modules/research/tg/machinery/_production.dm:91",
+   "code/modules/research/tg/machinery/_production.dm:96"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/techweb_remove_design",
+  "tests": []
+ },
+ "/datum/om/event/telesci_teleport": {
+  "emits": [
+   "code/modules/telesci/telesci_computer.dm:414",
+   "code/modules/telesci/telesci_computer.dm:415"
+  ],
+  "fields": [
+   "teleported_things",
+   "target_turf",
+   "sending"
+  ],
+  "listeners": [
+   "code/modules/research/tg/experisci/experiment/instances/teleporting.dm:10",
+   "code/modules/research/tg/experisci/experiment/instances/teleporting.dm:15"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/telesci_teleport",
+  "tests": []
+ },
+ "/datum/om/event/tgui_window_visible": {
+  "emits": [
+   "code/modules/tgui/tgui_window.dm:554"
+  ],
+  "fields": [
+   "client"
+  ],
+  "listeners": [
+   "code/_onclick/hud/map_view.dm:55",
+   "code/_onclick/hud/map_view.dm:62"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/tgui_window_visible",
+  "tests": []
+ },
+ "/datum/om/event/tool_atom_acted": {
+  "emits": [
+   "code/_onclick/item_attack.dm:108"
+  ],
+  "fields": [
+   "tool_quality",
+   "secondary",
+   "target",
+   "user",
+   "modifiers"
+  ],
+  "listeners": [],
+  "reads_result": false,
+  "target": "review",
+  "tests": [
+   "code/modules/unit_tests/interaction_tests.dm:61",
+   "code/modules/unit_tests/interaction_tests.dm:107"
+  ]
+ },
+ "/datum/om/event/trait_gained": {
+  "emits": [
+   "code/_helpers/traits.dm:83"
+  ],
+  "fields": [
+   "trait"
+  ],
+  "listeners": [
+   "code/datums/status_effects/debuffs/fire_stacks.dm:316",
+   "code/modules/organs/internal/special/heart_anomalock.dm:32",
+   "code/modules/organs/internal/special/heart_anomalock.dm:37",
+   "code/datums/status_effects/debuffs/fire_stacks.dm:334"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/trait_gained",
+  "tests": []
+ },
+ "/datum/om/event/trait_lost": {
+  "emits": [
+   "code/_helpers/traits.dm:104"
+  ],
+  "fields": [
+   "trait"
+  ],
+  "listeners": [
+   "code/datums/status_effects/debuffs/fire_stacks.dm:316",
+   "code/datums/status_effects/debuffs/fire_stacks.dm:340"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/trait_lost",
+  "tests": []
+ },
+ "/datum/om/event/turf_change": {
+  "emits": [
+   "code/game/turfs/turf_changing.dm:82",
+   "code/game/turfs/turf_changing.dm:84"
+  ],
+  "fields": [
+   "path",
+   "new_baseturfs",
+   "flags",
+   "post_change_callbacks"
+  ],
+  "listeners": [
+   "code/modules/lootpanel/search_object.dm:26",
+   "code/modules/materials/engineering/material_service.dm:270",
+   "code/modules/materials/engineering/material_service.dm:292",
+   "code/modules/materials/engineering/material_service.dm:364",
+   "code/modules/materials/engineering/material_service.dm:367"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/turf_change",
+  "tests": []
+ },
+ "/datum/om/event/ui_act": {
+  "emits": [
+   "code/modules/tgui/external.dm:105"
+  ],
+  "fields": [
+   "usr_",
+   "action"
+  ],
+  "listeners": [
+   "code/modules/research/tg/experisci/experiment/handlers/experiment_handler.dm:78"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/ui_act",
+  "tests": []
+ },
+ "/datum/om/event/unittest_data": {
+  "emits": [
+   "code/game/objects/items.dm:801"
+  ],
+  "fields": [
+   "data"
+  ],
+  "listeners": [],
+  "reads_result": false,
+  "target": "review",
+  "tests": [
+   "code/modules/unit_tests/clothing_tests.dm:32",
+   "code/modules/unit_tests/clothing_tests.dm:59"
+  ]
+ },
+ "/datum/om/event/world_explosion": {
+  "emits": [
+   "code/game/objects/explosion_service.dm:201"
+  ],
+  "fields": [
+   "epicenter",
+   "devastation_range",
+   "heavy_impact_range",
+   "light_impact_range",
+   "took"
+  ],
+  "listeners": [
+   "code/game/machinery/doppler_array.dm:26"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/world_explosion",
+  "tests": []
+ },
+ "/datum/om/event/world_ghost_captured": {
+  "emits": [
+   "code/game/objects/items/ghost_hunting/trap.dm:207"
+  ],
+  "fields": [
+   "passing_entity"
+  ],
+  "listeners": [
+   "code/game/objects/items/ghost_hunting/trap.dm:31",
+   "code/modules/research/tg/experisci/experiment/handlers/experiment_handler.dm:167"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/world_ghost_captured",
+  "tests": []
+ },
+ "/datum/om/event/world_mob_created": {
+  "emits": [
+   "code/modules/mob/mob.dm:51"
+  ],
+  "fields": [
+   "mob"
+  ],
+  "listeners": [
+   "code/controllers/subsystems/contracts.dm:82"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/world_mob_created",
+  "tests": []
+ },
+ "/datum/om/event/world_mob_death": {
+  "emits": [
+   "code/modules/mob/death.dm:125"
+  ],
+  "fields": [
+   "living",
+   "gibbed"
+  ],
+  "listeners": [
+   "code/controllers/subsystems/contracts.dm:83"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/world_mob_death",
+  "tests": []
+ },
+ "/datum/om/event/world_payment_account_status": {
+  "emits": [
+   "code/modules/economy/Accounts_DB.dm:188"
+  ],
+  "fields": [
+   "account"
+  ],
+  "listeners": [
+   "code/controllers/subsystems/contracts.dm:84"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/world_payment_account_status",
+  "tests": []
+ },
+ "/datum/om/event/world_supply_shuttle_depart": {
+  "emits": [
+   "code/modules/economy/supply_service.dm:537"
+  ],
+  "fields": [
+   "supply_shuttle_areas"
+  ],
+  "listeners": [
+   "code/modules/events/supply_demand.dm:71",
+   "code/modules/events/supply_demand.dm:79",
+   "code/modules/events/supply_demand.dm:98"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/world_supply_shuttle_depart",
+  "tests": []
+ },
+ "/datum/om/event/world_wight_captured": {
+  "emits": [
+   "code/game/objects/items/ghost_hunting/trap.dm:212"
+  ],
+  "fields": [
+   "shadow_wight"
+  ],
+  "listeners": [
+   "code/game/objects/items/ghost_hunting/trap.dm:32",
+   "code/modules/research/tg/experisci/experiment/handlers/experiment_handler.dm:170"
+  ],
+  "reads_result": false,
+  "target": "/datum/notice/world_wight_captured",
+  "tests": []
+ }
+}

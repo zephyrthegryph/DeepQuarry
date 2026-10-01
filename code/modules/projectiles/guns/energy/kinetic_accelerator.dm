@@ -40,8 +40,6 @@
 	if(T.z in using_map.station_levels)
 		. = FALSE
 
-OWN_TIMER(/obj/item/gun/energy/kinetic_accelerator, recharge_timerid)
-
 /obj/item/gun/energy/kinetic_accelerator
 	name = "proto-kinetic accelerator"
 	desc = "A self recharging, ranged mining tool that does increased damage in low pressure."

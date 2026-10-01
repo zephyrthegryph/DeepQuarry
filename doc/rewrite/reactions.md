@@ -12,10 +12,10 @@ delivery contract.
 
 | Trigger constructor | Fires | Contract |
 |---|---|---|
-| `before_op(key_or_type, handler)` | Around an operation, before commit. May veto or return a constrained proposal. | Synchronous, non-sleeping, bounded. A changed proposal is re-validated. |
+| `before_op(key_or_type, handler)` | Around an operation (op key or capability type), a guard key (`GUARD_*`, section 3a) or a damage key (`damage(kind)`, section 1b), before commit. May veto (a non-null reason) or return a constrained proposal. | Synchronous, non-sleeping, bounded. A changed proposal is re-validated. |
 | `after_op(key_or_type, handler)` | After an operation commits. | Ordered; small handlers only, expensive work requests a run. |
 | `on_notice(type, handler)` | When a notice of `type` is published on the source. | Ordered occurrence; never coalesced. |
-| `on_change(list/reads, handler)` | When any read in the list changes. | Coalescible: once per entity per output per frame; sees the final value. |
+| `on_change(list/reads, handler, at_most=, when=)` | When any read in the list changes (a tracked var, a change key a producer publishes, a native read). | Coalescible: once per entity per output per frame; sees the final value. `when` (a var or PROC_REF) is asked at publish: an excluded holder queues nothing. [built] |
 | `on_cross(read, bands, handler, urgent=)` | When a value crosses a band edge (hysteresis in Rust for native values). | Threshold. `urgent = TRUE` is an urgent work item (`request_urgent`, deduped per holder, run from the kernel's U slice); otherwise it runs at the drain. |
 | `every(interval, handler, when=, members=, phase=, after=, budget=, lane=)` | On a cadence, optionally only while a condition reads true. | A scheduled work item on the kernel ([scheduling_and_kernel.md](scheduling_and_kernel.md)); see section 1a. |
 | `after_init(delay, handler)` [built] | Once, `delay` after the holder initializes (`delay` may be `nameof(var)`). | An `rx_after()` armed by `rx_enrol()` at init (boot kind `RXB_INIT`); replaces `DECLARE_START_TIMER`. See section 4. |
@@ -25,6 +25,25 @@ delivery contract.
 cached value computed by `derive_<var>()`), `rust_push(...)` (push to Rust once per frame) and
 `runs_while(...)` (`should_run`). `members = <capability type>` makes an `every` or `on_cross` run
 once per member of that capability.
+
+## 1b. Damage reactions [built on master, A1]
+
+A damage reaction is a reaction on the damage operation: `before_op(damage(DAMAGE_EMP), PROC_REF(x))` may block the hit
+(return `DAMAGE_REACTION_BLOCK` or a reason), `after_op(damage(DAMAGE_PROJECTILE), PROC_REF(y))` runs after the sink if
+the holder survived. The composed reactions table keeps them as damage rows (`/datum/rx_table/var/damage_rows`), and
+`receive_damage()` reads them (code/datums/sys/damage_reactions.dm). A trigger is a DAMAGE_* kind (fires when the packet
+carries some) or an entry (`DAMAGE_EMP`, `DAMAGE_PROJECTILE`, ...: every hit through it). Capabilities contribute rows
+through their `reactions()`: `reflects(kinds, chance)` (projectiles bounce; `chance` a number or a PROC_REF) and
+`emp_disable(duration, field)` (EMPED for duration / severity, lapse on a keyed world-clock `after()`). The legacy
+`DAMAGE_REACTION` / `DAMAGE_REACTION_AFTER` / `REFLECTS` / `EMP_DISABLE` macros are thin wrappers over these.
+
+```text
+/obj/machinery/power/apc/reactions()
+    . = ..()
+    . += before_op(damage(DAMAGE_EMP), PROC_REF(apc_emp_fail))
+    . += before_op(damage(DAMAGE_BLOB), PROC_REF(apc_blob_rip_wires))   // returns DAMAGE_REACTION_BLOCK
+CAPABILITY(/obj/machinery/exonet_node, emp_disable(300 SECONDS))
+```
 
 ## 1a. Work on the kernel [built]
 
@@ -109,6 +128,30 @@ A `derive()` value is tracked: when the framework recomputes it and it changed, 
 tracked `nightshift_lights` is read by its area's `derive(lights_nightshift, rel(apc, ...))`, and each light's
 `derive(nightshift_enabled, rel(power_area, /area::lights_nightshift))` feeds its `on_change()` redraw.
 
+Notice types for the om events that have listeners are generated (`code/_generated/om_notices.dm`, by
+`tools/dx/gen_om_notices.py`, which also writes the event -> notice / guard map the codemod reads; migration_guide F5).
+Worked conversions: dry galoshes hear `/datum/notice/shoes_step` (published by the wearer's step); squeaky shoes
+`observe()` the same notice on their owner.
+
+## 3a. Guards [built on master, A1]
+
+"May this proceed?" for what is not an operation is a guard key: `before_op(GUARD_X, handler)` in `reactions()` (or
+`observe(source, before_op(GUARD_X), listener, handler)`), asked by the call site with `guard(E, GUARD_X, actor, item,
+data)`, which runs the same before_op reactions an operation would and returns null or the first refusal
+(code/datums/reactions/guard.dm). The handler gets a pooled `/datum/guard_ctx` (key, target, actor, item, data); a
+GLOBAL_PROC_REF handler reads the holder from `ctx.target`. `guarded(E, key)` costs one table read. Guard keys replace
+the om `before/*` veto events (`GUARD_MOVE`, `GUARD_Z_CHANGE`, `GUARD_IRRADIATE`, `GUARD_INJURE`, `GUARD_BODY_STATUS`,
+`GUARD_THROWN_HIT`, `GUARD_CROSS`, `GUARD_FALL`, `GUARD_STUMBLED_INTO`, and for entries that become operations
+`GUARD_ATTACKBY`, `GUARD_ATTACK_SELF`, `GUARD_ATTACK_HAND`, `GUARD_TOOL_ACT`, `GUARD_CLICK_ALT`).
+
+```text
+/mob/living/reactions()                       // spontaneous vore
+    . = ..()
+    . += before_op(GUARD_STUMBLED_INTO, GLOBAL_PROC_REF(spont_vore_stumble))
+if(guard(src, GUARD_STUMBLED_INTO, M))        // stumblevore.dm: somebody was eaten instead
+    return
+```
+
 | Question | Use |
 |---|---|
 | It happened; who cares? | `PUBLISH` / `on_notice` |
@@ -123,11 +166,16 @@ A timer armed when the holder initializes is declared, not written in `Initializ
 PROC_REF(x))` in `reactions()` (`code/datums/reactions/after_init.dm`, the form of `DECLARE_START_TIMER`). A subtype
 re-declaring the same handler replaces the inherited one.
 
-`after(owner, delay, handler, key=, clock=)` is the one timer, stored as a `TIMER` relation. It is
-dropped with its owner; one pending call per `key` when a key is given; `clock` selects world,
-biological (stasis-aware) or machine time. `om_after` and `after_slot` become wrappers. Today's
-`after`/`after_slot`/`om_after` are **[built]**; the `key=`/`clock=` unification is **[in
-progress]**. `COOLDOWN_*` and `timed_set` remain for their own intents. A datum argument deleted in
+`after(owner, delay, handler, key =, clock =, with =)` is the one timer **[built, A1]**, stored as a `TIMER`
+relation. It is dropped with its owner; one pending call per `key` when a key is given (`after_pending()`,
+`cancel_after()`, `after_left()` read it); `clock` is `CLOCK_OWN` (the owner's clock) or `CLOCK_WORLD`; `with` is the
+handler's argument list (no varargs, so the named arguments work). `rx_after()` is internal; `om_after` and
+`after_slot` are wrappers; `OWN_TIMER` is deleted.
+
+```text
+after(src, vend_delay, PROC_REF(finish_vend), with = list(product, user))
+after(src, 15 MINUTES, PROC_REF(set_grid_check), key = "grid_check", with = list(FALSE))
+``` `COOLDOWN_*` and `timed_set` remain for their own intents. A datum argument deleted in
 the meantime arrives as null (counted, logged); `after_if_alive` drops the call instead.
 
 ## 5. Wake, urgent request, direct execution

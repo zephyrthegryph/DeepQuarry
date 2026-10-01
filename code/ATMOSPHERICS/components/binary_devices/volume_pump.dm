@@ -336,8 +336,8 @@ UI_ACT_PROC(/obj/machinery/atmospherics/binary/volume_pump, ui_act_set_press)
 // from a component file would break any later include that uses them.)
 
 
-TRACKED(/obj/machinery/atmospherics/binary/volume_pump, transfer_rate, CHANGE_MACHINE_SETTINGS)
-TRACKED(/obj/machinery/atmospherics/binary/volume_pump, overclocked, CHANGE_MACHINE_SETTINGS)
+TRACKED_BRIDGED(/obj/machinery/atmospherics/binary/volume_pump, transfer_rate, CHANGE_MACHINE_SETTINGS)
+TRACKED_BRIDGED(/obj/machinery/atmospherics/binary/volume_pump, overclocked, CHANGE_MACHINE_SETTINGS)
 
 /// The Rust device law is pushed (once per frame) when any of these change.
 /obj/machinery/atmospherics/binary/volume_pump/derived()

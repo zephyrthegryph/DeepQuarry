@@ -303,5 +303,3 @@
 			var/obj/structure/S = N
 			S.update_connections()
 		N.update_icon()
-
-OWN_TIMER(/atom/movable, lifecycle_lifetime_timer)

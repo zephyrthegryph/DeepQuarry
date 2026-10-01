@@ -219,6 +219,6 @@
 
 /obj/machinery/atmospherics/trinary/ownership()
 	. = ..()
-	. += proto(nameof(air1))
-	. += proto(nameof(air2))
-	. += proto(nameof(air3))
+	. += rel_one(nameof(air1), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)
+	. += rel_one(nameof(air2), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)
+	. += rel_one(nameof(air3), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)

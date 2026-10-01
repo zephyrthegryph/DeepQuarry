@@ -86,8 +86,6 @@ Class Procs:
 	Compiled by Aygar
 */
 
-OWN_TIMER(/obj/machinery, first_wake)
-
 /obj/machinery
 	material_template = /datum/material_template/machine_part
 	material_total = 5 * SHEET_MATERIAL_AMOUNT

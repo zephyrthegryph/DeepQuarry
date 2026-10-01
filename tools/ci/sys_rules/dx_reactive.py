@@ -9,7 +9,7 @@ Rules:
         - draw(datum/look/look), should_run(), hidden_verbs(), tgui_data() on any type;
         - draw/gate/ui_data/examine/hidden_verbs on a /datum/capability subtype;
         - any proc named by `needs = PROC_REF(x)` / `TYPE_PROC_REF(T, x)` somewhere in the tree.
-      A read is fine when the var is declared `TRACKED(type, var, ...)` or registered with
+      A read is fine when the var is declared `TRACKED(type, var)` (or TRACKED_BRIDGED) or registered with
       `SETTER(type, var)` somewhere (its setter calls changed()), or its root is a relation var
       declared with a watch (a REL* declaration or rel() call naming the var with WATCH / watch =).
       A proc merely named set_<var> doesn't count: only a registered setter is known to mark.
@@ -65,7 +65,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import _dx_dm as dm  # noqa: E402
 
 RULES = {
-    "dx_untracked_read": "declare the var TRACKED(type, var, channel) (or give it a set_<var>()), or read it through a watched relation (design review H4)",
+    "dx_untracked_read": "declare the var TRACKED(type, var) (or give it a set_<var>()), or read it through a watched relation (design review H4)",
     "dx_reactive_write": "reactive procs (draw, should_run, hidden_verbs, tgui_data, a capability's draw/gate/ui_data/examine, needs procs) write nothing: move the write to the handler or setter that changes the state (design review H5)",
     "dx_caps_instance_read": "capabilities() is per type: read the instance var inside the capability at run time instead (design review M3, H1)",
     "dx_timed_write": "write this var only through timed_set() or its set_<var>() proc (design review M5)",
@@ -95,7 +95,7 @@ NEVER_STATE = {"len", "type", "parent_type"}
 GLOBAL_ROOT = re.compile(r"^(?:SS[a-z]\w*|[A-Z][A-Z0-9_]{2,})$")
 
 NEEDS = re.compile(r"\bneeds\s*=\s*(?:PROC_REF\(\s*(\w+)\s*\)|TYPE_PROC_REF\(\s*[/\w]+\s*,\s*(\w+)\s*\))")
-TRACKED = re.compile(r"^\s*(?:TRACKED\(\s*/[\w/]+\s*,\s*(\w+)\s*,|SETTER\(\s*/[\w/]+\s*,\s*(\w+)\s*\))")
+TRACKED = re.compile(r"^\s*(?:TRACKED(?:_BRIDGED)?\(\s*/[\w/]+\s*,\s*(\w+)\s*[,)]|SETTER\(\s*/[\w/]+\s*,\s*(\w+)\s*\))")
 ALIAS = re.compile(r"\bvar/(?:[\w/]+/)?(\w+)\s*=\s*(\w+)\s*$")
 WATCH_REL = re.compile(r"^\s*REL\w*\(\s*/[\w/]+\s*,\s*(\w+)\b[^\n]*\bWATCH\w*|\brel\(\s*nameof\(\s*(?:[\w.]+\.|/[\w/]+::)?(\w+)\s*\)[^\n]*\bwatch\s*=")
 CHAIN = re.compile(r"(?<![\w.\]\)\"'/:])([A-Za-z_]\w*)((?:\s*\??\.\s*[A-Za-z_]\w*)+)")
@@ -376,7 +376,7 @@ def analyse(files):
             if "needs" in line:
                 for m in NEEDS.finditer(line):
                     needs_names.add(m.group(1) or m.group(2))
-            if "TRACKED(" in line or "SETTER(" in line:
+            if "TRACKED" in line or "SETTER(" in line:
                 t = TRACKED.match(line)
                 if t:
                     tracked.add(t.group(1) or t.group(2))
@@ -424,7 +424,7 @@ FIXTURE = """
 	var/rigged = FALSE
 	var/sealed = FALSE
 	var/label_text
-TRACKED(/obj/item/cell, charge, CHANGE_EXPLICIT)
+TRACKED(/obj/item/cell, charge)
 SETTER(/obj/item/cell, sealed)
 
 /obj/item/cell/proc/set_label_text(value)

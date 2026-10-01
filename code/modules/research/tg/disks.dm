@@ -55,4 +55,4 @@ MATERIAL_MIX(/obj/item/disk/design_disk, list(MAT_STEEL = 30, MAT_GLASS = 10))
 
 /obj/item/disk/tech_disk/ownership()
 	. = ..()
-	. += proto(nameof(stored_research_static))
+	. += rel_one(nameof(stored_research_static), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)

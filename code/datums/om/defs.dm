@@ -363,6 +363,8 @@
 	var/combine = COMBINE_ANY
 	var/stacking = STACKING_REPLACE
 	var/channel = 0
+	/// The change key (PUBLISH_CHANGE) a change of this effect publishes on its entity, or null (row "publishes").
+	var/publishes
 	/// Value when nothing contributes.
 	var/default_value
 	/// Composite: an expression over other effect ids (ALL_OF/ANY_OF/NOT_OF/SUM_OF). No contributions of its own.

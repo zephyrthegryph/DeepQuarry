@@ -3,8 +3,6 @@
  * SPDX-License-Identifier: MIT
  */
 
-OWN_TIMER(/datum/tgui_window, payload_timeout)
-
 /datum/tgui_window
 	var/id
 	var/tmp/client/client

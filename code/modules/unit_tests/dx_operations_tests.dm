@@ -476,8 +476,8 @@
 	var/gauge = 0
 	var/unwatched = 0
 
-TRACKED(/obj/cap_fixture/ops/gauged, gauge, CHANGE_EXPLICIT)
-TRACKED(/obj/cap_fixture/ops/gauged, unwatched, CHANGE_EXPLICIT)
+TRACKED(/obj/cap_fixture/ops/gauged, gauge)
+TRACKED(/obj/cap_fixture/ops/gauged, unwatched)
 
 /obj/cap_fixture/ops/gauged/capabilities()
 	. = ..()

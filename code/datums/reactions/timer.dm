@@ -1,9 +1,8 @@
-// after(): the one timer. rx_after() is the implementation; after() (timed.dm) and om_after() (om/timer.dm)
-// are wrappers over it, and after_slot() (om/timer.dm) schedules through it (its named slots stay in
-// om's timer_slots map because om_timer_slot_pending / om_cancel_timer_slot / OWN_TIMER read it).
+// after(): the one timer. rx_after() is its implementation (internal: callers use after(), timed.dm); om_after()
+// and after_slot() (om/timer.dm) are legacy wrappers over it.
 //
 // A timer with a `key` is a TIMER relation on its owner: scheduling the same key again replaces the
-// pending one, cancel_after() cancels it, and the ledger says whether it is pending. `clock` is CLOCK_OWN
+// pending one, cancel_after() cancels it, after_pending() / after_left() read it. `clock` is CLOCK_OWN
 // (the owner's clock: paused with it) or CLOCK_WORLD (real time; kept on the global owner, so it holds the
 // owner by ref text and never keeps it alive).
 

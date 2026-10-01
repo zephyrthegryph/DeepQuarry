@@ -209,16 +209,6 @@
 /datum/om/event/atom_used_in_craft/New(result_)
 	src.result_ = result_
 
-/// From base of /obj/item/autopsy_scanner/do_surgery() : (mob/user, mob/target)
-/datum/om/event/autopsy_performed
-	sync = TRUE
-	var/user
-	var/target
-
-/datum/om/event/autopsy_performed/New(user, target)
-	src.user = user
-	src.target = target
-
 /// From /obj/belly/HandleBellyReagents() and /obj/belly/update_internal_overlay()
 /datum/om/event/before/belly_update_vore_fx
 	accumulate = TRUE
@@ -339,15 +329,6 @@
 /datum/om/event/do_after_ended
 	sync = TRUE
 
-/datum/om/event/dqai_ally_distress
-	sync = TRUE
-	var/ally
-	var/target
-
-/datum/om/event/dqai_ally_distress/New(ally, target)
-	src.ally = ally
-	src.target = target
-
 /// --------------------------------------------------------------------------- Signals emitted on the mob by the brain framework. Behaviors can subscribe to these via their eval_triggers list to re-evaluate only when relevant. ---------------------------------------------------------------------------
 /datum/om/event/dqai_damage_taken
 	sync = TRUE
@@ -389,24 +370,6 @@
 /// Signal that gets sent when a ghost query is completed
 /datum/om/event/ghost_query_complete
 	sync = TRUE
-
-/// Base /obj/item/autopsy_scanner/do_surgery() : (mob/user, mob/target)
-/datum/om/event/world_autopsy_performed
-	sync = TRUE
-	var/user
-	var/target
-
-/datum/om/event/world_autopsy_performed/New(user, target)
-	src.user = user
-	src.target = target
-
-/// NON TG Signals: brain removed from body, called by /obj/item/organ/internal/brain/proc/transfer_identity() : (mob/living/carbon/brain/brainmob)
-/datum/om/event/world_brain_removed
-	sync = TRUE
-	var/brainmob
-
-/datum/om/event/world_brain_removed/New(brainmob)
-	src.brainmob = brainmob
 
 /// Called after an explosion happened : (epicenter, devastation_range, heavy_impact_range, light_impact_range, took, orig_dev_range, orig_heavy_range, orig_light_range)
 /datum/om/event/world_explosion
@@ -496,10 +459,6 @@
 
 /// Hose Connector Component
 /datum/om/event/hose_forcepump
-	sync = TRUE
-
-/// From /datum/species/handle_fire. Called when the human is set on fire and burning clothes and stuff
-/datum/om/event/human_burning
 	sync = TRUE
 
 /// NON TG Signals When the mob's dna and species have been fully applied
@@ -704,16 +663,6 @@
 	src.check_protection = check_protection
 	src.rad_protection = rad_protection
 
-/// From base of /mob/living/regenerate_limbs(): (noheal, excluded_limbs)
-/datum/om/event/living_regenerate_limbs
-	sync = TRUE
-	var/noheal
-	var/excluded_limbs
-
-/datum/om/event/living_regenerate_limbs/New(noheal, excluded_limbs)
-	src.noheal = noheal
-	src.excluded_limbs = excluded_limbs
-
 /// From /mob/living/proc/return_from_death(), after the mob is alive again: (datum/source, reason)
 /datum/om/event/living_revived
 	sync = TRUE
@@ -898,14 +847,6 @@
 
 /datum/om/event/mob_client_login/New(client)
 	src.client = client
-
-/// From /mob/proc/set_combat_mode(): (new_mode)
-/datum/om/event/mob_combat_mode_changed
-	sync = TRUE
-	var/new_mode
-
-/datum/om/event/mob_combat_mode_changed/New(new_mode)
-	src.new_mode = new_mode
 
 /// From base of mob/death(): (gibbed)
 /datum/om/event/mob_death
@@ -1198,14 +1139,6 @@
 	src.item = item
 	src.user = user
 	src.params = params
-
-/// From [/mob/living/carbon/human/Move]: ()
-/datum/om/event/before/shoes_step_action
-	accumulate = TRUE
-	var/m_intent
-
-/datum/om/event/before/shoes_step_action/New(m_intent)
-	src.m_intent = m_intent
 
 /// From /mob/living/silicon/proc/laws_changed(): ()
 /datum/om/event/silicon_laws_changed

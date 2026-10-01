@@ -16,7 +16,7 @@
 	/// Until when an EMP keeps the generator down (EMP_DISABLE).
 	EXPIRY_DECLARE(emp_until)
 
-EMP_DISABLE(/obj/machinery/power/port_gen, 10 MINUTES, "emp_until")
+CAPABILITY(/obj/machinery/power/port_gen, emp_disable(10 MINUTES))
 DAMAGE_REACTION(/obj/machinery/power/port_gen, DAMAGE_EMP, PROC_REF(port_gen_emp_fault))
 
 /obj/machinery/power/port_gen/proc/IsBroken()

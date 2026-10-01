@@ -6,14 +6,12 @@
 // timed_set() writes the var through its setter (set_<var>() when the type has one, else a direct
 // write plus changed()), and when for_time runs out writes the var's value from before the call back
 // the same way, so every reader (draw, should_run, UI) reacts on its own: there is no lapse hook.
-// CLOCK_OWN runs on the holder's own clock (paused in stasis or suspension) in an owned timer slot
-// that the holder's teardown cancels; CLOCK_WORLD runs on real time. Setting again replaces the timer;
+// CLOCK_OWN runs on the holder's own clock (paused in stasis or suspension) in a keyed after() that the
+// holder's teardown cancels; CLOCK_WORLD runs on real time. Setting again replaces the timer;
 // keep_longer = TRUE keeps whichever of the two ends later.
 
 /// var name -> list(token, prior value, clock).
 /datum/var/tmp/list/timed_until
-
-OWN_TIMER(/datum, timed)
 
 /// Identifies one timed_set() so a replaced timer that still fires is ignored.
 GLOBAL_VAR_INIT(timed_token_seq, 0)
@@ -59,9 +57,9 @@ GLOBAL_VAR_INIT(timed_token_seq, 0)
 	if(clock == CLOCK_WORLD)
 		// Real time runs on the global owner. It holds a ref text, not D, so the timer never keeps a
 		// deleted holder alive; the token check drops a stale or reused ref.
-		after_slot(null, "timed:[SHARED_CACHE_UID(D)]:[var_name]", for_time, GLOBAL_PROC_REF(timed_expire_ref), REF(D), var_name, token)
+		after(null, for_time, GLOBAL_PROC_REF(timed_expire_ref), key = "timed:[SHARED_CACHE_UID(D)]:[var_name]", with = list(REF(D), var_name, token))
 	else
-		after_slot(D, "timed:[var_name]", for_time, GLOBAL_PROC_REF(timed_expire), D, var_name, token)
+		after(D, for_time, GLOBAL_PROC_REF(timed_expire), key = "timed:[var_name]", with = list(D, var_name, token))
 	return TRUE
 
 /proc/timed_expire_ref(ref_text, var_name, token)
@@ -82,22 +80,34 @@ GLOBAL_VAR_INIT(timed_token_seq, 0)
 	timed_write(D, var_name, pending[TIMED_PRIOR])
 
 /**
- * A delayed action (the third time form, next to timed_set() and COOLDOWN_*): calls proc_ref on E after
- * delay, as a dispatched call (E is marked changed afterwards). Owned by E: E's teardown cancels it.
- * The call still runs when a datum ARGUMENT was deleted meanwhile: that argument arrives as null, so
- * cleanup (vend_ready = TRUE) always happens; the handler checks its args (null policy). Only E's own
- * deletion drops the call.
- * Returns the OM timer id (never store it in a var; use timed_set() for state that must revert).
- *	after(src, vend_delay, PROC_REF(finish_vend), product, user)
+ * The one timer (the third time form, next to timed_set() and COOLDOWN_*): calls `handler` after `delay`
+ * deciseconds, a PROC_REF on `owner` or a GLOBAL_PROC_REF called with `with`. Stored as a TIMER relation on the
+ * owner, so the owner's teardown drops it.
+ *	after(src, vend_delay, PROC_REF(finish_vend), with = list(product, user))
+ *	after(src, 15 MINUTES, PROC_REF(set_grid_check), key = "grid_check", with = list(FALSE))
+ * - `key`: names the timer; scheduling the same key on the same owner again replaces the pending one, and
+ *   cancel_after() / after_pending() / after_left() find it.
+ * - `clock`: CLOCK_OWN (the owner's clock: paused in stasis or suspension) or CLOCK_WORLD (real time; held by
+ *   ref, so the timer never keeps a deleted owner alive).
+ * - `with`: the handler's arguments. A datum argument deleted meanwhile arrives as null, so cleanup always
+ *   happens; the handler checks its args (null policy). Only the owner's own deletion drops the call.
+ * Returns the timer id (never store it in a var; use a key).
  */
-/proc/after(datum/E, delay, proc_ref, ...)
-	return rx_after(E, delay, proc_ref, null, CLOCK_OWN, length(args) > 3 ? args.Copy(4) : null, TRUE)
+/proc/after(datum/owner, delay, handler, key = null, clock = CLOCK_OWN, list/with = null)
+	return rx_after(owner, delay, handler, key, clock, with, TRUE)
 
 /// after() for a pure effect that makes no sense once any datum argument is gone: the call is dropped
-/// (counted and logged by the scheduler). DM rejects an undeclared named argument on a variadic proc, so
-/// this is its own proc rather than an after(drop_if_gone = TRUE) option.
-/proc/after_if_alive(datum/E, delay, proc_ref, ...)
-	return om_after_list(E, delay, proc_ref, length(args) > 3 ? args.Copy(4) : null, nulls_for_gone = FALSE)
+/// (counted and logged by the scheduler).
+/proc/after_if_alive(datum/owner, delay, handler, list/with = null)
+	return om_after_list(owner, delay, handler, with, nulls_for_gone = FALSE)
+
+/// Deciseconds left on the pending timer of `key` on `owner` (on the clock it was armed on), or 0 when none is.
+/proc/after_left(datum/owner, key)
+	var/datum/holder = owner || om_global_owner()
+	var/list/pending = holder.rx?.timer_ids?[key]
+	if(!pending)
+		return 0
+	return om_timer_left(pending[3] == CLOCK_WORLD ? om_global_owner() : holder, pending[1]) || 0
 
 /// Deciseconds until var_name reverts (0 when nothing is pending), on the clock it was set on.
 /proc/time_left(datum/D, var_name)
@@ -105,8 +115,8 @@ GLOBAL_VAR_INIT(timed_token_seq, 0)
 	if(!pending)
 		return 0
 	if(pending[TIMED_CLOCK] == CLOCK_WORLD)
-		return om_timer_slot_left(null, "timed:[SHARED_CACHE_UID(D)]:[var_name]") || 0
-	return om_timer_slot_left(D, "timed:[var_name]") || 0
+		return after_left(null, "timed:[SHARED_CACHE_UID(D)]:[var_name]")
+	return after_left(D, "timed:[var_name]")
 
 /// Cancels a pending revert, leaving the current value.
 /proc/timed_cancel(datum/D, var_name)
@@ -115,9 +125,9 @@ GLOBAL_VAR_INIT(timed_token_seq, 0)
 		return
 	LAZYREMOVE(D.timed_until, var_name)
 	if(pending[TIMED_CLOCK] == CLOCK_WORLD)
-		om_cancel_timer_slot(null, "timed:[SHARED_CACHE_UID(D)]:[var_name]")
+		cancel_after(null, "timed:[SHARED_CACHE_UID(D)]:[var_name]")
 	else
-		om_cancel_timer_slot(D, "timed:[var_name]")
+		cancel_after(D, "timed:[var_name]")
 
 #undef TIMED_TOKEN
 #undef TIMED_PRIOR
