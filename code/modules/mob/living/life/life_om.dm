@@ -166,6 +166,13 @@ GLOBAL_LIST_EMPTY(life_z_presence)
 	changed(src, CHANGE_MOB_CLIENT)
 	PUBLISH_CHANGE(src, MOB_KEY_CLIENT)
 
+/// An admin edit of a plain var (one with no setter) announces nothing, so the canmove, HUD and sight reactions
+/// would keep their stale result: status is the key all three read.
+/mob/living/vv_edit_var(var_name, var_value)
+	. = ..()
+	if(.)
+		PUBLISH_CHANGE(src, MOB_KEY_STATUS)
+
 /// Something was equipped or unequipped.
 /mob/proc/on_equipment_changed()
 	return

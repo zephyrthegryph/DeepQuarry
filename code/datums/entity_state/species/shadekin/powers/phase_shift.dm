@@ -315,6 +315,7 @@
 	invisibility = INVISIBILITY_SHADEKIN
 	see_invisible = INVISIBILITY_SHADEKIN
 	see_invisible_default = INVISIBILITY_SHADEKIN // Allow seeing phased entities while phased.
+	refresh_vision() // life_vision() derives see_invisible from see_invisible_default
 	update_icon()
 	alpha = 127
 

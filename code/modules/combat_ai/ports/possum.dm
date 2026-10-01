@@ -26,6 +26,7 @@ TYPE_TABLE(/mob/living/simple_mob/animal/passive/opossum, get_ai_behaviors, list
 			else
 				act_message(src, null, others = span_infoplain(span_bold("%U%") + " dies!"))
 				resting = TRUE
+				PUBLISH_CHANGE(src, MOB_KEY_STATUS) // resting feeds canmove / lying
 				COOLDOWN_START(src, play_dead_until, rand(1 MINUTE, 2 MINUTES))
 		update_icon()
 
@@ -68,6 +69,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/passive/opossum, TYPE_PROC
 	var/last_resting = possum.resting
 	var/last_angery = possum.is_angry
 	possum.resting = (possum.stat == UNCONSCIOUS)
+	PUBLISH_CHANGE(possum, MOB_KEY_STATUS) // resting feeds canmove / lying
 	if(!possum.resting)
 		brain.wander = TRUE
 		possum.set_stat(CONSCIOUS)

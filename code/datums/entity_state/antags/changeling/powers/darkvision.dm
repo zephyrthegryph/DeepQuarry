@@ -18,6 +18,8 @@
 	if(istype(src,/mob/living/carbon))
 		var/mob/living/carbon/C = src
 		C.seedarkness = !C.seedarkness
+		C.refresh_vision() // life_vision() and the darksight overlay read seedarkness
+		C.refresh_hud()
 		if(C.seedarkness)
 			to_chat(C, span_notice("We allow the shadows to return."))
 		else

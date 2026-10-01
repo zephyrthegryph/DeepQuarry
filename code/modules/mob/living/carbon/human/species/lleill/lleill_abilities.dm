@@ -27,6 +27,7 @@
 		cloak()
 		block_hud = 1
 		hud_updateflag = 1
+		refresh_hud()
 		to_chat(src, span_warning("Your fur shimmers and shifts around you, hiding you from the naked eye."))
 		proto_private(src, nameof(species)) // per-mob change: never mutate the shared species
 		species.lleill_energy -= energy_cost
@@ -34,6 +35,7 @@
 		uncloak()
 		block_hud = 0
 		hud_updateflag = 1
+		refresh_hud()
 		to_chat(src, span_warning("The brustling of your fur settles down and you become visible once again."))
 	species.update_lleill_hud(src)
 
