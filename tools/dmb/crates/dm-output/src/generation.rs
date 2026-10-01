@@ -32,13 +32,12 @@ fn generation(root: &Path, id: String) -> Generation {
 }
 
 fn generation_id(dmb: &[u8], rsc: &[u8]) -> String {
-    let mut hash = Sha256::new();
-    hash.update(b"dm-output-generation-v1\0");
-    hash.update((dmb.len() as u64).to_le_bytes());
-    hash.update(dmb);
-    hash.update((rsc.len() as u64).to_le_bytes());
-    hash.update(rsc);
-    format!("{:x}", hash.finalize())
+    generation_id_from_digests(
+        dmb.len() as u64,
+        &format!("{:x}", Sha256::digest(dmb)),
+        rsc.len() as u64,
+        &format!("{:x}", Sha256::digest(rsc)),
+    )
 }
 
 /// Framed content digests make unchanged archives reusable without hashing
@@ -138,6 +137,116 @@ pub fn current_generation(root: &Path) -> io::Result<Option<Generation>> {
 /// rollback or collect them after no reader references them.
 pub fn publish_generation(root: &Path, dmb: &[u8], rsc: &[u8]) -> io::Result<Generation> {
     publish_generation_reusing_archive(root, dmb, rsc, None)
+}
+
+/// Import conventional compiler outputs without loading the archive into RAM.
+/// The private copied pair is validated before its immutable HEAD is advanced.
+pub fn publish_generation_from_files(
+    root: &Path,
+    dmb: &Path,
+    rsc: &Path,
+) -> io::Result<Generation> {
+    fn file_digest(path: &Path) -> io::Result<(u64, String)> {
+        let mut reader = File::open(path)?;
+        let mut hash = Sha256::new();
+        let mut length = 0u64;
+        let mut buffer = [0u8; 64 * 1024];
+        loop {
+            let count = reader.read(&mut buffer)?;
+            if count == 0 {
+                return Ok((length, format!("{:x}", hash.finalize())));
+            }
+            hash.update(&buffer[..count]);
+            length += count as u64;
+        }
+    }
+    fs::create_dir_all(root.join("generations"))?;
+    let temp = root.join("generations").join(format!(
+        ".pending-import-{}-{}",
+        std::process::id(),
+        NEXT_TEMP.fetch_add(1, Ordering::Relaxed)
+    ));
+    fs::create_dir(&temp)?;
+    let result = (|| {
+        let before = (capture(dmb), capture(rsc));
+        for (source, name) in [(dmb, "world.dmb"), (rsc, "world.rsc")] {
+            fs::copy(source, temp.join(name))?;
+            OpenOptions::new()
+                .write(true)
+                .open(temp.join(name))?
+                .sync_all()?;
+        }
+        let (dmb_len, dmb_digest) = file_digest(&temp.join("world.dmb"))?;
+        let (rsc_len, rsc_digest) = file_digest(&temp.join("world.rsc"))?;
+        let unchanged = if let (Some(left), Some(right)) = (&before.0, &before.1) {
+            capture(dmb).as_ref() == Some(left) && capture(rsc).as_ref() == Some(right)
+        } else {
+            file_digest(dmb)? == (dmb_len, dmb_digest.clone())
+                && file_digest(rsc)? == (rsc_len, rsc_digest.clone())
+        };
+        if !unchanged {
+            return Err(invalid("compiler outputs changed during generation import"));
+        }
+        let id = generation_id_from_digests(dmb_len, &dmb_digest, rsc_len, &rsc_digest);
+        let published = generation(root, id.clone());
+        let lock = OpenOptions::new()
+            .create(true)
+            .read(true)
+            .write(true)
+            .open(root.join("HEAD.lock"))?;
+        lock.lock()?;
+        let directory = published
+            .dmb
+            .parent()
+            .ok_or_else(|| invalid("generation has no directory"))?;
+        if directory.exists() && verify_generation_digest(root, &published).is_err() {
+            fs::rename(
+                directory,
+                root.join("generations").join(format!(
+                    ".corrupt-{}-{}-{}",
+                    id,
+                    std::process::id(),
+                    NEXT_TEMP.fetch_add(1, Ordering::Relaxed)
+                )),
+            )?;
+        }
+        if !directory.exists() {
+            fs::rename(&temp, directory)?;
+        }
+        let stamps = generation_stamps(&published);
+        let content = verify_generation_inner(root, &published, true)?;
+        if let Some(stamps) =
+            stamps.filter(|stamps| generation_stamps(&published).as_ref() == Some(stamps))
+        {
+            save_verification_receipt(&published, stamps, Some(content))?;
+        }
+        let head_path = root.join("HEAD");
+        if let Ok(bytes) = fs::read(&head_path) {
+            if !bytes.is_empty() && !bytes.ends_with(b"\n") {
+                let complete = bytes
+                    .iter()
+                    .rposition(|byte| *byte == b'\n')
+                    .map_or(0, |index| index + 1);
+                OpenOptions::new()
+                    .write(true)
+                    .open(&head_path)?
+                    .set_len(complete as u64)?;
+            }
+        }
+        if head_id(root)?.as_deref() != Some(id.as_str()) {
+            let mut head = OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open(head_path)?;
+            writeln!(head, "{id}")?;
+            head.sync_all()?;
+        }
+        Ok(published)
+    })();
+    if temp.exists() {
+        let _ = fs::remove_dir_all(&temp);
+    }
+    result
 }
 
 /// Reuse the unchanged immutable archive through a hard link when available.
@@ -629,6 +738,65 @@ impl<R: Read> Read for HashingReader<R> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn publication_route_does_not_change_generation_identity() {
+        let root = std::env::temp_dir().join(format!(
+            "dm-generation-route-{}-{}",
+            std::process::id(),
+            NEXT_TEMP.fetch_add(1, Ordering::Relaxed)
+        ));
+        let mut world = byond_dmb::dmb::Dmb::from_bytes(include_bytes!(
+            "../../../fixtures/native_template.bin"
+        ))
+        .unwrap();
+        world.resources.clear();
+        let bytes = world.to_bytes().unwrap();
+        let normal = publish_generation(&root, &bytes, &[]).unwrap();
+        let archive = verified_archive(&root, &normal).unwrap();
+        let reused = publish_generation_with_archive(&root, &bytes, &archive).unwrap();
+        assert_eq!(normal, reused);
+        let imported = publish_generation_from_files(&root, &normal.dmb, &normal.rsc).unwrap();
+        assert_eq!(normal, imported);
+        assert_eq!(
+            normal.id,
+            generation_id_from_digests(
+                bytes.len() as u64,
+                &format!("{:x}", Sha256::digest(&bytes)),
+                0,
+                &format!("{:x}", Sha256::digest([]))
+            )
+        );
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn legacy_generation_ids_remain_readable() {
+        let root = std::env::temp_dir().join(format!(
+            "dm-generation-legacy-{}-{}",
+            std::process::id(),
+            NEXT_TEMP.fetch_add(1, Ordering::Relaxed)
+        ));
+        let mut world = byond_dmb::dmb::Dmb::from_bytes(include_bytes!(
+            "../../../fixtures/native_template.bin"
+        ))
+        .unwrap();
+        world.resources.clear();
+        let bytes = world.to_bytes().unwrap();
+        let mut hash = Sha256::new();
+        hash.update(b"dm-output-generation-v1\0");
+        hash.update((bytes.len() as u64).to_le_bytes());
+        hash.update(&bytes);
+        hash.update(0u64.to_le_bytes());
+        let legacy = generation(&root, format!("{:x}", hash.finalize()));
+        fs::create_dir_all(legacy.dmb.parent().unwrap()).unwrap();
+        fs::write(&legacy.dmb, bytes).unwrap();
+        fs::write(&legacy.rsc, []).unwrap();
+        fs::write(root.join("HEAD"), format!("{}\n", legacy.id)).unwrap();
+        assert_eq!(current_generation(&root).unwrap(), Some(legacy.clone()));
+        verify_generation(&root, &legacy).unwrap();
+        fs::remove_dir_all(root).unwrap();
+    }
 
     #[test]
     fn verification_receipt_detects_same_length_corruption_with_restored_mtime() {

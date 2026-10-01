@@ -6,6 +6,7 @@
 //! provide that proof without materializing every unchanged record.
 
 pub mod generation;
+pub mod conventional;
 pub mod list_image;
 
 use serde::{Deserialize, Serialize};

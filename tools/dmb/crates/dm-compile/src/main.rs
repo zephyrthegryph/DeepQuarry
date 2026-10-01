@@ -10,11 +10,16 @@ use std::fs;
 use std::io::{BufRead, BufReader, Write};
 use std::net::TcpStream;
 use std::path::PathBuf;
+mod integration;
 
 fn main() {
     if let Err(error) = dm_host::run_on_compiler_thread(|| run().map_err(|error| error.to_string()))
     {
-        eprintln!("dm-compile: {error}");
+        if error.contains(":error:") {
+            eprintln!("{error}");
+        } else {
+            eprintln!("dm-compile: {error}");
+        }
         std::process::exit(1);
     }
 }
@@ -104,6 +109,33 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let _process_budget = dm_host::install_process_budget()?;
     let mut args = env::args().skip(1);
     match args.next().as_deref() {
+        Some("integrated-build") => integration::run(args.collect()).map_err(|error| Box::new(error) as Box<dyn std::error::Error>),
+        Some("analysis-jsonl") => {
+            use sha2::{Digest, Sha256};
+            let project = PathBuf::from(args.next().ok_or("usage: dm-compile analysis-jsonl PROJECT.dme [-DNAME]")?);
+            let defines = parse_defines(args)?;
+            let session = ProjectSession::from_disk(project, defines);
+            let expanded = session.preprocess_incremental();
+            dm_compiler::check_source_size(expanded.text.len(), dm_compiler::check_source_limit())?;
+            let ast = dm_syntax::parse(&expanded.text);
+            let (index, index_errors) = match dm_compiler::index_ast(&ast) {
+                Ok(index) => (index, vec![]),
+                Err(errors) => (Default::default(), errors),
+            };
+            let mut snapshot = dm_analysis::Snapshot::from_frontend(
+                format!("{:x}", Sha256::digest(expanded.text.as_bytes())), &index, &ast, &expanded,
+            );
+            if !index_errors.is_empty() {
+                snapshot.coverage.declarations = dm_analysis::Coverage::Partial;
+                snapshot.coverage.inheritance = dm_analysis::Coverage::Unavailable;
+                snapshot.coverage.signatures = dm_analysis::Coverage::Partial;
+                for message in index_errors {
+                    snapshot.facts.push(dm_analysis::Fact::Diagnostic { severity: "error".into(), category: "declaration_index".into(), message, location: None });
+                }
+            }
+            snapshot.write_jsonl(std::io::stdout().lock())?;
+            Ok(())
+        }
         Some("audit-resources") => {
             let source = PathBuf::from(args.next().ok_or("usage: dm-compile audit-resources EXPANDED.dm PROJECT.dme")?);
             let project = PathBuf::from(args.next().ok_or("missing project path")?);
@@ -320,15 +352,19 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             println!("emitted {} global procedures to {}", emitted.len(), output.display());
             Ok(())
         }
-        Some("build-project") => {
+        Some(command @ ("build-project" | "build-project-json")) => {
             let usage = "usage: dm-compile build-project PROJECT.dme BUILTINS.dmb OUTPUT_DIR";
             let project = PathBuf::from(args.next().ok_or(usage)?);
             let builtins = PathBuf::from(args.next().ok_or(usage)?);
             let output_root = PathBuf::from(args.next().ok_or(usage)?);
             let defines = parse_defines(args)?;
-            let key = SessionKey::new(env::current_dir()?, &project, "516.1687", defines.into_iter().collect(), "build")?;
+            let key = SessionKey::new(env::current_dir()?, &project, "516.1687", defines.into_iter().collect(), "canonical")?;
             let mut coordinator = Coordinator::new(default_cache_root(&project))?;
             let response = coordinator.handle(Request::BuildProject { key, builtins, output_root });
+            if command == "build-project-json" {
+                println!("{}", serde_json::to_string(&response)?);
+                return if response.ok { Ok(()) } else { Err("native build failed; see structured response".into()) };
+            }
             for diagnostic in &response.diagnostics { eprintln!("{diagnostic}"); }
             if let Some(error) = response.error { return Err(error.into()); }
             if !response.ok { return Err("project diagnostics emitted".into()); }
@@ -344,7 +380,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             let output_root = PathBuf::from(args.next().ok_or(usage)?);
             let defines = parse_defines(args)?;
             let root = env::current_dir()?;
-            let key = SessionKey::new(&root, &project, "516.1687", defines.into_iter().collect(), "build")?;
+            let key = SessionKey::new(&root, &project, "516.1687", defines.into_iter().collect(), "canonical")?;
             let mut stream = TcpStream::connect(address)?;
             serde_json::to_writer(&mut stream, &Request::BuildProject { key, builtins, output_root })?;
             stream.write_all(b"\n")?;
@@ -370,7 +406,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             }
             let defines = parse_defines(args)?;
             let root = env::current_dir()?;
-            let key = SessionKey::new(&root, &project, "516.1687", defines.into_iter().collect(), "build")?;
+            let key = SessionKey::new(&root, &project, "516.1687", defines.into_iter().collect(), "legacy-history")?;
             let mut stream = TcpStream::connect(address)?;
             serde_json::to_writer(&mut stream, &Request::BuildProjectPatch {
                 key, builtins, dmb, rsc, exclusive: true,
@@ -396,7 +432,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
                 return Err(usage.into());
             }
             let defines = parse_defines(args)?;
-            let key = SessionKey::new(env::current_dir()?, &project, "516.1687", defines.into_iter().collect(), "build")?;
+            let key = SessionKey::new(env::current_dir()?, &project, "516.1687", defines.into_iter().collect(), "legacy-history")?;
             let mut coordinator = Coordinator::new(default_cache_root(&project))?;
             let response = coordinator.handle(Request::BuildProjectPatch { key, builtins, dmb, rsc, exclusive: true });
             for diagnostic in &response.diagnostics { eprintln!("{diagnostic}"); }
@@ -439,6 +475,6 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             }
             Ok(())
         }
-        _ => Err("prototype commands: check FILE.dm|PROJECT.dme; check-daemon ADDRESS FILE.dm; check-project-daemon ADDRESS PROJECT.dme; bootstrap-procs SOURCE.dm TEMPLATE.dmb OUTPUT.dmb; emit-global-procs SOURCE.dm BUILTINS.dmb OUTPUT.dmb; build-project PROJECT.dme BUILTINS.dmb OUTPUT_DIR; build-project-daemon ADDRESS PROJECT.dme BUILTINS.dmb OUTPUT_DIR; build-project-patch-daemon ADDRESS PROJECT.dme BUILTINS.dmb OUTPUT.dmb OUTPUT.rsc --exclusive; build-project-patch PROJECT.dme BUILTINS.dmb OUTPUT.dmb OUTPUT.rsc --exclusive; patch-global-procs SOURCE.dm BUILTINS.dmb OUTPUT.dmb OUTPUT.rsc --exclusive".into()),
+        _ => Err("prototype commands: integrated-build PROJECT.dme [--mode byond|native|shadow]; analysis-jsonl PROJECT.dme; check FILE.dm|PROJECT.dme; check-daemon ADDRESS FILE.dm; check-project-daemon ADDRESS PROJECT.dme; bootstrap-procs SOURCE.dm TEMPLATE.dmb OUTPUT.dmb; emit-global-procs SOURCE.dm BUILTINS.dmb OUTPUT.dmb; build-project[-json] PROJECT.dme BUILTINS.dmb OUTPUT_DIR; build-project-daemon ADDRESS PROJECT.dme BUILTINS.dmb OUTPUT_DIR; build-project-patch-daemon ADDRESS PROJECT.dme BUILTINS.dmb OUTPUT.dmb OUTPUT.rsc --exclusive; build-project-patch PROJECT.dme BUILTINS.dmb OUTPUT.dmb OUTPUT.rsc --exclusive; patch-global-procs SOURCE.dm BUILTINS.dmb OUTPUT.dmb OUTPUT.rsc --exclusive".into()),
     }
 }
