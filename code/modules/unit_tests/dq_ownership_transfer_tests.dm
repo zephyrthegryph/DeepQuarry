@@ -31,12 +31,12 @@
 	var/obj/item/kept
 
 /datum/unit_test/proc/own_transfer_setup()
-	GLOB.refuse_capture = list()
-	GLOB.dq_lifecycle_report_capture = list()
+	set_global("refuse_capture", list())
+	set_global("dq_lifecycle_report_capture", list())
 
 /datum/unit_test/proc/own_transfer_teardown()
-	GLOB.refuse_capture = null
-	GLOB.dq_lifecycle_report_capture = null
+	set_global("refuse_capture", null)
+	set_global("dq_lifecycle_report_capture", null)
 
 /datum/unit_test/proc/own_transfer_reports()
 	var/list/capture = GLOB.dq_lifecycle_report_capture

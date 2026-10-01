@@ -38,9 +38,9 @@
 	B.instance_value = 2
 	type_list(A, TYPE_PROC_REF(/datum/type_list_fixture, fixture_list))
 	var/before = length(GLOB.type_list_impure)
-	GLOB.type_list_expect_impure = TRUE
+	set_global("type_list_expect_impure", TRUE)
 	type_list(B, TYPE_PROC_REF(/datum/type_list_fixture, fixture_list))
-	GLOB.type_list_expect_impure = FALSE
+	set_global("type_list_expect_impure", FALSE)
 	TEST_ASSERT_EQUAL(length(GLOB.type_list_impure) - before, 1, "an impure per-type list is reported")
 	qdel(A)
 	qdel(B)

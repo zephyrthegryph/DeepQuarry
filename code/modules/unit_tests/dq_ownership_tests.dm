@@ -60,7 +60,7 @@
 
 /datum/unit_test/ownership_own_accessors/Run()
 	var/list/capture = list()
-	GLOB.dq_lifecycle_report_capture = capture
+	set_global("dq_lifecycle_report_capture", capture)
 	var/datum/own_test_holder/H = new
 	var/datum/own_test_child/A = new
 	own_set(H, nameof(H.child), A)
@@ -95,21 +95,21 @@
 	qdel(H)
 	TEST_ASSERT(QDELETED(B) && QDELETED(V), "destroying the owner deletes its owned values")
 	qdel(H2)
-	GLOB.dq_lifecycle_report_capture = null
+	set_global("dq_lifecycle_report_capture", null)
 	TEST_ASSERT(!length(capture), "no reports: [json_encode(capture)]")
 
 /datum/unit_test/ownership_phase8_reset
 
 /datum/unit_test/ownership_phase8_reset/Run()
 	var/list/capture = list()
-	GLOB.dq_lifecycle_report_capture = capture
+	set_global("dq_lifecycle_report_capture", capture)
 	var/datum/own_test_holder/H = new
 	own_set(H, nameof(H.child), new /datum/own_test_child)
 	dq_lifecycle_clear_links(H) // phase 4
 	var/datum/own_test_child/late = new
 	H.child = late // ALLOW(ownership): the test re-sets an owned var after phase 4
 	own_scrub(H) // phase 8
-	GLOB.dq_lifecycle_report_capture = null
+	set_global("dq_lifecycle_report_capture", null)
 	TEST_ASSERT(QDELETED(late), "phase 8 deletes a value re-set during teardown")
 	TEST_ASSERT(length(capture) && findtext(capture[1], "re-set during teardown"), "and reports it: [json_encode(capture)]")
 	qdel(H)
@@ -134,7 +134,7 @@
 
 /datum/unit_test/ownership_relation_views/Run()
 	var/list/capture = list()
-	GLOB.dq_lifecycle_report_capture = capture
+	set_global("dq_lifecycle_report_capture", capture)
 	var/datum/own_test_holder/H = new
 	var/datum/own_test_child/T = new
 	rel_set(H, nameof(H.view), T)
@@ -171,7 +171,7 @@
 	rel_set(H3, nameof(H3.view), dying)
 	dying.gc_destroyed = null
 	TEST_ASSERT(isnull(H3.view), "a link to an entity being destroyed is refused")
-	GLOB.dq_lifecycle_report_capture = null
+	set_global("dq_lifecycle_report_capture", null)
 	qdel(dying)
 	qdel(H3)
 	qdel(P1)
@@ -235,10 +235,10 @@
 	qdel(S)
 	TEST_ASSERT(!QDELETED(S), "a registered instance refuses an unforced qdel()")
 	var/list/capture = list()
-	GLOB.dq_lifecycle_report_capture = capture
+	set_global("dq_lifecycle_report_capture", capture)
 	var/datum/own_test_holder/H = new
 	shared_set(H, nameof(H.view), copy)
-	GLOB.dq_lifecycle_report_capture = null
+	set_global("dq_lifecycle_report_capture", null)
 	TEST_ASSERT(length(capture) && findtext(capture[1], "not a registered instance"), "shared_set refuses an unregistered value: [json_encode(capture)]")
 	H.view = null // ALLOW(ownership): test cleanup of a deliberately wrong write
 	qdel(copy)
@@ -279,12 +279,12 @@
 	copy = captured.Copy()
 	TEST_ASSERT(!om_resolve_captured(copy, capture[2]), "and refuses once it is gone")
 	var/list/reports = list()
-	GLOB.dq_lifecycle_report_capture = reports
+	set_global("dq_lifecycle_report_capture", reports)
 	var/datum/own_test_child/K = new
 	var/list/keyed = list()
 	keyed[K] = 1
 	TEST_ASSERT(isnull(om_capture_args(list(keyed))), "a datum used as an assoc key is refused")
-	GLOB.dq_lifecycle_report_capture = null
+	set_global("dq_lifecycle_report_capture", null)
 	qdel(K)
 	var/datum/own_test_child/B = new
 	var/list/spec = om_callable(B, TYPE_PROC_REF(/datum/own_test_child, test_label), "x")

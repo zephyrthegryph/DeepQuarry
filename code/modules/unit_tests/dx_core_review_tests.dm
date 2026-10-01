@@ -163,14 +163,14 @@ TRACKED(/obj/cap_fixture/dx_review, tracked_value, CHANGE_EFFECTS)
 
 /// H5: an entity that marks itself during its own refresh is reported.
 /datum/unit_test/dx_review_self_mark/Run()
-	GLOB.refresh_self_mark_expected = TRUE
+	set_global("refresh_self_mark_expected", TRUE)
 	var/before = length(GLOB.refresh_self_marks)
 	var/obj/cap_fixture/dx_review_selfmark/F = allocate(/obj/cap_fixture/dx_review_selfmark)
 	changed(F)
 	// One drain, not refresh_flush(): the fixture re-marks itself forever, which flush reports as a
 	// runaway after its pass cap. One pass is enough for the detector, and the re-mark waits (deferred).
 	refresh_drain(null)
-	GLOB.refresh_self_mark_expected = FALSE
+	set_global("refresh_self_mark_expected", FALSE)
 	TEST_ASSERT(length(GLOB.refresh_self_marks) > before, "the self-mark detector reported it")
 	TEST_ASSERT(F.refresh_queued, "the self re-mark waits for the next drain instead of spinning")
 	F.refresh_queued = FALSE

@@ -372,10 +372,10 @@ TRACKED(/obj/cap_fixture/dx_deps_cap, spare, CHANGE_EFFECTS)
 
 /// A hop through a plain var is refused at init with a clear error.
 /datum/unit_test/dx_deps_refuse_plain_hop/Run()
-	GLOB.derived_error_expected = TRUE
+	set_global("derived_error_expected", TRUE)
 	GLOB.derived_errors.Cut()
 	allocate(/obj/cap_fixture/dx_deps_plainhop)
-	GLOB.derived_error_expected = FALSE
+	set_global("derived_error_expected", FALSE)
 	TEST_ASSERT(length(GLOB.derived_errors) > 0, "the hop was refused")
 	TEST_ASSERT(findtext(GLOB.derived_errors[1], "not a declared relation"), "and says why: [GLOB.derived_errors[1]]")
 	GLOB.derived_errors.Cut()
@@ -426,13 +426,13 @@ TRACKED(/obj/cap_fixture/dx_deps_cap, spare, CHANGE_EFFECTS)
 
 /// Outputs must not write state: a tracked write inside draw() is reported.
 /datum/unit_test/dx_deps_output_writes_state/Run()
-	GLOB.derived_write_expected = TRUE
-	GLOB.refresh_self_mark_expected = TRUE
+	set_global("derived_write_expected", TRUE)
+	set_global("refresh_self_mark_expected", TRUE)
 	GLOB.derived_write_violations.Cut()
 	allocate(/obj/cap_fixture/dx_deps_writer)
 	refresh_flush()
-	GLOB.derived_write_expected = FALSE
-	GLOB.refresh_self_mark_expected = FALSE
+	set_global("derived_write_expected", FALSE)
+	set_global("refresh_self_mark_expected", FALSE)
 	TEST_ASSERT(length(GLOB.derived_write_violations) > 0, "the write was reported")
 	TEST_ASSERT(findtext(GLOB.derived_write_violations[1], "lie"), "and names the var: [GLOB.derived_write_violations[1]]")
 	GLOB.derived_write_violations.Cut()
@@ -445,10 +445,10 @@ TRACKED(/obj/cap_fixture/dx_deps_cap, spare, CHANGE_EFFECTS)
 	F.set_shade(1)
 	TEST_ASSERT_EQUAL(F.refresh_queued, 0, "shade is declared nowhere: the change is dropped")
 	refresh_flush()
-	GLOB.refresh_drift_expected = TRUE
+	set_global("refresh_drift_expected", TRUE)
 	GLOB.refresh_drift.Cut()
 	var/found = refresh_check_drift(F)
-	GLOB.refresh_drift_expected = FALSE
+	set_global("refresh_drift_expected", FALSE)
 	TEST_ASSERT(found, "the audit saw the stale look")
 	TEST_ASSERT(length(GLOB.refresh_drift) > 0 && findtext(GLOB.refresh_drift[1], "shade"), "and named the likely undeclared read: [length(GLOB.refresh_drift) ? GLOB.refresh_drift[1] : "no report"]")
 	GLOB.refresh_drift.Cut()

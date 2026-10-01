@@ -3,9 +3,9 @@
 
 /// Runs `step` on `target` with no wait. Returns what perform() returned.
 /datum/unit_test/proc/ladder_walk(mob/actor, atom/target, datum/interaction/capability/construction_step/step, obj/item/held)
-	GLOB.dq_ladder_instant = TRUE
+	set_global("dq_ladder_instant", TRUE)
 	. = step.perform(actor, target, held)
-	GLOB.dq_ladder_instant = FALSE
+	set_global("dq_ladder_instant", FALSE)
 
 /// The step leaving `target`'s stage toward `destination` (a stage name or LADDER_DONE).
 /datum/unit_test/proc/ladder_step(atom/target, from, destination)
