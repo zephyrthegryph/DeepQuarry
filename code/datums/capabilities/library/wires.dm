@@ -41,8 +41,8 @@
 
 /datum/capability/wires/interactions(atom/holder)
 	return list(
-		adopt_entry(cap_tool("Pulse wires", TOOL_MULTITOOL, TYPE_PROC_REF(/atom, cap_wires_open), priority = 10), id = "wires:multitool"),
-		adopt_entry(cap_tool("Cut wires", TOOL_WIRECUTTER, TYPE_PROC_REF(/atom, cap_wires_open), priority = 10), id = "wires:wirecutter"),
+		adopt_entry(lib_op("Pulse wires", TYPE_PROC_REF(/atom, cap_wires_open), OP_SHAPE_TOOL, using = TOOL_MULTITOOL, key = "pulse_wires", priority = OP_PRIORITY_PART), id = "wires:multitool"),
+		adopt_entry(lib_op("Cut wires", TYPE_PROC_REF(/atom, cap_wires_open), OP_SHAPE_TOOL, using = TOOL_WIRECUTTER, key = "cut_wires", priority = OP_PRIORITY_PART), id = "wires:wirecutter"),
 	)
 
 /datum/capability/wires/draw(atom/holder, datum/look/look)

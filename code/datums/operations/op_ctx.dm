@@ -160,10 +160,26 @@ GLOBAL_VAR_INIT(op_ctx_seq, 0)
 /datum/op_ctx/proc/stage_provider()
 	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	provider = null
+	// ROUTE_TK: the provider is the telekinesis affordance (mob/has_telegrip()), not a slot. It stands in for manipulating
+	// and working controls (AFF_TK_PROVIDES); it holds nothing.
+	if(route == ROUTE_TK)
+		var/mob/M = actor
+		if(!istype(M) || !M.has_telegrip())
+			return /datum/msg/req_no_provider
+		return (op.by & ~AFF_TK_PROVIDES) ? /datum/msg/req_no_provider : null
 	if(!op.by)
 		return null
 	if(route == ROUTE_AUTHORITY || route == ROUTE_MIND || !ismob(actor))
 		return null
+	// Inside a legacy entry proc (an op with cap_op(entry =) run from attack_hand / attackby / attack_self / click_alt)
+	// the proc's caller already decided this actor reaches it (the AI's hand use through silicon_use, telekinesis), as the
+	// route stage takes its reach.
+	if(GLOB.interaction_entry_actors[actor])
+		return null
+	// A silicon works a control through its interface (its empty-handed click, a window): the interface is the provider
+	// of manipulating and working controls (AFF_INTERFACE_PROVIDES); it holds nothing.
+	if((route & (ROUTE_INTERFACE | ROUTE_UI)) && issilicon(actor))
+		return (op.by & ~AFF_INTERFACE_PROVIDES) ? /datum/msg/req_no_provider : null
 	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	provider = ops_provider(actor, op.by)
 	return provider ? null : /datum/msg/req_no_provider
@@ -173,12 +189,29 @@ GLOBAL_VAR_INIT(op_ctx_seq, 0)
 		return /datum/msg/req_no_route
 	if(route == ROUTE_PHYSICAL && isatom(target) && !GLOB.interaction_entry_actors[actor] && !dq_interaction_reach(actor, target, held))
 		return /datum/msg/req_out_of_reach
+	if(route == ROUTE_TK && isatom(target) && !op_tk_reach(actor, target))
+		return /datum/msg/req_out_of_reach
 	if(op.at && isatom(target))
 		return op_at_reason(target, op.at, src)
 	return null
 
+/// Whether `actor` reaches `target` telekinetically: in sight on its own z-level, within TK_MAXRANGE, not while viewing
+/// remotely (the ranged click's own rules, mob/living/carbon/human/RangedAttack()).
+/proc/op_tk_reach(mob/actor, atom/target)
+	var/turf/origin = get_turf(actor)
+	var/turf/destination = get_turf(target)
+	if(!origin || !destination || origin.z != destination.z)
+		return FALSE
+	if(get_dist(origin, destination) > TK_MAXRANGE)
+		return FALSE
+	return !actor.is_remote_viewing()
+
 /datum/op_ctx/proc/stage_actor()
 	if(op.legacy || route == ROUTE_AUTHORITY || !ismob(actor))
+		return null
+	// An observer is never alive or capable: what it may do its route and its adapter already limit (ROUTE_UI, the ghost
+	// adapter's observer ops).
+	if(isobserver(actor))
 		return null
 	if(QDELETED(actor) || actor.stat == DEAD)
 		return /datum/msg/req_not_capable

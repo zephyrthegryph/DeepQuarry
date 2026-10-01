@@ -32,9 +32,8 @@
 	O.make_climbable(kind, instance_delay, vaulting)
 
 /datum/capability/climb/interactions(atom/holder)
-	var/datum/interaction/capability/E = adopt_entry(cap_hand("Climb", TYPE_PROC_REF(/obj, cap_climb_start), needs = TYPE_PROC_REF(/obj, cap_climb_ok), works_broken = TRUE, works_unpowered = TRUE))
-	E.default_action = null // Menu only: a click keeps doing the holder's own thing, a drag climbs
-	return list(E)
+	// ACT_NONE: a click keeps doing the holder's own thing, a drag climbs; the Menu, radial and command bar name it.
+	return list(adopt_entry(lib_op("Climb", TYPE_PROC_REF(/obj, cap_climb_start), OP_SHAPE_HAND, key = "climb", action = ACT_NONE, needs = TYPE_PROC_REF(/obj, cap_climb_ok), works_broken = TRUE, works_unpowered = TRUE)))
 
 /// needs: the holder is still climbable (a table flipped by the cap_flip() capability stays climbable).
 /obj/proc/cap_climb_ok(mob/user, obj/item/held)

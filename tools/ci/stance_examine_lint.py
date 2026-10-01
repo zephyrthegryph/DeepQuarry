@@ -38,6 +38,8 @@ INPUT_STANCE = re.compile(r"\binput_stance\s*\(")
 INPUT_STANCE_READERS = (
     "code/modules/mob/combat_mode.dm",          # defines it and the resolver's stance clauses
     "code/datums/interactions/",                # the resolver
+    "code/datums/operations/actions.dm",        # the op router: the stance is a gesture modifier of the bind profile
+    "code/datums/operations/req.dm",            # req_stance(): an op's stance, as the resolver's stance clauses
     "code/modules/keybindings/",                # the actor adapters: click entries pass it on
     "code/modules/mob/living/living_movement.dm",  # bump entry (a mob action)
     "code/modules/vore/eating/belly_obj_resist.dm",  # resist entry (a mob action)

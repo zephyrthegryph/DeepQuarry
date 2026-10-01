@@ -46,6 +46,8 @@
 		entry.works_broken = TRUE
 		entry.works_unpowered = TRUE
 		entry.apply_stance_tags()
+		// A real op (the router ranks it): the crowbar that takes the machine apart, a structural part op.
+		op_attach(entry, "dismantle", ACT_USE, OP_PRIORITY_NORMAL, OP_STRUCTURAL)
 		own_set(src, nameof(src.dismantle), entry)
 	return list(dismantle)
 

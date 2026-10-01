@@ -40,10 +40,10 @@
 	return C
 
 /datum/capability/edible/interactions(atom/holder)
-	var/datum/interaction/capability/eat = adopt_entry(cap_hand("Eat", TYPE_PROC_REF(/obj/item, cap_edible_eat), needs = TYPE_PROC_REF(/obj/item, cap_edible_can_eat), works_broken = TRUE, works_unpowered = TRUE))
-	eat.entry = INTERACTION_ENTRY_SELF // using it in hand eats it
-	var/datum/interaction/capability/feed = adopt_entry(cap_hand("Feed", TYPE_PROC_REF(/obj/item, cap_edible_feed), works_broken = TRUE, works_unpowered = TRUE))
-	feed.default_action = null // Menu only
+	// "eat": the self-use (using it in hand eats it); "feed": ACT_NONE.
+	var/datum/interaction/capability/eat = adopt_entry(lib_op("Eat", TYPE_PROC_REF(/obj/item, cap_edible_eat), OP_SHAPE_HAND, key = "eat", offered = req_self_held(), needs = TYPE_PROC_REF(/obj/item, cap_edible_can_eat), works_broken = TRUE, works_unpowered = TRUE))
+	eat.entry = INTERACTION_ENTRY_SELF
+	var/datum/interaction/capability/feed = adopt_entry(lib_op("Feed", TYPE_PROC_REF(/obj/item, cap_edible_feed), OP_SHAPE_HAND, key = "feed", action = ACT_NONE, works_broken = TRUE, works_unpowered = TRUE))
 	return list(eat, feed)
 
 /datum/capability/edible/examine(atom/holder, mob/user)

@@ -73,18 +73,25 @@
 	if(!lid)
 		cap_set(holder, CAP_LID_OPEN, TRUE) // lidless: always open
 
+/**
+ * Ops: "toggle_lid" (an empty hand, when lidded), "set_transfer_amount" (ACT_NONE: a setting, chosen from the Menu,
+ * radial or command bar), and with a held container (anything else in hand is not meant, so the click falls through):
+ * "pour_in" (priority 5), "splash" (the hostile ACT_ATTACK in harm) and "fill_from" (priority 4; not meant where Pour in
+ * applies). A container that can't give or take now (closed, empty, full) refuses.
+ */
 /datum/capability/reagent_container/interactions(atom/holder)
 	. = list()
 	if(lid)
-		. += adopt_entry(cap_hand("Open lid", TYPE_PROC_REF(/atom, cap_reagent_toggle_lid), works_broken = TRUE, works_unpowered = TRUE, name_proc = TYPE_PROC_REF(/atom, cap_reagent_lid_name)), id = "reagents:lid", empty_handed = TRUE, pass_cap = TRUE)
+		. += adopt_entry(lib_op("Open lid", TYPE_PROC_REF(/atom, cap_reagent_toggle_lid), OP_SHAPE_HAND, key = "toggle_lid", works_broken = TRUE, works_unpowered = TRUE, name_proc = TYPE_PROC_REF(/atom, cap_reagent_lid_name)), id = "reagents:lid", empty_handed = TRUE, pass_cap = TRUE)
 	if(length(transfer_amounts) > 1)
 		var/list/form = cycle_transfer ? null : list(choice_field("amount", TYPE_PROC_REF(/atom, cap_reagent_amount_choices), message = "Amount per transfer:"))
-		. += adopt_entry(cap_hand("Set transfer amount", TYPE_PROC_REF(/atom, cap_reagent_set_amount), works_broken = TRUE, works_unpowered = TRUE, form = form), id = "reagents:amount", category = INTERACTION_CAT_CONFIGURE, empty_handed = TRUE, pass_cap = TRUE)
+		. += adopt_entry(lib_op("Set transfer amount", TYPE_PROC_REF(/atom, cap_reagent_set_amount), OP_SHAPE_HAND, key = "set_transfer_amount", action = ACT_NONE, works_broken = TRUE, works_unpowered = TRUE, form = form), id = "reagents:amount", category = INTERACTION_CAT_CONFIGURE, empty_handed = TRUE, pass_cap = TRUE)
+	var/datum/req/held_container = req_proc(TYPE_PROC_REF(/atom, cap_reagent_held_container))
 	if(fillable)
-		. += adopt_entry(cap_use_on("Pour in", /obj/item, TYPE_PROC_REF(/atom, cap_reagent_pour_in), needs = TYPE_PROC_REF(/atom, cap_reagent_pour_in_reason), works_broken = TRUE, works_unpowered = TRUE, priority = 5), id = "reagents:pour_in", pass_cap = TRUE)
-	. += adopt_entry(cap_use_on("Splash", /obj/item, TYPE_PROC_REF(/atom, cap_reagent_splash_on), needs = TYPE_PROC_REF(/atom, cap_reagent_splash_reason), works_broken = TRUE, works_unpowered = TRUE, log = LOG_GAME, priority = 5, stance = I_HURT), id = "reagents:splash:[I_HURT]", pass_cap = TRUE)
+		. += adopt_entry(lib_op("Pour in", TYPE_PROC_REF(/atom, cap_reagent_pour_in), OP_SHAPE_USE_ON, using = /obj/item, key = "pour_in", offered = held_container, needs = TYPE_PROC_REF(/atom, cap_reagent_pour_in_reason), works_broken = TRUE, works_unpowered = TRUE, priority = 5), id = "reagents:pour_in", pass_cap = TRUE)
+	. += adopt_entry(lib_op("Splash", TYPE_PROC_REF(/atom, cap_reagent_splash_on), OP_SHAPE_USE_ON, using = /obj/item, key = "splash", action = ACT_ATTACK, offered = held_container, needs = TYPE_PROC_REF(/atom, cap_reagent_splash_reason), works_broken = TRUE, works_unpowered = TRUE, log = LOG_GAME, priority = 5, stance = I_HURT), id = "reagents:splash:[I_HURT]", pass_cap = TRUE)
 	if(pourable)
-		. += adopt_entry(cap_use_on("Fill from", /obj/item, TYPE_PROC_REF(/atom, cap_reagent_fill_from), needs = TYPE_PROC_REF(/atom, cap_reagent_fill_from_reason), works_broken = TRUE, works_unpowered = TRUE, priority = 4), id = "reagents:fill_from", pass_cap = TRUE)
+		. += adopt_entry(lib_op("Fill from", TYPE_PROC_REF(/atom, cap_reagent_fill_from), OP_SHAPE_USE_ON, using = /obj/item, key = "fill_from", offered = list(held_container, req_proc(TYPE_PROC_REF(/atom, cap_reagent_fill_from_meant))), needs = TYPE_PROC_REF(/atom, cap_reagent_fill_from_reason), works_broken = TRUE, works_unpowered = TRUE, priority = 4), id = "reagents:fill_from", pass_cap = TRUE)
 
 /datum/capability/reagent_container/examine(atom/holder, mob/user)
 	. = list()
@@ -187,6 +194,15 @@
 	D.transfer_amount = chosen
 	to_chat(user, span_notice("\The [src] now transfers [chosen] unit\s at a time."))
 	return TRUE
+
+/// offered: the held item is a reagent container at all (anything else in hand is not meant: the click falls through).
+/atom/proc/cap_reagent_held_container(mob/user, obj/item/held)
+	return held?.reagents ? TRUE : "\the [held] can't hold reagents"
+
+/// offered: Fill from is not meant where Pour in applies (a holder that takes pouring, a held container with something in it).
+/atom/proc/cap_reagent_fill_from_meant(mob/user, obj/item/held)
+	var/datum/capability/reagent_container/C = cap_of(src, /datum/capability/reagent_container)
+	return (C?.fillable && held?.reagents?.total_volume) ? FALSE : TRUE
 
 /atom/proc/cap_reagent_pour_in_reason(mob/user, obj/item/held)
 	if(!held)
