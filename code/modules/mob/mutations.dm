@@ -19,6 +19,7 @@
 	LAZYADD(mutations, mut)
 	update_mutation_immunities(mut)
 	changed(src, CHANGE_MOB_CONDITIONS)
+	PUBLISH_CHANGE(src, MOB_KEY_CONDITIONS)
 
 /// Removes every occurrence of the given mutation from this mob.
 /mob/proc/remove_mutation(mut)
@@ -27,6 +28,7 @@
 	LAZYREMOVE(mutations, mut)
 	update_mutation_immunities(mut)
 	changed(src, CHANGE_MOB_CONDITIONS)
+	PUBLISH_CHANGE(src, MOB_KEY_CONDITIONS)
 
 /// Returns the number of mutations currently active on this mob.
 /mob/proc/mutation_count()

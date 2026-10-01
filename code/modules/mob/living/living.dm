@@ -1440,4 +1440,3 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 /mob/living/proc/ai_brain_resume()
 	ai_busy_end()
 
-DECLARE_BEHAVIOUR(/mob/living, /datum/om/behaviour/spontaneous_vore)

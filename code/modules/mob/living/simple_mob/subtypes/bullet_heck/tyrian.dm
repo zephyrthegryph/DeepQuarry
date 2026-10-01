@@ -302,7 +302,11 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/ex
 	B.absorbchance = 0
 	B.escapechance = 15
 
-REFLECTS(/mob/living/simple_mob/mechanical/mecha/eclipse/tankyboss/crystal_boss, list(/obj/item/projectile), "parry_chance")
+CAPABILITY(/mob/living/simple_mob/mechanical/mecha/eclipse/tankyboss/crystal_boss, reflects(list(/obj/item/projectile), PROC_REF(current_parry_chance)))
+
+/// reflects()'s chance: the boss parries with its current parry_chance.
+/mob/living/simple_mob/mechanical/mecha/eclipse/tankyboss/crystal_boss/proc/current_parry_chance()
+	return parry_chance
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/tankyboss/crystal_boss/do_special_attack(atom/A, stance)
 	om_after(src, 0.5 SECONDS, PROC_REF(bomb_chaos), A, 4)

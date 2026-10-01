@@ -173,7 +173,6 @@ REGISTRY_MEMBERSHIP(/obj/item/organ/internal/brain, REGISTRY_BRAIN_ORGANS)
 		var/datum/mind_host/host = get_mind_host(src)
 		var/mob/living/carbon/brain/view = host.receive_mind(owner.mind, "brain removed from [owner]")
 		to_chat(view, span_notice("You feel slightly disoriented. That's normal when you're just  [initial(name)]."))
-		OM_EMIT_WORLD(/datum/om/event/world_brain_removed, view)
 
 	..()
 	sync_defib_window() // re-anchor on the loose brain's clock

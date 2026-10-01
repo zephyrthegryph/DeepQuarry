@@ -44,13 +44,6 @@
 	//Something else made organs, meanwhile.
 	if(!isnewplayer(src))
 		om_attach(src, /datum/om/behaviour/slosh)
-		// Wire the spontaneous-vore signal handlers (stumble/slip/drop/throw vore).
-		// The behaviour is defined in code/datums/behaviours/spontaneous_vore.dm
-		// but was never attached anywhere — stumble/slip/drop/throw vore was silently
-		// broken.  Attaching here is safe: each handler checks the mob's stumble_vore,
-		// slip_vore, etc. preference flags and no-ops if they are disabled.
-		if(isliving(src))
-			om_attach(src, /datum/om/behaviour/spontaneous_vore)
 	if(LAZYLEN(vore_organs))
 		if(!soulgem)
 			own_set(src, nameof(soulgem), new /obj/soulgem(src))

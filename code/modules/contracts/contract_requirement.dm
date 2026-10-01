@@ -332,8 +332,6 @@
 	var/list/pending_tokens
 	var/list/completed_entities
 
-OWN_TIMER(/datum/contract_requirement/sustained_event, pending)
-
 /datum/contract_requirement/sustained_event/New(_event_type, _entity_field, _numeric_field, _comparator, _threshold, _duration, _target = 1, _scope_mode = CONTRACT_EVIDENCE_SCOPE_ANY)
 	. = ..()
 	event_type = _event_type
@@ -408,8 +406,6 @@ OWN_TIMER(/datum/contract_requirement/sustained_event, pending)
 	var/list/pending_tokens
 	var/list/pending_stage_indices
 	var/list/completed_stages
-
-OWN_TIMER(/datum/contract_requirement/staged_sustained_event, pending)
 
 /datum/contract_requirement/staged_sustained_event/New(_event_type, _entity_field, _numeric_field, _comparator, list/_stages, _scope_mode = CONTRACT_EVIDENCE_SCOPE_ANY)
 	. = ..()

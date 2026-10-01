@@ -19,10 +19,10 @@
 	TEST_ASSERT_NOTNULL(swipe, "the lock offers a swipe entry")
 	TEST_ASSERT(swipe.is_meant(H, A, good), "an ID is meant")
 	TEST_ASSERT(swipe.is_meant(H, A, null), "an empty hand is meant by an alt-click (the actor's own access)")
-	GLOB.op_gesture_now = GESTURE_CLICK
+	set_global("op_gesture_now", GESTURE_CLICK)
 	TEST_ASSERT(swipe.is_meant(H, A, good), "a click holding an ID is a swipe")
 	TEST_ASSERT(!swipe.is_meant(H, A, null), "a plain click with an empty hand is not")
-	GLOB.op_gesture_now = null
+	set_global("op_gesture_now", null)
 	TEST_ASSERT("It is unlocked." in caps_examine(A, H), "examine says unlocked")
 	TEST_ASSERT_EQUAL(swipe.display_name(H, A), "Lock", "named Lock while unlocked")
 

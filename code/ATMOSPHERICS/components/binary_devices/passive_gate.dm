@@ -279,10 +279,10 @@ UI_ACT_PROC(/obj/machinery/atmospherics/binary/passive_gate, ui_act_set_flow_rat
 	icon_state = "on"
 
 
-TRACKED(/obj/machinery/atmospherics/binary/passive_gate, unlocked, CHANGE_MACHINE_SETTINGS)
-TRACKED(/obj/machinery/atmospherics/binary/passive_gate, target_pressure, CHANGE_MACHINE_SETTINGS)
-TRACKED(/obj/machinery/atmospherics/binary/passive_gate, set_flow_rate, CHANGE_MACHINE_SETTINGS)
-TRACKED(/obj/machinery/atmospherics/binary/passive_gate, regulate_mode, CHANGE_MACHINE_SETTINGS)
+TRACKED_BRIDGED(/obj/machinery/atmospherics/binary/passive_gate, unlocked, CHANGE_MACHINE_SETTINGS)
+TRACKED_BRIDGED(/obj/machinery/atmospherics/binary/passive_gate, target_pressure, CHANGE_MACHINE_SETTINGS)
+TRACKED_BRIDGED(/obj/machinery/atmospherics/binary/passive_gate, set_flow_rate, CHANGE_MACHINE_SETTINGS)
+TRACKED_BRIDGED(/obj/machinery/atmospherics/binary/passive_gate, regulate_mode, CHANGE_MACHINE_SETTINGS)
 
 /// The Rust device law is pushed (once per frame) when any of these change.
 /obj/machinery/atmospherics/binary/passive_gate/derived()

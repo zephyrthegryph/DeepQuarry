@@ -171,11 +171,11 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/binary/dp_vent_pump, TYPE_PR
 	if(power_w > 0)
 		use_power(power_w)
 
-TRACKED(/obj/machinery/atmospherics/binary/dp_vent_pump, pump_direction, CHANGE_MACHINE_SETTINGS)
-TRACKED(/obj/machinery/atmospherics/binary/dp_vent_pump, external_pressure_bound, CHANGE_MACHINE_SETTINGS)
-TRACKED(/obj/machinery/atmospherics/binary/dp_vent_pump, input_pressure_min, CHANGE_MACHINE_SETTINGS)
-TRACKED(/obj/machinery/atmospherics/binary/dp_vent_pump, output_pressure_max, CHANGE_MACHINE_SETTINGS)
-TRACKED(/obj/machinery/atmospherics/binary/dp_vent_pump, pressure_checks, CHANGE_MACHINE_SETTINGS)
+TRACKED_BRIDGED(/obj/machinery/atmospherics/binary/dp_vent_pump, pump_direction, CHANGE_MACHINE_SETTINGS)
+TRACKED_BRIDGED(/obj/machinery/atmospherics/binary/dp_vent_pump, external_pressure_bound, CHANGE_MACHINE_SETTINGS)
+TRACKED_BRIDGED(/obj/machinery/atmospherics/binary/dp_vent_pump, input_pressure_min, CHANGE_MACHINE_SETTINGS)
+TRACKED_BRIDGED(/obj/machinery/atmospherics/binary/dp_vent_pump, output_pressure_max, CHANGE_MACHINE_SETTINGS)
+TRACKED_BRIDGED(/obj/machinery/atmospherics/binary/dp_vent_pump, pressure_checks, CHANGE_MACHINE_SETTINGS)
 
 /// The Rust device law is pushed (once per frame) when any of these change.
 /obj/machinery/atmospherics/binary/dp_vent_pump/derived()

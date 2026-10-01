@@ -100,7 +100,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/atmospheric_field_generator, "arfg_{appearanc
 		ispowered = FALSE
 		disable_field()
 
-EMP_DISABLE(/obj/machinery/atmospheric_field_generator, 7.5 SECONDS, "emp_until")
+CAPABILITY(/obj/machinery/atmospheric_field_generator, emp_disable(7.5 SECONDS))
 
 /obj/machinery/atmospheric_field_generator/emp_disable_changed(disabled)
 	..()

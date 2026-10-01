@@ -2,9 +2,6 @@
 #define ROBOT_ENTRY_CROWBAR "robot_crowbar"
 #define ROBOT_ENTRY_WELDER "robot_welder"
 
-OWN_TIMER(/mob/living/silicon/robot, killswitch)
-OWN_TIMER(/mob/living/silicon/robot, weapon_lock)
-
 /mob/living/silicon/robot
 	/// Traitor HUD images shown to a syndicate borg's client (see build_traitor_hud()).
 	var/list/traitor_hud_images
@@ -1915,7 +1912,7 @@ DECLARE_DEFAULT_CHILD(/mob/living/silicon/robot, "robotact", /datum/tgui_module/
 	// The module, radio, camera and components are deleted by phase 4, after the AI link and shell are undone.
 	. += owns(nameof(mmi), policy = OWN_CONTAINED)
 	// A registered robot sprite, or the robot's private fallback default (copy-on-write).
-	. += proto(nameof(sprite_datum))
+	. += rel_one(nameof(sprite_datum), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)
 
 /mob/living/silicon/robot/relations()
 	. = ..()

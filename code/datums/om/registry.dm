@@ -207,7 +207,7 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 			if(rows[id])
 				error("effect [id] defined twice (second in [B.type])")
 			rows[id] = B.effects[id]
-	var/static/list/allowed = list("combine", "stacking", "channel", "default", "expr", "type", "kind", "clock", "implies",
+	var/static/list/allowed = list("combine", "stacking", "channel", "publishes", "default", "expr", "type", "kind", "clock", "implies",
 		"unit", "rate", "rate_resting", "max_units", "immunity", "scaled", "signal", "alert", "alert_type", "indicator", "on_start", "on_end", "on_increase", "entity_type")
 	var/static/list/status_keys = list("unit", "rate", "rate_resting", "max_units", "immunity", "scaled", "signal", "alert", "alert_type", "indicator", "on_start", "on_end", "on_increase", "entity_type")
 	for(var/id in rows)
@@ -245,6 +245,7 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 			error("effect [id]: bad stacking [E.stacking]")
 			E.stacking = STACKING_REPLACE
 		E.channel = row["channel"] || 0
+		E.publishes = row["publishes"]
 		E.kind = row["kind"] || OM_EFFECT_PLAIN
 		E.expr = row["expr"]
 		if("default" in row)

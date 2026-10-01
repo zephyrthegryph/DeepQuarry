@@ -22,6 +22,10 @@ GLOBAL_LIST_INIT(dq_lifecycle_snapshot_ignored_globs, list(
 	// instance can't pre-fill it for randomised contents (an MRE's meal picks), so a content type
 	// first seen on materialize() would read as a round-trip change.
 	"registries_by_type",
+	// The per-frame refresh drain queue (refresh.dm): a setter in Initialize() queues the atom's
+	// derived outputs, and the next drain empties it (skipping deleted entries). Scratch, not a
+	// registration, like the native system's per-frame lists below.
+	"refresh_queue",
 ))
 
 /// Cached (container, varname) pairs for every list-valued var on GLOB and on

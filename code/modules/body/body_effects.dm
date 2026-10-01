@@ -212,8 +212,6 @@
 	UNSETEMPTY(body_effect_factors)
 	invalidate_factors()
 
-OWN_TIMER(/mob/living, body_effect)
-
 /// The timer slot for body effect timer `name` ("[path]#[serial]" or "[path]#tick"): on the mob,
 /// or, for a world-clock effect, on the global owner under a name that includes the mob.
 /mob/living/proc/body_effect_slot(datum/body_effect/def, name)
@@ -295,6 +293,7 @@ OWN_TIMER(/mob/living, body_effect)
 	var/stacks = (def.stacks == MODIFIER_STACK_ALLOWED) ? current + 1 : 1
 	om_hold(src, EFFECT_BODY_EFFECTS, src, stacks, path)
 	changed(src, CHANGE_MOB_CONDITIONS)
+	PUBLISH_CHANGE(src, MOB_KEY_CONDITIONS)
 	if(duration)
 		LAZYINITLIST(body_effect_timers)
 		LAZYADD(body_effect_timers[path], body_effect_new_stack(def, path, duration))
@@ -387,6 +386,7 @@ OWN_TIMER(/mob/living, body_effect)
 	if(!om_release(src, EFFECT_BODY_EFFECTS, src, path))
 		return
 	changed(src, CHANGE_MOB_CONDITIONS)
+	PUBLISH_CHANGE(src, MOB_KEY_CONDITIONS)
 	if(def.on_expired_text && !silent)
 		to_chat(src, def.on_expired_text)
 	// A persistent trait leaves the character only when deliberately removed from a living

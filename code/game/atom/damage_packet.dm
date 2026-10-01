@@ -216,19 +216,19 @@ GLOBAL_LIST_INIT(emp_ladder, list(100, 70, 40, 10))
 // --- The sinks ------------------------------------------------------------------
 
 /// Apply a damage packet. Returns the amount actually applied after mitigation.
-/// The type's declared damage reactions run first (DAMAGE_REACTION, systems.md section 12): one
-/// that blocks stops the hit. Then the sink applies it, then the DAMAGE_REACTION_AFTER rows.
-/// Not overridable: a type changes where damage lands by overriding damage_sink().
+/// The type's damage reactions run first (before_op(damage(...)) in its composed reactions table,
+/// doc/rewrite/reactions.md section 1b): one that blocks stops the hit. Then the sink applies it, then the
+/// after_op(damage(...)) rows. Not overridable: a type changes where damage lands by overriding damage_sink().
 /atom/proc/receive_damage(datum/damage_packet/packet)
 	SHOULD_NOT_OVERRIDE(TRUE)
-	var/datum/lifecycle_decls/decls = lifecycle_decls_of(src)
-	if(!decls?.damage_reactions)
+	var/list/rows = damage_rows_of(src)
+	if(!rows)
 		return damage_sink(packet)
-	if(run_damage_reactions(decls, packet, DAMAGE_REACTION_PHASE_BEFORE))
+	if(run_damage_reactions(rows, packet, DAMAGE_REACTION_PHASE_BEFORE))
 		return 0
 	. = damage_sink(packet)
-	if(decls.damage_reactions_after && !QDELETED(src))
-		run_damage_reactions(decls, packet, DAMAGE_REACTION_PHASE_AFTER)
+	if(damage_rows_after(src) && !QDELETED(src))
+		run_damage_reactions(rows, packet, DAMAGE_REACTION_PHASE_AFTER)
 
 /// Where a packet lands. The default sink is object integrity; /mob/living overrides it with injure().
 /atom/proc/damage_sink(datum/damage_packet/packet)

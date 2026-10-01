@@ -49,7 +49,7 @@
 	/// Whether it was running when the EMP took it down (it restarts when the outage lapses).
 	var/emp_was_on = FALSE
 
-EMP_DISABLE(/obj/vehicle, 30 SECONDS, "emp_until")
+CAPABILITY(/obj/vehicle, emp_disable(30 SECONDS))
 
 //-------------------------------------------
 // Standard procs

@@ -216,13 +216,13 @@ DECLARE_NO_REAGENTS(/obj/item/dq_decl_probe/dry)
 
 /datum/unit_test/dq_decl_binds/Run()
 	var/turf/T = dq_containment_floor()
-	GLOB.dq_decl_test_log = list()
+	set_global("dq_decl_test_log", list())
 	var/obj/item/dq_decl_probe/single = allocate(/obj/item/dq_decl_probe, T)
 	TEST_ASSERT(single.bound, "bound at materialize outside a batch")
 	TEST_ASSERT_EQUAL(jointext(GLOB.dq_decl_test_log, ","), "bind:1", "one bind_list() call for it")
 
 	// A batch: SSatoms owns deferred_decl_binds for the length of InitializeAtoms().
-	GLOB.dq_decl_test_log = list()
+	set_global("dq_decl_test_log", list())
 	var/list/saved = SSatoms.deferred_decl_binds
 	SSatoms.deferred_decl_binds = list()
 	var/list/probes = list()
@@ -236,7 +236,7 @@ DECLARE_NO_REAGENTS(/obj/item/dq_decl_probe/dry)
 	TEST_ASSERT(first.bound, "bound when the batch flushed")
 	TEST_ASSERT_EQUAL(jointext(GLOB.dq_decl_test_log, ","), "bind:2", "one bind_list() for the whole batch")
 
-	GLOB.dq_decl_test_log = list()
+	set_global("dq_decl_test_log", list())
 	qdel(single)
 	TEST_ASSERT_EQUAL(jointext(GLOB.dq_decl_test_log, ","), "unbind", "released once, in destroy phase 1")
 

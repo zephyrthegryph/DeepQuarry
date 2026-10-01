@@ -1,27 +1,28 @@
-// Declared damage reactions (doc/rewrite/systems.md section 12, runtime code/datums/sys/damage_reactions.dm).
+// Damage reactions (doc/rewrite/reactions.md section 1b, runtime code/datums/sys/damage_reactions.dm).
 //
-// A fixed thing a type does when it is hit is declared next to the type, not written as an
-// override of an entry point (bullet_act, emp_act, ex_act, blob_act, hitby, attack_generic ...):
+// A fixed thing a type does when it is hit is a reaction on the damage operation, declared in reactions() next to
+// the type, never an override of an entry point (bullet_act, emp_act, ex_act, blob_act, hitby, attack_generic ...):
 //
-//   DAMAGE_REACTION(/obj/machinery/firealarm, DAMAGE_PROJECTILE, PROC_REF(alarm_on_hit))
-//   DAMAGE_REACTION_AFTER(/obj/machinery/door, DAMAGE_PROJECTILE, PROC_REF(update_icon_after_hit))
-//   REFLECTS(/mob/living/simple_mob/slime/xenobio/silver, list(/obj/item/projectile/beam, /obj/item/projectile/energy), 100)
-//   EMP_DISABLE(/obj/machinery/exonet_node, 300 SECONDS, "emp_until")
+//	/obj/machinery/firealarm/reactions()
+//		. = ..()
+//		. += before_op(damage(DAMAGE_EMP), PROC_REF(firealarm_emp))        // may block the hit
+//		. += after_op(damage(DAMAGE_PROJECTILE), PROC_REF(flicker))        // after the sink, if it survived
+//	CAPABILITY(/mob/living/simple_mob/slime/xenobio/silver, reflects(list(/obj/item/projectile/beam), 100))
+//	CAPABILITY(/obj/machinery/exonet_node, emp_disable(300 SECONDS))
 //
-// Every entry adapter builds a damage packet and hands it to receive_damage(), which runs the
-// type's reactions and then its sink (damage_sink()). An entry that lands nothing (a zero-damage
-// round, a pulse on a type that takes no ionic damage) still delivers an empty packet when the
-// type declares reactions, so a reaction fires on every hit of its trigger.
+// Every entry adapter builds a damage packet and hands it to receive_damage(), which runs the before_op reactions of
+// the matching damage keys, then the sink (damage_sink()), then the after_op ones. An entry that lands nothing (a
+// zero-damage round, a pulse on a type that takes no ionic damage) still delivers an empty packet when the type has
+// damage reactions, so a reaction fires on every hit of its trigger. Capabilities contribute damage reactions
+// through their own reactions() (reflects() and emp_disable() do).
 //
-// Triggers: a DAMAGE_* kind (DAMAGE_BLUNT .. DAMAGE_PAIN) fires when the packet carries some of
-// that kind; an entry trigger below fires on every hit through that entry, whatever it carries.
-// The proc is called on the holder as proc(datum/damage_packet/packet); packet.severity is the
-// EMP / explosion severity (0 for other entries). A DAMAGE_REACTION proc returning
-// DAMAGE_REACTION_BLOCK stops the hit: no later reaction, no sink (and the entry skips its own
-// damage). DAMAGE_REACTION_AFTER procs run after the sink, only if the holder survived it.
+// Triggers: a DAMAGE_* kind (DAMAGE_BLUNT .. DAMAGE_PAIN) fires when the packet carries some of that kind; an entry
+// trigger below fires on every hit through that entry, whatever it carries. The handler is called on the holder as
+// handler(datum/damage_packet/packet) (a GLOBAL_PROC_REF gets the holder first); packet.severity is the EMP /
+// explosion severity (0 for other entries). A before_op handler returning DAMAGE_REACTION_BLOCK (or any reason: a
+// /datum/msg type or text) stops the hit: no later reaction, no sink (and the entry skips its own damage).
 //
-// Declarations accumulate down the type tree. A subtype changes an inherited reaction by
-// overriding the reaction proc, never by overriding the entry point.
+// A subtype changes an inherited reaction by overriding the handler proc, never by overriding the entry point.
 
 #define DAMAGE_ENTRY_PROJECTILE 101
 #define DAMAGE_ENTRY_EMP 102
@@ -45,19 +46,22 @@
 /// A reaction proc's return: the hit stops here.
 #define DAMAGE_REACTION_BLOCK (1<<0)
 
-/// Reaction phases (the third slot of a reaction row).
+/// Reaction phases (the third slot of a damage row, /datum/rx_table/var/damage_rows).
 #define DAMAGE_REACTION_PHASE_BEFORE 0
 #define DAMAGE_REACTION_PHASE_AFTER 1
 
-/// Runs PROC on the holder when a hit with TRIGGER reaches receive_damage(), before the sink.
-#define DAMAGE_REACTION(PATH, TRIGGER, PROC) _LIFECYCLE_DECL(PATH, add_damage_reaction(TRIGGER, PROC, DAMAGE_REACTION_PHASE_BEFORE))
-/// Runs PROC on the holder after the sink applied a hit with TRIGGER (only if the holder survived).
-#define DAMAGE_REACTION_AFTER(PATH, TRIGGER, PROC) _LIFECYCLE_DECL(PATH, add_damage_reaction(TRIGGER, PROC, DAMAGE_REACTION_PHASE_AFTER))
-/// Projectiles matching KINDS (projectile type paths, or the obj damage types BRUTE / BURN) are
-/// bounced back towards where they were fired from with CHANCE percent (a number, or the name of
-/// a var on the holder), instead of hitting.
-#define REFLECTS(PATH, KINDS, CHANCE) _LIFECYCLE_DECL(PATH, set_reflects(KINDS, CHANCE))
-/// An EMP disables the holder for DURATION / severity: FIELD (the name of an EXPIRY_DECLAREd var,
-/// CLOCK_WORLD) is extended, machinery gains EMPED, and emp_disable_changed(TRUE) runs. When the
-/// expiry lapses (section 17) EMPED is cleared and emp_disable_changed(FALSE) runs.
-#define EMP_DISABLE(PATH, DURATION, FIELD) _LIFECYCLE_DECL(PATH, set_emp_disable(DURATION, FIELD))
+/// The prefix of a damage key (damage(trigger)).
+#define DAMAGE_KEY_PREFIX "damage:"
+
+/// The after() key of emp_disable()'s lapse timer.
+#define EMP_DISABLE_KEY "emp_disable"
+
+// ---- LEGACY: thin wrappers over the forms above (the codemod moves their sites; tools/ci ratchets them) ----
+/// before_op(damage(TRIGGER), PROC) in PATH's reactions().
+#define DAMAGE_REACTION(PATH, TRIGGER, PROC) ##PATH/reactions() { . = ..(); . += before_op(damage(TRIGGER), PROC); }
+/// after_op(damage(TRIGGER), PROC) in PATH's reactions().
+#define DAMAGE_REACTION_AFTER(PATH, TRIGGER, PROC) ##PATH/reactions() { . = ..(); . += after_op(damage(TRIGGER), PROC); }
+/// CAPABILITY(PATH, reflects(KINDS, CHANCE)).
+#define REFLECTS(PATH, KINDS, CHANCE) CAPABILITY(PATH, reflects(KINDS, CHANCE))
+/// CAPABILITY(PATH, emp_disable(DURATION, FIELD)).
+#define EMP_DISABLE(PATH, DURATION, FIELD) CAPABILITY(PATH, emp_disable(DURATION, FIELD))

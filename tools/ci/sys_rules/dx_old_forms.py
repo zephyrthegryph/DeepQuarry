@@ -16,7 +16,7 @@ RULES = {
     "old_ui": "tgui_data() plus ui_<action>(mob/user, named args) procs (§5)",
     "old_prompt": "ask_text/ask_number/ask_list/ask_yes_no/ask_color/ask_mob (§6)",
     "old_expiry": "timed_set(src, nameof(var), value, for_time =) (§7)",
-    "old_field": "a plain var, or TRACKED(type, var, channel) (§1)",
+    "old_field": "a plain var, or TRACKED(type, var) (§1)",
     "old_verb_decl": "a native verb plus hidden_verbs() (§4)",
     "old_periodic": "periodic_cadence plus should_run()/periodic_step(dt) (§4)",
     "manual_fingerprint": "nothing: the dispatcher fingerprints (§2, §8)",

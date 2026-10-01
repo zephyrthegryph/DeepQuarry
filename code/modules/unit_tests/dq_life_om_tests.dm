@@ -215,12 +215,24 @@
 /datum/unit_test/life_om/proc/run_life()
 	return
 
-/// The handlers (as text) of `L`'s on_channel() reactions.
+/// The handlers (as text) of `L`'s on_change() reactions.
 /proc/life_test_reaction_handlers(mob/living/L)
 	. = list()
 	var/datum/rx_table/T = rx_table_of(L)
-	for(var/datum/reaction/R as anything in T?.chan_reactions)
-		. += "[R.handler]"
+	for(var/key in T?.by_key)
+		for(var/datum/reaction/R as anything in T.by_key[key])
+			. |= "[R.handler]"
+
+/// Raises a mob change the way its producer does: the OM channel (the Life stages still wake on it) and the change
+/// key the presentation reactions read (PUBLISH_CHANGE).
+/proc/life_test_raise(mob/living/L, channel)
+	changed(L, channel)
+	var/static/list/keys = list("[CHANGE_MOB_STATUS]" = MOB_KEY_STATUS, "[CHANGE_MOB_HEALTH]" = MOB_KEY_HEALTH, \
+		"[CHANGE_MOB_LOC]" = MOB_KEY_LOC, "[CHANGE_MOB_EQUIPMENT]" = MOB_KEY_EQUIPMENT, "[CHANGE_MOB_CONDITIONS]" = MOB_KEY_CONDITIONS, \
+		"[CHANGE_MOB_CLIENT]" = MOB_KEY_CLIENT)
+	var/key = keys["[channel]"]
+	if(key)
+		PUBLISH_CHANGE(L, key)
 
 /// TRUE when `L`'s reaction with `handler` is queued for the next drain.
 /proc/life_test_rx_queued(mob/living/L, handler)
@@ -646,12 +658,12 @@
 	scheduler_advance(LIFE_CYCLE_SECONDS * 3)
 	TEST_ASSERT_EQUAL(life_test_frames(H), before, "and runs no frame, with nothing tested per frame")
 	GLOB.living_players_by_zlevel[z] += H
+	defer_cleanup(null, GLOBAL_PROC_REF(life_test_drop_living_player), z, H)
 	life_z_occupancy_changed(z)
 	TEST_ASSERT_EQUAL(om_relevance(H), RELEVANCE_NEAR, "a living player arriving makes the z-level's low-priority mobs relevant")
 	scheduler_advance(LIFE_CYCLE_SECONDS * 2)
 	TEST_ASSERT(life_test_frames(H) > before, "so they run again")
-	GLOB.living_players_by_zlevel[z] -= H
-	life_z_occupancy_changed(z)
+	life_test_drop_living_player(z, H)
 	TEST_ASSERT_EQUAL(om_relevance(H), RELEVANCE_NONE, "and the last one leaving parks them")
 	H.set_low_priority(FALSE)
 	TEST_ASSERT(!(H in P.members), "a mob that isn't low priority leaves the presence")
@@ -732,7 +744,7 @@
 	var/frames = life_test_frames(H)
 	H.status_set(EFFECT_SLEEPING, 2)
 	H.canmove = TRUE
-	changed(H, CHANGE_MOB_STATUS)
+	life_test_raise(H, CHANGE_MOB_STATUS)
 	TEST_ASSERT(!life_test_rx_queued(H, TYPE_PROC_REF(/mob/living, life_hud_changed)), "a clientless mob queues no HUD pass")
 	TEST_ASSERT(life_test_rx_queued(H, TYPE_PROC_REF(/mob/living, life_canmove_changed)), "the canmove reaction is queued")
 	sched.run_pass(1e9)
@@ -762,17 +774,17 @@
 	rx_drain()
 	H.hud_runs = 0
 	for(var/channel in list(CHANGE_MOB_LOC, CHANGE_MOB_HEALTH, CHANGE_MOB_EQUIPMENT, CHANGE_MOB_STATUS))
-		changed(H, channel)
+		life_test_raise(H, channel)
 	TEST_ASSERT(!life_test_rx_queued(H, TYPE_PROC_REF(/mob/living, life_hud_changed)), "no client: nothing is queued")
 	rx_drain()
 	TEST_ASSERT_EQUAL(H.hud_runs, 0, "and no HUD pass runs")
 	H.pretend_client = TRUE
-	changed(H, CHANGE_MOB_CLIENT)
+	life_test_raise(H, CHANGE_MOB_CLIENT)
 	TEST_ASSERT(life_test_rx_queued(H, TYPE_PROC_REF(/mob/living, life_hud_changed)), "a client logging in queues the HUD")
 	rx_drain()
 	TEST_ASSERT_EQUAL(H.hud_runs, 1, "which draws once")
 
-/// on_channel(at_most = LIFE_PRESENT_MIN_INTERVAL): a walking player raises a location change most
+/// on_change(at_most = LIFE_PRESENT_MIN_INTERVAL): a walking player raises a location change most
 /// ticks; the HUD draws once, then the changes inside the window are held and drawn once when it ends.
 /datum/unit_test/life_om/hud_at_most_coalesces
 
@@ -784,12 +796,12 @@
 	scheduler_advance(LIFE_PRESENT_MIN_INTERVAL / 10 + 0.1)
 	rx_drain()
 	H.hud_runs = 0
-	changed(H, CHANGE_MOB_LOC)
+	life_test_raise(H, CHANGE_MOB_LOC)
 	rx_drain()
 	TEST_ASSERT_EQUAL(H.hud_runs, 1, "the first change draws at the drain")
 	for(var/i in 1 to 4)
-		changed(H, CHANGE_MOB_LOC)
-		changed(H, CHANGE_MOB_HEALTH)
+		life_test_raise(H, CHANGE_MOB_LOC)
+		life_test_raise(H, CHANGE_MOB_HEALTH)
 		rx_drain()
 	TEST_ASSERT_EQUAL(H.hud_runs, 1, "changes inside the window are held")
 	scheduler_advance(LIFE_PRESENT_MIN_INTERVAL / 10 + 0.1)
@@ -1232,3 +1244,10 @@
 	qdel(stasis_source)
 
 #endif
+
+/// Takes a test mob back out of its z-level's living players (a no-op once it has left).
+/proc/life_test_drop_living_player(z, mob/living/H)
+	if(!(H in GLOB.living_players_by_zlevel[z]))
+		return
+	GLOB.living_players_by_zlevel[z] -= H
+	life_z_occupancy_changed(z)

@@ -81,9 +81,9 @@
 	TEST_ASSERT(attacker.Adjacent(victim), "attacker should be adjacent to the victim")
 
 	var/before = victim.vitality()
-	GLOB.timed_actions_instant = TRUE // the windup is a timed action; land it now
+	set_global("timed_actions_instant", TRUE) // the windup is a timed action; land it now
 	victim.attackby(weapon, attacker) // harm-intent item attack -> divert -> windup -> swing
-	GLOB.timed_actions_instant = FALSE
+	set_global("timed_actions_instant", FALSE)
 	TEST_ASSERT(victim.vitality() < before, "a victim in the swing tile should take damage (vitality before [before], after [victim.vitality()])")
 
 /datum/unit_test/dq_melee_swing_kitchen_knife
@@ -99,9 +99,9 @@
 	TEST_ASSERT(knife.force > 0, "a newly initialized kitchen knife has no melee force")
 	TEST_ASSERT_EQUAL(attacker.get_active_hand(), knife, "the kitchen knife was not held in the active hand")
 	var/before = victim.injury_load(INJURY_CATEGORY_PHYSICAL)
-	GLOB.timed_actions_instant = TRUE // the windup is a timed action; land it now
+	set_global("timed_actions_instant", TRUE) // the windup is a timed action; land it now
 	var/committed = attacker.begin_melee_swing(victim, knife)
-	GLOB.timed_actions_instant = FALSE
+	set_global("timed_actions_instant", FALSE)
 	TEST_ASSERT(committed, "the kitchen knife swing did not commit")
 	TEST_ASSERT(victim.injury_load(INJURY_CATEGORY_PHYSICAL) > before, "a real kitchen knife on harm intent did not deal physical injury")
 
@@ -146,8 +146,8 @@
 	attacker.put_in_active_hand(weapon)
 	attacker.set_combat_mode(TRUE)
 
-	GLOB.timed_actions_instant = TRUE // the windup is a timed action; land it now
+	set_global("timed_actions_instant", TRUE) // the windup is a timed action; land it now
 	attacker.begin_melee_swing(victim, weapon)
-	GLOB.timed_actions_instant = FALSE
+	set_global("timed_actions_instant", FALSE)
 	TEST_ASSERT(attacker.next_click > world.time, "a recovery cooldown should be active immediately after the swing")
 	TEST_ASSERT(!attacker.is_swinging, "is_swinging should be cleared after the swing resolves")

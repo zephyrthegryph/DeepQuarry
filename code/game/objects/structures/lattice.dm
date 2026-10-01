@@ -80,8 +80,6 @@
 		return
 	after_slot(src, "overlays", 1, PROC_REF(update_overlays_now))
 
-OWN_TIMER(/obj/structure/lattice, overlays)
-
 // Moves upgrading lattices to their own proc for other stuff to call. Also makes them instant.
 /obj/structure/lattice/proc/upgrade(obj/item/stack/rods/R, mob/user)
 	to_chat(user, span_notice("You start connecting \the [R.name] to \the [src.name] ..."))

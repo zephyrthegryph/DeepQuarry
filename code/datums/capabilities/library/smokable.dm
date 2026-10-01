@@ -17,8 +17,6 @@
 /// Units one puff moves.
 #define SMOKABLE_PUFF_UNITS 1
 
-OWN_TIMER(/obj/item, cap_smokable)
-
 /datum/capability/smokable
 	data_type = /datum/cap_smokable_data
 	log = LOG_GAME

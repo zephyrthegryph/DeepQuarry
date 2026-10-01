@@ -16,7 +16,7 @@
 	center_of_mass_x = 0
 	center_of_mass_y = 0
 	/// A shared recipe table of /datum/stack_recipe (GLOB or the registered material holds it; never owned or cleared by the stack).
-	var/tmp/list/recipes
+	var/tmp/list/datum/stack_recipe/recipes
 	var/singular_name
 	var/amount = 1
 	var/max_amount //also see stack recipes initialisation, param "max_res_amount" must be equal to this max_amount
@@ -561,10 +561,6 @@ DECLARE_INTERACTIONS(/obj/item/stack, \
 			merge(AM)
 	return ..()
 
-
-/obj/item/stack/ownership()
-	. = ..()
-	. += shares(nameof(recipes))
 
 /obj/item/stack/relations()
 	. = ..()

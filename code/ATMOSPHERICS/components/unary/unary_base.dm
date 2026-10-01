@@ -171,6 +171,6 @@ OM_FIELD_VIEW(/obj/machinery/atmospherics/unary, obj/machinery/atmospherics, nod
 
 /obj/machinery/atmospherics/unary/ownership()
 	. = ..()
-	. += proto(nameof(air_contents))
+	. += rel_one(nameof(air_contents), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)
 
-TRACKED(/obj/machinery/atmospherics/unary, welded, CHANGE_MACHINE_SETTINGS)
+TRACKED_BRIDGED(/obj/machinery/atmospherics/unary, welded, CHANGE_MACHINE_SETTINGS)

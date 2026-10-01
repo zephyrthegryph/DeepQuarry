@@ -91,7 +91,7 @@
 	var/before = input?.air ? input.air.total_moles() + moles : moles
 	last_flow_rate = (before > 0 && input?.air) ? (moles / before) * input.air.return_volume() : 0
 
-TRACKED(/obj/machinery/atmospherics/omni/atmos_filter, set_flow_rate, CHANGE_MACHINE_SETTINGS)
+TRACKED_BRIDGED(/obj/machinery/atmospherics/omni/atmos_filter, set_flow_rate, CHANGE_MACHINE_SETTINGS)
 
 /// The Rust group is pushed (once per frame) when the rate or (through wake_for_state_change()) a port or mode changes.
 /obj/machinery/atmospherics/omni/atmos_filter/derived()

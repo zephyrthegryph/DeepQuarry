@@ -360,4 +360,4 @@ DAMAGE_REACTION(/obj/effect/plant, DAMAGE_EXPLOSION, PROC_REF(plant_blast_die_of
 
 /obj/effect/plant/ownership()
 	. = ..()
-	. += proto(nameof(seed_static))
+	. += rel_one(nameof(seed_static), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)

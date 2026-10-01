@@ -51,9 +51,9 @@
 
 /// Runs `edge` on `target` with no wait. Returns what perform() returned.
 /datum/unit_test/proc/dq_walk(mob/actor, atom/target, datum/interaction/construction/edge, obj/item/held)
-	GLOB.dq_construction_instant = TRUE
+	set_global("dq_construction_instant", TRUE)
 	. = edge.perform(actor, target, held)
-	GLOB.dq_construction_instant = FALSE
+	set_global("dq_construction_instant", FALSE)
 
 /// A zero-speed tool of `path` on `T`.
 /datum/unit_test/proc/dq_fast_tool(path, turf/T)

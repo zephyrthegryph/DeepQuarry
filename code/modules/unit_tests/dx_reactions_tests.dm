@@ -18,9 +18,9 @@
 	var/list/notes = list()
 	var/republish = FALSE
 
-TRACKED(/datum/rx_fx, watched, CHANGE_EXPLICIT)
-TRACKED(/datum/rx_fx, quiet, CHANGE_EXPLICIT)
-TRACKED(/datum/rx_fx, level, CHANGE_EXPLICIT)
+TRACKED(/datum/rx_fx, watched)
+TRACKED(/datum/rx_fx, quiet)
+TRACKED(/datum/rx_fx, level)
 
 /datum/rx_fx/reactions()
 	. = ..()
@@ -178,11 +178,11 @@ TRACKED(/datum/rx_fx, level, CHANGE_EXPLICIT)
 /// The one timer: a keyed timer is a TIMER relation, replaced by the same key and cancelled by key.
 /datum/unit_test/dx_reactions_after_keyed/Run()
 	var/datum/rx_fx/F = allocate(/datum/rx_fx)
-	var/first = rx_after(F, 100, TYPE_PROC_REF(/datum/rx_fx, did_op), "settle", CLOCK_OWN, list("a"))
+	var/first = after(F, 100, TYPE_PROC_REF(/datum/rx_fx, did_op), key = "settle", with = list("a"))
 	TEST_ASSERT(first, "scheduled")
 	TEST_ASSERT(after_pending(F, "settle"), "pending")
 	TEST_ASSERT(rx_ledger_has(F, RELK_TIMER, "settle"), "a TIMER relation")
-	rx_after(F, 100, TYPE_PROC_REF(/datum/rx_fx, did_op), "settle", CLOCK_OWN, list("b"))
+	after(F, 100, TYPE_PROC_REF(/datum/rx_fx, did_op), key = "settle", with = list("b"))
 	TEST_ASSERT_EQUAL(length(rx_ledger_sources(F, RELK_TIMER, "settle")), 1, "the same key replaced it: one pending")
 	TEST_ASSERT(cancel_after(F, "settle"), "cancelled")
 	TEST_ASSERT(!after_pending(F, "settle"), "not pending")

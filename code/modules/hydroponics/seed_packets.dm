@@ -386,4 +386,4 @@ REGISTRY_MEMBERSHIP(/obj/item/seeds, REGISTRY_SEED_PACKS)
 
 /obj/item/seeds/ownership()
 	. = ..()
-	. += proto(nameof(seed_static))
+	. += rel_one(nameof(seed_static), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)

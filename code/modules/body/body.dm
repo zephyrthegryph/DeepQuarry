@@ -121,6 +121,7 @@
 	// still waiting to be consumed.
 	if(gained && owner)
 		changed(owner, CHANGE_MOB_HEALTH)
+		PUBLISH_CHANGE(owner, MOB_KEY_HEALTH)
 
 // --- Affliction bookkeeping -------------------------------------------------
 

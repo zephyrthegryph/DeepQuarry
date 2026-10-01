@@ -1,7 +1,5 @@
 #define AGE_MOD_MAX 10 // Define for age_mod sanity check as a define to allow for easy tweaking.
 
-OWN_TIMER(/obj/machinery/portable_atmospherics/hydroponics, growth_timer)
-
 /obj/machinery/portable_atmospherics/hydroponics
 	name = "hydroponics tray"
 	desc = "A tray usually full of fluid for growing plants."
@@ -799,4 +797,4 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/hydroponics, MACHINE
 /// The planted seed: a registered line, or the tray's own private (mutated / modified) copy.
 /obj/machinery/portable_atmospherics/hydroponics/ownership()
 	. = ..()
-	. += proto(nameof(seed))
+	. += rel_one(nameof(seed), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)

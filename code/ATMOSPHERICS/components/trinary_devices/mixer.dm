@@ -86,9 +86,9 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/trinary/mixer, TYPE_PROC_REF
 	if(index == 3)
 		rust_device_dirty()
 
-TRACKED(/obj/machinery/atmospherics/trinary/mixer, set_flow_rate, CHANGE_MACHINE_SETTINGS)
-TRACKED(/obj/machinery/atmospherics/trinary/mixer, node1_concentration, CHANGE_MACHINE_SETTINGS)
-TRACKED(/obj/machinery/atmospherics/trinary/mixer, node2_concentration, CHANGE_MACHINE_SETTINGS)
+TRACKED_BRIDGED(/obj/machinery/atmospherics/trinary/mixer, set_flow_rate, CHANGE_MACHINE_SETTINGS)
+TRACKED_BRIDGED(/obj/machinery/atmospherics/trinary/mixer, node1_concentration, CHANGE_MACHINE_SETTINGS)
+TRACKED_BRIDGED(/obj/machinery/atmospherics/trinary/mixer, node2_concentration, CHANGE_MACHINE_SETTINGS)
 
 /// The Rust group is pushed (once per frame) when any of these change.
 /obj/machinery/atmospherics/trinary/mixer/derived()

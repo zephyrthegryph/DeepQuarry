@@ -1,4 +1,3 @@
-OWN_TIMER(/datum/tgui_say, packet_timeout)
 
 /datum/tgui_say/proc/handle_packets(id, total_packets, packet)
 	id = text2num(id)

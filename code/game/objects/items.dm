@@ -1,4 +1,3 @@
-OWN_TIMER(/obj/item, tip_timer)
 
 /obj/item
 	name = "item"

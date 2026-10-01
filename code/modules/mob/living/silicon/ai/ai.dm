@@ -1133,4 +1133,4 @@ DECLARE_APPEARANCE_PROC(/mob/living/silicon/ai, TYPE_PROC_REF(/atom, appearance_
 // A registered AI icon, or the AI's private custom icon (copy-on-write).
 /mob/living/silicon/ai/ownership()
 	. = ..()
-	. += proto(nameof(selected_sprite))
+	. += rel_one(nameof(selected_sprite), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)

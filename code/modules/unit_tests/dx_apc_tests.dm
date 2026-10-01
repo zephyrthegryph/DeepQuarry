@@ -78,7 +78,11 @@
 	var/datum/rx_table/T = rx_table_of(A)
 	TEST_ASSERT_NOTNULL(T, "the APC has a reaction table")
 	TEST_ASSERT_EQUAL(length(T.notices), 2, "it hears a hit and a slash")
-	TEST_ASSERT(!length(T.everys) && !length(T.crosses) && !length(T.before_keyed), "and declares nothing else itself")
+	TEST_ASSERT(!length(T.everys) && !length(T.crosses), "and declares no periodic work or crossings")
+	TEST_ASSERT_EQUAL(length(T.before_keyed), 3, "its before_op reactions are its three damage reactions")
+	for(var/key in T.before_keyed)
+		TEST_ASSERT(copytext(key, 1, length(DAMAGE_KEY_PREFIX) + 1) == DAMAGE_KEY_PREFIX, "[key] is a damage key")
+	TEST_ASSERT_EQUAL(length(damage_rows_of(A)), 3, "read by receive_damage() as damage rows")
 	TEST_ASSERT(T.after_keyed ~= list(CAP_EMAG = T.after_keyed[CAP_EMAG]), "the one after_op is the emag capability's, not the APC's")
 	TEST_ASSERT(WANTS(A, /datum/notice/hit) && WANTS(A, /datum/notice/slashed), "both are wanted")
 	TEST_ASSERT(!WANTS(A, /datum/notice/rx_fx), "and nothing else")
@@ -462,9 +466,9 @@
 	cap_set(A, CAP_COVER_OPEN, TRUE)
 	TEST_ASSERT(iface.is_meant(H, A, null), "and with it open: nothing hides the interface (the cell eject outranks it, dx_apc_cell_eject_priority)")
 	var/saved = GLOB.op_route_now
-	GLOB.op_route_now = ROUTE_INTERFACE
+	set_global("op_route_now", ROUTE_INTERFACE)
 	TEST_ASSERT(iface.is_meant(H, A, null), "over the interface route too")
-	GLOB.op_route_now = saved
+	set_global("op_route_now", saved)
 	cap_set(A, CAP_COVER_OPEN, FALSE)
 	A.stat_add(MAINT)
 	TEST_ASSERT_EQUAL(dx_apc_why(A, H, null, iface), req_reason_phrase(/datum/msg/req_not_working), "an unsecured APC isn't working")

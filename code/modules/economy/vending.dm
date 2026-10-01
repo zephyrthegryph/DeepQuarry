@@ -562,7 +562,7 @@ DAMAGE_REACTION(/obj/machinery/vending, DAMAGE_EXPLOSION, PROC_REF(vending_blast
 
 	use_power(vend_power_usage)	//actuators and stuff
 	flick("[icon_state]-vend",src)
-	after(src, vend_delay, PROC_REF(finish_vend), R, user)
+	after(src, vend_delay, PROC_REF(finish_vend), with = list(R, user))
 
 /obj/machinery/vending/proc/bonus_vend(datum/stored_item/vending_product/R)
 	if(R && R.get_product(get_turf(src)))
@@ -585,7 +585,7 @@ DAMAGE_REACTION(/obj/machinery/vending, DAMAGE_EXPLOSION, PROC_REF(vending_blast
 	if(has_logs)
 		do_logging(R, user, 1)
 	if(prob(1))
-		after(src, 0.3 SECONDS, PROC_REF(bonus_vend), R)
+		after(src, 0.3 SECONDS, PROC_REF(bonus_vend), with = list(R))
 	playsound(src, "sound/[vending_sound]", 100, 1, 1)
 
 	GLOB.items_sold_shift_roundstat++

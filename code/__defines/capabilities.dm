@@ -62,22 +62,29 @@
 #define CHANGE_CAPABILITY CHANGE_EXPLICIT
 
 /**
- * Declares a tracked var: generates `set_<V>(value)`, which compares, writes, calls
- * changed(src, CHANNEL, "V") and returns TRUE when the value changed. Declare the var normally next
- * to it. A hand-written `proc/set_<V>()` (for side effects) replaces this line and passes the var
- * name too: changed(src, CHANNEL, nameof(V)). tools/ci/tracked_lint.py rejects every write to V
- * outside its setter. A type that declares its dependencies (derived()) re-derives only the outputs
- * that read V when it changes.
+ * Declares a tracked var: generates `set_<V>(value)`, which compares, writes and returns TRUE when the value
+ * changed; a change publishes the key "V" (publish_change(src, nameof(V))) only when READERS(src, "V") says someone
+ * reads it (an on_change / on_cross reaction, a generated read, an observer), and re-derives the outputs that read
+ * V. Declare the var normally next to it. A hand-written `proc/set_<V>()` (for side effects) replaces this line,
+ * calls tracked_changed(src, nameof(V)) and registers itself with SETTER(T, V). tools/ci/tracked_lint.py rejects
+ * every write to V outside its setter.
  *
  *	/obj/machinery/pump
  *		var/target_pressure = ONE_ATMOSPHERE
- *	TRACKED(/obj/machinery/pump, target_pressure, CHANGE_MACHINE_SETTINGS)
+ *	TRACKED(/obj/machinery/pump, target_pressure)
  */
 /// TRUE for a GLOBAL_PROC_REF() (a /proc/ path), FALSE for a type proc ref: holder_call() and dispatch_call() pass a
 /// global proc the holder as an argument instead of calling it on the holder.
 #define IS_GLOBAL_PROC_REF(P) (copytext("[P]", 1, 7) == "/proc/")
 
-#define TRACKED(T, V, CHANNEL) ##T/proc/set_##V(value) { if(V == value) { return FALSE }; V = value; changed(src, CHANNEL, #V); return TRUE };SETTER(T, V)
+#define TRACKED(T, V) ##T/proc/set_##V(value) { if(V == value) { return FALSE }; V = value; tracked_changed(src, #V); return TRUE };SETTER(T, V)
+
+/**
+ * BRIDGE (removed with S4): TRACKED() that also raises the OM channel CHANNEL, for a var an OM stage `wake_on` or an
+ * om_watch() still listens to by channel (the machine pipeline wakes on CHANGE_MACHINE_SETTINGS). Everything else
+ * uses TRACKED(T, V). When the last channel consumer of V is gone, drop the third argument.
+ */
+#define TRACKED_BRIDGED(T, V, CHANNEL) ##T/proc/set_##V(value) { if(V == value) { return FALSE }; V = value; changed(src, CHANNEL, #V); return TRUE };SETTER(T, V)
 
 /**
  * Registers a hand-written `T/proc/set_<V>(value)` as V's setter (a setter with side effects):
@@ -86,6 +93,15 @@
  * (a verb, another signature) never is.
  */
 #define SETTER(T, V) ##T/proc/__setter_##V() { return TRUE }
+
+/**
+ * One-line capability declaration: `CAPABILITY(/obj/item/reagent_containers/food/snacks/donut, reagents(20, starts =
+ * list(REAGENT_ID_NUTRIMENT = 3)))`. Expands to a declared_capabilities() override that adds ENTRY after ..(),
+ * collected into the type's capabilities table after its capabilities() list (caps_build()). Any capability
+ * constructor, bundle or refine() works; several lines on one type add in file order. Use it for data-only
+ * subtypes; a type with logic keeps a capabilities() override (both may coexist).
+ */
+#define CAPABILITY(T, ENTRY) ##T/declared_capabilities(list/into) { ..(); into += ENTRY; }
 
 // ---- UI helpers ----
 /// Returned by a ui_<action> proc that refused (refuse() already told the user).

@@ -158,7 +158,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/gps, "compass", /obj/compass_holder)
 	update_holder()
 	update_icon()
 
-EMP_DISABLE(/obj/item/gps, 5 MINUTES, "emp_until")
+CAPABILITY(/obj/item/gps, emp_disable(5 MINUTES))
 
 /obj/item/gps/emp_disable_changed(disabled)
 	..()
