@@ -1326,7 +1326,7 @@ impl<P: SourceProvider> Context<'_, P> {
                                         self.output.skin_includes.push(child);
                                     }
                                     Err(error) => {
-                                        self.error_as(&path, source_line, DiagnosticKind::Io,
+                                        self.error_as(&path, source_line, DiagnosticKind::Include,
                                             format!("cannot include {}: {error}", child.display()))
                                     }
                                 }
@@ -1344,6 +1344,10 @@ impl<P: SourceProvider> Context<'_, P> {
                                         child.display(), diagnostic.message);
                                     diagnostic.path = path.clone();
                                     diagnostic.line = source_line;
+                                    // Attribution is now the include directive,
+                                    // not a failed read of this child. An ancestor
+                                    // must not remap it a second time at line one.
+                                    diagnostic.kind = DiagnosticKind::Include;
                                 }
                             }
                         }
@@ -3737,7 +3741,21 @@ mod tests {
     }
 
     #[test]
-    fn diagnostic_kinds_distinguish_io_macros_and_conditions() {
+    fn nested_missing_include_keeps_its_authored_directive() {
+        let fs = fixture(&[("game.dme", "#include \"a.dm\"\n"),
+            ("a.dm", "#include \"b.dm\"\n"),
+            ("b.dm", "#include \"missing.dm\"\n")]);
+        let output = preprocess_project(Path::new("game.dme"), &fs, &BTreeMap::new());
+        assert_eq!(output.diagnostics.len(), 1);
+        assert_eq!(output.diagnostics[0].path, Path::new("b.dm"));
+        assert_eq!(output.diagnostics[0].line, 1);
+        assert_eq!(output.diagnostics[0].kind, DiagnosticKind::Include);
+        let missing_root = preprocess_project(Path::new("missing.dme"), &fs, &BTreeMap::new());
+        assert_eq!(missing_root.diagnostics[0].kind, DiagnosticKind::Io);
+    }
+
+    #[test]
+    fn diagnostic_kinds_distinguish_includes_macros_and_conditions() {
         let fs = fixture(&[(
             "game.dme",
             "#include \"missing.dm\"\n#define BAD(x..., y) x\n#if x ? y : z\n#endif\n",
@@ -3746,8 +3764,8 @@ mod tests {
         assert!(output
             .diagnostics
             .iter()
-            .any(|d| d.kind == DiagnosticKind::Io));
-        let missing = output.diagnostics.iter().find(|d| d.kind == DiagnosticKind::Io).unwrap();
+            .any(|d| d.kind == DiagnosticKind::Include));
+        let missing = output.diagnostics.iter().find(|d| d.kind == DiagnosticKind::Include).unwrap();
         assert_eq!(missing.path, Path::new("game.dme"));
         assert_eq!(missing.line, 1);
         assert!(missing.message.contains("missing.dm"));
