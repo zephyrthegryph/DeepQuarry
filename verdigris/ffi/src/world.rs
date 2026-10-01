@@ -45,7 +45,7 @@ use vg_core::world::{KindId, World, WorldBuilder, WorldConfig};
 use crate::{entity, registry};
 
 thread_local! {
-    /// Set by [`shutdown`]: the world is gone and is never rebuilt.
+    /// Set by [`shutdown`]: the world is gone until [`revive`] (the next `world/New()`).
     static SHUT_DOWN: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
     static WORLD: RefCell<Option<World>> = const { RefCell::new(None) };
     /// The grid size the next (re)build uses ([`configure_world`]).
@@ -744,6 +744,18 @@ pub fn shutdown() {
     crate::jobs::shutdown();
 }
 
+/// Undoes [`shutdown`] for a new `world/New()`. BYOND keeps the library
+/// loaded across a soft reboot (`world.Reboot()`) but runs `world/Del()`, so
+/// without this every world call after a reboot fails. The world itself is
+/// rebuilt lazily on first use.
+///
+/// # Errors
+/// If the job threads cannot be restarted.
+pub fn revive() -> Result<()> {
+    SHUT_DOWN.with(|s| s.set(false));
+    crate::jobs::restart()
+}
+
 #[auxmacros::bind("/proc/vg_shutdown")]
 fn world_shutdown() -> Result<ByondValue> {
     shutdown();
@@ -767,5 +779,11 @@ mod tests {
             with_world(|_| Ok(())).is_err(),
             "the world was rebuilt after shutdown"
         );
+        revive().unwrap();
+        with_world(|w| {
+            w.step_blocking();
+            Ok(())
+        })
+        .expect("a revived world (soft reboot) runs again");
     }
 }

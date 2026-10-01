@@ -27,6 +27,17 @@ pub fn shutdown() {
     }
 }
 
+/// Restarts the job threads after [`shutdown`] (a soft reboot).
+///
+/// # Errors
+/// If the threads cannot be started.
+pub fn restart() -> Result<()> {
+    if let Some(r) = JOBS.get() {
+        r.restart(JOB_THREADS)?;
+    }
+    Ok(())
+}
+
 /// Job ids cross to DM as decimal strings (a float would lose bits).
 pub fn parse_id(value: &ByondValue) -> Result<JobId> {
     Ok(JobId(value.get_string()?.parse::<u64>()?))

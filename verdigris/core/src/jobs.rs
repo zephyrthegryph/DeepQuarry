@@ -158,6 +158,23 @@ impl JobRegistry {
             .shutdown();
     }
 
+    /// Starts fresh job threads after [`JobRegistry::shutdown`] (a soft reboot
+    /// keeps the library loaded and shuts it down from `world/Del()`). Jobs
+    /// from before the shutdown stay as they were. A no-op while running.
+    ///
+    /// # Errors
+    /// If the new pool cannot be created.
+    pub fn restart(&self, threads: usize) -> Result<(), rayon::ThreadPoolBuildError> {
+        let mut pool = self
+            .pool
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        if !pool.is_running() {
+            *pool = crate::pool::Pool::new(threads, "vg-job")?;
+        }
+        Ok(())
+    }
+
     /// A registry with `threads` job threads (named `vg-job-N`).
     ///
     /// # Errors
@@ -413,6 +430,25 @@ mod tests {
             }
             std::thread::yield_now();
         }
+    }
+
+    #[test]
+    fn restart_after_shutdown_runs_jobs_again() {
+        let reg = JobRegistry::new(1).unwrap();
+        reg.shutdown();
+        let lost = reg.submit("lost", None, |_| Ok(1u32));
+        assert!(
+            matches!(reg.poll(lost), JobStatus::Pending { .. }),
+            "a shut-down pool runs nothing"
+        );
+        reg.restart(1).unwrap();
+        let id = reg.submit("after", None, |_| Ok(2u32));
+        assert_eq!(
+            wait(&reg, id),
+            JobStatus::Ready,
+            "a restarted pool runs jobs"
+        );
+        reg.shutdown();
     }
 
     #[test]
