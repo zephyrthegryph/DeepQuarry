@@ -585,7 +585,7 @@ GLOBAL_LIST_EMPTY(op_action_indexes)
 /// The "Act" verb: `act lock` or `act remove power cell` on the thing next to you (or the target you name). Over ROUTE_VERB.
 /mob/verb/act_on(action_id as text, atom/target as null|mob|obj|turf in view(1))
 	set name = "Act"
-	set category = "IC"
+	set category = VERB_CAT_IC
 	set desc = "Do an action (use, open, lock, insert...) or a named operation to something next to you."
 	command_action(src, action_id, target)
 

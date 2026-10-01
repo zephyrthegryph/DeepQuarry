@@ -103,5 +103,5 @@
 /proc/cap_default_var(datum/D, var_name, value)
 	if(isnull(value) || D.vars[var_name] != initial(D.vars[var_name]))
 		return FALSE
-	D.vars[var_name] = value
+	D.vars[var_name] = value // ALLOW(api): the capability default writer is the reflection point: var_name is declared by the capability
 	return TRUE

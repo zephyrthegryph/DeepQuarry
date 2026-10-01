@@ -94,6 +94,8 @@
 	no_variants = TRUE
 	exotic_no_autolathe_reprint = TRUE
 
+// INIT: picks this sample's material and amount at random
+// ALLOW(init): the material and amount are random per sample, not a type fact
 /obj/item/stack/material/exotic_feedstock/random/Initialize(mapload, _amount, _material_name)
 	if(!_material_name)
 		_material_name = pick(

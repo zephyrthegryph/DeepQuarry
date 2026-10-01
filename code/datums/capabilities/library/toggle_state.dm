@@ -172,19 +172,19 @@
 // The native verbs, renamed per toggle by cap_toggle_state(). Each runs the toggle's entry.
 /obj/item/proc/cap_toggle_verb_1()
 	set name = "Toggle"
-	set category = "Object"
+	set category = VERB_CAT_OBJECT
 	set src in usr
 	cap_toggle_verb_run(usr, CAP_TOGGLE_1)
 
 /obj/item/proc/cap_toggle_verb_2()
 	set name = "Toggle"
-	set category = "Object"
+	set category = VERB_CAT_OBJECT
 	set src in usr
 	cap_toggle_verb_run(usr, CAP_TOGGLE_2)
 
 /obj/item/proc/cap_toggle_verb_3()
 	set name = "Toggle"
-	set category = "Object"
+	set category = VERB_CAT_OBJECT
 	set src in usr
 	cap_toggle_verb_run(usr, CAP_TOGGLE_3)
 

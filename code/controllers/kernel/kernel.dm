@@ -195,7 +195,7 @@
 /datum/controller/kernel/proc/guarded(phase, proc_ref, ...)
 	try
 		call(src, proc_ref)(arglist(args.Copy(3)))
-	catch(var/exception/e)
+	catch(var/exception/e) // ALLOW(silent_catch): report_fault() reports it through dq_report_caught() unless a test expects errors
 		phase_faults++
 		report_fault(e, "kernel phase [phase_letter(phase)] aborted: [e] ([e.file]:[e.line])")
 

@@ -182,7 +182,7 @@
 /// The declarations collected from one type's ownership() and relations() lists.
 /datum/own_decls
 	/// var name -> entry list(kind, arg, partner, extra, is_list, watch, other_deleted, on_unlink)
-	var/list/entries = list()
+	var/list/entries = list() // ALLOW(instance_list): one per declaring type, always filled by the collector and handed to the table
 	/// "var: ..." lines for a var declared with two kinds across the hierarchy.
 	var/list/conflicts
 	/// Annotations: keep_after_destroy / pool_reset / forward var names.

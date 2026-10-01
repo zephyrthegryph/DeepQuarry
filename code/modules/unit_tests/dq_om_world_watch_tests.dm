@@ -9,6 +9,22 @@
 /proc/om_test_ticks(ticks)
 	sleep(world.tick_lag * ticks)
 
+/**
+ * Waits, a tick at a time and for at most `max_ticks`, until `D.vars[var_name]` is truthy (a non-empty list
+ * counts). A world watch's wake is delivered by the kernel's urgent phase, which a loaded world (sharded test
+ * boots, overrun ticks) can skip for several ticks, so a positive assertion waits for the delivery itself
+ * instead of guessing a tick count with om_test_ticks(). Returns whether it arrived.
+ */
+/proc/om_test_wait_for(datum/D, var_name, max_ticks = 60)
+	for(var/attempt in 1 to max_ticks)
+		if(om_test_has_arrived(D.vars[var_name]))
+			return TRUE
+		sleep(world.tick_lag)
+	return om_test_has_arrived(D.vars[var_name])
+
+/proc/om_test_has_arrived(value)
+	return islist(value) ? length(value) > 0 : !!value
+
 /// A test probe entity (a Probe component, verdigris/ffi/src/sched.rs) by a test's own
 /// number, created on first use.
 /proc/world_test_probe(cell)
@@ -396,7 +412,8 @@
 	T.assume_air(donor)
 	tank.adjust_gas(/datum/gas/oxygen, 10)
 	SSair.run_gas_frames(1)
-	om_test_ticks(6)
+	om_test_wait_for(turf_sub, nameof(turf_sub.wakes))
+	om_test_wait_for(tank_sub, nameof(tank_sub.wakes))
 	TEST_ASSERT(length(turf_sub.wakes) >= 1, "turf gas pressure crossed [limit] kPa ([T.air.return_pressure()]) but the watch did not wake")
 	if(length(turf_sub.wakes))
 		var/list/wake = turf_sub.wakes[1]

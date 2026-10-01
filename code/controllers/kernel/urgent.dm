@@ -108,7 +108,7 @@
 					W.perform(owner, R.member, dt)
 					W.member_runs++
 					W.runs++
-		catch(var/exception/e)
+		catch(var/exception/e) // ALLOW(silent_catch): the fault is counted and reported through the kernel's report_fault() below
 			W.faults++
 			var/msg = "urgent run of [W.key] runtime: [e] ([e.file]:[e.line])"
 			report_fault(e, msg)

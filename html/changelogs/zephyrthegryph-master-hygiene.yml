@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Fixed the livesim_gas_threshold_watch and dq_world_gas_watches tests failing in full-suite runs: they waited a fixed six ticks for a wake the kernel delivers on its own schedule."
+  - code_imp: "Admin reads of a client's admin datum go through client.admin_datum(); the raw .holder ratchet no longer counts nameof() relations or .holder() calls."
+  - code_imp: "Cleared small ratchet regressions (cooldown, verb category, tracked writes, om_internal, init, declared reagents) and annotated justified keeps."

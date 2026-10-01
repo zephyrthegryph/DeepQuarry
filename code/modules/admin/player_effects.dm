@@ -773,7 +773,7 @@ UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_give_item)
 		return
 	if(!check_rights_for(ui.user.client, R_HOLDER))
 		return
-	var/obj/item/X = ui.user.client.holder.marked_datum()
+	var/obj/item/X = ui.user.client.admin_datum().marked_datum()
 	if(!istype(X))
 		return
 	Tar.put_in_hands(X)
@@ -785,7 +785,7 @@ UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_equip_item)
 		return
 	if(!check_rights_for(ui.user.client, R_HOLDER))
 		return
-	var/obj/item/X = ui.user.client.holder.marked_datum()
+	var/obj/item/X = ui.user.client.admin_datum().marked_datum()
 	if(!istype(X))
 		return
 	if(Tar.equip_to_appropriate_slot(X))
@@ -903,9 +903,9 @@ UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_view_variables)
 
 UI_ACT(/datum/eventkit/player_effects, "orbit", ui_act_orbit)
 UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_orbit)
-	if(!ui.user.client.holder.marked_datum())
+	if(!ui.user.client.admin_datum().marked_datum())
 		return
-	var/atom/movable/X = ui.user.client.holder.marked_datum()
+	var/atom/movable/X = ui.user.client.admin_datum().marked_datum()
 	X.orbit(target())
 
 UI_ACT(/datum/eventkit/player_effects, "ai", ui_act_ai)

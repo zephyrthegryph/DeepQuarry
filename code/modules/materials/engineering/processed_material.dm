@@ -289,6 +289,8 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	/// current amount, so splitting/merging/using never creates or destroys value.
 	var/export_value_per_sheet = 0
 
+// INIT: this stack's material, colour, export value and a batch copy sized to its amount
+// ALLOW(init): the material is a per-instance argument and the batch copy is sized to this stack
 /obj/item/stack/material/processed_alloy/Initialize(mapload, _amount, _material_name)
 	if(_material_name)
 		default_type = _material_name

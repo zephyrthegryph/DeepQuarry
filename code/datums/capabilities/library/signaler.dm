@@ -105,7 +105,7 @@
 /proc/cap_signaler_signal(obj/O)
 	var/datum/capability/signaler/C = cap_signaler_cap(O)
 	var/datum/cap_signaler_data/D = cap_data(O, C)
-	if(world.time < D.next_signal)
+	if(!COOLDOWN_FINISHED(D, next_signal))
 		return "it isn't ready yet"
 	if(is_jammed(O))
 		return "all you hear is static"
@@ -115,7 +115,7 @@
 	signal.data["message"] = "ACTIVATE"
 	var/datum/radio_frequency/channel = GLOB.radio_service.return_frequency(cap_signaler_frequency(O))
 	channel.post_signal(O, signal)
-	D.next_signal = world.time + SIGNALER_COOLDOWN
+	COOLDOWN_START(D, next_signal, SIGNALER_COOLDOWN)
 	return null
 
 /// A radio signal reached O (from /obj/receive_signal()): runs on_signal when the code matches.

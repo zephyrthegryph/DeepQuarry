@@ -316,7 +316,7 @@ OWN_TIMER(/datum/system_member_driver, step_yield)
 	if(QDELETED(E) || !E.periodic_pipe)
 		return
 	if(periodic_step_result(E, E.periodic_step(delta), delta))
-		_om_periodic_stop(E)
+		om_task_periodic_stop(E)
 
 /// Runlevel changed: every started system re-evaluates should_run() (its runlevels may now exclude it).
 /proc/kernel_runlevel_changed()

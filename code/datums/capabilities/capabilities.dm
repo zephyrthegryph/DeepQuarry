@@ -553,7 +553,7 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 	return dispatch_call(ctx, E.holder_of(ctx), E.handler, named, E.name, E.log)
 
 /proc/cap_dispatch_form(datum/dispatch_context/ctx, list/named)
-	set waitfor = FALSE
+	set waitfor = FALSE // ALLOW(scheduler): a form dispatch waits on the user's answers (ask_*) and resumes the action
 	var/datum/interaction/capability/E = ctx.entry
 	for(var/datum/form_field/F as anything in E.form)
 		var/answer = F.ask(ctx)

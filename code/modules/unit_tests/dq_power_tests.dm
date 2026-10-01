@@ -208,8 +208,8 @@
 	// (which leaves the APC like this); alone, or in another order under
 	// sharding, the APC never settled.
 	A.connect_to_network()
-	A.operating = TRUE
-	A.chargemode = TRUE
+	A.set_operating(TRUE)
+	A.set_chargemode(TRUE)
 	A.equipment = POWERCHAN_ON_AUTO
 	A.lighting = POWERCHAN_ON_AUTO
 	A.environ = POWERCHAN_ON_AUTO
