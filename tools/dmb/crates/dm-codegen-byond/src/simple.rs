@@ -3979,6 +3979,12 @@ impl Compiler<'_> {
                             "initial() requires one variable reference",
                         ));
                     };
+                    if matches!(target.kind, ExprKind::StaticMember { .. }) {
+                        // `::` already reads the receiver's initial field. The
+                        // receiver is evaluated once, including type values and
+                        // computed receivers; another Initial modifier is wrong.
+                        return self.expression(target, statement);
+                    }
                     let direct = match &target.kind {
                         ExprKind::Ident(name) => self.variable(name, statement).ok()
                             .filter(|variable| matches!(variable, VariableWord::Arg(_) | VariableWord::Local(_) | VariableWord::Global(_))),
@@ -4036,6 +4042,17 @@ impl Compiler<'_> {
                             "issaved() requires one variable reference",
                         ));
                     };
+                    if let ExprKind::StaticMember { object, selector } = &target.kind {
+                        self.expression(object, statement)?;
+                        let safe_labels = self.defer_safe_postfix_labels(object);
+                        self.emit(opcode::SET_VAR, vec![Word::Variable(VariableWord::Cache)]);
+                        self.intern_string(selector);
+                        self.emit(opcode::GET_VAR, vec![Word::Variable(VariableWord::IsSaved(
+                            Box::new(VariableWord::Field(selector.clone())),
+                        ))]);
+                        self.result.code.items.extend(safe_labels);
+                        return Ok(());
+                    }
                     let variable = self.assignment_variable(target, statement)?;
                     let variable = match variable {
                         VariableWord::SetCache(owner, field) => {
@@ -4978,6 +4995,40 @@ mod tests {
         let compiled = compile_simple_proc(&ast.items[0].children).unwrap();
         assert_eq!(compiled.strings,["vv_VAS"]);
         assert!(compiled.class_paths.is_empty());
+    }
+
+    #[test]
+    fn initial_and_issaved_static_members_match_native() {
+        let ast = dm_syntax::parse(include_str!(
+            "../../../fixtures/native_compiler/initial_static_member/probe.dm"
+        ));
+        assert!(ast.diagnostics.is_empty(), "{:?}", ast.diagnostics);
+        let native = byond_dmb::dmb::Dmb::from_bytes(include_bytes!(
+            "../../../fixtures/native_compiler/initial_static_member/probe.native.bin"
+        )).unwrap();
+        for name in ["read_path", "read_child", "read_value", "read_side_effect", "saved_path"] {
+            let path = format!("/proc/{name}");
+            let item = ast.items.iter().find(|item| item.header.starts_with(&format!("{path}("))).unwrap();
+            let bindings = LowerBindings {
+                parameters: if name == "read_value" { vec!["value".into()] } else { vec![] },
+                global_procs: BTreeSet::from(["make_value".into()]),
+                ..Default::default()
+            };
+            let compiled = compile_simple_proc_with_bindings(&item.children, &bindings).unwrap();
+            let mut ledger = Ledger::default();
+            for key in &compiled.strings {
+                let id = native.strings.iter().position(|entry| entry.data == compiled.string_bytes(key)).unwrap();
+                ledger.bind(crate::Symbol::new(Table::String, key), id as u32).unwrap();
+            }
+            for key in &compiled.class_paths {
+                let id = native.classes.iter().position(|class| native.string(class.path_string_id()) == Some(key.as_bytes())).unwrap();
+                ledger.bind(crate::Symbol::new(Table::Class, key), id as u32).unwrap();
+            }
+            let helper = native.procs.iter().position(|proc| native.string(proc.strings[0]) == Some(b"/proc/make_value")).unwrap();
+            ledger.bind(crate::Symbol::new(Table::Proc, "/proc/make_value"), helper as u32).unwrap();
+            let id = native.procs.iter().position(|proc| native.string(proc.strings[0]) == Some(path.as_bytes())).unwrap();
+            assert_eq!(link_proc(&compiled.code, &ledger).unwrap().words, native.proc_code_words(id).unwrap(), "{path}");
+        }
     }
 
     #[test]
