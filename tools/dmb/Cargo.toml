@@ -21,6 +21,9 @@ opt-level = 2
 [profile.dev.package.serde_json]
 opt-level = 2
 
+[profile.dev.package.lz4_flex]
+opt-level = 3
+
 # Full projects parse and lower tens of thousands of procedure bodies.
 [profile.dev.package.dm-syntax]
 opt-level = 2

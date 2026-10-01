@@ -18,6 +18,7 @@ byond-dmb = { path = "../.." }
 sha2 = "0.10"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+lz4_flex = { version = "0.14", default-features = false, features = ["std", "safe-encode", "safe-decode"] }
 
 [build-dependencies]
 sha2 = "0.10"

@@ -20,6 +20,7 @@ fn main() {
             "salsa",
             "sha2",
             "serde_json",
+            "lz4_flex",
         ],
     );
     for (name, stage, files, lock) in [

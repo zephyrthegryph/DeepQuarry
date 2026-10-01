@@ -176,6 +176,7 @@ dependencies = [
  "dm-semantics",
  "dm-store",
  "dm-syntax",
+ "lz4_flex",
  "salsa",
  "serde",
  "serde_json",
@@ -348,6 +349,12 @@ checksum = "224399e74b87b5f3557511d98dff8b14089b3dadafcab6bb93eab67d3aace965"
 dependencies = [
  "scopeguard",
 ]
+
+[[package]]
+name = "lz4_flex"
+version = "0.14.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ecbdfe44b1bd960b68170b417450a628c43f7cf56bb3c5317e61cb230ee7f226"
 
 [[package]]
 name = "md5"

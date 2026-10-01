@@ -7,6 +7,7 @@ use dm_codegen_byond::{
 };
 use dm_syntax::Item;
 use sha2::{Digest, Sha256};
+use std::borrow::Cow;
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::io::{Read, Write};
@@ -19,6 +20,7 @@ const MAX_ENTRY_BYTES: usize = 4 * 1024 * 1024;
 const MAX_MEMORY_BYTES: usize = 16 * 1024 * 1024;
 static TEMP_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 const RECORD_MAGIC: &[u8; 8] = b"DMPRC02\0";
+const COMPRESSED_RECORD_MAGIC: &[u8; 8] = b"DMPRC03\0";
 const RECORD_HEADER_BYTES: usize = 8 + 64 + 64 + 8;
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
@@ -31,28 +33,47 @@ pub struct CacheStats {
 // Keep the serialized procedure bytes directly in the record. Wrapping a
 // byte vector in JSON expands it into thousands of decimal integers.
 fn encode_record(key: &str, payload: &[u8]) -> Vec<u8> {
-    let mut bytes = Vec::with_capacity(RECORD_HEADER_BYTES + payload.len());
-    bytes.extend_from_slice(RECORD_MAGIC);
+    let compressed = lz4_flex::block::compress(payload);
+    let (magic, stored) = if compressed.len().saturating_add(64) < payload.len() {
+        (COMPRESSED_RECORD_MAGIC, compressed.as_slice())
+    } else {
+        (RECORD_MAGIC, payload)
+    };
+    let mut bytes = Vec::with_capacity(RECORD_HEADER_BYTES + stored.len());
+    bytes.extend_from_slice(magic);
     bytes.extend_from_slice(key.as_bytes());
     bytes.extend_from_slice(digest(payload).as_bytes());
     bytes.extend_from_slice(&(payload.len() as u64).to_le_bytes());
-    bytes.extend_from_slice(payload);
+    bytes.extend_from_slice(stored);
     bytes
 }
 
-fn decode_record<'a>(key: &str, bytes: &'a [u8]) -> Option<&'a [u8]> {
+fn decode_record<'a>(key: &str, bytes: &'a [u8]) -> Option<Cow<'a, [u8]>> {
     if bytes.len() < RECORD_HEADER_BYTES
-        || &bytes[..8] != RECORD_MAGIC
+        || (&bytes[..8] != RECORD_MAGIC && &bytes[..8] != COMPRESSED_RECORD_MAGIC)
         || &bytes[8..72] != key.as_bytes()
+        || bytes.len() - RECORD_HEADER_BYTES > MAX_ENTRY_BYTES
     {
         return None;
     }
     let length = u64::from_le_bytes(bytes[136..144].try_into().ok()?);
-    if length > MAX_ENTRY_BYTES as u64 || length != (bytes.len() - RECORD_HEADER_BYTES) as u64 {
+    if length > MAX_ENTRY_BYTES as u64 {
         return None;
     }
-    let payload = &bytes[RECORD_HEADER_BYTES..];
-    (&bytes[72..136] == digest(payload).as_bytes()).then_some(payload)
+    let stored = &bytes[RECORD_HEADER_BYTES..];
+    let payload = if &bytes[..8] == COMPRESSED_RECORD_MAGIC {
+        // The declared expansion size is checked before allocation; never trust
+        // a size prefix inside a corrupt compressed stream.
+        let mut decoded = vec![0; length as usize];
+        if lz4_flex::block::decompress_into(stored, &mut decoded).ok()? != decoded.len() {
+            return None;
+        }
+        Cow::Owned(decoded)
+    } else {
+        if stored.len() as u64 != length { return None; }
+        Cow::Borrowed(stored)
+    };
+    (&bytes[72..136] == digest(payload.as_ref()).as_bytes()).then_some(payload)
 }
 
 pub struct ProcLoweringCache {
@@ -137,7 +158,7 @@ impl ProcLoweringCache {
         if let Some(root) = &cache.root {
             if let Ok(store) = dm_store::Store::open(root.join("symbolic.redb")) {
                 let snapshot_started = std::time::Instant::now();
-                match store.snapshot_namespace(&Self::namespace(), 64_000, 128 * 1024 * 1024, None)
+                match store.snapshot_namespace(&Self::namespace(), 128_000, 128 * 1024 * 1024, None)
                 {
                     Ok(snapshot) => {
                         if std::env::var_os("DM_BUILD_TRACE").is_some() {
@@ -260,7 +281,7 @@ impl ProcLoweringCache {
         }
         if let Some(record) = self.snapshot.get(&key) {
             let cached = decode_record(&key, record).and_then(|payload| {
-                serde_json::from_slice::<crate::semantic_queries::SemanticMemo>(payload).ok()
+                serde_json::from_slice::<crate::semantic_queries::SemanticMemo>(payload.as_ref()).ok()
             });
             if let Some(memo) = cached {
                 if memo.valid_for(bindings) {
@@ -284,7 +305,7 @@ impl ProcLoweringCache {
                 .filter(|_| bytes.len() <= MAX_ENTRY_BYTES + RECORD_HEADER_BYTES)
                 .and_then(|_| {
                     let payload = decode_record(&key, &bytes)?;
-                    serde_json::from_slice::<crate::semantic_queries::SemanticMemo>(payload)
+                    serde_json::from_slice::<crate::semantic_queries::SemanticMemo>(payload.as_ref())
                         .ok()
                         .map(|memo| (memo, payload.to_vec()))
                 });
@@ -610,6 +631,7 @@ fn cache_key(body: &[Item], bindings: &LowerBindings) -> String {
         global_types: _,
         global_procs: _,
         shared: _,
+        prepared_member_globals: _,
     } = bindings;
     let value = serde_json::json!({
         "current_proc_path": current_proc_path,
@@ -771,7 +793,7 @@ mod tests {
         let payload = b"{\"value\":7}";
         let bytes = encode_record(&key, payload);
         assert_eq!(bytes.len(), RECORD_HEADER_BYTES + payload.len());
-        assert_eq!(decode_record(&key, &bytes), Some(payload.as_slice()));
+        assert_eq!(decode_record(&key, &bytes).as_deref(), Some(payload.as_slice()));
         assert!(decode_record(&digest(b"another procedure"), &bytes).is_none());
         assert!(decode_record(&key, &bytes[..bytes.len() - 1]).is_none());
         let mut corrupt = bytes.clone();
@@ -780,6 +802,27 @@ mod tests {
         let mut excessive = bytes;
         excessive[136..144].copy_from_slice(&u64::MAX.to_le_bytes());
         assert!(decode_record(&key, &excessive).is_none());
+    }
+
+    #[test]
+    fn compressed_memos_validate_identity_checksum_and_expansion_bound() {
+        let key = digest(b"large symbolic procedure");
+        let payload = b"{\"instruction\":\"PushNull\",\"arguments\":[],\"origin\":0}".repeat(2048);
+        let bytes = encode_record(&key, &payload);
+        assert_eq!(&bytes[..8], COMPRESSED_RECORD_MAGIC);
+        assert!(bytes.len() * 8 < payload.len());
+        assert_eq!(decode_record(&key, &bytes).as_deref(), Some(payload.as_slice()));
+        assert!(decode_record(&digest(b"other"), &bytes).is_none());
+        let mut checksum = bytes.clone();
+        checksum[72] ^= 1;
+        assert!(decode_record(&key, &checksum).is_none());
+        let mut oversized = bytes.clone();
+        oversized[136..144].copy_from_slice(&((MAX_ENTRY_BYTES as u64) + 1).to_le_bytes());
+        assert!(decode_record(&key, &oversized).is_none());
+        let mut undersized = bytes.clone();
+        undersized[136..144].copy_from_slice(&1u64.to_le_bytes());
+        assert!(decode_record(&key, &undersized).is_none());
+        assert!(decode_record(&key, &bytes[..bytes.len() - 1]).is_none());
     }
 
     #[test]
