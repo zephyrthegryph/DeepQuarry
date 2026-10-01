@@ -19,3 +19,7 @@ Use `write_jsonl` for streaming export and `read_jsonl` for version-checked impo
 read witnesses. Analysis construction and JSON encoding happen outside the
 database lock. Locations use expanded-file ID zero and preprocessing origins;
 unmapped source IDs produce no location rather than a fabricated one.
+
+Location indexes are built once per snapshot; each lookup searches line starts
+and include-origin boundaries. Imports reject any individual encoded fact larger
+than 8 MiB before growing the record buffer beyond that limit.

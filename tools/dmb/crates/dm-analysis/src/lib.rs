@@ -100,25 +100,82 @@ fn proc_path(owner: &str, name: &str, kind: ProcKind) -> String {
         name
     )
 }
-fn location(span: Span, project: &PreprocessedProject) -> Option<Location> {
-    // The existing declaration index uses expanded-file ID zero. Other IDs must
-    // be mapped by a future producer rather than falsely attributed to this text.
-    if span.file.0 != 0 || span.start > span.end || span.end as usize > project.text.len() {
-        return None;
+struct Locations<'a> {
+    project: &'a PreprocessedProject,
+    line_starts: Vec<usize>,
+    origins: Vec<usize>,
+}
+impl<'a> Locations<'a> {
+    fn new(project: &'a PreprocessedProject) -> Self {
+        let mut line_starts = vec![0];
+        line_starts.extend(
+            project
+                .text
+                .bytes()
+                .enumerate()
+                .filter_map(|(i, b)| (b == b'\n').then_some(i + 1)),
+        );
+        let mut origins: Vec<_> = (0..project.origins.len()).collect();
+        origins.sort_by_key(|&i| project.origins[i].output_line);
+        Self {
+            project,
+            line_starts,
+            origins,
+        }
     }
-    let prefix = project.text.get(..span.start as usize)?;
-    let line = prefix.bytes().filter(|b| *b == b'\n').count() + 1;
-    let origin = project
-        .origins
-        .iter()
-        .rev()
-        .find(|o| o.output_line <= line)?;
-    Some(Location {
-        file: origin.path.to_string_lossy().into_owned(),
-        line: origin.source_line + line - origin.output_line,
-        expanded_start: span.start,
-        expanded_end: span.end,
-    })
+    fn get(&self, span: Span) -> Option<Location> {
+        if span.file.0 != 0
+            || span.start > span.end
+            || span.end as usize > self.project.text.len()
+            || !self.project.text.is_char_boundary(span.start as usize)
+        {
+            return None;
+        }
+        let line = self
+            .line_starts
+            .partition_point(|&start| start <= span.start as usize);
+        let pos = self
+            .origins
+            .partition_point(|&i| self.project.origins[i].output_line <= line);
+        let origin = &self.project.origins[*self.origins.get(pos.checked_sub(1)?)?];
+        Some(Location {
+            file: origin.path.to_string_lossy().into_owned(),
+            line: origin.source_line + line - origin.output_line,
+            expanded_start: span.start,
+            expanded_end: span.end,
+        })
+    }
+}
+/// Maximum encoded size of one JSONL fact, including its newline.
+pub const MAX_JSONL_RECORD_BYTES: usize = 8 * 1024 * 1024;
+fn read_record(input: &mut impl BufRead) -> io::Result<Option<String>> {
+    let mut bytes = Vec::new();
+    loop {
+        let buffer = input.fill_buf()?;
+        if buffer.is_empty() {
+            return if bytes.is_empty() {
+                Ok(None)
+            } else {
+                String::from_utf8(bytes).map(Some).map_err(io::Error::other)
+            };
+        }
+        let count = buffer
+            .iter()
+            .position(|&b| b == b'\n')
+            .map_or(buffer.len(), |i| i + 1);
+        if bytes.len().saturating_add(count) > MAX_JSONL_RECORD_BYTES {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "analysis record exceeds byte limit",
+            ));
+        }
+        let done = buffer[count - 1] == b'\n';
+        bytes.extend_from_slice(&buffer[..count]);
+        input.consume(count);
+        if done {
+            return String::from_utf8(bytes).map(Some).map_err(io::Error::other);
+        }
+    }
 }
 fn headers(items: &[Item], out: &mut BTreeMap<usize, String>) {
     for item in items {
@@ -162,6 +219,7 @@ impl Snapshot {
             },
             facts: vec![],
         };
+        let locations = Locations::new(project);
         let mut proc_headers = BTreeMap::new();
         headers(&ast.items, &mut proc_headers);
         for ty in &index.types {
@@ -179,7 +237,7 @@ impl Snapshot {
                     symbol: ty.path.to_string(),
                     kind: "type".into(),
                     occurrence: occurrence as u32,
-                    location: location(*span, project),
+                    location: locations.get(*span),
                     synthetic: ty.synthetic,
                 });
             }
@@ -203,7 +261,7 @@ impl Snapshot {
                 ),
                 kind: if var.is_static { "static_var" } else { "var" }.into(),
                 occurrence: var.occurrence,
-                location: location(var.span, project),
+                location: locations.get(var.span),
                 synthetic: false,
             });
         }
@@ -222,7 +280,7 @@ impl Snapshot {
                 }
                 .into(),
                 occurrence: proc_.occurrence,
-                location: location(proc_.span, project),
+                location: locations.get(proc_.span),
                 synthetic: false,
             });
             if let Some(header) = proc_headers.get(&(proc_.span.start as usize)) {
@@ -230,7 +288,7 @@ impl Snapshot {
                     symbol,
                     occurrence: proc_.occurrence,
                     header: header.clone(),
-                    location: location(proc_.span, project),
+                    location: locations.get(proc_.span),
                 });
             }
         }
@@ -259,14 +317,11 @@ impl Snapshot {
                 severity: "error".into(),
                 category: format!("syntax::{:?}", d.kind),
                 message: d.message.clone(),
-                location: location(
-                    Span {
-                        file: dm_ir::FileId(0),
-                        start: d.span.start as u32,
-                        end: d.span.end as u32,
-                    },
-                    project,
-                ),
+                location: locations.get(Span {
+                    file: dm_ir::FileId(0),
+                    start: d.span.start as u32,
+                    end: d.span.end as u32,
+                }),
             });
         }
         result
@@ -303,11 +358,9 @@ impl Snapshot {
         }
         Ok(())
     }
-    pub fn read_jsonl(input: impl BufRead) -> io::Result<Self> {
-        let mut lines = input.lines();
-        let header = lines
-            .next()
-            .ok_or_else(|| io::Error::other("missing analysis header"))??;
+    pub fn read_jsonl(mut input: impl BufRead) -> io::Result<Self> {
+        let header =
+            read_record(&mut input)?.ok_or_else(|| io::Error::other("missing analysis header"))?;
         let Fact::Snapshot {
             schema,
             input_digest,
@@ -320,8 +373,8 @@ impl Snapshot {
             return Err(io::Error::other("unsupported analysis schema"));
         }
         let mut facts = vec![];
-        for line in lines {
-            let fact = serde_json::from_str(&line?).map_err(io::Error::other)?;
+        while let Some(line) = read_record(&mut input)? {
+            let fact = serde_json::from_str(&line).map_err(io::Error::other)?;
             if matches!(fact, Fact::Snapshot { .. }) {
                 return Err(io::Error::other("duplicate snapshot header"));
             }
@@ -379,6 +432,38 @@ mod tests {
         );
         assert_eq!(snapshot.coverage.references, Coverage::Partial);
         assert!(Snapshot::read_jsonl(std::io::Cursor::new(b"{\"record\":\"snapshot\",\"schema\":99,\"input_digest\":\"x\",\"coverage\":{\"declarations\":\"unavailable\",\"signatures\":\"unavailable\",\"inheritance\":\"unavailable\",\"origins\":\"unavailable\",\"references\":\"unavailable\",\"diagnostics\":\"unavailable\"}}\n")).is_err());
+    }
+    #[test]
+    fn indexed_locations_follow_multiple_origins_and_reader_is_bounded() {
+        let project = PreprocessedProject {
+            text: "one\ntwo\nthree\nfour\n".into(),
+            origins: vec![
+                dm_preprocess::Origin {
+                    output_line: 1,
+                    path: std::sync::Arc::new("a.dm".into()),
+                    source_line: 10,
+                },
+                dm_preprocess::Origin {
+                    output_line: 3,
+                    path: std::sync::Arc::new("b.dm".into()),
+                    source_line: 20,
+                },
+            ],
+            ..Default::default()
+        };
+        let locations = Locations::new(&project);
+        for (start, file, line) in [(4, "a.dm", 11), (8, "b.dm", 20), (14, "b.dm", 21)] {
+            let actual = locations
+                .get(Span {
+                    file: dm_ir::FileId(0),
+                    start,
+                    end: start + 1,
+                })
+                .unwrap();
+            assert_eq!((actual.file.as_str(), actual.line), (file, line));
+        }
+        let too_large = vec![b'x'; MAX_JSONL_RECORD_BYTES + 1];
+        assert!(read_record(&mut std::io::Cursor::new(too_large)).is_err());
     }
     #[test]
     fn frontend_export_keeps_explicit_inheritance_and_source_origin() {

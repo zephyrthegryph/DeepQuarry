@@ -60,11 +60,20 @@ pub struct ProcLoweringCache {
     memory: BTreeMap<String, Vec<u8>>,
     memory_bytes: usize,
     stats: CacheStats,
+    queries: crate::semantic_queries::SemanticQueries,
+    store: Option<dm_store::Store>,
+    snapshot: std::sync::Arc<BTreeMap<String, Vec<u8>>>,
+    snapshot_complete: bool,
+    pending: BTreeMap<String, Vec<u8>>,
+    pending_bytes: usize,
 }
 
 /// Put portable artifacts in Git's common directory so all worktrees share
 /// them. Standalone projects keep the cache beside their DME.
 pub fn project_cache_root(project: &Path) -> PathBuf {
+    if let Some(root) = std::env::var_os("DM_COMPILER_CACHE_ROOT") {
+        return PathBuf::from(root);
+    }
     let absolute = fs::canonicalize(project).unwrap_or_else(|_| {
         if project.is_absolute() {
             project.to_path_buf()
@@ -112,15 +121,107 @@ impl ProcLoweringCache {
             memory: BTreeMap::new(),
             memory_bytes: 0,
             stats: CacheStats::default(),
+            queries: Default::default(),
+            store: None,
+            snapshot: Default::default(),
+            snapshot_complete: false,
+            pending: BTreeMap::new(),
+            pending_bytes: 0,
         }
     }
 
     pub fn open(root: PathBuf) -> Self {
         let root = fs::create_dir_all(&root).ok().map(|()| root);
-        Self {
-            root,
-            ..Self::disabled()
+        let mut cache = Self::disabled();
+        cache.root = root;
+        if let Some(root) = &cache.root {
+            if let Ok(store) = dm_store::Store::open(root.join("symbolic.redb")) {
+                let snapshot_started = std::time::Instant::now();
+                match store.snapshot_namespace(&Self::namespace(), 64_000, 128 * 1024 * 1024, None)
+                {
+                    Ok(snapshot) => {
+                        if std::env::var_os("DM_BUILD_TRACE").is_some() {
+                            let bytes = snapshot
+                                .records
+                                .iter()
+                                .map(|(key, payload)| key.name.len() + payload.len())
+                                .sum::<usize>();
+                            eprintln!("DM_BUILD_TRACE symbolic store snapshot: {} entries, {} bytes, complete {}, {:.3}s",snapshot.records.len(),bytes,snapshot.complete,snapshot_started.elapsed().as_secs_f64());
+                        }
+                        cache.snapshot_complete = snapshot.complete;
+                        cache.snapshot = std::sync::Arc::new(
+                            snapshot
+                                .records
+                                .into_iter()
+                                .map(|(key, bytes)| (key.name, bytes))
+                                .collect(),
+                        );
+                    }
+                    Err(_) => cache.stats.corrupt_entries += 1,
+                }
+                cache.store = Some(store);
+            }
         }
+        cache
+    }
+    fn namespace() -> String {
+        format!("symbolic-lowering-{VERSION}")
+    }
+    /// Worker-local Salsa/overlays share one immutable stage snapshot, never a DB handle.
+    pub fn fork(&self) -> Self {
+        let mut cache = Self::disabled();
+        cache.root = self.root.clone();
+        cache.store = self.store.clone();
+        cache.snapshot = std::sync::Arc::clone(&self.snapshot);
+        cache.snapshot_complete = self.snapshot_complete;
+        cache
+    }
+    pub fn snapshot_complete(&self) -> bool {
+        self.snapshot_complete
+    }
+    /// Persist one bounded accumulated batch. No database is opened by `compile`.
+    pub fn flush(&mut self) -> std::io::Result<()> {
+        if self.pending.is_empty() {
+            return Ok(());
+        }
+        let Some(store) = &self.store else {
+            return Ok(());
+        };
+        let changes = self
+            .pending
+            .iter()
+            .map(|(key, bytes)| {
+                dm_store::Change::Put(dm_store::Key::new(Self::namespace(), key), bytes.clone())
+            })
+            .collect::<Vec<_>>();
+        match store.commit(&[], &changes, None)? {
+            dm_store::Commit::Applied => {
+                self.pending.clear();
+                self.pending_bytes = 0;
+                Ok(())
+            }
+            dm_store::Commit::Conflict => Err(std::io::Error::other(
+                "unexpected unwitnessed cache conflict",
+            )),
+        }
+    }
+    fn buffer(&mut self, key: String, record: Vec<u8>) {
+        if record.len() > MAX_MEMORY_BYTES {
+            return;
+        }
+        let old = self.pending.get(&key).map_or(0, Vec::len);
+        if self.pending_bytes - old + record.len() > MAX_MEMORY_BYTES
+            || self.pending.len() >= 64_000
+        {
+            if self.flush().is_err() {
+                return;
+            }
+        }
+        let bytes = record.len();
+        if let Some(old) = self.pending.insert(key, record) {
+            self.pending_bytes -= old.len();
+        }
+        self.pending_bytes += bytes;
     }
 
     pub fn stats(&self) -> CacheStats {
@@ -145,11 +246,30 @@ impl ProcLoweringCache {
         if self.root.is_none() {
             return compile_simple_proc_with_bindings(body, bindings);
         }
-        let key = cache_key(body, bindings);
+        let key = identity_key(body, bindings);
         if let Some(payload) = self.memory.get(&key) {
-            if let Ok(proc) = serde_json::from_slice(payload) {
-                self.stats.hits += 1;
-                return Ok(proc);
+            if let Ok(memo) =
+                serde_json::from_slice::<crate::semantic_queries::SemanticMemo>(payload)
+            {
+                if memo.valid_for(bindings) {
+                    let memo = self.queries.compile(&key, body, bindings, Some(memo))?;
+                    self.stats.hits += 1;
+                    return Ok(memo.procedure);
+                }
+            }
+        }
+        if let Some(record) = self.snapshot.get(&key) {
+            let cached = decode_record(&key, record).and_then(|payload| {
+                serde_json::from_slice::<crate::semantic_queries::SemanticMemo>(payload).ok()
+            });
+            if let Some(memo) = cached {
+                if memo.valid_for(bindings) {
+                    let memo = self.queries.compile(&key, body, bindings, Some(memo))?;
+                    self.stats.hits += 1;
+                    return Ok(memo.procedure);
+                }
+            } else {
+                self.stats.corrupt_entries += 1;
             }
         }
         let path = self.root.as_ref().unwrap().join(&key[..2]).join(&key);
@@ -164,27 +284,38 @@ impl ProcLoweringCache {
                 .filter(|_| bytes.len() <= MAX_ENTRY_BYTES + RECORD_HEADER_BYTES)
                 .and_then(|_| {
                     let payload = decode_record(&key, &bytes)?;
-                    serde_json::from_slice::<SimpleProc>(payload)
+                    serde_json::from_slice::<crate::semantic_queries::SemanticMemo>(payload)
                         .ok()
-                        .map(|proc| (proc, payload.to_vec()))
+                        .map(|memo| (memo, payload.to_vec()))
                 });
-            if let Some((proc, payload)) = cached {
-                self.remember(key, payload);
-                self.stats.hits += 1;
-                return Ok(proc);
+            if let Some((memo, payload)) = cached {
+                if memo.valid_for(bindings) {
+                    let memo = self.queries.compile(&key, body, bindings, Some(memo))?;
+                    if self.store.is_some() {
+                        self.buffer(key.clone(), encode_record(&key, &payload));
+                    }
+                    self.remember(key, payload);
+                    self.stats.hits += 1;
+                    return Ok(memo.procedure);
+                }
+            } else {
+                self.stats.corrupt_entries += 1;
             }
-            self.stats.corrupt_entries += 1;
         }
         self.stats.misses += 1;
-        let proc = compile_simple_proc_with_bindings(body, bindings)?;
-        if let Ok(payload) = serde_json::to_vec(&proc) {
+        let memo = self.queries.compile(&key, body, bindings, None)?;
+        if let Ok(payload) = serde_json::to_vec(&memo) {
             if payload.len() <= MAX_ENTRY_BYTES {
                 let bytes = encode_record(&key, &payload);
-                let _ = atomic_write(&path, &bytes);
+                if self.store.is_some() {
+                    self.buffer(key.clone(), bytes);
+                } else {
+                    let _ = atomic_write(&path, &bytes);
+                }
                 self.remember(key, payload);
             }
         }
-        Ok(proc)
+        Ok(memo.procedure)
     }
 
     fn remember(&mut self, key: String, payload: Vec<u8>) {
@@ -204,8 +335,45 @@ impl ProcLoweringCache {
     }
 }
 
+impl Drop for ProcLoweringCache {
+    fn drop(&mut self) {
+        if let Err(error) = self.flush() {
+            if std::env::var_os("DM_BUILD_TRACE").is_some() {
+                eprintln!("symbolic store cache flush failed: {error}");
+            }
+        }
+    }
+}
+
 fn digest(bytes: &[u8]) -> String {
     format!("{:x}", Sha256::digest(bytes))
+}
+
+/// Source and invocation frame identify a candidate, while actual recorded
+/// semantic reads determine whether that candidate is valid in this skeleton.
+fn identity_key(body: &[Item], bindings: &LowerBindings) -> String {
+    let mut hash = Sha256::new();
+    hash.update(b"dm-observed-symbolic-proc-v3\0");
+    hash.update(VERSION.as_bytes());
+    hash_items(&mut hash, body);
+    let spans = dm_codegen_byond::debug::relative_body_span_shape(body);
+    hash.update((spans.len() as u64).to_le_bytes());
+    for span in spans {
+        for offset in span {
+            hash.update(offset.to_le_bytes());
+        }
+    }
+    let value = serde_json::json!({
+        "current_proc_path": bindings.current_proc_path,
+        "current_type_path": bindings.current_type_path,
+        "parameters": bindings.parameters,
+        "parameter_type_flags": bindings.parameter_type_flags,
+        "parameter_value_sources": bindings.parameter_value_sources,
+        "parameter_defaults": bindings.parameter_defaults,
+        "parameter_types": bindings.parameter_types,
+    });
+    hash_json(&mut hash, &value);
+    format!("{:x}", hash.finalize())
 }
 
 /// Canonical shared-context identity computed once when building a project.
@@ -275,6 +443,7 @@ pub fn prepare_member_type_fingerprints(bindings: &mut SharedLowerBindings) {
         .collect();
 }
 
+#[cfg(test)]
 fn cache_key(body: &[Item], bindings: &LowerBindings) -> String {
     let mut hash = Sha256::new();
     hash.update(b"dm-symbolic-proc-v1\0");
@@ -455,6 +624,7 @@ fn cache_key(body: &[Item], bindings: &LowerBindings) -> String {
     format!("{:x}", hash.finalize())
 }
 
+#[cfg(test)]
 fn hash_optional_bytes(hash: &mut Sha256, bytes: Option<&[u8]>) {
     hash.update([u8::from(bytes.is_some())]);
     if let Some(bytes) = bytes {
@@ -463,6 +633,7 @@ fn hash_optional_bytes(hash: &mut Sha256, bytes: Option<&[u8]>) {
     }
 }
 
+#[cfg(test)]
 fn collect_text_names<'a>(text: &'a str, names: &mut BTreeSet<&'a str>) {
     let mut start = None;
     for (offset, c) in text.char_indices() {
@@ -477,6 +648,7 @@ fn collect_text_names<'a>(text: &'a str, names: &mut BTreeSet<&'a str>) {
     }
 }
 
+#[cfg(test)]
 fn collect_names<'a>(body: &'a [Item], names: &mut BTreeSet<&'a str>) {
     for item in body {
         collect_text_names(&item.header, names);
@@ -965,8 +1137,15 @@ mod tests {
         assert_eq!(first.stats().misses, 1);
         drop(first);
         let mut shifted = body.clone();
-        shifted[0].span = Span::new(100, 200);
-        shifted[0].header_span = Span::new(100, 120);
+        fn shift(items: &mut [Item]) {
+            for item in items {
+                item.span = Span::new(item.span.start + 100, item.span.end + 100);
+                item.header_span =
+                    Span::new(item.header_span.start + 100, item.header_span.end + 100);
+                shift(&mut item.children);
+            }
+        }
+        shift(&mut shifted);
         let mut cold = ProcLoweringCache::open(root.clone());
         assert_eq!(cold.compile(&shifted, &args).unwrap(), original);
         assert_eq!(cold.stats().hits, 1);
@@ -976,6 +1155,7 @@ mod tests {
         };
         assert_ne!(cold.compile(&body, &globals).unwrap().code, original.code);
         assert_eq!(cold.stats().misses, 1);
+        drop(cold);
         fs::remove_dir_all(root).unwrap();
     }
 
@@ -1032,6 +1212,51 @@ mod tests {
     }
 
     #[test]
+    fn internal_source_spacing_invalidates_relative_statement_anchors() {
+        let body = parse("/proc/test()\n    var/x = 1\n    return x\n")
+            .items
+            .remove(0)
+            .children;
+        let spaced = parse("/proc/test()\n    var/x = 1\n\n    return x\n")
+            .items
+            .remove(0)
+            .children;
+        assert_ne!(
+            identity_key(&body, &LowerBindings::default()),
+            identity_key(&spaced, &LowerBindings::default())
+        );
+    }
+    #[test]
+    fn worker_forks_share_stage_snapshot_and_flush_buffers_once() {
+        let root = std::env::temp_dir().join(format!(
+            "dm-stage-cache-{}-{}",
+            std::process::id(),
+            TEMP_SEQUENCE.fetch_add(1, Ordering::Relaxed)
+        ));
+        let body = parse("/proc/test()\n    return 3\n")
+            .items
+            .remove(0)
+            .children;
+        let bindings = LowerBindings::default();
+        let mut seed = ProcLoweringCache::open(root.clone());
+        seed.compile(&body, &bindings).unwrap();
+        assert!(!seed.pending.is_empty());
+        seed.flush().unwrap();
+        assert!(seed.pending.is_empty());
+        drop(seed);
+        let parent = ProcLoweringCache::open(root.clone());
+        let mut worker = parent.fork();
+        assert!(std::sync::Arc::ptr_eq(&parent.snapshot, &worker.snapshot));
+        assert!(worker.snapshot_complete());
+        worker.compile(&body, &bindings).unwrap();
+        assert_eq!(worker.stats().hits, 1);
+        assert!(worker.pending.is_empty());
+        drop(worker);
+        drop(parent);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
     fn corrupt_entry_is_recompiled_and_repaired() {
         let root = std::env::temp_dir().join(format!(
             "dm-proc-repair-{}-{}",
@@ -1043,11 +1268,21 @@ mod tests {
             .remove(0)
             .children;
         let bindings = LowerBindings::default();
-        let key = cache_key(&body, &bindings);
+        let key = identity_key(&body, &bindings);
         let mut first = ProcLoweringCache::open(root.clone());
         let expected = first.compile(&body, &bindings).unwrap();
-        let path = root.join(&key[..2]).join(&key);
-        fs::write(&path, b"torn").unwrap();
+        first.flush().unwrap();
+        drop(first);
+        dm_store::Store::open(root.join("symbolic.redb"))
+            .unwrap()
+            .put_many(
+                vec![(
+                    dm_store::Key::new(ProcLoweringCache::namespace(), key),
+                    b"torn".to_vec(),
+                )],
+                None,
+            )
+            .unwrap();
         let mut cold = ProcLoweringCache::open(root.clone());
         assert_eq!(cold.compile(&body, &bindings).unwrap(), expected);
         assert_eq!(cold.stats().corrupt_entries, 1);
@@ -1055,6 +1290,7 @@ mod tests {
         let mut repaired = ProcLoweringCache::open(root.clone());
         assert_eq!(repaired.compile(&body, &bindings).unwrap(), expected);
         assert_eq!(repaired.stats().hits, 1);
+        drop(repaired);
         fs::remove_dir_all(root).unwrap();
     }
 }

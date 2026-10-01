@@ -21,6 +21,9 @@ const MAX_RECORD: usize = 256 * 1024 * 1024;
 fn error(e: impl std::fmt::Display) -> io::Error {
     io::Error::other(e.to_string())
 }
+fn invalid_data(e: impl std::fmt::Display) -> io::Error {
+    io::Error::new(io::ErrorKind::InvalidData, e.to_string())
+}
 fn digest(bytes: &[u8]) -> String {
     format!("{:x}", Sha256::digest(bytes))
 }
@@ -33,7 +36,7 @@ fn encode_record(bytes: &[u8]) -> Vec<u8> {
 }
 fn decode_record(bytes: &[u8]) -> io::Result<Vec<u8>> {
     if bytes.len() < 32 || Sha256::digest(&bytes[32..]).as_slice() != &bytes[..32] {
-        return Err(error("store record checksum mismatch"));
+        return Err(invalid_data("store record checksum mismatch"));
     }
     Ok(bytes[32..].to_vec())
 }
@@ -169,7 +172,9 @@ impl Store {
             }
         };
         match schema {
-            Some(value) if value != SCHEMA => return Err(error("unsupported dm-store schema")),
+            Some(value) if value != SCHEMA => {
+                return Err(invalid_data("unsupported dm-store schema"))
+            }
             Some(_) => {}
             None => {
                 let tx = db.begin_write().map_err(error)?;
@@ -332,7 +337,7 @@ impl Store {
                 let (key, value) = row.map_err(error)?;
                 let key: Key = serde_json::from_str(key.value()).map_err(error)?;
                 if key.namespace != namespace {
-                    return Err(error("namespace index mismatch"));
+                    return Err(invalid_data("namespace index mismatch"));
                 }
                 let cost = value.value().len() + key.namespace.len() + key.name.len();
                 if records.len() == max_records || cost > max_bytes.saturating_sub(bytes) {
