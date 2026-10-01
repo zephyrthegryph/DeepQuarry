@@ -40,12 +40,12 @@ function Diagnostics([string]$Prefix) {
     return $records.ToArray()
 }
 $fixtures = @(
-    @{ name = 'valid'; source = "/proc/probe()`n    return 7`n"; expected_success = $true },
-    @{ name = 'explicit-preprocess-error'; source = "#error explicit_error_probe`n"; expected_success = $false },
-    @{ name = 'missing-include'; source = "#include `"absent_probe.dm`"`n"; expected_success = $false },
-    @{ name = 'unterminated-string'; source = "/proc/probe()`n    return `"unterminated`n"; expected_success = $false },
-    @{ name = 'unknown-procedure'; source = "/proc/probe()`n    return definitely_absent_probe()`n"; expected_success = $false },
-    @{ name = 'unknown-type'; source = "/proc/probe()`n    var/datum/definitely_absent_probe/value = new`n    return value`n"; expected_success = $false }
+    @{ name = 'valid'; source = "/proc/probe()`n    return 7`n"; expected_success = $true; authored_line = $null },
+    @{ name = 'explicit-preprocess-error'; source = "#error explicit_error_probe`n"; expected_success = $false; authored_line = 1 },
+    @{ name = 'missing-include'; source = "#include `"absent_probe.dm`"`n"; expected_success = $false; authored_line = 1 },
+    @{ name = 'unterminated-string'; source = "/proc/probe()`n    return `"unterminated`n"; expected_success = $false; authored_line = 2 },
+    @{ name = 'unknown-procedure'; source = "/proc/probe()`n    return definitely_absent_probe()`n"; expected_success = $false; authored_line = 2 },
+    @{ name = 'unknown-type'; source = "/proc/probe()`n    var/datum/definitely_absent_probe/value = new`n    return value`n"; expected_success = $false; authored_line = 2 }
 )
 try {
     $versionPrefix = Join-Path $OutputRoot 'byond-version'
@@ -82,7 +82,10 @@ try {
         if ($native.fallback) { $report.fallback_count++ }
         $sameStatus = $nativeOk -eq $byondOk
         $sameSourceClass = !$nativeOk -and !$byondOk -and $native.failure.kind -eq 'source' -and $byondKind -eq 'source'
-        $row = [pscustomobject]@{ fixture = $fixture.name; expected_success = $fixture.expected_success; status_matches = $sameStatus; source_failure_classification_matches = $sameSourceClass; diagnostic_equivalence = 'not_evaluated'; byond = @{ ok = $byondOk; exit_code = $byondTiming.exit_code; failure_kind = $byondKind; completed_error_summary = $byondFinished; runtime_seconds = $byondTiming.runtime_seconds; diagnostics = $byondDiagnostics; stdout = "$byondPrefix.stdout.log"; stderr = "$byondPrefix.stderr.log" }; native = @{ ok = $nativeOk; exit_code = $nativeTiming.exit_code; failure = $native.failure; fallback = $native.fallback; runtime_seconds = $nativeTiming.runtime_seconds; diagnostics = $nativeDiagnostics; stdout = "$nativePrefix.stdout.log"; stderr = "$nativePrefix.stderr.log" }; gate_passed = $sameStatus -and ($byondOk -eq $fixture.expected_success) -and ($byondOk -or $sameSourceClass) -and !$native.fallback }
+        # Check the fixture's authored location independently of BYOND's wording
+        # or number of diagnostics. This is not diagnostic-equivalence parity.
+        $nativeSourceOriginsValid = $nativeOk -or ($nativeDiagnostics.Count -gt 0 -and @($nativeDiagnostics | Where-Object { [IO.Path]::GetFileName($_.source) -ne 'probe.dm' }).Count -eq 0 -and @($nativeDiagnostics | Where-Object { $_.line -eq $fixture.authored_line }).Count -gt 0)
+        $row = [pscustomobject]@{ fixture = $fixture.name; expected_success = $fixture.expected_success; expected_authored_source = 'probe.dm'; expected_authored_line = $fixture.authored_line; native_source_origins_valid = $nativeSourceOriginsValid; status_matches = $sameStatus; source_failure_classification_matches = $sameSourceClass; diagnostic_equivalence = 'not_evaluated'; byond = @{ ok = $byondOk; exit_code = $byondTiming.exit_code; failure_kind = $byondKind; completed_error_summary = $byondFinished; runtime_seconds = $byondTiming.runtime_seconds; diagnostics = $byondDiagnostics; stdout = "$byondPrefix.stdout.log"; stderr = "$byondPrefix.stderr.log" }; native = @{ ok = $nativeOk; exit_code = $nativeTiming.exit_code; failure = $native.failure; fallback = $native.fallback; runtime_seconds = $nativeTiming.runtime_seconds; diagnostics = $nativeDiagnostics; stdout = "$nativePrefix.stdout.log"; stderr = "$nativePrefix.stderr.log" }; gate_passed = $sameStatus -and ($byondOk -eq $fixture.expected_success) -and ($byondOk -or $sameSourceClass) -and $nativeSourceOriginsValid -and !$native.fallback }
         $rows.Add($row)
         Save-Report
     }
