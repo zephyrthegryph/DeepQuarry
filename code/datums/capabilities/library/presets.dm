@@ -149,14 +149,36 @@
 				break
 	// A holder the map placed by hand (pixel_x / pixel_y set) stays where it was put.
 	if(!holder.pixel_x && !holder.pixel_y)
-		holder.wall_mount_orient(offset)
+		orient(holder)
 
-/// Sits the holder `offset` pixels onto the wall behind it. Types with an odd sprite (the angled APC)
-/// override it.
-/atom/proc/wall_mount_orient(offset = 26)
-	wall_mount_offset(src, offset)
+/// Sits the holder `offset` pixels onto the wall behind it. A type with an odd sprite (the angled APC) declares a
+/// subtype overriding it.
+/datum/capability/wall_mount/proc/orient(atom/holder)
+	wall_mount_offset(holder, offset)
+
+/// Re-sits A onto its wall after its dir changed (its cap_wall_mount(); nothing without one).
+/proc/wall_mount_reorient(atom/A)
+	var/datum/capability/wall_mount/C = cap_of(A, /datum/capability/wall_mount)
+	C?.orient(A)
 
 /// Offsets holder onto the wall behind it (toward its dir).
 /proc/wall_mount_offset(atom/holder, offset)
 	holder.pixel_x = (holder.dir & (NORTH|SOUTH)) ? 0 : (holder.dir == EAST ? offset : -offset)
 	holder.pixel_y = (holder.dir & (NORTH|SOUTH)) ? (holder.dir == NORTH ? offset : -offset) : 0
+
+/**
+ * service_panel(): a maintenance panel and the wires behind it as one bundle, with no cover (archive/framework_fixes.md
+ * §9.5): a vendor, a fabricator, a door controller. `wires`: the /datum/wires subtype (null: the machine's
+ * machine_wires). `panel_tool`: what opens the panel. `access`: when given (or `access_from_holder`), opening the panel
+ * needs a credential for it (cap_access(): the holder's own req_access wins), unless the holder is emagged. `emag_say`:
+ * when given, an emag (cap_emag(), `emag_mode`, `emag_effect`) subverts it. Each part keeps its own capability type, so
+ * a subtype still replaces one (`replace(., /datum/capability/wires, cap_wires(...))`) or refines it by key.
+ *
+ *	. += service_panel(/datum/wires/vending, emag_say = "You short out %T%'s product lock.", emag_mode = EMAG_REPEATABLE)
+ */
+/proc/service_panel(wires, panel_tool = TOOL_SCREWDRIVER, list/access, access_from_holder = FALSE, emag_say, emag_effect, emag_mode = EMAG_ONCE, panel_needs)
+	. = list(cap_panel(tool = panel_tool, needs = panel_needs), cap_wires(wires))
+	if(length(access) || access_from_holder)
+		. += cap_require("open_maintenance_panel", needs = any_of(req_set(CAP_EMAGGED), req_credential(access)))
+	if(emag_say || emag_effect)
+		. += cap_emag(say = emag_say, effect = emag_effect, mode = emag_mode)

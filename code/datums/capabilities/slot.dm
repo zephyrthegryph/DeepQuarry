@@ -16,8 +16,9 @@
 // so an ask_*() inside a slot hook re-validates and the dispatcher records the action once. The item
 // moves with one ownership transfer: out of the hand, slot or container it is in, into the holder,
 // adopted with own_set() (own_take() on the way out). The slot owns its var (owned():
-// owns(var, policy = OWN_CONTAINED)): the holder type declares nothing for it in ownership(). Holder hooks, compared with nameof(var):
-// slot_refusal(), slot_inserted(), slot_eject_refusal(), slot_ejecting(), slot_ejected(). From code:
+// owns(var, policy = OWN_CONTAINED)): the holder type declares nothing for it in ownership(). Hooks: procs of the slot
+// capability that take the holder (refusal(), inserted(), ejected()); a holder that reacts declares a slot subtype
+// overriding them and passes it as cap_slot(..., slot_type = /datum/capability/slot/<x>). From code:
 // slot_insert(nameof(var), item, user) and slot_eject(nameof(var), user).
 
 /datum/capability/slot
@@ -177,7 +178,7 @@
 			return FALSE
 		tell(full_msg, user, holder, current, warning = TRUE)
 		return UI_REFUSED
-	var/refusal = holder.slot_refusal(slot_var, item, user)
+	var/refusal = refusal(holder, item, user)
 	if(refusal)
 		if(refusal == SLOT_REFUSED_PASS)
 			return FALSE
@@ -192,7 +193,7 @@
 	if(!adopt(holder, item, user))
 		return UI_REFUSED
 	tell(insert_msg, user, holder, item)
-	holder.slot_inserted(slot_var, item, user)
+	inserted(holder, item, user)
 	return TRUE
 
 /// Takes the item out of the slot on `holder`, to `user`'s hands (or the floor with `drop`),
@@ -214,7 +215,7 @@
 		else
 			item.forceMove(holder.drop_location())
 	tell(isnull(message) ? eject_msg : message, user, holder, item)
-	holder.slot_ejected(slot_var, item, user)
+	ejected(holder, item, user)
 	return item
 
 /// Generated Insert: runs /atom/proc/cap_slot_do_insert through cap_dispatch() (the base run_effect),
@@ -302,13 +303,13 @@
 			return cap
 	return null
 
-/// Why `item` can't go into slot `slot` right now (text), SLOT_REFUSED_SILENT, SLOT_REFUSED_PASS,
-/// or null. Compare `slot` with nameof(var).
-/atom/proc/slot_refusal(slot, obj/item/item, mob/user)
+/// Why `item` can't go into this slot on holder right now (text), SLOT_REFUSED_SILENT, SLOT_REFUSED_PASS, or null.
+/// A holder that refuses some items declares a slot subtype overriding it.
+/datum/capability/slot/proc/refusal(atom/holder, obj/item/item, mob/user)
 	return null
 
-/// `item` went into slot `slot`.
-/atom/proc/slot_inserted(slot, obj/item/item, mob/user)
+/// `item` went into this slot on holder.
+/datum/capability/slot/proc/inserted(atom/holder, obj/item/item, mob/user)
 	return
 
 /// Why `item` can't come out of slot `slot` right now (text), SLOT_REFUSED_SILENT, or null.
@@ -319,8 +320,8 @@
 /proc/slot_ejecting(atom/holder, slot, obj/item/item, mob/user)
 	return
 
-/// `item` came out of slot `slot` (already in the actor's hands or on the floor).
-/atom/proc/slot_ejected(slot, obj/item/item, mob/user)
+/// `item` came out of this slot on holder (already in the actor's hands or on the floor).
+/datum/capability/slot/proc/ejected(atom/holder, obj/item/item, mob/user)
 	return
 
 /// Ejects slot `slot_var` (nameof()) from code. Returns the item or null.

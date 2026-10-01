@@ -165,7 +165,7 @@ GLOBAL_VAR_INIT(rx_draining, FALSE)
 						// at_most: inside its window the keys are held for one delivery when it ends.
 						if(R.at_most && !rx_at_most_admit(E, R, keys))
 							continue
-						rx_call(E, R.handler, keys)
+						rx_call_reaction(E, R, keys)
 					else
 						var/datum/rx_listener/L = target
 						if(L.source && L.listener && !QDELETED(L.listener))
@@ -283,7 +283,7 @@ GLOBAL_LIST_EMPTY(rx_cross_jobs)
 			rx_call(L.listener, L.handler, E, band, previous)
 		return
 	var/started = TICK_USAGE
-	rx_call(E, R.handler, band, previous)
+	rx_call_reaction(E, R, band, previous)
 	R.work?.account(TICK_USAGE_TO_MS(started))
 
 // ---------------------------------------------------------------- operations
@@ -307,7 +307,7 @@ GLOBAL_LIST_EMPTY(rx_cross_jobs)
 	var/datum/rx_table/T = rx_table_of(D)
 	if(T)
 		for(var/datum/reaction/R as anything in rx_op_matches(T.before_keyed, T.before_typed, key, cap_type))
-			var/veto = rx_call(D, R.handler, ctx)
+			var/veto = rx_call_reaction(D, R, ctx)
 			if(!isnull(veto))
 				return veto
 	for(var/datum/rx_listener/L as anything in D.rx?.listeners?.Copy())
@@ -323,7 +323,7 @@ GLOBAL_LIST_EMPTY(rx_cross_jobs)
 	var/datum/rx_table/T = rx_table_of(D)
 	if(T)
 		for(var/datum/reaction/R as anything in rx_op_matches(T.after_keyed, T.after_typed, key, cap_type))
-			rx_call(D, R.handler, ctx)
+			rx_call_reaction(D, R, ctx)
 	for(var/datum/rx_listener/L as anything in D.rx?.listeners?.Copy())
 		var/datum/reaction/R = L.trigger
 		if(R.kind == RXN_AFTER_OP && rx_op_listener_matches(R, key, cap_type) && L.listener && !QDELETED(L.listener))
@@ -429,7 +429,7 @@ GLOBAL_VAR_INIT(rx_notice_delivering, FALSE)
 				var/started = TICK_USAGE
 				var/faulted = FALSE
 				try
-					rx_call(E, R.handler, N)
+					rx_call_reaction(E, R, N)
 				catch(var/exception/e)
 					faulted = TRUE
 					stack_trace("notice [N.type] handler [R.handler] on [E.type]: [e] ([e.file]:[e.line])")

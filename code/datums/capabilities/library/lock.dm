@@ -54,20 +54,10 @@
 	data[LOOK_LOCKED] = is_locked(holder)
 
 /// Whether `accesses` opens this lock on holder: the holder's own req_access / req_one_access when
-/// either is set, else the capability's type default.
+/// either is set, else the capability's type default (access_needs(), library/access.dm).
 /datum/capability/lock/proc/grants(atom/holder, list/accesses)
-	var/list/need_all = req_access
-	var/list/need_one = req_one_access
-	if(isobj(holder))
-		var/obj/O = holder
-		if(length(O.req_access) || length(O.req_one_access))
-			need_all = O.req_access
-			need_one = O.req_one_access
-	if(!length(need_all) && !length(need_one))
-		return TRUE
-	if(!length(accesses))
-		return FALSE
-	return has_access(need_all, need_one, accesses)
+	var/list/needs = access_needs(holder, req_access, req_one_access)
+	return access_grants(needs[1], needs[2], accesses)
 
 /proc/cap_lock_name(atom/holder, mob/user)
 	return is_locked(holder) ? "Unlock" : "Lock"
@@ -92,16 +82,8 @@
 	var/datum/capability/lock/C = cap_of(holder, /datum/capability/lock)
 	if(!C || !actor)
 		return null
-	if(held && is_type_in_list(held, C.id_types) && C.grants(holder, held.GetAccess()))
-		return held
-	// The actor's own access: the holder's own requirement when it sets one (a map edit, req_access), else the lock's.
-	var/obj/O = isobj(holder) ? holder : null
-	var/permitted
-	if(O && (length(O.req_access) || length(O.req_one_access)))
-		permitted = O.allowed(actor)
-	else
-		permitted = C.grants(holder, actor.GetAccess())
-	return permitted ? actor : null
+	var/list/needs = access_needs(holder, C.req_access, C.req_one_access)
+	return access_credential(holder, actor, held, needs[1], needs[2], C.id_types)
 
 /// The lock op's handler: toggle the lock with the first credential provider that grants it.
 /proc/cap_lock_toggle(atom/holder, mob/user, obj/item/held)

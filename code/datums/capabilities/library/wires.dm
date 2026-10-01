@@ -12,9 +12,10 @@
 	/// The /datum/wires subtype made for each holder.
 	var/wires_type
 
-/// Wires of `wires_type`, reachable while the maintenance panel is open (and whatever `needs` asks).
-/proc/cap_wires(wires_type, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
-	var/datum/capability/wires/C = new
+/// Wires of `wires_type`, reachable while the maintenance panel is open (and whatever `needs` asks). type: a subtype
+/// choosing the wires per instance (wires_type_for()).
+/proc/cap_wires(wires_type, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log, type = /datum/capability/wires)
+	var/datum/capability/wires/C = new type
 	C.wires_type = wires_type
 	return cap_gating(C, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 
@@ -26,19 +27,19 @@
 		return null
 	var/datum/wires/W = A.cap_data?[C.key]
 	if(!W)
-		var/wires_type = A.wires_type_for(C.wires_type)
+		var/wires_type = C.wires_type_for(A)
 		W = new wires_type(A)
 		LAZYSET(A.cap_data, C.key, W)
 	return W
 
-/// The /datum/wires subtype A's wires capability makes for A: the capability's type default, or a
-/// per-instance choice (design review H1: an airlock built with secure electronics).
-/atom/proc/wires_type_for(default_type)
-	return default_type
-
-/// A machine's wires default to its machine_wires type var (cap_wires() with no type).
-/obj/machinery/wires_type_for(default_type)
-	return default_type || machine_wires
+/// The /datum/wires subtype this capability makes for holder: its type default, else a machine's machine_wires type
+/// var (cap_wires() with no type). A per-instance choice (design review H1: an airlock built with secure electronics)
+/// is a subtype.
+/datum/capability/wires/proc/wires_type_for(atom/holder)
+	if(wires_type)
+		return wires_type
+	var/obj/machinery/M = holder
+	return istype(M) ? M.machine_wires : null
 
 /datum/capability/wires/interactions(atom/holder)
 	return list(

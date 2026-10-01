@@ -230,14 +230,16 @@ About the new airlock wires panel:
 		return TRUE
 	return FALSE
 
-// cap_electrify() (code/datums/capabilities/library/doors.dm) reads these.
-/obj/machinery/door/airlock/is_electrified()
-	return isElectrified()
+/// cap_electrify() (code/datums/capabilities/library/doors.dm) reads the airlock's timed electrification.
+/datum/capability/electrify/airlock
 
-/obj/machinery/door/airlock/electrified_left()
-	if(electrified_until <= 0)
-		return electrified_until
-	return round(time_left(src, nameof(electrified_until)) / 10, 1)
+/datum/capability/electrify/airlock/is_electrified(obj/machinery/door/airlock/holder)
+	return holder.isElectrified()
+
+/datum/capability/electrify/airlock/electrified_left(obj/machinery/door/airlock/holder)
+	if(holder.electrified_until <= 0)
+		return holder.electrified_until
+	return round(time_left(holder, nameof(holder.electrified_until)) / 10, 1)
 
 /obj/machinery/door/airlock/proc/canAIControl()
 	return ((aiControlDisabled!=1) && (!isAllPowerLoss()));
@@ -266,8 +268,11 @@ About the new airlock wires panel:
 	var/datum/wires/W = cap_data?[/datum/capability/wires]
 	return W ? W.is_cut(wire) : FALSE
 
-/obj/machinery/door/airlock/wires_type_for(default_type)
-	return secured_wires ? /datum/wires/airlock/secure : default_type
+/// The wires capability makes secure wires for an airlock built with secure electronics.
+/datum/capability/wires/airlock
+
+/datum/capability/wires/airlock/wires_type_for(obj/machinery/door/airlock/holder)
+	return holder.secured_wires ? /datum/wires/airlock/secure : ..()
 
 /obj/machinery/door/airlock/proc/mainPowerCablesCut()
 	return wire_cut(WIRE_MAIN_POWER1) || wire_cut(WIRE_MAIN_POWER2)
@@ -440,7 +445,16 @@ APPEARANCE_NONE(/obj/machinery/door/airlock)
 	. = ..()
 	// draw() shows door_locked while the bolt lights are on, so it hides the bolts' and emergency access' parts;
 	// the door's own welder repair (door.dm) mends it.
-	. += door(wires = /datum/wires/airlock, electrify = TRUE, ai_control = TRUE, emag_effect = PROC_REF(emag_effect), weld_applies = PROC_REF(can_weld_now), weld_help_applies = PROC_REF(can_weld_without_repair))
+	// The airlock's own mechanism behind the door parts: capability subtypes taking the airlock as their holder.
+	var/static/list/airlock_parts = list(
+		/datum/capability/panel = /datum/capability/panel/airlock,
+		/datum/capability/wires = /datum/capability/wires/airlock,
+		/datum/capability/bolts = /datum/capability/bolts/airlock,
+		/datum/capability/electrify = /datum/capability/electrify/airlock,
+		/datum/capability/pry = /datum/capability/pry/airlock,
+		/datum/capability/crush = /datum/capability/crush/airlock,
+	)
+	. += door(wires = /datum/wires/airlock, electrify = TRUE, ai_control = TRUE, emag_effect = PROC_REF(emag_effect), weld_applies = PROC_REF(can_weld_now), weld_help_applies = PROC_REF(can_weld_without_repair), subtypes = airlock_parts)
 	. += cap_frozen_shut()
 	. += cap_hand("Use", PROC_REF(touch_airlock), needs = PROC_REF(can_touch_by_hand))
 	. += cap_use_on("Use", /obj/item, PROC_REF(use_item_on_airlock), works_broken = TRUE, works_unpowered = TRUE)
@@ -711,22 +725,25 @@ APPEARANCE_NONE(/obj/machinery/door/airlock)
 /obj/machinery/door/airlock/proc/can_weld_without_repair()
 	return can_weld_now() && get_integrity() >= max_integrity
 
-/obj/machinery/door/airlock/cap_pry_name(mob/user)
-	return can_remove_electronics() ? "Remove electronics" : "Force open or closed"
+/// The airlock's crowbar: removing the electronics from an opened, dead, welded door, else forcing it.
+/datum/capability/pry/airlock
+
+/datum/capability/pry/airlock/name_for(obj/machinery/door/airlock/holder, mob/user)
+	return holder.can_remove_electronics() ? "Remove electronics" : "Force open or closed"
 
 /// Removing the electronics is always possible; forcing needs no power and no bolts.
-/obj/machinery/door/airlock/cap_pry_reason(mob/user, obj/item/held)
-	if(can_remove_electronics())
+/datum/capability/pry/airlock/reason(obj/machinery/door/airlock/holder, mob/user, obj/item/held)
+	if(holder.can_remove_electronics())
 		return TRUE
-	if(arePowerSystemsOn())
+	if(holder.arePowerSystemsOn())
 		return "the airlock's motors resist your efforts to force it"
-	if(is_bolted(src))
+	if(is_bolted(holder))
 		return "the airlock's bolts prevent it from being forced"
 	return TRUE
 
-/obj/machinery/door/airlock/cap_pry_force(mob/user, obj/item/held)
-	if(can_remove_electronics())
-		use_tool(user, held, src, delay = 4 SECONDS, quality = TOOL_CROWBAR, volume = 75, start_self = "You start to remove electronics from the airlock assembly.", start_others = "[user] removes the electronics from the airlock assembly.", receiver = src, on_done = PROC_REF(crowbar_act_tool_done), done_args = list(user))
+/datum/capability/pry/airlock/force(obj/machinery/door/airlock/holder, mob/user, obj/item/held)
+	if(holder.can_remove_electronics())
+		use_tool(user, held, holder, delay = 4 SECONDS, quality = TOOL_CROWBAR, volume = 75, start_self = "You start to remove electronics from the airlock assembly.", start_others = "[user] removes the electronics from the airlock assembly.", receiver = holder, on_done = TYPE_PROC_REF(/obj/machinery/door/airlock, crowbar_act_tool_done), done_args = list(user))
 		return TRUE
 	return ..()
 
@@ -760,13 +777,15 @@ APPEARANCE_NONE(/obj/machinery/door/airlock)
 
 // ---- panel() ----
 
-/// The panel capability's handler, refined: a broken panel won't close, and opening it shows the wires.
-/obj/machinery/door/airlock/cap_panel_toggle(mob/user, obj/item/held)
-	if(panel_is_open(src) && has_stat(BROKEN))
+/// The panel capability, refined: a broken panel won't close, and opening it shows the wires.
+/datum/capability/panel/airlock
+
+/datum/capability/panel/airlock/toggle(obj/machinery/door/airlock/holder, mob/user, obj/item/held)
+	if(panel_is_open(holder) && holder.has_stat(BROKEN))
 		return refuse(user, "The panel is broken and cannot be closed.")
 	. = ..()
-	if(panel_is_open(src))
-		wires_of(src).Interact(user)
+	if(panel_is_open(holder))
+		wires_of(holder).Interact(user)
 
 // ---- emag() ----
 
@@ -859,8 +878,11 @@ TYPE_TABLE(/obj/machinery/door/airlock, emag_decl, null)
 /obj/machinery/door/airlock/ui_allowed(mob/user, action)
 	return user_allowed(user)
 
-/obj/machinery/door/airlock/door_safeties_on()
-	return !!safe
+/// cap_crush() asks the airlock's safeties.
+/datum/capability/crush/airlock
+
+/datum/capability/crush/airlock/safeties_on(obj/machinery/door/airlock/holder)
+	return !!holder.safe
 
 /obj/machinery/door/airlock/proc/user_allowed(mob/user)
 	var/mob/living/silicon/robot/R = user
@@ -1162,8 +1184,10 @@ TYPE_TABLE(/obj/machinery/door/airlock, emag_decl, null)
 	return TRUE
 
 /// cap_bolts() drops and raises through the airlock's own bolt mechanism.
-/obj/machinery/door/airlock/set_bolted(on, forced = FALSE)
-	return on ? lock(forced) : unlock(forced)
+/datum/capability/bolts/airlock
+
+/datum/capability/bolts/airlock/set_bolted(obj/machinery/door/airlock/holder, on, forced = FALSE)
+	return on ? holder.lock(forced) : holder.unlock(forced)
 
 /obj/machinery/door/airlock/allowed(mob/M)
 	if(is_bolted(src))
