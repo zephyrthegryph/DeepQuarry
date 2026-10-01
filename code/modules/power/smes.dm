@@ -25,19 +25,19 @@
 	max_integrity = 500
 
 	var/capacity = 5e6 // maximum charge
-	var/charge = 1e6 // actual charge
+	/// Starting charge, seeded into Rust when the unit registers. Rust owns the live value:
+	/// read it with stored_charge(), change it with adjust_stored_charge()/set_stored_charge().
+	var/initial_charge = 1e6
 
 	var/input_attempt = 0 			// 1 = attempting to charge, 0 = not attempting to charge
 	var/inputting = 0 				// 1 = actually inputting, 0 = not inputting
 	var/input_level = 50000 		// amount of power the SMES attempts to charge by
 	var/input_level_max = 200000 	// cap on input_level
-	var/input_available = 0 		// amount of charge available from input last tick
 
 	var/output_attempt = 1 			// 1 = attempting to output, 0 = not attempting to output
 	var/outputting = 0 				// 1 = actually outputting, 0 = not outputting
 	var/output_level = 50000		// amount of power the SMES attempts to output
 	var/output_level_max = 200000	// cap on output_level
-	var/output_used = 0				// amount of power actually outputted. may be less than output_level if the grid returns excess power
 
 	//Holders for powerout event.
 	var/last_output_attempt	= 0
@@ -46,14 +46,11 @@
 
 	//For icon overlay updates
 	var/last_disp
-	var/last_chrg
-	var/last_onln
 
 	var/input_cut = 0
 	var/input_pulsed = 0
 	var/output_cut = 0
 	var/output_pulsed = 0
-	var/target_load = 0
 
 	var/name_tag = null
 	var/building_terminal = 0 //Suggestions about how to avoid clickspam building several terminals accepted!
@@ -62,6 +59,8 @@
 	var/grid_check = FALSE // If true, suspends all I/O.
 	/// Power events applied (tests check that an idle SMES hears none).
 	var/power_event_count = 0
+	/// Whether initial_charge has been written into the Rust entity.
+	var/charge_seeded = FALSE
 
 	// More humming noises
 	var/datum/looping_sound/generator/soundloop
@@ -72,10 +71,8 @@
 	if(drain_check)
 		return 1
 
-	var/smes_amt = min((amount * SMESRATE), charge)
-	charge -= smes_amt
-	if(vg_entity)
-		adjust_charge(-smes_amt)
+	var/smes_amt = min((amount * SMESRATE), stored_charge())
+	adjust_stored_charge(-smes_amt)
 	return smes_amt / SMESRATE
 
 REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
@@ -90,7 +87,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 /obj/machinery/power/smes/Initialize(mapload)
 	. = ..()
 	add_nearby_terminals()
-	own_set(src, "soundloop", new /datum/looping_sound/generator(list(src), FALSE)) // hmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
+	own_set(src, nameof(soundloop), new /datum/looping_sound/generator(list(src), FALSE)) // hmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
 	soundloop.extra_range = -6 // Doing this here bc we're reusing the generator hum, and can't directly edit that one
 	soundloop.falloff = 0.2 // Harsher falloff.
 	if(!check_terminals())
@@ -125,7 +122,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 		var/obj/item/smes_coil/C = locate_in_list(component_parts, /obj/item/smes_coil)
 		if(isnull(C))
 			break
-		own_take_member(src, "component_parts", C)
+		own_take_member(src, nameof(component_parts), C)
 		qdel(C)
 		cur_coils--
 	// Rebuild from mapper's coils
@@ -133,7 +130,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 		if (cur_coils < max_coils)
 			var/obj/item/W = parts_found[i]
 			cur_coils++
-			own_add(src, "component_parts", W)
+			own_add(src, nameof(component_parts), W)
 			W.forceMove(src)
 	RefreshParts()
 
@@ -147,8 +144,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 		var/turf/T = get_step(src, d)
 		for(var/obj/machinery/power/terminal/smes_input/term in turf_contents_of_type(T, /obj/machinery/power/terminal/smes_input))
 			if(term && term.dir == turn(d, 180) && !term.master())
-				rel_add(src, "terminals", term)
-				rel_set(term, "master", src)
+				rel_add(src, nameof(terminals), term)
+				rel_set(term, nameof(term.master), src)
 				term.connect_to_network(FALSE)
 	power_sync()
 
@@ -158,12 +155,31 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 	return TRUE
 
 /obj/machinery/power/smes/disconnect_terminal(obj/machinery/power/terminal/term)
-	rel_remove(src, "terminals", term)
-	rel_clear(term, "master")
+	rel_remove(src, nameof(terminals), term)
+	rel_clear(term, nameof(term.master))
 	power_sync()
 
 /obj/machinery/power/smes/power_registered()
 	power_sync()
+	// Rust's charge starts at zero: seed it once from the DM starting value.
+	if(vg_entity && !charge_seeded)
+		charge_seeded = TRUE
+		adjust_charge(initial_charge - get_charge())
+
+/// The unit's stored charge in SMES units: read from Rust, never cached in DM.
+/obj/machinery/power/smes/proc/stored_charge()
+	return vg_entity ? get_charge() : initial_charge
+
+/// Adds `delta` (negative removes) to the stored charge. Before the unit registers it moves the seed.
+/obj/machinery/power/smes/proc/adjust_stored_charge(delta)
+	if(vg_entity)
+		adjust_charge(delta)
+	else
+		initial_charge = max(initial_charge + delta, 0)
+
+/// Sets the stored charge (mapped presets, admin, tests).
+/obj/machinery/power/smes/proc/set_stored_charge(value)
+	adjust_stored_charge(value - stored_charge())
 
 /// Sends settings and capacity to Rust (generated accessors,
 /// verdigris/domains/power/src/components.rs). Charge is Rust's own
@@ -174,15 +190,15 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 	if(QDELETED(src) || !vg_entity)
 		return
 	var/working = !has_stat(BROKEN) && !grid_check
-	set_input_enabled(working && input_attempt && !input_pulsed && !input_cut ? 1 : 0)
-	set_output_enabled(working && output_attempt && !output_pulsed && !output_cut ? 1 : 0)
-	set_capacity(capacity)
-	set_input_level(input_level)
-	set_output_level(output_level)
+	native_write(src, NATIVE_SMES_INPUT_ENABLED, working && input_attempt && !input_pulsed && !input_cut ? 1 : 0)
+	native_write(src, NATIVE_SMES_OUTPUT_ENABLED, working && output_attempt && !output_pulsed && !output_cut ? 1 : 0)
+	native_write(src, NATIVE_SMES_CAPACITY, capacity)
+	native_write(src, NATIVE_SMES_INPUT_LEVEL, input_level)
+	native_write(src, NATIVE_SMES_OUTPUT_LEVEL, output_level)
 	var/unit_index = (vg_entity - 1) & VG_ENTITY_INDEX_MASK
 	for(var/obj/machinery/power/terminal/smes_input/term as anything in terminals)
 		if(term.vg_entity)
-			term.set_unit(unit_index)
+			native_write(term, NATIVE_SMESINPUTTERMINAL_UNIT, unit_index)
 
 /// Reads back what Rust's SmesOutputPlan/Apply and SmesInputApply did this
 /// step (verdigris/domains/power/src/laws.rs): the settled charge and the
@@ -190,20 +206,15 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 /obj/machinery/power/smes/proc/power_poll()
 	if(!vg_entity)
 		return
-	var/new_charge = get_charge()
-	// Counts polls that saw Rust change something (tests: an idle SMES hears nothing).
-	if(new_charge != charge)
-		power_event_count++
-	charge = new_charge
-	var/new_inputting = input_available > 0 ? (input_available + 0.01 >= target_load ? 2 : 1) : 0
-	var/new_outputting = output_used > 0 ? 2 : (output_attempt ? 1 : 0)
-	if(new_inputting != inputting || new_outputting != outputting || last_disp != chargedisplay())
+	var/new_inputting = 0
+	var/new_outputting = output_attempt ? 1 : 0
+	var/display = chargedisplay()
+	if(new_inputting != inputting || new_outputting != outputting || last_disp != display)
 		power_event_count++
 		inputting = new_inputting
 		outputting = new_outputting
-		last_disp = chargedisplay()
-		last_chrg = inputting
-		last_onln = outputting
+		last_disp = display
+		native_changed(src, CHANGE_MACHINE_CHARGE, NATIVE_SRC_POWER)
 		update_icon()
 	update_soundloop()
 
@@ -213,7 +224,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 			soundloop.start()
 			noisy = TRUE
 		// Capped to 40 volume since higher volumes get annoying and it sounds worse.
-		soundloop.volume = CLAMP((output_used / 1000), 1, 40)
+		soundloop.volume = 1
 	else if(noisy)
 		soundloop.stop()
 		noisy = FALSE
@@ -249,28 +260,15 @@ DECLARE_APPEARANCE(/obj/machinery/power/smes, "appearance_smes_charge", list("1"
 	return chargedisplay()
 
 /obj/machinery/power/smes/proc/chargedisplay()
-	return round(5.5*charge/(capacity ? capacity : 5e6))
-
-/obj/machinery/power/smes/proc/input_power(percentage, obj/machinery/power/terminal/term)
-	var/to_input = target_load * (percentage/100)
-	to_input = between(0, to_input, target_load)
-	if(percentage == 100)
-		inputting = 2
-	else if(percentage)
-		inputting = 1
-	// else inputting = 0, as set in process()
-
-	var/inputted = power_draw(term.power_region, min(to_input, input_level - input_available), term)
-	add_charge(inputted)
-	input_available += inputted
+	return round(5.5*stored_charge()/(capacity ? capacity : 5e6))
 
 // Mostly in place due to child types that may store power in other way (PSUs)
 /obj/machinery/power/smes/proc/add_charge(amount)
-	charge += amount*SMESRATE
+	adjust_stored_charge(amount*SMESRATE)
 	power_sync()
 
 /obj/machinery/power/smes/proc/remove_charge(amount)
-	charge -= amount*SMESRATE
+	adjust_stored_charge(-amount*SMESRATE)
 	power_sync()
 
 /// One machine pipeline frame (the power/smes stage). Rust charges and discharges the unit;
@@ -340,9 +338,9 @@ DECLARE_APPEARANCE(/obj/machinery/power/smes, "appearance_smes_charge", list("1"
 		return
 	var/obj/machinery/power/terminal/smes_input/term = new(tempLoc)
 	term.set_dir(tempDir)
-	rel_set(term, "master", src)
+	rel_set(term, nameof(term.master), src)
 	term.connect_to_network()
-	rel_add(src, "terminals", term)
+	rel_add(src, nameof(terminals), term)
 	power_sync()
 	act_message(user, src, MSG_SELF(span_filter_notice(span_notice("You added cables to %T%."))), \
 		MSG_OTHERS(span_filter_notice(span_notice("[user.name] has added cables to %T%."))))
@@ -483,7 +481,7 @@ DECLARE_APPEARANCE(/obj/machinery/power/smes, "appearance_smes_charge", list("1"
 	new /obj/item/stack/cable_coil(loc, 10)
 	act_message(user, null, MSG_SELF(span_filter_notice(span_notice("You cut the cables and dismantle the power terminal."))), \
 		MSG_OTHERS(span_filter_notice(span_notice("[user.name] cut the cables and dismantled the power terminal."))))
-	rel_remove(src, "terminals", term)
+	rel_remove(src, nameof(terminals), term)
 	qdel(term)
 
 DECLARE_UI(/obj/machinery/power/smes, "Smes")
@@ -494,27 +492,27 @@ UI_DATA_REPLACE(/obj/machinery/power/smes, "merge:ui_data_obj_machinery_power_sm
 /obj/machinery/power/smes/proc/ui_data_obj_machinery_power_smes(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list(
 		"capacity" = capacity,
-		"capacityPercent" = round(100*charge/capacity, 0.1),
-		"charge" = charge,
+		"capacityPercent" = Percentage(),
+		"charge" = stored_charge(),
 		"inputAttempt" = input_attempt,
 		"inputting" = inputting,
 		"inputLevel" = input_level,
 		"inputLevel_text" = DisplayPower(input_level),
 		"inputLevelMax" = input_level_max,
-		"inputAvailable" = input_available,
+		"inputAvailable" = 0,
 		"outputAttempt" = output_attempt,
 		"outputting" = outputting,
 		"outputLevel" = output_level,
 		"outputLevel_text" = DisplayPower(output_level),
 		"outputLevelMax" = output_level_max,
-		"outputUsed" = output_used,
+		"outputUsed" = 0,
 	)
 	return data
 
 /obj/machinery/power/smes/proc/Percentage()
 	if(!capacity)
 		return 0
-	return round(100.0*charge/capacity, 0.1)
+	return round(100.0*stored_charge()/capacity, 0.1)
 
 UI_ACT(/obj/machinery/power/smes, "tryinput", ui_act_tryinput)
 UI_ACT_PROC(/obj/machinery/power/smes, ui_act_tryinput)
@@ -572,13 +570,13 @@ UI_ACT_PROC(/obj/machinery/power/smes, ui_act_output)
 	input_attempt = do_input
 	if(!input_attempt)
 		inputting = 0
-	om_changed(src, CHANGE_MACHINE_SETTINGS)
+	changed(src, CHANGE_MACHINE_SETTINGS)
 
 /obj/machinery/power/smes/proc/outputting(do_output)
 	output_attempt = do_output
 	if(!output_attempt)
 		outputting = 0
-	om_changed(src, CHANGE_MACHINE_SETTINGS)
+	changed(src, CHANGE_MACHINE_SETTINGS)
 
 /obj/machinery/power/smes/atom_destruction(damage_flag)
 	visible_message(span_filter_notice(span_danger("\The [src] explodes in large shower of sparks and smoke!")))
@@ -599,9 +597,7 @@ DAMAGE_REACTION(/obj/machinery/power/smes, DAMAGE_EMP, PROC_REF(smes_emp_scrambl
 	outputting(rand(0,1))
 	output_level = rand(0, output_level_max)
 	input_level = rand(0, input_level_max)
-	charge -= 1e6/packet.severity
-	if (charge < 0)
-		charge = 0
+	set_stored_charge(max(stored_charge() - 1e6/packet.severity, 0))
 	power_sync()
 	update_icon()
 
@@ -641,7 +637,7 @@ DAMAGE_REACTION(/obj/machinery/power/smes, DAMAGE_EMP, PROC_REF(smes_emp_scrambl
 // Description: Sets input setting on this SMES. Trims it if limits are exceeded.
 /obj/machinery/power/smes/proc/set_input(new_input = 0)
 	input_level = between(0, new_input, input_level_max)
-	om_changed(src, CHANGE_MACHINE_SETTINGS)
+	changed(src, CHANGE_MACHINE_SETTINGS)
 	update_icon()
 
 // Proc: set_output()
@@ -649,7 +645,7 @@ DAMAGE_REACTION(/obj/machinery/power/smes, DAMAGE_EMP, PROC_REF(smes_emp_scrambl
 // Description: Sets output setting on this SMES. Trims it if limits are exceeded.
 /obj/machinery/power/smes/proc/set_output(new_output = 0)
 	output_level = between(0, new_output, output_level_max)
-	om_changed(src, CHANGE_MACHINE_SETTINGS)
+	changed(src, CHANGE_MACHINE_SETTINGS)
 	update_icon()
 
 /obj/machinery/power/smes/buildable/hybrid
@@ -690,7 +686,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/smes/buildable/hybrid, TYPE_PROC_RE
 
 /// Hybrid units make their own charge every frame, so they never idle.
 /obj/machinery/power/smes/buildable/hybrid/power_step()
-	charge += min(recharge_rate, capacity - charge)
+	adjust_stored_charge(min(recharge_rate, capacity - stored_charge()))
 	power_sync()
 
 /obj/machinery/power/smes/buildable/hybrid/power_settled()

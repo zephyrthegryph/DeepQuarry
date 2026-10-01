@@ -99,7 +99,7 @@
 
 /mob/living/simple_mob/animal/passive/fox/renault/verb/become_friends()
 	set name = "Become Friends"
-	set category = "IC.Game"
+	set category = VERB_CAT_IC_GAME
 	set src in view(1)
 
 	var/mob/living/L = usr
@@ -114,7 +114,7 @@
 			to_chat(L, span_warning("\The [src] ignores you."))
 			return
 
-	rel_set(src, "friend", L)
+	rel_set(src, nameof(friend), L)
 	face_atom(L)
 	to_chat(L, span_notice("\The [src] is now your friend!"))
 	visible_emote(pick("nips [friend].", "brushes against [friend].", "tugs on [friend].", "chrrrrs."))
@@ -161,7 +161,7 @@
 
 /mob/living/simple_mob/animal/passive/fox/fluff/verb/friend()
 	set name = "Become Friends"
-	set category = "IC.Game"
+	set category = VERB_CAT_IC_GAME
 	set src in view(1)
 
 	if(friend && usr == friend)

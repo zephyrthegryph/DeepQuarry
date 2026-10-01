@@ -77,4 +77,6 @@ DECLARE_DEFAULT_CHILD(/obj/item/borg/sight/hud/med, "hud", /obj/item/clothing/gl
 
 DECLARE_DEFAULT_CHILD(/obj/item/borg/sight/hud/sec, "hud", /obj/item/clothing/glasses/hud/security)
 
-OWN(/obj/item/borg/sight/hud, hud, OWN_CONTAINED)
+/obj/item/borg/sight/hud/ownership()
+	. = ..()
+	. += owns(nameof(hud), policy = OWN_CONTAINED)

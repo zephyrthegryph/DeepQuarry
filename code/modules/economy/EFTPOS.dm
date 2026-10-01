@@ -21,7 +21,7 @@
 	. = ..()
 	//by default, connect to the station account
 	//the user of the EFTPOS device can change the target account though, and no-one will be the wiser (except whoever's being charged)
-	rel_set(src, "linked_account", GLOB.station_account)
+	rel_set(src, nameof(linked_account), GLOB.station_account)
 
 	machine_id = "[station_name()] EFTPOS #[GLOB.num_financial_terminals++]"
 	access_code = rand(1111,111111)
@@ -68,8 +68,7 @@
 	R.add_overlay(stampoverlay)
 	R.stamps += "<HR><i>This paper has been stamped by the EFTPOS device.</i>"
 	var/obj/item/smallDelivery/D = new(R.loc)
-	R.forceMove(D)
-	own_set(D, "wrapped", R)
+	own_set(D, nameof(D.wrapped), R, into = TRUE)
 	D.name = "small parcel - 'EFTPOS access code'"
 
 // TGUI migration. attack_self opens Eftpos.tsx; the
@@ -176,10 +175,10 @@ UI_ACT_PROC(/obj/item/eftpos, ui_act_link_account)
 	var/attempt_pin = act_ask(usr, action, params, ui, "k168", /datum/om/prompt/number, message = "Enter pin code", title = "Account pin")
 	if(isnull(attempt_pin))
 		return
-	rel_set(src, "linked_account", attempt_account_access(attempt_account_num, attempt_pin, 1))
+	rel_set(src, nameof(/obj/item/eftpos::linked_account), attempt_account_access(attempt_account_num, attempt_pin, 1))
 	if(linked_account())
 		if(linked_account().suspended)
-			rel_clear(src, "linked_account")
+			rel_clear(src, nameof(/obj/item/eftpos::linked_account))
 			to_chat(usr, "[icon2html(src, usr.client)]" + span_warning("Account has been suspended."))
 	else
 		to_chat(usr, "[icon2html(src, usr.client)]" + span_warning("Account not found."))

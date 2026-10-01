@@ -45,11 +45,11 @@
 			var/turf/get_dat_turf = get_turf(src)
 			tf_mob_holder.forceMove(get_dat_turf)
 		// the holder's old bellies go (it owns them)
-		own_clear(tf_mob_holder, "vore_organs", OWN_DELETE)
+		own_clear(tf_mob_holder, nameof(tf_mob_holder.vore_organs), OWN_DELETE)
 		tf_mob_holder.mob_belly_transfer(src)
 	if(tf_mob_holder)
 		set_tf_mob_holder(null)
-	own_clear(src, "hud_list", OWN_DELETE)
+	own_clear(src, nameof(hud_list), OWN_DELETE)
 	// Deleting a part detaches it, and the detach hook empties these caches
 	// (code/modules/body/parts/attach.dm). Copies: they shrink as we go.
 	for(var/OR in organs?.Copy())
@@ -65,7 +65,7 @@
 //mob verbs are faster than object verbs. See mob/verb/examine.
 /mob/living/verb/pulled(atom/movable/AM as mob|obj in oview(1))
 	set name = "Pull"
-	set category = "Object"
+	set category = VERB_CAT_OBJECT
 
 	if(istype(AM) && AM.Adjacent(src))
 		src.start_pulling(AM)
@@ -88,7 +88,7 @@
 
 /mob/living/verb/succumb()
 	set name = "Succumb to death"
-	set category = "IC.Game"
+	set category = VERB_CAT_IC_GAME
 	set desc = "Press this button if you are in crit and wish to die. Use this sparingly (ending a scene, no medical, etc.)"
 	om_ask(src, /datum/om/prompt/confirm/succumb, PROC_REF(succumb_ask_again), title = "Confirm wish to succumb", message = "Pressing this button will kill you instantenously! Are you sure you wish to proceed?", no_first = TRUE)
 
@@ -117,7 +117,7 @@
 
 /mob/living/verb/toggle_afk()
 	set name = "Toggle AFK"
-	set category = "IC.Game"
+	set category = VERB_CAT_IC_GAME
 	set desc = "Mark yourself as Away From Keyboard, or clear that status!"
 	if(away_from_keyboard)
 		remove_status_indicator("afk")
@@ -310,7 +310,7 @@
 
 /mob/living/verb/Examine_OOC()
 	set name = "Examine Meta-Info (OOC)"
-	set category = "OOC.Game"
+	set category = VERB_CAT_OOC_GAME
 	set src in view()
 	do_examine_ooc(usr)
 
@@ -331,7 +331,7 @@
 
 /mob/living/verb/resist()
 	set name = "Resist"
-	set category = "IC.Game"
+	set category = VERB_CAT_IC_GAME
 
 	if(!incapacitated(INCAPACITATION_KNOCKOUT) && !is_paralyzed() && (COOLDOWN_FINISHED(src, resist_cooldown)))
 		COOLDOWN_START(src, resist_cooldown, RESIST_COOLDOWN)
@@ -390,7 +390,7 @@
 
 /mob/living/verb/lay_down()
 	set name = "Rest"
-	set category = "IC.Game"
+	set category = VERB_CAT_IC_GAME
 
 	resting = !resting
 	to_chat(src, span_notice("You are now [resting ? "resting" : "getting up"]."))
@@ -775,7 +775,7 @@
 		animate(client, color = null, time = 10)
 
 /mob/living/swap_hand()
-	om_changed(src, CHANGE_MOB_HANDS)
+	changed(src, CHANGE_MOB_HANDS)
 	src.hand = !( src.hand )
 	if(hud_used?.l_hand_hud_object && hud_used.r_hand_hud_object)
 		if(hand)	//This being 1 means the left hand is in use
@@ -899,7 +899,7 @@
 //Add an entry to overlays, assuming it exists
 /mob/living/proc/apply_hud(cache_index, image/I)
 	if(I)
-		own_put(src, "hud_list", cache_index, I) // the mob owns its HUD images; a replaced one is deleted
+		own_put(src, nameof(hud_list), cache_index, I) // the mob owns its HUD images; a replaced one is deleted
 	if((. = hud_list[cache_index]))
 		add_overlay(.)
 
@@ -1051,7 +1051,7 @@
 
 /datum/character_setup_button/New(mob/living/M)
 	..()
-	rel_set(src, "owner", M)
+	rel_set(src, nameof(owner), M)
 	om_hook(owner, /datum/om/event/mob_client_login, src, PROC_REF(on_client_login))
 	if(owner.client)
 		create_mob_button(owner)
@@ -1062,13 +1062,13 @@
 		owner?.client?.screen -= screen_icon
 		var/datum/hud/button_hud = owner_of(screen_icon)
 		if(istype(button_hud))
-			own_remove(button_hud, "other_important", screen_icon)
+			own_remove(button_hud, nameof(button_hud.other_important), screen_icon)
 	..()
 
 /// Gives the mob its character setup HUD button if it has none.
 /mob/living/proc/add_character_setup_button()
 	if(!character_setup_button)
-		own_set(src, "character_setup_button", new /datum/character_setup_button(src))
+		own_set(src, nameof(character_setup_button), new /datum/character_setup_button(src))
 	return character_setup_button
 
 /datum/character_setup_button/proc/on_client_login(datum/source, datum/om/event/mob_client_login/event)
@@ -1081,8 +1081,8 @@
 	// (the old hud deleted its own, which cleared this relation).
 	if(!screen_icon)
 		var/atom/movable/screen/character_setup/button = new
-		own_add(HUD, "other_important", button)
-		rel_set(src, "screen_icon", button)
+		own_add(HUD, nameof(HUD.other_important), button)
+		rel_set(src, nameof(screen_icon), button)
 		om_hook(screen_icon, /datum/om/event/click, src, PROC_REF(character_setup_click))
 	if(ispAI(user))
 		screen_icon.icon = 'icons/mob/pai_hud.dmi'
@@ -1145,7 +1145,7 @@
 		// Note, this should be refactored to drop priority overlays
 		// ALLOW(decl): priority overlay from a global, gated on has_huds
 		add_overlay(GLOB.backplane,TRUE) //Strap this on here, to block HUDs from appearing in rightclick menus: http://www.byond.com/forum/?post=2336679
-		own_clear(src, "hud_list", OWN_DELETE)
+		own_clear(src, nameof(hud_list), OWN_DELETE)
 		hud_list = new /list(TOTAL_HUDS) // ALLOW(ownership): a fresh slot table (nulls only); its images are adopted through own_put()
 		make_hud_overlays()
 
@@ -1159,8 +1159,8 @@
 
 	selected_image = image(icon = GLOB.buildmode_hud, loc = src, icon_state = "ai_sel")
 
-	own_set(src, "deaf_loop", new /datum/looping_sound/mob/deafened(list(src), FALSE)) // ALLOW(decl): looping_sound takes constructor args
-	own_set(src, "firesoundloop", new /datum/looping_sound/mob/on_fire(list(src), FALSE)) // ALLOW(decl): looping_sound takes constructor args
+	own_set(src, nameof(deaf_loop), new /datum/looping_sound/mob/deafened(list(src), FALSE)) // ALLOW(decl): looping_sound takes constructor args
+	own_set(src, nameof(firesoundloop), new /datum/looping_sound/mob/on_fire(list(src), FALSE)) // ALLOW(decl): looping_sound takes constructor args
 	// stunnedloop = new(list(src), FALSE)
 	if(firesoundloop) // Partly safety, partly so we can have different probs for randomization
 		if(prob(40)) // Randomize our end_sound. Can't really do this easily in looping_sound without some work
@@ -1181,7 +1181,7 @@
 	..()
 
 /mob/living/verb/customsay()
-	set category = "IC.Settings"
+	set category = VERB_CAT_IC_SETTINGS
 	set name = "Customize Speech Verbs"
 	set desc = "Customize the text which appears when you type- e.g. 'says', 'asks', 'exclaims'."
 
@@ -1209,7 +1209,7 @@
 /mob/living/verb/set_metainfo()
 	set name = "Set OOC Metainfo"
 	set desc = "Sets OOC notes about yourself or your RP preferences or status."
-	set category = "OOC.Game Settings"
+	set category = VERB_CAT_OOC_GAME_SETTINGS
 
 	if(usr != src)
 		return
@@ -1345,7 +1345,7 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 /mob/living/verb/set_custom_link()
 	set name = "Set Custom Link"
 	set desc = "Set a custom link to show up with your examine text."
-	set category = "IC.Settings"
+	set category = VERB_CAT_IC_SETTINGS
 
 	if(usr != src)
 		return
@@ -1365,7 +1365,7 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 /mob/living/verb/set_voice_freq()
 	set name = "Set Voice Frequency"
 	set desc = "Sets your voice frequency to be higher or lower pitched!"
-	set category = "OOC.Game Settings"
+	set category = VERB_CAT_OOC_GAME_SETTINGS
 
 	var/static/list/preset_voice_freqs = list("high" = MAX_VOICE_FREQ, "middle-high" = 56250, "middle" = 425000, "middle-low"= 28750, "low" = MIN_VOICE_FREQ, "custom" = 1, "random" = 0)
 	om_ask(src, /datum/om/prompt/choice, PROC_REF(voice_freq_preset_chosen), title = "Voice Frequency", message = "What would you like to set your voice frequency to?", choices = preset_voice_freqs)
@@ -1389,7 +1389,7 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 /mob/living/verb/set_voice_type()
 	set name = "Set Voice Type"
 	set desc = "Sets your voice style!"
-	set category = "OOC.Game Settings"
+	set category = VERB_CAT_OOC_GAME_SETTINGS
 
 	om_ask(src, /datum/om/prompt/choice/voice_type, PROC_REF(voice_type_chosen), choices = sound_service().talk_sound_map)
 
@@ -1418,7 +1418,7 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 /mob/living/verb/open_private_notes()
 	set name = "Private Notes"
 	set desc = "View and edit your character's private notes, that persist between rounds!"
-	set category = "IC.Notes"
+	set category = VERB_CAT_IC_NOTES
 
 	private_notes_window(src)
 

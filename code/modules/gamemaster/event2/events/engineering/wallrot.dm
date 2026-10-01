@@ -17,7 +17,7 @@
 	for(var/i = 1 to 100)
 		var/turf/candidate = locate(rand(1, world.maxx), rand(1, world.maxy), pick(get_location_z_levels()) )
 		if(istype(candidate, /turf/simulated/wall))
-			rel_set(src, "origin", candidate)
+			rel_set(src, nameof(origin), candidate)
 			log_game("Wall-rot event has chosen \the [origin()] ([origin().loc]) as the origin for the wallrot infestation.")
 			return
 

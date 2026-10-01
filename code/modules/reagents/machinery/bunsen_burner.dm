@@ -41,9 +41,8 @@ DECLARE_REAGENTS_TYPED(/obj/machinery/bunsen_burner, 1, null, /datum/reagents/di
 		to_chat(user, span_notice("You must remove \the [held_container] before you can place another container on \the [src]."))
 		return TRUE
 	// A new hand touches the beacon
-	user.drop_item(src)
-	W.forceMove(src)
-	own_set(src, "held_container", W) // CONTAINED: in our contents first
+	if(!own_set(src, nameof(src.held_container), W, user = user))
+		return TRUE
 	reagents.maximum_volume = held_container.reagents.maximum_volume // Update internal reagent distilling volume
 	to_chat(user, span_notice("You put \the [held_container] onto \the [src]."))
 	if(held_container.reagents.total_volume > 0)
@@ -93,7 +92,7 @@ DECLARE_REAGENTS_TYPED(/obj/machinery/bunsen_burner, 1, null, /datum/reagents/di
 	to_chat(user, span_notice("You remove \the [held_container] from \the [src]."))
 	held_container.forceMove(get_turf(src))
 	held_container.attack_hand(user) // Pick it up
-	own_take(src, "held_container")
+	own_take(src, nameof(held_container))
 
 	// Removed beaker, so kill processing
 	if(heating)
@@ -120,7 +119,7 @@ DECLARE_REAGENTS_TYPED(/obj/machinery/bunsen_burner, 1, null, /datum/reagents/di
 	if(!held_container)
 		return
 	held_container.forceMove(get_turf(src))
-	own_take(src, "held_container")
+	own_take(src, nameof(held_container))
 
 /// Boils its container; runs while heating (declared).
 /obj/machinery/bunsen_burner/machine_step()
@@ -202,4 +201,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/bunsen_burner, TYPE_PROC_REF(/atom, appea
 	if(held_container?.reagents)
 		.[THERMAL_CAPACITY] += held_container.reagents.heat_capacity()
 
-OWN(/obj/machinery/bunsen_burner, held_container, OWN_CONTAINED)
+/obj/machinery/bunsen_burner/ownership()
+	. = ..()
+	. += owns(nameof(held_container), policy = OWN_CONTAINED)

@@ -2,7 +2,7 @@
 	if(!istype(T, /turf/simulated) || T.density)
 		return FALSE
 	if(!T.air)
-		own_set(T, "air", T.create_gas_mixture())
+		own_set(T, nameof(T.air), T.create_gas_mixture())
 		if(SSair?.initialized)
 			T.update_air_ref(0)
 	var/datum/gas_mixture/air = T.return_air()
@@ -108,9 +108,9 @@
 		var/obj/machinery/generated_station_data_relay/relay = new(placement)
 		relay.station_id = station_spec.id
 		relay.department_id = department.id
-		own_add(station_materialization, "infrastructure", relay)
+		own_add(station_materialization, nameof(station_materialization.infrastructure), relay)
 		var/obj/machinery/camera/camera = new(camera_placement)
 		camera.set_dir(turn(generated_station_adjacent_wall_direction(camera_placement), 180))
-		rel_set(relay, "camera", camera)
-		own_add(station_materialization, "infrastructure", camera)
+		rel_set(relay, nameof(relay.camera), camera)
+		own_add(station_materialization, nameof(station_materialization.infrastructure), camera)
 	return TRUE

@@ -46,7 +46,7 @@ GLOBAL_VAR_INIT(ntnrc_uid, 0)
 
 	// Channel operator left, pick new operator
 	if(C == channel_operator())
-		rel_clear(src, "operator")
+		rel_clear(src, nameof(/datum/ntnet_conversation/::operator))
 		if(length(clients))
 			var/datum/computer_file/program/chatclient/newop = DEFAULTPICK(clients, null)
 			changeop(newop)
@@ -54,7 +54,7 @@ GLOBAL_VAR_INIT(ntnrc_uid, 0)
 
 /datum/ntnet_conversation/proc/changeop(datum/computer_file/program/chatclient/newop)
 	if(istype(newop))
-		rel_set(src, "operator", newop)
+		rel_set(src, nameof(/datum/ntnet_conversation/::operator), newop)
 		add_status_message("Channel operator status transferred to [newop.username].")
 
 /datum/ntnet_conversation/proc/change_title(newtitle, datum/computer_file/program/chatclient/client)

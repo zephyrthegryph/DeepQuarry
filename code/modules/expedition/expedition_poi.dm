@@ -237,7 +237,7 @@
 	var/datum/expedition_building/B = new()
 	B.loot_difficulty = site ? site.difficulty : EXP_DIFF_LOW
 	B.loot_size = size
-	rel_set(B, "loot_biome", site?.biome)
+	rel_set(B, nameof(B.loot_biome), site?.biome)
 	if(!B.build(center, rand(dim - 2, dim + 4), rand(dim - 2, dim + 4)))
 		qdel(B)
 		return null

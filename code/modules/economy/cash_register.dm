@@ -39,7 +39,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 	. = ..()
 	cash_stored = rand(10, 70)*10
 	if(GLOB.economy_init && account_to_connect)
-		rel_set(src, "linked_account", GLOB.department_accounts[account_to_connect])
+		rel_set(src, nameof(linked_account), GLOB.department_accounts[account_to_connect])
 
 /obj/machinery/cash_register/examine(mob/user)
 	. = ..(user)
@@ -187,7 +187,7 @@ UI_ACT_PROC(/obj/machinery/cash_register, ui_act_link_account)
 			visible_message("[icon2html(src, viewers(src))]" + span_warning("Account has been suspended."))
 			return FALSE
 		var/provider_changed = linked_account != new_account
-		rel_set(src, "linked_account", new_account)
+		rel_set(src, nameof(/obj/item/eftpos::linked_account), new_account)
 		if(provider_changed)
 			reset_memory()
 		else
@@ -335,7 +335,7 @@ UI_ACT_PROC(/obj/machinery/cash_register, ui_act_reset_log)
 	if(confirm_item == I && confirm_revision == ticket_revision)
 		return 1
 	else
-		rel_set(src, "confirm_item", I)
+		rel_set(src, nameof(confirm_item), I)
 		confirm_revision = ticket_revision
 		src.visible_message(span_infoplain("[icon2html(src,viewers(src))]" + span_bold("Total price:") + " [transaction_amount] Thaler\s. Swipe again to confirm."))
 		play_sfx(src, SFX_MACHINES_TWOBEEP, 0.5, vary = FALSE)
@@ -513,7 +513,7 @@ UI_ACT_PROC(/obj/machinery/cash_register, ui_act_reset_log)
 
 /obj/machinery/cash_register/proc/ticket_changed()
 	ticket_revision++
-	rel_clear(src, "confirm_item")
+	rel_clear(src, nameof(confirm_item))
 	confirm_revision = 0
 
 /obj/machinery/cash_register/proc/get_current_transaction()

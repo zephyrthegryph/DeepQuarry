@@ -124,7 +124,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/portables_connector, TYPE_PR
 
 	for(var/obj/machinery/atmospherics/target in get_step(src,node_connect))
 		if(can_be_node(target, 1))
-			rel_set(src, "node", target)
+			rel_set(src, nameof(node), target)
 			break
 
 	update_icon()
@@ -141,7 +141,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/portables_connector, TYPE_PR
 
 /obj/machinery/atmospherics/portables_connector/reassign_network(datum/pipe_network/old_network, datum/pipe_network/new_network)
 	if(network == old_network)
-		rel_set(src, "network", new_network)
+		rel_set(src, nameof(network), new_network)
 
 	return 1
 
@@ -192,7 +192,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/portables_connector, TYPE_PR
 	clear_gas_dependency()
 	if(reference==node)
 		rust_release_network_wrapper(network)
-		rel_clear(src, "node")
+		rel_clear(src, nameof(node))
 	if(reference == connected_device || !connected_device)
 		set_on(0)
 

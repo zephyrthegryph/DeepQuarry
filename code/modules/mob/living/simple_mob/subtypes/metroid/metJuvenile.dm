@@ -38,7 +38,7 @@
 		. += "It appears to have been pacified."
 
 /mob/living/simple_mob/metroid/juvenile/verb/evolve()
-	set category = "metroid"
+	set category = VERB_CAT_SLIME
 	set desc = "This will let you advance to next form."
 
 	if(stat)
@@ -62,7 +62,7 @@
 
 	if(nutrition >= evo_limit && (src?.buckled_to() || vore_fullness == 1)) //spit dat crap out if nutrition gets too high!
 		release_vore_contents()
-		rel_clear(src, "prey_excludes")
+		rel_clear(src, nameof(prey_excludes))
 		stop_consumption()
 
 	else

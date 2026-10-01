@@ -151,7 +151,7 @@ OM_FIELD_VIEW(/datum/affliction, datum/body, body, CHANGE_DATUM_A)
 
 /datum/affliction/New(location)
 	..()
-	rel_set(src, "location", location)
+	rel_set(src, nameof(location), location)
 	configure(location)
 
 // an affliction leaves its body (symptoms end, factors recompute).

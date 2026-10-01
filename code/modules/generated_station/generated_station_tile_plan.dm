@@ -77,19 +77,19 @@
 	..()
 	grid_width = new_width
 	grid_height = new_height
-	own_take_all(src, "tiles")
+	own_take_all(src, nameof(tiles))
 	errors = list()
 	wall_fixture_edges = list()
 	utility_floors_by_owner = list()
 	utility_floors_by_zone = list()
-	rel_set(src, "generation_owner", new_generation_owner)
+	rel_set(src, nameof(generation_owner), new_generation_owner)
 	if(!deferred)
 		for(var/x in 1 to grid_width)
 			fill_column(x)
 
 /datum/generated_station_tile_plan/proc/fill_column(x)
 	for(var/y in 1 to grid_height)
-		own_put(src, "tiles", coordinate_key(x, y), new /datum/generated_station_tile_intent(x, y))
+		own_put(src, nameof(tiles), coordinate_key(x, y), new /datum/generated_station_tile_intent(x, y))
 
 
 /datum/generated_station_tile_plan/proc/coordinate_key(local_x, local_y)
@@ -230,7 +230,7 @@
 	if(!cursor)
 		hull_openings = list()
 		hull_coordinates = list()
-		rel_clear(src, "hull_corners")
+		rel_clear(src, nameof(hull_corners))
 	var/count = length(tiles)
 	if(stage == 1)
 		for(var/n in i to count)
@@ -272,14 +272,14 @@
 			var/east = tile(intent.local_x + 1, intent.local_y)?.structure_kind == GENERATED_STATION_TILE_HULL
 			var/west = tile(intent.local_x - 1, intent.local_y)?.structure_kind == GENERATED_STATION_TILE_HULL
 			if((north || south) && (east || west) && (north + south + east + west == 2))
-				rel_add(src, "hull_corners", intent)
+				rel_add(src, nameof(hull_corners), intent)
 		if(n < count && generation_owner()?.generation_checkpoint("Closing station hull corners", 30))
 			return list(3, n + 1)
 	for(var/datum/generated_station_tile_intent/intent in hull_corners)
 		claim(intent.local_x, intent.local_y, wall_owner_id, "hull", GENERATED_STATION_TILE_HULL, null, null)
 	hull_openings = null
 	hull_coordinates = null
-	rel_clear(src, "hull_corners")
+	rel_clear(src, nameof(hull_corners))
 	return null
 
 /// Floods vacuum from the map edge and proves it cannot reach a pressurized floor.

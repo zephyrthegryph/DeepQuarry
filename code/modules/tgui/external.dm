@@ -31,7 +31,10 @@
  * return list Data to be sent to the UI.
  */
 /datum/proc/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	return ui_declared_data(src, user, ui, state) // UI_DATA fields
+	. = ui_declared_data(src, user, ui, state) // UI_DATA fields
+	if(isatom(src))
+		var/atom/A = src
+		caps_ui_data(A, user, .) // capabilities add theirs (code/datums/capabilities/)
 
 /**
  * public
@@ -49,6 +52,14 @@
  */
 /datum/proc/tgui_static_data(mob/user)
 	return list()
+
+/**
+ * public
+ *
+ * The om change channels that raise a coalesced push to this datum's open UIs.
+ */
+/datum/proc/tgui_change_mask()
+	return CHANGE_GENERIC_MASK
 
 /**
  * public
@@ -95,6 +106,10 @@
 	// If UI is not interactive or usr calling Topic is not the UI user, bail.
 	if(!ui || ui.status != STATUS_INTERACTIVE)
 		return TRUE
+	// A named action proc, ui_<action>(mob/user, named args...) (code/datums/capabilities/ui_actions.dm).
+	var/list/named = ui_named_dispatch(src, action, params, ui)
+	if(named)
+		return named[2]
 	// The declared UI model: the UI_ACT row for `action` parses and validates params, then runs.
 	return ui_dispatch(src, action, params, ui, state)
 
@@ -136,8 +151,14 @@
  * This is a proc over a var for memory reasons
  */
 /datum/proc/tgui_state(mob/user)
-	// DECLARE_UI_STATE / UI_STATE (declared UI model); an instance-dependent state overrides this.
-	return ui_decl_of(src)?.state || GLOB.tgui_default_state
+	// DECLARE_UI_STATE / UI_STATE (declared UI model), else ui_rights (an admin panel); an instance-dependent state
+	// overrides this.
+	var/datum/tgui_state/declared = ui_decl_of(src)?.state
+	if(declared)
+		return declared
+	if(ui_rights)
+		return ADMIN_STATE(ui_rights)
+	return GLOB.tgui_default_state
 
 /**
  * global
@@ -192,7 +213,7 @@
 /client/verb/tgui_fix_white()
 	set desc = "Only use this if you have a broken TGUI window occupying your screen!"
 	set name = "Fix TGUI"
-	set category = "OOC.Debug"
+	set category = VERB_CAT_OOC_DEBUG
 
 	if(alert(src, "Only use this verb if you have a white TGUI window stuck on your screen.", "Fix TGUI", "Continue", "Nevermind") != "Continue") // ALLOW(scheduler): fixes broken tgui windows, so it cannot use a tgui prompt
 		return
@@ -228,7 +249,7 @@
 /proc/bypass_topic_limit(href_list)
 	// Deviation from TG. Our statbrowser has so many commands that logging in as a borg can cause it to rate limit you. This needs fixing eventually.
 	// ALLOW(sys_topic_raw_dispatch): the tgui message protocol (tgui=1;type=...), not a datum href action; its messages reach tgui_act().
-	if(href_list["window_id"] == "statbrowser")
+	if(href_list["window_id"] == SKIN_STAT_BROWSER)
 		return TRUE
 	// Chunked messages will exceed the limit
 	// ALLOW(sys_topic_raw_dispatch): the tgui message protocol (tgui=1;type=...), not a datum href action; its messages reach tgui_act().

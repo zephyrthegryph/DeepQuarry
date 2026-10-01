@@ -96,7 +96,7 @@
 	combat_button.icon = ui_style
 	combat_button.alpha = ui_alpha
 	combat_button.layer = LAYER_HUD_ITEM
-	own_add(HUD, "adding", combat_button)
+	own_add(HUD, nameof(HUD.adding), combat_button)
 
 	//Move intent (walk/run)
 	using = new /atom/movable/screen()
@@ -106,8 +106,8 @@
 	using.screen_loc = ui_movi
 	using.color = ui_color
 	using.alpha = ui_alpha
-	own_add(HUD, "adding", using)
-	rel_set(HUD, "move_intent", using)
+	own_add(HUD, nameof(HUD.adding), using)
+	rel_set(HUD, nameof(HUD.move_intent), using)
 
 	//Resist button
 	using = new /atom/movable/screen()
@@ -117,38 +117,38 @@
 	using.screen_loc = ui_movi
 	using.color = ui_color
 	using.alpha = ui_alpha
-	own_add(HUD, "hotkeybuttons", using)
+	own_add(HUD, nameof(HUD.hotkeybuttons), using)
 
 	//Pull button
-	own_set(src, "pullin", new /atom/movable/screen())
+	own_set(src, nameof(pullin), new /atom/movable/screen())
 	pullin.icon = ui_style
 	pullin.icon_state = "pull0"
 	pullin.name = "pull"
 	pullin.screen_loc = ui_movi
-	rel_add(HUD, "hud_elements", pullin)
+	rel_add(HUD, nameof(HUD.hud_elements), pullin)
 
 	//Health status
-	own_set(src, "healths", new /atom/movable/screen())
+	own_set(src, nameof(healths), new /atom/movable/screen())
 	healths.icon = ui_style
 	healths.icon_state = "health0"
 	healths.name = "health"
 	healths.screen_loc = ui_health
-	rel_add(HUD, "hud_elements", healths)
+	rel_add(HUD, nameof(HUD.hud_elements), healths)
 
-	own_set(src, "pain", new /atom/movable/screen( null ))
+	own_set(src, nameof(pain), new /atom/movable/screen( null ))
 
-	own_set(src, "zone_sel", new /atom/movable/screen/zone_sel( null ))
+	own_set(src, nameof(zone_sel), new /atom/movable/screen/zone_sel( null ))
 	zone_sel.icon = ui_style
 	zone_sel.color = ui_color
 	zone_sel.alpha = ui_alpha
 	zone_sel.cut_overlays()
 	zone_sel.update_icon()
-	rel_add(HUD, "hud_elements", zone_sel)
+	rel_add(HUD, nameof(HUD.hud_elements), zone_sel)
 
-	own_set(src, "pai_fold_display", new /atom/movable/screen/pai/pai_fold_display())
+	own_set(src, nameof(pai_fold_display), new /atom/movable/screen/pai/pai_fold_display())
 	pai_fold_display.screen_loc = ui_health
 	pai_fold_display.icon_state = "folded"
-	rel_add(HUD, "hud_elements", pai_fold_display)
+	rel_add(HUD, nameof(HUD.hud_elements), pai_fold_display)
 
 	//Choose chassis button
 	using = new /atom/movable/screen/pai()
@@ -157,8 +157,8 @@
 	using.screen_loc = ui_movi
 	using.color = ui_color
 	using.alpha = ui_alpha
-	own_add(HUD, "extra_screens", using)
-	rel_add(HUD, "hud_elements", using)
+	own_add(HUD, nameof(HUD.extra_screens), using)
+	rel_add(HUD, nameof(HUD.hud_elements), using)
 
 	//Software interface button
 	using = new /atom/movable/screen/pai()
@@ -167,8 +167,8 @@
 	using.screen_loc = ui_acti
 	using.color = ui_color
 	using.alpha = ui_alpha
-	own_add(HUD, "extra_screens", using)
-	rel_add(HUD, "hud_elements", using)
+	own_add(HUD, nameof(HUD.extra_screens), using)
+	rel_add(HUD, nameof(HUD.hud_elements), using)
 
 	//Radio configuration button
 	using = new /atom/movable/screen/pai()
@@ -177,8 +177,8 @@
 	using.screen_loc = ui_acti
 	using.color = ui_color
 	using.alpha = ui_alpha
-	own_add(HUD, "extra_screens", using)
-	rel_add(HUD, "hud_elements", using)
+	own_add(HUD, nameof(HUD.extra_screens), using)
+	rel_add(HUD, nameof(HUD.hud_elements), using)
 
 	//PDA button
 	using = new /atom/movable/screen/pai()
@@ -187,8 +187,8 @@
 	using.screen_loc = ui_pai_comms
 	using.color = ui_color
 	using.alpha = ui_alpha
-	own_add(HUD, "extra_screens", using)
-	rel_add(HUD, "hud_elements", using)
+	own_add(HUD, nameof(HUD.extra_screens), using)
+	rel_add(HUD, nameof(HUD.hud_elements), using)
 
 	//Communicator button
 	using = new /atom/movable/screen/pai()
@@ -197,8 +197,8 @@
 	using.screen_loc = ui_pai_comms
 	using.color = ui_color
 	using.alpha = ui_alpha
-	own_add(HUD, "extra_screens", using)
-	rel_add(HUD, "hud_elements", using)
+	own_add(HUD, nameof(HUD.extra_screens), using)
+	rel_add(HUD, nameof(HUD.hud_elements), using)
 
 	//Language button
 	using = new /atom/movable/screen/pai()
@@ -207,8 +207,8 @@
 	using.screen_loc = ui_acti
 	using.color = ui_color
 	using.alpha = ui_alpha
-	own_add(HUD, "extra_screens", using)
-	rel_add(HUD, "hud_elements", using)
+	own_add(HUD, nameof(HUD.extra_screens), using)
+	rel_add(HUD, nameof(HUD.hud_elements), using)
 
 	using = new /atom/movable/screen/pai()
 	using.name = "software toggle"
@@ -216,8 +216,8 @@
 	using.screen_loc = ui_inventory
 	using.color = ui_color
 	using.alpha = ui_alpha
-	own_add(HUD, "extra_screens", using)
-	rel_add(HUD, "hud_elements", using)
+	own_add(HUD, nameof(HUD.extra_screens), using)
+	rel_add(HUD, nameof(HUD.hud_elements), using)
 
 	using = new /atom/movable/screen/pai()
 	using.name = "directives"
@@ -225,7 +225,7 @@
 	using.screen_loc = "WEST:6,SOUTH:18"
 	using.color = ui_color
 	using.alpha = ui_alpha
-	own_add(HUD, "other", using)
+	own_add(HUD, nameof(HUD.other), using)
 
 	using = new /atom/movable/screen/pai()
 	using.name = "crew manifest"
@@ -233,7 +233,7 @@
 	using.screen_loc = "WEST:6,SOUTH+1:2"
 	using.color = ui_color
 	using.alpha = ui_alpha
-	own_add(HUD, "other", using)
+	own_add(HUD, nameof(HUD.other), using)
 
 	using = new /atom/movable/screen/pai()
 	using.name = "medical records"
@@ -241,7 +241,7 @@
 	using.screen_loc = "WEST:6,SOUTH+1:18"
 	using.color = ui_color
 	using.alpha = ui_alpha
-	own_add(HUD, "other", using)
+	own_add(HUD, nameof(HUD.other), using)
 
 	using = new /atom/movable/screen/pai()
 	using.name = "security records"
@@ -249,7 +249,7 @@
 	using.screen_loc = "WEST:6,SOUTH+2:2"
 	using.color = ui_color
 	using.alpha = ui_alpha
-	own_add(HUD, "other", using)
+	own_add(HUD, nameof(HUD.other), using)
 
 	using = new /atom/movable/screen/pai()
 	using.name = "atmosphere sensor"
@@ -257,7 +257,7 @@
 	using.screen_loc = "WEST:6,SOUTH+2:18"
 	using.color = ui_color
 	using.alpha = ui_alpha
-	own_add(HUD, "other", using)
+	own_add(HUD, nameof(HUD.other), using)
 
 	using = new /atom/movable/screen/pai()
 	using.name = "remote signaler"
@@ -265,7 +265,7 @@
 	using.screen_loc = "WEST:6,SOUTH+3:2"
 	using.color = ui_color
 	using.alpha = ui_alpha
-	own_add(HUD, "other", using)
+	own_add(HUD, nameof(HUD.other), using)
 
 	using = new /atom/movable/screen/pai()
 	using.name = "universal translator"
@@ -273,7 +273,7 @@
 	using.screen_loc = "WEST:6,SOUTH+3:18"
 	using.color = ui_color
 	using.alpha = ui_alpha
-	own_add(HUD, "other", using)
+	own_add(HUD, nameof(HUD.other), using)
 
 	using = new /atom/movable/screen/pai()
 	using.name = "door jack"
@@ -281,7 +281,7 @@
 	using.screen_loc = "WEST:6,SOUTH+4:2"
 	using.color = ui_color
 	using.alpha = ui_alpha
-	own_add(HUD, "other", using)
+	own_add(HUD, nameof(HUD.other), using)
 
 	using = new /atom/movable/screen/pai()
 	using.name = "ar hud"
@@ -289,7 +289,7 @@
 	using.screen_loc = "WEST:6,SOUTH+4:18"
 	using.color = ui_color
 	using.alpha = ui_alpha
-	own_add(HUD, "other", using)
+	own_add(HUD, nameof(HUD.other), using)
 
 	using = new /atom/movable/screen/pai()
 	using.name = "death alarm"
@@ -297,54 +297,54 @@
 	using.screen_loc = "WEST:6,SOUTH+5:2"
 	using.color = ui_color
 	using.alpha = ui_alpha
-	own_add(HUD, "other", using)
+	own_add(HUD, nameof(HUD.other), using)
 
-	own_set(src, "autowhisper_display", new /atom/movable/screen())
+	own_set(src, nameof(autowhisper_display), new /atom/movable/screen())
 	autowhisper_display.icon = 'icons/mob/screen/minimalist.dmi'
 	autowhisper_display.icon_state = "autowhisper"
 	autowhisper_display.name = "autowhisper"
 	autowhisper_display.screen_loc = "EAST-1:28,CENTER-2:13"
-	rel_add(HUD, "hud_elements", autowhisper_display)
+	rel_add(HUD, nameof(HUD.hud_elements), autowhisper_display)
 
 	var/atom/movable/screen/aw = new /atom/movable/screen()
 	aw.icon = 'icons/mob/screen/minimalist.dmi'
 	aw.icon_state = "aw-select"
 	aw.name = "autowhisper mode"
 	aw.screen_loc = "EAST-1:28,CENTER-2:13"
-	own_add(HUD, "extra_screens", aw)
-	rel_add(HUD, "hud_elements", aw)
+	own_add(HUD, nameof(HUD.extra_screens), aw)
+	rel_add(HUD, nameof(HUD.hud_elements), aw)
 
 	aw = new /atom/movable/screen()
 	aw.icon = 'icons/mob/screen/minimalist.dmi'
 	aw.icon_state = "lang"
 	aw.name = "check known languages"
 	aw.screen_loc = ui_under_health
-	own_add(HUD, "extra_screens", aw)
-	rel_add(HUD, "hud_elements", aw)
+	own_add(HUD, nameof(HUD.extra_screens), aw)
+	rel_add(HUD, nameof(HUD.hud_elements), aw)
 
 	aw = new /atom/movable/screen()
 	aw.icon = 'icons/mob/screen/minimalist.dmi'
 	aw.icon_state = "pose"
 	aw.name = "set pose"
 	aw.screen_loc = ui_under_health
-	own_add(HUD, "extra_screens", aw)
-	rel_add(HUD, "hud_elements", aw)
+	own_add(HUD, nameof(HUD.extra_screens), aw)
+	rel_add(HUD, nameof(HUD.hud_elements), aw)
 
 	aw = new /atom/movable/screen()
 	aw.icon = 'icons/mob/screen/minimalist.dmi'
 	aw.icon_state = "up"
 	aw.name = "move upwards"
 	aw.screen_loc = ui_under_health
-	own_add(HUD, "extra_screens", aw)
-	rel_add(HUD, "hud_elements", aw)
+	own_add(HUD, nameof(HUD.extra_screens), aw)
+	rel_add(HUD, nameof(HUD.hud_elements), aw)
 
 	aw = new /atom/movable/screen()
 	aw.icon = 'icons/mob/screen/minimalist.dmi'
 	aw.icon_state = "down"
 	aw.name = "move downwards"
 	aw.screen_loc = ui_under_health
-	own_add(HUD, "extra_screens", aw)
-	rel_add(HUD, "hud_elements", aw)
+	own_add(HUD, nameof(HUD.extra_screens), aw)
+	rel_add(HUD, nameof(HUD.hud_elements), aw)
 
 	if(client)
 		client.screen = list()
@@ -356,26 +356,28 @@
 	HUD.inventory_shown = 0
 
 
-/datum/om/stage/life/hud/silicon/pai
-	of = /mob/living/silicon/pai
 
-/datum/om/stage/life/hud/silicon/pai/perform(mob/living/silicon/pai/self, datum/om/frame/life/ctx)
+/// Its own HUD stays awake (rerun every Life cycle while it has a client).
+/mob/living/silicon/pai/life_hud_idle()
+	return FALSE
+
+/mob/living/silicon/pai/life_hud()
 	. = ..()
 	if(!.)
 		return
 
-	if(self.pai_fold_display)
-		if(self.loc == self.card)
-			self.pai_fold_display.icon_state = "folded"
+	if(src.pai_fold_display)
+		if(src.loc == src.card)
+			src.pai_fold_display.icon_state = "folded"
 		else
-			self.pai_fold_display.icon_state = "unfolded"
+			src.pai_fold_display.icon_state = "unfolded"
 
-/datum/om/stage/life/hud/silicon/pai/health_icons(mob/living/silicon/pai/self)
+/mob/living/silicon/pai/life_hud_health_icons()
 	. = ..()
-	if(!. || !self.healths)
+	if(!. || !src.healths)
 		return
 
-	self.healths.icon_state = vitality_health_band(self)
+	src.healths.icon_state = vitality_health_band(src)
 
 /mob/living/silicon/pai/toggle_hud_vis(full)
 	if(!client)

@@ -46,7 +46,7 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/pipe/tank, null, list(APPEARANCE_
 
 	for(var/obj/machinery/atmospherics/target in get_step(src,connect_direction))
 		if (can_be_node(target, 1))
-			rel_set(src, "node1", target)
+			rel_set(src, nameof(node1), target)
 			break
 
 	update_underlays()
@@ -55,7 +55,7 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/pipe/tank, null, list(APPEARANCE_
 	if(reference == node1)
 		if(istype(node1, /obj/machinery/atmospherics/pipe))
 			rust_invalidate_pipeline_wrapper(parent)
-		rel_clear(src, "node1")
+		rel_clear(src, nameof(node1))
 
 	update_underlays()
 
@@ -79,7 +79,7 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/pipe/tank, null, list(APPEARANCE_
 	icon_state = "air_map"
 
 /obj/machinery/atmospherics/pipe/tank/air/Initialize(mapload)
-	own_set(src, "air_temporary", new /datum/gas_mixture)
+	own_set(src, nameof(air_temporary), new /datum/gas_mixture)
 	air_temporary.set_volume(volume)
 	air_temporary.set_temperature(T20C)
 
@@ -95,7 +95,7 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/pipe/tank, null, list(APPEARANCE_
 DECLARE_APPEARANCE(/obj/machinery/atmospherics/pipe/tank/oxygen, null, list(APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "o2")))
 
 /obj/machinery/atmospherics/pipe/tank/oxygen/Initialize(mapload)
-	own_set(src, "air_temporary", new /datum/gas_mixture)
+	own_set(src, nameof(air_temporary), new /datum/gas_mixture)
 	air_temporary.set_volume(volume)
 	air_temporary.set_temperature(T20C)
 
@@ -111,7 +111,7 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/pipe/tank/oxygen, null, list(APPE
 DECLARE_APPEARANCE(/obj/machinery/atmospherics/pipe/tank/nitrogen, null, list(APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "n2")))
 
 /obj/machinery/atmospherics/pipe/tank/nitrogen/Initialize(mapload)
-	own_set(src, "air_temporary", new /datum/gas_mixture)
+	own_set(src, nameof(air_temporary), new /datum/gas_mixture)
 	air_temporary.set_volume(volume)
 	air_temporary.set_temperature(T20C)
 
@@ -126,7 +126,7 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/pipe/tank/nitrogen, null, list(AP
 DECLARE_APPEARANCE(/obj/machinery/atmospherics/pipe/tank/carbon_dioxide, null, list(APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "co2")))
 
 /obj/machinery/atmospherics/pipe/tank/carbon_dioxide/Initialize(mapload)
-	own_set(src, "air_temporary", new /datum/gas_mixture)
+	own_set(src, nameof(air_temporary), new /datum/gas_mixture)
 	air_temporary.set_volume(volume)
 	air_temporary.set_temperature(T20C)
 
@@ -142,7 +142,7 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/pipe/tank/carbon_dioxide, null, l
 DECLARE_APPEARANCE(/obj/machinery/atmospherics/pipe/tank/phoron, null, list(APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "phoron")))
 
 /obj/machinery/atmospherics/pipe/tank/phoron/Initialize(mapload)
-	own_set(src, "air_temporary", new /datum/gas_mixture)
+	own_set(src, nameof(air_temporary), new /datum/gas_mixture)
 	air_temporary.set_volume(volume)
 	air_temporary.set_temperature(T20C)
 
@@ -157,7 +157,7 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/pipe/tank/phoron, null, list(APPE
 DECLARE_APPEARANCE(/obj/machinery/atmospherics/pipe/tank/nitrous_oxide, null, list(APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "n2o")))
 
 /obj/machinery/atmospherics/pipe/tank/nitrous_oxide/Initialize(mapload)
-	own_set(src, "air_temporary", new /datum/gas_mixture)
+	own_set(src, nameof(air_temporary), new /datum/gas_mixture)
 	air_temporary.set_volume(volume)
 	air_temporary.set_temperature(T0C)
 
@@ -174,7 +174,7 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/pipe/tank/methane, null, list(APP
 
 /obj/machinery/atmospherics/pipe/tank/methane/Initialize(mapload)
 	. = ..()
-	own_set(src, "air_temporary", new /datum/gas_mixture)
+	own_set(src, nameof(air_temporary), new /datum/gas_mixture)
 	air_temporary.set_volume(volume)
 	air_temporary.set_temperature(T20C)
 

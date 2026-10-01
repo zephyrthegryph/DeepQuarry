@@ -50,7 +50,7 @@
 				existing.band = F.band
 			qdel(F)
 			return existing
-	own_add(src, "findings", F)
+	own_add(src, nameof(findings), F)
 	return F
 
 /// Findings of `kind` (DIAG_FINDING_*), or every finding.

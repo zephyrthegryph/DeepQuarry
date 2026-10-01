@@ -32,13 +32,13 @@
 
 /obj/effect/overmap/visitable/simplemob/Initialize(mapload, new_parent)
 	. = ..()
-	rel_set(src, "parent", new_parent)
+	rel_set(src, nameof(parent), new_parent)
 	if(!parent_mob_type && !parent)
 		log_and_message_admins("An improperly configured OM mob event tried to spawn, and was deleted.")
 		return INITIALIZE_HINT_QDEL
 	if(!parent)
 		var/mob/living/simple_mob/vore/overmap/P = new parent_mob_type(loc, src)
-		rel_set(src, "parent", P)
+		rel_set(src, nameof(parent), P)
 	om_mob_event_setup()
 
 /obj/effect/overmap/visitable/simplemob/proc/om_mob_event_setup()
@@ -117,7 +117,7 @@
 
 /mob/living/simple_mob/vore/overmap/Initialize(mapload, new_child)
 	. = ..()
-	own_set(src, "child_om_marker", new_child)
+	own_set(src, nameof(child_om_marker), new_child)
 	if(child_om_marker)
 		om_link(src, child_om_marker, /datum/om/relation/overmap_mob_marker)
 	if(!om_child_type)
@@ -131,7 +131,7 @@
 		return
 	if(!child_om_marker)
 		var/obj/effect/overmap/visitable/simplemob/C = new om_child_type(loc, src)
-		own_set(src, "child_om_marker", C)
+		own_set(src, nameof(child_om_marker), C)
 		// The marker's Initialize() may have failed and deleted itself.
 		if(!QDELETED(C))
 			om_link(src, C, /datum/om/relation/overmap_mob_marker)
@@ -166,13 +166,13 @@
 
 /obj/effect/overmap/visitable/ship/simplemob/Initialize(mapload, new_parent)
 	. = ..()
-	rel_set(src, "parent", new_parent)
+	rel_set(src, nameof(parent), new_parent)
 	if(!parent_mob_type && !parent)
 		log_and_message_admins("An improperly configured OM mob event tried to spawn, and was deleted.")
 		return INITIALIZE_HINT_QDEL
 	if(!parent)
 		var/mob/living/simple_mob/vore/overmap/P = new parent_mob_type(loc, src)
-		rel_set(src, "parent", P)
+		rel_set(src, nameof(parent), P)
 	om_mob_event_setup()
 
 /obj/effect/overmap/visitable/ship/simplemob/proc/om_mob_event_setup()

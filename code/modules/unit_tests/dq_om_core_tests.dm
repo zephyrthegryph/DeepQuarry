@@ -311,7 +311,7 @@
 	var/datum/om/scheduler/sched
 
 /datum/unit_test/om/Run()
-	rel_set(src, "sched", om_test_begin())
+	rel_set(src, nameof(sched), om_test_begin())
 	var/list/made = list()
 	try
 		run_om(made)
@@ -448,9 +448,9 @@
 /datum/unit_test/om/regression_wake_is_not_tick/run_om(list/made)
 	var/datum/om_test_entity/E = entity(made)
 	om_attach(E, /datum/om/behaviour/test/waker)
-	om_changed(E, CHANGE_DATUM_A)
-	om_changed(E, CHANGE_DATUM_B)
-	om_changed(E, CHANGE_DATUM_C)
+	changed(E, CHANGE_DATUM_A)
+	changed(E, CHANGE_DATUM_B)
+	changed(E, CHANGE_DATUM_C)
 	scheduler_advance(0.1)
 	TEST_ASSERT_EQUAL(E.wakes, 1, "changes in one tick coalesce into one on_wake")
 	TEST_ASSERT_EQUAL(E.last_changes, CHANGE_DATUM_A | CHANGE_DATUM_B, "on_wake gets the union of watched bits")
@@ -611,12 +611,12 @@
 	E.enabled = TRUE
 	scheduler_advance(2)
 	TEST_ASSERT_EQUAL(E.ticks, 0, "requires are only re-checked when their channel changes")
-	om_changed(E, CHANGE_DATUM_B)
+	changed(E, CHANGE_DATUM_B)
 	scheduler_advance(2)
 	TEST_ASSERT(E.ticks >= 1, "channel change re-evaluates requires")
 	TEST_ASSERT_EQUAL(E.starts, 1, "on_start on joining")
 	E.enabled = FALSE
-	om_changed(E, CHANGE_DATUM_B)
+	changed(E, CHANGE_DATUM_B)
 	TEST_ASSERT_EQUAL(E.stops, 1, "on_stop on leaving")
 
 /datum/unit_test/om/deadlines_replace_and_cancel
@@ -703,7 +703,7 @@
 	scheduler_advance(0.1)
 	TEST_ASSERT(A.last_changes & CHANGE_RELATION_ADDED, "RELATION_ADDED wakes")
 	A.last_changes = 0
-	om_changed(B, CHANGE_DATUM_A)
+	changed(B, CHANGE_DATUM_A)
 	scheduler_advance(0.1)
 	TEST_ASSERT(A.last_changes & CHANGE_RELATED, "a related entity's change is forwarded")
 	// Two hops: A -> B -> C.
@@ -711,13 +711,13 @@
 	om_link(B, C, /datum/om/relation/test_link)
 	scheduler_advance(0.1)
 	A.wakes = 0
-	om_changed(C, CHANGE_DATUM_B)
+	changed(C, CHANGE_DATUM_B)
 	scheduler_advance(0.1)
 	TEST_ASSERT(A.wakes >= 1, "multi-hop forwarding")
 	om_unlink(B, C, /datum/om/relation/test_link)
 	scheduler_advance(0.1)
 	A.wakes = 0
-	om_changed(C, CHANGE_DATUM_B)
+	changed(C, CHANGE_DATUM_B)
 	scheduler_advance(0.1)
 	TEST_ASSERT_EQUAL(A.wakes, 0, "unlinking an intermediate hop rebuilds the path")
 
@@ -728,7 +728,7 @@
 	var/datum/om_test_entity/target = entity(made)
 	om_attach(owner, /datum/om/behaviour/test/waker)
 	om_watch(owner, target, CHANGE_DATUM_D, /datum/om/behaviour/test/waker)
-	om_changed(target, CHANGE_DATUM_D)
+	changed(target, CHANGE_DATUM_D)
 	scheduler_advance(0.1)
 	TEST_ASSERT_EQUAL(owner.wakes, 1, "watch wakes its owner")
 	qdel(target)
@@ -740,8 +740,8 @@
 	var/datum/om_test_entity/watched = entity(made)
 	om_rec_of(watched)
 	var/calls = S.calls
-	om_changed(watched, CHANGE_DATUM_C)
-	om_changed(watched, CHANGE_DATUM_C)
+	changed(watched, CHANGE_DATUM_C)
+	changed(watched, CHANGE_DATUM_C)
 	scheduler_advance(0.1)
 	TEST_ASSERT_EQUAL(S.calls, calls + 1, "global observers get one call per tick")
 
@@ -752,8 +752,8 @@
 	om_attach(E, /datum/om/behaviour/test/waker)
 	om_attach(E, /datum/om/behaviour/test/handler)
 	om_bulk_begin()
-	om_changed(E, CHANGE_DATUM_A)
-	om_changed(E, CHANGE_DATUM_B)
+	changed(E, CHANGE_DATUM_A)
+	changed(E, CHANGE_DATUM_B)
 	TEST_ASSERT_EQUAL(E.om_rec.att_pend[1] | E.om_rec.att_pend[2], 0, "nothing dispatched inside bulk")
 	var/datum/om/event/test/skipped = new
 	skipped.skip_in_bulk = TRUE
@@ -777,16 +777,16 @@
 	E.value = 3
 	TEST_ASSERT_EQUAL(om_derived(E, "test_quad"), 12, "derived of derived")
 	E.value = 5
-	om_changed(E, CHANGE_DATUM_A)
+	changed(E, CHANGE_DATUM_A)
 	TEST_ASSERT_EQUAL(om_derived(E, "test_quad"), 20, "dirtiness cascades lazily")
 	TEST_ASSERT_EQUAL(om_derived(E, /datum/om/derived/test_double), 10, "readable by type too")
 	om_attach(E, /datum/om/behaviour/test/derived_watcher)
 	E.value = 7
-	om_changed(E, CHANGE_DATUM_A)
+	changed(E, CHANGE_DATUM_A)
 	scheduler_advance(0.1)
 	TEST_ASSERT_EQUAL(E.wakes, 1, "an observed derived value is eager and raises its channel")
 	E.value = 7
-	om_changed(E, CHANGE_DATUM_A)
+	changed(E, CHANGE_DATUM_A)
 	scheduler_advance(0.1)
 	TEST_ASSERT_EQUAL(E.wakes, 1, "no channel when the value did not change")
 
@@ -806,7 +806,7 @@
 	TEST_ASSERT_EQUAL(om_derived(holder, "test_member_count"), 3, "count")
 	var/datum/om_test_entity/first = members[1]
 	first.weight = 10
-	om_changed(first, CHANGE_DATUM_A)
+	changed(first, CHANGE_DATUM_A)
 	// FROM_VAR readers have no channel of their own; declare member_inputs to track.
 	om_unlink(first, holder, /datum/om/relation/test_member)
 	TEST_ASSERT_EQUAL(om_derived(holder, "test_weight_sum"), 5, "member left: O(1) delta from the cached contribution")
@@ -858,11 +858,11 @@
 	TEST_ASSERT_EQUAL(om_value_of(wearer, EFFECT_ARMOR_MELEE), 4, "contributes a FROM_VAR value to the target")
 	TEST_ASSERT(om_has_grant(armour, GRANT_ABILITY, "test_ability"), "grants_occupant go to the source")
 	armour.enabled = FALSE
-	om_changed(armour, CHANGE_DATUM_B)
+	changed(armour, CHANGE_DATUM_B)
 	scheduler_advance(0.1)
 	TEST_ASSERT_EQUAL(om_value_of(wearer, EFFECT_ARMOR_MELEE), 0, "active_if failing releases")
 	armour.enabled = TRUE
-	om_changed(armour, CHANGE_DATUM_B)
+	changed(armour, CHANGE_DATUM_B)
 	scheduler_advance(0.1)
 	TEST_ASSERT_EQUAL(om_value_of(wearer, EFFECT_ARMOR_MELEE), 4, "active_if passing re-applies")
 	om_unlink(armour, wearer, /datum/om/relation/test_contributing)
@@ -936,27 +936,6 @@
 	var/datum/om_test_entity/host = entity(made, /datum/om_test_entity/decl_host)
 	om_start(host)
 	TEST_ASSERT(om_has_grant(host, GRANT_TRAIT, "test_trait"), "decl self_grants")
-
-// ---------------------------------------------------------------- F: rates
-
-/datum/unit_test/om/rates_thresholds
-
-/datum/unit_test/om/rates_thresholds/run_om(list/made)
-	var/datum/om_test_entity/E = entity(made)
-	om_attach(E, /datum/om/behaviour/test/waker)
-	var/datum/om/rate/R = om_rate_new(E, "charge", 0, 2, CHANGE_DATUM_A, list(10))
-	TEST_ASSERT_EQUAL(R.time_until(10), 50, "time_until in deciseconds")
-	scheduler_advance(4)
-	TEST_ASSERT_EQUAL(E.wakes, 0, "no crossing yet")
-	TEST_ASSERT(abs(R.now() - 8) < 0.01, "value at time")
-	scheduler_advance(1.5)
-	TEST_ASSERT_EQUAL(E.wakes, 1, "crossing publishes the channel once")
-	R.set_rate(-4)
-	TEST_ASSERT(abs(R.now() - 11) < 0.25, "set_rate settles first")
-	scheduler_advance(1)
-	TEST_ASSERT_EQUAL(E.wakes, 2, "crossing back down")
-	var/list/stream = om_ui_rate(R)
-	TEST_ASSERT_EQUAL(stream["rate"], -4, "rate streaming helper")
 
 // ---------------------------------------------------------------- G: events
 
@@ -1051,7 +1030,7 @@
 	var/datum/om/task/T2 = om_task_start("test_task", other, target)
 	TEST_ASSERT(istype(T2), "claim released on completion")
 	other.enabled = FALSE
-	om_changed(other, CHANGE_DATUM_B)
+	changed(other, CHANGE_DATUM_B)
 	scheduler_advance(0.1)
 	TEST_ASSERT_EQUAL(T2.state, OM_TASK_CANCELLED, "requires failing cancels")
 	var/datum/om/task/T3 = om_task_start("test_task", actor, target)
@@ -1070,12 +1049,12 @@
 	var/datum/om_test_entity/target = entity(made)
 	om_ui_bind(session, target, CHANGE_DATUM_A)
 	TEST_ASSERT_EQUAL(om_relevance(target), RELEVANCE_WATCHED, "binding raises relevance to WATCHED")
-	om_changed(target, CHANGE_DATUM_A)
-	om_changed(target, CHANGE_DATUM_A)
-	om_changed(target, CHANGE_DATUM_A)
+	changed(target, CHANGE_DATUM_A)
+	changed(target, CHANGE_DATUM_A)
+	changed(target, CHANGE_DATUM_A)
 	scheduler_advance(0.1)
 	TEST_ASSERT_EQUAL(session.ui_pushes, 1, "changes coalesce into one push")
-	om_changed(target, CHANGE_DATUM_A)
+	changed(target, CHANGE_DATUM_A)
 	scheduler_advance(0.1)
 	TEST_ASSERT_EQUAL(session.ui_pushes, 1, "throttled")
 	scheduler_advance(0.3)
@@ -1107,7 +1086,7 @@
 	om_start(E)
 	scheduler_advance(2)
 	TEST_ASSERT(E.ticks >= 1, "a tick row from a nested bundle calls the entity's proc")
-	om_changed(E, CHANGE_DATUM_A)
+	changed(E, CHANGE_DATUM_A)
 	scheduler_advance(0.1)
 	TEST_ASSERT_EQUAL(E.wakes, 1, "a reacts row calls the entity's proc")
 	TEST_ASSERT_EQUAL(om_derived(E, "test_enabled_derived"), TRUE, "DERIVE() over a named check")
@@ -1171,12 +1150,12 @@
 	var/datum/om_test_entity/cached/E = entity(made, /datum/om_test_entity/cached)
 	var/datum/om_test_entity/other = entity(made)
 	om_rec_of(E)
-	rel_set(E, "on_change_cache", other)
-	rel_set(E, "on_event_cache", other)
-	rel_set(E, "on_relation_cache", other)
-	om_changed(E, CHANGE_CONTENTS)
+	rel_set(E, nameof(E.on_change_cache), other)
+	rel_set(E, nameof(E.on_event_cache), other)
+	rel_set(E, nameof(E.on_relation_cache), other)
+	changed(E, CHANGE_CONTENTS)
 	TEST_ASSERT(E.on_change_cache == other, "an unrelated channel leaves the cache")
-	om_changed(E, CHANGE_EXPLICIT)
+	changed(E, CHANGE_EXPLICIT)
 	TEST_ASSERT_NULL(E.on_change_cache, "the declared channel clears the cache")
 	TEST_ASSERT(E.on_event_cache == other, "a change doesn't clear an event cache")
 	om_emit(E, new /datum/om/event/test/other)

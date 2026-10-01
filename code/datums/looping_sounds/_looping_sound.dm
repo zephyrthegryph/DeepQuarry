@@ -114,7 +114,7 @@
 /// Arms the loop's one timer (the next loop, the start delay or the dormant recheck).
 /datum/looping_sound/proc/set_loop_timer(delay)
 	cancel_loop_timer()
-	om_after_slot(src, "loop_token", delay, PROC_REF(loop_timer_fired))
+	after_slot(src, "loop_token", delay, PROC_REF(loop_timer_fired))
 
 /datum/looping_sound/proc/loop_timer_fired()
 	if(!running)
@@ -243,12 +243,14 @@
 /// Adds an atom the sound plays from.
 /datum/looping_sound/proc/add_output(atom/thing)
 	if(!QDELETED(thing))
-		rel_add(src, "output_atoms", thing)
+		rel_add(src, nameof(output_atoms), thing)
 
 /// Removes an atom the sound plays from.
 /datum/looping_sound/proc/remove_output(atom/thing)
-	rel_remove(src, "output_atoms", thing)
+	rel_remove(src, nameof(output_atoms), thing)
 
-REL_LIST(/datum/looping_sound, output_atoms)
+/datum/looping_sound/relations()
+	. = ..()
+	. += rel_many(nameof(output_atoms))
 
 OWN_TIMER(/datum/looping_sound, loop_token)

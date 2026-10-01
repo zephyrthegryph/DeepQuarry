@@ -1,4 +1,4 @@
-ADMIN_VERB(cmd_admin_say, R_ADMIN, "ASay", "Send a message to other admins", "Admin.Chat", message as text)
+ADMIN_VERB(cmd_admin_say, R_ADMIN, "ASay", "Send a message to other admins", ADMIN_CATEGORY_CHAT, message as text)
 	var/msg = sanitize(message)
 	if(!msg)
 		return
@@ -11,7 +11,7 @@ ADMIN_VERB(cmd_admin_say, R_ADMIN, "ASay", "Send a message to other admins", "Ad
 
 	feedback_add_details("admin_verb","M") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
-ADMIN_VERB(cmd_mod_say, (R_ADMIN|R_MOD|R_SERVER), "Msay", "Send a message to other mod", "Admin.Chat", message as text)
+ADMIN_VERB(cmd_mod_say, (R_ADMIN|R_MOD|R_SERVER), "Msay", "Send a message to other mod", ADMIN_CATEGORY_CHAT, message as text)
 	var/msg = sanitize(message)
 	log_modsay(msg, list("speaker" = user))
 
@@ -27,7 +27,7 @@ ADMIN_VERB(cmd_mod_say, (R_ADMIN|R_MOD|R_SERVER), "Msay", "Send a message to oth
 
 	feedback_add_details("admin_verb","MS") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
-ADMIN_VERB(cmd_event_say, (R_ADMIN|R_MOD|R_EVENT|R_SERVER), "Esay", "Send a message to other event manager", "Admin.Chat", message as text)
+ADMIN_VERB(cmd_event_say, (R_ADMIN|R_MOD|R_EVENT|R_SERVER), "Esay", "Send a message to other event manager", ADMIN_CATEGORY_CHAT, message as text)
 	var/msg = sanitize(message)
 	log_eventsay(msg, list("speaker" = user))
 
@@ -42,7 +42,7 @@ ADMIN_VERB(cmd_event_say, (R_ADMIN|R_MOD|R_EVENT|R_SERVER), "Esay", "Send a mess
 
 	feedback_add_details("admin_verb","GS") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
-ADMIN_VERB(cmd_mentor_say, (R_ADMIN|R_MOD|R_EVENT|R_SERVER|R_MENTOR), "Mentorsay", "Send a message to other mentors", "Admin.Chat", message as text)
+ADMIN_VERB(cmd_mentor_say, (R_ADMIN|R_MOD|R_EVENT|R_SERVER|R_MENTOR), "Mentorsay", "Send a message to other mentors", ADMIN_CATEGORY_CHAT, message as text)
 	var/msg = sanitize(message)
 	if (!msg)
 		return

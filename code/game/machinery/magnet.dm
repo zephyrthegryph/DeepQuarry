@@ -34,7 +34,7 @@ DECLARE_REPEAT(/obj/machinery/magnetic_module, "magnet_delay", magnetic_process,
 	. = ..()
 	var/turf/T = loc
 	hide(!T.is_plating())
-	rel_set(src, "center", T)
+	rel_set(src, nameof(center), T)
 
 	if(GLOB.radio_service)
 		GLOB.radio_service.add_object(src, freq, RADIO_MAGNETS)
@@ -143,7 +143,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/magnetic_module, "floor_magnet{on?:0}{invisib
 	return (13 - electricity_level) DECISECONDS
 
 /obj/machinery/magnetic_module/proc/magnetic_process() // proc that actually does the pulling
-	rel_set(src, "center", locate(x+center_x, y+center_y, z))
+	rel_set(src, nameof(center), locate(x+center_x, y+center_y, z))
 	if(get_center())
 		for(var/obj/M in orange(magnetic_field, get_center()))
 			if(!M.anchored && !(M.flags & NOCONDUCT))
@@ -186,10 +186,10 @@ DECLARE_REPEAT(/obj/machinery/magnetic_controller, "magnet_delay", magnet_move_s
 	if(autolink)
 		for(var/obj/machinery/magnetic_module/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 			if(M.freq == frequency && M.code == code)
-				rel_add(src, "magnets", M)
+				rel_add(src, nameof(magnets), M)
 
 	if(GLOB.radio_service)
-		rel_set(src, "radio_connection", GLOB.radio_service.add_object(src, frequency, RADIO_MAGNETS))
+		rel_set(src, nameof(radio_connection), GLOB.radio_service.add_object(src, frequency, RADIO_MAGNETS))
 
 	if(path) // check for default path
 		filter_path() // renders rpath
@@ -199,7 +199,7 @@ DECLARE_REPEAT(/obj/machinery/magnetic_controller, "magnet_delay", magnet_move_s
 	if(length(magnets) == 0 && autolink)
 		for(var/obj/machinery/magnetic_module/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 			if(M.freq == frequency && M.code == code)
-				rel_add(src, "magnets", M)
+				rel_add(src, nameof(magnets), M)
 	return PROCESS_KILL
 
 /obj/machinery/magnetic_controller/declare_interactions(list/into)
@@ -229,7 +229,7 @@ DECLARE_REPEAT(/obj/machinery/magnetic_controller, "magnet_delay", magnet_move_s
 	// Prepare signal beforehand, because this is a radio operation
 	var/datum/signal/signal = new
 	signal.transmission_method = TRANSMISSION_RADIO // radio transmission
-	rel_set(signal, "source", src)
+	rel_set(signal, nameof(signal.source), src)
 	signal.frequency = frequency
 	signal.data["code"] = code
 
@@ -306,7 +306,7 @@ DECLARE_REPEAT(/obj/machinery/magnetic_controller, "magnet_delay", magnet_move_s
 	// Prepare the radio signal
 	var/datum/signal/signal = new
 	signal.transmission_method = TRANSMISSION_RADIO // radio transmission
-	rel_set(signal, "source", src)
+	rel_set(signal, nameof(signal.source), src)
 	signal.frequency = frequency
 	signal.data["code"] = code
 	signal.data["command"] = nextmove

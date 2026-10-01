@@ -9,7 +9,7 @@
 	verbpath = /mob/proc/changeling_extract_dna_sting
 
 /mob/proc/changeling_extract_dna_sting()
-	set category = "Changeling"
+	set category = VERB_CAT_CHANGELING
 	set name = "Extract DNA Sting (40)"
 	set desc="Stealthily sting a target to extract their DNA."
 

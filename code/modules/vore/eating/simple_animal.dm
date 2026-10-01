@@ -11,7 +11,7 @@
 // Simple nom proc for if you get ckey'd into a simple_mob mob! Avoids grabs.
 /mob/living/simple_mob/proc/animal_nom(mob/living/T in living_mobs_in_view(1))
 	set name = "Animal Nom"
-	set category = "Abilities.Vore" // Moving this to abilities from IC as it's more fitting there
+	set category = VERB_CAT_ABILITIES_VORE // Moving this to abilities from IC as it's more fitting there
 	set desc = "Since you can't grab, you get a verb!"
 
 	if(vore_active && !voremob_loaded) // On-demand belly loading.
@@ -45,7 +45,7 @@
 /mob/living/simple_mob/proc/toggle_digestion()
 	set name = "Toggle Animal's Digestion"
 	set desc = "Enables digestion on this mob for 20 minutes."
-	set category = "OOC.Mob Settings"
+	set category = VERB_CAT_OOC_MOB_SETTINGS
 	set src in oview(1)
 
 	var/mob/living/carbon/human/user = usr
@@ -73,7 +73,7 @@
 /mob/living/simple_mob/proc/toggle_fancygurgle()
 	set name = "Toggle Animal's Gurgle sounds"
 	set desc = "Switches between Fancy and Classic sounds on this mob."
-	set category = "OOC.Mob Settings"
+	set category = VERB_CAT_OOC_MOB_SETTINGS
 	set src in oview(1)
 
 	var/mob/living/user = usr	//I mean, At least ghosts won't use it.
@@ -103,7 +103,7 @@
 			release_vore_contents()
 			for(var/mob/living/L in living_mobs(0)) //add everyone on the tile to the do-not-eat list for a while
 				if(!(LAZYFIND(prey_excludes, L))) // Unless they're already on it, just to avoid fuckery.
-					rel_add(src, "prey_excludes", L)
+					rel_add(src, nameof(prey_excludes), L)
 					om_after(src, 5 MINUTES, PROC_REF(removeMobFromPreyExcludes), L)
 	else if(istype(O, /obj/item/healthanalyzer))
 		var/healthpercent = round(vitality() * 100)
@@ -113,11 +113,11 @@
 
 /mob/living/simple_mob/proc/removeMobFromPreyExcludes(mob/living/L)
 	// The timer skips a deleted L: prey_excludes is a relation list, so it already left.
-	rel_remove(src, "prey_excludes", L)
+	rel_remove(src, nameof(prey_excludes), L)
 
 /mob/living/simple_mob/proc/nutrition_heal()
 	set name = "Nutrition Heal"
-	set category = "Abilities.Mob"
+	set category = VERB_CAT_ABILITIES_MOB
 	set desc = "Slowly regenerate health using nutrition."
 
 	if(nutrition < 10)
@@ -143,4 +143,6 @@
 			break
 		heal_amount -= mend(treat_tag, heal_amount)
 
-REL_LIST(/mob/living/simple_mob, prey_excludes)
+/mob/living/simple_mob/relations()
+	. = ..()
+	. += rel_many(nameof(prey_excludes))

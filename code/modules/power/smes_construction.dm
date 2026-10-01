@@ -73,22 +73,22 @@
 // 1M Charge, 150K I/O
 /obj/machinery/power/smes/buildable/outpost_substation/Initialize(mapload)
 	. = ..()
-	own_add(src, "component_parts", new /obj/item/smes_coil/weak(src))
+	own_add(src, nameof(component_parts), new /obj/item/smes_coil/weak(src))
 	recalc_coils()
 
 // This one is pre-installed on engineering shuttle. Allows rapid charging/discharging for easier transport of power to outpost
 // 11M Charge, 2.5M I/O
 /obj/machinery/power/smes/buildable/power_shuttle/Initialize(mapload)
 	. = ..()
-	own_add(src, "component_parts", new /obj/item/smes_coil/super_io(src))
-	own_add(src, "component_parts", new /obj/item/smes_coil/super_io(src))
-	own_add(src, "component_parts", new /obj/item/smes_coil(src))
+	own_add(src, nameof(component_parts), new /obj/item/smes_coil/super_io(src))
+	own_add(src, nameof(component_parts), new /obj/item/smes_coil/super_io(src))
+	own_add(src, nameof(component_parts), new /obj/item/smes_coil(src))
 	recalc_coils()
 
 // Pre-installed and pre-charged SMES hidden from the station, for use in submaps.
 /obj/machinery/power/smes/buildable/point_of_interest/Initialize(mapload)
 	. = ..()
-	charge = capacity // Should be enough for an individual POI.
+	set_stored_charge(capacity) // Should be enough for an individual POI.
 	RCon = FALSE
 	input_level = input_level_max
 	output_level = output_level_max
@@ -105,7 +105,7 @@
 	var/grounding = 1			// Cut to quickly discharge, at cost of "minor" electrical issues in output grid.
 	var/RCon = 1				// Cut to disable AI and remote control.
 	var/RCon_tag = "NO_TAG"		// RCON tag, change to show it on SMES Remote control console.
-	charge = 0
+	initial_charge = 0
 	should_be_mapped = 1
 
 // RCON consoles rescan without it.
@@ -121,7 +121,7 @@
 	var/needs_grounding_tick = !grounding && (Percentage() > 5)
 	if(needs_grounding_tick)
 		fx_sparks(src, 5)
-		charge -= (output_level_max * SMESRATE)
+		adjust_stored_charge(-(output_level_max * SMESRATE))
 		if(prob(1)) // Small chance of overload occuring since grounding is disabled.
 			apcs_overload(0,10)
 	. = ..()
@@ -149,14 +149,14 @@
 // Description: Adds standard components for this SMES, and forces recalculation of properties.
 /obj/machinery/power/smes/buildable/Initialize(mapload)
 	. = ..()
-	own_take_all(src, "component_parts")
-	own_add(src, "component_parts", new /obj/item/stack/cable_coil(src,30))
+	own_take_all(src, nameof(component_parts))
+	own_add(src, nameof(component_parts), new /obj/item/stack/cable_coil(src,30))
 	set_wires(new /datum/wires/smes(src))
 
 	// Allows for mapped-in SMESs with larger capacity/IO
 	if(mapload)
 		for(var/i = 1, i <= cur_coils, i++)
-			own_add(src, "component_parts", new /obj/item/smes_coil(src))
+			own_add(src, nameof(component_parts), new /obj/item/smes_coil(src))
 		recalc_coils()
 
 // Proc: attack_hand()
@@ -203,7 +203,7 @@
 			capacity += C.ChargeCapacity
 			input_level_max += C.IOCapacity
 			output_level_max += C.IOCapacity
-		charge = between(0, charge, capacity)
+		set_stored_charge(between(0, stored_charge(), capacity))
 		power_sync()
 		return 1
 	return 0
@@ -303,7 +303,7 @@
 				om_after(src, rand(300,600), PROC_REF(containment_failure))
 
 	fx_sparks(src, spark_amount)
-	charge = 0
+	set_stored_charge(0)
 
 // Proc: apcs_overload()
 // Parameters: 2 (failure_chance - chance to actually break the APC, overload_chance - Chance of breaking lights)
@@ -373,7 +373,7 @@ DECLARE_APPEARANCE(/obj/machinery/power/smes/buildable, "failing", list("1" = li
 /// Requirement: TRUE, or why the SMES can't be modified now.
 /obj/machinery/power/smes/buildable/proc/can_modify(mob/user, atom/target, obj/item/held)
 	// Charged above 1% and safeties are enabled.
-	if((charge > (capacity/100)) && safeties_enabled)
+	if((stored_charge() > (capacity/100)) && safeties_enabled)
 		return "the safety circuit is preventing modifications while there is charge stored"
 	if(output_attempt || input_attempt)
 		return "turn it off first"
@@ -381,7 +381,7 @@ DECLARE_APPEARANCE(/obj/machinery/power/smes/buildable, "failing", list("1" = li
 
 /obj/machinery/power/smes/buildable/proc/interaction_install_coil(mob/user, obj/item/W, datum/interaction/interaction)
 	// Probability of failure if safety circuit is disabled (in %)
-	var/failure_probability = round((charge / capacity) * 100)
+	var/failure_probability = round((stored_charge() / capacity) * 100)
 
 	// If failure probability is below 5% it's usually safe to do modifications
 	if (failure_probability < 5)
@@ -395,10 +395,9 @@ DECLARE_APPEARANCE(/obj/machinery/power/smes/buildable, "failing", list("1" = li
 			return TRUE
 
 		to_chat(user, "You install the coil into the SMES unit!")
-		user.drop_item()
 		cur_coils ++
-		own_add(src, "component_parts", W)
-		W.forceMove(src)
+		if(!own_add(src, nameof(src.component_parts), W, user = user))
+			return TRUE
 		recalc_coils()
 	else
 		to_chat(user, span_red("You can't insert more coils into this SMES unit!"))
@@ -427,7 +426,7 @@ DECLARE_APPEARANCE(/obj/machinery/power/smes/buildable, "failing", list("1" = li
 		if(failing)
 			to_chat(user, span_warning("The [src]'s indicator lights are flashing wildly. It seems to be overloaded! Touching it now is probably not a good idea."))
 		return ITEM_INTERACT_BLOCKING
-	if((charge > capacity / 100) && safeties_enabled)
+	if((stored_charge() > capacity / 100) && safeties_enabled)
 		to_chat(user, span_warning("The safety circuit of [src] is preventing modifications while there is charge stored!"))
 		return ITEM_INTERACT_BLOCKING
 	if(output_attempt || input_attempt)
@@ -436,7 +435,7 @@ DECLARE_APPEARANCE(/obj/machinery/power/smes/buildable, "failing", list("1" = li
 	if(length(terminals))
 		to_chat(user, span_warning("You have to disassemble the terminal first!"))
 		return ITEM_INTERACT_BLOCKING
-	var/failure_probability = round(charge / capacity * 100)
+	var/failure_probability = round(stored_charge() / capacity * 100)
 	if(failure_probability < 5)
 		failure_probability = 0
 	use_tool(user, tool, src, delay = 10 SECONDS * cur_coils, volume = 50, start_self = "You begin to disassemble [src]!", receiver = src, on_done = PROC_REF(crowbar_act_tool_done), done_args = list(user, failure_probability))
@@ -461,9 +460,9 @@ DECLARE_APPEARANCE(/obj/machinery/power/smes/buildable, "failing", list("1" = li
 /// Remote (AI and RCON) control on or off.
 /obj/machinery/power/smes/buildable/proc/set_rcon(state)
 	RCon = state
-	om_changed(src, CHANGE_MACHINE_SETTINGS)
+	changed(src, CHANGE_MACHINE_SETTINGS)
 
 /// The failsafes on or off.
 /obj/machinery/power/smes/buildable/proc/set_safeties(state)
 	safeties_enabled = state
-	om_changed(src, CHANGE_MACHINE_SETTINGS)
+	changed(src, CHANGE_MACHINE_SETTINGS)

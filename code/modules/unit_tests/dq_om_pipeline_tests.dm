@@ -213,7 +213,7 @@
 	var/datum/om/scheduler/sched
 
 /datum/unit_test/om_pipeline/Run()
-	rel_set(src, "sched", om_test_begin())
+	rel_set(src, nameof(sched), om_test_begin())
 	try
 		run_pipeline()
 	catch(var/exception/e)
@@ -243,7 +243,7 @@
 	TEST_ASSERT(om_stage_idle(E, /datum/om/pipeline/test, /datum/om/stage/test/d), "skipped for a fact its wake_on reports, it idles")
 	TEST_ASSERT(!om_stage_idle(E, /datum/om/pipeline/test, /datum/om/stage/test/h), "skipped for a fact no channel reports, it stays awake")
 	E.on = TRUE
-	om_changed(E, CHANGE_DATUM_A)
+	changed(E, CHANGE_DATUM_A)
 	sched.run_pass(1e9)
 	TEST_ASSERT(!om_stage_idle(E, /datum/om/pipeline/test, /datum/om/stage/test/d), "the fact's channel wakes it")
 
@@ -291,7 +291,7 @@
 	var/before = S.frames
 	scheduler_advance(5)
 	TEST_ASSERT_EQUAL(S.frames, before, "a parked entity runs no frames")
-	om_changed(E, CHANGE_EXPLICIT)
+	changed(E, CHANGE_EXPLICIT)
 	sched.run_pass(1e9)
 	TEST_ASSERT(!S.parked, "a wake unparks it")
 	TEST_ASSERT(!S.asleep, "whole")
@@ -432,12 +432,12 @@
 
 /datum/unit_test/om_pipeline/behaviour_throttle/run_pipeline()
 	var/datum/pipe_test_entity/E = pipe_test_new()
-	om_changed(E, CHANGE_DATUM_B)
+	changed(E, CHANGE_DATUM_B)
 	sched.run_pass(1e9)
 	TEST_ASSERT_EQUAL(length(E.wakes), 1, "the first wake runs at once")
 	for(var/i in 1 to 4)
 		scheduler_advance(0.1)
-		om_changed(E, CHANGE_DATUM_B | (i == 4 ? CHANGE_DATUM_D : 0))
+		changed(E, CHANGE_DATUM_B | (i == 4 ? CHANGE_DATUM_D : 0))
 		sched.run_pass(1e9)
 	TEST_ASSERT_EQUAL(length(E.wakes), 1, "wakes inside the interval wait")
 	scheduler_advance(1)
@@ -451,14 +451,14 @@
 	var/datum/pipe_test_entity/E = pipe_test_new()
 	sched.run_pass(1e9)
 	E.log.Cut()
-	om_changed(E, CHANGE_DATUM_C)
+	changed(E, CHANGE_DATUM_C)
 	sched.run_pass(1e9)
 	TEST_ASSERT_EQUAL(E.log.Find("show"), 0, "the pass on start ran it already; within its interval it waits")
 	scheduler_advance(1.1)
 	TEST_ASSERT(E.log.Find("show"), "and runs by rewake when the interval ends")
 	scheduler_advance(1.1)
 	E.log.Cut()
-	om_changed(E, CHANGE_DATUM_C)
+	changed(E, CHANGE_DATUM_C)
 	sched.run_pass(1e9)
 	TEST_ASSERT(E.log.Find("show"), "after the interval a wake runs at once")
 
@@ -511,15 +511,14 @@
 	TEST_ASSERT_EQUAL(R.use_power, USE_POWER_IDLE, "idle power once charged")
 	TEST_ASSERT(S.parked, "a settled recharger parks")
 	R.stat_add(NOPOWER)
-	om_changed(R, CHANGE_MACHINE_POWER)
+	changed(R, CHANGE_MACHINE_POWER)
 	sched.run_pass(1e9)
 	TEST_ASSERT(!S.parked, "losing power wakes it (power_change raises CHANGE_MACHINE_POWER)")
 	R.stat_remove(NOPOWER)
 	R.set_charging(null)
 	qdel(C)
 
-/// An APC and an SMES settle and park on the machine pipeline; an APC power failure ends by the
-/// power stage's rewake; the APC icon updates at most every APC_UPDATE_ICON_COOLDOWN.
+/// An APC and an SMES settle and park on the machine pipeline; an APC power failure is a timed_set().
 /datum/unit_test/om_pipeline/apc_and_smes_park
 
 /datum/unit_test/om_pipeline/apc_and_smes_park/run_pipeline()
@@ -535,13 +534,10 @@
 		om_run_frame_now(A, /datum/om/pipeline/machine)
 	TEST_ASSERT(S.parked, "a settled APC parks")
 	A.energy_fail(1)
-	TEST_ASSERT(A.failure_until > world.time, "the failure is on")
-	A.om_rec.sched.run_pass(1e9)
-	om_run_frame_now(A, /datum/om/pipeline/machine)
-	var/datum/om/stage/T = om_registry().stage_by_type[/datum/om/stage/machine/power/apc]
-	TEST_ASSERT(om_deadline_pending(A, /datum/om/pipeline/machine, OM_DL_STAGE - 1 + T.pos), "the power stage ends the failure by rewake, no timer")
-	A.failure_until = world.time
-	A.failure_timer = 0
+	TEST_ASSERT(A.power_failed, "the failure is on")
+	TEST_ASSERT(time_left(A, nameof(A.power_failed)) > 0, "timed_set() ends the failure, no pipeline rewake")
+	A.act_reboot(null)
+	TEST_ASSERT(!A.power_failed, "a reboot ends it")
 	om_run_frame_now(A, /datum/om/pipeline/machine)
 	A.update()
 	var/obj/machinery/power/smes/M
@@ -551,7 +547,7 @@
 			break
 	if(!M)
 		TEST_NOTICE(src, "no SMES on the test map; checked the APC only")
-		rel_set(src, "sched", om_test_begin())
+		rel_set(src, nameof(sched), om_test_begin())
 		return
 	TEST_ASSERT(!machine_stepping(M), "an SMES doesn't poll")
 	var/datum/om/frame/MS = om_pipe_state(M, /datum/om/pipeline/machine, TRUE)
@@ -559,7 +555,7 @@
 	for(var/i in 1 to 3)
 		om_run_frame_now(M, /datum/om/pipeline/machine)
 	TEST_ASSERT(MS.parked, "a settled SMES parks")
-	rel_set(src, "sched", om_test_begin())
+	rel_set(src, nameof(sched), om_test_begin())
 
 /// A fire alarm parks once its (dead-code today) lockdown countdown is off, and a settings
 /// change (arming a countdown) wakes it until the countdown ends.

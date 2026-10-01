@@ -46,7 +46,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/gun/magnetic, "loaded", "loaded")
 	. = ..()
 	// So you can have some spawn with components
 	if(ispath(capacitor))
-		own_set(src, "capacitor", new capacitor(src))
+		own_set(src, nameof(capacitor), new capacitor(src))
 		capacitor.set_charge(capacitor.max_charge)
 
 	if(capacitor)
@@ -157,7 +157,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic, TYPE_PROC_REF(/atom, appearance_
 	user.put_in_hands(capacitor)
 	act_message(user, src, others = span_infoplain(span_bold("%U%") + " unscrews \the [capacitor] from %T%."))
 	playsound(src, tool.usesound, 50, 1)
-	own_take(src, "capacitor")
+	own_take(src, nameof(capacitor))
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
 
@@ -169,8 +169,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic, TYPE_PROC_REF(/atom, appearance_
 			if(cell)
 				to_chat(user, span_warning("\The [src] already has \a [cell] installed."))
 				return
-			user.drop_from_inventory(thing, src)
-			own_set(src, "cell", thing)
+			if(!own_set(src, nameof(src.cell), thing, user = user))
+				return
 			play_sfx(src, SFX_MACHINES_CLICK, 0.2)
 			act_message(user, src, others = span_infoplain(span_bold("%U%") + " slots %I% into %T%."), item = cell)
 			update_icon()
@@ -180,8 +180,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic, TYPE_PROC_REF(/atom, appearance_
 			if(capacitor)
 				to_chat(user, span_warning("\The [src] already has \a [capacitor] installed."))
 				return
-			own_set(src, "capacitor", thing)
-			user.drop_from_inventory(capacitor, src)
+			if(!own_set(src, nameof(src.capacitor), thing, user = user))
+				return
 			play_sfx(src, SFX_MACHINES_CLICK, 0.2)
 			power_per_tick = (power_cost*0.15) * capacitor.rating
 			act_message(user, src, others = span_infoplain(span_bold("%U%") + " slots %I% into %T%."), item = capacitor)
@@ -198,11 +198,10 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic, TYPE_PROC_REF(/atom, appearance_
 		// specific ammo types may exist down the track.
 		var/obj/item/stack/ammo = thing
 		if(!istype(ammo))
-			own_set(src, "loaded", thing)
-			user.drop_from_inventory(thing)
-			thing.forceMove(src)
+			if(!own_set(src, nameof(src.loaded), thing, user = user))
+				return
 		else
-			own_set(src, "loaded", new load_type(src, 1))
+			own_set(src, nameof(loaded), new load_type(src, 1))
 			ammo.use(1)
 
 		act_message(user, src, others = span_infoplain(span_bold("%U%") + " loads %T% with \the [loaded]."))
@@ -220,10 +219,10 @@ DECLARE_INTERACTIONS(/obj/item/gun/magnetic, INTERACT_HAND(null, PROC_REF(intera
 
 		if(loaded)
 			removing = loaded
-			own_take(src, "loaded")
+			own_take(src, nameof(loaded))
 		else if(cell && removable_components)
 			removing = cell
-			own_take(src, "cell")
+			own_take(src, nameof(cell))
 
 		if(removing)
 			removing.forceMove(get_turf(src))
@@ -238,7 +237,7 @@ DECLARE_INTERACTIONS(/obj/item/gun/magnetic, INTERACT_HAND(null, PROC_REF(intera
 	return loaded
 
 /obj/item/gun/magnetic/proc/use_ammo()
-	own_clear(src, "loaded", OWN_DELETE)
+	own_clear(src, nameof(loaded), OWN_DELETE)
 
 /obj/item/gun/magnetic/consume_next_projectile()
 

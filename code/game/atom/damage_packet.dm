@@ -10,9 +10,10 @@
 // Packets are pooled (code/datums/lifecycle/pool.dm): acquire one with
 // damage_packet(), never new() one, and release() it as soon as
 // receive_damage() returns. Nothing may keep a reference to a packet past its
-// release; release() resets every POOL_RESET field below from the declaration.
+// release; release() resets every field below to its initial value (the amounts list is kept and zeroed).
 
 /datum/damage_packet
+	parent_type = /datum/pooled
 	/// Amount per kind, indexed by DAMAGE_* (flat list of DAMAGE_KIND_COUNT
 	/// numbers). Zeroed when the packet is taken.
 	var/list/amounts
@@ -40,32 +41,18 @@
 	/// EMP / explosion severity for those entries, 0 otherwise.
 	var/severity = 0
 
-POOL_DECLARE(/datum/damage_packet)
-POOL_RESET(/datum/damage_packet, source)
-POOL_RESET(/datum/damage_packet, attacker)
-POOL_RESET(/datum/damage_packet, weapon)
-POOL_RESET(/datum/damage_packet, zone)
-POOL_RESET(/datum/damage_packet, penetration)
-POOL_RESET(/datum/damage_packet, direction)
-POOL_RESET(/datum/damage_packet, flags)
-POOL_RESET(/datum/damage_packet, armor_flag)
-POOL_RESET(/datum/damage_packet, entry)
-POOL_RESET(/datum/damage_packet, severity)
-
 /datum/damage_packet/New()
+	..()
 	amounts = new /list(DAMAGE_KIND_COUNT)
 	for(var/i in 1 to DAMAGE_KIND_COUNT)
 		amounts[i] = 0
 
 /// Take a clean packet from the pool.
 /proc/damage_packet(atom/source, atom/attacker, atom/weapon, zone, flags = NONE, penetration = 0, direction = 0, armor_flag = null, entry = 0, severity = 0)
-	var/datum/damage_packet/packet = pool_take(/datum/damage_packet)
-	var/list/amounts = packet.amounts
-	for(var/i in 1 to DAMAGE_KIND_COUNT)
-		amounts[i] = 0
-	packet.source = source // ALLOW(ownership): pooled transient packet, lives for one hit; POOL_RESET clears it on release
-	packet.attacker = attacker // ALLOW(ownership): pooled transient packet, lives for one hit; POOL_RESET clears it on release
-	packet.weapon = weapon // ALLOW(ownership): pooled transient packet, lives for one hit; POOL_RESET clears it on release
+	var/datum/damage_packet/packet = take(/datum/damage_packet)
+	packet.source = source // ALLOW(ownership): pooled transient packet, lives for one hit; the pool resets it on release
+	packet.attacker = attacker // ALLOW(ownership): pooled transient packet, lives for one hit; the pool resets it on release
+	packet.weapon = weapon // ALLOW(ownership): pooled transient packet, lives for one hit; the pool resets it on release
 	packet.zone = zone
 	packet.flags = flags
 	packet.penetration = penetration
@@ -74,6 +61,13 @@ POOL_RESET(/datum/damage_packet, severity)
 	packet.entry = entry
 	packet.severity = severity
 	return packet
+
+/// Back to zero for the next taker (the amounts list is New()'s, kept and emptied by the pool, so it
+/// is refilled here).
+/datum/damage_packet/reset()
+	..()
+	for(var/i in 1 to DAMAGE_KIND_COUNT)
+		amounts += 0
 
 /datum/damage_packet/proc/add(kind, amount)
 	POOL_ASSERT_LIVE(src)
@@ -361,7 +355,7 @@ GLOBAL_LIST_INIT(emp_ladder, list(100, 70, 40, 10))
 		packet.release()
 		return
 	var/obj/item/I = AM
-	packet.weapon = I // ALLOW(ownership): pooled transient packet, lives for one hit; POOL_RESET clears it on release
+	packet.weapon = I // ALLOW(ownership): pooled transient packet, lives for one hit; the pool resets it on release
 	packet.penetration = I.armor_penetration
 	if(I.edge)
 		packet.flags |= DAMAGE_PACKET_EDGE

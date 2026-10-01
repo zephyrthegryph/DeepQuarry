@@ -1,0 +1,154 @@
+# doc_snippets baseline (tools/ci/doc_snippets.py): doc_unknown_name is a ratchet (target 0);
+# doc_legacy_block lists the complete blocks that predate the lint and aren't compiled (first line).
+doc_unknown_name	doc/rewrite/kernel.md	sched.native_step() // the ONE Rust driver (section 3.3)
+doc_unknown_name	doc/rewrite/kernel.md	run_garbage(limit) // tg GC, whatever is left, floor per second
+doc_unknown_name	doc/rewrite/kernel.md	record_performance_tick(TICK_USAGE)
+doc_unknown_name	doc/rewrite/kernel.md	if(SS.can_fire && SS.due())
+doc_unknown_name	doc/rewrite/kernel.md	boot_world_services_after(subsystem.type)
+doc_unknown_name	doc/rewrite/kernel.md	machine_first_wakes_flush()
+doc_unknown_name	doc/rewrite/kernel.md	boot_world_service(GLOB.transcore_service)
+doc_unknown_name	doc/rewrite/kernel.md	boot_world_service(GLOB.planet_service)
+doc_unknown_name	doc/rewrite/kernel.md	deps[S] = resolve_needs(S) // needs + others' needed_by; unknown path = boot error
+doc_unknown_name	doc/rewrite/kernel.md	attach_rings(S) // system cadence + member cadence rings
+doc_unknown_name	doc/rewrite/kernel.md	native_dispatch(vg_drain_events()) // the ONLY drain; typed events -> OM_EMIT_WORLD
+doc_unknown_name	doc/rewrite/kernel.md	native_dispatch(vg_drain_events()) // the ONLY drain; typed events -> OM_EMIT_WORLD
+doc_unknown_name	doc/rewrite/kernel.md	return alist("gas" = vg_gas_stats(), "heat" = vg_heat_stats(), "laws" = vg_world_laws())
+doc_unknown_name	doc/rewrite/kernel.md	return process_pipenets() // STEP_YIELD while budget runs out
+doc_unknown_name	doc/rewrite/kernel.md	M.set_step_waiting_power(FALSE)
+doc_unknown_name	doc/rewrite/kernel.md	M.set_step_active(TRUE)
+doc_unknown_name	doc/rewrite/kernel.md	M.set_step_waiting_power(FALSE)
+doc_unknown_name	doc/rewrite/kernel.md	M.set_step_active(FALSE)
+doc_unknown_name	doc/rewrite/kernel.md	. += floor_machine() // includes powered(): joins /datum/system/power
+doc_unknown_name	doc/rewrite/kernel.md	. += slot(nameof(cell), /obj/item/cell, behind = COVER)
+doc_unknown_name	doc/rewrite/kernel.md	flush_pump_transfers()
+doc_unknown_name	doc/rewrite/kernel.md	return wake_dirty_gas_subscribers() // STEP_YIELD mid-batch, as today
+doc_unknown_name	doc/rewrite/kernel.md	return L.loc && !L.transforming && life_any_stage_wants(L) // == today's "not every stage idle"
+doc_unknown_name	doc/rewrite/kernel.md	run_life_frame(L, dt) // the existing pipeline runner, unchanged inside
+doc_unknown_name	doc/rewrite/kernel.md	return L.client && life_present_dirty(L)
+doc_unknown_name	doc/rewrite/kernel.md	system(/datum/system/db).mass_insert(format_table_name("death"), take_rows())
+doc_unknown_name	doc/rewrite/kernel.md	system(/datum/system/db).mass_insert(format_table_name("death"), take_rows())
+doc_unknown_name	doc/rewrite/kernel.md	return length(teardown_z) || has_generation_queued() // was on_demand + has_work()
+doc_unknown_name	doc/rewrite/kernel.md	if(system(/datum/system/flight).destination_busy(site.flight_destination_id))
+doc_unknown_name	doc/rewrite/kernel.md	if(site.z_level > 0 && players_on_z(site.z_level))
+doc_unknown_name	doc/rewrite/kernel.md	release_site(site, "assignment abandoned") // emits site_released; flight unregisters its OWN destination
+doc_unknown_name	doc/rewrite/kernel.md	rebuild_registry()
+doc_unknown_name	doc/rewrite/kernel.md	register_expedition(site) // replay: works whichever booted first
+doc_unknown_name	doc/rewrite/lifecycle.md	POOL_RESET(/datum/damage_packet, source)
+doc_unknown_name	doc/rewrite/lifecycle.md	POOL_RESET(/datum/damage_packet, attacker)
+doc_unknown_name	doc/rewrite/migration_guide.md	set_name(name)
+doc_unknown_name	doc/rewrite/migration_guide.md	if(do_after(user, 6, target = src))
+doc_unknown_name	doc/rewrite/migration_guide.md	look.gauge("can-o", level = pressure_band(), levels = 4) // can-o0..can-o3
+doc_unknown_name	doc/rewrite/migration_guide.md	var/why_not = shuttle_api_why_cant_call()
+doc_unknown_name	doc/rewrite/migration_guide.md	shuttle_api_call_evac(caller = user)
+doc_unknown_name	doc/rewrite/migration_guide.md	release_or_move_site(site, new_name = descriptor_name) // emits site_moved
+doc_unknown_name	doc/rewrite/migration_guide.md	set_recharging(TRUE)
+doc_unknown_name	doc/rewrite/migration_guide.md	set_recharging(FALSE)
+doc_unknown_name	doc/rewrite/migration_guide.md	set_energy(energy - 1)
+doc_unknown_name	doc/rewrite/migration_guide.md	set_energy(min(energy + 1, max_energy))
+doc_unknown_name	doc/rewrite/rules.md	REQ_COMPONENT(/datum/component/shadekin),
+doc_unknown_name	doc/rewrite/rules.md	REQ_AREA_ALLOWS(AREA_BLOCK_PHASE_SHIFT) /* admins bypass */,
+doc_unknown_name	doc/rewrite/rules.md	var/watchers = PERCEPTION_OBSERVERS(user, 7) // one shared query, computed once
+doc_legacy_block	doc/rewrite/caching.md	(_scs_n[k] || _sc_n.miss(k))
+doc_legacy_block	doc/rewrite/caching.md	/proc/build_window_overlays(icon_file, basestate, connections)
+doc_legacy_block	doc/rewrite/declarative_lifecycle.md	// Before
+doc_legacy_block	doc/rewrite/declarative_lifecycle.md	// Before (illustrative)
+doc_legacy_block	doc/rewrite/declarative_lifecycle.md	// Before (illustrative: a type that owns its holder)
+doc_legacy_block	doc/rewrite/declarative_lifecycle.md	/datum/decl_binder/my_thing/bind_list(list/atoms) // one bulk FFI call when one exists
+doc_legacy_block	doc/rewrite/declarative_lifecycle.md	/datum/decl_binder/power_node/bind_list(list/atoms) -> power_bind_machines(atoms) // the bulk call
+doc_legacy_block	doc/rewrite/declarative_lifecycle.md	DECLARE_APPEARANCE(PATH, "state_var" | null, list(
+doc_legacy_block	doc/rewrite/declarative_lifecycle.md	DECLARE_BEHAVIOUR(PATH, /datum/om/behaviour/x) // om_attach at materialize
+doc_legacy_block	doc/rewrite/declarative_lifecycle.md	DECLARE_GAS(PATH, "air_contents", VOLUME, TEMP, list(GAS_O2 = kPa, ...))
+doc_legacy_block	doc/rewrite/declarative_lifecycle.md	DECLARE_REAGENTS(PATH, VOLUME, CONTENTS) // VOLUME: number, var name, or null = parent's
+doc_legacy_block	doc/rewrite/declarative_lifecycle.md	DECLARE_REGISTRY(PATH, REGISTRY_ID)
+doc_legacy_block	doc/rewrite/declarative_lifecycle.md	DECLARE_SERVICE_MEMBER(PATH, "planet_service", TYPE_PROC_REF(/datum/world_service/planets, addTurf), TYPE_PROC_REF(/datum/world_service/planets, removeTurf))
+doc_legacy_block	doc/rewrite/declarative_lifecycle.md	DESTROY_EFFECTS(PATH, new /datum/destroy_effects_data(message = "%SRC% breaks apart!", \
+doc_legacy_block	doc/rewrite/declarative_lifecycle.md	OWN(PATH, var, OWN_SPILL) // how it dies: only when not the default OWN_DELETE
+doc_legacy_block	doc/rewrite/interactions.md	// Alt-click eject - communicator.dm (trimmed)
+doc_legacy_block	doc/rewrite/interactions.md	// Insert item of type X - advnifrepair.dm (trimmed)
+doc_legacy_block	doc/rewrite/interactions.md	// Plain use - binoculars.dm
+doc_legacy_block	doc/rewrite/interactions.md	/datum/interaction/toggle_power
+doc_legacy_block	doc/rewrite/interactions.md	/obj/item/assembly/signaler/declare_interactions(list/into)
+doc_legacy_block	doc/rewrite/interactions.md	DECLARE_INTERACTIONS(/obj/item/binoculars, \
+doc_legacy_block	doc/rewrite/interactions.md	INTERACT_USE(name, effect, requires...) // old attack_self
+doc_legacy_block	doc/rewrite/lifecycle.md	POOL_DECLARE(/datum/damage_packet)
+doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE (the APC today): a field, a check in every handler, a draw branch, a UI key
+doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: apc.dm:436-463 (15 lines of state checks around "open the cover")
+doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: apc.dm:700-715
+doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: atmo_control.dm:714-745
+doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: canister.dm:173-190
+doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: door_control.dm:36-48 (an interaction datum per action)
+doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: door_control.dm:98 (a string template language)
+doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: expedition_controller.dm:249 (expedition writes flight's private index)
+doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: geiger.dm:131 (a replace-timer used as "reset if nothing for N")
+doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: health.dm:154-157
+doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: laserpointer.dm:16, 81, 206
+doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: laserpointer.dm:209, 214-215 (set a state, then a timer to put it back)
+doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: laserpointer.dm:230
+doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: laserpointer.dm:51-61
+doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: laserpointer.dm:63-69
+doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: megaphone.dm:48-58
+doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: round_status_panel.dm:28, :98-107
+doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: throw_of in three storages (thrownthing.dm:10-19, :73; atoms_movable.dm:572)
+doc_legacy_block	doc/rewrite/migration_guide.md	/obj/item/laser_pointer
+doc_legacy_block	doc/rewrite/migration_guide.md	/obj/machinery/thing
+doc_legacy_block	doc/rewrite/migration_guide.md	/obj/machinery/thing/capabilities()
+doc_legacy_block	doc/rewrite/migration_guide.md	/obj/machinery/thing/draw(datum/look/look)
+doc_legacy_block	doc/rewrite/migration_guide.md	/obj/machinery/thing/proc/rename(mob/user)
+doc_legacy_block	doc/rewrite/migration_guide.md	/obj/machinery/thing/tgui_data(mob/user)
+doc_legacy_block	doc/rewrite/migration_guide.md	cap_hand(name, handler, behind = NONE, locked_by = NONE, needs, else_say, works_broken = FALSE,
+doc_legacy_block	doc/rewrite/object_model.md	/behaviour/powered_by_slot
+doc_legacy_block	doc/rewrite/object_model.md	/bundle/cell_powered/apply(archetype/A, slot = "cell")
+doc_legacy_block	doc/rewrite/object_model.md	/datum/proc/declare(archetype/A)
+doc_legacy_block	doc/rewrite/object_model.md	/event/moved
+doc_legacy_block	doc/rewrite/object_model.md	/obj/item/weldingtool/declare(archetype/A)
+doc_legacy_block	doc/rewrite/object_model.md	/obj/machinery/alarm/declare(archetype/A)
+doc_legacy_block	doc/rewrite/object_model.md	/prompt/vend/check(datum/check/C, mob/user, obj/machinery/vending/V, datum/stock_entry/entry)
+doc_legacy_block	doc/rewrite/object_model.md	/relation/sleeper_console
+doc_legacy_block	doc/rewrite/object_model.md	/requirement/powered
+doc_legacy_block	doc/rewrite/object_model.md	/task/tool_use
+doc_legacy_block	doc/rewrite/object_model.md	/task/tool_use/check(datum/check/C, mob/user, atom/target, obj/item/tool)
+doc_legacy_block	doc/rewrite/object_model.md	/ui/space_heater
+doc_legacy_block	doc/rewrite/object_model.md	/ui/space_heater/data(obj/machinery/space_heater/heater, datum/ui_data/D)
+doc_legacy_block	doc/rewrite/object_model_core.md	/datum/om/decl/recharger
+doc_legacy_block	doc/rewrite/object_model_core.md	/datum/om/task/timed/lockpick
+doc_legacy_block	doc/rewrite/object_model_core.md	/obj/machinery/proc/set_panel_open(value)
+doc_legacy_block	doc/rewrite/object_model_core.md	OM_FIELD(/obj/machinery/portable_atmospherics/powered/pump, on, 0, CHANGE_MACHINE_SETTINGS)
+doc_legacy_block	doc/rewrite/object_model_core.md	om_ask(src, /datum/om/prompt/choice/shapeshifter_form, PROC_REF(shapeshifter_shape_chosen), choices = species.get_valid_shapeshifter_forms(src))
+doc_legacy_block	doc/rewrite/object_model_core.md	om_flow_start(/datum/om/flow/leash, user, C, leash = src)
+doc_legacy_block	doc/rewrite/object_model_core.md	om_io(E, /datum/om/io/<kind>, request args..., on_done, context args...)
+doc_legacy_block	doc/rewrite/object_model_core.md	om_prompt(src, src, list("kind" = "list", "message" = "Please select a species to emulate.", "title" = "Shapeshifter Body", "choices" = species.get_valid_shapeshifter_forms(src), "requires" = PROMPT_CONSCIOUS), PROC_REF(shapeshifter_shape_chosen))
+doc_legacy_block	doc/rewrite/object_model_core.md	om_task_start(/datum/om/task/timed/splint_attack, user, affecting, M = M, limb = limb)
+doc_legacy_block	doc/rewrite/object_model_core.md	om_task_start(/datum/om/task/timed/splint_attack, user, affecting, list("receiver" = src, "M" = M, "limb" = limb))
+doc_legacy_block	doc/rewrite/object_model_core.md	om_task_timed(user, leashtime, target = C, receiver = src, on_done = PROC_REF(attack_timed_done), done_args = list(C, user))
+doc_legacy_block	doc/rewrite/object_model_core.md	spawn(0) // ALLOW(scheduler): world.Export() is a blocking external call
+doc_legacy_block	doc/rewrite/om_framework_report.md	/datum/om/pipeline/life
+doc_legacy_block	doc/rewrite/om_framework_report.md	/datum/om/stage/machine/power/recharger
+doc_legacy_block	doc/rewrite/om_framework_report.md	/mob/living/proc/life_frame(profile = FALSE)
+doc_legacy_block	doc/rewrite/om_framework_report.md	/obj/machinery/recharger/process()
+doc_legacy_block	doc/rewrite/om_in_10_minutes.md	/datum/om/behaviour/geiger
+doc_legacy_block	doc/rewrite/om_in_10_minutes.md	/proc/build_edge_overlays(key) ...
+doc_legacy_block	doc/rewrite/om_in_10_minutes.md	DECLARE_INTERACTIONS(/obj/item/binoculars, \
+doc_legacy_block	doc/rewrite/ownership.md	/obj/machinery/sleeper/ownership()
+doc_legacy_block	doc/rewrite/ownership.md	/obj/machinery/sleeper/relations()
+doc_legacy_block	doc/rewrite/ownership.md	own_set(src, nameof(src.beaker), W, user = user)
+doc_legacy_block	doc/rewrite/rules.md	/datum/ability/shadekin_phase_shift
+doc_legacy_block	doc/rewrite/rust_bindings.md	// Which component this type holds (type-level, no per-instance memory).
+doc_legacy_block	doc/rewrite/rust_bindings.md	/obj/machinery/atmospherics/binary/pump/high_power
+doc_legacy_block	doc/rewrite/rust_core.md	/proc/vg_gas_read(handle)
+doc_legacy_block	doc/rewrite/systems.md	APPEARANCE_TEMPLATE(/obj/machinery/recharger, "recharger[on][operable]") // icon_state template over fields
+doc_legacy_block	doc/rewrite/systems.md	DAMAGE_REACTION(/obj/machinery/camera, DAMAGE_EMP, PROC_REF(emp_disable_view))
+doc_legacy_block	doc/rewrite/systems.md	DECLARE_EMAG(/obj/machinery/vending, PROC_REF(on_emagged), "You short out the product lock.")
+doc_legacy_block	doc/rewrite/systems.md	DECLARE_LOOT(/obj/random/toolbox, LOOT_TABLE(/obj/item/storage/toolbox/mechanical = 3, \
+doc_legacy_block	doc/rewrite/systems.md	DECLARE_PERIODIC_WHILE(/obj/machinery/recharger, PERIODIC_SECOND, "charging") // runs while field truthy
+doc_legacy_block	doc/rewrite/systems.md	DECLARE_UI(/obj/machinery/recharger, "Recharger", tgui_default_state)
+doc_legacy_block	doc/rewrite/systems.md	EXAMINE_LINE(/obj/machinery/recharger, "on", list("1" = "It is charging.", "0" = "It is idle."))
+doc_legacy_block	doc/rewrite/systems.md	EXPIRY_DECLARE(stun_until) // var/stun_until = 0 (EXPIRY_TMP_DECLARE: var/tmp)
+doc_legacy_block	doc/rewrite/systems.md	INTERACT_USE("Toggle", PROC_REF(toggle), REQ_FIELD("operable"), REQ_FIELD_NOT("locked", "it's locked"))
+doc_legacy_block	doc/rewrite/systems.md	MAP_RESOLVER(/obj/effect/floor_decal, /proc/resolve_decal) // apply to the turf, no atom
+doc_legacy_block	doc/rewrite/systems.md	OM_FIELD(/obj/machinery, on, FALSE, CHANGE_MACHINE_SETTINGS)
+doc_legacy_block	doc/rewrite/systems.md	SLOT_INTERACTIONS(/obj/machinery/recharger, SLOT_CHARGING, list(/obj/item/cell, /obj/item/gun/energy), \
+doc_legacy_block	doc/rewrite/systems.md	SOUND_SET(SFX_WELD, list('sound/items/welder.ogg', 'sound/items/welder2.ogg'), 50, TRUE)
+doc_legacy_block	doc/rewrite/systems.md	TOPIC_ACTION(/datum/admins, "adminplayeropts", PROC_REF(topic_player_opts), TOPIC_REF("adminplayeropts", /mob), TOPIC_RIGHTS(R_ADMIN))
+doc_legacy_block	doc/rewrite/systems.md	TYPE_TABLE_DECLARE(/obj/machinery/vending, products, null) // once per name, on the root
+doc_legacy_block	doc/rewrite/systems.md	act_message(user, target, MSG_SELF("You pry %T% open."), MSG_OTHERS("%U% pries %T% open."), \
+doc_legacy_block	doc/rewrite/temperature.md	/atom/proc/get_temperature() // from the view (or overlay); ambient if the atom has no heat node

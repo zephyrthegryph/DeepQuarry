@@ -110,7 +110,9 @@ DECLARE_VERB(/mob/living/simple_mob/vore/alienanimals/catslug, /mob/living/proc/
 DECLARE_VERB(/mob/living/simple_mob/vore/alienanimals/catslug, /mob/living/proc/hide)
 DECLARE_VERB(/mob/living/simple_mob/vore/alienanimals/catslug, /mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_color)
 
-OWN(/mob/living/simple_mob/vore/alienanimals/catslug, hat, OWN_SPILL)
+/mob/living/simple_mob/vore/alienanimals/catslug/ownership()
+	. = ..()
+	. += owns(nameof(hat), policy = OWN_SPILL)
 
 EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/catslug, \
 	INTERACT_ITEM(null, PROC_REF(catslug_interaction_item)), \
@@ -227,9 +229,8 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/catslug, TYPE_P
 	else if(!can_wear_hat)
 		to_chat(user, span_warning("\The [src] is unable to wear \a [hat]."))
 	else
-		user.drop_item(new_hat)
-		new_hat.forceMove(src)
-		own_set(src, "hat", new_hat)
+		if(!own_set(src, nameof(src.hat), new_hat, user = user))
+			return
 		to_chat(user, span_notice("You place \a [new_hat] on \the [src]. How adorable!"))
 		update_icon()
 		return
@@ -238,7 +239,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/catslug, TYPE_P
 	if(!hat)
 		to_chat(user, span_warning("\The [src] doesn't have a hat to remove."))
 	else
-		var/obj/item/clothing/head/old_hat = own_take(src, "hat")
+		var/obj/item/clothing/head/old_hat = own_take(src, nameof(hat))
 		old_hat.forceMove(get_turf(src))
 		user.put_in_hands(old_hat)
 		to_chat(user, span_warning("You take away \the [src]'s [old_hat.name]. How mean."))
@@ -247,7 +248,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/catslug, TYPE_P
 /mob/living/simple_mob/vore/alienanimals/catslug/proc/drop_hat()
 	if(!hat)
 		return
-	var/obj/item/clothing/head/old_hat = own_take(src, "hat")
+	var/obj/item/clothing/head/old_hat = own_take(src, nameof(hat))
 	old_hat.forceMove(get_turf(src))
 	update_icon()
 
@@ -257,7 +258,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/catslug, TYPE_P
 		//legacy .wander reference removed (no equivalent on /datum/ai_brain).
 /mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_color()
 	set name = "Pick Color"
-	set category = "Abilities.Settings"
+	set category = VERB_CAT_ABILITIES_SETTINGS
 	set desc = "You can set your color!"
 	if(picked_color)
 		to_chat(src, span_notice("You have already picked a color! If you picked the wrong color, ask an admin to change your picked_color variable to 0."))
@@ -687,7 +688,7 @@ DECLARE_VERB_HIDE(/mob/living/simple_mob/vore/alienanimals/catslug/custom, /mob/
 	. = ..()
 	mob_radio.set_frequency(PUB_FREQ)
 	mob_radio.ks2type = /obj/item/encryptionkey/heads/captain 		//Might not be able to speak, but the catslug can listen.
-	own_set(mob_radio, "keyslot2", new /obj/item/encryptionkey/heads/captain(mob_radio))
+	own_set(mob_radio, nameof(mob_radio.keyslot2), new /obj/item/encryptionkey/heads/captain(mob_radio))
 	mob_radio.recalculateChannels(TRUE)
 
 //=============================================================================
@@ -753,7 +754,7 @@ DECLARE_VERB_HIDE(/mob/living/simple_mob/vore/alienanimals/catslug/custom, /mob/
 	mob_radio.set_frequency(SYND_FREQ)
 	mob_radio.syndie = TRUE
 	mob_radio.ks2type = /obj/item/encryptionkey/syndicate
-	own_set(mob_radio, "keyslot2", new /obj/item/encryptionkey/syndicate(mob_radio))
+	own_set(mob_radio, nameof(mob_radio.keyslot2), new /obj/item/encryptionkey/syndicate(mob_radio))
 	mob_radio.recalculateChannels(TRUE)
 	myid.access |= SSaccess.get_all_station_access()
 
@@ -787,7 +788,7 @@ DECLARE_VERB_HIDE(/mob/living/simple_mob/vore/alienanimals/catslug/custom, /mob/
 	mob_radio.set_frequency(ERT_FREQ)
 	mob_radio.centComm = 1
 	mob_radio.ks2type = /obj/item/encryptionkey/ert
-	own_set(mob_radio, "keyslot2", new /obj/item/encryptionkey/ert(mob_radio))
+	own_set(mob_radio, nameof(mob_radio.keyslot2), new /obj/item/encryptionkey/ert(mob_radio))
 	mob_radio.recalculateChannels(TRUE)
 	myid.access |= SSaccess.get_all_station_access()
 
@@ -1039,7 +1040,7 @@ DECLARE_VERB(/mob/living/simple_mob/vore/alienanimals/catslug/suslug, /mob/livin
 
 /mob/living/simple_mob/vore/alienanimals/catslug/suslug/proc/assussinate()
 	set name = "Kill Innocent"
-	set category = "Abilities.Catslug"
+	set category = VERB_CAT_ABILITIES_CATSLUG
 	set desc = "Kill an innocent suslug!"
 	if(!is_impostor)
 		to_chat(src, span_notice("You are not an impostor! You can't kill like that!"))

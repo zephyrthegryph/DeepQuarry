@@ -1,11 +1,11 @@
-SUBSYSTEM_DEF(persistence)
+SYSTEM_DEF(persistence)
 	name = "Persistence"
-	dependencies = list(
-		/datum/controller/subsystem/mapping,
+	init_stage = INITSTAGE_MAIN
+	needs = list(
+		/datum/system/mapping,
 		/datum/controller/subsystem/atoms,
-		/datum/controller/subsystem/holomaps
+		/datum/system/holomaps
 	)
-	flags = SS_NO_FIRE
 
 	var/list/tracking_values = list()
 	var/list/persistence_datums = list()
@@ -15,20 +15,19 @@ SUBSYSTEM_DEF(persistence)
 	var/list/all_paintings = list()
 	var/list/unpicked_paintings = list()
 
-/datum/controller/subsystem/persistence/Initialize()
+/datum/system/persistence/initialize()
 	for(var/datum/persistent/P as anything in subtypesof(/datum/persistent))
 		if(initial(P.name))
 			P = new P
 			persistence_datums[P.type] = P
 			P.Initialize()
-	return SS_INIT_SUCCESS
 
-/datum/controller/subsystem/persistence/Shutdown()
+/datum/system/persistence/on_shutdown()
 	for(var/thing in persistence_datums)
 		var/datum/persistent/P = persistence_datums[thing]
 		P.Shutdown()
 
-/datum/controller/subsystem/persistence/proc/track_value(atom/value, track_type)
+/datum/system/persistence/proc/track_value(atom/value, track_type)
 
 	if(CONFIG_GET(flag/persistence_disabled)) //if the config is set to persistence disabled, nothing will save or load.
 		return
@@ -48,12 +47,12 @@ SUBSYSTEM_DEF(persistence)
 		tracking_values[track_type] = list()
 	tracking_values[track_type] += value
 
-/datum/controller/subsystem/persistence/proc/forget_value(atom/value, track_type)
+/datum/system/persistence/proc/forget_value(atom/value, track_type)
 	if(tracking_values[track_type])
 		tracking_values[track_type] -= value
 
 
-/datum/controller/subsystem/persistence/proc/show_info(mob/user)
+/datum/system/persistence/proc/show_info(mob/user)
 	if(!check_rights_for(user.client, R_HOLDER))
 		return
 

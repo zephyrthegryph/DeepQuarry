@@ -1,10 +1,10 @@
 /**
- * StonedMC
+ * Master: the compatibility shim of the old MC.
  *
- * Designed to properly split up a given tick among subsystems
- * Note: if you read parts of this code and think "why is it doing it that way"
- * Odds are, there is a reason
- *
+ * The host loop is the kernel's (code/controllers/kernel/loop.dm) and there is no subsystem queue any more. What is left
+ * here is the boot sequence (Initialize: the init DAG over subsystems and systems), the run level, and the values that
+ * read `Master.x` across the codebase (iteration, last_run, sleep_delta, tickdrift, current_ticklimit,
+ * current_runlevel, processing, init_stage_completed, ...), which the kernel loop keeps up to date with the same meaning.
  **/
 
 // See initialization order in /code/game/world.dm
@@ -16,9 +16,6 @@ GLOBAL_REAL(Master, /datum/controller/master)
 	var/processing = TRUE
 	/// How many times have we ran
 	var/iteration = 0
-	/// Stack end detector to detect stack overflows that kill the mc's main loop
-	var/datum/stack_end_detector/stack_end_detector
-
 	/// world.time of last fire, for tracking lag outside of the mc
 	var/last_run
 
@@ -37,7 +34,7 @@ GLOBAL_REAL(Master, /datum/controller/master)
 	/// Tickdrift as of last tick, w no averaging going on
 	var/olddrift = 0
 
-	/// How long is the MC sleeping between runs, read only (set by Loop() based off of anti-tick-contention heuristics)
+	/// How long is the loop sleeping between runs, read only (set by the kernel loop off of anti-tick-contention heuristics)
 	var/sleep_delta = 1
 	/// Only run ticker subsystems for the next n ticks.
 	var/skip_ticks = 0
@@ -47,13 +44,6 @@ GLOBAL_REAL(Master, /datum/controller/master)
 
 	var/initializations_finished_with_no_players_logged_in //I wonder what this could be?
 
-	/// The type of the last subsystem to be fire()'d.
-	var/last_type_processed
-
-	var/datum/controller/subsystem/queue_head_static	//!Start of queue linked list
-	var/datum/controller/subsystem/queue_tail_static	//!End of queue linked list (used for appending to the list)
-	var/queue_priority_count = 0 //Running total so that we don't have to loop thru the queue each run to split up the tick
-	var/queue_priority_count_bg = 0 //Same, but for background subsystems
 	var/map_loading = FALSE //!Are we loading in a new map?
 
 	var/current_runlevel //!for scheduling different subsystems for different stages of the round
@@ -93,6 +83,8 @@ GLOBAL_REAL(Master, /datum/controller/master)
 	var/perf_history_limit = 12000
 	/// Names of one subsystem dependency cycle found at boot, or null (boot_dependencies.dm).
 	var/boot_dependency_cycle
+	/// Boot DAG errors (a system's need that names no node), or null before boot (kernel/boot.dm).
+	var/list/boot_errors
 	/// Every sample ever recorded, so callers can hold a position that survives trimming.
 	var/perf_samples_total = 0
 	var/perf_tick_top_name = "None"
@@ -119,8 +111,10 @@ GLOBAL_REAL(Master, /datum/controller/master)
 	var/list/_subsystems = list()
 	subsystems = _subsystems
 	if (Master != src)
-		if (istype(Master)) //If there is an existing MC take over his stuff and delete it
-			Recover()
+		if (istype(Master)) //If there is an existing Master take over its subsystems and run level and delete it
+			if(istype(Master.subsystems))
+				subsystems = Master.subsystems
+			current_runlevel = Master.current_runlevel
 			qdel(Master)
 			Master = src
 		else
@@ -150,6 +144,10 @@ GLOBAL_REAL(Master, /datum/controller/master)
 				benchmark_early_note("new [I]", REALTIMEOFDAY - started, mb_before)
 #endif
 
+	// The gameplay systems keep their SS<X> names (SYSTEM_DEF); they exist from here on, before the globals are built
+	// (some of those read SSmapping and friends).
+	kernel_create_systems()
+
 	if(!GLOB)
 		new /datum/controller/global_vars
 
@@ -168,6 +166,7 @@ GLOBAL_REAL(Master, /datum/controller/master)
 		if (ss.slept_count > 0)
 			log_world("Warning: Subsystem `[ss.name]` slept [ss.slept_count] times.")
 		ss.Shutdown()
+	kernel_shutdown_systems()
 	shutdown_world_services()
 	log_world("Shutdown complete")
 
@@ -231,6 +230,28 @@ UI_DATA_REPLACE(/datum/controller/master, "fast_update=overview_fast_update:num"
 			"initialized" = subsystem.initialized,
 			"initialization_failure_message" = subsystem.initialization_failure_message,
 		))
+	// The gameplay systems are listed beside the subsystems (their fire work is kernel work items).
+	for(var/datum/system/system as anything in kernel_pure_systems())
+		subsystem_data += list(list(
+			"name" = "[system.name] (system)",
+			"ref" = REF(system),
+			"init_order" = 0,
+			"last_fire" = system.last_fire,
+			"next_fire" = 0,
+			"can_fire" = system.can_fire,
+			"doesnt_fire" = !system.times_fired,
+			"cost_ms" = system.fire_cost,
+			"wall_cost_last_ms" = system.fire_cost,
+			"cpu_cost_ms" = system.fire_cost,
+			"cpu_cost_last_ms" = system.fire_cost,
+			"suspended_cost_last_ms" = 0,
+			"run_slices_last" = system.ticks,
+			"tick_usage" = 0,
+			"usage_per_tick" = 0,
+			"tick_overrun" = system.tick_overrun,
+			"initialized" = system.initialized,
+			"initialization_failure_message" = null,
+		))
 	data["subsystems"] = subsystem_data
 	data["world_time"] = world.time
 	data["map_cpu"] = world.map_cpu
@@ -266,7 +287,6 @@ UI_ACT_PROC(/datum/controller/master, ui_act_view_variables)
 	return TRUE
 
 /datum/controller/master/proc/check_and_perform_fast_update()
-	PRIVATE_PROC(TRUE)
 	set waitfor = FALSE // ALLOW(scheduler): MC code
 
 	if(!overview_fast_update)
@@ -278,72 +298,6 @@ UI_ACT_PROC(/datum/controller/master, ui_act_view_variables)
 	already_updating = TRUE
 	SStgui.update_uis(src)
 	already_updating = FALSE
-
-// Returns 1 if we created a new mc, 0 if we couldn't due to a recent restart,
-// -1 if we encountered a runtime trying to recreate it
-/proc/Recreate_MC()
-	. = -1 //so if we runtime, things know we failed
-	if (world.time < Master.restart_timeout)
-		return 0
-	if (world.time < Master.restart_clear)
-		Master.restart_count *= 0.5
-
-	var/delay = 50 * ++Master.restart_count
-	Master.restart_timeout = world.time + delay
-	Master.restart_clear = world.time + (delay * 2)
-	if (Master) //Can only do this if master hasn't been deleted
-		Master.processing = FALSE //stop ticking this one
-	try
-		new/datum/controller/master()
-	catch(var/exception/e)
-		dq_report_caught(e, "Master controller recreation")
-		return -1
-	return 1
-
-/datum/controller/master/Recover()
-	var/msg = "## DEBUG: [time2text(world.timeofday, "DDD MMM DD hh:mm:ss YYYY", TIMEZONE_UTC)] MC restarted. Reports:\n"
-	var/list/master_attributes = Master.vars
-	var/list/filtered_variables = list(
-		NAMEOF(src, name),
-		NAMEOF(src, parent_type),
-		NAMEOF(src, tag),
-		NAMEOF(src, type),
-		NAMEOF(src, vars),
-	)
-	for (var/varname in master_attributes - filtered_variables)
-		var/varval = master_attributes[varname]
-		if (isdatum(varval)) // Check if it has a type var.
-			var/datum/D = varval
-			msg += "\t [varname] = [D]([D.type])\n"
-		else
-			msg += "\t [varname] = [varval]\n"
-	log_world(msg)
-
-	var/datum/controller/subsystem/BadBoy = Master.last_type_processed
-	var/FireHim = FALSE
-	if(istype(BadBoy))
-		msg = null
-		LAZYINITLIST(BadBoy.failure_strikes)
-		switch(++BadBoy.failure_strikes[BadBoy.type])
-			if(2)
-				msg = "The [BadBoy.name] subsystem was the last to fire for 2 controller restarts. It will be recovered now and disabled if it happens again."
-				FireHim = TRUE
-			if(3)
-				msg = "The [BadBoy.name] subsystem seems to be destabilizing the MC and will be put offline."
-				BadBoy.flags |= SS_NO_FIRE
-		if(msg)
-			to_chat(GLOB.admins, span_boldannounce("[msg]"))
-			log_world(msg)
-
-	if (istype(Master.subsystems))
-		if(FireHim)
-			Master.subsystems += new BadBoy.type //NEW_SS_GLOBAL will remove the old one
-		subsystems = Master.subsystems
-		current_runlevel = Master.current_runlevel
-		StartProcessing(10)
-	else
-		to_chat(world, span_boldannounce("The Master Controller is having some issues, we will need to re-initialize EVERYTHING"))
-		Initialize(20, TRUE, FALSE)
 
 // Please don't stuff random bullshit here,
 // Make a subsystem, give it the SS_NO_FIRE flag, and do your work in its Initialize()
@@ -379,47 +333,78 @@ UI_ACT_PROC(/datum/controller/master, ui_act_view_variables)
 			LAZYOR(dependent.dependencies, subsystem.type)
 		subsystem.dependents = list()
 
-	// Resolves each subsystem's declared dependencies (boot_dependencies.dm).
-	var/list/deps_by_subsystem = list()
+	// Systems are nodes of the same DAG (kernel/boot.dm): a system's `needs` name subsystems or systems.
+	var/list/boot_systems = kernel_boot_systems()
+	var/list/type_to_node = type_to_subsystem.Copy()
+	for(var/datum/system/boot_system as anything in boot_systems)
+		type_to_node[boot_system.type] = boot_system
+	boot_errors = list()
+	var/list/deps_by_node = list()
+	var/list/system_deps = kernel_system_deps(boot_systems, type_to_node, boot_errors)
+	for(var/datum/system/boot_system as anything in system_deps)
+		deps_by_node[boot_system] = system_deps[boot_system]
+
+	// Resolves each subsystem's declared dependencies (boot_dependencies.dm). A dependency is a subsystem or
+	// a system, so a boot a subsystem used to do by hand is a declaration.
 	for(var/datum/controller/subsystem/subsystem as anything in subsystems)
 		var/list/resolved = list()
 		for(var/dependency_type in subsystem.dependencies)
-			if(!ispath(dependency_type, /datum/controller/subsystem))
+			if(!ispath(dependency_type, /datum/controller/subsystem) && !ispath(dependency_type, /datum/system))
 				stack_trace("ERROR: MC: subsystem `[subsystem.type]` has an invalid dependency: `[dependency_type]`. Skipping")
 				continue
-			var/datum/controller/subsystem/dependency = type_to_subsystem[dependency_type]
+			var/datum/dependency = type_to_node[dependency_type]
 			if(!dependency)
+				if(ispath(dependency_type, /datum/system))
+					boot_errors += "[subsystem.type] depends on [dependency_type], which is not a boot node"
 				continue
+			var/dependency_stage
+			var/datum/controller/subsystem/dependency_subsystem = istype(dependency, /datum/controller/subsystem) ? dependency : null
+			if(dependency_subsystem)
+				dependency_stage = dependency_subsystem.init_stage
+			else
+				dependency_stage = kernel_system_stage(dependency, deps_by_node)
 			// Not a foolproof failsafe, likely to only prevent any immediate issues if this is only triggered once.
-			if(subsystem.init_stage < dependency.init_stage)
-				stack_trace("ERROR: MC: subsystem `[subsystem.type]` has an init_stage before one of its dependencies (Dependency: `[dependency.type]`, [subsystem.init_stage] < [dependency.init_stage])! Setting init_stage to [dependency.init_stage]")
-				subsystem.init_stage = dependency.init_stage
-			dependency.dependents += subsystem
+			if(subsystem.init_stage < dependency_stage)
+				stack_trace("ERROR: MC: subsystem `[subsystem.type]` has an init_stage before one of its dependencies (Dependency: `[dependency.type]`, [subsystem.init_stage] < [dependency_stage])! Setting init_stage to [dependency_stage]")
+				subsystem.init_stage = dependency_stage
+			if(dependency_subsystem)
+				dependency_subsystem.dependents += subsystem
 			resolved += dependency
-		deps_by_subsystem[subsystem] = resolved
+		deps_by_node[subsystem] = resolved
+	for(var/boot_error in boot_errors)
+		stack_trace("ERROR: MC: boot: [boot_error]")
+		log_world("ERROR: MC: boot: [boot_error]")
+	var/list/boot_nodes = subsystems + boot_systems
 
-	var/list/cycle = list()
-	var/list/sorted_subsystems = boot_dependency_order(subsystems, deps_by_subsystem, cycle)
+	// The same validator orders the kernel's work items (kernel/graph.dm).
+	var/datum/graph_check/boot_graph = graph_validate(boot_nodes, deps_by_node)
+	var/list/cycle = boot_graph.cycle
+	var/list/sorted_nodes = boot_graph.order
 	for(var/i in 1 to length(subsystems))
 		var/datum/controller/subsystem/subsystem = subsystems[i]
 		subsystem.ordering_id = i
 
-	if(length(subsystems) != length(sorted_subsystems))
+	if(length(boot_nodes) != length(sorted_nodes))
 		var/list/usr_msg = list()
-		for(var/datum/controller/subsystem/subsystem as anything in subsystems - sorted_subsystems)
-			usr_msg += subsystem.name
+		for(var/datum/D as anything in boot_nodes - sorted_nodes)
+			usr_msg += "[D.type]"
 		boot_dependency_cycle = jointext(cycle, " -> ")
 		// Can't initialize them if they have circular dependencies, there's no real failsafe here.
-		stack_trace("ERROR: CRITICAL: MC: The following subsystems have circular dependencies: [boot_dependency_cycle]")
-		log_world("ERROR: CRITICAL: MC: subsystem dependency cycle: [boot_dependency_cycle]")
+		stack_trace("ERROR: CRITICAL: MC: The following nodes have circular dependencies: [boot_dependency_cycle]")
+		log_world("ERROR: CRITICAL: MC: boot dependency cycle: [boot_dependency_cycle]")
 		to_chat(world, span_bolddanger("CRITICAL: Failed to initialize [jointext(usr_msg, ", ")]"), MESSAGE_TYPE_DEBUG)
 
-	for (var/datum/controller/subsystem/subsystem as anything in sorted_subsystems)
-		var/subsystem_init_stage = subsystem.init_stage
-		if (!isnum(subsystem_init_stage) || subsystem_init_stage < 1 || subsystem_init_stage > INITSTAGE_MAX || round(subsystem_init_stage) != subsystem_init_stage)
-			stack_trace("ERROR: MC: subsystem `[subsystem.type]` has invalid init_stage: `[subsystem_init_stage]`. Setting to `[INITSTAGE_MAX]`")
-			subsystem_init_stage = subsystem.init_stage = INITSTAGE_MAX
-		stage_sorted_subsystems[subsystem_init_stage] += subsystem
+	for (var/datum/node as anything in sorted_nodes)
+		var/node_init_stage
+		if(istype(node, /datum/system))
+			node_init_stage = kernel_system_stage(node, deps_by_node)
+		else
+			var/datum/controller/subsystem/subsystem = node
+			node_init_stage = subsystem.init_stage
+			if (!isnum(node_init_stage) || node_init_stage < 1 || node_init_stage > INITSTAGE_MAX || round(node_init_stage) != node_init_stage)
+				stack_trace("ERROR: MC: subsystem `[subsystem.type]` has invalid init_stage: `[node_init_stage]`. Setting to `[INITSTAGE_MAX]`")
+				node_init_stage = subsystem.init_stage = INITSTAGE_MAX
+		stage_sorted_subsystems[node_init_stage] += node
 
 	// Sort subsystems by display setting for easy access.
 	var/evaluated_order = 1
@@ -428,11 +413,15 @@ UI_ACT_PROC(/datum/controller/master, ui_act_view_variables)
 	for (var/current_init_stage in 1 to INITSTAGE_MAX)
 
 		// Initialize subsystems.
-		for (var/datum/controller/subsystem/subsystem in stage_sorted_subsystems[current_init_stage])
+		for (var/datum/node in stage_sorted_subsystems[current_init_stage])
+			if(istype(node, /datum/system))
+				kernel_boot_system(node)
+				CHECK_TICK
+				continue
+			var/datum/controller/subsystem/subsystem = node
 			subsystem.init_order = evaluated_order
 			evaluated_order++
 			init_subsystem(subsystem)
-			boot_world_services_after(subsystem.type)
 
 			CHECK_TICK
 		current_initializing_subsystem = null
@@ -444,8 +433,9 @@ UI_ACT_PROC(/datum/controller/master, ui_act_view_variables)
 			// Loop.
 			Master.StartProcessing(0)
 
-	// Every machine that materialized during init arms its wakes now, in one pass (machine_pipeline.dm).
-	machine_first_wakes_flush()
+	// Every system's members that joined during init get their first evaluation now, in one pass each
+	// (kernel/system.dm on_members_ready(); the machine service arms first wakes here).
+	kernel_members_ready()
 
 	var/time = (REALTIMEOFDAY - start_timeofday) / 10
 	initializations_seconds = time
@@ -577,249 +567,17 @@ UI_ACT_PROC(/datum/controller/master, ui_act_view_variables)
 	if(current_runlevel < 1)
 		current_runlevel = old_runlevel
 		CRASH("Attempted to set invalid runlevel: [new_runlevel]")
+	kernel_runlevel_changed()
 
-// Starts the mc, and sticks around to restart it if the loop ever ends.
+/// Starts the kernel's host loop (kernel/loop.dm start_loop()): the kernel owns the loop, this is the name it had.
 /datum/controller/master/proc/StartProcessing(delay)
-	set waitfor = 0 // ALLOW(scheduler): MC code
-	if(delay)
-		sleep(delay) // ALLOW(scheduler): MC
-	testing("Master starting processing")
-	var/started_stage
-	var/rtn = -2
-	do
-		started_stage = init_stage_completed
-		rtn = Loop(started_stage)
-	while (rtn == MC_LOOP_RTN_NEWSTAGES && processing > 0 && started_stage < init_stage_completed)
-
-	if (rtn >= MC_LOOP_RTN_GRACEFUL_EXIT || processing < 0)
-		return //this was suppose to happen.
-	//loop ended, restart the mc
-	log_game("MC crashed or runtimed, restarting")
-	message_admins("MC crashed or runtimed, restarting")
-	var/rtn2 = Recreate_MC()
-	if (rtn2 <= 0)
-		log_game("Failed to recreate MC (Error code: [rtn2]), it's up to the failsafe now")
-		message_admins("Failed to recreate MC (Error code: [rtn2]), it's up to the failsafe now")
-		Failsafe.defcon = 2
-
-// Main loop.
-/datum/controller/master/proc/Loop(init_stage)
-	. = -1
-	//Prep the loop (most of this is because we want MC restarts to reset as much state as we can, and because
-	// local vars rock
-
-	//all this shit is here so that flag edits can be refreshed by restarting the MC. (and for speed)
-	var/list/tickersubsystems = list()
-	var/list/runlevel_sorted_subsystems = list(list()) //ensure we always have at least one runlevel
-	var/timer = world.time
-	for (var/thing in subsystems)
-		var/datum/controller/subsystem/SS = thing
-		if (SS.flags & SS_NO_FIRE)
-			continue
-		if (SS.init_stage > init_stage)
-			continue
-		SS.queued_time = 0
-		SS.queue_next_static = null
-		SS.queue_prev_static = null
-		SS.state = SS_IDLE
-		if ((SS.flags & (SS_TICKER|SS_BACKGROUND)) == SS_TICKER)
-			tickersubsystems += SS
-			// Timer subsystems aren't allowed to bunch up, so we offset them a bit
-			timer += TICKS2DS(rand(0, 1))
-			SS.next_fire = timer
-			continue
-
-		// Now, we have to set starting next_fires for all our new non ticker kids
-		if(SS.init_stage == init_stage - 1 && (SS.runlevels & current_runlevel))
-			// Give em a random offset so things don't clump up too bad
-			var/delay = SS.wait
-			if(SS.flags & SS_TICKER)
-				delay = TICKS2DS(delay)
-			// Gotta convert to ticks cause rand needs integers
-			SS.next_fire = world.time + TICKS2DS(rand(0, DS2TICKS(min(delay, 2 SECONDS))))
-
-		var/ss_runlevels = SS.runlevels
-		var/added_to_any = FALSE
-		for(var/I in 1 to GLOB.bitflags.len)
-			if(ss_runlevels & GLOB.bitflags[I])
-				while(runlevel_sorted_subsystems.len < I)
-					runlevel_sorted_subsystems += list(list())
-				runlevel_sorted_subsystems[I] += SS
-				added_to_any = TRUE
-		if(!added_to_any)
-			WARNING("[SS.name] subsystem is not SS_NO_FIRE but also does not have any runlevels set!")
-
-	queue_head_static = null
-	queue_tail_static = null
-	//these sort by lower priorities first to reduce the number of loops needed to add subsequent SS's to the queue
-	//(higher subsystems will be sooner in the queue, adding them later in the loop means we don't have to loop thru them next queue add)
-	sortTim(tickersubsystems, GLOBAL_PROC_REF(cmp_subsystem_priority))
-	for(var/I in runlevel_sorted_subsystems)
-		sortTim(I, GLOBAL_PROC_REF(cmp_subsystem_priority))
-		I += tickersubsystems
-
-	var/cached_runlevel = current_runlevel
-	var/list/current_runlevel_subsystems = runlevel_sorted_subsystems[cached_runlevel]
-
-	init_timeofday = REALTIMEOFDAY
-	init_time = world.time
-
-	iteration = 1
-	var/error_level = 0
-	var/sleep_delta = 1
-	var/list/subsystems_to_check
-
-	//setup the stack overflow detector
-	own_set(src, "stack_end_detector", new /datum/stack_end_detector())
-	var/datum/stack_canary/canary = stack_end_detector.prime_canary()
-	canary.use_variable()
-	//the actual loop.
-	while (1)
-		var/newdrift = ((REALTIMEOFDAY - init_timeofday) - (world.time - init_time)) / world.tick_lag
-		tickdrift = max(0, MC_AVERAGE_FAST(tickdrift, newdrift))
-		var/starting_tick_usage = TICK_USAGE
-		perf_tick_top_name = "None"
-		perf_tick_top_usage = 0
-		perf_tick_peak_usage = starting_tick_usage
-		LAZYCLEARLIST(perf_tick_breakdown)
-
-		if (init_stage != init_stage_completed)
-			// Initialization deliberately blocks for long stretches. Establish the
-			// drift baseline without treating boot work as a gameplay outlier.
-			olddrift = newdrift
-			return MC_LOOP_RTN_NEWSTAGES
-
-		if(newdrift - olddrift >= CONFIG_GET(number/drift_dump_threshold))
-			AttemptProfileDump(CONFIG_GET(number/drift_profile_delay))
-		olddrift = newdrift
-		if (processing <= 0)
-			current_ticklimit = TICK_LIMIT_RUNNING
-			sleep(1 SECONDS) // ALLOW(scheduler): MC
-			continue
-
-		//Anti-tick-contention heuristics:
-		if (init_stage == INITSTAGE_MAX)
-			//if there are multiple sleeping procs running before us hogging the cpu, we have to run later.
-			// (because sleeps are processed in the order received, longer sleeps are more likely to run first)
-			if (starting_tick_usage > TICK_LIMIT_MC) //if there isn't enough time to bother doing anything this tick, sleep a bit.
-				sleep_delta *= 2
-				current_ticklimit = TICK_LIMIT_RUNNING * 0.5
-				sleep(world.tick_lag * (processing * sleep_delta)) // ALLOW(scheduler): MC
-				continue
-
-			//Byond resumed us late. assume it might have to do the same next tick
-			if (last_run + CEILING(world.tick_lag * (processing * sleep_delta), world.tick_lag) < world.time)
-				sleep_delta += 1
-
-			sleep_delta = MC_AVERAGE_FAST(sleep_delta, 1) //decay sleep_delta
-
-			if (starting_tick_usage > (TICK_LIMIT_MC*0.75)) //we ran 3/4 of the way into the tick
-				sleep_delta += 1
-		else
-			sleep_delta = 1
-
-		//debug
-		if (make_runtime)
-			var/datum/controller/subsystem/SS
-			SS.can_fire = 0
-
-		if (!Failsafe || (Failsafe.processing_interval > 0 && (Failsafe.lasttick+(Failsafe.processing_interval*5)) < world.time))
-			new/datum/controller/failsafe() // (re)Start the failsafe.
-
-		//now do the actual stuff
-		if (!skip_ticks)
-			var/checking_runlevel = current_runlevel
-			if(cached_runlevel != checking_runlevel)
-				//resechedule subsystems
-				var/list/old_subsystems = current_runlevel_subsystems
-				cached_runlevel = checking_runlevel
-				current_runlevel_subsystems = runlevel_sorted_subsystems[cached_runlevel]
-
-				//now we'll go through all the subsystems we want to offset and give them a next_fire
-				for(var/datum/controller/subsystem/SS as anything in current_runlevel_subsystems)
-					//we only want to offset it if it's new and also behind
-					if(SS.next_fire > world.time || (SS in old_subsystems))
-						continue
-					// If they're new, give em a random offset so things don't clump up too bad
-					var/delay = SS.wait
-					if(SS.flags & SS_TICKER)
-						delay = TICKS2DS(delay)
-					SS.next_fire = world.time + TICKS2DS(rand(0, DS2TICKS(min(delay, 2 SECONDS))))
-
-			subsystems_to_check = current_runlevel_subsystems
-		else
-			subsystems_to_check = tickersubsystems
-
-		if (CheckQueue(subsystems_to_check) <= 0) //error processing queue
-			stack_trace("MC: CheckQueue failed. Current error_level is [round(error_level, 0.25)]")
-			if (!SoftReset(tickersubsystems, runlevel_sorted_subsystems))
-				error_level++
-				CRASH("MC: SoftReset() failed, exiting loop()")
-
-			if (error_level < 2) //except for the first strike, stop incrmenting our iteration so failsafe enters defcon
-				iteration++
-			else
-				cached_runlevel = null //3 strikes, Lets reset the runlevel lists
-			current_ticklimit = TICK_LIMIT_RUNNING
-			sleep((1 SECONDS) * error_level) // ALLOW(scheduler): MC
-			error_level++
-			continue
-
-		if (queue_head())
-			if (RunQueue() <= 0) //error running queue
-				stack_trace("MC: RunQueue failed. Current error_level is [round(error_level, 0.25)]")
-				if (error_level > 1) //skip the first error,
-					if (!SoftReset(tickersubsystems, runlevel_sorted_subsystems))
-						error_level++
-						CRASH("MC: SoftReset() failed, exiting loop()")
-
-					if (error_level <= 2) //after 3 strikes stop incrmenting our iteration so failsafe enters defcon
-						iteration++
-					else
-						cached_runlevel = null //3 strikes, Lets also reset the runlevel lists
-					current_ticklimit = TICK_LIMIT_RUNNING
-					sleep((1 SECONDS) * error_level) // ALLOW(scheduler): MC
-					error_level++
-					continue
-				error_level++
-		if (error_level > 0)
-			error_level = max(MC_AVERAGE_SLOW(error_level-1, error_level), 0)
-		if (!queue_head()) //reset the counts if the queue is empty, in the off chance they get out of sync
-			queue_priority_count = 0
-			queue_priority_count_bg = 0
-
-		iteration++
-		last_run = world.time
-		if (skip_ticks)
-			skip_ticks--
-		src.sleep_delta = MC_AVERAGE_FAST(src.sleep_delta, sleep_delta)
-
-// Force any verbs into overtime, to test how they perfrom under load
-// For local ONLY
-#ifdef VERB_STRESS_TEST
-		/// Target enough tick usage to only allow time for our maptick estimate and verb processing, and nothing else
-		var/overtime_target = TICK_LIMIT_RUNNING
-// This will leave just enough cpu time for maptick, forcing verbs to run into overtime
-// Use this for testing the worst case scenario, when maptick is spiking and usage is otherwise completely consumed
-#ifdef FORCE_VERB_OVERTIME
-		overtime_target += TICK_BYOND_RESERVE
-#endif
-		CONSUME_UNTIL(overtime_target)
-#endif
-
-		if (init_stage != INITSTAGE_MAX)
-			current_ticklimit = TICK_LIMIT_RUNNING * 2
-		else
-			current_ticklimit = TICK_LIMIT_RUNNING
-			if (processing * sleep_delta <= world.tick_lag)
-				current_ticklimit -= (TICK_LIMIT_RUNNING * 0.25) //reserve the tail 1/4 of the next tick for the mc if we plan on running next tick
-
-		check_and_perform_fast_update()
-		record_performance_tick(max(perf_tick_peak_usage, TICK_USAGE))
-		sleep(world.tick_lag * (processing * sleep_delta)) // ALLOW(scheduler): MC
+	kernel().start_loop(delay)
 
 /datum/controller/master/proc/record_performance_tick(usage)
 	usage = max(usage, 0)
+	kernel_latency().note_tick(usage)
+	// Close the tick's per-system accounting (code/controllers/measure/).
+	km_meter().end_tick(usage, MAPTICK_LAST_INTERNAL_TICK_USAGE)
 	perf_tick_usage += usage
 	perf_tick_realtime += REALTIMEOFDAY
 	perf_samples_total++
@@ -832,6 +590,7 @@ UI_ACT_PROC(/datum/controller/master, ui_act_view_variables)
 	var/previous_worst_usage = LAZYACCESS(perf_worst_tick, "usage") || 0
 	if(usage > previous_worst_usage || usage > 100)
 		var/list/breakdown = performance_tick_breakdown(usage)
+		var/datum/tick_meter/meter = km_meter()
 		var/list/tick_record = list(
 			"world_time" = world.time,
 			"usage" = usage,
@@ -840,6 +599,9 @@ UI_ACT_PROC(/datum/controller/master, ui_act_view_variables)
 			"top_usage" = perf_tick_top_usage,
 			"maptick" = MAPTICK_LAST_INTERNAL_TICK_USAGE,
 			"breakdown" = breakdown,
+			// The same tick by system, from inside Behaviours as well as the MC's own subsystems.
+			"top_systems" = meter.latest_top_systems(),
+			"streak" = meter.streak,
 		)
 		if(usage > previous_worst_usage)
 			perf_worst_tick = tick_record
@@ -932,218 +694,6 @@ GLOBAL_LIST_INIT(empty_performance_window, list("samples" = 0, "avg" = 0, "p50" 
 
 #undef PERF_HISTOGRAM_BINS
 
-// This is what decides if something should run.
-/datum/controller/master/proc/CheckQueue(list/subsystemstocheck)
-	. = 0 //so the mc knows if we runtimed
-
-	//we create our variables outside of the loops to save on overhead
-	var/datum/controller/subsystem/SS
-	var/SS_flags
-
-	for (var/thing in subsystemstocheck)
-		if (!thing)
-			subsystemstocheck -= thing
-		SS = thing
-		if (SS.state != SS_IDLE)
-			continue
-		if (SS.can_fire <= 0)
-			continue
-		if (SS.next_fire > world.time)
-			continue
-		SS_flags = SS.flags
-		if (SS_flags & SS_NO_FIRE)
-			subsystemstocheck -= SS
-			continue
-		// If we're keeping timing and running behind,
-		// fire at most 25% faster then normal to try and make up the gap without spamming
-		if ((SS_flags & (SS_TICKER|SS_KEEP_TIMING)) == SS_KEEP_TIMING && SS.last_fire + (SS.wait * 0.75) > world.time)
-			continue
-		if (SS.postponed_fires >= 1)
-			SS.postponed_fires--
-			SS.update_nextfire()
-			continue
-		SS.enqueue()
-	. = 1
-
-/// RunQueue - Run thru the queue of subsystems to run, running them while balancing out their allocated tick precentage
-/// Returns 0 if runtimed, a negitive number for logic errors, and a positive number if the operation completed without errors
-/datum/controller/master/proc/RunQueue()
-	. = 0
-	var/datum/controller/subsystem/queue_node
-	var/queue_node_flags
-	var/queue_node_priority
-	var/queue_node_paused
-
-	var/current_tick_budget
-	var/tick_precentage
-	var/tick_remaining
-	var/ran = TRUE //this is right
-	var/bg_calc //have we swtiched current_tick_budget to background mode yet?
-	var/tick_usage
-
-	//keep running while we have stuff to run and we haven't gone over a tick
-	// this is so subsystems paused eariler can use tick time that later subsystems never used
-	while (ran && queue_head() && TICK_USAGE < TICK_LIMIT_MC)
-		ran = FALSE
-		bg_calc = FALSE
-		current_tick_budget = queue_priority_count
-		queue_node = queue_head()
-		while (queue_node)
-			if (ran && TICK_USAGE > TICK_LIMIT_RUNNING)
-				break
-			queue_node_flags = queue_node.flags
-			queue_node_priority = queue_node.queued_priority
-
-			if (!(queue_node_flags & SS_TICKER) && skip_ticks)
-				queue_node = queue_node.queue_next()
-				continue
-
-			if ((queue_node_flags & SS_BACKGROUND))
-				if (!bg_calc)
-					current_tick_budget = queue_priority_count_bg
-					bg_calc = TRUE
-			else if (bg_calc)
-				//error state, do sane fallback behavior
-				if (. == 0)
-					log_world("MC: Queue logic failure, non-background subsystem queued to run after a background subsystem: [queue_node] queue_prev:[queue_node.queue_prev()]")
-				. = -1
-				current_tick_budget = queue_priority_count //this won't even be right, but is the best we have.
-				bg_calc = FALSE
-
-			tick_remaining = TICK_LIMIT_RUNNING - TICK_USAGE
-
-			if (queue_node_priority >= 0 && current_tick_budget > 0 && current_tick_budget >= queue_node_priority)
-				//Give the subsystem a precentage of the remaining tick based on the remaining priority
-				tick_precentage = tick_remaining * (queue_node_priority / current_tick_budget)
-			else
-				//error state
-				if (. == 0)
-					log_world("MC: tick_budget sync error. [json_encode(list(current_tick_budget, queue_priority_count, queue_priority_count_bg, bg_calc, queue_node, queue_node_priority))]")
-				. = -1
-				tick_precentage = tick_remaining //just because we lost track of priority calculations doesn't mean we can't try to finish off the run, if the error state persists, we don't want to stop ticks from happening
-
-			tick_precentage = max(tick_precentage*0.5, tick_precentage-queue_node.tick_overrun)
-
-			current_ticklimit = round(TICK_USAGE + tick_precentage)
-
-			ran = TRUE
-
-			queue_node_paused = (queue_node.state == SS_PAUSED || queue_node.state == SS_PAUSING)
-			last_type_processed = queue_node
-			queue_node.wall_timer_id ||= "mc-subsystem-[REF(queue_node)]"
-			if(!queue_node_paused)
-				rustg_time_reset(queue_node.wall_timer_id)
-				queue_node.current_run_slices = 0
-			queue_node.current_run_slices++
-
-			queue_node.state = SS_RUNNING
-
-			if(queue_node.profiler_focused)
-				world.Profile(PROFILE_START)
-
-			tick_usage = TICK_USAGE
-			var/state = queue_node.ignite(queue_node_paused)
-			tick_usage = TICK_USAGE - tick_usage
-			perf_tick_peak_usage = max(perf_tick_peak_usage, TICK_USAGE)
-			LAZYSET(perf_tick_breakdown, queue_node.name, (LAZYACCESS(perf_tick_breakdown, queue_node.name) || 0) + max(tick_usage, 0))
-			if(tick_usage > perf_tick_top_usage)
-				perf_tick_top_usage = tick_usage
-				perf_tick_top_name = queue_node.name
-
-			if(use_rolling_usage)
-				queue_node.prune_rolling_usage()
-				// Rolling usage is an unrolled list that we know the order off
-				// OPTIMIZATION POSTING
-				queue_node.rolling_usage += list(DS2TICKS(world.time), tick_usage)
-
-			if(queue_node.profiler_focused)
-				world.Profile(PROFILE_STOP)
-
-			if (state == SS_RUNNING)
-				state = SS_IDLE
-			current_tick_budget -= queue_node_priority
-
-			if (tick_usage < 0)
-				tick_usage = 0
-			queue_node.tick_overrun = max(0, MC_AVG_FAST_UP_SLOW_DOWN(queue_node.tick_overrun, tick_usage-tick_precentage))
-			queue_node.state = state
-
-			if (state == SS_PAUSED)
-				queue_node.paused_ticks++
-				queue_node.paused_tick_usage += tick_usage
-				queue_node = queue_node.queue_next()
-				continue
-
-			queue_node.ticks = MC_AVERAGE(queue_node.ticks, queue_node.paused_ticks)
-			tick_usage += queue_node.paused_tick_usage
-
-			queue_node.tick_usage = queue_node.tick_usage ? MC_AVERAGE_FAST(queue_node.tick_usage, tick_usage) : tick_usage
-
-			queue_node.cost = queue_node.cost ? MC_AVERAGE_FAST(queue_node.cost, TICK_DELTA_TO_MS(tick_usage)) : TICK_DELTA_TO_MS(tick_usage)
-			queue_node.active_cost_last = TICK_DELTA_TO_MS(tick_usage)
-			queue_node.wall_cost_last = max(rustg_time_milliseconds(queue_node.wall_timer_id), queue_node.active_cost_last)
-			queue_node.wall_cost = queue_node.wall_cost ? MC_AVERAGE_FAST(queue_node.wall_cost, queue_node.wall_cost_last) : queue_node.wall_cost_last
-			queue_node.run_slices_last = max(queue_node.current_run_slices, 1)
-			queue_node.suspended_cost_last = max(queue_node.wall_cost_last - queue_node.active_cost_last, 0)
-			queue_node.paused_ticks = 0
-			queue_node.paused_tick_usage = 0
-
-			if (bg_calc) //update our running total
-				queue_priority_count_bg -= queue_node_priority
-			else
-				queue_priority_count -= queue_node_priority
-
-			queue_node.last_fire = world.time
-			queue_node.times_fired++
-
-			queue_node.update_nextfire()
-
-			queue_node.queued_time = 0
-
-			//remove from queue
-			queue_node.dequeue()
-
-			queue_node = queue_node.queue_next()
-
-	if (. == 0)
-		. = 1
-
-//resets the queue, and all subsystems, while filtering out the subsystem lists
-// called if any mc's queue procs runtime or exit improperly.
-/datum/controller/master/proc/SoftReset(list/ticker_SS, list/runlevel_SS)
-	. = 0
-	stack_trace("MC: SoftReset called, resetting MC queue state.")
-
-	if (!istype(subsystems) || !istype(ticker_SS) || !istype(runlevel_SS))
-		log_world("MC: SoftReset: Bad list contents: '[subsystems]' '[ticker_SS]' '[runlevel_SS]'")
-		return
-	var/subsystemstocheck = subsystems | ticker_SS
-	for(var/I in runlevel_SS)
-		subsystemstocheck |= I
-
-	for (var/thing in subsystemstocheck)
-		var/datum/controller/subsystem/SS = thing
-		if (!SS || !istype(SS))
-			//list(SS) is so if a list makes it in the subsystem list, we remove the list, not the contents
-			subsystems -= list(SS)
-			ticker_SS -= list(SS)
-			for(var/I in runlevel_SS)
-				I -= list(SS)
-			log_world("MC: SoftReset: Found bad entry in subsystem list, '[SS]'")
-			continue
-		// The queue links are OM handles: they can't hold bad data, only go stale.
-		SS.queue_next_static = null
-		SS.queue_prev_static = null
-		SS.queued_priority = 0
-		SS.queued_time = 0
-		SS.state = SS_IDLE
-	queue_head_static = null
-	queue_tail_static = null
-	queue_priority_count = 0
-	queue_priority_count_bg = 0
-	log_world("MC: SoftReset: Finished.")
-	. = 1
-
 /// Warns us that the end of tick byond map_update will be laggier then normal, so that we can just skip running subsystems this tick.
 /datum/controller/master/proc/laggy_byond_map_update_incoming()
 	if (!skip_ticks)
@@ -1160,6 +710,8 @@ GLOBAL_LIST_INIT(empty_performance_window, list("samples" = 0, "avg" = 0, "p50" 
 	for(var/S in subsystems)
 		var/datum/controller/subsystem/SS = S
 		SS.StartLoadingMap()
+	for(var/datum/system/system as anything in kernel_pure_systems())
+		system.StartLoadingMap()
 	map_loading = TRUE
 
 /datum/controller/master/StopLoadingMap(bounds = null)
@@ -1167,6 +719,8 @@ GLOBAL_LIST_INIT(empty_performance_window, list("samples" = 0, "avg" = 0, "p50" 
 	for(var/S in subsystems)
 		var/datum/controller/subsystem/SS = S
 		SS.StopLoadingMap()
+	for(var/datum/system/system as anything in kernel_pure_systems())
+		system.StopLoadingMap()
 
 /datum/controller/master/proc/UpdateTickRate()
 	if (!processing)
@@ -1196,12 +750,3 @@ GLOBAL_LIST_INIT(empty_performance_window, list("samples" = 0, "avg" = 0, "p50" 
 		return FALSE
 	last_profiled = REALTIMEOFDAY
 	SSprofiler.DumpFile(allow_yield = FALSE)
-
-/// A shared definition/flyweight (implicitly shared), never cleared.
-/datum/controller/master/proc/queue_head() as /datum/controller/subsystem
-	return queue_head_static
-
-/// A shared definition/flyweight (implicitly shared), never cleared.
-/datum/controller/master/proc/queue_tail() as /datum/controller/subsystem
-	return queue_tail_static
-

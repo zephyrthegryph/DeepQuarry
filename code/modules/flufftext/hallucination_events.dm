@@ -96,8 +96,8 @@
 			CI.icon = 'icons/obj/grenade.dmi'
 			CI.icon_state = "flashbang1"
 			CI.name = "Flashbang"
-	own_set(src, "halitem", CI)
-	rel_set(src, "halitem_client", our_human.client)
+	own_set(src, nameof(halitem), CI)
+	rel_set(src, nameof(halitem_client), our_human.client)
 	our_human.client.screen += CI
 	om_after(src, rand(10,25) SECONDS, PROC_REF(remove_hallucination_item))
 
@@ -107,8 +107,8 @@
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(halitem_client && halitem)
 		halitem_client.screen -= halitem
-	rel_clear(src, "halitem_client")
-	own_clear(src, "halitem", OWN_DELETE)
+	rel_clear(src, nameof(halitem_client))
+	own_clear(src, nameof(halitem), OWN_DELETE)
 
 /datum/hallucinations/proc/event_strange_sound()
 	PROTECTED_PROC(TRUE)

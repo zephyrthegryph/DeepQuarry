@@ -6,7 +6,7 @@
 
 /client/verb/change_ui()
 	set name = "Change UI"
-	set category = "Preferences.Game"
+	set category = VERB_CAT_PREFERENCES_GAME
 	set desc = "Configure your user interface"
 
 	if(!ishuman(usr))

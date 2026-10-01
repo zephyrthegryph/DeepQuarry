@@ -56,8 +56,8 @@
 	var/datum/expedition_site/site = new(z, EXP_DIFF_LOW, get_turf(materialization.entry()))
 	site.name = spec.name
 	site.generation_seed = seed
-	own_set(site, "station_spec", spec)
-	own_set(site, "station_materialization", materialization)
+	own_set(site, nameof(site.station_spec), spec)
+	own_set(site, nameof(site.station_materialization), materialization)
 	if(!site.initialize_generated_station_utilities())
 		materialization.degradation_events += "utility initialization failed"
 	if(!site.initialize_generated_station_runtime())
@@ -72,72 +72,56 @@
 	site.status = EXP_STATUS_ACTIVE
 	EXPIRY_STAMP(site, deployed_at, CLOCK_WORLD)
 	EXPIRY_STAMP(site, last_occupied, CLOCK_WORLD)
-	own_put(src, "sites", "[z]", site)
+	own_put(src, nameof(sites), "[z]", site)
 	demand()
 	return site
 
-/client/verb/generate_procedural_station()
-	set name = "Generate Procedural Station"
-	set category = "Debug"
-
-	if(!check_rights(R_DEBUG))
-		return
-	var/seed_text = stripped_input(usr, "Enter a numeric seed, or leave blank for a random seed.", "Generated Station", "", 20)
+ADMIN_VERB(generate_procedural_station, R_DEBUG, "Generate Procedural Station", "Generate a station on an expedition z-level and move to its docking entry.", ADMIN_CATEGORY_DEBUG_GAME)
+	var/seed_text = verb_ask(user, "seed", args, /datum/om/prompt/text, message = "Enter a numeric seed, or leave blank for a random seed.", title = "Generated Station", max_length = 20)
 	if(isnull(seed_text))
 		return
 	var/seed = length(seed_text) ? text2num(seed_text) : rand(1, 2147483646)
 	if(!isnum(seed) || seed <= 0)
-		to_chat(usr, span_warning("The station seed must be a positive number."))
+		to_chat(user, span_warning("The station seed must be a positive number."))
 		return
 	seed = max(1, round(seed) % 2147483647)
 	var/list/validation_messages = list()
 	var/datum/expedition_site/site = GLOB.expedition_service.generate_debug_station(seed, validation_messages)
 	if(!site)
-		to_chat(usr, span_warning("Generated station [seed] failed: [length(validation_messages) ? jointext(validation_messages, "; ") : "no diagnostic was returned"]."))
+		to_chat(user, span_warning("Generated station [seed] failed: [length(validation_messages) ? jointext(validation_messages, "; ") : "no diagnostic was returned"]."))
 		return
-	if(mob)
-		mob.forceMove(site.landing())
-	to_chat(usr, span_notice("Generated station seed [seed] on z[site.z_level]; moved you to its docking entry. The expedition lifecycle will recycle it after it is vacated."))
-/client/verb/generate_expedition_site()
-	set name = "Generate Expedition Site"
-	set category = "Debug"
+	if(user.mob)
+		user.mob.forceMove(site.landing())
+	to_chat(user, span_notice("Generated station seed [seed] on z[site.z_level]; moved you to its docking entry. The expedition lifecycle will recycle it after it is vacated."))
 
-	if(!check_rights(R_DEBUG))
-		return
-
+ADMIN_VERB(generate_expedition_site, R_DEBUG, "Generate Expedition Site", "Generate an expedition site and move to its landing point.", ADMIN_CATEGORY_DEBUG_GAME)
 	var/datum/expedition_site/site = GLOB.expedition_service.generate_site()
 	if(!site || !site.landing())
-		to_chat(usr, span_warning("Expedition site generation failed (see world log)."))
+		to_chat(user, span_warning("Expedition site generation failed (see world log)."))
 		return
 
-	if(mob)
-		mob.forceMove(site.landing())
-	to_chat(usr, span_notice("Generated [site.name] on z[site.z_level]; moved you to its landing point."))
+	if(user.mob)
+		user.mob.forceMove(site.landing())
+	to_chat(user, span_notice("Generated [site.name] on z[site.z_level]; moved you to its landing point."))
 
 // Roll a chosen mission, generate its site, and drop the admin on the landing
 // pad to play it through.
-/client/verb/generate_expedition_mission()
-	set name = "Generate Expedition Mission"
-	set category = "Debug"
-
-	if(!check_rights(R_DEBUG))
-		return
-
+ADMIN_VERB(generate_expedition_mission, R_DEBUG, "Generate Expedition Mission", "Roll a chosen expedition mission, generate its site and move to the landing point.", ADMIN_CATEGORY_DEBUG_GAME)
 	var/list/mission_types = GLOB.expedition_mission_types
 	// Answers re-run this verb.
-	var/mission_type = client_ask("mission", VERB_REF(generate_expedition_mission), args, R_DEBUG, /datum/om/prompt/choice, message = "Mission type?", title = "Expedition Mission", choices = mission_types)
+	var/mission_type = verb_ask(user, "mission", args, /datum/om/prompt/choice, message = "Mission type?", title = "Expedition Mission", choices = mission_types)
 	if(!mission_type)
 		return
-	var/diff = client_ask("difficulty", VERB_REF(generate_expedition_mission), args, R_DEBUG, /datum/om/prompt/choice, message = "Difficulty?", title = "Expedition Mission", choices = list(EXP_DIFF_LOW, EXP_DIFF_MED, EXP_DIFF_HIGH))
+	var/diff = verb_ask(user, "difficulty", args, /datum/om/prompt/choice, message = "Difficulty?", title = "Expedition Mission", choices = list(EXP_DIFF_LOW, EXP_DIFF_MED, EXP_DIFF_HIGH))
 	if(isnull(diff))
 		return
 
 	var/datum/expedition_mission/mission = new mission_type(diff)
 	var/datum/expedition_site/site = GLOB.expedition_service.generate_site(mission)
 	if(!site || !site.landing())
-		to_chat(usr, span_warning("Expedition mission generation failed (see world log)."))
+		to_chat(user, span_warning("Expedition mission generation failed (see world log)."))
 		return
 
-	if(mob)
-		mob.forceMove(site.landing())
-	to_chat(usr, span_notice("Generated mission '[mission.name]' on [site.name] (z[site.z_level]). Objective: [mission.objective_text()]"))
+	if(user.mob)
+		user.mob.forceMove(site.landing())
+	to_chat(user, span_notice("Generated mission '[mission.name]' on [site.name] (z[site.z_level]). Objective: [mission.objective_text()]"))

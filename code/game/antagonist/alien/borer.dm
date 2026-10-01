@@ -54,7 +54,7 @@ GLOBAL_DATUM(borers, /datum/antagonist/borer)
 			om_link(borer, host, /datum/om/relation/host_of) // also lists it in head.implants
 			borer.forceMove(head)
 			if(!borer.host_brain)
-				own_set(borer, "host_brain", new /mob/living/captive_brain(borer)) // the borer owns the captive mind it makes
+				own_set(borer, nameof(borer.host_brain), new /mob/living/captive_brain(borer)) // the borer owns the captive mind it makes
 			borer.host_brain.name = host.name
 			borer.host_brain.real_name = host.real_name
 			return

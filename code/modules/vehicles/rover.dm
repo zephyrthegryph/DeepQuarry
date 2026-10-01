@@ -97,9 +97,7 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/rover/engine, \
 	if(!istype(W, /obj/item/key/rover))
 		return FALSE
 	if(!key)
-		user.drop_item()
-		W.forceMove(src)
-		own_set(src, "key", W)
+		own_set(src, nameof(src.key), W, user = user)
 	return TRUE
 
 //cargo trains are open topped, so there is a chance the projectile will hit the mob ridding the train instead
@@ -234,7 +232,7 @@ APPEARANCE_NONE(/obj/vehicle/train/rover)
 	key.forceMove(user.loc)
 	if(!user.get_active_hand())
 		user.put_in_hands(key)
-	own_take(src, "key")
+	own_take(src, nameof(key))
 
 //-------------------------------------------
 // Loading/unloading procs
@@ -276,7 +274,7 @@ APPEARANCE_NONE(/obj/vehicle/train/rover)
 		unbuckle_mob(load)
 		C.alpha = 255
 
-	rel_clear(src, "load")
+	rel_clear(src, nameof(load))
 
 
 //Load the object "inside" the trolley and add an overlay of it.
@@ -290,7 +288,7 @@ APPEARANCE_NONE(/obj/vehicle/train/rover)
 		return 0
 
 	var/datum/vehicle_dummy_load/dummy_load = new()
-	rel_set(src, "load", dummy_load)
+	rel_set(src, nameof(load), dummy_load)
 
 	if(!load)
 		return
@@ -312,7 +310,7 @@ APPEARANCE_NONE(/obj/vehicle/train/rover)
 /obj/vehicle/train/rover/trolley/unload(mob/user, direction)
 	if(istype(load, /datum/vehicle_dummy_load))
 		var/datum/vehicle_dummy_load/dummy_load = load
-		rel_set(src, "load", dummy_load.actual_load)
+		rel_set(src, nameof(load), dummy_load.actual_load)
 		dummy_load.actual_load = null
 		qdel(dummy_load)
 		cut_overlays()
@@ -371,7 +369,9 @@ APPEARANCE_NONE(/obj/vehicle/train/rover)
 	else
 		set_anchored(TRUE)
 
-OWN(/obj/vehicle/train/rover/engine, key, OWN_CONTAINED)
+/obj/vehicle/train/rover/engine/ownership()
+	. = ..()
+	. += owns(nameof(key), policy = OWN_CONTAINED)
 
 /// Engine Menu requirements (old start/stop/remove_key verb toggling in turn_on/turn_off/key insert).
 /obj/vehicle/train/rover/engine/proc/pred_rover_engine_running(mob/actor, atom/target, obj/item/held)

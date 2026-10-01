@@ -52,8 +52,8 @@
 	var/datum/material/glass = get_material_by_name(MAT_GLASS)
 	TEST_ASSERT_NOTNULL(steel, "no steel material")
 	TEST_ASSERT_NOTNULL(glass, "no glass material")
-	var/steel_coefficient = steel.material_thermal_conductance(2.5, 0.25, T20C) / WALL_CONDUCTANCE_PER_TRANSFER_COEFFICIENT
-	var/glass_coefficient = glass.material_thermal_conductance(2.5, 0.25, T20C) / WALL_CONDUCTANCE_PER_TRANSFER_COEFFICIENT
+	var/steel_coefficient = steel.thermal_conductance(2.5, 0.25, T20C) / WALL_CONDUCTANCE_PER_TRANSFER_COEFFICIENT
+	var/glass_coefficient = glass.thermal_conductance(2.5, 0.25, T20C) / WALL_CONDUCTANCE_PER_TRANSFER_COEFFICIENT
 	TEST_ASSERT(steel_coefficient < WALL_MAX_HEAT_TRANSFER_COEFFICIENT, "steel walls still hit the conductance cap ([steel_coefficient])")
 	TEST_ASSERT(glass_coefficient < steel_coefficient, "glass conducts no worse than steel ([glass_coefficient] vs [steel_coefficient])")
 
@@ -74,7 +74,7 @@
 	var/obj/machinery/atmospherics/valve/shutoff/valve = allocate(/obj/machinery/atmospherics/valve/shutoff, test_floor())
 	var/datum/pipe_network/ours = new()
 	var/datum/pipe_network/theirs = new()
-	rel_set(valve, "network_node1", ours)
+	rel_set(valve, nameof(valve.network_node1), ours)
 	valve.subscribe_network_keys()
 
 	// Held steady, and with a change on another network, the valve sleeps; its own network wakes it.
@@ -88,6 +88,6 @@
 	var/failure = om_wake_test(valve, om_callable(null, GLOBAL_PROC_REF(wake_automatic_shutoff_valves), ours))
 	TEST_ASSERT(!failure, failure)
 
-	rel_clear(valve, "network_node1")
+	rel_clear(valve, nameof(valve.network_node1))
 	qdel(ours)
 	qdel(theirs)

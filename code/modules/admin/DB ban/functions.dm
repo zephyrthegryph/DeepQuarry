@@ -68,7 +68,7 @@
 			// The answer records the ban again from the start, re-reading the target's identifiers.
 			var/datum/om/prompt/confirm/unseen_ban/ask = om_ask(usr, /datum/om/prompt/confirm/unseen_ban, PROC_REF(unseen_ban_confirmed), ban_args = list(bantype, null, duration, reason, job, rounds, banned_mob ? banned_mob.ckey : banckey, banned_mob?.client ? banned_mob.client.address : banip, banned_mob?.client ? banned_mob.client.computer_id : bancid))
 			if(ask && banned_mob)
-				rel_set(ask, "banned_mob", banned_mob)
+				rel_set(ask, nameof(ask.banned_mob), banned_mob)
 			return
 
 	var/a_ckey
@@ -340,7 +340,7 @@
 
 
 /client/proc/DB_ban_panel()
-	set category = "Admin.Moderation"
+	set category = VERB_CAT_ADMIN_MODERATION
 	set name = "Banning Panel"
 	set desc = "Edit admin permissions"
 

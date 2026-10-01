@@ -114,7 +114,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 /mob/living/silicon/ai/Initialize(mapload, is_decoy, datum/ai_laws/L, obj/item/mmi/B, safety = FALSE)
 	var/mob/observer/eye/eyeobj = src?.active_eye()
 
-	own_set(src, "announcement", new /datum/announcement/priority()) // ALLOW(decl): configured before parent init
+	own_set(src, nameof(announcement), new /datum/announcement/priority()) // ALLOW(decl): configured before parent init
 	announcement.title = "A.I. Announcement"
 	announcement.announcement_type = "A.I. Announcement"
 	announcement.newscast = 1
@@ -130,14 +130,14 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 				pickedName = null
 
 	if(!is_dummy)
-		own_set(src, "aiPDA", new/obj/item/pda/ai(src)) // ALLOW(decl): conditional on is_dummy
+		own_set(src, nameof(aiPDA), new/obj/item/pda/ai(src)) // ALLOW(decl): conditional on is_dummy
 	SetName(pickedName)
 	set_anchored(TRUE)
 	canmove = 0
 	set_density(TRUE)
 
 	if(!is_dummy)
-		own_set(src, "aiCommunicator", new /obj/item/communicator/integrated(src)) // ALLOW(decl): conditional on is_dummy
+		own_set(src, nameof(aiCommunicator), new /obj/item/communicator/integrated(src)) // ALLOW(decl): conditional on is_dummy
 
 	holo_icon = getHologramIcon(icon('icons/mob/AI.dmi',"holo1"))
 
@@ -145,13 +145,13 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 
 	if(L)
 		if (istype(L, /datum/ai_laws))
-			own_set(src, "laws", L)
+			own_set(src, nameof(laws), L)
 	else
-		own_set(src, "laws", new using_map.default_law_type) // ALLOW(decl): only when no laws were passed in
+		own_set(src, nameof(laws), new using_map.default_law_type) // ALLOW(decl): only when no laws were passed in
 
-	own_set(src, "aiRadio", new /obj/item/radio/headset/heads/ai_integrated(src)) // ALLOW(decl): wired to common_radio before parent init
-	rel_set(src, "common_radio", aiRadio) // an alias of the owned aiRadio
-	rel_set(aiRadio, "myAi", src)
+	own_set(src, nameof(aiRadio), new /obj/item/radio/headset/heads/ai_integrated(src)) // ALLOW(decl): wired to common_radio before parent init
+	rel_set(src, nameof(common_radio), aiRadio) // an alias of the owned aiRadio
+	rel_set(aiRadio, nameof(aiRadio.myAi), src)
 	additional_law_channels["Binary"] = "#b"
 	additional_law_channels["Holopad"] = ":h"
 
@@ -294,9 +294,9 @@ DECLARE_DEFAULT_CHILD(/mob/living/silicon/ai, "aiCamera", /obj/item/camera/silic
 		if(Entry[1] == src.ckey && Entry[2] == src.real_name)
 			icon = CUSTOM_ITEM_SYNTH
 			custom_sprite = TRUE
-			proto_set(src, "selected_sprite", new/datum/ai_icon("Custom", "[src.ckey]-ai", "4", "[ckey]-ai-crash", "#FFFFFF", "#FFFFFF", "#FFFFFF")) // the AI's private custom icon
+			proto_set(src, nameof(selected_sprite), new/datum/ai_icon("Custom", "[src.ckey]-ai", "4", "[ckey]-ai-crash", "#FFFFFF", "#FFFFFF", "#FFFFFF")) // the AI's private custom icon
 		else
-			proto_set(src, "selected_sprite", GLOB.default_ai_icon)
+			proto_set(src, nameof(selected_sprite), GLOB.default_ai_icon)
 	update_icon()
 
 /mob/living/silicon/ai/pointed(atom/A as mob|obj|turf in view())
@@ -334,10 +334,10 @@ DECLARE_DEFAULT_CHILD(/mob/living/silicon/ai, "aiCamera", /obj/item/camera/silic
 
 /obj/machinery/ai_powersupply/Initialize(mapload)
 	. = ..()
-	rel_set(src, "powered_ai", loc)
+	rel_set(src, nameof(powered_ai), loc)
 	if(!istype(powered_ai))
 		return INITIALIZE_HINT_QDEL
-	own_set(powered_ai, "psupply", src)
+	own_set(powered_ai, nameof(powered_ai.psupply), src)
 	if(istype(powered_ai,/mob/living/silicon/ai/announcer))	//Don't try to get a loc for a nullspace announcer mob, just put it into it
 		forceMove(powered_ai)
 	else
@@ -363,7 +363,7 @@ DECLARE_DEFAULT_CHILD(/mob/living/silicon/ai, "aiCamera", /obj/item/camera/silic
 		set_use_power(USE_POWER_ACTIVE)
 
 /mob/living/silicon/ai/proc/pick_icon()
-	set category = "AI.Settings"
+	set category = VERB_CAT_AI_SETTINGS
 	set name = "Set AI Core Display"
 	if(stat || aiRestorePowerRoutine)
 		return
@@ -383,12 +383,12 @@ DECLARE_DEFAULT_CHILD(/mob/living/silicon/ai, "aiCamera", /obj/item/camera/silic
 	return (AI.stat || AI.aiRestorePowerRoutine || AI.custom_sprite) ? "unable" : null
 
 /mob/living/silicon/ai/proc/ai_icon_chosen(datum/om/prompt/choice/ai_icon/ask)
-	proto_set(src, "selected_sprite", ask.choice)
+	proto_set(src, nameof(selected_sprite), ask.choice)
 	update_icon()
 
 /mob/living/silicon/ai/var/announcement_cooldown = 0
 /mob/living/silicon/ai/proc/ai_announcement()
-	set category = "AI.Station Commands"
+	set category = VERB_CAT_AI_STATION_COMMANDS
 	set name = "Make Station Announcement"
 	if(check_unable(AI_CHECK_WIRELESS | AI_CHECK_RADIO))
 		return
@@ -414,7 +414,7 @@ DECLARE_DEFAULT_CHILD(/mob/living/silicon/ai, "aiCamera", /obj/item/camera/silic
 	COOLDOWN_START(src, announcement_cooldown, 1 MINUTE)
 
 /mob/living/silicon/ai/proc/ai_call_shuttle()
-	set category = "AI.Station Commands"
+	set category = VERB_CAT_AI_STATION_COMMANDS
 	set name = "Call Emergency Shuttle"
 	if(check_unable(AI_CHECK_WIRELESS))
 		return
@@ -437,7 +437,7 @@ DECLARE_DEFAULT_CHILD(/mob/living/silicon/ai, "aiCamera", /obj/item/camera/silic
 		post_status(src, "shuttle", user = src)
 
 /mob/living/silicon/ai/proc/ai_recall_shuttle()
-	set category = "AI.Station Commands"
+	set category = VERB_CAT_AI_STATION_COMMANDS
 	set name = "Recall Emergency Shuttle"
 
 	if(check_unable(AI_CHECK_WIRELESS))
@@ -451,7 +451,7 @@ DECLARE_DEFAULT_CHILD(/mob/living/silicon/ai, "aiCamera", /obj/item/camera/silic
 /mob/living/silicon/ai/var/emergency_message_cooldown = 0
 
 /mob/living/silicon/ai/proc/ai_emergency_message()
-	set category = "AI.Station Commands"
+	set category = VERB_CAT_AI_STATION_COMMANDS
 	set name = "Send Emergency Message"
 
 	if(check_unable(AI_CHECK_WIRELESS))
@@ -570,7 +570,7 @@ TOPIC_ACTION(/mob/living/silicon/ai, "open", PROC_REF(topic_open_door), TOPIC_RE
 	if(camera)
 		camera.set_light(0)
 	if(istype(new_eye,/obj/machinery/camera))
-		rel_set(src, "camera", new_eye)
+		rel_set(src, nameof(camera), new_eye)
 	if(new_eye != GLOB.ai_camera_room_landmark)
 		end_multicam()
 	. = ..()
@@ -598,7 +598,7 @@ TOPIC_ACTION(/mob/living/silicon/ai, "open", PROC_REF(topic_open_door), TOPIC_RE
 	return 1
 
 /mob/living/silicon/ai/cancel_camera()
-	set category = "AI.Camera Control"
+	set category = VERB_CAT_AI_CAMERA_CONTROL
 	set name = "Cancel Camera View"
 	view_core()
 
@@ -622,7 +622,7 @@ TOPIC_ACTION(/mob/living/silicon/ai, "open", PROC_REF(topic_open_door), TOPIC_RE
 
 /mob/living/silicon/ai/proc/ai_network_change(network in get_camera_network_list())
 	var/mob/observer/eye/eyeobj = src?.active_eye()
-	set category = "AI.Camera Control"
+	set category = VERB_CAT_AI_CAMERA_CONTROL
 	set name = "Jump To Network"
 	unset_machine()
 
@@ -645,7 +645,7 @@ TOPIC_ACTION(/mob/living/silicon/ai, "open", PROC_REF(topic_open_door), TOPIC_RE
 //End of code by Mord_Sith
 
 /mob/living/silicon/ai/proc/ai_statuschange()
-	set category = "AI.Settings"
+	set category = VERB_CAT_AI_SETTINGS
 	set name = "AI Status"
 
 	if(check_unable(AI_CHECK_WIRELESS))
@@ -665,7 +665,7 @@ TOPIC_ACTION(/mob/living/silicon/ai, "open", PROC_REF(topic_open_door), TOPIC_RE
 /mob/living/silicon/ai/proc/ai_hologram_change()
 	set name = "Change Hologram"
 	set desc = "Change the default hologram available to AI to something else."
-	set category = "AI.Settings"
+	set category = VERB_CAT_AI_SETTINGS
 
 	if(check_unable())
 		return
@@ -803,7 +803,7 @@ TOPIC_ACTION(/mob/living/silicon/ai, "open", PROC_REF(topic_open_door), TOPIC_RE
 /mob/living/silicon/ai/proc/toggle_camera_light()
 	set name = "Toggle Camera Light"
 	set desc = "Toggles the light on the camera the AI is looking through."
-	set category = "AI.Camera Control"
+	set category = VERB_CAT_AI_CAMERA_CONTROL
 	if(check_unable())
 		return
 
@@ -812,7 +812,7 @@ TOPIC_ACTION(/mob/living/silicon/ai, "open", PROC_REF(topic_open_door), TOPIC_RE
 	if(!camera_light_on)
 		if(camera)
 			camera.set_light(0)
-			rel_clear(src, "camera")
+			rel_clear(src, nameof(camera))
 	else
 		lightNearbyCamera()
 
@@ -827,17 +827,17 @@ TOPIC_ACTION(/mob/living/silicon/ai, "open", PROC_REF(topic_open_door), TOPIC_RE
 			if(camera && src.camera != camera)
 				src.camera.set_light(0)
 				if(!camera.light_disabled)
-					rel_set(src, "camera", camera)
+					rel_set(src, nameof(camera), camera)
 					src.camera.set_light(AI_CAMERA_LUMINOSITY)
 				else
-					rel_clear(src, "camera")
+					rel_clear(src, nameof(camera))
 			else if(isnull(camera))
 				src.camera.set_light(0)
-				rel_clear(src, "camera")
+				rel_clear(src, nameof(camera))
 		else
 			var/obj/machinery/camera/camera = near_range_camera(eyeobj)
 			if(camera && !camera.light_disabled)
-				rel_set(src, "camera", camera)
+				rel_set(src, nameof(camera), camera)
 				src.camera.set_light(AI_CAMERA_LUMINOSITY)
 		camera_light_on = world.timeofday + 1 * 20 // Update the light every 2 seconds.
 
@@ -867,7 +867,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/ai, INTERACT_INSERT(/obj/item/aicard, PR
 /mob/living/silicon/ai/proc/control_integrated_radio()
 	set name = "Radio Settings"
 	set desc = "Allows you to change settings of your radio."
-	set category = "AI.Settings"
+	set category = VERB_CAT_AI_SETTINGS
 
 	if(check_unable(AI_CHECK_RADIO))
 		return
@@ -878,7 +878,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/ai, INTERACT_INSERT(/obj/item/aicard, PR
 
 /mob/living/silicon/ai/proc/sensor_mode()
 	set name = "Toggle Sensor Augmentation"
-	set category = "AI.Settings"
+	set category = VERB_CAT_AI_SETTINGS
 	set desc = "Augment visual feed with internal sensor overlays"
 	sensor_type = !sensor_type
 	to_chat(src, "You [sensor_type ? "enable" : "disable"] your sensors.")
@@ -886,7 +886,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/ai, INTERACT_INSERT(/obj/item/aicard, PR
 
 /mob/living/silicon/ai/proc/toggle_hologram_movement()
 	set name = "Toggle Hologram Movement"
-	set category = "AI.Settings"
+	set category = VERB_CAT_AI_SETTINGS
 	set desc = "Toggles hologram movement based on moving with your virtual eye."
 
 	hologram_follow = !hologram_follow
@@ -981,7 +981,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/silicon/ai, TYPE_PROC_REF(/atom, appearance_
 /mob/living/silicon/ai/appearance_overlays()
 	. = list()
 	if(!selected_sprite)
-		proto_set(src, "selected_sprite", GLOB.default_ai_icon)
+		proto_set(src, nameof(selected_sprite), GLOB.default_ai_icon)
 
 	if(stat == DEAD)
 		icon_state = selected_sprite.dead_icon
@@ -996,7 +996,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/silicon/ai, TYPE_PROC_REF(/atom, appearance_
 // Pass lying down or getting up to our pet human, if we're in a rig.
 /mob/living/silicon/ai/lay_down()
 	set name = "Rest"
-	set category = "IC.Game"
+	set category = VERB_CAT_IC_GAME
 
 	resting = 0
 	var/obj/item/rig/rig = src.get_rig()
@@ -1078,12 +1078,12 @@ DECLARE_APPEARANCE_PROC(/mob/living/silicon/ai, TYPE_PROC_REF(/atom, appearance_
 
 /mob/living/silicon/ai/proc/toggle_multicam_verb()
 	set name = "Toggle Multicam"
-	set category = "AI.Camera Control"
+	set category = VERB_CAT_AI_CAMERA_CONTROL
 	toggle_multicam()
 
 /mob/living/silicon/ai/proc/add_multicam_verb()
 	set name = "Add Multicam Viewport"
-	set category = "AI.Camera Control"
+	set category = VERB_CAT_AI_CAMERA_CONTROL
 	drop_new_multicam()
 
 //Special subtype kept around for global announcements
@@ -1131,4 +1131,6 @@ DECLARE_APPEARANCE_PROC(/mob/living/silicon/ai, TYPE_PROC_REF(/atom, appearance_
 	hacking = 0
 
 // A registered AI icon, or the AI's private custom icon (copy-on-write).
-PROTO(/mob/living/silicon/ai, selected_sprite)
+/mob/living/silicon/ai/ownership()
+	. = ..()
+	. += proto(nameof(selected_sprite))

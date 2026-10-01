@@ -14,13 +14,13 @@
 			if(T && !isopenturf(T) && (GLOB.planet_service.z_to_planet.len >= T.z && GLOB.planet_service.z_to_planet[T.z]))
 				make_indoors()
 		if(!shandler_noinit)
-			own_set(src, "shandler", new /datum/sunlight_handler(src))
+			own_set(src, nameof(shandler), new /datum/sunlight_handler(src))
 			shandler.manualInit()
 
 /turf/simulated/lighting_build_overlay()
 	..()
 	if(shandler)
-		rel_set(shandler, "only_sun_object", lighting_object)
+		rel_set(shandler, nameof(shandler.only_sun_object), lighting_object)
 
 /datum/sunlight_handler
 	var/tmp/datum/simple_sun/sun
@@ -45,7 +45,7 @@
 
 /datum/sunlight_handler/New(parent)
 	. = ..()
-	rel_set(src, "holder", parent)
+	rel_set(src, nameof(holder), parent)
 
 //Moved initialization here to make sure that it doesn't happen too early when replacing turfs.
 /datum/sunlight_handler/proc/manualInit()
@@ -83,30 +83,30 @@
 
 /datum/sunlight_handler/proc/add_to_affected(datum/lighting_corner/corner)
 	if(holder.lighting_corner_NE == corner)
-		rel_set(src, "affected_NE", corner)
+		rel_set(src, nameof(affected_NE), corner)
 		return
 	if(holder.lighting_corner_NW == corner)
-		rel_set(src, "affected_NW", corner)
+		rel_set(src, nameof(affected_NW), corner)
 		return
 	if(holder.lighting_corner_SW == corner)
-		rel_set(src, "affected_SW", corner)
+		rel_set(src, nameof(affected_SW), corner)
 		return
 	if(holder.lighting_corner_SE == corner)
-		rel_set(src, "affected_SE", corner)
+		rel_set(src, nameof(affected_SE), corner)
 		return
 
 /datum/sunlight_handler/proc/remove_from_affected(datum/lighting_corner/corner)
 	if(affected_NE() == corner)
-		rel_clear(src, "affected_NE")
+		rel_clear(src, nameof(affected_NE))
 		return
 	if(affected_NW() == corner)
-		rel_clear(src, "affected_NW")
+		rel_clear(src, nameof(affected_NW))
 		return
 	if(affected_SW() == corner)
-		rel_clear(src, "affected_SW")
+		rel_clear(src, nameof(affected_SW))
 		return
 	if(affected_SE() == corner)
-		rel_clear(src, "affected_SE")
+		rel_clear(src, nameof(affected_SE))
 		return
 
 /datum/sunlight_handler/proc/get_only_sun_list()
@@ -119,30 +119,30 @@
 
 /datum/sunlight_handler/proc/add_to_only_sun(datum/lighting_corner/corner)
 	if(holder.lighting_corner_NE == corner)
-		rel_set(src, "only_sun_NE", corner)
+		rel_set(src, nameof(only_sun_NE), corner)
 		return
 	if(holder.lighting_corner_NW == corner)
-		rel_set(src, "only_sun_NW", corner)
+		rel_set(src, nameof(only_sun_NW), corner)
 		return
 	if(holder.lighting_corner_SW == corner)
-		rel_set(src, "only_sun_SW", corner)
+		rel_set(src, nameof(only_sun_SW), corner)
 		return
 	if(holder.lighting_corner_SE == corner)
-		rel_set(src, "only_sun_SE", corner)
+		rel_set(src, nameof(only_sun_SE), corner)
 		return
 
 /datum/sunlight_handler/proc/remove_from_only_sun(datum/lighting_corner/corner)
 	if(only_sun_NE() == corner)
-		rel_clear(src, "only_sun_NE")
+		rel_clear(src, nameof(only_sun_NE))
 		return
 	if(only_sun_NW() == corner)
-		rel_clear(src, "only_sun_NW")
+		rel_clear(src, nameof(only_sun_NW))
 		return
 	if(only_sun_SW() == corner)
-		rel_clear(src, "only_sun_SW")
+		rel_clear(src, nameof(only_sun_SW))
 		return
 	if(only_sun_SE() == corner)
-		rel_clear(src, "only_sun_SE")
+		rel_clear(src, nameof(only_sun_SE))
 		return
 
 /datum/sunlight_handler/proc/turf_update(old_density, turf/new_turf, above)
@@ -284,13 +284,13 @@
 	if((sunlightonly_corners == 4 || sunlightonly_shade_corners == 4) && !only_sun_object())
 		var/datum/lighting_object/holder_object = holder.lighting_object
 		if(holder_object && !holder_object.sunlight_only)
-			rel_set(src, "only_sun_object", holder_object)
+			rel_set(src, nameof(only_sun_object), holder_object)
 			only_sun_object().set_sunonly(sunonly_val, pshandler())
 
 
 	if(sunlightonly_corners < 4 && sunlightonly_shade_corners < 4 && only_sun_object())
 		only_sun_object().set_sunonly(FALSE, pshandler())
-		rel_clear(src, "only_sun_object")
+		rel_clear(src, nameof(only_sun_object))
 
 	if(only_sun_object())
 		//Edge cases but needed to make sure that the correct overlay is used in the case that all corners switch from shade to overhead or vice versa between updates
@@ -349,7 +349,7 @@
 /datum/sunlight_handler/proc/corner_sunlight_change(datum/lighting_corner/sender)
 	if(only_sun_object())
 		only_sun_object().set_sunonly(FALSE, pshandler())
-		rel_clear(src, "only_sun_object")
+		rel_clear(src, nameof(only_sun_object))
 
 	set_sleeping(FALSE)
 	wake_sleepers()
@@ -369,11 +369,11 @@
 	sleeping = val
 	if(val)
 		if(pshandler)
-			rel_remove(pshandler, "shandlers", src)
+			rel_remove(pshandler, nameof(pshandler.shandlers), src)
 		SSlighting.sunlight_queue -= src
 	else
 		if(pshandler)
-			rel_add(pshandler, "shandlers", src)
+			rel_add(pshandler, nameof(pshandler.shandlers), src)
 		SSlighting.sunlight_queue |= src //Just in case somehow gets set to false twice use |=
 
 /datum/sunlight_handler/proc/wake_sleepers(val)
@@ -384,16 +384,18 @@
 /datum/sunlight_handler/proc/try_get_sun()
 	if(sun()) return TRUE
 	if(!sleeping && SSlighting.get_pshandler_z(holder.z))
-		rel_set(src, "pshandler", SSlighting.get_pshandler_z(holder.z))
-		rel_add(pshandler, "shandlers", src)
-		rel_set(src, "sun", pshandler().sun())
+		rel_set(src, nameof(pshandler), SSlighting.get_pshandler_z(holder.z))
+		rel_add(pshandler, nameof(pshandler.shandlers), src)
+		rel_set(src, nameof(sun), pshandler().sun())
 		return TRUE
 	else
 		return FALSE
 
 // A simulated turf owns its sunlight handler (turf.shandler, OWN); holder is the one-sided back
 // view. The handler moves to the replacement turf through ChangeTurf (turf_changing.dm).
-REL_LIST(/datum/planet_sunlight_handler, shandlers)
+/datum/planet_sunlight_handler/relations()
+	. = ..()
+	. += rel_many(nameof(shandlers))
 
 /// The sun (a relation view).
 /datum/sunlight_handler/proc/sun() as /datum/simple_sun

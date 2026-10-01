@@ -1,13 +1,13 @@
 /mob/verb/up()
 	set name = "Move Upwards"
-	set category = "IC.Game"
+	set category = VERB_CAT_IC_GAME
 
 	if(zMove(UP))
 		to_chat(src, span_notice("You move upwards."))
 
 /mob/verb/down()
 	set name = "Move Down"
-	set category = "IC.Game"
+	set category = VERB_CAT_IC_GAME
 
 	if(zMove(DOWN))
 		to_chat(src, span_notice("You move down."))
@@ -782,7 +782,7 @@
 /turf/simulated/proc/climb_wall()
 	set name = "Climb Wall"
 	set desc = "Using nature's gifts or technology, scale that wall!"
-	set category = "Object"
+	set category = VERB_CAT_OBJECT
 	set src in oview(1)
 
 	if(!isliving(usr)) return	//Why would ghosts want to climb?
@@ -936,7 +936,7 @@
 /mob/living/verb/climb_down()
 	set name = "Climb down wall"
 	set desc = "attempt to climb down the wall you are standing on, in direction you're looking"
-	set category = "IC.Game"
+	set category = VERB_CAT_IC_GAME
 
 	var/fall_chance = 0	//Increased if we can't actually climb
 	var/turf/our_turf = get_turf(src) //floor we're standing on

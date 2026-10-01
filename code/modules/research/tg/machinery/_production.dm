@@ -41,8 +41,8 @@ DECLARE_REPEAT(/obj/machinery/rnd/production, "build_time_per_item", do_make_ite
 
 
 /obj/machinery/rnd/production/Initialize(mapload)
-	own_set(src, "print_sound", new /datum/looping_sound/lathe_print(list(src), FALSE))
-	own_set(src, "materials", new /datum/remote_materials(
+	own_set(src, nameof(print_sound), new /datum/looping_sound/lathe_print(list(src), FALSE))
+	own_set(src, nameof(materials), new /datum/remote_materials(
 		src, \
 		mapload, \
 		mat_container_events = list( \
@@ -310,7 +310,7 @@ UI_DATA_REPLACE(/obj/machinery/rnd/production, "busy:num", "merge:ui_data_obj_ma
 			"heatResistance" = round(mat.heat_resistance),
 			"thermalInsulation" = round(mat.thermal_insulation),
 			"corrosionResistance" = round(mat.corrosion_resistance),
-			"pressureLimit" = round(mat.material_pressure_limit(MATERIAL_PIPE_REFERENCE_RADIUS, MATERIAL_PIPE_REFERENCE_THICKNESS, T20C) / ONE_ATMOSPHERE, 0.1),
+			"pressureLimit" = round(mat.pressure_limit(MATERIAL_PIPE_REFERENCE_RADIUS, MATERIAL_PIPE_REFERENCE_THICKNESS, T20C) / ONE_ATMOSPHERE, 0.1),
 			"resistivity" = mat.electrical_resistivity,
 			"criticalTemperature" = mat.critical_temperature,
 			"criticalCurrentDensity" = mat.critical_current_density,
@@ -391,7 +391,7 @@ UI_ACT_PROC(/obj/machinery/rnd/production, ui_act_build)
 	//start production
 	var/obj/item/card/id/producer_id = ui.user.GetIdCard()
 	current_producer_account = producer_id?.associated_account_number || 0
-	shared_set(src, "build_design", design)
+	shared_set(src, nameof(/obj/machinery/rnd/production::build_design), design)
 	build_remaining = print_quantity
 	src.build_time_per_item = build_time_per_item
 	build_coefficient = coefficient
@@ -502,7 +502,7 @@ UI_ACT_PROC(/obj/machinery/rnd/production, ui_act_build)
 	PROTECTED_PROC(TRUE)
 	print_sound.stop()
 	set_busy(FALSE)
-	shared_set(src, "build_design", null)
+	shared_set(src, nameof(build_design), null)
 	build_chosen_materials = null
 	current_producer_account = 0
 	SStgui.update_uis(src)

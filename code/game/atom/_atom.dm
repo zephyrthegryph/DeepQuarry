@@ -78,14 +78,15 @@
 	// threshold crossing (e.g. the overheating rule never firing).
 	dematerialize()
 	// ---- end L2 ----
+	caps_destroy(src)
 	if(!isnull(heat_body))
 		release_heat_body()
 	if(reagents)
-		own_clear(src, "reagents", OWN_DELETE)
+		own_clear(src, nameof(reagents), OWN_DELETE)
 	if(light)
-		own_clear(src, "light", OWN_DELETE)
+		own_clear(src, nameof(light), OWN_DELETE)
 	if(forensic_data)
-		own_clear(src, "forensic_data", OWN_DELETE)
+		own_clear(src, nameof(forensic_data), OWN_DELETE)
 	// Checking length(overlays) before cutting has significant speed benefits
 	if (length(overlays))
 		overlays.Cut()
@@ -96,7 +97,7 @@
 		prio.Cut()
 	priority_overlays = null
 	if (length(managed_vis_overlays))
-		rel_clear(src, "managed_vis_overlays")
+		rel_clear(src, nameof(managed_vis_overlays))
 	if (length(original_atom))
 		original_atom.Cut()
 	return ..()
@@ -129,7 +130,7 @@
 // returns true if open
 // false if closed
 /atom/proc/is_open_container()
-	return flags & OPENCONTAINER
+	return (flags & OPENCONTAINER) || (cap_state & CAP_LID_OPEN)
 
 /*//Convenience proc to see whether a container can be accessed in a certain way.
 
@@ -179,8 +180,9 @@
 	if(recursive > 5) //After a certain depth, we're just going to assume that it's too insulated to be EMP'd.
 		return
 	var/protection = (emp_protection_flags & EMP_PROTECT_ALL) | OM_EMIT(src, /datum/om/event/before/atom_pre_emp_act, severity)
-	if(!(protection & EMP_PROTECT_WIRES) && istype(wires))
-		wires.emp_pulse()
+	if(!(protection & EMP_PROTECT_WIRES))
+		var/datum/wires/W = istype(wires) ? wires : wires_of(src) // the wires capability keeps its own
+		W?.emp_pulse()
 
 	if(!(protection & EMP_PROTECT_CONTENTS))
 		for(var/atom/A in contents)
@@ -281,6 +283,7 @@
 	if(damage_band)
 		output += damage_flavour_text(damage_band)
 
+	output += examine_lines(user)
 	om_emit_examine(src, user, output)
 	return output
 
@@ -305,7 +308,7 @@
 		return FALSE
 	density = !!new_density // Sanitize to be strictly 0 or 1
 	if(istype(src, /obj/machinery))
-		om_changed(src, CHANGE_MACHINE_SETTINGS) // the declared field's channel (machinery_fields.dm)
+		changed(src, CHANGE_MACHINE_SETTINGS) // the declared field's channel (machinery_fields.dm)
 	return TRUE
 
 // Called to set the atom's invisibility and usd to add behavior to invisibility changes.
@@ -376,7 +379,7 @@
 		dq_set_blood_color(src, SYNTH_BLOOD_COLOUR)
 	if(istype(M))
 		if (!istype(M.dna, /datum/dna))
-			own_set(M, "dna", new /datum/dna(null))
+			own_set(M, nameof(M.dna), new /datum/dna(null))
 			M.dna.real_name = M.real_name
 		M.check_dna()
 		dq_set_blood_color(src, M.species.get_blood_colour(M))
@@ -703,7 +706,7 @@ GLOBAL_LIST_INIT(zero_icon_offsets, list("x" = 0, "y" = 0))
 
 /// Sets the wire datum of an atom
 /atom/proc/set_wires(datum/wires/new_wires)
-	own_set(src, "wires", new_wires)
+	own_set(src, nameof(wires), new_wires)
 
 /// Its icon state (om_after() target for a state that reverts, like a flash of a sprite).
 /atom/proc/set_icon_state(new_state)

@@ -88,7 +88,7 @@ TOPIC_ACTION(/datum/game_mode, "add_antag_type", PROC_REF(topic_add_antag_type),
 		return
 	var/datum/antagonist/antag = GLOB.antag_service.all_antag_types[id]
 	if(antag_templates && antag_templates.len && antag && (antag in antag_templates) && (antag.id in GLOB.additional_antag_types))
-		rel_remove(src, "antag_templates", antag)
+		rel_remove(src, nameof(antag_templates), antag)
 		GLOB.additional_antag_types -= antag.id
 		message_admins("Admin [key_name_admin(user)] removed [antag.role_text] template from game mode.")
 	refresh_game_mode_panel(user)
@@ -139,7 +139,7 @@ TOPIC_ACTION(/datum/game_mode, "add_antag_type", PROC_REF(topic_add_antag_type),
 	var/datum/antagonist/antag = GLOB.antag_service.all_antag_types[ask.choice]
 	if(antag)
 		if(!(antag in SSticker.mode.antag_templates))
-			rel_add(SSticker.mode, "antag_templates", antag)
+			rel_add(SSticker.mode, nameof(/datum/game_mode::antag_templates), antag)
 		message_admins("Admin [key_name_admin(user)] added [antag.role_text] template to game mode.")
 
 /datum/game_mode/proc/announce() //to be called when round starts
@@ -234,7 +234,7 @@ TOPIC_ACTION(/datum/game_mode, "add_antag_type", PROC_REF(topic_add_antag_type),
 			antag.attempt_spawn() //select antags to be spawned
 		antag.finalize_spawn() //actually spawn antags
 		if(antag.is_latejoin_template())
-			rel_add(src, "latejoin_templates", antag)
+			rel_add(src, nameof(latejoin_templates), antag)
 
 	if(GLOB.emergency_shuttle_service && auto_recall_shuttle)
 		GLOB.emergency_shuttle_service.auto_recall = TRUE
@@ -479,17 +479,17 @@ TOPIC_ACTION(/datum/game_mode, "add_antag_type", PROC_REF(topic_add_antag_type),
 		antag_scaling_coeff = 0
 
 	if(antag_tags && length(antag_tags))
-		rel_clear(src, "antag_templates")
+		rel_clear(src, nameof(antag_templates))
 		for(var/antag_tag in antag_tags)
 			var/datum/antagonist/antag = GLOB.antag_service.all_antag_types[antag_tag]
 			if(antag && !(antag in antag_templates))
-				rel_add(src, "antag_templates", antag)
+				rel_add(src, nameof(antag_templates), antag)
 
 	if(GLOB.additional_antag_types && GLOB.additional_antag_types.len)
 		for(var/antag_type in GLOB.additional_antag_types)
 			var/datum/antagonist/antag = GLOB.antag_service.all_antag_types[antag_type]
 			if(antag && !(antag in antag_templates))
-				rel_add(src, "antag_templates", antag)
+				rel_add(src, nameof(antag_templates), antag)
 
 	newscaster_announcements = pick(GLOB.newscaster_standard_feeds)
 
@@ -580,7 +580,7 @@ TOPIC_ACTION(/datum/game_mode, "add_antag_type", PROC_REF(topic_add_antag_type),
 
 /mob/verb/check_round_info()
 	set name = "Check Round Info"
-	set category = "OOC.Game"
+	set category = VERB_CAT_OOC_GAME
 
 	if(!SSticker|| !SSticker.mode)
 		to_chat(usr, span_warning("Something is terribly wrong; there is no gametype."))

@@ -28,7 +28,7 @@
 
 /datum/unit_test/test_asset_smart_cache/Run()
 	fdel("[ASSET_CROSS_ROUND_SMART_CACHE_DIRECTORY]/spritesheet_cache.test.json")
-	fdel("data/spritesheets/spritesheet_test.css")
+	fdel("[SPRITESHEET_DIR]spritesheet_test.css")
 	var/datum/asset/spritesheet_batched/test/sheet = new()
 	TEST_ASSERT(sheet.fully_generated, "Spritesheet not generated!")
 	// Cache should be invalid initially.
@@ -58,6 +58,6 @@
 	TEST_ASSERT(!sheet.cache_result, "Spritesheet did not load from smart cache, it was invalid despite having the same input data!")
 	// Cleanup files.
 	fdel("[ASSET_CROSS_ROUND_SMART_CACHE_DIRECTORY]/spritesheet_cache.test.json")
-	fdel("data/spritesheets/spritesheet_test.css")
+	fdel("[SPRITESHEET_DIR]spritesheet_test.css")
 	for(var/size in sheet.sizes)
-		fdel("data/spritesheets/test_[size].png")
+		fdel("[SPRITESHEET_DIR]test_[size].png")

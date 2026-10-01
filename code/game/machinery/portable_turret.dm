@@ -442,7 +442,7 @@ UI_DATA_REPLACE(/obj/machinery/porta_turret, "merge:ui_data_obj_machinery_porta_
 		return FALSE
 	if(isLocked(ui.user))
 		return FALSE
-	om_changed(src, CHANGE_MACHINE_SETTINGS)
+	changed(src, CHANGE_MACHINE_SETTINGS)
 	return TRUE
 
 UI_ACT(/obj/machinery/porta_turret, "power", ui_act_power)
@@ -704,7 +704,7 @@ DAMAGE_REACTION(/obj/machinery/porta_turret, DAMAGE_EMP, PROC_REF(turret_emp))
 /obj/machinery/porta_turret/proc/emp_reenable()
 	if(!enabled)
 		enabled = TRUE
-	om_changed(src, CHANGE_MACHINE_SETTINGS)
+	changed(src, CHANGE_MACHINE_SETTINGS)
 
 /obj/machinery/porta_turret/alien/turret_emp(datum/damage_packet/packet)
 	. = ..()
@@ -1001,7 +1001,7 @@ DAMAGE_REACTION(/obj/machinery/porta_turret, DAMAGE_EMP, PROC_REF(turret_emp))
 		def_zone = pick(BP_TORSO, BP_GROIN)
 
 	//Shooting Code:
-	rel_set(A, "firer", src)
+	rel_set(A, nameof(A.firer), src)
 	A.old_style_target(target)
 	A.launch_projectile_from_turf(target, def_zone, src)
 

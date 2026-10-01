@@ -70,6 +70,9 @@
 	/// RUNLEVEL_* mask. Outside these runlevels the behaviour's rings don't run (one test per
 	/// ring per pass, none per entity) and resume without catch-up. 0: every runlevel.
 	var/runlevels = 0
+	/// The measurement system this behaviour's cost is charged to (code/controllers/measure/systems.dm): set to
+	/// override the rule that derives it from the type path.
+	var/system_key
 
 	// ---- compiled by the registry ----
 	var/id = 0
@@ -87,6 +90,8 @@
 	var/compiled_max_interval = 0
 	/// wake_on | requires_mask, the channels this behaviour contributes to listen masks.
 	var/interest = 0
+	/// Index of the measurement system (km_bind_behaviours()); 0 until the registry binds it.
+	var/system_idx = 0
 
 /datum/om/behaviour/proc/tick(datum/E, dt)
 	SHOULD_NOT_SLEEP(TRUE)
@@ -160,9 +165,12 @@
 	abstract_type = /datum/om/event
 	/// before_* events are synchronous and may return EVENT_VETO.
 	var/before = FALSE
-	/// Re-entrant emits of the same type to the same entity keep only the latest.
-	var/coalesce = TRUE
-	/// Dropped inside bulk_begin()/bulk_end().
+	/// Re-entrant emits of the same type to the same entity keep only the latest. Off by default: an event is an
+	/// occurrence (something happened, once), so every one is delivered, in order. Only a state-like event whose
+	/// latest value is all that matters opts in.
+	var/coalesce = FALSE
+	/// Dropped inside bulk_begin()/bulk_end(). Off by default: occurrences are never suppressed in bulk; only a
+	/// cosmetic event opts in.
 	var/skip_in_bulk = FALSE
 	/// Delivered at once even inside another delivery (never queued), like a direct call.
 	/// Hooked (om_hook) cross-entity events are sync so their listeners see the state

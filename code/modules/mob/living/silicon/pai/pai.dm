@@ -121,16 +121,16 @@ DECLARE_VERB_HIDE(/mob/living/silicon/pai, /mob/verb/toggle_gun_mode) // no gun 
 	om_hook(src, /datum/om/event/living_injured, src, PROC_REF(on_injured))
 
 	if(istype(loc, /obj/item/paicard))
-		rel_set(src, "card", loc)
+		rel_set(src, nameof(card), loc)
 	else
 		var/obj/item/paicard/new_card = new default_pai_card_path(src) // only when not spawned in a card
-		rel_set(src, "card", new_card)
-		rel_set(card, "pai", src)
+		rel_set(src, nameof(card), new_card)
+		rel_set(card, nameof(card.pai), src)
 
 	if(card)
 		if(!card.radio)
-			own_set(card, "radio", new /obj/item/radio/borg/pai(src.card))
-		rel_set(src, "radio", card.radio)
+			own_set(card, nameof(card.radio), new /obj/item/radio/borg/pai(src.card))
+		rel_set(src, nameof(radio), card.radio)
 
 	//Default languages without universal translator software
 	add_language(LANGUAGE_SOL_COMMON, 1)
@@ -216,7 +216,7 @@ DECLARE_REPEAT(/mob/living/silicon/pai, 1 SECOND, hack_tick, "hackdoor")
 
 /// Verb used to select a chassis from the list of available chassis
 /mob/living/silicon/pai/proc/choose_chassis()
-	set category = "Abilities.pAI Commands"
+	set category = VERB_CAT_ABILITIES_PAI_COMMANDS
 	set name = "Choose Chassis"
 
 	pai_ui_chassis.tgui_interact(src)
@@ -528,7 +528,7 @@ DAMAGE_REACTION(/mob/living/silicon/pai, DAMAGE_EMP, PROC_REF(emp_scramble))
 
 /mob/living/silicon/pai/lay_down()
 	set name = "Rest"
-	set category = "IC.Game"
+	set category = VERB_CAT_IC_GAME
 
 	// Pass lying down or getting up to our pet human, if we're in a rig.
 	if(istype(src.loc,/obj/item/paicard))
@@ -555,7 +555,7 @@ DAMAGE_REACTION(/mob/living/silicon/pai, DAMAGE_EMP, PROC_REF(emp_scramble))
 
 	cableturf.visible_message("The data cable rapidly retracts back into its spool.", "You hear a click and the sound of wire spooling rapidly.")
 	play_sfx(src, SFX_MACHINES_CLICK)
-	own_clear(src, "cable", OWN_DELETE)
+	own_clear(src, nameof(cable), OWN_DELETE)
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // Update icons

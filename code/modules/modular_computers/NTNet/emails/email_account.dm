@@ -26,7 +26,7 @@
 
 /datum/computer_file/data/email_account/New(glob_load)
 	if(!glob_load)
-		own_add(GLOB.ntnet_global, "email_accounts", src) // NTNet owns every account; a dying account leaves the list in phase 2
+		own_add(GLOB.ntnet_global, nameof(/datum/ntnet::email_accounts), src) // NTNet owns every account; a dying account leaves the list in phase 2
 	..()
 
 /datum/computer_file/data/email_account/proc/all_emails()
@@ -58,19 +58,19 @@
 /datum/computer_file/data/email_account/proc/receive_mail(datum/computer_file/data/email_message/received_message, relayed)
 	received_message.set_timestamp()
 	if(!GLOB.ntnet_global.intrusion_detection_enabled)
-		rel_add(src, "inbox", received_message)
+		rel_add(src, nameof(inbox), received_message)
 		return 1
 	// Spam filters may occassionally let something through, or mark something as spam that isn't spam.
 	if(received_message.spam)
 		if(prob(98))
-			rel_add(src, "spam", received_message)
+			rel_add(src, nameof(spam), received_message)
 		else
-			rel_add(src, "inbox", received_message)
+			rel_add(src, nameof(inbox), received_message)
 	else
 		if(prob(1))
-			rel_add(src, "spam", received_message)
+			rel_add(src, nameof(spam), received_message)
 		else
-			rel_add(src, "inbox", received_message)
+			rel_add(src, nameof(inbox), received_message)
 	return 1
 
 // Address namespace (@internal-services.nt) for email addresses with special purpose only!.

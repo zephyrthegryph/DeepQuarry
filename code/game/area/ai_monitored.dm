@@ -8,8 +8,8 @@
 	// locate and store the motioncamera
 	for (var/obj/machinery/camera/M in area_contents_of_type(src, /obj/machinery/camera))
 		if(M.isMotion())
-			rel_set(src, "motioncamera", M)
-			rel_set(M, "area_motion", src)
+			rel_set(src, nameof(motioncamera), M)
+			rel_set(M, nameof(M.area_motion), src)
 
 /area/ai_monitored/Entered(atom/movable/O)
 	..()

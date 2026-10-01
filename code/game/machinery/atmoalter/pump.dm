@@ -24,7 +24,7 @@
 	. = ..()
 
 	if(!skip_cell)
-		own_set(src, "cell", new/obj/item/cell/apc(src))
+		own_set(src, nameof(cell), new/obj/item/cell/apc(src))
 
 	var/list/air_mix = StandardAirMix()
 	src.air_contents.adjust_multi(GAS_O2, air_mix[GAS_O2], GAS_N2, air_mix[GAS_N2])
@@ -62,7 +62,7 @@ DAMAGE_REACTION(/obj/machinery/portable_atmospherics/powered/pump, DAMAGE_EMP, P
 
 	target_pressure = rand(0,1300)
 	if(on)
-		om_changed(src, CHANGE_MACHINE_SETTINGS)
+		changed(src, CHANGE_MACHINE_SETTINGS)
 	update_icon()
 
 // Machine pipeline (code/game/machinery/machine_pipeline.dm, "portable pumps and scrubbers"
@@ -170,7 +170,7 @@ UI_ACT(/obj/machinery/portable_atmospherics/powered/pump, "power", ui_act_power)
 UI_ACT_PROC(/obj/machinery/portable_atmospherics/powered/pump, ui_act_power)
 	set_on(!on)
 	if(on)
-		om_changed(src, CHANGE_MACHINE_SETTINGS)
+		changed(src, CHANGE_MACHINE_SETTINGS)
 	. = 1
 	update_icon()
 
@@ -184,7 +184,7 @@ UI_ACT(/obj/machinery/portable_atmospherics/powered/pump, "eject", ui_act_eject)
 UI_ACT_PROC(/obj/machinery/portable_atmospherics/powered/pump, ui_act_eject)
 	if(holding)
 		holding.forceMove(loc)
-		own_take(src, "holding")
+		own_take(src, nameof(/datum/rule_binding::holding))
 	. = 1
 	update_icon()
 

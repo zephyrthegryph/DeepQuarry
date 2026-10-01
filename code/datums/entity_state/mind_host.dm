@@ -39,14 +39,14 @@
 	if(!isitem(new_owner))
 		log_world("[type] was created for a non-item host ([new_owner]); it hosts nothing.")
 		return
-	rel_set(src, "owner", new_owner)
+	rel_set(src, nameof(owner), new_owner)
 	set_tissue(tissue)
 
 /// Makes `holder` a mind host (was AddComponent(/datum/mind_host, tissue)).
 /obj/item/proc/make_mind_host(obj/item/organ/internal/brain/tissue) as /datum/mind_host
 	if(mind_host)
-		own_clear(src, "mind_host", OWN_DELETE)
-	own_set(src, "mind_host", new /datum/mind_host(src, tissue))
+		own_clear(src, nameof(mind_host), OWN_DELETE)
+	own_set(src, nameof(mind_host), new /datum/mind_host(src, tissue))
 	return mind_host
 
 /// Owned: this item's mind host, if it holds minds.
@@ -59,13 +59,13 @@
 /datum/mind_host/lifecycle_unbind()
 	if(view)
 		var/mob/living/carbon/brain/old_view = view
-		own_take(src, "view")
-		rel_clear(old_view, "host")
-		rel_clear(old_view, "container")
+		own_take(src, nameof(view))
+		rel_clear(old_view, nameof(old_view.host))
+		rel_clear(old_view, nameof(old_view.container))
 		if(!QDELETED(old_view))
 			qdel(old_view)
 	set_tissue(null)
-	rel_clear(src, "owner")
+	rel_clear(src, nameof(owner))
 
 
 /// The brain organ backing the view's status.
@@ -77,7 +77,7 @@
 		return
 	if(tissue)
 		om_unhook(tissue, /datum/om/event/qdeleting, src)
-	rel_set(src, "tissue", QDELETED(new_tissue) ? null : new_tissue)
+	rel_set(src, nameof(tissue), QDELETED(new_tissue) ? null : new_tissue)
 	if(tissue)
 		om_hook(tissue, /datum/om/event/qdeleting, src, PROC_REF(on_tissue_deleted))
 	view?.refresh_host_status()
@@ -95,9 +95,9 @@
 	return view
 
 /datum/mind_host/proc/attach_view(mob/living/carbon/brain/new_view)
-	own_set(src, "view", new_view)
-	rel_set(new_view, "host", src)
-	rel_set(new_view, "container", owner) // the item holding the view (it owns us, not the view)
+	own_set(src, nameof(view), new_view)
+	rel_set(new_view, nameof(new_view.host), src)
+	rel_set(new_view, nameof(new_view.container), owner) // the item holding the view (it owns us, not the view)
 	if(new_view.loc != owner)
 		new_view.forceMove(owner)
 	new_view.refresh_host_status()
@@ -126,9 +126,9 @@
 	if(!view)
 		return
 	var/mob/living/carbon/brain/old_view = view
-	own_take(src, "view")
-	rel_clear(old_view, "host")
-	rel_clear(old_view, "container")
+	own_take(src, nameof(view))
+	rel_clear(old_view, nameof(old_view.host))
+	rel_clear(old_view, nameof(old_view.container))
 	qdel(old_view)
 
 /// Move `other`'s view (and the mind in it) into this host. Returns TRUE if a
@@ -137,7 +137,7 @@
 	if(!other?.view || view)
 		return FALSE
 	var/mob/living/carbon/brain/moved_view = other.view
-	own_take(other, "view")
+	own_take(other, nameof(other.view))
 	log_game("MIND: [moved_view.mind ? "[moved_view.mind.key] ([moved_view.mind.name])" : "empty view [moved_view]"] moved from host [other.owner] to [owner]: [reason]")
 	attach_view(moved_view)
 	return TRUE

@@ -17,12 +17,12 @@
 	var/last_show_sig
 
 /datum/belly_overlay_tgui/New(mob/M)
-	rel_set(src, "owner", M)
+	rel_set(src, nameof(owner), M)
 
 // hides the owner's belly overlay window.
 /datum/belly_overlay_tgui/on_destroy(force)
 	if(owner()?.client)
-		winset(owner().client, "mapwindow.belly_overlay", "is-visible=false")
+		winset(owner().client, SKIN_BELLY_OVERLAY, "is-visible=false")
 	..()
 
 DECLARE_UI_STATE(/datum/belly_overlay_tgui, GLOB.tgui_always_state)
@@ -39,7 +39,7 @@ DECLARE_UI(/datum/belly_overlay_tgui, "BellyOverlay", UI_TITLE("Belly Overlay"))
 	return new /datum/tgui_window(user.client, "mapwindow.belly_overlay")
 
 /datum/belly_overlay_tgui/ui_opening(mob/user, datum/tgui/ui)
-	own_set(src, "active_ui", ui)
+	own_set(src, nameof(active_ui), ui)
 
 UI_DATA_REPLACE(/datum/belly_overlay_tgui, "merge:ui_data_datum_belly_overlay_tgui{}")
 
@@ -54,7 +54,7 @@ UI_DATA_REPLACE(/datum/belly_overlay_tgui, "merge:ui_data_datum_belly_overlay_tg
 	if(!owner()?.client)
 		return
 	var/client/C = owner().client
-	winset(C, "mapwindow.belly_overlay", "is-visible=true;inner-background-color=#00000000")
+	winset(C, SKIN_BELLY_OVERLAY, "is-visible=true;inner-background-color=#00000000")
 	if(!active_ui)
 		// Opening the window touches blocking BYOND UI calls (winexists / asset
 		// stoplag). This UI can be reached from no-sleep contexts (e.g. a death
@@ -183,13 +183,13 @@ UI_DATA_REPLACE(/datum/belly_overlay_tgui, "merge:ui_data_datum_belly_overlay_tg
 	if(active_ui)
 		active_ui.send_update()
 	if(owner()?.client)
-		winset(owner().client, "mapwindow.belly_overlay", "is-visible=false")
+		winset(owner().client, SKIN_BELLY_OVERLAY, "is-visible=false")
 
 /proc/get_belly_overlay_tgui(mob/M)
 	if(!M)
 		return null
 	if(!M.belly_overlay_tgui)
-		own_set(M, "belly_overlay_tgui", new /datum/belly_overlay_tgui(M))
+		own_set(M, nameof(/mob::belly_overlay_tgui), new /datum/belly_overlay_tgui(M))
 	return M.belly_overlay_tgui
 
 /mob

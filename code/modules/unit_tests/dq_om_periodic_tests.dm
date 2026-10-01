@@ -16,9 +16,9 @@
 	if(--work <= 0)
 		return PROCESS_KILL
 
-/// om_task_periodic() runs periodic_step() every frame until it returns PROCESS_KILL; the entity then
-/// idles and parks, om_task_periodic() wakes it again, om_task_periodic_stop() ends the work early, and the
-/// audit never sees a missed wake.
+/// om_task_periodic() puts the entity on a cadence and the kernel steps it until periodic_step() returns
+/// PROCESS_KILL; the entity then leaves the cadence (it costs nothing), om_task_periodic() starts it again,
+/// om_task_periodic_stop() ends the work early, and moving to another cadence leaves the first.
 /datum/unit_test/dq_om_periodic_park_wake
 
 /datum/unit_test/dq_om_periodic_park_wake/Run()
@@ -26,45 +26,83 @@
 	var/P = PERIODIC_SLOW
 	D.work = 2
 	om_task_periodic(D, P)
-	TEST_ASSERT(om_attached(D, P), "om_task_periodic() did not put it on the pipeline")
+	TEST_ASSERT(member_is(P, D), "om_task_periodic() did not put it on the cadence")
 	TEST_ASSERT(om_task_periodic_running(D) && (D.datum_flags & DF_ISPROCESSING), "a started entity is not marked running")
 	for(var/i in 1 to 2)
-		om_run_frame_now(D, P)
+		TEST_ASSERT(periodic_run_now(D, P), "a started entity could not be stepped")
 	TEST_ASSERT_EQUAL(D.steps, 2, "it did not step once per frame while it had work")
 	TEST_ASSERT_EQUAL(D.last_delta, 20, "the slow lane passes the old SSobj delta")
 	TEST_ASSERT(!om_task_periodic_running(D), "PROCESS_KILL did not end the work")
+	TEST_ASSERT(!member_is(P, D), "an entity with no work stayed on the cadence")
 	for(var/i in 1 to 3)
-		om_run_frame_now(D, P)
+		TEST_ASSERT(!periodic_run_now(D, P), "an entity with no work could be stepped")
 	TEST_ASSERT_EQUAL(D.steps, 2, "it stepped with no work")
-	TEST_ASSERT(om_pipe_parked(D, P), "an entity with no work did not park")
-	TEST_ASSERT(!length(om_pipeline_audit(null, 400, 100, TRUE)), "the audit reported a missed wake")
 
 	D.work = 5
 	om_task_periodic(D, P)
-	D.om_rec.sched.run_pass(1e9)
-	TEST_ASSERT(!om_pipe_parked(D, P), "om_task_periodic() did not unpark it")
-	// The pass may already have run the woken entity's slot, depending on where the suite's
-	// clock put the ring: measure the explicit frame from what the pass left.
-	var/after_pass = D.steps
-	TEST_ASSERT(after_pass <= 3, "the pass stepped a woken entity more than once")
-	om_run_frame_now(D, P)
-	TEST_ASSERT_EQUAL(D.steps, after_pass + 1, "a woken entity did not step")
+	TEST_ASSERT(member_is(P, D), "om_task_periodic() did not put it back on the cadence")
+	TEST_ASSERT(periodic_run_now(D, P), "a restarted entity did not step")
+	TEST_ASSERT_EQUAL(D.steps, 3, "a restarted entity did not step")
 	om_task_periodic_stop(D)
 	var/stopped_at = D.steps
 	for(var/i in 1 to 3)
-		om_run_frame_now(D, P)
+		periodic_run_now(D, P)
 	TEST_ASSERT_EQUAL(D.steps, stopped_at, "om_task_periodic_stop() did not end the work")
-	TEST_ASSERT(om_pipe_parked(D, P), "a stopped entity did not park")
+	TEST_ASSERT(!member_is(P, D), "a stopped entity stayed on the cadence")
 
-	// Moving to another lane leaves the first one idle, not missed.
+	// Moving to another lane leaves the first one, not double-stepped.
 	D.work = 5
+	om_task_periodic(D, P)
 	om_task_periodic(D, PERIODIC_FAST)
-	om_run_frame_now(D, P)
-	TEST_ASSERT_EQUAL(D.steps, stopped_at, "the old lane kept stepping after a move")
-	om_run_frame_now(D, PERIODIC_FAST)
-	TEST_ASSERT_EQUAL(D.steps, stopped_at + 1, "the new lane did not step")
+	TEST_ASSERT(!member_is(P, D), "moving to another lane left the entity on the first")
+	TEST_ASSERT(member_is(PERIODIC_FAST, D), "moving to another lane did not join the new one")
+	TEST_ASSERT(!periodic_run_now(D, P), "the old lane kept stepping after a move")
+	TEST_ASSERT(periodic_run_now(D, PERIODIC_FAST), "the new lane did not step")
 	TEST_ASSERT_EQUAL(D.last_delta, 2, "the fast lane passes the old SSfastprocess delta")
 	om_task_periodic_stop(D)
+
+	// The kernel sweeps the cadence: a started member steps on its own, every 0.2 s on the fast lane, until it stops.
+	D.work = 1000
+	var/steps_before = D.steps
+	om_task_periodic(D, PERIODIC_FAST)
+	sleep(1 SECONDS)
+	TEST_ASSERT(D.steps >= steps_before + 3, "the kernel did not step a fast-lane member: [D.steps - steps_before] steps in a second")
+	TEST_ASSERT(D.steps <= steps_before + 8, "the kernel stepped a fast-lane member too often: [D.steps - steps_before] steps in a second")
+	om_task_periodic_stop(D)
+	var/after_stop = D.steps
+	sleep(1 SECONDS)
+	TEST_ASSERT_EQUAL(D.steps, after_stop, "a stopped member kept being stepped by the kernel")
+	TEST_ASSERT(!length(om_pipeline_audit(null, 400, 100, TRUE)), "the audit reported a missed wake")
+
+/// A member that stops itself during its sweep does not make the member swapped into its slot miss the sweep.
+/datum/unit_test/dq_om_periodic_sweep_survives_leaving_members
+
+/datum/unit_test/dq_om_periodic_sweep_survives_leaving_members/Run()
+	var/list/probes = list()
+	for(var/i in 1 to 5)
+		var/datum/dq_periodic_probe/D = allocate(/datum/dq_periodic_probe)
+		D.work = (i == 2 || i == 3) ? 1 : 100 // the second and third stop at their first step
+		probes += D
+		om_task_periodic(D, PERIODIC_SLOW)
+	var/datum/controller/kernel/K = kernel()
+	var/datum/work_item/W = K.cadence_items[PERIODIC_SLOW]
+	W.next_run = 0
+	W.cursor = 0 // a fresh sweep
+	var/saved = K.expect_errors
+	// The sweep is spread across the interval (run_item_spread()): drive passes until it closes.
+	var/now = world.time + 1000
+	var/runs_before = W.runs
+	for(var/pass in 1 to 1000)
+		K.run_item(W, TICK_USAGE + 100, now) // a whole tick of budget from here: the test's tick may already be spent
+		if(W.runs > runs_before)
+			break
+		now += W.interval
+	K.expect_errors = saved
+	TEST_ASSERT(W.runs > runs_before && !W.cursor, "the sweep closed")
+	for(var/datum/dq_periodic_probe/D as anything in probes)
+		TEST_ASSERT_EQUAL(D.steps, 1, "every member is stepped once in a sweep, even when others leave it")
+	for(var/datum/dq_periodic_probe/D as anything in probes)
+		om_task_periodic_stop(D)
 
 /// A machine with explicitly started work (the old START_MACHINE_PROCESSING contract).
 /obj/machinery/dq_step_probe
@@ -96,7 +134,7 @@
 	TEST_ASSERT_EQUAL(M.steps, 2, "it stepped with no work")
 	TEST_ASSERT(om_pipe_parked(M, P), "a machine with no work did not park")
 	M.work = 5
-	om_changed(M, CHANGE_MACHINE_POWER)
+	changed(M, CHANGE_MACHINE_POWER)
 	M.om_rec.sched.run_pass(1e9)
 	for(var/i in 1 to 2)
 		om_run_frame_now(M, P)
@@ -121,7 +159,7 @@
 	om_task_periodic(M, PERIODIC_FAST)
 	om_run_frame_now(M, /datum/om/pipeline/machine)
 	TEST_ASSERT_EQUAL(M.steps, 0, "a fast machine stepped on the machine pipeline")
-	om_run_frame_now(M, PERIODIC_FAST)
+	TEST_ASSERT(periodic_run_now(M, PERIODIC_FAST), "a fast machine was not on the fast lane")
 	TEST_ASSERT_EQUAL(M.steps, 1, "a fast machine did not step on the fast lane")
 	M.set_speed_process(FALSE)
 	om_task_periodic_stop(M)
@@ -138,15 +176,15 @@
 	var/datum/source = allocate(/datum)
 	om_test_watch(S, source, CHANGE_DATUM_B)
 	om_trace(S)
-	om_changed(source, CHANGE_DATUM_A)
+	changed(source, CHANGE_DATUM_A)
 	om_test_ticks(4)
 	TEST_ASSERT_EQUAL(om_traced_count(S), 0, "a change on an unwatched channel woke the watcher")
-	om_changed(source, CHANGE_DATUM_B)
+	changed(source, CHANGE_DATUM_B)
 	TEST_ASSERT(om_wait_for_wake(S), "a watched channel did not wake the watcher")
 	TEST_ASSERT((S.wakes[length(S.wakes)] & CHANGE_RELATED), "a watch wake did not arrive as CHANGE_RELATED")
 	om_unwatch(S, source, /datum/om/behaviour/sleeper/test_subscriber)
 	var/before = om_traced_count(S)
-	om_changed(source, CHANGE_DATUM_B)
+	changed(source, CHANGE_DATUM_B)
 	om_test_ticks(4)
 	TEST_ASSERT_EQUAL(om_traced_count(S), before, "an unwatched datum woke")
 
@@ -243,7 +281,7 @@
 	TEST_ASSERT(stage.idle(igniter), "an unpowered waiting machine is not idle")
 	igniter.stat_remove(NOPOWER)
 	TEST_ASSERT(!stage.idle(igniter), "a powered waiting machine still looks idle to the audit")
-	om_changed(igniter, CHANGE_MACHINE_POWER)
+	changed(igniter, CHANGE_MACHINE_POWER)
 	igniter.om_rec.sched.run_pass(1e9)
 	om_run_frame_now(igniter, P)
 	TEST_ASSERT(igniter.step_active, "power returning did not restart its work")
@@ -333,7 +371,7 @@
 	TEST_ASSERT(E.periodic_pipe == PERIODIC_SLOW, "a new event is not on the slow lane")
 	E.kill()
 	TEST_ASSERT(!om_task_periodic_running(E), "a killed event kept its lane")
-	own_remove(GLOB.event_service, "finished_events", E) // the service owns finished events
+	own_remove(GLOB.event_service, nameof(/datum/world_service/events::finished_events), E) // the service owns finished events
 	for(var/i = EVENT_LEVEL_MUNDANE to EVENT_LEVEL_MAJOR)
 		var/datum/event_container/EC = GLOB.event_service.event_containers[i]
 		TEST_ASSERT(EC.periodic_pipe == PERIODIC_SLOW, "event container [i] is not keeping its clock")
@@ -371,7 +409,7 @@
 	var/datum/probe = allocate(/datum/dq_periodic_probe)
 	om_task_periodic(probe, PERIODIC_PLANTS)
 	TEST_ASSERT(probe.periodic_pipe == PERIODIC_PLANTS, "the plant lane did not take a datum")
-	var/datum/om/pipeline/periodic/P = om_registry().behaviour(PERIODIC_PLANTS)
+	var/datum/cadence/P = cadence_def(PERIODIC_PLANTS)
 	TEST_ASSERT_EQUAL(P.every, 7.5 SECONDS, "the plant lane lost the old SSplants cadence")
 	om_task_periodic_stop(probe)
 
@@ -461,3 +499,41 @@
 	TEST_ASSERT(length(eggs.om_rec?.timers), "an egg cluster has no hatch timer")
 
 #endif
+
+/// A spread cadence sweep keeps each member's phase: one pass runs only the share of members due by then, a later pass
+/// the rest, and a pass that fell behind catches up by a bounded share.
+/datum/unit_test/dq_om_periodic_sweep_is_spread
+
+/datum/unit_test/dq_om_periodic_sweep_is_spread/Run()
+	var/datum/controller/kernel/K = kernel()
+	var/datum/work_item/W = K.cadence_items[PERIODIC_SLOW]
+	TEST_ASSERT(W.spread, "a cadence slower than the tick spreads its sweep")
+	var/list/probes = list()
+	for(var/i in 1 to 40)
+		var/datum/dq_periodic_probe/D = allocate(/datum/dq_periodic_probe)
+		D.work = 100
+		probes += D
+		om_task_periodic(D, PERIODIC_SLOW)
+	var/total = members_total(PERIODIC_SLOW)
+	W.next_run = 0
+	W.cursor = 0
+	var/now = world.time + 1000
+	K.run_item(W, TICK_USAGE + 100, now)
+	var/stepped = 0
+	for(var/datum/dq_periodic_probe/D as anything in probes)
+		stepped += D.steps
+	TEST_ASSERT(W.cursor, "one pass leaves the sweep open")
+	TEST_ASSERT(W.cursor - 1 <= CEILING(total * world.tick_lag / W.interval, 1), "the first pass ran only its share ([W.cursor - 1] of [total])")
+	// A long stall: the next pass is far behind, but catches up by a bounded share.
+	var/before = W.cursor
+	K.run_item(W, TICK_USAGE + 100, now + W.interval * 10)
+	TEST_ASSERT(W.cursor == 0 || W.cursor - before <= CEILING(total * world.tick_lag / W.interval, 1) * KERNEL_SPREAD_CATCHUP, "catch-up is bounded ([W.cursor - before])")
+	for(var/pass in 1 to 1000)
+		if(!W.cursor)
+			break
+		now += W.interval
+		K.run_item(W, TICK_USAGE + 100, now)
+	TEST_ASSERT(!W.cursor, "the sweep closes")
+	for(var/datum/dq_periodic_probe/D as anything in probes)
+		TEST_ASSERT_EQUAL(D.steps, 1, "every member stepped once in the sweep")
+		om_task_periodic_stop(D)

@@ -42,17 +42,17 @@
 	if(reference == node1)
 		if(istype(node1, /obj/machinery/atmospherics/pipe))
 			rust_invalidate_pipeline_wrapper(parent)
-		rel_clear(src, "node1")
+		rel_clear(src, nameof(node1))
 
 	if(reference == node2)
 		if(istype(node2, /obj/machinery/atmospherics/pipe))
 			rust_invalidate_pipeline_wrapper(parent)
-		rel_clear(src, "node2")
+		rel_clear(src, nameof(node2))
 
 	if(reference == node3)
 		if(istype(node3, /obj/machinery/atmospherics/pipe))
 			rust_invalidate_pipeline_wrapper(parent)
-		rel_clear(src, "node3")
+		rel_clear(src, nameof(node3))
 
 	update_icon()
 	handle_leaking()
@@ -116,7 +116,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/pipe/manifold, TYPE_PROC_REF
 		if(direction&connect_directions)
 			for(var/obj/machinery/atmospherics/target in get_step(src,direction))
 				if (can_be_node(target, 1))
-					rel_set(src, "node1", target)
+					rel_set(src, nameof(node1), target)
 					connect_directions &= ~direction
 					break
 			if (node1)
@@ -126,7 +126,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/pipe/manifold, TYPE_PROC_REF
 		if(direction&connect_directions)
 			for(var/obj/machinery/atmospherics/target in get_step(src,direction))
 				if (can_be_node(target, 2))
-					rel_set(src, "node2", target)
+					rel_set(src, nameof(node2), target)
 					connect_directions &= ~direction
 					break
 			if (node2)
@@ -136,7 +136,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/pipe/manifold, TYPE_PROC_REF
 		if(direction&connect_directions)
 			for(var/obj/machinery/atmospherics/target in get_step(src,direction))
 				if (can_be_node(target, 3))
-					rel_set(src, "node3", target)
+					rel_set(src, nameof(node3), target)
 					connect_directions &= ~direction
 					break
 			if (node3)

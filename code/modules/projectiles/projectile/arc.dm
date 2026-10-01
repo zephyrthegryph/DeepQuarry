@@ -22,7 +22,7 @@
 	return
 
 /obj/item/projectile/arc/Initialize(mapload)
-	own_set(src, "shadow", new /obj/effect/projectile_shadow(get_turf(src)))
+	own_set(src, nameof(shadow), new /obj/effect/projectile_shadow(get_turf(src)))
 	return ..()
 
 

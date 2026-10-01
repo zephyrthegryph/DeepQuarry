@@ -22,7 +22,7 @@
 /obj/machinery/portable_atmospherics/powered/scrubber/Initialize(mapload, skip_cell)
 	. = ..()
 	if(!skip_cell)
-		own_set(src, "cell", new/obj/item/cell/apc(src))
+		own_set(src, nameof(cell), new/obj/item/cell/apc(src))
 	make_climbable()
 
 DAMAGE_REACTION(/obj/machinery/portable_atmospherics/powered/scrubber, DAMAGE_EMP, PROC_REF(scrubber_emp))
@@ -34,7 +34,7 @@ DAMAGE_REACTION(/obj/machinery/portable_atmospherics/powered/scrubber, DAMAGE_EM
 	if(prob(50/packet.severity))
 		set_on(!on)
 		if(on)
-			om_changed(src, CHANGE_MACHINE_SETTINGS)
+			changed(src, CHANGE_MACHINE_SETTINGS)
 
 DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/powered/scrubber, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/portable_atmospherics/powered/scrubber/appearance_overlays()
@@ -137,7 +137,7 @@ UI_ACT(/obj/machinery/portable_atmospherics/powered/scrubber, "power", ui_act_po
 UI_ACT_PROC(/obj/machinery/portable_atmospherics/powered/scrubber, ui_act_power)
 	set_on(!on)
 	if(on)
-		om_changed(src, CHANGE_MACHINE_SETTINGS)
+		changed(src, CHANGE_MACHINE_SETTINGS)
 	. = TRUE
 	update_icon()
 
@@ -145,7 +145,7 @@ UI_ACT(/obj/machinery/portable_atmospherics/powered/scrubber, "eject", ui_act_ej
 UI_ACT_PROC(/obj/machinery/portable_atmospherics/powered/scrubber, ui_act_eject)
 	if(holding)
 		holding.forceMove(loc)
-		own_take(src, "holding")
+		own_take(src, nameof(/datum/rule_binding::holding))
 	. = TRUE
 	update_icon()
 

@@ -9,7 +9,7 @@
 	verbpath = /mob/proc/changeling_blind_sting
 
 /mob/proc/changeling_blind_sting()
-	set category = "Changeling"
+	set category = VERB_CAT_CHANGELING
 	set name = "Blind sting (20)"
 	set desc="Sting target"
 	var/datum/changeling/comp = is_changeling(src)

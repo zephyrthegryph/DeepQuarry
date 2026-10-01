@@ -1375,8 +1375,7 @@
 /obj/machinery/door/blast/regular{
 	icon_state = "pdoor1";
 	id = "ASSAULT";
-	name = "Assault Weapon Storage";
-	p_open = 0
+	name = "Assault Weapon Storage"
 	},
 /turf/unsimulated/floor{
 	icon_state = "dark"
@@ -1701,8 +1700,7 @@
 /obj/machinery/door/blast/regular{
 	icon_state = "pdoor1";
 	id = "ASSAULT";
-	name = "Assault Armor Storage";
-	p_open = 0
+	name = "Assault Armor Storage"
 	},
 /turf/unsimulated/floor{
 	icon_state = "plating";
@@ -2552,8 +2550,8 @@
 /area/centcom/specops)
 "ga" = (
 /obj/machinery/door/airlock/centcom{
-	icon_state = "door_locked";
-	locked = 1
+	cap_state = 128;
+	icon_state = "door_locked"
 	},
 /turf/unsimulated/floor{
 	icon_state = "dark"
@@ -3381,10 +3379,10 @@
 /area/shuttle/response_ship/start)
 "hy" = (
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "response_shuttle_door";
-	locked = 1;
 	name = "Forward Docking Hatch";
 	req_access = list(13)
 	},
@@ -3392,10 +3390,10 @@
 /area/shuttle/response_ship/start)
 "hz" = (
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	frequency = 1381;
 	icon_state = "door_locked";
-	id_tag = "response_base_door";
-	locked = 1
+	id_tag = "response_base_door"
 	},
 /turf/unsimulated/floor{
 	icon_state = "plating";
@@ -4247,8 +4245,7 @@
 /obj/machinery/door/blast/regular{
 	icon_state = "pdoor1";
 	id = "CREED";
-	name = "Ready Room";
-	p_open = 0
+	name = "Ready Room"
 	},
 /turf/unsimulated/floor{
 	icon_state = "plating";
@@ -4326,8 +4323,7 @@
 /obj/machinery/door/blast/regular{
 	icon_state = "pdoor1";
 	id = "CREED";
-	name = "Ready Room";
-	p_open = 0
+	name = "Ready Room"
 	},
 /turf/unsimulated/floor{
 	icon_state = "steel"
@@ -4548,10 +4544,10 @@
 /area/centcom/evac)
 "jN" = (
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "escape_pod_1_recovery_hatch";
-	locked = 1;
 	name = "Recovery Shuttle Dock 1";
 	req_access = list(13)
 	},
@@ -4559,10 +4555,10 @@
 /area/centcom/evac)
 "jO" = (
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "escape_pod_2_recovery_hatch";
-	locked = 1;
 	name = "Recovery Shuttle Dock 2";
 	req_access = list(13)
 	},
@@ -4695,10 +4691,10 @@
 	id = "QMLoad2"
 	},
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "supply_shuttle_hatch";
-	locked = 1;
 	name = "Shuttle Hatch";
 	req_access = list(13)
 	},
@@ -4907,10 +4903,10 @@
 /area/centcom/creed)
 "kC" = (
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "supply_shuttle_hatch";
-	locked = 1;
 	name = "Shuttle Hatch";
 	req_access = list(13)
 	},
@@ -5035,10 +5031,10 @@
 	id = "QMLoad"
 	},
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "supply_shuttle_hatch";
-	locked = 1;
 	name = "Shuttle Hatch";
 	req_access = list(13)
 	},
@@ -5046,10 +5042,10 @@
 /area/shuttle/supply)
 "kT" = (
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "escape_pod_7_recovery_hatch";
-	locked = 1;
 	name = "Recovery Shuttle Dock 7";
 	req_access = list(13)
 	},
@@ -5079,10 +5075,10 @@
 /area/centcom/evac)
 "kW" = (
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "escape_pod_8_recovery_hatch";
-	locked = 1;
 	name = "Recovery Shuttle Dock 8";
 	req_access = list(13)
 	},
@@ -5531,11 +5527,11 @@
 /area/centcom/command)
 "mi" = (
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	frequency = 1381;
 	glass = 1380;
 	icon_state = "door_locked";
 	id_tag = "centcom_shuttle_bay_door";
-	locked = 1;
 	name = "Transport Airlock"
 	},
 /turf/unsimulated/floor{
@@ -5545,10 +5541,10 @@
 /area/centcom/command)
 "mj" = (
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "centcom_shuttle_hatch";
-	locked = 1;
 	name = "Shuttle Hatch";
 	req_access = list(13)
 	},
@@ -5901,10 +5897,10 @@
 /area/centcom/command)
 "na" = (
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "large_escape_pod_2_recovery_hatch";
-	locked = 1;
 	name = "Recovery Shuttle Dock 02";
 	req_access = list(13)
 	},
@@ -6081,8 +6077,7 @@
 /obj/machinery/door/blast/regular{
 	icon_state = "pdoor1";
 	id = "CREED";
-	name = "Ready Room";
-	p_open = 0
+	name = "Ready Room"
 	},
 /turf/simulated/shuttle/floor,
 /area/centcom/evac)
@@ -6455,10 +6450,10 @@
 /area/centcom/command)
 "oh" = (
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	frequency = 1381;
 	icon_state = "door_locked";
-	id_tag = "admin_shuttle_bay_door";
-	locked = 1
+	id_tag = "admin_shuttle_bay_door"
 	},
 /turf/unsimulated/floor{
 	icon_state = "plating";
@@ -6467,10 +6462,10 @@
 /area/centcom/command)
 "oi" = (
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "large_escape_pod_1_recovery_hatch";
-	locked = 1;
 	name = "Recovery Shuttle Dock 01";
 	req_access = list(13)
 	},
@@ -6734,10 +6729,10 @@
 /area/shuttle/administration/centcom)
 "oS" = (
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "admin_shuttle_hatch";
-	locked = 1;
 	name = "Shuttle Hatch";
 	req_access = list(13)
 	},
@@ -6812,10 +6807,10 @@
 /area/shuttle/administration/centcom)
 "pd" = (
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "cryostorage_shuttle_recovery_hatch";
-	locked = 1;
 	name = "Recovery Shuttle Dock Cryostorage";
 	req_access = list(13)
 	},
@@ -7576,8 +7571,8 @@
 /area/centcom/bar)
 "rd" = (
 /obj/machinery/door/airlock/glass{
+	cap_state = 128;
 	icon_state = "door_locked";
-	locked = 1;
 	name = "Arrivals Processing"
 	},
 /turf/unsimulated/floor{
@@ -7735,10 +7730,10 @@
 /area/centcom/evac)
 "ry" = (
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "escape_pod_4_recovery_hatch";
-	locked = 1;
 	name = "Recovery Shuttle Dock 4";
 	req_access = list(13)
 	},
@@ -7768,10 +7763,10 @@
 /area/centcom/evac)
 "rB" = (
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "escape_pod_6_recovery_hatch";
-	locked = 1;
 	name = "Recovery Shuttle Dock 6";
 	req_access = list(13)
 	},
@@ -8138,10 +8133,10 @@
 /area/shuttle/administration/centcom)
 "su" = (
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "escape_pod_3_recovery_hatch";
-	locked = 1;
 	name = "Recovery Shuttle Dock 3";
 	req_access = list(13)
 	},
@@ -8177,10 +8172,10 @@
 /area/centcom/evac)
 "sy" = (
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "escape_pod_5_recovery_hatch";
-	locked = 1;
 	name = "Recovery Shuttle Dock 5";
 	req_access = list(13)
 	},
@@ -8349,8 +8344,8 @@
 /area/centcom/main_hall)
 "sU" = (
 /obj/machinery/door/airlock/glass{
+	cap_state = 128;
 	icon_state = "door_locked";
-	locked = 1;
 	name = "Central Access"
 	},
 /turf/unsimulated/floor{
@@ -9112,10 +9107,10 @@
 /area/centcom/evac)
 "uQ" = (
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	frequency = 1381;
 	icon_state = "door_locked";
-	id_tag = "trade_shuttle_bay_door";
-	locked = 1
+	id_tag = "trade_shuttle_bay_door"
 	},
 /turf/unsimulated/floor{
 	icon_state = "steel"
@@ -9165,10 +9160,10 @@
 /area/shuttle/merchant/home)
 "uY" = (
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "trade_shuttle_hatch";
-	locked = 1;
 	name = "Shuttle Hatch";
 	req_access = list(13)
 	},
@@ -11234,8 +11229,8 @@
 /area/shuttle/merchant/home)
 "zu" = (
 /obj/machinery/door/airlock/glass{
+	cap_state = 128;
 	icon_state = "door_locked";
-	locked = 1;
 	name = "Arrivals Processing"
 	},
 /turf/unsimulated/floor{
@@ -11902,10 +11897,10 @@
 "AJ" = (
 /obj/machinery/atmospherics/pipe/simple/visible,
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	frequency = 1331;
 	icon_state = "door_locked";
 	id_tag = "trade2_shuttle_inner";
-	locked = 1;
 	name = "Ship Hatch";
 	req_access = list(13)
 	},
@@ -11913,10 +11908,10 @@
 /area/shuttle/merchant/home)
 "AK" = (
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	frequency = 1331;
 	icon_state = "door_locked";
 	id_tag = "trade2_shuttle_inner";
-	locked = 1;
 	name = "Ship Hatch";
 	req_access = list(13)
 	},
@@ -12056,10 +12051,10 @@
 /area/centcom/terminal)
 "AY" = (
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	frequency = 1331;
 	icon_state = "door_locked";
 	id_tag = "trade2_shuttle_outer";
-	locked = 1;
 	name = "Ship Hatch";
 	req_access = list(13)
 	},
@@ -12074,10 +12069,10 @@
 	req_one_access = list(150)
 	},
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	frequency = 1331;
 	icon_state = "door_locked";
 	id_tag = "trade2_shuttle_outer";
-	locked = 1;
 	name = "Ship Hatch";
 	req_access = list(13)
 	},
@@ -12447,8 +12442,8 @@
 /area/wizard_station)
 "BX" = (
 /obj/machinery/door/airlock/external{
-	icon_state = "door_locked";
-	locked = 1
+	cap_state = 128;
+	icon_state = "door_locked"
 	},
 /turf/unsimulated/floor{
 	icon_state = "vault";
@@ -12767,8 +12762,8 @@
 /area/wizard_station)
 "CJ" = (
 /obj/machinery/door/airlock/external{
-	icon_state = "door_locked";
-	locked = 1
+	cap_state = 128;
+	icon_state = "door_locked"
 	},
 /obj/effect/blocker,
 /turf/unsimulated/floor{
@@ -12778,10 +12773,10 @@
 /area/centcom/terminal)
 "CK" = (
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "centcom_dock_airlock";
-	locked = 1;
 	name = "Arrivals Airlock";
 	req_access = list(13)
 	},
@@ -12792,10 +12787,10 @@
 /area/centcom/terminal)
 "CL" = (
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "escape_shuttle_hatch";
-	locked = 1;
 	name = "Shuttle Hatch";
 	req_access = list(13)
 	},
@@ -15680,8 +15675,8 @@
 /area/syndicate_station)
 "Jz" = (
 /obj/machinery/door/airlock/centcom{
-	icon_state = "door_locked";
-	locked = 1
+	cap_state = 128;
+	icon_state = "door_locked"
 	},
 /turf/unsimulated/floor{
 	icon_state = "dark"
@@ -16971,7 +16966,6 @@
 	frequency = 1331;
 	icon_state = "door_closed";
 	id_tag = "vox_northwest_lock";
-	locked = 0;
 	req_access = list(150)
 	},
 /turf/simulated/shuttle/plating,
@@ -16981,7 +16975,6 @@
 	frequency = 1331;
 	icon_state = "door_closed";
 	id_tag = "vox_northeast_lock";
-	locked = 0;
 	req_access = list(150)
 	},
 /turf/simulated/shuttle/plating,
@@ -17414,7 +17407,6 @@
 	frequency = 1331;
 	icon_state = "door_closed";
 	id_tag = "vox_southwest_lock";
-	locked = 0;
 	req_access = list(150)
 	},
 /obj/machinery/atmospherics/pipe/simple/visible,
@@ -17460,7 +17452,6 @@
 	frequency = 1331;
 	icon_state = "door_closed";
 	id_tag = "vox_southeast_lock";
-	locked = 0;
 	req_access = list(150)
 	},
 /obj/machinery/atmospherics/pipe/simple/visible,

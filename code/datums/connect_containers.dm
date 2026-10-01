@@ -19,7 +19,7 @@
 	if(!ismovable(tracked))
 		log_runtime("CONNECT_CONTAINERS: [listener?.type] tried to track non-movable [tracked] ([tracked?.type])")
 		return
-	rel_set(src, "listener", listener)
+	rel_set(src, nameof(listener), listener)
 	src.connections = connections
 	set_tracked(tracked)
 
@@ -45,7 +45,7 @@
 	if(tracked())
 		om_unhook(tracked(), list(/datum/om/event/moved, /datum/om/event/qdeleting), src)
 		unregister_hooks(tracked())
-	rel_set(src, "tracked", new_tracked)
+	rel_set(src, nameof(tracked), new_tracked)
 	if(!tracked())
 		return
 	om_hook(tracked(), /datum/om/event/moved, src, PROC_REF(on_moved))

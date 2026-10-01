@@ -5,7 +5,7 @@
 	dir = 10
 	},
 /turf/simulated/floor/snow{
-	temperature = 268.15
+	initial_temperature = 268.15
 	},
 /area/survivalpod/redspace)
 "b" = (
@@ -26,7 +26,7 @@
 	dir = 6
 	},
 /turf/simulated/floor/snow{
-	temperature = 268.15
+	initial_temperature = 268.15
 	},
 /area/survivalpod/redspace)
 "d" = (
@@ -34,7 +34,7 @@
 	dir = 8
 	},
 /turf/simulated/floor/snow{
-	temperature = 268.15
+	initial_temperature = 268.15
 	},
 /area/survivalpod/redspace)
 "e" = (
@@ -42,12 +42,12 @@
 	dir = 4
 	},
 /turf/simulated/floor/snow{
-	temperature = 268.15
+	initial_temperature = 268.15
 	},
 /area/survivalpod/redspace)
 "f" = (
 /turf/simulated/floor/snow{
-	temperature = 268.15
+	initial_temperature = 268.15
 	},
 /area/survivalpod/redspace)
 "g" = (
@@ -60,7 +60,7 @@
 "h" = (
 /obj/effect/overlay/snow/floor/edges,
 /turf/simulated/floor/snow{
-	temperature = 268.15
+	initial_temperature = 268.15
 	},
 /area/survivalpod/redspace)
 "i" = (
@@ -68,7 +68,7 @@
 	dir = 9
 	},
 /turf/simulated/floor/snow{
-	temperature = 268.15
+	initial_temperature = 268.15
 	},
 /area/survivalpod/redspace)
 "j" = (
@@ -104,7 +104,7 @@
 	pixel_y = -6
 	},
 /turf/simulated/floor/snow{
-	temperature = 268.15
+	initial_temperature = 268.15
 	},
 /area/survivalpod/redspace)
 "o" = (
@@ -115,7 +115,7 @@
 	dir = 8
 	},
 /turf/simulated/floor/snow{
-	temperature = 268.15
+	initial_temperature = 268.15
 	},
 /area/survivalpod/redspace)
 "s" = (
@@ -125,7 +125,7 @@
 	desc = "A VERY large reindeer."
 	},
 /turf/simulated/floor/snow{
-	temperature = 268.15
+	initial_temperature = 268.15
 	},
 /area/survivalpod/redspace)
 "x" = (
@@ -152,7 +152,7 @@
 	dir = 1
 	},
 /turf/simulated/floor/snow{
-	temperature = 268.15
+	initial_temperature = 268.15
 	},
 /area/survivalpod/redspace)
 "E" = (
@@ -210,7 +210,7 @@
 	dir = 5
 	},
 /turf/simulated/floor/snow{
-	temperature = 268.15
+	initial_temperature = 268.15
 	},
 /area/survivalpod/redspace)
 "K" = (
@@ -221,7 +221,7 @@
 	dir = 1
 	},
 /turf/simulated/floor/snow{
-	temperature = 268.15
+	initial_temperature = 268.15
 	},
 /area/survivalpod/redspace)
 "M" = (

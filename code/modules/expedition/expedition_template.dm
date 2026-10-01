@@ -67,4 +67,4 @@
 		if(++i % 1000 == 0)
 			CHECK_TICK
 
-	rel_clear(src, "turfs_changed")
+	rel_clear(src, nameof(turfs_changed))

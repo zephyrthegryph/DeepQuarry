@@ -95,9 +95,9 @@
 	if(fresh)
 		S = new
 		S.factor_id = factor_id
-		rel_set(S, "source", source)
+		rel_set(S, nameof(S.source), source)
 		S.source_name = "[source]"
-		own_add(src, "supports", S)
+		own_add(src, nameof(supports), S)
 	var/changed = fresh || S.floor != floor || S.multiplier != multiplier
 	S.floor = floor
 	S.multiplier = multiplier
@@ -120,7 +120,7 @@
 
 /datum/body/proc/drop_support(datum/body_support/S, reason)
 	log_runtime("PHYSIOLOGY: [key_name(owner)] lost the [S.source_name] support on factor [S.factor_id] ([reason])")
-	own_remove(src, "supports", S)
+	own_remove(src, nameof(supports), S)
 	invalidate(BODY_DIRTY_PHYSIOLOGY)
 
 /// Drop lapsed supports.
@@ -294,7 +294,7 @@
 
 /datum/physiology/New(datum/body/new_body)
 	..()
-	rel_set(src, "body", new_body)
+	rel_set(src, nameof(body), new_body)
 
 /// Recompute the derived values. Plans override. FALSE if the owner can't be
 /// evaluated yet (still being set up).

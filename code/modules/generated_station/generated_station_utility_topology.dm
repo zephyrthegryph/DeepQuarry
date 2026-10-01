@@ -10,7 +10,7 @@
 /obj/machinery/power/smes/generated_station
 	should_be_mapped = TRUE
 	circuit = null
-	charge = 5e6
+	initial_charge = 5e6
 	output_attempt = TRUE
 	output_level = 200000
 
@@ -120,7 +120,7 @@
 	for(var/obj/machinery/power/smes/SMES in power_objects)
 		if(has_source)
 			break
-		if(QDELETED(SMES) || (SMES.has_stat(BROKEN)) || SMES.charge <= 0)
+		if(QDELETED(SMES) || (SMES.has_stat(BROKEN)) || SMES.stored_charge() <= 0)
 			continue
 		for(var/obj/machinery/power/terminal/terminal in SMES.terminals)
 			if(terminal.power_region)
@@ -445,9 +445,9 @@
 /datum/generated_station_utility_builder/proc/build(datum/generated_station_spec/new_spec, datum/generated_station_materialization/new_materialization)
 	if(!new_spec || !new_materialization)
 		return null
-	rel_set(src, "spec", new_spec)
-	rel_set(src, "materialization", new_materialization)
-	own_set(src, "result", new /datum/generated_station_utility_topology)
+	rel_set(src, nameof(spec), new_spec)
+	rel_set(src, nameof(materialization), new_materialization)
+	own_set(src, nameof(result), new /datum/generated_station_utility_topology)
 	result.station_id = spec().id
 	var/list/path_targets = list()
 	var/list/power_targets = list()
@@ -472,9 +472,9 @@
 		var/obj/machinery/power/apc/APC = new(apc_turf)
 		// APC construction faces into its supporting wall, unlike generic wall frames.
 		APC.set_dir(apc_wall_direction)
-		own_add(result, "power_objects", APC)
-		rel_add(result, "apcs", APC)
-		rel_set(A, "apc", APC)
+		own_add(result, nameof(result.power_objects), APC)
+		rel_add(result, nameof(result.apcs), APC)
+		rel_set(A, nameof(A.apc), APC)
 		var/turf/apc_terminal_turf = get_turf(APC.terminal)
 		if(!apc_terminal_turf)
 			return fail_global_build("APC in [A] did not create a terminal")
@@ -488,16 +488,16 @@
 		var/turf/supply_device = supply_pair["device"]
 		var/turf/supply_connector = supply_pair["connector"]
 		var/obj/machinery/atmospherics/unary/vent_pump/on/generated_station/vent = new(supply_device, get_dir(supply_device, supply_connector))
-		own_add(result, "atmos_objects", vent)
-		rel_add(result, "supply_vents", vent)
+		own_add(result, nameof(result.atmos_objects), vent)
+		rel_add(result, nameof(result.supply_vents), vent)
 		path_targets += supply_connector
 		add_external_connection(supply_connections, supply_connector, get_dir(supply_connector, supply_device))
 
 		var/turf/scrub_device = scrub_pair["device"]
 		var/turf/scrub_connector = scrub_pair["connector"]
 		var/obj/machinery/atmospherics/unary/vent_scrubber/on/generated_station/scrubber = new(scrub_device, get_dir(scrub_device, scrub_connector))
-		own_add(result, "atmos_objects", scrubber)
-		rel_add(result, "scrubbers", scrubber)
+		own_add(result, nameof(result.atmos_objects), scrubber)
+		rel_add(result, nameof(result.scrubbers), scrubber)
 		path_targets += scrub_connector
 		add_external_connection(scrub_connections, scrub_connector, get_dir(scrub_connector, scrub_device))
 
@@ -510,8 +510,8 @@
 		var/obj/machinery/alarm/alarm = new(alarm_turf)
 		alarm.set_dir(turn(alarm_wall_direction, 180))
 		alarm.offset_airalarm()
-		own_add(result, "atmos_objects", alarm)
-		rel_add(result, "alarms", alarm)
+		own_add(result, nameof(result.atmos_objects), alarm)
+		rel_add(result, nameof(result.alarms), alarm)
 
 	if(!engineering_area)
 		return fail_global_build("engineering area was not found")
@@ -523,14 +523,14 @@
 	var/turf/smes_terminal_turf = source_pair["connector"]
 	var/obj/machinery/power/terminal/smes_terminal = new(smes_terminal_turf)
 	smes_terminal.set_dir(get_dir(smes_terminal, smes_turf))
-	own_add(result, "power_objects", smes_terminal)
+	own_add(result, nameof(result.power_objects), smes_terminal)
 	var/obj/machinery/power/smes/generated_station/SMES = new(smes_turf)
-	own_add(result, "power_objects", SMES)
+	own_add(result, nameof(result.power_objects), SMES)
 	path_targets += smes_terminal_turf
 	power_targets += smes_terminal_turf
 	var/turf/generator_turf = generator_pair["device"]
 	var/obj/machinery/power/generator/generated_station/generator = new(generator_turf)
-	own_add(result, "power_objects", generator)
+	own_add(result, nameof(result.power_objects), generator)
 	path_targets += generator_turf
 	power_targets += generator_turf
 
@@ -541,15 +541,15 @@
 	var/turf/supply_tank_turf = supply_source_pair["device"]
 	var/turf/supply_tank_connector = supply_source_pair["connector"]
 	var/obj/machinery/atmospherics/pipe/tank/air/full/generated_station/supply_tank = new(supply_tank_turf, get_dir(supply_tank_turf, supply_tank_connector))
-	own_add(result, "atmos_objects", supply_tank)
-	rel_add(result, "supply_tanks", supply_tank)
+	own_add(result, nameof(result.atmos_objects), supply_tank)
+	rel_add(result, nameof(result.supply_tanks), supply_tank)
 	path_targets += supply_tank_connector
 	add_external_connection(supply_connections, supply_tank_connector, get_dir(supply_tank_connector, supply_tank_turf))
 	var/turf/scrub_tank_turf = scrub_source_pair["device"]
 	var/turf/scrub_tank_connector = scrub_source_pair["connector"]
 	var/obj/machinery/atmospherics/pipe/tank/generated_station_scrub/scrub_tank = new(scrub_tank_turf, get_dir(scrub_tank_turf, scrub_tank_connector))
-	own_add(result, "atmos_objects", scrub_tank)
-	rel_add(result, "scrub_tanks", scrub_tank)
+	own_add(result, nameof(result.atmos_objects), scrub_tank)
+	rel_add(result, nameof(result.scrub_tanks), scrub_tank)
 	path_targets += scrub_tank_connector
 	add_external_connection(scrub_connections, scrub_tank_connector, get_dir(scrub_tank_connector, scrub_tank_turf))
 
@@ -656,7 +656,7 @@
 			if(WEST)
 				light.pixel_x = -26
 				light.pixel_y = (T.y % 2) ? 8 : -8
-		own_add(result, "power_objects", light)
+		own_add(result, nameof(result.power_objects), light)
 
 /// Publishes power and lighting only after the power and atmosphere graphs exist.
 /datum/generated_station_utility_builder/proc/publish_utility_state()
@@ -667,7 +667,7 @@
 
 /datum/generated_station_utility_builder/proc/fail_global_build(reason)
 	log_world("Generated station utility build failed for [spec()?.id]: [reason]")
-	own_clear(src, "result", OWN_DELETE)
+	own_clear(src, nameof(result), OWN_DELETE)
 	return null
 
 /datum/generated_station_utility_builder/proc/add_external_connection(list/connections, turf/T, direction)
@@ -703,10 +703,10 @@
 			continue
 		if(length(directions) <= 2)
 			var/cable_state = length(directions) == 1 ? "0-[directions[1]]" : "[min(directions[1], directions[2])]-[max(directions[1], directions[2])]"
-			own_add(result, "power_objects", new /obj/structure/cable/generated_station(T, cable_state))
+			own_add(result, nameof(result.power_objects), new /obj/structure/cable/generated_station(T, cable_state))
 		else
 			for(var/direction in directions)
-				own_add(result, "power_objects", new /obj/structure/cable/generated_station(T, "0-[direction]"))
+				own_add(result, nameof(result.power_objects), new /obj/structure/cable/generated_station(T, "0-[direction]"))
 
 /// Gives every terminal/source an explicit center tap even when the routed cable bends on its tile.
 /datum/generated_station_utility_builder/proc/ensure_global_power_connections(list/path, list/targets)
@@ -721,7 +721,7 @@
 				found = TRUE
 				break
 		if(!found)
-			own_add(result, "power_objects", new /obj/structure/cable/generated_station(T, required_state))
+			own_add(result, nameof(result.power_objects), new /obj/structure/cable/generated_station(T, required_state))
 
 /datum/generated_station_utility_builder/proc/spanning_path_directions(list/path)
 	var/list/tree_directions = list()
@@ -764,7 +764,7 @@
 			if(4)
 				pipe = supply ? new /obj/machinery/atmospherics/pipe/manifold4w/hidden/supply(T) : new /obj/machinery/atmospherics/pipe/manifold4w/hidden/scrubbers(T)
 		if(pipe)
-			own_add(result, "atmos_objects", pipe)
+			own_add(result, nameof(result.atmos_objects), pipe)
 
 /datum/generated_station_utility_builder/proc/initialize_global_atmos()
 	for(var/obj/machinery/atmospherics/AM in result.atmos_objects)
@@ -795,7 +795,7 @@
 	if(!station_spec || !station_materialization || station_utilities)
 		return FALSE
 	var/datum/generated_station_utility_builder/builder = new
-	own_set(src, "station_utilities", builder.build(station_spec, station_materialization))
+	own_set(src, nameof(station_utilities), builder.build(station_spec, station_materialization))
 	qdel(builder)
 	return !!station_utilities
 

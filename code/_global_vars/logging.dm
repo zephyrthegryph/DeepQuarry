@@ -9,7 +9,8 @@ GLOBAL_PROTECT(log_directory)
 /// tmp/ that must not collide between two worlds sharing a working directory
 /// (a sharded dm-test run boots N worlds in the same worktree). See
 /// get_dummy_savefile() in code/_helpers/icons.dm.
-GLOBAL_VAR_INIT(dq_scratch_tag, num2text(rand(1, 999999999)))
+// The port is unique per running world; the random part covers worlds without one.
+GLOBAL_VAR_INIT(dq_scratch_tag, "[world.port]_[num2text(rand(1, 999999999))]")
 GLOBAL_PROTECT(dq_scratch_tag)
 
 #define DECLARE_LOG_NAMED(log_var_name, log_file_name, start)\

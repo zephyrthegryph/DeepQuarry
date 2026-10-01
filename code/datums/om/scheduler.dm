@@ -36,6 +36,8 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	sched.slot_ds = OM_SLOT_DS
 	sched.phase_seed = 0
 	sched.dl_cursor = 0
+	// Its own meter: a test pass must not charge the live one. A short ring, since tests never read a long one.
+	sched.meter = new /datum/tick_meter(32)
 	GLOB.om_sched = sched
 	return sched
 
@@ -102,6 +104,11 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	var/harness_deadline_cap = 0
 	/// Current phase's absolute tick usage limit and call cap.
 	var/limit = 0
+	/// The open pass (pass_begin): when it started, its budget, the scheduler time it covers, and whether all due work finished.
+	var/pass_start = 0
+	var/pass_avail = 0
+	var/pass_t = 0
+	var/pass_done = TRUE
 	var/cap = 0
 	var/calls = 0
 	/// Borrow threshold: a ring whose oldest due slot is this fraction of max_interval late borrows.
@@ -135,6 +142,9 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 #endif
 	var/last_run_ms = 0
 	var/runs = 0
+	/// Where this scheduler charges what it spends, per system (code/controllers/measure/): the live meter, or a
+	/// test's own (om_test_begin()).
+	var/datum/tick_meter/meter
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 	/// Tests: when a list, every dispatched change is logged here as list(entity, bits).
 	var/list/test_raises
@@ -154,6 +164,7 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	dl_cursor = round(now())
 	slot_ds = world.tick_lag > 0 ? world.tick_lag : OM_SLOT_DS
 	phase_seed = rand(0, 65535)
+	meter = km_meter()
 
 /datum/om/scheduler/proc/now()
 	return isnull(manual_time) ? world.time : manual_time
@@ -302,61 +313,88 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 
 /// One scheduler pass. `tick_limit` is an absolute world.tick_usage (live:
 /// Master.current_ticklimit). Returns TRUE if all due work finished.
+///
+/// The pass is a sequence of pieces (pass_begin ... pass_end). run_pass() runs them all back to back; the
+/// kernel tick (controllers/kernel/kernel.dm) runs the same pieces itself, between its own phases.
 /datum/om/scheduler/proc/run_pass(tick_limit)
-	var/start = TICK_USAGE
-	var/t = now()
+	pass_begin(tick_limit)
+	pass_deadlines(tick_limit)
+	pass_borrow(tick_limit)
+	pass_lanes(tick_limit)
+	pass_leftovers(tick_limit)
+	return pass_end()
+
+/// Opens a pass: the clock, the runlevel and this pass's budget. Zeroes the per-pass world wake counts, so it
+/// runs before the tick's native frame (kernel phase N).
+/datum/om/scheduler/proc/pass_begin(tick_limit)
+	pass_start = TICK_USAGE
+	pass_t = now()
 	runs++
 	if(isnull(manual_time))
 		var/level = Master.current_runlevel
 		runlevel = level ? (1 << (level - 1)) : 0
-	var/avail = max(tick_limit - start, 0)
-	var/done = TRUE
-
-	// 0. The Rust world step: timers, keys, rate crossings and native watches.
+	pass_avail = max(tick_limit - pass_start, 0)
+	pass_done = TRUE
 	if(world_pass_delivered)
 		for(var/lane in 1 to OM_LANE_COUNT)
 			world_pass_delivered[lane] = 0
-	world_step()
 
-	// 1. Deadlines.
-	limit = start + avail * OM_DEADLINE_SHARE
+/// 1. Deadlines, within OM_DEADLINE_SHARE of the pass's budget.
+/datum/om/scheduler/proc/pass_deadlines(tick_limit)
+	limit = pass_start + pass_avail * OM_DEADLINE_SHARE
 	cap = harness_deadline_cap
 	calls = 0
-	if(!run_deadlines(t))
-		done = FALSE
+	if(!run_deadlines(pass_t))
+		pass_done = FALSE
 
-	// 2. Borrow pass for rings near their staleness bound.
+/// 2. Borrow pass for rings near their staleness bound.
+/datum/om/scheduler/proc/pass_borrow(tick_limit)
 	limit = tick_limit
 	for(var/lane in 1 to OM_LANE_COUNT)
 		cap = harness_caps ? harness_caps[lane] : 0
 		calls = 0
 		for(var/datum/om/ring/R as anything in lane_rings[lane])
 			try
-				if(ring_urgent(R, t))
-					run_ring(R, t)
+				if(ring_urgent(R, pass_t))
+					run_ring(R, pass_t)
 			catch(var/exception/borrow_e)
 				report_caught(borrow_e, "lane [lane] borrow pass ([R.behaviour()?.name]): [borrow_e] ([borrow_e.file]:[borrow_e.line])")
 
-	// 3. Lanes with guaranteed shares.
+/// 3. Lanes with guaranteed shares.
+/datum/om/scheduler/proc/pass_lanes(tick_limit)
 	for(var/lane in 1 to OM_LANE_COUNT)
-		limit = min(TICK_USAGE + avail * lane_share[lane], tick_limit)
-		cap = harness_caps ? harness_caps[lane] : 0
-		calls = 0
-		if(!run_lane_guarded(lane, t))
-			done = FALSE
+		pass_lane(lane, tick_limit)
 
-	// 4. Leftover budget.
-	if(!done && TICK_USAGE < tick_limit && !harness_caps)
-		done = TRUE
+/// One lane's share of the pass.
+/datum/om/scheduler/proc/pass_lane(lane, tick_limit)
+	// L3 lanes are shed under an overrun streak (kernel/latency.dm); the borrow pass above still
+	// serves any ring near its staleness bound, and the floor admits one pass a second.
+	if(!kernel_admit_lane(lane))
+		return
+	limit = min(TICK_USAGE + pass_avail * lane_share[lane], tick_limit)
+	cap = harness_caps ? harness_caps[lane] : 0
+	calls = 0
+	if(!run_lane_guarded(lane, pass_t))
+		pass_done = FALSE
+
+/// 4. Leftover budget.
+/datum/om/scheduler/proc/pass_leftovers(tick_limit)
+	if(!pass_done && TICK_USAGE < tick_limit && !harness_caps)
+		pass_done = TRUE
 		limit = tick_limit
 		cap = 0
-		if(!run_deadlines(t))
-			done = FALSE
+		if(!run_deadlines(pass_t))
+			pass_done = FALSE
 		for(var/lane in 1 to OM_LANE_COUNT)
-			if(!run_lane_guarded(lane, t))
-				done = FALSE
-	last_run_ms = TICK_USAGE_TO_MS(start)
-	return done
+			if(kernel_latency().sheds_lane(lane))
+				continue
+			if(!run_lane_guarded(lane, pass_t))
+				pass_done = FALSE
+
+/// Closes the pass. Returns TRUE if all due work finished.
+/datum/om/scheduler/proc/pass_end()
+	last_run_ms = TICK_USAGE_TO_MS(pass_start)
+	return pass_done
 
 /datum/om/scheduler/proc/out_of_budget()
 	if(TICK_USAGE > limit)
@@ -386,10 +424,24 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	// Eager derived values are inputs to wakes in every lane: a behaviour in
 	// an earlier lane observing a derived channel must see the change this
 	// pass, not the next. The queue is empty (one length check) almost always.
-	if(!run_derived_queue())
-		return FALSE
+	if(length(derived_queue))
+		var/derived_start = TICK_USAGE
+		var/derived_done = run_derived_queue()
+		meter.charge(KM_SYS_OM_CORE, TICK_USAGE_TO_MS(derived_start))
+		if(!derived_done)
+			return FALSE
 	if(lane == LANE_DERIVED)
-		if(!run_services())
+		if(length(service_queue))
+			var/services_start = TICK_USAGE
+			var/services_done = run_services()
+			meter.charge(KM_SYS_OM_CORE, TICK_USAGE_TO_MS(services_start))
+			if(!services_done)
+				return FALSE
+	if(length(world_q?[lane]))
+		var/native_start = TICK_USAGE
+		var/native_done = run_world_wakes(lane)
+		meter.charge(KM_SYS_OM_NATIVE, TICK_USAGE_TO_MS(native_start))
+		if(!native_done)
 			return FALSE
 	if(lane == LANE_PRESENTATION)
 		// Declared appearances whose watched fields changed (code/datums/sys/appearance.dm).
@@ -449,6 +501,8 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 			var/late = t - R.next_abs * R.slot_ds
 			if(late > S[OM_STAT_LATE_MAX])
 				S[OM_STAT_LATE_MAX] = late
+			if(late > 0)
+				meter.note_late(B.system_idx, late)
 			if(dt_ds > B.compiled_max_interval)
 				S[OM_STAT_BREACHES]++
 		if(!run_slot(R, L))
@@ -568,7 +622,9 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	calls = n_calls
 	var/list/S = stat_for(B.id)
 	S[OM_STAT_RUNS] += ran
-	S[OM_STAT_MS] += TICK_USAGE_TO_MS(t0)
+	var/spent = TICK_USAGE_TO_MS(t0)
+	S[OM_STAT_MS] += spent
+	meter.charge(B.system_idx, spent)
 	return !(out && i <= length(L))
 
 /// Clocked, substepped, or holding behaviours (fixed-step ones only when clocked).
@@ -727,7 +783,9 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 				continue
 			stat_inc(B.id, OM_STAT_WAKES)
 			var/ver = rec.att_ver
+			var/wake_start = TICK_USAGE
 			call_hook(rec, B, OM_HOOK_WAKE, bits)
+			meter.charge(B.system_idx, TICK_USAGE_TO_MS(wake_start))
 			if(rec.torn_down)
 				break
 			if(rec.att_ver != ver)
@@ -889,6 +947,7 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	if(!length(D))
 		rec.deadlines = null
 	stat_inc(bid, OM_STAT_DEADLINES)
+	var/deadline_start = TICK_USAGE
 	switch(sub)
 		if(0)
 			call_hook(rec, B, OM_HOOK_DEADLINE)
@@ -896,6 +955,7 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 			om_throttle_release(rec, B)
 		else
 			call_hook(rec, B, OM_HOOK_KEYED, sub)
+	meter.charge(B.system_idx, TICK_USAGE_TO_MS(deadline_start))
 
 // ---------------------------------------------------------------- min_interval throttle
 
@@ -987,6 +1047,7 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	.["registry_errors"] = reg.errors.Copy()
 	.["io"] = om_io_diagnostics(sched)
 	.["pools"] = pool_diagnostics()
+	.["kernel"] = km_diagnostics(sched)
 
 /// The behaviour this ring runs.
 /datum/om/ring/proc/behaviour() as /datum/om/behaviour

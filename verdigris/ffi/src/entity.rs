@@ -193,12 +193,10 @@ fn entity_describe(entity: ByondValue) -> Result<ByondValue> {
     Ok(ByondValue::new_str(parts.join("; "))?)
 }
 
-/// `SSvg`'s per-sweep maintenance for hosts not yet on the world's pacer
-/// (the world itself is paced by `vg_world_tick`).
-#[auxmacros::bind("/proc/entity_tick_all")]
-fn entity_tick_all() -> Result<ByondValue> {
+/// Per-frame maintenance for hosts not yet on the world's pacer (the world
+/// itself is paced by [`crate::frame`], which calls this).
+pub(crate) fn tick_hosts() {
     registry::for_each(|_, handler| handler.tick());
-    Ok(ByondValue::null())
 }
 
 /// Live entities (a reconciler/test metric).

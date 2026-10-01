@@ -12,7 +12,7 @@
 	var/matrix/testing_matrix
 
 /datum/nobody_wants_to_learn_matrix_math/New(atom/target)
-	rel_set(src, "target", target)
+	rel_set(src, nameof(target), target)
 	testing_matrix = matrix(target.transform)
 
 

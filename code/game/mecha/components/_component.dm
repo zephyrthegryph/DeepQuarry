@@ -113,7 +113,7 @@ DAMAGE_REACTION(/obj/item/mecha_parts/component, DAMAGE_EMP, PROC_REF(component_
 			if(user)
 				to_chat(user, span_notice("\The [target] already has a [component_type] installed!"))
 			return FALSE
-		rel_set(src, "chassis", target)
+		rel_set(src, nameof(chassis), target)
 		if(user)
 			user.drop_from_inventory(src)
 		forceMove(target)
@@ -126,7 +126,7 @@ DAMAGE_REACTION(/obj/item/mecha_parts/component, DAMAGE_EMP, PROC_REF(component_
 			else
 				mech_body_plan().roll_affliction(chassis, list(internal_damage_flag))
 
-		own_move(src, chassis, "internal_components", component_type) // the chassis owns its installed components; `chassis` is the one-sided relation back
+		own_move(src, chassis, nameof(chassis.internal_components), component_type) // the chassis owns its installed components; `chassis` is the one-sided relation back
 
 		if(user)
 			act_message(user, chassis, others = span_notice("%U% installs \the [src] in %T%."))
@@ -141,7 +141,7 @@ DAMAGE_REACTION(/obj/item/mecha_parts/component, DAMAGE_EMP, PROC_REF(component_
 			mech_body_plan().cure(chassis, internal_damage_flag)
 
 		forceMove(get_turf(chassis))
-	rel_clear(src, "chassis")
+	rel_clear(src, nameof(chassis))
 	return TRUE
 
 /// One nanopaste repair a second (a timed action on `site`) until whole or out of paste.

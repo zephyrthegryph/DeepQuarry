@@ -48,6 +48,12 @@ GLOBAL_VAR(dq_lifecycle_snapshot_var_keys)
 		// The OM handle table (om_handle()) is an id allocator, not a registration.
 		if(findtext(name, "om_handle_") == 1)
 			continue
+		// type -> registries, a per-type cache filled on a type's first
+		// materialize (a box's first-seen contents type), not a registration:
+		// membership itself is the "registry [id]" counts below. Counting it made
+		// the round trip fail depending on which tests ran first.
+		if(name == "registries_by_type")
+			continue
 		if(name in GLOB.dq_lifecycle_snapshot_ignored_globs)
 			continue
 		// Test-build audit indexes (own_audit_index, om_rec_audit_index) mirror every owned
@@ -65,49 +71,84 @@ GLOBAL_VAR(dq_lifecycle_snapshot_var_keys)
 				continue
 			if(islist(subsystem.vars[name]))
 				keys["[subsystem.type].[name]"] = list(subsystem, name)
+	// The gameplay systems replaced subsystems that were walked here: their registries and queues are covered the same way.
+	// The native system's per-frame scratch lists churn by design, so only its entity tables count.
+	for(var/datum/system/system as anything in kernel_pure_systems())
+		var/native = istype(system, /datum/system/native)
+		for(var/name in system.vars)
+			if(name == "vars")
+				continue
+			if(native && !(name in list("bound", "entities_by_index")))
+				continue
+			if(islist(system.vars[name]))
+				keys["[system.type].[name]"] = list(system, name)
 	GLOB.dq_lifecycle_snapshot_var_keys = keys
 	return keys
 
-/// Global state an object could register itself with, as key -> size.
+/// Global state an object could register itself with, as sizes.
 /// Covers every list var on GLOB and on every subsystem (processing lists,
 /// machine lists, lighting queues, registries), each radio frequency's device
 /// lists, and the listeners of every global signal.
+///
+/// Returns list(sizes, dynamic): `sizes` is a flat list of lengths, one per
+/// entry of the cached var key set (dq_lifecycle_snapshot_var_keys(), same
+/// order every call); `dynamic` is key -> size for the sets whose keys can
+/// change (radio filters, registries, world hooks). The flat half was an assoc
+/// list keyed by strings, and building it and diffing it through a key union
+/// was most of dq_lifecycle_sandbox's time (~2 ms per snapshot and per diff).
 /proc/dq_lifecycle_snapshot()
-	var/list/snapshot = list()
 	var/list/var_keys = dq_lifecycle_snapshot_var_keys()
+	var/list/sizes = new /list(length(var_keys))
+	var/i = 0
 	for(var/key in var_keys)
+		i++
 		var/list/container_and_name = var_keys[key]
 		var/datum/container = container_and_name[1]
-		var/name = container_and_name[2]
-		var/value = container.vars[name]
+		var/value = container.vars[container_and_name[2]]
 		// Defensive: the cached key set only records which vars were
 		// list-valued at cache-build time. If a var was ever reassigned to a
 		// non-list (shouldn't happen for these bookkeeping lists, but a
 		// runtime here would be worse than a missed diff), treat it as absent
 		// rather than erroring length() on a non-list value.
-		snapshot[key] = islist(value) ? length(value) : 0
+		sizes[i] = islist(value) ? length(value) : 0
+	var/list/dynamic = list()
 	for(var/frequency_text in GLOB.radio_service.frequencies)
 		var/datum/radio_frequency/frequency = GLOB.radio_service.frequencies[frequency_text]
 		for(var/radio_filter in frequency.devices)
 			var/list/devices = frequency.devices[radio_filter]
-			snapshot["radio [frequency_text] [radio_filter]"] = length(devices)
+			dynamic["radio [frequency_text] [radio_filter]"] = length(devices)
 	for(var/id in GLOB.registries)
-		snapshot["registry [id]"] = REGISTRY_COUNT(id)
+		dynamic["registry [id]"] = REGISTRY_COUNT(id)
 	var/datum/om_world/om_world_holder = OM_WORLD
 	var/list/world_hooks = om_world_holder?.om_rec?.hooks_in
 	for(var/event_path in world_hooks)
 		var/list/hooks = world_hooks[event_path]
-		snapshot["world hook [event_path]"] = length(hooks) / 2
-	return snapshot
+		dynamic["world hook [event_path]"] = length(hooks) / 2
+	return list(sizes, dynamic)
 
 /// The keys whose sizes differ between two snapshots, as readable lines.
 /proc/dq_lifecycle_snapshot_diff(list/before, list/after)
 	. = list()
-	for(var/key in before | after)
-		var/old_size = before[key] || 0
-		var/new_size = after[key] || 0
+	var/list/before_sizes = before[1]
+	var/list/after_sizes = after[1]
+	var/list/var_keys = dq_lifecycle_snapshot_var_keys()
+	for(var/i in 1 to min(length(before_sizes), length(after_sizes)))
+		if(before_sizes[i] != after_sizes[i])
+			. += "[var_keys[i]] [before_sizes[i]] -> [after_sizes[i]]"
+	// Missing keys count as size 0, as before.
+	var/list/before_dynamic = before[2]
+	var/list/after_dynamic = after[2]
+	for(var/key in before_dynamic)
+		var/old_size = before_dynamic[key] || 0
+		var/new_size = after_dynamic[key] || 0
 		if(old_size != new_size)
 			. += "[key] [old_size] -> [new_size]"
+	for(var/key in after_dynamic)
+		if(!isnull(before_dynamic[key]))
+			continue
+		var/new_size = after_dynamic[key] || 0
+		if(new_size)
+			. += "[key] 0 -> [new_size]"
 
 /// Running behaviour the object started on itself: timers and processing.
 /proc/dq_lifecycle_running(datum/D)
@@ -125,6 +166,46 @@ GLOBAL_VAR(dq_lifecycle_snapshot_var_keys)
 
 /datum/unit_test/dq_lifecycle_sandbox
 	is_sweep_test = TRUE
+	tier = TEST_TIER_EXHAUSTIVE
+
+/// One latent-safe type from each latent-safe family (latent_safe_types.dm):
+/// the fixed subset the normal-tier representatives of the latent sweeps check.
+/proc/dq_latent_representative_types()
+	return list(
+		/obj/item/stock_parts/capacitor,
+		/obj/item/circuitboard/autolathe,
+		/obj/item/smes_coil,
+		/obj/item/bluespace_crystal,
+		/obj/item/paper,
+		/obj/item/pen,
+		/obj/item/reagent_containers/pill/paracetamol,
+		/obj/item/light/tube,
+		/obj/item/ammo_casing/a9mm,
+		/obj/item/ammo_magazine/m9mm,
+		/obj/item/clothing/under/color/grey,
+		/obj/item/clothing/suit/armor/vest,
+		/obj/item/clothing/shoes/black,
+		/obj/item/clothing/head/helmet,
+		/obj/item/tool/wrench,
+		/obj/item/trash/candy,
+		/obj/item/stack/rods,
+		/obj/item/stack/material/steel,
+		/obj/item/storage/box,
+		/obj/item/storage/toolbox,
+		/obj/item/storage/backpack,
+		/obj/item/storage/firstaid/regular,
+		/obj/item/radio,
+		/obj/item/card/id,
+	)
+
+/// Normal tier: the sandbox on a fixed subset (every latent-safe family, plus a
+/// listed clean type). The whole-tree sweep runs in CI and nightly.
+/datum/unit_test/dq_lifecycle_sandbox/representative
+	is_sweep_test = FALSE
+	tier = TEST_TIER_NORMAL
+
+/datum/unit_test/dq_lifecycle_sandbox/representative/curated_types()
+	return dq_latent_representative_types() + /obj/item/pda
 
 /// Types that are not latent-safe yet but register with the world only in
 /// on_materialize() (L3). The sandbox test holds them to the same rule. Only
@@ -143,10 +224,12 @@ GLOBAL_LIST_INIT(dq_lifecycle_clean_types, list(
 /datum/unit_test/dq_lifecycle_sandbox/Run()
 	var/list/failures = list()
 	var/tested = 0
+	var/list/tested_paths
 	for(var/atom/movable/path as anything in sweep_types(subtypesof(/atom/movable)))
 		if(!(initial(path.latent_safe) || (path in GLOB.dq_lifecycle_clean_types)) || is_abstract(path))
 			continue
 		tested++
+		LAZYSET(tested_paths, path, TRUE)
 		// Warm up: the first instance of a type builds per-type caches
 		// (element singletons, schemas, static lists) that are not registrations.
 		qdel(new path)
@@ -170,6 +253,13 @@ GLOBAL_LIST_INIT(dq_lifecycle_clean_types, list(
 			failures += "[path]: on_materialize()/on_dematerialize() did not round-trip: [jointext(round_trip, ", ")]"
 		qdel(sandboxed)
 	TEST_ASSERT(tested > 0, "no latent-safe types found")
+	var/list/curated = curated_types()
+	if(curated)
+		var/list/untested = list()
+		for(var/path in curated)
+			if(!LAZYACCESS(tested_paths, path))
+				untested += "[path]"
+		TEST_ASSERT(!length(untested), "curated types that are not latent-safe (or a listed clean type): [jointext(untested, ", ")]")
 	if(length(failures))
 		TEST_FAIL("[length(failures)] problem(s) across [tested] latent-safe types:\n[jointext(failures, "\n")]")
 

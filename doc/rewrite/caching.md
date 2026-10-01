@@ -12,11 +12,11 @@ Code: `code/__defines/shared_cache.dm` (macros), `code/datums/shared_cache/share
 `code/modules/benchmarks/shared_cache.dm`. Lint: `tools/ci/cache_lint.py`.
 
 This is not the per-entity declared-cache machinery (`declared_cache_vars()`,
-`CACHE_ON_CHANGE`/`CACHE_ON_EVENT`/`CACHE_ON_RELATION`, object_model.md): those clear one var on
+`CACHE_ON_CHANGE`/`CACHE_ON_EVENT`/`CACHE_ON_RELATION`, archive/object_model.md): those clear one var on
 one entity. A shared cache is global and keyed.
 
 It is the one caching mechanism for shared values. The declarative lifecycle runtime
-(`code/datums/lifecycle/declarations.dm`, declarative_lifecycle.md) keeps no private cache: its
+(`code/datums/lifecycle/declarations.dm`, archive/declarative_lifecycle.md) keeps no private cache: its
 per-type declaration table is the `lifecycle_decls` cache, `DECLARE_APPEARANCE`'s built
 combinations are `decl_appearance` (interned, so types that build the same overlays share one
 list), and binder singletons are `decl_binders`. The atom type table (`atom_type_table()`,
@@ -52,7 +52,8 @@ empty table rather than FALSE). Don't call `CACHED()` from a global var initiali
 
 ### 1.1 Stable keys
 
-A key must name the same thing for the life of the world. `ref()` and `ef` are recycled when
+A key must name the same thing for the life of the world. `ref()` and `
+ef` are recycled when
 their datum is deleted, so a key built from one can hand a new object another one's value.
 
 | Keyed thing | Key by |

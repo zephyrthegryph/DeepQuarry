@@ -6,7 +6,7 @@ GLOBAL_LIST_EMPTY(dq_attacks_panels)
 	var/mob/living/carbon/human/host
 
 /datum/attacks_panel/New(mob/living/carbon/human/host_mob)
-	rel_set(src, "host", host_mob)
+	rel_set(src, nameof(host), host_mob)
 
 /// Phase 2: leaves the per-host panel index.
 /datum/attacks_panel/lifecycle_dematerialize()
@@ -71,7 +71,7 @@ UI_ACT_PROC(/datum/attacks_panel, ui_act_reset_default)
 // Check Attacks verb now opens a structured TGUI panel.
 /mob/living/carbon/human/verb/check_attacks()
 	set name = "Check Attacks"
-	set category = "IC.Game"
+	set category = VERB_CAT_IC_GAME
 	set src = usr
 	var/key = "[REF(src)]"
 	var/datum/attacks_panel/panel = LAZYACCESS(GLOB.dq_attacks_panels, key)

@@ -197,7 +197,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/abstract_grub_machine, MACHINE_PIPELINE, "
 	shuffle_power_usages()
 	if(!istype(loc, /mob/living/simple_mob/animal/solargrub_larva))
 		return INITIALIZE_HINT_QDEL
-	rel_set(src, "grub", loc)
+	rel_set(src, nameof(grub), loc)
 
 /// Drains its area's power for its grub while draining; stopped, it sleeps until the grub moves.
 /obj/machinery/abstract_grub_machine/machine_step()

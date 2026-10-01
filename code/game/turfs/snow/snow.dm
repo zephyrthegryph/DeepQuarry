@@ -8,7 +8,7 @@
 	oxygen = MOLES_O2STANDARD * 1.15
 	nitrogen = MOLES_N2STANDARD * 1.15
 
-	temperature = TN60C
+	initial_temperature = TN60C
 	var/list/crossed_dirs
 
 /turf/snow/Entered(atom/A)

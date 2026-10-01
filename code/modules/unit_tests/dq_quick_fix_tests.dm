@@ -5,7 +5,7 @@
 	var/mob/clicked_by
 
 /obj/dq_test_ctrl_shift_probe/click_ctrl_shift(mob/user)
-	rel_set(src, "clicked_by", user)
+	rel_set(src, nameof(clicked_by), user)
 	return CLICK_ACTION_SUCCESS
 
 /// B5: a cyborg's ctrl-shift-click reaches the clicked atom, not the borg.

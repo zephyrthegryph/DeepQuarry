@@ -1,5 +1,5 @@
 /mob/living/verb/give(mob/living/target in living_mobs_in_view(1))
-	set category = "IC.Game"
+	set category = VERB_CAT_IC_GAME
 	set name = "Give"
 
 	do_give(target)

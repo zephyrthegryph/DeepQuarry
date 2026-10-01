@@ -18,14 +18,15 @@
 /obj/machinery/vending/nifsoft_shop/Initialize(mapload)
 	. = ..()
 
-	own_set(src, "wires", new /datum/wires/vending/no_contraband(src)) //These wires can't be hacked for contraband.
-	own_set(src, "entopic", new /datum/entopic(aholder = src, aicon = icon, aicon_state = "beacon"))
+	own_set(src, nameof(entopic), new /datum/entopic(aholder = src, aicon = icon, aicon_state = "beacon"))
 
-UI_DATA(/obj/machinery/vending/nifsoft_shop, "merge:ui_data_obj_machinery_vending_nifsoft_shop{chargesMoney:bool}")
+/obj/machinery/vending/nifsoft_shop/capabilities()
+	. = ..()
+	. = replace(., /datum/capability/wires, cap_wires(/datum/wires/vending/no_contraband)) //These wires can't be hacked for contraband.
+	. = replace(., /datum/capability/emag, cap_emag(say = "You short out %T%'s access lock & stock restrictions.", effect = PROC_REF(on_emag), mode = EMAG_REPEATABLE)) //Yeees, YEEES! Give me that black market tech.
 
-/// The computed part of /obj/machinery/vending/nifsoft_shop's window data (declared on its UI_DATA row).
-/obj/machinery/vending/nifsoft_shop/proc/ui_data_obj_machinery_vending_nifsoft_shop(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	. = list()
+/obj/machinery/vending/nifsoft_shop/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	. = ..()
 	.["chargesMoney"] = TRUE
 
 
@@ -33,18 +34,15 @@ UI_DATA(/obj/machinery/vending/nifsoft_shop, "merge:ui_data_obj_machinery_vendin
 	. = ..()
 	if(!entopic) return //Early APC init(), ignore
 	if(has_stat(BROKEN))
-		icon_state = "[initial(icon_state)]-broken"
 		entopic.hide()
 	else
 		if(!has_stat(NOPOWER))
-			icon_state = initial(icon_state)
 			entopic.show()
 		else
-			om_after(src, rand(0, 15), PROC_REF(lose_power))
+			after(src, rand(0, 15), PROC_REF(lose_power))
 
 /obj/machinery/vending/nifsoft_shop/malfunction()
 	atom_break()
-	icon_state = "[initial(icon_state)]-broken"
 	entopic.hide()
 	return
 
@@ -88,7 +86,7 @@ UI_DATA(/obj/machinery/vending/nifsoft_shop, "merge:ui_data_obj_machinery_vendin
 			product.category = category
 			product.item_desc = initial(NS.desc)
 
-			own_add(src, "product_records", product)
+			own_add(src, nameof(product_records), product)
 
 /obj/machinery/vending/nifsoft_shop/can_buy(datum/stored_item/vending_product/R, mob/user)
 	. = ..()
@@ -109,7 +107,7 @@ UI_DATA(/obj/machinery/vending/nifsoft_shop, "merge:ui_data_obj_machinery_vendin
 		if(initial(path.access))
 			var/list/soft_access = list(initial(path.access))
 			var/list/usr_access = user.GetAccess()
-			if(scan_id && !has_access(soft_access, list(), usr_access) && !emagged)
+			if(scan_id && !has_access(soft_access, list(), usr_access) && !is_emagged(src))
 				to_chat(user, span_warning("You aren't authorized to buy [initial(path.name)]."))
 				flick("[icon_state]-deny", entopic.my_image)
 				return FALSE
@@ -122,7 +120,6 @@ UI_DATA(/obj/machinery/vending/nifsoft_shop, "merge:ui_data_obj_machinery_vendin
 		flick("[icon_state]-deny",entopic.my_image)
 		return
 	vend_ready = 0 //One thing at a time!!
-	SStgui.update_uis(src)
 
 	if(R.category & CAT_COIN)
 		if(!coin)
@@ -133,10 +130,10 @@ UI_DATA(/obj/machinery/vending/nifsoft_shop, "merge:ui_data_obj_machinery_vendin
 				to_chat(user, span_notice("You successfully pull the coin out before \the [src] could swallow it."))
 			else
 				to_chat(user, span_notice("You weren't able to pull the coin out fast enough, the machine ate it, string and all."))
-				own_clear(src, "coin", OWN_DELETE)
+				own_clear(src, nameof(coin), OWN_DELETE)
 				categories &= ~CAT_COIN
 		else
-			own_clear(src, "coin", OWN_DELETE)
+			own_clear(src, nameof(coin), OWN_DELETE)
 			categories &= ~CAT_COIN
 
 	if(!COOLDOWN_TIMELEFT(src, reply_cooldown) && vend_reply)
@@ -144,7 +141,7 @@ UI_DATA(/obj/machinery/vending/nifsoft_shop, "merge:ui_data_obj_machinery_vendin
 		COOLDOWN_START(src, reply_cooldown, vend_delay + 20 SECONDS)
 
 	use_power(vend_power_usage)	//actuators and stuff
-	om_after(src, vend_delay, PROC_REF(finish_nifsoft_vend), R, H, user)
+	after(src, vend_delay, PROC_REF(finish_nifsoft_vend), R, H, user)
 	return 1
 
 //Can't throw intangible software at people.
@@ -158,15 +155,14 @@ UI_DATA(/obj/machinery/vending/nifsoft_shop, "merge:ui_data_obj_machinery_vendin
 	if(index != WIRE_CONTRABAND)
 		..(index)
 
-/obj/machinery/vending/nifsoft_shop/on_emag(remaining_charges, mob/user, obj/item/emag_source) //Yeees, YEEES! Give me that black market tech.
-	if(!emagged || !(categories & CAT_HIDDEN))
-		set_emagged(1)
-		categories |= CAT_HIDDEN
-		to_chat(user, "You short out [src]'s access lock & stock restrictions.")
-		return 1
+/// The emag's effect (it runs before the emagged bit is set): unlock the hidden stock, or decline when it already is.
+/obj/machinery/vending/nifsoft_shop/proc/on_emag(mob/user, obj/item/card/emag/card)
+	if(is_emagged(src) && (categories & CAT_HIDDEN))
+		return FALSE
+	categories |= CAT_HIDDEN
+	return TRUE
 
 /obj/machinery/vending/nifsoft_shop/proc/lose_power()
-	icon_state = "[initial(icon_state)]-off"
 	entopic.hide()
 
 /obj/machinery/vending/nifsoft_shop/proc/finish_nifsoft_vend(datum/stored_item/vending_product/R, mob/living/carbon/human/H, mob/user)
@@ -178,5 +174,4 @@ UI_DATA(/obj/machinery/vending/nifsoft_shop, "merge:ui_data_obj_machinery_vendin
 		do_logging(R, user, 1)
 
 	vend_ready = 1
-	rel_clear(src, "currently_vending")
-	SStgui.update_uis(src)
+	rel_clear(src, nameof(currently_vending))

@@ -23,7 +23,7 @@
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
 		if(H.get_equipped_item(SLOT_ID_GLOVES) == src)
-			rel_set(src, "wearer", H)
+			rel_set(src, nameof(wearer), H)
 			if(H.can_feel_pain())
 				to_chat(H, span_danger("You feel a stabbing sensation in your hands as you slide \the [src] on!"))
 				H.custom_pain("You feel a sharp pain in your hands!",1)

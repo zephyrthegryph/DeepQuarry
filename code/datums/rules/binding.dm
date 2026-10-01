@@ -22,7 +22,7 @@
 		return
 	var/datum/rule_binding/binding = new(A, rules)
 	if(!binding.active_count())
-		own_clear(A, "rule_binding", OWN_DELETE)
+		own_clear(A, nameof(/datum::rule_binding), OWN_DELETE)
 		return
 	return binding
 
@@ -43,7 +43,7 @@
 /// Drops `A`'s subscriptions. /atom/on_dematerialize() calls it.
 /proc/dq_rules_on_dematerialize(atom/A)
 	if(dq_rule_binding_of(A))
-		own_clear(A, "rule_binding", OWN_DELETE)
+		own_clear(A, nameof(/datum::rule_binding), OWN_DELETE)
 
 /// Evaluate `thing`'s rules now instead of at the next dispatch. For code about
 /// to destroy the object (take_damage before atom_destruction), so every rule
@@ -147,9 +147,9 @@
 
 /datum/rule_binding/New(atom/owner, list/rules)
 	..()
-	rel_set(src, "owner", owner)
+	rel_set(src, nameof(owner), owner)
 	table = dq_rule_table_for(rules)
-	own_set(owner, "rule_binding", src)
+	own_set(owner, nameof(owner.rule_binding), src)
 	var/count = table.count
 	for(var/i in 1 to count)
 		if(subscribe(i, rules[i]))
@@ -251,7 +251,7 @@
 			dq_rx_cancel(src, token)
 		UNSETEMPTY(tokens)
 	if(hold_models && !isnull(hold_models[i]) && hold_models[i] != RULE_HOLD_SPENT)
-		dq_rx_rate_remove(hold_models[i])
+		om_rate_remove(hold_models[i])
 		hold_models[i] = null
 		hold_tokens[i] = null
 
@@ -320,18 +320,18 @@
 	if(isnull(model))
 		if(!now)
 			return
-		model = dq_rx_rate_linear(0, 1, 0, null)
+		model = om_rate_linear(0, 1, 0, null)
 		hold_models[i] = model
 		hold_tokens[i] = dq_rx_on_rate(src, model, TRUE, rule.hold_for / 10) // ALLOW(ownership): positional slot aligned with table.rules (null gaps); the watch itself is linked through the world_watches relation, and this slot is cleared on cancel/spend
 		return
 	// Within a tick of the hold time counts: the model reads at step ticks.
-	if(now && dq_rx_rate_read(model) >= (rule.hold_for - world.tick_lag) / 10)
-		dq_rx_rate_remove(model)
+	if(now && om_rate_read(model) >= (rule.hold_for - world.tick_lag) / 10)
+		om_rate_remove(model)
 		hold_models[i] = RULE_HOLD_SPENT
 		hold_tokens[i] = null
 		fire(i)
 		return
-	dq_rx_rate_set_rate(model, now ? 1 : 0)
+	om_rate_set_rate(model, now ? 1 : 0)
 	if(now)
 		// Re-arm the crossing watch from the resumed rate.
 		if(!isnull(hold_tokens[i]))

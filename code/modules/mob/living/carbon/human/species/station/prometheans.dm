@@ -221,7 +221,7 @@
 
 /mob/living/carbon/human/proc/innate_shapeshifting()
 	set name = "Transform Appearance"
-	set category = "Abilities.Superpower"
+	set category = VERB_CAT_ABILITIES_SUPERPOWER
 	var/datum/tgui_module/appearance_changer/innate/I = new(src, src)
 	I.tgui_interact(src)
 
@@ -260,7 +260,7 @@ OWN_TIMER(/datum/trait_state/promethean_biology, still_timer)
 
 /datum/trait_state/promethean_biology/proc/restart_stillness()
 	still = FALSE
-	om_after_slot(src, "still_timer", PROMETHEAN_STILLNESS_TIME, PROC_REF(became_still))
+	after_slot(src, "still_timer", PROMETHEAN_STILLNESS_TIME, PROC_REF(became_still))
 
 /datum/trait_state/promethean_biology/proc/became_still()
 	still = TRUE

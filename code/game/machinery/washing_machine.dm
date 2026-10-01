@@ -35,7 +35,9 @@
 	default_apply_parts()
 	make_climbable()
 
-OWN(/obj/machinery/washing_machine, washing, OWN_SPILL)
+/obj/machinery/washing_machine/ownership()
+	. = ..()
+	. += owns(nameof(washing), policy = OWN_SPILL)
 
 /obj/machinery/washing_machine/declare_interactions(list/into)
 	into += list(
@@ -94,11 +96,11 @@ OWN(/obj/machinery/washing_machine, washing, OWN_SPILL)
 	//Tanning!
 	for(var/obj/item/stack/hairlesshide/HH in washing)
 		var/obj/item/stack/wetleather/WL = new(src, HH.get_amount())
-		own_take_member(src, "washing", HH)
+		own_take_member(src, nameof(washing), HH)
 		HH.forceMove(get_turf(src))
 		HH.use(HH.get_amount())
 
-		own_add(src, "washing", WL)
+		own_add(src, nameof(washing), WL)
 	var/has_mobs = FALSE
 	for(var/mob/living/mobs in washing)
 		has_mobs = TRUE
@@ -169,7 +171,7 @@ DECLARE_APPEARANCE(/obj/machinery/washing_machine, "panel_open", list("1" = list
 		if(state in list (EMPTY_OPEN, FULL_OPEN, BLOODY_OPEN))
 			if(!crayon())
 				user.drop_item()
-				rel_set(src, "crayon", W)
+				rel_set(src, nameof(crayon), W)
 				crayon().forceMove(src)
 			//else: old fell through to a bare ..() (approximated as a no-op)
 
@@ -191,9 +193,8 @@ DECLARE_APPEARANCE(/obj/machinery/washing_machine, "panel_open", list("1" = list
 	else if(istype(W, /obj/item/clothing) || istype(W, /obj/item/bedsheet) || istype(W, /obj/item/stack/hairlesshide))
 		if(length(washing) < 5)
 			if(state in list(EMPTY_OPEN, FULL_OPEN))
-				user.drop_item()
-				W.forceMove(src)
-				own_add(src, "washing", W)
+				if(!own_add(src, nameof(src.washing), W, user = user))
+					return TRUE
 				set_state(FULL_OPEN)
 			else
 				to_chat(user, span_notice("You can't put the item in right now."))
@@ -207,8 +208,7 @@ DECLARE_APPEARANCE(/obj/machinery/washing_machine, "panel_open", list("1" = list
 	if(state == EMPTY_OPEN) //Checking to make sure nobody closed it before we shoved em in it.
 		var/mob/grabbed = G?.grab_target()
 		act_message(user, grabbed, MSG_SELF("You stuff %T% into the [src] and shut the door!"), MSG_OTHERS("%U% stuffs %T% into the [src] and shuts the door!"))
-		grabbed.forceMove(src)
-		own_add(src, "washing", grabbed)
+		own_add(src, nameof(src.washing), grabbed, user = user, into = TRUE)
 		consume(G, user)
 		set_state(FULL_CLOSED)
 	else
@@ -238,14 +238,14 @@ DECLARE_APPEARANCE(/obj/machinery/washing_machine, "panel_open", list("1" = list
 			set_state(EMPTY_OPEN)
 			for(var/atom/movable/O in washing)
 				O.forceMove(get_turf(src))
-			own_take_all(src, "washing")
+			own_take_all(src, nameof(washing))
 		if(FULL_OPEN)
 			set_state(FULL_CLOSED)
 		if(FULL_CLOSED)
 			for(var/atom/movable/O in washing)
 				O.forceMove(get_turf(src))
-			rel_clear(src, "crayon")
-			own_take_all(src, "washing")
+			rel_clear(src, nameof(crayon))
+			own_take_all(src, nameof(washing))
 			set_state(EMPTY_OPEN)
 		if(RUNNING)
 			if(user)
@@ -261,9 +261,9 @@ DECLARE_APPEARANCE(/obj/machinery/washing_machine, "panel_open", list("1" = list
 					mobs.gib()
 			for(var/atom/movable/O in washing)
 				O.forceMove(get_turf(src))
-			rel_clear(src, "crayon")
+			rel_clear(src, nameof(crayon))
 			set_state(EMPTY_OPEN)
-			own_take_all(src, "washing")
+			own_take_all(src, nameof(washing))
 
 	update_icon()
 	return TRUE

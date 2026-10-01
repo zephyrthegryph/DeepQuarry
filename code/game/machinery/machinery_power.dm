@@ -37,9 +37,10 @@
 // Returns TRUE if NOPOWER stat flag changed.
 // can override if needed
 /obj/machinery/proc/power_change()
-	var/changed = powered(power_channel) ? stat_remove(NOPOWER) : stat_add(NOPOWER)
-	if(!changed) // the setter raised CHANGE_MACHINE_POWER
+	var/flipped = powered(power_channel) ? stat_remove(NOPOWER) : stat_add(NOPOWER)
+	if(!flipped) // the setter raised CHANGE_MACHINE_POWER
 		return FALSE
+	changed(src) // a power change is a dispatched call: the powered capability's layer follows
 	if(has_stat(NOPOWER))
 		OM_EMIT(src, /datum/om/event/machinery_power_lost)
 	else
@@ -122,7 +123,10 @@
 		area_changed(old_area, new_area)
 
 /obj/machinery/proc/area_changed(area/old_area, area/new_area)
-	if(old_area == new_area || !power_init_complete)
+	if(old_area == new_area)
+		return
+	caps_area_changed(src, old_area, new_area) // powered_by(POWERED_BY_AREA) memberships follow the machine
+	if(!power_init_complete)
 		return
 	if(power_subscriber)
 		old_area?.power_unsubscribe(src)
@@ -155,7 +159,7 @@
 		REPORT_POWER_CONSUMPTION_CHANGE(old_power, new_power)
 	// A power-mode change is a settings change for a machine on a pipeline (machine_pipeline.dm).
 	// Raised after the write: watchers (declared periodic work) read the new value.
-	om_changed(src, CHANGE_MACHINE_SETTINGS)
+	changed(src, CHANGE_MACHINE_SETTINGS)
 	return TRUE
 
 // Sets the power_channel var and then forces an area power update.

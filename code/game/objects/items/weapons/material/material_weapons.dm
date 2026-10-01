@@ -53,13 +53,13 @@
 
 /obj/item/material/proc/update_force()
 	if(edge || sharp)
-		force = material.get_edge_damage()
+		force = material.edge_damage()
 	else
-		force = material.get_blunt_damage()
+		force = material.blunt_damage()
 	force = round(force*force_divisor)
 	if(dulled)
 		force = round(force*dulled_divisor)
-	throwforce = round(material.get_blunt_damage()*thrown_force_divisor)
+	throwforce = round(material.blunt_damage()*thrown_force_divisor)
 
 /obj/item/material/proc/set_material(new_material)
 	material = get_material_by_name(new_material)

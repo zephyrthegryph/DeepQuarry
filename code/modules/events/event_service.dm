@@ -6,7 +6,7 @@ GLOBAL_DATUM_INIT(event_service, /datum/world_service/events, new)
 
 /datum/world_service/events
 	name = "Events"
-	boot_after = /datum/controller/subsystem/atoms
+	needs = list(/datum/controller/subsystem/atoms)
 
 	var/list/datum/event/finished_events = list()
 
@@ -48,13 +48,13 @@ GLOBAL_DATUM_INIT(event_service, /datum/world_service/events, new)
 		log_game("Event of '[E.type]' with missing meta-data has completed.")
 		return
 
-	own_add(src, "finished_events", E)
+	own_add(src, nameof(finished_events), E)
 
 	// Add the event back to the list of available events
 	var/datum/event_container/EC = event_containers[E.severity]
 	var/datum/event_meta/EM = E.event_meta()
 	if(EM.add_to_queue)
-		rel_add(EC, "available_events", EM)
+		rel_add(EC, nameof(EC.available_events), EM)
 
 	log_game("Event '[EM.name]' has completed at [stationtime2text()].")
 

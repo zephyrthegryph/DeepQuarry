@@ -1,9 +1,9 @@
 /datum/antagonist/proc/get_starting_locations()
 	if(landmark_id)
-		rel_clear(src, "starting_locations")
+		rel_clear(src, nameof(starting_locations))
 		for(var/obj/effect/landmark/L in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
 			if(L.name == landmark_id)
-				rel_add(src, "starting_locations", get_turf(L))
+				rel_add(src, nameof(starting_locations), get_turf(L))
 
 /datum/antagonist/proc/announce_antagonist_spawn()
 

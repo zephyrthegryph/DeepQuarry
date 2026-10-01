@@ -19,7 +19,7 @@ DECLARE_REPEAT(/mob/living/simple_mob/mechanical/mecha/eclipse, "volley_fire_del
 /// Starts a counted volley: the first shot now, the rest on the declared repeat.
 /mob/living/simple_mob/mechanical/mecha/eclipse/proc/start_volley(kind, atom/target, amount, next_cycle, fire_delay)
 	volley_kind = kind
-	rel_set(src, "volley_target", target)
+	rel_set(src, nameof(volley_target), target)
 	volley_next_cycle = next_cycle
 	volley_fire_delay = fire_delay
 	set_volley_shots_left(amount)

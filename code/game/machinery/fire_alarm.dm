@@ -60,10 +60,10 @@ FIRE ALARM
 	if(z in using_map.contact_levels)
 		set_security_level(GLOB.security_level ? get_security_level() : "green")
 
-	own_set(src, "soundloop", new /datum/looping_sound/alarm/fire_alarm(list(src), FALSE)) // Create soundloop
-	own_set(src, "engalarm", new /datum/looping_sound/alarm/engineering_alarm(list(src), FALSE)) // Create soundloop
-	own_set(src, "critalarm", new /datum/looping_sound/alarm/sm_critical_alarm(list(src), FALSE)) // Create soundloop
-	own_set(src, "causality", new /datum/looping_sound/alarm/sm_causality_alarm(list(src), FALSE)) // Create soundloop
+	own_set(src, nameof(soundloop), new /datum/looping_sound/alarm/fire_alarm(list(src), FALSE)) // Create soundloop
+	own_set(src, nameof(engalarm), new /datum/looping_sound/alarm/engineering_alarm(list(src), FALSE)) // Create soundloop
+	own_set(src, nameof(critalarm), new /datum/looping_sound/alarm/sm_critical_alarm(list(src), FALSE)) // Create soundloop
+	own_set(src, nameof(causality), new /datum/looping_sound/alarm/sm_causality_alarm(list(src), FALSE)) // Create soundloop
 
 
 // a sounding alarm is reset for its area.
@@ -188,7 +188,7 @@ DAMAGE_REACTION(/obj/machinery/firealarm, DAMAGE_EMP, PROC_REF(firealarm_emp))
 	. = ..()
 	// A burst of power changes (every grid binding at boot) shares one pending settle.
 	if(!om_timer_slot_pending(src, "power_settle"))
-		om_after_slot(src, "power_settle", rand(0,15), PROC_REF(power_change_settle))
+		after_slot(src, "power_settle", rand(0,15), PROC_REF(power_change_settle))
 
 OWN_TIMER(/obj/machinery/firealarm, power_settle)
 

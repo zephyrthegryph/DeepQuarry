@@ -9,7 +9,7 @@
 //Absorbs the victim's DNA. Requires a strong grip on the victim.
 //Doesn't cost anything as it's the most basic ability.
 /mob/living/proc/changeling_absorb_dna()
-	set category = "Changeling"
+	set category = VERB_CAT_CHANGELING
 	set name = "Absorb DNA"
 
 	var/datum/changeling/changeling = changeling_power(0,0,100) //Our changeling power

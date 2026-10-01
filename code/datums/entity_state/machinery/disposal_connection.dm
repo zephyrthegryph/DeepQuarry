@@ -15,12 +15,12 @@
 	RETURN_TYPE(/datum/disposal_system_connection)
 	if(disposal_connection)
 		qdel(disposal_connection)
-	own_set(src, "disposal_connection", new /datum/disposal_system_connection(src, visibly_connects))
+	own_set(src, nameof(disposal_connection), new /datum/disposal_system_connection(src, visibly_connects))
 	return disposal_connection
 
 /datum/disposal_system_connection/New(obj/new_owner, visibly_connects = TRUE)
 	..()
-	rel_set(src, "owner", new_owner)
+	rel_set(src, nameof(owner), new_owner)
 	visible_connection = visibly_connects
 	om_hook(owner, /datum/om/event/before/disposal_flush, src, PROC_REF(on_flush))
 	om_hook(owner, /datum/om/event/disposal_link, src, PROC_REF(link_to_trunk))
@@ -46,17 +46,17 @@
 		return FALSE
 	if(trunk.linked()) //Already linked to something
 		return FALSE
-	rel_set(src, "connected_trunk", trunk)
-	rel_set(trunk, "linked", disposal_owner())
+	rel_set(src, nameof(connected_trunk), trunk)
+	rel_set(trunk, nameof(trunk.linked), disposal_owner())
 	om_hook(trunk, /datum/om/event/before/disposal_send, src, PROC_REF(on_recieve))
 
 /datum/disposal_system_connection/proc/unlink_from_trunk(datum/source, datum/om/event/disposal_unlink/event)
 	EVENT_HANDLER
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(connected_trunk())
-		rel_clear(connected_trunk(), "linked")
+		rel_clear(connected_trunk(), nameof(/datum/integrated_io::linked))
 		om_unhook(connected_trunk(), /datum/om/event/before/disposal_send, src)
-		rel_clear(src, "connected_trunk")
+		rel_clear(src, nameof(connected_trunk))
 
 /datum/disposal_system_connection/proc/on_recieve(datum/source, datum/om/event/before/disposal_send/event)
 	EVENT_HANDLER

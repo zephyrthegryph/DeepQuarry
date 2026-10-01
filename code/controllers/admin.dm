@@ -37,11 +37,11 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick)
 	usr.client.debug_variables(target)
 	message_admins("Admin [key_name_admin(usr)] is debugging the [target] [class].")
 
-ADMIN_VERB(restart_controller, R_DEBUG, "Restart Controller", "Restart one of the various periodic loop controllers for the game (be careful!)", ADMIN_CATEGORY_DEBUG_GAME, controller in list("Master", "Failsafe"))
+ADMIN_VERB(restart_controller, R_DEBUG, "Restart Controller", "Restart one of the various periodic loop controllers for the game (be careful!)", ADMIN_CATEGORY_DEBUG_GAME, controller in list("Kernel", "Failsafe"))
 	switch(controller)
-		if("Master")
-			Recreate_MC()
-			feedback_add_details("admin_verb","RMC")
+		if("Kernel")
+			Recreate_kernel()
+			feedback_add_details("admin_verb","RKernel")
 		if("Failsafe")
 			new /datum/controller/failsafe()
 			feedback_add_details("admin_verb","RFailsafe")
@@ -56,6 +56,7 @@ ADMIN_VERB(debug_antagonist_template, R_DEBUG, "Debug Antagonist", "Debug an ant
 
 ADMIN_VERB(debug_controller, R_DEBUG, "Debug Controller", "Debug the various periodic loop controllers for the game (be careful!)", ADMIN_CATEGORY_DEBUG_GAME)
 	var/list/options = list()
+	options["Kernel"] = kernel()
 	options["MC"] = Master
 	options["Failsafe"] = Failsafe
 	options["Configuration"] = config
@@ -69,6 +70,12 @@ ADMIN_VERB(debug_controller, R_DEBUG, "Debug Controller", "Debug the various per
 				offset++
 			options["[strtype]_[offset] - DUPE ERROR"] = S		//Something is very, very wrong.
 		else
+			options[strtype] = S
+
+	// The gameplay systems keep their SS<X> names.
+	for(var/datum/system/S as anything in kernel_pure_systems())
+		var/strtype = "SS[get_end_section_of_type(S.type)]"
+		if(!options[strtype])
 			options[strtype] = S
 
 	//Goon PS stuff, and other yet-to-be-subsystem things.

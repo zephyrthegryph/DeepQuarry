@@ -37,10 +37,10 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob, /mob/living/simple_mob/proc/set_gende
 	can_be_afk_pred = client.prefs_vr.can_be_afk_pred
 	throw_vore = client.prefs_vr.throw_vore
 	food_vore = client.prefs_vr.food_vore
-	rel_set(src, "spont_belly_rear", client.prefs_vr.spont_belly_rear)
-	rel_set(src, "spont_belly_left", client.prefs_vr.spont_belly_left)
-	rel_set(src, "spont_belly_front", client.prefs_vr.spont_belly_front)
-	rel_set(src, "spont_belly_right", client.prefs_vr.spont_belly_right)
+	rel_set(src, nameof(spont_belly_rear), client.prefs_vr.spont_belly_rear)
+	rel_set(src, nameof(spont_belly_left), client.prefs_vr.spont_belly_left)
+	rel_set(src, nameof(spont_belly_front), client.prefs_vr.spont_belly_front)
+	rel_set(src, nameof(spont_belly_right), client.prefs_vr.spont_belly_right)
 	consume_liquid_belly = client.prefs_vr.consume_liquid_belly
 	allow_spontaneous_tf = client.prefs_vr.allow_spontaneous_tf
 	digest_leave_remains = client.prefs_vr.digest_leave_remains
@@ -90,7 +90,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob, /mob/living/simple_mob/proc/set_gende
 /mob/living/simple_mob/proc/set_name()
 	set name = "Set Name"
 	set desc = "Sets your mobs name. You only get to do this once."
-	set category = "Abilities.Settings"
+	set category = VERB_CAT_ABILITIES_SETTINGS
 	if(limit_renames && nameset)
 		to_chat(src, span_userdanger("You've already set your name. Ask an admin to toggle \"nameset\" to 0 if you really must."))
 		return
@@ -109,7 +109,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob, /mob/living/simple_mob/proc/set_gende
 /mob/living/simple_mob/proc/set_desc()
 	set name = "Set Description"
 	set desc = "Set your description."
-	set category = "Abilities.Settings"
+	set category = VERB_CAT_ABILITIES_SETTINGS
 	om_ask(src, /datum/om/prompt/text, PROC_REF(desc_set_entered), title = "Description set", message = "Set your description. Max 4096 chars.", multiline = TRUE, encode = FALSE)
 
 /mob/living/simple_mob/proc/desc_set_entered(datum/om/prompt/text/ask)
@@ -121,7 +121,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob, /mob/living/simple_mob/proc/set_gende
 /mob/living/simple_mob/proc/set_gender()
 	set name = "Set Gender"
 	set desc = "Set your gender."
-	set category = "Abilities.Settings"
+	set category = VERB_CAT_ABILITIES_SETTINGS
 	om_ask(src, /datum/om/prompt/choice, PROC_REF(gender_set_chosen), title = "Set Gender", message = "Please select a gender:", choices = list(FEMALE, MALE, NEUTER, PLURAL))
 
 /mob/living/simple_mob/proc/gender_set_chosen(datum/om/prompt/choice/ask)

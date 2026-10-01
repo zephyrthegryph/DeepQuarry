@@ -91,10 +91,7 @@ ADMIN_VERB(access_news_network, R_ADMIN|R_EVENT, "Access Newscaster Network", "A
 	user.holder?.dq_open_newscaster_panel()
 
 
-/datum/admins/proc/Jobbans()
-	if(!check_rights(R_BAN))
-		return
-
+/datum/admins/proc/Jobbans() // rights (R_BAN) are declared by the jobbans ADMIN_VERB
 	var/dat = span_bold("Job Bans!") + "<HR><table>"
 	for(var/t in GLOB.jobban_keylist)
 		var/r = t
@@ -421,7 +418,7 @@ ADMIN_VERB(togglepersistence, R_SERVER, "Toggle Persistent Data", "Whether persi
 	feedback_add_details("admin_verb","TPD") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 /datum/admins/proc/togglemaploadpersistence()
-	set category = "Server.Config"
+	set category = VERB_CAT_SERVER_CONFIG
 	set desc="Whether mapload persistent data will be saved from now on."
 	set name="Toggle Mapload Persistent Data"
 	CONFIG_SET(flag/persistence_ignore_mapload, !CONFIG_GET(flag/persistence_ignore_mapload))
@@ -479,7 +476,7 @@ ADMIN_VERB(adrev, R_SERVER, "Toggle Revive", "Toggle admin revives.", ADMIN_CATE
 	feedback_add_details("admin_verb","TAR") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 /datum/admins/proc/unprison(mob/M in REGISTRY_MEMBERS(REGISTRY_MOBS))
-	set category = "Admin.Moderation"
+	set category = VERB_CAT_ADMIN_MODERATION
 	set name = "Unprison"
 	if (M.z == 2)
 		if (CONFIG_GET(flag/allow_admin_jump))
@@ -593,7 +590,7 @@ ADMIN_VERB(spawn_atom, R_SPAWN, "Spawn", "(atom path) Spawn an atom", ADMIN_CATE
 	if(!chosen_path)
 		var/datum/spawn_menu/menu = user.holder.spawn_menu
 		if(!menu)
-			menu = own_set(user.holder, "spawn_menu", new /datum/spawn_menu())
+			menu = own_set(user.admin_datum(), nameof(/datum/admins::spawn_menu), new /datum/spawn_menu())
 		menu.init_value = object
 		menu.tgui_interact(user.mob)
 		feedback_add_details("admin_verb","SA")
@@ -652,7 +649,7 @@ ADMIN_VERB(toggleguests, R_HOST, "Toggle guests", "Guests can't enter.", ADMIN_C
 	feedback_add_details("admin_verb","TGU") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 /client/proc/update_mob_sprite(mob/living/carbon/human/H as mob)
-	set category = "Admin.Game"
+	set category = VERB_CAT_ADMIN_GAME
 	set name = "Update Mob Sprite"
 	set desc = "Should fix any mob sprite update errors."
 
@@ -830,11 +827,11 @@ ADMIN_VERB(sendFax, R_ADMIN|R_MOD|R_EVENT, "Send Fax", "Sends a fax to this mach
 	for(var/obj/machinery/photocopier/faxmachine/sendto in REGISTRY_MEMBERS(REGISTRY_FAXES))
 		if(sendto.department == department)
 			var/obj/item/paper/admin/P = new /obj/item/paper/admin(null) //hopefully the null loc won't cause trouble for us
-			own_set(user.holder, "faxreply", P) // a replaced reply is deleted
+			own_set(user.admin_datum(), nameof(/datum/admins::faxreply), P) // a replaced reply is deleted
 
-			rel_set(P, "admindatum", user.holder)
+			rel_set(P, nameof(/obj/item/paper/admin::admindatum), user.admin_datum())
 			P.origin = replyorigin
-			rel_set(P, "destination", sendto)
+			rel_set(P, nameof(/datum/ai_brain::destination), sendto)
 
 			P.adminbrowse()
 
@@ -928,7 +925,7 @@ ADMIN_VERB(sendFax, R_ADMIN|R_MOD|R_EVENT, "Send Fax", "Sends a fax to this mach
 
 	spawn(100) // ALLOW(scheduler): admin verb (allowlist)
 		if(faxreply == P)
-			own_clear(src, "faxreply", OWN_DELETE)
+			own_clear(src, nameof(faxreply), OWN_DELETE)
 		else
 			qdel(P)
 	return

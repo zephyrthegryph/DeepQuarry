@@ -208,12 +208,12 @@ DECLARE_REAGENTS_TYPED(/obj/machinery/portable_atmospherics/powered/reagent_dist
 		if("eject input")
 			if(InputBeaker)
 				InputBeaker.forceMove(get_turf(src))
-				own_take(src, "InputBeaker")
+				own_take(src, nameof(InputBeaker))
 
 		if("eject output")
 			if(OutputBeaker)
 				OutputBeaker.forceMove(get_turf(src))
-				own_take(src, "OutputBeaker")
+				own_take(src, nameof(OutputBeaker))
 
 		if("adjust temp")
 			om_ask(user, /datum/om/prompt/number, PROC_REF(target_temp_entered), max = max_temp, min = min_temp, title = "Temperature.", message = "Choose a target temperature.", default = T20C, round_entry = FALSE, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
@@ -259,17 +259,13 @@ DECLARE_REAGENTS_TYPED(/obj/machinery/portable_atmospherics/powered/reagent_dist
 	switch(ask.choice)
 		if("install input")
 			if(!InputBeaker)
-				user.drop_from_inventory(W)
 				W.add_fingerprint(user)
-				W.forceMove(src)
-				own_set(src, "InputBeaker", W)
+				own_set(src, nameof(src.InputBeaker), W, user = user)
 
 		if("install output")
 			if(!OutputBeaker)
-				user.drop_from_inventory(W)
 				W.add_fingerprint(user)
-				W.forceMove(src)
-				own_set(src, "OutputBeaker", W)
+				own_set(src, nameof(src.OutputBeaker), W, user = user)
 
 	update_icon()
 	return TRUE
@@ -399,7 +395,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/powered/reagent_dis
 	if(connected_port())
 		var/obj/machinery/atmospherics/portables_connector/our_port = connected_port()
 		if(our_port.network)
-			return our_port.network.gases[1]
+			return our_port.network.air
 	. = ..()
 
 /obj/machinery/portable_atmospherics/powered/reagent_distillery

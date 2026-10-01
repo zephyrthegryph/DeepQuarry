@@ -78,13 +78,27 @@
 	if(sdisability)
 		H.set_sdisabilities(H.sdisabilities | (sdisability)) // bitflag
 	om_grant(H, GRANT_VERB, /mob/living/carbon/human/proc/trait_tutorial, src)
+	if(H)
+		changed(H, CHANGE_CAPABILITY) // granted_verbs() reads the species' traits
 	if(special_env)
-		rel_add(S, "env_traits", src)
+		rel_add(S, nameof(S.env_traits), src)
 	if(added_component_path && !species_state_has(H, added_component_path))
 		species_state_add(H, added_component_path)
 	if(added_behaviour_path)
 		om_attach(H, added_behaviour_path)
 	return
+
+/// Verbs a mob has while its species carries this trait (read by human granted_verbs()). Pure.
+/datum/trait/proc/granted_verbs()
+	return null
+
+/mob/living/carbon/human/granted_verbs()
+	. = ..()
+	for(var/trait_type in species?.traits)
+		var/datum/trait/T = GLOB.all_traits[trait_type]
+		var/list/verbs_of_trait = T?.granted_verbs()
+		if(verbs_of_trait)
+			. |= verbs_of_trait
 
 // Traitgenes Disabling traits, genes can be turned off after all!
 /datum/trait/proc/unapply(datum/species/S,mob/living/carbon/human/H, trait_prefs = null)
@@ -114,8 +128,10 @@
 		H.disabilities &= ~disability // bitflag
 	if(sdisability)
 		H.set_sdisabilities(H.sdisabilities & (~sdisability)) // bitflag
+	if(H)
+		changed(H, CHANGE_CAPABILITY) // granted_verbs() reads the species' traits
 	if(special_env)
-		rel_remove(S, "env_traits", src)
+		rel_remove(S, nameof(S.env_traits), src)
 	if(added_behaviour_path && H)
 		om_detach(H, added_behaviour_path)
 	if(added_component_path)
@@ -208,4 +224,6 @@
 /datum/trait/proc/environment_effects(mob/living/carbon/human/H)
 	return
 
-REL_PAIR(/datum/trait, linked_gene, linked_trait)
+/datum/trait/relations()
+	. = ..()
+	. += rel_one(nameof(linked_gene), back = nameof(/datum/gene/trait::linked_trait))

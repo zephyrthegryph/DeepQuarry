@@ -1,7 +1,7 @@
 
 /client/verb/ooc(msg as text)
 	set name = "OOC"
-	set category = "OOC.Chat"
+	set category = VERB_CAT_OOC_CHAT
 
 
 	if(!mob)	return
@@ -82,7 +82,7 @@
 /client/verb/looc(msg as text)
 	set name = "LOOC"
 	set desc = "Local OOC, seen only by those in view."
-	set category = "OOC.Chat"
+	set category = VERB_CAT_OOC_CHAT
 
 	if(!mob)
 		return
@@ -194,7 +194,7 @@
 
 /client/verb/fit_viewport()
 	set name = "Fit Viewport"
-	set category = "OOC.Client Settings"
+	set category = VERB_CAT_OOC_CLIENT_SETTINGS
 	set desc = "Fit the width of the map window to match the viewport"
 
 	// Fetch aspect ratio
@@ -246,7 +246,7 @@
 	// Calculate and apply a best estimate
 	// +4 pixels are for the width of the splitter's handle
 	var/pct = 100 * (desired_width + 4) / split_width
-	winset(src, "mainwindow.mainvsplit", "splitter=[pct]")
+	winset(src, SKIN_MAIN_SPLIT, "splitter=[pct]")
 
 	// Apply an ever-lowering offset until we finish or fail: one round trip per step.
 	dx_winget(src, src, "mapwindow", "size", PROC_REF(fit_viewport_step), desired_width, split_width, pct, null, 1)
@@ -267,7 +267,7 @@
 		delta = -delta/2
 
 	pct += delta
-	winset(src, "mainwindow.mainvsplit", "splitter=[pct]")
+	winset(src, SKIN_MAIN_SPLIT, "splitter=[pct]")
 	if(safety < 10)
 		dx_winget(src, src, "mapwindow", "size", PROC_REF(fit_viewport_step), desired_width, split_width, pct, delta, safety + 1)
 

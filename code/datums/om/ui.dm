@@ -30,27 +30,22 @@
 		if(target)
 			om_ui_bind(session, target, row["watch"] || CHANGE_GENERIC_MASK)
 
-/// The rates a ui row streams, as name -> list(value, rate, at).
-/proc/om_ui_stream(datum/E)
-	. = list()
-	var/datum/om/rec/rec = E?.om_rec
-	if(!rec)
-		return
-	for(var/list/row as anything in rec.table.ui)
-		for(var/name in row["stream_rates"])
-			var/datum/om/rate/R = om_rate_named(E, name)
-			if(R)
-				.[name] = om_ui_rate(R)
-
-/// Rate streaming: the client interpolates value + rate * (now - at).
-/proc/om_ui_rate(datum/om/rate/R)
-	return list("value" = R.now(), "rate" = R.per_second, "at" = R.sched_now())
-
 /// Called on the session when a bound target changed. /datum/tgui pushes an update.
 /datum/proc/om_ui_push()
 	return
 
 /datum/tgui/om_ui_push()
+	if(closing || QDELETED(src))
+		return
+	if(push_reinteract)
+		// An update_uis() request: re-run tgui_interact, as the old inline push did.
+		push_reinteract = FALSE
+		INVOKE_ASYNC(src, TYPE_PROC_REF(/datum/tgui, process), 0.9, TRUE) // ALLOW(scheduler): tgui process re-runs arbitrary tgui_interact overrides / asset sends
+		return
+	// A watched change: validate the status, then send data only.
+	if(process_status() && status <= STATUS_CLOSE)
+		close()
+		return
 	send_update()
 
 /datum/om/behaviour/internal/ui_push

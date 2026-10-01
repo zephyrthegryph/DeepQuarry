@@ -168,7 +168,7 @@
 
 /datum/interaction/construction/vehicle/quadbike/power/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
 	var/obj/item/vehicle_assembly/quadbike/assembly = target
-	rel_set(assembly, "cell", held)
+	rel_set(assembly, nameof(assembly.cell), held)
 	assembly.set_build_visuals(after, "powered [initial(assembly.name)]")
 	to_chat(actor, span_notice("You add the power supply to \the [assembly]."))
 	return TRUE
@@ -224,9 +224,8 @@
 	to_chat(actor, span_notice("You finish \the [product]"))
 	product.forceMove(get_turf(assembly))
 	var/obj/item/cell/moved_cell = assembly.cell()
-	moved_cell?.forceMove(product) // CONTAINED: in the product's contents before own_set()
-	rel_clear(assembly, "cell")
-	own_set(product, "cell", moved_cell)
+	rel_clear(assembly, nameof(assembly.cell))
+	own_set(product, nameof(product.cell), moved_cell, into = TRUE)
 	consume(assembly, actor)
 	return TRUE
 
@@ -420,7 +419,7 @@
 
 /datum/interaction/construction/vehicle/spacebike/power/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
 	var/obj/item/vehicle_assembly/spacebike/assembly = target
-	rel_set(assembly, "cell", held)
+	rel_set(assembly, nameof(assembly.cell), held)
 	assembly.set_build_visuals(after, "powered [initial(assembly.name)]")
 	to_chat(actor, span_notice("You add the power supply to \the [assembly]."))
 	return TRUE
@@ -443,9 +442,8 @@
 	to_chat(actor, span_notice("You finish \the [product]"))
 	product.forceMove(get_turf(assembly))
 	var/obj/item/cell/moved_cell = assembly.cell()
-	moved_cell?.forceMove(product) // CONTAINED: in the product's contents before own_set()
-	rel_clear(assembly, "cell")
-	own_set(product, "cell", moved_cell)
+	rel_clear(assembly, nameof(assembly.cell))
+	own_set(product, nameof(product.cell), moved_cell, into = TRUE)
 	consume(assembly, actor)
 	return TRUE
 
@@ -559,7 +557,7 @@
 
 /datum/interaction/construction/vehicle/snowmobile/power/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
 	var/obj/item/vehicle_assembly/snowmobile/assembly = target
-	rel_set(assembly, "cell", held)
+	rel_set(assembly, nameof(assembly.cell), held)
 	assembly.set_build_visuals(after, "powered [initial(assembly.name)]")
 	to_chat(actor, span_notice("You add the power supply to \the [assembly]."))
 	return TRUE
@@ -615,9 +613,8 @@
 	to_chat(actor, span_notice("You finish \the [product]"))
 	product.forceMove(get_turf(assembly))
 	var/obj/item/cell/moved_cell = assembly.cell()
-	moved_cell?.forceMove(product) // CONTAINED: in the product's contents before own_set()
-	rel_clear(assembly, "cell")
-	own_set(product, "cell", moved_cell)
+	rel_clear(assembly, nameof(assembly.cell))
+	own_set(product, nameof(product.cell), moved_cell, into = TRUE)
 	consume(assembly, actor)
 	return TRUE
 

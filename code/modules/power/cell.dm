@@ -323,9 +323,9 @@ APPEARANCE_LEVEL(/obj/item/cell, "appearance_charge_level", 4, "{initial(icon_st
 	gradual_sparks = sparks
 	gradual_needs_user = !isnull(user)
 	if(user)
-		rel_set(src, "gradual_user", user)
+		rel_set(src, nameof(gradual_user), user)
 	else
-		rel_clear(src, "gradual_user")
+		rel_clear(src, nameof(gradual_user))
 	set_gradual_charge_left(iterations)
 	gradual_charge_step()
 

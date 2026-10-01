@@ -17,10 +17,9 @@
 
 
 /obj/item/camera/siliconcam/proc/injectaialbum(obj/item/photo/p, sufix = "") //stores image information to a list similar to that of the datacore
-	p.forceMove(src)
+	own_add(src, nameof(src.aipictures), p, into = TRUE)
 	photos_taken++
 	p.name = "Image [photos_taken][sufix]"
-	own_add(src, "aipictures", p)
 
 /obj/item/camera/siliconcam/proc/injectmasteralbum(mob/user, obj/item/photo/p) //stores image information to a list similar to that of the datacore
 	var/mob/living/silicon/robot/C = user
@@ -72,7 +71,7 @@
 	if(!selection)
 		return
 
-	own_remove(src, "aipictures", selection)
+	own_remove(src, nameof(aipictures), selection)
 	to_chat(user, span_unconscious("Local image deleted"))
 
 /obj/item/camera/siliconcam/ai_camera/can_capture_turf(turf/T, mob/user)
@@ -101,7 +100,7 @@
 	injectmasteralbum(user, p)
 
 /mob/living/silicon/ai/proc/take_image()
-	set category = "AI.Commands"
+	set category = VERB_CAT_AI_COMMANDS
 	set name = "Take Image"
 	set desc = "Takes an image"
 
@@ -109,7 +108,7 @@
 		aiCamera.toggle_camera_mode(src)
 
 /mob/living/silicon/ai/proc/view_images()
-	set category = "AI.Commands"
+	set category = VERB_CAT_AI_COMMANDS
 	set name = "View Images"
 	set desc = "View images"
 
@@ -117,7 +116,7 @@
 		aiCamera.viewpictures(src)
 
 /mob/living/silicon/ai/proc/delete_images()
-	set category = "AI.Commands"
+	set category = VERB_CAT_AI_COMMANDS
 	set name = "Delete Image"
 	set desc = "Delete image"
 
@@ -125,7 +124,7 @@
 		aiCamera.deletepicture(src)
 
 /mob/living/silicon/robot/proc/take_image()
-	set category ="Abilities.Silicon"
+	set category =VERB_CAT_ABILITIES_SILICON
 	set name = "Take Image"
 	set desc = "Takes an image"
 
@@ -133,7 +132,7 @@
 		aiCamera.toggle_camera_mode(src)
 
 /mob/living/silicon/robot/proc/view_images()
-	set category ="Abilities.Silicon"
+	set category =VERB_CAT_ABILITIES_SILICON
 	set name = "View Images"
 	set desc = "View images"
 
@@ -141,7 +140,7 @@
 		aiCamera.viewpictures(src)
 
 /mob/living/silicon/robot/proc/delete_images()
-	set category = "Abilities.Silicon"
+	set category = VERB_CAT_ABILITIES_SILICON
 	set name = "Delete Image"
 	set desc = "Delete a local image"
 

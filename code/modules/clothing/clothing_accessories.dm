@@ -104,7 +104,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing, \
 
 
 /obj/item/clothing/proc/attach_accessory(mob/user, obj/item/clothing/accessory/A)
-	own_add(src, "accessories", A)
+	own_add(src, nameof(accessories), A)
 	A.on_attached(src, user)
 	om_grant(src, GRANT_VERB, /obj/item/clothing/proc/removetie_verb, src)
 	update_accessory_slowdown()
@@ -116,7 +116,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing, \
 		return
 
 	A.on_removed(user)
-	own_take_member(src, "accessories", A)
+	own_take_member(src, nameof(accessories), A)
 	update_accessory_slowdown()
 	update_clothing_icon()
 	worn_protection_changed()
@@ -128,7 +128,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing, \
 
 /obj/item/clothing/proc/removetie_verb()
 	set name = "Remove Accessory"
-	set category = "Object"
+	set category = VERB_CAT_OBJECT
 	set src in usr
 
 	removetie_proc(usr)
@@ -174,4 +174,4 @@ EXTEND_INTERACTIONS(/obj/item/clothing, \
 
 	if(!LAZYLEN(accessories))
 		om_revoke(src, GRANT_VERB, /obj/item/clothing/proc/removetie_verb, src)
-		own_take_all(src, "accessories")
+		own_take_all(src, nameof(accessories))

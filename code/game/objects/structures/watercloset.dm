@@ -40,8 +40,8 @@
 	add_hose_connector(/datum/hose_connector/endless_drain) // Cannot suck from toilet... for obvious reasons.
 
 	if(teleplumb_crystal)
-		own_set(src, "teleplumb_crystal", new /obj/item/bluespace_crystal(src))
-		rel_set(src, "teleplumb_dest", locate(/obj/effect/landmark/teleplumb_exit))
+		own_set(src, nameof(teleplumb_crystal), new /obj/item/bluespace_crystal(src))
+		rel_set(src, nameof(teleplumb_dest), locate(/obj/effect/landmark/teleplumb_exit))
 		desc = "The BS-500, a bluespace rift-rotation-based waste disposal unit for small matter. This one seems remarkably clean."
 
 	// Non-bluespace plumbing. For POIs and player construction n' stuff.
@@ -57,16 +57,16 @@
 	..()
 	if(bin)
 		if(bin.type == /obj/item/stock_parts/matter_bin) //Specifically, if this is a basic bin, you dont get it back. Other bins are returned.
-			own_clear(src, "bin", OWN_DELETE)
+			own_clear(src, nameof(bin), OWN_DELETE)
 		else
 			bin.forceMove(src.loc)
-			own_take(src, "bin")
+			own_take(src, nameof(bin))
 	if(teleplumb_crystal)
 		teleplumb_crystal.forceMove(src.loc)
-		own_take(src, "teleplumb_crystal")
+		own_take(src, nameof(teleplumb_crystal))
 	for(var/atom/movable/AM in currently_held_objects)
 		AM.forceMove(src.loc)
-	rel_clear(src, "currently_held_objects")
+	rel_clear(src, nameof(currently_held_objects))
 
 APPEARANCE_TEMPLATE(/obj/structure/toilet, "{initial(icon_state)}{open}{cistern}")
 
@@ -77,8 +77,8 @@ APPEARANCE_TEMPLATE(/obj/structure/toilet, "{initial(icon_state)}{open}{cistern}
 		return
 	user.put_in_hands(teleplumb_crystal)
 	to_chat(user, span_notice("You take \the [teleplumb_crystal]."))
-	own_take(src, "teleplumb_crystal")
-	rel_clear(src, "teleplumb_dest")
+	own_take(src, nameof(teleplumb_crystal))
+	rel_clear(src, nameof(teleplumb_dest))
 	desc = initial(desc)
 
 /obj/structure/toilet/declare_interactions(list/into)
@@ -167,9 +167,9 @@ APPEARANCE_TEMPLATE(/obj/structure/toilet, "{initial(icon_state)}{open}{cistern}
 			var/mob/living/swirlie = swirlie_mob
 			if(open && !swirlie)
 				act_message(user, GM, MSG_SELF(span_notice("You start to give %T% a swirlie!")), MSG_OTHERS(span_danger("%U% starts to give %T% a swirlie!")))
-				rel_set(src, "swirlie_mob", GM)
+				rel_set(src, nameof(swirlie_mob), GM)
 				om_task_start(/datum/om/task/timed/toilet_attackby, user, GM, receiver = src)
-				rel_clear(src, "swirlie_mob")
+				rel_clear(src, nameof(swirlie_mob))
 			else
 				act_message(user, GM, MSG_SELF(span_notice("You slam %T% into the [src]!")), MSG_OTHERS(span_danger("%U% slams %T% into the [src]!")))
 				GM.injure(INJURY_BLUNT, 5, BP_HEAD, src)
@@ -226,17 +226,16 @@ APPEARANCE_TEMPLATE(/obj/structure/toilet, "{initial(icon_state)}{open}{cistern}
 	to_chat(user, span_notice("You insert \the [I] into \the [src]. A deep rumble eminates from within it, and a faint blue glow eminates from the bottom of the bowl for a moment."))
 	user.drop_item()
 	I.forceMove(src)
-	own_move(I, src, "teleplumb_crystal")
+	own_move(I, src, nameof(teleplumb_crystal))
 	//TODO: add a way to link this to custom destinations.
-	rel_set(src, "teleplumb_dest", locate(/obj/effect/landmark/teleplumb_exit))
+	rel_set(src, nameof(teleplumb_dest), locate(/obj/effect/landmark/teleplumb_exit))
 	desc = "The BS-500, a bluespace rift-rotation-based waste disposal unit for small matter. This one seems remarkably clean."
 	return
 /obj/structure/toilet/proc/attackby_timed_done3(obj/item/I, mob/living/user)
 	to_chat(user, span_notice("You replace \the [bin] with \the [I]."))
 	bin.forceMove(src.loc) //Remove the old bin.
-	user.drop_item()
-	I.forceMove(src)
-	own_set(src, "bin", I) //Set the internally stored bin to the new bin.
+	if(!own_set(src, nameof(src.bin), I, user = user))
+		return
 	return
 
 
@@ -343,7 +342,7 @@ APPEARANCE_TEMPLATE(/obj/structure/toilet, "{initial(icon_state)}{open}{cistern}
 /obj/structure/toilet/proc/tertiary_flush(atom/movable/flushed, flush_completed)
 	if(flushed.loc == loc)
 		flushed.forceMove(src)
-		rel_add(src, "currently_held_objects", flushed)
+		rel_add(src, nameof(currently_held_objects), flushed)
 
 	if(flush_completed) //Flushed it all.
 		om_after(src, 1 SECOND, PROC_REF(flush_send), currently_held_objects)
@@ -392,7 +391,7 @@ APPEARANCE_TEMPLATE(/obj/structure/toilet, "{initial(icon_state)}{open}{cistern}
 	if(flush_failed)
 		visible_message(span_warning("\The [src] glurks and splutters, unable to guzzle more stuff down in a single flush!"), span_warning("Glornch"))
 	panic_mult = initial(panic_mult)
-	rel_clear(src, "currently_held_objects") //Clear the list.
+	rel_clear(src, nameof(currently_held_objects)) //Clear the list.
 
 /obj/structure/toilet/proc/toilet_reflux(datum/source, datum/om/event/disposal_receive/event)
 	EVENT_HANDLER
@@ -517,7 +516,7 @@ APPEARANCE_TEMPLATE(/obj/structure/toilet, "{initial(icon_state)}{open}{cistern}
 
 /obj/machinery/shower/Initialize(mapload)
 	. = ..()
-	own_set(src, "soundloop", new /datum/looping_sound/showering(list(src), FALSE))
+	own_set(src, nameof(soundloop), new /datum/looping_sound/showering(list(src), FALSE))
 
 DECLARE_REAGENT_FROM_VAR(/obj/machinery/shower, "reaction_volume", "reagent_id", "reaction_volume")
 
@@ -1270,10 +1269,10 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/galaxy, INTERACT_USE("Squeeze
 	var/obj/machinery/recycling/crusher/crusher //Bluespace connection for recyclables
 
 /obj/structure/biowaste_tank/Initialize(mapload)
-	rel_set(src, "muffinmonster", new /mob/living/simple_mob/vore/aggressive/corrupthound/muffinmonster(src))
+	rel_set(src, nameof(muffinmonster), new /mob/living/simple_mob/vore/aggressive/corrupthound/muffinmonster(src))
 	muffinmonster().name = "Activate Muffin Monster"
 	muffinmonster().init_vore(TRUE)
-	rel_set(src, "crusher", locate(/obj/machinery/recycling/crusher))
+	rel_set(src, nameof(crusher), locate(/obj/machinery/recycling/crusher))
 	return ..()
 
 /obj/structure/biowaste_tank/AllowDrop()
@@ -1345,7 +1344,7 @@ DECLARE_EMAG_REPEATABLE(/obj/structure/biowaste_tank, PROC_REF(on_emag), null)
 	if(muffinmonster() && muffin_mode)
 		muffinmonster().name = "Muffin Monster"
 		muffinmonster().forceMove(get_turf(src))
-		rel_clear(src, "muffinmonster")
+		rel_clear(src, nameof(muffinmonster))
 		muffin_mode = FALSE
 
 /mob/living/simple_mob/vore/aggressive/corrupthound/muffinmonster
@@ -1368,7 +1367,9 @@ DECLARE_EMAG_REPEATABLE(/obj/structure/biowaste_tank, PROC_REF(on_emag), null)
 	B.special_entrance_sound = 'sound/machines/blender.ogg'
 	B.recycling = TRUE
 
-OWN(/obj/structure/toilet, teleplumb_crystal, OWN_CONTAINED)
+/obj/structure/toilet/ownership()
+	. = ..()
+	. += owns(nameof(teleplumb_crystal), policy = OWN_CONTAINED)
 
 DECLARE_DEFAULT_CHILD(/obj/structure/toilet, "bin", null)
 

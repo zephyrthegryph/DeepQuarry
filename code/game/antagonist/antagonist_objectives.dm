@@ -10,7 +10,7 @@
 		return 0
 	if(create_global_objectives() || length(global_objectives))
 		for(var/datum/objective/O as anything in global_objectives)
-			rel_add(player, "shared_objectives", O)
+			rel_add(player, nameof(player.shared_objectives), O)
 	return 1
 
 /datum/antagonist/proc/get_special_objective_text()
@@ -33,7 +33,7 @@
 
 /mob/living/proc/write_ambition()
 	set name = "Set Ambition"
-	set category = "IC.Antag"
+	set category = VERB_CAT_IC_ANTAG
 	set src = usr
 
 	if(!mind)

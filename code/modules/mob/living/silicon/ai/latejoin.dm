@@ -1,7 +1,7 @@
 
 /mob/living/silicon/ai/verb/store_core()
 	set name = "Store Core"
-	set category = "OOC.Game"
+	set category = VERB_CAT_OOC_GAME
 	set desc = "Enter intelligence storage. This is functionally equivalent to cryo or robotic storage, freeing up your job slot."
 
 	if(SSticker && SSticker.mode && SSticker.mode.name == "AI malfunction")

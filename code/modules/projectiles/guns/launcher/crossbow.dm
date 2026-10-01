@@ -84,7 +84,7 @@
 	return bolt
 
 /obj/item/gun/launcher/crossbow/handle_post_fire(mob/user, atom/target)
-	own_take(src, "bolt")
+	own_take(src, nameof(bolt))
 	tension = 0
 	update_icon()
 	..()
@@ -102,16 +102,16 @@
 				MSG_OTHERS("%U% relaxes the tension on %T%'s string and removes [bolt]."))
 			bolt.forceMove(get_turf(src))
 			var/obj/item/arrow/A = bolt
-			own_take(src, "bolt")
+			own_take(src, nameof(bolt))
 			A.removed(user)
 		else
 			act_message(user, src, MSG_SELF("You relax the tension on %T%'s string."), MSG_OTHERS("%U% relaxes the tension on %T%'s string."))
 		tension = 0
 		update_icon()
 	else
-		draw(user)
+		draw_string(user)
 
-/obj/item/gun/launcher/crossbow/proc/draw(mob/user as mob)
+/obj/item/gun/launcher/crossbow/proc/draw_string(mob/user as mob)
 
 	if(!bolt)
 		to_chat(user, "You don't have anything nocked to [src].")
@@ -166,7 +166,7 @@
 		C.forceMove(get_turf(user))
 		to_chat(user, span_notice("You jimmy [cell()] out of [src] with [tool]."))
 		playsound(src, tool.usesound, 50, 1)
-		rel_clear(src, "cell")
+		rel_clear(src, nameof(cell))
 	else
 		to_chat(user, span_notice("[src] doesn't have a cell installed."))
 	return ITEM_INTERACT_SUCCESS
@@ -176,15 +176,15 @@
 	. = INTERACTION_HANDLED_PASS
 	if(!bolt)
 		if (istype(W,/obj/item/arrow))
-			user.drop_from_inventory(W, src)
-			own_set(src, "bolt", W)
+			if(!own_set(src, nameof(src.bolt), W, user = user))
+				return
 			act_message(user, src, MSG_SELF("You slide [bolt] into %T%."), MSG_OTHERS("%U% slides [bolt] into %T%."))
 			update_icon()
 			return
 		else if(istype(W,/obj/item/stack/rods))
 			var/obj/item/stack/rods/R = W
 			if (R.use(1))
-				own_set(src, "bolt", new /obj/item/arrow/rod(src))
+				own_set(src, nameof(bolt), new /obj/item/arrow/rod(src))
 				bolt.add_fingerprint(user)
 				bolt.forceMove(src)
 				update_icon()
@@ -195,7 +195,7 @@
 	if(istype(W, /obj/item/cell))
 		if(!cell())
 			user.drop_item()
-			rel_set(src, "cell", W)
+			rel_set(src, nameof(cell), W)
 			cell().forceMove(src)
 			to_chat(user, span_notice("You jam [cell()] into [src] and wire it to the firing coil."))
 			superheat_rod(user)
@@ -319,4 +319,6 @@ DECLARE_INTERACTIONS(/obj/item/crossbowframe, INTERACT_ITEM(null, PROC_REF(inter
 /obj/item/gun/launcher/crossbow/proc/cell() as /obj/item/cell
 	return cell
 
-OWN(/obj/item/gun/launcher/crossbow, bolt, OWN_CONTAINED)
+/obj/item/gun/launcher/crossbow/ownership()
+	. = ..()
+	. += owns(nameof(bolt), policy = OWN_CONTAINED)

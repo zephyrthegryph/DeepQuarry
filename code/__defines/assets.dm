@@ -1,5 +1,10 @@
-#define ASSET_CROSS_ROUND_CACHE_DIRECTORY "data/spritesheets/legacy_cache"
-#define ASSET_CROSS_ROUND_SMART_CACHE_DIRECTORY "data/spritesheets/smart_cache"
+/// Where generated spritesheets (and the cross-round asset caches) are written, with a
+/// trailing slash: data/spritesheets/, or the `spritesheet-dir` world param. The test
+/// harness gives every test world its own (data/spritesheets/runN/) so worlds sharing a
+/// worktree -- a sharded dm-test run -- don't write the same files. See spritesheet_dir().
+#define SPRITESHEET_DIR (spritesheet_dir())
+#define ASSET_CROSS_ROUND_CACHE_DIRECTORY "[SPRITESHEET_DIR]legacy_cache"
+#define ASSET_CROSS_ROUND_SMART_CACHE_DIRECTORY "[SPRITESHEET_DIR]smart_cache"
 
 /// When sending mutiple assets, how many before we give the client a quaint little sending resources message
 #define ASSET_CACHE_TELL_CLIENT_AMOUNT 8

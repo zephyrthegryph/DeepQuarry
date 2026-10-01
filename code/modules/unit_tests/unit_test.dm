@@ -117,9 +117,9 @@ GLOBAL_VAR_INIT(unit_test_block_pool_ready, FALSE)
 					if(!T)
 						continue
 					if(!candidate.bottom_left && locate_within(T, /obj/effect/landmark/unit_test_bottom_left))
-						rel_set(candidate, "bottom_left", T)
+						rel_set(candidate, nameof(candidate.bottom_left), T)
 					if(!candidate.top_right && locate_within(T, /obj/effect/landmark/unit_test_top_right))
-						rel_set(candidate, "top_right", T)
+						rel_set(candidate, nameof(candidate.top_right), T)
 			if(candidate.bottom_left && candidate.top_right)
 				block = candidate
 				break
@@ -312,19 +312,19 @@ GLOBAL_VAR_INIT(dq_test_shard_index, 0)
 /// See dq_test_shard_index.
 GLOBAL_VAR_INIT(dq_test_shard_count, 1)
 
-/// Non-sweep test types assigned to this shard, or null when this world runs
-/// every test (a plain dm-test/focused run, or a shard-count-1 "sharded"
-/// run). Read from the file named by the `shard-tests` world param: one test
-/// type path per line. Sweep-test types (RunUnitTests() checks
-/// is_sweep_test) always run regardless of this list -- their cost is
-/// already spread across every shard by sweep_types(), so the sharded
-/// runner's bin-packer excludes them from this assignment entirely rather
-/// than pinning them to one shard.
-GLOBAL_VAR(dq_test_shard_names)
+/// The sharded runner's assignment of non-sweep test types to shards, as
+/// path -> shard index, or null when this world runs every test (a plain
+/// dm-test/focused run). Read from the file named by the `shard-tests` world
+/// param: one "path<TAB>index" line per test, the same file for every shard.
+/// A test the file doesn't name (new since the durations it was balanced on)
+/// goes to shard dq_test_shard_of_unlisted(), so every test runs in exactly one
+/// shard. Sweep-test types (is_sweep_test) run in every shard regardless --
+/// sweep_types() already spreads their cost -- and are never assigned.
+GLOBAL_VAR(dq_test_shard_assignment)
 
 /// Explicit test selection from `dm-test --domains=`/`--tier=`/`--affected`
 /// (see doc/testing.md "Domains, tiers and --affected"), or null to run
-/// every test that survives shard/focus filtering. Unlike dq_test_shard_names,
+/// every test that survives shard/focus filtering. Unlike the shard assignment,
 /// this applies to sweep tests too: a domain filter can legitimately exclude
 /// a sweep unrelated to the requested domains, so there's no is_sweep_test
 /// bypass here.
@@ -353,6 +353,40 @@ GLOBAL_VAR(dq_test_select_names)
 		names[path] = TRUE
 	return names
 
+/// Reads the shard-tests assignment file ("path<TAB>index" per line) into an
+/// assoc list path -> index. A name the build doesn't have (the durations the
+/// runner balanced on can name a test removed since) is logged and skipped.
+/proc/dq_test_read_shard_assignment(file)
+	if(isnull(file))
+		return null
+	if(!fexists(file))
+		stack_trace("dq_test_read_shard_assignment: shard-tests file [file] does not exist")
+		return null
+	var/list/assignment = list()
+	for(var/line in splittext(file2text(file), "\n"))
+		line = trim(line)
+		if(!length(line))
+			continue
+		var/list/parts = splittext(line, "\t")
+		var/path = text2path(parts[1])
+		var/index = length(parts) > 1 ? text2num(parts[2]) : GLOB.dq_test_shard_index
+		if(!path)
+			log_test("Shard assignment names [parts[1]], which this build doesn't have; skipped.")
+			continue
+		assignment[path] = index
+	return assignment
+
+/// The shard that runs a non-sweep test missing from the assignment: a stable
+/// hash of its path, so every world agrees without seeing the others.
+/proc/dq_test_shard_of_unlisted(test_path)
+	// A plain rolling hash of the path text (text2num(hex, 16) came back null
+	// here, which sent every unlisted test to shard 0).
+	var/text = "[test_path]"
+	var/hash = 0
+	for(var/i in 1 to length(text))
+		hash = (hash * 31 + text2ascii(text, i)) % 1000003
+	return hash % GLOB.dq_test_shard_count
+
 /// Reads shard-index/shard-count/shard-tests/test-select from world params
 /// into the globals above. Called once, early, from
 /// world/proc/HandleTestRun(). Missing shard-index/shard-count params leave
@@ -370,7 +404,7 @@ GLOBAL_VAR(dq_test_select_names)
 			GLOB.dq_test_shard_count = count
 			GLOB.dq_test_shard_index = index
 
-	GLOB.dq_test_shard_names = dq_test_read_name_list(TEST_SHARD_TESTS_FILE_PARAMETER, world.params[TEST_SHARD_TESTS_FILE_PARAMETER])
+	GLOB.dq_test_shard_assignment = dq_test_read_shard_assignment(world.params[TEST_SHARD_TESTS_FILE_PARAMETER])
 	GLOB.dq_test_select_names = dq_test_read_name_list(TEST_SELECT_FILE_PARAMETER, world.params[TEST_SELECT_FILE_PARAMETER])
 
 /datum/unit_test
@@ -390,6 +424,12 @@ GLOBAL_VAR(dq_test_select_names)
 	/// its cost is already spread across shards by sweep_types() rather than
 	/// being pinned to one shard by the runner's bin-packer.
 	var/is_sweep_test = FALSE
+	/// TEST_TIER_NORMAL or TEST_TIER_EXHAUSTIVE. Exhaustive tests only run with
+	/// the test-tier world param set to "all"/"exhaustive" (dm-test --tier=all),
+	/// or when named by a focused run.
+	var/tier = TEST_TIER_NORMAL
+	/// Curated entries sweep_types() actually found (see curated_types()).
+	var/list/curated_matched
 	//internal shit
 	var/focus = FALSE
 	var/succeeded = TRUE
@@ -441,7 +481,19 @@ GLOBAL_VAR(dq_test_select_names)
 	catch(var/exception/e)
 		log_world("UNIT TEST RUNTIME: [type]: [e.name] at [e.file]:[e.line] -- [e.desc]")
 		Fail("runtime in Run(): [e.name]", e.file || "RUNTIME", e.line || 0)
+	// A representative must actually cover its curated subset: an entry that
+	// was renamed or removed would otherwise shrink it silently.
+	var/list/curated = curated_types()
+	if(curated)
+		for(var/entry in curated)
+			if(!LAZYACCESS(curated_matched, "[entry]"))
+				Fail("curated entry [entry] was not in the sweep (renamed or removed? update curated_types())", __FILE__, __LINE__)
 	run_finished = TRUE
+
+/// A normal-tier representative's fixed subset of an exhaustive sweep, or null
+/// (the default: sweep everything). Filters sweep_types(); see doc/testing.md "Tiers".
+/datum/unit_test/proc/curated_types()
+	return null
 
 /proc/cmp_unit_test_priority(datum/unit_test/a, datum/unit_test/b)
 	return initial(a.priority) - initial(b.priority)
@@ -450,9 +502,9 @@ GLOBAL_VAR(dq_test_select_names)
 	if (isnull(uncreatables))
 		uncreatables = build_list_of_uncreatables()
 
-	rel_set(src, "test_block", acquire_unit_test_block())
-	rel_set(src, "run_loc_floor_bottom_left", test_block.bottom_left)
-	rel_set(src, "run_loc_floor_top_right", test_block.top_right)
+	rel_set(src, nameof(test_block), acquire_unit_test_block())
+	rel_set(src, nameof(run_loc_floor_bottom_left), test_block.bottom_left)
+	rel_set(src, nameof(run_loc_floor_top_right), test_block.top_right)
 
 	// Deterministic per-test RNG: reseed from the test's own type name rather
 	// than leaving the shared world RNG wherever the previous test's rand()
@@ -473,7 +525,9 @@ GLOBAL_VAR(dq_test_select_names)
 /// Everything allocate() made is the test's to delete when it ends. `allocated` is a relation
 /// list, never ownership: production code adopts allocated things freely, and whatever is still
 /// alive here when the test is torn down is deleted (deleted entries have left the view).
-REL_LIST(/datum/unit_test, allocated)
+/datum/unit_test/relations()
+	. = ..()
+	. += rel_many(nameof(allocated))
 
 /datum/unit_test/on_destroy(force)
 	for(var/datum/thing as anything in allocated?.Copy())
@@ -497,6 +551,19 @@ REL_LIST(/datum/unit_test, allocated)
 
 	LAZYADD(fail_reasons, list(list(reason, file, line)))
 
+/// Lets `n` server ticks pass. The one place a test sleeps for time (doc/rewrite/kernel.md sec 1.7).
+/datum/unit_test/proc/wait_ticks(n = 1)
+	sleep(world.tick_lag * n)
+
+/// Waits, a tick at a time, until `condition` (a callback) returns true or `timeout_ticks` pass. Returns
+/// whether the condition held.
+/datum/unit_test/proc/run_until(datum/callback/condition, timeout_ticks = 100)
+	for(var/i in 1 to timeout_ticks)
+		if(condition.Invoke())
+			return TRUE
+		sleep(world.tick_lag)
+	return !!condition.Invoke()
+
 /// Allocates an instance of the provided type, and places it somewhere in an available loc
 /// Instances allocated through this proc will be destroyed when the test is over
 /datum/unit_test/proc/allocate(type, ...)
@@ -515,7 +582,7 @@ REL_LIST(/datum/unit_test, allocated)
 	// A type that deletes itself in Initialize() (INITIALIZE_HINT_QDEL: a lattice off open space)
 	// is already gone: nothing to clean up, and a dying thing takes no new links.
 	if(!QDELETED(instance))
-		rel_add(src, "allocated", instance)
+		rel_add(src, nameof(allocated), instance)
 	return instance
 
 /// Hands something the test didn't allocate() but did cause (a construction product, a
@@ -523,7 +590,7 @@ REL_LIST(/datum/unit_test, allocated)
 /// Returns `thing`.
 /datum/unit_test/proc/own(datum/thing)
 	if(thing && !QDELETED(thing))
-		rel_add(src, "allocated", thing)
+		rel_add(src, nameof(allocated), thing)
 	return thing
 
 /// own()s everything currently on `T` (landmarks excepted): for a test whose subject
@@ -557,7 +624,23 @@ REL_LIST(/datum/unit_test, allocated)
 /// straight through, e.g.:
 ///   for(var/atom/movable/path as anything in sweep_types(subtypesof(/atom/movable)))
 /datum/unit_test/proc/sweep_types(list/types)
-	if(GLOB.dq_test_shard_count <= 1)
+	// A normal-tier representative of an exhaustive sweep names its fixed
+	// subset in curated_types(); the sweep then covers only those entries
+	// (matched by text, so a list of type paths or of path strings both work).
+	var/list/curated = curated_types()
+	if(curated)
+		var/list/wanted = list()
+		for(var/entry in curated)
+			wanted["[entry]"] = TRUE
+		var/list/kept = list()
+		for(var/entry in types)
+			if(wanted["[entry]"])
+				kept += entry
+				LAZYSET(curated_matched, "[entry]", TRUE)
+		types = kept
+	// Only a sweep test (runs in every shard) takes a slice; anything else runs
+	// in the one shard it was assigned to and must cover all of `types` there.
+	if(GLOB.dq_test_shard_count <= 1 || !is_sweep_test)
 		return types
 	. = list()
 	var/i = 0
@@ -565,6 +648,14 @@ REL_LIST(/datum/unit_test, allocated)
 		if((i % GLOB.dq_test_shard_count) == GLOB.dq_test_shard_index)
 			. += entry
 		i++
+
+/// Whether this world's shard owns work unit `index` (0-based) of a sweep test
+/// that slices by its own counter rather than through sweep_types(). TRUE for
+/// every unit when not sharded, or for a test that isn't a sweep.
+/datum/unit_test/proc/sweep_owns(index)
+	if(GLOB.dq_test_shard_count <= 1 || !is_sweep_test)
+		return TRUE
+	return (index % GLOB.dq_test_shard_count) == GLOB.dq_test_shard_index
 
 /// Resets the air of our testing room to its default
 /datum/unit_test/proc/restore_atmos()
@@ -652,6 +743,17 @@ REL_LIST(/datum/unit_test, allocated)
 			overruns++
 	return list("samples" = usage.len - start_index + 1, "overruns" = overruns, "max" = worst)
 
+/// Writes the proc profile gathered around one test to
+/// data/logs/<log dir>/profile/<test path>.json and stops the profiler.
+/proc/dq_test_write_profile(test_path)
+	var/profile = world.Profile(PROFILE_REFRESH, null, "json")
+	world.Profile(PROFILE_STOP)
+	var/safe_name = replacetext(copytext("[test_path]", length("/datum/unit_test/") + 1), "/", "__")
+	var/file_name = "[GLOB.log_directory]/profile/[safe_name].json"
+	fdel(file_name)
+	text2file(profile, file_name)
+	log_test("Profile for [test_path] written to [file_name]")
+
 /proc/RunUnitTest(datum/unit_test/test_path, list/test_results, current_index, total_tests)
 	if(ispath(test_path, /datum/unit_test/focus_only))
 		return
@@ -686,6 +788,12 @@ REL_LIST(/datum/unit_test, allocated)
 		log_world("[TEST_OUTPUT_YELLOW("SKIPPED")] Skipped run on map [SSmapping.current_map.name].")
 
 	else
+		// dm-test --profile-tests: BYOND's proc profiler around each test, dumped
+		// per test so a slow test's hot procs can be read without a one-off script.
+		var/profiling = !!world.params?[TEST_PROFILE_PARAMETER]
+		if(profiling)
+			world.Profile(PROFILE_CLEAR)
+			world.Profile(PROFILE_START)
 		duration = REALTIMEOFDAY
 		tick_start_index = Master.perf_samples_total + 1
 		INVOKE_ASYNC(test, TYPE_PROC_REF(/datum/unit_test, RunWrapped))
@@ -700,6 +808,8 @@ REL_LIST(/datum/unit_test, allocated)
 		test.restore_atmos()
 
 		duration = REALTIMEOFDAY - duration
+		if(profiling)
+			dq_test_write_profile(test_path)
 		tick_stats = unit_test_tick_stats(Master.perf_index_of(tick_start_index))
 		GLOB.current_test = null
 		GLOB.failed_any_test |= !test.succeeded
@@ -886,14 +996,26 @@ REL_LIST(/datum/unit_test, allocated)
 	if(length(focused_tests))
 		tests_to_run = focused_tests.Copy()
 
-	// Sharded run: keep only this shard's assigned non-sweep tests, plus
-	// every sweep test (it always runs -- see is_sweep_test).
-	if(GLOB.dq_test_shard_names)
+	// Sharded run: keep this shard's non-sweep tests (assigned here, or
+	// unlisted and hashed here), plus every sweep test (it always runs -- see
+	// is_sweep_test).
+	var/list/assignment = GLOB.dq_test_shard_assignment
+	if(assignment)
 		var/list/sharded = list()
+		var/unlisted = 0
 		for(var/_test_to_run in tests_to_run)
 			var/datum/unit_test/test_to_run = _test_to_run
-			if(initial(test_to_run.is_sweep_test) || GLOB.dq_test_shard_names[test_to_run])
+			if(initial(test_to_run.is_sweep_test))
 				sharded += test_to_run
+				continue
+			var/assigned = assignment[test_to_run]
+			if(isnull(assigned))
+				assigned = dq_test_shard_of_unlisted(test_to_run)
+				if(assigned == GLOB.dq_test_shard_index)
+					unlisted++
+			if(assigned == GLOB.dq_test_shard_index)
+				sharded += test_to_run
+		log_test("Shard [GLOB.dq_test_shard_index + 1]/[GLOB.dq_test_shard_count]: [length(sharded)] test types ([unlisted] not in the assignment, placed by hash).")
 		tests_to_run = sharded
 
 	// dm-test --domains=/--tier=/--affected: an explicit selection, applied
@@ -905,6 +1027,20 @@ REL_LIST(/datum/unit_test, allocated)
 			if(GLOB.dq_test_select_names[_test_to_run])
 				selected += _test_to_run
 		tests_to_run = selected
+
+	// Tier: a plain run is the normal tier; "all" adds the exhaustive sweeps,
+	// "exhaustive" runs only those. A focused run runs exactly what it named.
+	if(!length(focused_tests))
+		var/tier_param = world.params?[TEST_TIER_PARAMETER] || "normal"
+		var/want_normal = tier_param != "exhaustive"
+		var/want_exhaustive = tier_param == "all" || tier_param == "exhaustive"
+		var/list/tiered = list()
+		for(var/_test_to_run in tests_to_run)
+			var/datum/unit_test/test_to_run = _test_to_run
+			if(initial(test_to_run.tier) == TEST_TIER_EXHAUSTIVE ? want_exhaustive : want_normal)
+				tiered += test_to_run
+		log_test("Unit-test tier '[tier_param]': [length(tiered)] of [length(tests_to_run)] test types.")
+		tests_to_run = tiered
 
 	sortTim(tests_to_run, GLOBAL_PROC_REF(cmp_unit_test_priority))
 

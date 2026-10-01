@@ -27,7 +27,13 @@
 	light_color = "#315ab4"
 
 // Linked pods (two-sided with each pod's connected; a pod leaves when either end dies).
-REL_PAIR_LIST(/obj/machinery/computer/cloning, pods, connected)
+/obj/machinery/computer/cloning/ownership()
+	. = ..()
+	. += owns(nameof(diskette), policy = OWN_CONTAINED)
+
+/obj/machinery/computer/cloning/relations()
+	. = ..()
+	. += rel_many(nameof(pods), back = nameof(/obj/machinery/clonepod::connected))
 
 /obj/machinery/computer/cloning/Initialize(mapload)
 	. = ..()
@@ -57,14 +63,14 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/computer/cloning, MACHINE_PIPELINE, "autop
 			for(var/datum/transhuman/body_record/BR in records)
 				if(!(pod.get_occupant() || pod.mess))
 					if(pod.growclone(BR))
-						own_move(BR, pod, "growing_record")
+						own_move(BR, pod, nameof(pod.growing_record))
 
 /obj/machinery/computer/cloning/proc/updatemodules()
-	rel_set(src, "scanner", findscanner())
+	rel_set(src, nameof(scanner), findscanner())
 	releasecloner()
 	findcloner()
 	if(!selected_pod() && length(pods))
-		rel_set(src, "selected_pod", pods[1])
+		rel_set(src, nameof(selected_pod), pods[1])
 
 /obj/machinery/computer/cloning/proc/findscanner()
 	var/obj/machinery/dna_scannernew/scannerf = null
@@ -85,13 +91,13 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/computer/cloning, MACHINE_PIPELINE, "autop
 /obj/machinery/computer/cloning/proc/releasecloner()
 	for(var/obj/machinery/clonepod/P in pods)
 		P.name = initial(P.name)
-	rel_clear(src, "pods")
+	rel_clear(src, nameof(pods))
 
 /obj/machinery/computer/cloning/proc/findcloner()
 	var/num = 1
 	for(var/obj/machinery/clonepod/P in get_area(src))
 		if(!P.connected())
-			rel_add(src, "pods", P)
+			rel_add(src, nameof(pods), P)
 			P.name = "[initial(P.name)] #[num++]"
 
 EXTEND_INTERACTIONS(/obj/machinery/computer/cloning, \
@@ -104,9 +110,8 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/cloning, \
 	if(!istype(W, /obj/item/disk/body_record)) //Traitgenes Storing the entire body record
 		return FALSE
 	if(!diskette)
-		user.drop_item()
-		W.forceMove(src)
-		own_set(src, "diskette", W)
+		if(!own_set(src, nameof(src.diskette), W, user = user))
+			return FALSE
 		to_chat(user, "You insert [W].")
 		SStgui.update_uis(src)
 	return TRUE
@@ -117,7 +122,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/cloning, \
 	var/obj/item/multitool/multitool = tool
 	var/obj/machinery/clonepod/pod = multitool.connecting()
 	if(pod && !(pod in pods))
-		rel_add(src, "pods", pod)
+		rel_add(src, nameof(pods), pod)
 		pod.name = "[initial(pod.name)] #[length(pods)]"
 		to_chat(user, span_notice("You connect [pod] to [src]."))
 	return ITEM_INTERACT_SUCCESS
@@ -202,7 +207,6 @@ UI_DATA_REPLACE(/obj/machinery/computer/cloning, "menu", "loading:num", "autopro
 
 	return data
 
-DECLARE_UI_MODAL(/obj/machinery/computer/cloning)
 
 /obj/machinery/computer/cloning/ui_modal_answered(mob/user, id, answer, list/arguments, datum/tgui/ui, datum/tgui_state/state)
 	. = TRUE
@@ -214,7 +218,7 @@ DECLARE_UI_MODAL(/obj/machinery/computer/cloning)
 		if(check_access(C))
 			var/datum/transhuman/body_record/doomed = active_BR()
 			if(doomed in records)
-				own_remove(src, "records", doomed) // Already deletes dna in destroy()
+				own_remove(src, nameof(records), doomed) // Already deletes dna in destroy()
 			else
 				qdel(doomed)
 			set_temp("Record deleted.", "success")
@@ -255,7 +259,7 @@ UI_ACT_PROC(/obj/machinery/computer/cloning, ui_act_view_rec)
 	var/datum/transhuman/body_record/record = params["ref"]
 	if(!record)
 		return
-	rel_set(src, "active_BR", record)
+	rel_set(src, nameof(/obj/machinery/computer/cloning::active_BR), record)
 	if(istype(active_BR(), /datum/transhuman/body_record))
 		if(isnull(active_BR().ckey))
 			qdel(active_BR())
@@ -273,7 +277,7 @@ UI_ACT_PROC(/obj/machinery/computer/cloning, ui_act_view_rec)
 			)
 			tgui_modal_message(src, action, "", null, payload)
 	else
-		rel_clear(src, "active_BR")
+		rel_clear(src, nameof(/obj/machinery/computer/cloning::active_BR))
 		set_temp("Error: Record missing.", "danger")
 	add_fingerprint(ui.user)
 
@@ -300,21 +304,21 @@ UI_ACT_PROC(/obj/machinery/computer/cloning, ui_act_disk)
 				menu = MENU_MAIN
 				return
 
-			own_set(src, "loaded_BR", new /datum/transhuman/body_record(diskette.stored))
-			rel_set(src, "active_BR", loaded_BR) // Traitgenes Storing the entire body record
+			own_set(src, nameof(/obj/machinery/computer/cloning::loaded_BR), new /datum/transhuman/body_record(diskette.stored))
+			rel_set(src, nameof(/obj/machinery/computer/cloning::active_BR), loaded_BR) // Traitgenes Storing the entire body record
 			set_temp("Successfully loaded from disk.", "success")
 		if("save")
 			if(isnull(diskette) || isnull(active_BR())) // Traitgenes Removed readonly
 				set_temp("Error: The data could not be saved.", "danger")
 				return
 
-			own_set(diskette, "stored", new /datum/transhuman/body_record(active_BR())) // Traitgenes Storing the entire body record
+			own_set(diskette, nameof(/datum/stored_item::stored), new /datum/transhuman/body_record(active_BR())) // Traitgenes Storing the entire body record
 			diskette.name = "data disk - '[active_BR().mydna.dna.real_name]'"
 			set_temp("Successfully saved to disk.", "success")
 		if("eject")
 			if(!isnull(diskette))
 				diskette.forceMove(get_turf(src))
-				own_take(src, "diskette")
+				own_take(src, nameof(/obj/machinery/computer/cloning::diskette))
 	add_fingerprint(ui.user)
 
 UI_ACT(/obj/machinery/computer/cloning, "refresh", ui_act_refresh)
@@ -330,7 +334,7 @@ UI_ACT_PROC(/obj/machinery/computer/cloning, ui_act_selectpod)
 	if(!selected)
 		return
 	if(istype(selected) && (selected in pods))
-		rel_set(src, "selected_pod", selected)
+		rel_set(src, nameof(/obj/machinery/computer/cloning::selected_pod), selected)
 	add_fingerprint(ui.user)
 
 UI_ACT(/obj/machinery/computer/cloning, "clone", ui_act_clone, UI_ARG_REF("ref", null, /datum/transhuman/body_record))
@@ -363,7 +367,7 @@ UI_ACT_PROC(/obj/machinery/computer/cloning, ui_act_clone)
 				if(cloneresult)
 					set_temp("Initiating cloning cycle...", "success")
 					play_sfx(src, SFX_MACHINES_MEDBAYSCANNER1, 2)
-					own_move(C, pod, "growing_record")
+					own_move(C, pod, nameof(/obj/machinery/clonepod::growing_record))
 					menu = MENU_MAIN
 				else
 					set_temp("Error: Initialisation failure.", "danger")
@@ -469,7 +473,7 @@ UI_ACT_PROC(/obj/machinery/computer/cloning, ui_act_cleartemp)
 	if (!isnull(subject.mind)) //Save that mind so traitors can continue traitoring after cloning.
 		BR.mydna.mind = "\ref[subject.mind]"
 
-	own_add(src, "records", BR)
+	own_add(src, nameof(records), BR)
 	set_scan_temp("Subject successfully scanned.", "good")
 	SStgui.update_uis(src)
 
@@ -526,8 +530,6 @@ UI_ACT_PROC(/obj/machinery/computer/cloning, ui_act_cleartemp)
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/computer/cloning/step_start_condition()
 	return autoprocess
-
-OWN(/obj/machinery/computer/cloning, diskette, OWN_CONTAINED)
 
 /// scanner (a relation view: it reads null once the target is deleted).
 /obj/machinery/computer/cloning/proc/scanner() as /obj/machinery/dna_scannernew

@@ -34,6 +34,7 @@ use crate::world::{list, num, whole, with_world};
 /// Numbers per wake returned by `vg_world_step`:
 /// `subscriber, lane, reason, source, source_kind`.
 /// @dm-define WORLD_WAKE_STRIDE
+#[allow(dead_code)] // a DM define only
 pub const WAKE_STRIDE: u32 = 5;
 
 /// Reason class: a condition watch (Threshold, Band, Difference, ...).
@@ -112,6 +113,15 @@ fn key(kind: &ByondValue, id: &ByondValue) -> Result<u64> {
     Ok(u64::from(kind) << 24 | u64::from(id))
 }
 
+/// A watched cell: a number (a `vg_entity`, a gas arena id), or a turf datum
+/// (the solid field's cell is its ref).
+fn cell_arg(v: &ByondValue) -> Result<u32> {
+    match v.get_number() {
+        Ok(_) => whole(v, "cell"),
+        Err(_) => Ok(v.get_ref()?),
+    }
+}
+
 fn token(e: EntityId) -> ByondValue {
     ByondValue::from(entity_value(e))
 }
@@ -188,25 +198,21 @@ fn subscription(v: &ByondValue) -> Option<EntityId> {
 
 // --- Binds ---------------------------------------------------------------------
 
-/// the OM scheduler's one call per tick. Advances to tick `now` (firing timers and
-/// rate crossings, dispatching key publications), collects every watch
-/// port's wakes, and returns up to `budget` normal/background wakes (urgent
-/// ones always) as a flat list, `WORLD_WAKE_STRIDE` numbers per wake:
-/// `subscriber, lane, reason, source, source_kind`. `source` is the cell of
-/// a watch wake (a gas handle, or a component's `vg_entity`), the key id of
-/// a key wake (with `source_kind` its key kind), or the timer's or rate
-/// model's token.
-#[auxmacros::bind("/proc/world_step")]
-fn world_step(now: ByondValue, budget: ByondValue) -> Result<ByondValue> {
-    let now = num(&now)?;
-    // `!(now >= 0.0)` also rejects NaN.
-    #[allow(clippy::neg_cmp_op_on_partial_ord)]
-    if !(now >= 0.0) {
-        bail!("bad tick {now}");
-    }
-    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-    let now = now as Tick;
-    let budget = whole(&budget, "budget")? as usize;
+/// One scheduler step at wheel tick `now`: evaluates the main-owned watches,
+/// collects every watch port's wakes (the registry: world kinds, the turf
+/// solid, gas handles), fires due timers and rate crossings, dispatches key
+/// publications, and returns up to `budget` normal/background wakes (urgent
+/// ones always), each with its source resolved for DM: the cell of a watch
+/// wake (a gas handle, a component's `vg_entity`, a turf's `ref`), the key
+/// id of a key wake (with its kind), or the timer's or rate model's token.
+///
+/// Also returns the wakes' watch-table owners (`watch index -> subscriber`),
+/// which `ThresholdSet` crossings are matched against. Driven by
+/// [`crate::frame`] only.
+pub(crate) fn step(
+    now: Tick,
+    budget: usize,
+) -> Result<(Vec<Record>, std::collections::HashMap<u32, Subscriber>)> {
     // Phase timings (last step, microseconds) for PERF_PROFILE's rust_metrics.
     let t0 = std::time::Instant::now();
     with_world(|w| {
@@ -215,7 +221,18 @@ fn world_step(now: ByondValue, budget: ByondValue) -> Result<ByondValue> {
     })?;
     let t1 = std::time::Instant::now();
     let mut watch_wakes: Vec<Wake> = Vec::new();
-    registry::for_each(|_, d| d.take_wakes(&mut watch_wakes));
+    registry::for_each(|id, d| {
+        let at = std::time::Instant::now();
+        d.take_wakes(&mut watch_wakes);
+        #[allow(clippy::cast_possible_truncation)]
+        crate::metrics::registry()
+            .counter(&format!("frame.us.sched_domain_{id}"))
+            .add(at.elapsed().as_micros() as u64);
+    });
+    let owners = watch_wakes
+        .iter()
+        .map(|wk| (wk.watch.index, wk.subscriber))
+        .collect();
     let t2 = std::time::Instant::now();
     let wakes = with_world(|w| Ok(w.sched_step(now, budget, &watch_wakes)))?;
     {
@@ -229,8 +246,14 @@ fn world_step(now: ByondValue, budget: ByondValue) -> Result<ByondValue> {
         metrics
             .gauge("world_step.sched_us")
             .set(t2.elapsed().as_secs_f64() * 1e6);
+        // Cumulative, so a bench window's cost per part is the difference of two marks.
+        #[allow(clippy::cast_possible_truncation)]
+        {
+            metrics.counter("frame.us.sched_evaluate").add((t1 - t0).as_micros() as u64);
+            metrics.counter("frame.us.sched_step").add(t2.elapsed().as_micros() as u64);
+        }
     }
-    let mut flat = Vec::with_capacity(wakes.len() * WAKE_STRIDE as usize);
+    let mut out = Vec::with_capacity(wakes.len());
     for (w, e) in wakes {
         #[allow(clippy::cast_precision_loss)]
         let (source, kind) = match e {
@@ -240,16 +263,24 @@ fn world_step(now: ByondValue, budget: ByondValue) -> Result<ByondValue> {
             }
             None => (w.source as f32, 0.0),
         };
-        #[allow(clippy::cast_precision_loss)]
-        flat.extend_from_slice(&[
-            w.subscriber as f32,
-            f32::from(w.lane as u8),
-            w.reason as f32,
+        out.push(Record {
+            subscriber: w.subscriber,
+            lane: w.lane as u8,
+            reason: w.reason,
             source,
             kind,
-        ]);
+        });
     }
-    list(flat)
+    Ok((out, owners))
+}
+
+/// One wake as the frame reports it.
+pub(crate) struct Record {
+    pub subscriber: Subscriber,
+    pub lane: u8,
+    pub reason: u32,
+    pub source: f32,
+    pub kind: f32,
 }
 
 /// `om_world_at`: wakes `subscriber` on `lane` at tick `tick` (a past tick fires
@@ -380,7 +411,7 @@ fn world_watch_changed(
     mask: ByondValue,
 ) -> Result<ByondValue> {
     let cond = Cond::Changed {
-        cell: whole(&cell, "cell")?,
+        cell: cell_arg(&cell)?,
         mask: whole(&mask, "mask")?,
     };
     watch(&code, &sub, &lane, &cond)
@@ -402,7 +433,7 @@ fn world_watch_threshold(
 ) -> Result<ByondValue> {
     let c = whole(&code, "code")?;
     let cond = Cond::Threshold {
-        cell: whole(&cell, "cell")?,
+        cell: cell_arg(&cell)?,
         level: level(c, &ch, &cmp, &value, &hysteresis, both_edges.is_true())?,
     };
     watch(&code, &sub, &lane, &cond)
@@ -428,7 +459,7 @@ fn world_watch_band(
         .map(|v| Ok(v.get_number()?))
         .collect::<Result<Vec<f32>>>()?;
     let cond = Cond::Band {
-        cell: whole(&cell, "cell")?,
+        cell: cell_arg(&cell)?,
         ch: ch_id,
         unit: chans[ch_id.index()].unit,
         levels,
@@ -454,12 +485,97 @@ fn world_watch_difference(
 ) -> Result<ByondValue> {
     let c = whole(&code, "code")?;
     let cond = Cond::Difference {
-        a: whole(&a, "cell a")?,
-        b: whole(&b, "cell b")?,
+        a: cell_arg(&a)?,
+        b: cell_arg(&b)?,
         level: level(c, &ch, &cmp, &value, &hysteresis, false)?,
         abs: abs.is_true(),
     };
     watch(&code, &sub, &lane, &cond)
+}
+
+/// `ThresholdSet` watch (the heat ledger's): entries are added with
+/// `vg_world_watch_set_add`; every crossing of an entry leaves in the frame
+/// outbox as a CROSSED record whose band is the entry's payload.
+#[auxmacros::bind("/proc/world_watch_set")]
+fn world_watch_set(
+    code: ByondValue,
+    sub: ByondValue,
+    lane: ByondValue,
+    cell: ByondValue,
+    ch: ByondValue,
+) -> Result<ByondValue> {
+    let c = whole(&code, "code")?;
+    let chans = channels(c)?;
+    let ch_id = channel(&chans, &ch)?;
+    let cond = Cond::ThresholdSet {
+        cell: cell_arg(&cell)?,
+        ch: ch_id,
+    };
+    watch(&code, &sub, &lane, &cond)
+}
+
+/// The watch (registry code, port and id) behind a set watch's token.
+fn watch_of(token_v: &ByondValue) -> Result<(u32, u8, vg_core::outbox::WatchId)> {
+    let e = subscription(token_v).ok_or_else(|| eyre!("bad watch token"))?;
+    with_world(|w| Ok(w.sched_watch_of(e)))?.ok_or_else(|| eyre!("stale watch token"))
+}
+
+/// Adds (or replaces, by `payload`) an entry of a set watch: crosses
+/// `limit` per `cmp` (0 above, 1 below) on channel `ch` (the watch's own), in
+/// that channel's unit, reporting `payload` and `generation` (stale generations
+/// are dropped on the main thread).
+#[auxmacros::bind("/proc/world_watch_set_add")]
+fn world_watch_set_add(
+    token_v: ByondValue,
+    ch: ByondValue,
+    payload: ByondValue,
+    generation: ByondValue,
+    cmp_v: ByondValue,
+    limit: ByondValue,
+    both_edges: ByondValue,
+) -> Result<ByondValue> {
+    let (code, port, id) = watch_of(&token_v)?;
+    let chans = channels(code)?;
+    let unit = chans[channel(&chans, &ch)?.index()].unit;
+    let entry = vg_core::watch::SetEntry {
+        payload: whole(&payload, "payload")?,
+        generation: whole(&generation, "generation")?,
+        cmp: cmp(&cmp_v)?,
+        limit: Quantity::new(num(&limit)?, unit),
+        hysteresis: None,
+        edge: if both_edges.is_true() {
+            Edge::Both
+        } else {
+            Edge::Enter
+        },
+    };
+    registry::with_domain(world_kind_domain(code), |d| d.add_entry(port, id, entry))
+        .ok_or_else(|| eyre!("code {code} has no watch port"))?
+        .map_err(|e| eyre!("{e}"))?;
+    Ok(ByondValue::null())
+}
+
+/// Removes a set watch's entry by payload.
+#[auxmacros::bind("/proc/world_watch_set_remove")]
+fn world_watch_set_remove(token_v: ByondValue, payload: ByondValue) -> Result<ByondValue> {
+    let (code, port, id) = watch_of(&token_v)?;
+    let payload = whole(&payload, "payload")?;
+    registry::with_domain(world_kind_domain(code), |d| {
+        d.remove_entry(port, id, payload)
+    });
+    Ok(ByondValue::null())
+}
+
+/// The index of channel `name` on watch port `code` (`null` if it has none).
+#[auxmacros::bind("/proc/world_channel")]
+fn world_channel(code: ByondValue, name: ByondValue) -> Result<ByondValue> {
+    let chans = channels(whole(&code, "code")?)?;
+    let name = name.get_string()?;
+    #[allow(clippy::cast_precision_loss)]
+    Ok(chans
+        .iter()
+        .position(|c| c.name.eq_ignore_ascii_case(&name))
+        .map_or_else(ByondValue::null, |i| ByondValue::from(i as f32)))
 }
 
 // --- Rate models -------------------------------------------------------------------

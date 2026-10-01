@@ -13,7 +13,7 @@ GLOBAL_DATUM_INIT(emergency_shuttle_service, /datum/world_service/emergency_shut
 	// announcement datums). SSshuttles is the latest-initializing subsystem it relates to (it
 	// depends on SSatoms and SSair, and builds the shuttle datums this service drives), so boot
 	// right after it; that keeps it after mapload, as INITSTAGE_LAST did.
-	boot_after = /datum/controller/subsystem/shuttles
+	needs = list(/datum/system/shuttles)
 
 	/// Relation view: the emergency shuttle (set in shuttle_emergency.dm; the shuttle registry owns it).
 	var/datum/shuttle/autodock/ferry/emergency/shuttle
@@ -36,9 +36,9 @@ GLOBAL_DATUM_INIT(emergency_shuttle_service, /datum/world_service/emergency_shut
 
 /datum/world_service/emergency_shuttle/initialize()
 	initialized = TRUE
-	own_set(src, "emergency_shuttle_docked", new /datum/announcement/priority())
-	own_set(src, "emergency_shuttle_called", new /datum/announcement/priority())
-	own_set(src, "emergency_shuttle_recalled", new /datum/announcement/priority())
+	own_set(src, nameof(emergency_shuttle_docked), new /datum/announcement/priority())
+	own_set(src, nameof(emergency_shuttle_called), new /datum/announcement/priority())
+	own_set(src, nameof(emergency_shuttle_recalled), new /datum/announcement/priority())
 	log_world("World service [name] initialized: [length(escape_pods)] escape pods registered.")
 
 /datum/world_service/emergency_shuttle/service_step(resumed)
@@ -100,12 +100,12 @@ GLOBAL_DATUM_INIT(emergency_shuttle_service, /datum/world_service/emergency_shut
 /datum/world_service/emergency_shuttle/proc/set_launch_countdown(seconds)
 	wait_for_launch = TRUE
 	EXPIRY_SET(src, launch_time, (seconds * 10), CLOCK_WORLD)
-	om_changed(GLOB.emergency_shuttle_service, CHANGE_SHUTTLE_SCHEDULE)
+	changed(GLOB.emergency_shuttle_service, CHANGE_SHUTTLE_SCHEDULE)
 	demand()
 
 /datum/world_service/emergency_shuttle/proc/stop_launch_countdown()
 	wait_for_launch = FALSE
-	om_changed(GLOB.emergency_shuttle_service, CHANGE_SHUTTLE_SCHEDULE)
+	changed(GLOB.emergency_shuttle_service, CHANGE_SHUTTLE_SCHEDULE)
 
 //calls the shuttle for an emergency evacuation
 /datum/world_service/emergency_shuttle/proc/call_evac()

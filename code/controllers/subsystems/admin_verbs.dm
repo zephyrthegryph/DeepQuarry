@@ -1,8 +1,7 @@
-GENERAL_PROTECT_DATUM(/datum/controller/subsystem/admin_verbs)
+GENERAL_PROTECT_DATUM(/datum/system/admin_verbs)
 
-SUBSYSTEM_DEF(admin_verbs)
+SYSTEM_DEF(admin_verbs)
 	name = "Admin Verbs"
-	flags = SS_NO_FIRE
 	init_stage = INITSTAGE_EARLY
 	/// A list of all admin verbs indexed by their type.
 	var/list/datum/admin_verb/admin_verbs_by_type = list()
@@ -13,24 +12,21 @@ SUBSYSTEM_DEF(admin_verbs)
 	/// A list of all admins that are pending initialization of this SS.
 	var/list/admins_pending_subsytem_init = list()
 
-/datum/controller/subsystem/admin_verbs/Initialize()
+/datum/system/admin_verbs/initialize()
 	setup_verb_list()
 	process_pending_admins()
-	return SS_INIT_SUCCESS
 
-/datum/controller/subsystem/admin_verbs/Recover()
-	admin_verbs_by_type = SSadmin_verbs.admin_verbs_by_type
 
-/datum/controller/subsystem/admin_verbs/stat_entry(msg)
+/datum/system/admin_verbs/stat_entry(msg)
 	return "[..()] | V: [length(admin_verbs_by_type)]"
 
-/datum/controller/subsystem/admin_verbs/proc/process_pending_admins()
+/datum/system/admin_verbs/proc/process_pending_admins()
 	var/list/pending_admins = admins_pending_subsytem_init
 	admins_pending_subsytem_init = null
 	for(var/admin_ckey in pending_admins)
 		assosciate_admin(GLOB.directory[admin_ckey])
 
-/datum/controller/subsystem/admin_verbs/proc/setup_verb_list()
+/datum/system/admin_verbs/proc/setup_verb_list()
 	if(length(admin_verbs_by_type))
 		CRASH("Attempting to setup admin verbs twice!")
 	for(var/datum/admin_verb/verb_type as anything in subtypesof(/datum/admin_verb))
@@ -39,13 +35,16 @@ SUBSYSTEM_DEF(admin_verbs)
 			qdel(verb_singleton, force = TRUE)
 			continue
 
+		if(verb_singleton.debug_only && verb_singleton.permissions == R_NONE)
+			CRASH("Debug verb '[verb_type]' must require a permission; R_NONE exposes it to every admin.")
+
 		admin_verbs_by_type[verb_type] = verb_singleton
 		if(verb_singleton.visibility_flag)
 			if(!(verb_singleton.visibility_flag in admin_verbs_by_visibility_flag))
 				admin_verbs_by_visibility_flag[verb_singleton.visibility_flag] = list()
 			admin_verbs_by_visibility_flag[verb_singleton.visibility_flag] |= list(verb_singleton)
 
-/datum/controller/subsystem/admin_verbs/proc/get_valid_verbs_for_admin(client/admin)
+/datum/system/admin_verbs/proc/get_valid_verbs_for_admin(client/admin)
 	if(isnull(admin.holder))
 		CRASH("Why are we checking a non-admin for their valid... ahem... admin verbs?")
 
@@ -70,11 +69,11 @@ SUBSYSTEM_DEF(admin_verbs)
 
 	return valid_verbs
 
-/datum/controller/subsystem/admin_verbs/proc/verify_visibility(client/admin, datum/admin_verb/verb_singleton)
+/datum/system/admin_verbs/proc/verify_visibility(client/admin, datum/admin_verb/verb_singleton)
 	var/needed_flag = verb_singleton.visibility_flag
 	return !needed_flag || (needed_flag in admin_visibility_flags[admin.ckey])
 
-/datum/controller/subsystem/admin_verbs/proc/update_visibility_flag(client/admin, flag, state)
+/datum/system/admin_verbs/proc/update_visibility_flag(client/admin, flag, state)
 	if(state)
 		admin_visibility_flags[admin.ckey] |= list(flag)
 		assosciate_admin(admin)
@@ -86,7 +85,7 @@ SUBSYSTEM_DEF(admin_verbs)
 		verb_singleton.unassign_from_client(admin)
 	admin.init_verbs()
 
-/datum/controller/subsystem/admin_verbs/proc/dynamic_invoke_verb(client/admin, datum/admin_verb/verb_type, ...)
+/datum/system/admin_verbs/proc/dynamic_invoke_verb(client/admin, datum/admin_verb/verb_type, ...)
 	if(IsAdminAdvancedProcCall())
 		message_admins("PERMISSION ELEVATION: [key_name_admin(admin)] attempted to dynamically invoke admin verb '[verb_type]'.")
 		return
@@ -106,9 +105,13 @@ SUBSYSTEM_DEF(admin_verbs)
 	if(isnull(verb_singleton))
 		CRASH("Attempted to dynamically invoke admin verb '[verb_type]' that doesn't exist.")
 
-	if(!admin.holder.check_for_rights(verb_singleton.permissions))
+	if(!admin_can(admin, verb_singleton.permissions))
+		admin_log_denial(admin, "verb:[verb_type]", verb_singleton.permissions)
 		to_chat(admin, span_adminnotice("You lack the permissions to do this."))
 		return
+
+	if(verb_singleton.debug_only)
+		log_admin("DEBUG VERB: [key_name(admin)] invoked '[verb_singleton.name]' ([verb_type])")
 
 	var/old_usr = usr
 	usr = admin.mob
@@ -119,7 +122,7 @@ SUBSYSTEM_DEF(admin_verbs)
 /**
  * Assosciates and/or resyncs an admin with their accessible admin verbs.
  */
-/datum/controller/subsystem/admin_verbs/proc/assosciate_admin(client/admin)
+/datum/system/admin_verbs/proc/assosciate_admin(client/admin)
 	if(IsAdminAdvancedProcCall())
 		return
 
@@ -141,7 +144,7 @@ SUBSYSTEM_DEF(admin_verbs)
  * Goes over all admin verbs because we don't know which ones are assigned to the admin's mob without a bunch of extra bookkeeping.
  * This might be a performance issue in the future if we have a lot of admin verbs.
  */
-/datum/controller/subsystem/admin_verbs/proc/deassosciate_admin(client/admin)
+/datum/system/admin_verbs/proc/deassosciate_admin(client/admin)
 	if(IsAdminAdvancedProcCall())
 		return
 

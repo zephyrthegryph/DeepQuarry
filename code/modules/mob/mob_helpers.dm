@@ -771,7 +771,7 @@ GLOBAL_DATUM_INIT(backplane, /image, generate_backplane())
 
 /mob/verb/toggle_stomach_vision()
 	set name = "Toggle Stomach Sprites"
-	set category = "Preferences.Vore"
+	set category = VERB_CAT_PREFERENCES_VORE
 	set desc = "Toggle the ability to see stomachs or not"
 
 	om_ask(src, /datum/om/prompt/confirm, PROC_REF(stomach_vision_chosen), title = "Visible Tummy?", message = "Would you like to see visible stomachs?", answer_on_no = TRUE)

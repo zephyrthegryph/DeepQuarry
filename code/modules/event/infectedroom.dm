@@ -78,7 +78,7 @@
 		else
 			var/mob/living/simple_mob/vore/aggressive/macrophage/M
 			M = new(pick_n_take(target_turfs))
-			own_add(M, "infections", chosen_disease.Copy())
+			own_add(M, nameof(M.infections), chosen_disease.Copy())
 
 /// Accessor for the target_area var.
 /datum/event/disease_outbreak/floor/proc/target_area() as /area

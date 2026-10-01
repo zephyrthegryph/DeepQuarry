@@ -111,8 +111,8 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 	edit_admin_permissions(PERMISSIONS_PAGE_PERMISSIONS)
 
 /datum/admins/proc/add_admin(admin_ckey, admin_key, use_db)
-	if(!check_rights(R_PERMISSIONS) || (use_db && !check_rights(R_DBRANKS)))
-		return
+	if(use_db && !admin_require(owner(), R_DBRANKS, "permissionedit"))
+		return // R_PERMISSIONS is declared by the editrights* topics; only the database half varies
 	if(IsAdminAdvancedProcCall())
 		to_chat(usr, span_adminprefix("Admin Addition blocked: Advanced ProcCall detected."), confidential = TRUE)
 		return
@@ -146,8 +146,8 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 /datum/admins/proc/remove_admin(admin_ckey, admin_key, use_db, datum/admins/target_holder)
 	if(!GLOB.prompt_flow)
 		return prompt_flow(src, PROC_REF(remove_admin), args)
-	if(!check_rights(R_PERMISSIONS) || (use_db && !check_rights(R_DBRANKS)))
-		return
+	if(use_db && !admin_require(owner(), R_DBRANKS, "permissionedit"))
+		return // R_PERMISSIONS is declared by the editrights* topics; only the database half varies
 	if(IsAdminAdvancedProcCall())
 		to_chat(usr, span_adminprefix("Admin Removal blocked: Advanced ProcCall detected."), confidential = TRUE)
 		return
@@ -274,8 +274,8 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 /datum/admins/proc/change_admin_rank(admin_ckey, admin_key, use_db, datum/admins/target_holder, legacy_only, list/picked)
 	if(!picked && !GLOB.prompt_flow)
 		return prompt_flow(src, PROC_REF(change_admin_rank), args)
-	if(!check_rights(R_PERMISSIONS) || (use_db && !check_rights(R_DBRANKS)))
-		return
+	if(use_db && !admin_require(owner(), R_DBRANKS, "permissionedit"))
+		return // R_PERMISSIONS is declared by the editrights* topics; only the database half varies
 	if(IsAdminAdvancedProcCall())
 		to_chat(usr, span_adminprefix("Rank Modification blocked: Advanced ProcCall detected."), confidential = TRUE)
 		return
@@ -428,7 +428,7 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 			/* init_edit_rights = */ admin_holder.can_edit_rights_flags(),
 		)
 
-		own_set(admin_holder, "custom_rank", new_admin_rank)
+		own_set(admin_holder, nameof(admin_holder.custom_rank), new_admin_rank)
 		admin_holder.set_ranks(list(new_admin_rank))
 
 	var/log = "[key_name(usr)] has updated the admin rights of [admin_ckey] into [rights2text(new_flags)]"

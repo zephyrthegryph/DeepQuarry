@@ -172,9 +172,9 @@ EXTEND_INTERACTIONS(/obj/structure/toilet/wooden, \
 				var/mob/living/swirlie = swirlie_mob
 				if(open && !swirlie)
 					act_message(user, null, MSG_SELF(span_notice("You start to give [GM.name] a swirlie!")), MSG_OTHERS(span_danger("%U% starts to give [GM.name] a swirlie!")))
-					rel_set(src, "swirlie_mob", GM)
+					rel_set(src, nameof(swirlie_mob), GM)
 					om_task_start(/datum/om/task/timed/wooden_wooden_swirlie, user, GM, receiver = src)
-					rel_clear(src, "swirlie_mob")
+					rel_clear(src, nameof(swirlie_mob))
 				else
 					act_message(user, src, MSG_SELF(span_notice("You slam [GM.name] into %T%!")), MSG_OTHERS(span_danger("%U% slams [GM.name] into %T%!")))
 					GM.injure(INJURY_BLUNT, 5, source = src)
@@ -359,7 +359,7 @@ This device records all warnings given and teleport events for admin review in c
 		return
 
 	else
-		rel_set(src, "destination", find_beacon(choice))
+		rel_set(src, nameof(destination), find_beacon(choice))
 		rebuild_radial_images()
 
 /obj/item/perfect_tele/magic/proc/page_named(datum/om/prompt/text/ask)
@@ -380,9 +380,9 @@ This device records all warnings given and teleport events for admin review in c
 
 	var/obj/item/perfect_tele_beacon/magic/nb = new(get_turf(src))
 	nb.tele_name = new_name
-	rel_set(nb, "tele_hand", src)
+	rel_set(nb, nameof(nb.tele_hand), src)
 	nb.creator = user.ckey
-	rel_add(src, "beacons", nb)
+	rel_add(src, nameof(beacons), nb)
 	beacons_left--
 	if(isliving(user))
 		var/mob/living/L = user

@@ -29,11 +29,11 @@ OM_FIELD(/obj/machinery/media, playing, 0, CHANGE_MACHINE_SETTINGS)
 	// Check if there's a media source already.
 	if(A.media_source() && A.media_source() != src) // If it does, the new media source replaces it. basically, the last media source arrived gets played on top.
 		A.media_source().disconnect_media_source() // You can turn a media source off and on for it to come back on top.
-		rel_set(A, "media_source", src)
+		rel_set(A, nameof(/area::media_source), src)
 		master_area = A
 		return
 	else
-		rel_set(A, "media_source", src)
+		rel_set(A, nameof(/area::media_source), src)
 	master_area = A
 
 /obj/machinery/media/proc/disconnect_media_source()
@@ -47,7 +47,7 @@ OM_FIELD(/obj/machinery/media, playing, 0, CHANGE_MACHINE_SETTINGS)
 		master_area = null
 		return
 	// Update Media Source.
-	rel_clear(A, "media_source")
+	rel_clear(A, nameof(/area::media_source))
 	// Clients
 	for(var/mob/M as anything in mobs_in_area(A))
 		M.update_music()

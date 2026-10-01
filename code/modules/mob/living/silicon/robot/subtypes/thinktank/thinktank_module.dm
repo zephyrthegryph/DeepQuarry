@@ -26,7 +26,7 @@
 /obj/item/robot_module/robot/platform/verb/set_eye_colour()
 	set name = "Set Eye Colour"
 	set desc = "Select an eye colour to use."
-	set category = "Abilities.Silicon"
+	set category = VERB_CAT_ABILITIES_SILICON
 	set src in usr
 
 	// A cancel answers "": the default colour.
@@ -60,24 +60,24 @@
 
 /obj/item/robot_module/robot/platform/explorer/create_equipment(mob/living/silicon/robot/robot)
 	..()
-	own_add(src, "modules", new /obj/item/tool/wrench/cyborg(src))
-	own_add(src, "modules", new /obj/item/weldingtool/electric/mounted/cyborg(src))
-	own_add(src, "modules", new /obj/item/tool/wirecutters/cyborg(src))
-	own_add(src, "modules", new /obj/item/tool/screwdriver/cyborg(src))
-	own_add(src, "modules", new /obj/item/pickaxe/plasmacutter(src))
-	own_add(src, "modules", new /obj/item/material/knife/machete/cyborg(src))
+	own_add(src, nameof(modules), new /obj/item/tool/wrench/cyborg(src))
+	own_add(src, nameof(modules), new /obj/item/weldingtool/electric/mounted/cyborg(src))
+	own_add(src, nameof(modules), new /obj/item/tool/wirecutters/cyborg(src))
+	own_add(src, nameof(modules), new /obj/item/tool/screwdriver/cyborg(src))
+	own_add(src, nameof(modules), new /obj/item/pickaxe/plasmacutter(src))
+	own_add(src, nameof(modules), new /obj/item/material/knife/machete/cyborg(src))
 
 	var/datum/matter_synth/medicine = new /datum/matter_synth/medicine(7500)
 	var/obj/item/stack/medical/bruise_pack/bandaid = new(src)
 	bandaid.uses_charge = 1
 	bandaid.charge_costs = list(1000)
-	rel_add(bandaid, "synths", medicine)
-	own_add(src, "modules", bandaid)
-	own_add(src, "synths", medicine)
+	rel_add(bandaid, nameof(bandaid.synths), medicine)
+	own_add(src, nameof(modules), bandaid)
+	own_add(src, nameof(synths), medicine)
 
-	own_add(src, "modules", new /obj/item/gun/energy/robotic/phasegun(src))
+	own_add(src, nameof(modules), new /obj/item/gun/energy/robotic/phasegun(src))
 
-	own_add(src, "emag", new /obj/item/chainsaw(src))
+	own_add(src, nameof(emag), new /obj/item/chainsaw(src))
 
 /obj/item/robot_module/robot/platform/explorer/respawn_consumable(mob/living/silicon/robot/R, rate)
 	. = ..()
@@ -100,10 +100,10 @@
 
 /obj/item/robot_module/robot/platform/cargo/create_equipment(mob/living/silicon/robot/robot)
 	..()
-	own_add(src, "modules", new /obj/item/packageWrap(src))
-	own_add(src, "modules", new /obj/item/pen/multi(src))
-	own_add(src, "modules", new /obj/item/destTagger(src))
-	own_add(src, "emag", new /obj/item/stamp/denied)
+	own_add(src, nameof(modules), new /obj/item/packageWrap(src))
+	own_add(src, nameof(modules), new /obj/item/pen/multi(src))
+	own_add(src, nameof(modules), new /obj/item/destTagger(src))
+	own_add(src, nameof(emag), new /obj/item/stamp/denied)
 
 /obj/item/robot_module/robot/platform/cargo/respawn_consumable(mob/living/silicon/robot/R, rate)
 	. = ..()

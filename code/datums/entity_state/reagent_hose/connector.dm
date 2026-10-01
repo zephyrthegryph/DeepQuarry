@@ -42,8 +42,8 @@ DECLARE_PERIODIC_WHILE(/datum/hose_connector, PERIODIC_SLOW, "my_hose")
 
 /// Binds to `new_carrier`. FALSE when the carrier is incompatible.
 /datum/hose_connector/proc/attach(atom/movable/new_carrier, set_unique_name = null)
-	rel_set(src, "carrier", new_carrier)
-	own_set(src, "reagents", new /datum/reagents(60, src))
+	rel_set(src, nameof(carrier), new_carrier)
+	own_set(src, nameof(reagents), new /datum/reagents(60, src))
 	// Handle uniquely named connectors
 	if(set_unique_name)
 		name = set_unique_name
@@ -56,7 +56,7 @@ DECLARE_PERIODIC_WHILE(/datum/hose_connector, PERIODIC_SLOW, "my_hose")
 		if(other.type == type)
 			same++
 	connector_number = same + 1
-	own_add(carrier, "hose_connectors", src)
+	own_add(carrier, nameof(carrier.hose_connectors), src)
 	om_hook(carrier, /datum/om/event/examine, src, PROC_REF(on_examine))
 	om_hook(carrier, /datum/om/event/moved, src, PROC_REF(move_react))
 	om_hook(carrier, /datum/om/event/hose_forcepump, src, PROC_REF(on_force_pump))
@@ -135,7 +135,7 @@ DECLARE_PERIODIC_WHILE(/datum/hose_connector, PERIODIC_SLOW, "my_hose")
 		qdel(my_hose) // the hose is shared by both ends; its death clears both views
 
 /datum/hose_connector/proc/connect(datum/hose/H = null)
-	rel_set(src, "my_hose", H)
+	rel_set(src, nameof(my_hose), H)
 
 /// Connects a hose to `target`, using `distancetonode` of `tubing` when done. An inflation end
 /// is a timed action first (inflation_setup()); either way setup_hoses_finish() connects.
@@ -187,7 +187,7 @@ DECLARE_PERIODIC_WHILE(/datum/hose_connector, PERIODIC_SLOW, "my_hose")
 	return null
 
 /datum/hose_connector/proc/remove_hose()
-	rel_clear(src, "my_hose")
+	rel_clear(src, nameof(my_hose))
 	// Return reagents to source now that there is no hose, lossy to avoid exploits.
 	if(reagents.total_volume)
 		reagents.trans_to_holder(connected_reagents(), reagents.maximum_volume)
@@ -223,7 +223,7 @@ DECLARE_PERIODIC_WHILE(/datum/hose_connector, PERIODIC_SLOW, "my_hose")
 	set src in oview(1)
 	set name = "Disconnect Hose"
 	set desc = "Quickly disconnect a hose from all machines it is attached to."
-	set category = "Object"
+	set category = VERB_CAT_OBJECT
 
 	var/list/available_sockets = list()
 	var/atom/movable/AM = src

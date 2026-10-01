@@ -18,9 +18,9 @@
 	var/list/priorities = list() // ALLOW(instance_list): interaction area (I3/I4/I6): resolver result lists; not edited here
 
 /datum/interaction_resolution/New(mob/actor, atom/target, obj/item/held)
-	rel_set(src, "actor", actor)
-	rel_set(src, "target", target)
-	rel_set(src, "held", held)
+	rel_set(src, nameof(actor), actor)
+	rel_set(src, nameof(target), target)
+	rel_set(src, nameof(held), held)
 
 /// The available interactions that answer `action` at the best priority. Several means a tie.
 /datum/interaction_resolution/proc/best_for_action(action)
@@ -75,6 +75,10 @@
 			continue
 		if(!interaction.tool || !held()?.has_tool_quality(interaction.tool))
 			continue
+		// One declared for another stance (a pry offered outside combat mode) is not what was meant:
+		// the tool falls through to the target's next use, as a legacy entry skipped it.
+		if(!interaction.is_meant(actor(), target(), held()))
+			continue
 		return interaction
 	return null
 
@@ -101,7 +105,7 @@
 	var/list/blocked = list()
 	var/list/priorities = resolution.priorities
 	// The type's interactions, then the construction edges leaving its current state (construction.dm).
-	for(var/datum/interaction/interaction as anything in interaction_candidates(target) + construction_edges_for(target))
+	for(var/datum/interaction/interaction as anything in interaction_candidates(target) + cap_extra_interactions(target) + construction_edges_for(target))
 		if(action && interaction.default_action != action)
 			continue
 		if(quality && interaction.tool != quality)
@@ -153,7 +157,8 @@
 	return sorted
 
 /**
- * Runs the best interaction for an action. Returns INTERACTION_TRY_RAN,
+ * Runs the best interaction for an action: the router's op first (try_gesture()), then the resolver's own
+ * entries. Returns INTERACTION_TRY_RAN,
  * INTERACTION_TRY_MENU when several tie (the Menu opens), INTERACTION_TRY_BLOCKED
  * when the one the player meant is blocked (they are told why), or null when
  * nothing answers: the caller then falls back to the legacy handlers.
@@ -165,6 +170,11 @@
 /proc/try_interaction(mob/actor, atom/target, obj/item/held, action, quality, no_tool = FALSE, datum/input_adapter/adapter)
 	if(!actor || !target)
 		return null
+	// The router first: gesture -> actions -> op (operations/actions.dm). Only what no op answers is resolved
+	// below, from the interaction entries that were never migrated to ops.
+	var/routed = try_gesture(actor, target, held, action, quality, no_tool, adapter)
+	if(!isnull(routed))
+		return routed
 	// Narrowed before any why_not(): only this action (and quality) is resolved, converted legacy
 	// handlers (I7, run from their own entry procs, run_interaction_entry()) are skipped, and
 	// the blocked list is only built below when nothing is available.
@@ -254,11 +264,20 @@
 
 /// Runs one interaction by id, as chosen in the Menu. Returns TRUE if it ran.
 /proc/run_chosen_interaction(mob/actor, atom/target, id)
-	var/datum/interaction/interaction = INTERACTION_BY_ID(id)
-	if(!interaction || !actor || !target)
+	if(!actor || !target)
 		return FALSE
 	var/obj/item/held = actor.get_active_hand()
 	var/datum/interaction_resolution/resolution = interactions_for(actor, target, held)
+	// Ids are unique within one target, not globally (capability entries of different types share
+	// ids): resolve the choice among this target's own interactions first.
+	var/datum/interaction/interaction
+	for(var/datum/interaction/candidate as anything in resolution.available + resolution.blocked)
+		if(candidate.id == id)
+			interaction = candidate
+			break
+	interaction ||= INTERACTION_BY_ID(id)
+	if(!interaction)
+		return FALSE
 	if(!(interaction in resolution.available))
 		var/reason = resolution.blocked[interaction]
 		if(reason)

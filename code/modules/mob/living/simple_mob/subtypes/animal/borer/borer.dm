@@ -211,34 +211,36 @@ DECLARE_VERB(/mob/living/simple_mob/animal/borer, /mob/living/proc/hide)
 	to_chat(controlling ? host : src, span_info("You use [amount] chemicals, [FLOOR(chemicals,1)] remain."))
 	return TRUE
 
-/datum/om/stage/life/hud/simple_mob/animal/borer
-	of = /mob/living/simple_mob/animal/borer
 
-/datum/om/stage/life/hud/simple_mob/animal/borer/perform(mob/living/simple_mob/animal/borer/self, datum/om/frame/life/ctx)
+/// Its own HUD stays awake (rerun every Life cycle while it has a client).
+/mob/living/simple_mob/animal/borer/life_hud_idle()
+	return FALSE
+
+/mob/living/simple_mob/animal/borer/life_hud()
 	. = ..()
 	if(!.)
 		return
-	if(self.borer_chem_display)
-		self.borer_chem_display.invisibility = INVISIBILITY_NONE
-		switch(self.chemicals)
+	if(src.borer_chem_display)
+		src.borer_chem_display.invisibility = INVISIBILITY_NONE
+		switch(src.chemicals)
 			if(0 to 9)
-				self.borer_chem_display.icon_state = "ling_chems0e"
+				src.borer_chem_display.icon_state = "ling_chems0e"
 			if(10 to 19)
-				self.borer_chem_display.icon_state = "ling_chems10e"
+				src.borer_chem_display.icon_state = "ling_chems10e"
 			if(20 to 29)
-				self.borer_chem_display.icon_state = "ling_chems20e"
+				src.borer_chem_display.icon_state = "ling_chems20e"
 			if(30 to 39)
-				self.borer_chem_display.icon_state = "ling_chems30e"
+				src.borer_chem_display.icon_state = "ling_chems30e"
 			if(40 to 49)
-				self.borer_chem_display.icon_state = "ling_chems40e"
+				src.borer_chem_display.icon_state = "ling_chems40e"
 			if(50 to 59)
-				self.borer_chem_display.icon_state = "ling_chems50e"
+				src.borer_chem_display.icon_state = "ling_chems50e"
 			if(60 to 69)
-				self.borer_chem_display.icon_state = "ling_chems60e"
+				src.borer_chem_display.icon_state = "ling_chems60e"
 			if(70 to 79)
-				self.borer_chem_display.icon_state = "ling_chems70e"
+				src.borer_chem_display.icon_state = "ling_chems70e"
 			if(80 to INFINITY)
-				self.borer_chem_display.icon_state = "ling_chems80e"
+				src.borer_chem_display.icon_state = "ling_chems80e"
 
 /mob/living/simple_mob/animal/borer/proc/detatch()
 	var/mob/living/carbon/human/host = src?.borer_host()
@@ -287,7 +289,7 @@ DECLARE_VERB(/mob/living/simple_mob/animal/borer, /mob/living/proc/hide)
 		if(!host.lastKnownIP)
 			host.lastKnownIP = b2h_ip
 
-	own_clear(src, "host_brain", OWN_DELETE)
+	own_clear(src, nameof(host_brain), OWN_DELETE)
 	// End horrible ip swapping code for bans
 
 /mob/living/simple_mob/animal/borer/proc/leave_host()
@@ -312,8 +314,8 @@ DECLARE_VERB(/mob/living/simple_mob/animal/borer, /mob/living/proc/hide)
 	ckey = candidate.ckey
 
 	if(candidate.mind)
-		rel_set(src, "mind", candidate.mind)
-		rel_set(candidate.mind, "current", src)
+		rel_set(src, nameof(mind), candidate.mind)
+		rel_set(candidate.mind, nameof(/datum/forms::current), src)
 		mind.assigned_role = JOB_CORTICAL_BORER
 		mind.special_role = JOB_CORTICAL_BORER
 
@@ -329,7 +331,7 @@ DECLARE_VERB(/mob/living/simple_mob/animal/borer, /mob/living/proc/hide)
 
 /mob/living/simple_mob/animal/borer/extra_huds(datum/hud/hud,icon/ui_style,list/hud_elements)
 	// Chem hud
-	own_set(src, "borer_chem_display", new /atom/movable/screen/borer/chems())
+	own_set(src, nameof(borer_chem_display), new /atom/movable/screen/borer/chems())
 	borer_chem_display.screen_loc = ui_ling_chemical_display
 	borer_chem_display.icon_state = "ling_chems"
 	hud_elements |= borer_chem_display

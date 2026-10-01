@@ -76,9 +76,9 @@ UI_ACT_PROC(/datum/computer_file/program/email_administration, ui_act_back)
 	if(error)
 		error = ""
 	else if(current_message())
-		rel_clear(src, "current_message")
+		rel_clear(src, nameof(/datum/tgui_module/email_client::current_message))
 	else
-		rel_clear(src, "current_account")
+		rel_clear(src, nameof(/datum/tgui_module/email_client::current_account))
 	return TRUE
 
 UI_ACT(/datum/computer_file/program/email_administration, "ban", ui_act_ban)
@@ -114,7 +114,7 @@ UI_ACT_PROC(/datum/computer_file/program/email_administration, ui_act_viewmail)
 
 	for(var/datum/computer_file/data/email_message/received_message in (current_account().inbox | current_account().spam | current_account().deleted))
 		if(received_message.uid == params["viewmail"])
-			rel_set(src, "current_message", received_message)
+			rel_set(src, nameof(/datum/tgui_module/email_client::current_message), received_message)
 			break
 	return TRUE
 
@@ -122,7 +122,7 @@ UI_ACT(/datum/computer_file/program/email_administration, "viewaccount", ui_act_
 UI_ACT_PROC(/datum/computer_file/program/email_administration, ui_act_viewaccount)
 	for(var/datum/computer_file/data/email_account/email_account in GLOB.ntnet_global.email_accounts)
 		if(email_account.uid == params["viewaccount"])
-			rel_set(src, "current_account", email_account)
+			rel_set(src, nameof(/datum/tgui_module/email_client::current_account), email_account)
 			break
 	return TRUE
 

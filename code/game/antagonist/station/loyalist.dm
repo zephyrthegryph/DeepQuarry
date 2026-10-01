@@ -38,11 +38,11 @@ GLOBAL_DATUM(loyalists, /datum/antagonist/loyalists)
 /datum/antagonist/loyalists/create_global_objectives()
 	if(!..())
 		return
-	own_clear(src, "global_objectives", OWN_DELETE)
+	own_clear(src, nameof(global_objectives), OWN_DELETE)
 	for(var/mob/living/carbon/human/player in REGISTRY_MEMBERS(REGISTRY_MOBS))
 		if(!player.mind || player.stat==2 || !(SSjob.is_job_in_department(player.mind.assigned_role, DEPARTMENT_COMMAND)))
 			continue
 		var/datum/objective/protect/loyal_obj = new
-		rel_set(loyal_obj, "target", player.mind)
+		rel_set(loyal_obj, nameof(loyal_obj.target), player.mind)
 		loyal_obj.explanation_text = "Protect [player.real_name], the [player.mind.assigned_role]."
-		own_add(src, "global_objectives", loyal_obj)
+		own_add(src, nameof(global_objectives), loyal_obj)

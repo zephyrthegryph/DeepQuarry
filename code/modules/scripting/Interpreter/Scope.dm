@@ -9,11 +9,11 @@
 	var/list/variables
 
 /datum/scope/New(datum/node/BlockDefinition/B, datum/scope/parent)
-	rel_set(src, "block_ref", B)
-	rel_set(src, "parent_ref", parent)
+	rel_set(src, nameof(block_ref), B)
+	rel_set(src, nameof(parent_ref), parent)
 	// The scope owns its variable value nodes: wrap the block's raw initial values.
 	for(var/name in B.initial_variables)
-		own_put(src, "variables", name, script_value_node(B.initial_variables[name]))
+		own_put(src, nameof(variables), name, script_value_node(B.initial_variables[name]))
 	// Functions are not copied: find_function() reads the block's own table, and `functions`
 	// holds only what the interpreter binds into this scope at runtime (SetProc()).
 	.=..()

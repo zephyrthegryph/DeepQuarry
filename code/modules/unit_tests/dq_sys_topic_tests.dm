@@ -7,7 +7,9 @@
 	var/list/last_args
 	var/list/obj/item/pool
 
-REL_LIST(/datum/dq_topic_probe, pool)
+/datum/dq_topic_probe/relations()
+	. = ..()
+	. += rel_many(nameof(pool))
 TOPIC_ACTION(/datum/dq_topic_probe, "pick", PROC_REF(topic_pick), TOPIC_REF("pick", /obj/item))
 TOPIC_ACTION(/datum/dq_topic_probe, "pooled", PROC_REF(topic_pooled), TOPIC_REF("pooled", /obj/item, PROC_REF(topic_pool)))
 TOPIC_ACTION(/datum/dq_topic_probe, "set", PROC_REF(topic_set), TOPIC_NUM("amount"), TOPIC_TEXT("label", 4))
@@ -80,9 +82,9 @@ TOPIC_ACTION(/datum/dq_topic_probe/child, "pick", PROC_REF(topic_child_pick), TO
 	TEST_ASSERT_NULL(P.last_action, "the handler did not run for a dangling ref")
 
 	// A declared source: only objects in the pool resolve.
-	rel_clear(P, "pool")
+	rel_clear(P, nameof(P.pool))
 	TEST_ASSERT_NULL(topic_dispatch(P, null, list("pooled" = REF(I))), "a ref outside the declared source is rejected")
-	rel_add(P, "pool", I)
+	rel_add(P, nameof(P.pool), I)
 	TEST_ASSERT(topic_dispatch(P, null, list("pooled" = REF(I))), "a ref inside the declared source resolves")
 	TEST_ASSERT_EQUAL(P.last_args["pooled"], I, "pooled ref located")
 
@@ -141,3 +143,14 @@ TOPIC_ACTION(/datum/dq_topic_probe/child, "pick", PROC_REF(topic_child_pick), TO
 	handler_args[TOPIC_HREF] = href
 	TEST_ASSERT_EQUAL(P.om_topic_ask(null, handler_args, "k1", /datum/om/prompt/number, list()), "42", "a re-run answer is read from the raw href_list")
 	qdel(P)
+
+/// admin_can() is the single rights primitive: a null or holder-less subject holds no rights, check_rights_for()
+/// is its alias, and a denial through admin_require() is refused (and audited) without reading usr.
+/datum/unit_test/dq_admin_can
+	var/client/fake_client
+
+/datum/unit_test/dq_admin_can/Run()
+	TEST_ASSERT(!admin_can(null, R_ADMIN), "admin_can(null) must deny")
+	TEST_ASSERT(!admin_can(null, R_NONE), "admin_can(null, R_NONE) must deny: no client is not an admin")
+	TEST_ASSERT(!check_rights_for(null, R_ADMIN), "check_rights_for must alias admin_can")
+	TEST_ASSERT(!admin_require(null, R_BAN, "dq_admin_can test"), "admin_require(null) must deny")

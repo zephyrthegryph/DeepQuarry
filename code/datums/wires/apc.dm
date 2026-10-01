@@ -10,15 +10,13 @@
 /datum/wires/apc/get_status()
 	. = ..()
 	var/obj/machinery/power/apc/A = holder
-	. += "The APC is [A.locked ? "" : "un"]locked."
+	. += "The APC is [is_locked(A) ? "" : "un"]locked."
 	. += A.shorted ? "The APCs power has been shorted." : "The APC is working properly!"
 	. += "The 'AI control allowed' light is [A.aidisabled ? "off" : "on"]."
 
 /datum/wires/apc/interactable(mob/user)
 	var/obj/machinery/power/apc/A = holder
-	if(A.wiresexposed)
-		return 1
-	return 0
+	return panel_is_open(A) && !cover_is_open(A)
 
 /datum/wires/apc/on_pulse(wire)
 	var/obj/machinery/power/apc/A = holder
@@ -30,7 +28,7 @@
 
 		if(WIRE_MAIN_POWER1, WIRE_MAIN_POWER2)
 			if(!A.shorted)
-				A.shorted = TRUE
+				A.set_shorted(TRUE)
 
 				om_after(src, 2 MINUTES, PROC_REF(main_power_pulse_ends))
 
@@ -48,10 +46,10 @@
 			if(!mend)
 				if(isliving(usr))
 					A.shock(usr, 50)
-				A.shorted = TRUE
+				A.set_shorted(TRUE)
 
 			else if(!is_cut(WIRE_MAIN_POWER1) && !is_cut(WIRE_MAIN_POWER2))
-				A.shorted = FALSE
+				A.set_shorted(FALSE)
 				if(isliving(usr))
 					A.shock(usr, 50)
 
@@ -61,7 +59,7 @@
 /datum/wires/apc/proc/main_power_pulse_ends()
 	var/obj/machinery/power/apc/A = holder
 	if(!is_cut(WIRE_MAIN_POWER1) && !is_cut(WIRE_MAIN_POWER2))
-		A.shorted = FALSE
+		A.set_shorted(FALSE)
 
 /datum/wires/apc/proc/ai_control_pulse_ends()
 	var/obj/machinery/power/apc/A = holder

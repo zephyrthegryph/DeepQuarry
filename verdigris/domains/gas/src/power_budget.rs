@@ -357,6 +357,171 @@ pub fn mix_transfer(
 	})
 }
 
+// ---------------------------------------------------------------------------
+// Pumps, scrubbers, equalisation and thermal exchange: the rest of the DM
+// atmos helpers' maths (`_atmospherics_helpers.dm`), now one place.
+// ---------------------------------------------------------------------------
+
+/// `calculate_specific_power()`: the power (W/mol) to move one mole of
+/// `source`'s mixture into `sink` (zero when the move is downhill).
+#[must_use]
+pub fn pump_specific_power(source: &Mixture, sink: &Mixture) -> f32 {
+	specific_power(source, sink)
+}
+
+/// `calculate_equalize_moles()`: the moles that would bring `source` and
+/// `sink` to one pressure, taking both temperatures as unchanged.
+#[must_use]
+pub fn equalize_moles(source: &Mixture, sink: &Mixture) -> f32 {
+	let source_temperature = source.get_temperature();
+	if source_temperature == 0.0 || source.volume <= 0.0 || sink.volume <= 0.0 {
+		return 0.0;
+	}
+	(source.return_pressure() - sink.return_pressure())
+		/ (R_IDEAL_GAS_EQUATION
+			* (source_temperature / source.volume + sink.get_temperature() / sink.volume))
+}
+
+/// A pump's plan, from [`pump_plan`].
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct PumpTransfer {
+	/// Moles to move from source to sink.
+	pub moles: f32,
+	/// Power drawn moving them (W over one second).
+	pub power_draw: f32,
+	/// The source volume the moved moles represent (litres): the flow meter.
+	pub flow_volume: f32,
+}
+
+/// `pump_gas()` / `pump_gas_passive()` minus the movement: how much of
+/// `source` moves into `sink` and what it costs. `requested` caps the moles
+/// (`None`: all of them), `available_power` caps the moles by the entropy
+/// cost (`None`: uncapped); `efficiency` divides the specific power
+/// (`ATMOS_PUMP_EFFICIENCY * material_pump_efficiency()/0.8`). A `passive`
+/// pump is capped by pressure equalisation instead and draws nothing.
+/// `None` is `pump_gas()`'s `-1`.
+#[must_use]
+pub fn pump_plan(
+	source: &Mixture,
+	sink: &Mixture,
+	requested: Option<f32>,
+	available_power: Option<f32>,
+	efficiency: f32,
+	min_moles: f32,
+	passive: bool,
+) -> Option<PumpTransfer> {
+	let source_moles = source.total_moles();
+	if source_moles < min_moles {
+		return None;
+	}
+	let mut moles = requested.map_or(source_moles, |r| r.min(source_moles));
+	let mut specific = 0.0;
+	if passive {
+		moles = moles.min(equalize_moles(source, sink));
+	} else {
+		specific = specific_power(source, sink) / efficiency;
+		if let Some(power) = available_power {
+			if specific > 0.0 {
+				moles = moles.min(power / specific);
+			}
+		}
+	}
+	if moles.is_nan() || moles < min_moles {
+		return None;
+	}
+	Some(PumpTransfer {
+		moles,
+		power_draw: specific * moles,
+		flow_volume: moles / source_moles * source.volume,
+	})
+}
+
+/// A scrubber's plan, from [`scrub_plan`].
+#[derive(Clone, Debug, PartialEq)]
+pub struct ScrubTransfer {
+	/// `(gas, moles)` to move, each scrubbed gas in proportion to its share.
+	pub gases: Vec<(usize, f32)>,
+	/// Every gas of the filter below the trace threshold, moved whole
+	/// regardless of the budget (the remainder of a nearly-cleaned mix).
+	pub trace: Vec<(usize, f32)>,
+	/// Total moles scrubbed (`gases`' sum).
+	pub moles: f32,
+	/// Power drawn (W over one second).
+	pub power_draw: f32,
+	/// The source volume the scrubbed moles represent (litres).
+	pub flow_volume: f32,
+}
+
+/// `scrub_gas()` minus the movement. `filtering` is a `1 << gas_id` set;
+/// `min_moles` is `MINIMUM_MOLES_TO_FILTER`. The trace moves are reported
+/// even when the budget is `None` (`scrub_gas()` did them before it decided).
+#[must_use]
+pub fn scrub_plan(
+	source: &Mixture,
+	sink: &Mixture,
+	filtering: u32,
+	requested: Option<f32>,
+	available_power: Option<f32>,
+	efficiency: f32,
+	min_moles: f32,
+) -> (Option<ScrubTransfer>, Vec<(usize, f32)>) {
+	let source_moles = source.total_moles();
+	if source_moles < min_moles {
+		return (None, Vec::new());
+	}
+	let moles = source.moles_array();
+	let mut trace = Vec::new();
+	let mut present: Vec<(usize, f32, f32)> = Vec::new(); // gas, moles, specific power
+	let mut total_filterable = 0.0;
+	for (g, &n) in moles.iter().enumerate() {
+		if filtering & (1 << g) == 0 || n <= 0.0 {
+			continue;
+		}
+		if n < min_moles {
+			trace.push((g, n));
+			continue;
+		}
+		let power = specific_power_gas(g, source, sink) / efficiency;
+		present.push((g, n, power));
+		total_filterable += n;
+	}
+	if total_filterable < min_moles {
+		return (None, trace);
+	}
+	let total_specific_power: f32 = present
+		.iter()
+		.map(|&(_, n, p)| p * n / total_filterable)
+		.sum();
+	let mut total = requested.map_or(total_filterable, |r| r.min(total_filterable));
+	if let Some(power) = available_power {
+		if total_specific_power > 0.0 {
+			total = total.min(power / total_specific_power);
+		}
+	}
+	if total < min_moles {
+		return (None, trace);
+	}
+	let mut gases = Vec::with_capacity(present.len());
+	let mut power_draw = 0.0;
+	let mut moved = 0.0;
+	for &(g, n, p) in &present {
+		let t = n.min(total * (n / total_filterable));
+		power_draw += p * t;
+		moved += t;
+		gases.push((g, t));
+	}
+	(
+		Some(ScrubTransfer {
+			gases,
+			trace: trace.clone(),
+			moles: moved,
+			power_draw,
+			flow_volume: total / source_moles * source.volume,
+		}),
+		trace,
+	)
+}
+
 #[cfg(test)]
 mod tests {
 	use super::*;
@@ -506,5 +671,75 @@ mod tests {
 		assert!((result.moles[0] - 200.0).abs() < 1e-3);
 		assert!((result.moles[1] - 200.0).abs() < 1e-3);
 		assert!((result.clean_moles - 200.0).abs() < 1e-3);
+	}
+
+	#[test]
+	fn a_pump_moves_what_the_power_allows_and_conserves_moles() {
+		let source = air(200.0, 0.0, 0.0, 293.15);
+		let sink = air(500.0, 0.0, 0.0, 293.15);
+		let unlimited = pump_plan(&source, &sink, Some(50.0), None, 1.0, 0.01, false).unwrap();
+		assert!((unlimited.moles - 50.0).abs() < 1e-3);
+		assert!(unlimited.power_draw > 0.0, "moving gas uphill costs power");
+		let budget = unlimited.power_draw * 0.5;
+		let limited =
+			pump_plan(&source, &sink, Some(50.0), Some(budget), 1.0, 0.01, false).unwrap();
+		assert!(limited.moles < unlimited.moles);
+		assert!(
+			limited.power_draw <= budget * 1.001,
+			"{limited:?} within {budget}"
+		);
+	}
+
+	#[test]
+	fn a_passive_pump_stops_at_equal_pressure_and_draws_nothing() {
+		let source = air(400.0, 0.0, 0.0, 293.15);
+		let sink = air(100.0, 0.0, 0.0, 293.15);
+		let plan = pump_plan(&source, &sink, None, None, 1.0, 0.01, true).unwrap();
+		assert_eq!(plan.power_draw, 0.0);
+		// Equal volumes and temperatures: half the difference moves.
+		assert!((plan.moles - 150.0).abs() < 0.5, "{plan:?}");
+		let level = air(100.0, 0.0, 0.0, 293.15);
+		assert!(pump_plan(&level, &level, None, None, 1.0, 0.01, true).is_none());
+	}
+
+	#[test]
+	fn a_scrubber_takes_only_the_filtered_gas_in_proportion() {
+		let source = air(100.0, 60.0, 20.0, 293.15);
+		let sink = air(0.0, 0.0, 0.0, 293.15);
+		let mask = (1 << GAS_CARBON_DIOXIDE) | (1 << GAS_PLASMA);
+		let (plan, trace) = scrub_plan(&source, &sink, mask, Some(40.0), None, 1.0, 0.04);
+		let plan = plan.expect("plenty to scrub");
+		assert!(trace.is_empty());
+		assert!((plan.moles - 40.0).abs() < 1e-3, "{plan:?}");
+		let co2 = plan
+			.gases
+			.iter()
+			.find(|g| g.0 == GAS_CARBON_DIOXIDE)
+			.unwrap()
+			.1;
+		let plasma = plan.gases.iter().find(|g| g.0 == GAS_PLASMA).unwrap().1;
+		assert!(
+			(co2 / plasma - 3.0).abs() < 1e-2,
+			"shares follow the mix: {co2} {plasma}"
+		);
+		assert!(plan.gases.iter().all(|g| g.0 != GAS_OXYGEN));
+	}
+
+	#[test]
+	fn a_scrubber_moves_the_trace_even_when_nothing_else_moves() {
+		let source = air(100.0, 0.01, 0.0, 293.15);
+		let sink = air(0.0, 0.0, 0.0, 293.15);
+		let (plan, trace) = scrub_plan(
+			&source,
+			&sink,
+			1 << GAS_CARBON_DIOXIDE,
+			None,
+			None,
+			1.0,
+			0.04,
+		);
+		assert!(plan.is_none());
+		assert_eq!(trace.len(), 1);
+		assert!((trace[0].1 - 0.01).abs() < 1e-6);
 	}
 }

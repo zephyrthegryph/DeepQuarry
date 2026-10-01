@@ -80,7 +80,7 @@ GLOBAL_VAR_INIT(universe_has_ended, 0)
 /datum/universal_state/supermatter_cascade/proc/APCSet()
 	for (var/obj/machinery/power/apc/APC in REGISTRY_MEMBERS(REGISTRY_APCS))
 		if (!APC.has_stat(BROKEN) && !APC.is_critical)
-			APC.chargemode = 0
+			APC.set_chargemode(0)
 			if(APC.cell)
 				APC.cell.charge = 0
 			APC.wake_for_power_dependency()

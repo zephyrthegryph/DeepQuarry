@@ -125,6 +125,3 @@
 #define UI_FIELD_SLOT 3
 #define UI_FIELD_MERGE 4
 
-/// The tgui modal actions (code/modules/tgui/modal.dm) on PATH: the host implements
-/// ui_modal_opened() and ui_modal_answered().
-#define DECLARE_UI_MODAL(PATH) /datum/ui_declared##PATH/act_rows() { return ui_declare_act(ui_declare_act(ui_declare_act(..(), "modal_open", TYPE_PROC_REF(/datum, ui_modal_open), list(UI_ARG_TEXT("id", 64), UI_ARG_LIST("arguments"))), "modal_answer", TYPE_PROC_REF(/datum, ui_modal_answer), list(UI_ARG_TEXT("id", 64), UI_ARG_TEXT("answer", TGUI_MODAL_INPUT_MAX_LENGTH), UI_ARG_LIST("arguments"))), "modal_close", TYPE_PROC_REF(/datum, ui_modal_close), list(UI_ARG_TEXT("id", 64))) }

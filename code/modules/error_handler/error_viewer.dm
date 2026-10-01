@@ -85,12 +85,12 @@ GLOBAL_DATUM(error_cache, /datum/error_viewer/error_cache)
 	var/datum/error_viewer/error_source/error_source = LAZYACCESS(error_sources, erroruid)
 	if (!error_source)
 		error_source = new(e)
-		own_put(src, "error_sources", erroruid, error_source)
+		own_put(src, nameof(error_sources), erroruid, error_source)
 
 	var/datum/error_viewer/error_entry/error_entry = new(e, desclines, skip_count)
-	rel_set(error_entry, "error_source", error_source)
-	own_add(src, "errors", error_entry)
-	rel_add(error_source, "errors", error_entry) // the viewer owns every entry; a source only names its own
+	rel_set(error_entry, nameof(error_entry.error_source), error_source)
+	own_add(src, nameof(errors), error_entry)
+	rel_add(error_source, nameof(error_source.errors), error_entry) // the viewer owns every entry; a source only names its own
 	if (skip_count)
 		return // Skip notifying admins about skipped errors.
 
@@ -146,7 +146,7 @@ GLOBAL_DATUM(error_cache, /datum/error_viewer/error_cache)
 		return
 
 	name = "<b>\[[time_stamp()]]</b> Runtime in <b>[error_where(e)]</b>: <b>[html_encode(e.name)]</b>"
-	own_set(src, "exc", e)
+	own_set(src, nameof(exc), e)
 	if (istype(desclines))
 		for (var/line in desclines)
 			// There's probably a better way to do this than non-breaking spaces...
@@ -154,7 +154,7 @@ GLOBAL_DATUM(error_cache, /datum/error_viewer/error_cache)
 
 	if (usr)
 		usr_ref = "[REF(usr)]"
-		rel_set(src, "usr_loc", get_turf(usr))
+		rel_set(src, nameof(usr_loc), get_turf(usr))
 
 /datum/error_viewer/error_entry/show_to(user, datum/error_viewer/back_to, linear)
 	if (!istype(back_to))

@@ -37,7 +37,7 @@
 		var/datum/robolimb/R = GLOB.all_robolimbs[model] // company should be set in parent by now
 		if(!R)
 			log_runtime("A torso was robotize() but has no model that can be found: [model]. May affect FBPs.")
-		shared_set(owner, "synthetic", R)
+		shared_set(owner, nameof(owner.synthetic), R)
 	return FALSE
 
 

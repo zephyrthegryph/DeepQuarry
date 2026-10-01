@@ -142,7 +142,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/slime/xenobio, TYPE_PROC_REF(/ato
 
 // These are verbs so that player slimes can evolve/split.
 /mob/living/simple_mob/slime/xenobio/verb/evolve()
-	set category = "Slime"
+	set category = VERB_CAT_SLIME
 	set desc = "This will let you evolve from baby to adult slime."
 
 	if(stat)
@@ -162,7 +162,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/slime/xenobio, TYPE_PROC_REF(/ato
 		to_chat(src, span_warning("I have already evolved..."))
 
 /mob/living/simple_mob/slime/xenobio/verb/reproduce()
-	set category = "Slime"
+	set category = VERB_CAT_SLIME
 	set desc = "This will make you split into four new slimes."
 
 	if(stat)
@@ -233,7 +233,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/slime/xenobio, TYPE_PROC_REF(/ato
 	baby.untamable_inheirit = untamable_inheirit
 	baby.faction = faction
 	for(var/mob/living/friend as anything in friends)
-		rel_add(baby, "friends", friend)
+		rel_add(baby, nameof(baby.friends), friend)
 
 	if(no_step != 1)
 		step_away(baby, src)

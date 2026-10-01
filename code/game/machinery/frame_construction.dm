@@ -137,9 +137,8 @@
 	var/obj/structure/frame/frame = target
 	play_sfx(frame, SFX_ITEMS_DECONSTRUCT)
 	to_chat(actor, span_notice("You place the circuit board inside the frame."))
-	actor.drop_item()
-	held.forceMove(frame)
-	own_set(frame, "circuit", held) // CONTAINED: in the frame first
+	if(!own_set(frame, nameof(frame.circuit), held, user = actor))
+		return TRUE
 	if(frame.frame_type.frame_class == FRAME_CLASS_MACHINE)
 		frame.check_components()
 		frame.update_desc()
@@ -172,7 +171,7 @@
 /datum/interaction/construction/frame/remove_board/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
 	var/obj/structure/frame/frame = target
 	frame.circuit.forceMove(frame.loc)
-	own_take(frame, "circuit")
+	own_take(frame, nameof(frame.circuit))
 	if(frame.frame_type.frame_class == FRAME_CLASS_MACHINE)
 		frame.req_components = null
 	frame.update_desc()
@@ -395,9 +394,9 @@
 	if(new_machine.component_parts)
 		for(var/CP in new_machine.component_parts)
 			qdel(CP)
-		own_take_all(new_machine, "component_parts")
+		own_take_all(new_machine, nameof(new_machine.component_parts))
 	else
-		own_take_all(new_machine, "component_parts")
+		own_take_all(new_machine, nameof(new_machine.component_parts))
 
 	circuit.construct(new_machine)
 
@@ -416,12 +415,12 @@
 			O.move_into(new_machine, CONTAINER_SLOT_INTERNALS)
 		else
 			O.moveToNullspace()
-		own_add(new_machine, "component_parts", O)
-	own_take_all(src, "components") // the parts are the new machine's now (DECLARE_REF(..., OWNED_LIST) on both)
+		own_add(new_machine, nameof(new_machine.component_parts), O)
+	own_take_all(src, nameof(components)) // the parts are the new machine's now (DECLARE_REF(..., OWNED_LIST) on both)
 
 	circuit.moveToNullspace()
 	circuit.move_into(new_machine, CONTAINER_SLOT_INTERNALS)
-	own_set(new_machine, "circuit", circuit)
+	own_set(new_machine, nameof(new_machine.circuit), circuit)
 
 	new_machine.RefreshParts()
 	new_machine.finalize_material_assembly()
@@ -438,7 +437,7 @@
 	B.set_dir(dir)
 	circuit.construct(B)
 	circuit.moveToNullspace()
-	own_set(B, "circuit", circuit)
+	own_set(B, nameof(B.circuit), circuit)
 	if(!alarm)
 		B.update_icon()
 	qdel(src)
@@ -451,7 +450,7 @@
 	B.set_dir(dir)
 	circuit.construct(B)
 	circuit.moveToNullspace()
-	own_set(B, "circuit", circuit)
+	own_set(B, nameof(B.circuit), circuit)
 	var/obj/machinery/computer/LC = locate_within(get_step(B, turn(B.dir, 90)), /obj/machinery/computer)
 	var/obj/machinery/computer/RC = locate_within(get_step(B, turn(B.dir, -90)), /obj/machinery/computer)
 	if(LC)

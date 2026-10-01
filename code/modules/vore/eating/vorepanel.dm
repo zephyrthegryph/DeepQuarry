@@ -14,7 +14,7 @@
 
 /mob/proc/insidePanel()
 	set name = "Vore Panel"
-	set category = "IC.Vore"
+	set category = VERB_CAT_IC_VORE
 
 	if(SSticker.current_state == GAME_STATE_STARTUP)
 		return
@@ -25,7 +25,7 @@
 	if(!vorePanel)
 		if(!isnewplayer(src))
 			log_vore("[src] ([type], \ref[src]) didn't have a vorePanel and tried to use the verb.")
-		own_set(src, "vorePanel", new /datum/vore_look(src))
+		own_set(src, nameof(vorePanel), new /datum/vore_look(src))
 
 	vorePanel.tgui_interact(src)
 
@@ -53,7 +53,7 @@
 
 /datum/vore_look/New(mob/new_host)
 	if(istype(new_host))
-		rel_set(src, "host", new_host)
+		rel_set(src, nameof(host), new_host)
 	. = ..()
 
 /datum/vore_look/tgui_close(mob/user)
@@ -965,7 +965,7 @@ UI_ACT(/datum/vore_look, "soulcatcher_select", ui_act_soulcatcher_select, UI_ARG
 UI_ACT_PROC(/datum/vore_look, ui_act_soulcatcher_select)
 	var/mob/picked_soul = params["selected_soul"]
 	if(picked_soul && (picked_soul in host().soulgem.brainmobs))
-		rel_set(host().soulgem, "selected_soul", picked_soul)
+		rel_set(host().soulgem, nameof(/obj/soulgem::selected_soul), picked_soul)
 	return TRUE
 //Soulcatcher settings
 
@@ -1462,8 +1462,8 @@ UI_ACT_PROC(/datum/vore_look, pick_from_outside)
 		om_unsuspend(body_backup, body_backup)
 		body_backup.ajourn = 0
 		transfer_mind(T.mind, body_backup, "reformed in [host()]", force = TRUE)
-		rel_clear(body_backup, "teleop")
-		own_take(T, "body_backup")
+		rel_clear(body_backup, nameof(body_backup.teleop))
+		own_take(T, nameof(T.body_backup))
 		host().vore_selected.release_specific_contents(T, TRUE)
 		if(istype(body_backup, /mob/living/simple_mob))
 			var/mob/living/simple_mob/sm = body_backup
@@ -1494,14 +1494,13 @@ UI_ACT_PROC(/datum/vore_look, pick_from_outside)
 		om_unsuspend(body_backup, body_backup)
 		body_backup.forceMove(MMI.loc)
 		body_backup.ajourn = 0
-		rel_clear(body_backup, "teleop")
+		rel_clear(body_backup, nameof(body_backup.teleop))
 		//And now installing the MMI into the body...
 		if(isrobot(body_backup)) //Just do the reverse of getting the MMI pulled out in /obj/belly/proc/digestion_death
 			var/mob/living/silicon/robot/R = body_backup
 			R.revive()
 			mmi_host.release_mind(R, "reformed by [key_name(user)]")
-			MMI.forceMove(R)
-			own_set(R, "mmi", MMI)
+			own_set(R, nameof(R.mmi), MMI, into = TRUE)
 			R.add_language(LANGUAGE_ROBOT_TALK)
 		else // the same install as the surgery step (install_mmi_holder())
 			install_mmi_holder(body_backup, MMI)
@@ -1510,7 +1509,7 @@ UI_ACT_PROC(/datum/vore_look, pick_from_outside)
 			//You've hopefully already named yourself, so... not implementing that bit.
 			var/mob/living/carbon/human/H = body_backup
 			H.reform_restore("reformed around [MMI] in [host()]", host())
-		own_take(MMI, "body_backup")
+		own_take(MMI, nameof(MMI.body_backup))
 
 /// "Health": Report the prey's vitality.
 /datum/vore_look/proc/pick_health(mob/user, atom/movable/target, params)

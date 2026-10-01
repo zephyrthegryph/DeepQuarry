@@ -101,7 +101,7 @@
 	// (recolor, custom_name, custom_desc) ahead of this — appending at the end is stable
 	// for now, but document the contract so future parent reorders trigger a save migration
 	// rather than a silent reshuffle.
-	own_add(src, "gear_tweaks", new /datum/gear_tweak/pda_ringtone)
+	own_add(src, nameof(gear_tweaks), new /datum/gear_tweak/pda_ringtone)
 
 // Custom tweak — ringtone is per-PDA, stored as gear metadata, applied to the spawned
 // PDA's ttone. The standalone ringtone pref is still read by the job's default PDA at

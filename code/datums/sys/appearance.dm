@@ -422,11 +422,11 @@ DECLARE_SHARED_CACHE_EX(decl_appearance, GLOBAL_PROC_REF(build_decl_appearance),
 	for(var/turf/T in range(1, center))
 		if(turf_kind)
 			if(T != src && istype(T, kind))
-				om_changed(T, CHANGE_NEIGHBOURS)
+				changed(T, CHANGE_NEIGHBOURS)
 			continue
 		FOR_CONTENTS(var/atom/movable/A as anything, T)
 			if(A != src && istype(A, kind))
-				om_changed(A, CHANGE_NEIGHBOURS)
+				changed(A, CHANGE_NEIGHBOURS)
 
 /// The default DECLARE_APPEARANCE_PROC provider: no overlays. Types override it and declare it.
 /atom/proc/appearance_overlays()
@@ -460,6 +460,10 @@ GLOBAL_LIST_EMPTY(appearance_queue)
 /// Runs the queued refreshes within the lane budget. TRUE when the queue is empty. Refreshes raised
 /// by a refresh join the same pass.
 /proc/appearance_drain(datum/om/scheduler/sched)
+	// The refresh engine shares the presentation lane (code/datums/capabilities/refresh.dm).
+	if(!refresh_drain(sched))
+		return FALSE
+	refresh_sweep_step()
 	var/list/Q = GLOB.appearance_queue
 	if(!length(Q))
 		return TRUE
@@ -482,5 +486,6 @@ GLOBAL_LIST_EMPTY(appearance_queue)
 
 /// Runs every queued refresh now, ignoring the budget (unit tests, admin tools).
 /proc/appearance_flush()
+	refresh_flush()
 	while(length(GLOB.appearance_queue))
 		appearance_drain(null)

@@ -13,7 +13,7 @@
 			land_spot_list += land_spot
 
 	target_spot = pick(land_spot_list)
-	rel_set(src, "land_target", get_turf(target_spot))
+	rel_set(src, nameof(land_target), get_turf(target_spot))
 
 	if(!land_target())
 		kill()

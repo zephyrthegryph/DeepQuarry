@@ -54,7 +54,7 @@
 
 /client/verb/change_volume()
 	set name = "Set Volume"
-	set category = "OOC.Client Settings"
+	set category = VERB_CAT_OOC_CLIENT_SETTINGS
 	set desc = "Set jukebox volume"
 	set_new_volume(usr)
 
@@ -124,7 +124,7 @@
 
 /datum/media_manager/New(client/C)
 	ASSERT(istype(C))
-	rel_set(src, "owner", C)
+	rel_set(src, nameof(owner), C)
 
 /// Owned-child release: the media window is closed as it leaves us (replaced, or disposed at teardown).
 /datum/media_manager/on_owned_release(var_name, datum/child)
@@ -164,7 +164,7 @@ DECLARE_UI(/datum/media_manager, "MediaPlayer", UI_PINNED, UI_PREINITIALIZED)
 	// Enable the hidden skin element so its BROWSER actually loads our
 	// assets — the 1x1 size keeps it invisible regardless of is-visible.
 	winset(owner(), WINDOW_ID, "is-disabled=false;is-visible=true")
-	own_set(src, "media_window", new /datum/tgui_window(owner(), WINDOW_ID))
+	own_set(src, nameof(media_window), new /datum/tgui_window(owner(), WINDOW_ID))
 	media_window.initialize(
 		assets = list(get_asset_datum(/datum/asset/simple/tgui)),
 	)

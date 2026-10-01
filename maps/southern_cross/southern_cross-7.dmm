@@ -277,8 +277,8 @@
 /area/shuttle/shuttle3/start)
 "ale" = (
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	icon_state = "door_locked";
-	locked = 1;
 	name = "Port Stern Outer Airlock"
 	},
 /obj/machinery/access_button{
@@ -846,8 +846,8 @@
 	},
 /obj/effect/map_helper/airlock/door/int_door,
 /obj/machinery/door/airlock/glass_external{
+	cap_state = 128;
 	icon_state = "door_locked";
-	locked = 1;
 	name = "Port Bow Outer Airlock"
 	},
 /obj/machinery/door/firedoor/glass,
@@ -2340,9 +2340,9 @@
 /area/expoutpost/atmospherics)
 "ccq" = (
 /obj/machinery/door/airlock/voidcraft/vertical{
+	cap_state = 128;
 	icon_state = "door_locked";
 	id_tag = "expshuttle4_door_L";
-	locked = 1;
 	name = "shuttle side hatch"
 	},
 /obj/structure/cable/blue{
@@ -2787,9 +2787,9 @@
 	pixel_y = 26
 	},
 /obj/machinery/door/airlock/voidcraft/vertical{
+	cap_state = 128;
 	frequency = 1379;
 	id_tag = "ursula_outer";
-	locked = 1;
 	name = "External Access"
 	},
 /obj/structure/cable/blue{
@@ -3115,8 +3115,8 @@
 /area/expoutpost/engstorage)
 "cIJ" = (
 /obj/machinery/door/airlock/glass_external{
+	cap_state = 128;
 	icon_state = "door_locked";
-	locked = 1;
 	name = "Port Bow Outer Airlock"
 	},
 /obj/effect/map_helper/airlock/door/int_door,
@@ -5609,9 +5609,9 @@
 	icon_state = "1-2"
 	},
 /obj/machinery/door/airlock/maintenance_hatch{
+	cap_state = 128;
 	icon_state = "door_locked";
 	id_tag = "aeg_reactor_bolt";
-	locked = 1;
 	name = "Core Access Hatch";
 	req_one_access = list(11)
 	},
@@ -6569,8 +6569,8 @@
 /obj/effect/map_helper/airlock/button/int_button,
 /obj/effect/map_helper/airlock/door/int_door,
 /obj/machinery/door/airlock/glass_external{
+	cap_state = 128;
 	icon_state = "door_locked";
-	locked = 1;
 	name = "Port Bow Outer Airlock"
 	},
 /obj/machinery/door/firedoor/glass,
@@ -7130,8 +7130,8 @@
 /obj/effect/map_helper/airlock/door/ext_door,
 /obj/effect/map_helper/airlock/button/ext_button,
 /obj/machinery/door/airlock/glass_external{
+	cap_state = 128;
 	icon_state = "door_locked";
-	locked = 1;
 	name = "Port Bow Outer Airlock"
 	},
 /obj/machinery/door/firedoor/glass,
@@ -9219,8 +9219,8 @@
 	},
 /obj/effect/map_helper/airlock/door/int_door,
 /obj/machinery/door/airlock/glass_external{
+	cap_state = 128;
 	icon_state = "door_locked";
-	locked = 1;
 	name = "Starboard Bow Inner Airlock"
 	},
 /obj/machinery/door/firedoor/glass,
@@ -10849,8 +10849,8 @@
 /obj/effect/floor_decal/industrial/warning/cee,
 /obj/effect/map_helper/airlock/door/int_door,
 /obj/machinery/door/airlock/glass_external{
+	cap_state = 128;
 	icon_state = "door_locked";
-	locked = 1;
 	name = "Port Bow Outer Airlock"
 	},
 /obj/machinery/door/firedoor/glass,
@@ -10936,8 +10936,8 @@
 /area/expoutpost/washroom)
 "jmy" = (
 /obj/machinery/power/apc/hyper{
+	cap_state = 0;
 	coverlocked = 0;
-	locked = 0;
 	pixel_y = -24
 	},
 /obj/structure/cable/green{
@@ -12151,8 +12151,8 @@
 	},
 /obj/effect/map_helper/airlock/door/ext_door,
 /obj/machinery/door/airlock/glass_external{
+	cap_state = 128;
 	icon_state = "door_locked";
-	locked = 1;
 	name = "Port Bow Outer Airlock"
 	},
 /obj/machinery/door/firedoor/glass,
@@ -14788,8 +14788,8 @@
 /area/expoutpost/portbowhallway)
 "mqo" = (
 /obj/machinery/door/airlock/glass_external{
+	cap_state = 128;
 	icon_state = "door_locked";
-	locked = 1;
 	name = "Port Stern Inner Airlock"
 	},
 /obj/machinery/access_button{
@@ -15192,8 +15192,8 @@
 /obj/effect/map_helper/airlock/door/ext_door,
 /obj/effect/map_helper/airlock/button/ext_button,
 /obj/machinery/door/airlock/glass_external{
+	cap_state = 128;
 	icon_state = "door_locked";
-	locked = 1;
 	name = "Starboard Bow Outer Airlock"
 	},
 /obj/machinery/door/firedoor/glass,
@@ -15211,9 +15211,9 @@
 /area/expoutpost/portbowhallway)
 "mIK" = (
 /obj/machinery/door/airlock/multi_tile/metal{
+	cap_state = 128;
 	icon_state = "door_locked";
-	id_tag = "expshuttle3_door_cargo";
-	locked = 1
+	id_tag = "expshuttle3_door_cargo"
 	},
 /obj/machinery/button/remote/airlock{
 	desiredstate = 1;
@@ -15249,8 +15249,8 @@
 /area/expoutpost/portfuelstorage)
 "mKl" = (
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	icon_state = "door_locked";
-	locked = 1;
 	name = "Starboard Stern Outer Airlock"
 	},
 /obj/machinery/access_button{
@@ -15371,9 +15371,9 @@
 /area/expoutpost/slingcarrierdock)
 "mPc" = (
 /obj/machinery/door/airlock/voidcraft/vertical{
+	cap_state = 128;
 	frequency = 1379;
 	id_tag = "ursula_inner";
-	locked = 1;
 	name = "Internal Access"
 	},
 /obj/machinery/access_button{
@@ -16303,9 +16303,9 @@
 /area/expoutpost/miningfoyer)
 "nwH" = (
 /obj/machinery/door/airlock/voidcraft/vertical{
+	cap_state = 128;
 	frequency = 1379;
 	id_tag = "baby_mammoth_outer";
-	locked = 1;
 	name = "External Access"
 	},
 /obj/machinery/access_button{
@@ -16832,10 +16832,10 @@
 /area/expoutpost/reactorroom)
 "nLN" = (
 /obj/machinery/door/airlock/glass_external{
+	cap_state = 128;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "exp_sling_outpost_door";
-	locked = 1;
 	name = "Carrier Sling Access";
 	req_access = list();
 	req_one_access = list(5,43,67)
@@ -17827,11 +17827,11 @@
 /obj/machinery/mech_recharger,
 /obj/effect/floor_decal/industrial/warning/full,
 /obj/machinery/power/apc/hyper{
+	cap_state = 0;
 	coverlocked = 0;
 	environ = 1;
 	equipment = 1;
 	lighting = 1;
-	locked = 0;
 	pixel_y = -24
 	},
 /obj/structure/cable/green,
@@ -19007,11 +19007,11 @@
 /area/expoutpost/portbowhallway)
 "pJe" = (
 /obj/machinery/power/apc/hyper{
+	cap_state = 0;
 	coverlocked = 0;
 	environ = 1;
 	equipment = 1;
 	lighting = 1;
-	locked = 0;
 	pixel_y = -24
 	},
 /obj/structure/cable/green,
@@ -19874,9 +19874,9 @@
 /area/expoutpost/hangarfive)
 "qrZ" = (
 /obj/machinery/door/airlock/voidcraft/vertical{
+	cap_state = 128;
 	frequency = 1379;
 	id_tag = "needle_inner";
-	locked = 1;
 	name = "Internal Access"
 	},
 /obj/machinery/access_button{
@@ -20011,8 +20011,8 @@
 /area/expoutpost/reactorroom)
 "qvR" = (
 /obj/machinery/door/airlock/glass_external{
+	cap_state = 128;
 	icon_state = "door_locked";
-	locked = 1;
 	name = "Port Bow Outer Airlock"
 	},
 /obj/machinery/access_button{
@@ -21213,12 +21213,12 @@
 /area/expoutpost/commanderroom)
 "rrP" = (
 /obj/machinery/power/apc/hyper{
+	cap_state = 0;
 	coverlocked = 0;
 	dir = 4;
 	environ = 1;
 	equipment = 1;
 	lighting = 1;
-	locked = 0;
 	pixel_x = 23
 	},
 /obj/structure/panic_button{
@@ -21679,8 +21679,8 @@
 /obj/effect/map_helper/airlock/button/int_button,
 /obj/effect/map_helper/airlock/door/int_door,
 /obj/machinery/door/airlock/glass_external{
+	cap_state = 128;
 	icon_state = "door_locked";
-	locked = 1;
 	name = "Starboard Bow Inner Airlock"
 	},
 /obj/machinery/door/firedoor/glass,
@@ -23020,8 +23020,8 @@
 /obj/effect/floor_decal/industrial/warning/cee,
 /obj/effect/map_helper/airlock/door/int_door,
 /obj/machinery/door/airlock/glass_external{
+	cap_state = 128;
 	icon_state = "door_locked";
-	locked = 1;
 	name = "Starboard Bow Inner Airlock"
 	},
 /obj/machinery/door/firedoor/glass,
@@ -23231,8 +23231,8 @@
 /area/expoutpost/engoffice)
 "tac" = (
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	icon_state = "door_locked";
-	locked = 1;
 	name = "Port Stern Outer Airlock"
 	},
 /obj/effect/floor_decal/industrial/warning{
@@ -24075,8 +24075,8 @@
 /area/shuttle/shuttle3/start)
 "tKK" = (
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	icon_state = "door_locked";
-	locked = 1;
 	name = "Starboard Stern Outer Airlock"
 	},
 /obj/effect/map_helper/airlock/door/ext_door,
@@ -24808,8 +24808,8 @@
 /area/shuttle/ursula)
 "umd" = (
 /obj/machinery/door/airlock/glass_external{
+	cap_state = 128;
 	icon_state = "door_locked";
-	locked = 1;
 	name = "Port Stern Inner Airlock"
 	},
 /obj/effect/floor_decal/industrial/warning{
@@ -24878,9 +24878,9 @@
 /area/expoutpost/staruppermaint)
 "upT" = (
 /obj/machinery/door/airlock/voidcraft/vertical{
+	cap_state = 128;
 	frequency = 1379;
 	id_tag = "needle_outer";
-	locked = 1;
 	name = "External Access"
 	},
 /obj/machinery/access_button{
@@ -27043,9 +27043,9 @@
 /area/expoutpost/staruppermaint)
 "vWj" = (
 /obj/machinery/door/airlock/voidcraft/vertical{
+	cap_state = 128;
 	icon_state = "door_locked";
 	id_tag = "expshuttle3_door_L";
-	locked = 1;
 	name = "shuttle side hatch"
 	},
 /obj/machinery/button/remote/airlock{
@@ -27242,8 +27242,8 @@
 	},
 /obj/effect/map_helper/airlock/door/ext_door,
 /obj/machinery/door/airlock/glass_external{
+	cap_state = 128;
 	icon_state = "door_locked";
-	locked = 1;
 	name = "Starboard Bow Outer Airlock"
 	},
 /obj/machinery/door/firedoor/glass,
@@ -27318,9 +27318,9 @@
 	pixel_y = 26
 	},
 /obj/machinery/door/airlock/voidcraft/vertical{
+	cap_state = 128;
 	frequency = 1379;
 	id_tag = "baby_mammoth_inner";
-	locked = 1;
 	name = "Internal Access"
 	},
 /obj/structure/cable/blue{
@@ -28125,11 +28125,11 @@
 "wQf" = (
 /obj/effect/floor_decal/industrial/warning/cee,
 /obj/machinery/power/apc/hyper{
+	cap_state = 0;
 	coverlocked = 0;
 	environ = 1;
 	equipment = 1;
 	lighting = 1;
-	locked = 0;
 	pixel_y = -24
 	},
 /obj/structure/cable/green,
@@ -28614,8 +28614,8 @@
 /obj/effect/catwalk_plated/dark,
 /obj/machinery/door/firedoor/glass,
 /obj/machinery/door/airlock/silver{
+	cap_state = 128;
 	icon_state = "door_locked";
-	locked = 1;
 	name = "IN CONSTRUCTION"
 	},
 /obj/item/tape/engineering,
@@ -29504,9 +29504,9 @@
 	name = "window blast shield"
 	},
 /obj/machinery/door/airlock/multi_tile/metal/mait{
+	cap_state = 128;
 	icon_state = "door_locked";
-	id_tag = "expshuttle4_door_cargo";
-	locked = 1
+	id_tag = "expshuttle4_door_cargo"
 	},
 /turf/simulated/floor,
 /area/shuttle/baby_mammoth)
@@ -30074,8 +30074,8 @@
 	},
 /obj/effect/catwalk_plated/techfloor,
 /obj/machinery/door/airlock/engineering{
+	cap_state = 128;
 	icon_state = "door_locked";
-	locked = 1;
 	name = "Secure Storage"
 	},
 /obj/item/tape/engineering,

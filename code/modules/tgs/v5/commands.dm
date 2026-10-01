@@ -1,6 +1,6 @@
 /datum/tgs_api/v5/proc/ListCustomCommands()
 	var/results = list()
-	own_take_all(src, "custom_commands")
+	own_take_all(src, nameof(custom_commands))
 	for(var/I in typesof(/datum/tgs_chat_command) - /datum/tgs_chat_command)
 		var/datum/tgs_chat_command/stc = new I
 		if(stc.ignore_type == I)
@@ -16,7 +16,7 @@
 			TGS_ERROR_LOG("Custom commands [other.type] and [I] have the same name (\"[command_name]\"), only [other.type] will be available!")
 			continue
 		results += list(list(DMAPI5_CUSTOM_CHAT_COMMAND_NAME = command_name, DMAPI5_CUSTOM_CHAT_COMMAND_HELP_TEXT = stc.help_text, DMAPI5_CUSTOM_CHAT_COMMAND_ADMIN_ONLY = stc.admin_only))
-		own_put(src, "custom_commands", command_name, stc)
+		own_put(src, nameof(custom_commands), command_name, stc)
 
 	return results
 
@@ -29,7 +29,7 @@
 	u.id = user[DMAPI5_CHAT_USER_ID]
 	u.friendly_name = user[DMAPI5_CHAT_USER_FRIENDLY_NAME]
 	u.mention = user[DMAPI5_CHAT_USER_MENTION]
-	own_set(u, "channel", DecodeChannel(user[DMAPI5_CHAT_USER_CHANNEL]))
+	own_set(u, nameof(u.channel), DecodeChannel(user[DMAPI5_CHAT_USER_CHANNEL]))
 
 	var/datum/tgs_chat_command/sc = custom_commands[command]
 	if(sc)

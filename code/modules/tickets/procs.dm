@@ -3,7 +3,7 @@
 //
 
 /client/verb/mentorhelp(msg as text)
-	set category = "Admin"
+	set category = VERB_CAT_ADMIN
 	set name = "Mentorhelp"
 
 	//handle muting and automuting
@@ -13,7 +13,13 @@
 	if(handle_spam_prevention(MUTE_ADMINHELP))
 		return
 
-	if(!msg)
+	// `msg as text` is raw player input and is shown to every staff member (MessageNoRecipient,
+	// AddInteraction), so sanitize it once here. Never reassign `msg`: `args` is a live view of it, and
+	// rerun_ask() below re-runs this verb with `args`, which would sanitize the encoded copy a second time.
+	// /datum/ticket/New() takes the raw text: it sanitizes its own copy and forwards the raw text to Discord.
+	var/raw_msg = copytext(msg, 1, MAX_MESSAGE_LEN)
+	var/clean_msg = sanitize(raw_msg)
+	if(!clean_msg)
 		return
 
 	//remove out adminhelp verb temporarily to prevent spamming of admins.
@@ -28,9 +34,9 @@
 			return
 		if(input == "Yes")
 			if(current_ticket())
-				log_admin("Mentorhelp: [key_name(src)]: [msg]")
-				current_ticket().MessageNoRecipient(msg)
-				to_chat(src, span_adminnotice(span_mentor("Mentor-PM to-" + span_bold("Mentors") + ": [msg]")))
+				log_admin("Mentorhelp: [key_name(src)]: [clean_msg]")
+				current_ticket().MessageNoRecipient(clean_msg)
+				to_chat(src, span_adminnotice(span_mentor("Mentor-PM to-" + span_bold("Mentors") + ": [clean_msg]")))
 				return
 			else
 				to_chat(src, span_warning("Ticket not found, creating new one..."))
@@ -38,7 +44,7 @@
 			current_ticket().AddInteraction("[usr.ckey] opened a new ticket.")
 			current_ticket().Resolve(usr)
 
-	new /datum/ticket(msg, src, FALSE, 0)
+	new /datum/ticket(raw_msg, src, FALSE, 0)
 
 //admin proc
 ADMIN_VERB(cmd_mentor_ticket_panel, (R_ADMIN|R_SERVER|R_MOD|R_MENTOR), "Mentor Ticket List", "Opens the list of mentor tickets", ADMIN_CATEGORY_MISC)
@@ -68,7 +74,7 @@ ADMIN_VERB(cmd_mentor_ticket_panel, (R_ADMIN|R_SERVER|R_MOD|R_MENTOR), "Mentor T
 //
 
 /client/verb/requesthelp()
-	set category = "Admin"
+	set category = VERB_CAT_ADMIN
 	set name = "Request help"
 	set hidden = 1
 
@@ -78,7 +84,8 @@ ADMIN_VERB(cmd_mentor_ticket_panel, (R_ADMIN|R_SERVER|R_MOD|R_MENTOR), "Mentor T
 	if(!mhelp)
 		return
 
-	var/msg = rerun_ask(src, "k76", VERB_REF(requesthelp), args, /datum/om/prompt/text, message = "Input your request for help.", title = "Request for Help ([mhelp])", multiline = TRUE, max_length = MAX_TGUI_INPUT)
+	// encode = FALSE: mentorhelp()/adminhelp() sanitize their own argument, so encoding here would double-encode it.
+	var/msg = rerun_ask(src, "k76", VERB_REF(requesthelp), args, /datum/om/prompt/text, message = "Input your request for help.", title = "Request for Help ([mhelp])", multiline = TRUE, encode = FALSE, max_length = MAX_TGUI_INPUT)
 	if(isnull(msg))
 		return
 	if(!msg)
@@ -91,7 +98,7 @@ ADMIN_VERB(cmd_mentor_ticket_panel, (R_ADMIN|R_SERVER|R_MOD|R_MENTOR), "Mentor T
 	adminhelp(msg)
 
 /client/verb/adminhelp(msg as text)
-	set category = "Admin"
+	set category = VERB_CAT_ADMIN
 	set name = "Adminhelp"
 
 	//handle muting and automuting
@@ -101,7 +108,10 @@ ADMIN_VERB(cmd_mentor_ticket_panel, (R_ADMIN|R_SERVER|R_MOD|R_MENTOR), "Mentor T
 	if(handle_spam_prevention(MUTE_ADMINHELP))
 		return
 
-	if(!msg)
+	// Same contract as mentorhelp: clean_msg is the staff-facing text, raw_msg goes to the ticket. Never reassign `msg` (see mentorhelp).
+	var/raw_msg = copytext(msg, 1, MAX_MESSAGE_LEN)
+	var/clean_msg = sanitize(raw_msg)
+	if(!clean_msg)
 		return
 
 	//remove out adminhelp verb temporarily to prevent spamming of admins.
@@ -116,8 +126,8 @@ ADMIN_VERB(cmd_mentor_ticket_panel, (R_ADMIN|R_SERVER|R_MOD|R_MENTOR), "Mentor T
 			return
 		if(input == "Yes")
 			if(current_ticket())
-				current_ticket().MessageNoRecipient(msg)
-				to_chat(src, span_adminnotice("PM to-" + span_bold("Admins") + ": [msg]"))
+				current_ticket().MessageNoRecipient(clean_msg)
+				to_chat(src, span_adminnotice("PM to-" + span_bold("Admins") + ": [clean_msg]"))
 				return
 			else
 				to_chat(src, span_warning("Ticket not found, creating new one..."))
@@ -125,12 +135,12 @@ ADMIN_VERB(cmd_mentor_ticket_panel, (R_ADMIN|R_SERVER|R_MOD|R_MENTOR), "Mentor T
 			current_ticket().AddInteraction("[key_name_admin(usr)] opened a new ticket.")
 			current_ticket().Close(usr)
 
-	new /datum/ticket(msg, src, FALSE, 1)
+	new /datum/ticket(raw_msg, src, FALSE, 1)
 
 //admin proc
 /client/proc/cmd_admin_ticket_panel()
 	set name = "Show Ticket List"
-	set category = "Admin.Misc"
+	set category = VERB_CAT_ADMIN_MISC
 
 	if(!check_rights(R_ADMIN|R_MOD|R_DEBUG|R_EVENT, TRUE))
 		return
@@ -170,7 +180,7 @@ ADMIN_VERB(cmd_mentor_ticket_panel, (R_ADMIN|R_SERVER|R_MOD|R_MENTOR), "Mentor T
 	om_http_get("[CONFIG_GET(string/chat_webhook_url)]?[query_string]")
 
 /client/verb/adminspice()
-	set category = "Admin"
+	set category = VERB_CAT_ADMIN
 	set name = "Request Spice"
 	set desc = "Request admins to spice round up for you"
 
@@ -214,6 +224,7 @@ ADMIN_VERB(cmd_mentor_ticket_panel, (R_ADMIN|R_SERVER|R_MOD|R_MENTOR), "Mentor T
 
 	if(T)
 		message_mentors(span_mentor_channel("[src] has started replying to [C]'s mentor help."))
+	// encode = FALSE: cmd_mentor_pm() sanitizes the raw answer before it reaches any other client or the ticket log.
 	var/msg = client_ask("k208", PROC_REF(cmd_mhelp_reply), args, 0, /datum/om/prompt/text, message = "Message:", title = "Private message to [C]", multiline = TRUE, encode = FALSE, max_length = MAX_TGUI_INPUT)
 	if(isnull(msg))
 		return
@@ -223,7 +234,7 @@ ADMIN_VERB(cmd_mentor_ticket_panel, (R_ADMIN|R_SERVER|R_MOD|R_MENTOR), "Mentor T
 	cmd_mentor_pm(whom, msg, T)
 
 /client/proc/cmd_mentor_pm(whom, msg, datum/ticket/T)
-	set category = "Admin"
+	set category = VERB_CAT_ADMIN
 	set name = "Mentor-PM"
 	set hidden = 1
 
@@ -249,6 +260,7 @@ ADMIN_VERB(cmd_mentor_ticket_panel, (R_ADMIN|R_SERVER|R_MOD|R_MENTOR), "Mentor T
 
 	//get message text, limit it's length.and clean/escape html
 	if(!msg)
+		// encode = FALSE: the raw answer is sanitized below, before any branch shows it to another client.
 		var/_answer_k241 = client_ask("k241", PROC_REF(cmd_mentor_pm), args, 0, /datum/om/prompt/text, message = "Message:", title = "Mentor-PM to [whom]", multiline = TRUE, encode = FALSE, max_length = MAX_TGUI_INPUT)
 		if(isnull(_answer_k241))
 			return
@@ -260,6 +272,12 @@ ADMIN_VERB(cmd_mentor_ticket_panel, (R_ADMIN|R_SERVER|R_MOD|R_MENTOR), "Mentor T
 		if(prefs.muted & MUTE_ADMINHELP)
 			to_chat(src, span_mentor_warning("Error: Mentor-PM: You are unable to use mentor PM-s (muted)."))
 			return
+
+	// Sanitize before any branch below shows the text to a staff client or writes it to a ticket log
+	// (MessageNoRecipient, AddInteraction). The prompts above are encode = FALSE and several callers pass raw text.
+	msg = trim(sanitize(copytext(msg,1,MAX_MESSAGE_LEN)))
+	if(!msg)
+		return
 
 	if(!recipient)
 		if(!current_ticket())
@@ -277,10 +295,6 @@ ADMIN_VERB(cmd_mentor_ticket_panel, (R_ADMIN|R_SERVER|R_MOD|R_MENTOR), "Mentor T
 		return
 
 	if (src.handle_spam_prevention(MUTE_ADMINHELP))
-		return
-
-	msg = trim(sanitize(copytext(msg,1,MAX_MESSAGE_LEN)))
-	if(!msg)
 		return
 
 	var/interaction_message = span_mentor_notice("Mentor-PM from-" + span_bold("[src]") + " to-" + span_bold("[recipient]") + ": [msg]")

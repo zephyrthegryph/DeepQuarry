@@ -15,10 +15,10 @@
 	refresh_fuel_ports_list()
 
 /datum/shuttle/autodock/overmap/proc/refresh_fuel_ports_list() //loop through all
-	rel_clear(src, "fuel_ports")
+	rel_clear(src, nameof(fuel_ports))
 	for(var/area/A in shuttle_area)
 		for(var/obj/structure/fuel_port/fuel_port_in_area in contents_of(A))
-			rel_set(fuel_port_in_area, "parent_shuttle", src) // lists it in fuel_ports (the pair)
+			rel_set(fuel_port_in_area, nameof(fuel_port_in_area.parent_shuttle), src) // lists it in fuel_ports (the pair)
 
 /datum/shuttle/autodock/overmap/fuel_check()
 	if(!src.try_consume_fuel()) //insufficient fuel
@@ -57,7 +57,7 @@
 
 /datum/shuttle/autodock/overmap/proc/set_destination(obj/effect/shuttle_landmark/A)
 	if(A != current_location())
-		rel_set(src, "next_location", A)
+		rel_set(src, nameof(next_location), A)
 
 /datum/shuttle/autodock/overmap/proc/get_possible_destinations()
 	var/list/res = list()
@@ -196,5 +196,9 @@ DECLARE_APPEARANCE_PROC(/obj/structure/fuel_port, TYPE_PROC_REF(/atom, appearanc
 	return myship
 
 /// A fuel port sits in its shuttle's fuel_ports; deleting it leaves the list.
-REL_PAIR(/obj/structure/fuel_port, parent_shuttle, fuel_ports)
-REL_PAIR_LIST(/datum/shuttle/autodock/overmap, fuel_ports, parent_shuttle)
+/obj/structure/fuel_port/relations()
+	. = ..()
+	. += rel_one(nameof(parent_shuttle), back = nameof(/datum/shuttle/autodock/overmap::fuel_ports))
+/datum/shuttle/autodock/overmap/relations()
+	. = ..()
+	. += rel_many(nameof(fuel_ports), back = nameof(/obj/structure/fuel_port::parent_shuttle))

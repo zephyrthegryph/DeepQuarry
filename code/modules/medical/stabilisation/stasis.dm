@@ -159,9 +159,9 @@
 		return FALSE
 	if(key)
 		om_release(src, EFFECT_CLOCK_BIO_INHIBIT, src, key)
-		own_put(src, "stasis_sources", key, null)
+		own_put(src, nameof(stasis_sources), key, null)
 		if(!length(stasis_sources))
-			own_clear(src, "stasis_sources", OWN_DELETE)
+			own_clear(src, nameof(stasis_sources), OWN_DELETE)
 	if(stasis_type)
 		var/static/hold_serial = 0
 		key = source ? "stasis_[++hold_serial]" : STASIS_NO_SOURCE
@@ -169,11 +169,11 @@
 		var/datum/stasis_hold/hold = new
 		hold.stasis_type = stasis_type
 		if(source)
-			rel_set(hold, "source", source)
-		own_put(src, "stasis_sources", key, hold)
+			rel_set(hold, nameof(hold.source), source)
+		own_put(src, nameof(stasis_sources), key, hold)
 		om_hold(src, EFFECT_CLOCK_BIO_INHIBIT, src, level.stasis_depth(), key)
 	invalidate_factors()
-	om_changed(src, CHANGE_MOB_CONDITIONS)
+	changed(src, CHANGE_MOB_CONDITIONS)
 	var/datum/body_effect/old_level = current ? body_effect_def(current) : null
 	var/datum/body_effect/new_level = stasis_type ? body_effect_def(stasis_type) : null
 	log_game("STASIS: [key_name(src)] [old_level ? "left [old_level.name]" : ""][old_level && new_level ? " and " : ""][new_level ? "entered [new_level.name]" : ""] from [source ? "[source] ([source.type])" : "no source"] at [AREACOORD(src)]; BF_STASIS now [factor(BF_STASIS)].")

@@ -282,7 +282,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/medigun_backpack, TYPE_PROC_REF(/atom, appeara
 	. = ..()
 
 	var/obj/item/bork_medigun/linked/medigun = get_medigun()
-	rel_set(medigun, "medigun_base_unit", src)
+	rel_set(medigun, nameof(medigun.medigun_base_unit), src)
 
 	if(!is_twohanded())
 		medigun.beam_range = 4
@@ -347,24 +347,24 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 	if(W.has_tool_quality(TOOL_CROWBAR) && maintenance)
 		if(smodule )
 			smodule.forceMove(get_turf(loc))
-			own_take(src, "smodule")
+			own_take(src, nameof(smodule))
 
 		if(smanipulator)
 			smanipulator.forceMove(get_turf(loc))
-			own_take(src, "smanipulator")
+			own_take(src, nameof(smanipulator))
 			smaniptier = 0
 
 		if(slaser)
 			slaser.forceMove(get_turf(loc))
-			own_take(src, "slaser")
+			own_take(src, nameof(slaser))
 
 		if(scapacitor)
 			scapacitor.forceMove(get_turf(loc))
-			own_take(src, "scapacitor")
+			own_take(src, nameof(scapacitor))
 
 		if(sbin)
 			sbin.forceMove(get_turf(loc))
-			own_take(src, "sbin")
+			own_take(src, nameof(sbin))
 			sbintier = 0
 
 		to_chat(user, span_notice("You remove the Components from \the [src]."))
@@ -382,12 +382,10 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 		return INTERACTION_HANDLED_PASS
 
 	if(istype(W, /obj/item/cell))
-		if(!user.unEquip(W))
-			return INTERACTION_HANDLED_PASS
-		W.forceMove(src)
 		if(ccell)
 			to_chat(user, span_notice("You swap the [W] for \the [ccell]."))
-		own_set(src, "ccell", W)
+		if(!own_set(src, nameof(src.ccell), W, user = user))
+			return INTERACTION_HANDLED_PASS
 		to_chat(user, span_notice("You install the [W] into \the [src]."))
 		charging = TRUE
 		return INTERACTION_HANDLED_PASS
@@ -397,10 +395,8 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 			if(smodule)
 				to_chat(user, span_notice("\The [src] already has a scanning module."))
 			else
-				if(!user.unEquip(W))
+				if(!own_set(src, nameof(src.smodule), W, user = user))
 					return INTERACTION_HANDLED_PASS
-				W.forceMove(src)
-				own_set(src, "smodule", W)
 				to_chat(user, span_notice("You install the [W] into \the [src]."))
 				medigun.beam_range = 3+smodule.get_rating()
 				update_icon()
@@ -410,10 +406,8 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 			if(smanipulator)
 				to_chat(user, span_notice("\The [src] already has a manipulator."))
 				return INTERACTION_HANDLED_PASS
-			if(!user.unEquip(W))
+			if(!own_set(src, nameof(src.smanipulator), W, user = user))
 				return INTERACTION_HANDLED_PASS
-			W.forceMove(src)
-			own_set(src, "smanipulator", W)
 			smaniptier = smanipulator.get_rating()
 			to_chat(user, span_notice("You install the [W] into \the [src]."))
 			update_icon()
@@ -423,10 +417,8 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 			if(slaser)
 				to_chat(user, span_notice("\The [src] already has a micro laser."))
 				return INTERACTION_HANDLED_PASS
-			if(!user.unEquip(W))
+			if(!own_set(src, nameof(src.slaser), W, user = user))
 				return INTERACTION_HANDLED_PASS
-			W.forceMove(src)
-			own_set(src, "slaser", W)
 			to_chat(user, span_notice("You install the [W] into \the [src]."))
 			update_icon()
 			return INTERACTION_HANDLED_PASS
@@ -435,10 +427,8 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 			if(scapacitor)
 				to_chat(user, span_notice("\The [src] already has a capacitor."))
 				return INTERACTION_HANDLED_PASS
-			if(!user.unEquip(W))
+			if(!own_set(src, nameof(src.scapacitor), W, user = user))
 				return INTERACTION_HANDLED_PASS
-			W.forceMove(src)
-			own_set(src, "scapacitor", W)
 			var/scaptier = scapacitor.get_rating()
 			if(scaptier == 1)
 				chargecap = 1000
@@ -474,10 +464,8 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 			if(sbin)
 				to_chat(user, span_notice("\The [src] already has a matter bin."))
 				return INTERACTION_HANDLED_PASS
-			if(!user.unEquip(W))
+			if(!own_set(src, nameof(src.sbin), W, user = user))
 				return INTERACTION_HANDLED_PASS
-			W.forceMove(src)
-			own_set(src, "sbin", W)
 			sbintier = sbin.get_rating()
 			if(sbintier >= 5)
 				chemcap = 300
@@ -578,6 +566,8 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 /obj/item/medigun_backpack/proc/checked_use(charge_amt)
 	return (bcell && bcell.checked_use(charge_amt))
 
-OWN(/obj/item/medigun_backpack, ccell, OWN_CONTAINED)
-OWN(/obj/item/medigun_backpack, sbin, OWN_CONTAINED)
+/obj/item/medigun_backpack/ownership()
+	. = ..()
+	. += owns(nameof(ccell), policy = OWN_CONTAINED)
+	. += owns(nameof(sbin), policy = OWN_CONTAINED)
 DECLARE_DEFAULT_CHILD(/obj/item/medigun_backpack, "sbin", null)

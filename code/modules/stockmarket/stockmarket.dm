@@ -15,7 +15,7 @@ OWN_TIMER(/datum/stockMarket, process_timer)
 /datum/stockMarket/proc/schedule_process()
 	if(QDELETED(src) || om_timer_slot_pending(src, "process_timer"))
 		return
-	om_after_slot(src, "process_timer", 10 SECONDS, PROC_REF(market_tick))
+	after_slot(src, "process_timer", 10 SECONDS, PROC_REF(market_tick))
 
 /datum/stockMarket/proc/balanceLog(whose, net)
 	if (!(whose in balances))
@@ -109,7 +109,7 @@ OWN_TIMER(/datum/stockMarket, process_timer)
 		S.fluctuation_rate = rand(6, 20)
 		S.generateIndustry()
 		S.generateEvents()
-		own_add(src, "stocks", S)
+		own_add(src, nameof(stocks), S)
 		S.last_read = list()
 
 /datum/stockMarket/proc/market_tick()
@@ -126,7 +126,7 @@ OWN_TIMER(/datum/stockMarket, process_timer)
 	L.shareprice = shareprice
 	L.money = money
 	L.time = time2text(world.timeofday, "hh:mm")
-	own_add(src, "logs", L)
+	own_add(src, nameof(logs), L)
 
 GLOBAL_DATUM_INIT(stockExchange, /datum/stockMarket, new)
 // plotBarGraph deleted; StockChart TGUI panel renders typed values directly.

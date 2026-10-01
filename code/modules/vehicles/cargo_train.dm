@@ -87,9 +87,7 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/engine, \
 	if(!istype(W, key_type))
 		return FALSE
 	if(!key)
-		user.drop_item()
-		W.forceMove(src)
-		own_set(src, "key", W)
+		own_set(src, nameof(src.key), W, user = user)
 	return TRUE
 
 /*
@@ -252,7 +250,7 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/engine, \
 	key.forceMove(user.loc)
 	if(!user.get_active_hand())
 		user.put_in_hands(key)
-	own_take(src, "key")
+	own_take(src, nameof(key))
 
 //-------------------------------------------
 // Loading/unloading procs
@@ -290,7 +288,7 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/engine, \
 		return 0
 
 	var/datum/vehicle_dummy_load/dummy_load = new()
-	rel_set(src, "load", dummy_load)
+	rel_set(src, nameof(load), dummy_load)
 
 	if(!load)
 		return
@@ -312,7 +310,7 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/engine, \
 /obj/vehicle/train/trolley/unload(mob/user, direction)
 	if(istype(load, /datum/vehicle_dummy_load))
 		var/datum/vehicle_dummy_load/dummy_load = load
-		rel_set(src, "load", dummy_load.actual_load)
+		rel_set(src, nameof(load), dummy_load.actual_load)
 		dummy_load.actual_load = null
 		qdel(dummy_load)
 		cut_overlays()
@@ -525,7 +523,9 @@ DECLARE_APPEARANCE_PROC(/obj/vehicle/train/trolley_tank, TYPE_PROC_REF(/atom, ap
 /obj/vehicle/train/trolley_tank/on_reagent_change(changetype)
 	update_icon()
 
-OWN(/obj/vehicle/train/engine, key, OWN_CONTAINED)
+/obj/vehicle/train/engine/ownership()
+	. = ..()
+	. += owns(nameof(key), policy = OWN_CONTAINED)
 
 /// Engine Menu requirements (old start/stop/remove_key verb toggling in turn_on/turn_off/key insert).
 /obj/vehicle/train/engine/proc/pred_engine_running(mob/actor, atom/target, obj/item/held)

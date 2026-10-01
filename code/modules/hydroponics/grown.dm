@@ -31,7 +31,7 @@
 		log_runtime("Plantname not provided and [src] requires it at [x],[y],[z]")
 		return INITIALIZE_HINT_QDEL
 
-	proto_set(src, "seed_static", GLOB.plant_service.seeds[plantname])
+	proto_set(src, nameof(seed_static), GLOB.plant_service.seeds[plantname])
 
 	if(!seed())
 		log_runtime("Plant name '[plantname]' does not exist and [src] requires it at [x],[y],[z]")
@@ -408,4 +408,6 @@ DECLARE_SHARED_CACHE_EX(fruit_icon, GLOBAL_PROC_REF(build_fruit_icon), SC_NEVER,
 /obj/item/reagent_containers/food/snacks/grown/proc/seed() as /datum/seed
 	return seed_static
 
-PROTO(/obj/item/reagent_containers/food/snacks/grown, seed_static)
+/obj/item/reagent_containers/food/snacks/grown/ownership()
+	. = ..()
+	. += proto(nameof(seed_static))

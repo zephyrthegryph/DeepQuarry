@@ -25,7 +25,7 @@
 /obj/item/inducer/Initialize(mapload)
 	. = ..()
 	if(!cell && cell_type)
-		own_set(src, "cell", new cell_type(src)) // ALLOW(decl): cell_type is picked per instance
+		own_set(src, nameof(cell), new cell_type(src)) // ALLOW(decl): cell_type is picked per instance
 
 /obj/item/inducer/proc/induce(obj/item/cell/target, coefficient)
 	var/totransfer = min(cell.charge,(powertransfer * coefficient))
@@ -75,10 +75,9 @@
 	if(istype(W, /obj/item/cell))
 		if(opened)
 			if(!cell)
-				user.drop_from_inventory(W)
-				W.forceMove(src)
 				to_chat(user, span_notice("You insert [W] into [src]."))
-				own_set(src, "cell", W)
+				if(!own_set(src, nameof(src.cell), W, user = user))
+					return INTERACTION_HANDLED_PASS
 				update_icon()
 				return INTERACTION_HANDLED_PASS
 			else
@@ -203,7 +202,7 @@ DECLARE_INTERACTIONS(/obj/item/inducer, \
 		act_message(user, src, MSG_SELF(span_notice("You remove [cell].")), MSG_OTHERS(span_notice("%U% removes [cell] from %T%!")))
 		cell.update_icon()
 		user.put_in_hands(cell)
-		own_take(src, "cell")
+		own_take(src, nameof(cell))
 		update_icon()
 	return TRUE
 
@@ -274,7 +273,7 @@ DECLARE_APPEARANCE(/obj/item/inducer, "appearance_compartment", list( \
 	. = ..()
 	if(!istype(H))
 		return INITIALIZE_HINT_QDEL
-	rel_set(src, "hume", H)
+	rel_set(src, nameof(hume), H)
 	charge = H.nutrition
 	maxcharge = initial(H.nutrition)
 
@@ -295,7 +294,9 @@ DECLARE_APPEARANCE(/obj/item/inducer, "appearance_compartment", list( \
 /obj/vehicle/get_cell()
 	return cell
 
-OWN(/obj/item/inducer, cell, OWN_CONTAINED)
+/obj/item/inducer/ownership()
+	. = ..()
+	. += owns(nameof(cell), policy = OWN_CONTAINED)
 
 /// Relation view: hume (reads null once it is gone).
 /obj/item/cell/standin/proc/hume() as /mob/living/carbon/human

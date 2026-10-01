@@ -2,7 +2,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modi
 	if(!target)
 		return
 	var/datum/eventkit/modify_robot/modify_robot = new()
-	rel_set(modify_robot, "target", target)
+	rel_set(modify_robot, nameof(/datum/accessory_stat_modifier::target), target)
 	modify_robot.selected_ai = target.is_slaved()
 	modify_robot.tgui_interact(user.mob)
 
@@ -24,10 +24,10 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modi
 	var/list/laws = list()
 	init_subtypes(/datum/ai_laws, laws)
 	for(var/datum/ai_laws/laws_entry as anything in dd_sortedObjectList(laws))
-		own_add(src, "law_list", laws_entry)
+		own_add(src, nameof(law_list), laws_entry)
 
 /datum/eventkit/modify_robot/tgui_close()
-	rel_clear(src, "target")
+	rel_clear(src, nameof(target))
 	if(source)
 		qdel(source)
 
@@ -160,7 +160,7 @@ UI_ACT(/datum/eventkit/modify_robot, "select_target", ui_act_select_target, UI_A
 UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_select_target)
 	var/new_target = params["new_target"]
 	if(new_target != target())
-		rel_set(src, "target", params["new_target"])
+		rel_set(src, nameof(/datum/accessory_stat_modifier::target), params["new_target"])
 		log_and_message_admins("changed robot modifictation target to [target()]")
 	return TRUE
 
@@ -193,18 +193,18 @@ UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_select_source)
 		qdel(source)
 	var/module_type = GLOB.robot_modules[params["new_source"]]
 	if(ispath(module_type, /obj/item/robot_module/robot/syndicate))
-		own_set(src, "source", new /mob/living/silicon/robot/syndicate(null))
+		own_set(src, nameof(/datum/admin_rank::source), new /mob/living/silicon/robot/syndicate(null))
 	else if(ispath(module_type, /obj/item/robot_module/robot/malf))
-		own_set(src, "source", new /mob/living/silicon/robot/malf(null))
+		own_set(src, nameof(/datum/admin_rank::source), new /mob/living/silicon/robot/malf(null))
 	else
-		own_set(src, "source", new /mob/living/silicon/robot(null))
+		own_set(src, nameof(/datum/admin_rank::source), new /mob/living/silicon/robot(null))
 	source.modtype = params["new_source"]
 	var/obj/item/robot_module/robot/robot_type = new module_type(source)
-	proto_set(source, "sprite_datum", pick(SSrobot_sprites.get_module_sprites(source.modtype, source)))
+	proto_set(source, nameof(/datum/tgui_module/robot_ui_module::sprite_datum), pick(SSrobot_sprites.get_module_sprites(source.modtype, source)))
 	source.update_icon()
 	source.emag_items = TRUE
 	if(!istype(robot_type, /obj/item/robot_module/robot))
-		own_clear(src, "source", OWN_DELETE)
+		own_clear(src, nameof(/datum/admin_rank::source), OWN_DELETE)
 		return TRUE
 	return TRUE
 
@@ -219,7 +219,7 @@ UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_add_module)
 	if(!selected_item)
 		return TRUE
 	if(istype(selected_item, /obj/item/card/id))
-		own_take(source, "idcard")
+		own_take(source, nameof(/mob/living/silicon::idcard))
 	source.module.emag -= selected_item
 	source.module.modules -= selected_item
 	target().module.add_item(selected_item, target())
@@ -250,7 +250,7 @@ UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_swap_module)
 	new module_type(source)
 	// The target's sprite is shared (a registered sprite) or its private copy: copy a private one.
 	var/datum/robot_sprite/target_sprite = target().sprite_datum
-	proto_set(source, "sprite_datum", (!target_sprite || is_registered(target_sprite)) ? target_sprite : target_sprite.proto_copy())
+	proto_set(source, nameof(/datum/tgui_module/robot_ui_module::sprite_datum), (!target_sprite || is_registered(target_sprite)) ? target_sprite : target_sprite.proto_copy())
 	source.update_icon()
 	source.emag_items = TRUE
 	// Target
@@ -325,13 +325,13 @@ UI_ACT(/datum/eventkit/modify_robot, "remove_modkit", ui_act_remove_modkit, UI_A
 UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_remove_modkit)
 	var/obj/item/gun/energy/kinetic_accelerator/kin = locate_in_list(target().module.modules, /obj/item/gun/energy/kinetic_accelerator)
 	var/obj/item/rem_kit = params["modkit"]
-	rel_remove(kin, "modkits", rem_kit)
+	rel_remove(kin, nameof(/obj/item/gun/energy/kinetic_accelerator::modkits), rem_kit)
 	qdel(rem_kit)
 	return TRUE
 
 UI_ACT(/datum/eventkit/modify_robot, "select_multibelt", ui_act_select_multibelt, UI_ARG_REF("multibelt", null))
 UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_select_multibelt)
-	rel_set(src, "multibelt_holder", params["multibelt"])
+	rel_set(src, nameof(/datum/eventkit/modify_robot::multibelt_holder), params["multibelt"])
 	return TRUE
 
 UI_ACT(/datum/eventkit/modify_robot, "install_tool", ui_act_install_tool, UI_ARG_PATH("tool", /datum))

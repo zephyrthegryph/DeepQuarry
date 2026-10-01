@@ -30,7 +30,7 @@ OM_FIELD(/obj/structure/disposalholder, active, FALSE, CHANGE_EXPLICIT)
 DECLARE_REPEAT(/obj/structure/disposalholder, 1 DECISECONDS, move, "active")
 
 /obj/structure/disposalholder/proc/init(list/flush_list, datum/gas_mixture/flush_gas)
-	own_move(flush_gas, src, "gas") // transfer gas resv. into holder object (from whoever owns it now) -- let's be explicit about the data this proc consumes, please.
+	own_move(flush_gas, src, nameof(gas)) // transfer gas resv. into holder object (from whoever owns it now) -- let's be explicit about the data this proc consumes, please.
 
 	//Check for any living mobs trigger hasmob.
 	//hasmob effects whether the package goes to cargo or its tagged destination.

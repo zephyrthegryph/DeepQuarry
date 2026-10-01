@@ -8,7 +8,7 @@
 
 ADMIN_VERB(hide_verbs, R_HOLDER, "Adminverbs - Hide All", "Hide all admin verbs.", ADMIN_CATEGORY_MISC)
 	SSadmin_verbs.deassosciate_admin(user)
-	om_grant(user, GRANT_VERB, /client/proc/show_verbs, user.holder)
+	om_grant(user, GRANT_VERB, /client/proc/show_verbs, user.admin_datum())
 
 	to_chat(user, span_filter_system(span_interface("Almost all of your adminverbs have been hidden.")))
 	feedback_add_details("admin_verb","TAVVH") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
@@ -16,7 +16,7 @@ ADMIN_VERB(hide_verbs, R_HOLDER, "Adminverbs - Hide All", "Hide all admin verbs.
 
 /client/proc/show_verbs()
 	set name = "Adminverbs - Show"
-	set category = "Admin.Misc"
+	set category = VERB_CAT_ADMIN_MISC
 
 	if(!check_rights_for(src, R_HOLDER))
 		return

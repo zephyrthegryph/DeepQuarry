@@ -28,6 +28,18 @@ pub fn snapshot_json() -> String {
             .gauge("jobs.pending")
             .set(crate::jobs::registry().pending() as f64);
     }
+    // Per-bind FFI call and error counts (always on; two relaxed adds a call).
+    let (mut calls_total, mut errors_total) = (0_u64, 0_u64);
+    for (name, calls, errors) in auxcallback::panic_guard::snapshot() {
+        metrics.counter(&format!("ffi.calls.{name}")).set(calls);
+        calls_total += calls;
+        errors_total += errors;
+        if errors > 0 {
+            metrics.counter(&format!("ffi.errors.{name}")).set(errors);
+        }
+    }
+    metrics.counter("ffi.calls_total").set(calls_total);
+    metrics.counter("ffi.errors_total").set(errors_total);
     // The world's scheduler (the OM world step's Rust side), sampled like the rest.
     let _ = crate::world::with_world(|w| {
         let r = w.sched_metrics();

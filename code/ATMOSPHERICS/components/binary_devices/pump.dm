@@ -26,7 +26,7 @@ Thus, the two variables affect pump operation are set in New():
 	desc = "A pump that moves gas from one place to another."
 
 	// R10 (doc/rewrite/rust_bindings.md §14): target_pressure and power_rating
-	// are Rust-owned config, reached only through get_/set_target_pressure()
+	// are Rust-owned config, reached only through get_/set_target_pressure() (hand setters below over native_write())
 	// and get_/set_power_rating() (code/__defines/verdigris/_bindings_types.dm).
 	// There is no target_pressure var any more. power_rating is still declared
 	// on the shared /obj/machinery/atmospherics ancestor (other, not-yet-migrated
@@ -63,10 +63,10 @@ Thus, the two variables affect pump operation are set in New():
 /obj/machinery/atmospherics/binary/pump/rust_bind_pipe_port(index, datum/pipe_network/new_network, datum/gas_mixture/network_air)
 	. = ..()
 	if(index == 2)
-		update_rust_device()
+		rust_device_dirty()
 
 /**
- * R10/M2 bridge: target_pressure, power_rating and on are Rust-owned config
+ * The generated push (rust_push(rust_device_rev), coalesced once per frame): target_pressure, power_rating and on are Rust-owned config
  * on the binding layer's own Pump component (get_/set_target_pressure() etc,
  * code/__defines/verdigris/_bindings_types.dm) — that is their one store.
  * This reads them through those generated getters and republishes them to
@@ -75,7 +75,8 @@ Thus, the two variables affect pump operation are set in New():
  * component (doc/rewrite/rust_bindings.md §14 step 2). No var is duplicated:
  * this is a read-then-forward, not a second copy.
  */
-/obj/machinery/atmospherics/binary/pump/proc/update_rust_device()
+/obj/machinery/atmospherics/binary/pump/push_to_rust()
+	// ALLOW(derived_reads): the entity is bound at materialize; a port bind bumps rust_device_rev
 	if(!vg_entity)
 		return
 	if((!operable()) || !get_on())
@@ -83,6 +84,21 @@ Thus, the two variables affect pump operation are set in New():
 		return
 	rust_set_device(1, 2)
 	rust_set_device_flow(0, RUST_FLOW_POWER, get_power_rating(), RUST_DIR_FORCED, RUST_SIDE_B, RUST_STOP_AT_LEAST, get_target_pressure())
+
+/// The three Rust-owned config fields have no DM var (rust_bindings.md section 1), so each has one hand
+/// setter: write the field (native_write(), the one write door), then re-publish the law. Rust clamps
+/// the value; the stored value is returned.
+/obj/machinery/atmospherics/binary/pump/proc/set_target_pressure(value)
+	. = native_write(src, NATIVE_PUMP_TARGET_PRESSURE, value)
+	rust_device_dirty()
+
+/obj/machinery/atmospherics/binary/pump/proc/set_power_rating(value)
+	. = native_write(src, NATIVE_PUMP_POWER_RATING, value)
+	rust_device_dirty()
+
+/obj/machinery/atmospherics/binary/pump/set_on(value)
+	. = native_write(src, NATIVE_PUMP_ON, value)
+	rust_device_dirty()
 
 /// operable comes from anchored and integrity (rust_bindings.md §7's classes
 /// 3-5) through the generated wiring: the atom_break()/atom_fix() hook pushes
@@ -96,7 +112,7 @@ Thus, the two variables affect pump operation are set in New():
 	GLOB.radio_service.remove_object(src, frequency)
 	frequency = new_frequency
 	if(frequency)
-		rel_set(src, "radio_connection", GLOB.radio_service.add_object(src, frequency, radio_filter = RADIO_ATMOSIA))
+		rel_set(src, nameof(radio_connection), GLOB.radio_service.add_object(src, frequency, radio_filter = RADIO_ATMOSIA))
 
 /obj/machinery/atmospherics/binary/pump/proc/broadcast_status()
 	if(!radio_connection)
@@ -104,7 +120,7 @@ Thus, the two variables affect pump operation are set in New():
 
 	var/datum/signal/signal = new
 	signal.transmission_method = TRANSMISSION_RADIO //radio signal
-	rel_set(signal, "source", src)
+	rel_set(signal, nameof(signal.source), src)
 
 	signal.data = list(
 		"tag" = id,
@@ -161,8 +177,6 @@ UI_DATA_REPLACE(/obj/machinery/atmospherics/binary/pump, "merge:ui_data_obj_mach
 	if(signal.data["set_output_pressure"])
 		set_target_pressure(between(0, text2num(signal.data["set_output_pressure"]), ONE_ATMOSPHERE*50))
 
-	update_rust_device()
-
 	if(signal.data["status"])
 		om_after(src, 2, PROC_REF(broadcast_status))
 		return //do not update_icon
@@ -201,7 +215,6 @@ UI_DATA_REPLACE(/obj/machinery/atmospherics/binary/pump, "merge:ui_data_obj_mach
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	to_chat(user, span_notice("You set the [name] to max output"))
 	set_target_pressure(max_pressure_setting)
-	update_rust_device()
 	add_fingerprint(user)
 	return TRUE
 
@@ -210,8 +223,6 @@ UI_ACT_PROC(/obj/machinery/atmospherics/binary/pump, ui_act_power)
 	set_use_power(!use_power)
 	set_on(!!use_power)
 	. = TRUE
-	if(.)
-		update_rust_device()
 	add_fingerprint(ui.user)
 	update_icon()
 
@@ -229,15 +240,8 @@ UI_ACT_PROC(/obj/machinery/atmospherics/binary/pump, ui_act_set_press)
 				return
 			set_target_pressure(between(0, new_pressure, max_pressure_setting))
 	. = TRUE
-	if(.)
-		update_rust_device()
 	add_fingerprint(ui.user)
 	update_icon()
-
-/obj/machinery/atmospherics/binary/pump/power_change()
-	. = ..()
-	if(.)
-		update_rust_device()
 
 /obj/machinery/atmospherics/binary/pump/on_pump_target_reached()
 	update_icon()
@@ -318,7 +322,8 @@ APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/binary/pump, "{base_icon}-{appea
 
 	set_use_power(!use_power)
 	set_on(!!use_power)
-	update_rust_device()
+	// ALLOW(sys_update_icon): the device state is not an appearance-watched field; the icon is refreshed procedurally
+	// ALLOW(sys_update_icon_call): the device state is not an appearance-watched field; the icon is refreshed procedurally
 	update_icon()
 	add_fingerprint(user)
 	to_chat(user, span_notice("You toggle the [name] [use_power ? "on" : "off"]."))
@@ -344,3 +349,8 @@ APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/binary/pump, "{base_icon}-{appea
 
 APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/binary/pump/high_power, "{appearance_running?on:off}")
 
+
+/// The Rust device law is pushed (once per frame) when any of these change.
+/obj/machinery/atmospherics/binary/pump/derived()
+	. = ..()
+	. += rust_push(nameof(rust_device_rev))

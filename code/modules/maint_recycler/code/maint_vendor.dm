@@ -36,9 +36,9 @@
 	for(var/t in subtypesof(/datum/maint_recycler_vendor_entry) - /datum/maint_recycler_vendor_entry)
 		var/datum/maint_recycler_vendor_entry/entry = new t()
 		entry.initialize()
-		own_add(src, "product_datums", entry)
+		own_add(src, nameof(product_datums), entry)
 	//move to relevant location
-	own_set(src, "monitor_screen", new /obj/effect/overlay/recycler)
+	own_set(src, nameof(monitor_screen), new /obj/effect/overlay/recycler)
 	monitor_screen.plane = PLANE_LIGHTING_ABOVE
 	monitor_screen.layer = src.layer + 0.1
 	monitor_screen.icon = src.icon

@@ -5,13 +5,13 @@ This roadmap covers every work item, what each depends on, and what "done" means
 ## Rules for every item
 
 - **Wholesale.** Convert every caller and delete what the item replaces in the same change. No shims, and no commented-out code.
-- **Green.** Compile clean. `tools/build/build.sh dm-test` stays green, and so does `cargo test` in `verdigris/` for Rust.
+- **Green.** Compile clean. `tools/build/build.sh dm-test` (the normal tier) stays green on every merge, `dm-test --tier=all` (CI and nightly) stays green too, and so does `cargo test` in `verdigris/` for Rust.
 - **Measured.** Record benchmarks before and after with `tools/build/build.sh bench --runs=3`, compare them with `bench-compare`, and put the numbers in the report.
 - **Enforced.** Add the item's lint rules (see [Guardrails](#guardrails)) and a changelog entry.
 - **Logged.** Keep existing debug logging, and add logging for anything new.
 - **Documented.** Update the design document when the design changes.
 
-The order of the migration and its estimates are in [migration_plan.md](migration_plan.md).
+The order of the migration and its estimates are in [archive/migration_plan.md](archive/migration_plan.md).
 
 The lead compiles and runs the suite between waves, and agents stay inside their slice (`AGENTS.md`, `doc/refactor_brief.md`). Items marked "with the body rewrite" need the interface in [README.md](README.md#coordination-with-the-body-rewrite) agreed before work starts.
 
@@ -19,14 +19,14 @@ The lead compiles and runs the suite between waves, and agents stay inside their
 
 | Track | Scope | Design |
 |---|---|---|
-| **F** | Fixes, quick wins, baseline | [fixes.md](fixes.md) |
+| **F** | Fixes, quick wins, baseline | [archive/fixes.md](archive/fixes.md) |
 | **R** | Rust core | [rust_core.md](rust_core.md) |
 | **M** | Simulation domains | [simulation.md](simulation.md) |
-| **S** | Scheduling (the OM scheduler; SSreactor folded in) | [object_model_core.md §4](object_model_core.md#4-scheduling-section-a) |
+| **S** | Scheduling (the OM scheduler; SSreactor folded in) | [archive/object_model_core.md §4](archive/object_model_core.md#4-scheduling-section-a) |
 | **L** | State and lifecycle | [state.md](state.md) |
 | **P** | Properties, rules, constraints, abilities | [rules.md](rules.md) |
 | **C** | Containment | [containment.md](containment.md) |
-| **I** | Interactions and input | [interactions.md](interactions.md) |
+| **I** | Interactions and input | [archive/interactions.md](archive/interactions.md) |
 | **D** | Damage | [damage.md](damage.md) |
 | **H** | Temperature (DM integration) | [temperature.md](temperature.md) |
 
@@ -37,12 +37,12 @@ The lead compiles and runs the suite between waves, and agents stay inside their
 | ID | Work | Needs | Done when |
 |---|---|---|---|
 | F1 | Get the tree compiling. Run `bench --runs=3` on the test map and with `-DCITESTING_FULL_MAP` for boot_memory, idle, atmos_idle, atmos_large, major_events, generation and sm_soak. Take the first instance census. | — | Runs are stored in `data/bench/`, and the baseline table below is filled in |
-| F2 | Correctness bugs ([fixes.md §1](fixes.md#1-correctness-bugs)) | — | Each bug has a regression test |
-| F3 | Boot quick wins ([fixes.md §2](fixes.md#2-boot-quick-wins)) | F1 | Assets and total boot time are down against the baseline |
-| F4 | Runtime quick wins ([fixes.md §3](fixes.md#3-runtime-quick-wins)) | F1 | Idle DM CPU (Timer, Statpanels, Radiation, Garbage) is down |
-| F5 | Low-risk memory ([fixes.md §4](fixes.md#4-low-risk-memory)) | F1 | The boot_memory list count is down, with no behaviour change |
-| F6 | Dead code ([fixes.md §5](fixes.md#5-dead-code)) | — | Removed; build and tests green |
-| F7 | Hard deletes and runtime spam ([fixes.md §6](fixes.md#6-hard-deletes-and-runtimes)) | F1 | Hard deletes and runtimes per round are down |
+| F2 | Correctness bugs ([archive/fixes.md §1](archive/fixes.md#1-correctness-bugs)) | — | Each bug has a regression test |
+| F3 | Boot quick wins ([archive/fixes.md §2](archive/fixes.md#2-boot-quick-wins)) | F1 | Assets and total boot time are down against the baseline |
+| F4 | Runtime quick wins ([archive/fixes.md §3](archive/fixes.md#3-runtime-quick-wins)) | F1 | Idle DM CPU (Timer, Statpanels, Radiation, Garbage) is down |
+| F5 | Low-risk memory ([archive/fixes.md §4](archive/fixes.md#4-low-risk-memory)) | F1 | The boot_memory list count is down, with no behaviour change |
+| F6 | Dead code ([archive/fixes.md §5](archive/fixes.md#5-dead-code)) | — | Removed; build and tests green |
+| F7 | Hard deletes and runtime spam ([archive/fixes.md §6](archive/fixes.md#6-hard-deletes-and-runtimes)) | F1 | Hard deletes and runtimes per round are down |
 
 ### R: Rust core
 
@@ -75,12 +75,12 @@ The lead compiles and runs the suite between waves, and agents stay inside their
 
 | ID | Work | Needs | Done when |
 |---|---|---|---|
-| S1 | SSreactor (since folded into the OM scheduler, object_model_core.md §4.8): wake dispatch, timers, the continuous lane, DM-owned keys and bounded metrics | R5 | The profiler and the benchmarks report wake reasons, and every API has unit tests |
+| S1 | SSreactor (since folded into the OM scheduler, archive/object_model_core.md §4.8): wake dispatch, timers, the continuous lane, DM-owned keys and bounded metrics | R5 | The profiler and the benchmarks report wake reasons, and every API has unit tests |
 | S2 | Move the SSmachines reactive keys, the non-device gas subscriptions and SSai's chunk hibernation onto the reactor, and delete their tables and helpers | S1, M1b | The `machines.dm` dependency code is deleted, and every former subscriber has a wake test |
 | S3 | Convert the pollers: airlocks, cameras, lights, status displays, looping sounds, shutoff valves and mob chunk keys | S1 | Idle Machines plus Timer time is down, and the deadline-polling lint is on |
 | S4 | Retire SSobj, SSprocessing, the SSfastprocess users, SSbellies, SSburning, SSmaterial_services and the heavy SStimer users | S3, C7, M4 | `START_PROCESSING` is gone outside the reactor, and every remaining continuous user is declared |
 | S5 | Machines start asleep, and `START_MACHINE_PROCESSING` is removed | S3, M2, M3 | The 200–420 always-awake machines fall to those actually working |
-| S6 | Core for [object_model_core.md §4.11](object_model_core.md#411-one-scheduler-time-sequences-and-asynchrony): `om_after` (weak capture of object arguments), task `steps`, `om_prompt` (async tgui callbacks with re-checks), a global owner entity, OM handles (`om_handle`, `om_resolve`), and the lints with counts in their ratchet, LC-refs included | — | Unit tests for cancel-on-delete, clock pause, a deleted argument cancelling, step results, prompt re-checks, and handles after delete and id reuse |
+| S6 | Core for [archive/object_model_core.md §4.11](archive/object_model_core.md#411-one-scheduler-time-sequences-and-asynchrony): `om_after` (weak capture of object arguments), task `steps`, `om_prompt` (async tgui callbacks with re-checks), a global owner entity, OM handles (`om_handle`, `om_resolve`), and the lints with counts in their ratchet, LC-refs included | — | Unit tests for cancel-on-delete, clock pause, a deleted argument cancelling, step results, prompt re-checks, and handles after delete and id reuse |
 | S7 | Sweep `spawn(` (675) and raw `del(` (25) onto `om_after` and tasks | S6 | Both counts are 0 |
 | S8 | Sweep `do_after` (656) and gameplay `sleep()` sequences (554) onto `om_task` steps | S6 | Both are 0 outside the allowlist |
 | S9 | Sweep `addtimer` (834) onto `om_after`, clocks and contributions; delete SStimer | S6 | SStimer is gone |

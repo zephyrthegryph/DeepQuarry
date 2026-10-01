@@ -379,7 +379,7 @@ DECLARE_REAGENTS(/obj/item/organ, 5, null)
 	if(!W)
 		W = new()
 		W.weapon = used_weapon
-		own_put(src, "autopsy_data", used_weapon, W)
+		own_put(src, nameof(autopsy_data), used_weapon, W)
 
 	W.hits += 1
 	W.damage += damage

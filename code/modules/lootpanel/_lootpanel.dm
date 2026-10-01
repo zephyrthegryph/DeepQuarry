@@ -18,7 +18,7 @@
 /datum/lootpanel/New(client/owner)
 	. = ..()
 
-	rel_set(src, "owner", owner)
+	rel_set(src, nameof(owner), owner)
 
 // its searched contents are reset.
 /datum/lootpanel/on_destroy(force)
@@ -30,7 +30,7 @@ DECLARE_UI(/datum/lootpanel, "LootPanel")
 /datum/lootpanel/tgui_close(mob/user)
 	. = ..()
 
-	rel_clear(src, "source_turf")
+	rel_clear(src, nameof(source_turf))
 	reset_contents()
 
 UI_DATA_REPLACE(/datum/lootpanel, "merge:ui_data_datum_lootpanel{contents:unknown,is_blind:bool,searching:num}")

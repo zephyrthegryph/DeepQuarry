@@ -60,14 +60,14 @@ UI_DATA_REPLACE(/datum/computer_file/program/digitalwarrant, "merge:ui_data_datu
 UI_ACT(/datum/computer_file/program/digitalwarrant, "back", ui_act_back)
 UI_ACT_PROC(/datum/computer_file/program/digitalwarrant, ui_act_back)
 	. = TRUE
-	rel_clear(src, "activewarrant_ref")
+	rel_clear(src, nameof(/datum/computer_file/program/digitalwarrant::activewarrant_ref))
 
 UI_ACT(/datum/computer_file/program/digitalwarrant, "editwarrant", ui_act_editwarrant, UI_ARG_NUM("id"))
 UI_ACT_PROC(/datum/computer_file/program/digitalwarrant, ui_act_editwarrant)
 	. = TRUE
 	for(var/datum/data/record/warrant/W in GLOB.data_core.warrants)
 		if(W.warrant_id == params["id"])
-			rel_set(src, "activewarrant_ref", W)
+			rel_set(src, nameof(/datum/computer_file/program/digitalwarrant::activewarrant_ref), W)
 			break
 
 	// The following actions will only be possible if the user has an ID with security access equipped. This is in line with modular computer framework's authentication methods,
@@ -98,7 +98,7 @@ UI_ACT_PROC(/datum/computer_file/program/digitalwarrant, ui_act_addwarrant)
 			W.fields["charges"] = "No reason given"
 			W.fields["auth"] = "Unauthorized"
 			W.fields["arrestsearch"] = "search"
-		rel_set(src, "activewarrant_ref", W)
+		rel_set(src, nameof(/datum/computer_file/program/digitalwarrant::activewarrant_ref), W)
 
 UI_ACT(/datum/computer_file/program/digitalwarrant, "savewarrant", ui_act_savewarrant)
 UI_ACT_PROC(/datum/computer_file/program/digitalwarrant, ui_act_savewarrant)
@@ -108,7 +108,7 @@ UI_ACT_PROC(/datum/computer_file/program/digitalwarrant, ui_act_savewarrant)
 		return
 	. = TRUE
 	LAZYOR(GLOB.data_core.warrants, activewarrant())
-	rel_clear(src, "activewarrant_ref")
+	rel_clear(src, nameof(/datum/computer_file/program/digitalwarrant::activewarrant_ref))
 
 UI_ACT(/datum/computer_file/program/digitalwarrant, "deletewarrant", ui_act_deletewarrant)
 UI_ACT_PROC(/datum/computer_file/program/digitalwarrant, ui_act_deletewarrant)
@@ -118,7 +118,7 @@ UI_ACT_PROC(/datum/computer_file/program/digitalwarrant, ui_act_deletewarrant)
 		return
 	. = TRUE
 	LAZYREMOVE(GLOB.data_core.warrants, activewarrant())
-	rel_clear(src, "activewarrant_ref")
+	rel_clear(src, nameof(/datum/computer_file/program/digitalwarrant::activewarrant_ref))
 
 UI_ACT(/datum/computer_file/program/digitalwarrant, "editwarrantname", ui_act_editwarrantname)
 UI_ACT_PROC(/datum/computer_file/program/digitalwarrant, ui_act_editwarrantname)

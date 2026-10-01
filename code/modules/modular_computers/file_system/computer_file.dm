@@ -38,7 +38,7 @@ GLOBAL_VAR_INIT(file_uid, 0)
 		// holder.holder is the computer that has drive installed. If we are deleting the program that's currently running kill it.
 		var/obj/item/modular_computer/computer = holder().holder2()
 		if(computer && (computer.active_program == src))
-			rel_clear(computer, "active_program") // active_program() no longer resolves us
+			rel_clear(computer, nameof(computer.active_program)) // active_program() no longer resolves us
 			computer.kill_program(1)
 	..()
 

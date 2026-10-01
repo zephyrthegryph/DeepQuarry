@@ -69,7 +69,7 @@
 		return FALSE
 	vg_heat_body_keep(heat_body, TRUE)
 	vg_heat_body_couple(heat_body, 1, HEAT_TARGET_TURF_AIR, location, fire_conductance())
-	rel_set(src, "heat_fire_turf", location)
+	rel_set(src, nameof(heat_fire_turf), location)
 	return TRUE
 
 /// Ends the fire coupling: the body relaxes to its surroundings and is
@@ -77,7 +77,7 @@
 /atom/movable/proc/decouple_from_fire()
 	if(isnull(heat_fire_turf))
 		return
-	rel_clear(src, "heat_fire_turf")
+	rel_clear(src, nameof(heat_fire_turf))
 	if(isnull(heat_body))
 		return
 	vg_heat_body_couple(heat_body, 1, HEAT_TARGET_NONE, 0, 0)

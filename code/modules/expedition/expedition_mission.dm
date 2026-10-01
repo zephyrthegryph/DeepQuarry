@@ -55,10 +55,10 @@
 	return O
 
 /datum/expedition_mission/proc/populate(datum/expedition_site/S)
-	rel_set(src, "site", S)
-	own_clear(src, "objectives", OWN_DELETE)
+	rel_set(src, nameof(site), S)
+	own_clear(src, nameof(objectives), OWN_DELETE)
 	for(var/datum/expedition_objective/built as anything in build_objectives())
-		own_add(src, "objectives", built)
+		own_add(src, nameof(objectives), built)
 	for(var/datum/expedition_objective/O in objectives)
 		O.populate(S)
 	if(time_limit)

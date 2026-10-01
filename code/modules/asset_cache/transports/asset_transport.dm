@@ -151,16 +151,17 @@
 
 
 /// Precache files without clogging up the browse() queue, used for passively sending files on connection start.
-/datum/asset_transport/proc/send_assets_slow(client/client, list/files, filerate = SLOW_ASSET_SEND_RATE)
-	var/startingfilerate = filerate
-	for (var/file in files)
-		if (!client)
-			break
-		if (send_assets(client, file))
-			if (!(--filerate))
-				filerate = startingfilerate
-				client.browse_queue_flush()
-			stoplag(0) //queuing calls like this too quickly can cause issues in some client versions // ALLOW(scheduler): paces browse_rsc sends to the client; browse_queue_flush waits on the client
+/// Sends `filerate` files, then waits for the client's ack (event-driven, no polling) before
+/// sending the next batch from `start`.
+/datum/asset_transport/proc/send_assets_slow(client/client, list/files, filerate = SLOW_ASSET_SEND_RATE, start = 1)
+	if(!client || QDELETED(client) || !client.session)
+		return
+	var/sent = 0
+	for(var/i in start to length(files))
+		if(send_assets(client, files[i]))
+			if(++sent >= filerate)
+				client.session.flush_assets(src, PROC_REF(send_assets_slow), client, files, filerate, i + 1)
+				return
 
 /// Check the config is valid to load this transport
 /// Returns TRUE or FALSE

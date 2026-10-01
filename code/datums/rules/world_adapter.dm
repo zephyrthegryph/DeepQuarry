@@ -12,7 +12,8 @@
 //   dq_rx_on_change(D, node, ch)                             native heat watch (body appears)
 //   dq_rx_on_key(D, kind, id, mask) / dq_rx_publish(...)     om_world_on_key / om_world_publish
 //   dq_rx_at(D, time)                                        om_world_at
-//   dq_rx_rate_linear/read/set_rate/remove, dq_rx_on_rate    om_rate_* / om_world_on_rate
+//   (rate models are om_rate_* directly)                     om_rate_*
+//   dq_rx_on_rate                                            om_world_on_rate
 //   dq_rx_cancel(D, token), dq_rx_clear(D), dq_rx_id()       qdel / every watch / om_world_key_id
 //
 // Heat nodes (H3). An object's heat node is its heat body in the heat domain
@@ -32,7 +33,7 @@
 
 /datum/rule_binding/proc/keep_watch(datum/native_watch/W)
 	if(W)
-		rel_add(src, "world_watches", W)
+		rel_add(src, nameof(world_watches), W)
 	return W
 
 /proc/dq_rx_id()
@@ -53,26 +54,14 @@
 /// Every subscription is a watch: cancelling it is deleting it.
 /proc/dq_rx_cancel(datum/rule_binding/D, datum/native_watch/token)
 	if(istype(D))
-		rel_remove(D, "world_watches", token)
+		rel_remove(D, nameof(D.world_watches), token)
 	if(istype(token) && !QDELETED(token))
 		qdel(token)
 
 /proc/dq_rx_clear(datum/rule_binding/D)
 	for(var/datum/native_watch/W as anything in D.world_watches?.Copy())
 		dq_rx_cancel(D, W)
-	rel_clear(D, "world_watches")
-
-/proc/dq_rx_rate_linear(v0, per_second, lo, hi)
-	return om_rate_linear(v0, per_second, lo, hi)
-
-/proc/dq_rx_rate_read(model)
-	return om_rate_read(model)
-
-/proc/dq_rx_rate_set_rate(model, per_second)
-	om_rate_set_rate(model, per_second)
-
-/proc/dq_rx_rate_remove(model)
-	om_rate_remove(model)
+	rel_clear(D, nameof(D.world_watches))
 
 /// Wake D when `model` reaches `level` (above) or falls to it; at once if it already has.
 /proc/dq_rx_on_rate(datum/rule_binding/D, model, above, level)
@@ -90,7 +79,7 @@
 
 /datum/dq_rx_node/New(atom/A)
 	..()
-	rel_set(src, "node_atom", A)
+	rel_set(src, nameof(node_atom), A)
 
 /datum/dq_rx_node/proc/atom_of()
 	return QDELETED(node_atom) ? null : node_atom
@@ -135,8 +124,8 @@
 	if(W)
 		for(var/datum/native_watch/old as anything in node.watches?.Copy())
 			if(QDELETED(old))
-				own_take_member(node, "watches", old)
-		own_add(node, "watches", W)
+				own_take_member(node, nameof(node.watches), old)
+		own_add(node, nameof(node.watches), W)
 	return W
 
 /proc/dq_rx_when_threshold(datum/D, node, ch, above, level, edges)
@@ -151,7 +140,7 @@
 /// A heat node for atom `A`.
 /proc/dq_rx_node_new(atom/A)
 	if(!A.rx_node)
-		own_set(A, "rx_node", new /datum/dq_rx_node(A))
+		own_set(A, nameof(/atom::rx_node), new /datum/dq_rx_node(A))
 	return A.rx_node
 
 /// Sets the node's temperature (tests and DM authority): the atom gets a body

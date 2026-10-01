@@ -52,7 +52,7 @@
 /mob/living/carbon/human/proc/shapeshifter_change_opacity()
 
 	set name = "Toggle Opacity"
-	set category = "Abilities.Shapeshifter"
+	set category = VERB_CAT_ABILITIES_SHAPESHIFT
 
 	if(stat || !COOLDOWN_FINISHED(src, last_special))
 		return
@@ -72,9 +72,9 @@
 		return
 
 	// Link the two mobs for client transfer
-	rel_set(avatar, "vr_holder", src)
-	rel_set(src, "teleop", avatar)
-	rel_set(src, "vr_link", avatar) // Can't reuse vr_holder so that death can automatically eject users from VR
+	rel_set(avatar, nameof(avatar.vr_holder), src)
+	rel_set(src, nameof(teleop), avatar)
+	rel_set(src, nameof(vr_link), avatar) // Can't reuse vr_holder so that death can automatically eject users from VR
 
 	// Move the mind
 	src.mind.transfer_to(avatar)
@@ -84,7 +84,7 @@
 // exit_vr is called on the vr mob, and puts the mind back into the original mob
 /mob/living/carbon/human/proc/perform_exit_vr()
 	set name = "Exit Virtual Reality"
-	set category = "Abilities.VR"
+	set category = VERB_CAT_ABILITIES_VR
 	exit_vr(TRUE)
 
 /mob/living/carbon/human/proc/exit_vr(player_initated)
@@ -116,8 +116,8 @@
 		to_chat(vr_holder, span_warning("Pain from your time in VR lingers."))		// 250 damage leaves the user unconscious for several seconds in addition to paincrit
 
 	// Maintain a link with the mob, but don't use teleop
-	rel_set(vr_holder, "vr_link", src)
-	rel_clear(vr_holder, "teleop")
+	rel_set(vr_holder, nameof(vr_holder.vr_link), src)
+	rel_clear(vr_holder, nameof(vr_holder.teleop))
 
 	if(player_initated && istype(vr_holder.loc, /obj/machinery/vr_sleeper))
 		var/obj/machinery/vr_sleeper/V = vr_holder.loc

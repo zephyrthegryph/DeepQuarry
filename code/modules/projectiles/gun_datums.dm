@@ -31,7 +31,7 @@
 /datum/gun_firemode_selector/New(obj/item/gun/gun)
 	..()
 	if(gun)
-		rel_set(src, "gun_ref", gun)
+		rel_set(src, nameof(gun_ref), gun)
 
 /// Returns the currently active /datum/firemode, or null if no firemodes set.
 /datum/gun_firemode_selector/proc/current_mode()

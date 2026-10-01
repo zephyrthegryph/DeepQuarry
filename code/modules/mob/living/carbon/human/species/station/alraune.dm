@@ -191,7 +191,7 @@ DECLARE_REAGENTS(/obj/item/organ/internal/fruitgland, "usable_volume", null)
 /mob/living/carbon/human/proc/alraune_fruit_select() //So if someone doesn't want fruit/vegetables, they don't have to select one.
 	set name = "Select fruit"
 	set desc = "Select what fruit/vegetable you wish to grow."
-	set category = "Abilities.Alraune"
+	set category = VERB_CAT_ABILITIES_ALRAUNE
 	var/obj/item/organ/internal/fruitgland/fruit_gland
 	for(var/F in contents)
 		if(istype(F, /obj/item/organ/internal/fruitgland))
@@ -215,13 +215,13 @@ DECLARE_REAGENTS(/obj/item/organ/internal/fruitgland, "usable_volume", null)
 	fruit_gland.fruit_type = ask.choice
 	om_grant(src, GRANT_VERB, /mob/living/carbon/human/proc/alraune_fruit_pick, src)
 	om_grant(src, GRANT_VERB, /mob/living/carbon/human/proc/alraune_fruit_reagent, src)
-	rel_set(fruit_gland, "organ_owner", src)
+	rel_set(fruit_gland, nameof(fruit_gland.organ_owner), src)
 	fruit_gland.emote_descriptor = list("fruit right off of [fruit_gland.organ_owner]!", "a fruit from [fruit_gland.organ_owner]!")
 
 /mob/living/carbon/human/proc/alraune_fruit_pick()
 	set name = "Pick Fruit"
 	set desc = "Pick fruit off of the fruit gland."
-	set category = "Object"
+	set category = VERB_CAT_OBJECT
 	set src in view(1)
 
 	if(!isliving(usr) || !usr.checkClickCooldown())
@@ -264,7 +264,7 @@ DECLARE_REAGENTS(/obj/item/organ/internal/fruitgland, "usable_volume", null)
 /mob/living/carbon/human/proc/alraune_fruit_reagent()
 	set name = "Poison Fruit"
 	set desc = "Select a reagent to be placed in your fruit."
-	set category = "Abilities.Alraune"
+	set category = VERB_CAT_ABILITIES_ALRAUNE
 
 	if(!isliving(usr) || !usr.checkClickCooldown())
 		return

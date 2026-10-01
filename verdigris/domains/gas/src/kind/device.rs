@@ -38,6 +38,24 @@ pub mod rate_kind {
 	/// filter/mixer slice) -- not a function of the source's own density
 	/// the way `VOLUME`/`POWER` are, so it needs its own kind.
 	pub const MOLES: u8 = 3;
+	/// A share (0..=1) of the moles the source holds in `gases`
+	/// (`Rate::Fraction`): DM sets the mask and the share, Rust does the rest.
+	pub const FRACTION: u8 = 4;
+	/// A filter leg of a budget group ([`DeviceFlow::group`]): the group's moles are computed in Rust each step from the
+	/// hub's live gas under the entropy/power budget (`power_budget::filter_transfer_multi`). `rate` is the requested
+	/// volume flow (L/s) of the hub; `gases` the leg's mask ([`role`]).
+	pub const FILTER: u8 = 5;
+	/// A mixer leg of a budget group: `rate` is the requested volume flow (L/s) of the whole mixer, `ratio` this input's
+	/// share (`power_budget::mix_transfer`).
+	pub const MIX: u8 = 6;
+}
+
+/// [`DeviceFlow::role`]'s wire values (a filter leg's part in its group).
+pub mod role {
+	/// A leg that takes the gases in its mask.
+	pub const OUTPUT: u8 = 0;
+	/// The leg that takes every gas no other leg's mask claims.
+	pub const CLEAN: u8 = 1;
 }
 
 /// [`DeviceFlow::direction`]'s wire values.
@@ -93,6 +111,30 @@ pub struct DeviceFlow {
 	pub stop_cmp: u8,
 	#[vg(config, unit = "kPa", default = 0.0)]
 	pub stop_kpa: f32,
+	/// The second target that only caps the flow ([`Flow::limit`]): [`stop_side`] (`NONE` [`stop_cmp`]: none).
+	#[vg(config, default = 0)]
+	pub limit_side: u8,
+	/// [`stop_cmp`].
+	#[vg(config, default = 0)]
+	pub limit_cmp: u8,
+	#[vg(config, unit = "kPa", default = 0.0)]
+	pub limit_kpa: f32,
+	/// The budget group this leg belongs to (`0`: none; a plain flow). Legs of one group, on the edges of one machine,
+	/// are stepped together ([`crate::laws::BudgetJob`]); only [`rate_kind::FILTER`] and [`rate_kind::MIX`] legs group.
+	#[vg(config, default = 0)]
+	pub group: u32,
+	/// [`role`].
+	#[vg(config, default = 0)]
+	pub role: u8,
+	/// A mixer input's share of the mix (0..=1).
+	#[vg(config, default = 0.0)]
+	pub ratio: f32,
+	/// The group's available power (W; `0`: unlimited), as the device's material scales it.
+	#[vg(config, unit = "W", default = 0.0)]
+	pub power_w: f32,
+	/// The group's pumping efficiency (`ATMOS_FILTER_EFFICIENCY` times the material's).
+	#[vg(config, default = 1.0)]
+	pub efficiency: f32,
 }
 
 impl LinksTo for DeviceFlow {
@@ -102,6 +144,12 @@ impl LinksTo for DeviceFlow {
 }
 
 impl DeviceFlow {
+	/// Whether this row is a leg of a budget group rather than a plain flow.
+	#[must_use]
+	pub fn is_budget(&self) -> bool {
+		self.group != 0 && matches!(self.rate_kind, rate_kind::FILTER | rate_kind::MIX)
+	}
+
 	/// This row as the plain [`Flow`] `device.rs`'s math already runs on.
 	#[must_use]
 	pub fn flow(&self) -> Flow {
@@ -109,6 +157,7 @@ impl DeviceFlow {
 			rate_kind::POWER => Rate::Power(self.rate),
 			rate_kind::UNLIMITED => Rate::Unlimited,
 			rate_kind::MOLES => Rate::Moles(self.rate),
+			rate_kind::FRACTION => Rate::Fraction(self.rate),
 			_ => Rate::Volume(self.rate),
 		};
 		let direction = if self.direction == direction::DOWNHILL {
@@ -116,24 +165,29 @@ impl DeviceFlow {
 		} else {
 			Direction::Forced
 		};
-		let stop = (self.stop_cmp != stop_cmp::NONE).then_some(Target {
-			side: if self.stop_side == stop_side::B {
-				Side::B
-			} else {
-				Side::A
-			},
-			cmp: if self.stop_cmp == stop_cmp::AT_MOST {
-				Cmp::AtMost
-			} else {
-				Cmp::AtLeast
-			},
-			kpa: self.stop_kpa,
-		});
+		let target = |side: u8, cmp: u8, kpa: f32| {
+			(cmp != stop_cmp::NONE).then_some(Target {
+				side: if side == stop_side::B {
+					Side::B
+				} else {
+					Side::A
+				},
+				cmp: if cmp == stop_cmp::AT_MOST {
+					Cmp::AtMost
+				} else {
+					Cmp::AtLeast
+				},
+				kpa,
+			})
+		};
+		let stop = target(self.stop_side, self.stop_cmp, self.stop_kpa);
+		let limit = target(self.limit_side, self.limit_cmp, self.limit_kpa);
 		Flow {
 			gases: self.gases,
 			rate,
 			direction,
 			stop,
+			limit,
 		}
 	}
 }
@@ -173,6 +227,14 @@ mod tests {
 			stop_side: stop_side::B,
 			stop_cmp: stop_cmp::AT_LEAST,
 			stop_kpa: 101.325,
+			limit_side: stop_side::A,
+			limit_cmp: stop_cmp::NONE,
+			limit_kpa: 0.0,
+			group: 0,
+			role: 0,
+			ratio: 0.0,
+			power_w: 0.0,
+			efficiency: 1.0,
 		};
 		assert_eq!(
 			row.flow(),
@@ -185,6 +247,7 @@ mod tests {
 					cmp: Cmp::AtLeast,
 					kpa: 101.325
 				}),
+				limit: None,
 			}
 		);
 	}
@@ -200,6 +263,14 @@ mod tests {
 			stop_side: stop_side::A,
 			stop_cmp: stop_cmp::NONE,
 			stop_kpa: 0.0,
+			limit_side: stop_side::A,
+			limit_cmp: stop_cmp::NONE,
+			limit_kpa: 0.0,
+			group: 0,
+			role: 0,
+			ratio: 0.0,
+			power_w: 0.0,
+			efficiency: 1.0,
 		};
 		assert_eq!(row.flow().stop, None);
 	}
@@ -215,7 +286,45 @@ mod tests {
 			stop_side: stop_side::A,
 			stop_cmp: stop_cmp::NONE,
 			stop_kpa: 0.0,
+			limit_side: stop_side::A,
+			limit_cmp: stop_cmp::NONE,
+			limit_kpa: 0.0,
+			group: 0,
+			role: 0,
+			ratio: 0.0,
+			power_w: 0.0,
+			efficiency: 1.0,
 		};
 		assert_eq!(row.flow().direction, Direction::Downhill);
+	}
+
+	#[test]
+	fn a_limit_row_decodes_to_the_second_target() {
+		let row = DeviceFlow {
+			device: 0,
+			gases: 0,
+			rate_kind: rate_kind::POWER,
+			rate: 7500.0,
+			direction: direction::FORCED,
+			stop_side: stop_side::A,
+			stop_cmp: stop_cmp::AT_LEAST,
+			stop_kpa: 101.325,
+			limit_side: stop_side::B,
+			limit_cmp: stop_cmp::AT_MOST,
+			limit_kpa: 20.0,
+			group: 0,
+			role: 0,
+			ratio: 0.0,
+			power_w: 0.0,
+			efficiency: 1.0,
+		};
+		assert_eq!(
+			row.flow().limit,
+			Some(Target {
+				side: Side::B,
+				cmp: Cmp::AtMost,
+				kpa: 20.0
+			})
+		);
 	}
 }

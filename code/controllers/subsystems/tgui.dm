@@ -58,7 +58,7 @@
 SUBSYSTEM_DEF(tgui)
 	name = "tgui"
 	wait = 9
-	flags = SS_NO_INIT
+	flags = SS_NO_INIT | SS_KERNEL_HOSTED
 	priority = FIRE_PRIORITY_TGUI
 	runlevels = RUNLEVEL_LOBBY | RUNLEVELS_DEFAULT
 
@@ -323,7 +323,7 @@ SUBSYSTEM_DEF(tgui)
 	flush_queue |= window.send_asset(get_asset_datum(/datum/asset/simple/namespaced/tgui_extra_fonts))
 	flush_queue |= window.send_asset(get_asset_datum(/datum/asset/json/icon_ref_map))
 	if(flush_queue)
-		client.browse_queue_flush()
+		client.session?.flush_assets()
 
 /** Keep a small idle reserve warm, starting at most one browser per call. */
 /datum/controller/subsystem/tgui/proc/maintain_client_prewarm(client/client)
@@ -487,11 +487,15 @@ SUBSYSTEM_DEF(tgui)
  *
  * Update all UIs attached to src_object.
  *
+ * Pushes are coalesced (one per UI per OM_UI_THROTTLE window). `now_ui` is the UI
+ * whose user just acted: it is pushed inline so the click feels instant.
+ *
  * required src_object datum The object/datum which owns the UIs.
+ * optional now_ui datum/tgui A UI to push immediately instead of coalescing.
  *
  * return int The number of UIs updated.
  */
-/datum/controller/subsystem/tgui/proc/update_uis(datum/src_object)
+/datum/controller/subsystem/tgui/proc/update_uis(datum/src_object, datum/tgui/now_ui)
 	// No UIs opened for this src_object
 	if(!LAZYLEN(src_object?.open_tguis))
 		return 0
@@ -499,7 +503,10 @@ SUBSYSTEM_DEF(tgui)
 	for(var/datum/tgui/ui in src_object.open_tguis)
 		// Check if UI is valid.
 		if(ui?.src_object() && ui.user && ui.src_object().tgui_host(ui.user))
-			INVOKE_ASYNC(ui, TYPE_PROC_REF(/datum/tgui, process), wait * 0.1, TRUE) // ALLOW(scheduler): tgui process re-runs arbitrary tgui_interact overrides / asset sends
+			if(ui == now_ui)
+				INVOKE_ASYNC(ui, TYPE_PROC_REF(/datum/tgui, process), wait * 0.1, TRUE) // ALLOW(scheduler): tgui process re-runs arbitrary tgui_interact overrides / asset sends
+			else
+				ui.request_push()
 			count++
 	return count
 

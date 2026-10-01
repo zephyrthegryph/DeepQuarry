@@ -32,7 +32,7 @@ If the spell_projectile is seeking, it will update its target every process and 
 		projectile.speed = proj_step_delay
 		if(istype(projectile, /obj/item/projectile/spell_projectile))
 			var/obj/item/projectile/spell_projectile/SP = projectile
-			rel_set(SP, "carried", src) //casting is magical
+			rel_set(SP, nameof(SP.carried), src) //casting is magical
 		projectile.def_zone = check_zone(BP_TORSO)
 		projectile.old_style_target(target)
 		projectile.fire()

@@ -488,8 +488,8 @@
 				connection_exists = TRUE
 
 			if(!connection_exists)
-				rel_add(source_pin, "linked", target_pin)
-				rel_add(target_pin, "linked", source_pin)
+				rel_add(source_pin, nameof(source_pin.linked), target_pin)
+				rel_add(target_pin, nameof(target_pin.linked), source_pin)
 
 #undef ASSEMBLY_PREFIX
 #undef CIRCUIT_PREFIX

@@ -230,7 +230,7 @@ UI_DATA_REPLACE(/obj/machinery/petrification, "material:text", "identifier:text"
 	if(!machine.is_valid_target(target))
 		machine.popup_msg(actor, "They declined the request.", FALSE)
 		return
-	rel_set(machine, "target", target)
+	rel_set(machine, nameof(machine.target), target)
 	SStgui.update_uis(machine)
 
 /datum/om/flow/petrify_consent/ended(reason)
@@ -271,8 +271,8 @@ UI_ACT_PROC(/obj/machinery/petrification, ui_act_remote)
 		P.tint = tint
 		P.able_to_unpetrify = able_to_unpetrify
 		P.discard_clothes = discard_clothes
-		rel_set(P, "target", target_ref())
-		own_put(src, "remotes", target_ref(), P)
+		rel_set(P, nameof(/datum/accessory_stat_modifier::target), target_ref())
+		own_put(src, nameof(/obj/machinery/petrification::remotes), target_ref(), P)
 		ui.user.put_in_hands(P)
 	return TRUE
 

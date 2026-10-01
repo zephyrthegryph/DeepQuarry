@@ -326,7 +326,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/dosimeter, \
 /obj/item/clothing/accessory/dosimeter/proc/dosimeter_remove_film_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user.get_inactive_hand() == src)
 		if(current_film)
-			user.put_in_hands(own_take(src, "current_film"))
+			user.put_in_hands(own_take(src, nameof(current_film)))
 			to_chat(user, span_notice("You pulled out the film out of \the [src]."))
 			desc = "This seems like a dosimeter, but there is no film inside."
 			update_state(0)
@@ -336,9 +336,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/dosimeter, \
 /// Old attackby: insert a film.
 /obj/item/clothing/accessory/dosimeter/proc/dosimeter_insert_film(mob/user, obj/item/I, datum/interaction/interaction)
 	if(!current_film)
-		user.drop_item()
-		I.forceMove(src)
-		own_set(src, "current_film", I)
+		if(!own_set(src, nameof(src.current_film), I, user = user))
+			return INTERACTION_HANDLED_PASS
 		update_state(current_film.state)
 
 		to_chat(user, span_notice("You inserted the film into \the [src]."))

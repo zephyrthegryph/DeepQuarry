@@ -163,7 +163,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/demon, \
 /mob/living/simple_mob/vore/demon/verb/alt_appearance()
 	set name = "Toggle Alernate Appearance"
 	set desc = "Change your sprite to an alternative one."
-	set category = "Abilities.Demon"
+	set category = VERB_CAT_ABILITIES_DEMON
 
 	if(!LAZYLEN(alt_demon_appearances))
 		to_chat(src, span_warning("There are no alternative apperances selectable!"))

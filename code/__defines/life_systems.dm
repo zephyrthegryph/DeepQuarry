@@ -13,6 +13,15 @@
 #define LIFE_PHASE_OUTPUT 4000
 #define LIFE_PHASE_TAIL 5000
 
+// --- Anchors: the same bands on the Life sequence (/datum/sequence/life, doc/rewrite/life_sequences.md) ---
+// Named no-op steps. A step says which band it runs in with `after = LIFE_BODY`; an anchor is passed only
+// when no step is ready, so everything in a band runs before the next band begins.
+#define LIFE_INPUT "LIFE_INPUT"
+#define LIFE_BODY "LIFE_BODY"
+#define LIFE_MIND "LIFE_MIND"
+#define LIFE_OUTPUT "LIFE_OUTPUT"
+#define LIFE_TAIL "LIFE_TAIL"
+
 // --- Wakes (doc/rewrite/life_on_om.md §5) ----------------------------------------------------
 /// Channels that wake every Life stage: set_stat, Login and Logout, explicit wakes (the old
 /// "wake all"). Stages list only the channels specific to them in `wake_on`.
@@ -74,7 +83,7 @@
 #define GERM_RESAMPLE (1 MINUTES)
 /// At most this many Life cycles of germ creep are charged at once.
 #define GERM_CATCHUP_CYCLES 100
-/// The presentation pipeline (HUD, vision) runs at most this often; changes in between coalesce.
+/// The HUD and sight reactions run at most this often (on_channel at_most); changes in between coalesce.
 #define LIFE_PRESENT_MIN_INTERVAL (0.5 SECONDS)
 /// Observer upkeep (ghosts, AI eyes, blob overmind) runs this often.
 #define OBSERVER_UPKEEP_INTERVAL (LIFE_CYCLE)

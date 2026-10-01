@@ -1,0 +1,1513 @@
+# Base-type vars and `= list()` instance vars (unified plan sec 2.16). rule<TAB>file<TAB>text.
+# tools/ci/base_vars_lint.py fails on a site not listed here. A site with
+# `// ALLOW(base_vars): <reason>` doesn't count.
+# Shrink-only: after a sweep, `python tools/ci/base_vars_lint.py --update`.
+base_var	code/ATMOSPHERICS/atom_flags_1.dm	var/tmp/flags_1 = 0
+base_var	code/ATMOSPHERICS/environmental/LINDA_system.dm	var/can_atmos_pass = ATMOS_PASS_YES
+base_var	code/ATMOSPHERICS/environmental/LINDA_turf_tile.dm	var/pressure_resistance = 10
+base_var	code/ATMOSPHERICS/environmental/LINDA_turf_tile.dm	var/tmp/last_high_pressure_movement_air_cycle = 0
+base_var	code/ATMOSPHERICS/tg_infra_compat.dm	var/tmp/rebuilding = FALSE
+base_var	code/ATMOSPHERICS/tg_infra_compat.dm	var/tmp/smoothing_junction = 0
+base_var	code/ATMOSPHERICS/tg_infra_compat.dm	var/move_resist = 100
+base_var	code/_helpers/icons.dm	/atom/var/tmp/icon/examine_icon_snapshot
+base_var	code/_onclick/hud/alert.dm	var/list/alerts = null // contains /atom/movable/screen/alert only // On /mob so clientless mobs will throw alerts properly
+base_var	code/_onclick/hud/fullscreen.dm	var/list/screens = null
+base_var	code/_onclick/telekinesis.dm	var/tk_reach = TRUE
+base_var	code/controllers/subsystems/overlays.dm	var/tmp/list/realized_overlays
+base_var	code/controllers/subsystems/overlays.dm	var/tmp/list/realized_underlays
+base_var	code/core/atom/Transform.dm	/atom/var/tf_scale_x
+base_var	code/core/atom/Transform.dm	/atom/var/tf_scale_y
+base_var	code/core/atom/Transform.dm	/atom/var/tf_rotation
+base_var	code/core/atom/Transform.dm	/atom/var/tf_offset_x
+base_var	code/core/atom/Transform.dm	/atom/var/tf_offset_y
+base_var	code/datums/behaviours/burning.dm	var/burn_overlay
+base_var	code/datums/behaviours/burning.dm	var/burn_particle_type
+base_var	code/datums/behaviours/burning.dm	var/burn_fuel = 0
+base_var	code/datums/behaviours/burning.dm	var/tmp/datum/native_watch/heat/burn_cool_watch
+base_var	code/datums/behaviours/burning.dm	var/burn_ended_by
+base_var	code/datums/behaviours/climbable.dm	var/climbable_type
+base_var	code/datums/behaviours/climbable.dm	var/climbable_delay = 3.5 SECONDS
+base_var	code/datums/behaviours/climbable.dm	var/climbable_vaulting = FALSE
+base_var	code/datums/behaviours/climbable.dm	var/list/mob/living/climbers
+base_var	code/datums/behaviours/conflict_checking.dm	var/conflict_id
+base_var	code/datums/behaviours/deconstructable_research.dm	var/techweb_points = 0
+base_var	code/datums/behaviours/deconstructable_research.dm	var/techweb_point_type = TECHWEB_POINT_TYPE_GENERIC
+base_var	code/datums/behaviours/footstep.dm	var/footstep_type = FOOTSTEP_MOB_BAREFOOT
+base_var	code/datums/behaviours/footstep.dm	var/footstep_volume = 0.1
+base_var	code/datums/behaviours/footstep.dm	var/footstep_e_range = -8
+base_var	code/datums/behaviours/footstep.dm	var/footstep_vary = FALSE
+base_var	code/datums/behaviours/footstep.dm	var/footstep_steps = 0
+base_var	code/datums/behaviours/light_blocking.dm	var/blocks_light = FALSE
+base_var	code/datums/behaviours/omen.dm	var/omen_incidents = INFINITY
+base_var	code/datums/behaviours/omen.dm	var/omen_luck = 1
+base_var	code/datums/behaviours/omen.dm	var/omen_damage = 1
+base_var	code/datums/behaviours/omen.dm	var/omen_evil = TRUE
+base_var	code/datums/behaviours/omen.dm	var/omen_safe_disposals = FALSE
+base_var	code/datums/behaviours/omen.dm	var/omen_vorish = TRUE
+base_var	code/datums/behaviours/radiation_countdown.dm	var/rad_countdown_minimum = 0
+base_var	code/datums/behaviours/sellable.dm	var/sellable_type
+base_var	code/datums/behaviours/slosh.dm	var/slosh_steps = 0
+base_var	code/datums/behaviours/slosh.dm	var/slosh_volume = 0
+base_var	code/datums/behaviours/slosh.dm	var/slosh_chance = 0
+base_var	code/datums/behaviours/swarming.dm	var/swarm_offset_x = 0
+base_var	code/datums/behaviours/swarming.dm	var/swarm_offset_y = 0
+base_var	code/datums/behaviours/swarming.dm	var/is_swarming = FALSE
+base_var	code/datums/behaviours/swarming.dm	var/list/atom/movable/swarm_members
+base_var	code/datums/behaviours/tethered_item.dm	var/tether_path
+base_var	code/datums/capabilities/capabilities.dm	var/cap_state = 0
+base_var	code/datums/capabilities/capabilities.dm	var/tmp/list/cap_data
+base_var	code/datums/capabilities/capability_ext.dm	var/tmp/list/cap_extras
+base_var	code/datums/capabilities/library/assembly.dm	var/obj/item/assembly/attached_assembly
+base_var	code/datums/capabilities/library/signaler.dm	var/cap_signal_frequency
+base_var	code/datums/capabilities/library/signaler.dm	var/cap_signal_code
+base_var	code/datums/capabilities/library/storage.dm	var/hold_mask
+base_var	code/datums/capabilities/library/storage.dm	var/hold_slots
+base_var	code/datums/capabilities/library/storage.dm	var/hold_max_w_class
+base_var	code/datums/capabilities/library/storage.dm	var/hold_max_total
+base_var	code/datums/capabilities/library/storage.dm	var/storage_class = NONE
+base_var	code/datums/capabilities/look.dm	var/tmp/look_set_bits = 0
+base_var	code/datums/capabilities/look.dm	var/tmp/list/look_filters
+base_var	code/datums/capabilities/look.dm	var/tmp/list/look_vis
+base_var	code/datums/capabilities/refresh.dm	var/tmp/look_key
+base_var	code/datums/capabilities/refresh.dm	var/tmp/list/look_overlays
+base_var	code/datums/capabilities/refresh.dm	var/tmp/list/refresh_hidden_verbs
+base_var	code/datums/capabilities/refresh.dm	/atom/var/tmp/refresh_swept = FALSE
+base_var	code/datums/character_identity.dm	var/datum/character_identity/own_identity = new
+base_var	code/datums/character_identity.dm	var/datum/character_identity/identity
+base_var	code/datums/containment/latency_policy.dm	/atom/movable/var/tmp/latent_refused_until = 0
+base_var	code/datums/containment/latency_policy.dm	/atom/var/latent_idle_delay = 2 MINUTES
+base_var	code/datums/containment/latency_policy.dm	/atom/var/latency_policy_disabled = FALSE
+base_var	code/datums/containment/latent.dm	/atom/var/tmp/latent_contents = FALSE
+base_var	code/datums/containment/latent.dm	/atom/var/tmp/latent_declared = FALSE
+base_var	code/datums/containment/ledger.dm	/atom/var/tmp/datum/ledger/ledger
+base_var	code/datums/containment/ledger.dm	/atom/movable/var/tmp/has_slot_hooks = FALSE
+base_var	code/datums/containment/ledger.dm	/atom/movable/var/tmp/move_hooks = 0
+base_var	code/datums/containment/lifecycle.dm	/atom/movable/var/tmp/atom/movable/lifecycle_successor
+base_var	code/datums/containment/pin.dm	/atom/movable/var/tmp/list/latent_pins
+base_var	code/datums/entity_state/animations/dizzy.dm	var/dizzy_was_resting
+base_var	code/datums/entity_state/animations/jittery.dm	var/jittery_was_resting
+base_var	code/datums/entity_state/antags/changeling/changeling.dm	/mob/living/var/datum/changeling/changeling_state
+base_var	code/datums/entity_state/crafting/crafting.dm	/mob/living/carbon/human/var/datum/personal_crafting/crafting
+base_var	code/datums/entity_state/disabilities/gibbing.dm	var/disability_gut_pressure = 0
+base_var	code/datums/entity_state/disabilities/gibbing.dm	var/disability_death_time = FALSE
+base_var	code/datums/entity_state/disabilities/tourettes.dm	var/list/disability_motor_tics
+base_var	code/datums/entity_state/machinery/disposal_connection.dm	/obj/var/tmp/datum/disposal_system_connection/disposal_connection
+base_var	code/datums/entity_state/materials/machine_shim.dm	/mob/var/datum/using_machine_shim/machine_shim
+base_var	code/datums/entity_state/mind_host.dm	/obj/item/var/datum/mind_host/mind_host
+base_var	code/datums/entity_state/overlay_lighting.dm	var/tmp/datum/overlay_lighting/overlay_light
+base_var	code/datums/entity_state/reactive_icon_update.dm	/obj/var/tmp/datum/reactive_icon_update/reactive_icon
+base_var	code/datums/entity_state/reagent_hose/connector.dm	/atom/movable/var/list/hose_connectors
+base_var	code/datums/entity_state/remote_view.dm	var/tmp/datum/remote_view/remote_view
+base_var	code/datums/entity_state/species/shadekin/powers/phase_shift.dm	/mob/living/var/tmp/dq_phase_shift_pending_cost = 0
+base_var	code/datums/entity_state/species/shadekin/shadekin.dm	/mob/living/var/datum/shadekin/shadekin
+base_var	code/datums/entity_state/species/xenochimera.dm	/mob/living/carbon/human/var/datum/xenochimera/xenochimera
+base_var	code/datums/entity_state/traits/_trait_state.dm	/mob/living/var/list/trait_states
+base_var	code/datums/entity_state/turfslip.dm	/mob/living/var/datum/turfslip/turfslip
+base_var	code/datums/interactions/construction.dm	/atom/var/construction_graph
+base_var	code/datums/lifecycle/verbs.dm	/atom/movable/var/lifecycle_lifetime = 0
+base_var	code/datums/lifecycle/verbs.dm	/atom/movable/var/tmp/lifecycle_lifetime_timer
+base_var	code/datums/lifecycle/verbs.dm	/mob/living/var/delete_on_death = FALSE
+base_var	code/datums/properties/constraints.dm	var/list/constraint_overrides
+base_var	code/datums/properties/families/temperature_thresholds.dm	var/insulation = 0
+base_var	code/datums/recursive_move.dm	var/tmp/datum/recursive_move/recursive_move
+base_var	code/datums/rules/world_adapter.dm	/atom/var/tmp/datum/dq_rx_node/rx_node
+base_var	code/datums/soul_link.dm	var/list/datum/soul_link/owned_soul_links // Soul links we are the owner of (owned: deleted with us).
+base_var	code/datums/soul_link.dm	var/list/datum/soul_link/shared_soul_links // Soul links we are a/the sharer of (a relation list view).
+base_var	code/datums/sparse_vars/alt_appearance.dm	var/tmp/list/alt_appearances_owned
+base_var	code/datums/sparse_vars/alt_appearance.dm	var/tmp/list/datum/alternate_appearance/alt_appearances_viewing
+base_var	code/datums/sparse_vars/catalogue_delay.dm	var/catalogue_delay_override
+base_var	code/datums/sparse_vars/chat_color_cache.dm	var/tmp/chat_color_cached
+base_var	code/datums/sparse_vars/chat_color_cache.dm	var/tmp/chat_color_cached_name
+base_var	code/datums/sparse_vars/chat_color_cache.dm	var/tmp/chat_color_cached_darkened
+base_var	code/datums/sparse_vars/forensics.dm	var/forensic_was_bloodied
+base_var	code/datums/sparse_vars/forensics.dm	var/forensic_blood_color
+base_var	code/datums/sparse_vars/forensics.dm	var/forensic_fluorescent
+base_var	code/datums/sparse_vars/movable_misc.dm	var/tmp/belly_cycle_count = 0
+base_var	code/datums/sparse_vars/movable_misc.dm	var/tmp/list/recursive_listener_list
+base_var	code/datums/sparse_vars/movable_misc.dm	var/tmp/moved_recently_at = 0
+base_var	code/datums/sparse_vars/movable_misc.dm	var/tmp/list/dynamic_lights_affecting
+base_var	code/datums/sparse_vars/movable_misc.dm	var/tmp/image/cloak_selfimage
+base_var	code/datums/sparse_vars/movable_misc.dm	var/tmp/cloak_active = FALSE
+base_var	code/datums/sparse_vars/movable_misc.dm	var/tmp/parachute_deployed = FALSE
+base_var	code/datums/sparse_vars/movable_misc.dm	var/tmp/parachuting_override = FALSE
+base_var	code/datums/sparse_vars/movable_misc.dm	var/tmp/softfall_is_set = FALSE
+base_var	code/datums/sparse_vars/movable_misc.dm	var/tmp/softfall_value = FALSE
+base_var	code/datums/sparse_vars/movable_misc.dm	var/tmp/hovering_is_set = FALSE
+base_var	code/datums/sparse_vars/movable_misc.dm	var/tmp/hovering_value = FALSE
+base_var	code/datums/sparse_vars/observer_events.dm	var/tmp/list/observer_event_listeners
+base_var	code/datums/sparse_vars/update_on_z.dm	var/tmp/list/image/z_update_images
+base_var	code/datums/state/schema.dm	var/tmp/latent_safe = FALSE
+base_var	code/datums/sys/appearance.dm	var/tmp/decl_appearance_key
+base_var	code/datums/sys/appearance.dm	var/tmp/list/appearance_proc_overlays
+base_var	code/datums/sys/appearance.dm	var/tmp/appearance_queued = FALSE
+base_var	code/datums/sys/appearance.dm	var/tmp/appearance_neighbour_key
+base_var	code/datums/variants/gear_tweak_variant.dm	var/variant
+base_var	code/game/atom/_atom.dm	var/level = 2
+base_var	code/game/atom/_atom.dm	var/flags = NONE
+base_var	code/game/atom/_atom.dm	var/pass_flags = 0
+base_var	code/game/atom/_atom.dm	var/throwpass = 0
+base_var	code/game/atom/_atom.dm	var/germ_level = GERM_LEVEL_AMBIENT // The higher the germ level, the more germ on the atom.
+base_var	code/game/atom/_atom.dm	var/simulated = TRUE //filter for actions - used by lighting overlays
+base_var	code/game/atom/_atom.dm	var/bubble_icon = "normal" ///what icon the atom uses for speechbubbles
+base_var	code/game/atom/_atom.dm	var/datum/forensics_crime/forensic_data
+base_var	code/game/atom/_atom.dm	var/datum/reagents/reagents = null
+base_var	code/game/atom/_atom.dm	var/tmp/list/our_overlays
+base_var	code/game/atom/_atom.dm	var/tmp/priority_overlays
+base_var	code/game/atom/_atom.dm	var/tmp/list/managed_vis_overlays
+base_var	code/game/atom/_atom.dm	var/tmp/list/original_atom
+base_var	code/game/atom/_atom.dm	var/list/atom_colours
+base_var	code/game/atom/_atom.dm	var/rad_insulation = RAD_NO_INSULATION
+base_var	code/game/atom/_atom.dm	var/rad_shield_material
+base_var	code/game/atom/_atom.dm	var/rad_shield_thickness_mm = 0
+base_var	code/game/atom/_atom.dm	var/datum/wires/wires = null
+base_var	code/game/atom/_atom.dm	var/emp_protection_flags = NONE
+base_var	code/game/atom/armor.dm	var/armor_spec
+base_var	code/game/atom/armor.dm	var/tmp/datum/armor_override
+base_var	code/game/atom/atom_defense.dm	var/uses_integrity = FALSE
+base_var	code/game/atom/atom_defense.dm	var/max_integrity = 500
+base_var	code/game/atom/atom_defense.dm	var/integrity_failure = 0 //0 if we have no special broken behavior, otherwise is a percentage of at what point the atom breaks. 0.5 being 50%
+base_var	code/game/atom/atom_defense.dm	var/damage_deflection = 0
+base_var	code/game/atom/atom_defense.dm	var/resistance_flags = NONE // INDESTRUCTIBLE | LAVA_PROOF | FIRE_PROOF | ON_FIRE | UNACIDABLE | ACID_PROOF
+base_var	code/game/atom/atom_defense.dm	var/tmp/last_damage_flag
+base_var	code/game/atom/atom_defense.dm	var/tmp/damage_band = DAMAGE_BAND_NONE
+base_var	code/game/atom/atom_type_table.dm	var/init_from_table = FALSE
+base_var	code/game/atom/damage_flavour.dm	var/damage_wear = "scrapes and dents"
+base_var	code/game/atom/damage_flavour.dm	var/announce_damage_bands = FALSE
+base_var	code/game/atom/damage_packet.dm	var/emp_integrity_factor = 0
+base_var	code/game/atoms_movable.dm	var/tmp/last_move = null //The direction the atom last moved
+base_var	code/game/atoms_movable.dm	var/anchored = FALSE
+base_var	code/game/atoms_movable.dm	var/tmp/moving_diagonally
+base_var	code/game/atoms_movable.dm	var/tmp/move_speed = 10
+base_var	code/game/atoms_movable.dm	var/datum/thrownthing/throwing // running: set only mid-throw
+base_var	code/game/atoms_movable.dm	var/tmp/datum/throw_source
+base_var	code/game/atoms_movable.dm	var/throw_speed = 2
+base_var	code/game/atoms_movable.dm	var/throw_range = 7
+base_var	code/game/atoms_movable.dm	var/item_state = null // Used to specify the item state for the on-mob overlays.
+base_var	code/game/atoms_movable.dm	var/icon_scale_x = DEFAULT_ICON_SCALE_X // Used to scale icons up or down horizonally in update_transform().
+base_var	code/game/atoms_movable.dm	var/icon_scale_y = DEFAULT_ICON_SCALE_Y // Used to scale icons up or down vertically in update_transform().
+base_var	code/game/atoms_movable.dm	var/icon_rotation = DEFAULT_ICON_ROTATION // Used to rotate icons in update_transform()
+base_var	code/game/atoms_movable.dm	var/icon_expected_height = 32
+base_var	code/game/atoms_movable.dm	var/icon_expected_width = 32
+base_var	code/game/atoms_movable.dm	var/old_x = 0
+base_var	code/game/atoms_movable.dm	var/old_y = 0
+base_var	code/game/atoms_movable.dm	var/datum/riding/riding_datum = null
+base_var	code/game/atoms_movable.dm	var/does_spin = TRUE // Does the atom spin when thrown (of course it does :P)
+base_var	code/game/atoms_movable.dm	var/movement_type = NONE
+base_var	code/game/atoms_movable.dm	var/autotransferable = TRUE // Toggle for autotransfer mechanics.
+base_var	code/game/atoms_movable.dm	var/listening_recursive = NON_LISTENING_ATOM
+base_var	code/game/atoms_movable.dm	var/unacidable = TRUE
+base_var	code/game/gamemodes/cult/cultify/mob.dm	var/tmp/image/narsimage = null
+base_var	code/game/gamemodes/cult/cultify/mob.dm	var/tmp/image/narglow = null
+base_var	code/game/gamemodes/endgame/supermatter_cascade/portal.dm	var/tmp/image/riftimage = null
+base_var	code/game/gamemodes/technomancer/instability.dm	var/last_instability = 0 // Used to calculate instability delta.
+base_var	code/game/gamemodes/technomancer/spells/summon/summon.dm	var/summoned = 0
+base_var	code/game/jobs/access.dm	/obj/var/list/req_access
+base_var	code/game/jobs/access.dm	/obj/var/list/req_one_access
+base_var	code/game/machinery/machinery.dm	var/use_power = USE_POWER_IDLE
+base_var	code/game/machinery/machinery.dm	var/idle_power_usage = 0
+base_var	code/game/machinery/machinery.dm	var/active_power_usage = 0
+base_var	code/game/machinery/machinery.dm	var/power_channel = EQUIP //EQUIP, ENVIRON or LIGHT
+base_var	code/game/machinery/machinery.dm	var/tmp/power_init_complete = FALSE
+base_var	code/game/machinery/machinery.dm	var/power_subscriber = TRUE
+base_var	code/game/machinery/machinery.dm	var/list/component_parts = null
+base_var	code/game/machinery/machinery.dm	var/tmp/uid
+base_var	code/game/machinery/machinery.dm	var/clicksound // sound played on succesful interface. Just put it in the list of vars at the start.
+base_var	code/game/machinery/machinery.dm	var/clickvol = 40 // volume
+base_var	code/game/machinery/machinery.dm	var/interact_offline = 0 // Can the machine be interacted with while de-powered.
+base_var	code/game/machinery/machinery.dm	var/obj/item/circuitboard/circuit = null
+base_var	code/game/machinery/machinery.dm	var/maintenance_flags = NONE
+base_var	code/game/machinery/machinery.dm	var/maintenance_wrench_time = 0
+base_var	code/game/machinery/machinery.dm	var/maintenance_weld_time = 2 SECONDS
+base_var	code/game/machinery/machinery.dm	var/list/material_component_manifest
+base_var	code/game/machinery/machinery.dm	var/material_emp_resistance = 0
+base_var	code/game/machinery/machinery.dm	var/tmp/gas_dependency_wake_count = 0
+base_var	code/game/machinery/machinery.dm	var/tmp/machine_wake_count = 0
+base_var	code/game/machinery/machinery.dm	var/tmp/materialize_directed = FALSE
+base_var	code/game/machinery/machinery.dm	var/step_on_power_change = FALSE
+base_var	code/game/machinery/machinery.dm	var/tmp/list/react_sleep_tokens
+base_var	code/game/machinery/machinery_power.dm	var/tmp/recursive_set = FALSE // bool to indicate if recursive movement detection ever got set. If it did, don't try to set it again!
+base_var	code/game/objects/buckling.dm	var/can_buckle = FALSE
+base_var	code/game/objects/buckling.dm	var/buckle_movable = 0
+base_var	code/game/objects/buckling.dm	var/buckle_dir = 0
+base_var	code/game/objects/buckling.dm	var/buckle_lying = -1 //bed-like behavior, forces mob.lying = buckle_lying if != -1
+base_var	code/game/objects/buckling.dm	var/buckle_require_restraints = 0 //require people to be handcuffed before being able to buckle. eg: pipes
+base_var	code/game/objects/buckling.dm	var/max_buckled_mobs = 1
+base_var	code/game/objects/buckling.dm	var/drag_buckle = TRUE
+base_var	code/game/objects/items.dm	var/tmp/image/blood_overlay = null //this saves our blood splatter overlay, which will be processed not to go over the edges of the sprite
+base_var	code/game/objects/items.dm	var/randpixel = 6
+base_var	code/game/objects/items.dm	var/abstract = 0
+base_var	code/game/objects/items.dm	var/health = null // organ condition (the body rewrite owns it). Object hit points are integrity (take_damage/get_integrity), never this.
+base_var	code/game/objects/items.dm	var/burning = null
+base_var	code/game/objects/items.dm	var/hitsound = SFX_SWING_HIT
+base_var	code/game/objects/items.dm	var/usesound = null // Like hitsound, but for when used properly and not to kill someone.
+base_var	code/game/objects/items.dm	var/storage_cost = null
+base_var	code/game/objects/items.dm	var/slot_flags = 0 //This is used to determine on which slots an item can fit.
+base_var	code/game/objects/items.dm	var/no_attack_log = 0 //If it's an item we don't want to log attack_logs with, set this to 1
+base_var	code/game/objects/items.dm	var/obj/item/master = null // the item this one is attached to
+base_var	code/game/objects/items.dm	var/list/attack_verb //Used in attackby() to say how something was attacked "[x] has been [z.attack_verb] by [y] with [z]"
+base_var	code/game/objects/items.dm	var/force = 0
+base_var	code/game/objects/items.dm	var/throwforce = 0
+base_var	code/game/objects/items.dm	var/sharp = FALSE // whether this object cuts
+base_var	code/game/objects/items.dm	var/edge = FALSE // whether this object is more likely to dismember
+base_var	code/game/objects/items.dm	var/armor_penetration = 0
+base_var	code/game/objects/items.dm	var/melee_windup = 0 // Deciseconds of windup before the swing lands. 0 = w_class-scaled default.
+base_var	code/game/objects/items.dm	var/melee_recovery = 0 // Deciseconds of recovery (post-swing click cooldown). 0 = w_class-scaled default.
+base_var	code/game/objects/items.dm	var/melee_sweep = null // TRUE forces a 3-tile arc, FALSE forces single-tile; null = size default (LARGE+ sweeps).
+base_var	code/game/objects/items.dm	var/catchable = TRUE
+base_var	code/game/objects/items.dm	var/can_cleave = FALSE // If true, a 'cleaving' attack will occur.
+base_var	code/game/objects/items.dm	var/pry = 0 //Used in attackby() to open doors
+base_var	code/game/objects/items.dm	var/heat_protection = 0 //flags which determine which body parts are protected from heat. Use the HEAD, UPPER_TORSO, LOWER_TORSO, etc. flags. See setup.dm
+base_var	code/game/objects/items.dm	var/cold_protection = 0 //flags which determine which body parts are protected from cold. Use the HEAD, UPPER_TORSO, LOWER_TORSO, etc. flags. See setup.dm
+base_var	code/game/objects/items.dm	var/max_heat_protection_temperature //Set this variable to determine up to which temperature (IN KELVIN) the item protects against heat damage. Keep at null to disable protection. Only protects areas set by heat_protection flags
+base_var	code/game/objects/items.dm	var/min_cold_protection_temperature //Set this variable to determine down to which temperature (IN KELVIN) the item protects against cold damage. 0 is NOT an acceptable number due to if(varname) tests!! Keep at null to disable protection. Only protects areas set by cold_protection flags
+base_var	code/game/objects/items.dm	var/max_pressure_protection // Set this variable if the item protects its wearer against high pressures below an upper bound. Keep at null to disable protection.
+base_var	code/game/objects/items.dm	var/min_pressure_protection // Set this variable if the item protects its wearer against low pressures above a lower bound. Keep at null to disable protection. 0 represents protection against hard vacuum.
+base_var	code/game/objects/items.dm	var/tmp/list/actions //list of /datum/action's that this item has.
+base_var	code/game/objects/items.dm	var/list/actions_types //list of paths of action datums to give to the item on New().
+base_var	code/game/objects/items.dm	var/flags_inv = 0
+base_var	code/game/objects/items.dm	var/body_parts_covered = 0 //see setup.dm for appropriate bit flags
+base_var	code/game/objects/items.dm	var/item_flags = 0 //Miscellaneous flags pertaining to equippable objects.
+base_var	code/game/objects/items.dm	var/gas_transfer_coefficient = 1 // for leaking gas from turf to mask and vice-versa (for masks right now, but at some point, i'd like to include space helmets)
+base_var	code/game/objects/items.dm	var/permeability_coefficient = 1 // for chemicals/diseases
+base_var	code/game/objects/items.dm	var/siemens_coefficient = 1 // for electrical admittance/conductance (electrocution checks and shit)
+base_var	code/game/objects/items.dm	var/slowdown = 0 // How much clothing is slowing you down. Negative values speeds you up
+base_var	code/game/objects/items.dm	var/canremove = TRUE //Mostly for Ninja code at this point but basically will not allow the item to be removed if set to 0. /N
+base_var	code/game/objects/items.dm	var/obj/item/uplink/hidden/hidden_uplink // owned, sits in our contents
+base_var	code/game/objects/items.dm	var/zoomdevicename = null //name used for message when binoculars/scope is used
+base_var	code/game/objects/items.dm	var/tmp/zoom = 0 //1 if item is actively being used to zoom. For scoped guns and binoculars.
+base_var	code/game/objects/items.dm	var/embed_chance = -1 //0 won't embed, and 100 will always embed
+base_var	code/game/objects/items.dm	var/icon_override = null //Used to override hardcoded clothing dmis in human clothing proc.
+base_var	code/game/objects/items.dm	var/list/item_state_slots //overrides the default item_state for particular slots.
+base_var	code/game/objects/items.dm	var/list/item_icons
+base_var	code/game/objects/items.dm	var/list/sprite_sheets
+base_var	code/game/objects/items.dm	var/list/sprite_sheets_obj
+base_var	code/game/objects/items.dm	var/toolspeed = 1 // This is a multipler on how 'fast' a tool works. e.g. setting this to 0.5 will make the tool work twice as fast.
+base_var	code/game/objects/items.dm	var/attackspeed = DEFAULT_ATTACK_COOLDOWN // How long click delay will be when using this, in 1/10ths of a second. Checked in the user's get_attack_speed().
+base_var	code/game/objects/items.dm	var/reach = 1 // Length of tiles it can reach, 1 is adjacent.
+base_var	code/game/objects/items.dm	var/addblends // Icon overlay for ADD highlights when applicable.
+base_var	code/game/objects/items.dm	var/default_worn_icon //Default on-mob icon
+base_var	code/game/objects/items.dm	var/worn_layer //Default on-mob layer
+base_var	code/game/objects/items.dm	var/mob_throw_hit_sound
+base_var	code/game/objects/items.dm	var/equip_sound
+base_var	code/game/objects/items.dm	var/pickup_sound = SFX_GENERIC_PICKUP
+base_var	code/game/objects/items.dm	var/drop_sound = SFX_GENERIC_DROP
+base_var	code/game/objects/items.dm	var/no_random_knockdown = FALSE //stops item from being able to randomly knock people down in combat
+base_var	code/game/objects/items.dm	var/rock_climbing = FALSE //If true, allows climbing cliffs using click drag for single Z, walls if multiZ
+base_var	code/game/objects/items.dm	var/climbing_delay = 1 //If rock_climbing, lower better.
+base_var	code/game/objects/items.dm	var/digestable = TRUE
+base_var	code/game/objects/items.dm	var/item_tf_spawn_allowed = FALSE
+base_var	code/game/objects/items.dm	var/list/ckeys_allowed_itemspawn = null
+base_var	code/game/objects/items.dm	var/exploit_for //if this obj is an exploit for somebody, this points to them
+base_var	code/game/objects/items.dm	var/preserve_item = 0 //whether this object is preserved when its owner goes into cryo-storage, gateway, etc
+base_var	code/game/objects/items.dm	var/persist_storable = TRUE //If this is true, this item can be stored in the item bank.
+base_var	code/game/objects/items.dm	var/list/possessed_voice //Allows for items to be possessed/inhabited by voices.
+base_var	code/game/objects/items.dm	var/tmp/list/warned_of_possession //Checks to see who has been informed this item is possessed.
+base_var	code/game/objects/items.dm	var/tmp/cleaving = FALSE // Used to avoid infinite cleaving.
+base_var	code/game/objects/items.dm	var/list/tool_qualities
+base_var	code/game/objects/items.dm	var/tmp/obj/item/organ/internal/augment/my_augment
+base_var	code/game/objects/items.dm	var/datum/identification/identity = null // owned: identification datum, refers back to its holder
+base_var	code/game/objects/items.dm	var/identity_type = /datum/identification
+base_var	code/game/objects/items.dm	var/init_hide_identity = FALSE // Set to true to automatically obscure the object on initialization.
+base_var	code/game/objects/items.dm	var/trash_eatable = TRUE
+base_var	code/game/objects/items.dm	var/digest_stage = null
+base_var	code/game/objects/items.dm	var/d_mult_old = 1 //digest stage descriptions
+base_var	code/game/objects/items.dm	var/d_mult = 1 //digest stage descriptions
+base_var	code/game/objects/items.dm	var/tmp/image/d_stage_overlay //digest stage effects
+base_var	code/game/objects/items.dm	var/tmp/d_stage_overlay_key //cache key (icon|icon_state|color) for d_stage_overlay; rebuild only when this changes
+base_var	code/game/objects/items.dm	var/gurgled = FALSE
+base_var	code/game/objects/items.dm	var/oldname
+base_var	code/game/objects/items.dm	var/cleanname
+base_var	code/game/objects/items.dm	var/cleandesc
+base_var	code/game/objects/items.dm	var/gurgled_color
+base_var	code/game/objects/items.dm	/obj/item/var/center_of_mass_x = 16
+base_var	code/game/objects/items.dm	/obj/item/var/center_of_mass_y = 16
+base_var	code/game/objects/items/devices/paicard.dm	var/obj/item/paicard/paicard = null
+base_var	code/game/objects/items/weapons/capture_crystal.dm	var/capture_crystal = TRUE //If TRUE, the mob is capturable. Otherwise it isn't.
+base_var	code/game/objects/items/weapons/capture_crystal.dm	var/capture_caught = FALSE //If TRUE, the mob has already been caught, and so cannot be caught again.
+base_var	code/game/objects/obj_defense.dm	var/debris_type
+base_var	code/game/objects/obj_defense.dm	var/debris_amount = 1
+base_var	code/game/objects/obj_defense.dm	var/broken_icon_state
+base_var	code/game/objects/objs.dm	var/w_class // Size of the object.
+base_var	code/game/objects/objs.dm	var/tmp/in_use = 0 // If we have a user using us, this will be set on. We will check if the user has stopped using us, and thus stop updating and LAGGING EVERYTHING!
+base_var	code/game/objects/objs.dm	var/show_messages
+base_var	code/game/objects/objs.dm	var/can_speak = 0 //For MMIs and admin trickery. If an object has a brainmob in its contents, set this to 1 to allow it to speak.
+base_var	code/game/objects/objs.dm	var/show_examine = TRUE // Does this pop up on a mob when the mob is examined?
+base_var	code/game/objects/objs.dm	var/redgate_allowed = TRUE //can we be taken through the redgate, in either direction?
+base_var	code/game/objects/objs.dm	var/tmp/being_shocked = FALSE
+base_var	code/game/objects/objs.dm	var/micro_accepted_scale = 0.5
+base_var	code/game/objects/objs.dm	var/micro_target = FALSE
+base_var	code/game/objects/objs.dm	var/explosion_resistance
+base_var	code/game/objects/objs.dm	var/economic_department
+base_var	code/game/objects/objs.dm	var/economic_export_value = 0
+base_var	code/game/objects/objs.dm	var/economic_producer_account = 0
+base_var	code/game/objects/objs.dm	var/economic_sale_invoice_id = 0
+base_var	code/game/objects/objs.dm	var/tmp/custom_fire_overlay
+base_var	code/game/objects/objs.dm	var/burning_particles
+base_var	code/game/objects/objs.dm	var/obj_flags = CAN_BE_HIT
+base_var	code/game/skincmd.dm	/mob/var/skincmds = list()
+base_var	code/modules/admin/admin_attack_log.dm	/atom/var/tmp/lastattacker = null
+base_var	code/modules/belly_overlay/belly_overlay_tgui.dm	var/tmp/datum/belly_overlay_tgui/belly_overlay_tgui
+base_var	code/modules/body/body.dm	var/datum/body/body
+base_var	code/modules/body/body.dm	var/body_type = /datum/body/simple
+base_var	code/modules/body/body.dm	var/endurance = DEFAULT_ENDURANCE
+base_var	code/modules/body/body.dm	var/biology = BIOLOGY_ORGANIC
+base_var	code/modules/body/body_effects.dm	var/list/body_effect_timers
+base_var	code/modules/body/body_effects.dm	var/tmp/body_effect_serial = 0
+base_var	code/modules/body/body_effects.dm	var/list/body_effect_origins
+base_var	code/modules/body/body_effects.dm	var/list/body_effect_data
+base_var	code/modules/body/body_effects.dm	var/list/body_effect_factors
+base_var	code/modules/body/breath_profile.dm	var/tmp/photosynthesis_boost = 0
+base_var	code/modules/body/factors.dm	var/alist/worn_factors
+base_var	code/modules/body/injury.dm	var/list/injury_trace
+base_var	code/modules/body/injury.dm	var/injury_kind = INJURY_BLUNT
+base_var	code/modules/body/injury.dm	var/alist/injury_kinds
+base_var	code/modules/catalogue/atoms.dm	var/list/catalogue_data = null
+base_var	code/modules/client/verbs/suicide.dm	/mob/var/suiciding = 0
+base_var	code/modules/combat_ai/integration/mob_living.dm	var/datum/ai_brain/ai_brain = null
+base_var	code/modules/combat_ai/integration/mob_living.dm	var/use_modern_ai = FALSE
+base_var	code/modules/combat_ai/legacy_constants/say_list.dm	var/datum/say_list/say_list = null
+base_var	code/modules/combat_ai/legacy_constants/say_list.dm	var/say_list_type = /datum/say_list // Type to give us on initialization. Default has empty lists, so the mob will be silent.
+base_var	code/modules/combat_ai/legacy_constants/say_list.dm	var/can_pain_emote = TRUE
+base_var	code/modules/combat_ai/legacy_constants/say_list.dm	var/datum/looping_sound/mob/deafened/deaf_loop //NYI
+base_var	code/modules/combat_ai/legacy_constants/say_list.dm	var/pain_emote_1p = null
+base_var	code/modules/combat_ai/legacy_constants/say_list.dm	var/pain_emote_3p = null
+base_var	code/modules/combat_ai/legacy_constants/say_list.dm	var/species_sounds = "None" // By default, we have nothing.
+base_var	code/modules/combat_ai/legacy_constants/say_list.dm	var/death_sound_override = null
+base_var	code/modules/combat_ai/legacy_constants/say_list.dm	var/datum/looping_sound/mob/on_fire/firesoundloop
+base_var	code/modules/contracts/medical_trial.dm	var/list/contract_medical_indications
+base_var	code/modules/contracts/medical_trial.dm	var/list/clinical_exposure_history
+base_var	code/modules/detectivework/tools/rag.dm	var/bloody_hands = 0
+base_var	code/modules/detectivework/tools/rag.dm	var/track_blood = 0
+base_var	code/modules/detectivework/tools/rag.dm	var/list/feet_blood_DNA
+base_var	code/modules/detectivework/tools/rag.dm	var/track_blood_type
+base_var	code/modules/detectivework/tools/rag.dm	var/feet_blood_color
+base_var	code/modules/economy/price_list.dm	/atom/movable/var/price_tag = null
+base_var	code/modules/economy/service_invoices.dm	/obj/item/var/datum/economic_adoption/economic_adoption
+base_var	code/modules/emotes/emote_mob.dm	var/next_emote
+base_var	code/modules/emotes/emote_mob.dm	var/next_emote_refresh
+base_var	code/modules/emotes/emote_mob.dm	var/last_emote_summary
+base_var	code/modules/examine/examine.dm	var/description_fluff = null //Green text about the atom's fluff, if any exists.
+base_var	code/modules/examine/examine.dm	var/description_antag = null //Malicious red text, for the antags.
+base_var	code/modules/factions/reputation.dm	var/datum/faction_reputation_ledger/faction_reputation
+base_var	code/modules/factions/reputation.dm	var/list/faction_affiliations
+base_var	code/modules/flufftext/Dreaming.dm	/mob/living/carbon/var/tmp/datum/dream/current_dream
+base_var	code/modules/flufftext/Dreaming.dm	/mob/living/carbon/var/tmp/dream_wait = 0
+base_var	code/modules/flufftext/Hallucination.dm	/mob/living/carbon/var/datum/hallucinations/hallucinations
+base_var	code/modules/food/food/snacks.dm	var/composition_reagent
+base_var	code/modules/food/food/snacks.dm	var/composition_reagent_quantity
+base_var	code/modules/heat/heat.dm	/atom/var/heat_body
+base_var	code/modules/heat/heat.dm	/atom/var/tmp/list/heat_watches
+base_var	code/modules/heat/heat_objects.dm	var/tmp/datum/heat_fire_turf
+base_var	code/modules/heat/heat_objects.dm	var/heat_output = 0
+base_var	code/modules/heat/heat_objects.dm	var/heat_dissipation
+base_var	code/modules/heat/heat_objects.dm	var/tmp/heat_output_now = 0
+base_var	code/modules/keybindings/adapters.dm	var/silicon_use = NONE
+base_var	code/modules/keybindings/hover.dm	/mob/var/tmp/atom/hovered_atom_view
+base_var	code/modules/lighting/lighting_atom.dm	var/light_system = STATIC_LIGHT
+base_var	code/modules/lighting/lighting_atom.dm	var/light_range = 0
+base_var	code/modules/lighting/lighting_atom.dm	var/light_power = 1
+base_var	code/modules/lighting/lighting_atom.dm	var/light_color = COLOR_WHITE
+base_var	code/modules/lighting/lighting_atom.dm	var/light_on = FALSE
+base_var	code/modules/lighting/lighting_atom.dm	var/light_flags = NONE
+base_var	code/modules/lighting/lighting_atom.dm	var/tmp/datum/light_source/light
+base_var	code/modules/lighting/lighting_atom.dm	var/tmp/list/light_sources
+base_var	code/modules/lighting/lighting_atom.dm	var/light_cone_x_offset // When facing south, inverted when facing north
+base_var	code/modules/lighting/lighting_atom.dm	var/light_cone_y_offset // When facing east/west, ignored for north/south (uses 16 in those cases)
+base_var	code/modules/lighting/lighting_atom.dm	var/tmp/affecting_dynamic_lumi = 0
+base_var	code/modules/lighting/lighting_atom.dm	var/blocks_emissive = EMISSIVE_BLOCK_NONE
+base_var	code/modules/lighting/lighting_atom.dm	var/tmp/atom/movable/emissive_blocker/em_block
+base_var	code/modules/maps/map_resolvers.dm	var/map_resolver
+base_var	code/modules/maps/map_resolvers.dm	var/map_resolver_vars
+base_var	code/modules/material_science/material_applications.dm	var/engineered_material_id
+base_var	code/modules/material_science/material_applications.dm	var/engineered_material_profile
+base_var	code/modules/material_science/material_applications.dm	var/material_surgery_cleanliness_bonus = 0
+base_var	code/modules/material_science/material_applications.dm	var/material_tool_quality_bonus = 0
+base_var	code/modules/material_science/material_applications.dm	var/material_effective_density = 0
+base_var	code/modules/material_science/material_applications.dm	var/material_effective_electrical_resistance = 0
+base_var	code/modules/material_science/material_applications.dm	var/material_accuracy_delta = 0
+base_var	code/modules/material_science/material_applications.dm	var/material_recoil_delta = 0
+base_var	code/modules/material_science/material_composites.dm	var/material_environment_liner_integrity = 100
+base_var	code/modules/material_science/material_composites.dm	var/material_environment_exterior_integrity = 100
+base_var	code/modules/material_science/material_composites.dm	var/material_environment_fatigue = 0
+base_var	code/modules/material_science/material_composites.dm	var/material_environment_leaking = FALSE
+base_var	code/modules/material_science/material_composites.dm	var/tmp/material_environment_last_process = 0
+base_var	code/modules/material_science/material_construction.dm	var/material_template
+base_var	code/modules/material_science/material_construction.dm	var/material_total = 0
+base_var	code/modules/material_science/material_construction.dm	var/material_bulk_material
+base_var	code/modules/material_science/material_construction.dm	var/list/material_overrides
+base_var	code/modules/material_science/material_construction.dm	var/list/material_mix
+base_var	code/modules/material_science/material_responses.dm	/obj/item/var/datum/material_response/material_response
+base_var	code/modules/material_science/material_service.dm	var/datum/material_service/material_service
+base_var	code/modules/material_science/material_service.dm	var/material_configuration_revision = 0
+base_var	code/modules/material_science/material_service.dm	var/material_assembly_id
+base_var	code/modules/material_science/material_service.dm	var/material_custom_assembly = FALSE
+base_var	code/modules/material_science/material_service.dm	var/tmp/material_last_service_event
+base_var	code/modules/materials/material_behaviors.dm	var/mat_luminescence = 0
+base_var	code/modules/materials/material_behaviors.dm	var/mat_radioactivity = 0
+base_var	code/modules/materials/material_behaviors.dm	var/mat_toxicity = 0
+base_var	code/modules/medical/emergent.dm	var/dq_last_neural_load
+base_var	code/modules/medical/emergent.dm	var/dq_last_radiation
+base_var	code/modules/medical/emergent.dm	var/dq_last_bodytemperature
+base_var	code/modules/medical/stabilisation/stasis.dm	var/list/stasis_sources
+base_var	code/modules/mob/animations.dm	/mob/var/is_floating = 0
+base_var	code/modules/mob/animations.dm	/mob/var/floatiness = 0
+base_var	code/modules/mob/combat_mode.dm	/mob/var/combat_mode = FALSE
+base_var	code/modules/mob/combat_mode.dm	/mob/var/attack_variant = null
+base_var	code/modules/mob/freelook/mask/update_triggers.dm	/mob/living/var/updating_cult_vision = 0
+base_var	code/modules/mob/holder.dm	/mob/living/var/holder_type
+base_var	code/modules/mob/inventory.dm	var/tmp/obj/item/storage/s_active = null // Even ghosts can/should be able to peek into boxes on the ground
+base_var	code/modules/mob/language/snowflake.dm	var/hive_lang_range = 0
+base_var	code/modules/mob/living/butchering.dm	var/meat_amount = 0 // How much meat to drop from this mob when butchered
+base_var	code/modules/mob/living/butchering.dm	var/obj/meat_type // The meat object to drop
+base_var	code/modules/mob/living/butchering.dm	var/name_the_meat = TRUE
+base_var	code/modules/mob/living/butchering.dm	var/gib_on_butchery = FALSE
+base_var	code/modules/mob/living/butchering.dm	var/butchery_drops_organs = TRUE // Do we spawn and/or drop organs when butchered?
+base_var	code/modules/mob/living/butchering.dm	var/list/butchery_loot // Associated list, path = number.
+base_var	code/modules/mob/living/carbon/breathe.dm	/mob/living/carbon/var/breath_cycle = 0
+base_var	code/modules/mob/living/carbon/carbon.dm	var/germs_rolled_at
+base_var	code/modules/mob/living/carbon/carbon.dm	var/datum/looping_sound/mob/cozyloop/cozyloop
+base_var	code/modules/mob/living/carbon/carbon.dm	var/slip_reflex = FALSE
+base_var	code/modules/mob/living/carbon/carbon.dm	var/synth_reag_processing = TRUE
+base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/datum/species/species //Contains icon generation and language information, set during New().
+base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/list/antibodies = list() // ALLOW(instance_list): d: per-mob antibodies, filled at runtime; mobs are few
+base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/life_tick = 0 // The amount of life ticks that have processed on this mob.
+base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/number_wounds = 0
+base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/list/surgery_zones_in_progress
+base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/pose = null
+base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/pose_move = FALSE
+base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/image/pose_indicator
+base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/datum/reagents/metabolism/bloodstream/bloodstr = null
+base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/datum/reagents/metabolism/ingested/ingested = null
+base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/datum/reagents/metabolism/touch/touching = null
+base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/toxin_gut = FALSE
+base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/pulse = PULSE_NORM //current pulse level
+base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/does_not_breathe = 0 //Used for specific mobs that can't take advantage of the species flags (changelings)
+base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/last_taste_text = ""
+base_var	code/modules/mob/living/carbon/human/MedicalSideEffects.dm	/mob/living/carbon/human/var/list/datum/medical_effect/side_effects
+base_var	code/modules/mob/living/carbon/human/human.dm	var/struggle_anim_stomach = FALSE
+base_var	code/modules/mob/living/carbon/human/human.dm	var/struggle_anim_taur = FALSE
+base_var	code/modules/mob/living/carbon/human/human.dm	var/embedded_flag //To check if we've need to roll for damage on movement while an item is imbedded in us.
+base_var	code/modules/mob/living/carbon/human/human.dm	var/obj/item/rig/wearing_rig // This is very not good, but it's much much better than calling get_rig() every update_canmove() call.
+base_var	code/modules/mob/living/carbon/human/human.dm	var/spitting = 0 //Spitting and spitting related things. Any human based ranged attacks, be it innate or added abilities.
+base_var	code/modules/mob/living/carbon/human/human.dm	var/spit_projectile = null //Projectile type.
+base_var	code/modules/mob/living/carbon/human/human.dm	var/spit_name = null //String
+base_var	code/modules/mob/living/carbon/human/human.dm	var/can_defib = 1 //Horrible damage (like beheadings) will prevent defibbing organics.
+base_var	code/modules/mob/living/carbon/human/human.dm	var/active_regen = FALSE //Used for the regenerate proc in human_powers.dm
+base_var	code/modules/mob/living/carbon/human/human.dm	var/active_regen_delay = 300
+base_var	code/modules/mob/living/carbon/human/human.dm	var/list/teleporters = list() //Used for lleill abilities
+base_var	code/modules/mob/living/carbon/human/human.dm	var/rest_dir = 0 //To lay down in a specific direction
+base_var	code/modules/mob/living/carbon/human/human.dm	var/list/datum/genetics/side_effect/genetic_side_effects = list() //For any genetic side effects we currently have.
+base_var	code/modules/mob/living/carbon/human/human.dm	/mob/living/carbon/human/var/co2overloadtime = null
+base_var	code/modules/mob/living/carbon/human/human.dm	/mob/living/carbon/human/var/temperature_resistance = T0C+75
+base_var	code/modules/mob/living/carbon/human/human_attackhand.dm	var/datum/unarmed_attack/default_attack
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/r_hair = 0
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/g_hair = 0
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/b_hair = 0
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/h_style = "Bald"
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/r_grad = 0
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/g_grad = 0
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/b_grad = 0
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/grad_style = "none"
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/r_facial = 0
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/g_facial = 0
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/b_facial = 0
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/f_style = "Shaved"
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/r_eyes = 0
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/g_eyes = 0
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/b_eyes = 0
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/s_tone = 0 //Skin tone
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/r_skin = 0
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/g_skin = 0
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/b_skin = 0
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/skin_state = SKIN_NORMAL
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/synth_color = 0 //Lets normally uncolorable synth parts be colorable.
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/r_synth //Used with synth_color to color synth parts that normaly can't be colored.
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/g_synth //Same as above
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/b_synth //Same as above
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/synth_markings = 0 //Enables/disables markings on synth parts.
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/digitigrade = 0 // 0 = no digi, 1 = default, 2+ = digi styles... (Not used yet)
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/damage_multiplier = 1 //multiplies melee combat damage
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/icon_update = 1 //whether icon updating shall take place
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/lip_style = null //no lipstick by default- arguably misleading, as it could be used for general makeup
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/age = 30 //Player's age (pure fluff)
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/datum/robolimb/synthetic //If they are a synthetic (aka synthetic torso). Also holds the datum for the type of robolimb.
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/list/all_underwear // Lazy.
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/list/all_underwear_metadata = list() // ALLOW(instance_list): d: per-mob all_underwear_metadata, filled at runtime; mobs are few
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/list/hide_underwear = list() // ALLOW(instance_list): d: per-mob hide_underwear, filled at runtime; mobs are few
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/headset = 1 //Which headset type the player has chosen.
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/backbag = 2 //Which backpack type the player has chosen.
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/pdachoice = 1 //Which PDA type the player has chosen.
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/home_system = ""
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/birthplace = ""
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/citizenship = ""
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/personal_faction = "NanoTrasen"
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/religion = ""
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/antag_faction = ""
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/antag_vis = ""
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/voice = "" //Instead of new say code calling GetVoice() over and over and over, we're just going to ask this variable, which gets updated in Life()
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/special_voice = "" // For changing our voice. Used by a symptom.
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/last_dam = -1 //Used for determining if we need to process all organs or just some or even none.
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/xylophone = 0 //For the spoooooooky xylophone cooldown: world.time it can play again
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/hand_blood_color
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/list/flavor_texts // Lazy.
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/robolimb_count = 0 // Total number of external robot parts.
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/robobody_count = 0 // Counts torso, groin, and head, if they're robotic
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/identifying_gender // In case the human identifies as another gender than it's biological
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/step_count = 0 // Track how many footsteps have been taken to know when to play footstep sounds
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/mob/living/carbon/human/vr_holder = null
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/mob/living/carbon/human/vr_link = null
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/obj/machinery/machine_visual //machine that is currently applying visual effects to this mob. Only used for camera monitors currently.
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/datum/sprite_accessory/ears/ear_style = null
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/r_ears = 30
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/g_ears = 30
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/b_ears = 30
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/r_ears2 = 30
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/g_ears2 = 30
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/b_ears2 = 30
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/r_ears3 = 30 //Trust me, we could always use more colour. No japes.
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/g_ears3 = 30
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/b_ears3 = 30
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/a_ears = 255 //applied to the ears
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/a_ears2 = 255 //applied to the horns
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/datum/sprite_accessory/ears/ear_secondary_style
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/list/ear_secondary_colors
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/datum/sprite_accessory/tail/tail_style = null
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/r_tail = 30
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/g_tail = 30
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/b_tail = 30
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/r_tail2 = 30
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/g_tail2 = 30
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/b_tail2 = 30
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/r_tail3 = 30
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/g_tail3 = 30
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/b_tail3 = 30
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/a_tail = 255 //applied to the entire tail
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/wagging = 0 //UGH.
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/datum/sprite_accessory/wing/wing_style = null
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/r_wing = 30
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/g_wing = 30
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/b_wing = 30
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/r_wing2 = 30
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/g_wing2 = 30
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/b_wing2 = 30
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/r_wing3 = 30
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/g_wing3 = 30
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/b_wing3 = 30
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/a_wing = 255 //applied to both portions.
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/flapping = 0
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/custom_species
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/block_hud
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/phobias //For holding a list of phobias
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/redgate_restricted = FALSE
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/hide_headset = FALSE
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/hide_glasses = FALSE
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/vantag_pref = VANTAG_NONE //What's my status?
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/ability_flags = 0 //Shadekin abilities/potentially other species-based?
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/sensorpref = 5 //Suit sensor loadout pref
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/wings_hidden = FALSE
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/tail_hidden = FALSE
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/markings_len = 0 //mostly an arbitrary number
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/low_sorting_priority = FALSE
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/list/body_writing // assoc list by BP_ key
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/gender_change_cooldown = 0 // A cooldown for gender and gender indentify changing procs to make it easy to avoid spam of gender change
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/speech_sound_enabled = TRUE
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/nutrition_hidden = FALSE
+base_var	code/modules/mob/living/carbon/human/human_powers.dm	var/next_sonar_ping = 0
+base_var	code/modules/mob/living/carbon/human/life.dm	var/heartbeat = 0
+base_var	code/modules/mob/living/carbon/human/life.dm	var/chemical_darksight = 0
+base_var	code/modules/mob/living/carbon/human/life.dm	var/environment_steady = FALSE
+base_var	code/modules/mob/living/carbon/human/life.dm	var/nutrition_drained_at = 0
+base_var	code/modules/mob/living/carbon/human/life.dm	/mob/living/carbon/human/var/tmp/health_doll_key
+base_var	code/modules/mob/living/carbon/human/life.dm	var/synth_cosmetic_pain = FALSE
+base_var	code/modules/mob/living/carbon/human/species/station/protean/forms.dm	/mob/living/carbon/human/var/datum/forms/character_forms
+base_var	code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm	/mob/living/var/vore_shred_time = 45 SECONDS
+base_var	code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm	var/flight_vore = FALSE
+base_var	code/modules/mob/living/carbon/human/update_icons.dm	var/list/overlays_standing[TOTAL_LAYERS] // ALLOW(instance_list): d: per-mob overlays_standing, filled at runtime; mobs are few
+base_var	code/modules/mob/living/carbon/human/update_icons.dm	var/previous_damage_appearance // store what the body last looked like, so we only have to update it if something changed
+base_var	code/modules/mob/living/carbon/shock.dm	/mob/living/var/traumatic_shock = 0
+base_var	code/modules/mob/living/carbon/shock.dm	/mob/living/carbon/var/shock_stage = 0
+base_var	code/modules/mob/living/default_language.dm	var/datum/language/default_language
+base_var	code/modules/mob/living/inventory.dm	var/hand = null
+base_var	code/modules/mob/living/inventory.dm	var/obj/item/tank/internal = null//Human/Monkey
+base_var	code/modules/mob/living/life/life_om.dm	var/life_set = LIFE_SET_LIVING
+base_var	code/modules/mob/living/life/life_om.dm	var/tmp/life_z = 0
+base_var	code/modules/mob/living/life/living_systems.dm	var/tmp/list/global_hud_claims
+base_var	code/modules/mob/living/living.dm	/mob/living/var/datum/character_setup_button/character_setup_button
+base_var	code/modules/mob/living/living_defines.dm	var/mob_class = null // A mob's "class", e.g. human, mechanical, animal, etc. Used for certain projectile effects. See __defines/mob.dm for available classes.
+base_var	code/modules/mob/living/living_defines.dm	var/hud_updateflag = 0
+base_var	code/modules/mob/living/living_defines.dm	var/nutrition = 400
+base_var	code/modules/mob/living/living_defines.dm	var/max_nutrition = MAX_NUTRITION
+base_var	code/modules/mob/living/living_defines.dm	var/last_special = 0 //Used by the resist verb, likely used to prevent players from bypassing next_move by logging in/out.
+base_var	code/modules/mob/living/living_defines.dm	var/base_attack_cooldown = DEFAULT_ATTACK_COOLDOWN
+base_var	code/modules/mob/living/living_defines.dm	var/t_phoron = null
+base_var	code/modules/mob/living/living_defines.dm	var/t_oxygen = null
+base_var	code/modules/mob/living/living_defines.dm	var/t_sl_gas = null
+base_var	code/modules/mob/living/living_defines.dm	var/t_n2 = null
+base_var	code/modules/mob/living/living_defines.dm	var/now_pushing = null
+base_var	code/modules/mob/living/living_defines.dm	var/mob_bump_flag = 0
+base_var	code/modules/mob/living/living_defines.dm	var/mob_swap_flags = 0
+base_var	code/modules/mob/living/living_defines.dm	var/mob_push_flags = 0
+base_var	code/modules/mob/living/living_defines.dm	var/mob_always_swap = 0
+base_var	code/modules/mob/living/living_defines.dm	var/tod = null // Time of death
+base_var	code/modules/mob/living/living_defines.dm	var/tmp/revival_in_progress = FALSE
+base_var	code/modules/mob/living/living_defines.dm	var/update_slimes = 1
+base_var	code/modules/mob/living/living_defines.dm	var/on_fire = 0
+base_var	code/modules/mob/living/living_defines.dm	var/fire_stacks
+base_var	code/modules/mob/living/living_defines.dm	var/fire_stack_decay_rate = -0.05
+base_var	code/modules/mob/living/living_defines.dm	var/failed_last_breath = 0 //This is used to determine if the mob failed a breath. If they did fail a brath, they will attempt to breathe each tick, otherwise just once per 4 ticks.
+base_var	code/modules/mob/living/living_defines.dm	var/lastpuke = 0
+base_var	code/modules/mob/living/living_defines.dm	var/evasion = 0 // Makes attacks harder to land. Negative numbers increase hit chance.
+base_var	code/modules/mob/living/living_defines.dm	var/force_max_speed = 0 // If 1, the mob runs extremely fast and cannot be slowed.
+base_var	code/modules/mob/living/living_defines.dm	var/image/dsoverlay = null //Overlay used for darksight eye adjustments
+base_var	code/modules/mob/living/living_defines.dm	var/last_glow_range = null
+base_var	code/modules/mob/living/living_defines.dm	var/last_glow_intensity = null
+base_var	code/modules/mob/living/living_defines.dm	var/last_glow_color = null
+base_var	code/modules/mob/living/living_defines.dm	var/alert_state_drugged = FALSE
+base_var	code/modules/mob/living/living_defines.dm	var/alert_state_confused = FALSE
+base_var	code/modules/mob/living/living_defines.dm	var/see_invisible_default = SEE_INVISIBLE_LIVING
+base_var	code/modules/mob/living/living_defines.dm	var/nest //Not specific, because a Nest may be the prop nest, or blob factory in this case.
+base_var	code/modules/mob/living/living_defines.dm	var/list/hud_list //Holder for health hud, status hud, wanted hud, etc (not like inventory slots)
+base_var	code/modules/mob/living/living_defines.dm	var/has_huds = FALSE //Whether or not we should bother initializing the above list
+base_var	code/modules/mob/living/living_defines.dm	var/makes_dirt = TRUE //FALSE if the mob shouldn't be making dirt on the ground when it walks
+base_var	code/modules/mob/living/living_defines.dm	var/image/selected_image = null // Used for buildmode AI control stuff.
+base_var	code/modules/mob/living/living_defines.dm	var/allow_self_surgery = FALSE // Used to determine if the mob can perform surgery on itself.
+base_var	code/modules/mob/living/living_defines.dm	var/flying = 0 // Allows flight
+base_var	code/modules/mob/living/living_defines.dm	var/inventory_panel_type = /datum/inventory_panel
+base_var	code/modules/mob/living/living_defines.dm	var/datum/inventory_panel/inventory_panel
+base_var	code/modules/mob/living/living_defines.dm	var/tiredness = 0 //For vore draining
+base_var	code/modules/mob/living/living_defines.dm	var/fear = 0 //For fear effects and phobias
+base_var	code/modules/mob/living/living_defines.dm	var/touch_reaction_flags
+base_var	code/modules/mob/living/living_defines.dm	var/mob/living/tf_form // Shapeshifter shenanigans
+base_var	code/modules/mob/living/living_defines.dm	var/datum/mind/tf_form_mind
+base_var	code/modules/mob/living/living_defines.dm	var/tf_form_holds_key = FALSE
+base_var	code/modules/mob/living/living_defines.dm	var/list/status_effects
+base_var	code/modules/mob/living/living_defines.dm	var/muffled = FALSE // Used by muffling belly
+base_var	code/modules/mob/living/living_defines.dm	var/forced_psay = FALSE // If true will prevent the user from speaking with normal say/emotes, and instead redirect these to a private speech mode with their predator.
+base_var	code/modules/mob/living/living_defines.dm	var/autowhisper = FALSE // Automatically whisper
+base_var	code/modules/mob/living/living_defines.dm	var/autowhisper_mode = null // Mode to use with autowhisper
+base_var	code/modules/mob/living/living_defines.dm	var/custom_link = null
+base_var	code/modules/mob/living/living_defines.dm	var/hunger_rate = DEFAULT_HUNGER_FACTOR
+base_var	code/modules/mob/living/living_defines.dm	var/private_notes = null
+base_var	code/modules/mob/living/living_defines.dm	var/custom_say = null
+base_var	code/modules/mob/living/living_defines.dm	var/custom_ask = null
+base_var	code/modules/mob/living/living_defines.dm	var/custom_exclaim = null
+base_var	code/modules/mob/living/living_defines.dm	var/custom_whisper = null
+base_var	code/modules/mob/living/living_defines.dm	var/list/custom_heat
+base_var	code/modules/mob/living/living_defines.dm	var/list/custom_cold
+base_var	code/modules/mob/living/living_defines.dm	var/wingdings = 0
+base_var	code/modules/mob/living/living_defines.dm	var/can_climb = FALSE //Checked by turfs when using climb_wall(). Defined here for silicons and simple mobs
+base_var	code/modules/mob/living/living_defines.dm	var/climbing_delay = 1.5 //By default, mobs climb at quarter speed. To be overriden by specific simple mobs or species speed
+base_var	code/modules/mob/living/living_defines.dm	var/eggs = 0
+base_var	code/modules/mob/living/living_fire.dm	/mob/living/var/fire_reaction = FIRE_REACTION_BURN
+base_var	code/modules/mob/living/living_fire.dm	/mob/living/var/fire_trigger_proc
+base_var	code/modules/mob/living/living_fire.dm	/mob/living/var/fire_trigger_verb = "ignited"
+base_var	code/modules/mob/living/living_fire.dm	/mob/living/var/fire_heats_body = FALSE
+base_var	code/modules/mob/living/melee_swing.dm	/mob/living/var/is_swinging = FALSE
+base_var	code/modules/mob/living/melee_swing.dm	/mob/living/var/melee_swing_resolving = FALSE
+base_var	code/modules/mob/living/melee_swing.dm	/mob/living/var/melee_swing_serial = 0
+base_var	code/modules/mob/living/organs.dm	var/list/organs
+base_var	code/modules/mob/living/organs.dm	var/list/organs_by_name // map organ names to organs
+base_var	code/modules/mob/living/organs.dm	var/list/bad_external_organs // organs we check until they are good.
+base_var	code/modules/mob/living/silicon/robot/component.dm	/obj/item/var/datum/carried_afflictions/carried_afflictions
+base_var	code/modules/mob/living/status_indicators.dm	var/list/status_indicators = null // Will become a list as needed.
+base_var	code/modules/mob/mob.dm	var/tmp/user_vars_to_edit //fun times :3 - pretty much just grabbed from tg immabehonest - list(variable_name = variable_value) eg list("name" = "Wizardly Wizard", "real_name" = "Wizardly Wizard")
+base_var	code/modules/mob/mob.dm	var/tmp/user_vars_remembered //not needed for manual editing, just stores the original vars from the above list to make sure they go back to normal later
+base_var	code/modules/mob/mob_chunks.dm	/atom/movable/var/tmp/list/proximity_chunks
+base_var	code/modules/mob/mob_chunks.dm	/atom/movable/var/tmp/proximity_mask = 0
+base_var	code/modules/mob/mob_chunks.dm	/atom/movable/var/tmp/proximity_lane
+base_var	code/modules/mob/mob_defines.dm	var/tmp/datum/persistent_client/persistent_client
+base_var	code/modules/mob/mob_defines.dm	var/datum/mind/mind
+base_var	code/modules/mob/mob_defines.dm	var/stat = CONSCIOUS //Whether a mob is alive or dead.
+base_var	code/modules/mob/mob_defines.dm	var/obj/effect/organstructure/organStructure = null
+base_var	code/modules/mob/mob_defines.dm	var/tmp/atom/movable/screen/hands = null
+base_var	code/modules/mob/mob_defines.dm	var/tmp/atom/movable/screen/pullin = null
+base_var	code/modules/mob/mob_defines.dm	var/tmp/atom/movable/screen/purged = null
+base_var	code/modules/mob/mob_defines.dm	var/tmp/atom/movable/screen/internals = null
+base_var	code/modules/mob/mob_defines.dm	var/tmp/atom/movable/screen/i_select = null
+base_var	code/modules/mob/mob_defines.dm	var/tmp/atom/movable/screen/m_select = null
+base_var	code/modules/mob/mob_defines.dm	var/tmp/atom/movable/screen/healths = null
+base_var	code/modules/mob/mob_defines.dm	var/tmp/atom/movable/screen/throw_icon = null
+base_var	code/modules/mob/mob_defines.dm	var/tmp/atom/movable/screen/pain = null
+base_var	code/modules/mob/mob_defines.dm	var/tmp/atom/movable/screen/gun/item/item_use_icon = null
+base_var	code/modules/mob/mob_defines.dm	var/tmp/atom/movable/screen/gun/radio/radio_use_icon = null
+base_var	code/modules/mob/mob_defines.dm	var/tmp/atom/movable/screen/gun/move/gun_move_icon = null
+base_var	code/modules/mob/mob_defines.dm	var/tmp/atom/movable/screen/gun/run/gun_run_icon = null
+base_var	code/modules/mob/mob_defines.dm	var/tmp/atom/movable/screen/gun/mode/gun_setting_icon = null
+base_var	code/modules/mob/mob_defines.dm	var/tmp/atom/movable/screen/ling/chems/ling_chem_display = null
+base_var	code/modules/mob/mob_defines.dm	var/tmp/atom/movable/screen/borer/chems/borer_chem_display = null
+base_var	code/modules/mob/mob_defines.dm	var/tmp/atom/movable/screen/wizard/energy/wiz_energy_display = null
+base_var	code/modules/mob/mob_defines.dm	var/tmp/atom/movable/screen/wizard/instability/wiz_instability_display = null
+base_var	code/modules/mob/mob_defines.dm	var/tmp/atom/movable/screen/autowhisper_display = null
+base_var	code/modules/mob/mob_defines.dm	var/tmp/datum/plane_holder/plane_holder = null
+base_var	code/modules/mob/mob_defines.dm	var/list/vis_enabled = null // List of vision planes that should be graphically visible (list of their VIS_ indexes).
+base_var	code/modules/mob/mob_defines.dm	var/list/planes_visible = null // List of atom planes that are logically visible/interactable (list of actual plane numbers).
+base_var	code/modules/mob/mob_defines.dm	var/tmp/list/atom/movable/screen/movable/spell_master/spell_masters = null
+base_var	code/modules/mob/mob_defines.dm	var/tmp/atom/movable/screen/movable/ability_master/ability_master = null
+base_var	code/modules/mob/mob_defines.dm	var/tmp/atom/movable/screen/zone_sel/zone_sel = null
+base_var	code/modules/mob/mob_defines.dm	var/use_me = 1 //Allows all mobs to use the me verb by default, will have to manually specify they cannot
+base_var	code/modules/mob/mob_defines.dm	var/damageoverlaytemp = 0
+base_var	code/modules/mob/mob_defines.dm	var/computer_id = null
+base_var	code/modules/mob/mob_defines.dm	var/list/logging
+base_var	code/modules/mob/mob_defines.dm	var/already_placed = 0.0
+base_var	code/modules/mob/mob_defines.dm	var/other_mobs = null
+base_var	code/modules/mob/mob_defines.dm	var/memory = ""
+base_var	code/modules/mob/mob_defines.dm	var/poll_answer = 0.0
+base_var	code/modules/mob/mob_defines.dm	var/disabilities = 0 //Carbon
+base_var	code/modules/mob/mob_defines.dm	var/transforming = null //Carbon
+base_var	code/modules/mob/mob_defines.dm	var/other = 0.0
+base_var	code/modules/mob/mob_defines.dm	var/real_name = null
+base_var	code/modules/mob/mob_defines.dm	var/nickname = null
+base_var	code/modules/mob/mob_defines.dm	var/flavor_text = ""
+base_var	code/modules/mob/mob_defines.dm	var/med_record = ""
+base_var	code/modules/mob/mob_defines.dm	var/sec_record = ""
+base_var	code/modules/mob/mob_defines.dm	var/gen_record = ""
+base_var	code/modules/mob/mob_defines.dm	var/exploit_record = ""
+base_var	code/modules/mob/mob_defines.dm	var/list/obj/item/exploit_addons //Assorted things that show up at the end of the exploit_record list
+base_var	code/modules/mob/mob_defines.dm	var/blinded = null
+base_var	code/modules/mob/mob_defines.dm	var/bhunger = 0 //Carbon
+base_var	code/modules/mob/mob_defines.dm	var/ajourn = 0
+base_var	code/modules/mob/mob_defines.dm	var/antitoxs = null
+base_var	code/modules/mob/mob_defines.dm	var/phoron = null
+base_var	code/modules/mob/mob_defines.dm	var/resting = 0 //Carbon
+base_var	code/modules/mob/mob_defines.dm	var/lying = 0
+base_var	code/modules/mob/mob_defines.dm	var/lying_prev = 0
+base_var	code/modules/mob/mob_defines.dm	var/is_shifted = FALSE // Edit; pixel shifting
+base_var	code/modules/mob/mob_defines.dm	var/canmove = 1
+base_var	code/modules/mob/mob_defines.dm	var/incorporeal_move = 0 //0 is off, 1 is normal, 2 is for ninjas.
+base_var	code/modules/mob/mob_defines.dm	var/list/pinned // Lazylist of things pinning this creature to walls (see living_defense.dm). Usually empty.
+base_var	code/modules/mob/mob_defines.dm	var/list/embedded // Lazylist of embedded items, since simple mobs don't have organs. Usually empty.
+base_var	code/modules/mob/mob_defines.dm	var/list/languages = list() // For speaking/listening.
+base_var	code/modules/mob/mob_defines.dm	var/list/language_keys = list() // List of language keys indexing languages
+base_var	code/modules/mob/mob_defines.dm	var/species_language = null // For species who want reset to use a specified default.
+base_var	code/modules/mob/mob_defines.dm	var/only_species_language = 0 // For species who can only speak their default and no other languages. Does not affect understanding.
+base_var	code/modules/mob/mob_defines.dm	var/list/speak_emote = list("says") // Verbs used when speaking. Defaults to 'say' if speak_emote is null.
+base_var	code/modules/mob/mob_defines.dm	var/emote_type = 1 // Define emote default type, 1 for seen emotes, 2 for heard emotes
+base_var	code/modules/mob/mob_defines.dm	var/facing_dir = null // Used for the ancient art of moonwalking.
+base_var	code/modules/mob/mob_defines.dm	var/name_archive //For admin things like possession
+base_var	code/modules/mob/mob_defines.dm	var/death_message = "seizes up and falls limp..."
+base_var	code/modules/mob/mob_defines.dm	var/bodytemperature = BODYTEMP_NORMAL
+base_var	code/modules/mob/mob_defines.dm	var/charges = 0.0
+base_var	code/modules/mob/mob_defines.dm	var/losebreath = 0.0//Carbon
+base_var	code/modules/mob/mob_defines.dm	var/m_int = null//Living
+base_var	code/modules/mob/mob_defines.dm	var/m_intent = I_RUN//Living
+base_var	code/modules/mob/mob_defines.dm	var/lastKnownIP = null
+base_var	code/modules/mob/mob_defines.dm	var/no_pull_when_living = FALSE //Test for if it can be pulled when alive
+base_var	code/modules/mob/mob_defines.dm	var/tmp/skip_buckled_move_redirect = FALSE
+base_var	code/modules/mob/mob_defines.dm	var/seer = 0 //for cult//Carbon, probably Human
+base_var	code/modules/mob/mob_defines.dm	var/tmp/datum/hud/hud_used = null
+base_var	code/modules/mob/mob_defines.dm	var/tmp/list/mapobjs // Lazylist of overview screen objects. Usually empty/null.
+base_var	code/modules/mob/mob_defines.dm	var/in_throw_mode = 0
+base_var	code/modules/mob/mob_defines.dm	var/inertia_dir = 0
+base_var	code/modules/mob/mob_defines.dm	var/music_lastplayed = "null"
+base_var	code/modules/mob/mob_defines.dm	var/job = null//Living
+base_var	code/modules/mob/mob_defines.dm	var/can_pull_size = ITEMSIZE_NO_CONTAINER // Maximum w_class the mob can pull.
+base_var	code/modules/mob/mob_defines.dm	var/can_pull_mobs = MOB_PULL_LARGER // Whether or not the mob can pull other mobs.
+base_var	code/modules/mob/mob_defines.dm	var/datum/dna/dna = null//Carbon
+base_var	code/modules/mob/mob_defines.dm	var/radiation = 0.0//Carbon
+base_var	code/modules/mob/mob_defines.dm	var/list/mutations //Carbon -- Doohl
+base_var	code/modules/mob/mob_defines.dm	var/voice_name = "unidentifiable voice"
+base_var	code/modules/mob/mob_defines.dm	var/list/ventcraw_item_admin_allow = null // If this is a list, it will be appended to the default list of items the mob is allowed to ventcrawl with
+base_var	code/modules/mob/mob_defines.dm	var/faction = FACTION_NEUTRAL //Used for checking whether hostile simple animals will attack you, possibly more stuff later
+base_var	code/modules/mob/mob_defines.dm	var/can_be_antagged = FALSE // To prevent pAIs/mice/etc from getting antag in autotraitor and future auto- modes. Uses inheritance instead of a bunch of typechecks.
+base_var	code/modules/mob/mob_defines.dm	var/away_from_keyboard = FALSE //are we at, or away, from our keyboard?
+base_var	code/modules/mob/mob_defines.dm	var/manual_afk = FALSE //did we set afk manually or was it automatic?
+base_var	code/modules/mob/mob_defines.dm	var/proc_holder_list[] = list()//Right now unused.
+base_var	code/modules/mob/mob_defines.dm	var/tmp/mob/living/carbon/LAssailant = null
+base_var	code/modules/mob/mob_defines.dm	var/list/datum/spell/spell_list = list() // ALLOW(instance_list): d: per-mob spell_list, filled at runtime; mobs are few
+base_var	code/modules/mob/mob_defines.dm	var/update_icon = 1 //Set to 1 to trigger update_icons() at the next life() call
+base_var	code/modules/mob/mob_defines.dm	var/status_flags = CANPUSH //bitflags: CANPUSH, LEAPING, HIDING, PASSEMOTES, FAKEDEATH. Status immunities and godmode are effects (EFFECT_IMMUNE_*, EFFECT_GODMODE).
+base_var	code/modules/mob/mob_defines.dm	var/tmp/area/lastarea = null
+base_var	code/modules/mob/mob_defines.dm	var/digitalcamo = 0 // Can they be tracked by the AI?
+base_var	code/modules/mob/mob_defines.dm	var/tmp/list/radar_blips // list of screen objects, radar blips (currently unused; null until populated)
+base_var	code/modules/mob/mob_defines.dm	var/radar_open = 0 // nonzero is radar is open
+base_var	code/modules/mob/mob_defines.dm	var/obj/control_object //Used by admins to possess objects. All mobs should have this var
+base_var	code/modules/mob/mob_defines.dm	var/universal_speak = 0 // Set to 1 to enable the mob to speak to everyone -- TLE
+base_var	code/modules/mob/mob_defines.dm	var/universal_understand = 0 // Set to 1 to enable the mob to understand everyone, not necessarily speak
+base_var	code/modules/mob/mob_defines.dm	var/stance_damage = 0 //Whether this mob's ability to stand has been affected
+base_var	code/modules/mob/mob_defines.dm	var/tmp/mob/teleop = null
+base_var	code/modules/mob/mob_defines.dm	var/list/shouldnt_see = list(/mob/observer/eye) //list of objects that this mob shouldn't see in the stat panel. this silliness is needed because of AI alt+click and cult blood runes. Interned per subtype in /mob/Initialize().
+base_var	code/modules/mob/mob_defines.dm	var/list/active_genes
+base_var	code/modules/mob/mob_defines.dm	var/mob_size = MOB_MEDIUM
+base_var	code/modules/mob/mob_defines.dm	var/forbid_seeing_deadchat = FALSE // Used for lings to not see deadchat, and to have ghosting behave as if they were not really dead.
+base_var	code/modules/mob/mob_defines.dm	var/seedarkness = 1 //Determines mob's ability to see shadows. 1 = Normal vision, 0 = darkvision
+base_var	code/modules/mob/mob_defines.dm	var/get_rig_stats = 0 //Moved from computer.dm
+base_var	code/modules/mob/mob_defines.dm	var/custom_speech_bubble = "default"
+base_var	code/modules/mob/mob_defines.dm	var/low_priority = FALSE //Skip processing life() if there's just no players on this Z-level
+base_var	code/modules/mob/mob_defines.dm	var/default_pixel_x = 0 //For offsetting mobs
+base_var	code/modules/mob/mob_defines.dm	var/default_pixel_y = 0
+base_var	code/modules/mob/mob_defines.dm	var/attack_icon //Icon to use when attacking w/o anything in-hand
+base_var	code/modules/mob/mob_defines.dm	var/attack_icon_state //State for above
+base_var	code/modules/mob/mob_defines.dm	var/registered_z
+base_var	code/modules/mob/mob_defines.dm	var/in_enclosed_vehicle = 0 //For mechs and fighters ambiance. Can be used in other cases.
+base_var	code/modules/mob/mob_defines.dm	var/tmp/list/progressbars = null //for stacking do_after bars
+base_var	code/modules/mob/mob_defines.dm	var/tmp/list/do_afters
+base_var	code/modules/mob/mob_defines.dm	var/tmp/datum/click_intercept
+base_var	code/modules/mob/mob_defines.dm	var/tmp/datum/focus //What receives our keyboard inputs. src by default
+base_var	code/modules/mob/mob_defines.dm	var/list/list/misc_tabs = list() // ALLOW(instance_list): d: per-mob misc_tabs, filled at runtime; mobs are few
+base_var	code/modules/mob/mob_defines.dm	var/tmp/list/datum/action/actions
+base_var	code/modules/mob/mob_defines.dm	var/custom_footstep = FOOTSTEP_MOB_SHOE
+base_var	code/modules/mob/mob_defines.dm	var/vent_crawl_time = 4.5 SECONDS // Time to animate entering a vent
+base_var	code/modules/mob/mob_defines.dm	var/is_slipping = FALSE
+base_var	code/modules/mob/mob_defines.dm	var/vantag_hud = 0 // Do I have the HUD enabled?
+base_var	code/modules/mob/mob_defines.dm	var/disconnect_time = null //Time of client loss, set by Logout(), for timekeeping
+base_var	code/modules/mob/mob_defines.dm	var/tmp/atom/movable/screen/shadekin/shadekin_display = null
+base_var	code/modules/mob/mob_defines.dm	var/tmp/atom/movable/screen/shadekin/lleill_display = null
+base_var	code/modules/mob/mob_defines.dm	var/tmp/atom/movable/screen/xenochimera/danger_level/xenochimera_danger_display = null
+base_var	code/modules/mob/mob_defines.dm	var/size_multiplier = 1 //multiplier for the mob's icon size
+base_var	code/modules/mob/mob_defines.dm	var/accumulated_rads = 0 // For radiation stuff.
+base_var	code/modules/mob/mob_defines.dm	var/faction_bump_vore = FALSE // Don't bump nom mobs of the same faction
+base_var	code/modules/nifsoft/nif.dm	/mob/living/carbon/human/var/obj/item/nif/nif
+base_var	code/modules/organs/blood.dm	/mob/living/carbon/human/var/datum/reagents/vessel // Container for blood and BLOOD ONLY. Do not transfer other chems here.
+base_var	code/modules/organs/blood.dm	/mob/living/carbon/human/var/var/pale = 0 // Should affect how mob sprite is drawn, but currently doesn't.
+base_var	code/modules/organs/pain.dm	/mob/var/list/pain_stored = list()
+base_var	code/modules/organs/pain.dm	/mob/var/last_pain_message = ""
+base_var	code/modules/organs/pain.dm	/mob/var/next_pain_time = 0
+base_var	code/modules/organs/pain.dm	/mob/var/multilimb_pain_time = 0 // Global pain cooldown exists to prevent spam for multi-limb damage
+base_var	code/modules/persistence/serialize.dm	var/tmp/map_json_data
+base_var	code/modules/projectiles/autofire.dm	var/tmp/autofire_delay = 0
+base_var	code/modules/projectiles/autofire.dm	var/tmp/obj/item/gun/autofire_gun
+base_var	code/modules/projectiles/autofire.dm	var/tmp/atom/autofire_target
+base_var	code/modules/projectiles/autofire.dm	var/tmp/autofire_params = null
+base_var	code/modules/projectiles/targeting/targeting_mob.dm	/mob/living/var/obj/aiming_overlay/aiming
+base_var	code/modules/projectiles/targeting/targeting_mob.dm	/mob/living/var/list/aimed = list()
+base_var	code/modules/reagents/reagent_containers/glass.dm	/mob/living/var/tmp/venom_milking_cd = 0
+base_var	code/modules/research/tg/experisci/experiment/handlers/experiment_handler.dm	/atom/movable/var/tmp/datum/experiment_handler/experiment_handler
+base_var	code/modules/resleeving/infocore_records.dm	/mob/living/carbon/human/var/resleeve_lock
+base_var	code/modules/resleeving/infocore_records.dm	/mob/living/carbon/human/var/changeling_locked
+base_var	code/modules/resleeving/infocore_records.dm	/mob/living/carbon/human/var/original_player
+base_var	code/modules/surgery/cavity.dm	/obj/item/var/cavity_implantable = TRUE
+base_var	code/modules/surgery/surgery.dm	var/surgery_cleanliness = 0 // Used for tables/etc which can have surgery done of them.
+base_var	code/modules/tgui/external.dm	/mob/var/list/tgui_open_uis = list()
+base_var	code/modules/tgui_input/say_modal/typing.dm	var/tmp/mutable_appearance/active_typing_indicator
+base_var	code/modules/tgui_input/say_modal/typing.dm	var/tmp/mutable_appearance/active_thinking_indicator
+base_var	code/modules/ventcrawl/ventcrawl.dm	/mob/living/var/list/icon/pipes_shown = list()
+base_var	code/modules/ventcrawl/ventcrawl.dm	/mob/living/var/last_played_vent
+base_var	code/modules/ventcrawl/ventcrawl.dm	/mob/living/var/is_ventcrawling = FALSE
+base_var	code/modules/ventcrawl/ventcrawl.dm	/mob/var/next_play_vent = 0
+base_var	code/modules/ventcrawl/ventcrawl.dm	/mob/living/var/ventcrawl_layer = 3
+base_var	code/modules/vore/appearance/preferences.dm	var/tmp/datum/sprite_accessory/hair_accessory/hair_accessory_style_static
+base_var	code/modules/vore/appearance/preferences.dm	var/r_acc = 30
+base_var	code/modules/vore/appearance/preferences.dm	var/g_acc = 30
+base_var	code/modules/vore/appearance/preferences.dm	var/b_acc = 30
+base_var	code/modules/vore/appearance/preferences.dm	var/r_acc2 = 30
+base_var	code/modules/vore/appearance/preferences.dm	var/g_acc2 = 30
+base_var	code/modules/vore/appearance/preferences.dm	var/b_acc2 = 30
+base_var	code/modules/vore/appearance/preferences.dm	var/r_acc3 = 30
+base_var	code/modules/vore/appearance/preferences.dm	var/g_acc3 = 30
+base_var	code/modules/vore/appearance/preferences.dm	var/b_acc3 = 30
+base_var	code/modules/vore/eating/living.dm	var/showvoreprefs = TRUE // Determines if the mechanical vore preferences button will be displayed on the mob or not.
+base_var	code/modules/vore/eating/living.dm	var/list/temp_language_sources //Absorbs add languages to the pred. Lazy.
+base_var	code/modules/vore/eating/living.dm	var/list/temp_languages // Absorbs add languages to the pred. Lazy.
+base_var	code/modules/vore/eating/living.dm	var/prey_controlled = FALSE // If the mob is currently controlled by their prey.
+base_var	code/modules/vore/eating/living.dm	var/weight = 137 // Weight for mobs for weightgain system
+base_var	code/modules/vore/eating/living.dm	var/weight_gain = 1 // How fast you gain weight
+base_var	code/modules/vore/eating/living.dm	var/weight_loss = 0.5 // How fast you lose weight
+base_var	code/modules/vore/eating/living.dm	var/vore_egg_type = "egg" // Default egg type. // Only used for creatures that have the xenochimera regen ability, so far.
+base_var	code/modules/vore/eating/living.dm	var/metabolism = 0.0015
+base_var	code/modules/vore/eating/living.dm	var/no_vore = FALSE // If the character/mob can vore.
+base_var	code/modules/vore/eating/living.dm	var/restrict_vore_ventcrawl = FALSE // Self explanatory
+base_var	code/modules/vore/eating/living.dm	var/absorbing_prey = 0 // Determines if the person is using the succubus drain or not. See station_special_abilities_vr.
+base_var	code/modules/vore/eating/living.dm	var/drain_finalized = 0 // Determines if the succubus drain will be KO'd/absorbed. Can be toggled on at any time.
+base_var	code/modules/vore/eating/living.dm	var/fuzzy = 0 // Preference toggle for sharp/fuzzy icon.
+base_var	code/modules/vore/eating/living.dm	var/stuffing_feeder = FALSE // Can feed foods to others whole, like trash eater can eat them on their own.
+base_var	code/modules/vore/eating/living.dm	var/adminbus_trash = FALSE // For abusing trash eater for event shenanigans.
+base_var	code/modules/vore/eating/living.dm	var/adminbus_eat_minerals = FALSE // This creature subsists on a diet of pure adminium.
+base_var	code/modules/vore/eating/living.dm	var/vis_height = 32 // Sprite height used for resize features.
+base_var	code/modules/vore/eating/living.dm	var/appendage_color = "#e03997" //Default pink. Used for the 'long_vore' trait.
+base_var	code/modules/vore/eating/living.dm	var/appendage_alt_setting = FALSE // Dictates if 'long_vore' user pulls prey to them or not. 1 = user thrown towards target.
+base_var	code/modules/vore/eating/living.dm	var/digestion_in_progress = FALSE // Gradual corpse gurgles
+base_var	code/modules/vore/eating/living.dm	var/trash_catching = FALSE //Toggle for trash throw vore
+base_var	code/modules/vore/eating/living.dm	var/list/trait_injection_reagents //List of all the reagents allowed to be used for injection via venom bite. Lazy.
+base_var	code/modules/vore/eating/living.dm	var/skin_reagent
+base_var	code/modules/vore/eating/living.dm	var/trait_injection_selected = null //What trait reagent you're injecting.
+base_var	code/modules/vore/eating/living.dm	var/trait_injection_amount = 5 //How much you're injecting with traits.
+base_var	code/modules/vore/eating/living.dm	var/trait_injection_verb = "bite" //Which fluffy manner you're doing the injecting.
+base_var	code/modules/vore/eating/living.dm	var/mute_entry = FALSE //Toggleable vorgan entry logs.
+base_var	code/modules/vore/eating/living.dm	var/parasitic = FALSE //Digestion immunity and nutrition leeching variable
+base_var	code/modules/vore/eating/living.dm	var/liquidbelly_visuals = TRUE //Toggle for liquidbelly level visuals.
+base_var	code/modules/vore/eating/living.dm	var/churn_count = 0 //Counter for digested livings
+base_var	code/modules/vore/eating/living.dm	var/passtable_reset // For crawling
+base_var	code/modules/vore/eating/living.dm	var/passtable_crawl_checked = FALSE
+base_var	code/modules/vore/eating/living.dm	/mob/living/var/datum/vore_panel_button/vore_panel_button
+base_var	code/modules/vore/eating/mob.dm	var/digestable = TRUE // Can the mob be digested inside a belly?
+base_var	code/modules/vore/eating/mob.dm	var/devourable = TRUE // Can the mob be devoured at all?
+base_var	code/modules/vore/eating/mob.dm	var/feeding = TRUE // Can the mob be vorishly force fed or fed to others?
+base_var	code/modules/vore/eating/mob.dm	var/absorbable = TRUE // Are you allowed to absorb this person?
+base_var	code/modules/vore/eating/mob.dm	var/resizable = TRUE // Can other people resize you? (Usually ignored for self-resizes)
+base_var	code/modules/vore/eating/mob.dm	var/digest_leave_remains = FALSE // Will this mob leave bones/skull/etc after the melty demise?
+base_var	code/modules/vore/eating/mob.dm	var/allowmobvore = TRUE // Will simplemobs attempt to eat the mob?
+base_var	code/modules/vore/eating/mob.dm	var/allowtemp = TRUE // Can they be affected by belly temperature?
+base_var	code/modules/vore/eating/mob.dm	var/obj/belly/vore_selected // Default to no vore capability.
+base_var	code/modules/vore/eating/mob.dm	var/list/vore_organs // Lazy list of vore containers inside a mob
+base_var	code/modules/vore/eating/mob.dm	var/absorbed = FALSE // If a mob is absorbed into another
+base_var	code/modules/vore/eating/mob.dm	var/vore_taste = null // What the character tastes like
+base_var	code/modules/vore/eating/mob.dm	var/vore_smell = null // What the character smells like
+base_var	code/modules/vore/eating/mob.dm	var/noisy = FALSE // Toggle audible hunger.
+base_var	code/modules/vore/eating/mob.dm	var/permit_healbelly = TRUE
+base_var	code/modules/vore/eating/mob.dm	var/stumble_vore = TRUE
+base_var	code/modules/vore/eating/mob.dm	var/slip_vore = TRUE
+base_var	code/modules/vore/eating/mob.dm	var/drop_vore = TRUE
+base_var	code/modules/vore/eating/mob.dm	var/throw_vore = TRUE
+base_var	code/modules/vore/eating/mob.dm	var/food_vore = TRUE
+base_var	code/modules/vore/eating/mob.dm	var/obj/belly/spont_belly_front = null
+base_var	code/modules/vore/eating/mob.dm	var/obj/belly/spont_belly_rear = null
+base_var	code/modules/vore/eating/mob.dm	var/obj/belly/spont_belly_left = null
+base_var	code/modules/vore/eating/mob.dm	var/obj/belly/spont_belly_right = null
+base_var	code/modules/vore/eating/mob.dm	var/consume_liquid_belly = FALSE //starting off because if someone is into that, they'll toggle it first time they get the error. Otherway around would be more pref breaky.
+base_var	code/modules/vore/eating/mob.dm	var/digest_pain = TRUE
+base_var	code/modules/vore/eating/mob.dm	var/can_be_drop_prey = FALSE
+base_var	code/modules/vore/eating/mob.dm	var/can_be_drop_pred = FALSE
+base_var	code/modules/vore/eating/mob.dm	var/can_be_afk_prey = TRUE
+base_var	code/modules/vore/eating/mob.dm	var/can_be_afk_pred = TRUE
+base_var	code/modules/vore/eating/mob.dm	var/allow_spontaneous_tf = FALSE // Obviously.
+base_var	code/modules/vore/eating/mob.dm	var/show_vore_fx = TRUE // Show belly fullscreens
+base_var	code/modules/vore/eating/mob.dm	var/selective_preference = DM_DEFAULT // Preference for selective bellymode
+base_var	code/modules/vore/eating/mob.dm	var/size_strip_preference = SIZESTRIP_NONE // Preference for size change stripping
+base_var	code/modules/vore/eating/mob.dm	var/eating_privacy_global = FALSE // Makes eating attempt/success messages only reach for subtle range if true, overwritten by belly-specific var
+base_var	code/modules/vore/eating/mob.dm	var/vore_death_privacy = FALSE // Chooses whether to announce prey death when digested to ghosts.
+base_var	code/modules/vore/eating/mob.dm	var/allow_mimicry = TRUE // Allows mimicking their character
+base_var	code/modules/vore/eating/mob.dm	var/allow_mind_transfer = FALSE //Allows ones mind to be taken over or swapped
+base_var	code/modules/vore/eating/mob.dm	var/nutrition_message_visible = TRUE
+base_var	code/modules/vore/eating/mob.dm	var/list/nutrition_messages = list( // ALLOW(instance_list): d: per-mob nutrition_messages with starting entries, edited at runtime; mobs are few
+base_var	code/modules/vore/eating/mob.dm	var/weight_message_visible = TRUE
+base_var	code/modules/vore/eating/mob.dm	var/list/weight_messages = list( // ALLOW(instance_list): d: per-mob weight_messages with starting entries, edited at runtime; mobs are few
+base_var	code/modules/vore/eating/mob.dm	var/vore_capacity = 0 // Maximum capacity, -1 for unlimited
+base_var	code/modules/vore/eating/mob.dm	var/vore_capacity_ex = list("stomach" = 0) //expanded list of capacities
+base_var	code/modules/vore/eating/mob.dm	var/vore_fullness = 0 // How "full" the belly is (controls icons)
+base_var	code/modules/vore/eating/mob.dm	var/list/vore_fullness_ex = list("stomach" = 0) // Expanded list of fullness
+base_var	code/modules/vore/eating/mob.dm	var/belly_size_multiplier = 1
+base_var	code/modules/vore/eating/mob.dm	var/vore_sprite_multiply = list("stomach" = FALSE, "taur belly" = FALSE)
+base_var	code/modules/vore/eating/mob.dm	var/vore_sprite_color = list("stomach" = "#000", "taur belly" = "#000")
+base_var	code/modules/vore/eating/mob.dm	var/list/vore_icon_bellies = list("stomach") // ALLOW(instance_list): d: per-mob vore_icon_bellies with starting entries, edited at runtime; mobs are few
+base_var	code/modules/vore/eating/mob.dm	var/updating_fullness = FALSE
+base_var	code/modules/vore/eating/mob.dm	var/tmp/obj/belly/previewing_belly
+base_var	code/modules/vore/eating/mob.dm	var/vore_icons = 0 // Bitfield for which fields we have vore icons for.
+base_var	code/modules/vore/eating/mob.dm	var/vore_eyes = FALSE // For mobs with fullness specific eye overlays.
+base_var	code/modules/vore/eating/mob.dm	var/obj/soulgem/soulgem // Soulcatcher. Needs to be up-ported sometime.
+base_var	code/modules/vore/eating/mob.dm	var/receive_reagents = FALSE //Pref for people to avoid others transfering reagents into them.
+base_var	code/modules/vore/eating/mob.dm	var/give_reagents = FALSE //Pref for people to avoid others taking reagents from them.
+base_var	code/modules/vore/eating/mob.dm	var/apply_reagents = TRUE //Pref for people to avoid having stomach reagents applied to them
+base_var	code/modules/vore/eating/mob.dm	var/latejoin_vore = FALSE //If enabled, latejoiners can spawn into this, assuming they have a client
+base_var	code/modules/vore/eating/mob.dm	var/latejoin_prey = FALSE //If enabled, latejoiners can spawn ontop of and instantly eat the victim
+base_var	code/modules/vore/eating/mob.dm	var/noisy_full = FALSE //Enables belching when a mob has overeaten
+base_var	code/modules/vore/eating/mob.dm	var/phase_vore = TRUE //Enabled by default since you have to enable drop pred/prey to do this anyway
+base_var	code/modules/vore/eating/mob.dm	var/strip_pref = TRUE //Enables the ability for worn items to be stripped
+base_var	code/modules/vore/eating/mob.dm	var/contaminate_pref = TRUE //Enables the ability for worn items to be digested/contaminated.
+base_var	code/modules/vore/eating/mob.dm	var/no_latejoin_vore_warning = FALSE //Auto accepts pred spwan notifications (roundbased / saveable)
+base_var	code/modules/vore/eating/mob.dm	var/no_latejoin_prey_warning = FALSE //Auto accepts prey spawn notifications (roundbased / saveable)
+base_var	code/modules/vore/eating/mob.dm	var/no_latejoin_vore_warning_time = 15 //Time until accepting prey
+base_var	code/modules/vore/eating/mob.dm	var/no_latejoin_prey_warning_time = 15 //Time until accepting pred
+base_var	code/modules/vore/eating/mob.dm	var/no_latejoin_vore_warning_persists = FALSE //Do we save it?
+base_var	code/modules/vore/eating/mob.dm	var/no_latejoin_prey_warning_persists = FALSE //Do we save it?
+base_var	code/modules/vore/eating/mob.dm	var/belly_rub_target = null
+base_var	code/modules/vore/eating/mob.dm	var/soulcatcher_pref_flags = NONE //Default disabled
+base_var	code/modules/vore/eating/mob.dm	var/persistend_edit_mode = FALSE
+base_var	code/modules/vore/eating/mob.dm	var/voice_freq = 42500 // Preference for character voice frequency
+base_var	code/modules/vore/eating/mob.dm	var/emote_sound_mode = EMOTE_SOUND_VOICE_FREQ
+base_var	code/modules/vore/eating/mob.dm	var/list/voice_sounds_list = list() // The sound list containing our voice sounds!
+base_var	code/modules/vore/eating/mob.dm	var/died_in_vr = FALSE //For virtual reality sleepers
+base_var	code/modules/vore/eating/mob.dm	var/max_voreoverlay_alpha = 255
+base_var	code/modules/vore/eating/vorepanel.dm	var/tmp/datum/vore_look/vorePanel
+base_var	code/modules/vore/resizing/resize.dm	var/step_mechanics_pref = TRUE // Allow participation in macro-micro step mechanics
+base_var	code/modules/vore/resizing/resize.dm	var/pickup_pref = TRUE // Allow participation in macro-micro pickup mechanics
+base_var	code/modules/vore/resizing/resize.dm	var/center_offset = 0.5 // Center offset for uneven scaling symmetry.
+base_var	code/modules/vore/resizing/resize.dm	var/offset_override = TRUE // Pref toggle for center offset.
+base_var	code/modules/vore/resizing/resize.dm	var/holder_default
+base_var	code/modules/vore/resizing/resize.dm	var/pickup_active = TRUE // Toggle whether your help (combat mode off) touch picks up micros or pets them
+base_var	code/modules/xenoarcheaology/effect_master.dm	/atom/var/datum/artifact_master/artifact_master
+base_var	code/modules/xenoarcheaology/finds/talking.dm	/obj/var/datum/talking_atom/talking_atom // owned: xenoarch speech state
+list_init	code/ATMOSPHERICS/components/omni_devices/filter.dm	var/list/filtering_outputs = list() //maps gasids to gas_mixtures
+list_init	code/ATMOSPHERICS/components/omni_devices/mixer.dm	var/list/mixing_inputs = list() // ALLOW(instance_list): atmos area (M1a): omni mixer pipe device; listed in memory_lists_audit.md, not edited here
+list_init	code/ATMOSPHERICS/components/trinary_devices/filter.dm	var/list/filtered_out = list() // ALLOW(instance_list): atmos area (M1a): trinary filter pipe device; listed in memory_lists_audit.md, not edited here
+list_init	code/ATMOSPHERICS/datum_pipe_network.dm	var/list/leaks = list() // ALLOW(instance_list): atmos area (M1a/S1): listed in memory_lists_audit.md, not edited here
+list_init	code/ATMOSPHERICS/datum_pipeline.dm	var/list/leaks = list() // ALLOW(instance_list): atmos area (M1a): pipeline leaks; listed in memory_lists_audit.md, not edited here
+list_init	code/ATMOSPHERICS/tg_infra_compat.dm	var/list/z_list = list() // ALLOW(instance_list): d: subsystem singleton; one entry per z-level
+list_init	code/ATMOSPHERICS/tg_infra_compat.dm	var/list/multiz_levels = list() // ALLOW(instance_list): d: subsystem singleton; one entry per z-level
+list_init	code/ATMOSPHERICS/tg_infra_compat.dm	var/list/traits = list() // ALLOW(instance_list): d: every z-level has traits
+list_init	code/ATMOSPHERICS/xgm_compat.dm	var/list/name = list() // ALLOW(instance_list): d: gas data singleton (atmos compat), filled at init
+list_init	code/ATMOSPHERICS/xgm_compat.dm	var/list/specific_heat = list() // ALLOW(instance_list): d: gas data singleton (atmos compat), filled at init
+list_init	code/ATMOSPHERICS/xgm_compat.dm	var/list/molar_mass = list() // ALLOW(instance_list): d: gas data singleton (atmos compat), filled at init
+list_init	code/ATMOSPHERICS/xgm_compat.dm	var/list/gases = list() // ALLOW(instance_list): d: gas data singleton (atmos compat), filled at init
+list_init	code/ATMOSPHERICS/xgm_compat.dm	var/list/tile_overlay = list() // ALLOW(instance_list): d: gas data singleton (atmos compat), filled at init
+list_init	code/ATMOSPHERICS/xgm_compat.dm	var/list/molar_specific_volume = list() // ALLOW(instance_list): d: gas data singleton (atmos compat), filled at init
+list_init	code/ATMOSPHERICS/xgm_compat.dm	var/list/flags = list() // ALLOW(instance_list): d: gas data singleton (atmos compat), filled at init
+list_init	code/ATMOSPHERICS/xgm_compat.dm	var/list/overlay_limit = list() // ALLOW(instance_list): d: gas data singleton (atmos compat), filled at init
+list_init	code/_helpers/sorts/__main.dm	var/list/runBases = list() // ALLOW(instance_list): d: sort scratch state; one sort instance at a time, always used
+list_init	code/_helpers/sorts/__main.dm	var/list/runLens = list() // ALLOW(instance_list): d: sort scratch state; one sort instance at a time, always used
+list_init	code/_onclick/hud/ability_screen_objects.dm	var/arguments_to_use = list()
+list_init	code/_onclick/hud/map_popups.dm	var/list/screen_maps = list() // ALLOW(instance_list): d: one per connected client; nested per-map lists edited in place
+list_init	code/controllers/master.dm	var/list/perf_tick_usage = list() // ALLOW(instance_list): d: MC singleton, filled every tick
+list_init	code/controllers/master.dm	var/list/perf_tick_realtime = list() // ALLOW(instance_list): d: MC singleton, filled every tick
+list_init	code/controllers/master.dm	var/list/perf_outliers = list() // ALLOW(instance_list): d: MC singleton, filled every tick
+list_init	code/controllers/subsystem.dm	var/list/rolling_usage = list() // ALLOW(instance_list): d: one per subsystem; the usage ring buffer is always in use
+list_init	code/controllers/subsystems/internal_wiki.dm	var/list/data = list() // ALLOW(instance_list): d: every page fills its data table
+list_init	code/datums/ai_laws.dm	var/list/datum/ai_law/inherent_laws = list() // ALLOW(instance_list): d: per law set; every silicon has inherent laws
+list_init	code/datums/ai_laws.dm	var/list/datum/ai_law/supplied_laws = list() // ALLOW(instance_list): d: per law set, edited through the law procs; one per silicon
+list_init	code/datums/ai_laws.dm	var/list/datum/ai_law/ion/ion_laws = list() // ALLOW(instance_list): d: per law set, edited through the law procs; one per silicon
+list_init	code/datums/ai_laws.dm	var/list/state_ion = list() // ALLOW(instance_list): d: per law set, written through the internal law procs; one per silicon
+list_init	code/datums/ai_laws.dm	var/list/state_inherent = list() // ALLOW(instance_list): d: per law set, written through the internal law procs; one per silicon
+list_init	code/datums/ai_laws.dm	var/list/state_supplied = list() // ALLOW(instance_list): d: per law set, written through get/set_state_internal(); one per silicon
+list_init	code/datums/capabilities/capability_ext.dm	var/list/members = list()
+list_init	code/datums/connect_range.dm	var/list/turfs = list() // ALLOW(instance_list): d: the tracked turf set; always populated while live
+list_init	code/datums/datacore.dm	var/list/medical = list() // ALLOW(instance_list): owned records of the one data core; not static so the ownership accessors reach it through vars
+list_init	code/datums/datacore.dm	var/list/general = list() // ALLOW(instance_list): owned records of the one data core; not static so the ownership accessors reach it through vars
+list_init	code/datums/datacore.dm	var/list/security = list() // ALLOW(instance_list): owned records of the one data core; not static so the ownership accessors reach it through vars
+list_init	code/datums/datacore.dm	var/list/hidden_medical = list() // ALLOW(instance_list): owned records of the one data core; not static so the ownership accessors reach it through vars
+list_init	code/datums/datacore.dm	var/list/hidden_general = list() // ALLOW(instance_list): owned records of the one data core; not static so the ownership accessors reach it through vars
+list_init	code/datums/datacore.dm	var/list/hidden_security = list() // ALLOW(instance_list): owned records of the one data core; not static so the ownership accessors reach it through vars
+list_init	code/datums/datacore.dm	var/list/locked = list() // ALLOW(instance_list): owned records of the one data core; not static so the ownership accessors reach it through vars
+list_init	code/datums/entity_state/antags/changeling/changeling.dm	var/list/datum/absorbed_dna/absorbed_dna = list() // ALLOW(instance_list): d: changeling state; starts with the changeling's own DNA
+list_init	code/datums/gear/_gear.dm	var/list/gear = list() // ALLOW(instance_list): d: every loadout category holds its gear (singletons)
+list_init	code/datums/ghost_query.dm	var/list/candidates = list() // ALLOW(instance_list): d: ghost query responses; the query exists to collect them
+list_init	code/datums/helper_datums/events.dm	var/list/events = list() // ALLOW(instance_list): d: event bus state
+list_init	code/datums/interactions/resolver.dm	var/list/available = list() // ALLOW(instance_list): interaction area (I3/I4/I6): resolver result lists; listed in memory_lists_audit.md, not edited here
+list_init	code/datums/interactions/resolver.dm	var/list/blocked = list() // ALLOW(instance_list): interaction area (I3/I4/I6): resolver result lists; listed in memory_lists_audit.md, not edited here
+list_init	code/datums/interactions/resolver.dm	var/list/priorities = list() // ALLOW(instance_list): interaction area (I3/I4/I6): resolver result lists; not edited here
+list_init	code/datums/lifecycle/batch.dm	var/list/doomed = list() // ALLOW(instance_list): one per batched destroy, always filled
+list_init	code/datums/lifecycle/batch.dm	var/list/doomed_places = list() // ALLOW(instance_list): one per batched destroy, always filled
+list_init	code/datums/lifecycle/batch.dm	var/list/forced = list() // ALLOW(instance_list): one per batched destroy, filled in the teardown pass
+list_init	code/datums/lifecycle/batch.dm	var/list/unbind_entities = list() // ALLOW(instance_list): one per batched destroy, filled in the teardown pass
+list_init	code/datums/lifecycle/batch.dm	var/list/release_heat_bodies = list() // ALLOW(instance_list): one per batched destroy, filled in the teardown pass
+list_init	code/datums/lifecycle/batch.dm	var/list/unbind_power_nodes = list() // ALLOW(instance_list): one per batched destroy, filled in the teardown pass
+list_init	code/datums/lifecycle/batch.dm	var/list/remove_pipe_ports = list() // ALLOW(instance_list): one per batched destroy, filled in the teardown pass
+list_init	code/datums/lifecycle/batch.dm	var/list/free_pipe_ports = list() // ALLOW(instance_list): one per batched destroy, filled in the teardown pass
+list_init	code/datums/lifecycle/batch.dm	var/list/unbind_movers = list() // ALLOW(instance_list): one per batched destroy, filled in the teardown pass
+list_init	code/datums/lifecycle/batch.dm	var/list/registry_leaves = list() // ALLOW(instance_list): one per batched destroy, filled in the teardown pass
+list_init	code/datums/lifecycle/batch.dm	var/list/material_service_watch_keys = list() // ALLOW(instance_list): one per batched destroy, filled in the teardown pass
+list_init	code/datums/lifecycle/batch.dm	var/list/effect_turfs = list() // ALLOW(instance_list): one per batched destroy, filled in the teardown pass
+list_init	code/datums/lifecycle/batch.dm	var/list/after_effects = list() // ALLOW(instance_list): one per batched destroy, filled in the teardown pass
+list_init	code/datums/lifecycle/pool.dm	var/list/free = list() // ALLOW(instance_list): one pool per pooled type (a handful per round), always used as the free list
+list_init	code/datums/locations/locations.dm	var/list/children = list() // ALLOW(instance_list): d: location tree children
+list_init	code/datums/mind.dm	var/list/datum/objective/objectives = list() // ALLOW(instance_list): d: mind objectives; many call sites index it
+list_init	code/datums/mixed.dm	var/list/fields = list( ) // ALLOW(instance_list): d: every record has fields
+list_init	code/datums/modules.dm	var/list/modcount = list() // assoc list of the count of modules for a type
+list_init	code/datums/om/bundle.dm	var/list/behaviours = list()
+list_init	code/datums/om/bundle.dm	var/list/stages = list()
+list_init	code/datums/om/bundle.dm	var/list/tasks = list()
+list_init	code/datums/om/bundle.dm	var/list/ui = list()
+list_init	code/datums/om/bundle.dm	var/list/self_effects = list()
+list_init	code/datums/om/bundle.dm	var/list/self_grants = list()
+list_init	code/datums/om/entity.dm	var/list/att = list()
+list_init	code/datums/om/entity.dm	var/list/att_pend = list()
+list_init	code/datums/om/entity.dm	var/list/att_ring = list()
+list_init	code/datums/om/entity.dm	var/list/att_state = list()
+list_init	code/datums/om/fields.dm	var/list/fields_by_type = list() // ALLOW(instance_list): d: registry singleton, filled per entity type on first use
+list_init	code/datums/om/registry.dm	var/list/errors = list()
+list_init	code/datums/om/registry.dm	var/list/behaviours = list()
+list_init	code/datums/om/registry.dm	var/list/behaviour_by_type = list()
+list_init	code/datums/om/registry.dm	var/list/effects = list()
+list_init	code/datums/om/registry.dm	var/list/effect_by_id = list()
+list_init	code/datums/om/registry.dm	var/list/clocks = list()
+list_init	code/datums/om/registry.dm	var/list/clock_by_id = list()
+list_init	code/datums/om/registry.dm	var/list/relations = list()
+list_init	code/datums/om/registry.dm	var/list/relation_by_type = list()
+list_init	code/datums/om/registry.dm	var/list/slot_groups_by_holder = list()
+list_init	code/datums/om/registry.dm	var/list/slot_holder_types = list()
+list_init	code/datums/om/registry.dm	var/list/event_types = list()
+list_init	code/datums/om/registry.dm	var/list/event_idx = list()
+list_init	code/datums/om/registry.dm	var/list/event_handlers = list()
+list_init	code/datums/om/registry.dm	var/list/derived = list()
+list_init	code/datums/om/registry.dm	var/list/derived_by_name = list()
+list_init	code/datums/om/registry.dm	var/list/checks_cache = list()
+list_init	code/datums/om/registry.dm	var/list/named_checks = list()
+list_init	code/datums/om/registry.dm	var/list/tasks = list()
+list_init	code/datums/om/registry.dm	var/list/task_by_name = list()
+list_init	code/datums/om/registry.dm	var/list/task_by_type = list()
+list_init	code/datums/om/registry.dm	var/list/services = list()
+list_init	code/datums/om/registry.dm	var/list/stage_by_type = list()
+list_init	code/datums/om/registry.dm	var/list/pipelines = list()
+list_init	code/datums/om/registry.dm	var/list/bundles = list()
+list_init	code/datums/om/registry.dm	var/list/bundle_by_type = list()
+list_init	code/datums/om/registry.dm	var/list/decls = list()
+list_init	code/datums/om/registry.dm	var/list/decl_typecache = list()
+list_init	code/datums/om/registry.dm	var/list/expansions = list()
+list_init	code/datums/om/registry.dm	var/list/type_tables = list()
+list_init	code/datums/om/scheduler.dm	var/list/rings = list()
+list_init	code/datums/om/scheduler.dm	var/list/service_queue = list()
+list_init	code/datums/om/scheduler.dm	var/list/service_spare = list() // ALLOW(instance_list): scheduler singleton's double buffer
+list_init	code/datums/om/scheduler.dm	var/list/bucket_spare = list() // ALLOW(instance_list): scheduler singleton's double buffer
+list_init	code/datums/om/scheduler.dm	var/list/derived_queue = list()
+list_init	code/datums/om/scheduler.dm	var/list/bulk_list = list()
+list_init	code/datums/om/scheduler.dm	var/list/event_queue = list()
+list_init	code/datums/om/scheduler.dm	var/list/free_frames = list()
+list_init	code/datums/om/scheduler.dm	var/list/parked = list()
+list_init	code/datums/om/scheduler.dm	var/list/audit_cursor = list()
+list_init	code/datums/om/scheduler.dm	var/list/stage_cost = list()
+list_init	code/datums/om/scheduler.dm	var/list/stage_calls = list()
+list_init	code/datums/om/scheduler.dm	var/list/stats = list()
+list_init	code/datums/om/scheduler.dm	var/list/errors = list()
+list_init	code/datums/om/world_watch.dm	var/list/world_wakes_by_type = list() // ALLOW(instance_list): d: one live scheduler (plus test ones); counted on every world wake
+list_init	code/datums/properties/predicates.dm	var/list/errors = list() // ALLOW(instance_list): d: compiler state (generic name, too many ambiguous call sites)
+list_init	code/datums/properties/predicates.dm	var/list/watchable = list() // ALLOW(instance_list): d: singleton compiler table
+list_init	code/datums/properties/registry.dm	var/list/contributors = list() // ALLOW(instance_list): d: registry singleton, filled at init
+list_init	code/datums/rules/rule.dm	var/list/triggers = list() // ALLOW(instance_list): constraints (P3): compiler state; landed on master unlisted, not edited here
+list_init	code/datums/rules/rule.dm	var/list/errors = list() // ALLOW(instance_list): constraints (P3): compiler state; landed on master unlisted, not edited here
+list_init	code/datums/runechat_service.dm	var/list/message_queue = list() // om_callable() specs
+list_init	code/datums/supplypacks/supplypacks.dm	var/list/contains = list() // Typepaths, used to actually spawn the contents
+list_init	code/datums/supplypacks/supplypacks.dm	var/list/manifest = list() // Object names, used to compile manifests
+list_init	code/datums/vis_overlay_service.dm	var/list/vis_overlay_cache = list()
+list_init	code/game/antagonist/antag_service.dm	var/list/all_antag_types = list()
+list_init	code/game/antagonist/antag_service.dm	var/list/all_antag_spawnpoints = list()
+list_init	code/game/antagonist/antagonist.dm	var/list/candidates = list() // Potential candidates.
+list_init	code/game/antagonist/antagonist.dm	var/default_access = list()
+list_init	code/game/area/Space Station 13 areas.dm	var/asteroid_spawns = list()
+list_init	code/game/area/Space Station 13 areas.dm	var/mob_spawns = list()
+list_init	code/game/jobs/job/job.dm	var/list/access = list() // Useful for servers which either have fewer players, so each person needs to fill more than one role, or servers which like to give more access, so players can't hide forever in their super secure departments (I'm looking at you, chemistry!)
+list_init	code/game/jobs/job/job.dm	var/list/departments = list() // List of departments this job belongs to, if any. The first one on the list will be the 'primary' department.
+list_init	code/game/machinery/camera/tracking.dm	var/list/names = list() // ALLOW(instance_list): d: tracking scratch state rebuilt on every search
+list_init	code/game/machinery/camera/tracking.dm	var/list/cameras = list() // ALLOW(instance_list): d: tracking scratch state rebuilt on every search
+list_init	code/game/machinery/computer/camera.dm	var/list/network = list() // ALLOW(instance_list): d: camera console network filter; many call sites
+list_init	code/game/machinery/computer/guestpass.dm	var/temp_access = list() //to prevent agent cards stealing access as permanent
+list_init	code/game/machinery/computer/shuttle.dm	var/list/authorized = list( ) // ALLOW(instance_list): d: per-console authorisation state
+list_init	code/game/machinery/cryopod.dm	var/disallow_occupant_types = list()
+list_init	code/game/machinery/doors/airlock_control.dm	var/shockedby = list()
+list_init	code/game/machinery/embedded_controller/embedded_program_base.dm	var/list/memory = list() // ALLOW(instance_list): d: every embedded program keeps its state in memory
+list_init	code/game/machinery/food_replicator.dm	var/list/products = list() // ALLOW(instance_list): d: the replicator menu, filled at init
+list_init	code/game/machinery/gear_dispenser.dm	var/unique_dispense_list = list()
+list_init	code/game/machinery/machine_service.dm	var/list/pending_pump_transfers = list()
+list_init	code/game/machinery/newscaster.dm	var/list/datum/feed_message/messages = list() // ALLOW(instance_list): d: newscaster channel posts
+list_init	code/game/machinery/partslathe.dm	var/list/datum/category_item/partslathe/queue = list() // Queue of things to build
+list_init	code/game/machinery/partslathe.dm	var/list/queue_producer_accounts = list() // ALLOW(instance_list): d: kept index-parallel with queue (Cut() by index)
+list_init	code/game/machinery/telecomms/telecomunications.dm	var/list/memory = list() // stored memory
+list_init	code/game/machinery/telecomms/telecomunications.dm	var/parameters = list() // carbon-copy to signal.data[]
+list_init	code/game/mecha/mecha.dm	var/list/log = list() // ALLOW(instance_list): d: mech log (generic name, too many ambiguous call sites)
+list_init	code/game/mecha/mecha.dm	var/list/operation_req_access = list() //Required access level for mecha operation
+list_init	code/game/mecha/mecha.dm	var/list/equipment = list() //This lists holds what stuff you bolted onto your baby ride
+list_init	code/game/objects/effects/step_triggers.dm	var/list/affecting = list() // ALLOW(instance_list): d: live thrower state (generic name, too many ambiguous call sites)
+list_init	code/game/objects/effects/temporary_visuals/projectiles/tracer.dm	var/list/beam_components = list() // ALLOW(instance_list): d: beam cache state
+list_init	code/game/objects/items/devices/communicator/cartridge.dm	var/list/internal_data = list() // Data that shouldn't be updated every time nanoUI updates, or needs to persist between updates
+list_init	code/game/objects/items/devices/communicator/communicator.dm	var/list/exonet_messages = list() // ALLOW(instance_list): d: per-mob exonet_messages, filled at runtime; mobs are few
+list_init	code/game/objects/items/devices/radio/encryptionkey.dm	var/list/channels = list() // ALLOW(instance_list): d: every key defines its channels
+list_init	code/game/objects/items/devices/radio/radio.dm	var/list/channels = list() //see communications.dm for full list. First channel is a "default" for :h
+list_init	code/game/objects/items/devices/radio/radio_service.dm	var/list/datum/radio_frequency/frequencies = list()
+list_init	code/game/objects/items/devices/radio/radio_service.dm	var/list/list/obj/devices = list() // ALLOW(instance_list): d: frequencies exist because devices joined them
+list_init	code/game/objects/items/devices/radio/radio_service.dm	var/list/data = list() // ALLOW(instance_list): d: every signal carries data
+list_init	code/game/objects/items/devices/scanners/motiontracker_service.dm	var/list/queued_echo_turfs = list()
+list_init	code/game/objects/items/devices/scanners/motiontracker_service.dm	var/list/currentrun = list()
+list_init	code/game/objects/items/devices/scanners/motiontracker_service.dm	var/list/expended_echos = list()
+list_init	code/game/objects/items/devices/translocator.dm	var/warned_users = list()
+list_init	code/game/objects/items/trash_material.dm	var/matter_chances = list() //List of lists: list(mat_name, chance, amount)
+list_init	code/game/objects/items/weapons/id cards/station_ids.dm	var/list/access = list() // ALLOW(instance_list): d: ID access; an empty list and null differ for access checks
+list_init	code/game/objects/mail.dm	var/list/stamps = list() // ALLOW(instance_list): d: mail items are stamped on creation
+list_init	code/game/objects/mail_service.dm	var/admin_mail = list() // Mail added by Spawn Mail
+list_init	code/game/objects/structures/bedsheet_bin.dm	var/list/sheets = list() // ALLOW(instance_list): d: the bin's live stock
+list_init	code/game/objects/structures/loot_piles.dm	var/list/searchedby = list() // Keys that have searched this loot pile, with values of searched time.
+list_init	code/game/objects/structures/salvageable.dm	var/salvageable_parts = list()
+list_init	code/game/objects/structures/trash_pile.dm	var/list/searchedby = list()// Characters that have searched this trashpile, with values of searched time.
+list_init	code/game/objects/structures/tyr_project_props.dm	var/list/code = list() // ALLOW(instance_list): d: the keypad code, generated in New()
+list_init	code/game/skincmd.dm	/mob/var/skincmds = list()
+list_init	code/game/sound_service.dm	var/talk_sound_map = list()
+list_init	code/game/turfs/simulated/wall_types.dm	var/list/blend_log = list() // ALLOW(instance_list): rare: tgmc walls are unmapped; debug log
+list_init	code/modules/admin/callproc/callproc.dm	var/list/callers = list() // ALLOW(instance_list): one instance (GLOB.AdminProcCallHandler), so one list
+list_init	code/modules/admin/spawn_panel/spawn_panel.dm	var/offset = list()
+list_init	code/modules/asset_cache/asset_list.dm	var/assets = list()
+list_init	code/modules/asset_cache/asset_loading_service.dm	var/list/datum/asset/generate_queue = list()
+list_init	code/modules/belly_overlay/belly_overlay_tgui.dm	var/list/state = list() // ALLOW(instance_list): d: UI state (generic name, too many ambiguous call sites)
+list_init	code/modules/benchmarks/boot_profile.dm	var/list/by_type = list() // ALLOW(instance_list): benchmark singleton (one per bench run), always filled
+list_init	code/modules/benchmarks/boot_profile.dm	var/list/child_us = list() // ALLOW(instance_list): benchmark singleton (one per bench run), always filled
+list_init	code/modules/benchmarks/boot_profile.dm	var/list/qdel_child_ms = list() // ALLOW(instance_list): benchmark singleton (one per bench run), always filled
+list_init	code/modules/benchmarks/boot_profile.dm	var/list/qdel_phase_mark_ms = list() // ALLOW(instance_list): benchmark singleton (one per bench run), always filled
+list_init	code/modules/benchmarks/boot_profile.dm	var/list/phase_self_ms = list() // ALLOW(instance_list): benchmark singleton (one per bench run), always filled
+list_init	code/modules/benchmarks/boot_profile.dm	var/list/qdel_by_type = list() // ALLOW(instance_list): benchmark singleton (one per bench run), always filled
+list_init	code/modules/blob2/overmind/overmind.dm	var/list/resource_blobs = list() // ALLOW(instance_list): d: per-mob resource_blobs, filled at runtime; mobs are few
+list_init	code/modules/casino/board_games/checkers.dm	var/list/current_board = list() // ALLOW(instance_list): d: board state
+list_init	code/modules/casino/board_games/chess.dm	var/list/current_board = list() // ALLOW(instance_list): d: board state
+list_init	code/modules/casino/board_games/space_battle.dm	var/list/shots_fired_pone = list() // ALLOW(instance_list): d: board state written through an alias (current_shots[key] = hit); one per game table
+list_init	code/modules/casino/board_games/space_battle.dm	var/list/shots_fired_ptwo = list() // ALLOW(instance_list): d: board state written through an alias (current_shots[key] = hit); one per game table
+list_init	code/modules/casino/board_games/space_battle.dm	var/list/ships_placed_pone = list() // ALLOW(instance_list): d: board state written through an alias; one per game table
+list_init	code/modules/casino/board_games/space_battle.dm	var/list/ships_placed_ptwo = list() // ALLOW(instance_list): d: board state written through an alias; one per game table
+list_init	code/modules/casino/casino.dm	var/lottery_tickets = list()
+list_init	code/modules/casino/casino.dm	var/lottery_tickets_ckeys = list()
+list_init	code/modules/casino/casino.dm	var/collar_list = list()
+list_init	code/modules/casino/casino.dm	var/sentientprizes_ckeys_list = list() //Same trick as lottery, to keep life simple
+list_init	code/modules/casino/casino_prize_vendor.dm	var/list/log = list() //Log only SS13 staff is allowed to look at, CKEYS are listed here for record keeping of prizes and players for events!
+list_init	code/modules/client/client defines.dm	var/list/department_hours = list() // Track hours of leave accured for each department.
+list_init	code/modules/client/client defines.dm	var/list/play_hours = list() // Tracks total playtime hours for each departments.
+list_init	code/modules/client/client defines.dm	var/list/sent_assets = list() // ALLOW(instance_list): d: one per connected client; every client is sent assets on login
+list_init	code/modules/client/client defines.dm	var/list/panel_tabs = list() // ALLOW(instance_list): d: one per connected client; rebuilt on every verb refresh
+list_init	code/modules/client/client defines.dm	var/list/misc_tabs = list() // ALLOW(instance_list): d: one per connected client; stat panel tabs
+list_init	code/modules/client/client defines.dm	var/list/misc_cache = list() // ALLOW(instance_list): d: one per connected client; protean code indexes it directly
+list_init	code/modules/client/persistent_client.dm	var/list/logging = list() // ALLOW(instance_list): d: one per connected client; logs fill on login
+list_init	code/modules/client/preferences/preferences_tg.dm	var/value_cache = list()
+list_init	code/modules/client/preferences_save_service.dm	var/list/prefs_awaiting_setup = list()
+list_init	code/modules/client/preferences_save_service.dm	var/list/preferences_datums = list()
+list_init	code/modules/client/preferences_save_service.dm	var/list/newplayers_requiring_init = list()
+list_init	code/modules/client/statpanel_service.dm	var/list/currentrun = list()
+list_init	code/modules/clothing/accessory_slot_registry.dm	var/list/slot_names = list() // ALLOW(instance_list): d: singleton registry, filled at init
+list_init	code/modules/combat_ai/legacy_constants/say_list.dm	var/list/speak = list() // Things the mob might say if it talks while idle.
+list_init	code/modules/detectivework/tools/scanner.dm	var/list/stored = list() // ALLOW(instance_list): d: scanner evidence store
+list_init	code/modules/economy/cash.dm	var/access = list()
+list_init	code/modules/economy/cash_register.dm	var/list/item_list = list() // entities and according
+list_init	code/modules/economy/cash_register.dm	var/list/price_list = list() // prices for each purchase
+list_init	code/modules/economy/casinocash.dm	var/access = list()
+list_init	code/modules/economy/casinocash.dm	var/access = list()
+list_init	code/modules/economy/retail_scanner.dm	var/list/item_list = list() // entities and according
+list_init	code/modules/economy/retail_scanner.dm	var/list/price_list = list() // prices for each purchase
+list_init	code/modules/economy/supply_service.dm	var/list/service_invoices = list()
+list_init	code/modules/economy/supply_service.dm	var/list/currency_sources = list()
+list_init	code/modules/economy/supply_service.dm	var/list/currency_sinks = list()
+list_init	code/modules/economy/supply_service.dm	var/list/shoppinglist = list() // Approved orders
+list_init	code/modules/economy/supply_service.dm	var/list/supply_pack = list() // All supply packs
+list_init	code/modules/economy/supply_service.dm	var/list/exported_crates = list() // Crates sent from the station
+list_init	code/modules/economy/supply_service.dm	var/list/order_history = list() // History of orders, showing edits made by users
+list_init	code/modules/economy/supply_service.dm	var/list/adm_order_history = list() // Complete history of all orders, for admin use
+list_init	code/modules/economy/supply_service.dm	var/list/adm_export_history = list() // Complete history of all crates sent back on the shuttle, for admin use
+list_init	code/modules/economy/vending.dm	var/list/product_records = list() // ALLOW(instance_list): d: the vendor's live stock records (C9 turns these into slots)
+list_init	code/modules/economy/vending_refills.dm	var/refill_exceptions = list()
+list_init	code/modules/error_handler/error_viewer.dm	var/list/errors = list() // ALLOW(instance_list): d: error viewer state
+list_init	code/modules/error_handler/error_viewer.dm	var/list/errors = list() // ALLOW(instance_list): d: error viewer state
+list_init	code/modules/eventkit/collector_event/blockers.dm	var/list/active_repair_steps = list() // ALLOW(instance_list): d: event prop repair state
+list_init	code/modules/eventkit/gm_interfaces/fake_pda_conversations.dm	var/list/names = list() //Assoc list of refs in fakeRefs = name
+list_init	code/modules/events/event_service.dm	var/list/datum/event/finished_events = list()
+list_init	code/modules/expedition/expedition_controller.dm	var/list/sites = list()
+list_init	code/modules/expedition/expedition_controller.dm	var/list/free_z = list()
+list_init	code/modules/expedition/expedition_controller.dm	var/list/teardown_z = list()
+list_init	code/modules/exploration/lootsafe.dm	var/list/code = list() // ALLOW(instance_list): d: the lock code, generated in New()
+list_init	code/modules/exploration/lootsafe.dm	var/list/code = list() // ALLOW(instance_list): d: the lock code, generated in New()
+list_init	code/modules/flight_operations/flight_controller.dm	var/list/destinations = list()
+list_init	code/modules/flight_operations/flight_controller.dm	var/list/destination_by_target = list()
+list_init	code/modules/flight_operations/flight_controller.dm	var/list/vessels = list()
+list_init	code/modules/flight_operations/flight_controller.dm	var/list/vessel_by_ship = list()
+list_init	code/modules/flight_operations/flight_controller.dm	var/list/ports = list()
+list_init	code/modules/flight_operations/flight_controller.dm	var/list/port_by_landmark = list()
+list_init	code/modules/flight_operations/flight_controller.dm	var/list/plans = list()
+list_init	code/modules/food/food/snacks.dm	var/list/boxes = list() // If the boxes are stacked, they come here
+list_init	code/modules/food/kitchen/smartfridge/smartfridge.dm	var/list/item_records = list() // ALLOW(instance_list): d: the fridge's live stock records
+list_init	code/modules/games/cards.dm	var/list/cards = list() // ALLOW(instance_list): d: a deck always holds cards
+list_init	code/modules/games/cards.dm	var/list/cards = list() // ALLOW(instance_list): d: a card pack always holds cards
+list_init	code/modules/games/cards.dm	var/list/cards = list() // ALLOW(instance_list): d: a hand of cards always holds cards
+list_init	code/modules/hydroponics/plant_service.dm	var/list/product_descs = list() // Stores generated fruit descs.
+list_init	code/modules/hydroponics/plant_service.dm	var/list/seeds = list() // All seed data stored here.
+list_init	code/modules/hydroponics/plant_service.dm	var/list/gene_tag_masks = list() // Gene obfuscation for delicious trial and error goodness.
+list_init	code/modules/hydroponics/plant_service.dm	var/list/plant_icon_cache = list() // Stores images of growth, fruits and seeds.
+list_init	code/modules/hydroponics/plant_service.dm	var/list/plant_sprites = list() // List of all growth sprites plus number of growth stages.
+list_init	code/modules/hydroponics/plant_service.dm	var/list/accessible_plant_sprites = list() // List of all plant sprites allowed to appear in random generation.
+list_init	code/modules/hydroponics/plant_service.dm	var/list/plant_product_sprites = list() // List of all harvested product sprites.
+list_init	code/modules/hydroponics/plant_service.dm	var/list/accessible_product_sprites = list() // List of all product sprites allowed to appear in random generation.
+list_init	code/modules/hydroponics/plant_service.dm	var/list/gene_masked_list = list() // Stored gene masked list, rather than recreating it when needed.
+list_init	code/modules/hydroponics/plant_service.dm	var/list/plant_gene_datums = list() // Stored datum versions of the gene masked list.
+list_init	code/modules/hydroponics/seed.dm	var/list/traits = list() // Initialized in New()
+list_init	code/modules/hydroponics/seed_storage.dm	var/list/obj/item/seeds/seeds = list() // Tracks actual objects contained in the pile
+list_init	code/modules/hydroponics/seed_storage.dm	var/list/datum/seed_pile/piles = list() // ALLOW(instance_list): d: seed piles are filled at init and are the machine's stock
+list_init	code/modules/instruments/instrument_service.dm	var/list/datum/instrument/instrument_data = list()
+list_init	code/modules/integrated_electronics/_defines.dm	var/list/inputs = list() // ALLOW(instance_list): d: every circuit defines its input pins; setup_io() rebuilds it in place
+list_init	code/modules/integrated_electronics/_defines.dm	var/list/outputs = list() // ALLOW(instance_list): d: every circuit defines its output pins; setup_io() rebuilds it in place
+list_init	code/modules/integrated_electronics/_defines.dm	var/list/activators = list() // ALLOW(instance_list): d: every circuit defines its activator pins; setup_io() rebuilds it in place
+list_init	code/modules/integrated_electronics/circuit_service.dm	var/list/all_components = list() // Associative list of [component_name]:[component_path] pairs
+list_init	code/modules/integrated_electronics/circuit_service.dm	var/list/prototype_components = list() // Associative list of [component_path]:[component] pairs
+list_init	code/modules/integrated_electronics/circuit_service.dm	var/list/all_assemblies = list() // Associative list of [assembly_name]:[assembly_path] pairs
+list_init	code/modules/integrated_electronics/circuit_service.dm	var/list/prototype_assemblies = list() // Associative list of [assembly_path]:[assembly] pairs
+list_init	code/modules/integrated_electronics/circuit_service.dm	var/list/all_circuits = list() // Associative list of [circuit_name]:[circuit_path] pairs
+list_init	code/modules/integrated_electronics/circuit_service.dm	var/list/circuit_fabricator_recipe_list = list() // Associative list of [category_name]:[list_of_circuit_paths] pairs
+list_init	code/modules/library/lib_items.dm	var/list/pages = list() //the contents of each page
+list_init	code/modules/lootpanel/_lootpanel.dm	var/list/datum/search_object/searchables = list() // ALLOW(instance_list): d: loot panel state
+list_init	code/modules/lore_codex/lore_data_yw/orgs.dm	var/auto_keywords = list()
+list_init	code/modules/lore_codex/pages.dm	var/list/keywords = list() // Used for searching.
+list_init	code/modules/lore_codex/pages.dm	var/list/children = list()
+list_init	code/modules/maint_recycler/code/maint_vendor.dm	var/list/product_datums = list() //assoc list of obj spawn type to datum
+list_init	code/modules/maps/poi_service.dm	var/list/obj/effect/landmark/poi_loader/poi_queue = list()
+list_init	code/modules/maps/reader.dm	var/list/grid_models = list() // ALLOW(instance_list): d: map parser state, filled on parse
+list_init	code/modules/maps/reader.dm	var/list/gridSets = list() // ALLOW(instance_list): d: map parser state, filled on parse
+list_init	code/modules/material_science/material_batch.dm	var/list/contributors = list() // ALLOW(instance_list): d: batch provenance, filled when the batch is made
+list_init	code/modules/medical/contagion/engineered/engineered.dm	var/list/symptoms = list() // ALLOW(instance_list): d: every engineered strain has traits
+list_init	code/modules/medical/contagion/engineered/viral_trait.dm	var/threshold_descs = list()
+list_init	code/modules/medical/contagion/engineered/viral_trait.dm	var/list/prefixes = list() // ALLOW(instance_list): d: reset with initial() in severityset(); few symptom datums
+list_init	code/modules/medical/contagion/engineered/viral_trait.dm	var/list/bodies = list() // ALLOW(instance_list): d: reset with initial() in severityset(); few symptom datums
+list_init	code/modules/medical/contagion/engineered/viral_trait.dm	var/list/suffixes = list() // ALLOW(instance_list): d: reset with initial() in severityset(); few symptom datums
+list_init	code/modules/mining/abandonedcrates.dm	var/list/code = list() // ALLOW(instance_list): d: the lock code, generated in New()
+list_init	code/modules/mining/machinery/machine_processing.dm	var/list/ores_stored = list() // ALLOW(instance_list): d: filled in New() with an entry per ore
+list_init	code/modules/mob/dead/observer/observer.dm	var/list/visibleChunks = list() // ALLOW(instance_list): d: per-mob visibleChunks, filled at runtime; mobs are few
+list_init	code/modules/mob/freelook/chunk.dm	var/list/obscuredTurfs = list() // ALLOW(instance_list): d: camera/ghost chunk visibility state, rebuilt on every update with &=
+list_init	code/modules/mob/freelook/chunk.dm	var/list/visibleTurfs = list() // ALLOW(instance_list): d: camera/ghost chunk visibility state, rebuilt on every update with &=
+list_init	code/modules/mob/freelook/chunk.dm	var/list/turfs = list() // ALLOW(instance_list): d: every visibility chunk tracks its turfs
+list_init	code/modules/mob/freelook/eye.dm	var/list/visibleChunks = list() // ALLOW(instance_list): d: per-mob visibleChunks, filled at runtime; mobs are few
+list_init	code/modules/mob/language/language.dm	var/list/scramble_cache = list() // ALLOW(instance_list): d: one per language singleton; the cache fills as soon as the language is heard
+list_init	code/modules/mob/living/bot/bot.dm	var/list/botcard_access = list() // ALLOW(instance_list): d: per-mob botcard_access, filled at runtime; mobs are few
+list_init	code/modules/mob/living/bot/bot.dm	var/list/req_access = list() // ALLOW(instance_list): d: per-mob req_access, filled at runtime; mobs are few
+list_init	code/modules/mob/living/bot/bot.dm	var/list/req_one_access = list() // ALLOW(instance_list): d: per-mob req_one_access, filled at runtime; mobs are few
+list_init	code/modules/mob/living/bot/bot.dm	var/list/patrol_path = list() // ALLOW(instance_list): d: per-mob patrol_path, sized at creation and filled in place; mobs are few
+list_init	code/modules/mob/living/bot/bot.dm	var/list/target_path = list() // ALLOW(instance_list): d: per-mob target_path, sized at creation and filled in place; mobs are few
+list_init	code/modules/mob/living/bot/cleanbot.dm	var/list/target_types = list() // ALLOW(instance_list): d: per-mob target_types, sized at creation and filled in place; mobs are few
+list_init	code/modules/mob/living/carbon/carbon_defines.dm	var/list/antibodies = list() // ALLOW(instance_list): d: per-mob antibodies, filled at runtime; mobs are few
+list_init	code/modules/mob/living/carbon/human/human.dm	var/list/teleporters = list() //Used for lleill abilities
+list_init	code/modules/mob/living/carbon/human/human.dm	var/list/datum/genetics/side_effect/genetic_side_effects = list() //For any genetic side effects we currently have.
+list_init	code/modules/mob/living/carbon/human/human_defines.dm	var/list/all_underwear_metadata = list() // ALLOW(instance_list): d: per-mob all_underwear_metadata, filled at runtime; mobs are few
+list_init	code/modules/mob/living/carbon/human/human_defines.dm	var/list/hide_underwear = list() // ALLOW(instance_list): d: per-mob hide_underwear, filled at runtime; mobs are few
+list_init	code/modules/mob/living/carbon/human/species/species.dm	var/list/traits = list() // ALLOW(instance_list): d: per-mob trait selection; produceCopy() assigns it and genes Add/Remove in place
+list_init	code/modules/mob/living/life/life_om.dm	var/list/members = list()
+list_init	code/modules/mob/living/silicon/ai/ai.dm	var/list/connected_robots = list() // ALLOW(instance_list): d: per-mob connected_robots, filled at runtime; mobs are few
+list_init	code/modules/mob/living/silicon/pai/pai.dm	var/list/software = list() // ALLOW(instance_list): d: per-mob software, sized at creation and filled in place; mobs are few
+list_init	code/modules/mob/living/silicon/robot/dogborg/dog_sleeper.dm	var/list/list/deliverylists = list() // ALLOW(instance_list): d: nested per-slot lists created with the sleeper and edited in place
+list_init	code/modules/mob/living/silicon/robot/robot_modules/station.dm	var/channels = list()
+list_init	code/modules/mob/living/silicon/robot/robot_modules/station.dm	var/networks = list()
+list_init	code/modules/mob/living/silicon/robot/robot_modules/station.dm	var/list/modules = list() // ALLOW(instance_list): d: every robot module holds its items
+list_init	code/modules/mob/living/silicon/robot/robot_modules/station.dm	var/list/datum/matter_synth/synths = list() // ALLOW(instance_list): d: filled per module type when the module is created
+list_init	code/modules/mob/living/silicon/robot/robot_modules/station.dm	var/list/emag = list() // ALLOW(instance_list): d: robot module item lists, filled per module type
+list_init	code/modules/mob/living/silicon/robot/robot_modules/station.dm	var/list/subsystems = list() // ALLOW(instance_list): d: filled per module type when the module is created
+list_init	code/modules/mob/living/silicon/robot/robot_simple_items.dm	var/list/pockets = list() //List of the pockets we have. This is used to store the items inside of the gripper.
+list_init	code/modules/mob/living/silicon/robot/sprites/_sprite_datum.dm	var/list/belly_light_list = list() // Support multiple sleepers with r/g light "sleeper". Kept: code tests it for truth, so empty and null differ.
+list_init	code/modules/mob/living/silicon/robot/sprites/_sprite_datum.dm	var/list/belly_capacity_list = list() //Support multiple bellies with multiple sizes, default: "sleeper" = 1. Kept, as above.
+list_init	code/modules/mob/living/silicon/silicon.dm	var/list/stating_laws = list()// Channels laws are currently being stated on
+list_init	code/modules/mob/living/silicon/silicon.dm	var/list/speech_synthesizer_langs = list() //which languages can be vocalized by the speech synthesizer
+list_init	code/modules/mob/living/simple_mob/simple_mob.dm	var/list/speech_sounds = list() // ALLOW(instance_list): d: per-mob speech_sounds, sized at creation and filled in place; mobs are few
+list_init	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm	var/list/weather_areas = list() //We'll call a proc on these areas when we eat, don't worry!
+list_init	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/synx.dm	var/list/speak = list() // ALLOW(instance_list): d: per-mob speak, filled at runtime; mobs are few
+list_init	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/synx.dm	var/list/voices = list() // ALLOW(instance_list): d: per-mob voices, filled at runtime; mobs are few
+list_init	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/teppi.dm	var/affinity = list()
+list_init	code/modules/mob/living/simple_mob/subtypes/fleshtaker.dm	var/list/base_values = list() // ALLOW(instance_list): d: per-mob base_values, sized at creation and filled in place; mobs are few
+list_init	code/modules/mob/living/simple_mob/subtypes/occult/constructs/_construct.dm	var/list/construct_spells = list() // ALLOW(instance_list): d: per-mob construct_spells, sized at creation and filled in place; mobs are few
+list_init	code/modules/mob/living/simple_mob/subtypes/vore/dominated_brain.dm	var/list/prey_langs = list() // ALLOW(instance_list): d: per-mob prey_langs, filled at runtime; mobs are few
+list_init	code/modules/mob/mob_defines.dm	var/list/languages = list() // For speaking/listening.
+list_init	code/modules/mob/mob_defines.dm	var/list/language_keys = list() // List of language keys indexing languages
+list_init	code/modules/mob/mob_defines.dm	var/proc_holder_list[] = list()//Right now unused.
+list_init	code/modules/mob/mob_defines.dm	var/list/datum/spell/spell_list = list() // ALLOW(instance_list): d: per-mob spell_list, filled at runtime; mobs are few
+list_init	code/modules/mob/mob_defines.dm	var/list/list/misc_tabs = list() // ALLOW(instance_list): d: per-mob misc_tabs, filled at runtime; mobs are few
+list_init	code/modules/mob/mob_service.dm	var/list/death_list = list()
+list_init	code/modules/mob/new_player/lobby_monitor_service.dm	var/to_reinitialize = list()
+list_init	code/modules/mob/new_player/sprite_accessories_markings.dm	var/body_parts = list() //A list of bodyparts this covers, in organ_tag defines
+list_init	code/modules/modular_computers/NTNet/NTNRC/conversation.dm	var/list/messages = list() // ALLOW(instance_list): d: chat channel history
+list_init	code/modules/modular_computers/NTNet/emails/email_account.dm	var/list/inbox = list() // ALLOW(instance_list): d: mailbox state
+list_init	code/modules/modular_computers/NTNet/emails/email_account.dm	var/list/spam = list() // ALLOW(instance_list): d: mailbox state
+list_init	code/modules/modular_computers/NTNet/emails/email_account.dm	var/list/deleted = list() // ALLOW(instance_list): d: mailbox state
+list_init	code/modules/modular_computers/NTNet/emails/email_account.dm	var/connected_clients = list()
+list_init	code/modules/organs/pain.dm	/mob/var/list/pain_stored = list()
+list_init	code/modules/overmap/sectors.dm	var/list/map_z = list() // ALLOW(instance_list): d: the sector's z-levels, filled when the sector registers
+list_init	code/modules/overmap/ships/starmover_service.dm	var/list/zqueue = list()
+list_init	code/modules/overmap/ships/starmover_service.dm	var/list/moving_levels = list()
+list_init	code/modules/paperwork/paper_bundle.dm	var/list/pages = list() // Ordered list of pages as they are to be displayed. Can be different order than src.contents.
+list_init	code/modules/pda/cart.dm	var/list/stored_data = list() // ALLOW(instance_list): d: cartridge program data
+list_init	code/modules/persistence/pto_service.dm	var/list/currentrun = list()
+list_init	code/modules/persistence/pto_service.dm	var/list/query_stack = list()
+list_init	code/modules/planet/sun.dm	var/turfs_providing_spreads = list()
+list_init	code/modules/planet/sun.dm	var/spreads = list()
+list_init	code/modules/planet/weather.dm	var/list/forecast = list() // A list of what the weather will be in the future. This allows it to be pre-determined and planned around.
+list_init	code/modules/planet/weather.dm	var/transition_chances = list() // Assoc list of weather identifiers and the odds to shift to a specific type of weather. Can contain its own identifier to prolong it.
+list_init	code/modules/power/fusion/core/core_field.dm	var/list/dormant_reactant_quantities = list() // ALLOW(instance_list): d: live reactor state
+list_init	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	var/list/rod_quantities = list() // ALLOW(instance_list): d: filled in New() with the rod's reagent amounts
+list_init	code/modules/power/fusion/fusion_reactions.dm	var/list/products = list() // ALLOW(instance_list): d: reaction singleton table
+list_init	code/modules/power/power_bridge.dm	var/list/power_dirty_areas = list() // ALLOW(instance_list): d: SSmachines singleton (M3 power); one instance
+list_init	code/modules/power/power_bridge.dm	var/list/power_material_cables = list() // ALLOW(instance_list): d: SSmachines singleton (M3 power); one instance
+list_init	code/modules/power/sensors/powernet_sensor.dm	var/list/history = list() // ALLOW(instance_list): M3 power (Rust): sensor code rewritten on master; not edited here
+list_init	code/modules/projectiles/ammunition.dm	var/list/stored_ammo = list() // ALLOW(instance_list): d: magazines are filled with rounds on creation
+list_init	code/modules/projectiles/guns/projectile.dm	var/list/loaded = list() //stored ammo
+list_init	code/modules/projectiles/projectile.dm	var/list/permutated = list() // we've passed through these atoms, don't try to hit them again
+list_init	code/modules/projectiles/targeting/targeting_mob.dm	/mob/living/var/list/aimed = list()
+list_init	code/modules/radiation/radiation_service.dm	var/list/datum/radiation_pulse_information/processing = list()
+list_init	code/modules/radiation/radiation_service.dm	var/list/dirty_turfs = list()
+list_init	code/modules/radiation/radiation_service.dm	var/list/profile_source_cost_ms = list()
+list_init	code/modules/radiation/radiation_service.dm	var/list/profile_source_targets = list()
+list_init	code/modules/random_map/random_map.dm	var/list/map = list() // Actual map.
+list_init	code/modules/reagents/chemistry_service.dm	var/list/chemical_reactions = list()
+list_init	code/modules/reagents/chemistry_service.dm	var/list/chemical_reactions_by_product = list()
+list_init	code/modules/reagents/chemistry_service.dm	var/list/instant_reactions_by_reagent = list()
+list_init	code/modules/reagents/chemistry_service.dm	var/list/distilled_reactions_by_reagent = list()
+list_init	code/modules/reagents/chemistry_service.dm	var/list/distilled_reactions_by_product = list()
+list_init	code/modules/reagents/chemistry_service.dm	var/list/chemical_reagents = list()
+list_init	code/modules/reagents/machinery/dispenser/chem_synthesizer.dm	var/list/recipes = list() // This holds chemical recipes up to a maximum determined by SYNTHESIZER_MAX_RECIPES. Two-dimensional.
+list_init	code/modules/reagents/machinery/dispenser/chem_synthesizer.dm	var/list/queue = list() // This holds the recipe id's for queued up recipes.
+list_init	code/modules/reagents/machinery/dispenser/chem_synthesizer.dm	var/list/cartridges = list() // Associative, label -> cartridge
+list_init	code/modules/reagents/machinery/dispenser/dispenser2.dm	var/list/cartridges = list() // Associative, label -> cartridge
+list_init	code/modules/reagents/reagent_containers/borghypo.dm	var/list/reagent_volumes = list() // ALLOW(instance_list): d: filled in Initialize() with every reagent the hypo carries
+list_init	code/modules/recycling/recycling.dm	var/list/materials = list() // ALLOW(instance_list): d: sorter filter table set at init
+list_init	code/modules/research/message_server.dm	var/list/messages = list() //Stores messages of non-standard frequencies
+list_init	code/modules/research/research_service.dm	var/list/techweb_nodes = list() //associative id = node datum
+list_init	code/modules/research/research_service.dm	var/list/techweb_designs = list() //associative id = node datum
+list_init	code/modules/research/research_service.dm	var/list/list/datum/design_techweb/item_to_design = list() //typepath = list of design datums
+list_init	code/modules/research/research_service.dm	var/list/datum/techweb/techwebs = list()
+list_init	code/modules/research/research_service.dm	var/list/invalid_design_ids = list()
+list_init	code/modules/research/research_service.dm	var/list/invalid_node_ids = list()
+list_init	code/modules/research/research_service.dm	var/list/invalid_node_boost = list()
+list_init	code/modules/research/research_service.dm	var/list/techweb_nodes_starting = list()
+list_init	code/modules/research/research_service.dm	var/list/techweb_categories = list()
+list_init	code/modules/research/research_service.dm	var/list/techweb_unlock_items = list()
+list_init	code/modules/research/research_service.dm	var/list/techweb_nodes_hidden = list()
+list_init	code/modules/research/research_service.dm	var/list/techweb_nodes_experimental = list()
+list_init	code/modules/research/research_service.dm	var/list/errored_datums = list()
+list_init	code/modules/research/research_service.dm	var/list/ordnance_experiments = list()
+list_init	code/modules/research/tg/designs.dm	var/list/materials = list() // ALLOW(instance_list): composition rewrite: design materials are being replaced; not edited here
+list_init	code/modules/research/tg/designs.dm	var/list/category = list() // ALLOW(instance_list): d: every design is in a category (singletons)
+list_init	code/modules/research/tg/experisci/experiment/types/scanning.dm	var/list/scanned = list() // ALLOW(instance_list): d: one sub-list per requirement, filled when the experiment is set up
+list_init	code/modules/research/tg/machinery/mech_fabricator.dm	var/list/datum/design_techweb/queue = list() // ALLOW(instance_list): d: the build queue; kept index-parallel with queue_producer_accounts
+list_init	code/modules/research/tg/machinery/mech_fabricator.dm	var/list/queue_producer_accounts = list() // ALLOW(instance_list): d: kept index-parallel with queue (Cut() by index)
+list_init	code/modules/research/tg/rdconsole.dm	var/id_cache = list()
+list_init	code/modules/resleeving/infocore_records.dm	var/list/nif_savedata = list() // ALLOW(instance_list): d: per mind record, passed to the new NIF as its save data
+list_init	code/modules/resleeving/transcore_service.dm	var/list/datum/transcore_db/databases = list() // Holds instances of each database
+list_init	code/modules/resleeving/transcore_service.dm	var/list/datum/transhuman/mind_record/backed_up = list() // All known mind records, indexed by MR.mindname/mind.name
+list_init	code/modules/resleeving/transcore_service.dm	var/list/datum/transhuman/body_record/body_scans = list() // All known body records, indexed by BR.mydna.name
+list_init	code/modules/scripting/AST/AST Nodes.dm	var/list/parameters = list() // ALLOW(instance_list): d: script AST node state
+list_init	code/modules/scripting/AST/Blocks.dm	var/list/functions = list() // ALLOW(instance_list): d: script AST node state
+list_init	code/modules/scripting/AST/Statements.dm	var/list/parameters=list() // ALLOW(instance_list): d: script AST node state
+list_init	code/modules/scripting/AST/Statements.dm	var/list/parameters=list() // ALLOW(instance_list): d: script AST node state
+list_init	code/modules/scripting/Parser/Parser.dm	var/list/tokens = list() // ALLOW(instance_list): d: parser working state, filled on every parse
+list_init	code/modules/scripting/Parser/Parser.dm	var/list/errors = list() // ALLOW(instance_list): d: parser state (generic name, too many ambiguous call sites)
+list_init	code/modules/scripting/Scanner/Scanner.dm	var/list/errors = list() // ALLOW(instance_list): d: scanner state (generic name, too many ambiguous call sites)
+list_init	code/modules/shuttles/emergency_shuttle_service.dm	var/list/escape_pods = list()
+list_init	code/modules/shuttles/shuttle_emergency.dm	var/list/authorized = list() // ALLOW(instance_list): d: per-console authorisation state; one emergency console
+list_init	code/modules/shuttles/web_datums.dm	var/list/destinations = list() // List of currently instanced destinations.
+list_init	code/modules/spells/targeted/genetic.dm	var/list/mutations = list() //mutation strings
+list_init	code/modules/stockmarket/industries.dm	var/list/tokens = list() // ALLOW(instance_list): d: stock market singleton state
+list_init	code/modules/stockmarket/stockmarket.dm	var/list/stocks = list() // ALLOW(instance_list): d: stock market singleton state
+list_init	code/modules/stockmarket/stocks.dm	var/list/values = list() // ALLOW(instance_list): d: stock market singleton state
+list_init	code/modules/stockmarket/stocks.dm	var/list/products = list() // ALLOW(instance_list): d: stock market singleton state
+list_init	code/modules/stockmarket/stocks.dm	var/list/events = list() // ALLOW(instance_list): d: stock market singleton state
+list_init	code/modules/tgchat/chat_service.dm	var/list/list/datum/chat_payload/client_to_payloads = list()
+list_init	code/modules/tgchat/chat_service.dm	var/list/list/datum/chat_payload/client_to_reliability_history = list()
+list_init	code/modules/tgchat/chat_service.dm	var/list/client_to_sequence_number = list()
+list_init	code/modules/tgui/external.dm	/mob/var/list/tgui_open_uis = list()
+list_init	code/modules/tgui/external.dm	/client/var/list/tgui_windows = list()
+list_init	code/modules/tgui/modules/admin/player_notes.dm	var/ckeys = list()
+list_init	code/modules/tgui/modules/camera.dm	var/list/network = list() // ALLOW(instance_list): d: camera console network filter; many call sites
+list_init	code/modules/tgui/modules/communications.dm	var/list/req_access = list() // ALLOW(instance_list): d: access list; an empty list and null differ for access checks
+list_init	code/modules/tgui/modules/rcon.dm	var/filtered_smeslist = list()
+list_init	code/modules/tgui/modules/trait_tutorial_tgui.dm	var/trait_names = list()
+list_init	code/modules/tgui/modules/trait_tutorial_tgui.dm	var/trait_category = list() // name:category
+list_init	code/modules/tgui/modules/trait_tutorial_tgui.dm	var/trait_desc = list() // name:desc
+list_init	code/modules/tgui/modules/trait_tutorial_tgui.dm	var/trait_tutorial = list() //name:tutorial
+list_init	code/modules/tgui/tgui.dm	var/list/children = list() // ALLOW(instance_list): d: tgui window tree; many call sites
+list_init	code/modules/tgui/tgui_window.dm	var/sent_assets = list()
+list_init	code/modules/tgui_panel/ping_service.dm	var/list/currentrun = list()
+list_init	code/modules/tickets/tickets.dm	var/list/active_tickets = list() // ALLOW(instance_list): d: ticket singleton; ListInsert() writes through an alias
+list_init	code/modules/tickets/tickets.dm	var/list/closed_tickets = list() // ALLOW(instance_list): d: ticket singleton; ListInsert() writes through an alias
+list_init	code/modules/tickets/tickets.dm	var/list/resolved_tickets = list() // ALLOW(instance_list): d: ticket singleton; ListInsert() writes through an alias
+list_init	code/modules/turbolift/turbolift.dm	var/list/floors = list() // All floors in this system.
+list_init	code/modules/unit_tests/dq_combat_mode_tests.dm	var/list/done = list() // ALLOW(instance_list): d: unit-test fixture; a handful of instances per test run
+list_init	code/modules/unit_tests/dq_containment_tests.dm	var/list/events = list() // ALLOW(instance_list): containment (C1/C4): landed on master unlisted; not edited here
+list_init	code/modules/unit_tests/dq_containment_tests.dm	var/list/holders = list() // ALLOW(instance_list): d: unit-test fixture; a handful of instances per test run
+list_init	code/modules/unit_tests/dq_containment_tests.dm	var/list/things = list() // ALLOW(instance_list): d: unit-test fixture; a handful of instances per test run
+list_init	code/modules/unit_tests/dq_containment_tests.dm	var/list/made = list() // ALLOW(instance_list): d: unit-test fixture; a handful of instances per test run
+list_init	code/modules/unit_tests/dq_containment_tests.dm	var/list/log = list()
+list_init	code/modules/unit_tests/dq_interaction_entry_tests.dm	var/list/done = list()
+list_init	code/modules/unit_tests/dq_interaction_entry_tests.dm	var/list/done = list()
+list_init	code/modules/unit_tests/dq_interaction_tests.dm	var/list/done = list() // ALLOW(instance_list): d: unit-test fixture; a handful of instances per test run
+list_init	code/modules/unit_tests/dq_life_om_tests.dm	var/list/runs = list()
+list_init	code/modules/unit_tests/dq_life_om_tests.dm	var/list/runs = list()
+list_init	code/modules/unit_tests/dq_life_om_tests.dm	var/list/runs = list()
+list_init	code/modules/unit_tests/dq_om_core_tests.dm	var/list/dts = list()
+list_init	code/modules/unit_tests/dq_om_core_tests.dm	var/list/log = list()
+list_init	code/modules/unit_tests/dq_om_pipeline_tests.dm	var/list/log = list()
+list_init	code/modules/unit_tests/dq_om_pipeline_tests.dm	var/list/busy = list()
+list_init	code/modules/unit_tests/dq_om_pipeline_tests.dm	var/list/wakes = list()
+list_init	code/modules/unit_tests/dq_om_pipeline_tests.dm	var/list/log = list()
+list_init	code/modules/unit_tests/dq_om_pipeline_tests.dm	var/list/busy = list()
+list_init	code/modules/unit_tests/dq_om_wake_tests.dm	var/list/wakes = list() // ALLOW(instance_list): unit-test witness, always filled
+list_init	code/modules/unit_tests/dq_om_world_watch_tests.dm	var/list/wakes = list() // ALLOW(instance_list): d: unit-test fixture; a handful of instances per test run
+list_init	code/modules/unit_tests/dq_propagation_tests.dm	var/list/severities = list() // ALLOW(instance_list): d: unit-test fixture; a handful of instances per test run
+list_init	code/modules/unit_tests/dq_stock_tests.dm	var/list/made = list() // ALLOW(instance_list): d: unit-test fixture; a handful of instances per test run
+list_init	code/modules/unit_tests/dq_stock_tests.dm	var/list/made = list() // ALLOW(instance_list): d: unit-test fixture; a handful of instances per test run
+list_init	code/modules/unit_tests/dq_stock_tests.dm	var/list/made = list() // ALLOW(instance_list): d: unit-test fixture; a handful of instances per test run
+list_init	code/modules/unit_tests/dq_tool_tests.dm	var/list/done = list() // ALLOW(instance_list): d: unit-test fixture; a handful of instances per test run
+list_init	code/modules/unit_tests/find_reference_sanity.dm	var/list/test_list = list() // ALLOW(instance_list): d: unit-test fixture; the ref-tracking test needs a real list to find
+list_init	code/modules/unit_tests/find_reference_sanity.dm	var/list/test_assoc_list = list() // ALLOW(instance_list): d: unit-test fixture; the ref-tracking test needs a real list to find
+list_init	code/modules/unit_tests/map_tests.dm	var/list/log = list() // ALLOW(instance_list): d: unit-test state
+list_init	code/modules/ventcrawl/ventcrawl.dm	/mob/living/var/list/icon/pipes_shown = list()
+list_init	code/modules/vore/eating/belly_dat.dm	var/tmp/list/internal_contents = list() // People/Things you've eaten into this belly!
+list_init	code/modules/vore/eating/belly_dat.dm	var/tmp/list/items_preserved = list() // Stuff that wont digest.
+list_init	code/modules/vore/eating/belly_dat.dm	var/tmp/list/emote_lists = list() // ALLOW(instance_list): never instantiated: legacy /datum/belly (nothing creates it or calls copy()); no runtime cost, delete the type instead
+list_init	code/modules/vore/eating/mob.dm	var/list/voice_sounds_list = list() // The sound list containing our voice sounds!
+list_init	code/modules/vore/eating/soulcatcher.dm	var/tmp/list/brainmobs = list() // ALLOW(instance_list): d: soulgem occupants, edited in place through many paths
+list_init	code/modules/xenoarcheaology/artifacts/replicator.dm	var/list/spawning_types = list() // ALLOW(instance_list): d: filled in New() with the replicator's output table
+list_init	code/modules/xenoarcheaology/artifacts/replicator.dm	var/list/stored_materials = list() // ALLOW(instance_list): d: consumed with pop() in step with spawning_types
+list_init	code/modules/xenoarcheaology/effects/feelings.dm	var/list/messages = list() // ALLOW(instance_list): d: every feelings effect defines its messages
+list_init	code/modules/xenoarcheaology/finds/talking.dm	var/list/heard_words = list() // ALLOW(instance_list): d: speech memory of a talking item, filled as it hears
+list_init	code/modules/xenoarcheaology/xenoarch_service.dm	var/list/artifact_spawning_turfs = list()
+list_init	code/modules/xenoarcheaology/xenoarch_service.dm	var/list/digsite_spawning_turfs = list()

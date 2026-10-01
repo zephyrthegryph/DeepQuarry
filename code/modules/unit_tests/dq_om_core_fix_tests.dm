@@ -159,8 +159,8 @@
 	om_after(E, 1 SECONDS, /proc/om_cf_global_hit, E)
 	om_after(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, "typed")
 	var/list/T = E.om_rec.timers
-	TEST_ASSERT_EQUAL(T[6], TRUE, "a /proc/ timer is flagged global")
-	TEST_ASSERT_EQUAL(T[OM_TIMER_STRIDE + 6], FALSE, "a type-proc timer is not")
+	TEST_ASSERT(T[6] & OM_TIMER_GLOBAL, "a /proc/ timer is flagged global")
+	TEST_ASSERT(!(T[OM_TIMER_STRIDE + 6] & OM_TIMER_GLOBAL), "a type-proc timer is not")
 	scheduler_advance(1.5)
 	TEST_ASSERT(("global" in E.log) && ("typed" in E.log), "both fire through the stored flag")
 

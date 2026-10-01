@@ -9,7 +9,7 @@
 
 /obj/effect/map_effect/interval/effect_emitter/Initialize(mapload)
 	if(effect_system_type)
-		own_set(src, "effect_system", new effect_system_type())
+		own_set(src, nameof(effect_system), new effect_system_type())
 		effect_system.attach(src)
 		configure_effects()
 	return ..()

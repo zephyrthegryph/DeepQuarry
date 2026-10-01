@@ -65,14 +65,26 @@
 /// Every latent-safe type (and subtype) survives serialize -> materialize, also through JSON.
 /datum/unit_test/dq_state_latent_round_trip
 	is_sweep_test = TRUE
+	tier = TEST_TIER_EXHAUSTIVE
+
+/// Normal tier: the round trip on a fixed subset (one type per latent-safe
+/// family). The whole-tree sweep runs in CI and nightly.
+/datum/unit_test/dq_state_latent_round_trip/representative
+	is_sweep_test = FALSE
+	tier = TEST_TIER_NORMAL
+
+/datum/unit_test/dq_state_latent_round_trip/representative/curated_types()
+	return dq_latent_representative_types()
 
 /datum/unit_test/dq_state_latent_round_trip/Run()
 	var/list/failures = list()
 	var/tested = 0
+	var/list/tested_paths
 	for(var/atom/movable/path as anything in sweep_types(subtypesof(/atom/movable)))
 		if(!initial(path.latent_safe) || is_abstract(path))
 			continue
 		tested++
+		LAZYSET(tested_paths, path, TRUE)
 		var/atom/movable/original = new path(test_floor())
 		dq_state_perturb(original)
 		var/list/errors = list()
@@ -95,6 +107,13 @@
 			qdel(copy)
 		qdel(original)
 	TEST_ASSERT(tested > 0, "no latent-safe types found")
+	var/list/curated = curated_types()
+	if(curated)
+		var/list/untested = list()
+		for(var/path in curated)
+			if(!LAZYACCESS(tested_paths, path))
+				untested += "[path]"
+		TEST_ASSERT(!length(untested), "curated types that are not latent-safe: [jointext(untested, ", ")]")
 	if(length(failures))
 		TEST_FAIL("[length(failures)] of [tested] latent-safe types failed:\n[jointext(failures, "\n")]")
 
@@ -131,7 +150,7 @@
 	owned.text = "owned"
 	probe.path_value = /obj/item/paper
 	probe.values = list("plain", 3, /obj/item/pen, "#hash" = "escaped", "#path" = "not a wrapper")
-	own_set(probe, "ref_value", owned) // the owned codec: the probe owns it
+	own_set(probe, nameof(probe.ref_value), owned) // the owned codec: the probe owns it
 	var/list/blob = state_serialize(probe)
 	TEST_ASSERT_NOTNULL(blob, "the probe should serialize")
 	var/datum/dq_state_probe/copy = state_materialize(json_decode(json_encode(blob)), null)
@@ -203,21 +222,24 @@
 
 /datum/unit_test/dq_state_collapse_blockers/Run()
 	var/obj/item/paper/lone = new(test_floor())
+	refresh_flush() // a fresh atom sits in the refresh queue until it flushes: a reference the blockers would list
 	var/list/blockers = lone.state_collapse_blockers(1)
 	TEST_ASSERT_EQUAL(length(blockers), 0, "a paper with no outside references should collapse: [jointext(blockers, "; ")]")
 	qdel(lone)
 
 	var/obj/item/storage/box/box = new(test_floor())
+	refresh_flush()
 	blockers = box.state_collapse_blockers(1)
 	TEST_ASSERT_EQUAL(length(blockers), 0, "an empty box with no outside references should collapse: [jointext(blockers, "; ")]")
 	new /obj/item/paper(box)
+	refresh_flush()
 	blockers = box.state_collapse_blockers(1)
 	TEST_ASSERT_EQUAL(length(blockers), 0, "a box of paper with no outside references should collapse: [jointext(blockers, "; ")]")
 
 	// A relation view naming the box is accounted for: collapse parks it under the box's handle
 	// slot and it re-links on materialize (ownership.md 4.4), so it does not block.
 	var/datum/dq_state_holder/holder = new
-	rel_set(holder, "held", box)
+	rel_set(holder, nameof(holder.held), box)
 	blockers = box.state_collapse_blockers(1)
 	TEST_ASSERT_EQUAL(length(blockers), 0, "a relation view naming the box should not block collapse: [jointext(blockers, "; ")]")
 	qdel(holder)
@@ -356,12 +378,12 @@
 	// The soulgem saves its linked belly by name and relinks it on load.
 	var/obj/soulgem/gem = new(pred)
 	gem.inside_flavor = "a test room"
-	rel_set(gem, "linked_belly", copy)
+	rel_set(gem, nameof(gem.linked_belly), copy)
 	var/list/gem_blob = state_serialize(gem, NONE, errors)
 	TEST_ASSERT_NOTNULL(gem_blob, "the soulgem should serialize: [jointext(errors, "; ")]")
 	var/list/gem_vars = gem_blob[STATE_KEY_VARS]
 	TEST_ASSERT_EQUAL(gem_vars["linked_belly"], "Tummy", "the linked belly should be saved by name")
-	rel_clear(gem, "linked_belly")
+	rel_clear(gem, nameof(gem.linked_belly))
 	var/obj/soulgem/gem_copy = state_materialize(json_decode(json_encode(gem_blob)), pred, NONE, errors)
 	TEST_ASSERT_EQUAL(gem_copy?.inside_flavor, "a test room", "soulgem text should round trip")
 	TEST_ASSERT(gem_copy?.linked_belly()?.name == "Tummy", "the soulgem should relink the belly by name")
@@ -389,6 +411,6 @@
 	var/list/errors = list()
 	TEST_ASSERT_NULL(state_serialize(paper, NONE, errors), "a paper with a pinned contract document should refuse serialization")
 	TEST_ASSERT(length(errors), "the pinned refusal should say why")
-	own_take(paper, "contract_document")
+	own_take(paper, nameof(paper.contract_document))
 	qdel(document)
 	TEST_ASSERT_NOTNULL(state_serialize(paper), "the paper should serialize again once the document is gone")

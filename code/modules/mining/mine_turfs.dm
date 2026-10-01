@@ -20,7 +20,7 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache) // ALLOW(cache): also read/written in co
 	opacity = 1
 	density = TRUE
 	blocks_air = 1
-	temperature = T0C
+	initial_temperature = T0C
 	can_dirty = FALSE
 
 	var/floor_name = "sand"
@@ -281,7 +281,7 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/mineral, TYPE_PROC_REF(/atom, appearance
 		if(finds && finds.len)
 			var/datum/find/F = finds[1]
 			if(newDepth > F.excavation_required) // Digging too deep with something as clumsy or random as a blaster will destroy artefacts
-				own_remove(src, "finds", finds[1])
+				own_remove(src, nameof(finds), finds[1])
 				if(prob(50))
 					artifact_debris()
 
@@ -450,14 +450,14 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 
 			excavation_level += S.excavation_amount
 			update_archeo_overlays(S.excavation_amount)
-			own_set(src, "geologic_data", new /datum/geosample(src))
+			own_set(src, nameof(geologic_data), new /datum/geosample(src))
 			//drop some rocks
 			next_rock += S.excavation_amount
 			while(next_rock > 50)
 				next_rock -= 50
 				var/obj/item/ore/archeology_debris/O = new(src)
 				geologic_data.UpdateNearbyArtifactInfo(src)
-				own_set(O, "geologic_data", geologic_data.copy())
+				own_set(O, nameof(O.geologic_data), geologic_data.copy())
 
 		if (istype(W, /obj/item/pickaxe))
 			if(!istype(user.loc, /turf))
@@ -515,14 +515,14 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 
 	excavation_level += P.excavation_amount
 	update_archeo_overlays(P.excavation_amount)
-	own_set(src, "geologic_data", new /datum/geosample(src))
+	own_set(src, nameof(geologic_data), new /datum/geosample(src))
 	//drop some rocks
 	next_rock += P.excavation_amount
 	while(next_rock > 50)
 		next_rock -= 50
 		var/obj/item/ore/archeology_debris/O = new(src)
 		geologic_data.UpdateNearbyArtifactInfo(src)
-		own_set(O, "geologic_data", geologic_data.copy())
+		own_set(O, nameof(O.geologic_data), geologic_data.copy())
 
 //THIS IS THE 'YOU HIT AN ARTIFACT AND ARE GOING TOO DEEP' PROC. This is NOT the 'you destroyed the turf' proc. For that, look at 'GetDrilled'
 /turf/simulated/mineral/proc/wreckfinds(destroy = FALSE)
@@ -531,7 +531,7 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 						//Technically you CAN KEEP RUNNING INTO THE TILE but like, you're wasting so much time at that point. Just buy a pick set from the mining vendor.
 			excavate_find(prob(1), finds[1]) //1 in 100 chance of digging it out
 	else //destructive methods will always destroy finds, no bowls menacing with spikes for you
-		own_remove(src, "finds", finds[1])
+		own_remove(src, nameof(finds), finds[1])
 		artifact_debris()
 
 /turf/simulated/mineral/proc/update_archeo_overlays(excavation_amount = 0)
@@ -582,12 +582,12 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 	if(!mineral())
 		return
 	clear_ore_effects()
-	own_set(src, "geologic_data", new /datum/geosample(src))
+	own_set(src, nameof(geologic_data), new /datum/geosample(src))
 	var/new_ore_path = mineral().ore
 	var/obj/item/ore/O = new new_ore_path(src)
 	if(istype(O))
 		geologic_data.UpdateNearbyArtifactInfo(src)
-		own_set(O, "geologic_data", geologic_data.copy())
+		own_set(O, nameof(O.geologic_data), geologic_data.copy())
 	return O
 
 /turf/simulated/mineral/proc/excavate_turf()
@@ -596,7 +596,7 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 		//boulder with an artifact inside
 		B = new(src)
 		// The boulder takes the find over from this turf (the turf is drilled away next).
-		own_transfer(src, "artifact_find", B, "artifact_find_static")
+		own_transfer(src, nameof(artifact_find), B, nameof(B.artifact_find_static))
 
 	if(B)
 		GetDrilled(0)
@@ -651,7 +651,7 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 /turf/simulated/mineral/proc/excavate_find(is_clean = 0, datum/find/F)
 	//with skill and luck, players can cleanly extract finds
 	//otherwise, they come out inside a chunk of rock
-	own_set(src, "geologic_data", new /datum/geosample(src))
+	own_set(src, nameof(geologic_data), new /datum/geosample(src))
 	var/obj/item/X
 	if(is_clean)
 		X = new /obj/item/archaeological_find(src, F.find_type)
@@ -659,7 +659,7 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 		X = new /obj/item/strangerock(src, F.find_type)
 		geologic_data.UpdateNearbyArtifactInfo(src)
 		var/obj/item/strangerock/SR = X
-		own_set(SR, "geologic_data", geologic_data.copy())
+		own_set(SR, nameof(SR.geologic_data), geologic_data.copy())
 
 	//some find types delete the /obj/item/archaeological_find and replace it with something else, this handles when that happens
 	//yuck
@@ -677,7 +677,7 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 				visible_message(span_danger("\The [pick("[display_name] crumbles away into dust","[display_name] breaks apart")]."))
 				qdel(X)
 
-	own_remove(src, "finds", F)
+	own_remove(src, nameof(finds), F)
 
 /turf/simulated/mineral/proc/artifact_debris(severity = 0)
 	//cael's patented random limited drop componentized loot system!
@@ -735,12 +735,12 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 /turf/simulated/mineral/vacuum
 	oxygen = 0
 	nitrogen = 0
-	temperature	= TCMB
+	initial_temperature	= TCMB
 
 /turf/simulated/mineral/floor/vacuum
 	oxygen = 0
 	nitrogen = 0
-	temperature	= TCMB
+	initial_temperature	= TCMB
 
 
 /// Accessor for a shared definition.

@@ -51,9 +51,9 @@
 		voremob_loaded = TRUE
 		init_vore()
 	if(istype(Vac))
-		rel_set(Vac, "output_dest", vore_selected)
+		rel_set(Vac, nameof(Vac.output_dest), vore_selected)
 		Vac.vac_power = 3
-		rel_set(Vac, "vac_owner", src)
+		rel_set(Vac, nameof(Vac.vac_owner), src)
 
 /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/IIsAlly(mob/living/L)
 	. = ..()
@@ -115,7 +115,7 @@
 	B.belly_fullscreen_color4 = "#CCFFFF"
 	B.belly_fullscreen = "VBO_maw25" //Swoopies have beaks!!
 
-	rel_set(src, "vore_selected", B)
+	rel_set(src, nameof(vore_selected), B)
 
 	B = new /obj/belly/longneck(src)
 	B.affects_vore_sprites = TRUE
@@ -200,7 +200,7 @@
 		var/atom/movable/vac_output = self.Vac.output_dest
 		if(!vac_output)
 			if(isbelly(self.vore_selected))
-				rel_set(self.Vac, "output_dest", self.vore_selected)
+				rel_set(self.Vac, nameof(/obj/item/vac_attachment::output_dest), self.vore_selected)
 	if(!istype(T) || !istype(self.Vac) || !(self.ai_brain != null) || self.Vac.loc != self || self.stat)
 		return
 	if(istype(T, /turf/simulated))
@@ -283,7 +283,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie,
 /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/verb/borrow_vac()
 	set name = "Borrow Vac-Pack"
 	set desc = "Allows adjacent user to borrow Swoopie's Vac-Pack"
-	set category = "Object"
+	set category = VERB_CAT_OBJECT
 	set src in oview(1)
 	if(istype(Vac))
 		if(usr != src)

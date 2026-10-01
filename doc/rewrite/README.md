@@ -1,15 +1,113 @@
-# DeepQuarry rewrite
+# DeepQuarry rewrite: index and reading order
 
-This folder describes the architecture DeepQuarry is moving to and the plan for getting there. Instead of fixing systems one at a time, everything migrates onto a few shared systems:
-- one Rust simulation core
-- one scheduler
-- one containment system
-- one engine for properties, rules and constraints
-- one interaction model
-- one damage pipeline
-- one thermal model
+This folder describes the architecture DeepQuarry is moving to and the plan for getting there.
+The current design is the **foundation design**: three table procs per type (`capabilities()`,
+`relations()`, `reactions()`), one reactive change graph, operations and actions for player input,
+a kernel host loop, and one Rust frame. It replaces the earlier object-model (OM) API; the old
+docs are kept in [archive/](archive/) with a header saying what replaced each.
 
-It is based on seven code surveys and the profiles on disk (August–September 2026). File references were correct when this was written.
+Status legend used throughout: **[built]** merged on `rewrite/dx-framework`; **[in progress]**
+being built on a branch below; **[planned]** designed, not written. Don't invent a [planned] API.
+
+## Reading order
+
+1. [foundation.md](foundation.md): the design overview and the vocabulary table.
+2. [state_and_relations.md](state_and_relations.md): tracked state, generated reads, relation kinds.
+3. [reactions.md](reactions.md): the one reaction mechanism, notices, timers.
+4. [operations_and_actions.md](operations_and_actions.md): requirements, affordances, routes, operations, actions.
+5. [look.md](look.md), [construction.md](construction.md), [pools.md](pools.md): appearance, ladders, flyweights.
+6. [scheduling_and_kernel.md](scheduling_and_kernel.md): systems, work, membership, `kernel_tick`.
+7. [rust.md](rust.md): `vg_frame`, the outbox, `native_read`, no mirrors.
+8. [dx_conventions.md](dx_conventions.md) (the rules) and [migration_guide.md](migration_guide.md) (old form to new form, Part F first).
+
+## Branch status of the foundation batch
+
+Base `rewrite/dx-framework`. Old call sites are not migrated by this batch; new APIs are added
+beside the old forms.
+
+| Branch | Owner | Builds | Status |
+|---|---|---|---|
+| `rewrite/f-reactions` | W1 | TRACKED demand-gating, `reactions()`, triggers, `observe`, notices, relation kinds, `after` | [in progress] |
+| `rewrite/f-ops` | W2 | `req`, `cap_require`, `cap_op`, `refine`, affordances, routes, compartments, actions, bind profiles | [in progress] |
+| `rewrite/f-look` | W3 | `look.variant/part/glow`, construction primitives and joints, pools, rename tool | [in progress] |
+| `rewrite/f-rust` | W4 | `vg_frame`, outbox, `native_read`, one watch facility, mirror deletion, gas binds | [in progress] |
+| `rewrite/f-kernel` | W5 | `kernel_tick`, phases, urgent requests, membership as relations, systems | [in progress] |
+| `rewrite/foundation` | W6 | Integration; rebuilds the APC in the target shape; full suite | [built] |
+| `rewrite/f-docs` | - | This documentation set | this branch |
+
+## Document map
+
+### Current: the foundation set
+
+| Document | Covers |
+|---|---|
+| [foundation.md](foundation.md) | Overview, vocabulary, design rules, the target APC example |
+| [state_and_relations.md](state_and_relations.md) | `TRACKED`, `READERS`, generated reads, relation kinds, source counts |
+| [reactions.md](reactions.md) | Triggers, static vs dynamic, notices, timers, urgent vs wake |
+| [operations_and_actions.md](operations_and_actions.md) | Requirements, affordances, routes, compartments, `cap_op`, actions |
+| [look.md](look.md) | `variant`/`part`/`glow`, the icon naming convention, rename tool |
+| [construction.md](construction.md) | Primitives, joints, ladder presets, conservation test |
+| [pools.md](pools.md) | `/datum/pooled`, reset, poison |
+| [scheduling_and_kernel.md](scheduling_and_kernel.md) | `kernel_tick` phases, systems, work, urgent requests |
+| [life_sequences.md](life_sequences.md) | Sequences (entity-major kernel work: steps as procs, `after` edges, `should_run`, parking as membership), Mob Life's landing spot, the S1-S4 waves |
+| [rust.md](rust.md) | `vg_frame`, outbox, watches, no mirrors |
+| [dx_conventions.md](dx_conventions.md) | The rules and CI lints |
+| [migration_guide.md](migration_guide.md) | The API as built, and every old form with its replacement |
+| [roadmap.md](roadmap.md) | Tracks, work items, waves and gates (partly predates the foundation; item IDs are stable) |
+
+### Still-valid domain and detail references
+
+These stay where they are. Where a foundation chapter overrides part of one, the chapter says so.
+
+| Document | Covers | Note |
+|---|---|---|
+| [damage.md](damage.md) | Damage packets, mitigation, thresholds | Packets become pooled ([pools.md](pools.md)) |
+| [temperature.md](temperature.md) | One thermal model | Uses the one watch facility ([rust.md](rust.md)) |
+| [containment.md](containment.md) | Ledger, slots, equipment, storage, vore | Edges supply route policy |
+| [rules.md](rules.md) | Properties, predicates, constraints, abilities | |
+| [lifecycle.md](lifecycle.md) | Destruction as a transaction | Refs are relation kinds |
+| [state.md](state.md) | State schema, serialization, registries | Reactive parts: [state_and_relations.md](state_and_relations.md) |
+| [caching.md](caching.md) | Shared caches | |
+| [simulation.md](simulation.md) | Fields and networks in Rust | |
+| [rust_architecture.md](rust_architecture.md), [rust_core.md](rust_core.md), [rust_bindings.md](rust_bindings.md) | The Rust library structure and bindings | Drivers, watches and mirrors overridden by [rust.md](rust.md) |
+| [kernel.md](kernel.md) | Detailed kernel design and measurements | Phases and work units overridden by [scheduling_and_kernel.md](scheduling_and_kernel.md) section 6 |
+| [init_and_turfs.md](init_and_turfs.md) | Boot and bulk-destroy speed | |
+| `doc/body_architecture.md`, `doc/mob_life_architecture.md`, `doc/testing.md` | Body, mob Life, testing | Outside this folder |
+
+### Archive
+
+[archive/](archive/) holds two kinds of file, each with a one-line header.
+
+| Kind | Files |
+|---|---|
+| **Superseded by the foundation design** (still accurate for code not yet converted) | `object_model.md`, `object_model_core.md`, `om_in_10_minutes.md`, `time_mechanisms.md`, `ownership.md`, `interactions.md`, `systems.md`, `life_on_om.md`, `migration_plan.md`, `declarative_lifecycle.md` |
+| **Historical records** (audits, reports, briefs) | `fixes.md`, `framework_fixes.md`, `memory_lists_audit.md`, `om_framework_report.md`, `life_on_om_benchmark.md`, `object_model_medical_review.md`, `reconciliation.md`, `signal_migration_map.md`, `systems_worker_brief.md`, `health_system_review.md` |
+| **Design source** | `unified_operations_work.md` (the operations proposal, verbatim) |
+
+Until the f-* branches merge, most code still uses the OM forms, so `AGENTS.md` section 9 points
+at the archive copies for those; each such pointer also names the replacing chapter.
+
+## Principles
+
+1. **State lives where it is computed.** Simulation state lives in Rust; DM holds handles and owns
+   rules, behaviour and UI.
+2. **Nothing runs without a change or a deadline.**
+3. **Types define; instances store differences.**
+4. **Declare, don't register.** Three table procs, interned per type.
+5. **One writer per piece of state**, in DM and in Rust.
+6. **Conservation and parity are tested, not assumed.**
+7. **Everything is measured.** Every step has a benchmark gate.
+8. **No shims.** Each wave converts every caller and deletes what it replaces.
+
+## How the work runs
+
+- The work is delivered in waves ([roadmap.md](roadmap.md)). Every wave compiles clean, keeps the
+  suite green (`tools/build/build.sh dm-test`, the normal tier; CI also runs `--tier=all`; plus `cargo test` in `verdigris/` for Rust), deletes
+  what it replaces, adds its lint rules and a changelog entry, keeps debug logging, and records
+  benchmarks before and after (`tools/build/build.sh bench --runs=3`, `bench-compare`).
+- Agents work in slices and follow `AGENTS.md` and the build lock. If another agent's work leaves
+  the tree uncompilable, `DQ_WIP_TREE=1` skips unreachable files (see `doc/testing.md`).
+- A design change updates these documents in the same change as the code.
 
 ## Goals
 
@@ -25,63 +123,9 @@ It is based on seven code surveys and the profiles on disk (August–September 2
   - State and triggers are declared per type, so nothing can forget to register them.
 - **Players.** Every interaction can be listed, can say why it isn't available, and can be bound to a key.
 
-## Principles
-
-1. **State lives where it is computed.** Simulation state lives in Rust: gas, heat, charge, flows, networks and the grid. DM holds handles to it and owns rules, behaviour and UI.
-2. **Nothing runs without a change or a deadline.** A continuous process becomes a rate with predicted events.
-3. **Types define; instances store differences.** A sub-object stays as data until something needs a real object.
-4. **Declare, don't register.** The framework reads type data for slots, properties, rules, constraints, interactions and behaviours.
-5. **One writer per piece of state**, in DM and in Rust.
-6. **Conservation and parity are tested, not assumed.**
-7. **Everything is measured.** Every step has a benchmark gate.
-8. **No shims.** Each wave converts every caller and deletes what it replaces. The body rewrite follows the same rule (`doc/refactor_brief.md`).
-
-## Layers
-
-```
-DM    OM scheduler (world step) · Ledger & slots · Rules & constraints · Interactions · Damage pipeline · Thermal API
-          │ commands in, one batched event drain per tick      ▲ generated bindings
-Rust  vg-ffi ──────────────────────────────────────────────────┘
-      domains:  gas · atmos devices · power · heat · propagation · generation
-      vg-core:  owners & frames · handles · stores & grid · channels & watches · timers & rate models
-                fields · networks · outbox · jobs · metrics
-```
-
-## Documents
-
-| Document | Covers |
-|---|---|
-| [roadmap.md](roadmap.md) | Tracks, work items, dependencies, waves, gates and guardrails |
-| [fixes.md](fixes.md) | Bugs, quick wins, low-risk memory savings and dead code to handle first |
-| [rust_core.md](rust_core.md) | `vg-core`: threading, handles, stores, grid, watches, timers, the DM bridge, jobs, metrics and testing |
-| [simulation.md](simulation.md) | The field and network frameworks; gas, atmos devices, power, heat, propagation and generation |
-| [state.md](state.md) | State schema, serialization, deltas, lifecycle, registries and signals |
-| [rules.md](rules.md) | Properties, predicates, constraints, rules and abilities |
-| [containment.md](containment.md) | Ledger, slots, latent contents, equipment, inventory, storage, vore and occupants |
-| [interactions.md](interactions.md) | Input actions, keybinds, interactions, tools and construction |
-| [damage.md](damage.md) | Damage packets, mitigation, where damage lands, and thresholds |
-| [temperature.md](temperature.md) | One thermal model covering Rust, mobs, items, reagents and machines |
-| [object_model.md](object_model.md) | Object kinds, ownership, relations, archetypes, behaviours, requirements, events, scheduling, tasks, UI and dm-health (authoritative) |
-| [object_model_core.md](object_model_core.md) | The object-model core API: scheduler, change tracking, derived values, relations, contributions, rates, events, checks, tasks, UI and the table-first declarations (authoritative; supersedes the API parts of object_model.md) |
-| [life_on_om.md](life_on_om.md) | Mob Life on the object-model core: one frame behaviour, channel wakes, hibernation as roster removal, the 6 s cycle decision, statuses as contributions, stasis on the biology clock |
-| [lifecycle.md](lifecycle.md) | Destruction as a framework transaction: phases, slot policies and verbs |
-| [rust_architecture.md](rust_architecture.md) | Verdigris: domains as declarations plus laws, the generic core, crate map and plan (authoritative) |
-
-## How the work runs
-
-- The work is split into tracks and delivered in waves ([roadmap.md](roadmap.md)). Every wave:
-  - compiles clean and keeps the suite green: `tools/build/build.sh dm-test`, plus `cargo test` in `verdigris/` for Rust changes;
-  - deletes what it replaces;
-  - adds its lint rules and a changelog entry;
-  - keeps and extends debug logging;
-  - records benchmarks before and after with `tools/build/build.sh bench --runs=3`, compared using `bench-compare`.
-- Agents work in slices and follow `AGENTS.md` and the build lock.
-- If another agent's work in progress leaves the tree uncompilable, `DQ_WIP_TREE=1` makes validation and test builds skip unreachable files (see `doc/testing.md`).
-- A design change updates these documents in the same change as the code.
-
 ## Coordination with the body rewrite
 
-The medical and body rewrite is described in `doc/mob_life_architecture.md` (§8), `doc/health_system_review.md` and `doc/body_architecture.md`. Another session owns it, and it runs in parallel with this one. It owns:
+The medical and body rewrite is described in `doc/mob_life_architecture.md` (§8), `doc/rewrite/archive/health_system_review.md` and `doc/body_architecture.md`. Another session owns it, and it runs in parallel with this one. It owns:
 - `injure()` and `mend()`;
 - body plans, afflictions, organs and surgery;
 - species and proteans;
@@ -117,7 +161,7 @@ All figures come from what is on disk today. Phase 0 re-measures them with the b
 ## What "done" means
 
 - Every guardrail in [roadmap.md](roadmap.md) is enforced in CI.
-- No DM `process()` runs unless it is declared continuous, and every wake has a recorded reason.
+- No DM `process()` runs unless it is declared, and every wake has a recorded reason.
 - There is no `call_ext` outside the generated bindings, and DM keeps no copies of Rust state.
 - The conservation, parity and rule tests pass for every type they apply to.
 - The benchmarks meet the targets set after phase 0.

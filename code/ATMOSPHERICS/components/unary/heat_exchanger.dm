@@ -29,7 +29,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/unary/heat_exchanger, "{node?int
 
 		for(var/obj/machinery/atmospherics/unary/heat_exchanger/target in get_step(src,partner_connect))
 			if(target.dir & get_dir(src,target))
-				rel_set(src, "partner", target)
+				rel_set(src, nameof(partner), target)
 				break
 
 	..()
@@ -63,8 +63,8 @@ APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/unary/heat_exchanger, "{node?int
 		var/datum/material/their_material = partner.engineered_material()
 		var/transfer_fraction = 1
 		if(our_material || their_material)
-			var/our_conductance = our_material ? our_material.material_thermal_conductance(1, 0.005, old_temperature) / 1000 : 50
-			var/their_conductance = their_material ? their_material.material_thermal_conductance(1, 0.005, other_old_temperature) / 1000 : 50
+			var/our_conductance = our_material ? our_material.thermal_conductance(1, 0.005, old_temperature) / 1000 : 50
+			var/their_conductance = their_material ? their_material.thermal_conductance(1, 0.005, other_old_temperature) / 1000 : 50
 			transfer_fraction = clamp(min(our_conductance, their_conductance) / 50, 0.02, 1)
 		air_contents.set_temperature(old_temperature + (new_temperature - old_temperature) * transfer_fraction)
 		partner.air_contents.set_temperature(other_old_temperature + (new_temperature - other_old_temperature) * transfer_fraction)
@@ -112,4 +112,6 @@ APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/unary/heat_exchanger, "{node?int
 		MSG_BLIND("You hear a ratchet."))
 	atom_deconstruct()
 
-REL_PAIR(/obj/machinery/atmospherics/unary/heat_exchanger, partner, partner)
+/obj/machinery/atmospherics/unary/heat_exchanger/relations()
+	. = ..()
+	. += rel_one(nameof(partner), back = nameof(/obj/machinery/atmospherics/unary/heat_exchanger::partner))

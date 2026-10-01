@@ -50,7 +50,9 @@
 	var/datum/trait/linked_trait = null // Internal use, do not assign.
 	var/list/conflict_traits // Lazy. Cache known traits that don't work with this one, instead of doing it all at once, or EVERY time we do a mutation check
 
-REL_PAIR(/datum/gene/trait, linked_trait, linked_gene)
+/datum/gene/trait/relations()
+	. = ..()
+	. += rel_one(nameof(linked_trait), back = nameof(/datum/trait::linked_gene))
 
 // Use these when displaying info to players
 /datum/gene/trait/proc/get_name()
@@ -109,7 +111,7 @@ REL_PAIR(/datum/gene/trait, linked_trait, linked_gene)
 			if(linked_trait.type in H.species.traits)
 				return
 			// Mutate the mob's own copy, never the shared species prototype.
-			var/datum/species/S = proto_private(H, "species")
+			var/datum/species/S = proto_private(H, nameof(H.species))
 			linked_trait.apply(S, H, S.traits[linked_trait.type])
 			S.traits.Add(linked_trait.type)
 			if(!(linked_trait.type in H.dna.species_traits)) // Set species traits too
@@ -126,7 +128,7 @@ REL_PAIR(/datum/gene/trait, linked_trait, linked_gene)
 			if(!(linked_trait.type in H.species.traits))
 				return
 			// Mutate the mob's own copy, never the shared species prototype.
-			var/datum/species/S = proto_private(H, "species")
+			var/datum/species/S = proto_private(H, nameof(H.species))
 			linked_trait.unapply(S, H, S.traits[linked_trait.type])
 			linked_trait.remove(S) // Does nothing, but may as well call it because it exists and has a place now
 			S.traits.Remove(linked_trait.type)

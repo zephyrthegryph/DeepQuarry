@@ -1,3 +1,11 @@
+/// SPRITESHEET_DIR: data/spritesheets/, or the `spritesheet-dir` world param (which
+/// must end in a slash). Read once.
+/proc/spritesheet_dir()
+	var/static/dir
+	if(isnull(dir))
+		dir = world.params?["spritesheet-dir"] || "data/spritesheets/"
+	return dir
+
 //These datums are used to populate the asset cache, the proc "register()" does this.
 //Place any asset datums you create in asset_list_items.dm
 
@@ -141,7 +149,7 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 /datum/asset/proc/regenerate()
 	SHOULD_CALL_PARENT(FALSE)
 	unregister()
-	om_changed(src, CHANGE_EXPLICIT)
+	changed(src, CHANGE_EXPLICIT)
 	register()
 
 /// Unregisters any assets from the transport.
@@ -285,12 +293,12 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 	fdel("[ASSET_CROSS_ROUND_CACHE_DIRECTORY]/spritesheet.[name].css")
 	for(var/sheet in spritesheets_needed)
 		fdel("[ASSET_CROSS_ROUND_CACHE_DIRECTORY]/spritesheet.[sheet].png")
-	fdel("data/spritesheets/spritesheet_[name].css")
+	fdel("[SPRITESHEET_DIR]spritesheet_[name].css")
 	for(var/size_id in sizes)
-		fdel("data/spritesheets/[name]_[size_id].png")
+		fdel("[SPRITESHEET_DIR][name]_[size_id].png")
 	sizes = list()
 	to_generate = list()
-	om_changed(src, CHANGE_EXPLICIT)
+	changed(src, CHANGE_EXPLICIT)
 	fully_generated = FALSE
 	var/old_load = load_immediately
 	load_immediately = TRUE
@@ -334,7 +342,7 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 		var/file_hash = rustg_hash_file("md5", file_path)
 		SSassets.transport.register_asset("[name]_[size_id].png", file_path, file_hash=file_hash)
 	var/res_name = "spritesheet_[name].css"
-	var/fname = "data/spritesheets/[res_name]"
+	var/fname = "[SPRITESHEET_DIR][res_name]"
 	fdel(fname)
 	var/css = generate_css()
 	rustg_file_write(css, fname)
@@ -388,7 +396,7 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 			continue
 
 		// save flattened version
-		var/fname = "data/spritesheets/[name]_[size_id].png"
+		var/fname = "[SPRITESHEET_DIR][name]_[size_id].png"
 		fcopy(size[SPRSZ_ICON], fname)
 		var/error = rustg_dmi_strip_metadata(fname)
 		if(length(error))
@@ -460,7 +468,7 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 		replaced_css = replacetext(replaced_css, find_background_urls.match, "background:url('[asset_url]')")
 		LAZYADD(spritesheets_needed, asset_id)
 
-	var/replaced_css_filename = "data/spritesheets/spritesheet_[name].css"
+	var/replaced_css_filename = "[SPRITESHEET_DIR]spritesheet_[name].css"
 	var/css_hash = rustg_hash_string("md5", replaced_css)
 	rustg_file_write(replaced_css, replaced_css_filename)
 	SSassets.transport.register_asset("spritesheet_[name].css", replaced_css_filename, file_hash=css_hash)
@@ -741,7 +749,9 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 			rustg_file_write(json_encode(generate()), cached)
 		SSassets.transport.register_asset("[name].json", fcopy_rsc(cached))
 		return
-	var/filename = "data/[name].json"
+	// Scratch file under SPRITESHEET_DIR, not data/: worlds sharing a worktree (a
+	// sharded dm-test run) each write, load and delete their own copy.
+	var/filename = "[SPRITESHEET_DIR][name].json"
 	fdel(filename)
 	rustg_file_write(json_encode(generate()), filename)
 	SSassets.transport.register_asset("[name].json", fcopy_rsc(filename))

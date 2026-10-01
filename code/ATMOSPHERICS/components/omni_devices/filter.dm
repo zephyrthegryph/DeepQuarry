@@ -24,13 +24,10 @@
 	var/max_flow_rate = 200
 	var/set_flow_rate = 200
 
-	// ALLOW(instance_list): atmos area (M1a): omni filter pipe device; listed in memory_lists_audit.md, not edited here
-	var/list/filtering_outputs = list()	//maps gasids to gas_mixtures
 
 /obj/machinery/atmospherics/omni/atmos_filter/Initialize(mapload)
 	. = ..()
 
-	rebuild_filtering_list()
 	for(var/datum/omni_port/P in ports)
 		P.air.set_volume(ATMOS_DEFAULT_VOLUME_FILTER)
 
@@ -42,21 +39,20 @@
 			P.air.set_volume(200)
 	if(any_updated)
 		rebuild_port_roles()
-		rebuild_filtering_list()
 
 /// Derived view: input, output and the filter ports, recomputed from the owned ports' modes.
 /obj/machinery/atmospherics/omni/atmos_filter/proc/rebuild_port_roles()
-	rel_clear(src, "input")
-	rel_clear(src, "output")
-	rel_clear(src, "atmos_filters")
+	rel_clear(src, nameof(input))
+	rel_clear(src, nameof(output))
+	rel_clear(src, nameof(atmos_filters))
 	for(var/datum/omni_port/P as anything in ports)
 		switch(P.mode)
 			if(ATM_INPUT)
-				rel_set(src, "input", P)
+				rel_set(src, nameof(input), P)
 			if(ATM_OUTPUT)
-				rel_set(src, "output", P)
+				rel_set(src, nameof(output), P)
 			if(ATM_O2 to ATM_LASTGAS)
-				rel_add(src, "atmos_filters", P)
+				rel_add(src, nameof(atmos_filters), P)
 
 /obj/machinery/atmospherics/omni/atmos_filter/error_check()
 	if(!input || !output || !atmos_filters)
@@ -66,87 +62,41 @@
 
 	return 0
 
-/// R10/M2 bridge (rust_architecture.md §8.5 step 6's filter/mixer slice):
-/// the omni filter's N-way generalization of the trinary filter's two
-/// flows -- one masked `DeviceFlow` per configured filter port plus a
-/// catch-all one to `output`, all `RUST_FLOW_MOLES`. `vg_filter_transfer_multi()`
-/// (`verdigris/domains/gas/src/power_budget.rs`) is `filter_gas_multi()`'s
-/// entropy-limited power budget, unchanged maths, now in Rust; the actual
-/// gas movement is Rust's own device-edge step.
-/obj/machinery/atmospherics/omni/atmos_filter/machine_step()
-	if(!..())
-		return PROCESS_KILL // off or unpowered: its power and settings channels wake it
-
-	var/datum/gas_mixture/output_air = output.air	//BYOND doesn't like referencing "output.air.return_pressure()" so we need to make a direct reference
-	var/datum/gas_mixture/input_air = input.air		// it's completely happy with them if they're in a loop though i.e. "P.air.return_pressure()"... *shrug*
-
-	// Port air is rebound whenever the pipe topology commits: rebuild the
-	// gas -> output mixture list from the ports' current air every step.
-	rebuild_filtering_list()
-	//Figure out the amount of moles to transfer
-	var/requested = (set_flow_rate/input_air.return_volume())*input_air.total_moles()
-	if(requested <= MINIMUM_MOLES_TO_FILTER)
-		unregister_omni_filter_edges()
-		hibernate_until_gas_changes()
-		return PROCESS_KILL
-
-	var/list/outputs = list()	//mixture -> mask, one per configured filter port
+/// The omni filter is a Rust budget group (rust_set_budget_leg()): a masked leg from the input to each configured filter port
+/// plus a clean leg to the output. The requested moles from the input's live gas, the entropy/power budget and the split
+/// across the legs are computed in Rust each device step (power_budget.rs); this only declares the ports and settings.
+/obj/machinery/atmospherics/omni/atmos_filter/push_to_rust()
+	if(QDELETED(src))
+		return
+	last_power_draw = 0
+	last_flow_rate = 0
+	rust_unregister_all_devices_n()
+	if(!operable() || !use_power || !input || !output || !length(atmos_filters)) // ALLOW(derived_reads): set_use_power() and power_change() bump rust_device_rev, as do port binds and disconnect() (nodes, ports, modes)
+		return
+	var/available_power = material_pump_power(power_rating) // ALLOW(derived_reads): fixed by the material
+	var/efficiency = ATMOS_FILTER_EFFICIENCY * (material_pump_efficiency() / 0.8) // ALLOW(derived_reads): fixed by the material
+	var/input_index = ports.Find(input) // ALLOW(derived_reads): set_use_power() and power_change() bump rust_device_rev, as do port binds and disconnect() (nodes, ports, modes)
+	rust_set_budget_leg("output", input_index, ports.Find(output), RUST_FLOW_FILTER, 0, RUST_ROLE_CLEAN, 0, set_flow_rate, available_power, efficiency)
 	for(var/datum/omni_port/P in atmos_filters)
 		var/gasid = mode_to_gasid(P.mode)
-		if(gasid)
-			outputs[P.air] = 1 << GAS_IDX(gasid)
-
-	var/available_power = material_pump_power(power_rating)
-	var/efficiency = ATMOS_FILTER_EFFICIENCY * (material_pump_efficiency() / 0.8)
-	var/list/result = vg_filter_transfer_multi(input_air, outputs, output_air, requested, available_power, efficiency)
-	if(!result)
-		unregister_omni_filter_edges()
-		hibernate_until_gas_changes()
-		return PROCESS_KILL
-
-	var/total_transfer_moles = result[1]
-	var/power_draw = result[2]
-	var/clean_moles = result[3]
-	var/considered_moles = clean_moles
-	for(var/i in 4 to length(result))
-		considered_moles += result[i]
-	var/dt = SSvg.wait / (1 SECONDS)
-
-	last_power_draw = power_draw
-	use_power(power_draw)
-
-	rust_set_device_n("output", ports.Find(input), ports.Find(output))
-	rust_set_device_flow_n("output", 0, RUST_FLOW_MOLES, considered_moles > 0 ? (total_transfer_moles * clean_moles / considered_moles) / dt : 0, RUST_DIR_FORCED, RUST_SIDE_A, RUST_STOP_NONE, 0)
-
-	var/i = 4
-	for(var/datum/omni_port/P in atmos_filters)
-		var/slot = "filter_[P]"
-		if(!outputs[P.air])
-			rust_unregister_device_n(slot)
+		if(!gasid)
 			continue
-		var/moles = result[i++]
-		rust_set_device_n(slot, ports.Find(input), ports.Find(P))
-		rust_set_device_flow_n(slot, outputs[P.air], RUST_FLOW_MOLES, considered_moles > 0 ? (total_transfer_moles * moles / considered_moles) / dt : 0, RUST_DIR_FORCED, RUST_SIDE_A, RUST_STOP_NONE, 0)
+		rust_set_budget_leg("filter_[P]", input_index, ports.Find(P), RUST_FLOW_FILTER, 1 << GAS_IDX(gasid), RUST_ROLE_OUTPUT, 0, set_flow_rate, available_power, efficiency)
 
-	if(input.network)
-		input.network.mark_dirty()
-	if(output.network)
-		output.network.mark_dirty()
-	for(var/datum/omni_port/P in atmos_filters)
-		if(P.network)
-			P.network.mark_dirty()
+/// A step's result: the moles the group moved and the power it drew, billed.
+/obj/machinery/atmospherics/omni/atmos_filter/rust_device_stepped(moles, power_w, target_reached)
+	last_power_draw = power_w
+	if(power_w > 0)
+		use_power(power_w)
+	var/before = input?.air ? input.air.total_moles() + moles : moles
+	last_flow_rate = (before > 0 && input?.air) ? (moles / before) * input.air.return_volume() : 0
 
-	return 1
+TRACKED(/obj/machinery/atmospherics/omni/atmos_filter, set_flow_rate, CHANGE_MACHINE_SETTINGS)
 
-/obj/machinery/atmospherics/omni/atmos_filter/proc/unregister_omni_filter_edges()
-	rust_unregister_device_n("output")
-	for(var/datum/omni_port/P in atmos_filters)
-		rust_unregister_device_n("filter_[P]")
-
-/obj/machinery/atmospherics/omni/atmos_filter/can_process_gas()
-	if(!input?.air)
-		return FALSE
-	return (set_flow_rate / input.air.return_volume()) * input.air.total_moles() > MINIMUM_MOLES_TO_FILTER
+/// The Rust group is pushed (once per frame) when the rate or (through wake_for_state_change()) a port or mode changes.
+/obj/machinery/atmospherics/omni/atmos_filter/derived()
+	. = ..()
+	. += rust_push(nameof(rust_device_rev), nameof(set_flow_rate))
 
 DECLARE_UI(/obj/machinery/atmospherics/omni/atmos_filter, "OmniFilter")
 
@@ -239,7 +189,7 @@ UI_ACT_PROC(/obj/machinery/atmospherics/omni/atmos_filter, ui_act_set_flow_rate)
 	var/new_flow_rate = act_ask(ui.user, action, params, ui, "k236", /datum/om/prompt/number, message = "Enter new flow rate limit (0-[max_flow_rate]L/s)", title = "Flow Rate Control", default = set_flow_rate, max = max_flow_rate)
 	if(isnull(new_flow_rate))
 		return
-	set_flow_rate = between(0, new_flow_rate, max_flow_rate)
+	set_set_flow_rate(between(0, new_flow_rate, max_flow_rate))
 	. = TRUE
 	wake_for_state_change()
 	update_icon()
@@ -331,13 +281,6 @@ UI_ACT_PROC(/obj/machinery/atmospherics/omni/atmos_filter, ui_act_switch_filter)
 
 	update_ports()
 
-/obj/machinery/atmospherics/omni/atmos_filter/proc/rebuild_filtering_list()
-	filtering_outputs.Cut()
-	for(var/datum/omni_port/P in ports)
-		var/gasid = mode_to_gasid(P.mode)
-		if(gasid)
-			filtering_outputs[gasid] = P.air
-
 /obj/machinery/atmospherics/omni/atmos_filter/proc/handle_port_change(datum/omni_port/P)
 	wake_for_state_change()
 	switch(P.mode)
@@ -349,6 +292,8 @@ UI_ACT_PROC(/obj/machinery/atmospherics/omni/atmos_filter, ui_act_switch_filter)
 			P.connect()
 	P.update = 1
 
-REL(/obj/machinery/atmospherics/omni/atmos_filter, input)
-REL(/obj/machinery/atmospherics/omni/atmos_filter, output)
-REL_LIST(/obj/machinery/atmospherics/omni/atmos_filter, atmos_filters)
+/obj/machinery/atmospherics/omni/atmos_filter/relations()
+	. = ..()
+	. += rel_one(nameof(input))
+	. += rel_one(nameof(output))
+	. += rel_many(nameof(atmos_filters))

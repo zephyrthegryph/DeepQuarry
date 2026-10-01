@@ -48,7 +48,7 @@ GLOBAL_LIST_EMPTY(dq_permissions_panels)
 		dq_perms_log_operation = op
 		dq_perms_log_page = text2num(log_page) || 0
 	if(!dq_permissions_panel)
-		own_set(src, "dq_permissions_panel", new /datum/permissions_panel(src))
+		own_set(src, nameof(dq_permissions_panel), new /datum/permissions_panel(src))
 	if(QDELETED(usr) || usr.client != owner())
 		dq_permissions_panel.tgui_interact(owner().mob)
 	else
@@ -111,7 +111,7 @@ GLOBAL_LIST_EMPTY(dq_permissions_panels)
 
 /datum/permissions_panel/New(datum/admins/owner_holder)
 	..()
-	rel_set(src, "holder", owner_holder)
+	rel_set(src, nameof(holder), owner_holder)
 
 // clears its holder's cached panel.
 

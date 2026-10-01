@@ -15,8 +15,7 @@
 //! | `vg_component_get_many(entity, code, fields)` | a list, one number per field id (query groups) |
 //! | `vg_component_set(entity, code, field, index, value)` | a validated write (`index` < 0: whole field) |
 //! | `vg_component_adjust(entity, code, field, index, delta)` | take reconciliation on a conserved field; returns the shortfall |
-//! | `vg_world_tick(seconds)` | pacing: runs a step when one is owed |
-//! | `vg_world_events()` | every typed event since the last call, in `vg_core::event` wire form |
+//! | `vg_frame(elapsed, budget)` | the one driver (see [`crate::frame`]) |
 //! | `vg_world_violations()` | conservation violations since the last call, as text |
 //! | `vg_world_laws()` | per-law activity statistics, as text |
 //!
@@ -140,11 +139,13 @@ fn register(b: &mut WorldBuilder) -> Fields {
     let _ = b.add_law::<SmesInputApply>().after::<PowerSettle>();
 
     // Pipes (`rust_architecture.md` §6, §8.5, step 5): a main-owned network,
-    // its region payloads pooled gas (`vg_gas::pipes::PipeGas`). Devices
-    // step imperatively from `crate::pipes::pipe_step_devices` (DM's own
-    // `wait`-scaled dt, not the World's fixed law cadence -- see that
-    // module's docs), not a registered `Law`.
+    // its region payloads pooled gas (`vg_gas::pipes::PipeGas`). The devices
+    // are one law, `PipeDeviceStep`, on the pacer's period (0.5 s): their jobs
+    // are staged before each step and written back after it
+    // (`crate::pipes::stage_devices` / `apply_devices`).
     b.add_network::<vg_gas::pipes::Pipes>(Ownership::Main);
+    b.add_global(Ownership::Main, vg_gas::laws::DeviceJobs::default());
+    let _ = b.add_law::<vg_gas::laws::PipeDeviceStep>();
     b.conserve_network::<vg_gas::pipes::Pipes>();
     b.conserve("pipe_moles", Tolerance::default());
     b.conserve("pipe_energy", Tolerance::default());
@@ -163,7 +164,7 @@ fn build() -> Result<World> {
     // `wait` moved from 10 seconds to 0.5, and this `dt` moved with it
     // (`rust_architecture.md` §8.5 step 6).
     let mut b = WorldBuilder::new(WorldConfig {
-        dt: vg_core::units::Seconds(0.5),
+        dt: vg_core::units::Seconds(f64::from(crate::frame::PIPE_DEVICE_PERIOD)),
         ..WorldConfig::default()
     });
     let fields = register(&mut b);
@@ -175,15 +176,16 @@ fn build() -> Result<World> {
         Box::new(WorldEntities),
     );
     for (kind, schema) in world.schemas() {
-        // Heat's bodies are watched through heat's own binds, which drain
-        // that kind's wakes (`crate::heat`).
-        if world.kind_of::<vg_heat::HeatBody>() == Some(kind) {
-            continue;
-        }
         let code =
             vg_core::world::kind_code(vg_core::component::domain_id(schema.domain), schema.kind);
         registry::register_domain(world_kind_domain(code), Box::new(WorldKind { kind }));
     }
+    // The turf solid's cells as a watch port (heat watches use the same
+    // generic watch binds as every other watchable).
+    registry::register_domain(
+        world_kind_domain(crate::heat::HEAT_CELLS),
+        Box::new(crate::heat::HeatCells),
+    );
     // Gas handles (turf cells, main and pipe mixtures) as a watch port.
     registry::register_domain(
         world_kind_domain(crate::sched::GAS_HANDLES),
@@ -336,6 +338,23 @@ impl DomainRegistry for WorldKind {
         let _ = with_world(|w| Ok(w.unwatch(self.kind, id)));
     }
 
+    fn add_entry(
+        &mut self,
+        _port: u8,
+        id: WatchId,
+        entry: vg_core::watch::SetEntry,
+    ) -> Result<(), String> {
+        with_world(|w| {
+            w.add_watch_entry(self.kind, id, entry)
+                .map_err(|e| eyre!("{e}"))
+        })
+        .map_err(|e| e.to_string())
+    }
+
+    fn remove_entry(&mut self, _port: u8, id: WatchId, payload: u32) {
+        let _ = with_world(|w| Ok(w.remove_watch_entry(self.kind, id, payload)));
+    }
+
     /// This kind's watch wakes, with DM's `vg_entity` value as the source
     /// (the stores report the entity's slot).
     fn take_wakes(&mut self, out: &mut Vec<Wake>) {
@@ -424,6 +443,54 @@ fn component_bind(entity: ByondValue, code: ByondValue, init: ByondValue) -> Res
         Ok(())
     })?;
     Ok(ByondValue::from(entity::entity_value(e)))
+}
+
+/// [`component_bind`] for many entities in one call and one world lock.
+/// `fields` is `[field id, ...]`; `rows` is flat, `stride = length(fields) + 1`
+/// values per row: `[entity (0: a new entity), value for each field...]`.
+/// Returns the list of entity handles, in row order. One bad row fails the
+/// whole call (nothing is half-bound past the failing row).
+#[auxmacros::bind("/proc/vg_component_bind_list")]
+fn component_bind_list(
+    code: ByondValue,
+    fields: ByondValue,
+    rows: ByondValue,
+) -> Result<ByondValue> {
+    let field_ids = fields
+        .get_list_values()?
+        .iter()
+        .map(field)
+        .collect::<Result<Vec<_>>>()?;
+    if field_ids.is_empty() {
+        bail!("fields must name at least one field");
+    }
+    let values = rows.get_list_values()?;
+    let stride = field_ids.len() + 1;
+    if values.len() % stride != 0 {
+        bail!("rows must be flat entity, value... records of {stride} values");
+    }
+    // Entities are minted before the world is borrowed (as `component_bind` does).
+    let entities = values
+        .chunks_exact(stride)
+        .map(|row| entity::bind_or_reuse(num(&row[0])?))
+        .collect::<Result<Vec<_>>>()?;
+    let mut handles = Vec::with_capacity(entities.len());
+    with_world(|w| {
+        let k = kind(w, &code)?;
+        for (row, e) in values.chunks_exact(stride).zip(entities.iter().copied()) {
+            let mut init = Vec::with_capacity(field_ids.len());
+            for (f, v) in field_ids.iter().zip(&row[1..]) {
+                init.push((*f, None, f64::from(num(v)?)));
+            }
+            w.bind(Some(e), k, &init).map_err(|err| eyre!("{err}"))?;
+            w.entities_mut()
+                .attach(e, WORLD_DOMAIN, ComponentRef::new(0, e.bits()))
+                .map_err(|err| eyre!("{err}"))?;
+            handles.push(entity::entity_value(e));
+        }
+        Ok(())
+    })?;
+    list(handles)
 }
 
 /// Detaches one component.
@@ -550,26 +617,59 @@ fn component_adjust(
 }
 
 /// Pacing: feeds `seconds` of game time to the world's pacer and runs a
-/// step when one is owed. Returns whether a step ran.
-#[auxmacros::bind("/proc/vg_world_tick")]
-fn world_tick(seconds: ByondValue) -> Result<ByondValue> {
+/// step when one is owed. The pipe devices' jobs are staged only when a step is due and written back after it;
+/// returns the report of the step (`device handle, moles, power_w, target_reached` per device that moved gas or
+/// drew power). With `force`, a step runs now whatever the pacer owes (a deterministic step for a test that built
+/// a device by hand). Driven by [`crate::frame`] only.
+pub(crate) fn pace(seconds: f64, force: bool) -> Result<Vec<f32>> {
+    // The heat exchange law reads the mixture probes only when a step runs: building them walks every gas coupling
+    // and loads its mixture, so a frame that only advances the pacer (most of them: the step is PIPE_DEVICE_PERIOD,
+    // the frame a tick) skips it.
+    let due = force || with_world(|w| Ok(w.step_due(Seconds(seconds))))?;
+    let probes = due.then(crate::heat::mixture_probes);
+    with_world(|w| {
+        if let Some(probes) = probes {
+            w.set_global(probes).map_err(|e| eyre!("{e}"))?;
+        }
+        if due {
+            crate::pipes::stage_devices(w)?;
+        }
+        if force {
+            w.step_blocking();
+        } else {
+            let _ = w.tick(Seconds(seconds));
+        }
+        Ok(if due {
+            crate::pipes::apply_devices(w)
+        } else {
+            Vec::new()
+        })
+    })
+}
+
+/// Changes the world's step length (the gas publication cadence: a rupture asks
+/// for a short step for a while, the last grant to expire restores the default).
+/// Every law integrates the new `dt` from the next step on. Returns the step
+/// length now in effect, in seconds; a non-finite or non-positive `seconds` is
+/// refused and the current length is returned.
+#[auxmacros::bind("/proc/vg_world_set_dt")]
+fn world_set_dt(seconds: ByondValue) -> Result<ByondValue> {
     let s = f64::from(num(&seconds)?);
-    let probes = crate::heat::mixture_probes();
-    let ran = with_world(|w| {
-        w.set_global(probes).map_err(|e| eyre!("{e}"))?;
-        Ok(w.tick(Seconds(s)))
+    let now = with_world(|w| {
+        let _ = w.set_dt(Seconds(s));
+        Ok(w.dt().0)
     })?;
-    Ok(ByondValue::from(if ran { 1.0f32 } else { 0.0 }))
+    #[allow(clippy::cast_possible_truncation)]
+    Ok(ByondValue::from(now as f32))
 }
 
 /// Every typed event since the last call, as `vg_core::event`'s wire form
-/// (`header, entity, len, payload...` per record). The generated DM
-/// `vg_drain_events()` decodes it and dispatches each record.
-#[auxmacros::bind("/proc/vg_world_events")]
-fn world_events() -> Result<ByondValue> {
+/// (`header, entity, len, payload...` per record). Taken by
+/// [`crate::frame`], which turns each into a NOTICE record.
+pub(crate) fn take_events() -> Result<Vec<f32>> {
     let mut events = with_world(|w| Ok(w.drain_events()))?;
     crate::heat::apply_mixture_heat(&events);
-    list(events.take())
+    Ok(events.take())
 }
 
 /// Conservation violations since the last call, as text (empty: none).

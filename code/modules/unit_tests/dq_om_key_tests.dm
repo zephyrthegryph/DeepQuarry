@@ -15,8 +15,8 @@
 	// Regression (b11/b12 flake): a power step inside the window must not pull S off the test grid.
 	GLOB.machine_service.process_power()
 	TEST_ASSERT_EQUAL(S.power_region, P, "a power step kept the sensor on its detached test grid")
-	rel_clear(M.power_monitor, "grid_sensors")
-	rel_add(M.power_monitor, "grid_sensors", S)
+	rel_clear(M.power_monitor, nameof(/datum/tgui_module/power_monitor::grid_sensors))
+	rel_add(M.power_monitor, nameof(/datum/tgui_module/power_monitor::grid_sensors), S)
 	MACHINE_WAKE(M)
 	M.machine_step()
 	TEST_ASSERT(M.asleep_on_keys(), "stable power monitor did not sleep on its grid keys")
@@ -79,7 +79,7 @@
 	TEST_ASSERT(PD.asleep_on_keys(), "idle point defense did not sleep on the meteor key")
 	TEST_ASSERT_NULL(PD.om_sleep_violation(), "an idle point defense reported a violation")
 	// The meteor key is what /obj/effect/meteor publishes on Initialize and Destroy.
-	var/failure = om_wake_test(PD, om_callable(null, GLOBAL_PROC_REF(om_changed), GLOB.meteor_watch, CHANGE_METEORS))
+	var/failure = om_wake_test(PD, om_callable(null, GLOBAL_PROC_REF(changed), GLOB.meteor_watch, CHANGE_METEORS))
 	TEST_ASSERT(!failure, failure)
 
 /datum/unit_test/dq_om_keys_wake_disposal
@@ -106,7 +106,7 @@
 	var/mob/living/simple_mob/M = allocate(/mob/living/simple_mob, T)
 	var/datum/ai_brain/B = M.ai_brain
 	TEST_ASSERT_NOTNULL(B, "simple mob did not receive an AI brain")
-	rel_clear(B, "primary_threat")
+	rel_clear(B, nameof(B.primary_threat))
 	B.active_behavior_type = null
 	var/mob/living/visitor = allocate(/mob/living, locate(world.maxx, world.maxy, T.z))
 	TEST_ASSERT(B.hibernate_calm(), "calm brain refused to hibernate")
@@ -116,9 +116,9 @@
 	TEST_ASSERT(B.loop_running(DQAI_PROCESSING), "woken brain did not rejoin strategic processing")
 	// The audit catches a brain asleep with a threat.
 	B.hibernate_calm()
-	rel_set(B, "primary_threat", visitor)
+	rel_set(B, nameof(B.primary_threat), visitor)
 	TEST_ASSERT(B.om_sleep_violation(), "the audit missed a hibernating brain with a threat")
-	rel_clear(B, "primary_threat")
+	rel_clear(B, nameof(B.primary_threat))
 
 /// One mob chunk key, two mask bits: a mob without a client wakes any-mob subscribers only.
 /datum/unit_test/dq_om_keys_mob_chunk_masks

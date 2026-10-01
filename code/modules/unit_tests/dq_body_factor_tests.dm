@@ -35,7 +35,7 @@
 /// raises shield `effect_type`. Returns the generator.
 /datum/unit_test/proc/dq_equip_shield(mob/living/carbon/human/H, effect_type, obj/item/cell/cell)
 	var/obj/item/personal_shield_generator/G = allocate(/obj/item/personal_shield_generator)
-	own_set(G, "bcell", cell)
+	own_set(G, nameof(G.bcell), cell)
 	G.damage_cost = 1
 	TEST_ASSERT(H.equip_to_slot_if_possible(G, SLOT_ID_BACK, disable_warning = TRUE), "the shield generator should equip")
 	TEST_ASSERT(H.apply_body_effect(effect_type), "the shield should come up")

@@ -30,6 +30,7 @@
 	/// __verdigris_ffi_calls when the window began.
 	var/window_start_ffi_calls = 0
 	var/list/window_subsystem_fires
+	var/list/window_system_fires
 	/// The OM scheduler's world wakes when the window began.
 	var/window_world_wakes = 0
 	/// The machine world service's cumulative step time at the window start (it is no subsystem).
@@ -106,6 +107,7 @@
 	window_om_deadlines = benchmark_om_deadline_count()
 	for(var/datum/controller/subsystem/subsystem as anything in Master.subsystems)
 		window_subsystem_fires[subsystem] = subsystem.times_fired
+	window_system_fires = kernel_system_fire_counts()
 	if(profiling)
 		world.Profile(PROFILE_CLEAR) // each window's dump covers only that window
 		world.Profile(PROFILE_CLEAR, type = "sendmaps")
@@ -117,6 +119,7 @@
 	var/list/tick = Master.performance_window(elapsed_seconds, Master.perf_index_of(window_start_position))
 	metric("[prefix]_seconds", elapsed_seconds, "s", "none")
 	metric("[prefix]_tick_avg", tick["avg"], "%")
+	metric("[prefix]_tick_p50", tick["p50"], "%")
 	metric("[prefix]_tick_p95", tick["p95"], "%")
 	metric("[prefix]_tick_p99", tick["p99"], "%")
 	metric("[prefix]_tick_max", tick["max"], "%")
@@ -146,6 +149,20 @@
 		count_metric("[prefix]_[subsystem.name]_fires", fires, "fires")
 		if(work_items >= 0)
 			count_metric("[prefix]_[subsystem.name]_work_items", work_items, "items")
+	// Systems that run a fire() body (air, lighting, ticker ...) are reported like the subsystems they were.
+	for(var/datum/system/system as anything in window_system_fires)
+		var/fires = system.times_fired - window_system_fires[system]
+		if(!fires)
+			continue
+		subsystems[system.name] = list(
+			"fires" = fires,
+			"avg_cost_ms" = system.fire_cost,
+			"estimated_total_ms" = system.fire_cost * fires,
+			"tick_usage" = 0,
+			"tick_overrun" = system.tick_overrun,
+			"work_items" = -1,
+		)
+		count_metric("[prefix]_[system.name]_fires", fires, "fires")
 	count_metric("[prefix]_total_work_items", total_work_items, "items")
 	detail("[prefix]_subsystems", subsystems)
 	// SSair's main-thread time over the window (M1b's "Air time"), from the same
@@ -321,11 +338,20 @@
 		"datum" = length(typesof(/datum)) - atoms,
 	)
 
+/// system -> times_fired, for every registered system (a window's start reading).
+/proc/kernel_system_fire_counts()
+	. = list()
+	for(var/datum/system/system as anything in kernel_pure_systems())
+		.[system] = system.times_fired
+
 /proc/benchmark_subsystem_init_times()
 	var/list/times = list()
 	for(var/datum/controller/subsystem/subsystem as anything in Master.subsystems)
 		if(subsystem.init_time_ms)
 			times[subsystem.name] = subsystem.init_time_ms
+	for(var/datum/system/system as anything in kernel_pure_systems())
+		if(system.init_time_ms)
+			times[system.name] = system.init_time_ms
 	return times
 
 /proc/RunBenchmarks()
@@ -373,6 +399,9 @@
 			var/runtimes_before = GLOB.total_runtimes
 			var/start = REALTIMEOFDAY
 			log_test("Benchmark [scenario_id]: running")
+			// Every scenario reports the same kernel numbers over its whole run (kernel_metrics.dm).
+			var/datum/km_stats_set/kernel_run = km_meter().open_set(GLOB.om_live_sched)
+			var/kernel_start_position = Master.perf_samples_total + 1
 			try
 				scenario.Run()
 				result["status"] = "passed"
@@ -381,6 +410,10 @@
 				result["error"] = "[error.name] ([error.file]:[error.line])"
 				GLOB.failed_any_test = TRUE
 				log_test("::error::Benchmark [scenario_id] failed: [error.name]")
+			km_meter().close_set(kernel_run)
+			scenario.record_scenario_kernel_metrics(kernel_run, kernel_start_position, start)
+			qdel(kernel_run)
+			km_write_tick_series(scenario_id)
 			result["duration_seconds"] = (REALTIMEOFDAY - start) / 10
 			result["runtimes"] = GLOB.total_runtimes - runtimes_before
 			result["metrics"] = (scenario.metrics || list())

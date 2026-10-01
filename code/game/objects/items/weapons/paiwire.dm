@@ -9,7 +9,7 @@
 		play_sfx(src, SFX_MACHINES_CLICK)
 		user.drop_item()
 		src.forceMove(M)
-		rel_set(src, "machine", M)
+		rel_set(src, nameof(machine), M)
 	else
 		act_message(user, src, MSG_SELF("There aren't any ports on [M] that match the jack belonging to %T%."), MSG_OTHERS("%U% fumbles to find a place on [M] to plug in %T%."))
 

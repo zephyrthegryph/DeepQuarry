@@ -94,12 +94,12 @@
 	if(!F)
 		if(P.character_forms)
 			log_game("FORMS: [key_name(P)] had [P.character_forms.type] replaced by protean forms for a new control cluster.")
-			own_clear(P, "character_forms", OWN_DELETE)
+			own_clear(P, nameof(P.character_forms), OWN_DELETE)
 		F = P.add_forms(/datum/forms/protean)
 	if(F.rig && F.rig != src)
-		rel_clear(F.rig, "myprotean")
-	rel_set(F, "rig", src)
-	rel_set(src, "myprotean", P)
+		rel_clear(F.rig, nameof(/obj/item/rig/protean::myprotean))
+	rel_set(F, nameof(F.rig), src)
+	rel_set(src, nameof(myprotean), P)
 	if(P.get_equipped_item(SLOT_ID_BACK))
 		om_after(src, 3, PROC_REF(AssimilateBag), P, 1, P.get_equipped_item(SLOT_ID_BACK)) // ALLOW(decl): conditional, extra args
 	else
@@ -122,12 +122,11 @@
 	if(istype(B,/obj/item/storage/backpack))
 		if(spawned)
 			B = P.get_equipped_item(SLOT_ID_BACK)
-			P.unEquip(P.get_equipped_item(SLOT_ID_BACK))
 		if(QDELETED(B)) // for mannequins or such
 			return
-		B.forceMove(src)
-		own_set(src, "rig_storage", B)
-		P.drop_item(B)
+		// Off the back (spawned) or out of the hand, into the rig.
+		if(!own_set(src, nameof(src.rig_storage), B, user = spawned ? null : P, into = TRUE))
+			return
 		to_chat(P, span_notice("[B] has been integrated into the [src]."))
 		if(spawned)	//This feels very dumb to have a second if but I'm lazy
 			P.equip_to_slot_if_possible(src, SLOT_ID_BACK)
@@ -138,7 +137,7 @@
 /// Old verb "Remove Stored Bag".
 /obj/item/rig/protean/proc/protean_removebag_verb(mob/user, obj/item/held, datum/interaction/interaction)
 	if(rig_storage)
-		var/obj/item/storage/backpack/removed_bag = own_take(src, "rig_storage")
+		var/obj/item/storage/backpack/removed_bag = own_take(src, nameof(rig_storage))
 		user.put_in_hands(removed_bag)
 	else
 		to_chat(user, "This Rig does not have a bag installed. Use a bag on it to install one.")
@@ -315,11 +314,9 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 			to_chat(user, "\The [src] already has a tank installed.")
 			return INTERACTION_HANDLED_PASS
 
-		if(!user.unEquip(W))
-			return INTERACTION_HANDLED_PASS
 
-		W.forceMove(src)
-		own_set(src, "air_supply", W) // contained: must already be inside
+		if(!own_set(src, nameof(src.air_supply), W, user = user))
+			return INTERACTION_HANDLED_PASS
 		to_chat(user, "You slot [W] into [src] and tighten the connecting valve.")
 		return INTERACTION_HANDLED_PASS
 
@@ -372,7 +369,7 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 	if(!air_supply)
 		to_chat(user, "There is no tank to remove.")
 		return ITEM_INTERACT_BLOCKING
-	var/obj/item/tank/removed_tank = own_take(src, "air_supply")
+	var/obj/item/tank/removed_tank = own_take(src, nameof(air_supply))
 	if(user.get_equipped_item(SLOT_ID_HAND_R) && user.get_equipped_item(SLOT_ID_HAND_L))
 		removed_tank.forceMove(get_turf(user))
 	else
@@ -454,14 +451,14 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 	stop_soaking()
 	if(!istype(M) || M == myprotean)
 		return
-	rel_set(src, "soaking_wearer", M)
+	rel_set(src, nameof(soaking_wearer), M)
 	om_hook(M, /datum/om/event/before/living_injure, src, PROC_REF(soak_wearer_injury))
 
 /obj/item/rig/protean/proc/stop_soaking()
 	if(!soaking_wearer)
 		return
 	om_unhook(soaking_wearer, /datum/om/event/before/living_injure, src)
-	rel_clear(src, "soaking_wearer")
+	rel_clear(src, nameof(soaking_wearer))
 
 /obj/item/rig/protean/proc/soak_wearer_injury(mob/living/carbon/human/source, datum/om/event/before/living_injure/event)
 	EVENT_HANDLER

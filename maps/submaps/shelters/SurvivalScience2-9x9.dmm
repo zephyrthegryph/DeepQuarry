@@ -94,7 +94,7 @@
 	name = "Server Base";
 	nitrogen = 500;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/survivalpod/superpose/SurvivalScienceV2)
 "i" = (
@@ -396,7 +396,7 @@
 	name = "Server Base";
 	nitrogen = 500;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/survivalpod/superpose/SurvivalScienceV2)
 "E" = (
@@ -446,7 +446,7 @@
 	name = "Server Base";
 	nitrogen = 500;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/survivalpod/superpose/SurvivalScienceV2)
 "N" = (
@@ -492,7 +492,7 @@
 	name = "Server Base";
 	nitrogen = 500;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/survivalpod/superpose/SurvivalScienceV2)
 "U" = (

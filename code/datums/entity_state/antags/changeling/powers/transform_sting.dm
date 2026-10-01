@@ -8,7 +8,7 @@
 	verbpath = /mob/proc/changeling_transformation_sting
 
 /mob/proc/changeling_transformation_sting()
-	set category = "Changeling"
+	set category = VERB_CAT_CHANGELING
 	set name = "Transformation sting (40)"
 	set desc="Sting target"
 
@@ -43,7 +43,7 @@
 		return FALSE
 	add_attack_logs(src,T,"Transformation sting (changeling)")
 	act_message(T, null, others = span_warning("%U% transforms!"))
-	own_set(T, "dna", chosen_dna.dna.Clone())
+	own_set(T, nameof(T.dna), chosen_dna.dna.Clone())
 	T.real_name = chosen_dna.dna.real_name
 	T.UpdateAppearance()
 	domutcheck(T, null)

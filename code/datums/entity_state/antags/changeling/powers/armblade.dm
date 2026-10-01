@@ -10,7 +10,7 @@
 
 //Grows a scary, and powerful arm blade.
 /mob/proc/changeling_arm_blade()
-	set category = "Changeling"
+	set category = VERB_CAT_CHANGELING
 	set name = "Arm Blade (20)"
 
 	var/datum/changeling/comp = is_changeling(src)
@@ -38,7 +38,7 @@
 
 //Grows a scary, and powerful claw.
 /mob/proc/changeling_claw()
-	set category = "Changeling"
+	set category = VERB_CAT_CHANGELING
 	set name = "Claw (15)"
 	var/datum/changeling/comp = is_changeling(src)
 	if(!comp)
@@ -79,7 +79,7 @@
 		visible_message(span_warning("A grotesque weapon forms around [loc.name]\'s arm!"),
 		span_warning("Our arm twists and mutates, transforming it into a deadly weapon."),
 		span_warningplain("You hear organic matter ripping and tearing!"))
-		rel_set(src, "creator", loc)
+		rel_set(src, nameof(creator), loc)
 
 /obj/item/melee/changeling/dropped(mob/user, equipping, slot)
 	visible_message(span_warning("With a sickening crunch, [creator()] reforms their arm!"),

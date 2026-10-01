@@ -24,18 +24,14 @@
 		/obj/machinery/portable_atmospherics/powered/pump,
 		/obj/machinery/portable_atmospherics/powered/scrubber,
 		// Atmospherics devices with DM-side work (the "machine_step" section below). Devices whose
-		// flow law is a Rust device edge (vent pumps and scrubbers, pumps, valves, passive gates)
+		// flow law is a Rust device edge (vent pumps, dual-port vents and scrubbers, pumps, valves, passive gates, filters and mixers)
 		// and plain pipes have no DM work at all and don't join.
 		/obj/machinery/atmospherics/unary/freezer,
 		/obj/machinery/atmospherics/unary/heater,
 		/obj/machinery/atmospherics/unary/heat_exchanger,
 		/obj/machinery/atmospherics/unary/outlet_injector,
 		/obj/machinery/atmospherics/unary/cryo_cell,
-		/obj/machinery/atmospherics/binary/dp_vent_pump,
 		/obj/machinery/atmospherics/binary/algae_farm,
-		/obj/machinery/atmospherics/omni,
-		/obj/machinery/atmospherics/trinary/atmos_filter,
-		/obj/machinery/atmospherics/trinary/mixer,
 		/obj/machinery/atmospherics/portables_connector,
 		/obj/machinery/atmospherics/pipeturbine,
 		/obj/machinery/atmospherics/pipe/simple/heat_exchanging,
@@ -194,29 +190,31 @@
 	if(M.first_wake_pending())
 		return
 	// During init every machine's first wake runs in one bulk pass when the MC has initialized
-	// every subsystem (machine_first_wakes_flush()), before the first air fire, instead of
+	// every boot node (the machine service's on_members_ready()), before the first air fire, instead of
 	// thousands of zero-delay timers draining for minutes after the round starts.
 	if(GLOB.machine_first_wakes_bulk)
-		rel_add(om_global_owner(), "machine_first_wakes", M)
+		rel_add(om_global_owner(), nameof(/datum/om/global_owner::machine_first_wakes), M)
 		return
-	om_after_slot(M, "first_wake", 0, /obj/machinery/proc/materialize_wakes)
+	after_slot(M, "first_wake", 0, /obj/machinery/proc/materialize_wakes)
 
 /// Machines waiting for the boot bulk first-wake pass, in join order. A relation list on the global
 /// owner: a deleted machine drops out on its own (its relation teardown), nothing takes it out.
 /datum/om/global_owner/var/list/obj/machinery/machine_first_wakes
-REL_LIST(/datum/om/global_owner, machine_first_wakes)
+/datum/om/global_owner/relations()
+	. = ..()
+	. += rel_many(nameof(machine_first_wakes))
 /// TRUE until the MC finishes initializing; while set, on_start() queues first wakes in bulk.
 GLOBAL_VAR_INIT(machine_first_wakes_bulk, TRUE)
 
-/// Runs every queued machine's first wake (arm_wakes() and its start condition) in one pass. The MC
-/// calls it once every subsystem has initialized (pipenets and air exist, so gas watches can
-/// arm), before the first air fire. Machines that join later use their `first_wake` timer slot.
-/proc/machine_first_wakes_flush()
+/// Runs every queued machine's first wake (arm_wakes() and its start condition) in one pass. The kernel
+/// calls on_members_ready() once every boot node has initialized (pipenets and air exist, so gas
+/// watches can arm), before the first air fire. Machines that join later use their `first_wake` timer slot.
+/datum/world_service/machines/on_members_ready()
 	GLOB.machine_first_wakes_bulk = FALSE
 	var/datum/om/global_owner/owner = om_global_owner()
 	var/list/queued = owner.machine_first_wakes?.Copy() || list()
 	// Emptied up front: each materialize_wakes() then leaves an empty queue in O(1).
-	rel_clear(owner, "machine_first_wakes")
+	rel_clear(owner, nameof(owner.machine_first_wakes))
 	var/start = REALTIMEOFDAY
 	var/ran = 0
 	for(var/obj/machinery/M as anything in queued)
@@ -393,29 +391,15 @@ GLOBAL_VAR_INIT(machine_first_wakes_bulk, TRUE)
 
 // ---------------------------------------------------------------- APCs
 
-/// Rust runs the distributor; a wake resends the settings, and a power failure ends by rewake.
-/datum/om/stage/machine/power/apc
-	of = /obj/machinery/power/apc
+// Rust runs the distributor and the APC's settings reach it through its generated push_to_rust(): the APC has
+// no power stage of its own.
 
-/datum/om/stage/machine/power/apc/perform(obj/machinery/power/apc/M, datum/om/frame/machine/F)
-	if(M.failure_until && EXPIRY_EXPIRED(M, failure_until, CLOCK_WORLD))
-		M.failure_timer = 0
-		M.failure_until = 0
-		M.queue_icon_update()
-		M.update()
-	M.power_sync()
-	return STAGE_IDLE
-
-/datum/om/stage/machine/power/apc/rewake_delay(obj/machinery/power/apc/M)
-	return EXPIRY_LEFT(M, failure_until, CLOCK_WORLD)
-
-/// Icon updates, at most every APC_UPDATE_ICON_COOLDOWN.
+/// The APC draws through draw() (the refresh engine): its present stage has nothing to do. (The
+/// generic one would call update_icon(), whose changed() mark wakes this pipeline again.)
 /datum/om/stage/machine/present/apc
 	of = /obj/machinery/power/apc
-	min_interval = APC_UPDATE_ICON_COOLDOWN
 
 /datum/om/stage/machine/present/apc/perform(obj/machinery/power/apc/M, datum/om/frame/machine/F)
-	M.icon_renderer?.apply(M)
 	return STAGE_IDLE
 
 // ---------------------------------------------------------------- SMES
@@ -704,7 +688,9 @@ OM_FIELD(/obj/machinery, speed_process, FALSE, CHANGE_MACHINE_SETTINGS)
 
 /// The item being recharged.
 OM_FIELD_TYPED(/obj/machinery/recharger, obj/item, charging, null, CHANGE_MACHINE_OCCUPANT)
-OWN(/obj/machinery/recharger, charging, OWN_SPILL)
+/obj/machinery/recharger/ownership()
+	. = ..()
+	. += owns(nameof(charging), policy = OWN_SPILL)
 /// The cell being charged.
 OM_FIELD_TYPED(/obj/machinery/cell_charger, obj/item/cell, charging, null, CHANGE_MACHINE_OCCUPANT)
 /// TRUE while the fire alarm's countdown runs.

@@ -7,7 +7,7 @@
 
 //Change our DNA to that of somebody we've absorbed.
 /mob/proc/changeling_transform()
-	set category = "Changeling"
+	set category = VERB_CAT_CHANGELING
 	set name = "Transform (5)"
 
 	var/datum/changeling/changeling = changeling_power(5,1,0)
@@ -41,7 +41,7 @@
 		var/newSpecies = chosen_dna.speciesName
 		H.set_species(newSpecies)
 
-	own_set(src, "dna", chosen_dna.dna.Clone())
+	own_set(src, nameof(dna), chosen_dna.dna.Clone())
 	if(ishuman(src))
 		var/mob/living/carbon/human/H = src
 		H.identifying_gender = chosen_dna.identifying_gender

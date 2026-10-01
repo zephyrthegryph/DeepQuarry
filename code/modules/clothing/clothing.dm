@@ -71,7 +71,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing, TYPE_PROC_REF(/atom, appearance_over
 // to the floor as a normal item. After this runs the piece is never "stuck".
 /obj/item/clothing/proc/rig_self_detach()
 	var/obj/item/rig/owner_rig = master_rig()
-	rel_clear(src, "master_rig")
+	rel_clear(src, nameof(master_rig))
 	canremove = TRUE
 	if(ismob(loc))
 		var/mob/M = loc
@@ -179,7 +179,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing, TYPE_PROC_REF(/atom, appearance_over
 // start
 /obj/item/clothing/proc/change_color()
 	set name = "Change Color"
-	set category = "Object"
+	set category = VERB_CAT_OBJECT
 	set desc = "Change the color of the clothing."
 	set src in usr
 
@@ -323,7 +323,10 @@ EXTEND_INTERACTIONS(/obj/item/clothing/ears, INTERACT_HAND_UNGATED(null, PROC_RE
 		ACCESSORY_SLOT_RING\
 		|ACCESSORY_SLOT_WRIST)
 
-OWN(/obj/item/clothing/gloves, contents, OWN_SPILL)
+/obj/item/clothing/gloves/ownership()
+	. = ..()
+	. += owns(nameof(contents), policy = OWN_SPILL)
+	. += owns(nameof(cell), policy = OWN_CONTAINED)
 
 /obj/item/clothing/proc/set_clothing_index()
 	return
@@ -343,14 +346,14 @@ OWN(/obj/item/clothing/gloves, contents, OWN_SPILL)
 	update_icon()
 
 /obj/item/clothing/gloves/equipped(mob/user, slot)
-	rel_set(src, "wearer", user)
+	rel_set(src, nameof(wearer), user)
 	return ..()
 
 /obj/item/clothing/gloves/dropped(mob/user, equipping, slot)
 	..()
 
 	punch_force = initial(punch_force)
-	rel_clear(src, "wearer")
+	rel_clear(src, nameof(wearer))
 	if(!ishuman(user))
 		return
 	var/mob/living/carbon/human/H = user
@@ -361,11 +364,11 @@ OWN(/obj/item/clothing/gloves, contents, OWN_SPILL)
 		if(istype(G))
 			to_chat(user, "You slip \the [src] on over \the [H.get_equipped_item(SLOT_ID_GLOVES)].")
 			if(istype(G, /obj/item/clothing/gloves))
-				own_set(src, "gloves", H.get_equipped_item(SLOT_ID_GLOVES))
+				own_set(src, nameof(gloves), H.get_equipped_item(SLOT_ID_GLOVES))
 			else if(istype(G, /obj/item/clothing/accessory))
-				own_set(src, "ring", H.get_equipped_item(SLOT_ID_GLOVES))
+				own_set(src, nameof(ring), H.get_equipped_item(SLOT_ID_GLOVES))
 			else
-				own_set(src, "gloves", H.get_equipped_item(SLOT_ID_GLOVES)) //Fallback
+				own_set(src, nameof(gloves), H.get_equipped_item(SLOT_ID_GLOVES)) //Fallback
 			H.unEquip(H.get_equipped_item(SLOT_ID_GLOVES), TRUE, src)
 			if(!(flags & THICKMATERIAL))
 				if(istype(G, /obj/item/clothing/gloves) || istype(G, /obj/item/clothing/accessory)) //Because sometimes you can wear non-glove items on your hands.
@@ -376,13 +379,13 @@ OWN(/obj/item/clothing/gloves, contents, OWN_SPILL)
 	if(gloves)
 		if(!H.equip_to_slot_if_possible(gloves, SLOT_ID_GLOVES))
 			gloves.forceMove(get_turf(src))
-		own_take(src, "gloves")
+		own_take(src, nameof(gloves))
 		return
 
 	if(ring) //We do NOT have gloves under our gloves but have a ring under our glove instead!
 		if(!H.equip_to_slot_if_possible(ring, SLOT_ID_GLOVES))
 			ring.forceMove(get_turf(src))
-		own_take(src, "ring")
+		own_take(src, nameof(ring))
 		return
 
 /obj/item/clothing/gloves
@@ -665,7 +668,7 @@ TYPE_TABLE(/obj/item/clothing/shoes, fit_spec, list(REQ_FITS_BODYTYPES(list("exc
 	if(user.put_in_hands(holding))
 		act_message(user, null, others = span_danger("%U% pulls a knife out of their boot!"))
 		play_sfx(src, SFX_WEAPONS_HOLSTER_SHEATHOUT, 0.5, vary = FALSE)
-		own_take(src, "holding")
+		own_take(src, nameof(holding))
 		cut_overlay("[icon_state]_knife")
 	else
 		to_chat(user, span_warning("Your need an empty, unbroken hand to do that."))
@@ -949,7 +952,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/suit, TYPE_PROC_REF(/atom, appearance
 	if(!hoodtype)
 		return
 	var/obj/item/clothing/head/hood/H = new hoodtype(src)
-	own_set(src, "hood", H)
+	own_set(src, nameof(hood), H)
 	if(!actions_types.len) //If we don't already have a special action type, let's add it.
 		actions_types |= /datum/action/item_action/toggle_hood
 
@@ -1346,7 +1349,9 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under, \
 	sensor_mode = pick(0,1,2,3)
 	. = ..()
 
-OWN(/obj/item/clothing, contents, OWN_SPILL)
+/obj/item/clothing/ownership()
+	. = ..()
+	. += owns(nameof(contents), policy = OWN_SPILL)
 // Attached accessories are part of the garment: deleted with it, not spilled
 // (dq_lifecycle_spill_declared skips owned children held in contents).
 
@@ -1508,9 +1513,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/shoes, \
 		if(holding)
 			to_chat(user, span_warning("\The [src] is already holding \a [holding]."))
 			return INTERACTION_HANDLED_PASS
-		user.unEquip(I)
-		I.forceMove(src)
-		own_set(src, "holding", I)
+		if(!own_set(src, nameof(src.holding), I, user = user))
+			return INTERACTION_HANDLED_PASS
 		act_message(user, src, others = span_infoplain(span_bold("%U%") + " shoves %I% into %T%."), item = I)
 		update_icon()
 		return INTERACTION_HANDLED_PASS
@@ -1553,8 +1557,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/shoes, \
 		SPECIES_WEREBEAST = 'icons/inventory/head/mob_werebeast.dmi')
 
 
-
-OWN(/obj/item/clothing/gloves, cell, OWN_CONTAINED)
 
 /// the master_rig this refers to (a relation view: null once it is deleted).
 /obj/item/clothing/proc/master_rig() as /obj/item/rig

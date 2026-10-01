@@ -55,7 +55,7 @@
 
 	else if(mind)
 		soul_link(/datum/soul_link/shared_body, src, target)
-		rel_set(src, "deployed_shell", target)
+		rel_set(src, nameof(deployed_shell), target)
 		if(src.client) // ITION: Resize shell based on our preffered size
 			target.resize(src.client.prefs.read_preference(/datum/preference/numeric/human/size_multiplier)) // ITION + size_multiplier migrated
 		target.deploy_init(src)
@@ -64,9 +64,9 @@
 			target.first_transfer = FALSE
 			target.copy_from_prefs_vr()
 			if(LAZYLEN(target.vore_organs))
-				rel_set(target, "vore_selected", target.vore_organs[1])
+				rel_set(target, nameof(target.vore_selected), target.vore_organs[1])
 		src.copy_vore_prefs_to_mob(target)
-		rel_set(src, "teleop", target) // So the AI 'hears' messages near its core.
+		rel_set(src, nameof(teleop), target) // So the AI 'hears' messages near its core.
 		target.post_deploy()
 
 /// Picking a shell to deploy to (AIs and shells moving between shells). A cancel aborts deployment.
@@ -81,7 +81,7 @@
 	deploy_to_shell(ask.choice, TRUE)
 
 /mob/living/silicon/ai/proc/deploy_to_shell_act()
-	set category = "AI.Commands"
+	set category = VERB_CAT_AI_COMMANDS
 	set name = "Deploy to Shell"
 	deploy_to_shell() // This is so the AI is not prompted with a list of all mobs when using the 'real' proc.
 

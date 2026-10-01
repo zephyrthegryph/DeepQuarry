@@ -4,6 +4,7 @@
 /// Test that checks if all clothing is valid
 /datum/unit_test/all_clothing_shall_be_valid
 	is_sweep_test = TRUE
+	tier = TEST_TIER_EXHAUSTIVE
 	/// Set TRUE by get_signal_data when a worn icon_state is missing. Reported as a
 	/// notice (non-failing); see the art-check rationale below.
 	var/signal_failed = FALSE
@@ -23,13 +24,13 @@
 	#ifdef UNIT_TESTS
 	// Build one human per body type up-front. set_species runs once per species here
 	// instead of once per (species × clothing item).
-	own_set(src, "human_storage", new /obj())
-	own_take_all(src, "test_humans")
+	own_set(src, nameof(human_storage), new /obj())
+	own_take_all(src, nameof(test_humans))
 	for(var/body_type in list(SPECIES_HUMAN, SPECIES_VOX, SPECIES_TESHARI))
 		var/mob/living/carbon/human/H = new(human_storage)
 		H.set_species(body_type)
 		om_hook(H, /datum/om/event/unittest_data, src, PROC_REF(get_signal_data))
-		own_put(src, "test_humans", body_type, H)
+		own_put(src, nameof(test_humans), body_type, H)
 	#endif
 
 	var/list/scan = subtypesof(/obj/item/clothing)
@@ -57,8 +58,8 @@
 		var/mob/living/carbon/human/H = test_humans[body_type]
 		om_unhook(H, /datum/om/event/unittest_data, src)
 		qdel(H)
-	own_take_all(src, "test_humans")
-	own_clear(src, "human_storage", OWN_DELETE)
+	own_take_all(src, nameof(test_humans))
+	own_clear(src, nameof(human_storage), OWN_DELETE)
 	#endif
 
 	// Data-quality issues (missing worn/base sprites, heat/cold flag style) are a
@@ -206,3 +207,24 @@
 				TEST_NOTICE(src, "[item_path]: Clothing - Testing \"[species]\" state \"[set_state]\" for slot \"[slot_name]\", but it was not in dmi \"[set_icon]\"")
 				signal_failed = TRUE
 				return
+
+/// Normal tier: the clothing checks on one item per slot family (and a hooded
+/// suit, for the hood path). Every clothing type runs in CI and nightly.
+/datum/unit_test/all_clothing_shall_be_valid/representative
+	is_sweep_test = FALSE
+	tier = TEST_TIER_NORMAL
+
+/datum/unit_test/all_clothing_shall_be_valid/representative/curated_types()
+	return list(
+		/obj/item/clothing/under/color/grey,
+		/obj/item/clothing/suit/armor/vest,
+		/obj/item/clothing/suit/storage/hooded/wintercoat,
+		/obj/item/clothing/suit/space/void,
+		/obj/item/clothing/head/helmet,
+		/obj/item/clothing/shoes/black,
+		/obj/item/clothing/gloves/black,
+		/obj/item/clothing/mask/gas,
+		/obj/item/clothing/glasses/meson,
+		/obj/item/clothing/ears/earmuffs,
+		/obj/item/clothing/accessory/armband,
+	)

@@ -269,7 +269,7 @@ DECLARE_INTERACTIONS(/obj/item/mail, \
 /obj/item/mail/proc/initialize_for_recipient(datum/mind/recipient, preset_goodies = FALSE)
 	var/current_title = recipient.role_alt_title ? recipient.role_alt_title : recipient.assigned_role
 	name = "[initial(name)] for [recipient.name] ([current_title])"
-	rel_set(src, "addressee", recipient)
+	rel_set(src, nameof(addressee), recipient)
 
 	var/datum/job/this_job = SSjob.occupations_by_name[recipient.assigned_role]
 
@@ -439,7 +439,7 @@ TYPE_TABLE(/obj/item/storage/bag/mail, hold_spec, list(HOLD_ONLY(list( \
 			return
 		balloon_alert(user, "added to database")
 		play_sfx(loc, SFX_ITEMS_MAIL_MAILSCANNED)
-		rel_set(src, "saved", A)
+		rel_set(src, nameof(saved), A)
 		return
 	if(isliving(A))
 		if(!saved)
@@ -469,7 +469,7 @@ TYPE_TABLE(/obj/item/storage/bag/mail, hold_spec, list(HOLD_ONLY(list( \
 			return
 
 		saved.scanned = TRUE
-		rel_clear(src, "saved")
+		rel_clear(src, nameof(saved))
 
 		cargo_points = rand(5, 10)
 		to_chat(user, span_notice("Succesful delivery acknowledged! [cargo_points] points added to Supply."))

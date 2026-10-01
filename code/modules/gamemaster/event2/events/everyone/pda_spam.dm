@@ -19,8 +19,8 @@
 
 /datum/event2/event/pda_spam/set_up()
 	EXPIRY_STAMP(src, last_spam_time, CLOCK_WORLD)// So it won't immediately give up.
-	rel_set(src, "MS", pick_message_server())
-	rel_set(src, "node", get_exonet_node())
+	rel_set(src, nameof(MS), pick_message_server())
+	rel_set(src, nameof(node), get_exonet_node())
 
 /datum/event2/event/pda_spam/event_tick()
 	if(!can_spam())
@@ -65,11 +65,11 @@
 
 /datum/event2/event/pda_spam/proc/can_spam()
 	if(!node() || !node().on || !node().allow_external_PDAs)
-		rel_set(src, "node", get_exonet_node())
+		rel_set(src, nameof(node), get_exonet_node())
 		return FALSE
 
 	if(!MS() || !MS().active)
-		rel_set(src, "MS", pick_message_server())
+		rel_set(src, nameof(MS), pick_message_server())
 		return FALSE
 
 	return TRUE

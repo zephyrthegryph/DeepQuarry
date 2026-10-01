@@ -33,8 +33,8 @@
 	var/list/source_generators = list()
 	for(var/obj/machinery/power/smes/candidate_smes in topology.power_objects)
 		source_smeses += candidate_smes
-		stored_charges += candidate_smes.charge
-		candidate_smes.charge = 0
+		stored_charges += candidate_smes.stored_charge()
+		candidate_smes.set_stored_charge(0)
 	for(var/obj/machinery/power/generator/generated_station/candidate_generator in topology.power_objects)
 		source_generators += candidate_generator
 		candidate_generator.stat_add(BROKEN)
@@ -43,7 +43,7 @@
 	TEST_ASSERT(!topology.power_available(), "Physical power capability stayed available after source depletion")
 	for(var/i in 1 to length(source_smeses))
 		var/obj/machinery/power/smes/source_smes = source_smeses[i]
-		source_smes.charge = stored_charges[i]
+		source_smes.set_stored_charge(stored_charges[i])
 	for(var/obj/machinery/power/generator/generated_station/source_generator in source_generators)
 		source_generator.stat_remove(BROKEN)
 	TEST_ASSERT(topology.power_available(), "Physical power capability did not recover after source restoration")

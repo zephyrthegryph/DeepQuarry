@@ -8,7 +8,7 @@
 // ALLOW(scheduler): the object-model core's own record for this entity; released by the core (entity.dm) on leave
 /datum/var/tmp/datum/om/rec/om_rec
 /// Union of every channel something listens to on this entity. A setter's
-/// om_changed() returns on `!(om_listen & bits)` without a proc call more.
+/// changed() returns on `!(om_listen & bits)` without a proc call more.
 /datum/var/tmp/om_listen = 0
 
 /datum/om/rec
@@ -72,7 +72,6 @@
 	var/list/dv
 	/// Stride 4: clock idx, rate, local time (ds), settled at (ds).
 	var/list/clocks
-	var/list/rates
 	var/list/tasks
 	/// Step accumulators (seconds), indexed by the behaviour's step_idx. Grown on first use.
 	var/list/steps
@@ -341,7 +340,7 @@
 	for(var/datum/om/task/T as anything in rec.tasks)
 		slow |= T.interrupt_on
 	rec.slow_mask = slow
-	rec.owner.om_listen = mask | slow | rec.table?.cache_mask | rec.table?.appearance_mask | (rec.owner == GLOB.om_world ? shared_cache_change_mask : 0)
+	rec.owner.om_listen = mask | slow | rec.table?.cache_mask | rec.table?.appearance_mask | (rec.owner == GLOB.om_world ? shared_cache_change_mask : 0) | (rec.owner.seq_states ? seq_listen_mask(rec.owner) : 0) | rx_chan_mask_of(rec.owner)
 
 /// The mask other entities and behaviours observe (decides eager derived values).
 /proc/om_observed_mask(datum/om/rec/rec)
@@ -355,13 +354,25 @@
 
 // ---------------------------------------------------------------- change dispatch
 
-/// Setters call this after writing tracked state. Level-triggered: it says
-/// "these channels may have changed"; observers re-read current state.
-/proc/om_changed(datum/E, bits)
+/// The kernel's change dispatch, reached only through changed() (the public change API). Level-triggered:
+/// it says "these channels may have changed"; observers re-read current state. Any raise on an atom
+/// whose type derives something (a look, hidden verbs, capabilities, periodic work) queues its refresh
+/// (dx_conventions.md section 1); `force_refresh` queues it for any entity.
+/proc/om_raise_change(datum/E, bits, force_refresh = FALSE)
 	if(E.om_listen & bits)
 		om_dispatch_change(E, bits)
+	if(force_refresh || (isatom(E) && !E.refresh_queued && (GLOB.type_derives_cache[E.type] || E.periodic_cadence || E.periodic_interval)))
+		refresh_mark(E, DEP_ALL, bits)
 
 /proc/om_dispatch_change(datum/E, bits)
+	// Sequence steps that read these channels wake (code/controllers/kernel/sequence.dm). changed(), om_raise_change() and the
+	// OM_CHANGED() setters reach here: E's listen mask carries its sequences' channels (seq_listen_mask()).
+	if(E.seq_states)
+		seq_channels(E, bits)
+	// on_channel() reactions reading these channels queue for the drain (code/datums/reactions/delivery.dm).
+	var/datum/rx_table/RT = GLOB.rx_tables[E.type]
+	if(RT && (RT.chan_mask & bits))
+		rx_channels(E, bits, RT)
 	if((bits & shared_cache_change_mask) && E == GLOB.om_world)
 		shared_cache_on_world_change(bits)
 	var/datum/om/rec/rec = E.om_rec
@@ -414,7 +425,7 @@
 		var/list/R = rec.relay_in
 		for(var/j in 1 to length(R) step 2)
 			if(R[j + 1] & bits)
-				om_changed(R[j], CHANGE_RELATED)
+				changed(R[j], CHANGE_RELATED)
 	// A relation var a cross-entity derived input follows changed: resubscribe.
 	if(rec.table.relay_mask & bits)
 		om_derived_relink(E, rec)
@@ -587,7 +598,6 @@
 	rec.timer_slots = null
 	rec.timer_soonest = null
 	rec.dv = null
-	rec.rates = null
 	E.om_listen = 0
 	// Break the rec <-> entity cycle; wheel and queue entries hold the rec
 	// and skip it once torn down.

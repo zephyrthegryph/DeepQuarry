@@ -89,7 +89,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/organ/internal/augment, "integrated_object", "in
 /mob/living/carbon/human/proc/augment_menu()
 	set name = "Open Augment Menu"
 	set desc = "Toggle your augment menu."
-	set category = "Augments"
+	set category = VERB_CAT_AUGMENTS
 
 	enable_augments(src)
 
@@ -160,7 +160,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/organ/internal/augment, "integrated_object", "in
 			return 0
 
 	if(cling_to_organ) // Does the object automatically return to the organ?
-		rel_set(equipping, "my_augment", cling_to_organ)
+		rel_set(equipping, nameof(equipping.my_augment), cling_to_organ)
 
 	if(make_sound)
 		play_sfx(src, SFX_ITEMS_CHANGE_JAWS, 0.6)

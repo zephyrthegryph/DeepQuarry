@@ -22,7 +22,7 @@
 /datum/trait_state/crowd_detection/setup()
 	if(!ishuman(owner))
 		return FALSE
-	rel_set(src, "human_parent", owner)
+	rel_set(src, nameof(human_parent), owner)
 	return TRUE
 
 /// Called by the crowd detection trait system each Life() cycle.

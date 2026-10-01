@@ -17,26 +17,26 @@
 	map_name = "communicator_[REF(src)]_map"
 
 	// Initialize map objects
-	own_set(src, "cam_screen", new /atom/movable/screen/map_view)
+	own_set(src, nameof(cam_screen), new /atom/movable/screen/map_view)
 	cam_screen.name = "screen"
 	cam_screen.assigned_map = map_name
 	cam_screen.del_on_map_removal = FALSE
 	cam_screen.screen_loc = "[map_name]:1,1"
 
 	for(var/atom/movable/screen/plane_master as anything in get_tgui_plane_masters())
-		own_add(src, "cam_plane_masters", plane_master)
+		own_add(src, nameof(cam_plane_masters), plane_master)
 
 	for(var/atom/movable/screen/instance as anything in cam_plane_masters)
 		instance.assigned_map = map_name
 		instance.del_on_map_removal = FALSE
 		instance.screen_loc = "[map_name]:CENTER"
 
-	own_set(src, "local_skybox", new /atom/movable/screen/skybox())
+	own_set(src, nameof(local_skybox), new /atom/movable/screen/skybox())
 	local_skybox.assigned_map = map_name
 	local_skybox.del_on_map_removal = FALSE
 	local_skybox.screen_loc = "[map_name]:CENTER,CENTER"
 
-	own_set(src, "cam_background", new /atom/movable/screen/background)
+	own_set(src, nameof(cam_background), new /atom/movable/screen/background)
 	cam_background.assigned_map = map_name
 	cam_background.del_on_map_removal = FALSE
 
@@ -73,7 +73,7 @@
 		return
 
 	// We get a new turf in case they've moved in the last half decisecond (it's BYOND, it might happen)
-	rel_set(src, "last_camera_turf", get_turf(video_source))
+	rel_set(src, nameof(last_camera_turf), get_turf(video_source))
 
 	if(!is_on_same_plane_or_station(get_z(last_camera_turf()), get_z(src)))
 		show_static()

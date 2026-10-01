@@ -94,7 +94,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/ddraig, /mob/living/proc/glamour_
 /mob/living/simple_mob/vore/ddraig/Login()
 	. = ..()
 	if(!riding_datum)
-		own_set(src, "riding_datum", new /datum/riding/simple_mob(src))
+		own_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
 	movement_cooldown = -1
 
 /mob/living/simple_mob/vore/ddraig/load_default_bellies()
@@ -192,7 +192,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/ddraig, /mob/living/proc/glamour_
 	ai_busy_begin()
 	act_message(src, null, null, MSG_OTHERS(span_warning("%U% opens its maw, emitting flames!")))
 	do_windup_animation(A, charge_warmup)
-	om_after_slot(src, "firebreathtimer", charge_warmup, PROC_REF(firebreathend), A)
+	after_slot(src, "firebreathtimer", charge_warmup, PROC_REF(firebreathend), A)
 	playsound(src, "sound/magic/Fireball.ogg", 50, 1)
 
 /mob/living/simple_mob/vore/ddraig/proc/firebreathend(atom/A)
@@ -282,7 +282,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/ddraig, /mob/living/proc/glamour_
 /mob/living/proc/polymorph()
 	set name = "Polymorph"
 	set desc = "Take the form of a non-humanoid creature."
-	set category = "Abilities"
+	set category = VERB_CAT_ABILITIES
 
 	var/static/list/beast_options = list("Rabbit" = /mob/living/simple_mob/vore/rabbit,
 									"Red Panda" = /mob/living/simple_mob/vore/redpanda,
@@ -370,7 +370,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/ddraig, /mob/living/proc/glamour_
 /mob/living/proc/glamour_invisibility()
 	set name = "Invisibility"
 	set desc = "Change your appearance to match your surroundings, becoming completely invisible to the naked eye."
-	set category = "Abilities"
+	set category = VERB_CAT_ABILITIES
 
 	if(stat)
 		to_chat(src, span_warning("You can't go invisible when weakened like this."))

@@ -14,7 +14,7 @@
 	temp.spam = spam
 	temp.timestamp = timestamp
 	if(attachment)
-		own_set(temp, "attachment", attachment.clone())
+		own_set(temp, nameof(temp.attachment), attachment.clone())
 	return temp
 
 

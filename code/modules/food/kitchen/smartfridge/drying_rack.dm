@@ -64,7 +64,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/smartfridge/drying_rack, TYPE_PROC_REF(/a
 				S.dry = 1
 				S.name = "dried [S.name]"
 				S.color = "#AAAAAA"
-				rel_remove(I, "instances", S)
+				rel_remove(I, nameof(I.instances), S)
 				S.forceMove(get_turf(src))
 			else
 				var/D = S.dried_type
@@ -77,7 +77,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/smartfridge/drying_rack, TYPE_PROC_REF(/a
 				if(WL.get_amount())
 					WL.forceMove(get_turf(src))
 					WL.dry()
-				rel_remove(I, "instances", WL)
+				rel_remove(I, nameof(I.instances), WL)
 				break
 
 			WL.set_wetness(max(0, WL.wetness - rand(1, 3)))

@@ -506,12 +506,12 @@
 	dir = 4
 	},
 /obj/machinery/power/apc/hyper{
+	cap_state = 0;
 	coverlocked = 0;
 	dir = 4;
 	environ = 1;
 	equipment = 1;
 	lighting = 1;
-	locked = 0;
 	pixel_x = 23
 	},
 /obj/structure/cable/green{
@@ -617,7 +617,7 @@
 /area/survivalpod/superpose/MechFabShip)
 "qK" = (
 /obj/machinery/vending/robotics{
-	emagged = 1;
+	cap_state = 16;
 	req_access = null
 	},
 /obj/effect/floor_decal/industrial/outline/yellow,

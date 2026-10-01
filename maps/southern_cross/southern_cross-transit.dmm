@@ -263,8 +263,8 @@
 /area/shuttle/arrival/pre_game)
 "aT" = (
 /obj/machinery/door/airlock/silver{
+	cap_state = 128;
 	icon_state = "door_locked";
-	locked = 1;
 	name = "Employees Only";
 	secured_wires = 1
 	},
@@ -325,10 +325,10 @@
 /area/shuttle/arrival/pre_game)
 "bd" = (
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "arrivals_shuttle_hatch";
-	locked = 1;
 	name = "Shuttle Hatch";
 	req_access = list(13)
 	},
@@ -339,8 +339,8 @@
 /area/shuttle/arrival/pre_game)
 "bf" = (
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	icon_state = "door_locked";
-	locked = 1;
 	name = "Shuttle Hatch"
 	},
 /turf/simulated/shuttle/floor,

@@ -39,7 +39,7 @@ DECLARE_INTERACTIONS(/obj/item/multitool, INTERACT_USE(null, PROC_REF(interactio
 		return
 
 	if(selected_io())
-		rel_clear(src, "selected_io")
+		rel_clear(src, nameof(selected_io))
 		to_chat(user, span_notice("You clear the wired connection from the multitool."))
 		update_icon()
 		return
@@ -52,9 +52,9 @@ DECLARE_INTERACTIONS(/obj/item/multitool, INTERACT_USE(null, PROC_REF(interactio
 	switch(ask.choice)
 		if("Clear Buffers")
 			to_chat(user,span_notice("You clear \the [src]'s memory."))
-			rel_clear(src, "buffer")
-			rel_clear(src, "connecting")
-			rel_clear(src, "connectable")
+			rel_clear(src, nameof(buffer))
+			rel_clear(src, nameof(connecting))
+			rel_clear(src, nameof(connectable))
 			ref_wiring = null
 			accepting_refs = 0
 			if(toolmode == MULTITOOL_MODE_INTCIRCUITS)

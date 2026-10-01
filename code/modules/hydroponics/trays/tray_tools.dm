@@ -63,7 +63,7 @@ UI_ACT_PROC(/obj/item/analyzer/plant_analyzer, ui_act_print)
 
 UI_ACT(/obj/item/analyzer/plant_analyzer, "close", ui_act_close)
 UI_ACT_PROC(/obj/item/analyzer/plant_analyzer, ui_act_close)
-	proto_set(src, "last_seed", null)
+	proto_set(src, nameof(/obj/item/analyzer/plant_analyzer::last_seed), null)
 	last_reagents = null
 	return TRUE
 
@@ -106,7 +106,7 @@ UI_ACT_PROC(/obj/item/analyzer/plant_analyzer, ui_act_close)
 		return
 
 	// A private snapshot the analyzer owns: never the tray's (or a packet's) own seed datum.
-	proto_set(src, "last_seed", grown_seed.copy_line())
+	proto_set(src, nameof(last_seed), grown_seed.copy_line())
 
 	act_message(user, target, others = span_notice("%U% runs the scanner over %T%."))
 
@@ -122,7 +122,7 @@ UI_ACT_PROC(/obj/item/analyzer/plant_analyzer, ui_act_close)
 
 /obj/item/analyzer/plant_analyzer/proc/print_report_verb()
 	set name = "Print Plant Report"
-	set category = "Object"
+	set category = VERB_CAT_OBJECT
 	set src = usr
 
 	if(usr.stat || usr.restrained() || usr.lying)
@@ -303,4 +303,6 @@ UI_ACT_PROC(/obj/item/analyzer/plant_analyzer, ui_act_close)
 
 	return data
 
-PROTO(/obj/item/analyzer/plant_analyzer, last_seed)
+/obj/item/analyzer/plant_analyzer/ownership()
+	. = ..()
+	. += proto(nameof(last_seed))

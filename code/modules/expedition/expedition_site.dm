@@ -55,10 +55,10 @@
 /datum/expedition_site/New(_z_level, _difficulty = EXP_DIFF_LOW, turf/_landing)
 	z_level = _z_level
 	difficulty = _difficulty
-	rel_set(src, "landing", _landing)
+	rel_set(src, nameof(landing), _landing)
 	EXPIRY_STAMP(src, generated_at, CLOCK_WORLD)
 	EXPIRY_STAMP(src, last_occupied, CLOCK_WORLD)
-	rel_clear(src, "participants")
+	rel_clear(src, nameof(participants))
 
 
 // A random walkable floor on this site (prefers the cached list, falls back to

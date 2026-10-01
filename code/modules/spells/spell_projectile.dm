@@ -20,14 +20,14 @@
 /obj/item/projectile/spell_projectile/before_move()
 	if(proj_trail && src && src.loc) //pretty trails
 		var/obj/effect/overlay/trail = new /obj/effect/overlay(src.loc)
-		own_add(src, "trails", trail)
+		own_add(src, nameof(trails), trail)
 		trail.icon = proj_trail_icon
 		trail.icon_state = proj_trail_icon_state
 		trail.set_density(FALSE)
 		om_after(src, proj_trail_lifespan, PROC_REF(expire_trail), trail) // our Destroy() takes the trails with us
 
 /obj/item/projectile/spell_projectile/proc/expire_trail(obj/effect/trail)
-	own_remove(src, "trails", trail) // disposes of it
+	own_remove(src, nameof(trails), trail) // disposes of it
 
 /obj/item/projectile/spell_projectile/proc/prox_cast(list/targets)
 	if(loc)

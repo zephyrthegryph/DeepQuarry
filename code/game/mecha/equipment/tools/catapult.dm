@@ -35,20 +35,20 @@
 				if(!istype(target) || target.anchored)
 					occupant_message("Unable to lock on [target]")
 					return
-				rel_set(src, "locked", target)
+				rel_set(src, nameof(locked), target)
 				occupant_message("Locked on [target]")
 				send_byjax(chassis?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","\ref[src]",src.get_equip_info())
 				return
 			else if(target!=locked())
 				if(locked() in view(chassis))
 					locked().throw_at(target, 14, 1.5, chassis)
-					rel_clear(src, "locked")
+					rel_clear(src, nameof(locked))
 					send_byjax(chassis?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","\ref[src]",src.get_equip_info())
 					set_ready_state(FALSE)
 					chassis.use_power(energy_drain)
 					do_after_cooldown()
 				else
-					rel_clear(src, "locked")
+					rel_clear(src, nameof(locked))
 					occupant_message("Lock on [locked()] disengaged.")
 					send_byjax(chassis?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","\ref[src]",src.get_equip_info())
 		if(2)

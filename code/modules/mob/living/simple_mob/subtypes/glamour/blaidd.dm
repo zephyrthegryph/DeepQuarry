@@ -51,7 +51,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/blaidd, /mob/living/simple_mob/vo
 /mob/living/simple_mob/vore/blaidd/Login()
 	. = ..()
 	if(!riding_datum)
-		own_set(src, "riding_datum", new /datum/riding/simple_mob(src))
+		own_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
 	movement_cooldown = -1
 
 /mob/living/simple_mob/vore/blaidd/load_default_bellies()
@@ -121,7 +121,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/blaidd, TYPE_PROC_REF(/atom,
 /mob/living/simple_mob/vore/blaidd/proc/blaidd_invis()
 	set name = "Invisibility"
 	set desc = "Change your appearance to match your surroundings, becoming somewhat invisible to the naked eye."
-	set category = "Abilities"
+	set category = VERB_CAT_ABILITIES
 
 	if(blaidd_invisibility)
 		blaidd_invisibility = 0

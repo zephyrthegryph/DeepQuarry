@@ -18,6 +18,10 @@ Pipelines + Other Objects -> Pipe network
 	power_channel = ENVIRON
 	var/nodealert = 0
 	var/power_rating //the maximum amount of power the machine can use to do work, affects how powerful the machine is, in Watts
+	/// Bumped (rust_device_dirty()) when the device's Rust law changed for a reason that is no DM var of its own:
+	/// a port bound, a neighbour gone, power or a weld. A device's push_to_rust() reads it with the vars its law
+	/// is built from, so the push is one coalesced run per frame.
+	var/rust_device_rev = 0
 
 	unacidable = TRUE
 	layer = ATMOS_LAYER
@@ -49,9 +53,11 @@ Pipelines + Other Objects -> Pipe network
 	/// partner of /datum/pipe_network.normal_members).
 	var/list/datum/pipe_network/network_memberships
 
-REL(/obj/machinery/atmospherics, node1)
-REL(/obj/machinery/atmospherics, node2)
-REL_PAIR_LIST(/obj/machinery/atmospherics, network_memberships, normal_members)
+/obj/machinery/atmospherics/relations()
+	. = ..()
+	. += rel_one(nameof(node1))
+	. += rel_one(nameof(node2))
+	. += rel_many(nameof(network_memberships), back = nameof(/datum/pipe_network::normal_members))
 
 /// Phase 1 (unbind): the pipe topology leaves Rust, every node neighbour
 /// (get_neighbor_nodes_for_init(), each type's topology declaration)
@@ -73,6 +79,13 @@ REL_PAIR_LIST(/obj/machinery/atmospherics, network_memberships, normal_members)
 /// port) becomes the holder's private copy. The private copy it replaces is deleted; a
 /// network's shared mixture is only let go (the network owns it).
 /proc/atmos_air_set(datum/holder, var_name, datum/gas_mixture/value)
+	. = atmos_air_assign(holder, var_name, value)
+	// A gas watch (watches_gas) follows its port to whichever mixture it now has.
+	var/atom/A = holder
+	if(istype(A) && A.cap_data)
+		gas_watch_rearm(A)
+
+/proc/atmos_air_assign(datum/holder, var_name, datum/gas_mixture/value)
 	var/datum/gas_mixture/old = holder.vars[var_name]
 	if(old == value)
 		return value
@@ -376,3 +389,21 @@ REL_PAIR_LIST(/obj/machinery/atmospherics, network_memberships, normal_members)
 		unsafe_pressure_release(user, internal_pressure)
 		play_sfx(our_turf, SFX_MACHINES_HISS)
 
+
+TRACKED(/obj/machinery/atmospherics, rust_device_rev, CHANGE_MACHINE_SETTINGS)
+
+/// The device's Rust law needs re-publishing (see rust_device_rev): push_to_rust() runs once this frame.
+/obj/machinery/atmospherics/proc/rust_device_dirty()
+	set_rust_device_rev(rust_device_rev + 1)
+
+/// A power-mode change re-derives the device law (a device that is off is unregistered).
+/obj/machinery/atmospherics/set_use_power(new_use_power)
+	. = ..()
+	if(.)
+		rust_device_dirty()
+
+/// Losing or regaining power changes whether the device runs.
+/obj/machinery/atmospherics/power_change()
+	. = ..()
+	if(.)
+		rust_device_dirty()

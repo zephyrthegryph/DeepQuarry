@@ -155,7 +155,7 @@ TOPIC_ACTION(/datum/admins, "ac_set_signature", PROC_REF(topic_ac_set_signature)
 				WANTED.body = admincaster_feed_message.body                   //Wanted desc
 				WANTED.backup_author = admincaster_signature                  //Submitted by
 				WANTED.is_admin_message = 1
-				own_set(GLOB.news_network, "wanted_issue_owned", WANTED)
+				own_set(GLOB.news_network, nameof(/datum/feed_network::wanted_issue_owned), WANTED)
 				for(var/obj/machinery/newscaster/NEWSCASTER in REGISTRY_MEMBERS(REGISTRY_CASTERS))
 					NEWSCASTER.newsAlert()
 					NEWSCASTER.update_icon()
@@ -175,7 +175,7 @@ TOPIC_ACTION(/datum/admins, "ac_set_signature", PROC_REF(topic_ac_set_signature)
 	if(isnull(choice))
 		return
 	if(choice == "Confirm")
-		own_clear(GLOB.news_network, "wanted_issue_owned", OWN_DELETE)
+		own_clear(GLOB.news_network, nameof(/datum/feed_network::wanted_issue_owned), OWN_DELETE)
 		for(var/obj/machinery/newscaster/NEWSCASTER in REGISTRY_MEMBERS(REGISTRY_CASTERS))
 			NEWSCASTER.update_icon()
 		admincaster_screen = 17
@@ -209,7 +209,7 @@ TOPIC_ACTION(/datum/admins, "ac_set_signature", PROC_REF(topic_ac_set_signature)
 	admincaster_refresh(user)
 
 /datum/admins/proc/topic_ac_pick_d_notice(mob/user, list/args)
-	rel_set(src, "admincaster_feed_channel", args["ac_pick_d_notice"])
+	rel_set(src, nameof(admincaster_feed_channel), args["ac_pick_d_notice"])
 	admincaster_goto(user, 13)
 
 /datum/admins/proc/topic_ac_toggle_d_notice(mob/user, list/args)
@@ -225,18 +225,18 @@ TOPIC_ACTION(/datum/admins, "ac_set_signature", PROC_REF(topic_ac_set_signature)
 	admincaster_screen = args["ac_setScreen"]
 	if(admincaster_screen == 0)
 		if(admincaster_feed_channel())
-			rel_clear(src, "admincaster_feed_channel")
-			own_set(src, "admincaster_scratch_channel", new /datum/feed_channel)
+			rel_clear(src, nameof(admincaster_feed_channel))
+			own_set(src, nameof(admincaster_scratch_channel), new /datum/feed_channel)
 		if(admincaster_feed_message)
-			own_set(src, "admincaster_feed_message", new /datum/feed_message)
+			own_set(src, nameof(admincaster_feed_message), new /datum/feed_message)
 	admincaster_refresh(user)
 
 /datum/admins/proc/topic_ac_show_channel(mob/user, list/args)
-	rel_set(src, "admincaster_feed_channel", args["ac_show_channel"])
+	rel_set(src, nameof(admincaster_feed_channel), args["ac_show_channel"])
 	admincaster_goto(user, 9)
 
 /datum/admins/proc/topic_ac_pick_censor_channel(mob/user, list/args)
-	rel_set(src, "admincaster_feed_channel", args["ac_pick_censor_channel"])
+	rel_set(src, nameof(admincaster_feed_channel), args["ac_pick_censor_channel"])
 	admincaster_goto(user, 12)
 
 /datum/admins/proc/topic_ac_refresh(mob/user, list/args)

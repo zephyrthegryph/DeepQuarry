@@ -81,7 +81,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/verb_source)
 	var/client/owner
 
 /datum/client_verbs/New(client/C)
-	rel_set(src, "owner", C)
+	rel_set(src, nameof(owner), C)
 
 /// The datum grants on `target` are stored on: a client's holder, or `target` itself.
 /// `create`: make a client's holder when it has none (grants); FALSE for reads and revokes.
@@ -90,7 +90,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/verb_source)
 		return target
 	var/client/C = target
 	if(!C.verb_store && create)
-		own_set(C, "verb_store", new /datum/client_verbs(C)) // its grants die with the client
+		own_set(C, nameof(/client::verb_store), new /datum/client_verbs(C)) // its grants die with the client
 	return C.verb_store
 
 // ---------------------------------------------------------------- queries
@@ -125,14 +125,32 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/verb_source)
 	var/datum/lifecycle_decls/decls = isatom(owner) ? lifecycle_decls_of(owner) : null
 	if(decls && (decls.work & DECL_WORK_VERBS) && decls.verbs_hidden && (key in decls.verbs_hidden))
 		return FALSE
+	// hidden_verbs() (dx_conventions.md §4): derived from state, applied by the refresh engine.
+	if(isatom(owner))
+		var/atom/hider = owner
+		if(hider.refresh_hidden_verbs && (key in hider.refresh_hidden_verbs))
+			return FALSE
 	var/list/grants = E?.om_rec ? om_value_of(E, GRANT_VERB) : null
 	if(grants?[key] > 0)
 		return TRUE
+	// granted_verbs() (capabilities' verbs(), a mob's species and traits): derived, applied by the refresh engine.
+	if(isatom(owner))
+		var/atom/granter = owner
+		if(granter.refresh_granted_verbs && (key in granter.refresh_granted_verbs))
+			return TRUE
 	if(istext(key))
 		return FALSE // a named verb exists only while granted
 	var/owner_type = verb_static_owner(key)
 	if(owner_type && istype(owner, owner_type))
 		return TRUE
+	// type_verbs(): verbs a type has by what it is (a per-type list, no per-instance entry); a login entry
+	// (type_verb(..., login = TRUE)) only once a player has had the mob.
+	if(isatom(owner) && (type_derive_flags(owner) & TYPE_DERIVES_TYPE_VERBS))
+		if(key in type_verbs_always(owner))
+			return TRUE
+		if(ismob(owner) && (key in type_verbs_login(owner)))
+			var/mob/player = owner
+			return !!player.key
 	if(!decls || !(decls.work & DECL_WORK_VERBS))
 		return FALSE
 	if(decls.verbs_always && (key in decls.verbs_always))
@@ -258,8 +276,13 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/verb_source)
 	if(add || remove)
 		verb_store_write(A, A, add, remove)
 
-/// Login: the type's DECLARE_LOGIN_VERB lines.
+/// Login: the type's login verbs (type_verb(..., login = TRUE) in type_verbs(), which DECLARE_LOGIN_VERB expands
+/// to; the old declaration-table list while any type still fills it).
 /proc/verb_store_login(mob/M)
+	if(type_derive_flags(M) & TYPE_DERIVES_TYPE_VERBS)
+		var/list/login = type_verbs_login(M)
+		if(length(login))
+			verb_store_sync(M, login)
 	var/datum/lifecycle_decls/decls = lifecycle_decls_of(M)
 	if(!decls?.verbs_login)
 		return

@@ -86,14 +86,14 @@ They're also cool, and Rykka/Nyria wrote this uwu
 /mob/living/simple_mob/animal/hyena/verb/remove_hat()
 	set name = "Remove Hat"
 	set desc = "Remove the yeen's hat. You monster. ;~;"
-	set category = "Abilities.Hyena"
+	set category = VERB_CAT_ABILITIES_HYENA
 	set src in view(1)
 
 	drop_hat(usr)
 
 /mob/living/simple_mob/animal/hyena/proc/drop_hat(mob/user)
 	if(hat)
-		var/obj/item/clothing/head/old_hat = own_take(src, "hat")
+		var/obj/item/clothing/head/old_hat = own_take(src, nameof(hat))
 		old_hat.forceMove(get_turf(user))
 		update_icon()
 		if(user == src)
@@ -109,7 +109,7 @@ They're also cool, and Rykka/Nyria wrote this uwu
 /mob/living/simple_mob/animal/hyena/verb/give_hat()
 	set name = "Give Hat"
 	set desc = "Give the yeen a hat. You wonderful bean. <3"
-	set category = "Abilities.Hyena"
+	set category = VERB_CAT_ABILITIES_HYENA
 	set src in view(1)
 
 	take_hat(usr)
@@ -124,9 +124,8 @@ They're also cool, and Rykka/Nyria wrote this uwu
 		if(user == src)
 			if(istype(get_active_hand(), /obj/item/clothing/head))
 				var/obj/item/clothing/head/new_hat = get_active_hand()
-				drop_from_inventory(new_hat, src)
-				new_hat.forceMove(src)
-				own_set(src, "hat", new_hat)
+				if(!own_set(src, nameof(src.hat), new_hat, user = user, slot = SLOT_ID_BODY)) // out of the paw, onto the head
+					return
 				to_chat(user, span_notice("You put on the hat."))
 				update_icon()
 			return
@@ -150,7 +149,9 @@ They're also cool, and Rykka/Nyria wrote this uwu
 	emote_see = list("sniffs", "looks around", "grooms itself", "rolls around")
 	emote_hear = list("yawns", "cackles", "playfully yaps")
 
-OWN(/mob/living/simple_mob/animal/hyena, hat, OWN_SPILL)
+/mob/living/simple_mob/animal/hyena/ownership()
+	. = ..()
+	. += owns(nameof(hat), policy = OWN_SPILL)
 
 DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/hyena, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /mob/living/simple_mob/animal/hyena/appearance_overlays()

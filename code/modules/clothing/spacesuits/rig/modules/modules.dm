@@ -130,16 +130,16 @@ DECLARE_INTERACTIONS(/obj/item/rig_module, INTERACT_ITEM(null, PROC_REF(interact
 
 		charges = processed_charges
 
-	own_add(src, "stat_modules", new/atom/movable/stat_rig_module/activate(src))
-	own_add(src, "stat_modules", new/atom/movable/stat_rig_module/deactivate(src))
-	own_add(src, "stat_modules", new/atom/movable/stat_rig_module/engage(src))
-	own_add(src, "stat_modules", new/atom/movable/stat_rig_module/select(src))
-	own_add(src, "stat_modules", new/atom/movable/stat_rig_module/charge(src))
+	own_add(src, nameof(stat_modules), new/atom/movable/stat_rig_module/activate(src))
+	own_add(src, nameof(stat_modules), new/atom/movable/stat_rig_module/deactivate(src))
+	own_add(src, nameof(stat_modules), new/atom/movable/stat_rig_module/engage(src))
+	own_add(src, nameof(stat_modules), new/atom/movable/stat_rig_module/select(src))
+	own_add(src, nameof(stat_modules), new/atom/movable/stat_rig_module/charge(src))
 
 
 // Called when the module is installed into a suit.
 /obj/item/rig_module/proc/installed(obj/item/rig/new_holder)
-	rel_set(src, "holder", new_holder)
+	rel_set(src, nameof(holder), new_holder)
 	return
 
 //Proc for one-use abilities like teleport.
@@ -204,7 +204,7 @@ DECLARE_INTERACTIONS(/obj/item/rig_module, INTERACT_ITEM(null, PROC_REF(interact
 // Called when the module is uninstalled from a suit.
 /obj/item/rig_module/proc/removed()
 	deactivate()
-	rel_clear(src, "holder")
+	rel_clear(src, nameof(holder))
 	return
 
 // Called by the hardsuit each rig process tick.
@@ -225,7 +225,7 @@ DECLARE_INTERACTIONS(/obj/item/rig_module, INTERACT_ITEM(null, PROC_REF(interact
 
 /atom/movable/stat_rig_module/Initialize(mapload)
 	. = ..()
-	rel_set(src, "module", loc)
+	rel_set(src, nameof(module), loc)
 	if(!istype(module))
 		return INITIALIZE_HINT_QDEL
 
@@ -239,7 +239,7 @@ DECLARE_INTERACTIONS(/obj/item/rig_module, INTERACT_ITEM(null, PROC_REF(interact
 	if(CanUse())
 		switch(module_mode)
 			if("select")
-				rel_set(module.holder, "selected_module", module)
+				rel_set(module.holder, nameof(/datum/tgui_module/robot_ui_module::selected_module), module)
 			if("engage")
 				module.engage()
 			if("activate")

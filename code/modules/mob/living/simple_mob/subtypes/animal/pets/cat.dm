@@ -100,7 +100,7 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 
 /mob/living/simple_mob/animal/passive/cat/verb/become_friends()
 	set name = "Become Friends"
-	set category = "IC.Game"
+	set category = VERB_CAT_IC_GAME
 	set src in view(1)
 
 	var/mob/living/L = usr
@@ -117,7 +117,7 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 
 	// Adds friend_name var checks
 	if(!friend_name || L.real_name == friend_name)
-		rel_set(src, "friend", L)
+		rel_set(src, nameof(friend), L)
 		face_atom(L)
 		to_chat(L, span_notice("\The [src] is now your friend! Meow."))
 		visible_emote(pick("nuzzles [friend].", "brushes against [friend].", "rubs against [friend].", "purrs."))

@@ -38,7 +38,9 @@
 	/// The mobs already eaten once (a relation list).
 	var/list/eaten_mobs
 
-REL_LIST(/mob/living/simple_mob/vore/mantrap, eaten_mobs)
+/mob/living/simple_mob/vore/mantrap/relations()
+	. = ..()
+	. += rel_many(nameof(eaten_mobs))
 
 /mob/living/simple_mob/vore/mantrap/load_default_bellies()
 	. = ..()
@@ -76,7 +78,7 @@ REL_LIST(/mob/living/simple_mob/vore/mantrap, eaten_mobs)
 			return
 		if(L.devourable && L.allowmobvore && (src.vore_fullness < src.vore_capacity))
 			begin_instant_nom(src,L,src,src.vore_selected)
-			rel_add(src, "eaten_mobs", L)
+			rel_add(src, nameof(eaten_mobs), L)
 
 
 ////////////////////////////PITCHER PLANT////////////////////////////////////////////////

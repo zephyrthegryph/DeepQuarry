@@ -52,7 +52,7 @@ DECLARE_UI(/obj/machinery/librarywikicomp, "PublicLibraryWiki")
 
 /obj/machinery/librarywikicomp/tgui_close(mob/user)
 	. = ..()
-	rel_clear(src, "P")
+	rel_clear(src, nameof(P))
 	sub_category= null
 	searchmode = null
 
@@ -159,7 +159,7 @@ UI_DATA_REPLACE(/obj/machinery/librarywikicomp, "merge:ui_data_obj_machinery_lib
 UI_ACT(/obj/machinery/librarywikicomp, "closesearch", ui_act_closesearch)
 UI_ACT_PROC(/obj/machinery/librarywikicomp, ui_act_closesearch)
 	if(!crash)
-		rel_clear(src, "P")
+		rel_clear(src, nameof(/obj/machinery/librarywikicomp::P))
 		searchmode = null
 		sub_category = null
 		doc_title = "Click a search entry!"
@@ -172,7 +172,7 @@ UI_ACT_PROC(/obj/machinery/librarywikicomp, ui_act_swapsearch)
 		var/new_mode = params["data"]
 		if(searchmode == new_mode)
 			return FALSE
-		rel_clear(src, "P")
+		rel_clear(src, nameof(/obj/machinery/librarywikicomp::P))
 		doc_title = null
 		doc_body = null
 		searchmode = new_mode
@@ -205,7 +205,7 @@ UI_ACT_PROC(/obj/machinery/librarywikicomp, ui_act_setsubcat)
 		var/new_subcat = params["data"]
 		if(sub_category == new_subcat)
 			return FALSE
-		rel_clear(src, "P")
+		rel_clear(src, nameof(/obj/machinery/librarywikicomp::P))
 		doc_title = null
 		doc_body = null
 		sub_category = new_subcat
@@ -241,7 +241,7 @@ UI_ACT_PROC(/obj/machinery/librarywikicomp, ui_act_search)
 		if(new_page == P)
 			return FALSE
 
-		rel_set(src, "P", new_page)
+		rel_set(src, nameof(/obj/machinery/librarywikicomp::P), new_page)
 
 		if(P)
 			doc_title = P.title

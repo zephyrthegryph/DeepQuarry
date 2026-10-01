@@ -2,7 +2,7 @@
 
 /client/verb/who()
 	set name = "Who"
-	set category = "OOC.Resources"
+	set category = VERB_CAT_OOC_RESOURCES
 
 	var/msg = span_bold("Current Players:") + "\n"
 
@@ -57,7 +57,7 @@
 	to_chat(src,msg)
 
 /client/verb/staffwho()
-	set category = "Admin"
+	set category = VERB_CAT_ADMIN
 	set name = "Staffwho"
 
 	var/header = GLOB.admins.len == 0 ? "No Admins Currently Online" : "Current Admins"

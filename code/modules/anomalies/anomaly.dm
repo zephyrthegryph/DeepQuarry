@@ -13,7 +13,7 @@
 /obj/item/anomaly_neutralizer/Initialize(mapload)
 	. = ..()
 
-	own_set(src, "effect_remover", new /datum/effect_remover(src, \
+	own_set(src, nameof(effect_remover), new /datum/effect_remover(src, \
 		success_feedback = "You neutralize %THEEFFECT with %THEWEAPON, frying its circuitry in the process.", \
 		on_clear_callback = om_callable(src, PROC_REF(on_anomaly_neutralized)), \
 		effects_we_clear = list(/obj/effect/anomaly)))

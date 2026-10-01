@@ -76,6 +76,8 @@ Remember to update _globalvars/traits.dm if you're adding/removing/renaming trai
 /// This clothing protects the user from radiation.
 /// This should not be used on clothing_traits, but should be applied to the clothing itself.
 #define TRAIT_RADIATION_PROTECTED_CLOTHING "radiation_protected_clothing"
+/// What radiation-protected clothing shows on examine (cap_trait(TRAIT_RADIATION_PROTECTED_CLOTHING, examine =)).
+#define RADIATION_CLOTHING_EXAMINE "A patch with a hazmat sign on the side suggests it would <b>protect you from radiation</b>."
 /// Trait applied by MODsuits.
 #define MOD_TRAIT "mod"
 /// Harmful radiation effects, the toxin damage and the burns, will not occur while this trait is active

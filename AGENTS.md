@@ -78,8 +78,11 @@ no upstream to merge against, so there's no reason to keep a disabled include ar
 - **Avoid `usr`** outside verb procs — plumb `user` through args, or use `src`.
 - **Always chain `..()`** in lifecycle overrides (`Initialize`, `on_destroy`,
   `lifecycle_prerelease`, …) unless you specifically need to suppress the parent.
-- **New to the object model?** Read `doc/rewrite/om_in_10_minutes.md` first, then
-  `doc/rewrite/time_mechanisms.md` for any delay, cadence or timer choice.
+- **Start at `doc/rewrite/README.md`** (index and reading order; the foundation design is
+  `doc/rewrite/foundation.md`). Its forms are in progress; the object-model docs below are archived
+  but still describe the code as built.
+- **New to the object model?** Read `doc/rewrite/archive/om_in_10_minutes.md` first, then
+  `doc/rewrite/archive/time_mechanisms.md` for any delay, cadence or timer choice.
 - **Override via vars/subtypes**, not by editing an unrelated base — re-open the
   type and set `icon` / `name` / `desc`, or subtype it.
 - **Run DreamChecker before pushing.** Upstream-style red builds get rejected.
@@ -116,12 +119,12 @@ lazylist instead. For per-subtype constant tables (which DM can't express as a
   (calls `..()`), teardown that must still read declared vars in
   `lifecycle_prerelease()`, behaviour-side work in `on_entity_destroy(E)`. The GC hint is
   the `destroy_hint` var; refusal is `lifecycle_keep(force)`.
-- **Every object-typed var is own / shared / proto / relation** (`doc/rewrite/ownership.md`):
+- **Every object-typed var is own / shared / proto / relation** (`doc/rewrite/archive/ownership.md`):
   write owned vars with `own_set`/`own_take`/`own_add`/`own_transfer`/`own_clear`, relation
   views with `rel_set`/`rel_add`/`rel_remove`, copy-on-write vars with `proto_*`; registry-typed
   vars are shared. Declare only exceptions (`OWN(..., OWN_SPILL/OWN_CONTAINED)`, `PROTO`,
   `REL_PAIR`, `REL_KEYED`, ...). No `CALLBACK` in content: `om_callable()` + `om_run()`.
-  `tools/ci/ownership_lint.py` enforces it; see the table in `doc/rewrite/om_in_10_minutes.md` §3.
+  `tools/ci/ownership_lint.py` enforces it; see the table in `doc/rewrite/archive/om_in_10_minutes.md` §3.
 - Delete with a lifecycle verb (`consume()`, `replace_with()`, `expire()`, `slot_clear()`)
   when one fits, else `qdel()`; never `del()`.
 - **Don't unhook, cancel timers or null declared vars by hand on deletion**: the transaction
@@ -131,7 +134,7 @@ lazylist instead. For per-subtype constant tables (which DM can't express as a
 
 There are no signals, components or elements (`RegisterSignal`, `SEND_SIGNAL`,
 `AddComponent`, `AddElement`, `COMSIG_*` are deleted and `tools/ci/dcs_lints.py`
-bans them). See `doc/rewrite/object_model_core.md` §10:
+bans them). See `doc/rewrite/archive/object_model_core.md` §10:
 - An event is a typed `/datum/om/event/x` (payload in vars). Send it with
   `OM_EMIT(entity, /datum/om/event/x, args...)`, which allocates nothing when no one
   listens and returns the ORed handler results. World-wide events go to `OM_WORLD`.
@@ -174,7 +177,7 @@ bans them). See `doc/rewrite/object_model_core.md` §10:
 - Never override `Topic()` or read `href_list` yourself: declare
   `TOPIC_ACTION(type, "key", PROC_REF(handler), TOPIC_REF/TOPIC_NUM/TOPIC_TEXT/TOPIC_RIGHTS...)`
   rows; the core dispatcher validates every ref against its declared source
-  (doc/rewrite/systems.md §20, lint `tools/ci/sys_rules/topic.py`).
+  (doc/rewrite/archive/systems.md §20, lint `tools/ci/sys_rules/topic.py`).
 - Parameterized SQL only, through `om_io()` / `om_sql_write()` (nothing waits on I/O);
   `format_table_name()` for table names.
 
@@ -201,7 +204,7 @@ The reason is required; several lints go comma-separated (`ALLOW(lifecycle, dcs)
 inside a multi-line macro use `/* ALLOW(x): reason */`. `tools/ci/allow_annotations.py`
 lists the lint names and rejects a missing reason or an unknown name. Don't annotate new
 debt to get under a ceiling: use the mechanism the lint points to
-(`doc/rewrite/object_model_core.md` §16).
+(`doc/rewrite/archive/object_model_core.md` §16).
 
 ### 3h. Verbs
 
@@ -215,7 +218,7 @@ never `verbs +=`/`-=`/`=`, `verbs.Cut()`, or `new /x/proc/y(target, ...)`. There
   revokes it or is deleted.
 - Take a verb away with `GRANT_VERB_HIDE` from a source. Timed: `om_grant_for`.
 - Clients take grants too (`om_grant(client, ...)`).
-- Lint `sys_verb_write` is at 0 and accepts no ALLOW. See doc/rewrite/systems.md §19.
+- Lint `sys_verb_write` is at 0 and accepts no ALLOW. See doc/rewrite/archive/systems.md §19.
 
 ---
 
@@ -258,11 +261,18 @@ warning.
   `bash tools/dq_focused_test.sh /datum/unit_test/<name> [...]`. It works from
   a git worktree. It costs the compile plus about 25 seconds.
 - **Run the full suite only at integration** (before merging, or when asked).
-  It costs the compile plus about four minutes.
+  `dm-test` runs the **normal tier**, sharded across up to 4 worlds, in about
+  two to three minutes plus the compile (about five in one world).
+- **Integration merges run the normal tier; CI and nightly run the exhaustive
+  tier too** (`dm-test --tier=all`). Exhaustive tests are whole-type sweeps
+  (`tier = TEST_TIER_EXHAUSTIVE`); each one has a small normal-tier
+  `.../representative`. A focused run names any test, exhaustive or not. See
+  `doc/testing.md` "Tiers".
 
 | What | Command |
 |---|---|
-| Full unit-test suite (test map) | `bin/test.cmd` or `tools/build/build.sh dm-test` |
+| Unit-test suite, normal tier (test map) | `bin/test.cmd` or `tools/build/build.sh dm-test` (`--shards=1` for one world) |
+| Every tier, as CI runs it | `tools/build/build.sh dm-test --tier=all` |
 | Only some tests | `bash tools/dq_focused_test.sh <name> [...]` (bare names, quoted `*` globs, `--repeat=N`; other `--flags` go to dm-test) |
 | Same, on Southern Cross | `bash tools/dq_focused_test.sh --full-map /datum/unit_test/<name>` |
 | DM and TGUI lint | `tools/build/build.sh lint` (other CI checks: `doc/testing.md`) |
@@ -272,7 +282,8 @@ warning.
 | Memory, tick cost, overruns | `bin/bench.cmd` or `tools/build/build.sh bench [--scenario=a,b] [--runs=3]`, then `bench-compare` |
 
 Measure before and after any performance or memory change with `bench`; don't write
-one-off profiling tests or scripts. Add a scenario under `code/modules/benchmarks/`
+one-off profiling tests or scripts. For a slow unit test, `--profile-tests` writes
+BYOND's proc profile per test (`doc/testing.md` "Profiling a slow test"). Add a scenario under `code/modules/benchmarks/`
 instead. Results and history live in `data/bench/` and `data/test-runs/`. If another
 agent's unfinished work breaks the build, `DQ_WIP_TREE=1` lets test and bench builds
 skip their dangling includes.
@@ -330,9 +341,10 @@ Valid prefixes: `rscadd`, `rscdel`, `bugfix`, `qol`, `balance`, `soundadd`,
 
 ## 8. Where to look when stuck
 
-- Object model: `doc/rewrite/om_in_10_minutes.md` (onboarding),
-  `doc/rewrite/time_mechanisms.md` (which timer/cadence/lane), then
-  `doc/rewrite/object_model_core.md` (§16 "one way to do X").
+- Rewrite docs: `doc/rewrite/README.md` (index), `doc/rewrite/migration_guide.md` Part F (old form → new form).
+- Object model (archived, as built): `doc/rewrite/archive/om_in_10_minutes.md` (onboarding),
+  `doc/rewrite/archive/time_mechanisms.md` (which timer/cadence/lane), then
+  `doc/rewrite/archive/object_model_core.md` (§16 "one way to do X").
 - OM cost at runtime: admin verb "OM Profiler" (Debug > Investigate).
 - DM linter rules: `SpacemanDMM.toml`, `code/__odlint.dm`, `code/__pragmas.dm`.
 - Build entry: `bin/build.cmd` → `tools/build/build.ts`.
@@ -353,8 +365,8 @@ accident or assume they work:
   budgeted scheduler (SSbehaviours) in five lanes. There are no DCS signals/components,
   no SStimer/`addtimer`/`spawn`/gameplay `sleep`, no `do_after`, no raw `input()`, no
   weakrefs, no `/datum/modifier`, no per-type `Destroy()`, and most subsystems are now
-  world services. Onboarding: `doc/rewrite/om_in_10_minutes.md`; time choices:
-  `doc/rewrite/time_mechanisms.md`; reference: `doc/rewrite/object_model_core.md`.
+  world services. Onboarding: `doc/rewrite/archive/om_in_10_minutes.md`; time choices:
+  `doc/rewrite/archive/time_mechanisms.md`; reference: `doc/rewrite/archive/object_model_core.md`.
 - **Atmospherics — LINDA on a Rust backend.** LINDA (the vendored /tg/ atmos under
   `code/ATMOSPHERICS/`) is the only engine; ZAS/XGM are gone. Gas math, turf diffusion,
   decompression and heat conduction (superconductivity) run in the auxmos arena inside
@@ -405,7 +417,7 @@ accident or assume they work:
   spawners, coordinate landmarks, map helpers) declares `MAP_RESOLVER(path, proc)`
   (`code/__defines/map_resolvers.dm`) instead of an Initialize that ends in `INITIALIZE_HINT_QDEL` or
   deletes itself; resolved atoms are never initialized. `tools/ci/sys_rules/loot.py` and
-  `resolvers.py` reject the old shapes. See `doc/rewrite/systems.md` §8-9.
+  `resolvers.py` reject the old shapes. See `doc/rewrite/archive/systems.md` §8-9.
 - **Interaction refusals are requirements.** An interaction effect proc does the work only; a
   guard that tells the actor no ("it's locked", "the panel is open", "already has a cell") is a
   requirement clause on the interaction, so the resolver refuses it and the Menu shows why:
@@ -413,7 +425,7 @@ accident or assume they work:
   `REQ_ACCESS`, `REQ_NOT_EMAGGED`, `REQ_ANCHORED`, `REQ_PANEL(open)`, or
   `REQ_TARGET_STATE(/type/proc/can_x)` (side-effect free, returns TRUE or the reason). Full-form
   subtypes add theirs with `also_requires`. `code/__defines/sys_requirements.dm`,
-  doc/rewrite/systems.md Â§6; the `sys_inline_refusal` lint (baseline empty) rejects a
+  doc/rewrite/archive/systems.md Â§6; the `sys_inline_refusal` lint (baseline empty) rejects a
   message-and-return guard at the head of an effect proc.
 - **Appearance is declared (systems.md §1).** There are no `update_icon()` overrides: a type
   declares how its state is drawn (`APPEARANCE_TEMPLATE(T, "x{field}")`, `DECLARE_APPEARANCE`,
@@ -429,8 +441,8 @@ accident or assume they work:
   `/type/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)`, returning uses consumed
   or `EMAG_DECLINED`; subtypes override `on_emag()`. Emagging without a card goes through
   `emag_target(target, charges, user, source)`. `tools/ci/sys_rules/emag.py` rejects the old
-  pattern. See `doc/rewrite/systems.md` §13.
-- **Periodic work is declared by state** (`code/__defines/sys_periodic.dm`, doc/rewrite/systems.md §5).
+  pattern. See `doc/rewrite/archive/systems.md` §13.
+- **Periodic work is declared by state** (`code/__defines/sys_periodic.dm`, doc/rewrite/archive/systems.md §5).
   Work that runs while some state holds is `DECLARE_PERIODIC_WHILE(T, cadence, "field")` /
   `DECLARE_PERIODIC_WHILE_ALL(T, cadence, list("a", "!b"))` (cadence a `PERIODIC_*` lane for
   `periodic_step()`, or `MACHINE_PIPELINE` for `machine_step()`), and a timer loop is
@@ -486,7 +498,7 @@ accident or assume they work:
   does when hit is declared, never an entry override: `DAMAGE_REACTION(type, DAMAGE_EMP|DAMAGE_PROJECTILE|
   DAMAGE_EXPLOSION|…|DAMAGE_<kind>, PROC_REF(x))` (proc takes the packet; `packet.severity`; return
   `DAMAGE_REACTION_BLOCK` to stop the hit), `DAMAGE_REACTION_AFTER`, `REFLECTS(type, kinds, chance)`,
-  `EMP_DISABLE(type, duration, "expiry_field")` (doc/rewrite/systems.md §12). Lint `sys_entry_override`
+  `EMP_DISABLE(type, duration, "expiry_field")` (doc/rewrite/archive/systems.md §12). Lint `sys_entry_override`
   (`tools/ci/sys_rules/damage_reactions.py`) is 0 with an empty baseline.
   The old parallel `var/health`/`var/maxhealth` + `healthcheck()`/`CheckHealth()` model is
   **gone** — don't reintroduce it; set `max_integrity` (and `integrity_failure` for a "broken
@@ -580,8 +592,8 @@ accident or assume they work:
   it right after that subsystem and calls `on_shutdown()` at server shutdown.
   `tools/ci/subsystem_fire_lint.py` (K4) allows `fire()` only on air, behaviours, dbcore, garbage,
   input, profiler, tgui, ticker, verb_manager and vg (lighting keeps an ALLOW until F5).
-- **Mob Life runs on object-model pipelines.** Read `doc/rewrite/life_on_om.md` and
-  `doc/rewrite/object_model_core.md` §4.10. Every `/mob/living` carries three pipelines
+- **Mob Life runs on object-model pipelines.** Read `doc/rewrite/archive/life_on_om.md` and
+  `doc/rewrite/archive/object_model_core.md` §4.10. Every `/mob/living` carries three pipelines
   (`code/modules/mob/living/life/life_om.dm`): `life` (one frame per `LIFE_CYCLE`, 6 s, fixed
   steps, catch-up capped at 2), `life_derive` (canmove) and `life_present` (HUD and vision,
   clients only). Their stages are `/datum/om/stage/life` flyweights; a mob's plan is built once
@@ -626,7 +638,7 @@ accident or assume they work:
   machine pipeline (`code/game/machinery/machine_pipeline.dm`, `polls = FALSE`) and park when
   settled. Their producers raise `CHANGE_MACHINE_*` (`power_change()`, `atom_break()` and
   `atom_fix()` do it for every machine).
-- **tgui windows and actions are declared** (`doc/rewrite/systems.md` section 3). Never override
+- **tgui windows and actions are declared** (`doc/rewrite/archive/systems.md` section 3). Never override
   `tgui_interact()` or `tgui_act()` and never parse `params` yourself: `DECLARE_UI(type, "Interface",
   opts)` plus the `ui_prepare`/`ui_redirect`/`ui_opening`/`ui_opened`/`ui_title`/`ui_interface`/
   `ui_window` hooks open the window; `UI_ACT(type, "action", handler, UI_ARG_NUM/INT/TEXT/BOOL/CHOICE/

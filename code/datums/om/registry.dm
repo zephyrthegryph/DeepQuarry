@@ -65,9 +65,8 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 	var/list/expansions = list()
 	/// entity type -> /datum/om/type_table (lazy).
 	var/list/type_tables = list()
-	/// Internal behaviours (expiry, rates, tasks, ui, edge refresh).
+	/// Internal behaviours (expiry, tasks, ui, edge refresh).
 	var/datum/om/behaviour/expiry_behaviour
-	var/datum/om/behaviour/rate_behaviour
 	var/datum/om/behaviour/task_behaviour
 	var/datum/om/behaviour/timer_behaviour
 	var/datum/om/behaviour/ui_behaviour
@@ -487,7 +486,6 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 		pending += B
 		behaviour_by_type[path] = B
 	expiry_behaviour = behaviour_by_type[/datum/om/behaviour/internal/expiry]
-	rate_behaviour = behaviour_by_type[/datum/om/behaviour/internal/rates]
 	task_behaviour = behaviour_by_type[/datum/om/behaviour/internal/tasks]
 	timer_behaviour = behaviour_by_type[/datum/om/behaviour/internal/timers]
 	ui_behaviour = behaviour_by_type[/datum/om/behaviour/internal/ui_push]
@@ -502,6 +500,7 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 				continue
 			var/datum/om/behaviour/inline/B = new
 			B.mode = "react"
+			B.system_key = km_bundle_key(bundle)
 			B.call_path = proc_path
 			B.wake_on = mask
 			B.name = "[bundle.type]:[proc_path]"
@@ -524,6 +523,7 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 				continue
 			var/datum/om/behaviour/inline/B = new
 			B.mode = "tick"
+			B.system_key = km_bundle_key(bundle)
 			B.call_path = proc_path
 			B.every = row["every"]
 			B.clock = row["clock"]
@@ -542,6 +542,7 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 				continue
 			var/datum/om/behaviour/inline/B = new
 			B.mode = "event"
+			B.system_key = km_bundle_key(bundle)
 			B.call_path = bundle.events[event_path]
 			B.handles = list(event_path)
 			B.name = "[bundle.type]:[event_path]"
@@ -567,6 +568,7 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 		if(istype(P))
 			pipelines += P
 			P.pipe_idx = length(pipelines)
+	km_bind_behaviours(behaviours)
 
 // ---------------------------------------------------------------- stages and pipelines
 

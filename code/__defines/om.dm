@@ -77,7 +77,19 @@
 #define CHANGE_DATUM_C (1<<10)
 #define CHANGE_DATUM_D (1<<11)
 
-/// The one guarded setter call. Content writes om_changed(E, bits); this form
+// Rust -> DM change delivery sources (code/datums/om/native_adapter.dm).
+#define NATIVE_SRC_GAS_EVENT 1
+#define NATIVE_SRC_GAS_WATCH 2
+#define NATIVE_SRC_WORLD_WATCH 3
+#define NATIVE_SRC_HEAT 4
+#define NATIVE_SRC_POWER 5
+#define NATIVE_SRC_OTHER 6
+#define NATIVE_SRC_COUNT 6
+
+/// A turf's visible gas changed (Rust visual event, delivered by native_changed()).
+#define CHANGE_TURF_GAS_VISUAL CHANGE_DATUM_A
+
+/// The one guarded setter call. Content writes changed(E, bits); this form
 /// is for hot setters that want the listen-mask test inlined.
 #define OM_CHANGED(E, bits) if((E).om_listen & (bits)) { om_dispatch_change(E, bits) }
 
@@ -119,8 +131,22 @@
 /// verb_source() names: shared sources for verb grants nothing else owns.
 #define VERB_SOURCE_CONFIG "config"
 #define VERB_SOURCE_ADMIN "admin"
+/// A capability on an atom while any source grants it (code/datums/capabilities/condition.dm): a temporary
+/// condition with behaviour, `om_grant_for(A, GRANT_CAPABILITY, /datum/capability/condition/x, source, time)`.
+#define GRANT_CAPABILITY "grant_capability"
 #define GRANT_ACCESS "grant_access"
 #define GRANT_TRAIT "grant_trait"
+/// A system's publication cadence: the id names a step length (cadence.dm), and the
+/// system runs at the shortest one any live grant names.
+#define GRANT_CADENCE "grant_cadence"
+
+// Cadence ids for GRANT_CADENCE. Shortest step wins; the system's own step (CADENCE_BASE_DT) applies with none held.
+/// A canister rupture, hull breach or pressure-jump storm: gas publishes every 0.1 s.
+#define CADENCE_GAS_FAST "gas_fast"
+/// Something visibly moving but not violent: gas publishes every 0.25 s.
+#define CADENCE_GAS_BRISK "gas_brisk"
+/// The world's step with no cadence grant held, seconds.
+#define CADENCE_BASE_DT 0.5
 
 // Status and stat presets.
 // Mob statuses (doc/rewrite/life_on_om.md §7): timed contributions a mob holds on itself,
@@ -369,24 +395,26 @@
 
 // ---------------------------------------------------------------- periodic work (code/datums/om/periodic.dm)
 
-/// Starts `E`'s periodic work on pipeline type `P` (idempotent). Wakes it if parked.
+/// Starts `E`'s periodic work on cadence type `P` (idempotent): it joins the cadence and the kernel steps it.
 #define om_task_periodic(E, P) _om_periodic_start(E, P)
-/// Ends `E`'s periodic work: its stage idles and it parks. Does nothing when it isn't running.
+/// Ends `E`'s periodic work: it leaves its cadence and costs nothing. Does nothing when it isn't running.
 #define om_task_periodic_stop(E) _om_periodic_stop(E)
-/// TRUE while `E` has periodic work on any pipeline.
+/// TRUE while `E` has periodic work on any cadence.
 #define om_task_periodic_running(E) (!isnull((E).periodic_pipe))
 
-#define PERIODIC_SLOW /datum/om/pipeline/periodic/slow
-#define PERIODIC_SECOND /datum/om/pipeline/periodic/second
-#define PERIODIC_FAST /datum/om/pipeline/periodic/fast
-#define PERIODIC_PLANTS /datum/om/pipeline/periodic/plants
-#define PERIODIC_PROJECTILES /datum/om/pipeline/periodic/continuous/projectiles
-#define PERIODIC_INSTRUMENTS /datum/om/pipeline/periodic/continuous/instruments
-#define PERIODIC_STATUS_EFFECTS /datum/om/pipeline/periodic/continuous/status_effects
-#define PERIODIC_TAB_ITEMS /datum/om/pipeline/periodic/continuous/tab_items
-#define PERIODIC_THROWING /datum/om/pipeline/periodic/continuous/throwing
-#define PERIODIC_REFLECTORS /datum/om/pipeline/periodic/reflectors
-#define PERIODIC_LOOT_ICONS /datum/om/pipeline/periodic/loot_icons
+/// The source a periodic member holds its cadence membership under (member_join()).
+#define PERIODIC_SOURCE "periodic"
+#define PERIODIC_SLOW /datum/cadence/slow
+#define PERIODIC_SECOND /datum/cadence/second
+#define PERIODIC_FAST /datum/cadence/fast
+#define PERIODIC_PLANTS /datum/cadence/plants
+#define PERIODIC_PROJECTILES /datum/cadence/continuous/projectiles
+#define PERIODIC_INSTRUMENTS /datum/cadence/continuous/instruments
+#define PERIODIC_STATUS_EFFECTS /datum/cadence/continuous/status_effects
+#define PERIODIC_TAB_ITEMS /datum/cadence/continuous/tab_items
+#define PERIODIC_THROWING /datum/cadence/continuous/throwing
+#define PERIODIC_REFLECTORS /datum/cadence/reflectors
+#define PERIODIC_LOOT_ICONS /datum/cadence/loot_icons
 
 /// A lazy (data-only) world service, initialized on first use (code/datums/om/world_lanes.dm).
 /// `NAME` is its GLOB var. Each lazy service has a typed accessor proc built on this, e.g.
@@ -440,7 +468,7 @@
 
 // ---- Declared caches (lifecycle.md §4, LC-refs): the invalidation rule each entry of
 // declared_cache_vars() names. The core nulls the var when the rule fires.
-/// Cleared when any of `bits` is raised on the entity (om_changed / OM_CHANGED).
+/// Cleared when any of `bits` is raised on the entity (changed / OM_CHANGED).
 #define CACHE_ON_CHANGE(bits) list("change", bits)
 /// Cleared when an event of `path` (or a subtype) is emitted on the entity.
 #define CACHE_ON_EVENT(path) list("event", path)
@@ -460,24 +488,24 @@
 /// (the external AST linter tools/dm-health may model an OM_FIELD field as
 /// `tracked(setter=set_F)`; tools/ci/field_write_lint.py enforces it today). Don't change the
 /// naming without updating both.
-#define OM_FIELD(T, F, D, C) T/var/F = D;T/proc/set_##F(value) { if(F == value) { return FALSE } else { F = value; om_changed(src, C); return TRUE } };/datum/om/field_def##T/F { of = T; field = #F; channel = C }
+#define OM_FIELD(T, F, D, C) T/var/F = D;T/proc/set_##F(value) { if(F == value) { return FALSE } else { F = value; changed(src, C); return TRUE } };/datum/om/field_def##T/F { of = T; field = #F; channel = C }
 
 /// OM_FIELD() for a var with a declared type or modifier: VT is what goes between `var/` and the
 /// name (`tmp`, `obj/item/cell`, `tmp/mob/living`). Expands to `T/var/VT/F = D`; otherwise
 /// identical, including the `set_F` naming.
-#define OM_FIELD_TYPED(T, VT, F, D, C) T/var/VT/F = D;T/proc/set_##F(value) { if(F == value) { return FALSE } else { F = value; om_changed(src, C); return TRUE } };/datum/om/field_def##T/F { of = T; field = #F; channel = C }
+#define OM_FIELD_TYPED(T, VT, F, D, C) T/var/VT/F = D;T/proc/set_##F(value) { if(F == value) { return FALSE } else { F = value; changed(src, C); return TRUE } };/datum/om/field_def##T/F { of = T; field = #F; channel = C }
 
 /// A declared bitfield (doc/rewrite/systems.md Â§2). Declares `T/var/F = D` and generates
 /// `set_F(v)` (whole value), `F_add(bits)`, `F_remove(bits)` and `has_F(bits)` (TRUE when any of
 /// `bits` is set). Every writer raises C, and only when the value actually changed; each returns
 /// TRUE on a change. Registered like OM_FIELD (field_def), so stages may `reads = list("F")`.
-#define OM_FLAG_FIELD(T, F, D, C) T/var/F = D;T/proc/set_##F(value) { if(F == value) { return FALSE } else { F = value; om_changed(src, C); return TRUE } };T/proc/F##_add(bits) { if((F & bits) == bits) { return FALSE } else { F |= bits; om_changed(src, C); return TRUE } };T/proc/F##_remove(bits) { if(!(F & bits)) { return FALSE } else { F &= ~bits; om_changed(src, C); return TRUE } };T/proc/has_##F(bits) { return (F & bits) ? TRUE : FALSE };/datum/om/field_def##T/F { of = T; field = #F; channel = C }
+#define OM_FLAG_FIELD(T, F, D, C) T/var/F = D;T/proc/set_##F(value) { if(F == value) { return FALSE } else { F = value; changed(src, C); return TRUE } };T/proc/F##_add(bits) { if((F & bits) == bits) { return FALSE } else { F |= bits; changed(src, C); return TRUE } };T/proc/F##_remove(bits) { if(!(F & bits)) { return FALSE } else { F &= ~bits; changed(src, C); return TRUE } };T/proc/has_##F(bits) { return (F & bits) ? TRUE : FALSE };/datum/om/field_def##T/F { of = T; field = #F; channel = C }
 
 /// OM_FLAG_FIELD() with a channel per bit: BITS is `list("[BIT]" = CHANNEL, ...)` (text keys, as
 /// DM needs for numeric keys) and ALL is the union of those channels (the registered channel).
 /// A write raises only the channels of the bits that changed; a changed bit with no row raises
 /// ALL. The table is a proc-local static built once per type.
-#define OM_FLAG_FIELD_BITS(T, F, D, ALL, BITS) T/var/F = D;T/proc/F##_bit_channels() { var/static/list/table = BITS; return table };T/proc/set_##F(value) { var/changed = F ^ value; if(!changed) { return FALSE } else { F = value; om_changed(src, om_flag_channels(F##_bit_channels(), changed, ALL)); return TRUE } };T/proc/F##_add(bits) { var/changed = bits & ~F; if(!changed) { return FALSE } else { F |= bits; om_changed(src, om_flag_channels(F##_bit_channels(), changed, ALL)); return TRUE } };T/proc/F##_remove(bits) { var/changed = F & bits; if(!changed) { return FALSE } else { F &= ~bits; om_changed(src, om_flag_channels(F##_bit_channels(), changed, ALL)); return TRUE } };T/proc/has_##F(bits) { return (F & bits) ? TRUE : FALSE };/datum/om/field_def##T/F { of = T; field = #F; channel = ALL }
+#define OM_FLAG_FIELD_BITS(T, F, D, ALL, BITS) T/var/F = D;T/proc/F##_bit_channels() { var/static/list/table = BITS; return table };T/proc/set_##F(value) { var/flipped = F ^ value; if(!flipped) { return FALSE } else { F = value; changed(src, om_flag_channels(F##_bit_channels(), flipped, ALL)); return TRUE } };T/proc/F##_add(bits) { var/flipped = bits & ~F; if(!flipped) { return FALSE } else { F |= bits; changed(src, om_flag_channels(F##_bit_channels(), flipped, ALL)); return TRUE } };T/proc/F##_remove(bits) { var/flipped = F & bits; if(!flipped) { return FALSE } else { F &= ~bits; changed(src, om_flag_channels(F##_bit_channels(), flipped, ALL)); return TRUE } };T/proc/has_##F(bits) { return (F & bits) ? TRUE : FALSE };/datum/om/field_def##T/F { of = T; field = #F; channel = ALL }
 
 /// Registers an existing var F of T, with its existing hand-written setter `T/proc/set_F(value)`,
 /// as a declared field raising C (set_anchored, set_density). The setter must raise C on a real

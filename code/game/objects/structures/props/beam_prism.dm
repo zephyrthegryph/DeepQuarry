@@ -30,8 +30,12 @@
 	if(degrees_from_north)
 		animate(src, transform = turn(NORTH, degrees_from_north), time = 3)
 
-REL_PAIR(/obj/structure/prop/prism, remote_dial, my_turrets)
-REL_PAIR_LIST(/obj/structure/prop/prismcontrol, my_turrets, remote_dial)
+/obj/structure/prop/prism/relations()
+	. = ..()
+	. += rel_one(nameof(remote_dial), back = nameof(/obj/structure/prop/prismcontrol::my_turrets))
+/obj/structure/prop/prismcontrol/relations()
+	. = ..()
+	. += rel_many(nameof(my_turrets), back = nameof(/obj/structure/prop/prism::remote_dial))
 
 /obj/structure/prop/prism/proc/reset_rotation()
 	var/degrees_to_rotate = -1 * degrees_from_north
@@ -285,14 +289,14 @@ REL_PAIR_LIST(/obj/structure/prop/prismcontrol, my_turrets, remote_dial)
 	. = ..()
 	if(length(my_turrets)) //Preset controls.
 		for(var/obj/structure/prop/prism/P in my_turrets)
-			rel_set(P, "remote_dial", src)
+			rel_set(P, nameof(P.remote_dial), src)
 	else
 		. = INITIALIZE_HINT_LATELOAD
 
 /obj/structure/prop/prismcontrol/LateInitialize()
 	for(var/obj/structure/prop/prism/P in orange(src, world.view)) //Don't search a huge area.
 		if(P.dialID == dialID && !P.remote_dial && P.external_control_lock)
-			rel_add(src, "my_turrets", P) // the pair sets P.remote_dial
+			rel_add(src, nameof(my_turrets), P) // the pair sets P.remote_dial
 
 /// The second half of a two-stage turn.
 /obj/structure/prop/prism/proc/rotate_second_stage(rotate_degrees)

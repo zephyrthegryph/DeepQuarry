@@ -36,12 +36,12 @@
 	docking_definition.minimum_area = 16
 	var/datum/generated_station_department_instance/command = new
 	command.id = "command-1"
-	rel_set(command, "definition_static", command_definition)
+	rel_set(command, nameof(command.definition_static), command_definition)
 	command.desired_area = 165
 	command.layout_node_id = "node-command"
 	var/datum/generated_station_department_instance/docking = new
 	docking.id = "docking-1"
-	rel_set(docking, "definition_static", docking_definition)
+	rel_set(docking, nameof(docking.definition_static), docking_definition)
 	docking.desired_area = 165
 	docking.layout_node_id = "node-docking"
 	var/datum/generated_station_layout_node/command_node = new
@@ -71,17 +71,17 @@
 	spec.grid_width = 44
 	spec.grid_height = 16
 	spec.maximum_area = 704
-	own_clear(spec, "department_definitions", OWN_DELETE)
-	own_add(spec, "department_definitions", command_definition)
-	own_add(spec, "department_definitions", docking_definition)
-	own_clear(spec, "departments", OWN_DELETE)
-	own_add(spec, "departments", command)
-	own_add(spec, "departments", docking)
-	own_clear(spec, "layout_nodes", OWN_DELETE)
-	own_add(spec, "layout_nodes", command_node)
-	own_add(spec, "layout_nodes", docking_node)
-	own_clear(spec, "layout_edges", OWN_DELETE)
-	own_add(spec, "layout_edges", edge)
+	own_clear(spec, nameof(spec.department_definitions), OWN_DELETE)
+	own_add(spec, nameof(spec.department_definitions), command_definition)
+	own_add(spec, nameof(spec.department_definitions), docking_definition)
+	own_clear(spec, nameof(spec.departments), OWN_DELETE)
+	own_add(spec, nameof(spec.departments), command)
+	own_add(spec, nameof(spec.departments), docking)
+	own_clear(spec, nameof(spec.layout_nodes), OWN_DELETE)
+	own_add(spec, nameof(spec.layout_nodes), command_node)
+	own_add(spec, nameof(spec.layout_nodes), docking_node)
+	own_clear(spec, nameof(spec.layout_edges), OWN_DELETE)
+	own_add(spec, nameof(spec.layout_edges), edge)
 
 	var/datum/generated_station_materializer/materializer = new
 	var/origin_x = world.maxx - spec.grid_width + 1

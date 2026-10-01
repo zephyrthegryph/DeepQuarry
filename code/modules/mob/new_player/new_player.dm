@@ -179,7 +179,7 @@
 			// We want to be a spawned mob instead of a person aaaaa
 			var/mob/living/carrier = join_props["carrier"]
 			var/vorgans = join_props["vorgans"]
-			rel_set(cryst, "bound_mob", new cryst.spawn_mob_type(cryst))
+			rel_set(cryst, nameof(cryst.bound_mob), new cryst.spawn_mob_type(cryst))
 			cryst.spawn_mob_type = null
 			cryst.bound_mob.key = src.key
 			log_and_message_admins("[key_name_admin(src)] joined [cryst.bound_mob] inside a capture crystal [ADMIN_FLW(cryst.bound_mob)]")
@@ -213,7 +213,7 @@
 		character.forceMove(C.loc)
 
 		// AIize the character, but don't move them yet
-		character = character.AIize(move = FALSE) // Dupe of code in /datum/controller/subsystem/ticker/proc/create_characters() for non-latespawn, unify?
+		character = character.AIize(move = FALSE) // Dupe of code in /datum/system/ticker/proc/create_characters() for non-latespawn, unify?
 
 		AnnounceCyborg(character, rank, "has been transferred to the empty core in \the [character.loc.loc]")
 		SSticker.mode.latespawn(character)
@@ -272,7 +272,7 @@
 		for(var/obj/belly/B in character.vore_organs)
 			if(B.name == gut)
 				gut_to_enter = B
-				rel_set(character, "vore_selected", B) // a pointer at one of vore_organs
+				rel_set(character, nameof(character.vore_selected), B) // a pointer at one of vore_organs
 		var/datum/effect/effect/system/teleport_greyscale/tele = new /datum/effect/effect/system/teleport_greyscale()
 		tele.set_up("#00FFFF", get_turf(prey))
 		tele.start()
@@ -299,7 +299,7 @@
 
 /mob/new_player/proc/LateChoices()
 	if(!late_choices_dialog)
-		own_set(src, "late_choices_dialog", new /datum/tgui_module/late_choices(src))
+		own_set(src, nameof(late_choices_dialog), new /datum/tgui_module/late_choices(src))
 	late_choices_dialog.tgui_interact(src)
 
 /mob/new_player/proc/create_character(turf/T)
@@ -335,7 +335,7 @@
 
 	if(mind)
 		mind.active = 0					//we wish to transfer the key manually
-		rel_set(mind, "original_character", new_character)
+		rel_set(mind, nameof(mind.original_character), new_character)
 		mind.loaded_from_ckey = client.ckey
 		mind.loaded_from_slot = client.prefs.default_slot
 		mind.transfer_to(new_character)					//won't transfer key since the mind is not active
@@ -382,7 +382,7 @@
 
 /mob/new_player/proc/ViewManifest()
 	if(!manifest_dialog)
-		own_set(src, "manifest_dialog", new /datum/tgui_module/crew_manifest/new_player(src))
+		own_set(src, nameof(manifest_dialog), new /datum/tgui_module/crew_manifest/new_player(src))
 	manifest_dialog.tgui_interact(src)
 
 /mob/new_player/Move()

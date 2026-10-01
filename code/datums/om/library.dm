@@ -69,8 +69,10 @@
 		GRANT_LANGUAGE = list("combine" = COMBINE_SUM_PER_KEY),
 		GRANT_VERB = list("combine" = COMBINE_SUM_PER_KEY, "type" = /datum/om/effect/grant_verb),
 		GRANT_VERB_HIDE = list("combine" = COMBINE_SUM_PER_KEY, "type" = /datum/om/effect/grant_verb),
+		GRANT_CAPABILITY = list("combine" = COMBINE_SUM_PER_KEY, "type" = /datum/om/effect/grant_capability),
 		GRANT_ACCESS = list("combine" = COMBINE_SUM_PER_KEY),
 		GRANT_TRAIT = list("combine" = COMBINE_SUM_PER_KEY),
+		GRANT_CADENCE = list("combine" = COMBINE_SUM_PER_KEY, "type" = /datum/om/effect/grant_cadence),
 	)
 
 // ---------------------------------------------------------------- relations
@@ -115,7 +117,7 @@
 	source.update_canmove()
 	source.update_floating(source.Check_Dense_Object())
 	if(target.riding_datum)
-		rel_set(target.riding_datum, "ridden", target)
+		rel_set(target.riding_datum, nameof(/datum/riding::ridden), target)
 		target.riding_datum.handle_vehicle_offsets()
 	source.update_water()
 	target.post_buckle_mob(source)
@@ -205,7 +207,7 @@
 		return
 	if(ismob(source))
 		var/mob/M = source
-		om_changed(M, CHANGE_MOB_STATUS)
+		changed(M, CHANGE_MOB_STATUS)
 		if(M.pullin)
 			M.pullin.icon_state = "pull1"
 	if(ismob(target))
@@ -215,7 +217,7 @@
 /datum/om/relation/pulling/on_unlink(atom/movable/source, atom/movable/target, datum/om/edge/edge)
 	if(istype(source) && !QDELETED(source) && ismob(source))
 		var/mob/M = source
-		om_changed(M, CHANGE_MOB_STATUS)
+		changed(M, CHANGE_MOB_STATUS)
 		if(M.pullin)
 			M.pullin.icon_state = "pull0"
 
@@ -310,7 +312,7 @@
 
 /datum/om/bundle/ui_live
 	ui = list(
-		list("watch" = 0xFFFFFF, "stream_rates" = list()),
+		list("watch" = 0xFFFFFF),
 	)
 
 /// Refreshes the vitals HUD when vitals change (calls E.om_refresh_vitals_hud()).

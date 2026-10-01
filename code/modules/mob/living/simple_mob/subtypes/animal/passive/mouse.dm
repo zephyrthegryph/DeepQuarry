@@ -87,7 +87,7 @@ DECLARE_VERB(/mob/living/simple_mob/animal/passive/mouse, /mob/living/proc/hide)
 		holder_type = /obj/item/holder/mouse/black
 
 	if(prob(40))
-		own_add(src, "rat_diseases", new /datum/affliction/contagion/engineered/random(rand(1, 5), 9, 1, infected = src))
+		own_add(src, nameof(rat_diseases), new /datum/affliction/contagion/engineered/random(rand(1, 5), 9, 1, infected = src))
 
 /mob/living/simple_mob/animal/passive/mouse/extrapolator_act(mob/living/user, obj/item/extrapolator/extrapolator, dry_run = FALSE)
 	. = ..()
@@ -205,7 +205,7 @@ DECLARE_VERB(/mob/living/simple_mob/animal/passive/mouse, /mob/living/proc/hide)
 
 /mob/living/simple_mob/animal/passive/mouse/verb/set_mouse_colour()
 	set name = "Set Mouse Colour"
-	set category = "Abilities.Mouse"
+	set category = VERB_CAT_ABILITIES_MOUSE
 	set desc = "Set the colour of your mouse."
 	om_ask(src, /datum/om/prompt/choice, PROC_REF(mouse_colour_chosen), title = "Pick a colour", message = "Set Mouse Colour", choices = list("brown","gray","white","black"))
 
@@ -229,7 +229,7 @@ DECLARE_VERB(/mob/living/simple_mob/animal/passive/mouse, /mob/living/proc/hide)
 	. = ..()
 	name = initial(name)
 	desc = initial(desc)
-	own_add(src, "rat_diseases", new /datum/affliction/contagion/engineered/random(2, 2, 1, infected = src))
+	own_add(src, nameof(rat_diseases), new /datum/affliction/contagion/engineered/random(2, 2, 1, infected = src))
 
 /mob/living/simple_mob/animal/passive/mouse/white/virology/Crossed(atom/movable/AM)
 	. = ..()

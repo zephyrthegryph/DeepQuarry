@@ -9,7 +9,7 @@
 
 //Emag-lite
 /mob/proc/changeling_electric_lockpick()
-	set category = "Changeling"
+	set category = VERB_CAT_CHANGELING
 	set name = "Electric Lockpick (5 + 10/use)"
 	set desc = "Bruteforces open most electrical locking systems, at 10 chemicals per use."
 
@@ -51,7 +51,7 @@
 	if(istype(door,/obj/machinery/door/airlock))
 		var/obj/machinery/door/airlock/airlock = door
 
-		if(airlock.locked) //Check if we're bolted.
+		if(is_bolted(airlock)) //Check if we're bolted.
 			airlock.unlock()
 			to_chat(user, span_notice("We've unlocked \the [airlock].  Another pulse is requried to open it."))
 		else	//We're not bolted, so open the door already.

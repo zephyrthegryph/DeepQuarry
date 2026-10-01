@@ -2,14 +2,14 @@
 /// "lightcensus" reset. Read through the localhost world Topic "lightcensus".
 GLOBAL_LIST_EMPTY(lighting_update_census)
 
-SUBSYSTEM_DEF(lighting)
+SYSTEM_DEF(lighting)
 	name = "Lighting"
-	dependencies = list(
-		/datum/controller/subsystem/air
+	init_stage = INITSTAGE_MAIN
+	needs = list(
+		/datum/system/air
 	)
 	wait = 1
-	flags = SS_TICKER
-	runlevels = RUNLEVELS_DEFAULT | RUNLEVEL_LOBBY // Do some work during lobby waiting period. May as well.
+	periodic_runlevels = RUNLEVELS_DEFAULT | RUNLEVEL_LOBBY // Do some work during lobby waiting period. May as well.
 	var/sun_mult = 1.0
 	var/static/list/sources_queue = list() // List of lighting sources queued for update.
 	var/static/list/corners_queue = list() // List of lighting corners queued for update.
@@ -19,12 +19,12 @@ SUBSYSTEM_DEF(lighting)
 	var/list/planet_shandlers = list() // Precomputed lighting values for tiles only affected by the sun
 	var/list/z_to_pshandler = list()
 
-/datum/controller/subsystem/lighting/stat_entry(msg)
+/datum/system/lighting/stat_entry(msg)
 	msg = "L:[length(sources_queue)]|C:[length(corners_queue)]|O:[length(objects_queue)]"
 	return ..()
 
 
-/datum/controller/subsystem/lighting/Initialize()
+/datum/system/lighting/initialize()
 	if(!initialized)
 		initialized = TRUE
 		create_all_lighting_objects()
@@ -36,10 +36,14 @@ SUBSYSTEM_DEF(lighting)
 	fire(FALSE, TRUE)
 	sunlight_queue_active += sunlight_queue + sunlight_queue // Run through shandler's twice during lobby wait to get some initial computation out of the way. After these two, the sunlight system will run MUCH faster.
 
-	return SS_INIT_SUCCESS
+
+/// The light queues drain every tick (it was SSlighting's SS_TICKER fire()).
+/datum/system/lighting/reactions()
+	. = ..()
+	. += every(WORK_EVERY_TICK, PROC_REF(fire_step), when = PROC_REF(fire_ready), lane = LANE_PRESENTATION)
 
 // ALLOW(subsystem_fire): lighting folds in wave F5, after phase 4f makes it a Rust field
-/datum/controller/subsystem/lighting/fire(resumed, init_tick_checks)
+/datum/system/lighting/fire(resumed, init_tick_checks)
 	MC_SPLIT_TICK_INIT(4)
 	if(!init_tick_checks)
 		MC_SPLIT_TICK
@@ -130,7 +134,7 @@ SUBSYSTEM_DEF(lighting)
 	if (i)
 		queue.Cut(1, i + 1)
 
-/datum/controller/subsystem/lighting/proc/update_sunlight(datum/planet_sunlight_handler/pshandler)
+/datum/system/lighting/proc/update_sunlight(datum/planet_sunlight_handler/pshandler)
 	if(istype(pshandler))
 		pshandler.update_sun()
 		if(length(pshandler.shandlers)) sunlight_queue_active |= pshandler.shandlers
@@ -140,14 +144,14 @@ SUBSYSTEM_DEF(lighting)
 			planet_shandler.update_sun()
 		sunlight_queue_active = sunlight_queue.Copy()
 
-/datum/controller/subsystem/lighting/proc/get_pshandler_planet(datum/planet/planet)
+/datum/system/lighting/proc/get_pshandler_planet(datum/planet/planet)
 	if(!planet_shandlers[planet])
 		planet_shandlers[planet] = new /datum/planet_sunlight_handler(planet)
 	return planet_shandlers[planet]
 
 //Wrapper for the list, because these type of lists are just awful to work with
 //Also takes care of initialization order issues
-/datum/controller/subsystem/lighting/proc/get_pshandler_z(z)
+/datum/system/lighting/proc/get_pshandler_z(z)
 	if(z > length(z_to_pshandler))
 		z_to_pshandler.len = z
 	var/datum/planet_sunlight_handler/pshandler = z_to_pshandler[z]
@@ -159,9 +163,3 @@ SUBSYSTEM_DEF(lighting)
 			pshandler = get_pshandler_planet(P)
 			z_to_pshandler[z] = pshandler
 	return pshandler
-
-/datum/controller/subsystem/lighting
-
-/datum/controller/subsystem/lighting/Recover()
-	initialized = SSlighting.initialized
-	..()

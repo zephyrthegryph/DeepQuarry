@@ -72,7 +72,7 @@ EXTEND_INTERACTIONS(/obj/item/computer_hardware/nano_printer, INTERACT_ITEM(null
 			return INTERACTION_HANDLED_PASS
 		for(var/obj/item/bundleitem in B) //loop through items in bundle
 			if(istype(bundleitem, /obj/item/paper)) //if item is paper (and not photo), add into the bin
-				rel_remove(B, "pages", bundleitem)
+				rel_remove(B, nameof(B.pages), bundleitem)
 				qdel(bundleitem)
 				num_of_pages_added++
 				stored_paper++

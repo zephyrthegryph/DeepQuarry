@@ -21,13 +21,13 @@
 		if(!SK.status)
 			to_chat(user, span_notice("\The [SK] is not ready to be attached!"))
 			return TRUE
-		user.drop_item()
 		var/obj/structure/bed/chair/e_chair/E = new (src.loc, material.name)
 		play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 		E.set_dir(dir)
-		SK.forceMove(E)
-		own_move(SK, E, "part") // CONTAINED: moved in first
-		rel_set(SK, "master", E)
+		if(!own_set(E, nameof(E.part), SK, user = user)) // out of the hand, into the chair
+			qdel(E)
+			return TRUE
+		rel_set(SK, nameof(SK.master), E)
 		replace_with(src, E)
 	return TRUE
 

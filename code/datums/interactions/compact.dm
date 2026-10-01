@@ -33,7 +33,7 @@
 	var/applies_proc
 
 /datum/interaction/generic/applies_to(atom/target)
-	if(applies_proc && !call(target, applies_proc)())
+	if(applies_proc && !holder_call(target, applies_proc))
 		return FALSE
 	return ..()
 
@@ -58,7 +58,7 @@
 	return "[type]:[id]"
 
 /datum/interaction/generic/run_effect(mob/actor, atom/target, obj/item/held)
-	var/ran = call(target, effect)(actor, held, src)
+	var/ran = holder_call(target, effect, actor, held, src)
 	// Handled, but the input isn't used up: the entry's caller lets afterattack / the loot panel follow.
 	if(ran == INTERACTION_HANDLED_PASS && GLOB.interaction_entry_actors[actor])
 		GLOB.interaction_entry_pass[actor] = TRUE
@@ -151,14 +151,18 @@
 			tags = (tags || list()) + list(INTERACTION_TAG_REMOTE, INTERACTION_TAG_SILICON)
 		if(INTERACT_KIND_ROBOT)
 			category = INTERACTION_CAT_OPEN
-			priority = 1 // a cyborg's own Use goes ahead of the silicon one it overrides
+			// A cyborg's own Use goes ahead of the silicon one it overrides. As an op (operations_and_actions.md 5a) it is
+			// declared before the silicon op instead: declaration order, not a priority.
+			priority = 1
 			tags = (tags || list()) + list(INTERACTION_TAG_SILICON)
 		if(INTERACT_KIND_OBSERVER)
 			category = INTERACTION_CAT_OPEN
 			tags = (tags || list()) + list(INTERACTION_TAG_OBSERVER)
 		if(INTERACT_KIND_TK)
 			category = INTERACTION_CAT_OPEN
-			priority = 1 // ahead of the hand's interactions telekinesis also reaches
+			// Ahead of the hand's interactions telekinesis also reaches. As an op it takes ROUTE_TK instead: a telekinetic
+			// click reaches only the ops of its own route.
+			priority = 1
 			tags = (tags || list()) + list(INTERACTION_TAG_TELEKINESIS)
 		else
 			CRASH("dq_interaction_from_spec: unknown compact interaction kind [kind] on [owner_type]")

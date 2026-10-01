@@ -38,7 +38,6 @@
 	var/combine_first = FALSE // If TRUE, this appliance will do combination cooking before checking recipes
 	var/food_safety = FALSE	// If true, the appliance automatically ejects food instead of burning it
 
-	var/tgui_id
 
 	var/static/radial_eject = image(icon = 'icons/mob/radial.dmi', icon_state = "radial_eject")
 	var/static/radial_power = image(icon = 'icons/mob/radial.dmi', icon_state = "radial_power")
@@ -58,7 +57,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/appliance, MACHINE_PIPELINE, "cooking")
 /obj/machinery/appliance/on_destroy(force)
 	for(var/datum/cooking_item/CI as anything in cooking_objs?.Copy())
 		qdel(CI.container())//Food is fragile, it probably doesnt survive the destruction of the machine
-		own_take_member(src, "cooking_objs", CI)
+		own_take_member(src, nameof(cooking_objs), CI)
 		qdel(CI)
 	..()
 
@@ -305,7 +304,7 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 		var/obj/item/reagent_containers/cooking_container/CC = I
 		CI = new /datum/cooking_item/(CC)
 		I.forceMove(src)
-		own_add(src, "cooking_objs", CI)
+		own_add(src, nameof(cooking_objs), CI)
 		act_message(user, src, others = span_infoplain(span_bold("%U%") + " puts %I% into %T%."), item = I)
 		if (CC.check_contents() == 0)//If we're just putting an empty container in, then dont start any processing.
 			return TRUE
@@ -771,7 +770,7 @@ UI_ACT_PROC(/obj/machinery/appliance, ui_act_remove_menu)
 		thing.forceMove(get_turf(src))
 
 	if (delete)
-		own_take_member(src, "cooking_objs", CI)
+		own_take_member(src, nameof(cooking_objs), CI)
 		qdel(CI)
 	else
 		CI.reset()//reset instead of deleting if the container is left inside
@@ -856,7 +855,7 @@ UI_ACT_PROC(/obj/machinery/appliance, ui_act_remove_menu)
 	result.transform = M
 
 	// all done, now delete the old objects
-	rel_clear(H, "held_mob")
+	rel_clear(H, nameof(H.held_mob))
 	qdel(victim)
 	victim = null
 	qdel(H)
@@ -885,7 +884,7 @@ UI_ACT_PROC(/obj/machinery/appliance, ui_act_remove_menu)
 	var/max_oil = 0//Used for fryers.
 
 /datum/cooking_item/New(obj/item/I)
-	rel_set(src, "container", I)
+	rel_set(src, nameof(container), I)
 
 //This is called for containers whose contents are ejected without removing the container
 /datum/cooking_item/proc/reset()

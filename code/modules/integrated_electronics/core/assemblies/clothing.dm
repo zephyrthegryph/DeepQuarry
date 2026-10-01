@@ -80,14 +80,14 @@ DECLARE_APPEARANCE_PROC(/obj/item/electronic_assembly/clothing, TYPE_PROC_REF(/a
 // Does most of the repeatative setup.
 /obj/item/clothing/proc/setup_integrated_circuit(new_type)
 	// Set up the internal circuit holder.
-	own_set(src, "IC", new new_type(src))
-	rel_set(IC, "clothing", src)
+	own_set(src, nameof(IC), new new_type(src))
+	rel_set(IC, nameof(IC.clothing), src)
 	IC.name = name
 
 	// Clothing assemblies can be triggered by clicking on the HUD. This allows that to occur.
 	var/obj/item/integrated_circuit/built_in/action_button/button_circuit = new /obj/item/integrated_circuit/built_in/action_button(src.IC)
 	IC.force_add_circuit(button_circuit)
-	rel_set(src, "action_circuit", button_circuit)
+	rel_set(src, nameof(action_circuit), button_circuit)
 
 	add_item_action(new /datum/action/item_action/activate(src, name))
 
@@ -105,11 +105,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/electronic_assembly/clothing, TYPE_PROC_REF(/a
 	return ..()
 
 /obj/item/clothing/under/circuitry/equipped(mob/user, slot) // Set wearer var when equiped.
-	rel_set(src, "wearer", user)
+	rel_set(src, nameof(wearer), user)
 	..()
 
 /obj/item/clothing/under/circuitry/dropped(mob/user, equipping, slot) // Remove wearer var.
-	rel_clear(src, "wearer")
+	rel_clear(src, nameof(wearer))
 	..()
 
 // Gloves.
@@ -125,11 +125,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/electronic_assembly/clothing, TYPE_PROC_REF(/a
 	return ..()
 
 /obj/item/clothing/gloves/circuitry/equipped(mob/user, slot)
-	rel_set(src, "wearer", user)
+	rel_set(src, nameof(wearer), user)
 	..()
 
 /obj/item/clothing/gloves/circuitry/dropped(mob/user, equipping, slot)
-	rel_clear(src, "wearer")
+	rel_clear(src, nameof(wearer))
 	..()
 
 // Glasses.
@@ -145,11 +145,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/electronic_assembly/clothing, TYPE_PROC_REF(/a
 	return ..()
 
 /obj/item/clothing/glasses/circuitry/equipped(mob/user, slot)
-	rel_set(src, "wearer", user)
+	rel_set(src, nameof(wearer), user)
 	..()
 
 /obj/item/clothing/glasses/circuitry/dropped(mob/user, equipping, slot)
-	rel_clear(src, "wearer")
+	rel_clear(src, nameof(wearer))
 	..()
 
 // Shoes
@@ -165,11 +165,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/electronic_assembly/clothing, TYPE_PROC_REF(/a
 	return ..()
 
 /obj/item/clothing/shoes/circuitry/equipped(mob/user, slot)
-	rel_set(src, "wearer", user)
+	rel_set(src, nameof(wearer), user)
 	..()
 
 /obj/item/clothing/shoes/circuitry/dropped(mob/user, equipping, slot)
-	rel_clear(src, "wearer")
+	rel_clear(src, nameof(wearer))
 	..()
 
 // Head
@@ -185,11 +185,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/electronic_assembly/clothing, TYPE_PROC_REF(/a
 	return ..()
 
 /obj/item/clothing/head/circuitry/equipped(mob/user, slot)
-	rel_set(src, "wearer", user)
+	rel_set(src, nameof(wearer), user)
 	..()
 
 /obj/item/clothing/head/circuitry/dropped(mob/user, equipping, slot)
-	rel_clear(src, "wearer")
+	rel_clear(src, nameof(wearer))
 	..()
 
 // Ear
@@ -207,11 +207,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/electronic_assembly/clothing, TYPE_PROC_REF(/a
 	return ..()
 
 /obj/item/clothing/ears/circuitry/equipped(mob/user, slot)
-	rel_set(src, "wearer", user)
+	rel_set(src, nameof(wearer), user)
 	..()
 
 /obj/item/clothing/ears/circuitry/dropped(mob/user, equipping, slot)
-	rel_clear(src, "wearer")
+	rel_clear(src, nameof(wearer))
 	..()
 
 // Exo-slot
@@ -227,11 +227,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/electronic_assembly/clothing, TYPE_PROC_REF(/a
 	return ..()
 
 /obj/item/clothing/suit/circuitry/equipped(mob/user, slot)
-	rel_set(src, "wearer", user)
+	rel_set(src, nameof(wearer), user)
 	..()
 
 /obj/item/clothing/suit/circuitry/dropped(mob/user, equipping, slot)
-	rel_clear(src, "wearer")
+	rel_clear(src, nameof(wearer))
 	..()
 
 

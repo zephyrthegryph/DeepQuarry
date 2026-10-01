@@ -169,7 +169,7 @@
 	..();\
 }
 
-// Stance-declared compact shapes (combat mode, doc/rewrite/interactions.md §12).
+// Stance-declared compact shapes (combat mode, doc/rewrite/interactions.md ï¿½12).
 // Spec element 6 is the stance the interaction answers: I_HELP, I_DISARM, I_GRAB or
 // I_HURT. The resolver offers it only when the actor's input has that stance, so
 // the other stances fall through to the next candidate, and the interaction that
@@ -207,8 +207,9 @@
 // offers takes it (an item's pickup, a mob being hit or touched). Spec element 7.
 // They sort after every other interaction of the entry, whichever type declared them.
 #define INTERACT_ORDER_DEFAULT "default"
-/// Priority of a default interaction: below every ordinary one (0) and hostile shifts.
-#define INTERACTION_DEFAULT_PRIORITY -(COMBAT_MODE_PRIORITY_SHIFT * 2)
+/// Priority of a default interaction: below every ordinary one (0) and hostile shifts (-2 * COMBAT_MODE_PRIORITY_SHIFT).
+/// One scale with the ops': a converted _DEFAULT shape is cap_op(priority = OP_PRIORITY_DEFAULT).
+#define INTERACTION_DEFAULT_PRIORITY OP_PRIORITY_DEFAULT
 /// Touched with an empty hand, when nothing else answers: the type's default touch (an item's pickup).
 #define INTERACT_HAND_DEFAULT(name, effect, requires...) list(INTERACT_KIND_HAND, name, effect, list(requires), null, null, INTERACT_ORDER_DEFAULT)
 /// Used with any item, when nothing else takes it: the type's default (a mob is hit with it).

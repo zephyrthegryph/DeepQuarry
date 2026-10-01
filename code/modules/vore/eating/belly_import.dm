@@ -1180,7 +1180,7 @@ UI_ACT_PROC(/datum/vore_look/import_panel, ui_act_import_bellies)
 				new_belly.set_messages(new_fullness5_messages,BELLY_LIQUID_MESSAGE5, limit = BELLIES_MESSAGE_MAX)
 
 		// After import updates
-		rel_clear(new_belly, "items_preserved")
+		rel_clear(new_belly, nameof(new_belly.items_preserved))
 		new_belly.update_internal_overlay()
 
 	host.handle_belly_update()

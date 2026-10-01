@@ -8,6 +8,65 @@
 //! call to `::auxcallback::panic_guard::run_guarded` rather than inlining
 //! `catch_unwind`.
 use byondapi::value::ByondValue;
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::Mutex;
+
+/// Per-bind call and error counters. `#[auxmacros::bind]` emits one `static`
+/// of this per bind; it registers itself on its first call, so the cost of a
+/// call is two relaxed atomic adds. [`snapshot`] reads them all (exposed to
+/// DM through `verdigris_metrics()` as `ffi.calls.*` / `ffi.errors.*`).
+pub struct BindStats {
+    name: &'static str,
+    calls: AtomicU64,
+    errors: AtomicU64,
+    registered: AtomicBool,
+}
+
+static REGISTRY: Mutex<Vec<&'static BindStats>> = Mutex::new(Vec::new());
+
+impl BindStats {
+    #[must_use]
+    pub const fn new(name: &'static str) -> Self {
+        Self {
+            name,
+            calls: AtomicU64::new(0),
+            errors: AtomicU64::new(0),
+            registered: AtomicBool::new(false),
+        }
+    }
+}
+
+/// `(bind name, calls, errors)` for every bind called at least once.
+pub fn snapshot() -> Vec<(&'static str, u64, u64)> {
+    let registry = REGISTRY.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+    registry
+        .iter()
+        .map(|s| (s.name, s.calls.load(Ordering::Relaxed), s.errors.load(Ordering::Relaxed)))
+        .collect()
+}
+
+/// As [`run_guarded`], counting the call (and the error, if any) on `stats`.
+pub fn run_counted<F>(
+    stats: &'static BindStats,
+    context: &str,
+    f: F,
+) -> eyre::Result<ByondValue>
+where
+    F: FnOnce() -> eyre::Result<ByondValue>,
+{
+    if !stats.registered.swap(true, Ordering::Relaxed) {
+        REGISTRY
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .push(stats);
+    }
+    stats.calls.fetch_add(1, Ordering::Relaxed);
+    let result = run_guarded(context, f);
+    if result.is_err() {
+        stats.errors.fetch_add(1, Ordering::Relaxed);
+    }
+    result
+}
 
 /// Runs `f`, converting a panic into an `Err` instead of unwinding across the
 /// `extern "C"` boundary into BYOND (which would abort DreamDaemon). `context` is
@@ -42,6 +101,18 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn counted_calls_and_errors_are_snapshotted() {
+        static STATS: BindStats = BindStats::new("counted_test_bind");
+        let _ = run_counted(&STATS, "ctx", || Ok(ByondValue::null()));
+        let _ = run_counted(&STATS, "ctx", || Err(eyre::eyre!("boom")));
+        let row = snapshot()
+            .into_iter()
+            .find(|r| r.0 == "counted_test_bind")
+            .expect("registered on first call");
+        assert_eq!((row.1, row.2), (2, 1));
+    }
 
     #[test]
     fn ok_result_passes_through() {

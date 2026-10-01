@@ -52,13 +52,14 @@ Thus, the two variables affect pump operation are set in New():
 /obj/machinery/atmospherics/binary/volume_pump/rust_bind_pipe_port(index, datum/pipe_network/new_network, datum/gas_mixture/network_air)
 	. = ..()
 	if(index == 2)
-		update_rust_device()
+		rust_device_dirty()
 
-/obj/machinery/atmospherics/binary/volume_pump/proc/update_rust_device()
+/obj/machinery/atmospherics/binary/volume_pump/push_to_rust()
+	// ALLOW(derived_reads): set_use_power() and power_change() bump rust_device_rev; power_rating is fixed by the material
 	if((!operable()) || !use_power)
 		rust_unregister_device()
 		return
-	var/effective_rate = transfer_rate * material_pump_power(power_rating) / max(power_rating, 1)
+	var/effective_rate = transfer_rate * material_pump_power(power_rating) / max(power_rating, 1) // ALLOW(derived_reads): power_rating is fixed by the material
 	var/max_output = overclocked ? 0 : VOLUME_PUMP_MAX_OUTPUT_PRESSURE
 	rust_set_device(1, 2)
 	rust_set_device_flow(0, RUST_FLOW_VOLUME, effective_rate, RUST_DIR_FORCED, RUST_SIDE_B, max_output > 0 ? RUST_STOP_AT_LEAST : RUST_STOP_NONE, max_output)
@@ -150,7 +151,7 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/binary/volume_pump, "appearance_o
 	GLOB.radio_service.remove_object(src, frequency)
 	frequency = new_frequency
 	if(frequency)
-		rel_set(src, "radio_connection", GLOB.radio_service.add_object(src, frequency, radio_filter = RADIO_ATMOSIA))
+		rel_set(src, nameof(radio_connection), GLOB.radio_service.add_object(src, frequency, radio_filter = RADIO_ATMOSIA))
 
 /obj/machinery/atmospherics/binary/volume_pump/proc/broadcast_status()
 	if(!radio_connection)
@@ -158,7 +159,7 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/binary/volume_pump, "appearance_o
 
 	var/datum/signal/signal = new
 	signal.transmission_method = TRANSMISSION_RADIO //radio signal
-	rel_set(signal, "source", src)
+	rel_set(signal, nameof(signal.source), src)
 
 	signal.data = list(
 		"tag" = id,
@@ -209,9 +210,7 @@ UI_DATA_REPLACE(/obj/machinery/atmospherics/binary/volume_pump, "merge:ui_data_o
 		set_use_power(!use_power)
 
 	if(signal.data["set_volume_rate"])
-		transfer_rate = between(0, text2num(signal.data["set_volume_rate"]), air1.return_volume())
-
-	update_rust_device()
+		set_transfer_rate(between(0, text2num(signal.data["set_volume_rate"]), air1.return_volume()))
 
 	if(signal.data["status"])
 		broadcast_status()
@@ -246,8 +245,6 @@ UI_ACT(/obj/machinery/atmospherics/binary/volume_pump, "power", ui_act_power)
 UI_ACT_PROC(/obj/machinery/atmospherics/binary/volume_pump, ui_act_power)
 	set_use_power(!use_power)
 	. = TRUE
-	if(.)
-		update_rust_device()
 	add_fingerprint(ui.user)
 	update_icon()
 
@@ -256,24 +253,17 @@ UI_ACT_PROC(/obj/machinery/atmospherics/binary/volume_pump, ui_act_set_press)
 	var/press = params["press"]
 	switch(press)
 		if("min")
-			transfer_rate = 0
+			set_transfer_rate(0)
 		if("max")
-			transfer_rate = max_transfer_rate
+			set_transfer_rate(max_transfer_rate)
 		if("set")
 			var/new_rate = act_ask(ui.user, action, params, ui, "k269", /datum/om/prompt/number, message = "Enter new transfer rate (0-[max_transfer_rate] L/s)", title = "Flow Control", default = src.transfer_rate, max = max_transfer_rate)
 			if(isnull(new_rate))
 				return
-			src.transfer_rate = between(0, new_rate, max_transfer_rate)
+			set_transfer_rate(between(0, new_rate, max_transfer_rate))
 	. = TRUE
-	if(.)
-		update_rust_device()
 	add_fingerprint(ui.user)
 	update_icon()
-
-/obj/machinery/atmospherics/binary/volume_pump/power_change()
-	. = ..()
-	if(.)
-		update_rust_device()
 
 /obj/machinery/atmospherics/binary/volume_pump/examine(mob/user)
 	. = ..()
@@ -303,12 +293,11 @@ UI_ACT_PROC(/obj/machinery/atmospherics/binary/volume_pump, ui_act_set_press)
 
 /obj/machinery/atmospherics/binary/volume_pump/multitool_act(mob/user, obj/item/W)
 	if(!overclocked)
-		overclocked = TRUE
+		set_overclocked(TRUE)
 		to_chat(user, span_notice("The pump makes a grinding noise and air starts to hiss out as you disable its pressure limits."))
 	else
-		overclocked = FALSE
+		set_overclocked(FALSE)
 		to_chat(user, span_notice("The pump quiets down as you turn its limiters back on."))
-	update_rust_device()
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
 
@@ -324,8 +313,7 @@ UI_ACT_PROC(/obj/machinery/atmospherics/binary/volume_pump, ui_act_set_press)
 		return TRUE
 
 	to_chat(user, span_notice("You set the [name] to max output"))
-	transfer_rate = max_transfer_rate
-	update_rust_device()
+	set_transfer_rate(max_transfer_rate)
 	add_fingerprint(user)
 	return TRUE
 
@@ -336,7 +324,8 @@ UI_ACT_PROC(/obj/machinery/atmospherics/binary/volume_pump, ui_act_set_press)
 		return CLICK_ACTION_BLOCKING
 
 	set_use_power(!use_power)
-	update_rust_device()
+	// ALLOW(sys_update_icon): the device state is not an appearance-watched field; the icon is refreshed procedurally
+	// ALLOW(sys_update_icon_call): the device state is not an appearance-watched field; the icon is refreshed procedurally
 	update_icon()
 	add_fingerprint(user)
 	to_chat(user, span_notice("You toggle the [name] [use_power ? "on" : "off"]."))
@@ -346,3 +335,11 @@ UI_ACT_PROC(/obj/machinery/atmospherics/binary/volume_pump, ui_act_set_press)
 // globals from __defines/atmospherics_linda/atmos_piping.dm now; undef'ing them
 // from a component file would break any later include that uses them.)
 
+
+TRACKED(/obj/machinery/atmospherics/binary/volume_pump, transfer_rate, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/atmospherics/binary/volume_pump, overclocked, CHANGE_MACHINE_SETTINGS)
+
+/// The Rust device law is pushed (once per frame) when any of these change.
+/obj/machinery/atmospherics/binary/volume_pump/derived()
+	. = ..()
+	. += rust_push(nameof(rust_device_rev), nameof(transfer_rate), nameof(overclocked))

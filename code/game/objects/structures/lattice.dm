@@ -78,7 +78,7 @@
 /obj/structure/lattice/proc/updateOverlays()
 	if(om_timer_slot_pending(src, "overlays"))
 		return
-	om_after_slot(src, "overlays", 1, PROC_REF(update_overlays_now))
+	after_slot(src, "overlays", 1, PROC_REF(update_overlays_now))
 
 OWN_TIMER(/obj/structure/lattice, overlays)
 

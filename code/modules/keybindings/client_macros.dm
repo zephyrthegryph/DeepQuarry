@@ -56,13 +56,13 @@
 	hover_tracking = !!enabled
 	if(!hover_tracking)
 		if(mob)
-			rel_clear(mob, "hovered_atom_view")
+			rel_clear(mob, nameof(/mob::hovered_atom_view))
 		clear_screentip()
 
 /// Lists the current bindings in chat. Replaces the old hand-written hotkey help.
 /client/verb/hotkeys_help()
 	set name = "hotkeys-help"
-	set category = "OOC.Resources"
+	set category = VERB_CAT_OOC_RESOURCES
 
 	var/profile = mob?.keybind_profile() || KEYBIND_PROFILE_DEFAULT
 	var/list/overrides = keybinding_overrides()

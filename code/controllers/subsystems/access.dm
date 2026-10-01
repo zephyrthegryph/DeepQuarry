@@ -1,6 +1,6 @@
-SUBSYSTEM_DEF(access)
+SYSTEM_DEF(access)
 	name = "Access"
-	flags = SS_NO_FIRE
+	init_stage = INITSTAGE_MAIN
 
 	VAR_PRIVATE/list/datum/access/priv_all_access_datums
 	VAR_PRIVATE/list/datum/access/priv_all_access
@@ -13,7 +13,7 @@ SUBSYSTEM_DEF(access)
 	VAR_PRIVATE/list/datum/access/priv_all_access_datums_region = list()
 	VAR_PRIVATE/list/datum/access/priv_region_access = list()
 
-/datum/controller/subsystem/access/Initialize()
+/datum/system/access/initialize()
 	priv_all_access_datums = init_subtypes(/datum/access)
 	priv_all_access_datums = dd_sortedObjectList(priv_all_access_datums)
 
@@ -28,7 +28,6 @@ SUBSYSTEM_DEF(access)
 	priv_syndicate_access = get_access_ids(ACCESS_TYPE_SYNDICATE)
 	priv_private_access = get_access_ids(ACCESS_TYPE_PRIVATE)
 
-	return SS_INIT_SUCCESS
 
 /// CentCom job title -> its access list (shared; get_centcom_access() hands out copies).
 GLOBAL_LIST_INIT(centcom_job_access, list(
@@ -43,55 +42,55 @@ GLOBAL_LIST_INIT(centcom_job_access, list(
 ))
 
 /// A fresh copy of `job`'s CentCom access (callers assign it to a card, which edits it).
-/datum/controller/subsystem/access/proc/get_centcom_access(job)
+/datum/system/access/proc/get_centcom_access(job)
 	if(job == "Supreme Commander")
 		return get_all_centcom_access()
 	var/list/access = GLOB.centcom_job_access[job]
 	return access?.Copy()
 
-/datum/controller/subsystem/access/proc/get_all_access_datums()
+/datum/system/access/proc/get_all_access_datums()
 	return priv_all_access_datums
 
-/datum/controller/subsystem/access/proc/get_all_access_datums_by_id()
+/datum/system/access/proc/get_all_access_datums_by_id()
 	return priv_all_access_datums_id
 
-/datum/controller/subsystem/access/proc/get_all_access_datums_by_region()
+/datum/system/access/proc/get_all_access_datums_by_region()
 	return priv_all_access_datums_region
 
-/datum/controller/subsystem/access/proc/get_access_ids(access_types = ACCESS_TYPE_ALL)
+/datum/system/access/proc/get_access_ids(access_types = ACCESS_TYPE_ALL)
 	var/list/L = list()
 	for(var/datum/access/A in get_all_access_datums())
 		if(A.access_type & access_types)
 			L += A.id
 	return L
 
-/datum/controller/subsystem/access/proc/get_all_accesses()
+/datum/system/access/proc/get_all_accesses()
 	RETURN_TYPE(/list)
 	return priv_all_access
 
-/datum/controller/subsystem/access/proc/get_all_station_access()
+/datum/system/access/proc/get_all_station_access()
 	RETURN_TYPE(/list)
 	return priv_station_access
 
-/datum/controller/subsystem/access/proc/get_all_centcom_access()
+/datum/system/access/proc/get_all_centcom_access()
 	RETURN_TYPE(/list)
 	return priv_centcom_access
 
-/datum/controller/subsystem/access/proc/get_all_syndicate_access()
+/datum/system/access/proc/get_all_syndicate_access()
 	RETURN_TYPE(/list)
 	return priv_syndicate_access
 
-/datum/controller/subsystem/access/proc/get_all_private_access()
+/datum/system/access/proc/get_all_private_access()
 	RETURN_TYPE(/list)
 	return priv_private_access
 
-/datum/controller/subsystem/access/proc/get_region_accesses(code)
+/datum/system/access/proc/get_region_accesses(code)
 	if(code == ACCESS_REGION_ALL)
 		return get_all_station_access()
 
 	return priv_region_access["[code]"]
 
-/datum/controller/subsystem/access/proc/get_region_accesses_name(code)
+/datum/system/access/proc/get_region_accesses_name(code)
 	switch(code)
 		if(ACCESS_REGION_ALL)
 			return "All"
@@ -110,15 +109,15 @@ GLOBAL_LIST_INIT(centcom_job_access, list(
 		if(ACCESS_REGION_SUPPLY) //supply
 			return "Supply"
 
-/datum/controller/subsystem/access/proc/get_access_desc(id)
+/datum/system/access/proc/get_access_desc(id)
 	var/list/access_list = get_all_access_datums_by_id()
 	var/datum/access/access_datum = access_list["[id]"]
 
 	return access_datum ? access_datum.desc : ""
 
-/datum/controller/subsystem/access/proc/get_centcom_access_desc(A)
+/datum/system/access/proc/get_centcom_access_desc(A)
 	return get_access_desc(A)
 
-/datum/controller/subsystem/access/proc/get_access_by_id(id)
+/datum/system/access/proc/get_access_by_id(id)
 	var/list/access_list = get_all_access_datums_by_id()
 	return access_list["[id]"]

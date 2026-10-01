@@ -1,0 +1,1 @@
+# sys_lint baseline for tools/ci/sys_rules/dx_manual_transfer.py (doc/rewrite/systems.md); shrink-only, target 0

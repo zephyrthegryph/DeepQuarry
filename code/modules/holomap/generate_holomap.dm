@@ -34,7 +34,7 @@
 /// files, the templates loaded at boot, every area type's holomap colour, the
 /// canvas icon and the map's size and station levels. Without the .dmm sources
 /// on disk (a deployed .dmb) it falls back to the build key.
-/datum/controller/subsystem/holomaps/proc/holomap_cache_key()
+/datum/system/holomaps/proc/holomap_cache_key()
 	var/list/parts = list("v[HOLOMAP_CACHE_VERSION]", "[world.maxx]x[world.maxy]x[world.maxz]", json_encode(using_map.station_levels), json_encode(using_map.holomap_smoosh))
 	var/map_dir = "maps/[using_map.path]/"
 	var/map_files = 0
@@ -61,7 +61,7 @@
 
 /// Loads the holomaps rendered by an earlier boot of the same build and map.
 /// Returns FALSE (and loads nothing) if there is no matching cache.
-/datum/controller/subsystem/holomaps/proc/load_cached_holomaps(key)
+/datum/system/holomaps/proc/load_cached_holomaps(key)
 	var/index_file = "[HOLOMAP_CACHE_DIRECTORY]/index.json"
 	if(!fexists(index_file))
 		return FALSE
@@ -90,7 +90,7 @@
 	return TRUE
 
 /// Saves the rendered holomaps for the next boot of the same build and map.
-/datum/controller/subsystem/holomaps/proc/save_cached_holomaps(key)
+/datum/system/holomaps/proc/save_cached_holomaps(key)
 	fdel("[HOLOMAP_CACHE_DIRECTORY]/")
 	for(var/z in 1 to length(holoMiniMaps))
 		fcopy(holoMiniMaps[z], "[HOLOMAP_CACHE_DIRECTORY]/base_[z].dmi")
@@ -102,7 +102,7 @@
 
 /// Generates all the holo minimaps, initializing it all nicely, probably.
 /// Boots of the same build and map reuse the maps rendered by the last one.
-/datum/controller/subsystem/holomaps/proc/generateHoloMinimaps()
+/datum/system/holomaps/proc/generateHoloMinimaps()
 	var/start_time = world.timeofday
 
 	// Starting over if we're running midround (it runs real fast, so that's possible)
@@ -130,7 +130,7 @@
 	save_cached_holomaps(cache_key)
 	finish_holomaps(start_time)
 
-/datum/controller/subsystem/holomaps/proc/finish_holomaps(start_time)
+/datum/system/holomaps/proc/finish_holomaps(start_time)
 	holomaps_initialized = TRUE
 	admin_notice(span_notice("Holomaps initialized in [round(0.1*(world.timeofday-start_time),0.1)] seconds."), R_DEBUG)
 
@@ -147,7 +147,7 @@
 /// The PNG is RGB only, so each tile is written as an opaque key colour; SwapColor then turns
 /// every key into its real (translucent) colour and the background into transparency.
 /// `color_keys` maps real colour -> key. In HOLOMAP_PNG_AREAS mode it is filled as areas appear.
-/datum/controller/subsystem/holomaps/proc/render_holomap_png(zLevel, mode, list/color_keys)
+/datum/system/holomaps/proc/render_holomap_png(zLevel, mode, list/color_keys)
 	var/icon/blank = icon(HOLOMAP_ICON, "blank")
 	var/canvas_width = blank.Width()
 	var/canvas_height = blank.Height()
@@ -212,7 +212,7 @@
 	return canvas
 
 // Generates the "base" holomap for one z-level, showing only the physical structure of walls and paths.
-/datum/controller/subsystem/holomaps/proc/generateHoloMinimap(zLevel = 1)
+/datum/system/holomaps/proc/generateHoloMinimap(zLevel = 1)
 	var/static/list/base_keys = list(HOLOMAP_ROCK = "#000001", HOLOMAP_PATH = "#000002", HOLOMAP_OBSTACLE = "#000003")
 	return render_holomap_png(zLevel, HOLOMAP_PNG_BASE, base_keys)
 
@@ -220,7 +220,7 @@
 // This seems to do the drawing thing, but draws only the areas, having nothing to do with the tiles.
 // Leshana: I'm guessing this map will get overlayed on top of the base map at runtime? We'll see.
 // Wait, seems we actually blend the area map on top of it right now! Huh.
-/datum/controller/subsystem/holomaps/proc/generateStationMinimap(zLevel)
+/datum/system/holomaps/proc/generateStationMinimap(zLevel)
 	var/icon/canvas = render_holomap_png(zLevel, HOLOMAP_PNG_AREAS, list())
 
 	// Save this nice area-colored canvas in case we want to layer it or something I guess
@@ -250,7 +250,7 @@
 	extraMiniMaps["[HOLOMAP_EXTRA_STATIONMAPSMALL]_[zLevel]"] = actual_small_map
 
 // For tiny multi-z maps like the tether, we want to smoosh em together into a nice big one!
-/datum/controller/subsystem/holomaps/proc/smooshTetherHolomaps(list/zlevels)
+/datum/system/holomaps/proc/smooshTetherHolomaps(list/zlevels)
 	var/icon/big_map = icon(HOLOMAP_ICON, "stationmap")
 	var/icon/small_map = icon(HOLOMAP_ICON, "blank")
 	// For each zlevel in turn, overlay them on top of each other

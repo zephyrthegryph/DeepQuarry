@@ -174,6 +174,19 @@ GLOBAL_DATUM_INIT(statpanels_service, /datum/world_service/statpanels, new)
 			"fires" = SS.times_fired,
 			"ref" = REF(SS),
 		))
+	// Systems that run a fire() body on a work item (air, lighting, ticker ...) read like the subsystems they were.
+	for(var/datum/system/S as anything in kernel_pure_systems())
+		if(!S.times_fired && !S.fire_cost)
+			continue
+		subsystems += list(list(
+			"name" = S.name,
+			"state" = S.state == SS_PAUSED ? "P" : "  ",
+			"usage" = 0,
+			"overrun" = S.tick_overrun,
+			"cost" = S.fire_cost,
+			"fires" = S.times_fired,
+			"ref" = REF(S),
+		))
 	return list(
 		"tick_budget_ms" = world.tick_lag * 100,
 		"target_tps" = world.fps,
@@ -189,14 +202,17 @@ GLOBAL_DATUM_INIT(statpanels_service, /datum/world_service/statpanels, new)
 		"graph" = graph,
 		"outliers" = Master.perf_outliers.Copy(),
 		"subsystems" = subsystems,
+		"kernel" = km_panel_data(),
 		"runtime" = list(
 			"cpu" = world.cpu,
 			"instances" = length(world.contents),
 			"clients" = length(GLOB.clients),
 			"tick_drift" = Master.tickdrift,
 			"sleep_delta" = Master.sleep_delta,
-			"queue_priority" = Master.queue_priority_count,
-			"queue_priority_background" = Master.queue_priority_count_bg,
+			"queue_priority" = 0,
+			"queue_priority_background" = 0,
+			"kernel_ticks" = kernel().ticks,
+			"kernel_last_tick_ms" = kernel().last_tick_ms,
 			"rust_current_bytes" = rust_allocator?.len >= 1 ? rust_allocator[1] : 0,
 			"rust_peak_bytes" = rust_allocator?.len >= 2 ? rust_allocator[2] : 0,
 		),
@@ -298,6 +314,8 @@ GLOBAL_DATUM_INIT(statpanels_service, /datum/world_service/statpanels, new)
 #endif
 	for(var/datum/controller/subsystem/sub_system as anything in Master.subsystems)
 		mc_data[++mc_data.len] = list("\[[sub_system.state_letter()]][sub_system.name]", sub_system.stat_entry(), "\ref[sub_system]")
+	for(var/datum/system/system as anything in kernel_pure_systems())
+		mc_data[++mc_data.len] = list("(system) [system.name]", system.stat_entry(""), "\ref[system]")
 	for(var/datum/world_service/service as anything in world_services())
 		mc_data[++mc_data.len] = list("(service) [service.name]", service.stat_line(), "\ref[service]")
 	mc_data[++mc_data.len] = list("Camera Net", "Cameras: [length(REGISTRY_MEMBERS(REGISTRY_CAMERAS))] | Chunks: [length(GLOB.cameranet.chunks)]", "\ref[GLOB.cameranet]")

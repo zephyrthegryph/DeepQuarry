@@ -223,10 +223,8 @@
 /obj/machinery/computer/skills/proc/interaction_insert_id(mob/user, obj/item/O, datum/interaction/interaction)
 	if(scan)
 		return FALSE
-	if(!user.unEquip(O))
+	if(!own_set(src, nameof(src.scan), O, user = user))
 		return FALSE
-	O.forceMove(src)
-	own_set(src, "scan", O)
 	to_chat(user, "You insert [O].")
 	tgui_interact(user)
 	return TRUE
@@ -451,7 +449,7 @@ UI_DATA_REPLACE(/obj/machinery/computer/skills, "temp:text", "authenticated", "r
 		return FALSE
 	add_fingerprint(ui.user)
 	if(!(active1() in GLOB.data_core.general))
-		rel_clear(src, "active1")
+		rel_clear(src, nameof(active1))
 	return TRUE
 
 UI_ACT(/obj/machinery/computer/skills, "scan", ui_act_scan)
@@ -461,13 +459,11 @@ UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_scan)
 		scan.forceMove(loc)
 		if(ishuman(ui.user) && !ui.user.get_active_hand())
 			ui.user.put_in_hands(scan)
-		own_take(src, "scan")
+		own_take(src, nameof(/obj/item/extrapolator::scan))
 	else
 		var/obj/item/I = ui.user.get_active_hand()
 		if(istype(I, /obj/item/card/id))
-			ui.user.drop_item()
-			I.forceMove(src)
-			own_set(src, "scan", I)
+			own_set(src, nameof(src.scan), I, user = ui.user)
 
 UI_ACT(/obj/machinery/computer/skills, "cleartemp", ui_act_cleartemp)
 UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_cleartemp)
@@ -490,7 +486,7 @@ UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_login)
 		var/mob/living/silicon/robot/R = ui.user
 		rank = "[R.modtype] [R.braintype]"
 	if(authenticated)
-		rel_clear(src, "active1")
+		rel_clear(src, nameof(/obj/machinery/computer/med_data::active1))
 		screen = GENERAL_RECORD_LIST
 
 UI_ACT(/obj/machinery/computer/skills, "logout", ui_act_logout)
@@ -503,10 +499,10 @@ UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_logout)
 		scan.forceMove(loc)
 		if(ishuman(ui.user) && !ui.user.get_active_hand())
 			ui.user.put_in_hands(scan)
-		own_take(src, "scan")
+		own_take(src, nameof(/obj/item/extrapolator::scan))
 	authenticated = null
 	screen = null
-	rel_clear(src, "active1")
+	rel_clear(src, nameof(/obj/machinery/computer/med_data::active1))
 
 UI_ACT(/obj/machinery/computer/skills, "screen", ui_act_screen, UI_ARG_NUM("screen"))
 UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_screen)
@@ -519,7 +515,7 @@ UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_screen)
 		screen = requested_screen
 	else
 		screen = clamp(requested_screen || 0, GENERAL_RECORD_LIST, GENERAL_RECORD_MAINT)
-	rel_clear(src, "active1")
+	rel_clear(src, nameof(/obj/machinery/computer/med_data::active1))
 
 UI_ACT(/obj/machinery/computer/skills, "contract_accept", ui_act_contract_accept, UI_ARG_TEXT("id"))
 UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_contract_accept)
@@ -751,7 +747,7 @@ UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_del_r)
 				qdel(R)
 		set_temp("Employment record deleted.")
 		var/datum/data/record/deleted_record = active1()
-		rel_clear(src, "active1")
+		rel_clear(src, nameof(/obj/machinery/computer/med_data::active1))
 		QDEL_NULL(deleted_record)
 
 UI_ACT(/obj/machinery/computer/skills, "d_rec", ui_act_d_rec, UI_ARG_REF("d_rec", null, /datum/data/record))
@@ -765,7 +761,7 @@ UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_d_rec)
 		set_temp("Record not found.", "danger")
 		return
 
-	rel_set(src, "active1", general_record)
+	rel_set(src, nameof(/obj/machinery/computer/med_data::active1), general_record)
 	screen = GENERAL_RECORD_DATA
 
 UI_ACT(/obj/machinery/computer/skills, "new", ui_act_new)
@@ -776,7 +772,7 @@ UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_new)
 	. = TRUE
 	if(GLOB.PDA_Manifest)
 		GLOB.PDA_Manifest.Cut()
-	rel_set(src, "active1", GLOB.data_core.CreateGeneralRecord())
+	rel_set(src, nameof(/obj/machinery/computer/med_data::active1), GLOB.data_core.CreateGeneralRecord())
 	screen = GENERAL_RECORD_DATA
 	set_temp("Employment record created.", "success")
 
@@ -821,7 +817,6 @@ UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_print_p)
 		active1().fields["notes"] = notes
 		SStgui.update_uis(src)
 
-DECLARE_UI_MODAL(/obj/machinery/computer/skills)
 
 /obj/machinery/computer/skills/ui_modal_opened(mob/user, id, list/arguments, datum/tgui/ui, datum/tgui_state/state)
 	. = TRUE
@@ -946,7 +941,9 @@ DAMAGE_REACTION(/obj/machinery/computer/skills, DAMAGE_EMP, PROC_REF(skills_emp)
 
 #undef FIELD
 
-OWN(/obj/machinery/computer/skills, scan, OWN_CONTAINED)
+/obj/machinery/computer/skills/ownership()
+	. = ..()
+	. += owns(nameof(scan), policy = OWN_CONTAINED)
 
 /// The selected record (a relation view).
 /obj/machinery/computer/skills/proc/active1() as /datum/data/record

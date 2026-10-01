@@ -196,10 +196,22 @@ impl Mirror {
     }
 
     fn evaluate(&mut self, probes: &CowStore<GasCell>) -> Vec<Wake> {
+        let started = std::time::Instant::now();
         let mut outbox: Outbox<GasCell> = Outbox::default();
         self.port.dispatch(&mut self.state);
         self.state.evaluate(probes, &mut outbox);
         self.port.filter(&mut outbox);
+        // Cumulative: how often a drain finds changed mirror chunks and evaluates, and what that costs.
+        let stats = self.state.stats();
+        let metrics = crate::metrics::registry();
+        metrics.counter("gas_watch.mirror_evaluations").inc();
+        if stats.changed_chunks > 0 {
+            metrics.counter("gas_watch.mirror_full_passes").inc();
+            metrics.counter("gas_watch.mirror_changed_chunks").add(stats.changed_chunks as u64);
+            metrics.counter("gas_watch.mirror_evaluated").add(stats.evaluated as u64);
+        }
+        #[allow(clippy::cast_possible_truncation)]
+        metrics.counter("gas_watch.mirror_us").add(started.elapsed().as_micros() as u64);
         outbox.wakes().to_vec()
     }
 

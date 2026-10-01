@@ -44,8 +44,8 @@
 	om_agg_edge_added(edge)
 	om_edge_structure_changed(srec, R.id, CHANGE_RELATION_ADDED)
 	om_edge_structure_changed(trec, R.id, CHANGE_RELATION_ADDED)
-	om_changed(source, CHANGE_RELATION_ADDED)
-	om_changed(target, CHANGE_RELATION_ADDED)
+	changed(source, CHANGE_RELATION_ADDED)
+	changed(target, CHANGE_RELATION_ADDED)
 	return edge
 
 /proc/om_unlink(datum/source, datum/target, rel_path)
@@ -87,10 +87,10 @@
 			dq_report_caught(e, "[R.type] on_unlink")
 	if(srec && !srec.torn_down)
 		om_edge_structure_changed(srec, R.id, CHANGE_RELATION_REMOVED)
-		om_changed(source, CHANGE_RELATION_REMOVED)
+		changed(source, CHANGE_RELATION_REMOVED)
 	if(trec && !trec.torn_down)
 		om_edge_structure_changed(trec, R.id, CHANGE_RELATION_REMOVED)
-		om_changed(target, CHANGE_RELATION_REMOVED)
+		changed(target, CHANGE_RELATION_REMOVED)
 	edge.source = null
 	edge.target = null
 	if(R.derived_view)

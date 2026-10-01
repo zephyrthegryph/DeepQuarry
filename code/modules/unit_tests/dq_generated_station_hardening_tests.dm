@@ -13,14 +13,14 @@
 	var/list/smes_charges = list()
 	var/list/generators = list()
 	for(var/obj/machinery/power/smes/SMES in topology.power_objects)
-		smes_charges[SMES] = SMES.charge
-		SMES.charge = 0
+		smes_charges[SMES] = SMES.stored_charge()
+		SMES.set_stored_charge(0)
 	for(var/obj/machinery/power/generator/generated_station/generator in topology.power_objects)
 		generators += generator
 		generator.stat_add(BROKEN)
 	TEST_ASSERT(!topology.power_available(), "Generated microgrid remained available after every source was depleted")
 	for(var/obj/machinery/power/smes/SMES as anything in smes_charges)
-		SMES.charge = smes_charges[SMES]
+		SMES.set_stored_charge(smes_charges[SMES])
 	for(var/obj/machinery/power/generator/generated_station/generator as anything in generators)
 		generator.stat_remove(BROKEN)
 	TEST_ASSERT(topology.power_available(), "Generated microgrid did not recover after restoring its physical sources")
@@ -43,8 +43,8 @@
 		var/datum/generated_station_materialization/materialized = materializer.materialize(spec, world.maxz, origin_x, origin_y)
 		TEST_ASSERT_NOTNULL(materialized, "Repeated generated-station materialization failed for seed [seed]")
 		var/datum/expedition_site/site = new(world.maxz, EXP_DIFF_LOW)
-		own_set(site, "station_spec", spec)
-		own_set(site, "station_materialization", materialized)
+		own_set(site, nameof(site.station_spec), spec)
+		own_set(site, nameof(site.station_materialization), materialized)
 		TEST_ASSERT(site.initialize_generated_station_runtime(), "Repeated station failed runtime initialization for seed [seed]")
 		TEST_ASSERT(site.initialize_generated_station_infrastructure(), "Repeated station failed infrastructure initialization for seed [seed]")
 		var/atom_count = 0

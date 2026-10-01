@@ -17,7 +17,7 @@
 		pixel_x = (dir & 3)? 0 : (dir == 4 ? -27 : 27)
 		pixel_y = (dir & 3)? (dir ==1 ? -27 : 27) : 0
 	else
-		own_set(src, "has_extinguisher", new/obj/item/extinguisher(src))
+		own_set(src, nameof(has_extinguisher), new/obj/item/extinguisher(src))
 		om_hook(has_extinguisher, /datum/om/event/qdeleting, src, PROC_REF(on_extinguisher_deleted))
 
 	update_icon()
@@ -41,9 +41,8 @@
 		return TRUE
 	if(istype(O, /obj/item/extinguisher))
 		if(!has_extinguisher && opened)
-			user.remove_from_mob(O)
-			O.forceMove(src)
-			own_set(src, "has_extinguisher", O)
+			if(!own_set(src, nameof(src.has_extinguisher), O, user = user))
+				return TRUE
 			om_hook(has_extinguisher, /datum/om/event/qdeleting, src, PROC_REF(on_extinguisher_deleted))
 			to_chat(user, span_notice("You place [O] in [src]."))
 		else
@@ -88,7 +87,7 @@
 		om_unhook(has_extinguisher, /datum/om/event/qdeleting, src)
 		user.put_in_hands(has_extinguisher)
 		to_chat(user, span_notice("You take [has_extinguisher] from [src]."))
-		own_take(src, "has_extinguisher")
+		own_take(src, nameof(has_extinguisher))
 		opened = 1
 	else
 		opened = !opened
@@ -101,7 +100,7 @@
 		om_unhook(has_extinguisher, /datum/om/event/qdeleting, src)
 		has_extinguisher.forceMove(loc)
 		to_chat(user, span_notice("You telekinetically remove [has_extinguisher] from [src]."))
-		own_take(src, "has_extinguisher")
+		own_take(src, nameof(has_extinguisher))
 		opened = 1
 	else
 		opened = !opened
@@ -112,7 +111,7 @@
 	EVENT_HANDLER
 	if(source != has_extinguisher)
 		return
-	own_take(src, "has_extinguisher")
+	own_take(src, nameof(has_extinguisher))
 	opened = TRUE
 	update_icon()
 
@@ -133,4 +132,6 @@ APPEARANCE_TEMPLATE(/obj/structure/extinguisher_cabinet, "{initial(icon_state)}{
 	icon = 'icons/obj/closet.dmi'
 	icon_state = "oldextinguisher" // map preview sprite
 
-OWN(/obj/structure/extinguisher_cabinet, has_extinguisher, OWN_CONTAINED)
+/obj/structure/extinguisher_cabinet/ownership()
+	. = ..()
+	. += owns(nameof(has_extinguisher), policy = OWN_CONTAINED)

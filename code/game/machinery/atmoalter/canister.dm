@@ -215,7 +215,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/canister, TYPE_PROC
 
 	if (src.holding)
 		src.holding.forceMove(src.loc)
-		own_take(src, "holding")
+		own_take(src, nameof(holding))
 
 // Machine pipeline (code/game/machinery/machine_pipeline.dm, "portable atmospherics" section):
 // canister inherits polls = FALSE from /obj/machinery/portable_atmospherics. The body that used
@@ -411,7 +411,7 @@ UI_ACT_PROC(/obj/machinery/portable_atmospherics/canister, ui_act_valve)
 			release_log += "Valve was " + span_bold("opened") + " by [ui.user] ([ui.user.ckey]), starting the transfer into the " + span_red(span_bold("air")) + "<br>"
 			log_open()
 	set_valve_open(!valve_open)
-	om_changed(src, CHANGE_MACHINE_SETTINGS)
+	changed(src, CHANGE_MACHINE_SETTINGS)
 	. = TRUE
 	add_fingerprint(ui.user)
 	update_icon()
@@ -425,7 +425,7 @@ UI_ACT_PROC(/obj/machinery/portable_atmospherics/canister, ui_act_eject)
 		if(istype(holding, /obj/item/tank))
 			holding.manipulated_by = ui.user.real_name
 		holding.forceMove(loc)
-		own_take(src, "holding")
+		own_take(src, nameof(/datum/rule_binding::holding))
 	. = TRUE
 	add_fingerprint(ui.user)
 	update_icon()
@@ -490,7 +490,7 @@ UI_ACT_PROC(/obj/machinery/portable_atmospherics/canister, ui_act_eject)
 	var/turf/simulated/location = src.loc
 	if (istype(src.loc))
 		location.assume_air(air_contents)
-		atmos_air_set(src, "air_contents", new /datum/gas_mixture)
+		atmos_air_set(src, nameof(air_contents), new /datum/gas_mixture)
 
 /obj/machinery/portable_atmospherics/canister/nitrogen/Initialize(mapload)
 	. = ..()

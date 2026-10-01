@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Operations: requirement flyweights, pooled op contexts with a fixed check order, cap_op/cap_require/refine, routes, compartments, slot affordances and the action system (perform_action, bind profiles, radial and screentip data, UI and command-bar routes)."

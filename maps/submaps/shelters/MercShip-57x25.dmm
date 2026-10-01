@@ -41,7 +41,7 @@
 	name = "Server Base";
 	nitrogen = 500;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/survivalpod/superpose/MercShip)
 "aE" = (
@@ -298,7 +298,7 @@
 	name = "Server Base";
 	nitrogen = 500;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/survivalpod/superpose/MercShip)
 "dW" = (
@@ -414,17 +414,17 @@
 	name = "Server Base";
 	nitrogen = 500;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/survivalpod/superpose/MercShip)
 "fK" = (
 /obj/machinery/power/apc/hyper{
+	cap_state = 0;
 	coverlocked = 0;
 	dir = 4;
 	environ = 1;
 	equipment = 1;
 	lighting = 1;
-	locked = 0;
 	pixel_x = 23
 	},
 /obj/structure/cable{
@@ -515,7 +515,7 @@
 /area/survivalpod/superpose/MercShip)
 "hw" = (
 /obj/machinery/vending/engivend{
-	emagged = 1;
+	cap_state = 16;
 	req_access = list(777);
 	req_log_access = null
 	},
@@ -1376,12 +1376,12 @@
 /area/survivalpod/superpose/MercShip)
 "tj" = (
 /obj/machinery/power/apc/hyper{
+	cap_state = 0;
 	coverlocked = 0;
 	dir = 4;
 	environ = 1;
 	equipment = 1;
 	lighting = 1;
-	locked = 0;
 	pixel_x = 23
 	},
 /obj/structure/cable{
@@ -1699,8 +1699,8 @@
 /area/survivalpod/superpose/MercShip)
 "AP" = (
 /obj/machinery/vending/medical{
+	cap_state = 16;
 	dir = 4;
-	emagged = 1;
 	pixel_x = 5;
 	req_access = list(777)
 	},
@@ -1753,7 +1753,7 @@
 	name = "Server Base";
 	nitrogen = 500;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/survivalpod/superpose/MercShip)
 "BM" = (
@@ -1848,7 +1848,7 @@
 	name = "Server Base";
 	nitrogen = 500;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/survivalpod/superpose/MercShip)
 "DJ" = (
@@ -2089,7 +2089,7 @@
 	name = "Server Base";
 	nitrogen = 500;
 	oxygen = 0;
-	temperature = 80
+	initial_temperature = 80
 	},
 /area/survivalpod/superpose/MercShip)
 "JW" = (
@@ -2660,7 +2660,7 @@
 /area/survivalpod/superpose/MercShip)
 "WX" = (
 /obj/machinery/vending/tool{
-	emagged = 1;
+	cap_state = 16;
 	req_access = list(777);
 	req_log_access = null
 	},

@@ -164,7 +164,7 @@
 	name = "test raiser"
 
 /datum/om/stage/life/trait/test_raiser/perform(mob/living/self, datum/om/frame/life/ctx)
-	om_changed(self, CHANGE_MOB_HEALTH)
+	changed(self, CHANGE_MOB_HEALTH)
 
 /datum/om/stage/life/trait/test_raiser/idle(mob/living/self)
 	return TRUE
@@ -205,7 +205,7 @@
 	var/datum/om/scheduler/sched
 
 /datum/unit_test/life_om/Run()
-	rel_set(src, "sched", om_test_begin())
+	rel_set(src, nameof(sched), om_test_begin())
 	try
 		run_life()
 	catch(var/exception/e)
@@ -214,6 +214,21 @@
 
 /datum/unit_test/life_om/proc/run_life()
 	return
+
+/// The handlers (as text) of `L`'s on_channel() reactions.
+/proc/life_test_reaction_handlers(mob/living/L)
+	. = list()
+	var/datum/rx_table/T = rx_table_of(L)
+	for(var/datum/reaction/R as anything in T?.chan_reactions)
+		. += "[R.handler]"
+
+/// TRUE when `L`'s reaction with `handler` is queued for the next drain.
+/proc/life_test_rx_queued(mob/living/L, handler)
+	var/list/per = GLOB.rx_pending[L]
+	for(var/datum/reaction/R in per)
+		if(R.handler == handler)
+			return TRUE
+	return FALSE
 
 /// The life pipeline's counters on this test's scheduler.
 /datum/unit_test/life_om/proc/life_stats()
@@ -289,11 +304,10 @@
 	)
 	TEST_ASSERT(life_test_in_order(types, expected), "human stages are missing or out of order: [jointext(types, ", ")]")
 	TEST_ASSERT(!(/datum/om/stage/life/robot_power in types), "a human must not get robot stages")
-	TEST_ASSERT(!(/datum/om/stage/life/canmove in types), "canmove is not in the frame")
-	TEST_ASSERT(/datum/om/stage/life/canmove in life_test_stage_types(H, /datum/om/pipeline/life_derive), "canmove is a derivation")
-	var/list/present = life_test_stage_types(H, /datum/om/pipeline/life_present)
-	TEST_ASSERT(life_test_in_order(present, list(/datum/om/stage/life/hud/carbon/human, /datum/om/stage/life/hud_refresh)), "the human HUD is presentation: [jointext(present, ", ")]")
-	TEST_ASSERT(/datum/om/stage/life/vision/carbon/human in life_test_stage_types(H, /datum/om/pipeline/life_vision), "sight is its own pipeline, client or not")
+	var/list/handlers = life_test_reaction_handlers(H)
+	TEST_ASSERT(("[TYPE_PROC_REF(/mob/living, life_canmove_changed)]" in handlers) && ("[TYPE_PROC_REF(/mob/living, life_hud_changed)]" in handlers) && ("[TYPE_PROC_REF(/mob/living, life_vision_changed)]" in handlers), "canmove, HUD and sight are reactions on the mob: [jointext(handlers, ", ")]")
+	TEST_ASSERT(H.life_canmove_wanted() && H.life_vision_wanted(), "a human derives canmove and sight, client or not")
+	TEST_ASSERT(!H.life_hud_wanted(), "but draws no HUD without a client")
 
 /// Every human of a type shares one plan; a cyborg's plan comes from the robot set only.
 /datum/unit_test/dq_life_plan_is_shared
@@ -316,7 +330,8 @@
 	)
 	TEST_ASSERT(life_test_in_order(types, expected), "robot stages are missing or out of order: [jointext(types, ", ")]")
 	TEST_ASSERT_EQUAL(length(types), length(expected), "a robot should run only the robot set: [jointext(types, ", ")]")
-	TEST_ASSERT(/datum/om/stage/life/canmove/silicon/robot in life_test_stage_types(R, /datum/om/pipeline/life_derive), "a robot derives canmove with its own variant")
+	TEST_ASSERT(R.life_canmove_wanted(), "a robot derives canmove reactively")
+	TEST_ASSERT(!R.life_vision_wanted(), "its sight and HUD run from its robot_interface step, not the reactions")
 
 /// A simple mob's subtype code runs as its own variant after the simple mob core.
 /datum/unit_test/dq_life_simple_mob_variants
@@ -488,10 +503,10 @@
 	// The frame's own changes may have woken it: idle it again for the channel checks.
 	life_test_set_idle(H, S.type)
 	TEST_ASSERT(life_test_idle(H, S.type), "an idle stage idles after its run")
-	om_changed(H, CHANGE_MOB_EQUIPMENT)
+	changed(H, CHANGE_MOB_EQUIPMENT)
 	scheduler_advance(0.1)
 	TEST_ASSERT(life_test_idle(H, S.type), "a channel the stage doesn't declare leaves it idle")
-	om_changed(H, CHANGE_MOB_HEALTH)
+	changed(H, CHANGE_MOB_HEALTH)
 	scheduler_advance(0.1)
 	TEST_ASSERT(!life_test_idle(H, S.type), "its declared channel wakes it")
 	var/runs = S.runs["[REF(H)]"]
@@ -707,24 +722,82 @@
 	H.status_set(EFFECT_PARALYZED, 0)
 	TEST_ASSERT(!H.has_status(EFFECT_PARALYZED), "status_set(0) ends it")
 
-/// The derive and present pipelines: presentation doesn't start for clientless mobs; a status
-/// change runs the canmove derivation in the same pass, with no frame.
+/// canmove is a reaction: a status change derives it at the drain, with no Life frame. A clientless
+/// mob's HUD reaction queues nothing (its `when` gate).
 /datum/unit_test/life_om/derive_and_present
 
 /datum/unit_test/life_om/derive_and_present/run_life()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
-	TEST_ASSERT(om_attached(H, /datum/om/pipeline/life_present), "every living mob carries the present pipeline")
-	TEST_ASSERT(!life_test_started(H, /datum/om/pipeline/life_present), "a clientless mob does not start it")
-	TEST_ASSERT(life_test_started(H, /datum/om/pipeline/life_derive), "the derive pipeline runs for every mob")
 	var/frames = life_test_frames(H)
 	H.status_set(EFFECT_SLEEPING, 2)
 	H.canmove = TRUE
-	om_changed(H, CHANGE_MOB_STATUS)
+	changed(H, CHANGE_MOB_STATUS)
+	TEST_ASSERT(!life_test_rx_queued(H, TYPE_PROC_REF(/mob/living, life_hud_changed)), "a clientless mob queues no HUD pass")
+	TEST_ASSERT(life_test_rx_queued(H, TYPE_PROC_REF(/mob/living, life_canmove_changed)), "the canmove reaction is queued")
 	sched.run_pass(1e9)
 	TEST_ASSERT(!H.canmove, "a status change ran the canmove derivation without a frame")
 	TEST_ASSERT_EQUAL(life_test_frames(H), frames, "no life frame ran for it")
 	H.status_set(EFFECT_SLEEPING, 0)
+
+/// A human whose HUD gate and HUD pass the tests control (no client is possible in a test).
+/mob/living/carbon/human/dq_test_hud_probe
+	var/pretend_client = FALSE
+	var/hud_runs = 0
+
+/mob/living/carbon/human/dq_test_hud_probe/life_hud_wanted()
+	return pretend_client
+
+/mob/living/carbon/human/dq_test_hud_probe/life_hud()
+	hud_runs++
+	return ..()
+
+/// The HUD reaction's `when` is the has_client gate: without one a HUD channel queues nothing and
+/// nothing runs; with one the next drain draws it.
+/datum/unit_test/life_om/hud_gate_has_client
+
+/datum/unit_test/life_om/hud_gate_has_client/run_life()
+	var/mob/living/carbon/human/dq_test_hud_probe/H = allocate(/mob/living/carbon/human/dq_test_hud_probe)
+	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
+	rx_drain()
+	H.hud_runs = 0
+	for(var/channel in list(CHANGE_MOB_LOC, CHANGE_MOB_HEALTH, CHANGE_MOB_EQUIPMENT, CHANGE_MOB_STATUS))
+		changed(H, channel)
+	TEST_ASSERT(!life_test_rx_queued(H, TYPE_PROC_REF(/mob/living, life_hud_changed)), "no client: nothing is queued")
+	rx_drain()
+	TEST_ASSERT_EQUAL(H.hud_runs, 0, "and no HUD pass runs")
+	H.pretend_client = TRUE
+	changed(H, CHANGE_MOB_CLIENT)
+	TEST_ASSERT(life_test_rx_queued(H, TYPE_PROC_REF(/mob/living, life_hud_changed)), "a client logging in queues the HUD")
+	rx_drain()
+	TEST_ASSERT_EQUAL(H.hud_runs, 1, "which draws once")
+
+/// on_channel(at_most = LIFE_PRESENT_MIN_INTERVAL): a walking player raises a location change most
+/// ticks; the HUD draws once, then the changes inside the window are held and drawn once when it ends.
+/datum/unit_test/life_om/hud_at_most_coalesces
+
+/datum/unit_test/life_om/hud_at_most_coalesces/run_life()
+	var/mob/living/carbon/human/dq_test_hud_probe/H = allocate(/mob/living/carbon/human/dq_test_hud_probe)
+	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
+	H.pretend_client = TRUE
+	rx_drain()
+	scheduler_advance(LIFE_PRESENT_MIN_INTERVAL / 10 + 0.1)
+	rx_drain()
+	H.hud_runs = 0
+	changed(H, CHANGE_MOB_LOC)
+	rx_drain()
+	TEST_ASSERT_EQUAL(H.hud_runs, 1, "the first change draws at the drain")
+	for(var/i in 1 to 4)
+		changed(H, CHANGE_MOB_LOC)
+		changed(H, CHANGE_MOB_HEALTH)
+		rx_drain()
+	TEST_ASSERT_EQUAL(H.hud_runs, 1, "changes inside the window are held")
+	scheduler_advance(LIFE_PRESENT_MIN_INTERVAL / 10 + 0.1)
+	rx_drain()
+	TEST_ASSERT_EQUAL(H.hud_runs, 2, "and drawn once when it ends")
+	scheduler_advance(LIFE_PRESENT_MIN_INTERVAL / 10 + 0.1)
+	rx_drain()
+	TEST_ASSERT_EQUAL(H.hud_runs, 2, "nothing more was held")
 
 /// Ghosts, AI eyes and the blob overmind run their upkeep on their own behaviour.
 /datum/unit_test/life_om/observer_upkeep
@@ -1043,7 +1116,7 @@
 	TEST_ASSERT(life_test_idle_mouse(M), "no floor to place the test mouse on")
 	TEST_ASSERT(life_test_settle(M), "the mouse should park first; still busy: [life_test_busy(M)]")
 	var/datum/om/frame/S = life_test_pipe(M)
-	om_changed(M, CHANGE_EXPLICIT)
+	changed(M, CHANGE_EXPLICIT)
 	sched.run_pass(1e9)
 	TEST_ASSERT(!life_test_parked(M), "a change wakes it")
 	var/frames = 0
@@ -1054,7 +1127,7 @@
 	TEST_ASSERT(S.asleep >= S.plan.n, "its stages idle again; still busy: [life_test_busy(M)]")
 	TEST_ASSERT(!life_test_parked(M), "one idle frame doesn't park it")
 	TEST_ASSERT_EQUAL(S.idle_frames, 1, "one idle frame counted")
-	om_changed(M, CHANGE_MOB_HEALTH)
+	changed(M, CHANGE_MOB_HEALTH)
 	sched.run_pass(1e9)
 	TEST_ASSERT_EQUAL(S.idle_frames, 0, "a wake between idle frames starts the count again")
 	frames = 0
@@ -1065,7 +1138,7 @@
 	TEST_ASSERT(life_test_parked(M), "it parks after idle frames in a row")
 	TEST_ASSERT(frames >= LIFE_PARK_AFTER, "and not before [LIFE_PARK_AFTER] of them, took [frames]")
 
-/// Clientless mobs get correct sight flags: the vision pipeline runs for every mob when an input
+/// Clientless mobs get correct sight flags: the vision reaction runs for every mob when an input
 /// changes (a mutation, stat), not per frame and not on movement.
 /datum/unit_test/life_om/npc_vision_follows_inputs
 
@@ -1073,19 +1146,20 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	TEST_ASSERT(!H.client, "a clientless mob")
-	TEST_ASSERT(life_test_started(H, /datum/om/pipeline/life_vision), "vision runs for clientless mobs too")
+	TEST_ASSERT(H.life_vision_wanted(), "vision runs for clientless mobs too")
 	sched.run_pass(1e9)
 	TEST_ASSERT(!(H.sight & SEE_MOBS), "no x-ray sight to begin with")
 	H.add_mutation(XRAY)
 	scheduler_advance(1)
 	TEST_ASSERT(H.sight & SEE_MOBS, "gaining the x-ray mutation gives an NPC x-ray sight, with no frame and no client")
 	TEST_ASSERT_EQUAL(H.see_in_dark, 8, "and darksight")
-	var/datum/om/frame/V = life_test_pipe(H, /datum/om/pipeline/life_vision)
-	var/runs = V.frames
+	// A sentinel the vision pass would overwrite: walking must leave it alone.
+	H.see_in_dark = 77
 	for(var/i in 1 to 5)
 		H.forceMove(get_step(H, pick(GLOB.cardinal)) || H.loc)
 		sched.run_pass(1e9)
-	TEST_ASSERT_EQUAL(V.frames, runs, "walking around doesn't recompute sight")
+	TEST_ASSERT_EQUAL(H.see_in_dark, 77, "walking around doesn't recompute sight")
+	H.see_in_dark = 8
 	H.remove_mutation(XRAY)
 	scheduler_advance(1)
 	TEST_ASSERT(!(H.sight & SEE_MOBS), "losing the mutation takes it away")

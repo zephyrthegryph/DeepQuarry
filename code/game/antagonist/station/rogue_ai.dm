@@ -56,7 +56,7 @@ GLOBAL_DATUM(malf, /datum/antagonist/rogue_ai)
 		return
 
 	A.setup_for_malf()
-	own_set(A, "laws", new /datum/ai_laws/nanotrasen/malfunction)
+	own_set(A, nameof(A.laws), new /datum/ai_laws/nanotrasen/malfunction)
 
 
 	var/mob/living/silicon/ai/malf = player.current
@@ -77,10 +77,10 @@ GLOBAL_DATUM(malf, /datum/antagonist/rogue_ai)
 	// Get the mob.
 	if((flags & ANTAG_OVERRIDE_MOB) && (!player.current || (mob_path && !istype(player.current, mob_path))))
 		var/mob/holder = player.current
-		rel_set(player, "current", new mob_path(get_turf(player.current), null, null, 1))
+		rel_set(player, nameof(player.current), new mob_path(get_turf(player.current), null, null, 1))
 		player.transfer_to(player.current)
 		if(holder) qdel(holder)
-	rel_set(player, "original_character", player.current)
+	rel_set(player, nameof(player.original_character), player.current)
 	return player.current
 
 /datum/antagonist/rogue_ai/set_antag_name(mob/living/silicon/player)

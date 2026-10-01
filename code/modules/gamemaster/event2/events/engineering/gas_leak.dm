@@ -32,7 +32,7 @@
 		log_game("Gas Leak event failed to find any available turfs to leak into. Aborting.")
 		abort()
 		return
-	rel_set(src, "chosen_turf", pick(turfs))
+	rel_set(src, nameof(chosen_turf), pick(turfs))
 
 /datum/event2/event/gas_leak/announce()
 	if(chosen_turf())

@@ -23,6 +23,13 @@
 	var/callback
 	/// SSvg entity handle: this watch's identity, and the subscriber Rust reports.
 	var/handle = 0
+	/// NATIVE_SRC_* this watch's deliveries are counted under (native_adapter.dm).
+	var/delivery_source = NATIVE_SRC_OTHER
+	/// The on_cross reaction this watch feeds (native_watch_for_reaction()): its crossings deliver through
+	/// rx_crossed() instead of the owner's callback.
+	var/datum/reaction/rx_reaction
+	/// The observer listener of a dynamic on_cross this watch feeds, if any.
+	var/datum/rx_listener/rx_listener
 
 /datum/native_watch/New(datum/owner, callback)
 	..()
@@ -58,7 +65,15 @@
 	if(!owner)
 		qdel(src)
 		return
+	native_fired(delivery_source)
 	call(owner, callback)(arglist(list(src) + arguments))
+
+/// The frame reported this watch crossing `band` (`detail` is the record's numbers): by default the
+/// owner's callback runs with them. World watches queue on their lane, heat watches pick the wake or
+/// set-crossing form (native_crossed(), code/datums/native/system.dm).
+/datum/native_watch/proc/crossed(band, list/detail)
+	fire(detail)
+	return TRUE
 
 /// Finds the live watch behind `handle`, or null.
 /proc/om_native_watch_of(handle)

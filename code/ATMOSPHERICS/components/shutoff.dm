@@ -5,7 +5,7 @@
 /// new construction) GLOB.new_pipe_networks wakes every valve. Wakes merge per drain, so a bulk
 /// blast needs no batching of its own.
 /proc/wake_automatic_shutoff_valves(datum/pipe_network/network)
-	om_changed(network || GLOB.new_pipe_networks, CHANGE_PIPE_LEAKS)
+	changed(network || GLOB.new_pipe_networks, CHANGE_PIPE_LEAKS)
 
 /// Raises CHANGE_PIPE_LEAKS for changes whose network is not known yet (new construction).
 GLOBAL_DATUM_INIT(new_pipe_networks, /datum, new)
@@ -101,13 +101,13 @@ REGISTRY_MEMBERSHIP(/obj/machinery/atmospherics/valve/shutoff, REGISTRY_SHUTOFF_
 	if(network_node1 != network1_token)
 		if(network1_token && network1_token != network_node2)
 			om_unwatch(src, network1_token, /datum/om/behaviour/sleeper/shutoff_valve)
-		rel_set(src, "network1_token", network_node1)
+		rel_set(src, nameof(network1_token), network_node1)
 		if(network1_token)
 			om_watch(src, network1_token, CHANGE_PIPE_LEAKS, /datum/om/behaviour/sleeper/shutoff_valve)
 	if(network_node2 != network2_token)
 		if(network2_token && network2_token != network_node1)
 			om_unwatch(src, network2_token, /datum/om/behaviour/sleeper/shutoff_valve)
-		rel_set(src, "network2_token", network_node2)
+		rel_set(src, nameof(network2_token), network_node2)
 		if(network2_token)
 			om_watch(src, network2_token, CHANGE_PIPE_LEAKS, /datum/om/behaviour/sleeper/shutoff_valve)
 

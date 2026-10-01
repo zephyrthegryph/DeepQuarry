@@ -3,7 +3,7 @@
 	var/tmp/atom/movable/target
 
 /datum/particle_editor/New(atom/target)
-	rel_set(src, "target", target)
+	rel_set(src, nameof(target), target)
 
 DECLARE_UI_STATE(/datum/particle_editor, ADMIN_STATE(R_VAREDIT))
 
@@ -115,7 +115,7 @@ UI_ACT(/datum/particle_editor, "delete_and_close", ui_act_delete_and_close)
 UI_ACT_PROC(/datum/particle_editor, ui_act_delete_and_close)
 	ui.close()
 	target().particles = null
-	rel_clear(src, "target")
+	rel_clear(src, nameof(/datum/accessory_stat_modifier::target))
 	. = FALSE
 
 UI_ACT(/datum/particle_editor, "new_type", ui_act_new_type)

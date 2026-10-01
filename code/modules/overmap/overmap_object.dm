@@ -41,21 +41,21 @@
 
 	if(render_map) // Initialize map objects
 		map_name = "overmap_[REF(src)]_map"
-		own_set(src, "cam_screen", new /atom/movable/screen/map_view)
+		own_set(src, nameof(cam_screen), new /atom/movable/screen/map_view)
 		cam_screen.name = "screen"
 		cam_screen.assigned_map = map_name
 		cam_screen.del_on_map_removal = FALSE
 		cam_screen.screen_loc = "[map_name]:1,1"
 
 		for(var/atom/movable/screen/plane_master as anything in get_tgui_plane_masters())
-			own_add(src, "cam_plane_masters", plane_master)
+			own_add(src, nameof(cam_plane_masters), plane_master)
 
 		for(var/atom/movable/screen/instance as anything in cam_plane_masters)
 			instance.assigned_map = map_name
 			instance.del_on_map_removal = FALSE
 			instance.screen_loc = "[map_name]:CENTER"
 
-		own_set(src, "cam_background", new /atom/movable/screen/background)
+		own_set(src, nameof(cam_background), new /atom/movable/screen/background)
 		cam_background.assigned_map = map_name
 		cam_background.del_on_map_removal = FALSE
 		update_screen()
@@ -94,7 +94,7 @@
 	cached_skybox_image = I
 
 /obj/effect/overmap/proc/expire_skybox_representation()
-	om_changed(src, CHANGE_EXPLICIT)
+	changed(src, CHANGE_EXPLICIT)
 
 /obj/effect/overmap/proc/update_skybox_representation()
 	expire_skybox_representation()

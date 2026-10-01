@@ -43,10 +43,15 @@ TYPE_TABLE_DECLARE(/obj/item/megaphone, megaphone_insults, list("FUCK EVERYONE!"
 	else
 		user.audible_message(span_infoplain(span_bold("[user.GetVoice()]") + "[user.GetAltName()] broadcasts, " + span_large("\"[message]\"")), runemessage = message)
 
-DECLARE_INTERACTIONS(/obj/item/megaphone, INTERACT_USE(null, PROC_REF(interaction_self)))
+/obj/item/megaphone/capabilities()
+	. = ..()
+	// Was INTERACT_USE: the self-use op (in hand, Z), which the attack_self entry keeps running.
+	. += cap_use_self("Shout", PROC_REF(shout), key = "shout")
 
-/obj/item/megaphone/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// The self-use op: asks what to shout (the prompt checks the broadcast again when it is answered).
+/obj/item/megaphone/proc/shout(mob/user)
 	om_ask(user, /datum/om/prompt/text, PROC_REF(shout_entered), title = "Megaphone", message = "Shout a message?", ask_flags = ASK_CARRIED | ASK_CAPABLE)
+	return TRUE
 
 /obj/item/megaphone/proc/shout_entered(datum/om/prompt/text/ask)
 	var/mob/user = ask.answerer
@@ -103,10 +108,6 @@ TYPE_TABLE(/obj/item/megaphone/super, megaphone_insults, list("HONK?!", "HONK!",
 			to_chat(user, span_warning("You re-scramble \the [src]'s voice synthesizer."))
 		return 1
 
-/obj/item/megaphone/super/proc/turn_volume_dial_effect(mob/user, obj/item/held, datum/interaction/interaction)
-
-	adjust_volume(user)
-
 /obj/item/megaphone/super/proc/adjust_volume(mob/living/user)
 	om_ask(user, /datum/om/prompt/choice, PROC_REF(volume_chosen), choices = volume_options, title = "Set Volume", message = "Set Volume", requires = PROMPT_ADJACENT)
 
@@ -114,20 +115,12 @@ TYPE_TABLE(/obj/item/megaphone/super, megaphone_insults, list("HONK?!", "HONK!",
 	if(ask.choice)
 		broadcast_size = ask.choice
 
-/obj/item/megaphone/super/proc/change_font_effect(mob/user, obj/item/held, datum/interaction/interaction)
-
-	adjust_font(user)
-
 /obj/item/megaphone/super/proc/adjust_font(mob/living/user)
 	om_ask(user, /datum/om/prompt/choice, PROC_REF(font_chosen), choices = font_options, title = "Set Volume", message = "Set Volume", requires = PROMPT_ADJACENT)
 
 /obj/item/megaphone/super/proc/font_chosen(datum/om/prompt/choice/ask)
 	if(ask.choice)
 		broadcast_font = ask.choice
-
-/obj/item/megaphone/super/proc/change_color_effect(mob/user, obj/item/held, datum/interaction/interaction)
-
-	adjust_color(user)
 
 /obj/item/megaphone/super/proc/adjust_color(mob/living/user)
 	om_ask(user, /datum/om/prompt/choice, PROC_REF(color_chosen), choices = color_options, title = "Set Volume", message = "Set Volume", requires = PROMPT_ADJACENT)
@@ -172,9 +165,10 @@ TYPE_TABLE(/obj/item/megaphone/super, megaphone_insults, list("HONK?!", "HONK!",
 	qdel(src)
 	return
 
-/// Old object verbs.
-EXTEND_INTERACTIONS(/obj/item/megaphone/super, \
-	INTERACT_VERB("Change Volume", PROC_REF(turn_volume_dial_effect), REQ_IN_INVENTORY), \
-	INTERACT_VERB("Change... Pronunciation?", PROC_REF(change_font_effect), REQ_IN_INVENTORY), \
-	INTERACT_VERB("Change... Tune?", PROC_REF(change_color_effect), REQ_IN_INVENTORY), \
-)
+/// Were INTERACT_VERB (object verbs): ACT_NONE ops, which no gesture reaches: the Menu, the radial and the command bar
+/// name them. Only while carried (the old REQ_IN_INVENTORY): the cap_in_inventory() need.
+/obj/item/megaphone/super/capabilities()
+	. = ..()
+	. += cap_op("Change Volume", PROC_REF(adjust_volume), action = ACT_NONE, needs = GLOBAL_PROC_REF(cap_in_inventory), key = "change_volume")
+	. += cap_op("Change... Pronunciation?", PROC_REF(adjust_font), action = ACT_NONE, needs = GLOBAL_PROC_REF(cap_in_inventory), key = "change_font")
+	. += cap_op("Change... Tune?", PROC_REF(adjust_color), action = ACT_NONE, needs = GLOBAL_PROC_REF(cap_in_inventory), key = "change_color")

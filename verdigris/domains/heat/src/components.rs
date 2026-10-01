@@ -32,6 +32,12 @@ pub mod gas_kind {
     pub const TURF: u8 = 0;
     /// A gas mixture by arena id (a pipe network, a tank, a canister).
     pub const MIXTURE: u8 = 1;
+    /// The gas of the pipe region a pipe port (entity) is in (the coupling's `target` is the port's packed entity id).
+    /// A pipeline's persistent coupling: it names a port, not a region, so it follows the region the port is in through
+    /// every merge and split.
+    pub const PIPE_PORT: u8 = 2;
+    /// Set in a [`GasCoupling::probe_key`] that names a pipe port rather than an arena mixture.
+    pub const PORT_KEY: u32 = 0x8000_0000;
 }
 
 /// A heat body: an object, machine or container's node
@@ -167,6 +173,44 @@ impl LinksTo2 for GasCoupling {
     }
 }
 
+impl GasCoupling {
+    /// The key this coupling's gas is probed and heated under ([`crate::laws::MixtureProbes`]): its mixture id, or its
+    /// port's packed entity id with [`gas_kind::PORT_KEY`] set.
+    #[must_use]
+    pub fn probe_key(&self) -> u32 {
+        if self.kind == gas_kind::PIPE_PORT {
+            gas_kind::PORT_KEY | self.target
+        } else {
+            self.target
+        }
+    }
+
+    /// The conductance (W/K) at which a contact between a gas of `gas_capacity` J/K and something of
+    /// `other_capacity` J/K exchanges `fraction` (0..1) of their temperature difference over `dt` seconds
+    /// (`fraction` of one or more: they equalize). What a caller that thinks in shares per exchange (a pipe's
+    /// thermal conductivity) declares as a coupling.
+    #[must_use]
+    pub fn conductance_for_fraction(fraction: f64, gas_capacity: f32, other_capacity: f32, dt: f32) -> f64 {
+        let inv = 1.0 / f64::from(gas_capacity.max(f32::MIN_POSITIVE)) + 1.0 / f64::from(other_capacity.max(f32::MIN_POSITIVE));
+        if fraction >= 1.0 {
+            return f64::INFINITY;
+        }
+        if fraction <= 0.0 || dt <= 0.0 {
+            return 0.0;
+        }
+        -(1.0 - fraction).ln() / (inv * f64::from(dt))
+    }
+
+    /// The joules this coupling moves from the gas side `(K, J/K)` to the other side `(K, J/K)` over `dt` seconds
+    /// (negative: the gas gains): the exact pair exchange every gas-side coupling makes, the one kernel behind
+    /// [`crate::laws::BodyGasExchange`] and a pipe's contact with its surroundings.
+    #[must_use]
+    pub fn exchange(&self, gas: (f32, f32), other: (f32, f32), dt: f32) -> f32 {
+        #[allow(clippy::cast_possible_truncation)]
+        vg_core::thermo::pair_exchange_f32(gas.0, gas.1, other.0, other.1, self.conductance as f32, dt)
+    }
+}
+
 /// A thermal regulator (a heat pump/resistive heater): [`Regulator`]'s
 /// settings, flattened onto plain numeric fields
 /// (`vg_core::thermo::Regulator`, `rust_architecture.md` §6, §8.5). Couples
@@ -211,5 +255,43 @@ impl Regulator {
             resistive_heating: self.resistive_heating,
             deadband: self.deadband as f32,
         }
+    }
+}
+
+#[cfg(test)]
+mod gas_coupling_tests {
+    use super::*;
+
+    fn coupling(conductance: f64) -> GasCoupling {
+        GasCoupling { body: 0, kind: gas_kind::MIXTURE, target: 0, conductance, slot: 1 }
+    }
+
+    #[test]
+    fn a_declared_share_moves_that_share_of_the_series_difference() {
+        // 70 L of hot gas (200 J/K at 600 K) against a 1000 J/K wall at 300 K: a share of 0.5 moves half of
+        // dT * series capacity.
+        let (gas, other) = ((600.0_f32, 200.0_f32), (300.0_f32, 1000.0_f32));
+        let g = GasCoupling::conductance_for_fraction(0.5, gas.1, other.1, 1.0);
+        let moved = coupling(g).exchange(gas, other, 1.0);
+        let series = 200.0 * 1000.0 / 1200.0;
+        let expected = 0.5 * 300.0 * series;
+        assert!((moved - expected as f32).abs() < 1.0, "{moved} vs {expected}");
+    }
+
+    #[test]
+    fn a_whole_share_equalizes_and_none_moves_nothing() {
+        let (gas, other) = ((500.0_f32, 100.0_f32), (300.0_f32, 100.0_f32));
+        let g = GasCoupling::conductance_for_fraction(1.0, gas.1, other.1, 1.0);
+        let moved = coupling(g).exchange(gas, other, 1.0);
+        assert!((moved - 100.0 * 100.0).abs() < 1.0, "half the 200 K gap at 100 J/K each: {moved}");
+        assert_eq!(GasCoupling::conductance_for_fraction(0.0, gas.1, other.1, 1.0), 0.0);
+        assert_eq!(coupling(0.0).exchange(gas, other, 1.0), 0.0);
+    }
+
+    #[test]
+    fn a_cold_gas_gains() {
+        let (gas, other) = ((250.0_f32, 100.0_f32), (300.0_f32, 1000.0_f32));
+        let g = GasCoupling::conductance_for_fraction(0.25, gas.1, other.1, 0.5);
+        assert!(coupling(g).exchange(gas, other, 0.5) < 0.0);
     }
 }

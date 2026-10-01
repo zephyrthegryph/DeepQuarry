@@ -202,7 +202,7 @@ OWN_TIMER(/obj/item, tip_timer)
 	if(!(source in actions))
 		CRASH("An action ([source.type]) was deleted that was associated with an item ([src]), but was not found in the item's actions list.")
 
-	rel_remove(src, "actions", source)
+	rel_remove(src, nameof(actions), source)
 
 /// Adds an item action to our list of item actions.
 /// Item actions are actions linked to our item, that are granted to mobs who equip us.
@@ -217,7 +217,7 @@ OWN_TIMER(/obj/item, tip_timer)
 	else
 		CRASH("item add_item_action got a type or instance of something that wasn't an action.")
 
-	rel_add(src, "actions", action)
+	rel_add(src, nameof(actions), action)
 	om_hook(action, /datum/om/event/qdeleting, src, PROC_REF(on_action_deleted))
 	if(ismob(loc))
 		// We're being held or are equipped by someone while adding an action?
@@ -233,7 +233,7 @@ OWN_TIMER(/obj/item, tip_timer)
 		return
 
 	om_unhook(action, /datum/om/event/qdeleting, src)
-	rel_remove(src, "actions", action)
+	rel_remove(src, nameof(actions), action)
 	qdel(action)
 
 // Check if target is reasonable for us to operate on.
@@ -451,7 +451,7 @@ OWN_TIMER(/obj/item, tip_timer)
 /obj/item/proc/dropped(mob/user, equipping, slot)
 	SHOULD_CALL_PARENT(TRUE)
 	if(user)
-		om_changed(user, CHANGE_MOB_HANDS)
+		changed(user, CHANGE_MOB_HANDS)
 	// Worn/held items stay real for as long as they're worn or held (C10,
 	// containment.md §4.7): a matching equipped() pinned it, and dropping
 	// out of hands or a slot releases that pin. A safe no-op if it was never
@@ -501,7 +501,7 @@ OWN_TIMER(/obj/item, tip_timer)
 // for items that can be placed in multiple slots
 // note this isn't called during the initial dressing of a player
 /obj/item/proc/equipped(mob/user, slot)
-	om_changed(user, CHANGE_MOB_HANDS)
+	changed(user, CHANGE_MOB_HANDS)
 	// Worn or held: pin it real for as long as that's true (C10, unpinned by
 	// the matching dropped()).
 	latent_pin("equipped")
@@ -577,7 +577,7 @@ OWN_TIMER(/obj/item, tip_timer)
 //For non-projectile attacks this usually means the attack is blocked.
 //Otherwise should return 0 to indicate that the attack is not affected in any way.
 /obj/item/proc/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
-	return 0
+	return cap_block_hit(src, user, damage, damage_source, attacker, attack_text) // cap_block() (code/datums/capabilities/library/block.dm)
 
 /obj/item/proc/get_loc_turf()
 	var/atom/L = loc
@@ -707,7 +707,7 @@ GLOBAL_LIST_EMPTY(blood_overlays_by_type)
 
 /mob/living/carbon/verb/showoff()
 	set name = "Show Held Item"
-	set category = "Object"
+	set category = VERB_CAT_OBJECT
 
 	var/obj/item/I = get_active_hand()
 	if(I && !I.abstract)
@@ -936,7 +936,7 @@ GLOBAL_LIST_EMPTY(blood_overlays_by_type)
 		return
 	if(usr?.read_preference(/datum/preference/toggle/inv_tooltips) && ((src in usr) || isstorage(loc))) // If in inventory or in storage we're looking at
 		var/user = usr
-		om_after_slot(src, "tip_timer", 5, PROC_REF(openTip), location, control, params, user)
+		after_slot(src, "tip_timer", 5, PROC_REF(openTip), location, control, params, user)
 
 /obj/item/MouseExited()
 	. = ..()
@@ -1094,16 +1094,16 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_LISTENING_OBJECTS)
 		warned_of_possession = list()
 	var/mob/living/voice/new_voice = new /mob/living/voice(src) 	//Make the voice mob the person is going to be.
 	new_voice.transfer_identity(candidate) 			//Now make the voice mob load from the ghost's active character in preferences.
-	rel_set(new_voice, "mind", candidate.mind) //Transfer the mind, if any.
+	rel_set(new_voice, nameof(new_voice.mind), candidate.mind) //Transfer the mind, if any.
 	new_voice.ckey = candidate.ckey					//Finally, bring the client over.
-	rel_clear(candidate, "mind") // Remove the mind from the mob to avoid issues with multi TF interactions
+	rel_clear(candidate, nameof(/mob::mind)) // Remove the mind from the mob to avoid issues with multi TF interactions
 	new_voice.set_tf_mob_holder(candidate_original_form) //Save what mob they are! We'll need this for OOC escape and transformation back to their normal form.
 	if(candidate_name) 								//Were we given a candidate_name? Great! Name them that.
 		new_voice.name = "[candidate_name]"
 	else
 		new_voice.name = "[name]" 					//No name given? Give them the name of the object they're inhabiting.
 	new_voice.real_name = "[new_voice.real_name]" 	//We still know their real name though!
-	own_add(src, "possessed_voice", new_voice)
+	own_add(src, nameof(possessed_voice), new_voice)
 	registry_join(REGISTRY_LISTENING_OBJECTS, src)
 	om_grant(new_voice, GRANT_VERB_HIDE, /mob/living/voice/verb/change_name, src) // No changing your name! Bad!
 	om_grant(new_voice, GRANT_VERB_HIDE, /mob/living/voice/verb/hang_up, src) // Also you can't hang up. You are the item!
@@ -1129,7 +1129,9 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_LISTENING_OBJECTS)
 /proc/item_hidden_uplink(obj/item/I) as /obj/item/uplink/hidden
 	return I?.hidden_uplink
 
-OWN(/obj/item, hidden_uplink, OWN_CONTAINED)
+/obj/item/ownership()
+	. = ..()
+	. += owns(nameof(hidden_uplink), policy = OWN_CONTAINED)
 
 /// The host organ (the item side of the augment relation view); a global helper keeps the proc off the base type.
 /proc/item_my_augment(obj/item/I) as /obj/item/organ

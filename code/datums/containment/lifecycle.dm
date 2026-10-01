@@ -56,7 +56,7 @@
 
 /// End of phase 3: the contents phase must have carried out every slot's policy. Checked here,
 /// while the ledger still exists: phase 4 disposes of it (an owned var once the type's first
-/// destroy ran own_clear(src, "ledger")), so a check in Destroy() read a missing ledger and
+/// destroy ran own_clear(src, nameof(ledger))), so a check in Destroy() read a missing ledger and
 /// reported holder-kept contents (a machine's radio, a sleeper's beaker) as unreleased.
 /atom/movable/proc/dq_lifecycle_check_released()
 	if((ledger || dq_slot_defs_for(src)) && dq_holds_unreleased())

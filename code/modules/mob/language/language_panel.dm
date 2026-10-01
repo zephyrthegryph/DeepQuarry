@@ -16,7 +16,7 @@ GLOBAL_LIST_EMPTY(dq_languages_panels)
 	var/mob/host
 
 /datum/languages_panel/New(mob/host_mob)
-	rel_set(src, "host", host_mob)
+	rel_set(src, nameof(host), host_mob)
 
 /// Phase 2: leaves the per-host panel index.
 /datum/languages_panel/lifecycle_dematerialize()
@@ -90,7 +90,7 @@ UI_ACT_PROC(/datum/languages_panel, ui_act_edit_key)
 // Known Languages verb now opens a structured TGUI panel.
 /mob/verb/check_languages()
 	set name = "Check Known Languages"
-	set category = "IC.Game"
+	set category = VERB_CAT_IC_GAME
 	set src = usr
 	dq_open_languages_panel(src, src)
 

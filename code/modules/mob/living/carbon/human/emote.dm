@@ -367,7 +367,7 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 /mob/living/carbon/human/verb/pose()
 	set name = "Set Pose"
 	set desc = "Sets a description which will be shown when someone examines you."
-	set category = "IC.Settings"
+	set category = VERB_CAT_IC_SETTINGS
 
 	// An empty pose (or a cancel) clears it.
 	om_ask(src, /datum/om/prompt/text/pose, PROC_REF(pose_entered), message = "This is [src]. [p_they()]...")
@@ -453,7 +453,7 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 /mob/living/carbon/human/verb/set_flavor()
 	set name = "Set Flavour Text"
 	set desc = "Sets an extended description of your character's features."
-	set category = "IC.Settings"
+	set category = VERB_CAT_IC_SETTINGS
 	dq_open_flavor_panel(src)
 
 /mob/living/carbon/human/proc/toggle_tail(setting,message = 0)
@@ -484,7 +484,7 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 /mob/living/carbon/human/verb/toggle_resizing_immunity()
 	set name = "Toggle Resizing Immunity"
 	set desc = "Toggles your ability to resist resizing attempts"
-	set category = "IC.Settings"
+	set category = VERB_CAT_IC_SETTINGS
 
 	resizable = !resizable
 	to_chat(src, span_notice("You are now [resizable ? "susceptible" : "immune"] to being resized."))
@@ -542,7 +542,7 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 /mob/living/carbon/human/verb/toggle_gender_identity_vr()
 	set name = "Set Gender Identity"
 	set desc = "Sets the pronouns when examined and performing an emote."
-	set category = "IC.Settings"
+	set category = VERB_CAT_IC_SETTINGS
 	om_ask(src, /datum/om/prompt/choice, PROC_REF(gender_identity_chosen), message = "Please select a gender Identity:", title = "Set Gender Identity", choices = list(FEMALE, MALE, NEUTER, PLURAL, HERM))
 	return 1
 
@@ -551,7 +551,7 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 
 /mob/living/carbon/human/verb/hide_wings_vr()
 	set name = "Show/Hide wings"
-	set category = "IC.Settings"
+	set category = VERB_CAT_IC_SETTINGS
 	set desc = "Hide your wings, or show them if you already hid them."
 	wings_hidden = !wings_hidden
 	update_wing_showing()
@@ -564,7 +564,7 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 
 /mob/living/carbon/human/verb/hide_tail_vr()
 	set name = "Show/Hide tail"
-	set category = "IC.Settings"
+	set category = VERB_CAT_IC_SETTINGS
 	set desc = "Hide your tail, or show it if you already hid it."
 	if(!tail_style) //Just some checks.
 		to_chat(src,span_notice("You have no tail to hide!"))
@@ -575,7 +575,7 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 			to_chat(src,span_notice("Your current tail is too considerable to hide!"))
 			return
 	if(species.tail) //If they're using this verb, they already have a custom tail. This prevents their species tail from showing.
-		proto_private(src, "species") // per-mob change: never mutate the shared species
+		proto_private(src, nameof(species)) // per-mob change: never mutate the shared species
 		species.tail = null //Honestly, this should probably be done when a custom tail is chosen, but this is the only time it'd ever matter.
 	tail_hidden = !tail_hidden
 	update_tail_showing()
@@ -589,7 +589,7 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 
 /mob/living/carbon/human/verb/hide_nutrition()
 	set name = "Show/Hide Nutrition Levels"
-	set category = "IC.Settings"
+	set category = VERB_CAT_IC_SETTINGS
 	set desc = "Allow other player to see your current nutrition level or not."
 	nutrition_hidden = !nutrition_hidden
 	to_chat(src, "Players will [nutrition_hidden ? "no longer" : "now"] see your nutrition levels.")
@@ -597,7 +597,7 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 /mob/living/carbon/human/proc/toggle_speech_sounds()
 	set name = "Toggle Species Speech Sounds"
 	set desc = "Toggle if your species defined speech sound has a chance of playing on a Say"
-	set category = "IC.Settings"
+	set category = VERB_CAT_IC_SETTINGS
 
 	if(stat)
 		to_chat(src, span_warning("You must be awake and standing to perform this action!"))

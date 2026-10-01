@@ -114,10 +114,8 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/partslathe, TYPE_PROC_REF(/atom, appearan
 		if(copy_board)
 			to_chat(user, span_warning("There is already a board inserted in \the [src]."))
 			return TRUE
-		if(!user.unEquip(O))
+		if(!own_set(src, nameof(src.copy_board), O, user = user))
 			return TRUE
-		own_set(src, "copy_board", O)
-		O.forceMove(src)
 		act_message(user, src, MSG_SELF(span_notice("You insert [O] into %T%'s circuit reader.")), MSG_OTHERS("%U% inserts [O] into %T%'s circuit reader."))
 		return TRUE
 	if(try_load_materials(user, O))
@@ -342,7 +340,7 @@ UI_ACT_PROC(/obj/machinery/partslathe, ui_act_ejectboard)
 	if(copy_board)
 		visible_message(span_notice("[copy_board] is ejected from [src]'s circuit reader."))
 		copy_board.forceMove(src.loc)
-		own_take(src, "copy_board")
+		own_take(src, nameof(/obj/machinery/partslathe::copy_board))
 	return TRUE
 
 UI_ACT(/obj/machinery/partslathe, "remove_mat", ui_act_remove_mat, UI_ARG_NUM("amount"), UI_ARG_TEXT("id"))
@@ -397,5 +395,7 @@ UI_ACT_PROC(/obj/machinery/partslathe, ui_act_remove_mat)
 /obj/machinery/partslathe/step_start_condition()
 	return busy
 
-OWN(/obj/machinery/partslathe, copy_board, OWN_CONTAINED)
+/obj/machinery/partslathe/ownership()
+	. = ..()
+	. += owns(nameof(copy_board), policy = OWN_CONTAINED)
 

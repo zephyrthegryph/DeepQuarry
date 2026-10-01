@@ -26,7 +26,7 @@
 	if(new_stage == shock_stage)
 		return shock_stage
 	shock_stage = new_stage
-	om_changed(src, CHANGE_MOB_HEALTH)
+	changed(src, CHANGE_MOB_HEALTH)
 	return shock_stage
 
 #undef SHOCK_STAGE_MAX

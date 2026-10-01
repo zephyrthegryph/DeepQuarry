@@ -102,7 +102,7 @@ OM_FIELD(/datum/changeling, camo_draining, FALSE, CHANGE_DATUM_A)
 /datum/changeling/New(mob/living/new_owner)
 	..()
 	lifecycle_decls_init(src) // starts the chemical drain declarations (a non-atom has no materialize)
-	rel_set(src, "owner", new_owner)
+	rel_set(src, nameof(owner), new_owner)
 	if(owner)
 		if(GLOB.possible_changeling_IDs.len)
 			changelingID = pick(GLOB.possible_changeling_IDs)
@@ -137,7 +137,7 @@ OM_FIELD(/datum/changeling, camo_draining, FALSE, CHANGE_DATUM_A)
 	changeling_update_languages(comp.absorbed_languages)
 
 	if(!comp.GetDNA(newDNA.name)) // Don't duplicate - I wonder if it's possible for it to still be a different DNA? DNA code could use a rewrite
-		own_add(comp, "absorbed_dna", newDNA)
+		own_add(comp, nameof(comp.absorbed_dna), newDNA)
 
 //Restores our verbs. It will only restore verbs allowed during lesser (monkey) form if we are not human
 /mob/proc/make_changeling()
@@ -152,8 +152,8 @@ OM_FIELD(/datum/changeling, camo_draining, FALSE, CHANGE_DATUM_A)
 			return
 		var/mob/living/living_self = src
 		comp = new /datum/changeling(living_self)
-		own_set(living_self, "changeling_state", comp)
-	rel_set(mind.antag_holder, "changeling", comp)
+		own_set(living_self, nameof(living_self.changeling_state), comp)
+	rel_set(mind.antag_holder, nameof(/datum/antag_holder::changeling), comp)
 	var/lesser_form = !ishuman(src)
 
 	if(!GLOB.powerinstances.len)
@@ -174,7 +174,7 @@ OM_FIELD(/datum/changeling, camo_draining, FALSE, CHANGE_DATUM_A)
 				om_grant(src, GRANT_VERB, P.verbpath, comp)
 			if(P.make_hud_button)
 				if(!src.ability_master)
-					own_set(src, "ability_master", new /atom/movable/screen/movable/ability_master(src))
+					own_set(src, nameof(ability_master), new /atom/movable/screen/movable/ability_master(src))
 				src.ability_master.add_ling_ability(
 					object_given = src,
 					verb_given = P.verbpath,
@@ -354,7 +354,7 @@ OM_FIELD(/datum/changeling, camo_draining, FALSE, CHANGE_DATUM_A)
 
 /mob/proc/EvolutionMenu()
 	set name = "-Evolution Menu-"
-	set category = "Changeling"
+	set category = VERB_CAT_CHANGELING
 	set desc = "Adapt yourself carefully."
 
 	var/datum/changeling/comp = is_changeling(src)
@@ -365,8 +365,8 @@ OM_FIELD(/datum/changeling, camo_draining, FALSE, CHANGE_DATUM_A)
 		for(var/changeling_power in GLOB.changeling_powers)
 			GLOB.powerinstances += new changeling_power()
 	if(!comp.power_panel)
-		own_set(comp, "power_panel", new /datum/changeling_panel())
-		rel_set(comp.power_panel, "comp", comp)
+		own_set(comp, nameof(comp.power_panel), new /datum/changeling_panel())
+		rel_set(comp.power_panel, nameof(/datum/changeling_panel::comp), comp)
 
 	comp.power_panel.tgui_interact(src)
 
@@ -394,14 +394,14 @@ OM_FIELD(/datum/changeling, camo_draining, FALSE, CHANGE_DATUM_A)
 
 	geneticpoints -= Thepower.genomecost
 
-	rel_add(src, "purchased_powers", Thepower)
+	rel_add(src, nameof(purchased_powers), Thepower)
 
 	if(Thepower.genomecost > 0)
 		LAZYADD(purchased_powers_history, "[Pname] ([Thepower.genomecost] points)")
 
 	if(Thepower.make_hud_button && Thepower.isVerb)
 		// A fresh master (own_set deletes the old one); a mob without one gets its first.
-		own_set(owner, "ability_master", new /atom/movable/screen/movable/ability_master(owner))
+		own_set(owner, nameof(owner.ability_master), new /atom/movable/screen/movable/ability_master(owner))
 		owner.ability_master.add_ling_ability(
 			object_given = owner,
 			verb_given = Thepower.verbpath,

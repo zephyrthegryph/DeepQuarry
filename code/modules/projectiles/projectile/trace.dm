@@ -35,19 +35,19 @@
 
 /obj/item/projectile/test/Bump(atom/A)
 	if(A != src)
-		rel_add(src, "hit", A)
+		rel_add(src, nameof(hit), A)
 	if(isturf(A))
 		for(var/obj/O in contents_of(A))
-			rel_add(src, "hit", O)
+			rel_add(src, nameof(hit), O)
 		for(var/mob/living/M in contents_of(A))
-			rel_add(src, "hit", M)
+			rel_add(src, nameof(hit), M)
 	return ..()
 
 /obj/item/projectile/test/fire(angle, atom/direct_target)
 	. = ..()
 	if(direct_target)
 		if(direct_target != src)
-			rel_add(src, "hit", direct_target)
+			rel_add(src, nameof(hit), direct_target)
 		. = hit || list()
 
 

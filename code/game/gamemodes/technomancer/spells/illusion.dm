@@ -20,7 +20,7 @@
 	if(istype(hit_atom, /atom/movable))
 		var/atom/movable/AM = hit_atom
 		if(pay_energy(100))
-			rel_set(src, "copied", AM)
+			rel_set(src, nameof(copied), AM)
 			update_icon()
 			to_chat(user, span_notice("You've copied \the [AM]'s appearance."))
 			user << 'sound/weapons/flash.ogg'
@@ -29,9 +29,9 @@
 		var/turf/T = hit_atom
 		if(!illusion)
 			if(!copied())
-				rel_set(src, "copied", user)
+				rel_set(src, nameof(copied), user)
 			if(pay_energy(500))
-				own_set(src, "illusion", new /mob/living/simple_mob/illusion(T))
+				own_set(src, nameof(illusion), new /mob/living/simple_mob/illusion(T))
 				illusion.copy_appearance(copied())
 				illusion.copy_overlays(copied(), TRUE)
 				to_chat(user, span_notice("An illusion of \the [copied()] is made on \the [T]."))

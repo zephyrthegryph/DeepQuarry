@@ -118,7 +118,7 @@
 			our_hot_group.merge_hot_groups(enemy_spot.our_hot_group)
 
 	if(QDELETED(our_hot_group))//if after loop through all the adjacents turfs and we havent belong to a group yet, make our own
-		rel_set(src, "our_hot_group", new /datum/hot_group)
+		rel_set(src, nameof(our_hot_group), new /datum/hot_group)
 		our_hot_group.add_to_group(src)
 
 	// If our hotspot gets created on a turf with existing hotspots on it that just got spawned, abort
@@ -172,7 +172,7 @@
 		// When we are spawned from a deletion signal from our previous hotspot, this can happen
 		if(!QDELETED(location.active_hotspot))
 			qdel(location.active_hotspot)
-	own_set(location, "active_hotspot", src) // the turf owns its fire (deleted with it); the one it replaces was destroyed above
+	own_set(location, nameof(location.active_hotspot), src) // the turf owns its fire (deleted with it); the one it replaces was destroyed above
 
 	bypassing = !just_spawned && (volume > CELL_VOLUME*0.95)
 
@@ -275,7 +275,7 @@
 #define INSUFFICIENT(gas_id) (readings[GAS_READ_MOLES(gas_id)] < 0.5)
 
 /**
- * One burn frame, run by /datum/om/pipeline/hotspot (below) every SSair tick while it exists.
+ * One burn step, run by the kernel (burn_tick(), below) every SSair tick while it exists.
  * Handles the calling of perform_exposure() which handles the bulk of temperature processing.
  * Heating the tile's contents is also done by perform_exposure().
  * Also handles the dying and qdeletion of the hotspot and hotspot creations on adjacent cardinal turfs.
@@ -410,7 +410,7 @@
 
 
 /datum/hot_group/proc/remove_from_group(obj/effect/hotspot/target)
-	rel_remove(src, "spot_list", target)
+	rel_remove(src, nameof(spot_list), target)
 	if(!length(spot_list))
 		qdel(src)
 		return
@@ -418,7 +418,7 @@
 /datum/hot_group/proc/add_to_group(obj/effect/hotspot/target)
 	if(QDELETED(target))
 		return
-	rel_add(src, "spot_list", target)
+	rel_add(src, nameof(spot_list), target)
 	if(COOLDOWN_FINISHED(src, update_sound_center) && length(spot_list) > MIN_SIZE_SOUND)//arbitrary size to start playing the sound
 		update_sound()
 		COOLDOWN_START(src, update_sound_center, 5 SECONDS)
@@ -436,7 +436,7 @@
 		sacrificial_group = src
 	// Two-sided: re-pointing a hotspot moves it between the groups' spot_lists.
 	for(var/obj/effect/hotspot/reference as anything in sacrificial_group.spot_list?.Copy())
-		rel_set(reference, "our_hot_group", saving_group)
+		rel_set(reference, nameof(reference.our_hot_group), saving_group)
 	qdel(sacrificial_group)
 	if(COOLDOWN_FINISHED(src, update_sound_center) && length(spot_list) > MIN_SIZE_SOUND)//arbitrary size to start playing the sound
 		update_sound()
@@ -471,49 +471,39 @@
 		sound.falloff_distance = drop_off_dist
 		sound.extra_range = drop_off_dist
 		if(sound_turf != current_sound_loc)
-			rel_set(sound, "parent", sound_turf)
-			rel_set(src, "current_sound_loc", sound_turf)
+			rel_set(sound, nameof(sound.parent), sound_turf)
+			rel_set(src, nameof(current_sound_loc), sound_turf)
 		return
-	own_set(src, "sound", new /datum/looping_sound/fire(sound_turf, TRUE))
+	own_set(src, nameof(sound), new /datum/looping_sound/fire(sound_turf, TRUE))
 	sound.falloff_distance = drop_off_dist
 	sound.extra_range = drop_off_dist
-	rel_set(src, "current_sound_loc", sound_turf)
+	rel_set(src, nameof(current_sound_loc), sound_turf)
 
 #undef MIN_SIZE_SOUND
 #undef INSUFFICIENT
 
-REL_PAIR(/obj/effect/hotspot, our_hot_group, spot_list)
-REL_PAIR_LIST(/datum/hot_group, spot_list, our_hot_group)
-REL(/datum/hot_group, current_sound_loc)
+/obj/effect/hotspot/relations()
+	. = ..()
+	. += rel_one(nameof(our_hot_group), back = nameof(/datum/hot_group::spot_list))
+/datum/hot_group/relations()
+	. = ..()
+	. += rel_many(nameof(spot_list), back = nameof(/obj/effect/hotspot::our_hot_group))
+	. += rel_one(nameof(current_sound_loc))
 
 // ---------------------------------------------------------------- the hotspot pipeline
 
-/// A hotspot burns on its own object-model pipeline instead of SSair's hotspot pass: one frame
-/// every SSair tick (the cadence the pass had) for as long as it exists. It never idles -- a
-/// hotspot that has nothing left to burn deletes itself, which tears its pipeline down.
-/datum/om/decl/hotspot
-	of = /obj/effect/hotspot
-	behaviours = list(/datum/om/pipeline/hotspot)
+/// A hotspot burns as kernel work instead of SSair's hotspot pass: one step every SSair tick (the cadence the pass
+/// had) for as long as it exists, in the game and post-game run levels. It never idles -- a hotspot that has nothing
+/// left to burn deletes itself, which takes it out of the kernel's membership.
+/obj/effect/hotspot/reactions()
+	. = ..()
+	. += every(0.5 SECONDS, PROC_REF(burn_tick), when = PROC_REF(burn_ready), lane = LANE_SIMULATION)
 
-/datum/om/pipeline/hotspot
-	name = "hotspot"
-	every = 0.5 SECONDS
-	lane = LANE_SIMULATION
-	runlevels = RUNLEVEL_GAME | RUNLEVEL_POSTGAME
-	stages = list(/datum/om/stage/hotspot)
-	park_after = 0
+/// The run levels the burn steps in.
+/obj/effect/hotspot/proc/burn_ready()
+	return !!((RUNLEVEL_GAME | RUNLEVEL_POSTGAME) & (1 << (Master.current_runlevel - 1)))
 
-/datum/om/stage/hotspot
-	name = "burn"
-	category = /datum/om/stage/hotspot
-	pipeline = /datum/om/pipeline/hotspot
-	of = /obj/effect/hotspot
-
-/datum/om/stage/hotspot/perform(obj/effect/hotspot/H, datum/om/frame/F)
-	H.burn_step()
-	if(QDELETED(H))
-		return STAGE_ABORT
-
-/datum/om/stage/hotspot/idle(obj/effect/hotspot/H)
-	return FALSE
+/// The kernel work item's handler: one burn step.
+/obj/effect/hotspot/proc/burn_tick(dt)
+	burn_step()
 

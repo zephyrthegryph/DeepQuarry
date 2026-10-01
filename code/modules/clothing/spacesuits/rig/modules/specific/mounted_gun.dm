@@ -102,7 +102,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig_module/mounted, "gun", "gun_type")
 		return
 
 	var/obj/item/melee/energy/blade/blade = new(M)
-	rel_set(blade, "creator", M)
+	rel_set(blade, nameof(blade.creator), M)
 	M.put_in_hands(blade)
 
 /obj/item/rig_module/mounted/energy_blade/deactivate()
@@ -159,7 +159,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig_module/mounted, "gun", "gun_type")
 		return
 
 	var/obj/item/mop_deploy/blade = new(M)
-	rel_set(blade, "creator", M)
+	rel_set(blade, nameof(blade.creator), M)
 	M.put_in_hands(blade)
 
 /obj/item/rig_module/mounted/mop/deactivate()

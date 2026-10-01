@@ -28,7 +28,7 @@
 	if(!isatom(tracked) || isarea(tracked) || range < 0)
 		log_runtime("CONNECT_RANGE: [listener?.type] passed an invalid target [tracked] ([tracked?.type]) or range [range]")
 		return
-	rel_set(src, "listener", listener)
+	rel_set(src, nameof(listener), listener)
 	src.connections = connections
 	src.range = range
 	src.works_in_containers = works_in_containers
@@ -64,7 +64,7 @@
 	if(tracked()) //Unhook the old tracked and its surroundings
 		unregister_hooks(isturf(tracked()) ? tracked() : tracked().loc, turfs)
 		om_unhook(tracked(), list(/datum/om/event/moved, /datum/om/event/qdeleting), src)
-	rel_set(src, "tracked", new_tracked)
+	rel_set(src, nameof(tracked), new_tracked)
 	if(!tracked())
 		return
 	//Hook the new tracked atom and its surroundings.

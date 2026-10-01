@@ -23,6 +23,18 @@ type Data = {
   siliconUser: BooleanLike;
   externalPower;
   chargingStatus;
+  powerCellStatus: number;
+  emagged: BooleanLike;
+  chargeMode: BooleanLike;
+  totalCharging: number;
+  totalLoad: number;
+  coverLocked: BooleanLike;
+  emergencyLights: boolean;
+  // The power_channels() capability's data: channels, breaker, night shift.
+  caps?: { power?: PowerData };
+};
+
+type PowerData = {
   powerChannels: {
     title: string;
     powerLoad: number;
@@ -31,18 +43,11 @@ type Data = {
       auto: Record<string, number>;
       on: Record<string, number>;
       off: Record<string, number>;
-    }[];
-  };
-  powerCellStatus: number;
-  emagged: BooleanLike;
+    };
+  }[];
   isOperating: BooleanLike;
-  chargeMode: BooleanLike;
-  totalCharging: number;
-  totalLoad: number;
-  coverLocked: BooleanLike;
   nightshiftLights: BooleanLike;
   nightshiftSetting: number;
-  emergencyLights: boolean;
 };
 
 export const APC = (props) => {
@@ -123,24 +128,25 @@ const ApcContent = (props) => {
     siliconUser,
     externalPower,
     chargingStatus,
-    powerChannels,
     powerCellStatus,
     emagged,
-    isOperating,
     chargeMode,
     totalCharging,
     totalLoad,
     coverLocked,
-    nightshiftSetting,
     emergencyLights,
   } = data;
+  const power = data.caps?.power;
+  const powerChannels = power?.powerChannels;
+  const isOperating = power?.isOperating;
+  const nightshiftSetting = power?.nightshiftSetting;
 
   const is_locked: BooleanLike = locked && !siliconUser;
   const externalPowerStatus: powerStatus =
     powerStatusMap[externalPower] || powerStatusMap[0];
   const chargingPowerStatus: powerStatus =
     powerStatusMap[chargingStatus] || powerStatusMap[0];
-  const channelArray: any = powerChannels || [];
+  const channelArray = powerChannels || [];
   const adjustedCellChange: number = powerCellStatus / 100;
 
   return (

@@ -333,7 +333,7 @@
 			var/datum/om/effect/dep = effects[dep_idx]
 			bits |= dep.channel
 	if(E)
-		om_changed(E, bits)
+		changed(E, bits)
 
 // ---------------------------------------------------------------- expiry
 

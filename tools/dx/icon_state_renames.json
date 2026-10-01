@@ -1,0 +1,593 @@
+{
+  "_doc": "Starter PROPOSAL (not applied): dmi source -> {old_state: new_state}, standard capability layer names (cover_open, panel_open, wires, locked, sparks, broken, dark). Vending states are per-base prefixes: '<base>-panel' -> '<base>-panel_open', '<base>-off' -> '<base>-dark' ('<base>-broken' already matches); their code sites are interpolated, so the tool lists them as ambiguous and vending.dm is migrated by hand.",
+  "icons/obj/power.dmi": {
+    "apc1": "cover_open",
+    "apc2": "cell",
+    "apc-b": "broken",
+    "apcewires": "panel_open",
+    "apcemag": "emagged",
+    "apc-spark": "sparks",
+    "apcox-1": "locked",
+    "apcox-0": "unlocked"
+  },
+  "icons/obj/wall_machines_angled.dmi": {
+    "apc1": "cover_open",
+    "apc2": "cell",
+    "apc-b": "broken",
+    "apcewires": "panel_open",
+    "apcemag": "emagged",
+    "apc-spark": "sparks",
+    "apcox-1": "locked",
+    "apcox-0": "unlocked"
+  },
+  "icons/obj/doors/Door2x1_Maint.dmi": {
+    "door_locked": "locked"
+  },
+  "icons/obj/doors/Door2x1glass.dmi": {
+    "door_locked": "locked"
+  },
+  "icons/obj/doors/Door2x1metal.dmi": {
+    "door_locked": "locked"
+  },
+  "icons/obj/doors/Door2x1tinted_vr.dmi": {
+    "door_locked": "locked"
+  },
+  "icons/obj/doors/DoorHazard.dmi": {
+    "door_locked": "locked"
+  },
+  "icons/obj/doors/DoorHazard2x1.dmi": {
+    "door_locked": "locked"
+  },
+  "icons/obj/doors/DoorHazardGlass.dmi": {
+    "door_locked": "locked"
+  },
+  "icons/obj/doors/DoorHazardGlass2x1.dmi": {
+    "door_locked": "locked"
+  },
+  "icons/obj/doors/DoorHazardHidden.dmi": {
+    "door_locked": "locked"
+  },
+  "icons/obj/doors/DoorHazardHidden_steel.dmi": {
+    "door_locked": "locked"
+  },
+  "icons/obj/doors/Dooralien.dmi": {
+    "door_locked": "locked",
+    "sparks_damaged": "sparks",
+    "sparks_broken": "broken"
+  },
+  "icons/obj/doors/Dooralien_blue.dmi": {
+    "door_locked": "locked",
+    "sparks_damaged": "sparks",
+    "sparks_broken": "broken"
+  },
+  "icons/obj/doors/Dooratmo.dmi": {
+    "door_locked": "locked",
+    "sparks_damaged": "sparks",
+    "sparks_broken": "broken"
+  },
+  "icons/obj/doors/Dooratmoglass.dmi": {
+    "door_locked": "locked",
+    "sparks_damaged": "sparks",
+    "sparks_broken": "broken"
+  },
+  "icons/obj/doors/Doorcom.dmi": {
+    "door_locked": "locked",
+    "sparks_damaged": "sparks",
+    "sparks_broken": "broken"
+  },
+  "icons/obj/doors/Doorcomglass.dmi": {
+    "door_locked": "locked",
+    "sparks_damaged": "sparks",
+    "sparks_broken": "broken"
+  },
+  "icons/obj/doors/Doorcomtinted_vr.dmi": {
+    "door_locked": "locked",
+    "sparks_damaged": "sparks",
+    "sparks_broken": "broken"
+  },
+  "icons/obj/doors/Doordiamond.dmi": {
+    "door_locked": "locked",
+    "sparks_damaged": "sparks",
+    "sparks_broken": "broken"
+  },
+  "icons/obj/doors/Doorele.dmi": {
+    "door_locked": "locked",
+    "sparks_damaged": "sparks",
+    "sparks_broken": "broken"
+  },
+  "icons/obj/doors/Dooreleglass.dmi": {
+    "door_locked": "locked",
+    "sparks_damaged": "sparks",
+    "sparks_broken": "broken"
+  },
+  "icons/obj/doors/Dooreng.dmi": {
+    "door_locked": "locked",
+    "sparks_damaged": "sparks",
+    "sparks_broken": "broken"
+  },
+  "icons/obj/doors/Doorengatmoglass.dmi": {
+    "door_locked": "locked",
+    "sparks_damaged": "sparks",
+    "sparks_broken": "broken"
+  },
+  "icons/obj/doors/Doorengatmos.dmi": {
+    "door_locked": "locked",
+    "sparks_damaged": "sparks",
+    "sparks_broken": "broken"
+  },
+  "icons/obj/doors/Doorengglass.dmi": {
+    "door_locked": "locked",
+    "sparks_damaged": "sparks",
+    "sparks_broken": "broken"
+  },
+  "icons/obj/doors/Doorext.dmi": {
+    "door_locked": "locked",
+    "sparks_damaged": "sparks",
+    "sparks_broken": "broken"
+  },
+  "icons/obj/doors/Doorextglass.dmi": {
+    "door_locked": "locked",
+    "sparks_damaged": "sparks",
+    "sparks_broken": "broken"
+  },
+  "icons/obj/doors/Doorfire.dmi": {
+    "door_locked": "locked"
+  },
+  "icons/obj/doors/Doorfreezer.dmi": {
+    "door_locked": "locked",
+    "sparks_damaged": "sparks",
+    "sparks_broken": "broken"
+  },
+  "icons/obj/doors/Doorglass.dmi": {
+    "door_locked": "locked",
+    "sparks_damaged": "sparks",
+    "sparks_broken": "broken"
+  },
+  "icons/obj/doors/Doorgold.dmi": {
+    "door_locked": "locked",
+    "sparks_damaged": "sparks",
+    "sparks_broken": "broken"
+  },
+  "icons/obj/doors/Doorhatchele.dmi": {
+    "door_locked": "locked",
+    "sparks_damaged": "sparks",
+    "sparks_broken": "broken"
+  },
+  "icons/obj/doors/Doorhatchmaint2.dmi": {
+    "door_locked": "locked",
+    "sparks_damaged": "sparks",
+    "sparks_broken": "broken"
+  },
+  "icons/obj/doors/Doormaint.dmi": {
+    "door_locked": "locked",
+    "sparks_damaged": "sparks",
+    "sparks_broken": "broken"
+  },
+  "icons/obj/doors/Doormaint_cargo.dmi": {
+    "door_locked": "locked",
+    "sparks_damaged": "sparks",
+    "sparks_broken": "broken"
+  },
+  "icons/obj/doors/Doormaint_command.dmi": {
+    "door_locked": "locked",
+    "sparks_damaged": "sparks",
+    "sparks_broken": "broken"
+  },
+  "icons/obj/doors/Doormaint_common.dmi": {
+    "door_locked": "locked",
+    "sparks_damaged": "sparks",
+    "sparks_broken": "broken"
+  },
+  "icons/obj/doors/Doormaint_engi.dmi": {
+    "door_locked": "locked",
+    "sparks_damaged": "sparks",
+    "sparks_broken": "broken"
+  },
+  "icons/obj/doors/Doormaint_int.dmi": {
+    "door_locked": "locked",
+    "sparks_damaged": "sparks",
+    "sparks_broken": "broken"
+  },
+  "icons/obj/doors/Doormaint_med.dmi": {
+    "door_locked": "locked",
+    "sparks_damaged": "sparks",
+    "sparks_broken": "broken"
+  },
+  "icons/obj/doors/Doormaint_rnd.dmi": {
+    "door_locked": "locked",
+    "sparks_damaged": "sparks",
+    "sparks_broken": "broken"
+  },
+  "icons/obj/doors/Doormaint_sec.dmi": {
+    "door_locked": "locked",
+    "sparks_damaged": "sparks",
+    "sparks_broken": "broken"
+  },
+  "icons/obj/doors/Doormining.dmi": {
+    "door_locked": "locked",
+    "sparks_damaged": "sparks",
+    "sparks_broken": "broken"
+  },
+  "icons/obj/doors/Doorminingglass.dmi": {
+    "door_locked": "locked",
+    "sparks_damaged": "sparks",
+    "sparks_broken": "broken"
+  },
+  "icons/obj/doors/Doorphoron.dmi": {
+    "door_locked": "locked",
+    "sparks_damaged": "sparks",
+    "sparks_broken": "broken"
+  },
+  "icons/obj/doors/Doorsand.dmi": {
+    "door_locked": "locked",
+    "sparks_damaged": "sparks",
+    "sparks_broken": "broken"
+  },
+  "icons/obj/doors/Doorsec.dmi": {
+    "door_locked": "locked",
+    "sparks_damaged": "sparks",
+    "sparks_broken": "broken"
+  },
+  "icons/obj/doors/Doorsecglass.dmi": {
+    "door_locked": "locked",
+    "sparks_damaged": "sparks",
+    "sparks_broken": "broken"
+  },
+  "icons/obj/doors/Doorsectinted_vr.dmi": {
+    "door_locked": "locked",
+    "sparks_damaged": "sparks",
+    "sparks_broken": "broken"
+  },
+  "icons/obj/doors/Doorsilver.dmi": {
+    "door_locked": "locked",
+    "sparks_damaged": "sparks",
+    "sparks_broken": "broken"
+  },
+  "icons/obj/doors/Dooruranium.dmi": {
+    "door_locked": "locked",
+    "sparks_damaged": "sparks",
+    "sparks_broken": "broken"
+  },
+  "icons/obj/doors/SCPdoor.dmi": {
+    "door_locked": "locked"
+  },
+  "icons/obj/doors/doorint.dmi": {
+    "door_locked": "locked",
+    "sparks_damaged": "sparks",
+    "sparks_broken": "broken"
+  },
+  "icons/obj/doors/doorlift.dmi": {
+    "door_locked": "locked"
+  },
+  "icons/obj/doors/doormed.dmi": {
+    "door_locked": "locked",
+    "sparks_damaged": "sparks",
+    "sparks_broken": "broken"
+  },
+  "icons/obj/doors/doormedglass.dmi": {
+    "door_locked": "locked",
+    "sparks_damaged": "sparks",
+    "sparks_broken": "broken"
+  },
+  "icons/obj/doors/doormedtinted_vr.dmi": {
+    "door_locked": "locked",
+    "sparks_damaged": "sparks",
+    "sparks_broken": "broken"
+  },
+  "icons/obj/doors/doorresearch.dmi": {
+    "door_locked": "locked",
+    "sparks_damaged": "sparks",
+    "sparks_broken": "broken"
+  },
+  "icons/obj/doors/doorresearchglass.dmi": {
+    "door_locked": "locked",
+    "sparks_damaged": "sparks",
+    "sparks_broken": "broken"
+  },
+  "icons/obj/doors/doorsci.dmi": {
+    "door_locked": "locked",
+    "sparks_damaged": "sparks",
+    "sparks_broken": "broken"
+  },
+  "icons/obj/doors/doorsciglass.dmi": {
+    "door_locked": "locked",
+    "sparks_damaged": "sparks",
+    "sparks_broken": "broken"
+  },
+  "icons/obj/doors/edge_Doorfire.dmi": {
+    "door_locked": "locked"
+  },
+  "icons/obj/doors/hightechsecurity.dmi": {
+    "door_locked": "locked",
+    "sparks_damaged": "sparks",
+    "sparks_broken": "broken"
+  },
+  "icons/obj/doors/shuttledoors.dmi": {
+    "door_locked": "locked",
+    "sparks_damaged": "sparks",
+    "sparks_broken": "broken"
+  },
+  "icons/obj/doors/shuttledoors_vertical.dmi": {
+    "door_locked": "locked",
+    "sparks_damaged": "sparks",
+    "sparks_broken": "broken"
+  },
+  "icons/obj/doors/vault.dmi": {
+    "door_locked": "locked",
+    "sparks_damaged": "sparks",
+    "sparks_broken": "broken"
+  },
+  "icons/obj/vending.dmi": {
+    "Cola_Machine-off": "Cola_Machine-dark",
+    "Cola_Machine-panel": "Cola_Machine-panel_open",
+    "MagiVend-off": "MagiVend-dark",
+    "MagiVend-panel": "MagiVend-panel_open",
+    "Soda_Machine-off": "Soda_Machine-dark",
+    "Soda_Machine-panel": "Soda_Machine-panel_open",
+    "adh-tool-off": "adh-tool-dark",
+    "adh-tool-panel": "adh-tool-panel_open",
+    "boozeomat-off": "boozeomat-dark",
+    "boozeomat-panel": "boozeomat-panel_open",
+    "cart-off": "cart-dark",
+    "cart-panel": "cart-panel_open",
+    "cigs-off": "cigs-dark",
+    "cigs-panel": "cigs-panel_open",
+    "coffee-off": "coffee-dark",
+    "coffee-panel": "coffee-panel_open",
+    "dinnerware-off": "dinnerware-dark",
+    "dinnerware-panel": "dinnerware-panel_open",
+    "donksoft-off": "donksoft-dark",
+    "donksoft-panel": "donksoft-panel_open",
+    "engi-off": "engi-dark",
+    "engi-panel": "engi-panel_open",
+    "engivend-off": "engivend-dark",
+    "engivend-panel": "engivend-panel_open",
+    "fishvendor-off": "fishvendor-dark",
+    "fishvendor-panel": "fishvendor-panel_open",
+    "fitness-off": "fitness-dark",
+    "fitness-panel": "fitness-panel_open",
+    "fridge_sci-off": "fridge_sci-dark",
+    "fridge_sci-panel": "fridge_sci-panel_open",
+    "games-off": "games-dark",
+    "games-panel": "games-panel_open",
+    "generic-off": "generic-dark",
+    "generic-panel": "generic-panel_open",
+    "giftvendor-off": "giftvendor-dark",
+    "giftvendor-panel": "giftvendor-panel_open",
+    "hotfood-off": "hotfood-dark",
+    "hotfood-panel": "hotfood-panel_open",
+    "laptop-off": "laptop-dark",
+    "laptop-panel": "laptop-panel_open",
+    "lavatory-off": "lavatory-dark",
+    "lavatory-panel": "lavatory-panel_open",
+    "med-off": "med-dark",
+    "med-panel": "med-panel_open",
+    "minevend-off": "minevend-dark",
+    "minevend-panel": "minevend-panel_open",
+    "nutri-off": "nutri-dark",
+    "nutri-panel": "nutri-panel_open",
+    "nutri_generic-off": "nutri_generic-dark",
+    "nutri_generic-panel": "nutri_generic-panel_open",
+    "nutrimat-off": "nutrimat-dark",
+    "nutrimat-panel": "nutrimat-panel_open",
+    "old_fishvendor-off": "old_fishvendor-dark",
+    "old_fishvendor-panel": "old_fishvendor-panel_open",
+    "old_giftvendor-off": "old_giftvendor-dark",
+    "old_giftvendor-panel": "old_giftvendor-panel_open",
+    "radren-off": "radren-dark",
+    "radren-panel": "radren-panel_open",
+    "robotics-off": "robotics-dark",
+    "robotics-panel": "robotics-panel_open",
+    "sec-off": "sec-dark",
+    "sec-panel": "sec-panel_open",
+    "seeds-off": "seeds-dark",
+    "seeds-panel": "seeds-panel_open",
+    "seeds_generic-off": "seeds_generic-dark",
+    "seeds_generic-panel": "seeds_generic-panel_open",
+    "serbomat-off": "serbomat-dark",
+    "serbomat-panel": "serbomat-panel_open",
+    "smartfridge-off": "smartfridge-dark",
+    "snack-off": "snack-dark",
+    "snack-panel": "snack-panel_open",
+    "snix-off": "snix-dark",
+    "snix-panel": "snix-panel_open",
+    "snlvend-panel": "snlvend-panel_open",
+    "snlvendor-off": "snlvendor-dark",
+    "soda-off": "soda-dark",
+    "soda-panel": "soda-panel_open",
+    "solsnack-off": "solsnack-dark",
+    "sovietsoda-off": "sovietsoda-dark",
+    "sovietsoda-panel": "sovietsoda-panel_open",
+    "sovietvend-off": "sovietvend-dark",
+    "sovietvend-panel": "sovietvend-panel_open",
+    "talondrobe-off": "talondrobe-dark",
+    "talondrobe-panel": "talondrobe-panel_open",
+    "theater-off": "theater-dark",
+    "theater-panel": "theater-panel_open",
+    "tool-off": "tool-dark",
+    "tool-panel": "tool-panel_open",
+    "trashvend-off": "trashvend-dark",
+    "trashvend-panel": "trashvend-panel_open",
+    "uniform-off": "uniform-dark",
+    "uniform-panel": "uniform-panel_open",
+    "wallmed-off": "wallmed-dark",
+    "wallmed-panel": "wallmed-panel_open",
+    "weeb-off": "weeb-dark",
+    "weeb-panel": "weeb-panel_open"
+  },
+  "icons/obj/vending_job.dmi": {
+    "atmosdrobe-off": "atmosdrobe-dark",
+    "atmosdrobe-panel": "atmosdrobe-panel_open",
+    "bardrobe-off": "bardrobe-dark",
+    "bardrobe-panel": "bardrobe-panel_open",
+    "cargodrobe-off": "cargodrobe-dark",
+    "cargodrobe-panel": "cargodrobe-panel_open",
+    "chapdrobe-off": "chapdrobe-dark",
+    "chapdrobe-panel": "chapdrobe-panel_open",
+    "chefdrobe-off": "chefdrobe-dark",
+    "chefdrobe-panel": "chefdrobe-panel_open",
+    "chemdrobe-off": "chemdrobe-dark",
+    "chemdrobe-panel": "chemdrobe-panel_open",
+    "clowndrobe-off": "clowndrobe-dark",
+    "clowndrobe-panel": "clowndrobe-panel_open",
+    "curadrobe-off": "curadrobe-dark",
+    "curadrobe-panel": "curadrobe-panel_open",
+    "detdrobe-off": "detdrobe-dark",
+    "detdrobe-panel": "detdrobe-panel_open",
+    "engidrobe-off": "engidrobe-dark",
+    "engidrobe-panel": "engidrobe-panel_open",
+    "genedrobe-off": "genedrobe-dark",
+    "genedrobe-panel": "genedrobe-panel_open",
+    "hydrobe-off": "hydrobe-dark",
+    "hydrobe-panel": "hydrobe-panel_open",
+    "janidrobe-off": "janidrobe-dark",
+    "janidrobe-panel": "janidrobe-panel_open",
+    "lawdrobe-off": "lawdrobe-dark",
+    "lawdrobe-panel": "lawdrobe-panel_open",
+    "medidrobe-off": "medidrobe-dark",
+    "medidrobe-panel": "medidrobe-panel_open",
+    "mimedrobe-off": "mimedrobe-dark",
+    "mimedrobe-panel": "mimedrobe-panel_open",
+    "robodrobe-off": "robodrobe-dark",
+    "robodrobe-panel": "robodrobe-panel_open",
+    "scidrobe-off": "scidrobe-dark",
+    "scidrobe-panel": "scidrobe-panel_open",
+    "secdrobe-off": "secdrobe-dark",
+    "secdrobe-panel": "secdrobe-panel_open",
+    "virodrobe-off": "virodrobe-dark",
+    "virodrobe-panel": "virodrobe-panel_open"
+  },
+  "icons/obj/vending_smartfridge.dmi": {
+    "drying_rack-close-off": "drying_rack-close-dark",
+    "drying_rack-off": "drying_rack-dark",
+    "drying_rack-plant-off": "drying_rack-plant-dark",
+    "industrial-0-off": "industrial-0-dark",
+    "industrial-off": "industrial-dark",
+    "industrial-panel": "industrial-panel_open",
+    "industrial-sheet1-off": "industrial-sheet1-dark",
+    "industrial-sheet2-off": "industrial-sheet2-dark",
+    "industrial-sheet3-off": "industrial-sheet3-dark",
+    "mining-0-off": "mining-0-dark",
+    "mining-off": "mining-dark",
+    "mining-panel": "mining-panel_open",
+    "mining-sheet1-off": "mining-sheet1-dark",
+    "mining-sheet2-off": "mining-sheet2-dark",
+    "mining-sheet3-off": "mining-sheet3-dark",
+    "showcase-off": "showcase-dark",
+    "showcase-panel": "showcase-panel_open",
+    "smartfridge-0-off": "smartfridge-0-dark",
+    "smartfridge-chem1-off": "smartfridge-chem1-dark",
+    "smartfridge-chem2-off": "smartfridge-chem2-dark",
+    "smartfridge-chem3-off": "smartfridge-chem3-dark",
+    "smartfridge-drinks1-off": "smartfridge-drinks1-dark",
+    "smartfridge-drinks2-off": "smartfridge-drinks2-dark",
+    "smartfridge-drinks3-off": "smartfridge-drinks3-dark",
+    "smartfridge-food1-off": "smartfridge-food1-dark",
+    "smartfridge-food2-off": "smartfridge-food2-dark",
+    "smartfridge-food3-off": "smartfridge-food3-dark",
+    "smartfridge-off": "smartfridge-dark",
+    "smartfridge-panel": "smartfridge-panel_open",
+    "smartfridge-petri1-off": "smartfridge-petri1-dark",
+    "smartfridge-petri2-off": "smartfridge-petri2-dark",
+    "smartfridge-petri3-off": "smartfridge-petri3-dark",
+    "smartfridge-plants1-off": "smartfridge-plants1-dark",
+    "smartfridge-plants2-off": "smartfridge-plants2-dark",
+    "smartfridge-plants3-off": "smartfridge-plants3-dark",
+    "smartfridge-slime1-off": "smartfridge-slime1-dark",
+    "smartfridge-slime2-off": "smartfridge-slime2-dark",
+    "smartfridge-slime3-off": "smartfridge-slime3-dark",
+    "smartfridge-viro1-off": "smartfridge-viro1-dark",
+    "smartfridge-viro2-off": "smartfridge-viro2-dark",
+    "smartfridge-viro3-off": "smartfridge-viro3-dark",
+    "smartsheet-0-off": "smartsheet-0-dark",
+    "smartsheet-off": "smartsheet-dark",
+    "smartsheet-panel": "smartsheet-panel_open",
+    "smartsheet-sheets1-off": "smartsheet-sheets1-dark",
+    "smartsheet-sheets2-off": "smartsheet-sheets2-dark",
+    "smartsheet-sheets3-off": "smartsheet-sheets3-dark"
+  },
+  "icons/obj/vending_vr.dmi": {
+    "Bepis_Machine-off": "Bepis_Machine-dark",
+    "Bepis_Machine-panel": "Bepis_Machine-panel_open",
+    "Cola_Machine-off": "Cola_Machine-dark",
+    "Cola_Machine-panel": "Cola_Machine-panel_open",
+    "MagiVend-off": "MagiVend-dark",
+    "MagiVend-panel": "MagiVend-panel_open",
+    "Theater-panel": "Theater-panel_open",
+    "Theater_b-off": "Theater_b-dark",
+    "Theater_b-panel": "Theater_b-panel_open",
+    "accessory-off": "accessory-dark",
+    "accessory-panel": "accessory-panel_open",
+    "avx_gadgets-off": "avx_gadgets-dark",
+    "avx_gadgets-panel": "avx_gadgets-panel_open",
+    "bepis-off": "bepis-dark",
+    "bepis-panel": "bepis-panel_open",
+    "blood-off": "blood-dark",
+    "blood-panel": "blood-panel_open",
+    "boozeomat-off": "boozeomat-dark",
+    "boozeomat-panel": "boozeomat-panel_open",
+    "cart-off": "cart-dark",
+    "cart-panel": "cart-panel_open",
+    "cigs-off": "cigs-dark",
+    "cigs-panel": "cigs-panel_open",
+    "clothing-off": "clothing-dark",
+    "clothing-panel": "clothing-panel_open",
+    "coffee-off": "coffee-dark",
+    "coffee-panel": "coffee-panel_open",
+    "desatti-off": "desatti-dark",
+    "desatti-panel": "desatti-panel_open",
+    "dinnerware-off": "dinnerware-dark",
+    "engi-off": "engi-dark",
+    "engi-panel": "engi-panel_open",
+    "engivend-off": "engivend-dark",
+    "engivend-panel": "engivend-panel_open",
+    "fishvendor-off": "fishvendor-dark",
+    "fishvendor-panel": "fishvendor-panel_open",
+    "fitness-off": "fitness-dark",
+    "fitness-panel": "fitness-panel_open",
+    "foodcube-off": "foodcube-dark",
+    "foodcube-panel": "foodcube-panel_open",
+    "gadgets-off": "gadgets-dark",
+    "gadgets-panel": "gadgets-panel_open",
+    "generic-off": "generic-dark",
+    "generic-panel": "generic-panel_open",
+    "glovesnshoes-off": "glovesnshoes-dark",
+    "glovesnshoes-panel": "glovesnshoes-panel_open",
+    "loadout-off": "loadout-dark",
+    "loadout-panel": "loadout-panel_open",
+    "loadout_misc-off": "loadout_misc-dark",
+    "loadout_misc-panel": "loadout_misc-panel_open",
+    "med-off": "med-dark",
+    "med-panel": "med-panel_open",
+    "nifsoft-off": "nifsoft-dark",
+    "nifsoft-panel": "nifsoft-panel_open",
+    "nukie-off": "nukie-dark",
+    "nukie-panel": "nukie-panel_open",
+    "nutrimat-off": "nutrimat-dark",
+    "nutrimat-panel": "nutrimat-panel_open",
+    "old_Cola_Machine-off": "old_Cola_Machine-dark",
+    "old_Cola_Machine-panel": "old_Cola_Machine-panel_open",
+    "rattevendor-off": "rattevendor-dark",
+    "rattevendor-panel": "rattevendor-panel_open",
+    "robotics-off": "robotics-dark",
+    "robotics-panel": "robotics-panel_open",
+    "sec-off": "sec-dark",
+    "sec-panel": "sec-panel_open",
+    "smartfridge-off": "smartfridge-dark",
+    "smartfridge-panel": "smartfridge-panel_open",
+    "smartfridge_virology-off": "smartfridge_virology-dark",
+    "snack-off": "snack-dark",
+    "snack-panel": "snack-panel_open",
+    "soda-off": "soda-dark",
+    "soda-panel": "soda-panel_open",
+    "sovietsoda-off": "sovietsoda-dark",
+    "suit-off": "suit-dark",
+    "suit-panel": "suit-panel_open",
+    "tool-off": "tool-dark",
+    "tool-panel": "tool-panel_open",
+    "wallmed-off": "wallmed-dark",
+    "wallmed-panel": "wallmed-panel_open",
+    "weapon-off": "weapon-dark",
+    "weapon-panel": "weapon-panel_open"
+  }
+}

@@ -61,7 +61,7 @@
 	var/mob/living/simple_mob/combat_ai_test_subject/victim = allocate(/mob/living/simple_mob/combat_ai_test_subject, run_loc_floor_bottom_left)
 	var/mob/living/carbon/human/attacker = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
 	var/datum/ai_brain/B = victim.ai_brain
-	rel_clear(B, "primary_threat")
+	rel_clear(B, nameof(B.primary_threat))
 	B.active_behavior_type = null
 	TEST_ASSERT(B.hibernate_calm(), "calm brain refused to hibernate")
 	TEST_ASSERT(!om_attached(victim, /datum/om/behaviour/ai_brain/strategic), "hibernating brain kept its strategic loop")
@@ -84,7 +84,10 @@
 	B.give_target(target, TRUE)
 	var/start_dist = get_dist(hunter, target)
 	var/closest = start_dist
-	for(var/i in 1 to 30)
+	// Breaks as soon as it attacks; the budget only matters on a loaded machine,
+	// where 30 rounds sometimes ran out just before the swing (also seen on
+	// unsharded merge runs), so it's 60.
+	for(var/i in 1 to 60)
 		hunter.next_click = 0
 		om_tick_now(hunter, /datum/om/behaviour/ai_brain/strategic, 2)
 		om_tick_now(hunter, /datum/om/behaviour/ai_brain/tactical, 0.25)
@@ -93,6 +96,6 @@
 			break
 		om_test_ticks(3)
 	TEST_ASSERT(closest < start_dist, "the brain did not move toward its target (distance stayed [start_dist])")
-	TEST_ASSERT(B.last_attack_at, "the brain reached its target but never attacked")
+	TEST_ASSERT(B.last_attack_at, "the brain reached its target but never attacked (diag: dist=[get_dist(hunter, target)] closest=[closest] adjacent=[hunter.Adjacent(target)] threat=[B.primary_threat] target_stat=[target.stat] cooldown_ok=[hunter.checkClickCooldown()] hunter=[AREACOORD(hunter)] target=[AREACOORD(target)] behaviour=[B.active_behavior_type])")
 
 #endif

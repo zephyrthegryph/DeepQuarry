@@ -226,7 +226,7 @@ These pieces live on the main thread, in Rust structures that only the main thre
 - **Timer wheel.** A hierarchical wheel at tick resolution.
   - Inserting and cancelling take constant time, and no DM datum is created per timer.
   - A timer fires at tick precision; an airlock timer never waits for a 0.5 s simulation frame.
-- **Wake lanes.** Urgent, normal and background. Each subscriber appears once per lane, with its reasons merged, and the lanes drain within the OM scheduler's world budget ([object_model_core.md §4.8](object_model_core.md#48-native-rust-watches-and-the-world-step)).
+- **Wake lanes.** Urgent, normal and background. Each subscriber appears once per lane, with its reasons merged, and the lanes drain within the OM scheduler's world budget ([archive/object_model_core.md §4.8](archive/object_model_core.md#48-native-rust-watches-and-the-world-step)).
 - **Rate models** for main-owned and DM-owned quantities. Domain-owned rate models live in their domain.
 
   | Model | Value at time t |

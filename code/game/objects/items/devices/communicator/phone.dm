@@ -4,7 +4,7 @@
 /obj/item/communicator/proc/add_communicating(obj/item/communicator/comm)
 	if(!comm || !istype(comm)) return
 
-	rel_add(src, "communicating", comm)
+	rel_add(src, nameof(communicating), comm)
 	registry_join(REGISTRY_LISTENING_OBJECTS, src)
 	update_icon()
 
@@ -14,7 +14,7 @@
 /obj/item/communicator/proc/del_communicating(obj/item/communicator/comm)
 	if(!comm || !istype(comm)) return
 
-	rel_remove(src, "communicating", comm)
+	rel_remove(src, nameof(communicating), comm)
 	update_icon()
 
 // Proc: open_connection()
@@ -22,7 +22,7 @@
 // Description: Typechecks the candidate, then calls the correct proc for further connecting.
 /obj/item/communicator/proc/open_connection(mob/user, atom/candidate)
 	if(isobserver(candidate))
-		rel_remove(src, "voice_invites", candidate)
+		rel_remove(src, nameof(voice_invites), candidate)
 		open_connection_to_ghost(user, candidate)
 	else
 		if(istype(candidate, /obj/item/communicator))
@@ -35,7 +35,7 @@
 	if(!istype(candidate, /obj/item/communicator))
 		return
 	var/obj/item/communicator/comm = candidate
-	rel_remove(src, "voice_invites", candidate)
+	rel_remove(src, nameof(voice_invites), candidate)
 	LAZYREMOVE(comm.voice_requests, src)
 
 	if(user)
@@ -73,7 +73,7 @@
 	//Handle moving the ghost into the new shell.
 	announce_ghost_joinleave(candidate, 0, "They are occupying a personal communications device now.")
 	LAZYREMOVE(voice_requests, candidate)
-	rel_remove(src, "voice_invites", candidate)
+	rel_remove(src, nameof(voice_invites), candidate)
 	var/mob/living/voice/new_voice = new /mob/living/voice(src) 	//Make the voice mob the ghost is going to be.
 	new_voice.transfer_identity(candidate) 	//Now make the voice mob load from the ghost's active character in preferences.
 	//Do some simple logging since this is a tad risky as a concept.
@@ -81,9 +81,9 @@
 	[user && user.client ? "[user.client.key]" : "*no key*"] ([user ? "[user]" : "*null*"]) at [x],[y],[z].  They have joined as [new_voice.name]."
 	message_admins(msg)
 	log_game(msg)
-	rel_set(new_voice, "mind", candidate.mind) //Transfer the mind, if any.
+	rel_set(new_voice, nameof(new_voice.mind), candidate.mind) //Transfer the mind, if any.
 	new_voice.ckey = candidate.ckey			//Finally, bring the client over.
-	own_add(src, "voice_mobs", new_voice)
+	own_add(src, nameof(voice_mobs), new_voice)
 	registry_join(REGISTRY_LISTENING_OBJECTS, src)
 
 	var/atom/movable/screen/blackness = new() 	//Makes a black screen, so the candidate can't see what's going on before actually 'connecting' to the communicator.
@@ -140,7 +140,7 @@
 			continue
 		to_chat(voice, span_danger("[icon2html(src,voice.client)] [reason]."))
 		visible_message(span_danger("[icon2html(src,viewers(src))] [reason]."))
-		own_take_member(src, "voice_mobs", voice)
+		own_take_member(src, nameof(voice_mobs), voice)
 		qdel(voice)
 		update_icon()
 
@@ -171,7 +171,7 @@
 	else if(istype(candidate, /obj/item/communicator))
 		var/obj/item/communicator/comm = candidate
 		who = comm.owner
-		rel_add(comm, "voice_invites", src)
+		rel_add(comm, nameof(comm.voice_invites), src)
 
 	if(!who)
 		return
@@ -205,7 +205,7 @@
 		to_chat(candidate, span_warning("Your communicator call request was declined."))
 	else if(istype(candidate, /obj/item/communicator))
 		var/obj/item/communicator/comm = candidate
-		rel_remove(comm, "voice_invites", src)
+		rel_remove(comm, nameof(comm.voice_invites), src)
 
 	LAZYREMOVE(voice_requests, candidate)
 
@@ -288,7 +288,7 @@
 // Parameters: None
 // Description: Allows ghosts to call communicators, if they meet all the requirements.
 /mob/observer/dead/verb/join_as_voice()
-	set category = "Ghost.Message"
+	set category = VERB_CAT_GHOST_MESSAGE
 	set name = "Call Communicator"
 	set desc = "If there is a communicator available, send a request to speak through it.  This will reset your respawn timer, if someone picks up."
 
@@ -373,7 +373,7 @@
 		return
 	to_chat(user, span_notice("[icon2html(src, user.client)] Please wait..."))
 
-	rel_set(src, "video_source", comm.camera)
+	rel_set(src, nameof(video_source), comm.camera)
 	comm.visible_message(span_danger("[icon2html(src,viewers(src))] New video connection from [comm]."))
 	update_active_camera_screen()
 	om_hook(video_source, /datum/om/event/movable_attempted_move, src, PROC_REF(update_active_camera_screen))
@@ -386,7 +386,7 @@
 /obj/item/communicator/proc/end_video(reason)
 	om_unhook(video_source, /datum/om/event/movable_attempted_move, src)
 	show_static()
-	rel_clear(src, "video_source")
+	rel_clear(src, nameof(video_source))
 
 	if(reason)
 		visible_message(reason)

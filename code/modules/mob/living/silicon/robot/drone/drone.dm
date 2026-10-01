@@ -138,12 +138,12 @@ DECLARE_VERB(/mob/living/silicon/robot/drone, /mob/living/proc/hide)
 	..()
 	additional_law_channels -= "Binary"
 	additional_law_channels["Drone"] = ":d"
-	own_set(src, "laws", new law_type)
+	own_set(src, nameof(laws), new law_type)
 
 /mob/living/silicon/robot/drone/setup_module()
 	..()
 	if(!module)
-		own_set(src, "module", new module_type(src))
+		own_set(src, nameof(module), new module_type(src))
 	flavor_text = "It's a tiny little repair drone. The casing is stamped with an corporate logo and the subscript: '[using_map.company_name] Recursive Repair Systems: Fixing Tomorrow's Problem, Today!'"
 	play_sfx(src, SFX_MACHINES_TWOBEEP, vary = FALSE)
 
@@ -343,7 +343,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot/drone, INTERACT_INSERT_AS(I_HELP, 
 	clear_supplied_laws(1)
 	clear_inherent_laws(1)
 	clear_ion_laws(1)
-	own_set(src, "laws", new law_type)
+	own_set(src, nameof(laws), new law_type)
 
 //Reboot procs.
 

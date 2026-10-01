@@ -126,7 +126,7 @@ DECLARE_INTERACTIONS(/obj/item/t_scanner, INTERACT_USE(null, PROC_REF(interactio
 	else
 		LAZYCLEARLIST(active_scanned)
 
-	rel_set(src, "user_client", new_client)
+	rel_set(src, nameof(user_client), new_client)
 
 /obj/item/t_scanner/dropped(mob/user, equipping, slot)
 	if(equipping)

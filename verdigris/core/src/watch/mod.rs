@@ -926,7 +926,7 @@ impl<D: Channels> WatchState<D> {
         // mirrors, several times a tick, while the station idles.
         if !self.fresh_pending
             && let Some(prev) = &self.prev
-            && store.chunks_differing_from(prev).next().is_none()
+            && (store.unchanged_since(prev) || store.chunks_differing_from(prev).next().is_none())
         {
             self.stats = WatchStats {
                 watches: self.stats.watches,

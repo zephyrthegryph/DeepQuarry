@@ -275,13 +275,22 @@ TYPE_TABLE(/obj/item/storage, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 		return FALSE
 	if(new_location && ismob(loc))
 		W.dropped(user || loc)
+	return storage_exit(W, destination, user)
+
+/// remove_from_storage()'s commit, after any stall: moves `W` to `destination` and runs the storage
+/// side (layer, maptext, on_exit_storage(), icon). Never sleeps. `checked`: the caller already
+/// checked the move (a one-call transfer, code/datums/ownership/transfer.dm), so it commits straight
+/// into `slot` with `flags`; otherwise slot_remove() checks it.
+/obj/item/storage/proc/storage_exit(obj/item/W, atom/destination, mob/user, slot = null, flags = 0, checked = FALSE)
 	if(ismob(destination))
 		W.hud_layerise()
 	else
 		W.reset_plane_and_layer()
-	if(!slot_remove(W, destination, user))
+	if(checked)
+		if(!dq_ledger_force_move(W, destination, flags, slot))
+			return FALSE
+	else if(!slot_remove(W, destination, user))
 		return FALSE
-
 	if(W.maptext)
 		W.maptext = ""
 	W.on_exit_storage(src)
@@ -613,7 +622,7 @@ DECLARE_INTERACTIONS(/obj/item/storage, \
 
 /obj/item/storage/proc/close(mob/user)
 	hide_from(user)
-	rel_clear(user, "s_active")
+	rel_clear(user, nameof(/mob::s_active))
 
 /obj/item/storage/proc/close_all()
 	for(var/mob/M in can_see_contents())
@@ -641,9 +650,9 @@ DECLARE_INTERACTIONS(/obj/item/storage, \
 		user.s_active.hide_from(user)
 
 	if(!hud)
-		own_set(src, "hud", new /datum/storage_hud(src))
+		own_set(src, nameof(hud), new /datum/storage_hud(src))
 	LAZYDISTINCTADD(is_seeing, user)
-	rel_set(user, "s_active", src)
+	rel_set(user, nameof(/mob::s_active), src)
 	var/client/C = user.client
 	if(C)
 		C.screen += hud.screen_atoms()
@@ -659,9 +668,9 @@ DECLARE_INTERACTIONS(/obj/item/storage, \
 			if(I.loc != user)
 				C.screen -= I
 	if(user.s_active == src)
-		rel_clear(user, "s_active")
+		rel_clear(user, nameof(/mob::s_active))
 	if(!LAZYLEN(is_seeing))
-		own_clear(src, "hud", OWN_DELETE)
+		own_clear(src, nameof(hud), OWN_DELETE)
 
 /// Lays the HUD out again after a change, for everyone looking.
 /obj/item/storage/proc/refresh_hud()
@@ -702,18 +711,18 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 
 /datum/storage_hud/New(obj/item/storage/S)
 	..()
-	rel_set(src, "storage", S)
-	own_set(src, "backdrop", list())
-	own_set(src, "catchers", list())
+	rel_set(src, nameof(storage), S)
+	own_set(src, nameof(backdrop), list())
+	own_set(src, nameof(catchers), list())
 	var/obj/item/storage/master = S
 	if(S.storage_slots)
-		own_add(src, "backdrop", new_backdrop(master, "block"))
+		own_add(src, nameof(backdrop), new_backdrop(master, "block"))
 	else
-		own_add(src, "backdrop", new_backdrop(master, "storage_start"))
-		own_add(src, "backdrop", new_backdrop(master, "storage_continue"))
-		own_add(src, "backdrop", new_backdrop(master, "storage_end"))
-	own_set(src, "closer", new /atom/movable/screen/close())
-	rel_set(closer, "master_ref", master)
+		own_add(src, nameof(backdrop), new_backdrop(master, "storage_start"))
+		own_add(src, nameof(backdrop), new_backdrop(master, "storage_continue"))
+		own_add(src, nameof(backdrop), new_backdrop(master, "storage_end"))
+	own_set(src, nameof(closer), new /atom/movable/screen/close())
+	rel_set(closer, nameof(closer.master_ref), master)
 	closer.icon_state = "storage_close"
 	closer.hud_layerise()
 	GLOB.storage_hud_count++
@@ -732,7 +741,7 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 /datum/storage_hud/proc/new_backdrop(obj/item/storage/master, state)
 	var/atom/movable/screen/storage/B = new()
 	B.name = "storage"
-	rel_set(B, "master_ref", master)
+	rel_set(B, nameof(B.master_ref), master)
 	B.icon_state = state
 	return B
 
@@ -744,8 +753,8 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 
 /// Places the items and sizes the backdrop.
 /datum/storage_hud/proc/layout()
-	own_clear(src, "catchers", OWN_DELETE)
-	own_set(src, "catchers", list())
+	own_clear(src, nameof(catchers), OWN_DELETE)
+	own_set(src, nameof(catchers), list())
 	var/list/items = storage.hud_order(storage.stored_items())
 	var/list/counts
 	if(storage.display_contents_with_number)
@@ -769,9 +778,9 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 		I.latent_unpin(src)
 	for(var/obj/item/I as anything in items - was_shown)
 		I.latent_pin(src)
-	rel_clear(src, "shown")
+	rel_clear(src, nameof(shown))
 	for(var/obj/item/I as anything in items)
-		rel_add(src, "shown", I)
+		rel_add(src, nameof(shown), I)
 	if(storage.storage_slots)
 		boxes_layout(counts)
 	else
@@ -781,7 +790,7 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 	var/atom/movable/storage_slot/SS = new(null, I)
 	SS.screen_loc = I.screen_loc
 	SS.mouse_opacity = MOUSE_OPACITY_OPAQUE
-	own_add(src, "catchers", SS)
+	own_add(src, nameof(catchers), SS)
 	return SS
 
 /// Fixed-size storage (belts, boxes): a grid up to seven wide.
@@ -895,7 +904,7 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 	. = ..()
 	ASSERT(held_item)
 	name += held_item.name
-	rel_set(src, "held_item", held_item)
+	rel_set(src, nameof(held_item), held_item)
 
 /// Has to be this way. The fact that the overlays will be constantly mutated by other storage means we can't wait.
 /atom/movable/storage_slot/add_overlay(list/somethings)

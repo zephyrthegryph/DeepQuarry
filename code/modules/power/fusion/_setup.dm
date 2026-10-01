@@ -6,7 +6,7 @@
 #define SETUP_DELAYED 4		// Wait for other things first.
 
 /datum/admins/proc/setup_fusion()
-	set category = "Debug"
+	set category = VERB_CAT_DEBUG
 	set name = "Setup Fusion Core"
 	set desc = "Allows you to start the R-UST engine."
 
@@ -33,7 +33,7 @@
 	log_and_message_admins("## FUSION CORE SETUP - Setup initiated by [usr].")
 
 	for(var/obj/machinery/fusion_fuel_injector/mapped/injector in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		own_set(injector, "cur_assembly", new /obj/item/fuel_assembly/deuterium(injector))
+		own_set(injector, nameof(injector.cur_assembly), new /obj/item/fuel_assembly/deuterium(injector))
 		injector.BeginInjecting()
 
 	var/obj/machinery/power/fusion_core/mapped/core = locate_in_list(REGISTRY_MEMBERS(REGISTRY_MACHINES), /obj/machinery/power/fusion_core/mapped)

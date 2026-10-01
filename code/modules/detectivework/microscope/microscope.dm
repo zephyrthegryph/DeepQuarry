@@ -32,7 +32,7 @@
 	to_chat(user, span_notice("You insert \the [held] into the microscope."))
 	user.unEquip(held)
 	held.forceMove(src)
-	rel_set(src, "sample", held)
+	rel_set(src, nameof(sample), held)
 	update_icon()
 	return TRUE
 
@@ -131,7 +131,7 @@
 	to_chat(remover, span_notice("You remove \the [sample()] from \the [src]."))
 	sample().forceMove(get_turf(src))
 	remover.put_in_hands(sample())
-	rel_clear(src, "sample")
+	rel_clear(src, nameof(sample))
 	update_icon()
 
 /obj/machinery/microscope/MouseDrop(atom/other)

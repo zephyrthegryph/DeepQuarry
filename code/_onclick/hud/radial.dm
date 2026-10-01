@@ -10,7 +10,7 @@ GLOBAL_LIST_EMPTY(radial_menus)
 	var/datum/radial_menu/parent
 
 /atom/movable/screen/radial/proc/set_parent(new_value)
-	rel_set(src, "parent", new_value)
+	rel_set(src, nameof(parent), new_value)
 
 /atom/movable/screen/radial/slice
 	icon_state = "radial_slice"
@@ -116,12 +116,12 @@ GLOBAL_LIST_EMPTY(radial_menus)
 		return
 	if(AM in user.client.screen)
 		if(hudfix_method)
-			rel_set(src, "anchor", user)
+			rel_set(src, nameof(anchor), user)
 		else
 			py_shift = 32
 			restrict_to_dir(NORTH) //I was going to parse screen loc here but that's more effort than it's worth.
 	else if(hudfix_method && AM.loc)
-		rel_set(src, "anchor", get_atom_on_turf(anchor()))
+		rel_set(src, nameof(anchor), get_atom_on_turf(anchor()))
 
 //Sets defaults
 //These assume 45 deg min_angle
@@ -154,7 +154,7 @@ GLOBAL_LIST_EMPTY(radial_menus)
 			var/atom/movable/screen/radial/slice/new_element = new /atom/movable/screen/radial/slice
 			new_element.tooltips = use_tooltips
 			new_element.set_parent(src)
-			own_add(src, "elements", new_element)
+			own_add(src, nameof(elements), new_element)
 
 	var/page = 1
 	page_data = list(null)
@@ -258,7 +258,7 @@ GLOBAL_LIST_EMPTY(radial_menus)
 			E.vis_contents += info_button
 
 /datum/radial_menu/New()
-	own_set(src, "close_button", new /atom/movable/screen/radial/center)
+	own_set(src, nameof(close_button), new /atom/movable/screen/radial/center)
 	close_button.set_parent(src)
 
 /datum/radial_menu/proc/Reset()
@@ -312,7 +312,7 @@ GLOBAL_LIST_EMPTY(radial_menus)
 		hide()
 	if(!M.client || !anchor())
 		return
-	rel_set(src, "current_user", M.client)
+	rel_set(src, nameof(current_user), M.client)
 	//Blank
 	menu_holder = image(icon='icons/effects/effects.dmi',loc=anchor(),icon_state="nothing", layer = RADIAL_BACKGROUND_LAYER, pixel_x = offset_x, pixel_y = offset_y)
 	menu_holder.plane = PLANE_PLAYER_HUD_ABOVE

@@ -66,9 +66,14 @@
 	update_icon()
 
 // its containers drop out and the growing clone is ejected.
-OWN(/obj/machinery/clonepod, containers, OWN_SPILL)
-// Linked console: the pod is one of its pods (two-sided; clears when either dies).
-REL_PAIR(/obj/machinery/clonepod, connected, pods)
+/obj/machinery/clonepod/ownership()
+	. = ..()
+	. += owns(nameof(containers), policy = OWN_SPILL)
+
+/obj/machinery/clonepod/relations()
+	. = ..()
+	// Linked console: the pod is one of its pods (two-sided; clears when either dies).
+	. += rel_one(nameof(connected), back = nameof(/obj/machinery/computer/cloning::pods))
 
 // The occupant slot already spilled the clone in phase 3; go_out() is kept for its mess
 // branch (a failed clone leaves gibs).
@@ -107,9 +112,9 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/clonepod, MACHINE_PIPELINE, "clonepod_occu
 /obj/machinery/clonepod/proc/set_occupant(mob/living/L)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(!L)
-		rel_clear(src, "occupant_mob")
+		rel_clear(src, nameof(occupant_mob))
 		return
-	rel_set(src, "occupant_mob", L)
+	rel_set(src, nameof(occupant_mob), L)
 
 /obj/machinery/clonepod/proc/get_occupant()
 	RETURN_TYPE(/mob/living)
@@ -170,7 +175,13 @@ EXTEND_INTERACTIONS(/obj/machinery/clonepod, \
 
 	//Get the clone body ready, let's calculate their health so the pod doesn't immediately eject them!!!
 	var/mob/living/carbon/human/H = BR?.produce_human_mob(src,FALSE, FALSE, "clone ([rand(0,999)])")
-	own_clear(src, "growing_record", OWN_DELETE)
+	own_clear(src, nameof(growing_record), OWN_DELETE)
+	// An after() callback: the record (or the mind) may have been deleted during the wait and
+	// arrives as null. Without a body there is nothing to finish; the pod resets either way.
+	if(!H)
+		attempting = 0
+		update_icon()
+		return
 	OM_EMIT(H, /datum/om/event/human_dna_finalized)
 
 	//Get the clone body ready: a fresh clone is saturated with genetic damage and
@@ -315,7 +326,7 @@ EXTEND_INTERACTIONS(/obj/machinery/clonepod, \
 		return ITEM_INTERACT_BLOCKING
 	if(anchored)
 		set_anchored(FALSE)
-		rel_clear(src, "connected")
+		rel_clear(src, nameof(connected))
 	else
 		set_anchored(TRUE)
 	playsound(src, tool.usesound, 100, TRUE)
@@ -327,7 +338,7 @@ EXTEND_INTERACTIONS(/obj/machinery/clonepod, \
 	if(!istype(tool, /obj/item/multitool))
 		return ITEM_INTERACT_BLOCKING
 	var/obj/item/multitool/multitool = tool
-	rel_set(multitool, "connecting", src)
+	rel_set(multitool, nameof(multitool.connecting), src)
 	to_chat(user, span_notice("You load connection data from [src] to [multitool]."))
 	multitool.update_icon()
 	return ITEM_INTERACT_SUCCESS
@@ -462,7 +473,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/clonepod, PROC_REF(on_emag), null)
 		if(T)
 			for(var/obj/item/reagent_containers/glass/G in containers)
 				G.forceMove(T)
-				own_take_member(src, "containers", G)
+				own_take_member(src, nameof(containers), G)
 		return	1
 	return 0
 
@@ -507,7 +518,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/clonepod, "pod_{appearance_state}")
 /obj/machinery/clonepod/proc/track_biomass_container(obj/item/reagent_containers/glass/container)
 	if(!container || (container in containers))
 		return
-	own_add(src, "containers", container)
+	own_add(src, nameof(containers), container)
 
 //Health Tracker Implant
 

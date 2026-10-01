@@ -54,9 +54,9 @@ GLOBAL_VAR_INIT(nttransfer_uid, 0)
 	if(provided_file()) // Server mode, disconnect all clients
 		for(var/datum/computer_file/program/nttransfer/P in connected_clients)
 			P.crash_download("Connection terminated by remote server")
-		own_clear(src, "downloaded_file", OWN_DELETE)
+		own_clear(src, nameof(downloaded_file), OWN_DELETE)
 		if(GLOB.ntnet_global)
-			rel_remove(GLOB.ntnet_global, "fileservers", src)
+			rel_remove(GLOB.ntnet_global, nameof(/datum/ntnet::fileservers), src)
 	..(forced)
 
 // Finishes download and attempts to store the file on HDD
@@ -73,9 +73,9 @@ GLOBAL_VAR_INIT(nttransfer_uid, 0)
 // Cleans up variables for next use
 /datum/computer_file/program/nttransfer/proc/finalize_download()
 	if(remote())
-		rel_remove(remote(), "connected_clients", src)
-	own_clear(src, "downloaded_file", OWN_DELETE) // null when finish_download() stored it
-	rel_clear(src, "remote")
+		rel_remove(remote(), nameof(/datum/computer_file/data/email_account::connected_clients), src)
+	own_clear(src, nameof(downloaded_file), OWN_DELETE) // null when finish_download() stored it
+	rel_clear(src, nameof(remote))
 	download_completion = 0
 
 UI_DATA_REPLACE(/datum/computer_file/program/nttransfer, "error:text", "merge:ui_data_datum_computer_file_program_nttransfer{downloading:bool,download_size:num,download_progress:num,download_netspeed:num,download_name:text,uploading:bool,upload_uid:unknown,upload_clients:num,upload_haspassword:num,upload_filename:text,upload_filelist:list,servers:list}")
@@ -130,7 +130,7 @@ UI_ACT(/datum/computer_file/program/nttransfer, "PRG_downloadfile", ui_act_prg_d
 UI_ACT_PROC(/datum/computer_file/program/nttransfer, ui_act_prg_downloadfile)
 	for(var/datum/computer_file/program/nttransfer/P in GLOB.ntnet_global.fileservers)
 		if(P.unique_token == params["uid"])
-			rel_set(src, "remote", P)
+			rel_set(src, nameof(/datum/computer_file/program/nttransfer::remote), P)
 			break
 	if(!remote() || !remote().provided_file())
 		return
@@ -141,8 +141,8 @@ UI_ACT_PROC(/datum/computer_file/program/nttransfer, ui_act_prg_downloadfile)
 		if(pass != remote().server_password)
 			error = "Incorrect Password"
 			return
-	own_set(src, "downloaded_file", remote().provided_file().clone())
-	rel_add(remote(), "connected_clients", src)
+	own_set(src, nameof(/datum/computer_file/program/ntnetdownload::downloaded_file), remote().provided_file().clone())
+	rel_add(remote(), nameof(/datum/computer_file/data/email_account::connected_clients), src)
 	return TRUE
 
 UI_ACT(/datum/computer_file/program/nttransfer, "PRG_reset", ui_act_prg_reset)
@@ -151,10 +151,10 @@ UI_ACT_PROC(/datum/computer_file/program/nttransfer, ui_act_prg_reset)
 	upload_menu = 0
 	finalize_download()
 	if(src in GLOB.ntnet_global.fileservers)
-		rel_remove(GLOB.ntnet_global, "fileservers", src)
+		rel_remove(GLOB.ntnet_global, nameof(/datum/ntnet::fileservers), src)
 	for(var/datum/computer_file/program/nttransfer/T in connected_clients)
 		T.crash_download("Remote server has forcibly closed the connection")
-	rel_clear(src, "provided_file")
+	rel_clear(src, nameof(/datum/computer_file/program/nttransfer::provided_file))
 	return TRUE
 
 UI_ACT(/datum/computer_file/program/nttransfer, "PRG_setpassword", ui_act_prg_setpassword)
@@ -177,8 +177,8 @@ UI_ACT_PROC(/datum/computer_file/program/nttransfer, ui_act_prg_uploadfile)
 			if(F.unsendable)
 				error = "I/O Error: File locked."
 				return
-			rel_set(src, "provided_file", F)
-			rel_add(GLOB.ntnet_global, "fileservers", src)
+			rel_set(src, nameof(/datum/computer_file/program/nttransfer::provided_file), F)
+			rel_add(GLOB.ntnet_global, nameof(/datum/ntnet::fileservers), src)
 			return
 	error = "I/O Error: Unable to locate file on hard drive."
 	return TRUE

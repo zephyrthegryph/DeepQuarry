@@ -58,7 +58,7 @@
 	if (blocks_emissive)
 		if (blocks_emissive == EMISSIVE_BLOCK_UNIQUE)
 			render_target = ref(src)
-			own_set(src, "em_block", new /atom/movable/emissive_blocker(null, src))
+			own_set(src, nameof(/atom/movable::em_block), new /atom/movable/emissive_blocker(null, src))
 			// Note, this should be refactored to drop priority overlays
 			add_overlay(list(em_block), TRUE)
 			om_hook(em_block, /datum/om/event/qdeleting, src, PROC_REF(emblocker_gc))
@@ -116,7 +116,7 @@
 			var/slot = ((vg_entity - 1) & VG_ENTITY_INDEX_MASK) + 1
 			if(slot <= length(SSvg.entities_by_index) && SSvg.entities_by_index[slot] == src)
 				SSvg.entities_by_index[slot] = null
-			rel_add(batch, "unbind_movers", src)
+			rel_add(batch, nameof(batch.unbind_movers), src)
 			batch.unbind_entities += vg_entity
 		else
 			SSvg.unregister(src)
@@ -125,7 +125,7 @@
 	if(rad_insulation != RAD_NO_INSULATION)
 		RAD_SHIELDING_CHANGED(loc)
 	if(light_system == STATIC_LIGHT && light)
-		own_clear(src, "light", OWN_DELETE)
+		own_clear(src, nameof(light), OWN_DELETE)
 	return ..()
 
 /atom/movable/Destroy()
@@ -137,7 +137,7 @@
 	if(em_block)
 		cut_overlay(em_block)
 		om_unhook(em_block, /datum/om/event/qdeleting, src)
-		own_clear(src, "em_block", OWN_DELETE)
+		own_clear(src, nameof(em_block), OWN_DELETE)
 	// Leave the turf's opacity_sources while loc is still valid.
 	stop_blocking_light()
 	. = ..()
@@ -152,7 +152,7 @@
 	// never run Destroy() and keep a loc ref to this deleted container.
 	for(var/atom/movable/AM in contents.Copy())
 		qdel(AM)
-	own_clear(src, "ledger", OWN_DELETE)
+	own_clear(src, nameof(ledger), OWN_DELETE)
 
 	moveToNullspace()
 
@@ -165,8 +165,8 @@
 		pulledby.stop_pulling()
 
 	stop_orbit()
-	rel_clear(src, "throw_source")
-	own_clear(src, "riding_datum", OWN_DELETE)
+	rel_clear(src, nameof(throw_source))
+	own_clear(src, nameof(riding_datum), OWN_DELETE)
 	set_listening(NON_LISTENING_ATOM)
 
 ////////////////////////////////////////
@@ -322,7 +322,7 @@
 	om_emit_moved(src, old_loc, direction, forced)
 	// Mobs raise CHANGE_MOB_LOC themselves (living_movement.dm).
 	if(om_listen && !ismob(src))
-		om_changed(src, isitem(src) ? CHANGE_ITEM_LOC : CHANGE_EXPLICIT)
+		changed(src, isitem(src) ? CHANGE_ITEM_LOC : CHANGE_EXPLICIT)
 	// Covers Destroy() too, which moves to nullspace.
 	if(rad_insulation != RAD_NO_INSULATION)
 		RAD_SHIELDING_CHANGED(old_loc)
@@ -522,9 +522,9 @@
 		return
 	anchored = state
 	if(ismob(src))
-		om_changed(src, CHANGE_MOB_CAN_MOVE)
+		changed(src, CHANGE_MOB_CAN_MOVE)
 	else if(istype(src, /obj/machinery))
-		om_changed(src, CHANGE_MACHINE_ANCHORED)
+		changed(src, CHANGE_MACHINE_ANCHORED)
 
 /atom/movable/proc/glide_for(movetime)
 	if(movetime)
@@ -569,7 +569,7 @@
 		real_force = thrown_item.throwforce
 
 	var/datum/thrownthing/TT = new(src, target, dir, range, speed, thrower, FALSE, real_force, FALSE, callback)
-	rel_set(src, "throwing", TT)
+	rel_set(src, nameof(throwing), TT)
 
 	pixel_z = 0
 	if(spin && does_spin)

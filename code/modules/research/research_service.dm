@@ -6,7 +6,7 @@ GLOBAL_DATUM_INIT(research_service, /datum/world_service/research, new)
 	name = "Research"
 	lane = /datum/om/behaviour/world/research
 	// The old subsystem depended on SSmapping; boot right after it, as before.
-	boot_after = /datum/controller/subsystem/mapping
+	needs = list(/datum/system/mapping)
 	/// Income period; must match the lane's `every`.
 	var/income_interval = 1 SECOND
 	//TECHWEB STATIC
@@ -144,8 +144,8 @@ GLOBAL_DATUM_INIT(research_service, /datum/world_service/research, new)
 	register_techweb(new /datum/techweb/admin)
 	// new /datum/techweb/oldstation
 	autosort_categories()
-	proto_set(src, "error_design", new /datum/design_techweb/error_design)
-	proto_set(src, "error_node", new /datum/techweb_node/error_node)
+	proto_set(src, nameof(error_design), new /datum/design_techweb/error_design)
+	proto_set(src, nameof(error_node), new /datum/techweb_node/error_node)
 	log_world("World service [name] initialized: [length(techweb_nodes)] nodes, [length(techweb_designs)] designs, [length(techwebs)] techwebs.")
 
 /datum/world_service/research/service_step(resumed)
@@ -445,5 +445,7 @@ GLOBAL_DATUM_INIT(research_service, /datum/world_service/research, new)
 
 // Shared techwebs, scipaper partners and the two error placeholders live for the round.
 
-PROTO(/datum/world_service/research, error_design)
-PROTO(/datum/world_service/research, error_node)
+/datum/world_service/research/ownership()
+	. = ..()
+	. += proto(nameof(error_design))
+	. += proto(nameof(error_node))

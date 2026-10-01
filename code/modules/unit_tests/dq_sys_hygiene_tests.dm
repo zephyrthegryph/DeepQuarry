@@ -20,7 +20,7 @@
 	var/message = A.get_serialized_url_mappings()
 	TEST_ASSERT(!isnull(message), "serialized mappings were not built")
 	TEST_ASSERT(!isnull(A.cached_serialized_url_mappings), "serialized mappings were not kept")
-	om_changed(A, CHANGE_EXPLICIT)
+	changed(A, CHANGE_EXPLICIT)
 	TEST_ASSERT(isnull(A.cached_serialized_url_mappings), "CHANGE_EXPLICIT did not clear the declared cache")
 	TEST_ASSERT(isnull(A.cached_serialized_url_mappings_transport_type), "CHANGE_EXPLICIT did not clear the transport key")
 	TEST_ASSERT(!isnull(A.get_serialized_url_mappings()), "serialized mappings were not rebuilt after clearing")
@@ -33,17 +33,17 @@
 	device.duration = 1
 	device.set_activated(TRUE)
 	device.arm_emission_timer()
-	TEST_ASSERT(device.emission_timer, "arm_emission_timer() did not schedule the end of the run")
+	TEST_ASSERT(after_pending(device, "emission"), "arm_emission_timer() did not schedule the end of the run")
 	for(var/i in 1 to 40)
 		if(!device.activated)
 			break
 		sleep(world.tick_lag)
 	TEST_ASSERT(!device.activated, "the emission did not end when its timer came due")
-	TEST_ASSERT(!device.emission_timer, "the fired timer id was not cleared")
+	TEST_ASSERT(!after_pending(device, "emission"), "the fired timer id was not cleared")
 
 	// Shutting down early cancels the timer.
 	device.duration = 100
 	device.set_activated(TRUE)
 	device.arm_emission_timer()
 	device.shutdown_emission()
-	TEST_ASSERT(!device.emission_timer, "shutdown_emission() left the timer armed")
+	TEST_ASSERT(!after_pending(device, "emission"), "shutdown_emission() left the timer armed")

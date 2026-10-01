@@ -36,9 +36,9 @@
 
 /** Creates the new input window to exist in the background. */
 /datum/tgui_say/New(client/client, id)
-	rel_set(src, "client", client)
-	own_set(src, "window", new /datum/tgui_window(client, id))
-	winset(client, "tgui_say", "size=1,1;is-visible=0;")
+	rel_set(src, nameof(client), client)
+	own_set(src, nameof(window), new /datum/tgui_window(client, id))
+	winset(client, SKIN_TGUI_SAY, "size=1,1;is-visible=0;")
 	window.subscribe(src, PROC_REF(on_message))
 	window.is_browser = TRUE
 
@@ -69,7 +69,7 @@
 
 	var/minimum_width = client()?.prefs?.read_preference(/datum/preference/numeric/tgui_say_width) || 1
 	var/minimum_height = (client()?.prefs?.read_preference(/datum/preference/numeric/tgui_say_height) || 1) * 20 + 10
-	winset(client(), "tgui_say", "pos=410,400;is-visible=0;")
+	winset(client(), SKIN_TGUI_SAY, "pos=410,400;is-visible=0;")
 
 	window.send_message("props", list(
 		"lightMode" = client()?.prefs?.read_preference(/datum/preference/toggle/tgui_say_light),

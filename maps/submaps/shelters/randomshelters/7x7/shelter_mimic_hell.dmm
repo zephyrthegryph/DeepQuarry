@@ -1,7 +1,7 @@
 //MAP CONVERTED BY dmm2tgm.py THIS HEADER COMMENT PREVENTS RECONVERSION, DO NOT REMOVE
 "a" = (
 /turf/simulated/floor/wood{
-	temperature = 258.15
+	initial_temperature = 258.15
 	},
 /area/survivalpod/redspace)
 "b" = (
@@ -50,7 +50,7 @@
 "L" = (
 /obj/random/maintenance/misc,
 /turf/simulated/floor/wood{
-	temperature = 258.15
+	initial_temperature = 258.15
 	},
 /area/survivalpod/redspace)
 "M" = (
@@ -70,7 +70,7 @@
 	dir = 2
 	},
 /turf/simulated/floor/wood{
-	temperature = 258.15
+	initial_temperature = 258.15
 	},
 /area/survivalpod/redspace)
 "X" = (

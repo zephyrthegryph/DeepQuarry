@@ -662,7 +662,7 @@
 		remove_inherent_verbs(H) // split and regenerate came from this species
 		// This is hard-set to default the body to a normal FBP, without changing anything.
 		// proto_replace: src may be H's private copy, still running this proc; deleted below.
-		var/datum/species/old_species = proto_replace(H, "species", GLOB.all_species[SPECIES_HUMAN])
+		var/datum/species/old_species = proto_replace(H, nameof(H.species), GLOB.all_species[SPECIES_HUMAN])
 		H.invalidate_factors()
 
 		for(var/obj/item/organ/internal/diona/Org in H.internal_organ_list()) // Remove Nymph organs.
@@ -1983,7 +1983,7 @@
 /mob/living/carbon/human/proc/plant_weak()
 	set name = "Plant Weeds (150)"
 	set desc = "Plants some alien weeds."
-	set category = "Abilities.Alien"
+	set category = VERB_CAT_ABILITIES_ALIEN
 
 	if(check_alien_ability(150,1,O_RESIN))
 		act_message(src, null, others = span_alium(span_bold("%U% has planted some alien weeds!")))
@@ -1993,7 +1993,7 @@
 
 /mob/living/carbon/human/proc/check_plasma_amount(mob/living/carbon/human/M as mob)
 	set name = "Check Plasma Reserves"
-	set category = "Abilities.Alien"
+	set category = VERB_CAT_ABILITIES_ALIEN
 
 	var/obj/item/organ/internal/xenos/plasmavessel/I = M.organ_in(O_PLASMA)
 	if(!istype(I))
@@ -2006,7 +2006,7 @@
 /mob/living/carbon/human/proc/resin_weak() // Technically stronger in some aspects.
 	set name = "Secrete Resin (25)"
 	set desc = "Secrete tough, malleable resin in front of us."
-	set category = "Abilities.Alien"
+	set category = VERB_CAT_ABILITIES_ALIEN
 
 	var/list/options = list("resin door","resin wall","resin membrane","nest","resin blob")
 	for(var/option in options)

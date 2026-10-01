@@ -13,7 +13,7 @@ GLOBAL_DATUM(planet_virgo4, /datum/planet/virgo4)
 /datum/planet/virgo4/New()
 	..()
 	GLOB.planet_virgo4 = src
-	own_set(src, "weather_holder", new /datum/weather_holder/virgo4(src))
+	own_set(src, nameof(weather_holder), new /datum/weather_holder/virgo4(src))
 
 /datum/planet/virgo4/update_sun()
 	..()
@@ -614,7 +614,7 @@ GLOBAL_DATUM(planet_virgo4, /datum/planet/virgo4)
 
 /obj/machinery/power/smes/buildable/offmap_spawn/empty/Initialize(mapload)
 	. = ..()
-	charge = 0
+	set_stored_charge(0)
 	RCon = TRUE
 	input_level = input_level_max
 	output_level = output_level_max

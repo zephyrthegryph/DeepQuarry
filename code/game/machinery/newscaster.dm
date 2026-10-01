@@ -46,7 +46,7 @@
 
 /datum/feed_channel/proc/clear()
 	src.channel_name = ""
-	own_set(src, "messages", list())
+	own_set(src, nameof(messages), list())
 	src.locked = 0
 	src.author = ""
 	src.backup_author = ""
@@ -69,7 +69,7 @@
 		newChannel.announcement = announcement_message
 	else
 		newChannel.announcement = "Breaking news from [channel_name]!"
-	own_add(src, "network_channels", newChannel)
+	own_add(src, nameof(network_channels), newChannel)
 
 /datum/feed_network/proc/SubmitArticle(msg, author, channel_name, obj/item/photo/photo, adminMessage = 0, message_type = "", title)
 	var/datum/feed_message/newMsg = new /datum/feed_message
@@ -93,8 +93,8 @@
 			break
 
 /datum/feed_network/proc/insert_message_in_channel(datum/feed_channel/FC, datum/feed_message/newMsg)
-	own_add(FC, "messages", newMsg)
-	rel_set(newMsg, "parent_channel", FC)
+	own_add(FC, nameof(FC.messages), newMsg)
+	rel_set(newMsg, nameof(newMsg.parent_channel), FC)
 	FC.update()
 	alert_readers(FC.announcement)
 
@@ -165,7 +165,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 	return INITIALIZE_HINT_LATELOAD
 
 /obj/machinery/newscaster/LateInitialize()
-	rel_set(src, "node", get_exonet_node())
+	rel_set(src, nameof(node), get_exonet_node())
 	update_icon()
 
 DECLARE_APPEARANCE_PROC(/obj/machinery/newscaster, TYPE_PROC_REF(/atom, appearance_overlays), list())
@@ -232,7 +232,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/newscaster, TYPE_PROC_REF(/atom, appearan
 		return TRUE
 
 	if(!node())
-		rel_set(src, "node", get_exonet_node())
+		rel_set(src, nameof(node), get_exonet_node())
 
 	if(!node() || !node().on || !node().allow_external_newscasters)
 		to_chat(user, span_danger("Error: Cannot connect to external content.  Please try again in a few minutes.  If this error persists, please \
@@ -558,7 +558,7 @@ UI_ACT_PROC(/obj/machinery/newscaster, ui_act_toggle_d_notice)
 UI_ACT(/obj/machinery/newscaster, "show_channel", ui_act_show_channel, UI_ARG_REF("show_channel", null, /datum/feed_channel))
 UI_ACT_PROC(/obj/machinery/newscaster, ui_act_show_channel)
 	var/datum/feed_channel/FC = params["show_channel"]
-	rel_set(src, "viewing_channel", FC)
+	rel_set(src, nameof(/obj/machinery/newscaster::viewing_channel), FC)
 	return TRUE
 
 /datum/om/prompt/confirm/news_channel_create
@@ -610,14 +610,14 @@ UI_ACT_PROC(/obj/machinery/newscaster, ui_act_show_channel)
 	WANTED.backup_author = scanned_user //I know, a bit wacky
 	if(photo_data)
 		WANTED.img = photo_data.photo().img
-	own_set(GLOB.news_network, "wanted_issue_owned", WANTED)
+	own_set(GLOB.news_network, nameof(/datum/feed_network::wanted_issue_owned), WANTED)
 	GLOB.news_network.alert_readers()
 	set_temp("Wanted issue for [channel_name] is now in Network Circulation.", "success", FALSE)
 	return TRUE
 
 /obj/machinery/newscaster/proc/wanted_removal_confirmed(datum/om/prompt/confirm/ask)
 	if(GLOB.news_network.wanted_issue() && !GLOB.news_network.wanted_issue().is_admin_message)
-		own_clear(GLOB.news_network, "wanted_issue_owned", OWN_DELETE)
+		own_clear(GLOB.news_network, nameof(/datum/feed_network::wanted_issue_owned), OWN_DELETE)
 		for(var/obj/machinery/newscaster/NEWSCASTER in REGISTRY_MEMBERS(REGISTRY_CASTERS))
 			NEWSCASTER.update_icon()
 		set_temp("Wanted issue taken down.", "success", FALSE)
@@ -639,7 +639,7 @@ UI_ACT_PROC(/obj/machinery/newscaster, ui_act_show_channel)
 
 /datum/news_photo/New(obj/item/photo/p, synth)
 	is_synth = synth
-	rel_set(src, "photo", p)
+	rel_set(src, nameof(photo), p)
 
 /obj/machinery/newscaster/proc/AttachPhoto(mob/user)
 	if(photo_data)
@@ -653,14 +653,14 @@ UI_ACT_PROC(/obj/machinery/newscaster, ui_act_show_channel)
 		var/obj/item/photo = user.get_active_hand()
 		user.drop_item()
 		photo.forceMove(src)
-		own_set(src, "photo_data", new /datum/news_photo(photo, 0))
+		own_set(src, nameof(photo_data), new /datum/news_photo(photo, 0))
 	else if(istype(user,/mob/living/silicon))
 		var/mob/living/silicon/tempAI = user
 		var/obj/item/photo/selection = tempAI.GetPicture()
 		if(!selection)
 			return
 
-		own_set(src, "photo_data", new /datum/news_photo(selection, 1))
+		own_set(src, nameof(photo_data), new /datum/news_photo(selection, 1))
 
 ////////////////////////////////////helper procs
 /obj/machinery/newscaster/proc/tgui_user_name(mob/user)
@@ -692,9 +692,9 @@ UI_ACT_PROC(/obj/machinery/newscaster, ui_act_show_channel)
 	feedback_inc("newscaster_newspapers_printed",1)
 	var/obj/item/newspaper/NEWSPAPER = new /obj/item/newspaper
 	for(var/datum/feed_channel/FC in GLOB.news_network.network_channels)
-		rel_add(NEWSPAPER, "news_content", FC) // the paper names the network's channels
+		rel_add(NEWSPAPER, nameof(NEWSPAPER.news_content), FC) // the paper names the network's channels
 	if(GLOB.news_network.wanted_issue())
-		rel_set(NEWSPAPER, "important_message", GLOB.news_network.wanted_issue())
+		rel_set(NEWSPAPER, nameof(NEWSPAPER.important_message), GLOB.news_network.wanted_issue())
 	NEWSPAPER.forceMove(get_turf(src))
 	paper_remaining--
 	return

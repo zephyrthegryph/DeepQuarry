@@ -24,7 +24,7 @@
 /turf/simulated/floor/outdoors/dirt{
 	can_atmos_pass = 0;
 	outdoors = 0;
-	temperature = 300
+	initial_temperature = 300
 	},
 /area/survivalpod/superpose/logcabin)
 "fP" = (
@@ -195,7 +195,7 @@
 /turf/simulated/floor/outdoors/dirt{
 	can_atmos_pass = 0;
 	outdoors = 0;
-	temperature = 300
+	initial_temperature = 300
 	},
 /area/survivalpod/superpose/logcabin)
 "sf" = (
@@ -223,7 +223,7 @@
 	icon_state = "ice_dark_smooth";
 	desc = "A smooth crystalline polish of black marble, so polished you can see your reflection!";
 	name = "black marble";
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/survivalpod/superpose/logcabin)
 "te" = (
@@ -231,7 +231,7 @@
 /turf/simulated/floor/outdoors/dirt{
 	can_atmos_pass = 0;
 	outdoors = 0;
-	temperature = 300
+	initial_temperature = 300
 	},
 /area/survivalpod/superpose/logcabin)
 "tl" = (
@@ -392,7 +392,7 @@
 	icon_state = "ice_dark_smooth";
 	desc = "A smooth crystalline polish of black marble, so polished you can see your reflection!";
 	name = "black marble";
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/survivalpod/superpose/logcabin)
 "Ir" = (
@@ -415,7 +415,7 @@
 	icon_state = "ice_dark_smooth";
 	desc = "A smooth crystalline polish of black marble, so polished you can see your reflection!";
 	name = "black marble";
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/survivalpod/superpose/logcabin)
 "KU" = (
@@ -543,7 +543,7 @@
 	icon_state = "ice_dark_smooth";
 	desc = "A smooth crystalline polish of black marble, so polished you can see your reflection!";
 	name = "black marble";
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/survivalpod/superpose/logcabin)
 "TH" = (
@@ -551,7 +551,7 @@
 /turf/simulated/floor/outdoors/dirt{
 	can_atmos_pass = 0;
 	outdoors = 0;
-	temperature = 300
+	initial_temperature = 300
 	},
 /area/survivalpod/superpose/logcabin)
 "TN" = (
@@ -595,7 +595,7 @@
 /turf/simulated/floor/outdoors/dirt{
 	can_atmos_pass = 0;
 	outdoors = 0;
-	temperature = 300
+	initial_temperature = 300
 	},
 /area/survivalpod/superpose/logcabin)
 "XT" = (

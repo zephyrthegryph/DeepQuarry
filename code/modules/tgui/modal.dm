@@ -7,28 +7,32 @@
 GLOBAL_LIST(tgui_modals)
 
 /**
- * Modal actions (declared UI model, doc/rewrite/systems.md section 3).
- *
- * A host that shows modals declares DECLARE_UI_MODAL(type), which adds the three UI_ACT rows
- * modal_open / modal_answer / modal_close below, and implements
+ * Modal actions: act_<action> procs (doc/rewrite/dx_conventions.md §5). Every host has them; a host
+ * that shows modals implements
  *	ui_modal_opened(user, id, arguments, ui, state)          (switch on id: build the modal)
  *	ui_modal_answered(user, id, answer, arguments, ui, state) (switch on id: use the answer)
  * `id` is the modal's text id, `arguments` the list passed to and from JS, `answer` the
  * modal's answer text after the current modal's preprocess_answer().
  */
-UI_ACT_PROC(/datum, ui_modal_open)
-	return ui_modal_opened(user, params["id"], params["arguments"] || list(), ui, state)
+/datum/proc/act_modal_open(mob/user, id, arguments)
+	id = ui_text(id, 64)
+	if(isnull(id))
+		return refuse(user, null)
+	return ui_modal_opened(user, id, islist(arguments) ? arguments : list(), GLOB.dispatch_context_now?.ui, null)
 
-UI_ACT_PROC(/datum, ui_modal_answer)
-	var/answer = tgui_modal_preprocess_answer(src, params["answer"])
+/datum/proc/act_modal_answer(mob/user, id, answer, arguments)
+	id = ui_text(id, 64)
+	if(isnull(id))
+		return refuse(user, null)
+	answer = tgui_modal_preprocess_answer(src, ui_text(answer, TGUI_MODAL_INPUT_MAX_LENGTH))
 	// A current modal whose delegate handled the answer needs nothing more.
-	var/delegated = tgui_modal_answer(src, params["id"], answer)
+	var/delegated = tgui_modal_answer(src, id, answer)
 	tgui_modal_clear(src)
 	if(delegated)
 		return TRUE
-	return ui_modal_answered(user, params["id"], answer, params["arguments"] || list(), ui, state)
+	return ui_modal_answered(user, id, answer, islist(arguments) ? arguments : list(), GLOB.dispatch_context_now?.ui, null)
 
-UI_ACT_PROC(/datum, ui_modal_close)
+/datum/proc/act_modal_close(mob/user, id)
 	tgui_modal_clear(src)
 	return TRUE
 
@@ -194,7 +198,7 @@ UI_ACT_PROC(/datum, ui_modal_close)
 	if(previous && !replace_previous)
 		return FALSE
 
-	rel_set(modal, "owning_source", source)
+	rel_set(modal, nameof(modal.owning_source), source)
 
 	// Previous one should get GC'd
 	LAZYSET(GLOB.tgui_modals, REF(source), modal)

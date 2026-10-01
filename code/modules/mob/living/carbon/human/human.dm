@@ -38,7 +38,7 @@
 
 /mob/living/carbon/human/Initialize(mapload, new_species = null)
 	if(!dna)
-		own_set(src, "dna", new /datum/dna(null)) // ALLOW(decl): needed before parent init by set_species(); ctor takes an arg
+		own_set(src, nameof(dna), new /datum/dna(null)) // ALLOW(decl): needed before parent init by set_species(); ctor takes an arg
 		// Species name is handled by set_species()
 
 	if(!species)
@@ -666,8 +666,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 	BITSET(hud_updateflag, WANTED_HUD)
 	if(ishuman(user))
 		var/mob/living/carbon/human/U = user
-		var/datum/om/stage/life/hud/carbon/human/hud_system = om_stage_for(U, /datum/om/stage/life/hud)
-		hud_system.hud_list(U)
+		U.life_hud_list()
 	else
 		hud_record_changed(user)
 
@@ -815,7 +814,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 
 /mob/living/carbon/human/proc/morph()
 	set name = "Morph"
-	set category = "Superpower"
+	set category = VERB_CAT_SUPERPOWER
 
 	if(stat!=CONSCIOUS)
 		return
@@ -925,7 +924,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 
 /mob/living/carbon/human/proc/remotesay()
 	set name = "Project mind"
-	set category = "Abilities.Superpower"
+	set category = VERB_CAT_ABILITIES_SUPERPOWER
 
 	if(stat != CONSCIOUS)
 		return
@@ -974,7 +973,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 
 /mob/living/carbon/human/proc/remoteobserve()
 	set name = "Remote View"
-	set category = "Abilities.Superpower"
+	set category = VERB_CAT_ABILITIES_SUPERPOWER
 
 	if(stat != CONSCIOUS)
 		return
@@ -1202,7 +1201,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 					organ.set_status(organ.status | ORGAN_BLEEDING)
 
 /mob/living/carbon/human/verb/check_pulse()
-	set category = "Object"
+	set category = VERB_CAT_OBJECT
 	set name = "Check pulse"
 	set desc = "Approximately count somebody's pulse. Requires you to stand still at least 6 seconds."
 	set src in view(1)
@@ -1282,8 +1281,8 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 		holder_type = null
 		hunger_rate = initial(hunger_rate)
 
-	var/datum/species/replaced = proto_replace(src, "species", GLOB.all_species[new_species])
-	om_changed(src, CHANGE_MOB_CONDITIONS) // species vision and senses
+	var/datum/species/replaced = proto_replace(src, nameof(species), GLOB.all_species[new_species])
+	changed(src, CHANGE_MOB_CONDITIONS) // species vision and senses
 	old_species?.remove_components(src, species)
 	if(replaced)
 		qdel(replaced) // the private copy proto_replace() handed back, done with now
@@ -1320,11 +1319,11 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 	if(!keep_organs)
 		body_type = species.body_plan
 	if(!body)
-		own_set(src, "body", new body_type(src))
+		own_set(src, nameof(body), new body_type(src))
 	else if(!keep_organs && body.type != body_type)
 		log_game("BODY: [key_name(src)] body plan [body.type] -> [body_type] on species change to [species.name].")
-		own_clear(src, "body", OWN_DELETE)
-		own_set(src, "body", new body_type(src))
+		own_clear(src, nameof(body), OWN_DELETE)
+		own_set(src, nameof(body), new body_type(src))
 		// The slot set is keyed by body plan.
 		rebuild_slot_ledger()
 		// So is the Life plan (physiology applies by body plan).
@@ -1374,12 +1373,12 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 	fixblood()
 	// Traits (only ever on the mob's private copy) may change unarmed_types; a registered species
 	// built its attacks in New() and is never written here.
-	if(proto_is_private(src, "species"))
+	if(proto_is_private(src, nameof(species)))
 		species.update_attack_types()
 	species.update_vore_belly_def_variant()
 
 /mob/living/carbon/human/proc/bloody_doodle()
-	set category = "IC.Game"
+	set category = VERB_CAT_IC_GAME
 	set name = "Write in blood"
 	set desc = "Use blood on your hands to write a short message on the floor or a wall, murder mystery style."
 
@@ -1578,7 +1577,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 		return TRUE
 
 /mob/living/carbon/human/proc/relocate()
-	set category = "Object"
+	set category = VERB_CAT_OBJECT
 	set name = "Relocate Joint"
 	set desc = "Pop a joint back into place. Extremely painful."
 	set src in view(1)
@@ -1703,7 +1702,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 /mob/living/carbon/human/verb/toggle_underwear()
 	set name = "Toggle Underwear"
 	set desc = "Shows/hides selected parts of your underwear."
-	set category = "Object"
+	set category = VERB_CAT_OBJECT
 
 	if(stat) return
 	om_ask(src, /datum/om/prompt/choice, PROC_REF(toggle_underwear_chosen), message = "Choose underwear:", title = "Show/hide underwear", choices = GLOB.global_underwear.categories, ask_flags = ASK_CONSCIOUS)
@@ -1721,7 +1720,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 /mob/living/carbon/human/verb/pull_punches()
 	set name = "Pull Punches"
 	set desc = "Try not to hurt them."
-	set category = "IC.Game"
+	set category = VERB_CAT_IC_GAME
 
 	if(stat) return
 	var/pulling = FALSE
@@ -1932,7 +1931,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 
 /mob/living/carbon/human/verb/flip_lying()
 	set name = "Flip Resting Direction"
-	set category = "Abilities.General"
+	set category = VERB_CAT_ABILITIES_GENERAL
 	set desc = "Switch your horizontal direction while prone."
 
 	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || !COOLDOWN_FINISHED(src, last_special))
@@ -1952,14 +1951,14 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 
 /mob/living/carbon/human/verb/hide_headset()
 	set name = "Show/Hide Headset"
-	set category = "IC.Settings"
+	set category = VERB_CAT_IC_SETTINGS
 	set desc = "Toggle headset worn icon visibility."
 	hide_headset = !hide_headset
 	update_inv_ears()
 
 /mob/living/carbon/human/verb/hide_glasses()
 	set name = "Show/Hide Glasses"
-	set category = "IC.Settings"
+	set category = VERB_CAT_IC_SETTINGS
 	set desc = "Toggle glasses worn icon visibility."
 	hide_glasses = !hide_glasses
 	update_inv_glasses()
@@ -2044,7 +2043,7 @@ VV_TOPIC_ACTION(/mob/living/carbon/human, VK_HK_TURN_ROBOT, PROC_REF(vv_topic_tu
 
 /mob/living/carbon/human/proc/synth_reag_toggle()
 	set name = "Toggle Reagent Processing"
-	set category = "Abilities.Vore"
+	set category = VERB_CAT_ABILITIES_VORE
 	set desc = "Toggle reagent processing as synth."
 	synth_reag_processing = !synth_reag_processing
 
@@ -2052,7 +2051,7 @@ VV_TOPIC_ACTION(/mob/living/carbon/human, VK_HK_TURN_ROBOT, PROC_REF(vv_topic_tu
 /mob/living/carbon/human/verb/create_area()
 	set name = "Create Area"
 	set desc = "Create an area in a enclosed space, making it able to be powered by an APC."
-	set category = "IC.Game"
+	set category = VERB_CAT_IC_GAME
 
 	if(stat || !COOLDOWN_FINISHED(src, last_special))
 		to_chat(usr, span_warning("You recently tried to create an area. Wait a while before using it again."))
@@ -2062,7 +2061,9 @@ VV_TOPIC_ACTION(/mob/living/carbon/human, VK_HK_TURN_ROBOT, PROC_REF(vv_topic_tu
 	create_new_area(usr)
 	return
 
-OWN(/mob/living/carbon/human, wearing_rig, OWN_CONTAINED)
+/mob/living/carbon/human/ownership()
+	. = ..()
+	. += owns(nameof(wearing_rig), policy = OWN_CONTAINED)
 // Each side effect is created for this human and kept only here and by its finish() timer.
 
 DECLARE_DEFAULT_CHILD(/mob/living/carbon/human, "crafting", /datum/personal_crafting)

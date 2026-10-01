@@ -51,7 +51,9 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/conveyor, MACHINE_PIPELINE, list("oper
 
 // Switches find their conveyors (and each other) by id: keyed relations, linked when either end
 // materializes; a dying conveyor leaves every switch's list by itself.
-KEYED_TARGET(/obj/machinery/conveyor, id)
+/obj/machinery/conveyor/relations()
+	. = ..()
+	. += rel_key(nameof(id))
 
 /obj/machinery/conveyor/Moved(atom/old_loc, direction, forced = FALSE)
 	if(old_loc)
@@ -83,7 +85,7 @@ KEYED_TARGET(/obj/machinery/conveyor, id)
 	if(new_operating == operating)
 		return // No change
 	operating = new_operating
-	om_changed(src, CHANGE_MACHINE_SETTINGS)
+	changed(src, CHANGE_MACHINE_SETTINGS)
 	if(operating == FORWARDS)
 		movedir = forwards
 	else if(operating == BACKWARDS)
@@ -169,7 +171,7 @@ KEYED_TARGET(/obj/machinery/conveyor, id)
 	if(!input)
 		to_chat(user, "No input found. Please hang up and try your call again.")
 		return ITEM_INTERACT_BLOCKING
-	keyed_set_id(src, "id", input) // leaves the old id's switches, joins the new id's
+	keyed_set_id(src, nameof(id), input) // leaves the old id's switches, joins the new id's
 	return ITEM_INTERACT_SUCCESS
 
 // attack with hand, move pulled object onto conveyor. Old attack_hand never called ..(), so ungated.
@@ -259,9 +261,11 @@ KEYED_TARGET(/obj/machinery/conveyor, id)
 OM_FIELD(/obj/machinery/conveyor_switch, operated, FALSE, CHANGE_MACHINE_SETTINGS)
 DECLARE_PERIODIC_WHILE(/obj/machinery/conveyor_switch, MACHINE_PIPELINE, "operated")
 
-REL_KEYED_LIST(/obj/machinery/conveyor_switch, conveyors, id, /obj/machinery/conveyor)
-REL_KEYED_LIST(/obj/machinery/conveyor_switch, linked_switches, id, /obj/machinery/conveyor_switch)
-KEYED_TARGET(/obj/machinery/conveyor_switch, id)
+/obj/machinery/conveyor_switch/relations()
+	. = ..()
+	. += rel_many(nameof(conveyors), keyed = nameof(id), keyed_target = /obj/machinery/conveyor)
+	. += rel_many(nameof(linked_switches), keyed = nameof(id), keyed_target = /obj/machinery/conveyor_switch)
+	. += rel_key(nameof(id))
 
 /obj/machinery/conveyor_switch/Initialize(mapload)
 	. = ..()
@@ -354,7 +358,7 @@ KEYED_TARGET(/obj/machinery/conveyor_switch, id)
 	if(!input)
 		to_chat(user, "No input found. Please hang up and try your call again.")
 		return ITEM_INTERACT_BLOCKING
-	keyed_set_id(src, "id", input) // relinks the conveyors and switches sharing the new id
+	keyed_set_id(src, nameof(id), input) // relinks the conveyors and switches sharing the new id
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/conveyor_switch/wrench_act(mob/user, obj/item/I)

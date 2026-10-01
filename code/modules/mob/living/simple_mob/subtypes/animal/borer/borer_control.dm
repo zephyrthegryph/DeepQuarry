@@ -3,7 +3,7 @@
  */
 /mob/living/simple_mob/animal/borer/verb/bond_brain()
 	var/mob/living/carbon/human/host = src?.borer_host()
-	set category = "Abilities.Borer"
+	set category = VERB_CAT_ABILITIES_BORER
 	set name = "Assume Control"
 	set desc = "Fully connect to the brain of your host."
 
@@ -40,7 +40,7 @@
 	host.computer_id = null
 	host.lastKnownIP = null
 
-	own_set(src, "host_brain", new /mob/living/captive_brain(src)) // replaces (and deletes) any old one
+	own_set(src, nameof(host_brain), new /mob/living/captive_brain(src)) // replaces (and deletes) any old one
 	host_brain.name = host.name
 	// The host's mind is pushed aside into the captive brain, keeping its identity.
 	move_player(host, host_brain, "pushed aside by borer [src]", share = TRUE)
@@ -77,7 +77,7 @@
  */
 /mob/living/simple_mob/animal/borer/verb/release_host()
 	var/mob/living/carbon/human/host = src?.borer_host()
-	set category = "Abilities.Borer"
+	set category = VERB_CAT_ABILITIES_BORER
 	set name = "Release Host"
 	set desc = "Slither out of your host."
 

@@ -10,7 +10,7 @@
 
 /mob/living/silicon/robot/malf/setup_brain()
 	..()
-	own_set(src, "mmi", new /obj/item/mmi/digital/robot(src)) // Explicitly a drone.
+	own_set(src, nameof(mmi), new /obj/item/mmi/digital/robot(src)) // Explicitly a drone.
 	updatename(modtype)
 	play_sfx(src, SFX_MECHA_NOMINALSYNDI)
 

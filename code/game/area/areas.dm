@@ -41,6 +41,10 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 	var/music = null
 	var/has_gravity = TRUE // Don't check this var directly; use get_gravity() instead
 	var/obj/machinery/power/apc/apc = null
+	/// The APC runs night-shift lighting (derived from it; the lights read it).
+	var/lights_nightshift = FALSE
+	/// The APC switched emergency lighting off (derived from it; the lights read it).
+	var/lights_emergency_off = FALSE
 	var/no_air = null
 //	var/list/lights				// list of all lights on this area
 	var/list/all_doors = null		//Added by Strumpetplaya - Alarm Change - Contains a list of doors adjacent to this area
@@ -274,17 +278,17 @@ DECLARE_APPEARANCE_PROC(/area, TYPE_PROC_REF(/atom, appearance_overlays), list()
 /area/var/list/power_machines
 
 /area/proc/power_subscribe(obj/machinery/M)
-	rel_add(src, "power_machines", M)
+	rel_add(src, nameof(power_machines), M)
 
 /area/proc/power_unsubscribe(obj/machinery/M)
-	rel_remove(src, "power_machines", M)
+	rel_remove(src, nameof(power_machines), M)
 
 // Called once per area channel change (the APC's Rust power event). Lights and
 // other reactor subscribers hear the key; subscribed machines re-check their
 // power, and the base power_change() emits machinery_power_lost or
 // machinery_power_restored when it flips.
 /area/proc/power_change()
-	om_changed(src, CHANGE_AREA_POWER)
+	changed(src, CHANGE_AREA_POWER)
 	for(var/obj/machinery/M as anything in power_machines)
 		M.power_change()
 	if (fire || eject || party)
@@ -322,7 +326,7 @@ DECLARE_APPEARANCE_PROC(/area, TYPE_PROC_REF(/atom, appearance_overlays), list()
 			oneoff_environ += amount
 	if(amount)
 		power_loads_changed()
-		om_changed(src, CHANGE_AREA_POWER)
+		changed(src, CHANGE_AREA_POWER)
 	return amount
 
 // This is used by machines to properly update the area of power changes.
@@ -340,7 +344,7 @@ DECLARE_APPEARANCE_PROC(/area, TYPE_PROC_REF(/atom, appearance_overlays), list()
 			static_environ += amount
 	if(amount)
 		power_loads_changed()
-		om_changed(src, CHANGE_AREA_POWER)
+		changed(src, CHANGE_AREA_POWER)
 
 // This recomputes the continued power usage; can be used for testing or error recovery, but is not called every tick.
 /area/proc/retally_power()
@@ -678,4 +682,34 @@ GLOBAL_DATUM(spoiler_obfuscation_image, /image)
 
 /// The area's APC: a one-sided relation view (the APC's own `area` var is a plain area ref, and
 /// areas are never relation targets). A dying APC leaves it.
-REL(/area, apc)
+/area/relations()
+	. = ..()
+	. += rel_one(nameof(apc))
+
+/// What the area's lights read from its APC, derived through the apc relation: the lights read these through theirs.
+/area/derived()
+	. = ..()
+	. += derive(nameof(lights_nightshift), rel(nameof(apc), nameof(/obj/machinery/power/apc::nightshift_lights)), rel(nameof(apc), nameof(/obj/machinery/power/apc::nightshift_setting)))
+	. += derive(nameof(lights_emergency_off), rel(nameof(apc), nameof(/obj/machinery/power/apc::emergency_lights)))
+
+/// Night lighting: the night shift's ask to the APC, under the APC's UI setting.
+/area/proc/derive_lights_nightshift()
+	if(!apc)
+		return FALSE
+	switch(apc.nightshift_setting)
+		if(NIGHTSHIFT_NEVER)
+			return FALSE
+		if(NIGHTSHIFT_ALWAYS)
+			return TRUE
+	return !!apc.nightshift_lights
+
+/area/proc/derive_lights_emergency_off()
+	return !!apc?.emergency_lights
+
+/// A new APC (or none) serves the area: its Rust node takes the area's static loads.
+/area/reactions()
+	. = ..()
+	. += on_change(list(nameof(apc)), PROC_REF(apc_changed))
+
+/area/proc/apc_changed(list/keys)
+	power_loads_changed()

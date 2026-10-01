@@ -17,7 +17,7 @@
 		construction_stage = null
 	// The material cap is the wall's integrity; the wall keeps the damage it already has.
 	// A wall is geometry around a material, not a hard-coded thermal type.
-	var/material_temperature = SSair?.initialized ? get_temperature() : temperature
+	var/material_temperature = SSair?.initialized ? get_temperature() : initial_temperature
 	var/list/facts = wall_material_facts(material_temperature)
 	var/missing = max_integrity - get_integrity()
 	max_integrity = facts[WALL_FACT_INTEGRITY]
@@ -58,13 +58,13 @@
 	var/explosion = material.explosion_resistance
 	if(reinf_material && reinf_material.explosion_resistance > explosion)
 		explosion = reinf_material.explosion_resistance
-	var/conductance = material.material_thermal_conductance(2.5, 0.25, material_temperature)
+	var/conductance = material.thermal_conductance(2.5, 0.25, material_temperature)
 	return list(
 		W.material_integrity_cap(),
 		explosion,
 		clamp(conductance / WALL_CONDUCTANCE_PER_TRANSFER_COEFFICIENT, 0.001, WALL_MAX_HEAT_TRANSFER_COEFFICIENT),
 		max(10000, material.density * material.specific_heat * 25),
-		material.material_radiation_transmission(RAD_WALL_THICKNESS_MM),
+		material.radiation_transmission(RAD_WALL_THICKNESS_MM),
 		reinf_material ? "reinforced [material.display_name] wall" : "[material.display_name] wall",
 		reinf_material ? "It seems to be a section of wall reinforced with [reinf_material.display_name] and plated with [material.display_name]." : "It seems to be a section of wall plated with [material.display_name].",
 	)

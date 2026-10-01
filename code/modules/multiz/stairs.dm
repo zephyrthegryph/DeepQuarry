@@ -46,14 +46,11 @@
 
 	// Case 4: They're unlinked
 	B.dir = get_dir(get_turf(B), get_turf(M))
-	rel_set(B, "top", T)
-	rel_set(B, "middle", M)
+	rel_set(B, nameof(B.top), T)
+	rel_set(B, nameof(B.middle), M)
 	T.dir	 = B.dir
-	rel_set(T, "middle", M)
-	T.bottom = B
+	rel_set(T, nameof(T.middle), M) // pairs: also sets T.bottom, M.bottom and M.top
 	M.dir	 = B.dir
-	rel_set(M, "top", T)
-	M.bottom = B
 	return TRUE
 
 // Used to actually move stuff up/down stairs. Removed from Crossed for special cases
@@ -77,8 +74,10 @@
 		WARNING("Stair created without level above: ([loc.x], [loc.y], [loc.z])")
 		return INITIALIZE_HINT_QDEL
 
-REL_PAIR(/obj/structure/stairs/bottom, top, bottom)
-REL_PAIR(/obj/structure/stairs/bottom, middle, bottom)
+/obj/structure/stairs/bottom/relations()
+	. = ..()
+	. += rel_one(nameof(top), back = nameof(/obj/structure/stairs/top::bottom))
+	. += rel_one(nameof(middle), back = nameof(/obj/structure/stairs/middle::bottom))
 
 // These are necessarily fairly similar, but because the positional relations are different, we have to copy-pasta a fair bit
 /obj/structure/stairs/bottom/check_integrity(obj/structure/stairs/bottom/B = null,
@@ -248,8 +247,10 @@ REL_PAIR(/obj/structure/stairs/bottom, middle, bottom)
 		return INITIALIZE_HINT_QDEL
 	make_climbable()
 
-REL_PAIR(/obj/structure/stairs/middle, top, middle)
-REL_PAIR(/obj/structure/stairs/middle, bottom, middle)
+/obj/structure/stairs/middle/relations()
+	. = ..()
+	. += rel_one(nameof(top), back = nameof(/obj/structure/stairs/top::middle))
+	. += rel_one(nameof(bottom), back = nameof(/obj/structure/stairs/bottom::middle))
 
 // These are necessarily fairly similar, but because the positional relations are different, we have to copy-pasta a fair bit
 /obj/structure/stairs/middle/check_integrity(obj/structure/stairs/bottom/B = null,
@@ -298,8 +299,7 @@ REL_PAIR(/obj/structure/stairs/middle, bottom, middle)
 
 	// The middle stair has some further special logic, in that it can be climbed, and so is technically valid if only the top exists
 	// T is enforced by a prior if
-	rel_set(T, "middle", src)
-	rel_set(src, "top", T)
+	rel_set(T, nameof(T.middle), src) // pair: sets our top too
 	src.dir = T.dir
 	return TRUE
 
@@ -329,8 +329,10 @@ DECLARE_INTERACTIONS(/obj/structure/stairs/middle, INTERACT_DRAG(null, PROC_REF(
 		WARNING("Stair created without level below: ([loc.x], [loc.y], [loc.z])")
 		return INITIALIZE_HINT_QDEL
 
-REL_PAIR(/obj/structure/stairs/top, middle, top)
-REL_PAIR(/obj/structure/stairs/top, bottom, top)
+/obj/structure/stairs/top/relations()
+	. = ..()
+	. += rel_one(nameof(middle), back = nameof(/obj/structure/stairs/middle::top))
+	. += rel_one(nameof(bottom), back = nameof(/obj/structure/stairs/bottom::top))
 
 // These are necessarily fairly similar, but because the positional relations are different, we have to copy-pasta a fair bit
 /obj/structure/stairs/top/check_integrity(obj/structure/stairs/bottom/B = null,

@@ -41,9 +41,9 @@ OWN_TIMER(/turf/simulated, wet_cleanup_timer)
 	if(om_timer_slot_pending(src, "wet_cleanup_timer"))
 		om_cancel_timer_slot(src, "wet_cleanup_timer")
 	if(wet == TURFSLIP_LUBE)
-		om_after_slot(src, "wet_cleanup_timer", 160 SECONDS, PROC_REF(wet_floor_finish))
+		after_slot(src, "wet_cleanup_timer", 160 SECONDS, PROC_REF(wet_floor_finish))
 	else
-		om_after_slot(src, "wet_cleanup_timer", 40 SECONDS, PROC_REF(wet_floor_finish))
+		after_slot(src, "wet_cleanup_timer", 40 SECONDS, PROC_REF(wet_floor_finish))
 
 /turf/simulated/proc/wet_floor_finish()
 	wet = TURFSLIP_DRY
@@ -153,7 +153,7 @@ DECLARE_VERB_IF(/turf/simulated, /turf/simulated/proc/climb_wall, "climbable")
 		for(var/obj/effect/decal/cleanable/blood/B in contents)
 			var/fresh = B.init_forensic_data().add_blooddna(M.dna,M)
 			if(fresh && M.has_contagions())
-				own_clear(B, "viruses", OWN_DELETE) // the decal owns its contagion copies
+				own_clear(B, nameof(B.viruses), OWN_DELETE) // the decal owns its contagion copies
 				B.add_contagions(contagion_copies(M.get_spreadable_contagions()), copy = FALSE)
 			return TRUE //we bloodied the floor
 		blood_splatter(src,M.get_blood(M.vessel),1)

@@ -28,16 +28,37 @@ GLOBAL_VAR_INIT(auxmos_gas_registry_initialized, FALSE)
 	vg_hook_init(build_auxmos_gas_registry())
 	GLOB.auxmos_gas_registry_initialized = TRUE
 
-// byondapi_stack_trace — auxmos error/panic handler routes back into DM via this
-// proc. Log each DISTINCT message once (deduped) to world log so a per-turf error
-// flood doesn't drown the log — and so we can actually see the message.
+// byondapi_stack_trace: every Rust error and caught panic routes back into DM here (the bind
+// macro wraps each error with "in verdigris bind `name`"). Each one is counted per bind
+// (GLOB.vg_bind_errors, shown by verdigris_metrics_list() and the profiler); the first
+// occurrence of each distinct message is logged to the world log AND raised as a real DM
+// runtime, so admins see it in the runtime log and a unit test that triggers one fails,
+// naming the bind. Repeats are only counted, so a per-turf flood cannot drown the log.
 GLOBAL_LIST_EMPTY(auxmos_seen_errors)
+/// Rust bind name -> errors seen since boot.
+GLOBAL_LIST_EMPTY(vg_bind_errors)
+/// TRUE while a test deliberately provokes Rust errors (they are counted and logged, not raised).
+GLOBAL_VAR_INIT(vg_errors_expected, FALSE)
+
+/// The bind name inside a Rust error message, or "unknown".
+/proc/vg_error_bind_name(msg)
+	var/start = findtext(msg, "in verdigris bind `")
+	if(!start)
+		return "unknown"
+	start += length("in verdigris bind `")
+	var/end = findtext(msg, "`", start)
+	return end ? copytext(msg, start, end) : "unknown"
+
 /proc/byondapi_stack_trace(msg)
 	var/key = "[msg]"
+	var/bind = vg_error_bind_name(key)
+	GLOB.vg_bind_errors[bind]++
 	if(GLOB.auxmos_seen_errors[key])
 		return
 	GLOB.auxmos_seen_errors[key] = TRUE
 	log_world("AUXMOS_STACK_TRACE: [key]")
+	if(!GLOB.vg_errors_expected)
+		stack_trace("Verdigris error in [bind]: [key]")
 
 // === Gas registry rows ===
 //

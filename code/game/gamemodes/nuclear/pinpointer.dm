@@ -37,7 +37,7 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer, INTERACT_USE("Toggle", PROC_REF(inter
 
 /obj/item/pinpointer/periodic_step()
 	if(!the_disk())
-		rel_set(src, "the_disk", locate(/obj/item/disk/nuclear))
+		rel_set(src, nameof(the_disk), locate(/obj/item/disk/nuclear))
 		if(!the_disk())
 			icon_state = "pinonnull"
 			return
@@ -114,8 +114,8 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer, INTERACT_USE("Toggle", PROC_REF(inter
 
 	set_active(FALSE)
 	icon_state = "pinoff"
-	rel_clear(src, "target")
-	rel_clear(src, "location")
+	rel_clear(src, nameof(target))
+	rel_clear(src, nameof(location))
 
 	om_ask(user, /datum/om/prompt/choice/carried_item, PROC_REF(pinpointer_mode_chosen), title = "Pinpointer Mode Select", message = "Please select the mode you want to put the pinpointer in.", choices = list("Location", "Disk Recovery", "Other Signature"), buttons = TRUE)
 
@@ -148,7 +148,7 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer, INTERACT_USE("Toggle", PROC_REF(inter
 	if(!locationx || !locationy)
 		return
 	var/turf/Z = get_turf(src)
-	rel_set(src, "location", locate(locationx,locationy,Z.z))
+	rel_set(src, nameof(location), locate(locationx,locationy,Z.z))
 	to_chat(user, "You set the pinpointer to locate [locationx],[locationy]")
 	attack_self(user)
 
@@ -166,7 +166,7 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer, INTERACT_USE("Toggle", PROC_REF(inter
 	var/mob/user = ask.answerer
 	var/targetitem = ask.choice
 	var/datum/objective/steal/itemlist = new
-	rel_set(src, "target", locate(itemlist.possible_items[targetitem]))
+	rel_set(src, nameof(target), locate(itemlist.possible_items[targetitem]))
 	qdel(itemlist)
 	if(!target_ref())
 		to_chat(user, "Failed to locate [targetitem]!")
@@ -183,7 +183,7 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer, INTERACT_USE("Toggle", PROC_REF(inter
 		if(!M.dna)
 			continue
 		if(M.dna.unique_enzymes == DNAstring)
-			rel_set(src, "target", M)
+			rel_set(src, nameof(target), M)
 			break
 	attack_self(user)
 
@@ -229,7 +229,7 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer/nukeop, INTERACT_USE("Toggle", PROC_RE
 		return		//Get outta here
 
 	if(!the_disk())
-		rel_set(src, "the_disk", locate(/obj/item/disk/nuclear))
+		rel_set(src, nameof(the_disk), locate(/obj/item/disk/nuclear))
 		if(!the_disk())
 			icon_state = "pinonnull"
 			return
@@ -254,7 +254,7 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer/nukeop, INTERACT_USE("Toggle", PROC_RE
 		return
 
 	if(!home())
-		rel_set(src, "home", locate(/obj/machinery/computer/shuttle_control/multi/syndicate))
+		rel_set(src, nameof(home), locate(/obj/machinery/computer/shuttle_control/multi/syndicate))
 		if(!home())
 			icon_state = "pinonnull"
 			return
@@ -298,7 +298,7 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer/shuttle, INTERACT_USE("Toggle", PROC_R
 	if(!our_shuttle())
 		for(var/obj/machinery/computer/shuttle_control/S in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 			if(S.shuttle_tag == shuttle_comp_id) // Shuttle tags are used so that it will work if the computer path changes, as it does on the southern cross map.
-				rel_set(src, "our_shuttle", S)
+				rel_set(src, nameof(our_shuttle), S)
 				break
 
 		if(!our_shuttle())

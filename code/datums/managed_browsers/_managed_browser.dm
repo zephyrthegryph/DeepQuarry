@@ -22,7 +22,7 @@ GLOBAL_VAR(managed_browser_id_ticker)
 		stack_trace("Managed browser object does not have a base browser id defined in its type.")
 		return
 
-	rel_set(src, "my_client", new_client)
+	rel_set(src, nameof(my_client), new_client)
 	browser_id = "[base_browser_id]-[GLOB.managed_browser_id_ticker++]"
 
 	if(display_when_created)

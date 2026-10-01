@@ -213,7 +213,20 @@ GLOBAL_LIST_EMPTY(ui_decls)
 	var/datum/ui_decl/decl = ui_decl_of(src)
 	if(decl?.interface_var)
 		return vars[decl.interface_var]
-	return decl?.interface
+	return decl?.interface || tgui_id
+
+/// The tgui interface this type opens (a type var, dx_conventions.md §5), e.g. "SupplyConsole".
+/datum/var/tgui_id
+/// The tgui state its window uses, or null for the default.
+/datum/var/datum/tgui_state/tgui_window_state
+/**
+ * The admin rights (R_* flags, at least ONE of them) its window needs: `ui_rights = R_ADMIN | R_SERVER` on an admin
+ * panel. The window opens and stays interactive only for an admin holding one (ADMIN_STATE(ui_rights), unless a
+ * DECLARE_UI_STATE / tgui_window_state says otherwise), and every act_<x>() / UI_ACT from anyone else is refused and
+ * audited (admin_require()). Per-action narrowing stays inside the handler: `admin_require(user.client, R_X, entry)`.
+ * A type var: nothing per instance.
+ */
+/datum/var/ui_rights
 
 /// The window title: UI_TITLE, else the host's name.
 /datum/proc/ui_title(mob/user)
@@ -266,7 +279,7 @@ GLOBAL_LIST_EMPTY(ui_decls)
 			ui = null
 		return redirect.tgui_interact(user, ui, parent_ui, custom_state)
 	var/datum/ui_decl/decl = ui_decl_of(host)
-	if(!decl?.interface && !decl?.interface_var)
+	if(!decl?.interface && !decl?.interface_var && !host.tgui_id)
 		return FALSE
 	if(!host.ui_prepare(user, ui))
 		ui?.close()
@@ -280,20 +293,20 @@ GLOBAL_LIST_EMPTY(ui_decls)
 	if(!interface)
 		return FALSE
 	ui = new(user, host, interface, host.ui_title(user), parent_ui, null, null, host.ui_window(user))
-	var/datum/tgui_state/state = custom_state || decl.state
+	var/datum/tgui_state/state = custom_state || decl?.state || host.tgui_window_state || (host.ui_rights ? ADMIN_STATE(host.ui_rights) : null)
 	if(state)
 		ui.set_state(state)
-	if(decl.autoupdate)
+	if(decl?.autoupdate)
 		ui.set_autoupdate(TRUE)
-	if(decl.pinned)
+	if(decl?.pinned)
 		ui.closeable = FALSE
 	host.ui_opening(user, ui)
-	ui.open(decl.preinitialized)
+	ui.open(decl?.preinitialized)
 	if(!QDELETED(ui))
 		host.ui_opened(user, ui)
-	if(decl.watch && !QDELETED(ui))
+	if(decl?.watch && !QDELETED(ui))
 		om_ui_bind(ui, host, decl.watch)
-		rel_set(ui, "om_bound", host)
+		rel_set(ui, nameof(ui.om_bound), host)
 	return ui
 
 /// A window's periodic refresh (autoupdate, forced): the host's ui_prepare() runs as it does on a
@@ -335,6 +348,8 @@ GLOBAL_LIST_EMPTY(ui_decls)
 		return null
 	var/mob/user = ui?.user
 	GLOB.ui_rerun = FALSE // a click is never a re-run (also clears a re-run that runtimed)
+	if(host.ui_rights && !admin_require(user?.client, host.ui_rights, "[host.type]:[action]"))
+		return FALSE
 	if(!host.ui_act_allowed(user, action, ui, state))
 		return FALSE
 	if(!row)

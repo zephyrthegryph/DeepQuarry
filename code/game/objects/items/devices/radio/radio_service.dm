@@ -67,7 +67,7 @@ GLOBAL_DATUM_INIT(radio_service, /datum/world_service/radio, new)
 
 /datum/world_service/radio
 	name = "Radio"
-	boot_after = /datum/controller/subsystem/atoms
+	needs = list(/datum/controller/subsystem/atoms)
 	var/list/datum/radio_frequency/frequencies = list()
 
 /// The service owns its frequencies (keyed by frequency text).
@@ -86,7 +86,7 @@ GLOBAL_DATUM_INIT(radio_service, /datum/world_service/radio, new)
 	if(!frequency)
 		frequency = new
 		frequency.frequency = new_frequency
-		own_put(src, "frequencies", f_text, frequency)
+		own_put(src, nameof(frequencies), f_text, frequency)
 
 	frequency.add_listener(device, radio_filter)
 	return frequency
@@ -99,7 +99,7 @@ GLOBAL_DATUM_INIT(radio_service, /datum/world_service/radio, new)
 		frequency.remove_listener(device)
 
 		if(!length(frequency.devices))
-			own_put(src, "frequencies", f_text, null) // disposes of (deletes) the emptied frequency
+			own_put(src, nameof(frequencies), f_text, null) // disposes of (deletes) the emptied frequency
 
 	return 1
 
@@ -110,7 +110,7 @@ GLOBAL_DATUM_INIT(radio_service, /datum/world_service/radio, new)
 	if(!frequency)
 		frequency = new
 		frequency.frequency = new_frequency
-		own_put(src, "frequencies", f_text, frequency)
+		own_put(src, nameof(frequencies), f_text, frequency)
 
 	return frequency
 
@@ -192,7 +192,7 @@ GLOBAL_DATUM_INIT(radio_service, /datum/world_service/radio, new)
 	var/frequency = ZERO_FREQ
 
 /datum/signal/proc/copy_from(datum/signal/model)
-	rel_set(src, "source", model.source)
+	rel_set(src, nameof(source), model.source)
 	transmission_method = model.transmission_method
 	data = model.data
 	encryption = model.encryption
@@ -213,6 +213,7 @@ GLOBAL_DATUM_INIT(radio_service, /datum/world_service/radio, new)
 
 //callback used by objects to react to incoming radio signals
 /obj/proc/receive_signal(datum/signal/signal, receive_method, receive_param)
+	cap_signaler_receive(src, signal) // a holder of the signaler capability (capabilities/library/signaler.dm)
 	return null
 
 /// Relation view: the device that sent this signal (reads null once it is gone).

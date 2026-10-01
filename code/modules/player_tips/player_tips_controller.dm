@@ -43,7 +43,7 @@ Controlled by the player_tips subsystem under code/controllers/subsystems/player
 /mob/living/verb/request_automated_advice()
 	set name = "Request Automated Advice"
 	set desc = "Sends you advice from a list of possibilities. You can choose to request a specific topic."
-	set category = "OOC.Game Settings"
+	set category = VERB_CAT_OOC_GAME_SETTINGS
 
 	var/choice = rerun_ask(src, "k48", VERB_REF(request_automated_advice), args, /datum/om/prompt/choice, message = "What topic would you like to receive advice on?", title = "Select Topic", choices = list("none","general","gameplay","roleplay","lore","cancel"))
 	if(isnull(choice))

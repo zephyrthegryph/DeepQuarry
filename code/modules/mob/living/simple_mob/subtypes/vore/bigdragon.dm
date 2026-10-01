@@ -254,7 +254,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/bigdragon, /mob/living/simple_mob
 /mob/living/simple_mob/vore/bigdragon/Login()
 	. = ..()
 	if(!riding_datum)
-		own_set(src, "riding_datum", new /datum/riding/simple_mob(src))
+		own_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
 	faction = FACTION_NEUTRAL
 
 /mob/living/simple_mob/vore/bigdragon/Initialize(mapload)
@@ -279,14 +279,14 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/bigdragon, /mob/living/simple_mob
 /mob/living/simple_mob/vore/bigdragon/proc/toggle_glow()
 	set name = "Toggle Glow"
 	set desc = "Switch between glowing and not glowing."
-	set category = "Abilities.Settings"
+	set category = VERB_CAT_ABILITIES_SETTINGS
 
 	set_glow_toggle(!glow_toggle)
 
 /mob/living/simple_mob/vore/bigdragon/proc/sprite_toggle()
 	set name = "Toggle Small Sprite"
 	set desc = "Switches your sprite to a smaller variant so you can see what you're doing. Others will always see your standard sprite instead. "
-	set category = "Abilities.Settings"
+	set category = VERB_CAT_ABILITIES_SETTINGS
 
 	if(!small)
 		var/image/I = image(icon = small_icon, icon_state = small_icon_state, loc = src)
@@ -301,7 +301,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/bigdragon, /mob/living/simple_mob
 /mob/living/simple_mob/vore/bigdragon/proc/flame_toggle()
 	set name = "Toggle breath attack"
 	set desc = "Toggles whether you will breath attack on harm intent (If you have one)."
-	set category = "Abilities.Settings"
+	set category = VERB_CAT_ABILITIES_SETTINGS
 
 	if(norange)
 		to_chat(src, span_userdanger("You don't have a breath attack!"))
@@ -313,7 +313,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/bigdragon, /mob/living/simple_mob
 /mob/living/simple_mob/vore/bigdragon/proc/special_toggle()
 	set name = "Toggle special attacks"
 	set desc = "Toggles whether you will tail spin and charge (If you have them)."
-	set category = "Abilities.Settings"
+	set category = VERB_CAT_ABILITIES_SETTINGS
 
 	if(nospecial)
 		to_chat(src, span_userdanger("You don't have special attacks!"))
@@ -413,7 +413,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/at
 /mob/living/simple_mob/vore/bigdragon/proc/set_style()
 	set name = "Set Dragon Style"
 	set desc = "Customise your icons."
-	set category = "Abilities.Settings"
+	set category = VERB_CAT_ABILITIES_SETTINGS
 
 	var/list/options = list("Underbelly","Body","Ears","Mane","Horns","Eyes")
 	for(var/option in options)
@@ -518,7 +518,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/at
 		"The vast tongue quivers, inching you up close to it's gaping gullet. The slick hatch squeezes on a limb of yours, giving it a plush, sloppy, inviting tug...",
 		"Nestled atop the muscle, an array of deep, dull muffled glrrrgles echo up the beast's gullet, a gastric siren-song calling out for you.")
 	gut1 = B
-	rel_set(src, "vore_selected", B)
+	rel_set(src, nameof(vore_selected), B)
 	B = new /obj/belly/dragon/throat(src)
 	B.affects_vore_sprites = FALSE
 	B.own_emote_lists()
@@ -748,7 +748,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/at
 		ai_busy_begin()
 	do_windup_animation(A, charge_warmup)
 	//callbacks are more reliable than byond's process scheduler
-	om_after_slot(src, "chargetimer", charge_warmup, PROC_REF(chargeend), A)
+	after_slot(src, "chargetimer", charge_warmup, PROC_REF(chargeend), A)
 
 
 /mob/living/simple_mob/vore/bigdragon/proc/chargeend(atom/A, explicit = 0, gentle = 0)
@@ -789,7 +789,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/at
 		ai_busy_begin()
 	flames = 1
 	build_icons()
-	om_after_slot(src, "firebreathtimer", charge_warmup, PROC_REF(firebreathend), A)
+	after_slot(src, "firebreathtimer", charge_warmup, PROC_REF(firebreathend), A)
 	playsound(src, "sound/magic/Fireball.ogg", 50, 1)
 
 /mob/living/simple_mob/vore/bigdragon/proc/firebreathend(atom/A)
@@ -878,7 +878,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/at
 	// personal disposition for state changes.
 	faction = FACTION_NEUTRAL
 	norange = 1		//Don't start fires while friendly
-	rel_set(src, "vore_selected", gut2) //Just incase it eats someone right after being tamed
+	rel_set(src, nameof(vore_selected), gut2) //Just incase it eats someone right after being tamed
 	ai_brain?.set_hostile(FALSE)
 	ai_brain?.lose_target()
 
@@ -894,7 +894,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/at
 	say("HAVE IT YOUR WAY THEN")
 	// DQEdit - legacy ai_brain swap removed; brain stays put.
 	ai_brain?.set_hostile(TRUE)
-	rel_set(src, "vore_selected", gut1)
+	rel_set(src, nameof(vore_selected), gut1)
 	if(attacker)
 		ai_brain?.give_target(attacker, TRUE)
 
@@ -910,7 +910,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/at
 /mob/living/simple_mob/vore/bigdragon/proc/export_style()
 	set name = "Export style string"
 	set desc = "Export a string of text that can be used to instantly get the current style back using the import style verb"
-	set category = "Abilities.Settings"
+	set category = VERB_CAT_ABILITIES_SETTINGS
 	var/output_style = jointext(list(
 		overlay_colors["Underbelly"],
 		under,
@@ -929,7 +929,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/at
 /mob/living/simple_mob/vore/bigdragon/proc/import_style()
 	set name = "Import style string"
 	set desc = "Import a string of text that was made using the import style verb to get back that style"
-	set category = "Abilities.Settings"
+	set category = VERB_CAT_ABILITIES_SETTINGS
 	om_ask(src, /datum/om/prompt/text, PROC_REF(import_style_entered), title = "Style loading", message = "Paste the style string you exported with Export Style.")
 
 /mob/living/simple_mob/vore/bigdragon/proc/import_style_entered(datum/om/prompt/text/ask)

@@ -14,7 +14,7 @@
 	message="Unexpected token: "
 	var/tmp/datum/token/token_ref
 /datum/scriptError/BadToken/New(datum/token/t)
-	rel_set(src, "token_ref", t)
+	rel_set(src, nameof(token_ref), t)
 	if(t&&t.line) message="[t.line]: [message]"
 	if(istype(t))message+="[t.value]"
 	else message+="[t]"
@@ -35,7 +35,7 @@
 	var/tmp/datum/token/token_ref
 	message = "Unexpected return statement outside of a function."
 /datum/scriptError/BadReturn/New(datum/token/t)
-	rel_set(src, "token_ref", t)
+	rel_set(src, nameof(token_ref), t)
 
 /datum/scriptError/EndOfFile
 	message = "Unexpected end of file."

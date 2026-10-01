@@ -23,11 +23,11 @@
 /obj/item/mecha_parts/mecha_equipment/omni_shield/attach(obj/mecha/M as obj)
 	. = ..()
 	if(chassis)
-		own_set(src, "shields", new shield_type(chassis))
+		own_set(src, nameof(shields), new shield_type(chassis))
 
 /obj/item/mecha_parts/mecha_equipment/omni_shield/detach()
 	if(chassis)
-		own_clear(src, "shields", OWN_DELETE)
+		own_clear(src, nameof(shields), OWN_DELETE)
 	. = ..()
 
 /obj/item/mecha_parts/mecha_equipment/omni_shield/handle_movement_action()
@@ -70,7 +70,7 @@ TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/omni_shield, "toggle_omnishie
 
 /obj/item/shield_projector/rectangle/mecha/Initialize(mapload)
 	. = ..()
-	rel_set(src, "my_mech", loc)
+	rel_set(src, nameof(my_mech), loc)
 	om_hook(my_mech(), /datum/om/event/movable_attempted_move, src, TYPE_PROC_REF(/obj/item/shield_projector, update_shield_positions))
 	dq_add_recursive_move(my_mech())
 	update_shift(my_mech())

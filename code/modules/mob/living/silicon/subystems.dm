@@ -32,27 +32,27 @@
 	idcard_type = /obj/item/card/id/syndicate
 
 /mob/living/silicon/proc/init_subsystems()
-	own_set(src, "alarm_monitor", new /datum/tgui_module/alarm_monitor/all/robot(src))
-	own_set(src, "atmos_control", new /datum/tgui_module/atmos_control/robot(src))
-	own_set(src, "crew_manifest", new /datum/tgui_module/crew_manifest/robot(src))
-	own_set(src, "crew_monitor", new /datum/tgui_module/crew_monitor/robot(src))
-	own_set(src, "law_manager", new /datum/tgui_module/law_manager/robot(src))
-	own_set(src, "power_monitor", new /datum/tgui_module/power_monitor/robot(src))
-	own_set(src, "rcon", new /datum/tgui_module/rcon/robot(src))
+	own_set(src, nameof(alarm_monitor), new /datum/tgui_module/alarm_monitor/all/robot(src))
+	own_set(src, nameof(atmos_control), new /datum/tgui_module/atmos_control/robot(src))
+	own_set(src, nameof(crew_manifest), new /datum/tgui_module/crew_manifest/robot(src))
+	own_set(src, nameof(crew_monitor), new /datum/tgui_module/crew_monitor/robot(src))
+	own_set(src, nameof(law_manager), new /datum/tgui_module/law_manager/robot(src))
+	own_set(src, nameof(power_monitor), new /datum/tgui_module/power_monitor/robot(src))
+	own_set(src, nameof(rcon), new /datum/tgui_module/rcon/robot(src))
 
 	if(!register_alarms)
 		return
 
 	for(var/datum/alarm_handler/AH in all_alarm_handlers())
 		AH.register_alarm(src, /mob/living/silicon/proc/receive_alarm)
-		own_put(src, "queued_alarms", "[AH.type]", new /datum/silicon_alarm_queue(AH.category))	// Makes sure alarms remain listed in consistent order
+		own_put(src, nameof(queued_alarms), "[AH.type]", new /datum/silicon_alarm_queue(AH.category))	// Makes sure alarms remain listed in consistent order
 
 /********************
 *	Alarm Monitor	*
 ********************/
 /mob/living/silicon/proc/subsystem_alarm_monitor()
 	set name = "Alarm Monitor"
-	set category = "Abilities.Silicon"
+	set category = VERB_CAT_ABILITIES_SILICON
 
 	alarm_monitor.tgui_interact(src)
 
@@ -60,7 +60,7 @@
 *	Atmos Control	*
 ********************/
 /mob/living/silicon/proc/subsystem_atmos_control()
-	set category = "Abilities.Silicon"
+	set category = VERB_CAT_ABILITIES_SILICON
 	set name = "Atmospherics Control"
 
 	atmos_control.tgui_interact(src)
@@ -69,7 +69,7 @@
 *	Crew Manifest	*
 ********************/
 /mob/living/silicon/proc/subsystem_crew_manifest()
-	set category = "Abilities.Silicon"
+	set category = VERB_CAT_ABILITIES_SILICON
 	set name = "Crew Manifest"
 
 	crew_manifest.tgui_interact(src)
@@ -78,7 +78,7 @@
 *	Crew Monitor	*
 ********************/
 /mob/living/silicon/proc/subsystem_crew_monitor()
-	set category = "Abilities.Silicon"
+	set category = VERB_CAT_ABILITIES_SILICON
 	set name = "Crew Monitor"
 
 	crew_monitor.tgui_interact(src)
@@ -88,7 +88,7 @@
 ****************/
 /mob/living/silicon/proc/subsystem_law_manager()
 	set name = "Law Manager"
-	set category = "Abilities.Silicon"
+	set category = VERB_CAT_ABILITIES_SILICON
 
 	law_manager.tgui_interact(src)
 
@@ -96,7 +96,7 @@
 *	Power Monitor	*
 ********************/
 /mob/living/silicon/proc/subsystem_power_monitor()
-	set category = "Abilities.Silicon"
+	set category = VERB_CAT_ABILITIES_SILICON
 	set name = "Power Monitor"
 
 	power_monitor.tgui_interact(src)
@@ -105,7 +105,7 @@
 *	RCON	*
 ************/
 /mob/living/silicon/proc/subsystem_rcon()
-	set category = "Abilities.Silicon"
+	set category = VERB_CAT_ABILITIES_SILICON
 	set name = "RCON"
 
 	rcon.tgui_interact(src)
@@ -115,5 +115,5 @@
 
 /mob/living/silicon/robot/init_subsystems()
 	..()
-	own_set(src, "decal_control", new /datum/tgui_module/robot_ui_decals(src))
+	own_set(src, nameof(decal_control), new /datum/tgui_module/robot_ui_decals(src))
 

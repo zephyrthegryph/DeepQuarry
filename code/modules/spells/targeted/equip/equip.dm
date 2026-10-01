@@ -25,7 +25,7 @@
 					old_item.forceMove(L.loc)
 
 			if(duration)
-				own_add(src, "summoned_items", new_item) // the spell made it and disposes of it when the spell runs out
+				own_add(src, nameof(summoned_items), new_item) // the spell made it and disposes of it when the spell runs out
 
 	if(duration)
 		om_after(src, duration, PROC_REF(unsummon_items))

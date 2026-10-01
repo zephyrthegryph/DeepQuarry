@@ -8,7 +8,7 @@
 /client/verb/toggle_hardsuit_mode()
 	set name = "Toggle Hardsuit Activation Mode"
 	set desc = "Switch between hardsuit activation modes."
-	set category = "OOC.Game Settings"
+	set category = VERB_CAT_OOC_GAME_SETTINGS
 
 	var/list/actions = HARDSUIT_CLICK_ACTIONS
 	var/index = actions.Find(hardsuit_click_action) + 1

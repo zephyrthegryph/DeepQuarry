@@ -54,7 +54,7 @@ TYPE_TABLE(/obj/item/storage/wallet, hold_spec, list(HOLD_ONLY(list( \
 	. = ..()
 	if(.)
 		if(W == front_id())
-			rel_clear(src, "front_id")
+			rel_clear(src, nameof(front_id))
 			name = original_name || initial(name)
 			update_icon()
 
@@ -62,7 +62,7 @@ TYPE_TABLE(/obj/item/storage/wallet, hold_spec, list(HOLD_ONLY(list( \
 	. = ..()
 	if(.)
 		if(!front_id() && istype(W, /obj/item/card/id))
-			rel_set(src, "front_id", W)
+			rel_set(src, nameof(front_id), W)
 			if(!original_name)
 				original_name = name
 			name = "[original_name] ([front_id()])"
@@ -116,7 +116,7 @@ DECLARE_VERB(/obj/item/storage/wallet/poly, /obj/item/storage/wallet/poly/proc/c
 
 /obj/item/storage/wallet/poly/proc/change_color()
 	set name = "Change Wallet Color"
-	set category = "Object"
+	set category = VERB_CAT_OBJECT
 	set desc = "Change the color of the wallet."
 	set src in usr
 

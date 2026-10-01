@@ -8,8 +8,10 @@
 	var/keep = "kept"
 
 POOL_DECLARE(/datum/pool_test_item)
-POOL_RESET(/datum/pool_test_item, held)
-POOL_RESET(/datum/pool_test_item, count)
+/datum/pool_test_item/ownership()
+	. = ..()
+	. += owns(nameof(held), policy = OWN_NONE, pool_reset = TRUE)
+	. += owns(nameof(count), policy = OWN_NONE, pool_reset = TRUE)
 
 /datum/pool_test_item/proc/touch()
 	POOL_ASSERT_LIVE(src)
@@ -28,7 +30,7 @@ POOL_RESET(/datum/pool_test_item, count)
 	TEST_ASSERT(istype(item), "pool_take() should hand out the pooled type")
 	TEST_ASSERT_EQUAL(item.pool_state, POOL_STATE_TAKEN, "a taken object is marked taken")
 	var/datum/other = new /datum
-	rel_set(item, "held", other)
+	rel_set(item, nameof(item.held), other)
 	item.count = 9
 	item.keep = "changed"
 	item.release()
@@ -118,9 +120,10 @@ POOL_RESET(/datum/pool_test_item, count)
 /datum/unit_test/dq_pool/damage_packet/Run()
 	var/was_poison = pool_set_poison(FALSE)
 	var/datum/damage_packet/probe = new
-	var/list/transient = own_table_of(probe).pool_reset_vars
+	var/list/plan = pool_reset_plan(probe)
 	for(var/name in list("source", "attacker", "weapon"))
-		TEST_ASSERT(name in transient, "damage packet [name] is POOL_RESET")
+		TEST_ASSERT(name in plan, "damage packet [name] is reset on release")
+	TEST_ASSERT_EQUAL(plan["amounts"], POOL_RESET_LIST, "the amounts list is kept and emptied")
 	var/datum/other = new /datum
 	var/datum/damage_packet/packet = damage_packet(other, other, other, BP_TORSO, DAMAGE_PACKET_SILENT, 7, NORTH)
 	packet.add(DAMAGE_BLUNT, 4)

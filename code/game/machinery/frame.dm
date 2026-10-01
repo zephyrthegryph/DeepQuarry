@@ -341,7 +341,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/frame, TYPE_PROC_REF(/atom, appearance_ov
 	icon_state = frame_type.get_icon_state(state)
 
 /obj/structure/frame/proc/check_components(mob/user as mob)
-	own_take_all(src, "components")
+	own_take_all(src, nameof(components))
 	req_components = circuit.req_components.Copy()
 	for(var/A in circuit.req_components)
 		req_components[A] = circuit.req_components[A]
@@ -353,7 +353,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/frame, TYPE_PROC_REF(/atom, appearance_ov
 /obj/structure/frame/Initialize(mapload, dir, building = 0, datum/frame/frame_types/type, mob/user as mob)
 	. = ..()
 	if(building)
-		own_set(src, "frame_type", frame_type_copy(type))
+		own_set(src, nameof(frame_type), frame_type_copy(type))
 		state = FRAME_PLACED
 
 		if(dir)
@@ -367,7 +367,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/frame, TYPE_PROC_REF(/atom, appearance_ov
 
 		if(frame_type.circuit)
 			need_circuit = FALSE
-			own_set(src, "circuit", new frame_type.circuit(src))
+			own_set(src, nameof(circuit), new frame_type.circuit(src))
 
 	if(frame_type.name == "Computer")
 		set_density(TRUE)
@@ -400,13 +400,13 @@ DECLARE_INTERACTIONS(/obj/structure/frame, INTERACT_ITEM(null, PROC_REF(interact
 					var/obj/item/stack/cable_coil/CC = new /obj/item/stack/cable_coil(src, camt)
 					CC.update_icon()
 					CP.use(camt)
-					own_add(src, "components", CC)
+					own_add(src, nameof(components), CC)
 					req_components[I] -= camt
 					update_desc()
 					break
 				user.drop_item()
 				P.forceMove(src)
-				own_move(P, src, "components")
+				own_move(P, src, nameof(components))
 				req_components[I]--
 				update_desc()
 				break
@@ -437,7 +437,7 @@ DECLARE_INTERACTIONS(/obj/structure/frame, INTERACT_ITEM(null, PROC_REF(interact
 				var/obj/item/stack/NS = new ST.stacktype(src, camt)
 				NS.update_icon()
 				ST.use(camt)
-				own_add(src, "components", NS)
+				own_add(src, nameof(components), NS)
 				req_components[I] -= camt
 				break
 
@@ -447,7 +447,7 @@ DECLARE_INTERACTIONS(/obj/structure/frame, INTERACT_ITEM(null, PROC_REF(interact
 		else
 			user.drop_item()
 			P.forceMove(src)
-		own_move(P, src, "components")
+		own_move(P, src, nameof(components))
 		req_components[I]--
 		break
 
@@ -474,7 +474,9 @@ DECLARE_INTERACTIONS(/obj/structure/frame, INTERACT_ITEM(null, PROC_REF(interact
 	to_chat(user, desc)
 	return TRUE
 
-OWN(/obj/structure/frame, circuit, OWN_CONTAINED)
-// The frame owns its frame type (its own default instance, or a copy: frame_type_copy()).
-OWN(/obj/structure/frame, frame_type, OWN_DELETE)
+/obj/structure/frame/ownership()
+	. = ..()
+	. += owns(nameof(circuit), policy = OWN_CONTAINED)
+	// The frame owns its frame type (its own default instance, or a copy: frame_type_copy()).
+	. += owns(nameof(frame_type), policy = OWN_DELETE)
 

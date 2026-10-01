@@ -5,7 +5,7 @@
 /obj/item/flame/lighter/random,
 /turf/simulated/floor/outdoors/sidewalk/slab{
 	movement_cost = 0;
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/survivalpod/superpose/PizzaParlor)
 "aA" = (
@@ -116,7 +116,7 @@
 	},
 /turf/simulated/floor/outdoors/sidewalk/slab{
 	movement_cost = 0;
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/survivalpod/superpose/PizzaParlor)
 "dZ" = (
@@ -145,14 +145,14 @@
 /obj/vehicle/train/engine/quadbike,
 /turf/simulated/floor/outdoors/sidewalk/slab{
 	movement_cost = 0;
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/survivalpod/superpose/PizzaParlor)
 "ft" = (
 /obj/structure/closet/crate/trashcart,
 /turf/simulated/floor/outdoors/sidewalk/slab{
 	movement_cost = 0;
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/survivalpod/superpose/PizzaParlor)
 "fG" = (
@@ -168,7 +168,7 @@
 /obj/machinery/biogenerator,
 /turf/simulated/floor/outdoors/sidewalk/slab{
 	movement_cost = 0;
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/survivalpod/superpose/PizzaParlor)
 "gV" = (
@@ -534,7 +534,7 @@
 /obj/item/stack/cable_coil,
 /turf/simulated/floor/outdoors/sidewalk/slab{
 	movement_cost = 0;
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/survivalpod/superpose/PizzaParlor)
 "At" = (
@@ -689,7 +689,7 @@
 "Gj" = (
 /turf/simulated/floor/outdoors/sidewalk/slab{
 	movement_cost = 0;
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/survivalpod/superpose/PizzaParlor)
 "Gt" = (
@@ -856,7 +856,7 @@
 	},
 /turf/simulated/floor/outdoors/sidewalk/slab{
 	movement_cost = 0;
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/survivalpod/superpose/PizzaParlor)
 "PH" = (
@@ -935,7 +935,7 @@
 	},
 /turf/simulated/floor/outdoors/sidewalk/slab{
 	movement_cost = 0;
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/survivalpod/superpose/PizzaParlor)
 "SK" = (
@@ -999,7 +999,7 @@
 /obj/item/storage/bag/trash,
 /turf/simulated/floor/outdoors/sidewalk/slab{
 	movement_cost = 0;
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/survivalpod/superpose/PizzaParlor)
 "TG" = (
@@ -1009,7 +1009,7 @@
 	},
 /turf/simulated/floor/outdoors/sidewalk/slab{
 	movement_cost = 0;
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/survivalpod/superpose/PizzaParlor)
 "TH" = (
@@ -1144,7 +1144,7 @@
 /obj/structure/closet/crate/solar,
 /turf/simulated/floor/outdoors/sidewalk/slab{
 	movement_cost = 0;
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/survivalpod/superpose/PizzaParlor)
 "YR" = (
@@ -1187,7 +1187,7 @@
 	},
 /turf/simulated/floor/outdoors/sidewalk/slab{
 	movement_cost = 0;
-	temperature = 293.15
+	initial_temperature = 293.15
 	},
 /area/survivalpod/superpose/PizzaParlor)
 "ZZ" = (

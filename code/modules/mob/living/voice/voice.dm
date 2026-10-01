@@ -13,7 +13,7 @@
 	apply_default_language(GLOB.all_languages[LANGUAGE_GALCOM])
 
 	if(istype(loc, /obj/item/communicator))
-		rel_set(src, "comm", loc) // the communicator carrying us
+		rel_set(src, nameof(comm), loc) // the communicator carrying us
 	. = ..()
 
 // Proc: transfer_identity()
@@ -56,7 +56,7 @@
 // Description: Disconnects the voice mob from the communicator.
 /mob/living/voice/verb/hang_up()
 	set name = "Hang Up"
-	set category = "Communicator"
+	set category = VERB_CAT_COMMUNICATOR
 	set desc = "Disconnects you from whoever you're talking to."
 	set src = usr
 
@@ -70,7 +70,7 @@
 // Description: Allows the voice mob to change their name, assuming it is valid.
 /mob/living/voice/verb/change_name()
 	set name = "Change Name"
-	set category = "Communicator"
+	set category = VERB_CAT_COMMUNICATOR
 	set desc = "Changes your name."
 	set src = usr
 
@@ -151,4 +151,6 @@
 	no_vore = TRUE
 	can_pain_emote = FALSE
 
-REL(/mob/living/voice, comm)
+/mob/living/voice/relations()
+	. = ..()
+	. += rel_one(nameof(comm))

@@ -57,7 +57,7 @@
 
 /obj/item/gun/launcher/crossbow/bow/proc/unload(mob/user)
 	var/obj/item/arrow/A = bolt
-	own_take(src, "bolt")
+	own_take(src, nameof(bolt))
 	drawn = FALSE
 	A.forceMove(get_turf(user))
 	user.put_in_hands(A)
@@ -70,7 +70,7 @@
 	return bolt
 
 /obj/item/gun/launcher/crossbow/bow/handle_post_fire(mob/user, atom/target)
-	own_take(src, "bolt")
+	own_take(src, nameof(bolt))
 	drawn = FALSE
 	update_icon()
 	..()
@@ -100,9 +100,9 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/crossbow/bow, INTERACT_HAND(null, PR
 		drawn = FALSE
 		update_icon()
 	else
-		draw(user)
+		draw_string(user)
 
-/obj/item/gun/launcher/crossbow/bow/draw(mob/user)
+/obj/item/gun/launcher/crossbow/bow/draw_string(mob/user)
 	if(!bolt)
 		to_chat(user, span_infoplain("You don't have anything nocked to [src]."))
 		return
@@ -126,8 +126,8 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/crossbow/bow, INTERACT_HAND(null, PR
 /obj/item/gun/launcher/crossbow/bow/gun_item(mob/user, obj/item/W, datum/interaction/interaction)
 	. = INTERACTION_HANDLED_PASS
 	if(!bolt && istype(W,/obj/item/arrow/standard))
-		user.drop_from_inventory(W, src)
-		own_set(src, "bolt", W)
+		if(!own_set(src, nameof(src.bolt), W, user = user))
+			return
 		act_message(user, src, MSG_SELF(span_infoplain("You slide [bolt] into %T%.")), MSG_OTHERS(span_infoplain("%U% slides [bolt] into %T%.")))
 		update_icon()
 
@@ -149,7 +149,7 @@ APPEARANCE_TEMPLATE(/obj/item/gun/launcher/crossbow/bow, "{initial(icon_state)}{
 	hardlight = TRUE
 
 /obj/item/gun/launcher/crossbow/bow/hardlight/unload(mob/user)
-	own_clear(src, "bolt", OWN_DELETE)
+	own_clear(src, nameof(bolt), OWN_DELETE)
 	update_icon()
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
@@ -167,9 +167,9 @@ APPEARANCE_TEMPLATE(/obj/item/gun/launcher/crossbow/bow, "{initial(icon_state)}{
 	if(!bolt)
 		act_message(user, src, MSG_SELF(span_infoplain("You fabricate a new hardlight projectile with %T%.")), \
 			MSG_OTHERS(span_infoplain(span_bold("%U%") + " fabricates a new hardlight projectile with %T%.")))
-		own_set(src, "bolt", new /obj/item/arrow/energy(src))
+		own_set(src, nameof(bolt), new /obj/item/arrow/energy(src))
 		update_icon()
-	draw(user)
+	draw_string(user)
 
 /obj/item/gun/launcher/crossbow/bow/glamour
 	name = "glamour bow"

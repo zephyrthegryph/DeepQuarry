@@ -106,8 +106,8 @@ DECLARE_EMAG(/obj/item/kinetic_crusher, PROC_REF(on_emag), null, null)
 			return
 		var/obj/item/projectile/destabilizer/D = new /obj/item/projectile/destabilizer(proj_turf)
 		D.preparePixelProjectile(target, user, clickparams)
-		rel_set(D, "firer", user)
-		rel_set(D, "hammer_synced", src)
+		rel_set(D, nameof(D.firer), user)
+		rel_set(D, nameof(D.hammer_synced), src)
 		play_sfx(user, SFX_WEAPONS_PLASMA_CUTTER)
 		D.fire()
 		charged = FALSE
@@ -270,16 +270,16 @@ DECLARE_INTERACTIONS(/obj/item/kinetic_crusher/machete/gauntlets, INTERACT_USE(n
 	var/obj/item/offhand/crushergauntlets/O = new(M)
 	O.name = "[name] - readied"
 	O.desc = "As much as you'd like to punch things with one hand, [src] is far too unwieldy for that."
-	rel_set(O, "linked", src)
+	rel_set(O, nameof(O.linked), src)
 	M.put_in_inactive_hand(O)
-	own_set(src, "offhand", O)
+	own_set(src, nameof(offhand), O)
 
 /obj/item/kinetic_crusher/machete/gauntlets/proc/unwield(mob/living/M)
 	to_chat(M, span_notice("You unready [src]."))
 	name = "[initial(name)] (unreadied)"
 	wielded = FALSE
 	if(offhand)
-		own_clear(src, "offhand", OWN_DELETE)
+		own_clear(src, nameof(offhand), OWN_DELETE)
 
 /obj/item/offhand
 	icon = 'icons/obj/weapons.dmi'

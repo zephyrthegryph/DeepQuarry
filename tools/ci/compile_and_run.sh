@@ -33,6 +33,9 @@ fi
 # Compile-only checks set it to 0.
 if [ $RUN -eq 1 ];
 then
-  DreamDaemon deepquarry.dmb -close -invisible -trusted -verbose -params "log-directory=ci"
+  # CI (and the nightly/weekly full-map run) runs every tier: the normal tier
+  # plus the exhaustive whole-type sweeps. Integration merges run the normal
+  # tier locally (tools/build/build.sh dm-test); see doc/testing.md "Tiers".
+  DreamDaemon deepquarry.dmb -close -invisible -trusted -verbose -params "log-directory=ci&test-tier=${TEST_TIER:-all}"
   cat data/logs/ci/clean_run.lk
 fi
