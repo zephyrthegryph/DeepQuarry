@@ -41,6 +41,13 @@
 	TEST_ASSERT(!L.admit(LATENCY_L3, "k"), "and only one")
 	TEST_ASSERT(L.admit(LATENCY_L3, "other"), "a different L3 key has its own floor and is not starved by the first")
 	TEST_ASSERT(!L.admit(LATENCY_L3, "other"), "which is also one a second")
+	// A lane is admitted by number: its floor key must not index the assoc table as a list (it ran
+	// "list index out of bounds" and aborted the lane phase whenever the live kernel shed).
+	set_var(kernel_latency(), "enabled", TRUE)
+	set_var(kernel_latency(), "shedding", TRUE)
+	kernel_admit_lane(LANE_BACKGROUND)
+	TEST_ASSERT(!isnull(kernel_latency().floor_pass["lane:[LANE_BACKGROUND]"]), "a shed lane's floor pass is keyed by name")
+	set_var(kernel_latency(), "shedding", FALSE)
 	var/datum/system/test_latency_l3/S = new
 	L.floor_pass[S.type] = world.time
 	TEST_ASSERT(!L.admit(S.latency_class, S.type), "a system's class and type are what gate it")
