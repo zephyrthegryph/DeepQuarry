@@ -36,12 +36,6 @@
 	C.key = "access:[md5(datum_signature(list(C.ops, access, req_one_access, id_types)))]"
 	return C
 
-/datum/capability/require/access/examine(atom/holder, mob/user)
-	var/list/needs = access_needs(holder, req_access, req_one_access)
-	if(!length(needs[1]) && !length(needs[2]))
-		return null
-	return list("It has an access reader.")
-
 // ---- what is required ----
 
 /// list(all, one): the access holder requires. Its own req_access / req_one_access when either is set, else the defaults.

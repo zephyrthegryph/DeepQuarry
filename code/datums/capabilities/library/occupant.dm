@@ -75,10 +75,11 @@ GLOBAL_LIST_EMPTY(occupant_slot_ids)
 	var/mob/M = inside[1]
 	return list(length(inside) > 1 ? "There are [length(inside)] people inside." : "[M] is inside.")
 
+/// UI data: the occupants' refs (a window that shows more reads them through its own UI_DATA).
 /datum/capability/occupant/ui_data(atom/holder, mob/user, list/data)
 	var/list/inside = list()
 	for(var/mob/M as anything in members(holder))
-		inside += list(list("name" = M.name, "ref" = REF(M), "stat" = M.stat))
+		inside += REF(M)
 	data["occupants"] = inside
 
 /// The mobs in holder's slot, in entry order. Never null.

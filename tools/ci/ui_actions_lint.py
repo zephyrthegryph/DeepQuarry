@@ -286,6 +286,10 @@ CAP_ROOT = "/datum/capability"
 NEW_CAP = re.compile(r"\bnew\s+(/datum/capability[\w/]*)|\bvar/(/datum/capability[\w/]*)/\w+\s*=\s*new\b")
 # A bare call inside capabilities() or a constructor: followed when it names a global cap_* proc or
 # a global proc under code/datums/capabilities/ (the bundles: door(), machine_basics(), ...).
+# A capability type handed to a constructor or bundle (power_channels(/datum/capability/power_channels/apc),
+# cap_slot(..., slot_type = /datum/capability/slot/x), door(subtypes = list(... = /datum/capability/bolts/airlock))): the
+# holder's subtype implementing the capability's holder interface, declared like a `new` (doc/rewrite/dx_conventions.md).
+CAP_ARG = re.compile(r"(?:[(,=]\s*)(/datum/capability/[\w/]+)")
 CTOR_CALL = re.compile(r"(?<![\w./:])([A-Za-z_]\w*)\s*\(")
 CAPS_DIR = "code/datums/capabilities/"
 
@@ -351,6 +355,8 @@ class Hosts:
         out = set()
         for m in NEW_CAP.finditer(body):
             out.add(m.group(1) or m.group(2))
+        for m in CAP_ARG.finditer(body):
+            out.add(m.group(1))
         for m in CTOR_CALL.finditer(body):
             out |= self.ctor_caps(m.group(1), seen)
         return out
