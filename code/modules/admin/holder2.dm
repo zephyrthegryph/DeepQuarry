@@ -320,3 +320,8 @@ GLOBAL_PROTECT(href_token)
 	rel_clear(src, nameof(ranks))
 	for(var/datum/admin_rank/rank as anything in new_ranks)
 		rel_add(src, nameof(ranks), rank)
+
+/// The client's admin datum (null for a non-admin). The one read accessor outside modules/admin/holder*; rights
+/// questions go through admin_can().
+/client/proc/admin_datum() as /datum/admins
+	return holder

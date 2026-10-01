@@ -229,7 +229,7 @@
 /datum/unit_test/dq_capability_deconstruct
 
 /datum/unit_test/dq_capability_deconstruct/Run()
-	var/datum/capability/deconstruct/C = cap_deconstruct(board = /obj/item/circuitboard)
+	var/datum/capability/deconstruct/C = cap_deconstruct(board = /obj/item/circuitboard, needs = req_set(PANEL))
 	var/list/entries = C.interactions(null)
 	TEST_ASSERT_EQUAL(length(entries), 1, "one entry")
 	var/datum/interaction/capability/entry = entries[1]

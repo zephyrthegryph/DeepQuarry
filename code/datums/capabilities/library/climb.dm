@@ -16,12 +16,12 @@
 	/// The climbable behaviour type (a /datum/om/behaviour/climbable subtype: tables, cliffs, railings).
 	var/kind = /datum/om/behaviour/climbable
 
-/proc/cap_climb(delay = 3.5 SECONDS, vaulting = FALSE, kind = /datum/om/behaviour/climbable, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
+/proc/cap_climb(delay = 3.5 SECONDS, vaulting = FALSE, kind = /datum/om/behaviour/climbable, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
 	var/datum/capability/climb/C = new
 	C.delay = delay
 	C.vaulting = vaulting
 	C.kind = kind
-	cap_gating(C, behind = behind, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
+	cap_gating(C, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 	return C
 
 /datum/capability/climb/on_holder_init(atom/holder, mapload)
@@ -32,9 +32,8 @@
 	O.make_climbable(kind, instance_delay, vaulting)
 
 /datum/capability/climb/interactions(atom/holder)
-	var/datum/interaction/capability/E = adopt_entry(cap_hand("Climb", GLOBAL_PROC_REF(cap_climb_start), needs = GLOBAL_PROC_REF(cap_climb_ok), works_broken = TRUE, works_unpowered = TRUE))
-	E.default_action = null // Menu only: a click keeps doing the holder's own thing, a drag climbs
-	return list(E)
+	// ACT_NONE: a click keeps doing the holder's own thing, a drag climbs; the Menu, radial and command bar name it.
+	return list(adopt_entry(lib_op("Climb", GLOBAL_PROC_REF(cap_climb_start), OP_SHAPE_HAND, key = "climb", action = ACT_NONE, needs = GLOBAL_PROC_REF(cap_climb_ok), works_broken = TRUE, works_unpowered = TRUE)))
 
 /// needs: the holder is still climbable (a table flipped by the cap_flip() capability stays climbable).
 /proc/cap_climb_ok(mob/user, obj/holder, obj/item/held)

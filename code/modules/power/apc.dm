@@ -170,9 +170,10 @@ TRACKED(/obj/machinery/power/apc, emergency_lights, CHANGE_MACHINE_SETTINGS)
 /// The APC's own ops: the interface, a new cover, the multitool reset.
 /obj/machinery/power/apc/proc/apc_ops()
 	. = list()
-	// An empty hand or a silicon's touch. The open cover is in the way of a hand (ROUTE_PHYSICAL: the touch falls
-	// through to the cell behind it), not of a silicon's interface; a shredder's claws are the claw op's (declared first).
-	. += cap_control("Open interface", PROC_REF(open_interface), using = EMPTY_HAND, offered = req_on_route(ROUTE_PHYSICAL, req_clear(CAP_COVER_OPEN)), needs = req_working(), key = "open_interface")
+	// An empty hand or a silicon's touch. With the cover open a hand takes the cell out first: the cell bay's hand eject
+	// ("eject_cell") answers the same click at OP_PRIORITY_TAKE_OUT, and the board's hand step at the ladder's priority,
+	// both above this op's; a shredder's claws are the claw op's (OP_PRIORITY_CLAW). Nothing here hides the interface.
+	. += cap_control("Open interface", PROC_REF(open_interface), using = EMPTY_HAND, needs = req_working(), key = "open_interface")
 	. += cap_op("Replace damaged cover", PROC_REF(replace_cover), using = /obj/item/frame/apc, at = BAY_HATCH, delay = 5 SECONDS, needs = PROC_REF(cover_replaceable), start_msg = /datum/msg/start/apc/replace_cover, kind = OP_STRUCTURAL, key = "replace_cover")
 	. += cap_op("Reset", PROC_REF(reset_apc), using = TOOL_MULTITOOL, at = BAY_HATCH, delay = 5 SECONDS, needs = PROC_REF(cell_out_for_reset), offered = req_proc(TYPE_PROC_REF(/atom, is_subverted)), start_msg = /datum/msg/start/apc/reset, kind = OP_STRUCTURAL, key = "reset_apc")
 
@@ -181,7 +182,8 @@ MSG_DEF(start/apc/reset, "You begin resetting the APC...", "%U% connects %I% to 
 
 /obj/machinery/power/apc/relations()
 	. = ..()
-	. += rel_one(nameof(cell), /obj/item/cell, kind = RELK_OWNED, policy = OWN_SPILL)
+	// The cell the APC starts with is its cell_type (a map or subtype override picks another; null: none).
+	. += rel_one(nameof(cell), /obj/item/cell, kind = RELK_OWNED, policy = OWN_SPILL, starts = nameof(cell_type))
 	. += rel_one(nameof(terminal), /obj/machinery/power/terminal, kind = RELK_PAIRED, back = nameof(/obj/machinery/power/terminal::master))
 	. += rel_one(nameof(hacker), /mob/living/silicon/ai, back = nameof(/mob/living/silicon/ai::hacked_apcs))
 
@@ -402,6 +404,8 @@ MSG_DEF(start/apc/reset, "You begin resetting the APC...", "%U% connects %I% to 
 REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 
 /obj/machinery/power/apc/Initialize(mapload, ndir, building)
+	if(building)
+		cell_type = null // a frame built by hand starts without the cell its relation would make (starts =)
 	. = ..()
 	// The wall mount (cap_wall_mount) offsets it into the wall; a built APC faces its builder's way.
 	if(building)
@@ -553,8 +557,7 @@ SETTER(/obj/machinery/power/apc, power_failed)
 
 /obj/machinery/power/apc/proc/init()
 	ladder_set_stage(src, "secured") // installed and secured
-	if(cell_type)
-		own_set(src, nameof(cell), new cell_type(src))
+	if(cell) // made at init by its relation (starts = nameof(cell_type))
 		cell.charge = start_charge * cell.maxcharge / 100.0
 
 	var/area/A = loc.loc

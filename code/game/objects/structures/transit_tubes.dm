@@ -554,4 +554,7 @@
 			return "SW"
 	return
 
-DECLARE_GAS(/obj/structure/transit_tube_pod, "air_contents", CELL_VOLUME, T20C, list(GAS_O2 = O2STANDARD * ONE_ATMOSPHERE * 2, GAS_N2 = N2STANDARD * ONE_ATMOSPHERE))
+/// The pod carries its own air: one cell of breathable mix, owned by the pod (gas_store()).
+/obj/structure/transit_tube_pod/capabilities()
+	. = ..()
+	. += gas_store(nameof(air_contents), CELL_VOLUME, T20C, list(GAS_O2 = O2STANDARD * ONE_ATMOSPHERE * 2, GAS_N2 = N2STANDARD * ONE_ATMOSPHERE))

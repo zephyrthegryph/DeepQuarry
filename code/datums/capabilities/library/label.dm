@@ -17,28 +17,27 @@
 	/// The name before the label went on.
 	var/base_name
 
-/proc/cap_label(max_length = MAX_NAME_LEN, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log = LOG_GAME, layer = CAP_NO_LAYER)
+/proc/cap_label(max_length = MAX_NAME_LEN, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log = LOG_GAME)
 	var/datum/capability/label/C = new
 	C.max_length = max_length
-	C.layer_name = layer
-	return cap_gating(C, behind = behind, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
+	return cap_gating(C, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 
-/proc/cap_rename(max_length = MAX_NAME_LEN, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log = LOG_GAME, layer = CAP_NO_LAYER)
+/proc/cap_rename(max_length = MAX_NAME_LEN, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log = LOG_GAME)
 	var/datum/capability/label/rename/C = new
 	C.max_length = max_length
-	C.layer_name = layer
-	return cap_gating(C, behind = behind, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
+	return cap_gating(C, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 
+/// Ops: "label" (a click with a hand labeler) or "rename" (a click with a pen), and "remove_label" (ACT_NONE).
 /datum/capability/label/interactions(atom/holder)
-	return list(adopt_entry(cap_use_on("Label", /obj/item/hand_labeler, GLOBAL_PROC_REF(cap_label_apply), works_broken = TRUE, works_unpowered = TRUE)), remove_entry())
+	return list(adopt_entry(lib_op("Label", GLOBAL_PROC_REF(cap_label_apply), OP_SHAPE_USE_ON, using = /obj/item/hand_labeler, key = "label", works_broken = TRUE, works_unpowered = TRUE)), remove_entry())
 
 /datum/capability/label/rename/interactions(atom/holder)
-	return list(adopt_entry(cap_use_on("Rename", /obj/item/pen, GLOBAL_PROC_REF(cap_label_rename), works_broken = TRUE, works_unpowered = TRUE)), remove_entry())
+	return list(adopt_entry(lib_op("Rename", GLOBAL_PROC_REF(cap_label_rename), OP_SHAPE_USE_ON, using = /obj/item/pen, key = "rename", works_broken = TRUE, works_unpowered = TRUE)), remove_entry())
 
+/// ACT_NONE: an empty hand keeps doing the holder's own thing; the Menu, radial and command bar name it.
 /datum/capability/label/proc/remove_entry()
-	var/datum/interaction/capability/E = adopt_entry(cap_hand("Remove label", GLOBAL_PROC_REF(cap_label_remove), needs = GLOBAL_PROC_REF(cap_label_present), else_say = "it has no label", works_broken = TRUE, works_unpowered = TRUE))
+	var/datum/interaction/capability/E = adopt_entry(lib_op("Remove label", GLOBAL_PROC_REF(cap_label_remove), OP_SHAPE_HAND, key = "remove_label", action = ACT_NONE, needs = GLOBAL_PROC_REF(cap_label_present), else_say = "it has no label", works_broken = TRUE, works_unpowered = TRUE))
 	E.id = "[E.id]:[key]" // cap_label() and cap_rename() on one type each offer their own
-	E.default_action = null // Menu only: an empty hand keeps doing the holder's own thing
 	return E
 
 /datum/capability/label/examine(atom/holder, mob/user)

@@ -18,9 +18,9 @@
 	var/overruns_total = 0
 	/// key (a lane number or a system type) -> world.time of that key's last L3 pass admitted while shedding
 	/// (its floor). One floor per key, so a slow L3 system is not starved by a busy one.
-	var/list/floor_pass = list()
+	var/list/floor_pass = list() // ALLOW(instance_list): one kernel latency datum; an assoc table written on every admitted pass
 	/// Per class (index = LATENCY_L0 + 1): times L3 work was refused.
-	var/list/shed_by_class = list(0, 0, 0, 0)
+	var/list/shed_by_class = list(0, 0, 0, 0) // ALLOW(instance_list): one kernel latency datum; a fixed per-class counter table mutated on every shed
 	var/shed_events = 0
 	/// Input latency: ticks a click waited before it ran. Bin i counts i ticks; the last bin is "or more".
 	var/list/input_bins

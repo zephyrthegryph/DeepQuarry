@@ -26,16 +26,17 @@
 	/// The overlay state of each stamp, in stamping order.
 	var/list/marks
 
-/proc/cap_stamp_target(max_stamps, noun = "document", draws_marks = TRUE, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log = LOG_GAME)
+/proc/cap_stamp_target(max_stamps, noun = "document", draws_marks = TRUE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log = LOG_GAME)
 	var/datum/capability/stamp_target/C = new
 	C.max_stamps = max_stamps
 	C.noun = noun
 	C.draws_marks = draws_marks
-	cap_gating(C, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered)
+	cap_gating(C, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered)
 	return C
 
 /datum/capability/stamp_target/interactions(atom/holder)
-	var/datum/interaction/capability/stamp = adopt_entry(cap_use_on("Stamp", list(/obj/item/stamp, /obj/item/clothing/accessory/ring/seal), GLOBAL_PROC_REF(cap_stamp_apply), needs = GLOBAL_PROC_REF(cap_stamp_has_room), else_say = "there's no room left for another stamp", works_broken = TRUE, works_unpowered = TRUE))
+	// "stamp": a click with a stamp or a seal ring; with no room left, it refuses.
+	var/datum/interaction/capability/stamp = adopt_entry(lib_op("Stamp", GLOBAL_PROC_REF(cap_stamp_apply), OP_SHAPE_USE_ON, using = list(/obj/item/stamp, /obj/item/clothing/accessory/ring/seal), key = "stamp", needs = GLOBAL_PROC_REF(cap_stamp_has_room), else_say = "there's no room left for another stamp", works_broken = TRUE, works_unpowered = TRUE))
 	return list(stamp)
 
 /datum/capability/stamp_target/examine(atom/holder, mob/user)

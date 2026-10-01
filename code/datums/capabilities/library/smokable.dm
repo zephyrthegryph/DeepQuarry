@@ -40,7 +40,7 @@ OWN_TIMER(/obj/item, cap_smokable)
 	/// Burn time left; null while fresh.
 	var/burn_left
 
-/proc/cap_smokable(burn_time = 10 MINUTES, drag = 5, butt, list/light_types = list(/obj/item/flame, /obj/item/weldingtool, /obj/item/assembly/igniter), lit_state, burnt_state, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log = LOG_GAME)
+/proc/cap_smokable(burn_time = 10 MINUTES, drag = 5, butt, list/light_types = list(/obj/item/flame, /obj/item/weldingtool, /obj/item/assembly/igniter), lit_state, burnt_state, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log = LOG_GAME)
 	var/datum/capability/smokable/C = new
 	C.burn_time = burn_time
 	C.drag = drag
@@ -48,15 +48,16 @@ OWN_TIMER(/obj/item, cap_smokable)
 	C.light_types = light_types
 	C.lit_state = lit_state
 	C.burnt_state = burnt_state
-	cap_gating(C, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered)
+	cap_gating(C, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered)
 	return C
 
 /datum/capability/smokable/interactions(atom/holder)
-	var/datum/interaction/capability/light = adopt_entry(cap_use_on("Light", light_types, GLOBAL_PROC_REF(cap_smokable_light), needs = GLOBAL_PROC_REF(cap_smokable_can_light), works_broken = TRUE, works_unpowered = TRUE))
-	var/datum/interaction/capability/drag_entry = adopt_entry(cap_hand("Take a drag", GLOBAL_PROC_REF(cap_smokable_drag), needs = GLOBAL_PROC_REF(cap_smokable_is_lit), else_say = "it isn't lit", works_broken = TRUE, works_unpowered = TRUE))
-	drag_entry.entry = INTERACTION_ENTRY_SELF // using it in hand takes a drag
-	var/datum/interaction/capability/snuff = adopt_entry(cap_hand("Put out", GLOBAL_PROC_REF(cap_smokable_put_out), needs = GLOBAL_PROC_REF(cap_smokable_is_lit), else_say = "it isn't lit", works_broken = TRUE, works_unpowered = TRUE))
-	snuff.default_action = null // Menu only
+	// "light" (a click with a lighter, match...), "take_drag" (the self-use: using it in hand takes a drag) and "put_out"
+	// (ACT_NONE).
+	var/datum/interaction/capability/light = adopt_entry(lib_op("Light", GLOBAL_PROC_REF(cap_smokable_light), OP_SHAPE_USE_ON, using = light_types, key = "light", needs = GLOBAL_PROC_REF(cap_smokable_can_light), works_broken = TRUE, works_unpowered = TRUE))
+	var/datum/interaction/capability/drag_entry = adopt_entry(lib_op("Take a drag", GLOBAL_PROC_REF(cap_smokable_drag), OP_SHAPE_HAND, key = "take_drag", offered = req_self_held(), needs = GLOBAL_PROC_REF(cap_smokable_is_lit), else_say = "it isn't lit", works_broken = TRUE, works_unpowered = TRUE))
+	drag_entry.entry = INTERACTION_ENTRY_SELF
+	var/datum/interaction/capability/snuff = adopt_entry(lib_op("Put out", GLOBAL_PROC_REF(cap_smokable_put_out), OP_SHAPE_HAND, key = "put_out", action = ACT_NONE, needs = GLOBAL_PROC_REF(cap_smokable_is_lit), else_say = "it isn't lit", works_broken = TRUE, works_unpowered = TRUE))
 	return list(light, drag_entry, snuff)
 
 /datum/capability/smokable/examine(atom/holder, mob/user)

@@ -33,6 +33,8 @@
 #define RXN_EVERY 6
 /// A derived() / generated read folded into reactions(): only feeds READERS.
 #define RXN_READ 7
+/// after_init(delay, handler): a one-shot timer armed at init (code/datums/reactions/after_init.dm).
+#define RXN_AFTER_INIT 8
 
 // ---- what a type's reactions() declares for the kernel (generated: code/_generated/reads.dm, rx_boot_types()) ----
 /// The type declares every().
@@ -41,6 +43,8 @@
 #define RXB_CROSS (1<<1)
 /// The type declares on_notice().
 #define RXB_NOTICE (1<<2)
+/// The type declares after_init(): rx_enrol() arms its timers at init.
+#define RXB_INIT (1<<3)
 /// The source a holder joins its every() work under (join(key, holder, RX_ENROL_SOURCE)).
 #define RX_ENROL_SOURCE "rx_enrol"
 /// Deciseconds an urgent crossing may wait for the kernel's U phase before it counts as a breach.
@@ -48,6 +52,9 @@
 
 /// Deepest chain of notices published from inside a delivery before the rest is dropped (a loop).
 #define RX_NOTICE_LIMIT 500
+/// The change key of OM channel bit `BIT` (changed(E, CHANGE_*)): what an on_channel() reaction reads.
+#define CHANNEL_KEY(BIT) "chan:[BIT]"
+
 /// Passes rx_drain() runs when change handlers keep changing state, before it reports a loop.
 #define RX_DRAIN_PASSES 20
 

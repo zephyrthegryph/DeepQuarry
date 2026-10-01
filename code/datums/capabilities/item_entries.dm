@@ -22,8 +22,10 @@
 /// Runs from attack_self() (INTERACTION_ENTRY_SELF), not from clicks on the item, so an empty hand still
 /// picks it up. Answers INPUT_ACTION_SELF_USE. Handler on the item: (mob/user, ...form answers).
 /// Gating arguments as cap_hand() (works_broken/unpowered default FALSE); `entry_type` lets a library
-/// capability give the entry its own why_not().
-/proc/cap_use_self(name, handler, behind = NONE, locked_by = NONE, needs, else_say, works_broken = FALSE, works_unpowered = FALSE, log, list/form, priority, name_proc, applies, blocked_by = NONE, delay, cooldown, in_inventory = FALSE, entry_type = /datum/interaction/capability)
+/// capability give the entry its own why_not(). A real op: `key` (default: the snake_case name), ACT_USE (the
+/// GESTURE_SELF action) offering req_self_held(), so a click on the item never means it; `priority` orders it among the
+/// item's other self-uses.
+/proc/cap_use_self(name, handler, behind = NONE, locked_by = NONE, needs, else_say, works_broken = FALSE, works_unpowered = FALSE, log, list/form, priority, name_proc, applies, blocked_by = NONE, delay, cooldown, in_inventory = FALSE, entry_type = /datum/interaction/capability, key)
 	var/datum/capability/entry/C = new
 	var/datum/interaction/capability/E = new entry_type
 	var/list/all_needs = list(in_inventory ? GLOBAL_PROC_REF(cap_in_inventory) : GLOBAL_PROC_REF(cap_in_hand))
@@ -51,6 +53,7 @@
 	E.category = INTERACTION_CAT_TOGGLE
 	E.default_action = INPUT_ACTION_SELF_USE
 	E.cap = C
+	op_attach(E, key || replacetext(lowertext("[name]"), " ", "_"), ACT_USE, priority || 0, offered = req_self_held())
 	C.entry = E
 	C.key = E.id
 	C.behind = behind

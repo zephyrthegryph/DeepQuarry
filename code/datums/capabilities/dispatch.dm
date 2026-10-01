@@ -77,7 +77,7 @@ GLOBAL_DATUM(dispatch_context_now, /datum/dispatch_context)
 /// runs_on: the datum the proc is called on when it isn't the target (a capability flyweight whose
 /// handler takes the holder as `holder`); the target is still what gets marked, fingerprinted and logged.
 /proc/dispatch_call_inner(datum/dispatch_context/ctx, datum/target, proc_ref, list/named, action_name, log, datum/runs_on)
-	set waitfor = FALSE
+	set waitfor = FALSE // ALLOW(scheduler): a capability handler may ask the user mid-action; the dispatcher must not block its caller
 	var/result
 	var/failed = FALSE
 	try

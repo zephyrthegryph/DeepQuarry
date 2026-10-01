@@ -62,33 +62,20 @@
 		"blood_type" = list("A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"),
 	)
 
-/// Old verb "Eject ID Card".
-/obj/machinery/computer/med_data/proc/med_data_eject_id(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!user || user.stat || user.lying)	return
+/obj/machinery/computer/med_data/capabilities()
+	. = ..()
+	// Were INTERACT_ITEM (an ID card goes in) and INTERACT_VERB "Eject ID Card": the ID slot. Its insert op answers a
+	// click with a card (a full slot passes the click on, to the computer's item fallback); its eject is the slot's
+	// ACT_NONE op, which the Menu, the radial and the command bar name.
+	. += cap_slot(nameof(scan), /obj/item/card/id, name = "Insert ID card", eject_name = "Eject ID Card", eject_via = SLOT_VIA_VERB, when_full = SLOT_FULL_PASS, insert_msg = "You insert %I%.", eject_msg = "You remove %I% from %T%.", ui_key = null)
+	// Was INTERACT_HAND: an empty hand opens the records. `entry` keeps attack_hand() reaching it for its other callers
+	// (the AI's hand use through silicon_use, the computer's any-item fallback).
+	. += cap_op("Open records", TYPE_PROC_REF(/atom, interaction_open_ui_fingerprint), using = EMPTY_HAND, key = "open_records", entry = INTERACTION_ENTRY_HAND)
 
-	if(scan)
-		to_chat(user, "You remove \the [scan] from \the [src].")
-		scan.forceMove(get_turf(src))
-		if(!user.get_active_hand() && ishuman(user))
-			user.put_in_hands(scan)
-		own_take(src, nameof(scan))
-	else
-		to_chat(user, "There is nothing to remove from the console.")
-	return
-
-EXTEND_INTERACTIONS(/obj/machinery/computer/med_data, \
-	INTERACT_ITEM(null, PROC_REF(med_data_interaction_item)), \
-	INTERACT_HAND(null, TYPE_PROC_REF(/atom, interaction_open_ui_fingerprint)), \
-	INTERACT_VERB("Eject ID Card", PROC_REF(med_data_eject_id)), \
-)
-
-/// Old attackby.
-/obj/machinery/computer/med_data/proc/med_data_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
-	if(istype(O, /obj/item/card/id) && !scan && own_set(src, nameof(src.scan), O, user = user))
-		to_chat(user, "You insert \the [O].")
+/// A card in the slot opens the records, as the old insert did.
+/obj/machinery/computer/med_data/slot_inserted(slot, obj/item/item, mob/user)
+	if(slot == nameof(scan) && user)
 		tgui_interact(user)
-		return TRUE
-	return FALSE
 
 DECLARE_UI(/obj/machinery/computer/med_data, "MedicalRecords", UI_TITLE("Medical Records"))
 
@@ -579,10 +566,6 @@ DAMAGE_REACTION(/obj/machinery/computer/med_data, DAMAGE_EMP, PROC_REF(med_data_
 
 #undef FIELD
 #undef MED_FIELD
-
-/obj/machinery/computer/med_data/ownership()
-	. = ..()
-	. += owns(nameof(scan), policy = OWN_CONTAINED)
 
 /// The selected record (a relation view).
 /obj/machinery/computer/med_data/proc/active1() as /datum/data/record

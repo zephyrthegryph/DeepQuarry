@@ -20,20 +20,20 @@
 	/// Refuse while the holder isn't an open container.
 	var/needs_open = TRUE
 
-/proc/cap_drinkable(sip = 5, drink_sound = SFX_ITEMS_DRINK, feed_time = 3 SECONDS, needs_open = TRUE, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log = LOG_GAME)
+/proc/cap_drinkable(sip = 5, drink_sound = SFX_ITEMS_DRINK, feed_time = 3 SECONDS, needs_open = TRUE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log = LOG_GAME)
 	var/datum/capability/drinkable/C = new
 	C.sip = sip
 	C.drink_sound = drink_sound
 	C.feed_time = feed_time
 	C.needs_open = needs_open
-	cap_gating(C, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered)
+	cap_gating(C, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered)
 	return C
 
 /datum/capability/drinkable/interactions(atom/holder)
-	var/datum/interaction/capability/drink = adopt_entry(cap_hand("Drink", GLOBAL_PROC_REF(cap_drinkable_drink), needs = GLOBAL_PROC_REF(cap_drinkable_can_drink), works_broken = TRUE, works_unpowered = TRUE))
-	drink.entry = INTERACTION_ENTRY_SELF // using it in hand drinks from it
-	var/datum/interaction/capability/give = adopt_entry(cap_hand("Give a drink", GLOBAL_PROC_REF(cap_drinkable_give), needs = GLOBAL_PROC_REF(cap_drinkable_can_drink), works_broken = TRUE, works_unpowered = TRUE))
-	give.default_action = null // Menu only
+	// "drink": the self-use (using it in hand drinks from it); "give_drink": ACT_NONE.
+	var/datum/interaction/capability/drink = adopt_entry(lib_op("Drink", GLOBAL_PROC_REF(cap_drinkable_drink), OP_SHAPE_HAND, key = "drink", offered = req_self_held(), needs = GLOBAL_PROC_REF(cap_drinkable_can_drink), works_broken = TRUE, works_unpowered = TRUE))
+	drink.entry = INTERACTION_ENTRY_SELF
+	var/datum/interaction/capability/give = adopt_entry(lib_op("Give a drink", GLOBAL_PROC_REF(cap_drinkable_give), OP_SHAPE_HAND, key = "give_drink", action = ACT_NONE, needs = GLOBAL_PROC_REF(cap_drinkable_can_drink), works_broken = TRUE, works_unpowered = TRUE))
 	return list(drink, give)
 
 /datum/capability/drinkable/examine(atom/holder, mob/user)

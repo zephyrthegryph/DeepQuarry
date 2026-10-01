@@ -15,6 +15,11 @@
 //
 // Delivery contracts (handler is a PROC_REF on the holder, or a GLOBAL_PROC_REF):
 //   on_change(reads, handler)   handler(list/keys): once per drain (rx_drain) however many reads changed.
+//               at_most = N     ... and at most once per N deciseconds per holder: changes inside the window are held
+//                               and delivered once, with every key they named, when it ends (rx_at_most_admit()).
+//   on_channel(bits, handler)   on_change() over OM channels: handler(list/keys) with CHANNEL_KEY()s, once per drain
+//               at_most, when   when changed(E, CHANGE_*) raised one of `bits`; `when` (a var name or a proc on the
+//                               holder) is asked at the raise, so a holder it excludes queues nothing (rx_channels()).
 //   on_notice(type, handler)    handler(datum/notice/N): every occurrence, in publish order, never coalesced.
 //   before_op(key|type, handler) handler(ctx): synchronous before commit; a non-null return vetoes (a reason).
 //   after_op(key|type, handler)  handler(ctx): synchronous after commit; the return is ignored.
@@ -51,6 +56,10 @@
 	var/budget
 	/// every(): the LANE_* whose share pays for it (null: LANE_SIMULATION).
 	var/lane
+	/// on_channel(): the OM channel bits (CHANGE_*) it reads; 0 for any other reaction.
+	var/chan_bits = 0
+	/// on_change(): deciseconds; deliveries to one holder are at least this far apart (0: every drain).
+	var/at_most = 0
 	/// The shared work item this reaction registered (every / urgent on_cross / on_notice, from a type table), or null.
 	var/datum/work_item/reaction/work
 	/// every(): the type whose reactions() declared it (the work item is keyed by it and the handler), or null.
@@ -94,9 +103,32 @@
 /proc/on_notice(type, handler)
 	return rx_make(RXN_NOTICE, type, null, handler)
 
-/// One of `reads` (var names, or native() specs) changed: handler(list/keys), once per drain.
-/proc/on_change(list/reads, handler)
-	return rx_make(RXN_CHANGE, null, rx_reads_of(reads), handler)
+/// One of `reads` (var names, or native() specs) changed: handler(list/keys), once per drain. `at_most`
+/// (deciseconds) coalesces further: after a delivery, changes within that window wait and arrive together, once,
+/// when it ends (a HUD refresh needs the latest state, not every step of a walk). A static reaction only: observe()
+/// delivers every drain whatever its trigger says.
+/proc/on_change(list/reads, handler, at_most = 0)
+	var/datum/reaction/R = rx_make(RXN_CHANGE, null, rx_reads_of(reads), handler)
+	if(at_most > 0)
+		R.at_most = at_most
+		R.sig = "[R.sig]|at_most:[at_most]"
+	return R
+
+/// On OM channels: one of `bits` (CHANGE_* raised by changed() / om_raise_change()) changed on the holder:
+/// handler(list/keys) with a CHANNEL_KEY() per raised bit, once per drain, coalesced by `at_most` like on_change().
+/// `when` (a var name truthy on the holder, or a PROC_REF answering TRUE) is asked when the channel is raised: a
+/// holder it excludes (a mob without a client) queues nothing and costs one test. The channel-raised side of the
+/// reactive pipelines' wake_on (doc/rewrite/life_sequences.md S2).
+/proc/on_channel(bits, handler, at_most = 0, when)
+	var/list/reads = list()
+	for(var/b in 0 to 23)
+		if(bits & (1 << b))
+			reads += CHANNEL_KEY(1 << b)
+	var/datum/reaction/R = on_change(reads, handler, at_most)
+	R.chan_bits = bits
+	R.when = when
+	R.sig = "[R.sig]|chan:[bits]|[when]"
+	return R
 
 /// `read` moved to another band of `bands` (ascending thresholds): handler(band, previous_band).
 /proc/on_cross(read, list/bands, handler, urgent = FALSE)
@@ -199,6 +231,12 @@
 	var/list/everys = list()
 	/// The membership keys a holder of this type joins at init for its per-instance every() work (rx_enrol()).
 	var/list/holder_keys
+	/// OM channel bits some on_channel() reaction reads (folded into the holder's om_listen).
+	var/chan_mask = 0
+	/// The on_channel() reactions, delivered by rx_channels() rather than publish_change().
+	var/list/chan_reactions
+	/// sig -> on_change reaction with at_most (a held delivery finds its reaction when its window ends).
+	var/list/at_most_by_sig
 
 /// type -> /datum/rx_table, or 0 for a type that reacts to nothing and reads nothing.
 GLOBAL_LIST_EMPTY(rx_tables)
@@ -250,10 +288,21 @@ GLOBAL_LIST_EMPTY(rx_tables)
 /proc/rx_table_add(datum/rx_table/T, datum/reaction/R)
 	switch(R.kind)
 		if(RXN_CHANGE)
+			if(R.chan_bits)
+				T.chan_mask |= R.chan_bits
+				// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
+				LAZYADD(T.chan_reactions, R)
+				if(R.at_most)
+					// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
+					LAZYSET(T.at_most_by_sig, R.sig, R)
+				return
 			for(var/read in R.reads)
 				LAZYINITLIST(T.by_key[read])
 				T.by_key[read] += R
 				T.read_keys[read] = TRUE
+			if(R.at_most)
+				// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
+				LAZYSET(T.at_most_by_sig, R.sig, R)
 		if(RXN_BEFORE_OP)
 			rx_table_add_op(T.before_keyed, T.before_typed, R)
 		if(RXN_AFTER_OP)

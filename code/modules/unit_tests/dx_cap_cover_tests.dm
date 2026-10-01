@@ -32,9 +32,9 @@
 
 /obj/cap_fixture/cover_hand/capabilities()
 	. = ..()
-	. += cap_cover(open_tool = BY_HAND, locked_by = LOCK)
+	. += cap_cover(open_tool = BY_HAND, needs = req_clear(LOCK))
 	. += cap_lock(access = list(ACCESS_SECURITY))
-	. += cap_panel(behind = COVER)
+	. += cap_panel(needs = req_set(COVER))
 
 /obj/cap_fixture/cover_crowbar/capabilities()
 	. = ..()

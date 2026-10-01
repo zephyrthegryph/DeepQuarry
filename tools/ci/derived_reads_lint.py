@@ -72,8 +72,8 @@ GENERATED_SKIP_DIRS = SKIP_SITE_DIRS + ("code/modules/benchmarks/",)
 GENERATED = os.path.join(ROOT, "code", "_generated", "reads.dm")
 GENERATED_REL = "code/_generated/reads.dm"
 # reactions() constructors that need the kernel: their declaring types are listed in the generated file.
-REACTION_KINDS = {"every": "RXB_EVERY", "on_cross": "RXB_CROSS", "on_notice": "RXB_NOTICE"}
-REACTION_CALL = re.compile(r"(?<![\w.])(every|on_cross|on_notice)\s*\(")
+REACTION_KINDS = {"every": "RXB_EVERY", "on_cross": "RXB_CROSS", "on_notice": "RXB_NOTICE", "after_init": "RXB_INIT"}
+REACTION_CALL = re.compile(r"(?<![\w.])(every|on_cross|on_notice|after_init)\s*\(")
 RELATION_ENTRY = re.compile(r"\brel_(?:one|many)\(\s*nameof\(\s*(\w+)\s*\)")
 GENERATED_KIND_CALL = {"runs": "runs_while", "drawn": "drawn_from", "ui": "ui_from", "push": "rust_push"}
 

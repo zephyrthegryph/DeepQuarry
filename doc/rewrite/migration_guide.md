@@ -47,17 +47,46 @@ the old ones and does not migrate callers.
 | `update_rust_device()`, `push_to_rust()` hand pushes, `power_sync` | generated `rust_push(reads...)` | f-rust | [rust.md](rust.md) |
 | Mirrors: `turf.temperature`, APC `sync_cell_charge`, gas observation drains | `native_read(E, key)`, `native(key...)`, one `vg_frame` outbox | f-rust | [rust.md](rust.md) |
 | Reactor watch/token, per-domain watches | one World watch facility + `on_cross` | f-rust | [rust.md](rust.md) |
-| `cap_entry_point(cap_hand(...), INTERACTION_ENTRY_ALT, ...)`, per-entry alt-click, `INTERACT_*` | `cap_op(..., action = ACT_X)`; gestures bind to actions in a bind profile | f-ops | [operations_and_actions.md](operations_and_actions.md) |
+| `cap_entry_point(cap_hand(...), INTERACTION_ENTRY_ALT, ...)`, per-entry alt-click, `INTERACT_*` | `cap_op(..., action = ACT_X, priority =, stance =)`; gestures bind to actions in a bind profile (stance is a gesture modifier); `INTERACT_VERB` is `action = ACT_NONE`; the kind-by-kind table is B1 | f-ops [built: a2-ops] | [operations_and_actions.md](operations_and_actions.md) §5, §5a |
+| `_DEFAULT` ordering, `INTERACT_ROBOT` / `INTERACT_TK` priority 1 | `priority = OP_PRIORITY_DEFAULT`; declaration order (the cyborg op before the silicon one); `via = ROUTE_TK` | a2-ops [built] | [operations_and_actions.md](operations_and_actions.md) §5 |
 | `behind = COVER \| PANEL` bits | compartments: `compartment(BAY_X, door =, route_gate =)` and `at = BAY_X` on operations, slots, ladders | f-ops | [operations_and_actions.md](operations_and_actions.md) |
 | `needs = PROC_REF(x)` + `else_say`, `works_broken`, `works_unpowered`, `locked_by`, `blocked_by` | requirements: `req_*`, `all_of`/`any_of`/`none_of`, `cap_require(ops =, needs =)` (old arguments still map to them) | f-ops | [operations_and_actions.md](operations_and_actions.md) |
 | `cap_hand` / `cap_tool` / `cap_use_on` / `cap_insert` / `cap_control` | presets over `cap_op(name, handler, using=, by=, via=, action=, needs=, delay=, cost=, kind=, key=, at=, log=)` | f-ops | [operations_and_actions.md](operations_and_actions.md) |
 | Same-key redeclaration silently replacing | init error unless via `refine(key, ...)` or `replace` | f-ops | [operations_and_actions.md](operations_and_actions.md) |
 | Global "can hold" / `has_hands` booleans | affordances (`AFF_*`) from slot providers; routes (`ROUTE_*`) | f-ops | [operations_and_actions.md](operations_and_actions.md) |
-| `layer =` on capability constructors, `CAP_NO_LAYER` | icon naming convention: `look.variant`, `look.part`, `look.glow`; standard names in `look_names.dm` | f-look | [look.md](look.md) |
+| `layer =` on capability constructors, `CAP_NO_LAYER` | icon naming convention: `look.variant`, `look.part`, `look.glow`; standard names in `look_names.dm`. **[built on master, G12]**: library constructors take no `layer =`; a capability draws its fixed standard name, a holder that shows it another way calls `look.hide(name)` in `draw()`; a slot names its part with `part =` | f-look | [look.md](look.md) |
+| `behind =` / `blocked_by =` / `locked_by =` on **library** constructors (`cap_panel`, `cap_cover`, `cap_slot`, `lock_op`, `emag_op`, ...) | **[built on master, G12]** requirements in `needs`: `req_set(COVER)` (must be open), `req_clear(COVER \| PANEL)` (must be shut), `req_clear(LOCK)` (not locked); a compartment is `at = BAY_X`. Same refusal messages. The `cap_op` presets (`cap_hand`, `cap_tool`, ...) keep their old arguments until the ops batch | a3 | [look.md](look.md), F4 |
 | Hand-written construction stage entries, `apc_steps` | `cap_construction` with `insert`, `wire`, `fasten`, `weld` and joints `fit`, `plate`, `parts`; presets `machine_frame`, `computer_frame`, `wall_frame`, `girder`, `mech_chassis` | f-look | [construction.md](construction.md) |
 | `POOL_DECLARE` / `POOL_RESET`, storing packets via `ownership()` | `/datum/pooled`: automatic reset, `take`/`release`, `snapshot()` | f-look | [pools.md](pools.md) |
 | `system.members`, `cap_system` roles, `world_services()` | `MEMBER` relations, `join(system, E, source)` | f-kernel | [scheduling_and_kernel.md](scheduling_and_kernel.md) |
 | MC `Loop` for gameplay, `SSbehaviours` | `kernel_tick()` phases K, N, U, D, P, R, G; `request_urgent(member, work, deadline)` | f-kernel | [scheduling_and_kernel.md](scheduling_and_kernel.md) |
+
+## F4. Lifecycle declarations (G4) [built on master]
+
+Each `DECLARE_*` lifecycle macro has a foundation form. The macros stay until the codemod has moved their sites;
+`DECLARE_DEFAULT_CHILD` and `DECLARE_LOGIN_VERB` are already thin wrappers over the new forms. Chapter:
+[lifecycle.md](lifecycle.md) section 9.
+
+| Old | New | Where |
+|---|---|---|
+| `DECLARE_DEFAULT_CHILD(T, "cell", "cell_type")` | `rel_one(nameof(cell), /obj/item/cell, kind = RELK_OWNED, policy = OWN_SPILL, starts = nameof(cell_type))`; a list var: `rel_many(..., starts = list(/obj/x = 2))`; a null DEFAULT (the var holds its own path): `starts = nameof(var)` | `relations()` |
+| `DECLARE_REAGENTS(T, V, C)` on the root of a chain | `reagents(V, starts = C)` (`V` a number or `nameof(volume)`) | `capabilities()` |
+| `DECLARE_REAGENTS(T, null, C)` on a subtype (659 of 666 stacked sites) | `refine(CAP_REAGENTS, starts = C)`: ADDS to the inherited contents, as the macro did | `capabilities()` |
+| `DECLARE_REAGENTS(T, V, C)` on a subtype | `refine(CAP_REAGENTS, starts = C, volume = V)` | `capabilities()` |
+| `DECLARE_REAGENTS_TINTED` / `_TYPED` | `reagents(V, starts = C, tint = TRUE)` / `reagents(V, starts = C, holder = /datum/reagents/x)` | `capabilities()` |
+| `DECLARE_REAGENT_FROM_VAR(T, V, "id_var", "amount_var")` | `reagents(V, starts_from = list(nameof(id_var) = nameof(amount_var)))` | `capabilities()` |
+| `DECLARE_NO_REAGENTS(T)` | `. = without(., CAP_REAGENTS)` | `capabilities()` |
+| `DECLARE_LOGIN_VERB(T, verb)` | `. += type_verb(verb, login = TRUE)` | `type_verbs()` |
+| `DECLARE_GAS(T, "v", V, K, gases)` | `gas_store(nameof(v), V, K, gases)` | `capabilities()` |
+| `DECLARE_REGISTRY(T, REGISTRY_X)` | `membership(joins = REGISTRY_X)` (a list may mix registry ids and `/datum/system` types) | `capabilities()` |
+| `DECLARE_START_TIMER(T, delay, PROC_REF(x))` | `after_init(delay, PROC_REF(x))` (armed at init, not materialize; `delay` may be `nameof(var)`) | `reactions()` |
+| `DECLARE_BEHAVIOUR(T, B)` | per behaviour: a trait + examine line is `cap_trait(TRAIT_X, examine =)`; an after-fact behaviour is `on_notice`; a before-veto behaviour is `before_op` on a guard key (G3). Audit in lifecycle.md 9 | varies |
+| `DECLARE_BIND(T, binder)` | no real site (the test fixture only): data to Rust is `push_to_rust()` with the generated `rust_push()` reads, the binding's lifetime a relation / `lifecycle_unbind()` | varies |
+
+**Trap:** do not mix the two forms in one chain. A type converted to `reagents()` that still inherits a
+`DECLARE_REAGENTS` gets two holders (the capability replaces the declared one); convert a whole chain from its root
+(`/obj/item/reagent_containers` is one root with 633 subtypes; `/obj/structure/reagent_dispensers`, converted, is
+the worked example).
 
 ## F2. Choosing the form
 
@@ -201,11 +230,13 @@ Handler signatures: a `cap_hand()` handler is `(mob/user, ...form answers)`; `ca
 
 | Constructor | Status | Gives |
 |---|---|---|
-Every constructor below also takes the standard gating arguments `behind`, `blocked_by`, `locked_by`, `needs`, `else_say`, `works_broken`, `works_unpowered`, `log`, plus `layer =` (the state name it draws; `CAP_NO_LAYER` draws nothing). Capability-level gating is merged onto every entry the capability builds.
+Every constructor below also takes the standard gating arguments `needs`, `else_say`, `works_broken`, `works_unpowered`, `log` (and `at =` where a compartment applies). Since G12 there is no `behind` / `blocked_by` / `locked_by` and no `layer =`: a state gate is a requirement in `needs` (`req_set(COVER)`, `req_clear(COVER | PANEL)`, `req_clear(LOCK)`), folded onto the entries with the old messages, and a capability draws its fixed standard look name (`look.hide(name)` in the holder's `draw()` drops it). Capability-level gating is merged onto every entry the capability builds.
+
+Every entry a library capability builds is a real op [built: a2-ops, G16]: it has a key (`open_cover`, `remove_cover`, `open_maintenance_panel`, `pulse_wires`, `cut_wires`, `repair`, `anchor`, `insert_<var>` / `eject_<var>` / `eject_<var>_alt` / `eject_<var>_self` / `eject_<var>_menu` for a slot, `step:<from>><to>:<tool or item>` for a ladder step, `dismantle`, `put_in` / `take_out` / `empty_out`, `pour_in` / `splash` / `fill_from`, ...), an action, a priority and requirements, so your type's own ops compete with the library's by priority (`OP_PRIORITY_*`) and declaration order. `before_op(key, ...)`, `cap_require(key, ...)` and `refine()` (for top-level ops) name them. Settings and other menu-only entries (climb, flip, the signaler's three, a label's removal, Give a drink, Feed, Put out, Empty out, Set transfer amount) are `ACT_NONE`. The library's ops take no provider slot (`by = NONE`).
 
 | `cap_cover(open_tool = TOOL_CROWBAR, delay, removable = FALSE, ...gating)` | [built] | open/close entry (`BY_HAND` opens by hand), `cover_open` state and look, examine; `removable` adds the knocked-off cover (`CAP_COVER_REMOVED`) |
 | `cap_panel(tool = TOOL_SCREWDRIVER, delay, ...gating)` | [built] | maintenance panel |
-| `cap_wires(wires_type, ...gating; behind = PANEL)` | [built] | wire access; the wires datum lives in `wires_of(A)` (replaces the `wires` var) |
+| `cap_wires(wires_type, ...gating)` | [built] | wire access behind the maintenance panel (its type); the wires datum lives in `wires_of(A)` (replaces the `wires` var) |
 | `cap_lock(access, req_one_access, id_types, ...gating)` | [built] | ID swipe lock; reads the holder's mapped `req_access`/`req_one_access` first (replaces `locked` and `req_access` gating) |
 | `cap_emag(say, effect, mode = EMAG_ONCE, already_say, delay, ...gating; log = LOG_ADMIN)` | [built] | emag entry; `effect(mob/user, obj/item/card)` runs FIRST and may refuse (FALSE: no bit, no charge); then the bit is set and a charge spent |
 | `cap_breakable(repair_tool = TOOL_WELDER, repair_delay, ...gating)` | [built] | broken state (from atom_break/atom_fix), welder repair, examine |
@@ -214,14 +245,15 @@ Every constructor below also takes the standard gating arguments `behind`, `bloc
 | `cap_buckle(...gating)` | [built] | buckling (settings are the holder's type vars) |
 | `cap_label(max_length, ...gating)`, `cap_rename(max_length, ...gating)` | [built] | hand-labeller label, pen rename |
 | `cap_power(...gating)` | [built] | the `dark` state and examine while unpowered; entries refuse unpowered unless `works_unpowered` |
-| `cap_slot(var_name, accepts, ...gating, eject_needs, name, ...)` | [built] | one item slot: insert, eject, examine, UI data; the var becomes owned; draws its item when it has a layer |
-| `cap_deconstruct(board, behind = PANEL, ...)` | [built] | crowbar dismantle to a frame (in the design, `deconstructible`) |
+| `cap_slot(var_name, accepts, ...gating, eject_needs, name, ..., part)` | [built] | one item slot: insert, eject, examine, UI data; the var becomes owned; draws the look part `part` (null: nothing) while filled |
+| `cap_deconstruct(board, ...gating)` | [built] | crowbar dismantle to a frame (in the design, `deconstructible`); `machine_basics()` passes `needs = req_set(PANEL)` |
+| `reagents(volume, starts, holder, tint, starts_from)`, `gas_store(var, volume, temp, gases)`, `membership(joins)`, `cap_trait(trait, examine)` | [built, G4] | starting state: [lifecycle.md](lifecycle.md) section 9, F4 |
 | `cap_construction(stage(...), ..., ladder_options(...))` | [built] (costs are `cap_tool`/`cap_insert`/`cap_use_on`/`cap_hand` entries with no handler; `uses`, `sfx`, `icon` on `stage()`) | build/undo ladders |
 | `cap_frame_ladder()` | [built] (a proc on `/obj/structure/frame`) | the standard machine/computer frame ladder |
 | `cap_wall_mount(offset)` | [built] | faces a wall machine away from its wall and offsets it onto it |
 | `cap_atmos_unwrench(delay)` | [built] | unfasten an atmos device into its pipe item, refused while running or over-pressured |
 | **Bundles** [built]: `machine_basics(board, anchored_by = TOOL_WRENCH, repair = TOOL_WELDER, dismantle = TRUE, powered = TRUE)` (panel, breakable, power, anchor, deconstruct behind the panel; `dismantle = NONE` and `powered = FALSE` leave those out), `wall_machine(board, offset, repair, dismantle, powered)` (basics without anchoring + wall mount), `console(board)`, `atmos_device(uses_power, unwrench_delay)`, `maintenance_hatch(cover_holds, panel_needs_cover_closed, cover_tool, removable_cover, emag_say, emag_mode)` (cover + panel + wires behind it + lock + emag; declares the compartment `BAY_HATCH` whose door is the open cover; the wiring is the holder's `machine_wires`, the lock's access its `req_access`; `cover_holds` is a holder proc that says why the cover can't move, opening or closing; the lock and the emag are ops keyed `CAP_LOCK`, `CAP_LOCK_SWIPE`, `CAP_EMAG` that a holder adds `cap_require()` contracts to and `refine()`s) | [built] | a later capability with the same key replaces an earlier one in place, so a bundle can refine another's part (the hatch's panel replaces the basics' panel) |
-| **Bundles** [built]: `cell_bay(slot_var, accepts, layer, at, needs, size)` (`at = BAY_HATCH` puts the bay behind a hatch's compartment), `power_channels()` (owns `act_channel`/`act_breaker`/`act_nightshift`; channel indicators are the parts `channel-<c>-<m>`), `powered_by(system, role)` and `powered_by(POWERED_BY_AREA, role)` (MEMBER of the holder's area: lights and consoles; read with `area_members(area, role)`); `door(...)` (rewrite/dx-doors) | [built] | the APC is the worked example: [foundation.md](foundation.md) |
+| **Bundles** [built]: `cell_bay(slot_var, accepts, at, needs, size)` (draws `LOOK_CELL`) (`at = BAY_HATCH` puts the bay behind a hatch's compartment), `power_channels()` (owns `act_channel`/`act_breaker`/`act_nightshift`; channel indicators are the parts `channel-<c>-<m>`), `powered_by(system, role)` and `powered_by(POWERED_BY_AREA, role)` (MEMBER of the holder's area: lights and consoles; read with `area_members(area, role)`); `door(...)` (rewrite/dx-doors) | [built] | the APC is the worked example: [foundation.md](foundation.md) |
 | Items: `cap_use_self(name, handler, ...gating, form =, log =, cooldown =, in_inventory = FALSE)`, `cap_use_at(name, handler, range = 1, target_types =, ...gating, form =, log =, cooldown =)` (replace `attack_self`/`afterattack`) | [built] | `cap_use_self`: item in hand used on itself, handler `(mob/user, ...form)`, runs from `attack_self`, answers `INPUT_ACTION_SELF_USE`, refused unless held when offered through the resolver/Menu (`needs cap_in_hand`; a direct `attack_self()` call, e.g. an action button, is trusted as before, since its callers decide reach; `in_inventory = TRUE` also accepts worn). It replaces the old `self_use()` helper. `cap_use_at`: the held item is the holder, the clicked atom the target, handler `(mob/user, atom/target, ...form)`; `range` 1 = adjacent, >1 also ranged; `target_types` filters. Click order: target `attackby` first, then the item's `use_at` entries (via `after_click()`), then legacy `afterattack`. The dispatch marks, fingerprints and logs the ITEM; mark the target yourself with `changed(target)` |
 | Mobs: `cap_ai(targets)`, `cap_ai_behaviors(...)`, species `species_capabilities()` | [planned] | plan §2.3, §2.4 |
 | `cap_system(path)` membership (`systems()`) | [built] (O(1) join/leave) | used by `/datum/system` once it exists |
@@ -328,10 +360,18 @@ Verbs:
 - Validators: `ui_number(v, min, max, round_to)`, `ui_text(v, max_length)`, `ui_choice(v, list)`, `ui_ref(v, within, type)`, `ui_bool(v)`, plus `refuse(user, text)`. Validate before use; a lint checks it.
 - The TSX lint checks every `act()` name has an `act_` proc with matching argument names. **Literal names only:** `act(\`be_player_${x}\`)` is banned; pass it as an argument.
 
+[built, G14]:
+- **Pushes are coalesced and driven by change.** A tracked write that `tgui_data()` reads (generated `ui_from()`
+  reads, or a declared `ui_from()`) marks the host; the refresh engine queues each open window and the kernel's
+  phase R pushes it **at most once per tick** (`code/modules/tgui/ui_push.dm`). An `act_<x>()` returning TRUE
+  updates the acting window. So `SStgui.update_uis(src)` in a converted file is deleted (the round status panel is
+  the worked example). `SStgui.update_uis()` itself stays for legacy callers.
+- **`ui_rights = R_X`** (a type var) on an admin panel: its window uses `ADMIN_STATE(R_X)` and every `act_<x>()` /
+  `UI_ACT` from a user without one of the rights is refused and audited (`admin_require()`). Narrow per action inside
+  the handler with `admin_require(user.client, R_Y, entry)`.
+
 [planned]:
-- `ui_rights = R_X` on admin panels;
 - `config` sent once per open;
-- pushes coalesced and driven by `changed()`;
 - generated TSX data types that must be imported.
 
 ## A8. Prompts
@@ -414,9 +454,15 @@ presets of `cap_op`). For new or reworked code:
 - Replace a copied op with `refine(key, delay = ...)`; a duplicate op key is an init error.
 - A control that a remote console or UI may also work: `cap_control(...)`, or `via = ROUTE_PHYSICAL | ROUTE_UI`.
 - Open parts of a machine through `compartment(BAY_X, ...)` and `at = BAY_X`, not ad-hoc `behind` bits.
-- Gestures: answer an action (`action = ACT_LOCK`); do not read click modifiers. A real `cap_op()` (not a
-  `cap_hand`/`cap_tool` preset) whose action the actor's bind profile lists for the gesture is run by the click
-  router before the interaction resolver; an op that would be refused leaves the click to the legacy path.
+- Gestures: answer an action (`action = ACT_LOCK`); do not read click modifiers or the stance. A real `cap_op()` (not
+  a `cap_hand`/`cap_tool` preset) whose action the actor's bind profile lists for the gesture is run by the click
+  router before the interaction resolver. Among the ops of one action `priority =` (`OP_PRIORITY_*`) decides, then
+  declaration order; the first that would run answers, else the first meant one refuses. A menu-only op is
+  `action = ACT_NONE`; a hostile one `action = ACT_ATTACK` (a harm or disarm click reaches it first); one for some
+  stances only `stance = I_X` or a list. Every library capability already builds real ops (G16), so a type's own op
+  competes with them by priority, not by being the only op there.
+- Keep `entry = INTERACTION_ENTRY_HAND` (or `_ITEM`, `_SELF`, `_ALT`) on a converted op while other code still calls
+  that entry proc directly (a silicon's `silicon_use` hand use, a computer's any-item fallback).
 - Veto or follow an op with `before_op(key | capability type, handler)` / `after_op(...)` in `reactions()`; the
   handler gets the `op_ctx` and must not keep it. `after_op` fires only for a committed op.
 - `act_action` is a capability UI action, not an atom proc: do not call `atom.act_action`.
@@ -528,6 +574,27 @@ DECLARE_INTERACTIONS(/obj/item/laser_pointer, INTERACT_INSERT(/obj/item/stock_pa
 - Entry order is menu order.
 - Handlers take `(mob/user, obj/item/held)` and return TRUE or `refuse(...)`.
 - Don't move the item yourself: `cap_slot` and `own_set` do it.
+
+**Kind by kind** [built: a2-ops; the A4 codemod writes these] (the full table with notes and three worked conversions,
+the megaphone, the medical records console and the desk bell, is [operations_and_actions.md §5a](operations_and_actions.md)):
+
+| Legacy spec | New form |
+|---|---|
+| `INTERACT_USE` / `INTERACT_SELF` | `cap_use_self(name, handler)` (ACT_USE offering `req_self_held()`; attack_self keeps running it) |
+| `INTERACT_HAND` | `cap_op(name, handler, using = EMPTY_HAND, entry = INTERACTION_ENTRY_HAND)`; a machine silicons work too: `cap_control(...)` |
+| `INTERACT_HAND_UNGATED` | as HAND, `works_broken = TRUE, works_unpowered = TRUE` |
+| `INTERACT_ITEM` | `cap_op(name, handler, using = <held type>, entry = INTERACTION_ENTRY_ITEM)` |
+| `INTERACT_INSERT` | a library slot, else `cap_op(name, handler, using = held_type, entry = INTERACTION_ENTRY_ITEM)` |
+| `INTERACT_ALT` | `cap_op(name, handler, action = ACT_TOGGLE, entry = INTERACTION_ENTRY_ALT)` (or ACT_EJECT / OPEN / CLOSE / LOCK / UNLOCK) |
+| `INTERACT_DRAG` | `cap_op(name, handler, using = <type>, action = ACT_DROP_ONTO, entry = INTERACTION_ENTRY_DRAG)` |
+| `INTERACT_VERB` | `cap_op(name, handler, action = ACT_NONE)`; `REQ_IN_INVENTORY` is `needs = TYPE_PROC_REF(/atom, cap_in_inventory)` |
+| `INTERACT_SILICON` / `INTERACT_ROBOT` | `cap_op(name, handler, via = ROUTE_INTERFACE, by = AFF_INTERFACE)`; the robot one also `offered = req(/mob/living/silicon/robot, of = OP_ACTOR)`, declared first |
+| `INTERACT_OBSERVER` | `cap_op(name, handler, action = ACT_EXAMINE, via = ROUTE_UI, by = NONE)` |
+| `INTERACT_TK` | `cap_op(name, handler, via = ROUTE_TK)` |
+| `_AS(I_HURT)`, `_HOSTILE` / `_AS(I_DISARM)` | `action = ACT_ATTACK, stance = I_HURT` / `stance = I_DISARM` |
+| `_AS(I_GRAB)` / `_AS(I_HELP)`, `_PEACEFUL` | `stance = I_GRAB` / `stance = I_HELP` (ACT_USE) |
+| `_DEFAULT`, `_DEFAULT_AS` | `priority = OP_PRIORITY_DEFAULT` |
+| `REQ_*` clauses | `needs =` (refuses) or `offered =` (not meant: the input falls through) |
 
 ## B2. Tool acts → `cap_tool` or the library
 
@@ -688,7 +755,7 @@ UI_ACT_PROC(/datum/round_status_panel, ui_act_call_shuttle)
 	SStgui.update_uis(src)
 	return TRUE
 
-// AFTER
+// AFTER (round_status_panel.dm is converted: tgui_id, ui_rights, act_<x>() procs, no update_uis)
 /datum/round_status_panel/proc/act_call_shuttle(mob/user)
 	var/why_not = shuttle_api_why_cant_call()
 	if(why_not)
@@ -703,8 +770,9 @@ UI_ACT_PROC(/datum/round_status_panel, ui_act_call_shuttle)
 | `UI_ARG_TEXT`, `UI_ARG_CHOICE`, `UI_ARG_REF` | `ui_text`, `ui_choice`, `ui_ref` |
 | `UI_DATA` / `UI_DATA_REPLACE` | `tgui_data(user)`, calling `..()` first |
 | `tgui_static_data` | unchanged |
-| `SStgui.update_uis(src)` | delete: the change pushes |
-| `DECLARE_UI_STATE(..., ADMIN_STATE(R))` | the state stays until `ui_rights` [planned]; narrow per action with `admin_require(user, R)` |
+| `SStgui.update_uis(src)` | delete: the change pushes (coalesced, once per tick in phase R) and a TRUE `act_` return updates the acting window |
+| `DECLARE_UI_STATE(..., ADMIN_STATE(R))` | `ui_rights = R` on the type [built]; narrow per action with `admin_require(user.client, R, entry)` |
+| `DECLARE_UI(T, "Iface", UI_TITLE("T"))` | `tgui_id = "Iface"` and, when the host has no `name`, `ui_title()` |
 
 **Traps:**
 - The TSX `act("x", {...})` names and keys must match the `act_x` proc's argument names; the lint checks it.
@@ -804,6 +872,7 @@ DECLARE_VERB(/obj/item/healthanalyzer/scroll, /obj/item/healthanalyzer/proc/togg
 | `DECLARE_VERB(type, verb)` | a native `/verb/`, or `type_verbs()` for a per-subtype set |
 | `DECLARE_VERB_IF(type, verb, "varname")` | `hidden_verbs()` returning the verb while the var is false |
 | `DECLARE_VERB_HIDE` | `hidden_verbs()` |
+| `DECLARE_LOGIN_VERB(type, verb)` | `type_verbs()`: `. += type_verb(verb, login = TRUE)` [built, G4]; the macro is a wrapper over it |
 | a trait or species granting verbs in `apply()` | `/datum/trait/proc/granted_verbs()` [built] (see `xenomorph_hunter`); species-level grants still use `om_grant` in `apply()` |
 
 ## B12. Periodic → a cadence
@@ -1062,7 +1131,7 @@ Tests that step Rust by hand call `vg_world_run_steps(n)` and then `native_syste
 
 | Old | New |
 |---|---|
-| `SStgui.update_uis(src)` (323 sites) | delete; `changed()` pushes, coalesced to 0.2 s [planned] |
+| `SStgui.update_uis(src)` (323 sites) | delete in converted files: a change pushes, coalesced to once per open window per tick (phase R) [built, G14] |
 | a full `config` block on every push | `config` only on open, ready and full update [planned] |
 | unused generated `.d.ts` files | generated types imported via `useBackend<T>` [planned] |
 | per-push rebuilds of static-ish data (lathe designs, `_production.dm:217-259`) | `tgui_static_data` cached per type and state; rebuild on change |

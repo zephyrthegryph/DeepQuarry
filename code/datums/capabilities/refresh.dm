@@ -293,8 +293,8 @@ GLOBAL_VAR_INIT(derive_probe_found, 0)
 		return FALSE
 	return TRUE
 
-/// Every queued refresh now, ignoring the budget (tests, admin tools). A self-re-marking entity is
-/// refreshed a bounded number of times, then reported.
+/// Every queued refresh now, ignoring the budget (tests, admin tools), then the UI pushes they queued. A
+/// self-re-marking entity is refreshed a bounded number of times, then reported.
 /proc/refresh_flush()
 	var/passes = 0
 	while(length(GLOB.refresh_queue))
@@ -305,7 +305,8 @@ GLOBAL_VAR_INIT(derive_probe_found, 0)
 				D.refresh_queued = 0
 				D.refresh_bits = 0
 			GLOB.refresh_queue.Cut()
-			return
+			break
+	ui_push_flush()
 
 /// One entity's refresh of the outputs in `mask` (DEP_*; everything by default): derive values, periodic
 /// gate, look and hidden verbs, open windows, the Rust push, then on_state_changed.
@@ -366,7 +367,8 @@ GLOBAL_VAR_INIT(derive_probe_found, 0)
 	if(mask & DEP_LEGACY)
 		D.on_state_changed(bits)
 
-/// Pushes D's open tgui windows (tgui_data() runs inside the push).
+/// Queues a push of D's open tgui windows: at most one per window per tick, delivered in the kernel's phase R
+/// (code/modules/tgui/ui_push.dm; tgui_data() runs inside the push, as an output).
 /proc/refresh_ui(datum/D)
 #if defined(UNIT_TESTS) && !defined(BENCHMARK)
 	if(derived_is_exact(D))
@@ -374,9 +376,7 @@ GLOBAL_VAR_INIT(derive_probe_found, 0)
 #endif
 	if(!LAZYLEN(D.open_tguis))
 		return
-	DERIVED_EVAL_BEGIN
-	SStgui.update_uis(D)
-	DERIVED_EVAL_END
+	ui_push_mark(D)
 
 /proc/refresh_periodic(datum/D)
 	if(D.periodic_interval)

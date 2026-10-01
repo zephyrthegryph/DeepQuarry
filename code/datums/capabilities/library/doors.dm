@@ -40,23 +40,21 @@ GLOBAL_LIST_INIT(cap_all_stances, list(I_HELP, I_DISARM, I_GRAB, I_HURT))
 // ============================================================================
 // cap_bolts(): CAP_BOLTED. Dropped and raised by the door's own controls (wires, the AI, a UI, a
 // button): no entry of its own. The door refuses to open while bolted (its can_open() reads
-// is_bolted()), and cap_pry() refuses. Layer: `layer` while bolted (null: the holder draws its own).
+// is_bolted()), and cap_pry() refuses. Look: part LOOK_BOLTS while bolted (a holder that shows its bolts
+// another way, a door_locked state, hides it in its draw(): look.hide(LOOK_BOLTS)).
 // No examine line: bolt lights that are off hide the bolts on purpose.
 
 /datum/capability/bolts
-	/// The layer drawn while bolted, or null when the holder's draw() shows it (a door_locked state).
-	var/layer = LOOK_BOLTS
+	layer_name = LOOK_BOLTS
 
-/// Door bolts. layer: the overlay while bolted (null: the holder draws the state itself).
-/proc/cap_bolts(layer = LOOK_BOLTS, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
+/// Door bolts. Draws LOOK_BOLTS while bolted.
+/proc/cap_bolts(needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
 	var/datum/capability/bolts/C = new
-	C.layer = layer
-	cap_gating(C, behind = behind, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
+	cap_gating(C, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 	return C
 
 /datum/capability/bolts/draw(atom/holder, datum/look/look)
-	if(layer)
-		look.part(layer, !!(is_bolted(holder)))
+	draw_layer(look, when = is_bolted(holder))
 
 /datum/capability/bolts/ui_data(atom/holder, mob/user, list/data)
 	data["bolted"] = is_bolted(holder)
@@ -79,9 +77,9 @@ GLOBAL_LIST_INIT(cap_all_stances, list(I_HELP, I_DISARM, I_GRAB, I_HURT))
 	var/item_chance = 75
 
 /// Zaps on touch while the holder is_electrified(): touch_chance by hand, item_chance with an item.
-/proc/cap_electrify(touch_chance = 100, item_chance = 75, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
+/proc/cap_electrify(touch_chance = 100, item_chance = 75, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
 	var/datum/capability/electrify/C = new
-	cap_gating(C, behind = behind, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
+	cap_gating(C, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 	C.touch_chance = touch_chance
 	C.item_chance = item_chance
 	return C
@@ -121,26 +119,27 @@ GLOBAL_LIST_INIT(cap_all_stances, list(I_HELP, I_DISARM, I_GRAB, I_HURT))
 	var/tool_quality = TOOL_WELDER
 	var/applies
 	var/help_applies
-	var/layer = LOOK_WELDED
+	layer_name = LOOK_WELDED
 
 /// Weld shut with `tool`. applies / help_applies: holder procs, () -> whether welding is offered.
-/proc/cap_weld_shut(tool = TOOL_WELDER, applies, help_applies, layer = LOOK_WELDED, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
+/proc/cap_weld_shut(tool = TOOL_WELDER, applies, help_applies, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
 	var/datum/capability/weld_shut/C = new
 	C.tool_quality = tool
 	C.applies = applies
 	C.help_applies = help_applies
-	C.layer = layer
-	cap_gating(C, behind = behind, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
+	cap_gating(C, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 	return C
 
 /// Welds A shut or unwelds it with no welder (a construct's spell, a mech clamp tearing it open).
 /proc/set_welded(atom/A, on)
 	return cap_set(A, CAP_WELDED, on)
 
+/// One structural op per stance, "weld_shut:<stance>" (each narrowed to its stance, as the old per-stance entries were), so
+/// help_applies can hide the help one alone. A hostile stance's op is still ACT_USE: welding is no attack.
 /datum/capability/weld_shut/interactions(atom/holder)
 	. = list()
 	for(var/stance in GLOB.cap_all_stances)
-		var/datum/capability/entry/wrapper = cap_tool("Weld shut", tool_quality, GLOBAL_PROC_REF(cap_weld_toggle), works_broken = TRUE, works_unpowered = TRUE, log = log, name_proc = GLOBAL_PROC_REF(cap_weld_name))
+		var/datum/capability/entry/wrapper = lib_op("Weld shut", GLOBAL_PROC_REF(cap_weld_toggle), OP_SHAPE_TOOL, using = tool_quality, key = "weld_shut:[stance]", kind = OP_STRUCTURAL, works_broken = TRUE, works_unpowered = TRUE, log = log, name_proc = GLOBAL_PROC_REF(cap_weld_name))
 		var/datum/interaction/capability/E = adopt_entry(wrapper, id = "weld_shut:[tool_quality]:[stance]")
 		// The handler plays the welder's sound itself, louder, as the old weld did.
 		cap_entry_setup(E, stance = stance, applies = (stance == I_HELP && help_applies) ? help_applies : applies, tool_volume = 0)
@@ -152,8 +151,7 @@ GLOBAL_LIST_INIT(cap_all_stances, list(I_HELP, I_DISARM, I_GRAB, I_HURT))
 	return null
 
 /datum/capability/weld_shut/draw(atom/holder, datum/look/look)
-	if(layer)
-		look.part(layer, !!(is_welded(holder)))
+	draw_layer(look, when = is_welded(holder))
 
 /datum/capability/weld_shut/ui_data(atom/holder, mob/user, list/data)
 	data["welded"] = is_welded(holder)
@@ -184,17 +182,19 @@ GLOBAL_LIST_INIT(cap_all_stances, list(I_HELP, I_DISARM, I_GRAB, I_HURT))
 	var/strong_tier = 0
 
 /// Pry with `tool`, while unpowered (or with a tool of `strong_tier`), unbolted and unwelded.
-/proc/cap_pry(tool = TOOL_CROWBAR, strong_tier = 0, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
+/proc/cap_pry(tool = TOOL_CROWBAR, strong_tier = 0, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
 	var/datum/capability/pry/C = new
 	C.tool_quality = tool
 	C.strong_tier = strong_tier
-	cap_gating(C, behind = behind, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
+	cap_gating(C, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 	return C
 
+/// One op per stance but harm, "pry:<stance>" (in harm the crowbar strikes instead): the refusals are needs (a tool's
+/// click on a bolted door answers with why).
 /datum/capability/pry/interactions(atom/holder)
 	. = list()
 	for(var/stance in list(I_HELP, I_DISARM, I_GRAB))
-		var/datum/capability/entry/wrapper = cap_tool("Force open or closed", tool_quality, TYPE_PROC_REF(/atom, cap_pry_force), needs = TYPE_PROC_REF(/atom, cap_pry_reason), works_broken = TRUE, works_unpowered = TRUE, log = log, name_proc = TYPE_PROC_REF(/atom, cap_pry_name))
+		var/datum/capability/entry/wrapper = lib_op("Force open or closed", TYPE_PROC_REF(/atom, cap_pry_force), OP_SHAPE_TOOL, using = tool_quality, key = "pry:[stance]", needs = TYPE_PROC_REF(/atom, cap_pry_reason), works_broken = TRUE, works_unpowered = TRUE, log = log, name_proc = TYPE_PROC_REF(/atom, cap_pry_name))
 		var/datum/interaction/capability/E = adopt_entry(wrapper, id = "pry:[tool_quality]:[stance]")
 		cap_entry_setup(E, stance = stance, tool_volume = 0)
 		. += E
@@ -227,16 +227,15 @@ GLOBAL_LIST_INIT(cap_all_stances, list(I_HELP, I_DISARM, I_GRAB, I_HURT))
 
 // ============================================================================
 // cap_emergency_access(): CAP_EMERGENCY_ACCESS. While engaged the door lets anyone through (a door's access
-// check reads emergency_access_on()). Toggled by the door's controls. Layer: `layer` while engaged.
+// check reads emergency_access_on()). Toggled by the door's controls. Look: part LOOK_EMERGENCY while engaged.
 
 /datum/capability/emergency_access
-	var/layer = LOOK_EMERGENCY
+	layer_name = LOOK_EMERGENCY
 
-/// Emergency access. layer: the overlay while engaged (null: nothing drawn).
-/proc/cap_emergency_access(layer = LOOK_EMERGENCY, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
+/// Emergency access. Draws LOOK_EMERGENCY while engaged.
+/proc/cap_emergency_access(needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
 	var/datum/capability/emergency_access/C = new
-	C.layer = layer
-	cap_gating(C, behind = behind, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
+	cap_gating(C, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 	return C
 
 /proc/emergency_access_on(atom/A)
@@ -251,8 +250,7 @@ GLOBAL_LIST_INIT(cap_all_stances, list(I_HELP, I_DISARM, I_GRAB, I_HURT))
 	return null
 
 /datum/capability/emergency_access/draw(atom/holder, datum/look/look)
-	if(layer)
-		look.part(layer, !!(emergency_access_on(holder)))
+	draw_layer(look, when = emergency_access_on(holder))
 
 /datum/capability/emergency_access/ui_data(atom/holder, mob/user, list/data)
 	data["emergency"] = emergency_access_on(holder)
@@ -293,10 +291,10 @@ GLOBAL_LIST_INIT(cap_all_stances, list(I_HELP, I_DISARM, I_GRAB, I_HURT))
 	var/damage = DOOR_CRUSH_DAMAGE
 
 /// A door that crushes what it closes on, for `damage` (the type default).
-/proc/cap_crush(damage = DOOR_CRUSH_DAMAGE, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
+/proc/cap_crush(damage = DOOR_CRUSH_DAMAGE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
 	var/datum/capability/crush/C = new
 	C.damage = damage
-	cap_gating(C, behind = behind, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
+	cap_gating(C, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 	return C
 
 /// Crushes everything in holder's tiles for `amount` (null: this capability's damage). TRUE when
@@ -378,20 +376,20 @@ GLOBAL_LIST_INIT(cap_all_stances, list(I_HELP, I_DISARM, I_GRAB, I_HURT))
 //		. += cap_frozen_shut()
 //
 // Named args pick the variations; `without()` / `replace()` edit the result like any list.
-/proc/door(wires, electrify = FALSE, ai_control = FALSE, panel_tool = TOOL_SCREWDRIVER, repair_tool = null, emag_effect, emag_mode = EMAG_REPEATABLE, emag_log = LOG_GAME, bolts_layer = null, emergency_layer = null, weld_applies, weld_help_applies, pry_strong_tier = 0, crush_damage = DOOR_CRUSH_DAMAGE, close_wait = 15 SECONDS)
+/proc/door(wires, electrify = FALSE, ai_control = FALSE, panel_tool = TOOL_SCREWDRIVER, repair_tool = null, emag_effect, emag_mode = EMAG_REPEATABLE, emag_log = LOG_GAME, weld_applies, weld_help_applies, pry_strong_tier = 0, crush_damage = DOOR_CRUSH_DAMAGE, close_wait = 15 SECONDS)
 	. = list(cap_panel(tool = panel_tool))
 	if(wires)
-		. += cap_wires(wires, behind = PANEL)
+		. += cap_wires(wires)
 	. += cap_door_access()
 	. += cap_breakable(repair_tool = repair_tool)
 	. += cap_power()
 	. += cap_emag(effect = emag_effect, mode = emag_mode, log = emag_log)
-	. += cap_bolts(layer = bolts_layer)
+	. += cap_bolts()
 	if(electrify)
 		. += cap_electrify()
 	. += cap_weld_shut(applies = weld_applies, help_applies = weld_help_applies)
 	. += cap_pry(strong_tier = pry_strong_tier)
-	. += cap_emergency_access(layer = emergency_layer)
+	. += cap_emergency_access()
 	. += cap_crush(damage = crush_damage)
 	. += cap_door_timing(close_wait = close_wait)
 	if(ai_control)

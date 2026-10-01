@@ -23,8 +23,15 @@
 	var/name
 	/// OP_CONTROL / OP_STRUCTURAL / OP_EMERGENCY.
 	var/kind = OP_CONTROL
-	/// ACT_*: which action this op answers (input resolution, radial, UI).
+	/// ACT_*: which action this op answers: the gesture vocabulary (a gesture reaches actions through the actor's bind
+	/// profile). ACT_NONE: no gesture reaches it; it is chosen by its key or name (Menu, radial, command bar).
 	var/action = ACT_USE
+	/// Higher first among the ops answering one action (gesture resolution: the profile's action list, then this, then
+	/// declaration order). OP_PRIORITY_*.
+	var/priority = 0
+	/// The stances (I_* values) the op answers, or null for any: a list form of cap_op(stance =) (an offered requirement,
+	/// req_stance()); a single stance sits on the entry, as the resolver's selector.
+	var/list/stances
 	/// What it is used with: null (bare hand), a TOOL_* quality, an item type (or list), or a /datum/req.
 	var/using
 	/// AFF_* bits the actor's provider slot must give (NONE for none).
@@ -70,7 +77,13 @@
  *	using	null (empty hand), a TOOL_* quality, an item type or list of types, or a /datum/req.
  *	by		AFF_* bits the actor's provider slot must give. Default AFF_MANIPULATE (AFF_CONTROL for controls).
  *	via		ROUTE_* bits accepted. Default ROUTE_PHYSICAL (controls also ROUTE_INTERFACE).
- *	action	the ACT_* it answers (default ACT_USE).
+ *	action	the ACT_* it answers (default ACT_USE): the gesture vocabulary. ACT_NONE: no gesture reaches it (the Menu,
+ *			radial and command bar do, by its key or name: the old INTERACT_VERB). ACT_ATTACK: the hostile use, reached by a
+ *			click in a hostile stance before ACT_USE.
+ *	priority	higher first among the ops of one action (OP_PRIORITY_*): the profile's action list, then this, then
+ *			declaration order decide what a gesture reaches.
+ *	stance	I_HELP / I_DISARM / I_GRAB / I_HURT, or a list of them: the op is meant only in those stances (an offered
+ *			requirement: another stance falls through to the next op).
  *	needs	a /datum/req or list of them (the op's own needs); old-style proc refs are passed to the
  *			target contract as before.
  *	offered	a /datum/req or list: while one fails the op is not meant (the input falls through); not a refusal.
@@ -84,9 +97,12 @@
  *	log		LOG_GAME / LOG_ADMIN.
  *	replace	TRUE to replace an earlier op of the same key instead of raising the init error.
  *	click_with	item types a plain click must hold to reach the op (a swipe); passes_held: the handler also gets `held`.
+ *	entry	INTERACTION_ENTRY_*: the legacy entry proc (attack_hand, attackby, attack_self, click_alt) that also runs the op,
+ *			for callers that still call it directly (a silicon's hand use through silicon_use, a computer's item fallback)
+ *			until they migrate. The click router runs the op first either way.
  * The remaining arguments are the old gating arguments of cap_hand()/cap_tool()/...
  */
-/proc/cap_op(name, handler, using, by, via, action, needs, delay, cost, start_msg, kind = OP_CONTROL, key, at, log, replace = FALSE, shape, legacy = FALSE, behind = NONE, blocked_by = NONE, locked_by = NONE, else_say, works_broken, works_unpowered, list/form, priority, stance, name_proc, applies, cooldown, volume, list/click_with, passes_held, offered)
+/proc/cap_op(name, handler, using, by, via, action, needs, delay, cost, start_msg, kind = OP_CONTROL, key, at, log, replace = FALSE, shape, legacy = FALSE, behind = NONE, blocked_by = NONE, locked_by = NONE, else_say, works_broken, works_unpowered, list/form, priority, stance, name_proc, applies, cooldown, volume, list/click_with, passes_held, offered, entry)
 	var/list/spec = list(
 		"name" = name, "handler" = handler, "using" = using, "by" = by, "via" = via, "action" = action,
 		"needs" = needs, "delay" = delay, "cost" = cost, "start_msg" = start_msg, "kind" = kind, "key" = key,
@@ -95,6 +111,7 @@
 		"works_broken" = works_broken, "works_unpowered" = works_unpowered, "form" = form,
 		"priority" = priority, "stance" = stance, "name_proc" = name_proc, "applies" = applies,
 		"cooldown" = cooldown, "volume" = volume, "click_with" = click_with, "passes_held" = passes_held, "offered" = offered,
+		"entry" = entry,
 	)
 	return cap_op_build(spec)
 
@@ -139,13 +156,24 @@
 	else if(shape == OP_SHAPE_USE_ON || shape == OP_SHAPE_INSERT)
 		held_type = using
 	var/entry_kind = shape
-	var/datum/capability/entry/C = cap_entry(entry_kind, spec["name"], spec["handler"], spec["behind"], spec["locked_by"], procs, spec["else_say"], works_broken, works_unpowered, spec["log"], spec["form"], held_type, quality, spec["delay"], spec["priority"], spec["stance"], spec["name_proc"], spec["applies"], spec["blocked_by"], spec["cooldown"], spec["cost"] || 0, spec["volume"])
+	// One stance sits on the entry (the resolver's selector, and the stance its effect reads); several are an offered
+	// requirement of the op.
+	var/stance = spec["stance"]
+	var/list/stances = islist(stance) ? stance : null
+	var/datum/capability/entry/C = cap_entry(entry_kind, spec["name"], spec["handler"], spec["behind"], spec["locked_by"], procs, spec["else_say"], works_broken, works_unpowered, spec["log"], spec["form"], held_type, quality, spec["delay"], spec["priority"], stances ? null : stance, spec["name_proc"], spec["applies"], spec["blocked_by"], spec["cooldown"], spec["cost"] || 0, spec["volume"])
 	var/datum/interaction/capability/E = C.entry
 	var/datum/op_def/op = new
 	op.name = spec["name"]
 	op.key = spec["key"] || replacetext(lowertext("[spec["name"]]"), " ", "_")
 	op.kind = spec["kind"] || OP_CONTROL
 	op.action = spec["action"] || ACT_USE
+	op.priority = spec["priority"] || 0
+	op.stances = stances
+	// No gesture reaches an ACT_NONE op: the resolver answers no input with it either (the Menu lists it).
+	if(op.action == ACT_NONE)
+		E.default_action = null
+	if(spec["entry"])
+		E.entry = spec["entry"]
 	op.using = istype(using, /datum/req) ? using : (shape == OP_SHAPE_HAND ? null : using)
 	op.legacy = legacy
 	var/by = spec["by"]
@@ -164,6 +192,8 @@
 		E.passes_held = TRUE
 	op.needs = reqs
 	op.offered = req_list(spec["offered"])
+	if(stances)
+		op.offered += req_stance(stances)
 	op.gating = req_from_gating(spec["behind"], spec["blocked_by"], spec["locked_by"])
 	op.replaces = spec["replace"]
 	op.spec = spec
@@ -209,8 +239,8 @@
 
 /// A control: an empty hand (or any provider with AFF_CONTROL) working the holder's interface, over
 /// the physical or the interface route. Handler (mob/user). Strict: needs a capable actor.
-/proc/cap_control(name, handler, needs, action = ACT_USE, delay, kind = OP_CONTROL, key, at, log, behind = NONE, blocked_by = NONE, locked_by = NONE, else_say, works_broken, works_unpowered, list/form, priority, name_proc, applies, cooldown, using, offered)
-	return cap_op(name, handler, using = using, offered = offered, by = AFF_CONTROL, via = ROUTE_PHYSICAL | ROUTE_INTERFACE, action = action, needs = needs, delay = delay, kind = kind, key = key, at = at, log = log, shape = OP_SHAPE_HAND, behind = behind, blocked_by = blocked_by, locked_by = locked_by, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, form = form, priority = priority, name_proc = name_proc, applies = applies, cooldown = cooldown)
+/proc/cap_control(name, handler, needs, action = ACT_USE, delay, kind = OP_CONTROL, key, at, log, behind = NONE, blocked_by = NONE, locked_by = NONE, else_say, works_broken, works_unpowered, list/form, priority, name_proc, applies, cooldown, using, offered, stance, entry)
+	return cap_op(name, handler, using = using, offered = offered, by = AFF_CONTROL, via = ROUTE_PHYSICAL | ROUTE_INTERFACE, action = action, needs = needs, delay = delay, kind = kind, key = key, at = at, log = log, shape = OP_SHAPE_HAND, behind = behind, blocked_by = blocked_by, locked_by = locked_by, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, form = form, priority = priority, stance = stance, name_proc = name_proc, applies = applies, cooldown = cooldown, entry = entry)
 
 // ---- cap_require ----
 
@@ -238,14 +268,17 @@
 // ---- refine ----
 
 /// A change to an op declared earlier on the type (or by a bundle): the refined op replaces it in
-/// place. caps_intern_list() applies it; refining a key nothing declared is an init error.
+/// place. caps_intern_list() applies it; refining a key nothing declared is an init error. A key that
+/// names a capability which is not an op (CAP_REAGENTS) refines that capability: its refined() makes the
+/// replacement from the same named fields.
 /datum/capability/refine
 	var/base_key
 	var/list/overrides
 
-/// key: the op's key. delay: the new wait. effect: the new handler (PROC_REF). input: the new `using`.
-/// action: the new ACT_*.
-/proc/refine(key, delay, effect, input, action)
+/// key: the op's key (or a capability's, e.g. CAP_REAGENTS). delay: the new wait. effect: the new handler
+/// (PROC_REF). input: the new `using`. action: the new ACT_*. priority: the new OP_PRIORITY_*. starts / volume: a
+/// capability's starting contents and volume (refine(CAP_REAGENTS, starts = ...) adds to the inherited contents).
+/proc/refine(key, delay, effect, input, action, priority, starts, volume)
 	var/datum/capability/refine/C = new
 	C.base_key = key
 	var/list/o = list()
@@ -257,6 +290,12 @@
 		o["using"] = input
 	if(!isnull(action))
 		o["action"] = action
+	if(!isnull(priority))
+		o["priority"] = priority
+	if(!isnull(starts))
+		o["starts"] = starts
+	if(!isnull(volume))
+		o["volume"] = volume
 	C.overrides = o
 	C.key = "refine:[key]:[md5(datum_signature(o))]"
 	return C
@@ -308,8 +347,13 @@ GLOBAL_VAR(op_gesture_now)
 /// requirements' reads, and op_wait_done() finishes the attempt (which checks everything again).
 OWN_TIMER(/mob, op_wait)
 
+/// Whether this op entry waits through the op wait (a pending context that cancels early on its requirements' reads);
+/// FALSE for an entry that pays its time through the tool pipeline (a construction step, whose start lines it prints).
+/datum/interaction/capability/proc/op_waits()
+	return TRUE
+
 /datum/interaction/capability/pay_cost(mob/actor, atom/target, obj/item/held)
-	if(!op || tool || duration <= 0)
+	if(!op || tool || duration <= 0 || !op_waits())
 		return ..()
 	if(om_timer_slot_pending(actor, "op_wait"))
 		to_chat(actor, span_warning("You are already busy."))

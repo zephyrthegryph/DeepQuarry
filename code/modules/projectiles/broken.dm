@@ -9,7 +9,10 @@
 
 	var/do_rotation = TRUE
 
-DECLARE_START_TIMER(/obj/item/broken_gun, 30 SECONDS, PROC_REF(validate_gun_type))
+/// A wreck that never learned what gun it was (spawned without a type) cleans itself up.
+/obj/item/broken_gun/reactions()
+	. = ..()
+	. += after_init(30 SECONDS, PROC_REF(validate_gun_type))
 
 /obj/item/broken_gun/Initialize(mapload, path)
 	. = ..()

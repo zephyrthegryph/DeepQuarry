@@ -39,7 +39,7 @@
 	/// The renamed native verb, made once per capability.
 	var/tmp/verb_ref
 
-/proc/cap_toggle_state(name, on_state, off_state, on_suffix, verb_name, bit = CAP_TOGGLE_1, apply, available, self_on, self_off, others_on, others_off, examine_on, examine_off, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
+/proc/cap_toggle_state(name, on_state, off_state, on_suffix, verb_name, bit = CAP_TOGGLE_1, apply, available, self_on, self_off, others_on, others_off, examine_on, examine_off, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
 	var/datum/capability/toggle_state/C = new
 	C.name = name
 	C.key = "toggle_state:[bit]"
@@ -58,7 +58,7 @@
 	C.examine_off = examine_off
 	var/verb_path = cap_toggle_verb_path(bit)
 	C.verb_ref = new verb_path(null, C.verb_name)
-	cap_gating(C, behind = behind, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
+	cap_gating(C, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 	return C
 
 /// The generic verb proc for a toggle bit (renamed per capability by cap_toggle_state()).
@@ -84,7 +84,8 @@
 		return else_say || "you can't do that right now"
 
 /datum/capability/toggle_state/interactions(atom/holder)
-	var/datum/capability/entry/wrapper = cap_use_self(verb_name, GLOBAL_PROC_REF(cap_toggle_run), works_broken = TRUE, works_unpowered = TRUE, in_inventory = TRUE, entry_type = /datum/interaction/capability/toggle)
+	// The op "toggle_<name>": the self-use, the Menu and the native verb reach it.
+	var/datum/capability/entry/wrapper = cap_use_self(verb_name, GLOBAL_PROC_REF(cap_toggle_run), works_broken = TRUE, works_unpowered = TRUE, in_inventory = TRUE, entry_type = /datum/interaction/capability/toggle, key = "toggle_[name]")
 	return list(adopt_entry(wrapper, "self:toggle:[bit]"))
 
 /datum/capability/toggle_state/verbs()
@@ -171,19 +172,19 @@
 // The native verbs, renamed per toggle by cap_toggle_state(). Each runs the toggle's entry.
 /obj/item/proc/cap_toggle_verb_1()
 	set name = "Toggle"
-	set category = "Object"
+	set category = VERB_CAT_OBJECT
 	set src in usr
 	cap_toggle_verb_run(src, usr, CAP_TOGGLE_1)
 
 /obj/item/proc/cap_toggle_verb_2()
 	set name = "Toggle"
-	set category = "Object"
+	set category = VERB_CAT_OBJECT
 	set src in usr
 	cap_toggle_verb_run(src, usr, CAP_TOGGLE_2)
 
 /obj/item/proc/cap_toggle_verb_3()
 	set name = "Toggle"
-	set category = "Object"
+	set category = VERB_CAT_OBJECT
 	set src in usr
 	cap_toggle_verb_run(src, usr, CAP_TOGGLE_3)
 

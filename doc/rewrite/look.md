@@ -31,10 +31,20 @@ and one machine overrides it by shipping `<base>-panel_open`. Standard part name
 the first draw. `look.hide` keeps working.
 
 Library capabilities switch to parts, so `cap_cover`, `cap_panel`, `cap_lock`, `cap_emag`, `cap_power` etc. no
-longer take `layer =` (the lock takes `lamp =`: it shows as a glowing `locked` / `unlocked` lamp while the holder is lit, see `is_lit(A)`). `CAP_NO_LAYER` and `layer=` are the old form; see
+longer take `layer =` **[built on master, G12: no library constructor takes `layer =`, `behind`, `blocked_by` or
+`locked_by`; each capability draws its fixed standard name (`cap_bolts` LOOK_BOLTS, `cap_weld_shut` LOOK_WELDED,
+`cap_emergency_access` LOOK_EMERGENCY, `cell_bay`/`cap_cell_holder` LOOK_CELL, ...); a slot names its part with
+`part =`; a holder whose sprite shows the state another way drops the part with `look.hide(name)` in `draw()` (the
+airlock hides bolts and emergency, the vendor its panel, wires, broken and dark parts); state gates are
+requirements in `needs`]** (the lock takes `lamp =`: it shows as a glowing `locked` / `unlocked` lamp while the holder is lit, see `is_lit(A)`). `CAP_NO_LAYER` and `layer=` are the old form; see
 [migration_guide.md](migration_guide.md) Part F.
 
 ## 3. Checks and tooling
+
+- **Outputs have no side effects:** `draw()` is a reactive proc (`dx_reactive_write` flags a state write, `to_chat`
+  or `playsound` in it), and `tools/ci/sys_rules/dx_look_side_effects.py` holds the legacy appearance procs
+  (`appearance_overlays()` and `DECLARE_APPEARANCE_PROC` rows) to the same rule, their own appearance-var writes
+  excepted; its baseline is the legacy offenders (vent_pump's sounds among them), shrink-only.
 
 - **Unit test:** for each type, lists the standard parts it should have and lacks. A per-type
   `look_lacks()` allowlist records intentional gaps (a machine with no panel art).

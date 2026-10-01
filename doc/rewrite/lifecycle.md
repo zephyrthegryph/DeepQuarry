@@ -227,3 +227,39 @@ Tests (written now, run when the testing freeze lifts):
 - no nullspace parking;
 - a zero-leak check across a mass-delete (explosion-sized batch);
 - per-phase destroy time from `SSgarbage` before and after.
+
+## 9. Starting state: the foundation forms of the lifecycle declarations [built]
+
+What an instance starts with is declared in the three tables, not in `DECLARE_*` lines
+(`code/__defines/lifecycle_decl.dm`, which stay until the codemod has moved their sites). All of it happens at
+the end of `/atom/Initialize()`, so a subtype's `Initialize()` sees it right after `. = ..()`, exactly as with
+the macros: starting occupants in `lifecycle_decls_init()` (step 1, before gas and reagents), the capabilities in
+`caps_init()` right after, the `after_init()` timers in `rx_enrol()`.
+
+| Declaration | Form | Implementation |
+|---|---|---|
+| Starting occupant (was `DECLARE_DEFAULT_CHILD`) | `relations()`: `rel_one(nameof(cell), /obj/item/cell, kind = RELK_OWNED, policy = OWN_SPILL, starts = nameof(cell_type))`. `starts` is a type, a list (`list(/obj/x = 2)`) for `rel_many`, or `nameof()` a var holding either, so a map or subtype override of `cell_type` picks the type. The var itself wins: a path in it (a map edit) is made instead, an instance in it makes nothing. The relation's `policy` decides teardown. | `owns(starts =)` is an annotation in the ownership table (`own_table.start_vars`), made by `own_init_starts()`. `DECLARE_DEFAULT_CHILD` is a thin wrapper: `owns(VAR, policy = OWN_NONE, starts = DEFAULT)` (no kind: the first `own_set()` learns OWN_DELETE, or the type's own declaration gives the policy). The APC's cell is the worked example (`apc.dm` relations; a hand-built frame sets `cell_type = null` before `..()`). |
+| Reagents (was `DECLARE_REAGENTS*`, `DECLARE_REAGENT_FROM_VAR`, `DECLARE_NO_REAGENTS`) | `capabilities()`: `reagents(volume, starts = list(...), holder =, tint =, starts_from =)`; a subtype adds with `refine(CAP_REAGENTS, starts = ..., volume = ...)` (added to the inherited contents, the macro's rule), drops it with `. = without(., CAP_REAGENTS)`. | `/datum/capability/reagents` (`library/reagents.dm`); `refine()` on a capability that is not an op calls its `refined(overrides)`. One interned flyweight per distinct declaration; an instance owns only its `/datum/reagents`, as before; a type without the capability allocates nothing. Worked example: the reagent tanks (`reagent_tank.dm`: the base `reagents(5000)`, each tank `refine(CAP_REAGENTS, starts = ...)`). |
+| Login verbs (was `DECLARE_LOGIN_VERB`) | `type_verbs()`: `. += type_verb(/mob/proc/x, login = TRUE)` | `capabilities/type_verbs.dm`: the composed list is split per type (`type_verbs_always()` / `type_verbs_login()`); the verb store applies login entries at Login and refuses them on a mob no player has had. `DECLARE_LOGIN_VERB` is a thin wrapper. Worked example: `/mob/living`'s player verbs (`mob/living/login.dm`). |
+| Gas (was `DECLARE_GAS`) | `capabilities()`: `gas_store(nameof(air_contents), volume, temp, list(GAS_X = kPa))` | `library/gas_store.dm`: owns the var (`owned()`), makes the mixture at init. Worked example: the transit tube pod. |
+| Registry membership (was `DECLARE_REGISTRY`) | `capabilities()`: `membership(joins = REGISTRY_X)`; `joins` may list registry ids and `/datum/system` types | `library/membership.dm`: registry ids join `type_registries()` (so materialize joins, dematerialize leaves), a conditional registry is joined at materialize too; system types are the capability's `joins`. Worked example: the tape recorder. |
+| Start timer (was `DECLARE_START_TIMER`) | `reactions()`: `after_init(delay, PROC_REF(x))`; `delay` may be `nameof(var)` | `reactions/after_init.dm`: armed by `rx_enrol()` at init (the boot list marks the type `RXB_INIT`), an ordinary `rx_after()` on the holder. Armed at init where the macro armed at materialize: a latent (unmaterialized) instance's timer runs too. Worked example: the broken gun's self-check. |
+
+**DECLARE_BEHAVIOUR audit** (4 real sites):
+
+| Site | Behaviour | Foundation form |
+|---|---|---|
+| `clothing/suits/utility.dm` radiation hood and suit | `radiation_protected_clothing`: a trait while attached, an examine line | `cap_trait(TRAIT_RADIATION_PROTECTED_CLOTHING, examine = RADIATION_CLOTHING_EXAMINE)` **(converted; the behaviour is deleted)** |
+| `clothing/shoes/miscellaneous.dm` dry galoshes | `dry`: on `before/shoes_step_action`, dries the floor and blood underfoot (never vetoes) | an after-fact: `on_notice(/datum/notice/<step>, PROC_REF(dry_floor))` once G3 generates the step notice (batch A1) |
+| `mob/living/living.dm` `/mob/living` | `spontaneous_vore`: vetoes `before/stumbled_into`, `falling_down`, `hit_by_thrown`, `cross` | `before_op` on the G3 guard keys (stumble, falling, thrown hit, cross; batch A1) |
+| the lifecycle test probe | test fixture | none needed |
+
+**DECLARE_BIND audit:** no real site (only the test probe). A Rust binding is `push_to_rust()` with its generated
+`rust_push()` reads for data, and a relation (or `lifecycle_unbind()`, the APC's node) for its lifetime.
+`DECLARE_SERVICE_MEMBER` has no site; its form is `membership(joins = /datum/system/x)`.
+
+**Codemod notes (A4).** `DECLARE_DEFAULT_CHILD` -> the relation's `starts` (merge into an existing `rel_one` /
+`owns` of the var, else add `owns(nameof(v), policy = OWN_NONE, starts = ...)`). `DECLARE_REAGENTS*` per chain: the
+chain root (no declaring ancestor) gets `reagents()`, each stacked declaration `refine(CAP_REAGENTS, starts =)` (with
+`volume =` when it names one); never convert part of a chain. `DECLARE_LOGIN_VERB` lines of one type become one
+`type_verbs()` override.

@@ -24,13 +24,13 @@
 	var/tmp/datum/interaction/capability/dismantle
 
 /**
- * cap_deconstruct(board = /obj/item/circuitboard/x): with the panel open (`behind`), a crowbar
+ * cap_deconstruct(board = /obj/item/circuitboard/x, needs = req_set(PANEL)): with the panel open, a crowbar
  * dismantles the machine into its frame. Works broken and unpowered.
  */
-/proc/cap_deconstruct(board, behind = PANEL, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log = LOG_GAME)
+/proc/cap_deconstruct(board, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log = LOG_GAME)
 	var/datum/capability/deconstruct/made = new
 	made.board = board
-	return cap_gating(made, behind = behind, blocked_by = blocked_by, locked_by = locked_by, needs = needs,
+	return cap_gating(made, needs = needs,
 		else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 
 /// One crowbar entry; its gating comes from the capability (cap_apply_gating()).
@@ -46,6 +46,8 @@
 		entry.works_broken = TRUE
 		entry.works_unpowered = TRUE
 		entry.apply_stance_tags()
+		// A real op (the router ranks it): the crowbar that takes the machine apart, a structural part op.
+		op_attach(entry, "dismantle", ACT_USE, OP_PRIORITY_NORMAL, OP_STRUCTURAL)
 		own_set(src, nameof(src.dismantle), entry)
 	return list(dismantle)
 

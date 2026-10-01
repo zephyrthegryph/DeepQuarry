@@ -368,14 +368,16 @@
 	TEST_ASSERT_EQUAL(test_action(H, F, ACT_EJECT, ROUTE_UI), "you can't do that that way", "the bayed op is not offered over the UI route")
 	TEST_ASSERT_EQUAL(test_action(H, F, ACT_REPAIR), "there is nothing to repair there", "an action nothing answers")
 
+	// The radial names ops by key (two ops of one action are two rows), with the action each answers.
 	var/list/rows = action_options(H, F)
 	var/list/by_id = list()
 	for(var/list/row as anything in rows)
 		by_id[row["id"]] = row
-	TEST_ASSERT(by_id[ACT_LOCK] && by_id[ACT_LOCK]["enabled"], "the radial lists lock, enabled")
-	TEST_ASSERT(by_id[ACT_EJECT] && !by_id[ACT_EJECT]["enabled"], "eject is listed but disabled (the bay is closed)")
-	TEST_ASSERT(by_id[ACT_EJECT]["reason"], "with its reason")
-	TEST_ASSERT(!by_id[ACT_REPAIR], "actions nothing answers are not listed")
+	TEST_ASSERT(by_id["latch"] && by_id["latch"]["enabled"], "the radial lists the latch op, enabled")
+	TEST_ASSERT_EQUAL(by_id["latch"]?["action"], ACT_LOCK, "with the action it answers")
+	TEST_ASSERT(by_id["bayed"] && !by_id["bayed"]["enabled"], "the bayed op is listed but disabled (the bay is closed)")
+	TEST_ASSERT(by_id["bayed"]["reason"], "with its reason")
+	TEST_ASSERT(!by_id[ACT_REPAIR], "rows are ops, not actions")
 
 	F.hook_log = null
 	TEST_ASSERT(perform_action(H, F, ACT_LOCK), "perform_action runs the op")

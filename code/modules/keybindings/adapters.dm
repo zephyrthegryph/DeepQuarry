@@ -351,9 +351,16 @@ TYPE_TABLE_DECLARE(/datum/input_adapter, adapter_click_table, TYPE_TABLE_GET(GLO
 /datum/input_adapter/ghost
 	name = "ghost"
 
-/// Ghosts only observe: they get observer-only interactions and nothing else.
+/// Ghosts only observe: they get observer-only interactions and nothing else. An op is an observer's when it answers the
+/// observer profile's gesture (ACT_EXAMINE) over the observer route (ROUTE_UI, mob/observer/dead/op_route()): the old
+/// INTERACT_OBSERVER as cap_op(action = ACT_EXAMINE, via = ROUTE_UI, by = NONE).
 /datum/input_adapter/ghost/allows_interaction(mob/user, atom/target, datum/interaction/interaction)
-	return (INTERACTION_TAG_OBSERVER in interaction.tags) ? TRUE : FALSE
+	if(INTERACTION_TAG_OBSERVER in interaction.tags)
+		return TRUE
+	var/datum/interaction/capability/E = interaction
+	if(istype(E) && E.op && !E.op.legacy)
+		return E.op.action == ACT_EXAMINE && (E.op.via & ROUTE_UI) ? TRUE : FALSE
+	return FALSE
 
 /// Observer-only interactions first; then attack_ghost, which on /obj opens the
 /// UI to view (so types no longer override it just to call tgui_interact).
@@ -408,9 +415,14 @@ TYPE_TABLE(/datum/input_adapter/ai, adapter_click_table, list( \
 	list(list(RIGHT_CLICK), INPUT_ACTION_RIGHT_CLICK_BINDING), \
 ))
 
-/// The AI has no hands: only tool-less interactions tagged remote, on what its cameras can see.
+/// The AI has no hands: only tool-less interactions tagged remote, and ops that travel the interface route (the old
+/// INTERACT_SILICON as cap_control(), or cap_op(via = ROUTE_INTERFACE)), on what its cameras can see.
 /datum/input_adapter/ai/allows_interaction(mob/living/silicon/ai/user, atom/target, datum/interaction/interaction)
-	if(interaction.tool || !(INTERACTION_TAG_REMOTE in interaction.tags))
+	if(interaction.tool)
+		return FALSE
+	var/datum/interaction/capability/E = interaction
+	var/remote_op = istype(E) && E.op && !E.op.legacy && (E.op.via & ROUTE_INTERFACE)
+	if(!remote_op && !(INTERACTION_TAG_REMOTE in interaction.tags))
 		return FALSE
 	return istype(user) ? user.has_camera_sight(target) : TRUE
 

@@ -37,8 +37,8 @@ SUBSYSTEM_DEF(behaviours)
 	EXPIRY_SET(src, next_audit, OM_AUDIT_INTERVAL, CLOCK_WORLD)
 	return TRUE
 
-/// The audit runs in unit test and TESTING builds always; on servers only with the
-/// OM_PIPELINE_AUDIT config flag or the admin verb (it is a debugging aid, not a feature).
+/// The audit (pipelines and sequences, kernel.dm run_audits()) runs in unit test and TESTING builds always; on
+/// servers only with the OM_PIPELINE_AUDIT config flag or the admin verb (it is a debugging aid, not a feature).
 /datum/controller/subsystem/behaviours/proc/audit_enabled()
 #if defined(UNIT_TESTS) || defined(TESTING)
 	return TRUE
@@ -55,7 +55,7 @@ SUBSYSTEM_DEF(behaviours)
 /datum/controller/subsystem/behaviours/Recover()
 	last_done = SSbehaviours.last_done
 
-ADMIN_VERB(toggle_pipeline_audit, R_DEBUG, "Toggle Pipeline Audit", "Turns the object-model pipeline missed-wake audit (mobs, machines) on or off for this round.", ADMIN_CATEGORY_DEBUG_MISC)
+ADMIN_VERB(toggle_pipeline_audit, R_DEBUG, "Toggle Pipeline Audit", "Turns the missed-wake audit of object-model pipelines and kernel sequences (mobs, machines) on or off for this round.", ADMIN_CATEGORY_DEBUG_MISC)
 	SSbehaviours.audit_forced = !SSbehaviours.audit_forced
 	log_admin("[key_name(user)] turned the pipeline audit [SSbehaviours.audit_forced ? "on" : "off"] for this round.")
 	message_admins("[key_name_admin(user)] turned the pipeline audit [SSbehaviours.audit_forced ? "on" : "off"] for this round.")

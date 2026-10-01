@@ -356,26 +356,28 @@
 	HUD.inventory_shown = 0
 
 
-/datum/om/stage/life/hud/silicon/pai
-	of = /mob/living/silicon/pai
 
-/datum/om/stage/life/hud/silicon/pai/perform(mob/living/silicon/pai/self, datum/om/frame/life/ctx)
+/// Its own HUD stays awake (rerun every Life cycle while it has a client).
+/mob/living/silicon/pai/life_hud_idle()
+	return FALSE
+
+/mob/living/silicon/pai/life_hud()
 	. = ..()
 	if(!.)
 		return
 
-	if(self.pai_fold_display)
-		if(self.loc == self.card)
-			self.pai_fold_display.icon_state = "folded"
+	if(src.pai_fold_display)
+		if(src.loc == src.card)
+			src.pai_fold_display.icon_state = "folded"
 		else
-			self.pai_fold_display.icon_state = "unfolded"
+			src.pai_fold_display.icon_state = "unfolded"
 
-/datum/om/stage/life/hud/silicon/pai/health_icons(mob/living/silicon/pai/self)
+/mob/living/silicon/pai/life_hud_health_icons()
 	. = ..()
-	if(!. || !self.healths)
+	if(!. || !src.healths)
 		return
 
-	self.healths.icon_state = vitality_health_band(self)
+	src.healths.icon_state = vitality_health_band(src)
 
 /mob/living/silicon/pai/toggle_hud_vis(full)
 	if(!client)

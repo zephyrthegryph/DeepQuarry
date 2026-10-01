@@ -70,6 +70,8 @@ OWN_TIMER(/obj/machinery/material_furnace, firing_timer)
 DECLARE_GAS(/obj/machinery/material_furnace, "chamber_air", 500, T20C, null)
 DECLARE_REAGENTS(/obj/machinery/material_furnace, 120, null)
 
+// INIT: seeds this furnace's chamber air from the air of the turf it is built on
+// ALLOW(init): copies the build turf's air into this instance's chamber
 /obj/machinery/material_furnace/Initialize(mapload)
 	. = ..()
 	var/turf/furnace_turf = get_turf(src)
@@ -419,9 +421,7 @@ DECLARE_INTERACTIONS(/obj/structure/material_anvil, \
 	icon_state = "bath_off"
 	anchored = TRUE
 
-/obj/structure/bed/bath/material_treatment/Initialize(mapload)
-	. = ..()
-	create_reagents(200)
+DECLARE_REAGENTS(/obj/structure/bed/bath/material_treatment, 200, null)
 
 EXTEND_INTERACTIONS(/obj/structure/bed/bath/material_treatment, INTERACT_INSERT(/obj/item/stack/material/processed_alloy, PROC_REF(material_treatment_interaction_item), "Treat alloy", REQ_BECAUSE(REQ_TARGET_STATE(/obj/structure/bed/bath/material_treatment/proc/has_medium), "the bath contains no treatment medium")))
 

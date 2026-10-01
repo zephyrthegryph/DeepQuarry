@@ -460,10 +460,10 @@
 	var/datum/interaction/capability/iface = dx_apc_op(A, "open_interface")
 	TEST_ASSERT(iface.is_meant(H, A, null), "a hand means the interface with the cover shut")
 	cap_set(A, CAP_COVER_OPEN, TRUE)
-	TEST_ASSERT(!iface.is_meant(H, A, null), "the open cover is in a hand's way (the cell behind it is what it reaches)")
+	TEST_ASSERT(iface.is_meant(H, A, null), "and with it open: nothing hides the interface (the cell eject outranks it, dx_apc_cell_eject_priority)")
 	var/saved = GLOB.op_route_now
 	GLOB.op_route_now = ROUTE_INTERFACE
-	TEST_ASSERT(iface.is_meant(H, A, null), "but not in the interface's")
+	TEST_ASSERT(iface.is_meant(H, A, null), "over the interface route too")
 	GLOB.op_route_now = saved
 	cap_set(A, CAP_COVER_OPEN, FALSE)
 	A.stat_add(MAINT)
@@ -472,3 +472,34 @@
 	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, T)
 	TEST_ASSERT_EQUAL(R.op_route(null), ROUTE_INTERFACE, "a silicon's empty-handed click is the interface route")
 	TEST_ASSERT_EQUAL(H.op_route(null), ROUTE_PHYSICAL, "a human's is physical")
+
+/// With the cover open and a cell in, an empty hand's click takes the cell out: the cell bay's hand eject ("eject_cell",
+/// a real op of the cell_bay library capability) and the interface both answer the click (both meant, both would run)
+/// and the eject wins by its op priority, not because the interface is hidden. With the bay empty the same click opens
+/// the interface.
+/datum/unit_test/dx_apc_cell_eject_priority/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	var/obj/machinery/power/apc/dx_test/A = dx_apc_make(T)
+	var/datum/interaction/capability/eject = dx_apc_op(A, "eject_cell")
+	var/datum/interaction/capability/iface = dx_apc_op(A, "open_interface")
+	TEST_ASSERT_NOTNULL(eject, "the cell bay's hand eject is an op keyed eject_cell")
+	TEST_ASSERT(eject.op && !eject.op.legacy, "a real op (the router ranks it)")
+	TEST_ASSERT_EQUAL(eject.op.action, ACT_USE, "answering the click's action")
+	TEST_ASSERT(eject.op.priority > iface.op.priority, "at a higher priority than the interface")
+	cap_set(A, CAP_COVER_OPEN, TRUE)
+	TEST_ASSERT(eject.is_meant(H, A, null) && iface.is_meant(H, A, null), "an empty hand means both")
+	TEST_ASSERT_NULL(dx_apc_why(A, H, null, eject), "the eject would run")
+	TEST_ASSERT_NULL(dx_apc_why(A, H, null, iface), "and so would the interface")
+	var/list/entries = action_entries(A, ACT_USE, TRUE)
+	TEST_ASSERT(entries.Find(eject) && entries.Find(eject) < entries.Find(iface), "the eject comes first among the click's ops")
+	TEST_ASSERT_EQUAL(gesture_entry_for(H, A, null, GESTURE_CLICK), eject, "the click reaches the eject")
+	var/obj/item/cell/C = A.cell
+	TEST_ASSERT_EQUAL(try_interaction(H, A, null, INPUT_ACTION_USE, null, TRUE), INTERACTION_TRY_RAN, "the click ran")
+	TEST_ASSERT_NULL(A.cell, "the cell came out")
+	TEST_ASSERT(H.is_in_hands(C), "into the hand")
+	H.drop_from_inventory(C)
+	TEST_ASSERT_EQUAL(gesture_entry_for(H, A, null, GESTURE_CLICK), iface, "an empty bay leaves the click to the interface")
+	cap_set(A, CAP_COVER_OPEN, FALSE)
+	TEST_ASSERT(slot_insert(A, nameof(A.cell), C, H), "the cell goes back in")
+	TEST_ASSERT_EQUAL(gesture_entry_for(H, A, null, GESTURE_CLICK), iface, "with the cover shut the eject can't reach the bay: the interface answers")

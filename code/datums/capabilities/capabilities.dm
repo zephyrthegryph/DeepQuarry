@@ -47,14 +47,22 @@
 		. += C
 		at_key["[C.key]"] = length(.)
 
-/// Applies refine() R to the op it names in list `into` (at_key: key -> position).
+/// Applies refine() R to the op it names in list `into` (at_key: key -> position), or, when the key names a
+/// capability that is not an op (CAP_REAGENTS), to that capability through its refined().
 /proc/cap_apply_refine(list/into, list/at_key, datum/capability/refine/R)
 	var/slot = at_key["op:[R.base_key]"]
-	if(!slot)
-		stack_trace("refine('[R.base_key]') refines an op nothing declared")
+	if(slot)
+		into[slot] = cap_intern(cap_op_refined(into[slot], R))
 		return
-	var/datum/capability/refined = cap_intern(cap_op_refined(into[slot], R))
-	into[slot] = refined
+	slot = at_key["[R.base_key]"]
+	if(!slot)
+		stack_trace("refine('[R.base_key]') refines an op or capability nothing declared")
+		return
+	var/datum/capability/base = into[slot]
+	var/datum/capability/refined = base.refined(R.overrides)
+	if(refined)
+		refined.key = base.key
+		into[slot] = cap_intern(refined)
 
 /// The shared capability equal to C (same type, same saved settings), registering C if it's new.
 /proc/cap_intern(datum/capability/C)
@@ -189,7 +197,7 @@ GLOBAL_LIST_EMPTY(caps_interned)
 /proc/caps_init(atom/holder, mapload)
 	var/flags = type_derive_flags(holder)
 	if(flags & TYPE_DERIVES_TYPE_VERBS)
-		verb_store_refresh(holder, type_list(holder, TYPE_PROC_REF(/atom, type_verbs)))
+		verb_store_refresh(holder, type_verbs_always(holder)) // login entries wait for Login (type_verbs.dm)
 	if(flags & TYPE_DERIVES_CAPS)
 		for(var/datum/capability/C as anything in caps_of(holder))
 			C.on_holder_init(holder, mapload)
@@ -302,7 +310,20 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 			if(!E.cap)
 				E.cap = C
 			cap_apply_gating(C, E)
+			if(E.op)
+				cap_op_sync_gating(E)
 	return C.built_entries
+
+/// An op entry's compartment and gating reads, once its capability's gating is merged onto it (cap_apply_gating()): the
+/// op's route stage asks the entry's bay (a library capability declared `at =`), and a pending wait watches the bits
+/// its behind / blocked_by / locked_by read.
+/proc/cap_op_sync_gating(datum/interaction/capability/E)
+	var/datum/op_def/op = E.op
+	if(!op.at && E.at)
+		op.at = E.at
+	var/list/gating = req_from_gating(E.behind, E.blocked_by, E.locked_by)
+	if(gating)
+		op.gating = gating
 
 // ---- gating ----
 
@@ -532,7 +553,7 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 	return dispatch_call(ctx, E.holder_of(ctx), E.handler, named, E.name, E.log)
 
 /proc/cap_dispatch_form(datum/dispatch_context/ctx, list/named)
-	set waitfor = FALSE
+	set waitfor = FALSE // ALLOW(scheduler): a form dispatch waits on the user's answers (ask_*) and resumes the action
 	var/datum/interaction/capability/E = ctx.entry
 	for(var/datum/form_field/F as anything in E.form)
 		var/answer = F.ask(ctx)
@@ -581,18 +602,59 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 	E.at ||= C.at
 
 /// Sets the standard gating arguments on capability C (every library constructor calls it with its
-/// own same-named arguments). Returns C.
-/proc/cap_gating(datum/capability/C, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log, at)
-	C.behind = behind
-	C.blocked_by = blocked_by
-	C.locked_by = locked_by
-	C.needs = needs
+/// own same-named arguments). Returns C. Library constructors take no `behind` / `blocked_by` / `locked_by`
+/// (G12): state gates are requirements in `needs` (req_set(COVER): the cover must be open; req_clear(COVER |
+/// PANEL): both must be shut; req_clear(CAP_LOCKED): not locked), a compartment is `at`. They are folded here
+/// onto the capability's gate bits (added to its type's own, e.g. the wires' PANEL), so the entries refuse with
+/// the same messages as before ("open the cover first", "close the maintenance panel first", "it's locked").
+/proc/cap_gating(datum/capability/C, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log, at)
+	var/list/gate = cap_fold_state_needs(needs)
+	C.behind |= gate[1]
+	C.blocked_by |= gate[2]
+	C.locked_by |= gate[3]
+	C.needs = gate[4]
 	C.else_say = else_say
 	C.works_broken = works_broken
 	C.works_unpowered = works_unpowered
 	C.log = log
 	C.at = at
 	return C
+
+/**
+ * Splits library `needs` (a holder proc ref, a /datum/req, or a list of them) into the gate bits a capability's
+ * entries check with their own messages and the rest: req_set(bits) on the target -> behind; req_clear(bits) on
+ * the target -> CAP_LOCKED to locked_by, the other bits to blocked_by. Returns list(behind, blocked_by, locked_by,
+ * rest), rest being null, one entry, or a list.
+ */
+/proc/cap_fold_state_needs(needs)
+	var/behind = NONE
+	var/blocked = NONE
+	var/locked = NONE
+	var/list/rest
+	for(var/entry in (islist(needs) ? needs : list(needs)))
+		if(isnull(entry))
+			continue
+		if(istype(entry, /datum/req/state_set))
+			var/datum/req/state_set/R = entry
+			if(R.of == OP_TARGET)
+				behind |= R.bits
+				continue
+		else if(istype(entry, /datum/req/state_clear))
+			var/datum/req/state_clear/R = entry
+			if(R.of == OP_TARGET)
+				locked |= R.bits & CAP_LOCKED
+				blocked |= R.bits & ~CAP_LOCKED
+				continue
+		LAZYADD(rest, entry)
+	return list(behind, blocked, locked, length(rest) == 1 ? rest[1] : rest)
+
+/// `needs` with `extra` (a requirement or proc ref) in front: a new list.
+/proc/cap_needs_with(extra, needs)
+	. = list(extra)
+	if(islist(needs))
+		. += needs
+	else if(!isnull(needs))
+		. += needs
 
 // ---- the bespoke entries: small capabilities ----
 

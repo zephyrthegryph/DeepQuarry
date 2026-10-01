@@ -29,7 +29,10 @@ DECLARE_INTERACTIONS(/obj/structure/reagent_dispensers, \
 /obj/structure/reagent_dispensers/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	return INTERACTION_HANDLED_PASS
 
-DECLARE_REAGENTS(/obj/structure/reagent_dispensers, 5000, null)
+/// The tank's reagents: 5000 units, filled by each kind of tank (refine(CAP_REAGENTS, starts =) adds to what it inherits).
+/obj/structure/reagent_dispensers/capabilities()
+	. = ..()
+	. += reagents(5000)
 
 /obj/structure/reagent_dispensers/Initialize(mapload)
 	. = ..()
@@ -88,7 +91,9 @@ DAMAGE_REACTION(/obj/structure/reagent_dispensers, DAMAGE_BLOB, PROC_REF(dispens
 	icon_state = "water"
 	amount_per_transfer_from_this = 10
 
-DECLARE_REAGENTS(/obj/structure/reagent_dispensers/watertank, null, list(REAGENT_ID_WATER = 1000))
+/obj/structure/reagent_dispensers/watertank/capabilities()
+	. = ..()
+	. += refine(CAP_REAGENTS, starts = list(REAGENT_ID_WATER = 1000))
 
 /obj/structure/reagent_dispensers/watertank/Initialize(mapload)
 	. = ..()
@@ -99,7 +104,9 @@ DECLARE_REAGENTS(/obj/structure/reagent_dispensers/watertank, null, list(REAGENT
 	desc = "A highly-pressurized water tank made to hold vast amounts of water.."
 	icon_state = "water_high"
 
-DECLARE_REAGENTS(/obj/structure/reagent_dispensers/watertank/high, null, list(REAGENT_ID_WATER = 4000))
+/obj/structure/reagent_dispensers/watertank/high/capabilities()
+	. = ..()
+	. += refine(CAP_REAGENTS, starts = list(REAGENT_ID_WATER = 4000))
 
 /obj/structure/reagent_dispensers/watertank/barrel
 	name = "water barrel"
@@ -115,7 +122,9 @@ DECLARE_REAGENTS(/obj/structure/reagent_dispensers/watertank/high, null, list(RE
 	var/modded = 0
 	var/obj/item/assembly_holder/rig = null
 
-DECLARE_REAGENTS(/obj/structure/reagent_dispensers/fueltank, null, list(REAGENT_ID_FUEL = 1000))
+/obj/structure/reagent_dispensers/fueltank/capabilities()
+	. = ..()
+	. += refine(CAP_REAGENTS, starts = list(REAGENT_ID_FUEL = 1000))
 
 /obj/structure/reagent_dispensers/fueltank/Initialize(mapload)
 	. = ..()
@@ -126,7 +135,9 @@ DECLARE_REAGENTS(/obj/structure/reagent_dispensers/fueltank, null, list(REAGENT_
 	desc = "A highly-pressurized fuel tank made to hold vast amounts of fuel."
 	icon_state = "fuel_high"
 
-DECLARE_REAGENTS(/obj/structure/reagent_dispensers/fueltank/high, null, list(REAGENT_ID_FUEL = 4000))
+/obj/structure/reagent_dispensers/fueltank/high/capabilities()
+	. = ..()
+	. += refine(CAP_REAGENTS, starts = list(REAGENT_ID_FUEL = 4000))
 
 //Foam
 /obj/structure/reagent_dispensers/foam
@@ -135,7 +146,9 @@ DECLARE_REAGENTS(/obj/structure/reagent_dispensers/fueltank/high, null, list(REA
 	icon_state = "foam"
 	amount_per_transfer_from_this = 10
 
-DECLARE_REAGENTS(/obj/structure/reagent_dispensers/foam, null, list(REAGENT_ID_FIREFOAM = 1000))
+/obj/structure/reagent_dispensers/foam/capabilities()
+	. = ..()
+	. += refine(CAP_REAGENTS, starts = list(REAGENT_ID_FIREFOAM = 1000))
 
 /obj/structure/reagent_dispensers/foam/Initialize(mapload)
 	. = ..()
@@ -148,7 +161,9 @@ DECLARE_REAGENTS(/obj/structure/reagent_dispensers/foam, null, list(REAGENT_ID_F
 	icon_state = "he3"
 	amount_per_transfer_from_this = 10
 
-DECLARE_REAGENTS(/obj/structure/reagent_dispensers/he3, null, list(REAGENT_ID_HELIUM3 = 1000))
+/obj/structure/reagent_dispensers/he3/capabilities()
+	. = ..()
+	. += refine(CAP_REAGENTS, starts = list(REAGENT_ID_HELIUM3 = 1000))
 
 /obj/structure/reagent_dispensers/he3/Initialize(mapload)
 	. = ..()
@@ -312,7 +327,9 @@ DAMAGE_REACTION(/obj/structure/reagent_dispensers/fueltank, DAMAGE_EXPLOSION, PR
 	amount_per_transfer_from_this = 45
 	flags = WALL_ITEM
 
-DECLARE_REAGENTS(/obj/structure/reagent_dispensers/peppertank, null, list(REAGENT_ID_CONDENSEDCAPSAICIN = 1000))
+/obj/structure/reagent_dispensers/peppertank/capabilities()
+	. = ..()
+	. += refine(CAP_REAGENTS, starts = list(REAGENT_ID_CONDENSEDCAPSAICIN = 1000))
 
 /obj/structure/reagent_dispensers/virusfood
 	name = "Virus Food Dispenser"
@@ -323,7 +340,9 @@ DECLARE_REAGENTS(/obj/structure/reagent_dispensers/peppertank, null, list(REAGEN
 	density = FALSE
 	amount_per_transfer_from_this = 10
 
-DECLARE_REAGENTS(/obj/structure/reagent_dispensers/virusfood, null, list(REAGENT_ID_VIRUSFOOD = 1000))
+/obj/structure/reagent_dispensers/virusfood/capabilities()
+	. = ..()
+	. += refine(CAP_REAGENTS, starts = list(REAGENT_ID_VIRUSFOOD = 1000))
 
 /obj/structure/reagent_dispensers/acid
 	name = "Sulphuric Acid Dispenser"
@@ -334,7 +353,9 @@ DECLARE_REAGENTS(/obj/structure/reagent_dispensers/virusfood, null, list(REAGENT
 	density = FALSE
 	amount_per_transfer_from_this = 10
 
-DECLARE_REAGENTS(/obj/structure/reagent_dispensers/acid, null, list(REAGENT_ID_SACID = 1000))
+/obj/structure/reagent_dispensers/acid/capabilities()
+	. = ..()
+	. += refine(CAP_REAGENTS, starts = list(REAGENT_ID_SACID = 1000))
 
 /obj/structure/reagent_dispensers/water_cooler
 	name = "Water-Cooler"
@@ -491,7 +512,9 @@ DECLARE_APPEARANCE(/obj/structure/reagent_dispensers/water_cooler, "bottle", lis
 	icon_state = "beertankTEMP"
 	amount_per_transfer_from_this = 10
 
-DECLARE_REAGENTS(/obj/structure/reagent_dispensers/beerkeg, null, list(REAGENT_ID_BEER = 1000))
+/obj/structure/reagent_dispensers/beerkeg/capabilities()
+	. = ..()
+	. += refine(CAP_REAGENTS, starts = list(REAGENT_ID_BEER = 1000))
 
 /obj/structure/reagent_dispensers/beerkeg/Initialize(mapload)
 	. = ..()
@@ -507,7 +530,9 @@ DECLARE_REAGENTS(/obj/structure/reagent_dispensers/beerkeg, null, list(REAGENT_I
 	desc = "A wine casket with a tap on it."
 	icon_state = "beertankfantasy"
 
-DECLARE_REAGENTS(/obj/structure/reagent_dispensers/beerkeg/wine, null, list(REAGENT_ID_REDWINE = 1000))
+/obj/structure/reagent_dispensers/beerkeg/wine/capabilities()
+	. = ..()
+	. += refine(CAP_REAGENTS, starts = list(REAGENT_ID_REDWINE = 1000))
 
 /obj/structure/reagent_dispensers/beerkeg/fakenuke
 	name = "nuclear beer keg"
@@ -523,7 +548,9 @@ DECLARE_REAGENTS(/obj/structure/reagent_dispensers/beerkeg/wine, null, list(REAG
 	icon_state = "oiltank"
 	amount_per_transfer_from_this = 120
 
-DECLARE_REAGENTS(/obj/structure/reagent_dispensers/cookingoil, null, list(REAGENT_ID_COOKINGOIL = 5000))
+/obj/structure/reagent_dispensers/cookingoil/capabilities()
+	. = ..()
+	. += refine(CAP_REAGENTS, starts = list(REAGENT_ID_COOKINGOIL = 5000))
 
 /obj/structure/reagent_dispensers/cookingoil/Initialize(mapload)
 	. = ..()
@@ -566,7 +593,9 @@ DAMAGE_REACTION(/obj/structure/reagent_dispensers/cookingoil, DAMAGE_EXPLOSION, 
 	amount_per_transfer_from_this = 60
 	anchored = 1
 
-DECLARE_REAGENTS(/obj/structure/reagent_dispensers/space_cleaner, null, list(REAGENT_ID_CLEANER = 1000))
+/obj/structure/reagent_dispensers/space_cleaner/capabilities()
+	. = ..()
+	. += refine(CAP_REAGENTS, starts = list(REAGENT_ID_CLEANER = 1000))
 
 /obj/structure/reagent_dispensers/fueltank/ownership()
 	. = ..()

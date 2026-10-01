@@ -84,7 +84,7 @@
 	if(uses_integrity && max_integrity > 0)
 		take_damage(max_integrity, BRUTE)
 	else
-		qdel(src)
+		qdel(src) // ALLOW(lifecycle): a non-integrity object has no break state: the rupture destroys it outright
 
 /// Applies conserved heat exchange, differential-pressure fatigue, and both
 /// wetted- and exterior-surface corrosion. Returns TRUE while another sample
@@ -181,7 +181,7 @@
 		if(uses_integrity && max_integrity > 0)
 			take_damage(max_integrity, BURN)
 		else
-			qdel(src)
+			qdel(src) // ALLOW(lifecycle): a non-integrity object has no break state: exterior corrosion destroys it outright
 	return TRUE
 
 /obj/proc/process_material_reagent_liner(datum/reagents/contents, elapsed_seconds = 0)
@@ -221,7 +221,7 @@
 	var/turf/spill_target = get_turf(src)
 	if(spill_target)
 		reagents?.splash(spill_target, reagents.total_volume)
-	qdel(src)
+	qdel(src) // ALLOW(lifecycle): the perforated vessel spills and is destroyed now
 
 /obj/item/reagent_containers/examine(mob/user)
 	. = ..()

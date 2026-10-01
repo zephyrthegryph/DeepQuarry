@@ -154,12 +154,9 @@
 	var/saved_ticklimit = Master.current_ticklimit
 	Master.current_ticklimit = limit_abs
 	try
-		if(W.members)
-			done = W.spread ? run_item_spread(W, owner, limit_abs, now) : run_item_members(W, owner, limit_abs, now)
-		else
-			done = run_item_once(W, owner, now)
+		done = W.sweep(src, owner, limit_abs, now)
 		W.consecutive_faults = 0
-	catch(var/exception/e)
+	catch(var/exception/e) // ALLOW(silent_catch): the fault is counted per work item and escalated by consecutive_faults
 		W.faults++
 		W.consecutive_faults++
 		W.cursor = 0

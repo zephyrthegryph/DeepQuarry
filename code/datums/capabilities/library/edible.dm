@@ -29,21 +29,21 @@
 /datum/cap_edible_data
 	var/bites_taken = 0
 
-/proc/cap_edible(bites, bite_size = 1, trash, eat_sound = SFX_ITEMS_EATFOOD, feed_time = 3 SECONDS, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log = LOG_GAME)
+/proc/cap_edible(bites, bite_size = 1, trash, eat_sound = SFX_ITEMS_EATFOOD, feed_time = 3 SECONDS, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log = LOG_GAME)
 	var/datum/capability/edible/C = new
 	C.bites = bites
 	C.bite_size = bite_size
 	C.trash = trash
 	C.eat_sound = eat_sound
 	C.feed_time = feed_time
-	cap_gating(C, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered)
+	cap_gating(C, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered)
 	return C
 
 /datum/capability/edible/interactions(atom/holder)
-	var/datum/interaction/capability/eat = adopt_entry(cap_hand("Eat", GLOBAL_PROC_REF(cap_edible_eat), needs = GLOBAL_PROC_REF(cap_edible_can_eat), works_broken = TRUE, works_unpowered = TRUE))
-	eat.entry = INTERACTION_ENTRY_SELF // using it in hand eats it
-	var/datum/interaction/capability/feed = adopt_entry(cap_hand("Feed", GLOBAL_PROC_REF(cap_edible_feed), works_broken = TRUE, works_unpowered = TRUE))
-	feed.default_action = null // Menu only
+	// "eat": the self-use (using it in hand eats it); "feed": ACT_NONE.
+	var/datum/interaction/capability/eat = adopt_entry(lib_op("Eat", GLOBAL_PROC_REF(cap_edible_eat), OP_SHAPE_HAND, key = "eat", offered = req_self_held(), needs = GLOBAL_PROC_REF(cap_edible_can_eat), works_broken = TRUE, works_unpowered = TRUE))
+	eat.entry = INTERACTION_ENTRY_SELF
+	var/datum/interaction/capability/feed = adopt_entry(lib_op("Feed", GLOBAL_PROC_REF(cap_edible_feed), OP_SHAPE_HAND, key = "feed", action = ACT_NONE, works_broken = TRUE, works_unpowered = TRUE))
 	return list(eat, feed)
 
 /datum/capability/edible/examine(atom/holder, mob/user)

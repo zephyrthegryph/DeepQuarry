@@ -33,20 +33,19 @@
 	/// world.time before which the holder can't signal again.
 	var/next_signal = 0
 
-/proc/cap_signaler(frequency = RSD_FREQ, code = 30, on_signal, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = FALSE, works_unpowered = TRUE, log = LOG_GAME)
+/proc/cap_signaler(frequency = RSD_FREQ, code = 30, on_signal, needs, else_say, works_broken = FALSE, works_unpowered = TRUE, log = LOG_GAME)
 	var/datum/capability/signaler/C = new
 	C.frequency = sanitize_frequency(frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ)
 	C.code = clamp(round(code), 1, 100)
 	C.on_signal = on_signal
-	cap_gating(C, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered)
+	cap_gating(C, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered)
 	return C
 
 /datum/capability/signaler/interactions(atom/holder)
-	var/datum/interaction/capability/send = adopt_entry(cap_hand("Send signal", GLOBAL_PROC_REF(cap_signaler_send), works_unpowered = TRUE))
-	var/datum/interaction/capability/set_freq = adopt_entry(cap_hand("Set frequency", GLOBAL_PROC_REF(cap_signaler_set_frequency), works_unpowered = TRUE, form = list(number_field("frequency", min_value = RADIO_LOW_FREQ, max_value = RADIO_HIGH_FREQ, message = "Frequency, [RADIO_LOW_FREQ] to [RADIO_HIGH_FREQ] ([format_frequency(RSD_FREQ)] is [RSD_FREQ]):", title = "Signaler", default = frequency))))
-	var/datum/interaction/capability/set_code = adopt_entry(cap_hand("Set code", GLOBAL_PROC_REF(cap_signaler_set_code), works_unpowered = TRUE, form = list(number_field("code", min_value = 1, max_value = 100, message = "Code, 1 to 100:", title = "Signaler", default = code))))
-	for(var/datum/interaction/capability/E as anything in list(send, set_freq, set_code))
-		E.default_action = null // Menu entries: an empty hand keeps doing the holder's own thing
+	// ACT_NONE, all three: an empty hand keeps doing the holder's own thing; the Menu, radial and command bar name them.
+	var/datum/interaction/capability/send = adopt_entry(lib_op("Send signal", GLOBAL_PROC_REF(cap_signaler_send), OP_SHAPE_HAND, key = "send_signal", action = ACT_NONE, works_unpowered = TRUE))
+	var/datum/interaction/capability/set_freq = adopt_entry(lib_op("Set frequency", GLOBAL_PROC_REF(cap_signaler_set_frequency), OP_SHAPE_HAND, key = "set_frequency", action = ACT_NONE, works_unpowered = TRUE, form = list(number_field("frequency", min_value = RADIO_LOW_FREQ, max_value = RADIO_HIGH_FREQ, message = "Frequency, [RADIO_LOW_FREQ] to [RADIO_HIGH_FREQ] ([format_frequency(RSD_FREQ)] is [RSD_FREQ]):", title = "Signaler", default = frequency))))
+	var/datum/interaction/capability/set_code = adopt_entry(lib_op("Set code", GLOBAL_PROC_REF(cap_signaler_set_code), OP_SHAPE_HAND, key = "set_code", action = ACT_NONE, works_unpowered = TRUE, form = list(number_field("code", min_value = 1, max_value = 100, message = "Code, 1 to 100:", title = "Signaler", default = code))))
 	return list(send, set_freq, set_code)
 
 /datum/capability/signaler/examine(atom/holder, mob/user)
@@ -106,7 +105,7 @@
 /proc/cap_signaler_signal(obj/O)
 	var/datum/capability/signaler/C = cap_signaler_cap(O)
 	var/datum/cap_signaler_data/D = cap_data(O, C)
-	if(world.time < D.next_signal)
+	if(!COOLDOWN_FINISHED(D, next_signal))
 		return "it isn't ready yet"
 	if(is_jammed(O))
 		return "all you hear is static"
@@ -116,7 +115,7 @@
 	signal.data["message"] = "ACTIVATE"
 	var/datum/radio_frequency/channel = GLOB.radio_service.return_frequency(cap_signaler_frequency(O))
 	channel.post_signal(O, signal)
-	D.next_signal = world.time + SIGNALER_COOLDOWN
+	COOLDOWN_START(D, next_signal, SIGNALER_COOLDOWN)
 	return null
 
 /// A radio signal reached O (from /obj/receive_signal()): runs on_signal when the code matches.

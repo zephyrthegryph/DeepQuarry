@@ -18,10 +18,10 @@
 
 /**
  * The cell holder for holder var `var_name` (nameof(var)) holding one `cell_type`. Takes the standard
- * gating arguments (an APC: behind = COVER).
+ * gating arguments (behind a cover: needs = req_set(COVER)). Draws LOOK_CELL while it holds a cell.
  */
-/proc/cap_cell_holder(var_name, cell_type = /obj/item/cell, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log, layer = LOOK_CELL)
-	return cap_slot(var_name, cell_type, behind = behind, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log, layer = layer, name = "Insert cell", eject_name = "Remove cell", eject_via = SLOT_VIA_HAND, slot_type = /datum/capability/slot/cell_holder, insert_msg = "You insert %I% into %T%.", eject_msg = "You take %I% out of %T%.", full_msg = "%T% already has %I% in it.")
+/proc/cap_cell_holder(var_name, cell_type = /obj/item/cell, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
+	return cap_slot(var_name, cell_type, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log, part = LOOK_CELL, name = "Insert cell", eject_name = "Remove cell", eject_via = SLOT_VIA_HAND, slot_type = /datum/capability/slot/cell_holder, insert_msg = "You insert %I% into %T%.", eject_msg = "You take %I% out of %T%.", full_msg = "%T% already has %I% in it.")
 
 /datum/capability/slot/cell_holder/examine(atom/holder, mob/user)
 	var/obj/item/cell/cell = holder.vars[slot_var]
@@ -56,12 +56,12 @@
 	var/cell_var
 
 /// Charges the holder's cell (its cap_cell_holder()) by `rate` per second while powered and not broken.
-/proc/cap_charger(rate = 100, cell_var = null, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = FALSE, works_unpowered = FALSE, log)
+/proc/cap_charger(rate = 100, cell_var = null, needs, else_say, works_broken = FALSE, works_unpowered = FALSE, log)
 	var/datum/capability/charger/C = new
 	C.rate = rate
 	C.cell_var = cell_var
 	C.key = cell_var ? "charger:[cell_var]" : "charger"
-	return cap_gating(C, behind = behind, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
+	return cap_gating(C, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 
 /datum/capability/charger/on_holder_init(atom/holder, mapload)
 	if(!holder.periodic_cadence)

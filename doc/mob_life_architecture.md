@@ -368,6 +368,16 @@ with no behaviour change. The code is in `code/modules/mob/living/life/` and the
 - **Species hooks.** `handle_environment_special()` and `handle_npc()` are species strategy calls
   (`environment_effects()`, `npc_behaviour()`). `handle_species_components()` became the
   species components system.
+- **Reactive output (S2, [doc/rewrite/life_sequences.md](rewrite/life_sequences.md)).** canmove, the
+  HUD and sight flags are not Life stages: they are `on_channel()` reactions on `/mob/living`
+  (`code/modules/mob/living/life/living_systems.dm`, "Reactive output"). Each runs when one of its
+  `CHANGE_MOB_*` channels is raised through `changed()`; HUD and sight at most every
+  `LIFE_PRESENT_MIN_INTERVAL` (`at_most`). Per-type behaviour is proc overrides: `life_canmove()`,
+  `life_hud()` (and `life_hud_health_icons()`, `life_hud_darksight()`, the human `life_hud_*`
+  helpers), `life_vision()`, with `life_hud_idle()` / `life_vision_idle()` and their
+  `*_rewake_delay()` choosing the keyed `rx_after()` rewake. The HUD reaction's `when` is
+  `life_hud_wanted()` (a client): a clientless mob queues nothing. Robots draw their HUD and
+  sight from their `robot_interface` step only.
 - **Public entry points.** Code outside `Life()` uses `refresh_hud()`, `refresh_vision()`,
   `refresh_glow()`, `process_chemicals()`, `process_organs(force)` (humans) and
   `run_life_system(family)`.
@@ -443,12 +453,12 @@ bit is left, `life_hibernate()` parks the mob.
 | status (root) | conscious or dead, and `body.life_settled()` | |
 | disabilities (root) | eyes and ears recovered, blind alert gone, no disability component | |
 | statuses (root) | every counter at 0 and every alert cleared | |
-| canmove (root) | not stunned, weakened, paralysed or asleep | |
-| hud, vision (roots) | no component takes over the HUD or vision | 5 s with a client (darksight) |
+| canmove (reaction) | runs only when its channels are raised | |
+| hud, vision (reactions: `life_hud_idle()`, `life_vision_idle()`) | no component takes over the HUD or vision | 5 s with a client (darksight); a type with its own HUD reruns every cycle while it has a client |
 | modifiers, instability, tf holder, vr derez | nothing to expire, decay, spread or link; a VR mob inside the VR area | |
 | simple statuses, supernatural, healing, guts | counters at 0; purge 0; not hurt or not fed; no organ objects | |
 | environment (simple mob) | the air is survivable and the body has nothing for it to treat | 15 s (air changing in place) |
-| human hud refresh, voice, visible name | always | 1 min; 10 s; 10 s |
+| human hud full refresh (follows the HUD reaction), voice, visible name | always | 1 min; 10 s; 10 s |
 
 A healthy idle simple mob hibernates within two cycles. Humans still run their physiology,
 HUD, vision and tail systems every cycle, and robots, the AI and pAIs their own sets. They

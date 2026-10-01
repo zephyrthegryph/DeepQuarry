@@ -438,8 +438,8 @@ APPEARANCE_NONE(/obj/machinery/door/airlock)
 
 /obj/machinery/door/airlock/capabilities()
 	. = ..()
-	// draw() shows door_locked while the bolt lights are on, so the bolts and emergency access draw no
-	// layer of their own; the door's own welder repair (door.dm) mends it.
+	// draw() shows door_locked while the bolt lights are on, so it hides the bolts' and emergency access' parts;
+	// the door's own welder repair (door.dm) mends it.
 	. += door(wires = /datum/wires/airlock, electrify = TRUE, ai_control = TRUE, emag_effect = PROC_REF(emag_effect), weld_applies = PROC_REF(can_weld_now), weld_help_applies = PROC_REF(can_weld_without_repair))
 	. += cap_frozen_shut()
 	. += cap_hand("Use", PROC_REF(touch_airlock), needs = PROC_REF(can_touch_by_hand))
@@ -454,10 +454,13 @@ APPEARANCE_NONE(/obj/machinery/door/airlock)
 
 /obj/machinery/door/airlock/draw(datum/look/look)
 	..()
-	// doorint.dmi and its kin have no wires, broken or dark states: the sparks below show damage.
-	look.hide("wires")
-	look.hide("broken")
-	look.hide("dark")
+	// doorint.dmi and its kin have no wires, broken or dark states: the sparks below show damage. The bolts show as
+	// door_locked (below) and emergency access has no sprite of its own.
+	look.hide(LOOK_WIRES)
+	look.hide(LOOK_BROKEN)
+	look.hide(LOOK_DARK)
+	look.hide(LOOK_BOLTS)
+	look.hide(LOOK_EMERGENCY)
 	var/powered = !has_stat(NOPOWER)
 	var/damaged = get_integrity() < max_integrity * 3/4
 	if(density)

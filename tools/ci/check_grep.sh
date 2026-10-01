@@ -470,13 +470,14 @@ part "admin rights: shrink-only baseline (one mechanism: admin_can)"
 # admin_can(client, rights), which never reads usr. Raw `.holder` reads and `rights & R_X` tests belong
 # in modules/admin/holder*; check_rights() is a deprecated usr wrapper. These counts may only go down.
 admin_hits() {
-	$grep_bin -n "$1" "${code_files[@]}" | grep -v 'code/modules/admin/holder' | grep -v 'proc/check_rights' | grep -v 'ALLOW([^)]*check_grep' | wc -l
+	$grep_bin -n "$1" "${code_files[@]}" | grep -v 'code/modules/admin/holder' | grep -v 'proc/check_rights' | grep -v 'ALLOW([^)]*check_grep' | grep -Ev "${2:-^$}" | wc -l
 }
 admin_check_rights_max=82
 admin_holder_max=327
 admin_rights_and_max=17
 admin_check_rights_count=$(admin_hits 'check_rights\(')
-admin_holder_count=$(admin_hits '\.holder\b')
+# `nameof(x.holder)` ownership relations (assemblies, reagents, ...) and `.holder()` accessor calls are not admin reads.
+admin_holder_count=$(admin_hits '\.holder\b' 'nameof\([^)]*\.holder|\.holder\(')
 admin_rights_and_count=$(admin_hits 'rights & R_')
 if [ "$admin_check_rights_count" -gt "$admin_check_rights_max" ]; then
 	echo

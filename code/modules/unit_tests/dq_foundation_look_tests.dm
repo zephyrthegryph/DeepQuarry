@@ -140,6 +140,8 @@
 
 /obj/cap_fixture/prim_probe/capabilities()
 	. = ..()
+	// The bay its steps work at (ladder steps are ops, and an op at a bay the holder never declares fails closed).
+	. += compartment("test_bay")
 	. += cap_construction(
 		ladder_options(at = "test_bay", sprite = "prim_", undo_delay = 1 SECONDS, dismantle = ladder_dismantle(tool = TOOL_WRENCH, becomes = /obj/item/stack/material/steel, amount = 2)),
 		stage("frame", desc = "A bare frame."),

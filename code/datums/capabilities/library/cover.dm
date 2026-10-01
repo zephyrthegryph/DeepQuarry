@@ -1,10 +1,10 @@
 // The cover capability (doc/rewrite/dx_conventions.md §2): a hatch or front plate that opens by
 // hand or with a tool. State: CAP_COVER_OPEN, and CAP_COVER_REMOVED once a removable cover is pried
 // off (the APC's "cover removed": it stays open and can't be closed). Other entries declare
-// `behind = COVER` to be reachable only while it is open (cap_gate_reason()). Layer: LOOK_COVER_OPEN.
+// `needs = req_set(COVER)` to be reachable only while it is open (cap_gate_reason()). Look: LOOK_COVER_OPEN.
 // Accessors: cover_is_open(), cover_removed().
 //
-//	. += cap_cover(open_tool = TOOL_CROWBAR, locked_by = LOCK)
+//	. += cap_cover(open_tool = TOOL_CROWBAR, needs = req_clear(LOCK))
 //	. += cap_cover(open_tool = BY_HAND)
 //	. += cap_cover(removable = TRUE, needs = PROC_REF(coverlock_ok), else_say = "the cover is locked")
 
@@ -18,26 +18,25 @@
 
 /// A cover. open_tool: TOOL_* or BY_HAND (null can't be passed: DM would substitute the default).
 /// removable: a crowbar on harm intent removes it. Gating as every library constructor.
-/proc/cap_cover(open_tool = TOOL_CROWBAR, delay = 0, removable = FALSE, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log, layer = LOOK_COVER_OPEN)
+/proc/cap_cover(open_tool = TOOL_CROWBAR, delay = 0, removable = FALSE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
 	var/datum/capability/cover/C = new
 	C.open_tool = open_tool
 	C.delay = delay
 	C.removable = removable
-	C.layer_name = layer
-	return cap_gating(C, behind = behind, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
+	return cap_gating(C, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 
+/// Ops: "open_cover" (the tool's click, OP_PRIORITY_PART; or an empty hand's, BY_HAND), and with `removable`
+/// "remove_cover" (a crowbar in harm: the hostile ACT_ATTACK, above the opening).
 /datum/capability/cover/interactions(atom/holder)
 	. = list()
 	var/present = GLOBAL_PROC_REF(cap_cover_present)
 	if(open_tool && open_tool != BY_HAND)
-		. += adopt_entry(cap_tool("Open cover", open_tool, GLOBAL_PROC_REF(cap_cover_toggle), delay = delay, needs = present, priority = 10, name_proc = GLOBAL_PROC_REF(cap_cover_name)), id = "cover:[open_tool]")
+		. += adopt_entry(lib_op("Open cover", GLOBAL_PROC_REF(cap_cover_toggle), OP_SHAPE_TOOL, using = open_tool, key = "open_cover", delay = delay, needs = present, priority = OP_PRIORITY_PART, name_proc = GLOBAL_PROC_REF(cap_cover_name)), id = "cover:[open_tool]")
 	else
-		. += adopt_entry(cap_hand("Open cover", GLOBAL_PROC_REF(cap_cover_toggle), needs = present, works_broken = TRUE, works_unpowered = TRUE, name_proc = GLOBAL_PROC_REF(cap_cover_name)), id = "cover:[open_tool]")
+		// A removed cover is not what an empty hand means: the touch falls through.
+		. += adopt_entry(lib_op("Open cover", GLOBAL_PROC_REF(cap_cover_toggle), OP_SHAPE_HAND, key = "open_cover", offered = req_proc(present), works_broken = TRUE, works_unpowered = TRUE, name_proc = GLOBAL_PROC_REF(cap_cover_name)), id = "cover:[open_tool]")
 	if(removable)
-		var/datum/interaction/capability/E = adopt_entry(cap_tool("Remove cover", TOOL_CROWBAR, GLOBAL_PROC_REF(cap_cover_remove), delay = delay, needs = present, priority = 20), id = "cover:remove")
-		E.stance = I_HURT
-		E.apply_stance_tags()
-		. += E
+		. += adopt_entry(lib_op("Remove cover", GLOBAL_PROC_REF(cap_cover_remove), OP_SHAPE_TOOL, using = TOOL_CROWBAR, key = "remove_cover", action = ACT_ATTACK, delay = delay, needs = present, priority = OP_PRIORITY_PART * 2, stance = I_HURT), id = "cover:remove")
 
 /datum/capability/cover/examine(atom/holder, mob/user)
 	if(cover_removed(holder))

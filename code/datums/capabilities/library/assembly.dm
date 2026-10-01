@@ -25,27 +25,27 @@
 	/// An overlay drawn while an assembly is attached, or null.
 	var/attached_state
 
-/proc/cap_assembly(list/attach_types = list(/obj/item/assembly), on_pulse, detach_tool = TOOL_SCREWDRIVER, attached_state, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log = LOG_GAME)
+/proc/cap_assembly(list/attach_types = list(/obj/item/assembly), on_pulse, detach_tool = TOOL_SCREWDRIVER, attached_state, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log = LOG_GAME)
 	var/datum/capability/assembly/C = new
 	C.attach_types = attach_types
 	C.on_pulse = on_pulse
 	C.detach_tool = detach_tool
 	C.attached_state = attached_state
-	cap_gating(C, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered)
+	cap_gating(C, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered)
 	return C
 
+/// Ops: "attach_assembly" (a click with an attachable assembly; one it can't take now refuses), "detach_assembly" (the
+/// detach tool's click, or ACT_NONE by hand: an empty hand keeps doing the holder's own thing) and "trigger_assembly"
+/// (ACT_NONE: the Menu, radial or command bar).
 /datum/capability/assembly/interactions(atom/holder)
-	var/datum/interaction/capability/attach = adopt_entry(cap_insert("Attach", attach_types, GLOBAL_PROC_REF(cap_assembly_attach), needs = GLOBAL_PROC_REF(cap_assembly_can_attach), works_broken = TRUE, works_unpowered = TRUE))
+	var/datum/interaction/capability/attach = adopt_entry(lib_op("Attach", GLOBAL_PROC_REF(cap_assembly_attach), OP_SHAPE_INSERT, using = attach_types, key = "attach_assembly", needs = GLOBAL_PROC_REF(cap_assembly_can_attach), works_broken = TRUE, works_unpowered = TRUE))
 	var/datum/capability/entry/detach_wrapper
 	if(detach_tool)
-		detach_wrapper = cap_tool("Detach assembly", detach_tool, GLOBAL_PROC_REF(cap_assembly_detach), needs = GLOBAL_PROC_REF(cap_assembly_present), else_say = "nothing is attached to it")
+		detach_wrapper = lib_op("Detach assembly", GLOBAL_PROC_REF(cap_assembly_detach), OP_SHAPE_TOOL, using = detach_tool, key = "detach_assembly", needs = GLOBAL_PROC_REF(cap_assembly_present), else_say = "nothing is attached to it")
 	else
-		detach_wrapper = cap_hand("Detach assembly", GLOBAL_PROC_REF(cap_assembly_detach), needs = GLOBAL_PROC_REF(cap_assembly_present), else_say = "nothing is attached to it", works_broken = TRUE, works_unpowered = TRUE)
+		detach_wrapper = lib_op("Detach assembly", GLOBAL_PROC_REF(cap_assembly_detach), OP_SHAPE_HAND, key = "detach_assembly", action = ACT_NONE, needs = GLOBAL_PROC_REF(cap_assembly_present), else_say = "nothing is attached to it", works_broken = TRUE, works_unpowered = TRUE)
 	var/datum/interaction/capability/detach = adopt_entry(detach_wrapper)
-	var/datum/interaction/capability/trigger = adopt_entry(cap_hand("Trigger", GLOBAL_PROC_REF(cap_assembly_trigger), needs = GLOBAL_PROC_REF(cap_assembly_present), else_say = "nothing is attached to it", works_broken = TRUE, works_unpowered = TRUE))
-	trigger.default_action = null // Menu only: an empty hand keeps doing the holder's own thing
-	if(!detach_tool)
-		detach.default_action = null
+	var/datum/interaction/capability/trigger = adopt_entry(lib_op("Trigger", GLOBAL_PROC_REF(cap_assembly_trigger), OP_SHAPE_HAND, key = "trigger_assembly", action = ACT_NONE, needs = GLOBAL_PROC_REF(cap_assembly_present), else_say = "nothing is attached to it", works_broken = TRUE, works_unpowered = TRUE))
 	return list(attach, detach, trigger)
 
 /datum/capability/assembly/examine(atom/holder, mob/user)

@@ -32,7 +32,7 @@
 			var/datum/owned = client.vars[var_name]
 			if(owned)
 				qdel(owned)
-			client.vars[var_name] = null
+			client.vars[var_name] = null // ALLOW(api): clears a fixed static list of client-owned panel vars on session teardown
 		for(var/window_id in client.tgui_windows)
 			var/datum/tgui_window/window = client.tgui_windows[window_id]
 			if(window)

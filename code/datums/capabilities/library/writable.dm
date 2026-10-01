@@ -31,16 +31,17 @@
 	/// Visible characters written so far.
 	var/used = 0
 
-/proc/cap_writable(max_length = MAX_PAPER_MESSAGE_LEN, pen_types = /obj/item/pen, written_state, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log = LOG_GAME)
+/proc/cap_writable(max_length = MAX_PAPER_MESSAGE_LEN, pen_types = /obj/item/pen, written_state, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log = LOG_GAME)
 	var/datum/capability/writable/C = new
 	C.max_length = max_length
 	C.pen_types = pen_types
 	C.written_state = written_state
-	cap_gating(C, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered)
+	cap_gating(C, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered)
 	return C
 
 /datum/capability/writable/interactions(atom/holder)
-	var/datum/interaction/capability/write = adopt_entry(cap_use_on("Write", pen_types, TYPE_PROC_REF(/atom, cap_writable_write), needs = GLOBAL_PROC_REF(cap_writable_has_space), else_say = "there's no room left to write on it", works_broken = TRUE, works_unpowered = TRUE, priority = WRITABLE_PRIORITY))
+	// "write": a click with a pen or crayon, ahead of a rename by the same pen (WRITABLE_PRIORITY); a full page refuses.
+	var/datum/interaction/capability/write = adopt_entry(lib_op("Write", TYPE_PROC_REF(/atom, cap_writable_write), OP_SHAPE_USE_ON, using = pen_types, key = "write", needs = GLOBAL_PROC_REF(cap_writable_has_space), else_say = "there's no room left to write on it", works_broken = TRUE, works_unpowered = TRUE, priority = WRITABLE_PRIORITY))
 	return list(write)
 
 /datum/capability/writable/examine(atom/holder, mob/user)

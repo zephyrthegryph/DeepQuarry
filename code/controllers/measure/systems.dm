@@ -150,7 +150,7 @@
 		"object_behaviours" = list(
 			/datum/om/behaviour/absorbent, /datum/om/behaviour/bluespace_connection, /datum/om/behaviour/burning,
 			/datum/om/behaviour/cleaning, /datum/om/behaviour/climbable, /datum/om/behaviour/footstep,
-			/datum/om/behaviour/omen, /datum/om/behaviour/radiation_protected_clothing, /datum/om/behaviour/resize_guard,
+			/datum/om/behaviour/omen, /datum/om/behaviour/resize_guard,
 			/datum/om/behaviour/slip_prone, /datum/om/behaviour/slosh, /datum/om/behaviour/swarming,
 			/datum/om/behaviour/tether_host, /datum/om/behaviour/tether_handheld,
 		),

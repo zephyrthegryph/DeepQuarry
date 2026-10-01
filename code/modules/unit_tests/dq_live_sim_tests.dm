@@ -80,8 +80,11 @@
 	TEST_ASSERT_EQUAL(sub.wakes, 0, "the sensor stays quiet below the threshold")
 	tank.adjust_gas(/datum/gas/nitrogen, 200)
 	SSair.run_gas_frames(1)
-	om_test_ticks(6)
-	TEST_ASSERT(sub.wakes >= 1, "the pressure crossed [limit] kPa ([tank.return_pressure()]) but the watch did not fire")
+	// The crossing is queued by the frame above, but the wake is delivered by the kernel's urgent phase, which
+	// a loaded full-suite world (sharded boots, overrun ticks) can skip for several ticks. Wait for the delivery
+	// itself, with a generous bound, instead of assuming six ticks always reach it.
+	om_test_wait_for(sub, nameof(sub.wakes))
+	TEST_ASSERT(sub.wakes >= 1, "the pressure crossed [limit] kPa ([tank.return_pressure()]) but the watch did not fire; world wake diagnostics: [json_encode(om_world_diagnostics())]")
 	TEST_ASSERT_NULL(om_watch_gas(sub, null, CH_GAS_PRESSURE, WORLD_CMP_ABOVE, 1, TYPE_PROC_REF(/datum/world_threshold_subscriber, on_cross)), "no mixture, no watch")
 	qdel(watch)
 	qdel(tank)
@@ -105,13 +108,13 @@
 	var/threw = FALSE
 	try
 		must_be(null, /datum/unit_test)
-	catch
+	catch // ALLOW(silent_catch): the test asserts that must_be(null) throws
 		threw = TRUE
 	TEST_ASSERT(threw, "must_be() asserts on null")
 	threw = FALSE
 	try
 		must_be(none, /obj)
-	catch
+	catch // ALLOW(silent_catch): the test asserts that must_be() on the wrong type throws
 		threw = TRUE
 	TEST_ASSERT(threw, "and on the wrong type")
 	TEST_ASSERT_EQUAL(z_of(null), NO_Z, "an atom that is nowhere is on NO_Z")

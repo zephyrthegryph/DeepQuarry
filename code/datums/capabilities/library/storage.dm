@@ -57,9 +57,8 @@
  * max_total: space in storage-cost units; can_hold_proc: the holder's exception proc. behind /
  * locked_by gate every entry (a lockbox: locked_by = LOCK).
  */
-/proc/cap_storage(holds = HOLDS_ANY, slots = null, max_w_class = ITEMSIZE_SMALL, max_total = ITEMSIZE_COST_SMALL * 4, can_hold_proc = null, quick_empty = TRUE, use_sound = SFX_RUSTLE, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log, layer = CAP_NO_LAYER)
+/proc/cap_storage(holds = HOLDS_ANY, slots = null, max_w_class = ITEMSIZE_SMALL, max_total = ITEMSIZE_COST_SMALL * 4, can_hold_proc = null, quick_empty = TRUE, use_sound = SFX_RUSTLE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
 	var/datum/capability/storage/C = new
-	C.layer_name = layer
 	C.holds = holds
 	C.slots = slots
 	C.max_w_class = max_w_class
@@ -67,14 +66,18 @@
 	C.can_hold_proc = can_hold_proc
 	C.quick_empty = quick_empty
 	C.use_sound = use_sound
-	return cap_gating(C, behind = behind, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
+	return cap_gating(C, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 
+/// Ops: "put_in" (a click with an item that fits: one that doesn't is not meant, so the click falls through to the
+/// holder's other uses of it), "take_out" (an empty hand, while it holds something) and "empty_out" (ACT_NONE: the Menu,
+/// radial or command bar; an empty hand's click is Take out).
 /datum/capability/storage/interactions(atom/holder)
 	. = list()
-	. += adopt_entry(cap_insert("Put in", /obj/item, GLOBAL_PROC_REF(cap_storage_put_in), needs = GLOBAL_PROC_REF(cap_storage_insert_reason), works_broken = TRUE, works_unpowered = TRUE, priority = 1), id = "storage:put_in", pass_cap = TRUE)
-	. += adopt_entry(cap_hand("Take out", GLOBAL_PROC_REF(cap_storage_take_out), needs = GLOBAL_PROC_REF(cap_storage_has_items), else_say = "it's empty", works_broken = TRUE, works_unpowered = TRUE, form = list(choice_field("choice", GLOBAL_PROC_REF(cap_storage_choices), message = "Take out what?"))), id = "storage:take_out", category = INTERACTION_CAT_OPEN, empty_handed = TRUE, pass_cap = TRUE)
+	. += adopt_entry(lib_op("Put in", GLOBAL_PROC_REF(cap_storage_put_in), OP_SHAPE_INSERT, using = /obj/item, key = "put_in", offered = req_proc(GLOBAL_PROC_REF(cap_storage_insert_reason)), works_broken = TRUE, works_unpowered = TRUE, priority = 1), id = "storage:put_in", pass_cap = TRUE)
+	var/datum/req/has_items = req_proc(GLOBAL_PROC_REF(cap_storage_has_items), else_say = "it's empty")
+	. += adopt_entry(lib_op("Take out", GLOBAL_PROC_REF(cap_storage_take_out), OP_SHAPE_HAND, key = "take_out", offered = has_items, works_broken = TRUE, works_unpowered = TRUE, form = list(choice_field("choice", GLOBAL_PROC_REF(cap_storage_choices), message = "Take out what?"))), id = "storage:take_out", category = INTERACTION_CAT_OPEN, empty_handed = TRUE, pass_cap = TRUE)
 	if(quick_empty)
-		. += adopt_entry(cap_hand("Empty out", GLOBAL_PROC_REF(cap_storage_empty_out), needs = GLOBAL_PROC_REF(cap_storage_has_items), else_say = "it's empty", works_broken = TRUE, works_unpowered = TRUE), id = "storage:empty_out", category = INTERACTION_CAT_EJECT, empty_handed = TRUE, pass_cap = TRUE)
+		. += adopt_entry(lib_op("Empty out", GLOBAL_PROC_REF(cap_storage_empty_out), OP_SHAPE_HAND, key = "empty_out", action = ACT_NONE, offered = has_items, works_broken = TRUE, works_unpowered = TRUE), id = "storage:empty_out", category = INTERACTION_CAT_EJECT, empty_handed = TRUE, pass_cap = TRUE)
 
 /datum/capability/storage/examine(atom/holder, mob/user)
 	var/count = length(storage_items(holder))

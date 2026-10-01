@@ -72,7 +72,7 @@ GLOBAL_LIST_EMPTY(asks_open)
 	var/datum/dispatch_context/ctx = ask_context(user, target, context, needs, third_party)
 	if(!ask_open(ctx))
 		return null
-	var/answer = tgui_input_text(user, message, title || "Input", default, max_length, multiline)
+	var/answer = tgui_input_text(user, message, title || "Input", default, max_length, multiline) // ALLOW(scheduler): ask_*() is the capability system's one blocking prompt primitive (re-validates after the answer)
 	ask_close(ctx)
 	if(isnull(answer) || !ask_still_valid(ctx))
 		return null
@@ -83,7 +83,7 @@ GLOBAL_LIST_EMPTY(asks_open)
 	var/datum/dispatch_context/ctx = ask_context(user, target, context, needs, third_party)
 	if(!ask_open(ctx))
 		return null
-	var/answer = tgui_input_number(user, message, title || "Input", default, max_value, min_value, 0, round_value)
+	var/answer = tgui_input_number(user, message, title || "Input", default, max_value, min_value, 0, round_value) // ALLOW(scheduler): ask_*() is the capability system's one blocking prompt primitive (re-validates after the answer)
 	ask_close(ctx)
 	if(isnull(answer) || !ask_still_valid(ctx))
 		return null
@@ -93,7 +93,7 @@ GLOBAL_LIST_EMPTY(asks_open)
 	var/datum/dispatch_context/ctx = ask_context(user, target, context, needs, third_party)
 	if(!ask_open(ctx))
 		return null
-	var/answer = tgui_input_list(user, message, title || "Select", choices, default)
+	var/answer = tgui_input_list(user, message, title || "Select", choices, default) // ALLOW(scheduler): ask_*() is the capability system's one blocking prompt primitive (re-validates after the answer)
 	ask_close(ctx)
 	if(isnull(answer) || !ask_still_valid(ctx))
 		return null
@@ -104,7 +104,7 @@ GLOBAL_LIST_EMPTY(asks_open)
 	var/datum/dispatch_context/ctx = ask_context(user, target, context, needs, third_party)
 	if(!ask_open(ctx))
 		return null
-	var/answer = tgui_alert(user, message, title || "Confirm", list("Yes", "No"))
+	var/answer = tgui_alert(user, message, title || "Confirm", list("Yes", "No")) // ALLOW(scheduler): ask_*() is the capability system's one blocking prompt primitive (re-validates after the answer)
 	ask_close(ctx)
 	if(isnull(answer) || !ask_still_valid(ctx))
 		return null
