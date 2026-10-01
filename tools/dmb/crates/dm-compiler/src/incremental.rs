@@ -56,7 +56,8 @@ struct ProcedureInput {
     cache_root: Option<PathBuf>,
 }
 
-#[salsa::tracked(no_eq)]
+// The portable semantic cache owns the tracked query. Attaching this outer
+// database across cache.compile would nest two independent Salsa runtimes.
 fn lower_changed(db: &dyn crate::Db, input: ProcedureInput) -> Result<SimpleProc, String> {
     let source = input.source(db);
     let item = dm_syntax::parse_proc_at_span(
@@ -153,7 +154,7 @@ impl IncrementalSession {
             input
         };
         self.bytes = self.bytes.saturating_add(bytes);
-        lower_changed(&self.db, input).clone()
+        lower_changed(&self.db, input)
     }
 }
 
@@ -519,6 +520,40 @@ fn intern(dmb: &mut Dmb, bytes: &[u8]) -> u32 {
 mod tests {
     use super::*;
 
+    #[test]
+    fn legacy_session_enters_only_the_portable_semantic_query_database() {
+        let root = std::env::temp_dir().join(format!(
+            "dm-legacy-salsa-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let mut session = IncrementalSession::default();
+        session.set_cache_root(root.clone());
+        let shared = Arc::new(SharedLowerBindings::default());
+        let mut bindings = LowerBindings::default();
+        bindings.globals.insert("value".into());
+        let source = "/proc/f()\n    return value\n";
+        let first = session
+            .compile("/proc/f", source, bindings.clone(), shared.clone())
+            .unwrap();
+        assert_eq!(
+            session
+                .compile("/proc/f", source, bindings.clone(), shared.clone())
+                .unwrap(),
+            first
+        );
+        bindings.globals.clear();
+        bindings.fields.insert("value".into());
+        let changed = session
+            .compile("/proc/f", source, bindings, shared)
+            .unwrap();
+        assert_ne!(changed.code, first.code);
+        drop(session);
+        std::fs::remove_dir_all(root).unwrap();
+    }
     #[test]
     fn incremental_ledger_binds_only_referenced_baseline_symbols() {
         let ast = dm_syntax::parse("/proc/changed()\n    return answer()\n");

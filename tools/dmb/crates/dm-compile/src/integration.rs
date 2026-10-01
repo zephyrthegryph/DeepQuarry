@@ -333,14 +333,7 @@ fn native_build(options: &Options) -> Result<Response, Failure> {
         // Old daemons and unclassified semantic strings remain source failures.
         let (message, diagnostics) =
             failure_messages(response.error.as_deref(), &response.diagnostics);
-        let mut failure = options.failure(
-            match response.failure_kind {
-                Some(dm_compiled::FailureKind::Internal) => FailureKind::Internal,
-                Some(dm_compiled::FailureKind::Configuration) => FailureKind::Configuration,
-                _ => FailureKind::Source,
-            },
-            message,
-        );
+        let mut failure = options.failure(compiler_failure_kind(response.failure_kind), message);
         failure.diagnostics = diagnostics;
         return Err(failure);
     }
@@ -372,6 +365,15 @@ fn failure_messages(error: Option<&str>, diagnostics: &[String]) -> (String, Vec
             .map(|(_, message)| message.clone())
             .collect(),
     )
+}
+
+fn compiler_failure_kind(kind: Option<dm_compiled::FailureKind>) -> FailureKind {
+    match kind {
+        Some(dm_compiled::FailureKind::Internal) => FailureKind::Internal,
+        Some(dm_compiled::FailureKind::Configuration) => FailureKind::Configuration,
+        // Old daemons and unclassified semantic strings remain source failures.
+        _ => FailureKind::Source,
+    }
 }
 
 fn byond_build(options: &Options) -> Result<(), Failure> {
@@ -523,13 +525,20 @@ fn fresh_native(options: &Options) -> Result<Response, Failure> {
         )
     })?;
     if !output.status.success() || !response.ok {
-        return Err(options.failure(
-            FailureKind::Source,
-            response
-                .error
-                .clone()
-                .unwrap_or_else(|| "fresh native compiler failed".into()),
-        ));
+        let (message, diagnostics) =
+            failure_messages(response.error.as_deref(), &response.diagnostics);
+        let mut failure = options.failure(
+            if response.ok {
+                // A successful build response followed by an unsuccessful exit
+                // violates the child protocol rather than rejecting source.
+                FailureKind::Internal
+            } else {
+                compiler_failure_kind(response.failure_kind)
+            },
+            message,
+        );
+        failure.diagnostics = diagnostics;
+        return Err(failure);
     }
     Ok(response)
 }
@@ -848,5 +857,21 @@ mod tests {
         let (message, remaining) = failure_messages(Some(&diagnostics[0]), &diagnostics);
         assert_eq!(message, diagnostics[0]);
         assert_eq!(remaining, diagnostics[1..]);
+    }
+    #[test]
+    fn native_and_fresh_shadow_failures_keep_typed_classification() {
+        assert_eq!(compiler_failure_kind(None), FailureKind::Source);
+        assert_eq!(
+            compiler_failure_kind(Some(dm_compiled::FailureKind::Source)),
+            FailureKind::Source
+        );
+        assert_eq!(
+            compiler_failure_kind(Some(dm_compiled::FailureKind::Internal)),
+            FailureKind::Internal
+        );
+        assert_eq!(
+            compiler_failure_kind(Some(dm_compiled::FailureKind::Configuration)),
+            FailureKind::Configuration
+        );
     }
 }
