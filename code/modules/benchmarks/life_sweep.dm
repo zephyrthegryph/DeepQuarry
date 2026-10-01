@@ -6,6 +6,8 @@
 //   life_bench_ms()      milliseconds spent so far in the subsystem that runs Life
 //   life_bench_scheduler() a label
 // One boot measures every configuration in turn: spawn, settle, measure a window, delete.
+// <cfg>_life_ms_per_s is the OM scheduler pass alone (what SSbehaviours.fire() measured before the kernel), so it
+// compares across that change; <cfg>_phase_ms_per_s is the kernel's whole N..R span (native frame and work items too).
 //   tools/build/build.sh bench --scenario=life_sweep -DOM_NO_STAGE_PROFILE [--arg=seconds=40] [--arg=configs=h32,mix]
 
 /datum/benchmark/life_sweep
