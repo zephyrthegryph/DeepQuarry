@@ -138,6 +138,9 @@
 #define TYPE_DERIVES_TYPE_VERBS (1<<4)
 /// The type declares its dependencies (derived()): its instances join the relation index at init.
 #define TYPE_DERIVES_DEPS (1<<5)
+/// The type overrides a refresh side effect (on_state_changed() or push_to_rust()), or its probe could not rule it out:
+/// a refresh of it does work even when it draws and hides nothing, so its refreshes are never skipped.
+#define TYPE_DERIVES_SIDE (1<<6)
 
 // ---- periodic cadences (periodic_cadence = CADENCE_*; periodic_step(delta) gets the interval in ds) ----
 /// Every 2 seconds.

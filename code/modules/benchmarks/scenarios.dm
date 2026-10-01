@@ -114,10 +114,25 @@
 /datum/benchmark/idle/Run()
 	wait_for_assets()
 	begin_window()
-	// A few synthetic clicks and queued verbs every tick, so the input latency record (input_p99) has data.
-	wait_seconds_with_input(param("seconds", 60), param("clicks", 2), param("verbs", 2))
+	// Pure wait: no synthetic input, so idle compares like for like with builds from before the input record.
+	// Input latency has its own scenario (`input`).
+	wait_seconds(param("seconds", 60))
 	end_window("idle")
 	mark("idle_end")
+
+/// Input latency on a quiet round: synthetic clicks and queued verbs every tick, so the input record (input_p99,
+/// click/verb waits) has data on a world with no clients. Kept apart from `idle` so idle stays a pure wait.
+/datum/benchmark/input
+	id = "input"
+	description = "Input latency with synthetic clicks and verbs every tick on an idle round"
+	default_scenario = TRUE
+
+/datum/benchmark/input/Run()
+	wait_for_assets()
+	begin_window()
+	wait_seconds_with_input(param("seconds", 30), param("clicks", 2), param("verbs", 2))
+	end_window("input")
+	mark("input_end")
 
 /// Atmospherics baseline: 120 SSair cycles of the mapped station, recording
 /// Rust worker pressure alongside tick cost.

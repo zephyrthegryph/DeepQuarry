@@ -224,7 +224,12 @@ GLOBAL_LIST_EMPTY(caps_interned)
 		derived_attach(holder)
 	if(rx_type_enrols(holder))
 		rx_enrol(holder) // per-instance every() work (reactions/work.dm)
-	if(flags || holder.periodic_cadence || holder.periodic_interval)
+	if(flags == TYPE_DERIVES_PENDING && !holder.periodic_cadence && !holder.periodic_interval)
+		// Nothing declared, and the type's verdict (does it draw or hide anything?) is not in yet: one instance probes,
+		// the rest wait for its answer (type_derive_wait()) instead of each queueing a refresh that, for most types,
+		// finds nothing to do.
+		type_derive_wait(holder)
+	else if(flags || holder.periodic_cadence || holder.periodic_interval)
 		// The first refresh is queued, nothing changed: changed() would raise CHANGE_EXPLICIT, which every machine's
 		// pipeline wakes on (wake_all), so declaring a capability or a membership woke its holder at init.
 		refresh_mark(holder, DEP_ALL)
@@ -245,7 +250,7 @@ GLOBAL_LIST_EMPTY(caps_interned)
 	GLOB.type_derives_cache[A.type] = .
 
 /// A refresh of A just ran draw() and hidden_verbs(): record what its type derives (first time only).
-/proc/type_derive_record(atom/A, drew, hid)
+/proc/type_derive_record(atom/A, drew, hid, side = TRUE)
 	var/flags = GLOB.type_derives_cache[A.type]
 	if(isnull(flags) || !(flags & TYPE_DERIVES_PENDING))
 		return
@@ -254,7 +259,39 @@ GLOBAL_LIST_EMPTY(caps_interned)
 		flags |= TYPE_DERIVES_LOOK
 	if(hid)
 		flags |= TYPE_DERIVES_VERBS
+	if(side)
+		flags |= TYPE_DERIVES_SIDE
 	GLOB.type_derives_cache[A.type] = flags
+	// The instances that waited for this verdict get their first refresh only if the type derives something.
+	var/list/waiting = GLOB.type_derive_waiting[A.type]
+	if(isnull(waiting))
+		return
+	GLOB.type_derive_waiting -= A.type
+	if(!(flags & (TYPE_DERIVES_LOOK | TYPE_DERIVES_VERBS | TYPE_DERIVES_SIDE)))
+		return
+	for(var/ref_text in waiting)
+		var/atom/W = locate(ref_text)
+		if(isatom(W) && W.type == A.type && !QDELETED(W))
+			refresh_mark(W, DEP_ALL)
+
+/// type -> REF texts of instances initialized while their type's derive verdict was pending (type_derive_wait()).
+/// Refs, so a waiting instance deleted meanwhile is not kept alive; the verdict drops the list.
+GLOBAL_LIST_EMPTY(type_derive_waiting)
+/// type -> REF text of the instance whose queued refresh will record the type's verdict.
+GLOBAL_LIST_EMPTY(type_derive_probe)
+
+/// An instance of a type whose verdict is pending and that declares nothing: the first (or the first since its probe
+/// went away) is queued as the probe; any other waits in type_derive_waiting for type_derive_record().
+/proc/type_derive_wait(atom/A)
+	var/atom/probe = locate(GLOB.type_derive_probe[A.type])
+	if(isatom(probe) && probe != A && probe.type == A.type && !QDELETED(probe) && probe.refresh_queued)
+		var/list/waiting = GLOB.type_derive_waiting[A.type]
+		if(!waiting)
+			waiting = GLOB.type_derive_waiting[A.type] = list()
+		waiting += REF(A)
+		return
+	GLOB.type_derive_probe[A.type] = REF(A)
+	refresh_mark(A, DEP_ALL)
 
 /// Whether A's type derives anything the refresh engine keeps up (a look or hidden verbs; unknown yet
 /// counts as yes).

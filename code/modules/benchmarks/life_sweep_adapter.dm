@@ -6,8 +6,13 @@
 /proc/life_bench_frames(list/mobs)
 	return om_pipeline_frames(mobs, /datum/om/pipeline/life)
 
+/// The OM scheduler's own pass (what SSbehaviours.fire() measured before the kernel): comparable across the kernel change.
 /proc/life_bench_ms()
 	return SSbehaviours.bench_ms
+
+/// The kernel's whole N..R span: the scheduler plus the native frame and the work items of those phases.
+/proc/life_bench_pass_ms()
+	return SSbehaviours.bench_pass_ms
 
 /// The life pipeline's scheduler counters since boot (runs, deferrals, breaches, lateness).
 /proc/life_bench_diag()

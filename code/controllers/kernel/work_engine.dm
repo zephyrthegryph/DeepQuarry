@@ -135,6 +135,10 @@
 			continue
 		if(!run_item(W, limit_abs, now))
 			. = FALSE
+			// Out of the lane's share with work left: phase R offers it the tick's leftovers (run_leftover_phase()).
+			// A spread sweep is paced on purpose and waits for its next pass.
+			if(lane && !W.spread)
+				p_carry |= W
 			if(TICK_USAGE >= limit_abs)
 				return
 

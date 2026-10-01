@@ -98,7 +98,28 @@
 		mask = derived_mask(E, var_name)
 		if(!mask)
 			return
+	if(!refresh_wanted(E))
+		refresh_mark_owner(E, mask, channel)
+		return
 	refresh_mark(E, mask, channel)
+
+/// FALSE when a refresh of E could not do anything: an atom (not a mob, which its species and traits can grant verbs)
+/// whose type is known to derive nothing (no look, verbs, capabilities, type verbs or declared dependencies), with no
+/// periodic work and no open window. The same rule om_raise_change() applies, so a setter on such an atom costs no
+/// queue entry and no refresh.
+/proc/refresh_wanted(datum/E)
+	if(!isatom(E) || ismob(E) || E.refresh_queued || E.periodic_cadence || E.periodic_interval || LAZYLEN(E.open_tguis))
+		return TRUE
+	return GLOB.type_derives_cache[E.type] != 0
+
+/// E itself has nothing to refresh, but an owner whose capability draws it still redraws (refresh_mark()'s owner rule).
+/proc/refresh_mark_owner(datum/E, mask, channel)
+	if(mask != DEP_ALL && !(mask & DEP_DRAW))
+		return
+	var/datum/owner = owner_of(E)
+	if(!owner || QDELING(owner) || !isatom(owner) || !owner_draws_child(owner, E))
+		return
+	refresh_mark(owner, mask == DEP_ALL ? DEP_ALL : DEP_DRAW, channel)
 
 /// A dispatched call on E finished (a timer, a periodic step): its derived procs re-run, as changed(E) does, but
 /// no OM channel is raised. Nothing a dispatch can change is unannounced: what it writes through setters raises
@@ -110,6 +131,9 @@
 	refresh_trace_note(E, CHANGE_EXPLICIT)
 	if(E.rel_watchers && !E.refresh_queued)
 		rel_notify_watchers(E)
+	if(!refresh_wanted(E))
+		refresh_mark_owner(E, DEP_ALL, CHANGE_EXPLICIT)
+		return
 	refresh_mark(E, DEP_ALL, CHANGE_EXPLICIT)
 
 /// Queues E for the outputs in `mask`, and its owner up the chain for its look when one of the owner's
@@ -243,7 +267,15 @@ GLOBAL_VAR_INIT(derive_probe_found, 0)
 /// frame. `bits` are the channels raised since the last refresh. Never call it by hand.
 /datum/proc/on_state_changed(bits)
 	SHOULD_NOT_SLEEP(TRUE)
+	if(GLOB.derive_side_probing && !derive_called_by_override(callee.caller, "on_state_changed"))
+		// ALLOW(sys_dx_reactive_write): the derive probe notes the base was reached directly; it runs only while probing
+		GLOB.derive_side_base_reached = TRUE
 	return
+
+/// Set while a type's first refresh probes whether it overrides push_to_rust() / on_state_changed().
+GLOBAL_VAR_INIT(derive_side_probing, FALSE)
+/// Set by the base push_to_rust() / on_state_changed() when the engine reached it directly (no override in between).
+GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 
 // ---- the drain ----
 
@@ -318,6 +350,8 @@ GLOBAL_VAR_INIT(derive_probe_found, 0)
 		// D as a self-mark.
 		GLOB.refresh_running = outer
 		GLOB.derived_evaluating = 0
+		GLOB.derive_probing = FALSE
+		GLOB.derive_side_probing = FALSE
 		throw e
 	GLOB.refresh_running = outer
 #if defined(UNIT_TESTS) && !defined(BENCHMARK)
@@ -327,6 +361,8 @@ GLOBAL_VAR_INIT(derive_probe_found, 0)
 #endif
 
 /proc/refresh_one_inner(datum/D, bits, mask)
+	var/probing = FALSE
+	var/probe_found = 0
 	if(mask & DEP_VALUES)
 		var/datum/derived_table/T = derived_table_of(D)
 		if(T?.derived_vars)
@@ -341,7 +377,7 @@ GLOBAL_VAR_INIT(derive_probe_found, 0)
 		var/may_draw = flags & (TYPE_DERIVES_LOOK | TYPE_DERIVES_CAPS | TYPE_DERIVES_PENDING) || !isnull(A.look_key)
 		// A mob may be granted verbs by its species and traits, which no type flag can know.
 		var/may_hide = flags & (TYPE_DERIVES_VERBS | TYPE_DERIVES_CAPS | TYPE_DERIVES_PENDING) || A.refresh_hidden_verbs || A.refresh_granted_verbs || ismob(A)
-		var/probing = flags & TYPE_DERIVES_PENDING
+		probing = flags & TYPE_DERIVES_PENDING
 		if(probing)
 			GLOB.derive_probing = TRUE
 			GLOB.derive_probe_found = 0
@@ -352,18 +388,38 @@ GLOBAL_VAR_INIT(derive_probe_found, 0)
 			refresh_granted_verbs(A)
 		if(probing)
 			GLOB.derive_probing = FALSE
-			// Type-pure: the type overrides draw()/hidden_verbs()/granted_verbs() or it doesn't, whatever
-			// this instance's state drew or hid (review: never record a negative from one result).
-			type_derive_record(A, GLOB.derive_probe_found & TYPE_DERIVES_LOOK, GLOB.derive_probe_found & TYPE_DERIVES_VERBS)
+			probe_found = GLOB.derive_probe_found
 		refresh_sweep_track(A)
 	if(mask & DEP_UI)
 		refresh_ui(D)
+	// The side effects. While the type is probed, the base procs report whether the engine reached them directly: a type
+	// that overrides either (with or without ..()) is recorded TYPE_DERIVES_SIDE, as is one whose probe skipped them.
+	var/side = FALSE
 	if(mask & DEP_PUSH)
+		if(probing)
+			GLOB.derive_side_probing = TRUE
+			GLOB.derive_side_base_reached = FALSE
 		DERIVED_EVAL_BEGIN
 		D.push_to_rust()
 		DERIVED_EVAL_END
+		if(probing)
+			side = side || !GLOB.derive_side_base_reached
+	else
+		side = TRUE
 	if(mask & DEP_LEGACY)
+		if(probing)
+			GLOB.derive_side_probing = TRUE
+			GLOB.derive_side_base_reached = FALSE
 		D.on_state_changed(bits)
+		if(probing)
+			side = side || !GLOB.derive_side_base_reached
+	else
+		side = TRUE
+	if(probing)
+		GLOB.derive_side_probing = FALSE
+		// Type-pure: the type overrides draw()/hidden_verbs()/granted_verbs()/the side effects or it doesn't, whatever
+		// this instance's state drew or hid (review: never record a negative from one result).
+		type_derive_record(D, probe_found & TYPE_DERIVES_LOOK, probe_found & TYPE_DERIVES_VERBS, side)
 
 /// Queues a push of D's open tgui windows: at most one per window per tick, delivered in the kernel's phase R
 /// (code/modules/tgui/ui_push.dm; tgui_data() runs inside the push, as an output).

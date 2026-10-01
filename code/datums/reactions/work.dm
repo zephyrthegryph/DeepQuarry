@@ -33,6 +33,10 @@ GLOBAL_LIST_EMPTY(rx_work_by_sig)
 	var/holder_run = FALSE
 	/// The membership key a holder of the declaring type joins (per-instance every()), or null.
 	var/enrol_key
+	/// Whether `run_when` names a var on the subject (TRUE), a proc (FALSE), or is not known yet (null). Decided on the
+	/// first ask: every subject is the declaring type or a subtype (or the one system), so the answer does not change,
+	/// and the `in vars` scan (linear in the type's var count) runs once per item instead of once per member per run.
+	var/when_is_var
 
 /// Builds the item for `R`, declared by `owner_type` (for an every() on a holder, the type whose reactions() declared it).
 /datum/work_item/reaction/New(datum/reaction/R, owner_type)
@@ -88,7 +92,9 @@ GLOBAL_LIST_EMPTY(rx_work_by_sig)
 	var/datum/subject = holder_run ? member : owner
 	if(!subject)
 		return TRUE
-	if(istext(run_when) && (run_when in subject.vars))
+	if(isnull(when_is_var))
+		when_is_var = istext(run_when) && (run_when in subject.vars)
+	if(when_is_var)
 		return !!subject.vars[run_when]
 	if(holder_run || !member)
 		return !!call(subject, run_when)()

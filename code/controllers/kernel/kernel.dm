@@ -39,6 +39,9 @@
 	/// Phase P's items by lane (LANE_* -> items in dependency order), rebuilt with phase_items.
 	var/list/phase_lane_items
 	var/work_dirty = TRUE
+	/// Phase P items that ran out of their lane's share this tick with work left (a yielded fire(), an open sweep):
+	/// phase R gives them what is left of the tick, as the scheduler's leftovers pass does for its rings.
+	var/list/p_carry = list()
 	/// Problems the last graph validation found (a missing target, a cycle, an edge into a later phase).
 	var/list/work_errors = list()
 	/// Capability types some item names in `members`: their holders join the membership store in caps_init().
@@ -64,6 +67,10 @@
 	var/k_over_cap = 0
 	var/phase_faults = 0
 	var/last_tick_ms = 0
+	/// This tick's milliseconds inside the OM scheduler's own pass pieces (pass_begin/deadlines/borrow/lanes/leftovers/
+	/// pass_end), without the native frame and the work items that share phases N..R. It is what SSbehaviours' run_pass
+	/// measured before the kernel, so the life benchmark compares like for like (SSbehaviours.bench_ms).
+	var/sched_ms_tick = 0
 	/// Caught faults (phases, work items, urgent runs), newest last, bounded. Tests that fault on purpose set expect_errors.
 	var/list/fault_log
 	var/expect_errors = FALSE
@@ -129,7 +136,9 @@
 	phase_note(KERNEL_PHASE_K, k_start)
 
 	if(!light && sched && isnull(sched.manual_time) && sched_runs(init_stage))
+		var/sb_start = TICK_USAGE
 		sched.pass_begin(tick_limit)
+		sched_ms_tick = TICK_USAGE_TO_MS(sb_start)
 		// N
 		var/n_start = TICK_USAGE
 		var/elapsed = last_native ? min(world.time - last_native, KERNEL_NATIVE_MAX_CATCHUP * world.tick_lag) : world.tick_lag
@@ -172,9 +181,11 @@
 			phase_fault(KERNEL_PHASE_R, r_e)
 		phase_note(KERNEL_PHASE_R, r_start)
 		// The scheduler pass is N through R: phase K's host services (input, verbs, tgui, ...) are not part of it.
-		var/pass_ms = TICK_USAGE_TO_MS(sched.pass_start)
+		var/se_start = TICK_USAGE
 		sched.pass_end()
-		note_behaviours(pass_ms)
+		sched_ms_tick += TICK_USAGE_TO_MS(se_start)
+		var/pass_ms = TICK_USAGE_TO_MS(sched.pass_start)
+		note_behaviours(pass_ms, sched_ms_tick)
 		run_audits()
 
 	// G: whatever is left, with a floor once a second.
@@ -243,15 +254,21 @@
 
 /// D: the deadline wheel, then deadline-phase work items in what is left of the deadline share.
 /datum/controller/kernel/proc/run_deadline_phase(tick_limit)
+	var/s_start = TICK_USAGE
 	sched.pass_deadlines(tick_limit)
+	sched_ms_tick += TICK_USAGE_TO_MS(s_start)
 	work_run_phase(KERNEL_PHASE_D, min(tick_limit, sched.pass_start + sched.pass_avail * OM_DEADLINE_SHARE + sched.pass_avail * KERNEL_URGENT_SHARE))
 
 /// P: the borrow pass, then each lane: the scheduler's share of it, then that lane's work items.
 /datum/controller/kernel/proc/run_lane_phase(tick_limit)
+	var/s_start = TICK_USAGE
 	sched.pass_borrow(tick_limit)
+	sched_ms_tick += TICK_USAGE_TO_MS(s_start)
 	var/datum/kernel_latency/latency = kernel_latency()
 	for(var/lane in 1 to OM_LANE_COUNT)
+		s_start = TICK_USAGE
 		sched.pass_lane(lane, tick_limit)
+		sched_ms_tick += TICK_USAGE_TO_MS(s_start)
 		// A lane with no work items (most of them) costs no admission check and no engine call.
 		if(!length(phase_lane_items?[lane]) && !work_dirty)
 			continue
@@ -261,10 +278,22 @@
 		var/lane_limit = min(TICK_USAGE + sched.pass_avail * sched.lane_share[lane], tick_limit)
 		work_run_phase(KERNEL_PHASE_P, lane_limit, lane)
 
-/// R: leftovers.
+/// R: leftovers. The scheduler's leftovers, R's own items, then phase P items that ran out of their lane's share with
+/// work left (p_carry), in the order they stopped: a backlog (lighting after a power change, a long fire()) drains with
+/// whatever the tick has spare instead of one lane share per tick.
 /datum/controller/kernel/proc/run_leftover_phase(tick_limit)
+	var/s_start = TICK_USAGE
 	sched.pass_leftovers(tick_limit)
+	sched_ms_tick += TICK_USAGE_TO_MS(s_start)
 	work_run_phase(KERNEL_PHASE_R, tick_limit)
+	if(!length(p_carry))
+		return
+	var/list/carry = p_carry
+	p_carry = list()
+	for(var/datum/work_item/W as anything in carry)
+		if(TICK_USAGE >= tick_limit)
+			break
+		run_item(W, tick_limit)
 
 /// The work items of a phase that has no scheduler piece of its own (K, N, G).
 /datum/controller/kernel/proc/run_work_phase(phase, tick_limit)
@@ -339,11 +368,14 @@
 // ---------------------------------------------------------------- SSbehaviours' remaining duties
 
 /// SSbehaviours stopped firing; its profiler and benchmark counters are fed from the kernel's scheduler passes.
-/datum/controller/kernel/proc/note_behaviours(pass_ms)
+/// `pass_ms` is the whole N..R span (native frame and work items included); `sched_ms` only the OM scheduler's pieces.
+/datum/controller/kernel/proc/note_behaviours(pass_ms, sched_ms)
 	if(!SSbehaviours)
 		return
 	// ALLOW(system_boundary): the kernel is the scheduler core SSbehaviours delegates to: it reads and updates that subsystem own fire bookkeeping
-	SSbehaviours.bench_ms += pass_ms
+	SSbehaviours.bench_ms += sched_ms
+	// ALLOW(system_boundary): the kernel is the scheduler core SSbehaviours delegates to: it reads and updates that subsystem own fire bookkeeping
+	SSbehaviours.bench_pass_ms += pass_ms
 	// ALLOW(system_boundary): the kernel is the scheduler core SSbehaviours delegates to: it reads and updates that subsystem own fire bookkeeping
 	SSbehaviours.last_done = sched.pass_done
 	// ALLOW(system_boundary): the kernel is the scheduler core SSbehaviours delegates to: it reads and updates that subsystem own fire bookkeeping

@@ -329,7 +329,14 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 /// TRUE when `proc_ref` is a global proc (/proc/x), FALSE for a type proc. Decided once, when a
 /// deferred call is recorded, so firing never stringifies the proc.
 /proc/om_proc_is_global(proc_ref)
-	return copytext("[proc_ref]", 1, 7) == "/proc/"
+	// Memoized per proc ref: stringifying a proc path costs microseconds, and reaction delivery (rx_call) asks on
+	// every call. The set of proc refs is the code's, so the table is bounded.
+	var/static/list/answers = list()
+	if(isnull(proc_ref))
+		return FALSE
+	. = answers[proc_ref]
+	if(isnull(.))
+		. = answers[proc_ref] = (copytext("[proc_ref]", 1, 7) == "/proc/")
 
 /// The position in rec.timers of timer `id`, or 0. Binary search: the list is sorted by id.
 /proc/om_timer_index(datum/om/rec/rec, id)

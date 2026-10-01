@@ -150,6 +150,9 @@
 /// its reads changed (and after every plain changed()). Read state, push it, write nothing.
 /datum/proc/push_to_rust()
 	SHOULD_NOT_SLEEP(TRUE)
+	if(GLOB.derive_side_probing && !derive_called_by_override(callee.caller, "push_to_rust"))
+		// ALLOW(sys_dx_reactive_write): the derive probe notes the base was reached directly; it runs only while probing
+		GLOB.derive_side_base_reached = TRUE
 	return
 
 // ---- the compiled table (one per exact type) ----
