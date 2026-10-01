@@ -305,14 +305,17 @@
 /// A ticker (input, verb_manager) gets the whole phase limit; a service on a longer wait (tgui, dbcore, profiler,
 /// garbage) gets KERNEL_HOST_SLICE of a tick at most, so a slow host cannot starve the phases after it.
 /datum/controller/kernel/proc/run_hosted_phase(list/subsystems, tick_limit, init_stage)
+	var/now = world.time
+	var/runlevel_bit = 1 << (Master.current_runlevel - 1)
 	for(var/datum/controller/subsystem/SS as anything in subsystems)
+		// Not due (most hosts most ticks: they run on waits of seconds) is the first and cheapest refusal.
+		var/paused = (SS?.state == SS_PAUSED)
+		// ALLOW(sys_world_time_expiry): the kernel clock: compares the scheduler own timestamps, not an entity expiry
+		if(!paused && SS?.next_fire > now)
+			continue
 		if(!SS || !SS.can_fire || SS.init_stage > init_stage)
 			continue
-		if(!(SS.runlevels & (1 << (Master.current_runlevel - 1))))
-			continue
-		var/paused = (SS.state == SS_PAUSED)
-		// ALLOW(sys_world_time_expiry): the kernel clock: compares the scheduler own timestamps, not an entity expiry
-		if(!paused && SS.next_fire > world.time)
+		if(!(SS.runlevels & runlevel_bit))
 			continue
 		if(TICK_USAGE >= tick_limit && SS.state != SS_PAUSED && !(SS.flags & SS_TICKER))
 			continue

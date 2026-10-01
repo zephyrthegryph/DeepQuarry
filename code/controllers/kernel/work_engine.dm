@@ -197,7 +197,8 @@
 
 /// A memberless item: one call. Returns TRUE when done (a yield is not done).
 /datum/controller/kernel/proc/run_item_once(datum/work_item/W, datum/owner, now)
-	if(W.token_current(null, now) && !W.yielded)
+	// Only an urgent-capable item can have been run ahead of its cadence (request_urgent()); the rest skip the token read.
+	if(W.urgent && !W.yielded && W.token_current(null, now))
 		// An urgent run already covered this instant.
 		W.next_run = now + W.interval
 		return TRUE
