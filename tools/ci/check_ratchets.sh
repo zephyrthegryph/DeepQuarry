@@ -71,6 +71,16 @@ if ! "$PY" tools/ci/derived_reads_lint.py --selftest; then
 	failed+=("derived_reads_lint.py --selftest")
 fi
 echo "::endgroup::"
+echo "::group::gen_capability_varmap.py --check"
+if ! "$PY" tools/dx/gen_capability_varmap.py --check; then
+	failed+=("gen_capability_varmap.py --check")
+fi
+echo "::endgroup::"
+echo "::group::gen_capability_varmap.py --selftest"
+if ! "$PY" tools/dx/gen_capability_varmap.py --selftest; then
+	failed+=("gen_capability_varmap.py --selftest")
+fi
+echo "::endgroup::"
 echo "::group::gen_om_notices.py --check"
 if ! "$PY" tools/dx/gen_om_notices.py --check; then
 	failed+=("gen_om_notices.py --check")
