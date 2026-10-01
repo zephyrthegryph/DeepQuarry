@@ -465,6 +465,8 @@ GLOBAL_VAR(dq_test_select_names)
 	/// Original config values set_config() changed, each boxed in a one-element
 	/// list (so a saved null is still a saved value); restored on destroy.
 	var/tmp/list/saved_configs
+	/// om_callable() specs defer_cleanup() queued; run last-first on destroy.
+	var/tmp/list/deferred_cleanups
 
 /// A stable, deterministic seed for a test's own name: same input, same
 /// output, forever, regardless of process or run order -- unlike rand()'s own
@@ -536,6 +538,7 @@ GLOBAL_VAR(dq_test_select_names)
 	. += rel_many(nameof(allocated))
 
 /datum/unit_test/on_destroy(force)
+	run_deferred_cleanups()
 	for(var/datum/thing as anything in allocated?.Copy())
 		if(!QDELETED(thing))
 			qdel(thing)
@@ -570,6 +573,26 @@ GLOBAL_VAR(dq_test_select_names)
 		LAZYSET(saved_configs, entry_type, list(global.config.Get(entry_type)))
 	global.config.Set(entry_type, value)
 	return value
+
+/// Calls `target`'s `proc_ref` with `...` when the test is torn down (last queued first, before
+/// allocate()d things are deleted and set_var() changes restored, and before the block's leak check),
+/// even if a TEST_ASSERT returned from Run() early or Run() runtimed. For cleanup that isn't a
+/// qdel(): releasing a site, unregistering from a global list. A null target calls a global proc.
+/datum/unit_test/proc/defer_cleanup(datum/target, proc_ref, ...)
+	var/list/spec = om_callable(arglist(args))
+	if(spec)
+		LAZYADD(deferred_cleanups, list(spec))
+
+/datum/unit_test/proc/run_deferred_cleanups()
+	var/list/pending = deferred_cleanups
+	deferred_cleanups = null
+	for(var/i in length(pending) to 1 step -1)
+		try
+			om_run(pending[i])
+		catch(var/exception/e)
+			// Teardown runs after the test's result is logged: fail the run, not just the test.
+			log_world("::error::UNIT TEST CLEANUP RUNTIME: [type]: [e.name] at [e.file]:[e.line]")
+			GLOB.failed_any_test = TRUE
 
 /// Puts back everything set_var()/set_global()/set_config() changed.
 /datum/unit_test/proc/restore_test_overrides()

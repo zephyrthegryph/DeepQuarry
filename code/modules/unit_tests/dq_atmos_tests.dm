@@ -235,7 +235,7 @@ GLOBAL_DATUM(dq_preboot_gas_probe, /datum/gas_mixture)
 		/obj/machinery/portable_atmospherics/canister/carbon_dioxide,
 		/obj/machinery/portable_atmospherics/canister/air,
 	))
-		var/obj/machinery/portable_atmospherics/canister/C = new canister_type(locate(1, 1, 1))
+		var/obj/machinery/portable_atmospherics/canister/C = allocate(canister_type)
 		TEST_ASSERT_NOTNULL(C, "[canister_type]: failed to construct")
 		TEST_ASSERT_NOTNULL(C.air_contents, "[canister_type]: air_contents not allocated")
 		var/moles = C.air_contents.total_moles()
@@ -1772,6 +1772,9 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	if(length(GLOB.z_levels) < lower_z)
 		GLOB.z_levels.len = lower_z
 	var/old_connected = GLOB.z_levels[lower_z]
+	// Teardown even when an assert below returns early: a leftover connected scratch
+	// pair would stay wired into multi-z atmos for every later test.
+	defer_cleanup(src, PROC_REF(teardown_scratch_column), lower_z, upper_z, cx, cy, old_connected, old_z_levels_len)
 	GLOB.z_levels[lower_z] = TRUE
 
 	SSair.build_multiz_atmos_levels()
@@ -1793,12 +1796,11 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	// Keep this a vertical-spread test. Scratch levels start as open space, so
 	// without a wall ring the donor vents sideways before the detached solver
 	// has a meaningful opportunity to exercise the multi-z edge.
-	var/list/isolation_walls = list()
 	for(var/direction in GLOB.cardinal)
 		var/turf/lower_neighbor = get_step(lower, direction)
 		var/turf/upper_neighbor = get_step(upper, direction)
-		isolation_walls += lower_neighbor.ChangeTurf(/turf/simulated/wall)
-		isolation_walls += upper_neighbor.ChangeTurf(/turf/simulated/wall)
+		lower_neighbor.ChangeTurf(/turf/simulated/wall)
+		upper_neighbor.ChangeTurf(/turf/simulated/wall)
 
 	// Wire both ends through the production recompute path, then publish the
 	// complete topology batch before expecting the detached solver to use it.
@@ -1835,16 +1837,24 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	TEST_ASSERT(down_p > 1, \
 		"multi-z spread failed: floor below the open turf got [down_p] plasma after real SSair ticks")
 
-	// Tear the scratch column down: clear gas, revert turfs to space, restore
-	// the connectivity table. (world.maxz can't shrink; the spare levels are
-	// left as inert space, which no later test's floor/open searches match.)
-	upper.air.set_moles(/datum/gas/plasma, 0)
-	lower.air.set_moles(/datum/gas/plasma, 0)
-	for(var/turf/isolation_wall as anything in isolation_walls)
-		isolation_wall.ChangeTurf(/turf/space)
-	upper.ChangeTurf(/turf/space)
-	lower.ChangeTurf(/turf/space)
-	GLOB.z_levels[lower_z] = old_connected
+	// teardown_scratch_column() (deferred above) takes the column down.
+
+/// Takes the scratch column down: reverts its turfs to space and restores the
+/// connectivity table. (world.maxz can't shrink; the spare levels are left as
+/// inert space, which no later test's floor/open searches match.)
+/datum/unit_test/dq_multiz_spread_through_open_turf/proc/teardown_scratch_column(lower_z, upper_z, cx, cy, old_connected, old_z_levels_len)
+	for(var/z in list(lower_z, upper_z))
+		var/turf/center = locate(cx, cy, z)
+		if(!center)
+			continue
+		var/list/column = list(center)
+		for(var/direction in GLOB.cardinal)
+			column += get_step(center, direction)
+		for(var/turf/T in column)
+			if(!istype(T, /turf/space))
+				T.ChangeTurf(/turf/space)
+	if(length(GLOB.z_levels) >= lower_z)
+		GLOB.z_levels[lower_z] = old_connected
 	if(old_z_levels_len < length(GLOB.z_levels))
 		GLOB.z_levels.len = old_z_levels_len
 	SSair.build_multiz_atmos_levels()
@@ -3143,7 +3153,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 /datum/unit_test/dq_pipeline_edge_reverse_ownership
 
 /datum/unit_test/dq_pipeline_edge_reverse_ownership/Run()
-	var/turf/test_turf = get_turf(run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1))
+	var/turf/test_turf = run_loc_floor_bottom_left
 	var/obj/machinery/atmospherics/pipe/simple/edge = new(test_turf)
 	var/datum/pipeline/first = new
 	var/datum/pipeline/second = new
@@ -3853,7 +3863,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 /datum/unit_test/dq_tank_pressure_read_correct
 
 /datum/unit_test/dq_tank_pressure_read_correct/Run()
-	var/obj/item/tank/oxygen/Tank = new(locate(1, 1, 1))
+	var/obj/item/tank/oxygen/Tank = allocate(/obj/item/tank/oxygen)
 	TEST_ASSERT_NOTNULL(Tank, "couldn't construct oxygen tank")
 	TEST_ASSERT_NOTNULL(Tank.air_contents, "tank air_contents null")
 	var/initial_p = Tank.return_pressure()
@@ -4100,7 +4110,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_idle_recharge_station_hibernates
 
 /datum/unit_test/dq_idle_recharge_station_hibernates/Run()
-	var/turf/test_turf = get_turf(run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1))
+	var/turf/test_turf = run_loc_floor_bottom_left
 	var/obj/machinery/recharge_station/R = new(test_turf)
 	TEST_ASSERT_NOTNULL(R.cell, "recharge station did not construct its internal cell")
 	var/obj/item/cell/station_cell = R.cell
@@ -4124,7 +4134,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_idle_shieldwall_generator_hibernates
 
 /datum/unit_test/dq_idle_shieldwall_generator_hibernates/Run()
-	var/turf/test_turf = get_turf(run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1))
+	var/turf/test_turf = run_loc_floor_bottom_left
 	var/obj/machinery/shieldwallgen/G = new(test_turf)
 	G.set_active(FALSE)
 	G.set_anchored(FALSE)
@@ -4140,7 +4150,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_idle_circulator_hibernates
 
 /datum/unit_test/dq_idle_circulator_hibernates/Run()
-	var/turf/test_turf = get_turf(run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1))
+	var/turf/test_turf = run_loc_floor_bottom_left
 	var/obj/machinery/atmospherics/binary/circulator/C = new(test_turf)
 	// No machine step at all: the "running" display times out on a timer re-armed per transfer.
 	TEST_ASSERT(!om_attached(C, /datum/om/pipeline/machine), "circulator joined the machine pipeline with no DM work")
@@ -4182,7 +4192,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_inactive_emergency_shield_hibernates
 
 /datum/unit_test/dq_inactive_emergency_shield_hibernates/Run()
-	var/turf/test_turf = get_turf(run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1))
+	var/turf/test_turf = run_loc_floor_bottom_left
 	var/obj/machinery/shieldgen/G = new(test_turf)
 	G.set_active(FALSE)
 	TEST_ASSERT(!machine_stepping(G), "inactive emergency shield generator retained timed polling")
@@ -4193,7 +4203,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_idle_motion_camera_hibernates
 
 /datum/unit_test/dq_idle_motion_camera_hibernates/Run()
-	var/turf/test_turf = get_turf(run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1))
+	var/turf/test_turf = run_loc_floor_bottom_left
 	var/obj/machinery/camera/C = new(test_turf)
 	C.upgradeMotion()
 	C.motionTargets = null
@@ -4210,7 +4220,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_unanchored_teg_hibernates
 
 /datum/unit_test/dq_unanchored_teg_hibernates/Run()
-	var/turf/test_turf = get_turf(run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1))
+	var/turf/test_turf = run_loc_floor_bottom_left
 	var/obj/machinery/power/generator/G = new(test_turf)
 	G.set_anchored(FALSE)
 	TEST_ASSERT(test_machine_idle(G), "unanchored thermoelectric generator retained timed polling")
@@ -4219,7 +4229,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_idle_teg_wakes_from_pressure
 
 /datum/unit_test/dq_idle_teg_wakes_from_pressure/Run()
-	var/turf/test_turf = get_turf(run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1))
+	var/turf/test_turf = run_loc_floor_bottom_left
 	var/obj/machinery/atmospherics/binary/circulator/first = new(test_turf)
 	var/obj/machinery/atmospherics/binary/circulator/second = new(test_turf)
 	var/obj/machinery/power/generator/G = new(test_turf)
@@ -4281,7 +4291,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_unpowered_empty_light_hibernates
 
 /datum/unit_test/dq_unpowered_empty_light_hibernates/Run()
-	var/turf/test_turf = get_turf(run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1))
+	var/turf/test_turf = run_loc_floor_bottom_left
 	var/obj/machinery/light/L = new(test_turf)
 	L.stat_add(NOPOWER)
 	L.emergency_mode = FALSE
@@ -4295,7 +4305,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_emergency_light_discharge_is_timer_driven
 
 /datum/unit_test/dq_emergency_light_discharge_is_timer_driven/Run()
-	var/turf/test_turf = get_turf(run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1))
+	var/turf/test_turf = run_loc_floor_bottom_left
 	var/obj/machinery/light/L = new(test_turf)
 	L.stat_add(NOPOWER)
 	L.emergency_mode = TRUE
@@ -4308,7 +4318,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_idle_cooker_hibernates
 
 /datum/unit_test/dq_idle_cooker_hibernates/Run()
-	var/turf/test_turf = get_turf(run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1))
+	var/turf/test_turf = run_loc_floor_bottom_left
 	var/obj/machinery/appliance/cooker/oven/O = new(test_turf)
 	O.set_stat(0)
 	O.set_cooking(FALSE)
@@ -5752,7 +5762,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_omni_devices_are_rust_budget_groups
 
 /datum/unit_test/dq_omni_devices_are_rust_budget_groups/Run()
-	var/turf/T = locate(1, 1, 1)
+	var/turf/T = run_loc_floor_bottom_left
 	var/obj/machinery/atmospherics/omni/atmos_filter/F = new(T)
 	F.set_use_power(USE_POWER_IDLE)
 	F.stat_remove(NOPOWER | BROKEN)
@@ -5844,7 +5854,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_om_watch_derived_fires_on_band_crossing
 
 /datum/unit_test/dq_om_watch_derived_fires_on_band_crossing/Run()
-	var/obj/machinery/dq_om_watch_test_probe/M = new(locate(1, 1, 1))
+	var/obj/machinery/dq_om_watch_test_probe/M = allocate(/obj/machinery/dq_om_watch_test_probe)
 	var/list/datum/om_watch_band/bands = list(new /datum/om_watch_band("value", TRUE, 10, 2))
 	om_watch_arm_derived(M, "probe", bands, channel = null, getter = om_callable(M, TYPE_PROC_REF(/obj/machinery/dq_om_watch_test_probe, read_probe)), wake_callback = om_callable(M, TYPE_PROC_REF(/obj/machinery/dq_om_watch_test_probe, count_wake)))
 	M.probe = 5
@@ -6096,7 +6106,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_tank_overpressure_loses_integrity
 
 /datum/unit_test/dq_tank_overpressure_loses_integrity/Run()
-	var/obj/item/tank/oxygen/Tank = new(locate(1, 1, 1))
+	var/obj/item/tank/oxygen/Tank = allocate(/obj/item/tank/oxygen)
 	TEST_ASSERT_NOTNULL(Tank, "couldn't construct oxygen tank")
 	TEST_ASSERT_NOTNULL(Tank.air_contents, "tank air_contents null")
 
@@ -6131,7 +6141,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_tank_remove_air_volume_drains_moles
 
 /datum/unit_test/dq_tank_remove_air_volume_drains_moles/Run()
-	var/obj/item/tank/oxygen/Tank = new(locate(1, 1, 1))
+	var/obj/item/tank/oxygen/Tank = allocate(/obj/item/tank/oxygen)
 	TEST_ASSERT_NOTNULL(Tank, "tank construct failed")
 	TEST_ASSERT_NOTNULL(Tank.air_contents, "tank air_contents null")
 
@@ -6160,7 +6170,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_tank_assume_air_merges_donor
 
 /datum/unit_test/dq_tank_assume_air_merges_donor/Run()
-	var/obj/item/tank/oxygen/Tank = new(locate(1, 1, 1))
+	var/obj/item/tank/oxygen/Tank = allocate(/obj/item/tank/oxygen)
 	TEST_ASSERT_NOTNULL(Tank, "tank construct failed")
 	var/initial_moles = Tank.air_contents.total_moles()
 
@@ -6486,7 +6496,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_atmos_analyzer_handles_extreme_pressure
 
 /datum/unit_test/dq_atmos_analyzer_handles_extreme_pressure/Run()
-	var/obj/item/tank/oxygen/Tank = new(locate(1, 1, 1))
+	var/obj/item/tank/oxygen/Tank = allocate(/obj/item/tank/oxygen)
 	TEST_ASSERT_NOTNULL(Tank, "tank construct failed")
 
 	// Push pressure to ~30 atm (below TANK_LEAK so we don't lose integrity).
@@ -6753,7 +6763,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_tank_round_trip_drain_fill_drain
 
 /datum/unit_test/dq_tank_round_trip_drain_fill_drain/Run()
-	var/obj/item/tank/oxygen/Tank = new(locate(1, 1, 1))
+	var/obj/item/tank/oxygen/Tank = allocate(/obj/item/tank/oxygen)
 	TEST_ASSERT_NOTNULL(Tank, "tank construct failed")
 	TEST_ASSERT_NOTNULL(Tank.air_contents, "tank air_contents null")
 
@@ -7322,7 +7332,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_airlock_controller_ignores_unrelated_radio
 
 /datum/unit_test/dq_airlock_controller_ignores_unrelated_radio/Run()
-	var/turf/test_turf = locate(1, 1, 1)
+	var/turf/test_turf = run_loc_floor_bottom_left
 	var/obj/machinery/embedded_controller/radio/airlock/airlock_controller/controller = new(test_turf)
 	var/datum/embedded_program/airlock/program = controller.program
 	var/datum/signal/unrelated = new
@@ -7349,7 +7359,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_pda_multicaster_hibernates_between_state_changes
 
 /datum/unit_test/dq_pda_multicaster_hibernates_between_state_changes/Run()
-	var/turf/test_turf = locate(1, 1, 1)
+	var/turf/test_turf = run_loc_floor_bottom_left
 	var/obj/machinery/pda_multicaster/multicaster = new(test_turf)
 	TEST_ASSERT(test_machine_idle(multicaster), "stable PDA multicaster kept polling machinery")
 	multicaster.stat_add(EMPED)

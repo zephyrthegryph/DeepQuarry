@@ -25,15 +25,16 @@
 
 /datum/unit_test/dq_expedition_is_metadata_until_departure/Run()
 	var/datum/expedition_mission/mission = new /datum/expedition_mission/survey(EXP_DIFF_LOW)
-	var/datum/expedition_site/site = GLOB.expedition_service.create_site_descriptor(mission, EXP_DIFF_LOW)
+	var/datum/expedition_site/site = own(GLOB.expedition_service.create_site_descriptor(mission, EXP_DIFF_LOW))
 	TEST_ASSERT_NOTNULL(site, "Expedition survey did not create a site descriptor")
+	if(site.flight_destination_id)
+		defer_cleanup(GLOB.flight_service, TYPE_PROC_REF(/datum/world_service/flight, unregister_destination), site.flight_destination_id)
 	TEST_ASSERT_EQUAL(site.z_level, 0, "Surveying an expedition allocated a physical z-level before departure")
 	TEST_ASSERT_NULL(site.landing(), "Surveying an expedition created a landing turf before departure")
 	TEST_ASSERT_NULL(site.overmap_sector(), "Surveying an expedition created a legacy overmap sector before departure")
 	TEST_ASSERT_NOTNULL(site.flight_destination_id, "Surveying an expedition did not register a stable flight destination")
 	var/datum/flight_destination/destination = GLOB.flight_service.destinations[site.flight_destination_id]
 	TEST_ASSERT(destination?.expedition() == site, "The flight destination did not retain the surveyed site descriptor")
-	GLOB.flight_service.unregister_destination(site.flight_destination_id)
 	qdel(site)
 
 /datum/unit_test/dq_incompatible_flight_plan_fails_closed

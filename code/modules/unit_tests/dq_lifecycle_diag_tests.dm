@@ -52,21 +52,19 @@
 /datum/unit_test/dq_lifecycle_diag_catch_reports
 
 /datum/unit_test/dq_lifecycle_diag_catch_reports/Run()
-	GLOB.dq_caught_capture = list()
+	set_global("dq_caught_capture", list())
 	try
 		CRASH("dq_diag direct")
 	catch(var/exception/e)
 		dq_report_caught(e, "dq_diag direct catch")
 	var/datum/om/scheduler/sched = om_scheduler()
-	var/was_expecting = sched.expect_errors
-	sched.expect_errors = FALSE
+	set_var(sched, "expect_errors", FALSE)
 	try
 		CRASH("dq_diag scheduler")
 	catch(var/exception/e2)
 		sched.report_caught(e2, "dq_diag scheduler catch")
-	sched.expect_errors = was_expecting
 
-	GLOB.om_expect_sleep = TRUE
+	set_global("om_expect_sleep", TRUE)
 	om_guarded_call(null, /proc/dq_diag_sleep_then_throw, list())
 	GLOB.om_expect_sleep = FALSE
 	for(var/i in 1 to 20)
@@ -101,8 +99,8 @@
 
 /datum/unit_test/dq_lifecycle_diag_leak_postcondition/Run()
 	var/old_level = GLOB.dq_lifecycle_leak_check
-	GLOB.dq_lifecycle_leak_check = 1
-	GLOB.dq_lifecycle_report_capture = list()
+	set_global("dq_lifecycle_leak_check", 1)
+	set_global("dq_lifecycle_report_capture", list())
 
 	var/datum/dq_diag_leaker/leaker = new
 	var/datum/dq_diag_leaked/leaked = new
