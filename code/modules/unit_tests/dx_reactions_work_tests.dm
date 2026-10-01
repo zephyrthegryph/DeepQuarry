@@ -331,14 +331,14 @@
 	var/list/entry = own_table_of(A).entries[nameof(A.partner)]
 	TEST_ASSERT_EQUAL(entry[OWNE_TYPE], /datum/rxw_typed, "the declaration recorded its type")
 	var/list/capture = list()
-	GLOB.dq_lifecycle_report_capture = capture
+	set_global("dq_lifecycle_report_capture", capture)
 	TEST_ASSERT_NULL(rel_link(A, nameof(A.partner), S), "a rel_one write of another type is refused")
 	TEST_ASSERT_NULL(A.partner, "and nothing was written")
 	TEST_ASSERT_NULL(rel_link(A, nameof(A.others), S), "a rel_many write of another type is refused")
 	TEST_ASSERT(!length(A.others), "and nothing was added")
 	TEST_ASSERT_NULL(own_set(A, nameof(A.kept), S), "an owned write of another type is refused")
 	TEST_ASSERT_NULL(A.kept, "and nothing was owned")
-	GLOB.dq_lifecycle_report_capture = null
+	set_global("dq_lifecycle_report_capture", null)
 	TEST_ASSERT_EQUAL(length(capture), 3, "each refusal was reported: [json_encode(capture)]")
 	TEST_ASSERT(findtext(capture[1], "declared"), "naming the declaration")
 	TEST_ASSERT_EQUAL(rel_link(A, nameof(A.partner), B), B, "the declared type is written")

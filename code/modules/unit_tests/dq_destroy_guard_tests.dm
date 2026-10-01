@@ -64,7 +64,7 @@
 			qdel(C)
 			continue
 		var/list/capture = list()
-		GLOB.dq_lifecycle_report_capture = capture
+		set_global("dq_lifecycle_report_capture", capture)
 		dying.destroy_phase = LIFECYCLE_PHASE_LINKS
 		if(inside)
 			GLOB.destroy_transaction_depth++
@@ -113,7 +113,7 @@
 		if(inside)
 			GLOB.destroy_transaction_depth--
 		dying.destroy_phase = 0
-		GLOB.dq_lifecycle_report_capture = null
+		set_global("dq_lifecycle_report_capture", null)
 		if(done)
 			written += name
 		if(inside ? length(capture) : !length(capture))
@@ -134,7 +134,7 @@
 		TEST_ASSERT_NOTNULL(dq_ledger(holder), "the box keeps a ledger")
 		var/datum/dying = dying_end == "holder" ? holder : thing
 		var/list/capture = list()
-		GLOB.dq_lifecycle_report_capture = capture
+		set_global("dq_lifecycle_report_capture", capture)
 		dying.destroy_phase = LIFECYCLE_PHASE_LINKS
 		if(inside)
 			GLOB.destroy_transaction_depth++
@@ -143,7 +143,7 @@
 		if(inside)
 			GLOB.destroy_transaction_depth--
 		dying.destroy_phase = 0
-		GLOB.dq_lifecycle_report_capture = null
+		set_global("dq_lifecycle_report_capture", null)
 		thing.forceMove(run_loc_floor_bottom_left)
 		TEST_ASSERT(!adopted, "contents adoption with the [dying_end] dying ([inside ? "inside" : "outside"] a transaction) took a slot")
 		if(inside)

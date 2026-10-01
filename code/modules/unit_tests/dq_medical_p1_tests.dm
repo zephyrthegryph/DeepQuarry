@@ -11,15 +11,13 @@
 /datum/unit_test/dq_p1_b10_slow_addiction_threshold
 
 /datum/unit_test/dq_p1_b10_slow_addiction_threshold/Run()
-	var/old_config = CONFIG_GET(flag/can_addict_during_round)
-	CONFIG_SET(flag/can_addict_during_round, TRUE)
+	set_config(/datum/config_entry/flag/can_addict_during_round, TRUE)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	H.bloodstr.add_reagent(REAGENT_ID_TRAMADOL, 5)
 	// Past the normal threshold (-1000) but well short of the slow one (-1750).
 	H.set_addiction_buildup(REAGENT_ID_TRAMADOL, -1200)
 	H.process_addictions()
 	TEST_ASSERT(H.get_addiction_to_reagent(REAGENT_ID_TRAMADOL) <= 0, "tramadol (ADDICT_SLOW) must not addict at the normal threshold, counter is [H.get_addiction_to_reagent(REAGENT_ID_TRAMADOL)]")
-	CONFIG_SET(flag/can_addict_during_round, old_config)
 
 /// B9: the advanced trauma kit spends one charge per wound it treats.
 /datum/unit_test/dq_p1_b9_trauma_kit_charges

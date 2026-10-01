@@ -127,7 +127,7 @@ DECLARE_UI(/datum/ui_test_host/from_var, UI_FROM_VAR("tgui_id"))
 /datum/unit_test/dq_sys_ui_parse
 
 /datum/unit_test/dq_sys_ui_parse/Run()
-	GLOB.ui_test_calls = list()
+	set_global("ui_test_calls", list())
 	var/datum/ui_test_host/host = new
 	var/datum/ui_test_host/other = new
 	host.things = list(other)
@@ -184,7 +184,7 @@ DECLARE_UI(/datum/ui_test_host/from_var, UI_FROM_VAR("tgui_id"))
 /datum/unit_test/dq_sys_ui_dispatch
 
 /datum/unit_test/dq_sys_ui_dispatch/Run()
-	GLOB.ui_test_calls = list()
+	set_global("ui_test_calls", list())
 	var/datum/ui_test_host/host = new
 	var/datum/tgui/ui = ui_test_window(host)
 

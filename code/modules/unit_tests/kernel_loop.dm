@@ -180,7 +180,12 @@
 	var/air_before = SSair.times_fired
 	var/light_before = SSlighting.times_fired
 	var/ticker_before = SSticker.times_fired
-	sleep(3 SECONDS)
+	// Lighting is presentation work, shed while the machine is overloaded (as under a sharded
+	// suite), so wait for all three rather than a fixed three seconds.
+	for(var/waited in 1 to 30)
+		sleep(1 SECONDS)
+		if(SSair.times_fired > air_before && SSlighting.times_fired > light_before && SSticker.times_fired > ticker_before)
+			break
 	TEST_ASSERT(SSair.times_fired > air_before, "air fires from the kernel")
 	TEST_ASSERT(SSlighting.times_fired > light_before, "lighting fires from the kernel")
 	TEST_ASSERT(SSticker.times_fired > ticker_before, "the ticker fires from the kernel")

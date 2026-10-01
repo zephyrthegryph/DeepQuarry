@@ -122,7 +122,7 @@
 	var/datum/tgui/ui = dx_vending_window(H, V)
 	var/datum/stored_item/vending_product/R = V.product_records[1]
 	var/before = R.get_amount()
-	GLOB.refuse_capture = list()
+	set_global("refuse_capture", list())
 
 	TEST_ASSERT(!V.tgui_act("vend", list("vend" = 99), ui), "a key past the list is refused (not clamped onto another product)")
 	TEST_ASSERT(!V.tgui_act("vend", list("vend" = 0), ui), "key 0 is refused")
@@ -140,7 +140,7 @@
 	TEST_ASSERT(!V.vend_ready, "the machine is busy until it finishes")
 	TEST_ASSERT(!V.tgui_act("vend", list("vend" = 1), ui), "a second request while busy is refused")
 	var/list/refusals = GLOB.refuse_capture
-	GLOB.refuse_capture = null
+	set_global("refuse_capture", null)
 	var/found_busy = FALSE
 	for(var/list/entry in refusals)
 		if(findtext(entry[2], "busy"))

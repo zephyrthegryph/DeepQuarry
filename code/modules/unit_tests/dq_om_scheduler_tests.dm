@@ -351,7 +351,7 @@
 /datum/unit_test/om/sleeping_callee_is_caught/run_om(list/made)
 	var/datum/om/scheduler/sched = om_scheduler()
 	var/datum/om_test_entity/E = entity(made)
-	GLOB.om_expect_sleep = TRUE
+	set_global("om_expect_sleep", TRUE)
 	var/before = sched.callees_slept
 	om_after(E, 1 SECONDS, /datum/om_test_entity/proc/sleepy_hit, "sleepy")
 	om_after(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, "after")
@@ -362,7 +362,7 @@
 	E.log.Cut()
 	var/datum/om/task/T = om_task_start(/datum/om/task/test_steps_sleepy, E)
 	scheduler_advance(1.5)
-	GLOB.om_expect_sleep = FALSE
+	set_global("om_expect_sleep", FALSE)
 	TEST_ASSERT_EQUAL(sched.callees_slept, before + 2, "the sleeping step is counted")
 	TEST_ASSERT_EQUAL(T.state, OM_TASK_CANCELLED, "a sleeping step fails its task")
 	TEST_ASSERT_EQUAL(T.reason, "slept", "with the reason 'slept'")

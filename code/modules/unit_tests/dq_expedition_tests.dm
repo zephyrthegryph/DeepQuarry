@@ -36,6 +36,7 @@
 	var/datum/expedition_mission/mission = new /datum/expedition_mission/survey(EXP_DIFF_MED)
 	var/datum/expedition_site/site = GLOB.expedition_service.generate_site(mission, EXP_DIFF_MED)
 
+	release_site_at_teardown(site, "expedition integration unit test")
 	TEST_ASSERT_NOTNULL(site, "generate_site() returned null — z-alloc, verdigris carve, or content scatter failed")
 	TEST_ASSERT(world.maxz > pre_maxz, "world.maxz did not grow: [pre_maxz] -> [world.maxz]; load_new_z() allocated nothing")
 	TEST_ASSERT(!HasAbove(pre_maxz), "independent expedition z-level activated a vertical connection above the previous world boundary")
@@ -70,9 +71,6 @@
 	log_test("Expedition site generated on z[site.z_level] with [floor_count] walkable floor turfs.")
 
 
-	GLOB.expedition_service.release_site(site, "expedition integration unit test")
-
-
 /datum/unit_test/dq_debug_station_initializes_complete_runtime
 
 /datum/unit_test/dq_debug_station_initializes_complete_runtime/Run()
@@ -80,8 +78,9 @@
 	var/datum/generated_station_prng/seed_stream = new(20260721)
 	var/seed = ((seed_stream.next() + world.time + REALTIMEOFDAY) % 15999999) + 1
 	var/datum/expedition_site/site = GLOB.expedition_service.generate_debug_station(seed, diagnostics)
-	TEST_ASSERT_NOTNULL(site, "Pseudo-random debug station seed [seed] failed: [jointext(diagnostics, "; ")]")
+	release_site_at_teardown(site, "debug station unit test")
 	qdel(seed_stream)
+	TEST_ASSERT_NOTNULL(site, "Pseudo-random debug station seed [seed] failed: [jointext(diagnostics, "; ")]")
 	TEST_ASSERT_NOTNULL(site.station_spec, "Debug station discarded its authoritative specification")
 	TEST_ASSERT_EQUAL(site.station_spec.grid_width, 160, "Debug station did not use the doubled interactive generation footprint")
 	TEST_ASSERT_EQUAL(site.station_spec.grid_height, 160, "Debug station did not use the doubled interactive generation footprint")
@@ -130,7 +129,6 @@
 	TEST_ASSERT(architecture.is_valid(), "Debug station became architecturally invalid after runtime controls and defenders initialized")
 	rustg_file_write(site.station_materialization.diagnostic_minimap_html(architecture), "[GLOB.log_directory]/generated-station-large-[seed].html")
 	qdel(architecture)
-	GLOB.expedition_service.release_site(site, "debug station unit test")
 
 /datum/unit_test/dq_emergency_station_fallback_is_playable
 
@@ -284,6 +282,8 @@
 		var/seed = ((seed_stream.next() + sample) % 2147483646) + 1
 		var/list/diagnostics = list()
 		var/datum/expedition_site/site = GLOB.expedition_service.generate_debug_station(seed, diagnostics)
+		// Released below once the sample passes (so samples reuse the z); teardown releases a failed one.
+		release_site_at_teardown(site, "generated station physical regression unit test")
 		TEST_ASSERT_NOTNULL(site, "Pseudo-random runtime sample [sample] seed [seed] failed: [jointext(diagnostics, "; ")]")
 		TEST_ASSERT_EQUAL(length(site.station_materialization.degradation_events), 0, "Seed [seed] required materialization degradation: [jointext(site.station_materialization.degradation_events, "; ")]")
 		for(var/datum/generated_room_solution/solution in site.station_materialization.room_solutions)
@@ -338,19 +338,35 @@
 /datum/unit_test/dq_expedition_assignment_prevents_ready_expiry
 
 /datum/unit_test/dq_expedition_assignment_prevents_ready_expiry/Run()
-	var/datum/expedition_site/site = new(world.maxz + 1, EXP_DIFF_LOW)
-	var/obj/machinery/computer/shuttle_control/explore/console = new(null)
+	var/datum/expedition_site/site = own(new /datum/expedition_site(world.maxz + 1, EXP_DIFF_LOW))
+	var/obj/machinery/computer/shuttle_control/explore/console = own(new /obj/machinery/computer/shuttle_control/explore(null))
 	rel_set(site, nameof(site.origin_console), console)
 	TEST_ASSERT(site.has_active_assignment(), "A site owned by its origin console was not recognized as actively assigned")
 	site.status = EXP_STATUS_ACTIVE
 	site.deployed_at = world.time - EXP_DEPLOY_GRACE - 1
 	site.last_occupied = world.time - EXP_AUTO_RELEASE_GRACE - 1
 	own_put(GLOB.expedition_service, nameof(/datum/world_service/expedition::sites), "assignment-lifecycle-test", site)
+	defer_cleanup(null, GLOBAL_PROC_REF(dq_test_take_expedition_site), "assignment-lifecycle-test")
 	GLOB.expedition_service.service_step()
 	TEST_ASSERT(GLOB.expedition_service.sites["assignment-lifecycle-test"] == site, "An empty active site was released while its incomplete assignment was still held by the shuttle console")
-	own_take_member(GLOB.expedition_service, nameof(/datum/world_service/expedition::sites), "assignment-lifecycle-test")
+	dq_test_take_expedition_site("assignment-lifecycle-test")
 
 	rel_clear(console, nameof(console.active_expedition))
 	TEST_ASSERT(!site.has_active_assignment(), "A site remained actively assigned after its console released it")
 	qdel(console)
 	qdel(site)
+
+/// Releases `site` when the test is torn down, unless the test already released it (so a
+/// failed assert can't leave a generated z-level allocated). A null site does nothing.
+/datum/unit_test/proc/release_site_at_teardown(datum/expedition_site/site, reason)
+	if(site)
+		defer_cleanup(src, PROC_REF(release_site_if_live), site, reason)
+
+/datum/unit_test/proc/release_site_if_live(datum/expedition_site/site, reason)
+	if(site.status != EXP_STATUS_EXPIRED)
+		GLOB.expedition_service.release_site(site, reason)
+
+/// Takes the test site a test put in the expedition registry under `key` back out, if it's still there.
+/proc/dq_test_take_expedition_site(key)
+	if(key in GLOB.expedition_service.sites)
+		own_take_member(GLOB.expedition_service, nameof(/datum/world_service/expedition::sites), key)

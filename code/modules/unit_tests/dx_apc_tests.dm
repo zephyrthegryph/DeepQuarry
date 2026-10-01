@@ -466,9 +466,9 @@
 	cap_set(A, CAP_COVER_OPEN, TRUE)
 	TEST_ASSERT(iface.is_meant(H, A, null), "and with it open: nothing hides the interface (the cell eject outranks it, dx_apc_cell_eject_priority)")
 	var/saved = GLOB.op_route_now
-	GLOB.op_route_now = ROUTE_INTERFACE
+	set_global("op_route_now", ROUTE_INTERFACE)
 	TEST_ASSERT(iface.is_meant(H, A, null), "over the interface route too")
-	GLOB.op_route_now = saved
+	set_global("op_route_now", saved)
 	cap_set(A, CAP_COVER_OPEN, FALSE)
 	A.stat_add(MAINT)
 	TEST_ASSERT_EQUAL(dx_apc_why(A, H, null, iface), req_reason_phrase(/datum/msg/req_not_working), "an unsecured APC isn't working")
