@@ -99,6 +99,10 @@ pub struct LowerBindings {
     /// Immutable project-wide names shared between procedure lowering jobs.
     #[serde(skip)]
     pub shared: Option<Arc<SharedLowerBindings>>,
+    /// Invocation-local accelerator prepared once for this exact shared Arc.
+    /// Opaque cache state is absent from serialization and semantic equality.
+    #[serde(skip)]
+    pub prepared_member_globals: crate::PreparedMemberGlobals,
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
@@ -121,6 +125,12 @@ pub struct SharedLowerBindings {
     /// Complete declaration inventory, separate from static call selection.
     #[serde(default)]
     pub known_member_procs: HashMap<String, BTreeSet<String>>,
+    /// Explicit concrete source return annotations. Unannotated overrides
+    /// inherit the return declaration from their parent procedure.
+    #[serde(default)]
+    pub global_proc_return_types: HashMap<String, String>,
+    #[serde(default)]
+    pub member_proc_return_types: HashMap<String, HashMap<String, String>>,
     pub parent_types: HashMap<String, String>,
     pub fields: BTreeSet<String>,
     pub globals: BTreeSet<String>,
@@ -187,6 +197,21 @@ impl LowerBindings {
         crate::dependencies::observe(crate::BindingFact::DeclaredMemberProc(owner.into(), name.into()), crate::FactValue::Boolean(result));
         result
     }
+    fn global_proc_return_type(&self, name: &str) -> Option<&str> {
+        let result = self.global_proc_return_type_raw(name);
+        crate::dependencies::observe(crate::BindingFact::GlobalProcReturnType(name.into()), crate::FactValue::text(result));
+        result
+    }
+    fn member_proc_return_type(&self, owner: &str, name: &str) -> Option<&str> {
+        let result = self.member_proc_return_type_raw(owner, name, false);
+        crate::dependencies::observe(crate::BindingFact::MemberProcReturnType(owner.into(), name.into()), crate::FactValue::text(result));
+        result
+    }
+    fn parent_proc_return_type(&self, owner: &str, name: &str) -> Option<&str> {
+        let result = self.member_proc_return_type_raw(owner, name, true);
+        crate::dependencies::observe(crate::BindingFact::ParentProcReturnType(owner.into(), name.into()), crate::FactValue::text(result));
+        result
+    }
     fn modified_instance(&self, path: &str) -> Option<&str> {
         let result = self.shared.as_ref().and_then(|shared| shared.modified_instances.get(path)).map(String::as_str);
         crate::dependencies::observe(crate::BindingFact::ModifiedInstance(path.into()), crate::FactValue::text(result));
@@ -218,6 +243,9 @@ impl LowerBindings {
             F::UniqueMemberGlobal(n) => V::text(self.unique_member_global_raw(n)),
             F::MemberProc(o, n) => V::text(self.member_proc_raw(o, n)),
             F::DeclaredMemberProc(o, n) => V::Boolean(self.has_declared_member_proc_raw(o, n)),
+            F::GlobalProcReturnType(n) => V::text(self.global_proc_return_type_raw(n)),
+            F::MemberProcReturnType(o, n) => V::text(self.member_proc_return_type_raw(o, n, false)),
+            F::ParentProcReturnType(o, n) => V::text(self.member_proc_return_type_raw(o, n, true)),
             F::NumericConstant(n) => self.shared.as_ref().and_then(|s| s.numeric_constants.get(n)).copied().map_or(V::Absent, V::Bits),
             F::StringConstant(n) => V::text(self.shared.as_ref().and_then(|s| s.string_constants.get(n)).map(String::as_str)),
             F::ModifiedInstance(n) => V::text(self.shared.as_ref().and_then(|s| s.modified_instances.get(n)).map(String::as_str)),
@@ -281,18 +309,18 @@ impl LowerBindings {
 
     fn member_global_raw(&self, owner: &str, name: &str) -> Option<&str> {
         let shared = self.shared.as_ref()?;
-        let mut path = shared.modified_instances.get(owner).map(String::as_str).unwrap_or(owner);
-        for _ in 0..64 {
-            if let Some(symbol) = shared.member_globals.get(path).and_then(|members| members.get(name)) {
-                return Some(symbol);
-            }
-            path = shared.parent_types.get(path)?;
-        }
-        None
+        crate::binding_index::member_global(shared, owner, name)
     }
 
     fn unique_member_global_raw(&self, name: &str) -> Option<&str> {
         let shared = self.shared.as_ref()?;
+        if let Some(result) = self.prepared_member_globals.resolve(shared, name) {
+            return match result {
+                crate::binding_index::MemberGlobalResolution::Unique(symbol) => Some(symbol),
+                crate::binding_index::MemberGlobalResolution::Ambiguous
+                | crate::binding_index::MemberGlobalResolution::Absent => None,
+            };
+        }
         if shared.known_member_fields.iter().any(|(owner, members)| {
             members.contains(name) && self.member_global_raw(owner, name).is_none()
         }) { return None; }
@@ -331,6 +359,21 @@ impl LowerBindings {
             path=parent;
         }
         false
+    }
+    fn global_proc_return_type_raw(&self, name: &str) -> Option<&str> {
+        self.shared.as_ref()?.global_proc_return_types.get(name).map(String::as_str)
+    }
+    fn member_proc_return_type_raw(&self, owner: &str, name: &str, parent_only: bool) -> Option<&str> {
+        let shared = self.shared.as_ref()?;
+        let mut path = shared.modified_instances.get(owner).map(String::as_str).unwrap_or(owner);
+        if parent_only { path = shared.parent_types.get(path)?; }
+        for _ in 0..64 {
+            if let Some(return_type) = shared.member_proc_return_types.get(path).and_then(|members| members.get(name)) {
+                return Some(return_type);
+            }
+            path = shared.parent_types.get(path)?;
+        }
+        None
     }
 }
 
@@ -2689,11 +2732,48 @@ impl Compiler<'_> {
                     .member_type(&owner, selector)
                     .map(str::to_owned)
             }
+            ExprKind::Call { callee, .. } => self.inferred_call_type(callee),
             _ => None,
         };
         inferred.map(|path| {
             self.bindings.modified_instance(&path).map(str::to_owned).unwrap_or(path)
         })
+    }
+
+    fn inferred_call_type(&self, callee: &Expr) -> Option<String> {
+        match &callee.kind {
+            ExprKind::Ident(name) if name == ".." => {
+                let owner = self.bindings.current_type_path.as_deref()?;
+                let name = self.bindings.current_proc_path.as_deref()?.rsplit('/').next()?;
+                self.bindings.parent_proc_return_type(owner, name).map(str::to_owned)
+            }
+            ExprKind::Ident(name) => {
+                // Bare builtin calls take precedence over authored procedures
+                // in emission. Their results cannot inherit a source signature.
+                if crate::builtin_catalog::lookup(name).is_some()
+                    || matches!(name.as_str(), "new" | "list" | "sound" | "image" | "icon"
+                        | "regex" | "matrix" | "input" | "locate" | "initial" | "issaved"
+                        | "istype" | "pick" | "call" | "arglist" | "text" | "CRASH")
+                { return None; }
+                let member = self.bindings.current_type_path.as_deref().filter(|owner| {
+                    self.bindings.has_declared_member_proc(owner, name)
+                        || self.bindings.member_proc(owner, name).is_some()
+                });
+                if let Some(owner) = member {
+                    self.bindings.member_proc_return_type(owner, name).map(str::to_owned)
+                } else if self.bindings.has_global_proc(name) {
+                    self.bindings.global_proc_return_type(name).map(str::to_owned)
+                } else {
+                    None
+                }
+            }
+            ExprKind::Member { object, selector, .. } | ExprKind::SafeMember { object, selector } => {
+                let owner = self.inferred_expression_type(object)?;
+                self.bindings.member_proc_return_type(&owner, selector).map(str::to_owned)
+            }
+            ExprKind::Group(inner) => self.inferred_call_type(inner),
+            _ => None,
+        }
     }
 
     fn local_array(&mut self, dimensions: &[&str], statement: &str) -> Result<(), LowerError> {
@@ -4077,7 +4157,14 @@ impl Compiler<'_> {
                             self.emit(0x7d, vec![]);
                             return Ok(());
                         }
-                        [value] => self.inferred_expression_type(value),
+                        [value] => {
+                            let mut target = value;
+                            while let ExprKind::Group(inner) = &target.kind { target = inner; }
+                            // Native accepts members selected through a typed
+                            // result, but a call itself has no one-arg istype form.
+                            if matches!(&target.kind, ExprKind::Call { .. }) { None }
+                            else { self.inferred_expression_type(value) }
+                        }
                         _ => {
                             return Err(error(statement, "istype() requires one or two arguments"))
                         }

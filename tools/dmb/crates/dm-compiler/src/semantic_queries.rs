@@ -142,7 +142,9 @@ fn fact_heap(fact: &BindingFact) -> usize {
         | NumericConstant(a)
         | StringConstant(a)
         | ModifiedInstance(a) => a.capacity(),
-        MemberType(a, b) | MemberGlobal(a, b) | MemberProc(a, b) | DeclaredMemberProc(a, b) => {
+        GlobalProcReturnType(a) => a.capacity(),
+        MemberType(a, b) | MemberGlobal(a, b) | MemberProc(a, b) | DeclaredMemberProc(a, b)
+        | MemberProcReturnType(a, b) | ParentProcReturnType(a, b) => {
             a.capacity().saturating_add(b.capacity())
         }
         SharedPresence => 0,
@@ -425,5 +427,85 @@ mod tests {
         bindings.global_procs.insert("missing".into());
         assert!(queries.compile("f", &body, &bindings, None).is_ok());
         assert_eq!(queries.executions(), 2);
+    }
+
+    #[test]
+    fn proc_return_reads_invalidate_positive_and_negative_results() {
+        let body = dm_syntax::parse("/proc/check()\n    return istype(fetch().payload)\n")
+            .items.remove(0).children;
+        let mut bindings = LowerBindings::default();
+        let mut shared = dm_codegen_byond::SharedLowerBindings::default();
+        shared.global_procs.insert("fetch".into());
+        shared.member_types.insert("/datum/result".into(),
+            [("payload".into(), "/datum/first".into())].into());
+        bindings.shared = Some(Arc::new(shared));
+        let (failure, reads) = capture_binding_reads(||
+            dm_codegen_byond::compile_simple_proc_with_bindings(&body, &bindings));
+        assert!(failure.is_err());
+        assert!(reads.iter().any(|read| read.fact == BindingFact::GlobalProcReturnType("fetch".into())
+            && read.value == FactValue::Absent));
+        let mut queries = SemanticQueries::default();
+        assert!(queries.compile("result", &body, &bindings, None).is_err());
+        Arc::make_mut(bindings.shared.as_mut().unwrap()).global_proc_return_types
+            .insert("fetch".into(), "/datum/result".into());
+        let first = queries.compile("result", &body, &bindings, None).unwrap();
+        assert!(first.valid_for(&bindings));
+        assert_eq!(queries.executions(), 2);
+        Arc::make_mut(bindings.shared.as_mut().unwrap()).global_proc_return_types
+            .insert("unrelated".into(), "/datum/unrelated".into());
+        assert_eq!(queries.compile("result", &body, &bindings, Some(first.clone())).unwrap(), first);
+        assert_eq!(queries.executions(), 2);
+        Arc::make_mut(bindings.shared.as_mut().unwrap()).member_types
+            .get_mut("/datum/result").unwrap().insert("payload".into(), "/datum/second".into());
+        let changed = queries.compile("result", &body, &bindings, Some(first.clone())).unwrap();
+        assert_ne!(changed.procedure, first.procedure);
+        assert_eq!(queries.executions(), 3);
+        Arc::make_mut(bindings.shared.as_mut().unwrap()).global_proc_return_types.remove("fetch");
+        assert!(!changed.valid_for(&bindings));
+        assert!(queries.compile("result", &body, &bindings, Some(changed)).is_err());
+        assert_eq!(queries.executions(), 4);
+    }
+
+    #[test]
+    fn proc_return_member_shadowing_and_parent_changes_are_observed() {
+        let body = dm_syntax::parse("/proc/check()\n    return istype(fetch().payload)\n")
+            .items.remove(0).children;
+        let mut bindings = LowerBindings {
+            current_type_path: Some("/datum/owner/child".into()),
+            current_proc_path: Some("/datum/owner/child/proc/check".into()),
+            ..Default::default()
+        };
+        let mut shared = dm_codegen_byond::SharedLowerBindings::default();
+        shared.parent_types.insert("/datum/owner/child".into(), "/datum/owner".into());
+        shared.global_procs.insert("fetch".into());
+        shared.global_proc_return_types.insert("fetch".into(), "/datum/global_result".into());
+        for (owner, ty) in [("/datum/global_result", "/datum/a"), ("/datum/member_result", "/datum/b")] {
+            shared.member_types.insert(owner.into(), [("payload".into(), ty.into())].into());
+        }
+        bindings.shared = Some(Arc::new(shared));
+        let mut queries = SemanticQueries::default();
+        let global = queries.compile("shadowing", &body, &bindings, None).unwrap();
+        assert!(global.dependencies.iter().any(|read| read.fact
+            == BindingFact::DeclaredMemberProc("/datum/owner/child".into(), "fetch".into())
+            && read.value == FactValue::Boolean(false)));
+        let shared = Arc::make_mut(bindings.shared.as_mut().unwrap());
+        shared.known_member_procs.insert("/datum/owner".into(), ["fetch".into()].into());
+        shared.member_proc_return_types.insert("/datum/owner".into(),
+            [("fetch".into(), "/datum/member_result".into())].into());
+        let member = queries.compile("shadowing", &body, &bindings, Some(global.clone())).unwrap();
+        assert_ne!(member.procedure, global.procedure);
+        assert!(member.dependencies.iter().any(|read| read.fact
+            == BindingFact::MemberProcReturnType("/datum/owner/child".into(), "fetch".into())
+            && read.value == FactValue::Text("/datum/member_result".into())));
+        let parent_body = dm_syntax::parse("/proc/check()\n    return istype(..().payload)\n")
+            .items.remove(0).children;
+        bindings.current_proc_path = Some("/datum/owner/child/proc/fetch".into());
+        let parent = queries.compile("parent", &parent_body, &bindings, None).unwrap();
+        assert!(parent.dependencies.iter().any(|read| read.fact
+            == BindingFact::ParentProcReturnType("/datum/owner/child".into(), "fetch".into())));
+        Arc::make_mut(bindings.shared.as_mut().unwrap()).parent_types
+            .insert("/datum/owner/child".into(), "/datum/missing".into());
+        assert!(!parent.valid_for(&bindings));
+        assert!(queries.compile("parent", &parent_body, &bindings, Some(parent)).is_err());
     }
 }

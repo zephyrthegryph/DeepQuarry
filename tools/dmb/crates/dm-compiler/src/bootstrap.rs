@@ -16,7 +16,7 @@ use byond_dmb::bytecode::opcode;
 use byond_dmb::dmb::{DmString, Dmb, Instance, MobType, Proc, Variable};
 use dm_codegen_byond::{
     compile_simple_proc_with_bindings, link_proc, Instruction as CodeInstruction, Item as CodeItem,
-    Ledger, LowerBindings, SharedLowerBindings, Symbol, Table, ValueWord, VariableWord, Word,
+    Ledger, LowerBindings, PreparedMemberGlobals, SharedLowerBindings, Symbol, Table, ValueWord, VariableWord, Word,
 };
 use dm_preprocess::PreprocessedProject;
 use dm_resources::{ResourceRequest, ResourceSet};
@@ -600,6 +600,7 @@ fn compile_preprocessed_project_with_loaded_resources(
         Some(frontend),
         None,
         source_debug.as_ref(),
+        None,
     )?;
     if let Some(skin) = preprocessed.skin_includes.last() {
         let root = dme_path.parent().unwrap_or_else(|| Path::new("."));
@@ -651,7 +652,7 @@ pub fn compile_preprocessed_project_with_resource_catalog(
         crate::source_debug::SourceDebugIndex::new(preprocessed, dme_path.parent().unwrap_or_else(|| Path::new("."))));
     let (mut dmb, emitted, rsc_bytes) = emit_global_procs_mode_with_frontend_catalog(
         &preprocessed.text, builtin_image, world_name, None, &mut lowering_cache, None, None,
-        procedure_pipeline::worker_count(), Some(frontend), Some(resources), source_debug.as_ref())?;
+        procedure_pipeline::worker_count(), Some(frontend), Some(resources), source_debug.as_ref(), None)?;
     if let Some(skin) = preprocessed.skin_includes.last() {
         let root = dme_path.parent().unwrap_or_else(|| Path::new("."));
         let name = skin_archive_name(root, skin)?;
@@ -1225,6 +1226,41 @@ pub fn emit_global_procs_with_resources(
         Some(resources),
         &mut crate::lower_cache::ProcLoweringCache::disabled(),
     )
+}
+
+/// Only an explicit class path conveys a concrete call-result type. Primitive
+/// return restrictions such as `as anything` are not inferred as class paths.
+fn declared_proc_return_type(header: &str) -> Result<Option<Option<String>>, String> {
+    let Some((_, suffix)) = header.rsplit_once(')') else { return Ok(None); };
+    let tokens = dm_syntax::lex_spans(suffix).tokens.into_iter().filter(|token| {
+        !matches!(token.kind, TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment)
+    }).collect::<Vec<_>>();
+    if tokens.is_empty() { return Ok(None); }
+    let failure = || "return type must be a type path or atomic restriction".to_owned();
+    if tokens[0].text(suffix) != "as" || tokens.len() < 2 { return Err(failure()); }
+    if tokens.len() == 2 && tokens[1].kind == TokenKind::Ident { return Ok(Some(None)); }
+    let mut path = String::new();
+    for (index, token) in tokens[1..].iter().enumerate() {
+        if (index % 2 == 0 && token.text(suffix) != "/")
+            || (index % 2 == 1 && token.kind != TokenKind::Ident)
+        { return Err(failure()); }
+        path.push_str(token.text(suffix));
+    }
+    if (tokens.len() - 1) % 2 != 0 { return Err(failure()); }
+    Ok(Some(Some(path)))
+}
+
+fn inherited_return_annotation_error(shared: &SharedLowerBindings, owner: &str, name: &str) -> bool {
+    let mut owner = owner;
+    let mut visited = HashSet::new();
+    while let Some(parent) = shared.parent_types.get(owner) {
+        if !visited.insert(parent) { break; }
+        if shared.known_member_procs.get(parent).is_some_and(|members| members.contains(name))
+            || shared.member_procs.get(parent).is_some_and(|members| members.contains_key(name))
+        { return true; }
+        owner = parent;
+    }
+    false
 }
 
 fn declared_variable_type(header: &str) -> Option<(String, String)> {
@@ -2272,6 +2308,81 @@ pub struct LoweringAudit {
     pub groups: BTreeMap<String, LoweringAuditGroup>,
 }
 
+/// Canonical authored-body lowering with normal successful-body linking.
+/// Lowering errors continue; setup/signature/link errors fail fast. Resource
+/// existence, generated dynamic initializers and publication are not covered.
+#[derive(Debug, Default)]
+pub struct CanonicalLoweringAudit {
+    pub expected_procedures: usize,
+    pub lowering: LoweringAudit,
+    pub cache_hits: usize,
+    pub cache_misses: usize,
+    pub truncated_texts: usize,
+}
+
+impl CanonicalLoweringAudit {
+    fn bounded(&mut self, text: &str) -> String {
+        let mut chars = text.chars();
+        let mut result: String = chars.by_ref().take(512).collect();
+        if chars.next().is_some() { self.truncated_texts += 1; result.push_str("..."); }
+        result
+    }
+
+    fn record(&mut self, path: &str, span: dm_syntax::Span, body_base: usize,
+        source_debug: Option<&crate::source_debug::SourceDebugIndex<'_>>,
+        result: &Result<dm_codegen_byond::SimpleProc, Vec<dm_codegen_byond::LowerError>>) {
+        self.lowering.procedures += 1;
+        let Err(errors) = result else { self.lowering.passed += 1; return; };
+        self.lowering.failed += 1;
+        for error in errors {
+            self.lowering.error_count += 1;
+            let mut reason = self.bounded(&error.reason);
+            if self.lowering.groups.len() >= 255 && !self.lowering.groups.contains_key(&reason) {
+                reason = "other errors (group limit)".into();
+            }
+            let sample = if self.lowering.groups.get(&reason).map_or(0, |group| group.samples.len()) < 3 {
+                let offset = error.statement_origin.as_ref().and_then(|relative| body_base.checked_add(relative.start))
+                    .unwrap_or(span.start);
+                Some(LoweringAuditSample {
+                    procedure: self.bounded(path), span,
+                    statement: self.bounded(&source_error(source_debug, offset, path,
+                        &format!("{} ({})", error.reason, error.statement))),
+                })
+            } else { None };
+            let group = self.lowering.groups.entry(reason).or_default();
+            group.count += 1;
+            if let Some(sample) = sample { group.samples.push(sample); }
+        }
+    }
+}
+
+/// Uses canonical metadata, frames and successful-body linking reservations.
+/// A failed body has no valid allocation footprint, so subsequent numeric IDs
+/// follow successful predecessors only. No partial image is exposed or encoded.
+/// Resource paths receive symbol-only placeholder IDs; assets are not read.
+pub fn audit_canonical_lowering(dme_path: &Path, preprocessed: &PreprocessedProject,
+    builtin_image: &[u8], frontend: &mut crate::frontend::OutlineSession,
+    workers: usize) -> Result<CanonicalLoweringAudit, String> {
+    if !preprocessed.diagnostics.is_empty() {
+        return Err("preprocessing diagnostics prevent canonical audit".into());
+    }
+    let mut report = CanonicalLoweringAudit::default();
+    let mut cache = crate::lower_cache::ProcLoweringCache::open(crate::lower_cache::default_cache_root(dme_path));
+    let source_debug = (!preprocessed.origins.is_empty()).then(||
+        crate::source_debug::SourceDebugIndex::new(preprocessed, dme_path.parent().unwrap_or_else(|| Path::new("."))));
+    let discarded = emit_global_procs_mode_with_frontend_catalog(&preprocessed.text, builtin_image,
+        "audit", None, &mut cache, None, None, workers.clamp(1, 2), Some(frontend), None,
+        source_debug.as_ref(), Some(&mut report))?;
+    drop(discarded);
+    let stats = cache.stats();
+    report.cache_hits = stats.hits;
+    report.cache_misses = stats.misses;
+    if report.lowering.procedures != report.expected_procedures {
+        return Err("canonical audit did not visit every authored procedure".into());
+    }
+    Ok(report)
+}
+
 /// Lower every procedure independently without linking or loading resources.
 /// The result inventories unsupported semantics; it does not imply runtime parity.
 pub fn audit_lowering(
@@ -2407,8 +2518,22 @@ pub fn audit_lowering(
             .filter(|proc| index.types[proc.owner.index()].path.as_str() == "/")
             .map(|proc| proc.name.clone()),
     );
+    let mut return_annotations = Vec::new();
     for proc in &index.procs {
         let owner = index.types[proc.owner.index()].path.as_str();
+        let annotation = items.get(&(proc.span.start as usize)).map(|item|
+            declared_proc_return_type(&item.header)).transpose()?.flatten();
+        if annotation.is_some() && owner != "/" {
+            return_annotations.push((owner.to_owned(), proc.name.clone()));
+        }
+        if let Some(Some(return_type)) = annotation {
+            if owner == "/" {
+                shared.global_proc_return_types.insert(proc.name.clone(), return_type);
+            } else {
+                shared.member_proc_return_types.entry(owner.to_owned()).or_default()
+                    .insert(proc.name.clone(), return_type);
+            }
+        }
         if owner != "/" {
             shared
                 .known_member_procs
@@ -2441,7 +2566,13 @@ pub fn audit_lowering(
         .map(|(path, scope)| (path.clone(), scope.field_types.clone()))
         .collect();
     shared.parent_types = parent_paths.clone();
+    for (owner, name) in return_annotations {
+        if inherited_return_annotation_error(&shared, &owner, &name) {
+            return Err(format!("{owner}/{name}: proc return type cannot be redefined from parent"));
+        }
+    }
     let shared = Arc::new(shared);
+    let prepared_member_globals = PreparedMemberGlobals::new(Arc::clone(&shared));
     let mut audit = LoweringAudit::default();
     for proc in &index.procs {
         audit.procedures += 1;
@@ -2489,6 +2620,7 @@ pub fn audit_lowering(
                     })
                     .collect(),
                 shared: Some(Arc::clone(&shared)),
+                prepared_member_globals: prepared_member_globals.clone(),
                 ..LowerBindings::default()
             };
             let mut current = owner;
@@ -2682,7 +2814,7 @@ fn emit_global_procs_mode_with_frontend(
     frontend: Option<&mut crate::frontend::OutlineSession>,
 ) -> Result<(Dmb, Vec<EmittedProc>, Vec<u8>), String> {
     emit_global_procs_mode_with_frontend_catalog(source, builtin_image, world_name, resources,
-        lowering_cache, audit, capture, workers, frontend, None, None)
+        lowering_cache, audit, capture, workers, frontend, None, None, None)
 }
 
 fn source_error(index: Option<&crate::source_debug::SourceDebugIndex<'_>>, offset: usize,
@@ -2698,6 +2830,7 @@ fn emit_global_procs_mode_with_frontend_catalog(
     capture: Option<&mut Option<crate::incremental::EmissionCheckpoint>>, workers: usize,
     frontend: Option<&mut crate::frontend::OutlineSession>, catalog: Option<&dm_resources::ResourceCatalog>,
     source_debug: Option<&crate::source_debug::SourceDebugIndex<'_>>,
+    mut lowering_audit: Option<&mut CanonicalLoweringAudit>,
 ) -> Result<(Dmb, Vec<EmittedProc>, Vec<u8>), String> {
     let build_started = std::time::Instant::now();
     let trace = |stage: &str| {
@@ -2750,7 +2883,7 @@ fn emit_global_procs_mode_with_frontend_catalog(
             resource_ids.insert(input.archive_name.clone(), id.index() as u32);
         }
     }
-    if audit.is_some() && resources.is_none() && catalog.is_none() {
+    if (audit.is_some() || lowering_audit.is_some()) && resources.is_none() && catalog.is_none() {
         // Symbol-only audit: archive bytes and filesystem existence are checked
         // by the separate resource audit. Never publish this placeholder image.
         resource_scan::visit_resources(source, &mut |raw| {
@@ -3214,7 +3347,23 @@ fn emit_global_procs_mode_with_frontend_catalog(
         }
     }
     seed_native_member_procs(&mut shared_bindings, &dmb);
+    let mut return_annotations = Vec::new();
     for proc in &pending {
+        let name = proc.item.header.split('(').next().unwrap_or("")
+            .trim_end_matches('/').rsplit('/').next().unwrap_or("").to_owned();
+        let annotation = declared_proc_return_type(&proc.item.header).map_err(|reason|
+            source_error(source_debug, proc.item.span.start, &proc.item.header, &reason))?;
+        if annotation.is_some() && !proc.owner_path.is_empty() {
+            return_annotations.push((proc.owner_path.clone(), name.clone(), proc.item.span.start));
+        }
+        if let Some(Some(return_type)) = annotation {
+            if proc.owner_path.is_empty() {
+                shared_bindings.global_proc_return_types.insert(name, return_type);
+            } else {
+                shared_bindings.member_proc_return_types.entry(proc.owner_path.clone()).or_default()
+                    .insert(name, return_type);
+            }
+        }
         if !proc.owner_path.is_empty() {
             let (path, _) = member_signature(proc.item, &proc.owner_path, proc.verb)?;
             shared_bindings
@@ -3264,8 +3413,15 @@ fn emit_global_procs_mode_with_frontend_catalog(
             }
         }
     }
+    for (owner, name, offset) in return_annotations {
+        if inherited_return_annotation_error(&shared_bindings, &owner, &name) {
+            return Err(source_error(source_debug, offset, &format!("{owner}/{name}"),
+                "proc return type cannot be redefined from parent"));
+        }
+    }
     seed_builtin_constants(&mut shared_bindings);
     let shared_bindings = Arc::new(shared_bindings);
+    let prepared_member_globals = PreparedMemberGlobals::new(Arc::clone(&shared_bindings));
     for assignment in &mut pending_dynamic {
         if let Some(&scope) = type_metadata.dynamic_static_scopes.get(&assignment.name) {
             assignment.expression = qualify_static_expression(&assignment.expression, scope, &dmb);
@@ -3300,6 +3456,7 @@ fn emit_global_procs_mode_with_frontend_catalog(
         .collect();
     let mut resolved_metadata = HashMap::new();
     let procedure_count = pending.len();
+    if let Some(report) = lowering_audit.as_deref_mut() { report.expected_procedures = procedure_count; }
     let mut mouse_bits = HashMap::<u32, u64>::new();
     for proc in &pending {
         if let Some(owner) = proc.owner {
@@ -3325,6 +3482,15 @@ fn emit_global_procs_mode_with_frontend_catalog(
             ancestor = dmb.classes[ancestor as usize].parent_class_id();
         }
         dmb.classes[id].flags |= bits;
+    }
+    // Authored globals may legally share a generated static-slot name. Index
+    // every occurrence, including those existing before procedure preparation.
+    let mut dynamic_by_name: HashMap<String, Vec<usize>> = HashMap::new();
+    for (index, assignment) in pending_dynamic.iter().enumerate() {
+        dynamic_by_name
+            .entry(assignment.name.clone())
+            .or_default()
+            .push(index);
     }
     let mut pending = pending.into_iter().enumerate().peekable();
     let mut owner_bindings = OwnerBindingCache::new(4 * 1024 * 1024, 64);
@@ -3387,6 +3553,7 @@ fn emit_global_procs_mode_with_frontend_catalog(
                             .map(|param| param.default.clone())
                             .collect(),
                         shared: Some(Arc::clone(&shared_bindings)),
+                        prepared_member_globals: prepared_member_globals.clone(),
                         ..LowerBindings::default()
                     };
                     if pending.owner_path == "/world" {
@@ -3594,6 +3761,10 @@ fn emit_global_procs_mode_with_frontend_catalog(
                             local_const_ids.insert(name.to_owned(), variable_id);
                         }
                         if let Some(expression) = dynamic {
+                            dynamic_by_name
+                                .entry(initializer_name.clone())
+                                .or_default()
+                                .push(pending_dynamic.len());
                             pending_dynamic.push(PendingDynamic {
                                 owner: None,
                                 name: initializer_name,
@@ -3606,18 +3777,19 @@ fn emit_global_procs_mode_with_frontend_catalog(
                         .iter()
                         .map(|(name, id)| (name.clone(), format!("__dm_static_{id}")))
                         .collect();
-                    for assignment in &mut pending_dynamic {
-                        if static_ids
-                            .values()
-                            .any(|id| assignment.name == format!("__dm_static_{id}"))
-                        {
-                            assignment.expression = qualify_expression_with_aliases(
-                                &assignment.expression,
-                                &local_aliases,
-                            );
-                            if let Some(owner) = pending.owner {
-                                assignment.expression =
-                                    qualify_static_expression(&assignment.expression, owner, &dmb);
+                    for id in static_ids.values() {
+                        if let Some(indices) = dynamic_by_name.get(&format!("__dm_static_{id}")) {
+                            for &index in indices {
+                                let assignment = &mut pending_dynamic[index];
+                                assignment.expression = qualify_expression_with_aliases(
+                                    &assignment.expression,
+                                    &local_aliases,
+                                );
+                                if let Some(owner) = pending.owner {
+                                    assignment.expression = qualify_static_expression(
+                                        &assignment.expression, owner, &dmb,
+                                    );
+                                }
                             }
                         }
                     }
@@ -3630,6 +3802,10 @@ fn emit_global_procs_mode_with_frontend_catalog(
                     prepared.into_iter().zip(results)
                 {
                     assert_eq!(ordinal, result.ordinal, "lowered procedure order");
+                    if let Some(report) = lowering_audit.as_deref_mut() {
+                        report.record(&path, pending.item.span, body_base, source_debug, &result.compiled);
+                        if result.compiled.is_err() { continue; }
+                    }
                     let bindings = result.bindings;
                     let mut simple = result
                         .compiled
@@ -3881,6 +4057,10 @@ fn emit_global_procs_mode_with_frontend_catalog(
                     });
                 }
             }
+            if lowering_audit.is_some() {
+                trace("canonical procedure audit complete; no dynamic initializers or output");
+                return Ok(());
+            }
             trace("procedure lowering complete; dynamic initializers start");
             emit_dynamic_initializers_with_pool(
                 &mut dmb,
@@ -3891,6 +4071,7 @@ fn emit_global_procs_mode_with_frontend_catalog(
                 &initializer_globals,
                 &global_proc_ids,
                 &shared_bindings,
+                &prepared_member_globals,
                 lowering_cache,
                 true,
                 Some(pool),
@@ -3921,6 +4102,7 @@ fn emit_global_procs_mode_with_frontend_catalog(
                     &initializer_globals,
                     &global_proc_ids,
                     &shared_bindings,
+                    &prepared_member_globals,
                     lowering_cache,
                     false,
                     Some(pool),
@@ -3933,6 +4115,7 @@ fn emit_global_procs_mode_with_frontend_catalog(
     );
     lowering_cache.merge_stats(worker_stats);
     lowering_result?;
+    if lowering_audit.is_some() { return Ok((dmb, Vec::new(), Vec::new())); }
     if emitted
         .iter()
         .any(|p| p.path == "/client/Import" || p.path == "/client/proc/Import")
@@ -4343,6 +4526,7 @@ fn emit_dynamic_initializers_with_pool(
     globals: &HashMap<String, u32>,
     global_procs: &HashMap<String, u32>,
     project_bindings: &Arc<SharedLowerBindings>,
+    prepared_member_globals: &PreparedMemberGlobals,
     lowering_cache: &mut crate::lower_cache::ProcLoweringCache,
     attach: bool,
     mut pool: Option<&mut procedure_pipeline::LoweringPool>,
@@ -4355,15 +4539,16 @@ fn emit_dynamic_initializers_with_pool(
     let mut linking_time = std::time::Duration::ZERO;
     let shared = Arc::clone(project_bindings);
     let mut groups: Vec<(Option<u32>, Vec<PendingDynamic>)> = Vec::new();
+    // Index only the lookup. The vector retains first-occurrence owner order
+    // and each owner's authored assignment order for deterministic linking.
+    let mut group_indices: HashMap<Option<u32>, usize> = HashMap::new();
     for assignment in pending {
-        if let Some((_, entries)) = groups
-            .iter_mut()
-            .find(|(owner, _)| *owner == assignment.owner)
-        {
-            entries.push(assignment);
-        } else {
-            groups.push((assignment.owner, vec![assignment]));
-        }
+        let index = *group_indices.entry(assignment.owner).or_insert_with(|| {
+            let index = groups.len();
+            groups.push((assignment.owner, Vec::new()));
+            index
+        });
+        groups[index].1.push(assignment);
     }
     let mut groups = groups.into_iter().enumerate().peekable();
     while groups.peek().is_some() {
@@ -4407,6 +4592,7 @@ fn emit_dynamic_initializers_with_pool(
             let mut bindings = LowerBindings {
                 globals: referenced_initializer_globals(&source, globals),
                 shared: Some(Arc::clone(&shared)),
+                prepared_member_globals: prepared_member_globals.clone(),
                 ..LowerBindings::default()
             };
             if let Some(mut class_id) = owner {
@@ -6871,6 +7057,51 @@ mod tests {
     use super::*;
 
     #[test]
+    fn canonical_audit_bounds_unique_errors_and_unicode_samples() {
+        let mut report = CanonicalLoweringAudit::default();
+        for index in 0..300 {
+            let errors = Err(vec![dm_codegen_byond::LowerError {
+                statement: "é".repeat(900), reason: format!("distinct unsupported form {index}"),
+                statement_origin: None,
+            }]);
+            report.record("/proc/probe", dm_syntax::Span::new(0, 1), 0, None, &errors);
+        }
+        assert_eq!(report.lowering.error_count, 300);
+        assert_eq!(report.lowering.groups.len(), 256);
+        assert_eq!(report.lowering.groups.values().map(|group| group.count).sum::<usize>(), 300);
+        assert!(report.lowering.groups.values().all(|group| group.samples.len() <= 3));
+        assert!(report.truncated_texts > 0);
+        assert!(report.lowering.groups.values().flat_map(|group| &group.samples)
+            .all(|sample| sample.statement.chars().count() <= 515));
+    }
+
+    #[test]
+    fn canonical_audit_visits_valid_bodies_after_multiple_failures_without_output() {
+        let root = std::env::temp_dir().join(format!("dm-canonical-audit-{}-{}", std::process::id(),
+            std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+        std::fs::create_dir_all(&root).unwrap();
+        let source = "/obj/probe\n    icon = 'not-loaded.dmi'\n/proc/first()\n    return 1\n/proc/bad_one()\n    unknown_a()\n/proc/bad_two()\n    unknown_b()\n/proc/last()\n    return 2\n";
+        let file = Arc::new(root.join("authored.dm"));
+        let project = PreprocessedProject {
+            text: source.into(),
+            origins: source.lines().enumerate().map(|(line, _)| dm_preprocess::Origin {
+                output_line: line + 1, source_line: line + 101, path: Arc::clone(&file),
+            }).collect(), ..PreprocessedProject::default()
+        };
+        let report = audit_canonical_lowering(&root.join("world.dme"), &project, BUILTINS,
+            &mut crate::frontend::OutlineSession::new(None), 2).unwrap();
+        assert_eq!((report.expected_procedures, report.lowering.procedures), (4, 4));
+        assert_eq!((report.lowering.passed, report.lowering.failed), (2, 2));
+        assert_eq!(report.cache_hits + report.cache_misses, 4);
+        assert!(report.lowering.groups.values().flat_map(|group| &group.samples)
+            .all(|sample| sample.statement.contains("authored.dm:") && sample.statement.contains(":error:")));
+        assert!(!root.join("world.dmb").exists());
+        assert!(!root.join("world.rsc").exists());
+        assert!(root.starts_with(std::env::temp_dir()));
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
     fn owner_binding_cache_preserves_frames_and_respects_budgets() {
         let (dmb, _) = emit_global_procs(
             "/datum/base\n    var/value = 7\n/datum/child\n    parent_type = /datum/base\n    var/other = 8\n",
@@ -8518,7 +8749,7 @@ mod tests {
         let catalog = resources.catalog().unwrap();
         let (cached, _, omitted_archive) = emit_global_procs_mode_with_frontend_catalog(
             source, BUILTINS, "catalog", None, &mut crate::lower_cache::ProcLoweringCache::disabled(),
-            None, None, 1, None, Some(&catalog), None).unwrap();
+            None, None, 1, None, Some(&catalog), None, None).unwrap();
         assert_eq!(full.to_bytes().unwrap(), cached.to_bytes().unwrap());
         assert!(!archive.is_empty());
         assert!(omitted_archive.is_empty());

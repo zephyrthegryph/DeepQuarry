@@ -12,10 +12,12 @@ use std::fmt;
 pub const BUILTIN_GLOBAL_VARS_SYMBOL: &str = "@builtin/global.vars";
 
 mod builtin_catalog;
+mod binding_index;
 mod simple;
 pub mod debug;
 pub mod dependencies;
 pub use dependencies::{capture_binding_reads, BindingFact, BindingWitness, FactValue};
+pub use binding_index::PreparedMemberGlobals;
 pub use simple::{
     compile_simple_proc, compile_simple_proc_with_bindings, compile_simple_proc_with_params,
     decode_constant_string_literal, nameof_reference, ArgumentMetadata, LowerBindings, LowerError,

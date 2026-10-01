@@ -333,3 +333,38 @@ fn builtin_callee_and_caller_selectors_match_native() {
         "callee/caller selectors: {differences:#?}"
     );
 }
+
+#[test]
+fn procedure_return_types_and_inherited_overrides_match_native() {
+    let source = include_str!("../../../fixtures/native_compiler/proc_return_types/probe.dm");
+    let native = Dmb::from_bytes(include_bytes!(
+        "../../../fixtures/native_compiler/proc_return_types/probe.native.bin"
+    )).unwrap();
+    let actual = bootstrap::emit_global_procs(source, BUILTINS, "probe").unwrap().0;
+    let options = CompareOptions {
+        authored_prefixes: vec!["/datum/api".into(), "/proc/check_".into()],
+        ..Default::default()
+    };
+    let differences = compare::compare_dmbs(&native, &actual, &options);
+    assert!(differences.is_empty(), "procedure return inference: {differences:#?}");
+}
+
+#[test]
+fn procedure_return_annotations_reject_native_invalid_shapes() {
+    for annotation in ["as anything", "as /datum", "as num"] {
+        let source = format!("/datum/api/proc/current()\n    return null\n/datum/api/child/current() {annotation}\n    return null\n");
+        let error = bootstrap::emit_global_procs(&source, BUILTINS, "probe").unwrap_err();
+        assert!(error.contains("proc return type cannot be redefined from parent"), "{error}");
+    }
+    let error = bootstrap::emit_global_procs(
+        "/proc/current() as /datum|null\n    return null\n", BUILTINS, "probe").unwrap_err();
+    assert!(error.contains("return type must be a type path or atomic restriction"), "{error}");
+    let error = bootstrap::emit_global_procs(
+        "/proc/current()\n    return null\n/proc/check()\n    return istype(current())\n", BUILTINS, "probe").unwrap_err();
+    assert!(error.contains("cannot infer"), "{error}");
+    for expression in ["current()", "global.current().attachment"] {
+        let source = format!("/datum/result\n    var/datum/attachment\n/proc/current() as /datum/result\n    return null\n/proc/check()\n    return istype({expression})\n");
+        let error = bootstrap::emit_global_procs(&source, BUILTINS, "probe").unwrap_err();
+        assert!(error.contains("cannot infer"), "{error}");
+    }
+}
