@@ -10,7 +10,7 @@ task interrupt, a cache rule or any other non-emit reference outside tests):
   - a veto event (/datum/om/event/before/...) maps to a GUARD_* key (code/__defines/reactions.dm) when the decision
     table below names one, else to "op" (it becomes an operation's before_op) or "review".
 The map records, per event: the target (notice type, guard key, op, review, delete), the payload fields, the emit
-sites, the listener sites and whether an emit site reads the result (a notice returns nothing: such a site needs a
+files, the listener files and whether an emit site reads the result (a notice returns nothing: such a site needs a
 guard or a review). The A4 codemod reads it. Events with no listener are not generated: delete them with their emit
 sites. Events already converted by hand (shoes_step_action, the spontaneous vore guards) are gone from the tree.
 """
@@ -129,7 +129,10 @@ def build():
         emits = r.get("emit", [])
         ev = events[name]
         fields = ev["args"] if ev["args"] is not None else ev["vars"]
-        row = {"fields": fields, "emits": emits, "listeners": listeners, "tests": r.get("test", []),
+        # Files only (no line numbers), so an unrelated edit never makes the checked-in map stale.
+        def files(sites):
+            return sorted({site.rsplit(":", 1)[0] for site in sites})
+        row = {"fields": fields, "emits": files(emits), "listeners": files(listeners), "tests": files(r.get("test", [])),
                "reads_result": reads_result(emits)}
         if not listeners:
             row["target"] = "delete" if not r.get("test") else "review"
