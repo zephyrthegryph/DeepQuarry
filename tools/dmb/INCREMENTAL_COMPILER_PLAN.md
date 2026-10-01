@@ -1,5 +1,10 @@
 # Native incremental DM compiler plan
 
+This is the original prototype plan. The current performance and architecture
+proposal is [ARCHITECTURE.md](ARCHITECTURE.md), based on the implemented compiler
+and measured costs as of October 1, 2026. Use it for the next incremental,
+parallel, shared-tooling, cache and output-patching work.
+
 The first Rust workspace prototype is implemented; see [COMPILER_PROTOTYPE.md](COMPILER_PROTOTYPE.md) for crate boundaries, commands, and current limits. Full DM language lowering and direct DMB/RSC emission remain future milestones.
 
 ## Goal and boundary

@@ -7,6 +7,11 @@ frontend coverage, measured cache performance, and remaining integration work.
 See [iteration performance](PERFORMANCE.md) for cache validation and timings,
 and [parallel workers](PARALLEL.md) for bounded daemon concurrency.
 
+See [persistent compiler architecture](ARCHITECTURE.md) for the proposed complete
+incremental query graph, reusable analysis APIs, shared disk caches, parallel
+scheduler, linker and binary patch design. It includes the measured bottlenecks,
+implementation stages, and explicit correctness and reuse contracts.
+
 The `crates/` workspace contains a DM preprocessor, parser, semantic model,
 BYOND code generator, daemon coordinator, and output publisher. For a small
 project containing supported global procedures, run:
