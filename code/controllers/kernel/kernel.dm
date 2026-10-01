@@ -83,11 +83,12 @@
 	var/static/datum/controller/kernel/K = kernel_create_live()
 	return K
 
-/// The live kernel, with the periodic cadences' sweep items (datums/om/periodic.dm) registered. A kernel a test makes
-/// with `new` starts empty.
+/// The live kernel, with the periodic cadences' sweep items (datums/om/periodic.dm) and the sequences' sweep items
+/// (kernel/sequence.dm) registered. A kernel a test makes with `new` starts empty.
 /proc/kernel_create_live()
 	var/datum/controller/kernel/K = new
 	kernel_register_cadences(K)
+	kernel_register_sequences(K)
 	return K
 
 // ---------------------------------------------------------------- the tick
@@ -316,12 +317,13 @@
 	// ALLOW(sys_world_time_write, system_boundary): the kernel clock: a per-tick timestamp of the scheduler itself, not a per-entity expiry; the kernel is the scheduler core SSbehaviours delegates to: it reads and updates that subsystem own fire bookkeeping
 	SSbehaviours.last_fire = world.time
 
-/// The pipeline missed-wake audit (pipeline.dm), on its interval.
+/// The missed-wake audits on their interval: pipelines (pipeline.dm), sequences (sequence.dm) and sleepers.
 /datum/controller/kernel/proc/run_audits()
 	// ALLOW(system_boundary): the kernel is the scheduler core SSbehaviours delegates to: it reads and updates that subsystem own fire bookkeeping
 	if(!SSbehaviours || !SSbehaviours.audit_due())
 		return
 	om_pipeline_audit(sched, OM_AUDIT_PARKED_SAMPLE, OM_AUDIT_AWAKE_SAMPLE)
+	seq_audit(SEQ_AUDIT_PARKED_SAMPLE, SEQ_AUDIT_AWAKE_SAMPLE)
 	om_sleeper_audit(64, TRUE)
 
 // ---------------------------------------------------------------- telemetry

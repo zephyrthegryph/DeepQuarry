@@ -142,10 +142,7 @@
 	var/saved_ticklimit = Master.current_ticklimit
 	Master.current_ticklimit = limit_abs
 	try
-		if(W.members)
-			done = W.spread ? run_item_spread(W, owner, limit_abs, now) : run_item_members(W, owner, limit_abs, now)
-		else
-			done = run_item_once(W, owner, now)
+		done = W.sweep(src, owner, limit_abs, now)
 		W.consecutive_faults = 0
 	catch(var/exception/e)
 		W.faults++

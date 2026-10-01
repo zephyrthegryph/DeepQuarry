@@ -340,7 +340,7 @@
 	for(var/datum/om/task/T as anything in rec.tasks)
 		slow |= T.interrupt_on
 	rec.slow_mask = slow
-	rec.owner.om_listen = mask | slow | rec.table?.cache_mask | rec.table?.appearance_mask | (rec.owner == GLOB.om_world ? shared_cache_change_mask : 0)
+	rec.owner.om_listen = mask | slow | rec.table?.cache_mask | rec.table?.appearance_mask | (rec.owner == GLOB.om_world ? shared_cache_change_mask : 0) | (rec.owner.seq_states ? seq_listen_mask(rec.owner) : 0)
 
 /// The mask other entities and behaviours observe (decides eager derived values).
 /proc/om_observed_mask(datum/om/rec/rec)
@@ -365,6 +365,10 @@
 		refresh_mark(E, DEP_ALL, bits)
 
 /proc/om_dispatch_change(datum/E, bits)
+	// Sequence steps that read these channels wake (code/controllers/kernel/sequence.dm). changed(), om_raise_change() and the
+	// OM_CHANGED() setters reach here: E's listen mask carries its sequences' channels (seq_listen_mask()).
+	if(E.seq_states)
+		seq_channels(E, bits)
 	if((bits & shared_cache_change_mask) && E == GLOB.om_world)
 		shared_cache_on_world_change(bits)
 	var/datum/om/rec/rec = E.om_rec
