@@ -1,0 +1,133 @@
+// What the metrics service measures. Each concrete subtype is instantiated once and its
+// collect() runs every sample (METRICS_SAMPLE_INTERVAL); it reports values with
+// M.gauge(name, value, category, subcategory, unit). Names are "category/subcategory/what",
+// and category/subcategory are what the admin viewer breaks performance down by.
+// To measure something new, add a subtype here (or next to the feature it measures).
+
+/datum/metrics_source
+	abstract_type = /datum/metrics_source
+	/// rate()'s memory: the last total seen for each counter key.
+	var/list/last_totals
+
+/// Reports this source's values for the sample. `dt` is the seconds since the last sample.
+/datum/metrics_source/proc/collect(datum/world_service/server_metrics/M, dt)
+	return
+
+/// Rate of a cumulative counter: (total - last seen) / dt, remembering `total` under `key`.
+/// Null on the first sight of a counter. A counter that went backwards (a profiler reset)
+/// restarts from zero.
+/datum/metrics_source/proc/rate(key, total, dt)
+	var/previous = LAZYACCESS(last_totals, key)
+	LAZYSET(last_totals, key, total)
+	if(isnull(previous))
+		return null
+	var/delta = total - previous
+	if(delta < 0)
+		delta = total
+	return delta / dt
+
+// ---------------------------------------------------------------- server
+
+/// Tick usage, CPU, MC drift and runtimes. (Time dilation is reported by its own service,
+/// code/modules/logging/time_track_service.dm.)
+/datum/metrics_source/server
+	var/last_runtimes
+	/// The first sample's window reaches back into MC init (seconds-long ticks), which would skew
+	/// every round's tick statistics; tick usage is reported from the second sample on.
+	var/first_sample = TRUE
+
+/datum/metrics_source/server/collect(datum/world_service/server_metrics/M, dt)
+	if(first_sample)
+		first_sample = FALSE
+	else if(Master)
+		var/list/window = Master.performance_window(dt)
+		M.gauge("server/tick/avg", window["avg"], METRICS_CAT_SERVER, "tick", "%")
+		M.gauge("server/tick/p95", window["p95"], METRICS_CAT_SERVER, "tick", "%")
+		M.gauge("server/tick/max", window["max"], METRICS_CAT_SERVER, "tick", "%")
+		M.gauge("server/tick/tps", window["tps"], METRICS_CAT_SERVER, "tick", "tps")
+		M.gauge("server/mc/tickdrift", Master.tickdrift, METRICS_CAT_SERVER, "mc", "ticks")
+	M.gauge("server/cpu", world.cpu, METRICS_CAT_SERVER, "cpu", "%")
+	M.gauge("server/map_cpu", world.map_cpu, METRICS_CAT_SERVER, "cpu", "%")
+	var/runtimes = GLOB.total_runtimes + GLOB.total_runtimes_skipped
+	M.gauge("errors/runtimes", isnull(last_runtimes) ? 0 : max(runtimes - last_runtimes, 0), METRICS_CAT_ERRORS, "runtime", "count")
+	last_runtimes = runtimes
+
+// ---------------------------------------------------------------- MC subsystems and systems
+
+/// Each MC subsystem's cost (ms per fire, smoothed) and share of the tick, and each pure
+/// kernel system's fire cost.
+/datum/metrics_source/mc
+
+/datum/metrics_source/mc/collect(datum/world_service/server_metrics/M, dt)
+	if(Master)
+		for(var/datum/controller/subsystem/S as anything in Master.subsystems)
+			if(!S.times_fired)
+				continue
+			M.gauge("mc/[S.name]/cost_ms", S.cost, METRICS_CAT_MC, S.name, "ms")
+			M.gauge("mc/[S.name]/tick_usage", S.tick_usage, METRICS_CAT_MC, S.name, "%")
+	for(var/datum/system/system as anything in kernel_pure_systems())
+		if(!system.times_fired)
+			continue
+		M.gauge("mc/[system.name]/cost_ms", system.fire_cost, METRICS_CAT_MC, system.name, "ms")
+
+// ---------------------------------------------------------------- world services
+
+/// Each world service's cost, in ms per second of real time.
+/datum/metrics_source/services
+
+/datum/metrics_source/services/collect(datum/world_service/server_metrics/M, dt)
+	for(var/datum/world_service/service as anything in world_services())
+		var/ms_per_s = rate(service.name, service.total_ms, dt)
+		if(!isnull(ms_per_s))
+			M.gauge("service/[service.name]/ms_per_s", ms_per_s, METRICS_CAT_SERVICE, service.name, "ms/s")
+
+// ---------------------------------------------------------------- OM lanes and behaviours
+
+/// Each OM lane's cost and wake backlog, and each behaviour busy enough to matter
+/// (METRICS_BEHAVIOUR_MIN_MS_PER_S), filed under its lane.
+/datum/metrics_source/om
+
+/datum/metrics_source/om/collect(datum/world_service/server_metrics/M, dt)
+	var/datum/om/scheduler/sched = GLOB.om_live_sched
+	var/datum/om/registry/reg = om_registry()
+	if(!sched || !reg)
+		return
+	var/static/list/lane_names = list("urgent", "simulation", "derived", "presentation", "background")
+	var/list/lane_ms = new /list(OM_LANE_COUNT)
+	for(var/i in 1 to OM_LANE_COUNT)
+		lane_ms[i] = 0
+	for(var/datum/om/behaviour/B as anything in reg.behaviours)
+		if(!B?.id || B.id > length(sched.stats))
+			continue
+		var/list/S = sched.stats[min(B.id, OM_MAX_STAT_TYPES)]
+		if(!S)
+			continue
+		var/lane = clamp(B.lane || LANE_SIMULATION, 1, OM_LANE_COUNT)
+		lane_ms[lane] += S[OM_STAT_MS]
+		var/ms_per_s = rate("b:[B.type]", S[OM_STAT_MS], dt)
+		if(ms_per_s >= METRICS_BEHAVIOUR_MIN_MS_PER_S)
+			M.gauge("behaviour/[B.name || B.type]/ms_per_s", ms_per_s, METRICS_CAT_BEHAVIOUR, lane_names[lane], "ms/s")
+	for(var/i in 1 to OM_LANE_COUNT)
+		var/ms_per_s = rate("lane:[i]", lane_ms[i], dt)
+		if(!isnull(ms_per_s))
+			M.gauge("lane/[lane_names[i]]/ms_per_s", ms_per_s, METRICS_CAT_LANE, lane_names[i], "ms/s")
+		M.gauge("lane/[lane_names[i]]/backlog", length(sched.wake_q?[i]), METRICS_CAT_LANE, lane_names[i], "wakes")
+	M.gauge("lane/errors", length(sched.errors), METRICS_CAT_LANE, "scheduler", "count")
+
+// ---------------------------------------------------------------- players and staff
+
+/// Connected players, staff on duty and open tickets.
+/datum/metrics_source/players
+
+/datum/metrics_source/players/collect(datum/world_service/server_metrics/M, dt)
+	M.gauge("players/online", length(GLOB.clients), METRICS_CAT_PLAYERS, "online", "players")
+	var/living = 0
+	for(var/mob/living/L in GLOB.registry_members[REGISTRY_PLAYERS])
+		if(L.client && L.stat != DEAD)
+			living++
+	M.gauge("players/living", living, METRICS_CAT_PLAYERS, "online", "players")
+	var/list/counts = get_admin_counts()
+	M.gauge("staff/admins_present", length(counts["present"]), METRICS_CAT_STAFF, "admins", "admins")
+	M.gauge("staff/admins_afk", length(counts["afk"]), METRICS_CAT_STAFF, "admins", "admins")
+	if(GLOB.tickets)
+		M.gauge("staff/tickets_open", length(GLOB.tickets.active_tickets), METRICS_CAT_STAFF, "tickets", "tickets")

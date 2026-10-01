@@ -25,6 +25,7 @@ services:
     volumes:
       - ./SQL/tgstation_schema.sql:/docker-entrypoint-initdb.d/tgstation_schema.sql:ro
       - ./SQL/feedback_schema.sql:/docker-entrypoint-initdb.d/feedback_schema.sql:ro
+      - ./SQL/metrics_schema.sql:/docker-entrypoint-initdb.d/metrics_schema.sql:ro
       - database:/var/lib/mysql
   # Adminer, for managing the DB, commented out by default but uncomment if you need it I guess.
   #adminer:

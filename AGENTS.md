@@ -649,6 +649,15 @@ accident or assume they work:
   (var fields, `"proc:x"`/`"merge:x{key:type}"` getters; never a `tgui_data()` override) and
   `DECLARE_UI_STATE` its shared state. `tools/ci/sys_rules/ui.py` keeps all of this at 0;
   `tools/build/build.sh ui-types` regenerates `tgui/packages/tgui/interfaces/generated/*.d.ts`.
+- **Server metrics and the admin viewer.** `GLOB.metrics_service` (`code/modules/metrics/`) samples
+  every `/datum/metrics_source` every 10 s and flushes once a minute through `om_io` into the `metric_*`
+  tables (`SQL/metrics_schema.sql`, `METRICS_ENABLED`). Events come from single framework points
+  through `METRICS_EVENT()`: the admin verb dispatcher, the ticket list (`ListInsert`), the ticker,
+  `world/Error` (`note_runtime`) and the MC tick record (`note_overrun`). To measure something new, add
+  a `/datum/metrics_source` subtype; don't write metrics SQL elsewhere. `tools/admin-viewer/` (Bun +
+  React, no other services) is the staff UI: it rolls finished rounds into `metric_round`, prunes old
+  samples, and shows test/bench history loaded by `bun run ingest`. Staff open it with the signed-link
+  **Admin Viewer** verbs; see its README.
 - **verdigris (Rust FFI)** is a build artifact, gitignored per-platform. If `cargo` is absent
   the build warns and skips it, and **both** subsystems that depend on it fail at runtime:
   cave-gen (expedition) and — since the auxmos cutover — **atmospherics** (gas math + turf

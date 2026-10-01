@@ -607,6 +607,7 @@ UI_ACT_PROC(/datum/controller/master, ui_act_view_variables)
 			perf_worst_tick = tick_record
 		if(usage <= 100)
 			return
+		GLOB.metrics_service?.note_overrun(tick_record)
 		perf_outliers += list(tick_record)
 		if(perf_outliers.len > 20)
 			perf_outliers.Cut(1, perf_outliers.len - 19)

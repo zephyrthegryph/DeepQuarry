@@ -42,3 +42,17 @@ MAX_CONCURRENT_QUERIES 25
 # Track population and death statistics
 # Comment this out to disable
 #ENABLE_STAT_TRACKING
+
+# Record server metrics (tick usage, subsystem and lane cost, players, runtimes, overruns,
+# tickets, admin verbs) to the metric_* tables (SQL/metrics_schema.sql). Needs the database.
+#METRICS_ENABLED
+
+# Admin viewer (tools/admin-viewer). The URL staff are sent to, and the secret both sides use
+# to sign/verify viewer links (set VIEWER_SECRET in the viewer's environment to the same value).
+#METRICS_VIEWER_URL http://127.0.0.1:8090
+#METRICS_VIEWER_SECRET change-me-to-a-long-random-string
+# Minutes a viewer link stays valid.
+#METRICS_VIEWER_LINK_MINUTES 720
+
+# When set, the localhost diagnostic topics (mcdiag, omsteps, mcprof_*, ...) also require key=<value>.
+#DIAG_TOPIC_KEY

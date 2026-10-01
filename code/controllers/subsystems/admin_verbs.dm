@@ -112,6 +112,7 @@ SYSTEM_DEF(admin_verbs)
 
 	if(verb_singleton.debug_only)
 		log_admin("DEBUG VERB: [key_name(admin)] invoked '[verb_singleton.name]' ([verb_type])")
+	METRICS_EVENT(METRICS_EVENT_ADMIN_VERB, verb_singleton.category, "[verb_type]", admin.ckey, verb_singleton.name, null)
 
 	var/old_usr = usr
 	usr = admin.mob
