@@ -138,9 +138,14 @@ impl<'a> Locations<'a> {
             .origins
             .partition_point(|&i| self.project.origins[i].output_line <= line);
         let origin = &self.project.origins[*self.origins.get(pos.checked_sub(1)?)?];
+        // Expansion can insert, remove or repeat authored lines. An earlier
+        // origin is not a range from which a source line can be extrapolated.
+        if origin.output_line != line {
+            return None;
+        }
         Some(Location {
             file: origin.path.to_string_lossy().into_owned(),
-            line: origin.source_line + line - origin.output_line,
+            line: origin.source_line,
             expanded_start: span.start,
             expanded_end: span.end,
         })
@@ -199,6 +204,28 @@ impl Snapshot {
         ast: &AstFile,
         project: &PreprocessedProject,
     ) -> Self {
+        let locations = Locations::new(project);
+        let mut origin_cursor = 0;
+        let origin_coverage = if project.origins.is_empty() {
+            Coverage::Unavailable
+        } else if project.text.lines().enumerate().all(|(line, text)| {
+            if text.trim().is_empty() {
+                return true;
+            }
+            while origin_cursor < locations.origins.len()
+                && project.origins[locations.origins[origin_cursor]].output_line < line + 1
+            {
+                origin_cursor += 1;
+            }
+            locations
+                .origins
+                .get(origin_cursor)
+                .is_some_and(|&i| project.origins[i].output_line == line + 1)
+        }) {
+            Coverage::Complete
+        } else {
+            Coverage::Partial
+        };
         let mut result = Self {
             input_digest: input_digest.into(),
             coverage: CoverageReport {
@@ -209,17 +236,12 @@ impl Snapshot {
                 },
                 inheritance: Coverage::Complete,
                 signatures: Coverage::Partial,
-                origins: if project.origins.is_empty() {
-                    Coverage::Unavailable
-                } else {
-                    Coverage::Complete
-                },
+                origins: origin_coverage,
                 references: Coverage::Unavailable,
                 diagnostics: Coverage::Partial,
             },
             facts: vec![],
         };
-        let locations = Locations::new(project);
         let mut proc_headers = BTreeMap::new();
         headers(&ast.items, &mut proc_headers);
         for ty in &index.types {
@@ -452,7 +474,7 @@ mod tests {
             ..Default::default()
         };
         let locations = Locations::new(&project);
-        for (start, file, line) in [(4, "a.dm", 11), (8, "b.dm", 20), (14, "b.dm", 21)] {
+        for (start, file, line) in [(0, "a.dm", 10), (8, "b.dm", 20)] {
             let actual = locations
                 .get(Span {
                     file: dm_ir::FileId(0),
@@ -462,6 +484,19 @@ mod tests {
                 .unwrap();
             assert_eq!((actual.file.as_str(), actual.line), (file, line));
         }
+        for start in [4, 14] {
+            assert!(locations
+                .get(Span {
+                    file: dm_ir::FileId(0),
+                    start,
+                    end: start + 1,
+                })
+                .is_none());
+        }
+        let ast = dm_syntax::parse(&project.text);
+        let index = DeclarationIndex::build(vec![]).unwrap();
+        let snapshot = Snapshot::from_frontend("sparse", &index, &ast, &project);
+        assert_eq!(snapshot.coverage.origins, Coverage::Partial);
         let too_large = vec![b'x'; MAX_JSONL_RECORD_BYTES + 1];
         assert!(read_record(&mut std::io::Cursor::new(too_large)).is_err());
     }
