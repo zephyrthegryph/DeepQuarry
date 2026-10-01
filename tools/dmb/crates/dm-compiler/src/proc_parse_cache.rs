@@ -396,18 +396,88 @@ mod tests {
         );
     }
     #[test]
-    fn truncated_pack_falls_back_to_parser() {
-        let root = root("truncated");
-        let proc = "/proc/test()\n    return 42\n";
-        let mut cache = ProcParseCache::open(Some(&root));
-        cache.parse(proc, Span::new(0, proc.len())).unwrap();
+    fn corrupt_transactional_syntax_is_reparsed_and_repaired() {
+        let root = root("corrupt");
+        let source = "/proc/test()\n    return 42\n";
+        let key = format!("{:x}", Sha256::digest(source.as_bytes()));
+        let mut first = ProcParseCache::open(Some(&root));
+        let expected = first.parse(source, Span::new(0, source.len())).unwrap();
+        first.flush().unwrap();
+        first
+            .store
+            .as_ref()
+            .unwrap()
+            .put_many(
+                vec![(
+                    dm_store::Key::new(ProcParseCache::namespace(), &key),
+                    b"torn".to_vec(),
+                )],
+                None,
+            )
+            .unwrap();
+        drop(first);
+        let mut cold = ProcParseCache::open(Some(&root));
+        assert_eq!(
+            cold.parse(source, Span::new(0, source.len())).unwrap(),
+            expected
+        );
+        assert_eq!(cold.stats().corrupt, 1);
+        assert_eq!(cold.stats().misses, 1);
+        drop(cold);
+        let mut repaired = ProcParseCache::open(Some(&root));
+        assert_eq!(
+            repaired.parse(source, Span::new(0, source.len())).unwrap(),
+            expected
+        );
+        assert_eq!(repaired.stats().hits, 1);
+        assert!(fs::read_dir(repaired.root.as_ref().unwrap())
+            .unwrap()
+            .all(|entry| entry
+                .unwrap()
+                .path()
+                .extension()
+                .is_none_or(|e| e != "pack" && e != "idx")));
+    }
+    #[test]
+    fn legacy_pack_is_read_only_and_migrates_to_transactional_store() {
+        let root = root("legacy");
+        let source = "/proc/test()\n    return 42\n";
+        let expected = dm_syntax::parse_proc_at_span(source, Span::new(0, source.len())).unwrap();
+        let bytes = encode(&expected, 0).unwrap();
+        let key = format!("{:x}", Sha256::digest(source.as_bytes()));
+        let cache = ProcParseCache::open(Some(&root));
+        let directory = cache.root.as_ref().unwrap().clone();
+        let pack = directory.join("fixture.pack");
+        let index = directory.join("fixture.idx");
+        let metadata = serde_json::to_vec(&BTreeMap::from([(
+            key,
+            Entry {
+                offset: 0,
+                length: bytes.len() as u64,
+                checksum: format!("{:x}", Sha256::digest(&bytes)),
+            },
+        )]))
+        .unwrap();
+        fs::write(&pack, &bytes).unwrap();
+        fs::write(&index, &metadata).unwrap();
         drop(cache);
-        let mut cache = ProcParseCache::open(Some(&root));
-        let pack = cache.entries.values().next().unwrap().pack.clone();
-        fs::write(pack, b"torn").unwrap();
-        assert!(cache.parse(proc, Span::new(0, proc.len())).is_ok());
-        assert_eq!(cache.stats().corrupt, 1);
-        assert_eq!(cache.stats().misses, 1);
+        let mut legacy = ProcParseCache::open(Some(&root));
+        assert_eq!(
+            legacy.parse(source, Span::new(0, source.len())).unwrap(),
+            expected
+        );
+        assert_eq!(legacy.stats().hits, 1);
+        drop(legacy);
+        assert_eq!(fs::read(&pack).unwrap(), bytes);
+        assert_eq!(fs::read(&index).unwrap(), metadata);
+        fs::remove_file(pack).unwrap();
+        fs::remove_file(index).unwrap();
+        let mut migrated = ProcParseCache::open(Some(&root));
+        assert_eq!(
+            migrated.parse(source, Span::new(0, source.len())).unwrap(),
+            expected
+        );
+        assert_eq!(migrated.stats().hits, 1);
     }
 
     #[test]
@@ -427,7 +497,7 @@ mod tests {
         assert_eq!(cache.stats().hits, 1);
     }
     #[test]
-    fn simultaneous_writers_publish_independent_immutable_segments() {
+    fn simultaneous_writers_commit_independent_syntax_records() {
         let root = root("writers");
         let a = "/proc/a()\n    return 1\n";
         let b = "/proc/b()\n    return 2\n";

@@ -76,6 +76,10 @@ deletions, assets and reverts. A separate legacy body-patch regression gate chec
 normalized output against fresh assembly. The numeric list fixture's native output
 was compiled offline with BYOND 516.1687; it was never hosted.
 
+The callee fixtures use the same native compiler and check `/callee` parameter
+metadata, builtin `callee`/`caller` operands, direct and safe field access,
+parameter shadowing, and chained safe-member cache preservation.
+
 | Cache | Implementation fingerprint |
 |---|---|
 | Procedure syntax pack | Syntax/parser, parse pack codec, relevant locked codec/hash dependencies |
@@ -116,6 +120,9 @@ The frozen source predates independent game changes.
 `/datum/controller/subsystem/machines/process_power` is native procedure 4177 and
 Rust procedure 33419, with 186 and 223 normalized instructions. The initial positional
 comparison reported 234 differences; switch/local shifts made that count cascade.
+Bounded opcode alignment matches 178 instruction pairs and reports 30 changed
+regions, without truncation. These regions are diagnostic groupings, not 30
+independent semantic defects; local and branch operand shifts remain visible.
 
 The retired-region access has the same inputs and operations:
 
