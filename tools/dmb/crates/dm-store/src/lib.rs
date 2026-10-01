@@ -302,8 +302,8 @@ impl Store {
             Ok(Commit::Applied)
         })
     }
-    /// Bounded stage snapshot. `complete=false` means the caller must not treat
-    /// omitted entries as misses; lower the requested caps or use read_many.
+    /// Bounded stage snapshot. Omitted entries never prove semantic absence;
+    /// callers can recompute or use read_many when `complete=false`.
     pub fn snapshot_namespace(
         &self,
         namespace: &str,
@@ -312,7 +312,9 @@ impl Store {
         cancel: Option<&AtomicBool>,
     ) -> io::Result<NamespaceSnapshot> {
         Key::new(namespace, "").encode()?;
-        let max_records = max_records.min(64_000);
+        // Read snapshots need to cover projects larger than one write batch.
+        // The byte budget is unchanged, and transactions still cap writes at 64k.
+        let max_records = max_records.min(128_000);
         let max_bytes = max_bytes.min(128 * 1024 * 1024);
         let prefix = format!(
             "{{\"namespace\":{},\"name\":",
@@ -492,6 +494,33 @@ mod tests {
             tx.commit().unwrap();
         }
         assert!(Store::open(&path).is_err());
+        fs::remove_dir_all(path.parent().unwrap()).unwrap();
+    }
+
+    #[test]
+    fn stage_snapshot_spans_multiple_write_batches_within_byte_budget() {
+        let path = temporary();
+        let store = Store::open(&path).unwrap();
+        for range in [0..32_001, 32_001..64_001] {
+            store
+                .put_many(
+                    range
+                        .map(|i| (Key::new("procedures", format!("{i:05}")), vec![7]))
+                        .collect(),
+                    None,
+                )
+                .unwrap();
+        }
+        let snapshot = store
+            .snapshot_namespace("procedures", 128_000, 8 * 1024 * 1024, None)
+            .unwrap();
+        assert!(snapshot.complete);
+        assert_eq!(snapshot.records.len(), 64_001);
+        let bounded = store
+            .snapshot_namespace("procedures", 128_000, 1024, None)
+            .unwrap();
+        assert!(!bounded.complete);
+        assert!(bounded.records.len() < snapshot.records.len());
         fs::remove_dir_all(path.parent().unwrap()).unwrap();
     }
 
