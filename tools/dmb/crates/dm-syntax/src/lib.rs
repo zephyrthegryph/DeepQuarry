@@ -157,7 +157,7 @@ pub fn quoted_end(rest: &str, block: bool, raw: bool) -> Option<usize> {
             }
             continue;
         }
-        if ch == '[' {
+        if ch == '[' && !raw {
             interpolation_depth = 1;
         } else if ch == '"' {
             if !block {

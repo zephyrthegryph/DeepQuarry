@@ -182,7 +182,50 @@ fn materialize(
         )));
     }
     let maps = load_map_set_from_paths(project, &expanded.map_includes).map_err(err)?;
-    let literals = frontend.resource_literals(&expanded.text).map_err(err)?;
+    let literals = frontend
+        .resource_literals(&expanded.text)
+        .map_err(|error| {
+            let limit = std::env::var("DM_BUILD_MAX_PARSE_CHUNK_BYTES")
+                .ok()
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(1024 * 1024);
+            let report = dm_syntax::for_each_source_chunk_with_limits(
+                &expanded.text,
+                256 * 1024,
+                limit,
+                |_, _| {},
+            );
+            if let Some(span) = report.first_skipped_span {
+                let line = expanded.text[..span.start]
+                    .bytes()
+                    .filter(|&b| b == b'\n')
+                    .count()
+                    + 1;
+                let origin = expanded
+                    .origins
+                    .iter()
+                    .rev()
+                    .find(|origin| origin.output_line <= line);
+                let header = expanded.text[span.range()]
+                    .lines()
+                    .find(|line| !line.trim().is_empty())
+                    .unwrap_or("")
+                    .chars()
+                    .take(160)
+                    .collect::<String>();
+                return err(format!(
+                    "{error}; first span {:?}, {} bytes, header {:?}, origin {:?}",
+                    span,
+                    span.end - span.start,
+                    header,
+                    origin.map(|origin| (
+                        origin.path.display().to_string(),
+                        origin.source_line + line - origin.output_line
+                    ))
+                ));
+            }
+            err(error)
+        })?;
     let requests = resolved_resource_requests_with_literals(
         project,
         &literals,

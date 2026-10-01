@@ -519,6 +519,29 @@ mod tests {
     }
 
     #[test]
+    fn raw_regex_brackets_preserve_following_declarations() {
+        let source = r#"/proc/om_is_handle(h)
+    var/static/regex/shape = regex(@"^(\d+:\d+|\[0x[0-9a-fA-F]+\](#\d+)?|@\w+)$")
+    return istext(h) && shape.Find(h)
+/proc/after()
+    return @"[not_var]"
+/proc/unbalanced()
+    return @"["
+"#;
+        let mut boundaries = Vec::new();
+        for_each_top_level_boundary(source, |at| boundaries.push(at));
+        assert!(boundaries.contains(&source.find("/proc/after()").unwrap()));
+        assert!(boundaries.contains(&source.find("/proc/unbalanced()").unwrap()));
+        let report = for_each_parsed_chunk(source, 200, |ast, _| {
+            assert!(ast.diagnostics.is_empty(), "{:?}", ast.diagnostics);
+        });
+        assert_eq!(report.skipped_declarations, 0);
+        assert!(report.parsed_chunks > 1);
+        let audit = audit_source_streaming(source, 200, 5);
+        assert_eq!(audit.procedures, 3);
+    }
+
+    #[test]
     fn raw_block_string_does_not_create_declaration_boundary() {
         let source = "/proc/a()\n    var/text = @{\"line\n/proc/not_real()\nend\"}\n/proc/b()\n    return 2\n";
         let audit = audit_source_streaming(source, 256, 5);
