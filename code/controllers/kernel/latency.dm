@@ -88,7 +88,8 @@
 
 /// Convenience for a scheduler lane.
 /proc/kernel_admit_lane(lane)
-	return kernel_latency().admit(kernel_lane_class(lane), lane)
+	// A text key: a bare lane number would index floor_pass by position.
+	return kernel_latency().admit(kernel_lane_class(lane), "lane [lane]")
 
 /// TRUE when this system's work may run now: its own latency class, and its own floor when shedding.
 /datum/system/proc/admitted()
