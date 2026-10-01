@@ -11,6 +11,22 @@ See [persistent compiler architecture](ARCHITECTURE.md) for the proposed complet
 incremental query graph, reusable analysis APIs, shared disk caches, parallel
 scheduler, linker and binary patch design. It includes the measured bottlenecks,
 implementation stages, and explicit correctness and reuse contracts.
+The accepted [revised architecture](REVISED_ARCHITECTURE.md) supersedes its output
+and persistence policies. [Correctness gates](CORRECTNESS.md) distinguish verified
+fixture parity from pending real-project runtime and performance checks.
+
+Canonical output is the default: recorded semantic dependencies validate cached
+symbolic procedures, and linking uses a fixed source order. Every publication is
+an immutable generation. Unchanged assets reuse the verified RSC by identity.
+Transactional redb metadata and batched procedure caches survive daemon restarts
+and share a Git-common cache across worktrees. `DM_COMPILER_CACHE_ROOT` overrides
+all native cache stages for an isolated fresh reference.
+
+The build adapter supports `DQ_COMPILER=byond|native|shadow`. Internal failures
+may fall back visibly to BYOND; source errors do not. Set `DQ_COMPILER_STRICT=1`
+to forbid fallback. Shadow produces BYOND output and checks native output against
+an independent fresh native build. `analysis-jsonl` exports versioned declaration,
+signature, inheritance and origin facts with explicit reference coverage.
 
 The `crates/` workspace contains a DM preprocessor, parser, semantic model,
 BYOND code generator, daemon coordinator, and output publisher. For a small
@@ -28,7 +44,9 @@ patch API for exclusive ownership of an existing pair.
 `build-project` uses a persistent content store even without a daemon. For a
 long-lived process, `dm-compiled` accepts `BuildProject` requests through the
 `dm-compile build-project-daemon` command.
-For an output pair owned exclusively by the compiler, `build-project-patch`
+The following patch commands are explicit legacy experiments, excluded from the
+canonical integrated build and test path. For an output pair owned exclusively
+by the compiler, `build-project-patch`
 updates fixed-layout changes in place with an undo journal. It rejects layout
 changes; use `build-project` to publish a new immutable generation then.
 `build-project-patch-daemon` performs the same operation through the daemon.
@@ -53,7 +71,7 @@ verification. Patch builds verify their exclusively owned live output pair.
 Set `DM_BUILD_TRACE=1` on the daemon process to print timing for discovery,
 hashing, resource fingerprinting, cache lookup, compilation, and output work.
 
-Safe procedure-body edits reuse a persisted linked checkpoint and lower only
+Explicit legacy-history procedure-body edits reuse a persisted linked checkpoint and lower only
 changed procedures through per-procedure Salsa inputs. Unchanged procedures
 keep their IDs; new strings and locals append to existing tables. Checkpoints
 live under the shared cache root, survive non-daemon builds and cold starts,
@@ -66,8 +84,9 @@ The direct compiler emits type inheritance, class/global/static variables,
 dynamic initializers, procedures and verbs, world settings, DMM templates,
 resources, and active skins. Procedure lowering includes structured control
 flow, exceptions, arrays, named arguments, safe access, constructors, and a
-growing native-verified builtin catalog. Full-game output generation passes;
-runtime integration and complete language/metadata coverage remain in progress.
+growing native-verified builtin catalog. Earlier game snapshots produced full-game
+output. Current game compilation, runtime parity and real structural-edit latency
+remain active integration gates; unsupported source constructs are diagnosed.
 The daemon verifies source, map, and asset contents and resource search-path
 shadowing before reusing retained project inputs.
 Project builds hash source, map, and asset bytes before using a cached output. The
@@ -84,8 +103,9 @@ Standalone projects use `.dm-cache/` beside the DME. Macro fingerprints and
 changed definitions replace full macro snapshots; retained preprocessing cache
 data is capped at 160 MiB. Cached inputs retain a SHA-256 digest and byte length;
 source origins retain compact line offsets and share their path allocations.
-Procedure cache records are closed and atomically renamed without a disk
-barrier per procedure. Missing or damaged records are rebuilt after validation;
+Procedure syntax and semantic records use bounded transactional snapshots and
+batched writes, without a database operation per procedure. Legacy packs are
+read-only migration inputs. Missing or damaged records are rebuilt after validation;
 published output and patch journals use their own durability rules.
 The one-shot `dm-compile check PROJECT.dme` diagnostic caps expanded source
 at 16 MiB before building a whole-project AST; set `DM_CHECK_MAX_SOURCE_BYTES`
