@@ -37,6 +37,7 @@ LINTS = {
     "doc_snippets": "tools/ci/doc_snippets.py (a doc/rewrite dm block calling a name that doesn't exist)",
     "decl": "tools/ci/decl_lint.py (Initialize()/on_destroy() work a lifecycle declaration now does)",
     "derived_reads": "tools/ci/derived_reads_lint.py (a derived proc reading a var derived() does not declare)",
+    "init": "tools/ci/init_lint.py (Initialize() overrides that set per-instance state, not type facts)",
     "instance_list": "tools/ci/instance_list_lint.py",
     "interactions": "tools/ci/interactions_lint.py (DECLARE_INTERACTIONS replacing an ancestor's specs)",
     "latent": "tools/ci/latent_lint.py",
