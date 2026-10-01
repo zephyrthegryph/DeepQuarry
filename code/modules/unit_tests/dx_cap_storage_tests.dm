@@ -19,7 +19,7 @@
 /// Anything small, little space; locked by the lock bit.
 /obj/cap_fixture/storage_lockbox/capabilities()
 	. = ..()
-	. += cap_storage(max_total = ITEMSIZE_COST_SMALL * 2, locked_by = LOCK, use_sound = FALSE)
+	. += cap_storage(max_total = ITEMSIZE_COST_SMALL * 2, needs = req_clear(LOCK), use_sound = FALSE)
 
 /// Medical only, with an exception for plain test items named "exception".
 /obj/cap_fixture/storage_picky/capabilities()

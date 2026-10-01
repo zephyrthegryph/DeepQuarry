@@ -61,6 +61,13 @@ Internal kinds live on the same store and are used by the framework rather than 
 **Source counts.** Two features can grant or enrol the same thing; removal by one source leaves it
 in place until the last source leaves. This applies to GRANT and MEMBER.
 
+**Starting occupant [built].** An owned relation may name what it starts with:
+`rel_one(nameof(cell), /obj/item/cell, kind = RELK_OWNED, policy = OWN_SPILL, starts = nameof(cell_type))`.
+`starts` is a type, a list (`list(/obj/x = 2)`) for `rel_many`, or `nameof()` a type var, so a map or subtype
+override picks the type; a path already in the var (a map edit) wins, an instance in it makes nothing. It is made at
+init, before gas, reagents and the subtype's `Initialize()` body ([lifecycle.md](lifecycle.md) section 9); the
+policy decides its teardown as for any owned value. `DECLARE_DEFAULT_CHILD` is a wrapper over it.
+
 **Writing.** `rel_link(src, nameof(var), B)` / `rel_unlink()` (never a string name, never `link()`,
 which is a BYOND built-in). Ownership writes go through the `own_*` accessors today (`own_set`,
 `own_clear`, `consume`, `replace_with`). Typed `rel_one`/`rel_many` with kinds: **[built]**. The declared `type` is stored on the entry

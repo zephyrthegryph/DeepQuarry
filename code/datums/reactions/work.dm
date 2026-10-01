@@ -159,6 +159,7 @@ GLOBAL_LIST_EMPTY(rx_work_by_sig)
 /// `D` (a holder that declares per-instance every()) joins the membership key of each such reaction, held by
 /// RX_ENROL_SOURCE. It leaves them when it is destroyed (member_teardown). Builds D's reaction table.
 /proc/rx_enrol(datum/D)
+	rx_arm_after_init(D) // after_init() timers (after_init.dm)
 	var/datum/rx_table/T = rx_table_of(D)
 	if(!T)
 		return
@@ -200,7 +201,7 @@ GLOBAL_LIST_EMPTY(rx_enrol_cache)
 	cached = FALSE
 	var/list/flags = rx_boot_flags()
 	for(var/listed in flags)
-		if(!(flags[listed] & RXB_EVERY))
+		if(!(flags[listed] & (RXB_EVERY | RXB_INIT)))
 			continue
 		if(ispath(D.type, listed))
 			cached = TRUE

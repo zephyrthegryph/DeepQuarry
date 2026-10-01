@@ -1,7 +1,7 @@
 // The maintenance panel capability (doc/rewrite/dx_conventions.md §2). State: CAP_PANEL_OPEN.
-// Other entries declare `behind = PANEL`. Layer: LOOK_PANEL_OPEN. Accessor: panel_is_open().
+// Other entries declare `needs = req_set(PANEL)`. Look: LOOK_PANEL_OPEN. Accessor: panel_is_open().
 //
-//	. += cap_panel(tool = TOOL_SCREWDRIVER, behind = COVER)
+//	. += cap_panel(tool = TOOL_SCREWDRIVER, needs = req_set(COVER))
 
 /datum/capability/panel
 	layer_name = LOOK_PANEL_OPEN
@@ -9,12 +9,11 @@
 	var/delay = 0
 
 /// A maintenance panel toggled with `tool`; behind = COVER puts it behind a cover.
-/proc/cap_panel(tool = TOOL_SCREWDRIVER, delay = 0, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log, layer = LOOK_PANEL_OPEN)
+/proc/cap_panel(tool = TOOL_SCREWDRIVER, delay = 0, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
 	var/datum/capability/panel/C = new
 	C.tool_quality = tool
 	C.delay = delay
-	C.layer_name = layer
-	return cap_gating(C, behind = behind, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
+	return cap_gating(C, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 
 /datum/capability/panel/interactions(atom/holder)
 	return list(adopt_entry(cap_tool("Open maintenance panel", tool_quality, TYPE_PROC_REF(/atom, cap_panel_toggle), delay = delay, priority = 10, name_proc = TYPE_PROC_REF(/atom, cap_panel_name)), id = "panel:[tool_quality]"))

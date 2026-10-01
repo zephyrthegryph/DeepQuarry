@@ -1,8 +1,11 @@
 // Shared helpers for the standard capability library (doc/rewrite/dx_conventions.md §2).
 //
-// Every library constructor takes the standard gating arguments (behind, blocked_by, locked_by,
-// needs, else_say, works_broken, works_unpowered, log), stored with cap_gating() and merged onto each
-// entry by cap_apply_gating(), plus `layer =`: the layer name it draws (CAP_NO_LAYER: nothing).
+// Every library constructor takes the standard gating arguments (needs, else_say, works_broken,
+// works_unpowered, log; `at` for a compartment), stored with cap_gating() and merged onto each entry by
+// cap_apply_gating(). There is no `behind` / `blocked_by` / `locked_by` and no `layer =` (G12): a state gate is a
+// requirement in `needs` (req_set(COVER) / req_clear(COVER | PANEL) / req_clear(LOCK)), and a capability draws
+// its fixed standard look name (code/__defines/look_names.dm), which the look resolves against the holder's
+// icon ("<base>-<name>", else "<name>", else nothing); a holder that shows it another way calls look.hide(name).
 // Entries are built with the standard constructors (cap_hand()/cap_tool()/cap_use_on()/cap_insert())
 // and taken out of their wrapper with adopt_entry(), the one entry-building helper (M12). An entry
 // passes only its own gating; the capability's comes on top centrally.

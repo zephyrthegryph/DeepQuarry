@@ -79,6 +79,16 @@
 	var/list/refs = islist(needs) ? needs : list(needs)
 	for(var/proc_ref in refs)
 		var/result
+		if(istype(proc_ref, /datum/req))
+			// A requirement (req_*: operations/req.dm) asked of a short-lived context of this attempt.
+			var/datum/req/R = proc_ref
+			var/datum/op_ctx/asked = op_ctx_take(user, holder, held, null, GLOB.op_route_now)
+			var/why = R.test(asked)
+			var/phrase = why ? req_reason_phrase(why, asked) : null
+			asked.release()
+			if(why)
+				return phrase || else_say || "you can't do that right now"
+			continue
 		if(copytext("[proc_ref]", 1, 7) == "/proc/")
 			result = call(proc_ref)(user, holder, held)
 		else

@@ -33,12 +33,12 @@
 	/// world.time before which the holder can't signal again.
 	var/next_signal = 0
 
-/proc/cap_signaler(frequency = RSD_FREQ, code = 30, on_signal, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = FALSE, works_unpowered = TRUE, log = LOG_GAME)
+/proc/cap_signaler(frequency = RSD_FREQ, code = 30, on_signal, needs, else_say, works_broken = FALSE, works_unpowered = TRUE, log = LOG_GAME)
 	var/datum/capability/signaler/C = new
 	C.frequency = sanitize_frequency(frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ)
 	C.code = clamp(round(code), 1, 100)
 	C.on_signal = on_signal
-	cap_gating(C, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered)
+	cap_gating(C, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered)
 	return C
 
 /datum/capability/signaler/interactions(atom/holder)

@@ -8,13 +8,12 @@
 	/// Refuse while the holder is anchored.
 	var/needs_unanchored = TRUE
 
-/proc/cap_rotate(clockwise = TRUE, counter = TRUE, needs_unanchored = TRUE, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log, layer = CAP_NO_LAYER)
+/proc/cap_rotate(clockwise = TRUE, counter = TRUE, needs_unanchored = TRUE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
 	var/datum/capability/rotate/C = new
 	C.clockwise = clockwise
 	C.counter = counter
 	C.needs_unanchored = needs_unanchored
-	C.layer_name = layer
-	return cap_gating(C, behind = behind, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
+	return cap_gating(C, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 
 /datum/capability/rotate/interactions(atom/holder)
 	. = list()

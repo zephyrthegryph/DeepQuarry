@@ -12,10 +12,10 @@
 	/// Percent chance to lodge on a hit hard enough (0 never embeds).
 	var/chance = 0
 
-/proc/cap_embed(chance = 0, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
+/proc/cap_embed(chance = 0, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
 	var/datum/capability/embed/C = new
 	C.chance = clamp(chance, 0, 100)
-	cap_gating(C, behind = behind, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
+	cap_gating(C, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 	return C
 
 /datum/capability/embed/on_holder_init(atom/holder, mapload)

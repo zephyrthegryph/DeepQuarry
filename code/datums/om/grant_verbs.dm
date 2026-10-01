@@ -143,9 +143,14 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/verb_source)
 	var/owner_type = verb_static_owner(key)
 	if(owner_type && istype(owner, owner_type))
 		return TRUE
-	// type_verbs(): verbs a type has by what it is (a per-type list, no per-instance entry).
-	if(isatom(owner) && (type_derive_flags(owner) & TYPE_DERIVES_TYPE_VERBS) && (key in type_list(owner, TYPE_PROC_REF(/atom, type_verbs))))
-		return TRUE
+	// type_verbs(): verbs a type has by what it is (a per-type list, no per-instance entry); a login entry
+	// (type_verb(..., login = TRUE)) only once a player has had the mob.
+	if(isatom(owner) && (type_derive_flags(owner) & TYPE_DERIVES_TYPE_VERBS))
+		if(key in type_verbs_always(owner))
+			return TRUE
+		if(ismob(owner) && (key in type_verbs_login(owner)))
+			var/mob/player = owner
+			return !!player.key
 	if(!decls || !(decls.work & DECL_WORK_VERBS))
 		return FALSE
 	if(decls.verbs_always && (key in decls.verbs_always))
@@ -271,8 +276,13 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/verb_source)
 	if(add || remove)
 		verb_store_write(A, A, add, remove)
 
-/// Login: the type's DECLARE_LOGIN_VERB lines.
+/// Login: the type's login verbs (type_verb(..., login = TRUE) in type_verbs(), which DECLARE_LOGIN_VERB expands
+/// to; the old declaration-table list while any type still fills it).
 /proc/verb_store_login(mob/M)
+	if(type_derive_flags(M) & TYPE_DERIVES_TYPE_VERBS)
+		var/list/login = type_verbs_login(M)
+		if(length(login))
+			verb_store_sync(M, login)
 	var/datum/lifecycle_decls/decls = lifecycle_decls_of(M)
 	if(!decls?.verbs_login)
 		return

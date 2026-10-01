@@ -29,14 +29,14 @@
 	/// The item's force before it was wielded.
 	var/force_unwielded
 
-/proc/cap_two_handed(force_wielded, multiplier = 2, icon_base, wield_sound, unwield_sound, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
+/proc/cap_two_handed(force_wielded, multiplier = 2, icon_base, wield_sound, unwield_sound, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
 	var/datum/capability/two_handed/C = new
 	C.force_wielded = force_wielded
 	C.multiplier = multiplier
 	C.icon_base = icon_base
 	C.wield_sound = wield_sound
 	C.unwield_sound = unwield_sound
-	cap_gating(C, behind = behind, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
+	cap_gating(C, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 	return C
 
 /datum/capability/two_handed/proc/wielded_force(one_handed)

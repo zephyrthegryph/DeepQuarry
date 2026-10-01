@@ -181,7 +181,8 @@ MSG_DEF(start/apc/reset, "You begin resetting the APC...", "%U% connects %I% to 
 
 /obj/machinery/power/apc/relations()
 	. = ..()
-	. += rel_one(nameof(cell), /obj/item/cell, kind = RELK_OWNED, policy = OWN_SPILL)
+	// The cell the APC starts with is its cell_type (a map or subtype override picks another; null: none).
+	. += rel_one(nameof(cell), /obj/item/cell, kind = RELK_OWNED, policy = OWN_SPILL, starts = nameof(cell_type))
 	. += rel_one(nameof(terminal), /obj/machinery/power/terminal, kind = RELK_PAIRED, back = nameof(/obj/machinery/power/terminal::master))
 	. += rel_one(nameof(hacker), /mob/living/silicon/ai, back = nameof(/mob/living/silicon/ai::hacked_apcs))
 
@@ -402,6 +403,8 @@ MSG_DEF(start/apc/reset, "You begin resetting the APC...", "%U% connects %I% to 
 REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 
 /obj/machinery/power/apc/Initialize(mapload, ndir, building)
+	if(building)
+		cell_type = null // a frame built by hand starts without the cell its relation would make (starts =)
 	. = ..()
 	// The wall mount (cap_wall_mount) offsets it into the wall; a built APC faces its builder's way.
 	if(building)
@@ -553,8 +556,7 @@ SETTER(/obj/machinery/power/apc, power_failed)
 
 /obj/machinery/power/apc/proc/init()
 	ladder_set_stage(src, "secured") // installed and secured
-	if(cell_type)
-		own_set(src, nameof(cell), new cell_type(src))
+	if(cell) // made at init by its relation (starts = nameof(cell_type))
 		cell.charge = start_charge * cell.maxcharge / 100.0
 
 	var/area/A = loc.loc

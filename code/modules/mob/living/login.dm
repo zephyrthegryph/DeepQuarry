@@ -3,21 +3,24 @@
 // edits are mechanical and span the whole file; the commit SHA
 // is the source of truth for per-line diff context.
 
-DECLARE_LOGIN_VERB(/mob/living, /mob/living/proc/escapeOOC)
-DECLARE_LOGIN_VERB(/mob/living, /mob/living/proc/lick)
-DECLARE_LOGIN_VERB(/mob/living, /mob/living/proc/smell)
-DECLARE_LOGIN_VERB(/mob/living, /mob/living/proc/switch_scaling)
-DECLARE_LOGIN_VERB(/mob/living, /mob/living/proc/center_offset)
-DECLARE_LOGIN_VERB(/mob/living, /mob/living/proc/mute_entry)
-DECLARE_LOGIN_VERB(/mob/living, /mob/living/proc/liquidbelly_visuals)
-DECLARE_LOGIN_VERB(/mob/living, /mob/living/proc/fix_vore_effects)
-DECLARE_LOGIN_VERB(/mob/living, /mob/living/proc/vore_transfer_reagents) // If mob doesnt have bellies it cant use this verb for anything
-DECLARE_LOGIN_VERB(/mob/living, /mob/living/proc/vore_check_reagents) // If mob doesnt have bellies it cant use this verb for anything
-DECLARE_LOGIN_VERB(/mob/living, /mob/proc/nsay_vore)
-DECLARE_LOGIN_VERB(/mob/living, /mob/proc/nme_vore)
-DECLARE_LOGIN_VERB(/mob/living, /mob/proc/nsay_vore_ch)
-DECLARE_LOGIN_VERB(/mob/living, /mob/proc/nme_vore_ch)
-DECLARE_LOGIN_VERB(/mob/living, /mob/proc/enter_soulcatcher)
+/// Verbs a living mob has once a player has had it (applied at Login; an NPC-only mob never carries them).
+/mob/living/type_verbs()
+	. = ..()
+	. += type_verb(/mob/living/proc/escapeOOC, login = TRUE)
+	. += type_verb(/mob/living/proc/lick, login = TRUE)
+	. += type_verb(/mob/living/proc/smell, login = TRUE)
+	. += type_verb(/mob/living/proc/switch_scaling, login = TRUE)
+	. += type_verb(/mob/living/proc/center_offset, login = TRUE)
+	. += type_verb(/mob/living/proc/mute_entry, login = TRUE)
+	. += type_verb(/mob/living/proc/liquidbelly_visuals, login = TRUE)
+	. += type_verb(/mob/living/proc/fix_vore_effects, login = TRUE)
+	. += type_verb(/mob/living/proc/vore_transfer_reagents, login = TRUE) // If mob doesnt have bellies it cant use this verb for anything
+	. += type_verb(/mob/living/proc/vore_check_reagents, login = TRUE) // If mob doesnt have bellies it cant use this verb for anything
+	. += type_verb(/mob/proc/nsay_vore, login = TRUE)
+	. += type_verb(/mob/proc/nme_vore, login = TRUE)
+	. += type_verb(/mob/proc/nsay_vore_ch, login = TRUE)
+	. += type_verb(/mob/proc/nme_vore_ch, login = TRUE)
+	. += type_verb(/mob/proc/enter_soulcatcher, login = TRUE)
 
 /mob/living/Login()
 	..()

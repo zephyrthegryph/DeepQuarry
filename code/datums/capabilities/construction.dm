@@ -59,7 +59,7 @@
 
 /**
  * The construction capability: cap_construction(stage(...), ..., ladder_options(...)). The standard
- * gating arguments (behind, blocked_by, locked_by, needs, else_say, works_broken, works_unpowered,
+ * gating arguments (needs, with state gates as req_set / req_clear; else_say, works_broken, works_unpowered,
  * log) are ladder_options() arguments: they gate every step.
  */
 /proc/cap_construction(...)
@@ -68,9 +68,11 @@
 	made.works_broken = TRUE
 	made.works_unpowered = TRUE
 	for(var/datum/ladder_settings/options in made.declaration)
-		cap_gating(made, behind = options.behind, blocked_by = options.blocked_by, locked_by = options.locked_by,
-			needs = options.needs, else_say = options.else_say, works_broken = options.works_broken,
+		cap_gating(made, needs = options.needs, else_say = options.else_say, works_broken = options.works_broken,
 			works_unpowered = options.works_unpowered, log = options.log)
+		made.behind |= options.behind
+		made.blocked_by |= options.blocked_by
+		made.locked_by |= options.locked_by
 	return made
 
 /// The ladder of this capability, built from its declaration by the first holder asking. The ladder
@@ -328,7 +330,7 @@
 /// steps are done in. `undo_delay`: the wait of every undo. `dismantle` = list(tool, result_type, amount, ruined_proc, ruined_type, ruined_amount): a
 /// branch out of the first stage that takes the holder apart into `result_type`; when the holder's `ruined_proc` answers TRUE (a broken
 /// frame) it comes apart into `ruined_type` instead.
-/proc/ladder_options(start, state_var, state, store, list/anywhere, on_step, on_start, list/starts, stance, category, sprite, at, undo_delay, list/dismantle, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
+/proc/ladder_options(start, state_var, state, store, list/anywhere, on_step, on_start, list/starts, stance, category, sprite, at, undo_delay, list/dismantle, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
 	var/datum/ladder_settings/made = new
 	made.start = start
 	made.starts = starts
@@ -344,10 +346,12 @@
 	made.at = at
 	made.undo_delay = undo_delay
 	made.dismantle = dismantle
-	made.behind = behind
-	made.blocked_by = blocked_by
-	made.locked_by = locked_by
-	made.needs = needs
+	// State gates are requirements in `needs` (req_set / req_clear), folded onto the gate bits (cap_gating()).
+	var/list/gate = cap_fold_state_needs(needs)
+	made.behind = gate[1]
+	made.blocked_by = gate[2]
+	made.locked_by = gate[3]
+	made.needs = gate[4]
 	made.else_say = else_say
 	made.works_broken = works_broken
 	made.works_unpowered = works_unpowered

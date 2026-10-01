@@ -3,19 +3,20 @@
 // multitool or wirecutters on the exposed wires opens the wires window. Layer: LOOK_WIRES while exposed.
 // Accessors: wires_exposed(), wires_of().
 //
-//	. += cap_wires(/datum/wires/apc, behind = PANEL)
+//	. += cap_wires(/datum/wires/apc)			// behind the maintenance panel
 
 /datum/capability/wires
 	layer_name = LOOK_WIRES
+	// The wires sit behind the maintenance panel (wires_exposed() reads it); `needs` adds more.
+	behind = PANEL
 	/// The /datum/wires subtype made for each holder.
 	var/wires_type
 
-/// Wires of `wires_type`, reachable while everything in `behind` is open.
-/proc/cap_wires(wires_type, behind = PANEL, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log, layer = LOOK_WIRES)
+/// Wires of `wires_type`, reachable while the maintenance panel is open (and whatever `needs` asks).
+/proc/cap_wires(wires_type, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
 	var/datum/capability/wires/C = new
 	C.wires_type = wires_type
-	C.layer_name = layer
-	return cap_gating(C, behind = behind, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
+	return cap_gating(C, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 
 /// A's wires datum (made on first use), or null when A has no wires capability.
 /proc/wires_of(atom/A)

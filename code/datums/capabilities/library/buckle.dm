@@ -10,10 +10,9 @@
  * instance (design review H1), so this writes nothing per instance: set can_buckle = TRUE,
  * max_buckled_mobs, buckle_lying and buckle_require_restraints on the type.
  */
-/proc/cap_buckle(behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log = LOG_GAME, layer = CAP_NO_LAYER)
+/proc/cap_buckle(needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log = LOG_GAME)
 	var/datum/capability/buckle/C = new
-	C.layer_name = layer
-	return cap_gating(C, behind = behind, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
+	return cap_gating(C, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 
 #ifdef UNIT_TESTS
 /datum/capability/buckle/on_holder_init(atom/holder, mapload)

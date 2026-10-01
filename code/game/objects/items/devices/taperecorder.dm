@@ -32,7 +32,11 @@ OM_FIELD(/obj/item/taperecorder, recording, 0, CHANGE_EXPLICIT)
 // The tape fills one second at a time while recording.
 DECLARE_REPEAT(/obj/item/taperecorder, 1 SECOND, record_tick, "recording")
 DECLARE_DEFAULT_CHILD(/obj/item/taperecorder, "mytape", null)
-DECLARE_REGISTRY(/obj/item/taperecorder, REGISTRY_LISTENING_OBJECTS)
+
+/// A recorder hears what is said around it (the listening registry).
+/obj/item/taperecorder/capabilities()
+	. = ..()
+	. += membership(joins = REGISTRY_LISTENING_OBJECTS)
 
 DECLARE_INTERACTIONS(/obj/item/taperecorder, \
 	INTERACT_INSERT(/obj/item/rectape, PROC_REF(interaction_item), "Insert tape", REQ_BECAUSE(REQ_FIELD_NOT("mytape"), "there's already a tape inside")), \

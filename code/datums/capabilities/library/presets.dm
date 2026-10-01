@@ -30,7 +30,7 @@
 	if(anchored_by)
 		. += cap_anchor(tool = anchored_by)
 	if(board && dismantle)
-		. += cap_deconstruct(board, behind = PANEL)
+		. += cap_deconstruct(board, needs = req_set(PANEL))
 
 /**
  * A wall-mounted machine: machine_basics() without anchoring (it hangs on the wall), plus the wall mount,
@@ -60,11 +60,11 @@
 	. += cap_cover(open_tool = cover_tool, removable = removable_cover)
 	if(cover_holds)
 		. += cap_require(list("open_cover", "remove_cover"), needs = req_proc(TYPE_PROC_REF(/atom, hatch_cover_free)))
-	. += cap_panel(blocked_by = panel_needs_cover_closed ? COVER : NONE)
-	. += cap_wires(null, behind = PANEL)
-	. += cap_lock(blocked_by = COVER | PANEL, entries = FALSE, lamp = TRUE)
-	. += lock_op(blocked_by = COVER | PANEL)
-	. += emag_op(mode = emag_mode, blocked_by = COVER | PANEL)
+	. += cap_panel(needs = panel_needs_cover_closed ? req_clear(COVER) : null)
+	. += cap_wires(null)
+	. += cap_lock(needs = req_clear(COVER | PANEL), entries = FALSE, lamp = TRUE)
+	. += lock_op(needs = req_clear(COVER | PANEL))
+	. += emag_op(mode = emag_mode, needs = req_clear(COVER | PANEL))
 
 /// The hatch's own settings (no entries): what locks the cover.
 /datum/capability/maintenance_hatch
@@ -87,7 +87,7 @@
 		cap_power(),
 	)
 	if(board)
-		. += cap_deconstruct(board, behind = NONE)
+		. += cap_deconstruct(board)
 
 /**
  * An atmospherics device: the wrench unfastens it into its pipe item, refused while it runs or while its

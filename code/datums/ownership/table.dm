@@ -50,14 +50,18 @@
 	var/forward = FALSE
 	/// rel_key(): instances are keyed targets found through this var.
 	var/keyed_key
+	/// The starting occupant (owns()/rel_one()/rel_many(starts =)): a type path, a list of paths (or
+	/// list(path = count)) for a list var, or the name of a var holding either. Null: none.
+	var/starts
 
-/proc/_own_entry(var_name, list/entry, keep_after_destroy, pool_reset, forward)
+/proc/_own_entry(var_name, list/entry, keep_after_destroy, pool_reset, forward, starts)
 	var/datum/own_entry/E = new
 	E.var_name = var_name
 	E.entry = entry
 	E.keep_after_destroy = !!keep_after_destroy
 	E.pool_reset = !!pool_reset
 	E.forward = !!forward
+	E.starts = starts
 	return E
 
 /**
@@ -74,8 +78,13 @@
  * - Annotations: `keep_after_destroy` (the leak check skips the var), `pool_reset`
  *   (pool_release() resets it to its initial value), `forward` (replace_with() carries it to the
  *   successor: an owned value moves, a relation re-links, anything else is copied).
+ * - `starts`: the starting occupant, made at init (own_init_starts()): a type path, a list of paths or
+ *   list(path = count) for a list var, or nameof() a var holding either (`starts = nameof(cell_type)`,
+ *   so a map or subtype override of that var picks the type). The var itself wins: a mapped path in it
+ *   is made instead, an instance in it makes nothing. `policy = OWN_NONE` with `starts` gives the var no
+ *   kind (the first own_set() learns OWN_DELETE): that is what DECLARE_DEFAULT_CHILD expands to.
  */
-/proc/owns(var_name, policy = OWN_DELETE, policy_proc = null, if_var = null, else_policy = OWN_DELETE, keep_after_destroy = FALSE, pool_reset = FALSE, forward = FALSE, type = null)
+/proc/owns(var_name, policy = OWN_DELETE, policy_proc = null, if_var = null, else_policy = OWN_DELETE, keep_after_destroy = FALSE, pool_reset = FALSE, forward = FALSE, type = null, starts = null)
 	var/list/entry = null
 	if(policy_proc)
 		entry = list(OWNK_OWN, policy_proc, null, null, FALSE, null, CLEAR, null, null)
@@ -85,7 +94,7 @@
 		entry = list(OWNK_OWN, policy, null, null, FALSE, null, CLEAR, null, null)
 	if(entry && type)
 		entry[OWNE_TYPE] = type
-	return _own_entry(var_name, entry, keep_after_destroy, pool_reset, forward)
+	return _own_entry(var_name, entry, keep_after_destroy, pool_reset, forward, starts)
 
 /// Shares: var_name holds a registered singleton or DEF (only an untyped var needs this; a var
 /// typed as a registry type is implicitly shared). Never cleared.
@@ -113,14 +122,14 @@
  *   (draw, should_run, hidden_verbs, tgui_data, needs procs) read. While linked, a changed() of the
  *   target (every TRACKED setter raises one) marks the holder changed too.
  */
-/proc/rel_one(var_name, type = null, kind = null, back = null, other_deleted = CLEAR, on_unlink = null, keyed = null, keyed_target = null, list/watch = null, keep_after_destroy = FALSE, pool_reset = FALSE, forward = FALSE, policy = OWN_DELETE)
-	return _rel_kind_decl(var_name, FALSE, type, kind, back, other_deleted, on_unlink, keyed, keyed_target, watch, keep_after_destroy, pool_reset, forward, policy)
+/proc/rel_one(var_name, type = null, kind = null, back = null, other_deleted = CLEAR, on_unlink = null, keyed = null, keyed_target = null, list/watch = null, keep_after_destroy = FALSE, pool_reset = FALSE, forward = FALSE, policy = OWN_DELETE, starts = null)
+	return _rel_kind_decl(var_name, FALSE, type, kind, back, other_deleted, on_unlink, keyed, keyed_target, watch, keep_after_destroy, pool_reset, forward, policy, starts)
 
 /// A list relation view: var_name lists any number of entities, each dropped when it dies. The
 /// options are rel_one()'s; with `back` naming this same var the membership is symmetric (linking
 /// A to B lists each in the other's var).
-/proc/rel_many(var_name, type = null, kind = null, back = null, other_deleted = CLEAR, on_unlink = null, keyed = null, keyed_target = null, list/watch = null, keep_after_destroy = FALSE, pool_reset = FALSE, forward = FALSE, policy = OWN_DELETE)
-	return _rel_kind_decl(var_name, TRUE, type, kind, back, other_deleted, on_unlink, keyed, keyed_target, watch, keep_after_destroy, pool_reset, forward, policy)
+/proc/rel_many(var_name, type = null, kind = null, back = null, other_deleted = CLEAR, on_unlink = null, keyed = null, keyed_target = null, list/watch = null, keep_after_destroy = FALSE, pool_reset = FALSE, forward = FALSE, policy = OWN_DELETE, starts = null)
+	return _rel_kind_decl(var_name, TRUE, type, kind, back, other_deleted, on_unlink, keyed, keyed_target, watch, keep_after_destroy, pool_reset, forward, policy, starts)
 
 /**
  * rel_one() / rel_many() with the declared kind. `type` is the type of what the var holds (a path; null: untyped).
@@ -128,15 +137,19 @@
  *   RELK_REF     a plain reference, cleared when the other end dies (the default);
  *   RELK_PAIRED  both ends name each other: needs back =, and one rel_link() writes both sides;
  *   RELK_OWNED   the holder owns the value(s) and deletes them with itself (owns()); `policy` is owns()'s
- *                (OWN_DELETE, or OWN_SPILL for a part that drops out when the holder is destroyed).
+ *                (OWN_DELETE, or OWN_SPILL for a part that drops out when the holder is destroyed), and
+ *                `starts` its starting occupant (owns(starts =)):
+ *                  rel_one(nameof(cell), /obj/item/cell, kind = RELK_OWNED, policy = OWN_SPILL, starts = nameof(cell_type))
  * Giving back = without a kind means RELK_PAIRED. Every write of a view publishes both ends.
  */
-/proc/_rel_kind_decl(var_name, is_list, type, kind, back, other_deleted, on_unlink, keyed, keyed_target, list/watch, keep_after_destroy, pool_reset, forward, policy = OWN_DELETE)
+/proc/_rel_kind_decl(var_name, is_list, type, kind, back, other_deleted, on_unlink, keyed, keyed_target, list/watch, keep_after_destroy, pool_reset, forward, policy = OWN_DELETE, starts = null)
 	if(isnull(kind))
 		kind = back ? RELK_PAIRED : RELK_REF
+	if(!isnull(starts) && kind != RELK_OWNED)
+		CRASH("rel_one/rel_many([var_name]): starts = is only for RELK_OWNED (a starting occupant is owned)")
 	switch(kind)
 		if(RELK_OWNED)
-			return owns(var_name, policy = policy, keep_after_destroy = keep_after_destroy, pool_reset = pool_reset, forward = forward, type = type)
+			return owns(var_name, policy = policy, keep_after_destroy = keep_after_destroy, pool_reset = pool_reset, forward = forward, type = type, starts = starts)
 		if(RELK_PAIRED)
 			if(!back)
 				CRASH("rel_one/rel_many([var_name]): RELK_PAIRED needs back = nameof(/other/type::var)")
@@ -178,6 +191,8 @@
 	var/list/forward
 	/// rel_key(): instances are keyed targets found through `key`.
 	var/keyed_key
+	/// var name -> starting occupant spec (owns(starts =)); a later declaration (a subtype's) replaces an earlier one.
+	var/list/starts
 
 /// Records one declaration. One kind per var across the hierarchy: a subtype may change an own
 /// policy or a relation's options, never the kind. A conflict is reported when the table is built.
@@ -195,6 +210,8 @@
 		LAZYOR(pool_reset, var_name)
 	if(E.forward)
 		LAZYOR(forward, var_name)
+	if(!isnull(E.starts))
+		LAZYSET(starts, var_name, E.starts)
 	var/list/entry = E.entry
 	if(!entry)
 		return
@@ -242,6 +259,8 @@
 	var/keyed_key
 	/// REL vars declared with watch =, or null.
 	var/list/watch_vars
+	/// var name -> starting occupant spec (owns(starts =)), made by own_init_starts() at init, or null.
+	var/list/start_vars
 
 /// D's ownership table (never null).
 /proc/own_table_of(datum/D)
@@ -291,6 +310,15 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 	T.pool_reset_vars = decl.pool_reset
 	T.forward_vars = decl.forward
 	T.keyed_key = decl.keyed_key
+	for(var/var_name in decl.starts)
+		if(!(var_name in D.vars))
+			OWN_REPORT("[D.type] declares a starting occupant for var '[var_name]', which it doesn't have")
+			continue
+		var/list/start_entry = T.entries[var_name]
+		if(start_entry && start_entry[OWNE_KIND] != OWNK_OWN)
+			OWN_REPORT("[D.type].[var_name]: a starting occupant is owned, but the var is declared [own_kind_name(start_entry[OWNE_KIND])]")
+			continue
+		LAZYSET(T.start_vars, var_name, decl.starts[var_name])
 	if(T.keyed_key && !(T.keyed_key in D.vars))
 		OWN_REPORT("[D.type] is a keyed target through var '[T.keyed_key]', which it doesn't have")
 	var/list/slots = D.declared_timer_slots()

@@ -54,9 +54,8 @@
  * choices (first is the default); lid: has a lid; pourable / fillable / splashable: what other
  * containers can do with it; cycle_transfer: Set transfer amount steps instead of asking.
  */
-/proc/cap_reagent_container(volume = 30, list/transfer_amounts = list(5, 10, 15, 30), lid = FALSE, pourable = TRUE, fillable = TRUE, splashable = TRUE, cycle_transfer = FALSE, fill_levels = 4, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log, layer = LOOK_LID)
+/proc/cap_reagent_container(volume = 30, list/transfer_amounts = list(5, 10, 15, 30), lid = FALSE, pourable = TRUE, fillable = TRUE, splashable = TRUE, cycle_transfer = FALSE, fill_levels = 4, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
 	var/datum/capability/reagent_container/C = new
-	C.layer_name = layer
 	C.volume = volume
 	C.transfer_amounts = transfer_amounts
 	C.lid = lid
@@ -65,7 +64,7 @@
 	C.splashable = splashable
 	C.cycle_transfer = cycle_transfer
 	C.fill_levels = fill_levels
-	return cap_gating(C, behind = behind, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
+	return cap_gating(C, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 
 /datum/capability/reagent_container/on_holder_init(atom/holder, mapload)
 	if(!holder.reagents)

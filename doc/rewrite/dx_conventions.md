@@ -197,6 +197,11 @@ One vocabulary for "something happened" (code in `code/datums/reactions/`, defin
   (hyphen and camelCase become snake_case). Reserved argument names are written last.
 - **Validation.** Validate every parameter first with `ui_number` / `ui_text` / `ui_choice` /
   `ui_ref` / `ui_bool`. `ui_actions_lint.py` checks that TSX and DM agree.
+- **Pushes.** Nothing pushes a window by hand: a change `tgui_data()` reads marks the host and each open window gets
+  at most one push per tick, in phase R (`code/modules/tgui/ui_push.dm`); a TRUE `act_` return updates the acting
+  window. No `SStgui.update_uis(src)` in converted code.
+- **Admin panels** declare `ui_rights = R_X` (the admin state, and every action refused and audited without it);
+  per-action narrowing is `admin_require(user.client, R_Y, entry)` in the handler.
 - **Player input** goes through actions: a gesture resolves via the bind profile to an action, then
   to the first applicable operation. There is no per-entry alt-click form ([operations_and_actions.md](operations_and_actions.md)).
 

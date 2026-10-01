@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Lifecycle declarations have foundation forms: relation starting occupants (starts =), reagents()/refine(CAP_REAGENTS), gas_store(), membership(joins =), after_init(), type_verb(login = TRUE) and cap_trait(); the APC's cell, reagent tanks, the transit pod, tape recorders, broken guns, living mobs' player verbs and radiation clothing use them."
+  - code_imp: "Library capabilities take requirements instead of behind/blocked_by/locked_by and draw fixed standard look names instead of layer =; a lint keeps appearance procs free of state writes and sounds."
+  - code_imp: "Open UIs get at most one data push per tick, coalesced in the kernel's phase R; admin panels can declare ui_rights. The round status panel uses both."

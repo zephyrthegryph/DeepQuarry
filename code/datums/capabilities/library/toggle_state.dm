@@ -39,7 +39,7 @@
 	/// The renamed native verb, made once per capability.
 	var/tmp/verb_ref
 
-/proc/cap_toggle_state(name, on_state, off_state, on_suffix, verb_name, bit = CAP_TOGGLE_1, apply, available, self_on, self_off, others_on, others_off, examine_on, examine_off, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
+/proc/cap_toggle_state(name, on_state, off_state, on_suffix, verb_name, bit = CAP_TOGGLE_1, apply, available, self_on, self_off, others_on, others_off, examine_on, examine_off, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
 	var/datum/capability/toggle_state/C = new
 	C.name = name
 	C.key = "toggle_state:[bit]"
@@ -58,7 +58,7 @@
 	C.examine_off = examine_off
 	var/verb_path = cap_toggle_verb_path(bit)
 	C.verb_ref = new verb_path(null, C.verb_name)
-	cap_gating(C, behind = behind, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
+	cap_gating(C, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 	return C
 
 /// The generic verb proc for a toggle bit (renamed per capability by cap_toggle_state()).

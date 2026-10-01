@@ -12,12 +12,11 @@
 
 /// Breaks with the holder; `repair_tool` over `repair_delay` repairs it. repair_tool = NONE: no repair
 /// entry (null can't be passed: DM would substitute the default).
-/proc/cap_breakable(repair_tool = TOOL_WELDER, repair_delay = 3 SECONDS, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log, layer = LOOK_BROKEN)
+/proc/cap_breakable(repair_tool = TOOL_WELDER, repair_delay = 3 SECONDS, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
 	var/datum/capability/breakable/C = new
 	C.repair_tool = repair_tool
 	C.repair_delay = repair_delay
-	C.layer_name = layer
-	return cap_gating(C, behind = behind, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
+	return cap_gating(C, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 
 /datum/capability/breakable/interactions(atom/holder)
 	if(!repair_tool)

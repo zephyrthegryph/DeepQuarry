@@ -57,9 +57,8 @@
  * max_total: space in storage-cost units; can_hold_proc: the holder's exception proc. behind /
  * locked_by gate every entry (a lockbox: locked_by = LOCK).
  */
-/proc/cap_storage(holds = HOLDS_ANY, slots = null, max_w_class = ITEMSIZE_SMALL, max_total = ITEMSIZE_COST_SMALL * 4, can_hold_proc = null, quick_empty = TRUE, use_sound = SFX_RUSTLE, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log, layer = CAP_NO_LAYER)
+/proc/cap_storage(holds = HOLDS_ANY, slots = null, max_w_class = ITEMSIZE_SMALL, max_total = ITEMSIZE_COST_SMALL * 4, can_hold_proc = null, quick_empty = TRUE, use_sound = SFX_RUSTLE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
 	var/datum/capability/storage/C = new
-	C.layer_name = layer
 	C.holds = holds
 	C.slots = slots
 	C.max_w_class = max_w_class
@@ -67,7 +66,7 @@
 	C.can_hold_proc = can_hold_proc
 	C.quick_empty = quick_empty
 	C.use_sound = use_sound
-	return cap_gating(C, behind = behind, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
+	return cap_gating(C, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 
 /datum/capability/storage/interactions(atom/holder)
 	. = list()

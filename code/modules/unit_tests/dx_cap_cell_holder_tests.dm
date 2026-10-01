@@ -6,7 +6,7 @@
 
 /obj/cap_fixture/cell_box/capabilities()
 	. = ..()
-	. += cap_cell_holder(nameof(cell), /obj/item/cell, behind = COVER)
+	. += cap_cell_holder(nameof(cell), /obj/item/cell, needs = req_set(COVER))
 
 /// A charger with its own cell slot.
 /obj/cap_fixture/cell_charger

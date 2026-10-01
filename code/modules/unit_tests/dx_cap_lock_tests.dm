@@ -3,7 +3,7 @@
 /obj/cap_fixture/lock/capabilities()
 	. = ..()
 	. += cap_lock(access = list(ACCESS_SECURITY))
-	. += cap_cover(open_tool = BY_HAND, locked_by = LOCK)
+	. += cap_cover(open_tool = BY_HAND, needs = req_clear(LOCK))
 
 /// A swipe with access toggles the lock, which gates locked_by = LOCK entries; no access is refused.
 /datum/unit_test/dx_cap_lock_swipe/Run()

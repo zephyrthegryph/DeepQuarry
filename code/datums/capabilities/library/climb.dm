@@ -16,12 +16,12 @@
 	/// The climbable behaviour type (a /datum/om/behaviour/climbable subtype: tables, cliffs, railings).
 	var/kind = /datum/om/behaviour/climbable
 
-/proc/cap_climb(delay = 3.5 SECONDS, vaulting = FALSE, kind = /datum/om/behaviour/climbable, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
+/proc/cap_climb(delay = 3.5 SECONDS, vaulting = FALSE, kind = /datum/om/behaviour/climbable, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
 	var/datum/capability/climb/C = new
 	C.delay = delay
 	C.vaulting = vaulting
 	C.kind = kind
-	cap_gating(C, behind = behind, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
+	cap_gating(C, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 	return C
 
 /datum/capability/climb/on_holder_init(atom/holder, mapload)

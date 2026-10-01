@@ -23,14 +23,14 @@
 	var/lamp = FALSE
 
 /// An access lock: access (all required) and/or req_one_access (any one). id_types: what is swiped.
-/proc/cap_lock(list/access, list/req_one_access, list/id_types = list(/obj/item/card/id, /obj/item/pda), behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log, entries = TRUE, lamp = FALSE)
+/proc/cap_lock(list/access, list/req_one_access, list/id_types = list(/obj/item/card/id, /obj/item/pda), needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log, entries = TRUE, lamp = FALSE)
 	var/datum/capability/lock/C = new
 	C.entries = entries
 	C.req_access = access
 	C.req_one_access = req_one_access
 	C.id_types = id_types
 	C.lamp = lamp
-	return cap_gating(C, behind = behind, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
+	return cap_gating(C, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 
 /datum/capability/lock/interactions(atom/holder)
 	if(!entries)
@@ -79,8 +79,9 @@
  * `click_with`), so a click with a wrench is still the wrench's. The hatch declares it beside cap_lock(entries = FALSE).
  * It takes no provider slot: the credential is found by cap_lock_credential(), so a silicon can lock with its own access.
  */
-/proc/lock_op(list/id_types = list(/obj/item/card/id, /obj/item/pda), behind = NONE, blocked_by = NONE, locked_by = NONE, log, works_broken = TRUE, works_unpowered = TRUE)
-	return cap_op("Lock", TYPE_PROC_REF(/atom, cap_lock_toggle), key = CAP_LOCK, action = ACT_LOCK, by = NONE, kind = OP_CONTROL, priority = 10, name_proc = TYPE_PROC_REF(/atom, cap_lock_name), behind = behind, blocked_by = blocked_by, locked_by = locked_by, works_broken = works_broken, works_unpowered = works_unpowered, log = log, click_with = id_types, passes_held = TRUE)
+/proc/lock_op(list/id_types = list(/obj/item/card/id, /obj/item/pda), needs, log, works_broken = TRUE, works_unpowered = TRUE)
+	var/list/gate = cap_fold_state_needs(needs) // req_set / req_clear: the op's state gates, with their messages
+	return cap_op("Lock", TYPE_PROC_REF(/atom, cap_lock_toggle), key = CAP_LOCK, action = ACT_LOCK, by = NONE, kind = OP_CONTROL, priority = 10, name_proc = TYPE_PROC_REF(/atom, cap_lock_name), needs = gate[4], behind = gate[1], blocked_by = gate[2], locked_by = gate[3], works_broken = works_broken, works_unpowered = works_unpowered, log = log, click_with = id_types, passes_held = TRUE)
 
 /**
  * The credential provider that opens this lock for `actor`, or null. Credentials are providers, tried like hands:

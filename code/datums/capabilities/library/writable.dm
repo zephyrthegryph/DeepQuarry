@@ -31,12 +31,12 @@
 	/// Visible characters written so far.
 	var/used = 0
 
-/proc/cap_writable(max_length = MAX_PAPER_MESSAGE_LEN, pen_types = /obj/item/pen, written_state, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log = LOG_GAME)
+/proc/cap_writable(max_length = MAX_PAPER_MESSAGE_LEN, pen_types = /obj/item/pen, written_state, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log = LOG_GAME)
 	var/datum/capability/writable/C = new
 	C.max_length = max_length
 	C.pen_types = pen_types
 	C.written_state = written_state
-	cap_gating(C, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered)
+	cap_gating(C, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered)
 	return C
 
 /datum/capability/writable/interactions(atom/holder)

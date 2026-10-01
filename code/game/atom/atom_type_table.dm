@@ -38,6 +38,9 @@
 		bits |= TYPE_TABLE_HAS_REGISTRIES
 		if(!registry.conditional)
 			bits |= TYPE_TABLE_JOINS_REGISTRIES
+	// membership(joins =) joins its registries at materialize, conditional ones included (membership.dm).
+	if(isatom(thing) && cap_registries_of(thing))
+		bits |= TYPE_TABLE_JOINS_REGISTRIES
 	if(dq_rules_for_type(thing.type))
 		bits |= TYPE_TABLE_HAS_RULES
 	if(om_type_has_decl(thing.type))

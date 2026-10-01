@@ -29,14 +29,14 @@
 /datum/cap_edible_data
 	var/bites_taken = 0
 
-/proc/cap_edible(bites, bite_size = 1, trash, eat_sound = SFX_ITEMS_EATFOOD, feed_time = 3 SECONDS, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log = LOG_GAME)
+/proc/cap_edible(bites, bite_size = 1, trash, eat_sound = SFX_ITEMS_EATFOOD, feed_time = 3 SECONDS, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log = LOG_GAME)
 	var/datum/capability/edible/C = new
 	C.bites = bites
 	C.bite_size = bite_size
 	C.trash = trash
 	C.eat_sound = eat_sound
 	C.feed_time = feed_time
-	cap_gating(C, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered)
+	cap_gating(C, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered)
 	return C
 
 /datum/capability/edible/interactions(atom/holder)

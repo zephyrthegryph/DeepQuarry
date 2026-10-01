@@ -25,13 +25,13 @@
 	/// An overlay drawn while an assembly is attached, or null.
 	var/attached_state
 
-/proc/cap_assembly(list/attach_types = list(/obj/item/assembly), on_pulse, detach_tool = TOOL_SCREWDRIVER, attached_state, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log = LOG_GAME)
+/proc/cap_assembly(list/attach_types = list(/obj/item/assembly), on_pulse, detach_tool = TOOL_SCREWDRIVER, attached_state, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log = LOG_GAME)
 	var/datum/capability/assembly/C = new
 	C.attach_types = attach_types
 	C.on_pulse = on_pulse
 	C.detach_tool = detach_tool
 	C.attached_state = attached_state
-	cap_gating(C, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered)
+	cap_gating(C, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered)
 	return C
 
 /datum/capability/assembly/interactions(atom/holder)

@@ -238,14 +238,17 @@
 // ---- refine ----
 
 /// A change to an op declared earlier on the type (or by a bundle): the refined op replaces it in
-/// place. caps_intern_list() applies it; refining a key nothing declared is an init error.
+/// place. caps_intern_list() applies it; refining a key nothing declared is an init error. A key that
+/// names a capability which is not an op (CAP_REAGENTS) refines that capability: its refined() makes the
+/// replacement from the same named fields.
 /datum/capability/refine
 	var/base_key
 	var/list/overrides
 
-/// key: the op's key. delay: the new wait. effect: the new handler (PROC_REF). input: the new `using`.
-/// action: the new ACT_*.
-/proc/refine(key, delay, effect, input, action)
+/// key: the op's key (or a capability's, e.g. CAP_REAGENTS). delay: the new wait. effect: the new handler
+/// (PROC_REF). input: the new `using`. action: the new ACT_*. starts / volume: a capability's starting contents
+/// and volume (refine(CAP_REAGENTS, starts = ...) adds to the inherited contents).
+/proc/refine(key, delay, effect, input, action, starts, volume)
 	var/datum/capability/refine/C = new
 	C.base_key = key
 	var/list/o = list()
@@ -257,6 +260,10 @@
 		o["using"] = input
 	if(!isnull(action))
 		o["action"] = action
+	if(!isnull(starts))
+		o["starts"] = starts
+	if(!isnull(volume))
+		o["volume"] = volume
 	C.overrides = o
 	C.key = "refine:[key]:[md5(datum_signature(o))]"
 	return C

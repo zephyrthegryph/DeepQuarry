@@ -48,6 +48,9 @@
 	if(decl?.acts[action])
 		return null
 	var/mob/user = ui?.user
+	// ui_rights (code/datums/sys/ui.dm): an admin panel refuses, and audits, anyone without one of its rights.
+	if(host.ui_rights && !admin_require(user?.client, host.ui_rights, "[host.type]:[key]"))
+		return list(TRUE, FALSE)
 	if(!host.ui_allowed(user, key))
 		return list(TRUE, FALSE)
 	// The client's keys first, then the reserved names LAST.

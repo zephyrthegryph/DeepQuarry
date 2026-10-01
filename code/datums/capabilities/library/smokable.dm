@@ -40,7 +40,7 @@ OWN_TIMER(/obj/item, cap_smokable)
 	/// Burn time left; null while fresh.
 	var/burn_left
 
-/proc/cap_smokable(burn_time = 10 MINUTES, drag = 5, butt, list/light_types = list(/obj/item/flame, /obj/item/weldingtool, /obj/item/assembly/igniter), lit_state, burnt_state, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log = LOG_GAME)
+/proc/cap_smokable(burn_time = 10 MINUTES, drag = 5, butt, list/light_types = list(/obj/item/flame, /obj/item/weldingtool, /obj/item/assembly/igniter), lit_state, burnt_state, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log = LOG_GAME)
 	var/datum/capability/smokable/C = new
 	C.burn_time = burn_time
 	C.drag = drag
@@ -48,7 +48,7 @@ OWN_TIMER(/obj/item, cap_smokable)
 	C.light_types = light_types
 	C.lit_state = lit_state
 	C.burnt_state = burnt_state
-	cap_gating(C, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered)
+	cap_gating(C, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered)
 	return C
 
 /datum/capability/smokable/interactions(atom/holder)

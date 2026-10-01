@@ -7,7 +7,7 @@
 //
 //   init         (end of /atom/Initialize(), and table_initialize()): instance state that
 //                subtype Initialize() code may read right after `. = ..()`:
-//                  1. owned children   DECLARE_DEFAULT_CHILD
+//                  1. owned children   DECLARE_DEFAULT_CHILD (now owns(starts =): code/datums/ownership/table.dm)
 //                  2. gas contents     DECLARE_GAS
 //                  3. reagents         DECLARE_REAGENTS
 //                  4. appearance       DECLARE_APPEARANCE
@@ -29,19 +29,27 @@
 /// Adds one entry to PATH's declaration table. Internal: use the named macros below.
 #define _LIFECYCLE_DECL(PATH, CALL) ##PATH/declare_lifecycle(datum/lifecycle_decls/decls) { ..(); decls.##CALL; }
 
-/// 1. Owned child created at init. VAR must also carry a DECLARE_REF of kind OWNED, OWNED_LIST,
-/// HELD, SPILL or SPILL_LIST (that line says how it is destroyed). DEFAULT is a type path, a
-/// list of type paths (or `list(type = count)`) for a list var, or the name of a var holding the
-/// type (e.g. "cell_type"). The var itself wins: holding a path (`var/obj/item/cell/cell =
-/// /obj/item/cell/high`) creates that path; holding an instance creates nothing. Children are
-/// created with `new type(src)`.
-#define DECLARE_DEFAULT_CHILD(PATH, VAR, DEFAULT) _LIFECYCLE_DECL(PATH, add_child(VAR, DEFAULT))
+/// 1. Owned child created at init. LEGACY: the foundation form is the relation's starting occupant,
+///	rel_one(nameof(cell), /obj/item/cell, kind = RELK_OWNED, policy = OWN_SPILL, starts = nameof(cell_type))
+/// in relations() (doc/rewrite/state_and_relations.md section 2); this macro is a thin wrapper over it
+/// that adds only the `starts` annotation (the var keeps whatever kind/policy ownership() or relations()
+/// give it, else the first own_set() learns OWN_DELETE). DEFAULT is a type path, a list of type paths (or
+/// `list(type = count)`) for a list var, or the name of a var holding the type (e.g. "cell_type"). The var
+/// itself wins: holding a path (`var/obj/item/cell/cell = /obj/item/cell/high`) creates that path; holding
+/// an instance creates nothing (a null DEFAULT names the var itself: whatever path it holds is made). Children
+/// are created with `new type(src)`.
+#define DECLARE_DEFAULT_CHILD(PATH, VAR, DEFAULT) ##PATH/relations() { . = ..(); . += owns(VAR, policy = OWN_NONE, starts = (isnull(DEFAULT) ? VAR : DEFAULT)); }
 
-/// 2. A gas mixture created at init in VAR (declare VAR OWNED). VOLUME: litres, or a var name.
+/// 2. LEGACY: the foundation form is `gas_store(nameof(var), volume, temp, gases)` in capabilities()
+/// (code/datums/capabilities/library/gas_store.dm; doc/rewrite/lifecycle.md section 9).
+/// A gas mixture created at init in VAR (declare VAR OWNED). VOLUME: litres, or a var name.
 /// GASES: list(GAS_O2 = kPa, ...) at TEMP kelvin (moles = P*V / (R*T)).
 #define DECLARE_GAS(PATH, VAR, VOLUME, TEMP, GASES) _LIFECYCLE_DECL(PATH, set_gas(VAR, VOLUME, TEMP, GASES))
 
-/// 3. Starting reagents at init: create_reagents(VOLUME) then add CONTENTS
+/// 3. LEGACY: the foundation form is `reagents(volume, starts = list(...))` in capabilities(), with
+/// `refine(CAP_REAGENTS, starts = ...)` on subtypes and `without(., CAP_REAGENTS)` for DECLARE_NO_REAGENTS
+/// (code/datums/capabilities/library/reagents.dm; doc/rewrite/lifecycle.md section 9). Never mix the forms in a chain.
+/// Starting reagents at init: create_reagents(VOLUME) then add CONTENTS
 /// (list(REAGENT_ID_X = amount, ...), or null for an empty holder). VOLUME: a number, a var
 /// name ("volume"), or null to keep the parent's. CONTENTS ADD to the parent's declared contents,
 /// the way the old `. = ..(); reagents.add_reagent(...)` chain added to the parent's; the
@@ -77,7 +85,9 @@
 /// The fallback row key.
 #define APPEARANCE_ANY "*"
 
-/// 5. Registry membership (code/__defines/registries.dm). The same as REGISTRY_MEMBERSHIP() for an
+/// 5. LEGACY: the foundation form is `membership(joins = REGISTRY_X)` in capabilities()
+/// (code/datums/capabilities/library/membership.dm).
+/// Registry membership (code/__defines/registries.dm). The same as REGISTRY_MEMBERSHIP() for an
 /// ordinary registry; for a conditional one it also joins at materialize (was an unconditional
 /// registry_join() in Initialize()). Leaving is automatic either way.
 #define DECLARE_REGISTRY(PATH, ID) REGISTRY_MEMBERSHIP(PATH, ID); _LIFECYCLE_DECL(PATH, add_registry(ID))
@@ -87,17 +97,23 @@
 /// the GLOB var name as a string.
 #define DECLARE_SERVICE_MEMBER(PATH, SERVICE, JOIN, LEAVE) _LIFECYCLE_DECL(PATH, add_service(SERVICE, JOIN, LEAVE))
 
-/// 7. A Rust (or other external) binding: BINDER is a /datum/decl_binder type. bind_list() runs at
+/// 7. LEGACY, test-only (no real site): a Rust binding is push_to_rust() with generated rust_push() reads and a
+/// relation / lifecycle_unbind() for its lifetime (doc/rewrite/lifecycle.md section 9).
+/// A Rust (or other external) binding: BINDER is a /datum/decl_binder type. bind_list() runs at
 /// materialize (all of an SSatoms batch at once, at the end of the batch); unbind() runs in
 /// destroy phase 1 and on dematerialize.
 #define DECLARE_BIND(PATH, BINDER) _LIFECYCLE_DECL(PATH, add_binder(BINDER))
 
-/// 8a. An OM behaviour attached at materialize (om_attach). The OM teardown detaches it.
+/// 8a. LEGACY: per behaviour, cap_trait() (a trait + examine line), on_notice (an after-fact) or before_op on a
+/// guard key (a veto): the audit is in doc/rewrite/lifecycle.md section 9.
+/// An OM behaviour attached at materialize (om_attach). The OM teardown detaches it.
 #define DECLARE_BEHAVIOUR(PATH, BEHAVIOUR) _LIFECYCLE_DECL(PATH, add_behaviour(BEHAVIOUR))
 /// 8b. Periodic work (om_task_periodic(src, PIPELINE)) started at materialize, stopped at
 /// dematerialize. The type implements periodic_step().
 #define DECLARE_PERIODIC(PATH, PIPELINE) _LIFECYCLE_DECL(PATH, set_periodic(PIPELINE))
-/// 8c. om_after(src, DELAY, PROC) at materialize. DELAY: a time, or a var name. PROC: PROC_REF(x).
+/// 8c. LEGACY: the foundation form is `after_init(delay, PROC_REF(x))` in reactions() (armed at init;
+/// code/datums/reactions/after_init.dm).
+/// om_after(src, DELAY, PROC) at materialize. DELAY: a time, or a var name. PROC: PROC_REF(x).
 #define DECLARE_START_TIMER(PATH, DELAY, PROC) _LIFECYCLE_DECL(PATH, add_timer(DELAY, PROC))
 
 // Verbs a type has by what it is (code/datums/om/grant_verbs.dm, doc/rewrite/systems.md §19).
@@ -106,7 +122,9 @@
 /// 4b. VERB is on every PATH instance from init.
 #define DECLARE_VERB(PATH, VERB) _LIFECYCLE_DECL(PATH, add_verb_decl(VERB, VERB_DECL_ALWAYS))
 /// VERB is on a PATH mob once a player has had it (applied at Login); NPC-only mobs never carry it.
-#define DECLARE_LOGIN_VERB(PATH, VERB) _LIFECYCLE_DECL(PATH, add_verb_decl(VERB, VERB_DECL_LOGIN))
+/// LEGACY: a thin wrapper over the foundation form, a type_verbs() entry `type_verb(VERB, login = TRUE)`
+/// (code/datums/capabilities/type_verbs.dm).
+#define DECLARE_LOGIN_VERB(PATH, VERB) ##PATH/type_verbs() { . = ..(); . += type_verb(VERB, login = TRUE); }
 /// VERB is on a PATH instance while its var VAR_NAME (a string) is true. Whoever changes the var
 /// calls verb_store_refresh(src, VERB) after.
 #define DECLARE_VERB_IF(PATH, VERB, VAR_NAME) _LIFECYCLE_DECL(PATH, add_verb_decl(VERB, VAR_NAME))

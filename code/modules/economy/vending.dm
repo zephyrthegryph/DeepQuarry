@@ -206,12 +206,14 @@ DAMAGE_REACTION(/obj/machinery/vending, DAMAGE_EXPLOSION, PROC_REF(vending_blast
 
 /obj/machinery/vending/capabilities()
 	. = ..()
-	. += cap_panel(layer = CAP_NO_LAYER) // drawn in draw(): the panel state is "[icon_state]-panel", one per vendor icon
-	. += cap_wires(/datum/wires/vending, behind = PANEL, layer = CAP_NO_LAYER)
+	// The panel, wires, broken and dark parts are drawn by draw() in this vendor's own states ("[base]-panel",
+	// "[base]-broken", "[base]-off"), which hides the standard parts the capabilities name.
+	. += cap_panel()
+	. += cap_wires(/datum/wires/vending)
 	. += cap_emag(say = "You short out %T%'s product lock.", mode = EMAG_REPEATABLE)
-	. += cap_anchor(delay = 2 SECONDS, needs_floor = FALSE, blocked_by = PANEL)
-	. += cap_breakable(repair_tool = NONE, layer = CAP_NO_LAYER)
-	. += cap_power(layer = CAP_NO_LAYER)
+	. += cap_anchor(delay = 2 SECONDS, needs_floor = FALSE, needs = req_clear(PANEL))
+	. += cap_breakable(repair_tool = NONE)
+	. += cap_power()
 	// An ID card or cash held to the machine opens it, as the old attackby did.
 	. += cap_use_on("Use", /obj/item, PROC_REF(open_window), needs = PROC_REF(wants_hand_dispatch), works_broken = TRUE, works_unpowered = TRUE)
 	. += cap_use_on("Refill", /obj/item/refill_cartridge, PROC_REF(refill_from), needs = PROC_REF(refill_ok), blocked_by = PANEL)
@@ -671,6 +673,11 @@ DAMAGE_REACTION(/obj/machinery/vending, DAMAGE_EXPLOSION, PROC_REF(vending_blast
 /// Broken and dark states replace the vendor's face; an open panel lays its own state over it.
 /obj/machinery/vending/draw(datum/look/look)
 	..()
+	// A vendor draws these in its own states below, not as the capabilities' standard parts.
+	look.hide(LOOK_PANEL_OPEN)
+	look.hide(LOOK_WIRES)
+	look.hide(LOOK_BROKEN)
+	look.hide(LOOK_DARK)
 	var/base = initial(icon_state)
 	if(is_broken(src))
 		look.state("[base]-broken")

@@ -1,5 +1,5 @@
 // cell_bay(): a power cell slot behind the cover (doc/rewrite/dx_conventions.md §2). One slot
-// (cap_slot, behind = COVER, hand eject, layer "cell" seen through the open cover), a charge examine
+// (cap_slot, needing the cover open, hand eject, part LOOK_CELL seen through the open cover), a charge examine
 // line, charge UI data (data["caps"][slot var]["charge"]) and a low-charge helper for other entries:
 // cell_charge_percent(A) (0 with no cell, never null) and the needs proc cap_cell_charged().
 //
@@ -9,8 +9,8 @@
 /// The cell bay bundle for holder var `slot_var` (nameof(cell)).
 /// `at`: the compartment (BAY_*) the bay is in instead of standing behind a cover. `needs`: a holder proc (mob/user, held) that
 /// answers TRUE or the reason the bay can't be used now. `size`: the ITEMSIZE_* a cell must be to fit.
-/proc/cell_bay(slot_var, accepts = /obj/item/cell, layer = LOOK_CELL, at, needs, size)
-	var/datum/capability/slot/cell_bay/bay = cap_slot(slot_var, accepts, at = at, behind = at ? NONE : COVER, needs = needs, layer = layer, eject_via = SLOT_VIA_HAND, name = "Insert power cell", eject_name = "Remove power cell", insert_msg = "You insert %I%.", eject_msg = "You remove %I%.", full_msg = "%T% already has a power cell installed.", slot_type = /datum/capability/slot/cell_bay)
+/proc/cell_bay(slot_var, accepts = /obj/item/cell, at, needs, size)
+	var/datum/capability/slot/cell_bay/bay = cap_slot(slot_var, accepts, at = at, needs = at ? needs : cap_needs_with(req_set(COVER), needs), part = LOOK_CELL, eject_via = SLOT_VIA_HAND, name = "Insert power cell", eject_name = "Remove power cell", insert_msg = "You insert %I%.", eject_msg = "You remove %I%.", full_msg = "%T% already has a power cell installed.", slot_type = /datum/capability/slot/cell_bay)
 	bay.size = size
 	return list(cap_layer_order(bay, 50))
 

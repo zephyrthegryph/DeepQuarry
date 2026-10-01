@@ -18,6 +18,7 @@ delivery contract.
 | `on_change(list/reads, handler)` | When any read in the list changes. | Coalescible: once per entity per output per frame; sees the final value. |
 | `on_cross(read, bands, handler, urgent=)` | When a value crosses a band edge (hysteresis in Rust for native values). | Threshold. `urgent = TRUE` is an urgent work item (`request_urgent`, deduped per holder, run from the kernel's U slice); otherwise it runs at the drain. |
 | `every(interval, handler, when=, members=, phase=, after=, budget=, lane=)` | On a cadence, optionally only while a condition reads true. | A scheduled work item on the kernel ([scheduling_and_kernel.md](scheduling_and_kernel.md)); see section 1a. |
+| `after_init(delay, handler)` [built] | Once, `delay` after the holder initializes (`delay` may be `nameof(var)`). | An `rx_after()` armed by `rx_enrol()` at init (boot kind `RXB_INIT`); replaces `DECLARE_START_TIMER`. See section 4. |
 
 `on_change` has sugar that names the output it feeds, replacing the old `derived()` vocabulary:
 `drawn_from(...)` (draw and hidden verbs), `ui_from(...)` (open UIs), `derive(var, reads...)` (a
@@ -117,6 +118,10 @@ tracked `nightshift_lights` is read by its area's `derive(lights_nightshift, rel
 | Do this later or repeatedly | `after` / `every` |
 
 ## 4. Timers
+
+A timer armed when the holder initializes is declared, not written in `Initialize()`: `after_init(delay,
+PROC_REF(x))` in `reactions()` (`code/datums/reactions/after_init.dm`, the form of `DECLARE_START_TIMER`). A subtype
+re-declaring the same handler replaces the inherited one.
 
 `after(owner, delay, handler, key=, clock=)` is the one timer, stored as a `TIMER` relation. It is
 dropped with its owner; one pending call per `key` when a key is given; `clock` selects world,

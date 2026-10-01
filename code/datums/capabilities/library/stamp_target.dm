@@ -26,12 +26,12 @@
 	/// The overlay state of each stamp, in stamping order.
 	var/list/marks
 
-/proc/cap_stamp_target(max_stamps, noun = "document", draws_marks = TRUE, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log = LOG_GAME)
+/proc/cap_stamp_target(max_stamps, noun = "document", draws_marks = TRUE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log = LOG_GAME)
 	var/datum/capability/stamp_target/C = new
 	C.max_stamps = max_stamps
 	C.noun = noun
 	C.draws_marks = draws_marks
-	cap_gating(C, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered)
+	cap_gating(C, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered)
 	return C
 
 /datum/capability/stamp_target/interactions(atom/holder)

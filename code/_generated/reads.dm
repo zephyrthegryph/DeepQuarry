@@ -7,6 +7,10 @@
 	. += derive(nameof(lights_emergency_off), nameof(apc))
 	. += derive(nameof(lights_nightshift), nameof(apc))
 
+/datum/round_status_panel/generated_reads()
+	. = ..()
+	. += ui_from(nameof(shown_antag_blocks))
+
 /datum/system/generated_reads()
 	. = ..()
 	. += runs_while(nameof(periodic_parked))
@@ -90,7 +94,9 @@
 			/datum/system/lighting = RXB_EVERY,
 			/datum/system/speech_controller = RXB_EVERY,
 			/datum/system/ticker = RXB_EVERY,
+			/datum/system/ui_push = RXB_EVERY,
 			/obj/effect/hotspot = RXB_EVERY,
+			/obj/item/broken_gun = RXB_INIT,
 			/obj/machinery/power/apc = RXB_NOTICE,
 		)
 	return table

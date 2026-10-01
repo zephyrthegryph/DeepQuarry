@@ -219,6 +219,14 @@ GLOBAL_LIST_EMPTY(ui_decls)
 /datum/var/tgui_id
 /// The tgui state its window uses, or null for the default.
 /datum/var/datum/tgui_state/tgui_window_state
+/**
+ * The admin rights (R_* flags, at least ONE of them) its window needs: `ui_rights = R_ADMIN | R_SERVER` on an admin
+ * panel. The window opens and stays interactive only for an admin holding one (ADMIN_STATE(ui_rights), unless a
+ * DECLARE_UI_STATE / tgui_window_state says otherwise), and every act_<x>() / UI_ACT from anyone else is refused and
+ * audited (admin_require()). Per-action narrowing stays inside the handler: `admin_require(user.client, R_X, entry)`.
+ * A type var: nothing per instance.
+ */
+/datum/var/ui_rights
 
 /// The window title: UI_TITLE, else the host's name.
 /datum/proc/ui_title(mob/user)
@@ -285,7 +293,7 @@ GLOBAL_LIST_EMPTY(ui_decls)
 	if(!interface)
 		return FALSE
 	ui = new(user, host, interface, host.ui_title(user), parent_ui, null, null, host.ui_window(user))
-	var/datum/tgui_state/state = custom_state || decl?.state || host.tgui_window_state
+	var/datum/tgui_state/state = custom_state || decl?.state || host.tgui_window_state || (host.ui_rights ? ADMIN_STATE(host.ui_rights) : null)
 	if(state)
 		ui.set_state(state)
 	if(decl?.autoupdate)
@@ -340,6 +348,8 @@ GLOBAL_LIST_EMPTY(ui_decls)
 		return null
 	var/mob/user = ui?.user
 	GLOB.ui_rerun = FALSE // a click is never a re-run (also clears a re-run that runtimed)
+	if(host.ui_rights && !admin_require(user?.client, host.ui_rights, "[host.type]:[action]"))
+		return FALSE
 	if(!host.ui_act_allowed(user, action, ui, state))
 		return FALSE
 	if(!row)

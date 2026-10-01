@@ -9,7 +9,8 @@
 // instance except what the declarations create.
 //
 // Order (also in the define file's header and the doc, keep all three in step):
-//   init:          children, gas, reagents, appearance
+//   init:          starting occupants (owns()/rel_one(starts =), which DECLARE_DEFAULT_CHILD expands to),
+//                  gas, reagents, appearance
 //   materialize:   registries, service members, binds, behaviours, periodic, timers, declared periodic work (sys_periodic)
 //   dematerialize: periodic stop, declared periodic stop, service leave, bind release
 //   destroy:       phase 1 bind release; phase 4 children (their DECLARE_REF kind);
@@ -48,8 +49,6 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 	/// DECL_WORK_* bits: which lifecycle points have anything to do.
 	var/work = 0
 
-	/// var name -> default (type path, list of paths, list(path = count), or a var name).
-	var/list/children
 	/// list(var, volume, temperature, list(gas = kPa)), or null.
 	var/list/gas
 	/// A number or a var name; null: no declared reagents.
@@ -93,7 +92,6 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 
 /// A table with no work: every declaration list dropped (finish() found nothing to run).
 /datum/lifecycle_decls/proc/emptied()
-	children = null
 	gas = null
 	clear_reagents()
 	drop_appearance()
@@ -109,9 +107,6 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 	verbs_hidden = null
 	sys_periodic = null
 	return src
-
-/datum/lifecycle_decls/proc/add_child(var_name, default)
-	LAZYSET(children, var_name, default)
 
 /datum/lifecycle_decls/proc/set_gas(var_name, volume, temperature, list/gases)
 	gas = list(var_name, volume, temperature, gases)
@@ -192,20 +187,6 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 /// Validates the declarations against the first instance and works out the work bits.
 /// A bad declaration is reported and dropped here, once per type, never mid-lifecycle.
 /datum/lifecycle_decls/proc/finish(datum/D)
-	if(length(children))
-		for(var/var_name in children.Copy())
-			if(!(var_name in D.vars))
-				stack_trace("DECLARE_DEFAULT_CHILD([owner_type], \"[var_name]\"): no such var; dropped")
-				children -= var_name
-				continue
-			// Every default child is owned: the var is OWN, implicitly (DELETE) or declared (a
-			// movable child in contents may use owns(policy = OWN_CONTAINED)). Any other kind is refused.
-			var/list/entry = own_entry(D, var_name)
-			if(entry && entry[OWNE_KIND] != OWNK_OWN)
-				stack_trace("DECLARE_DEFAULT_CHILD([owner_type], \"[var_name]\"): the var is declared [own_kind_name(entry[OWNE_KIND])], but a default child is owned; dropped")
-				children -= var_name
-		if(!length(children))
-			children = null
 	if(gas && !(gas[1] in D.vars))
 		stack_trace("DECLARE_GAS([owner_type], \"[gas[1]]\"): no such var; dropped")
 		gas = null
@@ -246,7 +227,7 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 		work |= DECL_WORK_VERBS
 	if(appearance_draws || appearance_mask)
 		work |= DECL_WORK_INIT | DECL_WORK_APPEARANCE
-	if(children || gas || !isnull(reagent_volume) || verbs_always || verbs_if || verbs_hidden)
+	if(gas || !isnull(reagent_volume) || verbs_always || verbs_if || verbs_hidden)
 		work |= DECL_WORK_INIT
 	for(var/hook_var in expiry_hooks?.Copy())
 		if(!(hook_var in D.vars))
@@ -279,13 +260,17 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 /// Runs the init declarations on A. Called at the end of /atom/Initialize() and from
 /// table_initialize(); a non-atom datum with declarations calls it from its own New().
 /proc/lifecycle_decls_init(datum/D)
+	// Starting occupants first (the old step 1, default children): gas, reagents and a subtype's
+	// Initialize() after `. = ..()` may read them. Every atom passes here (~500k at boot): the table read is the
+	// shared cache's fast path, inlined, and the proc runs only for a type that declares one.
+	var/datum/own_table/start_table = _CACHED_KEY_FAST(own_table, D.type, D)
+	if(start_table.start_vars)
+		own_init_starts(D, start_table)
 	var/datum/lifecycle_decls/decls = lifecycle_decls_of(D)
 	if(!decls || !(decls.work & DECL_WORK_INIT))
 		return
 	if(decls.sys_periodic && !isatom(D))
 		sys_periodic_start(D, decls.sys_periodic)
-	if(decls.children)
-		decls.create_children(D)
 	if(decls.gas)
 		decls.create_gas(D)
 	if(!isnull(decls.reagent_volume))
@@ -295,15 +280,27 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 	if(decls.verbs_always || decls.verbs_if || decls.verbs_hidden)
 		verb_store_apply_declared(D, decls)
 
-/datum/lifecycle_decls/proc/create_children(datum/D)
-	for(var/var_name in children)
+/**
+ * Makes D's starting occupants (owns() / rel_one() / rel_many() with `starts =`, and DECLARE_DEFAULT_CHILD,
+ * which expands to them): for each declared var, the var itself wins (a path in it, a map edit, is made; an
+ * instance in it makes nothing), else the declared spec is made (a var name reads the instance's var, so
+ * `starts = nameof(cell_type)` follows a map or subtype override). A list var takes a list of paths or
+ * list(path = count). Children are created with `new type(D)` and adopted through own_set() / own_add().
+ */
+/proc/own_init_starts(datum/D, datum/own_table/T)
+	if(!T)
+		T = own_table_of(D)
+	var/list/starts = T.start_vars
+	if(!starts)
+		return
+	for(var/var_name in starts)
 		var/current = D.vars[var_name]
-		var/default = children[var_name]
+		var/default = starts[var_name]
 		if(istext(default))
 			default = D.vars[default]
 		if(islist(current) || (isnull(current) && islist(default)))
 			var/list/spec = islist(current) ? current : default
-			D.vars[var_name] = null // ALLOW(api, ownership): declared-child plumbing replaces the spec with owned children
+			D.vars[var_name] = null // ALLOW(api, ownership): starting-occupant plumbing replaces the spec with owned children
 			for(var/datum/child as anything in lifecycle_decl_child_list(D, spec))
 				lifecycle_decl_adopt_child(D, var_name, child, TRUE)
 			continue
@@ -329,9 +326,9 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 			made += entry
 	return made
 
-/// Adopts a declared default child through the ownership accessors (DECLARE_DEFAULT_CHILD needs
-/// an OWN declaration on the var; a movable child in contents may be CONTAINED), then wires the
-/// child's back relation when its type names one (default_child_backref()).
+/// Adopts a starting occupant through the ownership accessors (the var is OWN, declared or learned on
+/// this first write; a movable child in contents may be CONTAINED), then wires the child's back relation
+/// when its type names one (default_child_backref()).
 /proc/lifecycle_decl_adopt_child(datum/D, var_name, datum/child, as_list)
 	if(as_list)
 		own_add(D, var_name, child)

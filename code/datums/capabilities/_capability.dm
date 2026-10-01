@@ -93,6 +93,12 @@
 /datum/capability/proc/before_entry(atom/holder, mob/user, obj/item/held, datum/interaction/capability/entry)
 	return FALSE
 
+/// refine(key, ...) on this capability (not an op): a new capability with `overrides` (refine()'s named fields,
+/// field -> value) applied, or null when it has nothing refinable. The default refuses (a stack_trace names the key).
+/datum/capability/proc/refined(list/overrides)
+	stack_trace("refine('[key]'): [type] has nothing refine() can change")
+	return null
+
 /// Init / teardown hooks for per-instance state (default children, lazily created data).
 /datum/capability/proc/on_holder_init(atom/holder, mapload)
 	return

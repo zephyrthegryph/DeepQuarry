@@ -19,13 +19,13 @@
 	/// The verb in the block message: "%U% blocks the attack with %T%!".
 	var/verb = "blocks"
 
-/proc/cap_block(chance = 50, projectiles = FALSE, needs_wielded = FALSE, verb = "blocks", behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
+/proc/cap_block(chance = 50, projectiles = FALSE, needs_wielded = FALSE, verb = "blocks", needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
 	var/datum/capability/block/C = new
 	C.chance = clamp(chance, 0, 100)
 	C.projectiles = projectiles
 	C.needs_wielded = needs_wielded
 	C.verb = verb
-	cap_gating(C, behind = behind, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
+	cap_gating(C, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 	return C
 
 /// Whether the block could stop this hit at all (before the roll): not from behind, and the right

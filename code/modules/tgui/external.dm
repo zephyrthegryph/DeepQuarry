@@ -151,8 +151,14 @@
  * This is a proc over a var for memory reasons
  */
 /datum/proc/tgui_state(mob/user)
-	// DECLARE_UI_STATE / UI_STATE (declared UI model); an instance-dependent state overrides this.
-	return ui_decl_of(src)?.state || GLOB.tgui_default_state
+	// DECLARE_UI_STATE / UI_STATE (declared UI model), else ui_rights (an admin panel); an instance-dependent state
+	// overrides this.
+	var/datum/tgui_state/declared = ui_decl_of(src)?.state
+	if(declared)
+		return declared
+	if(ui_rights)
+		return ADMIN_STATE(ui_rights)
+	return GLOB.tgui_default_state
 
 /**
  * global
