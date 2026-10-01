@@ -241,6 +241,9 @@ main {
 	font-size: 12px;
 }
 .tile .value {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 	font-size: 24px;
 	font-weight: 650;
 	font-variant-numeric: tabular-nums;
@@ -258,6 +261,7 @@ table {
 }
 th,
 td {
+	overflow-wrap: anywhere;
 	text-align: left;
 	padding: 6px 8px;
 	border-bottom: 1px solid var(--grid);
@@ -271,6 +275,7 @@ th {
 }
 td:first-child {
 	white-space: nowrap;
+	overflow-wrap: normal;
 }
 td.num,
 th.num {

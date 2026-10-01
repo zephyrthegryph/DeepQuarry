@@ -175,13 +175,19 @@ async function roundEvents(roundIds: number[]) {
 
 export async function rounds(q: URLSearchParams) {
   const limit = Math.min(num(q.get('limit'), 30), 200);
-  const rows = await query<{ round_id: number; first: Date; last: Date }>(
+  let rows = await query<{ round_id: number; first: Date; last: Date }>(
     `SELECT ids.round_id,
 			(SELECT MIN(ts) FROM metric_sample s WHERE s.round_id = ids.round_id) AS first,
 			(SELECT MAX(ts) FROM metric_sample s WHERE s.round_id = ids.round_id) AS last
 		 FROM (SELECT DISTINCT round_id FROM metric_event UNION SELECT DISTINCT round_id FROM metric_round) ids
 		 ORDER BY ids.round_id DESC LIMIT ?`,
     [limit],
+  );
+  // Under a minute of samples (a test world's, or a boot that never got going) has nothing to show.
+  rows = rows.filter(
+    (r) =>
+      r.first &&
+      new Date(r.last).getTime() - new Date(r.first).getTime() >= 60_000,
   );
   const ids = rows.map((r) => r.round_id);
   const meta = new Map<number, Record<string, unknown>>();
@@ -234,8 +240,10 @@ export async function rounds(q: URLSearchParams) {
       first: r.first,
       last: r.last,
       live:
+        r.round_id === rows[0]?.round_id &&
         Date.now() - new Date(r.last).getTime() <
-          config.staleRoundMinutes * 60_000 && !meta.get(r.round_id)?.ended,
+          config.staleRoundMinutes * 60_000 &&
+        !meta.get(r.round_id)?.ended,
       ...meta.get(r.round_id),
       tick_avg: pick(headline[0])?.mean ?? null,
       tick_p95: pick(headline[1])?.p95 ?? null,

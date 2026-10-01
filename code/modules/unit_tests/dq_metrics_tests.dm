@@ -110,3 +110,33 @@
 /// A ticket that skips /datum/ticket/New() (which needs a client).
 /datum/ticket/dq_metrics_fixture/New()
 	return
+
+/// The shutdown flush writes keys, samples and events synchronously, in order (the I/O lane has
+/// stopped by then). Needs a database: without one (CI) it only notes that it didn't run.
+/datum/unit_test/dq_metrics_shutdown_flush_writes
+
+/datum/unit_test/dq_metrics_shutdown_flush_writes/Run()
+	if(!SSdbcore.IsConnected() || isnull(GLOB.round_id))
+		TEST_NOTICE(src, "no database: the shutdown flush was not exercised")
+		return
+	var/datum/world_service/server_metrics/M = GLOB.metrics_service
+	for(var/buffer in list("known_keys", "new_keys", "pending_samples", "pending_events", "runtime_buffer", "overrun_buffer"))
+		set_var(M, buffer, null)
+	set_var(M, "recording", TRUE)
+	var/key = "test/shutdown_flush_[world.time]"
+	M.gauge(key, 7, METRICS_CAT_SERVER, "test", "")
+	M.final_flush()
+	TEST_ASSERT(!length(M.pending_samples) && !length(M.pending_events), "the flush emptied the buffers")
+	var/datum/db_query/samples = SSdbcore.NewQuery(
+		"SELECT s.value FROM metric_sample s JOIN metric_key k ON k.id = s.key_id WHERE s.round_id = :round AND k.name = :name",
+		list("round" = text2num(GLOB.round_id), "name" = key))
+	TEST_ASSERT(samples.Execute(async = FALSE), "sample read failed: [samples.ErrorMsg()]")
+	TEST_ASSERT(samples.NextRow(), "the sample was written before the flush returned")
+	TEST_ASSERT_EQUAL(text2num(samples.item[1]), 7, "the sample's value")
+	qdel(samples)
+	var/datum/db_query/events = SSdbcore.NewQuery(
+		"SELECT COUNT(*) FROM metric_event WHERE round_id = :round AND kind = 'round' AND category = 'shutdown'",
+		list("round" = text2num(GLOB.round_id)))
+	TEST_ASSERT(events.Execute(async = FALSE), "event read failed: [events.ErrorMsg()]")
+	TEST_ASSERT(events.NextRow() && text2num(events.item[1]) >= 1, "the shutdown event was written before the flush returned")
+	qdel(events)

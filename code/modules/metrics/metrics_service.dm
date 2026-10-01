@@ -55,10 +55,14 @@ GLOBAL_DATUM_INIT(metrics_service, /datum/world_service/server_metrics, new)
 		own_add(src, nameof(sources), new source_type)
 	return TRUE
 
-/datum/world_service/server_metrics/on_shutdown()
-	if(recording)
-		METRICS_EVENT(METRICS_EVENT_ROUND, "shutdown", "", "", "server shutdown", null)
-		flush()
+/// The server is going down (or rebooting): SSdbcore calls this from its Shutdown(), while the
+/// database is still connected (world services shut down after it). The I/O lane won't run again,
+/// so this one flush blocks.
+/datum/world_service/server_metrics/proc/final_flush()
+	if(!recording)
+		return
+	METRICS_EVENT(METRICS_EVENT_ROUND, "shutdown", "", "", "server shutdown", list("runtimes" = GLOB.total_runtimes))
+	flush(blocking = TRUE)
 
 /datum/world_service/server_metrics/service_step(resumed)
 	if(!initialized)
@@ -160,8 +164,9 @@ GLOBAL_DATUM_INIT(metrics_service, /datum/world_service/server_metrics, new)
 #define METRICS_ROWS_PER_STATEMENT 400
 
 /// Writes everything buffered: new metric keys, then samples (resolved to key ids in SQL),
-/// then events. Fire-and-forget; failures go to the SQL log.
-/datum/world_service/server_metrics/proc/flush()
+/// then events. Fire-and-forget through om_io (failures go to the SQL log), or, with `blocking`
+/// (server shutdown only), right away in order.
+/datum/world_service/server_metrics/proc/flush(blocking = FALSE)
 	samples_since_flush = 0
 	var/round_id = text2num(GLOB.round_id)
 	if(!round_id || !SSdbcore?.IsConnected())
@@ -179,10 +184,19 @@ GLOBAL_DATUM_INIT(metrics_service, /datum/world_service/server_metrics, new)
 	var/list/event_statement = length(pending_events) ? event_statement(pending_events, round_id, flush_t) : null
 	pending_events = null
 
-	if(length(new_keys))
+	var/list/key_statement = length(new_keys) ? key_statement(new_keys) : null
+	new_keys = null
+	if(blocking)
+		var/list/statements = list()
+		if(key_statement)
+			statements += list(key_statement)
+		statements += sample_statements
+		if(event_statement)
+			statements += list(event_statement)
+		metrics_write_statements_now(statements)
+		return
+	if(key_statement)
 		// Samples join against metric_key, so the keys go first; the samples follow in the callback.
-		var/list/key_statement = key_statement(new_keys)
-		new_keys = null
 		om_io(null, /datum/om/io/sql, key_statement[1], key_statement[2], /proc/metrics_keys_written, sample_statements)
 	else
 		metrics_write_statements(sample_statements)
@@ -257,6 +271,15 @@ GLOBAL_DATUM_INIT(metrics_service, /datum/world_service/server_metrics, new)
 /proc/metrics_write_statements(list/statements)
 	for(var/list/statement as anything in statements)
 		om_sql_write(statement[1], statement[2])
+
+/// Runs the statements now, in order, waiting for each: the shutdown flush only, when the I/O
+/// lane has stopped.
+/proc/metrics_write_statements_now(list/statements)
+	for(var/list/statement as anything in statements)
+		var/datum/db_query/query = SSdbcore.NewQuery(statement[1], statement[2])
+		if(!query.Execute(async = FALSE))
+			log_sql("metrics: shutdown flush failed: [query.ErrorMsg()]")
+		qdel(query)
 
 // ---------------------------------------------------------------- lane
 

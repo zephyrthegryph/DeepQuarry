@@ -111,9 +111,8 @@ function OutlierTable({ rows, roundId }: { rows: Flagged[]; roundId: number }) {
         <thead>
           <tr>
             <th>Metric</th>
-            <th>Area</th>
-            <th className="num">This round (p95)</th>
-            <th className="num">Usual (median p95)</th>
+            <th className="num">This round</th>
+            <th className="num">Usual</th>
             <th className="num">Change</th>
           </tr>
         </thead>
@@ -131,9 +130,8 @@ function OutlierTable({ rows, roundId }: { rows: Flagged[]; roundId: number }) {
                 })
               }
             >
-              <td className="mono">{r.name}</td>
-              <td>
-                {r.category} › {r.subcategory}
+              <td className="mono" style={{ wordBreak: 'break-all' }}>
+                {r.name}
               </td>
               <td className="num">{fmt(r.value, r.unit)}</td>
               <td className="num">{fmt(r.baseline, r.unit)}</td>
@@ -475,7 +473,8 @@ export function PerformancePage({ params }: PageProps) {
             <BarList
               rows={rows.map((r) => ({
                 key: r.name,
-                label: r.subcategory,
+                label:
+                  r.name.split('/').slice(1, -1).join('/') || r.subcategory,
                 value: r.value,
                 baseline: r.baseline,
                 outlier: r.outlier,
@@ -490,7 +489,9 @@ export function PerformancePage({ params }: PageProps) {
           )}
         </Card>
         <Card
-          title={sel ? sel.subcategory : 'Pick a row'}
+          title={
+            sel ? sel.name.split('/').slice(1, -1).join('/') : 'Pick a row'
+          }
           sub={
             sel ? (
               <span className="mono">{sel.name}</span>

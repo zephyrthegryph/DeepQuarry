@@ -97,7 +97,7 @@ export function RuntimesPage({ params }: PageProps) {
                       setOpen(open === g.signature ? null : g.signature)
                     }
                   >
-                    <td style={{ maxWidth: 420 }}>
+                    <td style={{ maxWidth: 420, whiteSpace: 'normal' }}>
                       {g.is_new && <Badge kind="warning">new</Badge>}{' '}
                       {g.message}
                     </td>
