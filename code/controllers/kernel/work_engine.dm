@@ -121,6 +121,9 @@
 	for(var/datum/work_item/W as anything in items)
 		if(lane && W.lane != lane)
 			continue
+		// Not due (run_item() asks the same first): most items most ticks, so they cost no call.
+		if(W.parked || (!W.cursor && !W.yielded && W.next_run > now))
+			continue
 		if(!run_item(W, limit_abs, now))
 			. = FALSE
 			if(TICK_USAGE >= limit_abs)
