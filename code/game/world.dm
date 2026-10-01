@@ -700,13 +700,22 @@ GLOBAL_LIST_EMPTY(world_next_tick_callbacks)
 /proc/world_next_tick(list/spec)
 	GLOB.world_next_tick_callbacks += list(spec)
 
+/// The last DM code of every tick: the MC and every sleeping proc due this tick have run, the map send
+/// has not. The tick frame (metrics_capture.dm) splits the tick's time at the MC here.
 /world/Tick()
-	if(!GLOB || !length(GLOB.world_next_tick_callbacks))
+	if(!GLOB)
 		return
+	var/datum/tick_frame/frame = GLOB.tick_frame
+	frame?.frame_end(TICK_USAGE)
+	if(!length(GLOB.world_next_tick_callbacks))
+		return
+	var/started = TICK_USAGE
 	var/list/due = GLOB.world_next_tick_callbacks
 	GLOB.world_next_tick_callbacks = list()
 	for(var/list/spec as anything in due)
 		om_run_async(spec)
+	if(frame)
+		frame.callbacks += max(TICK_USAGE - started, 0)
 
 /world/Reboot(reason = 0, fast_track = FALSE)
 	if (reason || fast_track) //special reboot, do none of the normal stuff

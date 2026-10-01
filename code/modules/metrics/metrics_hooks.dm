@@ -11,7 +11,11 @@
 		"commit" = GLOB.revdata?.commit,
 		"players" = length(GLOB.clients),
 		"byond" = "[world.byond_version].[world.byond_build]",
+#ifdef UNIT_TESTS
+		"test" = TRUE,
+#endif
 	))
+	profile_round_start()
 
 /hook/roundend/proc/metrics_round_end()
 	var/datum/world_service/server_metrics/M = GLOB.metrics_service

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { Badge, BarList, fmt, fmtDuration, LineChart } from '../charts';
 import {
   Card,
@@ -314,16 +314,24 @@ function TestTable({
         </thead>
         <tbody>
           {rows.map((r) => (
-            <tr
-              key={r.test}
-              className={`click${selected === r.test ? ' sel' : ''}`}
-              onClick={() => go('tests', { test: r.test })}
-              title={r.msg}
-            >
-              <td className="mono">{short(r.test)}</td>
-              <td>{r.a}</td>
-              <td>{r.b}</td>
-            </tr>
+            <Fragment key={r.test}>
+              <tr
+                className={`click${selected === r.test ? ' sel' : ''}`}
+                onClick={() => go('tests', { test: r.test })}
+                title={r.msg}
+              >
+                <td className="mono">{short(r.test)}</td>
+                <td>{r.a}</td>
+                <td>{r.b}</td>
+              </tr>
+              {selected === r.test && r.msg && (
+                <tr className="sel msg-row">
+                  <td colSpan={3} className="mono">
+                    {r.msg}
+                  </td>
+                </tr>
+              )}
+            </Fragment>
           ))}
         </tbody>
       </table>

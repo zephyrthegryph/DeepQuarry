@@ -30,7 +30,7 @@ GLOBAL_DATUM_INIT(metrics_service, /datum/world_service/server_metrics, new)
 	var/list/pending_samples
 	/// Buffered events: list(t, kind, category, signature, ckey, message, payload_json).
 	var/list/pending_events
-	/// Runtimes since the last flush, by signature: list(count, where, error name, first t).
+	/// Runtimes since the last flush, by signature: list(count, where, error name, first t, proc, stack).
 	var/list/runtime_buffer
 	/// The worst overrun ticks since the last flush (Master's tick records), worst first.
 	var/list/overrun_buffer
@@ -109,7 +109,8 @@ GLOBAL_DATUM_INIT(metrics_service, /datum/world_service/server_metrics, new)
 		return
 	LAZYADD(pending_events, list(list(now_t(), kind, category || "", copytext("[signature]", 1, 64), ckey || "", copytext("[message]", 1, 512), payload ? json_encode(payload) : null)))
 
-/// A runtime (from /world/Error): counted by signature, written once per flush with its count.
+/// A runtime (from /world/Error): counted by signature, written once per flush with its count. The first
+/// sighting in a flush keeps the proc and a trimmed call stack from the exception's desc.
 /// Must stay cheap and must not runtime.
 /datum/world_service/server_metrics/proc/note_runtime(exception/E, error_uid)
 	if(!wants_recording())
@@ -119,7 +120,8 @@ GLOBAL_DATUM_INIT(metrics_service, /datum/world_service/server_metrics, new)
 	if(entry)
 		entry[1]++
 		return
-	LAZYSET(runtime_buffer, signature, list(1, E.file ? "[E.file]:[E.line]" : error_proc_name(E), E.name, now_t()))
+	var/proc_name = error_proc_name(E)
+	LAZYSET(runtime_buffer, signature, list(1, E.file ? "[E.file]:[E.line]" : proc_name, E.name, now_t(), proc_name, metrics_runtime_stack(E.desc)))
 
 /// An overrun tick (from the MC): counted, and kept in full if among the worst this flush.
 /datum/world_service/server_metrics/proc/note_overrun(list/tick_record)
@@ -127,6 +129,8 @@ GLOBAL_DATUM_INIT(metrics_service, /datum/world_service/server_metrics, new)
 		return
 	overruns_since_sample++
 	var/usage = tick_record["usage"]
+	if(usage >= METRICS_SPIKE_USAGE)
+		spike_seen(tick_record)
 	var/count = length(overrun_buffer)
 	if(count >= METRICS_OVERRUNS_PER_FLUSH)
 		var/list/least = overrun_buffer[count]
@@ -207,10 +211,13 @@ GLOBAL_DATUM_INIT(metrics_service, /datum/world_service/server_metrics, new)
 /datum/world_service/server_metrics/proc/collect_buffered_events()
 	for(var/signature in runtime_buffer)
 		var/list/entry = runtime_buffer[signature]
-		LAZYADD(pending_events, list(list(entry[4], METRICS_EVENT_RUNTIME, "", signature, "", copytext("[entry[3]]", 1, 512), json_encode(list("count" = entry[1], "where" = entry[2])))))
+		var/list/payload = list("count" = entry[1], "where" = entry[2], "proc" = entry[5])
+		if(length(entry[6]))
+			payload["stack"] = entry[6]
+		LAZYADD(pending_events, list(list(entry[4], METRICS_EVENT_RUNTIME, "", signature, "", copytext("[entry[3]]", 1, 512), json_encode(payload))))
 	runtime_buffer = null
 	for(var/list/record as anything in overrun_buffer)
-		LAZYADD(pending_events, list(list(record["t"], METRICS_EVENT_OVERRUN, "[record["top_subsystem"]]", "", "", "[round(record["usage"], 0.1)]% tick", json_encode(record))))
+		LAZYADD(pending_events, list(list(record["t"], METRICS_EVENT_OVERRUN, "[record["cause"] || record["top_subsystem"]]", "", "", "[round(record["usage"], 0.1)]% tick", json_encode(record))))
 	overrun_buffer = null
 
 /datum/world_service/server_metrics/proc/key_statement(list/keys)

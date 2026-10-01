@@ -45,7 +45,9 @@ From the host, `bun run mint <ckey> [hours]` prints a sign-in link without the g
 | `VIEWER_HOST` / `VIEWER_PORT` | `127.0.0.1` / `8090` | Where the viewer listens. |
 | `METRICS_RETENTION_DAYS` | `30` | Raw 10 s samples are deleted after this; per-round summaries are kept forever. |
 | `BASELINE_ROUNDS` | `20` | How many previous rounds a round is compared against for outliers. |
-| `STALE_ROUND_MINUTES` | `15` | A round with no samples for this long counts as finished (for crashes). |
+| `STALE_ROUND_MINUTES` | `3` | A round with no samples for this long counts as finished (for crashes); a round that ended or shut down is never live. |
+| `TEST_MAPS` | `Virgo_minitest` | Comma-separated maps only unit-test worlds load. Their rounds (and rounds flagged `test` at start, or that never started) are hidden unless "Test rounds" is ticked. |
+| `TICK_MS` | `25` | The server's tick length (1000 / FPS), used to read overrun records written before they carried a cause. |
 | `REPO_URL` | this repository | Runtime locations link to `REPO_URL/blob/<commit>/<file>#L<line>`. |
 
 ## Test and benchmark history
@@ -59,7 +61,12 @@ loaded yet. Run it after `dm-test`, `test-repeat` or `bench`, or as the last CI 
 * **Recording** (`code/modules/metrics/`): `GLOB.metrics_service` samples every
   `/datum/metrics_source` every 10 s and flushes once a minute through `om_io`, so the game never
   waits on the database. Runtimes and overruns are counted in memory and written once per flush
-  (grouped by signature; the worst overrun ticks keep their full breakdown). Events (`METRICS_EVENT`)
+  (grouped by signature, with the proc and a trimmed call stack; the worst overrun ticks keep their full
+  breakdown and a cause: a subsystem, an object-model system, or "Outside MC" when time before or after the
+  MC's own run dominates, with the slowest single entity step when one took over a tick). The tick is
+  also split at the MC every tick from `/world/Tick` (`frame/*` metrics), and the server profiles the
+  first minute of each round and a few seconds after any tick over 300% (`profile` events, on the
+  Overruns page). Events (`METRICS_EVENT`)
   come from single framework points: the admin verb dispatcher, the ticket list, the ticker, world/Error
   and the MC tick record. To measure something new, add a `/datum/metrics_source` subtype.
 * **Rollups and retention** (`src/maintenance.ts`): when a round ends, its per-metric distribution

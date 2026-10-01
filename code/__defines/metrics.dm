@@ -31,3 +31,22 @@
 
 /// Records an event if metrics are running; safe to call from anywhere, at any point of boot.
 #define METRICS_EVENT(kind, category, signature, ckey, message, payload) GLOB?.metrics_service?.event(kind, category, signature, ckey, message, payload)
+
+// Names in an overrun tick's breakdown (Master.performance_tick_breakdown()) besides the subsystems.
+/// Work that ran this tick before the MC's iteration: resumed sleeping procs, verbs run on the spot,
+/// Topic calls, clicks, world/Tick callbacks.
+#define PERF_OUTSIDE_MC "Outside MC"
+/// Object-model work the tick meter charged (behaviours, world service lanes, the scheduler core).
+#define PERF_OBJECT_MODEL "Object model"
+/// The rest of the MC's iteration: kernel phases and bookkeeping nothing charged.
+#define PERF_MC_OTHER "MC other"
+
+/// A tick this far over (percent of a tick) starts a profile capture (metrics_capture.dm).
+#define METRICS_SPIKE_USAGE 300
+/// Least time between two spike captures.
+#define METRICS_PROFILE_COOLDOWN (5 MINUTES)
+/// Procs kept in a profile capture's event, by self time.
+#define METRICS_PROFILE_TOP 25
+/// Call stack lines kept with a runtime.
+#define METRICS_RUNTIME_STACK_LINES 12
+#define METRICS_EVENT_PROFILE "profile"

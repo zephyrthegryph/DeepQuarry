@@ -146,3 +146,47 @@ export function go(
   ).toString();
   location.hash = `#/${page}${qs ? `?${qs}` : ''}`;
 }
+
+const INCLUDE_TESTS_KEY = 'admin-viewer.include-tests';
+
+/** Whether unit-test worlds' rounds are shown, remembered in this browser. Off by default. */
+export function useIncludeTests(): [boolean, (on: boolean) => void] {
+  const [on, setOn] = useState(() => {
+    try {
+      return localStorage.getItem(INCLUDE_TESTS_KEY) === '1';
+    } catch {
+      return false;
+    }
+  });
+  const set = (value: boolean) => {
+    setOn(value);
+    try {
+      localStorage.setItem(INCLUDE_TESTS_KEY, value ? '1' : '0');
+    } catch {
+      // Storage blocked: the choice lasts for this page only.
+    }
+  };
+  return [on, set];
+}
+
+/** The query parameter that asks the API for test rounds too. */
+export const testsParam = (on: boolean) => (on ? '&include_tests=1' : '');
+
+export function TestRoundsToggle({
+  value,
+  onChange,
+}: {
+  value: boolean;
+  onChange: (on: boolean) => void;
+}) {
+  return (
+    <label className="toggle" title="Rounds from unit-test worlds">
+      <input
+        type="checkbox"
+        checked={value}
+        onChange={(e) => onChange(e.target.checked)}
+      />{' '}
+      Test rounds
+    </label>
+  );
+}

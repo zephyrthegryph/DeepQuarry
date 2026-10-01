@@ -46,6 +46,11 @@ MAX_CONCURRENT_QUERIES 25
 # Record server metrics (tick usage, subsystem and lane cost, players, runtimes, overruns,
 # tickets, admin verbs) to the metric_* tables (SQL/metrics_schema.sql). Needs the database.
 #METRICS_ENABLED
+# Seconds of BYOND proc profiling recorded from each round start (0 = off), so a freeze in the
+# round's first minute is stored with the procs behind it. Skipped while AUTO_PROFILE is on.
+#METRICS_PROFILE_ROUND_START 60
+# Seconds of proc profiling recorded after a tick over 300% (0 = off), at most once per 5 minutes.
+#METRICS_SPIKE_PROFILE 10
 
 # Admin viewer (tools/admin-viewer). The URL staff are sent to, and the secret both sides use
 # to sign/verify viewer links (set VIEWER_SECRET in the viewer's environment to the same value).

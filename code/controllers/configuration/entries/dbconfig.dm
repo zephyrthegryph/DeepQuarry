@@ -71,6 +71,21 @@
 /datum/config_entry/flag/metrics_enabled
 	protection = CONFIG_ENTRY_LOCKED
 
+/// Seconds of BYOND proc profiling the metrics service records from the round start, so a freeze in the
+/// first minute of a round is stored with the procs that caused it. 0 turns it off. Skipped while
+/// AUTO_PROFILE has the profiler.
+/datum/config_entry/number/metrics_profile_round_start
+	default = 60
+	min_val = 0
+	protection = CONFIG_ENTRY_LOCKED
+
+/// Seconds of BYOND proc profiling the metrics service records after a tick goes far over budget
+/// (METRICS_SPIKE_USAGE), at most once per METRICS_PROFILE_COOLDOWN. 0 turns it off.
+/datum/config_entry/number/metrics_spike_profile
+	default = 10
+	min_val = 0
+	protection = CONFIG_ENTRY_LOCKED
+
 /// Base URL of the admin viewer (tools/admin-viewer), e.g. http://127.0.0.1:8090.
 /// Empty hides the "Admin Viewer" verb's link.
 /datum/config_entry/string/metrics_viewer_url

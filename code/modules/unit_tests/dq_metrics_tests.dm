@@ -140,3 +140,24 @@
 	TEST_ASSERT(events.Execute(async = FALSE), "event read failed: [events.ErrorMsg()]")
 	TEST_ASSERT(events.NextRow() && text2num(events.item[1]) >= 1, "the shutdown event was written before the flush returned")
 	qdel(events)
+
+/// An overrun is named after what took most of it: "Outside MC" when the time before the MC dominates,
+/// else the costliest part; a runtime keeps its proc and a trimmed call stack.
+/datum/unit_test/dq_metrics_overrun_cause_and_runtime_stack
+
+/datum/unit_test/dq_metrics_overrun_cause_and_runtime_stack/Run()
+	var/list/outside = list(list("name" = "Verb Manager", "usage" = 0.04), list("name" = PERF_OUTSIDE_MC, "usage" = 7000))
+	TEST_ASSERT_EQUAL(Master.performance_tick_cause(outside, list()), PERF_OUTSIDE_MC, "time before the MC dominating is Outside MC, not the biggest subsystem")
+	var/list/om = list(list("name" = "Verb Manager", "usage" = 1), list("name" = PERF_OBJECT_MODEL, "usage" = 300))
+	TEST_ASSERT_EQUAL(Master.performance_tick_cause(om, list(list("key" = "machines", "ms" = 150))), "machines", "object-model time is named by its costliest system")
+
+	var/desc = "proc name: foo (/datum/proc/foo)\n  usr: null\n  src: null\n  call stack:\nfoo()\nbar()\n"
+	var/list/stack = metrics_runtime_stack(desc)
+	TEST_ASSERT_EQUAL(length(stack), 2, "the call stack lines are kept: [json_encode(stack)]")
+	TEST_ASSERT_EQUAL(stack[1], "foo()", "the stack starts at the failing proc")
+	TEST_ASSERT_EQUAL(length(metrics_runtime_stack("no stack here")), 0, "a desc without a stack gives none")
+
+	var/list/top = metrics_profile_top(list(list("name" = "a", "self" = 0.001, "total" = 1, "real" = 1, "calls" = 1), list("name" = "b", "self" = 0.5, "total" = 1, "real" = 1, "calls" = 2), list("name" = "c", "self" = 0.2, "total" = 1, "real" = 1, "calls" = 3)), 2)
+	TEST_ASSERT_EQUAL(length(top), 2, "the profile keeps the top procs only")
+	TEST_ASSERT_EQUAL(top[1]["name"], "b", "the profile is most self time first")
+	TEST_ASSERT_EQUAL(top[1]["self"], 500, "profile times are ms")

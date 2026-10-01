@@ -33,6 +33,7 @@ function App() {
     return () => window.removeEventListener('hashchange', on);
   }, []);
   const me = useApi<Me>('/api/me');
+  const [menuOpen, setMenuOpen] = useState(false);
   const [theme, setTheme] = useState<string | null>(() => {
     try {
       return localStorage.getItem('dq-viewer-theme');
@@ -60,18 +61,30 @@ function App() {
     );
   }
   const props = { params };
+  const current = PAGES.find((p) => p.id === page)?.label ?? '';
   return (
     <div className="app">
-      <nav className="nav">
+      <nav className={`nav${menuOpen ? ' open' : ''}`}>
         <div className="brand">
           DeepQuarry
           <small>Admin viewer</small>
         </div>
+        <span className="nav-current">{current}</span>
+        <button
+          type="button"
+          className="nav-toggle"
+          aria-expanded={menuOpen}
+          aria-label="Menu"
+          onClick={() => setMenuOpen(!menuOpen)}
+        >
+          {menuOpen ? 'Close' : 'Menu'}
+        </button>
         {PAGES.filter((p) => !p.admin || me.data?.admin).map((p) => (
           <a
             key={p.id}
             href={`#/${p.id}`}
             className={page === p.id ? 'active' : ''}
+            onClick={() => setMenuOpen(false)}
           >
             {p.label}
           </a>
@@ -80,6 +93,7 @@ function App() {
         {me.data && <div className="who">Signed in as {me.data.ckey}</div>}
         <button
           type="button"
+          className="theme-toggle"
           onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
         >
           {theme === 'light' ? 'Dark theme' : 'Light theme'}

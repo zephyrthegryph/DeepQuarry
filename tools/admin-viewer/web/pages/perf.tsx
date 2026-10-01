@@ -13,8 +13,11 @@ import {
   Loading,
   type PageProps,
   Seg,
+  TestRoundsToggle,
   Tile,
+  testsParam,
   useApi,
+  useIncludeTests,
   when,
 } from '../util';
 
@@ -23,6 +26,8 @@ type Round = {
   first: string;
   last: string;
   live: boolean;
+  /** A unit-test world's round (only listed with include_tests). */
+  test?: boolean;
   map?: string;
   commit?: string;
   started?: string;
@@ -57,39 +62,49 @@ type Flagged = {
   n: number;
 };
 
-/** The round a page shows: ?round=, else the latest. */
+/** The round a page shows: ?round=, else the latest (the latest real round unless test rounds are on). */
 function useRound(params: URLSearchParams) {
-  const rounds = useApi<Round[]>('/api/rounds?limit=60', 30_000);
+  const tests = useIncludeTests();
+  const rounds = useApi<Round[]>(
+    `/api/rounds?limit=60${testsParam(tests[0])}`,
+    30_000,
+  );
   const requested = Number(params.get('round') ?? 0);
   const round =
     rounds.data?.find((r) => r.id === requested) ?? rounds.data?.[0] ?? null;
-  return { rounds, round };
+  return { rounds, round, tests };
 }
 
 function RoundPicker({
   rounds,
   round,
   page,
+  tests,
   extra = {},
 }: {
   rounds: Round[];
   round: Round;
   page: string;
+  tests: [boolean, (on: boolean) => void];
   extra?: Record<string, string>;
 }) {
   return (
-    <select
-      value={round.id}
-      onChange={(e) => go(page, { ...extra, round: e.target.value })}
-      aria-label="Round"
-    >
-      {rounds.map((r) => (
-        <option key={r.id} value={r.id}>
-          Round {r.id} · {when(r.started ?? r.first)}
-          {r.live ? ' · live' : ''}
-        </option>
-      ))}
-    </select>
+    <>
+      <TestRoundsToggle value={tests[0]} onChange={tests[1]} />
+      <select
+        value={round.id}
+        onChange={(e) => go(page, { ...extra, round: e.target.value })}
+        aria-label="Round"
+      >
+        {rounds.map((r) => (
+          <option key={r.id} value={r.id}>
+            Round {r.id} · {when(r.started ?? r.first)}
+            {r.live ? ' · live' : ''}
+            {r.test ? ' · test' : ''}
+          </option>
+        ))}
+      </select>
+    </>
   );
 }
 
@@ -167,7 +182,7 @@ const asSeries = (
   }));
 
 export function OverviewPage({ params }: PageProps) {
-  const { rounds, round } = useRound(params);
+  const { rounds, round, tests } = useRound(params);
   const tick = useSeries(round?.id, [
     'server/tick/avg',
     'server/tick/p95',
@@ -217,7 +232,12 @@ export function OverviewPage({ params }: PageProps) {
           )}
         </h1>
         <div className="filters">
-          <RoundPicker rounds={rounds.data} round={round} page="overview" />
+          <RoundPicker
+            rounds={rounds.data}
+            round={round}
+            page="overview"
+            tests={tests}
+          />
         </div>
       </div>
       <div className="tiles">
@@ -389,7 +409,7 @@ const CATEGORIES = [
 ];
 
 export function PerformancePage({ params }: PageProps) {
-  const { rounds, round } = useRound(params);
+  const { rounds, round, tests } = useRound(params);
   const category = params.get('category') ?? 'mc';
   const cat = CATEGORIES.find((c) => c.id === category) ?? CATEGORIES[0];
   const metric = params.get('metric') ?? cat.metrics[0];
@@ -424,6 +444,7 @@ export function PerformancePage({ params }: PageProps) {
             rounds={rounds.data}
             round={round}
             page="performance"
+            tests={tests}
             extra={{ category, metric }}
           />
           <Seg
@@ -559,13 +580,20 @@ export function PerformancePage({ params }: PageProps) {
 }
 
 export function RoundsPage(_: PageProps) {
-  const rounds = useApi<Round[]>('/api/rounds?limit=100', 30_000);
+  const [includeTests, setIncludeTests] = useIncludeTests();
+  const rounds = useApi<Round[]>(
+    `/api/rounds?limit=100${testsParam(includeTests)}`,
+    30_000,
+  );
   if (!rounds.data) return <Loading error={rounds.error} />;
   const list = [...rounds.data].reverse();
   return (
     <>
       <div className="page-head">
         <h1>Rounds</h1>
+        <div className="filters">
+          <TestRoundsToggle value={includeTests} onChange={setIncludeTests} />
+        </div>
       </div>
       {list.length > 1 && (
         <div className="grid cols-2" style={{ marginBottom: 14 }}>
@@ -635,6 +663,7 @@ export function RoundsPage(_: PageProps) {
                 >
                   <td>
                     {r.id} {r.live && <Badge kind="good">live</Badge>}
+                    {r.test && <Badge kind="info">test</Badge>}
                   </td>
                   <td>{when(r.started ?? r.first)}</td>
                   <td>{fmtDuration(roundDuration(r))}</td>

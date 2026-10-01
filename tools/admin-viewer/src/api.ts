@@ -173,23 +173,37 @@ async function roundEvents(roundIds: number[]) {
   );
 }
 
-export async function rounds(q: URLSearchParams) {
-  const limit = Math.min(num(q.get('limit'), 30), 200);
-  let rows = await query<{ round_id: number; first: Date; last: Date }>(
-    `SELECT ids.round_id,
-			(SELECT MIN(ts) FROM metric_sample s WHERE s.round_id = ids.round_id) AS first,
-			(SELECT MAX(ts) FROM metric_sample s WHERE s.round_id = ids.round_id) AS last
-		 FROM (SELECT DISTINCT round_id FROM metric_event UNION SELECT DISTINCT round_id FROM metric_round) ids
-		 ORDER BY ids.round_id DESC LIMIT ?`,
-    [limit],
+/** Whether a round's start payload (or the lack of one) marks it as a unit-test world. A world that never
+ * started a round and has shut down (or gone quiet) is a test boot too. */
+function isTestRound(
+  m: Record<string, unknown> | undefined,
+  last: Date | null,
+) {
+  if (!m?.started)
+    return (
+      !!m?.shutdown ||
+      !last ||
+      Date.now() - new Date(last).getTime() > config.staleRoundMinutes * 60_000
+    );
+  return m.test === true || config.testMaps.includes(String(m.map ?? ''));
+}
+
+/** Round ids that are unit-test worlds, among those with events in the last `days`. */
+export async function testRoundIds(days: number): Promise<Set<number>> {
+  const ids = await query<{ round_id: number; last: Date | null }>(
+    `SELECT e.round_id, (SELECT MAX(ts) FROM metric_sample s WHERE s.round_id = e.round_id) AS last
+		 FROM metric_event e WHERE e.ts > NOW() - INTERVAL ? DAY GROUP BY e.round_id`,
+    [days],
   );
-  // Under a minute of samples (a test world's, or a boot that never got going) has nothing to show.
-  rows = rows.filter(
-    (r) =>
-      r.first &&
-      new Date(r.last).getTime() - new Date(r.first).getTime() >= 60_000,
+  const meta = await roundMeta(ids.map((r) => r.round_id));
+  return new Set(
+    ids
+      .filter((r) => isTestRound(meta.get(r.round_id), r.last))
+      .map((r) => r.round_id),
   );
-  const ids = rows.map((r) => r.round_id);
+}
+
+async function roundMeta(ids: number[]) {
   const meta = new Map<number, Record<string, unknown>>();
   for (const e of await roundEvents(ids)) {
     const m = meta.get(e.round_id) ?? {};
@@ -199,6 +213,7 @@ export async function rounds(q: URLSearchParams) {
         map: payload.map,
         commit: payload.commit,
         started: e.ts,
+        test: payload.test === true,
       });
     if (e.category === 'end')
       Object.assign(m, {
@@ -209,6 +224,35 @@ export async function rounds(q: URLSearchParams) {
     if (e.category === 'shutdown') m.shutdown = e.ts;
     meta.set(e.round_id, m);
   }
+  return meta;
+}
+
+export async function rounds(q: URLSearchParams) {
+  const limit = Math.min(num(q.get('limit'), 30), 200);
+  const includeTests = q.get('include_tests') === '1';
+  let rows = await query<{ round_id: number; first: Date; last: Date }>(
+    `SELECT ids.round_id,
+			(SELECT MIN(ts) FROM metric_sample s WHERE s.round_id = ids.round_id) AS first,
+			(SELECT MAX(ts) FROM metric_sample s WHERE s.round_id = ids.round_id) AS last
+		 FROM (SELECT DISTINCT round_id FROM metric_event UNION SELECT DISTINCT round_id FROM metric_round) ids
+		 ORDER BY ids.round_id DESC LIMIT ?`,
+    [includeTests ? limit : limit * 5],
+  );
+  // Under a minute of samples (a test world's, or a boot that never got going) has nothing to show.
+  rows = rows.filter(
+    (r) =>
+      r.first &&
+      new Date(r.last).getTime() - new Date(r.first).getTime() >= 60_000,
+  );
+  const meta = await roundMeta(rows.map((r) => r.round_id));
+  for (const r of rows) {
+    const m = meta.get(r.round_id) ?? {};
+    m.test = isTestRound(m, r.last);
+    meta.set(r.round_id, m);
+  }
+  if (!includeTests) rows = rows.filter((r) => !meta.get(r.round_id)?.test);
+  rows = rows.slice(0, limit);
+  const ids = rows.map((r) => r.round_id);
   const counts = ids.length
     ? await query<{ round_id: number; kind: string; n: number }>(
         `SELECT round_id, kind, SUM(COALESCE(JSON_VALUE(payload, '$.count'), 1)) AS n FROM metric_event
@@ -239,11 +283,13 @@ export async function rounds(q: URLSearchParams) {
       id: r.round_id,
       first: r.first,
       last: r.last,
+      // Only the newest round can be running, and only while it is still writing samples.
       live:
         r.round_id === rows[0]?.round_id &&
         Date.now() - new Date(r.last).getTime() <
           config.staleRoundMinutes * 60_000 &&
-        !meta.get(r.round_id)?.ended,
+        !meta.get(r.round_id)?.ended &&
+        !meta.get(r.round_id)?.shutdown,
       ...meta.get(r.round_id),
       tick_avg: pick(headline[0])?.mean ?? null,
       tick_p95: pick(headline[1])?.p95 ?? null,
@@ -395,23 +441,37 @@ function sourceLink(where: string, commit?: string): string | null {
     : null;
 }
 
+/** `AND round_id NOT IN (...)` for the test rounds of the last `days`, unless `include_tests=1`. */
+async function excludeTests(q: URLSearchParams, days: number) {
+  if (q.get('include_tests') === '1' || num(q.get('round'), 0))
+    return { sql: '', args: [] as number[] };
+  const ids = [...(await testRoundIds(days))];
+  return ids.length
+    ? { sql: ` AND round_id NOT IN (${placeholders(ids.length)})`, args: ids }
+    : { sql: '', args: [] as number[] };
+}
+
 export async function runtimes(q: URLSearchParams) {
   const days = Math.min(num(q.get('days'), 14), 365);
   const roundId = num(q.get('round'), 0);
-  const where = roundId ? 'round_id = ?' : 'ts > NOW() - INTERVAL ? DAY';
+  const tests = await excludeTests(q, days);
+  const where = `${roundId ? 'round_id = ?' : 'ts > NOW() - INTERVAL ? DAY'}${tests.sql}`;
   const groups = await query<{
     signature: string;
     message: string;
     location: string;
+    proc: string | null;
+    stack: string | null;
     total: number;
     rounds: number;
     first_seen: Date;
     last_seen: Date;
   }>(
     `SELECT signature, MAX(message) AS message, MAX(JSON_VALUE(payload, '$.where')) AS location,
+			MAX(JSON_VALUE(payload, '$.proc')) AS proc, MAX(JSON_QUERY(payload, '$.stack')) AS stack,
 			SUM(JSON_VALUE(payload, '$.count')) AS total, COUNT(DISTINCT round_id) AS rounds, MIN(ts) AS first_seen, MAX(ts) AS last_seen
 		 FROM metric_event WHERE kind = 'runtime' AND ${where} GROUP BY signature ORDER BY total DESC LIMIT 200`,
-    [roundId || days],
+    [roundId || days, ...tests.args],
   );
   const sigs = groups.map((g) => g.signature);
   const firstEver = sigs.length
@@ -446,6 +506,7 @@ export async function runtimes(q: URLSearchParams) {
         g.first_seen;
       return {
         ...g,
+        stack: g.stack ? (JSON.parse(g.stack) as string[]) : [],
         total: Number(g.total),
         first_seen: first,
         is_new: Date.now() - new Date(first).getTime() < 86_400_000,
@@ -460,10 +521,46 @@ export async function runtimes(q: URLSearchParams) {
   };
 }
 
+/** The game's name for time before the MC's iteration (PERF_OUTSIDE_MC in code/__defines/metrics.dm). */
+const OUTSIDE_MC = 'Outside MC';
+/** Before the cause was recorded, the breakdown named everything outside the MC's subsystems this. */
+const LEGACY_EXTERNAL = 'BYOND / pre-MC / external';
+
+type Part = { name: string; usage: number };
+type TopSystem = { key: string; ms: number };
+
+/** What an overrun tick mostly went to. Newer records carry it (`cause`); for older ones it is worked
+ * out from the breakdown: when the unattributed part dominates, the costliest object-model system if it
+ * accounts for at least a quarter of the tick (it was not in the breakdown then), else "Outside MC". */
+function overrunCause(
+  p: {
+    cause?: string;
+    usage?: number;
+    breakdown?: Part[];
+    top_systems?: TopSystem[];
+  },
+  category: string,
+) {
+  if (p.cause) return p.cause;
+  const parts = p.breakdown ?? [];
+  const external = parts.find((b) => b.name === LEGACY_EXTERNAL)?.usage ?? 0;
+  const named = Math.max(
+    0,
+    ...parts.filter((b) => b.name !== LEGACY_EXTERNAL).map((b) => b.usage),
+  );
+  if (external <= named) return category || 'unknown';
+  // usage is percent of a tick: 25 ms at the server's 40 fps.
+  const tickMs = ((p.usage ?? 0) / 100) * config.tickMs;
+  const top = p.top_systems?.[0];
+  if (top && tickMs > 0 && top.ms >= tickMs * 0.25) return top.key;
+  return OUTSIDE_MC;
+}
+
 export async function overruns(q: URLSearchParams) {
   const roundId = num(q.get('round'), 0);
   const days = Math.min(num(q.get('days'), 14), 365);
-  const where = roundId ? 'round_id = ?' : 'ts > NOW() - INTERVAL ? DAY';
+  const tests = await excludeTests(q, days);
+  const where = `${roundId ? 'round_id = ?' : 'ts > NOW() - INTERVAL ? DAY'}${tests.sql}`;
   const events = await query<{
     round_id: number;
     ts: Date;
@@ -471,7 +568,7 @@ export async function overruns(q: URLSearchParams) {
     payload: string;
   }>(
     `SELECT round_id, ts, category, payload FROM metric_event WHERE kind = 'overrun' AND ${where} ORDER BY ts DESC LIMIT 300`,
-    [roundId || days],
+    [roundId || days, ...tests.args],
   );
   const byTop = new Map<
     string,
@@ -479,7 +576,7 @@ export async function overruns(q: URLSearchParams) {
   >();
   const list = events.map((e) => {
     const p = JSON.parse(e.payload ?? '{}');
-    const top = e.category || 'unknown';
+    const top = overrunCause(p, e.category);
     const entry = byTop.get(top) ?? { name: top, count: 0, worst: 0 };
     entry.count++;
     entry.worst = Math.max(entry.worst, p.usage ?? 0);
@@ -491,13 +588,37 @@ export async function overruns(q: URLSearchParams) {
       usage: p.usage,
       maptick: p.maptick,
       streak: p.streak,
-      breakdown: p.breakdown ?? [],
-      top_systems: p.top_systems ?? [],
+      pre_mc: p.pre_mc ?? null,
+      post_mc: p.post_mc ?? null,
+      breakdown: ((p.breakdown ?? []) as Part[]).map((b) =>
+        b.name === LEGACY_EXTERNAL
+          ? { ...b, name: `${OUTSIDE_MC} or object model (unsplit)` }
+          : b,
+      ),
+      top_systems: (p.top_systems ?? []) as TopSystem[],
+      slow_step: p.slow_step ?? null,
     };
   });
+  const profileRows = await query<{
+    round_id: number;
+    ts: Date;
+    category: string;
+    message: string;
+    payload: string;
+  }>(
+    `SELECT round_id, ts, category, message, payload FROM metric_event WHERE kind = 'profile' AND ${where} ORDER BY ts DESC LIMIT 30`,
+    [roundId || days, ...tests.args],
+  );
   return {
     events: list,
     by_top: [...byTop.values()].sort((a, b) => b.count - a.count),
+    profiles: profileRows.map((r) => ({
+      round_id: r.round_id,
+      ts: r.ts,
+      reason: r.category,
+      message: r.message,
+      ...JSON.parse(r.payload ?? '{}'),
+    })),
   };
 }
 

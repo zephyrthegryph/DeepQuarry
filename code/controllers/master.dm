@@ -91,6 +91,13 @@ GLOBAL_REAL(Master, /datum/controller/master)
 	var/perf_tick_top_usage = 0
 	var/perf_tick_peak_usage = 0
 	var/list/perf_tick_breakdown
+	/// TICK_USAGE when this tick's MC iteration began: everything before it this tick ran outside the MC
+	/// (resumed sleeping procs, verbs run on the spot, Topic, clicks).
+	var/perf_tick_start_usage = 0
+	/// TICK_USAGE when the MC iteration recorded the tick, and the world.time it did: /world/Tick reads them
+	/// to tell what ran after the MC (tick_frame_end()).
+	var/perf_tick_end_usage = 0
+	var/perf_tick_end_time = -1
 
 /datum/controller/master/New()
 	// Ensure usr is null, to prevent any potential weirdness resulting from the MC having a usr if it's manually restarted.
@@ -575,9 +582,14 @@ UI_ACT_PROC(/datum/controller/master, ui_act_view_variables)
 
 /datum/controller/master/proc/record_performance_tick(usage)
 	usage = max(usage, 0)
+	perf_tick_end_usage = TICK_USAGE
+	perf_tick_end_time = world.time
 	kernel_latency().note_tick(usage)
-	// Close the tick's per-system accounting (code/controllers/measure/).
-	km_meter().end_tick(usage, MAPTICK_LAST_INTERNAL_TICK_USAGE)
+	// Close the tick's per-system accounting (code/controllers/measure/). Its OM charges are read first:
+	// end_tick() clears them.
+	var/datum/tick_meter/meter = km_meter()
+	var/om_charged_ms = meter.tick_charged
+	meter.end_tick(usage, MAPTICK_LAST_INTERNAL_TICK_USAGE)
 	perf_tick_usage += usage
 	perf_tick_realtime += REALTIMEOFDAY
 	perf_samples_total++
@@ -589,20 +601,25 @@ UI_ACT_PROC(/datum/controller/master, ui_act_view_variables)
 		perf_tick_realtime.Cut(1, trim_count + 1)
 	var/previous_worst_usage = LAZYACCESS(perf_worst_tick, "usage") || 0
 	if(usage > previous_worst_usage || usage > 100)
-		var/list/breakdown = performance_tick_breakdown(usage)
-		var/datum/tick_meter/meter = km_meter()
+		var/list/top_systems = meter.latest_top_systems()
+		var/list/breakdown = performance_tick_breakdown(usage, om_charged_ms)
 		var/list/tick_record = list(
 			"world_time" = world.time,
 			"usage" = usage,
 			"overrun" = max(usage - 100, 0),
+			"cause" = performance_tick_cause(breakdown, top_systems),
 			"top_subsystem" = perf_tick_top_name,
 			"top_usage" = perf_tick_top_usage,
+			"pre_mc" = perf_tick_start_usage,
 			"maptick" = MAPTICK_LAST_INTERNAL_TICK_USAGE,
 			"breakdown" = breakdown,
 			// The same tick by system, from inside Behaviours as well as the MC's own subsystems.
-			"top_systems" = meter.latest_top_systems(),
+			"top_systems" = top_systems,
 			"streak" = meter.streak,
 		)
+		var/list/slow_step = GLOB.om_live_sched?.slow_step
+		if(slow_step && slow_step["world_time"] == world.time)
+			tick_record["slow_step"] = slow_step
 		if(usage > previous_worst_usage)
 			perf_worst_tick = tick_record
 		if(usage <= 100)
@@ -612,17 +629,42 @@ UI_ACT_PROC(/datum/controller/master, ui_act_view_variables)
 		if(perf_outliers.len > 20)
 			perf_outliers.Cut(1, perf_outliers.len - 19)
 
-/datum/controller/master/proc/performance_tick_breakdown(usage)
+/// Where the tick's `usage` went, as list(list("name", "usage"), ...) in percent of a tick: each hosted
+/// subsystem, the object model's charged work (`om_charged_ms`, from the tick meter), the rest of the MC's
+/// own iteration, and what ran before the MC this tick (perf_tick_start_usage).
+/datum/controller/master/proc/performance_tick_breakdown(usage, om_charged_ms = 0)
 	var/list/breakdown = list()
 	var/attributed_usage = 0
 	for(var/subsystem_name in perf_tick_breakdown)
 		var/subsystem_usage = LAZYACCESS(perf_tick_breakdown, subsystem_name)
 		attributed_usage += subsystem_usage
 		breakdown += list(list("name" = subsystem_name, "usage" = subsystem_usage))
-	var/unattributed = max(usage - attributed_usage, 0)
+	var/pre_mc = clamp(perf_tick_start_usage, 0, usage)
+	var/om_usage = clamp(om_charged_ms / world.tick_lag, 0, max(usage - pre_mc - attributed_usage, 0))
+	if(om_usage)
+		breakdown += list(list("name" = PERF_OBJECT_MODEL, "usage" = om_usage))
+		attributed_usage += om_usage
+	if(pre_mc)
+		breakdown += list(list("name" = PERF_OUTSIDE_MC, "usage" = pre_mc))
+	var/unattributed = max(usage - attributed_usage - pre_mc, 0)
 	if(unattributed)
-		breakdown += list(list("name" = "BYOND / pre-MC / external", "usage" = unattributed))
+		breakdown += list(list("name" = PERF_MC_OTHER, "usage" = unattributed))
 	return breakdown
+
+/// What a tick's time mostly went to: PERF_OUTSIDE_MC when the time before the MC is the largest part of
+/// `breakdown`, else the costliest system the tick meter saw (`top_systems`) or the costliest subsystem.
+/datum/controller/master/proc/performance_tick_cause(list/breakdown, list/top_systems)
+	var/best_name = "None"
+	var/best_usage = 0
+	for(var/list/part as anything in breakdown)
+		if(part["usage"] > best_usage)
+			best_usage = part["usage"]
+			best_name = part["name"]
+	if(best_name != PERF_OBJECT_MODEL)
+		return best_name
+	// Name the object-model system that took most of it.
+	var/list/top = length(top_systems) ? top_systems[1] : null
+	return top ? "[top["key"]]" : best_name
 
 /// Converts a perf_samples_total position into a current perf_tick_usage index.
 /// Positions that have been trimmed away clamp to the oldest retained sample.

@@ -12,8 +12,11 @@ import {
   Loading,
   type PageProps,
   Seg,
+  TestRoundsToggle,
   Tile,
+  testsParam,
   useApi,
+  useIncludeTests,
   when,
 } from '../util';
 
@@ -28,6 +31,9 @@ type RuntimeGroup = {
   signature: string;
   message: string;
   location: string;
+  /** The proc it happened in, and the call stack of its first sighting (newest flush). */
+  proc: string | null;
+  stack: string[];
   total: number;
   rounds: number;
   first_seen: string;
@@ -39,8 +45,9 @@ type RuntimeGroup = {
 
 export function RuntimesPage({ params }: PageProps) {
   const [days, setDays] = useState(params.get('days') ?? '7');
+  const [includeTests, setIncludeTests] = useIncludeTests();
   const data = useApi<{ days: string[]; groups: RuntimeGroup[] }>(
-    `/api/runtimes?days=${days}`,
+    `/api/runtimes?days=${days}${testsParam(includeTests)}`,
     60_000,
   );
   const [open, setOpen] = useState<string | null>(null);
@@ -51,6 +58,7 @@ export function RuntimesPage({ params }: PageProps) {
       <div className="page-head">
         <h1>Runtimes</h1>
         <div className="filters">
+          <TestRoundsToggle value={includeTests} onChange={setIncludeTests} />
           <Seg value={days} options={DAY_OPTIONS} onChange={setDays} />
         </div>
       </div>
@@ -68,7 +76,7 @@ export function RuntimesPage({ params }: PageProps) {
       </div>
       <Card
         title="Grouped by error"
-        sub="Same file, line and message grouped together, most frequent first. The sparkline is per day."
+        sub="Same file, line and message grouped together, most frequent first. The sparkline is per day; click a row for its call stack."
       >
         {!data.data ? (
           <Loading error={data.error} />
@@ -100,6 +108,19 @@ export function RuntimesPage({ params }: PageProps) {
                     <td style={{ maxWidth: 420, whiteSpace: 'normal' }}>
                       {g.is_new && <Badge kind="warning">new</Badge>}{' '}
                       {g.message}
+                      {g.proc && g.proc !== g.location && (
+                        <div className="sub mono">in {g.proc}</div>
+                      )}
+                      {open === g.signature &&
+                        (g.stack.length ? (
+                          <ol className="stack mono">
+                            {g.stack.map((line, i) => (
+                              <li key={i}>{line}</li>
+                            ))}
+                          </ol>
+                        ) : (
+                          <div className="sub">No call stack recorded.</div>
+                        ))}
                     </td>
                     <td className="mono">
                       {g.link ? (
@@ -140,22 +161,55 @@ type Overrun = {
   usage: number;
   maptick: number;
   streak: number;
+  pre_mc: number | null;
+  post_mc: number | null;
   breakdown: { name: string; usage: number }[];
-  top_systems: unknown;
+  top_systems: { key: string; ms: number }[];
+  /** The one entity step that took most of the tick, when one took over a tick by itself. */
+  slow_step: {
+    kind?: string;
+    behaviour: string;
+    entity: string;
+    name: string;
+    ms: number;
+  } | null;
+};
+
+type Profile = {
+  round_id: number;
+  ts: string;
+  reason: string;
+  message: string;
+  from_t: number;
+  to_t: number;
+  self_total?: number;
+  procs?: number;
+  top: {
+    name: string;
+    self: number;
+    total: number;
+    real: number;
+    calls: number;
+  }[];
+  spike?: { t: number; usage: number; cause: string };
 };
 
 export function OverrunsPage({ params }: PageProps) {
   const [days, setDays] = useState(params.get('days') ?? '7');
+  const [includeTests, setIncludeTests] = useIncludeTests();
   const data = useApi<{
     events: Overrun[];
     by_top: { name: string; count: number; worst: number }[];
-  }>(`/api/overruns?days=${days}`, 60_000);
+    profiles: Profile[];
+  }>(`/api/overruns?days=${days}${testsParam(includeTests)}`, 60_000);
   const [open, setOpen] = useState<number | null>(null);
+  const [openProfile, setOpenProfile] = useState<number | null>(0);
   return (
     <>
       <div className="page-head">
         <h1>Tick overruns</h1>
         <div className="filters">
+          <TestRoundsToggle value={includeTests} onChange={setIncludeTests} />
           <Seg value={days} options={DAY_OPTIONS} onChange={setDays} />
         </div>
       </div>
@@ -165,7 +219,7 @@ export function OverrunsPage({ params }: PageProps) {
         <div className="grid cols-2">
           <Card
             title="What was running"
-            sub="The subsystem that used most of each recorded overrun tick (the worst few per minute are kept in full)."
+            sub="What took most of each recorded overrun tick: a subsystem, an object-model system, or Outside MC (time before or after the MC's own run: resumed sleeping procs, verbs, Topic). The worst few per minute are kept in full."
           >
             <BarList
               rows={data.data.by_top.map((t) => ({
@@ -178,7 +232,7 @@ export function OverrunsPage({ params }: PageProps) {
           </Card>
           <Card
             title="Worst ticks"
-            sub="Newest first; click one for its per-subsystem breakdown."
+            sub="Newest first; click one for where its time went."
           >
             {!data.data.events.length ? (
               <div className="empty">No overruns recorded in this period.</div>
@@ -190,7 +244,7 @@ export function OverrunsPage({ params }: PageProps) {
                       <th>When</th>
                       <th>Round</th>
                       <th className="num">Tick usage</th>
-                      <th>Top subsystem</th>
+                      <th>Cause</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -219,6 +273,22 @@ export function OverrunsPage({ params }: PageProps) {
                                     {b.name}: {fmt(b.usage, '%')}
                                   </li>
                                 ))}
+                              {e.top_systems.map((t) => (
+                                <li key={`sys-${t.key}`}>
+                                  system {t.key}: {fmt(t.ms, 'ms')}
+                                </li>
+                              ))}
+                              {e.slow_step && (
+                                <li>
+                                  slowest {e.slow_step.kind ?? 'step'}:{' '}
+                                  {e.slow_step.behaviour} on {e.slow_step.name}{' '}
+                                  ({e.slow_step.entity}),{' '}
+                                  {fmt(e.slow_step.ms, 'ms')}
+                                </li>
+                              )}
+                              {e.post_mc ? (
+                                <li>after the MC: {fmt(e.post_mc, '%')}</li>
+                              ) : null}
                             </ul>
                           )}
                         </td>
@@ -227,6 +297,56 @@ export function OverrunsPage({ params }: PageProps) {
                   </tbody>
                 </table>
               </div>
+            )}
+          </Card>
+          <Card
+            title="Profiles"
+            sub="BYOND proc profiles the server took: the first minute of each round, and a few seconds after a tick far over budget. Procs by self time."
+          >
+            {!data.data.profiles.length ? (
+              <div className="empty">No profiles in this period.</div>
+            ) : (
+              data.data.profiles.map((p, i) => (
+                <div key={`${p.ts}-${i}`} className="profile">
+                  <button
+                    type="button"
+                    className="linkish"
+                    onClick={() => setOpenProfile(openProfile === i ? null : i)}
+                  >
+                    Round {p.round_id} · {when(p.ts)} · {p.message}
+                  </button>
+                  {openProfile === i && p.self_total ? (
+                    <div className="sub">
+                      All DM procs: {fmt(p.self_total, 'ms')} self time over{' '}
+                      {fmt(p.to_t - p.from_t)} s ({fmt(p.procs)} procs).
+                    </div>
+                  ) : null}
+                  {openProfile === i && (
+                    <div className="table-wrap">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>Proc</th>
+                            <th className="num">Self</th>
+                            <th className="num">Total</th>
+                            <th className="num">Calls</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {p.top.map((r) => (
+                            <tr key={r.name}>
+                              <td className="mono">{r.name}</td>
+                              <td className="num">{fmt(r.self, 'ms')}</td>
+                              <td className="num">{fmt(r.total, 'ms')}</td>
+                              <td className="num">{fmt(r.calls)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              ))
             )}
           </Card>
         </div>

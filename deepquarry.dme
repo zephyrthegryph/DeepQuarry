@@ -3181,6 +3181,7 @@
 #include "code\modules\media\media_machinery.dm"
 #include "code\modules\media\media_tracks.dm"
 #include "code\modules\media\mediamanager.dm"
+#include "code\modules\metrics\metrics_capture.dm"
 #include "code\modules\metrics\metrics_hooks.dm"
 #include "code\modules\metrics\metrics_service.dm"
 #include "code\modules\metrics\metrics_sources.dm"

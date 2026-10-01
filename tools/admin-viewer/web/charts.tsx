@@ -2,7 +2,33 @@
 // baseline marker, a stacked column chart and a sparkline. Series take palette slots in fixed
 // order (series-1..8), lines are 2px, one y-axis per chart.
 
-import { type ReactNode, useId, useMemo, useRef, useState } from 'react';
+import {
+  type ReactNode,
+  type RefObject,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+
+/** The element's rendered width in CSS px (fallback until measured), so a chart's viewBox
+    matches the screen and axis text keeps its real size on narrow screens. */
+function useWidth(ref: RefObject<HTMLElement | null>, fallback = 640): number {
+  const [w, setW] = useState(fallback);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(([e]) => {
+      const next = Math.round(e.contentRect.width);
+      if (next > 0) setW(next);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [ref]);
+  // Desktop keeps the fixed 640-unit viewBox (scaled to fit); only narrow cards draw 1:1.
+  return w < 560 ? w : fallback;
+}
 
 export const SLOT = (i: number) => `var(--series-${(i % 8) + 1})`;
 
@@ -75,7 +101,7 @@ export function LineChart({
   const ref = useRef<HTMLDivElement>(null);
   const clipId = useId();
   const [hover, setHover] = useState<number | null>(null);
-  const width = 640;
+  const width = useWidth(ref);
   const pad = { l: 44, r: 10, t: 8, b: 22 };
   const xs = useMemo(
     () =>
@@ -97,7 +123,7 @@ export function LineChart({
   const Y = (y: number) =>
     pad.t + (1 - (y - y0) / (y1 - y0 || 1)) * (height - pad.t - pad.b);
   const span = x1 - x0;
-  const xTickCount = Math.min(xLabels ? 5 : 6, xs.length);
+  const xTickCount = Math.min(width < 480 ? 3 : xLabels ? 5 : 6, xs.length);
   const xTicks = Array.from(
     { length: xTickCount },
     (_, i) =>
@@ -328,8 +354,9 @@ export function StackedColumns({
   series: { name: string; values: number[] }[];
   height?: number;
 }) {
+  const ref = useRef<HTMLDivElement>(null);
   const [hover, setHover] = useState<number | null>(null);
-  const width = 640;
+  const width = useWidth(ref);
   const pad = { l: 32, r: 6, t: 8, b: 20 };
   const totals = labels.map((_, i) =>
     series.reduce((a, s) => a + (s.values[i] ?? 0), 0),
@@ -340,7 +367,7 @@ export function StackedColumns({
   const barW = Math.max(band - 2, 1);
   const Y = (v: number) => pad.t + (1 - v / top) * (height - pad.t - pad.b);
   return (
-    <div className="chart" onMouseLeave={() => setHover(null)}>
+    <div className="chart" ref={ref} onMouseLeave={() => setHover(null)}>
       <div className="legend">
         {series.map((s, i) => (
           <span key={s.name}>
@@ -366,7 +393,7 @@ export function StackedColumns({
             </text>
           ))}
           {labels.map((l, i) =>
-            i % Math.ceil(labels.length / 7) === 0 ? (
+            i % Math.ceil(labels.length / (width < 480 ? 4 : 7)) === 0 ? (
               <text
                 key={l}
                 x={pad.l + i * band + band / 2}
