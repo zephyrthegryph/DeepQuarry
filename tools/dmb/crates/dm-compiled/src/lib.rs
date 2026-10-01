@@ -821,6 +821,23 @@ const MAX_BUILD_INPUT_BYTES: usize = 96 * 1024 * 1024;
 
 impl BuildInputSnapshot {
     fn resident_bytes(&self) -> usize {
+        // Each output line retains an Origin, but lines from one include share
+        // their Arc<PathBuf>. Charge actual allocations once so this budget
+        // neither drops the source map nor counts the same file per line.
+        let mut origin_paths = std::collections::HashSet::new();
+        let origin_bytes = self.preprocessed.origins.capacity()
+            * std::mem::size_of::<dm_preprocess::Origin>()
+            + self
+                .preprocessed
+                .origins
+                .iter()
+                .filter(|origin| origin_paths.insert(Arc::as_ptr(&origin.path)))
+                .map(|origin| {
+                    origin.path.capacity() * 2
+                        + std::mem::size_of::<PathBuf>()
+                        + 2 * std::mem::size_of::<usize>()
+                })
+                .sum::<usize>();
         self.source_resource_literals.capacity() * std::mem::size_of::<String>()
             + self
                 .source_resource_literals
@@ -828,6 +845,7 @@ impl BuildInputSnapshot {
                 .map(String::capacity)
                 .sum::<usize>()
             + self.preprocessed.text.capacity()
+            + origin_bytes
             + self
                 .map_set
                 .files
@@ -2130,7 +2148,16 @@ impl Coordinator {
             let literals = frontend
                 .1
                 .resource_literals(&discovery.text)
-                .map_err(io::Error::other)?;
+                .map_err(|error| {
+                    // Resource discovery shares the structural lexer and may
+                    // reject source before a retained snapshot is assembled.
+                    let authored = dm_compiler::authored_syntax_errors(&discovery, project_root);
+                    io::Error::other(if authored.is_empty() {
+                        error
+                    } else {
+                        authored.join("\n")
+                    })
+                })?;
             let reusable_inventory = previous_inventory.as_ref().is_some_and(
                 |(old_literals, dirs, skins, map_paths, map_fingerprint)| {
                     *old_literals == literals
@@ -2213,6 +2240,7 @@ impl Coordinator {
                     text: discovery.text,
                     units: discovery.units,
                     unit_digests: discovery.unit_digests,
+                    origins: discovery.origins,
                     map_includes: discovery.map_includes,
                     skin_includes: discovery.skin_includes,
                     file_dirs: discovery.file_dirs,
@@ -2821,6 +2849,67 @@ mod tests {
             &root.join("icon.dmi"),
             &dirs
         ));
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn coordinator_errors_keep_included_authored_source_origins() {
+        let root = std::env::temp_dir().join(format!(
+            "dm-coordinator-origins-{}-{}",
+            std::process::id(),
+            TEMP_SEQUENCE.fetch_add(1, Ordering::Relaxed)
+        ));
+        fs::create_dir_all(&root).unwrap();
+        let builtins = root.join("builtins.dmb");
+        fs::write(
+            &builtins,
+            include_bytes!("../../../fixtures/native_template.bin"),
+        )
+        .unwrap();
+        let mut coordinator = Coordinator::new(root.join("cache")).unwrap();
+        for (name, source, reason) in [
+            (
+                "unknown-procedure",
+                "/proc/probe()\n    return definitely_absent_probe()\n",
+                "definitely_absent_probe",
+            ),
+            (
+                "unknown-type",
+                "/proc/probe()\n    var/datum/definitely_absent_probe/value = new\n    return value\n",
+                "definitely_absent_probe",
+            ),
+            (
+                "lexical-error",
+                "/proc/probe()\n    return \"unterminated\n",
+                "unterminated",
+            ),
+        ] {
+            let directory = root.join(name);
+            fs::create_dir_all(&directory).unwrap();
+            let manifest = directory.join("world.dme");
+            fs::write(&manifest, "#include \"code.dm\"\n").unwrap();
+            fs::write(directory.join("code.dm"), source).unwrap();
+            let response = coordinator.handle(Request::BuildProject {
+                key: SessionKey::new(&directory, &manifest, "516.1687", vec![], "canonical")
+                    .unwrap(),
+                builtins: builtins.clone(),
+                output_root: directory.join("output"),
+            });
+            assert!(!response.ok, "{name}: {response:?}");
+            assert!(
+                response
+                    .diagnostics
+                    .iter()
+                    .chain(response.error.iter())
+                    .any(|message| message.contains("code.dm:2:") && message.contains(reason)),
+                "{name}: expected authored code.dm:2 error: {response:?}"
+            );
+        }
+        drop(coordinator);
+        assert!(root
+            .canonicalize()
+            .unwrap()
+            .starts_with(std::env::temp_dir().canonicalize().unwrap()));
         fs::remove_dir_all(root).unwrap();
     }
 
