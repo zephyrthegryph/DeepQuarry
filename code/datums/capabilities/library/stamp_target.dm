@@ -35,7 +35,8 @@
 	return C
 
 /datum/capability/stamp_target/interactions(atom/holder)
-	var/datum/interaction/capability/stamp = adopt_entry(cap_use_on("Stamp", list(/obj/item/stamp, /obj/item/clothing/accessory/ring/seal), TYPE_PROC_REF(/atom, cap_stamp_apply), needs = TYPE_PROC_REF(/atom, cap_stamp_has_room), else_say = "there's no room left for another stamp", works_broken = TRUE, works_unpowered = TRUE))
+	// "stamp": a click with a stamp or a seal ring; with no room left, it refuses.
+	var/datum/interaction/capability/stamp = adopt_entry(lib_op("Stamp", TYPE_PROC_REF(/atom, cap_stamp_apply), OP_SHAPE_USE_ON, using = list(/obj/item/stamp, /obj/item/clothing/accessory/ring/seal), key = "stamp", needs = TYPE_PROC_REF(/atom, cap_stamp_has_room), else_say = "there's no room left for another stamp", works_broken = TRUE, works_unpowered = TRUE))
 	return list(stamp)
 
 /datum/capability/stamp_target/examine(atom/holder, mob/user)

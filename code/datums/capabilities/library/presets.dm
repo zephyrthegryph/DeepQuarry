@@ -108,7 +108,7 @@
 	return C
 
 /datum/capability/atmos_unwrench/interactions(atom/holder)
-	return list(adopt_entry(cap_tool("Unfasten", TOOL_WRENCH, TYPE_PROC_REF(/obj/machinery/atmospherics, unfasten), delay = delay, needs = TYPE_PROC_REF(/obj/machinery/atmospherics, unwrench_refusal), works_unpowered = TRUE), id = "atmos_unwrench"))
+	return list(adopt_entry(lib_op("Unfasten", TYPE_PROC_REF(/obj/machinery/atmospherics, unfasten), OP_SHAPE_TOOL, using = TOOL_WRENCH, key = "unfasten", kind = OP_STRUCTURAL, delay = delay, needs = TYPE_PROC_REF(/obj/machinery/atmospherics, unwrench_refusal), works_unpowered = TRUE), id = "atmos_unwrench"))
 
 /// Why the device can't be unfastened now (running, or too much internal pressure), else TRUE.
 /obj/machinery/atmospherics/proc/unwrench_refusal(mob/user, obj/item/held)

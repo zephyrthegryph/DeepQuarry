@@ -541,15 +541,20 @@
 			current = stage.anchored
 		anchoring[stage.name] = current
 
-/// Registers a step and gives it an id.
+/// Registers a step, gives it an id and makes it a real operation: keyed "step:<from>><to>:<tool or item>" (the id without
+/// the ladder's own prefix), a structural ACT_USE op at the step's priority, so the gesture router ranks the ladder's
+/// steps against the holder's other ops (the APC's hand step that takes its board out over its interface).
 /datum/construction_ladder/proc/add_edge(datum/interaction/capability/construction_step/edge)
-	var/base_id = "[id]:[edge.from_state]>[isnull(edge.to_state) ? "?" : edge.to_state]:[edge.tool || edge.item_key()]"
+	var/step_key = "[edge.from_state]>[isnull(edge.to_state) ? "?" : edge.to_state]:[edge.tool || edge.item_key()]"
+	var/base_id = "[id]:[step_key]"
 	edge.id = base_id
 	var/n = 1
 	while(edge_ids[edge.id])
 		n++
 		edge.id = "[base_id]#[n]"
+		step_key = "[copytext(step_key, 1, findtext(step_key, "#") || 0)]#[n]"
 	edge_ids[edge.id] = TRUE
+	op_attach(edge, "step:[step_key]", ACT_USE, edge.priority, OP_STRUCTURAL, at = edge.at)
 	own_add(src, nameof(src.edges), edge)
 	var/index = length(edges)
 	if(edge.from_state == LADDER_ANY)
@@ -1064,14 +1069,35 @@ GLOBAL_VAR_INIT(dq_ladder_instant, FALSE)
 					break
 			part?.forceMove(where)
 
-/// Construction steps run through the central dispatch (fingerprint, log, changed()) like every entry.
+/// Construction steps run through the central dispatch (fingerprint, log, changed()) like every entry, as ops: the
+/// holder's before_op reactions (by the step's key, or the construction capability's type) may stop one, and its
+/// after_op reactions follow one that committed.
 /datum/interaction/capability/construction_step/run_effect(mob/actor, atom/target, obj/item/held)
 	if(!target.before_entry(actor, src, held))
 		return UI_REFUSED
+	var/datum/op_ctx/octx
+	if(op)
+		octx = op_ctx_take(actor, target, held, op, GLOB.op_route_now)
+		// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
+		octx.entry = src
+		var/veto = op_before(octx)
+		if(!isnull(veto))
+			op_refusal_told(octx, veto)
+			octx.release()
+			return UI_REFUSED
 	var/datum/dispatch_context/ctx = new(actor, target, held, src)
 	. = dispatch_call(ctx, target, TYPE_PROC_REF(/atom, traverse_ladder_step), list("user" = actor, "held" = held, "step" = src), name, log)
 	if(isnull(.))
 		. = TRUE
+	if(octx)
+		if(dispatch_succeeded(.))
+			op_after(octx)
+		octx.release()
+
+/// A step pays its cost through the tool pipeline (its start lines, the stage it leaves re-checked when the wait ends),
+/// not the op wait.
+/datum/interaction/capability/construction_step/op_waits()
+	return FALSE
 
 /// The handler every construction step dispatches to.
 /atom/proc/traverse_ladder_step(mob/user, obj/item/held, datum/interaction/capability/construction_step/step)

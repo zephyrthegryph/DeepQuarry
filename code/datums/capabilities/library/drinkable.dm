@@ -30,10 +30,10 @@
 	return C
 
 /datum/capability/drinkable/interactions(atom/holder)
-	var/datum/interaction/capability/drink = adopt_entry(cap_hand("Drink", TYPE_PROC_REF(/obj/item, cap_drinkable_drink), needs = TYPE_PROC_REF(/obj/item, cap_drinkable_can_drink), works_broken = TRUE, works_unpowered = TRUE))
-	drink.entry = INTERACTION_ENTRY_SELF // using it in hand drinks from it
-	var/datum/interaction/capability/give = adopt_entry(cap_hand("Give a drink", TYPE_PROC_REF(/obj/item, cap_drinkable_give), needs = TYPE_PROC_REF(/obj/item, cap_drinkable_can_drink), works_broken = TRUE, works_unpowered = TRUE))
-	give.default_action = null // Menu only
+	// "drink": the self-use (using it in hand drinks from it); "give_drink": ACT_NONE.
+	var/datum/interaction/capability/drink = adopt_entry(lib_op("Drink", TYPE_PROC_REF(/obj/item, cap_drinkable_drink), OP_SHAPE_HAND, key = "drink", offered = req_self_held(), needs = TYPE_PROC_REF(/obj/item, cap_drinkable_can_drink), works_broken = TRUE, works_unpowered = TRUE))
+	drink.entry = INTERACTION_ENTRY_SELF
+	var/datum/interaction/capability/give = adopt_entry(lib_op("Give a drink", TYPE_PROC_REF(/obj/item, cap_drinkable_give), OP_SHAPE_HAND, key = "give_drink", action = ACT_NONE, needs = TYPE_PROC_REF(/obj/item, cap_drinkable_can_drink), works_broken = TRUE, works_unpowered = TRUE))
 	return list(drink, give)
 
 /datum/capability/drinkable/examine(atom/holder, mob/user)

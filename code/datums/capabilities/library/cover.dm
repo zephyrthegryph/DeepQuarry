@@ -25,18 +25,18 @@
 	C.removable = removable
 	return cap_gating(C, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 
+/// Ops: "open_cover" (the tool's click, OP_PRIORITY_PART; or an empty hand's, BY_HAND), and with `removable`
+/// "remove_cover" (a crowbar in harm: the hostile ACT_ATTACK, above the opening).
 /datum/capability/cover/interactions(atom/holder)
 	. = list()
 	var/present = TYPE_PROC_REF(/atom, cap_cover_present)
 	if(open_tool && open_tool != BY_HAND)
-		. += adopt_entry(cap_tool("Open cover", open_tool, TYPE_PROC_REF(/atom, cap_cover_toggle), delay = delay, needs = present, priority = 10, name_proc = TYPE_PROC_REF(/atom, cap_cover_name)), id = "cover:[open_tool]")
+		. += adopt_entry(lib_op("Open cover", TYPE_PROC_REF(/atom, cap_cover_toggle), OP_SHAPE_TOOL, using = open_tool, key = "open_cover", delay = delay, needs = present, priority = OP_PRIORITY_PART, name_proc = TYPE_PROC_REF(/atom, cap_cover_name)), id = "cover:[open_tool]")
 	else
-		. += adopt_entry(cap_hand("Open cover", TYPE_PROC_REF(/atom, cap_cover_toggle), needs = present, works_broken = TRUE, works_unpowered = TRUE, name_proc = TYPE_PROC_REF(/atom, cap_cover_name)), id = "cover:[open_tool]")
+		// A removed cover is not what an empty hand means: the touch falls through.
+		. += adopt_entry(lib_op("Open cover", TYPE_PROC_REF(/atom, cap_cover_toggle), OP_SHAPE_HAND, key = "open_cover", offered = req_proc(present), works_broken = TRUE, works_unpowered = TRUE, name_proc = TYPE_PROC_REF(/atom, cap_cover_name)), id = "cover:[open_tool]")
 	if(removable)
-		var/datum/interaction/capability/E = adopt_entry(cap_tool("Remove cover", TOOL_CROWBAR, TYPE_PROC_REF(/atom, cap_cover_remove), delay = delay, needs = present, priority = 20), id = "cover:remove")
-		E.stance = I_HURT
-		E.apply_stance_tags()
-		. += E
+		. += adopt_entry(lib_op("Remove cover", TYPE_PROC_REF(/atom, cap_cover_remove), OP_SHAPE_TOOL, using = TOOL_CROWBAR, key = "remove_cover", action = ACT_ATTACK, delay = delay, needs = present, priority = OP_PRIORITY_PART * 2, stance = I_HURT), id = "cover:remove")
 
 /datum/capability/cover/examine(atom/holder, mob/user)
 	if(cover_removed(holder))

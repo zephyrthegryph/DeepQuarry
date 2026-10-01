@@ -77,10 +77,6 @@
 	if(self.stat != DEAD)
 		self.process_queued_alarms()
 
-/datum/om/stage/life/canmove/silicon/robot
-	order = LIFE_PHASE_OUTPUT + 30
-	of = /mob/living/silicon/robot
-	run_if = null
 
 /// Ear damage heals; a deafness disability keeps deafness up. Temporary blindness, deafness and
 /// blur are timed statuses that end on their own (update_senses() follows blindness ending).
@@ -141,113 +137,109 @@
 
 // --- Senses and HUD ------------------------------------------------------------------------------
 
-/datum/om/stage/life/vision/silicon/robot
-	of = /mob/living/silicon/robot
 
-/datum/om/stage/life/vision/silicon/robot/perform(mob/living/silicon/robot/self, datum/om/frame/life/ctx)
+/mob/living/silicon/robot/life_vision()
 	var/fullbright = FALSE
 	var/seemeson = FALSE
-	var/seejanhud = self.sight_mode & BORGJAN
+	var/seejanhud = src.sight_mode & BORGJAN
 
-	var/area/A = get_area(self)
+	var/area/A = get_area(src)
 	if(A?.flag_check(AREA_NO_SPOILERS))
-		self.disable_spoiler_vision()
+		src.disable_spoiler_vision()
 
-	if (self.stat == DEAD || (self.has_mutation(XRAY)) || (self.sight_mode & BORGXRAY))
-		self.sight |= SEE_TURFS
-		self.sight |= SEE_MOBS
-		self.sight |= SEE_OBJS
-		self.see_in_dark = 8
-		self.see_invisible = SEE_INVISIBLE_MINIMUM
-	else if ((self.sight_mode & BORGMESON) && (self.sight_mode & BORGTHERM))
-		self.sight |= SEE_TURFS
-		self.sight |= SEE_MOBS
-		self.see_in_dark = 8
-		self.see_invisible = SEE_INVISIBLE_MINIMUM
+	if (src.stat == DEAD || (src.has_mutation(XRAY)) || (src.sight_mode & BORGXRAY))
+		src.sight |= SEE_TURFS
+		src.sight |= SEE_MOBS
+		src.sight |= SEE_OBJS
+		src.see_in_dark = 8
+		src.see_invisible = SEE_INVISIBLE_MINIMUM
+	else if ((src.sight_mode & BORGMESON) && (src.sight_mode & BORGTHERM))
+		src.sight |= SEE_TURFS
+		src.sight |= SEE_MOBS
+		src.see_in_dark = 8
+		src.see_invisible = SEE_INVISIBLE_MINIMUM
 		fullbright = TRUE
-	else if (self.sight_mode & BORGMESON)
-		self.sight |= SEE_TURFS
-		self.see_in_dark = 8
-		self.see_invisible = SEE_INVISIBLE_MINIMUM
+	else if (src.sight_mode & BORGMESON)
+		src.sight |= SEE_TURFS
+		src.see_in_dark = 8
+		src.see_invisible = SEE_INVISIBLE_MINIMUM
 		fullbright = TRUE
 		seemeson = TRUE
-	else if (self.sight_mode & BORGMATERIAL)
-		self.sight |= SEE_OBJS
-		self.see_in_dark = 8
-		self.see_invisible = SEE_INVISIBLE_MINIMUM
+	else if (src.sight_mode & BORGMATERIAL)
+		src.sight |= SEE_OBJS
+		src.see_in_dark = 8
+		src.see_invisible = SEE_INVISIBLE_MINIMUM
 		fullbright = TRUE
-	else if (self.sight_mode & BORGTHERM)
-		self.sight |= SEE_MOBS
-		self.see_in_dark = 8
-		self.see_invisible = SEE_INVISIBLE_LEVEL_TWO
+	else if (src.sight_mode & BORGTHERM)
+		src.sight |= SEE_MOBS
+		src.see_in_dark = 8
+		src.see_invisible = SEE_INVISIBLE_LEVEL_TWO
 		fullbright = TRUE
-	else if (self.sight_mode & BORGANOMALOUS)
-		self.see_in_dark = 8
-		self.see_invisible = INVISIBILITY_SHADEKIN
+	else if (src.sight_mode & BORGANOMALOUS)
+		src.see_in_dark = 8
+		src.see_invisible = INVISIBILITY_SHADEKIN
 		fullbright = TRUE
-	else if (!self.seedarkness)
-		self.sight &= ~SEE_MOBS
-		self.sight &= ~SEE_TURFS
-		self.sight &= ~SEE_OBJS
-		self.see_in_dark = 8
-		self.see_invisible = SEE_INVISIBLE_NOLIGHTING
-	else if (self.stat != DEAD)
-		self.sight &= ~SEE_MOBS
-		self.sight &= ~SEE_TURFS
-		self.sight &= ~SEE_OBJS
-		self.see_in_dark = 8 			 // see_in_dark means you can FAINTLY see in the dark, humans have a range of 3 or so, tajaran have it at 8
-		self.see_invisible = SEE_INVISIBLE_LIVING // This is normal vision (25), setting it lower for normal vision means you don't "see" things like darkness since darkness
+	else if (!src.seedarkness)
+		src.sight &= ~SEE_MOBS
+		src.sight &= ~SEE_TURFS
+		src.sight &= ~SEE_OBJS
+		src.see_in_dark = 8
+		src.see_invisible = SEE_INVISIBLE_NOLIGHTING
+	else if (src.stat != DEAD)
+		src.sight &= ~SEE_MOBS
+		src.sight &= ~SEE_TURFS
+		src.sight &= ~SEE_OBJS
+		src.see_in_dark = 8 			 // see_in_dark means you can FAINTLY see in the dark, humans have a range of 3 or so, tajaran have it at 8
+		src.see_invisible = SEE_INVISIBLE_LIVING // This is normal vision (25), setting it lower for normal vision means you don't "see" things like darkness since darkness
 											// has a "invisible" value of 15
 
-	if(self.plane_holder)
-		self.plane_holder.set_vis(VIS_FULLBRIGHT,fullbright)
-		self.plane_holder.set_vis(VIS_MESONS,seemeson)
-		self.plane_holder.set_vis(VIS_JANHUD,seejanhud)
+	if(src.plane_holder)
+		src.plane_holder.set_vis(VIS_FULLBRIGHT,fullbright)
+		src.plane_holder.set_vis(VIS_MESONS,seemeson)
+		src.plane_holder.set_vis(VIS_JANHUD,seejanhud)
 
 	// Call parent to handle signals
 	..()
 
-/datum/om/stage/life/hud/silicon/robot
-	of = /mob/living/silicon/robot
 
-/datum/om/stage/life/hud/silicon/robot/perform(mob/living/silicon/robot/self, datum/om/frame/life/ctx)
+/mob/living/silicon/robot/life_hud()
 	. = ..()
 	if(!.)
 		return
 
-	self.update_cell()
+	src.update_cell()
 
-	var/turf/T = get_turf(self)
+	var/turf/T = get_turf(src)
 	var/datum/gas_mixture/environment = T?.return_air()
 	if(environment)
 		switch(environment.return_temperature())
 			if(400 to INFINITY)
-				self.throw_alert("temp", /atom/movable/screen/alert/hot/robot, HOT_ALERT_SEVERITY_MODERATE)
+				src.throw_alert("temp", /atom/movable/screen/alert/hot/robot, HOT_ALERT_SEVERITY_MODERATE)
 			if(360 to 400)
-				self.throw_alert("temp", /atom/movable/screen/alert/hot/robot, HOT_ALERT_SEVERITY_LOW)
+				src.throw_alert("temp", /atom/movable/screen/alert/hot/robot, HOT_ALERT_SEVERITY_LOW)
 			if(260 to 360)
-				self.clear_alert("temp")
+				src.clear_alert("temp")
 			if(200 to 260)
-				self.throw_alert("temp", /atom/movable/screen/alert/cold/robot, COLD_ALERT_SEVERITY_LOW)
+				src.throw_alert("temp", /atom/movable/screen/alert/cold/robot, COLD_ALERT_SEVERITY_LOW)
 			else
-				self.throw_alert("temp", /atom/movable/screen/alert/cold/robot, COLD_ALERT_SEVERITY_MODERATE)
+				src.throw_alert("temp", /atom/movable/screen/alert/cold/robot, COLD_ALERT_SEVERITY_MODERATE)
 
 	// Blindness is raised by update_senses() when the camera or stat changes.
-	if(self.stat != DEAD && !self.blinded)
-		self.set_fullscreen(self.status_units(EFFECT_BLURRY), "blurry", /atom/movable/screen/fullscreen/blurry)
-		self.set_fullscreen(self.status_units(EFFECT_DRUGGED), "high", /atom/movable/screen/fullscreen/high)
+	if(src.stat != DEAD && !src.blinded)
+		src.set_fullscreen(src.status_units(EFFECT_BLURRY), "blurry", /atom/movable/screen/fullscreen/blurry)
+		src.set_fullscreen(src.status_units(EFFECT_DRUGGED), "high", /atom/movable/screen/fullscreen/high)
 
-	if(self.emagged)
-		self.throw_alert("hacked", /atom/movable/screen/alert/hacked)
+	if(src.emagged)
+		src.throw_alert("hacked", /atom/movable/screen/alert/hacked)
 	else
-		self.clear_alert("hacked")
+		src.clear_alert("hacked")
 
-/datum/om/stage/life/hud/silicon/robot/health_icons(mob/living/silicon/robot/self)
+/mob/living/silicon/robot/life_hud_health_icons()
 	. = ..()
-	if(!. || !self.healths)
+	if(!. || !src.healths)
 		return
 
-	self.healths.icon_state = vitality_health_band(self)
+	src.healths.icon_state = vitality_health_band(src)
 
 /mob/living/silicon/robot/proc/update_cell()
 	if(cell)

@@ -72,9 +72,15 @@ Datums that never wait on an op carry nothing.
 **Defining operations.**
 
 ```text
-cap_op(name, handler, using=, by=, via=, action=, needs=, delay=, cost=, start_msg=,
-       kind=OP_CONTROL|OP_STRUCTURAL|OP_EMERGENCY, key=, at=, log=)
+cap_op(name, handler, using=, by=, via=, action=, needs=, offered=, delay=, cost=, start_msg=,
+       kind=OP_CONTROL|OP_STRUCTURAL|OP_EMERGENCY, key=, at=, log=, priority=, stance=, entry=)
 ```
+
+`priority` (`OP_PRIORITY_*`, higher first) orders the ops of one action for a gesture (§5). `stance` (`I_HELP`,
+`I_DISARM`, `I_GRAB`, `I_HURT`, or a list) narrows the op to those stances: an offered requirement, so another stance
+falls through to the next op. `entry` (`INTERACTION_ENTRY_*`) keeps a legacy entry proc (`attack_hand`, `attackby`,
+`attack_self`, `click_alt`) running the op for callers that still call it directly (a silicon's hand use through
+`silicon_use`, a computer's any-item fallback); inside such a proc the provider and reach stages trust the proc's caller.
 
 `cap_hand`, `cap_tool`, `cap_use_on`, `cap_insert` and `cap_control` become presets over `cap_op`.
 `refine(key, delay=, effect=, input=/action=)` adjusts an inherited operation; redeclaring a key
@@ -104,7 +110,15 @@ resolves the held item in the transition (drop or transfer policy), not on the n
 two-handed item binds two distinct ports atomically.
 
 **Routes** say how an operation reaches its target: `ROUTE_PHYSICAL`, `ROUTE_INTERFACE`,
-`ROUTE_UI`, `ROUTE_VERB`, `ROUTE_SPEECH`, `ROUTE_MIND`, `ROUTE_AUTHORITY`. Reach is a route through
+`ROUTE_UI`, `ROUTE_VERB`, `ROUTE_SPEECH`, `ROUTE_MIND`, `ROUTE_AUTHORITY`, `ROUTE_TK`. [built]
+
+- `ROUTE_TK` is a telekinetic reach at range: the telekinesis adapter's click (`input_adapter/op_route()`). Its
+  provider is the telekinesis affordance (`AFF_TELEKINESIS`, `mob/has_telegrip()`), not a slot; it stands in for
+  manipulating and working controls (`AFF_TK_PROVIDES`) and holds nothing. Reach is `op_tk_reach()`: the same z-level,
+  within `TK_MAXRANGE`, not while viewing remotely. An op a mind may do at range says `via = ROUTE_PHYSICAL | ROUTE_TK`.
+- A silicon's empty-handed click and its windows travel `ROUTE_INTERFACE` / `ROUTE_UI`; there its interface is the
+  provider of `AFF_INTERFACE_PROVIDES` (manipulate, interface), so `cap_control()` works for the AI and a cyborg.
+- A ghost's click travels `ROUTE_UI` (`mob/observer/dead/op_route()`): an observer never touches. Reach is a route through
 a containment and spatial graph, not adjacency. A belly interior reaches its own contents but not
 a machine outside; absorption removes physical providers; a remote interface or speech may cross
 the boundary. The containment edge supplies the policy once; pickup, machine use, tool use and
@@ -120,28 +134,116 @@ The boundary is asked in ONE place, `op_at_reason(holder, bay, ctx)`: the op con
 
 ## 5. Actions and bind profiles
 
-An **action** is the semantic thing a player means, decoupled from the gesture.
+An **action** is the semantic thing a player means, decoupled from the gesture. The `ACT_*` ids are the **gesture
+vocabulary only**: an op is identified by its key (and its name) in the Menu, the radial and the command bar, never by
+its action. Most ops answer `ACT_USE`; two ops answering one action is no collision, it is what op priority orders.
 
-- `/datum/action_def/<x>`: `name`, `binds`, `radial_icon`, `category`; constants `ACT_*`.
+- `/datum/action_def/<x>`: `name`, `binds`, `radial_icon`, `category`; constants `ACT_*`. `ACT_ATTACK` is the
+  hostile use (hostile ops declare it); `ACT_NONE` is no action at all (no definition, no gesture reaches it).
 - `/datum/bind_profile/{default,silicon,observer}` map a **gesture** to a **priority list of
-  actions**.
+  actions** (`table()`), and a **stance** to the lists that replace some of them (`stance_table()`): the stance is a
+  gesture modifier.
 - Input resolution: gesture, then actions, then the **first applicable operation**. A plain click is
   `ACT_USE`; a drag is `ACT_DROP_ONTO`. **There is no `alt_action`**; alt-click is just a gesture
   whose profile entry lists (say) `ACT_LOCK` before `ACT_EXAMINE`.
-- `perform_action(mob, target, ACT_X)` and `test_action(...)` for code; radial/screentip data for
-  UI; the UI route `act("action", {id})`, a UI action of the capability layer (`/datum/capability/entry/proc/
-  act_action`, found by the dispatcher on any holder of op entries; no atom has one); a command-bar verb.
+- `perform_action(mob, target, ACT_X)` and `test_action(...)` for code, and `perform_op(mob, target, key or name)` /
+  `test_op(...)` for one op by its key or name (`op_entry_named()`); radial/screentip data for
+  UI; the UI route `act("action", {id})` (an action id or an op key), a UI action of the capability layer
+  (`/datum/capability/entry/proc/act_action`, found by the dispatcher on any holder of op entries; no atom has one); a
+  command-bar verb (`Act <action or op name>`).
+
+**Gesture resolution order** [built]. `resolve_gesture()`:
+
+1. the actor's bind profile: `actions_for(gesture, stance)`, the actions the gesture reaches in the actor's stance
+   (`mob/input_stance()`), in the listed order;
+2. within one action, the op `priority` (higher first: `OP_PRIORITY_DEFAULT` -2000, `OP_PRIORITY_NORMAL` 0,
+   `OP_PRIORITY_PART` 10, `OP_PRIORITY_TAKE_OUT` 30, `OP_PRIORITY_CLAW` 40, `OP_PRIORITY_SUBVERT` 50);
+3. then the declaration order (`capabilities()` order).
+
+In that order the first op that is meant (`offered`, the held item, the stance) and would run now answers; when none
+would run, the first meant one answers with its refusal. An op that does not accept the click's route at all is passed
+over, and so is one the actor's adapter never allows. What the gesture does not reach stays in the Menu, the radial
+(`action_options()`: one row per op key, with the action it answers) and the command bar. The per-type index is
+`op_action_index()`. This replaces the resolver's `_DEFAULT` ordering (`priority = OP_PRIORITY_DEFAULT`) and the
+`ROBOT` / `TK` priority 1 (a cyborg-only op is declared before the silicon one it overrides; a TK op is reached by the
+telekinetic click's own route).
+
+**The stance modifier.** The default profile's click in harm or disarm is `ACT_ATTACK, ACT_USE, ACT_LOCK`; in help or
+grab it is `ACT_USE, ACT_LOCK`. So an attack op is reached by stance and never by a help click, and a harm click still
+falls back to the ordinary use (a door opens in combat mode). The silicon profile does the same over its click. An op
+narrows itself further with `stance =`: `stance = I_HURT` answers only harm, `stance = list(I_HELP, I_DISARM, I_GRAB)`
+every stance but harm.
+
+**ACT_NONE.** `cap_op(..., action = ACT_NONE)` is reached only by its key or name: the Menu, the radial, the command
+bar and `act("action", {id: key})`. No profile lists it; the resolver answers no input with it (`default_action` is
+null). The command bar runs an op over `ROUTE_VERB` when it takes it, else over the actor's own route (typing at the
+thing next to you is your hand on it); a window's act needs `via` to include `ROUTE_UI`.
 - **The router.** `try_interaction()` (the click path of use, alternate and tool_act) asks `try_gesture()` first:
   `INPUT_ACTION_USE` is `GESTURE_CLICK`, `INPUT_ACTION_ALTERNATE` is `GESTURE_ALT` (`GESTURE_RIGHT` for a tool's
   secondary click), and `adapter.drag()` asks `try_gesture_drag()` (`GESTURE_DRAG`, the dragged item as `held`)
-  before `MouseDrop_T`. `gesture_entry_for()` resolves gesture, actions, then the first real `cap_op()` (not a
-  `cap_hand`/`cap_tool`/`cap_use_on`/`cap_insert` preset) that would run now; that entry runs. When no op answers,
-  or the op would be refused, nothing changes: the interaction resolver and the legacy handlers run as before,
-  so unmigrated `INTERACT_*` content and the presets keep their ordering, ties and Menu.
+  before `MouseDrop_T`. `gesture_entry_for()` resolves gesture, actions, op priority and declaration order over the
+  real ops (not a `cap_hand`/`cap_tool`/`cap_use_on`/`cap_insert` preset), over the route of the actor's adapter
+  (`input_adapter/op_route()`: the telekinesis adapter's is `ROUTE_TK`); that entry runs. When no op answers, the
+  interaction resolver and the legacy handlers run as before, so unmigrated `INTERACT_*` content and the presets keep
+  their ordering, ties and Menu. A handler that declines (returns FALSE) also falls through to them.
 
 Every operation can therefore be listed, explain why it is unavailable (its refusal reason), and be
 bound to a key. `cap_entry_point` and the `INTERACTION_ENTRY_*` entries collapse into
 `cap_op(action = ACT_X)`. [built for the click, alt-click and drag gestures; the resolver and Menu remain the fallback only for a target with no matching op: an op that is refused answers the click with its own typed refusal, the legacy resolver is never asked]
+
+**The library builds only ops** [built, G16]. Every entry a library capability builds is a real op with a key, an
+action, a priority and requirements (`lib_op()`, the library's `cap_op()` defaults, or `op_attach()` on an entry datum
+of its own: a slot's insert and ejects, a ladder step, the deconstruct crowbar, a self-use), so the router ranks it
+against the holder's other ops. The cell bay's hand eject is `eject_cell` (`ACT_USE`, `OP_PRIORITY_TAKE_OUT`): on the
+APC it wins over the interface by priority, the interface is not hidden (`dx_apc_cell_eject_priority`). A condition
+under which the player did not mean the op (nobody is buckled, the held item is no container) is `offered`, so the
+gesture falls through as the resolver let a blocked entry fall through; a condition under which the player meant it
+(the cover is held shut) is `needs`, and the refusal answers. Library ops take no provider slot (`by = NONE`) until
+cyborg modules and simple mobs have provider slots of their own. `dx_cap_library_ops` sweeps the library.
+
+## 5a. INTERACT_* to ops [the codemod in batch A4 implements this table]
+
+| Legacy spec | New form (in `capabilities()`) | Notes |
+|---|---|---|
+| `INTERACT_USE(name, effect, req...)` | `cap_use_self(name, handler)` | A real op answering `ACT_USE` (the `GESTURE_SELF` action) that offers `req_self_held()`, so a click on the item never means it; `attack_self` keeps running it (entry SELF). Handler `(mob/user)`, returning TRUE. |
+| `INTERACT_SELF(...)` | `cap_use_self(name, handler)` | A FALSE return declines to the item's next self-use, as before. |
+| `INTERACT_HAND(name, effect, req...)` | `cap_op(name, handler, using = EMPTY_HAND, entry = INTERACTION_ENTRY_HAND)` | On a machine a silicon works too: `cap_control(...)` (its interface route) or keep `entry` (its `silicon_use` hand use calls `attack_hand`). |
+| `INTERACT_HAND_UNGATED(...)` | as HAND, plus `works_broken = TRUE, works_unpowered = TRUE` | The router runs no `hand_gate()`; ungated meant "works whatever the machine's state". |
+| `INTERACT_ITEM(name, effect, req...)` | `cap_op(name, handler, using = <held type>, entry = INTERACTION_ENTRY_ITEM)` | `using` is the type the effect's `istype()` guard tested (`/obj/item` when none). A FALSE return declines: the click falls through. |
+| `INTERACT_INSERT(held_type, effect, name, req...)` | a library slot (`cap_slot()`, `cell_bay()`...) when it stores the item; else `cap_op(name, handler, using = held_type, entry = INTERACTION_ENTRY_ITEM)` | |
+| `INTERACT_ALT(name, effect, req...)` | `cap_op(name, handler, action = ACT_TOGGLE, entry = INTERACTION_ENTRY_ALT)` | `ACT_EJECT`, `ACT_OPEN`, `ACT_CLOSE`, `ACT_LOCK`, `ACT_UNLOCK` where one fits: the default alt list is those six. |
+| `INTERACT_DRAG(name, effect, req...)` | `cap_op(name, handler, using = <dragged type>, action = ACT_DROP_ONTO, entry = INTERACTION_ENTRY_DRAG)` | The dragged atom is `held`. |
+| `INTERACT_VERB(name, effect, req...)` | `cap_op(name, handler, action = ACT_NONE)` | Menu, radial and command bar only, by key or name. `REQ_IN_INVENTORY` becomes `needs = TYPE_PROC_REF(/atom, cap_in_inventory)`; add `via = ROUTE_PHYSICAL \| ROUTE_UI` for a window's act. |
+| `INTERACT_SILICON(name, effect, req...)` | `cap_op(name, handler, via = ROUTE_INTERFACE, by = AFF_INTERFACE)` | Or `cap_control()` when a hand does the same. The AI adapter allows ops over `ROUTE_INTERFACE`. |
+| `INTERACT_ROBOT(...)` | as SILICON, plus `offered = req(/mob/living/silicon/robot, of = OP_ACTOR)`, declared before the silicon op | Declaration order replaces its priority 1. |
+| `INTERACT_OBSERVER(...)` | `cap_op(name, handler, action = ACT_EXAMINE, via = ROUTE_UI, by = NONE)` | The observer profile's click is `ACT_EXAMINE` over `ROUTE_UI`; the ghost adapter allows exactly those ops. |
+| `INTERACT_TK(...)` | `cap_op(name, handler, via = ROUTE_TK)` (`ROUTE_PHYSICAL \| ROUTE_TK` when a hand does the same) | The telekinetic click's own route replaces its priority 1; the provider is the telekinesis affordance. |
+| `*_AS(I_HURT, ...)`, `*_HOSTILE` | `action = ACT_ATTACK, stance = I_HURT` | |
+| `*_AS(I_DISARM, ...)` | `action = ACT_ATTACK, stance = I_DISARM` | |
+| `*_AS(I_GRAB, ...)` | `stance = I_GRAB` | ACT_USE. |
+| `*_AS(I_HELP, ...)`, `*_PEACEFUL` | `stance = I_HELP` | ACT_USE. Drop the stance when the op may also be the harm click's fallback. |
+| several `*_AS` sharing one effect | one op, `stance = list(...)` | Split the handler when the effect read `interaction.stance`. |
+| `*_DEFAULT`, `*_DEFAULT_AS` | the same op, `priority = OP_PRIORITY_DEFAULT` | |
+| `requires...` (`REQ_*` clauses) | `needs =` (a refusal) or `offered =` (not meant, the input falls through) | `REQ_TARGET_STATE(proc)` / `REQ_ON(proc)` become `PROC_REF(proc)`; reach and adjacency clauses are the route stage's. |
+
+Handlers change from `(mob/user, obj/item/held, datum/interaction/I)` to `(mob/user)` (hand and self shapes) or
+`(mob/user, obj/item/held)` (held shapes), and return TRUE (done), FALSE (declined: the input goes on) or
+`refuse(user, text)`. `INTERACTION_HANDLED_PASS` has no op form: a router op that ran used the input.
+
+**Worked conversions** (this batch; `dx_op_converted_examples` checks them):
+
+- `code/game/objects/items/devices/megaphone.dm`, an item's USE and VERBs: `INTERACT_USE(null, PROC_REF(interaction_self))`
+  became `cap_use_self("Shout", PROC_REF(shout), key = "shout")`; the gigaphone's three `INTERACT_VERB(..., REQ_IN_INVENTORY)`
+  became `cap_op("Change Volume", PROC_REF(adjust_volume), action = ACT_NONE, needs = TYPE_PROC_REF(/atom, cap_in_inventory),
+  key = "change_volume")` and two more, with the `*_effect` wrapper procs deleted.
+- `code/game/machinery/computer/medical.dm`, a machine's ITEM, HAND and VERB: the ID card's `INTERACT_ITEM` and the
+  "Eject ID Card" `INTERACT_VERB` became one library slot, `cap_slot(nameof(scan), /obj/item/card/id, eject_via =
+  SLOT_VIA_VERB, when_full = SLOT_FULL_PASS, ...)` (ops `insert_scan` and the ACT_NONE `eject_scan_menu`, the old
+  "open the records on insert" a `slot_inserted()` hook); `INTERACT_HAND(null, TYPE_PROC_REF(/atom, interaction_open_ui_fingerprint))`
+  became `cap_op("Open records", ..., using = EMPTY_HAND, key = "open_records", entry = INTERACTION_ENTRY_HAND)`.
+- `code/game/objects/items/bells.dm`, the stance shapes: eight `INTERACT_HAND_AS` / `INTERACT_ITEM_AS` specs became
+  four ops: `ring` (`using = EMPTY_HAND, stance = list(I_HELP, I_DISARM, I_GRAB)`), `hammer` (`action = ACT_ATTACK,
+  stance = I_HURT`) and their held-item twins, each with its own handler instead of reading `interaction.stance`.
 
 ## 6. Containment, prompts, waits
 

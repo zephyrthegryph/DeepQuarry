@@ -22,7 +22,7 @@
 	return cap_gating(C, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 
 /datum/capability/anchor/interactions(atom/holder)
-	return list(adopt_entry(cap_tool("Anchor", tool_quality, TYPE_PROC_REF(/atom/movable, cap_anchor_toggle), delay = delay, needs = needs_floor ? TYPE_PROC_REF(/atom/movable, cap_anchor_floor_ok) : null, name_proc = TYPE_PROC_REF(/atom/movable, cap_anchor_name))))
+	return list(adopt_entry(lib_op("Anchor", TYPE_PROC_REF(/atom/movable, cap_anchor_toggle), OP_SHAPE_TOOL, using = tool_quality, key = "anchor", kind = OP_STRUCTURAL, delay = delay, needs = needs_floor ? TYPE_PROC_REF(/atom/movable, cap_anchor_floor_ok) : null, name_proc = TYPE_PROC_REF(/atom/movable, cap_anchor_name))))
 
 /datum/capability/anchor/examine(atom/holder, mob/user)
 	var/atom/movable/AM = holder

@@ -31,9 +31,9 @@
 /datum/capability/emag/interactions(atom/holder)
 	if(as_op)
 		return null
-	var/datum/interaction/capability/E = adopt_entry(cap_use_on("Emag", /obj/item/card/emag, TYPE_PROC_REF(/atom, cap_emag_use), works_unpowered = TRUE, priority = 50), id = "emag")
-	E.duration = delay // paid through use_tool() like any timed interaction, before the handler runs
-	return list(E)
+	// The op keyed CAP_EMAG, as emag_op()'s: cap_require(CAP_EMAG, ...) contracts it. A card beats any other use of it
+	// (OP_PRIORITY_SUBVERT). The wait is the op wait, before the handler runs.
+	return list(adopt_entry(lib_op("Emag", TYPE_PROC_REF(/atom, cap_emag_use), OP_SHAPE_USE_ON, using = /obj/item/card/emag, key = CAP_EMAG, kind = OP_STRUCTURAL, delay = delay, works_broken = FALSE, works_unpowered = TRUE, priority = OP_PRIORITY_SUBVERT), id = "emag"))
 
 /datum/capability/emag/draw(atom/holder, datum/look/look)
 	if(as_op)
@@ -86,7 +86,7 @@
 	var/list/pre = list(TYPE_PROC_REF(/atom, emag_op_ok))
 	if(gate[4])
 		pre += islist(gate[4]) ? gate[4] : list(gate[4])
-	var/datum/capability/entry/op = cap_op("Emag", effect || TYPE_PROC_REF(/atom, emag_default_effect), using = /obj/item/card/emag, key = CAP_EMAG, action = ACT_USE, kind = OP_STRUCTURAL, delay = delay, priority = 50, needs = pre, else_say = else_say, behind = gate[1], blocked_by = gate[2], locked_by = gate[3], log = log)
+	var/datum/capability/entry/op = cap_op("Emag", effect || TYPE_PROC_REF(/atom, emag_default_effect), using = /obj/item/card/emag, key = CAP_EMAG, action = ACT_USE, kind = OP_STRUCTURAL, delay = delay, priority = OP_PRIORITY_SUBVERT, needs = pre, else_say = else_say, behind = gate[1], blocked_by = gate[2], locked_by = gate[3], log = log)
 	return list(C, op)
 
 /datum/capability/emag/reactions()

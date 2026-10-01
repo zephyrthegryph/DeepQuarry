@@ -109,17 +109,21 @@ op, provider, route, authority and id. Code: `code/datums/operations/`, defines 
   It runs before the wait, at the end of the wait and at commit. A waiting op also watches its requirements' reads
   and cancels early when one is published (`op_reads_changed(datum, key)`; `cap_set()` publishes `OP_KEY_CAP_STATE`).
 - **`cap_require(ops = key|kind|list|null, needs = ...)`**: an additive contract on the holder's ops.
-- **`refine(key, delay=, effect=, input=, action=)`** edits an op declared earlier. Declaring one non-legacy op key
+- **`refine(key, delay=, effect=, input=, action=, priority=)`** edits an op declared earlier. Declaring one non-legacy op key
   twice in a list is an init error unless the second says `replace = TRUE`.
 - **Affordances:** `slot.provides` (`AFF_HOLD`, `AFF_MANIPULATE`, `AFF_HOLD_SMALL`, `AFF_INTERFACE`); hands provide
-  all four. `ops_provider()` picks the slot, active hand first.
+  all four. `ops_provider()` picks the slot, active hand first. Over `ROUTE_TK` the provider is the telekinesis
+  affordance (`AFF_TELEKINESIS`, `has_telegrip()`); over a silicon's `ROUTE_INTERFACE` / `ROUTE_UI` its interface.
 - **Compartments:** `compartment(BAY_X, door = CAP_KEY|bits|req, route_gate = req, heat=, damage=, radiation=, gas=)`.
   Ops take `at = BAY_X`; slots take `at`; `passes(route, ctx)` gates the op, `transmission(effect)` scales the
   slot's path share in `containment/paths.dm`.
 - **Actions:** `/datum/action_def/<x>` (id `ACT_*`, name, binds, radial_icon, category); `/datum/bind_profile/{default,
-  silicon,observer}` map `GESTURE_*` to a priority list of actions. `perform_action(mob, target, ACT_X, route=)`,
-  `test_action(...)` (null or the reason), `resolve_gesture()`, `action_options()` (radial rows),
-  `screentip_for()`, the UI route `act("action", {id})` (`/atom/proc/act_action`) and the "Act" verb.
+  silicon,observer}` map `GESTURE_*` to a priority list of actions, and a stance to the lists that replace some
+  (`stance_table()`: a harm or disarm click is `ACT_ATTACK` first). A gesture reaches: the profile's action list, then
+  op `priority` (`OP_PRIORITY_*`), then declaration order. `ACT_NONE` ops are reached only by key or name.
+  `perform_action(mob, target, ACT_X, route=)`, `test_action(...)` (null or the reason), `perform_op()` / `test_op()`
+  (an op by key or name), `resolve_gesture()`, `action_options()` (radial rows, one per op key), `screentip_for()`, the
+  UI route `act("action", {id})` (an action or an op key) and the "Act" verb.
 - **Reactions:** `op_before(ctx)` runs the target's `before_op` reactions (by op key, then capability type); a
   non-null answer is a refusal reason that stops the commit and is told to the actor. `op_after(ctx)` runs
   `after_op` reactions only after a committed op.
@@ -202,8 +206,9 @@ One vocabulary for "something happened" (code in `code/datums/reactions/`, defin
   window. No `SStgui.update_uis(src)` in converted code.
 - **Admin panels** declare `ui_rights = R_X` (the admin state, and every action refused and audited without it);
   per-action narrowing is `admin_require(user.client, R_Y, entry)` in the handler.
-- **Player input** goes through actions: a gesture resolves via the bind profile to an action, then
-  to the first applicable operation. There is no per-entry alt-click form ([operations_and_actions.md](operations_and_actions.md)).
+- **Player input** goes through actions: a gesture resolves via the bind profile (in the actor's stance) to an action,
+  then by op priority and declaration order to the first applicable operation. There is no per-entry alt-click form
+  ([operations_and_actions.md](operations_and_actions.md) §5; the INTERACT_* table is §5a).
 
 ## Rust
 

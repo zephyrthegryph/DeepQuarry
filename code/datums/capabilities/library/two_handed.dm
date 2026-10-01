@@ -43,7 +43,8 @@
 	return isnull(force_wielded) ? round(one_handed * multiplier) : force_wielded
 
 /datum/capability/two_handed/interactions(atom/holder)
-	var/datum/capability/entry/wrapper = cap_use_self("Wield", TYPE_PROC_REF(/obj/item, cap_two_handed_toggle), works_broken = TRUE, works_unpowered = TRUE, needs = TYPE_PROC_REF(/obj/item, cap_two_handed_can_wield), name_proc = TYPE_PROC_REF(/obj/item, cap_two_handed_name))
+	// The op "wield": the self-use (Z) wields and unwields.
+	var/datum/capability/entry/wrapper = cap_use_self("Wield", TYPE_PROC_REF(/obj/item, cap_two_handed_toggle), works_broken = TRUE, works_unpowered = TRUE, needs = TYPE_PROC_REF(/obj/item, cap_two_handed_can_wield), name_proc = TYPE_PROC_REF(/obj/item, cap_two_handed_name), key = "wield")
 	return list(adopt_entry(wrapper))
 
 /datum/capability/two_handed/on_holder_init(atom/holder, mapload)

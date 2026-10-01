@@ -157,6 +157,14 @@
 	var/prev = last_at?[member || src]
 	return !isnull(prev) && prev >= work_clock_now(clock, member, now)
 
+/// One run of the item on kernel `K`: a member sweep (spread or whole) or one call. Returns TRUE when done. An item
+/// type with its own member loop (a sequence: kernel/sequence.dm) overrides it; the protocol is run_item_spread()'s.
+// ALLOW(sys_world_time_write): the kernel clock: a per-tick timestamp of the scheduler itself, not a per-entity expiry
+/datum/work_item/proc/sweep(datum/controller/kernel/K, datum/owner, limit_abs, now = world.time)
+	if(members)
+		return spread ? K.run_item_spread(src, owner, limit_abs, now) : K.run_item_members(src, owner, limit_abs, now)
+	return K.run_item_once(src, owner, now)
+
 /// Puts a parked item back on the schedule.
 /datum/work_item/proc/wake()
 	parked = FALSE

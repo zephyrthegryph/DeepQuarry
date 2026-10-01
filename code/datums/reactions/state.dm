@@ -31,6 +31,10 @@
 	/// Pending operation contexts (/datum/op_ctx) this datum is an end of (actor, target, held, a watched
 	/// datum): rx_teardown() cancels them, so a wait never outlives what it is about (operations/op_ctx.dm).
 	var/list/pending_ops
+	/// on_change(at_most =): reaction sig -> when it was last delivered (the scheduler's clock).
+	var/list/at_most_last
+	/// on_change(at_most =): reaction sig -> the keys held until its window ends.
+	var/list/at_most_held
 
 /datum
 	/// The reaction layer's per-datum state, or null (see /datum/rx_state).
@@ -104,6 +108,9 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 	// A pending operation watching this read re-checks now (a cheap no-op while nothing is pending).
 	if(length(GLOB.op_watchers))
 		op_reads_changed(E, key)
+	// Sequence steps that read the key wake (code/controllers/kernel/sequence.dm).
+	if(E.seq_states)
+		seq_publish(E, key)
 
 // ---------------------------------------------------------------- the relation ledger
 
@@ -304,6 +311,8 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 /// Phase 4 of a datum's destruction (own_teardown): every listener record it is an end of goes, it leaves
 /// every system it joined, and its ledger is dropped. Both ends are cleaned, so nothing keeps it alive.
 /proc/rx_teardown(datum/D)
+	if(D.seq_states)
+		seq_teardown(D) // its sequence states go first: they leave their sweeps themselves
 	member_teardown(D) // a member with no reaction state still leaves what it joined
 	var/datum/rx_state/S = D.rx
 	if(!S)

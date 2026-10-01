@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Operations: a click reaches an op by the bind profile's action list in the actor's stance, then op priority, then declaration order; harm and disarm clicks try attack ops first; menu-only ops (ACT_NONE) are reached by name from the Menu, the radial and the Act command; telekinesis is a route of its own."
+  - code_imp: "Every standard capability (covers, panels, wires, slots, construction steps, storage, containers and the rest) is now a real operation, so the click router ranks it against a machine's own operations."
+  - qol: "With an APC's cover open, an empty hand takes the cell out first; with no cell in it the click opens the interface."

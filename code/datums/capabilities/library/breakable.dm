@@ -21,7 +21,7 @@
 /datum/capability/breakable/interactions(atom/holder)
 	if(!repair_tool)
 		return null
-	return list(adopt_entry(cap_tool("Repair", repair_tool, TYPE_PROC_REF(/atom, cap_breakable_repair), delay = repair_delay, needs = TYPE_PROC_REF(/atom, cap_breakable_is_broken), else_say = "it isn't broken", works_broken = TRUE, works_unpowered = TRUE, priority = 10), id = "breakable:[repair_tool]"))
+	return list(adopt_entry(lib_op("Repair", TYPE_PROC_REF(/atom, cap_breakable_repair), OP_SHAPE_TOOL, using = repair_tool, key = "repair", kind = OP_STRUCTURAL, delay = repair_delay, needs = TYPE_PROC_REF(/atom, cap_breakable_is_broken), else_say = "it isn't broken", works_broken = TRUE, works_unpowered = TRUE, priority = OP_PRIORITY_PART), id = "breakable:[repair_tool]"))
 
 /datum/capability/breakable/examine(atom/holder, mob/user)
 	if(is_broken(holder))
@@ -53,10 +53,11 @@
  * Claws on a breakable machine, CAP_CLAW: an empty-handed swipe by an actor whose claws tear machines (req_claws()).
  * It is offered only where something hears the slash (req_heard(/datum/notice/slashed)), so on a machine nobody
  * listens to the touch stays whatever else it is. The op publishes /datum/notice/slashed; the holder's reaction
- * decides what gives. It wins over the holder's other empty-hand ops by being declared first (machine_basics()).
+ * decides what gives. It wins over the holder's other empty-hand ops by its priority (OP_PRIORITY_CLAW: above taking
+ * out what sits in an open bay).
  */
 /proc/claw_op()
-	return cap_op("Slash", TYPE_PROC_REF(/atom, claw_slash), using = EMPTY_HAND, offered = list(req_claws(), req_heard(/datum/notice/slashed)), key = CAP_CLAW, kind = OP_CONTROL, works_broken = TRUE, works_unpowered = TRUE)
+	return cap_op("Slash", TYPE_PROC_REF(/atom, claw_slash), using = EMPTY_HAND, offered = list(req_claws(), req_heard(/datum/notice/slashed)), key = CAP_CLAW, kind = OP_CONTROL, priority = OP_PRIORITY_CLAW, works_broken = TRUE, works_unpowered = TRUE)
 
 /// The claw op's handler: the swipe lands (its cooldown, the noise, the prints) and the holder hears it.
 /atom/proc/claw_slash(mob/living/carbon/human/user)

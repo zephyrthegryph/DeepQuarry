@@ -310,7 +310,20 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 			if(!E.cap)
 				E.cap = C
 			cap_apply_gating(C, E)
+			if(E.op)
+				cap_op_sync_gating(E)
 	return C.built_entries
+
+/// An op entry's compartment and gating reads, once its capability's gating is merged onto it (cap_apply_gating()): the
+/// op's route stage asks the entry's bay (a library capability declared `at =`), and a pending wait watches the bits
+/// its behind / blocked_by / locked_by read.
+/proc/cap_op_sync_gating(datum/interaction/capability/E)
+	var/datum/op_def/op = E.op
+	if(!op.at && E.at)
+		op.at = E.at
+	var/list/gating = req_from_gating(E.behind, E.blocked_by, E.locked_by)
+	if(gating)
+		op.gating = gating
 
 // ---- gating ----
 

@@ -81,7 +81,7 @@ The excerpt is the real code, trimmed to the declarations:
         build_insert(/obj/item/module/power_control, name = "board", on_enter = PROC_REF(board_seated)),
         build_wire(10, name = "wired", needs = PROC_REF(floor_exposed), undo_needs = PROC_REF(floor_exposed), on_enter = PROC_REF(terminal_wired), on_leave = PROC_REF(terminal_cut)),
         build_fasten(TOOL_SCREWDRIVER, name = "secured", needs = PROC_REF(cell_out), else_say = "...", undo_needs = PROC_REF(cell_out), undo_else_say = "...", on_enter = ..., on_leave = ...))
-    . += apc_ops()   // cap_control("Open interface", offered = req_on_route(ROUTE_PHYSICAL, req_clear(CAP_COVER_OPEN)), needs = req_working()), new cover, reset
+    . += apc_ops()   // cap_control("Open interface", using = EMPTY_HAND, needs = req_working()), new cover, reset; with the cover open the cell bay's eject_cell outranks it
     . += cap_require(CAP_LOCK, needs = list(req_not_subverted(), req_wire(WIRE_IDSCAN), req_working()))
     . += cap_require(CAP_EMAG, needs = list(req_not_subverted(), req_working()))
     . += refine(CAP_EMAG, delay = 0.6 SECONDS, effect = PROC_REF(on_emag))

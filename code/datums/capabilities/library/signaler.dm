@@ -42,11 +42,10 @@
 	return C
 
 /datum/capability/signaler/interactions(atom/holder)
-	var/datum/interaction/capability/send = adopt_entry(cap_hand("Send signal", TYPE_PROC_REF(/obj, cap_signaler_send), works_unpowered = TRUE))
-	var/datum/interaction/capability/set_freq = adopt_entry(cap_hand("Set frequency", TYPE_PROC_REF(/obj, cap_signaler_set_frequency), works_unpowered = TRUE, form = list(number_field("frequency", min_value = RADIO_LOW_FREQ, max_value = RADIO_HIGH_FREQ, message = "Frequency, [RADIO_LOW_FREQ] to [RADIO_HIGH_FREQ] ([format_frequency(RSD_FREQ)] is [RSD_FREQ]):", title = "Signaler", default = frequency))))
-	var/datum/interaction/capability/set_code = adopt_entry(cap_hand("Set code", TYPE_PROC_REF(/obj, cap_signaler_set_code), works_unpowered = TRUE, form = list(number_field("code", min_value = 1, max_value = 100, message = "Code, 1 to 100:", title = "Signaler", default = code))))
-	for(var/datum/interaction/capability/E as anything in list(send, set_freq, set_code))
-		E.default_action = null // Menu entries: an empty hand keeps doing the holder's own thing
+	// ACT_NONE, all three: an empty hand keeps doing the holder's own thing; the Menu, radial and command bar name them.
+	var/datum/interaction/capability/send = adopt_entry(lib_op("Send signal", TYPE_PROC_REF(/obj, cap_signaler_send), OP_SHAPE_HAND, key = "send_signal", action = ACT_NONE, works_unpowered = TRUE))
+	var/datum/interaction/capability/set_freq = adopt_entry(lib_op("Set frequency", TYPE_PROC_REF(/obj, cap_signaler_set_frequency), OP_SHAPE_HAND, key = "set_frequency", action = ACT_NONE, works_unpowered = TRUE, form = list(number_field("frequency", min_value = RADIO_LOW_FREQ, max_value = RADIO_HIGH_FREQ, message = "Frequency, [RADIO_LOW_FREQ] to [RADIO_HIGH_FREQ] ([format_frequency(RSD_FREQ)] is [RSD_FREQ]):", title = "Signaler", default = frequency))))
+	var/datum/interaction/capability/set_code = adopt_entry(lib_op("Set code", TYPE_PROC_REF(/obj, cap_signaler_set_code), OP_SHAPE_HAND, key = "set_code", action = ACT_NONE, works_unpowered = TRUE, form = list(number_field("code", min_value = 1, max_value = 100, message = "Code, 1 to 100:", title = "Signaler", default = code))))
 	return list(send, set_freq, set_code)
 
 /datum/capability/signaler/examine(atom/holder, mob/user)

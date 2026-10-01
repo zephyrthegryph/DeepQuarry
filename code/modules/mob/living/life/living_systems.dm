@@ -12,7 +12,7 @@
 //	[placed]                   TF holder, VR derez
 //	subtype tails (carbon germs, human, alien, simple mob, bot), then type_post variants
 //
-// canmove runs in the life_derive pipeline and HUD and vision in life_present (life_om.dm).
+// canmove, HUD and vision are on_channel() reactions on /mob/living ("Reactive output" below).
 //
 // Idle rules: each stage's idle() says when it has nothing to do, and `woken_by` names the
 // producers that raise the channels in its `wake_on`. A family root's rule covers only the root:
@@ -477,40 +477,103 @@
 
 // --- Output -----------------------------------------------------------------------------------
 
-/// Whether the mob can move (lying, stunned, buckled, ...).
-/datum/om/stage/life/canmove
-	order = LIFE_PHASE_OUTPUT + 10
-	name = "canmove"
-	pipeline = /datum/om/pipeline/life_derive
-	wake_on = CHANGE_MOB_STATUS
-	run_if = LIFE_RUN_IF_PLACED
-	life_sets = LIFE_SET_LIVING | LIFE_SET_ROBOT
-	woken_by = "status setters; set_stat; Moved"
+// --- Reactive output: canmove, HUD and sight (doc/rewrite/life_sequences.md S2) -------------------
+// Three on_channel() reactions on /mob/living, not Life steps: each runs when one of its channels is
+// raised (changed(src, CHANGE_MOB_*)), coalesced per drain. HUD and sight run at most every
+// LIFE_PRESENT_MIN_INTERVAL (a walking player raises a location change most ticks and the HUD needs only
+// the latest state). The HUD reaction's `when` is life_hud_wanted(): a mob without a client queues
+// nothing. Rewakes (darksight re-adapting, a fading overlay, a remote-view listener) are keyed after()
+// timers. refresh_hud() / refresh_vision() call life_hud() / life_vision() directly.
 
-/datum/om/stage/life/canmove/perform(mob/living/self, datum/om/frame/life/ctx)
-	self.update_canmove()
+/// The Life sets that derive canmove / draw a HUD and sight (the decoy and delisted mobs do neither;
+/// a robot's HUD and sight run from its robot_interface step).
+#define LIFE_CANMOVE_SETS (LIFE_SET_LIVING | LIFE_SET_ROBOT)
+#define LIFE_PRESENT_SETS (LIFE_SET_LIVING | LIFE_SET_AI | LIFE_SET_PAI)
+/// What wakes each reaction (the old stages' wake_on plus their pipeline's wake_all).
+#define LIFE_CANMOVE_CHANNELS (CHANGE_MOB_STATUS | CHANGE_MOB_STAT | CHANGE_EXPLICIT)
+#define LIFE_HUD_CHANNELS (CHANGE_MOB_HEALTH | CHANGE_MOB_STATUS | CHANGE_MOB_LOC | CHANGE_MOB_EQUIPMENT | LIFE_WAKE_ALL)
+#define LIFE_VISION_CHANNELS (CHANGE_MOB_STATUS | CHANGE_MOB_EQUIPMENT | CHANGE_MOB_CONDITIONS | CHANGE_MOB_HEALTH | LIFE_WAKE_ALL)
+/// after() keys of the rewakes.
+#define LIFE_HUD_REWAKE "life_hud"
+#define LIFE_VISION_REWAKE "life_vision"
 
-/// Resting and buckling update canmove themselves, and the statuses when they start or end.
-/datum/om/stage/life/canmove/idle(mob/living/self)
-	return type == /datum/om/stage/life/canmove
+/mob/living/reactions()
+	. = ..()
+	. += on_channel(LIFE_CANMOVE_CHANNELS, PROC_REF(life_canmove_changed), when = PROC_REF(life_canmove_wanted))
+	. += on_channel(LIFE_HUD_CHANNELS, PROC_REF(life_hud_changed), at_most = LIFE_PRESENT_MIN_INTERVAL, when = PROC_REF(life_hud_wanted))
+	. += on_channel(LIFE_VISION_CHANNELS, PROC_REF(life_vision_changed), at_most = LIFE_PRESENT_MIN_INTERVAL, when = PROC_REF(life_vision_wanted))
+
+/// Not transforming and somewhere (the Life frame's "placed").
+/mob/living/proc/life_placed()
+	return loc && !transforming
+
+/mob/living/proc/life_canmove_wanted()
+	return life_set & LIFE_CANMOVE_SETS
+
+/// The HUD reaction's gate: only a mob with a client draws one.
+/mob/living/proc/life_hud_wanted()
+	return client && (life_set & LIFE_PRESENT_SETS)
+
+/// Sight flags matter for every living mob, client or not.
+/mob/living/proc/life_vision_wanted()
+	return life_set & LIFE_PRESENT_SETS
+
+/mob/living/proc/life_canmove_changed(list/keys)
+	if(QDELETED(src) || !life_canmove_wanted())
+		return
+	life_canmove()
+
+/// Whether the mob can move (lying, stunned, buckled, ...). Resting and buckling update canmove
+/// themselves, and the statuses when they start or end.
+/mob/living/proc/life_canmove()
+	if(life_placed())
+		update_canmove()
+
+/mob/living/proc/life_hud_changed(list/keys)
+	if(QDELETED(src) || !life_hud_wanted())
+		return
+	life_hud_pass()
+
+/// One reactive HUD pass: draw it, then arm its rewake (darksight, fading overlays) or, while it
+/// still has work (life_hud_idle() FALSE), run again a Life cycle later.
+/mob/living/proc/life_hud_pass()
+	if(!life_placed())
+		return
+	life_hud()
+	var/delay = life_hud_idle() ? life_hud_rewake_delay() : LIFE_CYCLE
+	if(delay > 0 && client)
+		rx_after(src, delay, PROC_REF(life_hud_rewake), LIFE_HUD_REWAKE, CLOCK_WORLD)
+
+/mob/living/proc/life_hud_rewake()
+	if(QDELETED(src) || !life_hud_wanted())
+		return
+	life_hud_pass()
+
+/mob/living/proc/life_vision_changed(list/keys)
+	if(QDELETED(src) || !life_vision_wanted())
+		return
+	life_vision_pass()
+
+/// One reactive sight pass, then its rewake (a player's view) or, while a listener (remote view)
+/// wants the signal, again a Life cycle later.
+/mob/living/proc/life_vision_pass()
+	life_vision()
+	var/delay = life_vision_idle() ? life_vision_rewake_delay() : LIFE_CYCLE
+	if(delay > 0)
+		rx_after(src, delay, PROC_REF(life_vision_rewake), LIFE_VISION_REWAKE, CLOCK_WORLD)
+
+/mob/living/proc/life_vision_rewake()
+	if(QDELETED(src) || !life_vision_wanted())
+		return
+	life_vision_pass()
 
 /// The player HUD. Returns FALSE when there is no HUD to update. Also run by refresh_hud().
-/datum/om/stage/life/hud
-	order = LIFE_PHASE_OUTPUT + 20
-	name = "hud"
-	pipeline = /datum/om/pipeline/life_present
-	wake_on = CHANGE_MOB_HEALTH | CHANGE_MOB_STATUS | CHANGE_MOB_LOC | CHANGE_MOB_EQUIPMENT
-	run_if = LIFE_RUN_IF_PLACED
-	life_sets = LIFE_SET_LIVING | LIFE_SET_AI | LIFE_SET_PAI
-	woken_by = "Login; body invalidate; equipment; Moved; its own timer (darksight)"
-
-/datum/om/stage/life/hud/perform(mob/living/self, datum/om/frame/life/ctx)
+/mob/living/proc/life_hud()
 	SHOULD_CALL_PARENT(TRUE)
-	..()
-	if(!self.hud_available())
+	if(!hud_available())
 		return FALSE
-	darksight(self)
-	health_icons(self)
+	life_hud_darksight()
+	life_hud_health_icons()
 	return TRUE
 
 /// A14: full-screen global HUD overlays are owned by their providers (glasses, NIF
@@ -548,40 +611,41 @@
 			client.screen |= overlay
 
 /// The root's health icon is event-driven; darksight re-adapts on a timer for players.
-/datum/om/stage/life/hud/idle(mob/living/self)
-	return type == /datum/om/stage/life/hud && !om_wants(self, /datum/om/event/before/mob_handle_hud)
+/// Mob types with their own HUD (life_hud() overrides) keep it awake unless they say otherwise.
+/mob/living/proc/life_hud_idle()
+	return !om_wants(src, /datum/om/event/before/mob_handle_hud)
 
-/datum/om/stage/life/hud/rewake_delay(mob/living/self)
-	return self.client ? 5 SECONDS : 0
+/mob/living/proc/life_hud_rewake_delay()
+	return src.client ? 5 SECONDS : 0
 
 /// Health doll / health icon. Returns FALSE when a component draws it instead.
-/datum/om/stage/life/hud/proc/health_icons(mob/living/self)
+/mob/living/proc/life_hud_health_icons()
 	SHOULD_CALL_PARENT(TRUE)
-	if(OM_EMIT(self, /datum/om/event/before/mob_handle_hud_health_icon) & HEALTH_ICON_EVENT_HANDLED)
+	if(OM_EMIT(src, /datum/om/event/before/mob_handle_hud_health_icon) & HEALTH_ICON_EVENT_HANDLED)
 		return FALSE
 	return TRUE
 
 /// Adapts the darkness overlay to the light level and the mob's darksight.
-/datum/om/stage/life/hud/proc/darksight(mob/living/self)
-	OM_EMIT(self, /datum/om/event/mob_handle_hud_darksight)
-	if(!self.seedarkness) //Cheap 'always darksight' var
-		self.dsoverlay.alpha = 255
+/mob/living/proc/life_hud_darksight()
+	OM_EMIT(src, /datum/om/event/mob_handle_hud_darksight)
+	if(!src.seedarkness) //Cheap 'always darksight' var
+		src.dsoverlay.alpha = 255
 		return
 
-	var/darksightedness = min(self.see_in_dark/world.view,1.0)	//A ratio of how good your darksight is, from 'nada' to 'really darn good'
-	var/current = self.dsoverlay.alpha/255						//Our current adjustedness
+	var/darksightedness = min(src.see_in_dark/world.view,1.0)	//A ratio of how good your darksight is, from 'nada' to 'really darn good'
+	var/current = src.dsoverlay.alpha/255						//Our current adjustedness
 
 	var/brightness = 0.0 //We'll assume it's superdark if we can't find something else.
 
-	if(isturf(self.loc))
-		var/turf/T = self.loc //Will be true 99% of the time, thus avoiding the whole elif chain
+	if(isturf(src.loc))
+		var/turf/T = src.loc //Will be true 99% of the time, thus avoiding the whole elif chain
 		brightness = T.get_lumcount()
 
 	//Snowflake treatment of potential locations
-	else if(istype(self.loc,/obj/mecha)) //I imagine there's like displays and junk in there. Use the lights!
+	else if(istype(src.loc,/obj/mecha)) //I imagine there's like displays and junk in there. Use the lights!
 		brightness = 1
-	else if(istype(self.loc,/obj/item/holder)) //Poor carried teshari and whatnot should adjust appropriately
-		var/turf/T = get_turf(self)
+	else if(istype(src.loc,/obj/item/holder)) //Poor carried teshari and whatnot should adjust appropriately
+		var/turf/T = get_turf(src)
 		brightness = T.get_lumcount()
 
 	var/darkness = 1-brightness					//Silly, I know, but 'alpha' and 'darkness' go the same direction on a number line
@@ -589,31 +653,23 @@
 	var/distance = abs(current-adjust_to)		//Used for how long to animate for
 	if(distance < 0.01) return					//We're already all set
 
-	animate(self.dsoverlay, alpha = (adjust_to*255), time = (distance*10 SECONDS))
+	animate(src.dsoverlay, alpha = (adjust_to*255), time = (distance*10 SECONDS))
 
 /// Sight flags: SEE_TURFS, see_in_dark, see_invisible, vision planes. Also run by refresh_vision().
-/datum/om/stage/life/vision
-	order = LIFE_PHASE_OUTPUT + 30
-	name = "vision"
-	pipeline = /datum/om/pipeline/life_vision
-	wake_on = CHANGE_MOB_STATUS | CHANGE_MOB_EQUIPMENT | CHANGE_MOB_CONDITIONS | CHANGE_MOB_HEALTH
-	life_sets = LIFE_SET_LIVING | LIFE_SET_AI | LIFE_SET_PAI
-	woken_by = "blindness and drugs (statuses); equipment (glasses, helmets); mutations, species, modifiers (conditions); set_stat; Login; refresh_vision()"
 
 /// Variants set their sight, then call ..() last to send the vision signal.
-/datum/om/stage/life/vision/perform(mob/living/self, datum/om/frame/life/ctx)
+/mob/living/proc/life_vision()
 	SHOULD_CALL_PARENT(TRUE)
-	..()
-	OM_EMIT(self, /datum/om/event/mob_handle_vision)
+	OM_EMIT(src, /datum/om/event/mob_handle_vision)
 
 /// The root only notifies listeners (remote view); sight inputs wake it.
-/// Every variant's inputs are channel-reported (see wake_on), so all of them idle once they have
+/// Every override's inputs are channel-reported (LIFE_VISION_CHANNELS), so all of them idle once they have
 /// run, unless a listener (remote view) wants the signal every cycle.
-/datum/om/stage/life/vision/idle(mob/living/self)
-	return !om_wants(self, /datum/om/event/mob_handle_vision)
+/mob/living/proc/life_vision_idle()
+	return !om_wants(src, /datum/om/event/mob_handle_vision)
 
-/datum/om/stage/life/vision/rewake_delay(mob/living/self)
-	return self.client ? 5 SECONDS : 0
+/mob/living/proc/life_vision_rewake_delay()
+	return src.client ? 5 SECONDS : 0
 
 // ---------------------------------------------------------------- declared fields (code/datums/om/fields.dm)
 // What Life stages read to decide there is work, and the channel each raises. Written only through

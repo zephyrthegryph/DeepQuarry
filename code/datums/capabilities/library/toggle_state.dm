@@ -84,7 +84,8 @@
 		return else_say || "you can't do that right now"
 
 /datum/capability/toggle_state/interactions(atom/holder)
-	var/datum/capability/entry/wrapper = cap_use_self(verb_name, TYPE_PROC_REF(/obj/item, cap_toggle_run), works_broken = TRUE, works_unpowered = TRUE, in_inventory = TRUE, entry_type = /datum/interaction/capability/toggle)
+	// The op "toggle_<name>": the self-use, the Menu and the native verb reach it.
+	var/datum/capability/entry/wrapper = cap_use_self(verb_name, TYPE_PROC_REF(/obj/item, cap_toggle_run), works_broken = TRUE, works_unpowered = TRUE, in_inventory = TRUE, entry_type = /datum/interaction/capability/toggle, key = "toggle_[name]")
 	return list(adopt_entry(wrapper, "self:toggle:[bit]"))
 
 /datum/capability/toggle_state/verbs()

@@ -47,7 +47,8 @@ the old ones and does not migrate callers.
 | `update_rust_device()`, `push_to_rust()` hand pushes, `power_sync` | generated `rust_push(reads...)` | f-rust | [rust.md](rust.md) |
 | Mirrors: `turf.temperature`, APC `sync_cell_charge`, gas observation drains | `native_read(E, key)`, `native(key...)`, one `vg_frame` outbox | f-rust | [rust.md](rust.md) |
 | Reactor watch/token, per-domain watches | one World watch facility + `on_cross` | f-rust | [rust.md](rust.md) |
-| `cap_entry_point(cap_hand(...), INTERACTION_ENTRY_ALT, ...)`, per-entry alt-click, `INTERACT_*` | `cap_op(..., action = ACT_X)`; gestures bind to actions in a bind profile | f-ops | [operations_and_actions.md](operations_and_actions.md) |
+| `cap_entry_point(cap_hand(...), INTERACTION_ENTRY_ALT, ...)`, per-entry alt-click, `INTERACT_*` | `cap_op(..., action = ACT_X, priority =, stance =)`; gestures bind to actions in a bind profile (stance is a gesture modifier); `INTERACT_VERB` is `action = ACT_NONE`; the kind-by-kind table is B1 | f-ops [built: a2-ops] | [operations_and_actions.md](operations_and_actions.md) §5, §5a |
+| `_DEFAULT` ordering, `INTERACT_ROBOT` / `INTERACT_TK` priority 1 | `priority = OP_PRIORITY_DEFAULT`; declaration order (the cyborg op before the silicon one); `via = ROUTE_TK` | a2-ops [built] | [operations_and_actions.md](operations_and_actions.md) §5 |
 | `behind = COVER \| PANEL` bits | compartments: `compartment(BAY_X, door =, route_gate =)` and `at = BAY_X` on operations, slots, ladders | f-ops | [operations_and_actions.md](operations_and_actions.md) |
 | `needs = PROC_REF(x)` + `else_say`, `works_broken`, `works_unpowered`, `locked_by`, `blocked_by` | requirements: `req_*`, `all_of`/`any_of`/`none_of`, `cap_require(ops =, needs =)` (old arguments still map to them) | f-ops | [operations_and_actions.md](operations_and_actions.md) |
 | `cap_hand` / `cap_tool` / `cap_use_on` / `cap_insert` / `cap_control` | presets over `cap_op(name, handler, using=, by=, via=, action=, needs=, delay=, cost=, kind=, key=, at=, log=)` | f-ops | [operations_and_actions.md](operations_and_actions.md) |
@@ -230,6 +231,8 @@ Handler signatures: a `cap_hand()` handler is `(mob/user, ...form answers)`; `ca
 | Constructor | Status | Gives |
 |---|---|---|
 Every constructor below also takes the standard gating arguments `needs`, `else_say`, `works_broken`, `works_unpowered`, `log` (and `at =` where a compartment applies). Since G12 there is no `behind` / `blocked_by` / `locked_by` and no `layer =`: a state gate is a requirement in `needs` (`req_set(COVER)`, `req_clear(COVER | PANEL)`, `req_clear(LOCK)`), folded onto the entries with the old messages, and a capability draws its fixed standard look name (`look.hide(name)` in the holder's `draw()` drops it). Capability-level gating is merged onto every entry the capability builds.
+
+Every entry a library capability builds is a real op [built: a2-ops, G16]: it has a key (`open_cover`, `remove_cover`, `open_maintenance_panel`, `pulse_wires`, `cut_wires`, `repair`, `anchor`, `insert_<var>` / `eject_<var>` / `eject_<var>_alt` / `eject_<var>_self` / `eject_<var>_menu` for a slot, `step:<from>><to>:<tool or item>` for a ladder step, `dismantle`, `put_in` / `take_out` / `empty_out`, `pour_in` / `splash` / `fill_from`, ...), an action, a priority and requirements, so your type's own ops compete with the library's by priority (`OP_PRIORITY_*`) and declaration order. `before_op(key, ...)`, `cap_require(key, ...)` and `refine()` (for top-level ops) name them. Settings and other menu-only entries (climb, flip, the signaler's three, a label's removal, Give a drink, Feed, Put out, Empty out, Set transfer amount) are `ACT_NONE`. The library's ops take no provider slot (`by = NONE`).
 
 | `cap_cover(open_tool = TOOL_CROWBAR, delay, removable = FALSE, ...gating)` | [built] | open/close entry (`BY_HAND` opens by hand), `cover_open` state and look, examine; `removable` adds the knocked-off cover (`CAP_COVER_REMOVED`) |
 | `cap_panel(tool = TOOL_SCREWDRIVER, delay, ...gating)` | [built] | maintenance panel |
@@ -451,9 +454,15 @@ presets of `cap_op`). For new or reworked code:
 - Replace a copied op with `refine(key, delay = ...)`; a duplicate op key is an init error.
 - A control that a remote console or UI may also work: `cap_control(...)`, or `via = ROUTE_PHYSICAL | ROUTE_UI`.
 - Open parts of a machine through `compartment(BAY_X, ...)` and `at = BAY_X`, not ad-hoc `behind` bits.
-- Gestures: answer an action (`action = ACT_LOCK`); do not read click modifiers. A real `cap_op()` (not a
-  `cap_hand`/`cap_tool` preset) whose action the actor's bind profile lists for the gesture is run by the click
-  router before the interaction resolver; an op that would be refused leaves the click to the legacy path.
+- Gestures: answer an action (`action = ACT_LOCK`); do not read click modifiers or the stance. A real `cap_op()` (not
+  a `cap_hand`/`cap_tool` preset) whose action the actor's bind profile lists for the gesture is run by the click
+  router before the interaction resolver. Among the ops of one action `priority =` (`OP_PRIORITY_*`) decides, then
+  declaration order; the first that would run answers, else the first meant one refuses. A menu-only op is
+  `action = ACT_NONE`; a hostile one `action = ACT_ATTACK` (a harm or disarm click reaches it first); one for some
+  stances only `stance = I_X` or a list. Every library capability already builds real ops (G16), so a type's own op
+  competes with them by priority, not by being the only op there.
+- Keep `entry = INTERACTION_ENTRY_HAND` (or `_ITEM`, `_SELF`, `_ALT`) on a converted op while other code still calls
+  that entry proc directly (a silicon's `silicon_use` hand use, a computer's any-item fallback).
 - Veto or follow an op with `before_op(key | capability type, handler)` / `after_op(...)` in `reactions()`; the
   handler gets the `op_ctx` and must not keep it. `after_op` fires only for a committed op.
 - `act_action` is a capability UI action, not an atom proc: do not call `atom.act_action`.
@@ -565,6 +574,27 @@ DECLARE_INTERACTIONS(/obj/item/laser_pointer, INTERACT_INSERT(/obj/item/stock_pa
 - Entry order is menu order.
 - Handlers take `(mob/user, obj/item/held)` and return TRUE or `refuse(...)`.
 - Don't move the item yourself: `cap_slot` and `own_set` do it.
+
+**Kind by kind** [built: a2-ops; the A4 codemod writes these] (the full table with notes and three worked conversions,
+the megaphone, the medical records console and the desk bell, is [operations_and_actions.md §5a](operations_and_actions.md)):
+
+| Legacy spec | New form |
+|---|---|
+| `INTERACT_USE` / `INTERACT_SELF` | `cap_use_self(name, handler)` (ACT_USE offering `req_self_held()`; attack_self keeps running it) |
+| `INTERACT_HAND` | `cap_op(name, handler, using = EMPTY_HAND, entry = INTERACTION_ENTRY_HAND)`; a machine silicons work too: `cap_control(...)` |
+| `INTERACT_HAND_UNGATED` | as HAND, `works_broken = TRUE, works_unpowered = TRUE` |
+| `INTERACT_ITEM` | `cap_op(name, handler, using = <held type>, entry = INTERACTION_ENTRY_ITEM)` |
+| `INTERACT_INSERT` | a library slot, else `cap_op(name, handler, using = held_type, entry = INTERACTION_ENTRY_ITEM)` |
+| `INTERACT_ALT` | `cap_op(name, handler, action = ACT_TOGGLE, entry = INTERACTION_ENTRY_ALT)` (or ACT_EJECT / OPEN / CLOSE / LOCK / UNLOCK) |
+| `INTERACT_DRAG` | `cap_op(name, handler, using = <type>, action = ACT_DROP_ONTO, entry = INTERACTION_ENTRY_DRAG)` |
+| `INTERACT_VERB` | `cap_op(name, handler, action = ACT_NONE)`; `REQ_IN_INVENTORY` is `needs = TYPE_PROC_REF(/atom, cap_in_inventory)` |
+| `INTERACT_SILICON` / `INTERACT_ROBOT` | `cap_op(name, handler, via = ROUTE_INTERFACE, by = AFF_INTERFACE)`; the robot one also `offered = req(/mob/living/silicon/robot, of = OP_ACTOR)`, declared first |
+| `INTERACT_OBSERVER` | `cap_op(name, handler, action = ACT_EXAMINE, via = ROUTE_UI, by = NONE)` |
+| `INTERACT_TK` | `cap_op(name, handler, via = ROUTE_TK)` |
+| `_AS(I_HURT)`, `_HOSTILE` / `_AS(I_DISARM)` | `action = ACT_ATTACK, stance = I_HURT` / `stance = I_DISARM` |
+| `_AS(I_GRAB)` / `_AS(I_HELP)`, `_PEACEFUL` | `stance = I_GRAB` / `stance = I_HELP` (ACT_USE) |
+| `_DEFAULT`, `_DEFAULT_AS` | `priority = OP_PRIORITY_DEFAULT` |
+| `REQ_*` clauses | `needs =` (refuses) or `offered =` (not meant: the input falls through) |
 
 ## B2. Tool acts → `cap_tool` or the library
 

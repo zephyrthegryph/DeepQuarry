@@ -20,8 +20,9 @@
 	EXPIRY_DECLARE(hud_full_refresh_at)
 
 // Human Life (doc/rewrite/life_on_om.md). The living core runs first; the human-only steps that
-// followed ..() in the old Life() are TAIL stages below, in their old order:
-//	hud refresh (life_present), voice, stasis sleep, fall,
+// followed ..() in the old Life() are TAIL stages below, in their old order (the HUD and its periodic
+// full refresh are reactions: life_hud_pass() below and living_systems.dm):
+//	voice, stasis sleep, fall,
 //	[alive, not in stasis] changeling, organs, thermoregulation, weight, shock, pain, medical,
 //	                       heartbeat, NIF, phobias, NPC       (run_if LIFE_RUN_IF_LIVE_BIOLOGY)
 //	[dead, not in stasis]  defib timer                        (run_if LIFE_RUN_IF_DEAD_BIOLOGY)
@@ -46,28 +47,32 @@
 	self.life_tick++
 	return ..()
 
-/// Periodic safety refresh of every HUD.
-/datum/om/stage/life/hud_refresh
-	order = LIFE_PHASE_TAIL + 100
-	name = "hud refresh"
-	pipeline = /datum/om/pipeline/life_present
-	wake_on = CHANGE_MOB_HEALTH | CHANGE_MOB_STATUS | CHANGE_MOB_LOC | CHANGE_MOB_EQUIPMENT
-	of = /mob/living/carbon/human
-	woken_by = "its own timer"
+/// Periodic safety refresh of every HUD: once a minute every hud_updateflag bit is set. It follows
+/// each reactive HUD pass and wakes on its own keyed timer while the human has a client.
+#define LIFE_HUD_FULL_REFRESH_REWAKE "life_hud_full_refresh"
 
-/datum/om/stage/life/hud_refresh/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
+/mob/living/carbon/human/life_hud_pass()
+	..()
+	life_hud_full_refresh_pass()
+
+/mob/living/carbon/human/proc/life_hud_full_refresh_pass()
+	if(!life_placed())
+		return
+	life_hud_full_refresh()
+	if(client)
+		rx_after(src, max(1 SECONDS, hud_full_refresh_at - world.time), PROC_REF(life_hud_full_refresh_rewake), LIFE_HUD_FULL_REFRESH_REWAKE, CLOCK_WORLD)
+
+/mob/living/carbon/human/proc/life_hud_full_refresh_rewake()
+	if(QDELETED(src) || !life_hud_wanted())
+		return
+	life_hud_full_refresh_pass()
+
+/mob/living/carbon/human/proc/life_hud_full_refresh()
 	// The periodic safety refresh is intentionally rare (once a minute); state-changing
 	// code continues to set its exact HUD dirty bits.
-	if(!BEFORE(src, self.hud_full_refresh_at, CLOCK_WORLD))
-		EXPIRY_SET(self, hud_full_refresh_at, 1 MINUTES, CLOCK_WORLD)
-		self.hud_updateflag = (1 << TOTAL_HUDS) - 1
-
-/// Lazy: sleeps until the next refresh is due.
-/datum/om/stage/life/hud_refresh/idle(mob/living/carbon/human/self)
-	return TRUE
-
-/datum/om/stage/life/hud_refresh/rewake_delay(mob/living/carbon/human/self)
-	return max(1 SECONDS, self.hud_full_refresh_at - world.time)
+	if(!BEFORE(src, hud_full_refresh_at, CLOCK_WORLD))
+		EXPIRY_SET(src, hud_full_refresh_at, 1 MINUTES, CLOCK_WORLD)
+		hud_updateflag = (1 << TOTAL_HUDS) - 1
 
 /// The voice others hear.
 /datum/om/stage/life/voice
@@ -1501,62 +1506,59 @@
 	if(. && stat)
 		update_skin(1)
 
-/datum/om/stage/life/hud/carbon/human
-	of = /mob/living/carbon/human
-	woken_by = "Login; body invalidate; equipment; Moved; status setters; its rewake (overlays that fade, hud_updateflag bits set raw)"
 
 /// A24: nothing for others to see (no hud_updateflag) and nothing on our own screen that moves
 /// on its own: no client, or a settled conscious body with no fading overlay.
-/datum/om/stage/life/hud/carbon/human/idle(mob/living/carbon/human/self)
-	if(self.hud_updateflag || om_wants(self, /datum/om/event/before/mob_handle_hud))
+/mob/living/carbon/human/life_hud_idle()
+	if(src.hud_updateflag || om_wants(src, /datum/om/event/before/mob_handle_hud))
 		return FALSE
-	if(!self.client)
+	if(!src.client)
 		return TRUE
-	if(self.stat != CONSCIOUS || self.is_critical() || self.oxygen_debt() || self.damageoverlaytemp)
+	if(src.stat != CONSCIOUS || src.is_critical() || src.oxygen_debt() || src.damageoverlaytemp)
 		return FALSE
-	if(self.tiredness || self.fear || self.blinded)
+	if(src.tiredness || src.fear || src.blinded)
 		return FALSE
-	return !self.has_status(EFFECT_BLURRY) && !self.has_status(EFFECT_DRUGGED)
+	return !src.has_status(EFFECT_BLURRY) && !src.has_status(EFFECT_DRUGGED)
 
 /// Nutrition drains and darksight re-adapts slowly; hud_updateflag bits are set raw.
-/datum/om/stage/life/hud/carbon/human/rewake_delay(mob/living/carbon/human/self)
+/mob/living/carbon/human/life_hud_rewake_delay()
 	return 5 SECONDS
 
 /// P2-F1: the human screen, one proc per overlay family below.
-/datum/om/stage/life/hud/carbon/human/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
-	if(self.hud_updateflag) // update our mob's hud overlays, AKA what others see flaoting above our head
-		hud_list(self)
+/mob/living/carbon/human/life_hud()
+	if(src.hud_updateflag) // update our mob's hud overlays, AKA what others see flaoting above our head
+		life_hud_list()
 
 	// now handle what we see on our screen
 	. = ..()
 	if(!.)
 		return
 
-	if(istype(self.client.eye,/obj/machinery/camera))
-		var/obj/machinery/camera/cam = self.client.eye
+	if(istype(src.client.eye,/obj/machinery/camera))
+		var/obj/machinery/camera/cam = src.client.eye
 		if(LAZYLEN(cam.client_huds))
-			self.client.screen |= cam.client_huds
+			src.client.screen |= cam.client_huds
 
-	if(self.stat == DEAD) //Dead
-		if(!self.has_status(EFFECT_DRUGGED))
-			self.see_invisible = SEE_INVISIBLE_LEVEL_TWO
-	else if(self.is_critical()) //Crit
-		crit_overlay(self)
+	if(src.stat == DEAD) //Dead
+		if(!src.has_status(EFFECT_DRUGGED))
+			src.see_invisible = SEE_INVISIBLE_LEVEL_TWO
+	else if(src.is_critical()) //Crit
+		life_hud_crit_overlay()
 	else //Alive
-		self.clear_fullscreen("crit")
-		condition_overlays(self)
-		nutrition_alert(self)
-		sight_overlays(self)
-		if(!self.surrounding_belly() && !self.previewing_belly) // Belly fullscreens safety
-			self.clear_fullscreen("belly")
-			self.belly_overlay_tgui?.hide() // hide TGUI belly overlay
-		if(CONFIG_GET(flag/welder_vision) && welder_vision(self))
-			self.claim_global_hud(GLOB.global_hud.darkMask)
+		src.clear_fullscreen("crit")
+		life_hud_condition_overlays()
+		life_hud_nutrition_alert()
+		life_hud_sight_overlays()
+		if(!src.surrounding_belly() && !src.previewing_belly) // Belly fullscreens safety
+			src.clear_fullscreen("belly")
+			src.belly_overlay_tgui?.hide() // hide TGUI belly overlay
+		if(CONFIG_GET(flag/welder_vision) && life_hud_welder_vision())
+			src.claim_global_hud(GLOB.global_hud.darkMask)
 
-	self.reconcile_global_huds()
+	src.reconcile_global_huds()
 
 /// Severity band of `value` against ascending `thresholds`: 0 below the first, n at or past the nth.
-/datum/om/stage/life/hud/carbon/human/proc/overlay_band(value, list/thresholds)
+/mob/living/carbon/human/proc/life_hud_overlay_band(value, list/thresholds)
 	. = 0
 	for(var/threshold in thresholds)
 		if(value < threshold)
@@ -1564,101 +1566,101 @@
 		.++
 
 /// Critical damage passage overlay, deeper as vitality drains (0 at the crit line, -100 at the end).
-/datum/om/stage/life/hud/carbon/human/proc/crit_overlay(mob/living/carbon/human/self)
-	var/depth = -100 * (2 * self.vitality() - 1) // 0 at the crit line, 100 at the end
+/mob/living/carbon/human/proc/life_hud_crit_overlay()
+	var/depth = -100 * (2 * src.vitality() - 1) // 0 at the crit line, 100 at the end
 	var/static/list/crit_bands = list(10, 20, 30, 40, 50, 60, 70, 80, 90, 95)
-	self.overlay_fullscreen("crit", /atom/movable/screen/fullscreen/crit, overlay_band(depth, crit_bands))
+	src.overlay_fullscreen("crit", /atom/movable/screen/fullscreen/crit, life_hud_overlay_band(depth, crit_bands))
 
 /// Oxygen debt, injury, tiredness (drain vore) and fear overlays.
-/datum/om/stage/life/hud/carbon/human/proc/condition_overlays(mob/living/carbon/human/self)
+/mob/living/carbon/human/proc/life_hud_condition_overlays()
 	var/static/list/oxy_bands = list(10, 20, 25, 30, 35, 40, 45)
 	var/static/list/hurt_bands = list(10, 25, 40, 55, 70, 85)
 	var/static/list/tired_bands = list(10, 20, 30, 45, 60, 75, 90)
 	var/static/list/fear_bands = list(10, 20, 30, 50, 70, 90)
-	var/debt = self.oxygen_debt()
+	var/debt = src.oxygen_debt()
 	if(debt)
-		self.overlay_fullscreen("oxy", /atom/movable/screen/fullscreen/oxy, overlay_band(debt, oxy_bands))
+		src.overlay_fullscreen("oxy", /atom/movable/screen/fullscreen/oxy, life_hud_overlay_band(debt, oxy_bands))
 	else
-		self.clear_fullscreen("oxy")
+		src.clear_fullscreen("oxy")
 
 	//Fire and Brute damage overlay (BSSR)
-	var/hurtdamage = self.injury_load(INJURY_CATEGORY_PHYSICAL) + self.injury_load(INJURY_CATEGORY_THERMAL) + self.damageoverlaytemp
-	self.damageoverlaytemp = 0 // We do this so we can detect if someone hits us or not.
+	var/hurtdamage = src.injury_load(INJURY_CATEGORY_PHYSICAL) + src.injury_load(INJURY_CATEGORY_THERMAL) + src.damageoverlaytemp
+	src.damageoverlaytemp = 0 // We do this so we can detect if someone hits us or not.
 	if(hurtdamage)
-		self.overlay_fullscreen("brute", /atom/movable/screen/fullscreen/brute, overlay_band(hurtdamage, hurt_bands))
+		src.overlay_fullscreen("brute", /atom/movable/screen/fullscreen/brute, life_hud_overlay_band(hurtdamage, hurt_bands))
 	else
-		self.clear_fullscreen("brute")
+		src.clear_fullscreen("brute")
 
-	if(self.tiredness)
-		self.overlay_fullscreen("tired", /atom/movable/screen/fullscreen/oxy, overlay_band(self.tiredness, tired_bands))
+	if(src.tiredness)
+		src.overlay_fullscreen("tired", /atom/movable/screen/fullscreen/oxy, life_hud_overlay_band(src.tiredness, tired_bands))
 	else
-		self.clear_fullscreen("tired")
+		src.clear_fullscreen("tired")
 
-	if(self.fear)
-		self.overlay_fullscreen("fear", /atom/movable/screen/fullscreen/fear, overlay_band(self.fear, fear_bands))
+	if(src.fear)
+		src.overlay_fullscreen("fear", /atom/movable/screen/fullscreen/fear, life_hud_overlay_band(src.fear, fear_bands))
 	else
-		self.clear_fullscreen("fear")
+		src.clear_fullscreen("fear")
 
 /// Hunger alerts in the body's style (P2-S5: hunger_alert_style(), not a species name check).
-/datum/om/stage/life/hud/carbon/human/proc/nutrition_alert(mob/living/carbon/human/self)
+/mob/living/carbon/human/proc/life_hud_nutrition_alert()
 	var/static/list/alerts_by_style = list(
 		"[HUNGER_ALERT_ORGANIC]" = list(/atom/movable/screen/alert/fat, /atom/movable/screen/alert/hungry, /atom/movable/screen/alert/starving),
 		"[HUNGER_ALERT_SYNTH]" = list(/atom/movable/screen/alert/fat/synth, /atom/movable/screen/alert/hungry/synth, /atom/movable/screen/alert/starving/synth),
 		"[HUNGER_ALERT_VAMPIRE]" = list(/atom/movable/screen/alert/fat/vampire, /atom/movable/screen/alert/hungry/vampire, /atom/movable/screen/alert/starving/vampire),
 	)
-	var/list/alerts = alerts_by_style["[self.hunger_alert_style()]"] || alerts_by_style["[HUNGER_ALERT_ORGANIC]"]
-	switch(self.nutrition)
+	var/list/alerts = alerts_by_style["[src.hunger_alert_style()]"] || alerts_by_style["[HUNGER_ALERT_ORGANIC]"]
+	switch(src.nutrition)
 		if(450 to INFINITY)
-			self.throw_alert("nutrition", alerts[1])
+			src.throw_alert("nutrition", alerts[1])
 		if(250 to 450)
-			self.clear_alert("nutrition")
+			src.clear_alert("nutrition")
 		if(150 to 250)
-			self.throw_alert("nutrition", alerts[2])
+			src.throw_alert("nutrition", alerts[2])
 		else
-			self.throw_alert("nutrition", alerts[3])
+			src.throw_alert("nutrition", alerts[3])
 
 /// Blindness, nearsightedness, blur and drug overlays.
-/datum/om/stage/life/hud/carbon/human/proc/sight_overlays(mob/living/carbon/human/self)
-	if(self.blinded)
-		self.overlay_fullscreen("blind", /atom/movable/screen/fullscreen/blind)
-		self.throw_alert("blind", /atom/movable/screen/alert/blind)
+/mob/living/carbon/human/proc/life_hud_sight_overlays()
+	if(src.blinded)
+		src.overlay_fullscreen("blind", /atom/movable/screen/fullscreen/blind)
+		src.throw_alert("blind", /atom/movable/screen/alert/blind)
 	else
-		self.clear_fullscreen("blind")
-		self.clear_alert("blind")
+		src.clear_fullscreen("blind")
+		src.clear_alert("blind")
 
 	var/apply_nearsighted_overlay = FALSE
-	if(self.is_nearsighted())
+	if(src.is_nearsighted())
 		apply_nearsighted_overlay = TRUE
-		var/obj/item/clothing/glasses/G = self.get_equipped_item(SLOT_ID_EYES)
+		var/obj/item/clothing/glasses/G = src.get_equipped_item(SLOT_ID_EYES)
 		if(istype(G) && G.prescription)
 			apply_nearsighted_overlay = FALSE
-		if(self.nif && self.nif.flag_check(NIF_V_CORRECTIVE, NIF_FLAGS_VISION))
+		if(src.nif && src.nif.flag_check(NIF_V_CORRECTIVE, NIF_FLAGS_VISION))
 			apply_nearsighted_overlay = FALSE
-	self.set_fullscreen(apply_nearsighted_overlay, "nearsighted", /atom/movable/screen/fullscreen/impaired, 1)
+	src.set_fullscreen(apply_nearsighted_overlay, "nearsighted", /atom/movable/screen/fullscreen/impaired, 1)
 
-	self.set_fullscreen(self.status_units(EFFECT_BLURRY), "blurry", /atom/movable/screen/fullscreen/blurry)
-	self.set_fullscreen(self.status_units(EFFECT_DRUGGED), "high", /atom/movable/screen/fullscreen/high)
-	if(self.has_status(EFFECT_DRUGGED))
-		self.throw_alert("high", /atom/movable/screen/alert/high)
+	src.set_fullscreen(src.status_units(EFFECT_BLURRY), "blurry", /atom/movable/screen/fullscreen/blurry)
+	src.set_fullscreen(src.status_units(EFFECT_DRUGGED), "high", /atom/movable/screen/fullscreen/high)
+	if(src.has_status(EFFECT_DRUGGED))
+		src.throw_alert("high", /atom/movable/screen/alert/high)
 	else
-		self.clear_alert("high")
+		src.clear_alert("high")
 
 /// Is anything dimming the view like a welding mask (short sight, welding gear, UV filter, rig visor)?
-/datum/om/stage/life/hud/carbon/human/proc/welder_vision(mob/living/carbon/human/self)
-	if(self.species.short_sighted || self.absorbed)
+/mob/living/carbon/human/proc/life_hud_welder_vision()
+	if(src.species.short_sighted || src.absorbed)
 		return TRUE
-	var/obj/item/clothing/glasses/welding/goggles = self.get_equipped_item(SLOT_ID_EYES)
+	var/obj/item/clothing/glasses/welding/goggles = src.get_equipped_item(SLOT_ID_EYES)
 	if(istype(goggles) && !goggles.up)
 		return TRUE
-	if(self.nif && self.nif.flag_check(NIF_V_UVFILTER,NIF_FLAGS_VISION))
+	if(src.nif && src.nif.flag_check(NIF_V_UVFILTER,NIF_FLAGS_VISION))
 		return TRUE
-	if(istype(self.get_equipped_item(SLOT_ID_EYES), /obj/item/clothing/glasses/sunglasses/thinblindfold))
+	if(istype(src.get_equipped_item(SLOT_ID_EYES), /obj/item/clothing/glasses/sunglasses/thinblindfold))
 		return TRUE
-	var/obj/item/clothing/head/welding/mask = self.get_equipped_item(SLOT_ID_HEAD)
+	var/obj/item/clothing/head/welding/mask = src.get_equipped_item(SLOT_ID_HEAD)
 	if(istype(mask) && !mask.up)
 		return TRUE
-	var/obj/item/rig/O = self.get_equipped_item(SLOT_ID_BACK)
-	if(istype(O) && O.helmet && O.helmet == self.get_equipped_item(SLOT_ID_HEAD) && (O.helmet.body_parts_covered & EYES))
+	var/obj/item/rig/O = src.get_equipped_item(SLOT_ID_BACK)
+	if(istype(O) && O.helmet && O.helmet == src.get_equipped_item(SLOT_ID_HEAD) && (O.helmet.body_parts_covered & EYES))
 		if((O.offline && O.offline_vision_restriction == 1) || (!O.offline && O.vision_restriction == 1))
 			return TRUE
 	return FALSE
@@ -1671,57 +1673,57 @@
 		return 0
 	return current_pain() / max(1, HB.pain_tolerance() + 100)
 
-/datum/om/stage/life/hud/carbon/human/health_icons(mob/living/carbon/human/self)
+/mob/living/carbon/human/life_hud_health_icons()
 	. = ..()
-	if(!. || !self.healths)
+	if(!. || !src.healths)
 		return
 
-	if(self.stat == DEAD || (self.status_flags & FAKEDEATH)) //Dead
-		self.healths.icon_state = "health7"	//DEAD healthmeter
-		self.health_doll_key = null
+	if(src.stat == DEAD || (src.status_flags & FAKEDEATH)) //Dead
+		src.healths.icon_state = "health7"	//DEAD healthmeter
+		src.health_doll_key = null
 		return
 
-	if(self.is_critical()) //Crit
+	if(src.is_critical()) //Crit
 		return
 
-	if(self.factor(BF_ANALGESIA) > 100)
-		self.healths.icon_state = "health_numb"
-		self.health_doll_key = null
+	if(src.factor(BF_ANALGESIA) > 100)
+		src.healths.icon_state = "health_numb"
+		src.health_doll_key = null
 		return
 
 	// A by-limb health display. The doll is only rebuilt when what it shows changes: each limb's
 	// cached damage image and colour band, fire, and the pain indicators make up the key.
 	var/trauma_val = 0 // Used in calculating softcrit/hardcrit indicators.
-	if(self.can_feel_pain())
-		trauma_val = self.pain_knockout_fraction()
+	if(src.can_feel_pain())
+		trauma_val = src.pain_knockout_fraction()
 	var/limb_trauma_val = trauma_val*0.3
-	var/hallucination_hud = self.get_hallucination_state()?.get_hud_state()
-	var/burning = self.on_fire || hallucination_hud == HUD_HALLUCINATION_ONFIRE
+	var/hallucination_hud = src.get_hallucination_state()?.get_hud_state()
+	var/burning = src.on_fire || hallucination_hud == HUD_HALLUCINATION_ONFIRE
 	if(hallucination_hud == HUD_HALLUCINATION_CRIT)
 		trauma_val = 2
 
 	var/no_damage = 1
-	var/key = "[burning ? self.get_fire_icon_state() : ""]"
-	for(var/obj/item/organ/external/E in self.organs)
+	var/key = "[burning ? src.get_fire_icon_state() : ""]"
+	for(var/obj/item/organ/external/E in src.organs)
 		if(no_damage && (E.get_trauma() || E.get_burn()))
 			no_damage = 0
 		var/image/limb_image = E.get_damage_hud_image(limb_trauma_val)
 		key += "|\ref[limb_image][limb_image.color]"
-	var/show_pain = trauma_val && self.can_feel_pain()
+	var/show_pain = trauma_val && src.can_feel_pain()
 	key += "|[show_pain && trauma_val > 0.7][show_pain && trauma_val >= 1][!trauma_val && no_damage]"
-	if(key == self.health_doll_key)
+	if(key == src.health_doll_key)
 		return
-	self.health_doll_key = key
+	src.health_doll_key = key
 
-	var/mutable_appearance/healths_ma = new(self.healths)
+	var/mutable_appearance/healths_ma = new(src.healths)
 	healths_ma.icon_state = "blank"
 	healths_ma.overlays = null
 	healths_ma.plane = PLANE_PLAYER_HUD
 	var/list/health_images = list()
-	for(var/obj/item/organ/external/E in self.organs)
+	for(var/obj/item/organ/external/E in src.organs)
 		health_images += E.get_damage_hud_image(limb_trauma_val)
 	if(burning)
-		health_images += image('icons/mob/OnFire.dmi',"[self.get_fire_icon_state()]")
+		health_images += image('icons/mob/OnFire.dmi',"[src.get_fire_icon_state()]")
 	if(show_pain)
 		if(trauma_val > 0.7)
 			health_images += image('icons/mob/screen1_health.dmi',"softcrit")
@@ -1731,91 +1733,89 @@
 		health_images += image('icons/mob/screen1_health.dmi',"fullhealth")
 
 	healths_ma.add_overlay(health_images)
-	self.healths.appearance = healths_ma
+	src.healths.appearance = healths_ma
 
 /// The last by-limb health doll this human's HUD built (see health_icons); null forces a rebuild.
 /mob/living/carbon/human/var/tmp/health_doll_key
 
-/datum/om/stage/life/vision/carbon/human
-	of = /mob/living/carbon/human
 
-/datum/om/stage/life/vision/carbon/human/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
-	if(self.stat == DEAD)
-		self.sight |= SEE_TURFS|SEE_MOBS|SEE_OBJS|SEE_SELF
-		self.see_in_dark = 8
+/mob/living/carbon/human/life_vision()
+	if(src.stat == DEAD)
+		src.sight |= SEE_TURFS|SEE_MOBS|SEE_OBJS|SEE_SELF
+		src.see_in_dark = 8
 	else //We aren't dead
-		self.sight &= ~(SEE_TURFS|SEE_MOBS|SEE_OBJS)
+		src.sight &= ~(SEE_TURFS|SEE_MOBS|SEE_OBJS)
 
-		if(self.see_invisible_default > SEE_INVISIBLE_LEVEL_ONE)
-			self.see_invisible = self.see_invisible_default
+		if(src.see_invisible_default > SEE_INVISIBLE_LEVEL_ONE)
+			src.see_invisible = src.see_invisible_default
 		else
-			self.see_invisible = self.see_in_dark>2 ? SEE_INVISIBLE_LEVEL_ONE : self.see_invisible_default
+			src.see_invisible = src.see_in_dark>2 ? SEE_INVISIBLE_LEVEL_ONE : src.see_invisible_default
 
 		// Do this early so certain stuff gets turned off before vision is assigned.
-		var/area/A = get_area(self)
+		var/area/A = get_area(src)
 		if(A?.flag_check(AREA_NO_SPOILERS))
-			self.disable_spoiler_vision()
+			src.disable_spoiler_vision()
 
-		if(self.has_mutation(XRAY))
-			self.sight |= SEE_TURFS|SEE_MOBS|SEE_OBJS
-			self.see_in_dark = 8
-			if(!self.has_status(EFFECT_DRUGGED))		self.see_invisible = SEE_INVISIBLE_LEVEL_TWO
+		if(src.has_mutation(XRAY))
+			src.sight |= SEE_TURFS|SEE_MOBS|SEE_OBJS
+			src.see_in_dark = 8
+			if(!src.has_status(EFFECT_DRUGGED))		src.see_invisible = SEE_INVISIBLE_LEVEL_TWO
 
-		if(self.seer==1)
-			var/obj/effect/rune/R = locate_within(self.loc, /obj/effect/rune)
+		if(src.seer==1)
+			var/obj/effect/rune/R = locate_within(src.loc, /obj/effect/rune)
 			if(R && R.word1 == GLOB.cultwords["see"] && R.word2 == GLOB.cultwords["hell"] && R.word3 == GLOB.cultwords["join"])
-				self.see_invisible = SEE_INVISIBLE_CULT
+				src.see_invisible = SEE_INVISIBLE_CULT
 			else
-				self.see_invisible = self.see_invisible_default
-				self.seer = 0
+				src.see_invisible = src.see_invisible_default
+				src.seer = 0
 
-		if(!self.seedarkness)
-			self.sight = self.species.get_vision_flags(self)
-			self.see_in_dark = 8
-			self.see_invisible = SEE_INVISIBLE_NOLIGHTING
+		if(!src.seedarkness)
+			src.sight = src.species.get_vision_flags(src)
+			src.see_in_dark = 8
+			src.see_invisible = SEE_INVISIBLE_NOLIGHTING
 
 		else
-			self.sight = self.species.get_vision_flags(self)
-			self.see_in_dark = self.species.darksight
-			if(self.see_invisible_default > SEE_INVISIBLE_LEVEL_ONE)
-				self.see_invisible = self.see_invisible_default
+			src.sight = src.species.get_vision_flags(src)
+			src.see_in_dark = src.species.darksight
+			if(src.see_invisible_default > SEE_INVISIBLE_LEVEL_ONE)
+				src.see_invisible = src.see_invisible_default
 			else
-				self.see_invisible = self.see_in_dark>2 ? SEE_INVISIBLE_LEVEL_ONE : self.see_invisible_default
+				src.see_invisible = src.see_in_dark>2 ? SEE_INVISIBLE_LEVEL_ONE : src.see_invisible_default
 
 		var/glasses_processed = 0
-		var/obj/item/rig/rig = self.get_rig()
-		if(istype(rig) && rig.visor && !self.is_remote_viewing())
-			if(!rig.helmet || (self.get_equipped_item(SLOT_ID_HEAD) && rig.helmet == self.get_equipped_item(SLOT_ID_HEAD)))
+		var/obj/item/rig/rig = src.get_rig()
+		if(istype(rig) && rig.visor && !src.is_remote_viewing())
+			if(!rig.helmet || (src.get_equipped_item(SLOT_ID_HEAD) && rig.helmet == src.get_equipped_item(SLOT_ID_HEAD)))
 				if(rig.visor && rig.visor.vision && rig.visor.active && rig.visor.vision.glasses)
-					glasses_processed = self.process_glasses(rig.visor.vision.glasses)
+					glasses_processed = src.process_glasses(rig.visor.vision.glasses)
 
-		if(self.get_equipped_item(SLOT_ID_EYES) && !glasses_processed && !self.is_remote_viewing())
-			glasses_processed = self.process_glasses(self.get_equipped_item(SLOT_ID_EYES))
-		if(self.has_mutation(XRAY))
-			self.sight |= SEE_TURFS|SEE_MOBS|SEE_OBJS
-			self.see_in_dark = 8
-			if(!self.has_status(EFFECT_DRUGGED))
-				self.see_invisible = SEE_INVISIBLE_LEVEL_TWO
+		if(src.get_equipped_item(SLOT_ID_EYES) && !glasses_processed && !src.is_remote_viewing())
+			glasses_processed = src.process_glasses(src.get_equipped_item(SLOT_ID_EYES))
+		if(src.has_mutation(XRAY))
+			src.sight |= SEE_TURFS|SEE_MOBS|SEE_OBJS
+			src.see_in_dark = 8
+			if(!src.has_status(EFFECT_DRUGGED))
+				src.see_invisible = SEE_INVISIBLE_LEVEL_TWO
 
-		self.sight |= self.factor(BF_SIGHT_FLAGS)
+		src.sight |= src.factor(BF_SIGHT_FLAGS)
 
-		if(!glasses_processed && self.nif)
+		if(!glasses_processed && src.nif)
 			var/datum/nifsoft/vision_soft
-			for(var/datum/nifsoft/NS in self.nif.nifsofts)
+			for(var/datum/nifsoft/NS in src.nif.nifsofts)
 				if(NS.vision_exclusive && NS.active)
 					vision_soft = NS
 					break
 			if(vision_soft)
-				glasses_processed = self.process_nifsoft_vision(vision_soft)		//not really glasses but equitable
+				glasses_processed = src.process_nifsoft_vision(vision_soft)		//not really glasses but equitable
 
-		if(!glasses_processed && (self.species.get_vision_flags(self) > 0))
-			self.sight |= self.species.get_vision_flags(self)
-		if(!self.seer && !glasses_processed && self.seedarkness)
-			self.see_invisible = self.see_invisible_default
+		if(!glasses_processed && (src.species.get_vision_flags(src) > 0))
+			src.sight |= src.species.get_vision_flags(src)
+		if(!src.seer && !glasses_processed && src.seedarkness)
+			src.see_invisible = src.see_invisible_default
 
-		var/mob/observer/eye/eyeobj = self?.active_eye()
-		if(eyeobj && eyeobj?.eye_owner() != self)
-			self.reset_perspective()
+		var/mob/observer/eye/eyeobj = src?.active_eye()
+		if(eyeobj && eyeobj?.eye_owner() != src)
+			src.reset_perspective()
 
 	// Call parent to handle signals
 	..()
@@ -2158,88 +2158,88 @@
 	we only set those statuses and icons upon changes.  Then those HUD items will simply add those pre-made images.
 	This proc below is only called when those HUD elements need to change as determined by the mobs hud_updateflag.
 */
-/datum/om/stage/life/hud/carbon/human/proc/hud_list(mob/living/carbon/human/self)
+/mob/living/carbon/human/proc/life_hud_list()
 	// P2-F1: one proc per HUD image; each redraws only when its bit is set.
-	var/flags = self.hud_updateflag
+	var/flags = src.hud_updateflag
 	if (BITTEST(flags, HEALTH_HUD))
-		hud_health(self)
+		life_hud_health()
 	if (BITTEST(flags, LIFE_HUD))
-		hud_life(self)
+		life_hud_life()
 	if (BITTEST(flags, STATUS_HUD))
-		hud_status(self)
+		life_hud_status()
 	if (BITTEST(flags, ID_HUD))
-		hud_id(self)
+		life_hud_id()
 	if (BITTEST(flags, WANTED_HUD))
-		hud_wanted(self)
+		life_hud_wanted_record()
 	if (BITTEST(flags, IMPLOYAL_HUD) || BITTEST(flags, IMPCHEM_HUD) || BITTEST(flags, IMPTRACK_HUD))
-		hud_implants(self)
+		life_hud_implants()
 	if (BITTEST(flags, SPECIALROLE_HUD))
-		hud_special_role(self)
+		life_hud_special_role()
 	if (BITTEST(flags, BACKUP_HUD))
-		hud_backup(self)
+		life_hud_backup()
 	if (BITTEST(flags, VANTAG_HUD))
-		hud_vantag(self)
-	self.hud_updateflag = 0
+		life_hud_vantag()
+	src.hud_updateflag = 0
 
 /// Health bar: vitality band, or dead.
-/datum/om/stage/life/hud/carbon/human/proc/hud_health(mob/living/carbon/human/self)
-	var/image/holder = self.grab_hud(HEALTH_HUD)
-	var/image/health_us = self.grab_hud(HEALTH_VR_HUD)
-	if(self.stat == DEAD || (self.status_flags & FAKEDEATH))
+/mob/living/carbon/human/proc/life_hud_health()
+	var/image/holder = src.grab_hud(HEALTH_HUD)
+	var/image/health_us = src.grab_hud(HEALTH_VR_HUD)
+	if(src.stat == DEAD || (src.status_flags & FAKEDEATH))
 		holder.icon_state = "-100" 	// X_X
 	else
-		holder.icon_state = vitality_hud_state(self)
-	if(self.block_hud)
+		holder.icon_state = vitality_hud_state(src)
+	if(src.block_hud)
 		holder.icon_state = "hudblank"
 	health_us.icon_state = holder.icon_state
-	self.apply_hud(HEALTH_HUD, holder)
-	self.apply_hud(HEALTH_VR_HUD, health_us)
+	src.apply_hud(HEALTH_HUD, holder)
+	src.apply_hud(HEALTH_VR_HUD, health_us)
 
 /// Life indicator: synthetic, dead or healthy.
-/datum/om/stage/life/hud/carbon/human/proc/hud_life(mob/living/carbon/human/self)
-	var/image/holder = self.grab_hud(LIFE_HUD)
-	if(HAS_SYNTHETIC_BIOLOGY(self))
+/mob/living/carbon/human/proc/life_hud_life()
+	var/image/holder = src.grab_hud(LIFE_HUD)
+	if(HAS_SYNTHETIC_BIOLOGY(src))
 		holder.icon_state = "hudrobo"
-	else if(self.stat == DEAD || (self.status_flags & FAKEDEATH))
+	else if(src.stat == DEAD || (src.status_flags & FAKEDEATH))
 		holder.icon_state = "huddead"
 	else
 		holder.icon_state = "hudhealthy"
-	if(self.block_hud)
+	if(src.block_hud)
 		holder.icon_state = "hudblank"
-	self.apply_hud(LIFE_HUD, holder)
+	src.apply_hud(LIFE_HUD, holder)
 
 /// Medical status: synthetic, dead, ill (a known contagion) or healthy.
-/datum/om/stage/life/hud/carbon/human/proc/hud_status(mob/living/carbon/human/self)
-	var/image/holder = self.grab_hud(STATUS_HUD)
-	var/image/holder2 = self.grab_hud(STATUS_HUD_OOC)
-	var/image/status_r = self.grab_hud(STATUS_R_HUD)
-	if (HAS_SYNTHETIC_BIOLOGY(self))
+/mob/living/carbon/human/proc/life_hud_status()
+	var/image/holder = src.grab_hud(STATUS_HUD)
+	var/image/holder2 = src.grab_hud(STATUS_HUD_OOC)
+	var/image/status_r = src.grab_hud(STATUS_R_HUD)
+	if (HAS_SYNTHETIC_BIOLOGY(src))
 		holder.icon_state = "hudrobo"
-	else if(self.stat == DEAD || (self.status_flags & FAKEDEATH))
+	else if(src.stat == DEAD || (src.status_flags & FAKEDEATH))
 		holder.icon_state = "huddead"
 		holder2.icon_state = "huddead"
-	else if(self.has_known_contagion())
+	else if(src.has_known_contagion())
 		holder.icon_state = "hudill"
 	else
 		holder.icon_state = "hudhealthy"
-		if(self.has_known_contagion())
+		if(src.has_known_contagion())
 			holder2.icon_state = "hudill"
 		else
 			holder2.icon_state = "hudhealthy"
-	if(self.block_hud)
+	if(src.block_hud)
 		holder.icon_state = "hudblank"
 		holder2.icon_state = "hudblank"
 
 	status_r.icon_state = holder.icon_state
-	self.apply_hud(STATUS_HUD, holder)
-	self.apply_hud(STATUS_R_HUD, status_r)
-	self.apply_hud(STATUS_HUD_OOC, holder2)
+	src.apply_hud(STATUS_HUD, holder)
+	src.apply_hud(STATUS_R_HUD, status_r)
+	src.apply_hud(STATUS_HUD_OOC, holder2)
 
 /// Job icon from the worn ID.
-/datum/om/stage/life/hud/carbon/human/proc/hud_id(mob/living/carbon/human/self)
-	var/image/holder = self.grab_hud(ID_HUD)
-	if(self.get_equipped_item(SLOT_ID_ID))
-		var/obj/item/card/id/I = self.get_equipped_item(SLOT_ID_ID).GetID()
+/mob/living/carbon/human/proc/life_hud_id()
+	var/image/holder = src.grab_hud(ID_HUD)
+	if(src.get_equipped_item(SLOT_ID_ID))
+		var/obj/item/card/id/I = src.get_equipped_item(SLOT_ID_ID).GetID()
 		if(I)
 			holder.icon_state = "hud[ckey(GetJobName(I))]"
 		else
@@ -2247,17 +2247,17 @@
 	else
 		holder.icon_state = "hudunknown"
 
-	if(self.block_hud)
+	if(src.block_hud)
 		holder.icon_state = "hudblank"
-	self.apply_hud(ID_HUD, holder)
+	src.apply_hud(ID_HUD, holder)
 
 /// Security record status for the worn ID's name.
-/datum/om/stage/life/hud/carbon/human/proc/hud_wanted(mob/living/carbon/human/self)
-	var/image/holder = self.grab_hud(WANTED_HUD)
+/mob/living/carbon/human/proc/life_hud_wanted_record()
+	var/image/holder = src.grab_hud(WANTED_HUD)
 	holder.icon_state = "hudblank"
-	var/perpname = self.name
-	if(self.get_equipped_item(SLOT_ID_ID))
-		var/obj/item/card/id/I = self.get_equipped_item(SLOT_ID_ID).GetID()
+	var/perpname = src.name
+	if(src.get_equipped_item(SLOT_ID_ID))
+		var/obj/item/card/id/I = src.get_equipped_item(SLOT_ID_ID).GetID()
 		if(I)
 			perpname = I.registered_name
 
@@ -2276,22 +2276,22 @@
 				else if((R.fields["id"] == E.fields["id"]) && (R.fields["criminal"] == "Released"))
 					holder.icon_state = "hudreleased"
 					break
-	if(self.block_hud)
+	if(src.block_hud)
 		holder.icon_state = "hudblank"
-	self.apply_hud(WANTED_HUD, holder)
+	src.apply_hud(WANTED_HUD, holder)
 
 /// Loyalty, tracking and chemical implants.
-/datum/om/stage/life/hud/carbon/human/proc/hud_implants(mob/living/carbon/human/self)
+/mob/living/carbon/human/proc/life_hud_implants()
 
-	var/image/holder1 = self.grab_hud(IMPTRACK_HUD)
-	var/image/holder2 = self.grab_hud(IMPLOYAL_HUD)
-	var/image/holder3 = self.grab_hud(IMPCHEM_HUD)
+	var/image/holder1 = src.grab_hud(IMPTRACK_HUD)
+	var/image/holder2 = src.grab_hud(IMPLOYAL_HUD)
+	var/image/holder3 = src.grab_hud(IMPCHEM_HUD)
 
 	holder1.icon_state = "hudblank"
 	holder2.icon_state = "hudblank"
 	holder3.icon_state = "hudblank"
 
-	for(var/obj/item/implant/I in self)
+	for(var/obj/item/implant/I in src)
 		if(I.implanted)
 			if(!I.malfunction)
 				if(istype(I,/obj/item/implant/tracking))
@@ -2301,51 +2301,51 @@
 				if(istype(I,/obj/item/implant/chem))
 					holder3.icon_state = "hud_imp_chem"
 
-	self.apply_hud(IMPTRACK_HUD, holder1)
-	self.apply_hud(IMPLOYAL_HUD, holder2)
-	self.apply_hud(IMPCHEM_HUD, holder3)
+	src.apply_hud(IMPTRACK_HUD, holder1)
+	src.apply_hud(IMPLOYAL_HUD, holder2)
+	src.apply_hud(IMPCHEM_HUD, holder3)
 
 /// Antagonist role icon.
-/datum/om/stage/life/hud/carbon/human/proc/hud_special_role(mob/living/carbon/human/self)
-	var/image/holder = self.grab_hud(SPECIALROLE_HUD)
+/mob/living/carbon/human/proc/life_hud_special_role()
+	var/image/holder = src.grab_hud(SPECIALROLE_HUD)
 	holder.icon_state = "hudblank"
-	if(self.mind && self.mind.special_role)
-		if(GLOB.hud_icon_reference[self.mind.special_role])
-			holder.icon_state = GLOB.hud_icon_reference[self.mind.special_role]
+	if(src.mind && src.mind.special_role)
+		if(GLOB.hud_icon_reference[src.mind.special_role])
+			holder.icon_state = GLOB.hud_icon_reference[src.mind.special_role]
 		else
 			holder.icon_state = "hudsyndicate"
-	self.apply_hud(SPECIALROLE_HUD, holder)
+	src.apply_hud(SPECIALROLE_HUD, holder)
 
 /// Backup implant: mind and body scan on record.
-/datum/om/stage/life/hud/carbon/human/proc/hud_backup(mob/living/carbon/human/self)
-	var/image/holder = self.grab_hud(BACKUP_HUD)
+/mob/living/carbon/human/proc/life_hud_backup()
+	var/image/holder = src.grab_hud(BACKUP_HUD)
 
 	holder.icon_state = "hudblank"
 
-	for(var/obj/item/organ/external/E in self.organs)
+	for(var/obj/item/organ/external/E in src.organs)
 		for(var/obj/item/implant/I in E.implants)
 			if(I.implanted && istype(I,/obj/item/implant/backup))
 				var/obj/item/implant/backup/B = I
-				if(!self.mind)
+				if(!src.mind)
 					holder.icon_state = "hud_backup_nomind"
-				else if(!(self.mind.name in B.our_db().body_scans))
+				else if(!(src.mind.name in B.our_db().body_scans))
 					holder.icon_state = "hud_backup_nobody"
 				else
 					holder.icon_state = "hud_backup_norm"
-	if(self.block_hud)
+	if(src.block_hud)
 		holder.icon_state = "hudblank"
-	self.apply_hud(BACKUP_HUD, holder)
+	src.apply_hud(BACKUP_HUD, holder)
 
 /// Vore antag preference.
-/datum/om/stage/life/hud/carbon/human/proc/hud_vantag(mob/living/carbon/human/self)
-	var/image/vantag = self.grab_hud(VANTAG_HUD)
-	if(self.vantag_pref)
-		vantag.icon_state = self.vantag_pref
+/mob/living/carbon/human/proc/life_hud_vantag()
+	var/image/vantag = src.grab_hud(VANTAG_HUD)
+	if(src.vantag_pref)
+		vantag.icon_state = src.vantag_pref
 	else
 		vantag.icon_state = "hudblank"
-	if(self.block_hud)
+	if(src.block_hud)
 		vantag.icon_state = "hudblank"
-	self.apply_hud(VANTAG_HUD, vantag)
+	src.apply_hud(VANTAG_HUD, vantag)
 
 /mob/living/carbon/human/on_fire_stack(seconds_per_tick, datum/status_effect/fire_handler/fire_stacks/fire_handler)
 	OM_EMIT(src, /datum/om/event/human_burning)

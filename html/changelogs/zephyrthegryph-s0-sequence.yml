@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Kernel sequences: ordered steps per entity sharing a frame (steps as procs, after-edges, should_run, parking as membership, rewakes on the one timer, a missed-wake audit), the landing spot for Mob Life"
+  - code_imp: "on_change reactions take at_most to coalesce deliveries within a window"

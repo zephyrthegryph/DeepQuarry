@@ -12,6 +12,12 @@
 #define AFF_INTERFACE (1<<3)
 /// Everything a control needs.
 #define AFF_CONTROL (AFF_MANIPULATE | AFF_INTERFACE)
+/// Reach out with the mind (the telekinesis affordance, mob/has_telegrip()): the provider of ROUTE_TK. It is no slot.
+#define AFF_TELEKINESIS (1<<4)
+/// What the telekinesis affordance stands in for over ROUTE_TK: it manipulates and works controls, it holds nothing.
+#define AFF_TK_PROVIDES (AFF_MANIPULATE | AFF_INTERFACE | AFF_TELEKINESIS)
+/// What a silicon's interface stands in for over ROUTE_INTERFACE: it works controls, it holds nothing.
+#define AFF_INTERFACE_PROVIDES (AFF_MANIPULATE | AFF_INTERFACE)
 
 // ---- routes: how an operation reaches its target ----
 #define ROUTE_PHYSICAL (1<<0)
@@ -21,7 +27,9 @@
 #define ROUTE_SPEECH (1<<4)
 #define ROUTE_MIND (1<<5)
 #define ROUTE_AUTHORITY (1<<6)
-#define ROUTE_ANY (ROUTE_PHYSICAL | ROUTE_INTERFACE | ROUTE_UI | ROUTE_VERB | ROUTE_SPEECH | ROUTE_MIND | ROUTE_AUTHORITY)
+/// A telekinetic reach at range (the telekinesis adapter's click): the provider is the telekinesis affordance.
+#define ROUTE_TK (1<<7)
+#define ROUTE_ANY (ROUTE_PHYSICAL | ROUTE_INTERFACE | ROUTE_UI | ROUTE_VERB | ROUTE_SPEECH | ROUTE_MIND | ROUTE_AUTHORITY | ROUTE_TK)
 
 // ---- operation kinds (cap_op(kind =)); also what cap_require(ops =) can name ----
 /// An ordinary use: needs a capable actor.
@@ -72,7 +80,29 @@
 #define OP_STAGE_NEEDS 6
 #define OP_STAGE_ALL OP_STAGE_NEEDS
 
+// ---- op priorities (cap_op(priority =)): gesture resolution is the bind profile's action list, then this, then
+// declaration order (doc/rewrite/operations_and_actions.md §5) ----
+/// What a type does when nothing more specific it offers answers (an item's pickup, a mob being hit): the old
+/// INTERACT_*_DEFAULT shapes. The same scale as the resolver's INTERACTION_DEFAULT_PRIORITY.
+#define OP_PRIORITY_DEFAULT -2000
+#define OP_PRIORITY_NORMAL 0
+/// A maintenance part worked with a tool (a cover, a panel, wires, a repair): ahead of the holder's own uses of that tool.
+#define OP_PRIORITY_PART 10
+/// Taking out what sits in an open bay or slot by hand: ahead of the holder's own empty-hand use (the APC's cell over
+/// its interface).
+#define OP_PRIORITY_TAKE_OUT 30
+/// Claws tearing at a machine (claw_op()): ahead of everything else an empty hand does to it.
+#define OP_PRIORITY_CLAW 40
+/// Subverting the holder (an emag): ahead of anything else the card could be used for.
+#define OP_PRIORITY_SUBVERT 50
+
 // ---- actions (action_defs) ----
+/// No gesture reaches the op: it is chosen from the Menu, the radial or the command bar by its key or name (the old
+/// INTERACT_VERB). Never listed by a bind profile, has no action_def.
+#define ACT_NONE "none"
+/// The hostile use: a click in a hostile stance (harm, disarm) reaches it before ACT_USE (the bind profile's
+/// stance table). Hostile ops declare it.
+#define ACT_ATTACK "attack"
 #define ACT_USE "use"
 #define ACT_DROP_ONTO "drop_onto"
 #define ACT_OPEN "open"
