@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Gas watch mirrors evaluate only the chunks written since the last pass, and the kernel loop skips idle work without calls: less tick time per frame."
