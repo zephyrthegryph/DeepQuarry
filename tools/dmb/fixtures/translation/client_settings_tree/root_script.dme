@@ -1,0 +1,2 @@
+/client/script="<STYLE>BODY {font: monospace}</STYLE>"
+/client/child/script="<STYLE>BODY {font: serif}</STYLE>"

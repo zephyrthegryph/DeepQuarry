@@ -1,0 +1,4 @@
+/proc/receiver()
+    return world
+/proc/probe(W)
+    if(0) return world.cpu

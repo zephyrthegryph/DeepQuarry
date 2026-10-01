@@ -1,0 +1,22 @@
+[package]
+name = "dm-compiler"
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0-only"
+description = "Incremental query engine for DM projects"
+
+[dependencies]
+salsa = "=0.28.5"
+dm-syntax = { path = "../dm-syntax" }
+dm-preprocess = { path = "../dm-preprocess" }
+dm-semantics = { path = "../dm-semantics" }
+dm-ir = { path = "../dm-ir" }
+dm-codegen-byond = { path = "../dm-codegen-byond" }
+dm-resources = { path = "../dm-resources" }
+byond-dmb = { path = "../.." }
+sha2 = "0.10"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[build-dependencies]
+sha2 = "0.10"

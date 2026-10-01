@@ -1,0 +1,9 @@
+/var/const/edge_null_and = null && 5
+/var/const/edge_empty_and = "" && 5
+/var/const/edge_text_and = "x" && 5
+/var/const/edge_shift24 = 1 << 24
+/var/const/edge_shift31 = 1 << 31
+/var/const/edge_shift32 = 1 << 32
+/var/const/edge_shift_negative = 1 << -1
+/var/const/edge_shift_fraction = 1 << 1.9
+/var/const/edge_modulo = 11.7 % 3.1

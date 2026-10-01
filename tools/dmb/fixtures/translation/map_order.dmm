@@ -1,0 +1,2 @@
+"b" = (/obj/marker{nitrogen = 2; temp = 1},/turf,/area)
+(1,1,1) = {"b"}

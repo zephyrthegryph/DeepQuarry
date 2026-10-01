@@ -1,0 +1,11 @@
+"aa" = (
+/obj/map_props{
+	amount = 3.3;
+	payload = null;
+	name = "line\nnext\"quoted\""
+	},
+/turf/map_floor,
+/area/map_area)
+(1,1,1) = {"
+aa
+"}

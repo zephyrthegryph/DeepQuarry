@@ -1,0 +1,26 @@
+diff --git a/DMCompiler/DM/DMObject.cs b/DMCompiler/DM/DMObject.cs
+index af1a7bc..f3e02dc 100644
+--- a/DMCompiler/DM/DMObject.cs
++++ b/DMCompiler/DM/DMObject.cs
+@@ -197,6 +197,9 @@ internal sealed class DMObject(DMCompiler compiler, int id, DreamPath path, DMOb
+             }
+         }
+ 
++        if (Path == DreamPath.World && VariableOverrides.Count > 0)
++            typeJson.ExplicitWorldFields = VariableOverrides.Keys.ToHashSet();
++
+         if (GlobalVariables.Count > 0) {
+             typeJson.GlobalVariables = GlobalVariables;
+         }
+diff --git a/DMCompiler/Json/DreamObjectJson.cs b/DMCompiler/Json/DreamObjectJson.cs
+index bba5a4d..c10b456 100644
+--- a/DMCompiler/Json/DreamObjectJson.cs
++++ b/DMCompiler/Json/DreamObjectJson.cs
+@@ -12,6 +12,7 @@ public enum JsonVariableType {
+ 
+ public sealed class DreamTypeJson {
+     public required string Path { get; set; }
++    public HashSet<string>? ExplicitWorldFields { get; set; }
+     public int? Parent { get; set; }
+     public int? InitProc { get; set; }
+     public List<List<int>>? Procs { get; set; }

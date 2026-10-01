@@ -1,0 +1,2 @@
+#include "numeric_constants.dm"
+/var/list/force516=alist()

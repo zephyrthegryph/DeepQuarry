@@ -1,0 +1,5 @@
+"a" = (/datum/obj_alias{name="map alias"},/datum/turf_alias,/datum/area_alias)
+
+(1,1,1) = {"
+a
+"}

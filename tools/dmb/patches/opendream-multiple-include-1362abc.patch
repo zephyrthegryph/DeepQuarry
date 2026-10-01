@@ -1,0 +1,45 @@
+diff --git a/DMCompiler/Compiler/DMPreprocessor/DMPreprocessor.cs b/DMCompiler/Compiler/DMPreprocessor/DMPreprocessor.cs
+index 007370f..5308721 100644
+--- a/DMCompiler/Compiler/DMPreprocessor/DMPreprocessor.cs
++++ b/DMCompiler/Compiler/DMPreprocessor/DMPreprocessor.cs
+@@ -14,6 +14,8 @@ public sealed class DMPreprocessor(DMCompiler compiler, bool enableDirectives) :
+     private readonly DMPreprocessorParser _dmPreprocessorParser = new(compiler);
+     public readonly List<string> IncludedMaps = new(8);
+     public string? IncludedInterface;
++    public bool IsMacroDefined(string name) => _defines.ContainsKey(name);
++    public readonly List<string> IncludedClientScriptFiles = new();
+ 
+     //Every include pushes a new lexer that gets popped once the included file is finished
+     private readonly Stack<DMPreprocessorLexer> _lexerStack =  new(8); // Capacity Note: TG peaks at 4 at time of writing
+@@ -202,7 +204,9 @@ public sealed class DMPreprocessor(DMCompiler compiler, bool enableDirectives) :
+         filePath = filePath.Replace('\\', Path.DirectorySeparatorChar);
+         filePath = Path.GetFullPath(filePath); // Strips out path operators
+ 
+-        if (_includedFiles.Contains(filePath)) {
++        bool repeatedSource = _includedFiles.Contains(filePath) && Path.GetExtension(filePath) == ".dm" && File.Exists(filePath) &&
++            File.ReadLines(filePath).Any(line => line.Trim().Equals("#pragma multiple", StringComparison.OrdinalIgnoreCase));
++        if (_includedFiles.Contains(filePath) && !repeatedSource) {
+             compiler.Emit(WarningCode.FileAlreadyIncluded, includedFrom ?? Location.Internal, $"File \"{filePath}\" was already included");
+             return;
+         }
+@@ -234,8 +238,7 @@ public sealed class DMPreprocessor(DMCompiler compiler, bool enableDirectives) :
+                 IncludedInterface = filePath;
+                 break;
+             case ".dms":
+-                // Webclient interface file. Probably never gonna be supported.
+-                compiler.UnimplementedWarning(includedFrom ?? Location.Internal, "DMS files are not supported");
++                IncludedClientScriptFiles.Add(filePath);
+                 break;
+             default:
+                 PreprocessFile(includeDir, file, isDMStandard);
+@@ -619,6 +622,10 @@ public sealed class DMPreprocessor(DMCompiler compiler, bool enableDirectives) :
+ 
+     private void HandlePragmaDirective() {
+         Token warningNameToken = GetNextToken(true);
++        if (warningNameToken.Type == TokenType.DM_Preproc_Identifier && warningNameToken.Text == "multiple") {
++            GetLineOfTokens();
++            return;
++        }
+         WarningCode warningCode;
+         switch(warningNameToken.Type) {
+             case TokenType.DM_Preproc_Identifier: {

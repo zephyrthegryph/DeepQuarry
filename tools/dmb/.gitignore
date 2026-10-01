@@ -1,0 +1,8 @@
+**/target/
+/.cache/
+**/.dm-cache/
+__pycache__/
+!/fixtures/**/*.dmb
+!/fixtures/**/*.rsc
+!/fixtures/*.dmb
+!/fixtures/*.rsc

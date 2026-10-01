@@ -1,0 +1,10 @@
+[package]
+name = "dm-preprocess"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+dm-syntax = { path = "../dm-syntax" }
+serde = { version = "1", features = ["derive", "rc"] }
+serde_json = "1"
+sha2 = "0.10"

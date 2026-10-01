@@ -1,0 +1,33 @@
+diff --git a/DMCompiler/DM/DMProc.cs b/DMCompiler/DM/DMProc.cs
+--- a/DMCompiler/DM/DMProc.cs
++++ b/DMCompiler/DM/DMProc.cs
+@@ -80,5 +80,6 @@ internal sealed class DMProc {
+     public string? VerbCategory = string.Empty;
+     public string? VerbDesc;
+     public sbyte Invisibility;
++    public bool ExplicitInvisibility;
+ 
+     private readonly DMCompiler _compiler;
+@@ -249,5 +250,6 @@ internal sealed class DMProc {
+             VerbName = VerbName,
+             VerbDesc = VerbDesc,
+             Invisibility = Invisibility,
++            ExplicitInvisibility = ExplicitInvisibility,
+ 
+             // Normally VerbCategory is "" by default and null to hide it, but we invert those during (de)serialization to reduce JSON size
+@@ -508,5 +510,6 @@ internal sealed class DMProc {
+                 }
+ 
+                 Invisibility = Convert.ToSByte(Math.Clamp(MathF.Floor(invisNum.Value), 0f, 100f));
++                ExplicitInvisibility = true;
+                 break;
+             case "src":
+diff --git a/DMCompiler/Json/DreamProcJson.cs b/DMCompiler/Json/DreamProcJson.cs
+--- a/DMCompiler/Json/DreamProcJson.cs
++++ b/DMCompiler/Json/DreamProcJson.cs
+@@ -20,4 +20,5 @@ public sealed class ProcDefinitionJson {
+     public string? VerbCategory { get; init; }
+     public string? VerbDesc { get; init; }
+     public sbyte Invisibility { get; init; }
++    public bool ExplicitInvisibility { get; init; }
+ }

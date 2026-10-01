@@ -1,0 +1,6 @@
+/proc/check_text(var/x)
+    return istext(x)
+/proc/parse_num(var/x)
+    return text2num(x)
+/proc/parse_radix(var/x, var/r)
+    return text2num(x,r)

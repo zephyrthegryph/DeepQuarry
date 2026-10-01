@@ -1,0 +1,6 @@
+/proc/add_two(a,b)
+    return addtext(a,b)
+/proc/add_three(a,b,c)
+    return addtext(a,b,c)
+/proc/output_link(a,b)
+    a << link(b)

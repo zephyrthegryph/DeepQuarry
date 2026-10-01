@@ -1,0 +1,167 @@
+[package]
+name = "byond-dmb"
+version = "0.1.0"
+edition = "2021"
+description = "Reader and writer for BYOND compiled world and resource files"
+license = "GPL-3.0-only"
+
+[workspace]
+members = [".", "crates/*"]
+resolver = "2"
+
+# Asset and source hashing are hot even in prototype builds. Keep the compiler
+# debuggable without paying the unoptimized SHA-256 cost for large archives.
+[profile.dev.package.sha2]
+opt-level = 3
+
+# Expansion and persisted cache decoding dominate prototype cold starts.
+[profile.dev.package.dm-preprocess]
+opt-level = 2
+
+[profile.dev.package.serde_json]
+opt-level = 2
+
+# Full projects parse and lower tens of thousands of procedure bodies.
+[profile.dev.package.dm-syntax]
+opt-level = 2
+
+[profile.dev.package.dm-codegen-byond]
+opt-level = 2
+
+[profile.dev.package.dm-compiler]
+opt-level = 2
+
+[dependencies]
+md5 = "0.7"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[lib]
+name = "byond_dmb"
+path = "src/lib.rs"
+
+[[bin]]
+name = "dmb-inspect"
+path = "src/main.rs"
+
+# Investigation tools retained as explicit Cargo examples.
+
+[[example]]
+name = "anonymous_proc_audit"
+path = "dev-scripts/anonymous_proc_audit.rs"
+
+[[example]]
+name = "argument_default_audit"
+path = "dev-scripts/argument_default_audit.rs"
+
+[[example]]
+name = "argument_sources_audit"
+path = "dev-scripts/argument_sources_audit.rs"
+
+[[example]]
+name = "branch_route_dump"
+path = "dev-scripts/branch_route_dump.rs"
+
+[[example]]
+name = "branch_target_audit"
+path = "dev-scripts/branch_target_audit.rs"
+
+[[example]]
+name = "cache_owner_audit"
+path = "dev-scripts/cache_owner_audit.rs"
+
+[[example]]
+name = "call_result_audit"
+path = "dev-scripts/call_result_audit.rs"
+
+[[example]]
+name = "conservative_pattern_audit"
+path = "dev-scripts/conservative_pattern_audit.rs"
+
+[[example]]
+name = "equality_contexts"
+path = "dev-scripts/equality_contexts.rs"
+
+[[example]]
+name = "flag_branch_witnesses"
+path = "dev-scripts/flag_branch_witnesses.rs"
+
+[[example]]
+name = "global_owner_audit"
+path = "dev-scripts/global_owner_audit.rs"
+
+[[example]]
+name = "initializer_identity_audit"
+path = "dev-scripts/initializer_identity_audit.rs"
+
+[[example]]
+name = "inspect_hub"
+path = "dev-scripts/inspect_hub.rs"
+
+[[example]]
+name = "inspect_marker"
+path = "dev-scripts/inspect_marker.rs"
+
+[[example]]
+name = "inspect_marker_strings"
+path = "dev-scripts/inspect_marker_strings.rs"
+
+[[example]]
+name = "inspect_proc_code"
+path = "dev-scripts/inspect_proc_code.rs"
+
+[[example]]
+name = "inspect_static_flags"
+path = "dev-scripts/inspect_static_flags.rs"
+
+[[example]]
+name = "inspect_string_defaults"
+path = "dev-scripts/inspect_string_defaults.rs"
+
+[[example]]
+name = "inspect_stub_calls"
+path = "dev-scripts/inspect_stub_calls.rs"
+
+[[example]]
+name = "inspect_tag41"
+path = "dev-scripts/inspect_tag41.rs"
+
+[[example]]
+name = "inspect_type_tags"
+path = "dev-scripts/inspect_type_tags.rs"
+
+[[example]]
+name = "inspect_variable_names"
+path = "dev-scripts/inspect_variable_names.rs"
+
+[[example]]
+name = "inspect_verb_sources"
+path = "dev-scripts/inspect_verb_sources.rs"
+
+[[example]]
+name = "keyed_switch_audit"
+path = "dev-scripts/keyed_switch_audit.rs"
+
+[[example]]
+name = "list_usage"
+path = "dev-scripts/list_usage.rs"
+
+[[example]]
+name = "marker_gap"
+path = "dev-scripts/marker_gap.rs"
+
+[[example]]
+name = "matched_audit"
+path = "dev-scripts/matched_audit.rs"
+
+[[example]]
+name = "output_parity"
+path = "dev-scripts/output_parity.rs"
+
+[[example]]
+name = "proc_inventory"
+path = "dev-scripts/proc_inventory.rs"
+
+[[example]]
+name = "var_pair"
+path = "dev-scripts/var_pair.rs"

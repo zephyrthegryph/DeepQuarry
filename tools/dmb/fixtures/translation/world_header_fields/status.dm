@@ -1,0 +1,1 @@
+/world/status = "status"

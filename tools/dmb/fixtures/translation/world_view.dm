@@ -1,0 +1,2 @@
+/world
+    view = 5

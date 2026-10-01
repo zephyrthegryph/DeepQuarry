@@ -1,0 +1,2 @@
+/world/proc/_()
+    var/static/_ = world.Genesis()

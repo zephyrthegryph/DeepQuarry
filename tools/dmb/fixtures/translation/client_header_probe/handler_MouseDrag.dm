@@ -1,0 +1,2 @@
+/client/MouseDrag()
+    return

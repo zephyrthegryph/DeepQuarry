@@ -1,0 +1,2 @@
+/world/proc/_()
+    var/static/late = marker(2)

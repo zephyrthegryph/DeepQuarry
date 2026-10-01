@@ -1,0 +1,16 @@
+/proc/send_run(target, value)
+    target << run(value)
+/proc/send_browse(target, value)
+    target << browse(value)
+/proc/send_browse_options(target, value, options)
+    target << browse(value, options)
+/proc/send_resource(target, value, name)
+    target << browse_rsc(value, name)
+/proc/send_ftp(target, value, name)
+    target << ftp(value, name)
+/proc/send_output(target, value, control)
+    target << output(value, control)
+/proc/send_plain(target, value)
+    target << value
+/proc/typed_plain(mob/target, value)
+    target << value

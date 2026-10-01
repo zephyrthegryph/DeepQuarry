@@ -1,0 +1,5 @@
+author: "codex"
+delete-after: true
+changes:
+  - experiment: "Added native Rust DM compiler tooling with persistent incremental caches, daemon support, and DMB/RSC output."
+  - code_imp: "Keep rule-test fixture exclusions confined to test builds so production builds do not reference an undefined type."

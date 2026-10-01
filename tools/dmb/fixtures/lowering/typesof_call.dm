@@ -1,0 +1,1 @@
+/proc/typesof_call(var/x) return typesof(x)

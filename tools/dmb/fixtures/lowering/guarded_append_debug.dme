@@ -1,0 +1,2 @@
+#define DEBUG
+#include "guarded_append_debug.dm"

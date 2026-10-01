@@ -1,0 +1,8 @@
+/proc/probe_image(a)
+    return image("icon" = a)
+/proc/probe_alist()
+    return alist((1 << 0) = "ATTACK", (1 << 1) = "SAY")
+/proc/probe_alist_empty()
+    return alist()
+/proc/probe_alist_pos(a,b)
+    return alist(a,b)

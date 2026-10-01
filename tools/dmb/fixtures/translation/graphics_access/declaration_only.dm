@@ -1,0 +1,2 @@
+/obj/probe
+    icon = null

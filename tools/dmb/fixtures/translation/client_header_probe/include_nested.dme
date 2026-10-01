@@ -1,0 +1,4 @@
+#include "scripts/a.dms"
+#include "b.dms"
+#include "scripts/a.dms"
+/client/script='scripts/a.dms'

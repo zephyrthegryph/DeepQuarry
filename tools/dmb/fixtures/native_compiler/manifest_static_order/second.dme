@@ -1,0 +1,2 @@
+/proc/second()
+    var/static/second = marker(3)

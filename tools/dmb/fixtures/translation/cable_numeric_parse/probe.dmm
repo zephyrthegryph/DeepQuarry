@@ -1,0 +1,6 @@
+"a" = (/obj/cable/green{icon_state = "1-2"},/turf,/area)
+
+(1,1,1) = {"
+a
+"}
+

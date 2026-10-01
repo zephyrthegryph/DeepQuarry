@@ -1,0 +1,1 @@
+/proc/ismob_call(var/x) return ismob(x)

@@ -1,0 +1,8 @@
+/proc/arglist_sound(list/L)
+    return sound(arglist(L))
+/proc/arglist_image(list/L)
+    return image(arglist(L))
+/proc/arglist_self(list/L)
+    return .(arglist(L))
+/proc/arglist_root_super(list/L)
+    return ..(arglist(L))

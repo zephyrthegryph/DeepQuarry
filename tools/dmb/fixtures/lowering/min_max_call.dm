@@ -1,0 +1,6 @@
+/proc/min_two(var/x, var/y)
+    return min(x,y)
+/proc/min_three(var/x, var/y, var/z)
+    return min(x,y,z)
+/proc/max_two(var/x, var/y)
+    return max(x,y)

@@ -1,0 +1,16 @@
+[package]
+name = "dm-compile"
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0-only"
+description = "CLI for the incremental DM compiler"
+
+[dependencies]
+dm-compiler = { path = "../dm-compiler" }
+dm-compiled = { path = "../dm-compiled" }
+serde_json = "1"
+byond-dmb = { path = "../.." }
+dm-output = { path = "../dm-output" }
+dm-syntax = { path = "../dm-syntax" }
+dm-host = { path = "../dm-host" }
+dm-preprocess = { path = "../dm-preprocess" }

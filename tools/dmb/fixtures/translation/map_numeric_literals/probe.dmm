@@ -1,0 +1,9 @@
+"a" = (/obj/map_numeric{value = -26;pixel_x = -26;pixel_y = -16},/turf,/area)
+"b" = (/obj/map_numeric{value = 65535},/turf,/area)
+"c" = (/obj/map_numeric{value = 65536},/turf,/area)
+"d" = (/obj/map_numeric{value = -0.0},/turf,/area)
+"e" = (/obj/map_numeric{value = 26;pixel_x = 26;pixel_y = 16},/turf,/area)
+
+(1,1,1) = {"
+abcde
+"}

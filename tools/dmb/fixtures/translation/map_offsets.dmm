@@ -1,0 +1,5 @@
+"a" = (/turf/floor,/area/room)
+"b" = (/obj/A,/turf/floor,/area/room)
+"c" = (/obj/B,/turf/floor,/area/room)
+(1,1,1) = {"ab
+ca"}

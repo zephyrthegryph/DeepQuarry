@@ -1,0 +1,6 @@
+/proc/rand_zero()
+    return rand()
+/proc/rand_one(var/x)
+    return rand(x)
+/proc/rand_two(var/x, var/y)
+    return rand(x, y)

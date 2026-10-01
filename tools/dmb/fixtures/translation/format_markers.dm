@@ -1,0 +1,2 @@
+/proc/format_marker_probe(x)
+	return list("K00[x]Z00", "K01\the [x]Z01", "K03\ref[x]Z03", "K04\The [x]Z04", "K05\the [x]Z05", "K06\A [x]Z06", "K07\a [x]Z07", "K09[x]\he Z09", "K0B[x]\his Z0B", "K0D[x]\himself Z0D", "K0F[x]\hers Z0F", "\proper K10", "\improper K11", "K12\roman[x]Z12", "K14[x]\th Z14", "K15[x]\s Z15")

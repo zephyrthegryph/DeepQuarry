@@ -1,0 +1,2 @@
+"a" = (/obj/map_list{values = list(1,2)},/turf,/area)
+(1,1,1) = {"a"}

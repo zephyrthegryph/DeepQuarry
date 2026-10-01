@@ -1,0 +1,2 @@
+"a" = (/obj/door{req_access = newlist()},/turf/floor,/area/room)
+(1,1,1) = {"a"}

@@ -1,0 +1,9 @@
+/obj/base
+    name="uniform"
+/obj/base/child
+    name="dress"
+/obj/explicit
+    name="base"
+    text="X"
+/obj/explicit/child
+    name="child"

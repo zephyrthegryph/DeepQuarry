@@ -1,0 +1,3 @@
+#include "example.dms"
+#include "script_file.dm"
+#include "second.dms"

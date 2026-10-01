@@ -1,0 +1,18 @@
+/proc/a_mixed(x)
+    return list(x,"key"=2,x+1)
+/proc/a_explicit_null()
+    return list(null=7,"tail"=2)
+/proc/a_positional_null()
+    return list(null,"tail"=2)
+/proc/key_effect()
+    return "key"
+/proc/value_effect()
+    return 7
+/proc/a_effect()
+    return list((key_effect())=value_effect(),value_effect())
+/proc/a_cond(cond,x)
+    return list((cond ? "key" : "other")=(x+1), cond ? x : 7)
+/proc/a_null_expression()
+    return list((null)=7,"tail"=2)
+/proc/a_null_cond(cond)
+    return list((cond ? null : "key")=7,"tail"=2)

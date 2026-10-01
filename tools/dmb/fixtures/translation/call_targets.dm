@@ -1,0 +1,26 @@
+/proc/target_owner()
+    return null
+/proc/target_name()
+    return "target_proc"
+/proc/argument_value()
+    return 7
+/proc/target_proc(a,b)
+    return a+b
+/proc/dyn_computed()
+    return call(target_owner(),target_name())(argument_value())
+/proc/dyn_one(procpath,x)
+    return call(procpath)(x+1)
+/proc/dyn_path(x)
+    return call(/proc/target_proc)(x+1,2)
+/proc/dyn_named(owner,name,x)
+    return call(owner,name)(a=x,b=2)
+/proc/dyn_arglist(owner,name,list/L)
+    return call(owner,name)(arglist(L))
+/proc/dyn_ext_one(handle,x)
+    return call_ext(handle)(x)
+/proc/dyn_ext_two(lib,fn,x)
+    return call_ext(lib,fn)(x)
+/proc/dyn_ext_args(lib,fn,list/L)
+    return call_ext(lib,fn)(arglist(L))
+/proc/dyn_mixed(owner,name,x)
+    return call(owner,name)(x,b=2)

@@ -1,0 +1,1 @@
+/proc/isicon_call(var/x) return isicon(x)

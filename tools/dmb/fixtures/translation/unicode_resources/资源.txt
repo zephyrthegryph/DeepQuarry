@@ -1,0 +1,1 @@
+resource contents 资源.txt

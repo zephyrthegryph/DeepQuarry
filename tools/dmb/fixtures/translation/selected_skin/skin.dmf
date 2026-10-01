@@ -1,0 +1,6 @@
+macro "default"
+window "default"
+    elem "main"
+        type = MAIN
+        size = 320x240
+        icon = 'tiny.png'

@@ -1,0 +1,6 @@
+/proc/browse_resource_test(var/client/C)
+    C << browse_rsc('asset.txt', "myfile.txt")
+/proc/output_control_test(var/client/C)
+    C << output("hello", "window.control")
+/proc/link_test(var/client/C)
+    C << link("https://example.com")

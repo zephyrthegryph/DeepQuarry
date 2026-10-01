@@ -1,0 +1,10 @@
+/proc/rgb_named(h,s,v)
+    return rgb(h=h,s=s,v=v,space=COLORSPACE_HSV)
+/proc/rgb_five(r,g,b,a,space)
+    return rgb(r,g,b,a,space)
+/proc/rgb_named_alpha(h,s,v,a)
+    return rgb(h=h,s=s,v=v,a=a,space=COLORSPACE_HSV)
+/proc/rgb_value(x)
+    return x
+/proc/rgb_shuffled(h,s,v)
+    return rgb(v=rgb_value(v), h=rgb_value(h), s=rgb_value(s), space=COLORSPACE_HSV)

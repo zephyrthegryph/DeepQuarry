@@ -1,0 +1,1 @@
+/world/maxz = 4

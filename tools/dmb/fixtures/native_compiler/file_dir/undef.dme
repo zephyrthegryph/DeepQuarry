@@ -1,0 +1,4 @@
+#define FILE_DIR first
+#define FILE_DIR second
+#undef FILE_DIR
+#include "probe.dm"

@@ -1,0 +1,9 @@
+/obj/base
+    animate_movement=2
+/obj/base/MouseEntered()
+    return
+/obj/base/MouseWheel()
+    return
+/obj/base/MouseMove()
+    return
+/obj/base/child

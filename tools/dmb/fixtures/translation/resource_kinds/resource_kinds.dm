@@ -1,0 +1,10 @@
+/datum/resource_probe
+    var/r1 = 'a.dmi'
+    var/r2 = 'a.png'
+    var/r3 = 'a.ogg'
+    var/r4 = 'a.ttf'
+    var/r5 = 'a.txt'
+    var/r6 = 'a.html'
+    var/r7 = 'a.css'
+    var/r8 = 'a.js'
+    var/r9 = 'a.json'

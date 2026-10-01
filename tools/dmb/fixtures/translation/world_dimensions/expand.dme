@@ -1,0 +1,4 @@
+/var/list/force_516=alist()
+/world
+    maxx = 5
+#include "map.dmm"

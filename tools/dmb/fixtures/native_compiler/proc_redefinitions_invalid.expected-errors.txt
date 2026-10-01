@@ -1,0 +1,4 @@
+DreamMaker 516.1687 rejects this fixture with duplicate-definition errors for
+the repeated explicit /datum/.../proc/foo, explicit /proc/redefined_global,
+and the repeated under_score proc. The valid override chain uses descendant
+implicit /datum/.../child/foo() definitions in proc_override_chain.dm.

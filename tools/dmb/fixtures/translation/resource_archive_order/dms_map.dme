@@ -1,0 +1,3 @@
+#include "a.dms"
+#include "map_class_default.dm"
+#include "map.dmm"

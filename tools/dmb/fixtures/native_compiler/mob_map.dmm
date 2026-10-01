@@ -1,0 +1,2 @@
+"a" = (/mob/map_mob{value = 8},/turf,/area)
+(1,1,1) = {"a"}

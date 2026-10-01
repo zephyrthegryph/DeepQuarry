@@ -1,0 +1,156 @@
+diff --git a/DMCompiler/Bytecode/DreamProcOpcode.cs b/DMCompiler/Bytecode/DreamProcOpcode.cs
+index 91524d9..f612ee6 100644
+--- a/DMCompiler/Bytecode/DreamProcOpcode.cs
++++ b/DMCompiler/Bytecode/DreamProcOpcode.cs
+@@ -309,6 +309,12 @@ public enum DreamProcOpcode : byte {
+     NPushFloatAssign = 0x9B,
+     [OpcodeMetadata(0, OpcodeArgType.ArgType, OpcodeArgType.StackDelta)]
+     Animate = 0x9C,
++    // Diagnostic compiler extension: preserves call_ext rather than conflating it with call.
++    [OpcodeMetadata(0, OpcodeArgType.ArgType, OpcodeArgType.StackDelta)]
++    CallExtStatement = 0x9D,
++    // Diagnostic compiler extension: a plain call() distinct from stock ambiguous 0x23.
++    [OpcodeMetadata(0, OpcodeArgType.ArgType, OpcodeArgType.StackDelta)]
++    CallStatementForByond = 0x9E,
+ }
+ // ReSharper restore MissingBlankLines
+ 
+diff --git a/DMCompiler/Compiler/DM/AST/DMAST.Expression.cs b/DMCompiler/Compiler/DM/AST/DMAST.Expression.cs
+index 2fb18d8..affeeec 100644
+--- a/DMCompiler/Compiler/DM/AST/DMAST.Expression.cs
++++ b/DMCompiler/Compiler/DM/AST/DMAST.Expression.cs
+@@ -134,8 +134,10 @@ public class DMASTLog(Location location, DMASTExpression expression, DMASTExpres
+ public sealed class DMASTCall(
+     Location location,
+     DMASTCallParameter[] callParameters,
+-    DMASTCallParameter[] procParameters) : DMASTExpression(location) {
++    DMASTCallParameter[] procParameters,
++    bool isCallExt) : DMASTExpression(location) {
+     public readonly DMASTCallParameter[] CallParameters = callParameters, ProcParameters = procParameters;
++    public readonly bool IsCallExt = isCallExt;
+ }
+ 
+ public class DMASTVarDeclExpression(Location location, DMASTPath path) : DMASTExpression(location) {
+diff --git a/DMCompiler/Compiler/DM/DMLexer.cs b/DMCompiler/Compiler/DM/DMLexer.cs
+index 83b12d0..b8c5471 100644
+--- a/DMCompiler/Compiler/DM/DMLexer.cs
++++ b/DMCompiler/Compiler/DM/DMLexer.cs
+@@ -54,7 +54,7 @@ public sealed class DMLexer : TokenLexer {
+         { "as", TokenType.DM_As },
+         { "set", TokenType.DM_Set },
+         { "call", TokenType.DM_Call },
+-        { "call_ext", TokenType.DM_Call},
++        { "call_ext", TokenType.DM_CallExt},
+         { "spawn", TokenType.DM_Spawn },
+         { "goto", TokenType.DM_Goto },
+         { "step", TokenType.DM_Step },
+diff --git a/DMCompiler/Compiler/DM/DMParser.cs b/DMCompiler/Compiler/DM/DMParser.cs
+index aac4564..c482eb5 100644
+--- a/DMCompiler/Compiler/DM/DMParser.cs
++++ b/DMCompiler/Compiler/DM/DMParser.cs
+@@ -2318,7 +2318,8 @@ namespace DMCompiler.Compiler.DM {
+             if (Check(TokenType.DM_DoubleColon))
+                 return ParseScopeIdentifier(null);
+ 
+-            if (Check(TokenType.DM_Call)) {
++            bool isCallExt = Check(TokenType.DM_CallExt);
++            if (isCallExt || Check(TokenType.DM_Call)) {
+                 Whitespace();
+                 DMASTCallParameter[]? callParameters = ProcCall();
+ 
+@@ -2335,7 +2336,7 @@ namespace DMCompiler.Compiler.DM {
+                     procParameters = [];
+                 }
+ 
+-                return invalid ? new DMASTInvalidExpression(loc): new DMASTCall(loc, callParameters!, procParameters);
++                return invalid ? new DMASTInvalidExpression(loc): new DMASTCall(loc, callParameters!, procParameters, isCallExt);
+             }
+ 
+             return null;
+diff --git a/DMCompiler/Compiler/Token.cs b/DMCompiler/Compiler/Token.cs
+index adf8a5b..c85377f 100644
+--- a/DMCompiler/Compiler/Token.cs
++++ b/DMCompiler/Compiler/Token.cs
+@@ -63,6 +63,7 @@ public enum TokenType : byte {
+     DM_BarBarEquals,
+     DM_Break,
+     DM_Call,
++    DM_CallExt,
+     DM_Catch,
+     DM_Colon,
+     DM_Comma,
+diff --git a/DMCompiler/DM/Builders/DMExpressionBuilder.cs b/DMCompiler/DM/Builders/DMExpressionBuilder.cs
+index 2d3a73b..dc0903a 100644
+--- a/DMCompiler/DM/Builders/DMExpressionBuilder.cs
++++ b/DMCompiler/DM/Builders/DMExpressionBuilder.cs
+@@ -1314,15 +1314,15 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
+             case 2: {
+                 var a = BuildExpression(call.CallParameters[0].Value, inferredPath);
+                 var b = BuildExpression(call.CallParameters[1].Value, inferredPath);
+-                return new CallStatement(call.Location, a, b, procArgs);
++                return new CallStatement(call.Location, a, b, procArgs, call.IsCallExt);
+             }
+             case 1: {
+                 var a = BuildExpression(call.CallParameters[0].Value, inferredPath);
+-                return new CallStatement(call.Location, a, procArgs);
++                return new CallStatement(call.Location, a, procArgs, call.IsCallExt);
+             }
+             case 0:
+                  Compiler.Emit(WarningCode.InvalidArgumentCount, call.Location, "Not enough arguments for call()");
+-                return new CallStatement(call.Location, new Null(Location.Internal), procArgs);
++                return new CallStatement(call.Location, new Null(Location.Internal), procArgs, call.IsCallExt);
+         }
+     }
+ 
+diff --git a/DMCompiler/DM/DMProc.cs b/DMCompiler/DM/DMProc.cs
+index bf8e5ad..dea3146 100644
+--- a/DMCompiler/DM/DMProc.cs
++++ b/DMCompiler/DM/DMProc.cs
+@@ -954,10 +954,10 @@ internal sealed class DMProc {
+         WriteStackDelta(argumentStackSize);
+     }
+ 
+-    public void CallStatement(DMCallArgumentsType argumentsType, int argumentStackSize) {
++    public void CallStatement(DMCallArgumentsType argumentsType, int argumentStackSize, bool isCallExt) {
+         //Shrinks the stack by argumentStackSize. Could also shrink it by argumentStackSize+1, but assume not.
+         ResizeStack(-argumentStackSize);
+-        WriteOpcode(DreamProcOpcode.CallStatement);
++        WriteOpcode(isCallExt ? DreamProcOpcode.CallExtStatement : DreamProcOpcode.CallStatementForByond);
+         WriteArgumentType(argumentsType);
+         WriteStackDelta(argumentStackSize);
+     }
+diff --git a/DMCompiler/DM/Expressions/Builtins.cs b/DMCompiler/DM/Expressions/Builtins.cs
+index 8afb44e..0a60a32 100644
+--- a/DMCompiler/DM/Expressions/Builtins.cs
++++ b/DMCompiler/DM/Expressions/Builtins.cs
+@@ -657,16 +657,19 @@ internal sealed class CallStatement : DMExpression {
+     private readonly DMExpression _a; // Proc-ref, Object, LibName
+     private readonly DMExpression? _b; // ProcName, FuncName
+     private readonly ArgumentList _procArgs;
++    private readonly bool _isCallExt;
+ 
+-    public CallStatement(Location location, DMExpression a, ArgumentList procArgs) : base(location) {
++    public CallStatement(Location location, DMExpression a, ArgumentList procArgs, bool isCallExt) : base(location) {
+         _a = a;
+         _procArgs = procArgs;
++        _isCallExt = isCallExt;
+     }
+ 
+-    public CallStatement(Location location, DMExpression a, DMExpression b, ArgumentList procArgs) : base(location) {
++    public CallStatement(Location location, DMExpression a, DMExpression b, ArgumentList procArgs, bool isCallExt) : base(location) {
+         _a = a;
+         _b = b;
+         _procArgs = procArgs;
++        _isCallExt = isCallExt;
+     }
+ 
+     public override void EmitPushValue(ExpressionContext ctx) {
+@@ -674,7 +677,7 @@ internal sealed class CallStatement : DMExpression {
+ 
+         _b?.EmitPushValue(ctx);
+         _a.EmitPushValue(ctx);
+-        ctx.Proc.CallStatement(argumentInfo.Type, argumentInfo.StackSize);
++        ctx.Proc.CallStatement(argumentInfo.Type, argumentInfo.StackSize, _isCallExt);
+     }
+ }
+ 

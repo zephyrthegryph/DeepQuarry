@@ -1,0 +1,26 @@
+diff --git a/DMCompiler/DM/DMProc.cs b/DMCompiler/DM/DMProc.cs
+index bf8e5ad..9518a06 100644
+--- a/DMCompiler/DM/DMProc.cs
++++ b/DMCompiler/DM/DMProc.cs
+@@ -227,7 +227,8 @@ internal sealed class DMProc {
+ 
+                 arguments.Add(new ProcArgumentJson {
+                     Name = parameter.Name,
+-                    Type = argumentType.Type
++                    Type = argumentType.Type,
++                    ExplicitAnything = parameter.ExplicitValueType?.IsAnything == true
+                 });
+             }
+         }
+diff --git a/DMCompiler/Json/DreamProcJson.cs b/DMCompiler/Json/DreamProcJson.cs
+index eb9f4a0..765c07e 100644
+--- a/DMCompiler/Json/DreamProcJson.cs
++++ b/DMCompiler/Json/DreamProcJson.cs
+@@ -26,6 +26,7 @@ public sealed class ProcDefinitionJson {
+ public struct ProcArgumentJson {
+     public required string Name { get; init; }
+     public DMValueType Type { get; init; }
++    public bool ExplicitAnything { get; init; }
+ }
+ 
+ public struct LocalVariableJson {

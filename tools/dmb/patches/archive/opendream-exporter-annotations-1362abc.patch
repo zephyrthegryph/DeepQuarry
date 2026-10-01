@@ -1,0 +1,729 @@
+diff --git a/DMCompiler/Compiler/DM/AST/DMAST.ObjectStatements.cs b/DMCompiler/Compiler/DM/AST/DMAST.ObjectStatements.cs
+index e0744b4..9b4f44e 100644
+--- a/DMCompiler/Compiler/DM/AST/DMAST.ObjectStatements.cs
++++ b/DMCompiler/Compiler/DM/AST/DMAST.ObjectStatements.cs
+@@ -70,7 +70,7 @@ public sealed class DMASTObjectVarDefinition(
+     Location location,
+     DreamPath path,
+     DMASTExpression value,
+-    DMComplexValueType valType) : DMASTStatement(location) {
++    DMComplexValueType valType, bool emptyArraySyntax = false) : DMASTStatement(location) {
+     /// <summary>The path of the object that we are a property of.</summary>
+     public DreamPath ObjectPath => _varDecl.ObjectPath;
+ 
+@@ -79,6 +79,7 @@ public sealed class DMASTObjectVarDefinition(
+ 
+     public string Name => _varDecl.VarName;
+     public DMASTExpression Value = value;
++    public bool EmptyArraySyntax = emptyArraySyntax;
+ 
+     private readonly ObjVarDeclInfo _varDecl = new(path);
+ 
+diff --git a/DMCompiler/Compiler/DM/AST/DMAST.cs b/DMCompiler/Compiler/DM/AST/DMAST.cs
+index 993e2b2..5d252e3 100644
+--- a/DMCompiler/Compiler/DM/AST/DMAST.cs
++++ b/DMCompiler/Compiler/DM/AST/DMAST.cs
+@@ -82,6 +82,7 @@ public sealed class DMASTDefinitionParameter(
+     DMComplexValueType? type,
+     DMASTExpression? possibleValues) : DMASTNode(location) {
+     public DreamPath? ObjectType => _paramDecl.IsList ? DreamPath.List : _paramDecl.TypePath;
++    public DreamPath FullPath => astPath.Path;
+     public string Name => _paramDecl.VarName;
+     public DMASTExpression? Value = value;
+     public readonly DMComplexValueType? Type = type;
+diff --git a/DMCompiler/Compiler/DM/DMParser.cs b/DMCompiler/Compiler/DM/DMParser.cs
+index aac4564..64ac820 100644
+--- a/DMCompiler/Compiler/DM/DMParser.cs
++++ b/DMCompiler/Compiler/DM/DMParser.cs
+@@ -313,7 +313,9 @@ namespace DMCompiler.Compiler.DM {
+                 while (true) {
+                     Whitespace();
+ 
++                    bool hasArraySyntax = Current().Type is TokenType.DM_LeftBracket or TokenType.DM_DoubleSquareBracket;
+                     DMASTExpression? value = PathArray(ref varPath);
++                    bool emptyArraySyntax = hasArraySyntax && value == null;
+ 
+                     if (Check(TokenType.DM_Equals)) {
+                         if (value != null) Warning("List doubly initialized");
+@@ -332,7 +334,7 @@ namespace DMCompiler.Compiler.DM {
+                     }
+ 
+                     var valType = AsComplexTypes() ?? DMValueType.Anything;
+-                    var varDef = new DMASTObjectVarDefinition(loc, varPath, value, valType);
++                    var varDef = new DMASTObjectVarDefinition(loc, varPath, value, valType, emptyArraySyntax);
+ 
+                     if (varDef.IsStatic && varDef.Name is "usr" or "src" or "args" or "world" or "global" or "callee" or "caller")
+                         Compiler.Emit(WarningCode.SoftReservedKeyword, loc, $"Global variable named {varDef.Name} DOES NOT override the built-in {varDef.Name}. This is a terrible idea, don't do that.");
+@@ -2318,7 +2320,8 @@ namespace DMCompiler.Compiler.DM {
+             if (Check(TokenType.DM_DoubleColon))
+                 return ParseScopeIdentifier(null);
+ 
+-            if (Check(TokenType.DM_Call)) {
++            bool isCallExt = Check(TokenType.DM_CallExt);
++            if (isCallExt || Check(TokenType.DM_Call)) {
+                 Whitespace();
+                 DMASTCallParameter[]? callParameters = ProcCall();
+ 
+@@ -2335,7 +2338,7 @@ namespace DMCompiler.Compiler.DM {
+                     procParameters = [];
+                 }
+ 
+-                return invalid ? new DMASTInvalidExpression(loc): new DMASTCall(loc, callParameters!, procParameters);
++                return invalid ? new DMASTInvalidExpression(loc): new DMASTCall(loc, callParameters!, procParameters, isCallExt);
+             }
+ 
+             return null;
+diff --git a/DMCompiler/Compiler/DM/DMParserHelper.cs b/DMCompiler/Compiler/DM/DMParserHelper.cs
+index bd2ab98..1839614 100644
+--- a/DMCompiler/Compiler/DM/DMParserHelper.cs
++++ b/DMCompiler/Compiler/DM/DMParserHelper.cs
+@@ -315,15 +315,21 @@ public partial class DMParser {
+                             switch (escapeSequence) {
+                                 case "[":
+                                 case "]":
+-                                case "<":
+-                                case ">":
+                                 case "\"":
+                                 case "'":
+                                 case "\\":
+-                                case " ":
+                                 case ".":
+                                     stringBuilder.Append(escapeSequence);
+                                     break;
++                                case "<":
++                                    stringBuilder.Append("&lt;");
++                                    break;
++                                case ">":
++                                    stringBuilder.Append("&gt;");
++                                    break;
++                                case " ":
++                                    // DreamMaker consumes an escaped space.
++                                    break;
+                                 default: //Unimplemented escape sequence
+                                     Emit(WarningCode.BadToken, "Invalid escape sequence \"\\" + escapeSequence + "\"");
+                                     break;
+diff --git a/DMCompiler/DM/Builders/DMCodeTreeBuilder.cs b/DMCompiler/DM/Builders/DMCodeTreeBuilder.cs
+index 2bf56a8..74d2190 100644
+--- a/DMCompiler/DM/Builders/DMCodeTreeBuilder.cs
++++ b/DMCompiler/DM/Builders/DMCodeTreeBuilder.cs
+@@ -23,8 +23,8 @@ internal class DMCodeTreeBuilder(DMCompiler compiler) {
+             dmObject.CreateInitializationProc();
+ 
+         // Compile every proc
+-        foreach (DMProc proc in compiler.DMObjectTree.AllProcs)
+-            proc.Compile();
++        for (int procIndex = 0; procIndex < compiler.DMObjectTree.AllProcs.Count; procIndex++)
++            compiler.DMObjectTree.AllProcs[procIndex].Compile();
+     }
+ 
+     private void ProcessBlockInner(DMASTBlockInner blockInner, DreamPath currentType) {
+@@ -59,6 +59,13 @@ internal class DMCodeTreeBuilder(DMCompiler compiler) {
+             case DMASTProcDefinition procDefinition:
+                 var procOwner = currentType.Combine(procDefinition.ObjectPath);
+ 
++                foreach (DMASTDefinitionParameter parameter in procDefinition.Parameters) {
++                    if (parameter.FullPath.Type == DreamPath.PathType.Absolute &&
++                        !parameter.Location.InDMStandard &&
++                        (parameter.FullPath.Elements.Length == 0 || parameter.FullPath.Elements[0] != "list"))
++                        CodeTree.AddType(parameter.FullPath);
++                }
++
+                 CodeTree.AddType(procOwner);
+                 CodeTree.AddProc(procOwner, procDefinition);
+                 break;
+diff --git a/DMCompiler/DM/Builders/DMProcBuilder.cs b/DMCompiler/DM/Builders/DMProcBuilder.cs
+index b0cadf5..7370cd3 100644
+--- a/DMCompiler/DM/Builders/DMProcBuilder.cs
++++ b/DMCompiler/DM/Builders/DMProcBuilder.cs
+@@ -17,6 +17,17 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
+         foreach (DMASTDefinitionParameter parameter in procDefinition.Parameters) {
+             string parameterName = parameter.Name;
+ 
++            if (parameter.PossibleValues != null) {
++                DMProc sourceProc = compiler.DMObjectTree.CreateDMProc(dmObject, null);
++                foreach (DMASTDefinitionParameter sourceParameter in procDefinition.Parameters)
++                    sourceProc.AddParameter(sourceParameter.Name, sourceParameter.Location, sourceParameter.Type, sourceParameter.ObjectType);
++                sourceProc.DebugSource(parameter.PossibleValues.Location);
++                new DMExpressionBuilder(new(compiler, dmObject, sourceProc)).Emit(parameter.PossibleValues, null);
++                sourceProc.Return();
++                sourceProc.ResolveLabels();
++                proc.PossibleValuesProcs[parameterName] = sourceProc.Id;
++            }
++
+             if (parameter.Value != null) { //Parameter has a default value
+                 string afterDefaultValueCheck = proc.NewLabelName();
+                 DMReference parameterRef = proc.GetLocalVariableReference(parameterName, parameter.Location);
+@@ -187,6 +198,13 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
+             }
+ 
+             successful = proc.TryAddLocalConstVariable(varDeclaration.Name, varDeclaration.Type, constValue);
++            if (successful && !varDeclaration.Location.InDMStandard &&
++                constValue.TryAsJsonRepresentation(compiler, out var constJson))
++                compiler.DMObjectTree.CompileTimeConstDeclarations.Add(new global::DMCompiler.Json.CompileTimeConstDeclarationJson {
++                    ProcId = proc.Id,
++                    Name = varDeclaration.Name,
++                    Value = constJson
++                });
+         } else {
+             successful = proc.TryAddLocalVariable(varDeclaration.Name, varDeclaration.Type, varDeclaration.ValType);
+         }
+diff --git a/DMCompiler/DM/DMCodeTree.Vars.cs b/DMCompiler/DM/DMCodeTree.Vars.cs
+index 044d2f7..c6bd2ed 100644
+--- a/DMCompiler/DM/DMCodeTree.Vars.cs
++++ b/DMCompiler/DM/DMCodeTree.Vars.cs
+@@ -4,11 +4,31 @@ using DMCompiler.Compiler;
+ using DMCompiler.Compiler.DM.AST;
+ using DMCompiler.DM.Builders;
+ using DMCompiler.DM.Expressions;
++using DMCompiler.Json;
+ using ScopeMode = DMCompiler.DM.Builders.DMExpressionBuilder.ScopeMode;
+ 
+ namespace DMCompiler.DM;
+ 
+ internal partial class DMCodeTree {
++    private static ModifiedTypeValueJson? BuildModifiedTypeValue(DMCompiler compiler, DMASTExpression ast) {
++        if (ast is not DMASTModifiedType modified || modified.VarOverrides is null ||
++            !compiler.DMObjectTree.TryGetDMObject(modified.Value.Path, out var target))
++            return null;
++
++        var overrides = new Dictionary<string, object?>();
++        foreach (var entry in modified.VarOverrides) {
++            var expression = new DMExpressionBuilder(new(compiler, target, null)).Create(entry.Value);
++            if (!expression.TryAsJsonRepresentation(compiler, out var value))
++                return null;
++            overrides.Add(entry.Key, value);
++        }
++        return new ModifiedTypeValueJson {
++            TypePath = modified.Value.Path.PathString,
++            Overrides = overrides,
++            OverrideOrder = new List<string>(overrides.Keys)
++        };
++    }
++
+     public abstract class VarNode : INode {
+         public UnknownReference? LastError;
+ 
+@@ -133,6 +153,22 @@ internal partial class DMCodeTree {
+ 
+             int globalId = compiler.DMObjectTree.CreateGlobal(out DMVariable global, varDef.Type, VarName, varDef.IsConst,
+                 varDef.IsFinal, varDef.ValType);
++            if (varDef.IsTmp && !varDef.Location.InDMStandard)
++                compiler.DMObjectTree.TemporaryGlobalIds.Add(globalId);
++
++            if (!varDef.Location.InDMStandard && varDef.Value is not null &&
++                value.TryAsConstant(compiler, out var declarationConstant) &&
++                declarationConstant.TryAsJsonRepresentation(compiler, out var declarationValue))
++                compiler.DMObjectTree.GlobalDeclarationValues[globalId] = declarationValue;
++
++            if (!varDef.Location.InDMStandard && varDef.Value is not null) {
++                compiler.DMObjectTree.GlobalInitializerValueKinds[globalId] = value.GetType().Name;
++                if ((value is Expressions.List list && (value.TryAsJsonRepresentation(compiler, out _) || list.ContainsObjectConstruction)) ||
++                    (value is Expressions.AList alist && (value.TryAsJsonRepresentation(compiler, out _) || alist.ContainsObjectConstruction)) ||
++                    value is Expressions.NewList or Expressions.NewPath or Expressions.New ||
++                    value is Expressions.ProcCall call && call.GetTargetProc(compiler, dmObject).Proc?.Name == "icon")
++                    compiler.DMObjectTree.DynamicInitializerGlobalIds.Add(globalId);
++            }
+ 
+             dmObject.AddGlobalVariable(global, globalId);
+             _defined = true;
+@@ -157,6 +193,8 @@ internal partial class DMCodeTree {
+         }
+ 
+         private bool HandleInstanceVar(DMCompiler compiler, DMObject dmObject) {
++            if (varDef.EmptyArraySyntax && !varDef.Location.InDMStandard)
++                dmObject.ImplicitEmptyInitProc = true;
+             if (!TryBuildValue(new(compiler, dmObject, null), varDef.Value, varDef.Type, ScopeMode.Normal, out var value))
+                 return false;
+ 
+@@ -164,7 +202,18 @@ internal partial class DMCodeTree {
+             dmObject.AddVariable(variable);
+             _defined = true;
+ 
+-            return TrySetVariableValue(compiler, dmObject, variable, value, false);
++            int initCount = dmObject.InitializationProcAssignments.Count;
++            bool complete = TrySetVariableValue(compiler, dmObject, variable, value, false);
++            if (complete && !varDef.Location.InDMStandard) {
++                if (variable.TryAsJsonRepresentation(compiler, out var declarationValue))
++                    dmObject.VariableDeclarationValues[variable.Name] = declarationValue;
++                var modified = BuildModifiedTypeValue(compiler, varDef.Value);
++                if (modified is not null)
++                    dmObject.ModifiedTypeDeclarationValues[variable.Name] = modified;
++            }
++            dmObject.RecordInitializerValue(variable.Name, value, !varDef.Location.InDMStandard, false,
++                complete && dmObject.InitializationProcAssignments.Count > initCount);
++            return complete;
+         }
+ 
+         private bool CheckCantDefine(DMCompiler compiler, DMObject dmObject) {
+@@ -262,7 +311,19 @@ internal partial class DMCodeTree {
+                     "var \"tag\" cannot be set to a value at compile-time");
+ 
+             dmObject.VariableOverrides[variable.Name] = variable;
++            if (!varOverride.Location.InDMStandard)
++                dmObject.ExplicitTypeFields.Add(variable.Name);
++            int initCount = dmObject.InitializationProcAssignments.Count;
+             _finished = TrySetVariableValue(compiler, dmObject, variable, value, true);
++            if (!varOverride.Location.InDMStandard) {
++                var modified = BuildModifiedTypeValue(compiler, varOverride.Value);
++                if (modified is not null)
++                    dmObject.ModifiedTypeOverrideValues[variable.Name] = modified;
++                else
++                    dmObject.ModifiedTypeOverrideValues.Remove(variable.Name);
++            }
++            dmObject.RecordInitializerValue(variable.Name, value, !varOverride.Location.InDMStandard, true,
++                _finished && dmObject.InitializationProcAssignments.Count > initCount);
+ 
+             return _finished;
+         }
+@@ -291,6 +352,20 @@ internal partial class DMCodeTree {
+             int globalId = compiler.DMObjectTree.CreateGlobal(out DMVariable global, varDecl.Type, varDecl.Name, varDecl.IsConst,
+                 false, varDecl.ValType);
+ 
++            if (!varDecl.Location.InDMStandard && value is not null &&
++                value.TryAsConstant(compiler, out var declarationConstant) &&
++                declarationConstant.TryAsJsonRepresentation(compiler, out var declarationValue))
++                compiler.DMObjectTree.GlobalDeclarationValues[globalId] = declarationValue;
++
++            if (!varDecl.Location.InDMStandard && value != null) {
++                compiler.DMObjectTree.GlobalInitializerValueKinds[globalId] = value.GetType().Name;
++                if ((value is Expressions.List list && (value.TryAsJsonRepresentation(compiler, out _) || list.ContainsObjectConstruction)) ||
++                    (value is Expressions.AList alist && (value.TryAsJsonRepresentation(compiler, out _) || alist.ContainsObjectConstruction)) ||
++                    value is Expressions.NewList or Expressions.NewPath or Expressions.New ||
++                    value is Expressions.ProcCall call && call.GetTargetProc(compiler, dmObject).Proc?.Name == "icon")
++                    compiler.DMObjectTree.DynamicInitializerGlobalIds.Add(globalId);
++            }
++
+             global.Value = new Null(Location.Internal);
+             proc.AddGlobalVariable(global, globalId);
+             _defined = true;
+diff --git a/DMCompiler/DM/DMObject.cs b/DMCompiler/DM/DMObject.cs
+index af1a7bc..f6253f4 100644
+--- a/DMCompiler/DM/DMObject.cs
++++ b/DMCompiler/DM/DMObject.cs
+@@ -1,4 +1,4 @@
+-﻿using System.Linq;
++using System.Linq;
+ using DMCompiler.Bytecode;
+ using DMCompiler.DM.Expressions;
+ using DMCompiler.Json;
+@@ -18,12 +18,57 @@ internal sealed class DMObject(DMCompiler compiler, int id, DreamPath path, DMOb
+     public readonly Dictionary<string, DMVariable> Variables = new();
+     public readonly Dictionary<string, int> GlobalVariables = new();
+     public readonly Dictionary<string, DMVariable> VariableOverrides = new();
++    public readonly Dictionary<string, object?> VariableDeclarationValues = new();
++    public readonly Dictionary<string, ModifiedTypeValueJson> ModifiedTypeDeclarationValues = new();
++    public readonly Dictionary<string, ModifiedTypeValueJson> ModifiedTypeOverrideValues = new();
++    public readonly HashSet<string> ExplicitTypeFields = new();
++    public readonly HashSet<string> DynamicInitializerFields = new();
++    public readonly HashSet<string> DynamicDeclarationFields = new();
++    public readonly List<string> DynamicInitializerAssignments = new();
++    public readonly Dictionary<string, string> InitializerValueKinds = new();
++    public readonly Dictionary<string, object?> ConstantInitializerFields = new();
++    public readonly List<string> ConstantInitializerAssignments = new();
+     public readonly HashSet<string> TmpVariables = new();
+     public readonly HashSet<string> ConstVariables = new();
+     public int? InitializationProc;
+ 
++    public void RecordInitializerValue(string name, DMExpression value, bool authored, bool isOverride, bool hasInitializer) {
++        if (!authored)
++            return;
++
++        InitializerValueKinds[name] = value.GetType().Name;
++        if (hasInitializer && value.TryAsConstant(compiler, out var constant) &&
++            constant.TryAsJsonRepresentation(compiler, out var constantJson)) {
++            ConstantInitializerFields[name] = constantJson;
++            ConstantInitializerAssignments.Add(name);
++        } else
++            ConstantInitializerFields.Remove(name);
++        bool dynamicValue = hasInitializer &&
++            (value is Expressions.List or AList or DimensionalList or NewList or NewPath or New ||
++             value is ProcCall call && call.GetTargetProc(compiler, this).Proc?.Name == "generator");
++        bool dynamicDeclaration = hasInitializer &&
++            (value is Expressions.List or AList or NewList or NewPath or New ||
++             value is ProcCall declarationCall && declarationCall.GetTargetProc(compiler, this).Proc?.Name == "icon");
++        if (!isOverride) {
++            if (dynamicDeclaration)
++                DynamicDeclarationFields.Add(name);
++            else
++                DynamicDeclarationFields.Remove(name);
++        } else if (value is Null) {
++            DynamicDeclarationFields.Remove(name);
++        }
++
++        if (isOverride && dynamicValue) {
++            DynamicInitializerFields.Add(name);
++            DynamicInitializerAssignments.Add(name);
++        } else {
++            DynamicInitializerFields.Remove(name);
++        }
++    }
++
+     /// <summary>A list of var and verb initializations implicitly done before the user's New() is called.</summary>
+     public readonly List<(string Name, Assignment Assignment)> InitializationProcAssignments = new();
++    public bool ImplicitEmptyInitProc;
+ 
+     public bool IsRoot => Path == DreamPath.Root;
+ 
+@@ -176,8 +221,16 @@ internal sealed class DMObject(DMCompiler compiler, int id, DreamPath path, DMOb
+     public DreamTypeJson CreateJsonRepresentation() {
+         DreamTypeJson typeJson = new DreamTypeJson {
+             Path = Path.PathString,
+-            Parent = Parent?.Id
++            Parent = Parent?.Id,
++            VariableDeclarationOrder = Variables.Count > 0 ? Variables.Keys.ToList() : null,
++            VariableOverrideOrder = VariableOverrides.Count > 0 ? VariableOverrides.Keys.ToList() : null
+         };
++        if (VariableDeclarationValues.Count > 0)
++            typeJson.VariableDeclarationValues = VariableDeclarationValues;
++        if (ModifiedTypeDeclarationValues.Count > 0)
++            typeJson.ModifiedTypeDeclarationValues = ModifiedTypeDeclarationValues;
++        if (ModifiedTypeOverrideValues.Count > 0)
++            typeJson.ModifiedTypeOverrideValues = ModifiedTypeOverrideValues;
+ 
+         if (Variables.Count > 0 || VariableOverrides.Count > 0) {
+             typeJson.Variables = new Dictionary<string, object>();
+@@ -197,6 +250,27 @@ internal sealed class DMObject(DMCompiler compiler, int id, DreamPath path, DMOb
+             }
+         }
+ 
++        if (ExplicitTypeFields.Count > 0)
++            typeJson.ExplicitTypeFields = ExplicitTypeFields;
++        if (DynamicInitializerFields.Count > 0)
++            typeJson.DynamicInitializerFields = DynamicInitializerFields;
++        if (DynamicDeclarationFields.Count > 0)
++            typeJson.DynamicDeclarationFields = DynamicDeclarationFields;
++        if (DynamicInitializerAssignments.Count > 0)
++            typeJson.DynamicInitializerAssignments = DynamicInitializerAssignments;
++        if (InitializerValueKinds.Count > 0)
++            typeJson.InitializerValueKinds = InitializerValueKinds;
++        if (ConstantInitializerFields.Count > 0)
++            typeJson.ConstantInitializerFields = ConstantInitializerFields;
++        if (ConstantInitializerAssignments.Count > 0)
++            typeJson.ConstantInitializerAssignments = ConstantInitializerAssignments;
++        if (InitializationProcAssignments.Count > 0)
++            typeJson.InitializerAssignmentCount = InitializationProcAssignments.Count;
++        if (ImplicitEmptyInitProc)
++            typeJson.ImplicitEmptyInitProc = true;
++        if (Path == DreamPath.World && ExplicitTypeFields.Count > 0)
++            typeJson.ExplicitWorldFields = ExplicitTypeFields;
++
+         if (GlobalVariables.Count > 0) {
+             typeJson.GlobalVariables = GlobalVariables;
+         }
+diff --git a/DMCompiler/DM/DMObjectTree.cs b/DMCompiler/DM/DMObjectTree.cs
+index 2ac610e..9872765 100644
+--- a/DMCompiler/DM/DMObjectTree.cs
++++ b/DMCompiler/DM/DMObjectTree.cs
+@@ -11,9 +11,15 @@ internal class DMObjectTree(DMCompiler compiler) {
+ 
+     //TODO: These don't belong in the object tree
+     public readonly List<DMVariable> Globals = new();
++    public readonly HashSet<int> DynamicInitializerGlobalIds = new();
++    public readonly HashSet<int> TemporaryGlobalIds = new();
++    public readonly Dictionary<int, object?> GlobalDeclarationValues = new();
++    public readonly List<CompileTimeConstDeclarationJson> CompileTimeConstDeclarations = new();
++    public readonly Dictionary<int, string> GlobalInitializerValueKinds = new();
+     public readonly Dictionary<string, int> GlobalProcs = new();
+     public readonly List<string> StringTable = new();
+     public readonly HashSet<string> Resources = new();
++    public readonly Dictionary<string, string> ResourceAliases = new();
+ 
+     public DMObject Root => GetOrCreateDMObject(DreamPath.Root);
+ 
+diff --git a/DMCompiler/DM/DMProc.cs b/DMCompiler/DM/DMProc.cs
+index bf8e5ad..58cf32a 100644
+--- a/DMCompiler/DM/DMProc.cs
++++ b/DMCompiler/DM/DMProc.cs
+@@ -68,6 +68,7 @@ internal sealed class DMProc {
+     public bool IsVerb { get; set; }
+     public bool IsFinal => _astDefinition?.IsFinal ?? false;
+     public readonly List<string> Parameters = new();
++    public readonly Dictionary<string, int> PossibleValuesProcs = new();
+     public Location Location;
+     public ProcAttributes Attributes;
+     public string? UnsupportedReason;
+@@ -80,6 +81,7 @@ internal sealed class DMProc {
+     public string? VerbCategory = string.Empty;
+     public string? VerbDesc;
+     public sbyte Invisibility;
++    public bool ExplicitInvisibility;
+ 
+     private readonly DMCompiler _compiler;
+     private readonly DMObject _dmObject;
+@@ -227,7 +229,10 @@ internal sealed class DMProc {
+ 
+                 arguments.Add(new ProcArgumentJson {
+                     Name = parameter.Name,
+-                    Type = argumentType.Type
++                    PossibleValuesProc = PossibleValuesProcs.TryGetValue(parameter.Name, out var sourceProcId) ? sourceProcId : null,
++                    Type = argumentType.Type,
++                    TypePath = parameter.Type?.ToString(),
++                    ExplicitAnything = parameter.ExplicitValueType?.IsAnything == true
+                 });
+             }
+         }
+@@ -249,6 +254,7 @@ internal sealed class DMProc {
+             VerbName = VerbName,
+             VerbDesc = VerbDesc,
+             Invisibility = Invisibility,
++            ExplicitInvisibility = ExplicitInvisibility,
+ 
+             // Normally VerbCategory is "" by default and null to hide it, but we invert those during (de)serialization to reduce JSON size
+             VerbCategory = VerbCategory switch {
+@@ -508,6 +514,7 @@ internal sealed class DMProc {
+                 }
+ 
+                 Invisibility = Convert.ToSByte(Math.Clamp(MathF.Floor(invisNum.Value), 0f, 100f));
++                ExplicitInvisibility = true;
+                 break;
+             case "src":
+                 _compiler.UnimplementedWarning(statementSet.Location, "set src is not implemented");
+@@ -954,10 +961,10 @@ internal sealed class DMProc {
+         WriteStackDelta(argumentStackSize);
+     }
+ 
+-    public void CallStatement(DMCallArgumentsType argumentsType, int argumentStackSize) {
++    public void CallStatement(DMCallArgumentsType argumentsType, int argumentStackSize, bool isCallExt) {
+         //Shrinks the stack by argumentStackSize. Could also shrink it by argumentStackSize+1, but assume not.
+         ResizeStack(-argumentStackSize);
+-        WriteOpcode(DreamProcOpcode.CallStatement);
++        WriteOpcode(isCallExt ? DreamProcOpcode.CallExtStatement : DreamProcOpcode.CallStatementForByond);
+         WriteArgumentType(argumentsType);
+         WriteStackDelta(argumentStackSize);
+     }
+diff --git a/DMCompiler/DM/Expressions/Builtins.cs b/DMCompiler/DM/Expressions/Builtins.cs
+index 8afb44e..a3ffc08 100644
+--- a/DMCompiler/DM/Expressions/Builtins.cs
++++ b/DMCompiler/DM/Expressions/Builtins.cs
+@@ -1,4 +1,5 @@
+ using DMCompiler.Bytecode;
++using System.Linq;
+ using System.Diagnostics.CodeAnalysis;
+ using System.Text.Json;
+ using DMCompiler.Compiler;
+@@ -456,6 +457,12 @@ internal sealed class GetDir(Location location, DMExpression loc1, DMExpression
+ // list(...)
+ internal sealed class List : DMExpression {
+     private readonly (DMExpression? Key, DMExpression Value)[] _values;
++    public bool ContainsObjectConstruction => _values.Any(value =>
++        ContainsObjectConstructionValue(value.Key) || ContainsObjectConstructionValue(value.Value));
++
++    public static bool ContainsObjectConstructionValue(DMExpression? value) => value is NewPath or New ||
++        value is List list && list.ContainsObjectConstruction ||
++        value is AList alist && alist.ContainsObjectConstruction;
+     private readonly bool _isAssociative;
+ 
+     public override bool PathIsFuzzy => true;
+@@ -529,6 +536,8 @@ internal sealed class List : DMExpression {
+ 
+ // alist(...)
+ internal sealed class AList(Location location, (DMExpression Key, DMExpression Value)[] values) : DMExpression(location) {
++    public bool ContainsObjectConstruction => values.Any(value =>
++        List.ContainsObjectConstructionValue(value.Key) || List.ContainsObjectConstructionValue(value.Value));
+     public override bool PathIsFuzzy => true;
+     public override DMComplexValueType ValType => DreamPath.AList;
+ 
+@@ -598,6 +607,13 @@ internal sealed class NewList(Location location, DMExpression[] parameters) : DM
+     }
+ 
+     public override bool TryAsJsonRepresentation(DMCompiler compiler, out object? json) {
++        if (parameters.Length == 0) {
++            json = new Dictionary<string, object> {
++                { "type", JsonVariableType.List },
++                { "values", new List<object?>() }
++            };
++            return true;
++        }
+         json = null;
+         compiler.UnimplementedWarning(Location, "DMM overrides for newlist() are not implemented");
+         return true; //ctx
+@@ -657,16 +673,19 @@ internal sealed class CallStatement : DMExpression {
+     private readonly DMExpression _a; // Proc-ref, Object, LibName
+     private readonly DMExpression? _b; // ProcName, FuncName
+     private readonly ArgumentList _procArgs;
++    private readonly bool _isCallExt;
+ 
+-    public CallStatement(Location location, DMExpression a, ArgumentList procArgs) : base(location) {
++    public CallStatement(Location location, DMExpression a, ArgumentList procArgs, bool isCallExt) : base(location) {
+         _a = a;
+         _procArgs = procArgs;
++        _isCallExt = isCallExt;
+     }
+ 
+-    public CallStatement(Location location, DMExpression a, DMExpression b, ArgumentList procArgs) : base(location) {
++    public CallStatement(Location location, DMExpression a, DMExpression b, ArgumentList procArgs, bool isCallExt) : base(location) {
+         _a = a;
+         _b = b;
+         _procArgs = procArgs;
++        _isCallExt = isCallExt;
+     }
+ 
+     public override void EmitPushValue(ExpressionContext ctx) {
+@@ -674,7 +693,7 @@ internal sealed class CallStatement : DMExpression {
+ 
+         _b?.EmitPushValue(ctx);
+         _a.EmitPushValue(ctx);
+-        ctx.Proc.CallStatement(argumentInfo.Type, argumentInfo.StackSize);
++        ctx.Proc.CallStatement(argumentInfo.Type, argumentInfo.StackSize, _isCallExt);
+     }
+ }
+ 
+diff --git a/DMCompiler/DM/Expressions/Constant.cs b/DMCompiler/DM/Expressions/Constant.cs
+index 5b169cc..03586e8 100644
+--- a/DMCompiler/DM/Expressions/Constant.cs
++++ b/DMCompiler/DM/Expressions/Constant.cs
+@@ -104,7 +104,7 @@ internal sealed class Resource : Constant {
+     public Resource(DMCompiler compiler, Location location, string filePath) : base(location) {
+         // Treat backslashes as forward slashes on Linux
+         // Also remove "." and ".." from the directory path
+-        filePath = System.IO.Path.GetRelativePath(".", filePath.Replace('\\', '/'));
++        filePath = System.IO.Path.GetRelativePath(".", filePath.Replace('\\', '/')).Replace('\\', '/');
+ 
+         var outputDir = System.IO.Path.GetDirectoryName(compiler.Settings.Files?[0]) ?? "/";
+         if (string.IsNullOrEmpty(outputDir))
+@@ -153,6 +153,12 @@ internal sealed class Resource : Constant {
+         // Compile-time resources always use forward slashes
+         _filePath = _filePath.Replace('\\', '/');
+ 
++        var archivePath = _filePath.StartsWith("icons/gen/", StringComparison.Ordinal)
++            ? _filePath["icons/gen/".Length..] : _filePath;
++        if (string.Equals(filePath, archivePath, StringComparison.OrdinalIgnoreCase) &&
++            !string.Equals(filePath, archivePath, StringComparison.Ordinal))
++            compiler.DMObjectTree.ResourceAliases[filePath] = _filePath;
++
+         compiler.DMObjectTree.Resources.Add(_filePath);
+     }
+ 
+diff --git a/DMCompiler/DMCompiler.cs b/DMCompiler/DMCompiler.cs
+index 5133da4..4a10e9d 100644
+--- a/DMCompiler/DMCompiler.cs
++++ b/DMCompiler/DMCompiler.cs
+@@ -296,7 +296,7 @@ public class DMCompiler {
+     private DreamCompiledJson? CompileToJson(List<DreamMapJson> maps, string? interfaceFile, string outputFile) {
+         if (!string.IsNullOrWhiteSpace(interfaceFile) &&
+                 Path.GetDirectoryName(Path.GetFullPath(outputFile)) is { } interfaceDirectory) {
+-            interfaceFile = Path.GetRelativePath(interfaceDirectory, interfaceFile);
++            interfaceFile = Path.GetRelativePath(interfaceDirectory, interfaceFile).Replace('\\', '/');
+             DMObjectTree.Resources.Add(interfaceFile); // Ensure the DMF is included in the list of resources
+         } else {
+             interfaceFile = string.Empty;
+@@ -314,6 +314,7 @@ public class DMCompiler {
+             Metadata = new DreamCompiledJsonMetadata { Version = OpcodeVerifier.GetOpcodesHash() },
+             Strings = DMObjectTree.StringTable,
+             Resources = DMObjectTree.Resources.ToArray(),
++            ResourceAliases = DMObjectTree.ResourceAliases.Count > 0 ? DMObjectTree.ResourceAliases : null,
+             Maps = maps,
+             Interface = interfaceFile,
+             Types = jsonRep.Item1,
+@@ -326,6 +327,11 @@ public class DMCompiler {
+ 
+         if (DMObjectTree.Globals.Count > 0) {
+             GlobalListJson globalListJson = new GlobalListJson {
++                TemporaryGlobalIds = DMObjectTree.TemporaryGlobalIds,
++                DeclarationValues = DMObjectTree.GlobalDeclarationValues,
++                CompileTimeConstDeclarations = DMObjectTree.CompileTimeConstDeclarations,
++                DynamicInitializerGlobalIds = DMObjectTree.DynamicInitializerGlobalIds,
++                InitializerValueKinds = DMObjectTree.GlobalInitializerValueKinds,
+                 GlobalCount = DMObjectTree.Globals.Count,
+                 Names = new(),
+                 Globals = new()
+diff --git a/DMCompiler/Json/DreamCompiledJson.cs b/DMCompiler/Json/DreamCompiledJson.cs
+index 62483d3..f82d3f0 100644
+--- a/DMCompiler/Json/DreamCompiledJson.cs
++++ b/DMCompiler/Json/DreamCompiledJson.cs
+@@ -4,6 +4,7 @@ public sealed class DreamCompiledJson {
+     public required DreamCompiledJsonMetadata Metadata { get; set; }
+     public required List<string> Strings { get; set; }
+     public string[]? Resources { get; set; }
++    public Dictionary<string, string>? ResourceAliases { get; set; }
+     public int[]? GlobalProcs { get; set; }
+     public GlobalListJson? Globals { get; set; }
+     public ProcDefinitionJson? GlobalInitProc { get; set; }
+diff --git a/DMCompiler/Json/DreamMapJson.cs b/DMCompiler/Json/DreamMapJson.cs
+index db336d9..df392cb 100644
+--- a/DMCompiler/Json/DreamMapJson.cs
++++ b/DMCompiler/Json/DreamMapJson.cs
+@@ -20,9 +20,11 @@ public sealed class CellDefinitionJson(string name) {
+ public sealed class MapObjectJson(int type) {
+     public int Type { get; set; } = type;
+     public Dictionary<string, object?>? VarOverrides { get; set; }
++    public List<string>? OverrideOrder { get; set; }
+ 
+     public bool AddVarOverride(string varName, object? varValue) {
+         VarOverrides ??= new();
++        (OverrideOrder ??= new()).Add(varName);
+         bool contained = VarOverrides.ContainsKey(varName);
+         VarOverrides[varName] = varValue;
+         return !contained;
+diff --git a/DMCompiler/Json/DreamObjectJson.cs b/DMCompiler/Json/DreamObjectJson.cs
+index bba5a4d..11d528e 100644
+--- a/DMCompiler/Json/DreamObjectJson.cs
++++ b/DMCompiler/Json/DreamObjectJson.cs
+@@ -12,6 +12,21 @@ public enum JsonVariableType {
+ 
+ public sealed class DreamTypeJson {
+     public required string Path { get; set; }
++    public List<string>? VariableDeclarationOrder { get; set; }
++    public List<string>? VariableOverrideOrder { get; set; }
++    public Dictionary<string, object?>? VariableDeclarationValues { get; set; }
++    public Dictionary<string, ModifiedTypeValueJson>? ModifiedTypeDeclarationValues { get; set; }
++    public Dictionary<string, ModifiedTypeValueJson>? ModifiedTypeOverrideValues { get; set; }
++    public HashSet<string>? ExplicitTypeFields { get; set; }
++    public HashSet<string>? DynamicInitializerFields { get; set; }
++    public HashSet<string>? DynamicDeclarationFields { get; set; }
++    public List<string>? DynamicInitializerAssignments { get; set; }
++    public Dictionary<string, string>? InitializerValueKinds { get; set; }
++    public Dictionary<string, object?>? ConstantInitializerFields { get; set; }
++    public List<string>? ConstantInitializerAssignments { get; set; }
++    public int? InitializerAssignmentCount { get; set; }
++    public bool? ImplicitEmptyInitProc { get; set; }
++    public HashSet<string>? ExplicitWorldFields { get; set; }
+     public int? Parent { get; set; }
+     public int? InitProc { get; set; }
+     public List<List<int>>? Procs { get; set; }
+@@ -22,8 +37,25 @@ public sealed class DreamTypeJson {
+     public HashSet<string>? TmpVariables { get; set; }
+ }
+ 
++public sealed class ModifiedTypeValueJson {
++    public required string TypePath { get; set; }
++    public required Dictionary<string, object?> Overrides { get; set; }
++    public required List<string> OverrideOrder { get; set; }
++}
++
+ public sealed class GlobalListJson {
++    public HashSet<int>? TemporaryGlobalIds { get; set; }
++    public Dictionary<int, object?>? DeclarationValues { get; set; }
++    public List<CompileTimeConstDeclarationJson>? CompileTimeConstDeclarations { get; set; }
++    public HashSet<int>? DynamicInitializerGlobalIds { get; set; }
++    public Dictionary<int, string>? InitializerValueKinds { get; set; }
+     public int GlobalCount { get; set; }
+     public required List<string> Names { get; set; }
+     public required Dictionary<int, object> Globals { get; set; }
+ }
++
++public sealed class CompileTimeConstDeclarationJson {
++    public required int ProcId { get; set; }
++    public required string Name { get; set; }
++    public required object? Value { get; set; }
++}
+diff --git a/DMCompiler/Json/DreamProcJson.cs b/DMCompiler/Json/DreamProcJson.cs
+index eb9f4a0..1b17a9b 100644
+--- a/DMCompiler/Json/DreamProcJson.cs
++++ b/DMCompiler/Json/DreamProcJson.cs
+@@ -21,11 +21,15 @@ public sealed class ProcDefinitionJson {
+     public string? VerbCategory { get; init; }
+     public string? VerbDesc { get; init; }
+     public sbyte Invisibility { get; init; }
++    public bool ExplicitInvisibility { get; init; }
+ }
+ 
+ public struct ProcArgumentJson {
+     public required string Name { get; init; }
++    public int? PossibleValuesProc { get; init; }
+     public DMValueType Type { get; init; }
++    public string? TypePath { get; init; }
++    public bool ExplicitAnything { get; init; }
+ }
+ 
+ public struct LocalVariableJson {

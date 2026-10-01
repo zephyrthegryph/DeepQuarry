@@ -1,0 +1,2 @@
+"a" = (/obj/map_proc{target = /proc/fixture_target},/turf,/area)
+(1,1,1) = {"a"}

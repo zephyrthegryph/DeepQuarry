@@ -1,0 +1,47 @@
+diff --git a/DMCompiler/DM/DMCodeTree.Vars.cs b/DMCompiler/DM/DMCodeTree.Vars.cs
+index 044d2f7..96e4f89 100644
+--- a/DMCompiler/DM/DMCodeTree.Vars.cs
++++ b/DMCompiler/DM/DMCodeTree.Vars.cs
+@@ -262,6 +262,8 @@ internal partial class DMCodeTree {
+                     "var \"tag\" cannot be set to a value at compile-time");
+ 
+             dmObject.VariableOverrides[variable.Name] = variable;
++            if (!varOverride.Location.InDMStandard)
++                dmObject.ExplicitTypeFields.Add(variable.Name);
+             _finished = TrySetVariableValue(compiler, dmObject, variable, value, true);
+ 
+             return _finished;
+diff --git a/DMCompiler/DM/DMObject.cs b/DMCompiler/DM/DMObject.cs
+index af1a7bc..3a50620 100644
+--- a/DMCompiler/DM/DMObject.cs
++++ b/DMCompiler/DM/DMObject.cs
+@@ -18,6 +18,7 @@ internal sealed class DMObject(DMCompiler compiler, int id, DreamPath path, DMOb
+     public readonly Dictionary<string, DMVariable> Variables = new();
+     public readonly Dictionary<string, int> GlobalVariables = new();
+     public readonly Dictionary<string, DMVariable> VariableOverrides = new();
++    public readonly HashSet<string> ExplicitTypeFields = new();
+     public readonly HashSet<string> TmpVariables = new();
+     public readonly HashSet<string> ConstVariables = new();
+     public int? InitializationProc;
+@@ -197,6 +198,9 @@ internal sealed class DMObject(DMCompiler compiler, int id, DreamPath path, DMOb
+             }
+         }
+ 
++        if (ExplicitTypeFields.Count > 0)
++            typeJson.ExplicitTypeFields = ExplicitTypeFields;
++
+         if (GlobalVariables.Count > 0) {
+             typeJson.GlobalVariables = GlobalVariables;
+         }
+diff --git a/DMCompiler/Json/DreamObjectJson.cs b/DMCompiler/Json/DreamObjectJson.cs
+index bba5a4d..f474b81 100644
+--- a/DMCompiler/Json/DreamObjectJson.cs
++++ b/DMCompiler/Json/DreamObjectJson.cs
+@@ -12,6 +12,7 @@ public enum JsonVariableType {
+ 
+ public sealed class DreamTypeJson {
+     public required string Path { get; set; }
++    public HashSet<string>? ExplicitTypeFields { get; set; }
+     public int? Parent { get; set; }
+     public int? InitProc { get; set; }
+     public List<List<int>>? Procs { get; set; }

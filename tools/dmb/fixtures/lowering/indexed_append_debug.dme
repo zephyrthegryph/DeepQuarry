@@ -1,0 +1,2 @@
+#define DEBUG
+#include "indexed_append_debug.dm"

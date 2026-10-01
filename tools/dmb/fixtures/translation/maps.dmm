@@ -1,0 +1,3 @@
+"a" = (/obj/fixture_marker{amount = 12},/turf/fixture_floor,/area/fixture_room)
+
+(1,1,1) = {"a"}

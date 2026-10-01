@@ -1,0 +1,1568 @@
+﻿test,category,native_status,rust_status,same_message,native_failure_kind,rust_failure_kind,native_runtimes,rust_runtimes,native_message,rust_message
+/datum/unit_test/admin_trait_listing_sees_added_trait,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/alarm_release_atom_clears_sources_and_camera_cache,both_pass,pass,pass,True,none,none,28,28,,
+/datum/unit_test/all_clothing_shall_be_valid,both_fail,fail,fail,False,other,other,92319,92319,"	FAILURE #1: [03:14:56] Runtime in code/game/atoms_movable.dm,119: /obj/item/storage/internal still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/game/atoms_movable.dm:119
+	FAILURE #2: [03:14:56] Runtime in code/game/atoms_movable.dm,119: /obj/item/storage/internal still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ at code/game/atoms_movable.dm:119
+	FAILURE #3: [03:14:59] Runtime in code/game/atoms_movable.dm,119: /mob/living/carbon/human still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ at code/game/atoms_movable.dm:119
+	FAILURE #4: [03:14:59] Runtime in code/game/atoms_movable.dm,119: /mob/living/carbon/human still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ at code/game/atoms_movable.dm:119
+	FAILURE #5: [03:14:59] Runtime in code/game/atoms_movable.dm,119: /mob/living/carbon/human still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ at code/game/atoms_movable.dm:119","	FAILURE #1: [03:15:14] Runtime in code/game/atoms_movable.dm,119: /obj/item/storage/internal still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/game/atoms_movable.dm:119
+	FAILURE #2: [03:15:14] Runtime in code/game/atoms_movable.dm,119: /obj/item/storage/internal still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ at code/game/atoms_movable.dm:119
+	FAILURE #3: [03:15:17] Runtime in code/game/atoms_movable.dm,119: /mob/living/carbon/human still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ at code/game/atoms_movable.dm:119
+	FAILURE #4: [03:15:17] Runtime in code/game/atoms_movable.dm,119: /mob/living/carbon/human still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ at code/game/atoms_movable.dm:119
+	FAILURE #5: [03:15:17] Runtime in code/game/atoms_movable.dm,119: /mob/living/carbon/human still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ at code/game/atoms_movable.dm:119"
+/datum/unit_test/all_default_circuits_must_match_machines,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/all_dna_injectors_must_be_valid,both_pass,pass,pass,True,none,none,480,480,,
+/datum/unit_test/all_genes_shall_have_unique_name,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/all_machine_circuits_must_be_printable,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/all_robot_sprites_must_be_valid,both_pass,pass,pass,True,none,none,5976,5976,,
+/datum/unit_test/all_sheets_must_be_printable_from_autolathe,both_pass,pass,pass,True,none,none,3430,3430,,
+/datum/unit_test/all_slimes_must_have_research_values,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/all_traits_unique_names,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/apc_area_test,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/autohiss_shall_be_exclusive,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/autowiki,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/autowiki_include_template,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/belly_damage,both_pass,pass,pass,True,none,none,48,36,,
+/datum/unit_test/belly_nonsuffocation,both_pass,pass,pass,True,none,none,36,36,,
+/datum/unit_test/belly_spacesafe,both_pass,pass,pass,True,none,none,18,12,,
+/datum/unit_test/chemical_grinding_must_produce_valid_results,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/chemical_reactions_shall_not_conflict,both_pass,pass,pass,True,none,none,63868,63868,,
+/datum/unit_test/chemical_reactions_shall_use_and_produce_valid_reagents,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/component_duping,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dcs_check_list_arguments,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dcs_get_id_from_arguments,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/default_spawnpoint_exists,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/disease_tests,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_ability_create_shade_applies_the_modifier,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_ability_dark_maw_deploys_and_dispels,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_ability_dark_respite_needs_dark_area,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_ability_dark_respite_needs_full_variant,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_ability_dark_respite_toggles,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_ability_dark_respite_warp_triggered_cannot_be_manually_ended,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_ability_dark_tunneling_needs_energy,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_ability_dark_tunneling_once_only,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_ability_grant_survives_while_any_source_remains,both_pass,pass,pass,True,none,none,12,12,,
+/datum/unit_test/dq_ability_phase_shift_area_blocks,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_ability_phase_shift_blocked_spends_nothing,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_ability_phase_shift_commits,both_pass,pass,pass,True,none,none,0,1,,
+/datum/unit_test/dq_ability_phase_shift_needs_grant,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_ability_phase_shift_returning_is_free,both_pass,pass,pass,True,none,none,0,1,,
+/datum/unit_test/dq_ability_phase_shift_watcher_cost,both_pass,pass,pass,True,none,none,838,838,,
+/datum/unit_test/dq_ability_regenerate_other_heals_a_neighbour,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_ability_regenerate_other_needs_energy,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_ability_robot_toggle_lights,both_pass,pass,pass,True,none,none,894,894,,
+/datum/unit_test/dq_actor_capabilities,both_pass,pass,pass,True,none,none,532,532,,
+/datum/unit_test/dq_actor_parity_ai,both_pass,pass,pass,True,none,none,532,532,,
+/datum/unit_test/dq_actor_parity_ghost,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_actor_parity_robot,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_actor_parity_telekinesis,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_actor_use_resolver,both_pass,pass,pass,True,none,none,532,532,,
+/datum/unit_test/dq_affliction_afflict_configures_location,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_affliction_destroy_detaches_from_body,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_affliction_symptoms_accumulate,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_affliction_symptoms_are_singletons,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_agent_approach_and_discovery_tradeoffs,both_pass,pass,pass,True,none,none,892,892,,
+/datum/unit_test/dq_agent_physical_freight_and_evidence,both_fail,fail,fail,False,other,other,2738,2744,"	FAILURE #1: [03:17:09] Runtime in code/game/atoms_movable.dm,119: /mob/living/carbon/human still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/game/atoms_movable.dm:119
+	FAILURE #2: [03:17:09] Runtime in code/game/atoms_movable.dm,119: /mob/living/carbon/human still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ at code/game/atoms_movable.dm:119","	FAILURE #1: [03:17:22] Runtime in code/game/atoms_movable.dm,119: /mob/living/carbon/human still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/game/atoms_movable.dm:119
+	FAILURE #2: [03:17:22] Runtime in code/game/atoms_movable.dm,119: /mob/living/carbon/human still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ at code/game/atoms_movable.dm:119"
+/datum/unit_test/dq_air_alarm_reads_turf_pressure,both_pass,pass,pass,True,none,none,148,148,,
+/datum/unit_test/dq_air_alarm_receives_matching_status,both_pass,pass,pass,True,none,none,46,46,,
+/datum/unit_test/dq_air_alarm_skips_unchanged_air,both_pass,pass,pass,True,none,none,160,160,,
+/datum/unit_test/dq_airalarm_radio_is_area_scoped,both_pass,pass,pass,True,none,none,44,44,,
+/datum/unit_test/dq_airless_floor_is_not_a_cryogenic_solid,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_airlock_controller_ignores_unrelated_radio,both_pass,pass,pass,True,none,none,34,34,,
+/datum/unit_test/dq_airlock_sensor_wakes_on_pressure,both_pass,pass,pass,True,none,none,88,88,,
+/datum/unit_test/dq_all_reactions_have_valid_requirements,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_all_species_handle_breath_safely,both_fail,fail,fail,False,other,other,94632,94632,"	FAILURE #1: [03:16:17] Runtime in code/game/atoms_movable.dm,119: /mob/living/carbon/human still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/game/atoms_movable.dm:119
+	FAILURE #2: [03:16:18] Runtime in code/game/atoms_movable.dm,119: /mob/living/carbon/human still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ at code/game/atoms_movable.dm:119","	FAILURE #1: [03:16:33] Runtime in code/game/atoms_movable.dm,119: /mob/living/carbon/human still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/game/atoms_movable.dm:119
+	FAILURE #2: [03:16:34] Runtime in code/game/atoms_movable.dm,119: /mob/living/carbon/human still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ at code/game/atoms_movable.dm:119"
+/datum/unit_test/dq_all_visible_gases_render_overlays,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_amputation_needs_open_limb,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_anonymous_service_refund_requires_provider_staff,both_fail,fail,fail,False,other,other,867,867,"	FAILURE #1: [03:17:06] Runtime in code/game/atoms_movable.dm,119: /mob/living/carbon/human still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/game/atoms_movable.dm:119","	FAILURE #1: [03:17:20] Runtime in code/game/atoms_movable.dm,119: /mob/living/carbon/human still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/game/atoms_movable.dm:119"
+/datum/unit_test/dq_apc_cell_deletion_clears_owner,both_pass,pass,pass,True,none,none,82,82,,
+/datum/unit_test/dq_armor_interning,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_armor_material_response,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_armor_mitigation_table,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_armor_object_mitigation,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_armor_parity_with_old_roll,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_armor_sharp_to_blunt,both_pass,pass,pass,True,none,none,114,114,,
+/datum/unit_test/dq_armor_shield_blocks,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_armor_specs_parse,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_armor_worn_cache_combines,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_arrivals_idle_automation_owned_by_shuttles,both_pass,pass,pass,True,none,none,22,22,,
+/datum/unit_test/dq_arrivals_shuttle_preserves_air,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_atmos_analyzer_handles_extreme_pressure,both_pass,pass,pass,True,none,none,26,26,,
+/datum/unit_test/dq_atmos_analyzer_handles_pure_gas,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_atmos_analyzer_handles_vacuum,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_atmos_analyzer_lists_gases,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_atmos_filter_constructs,both_pass,pass,pass,True,none,none,10,10,,
+/datum/unit_test/dq_atmos_leak_event_type_exists,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_atmos_mass_topology_teardown_breaks_all_cycles,both_pass,pass,pass,True,none,none,102,102,,
+/datum/unit_test/dq_atmos_mixer_constructs,both_pass,pass,pass,True,none,none,10,10,,
+/datum/unit_test/dq_atmos_topology_collects_without_hard_delete,both_pass,pass,pass,True,none,none,34,34,,
+/datum/unit_test/dq_auxmos_byondapi_set_get_consistent,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_bicaridine_od_drains_hematoma,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_binary_pump_transfers_between_pipenets,both_pass,pass,pass,True,none,none,46,46,,
+/datum/unit_test/dq_blocked_airlock_wakes_from_blocker_movement,both_pass,pass,pass,True,none,none,32,32,,
+/datum/unit_test/dq_body_destroy_removes_afflictions,both_pass,pass,pass,True,none,none,24,24,,
+/datum/unit_test/dq_body_factor_affliction_bands,both_pass,pass,pass,True,none,none,12,12,,
+/datum/unit_test/dq_body_factor_affliction_stages,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_body_factor_book_text,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_body_factor_combine_math,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_body_factor_consumers,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_body_factor_energy_shield,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_body_factor_healing_and_blocks,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_body_factor_lazy_storage,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_body_factor_modifier_recompute,both_pass,pass,pass,True,none,none,12,12,,
+/datum/unit_test/dq_body_factor_movement,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_body_factor_reagent_dose,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_body_factor_species_baseline,both_pass,pass,pass,True,none,none,622,622,,
+/datum/unit_test/dq_body_factor_worn_equipment,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_body_injure_marks_dirty,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_body_location_index,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_body_part_multiplier,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_body_regeneration_level,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_body_restoration_heals_internal_wounds,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_body_severity_signal,both_pass,pass,pass,True,none,none,12,12,,
+/datum/unit_test/dq_body_slot_cache_matches_scan,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_body_slot_insulation_matches_scan,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_body_slot_missing_hand,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_body_slot_plans_declare_slots,both_pass,pass,pass,True,none,none,24,24,,
+/datum/unit_test/dq_body_slot_torso_vest,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_body_slot_unequip_updates,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_body_treatment_snapshot,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_body_wound_continuous_treatment,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_body_wound_mend_budget,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_bodyscanner_custom_affliction_findings,both_pass,pass,pass,True,none,none,18,18,,
+/datum/unit_test/dq_bodyscanner_finding_trend,both_pass,pass,pass,True,none,none,60,60,,
+/datum/unit_test/dq_bodyscanner_health_bands,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_bodyscanner_patient_symptoms_hidden,both_pass,pass,pass,True,none,none,12,12,,
+/datum/unit_test/dq_bodyscanner_qualitative_bands,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_bodyscanner_scanner_findings_filter,both_pass,pass,pass,True,none,none,36,30,,
+/datum/unit_test/dq_borg_ctrl_shift_click_targets_atom,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_borg_destroyed_mind_placement,both_pass,pass,pass,True,none,none,1918,1918,,
+/datum/unit_test/dq_brain_damage_has_no_surgery,both_pass,pass,pass,True,none,none,78,78,,
+/datum/unit_test/dq_brain_decay_past_threshold,both_pass,pass,pass,True,none,none,12,13,,
+/datum/unit_test/dq_brain_natural_heal_below_floor,both_pass,pass,pass,True,none,none,0,1,,
+/datum/unit_test/dq_brain_natural_heal_floors_at_zero,both_pass,pass,pass,True,none,none,6,7,,
+/datum/unit_test/dq_brain_stable_mid_range,both_pass,pass,pass,True,none,none,0,1,,
+/datum/unit_test/dq_brain_swelling_blunts_treatment,both_pass,pass,pass,True,none,none,0,6,,
+/datum/unit_test/dq_brain_terminal_zone_is_unsavable,both_pass,pass,pass,True,none,none,6,8,,
+/datum/unit_test/dq_breakpoint_rules_declared,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_breath_from_internals_drains_tank,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_c6_deconstruct_materializes_parts,both_pass,pass,pass,True,none,none,118,118,,
+/datum/unit_test/dq_c6_mapped_machine_stays_latent,both_pass,pass,pass,True,none,none,68,68,,
+/datum/unit_test/dq_c6_refresh_parts_reads_real_board,both_pass,pass,pass,True,none,none,190,190,,
+/datum/unit_test/dq_c6_rped_swap_reads_real_part,both_pass,pass,pass,True,none,none,144,144,,
+/datum/unit_test/dq_c6_type_var_reads_subtype,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_c8a_cryopod_blast_share,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_c8a_cryopod_destroy_spills_occupant,both_pass,pass,pass,True,none,none,48,48,,
+/datum/unit_test/dq_c8a_cryopod_occupant_slot,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_c8a_dna_scanner_blast_share,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_c8a_dna_scanner_occupant_slot,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_c8a_gibber_occupant_slot,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_c8a_implant_chair_occupant_slot,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_c8a_mecha_cargo_slot,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_c8a_mecha_equipment_hardpoint_slot,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_c8a_mecha_pilot_slot,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_c8a_recharge_station_occupant_slot,both_pass,pass,pass,True,none,none,66,66,,
+/datum/unit_test/dq_c8a_resleever_occupant_slot,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_c8a_suit_storage_occupant_slot,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_c_airblock_returns_bitfield,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_canister_release_propagates_through_room,both_pass,pass,pass,True,none,none,106,106,,
+/datum/unit_test/dq_canister_release_to_turf,both_pass,pass,pass,True,none,none,16,16,,
+/datum/unit_test/dq_cargo_faction_market,both_pass,pass,pass,True,none,none,890,890,,
+/datum/unit_test/dq_cascade_chance_scales_with_damage,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_cavity_implant_is_opt_in,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_changeturf_space_floor_roundtrip_preserves_shared_vacuum,both_pass,pass,pass,True,none,none,42,42,,
+/datum/unit_test/dq_changeturf_to_wall_no_crash,both_pass,pass,pass,True,none,none,36,36,,
+/datum/unit_test/dq_chem_presence_interaction_requires_both,both_pass,pass,pass,True,none,none,12,12,,
+/datum/unit_test/dq_chem_presence_side_effect_spawns,both_pass,pass,pass,True,none,none,12,12,,
+/datum/unit_test/dq_chomp_canister_presets_have_gas,both_pass,pass,pass,True,none,none,80,80,,
+/datum/unit_test/dq_closed_airlock_blocks_atmos,both_pass,pass,pass,True,none,none,34,34,,
+/datum/unit_test/dq_closed_airlock_clears_stale_autoclose,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_closed_door_blocks_canatmospass,both_pass,pass,pass,True,none,none,38,38,,
+/datum/unit_test/dq_closed_firedoor_is_event_driven,both_pass,pass,pass,True,none,none,122,122,,
+/datum/unit_test/dq_combat_ai_aggro_on_damage_out_of_view,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_combat_ai_behaviors_are_flyweight,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_combat_ai_behaviors_well_formed,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_combat_ai_brain_spawns_on_simple_mob,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_combat_ai_damage_promotes_attacker,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_combat_ai_faction_registry_populates,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_combat_ai_fast_processing_is_combat_scoped,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_combat_ai_forget_clears_state,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_combat_ai_give_destination_records_target,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_combat_ai_give_target_sets_threat,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_combat_ai_grenade_grants_throw_behavior,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_combat_ai_gun_grants_aimed_shot_behavior,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_combat_ai_item_granted_behaviors_have_no_brain_cooldown,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_combat_ai_login_adds_player_verb,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_combat_ai_personal_overrides_faction,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_combat_ai_player_verbs_well_formed,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_combat_ai_react_to_attack_sets_last_attacker,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_combat_ai_rebuild_merges_held_grants,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_combat_ai_set_hostile_flips_attack_on_sight,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_combat_ai_spatial_sleep_wakes,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_combat_ai_stop_active_clears_busy,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_combat_mode_resolver,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_combat_mode_toggle,both_pass,pass,pass,True,none,none,10,10,,
+/datum/unit_test/dq_combat_mode_variant_keys,both_pass,pass,pass,True,none,none,680,680,,
+/datum/unit_test/dq_combat_parity_disarm,both_pass,pass,pass,True,none,none,990,990,,
+/datum/unit_test/dq_combat_parity_grab,both_pass,pass,pass,True,none,none,1050,1050,,
+/datum/unit_test/dq_combat_parity_harm,both_pass,pass,pass,True,none,none,660,660,,
+/datum/unit_test/dq_combat_parity_help,both_pass,pass,pass,True,none,none,660,660,,
+/datum/unit_test/dq_combat_parity_simple_mob_attacker,both_pass,pass,pass,True,none,none,382,371,,
+/datum/unit_test/dq_constraint_declarations_compile,native_only_fail,fail,pass,False,other,none,281260,284084,"	FAILURE #1: [03:20:20] Runtime in code/modules/power/power_bridge.dm,154: list index out of bounds
+ (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/power/power_bridge.dm:154
+	FAILURE #2: [03:20:20] Runtime in code/game/atoms_movable.dm,119: /obj/item/storage/fancy/cigarettes/dromedaryco still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ at code/game/atoms_movable.dm:119
+	FAILURE #3: [03:20:20] Runtime in code/game/atoms_movable.dm,119: /obj/item/storage/box/matches still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ at code/game/atoms_movable.dm:119
+	FAILURE #4: [03:20:21] Runtime in code/game/atoms_movable.dm,119: /obj/item/storage/belt/utility/full still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ at code/game/atoms_movable.dm:119
+	FAILURE #5: [03:20:21] Runtime in code/game/atoms_movable.dm,119: /obj/item/storage/belt/utility/full/multitool still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ at code/game/atoms_movable.dm:119
+	FAILURE #6: [03:20:21] Runtime in code/game/atoms_movable.dm,119: /obj/item/storage/belt/utility/chemtech still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ at code/game/atoms_movable.dm:119
+	FAILURE #7: [03:20:21] Runtime in code/game/atoms_movable.dm,119: /obj/item/storage/belt/utility/atmostech still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ at code/game/atoms_movable.dm:119
+	FAILURE #8: [03:20:23] Runtime in code/game/atoms_movable.dm,119: /obj/item/storage/box/lights/bulbs still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ at code/game/atoms_movable.dm:119
+	FAILURE #9: [03:20:23] Runtime in code/game/atoms_movable.dm,119: /obj/item/storage/box/lights/tubes still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ at code/game/atoms_movable.dm:119
+	FAILURE #10: [03:20:23] Runtime in code/game/atoms_movable.dm,119: /obj/item/storage/box/lights/mixed still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ at code/game/atoms_movable.dm:119
+	FAILURE #11: [03:20:24] Runtime in code/modules/power/power_bridge.dm,154: list index out of bounds
+ at code/modules/power/power_bridge.dm:154
+	FAILURE #12: [03:20:25] Runtime in code/game/atoms_movable.dm,119: /obj/item/storage/fancy/cigarettes still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ at code/game/atoms_movable.dm:119
+	FAILURE #13: [03:20:25] Runtime in code/game/atoms_movable.dm,119: /obj/item/storage/fancy/cigarettes still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ at code/game/atoms_movable.dm:119
+	FAILURE #14: [03:20:25] Runtime in code/game/atoms_movable.dm,119: /obj/item/storage/fancy/cigarettes still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ at code/game/atoms_movable.dm:119
+	FAILURE #15: [03:20:25] Runtime in code/game/atoms_movable.dm,119: /obj/item/storage/fancy/cigarettes still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+  (This error will now be silenced for 10 minutes) at code/game/atoms_movable.dm:119
+	FAILURE #16: [03:20:28] Runtime in code/modules/power/power_bridge.dm,154: list index out of bounds
+ at code/modules/power/power_bridge.dm:154
+	FAILURE #17: [03:20:56] Runtime in code/modules/power/power_bridge.dm,154: list index out of bounds
+ at code/modules/power/power_bridge.dm:154
+	FAILURE #18: [03:20:59] Runtime in code/modules/power/power_bridge.dm,154: list index out of bounds
+ at code/modules/power/power_bridge.dm:154
+	FAILURE #19: [03:21:02] Runtime in code/modules/power/power_bridge.dm,154: list index out of bounds
+ at code/modules/power/power_bridge.dm:154
+	FAILURE #20: [03:21:04] Runtime in code/modules/power/power_bridge.dm,154: list index out of bounds
+ at code/modules/power/power_bridge.dm:154
+	FAILURE #21: [03:21:06] Runtime in code/modules/power/power_bridge.dm,154: list index out of bounds
+ at code/modules/power/power_bridge.dm:154
+	FAILURE #22: [03:21:08] Runtime in code/modules/power/power_bridge.dm,154: list index out of bounds
+ at code/modules/power/power_bridge.dm:154
+	FAILURE #23: [03:21:16] Runtime in code/modules/power/power_bridge.dm,154: list index out of bounds
+ at code/modules/power/power_bridge.dm:154
+	FAILURE #24: [03:21:19] Runtime in code/modules/power/power_bridge.dm,154: list index out of bounds
+ at code/modules/power/power_bridge.dm:154
+	FAILURE #25: [03:21:22] Runtime in code/modules/power/power_bridge.dm,154: list index out of bounds
+ at code/modules/power/power_bridge.dm:154
+	FAILURE #26: [03:21:25] Runtime in code/modules/power/power_bridge.dm,154: list index out of bounds
+ at code/modules/power/power_bridge.dm:154
+	FAILURE #27: [03:21:27] Runtime in code/modules/power/power_bridge.dm,154: list index out of bounds
+ at code/modules/power/power_bridge.dm:154
+	FAILURE #28: [03:21:30] Runtime in code/modules/power/power_bridge.dm,154: list index out of bounds
+ at code/modules/power/power_bridge.dm:154
+	FAILURE #29: [03:21:32] Runtime in code/modules/power/power_bridge.dm,154: list index out of bounds
+ at code/modules/power/power_bridge.dm:154
+	FAILURE #30: [03:21:34] Runtime in code/modules/power/power_bridge.dm,154: list index out of bounds
+ at code/modules/power/power_bridge.dm:154
+	FAILURE #31: [03:21:36] Runtime in code/modules/power/power_bridge.dm,154: list index out of bounds
+ at code/modules/power/power_bridge.dm:154
+	FAILURE #32: [03:21:38] Runtime in code/modules/power/power_bridge.dm,154: list index out of bounds
+ at code/modules/power/power_bridge.dm:154
+	FAILURE #33: [03:21:40] Runtime in code/modules/power/power_bridge.dm,154: list index out of bounds
+ at code/modules/power/power_bridge.dm:154
+	FAILURE #34: [03:21:43] Runtime in code/modules/power/power_bridge.dm,154: list index out of bounds
+ at code/modules/power/power_bridge.dm:154
+	FAILURE #35: [03:21:45] Runtime in code/modules/power/power_bridge.dm,154: list index out of bounds
+ at code/modules/power/power_bridge.dm:154
+	FAILURE #36: [03:21:47] Runtime in code/modules/power/power_bridge.dm,154: list index out of bounds
+ at code/modules/power/power_bridge.dm:154",
+/datum/unit_test/dq_constraint_equip_reasons,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_constraint_parity,intentional_exclusion,unrun,unrun,True,none,none,,,,
+/datum/unit_test/dq_constraint_parity/equip,both_pass,pass,pass,True,none,none,197563,197686,,
+/datum/unit_test/dq_constraint_parity/holster,both_pass,pass,pass,True,none,none,72132,71922,,
+/datum/unit_test/dq_constraint_parity/storage,both_fail,fail,fail,False,other,other,237239,237011,"	FAILURE #1: storage insert: 56 of 559101 cells differ from the legacy answer:
+/obj/item/storage/backpack/clown/loaded: can't be created any more
+/obj/item/storage/backpack/dufflebag/cratedrills: can't be created any more
+/obj/item/storage/backpack/mime/loaded: can't be created any more
+/obj/item/storage/belt/utility/alien/full: can't be created any more
+/obj/item/storage/belt/utility/spicyfull: can't be created any more
+/obj/item/storage/box/survival: can't be created any more
+/obj/item/storage/box/survival/synth: can't be created any more
+/obj/item/storage/box/survival/comp: can't be created any more
+/obj/item/storage/box/survival/space: can't be created any more
+/obj/item/storage/box/capguntoy: can't be created any more
+/obj/item/storage/box/casino/foamcrossbow: can't be created any more
+/obj/item/storage/box/casino/costume_sexyclown: can't be created any more
+/obj/item/storage/box/tgmc_mre: can't be created any more
+/obj/item/storage/box/syndie_kit/space: can't be created any more
+/obj/item/storage/box/syndie_kit/chameleon: can't be created any more
+/obj/item/storage/box/syndie_kit/voidsuit: can't be created any more
+/obj/item/storage/box/syndie_kit/voidsuit/fire: can't be created any more
+/obj/item/storage/box/anomaly: can't be created any more
+/obj/item/storage/box/stylist: can't be created any more
+/obj/item/storage/box/halloween/masked_killer: can't be created any more
+/obj/item/storage/box/halloween/professional: can't be created any more
+/obj/item/storage/box/halloween/horrorcop: can't be created any more
+/obj/item/storage/box/halloween/cowboy: can't be created any more
+/obj/item/storage/box/halloween/lumberjack: can't be created any more
+/obj/item/storage/box/halloween/firefighter: can't be created any more
+/obj/item/storage/box/halloween/vampirehunter: can't be created any more
+/obj/item/storage/box/halloween/whiteout: can't be created any more
+/obj/item/storage/box/halloween/marine: can't be created any more
+/obj/item/storage/chewables: can't be created any more
+/obj/item/storage/chewables/tobacco: can't be created any more (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_constraint_tests.dm:64","	FAILURE #1: storage insert: 55 of 559922 cells differ from the legacy answer:
+/obj/item/storage/backpack/clown/loaded: can't be created any more
+/obj/item/storage/backpack/dufflebag/cratedrills: can't be created any more
+/obj/item/storage/backpack/mime/loaded: can't be created any more
+/obj/item/storage/belt/utility/alien/full: can't be created any more
+/obj/item/storage/belt/utility/spicyfull: can't be created any more
+/obj/item/storage/box/survival: can't be created any more
+/obj/item/storage/box/survival/synth: can't be created any more
+/obj/item/storage/box/survival/comp: can't be created any more
+/obj/item/storage/box/survival/space: can't be created any more
+/obj/item/storage/box/capguntoy: can't be created any more
+/obj/item/storage/box/casino/foamcrossbow: can't be created any more
+/obj/item/storage/box/casino/costume_sexyclown: can't be created any more
+/obj/item/storage/box/tgmc_mre: can't be created any more
+/obj/item/storage/box/syndie_kit/space: can't be created any more
+/obj/item/storage/box/syndie_kit/chameleon: can't be created any more
+/obj/item/storage/box/syndie_kit/voidsuit: can't be created any more
+/obj/item/storage/box/syndie_kit/voidsuit/fire: can't be created any more
+/obj/item/storage/box/anomaly: can't be created any more
+/obj/item/storage/box/stylist: can't be created any more
+/obj/item/storage/box/halloween/masked_killer: can't be created any more
+/obj/item/storage/box/halloween/professional: can't be created any more
+/obj/item/storage/box/halloween/horrorcop: can't be created any more
+/obj/item/storage/box/halloween/cowboy: can't be created any more
+/obj/item/storage/box/halloween/lumberjack: can't be created any more
+/obj/item/storage/box/halloween/firefighter: can't be created any more
+/obj/item/storage/box/halloween/vampirehunter: can't be created any more
+/obj/item/storage/box/halloween/whiteout: can't be created any more
+/obj/item/storage/box/halloween/marine: can't be created any more
+/obj/item/storage/chewables: can't be created any more
+/obj/item/storage/chewables/tobacco: can't be created any more (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_constraint_tests.dm:64"
+/datum/unit_test/dq_constraint_parity/suit_storage,both_fail,fail,fail,True,other,other,196751,196744,"	FAILURE #1: suit storage: 7 of 863692 cells differ from the legacy answer:
+/obj/item/clothing/suit/storage/vest/heavy: can't be created any more
+/obj/item/clothing/suit/storage/vest/heavy/flexitac: can't be created any more
+/obj/item/clothing/suit/storage/vest/heavy/officer: can't be created any more
+/obj/item/clothing/suit/storage/vest/heavy/warden: can't be created any more
+/obj/item/clothing/suit/storage/vest/heavy/hos: can't be created any more
+/obj/item/clothing/suit/storage/vest/heavy/pcrc: can't be created any more
+/obj/item/clothing/suit/storage/vest/heavy/merc: can't be created any more (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_constraint_tests.dm:64","	FAILURE #1: suit storage: 7 of 863692 cells differ from the legacy answer:
+/obj/item/clothing/suit/storage/vest/heavy: can't be created any more
+/obj/item/clothing/suit/storage/vest/heavy/flexitac: can't be created any more
+/obj/item/clothing/suit/storage/vest/heavy/officer: can't be created any more
+/obj/item/clothing/suit/storage/vest/heavy/warden: can't be created any more
+/obj/item/clothing/suit/storage/vest/heavy/hos: can't be created any more
+/obj/item/clothing/suit/storage/vest/heavy/pcrc: can't be created any more
+/obj/item/clothing/suit/storage/vest/heavy/merc: can't be created any more (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_constraint_tests.dm:64"
+/datum/unit_test/dq_constraint_reasons,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_construction_assembly_forward_only,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_construction_ed209_assembly,both_pass,pass,pass,True,none,none,174,174,,
+/datum/unit_test/dq_construction_ed209_assembly_xeno_taser_swap,both_pass,pass,pass,True,none,none,42,42,,
+/datum/unit_test/dq_construction_edCLN_assembly,both_pass,pass,pass,True,none,none,98,98,,
+/datum/unit_test/dq_construction_examine_next,both_pass,pass,pass,True,none,none,24,24,,
+/datum/unit_test/dq_construction_floor,both_pass,pass,pass,True,none,none,46,46,,
+/datum/unit_test/dq_construction_frame,both_pass,pass,pass,True,none,none,10,10,,
+/datum/unit_test/dq_construction_girder,both_pass,pass,pass,True,none,none,10,10,,
+/datum/unit_test/dq_construction_graph_types,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_construction_graphs_valid,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_construction_mech_all_graphs_round_trip,both_pass,pass,pass,True,none,none,3330,3330,,
+/datum/unit_test/dq_construction_mech_gygax_full_build,both_pass,pass,pass,True,none,none,150,150,,
+/datum/unit_test/dq_construction_mech_gygax_round_trip,both_pass,pass,pass,True,none,none,80,80,,
+/datum/unit_test/dq_construction_mech_pinnace_full_build,both_pass,pass,pass,True,none,none,160,160,,
+/datum/unit_test/dq_construction_mech_pinnace_round_trip,both_pass,pass,pass,True,none,none,90,90,,
+/datum/unit_test/dq_construction_mech_polecat_full_build,both_pass,pass,pass,True,none,none,140,140,,
+/datum/unit_test/dq_construction_mech_polecat_round_trip,both_pass,pass,pass,True,none,none,70,70,,
+/datum/unit_test/dq_construction_mech_ripley_full_build,both_pass,pass,pass,True,none,none,110,110,,
+/datum/unit_test/dq_construction_mech_ripley_round_trip,both_pass,pass,pass,True,none,none,70,70,,
+/datum/unit_test/dq_construction_mecha_maintenance,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_construction_quadbike,both_pass,pass,pass,True,none,none,70,70,,
+/datum/unit_test/dq_construction_quadbike_to_trailer,both_pass,pass,pass,True,none,none,20,20,,
+/datum/unit_test/dq_construction_quadtrailer,both_pass,pass,pass,True,none,none,30,30,,
+/datum/unit_test/dq_construction_quadtrailer_rejects_advanced_quadbike,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_construction_secbot_assembly,both_pass,pass,pass,True,none,none,40,40,,
+/datum/unit_test/dq_construction_secbot_assembly_slime_baton,both_pass,pass,pass,True,none,none,20,20,,
+/datum/unit_test/dq_construction_sled209_assembly,both_pass,pass,pass,True,none,none,68,68,,
+/datum/unit_test/dq_construction_snowmobile,both_pass,pass,pass,True,none,none,70,70,,
+/datum/unit_test/dq_construction_spacebike,both_pass,pass,pass,True,none,none,110,110,,
+/datum/unit_test/dq_construction_wall_plain,both_pass,pass,pass,True,none,none,62,62,,
+/datum/unit_test/dq_construction_wall_reinforced,both_pass,pass,pass,True,none,none,62,72,,
+/datum/unit_test/dq_construction_wall_welder_work,both_pass,pass,pass,True,none,none,34,34,,
+/datum/unit_test/dq_construction_window,both_pass,pass,pass,True,none,none,16,16,,
+/datum/unit_test/dq_construction_wreckage,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_container_deletion_destroys_all_contents,both_fail,fail,fail,False,other,other,71,71,"	FAILURE #1: [03:17:26] Runtime in code/game/atoms_movable.dm,119: /obj/item/storage/box still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/game/atoms_movable.dm:119","	FAILURE #1: [03:17:50] Runtime in code/game/atoms_movable.dm,119: /obj/item/storage/box still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/game/atoms_movable.dm:119"
+/datum/unit_test/dq_containment_aggregates,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_containment_conservation_fuzz,both_pass,pass,pass,True,none,none,742,742,,
+/datum/unit_test/dq_containment_drop_policies,both_pass,pass,pass,True,none,none,74,74,,
+/datum/unit_test/dq_containment_j2_forced_spill,both_pass,pass,pass,True,none,none,38,38,,
+/datum/unit_test/dq_containment_j2_forced_transfer,both_pass,pass,pass,True,none,none,16,16,,
+/datum/unit_test/dq_containment_j4_keyed_slots,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_containment_j6_commit_hooks,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_containment_j8_slot_item,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_containment_slot_acceptance,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_continuity_brain_death_blocks_defib,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_continuity_cryo_despawn,both_pass,pass,pass,True,none,none,862,862,,
+/datum/unit_test/dq_continuity_defib_keeps_body,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_continuity_fully_heal,both_pass,pass,pass,True,none,none,24,24,,
+/datum/unit_test/dq_continuity_rejuvenate_dead,both_pass,pass,pass,True,none,none,24,24,,
+/datum/unit_test/dq_continuity_resleeve_printed_body_is_fresh,both_pass,pass,pass,True,none,none,862,862,,
+/datum/unit_test/dq_continuity_resleeve_protean_plan,both_pass,pass,pass,True,none,none,776,776,,
+/datum/unit_test/dq_continuity_resleeve_regrow_in_place,both_pass,pass,pass,True,none,none,670,670,,
+/datum/unit_test/dq_continuity_revive_rebuilds_organs,both_pass,pass,pass,True,none,none,646,646,,
+/datum/unit_test/dq_continuity_robot_rejuvenate,both_pass,pass,pass,True,none,none,12,12,,
+/datum/unit_test/dq_continuity_robotize_sheds_organic_afflictions,both_pass,pass,pass,True,none,none,12,12,,
+/datum/unit_test/dq_continuity_set_species,both_pass,pass,pass,True,none,none,640,640,,
+/datum/unit_test/dq_continuity_set_species_swaps_plan,both_pass,pass,pass,True,none,none,1190,1190,,
+/datum/unit_test/dq_continuity_transform_into_other_human,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_contract_authoritative_producers,both_pass,pass,pass,True,none,none,1174,1174,,
+/datum/unit_test/dq_contract_board_curation,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_contract_budget_acceptance_feasibility,both_pass,pass,pass,True,none,none,90,90,,
+/datum/unit_test/dq_contract_custody_rejects_dead_or_credentialed_subjects,both_fail,fail,fail,False,other,other,865,865,"	FAILURE #1: [03:17:20] Runtime in code/game/atoms_movable.dm,119: /obj/item/storage/backpack still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/game/atoms_movable.dm:119","	FAILURE #1: [03:17:44] Runtime in code/game/atoms_movable.dm,119: /obj/item/storage/backpack still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/game/atoms_movable.dm:119"
+/datum/unit_test/dq_contract_definition_catalog,both_pass,pass,pass,True,none,none,366,372,,
+/datum/unit_test/dq_contract_economy_result,both_pass,pass,pass,True,none,none,910,910,,
+/datum/unit_test/dq_contract_event_lifecycle,both_pass,pass,pass,True,none,none,96,96,,
+/datum/unit_test/dq_contract_event_preserves_submitter_and_contributor,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_contract_event_schema_rejection,both_pass,pass,pass,True,none,none,18,18,,
+/datum/unit_test/dq_contract_evidence_routing,both_pass,pass,pass,True,none,none,96,96,,
+/datum/unit_test/dq_contract_fake_security_record_rejected,both_pass,pass,pass,True,none,none,136,136,,
+/datum/unit_test/dq_contract_identity_and_evidence,both_pass,pass,pass,True,none,none,2598,2598,,
+/datum/unit_test/dq_contract_internal_escrow,both_pass,pass,pass,True,none,none,150,150,,
+/datum/unit_test/dq_contract_negotiated_effects,both_pass,pass,pass,True,none,none,994,994,,
+/datum/unit_test/dq_contract_negotiation,both_pass,pass,pass,True,none,none,72,72,,
+/datum/unit_test/dq_contract_offer_lifecycle,both_pass,pass,pass,True,none,none,276,276,,
+/datum/unit_test/dq_contract_paired_facts,both_pass,pass,pass,True,none,none,90,90,,
+/datum/unit_test/dq_contract_personal_offer_reassignment,both_pass,pass,pass,True,none,none,1850,1850,,
+/datum/unit_test/dq_contract_refunds_do_not_settle,both_pass,pass,pass,True,none,none,988,988,,
+/datum/unit_test/dq_contract_reputation_terms_and_failure,both_pass,pass,pass,True,none,none,234,228,,
+/datum/unit_test/dq_contract_reversible_portfolio,both_pass,pass,pass,True,none,none,78,78,,
+/datum/unit_test/dq_contract_staged_requirement_unique_tiers,both_pass,pass,pass,True,none,none,12,12,,
+/datum/unit_test/dq_contract_sustained_evidence,both_pass,pass,pass,True,none,none,72,104,,
+/datum/unit_test/dq_cordradaxon_od_drains_heart_damage,both_pass,pass,pass,True,none,none,288,288,,
+/datum/unit_test/dq_covert_investigation_uses_opportunity_broker,both_pass,pass,pass,True,none,none,54,54,,
+/datum/unit_test/dq_covert_market_agent_integration,native_only_fail,fail,pass,False,other,none,3102,438,"	FAILURE #1: [03:17:08] Runtime in code/game/atoms_movable.dm,119: /mob/living/carbon/human still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/game/atoms_movable.dm:119
+	FAILURE #2: [03:17:08] Runtime in code/game/atoms_movable.dm,119: /mob/living/carbon/human still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ at code/game/atoms_movable.dm:119",
+/datum/unit_test/dq_cryo_cell_constructs,both_pass,pass,pass,True,none,none,10,10,,
+/datum/unit_test/dq_cryo_cell_cools_mob,both_pass,pass,pass,True,none,none,10,10,,
+/datum/unit_test/dq_cure_rate_caps_at_dose_cap,both_pass,pass,pass,True,none,none,12,12,,
+/datum/unit_test/dq_cure_rate_scales_with_volume,both_pass,pass,pass,True,none,none,12,13,,
+/datum/unit_test/dq_damage_flavour_bands,rust_only_fail,pass,fail,False,none,assertion,125,12,,	FAILURE #1: Expected 3 to be equal to 2. at 0.45 integrity the band is 2 (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_breakpoint_tests.dm:143
+/datum/unit_test/dq_damage_packet,intentional_exclusion,unrun,unrun,True,none,none,,,,
+/datum/unit_test/dq_damage_packet/attack_generic,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_damage_packet/blob_act,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_damage_packet/bullet_act,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_damage_packet/carbon_melee,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_damage_packet/electrocute_act,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_damage_packet/emp_act,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_damage_packet/ex_act,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_damage_packet/fire_act,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_damage_packet/injure_mapping,both_pass,pass,pass,True,none,none,30,30,,
+/datum/unit_test/dq_damage_packet/object_sink,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_damage_packet/pool,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_damage_packet/projectile_shape,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_damage_packet/thrown,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_damage_packet/weapon_hit,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_debug_station_initializes_complete_runtime,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_department_allocations_are_proportional,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_department_budget_plan_is_immediate_and_funded,both_pass,pass,pass,True,none,none,844,844,,
+/datum/unit_test/dq_department_budget_rollover,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_department_management_scope,both_pass,pass,pass,True,none,none,38,38,,
+/datum/unit_test/dq_department_product_sales,both_fail,fail,fail,False,other,other,1447,1447,"	FAILURE #1: [03:17:07] Runtime in code/game/atoms_movable.dm,119: /mob/living/carbon/human still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/game/atoms_movable.dm:119","	FAILURE #1: [03:17:21] Runtime in code/game/atoms_movable.dm,119: /mob/living/carbon/human still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/game/atoms_movable.dm:119"
+/datum/unit_test/dq_department_program_contract_catalog,both_pass,pass,pass,True,none,none,870,870,,
+/datum/unit_test/dq_department_program_event_pipeline,both_pass,pass,pass,True,none,none,252,252,,
+/datum/unit_test/dq_destroy_transaction_children_first_nested,both_pass,pass,pass,True,none,none,32,32,,
+/datum/unit_test/dq_destroy_transaction_destroying_flag_scoped,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_destroy_transaction_mass_delete_no_leak,both_pass,pass,pass,True,none,none,1600,1600,,
+/datum/unit_test/dq_destroy_transaction_mind_pre_order,both_fail,fail,fail,True,assertion,assertion,48,48,	FAILURE #1: Assertion failed: the body was still fully valid (had a loc) when its mind slot resolved (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_destroy_transaction_tests.dm:251,	FAILURE #1: Assertion failed: the body was still fully valid (had a loc) when its mind slot resolved (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_destroy_transaction_tests.dm:251
+/datum/unit_test/dq_destroy_transaction_occupant_ejection,both_pass,pass,pass,True,none,none,16,16,,
+/datum/unit_test/dq_destroy_transaction_pair_reentrancy,both_pass,pass,pass,True,none,none,12,12,,
+/datum/unit_test/dq_destroy_transaction_pair_symmetry,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_destroy_transaction_phase_order,both_pass,pass,pass,True,none,none,22,22,,
+/datum/unit_test/dq_destroy_transaction_phase_timing_recorded,native_only_fail,fail,pass,False,other,none,11,11,"	FAILURE #1: [03:22:01] Runtime in code/modules/unit_tests/dq_destroy_transaction_tests.dm,399: list index out of bounds
+ (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_destroy_transaction_tests.dm:399",
+/datum/unit_test/dq_destroy_transaction_scrub_catches_leftover_reset,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_destruction_debris,both_pass,pass,pass,True,none,none,26,26,,
+/datum/unit_test/dq_diagnosis_fake_death,both_pass,pass,pass,True,none,none,18,18,,
+/datum/unit_test/dq_diagnosis_hidden_affliction,both_pass,pass,pass,True,none,none,120,138,,
+/datum/unit_test/dq_diagnosis_no_legacy_readouts,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_diagnosis_profiles_differ,both_pass,pass,pass,True,none,none,72,84,,
+/datum/unit_test/dq_diagnosis_renderers_all_plans,both_pass,pass,pass,True,none,none,1444,1474,,
+/datum/unit_test/dq_diffusion_converges_to_balanced_composition,both_pass,pass,pass,True,none,none,84,84,,
+/datum/unit_test/dq_dirty_gas_observation_matches_air_alarm,both_pass,pass,pass,True,none,none,40,40,,
+/datum/unit_test/dq_dirty_gas_publication_is_watch_scoped,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_disposal_filters_unpumpable_gas_changes,both_pass,pass,pass,True,none,none,22,22,,
+/datum/unit_test/dq_disposal_staggered_power_retry_wakes,both_pass,pass,pass,True,none,none,16,16,,
+/datum/unit_test/dq_dna_check_integrity_detached_default,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_dna_clone_is_identical,both_pass,pass,pass,True,none,none,12,12,,
+/datum/unit_test/dq_dna_encode_decode_roundtrip,both_pass,pass,pass,True,none,none,12,12,,
+/datum/unit_test/dq_dna_se_state_toggle_independent,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_docking_controller_releases_program_aliases,both_pass,pass,pass,True,none,none,22,22,,
+/datum/unit_test/dq_economy_observatory_metrics,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_economy_service_requires_funding,both_pass,pass,pass,True,none,none,18,18,,
+/datum/unit_test/dq_economy_shift_tracking_reset,both_pass,pass,pass,True,none,none,12,12,,
+/datum/unit_test/dq_economy_transfer_is_conservative,both_pass,pass,pass,True,none,none,18,18,,
+/datum/unit_test/dq_electronic_assembly_breaks_device_cycle,both_pass,pass,pass,True,none,none,68,68,,
+/datum/unit_test/dq_emergency_light_discharge_is_timer_driven,both_pass,pass,pass,True,none,none,38,38,,
+/datum/unit_test/dq_emergency_station_fallback_is_playable,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_emp_severity_rings,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_empty_belly_does_not_allocate,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_escape_shuttle_preserves_air,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_expanded_contract_catalog,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_expanded_department_outcomes,native_only_fail,fail,pass,False,other,none,929,917,"	FAILURE #1: [03:17:18] Runtime in code/modules/power/power_bridge.dm,154: list index out of bounds
+ (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/power/power_bridge.dm:154",
+/datum/unit_test/dq_expedition_assignment_prevents_ready_expiry,both_pass,pass,pass,True,none,none,22,22,,
+/datum/unit_test/dq_expedition_generates_site,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_expedition_generation_begins_in_transit,both_pass,pass,pass,True,none,none,24,24,,
+/datum/unit_test/dq_expedition_is_metadata_until_departure,both_pass,pass,pass,True,none,none,18,18,,
+/datum/unit_test/dq_expedition_threat_band_values,both_pass,pass,pass,True,none,none,18,18,,
+/datum/unit_test/dq_explosion_batch,intentional_exclusion,unrun,unrun,True,none,none,,,,
+/datum/unit_test/dq_explosion_batch/bomb_proof,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_explosion_batch/budget_and_grouping,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_explosion_batch/contents_spill,both_pass,pass,pass,True,none,none,16,16,,
+/datum/unit_test/dq_explosion_batch/emp_ladder,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_explosion_batch/one_topology_commit,both_pass,pass,pass,True,none,none,84,84,,
+/datum/unit_test/dq_explosion_batch/outcome_parity,both_pass,pass,pass,True,none,none,82,82,,
+/datum/unit_test/dq_extreme_cold_damages_human,both_pass,pass,pass,True,none,none,42,42,,
+/datum/unit_test/dq_faction_affiliation_budget,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_faction_affiliation_preference,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_faction_agent_earned_eligibility,both_pass,pass,pass,True,none,none,1090,1102,,
+/datum/unit_test/dq_faction_ledger_scopes,both_pass,pass,pass,True,none,none,12,12,,
+/datum/unit_test/dq_faction_operation_composition,both_pass,pass,pass,True,none,none,3114,3114,,
+/datum/unit_test/dq_faction_registry,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_faction_reputation_stable_identity,both_pass,pass,pass,True,none,none,1688,1688,,
+/datum/unit_test/dq_failed_flight_releases_all_leases,both_pass,pass,pass,True,none,none,24,24,,
+/datum/unit_test/dq_filter_gas_multi_routes_target_gas,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_fire_act_reads_temperature,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_fire_protection_prevents_ignition,both_pass,pass,pass,True,none,none,16,16,,
+/datum/unit_test/dq_fire_spreads_to_adjacent_floor,both_pass,pass,pass,True,none,none,100,100,,
+/datum/unit_test/dq_flight_plan_owns_destination_lease,both_pass,pass,pass,True,none,none,28,28,,
+/datum/unit_test/dq_flight_registry_has_single_authored_planet,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_flight_ui_includes_nontravelable_system_root,both_pass,pass,pass,True,none,none,12,12,,
+/datum/unit_test/dq_floor_adjacency_lists_floor_neighbors,both_pass,pass,pass,True,none,none,12,12,,
+/datum/unit_test/dq_floor_has_init_air_and_adjacency,both_pass,pass,pass,True,none,none,28,28,,
+/datum/unit_test/dq_form_injury_multipliers,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_form_no_refs_on_delete,both_pass,pass,pass,True,none,none,730,730,,
+/datum/unit_test/dq_form_switch_keeps_body_ticking,both_pass,pass,pass,True,none,none,18,18,,
+/datum/unit_test/dq_freezer_constructs,both_pass,pass,pass,True,none,none,100,100,,
+/datum/unit_test/dq_freonfire_reaction_cools_mixture,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_full_atmos_cycle_vent_then_scrubber,both_pass,pass,pass,True,none,none,134,134,,
+/datum/unit_test/dq_fusion_engine_components_construct,both_pass,pass,pass,True,none,none,68,68,,
+/datum/unit_test/dq_gas_data_molar_mass_populated,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_gas_data_populated,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_gas_dependencies_wake_exact_devices,both_pass,pass,pass,True,none,none,300,264,,
+/datum/unit_test/dq_gas_equilibrates_over_ticks,both_pass,pass,pass,True,none,none,84,84,,
+/datum/unit_test/dq_gas_ids_are_numeric_end_to_end,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_gas_ids_lists_present_gases,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_gas_meter_reads_target_pipeline_pressure,both_pass,pass,pass,True,none,none,60,60,,
+/datum/unit_test/dq_gas_mixture_merge_conserves_moles,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_gas_mixture_remove_takes_moles,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_gas_mixture_remove_zero_safe,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_gas_mixture_rust_roundtrip,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_gas_overlays_appear_on_share,both_pass,pass,pass,True,none,none,84,84,,
+/datum/unit_test/dq_gas_react_safe_at_tcmb,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_gas_revision_tracks_mutations,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_gas_thruster_construct_and_check_fuel,both_pass,pass,pass,True,none,none,16,16,,
+/datum/unit_test/dq_gear_unique_display_names,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_gear_variant_sprite,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_generated_room_catalog_covers_module_roles,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_generated_room_constraints_are_typed,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_generated_room_definition_lookup_is_fresh,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_generated_room_definitions_are_valid,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_generated_room_fragment_materializes_real_content,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_generated_room_fragments_have_valid_sockets,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_generated_room_hard_dependencies_are_ordered,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_generated_room_roles_have_authored_signatures,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_generated_room_selection_is_deterministic,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_generated_room_styles_are_department_specific,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_generated_room_wall_constraints_match_placement,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_generated_station_aesthetic_validator_is_falsifiable,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_generated_station_ai_loss_preserves_local_response,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_generated_station_air_seed_is_breathable,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_generated_station_architecture_many_seeds,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_generated_station_architecture_validator_is_falsifiable,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_generated_station_candidate_selection_is_deterministic,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_generated_station_consequence_apis,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_generated_station_content_random_materializations,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_generated_station_defender_spawn_is_walkable,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_generated_station_defense_has_no_idle_loop,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_generated_station_dependency_simulation,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_generated_station_diagnostic_layers_are_machine_checkable,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_generated_station_disconnection_isolates_knowledge,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_generated_station_materializer_rejects_invalid_bounds,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_generated_station_materializes_geometry,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_generated_station_microgrid_failure_recovery,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_generated_station_objectives_follow_department_state,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_generated_station_physical_regressions,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_generated_station_physical_utilities,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_generated_station_plan_parity_is_falsifiable,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_generated_station_planner_is_deterministic,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_generated_station_planner_many_seeds,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_generated_station_preserve_fails_when_disabled,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_generated_station_repeated_materialization_is_bounded,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_generated_station_reports_contract_gaps,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_generated_station_required_services_are_physical,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_generated_station_runtime_rejects_generic_room_fallback,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_generated_station_rust_catalog_accepts_callers,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_generated_station_rust_catalog_is_canonical,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_generated_station_rust_decoder_accepts_consistent_doors,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_generated_station_rust_decoder_preserves_hull_tiles,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_generated_station_rust_decoder_reconstructs_ownership,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_generated_station_rust_decoder_rejects_adversarial_payloads,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_generated_station_rust_decoder_rejects_bad_rle,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_generated_station_rust_decoder_rejects_version_mismatch,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_generated_station_semantic_layout_many_seeds,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_generated_station_stockpile_propagation,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_generated_station_valid_contract,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_get_all_contents_type_nested,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_h2fire_reaction_consumes_hydrogen,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_h3_appliance_energy,both_fail,fail,fail,True,assertion,assertion,30,30,	FAILURE #1: Assertion failed: the oven heated its contents (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_h3_heat_tests.dm:171,	FAILURE #1: Assertion failed: the oven heated its contents (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_h3_heat_tests.dm:171
+/datum/unit_test/dq_h3_burning_ends,both_pass,pass,pass,True,none,none,72,66,,
+/datum/unit_test/dq_h3_hotspot_heats_items,both_pass,pass,pass,True,none,none,22,22,,
+/datum/unit_test/dq_h3_ignition_at_threshold,both_pass,pass,pass,True,none,none,115,62,,
+/datum/unit_test/dq_h3_melting_at_threshold,both_pass,pass,pass,True,none,none,50,54,,
+/datum/unit_test/dq_h3_reagent_reaction_at_temperature,both_pass,pass,pass,True,none,none,2124,2118,,
+/datum/unit_test/dq_halon_removes_oxygen,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_harm_armor_by_kind,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_harm_kind_declarations,both_pass,pass,pass,True,none,none,18,18,,
+/datum/unit_test/dq_harm_mitigation_pipeline,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_harm_object_damage_derived,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_heat_body_is_created_on_divergence_and_relaxes,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_heat_constants_match_rust,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_heat_constants_unified,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_heat_gas_container_readers_parity,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_heat_hot_wall_conducts_to_its_neighbour,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_heat_mecha_reader_parity,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_heat_space_cools_an_exposed_wall,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_heat_threshold_watches_wake_subscribers,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_heat_turf_readers_parity,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_heater_constructs,both_pass,pass,pass,True,none,none,130,130,,
+/datum/unit_test/dq_high_pressure_damages_human,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_hotspot_below_minimum_heat_no_ignition,both_pass,pass,pass,True,none,none,22,22,,
+/datum/unit_test/dq_hotspot_expose_creates_fire,both_pass,pass,pass,True,none,none,16,16,,
+/datum/unit_test/dq_human_breath_cycle,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_human_deletion_destroys_all_organs,both_pass,pass,pass,True,none,none,838,838,,
+/datum/unit_test/dq_human_low_pressure_hypoxia,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_hyperzine_od_speeds_movement,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_idle_auxiliary_machines_hibernate,both_pass,pass,pass,True,none,none,1606,1660,,
+/datum/unit_test/dq_idle_circulator_hibernates,both_pass,pass,pass,True,none,none,10,10,,
+/datum/unit_test/dq_idle_cooker_hibernates,both_pass,pass,pass,True,none,none,202,202,,
+/datum/unit_test/dq_idle_distillery_hibernates,both_pass,pass,pass,True,none,none,22,22,,
+/datum/unit_test/dq_idle_meter_and_fire_alarm_hibernate,both_pass,pass,pass,True,none,none,282,276,,
+/datum/unit_test/dq_idle_motion_camera_hibernates,both_pass,pass,pass,True,none,none,880,880,,
+/datum/unit_test/dq_idle_portables_connectors_and_displays_hibernate,both_pass,pass,pass,True,none,none,106,106,,
+/datum/unit_test/dq_idle_recharge_station_hibernates,both_pass,pass,pass,True,none,none,166,166,,
+/datum/unit_test/dq_idle_recharger_hibernates,both_pass,pass,pass,True,none,none,88,88,,
+/datum/unit_test/dq_idle_shieldwall_generator_hibernates,both_pass,pass,pass,True,none,none,10,10,,
+/datum/unit_test/dq_idle_teg_wakes_from_pressure,both_pass,pass,pass,True,none,none,36,36,,
+/datum/unit_test/dq_idle_turret_wakes_for_nearby_mob,native_only_fail,fail,pass,False,other,none,119,96,"	FAILURE #1: [03:16:07] Runtime in code/modules/power/power_bridge.dm,154: list index out of bounds
+ (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/power/power_bridge.dm:154",
+/datum/unit_test/dq_inactive_emergency_shield_hibernates,both_pass,pass,pass,True,none,none,32,32,,
+/datum/unit_test/dq_inactive_vents_hibernate,both_pass,pass,pass,True,none,none,20,20,,
+/datum/unit_test/dq_incompatible_flight_plan_fails_closed,both_pass,pass,pass,True,none,none,28,28,,
+/datum/unit_test/dq_input_ai_click_table,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_input_router_capabilities,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_input_router_per_actor,both_pass,pass,pass,True,none,none,532,532,,
+/datum/unit_test/dq_input_standard_click_table,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_integrity_pool,intentional_exclusion,unrun,unrun,True,none,none,,,,
+/datum/unit_test/dq_integrity_pool/blob,both_pass,pass,pass,True,none,none,10,10,,
+/datum/unit_test/dq_integrity_pool/computer_hardware,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_integrity_pool/energy_field,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_integrity_pool/material_armor,both_pass,pass,pass,True,none,none,10,10,,
+/datum/unit_test/dq_integrity_pool/material_misc,both_pass,pass,pass,True,none,none,40,40,,
+/datum/unit_test/dq_integrity_pool/material_weapon,both_pass,pass,pass,True,none,none,30,30,,
+/datum/unit_test/dq_integrity_pool/mech_component,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_integrity_pool/mech_packet,both_pass,pass,pass,True,none,none,63,63,,
+/datum/unit_test/dq_integrity_pool/modular_computer,both_pass,pass,pass,True,none,none,26,26,,
+/datum/unit_test/dq_integrity_pool/old_blob,both_pass,pass,pass,True,none,none,16,16,,
+/datum/unit_test/dq_integrity_pool/shield_projector,both_pass,pass,pass,True,none,none,262,262,,
+/datum/unit_test/dq_integrity_pool/simple_door,both_pass,pass,pass,True,none,none,20,20,,
+/datum/unit_test/dq_integrity_pool/smolebuilding,both_pass,pass,pass,True,none,none,20,20,,
+/datum/unit_test/dq_integrity_pool/tank,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_integrity_pool/target,both_pass,pass,pass,True,none,none,10,10,,
+/datum/unit_test/dq_integrity_pool/wall,both_pass,pass,pass,True,none,none,82,82,,
+/datum/unit_test/dq_integrity_pool/wall_packet,both_pass,pass,pass,True,none,none,62,62,,
+/datum/unit_test/dq_interaction_definitions,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_interaction_domain_snapshot,intentional_exclusion,unrun,unrun,True,none,none,,,,
+/datum/unit_test/dq_interaction_domain_snapshot/i7_bulk,both_fail,fail,fail,False,assertion,assertion,16589,16589,"	FAILURE #1: [03:32:18] Runtime in code/game/machinery/food_replicator.dm,216: Division by zero
+ (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/game/machinery/food_replicator.dm:216
+	FAILURE #2: Assertion failed: new or changed snapshot: /obj/machinery/computer/skills|human|none => |skills_insert_id:needs an identification card,skills_open_ui:you're too far away from the station!,computer_gripper:needs a magnetic gripper,computer_use_item:needs an item at code/modules/unit_tests/dq_interaction_entry_tests.dm:253","	FAILURE #1: Assertion failed: new or changed snapshot: /obj/machinery/computer/skills|human|none => |skills_insert_id:needs an identification card,skills_open_ui:you're too far away from the station!,computer_gripper:needs a magnetic gripper,computer_use_item:needs an item (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_interaction_entry_tests.dm:253"
+/datum/unit_test/dq_interaction_entry_hand,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_interaction_entry_item,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_interaction_entry_other,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_interaction_machine_anchor,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_interaction_machine_deconstruct,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_interaction_machine_panel,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_interaction_machine_repair,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_interaction_maintainable_flags,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_interaction_menu_data,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_interaction_resolver,both_pass,pass,pass,True,none,none,532,532,,
+/datum/unit_test/dq_interaction_screentips,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_interaction_snapshots,both_pass,pass,pass,True,none,none,532,532,,
+/datum/unit_test/dq_interaction_use_end_to_end,both_pass,pass,pass,True,none,none,113,112,,
+/datum/unit_test/dq_interference_reduces_cure_rate,both_pass,pass,pass,True,none,none,12,13,,
+/datum/unit_test/dq_internal_storage_released_on_destroy,both_pass,pass,pass,True,none,none,84,84,,
+/datum/unit_test/dq_inventory_conservation_fuzz,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_inventory_cuffs,both_pass,pass,pass,True,none,none,20,20,,
+/datum/unit_test/dq_inventory_human_equip_parity,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_inventory_human_pickup_drop,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_inventory_pockets_suit_storage,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_inventory_robot_modules,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_inventory_simple_mob_hands,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_inventory_throw,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_involuntary_emote_conjugation,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_item_takes_atmos_heat,both_pass,pass,pass,True,none,none,98,128,,
+/datum/unit_test/dq_keybinding_defaults_match_old_skin,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_keybinding_overrides,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_latent_blast_parity,both_pass,pass,pass,True,none,none,304,304,,
+/datum/unit_test/dq_latent_closet_declared,both_pass,pass,pass,True,none,none,53,52,,
+/datum/unit_test/dq_latent_closet_round_trip,both_pass,pass,pass,True,none,none,291,290,,
+/datum/unit_test/dq_latent_closet_types,both_fail,fail,fail,False,other,other,118727,117927,"	FAILURE #1: [03:23:04] Runtime in code/game/objects/items/weapons/storage/storage.dm,922: Cannot execute null.get storage cost().
+ (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/game/objects/items/weapons/storage/storage.dm:922
+	FAILURE #2: [03:23:04] Runtime in code/game/objects/items/weapons/storage/storage.dm,922: Cannot execute null.get storage cost().
+ at code/game/objects/items/weapons/storage/storage.dm:922
+	FAILURE #3: [03:23:04] Runtime in code/game/objects/items/weapons/storage/storage.dm,922: Cannot execute null.get storage cost().
+ at code/game/objects/items/weapons/storage/storage.dm:922","	FAILURE #1: [03:21:30] Runtime in code/game/atoms_movable.dm,119: /obj/item/storage/briefcase/target_toy still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/game/atoms_movable.dm:119
+	FAILURE #2: [03:21:30] Runtime in code/game/atoms_movable.dm,119: /obj/item/storage/backpack/luchador/loaded still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ at code/game/atoms_movable.dm:119
+	FAILURE #3: [03:21:31] Runtime in code/game/atoms_movable.dm,119: /obj/item/storage/mre/menu7 still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ at code/game/atoms_movable.dm:119
+	FAILURE #4: [03:21:31] Runtime in code/game/atoms_movable.dm,119: /obj/item/storage/mrebag/menu7 still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ at code/game/atoms_movable.dm:119
+	FAILURE #5: [03:21:31] Runtime in code/game/atoms_movable.dm,119: /obj/item/storage/mrebag/side still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ at code/game/atoms_movable.dm:119
+	FAILURE #6: [03:21:31] Runtime in code/game/atoms_movable.dm,119: /obj/item/storage/mrebag/dessert still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ at code/game/atoms_movable.dm:119
+	FAILURE #7: [03:21:31] Runtime in code/game/atoms_movable.dm,119: /obj/item/storage/fancy/crackers still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ at code/game/atoms_movable.dm:119
+	FAILURE #8: [03:21:31] Runtime in code/game/atoms_movable.dm,119: /obj/item/storage/mre/menu4 still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ at code/game/atoms_movable.dm:119
+	FAILURE #9: [03:21:31] Runtime in code/game/atoms_movable.dm,119: /obj/item/storage/mrebag/menu4 still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ at code/game/atoms_movable.dm:119
+	FAILURE #10: [03:21:31] Runtime in code/game/atoms_movable.dm,119: /obj/item/storage/mrebag/side still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ at code/game/atoms_movable.dm:119
+	FAILURE #11: [03:21:31] Runtime in code/game/atoms_movable.dm,119: /obj/item/storage/mrebag/dessert still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ at code/game/atoms_movable.dm:119
+	FAILURE #12: [03:21:31] Runtime in code/game/atoms_movable.dm,119: /obj/item/storage/fancy/crackers still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+  (This error will now be silenced for 10 minutes) at code/game/atoms_movable.dm:119"
+/datum/unit_test/dq_latent_collapse,both_pass,pass,pass,True,none,none,64,64,,
+/datum/unit_test/dq_latent_destroy_parity,both_fail,fail,fail,False,assertion,assertion,158,157,	FAILURE #1: Expected 0 to be equal to 3. entries moved into the outer closet as data (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_latent_tests.dm:203,"	FAILURE #1: [03:21:29] Runtime in code/game/atoms_movable.dm,119: /obj/structure/closet/dq_latent_test still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/game/atoms_movable.dm:119
+	FAILURE #2: Expected 0 to be equal to 3. entries moved into the outer closet as data at code/modules/unit_tests/dq_latent_tests.dm:203"
+/datum/unit_test/dq_latent_light_emergency,both_fail,fail,fail,True,assertion,assertion,6,6,	FAILURE #1: Assertion failed: checking doesn't materialize (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_latent_tests.dm:402,	FAILURE #1: Assertion failed: checking doesn't materialize (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_latent_tests.dm:402
+/datum/unit_test/dq_latent_light_parts,both_fail,fail,fail,True,assertion,assertion,6,6,	FAILURE #1: Assertion failed: no cell atom yet (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_latent_tests.dm:371,	FAILURE #1: Assertion failed: no cell atom yet (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_latent_tests.dm:371
+/datum/unit_test/dq_latent_magazine_rounds,both_pass,pass,pass,True,none,none,364,364,,
+/datum/unit_test/dq_latent_materialize_once,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_latent_pill_bottle_chem_master,both_pass,pass,pass,True,none,none,346,346,,
+/datum/unit_test/dq_latent_pill_bottle_declared,both_pass,pass,pass,True,none,none,371,371,,
+/datum/unit_test/dq_latent_pill_bottle_pickup,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_latent_slot_round_trip,both_pass,pass,pass,True,none,none,34,34,,
+/datum/unit_test/dq_latent_storage_declared,both_pass,pass,pass,True,none,none,135,135,,
+/datum/unit_test/dq_latent_storage_in_closet,both_pass,pass,pass,True,none,none,143,142,,
+/datum/unit_test/dq_latent_storage_pickup,both_pass,pass,pass,True,none,none,12,12,,
+/datum/unit_test/dq_lesion_created_from_organ_damage,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_lesion_derived_integrity,both_pass,pass,pass,True,none,none,18,18,,
+/datum/unit_test/dq_lesion_injury_kind_table,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_lesion_necrosis_needs_resection,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_lesion_respiratory_mend_respects_floor,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_lesion_restoration_repairs_everything,both_pass,pass,pass,True,none,none,12,12,,
+/datum/unit_test/dq_lesion_surgical_repair_heals_laceration,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_lesion_surgical_repair_single_budget,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_lesion_synthetic_organ_component_fault,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_lesion_transplant_carries_lesions,both_pass,pass,pass,True,none,none,28,28,,
+/datum/unit_test/dq_life_alive_gate_blocks_segment,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_life_audit_catches_missed_wake,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_life_client_login_wakes,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_life_composition_is_shared,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_life_human_composition_order,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_life_idle_mob_hibernates,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_life_injure_wakes,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_life_reagent_wakes,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_life_simple_mob_variants,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_life_stun_wakes_then_rehibernates,both_pass,pass,pass,True,none,none,10,10,,
+/datum/unit_test/dq_life_system_profiler,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_life_system_variants_mirror_mob_paths,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_life_trait_system_follows_component,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_life_transforming_human_halts,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_life_wake_and_hibernation,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_lifecycle_hooks_wired,both_pass,pass,pass,True,none,none,10,10,,
+/datum/unit_test/dq_lifecycle_sandbox,native_only_fail,fail,pass,False,other,none,28949,11217,"	FAILURE #1: [03:31:31] Runtime in code/modules/unit_tests/dq_lifecycle_tests.dm,91: Cannot read null._active_timers
+ (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_lifecycle_tests.dm:91
+	FAILURE #2: [03:31:31] Runtime in code/modules/unit_tests/dq_lifecycle_tests.dm,129: Cannot read null.flags
+ at code/modules/unit_tests/dq_lifecycle_tests.dm:129",
+/datum/unit_test/dq_lightweight_performance_diagnostics,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_lingering_fire_bridge,both_pass,pass,pass,True,none,none,16,16,,
+/datum/unit_test/dq_linked_personal_outcome,both_pass,pass,pass,True,none,none,958,958,,
+/datum/unit_test/dq_live_carrier_independently_orbits_sif,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_live_flight_payload_attaches_carrier_craft,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_live_flight_payload_preserves_carrier_hierarchy,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_loadout_blazer_persists,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_loadout_build_ui_reflects_add,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_loadout_persists_add,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_loadout_swap_evicts,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_local_atmos_disturbance_settles,both_pass,pass,pass,True,none,none,168,168,,
+/datum/unit_test/dq_machine_break_parity,both_pass,pass,pass,True,none,none,56,56,,
+/datum/unit_test/dq_machine_break_real_types,both_pass,pass,pass,True,none,none,104,104,,
+/datum/unit_test/dq_machine_roster_swap_remove,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_make_floor_creates_air,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_manual_account_creation_is_conservative,both_pass,pass,pass,True,none,none,52,52,,
+/datum/unit_test/dq_material_blueprint_covers_catalogue,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_material_blueprint_has_no_category_gate,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_material_cable_installation_preserves_insulation,both_pass,pass,pass,True,none,none,34,34,,
+/datum/unit_test/dq_material_canister_rating_is_physical,both_pass,pass,pass,True,none,none,44,44,,
+/datum/unit_test/dq_material_cell_delivery_and_rebuild,both_pass,pass,pass,True,none,none,38,38,,
+/datum/unit_test/dq_material_cold_assembly_operates,both_pass,pass,pass,True,none,none,22,22,,
+/datum/unit_test/dq_material_construction_is_multipart,both_pass,pass,pass,True,none,none,16,16,,
+/datum/unit_test/dq_material_corrosion_interval_invariance,both_pass,pass,pass,True,none,none,32,32,,
+/datum/unit_test/dq_material_delivery_requires_matching_shipment,both_pass,pass,pass,True,none,none,78,78,,
+/datum/unit_test/dq_material_design_costs_every_role,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_material_duplicate_catalogue_removed,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_material_emitter_energy_conservation,both_pass,pass,pass,True,none,none,108,102,,
+/datum/unit_test/dq_material_environment_conserves_heat,both_pass,pass,pass,True,none,none,22,22,,
+/datum/unit_test/dq_material_environment_covers_infrastructure,both_pass,pass,pass,True,none,none,114,114,,
+/datum/unit_test/dq_material_environment_distinguishes_surfaces,both_pass,pass,pass,True,none,none,28,28,,
+/datum/unit_test/dq_material_every_slot_changes_real_physics,both_pass,pass,pass,True,none,none,2368,2368,,
+/datum/unit_test/dq_material_feedstock_remains_normal_stack,both_pass,pass,pass,True,none,none,54,54,,
+/datum/unit_test/dq_material_fingerprint_is_quantity_independent,both_pass,pass,pass,True,none,none,12,12,,
+/datum/unit_test/dq_material_furnace_cannot_create_heat,both_pass,pass,pass,True,none,none,50,50,,
+/datum/unit_test/dq_material_furnace_prepares_real_heat_treatment,both_pass,pass,pass,True,none,none,120,120,,
+/datum/unit_test/dq_material_furnace_requires_and_performs_real_melt,both_pass,pass,pass,True,none,none,90,90,,
+/datum/unit_test/dq_material_gas_publication_filtering,both_pass,pass,pass,True,none,none,38,38,,
+/datum/unit_test/dq_material_high_energy_progression,both_pass,pass,pass,True,none,none,30,30,,
+/datum/unit_test/dq_material_hot_steel_loses_pressure_capacity,both_pass,pass,pass,True,none,none,16,16,,
+/datum/unit_test/dq_material_machine_retains_component_makeup,both_pass,pass,pass,True,none,none,26,26,,
+/datum/unit_test/dq_material_physical_cable_loss,both_pass,pass,pass,True,none,none,78,78,,
+/datum/unit_test/dq_material_pipe_installation_preserves_layers,both_pass,pass,pass,True,none,none,32,32,,
+/datum/unit_test/dq_material_power_graph_branches_and_loops,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_material_pressure_has_safe_endurance_band,both_pass,pass,pass,True,none,none,22,22,,
+/datum/unit_test/dq_material_pump_energy_conservation,both_pass,pass,pass,True,none,none,16,16,,
+/datum/unit_test/dq_material_pump_parts_change_operation,both_pass,pass,pass,True,none,none,10,10,,
+/datum/unit_test/dq_material_qualification_records,both_pass,pass,pass,True,none,none,90,90,,
+/datum/unit_test/dq_material_reagent_exposure_uses_duration,both_pass,pass,pass,True,none,none,50,50,,
+/datum/unit_test/dq_material_rebuild_preserves_damage,both_pass,pass,pass,True,none,none,16,16,,
+/datum/unit_test/dq_material_recovery_is_production_backed,both_pass,pass,pass,True,none,none,40,40,,
+/datum/unit_test/dq_material_refit_clears_old_behaviors,both_pass,pass,pass,True,none,none,22,22,,
+/datum/unit_test/dq_material_service_due_heap,both_pass,pass,pass,True,none,none,48,48,,
+/datum/unit_test/dq_material_service_sleep_move_delete,both_pass,pass,pass,True,none,none,16,16,,
+/datum/unit_test/dq_material_slots_resolve_defaults,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_material_thermal_buffer_conserves_energy,both_pass,pass,pass,True,none,none,16,16,,
+/datum/unit_test/dq_matter_blueprints,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_matter_type_totals_match_snapshot,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_mc_performance_window_statistics,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_medical_afflict_locates_on_organ,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_medical_all_conditions_categorized,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_medical_bleed_drains_blood,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_medical_burn_shock_stages,both_pass,pass,pass,True,none,none,6,7,,
+/datum/unit_test/dq_medical_cascade_via_limb_damage,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_medical_cause_registry_covers_emergents,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_medical_cellulitis_pushes_temperature,both_pass,pass,pass,True,none,none,0,2,,
+/datum/unit_test/dq_medical_chain_brain,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_medical_chain_infection,both_pass,pass,pass,True,none,none,0,1,,
+/datum/unit_test/dq_medical_chain_respiratory,both_pass,pass,pass,True,none,none,12,14,,
+/datum/unit_test/dq_medical_concussion_self_heals,both_pass,pass,pass,True,none,none,6,16,,
+/datum/unit_test/dq_medical_condition_cure_ingested_lowers_severity,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_medical_condition_cure_reagent_lowers_severity,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_medical_condition_spawn,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_medical_condition_tick_raises_severity,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_medical_contract_machine_integration,both_fail,fail,fail,False,other,other,991,991,"	FAILURE #1: [03:17:17] Runtime in code/game/atoms_movable.dm,119: /mob/living/carbon/human still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/game/atoms_movable.dm:119","	FAILURE #1: [03:17:38] Runtime in code/game/atoms_movable.dm,119: /mob/living/carbon/human still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/game/atoms_movable.dm:119"
+/datum/unit_test/dq_medical_contraindicated_reagent_worsens,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_medical_custom_affliction_runtime_config,both_pass,pass,pass,True,none,none,24,24,,
+/datum/unit_test/dq_medical_dirty_domains_wake_exactly,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_medical_effective_cures_resolve_tags,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_medical_emergent_auto_cures_when_organ_heals,both_pass,pass,pass,True,none,none,12,12,,
+/datum/unit_test/dq_medical_every_condition_curable,both_pass,pass,pass,True,none,none,720,720,,
+/datum/unit_test/dq_medical_every_condition_identifiable,both_pass,pass,pass,True,none,none,2028,2028,,
+/datum/unit_test/dq_medical_every_overdose_has_condition,both_pass,pass,pass,True,none,none,1284,1284,,
+/datum/unit_test/dq_medical_examine_lists_visible_symptoms,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_medical_external_process_ticks_conditions,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_medical_fully_heal_clears_everything,both_pass,pass,pass,True,none,none,24,24,,
+/datum/unit_test/dq_medical_generic_treats_by_tag,both_pass,pass,pass,True,none,none,36,36,,
+/datum/unit_test/dq_medical_gut_translocation_during_ischemia,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_medical_high_severity_damages_organ,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_medical_high_severity_oxy_damage,both_pass,pass,pass,True,none,none,0,2,,
+/datum/unit_test/dq_medical_hypovolemic_shock_severity_bands,both_pass,pass,pass,True,none,none,0,1,,
+/datum/unit_test/dq_medical_hypoxia_causes_crit,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_medical_hypoxia_damages_brain,both_pass,pass,pass,True,none,none,30,30,,
+/datum/unit_test/dq_medical_injure_and_mend_limb,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_medical_ischemia_damages_organs,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_medical_limb_tendon_severed_arm,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_medical_limb_tendon_severed_leg,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_medical_mechanical_slowdown_aggregates,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_medical_mechanical_verb_block,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_medical_mend_respects_biology,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_medical_metric_radiation_spawns,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_medical_metric_temperature_extremes,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_medical_no_health_death,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_medical_organ_detach_reattach_carries_afflictions,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_medical_organ_failure_emergent,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_medical_reagent_tags_skip_synthetic_parts,both_pass,pass,pass,True,none,none,18,18,,
+/datum/unit_test/dq_medical_robot_machine_body,both_pass,pass,pass,True,none,none,26,26,,
+/datum/unit_test/dq_medical_scenarios_apply_cleanly,both_pass,pass,pass,True,none,none,78,78,,
+/datum/unit_test/dq_medical_simple_body_dies_at_endurance,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_medical_tox_pool_is_a_condition,both_pass,pass,pass,True,none,none,12,12,,
+/datum/unit_test/dq_medical_treatment_lowers_pool,both_pass,pass,pass,True,none,none,18,18,,
+/datum/unit_test/dq_medical_trial_cohort_protocols,both_pass,pass,pass,True,none,none,3652,3640,,
+/datum/unit_test/dq_medical_trial_custody_chain,both_pass,pass,pass,True,none,none,1976,1976,,
+/datum/unit_test/dq_medical_trial_deferred_availability,both_pass,pass,pass,True,none,none,2556,2556,,
+/datum/unit_test/dq_medical_trial_outcome_workflow,both_pass,pass,pass,True,none,none,2742,2742,,
+/datum/unit_test/dq_medical_trial_side_contracts,both_fail,fail,fail,False,other,other,4999,4999,"	FAILURE #1: [03:17:15] Runtime in code/game/atoms_movable.dm,119: /obj/structure/closet/crate still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/game/atoms_movable.dm:119","	FAILURE #1: [03:17:34] Runtime in code/game/atoms_movable.dm,119: /obj/structure/closet/crate still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/game/atoms_movable.dm:119"
+/datum/unit_test/dq_medical_vital_limb_destroyed_kills,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_medical_vital_readings_jitter,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_melee_swing_dodge_by_moving,both_pass,pass,pass,True,none,none,717,666,,
+/datum/unit_test/dq_melee_swing_getters_scale,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_melee_swing_hits_occupied_tile,both_pass,pass,pass,True,none,none,258,258,,
+/datum/unit_test/dq_melee_swing_kitchen_knife,both_pass,pass,pass,True,none,none,346,399,,
+/datum/unit_test/dq_melee_swing_sets_recovery_cooldown,both_pass,pass,pass,True,none,none,396,437,,
+/datum/unit_test/dq_melee_swing_tiles_arc,both_pass,pass,pass,True,none,none,200,200,,
+/datum/unit_test/dq_miaster_decomposes_miasma,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_mind_brain_death_gating,both_pass,pass,pass,True,none,none,12,12,,
+/datum/unit_test/dq_mind_damaged_brain_still_repairable,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_mind_dead_brain_organ_stays_dead,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_mind_dead_brain_refuses_repair,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_mind_dominate_predator_roundtrip,both_pass,pass,pass,True,none,none,50,50,,
+/datum/unit_test/dq_mind_dominate_prey_roundtrip,both_pass,pass,pass,True,none,none,50,50,,
+/datum/unit_test/dq_mind_identity_survives_borging,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_mind_identity_survives_brain_removal,both_pass,pass,pass,True,none,none,118,118,,
+/datum/unit_test/dq_mind_identity_survives_mmi,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_mind_identity_survives_posibrain,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_mind_identity_survives_resleeve,both_pass,pass,pass,True,none,none,856,856,,
+/datum/unit_test/dq_mind_mmi_brain_damage_continuity,both_pass,pass,pass,True,none,none,118,118,,
+/datum/unit_test/dq_mind_mob_transform_roundtrip,both_pass,pass,pass,True,none,none,106,106,,
+/datum/unit_test/dq_mind_sleeve_character_from_mind,both_pass,pass,pass,True,none,none,862,862,,
+/datum/unit_test/dq_mind_view_status_follows_tissue,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_mineral_stacker_wakes_for_input,both_pass,pass,pass,True,none,none,40,40,,
+/datum/unit_test/dq_mix_gas_combines_at_target_ratio,both_pass,pass,pass,True,none,none,12,12,,
+/datum/unit_test/dq_mmi_tissue_loss_kills_view,both_pass,pass,pass,True,none,none,112,112,,
+/datum/unit_test/dq_mob_memlist_human_lazy_lists_null,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_mob_memlist_robot_lazy_lists_null,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_mob_memlist_simple_mob_lazy_lists_null,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_multiz_spread_through_open_turf,both_pass,pass,pass,True,none,none,144,144,,
+/datum/unit_test/dq_mutations_lazy_and_accessors,both_pass,pass,pass,True,none,none,20,20,,
+/datum/unit_test/dq_nanite_cohesion_loss,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_nanite_contamination,both_pass,pass,pass,True,none,none,12,12,,
+/datum/unit_test/dq_nanite_form_strain,both_pass,pass,pass,True,none,none,12,12,,
+/datum/unit_test/dq_nanite_orchestrator_damage,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_nanite_refactory_depletion,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_nanoform_dormancy_and_revival,both_pass,pass,pass,True,none,none,18,18,,
+/datum/unit_test/dq_nanoform_regeneration_costs_steel,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_nanoform_treatment_is_limited,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_omni_devices_hibernate_without_input,both_pass,pass,pass,True,none,none,20,20,,
+/datum/unit_test/dq_opaque_movable_detaches_from_turf_before_delete,both_pass,pass,pass,True,none,none,10,10,,
+/datum/unit_test/dq_opportunity_broker_guardrails,both_pass,pass,pass,True,none,none,156,156,,
+/datum/unit_test/dq_opportunity_contract_catalog,both_pass,pass,pass,True,none,none,498,498,,
+/datum/unit_test/dq_organ_lifecycle_amputation_detaches_conditions,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_organ_lifecycle_destroy_qdels_conditions,both_pass,pass,pass,True,none,none,62,62,,
+/datum/unit_test/dq_organ_lifecycle_reattach_restores_conditions,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_overdose_severity_climbs_with_overage,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_overdose_severity_decays_after_chem_clears,both_pass,pass,pass,True,none,none,186,186,,
+/datum/unit_test/dq_overdose_stages_assigned_by_severity,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_passive_gate_one_way_flow,both_pass,pass,pass,True,none,none,46,46,,
+/datum/unit_test/dq_path_fire_closet_insulation,both_pass,pass,pass,True,none,none,12,12,,
+/datum/unit_test/dq_path_fire_nested,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_path_sealed_blocks_gas,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_path_weapon_hit_bag,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_path_weapon_hit_closet,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_path_worn_layers,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_payroll_uses_all_available_funds_fairly,both_pass,pass,pass,True,none,none,1694,1694,,
+/datum/unit_test/dq_pda_atmos_scanner_reads_turf_air,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_pda_multicaster_hibernates_between_state_changes,both_pass,pass,pass,True,none,none,224,224,,
+/datum/unit_test/dq_personal_supply_order_payment_and_refund,both_pass,pass,pass,True,none,none,850,850,,
+/datum/unit_test/dq_pharmacology_catalogue,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_phoron_below_threshold_invisible,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_phoron_breath_applies_toxin_reagent,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_phoron_breath_via_full_chain_applies_toxin,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_phoron_breather_consumes_plasma,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_phoron_canister_releases_to_turf,both_pass,pass,pass,True,none,none,78,78,,
+/datum/unit_test/dq_phoron_chains_through_3_floors,both_pass,pass,pass,True,none,none,96,96,,
+/datum/unit_test/dq_phoron_renders_above_visible_threshold,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_phoron_spreads_to_adjacent_floor,both_pass,pass,pass,True,none,none,12,12,,
+/datum/unit_test/dq_physical_sales_routing,both_fail,fail,fail,False,other,other,957,957,"	FAILURE #1: [03:17:10] Runtime in code/game/atoms_movable.dm,119: /mob/living/carbon/human still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/game/atoms_movable.dm:119","	FAILURE #1: [03:17:23] Runtime in code/game/atoms_movable.dm,119: /mob/living/carbon/human still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/game/atoms_movable.dm:119"
+/datum/unit_test/dq_physiology_blood_loss_lowers_perfusion,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_physiology_bvm_support_prevents_debt,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_physiology_cyanide_debt_despite_good_breath,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_physiology_dexalin_recovers,both_pass,pass,pass,True,none,none,90,92,,
+/datum/unit_test/dq_physiology_healthy_baseline,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_physiology_occluded_airway_to_brain_lesion,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_physiology_simple_plan,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_pipe_split_then_merge_rebuilds_pipeline,both_pass,pass,pass,True,none,none,136,136,,
+/datum/unit_test/dq_pipeline_build_pipeline_single_pipe,both_pass,pass,pass,True,none,none,34,34,,
+/datum/unit_test/dq_pipeline_chains_two_connected_pipes,both_pass,pass,pass,True,none,none,50,50,,
+/datum/unit_test/dq_pipeline_edge_reverse_ownership,both_pass,pass,pass,True,none,none,22,22,,
+/datum/unit_test/dq_pipeline_temperature_interact_with_turf,both_pass,pass,pass,True,none,none,12,12,,
+/datum/unit_test/dq_pipenet_dispatches_through_ssair,both_pass,pass,pass,True,none,none,50,50,,
+/datum/unit_test/dq_pipenet_gas_reacts_in_pipeline,both_pass,pass,pass,True,none,none,12,12,,
+/datum/unit_test/dq_pipenet_member_destroy_clears_every_roster,both_pass,pass,pass,True,none,none,22,22,,
+/datum/unit_test/dq_pipenet_merge_releases_donor_graph,both_pass,pass,pass,True,none,none,36,36,,
+/datum/unit_test/dq_pipenet_reconcile_air_equalizes,both_pass,pass,pass,True,none,none,48,48,,
+/datum/unit_test/dq_pipes_build_into_one_network,both_pass,pass,pass,True,none,none,50,50,,
+/datum/unit_test/dq_planetary_atmos_converges_to_baseline,both_pass,pass,pass,True,none,none,84,84,,
+/datum/unit_test/dq_plasmafire_conserves_mass,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_plasmafire_reaction_consumes_plasma,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_portable_pump_pushes_to_turf,both_pass,pass,pass,True,none,none,32,32,,
+/datum/unit_test/dq_portable_scrubber_pulls_target_gas,both_pass,pass,pass,True,none,none,38,38,,
+/datum/unit_test/dq_power_apc_cycle,both_fail,fail,fail,False,assertion,assertion,20,20,"	FAILURE #1: [03:31:54] Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds
+ (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/power/power_bridge.dm:151
+	FAILURE #2: [03:31:54] Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds
+ at code/modules/power/power_bridge.dm:151
+	FAILURE #3: [03:31:54] Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds
+ at code/modules/power/power_bridge.dm:151
+	FAILURE #4: [03:31:54] Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds
+ at code/modules/power/power_bridge.dm:151
+	FAILURE #5: [03:31:54] Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds
+ at code/modules/power/power_bridge.dm:151
+	FAILURE #6: [03:31:54] Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds
+ at code/modules/power/power_bridge.dm:151
+	FAILURE #7: [03:31:54] Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds
+ at code/modules/power/power_bridge.dm:151
+	FAILURE #8: [03:31:54] Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds
+ at code/modules/power/power_bridge.dm:151
+	FAILURE #9: [03:31:54] Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds
+ at code/modules/power/power_bridge.dm:151
+	FAILURE #10: [03:31:54] Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds
+ at code/modules/power/power_bridge.dm:151
+	FAILURE #11: [03:31:54] Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds
+ at code/modules/power/power_bridge.dm:151
+	FAILURE #12: [03:31:54] Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds
+ at code/modules/power/power_bridge.dm:151
+	FAILURE #13: [03:31:54] Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds
+ at code/modules/power/power_bridge.dm:151
+	FAILURE #14: [03:31:54] Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds
+ at code/modules/power/power_bridge.dm:151
+	FAILURE #15: [03:31:54] Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds
+ at code/modules/power/power_bridge.dm:151
+	FAILURE #16: [03:31:54] Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds
+ at code/modules/power/power_bridge.dm:151
+	FAILURE #17: [03:31:54] Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds
+ at code/modules/power/power_bridge.dm:151
+	FAILURE #18: [03:31:54] Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds
+ at code/modules/power/power_bridge.dm:151
+	FAILURE #19: [03:31:54] Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds
+ at code/modules/power/power_bridge.dm:151
+	FAILURE #20: [03:31:54] Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds
+ at code/modules/power/power_bridge.dm:151
+	FAILURE #21: Assertion failed: an empty isolated APC kept its area powered at code/modules/unit_tests/dq_power_tests.dm:146",	FAILURE #1: Assertion failed: an empty isolated APC kept its area powered (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_power_tests.dm:146
+/datum/unit_test/dq_power_cut_splits_and_repair_merges,both_fail,fail,fail,True,other,other,1,1,	FAILURE #1: Expected non-null value: the left machine is not on the cable (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_power_tests.dm:72,	FAILURE #1: Expected non-null value: the left machine is not on the cable (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_power_tests.dm:72
+/datum/unit_test/dq_power_idle_apc_and_smes_sleep,native_only_fail,fail,pass,False,other,none,93,93,"	FAILURE #1: [03:31:54] Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds
+ (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/power/power_bridge.dm:151
+	FAILURE #2: [03:31:54] Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds
+ at code/modules/power/power_bridge.dm:151
+	FAILURE #3: [03:31:54] Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds
+ at code/modules/power/power_bridge.dm:151
+	FAILURE #4: [03:31:54] Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds
+ at code/modules/power/power_bridge.dm:151
+	FAILURE #5: [03:31:54] Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds
+ at code/modules/power/power_bridge.dm:151
+	FAILURE #6: [03:31:54] Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds
+ at code/modules/power/power_bridge.dm:151
+	FAILURE #7: [03:31:54] Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds
+ at code/modules/power/power_bridge.dm:151
+	FAILURE #8: [03:31:54] Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds
+ at code/modules/power/power_bridge.dm:151
+	FAILURE #9: [03:31:54] Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds
+ at code/modules/power/power_bridge.dm:151
+	FAILURE #10: [03:31:54] Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds
+ at code/modules/power/power_bridge.dm:151
+	FAILURE #11: [03:31:54] Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds
+ at code/modules/power/power_bridge.dm:151
+	FAILURE #12: [03:31:54] Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds
+ at code/modules/power/power_bridge.dm:151
+	FAILURE #13: [03:31:54] Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds
+ at code/modules/power/power_bridge.dm:151
+	FAILURE #14: [03:31:54] Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds
+ at code/modules/power/power_bridge.dm:151
+	FAILURE #15: [03:31:54] Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds
+ at code/modules/power/power_bridge.dm:151
+	FAILURE #16: [03:31:54] Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds
+ at code/modules/power/power_bridge.dm:151
+	FAILURE #17: [03:31:54] Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds
+ at code/modules/power/power_bridge.dm:151
+	FAILURE #18: [03:31:54] Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds
+ at code/modules/power/power_bridge.dm:151
+	FAILURE #19: [03:31:54] Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds
+ at code/modules/power/power_bridge.dm:151
+	FAILURE #20: [03:31:54] Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds
+ at code/modules/power/power_bridge.dm:151
+	FAILURE #21: [03:31:54] Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds
+ at code/modules/power/power_bridge.dm:151
+	FAILURE #22: [03:31:54] Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds
+ at code/modules/power/power_bridge.dm:151
+	FAILURE #23: [03:31:54] Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds
+ at code/modules/power/power_bridge.dm:151
+	FAILURE #24: [03:31:54] Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds
+ at code/modules/power/power_bridge.dm:151
+	FAILURE #25: [03:31:54] Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds
+ at code/modules/power/power_bridge.dm:151
+	FAILURE #26: [03:31:54] Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds
+ at code/modules/power/power_bridge.dm:151
+	FAILURE #27: [03:31:54] Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds
+ at code/modules/power/power_bridge.dm:151
+	FAILURE #28: [03:31:54] Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds
+ at code/modules/power/power_bridge.dm:151
+	FAILURE #29: [03:31:54] Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds
+ at code/modules/power/power_bridge.dm:151
+	FAILURE #30: [03:31:54] Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds
+ at code/modules/power/power_bridge.dm:151
+	FAILURE #31: [03:31:54] Runtime in code/modules/power/power_bridge.dm,151: list index out of bounds
+  (This error will now be silenced for 10 minutes) at code/modules/power/power_bridge.dm:151",
+/datum/unit_test/dq_power_monitor_hibernates_until_grid_warning,both_pass,pass,pass,True,none,none,128,50,,
+/datum/unit_test/dq_power_monitor_reading,both_fail,fail,fail,True,other,other,2,2,	FAILURE #1: Expected non-null value: the sensor is not on the network (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_power_tests.dm:234,	FAILURE #1: Expected non-null value: the sensor is not on the network (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_power_tests.dm:234
+/datum/unit_test/dq_predicate_clauses,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_predicate_combinators,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_predicate_table,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_predicate_validation,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_predicate_watchable,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_pref_batch_nests,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_pref_character_metadata_present,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_pref_composite_roundtrip,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_pref_constraint_depth_guard,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_pref_registry_has_keys,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_pref_widget_auto_resolves,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_pressure_differential_drives_flow,both_pass,pass,pass,True,none,none,84,84,,
+/datum/unit_test/dq_pressure_does_not_push_anchored_movable,both_pass,pass,pass,True,none,none,28,28,,
+/datum/unit_test/dq_pressure_pushes_unanchored_movable,both_pass,pass,pass,True,none,none,28,40,,
+/datum/unit_test/dq_preview_async_discards_stale,both_pass,pass,pass,True,none,none,12,12,,
+/datum/unit_test/dq_preview_async_matches_getflaticon,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_processed_stock_split_preserves_physical_state,both_pass,pass,pass,True,none,none,98,98,,
+/datum/unit_test/dq_property_aggregators,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_property_item_families,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_property_registry_validates,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_property_type_values_valid,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_protean_dormancy_stays_contained,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_protean_dormancy_without_rig,both_pass,pass,pass,True,none,none,390,390,,
+/datum/unit_test/dq_protean_dormant_rig_is_inert,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_protean_folded_lethal_goes_dormant,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_protean_revival_keeps_unrelated_afflictions,both_pass,pass,pass,True,none,none,24,24,,
+/datum/unit_test/dq_protean_rig_hits_land_on_body,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_protean_rig_power_ledger,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_pump_gas_helper_transfers_moles,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_pump_gas_passive_equalizes_pressures,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_radiation_does_not_cross_map_edges,both_pass,pass,pass,True,none,none,38,16,,
+/datum/unit_test/dq_radiation_dose_falls_off,both_pass,pass,pass,True,none,none,24,52,,
+/datum/unit_test/dq_radiation_insulated_movable_blocks,native_only_fail,fail,pass,False,other,none,117,95,"	FAILURE #1: [03:18:22] Runtime in code/modules/power/power_bridge.dm,154: list index out of bounds
+ (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/power/power_bridge.dm:154",
+/datum/unit_test/dq_radiation_shielding_tracks_changes,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_radiation_wall_shields,both_pass,pass,pass,True,none,none,46,30,,
+/datum/unit_test/dq_rare_case_consent_revocation,both_pass,pass,pass,True,none,none,976,976,,
+/datum/unit_test/dq_rare_case_report_workflow,both_fail,fail,fail,False,other,other,1827,1821,"	FAILURE #1: [03:17:17] Runtime in code/game/atoms_movable.dm,119: /mob/living/carbon/human still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/game/atoms_movable.dm:119","	FAILURE #1: [03:17:40] Runtime in code/game/atoms_movable.dm,119: /mob/living/carbon/human still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/game/atoms_movable.dm:119"
+/datum/unit_test/dq_reactive_disposal_wakes_on_contents,both_pass,pass,pass,True,none,none,16,16,,
+/datum/unit_test/dq_reactor_airlock_deadlines,both_pass,pass,pass,True,none,none,143,105,,
+/datum/unit_test/dq_reactor_airlock_mode_key,both_pass,pass,pass,True,none,none,0,65,,
+/datum/unit_test/dq_reactor_audit_and_metrics,both_pass,pass,pass,True,none,none,0,6,,
+/datum/unit_test/dq_reactor_camera_timers,both_pass,pass,pass,True,none,none,176,161,,
+/datum/unit_test/dq_reactor_clear_on_destroy,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_reactor_continuous_lane,both_pass,pass,pass,True,none,none,0,35,,
+/datum/unit_test/dq_reactor_gas_watches,both_pass,pass,pass,True,none,none,126,108,,
+/datum/unit_test/dq_reactor_keys,both_pass,pass,pass,True,none,none,22,0,,
+/datum/unit_test/dq_reactor_lane_budget,both_pass,pass,pass,True,none,none,0,24,,
+/datum/unit_test/dq_reactor_light_area_power,both_pass,pass,pass,True,none,none,122,48,,
+/datum/unit_test/dq_reactor_looping_sound_dormancy,both_pass,pass,pass,True,none,none,22,6,,
+/datum/unit_test/dq_reactor_once_per_lane_per_tick,both_pass,pass,pass,True,none,none,18,0,,
+/datum/unit_test/dq_reactor_player_chunk_keys,both_pass,pass,pass,True,none,none,0,89,,
+/datum/unit_test/dq_reactor_probe_watches,both_pass,pass,pass,True,none,none,85,24,,
+/datum/unit_test/dq_reactor_rate_models,both_pass,pass,pass,True,none,none,52,51,,
+/datum/unit_test/dq_reactor_status_display,both_pass,pass,pass,True,none,none,42,46,,
+/datum/unit_test/dq_reactor_timers_fire_at_their_tick,both_pass,pass,pass,True,none,none,24,18,,
+/datum/unit_test/dq_reactor_wake_test_helper,both_pass,pass,pass,True,none,none,65,70,,
+/datum/unit_test/dq_reactor_wakes_merge,both_pass,pass,pass,True,none,none,6,16,,
+/datum/unit_test/dq_real_canister_release_spreads_via_master_loop,native_only_fail,fail,pass,False,other,none,171,63,"	FAILURE #1: [03:16:45] Runtime in code/modules/power/power_bridge.dm,154: list index out of bounds
+ (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/power/power_bridge.dm:154",
+/datum/unit_test/dq_real_overlay_appears_after_assume_air,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_real_spread_via_ssair_fire,both_pass,pass,pass,True,none,none,84,84,,
+/datum/unit_test/dq_real_ssair_scheduling_spreads_gas,both_pass,pass,pass,True,none,none,84,84,,
+/datum/unit_test/dq_reconcile_air_three_pipes_conserves_mass,both_pass,pass,pass,True,none,none,66,66,,
+/datum/unit_test/dq_registry_membership,both_pass,pass,pass,True,none,none,104,104,,
+/datum/unit_test/dq_registry_no_deleted_members,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_resting_allows_crawling,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_retuned_radio_unregisters_from_ssradio,both_pass,pass,pass,True,none,none,16,16,,
+/datum/unit_test/dq_robot_body_ticks_once,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_robot_brownout,both_pass,pass,pass,True,none,none,0,6,,
+/datum/unit_test/dq_robot_core_death,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_robot_emp_hits_once,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_robot_part_carries_damage,both_pass,pass,pass,True,none,none,12,12,,
+/datum/unit_test/dq_robot_power_demand_cached,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_robot_power_ledger_bounds,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_robot_stun_stays_down,both_pass,pass,pass,True,none,none,16,16,,
+/datum/unit_test/dq_robot_upgrade_detection,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_room_depressurizes_when_open_to_space,both_pass,pass,pass,True,none,none,102,102,,
+/datum/unit_test/dq_rule_compile,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_rule_grille_parity,both_pass,pass,pass,True,none,none,56,62,,
+/datum/unit_test/dq_rule_hold_and_band,both_pass,pass,pass,True,none,none,1212,1259,,
+/datum/unit_test/dq_rule_paper_ignition,both_pass,pass,pass,True,none,none,34,46,,
+/datum/unit_test/dq_rule_plastic_melts,both_pass,pass,pass,True,none,none,42,54,,
+/datum/unit_test/dq_rule_subscription,both_pass,pass,pass,True,none,none,28,28,,
+/datum/unit_test/dq_rule_thresholds,native_only_fail,fail,pass,False,other,none,6074,6087,"	FAILURE #1: [03:23:19] Runtime in code/modules/power/power_bridge.dm,154: list index out of bounds
+ (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/power/power_bridge.dm:154
+	FAILURE #2: [03:23:21] Runtime in code/modules/power/power_bridge.dm,154: list index out of bounds
+ at code/modules/power/power_bridge.dm:154
+	FAILURE #3: [03:23:23] Runtime in code/modules/power/power_bridge.dm,154: list index out of bounds
+ at code/modules/power/power_bridge.dm:154
+	FAILURE #4: [03:23:25] Runtime in code/modules/power/power_bridge.dm,154: list index out of bounds
+ at code/modules/power/power_bridge.dm:154
+	FAILURE #5: [03:23:27] Runtime in code/modules/power/power_bridge.dm,154: list index out of bounds
+ at code/modules/power/power_bridge.dm:154
+	FAILURE #6: [03:23:29] Runtime in code/modules/power/power_bridge.dm,154: list index out of bounds
+ at code/modules/power/power_bridge.dm:154
+	FAILURE #7: [03:23:31] Runtime in code/modules/power/power_bridge.dm,154: list index out of bounds
+ at code/modules/power/power_bridge.dm:154
+	FAILURE #8: [03:23:33] Runtime in code/modules/power/power_bridge.dm,154: list index out of bounds
+ at code/modules/power/power_bridge.dm:154
+	FAILURE #9: [03:23:35] Runtime in code/modules/power/power_bridge.dm,154: list index out of bounds
+ at code/modules/power/power_bridge.dm:154
+	FAILURE #10: [03:23:37] Runtime in code/modules/power/power_bridge.dm,154: list index out of bounds
+  (This error will now be silenced for 10 minutes) at code/modules/power/power_bridge.dm:154",
+/datum/unit_test/dq_rust_adjacency_matches_pairwise_rule,native_only_fail,fail,pass,False,other,none,378,378,"	FAILURE #1: [03:16:48] Runtime in code/modules/power/power_bridge.dm,154: list index out of bounds
+ (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/power/power_bridge.dm:154
+	FAILURE #2: [03:16:50] Runtime in code/modules/power/power_bridge.dm,154: list index out of bounds
+ at code/modules/power/power_bridge.dm:154",
+/datum/unit_test/dq_rust_destroyed_pipe_vents_atomically,both_pass,pass,pass,True,none,none,112,112,,
+/datum/unit_test/dq_rust_portable_port_round_trip_conserves_gas,both_pass,pass,pass,True,none,none,80,80,,
+/datum/unit_test/dq_s2_mob_chunk_masks,both_pass,pass,pass,True,none,none,22,0,,
+/datum/unit_test/dq_s2_wake_calm_brain,both_pass,pass,pass,True,none,none,18,16,,
+/datum/unit_test/dq_s2_wake_disposal,both_pass,pass,pass,True,none,none,30,18,,
+/datum/unit_test/dq_s2_wake_point_defense,both_pass,pass,pass,True,none,none,29,30,,
+/datum/unit_test/dq_s2_wake_power_monitor,both_pass,pass,pass,True,none,none,28,44,,
+/datum/unit_test/dq_s2_wake_shield_capacitor,both_pass,pass,pass,True,none,none,6,12,,
+/datum/unit_test/dq_s2_wake_turret,both_pass,pass,pass,True,none,none,0,35,,
+/datum/unit_test/dq_scrub_gas_removes_target,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_scrubber_trace_remnant_conserves_moles,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_service_checkout_uses_service_billing,both_pass,pass,pass,True,none,none,868,868,,
+/datum/unit_test/dq_service_invoice_adversarial,both_pass,pass,pass,True,none,none,896,896,,
+/datum/unit_test/dq_service_real_machine_and_pda_lifecycle,both_fail,fail,fail,False,other,other,1863,1863,"	FAILURE #1: [03:17:06] Runtime in code/game/atoms_movable.dm,119: /mob/living/carbon/human still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/game/atoms_movable.dm:119","	FAILURE #1: [03:17:20] Runtime in code/game/atoms_movable.dm,119: /mob/living/carbon/human still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/game/atoms_movable.dm:119"
+/datum/unit_test/dq_service_ticket_canonicalization,both_pass,pass,pass,True,none,none,32,32,,
+/datum/unit_test/dq_set_species_removes_components,both_pass,pass,pass,True,none,none,538,538,,
+/datum/unit_test/dq_shadekin_mob_deletion_leaves_no_hud,both_pass,pass,pass,True,none,none,844,844,,
+/datum/unit_test/dq_share_ratio_matches_rust_semantics,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_shared_pipenet_vent_and_scrubber_loop,both_pass,pass,pass,True,none,none,146,146,,
+/datum/unit_test/dq_shield_diffuser_is_event_driven,both_pass,pass,pass,True,none,none,20,20,,
+/datum/unit_test/dq_shutoff_wake_is_network_local,both_pass,pass,pass,True,none,none,18,12,,
+/datum/unit_test/dq_shuttle_active_set_is_event_driven,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_shuttle_jump_refuses_null_landmark,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_shuttle_repeated_moves_preserve_air,both_pass,pass,pass,True,none,none,6722,6682,,
+/datum/unit_test/dq_side_effect_stays_binary,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_simulated_floor_is_open_turf,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_sleeper_rejects_unlisted_chemical,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_social_contract_catalog,both_pass,pass,pass,True,none,none,192,192,,
+/datum/unit_test/dq_social_contract_grading_and_stakeholders,both_pass,pass,pass,True,none,none,312,312,,
+/datum/unit_test/dq_social_contract_population_scaling,both_pass,pass,pass,True,none,none,48,48,,
+/datum/unit_test/dq_southern_cross_berth_fits_every_expedition_craft,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_space_turfs_share_vacuum_mixture,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_specific_entropy_decreases_with_pressure,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_ssair_initialized,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_stab_gauze_stops_wound_bleed,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_stab_splint_reduces_fracture_slowdown,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_stab_stasis_slows_progression,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_stab_stasis_sources,both_pass,pass,pass,True,none,none,12,12,,
+/datum/unit_test/dq_stab_tourniquet_stops_bleed_and_causes_ischemia,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_stable_binary_pump_hibernates_and_wakes,both_pass,pass,pass,True,none,none,46,46,,
+/datum/unit_test/dq_stable_heat_exchanger_hibernates,both_pass,pass,pass,True,none,none,20,20,,
+/datum/unit_test/dq_stable_open_pipe_hibernates,both_pass,pass,pass,True,none,none,50,50,,
+/datum/unit_test/dq_standard_light_matches_station_baseline,both_pass,pass,pass,True,none,none,16,16,,
+/datum/unit_test/dq_state_canonical_delta,both_pass,pass,pass,True,none,none,48,48,,
+/datum/unit_test/dq_state_codecs,both_pass,pass,pass,True,none,none,118,118,,
+/datum/unit_test/dq_state_collapse_blockers,both_pass,pass,pass,True,none,none,101,101,,
+/datum/unit_test/dq_state_latent_round_trip,native_only_fail,fail,pass,False,other,none,963446,963478,"	FAILURE #1: [03:25:21] Runtime in code/datums/state/serializer.dm,41: Cannot read null.type
+ (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/datums/state/serializer.dm:41
+	FAILURE #2: [03:25:21] Runtime in code/datums/state/serializer.dm,248: Cannot read null.saved_vars
+ at code/datums/state/serializer.dm:248
+	FAILURE #3: [03:25:44] Runtime in code/datums/state/serializer.dm,41: Cannot read null.type
+ at code/datums/state/serializer.dm:41
+	FAILURE #4: [03:25:44] Runtime in code/datums/state/serializer.dm,248: Cannot read null.saved_vars
+ at code/datums/state/serializer.dm:248
+	FAILURE #5: [03:25:44] Runtime in code/datums/state/serializer.dm,41: Cannot read null.type
+ at code/datums/state/serializer.dm:41
+	FAILURE #6: [03:25:44] Runtime in code/datums/state/serializer.dm,248: Cannot read null.saved_vars
+ at code/datums/state/serializer.dm:248
+	FAILURE #7: [03:25:44] Runtime in code/datums/state/serializer.dm,41: Cannot read null.type
+ at code/datums/state/serializer.dm:41
+	FAILURE #8: [03:25:44] Runtime in code/datums/state/serializer.dm,248: Cannot read null.saved_vars
+ at code/datums/state/serializer.dm:248
+	FAILURE #9: [03:25:44] Runtime in code/datums/state/serializer.dm,41: Cannot read null.type
+ at code/datums/state/serializer.dm:41
+	FAILURE #10: [03:25:44] Runtime in code/datums/state/serializer.dm,248: Cannot read null.saved_vars
+ at code/datums/state/serializer.dm:248
+	FAILURE #11: [03:25:44] Runtime in code/datums/state/serializer.dm,41: Cannot read null.type
+ at code/datums/state/serializer.dm:41
+	FAILURE #12: [03:25:44] Runtime in code/datums/state/serializer.dm,248: Cannot read null.saved_vars
+ at code/datums/state/serializer.dm:248
+	FAILURE #13: [03:25:44] Runtime in code/datums/state/serializer.dm,41: Cannot read null.type
+ at code/datums/state/serializer.dm:41
+	FAILURE #14: [03:25:44] Runtime in code/datums/state/serializer.dm,248: Cannot read null.saved_vars
+ at code/datums/state/serializer.dm:248
+	FAILURE #15: [03:25:44] Runtime in code/datums/state/serializer.dm,41: Cannot read null.type
+ at code/datums/state/serializer.dm:41
+	FAILURE #16: [03:25:44] Runtime in code/datums/state/serializer.dm,248: Cannot read null.saved_vars
+ at code/datums/state/serializer.dm:248
+	FAILURE #17: [03:28:14] Runtime in code/datums/state/serializer.dm,41: Cannot read null.type
+ at code/datums/state/serializer.dm:41
+	FAILURE #18: [03:28:14] Runtime in code/datums/state/serializer.dm,248: Cannot read null.saved_vars
+ at code/datums/state/serializer.dm:248
+	FAILURE #19: [03:28:47] Runtime in code/datums/state/serializer.dm,41: Cannot read null.type
+ at code/datums/state/serializer.dm:41
+	FAILURE #20: [03:28:47] Runtime in code/datums/state/serializer.dm,248: Cannot read null.saved_vars
+ at code/datums/state/serializer.dm:248
+	FAILURE #21: [03:28:47] Runtime in code/datums/state/serializer.dm,41: Cannot read null.type
+ at code/datums/state/serializer.dm:41
+	FAILURE #22: [03:28:47] Runtime in code/datums/state/serializer.dm,248: Cannot read null.saved_vars
+ at code/datums/state/serializer.dm:248
+	FAILURE #23: [03:28:47] Runtime in code/datums/state/serializer.dm,41: Cannot read null.type
+ at code/datums/state/serializer.dm:41
+	FAILURE #24: [03:28:47] Runtime in code/datums/state/serializer.dm,248: Cannot read null.saved_vars
+ at code/datums/state/serializer.dm:248
+	FAILURE #25: [03:28:47] Runtime in code/datums/state/serializer.dm,41: Cannot read null.type
+ at code/datums/state/serializer.dm:41
+	FAILURE #26: [03:28:47] Runtime in code/datums/state/serializer.dm,248: Cannot read null.saved_vars
+ at code/datums/state/serializer.dm:248
+	FAILURE #27: [03:28:47] Runtime in code/datums/state/serializer.dm,41: Cannot read null.type
+ at code/datums/state/serializer.dm:41
+	FAILURE #28: [03:28:47] Runtime in code/datums/state/serializer.dm,248: Cannot read null.saved_vars
+ at code/datums/state/serializer.dm:248
+	FAILURE #29: [03:28:47] Runtime in code/datums/state/serializer.dm,41: Cannot read null.type
+ at code/datums/state/serializer.dm:41
+	FAILURE #30: [03:28:47] Runtime in code/datums/state/serializer.dm,248: Cannot read null.saved_vars
+ at code/datums/state/serializer.dm:248
+	FAILURE #31: [03:28:47] Runtime in code/datums/state/serializer.dm,41: Cannot read null.type
+ at code/datums/state/serializer.dm:41
+	FAILURE #32: [03:28:47] Runtime in code/datums/state/serializer.dm,248: Cannot read null.saved_vars
+ at code/datums/state/serializer.dm:248
+	FAILURE #33: [03:28:47] Runtime in code/datums/state/serializer.dm,41: Cannot read null.type
+ at code/datums/state/serializer.dm:41
+	FAILURE #34: [03:28:47] Runtime in code/datums/state/serializer.dm,248: Cannot read null.saved_vars
+ at code/datums/state/serializer.dm:248
+	FAILURE #35: [03:28:47] Runtime in code/datums/state/serializer.dm,41: Cannot read null.type
+ at code/datums/state/serializer.dm:41
+	FAILURE #36: [03:28:47] Runtime in code/datums/state/serializer.dm,248: Cannot read null.saved_vars
+ at code/datums/state/serializer.dm:248
+	FAILURE #37: [03:28:56] Runtime in code/datums/state/serializer.dm,41: Cannot read null.type
+ at code/datums/state/serializer.dm:41
+	FAILURE #38: [03:28:56] Runtime in code/datums/state/serializer.dm,248: Cannot read null.saved_vars
+ at code/datums/state/serializer.dm:248
+	FAILURE #39: [03:28:56] Runtime in code/datums/state/serializer.dm,41: Cannot read null.type
+ at code/datums/state/serializer.dm:41
+	FAILURE #40: [03:28:56] Runtime in code/datums/state/serializer.dm,248: Cannot read null.saved_vars
+ at code/datums/state/serializer.dm:248
+	FAILURE #41: [03:28:56] Runtime in code/datums/state/serializer.dm,41: Cannot read null.type
+ at code/datums/state/serializer.dm:41
+	FAILURE #42: [03:28:56] Runtime in code/datums/state/serializer.dm,248: Cannot read null.saved_vars
+ at code/datums/state/serializer.dm:248
+	FAILURE #43: 2 of 6054 latent-safe types failed:
+/obj/item/clothing/head/fishing: round trip changed the state: at 116: before ...,""vars"":{""desc"":""sampled state"",""embed_chance"":5,""flags"":1,""level"":3,""name"":""'Women attempt to approach me, fish choke me with their thighs'... after ...,""vars"":{""desc"":""sampled state"",""embed_chance"":5,""flags"":1,""item_state_slots"":{""slot_head"":""bluesoft0"",""slot_l_hand"":""bluesoft"",""slot_r_hand...
+/obj/item/clothing/head/fishing: round trip through JSON changed the state: at 116: before ...,""vars"":{""desc"":""sampled state"",""embed_chance"":5,""flags"":1,""level"":3,""name"":""'Women attempt to approach me, fish choke me with their thighs'... after ...,""vars"":{""desc"":""sampled state"",""embed_chance"":5,""flags"":1,""item_state_slots"":{""slot_head"":""yellowsoft0"",""slot_l_hand"":""yellowsoft"",""slot_r_... at code/modules/unit_tests/dq_state_tests.dm:102",
+/datum/unit_test/dq_state_versioning,both_pass,pass,pass,True,none,none,30,30,,
+/datum/unit_test/dq_state_vore_belly_round_trip,both_pass,pass,pass,True,none,none,56,56,,
+/datum/unit_test/dq_station_alarm_component_is_sealed,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_station_arrival_without_berth_fails_preflight,both_pass,pass,pass,True,none,none,394,394,,
+/datum/unit_test/dq_station_flight_never_substitutes_carrier_port,both_skip,skip,skip,True,none,none,0,0,,
+/datum/unit_test/dq_station_monthly_income_tracking,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_station_route_rejects_carrier_port_alias,both_pass,pass,pass,True,none,none,18,18,,
+/datum/unit_test/dq_stock_sheets,both_pass,pass,pass,True,none,none,60,60,,
+/datum/unit_test/dq_stock_smartfridge,both_fail,fail,fail,True,assertion,assertion,144,144,	FAILURE #1: Expected 4 to be equal to 6. destroying the fridge spilled two latent and one real (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_stock_tests.dm:165,	FAILURE #1: Expected 4 to be equal to 6. destroying the fridge spilled two latent and one real (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_stock_tests.dm:165
+/datum/unit_test/dq_stock_vending,both_pass,pass,pass,True,none,none,106,106,,
+/datum/unit_test/dq_storage_gather_and_empty,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_storage_hud_per_viewer,both_pass,pass,pass,True,none,none,204,204,,
+/datum/unit_test/dq_storage_limits,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_storage_nested,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_superconducting_cell_automatic_envelope,both_pass,pass,pass,True,none,none,22,22,,
+/datum/unit_test/dq_superconductivity_arena_tracks_turfs,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_supermatter_accumulates_damage_in_vacuum,both_pass,pass,pass,True,none,none,46,46,,
+/datum/unit_test/dq_supermatter_constructs,both_pass,pass,pass,True,none,none,32,32,,
+/datum/unit_test/dq_supermatter_reaches_delamination_state,both_pass,pass,pass,True,none,none,16,16,,
+/datum/unit_test/dq_supply_shortage_uses_opportunity_broker,both_pass,pass,pass,True,none,none,126,126,,
+/datum/unit_test/dq_surgery_bone_layer_closes_first,both_pass,pass,pass,True,none,none,12,12,,
+/datum/unit_test/dq_surgery_does_not_cure_unrelated,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_surgery_failure_complicates,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_surgery_incision_bleeds_and_infects,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_surgery_incision_opens_and_closes,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_surgery_organ_beyond_repair_heals_nothing,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_surgery_organ_reinsertion_keeps_afflictions,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_surgery_organ_repair_is_targeted,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_surgery_organ_steps_match_lesions,both_pass,pass,pass,True,none,none,12,12,,
+/datum/unit_test/dq_surgery_records_well_formed,both_pass,pass,pass,True,none,none,78,78,,
+/datum/unit_test/dq_surgery_registry_populates,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_surgery_robotic_limb_repair_tags,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_surgery_steps_cure_their_conditions,both_pass,pass,pass,True,none,none,66,66,,
+/datum/unit_test/dq_surgery_success_conditions,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_synaptizine_od_rescues_brain_with_alkysine,both_pass,pass,pass,True,none,none,6,15,,
+/datum/unit_test/dq_syndicate_borg_state,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_take_damage_on_destroyed_atom_no_crash,both_pass,pass,pass,True,none,none,16,16,,
+/datum/unit_test/dq_tank_assume_air_merges_donor,both_pass,pass,pass,True,none,none,26,26,,
+/datum/unit_test/dq_tank_overpressure_loses_integrity,both_pass,pass,pass,True,none,none,26,26,,
+/datum/unit_test/dq_tank_pressure_read_correct,both_pass,pass,pass,True,none,none,26,26,,
+/datum/unit_test/dq_tank_remove_air_volume_drains_moles,both_pass,pass,pass,True,none,none,26,26,,
+/datum/unit_test/dq_tank_round_trip_drain_fill_drain,both_pass,pass,pass,True,none,none,26,26,,
+/datum/unit_test/dq_thruster_remove_ratio_drives_burn_math,both_pass,pass,pass,True,none,none,16,16,,
+/datum/unit_test/dq_tool_all_qualities_route,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_tool_parity_door_assembly,both_pass,pass,pass,True,none,none,10,10,,
+/datum/unit_test/dq_tool_parity_girder,both_pass,pass,pass,True,none,none,10,10,,
+/datum/unit_test/dq_tool_parity_valve,both_pass,pass,pass,True,none,none,10,10,,
+/datum/unit_test/dq_total_moles_conserved_long_run,both_pass,pass,pass,True,none,none,84,84,,
+/datum/unit_test/dq_tritfire_reaction_consumes_tritium,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_turf_air_persistence,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_unanchored_teg_hibernates,both_pass,pass,pass,True,none,none,16,16,,
+/datum/unit_test/dq_unpowered_empty_light_hibernates,both_pass,pass,pass,True,none,none,38,38,,
+/datum/unit_test/dq_use_tool_delay,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_use_tool_fuel,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_use_tool_interaction_cost,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_use_tool_quality,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_use_tool_stack,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_vacuum_mixture_pressure_is_zero,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_valve_open_close_gates_pipenet_flow,both_pass,pass,pass,True,none,none,120,120,,
+/datum/unit_test/dq_vent_pump_pushes_to_turf,both_pass,pass,pass,True,none,none,158,158,,
+/datum/unit_test/dq_vent_scrubber_pulls_target_gas,both_pass,pass,pass,True,none,none,106,106,,
+/datum/unit_test/dq_vent_scrubber_siphon_drains_all_gas,both_pass,pass,pass,True,none,none,106,106,,
+/datum/unit_test/dq_verdigris_cavegen_ffi,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_verdigris_loaded,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_vg_pump_binds_at_materialize_unbinds_at_dematerialize,both_pass,pass,pass,True,none,none,10,10,,
+/datum/unit_test/dq_vg_pump_high_power_seeds_differ,both_pass,pass,pass,True,none,none,20,20,,
+/datum/unit_test/dq_vg_pump_read_your_writes,both_pass,pass,pass,True,none,none,10,10,,
+/datum/unit_test/dq_vg_pump_wrong_component_handle_errors,both_pass,pass,pass,True,none,none,10,10,,
+/datum/unit_test/dq_vg_reconciler_catches_injected_desync,both_pass,pass,pass,True,none,none,10,10,,
+/datum/unit_test/dq_vital_asystole_defib_fails,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_vital_cpr_slows_ischemia,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_vital_obstruction_blocks_breathing,both_pass,pass,pass,True,none,none,12,12,,
+/datum/unit_test/dq_vital_pneumothorax_decompression,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_vital_respiratory_arrest_bvm,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_vital_vf_defib_converts,both_pass,pass,pass,True,none,none,6,6,,
+/datum/unit_test/dq_volume_pump_transfers_by_volume,both_pass,pass,pass,True,none,none,52,52,,
+/datum/unit_test/dq_vore_consent_reasons,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_vore_customized_belly_round_trip,both_pass,pass,pass,True,none,none,18,18,,
+/datum/unit_test/dq_vore_devour_struggle_release,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_vore_empty_belly_costs_nothing,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_vore_mode_outcomes,both_pass,pass,pass,True,none,none,1382,1346,,
+/datum/unit_test/dq_vore_mode_rates_scale_with_time,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_vore_subtype_lists_shared,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_wall_blocks_gas_spread,both_pass,pass,pass,True,none,none,12,12,,
+/datum/unit_test/dq_wall_conductance_uses_material,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_water_vapor_condenses_on_cold_turf,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_web_shuttle_destinations_have_landmarks,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/dq_zair_blocks_vertical_through_floor,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/emotes_shall_have_unique_keys,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/enough_bad_genes_must_exist,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/enough_free_gene_slots_must_be_available,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/enough_neutral_genes_must_exist,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/enough_positive_genes_must_exist,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/find_reference_assoc_investigation,both_fail,fail,fail,True,assertion,assertion,0,0,	FAILURE #1: Expected 5 to be equal to 4. Should be: test references: 2 + baseline references: 2 (victim var and loc) (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/find_reference_sanity.dm:125,	FAILURE #1: Expected 5 to be equal to 4. Should be: test references: 2 + baseline references: 2 (victim var and loc) (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/find_reference_sanity.dm:125
+/datum/unit_test/find_reference_baseline,both_fail,fail,fail,True,assertion,assertion,0,0,	FAILURE #1: Expected 6 to be equal to 5. Should be: test references: 3 + baseline references: 2 (victim var and loc) (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/find_reference_sanity.dm:50,	FAILURE #1: Expected 6 to be equal to 5. Should be: test references: 3 + baseline references: 2 (victim var and loc) (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/find_reference_sanity.dm:50
+/datum/unit_test/find_reference_esoteric,both_fail,fail,fail,True,assertion,assertion,0,0,	FAILURE #1: Expected 6 to be equal to 5. Should be: test references: 3 + baseline references: 2 (victim var and loc) (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/find_reference_sanity.dm:91,	FAILURE #1: Expected 6 to be equal to 5. Should be: test references: 3 + baseline references: 2 (victim var and loc) (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/find_reference_sanity.dm:91
+/datum/unit_test/find_reference_exotic,both_fail,fail,fail,True,assertion,assertion,0,0,	FAILURE #1: Expected 6 to be equal to 5. Should be: test references: 3 + baseline references: 2 (victim var and loc) (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/find_reference_sanity.dm:69,	FAILURE #1: Expected 6 to be equal to 5. Should be: test references: 3 + baseline references: 2 (victim var and loc) (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/find_reference_sanity.dm:69
+/datum/unit_test/find_reference_null_key_entry,both_fail,fail,fail,True,assertion,assertion,0,0,	FAILURE #1: Expected 4 to be equal to 3. Should be: test references: 1 + baseline references: 2 (victim var and loc) (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/find_reference_sanity.dm:108,	FAILURE #1: Expected 4 to be equal to 3. Should be: test references: 1 + baseline references: 2 (victim var and loc) (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/find_reference_sanity.dm:108
+/datum/unit_test/find_reference_sanity,both_fail,fail,fail,True,assertion,assertion,0,0,	FAILURE #1: Expected 3 to be equal to 2. Should be: test references: 0 + baseline references: 2 (victim var and loc; BYOND 516 no longer exposes the allocated-list reference through refcount()) (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/find_reference_sanity.dm:33,	FAILURE #1: Expected 3 to be equal to 2. Should be: test references: 0 + baseline references: 2 (victim var and loc; BYOND 516 no longer exposes the allocated-list reference through refcount()) (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/find_reference_sanity.dm:33
+/datum/unit_test/find_reference_static_investigation,both_fail,fail,fail,True,assertion,assertion,0,0,	FAILURE #1: Expected 5 to be equal to 4. Should be: test references: 2 + baseline references: 2 (victim var and loc) (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/find_reference_sanity.dm:148,	FAILURE #1: Expected 5 to be equal to 4. Should be: test references: 2 + baseline references: 2 (victim var and loc) (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/find_reference_sanity.dm:148
+/datum/unit_test/focus_only,intentional_exclusion,unrun,unrun,True,none,none,,,,
+/datum/unit_test/focus_only/atmos_and_temp_requirements,intentional_exclusion,unrun,unrun,True,none,none,,,,
+/datum/unit_test/focus_only/bad_cooking_crafting_icons,intentional_exclusion,unrun,unrun,True,none,none,,,,
+/datum/unit_test/focus_only/check_foodtypes,intentional_exclusion,unrun,unrun,True,none,none,,,,
+/datum/unit_test/focus_only/fish_sources_tables,intentional_exclusion,unrun,unrun,True,none,none,,,,
+/datum/unit_test/focus_only/humanstep_validity,intentional_exclusion,unrun,unrun,True,none,none,,,,
+/datum/unit_test/focus_only/invalid_emissives,intentional_exclusion,unrun,unrun,True,none,none,,,,
+/datum/unit_test/focus_only/invalid_overlays,intentional_exclusion,unrun,unrun,True,none,none,,,,
+/datum/unit_test/focus_only/invalid_research_designs,intentional_exclusion,unrun,unrun,True,none,none,,,,
+/datum/unit_test/focus_only/invalid_vending_machine_icon_states,intentional_exclusion,unrun,unrun,True,none,none,,,,
+/datum/unit_test/focus_only/missing_job_datum_variables,intentional_exclusion,unrun,unrun,True,none,none,,,,
+/datum/unit_test/focus_only/multiple_space_initialization,intentional_exclusion,unrun,unrun,True,none,none,,,,
+/datum/unit_test/focus_only/nightvision_color_cutoffs,intentional_exclusion,unrun,unrun,True,none,none,,,,
+/datum/unit_test/focus_only/openspace_clear,intentional_exclusion,unrun,unrun,True,none,none,,,,
+/datum/unit_test/focus_only/runtime_icon_states,intentional_exclusion,unrun,unrun,True,none,none,,,,
+/datum/unit_test/focus_only/sorted_smoothing_groups,intentional_exclusion,unrun,unrun,True,none,none,,,,
+/datum/unit_test/focus_only/stacked_lights,intentional_exclusion,unrun,unrun,True,none,none,,,,
+/datum/unit_test/focus_only/topdown_filtering,intentional_exclusion,unrun,unrun,True,none,none,,,,
+/datum/unit_test/focus_only/valid_turf_states,intentional_exclusion,unrun,unrun,True,none,none,,,,
+/datum/unit_test/font_awesome_icons,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/genetraits_should_have_valid_dna_bounds,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/ladder_test,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/language_test_shall_have_distinct_keys,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/language_test_shall_have_distinct_names,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/loadout_tests,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/log_mapping,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/machine_component_qdel_detaches_owner,both_pass,pass,pass,True,none,none,20,20,,
+/datum/unit_test/machinery_destruction_detaches_salvage,both_pass,pass,pass,True,none,none,16,16,,
+/datum/unit_test/machinery_integrity_break_fix_lifecycle,both_pass,pass,pass,True,none,none,22,22,,
+/datum/unit_test/materials_shall_have_names,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/materials_shall_have_sell_prices,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/mech_construction,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/mobs_use_valid_belly_overlays,both_fail,fail,fail,False,other,other,57702,57702,"	FAILURE #1: [03:15:43] Runtime in code/game/atoms_movable.dm,119: /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/game/atoms_movable.dm:119
+	FAILURE #2: [03:15:52] Runtime in code/game/atoms_movable.dm,119: /mob/living/simple_mob/humanoid/cultist/magus/rift still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ at code/game/atoms_movable.dm:119","	FAILURE #1: [03:15:58] Runtime in code/game/atoms_movable.dm,119: /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/game/atoms_movable.dm:119
+	FAILURE #2: [03:16:08] Runtime in code/game/atoms_movable.dm,119: /mob/living/simple_mob/humanoid/cultist/magus/rift still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them
+ at code/game/atoms_movable.dm:119"
+/datum/unit_test/modern_tool_interaction_dispatch,both_pass,pass,pass,True,none,none,20,20,,
+/datum/unit_test/nuke_cinematic,native_only_fail,fail,pass,False,other,none,134,134,"	FAILURE #1: [03:15:02] Runtime in code/modules/power/power_bridge.dm,154: list index out of bounds
+ (rng seed 1: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/power/power_bridge.dm:154
+	FAILURE #2: [03:15:04] Runtime in code/modules/power/power_bridge.dm,154: list index out of bounds
+ at code/modules/power/power_bridge.dm:154",
+/datum/unit_test/pai_software_shall_have_unique_id,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/pai_sprites_shall_be_valid,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/posters_shall_have_legal_states,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/preferences_implement_everything,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/preferences_should_generate_icons_sanity,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/preferences_valid_main_feature_name,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/preferences_valid_savefile_key,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/prefilled_reagent_containers_shall_have_valid_reagents,both_pass,pass,pass,True,none,none,7004,7004,,
+/datum/unit_test/reagent_shall_have_unique_name_and_id,both_pass,pass,pass,True,none,none,4542,4542,,
+/datum/unit_test/recipe_test,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/recycler_vendor_tests,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/smes_validity,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/special_role_flags_syncronized,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/sprite_accessories_shall_be_unique,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/spritesheets,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/sqlite_tests_cooldown,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/sqlite_tests_insert,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/subsystem_init,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/techwebs_must_all_be_valid,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/template_noops,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/test_asset_smart_cache,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/tgui_create_message,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/timer_sanity,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/vbo_has_state,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/wire_test,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/wires_bulk_cut_is_idempotent,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/wires_interactive_cut_remains_a_toggle,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/wires_random_cut_only_targets_intact_wires,both_pass,pass,pass,True,none,none,0,0,,
+/datum/unit_test/xgm_total_moles_helper,both_pass,pass,pass,True,none,none,0,0,,

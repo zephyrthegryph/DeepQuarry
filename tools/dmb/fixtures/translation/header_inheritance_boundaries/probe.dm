@@ -1,0 +1,34 @@
+/world
+ fps=10
+/atom
+ layer=7
+/atom/MouseEntered(location,control,params)
+ return
+/atom/MouseWheel(delta_x,delta_y,location,control,params)
+ return
+/atom/movable
+ appearance_flags=801
+/obj/probe
+/area/probe
+/obj/zero_dir
+ dir=0
+/obj/zero_dir/child
+/obj/direct_layer
+ layer=3
+/obj/direct_layer/child
+/obj/drop/MouseDrop(over_object,src_location,over_location,src_control,over_control,params)
+ return
+/obj/move/MouseMove(location,control,params)
+ return
+/obj/down/MouseDown(location,control,params)
+ return
+/obj/invisible
+ invisibility=1
+/obj/invisible/child
+/obj/visible
+ invisibility=0
+/area/dark
+ luminosity=0
+/area/dark/child
+/area/light
+ luminosity=1

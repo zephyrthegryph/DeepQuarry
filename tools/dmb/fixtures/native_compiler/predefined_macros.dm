@@ -1,0 +1,6 @@
+/proc/e(message)
+    return EXCEPTION(message)
+/proc/r(message)
+    return REGEX_QUOTE(message)
+/proc/rr(message)
+    return REGEX_QUOTE_REPLACEMENT(message)

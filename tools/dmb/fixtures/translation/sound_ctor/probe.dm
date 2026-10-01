@@ -1,0 +1,6 @@
+/proc/probe_one(a)
+    return sound(a)
+/proc/probe_named(a)
+    return sound(a, volume=20)
+/proc/probe_empty()
+    return sound()

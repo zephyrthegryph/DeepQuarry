@@ -1,0 +1,2 @@
+/world
+    visibility = 0
