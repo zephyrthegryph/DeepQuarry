@@ -68,3 +68,29 @@ included `DECLARE_LOGIN_VERB` (120 occurrences in 36 files), `SEQ_TEST` (88 in
 one file), and `SEQ_TARGET_STATIC` (7 in three files). This small sample is
 recorded in `target/macro-history-game-architecture.json`; it does not measure
 active expansion dependencies or predict full recompilation cost.
+
+## Canonical procedure coverage audit
+
+```powershell
+cargo run -j1 -p dm-compile --example canonical_lowering_audit -- --project ./target/materialization-input/deepquarry.dme --output ./target/canonical-audit-new -DCBT -DCIBUILDING -DCITESTING
+```
+
+This offline runner uses the canonical emitter's declaration metadata and
+invocation frames. It visits every authored procedure with at most two workers,
+then writes `audit.json` containing counts, cache statistics and grouped errors.
+It never publishes or runs an executable. Successful bodies retain normal
+internal linking/table reservations. A procedure error does not stop
+later procedures. Invalid preprocessing or declaration/signature setup fails
+immediately because trustworthy body bindings cannot then be established.
+
+Coverage is symbolic lowering of authored procedure bodies only. Failed bodies
+have no valid allocation footprint, so later numeric IDs follow successful
+predecessors only. A linking failure remains fail-fast. It excludes
+resource existence, generated dynamic initializers, encoding
+and runtime behavior. Resource references use audit-only symbolic placeholders;
+no such image is exposed. Reports retain at most 256 error groups and three
+samples per group. Texts are capped at 512 characters, with a truncation count;
+additional distinct groups share an explicitly labeled overflow group. The
+runner exits unsuccessfully when any procedure fails, while preserving its
+bounded report. Output directories must be new and contain only the report and
+private syntax/lowering caches.

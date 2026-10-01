@@ -257,6 +257,12 @@ fn materialize(
     dm_output::generation::verify_generation_digest(out, &generation)?;
     let durable_publication_s = start.elapsed().as_secs_f64();
     let total_s = total.elapsed().as_secs_f64();
+    let lowering_stats = compiled.lowering_cache_stats;
+    let resource_catalog = compiled.resource_catalog.clone();
+    let rsc_digest = sha(&compiled.rsc_bytes);
+    // Retain only the encoded DMB for the equality check, not the first linked
+    // world and complete archive while reconstructing the catalog-backed world.
+    drop(compiled);
     // A second canonical assembly reuses only a verified resource catalog/archive,
     // never the previously linked world or a wire patch.
     let catalog_total = Instant::now();
@@ -269,7 +275,7 @@ fn materialize(
         "world",
         frontend,
         &maps,
-        &compiled.resource_catalog,
+        &resource_catalog,
     )
     .map_err(err)?;
     let catalog_materialization_s = start.elapsed().as_secs_f64();
@@ -302,10 +308,10 @@ fn materialize(
         catalog_encoding_validation_s,
         catalog_publication_s,
         catalog_total_s,
-        symbolic_hits: compiled.lowering_cache_stats.hits,
-        symbolic_misses: compiled.lowering_cache_stats.misses,
+        symbolic_hits: lowering_stats.hits,
+        symbolic_misses: lowering_stats.misses,
         dmb_digest: sha(&dmb),
-        rsc_digest: sha(&compiled.rsc_bytes),
+        rsc_digest,
         native_s: None,
     })
 }
