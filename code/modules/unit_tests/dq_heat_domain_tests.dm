@@ -103,7 +103,11 @@
 	vg_world_run_steps(60)
 	var/later = I.get_temperature()
 	TEST_ASSERT(later < start - 0.5, "the body did not relax ([start] K -> [later] K)")
-	TEST_ASSERT(later > ambient, "the body passed its surroundings ([later] K < [ambient] K)")
+	// The surroundings are live room air and drift over the 60 steps (a loaded or shared world moved it by
+	// several kelvin); the body must relax toward them but not pass either end of that drift.
+	var/ambient_now = I.get_ambient_temperature()
+	var/floor_temp = min(ambient, ambient_now)
+	TEST_ASSERT(later > floor_temp, "the body passed its surroundings ([later] K < [floor_temp] K; ambient [ambient] K at the start, [ambient_now] K now)")
 	I.release_heat_body()
 	TEST_ASSERT_NULL(I.heat_body, "release kept the handle")
 	TEST_ASSERT(abs(I.get_temperature() - I.get_ambient_temperature()) < 0.01, "a released item does not read its surroundings")

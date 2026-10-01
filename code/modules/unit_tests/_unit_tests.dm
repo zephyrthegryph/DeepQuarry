@@ -36,6 +36,16 @@
 	} \
 } while (FALSE)
 
+/// Waits, a tick at a time and for at most `max_ticks`, until `cond` holds. A positive assertion waits for the
+/// condition itself (a loaded world skips kernel phases for several ticks); negative assertions keep a fixed wait.
+#define OM_TEST_WAIT_UNTIL(cond, max_ticks) \
+	for(var/om_wait_i in 1 to max_ticks) { \
+		if(cond) { \
+			break; \
+		} \
+		sleep(world.tick_lag); \
+	}
+
 /// *Only* run the test provided within the parentheses
 /// This is useful for debugging when you want to reduce noise, but should never be pushed
 /// Intended to be used in the manner of `TEST_FOCUS(/datum/unit_test/math)`

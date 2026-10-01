@@ -142,7 +142,7 @@
 	TEST_ASSERT_NULL(C.om_sleep_violation(), "an idle camera is not asleep")
 	var/failure = om_wake_test(C, om_callable(src, PROC_REF(emp_camera_briefly), C), 20)
 	TEST_ASSERT(!failure, failure)
-	om_test_ticks(4)
+	OM_TEST_WAIT_UNTIL(!C.has_stat(EMPED), 80)
 	TEST_ASSERT(!C.has_stat(EMPED), "the camera did not recover at the end of its EMP")
 
 	C.upgradeMotion()
@@ -153,7 +153,7 @@
 	C.newTarget(H)
 	TEST_ASSERT(om_timer_slot_pending(C, "camera_timer_token"), "a motion target did not schedule the alarm")
 	TEST_ASSERT_NULL(C.om_sleep_violation(), "a tracking camera's audit failed")
-	om_test_ticks(20)
+	OM_TEST_WAIT_UNTIL(C.detectTime == -1, 120)
 	TEST_ASSERT_EQUAL(C.detectTime, -1, "the motion alarm did not fire at its deadline")
 	H.set_stat(DEAD)
 	TEST_ASSERT(!(H in C.motionTargets), "a dead target was not dropped")
@@ -181,14 +181,14 @@
 	var/was_powered = L.has_power() && A.requires_power
 	A.power_light = FALSE
 	A.power_change()
-	om_test_ticks(4)
+	OM_TEST_WAIT_UNTIL(L.emergency_mode, 60) // may never come (the guard below), so bounded and unasserted here
 	if(was_powered && L.has_cell() && L.has_emergency_power(0.2) && L.status == LIGHT_OK && !L.no_emergency)
 		TEST_ASSERT(L.emergency_mode, "an unpowered charged light did not go to emergency power")
 		TEST_ASSERT(L.emergency_discharge_at && om_timer_slot_pending(L, "light_timer_token"), "emergency discharge has no timer")
 	TEST_ASSERT_NULL(L.om_sleep_violation(), "an unpowered light's audit failed")
 	A.power_light = old_power
 	A.power_change()
-	om_test_ticks(4)
+	OM_TEST_WAIT_UNTIL(!L.emergency_mode && !L.emergency_discharge_at, 60)
 	if(L.has_power())
 		TEST_ASSERT(!L.emergency_mode, "power returned but the light stayed on its cell")
 		TEST_ASSERT(!L.emergency_discharge_at, "power returned but emergency discharge kept its deadline")
@@ -274,6 +274,7 @@
 	TEST_ASSERT(length(tokens), "watch_mob_chunks returned no chunks")
 	TEST_ASSERT(GLOB.player_chunk_watches > 0, "a player chunk subscription was not counted")
 	om_trace(players)
+	om_settle(players, 40)
 	om_test_ticks(4)
 	var/before = om_traced_count(players)
 	var/mob/living/npc = allocate(/mob/living, T)

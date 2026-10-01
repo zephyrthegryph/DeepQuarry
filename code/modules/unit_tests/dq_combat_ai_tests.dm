@@ -65,7 +65,7 @@ TYPE_TABLE(/mob/living/simple_mob/combat_ai_test_subject, get_ai_target_selector
 	TEST_ASSERT(!B.loop_running(DQAI_PROCESSING), "hibernating brain remained in strategic processing")
 	var/wakes = B.chunk_wakes
 	publish_mob_chunk(M)
-	om_test_ticks(4)
+	OM_TEST_WAIT_UNTIL(B.chunk_wakes > wakes, 60)
 	// Not loop_running(): a woken calm brain with nothing to do is due at once
 	// and may hibernate again before this line runs.
 	TEST_ASSERT(B.chunk_wakes > wakes, "movement publication did not wake nearby brain")
