@@ -89,51 +89,51 @@
 
 	return 1
 
-/datum/om/stage/life/vision/carbon/alien
-	of = /mob/living/carbon/alien
 
-/datum/om/stage/life/vision/carbon/alien/perform(mob/living/carbon/alien/self, datum/om/frame/life/ctx)
-	if (self.stat == 2 || (self.has_mutation(XRAY)))
-		self.sight |= SEE_TURFS
-		self.sight |= SEE_MOBS
-		self.sight |= SEE_OBJS
-		self.see_in_dark = 8
-		self.see_invisible = SEE_INVISIBLE_LEVEL_TWO
-	else if (self.stat != 2)
-		self.sight &= ~SEE_TURFS
-		self.sight &= ~SEE_MOBS
-		self.sight &= ~SEE_OBJS
-		self.see_in_dark = 2
-		self.see_invisible = SEE_INVISIBLE_LIVING
+/mob/living/carbon/alien/life_vision()
+	if (src.stat == 2 || (src.has_mutation(XRAY)))
+		src.sight |= SEE_TURFS
+		src.sight |= SEE_MOBS
+		src.sight |= SEE_OBJS
+		src.see_in_dark = 8
+		src.see_invisible = SEE_INVISIBLE_LEVEL_TWO
+	else if (src.stat != 2)
+		src.sight &= ~SEE_TURFS
+		src.sight &= ~SEE_MOBS
+		src.sight &= ~SEE_OBJS
+		src.see_in_dark = 2
+		src.see_invisible = SEE_INVISIBLE_LIVING
 
 	// Call parent to handle signals
 	..()
 
-/datum/om/stage/life/hud/carbon/alien
-	of = /mob/living/carbon/alien
 
-/datum/om/stage/life/hud/carbon/alien/perform(mob/living/carbon/alien/self, datum/om/frame/life/ctx)
+/// Its own HUD stays awake (rerun every Life cycle while it has a client).
+/mob/living/carbon/alien/life_hud_idle()
+	return FALSE
+
+/mob/living/carbon/alien/life_hud()
 	. = ..()
 	if(!.)
 		return
 
-	self.client.screen.Remove(GLOB.global_hud.blurry,GLOB.global_hud.druggy,GLOB.global_hud.vimpaired)
+	src.client.screen.Remove(GLOB.global_hud.blurry,GLOB.global_hud.druggy,GLOB.global_hud.vimpaired)
 
-	if ( self.stat != 2)
-		if ((self.blinded))
-			self.overlay_fullscreen("blind", /atom/movable/screen/fullscreen/blind)
+	if ( src.stat != 2)
+		if ((src.blinded))
+			src.overlay_fullscreen("blind", /atom/movable/screen/fullscreen/blind)
 		else
-			self.clear_fullscreen("blind")
-			self.set_fullscreen(self.is_nearsighted(), "impaired", /atom/movable/screen/fullscreen/impaired, 1)
-			self.set_fullscreen(self.status_units(EFFECT_BLURRY), "blurry", /atom/movable/screen/fullscreen/blurry)
-			self.set_fullscreen(self.status_units(EFFECT_DRUGGED), "high", /atom/movable/screen/fullscreen/high)
+			src.clear_fullscreen("blind")
+			src.set_fullscreen(src.is_nearsighted(), "impaired", /atom/movable/screen/fullscreen/impaired, 1)
+			src.set_fullscreen(src.status_units(EFFECT_BLURRY), "blurry", /atom/movable/screen/fullscreen/blurry)
+			src.set_fullscreen(src.status_units(EFFECT_DRUGGED), "high", /atom/movable/screen/fullscreen/high)
 
-/datum/om/stage/life/hud/carbon/alien/health_icons(mob/living/carbon/alien/self)
+/mob/living/carbon/alien/life_hud_health_icons()
 	. = ..()
-	if(!. || !self.healths)
+	if(!. || !src.healths)
 		return
 
-	self.healths.icon_state = vitality_health_band(self)
+	src.healths.icon_state = vitality_health_band(src)
 
 /datum/om/stage/life/environment/carbon/alien
 	of = /mob/living/carbon/alien

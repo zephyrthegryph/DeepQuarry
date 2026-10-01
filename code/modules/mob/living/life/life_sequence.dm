@@ -1,7 +1,8 @@
 // Mob Life as a kernel sequence (doc/rewrite/life_sequences.md).
 //
 // S0 defines the sequence Life moves onto; no mob runs it yet. The Life stages move in waves: S1 dissolves the
-// machine pipeline, S2 turns life_derive / life_present / life_vision into on_change reactions (at_most =), S3
+// machine pipeline, S2 turned life_derive / life_present / life_vision into on_channel reactions on /mob/living (at_most =,
+// living_systems.dm), S3
 // turns the main stages into procs on /mob/living and its subtypes, declared in life_steps() with the edges
 // life_sequence_edges() derives from today's `order` numbers, and S4 deletes the pipeline runner.
 

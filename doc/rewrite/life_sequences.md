@@ -2,7 +2,7 @@
 
 Status: **[built]** (S0) on `rewrite/s0-sequence`: the kernel primitive, the Life sequence definition (no mob runs
 it yet), `on_change(at_most =)`, the Life edge generator, focused tests and a bench. The waves that move Life onto it
-(S1-S4, section 6) are **[planned]**. Code: `code/controllers/kernel/sequence.dm` (runner, wakes, parking, audit),
+(S1-S4, section 7) are **[planned]** except S2, which is **[built]** (section 7a). Code: `code/controllers/kernel/sequence.dm` (runner, wakes, parking, audit),
 `sequence_table.dm` (steps, tables, order, the edge generator), `sequence_state.dm` (frame, state),
 `code/modules/mob/living/life/life_sequence.dm` (`/datum/sequence/life`). Tests:
 `code/modules/unit_tests/kernel_sequence.dm`. Bench: `code/modules/benchmarks/life_sequence.dm`.
@@ -166,9 +166,34 @@ handler with more to do schedules it with `after()`.
 |---|---|---|
 | **S0** (this) | The sequence primitive, `/datum/sequence/life` (no mob on it), `at_most`, the edge generator, tests, bench | nothing |
 | **S1** | The machine pipeline dissolves: each machine stage becomes a reaction on the machine (`on_change`, `every`), `machine_active` becomes membership (a machine is in the sweep only while it has work), `drawn_from` declares its power reads | `/datum/om/pipeline/machine` and its stages |
-| **S2** | `life_derive` (canmove), `life_present` (HUD) and `life_vision` become `on_change` reactions on `/mob/living` with `at_most = LIFE_PRESENT_MIN_INTERVAL`; `refresh_hud()` / `refresh_vision()` call the handler | the three reactive Life pipelines |
+| **S2** [built] | `life_derive` (canmove), `life_present` (HUD) and `life_vision` become `on_channel` reactions on `/mob/living` with `at_most = LIFE_PRESENT_MIN_INTERVAL`; `refresh_hud()` / `refresh_vision()` call the handler | the three reactive Life pipelines (deleted) |
 | **S3** | The main Life stages become procs on `/mob/living` and subtypes, declared in `life_steps()` with the edges `life_sequence_edges()` derives (keep `kernel_sequence_life_order` green); `idle()` becomes `should_run()` returning `!(old body)`; `rewake_delay()` becomes `rewake`; run_if facts become `when`; `ctx.set_fact("status_ok")` becomes `F.status_ok`; `ctx.fact("environment")` becomes `F.environment()`; trait stages become contributors (`seq_extra_add()`); mobs `seq_start()` Life where they attached the pipeline; `recompose_life()` calls `seq_replan()` | `/datum/om/pipeline/life`, `/datum/om/stage/life/*` |
 | **S4** | Docs; `check_grep.sh` rejects `/datum/om/stage` | `code/datums/om/pipeline.dm`, the OM plan/variant/fact code, the stage adapter, `life_sequence_plans()`/`life_sequence_edges()` |
+
+### 7a. S2 as built
+
+- **Channels as change keys.** Life's producers call `changed(src, CHANGE_MOB_*)`: they raise channel bits, not var
+  keys. `on_channel(bits, handler, at_most =, when =)` (`code/datums/reactions/reactions.dm`) is `on_change()` over
+  `CHANNEL_KEY(bit)` keys; the type table keeps `chan_mask` / `chan_reactions`, `om_recompute_listen()` folds
+  `chan_mask` into `om_listen`, and `om_dispatch_change()` calls `rx_channels()` (`reactions/delivery.dm`), which
+  queues the reaction for the drain with a key per raised bit. No producer changed.
+- **The three reactions** (`living_systems.dm`, "Reactive output"): canmove on `CHANGE_MOB_STATUS | STAT | EXPLICIT`
+  (no `at_most`: the derive pipeline had no `min_interval`); HUD on `HEALTH | STATUS | LOC | EQUIPMENT |
+  LIFE_WAKE_ALL`, `at_most = LIFE_PRESENT_MIN_INTERVAL`; sight on `STATUS | EQUIPMENT | CONDITIONS | HEALTH |
+  LIFE_WAKE_ALL`, same `at_most`.
+- **`requires has_client` is the HUD's `when`** (`life_hud_wanted()`), asked when the channel is raised: a clientless
+  mob queues nothing. `life_sets` became `when` too (`life_canmove_wanted()`, `life_vision_wanted()`): robots derive
+  canmove reactively but draw HUD and sight only from `robot_interface`, as before.
+- **Stage variants are proc overrides** on the mob types (`life_canmove()`, `life_hud()`, `life_vision()`, the
+  `life_hud_*` helpers); the "placed" gate is `life_placed()`.
+- **Rewakes and busy_retry** are keyed `rx_after()` timers (`"life_hud"`, `"life_vision"`, the human's
+  `"life_hud_full_refresh"`): an idle pass arms its `*_rewake_delay()`, a pass that is not idle (a type with its own
+  HUD, a remote-view listener on sight) runs again `LIFE_CYCLE` later. `refresh_hud()` / `refresh_vision()` call
+  `life_hud()` / `life_vision()` directly and arm nothing, as `om_stage_run_now()` did.
+- **One behaviour change:** the reactive pipelines shared `/datum/om/frame/life`, whose `begin()` advances the stasis
+  clock, so every HUD, sight or canmove frame advanced it as well; the reactions take no frame, so only Life frames do.
+- Tests: `life_om/derive_and_present`, `life_om/hud_gate_has_client`, `life_om/hud_at_most_coalesces`,
+  `life_om/npc_vision_follows_inputs` (`dq_life_om_tests.dm`).
 
 S3 decision points:
 

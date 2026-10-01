@@ -340,7 +340,7 @@
 	for(var/datum/om/task/T as anything in rec.tasks)
 		slow |= T.interrupt_on
 	rec.slow_mask = slow
-	rec.owner.om_listen = mask | slow | rec.table?.cache_mask | rec.table?.appearance_mask | (rec.owner == GLOB.om_world ? shared_cache_change_mask : 0) | (rec.owner.seq_states ? seq_listen_mask(rec.owner) : 0)
+	rec.owner.om_listen = mask | slow | rec.table?.cache_mask | rec.table?.appearance_mask | (rec.owner == GLOB.om_world ? shared_cache_change_mask : 0) | (rec.owner.seq_states ? seq_listen_mask(rec.owner) : 0) | rx_chan_mask_of(rec.owner)
 
 /// The mask other entities and behaviours observe (decides eager derived values).
 /proc/om_observed_mask(datum/om/rec/rec)
@@ -369,6 +369,10 @@
 	// OM_CHANGED() setters reach here: E's listen mask carries its sequences' channels (seq_listen_mask()).
 	if(E.seq_states)
 		seq_channels(E, bits)
+	// on_channel() reactions reading these channels queue for the drain (code/datums/reactions/delivery.dm).
+	var/datum/rx_table/RT = GLOB.rx_tables[E.type]
+	if(RT && (RT.chan_mask & bits))
+		rx_channels(E, bits, RT)
 	if((bits & shared_cache_change_mask) && E == GLOB.om_world)
 		shared_cache_on_world_change(bits)
 	var/datum/om/rec/rec = E.om_rec

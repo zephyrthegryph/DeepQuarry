@@ -666,8 +666,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 	BITSET(hud_updateflag, WANTED_HUD)
 	if(ishuman(user))
 		var/mob/living/carbon/human/U = user
-		var/datum/om/stage/life/hud/carbon/human/hud_system = om_stage_for(U, /datum/om/stage/life/hud)
-		hud_system.hud_list(U)
+		U.life_hud_list()
 	else
 		hud_record_changed(user)
 

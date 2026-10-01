@@ -1,17 +1,12 @@
 // Mob Life on object-model pipelines (doc/rewrite/life_on_om.md).
 //
-// Life is declarations: three pipelines of /datum/om/stage/life stages, a frame with the old gates
+// Life is declarations: a pipeline of /datum/om/stage/life stages, a frame with the old gates
 // as facts, and the producers that raise mob channels. When stages run, idle, wake and park is
 // the core pipeline runner's business (code/datums/om/pipeline.dm); nothing here decides it.
 
 /datum/om/decl/living
 	of = /mob/living
-	behaviours = list(
-		/datum/om/pipeline/life,
-		/datum/om/pipeline/life_derive,
-		/datum/om/pipeline/life_present,
-		/datum/om/pipeline/life_vision,
-	)
+	behaviours = list(/datum/om/pipeline/life)
 
 /datum/om/decl/observer
 	of = /mob/observer
@@ -32,40 +27,6 @@
 	wake_all = LIFE_WAKE_ALL
 	park_after = LIFE_PARK_AFTER
 	profile_stride = LIFE_PROFILE_STRIDE
-
-/// Status derivation (canmove): run the pass a status or the stat changes, never on a cadence.
-/datum/om/pipeline/life_derive
-	name = "life: derive"
-	lane = LANE_DERIVED
-	stages = list(/datum/om/stage/life)
-	frame_type = /datum/om/frame/life
-	wake_all = CHANGE_MOB_STAT | CHANGE_EXPLICIT
-
-/// HUD and vision for mobs with a client: run on their channels, at most every
-/// LIFE_PRESENT_MIN_INTERVAL (a walking player raises a location change most ticks and the HUD
-/// needs only the latest state), and by their rewakes (darksight). Clientless mobs don't start it.
-/datum/om/pipeline/life_present
-	name = "life: present"
-	lane = LANE_PRESENTATION
-	requires = list(/datum/om/check/has_client)
-	min_interval = LIFE_PRESENT_MIN_INTERVAL
-	busy_retry = LIFE_CYCLE
-	stages = list(/datum/om/stage/life)
-	frame_type = /datum/om/frame/life
-	wake_all = LIFE_WAKE_ALL
-
-/// Sight flags (sight, see_in_dark, see_invisible) for every living mob, clients or not: run when
-/// an input changes (stat, blindness and drugs, equipment, mutations, species, modifiers, login),
-/// at most every LIFE_PRESENT_MIN_INTERVAL. Not on movement: nothing an NPC walks into changes its
-/// sight flags, and a player's view refreshes by the stage's own rewake.
-/datum/om/pipeline/life_vision
-	name = "life: vision"
-	lane = LANE_PRESENTATION
-	min_interval = LIFE_PRESENT_MIN_INTERVAL
-	busy_retry = LIFE_CYCLE
-	stages = list(/datum/om/stage/life)
-	frame_type = /datum/om/frame/life
-	wake_all = LIFE_WAKE_ALL
 
 /// Ghosts, AI eyes and the blob overmind: their old Life() upkeep.
 /datum/om/behaviour/observer_upkeep
@@ -172,7 +133,8 @@ GLOBAL_LIST_EMPTY(life_z_presence)
 
 // --- Public refresh entry points --------------------------------------------------------------
 // Code outside Life asks for an immediate HUD or vision refresh through these. Living mobs run
-// their HUD and vision stages; other mobs keep the base behaviour.
+// life_hud() / life_vision() (the handlers of their HUD and sight reactions, living_systems.dm) now;
+// other mobs keep the base behaviour.
 
 /// Refreshes the player HUD now. Returns FALSE when there is no HUD to refresh.
 /mob/proc/refresh_hud()
@@ -187,14 +149,14 @@ GLOBAL_LIST_EMPTY(life_z_presence)
 	return TRUE
 
 /mob/living/refresh_hud()
-	return om_stage_run_now(src, /datum/om/stage/life/hud)
+	return life_hud()
 
 /// Recomputes sight flags (SEE_TURFS, see_in_dark, ...) now.
 /mob/proc/refresh_vision()
 	OM_EMIT(src, /datum/om/event/mob_handle_vision)
 
 /mob/living/refresh_vision()
-	om_stage_run_now(src, /datum/om/stage/life/vision)
+	life_vision()
 
 // --- Producers ----------------------------------------------------------------------------
 // Hooks on /mob that the generic mob code calls; living mobs raise the matching channel.

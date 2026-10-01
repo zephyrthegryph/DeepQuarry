@@ -43,7 +43,7 @@
 	TEST_ASSERT_EQUAL(km_system_key_for_path(/datum/om/pipeline/life), "life", "the life pipeline")
 	var/list/known = km_system_prefixes()
 	TEST_ASSERT(length(known) > 20, "the prefix table is built (it has [length(known)] rows)")
-	TEST_ASSERT_EQUAL(km_system_key_for_path(/datum/om/pipeline/life_derive), "life", "a sibling pipeline named life_*")
+	TEST_ASSERT_EQUAL(km_system_key_for_path("/datum/om/pipeline/life_derive"), "life", "a sibling pipeline named life_* (as text: no such pipeline exists any more)")
 	TEST_ASSERT_EQUAL(km_system_key_for_path(/datum/om/pipeline/machine), "machines", "the machine pipeline")
 	TEST_ASSERT_EQUAL(km_system_key_for_path(/datum/om/behaviour/world/machines), "machines", "the machines world lane")
 	TEST_ASSERT_EQUAL(km_system_key_for_path(/datum/om/behaviour/ai_brain/tactical), "ai_brain", "a subtype of a folder's type")

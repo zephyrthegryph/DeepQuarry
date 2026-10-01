@@ -83,7 +83,7 @@
 #define GERM_RESAMPLE (1 MINUTES)
 /// At most this many Life cycles of germ creep are charged at once.
 #define GERM_CATCHUP_CYCLES 100
-/// The presentation pipeline (HUD, vision) runs at most this often; changes in between coalesce.
+/// The HUD and sight reactions run at most this often (on_channel at_most); changes in between coalesce.
 #define LIFE_PRESENT_MIN_INTERVAL (0.5 SECONDS)
 /// Observer upkeep (ghosts, AI eyes, blob overmind) runs this often.
 #define OBSERVER_UPKEEP_INTERVAL (LIFE_CYCLE)
