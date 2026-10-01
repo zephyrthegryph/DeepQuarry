@@ -24,6 +24,7 @@ param(
     [ValidateRange(10, 1800)][int]$TimeoutSeconds = 900
 )
 $ErrorActionPreference = 'Stop'
+Import-Module "$PSScriptRoot/process.psm1" -Force
 $Compiler = (Resolve-Path -LiteralPath $Compiler).Path
 $Daemon = (Resolve-Path -LiteralPath $Daemon).Path
 $Builtins = (Resolve-Path -LiteralPath $Builtins).Path
@@ -35,7 +36,6 @@ New-Item -ItemType Directory -Path $OutputRoot | Out-Null
 $fixture = $Worktrees.Count -eq 0
 $cache = Join-Path $OutputRoot 'shared-cache'
 $rows = [Collections.Generic.List[object]]::new()
-$allOwned = [Collections.Generic.List[object]]::new()
 $overallPeak = 0L
 $daemonJob = $null
 $fixtureHeader = "/datum/probe_resources`n    var/asset = 'asset.txt'`n/proc/probe()`n    return "
@@ -67,70 +67,20 @@ foreach ($worktree in $Worktrees) {
 }
 
 function Start-Owned([string]$Executable, [string]$Directory, [string[]]$Arguments, [string]$Prefix, [string]$CacheRoot, [int]$MemoryMb) {
-    $start = [Diagnostics.ProcessStartInfo]::new()
-    $start.FileName = $Executable
-    $start.WorkingDirectory = $Directory
-    $start.UseShellExecute = $false
-    $start.CreateNoWindow = $true
-    $start.WindowStyle = [Diagnostics.ProcessWindowStyle]::Hidden
-    $start.RedirectStandardOutput = $true
-    $start.RedirectStandardError = $true
-    $start.Environment['DM_MEMORY_LIMIT_MB'] = "$MemoryMb"
-    $start.Environment['DM_COMPILER_CACHE_ROOT'] = $CacheRoot
-    $start.Environment['DM_DAEMON_WORKERS'] = '2'
-    $start.Environment['DQ_COMPILER_STRICT'] = '1'
-    foreach ($argument in $Arguments) { $start.ArgumentList.Add($argument) }
-    $process = [Diagnostics.Process]::new()
-    $process.StartInfo = $start
-    $stdout = [IO.File]::Create("$Prefix.stdout.log")
-    $stderr = [IO.File]::Create("$Prefix.stderr.log")
-    try {
-        if (!$process.Start()) { throw 'Could not start owned compiler process.' }
-        $job = [pscustomobject]@{ Process = $process; Prefix = $Prefix; Files = @($stdout, $stderr); Tasks = @($process.StandardOutput.BaseStream.CopyToAsync($stdout), $process.StandardError.BaseStream.CopyToAsync($stderr)); Finished = $false; Started = [Diagnostics.Stopwatch]::StartNew() }
-        $allOwned.Add($job)
-        return $job
-    } catch {
-        $stdout.Dispose(); $stderr.Dispose(); $process.Dispose()
-        throw
-    }
+    Start-CompilerRun $Executable $Directory $Arguments $Prefix @{ DM_COMPILER_CACHE_ROOT = $CacheRoot; DM_DAEMON_WORKERS = '2'; DQ_COMPILER_STRICT = '1'; DQ_NATIVE_TARGET = '516.1687' } $MemoryMb
 }
 function Finish-Owned($Job, [switch]$Stop) {
-    if ($Job.Finished) { return }
-    if ($Stop -and !$Job.Process.HasExited) { $Job.Process.Kill($true) }
-    if (!$Job.Process.HasExited) { throw 'Owned process is still running.' }
-    foreach ($task in $Job.Tasks) { [void]$task.GetAwaiter().GetResult() }
-    foreach ($file in $Job.Files) { $file.Dispose() }
-    $Job.Finished = $true
+    Complete-CompilerRun $Job -Stop:$Stop
 }
 function Check-Memory {
-    $bytes = 0L
-    foreach ($job in $allOwned) {
-        if (!$job.Finished -and !$job.Process.HasExited) { $job.Process.Refresh(); $bytes += $job.Process.PrivateMemorySize64 }
-    }
+    $bytes = Get-CompilerPrivateMemory
     $script:overallPeak = [Math]::Max($script:overallPeak, $bytes)
     if ($bytes -gt [long]$AggregateMemoryMb * 1MB) { throw "Compiler aggregate memory exceeded $AggregateMemoryMb MiB; stopping owned processes." }
 }
 function Start-Daemon {
-    $listener = [Net.Sockets.TcpListener]::new([Net.IPAddress]::Loopback, 0)
-    $listener.Start()
-    $port = $listener.LocalEndpoint.Port
-    $listener.Stop()
-    $script:address = "127.0.0.1:$port"
-    $script:daemonJob = Start-Owned $Daemon $Worktrees[0] @("$port", $cache) (Join-Path $OutputRoot "daemon-$port") $cache $DaemonMemoryMb
-    $watch = [Diagnostics.Stopwatch]::StartNew()
-    while ($watch.Elapsed.TotalSeconds -lt 10) {
-        if ($daemonJob.Process.HasExited) { Finish-Owned $daemonJob; throw "Daemon startup failed; see $($daemonJob.Prefix).stderr.log" }
-        try {
-            $socket = [Net.Sockets.TcpClient]::new()
-            $socket.Connect('127.0.0.1', $port)
-            $stream = $socket.GetStream()
-            $ping = [Text.Encoding]::UTF8.GetBytes('{"command":"ping"}' + "`n")
-            $stream.Write($ping, 0, $ping.Length)
-            $socket.Dispose()
-            return
-        } catch { $socket.Dispose(); Start-Sleep -Milliseconds 50 }
-    }
-    throw 'Daemon startup timed out.'
+    $daemonInfo = Start-CompilerDaemon $Daemon $Worktrees[0] $cache (Join-Path $OutputRoot "daemon-$([Guid]::NewGuid().ToString('N'))") $DaemonMemoryMb 2
+    $script:daemonJob = $daemonInfo.Run
+    $script:address = $daemonInfo.Address
 }
 function Phase([string]$Name) {
     Write-Host "Native acceptance: $Name (six worktrees, at most $MaxClients clients)"
@@ -202,6 +152,4 @@ try {
     }
     [pscustomobject]@{ schema = 1; native_gate_passed = $true; fallback_count = 0; fixture = $fixture; worktrees = 6; max_clients = $MaxClients; sampled_peak_private_bytes = $overallPeak; aggregate_limit_mb = $AggregateMemoryMb; cache = $cache; results = $rows.ToArray() } | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath (Join-Path $OutputRoot 'acceptance.json')
     Write-Host "Acceptance passed; report: $OutputRoot/acceptance.json"
-} finally {
-    foreach ($job in $allOwned) { if (!$job.Finished) { Finish-Owned $job -Stop }; $job.Process.Dispose() }
-}
+} finally { Close-CompilerRuns }

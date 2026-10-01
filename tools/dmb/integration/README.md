@@ -115,6 +115,55 @@ starts a world or runs a DM suite.
 mode. Conventional output publication still updates their generated DMB/RSC.
 The large-project mode is opt-in; the default gate remains the tiny fixture.
 
+### Commit replay
+
+`replay-commits.ps1` creates one actual detached Git worktree inside a new owned
+result directory. `-Commits` selects explicit commits in the supplied order;
+otherwise `-Last N` selects the last N first-parent commits, oldest first. It
+never checks out or edits the original repository, refuses unexpected source
+changes, and uses checkout without overwriting ignored-file collisions.
+
+```powershell
+pwsh -File tools/dmb/integration/replay-commits.ps1 -Compiler tools/dmb/target/debug/dm-compile.exe -Daemon tools/dmb/target/debug/dm-compiled.exe -Last 3
+```
+
+The daemon remains alive across revisions. Each revision's canonical build is
+compared with a fresh standalone child using an empty all-stage cache. The gate
+requires successful native production, zero fallback, the same expanded source
+digest and exact full DMB/RSC SHA-256 equality. `replay.json` retains commit IDs,
+binary/builtin digests, timings, lowering reuse and output digests. Fresh artifacts
+are removed only after a successful comparison to bound disk use;
+`-KeepFreshArtifacts` retains them. Failed output and the linked worktree remain
+available for review.
+
+Large historical projects may need generated ignored art. `-AssetOverlayRoot`
+copies only untracked assets from `-AssetDirectories` (default `icons/gen`) once;
+it never replaces tracked files. The overlay manifest digest is recorded, so
+results are described as commits plus that asset snapshot. A missing or invalid
+historical source revision fails visibly; it is not counted as native parity.
+The live daemon plus fresh reference share the sampled aggregate budget and
+their separate process ceilings. An overrun stops owned processes and preserves
+the report; the driver does not raise its memory limit automatically.
+
+### Small compiler-error captures
+
+`check-errors.ps1` runs six small probes with native and reference BYOND 516.1687:
+a valid procedure, explicit preprocessing error, missing include, unterminated
+string, unknown procedure and unknown type. It requires zero native fallback and
+records both raw logs and located diagnostics in `errors.json`.
+
+```powershell
+pwsh -File tools/dmb/integration/check-errors.ps1 -Compiler tools/dmb/target/debug/dm-compile.exe -Byond 'C:/Program Files/BYOND/bin/dm.exe'
+```
+
+This gate compares success/failure and whether both failures are proven source
+errors. It does not rewrite messages or claim that differing diagnostics mean
+the same thing. Unlocated nonzero BYOND exits remain unclassified (or internal
+for abnormal negative process codes), not source parity. The existing
+`dev-scripts/correctness_reports.py` can compare the captured diagnostic logs
+for exact message differences independently. The three drivers share hidden,
+owned-process, bounded log/memory handling in `process.psm1`.
+
 ## Reusable compiler facts
 
 `dm-compile analysis-jsonl PROJECT.dme [-DNAME]` exports the `dm-analysis` versioned
