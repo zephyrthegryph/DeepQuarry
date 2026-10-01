@@ -460,6 +460,12 @@ GLOBAL_VAR(dq_test_select_names)
 	/// flake involving rand()/pick() is reproducible.
 	var/tmp/seed
 
+	/// list(datum, var name, original value) per var set_var() changed; restored on destroy.
+	var/tmp/list/saved_vars
+	/// Original config values set_config() changed, each boxed in a one-element
+	/// list (so a saved null is still a saved value); restored on destroy.
+	var/tmp/list/saved_configs
+
 /// A stable, deterministic seed for a test's own name: same input, same
 /// output, forever, regardless of process or run order -- unlike rand()'s own
 /// state, which drifts with everything that ran before it.
@@ -533,7 +539,50 @@ GLOBAL_VAR(dq_test_select_names)
 	for(var/datum/thing as anything in allocated?.Copy())
 		if(!QDELETED(thing))
 			qdel(thing)
+	restore_test_overrides()
 	..()
+
+/// Sets `target.vars[name]` for the rest of this test. The first change to each var records its
+/// original value, and on_destroy() puts it back (last change first). A failing TEST_ASSERT
+/// (which returns from Run()) or a runtime then can't leak the change into later tests.
+/// Returns `value`.
+/datum/unit_test/proc/set_var(datum/target, name, value)
+	if(!(name in target.vars))
+		CRASH("set_var: [target.type] has no var [name]")
+	var/already = FALSE
+	for(var/list/entry as anything in saved_vars)
+		if(entry[1] == target && entry[2] == name)
+			already = TRUE
+			break
+	if(!already)
+		LAZYADD(saved_vars, list(list(target, name, target.vars[name])))
+	target.vars[name] = value
+	return value
+
+/// set_var() on GLOB: sets GLOB.<name> for the rest of this test.
+/datum/unit_test/proc/set_global(name, value)
+	return set_var(GLOB, name, value)
+
+/// Sets a config entry (a /datum/config_entry path) for the rest of this test; restored like
+/// set_var(). Returns `value`.
+/datum/unit_test/proc/set_config(entry_type, value)
+	if(!LAZYACCESS(saved_configs, entry_type))
+		LAZYSET(saved_configs, entry_type, list(global.config.Get(entry_type)))
+	global.config.Set(entry_type, value)
+	return value
+
+/// Puts back everything set_var()/set_global()/set_config() changed.
+/datum/unit_test/proc/restore_test_overrides()
+	for(var/i in length(saved_vars) to 1 step -1)
+		var/list/entry = saved_vars[i]
+		var/datum/target = entry[1]
+		if(!QDELETED(target))
+			target.vars[entry[2]] = entry[3]
+	for(var/entry_type in saved_configs)
+		var/list/box = saved_configs[entry_type]
+		global.config.Set(entry_type, box[1])
+	saved_vars = null
+	saved_configs = null
 
 /datum/unit_test/proc/Run()
 	TEST_FAIL("[type]/Run() called parent or not implemented")

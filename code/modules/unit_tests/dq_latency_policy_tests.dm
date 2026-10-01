@@ -109,12 +109,10 @@
 	refresh_flush() // a fresh atom sits in the refresh queue until it flushes: a reference the eligibility check would see
 	item.latent_touched_at = world.time - (box.latent_idle_delay * 2)
 
-	var/was_enabled = CONFIG_GET(flag/latency_policy_enabled)
-	CONFIG_SET(flag/latency_policy_enabled, FALSE)
+	set_config(/datum/config_entry/flag/latency_policy_enabled, FALSE)
 	TEST_ASSERT(!latent_ok(item), "the kill switch must refuse collapse when off")
-	CONFIG_SET(flag/latency_policy_enabled, TRUE)
+	set_config(/datum/config_entry/flag/latency_policy_enabled, TRUE)
 	TEST_ASSERT(latent_ok(item), "an idle, unpinned, storable item should be latent-eligible once the switch is on ([dq_latency_explain(item)]): [GLOB.latency_last_ineligible]")
-	CONFIG_SET(flag/latency_policy_enabled, was_enabled)
 	qdel(box)
 
 /datum/unit_test/dq_latency_idle_delay

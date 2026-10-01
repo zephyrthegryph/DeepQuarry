@@ -122,7 +122,7 @@
 	var/datum/tgui/ui = dx_vending_window(H, V)
 	var/datum/stored_item/vending_product/R = V.product_records[1]
 	var/before = R.get_amount()
-	GLOB.refuse_capture = list()
+	set_global("refuse_capture", list())
 
 	TEST_ASSERT(!V.tgui_act("vend", list("vend" = 99), ui), "a key past the list is refused (not clamped onto another product)")
 	TEST_ASSERT(!V.tgui_act("vend", list("vend" = 0), ui), "key 0 is refused")
