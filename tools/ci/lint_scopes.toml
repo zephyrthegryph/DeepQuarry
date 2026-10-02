@@ -98,3 +98,59 @@ core = [
   "tgui",
   "verb_manager",  # and its speech_controller subtype
 ]
+# check_grep.sh: the path allowlists of its `grep -v` stages. An entry is an exact file, or a
+# directory when it ends in `/`. The key is read by the part's DropPaths("<key>").
+[lint.check_grep.lists]
+call_ext_allow = [
+  "code/__defines/verdigris/_bindings.dm", "code/__defines/rust_g.dm", "code/__defines/vchatlog.dm",
+  "code/__byond_version_compat.dm", "code/modules/debugging/tracy.dm", "code/modules/debugging/debugger.dm",
+  "code/modules/tgs/", "code/modules/benchmarks/scenarios.dm",
+]
+# the dynamic R10/thermal checks read their names from these generated files
+verdigris_defines_allow = ["code/__defines/verdigris/"]
+bindings_file_allow = ["code/__defines/verdigris/_bindings.dm"]
+# only the core pipeline runner and the kernel work engine change idle/park state
+pipelines_allow = ["code/datums/om/", "code/controllers/kernel/", "code/modules/unit_tests/"]
+relation_fields_allow = ["code/datums/om/"]
+timer_handles_allow = ["code/datums/om/"]
+# creation/deletion bookkeeping for the one revive path
+revive_allow = [
+  "code/modules/unit_tests/", "code/modules/body/revival.dm", "code/modules/mob/death.dm", "code/modules/mob/mob.dm",
+  "code/_helpers/unsorted.dm", "code/modules/mob/living/carbon/human/human_species.dm",
+  "code/modules/mob/living/silicon/ai/ai.dm", "code/game/objects/items/weapons/autopsy.dm",
+]
+thermal_allow = ["code/__defines/verdigris/_bindings.dm"]
+input_ladder_allow = ["code/modules/keybindings/router.dm"]
+# type-specific tool checks and domains converted later (mecha: I5; surgery and medical machines)
+tool_istype_allow = [
+  "code/datums/wires/wires.dm", "code/datums/behaviours/omen.dm", "code/game/machinery/recharger.dm",
+  "code/game/mecha/mecha.dm", "code/game/mecha/space/shuttle.dm", "code/game/mecha/combat/fighter.dm",
+  "code/game/machinery/adv_med.dm", "code/game/machinery/cloning.dm", "code/game/machinery/computer/cloning.dm",
+]
+# verbs that are really a mob's own abilities, run through an item they carry
+i7_verb_allow = [
+  "code/modules/unit_tests/", "code/game/mecha/equipment/tools/passenger.dm", "code/game/mecha/equipment/tools/sleeper.dm",
+  "code/game/objects/items/devices/communicator/integrated.dm", "code/modules/assembly/holder.dm",
+  "code/modules/clothing/spacesuits/rig/modules/specific/ai_container.dm",
+  "code/modules/mob/living/silicon/robot/subtypes/thinktank/thinktank_module.dm", "code/modules/pda/ai.dm",
+]
+bodytemp_allow = ["code/modules/heat/heat_mobs.dm"]
+weapon_damage_type_allow = ["code/modules/medical/conditions/wounds.dm"]
+organ_damage_allow = ["code/modules/body/", "code/modules/organs/"]
+rust_state_allow = ["code/__defines/verdigris/_bindings.dm"]
+slot_flags_allow = ["code/datums/properties/"]
+# the volatile abductor RTG's asplod lifecycle; the generic machinery explosion damage itself
+machinery_qdel_allow = ["code/modules/power/port_gen.dm"]
+machinery_ex_act_allow = ["code/game/machinery/machinery.dm"]
+
+# The count ratchets of check_grep.sh: a rule over its ceiling fails (`analyze baseline --update`
+# lowers a ceiling, never raises it). The colour-macro count is MACRO_COUNT in dependencies.sh.
+[lint.check_grep.ceilings]
+admin_rights_shrink_only_baseline_one_mechanism_admin_can = 82
+admin_rights_shrink_only_baseline_one_mechanism_admin_can__holder = 327
+admin_rights_shrink_only_baseline_one_mechanism_admin_can__rights_and = 17
+heat_ratchet_on_fire_act_overrides_h3 = 6
+damage_ratchet_on_non_turf_ex_act_overrides_d5 = 64
+damage_ratchet_on_atom_break_set_broken_overrides_d4 = 18
+improper_atom_new_usage = 2
+legacy_equip_restriction_vars__slot_flags = 2

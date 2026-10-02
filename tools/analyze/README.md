@@ -109,6 +109,28 @@ nothing for a lint that has no sites there (a hard ban at zero): the fixtures ar
 output (`Tagged` `file:line: [lbl/rule]`, `Report` `file:line: rule`, `FileLine`, `Bare`); `update`/`seed`/
 `files` = byte-for-byte baseline rewrite comparison; `selftest`.
 
+### The `check_grep` lint (a shell script's worth of `rg`/`grep`)
+
+`src/lints/check_grep/` ports `tools/ci/check_grep.sh`. A check is a `Part` (`framework.rs`): the search
+(`line`, `line_g` = GNU `grep -P` with ASCII classes, `multi_u` = `rg -PU`, `multi_z` = `grep -Pzo`, a
+file test) plus the `grep -v` stages after it as filters over the composite `rel:line:text` the script
+printed (so a path allowlist, a `:\s*//` comment test and a `var/` substring behave as in the shell).
+`parts_*.rs` list them, one rule per part (rule = slug of the script's `part "..."` title, `__what` for a
+second check under one title). Path allowlists are `[lint.check_grep.lists]`, the count ratchets are
+`[lint.check_grep.ceilings]`, the colour-macro limit is `MACRO_COUNT` in `dependencies.sh`. To add a check,
+add a `Part` and (if it has a path allowlist) its list; `cargo test` holds the rule names to the titles.
+
+Engine hooks it needed (both default to doing nothing): `Lint::extra_inputs` (files outside `select` that
+`scan_tree` reads: `*.dme`, the example config, `html/changelogs/example.yml`; their hashes key the tree
+memo) and `Lint::parity_normalize` (rewrites raw findings into what the script prints: counts instead of
+sites, the `a || b || c` first-hit rule). `ParseKind::CheckGrep` reads the script's coloured `NN- title`
+output; a legacy `.sh` runs under bash from the repo root as a copy without `errexit` (it aborts at its
+first hit otherwise), with `LC_ALL=C.UTF-8`; set `DQ_BASH` to the bash to use (on Windows the first
+`bash` `Command` finds can be the WSL launcher).
+
+Running the old script on Windows needs `rg` with PCRE2 on `PATH` and a shim for the file-argument limit
+(`rg.exe` and msys `grep` cannot take ~5,900 paths): wrap both to run in chunks of 100 paths with `-H`.
+
 ## Tooling gotchas
 
 * Edit Rust with the Write/Edit tools. Shell heredocs and `python -` snippets through the Bash tool have

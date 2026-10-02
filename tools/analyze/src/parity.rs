@@ -46,6 +46,200 @@ pub enum ParseKind {
     /// whose lines start with the rule name): rule, file and line; a line with no file is compared
     /// by its text (the file field), line 0.
     RulePrefixed,
+    /// `check_grep.sh`: ANSI-coloured `NN- title` part headers, hits as `file:line:text` (or
+    /// `file:text` when the old rule printed no line numbers), a few counted ratchets. Findings are
+    /// attributed to the part's slug; see [`parse_check_grep`].
+    CheckGrep,
+}
+
+/// The rule name a part title maps to: lowercase, every run of non-alphanumerics one `_`.
+pub fn slug(title: &str) -> String {
+    let mut out = String::new();
+    for c in title.chars() {
+        if c.is_ascii_alphanumeric() {
+            out.push(c.to_ascii_lowercase());
+        } else if !out.ends_with('_') {
+            out.push('_');
+        }
+    }
+    out.trim_matches('_').to_string()
+}
+
+/// A rule with extra checks inside one part is `<slug>__<what>`: the part is the base.
+pub fn base_rule(rule: &str) -> &str {
+    rule.split("__").next().unwrap_or(rule)
+}
+
+/// Stand-in file of a finding that is a count (a ratchet that printed only its number).
+pub const COUNT_PATH: &str = "(count)";
+/// Stand-in file of a `*.dme` finding (the old output omits the file name for a single file).
+pub const DME_PATH: &str = "(dme)";
+/// Stand-in file of a `grep -R` finding over a single file operand (printed without the name).
+pub const SINGLE_FILE_PATH: &str = "(file)";
+
+fn strip_ansi(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    let mut chars = s.chars().peekable();
+    while let Some(c) = chars.next() {
+        if c == '\u{1b}' && chars.peek() == Some(&'[') {
+            chars.next();
+            while let Some(&n) = chars.peek() {
+                chars.next();
+                if n.is_ascii_alphabetic() {
+                    break;
+                }
+            }
+        } else {
+            out.push(c);
+        }
+    }
+    out
+}
+
+/// Reads the legacy `check_grep.sh` output (or the engine's text for the same lint).
+///
+/// Old output: hits are attributed to the slug of the `NN- title` header above them; a repeated
+/// title (the script lists some checks twice) is skipped. Lines without a line number (`grep -P`
+/// without `-n`) become line 0, which `compare` treats as "any line of that file". A ratchet that
+/// printed its count instead of its sites becomes one `(count)` finding whose line is the count.
+/// Engine output: `file:line: [check_grep/rule]` lines, and ceiling status lines for the counts.
+pub fn parse_check_grep(text: &str) -> Vec<Finding> {
+    let header = Pat::new(r"^\s*\d\d- (.+?)\s*$");
+    let lineful = Pat::new(r"^((?:code|maps|tgui|html|config)/[^:]*?\.[A-Za-z]+|[^/:]+\.dme):(\d+):");
+    let lineless = Pat::new(r"^((?:code|maps)/[^:]*?\.dmm?|[^/:]+\.dme):");
+    let tagged = Pat::new(r"^(.+?):(\d+): \[check_grep/(\w+)\]");
+    let ceiling = Pat::new(r"^check_grep (\S+)\s+(\d+)\s+\(ceiling \d+\)\s+(\S+)");
+    let dme_bare = Pat::new(r"maps\\.*test");
+    let bare_numbered = Pat::new(r"^(\d+):");
+    let html_file = Pat::new(r"^(code[\\/].*\.dm)$");
+    let html_line = Pat::new(r"^\t\tLine (\d+)$");
+    let counts = [
+        Pat::new(r"^ERROR: (\d+) check_rights\( calls"),
+        Pat::new(r"^ERROR: (\d+) raw \.holder reads"),
+        Pat::new(r"^ERROR: (\d+) 'rights & R_' tests"),
+        Pat::new(r"^ERROR: (\d+) fire_act\(\) overrides"),
+        Pat::new(r"^ERROR: (\d+) non-turf ex_act\(\) overrides"),
+        Pat::new(r"^ERROR: (\d+) atom_break\(\)/set_broken\(\) overrides"),
+    ];
+    let expecting = Pat::new(r"^(\d+) (?:escapes|New|raw slot_flags reads) \(expecting (\d+) or less\)");
+    let mut out: Vec<Finding> = Vec::new();
+    let mut seen = std::collections::BTreeSet::new();
+    let mut cur = String::new();
+    let mut skip = false;
+    let mut ceiling_skip = String::new();
+    let mut html_cur = String::new();
+    for raw in text.lines() {
+        let clean = strip_ansi(raw);
+        // `rg` over a directory prints native separators (`code\modules\x.dm:12:`) on Windows.
+        let unslashed;
+        let mut l = clean.trim_start_matches('\0').trim_end();
+        if let Some(i) = l.find(':') {
+            if l[..i].contains('\\') && (l.starts_with("code") || l.starts_with("maps") || l.starts_with("tgui")) {
+                unslashed = format!("{}{}", l[..i].replace('\\', "/"), &l[i..]);
+                l = &unslashed;
+            }
+        }
+        let mk = |rule: &str, rel: &str, line: u32| Finding { rule: rule.to_string(), rel: rel.replace('\\', "/"), line };
+        if let Some(c) = header.captures(l) {
+            cur = slug(c.s(1));
+            skip = !seen.insert(cur.clone());
+            continue;
+        }
+        if let Some(c) = tagged.captures(l) {
+            let rule = base_rule(c.s(3)).to_string();
+            if c.s(3) == ceiling_skip {
+                continue;
+            }
+            let rel = if rule == "test_map_included" { DME_PATH } else { c.s(1) };
+            out.push(mk(&rule, rel, c.s(2).parse().unwrap_or(0)));
+            continue;
+        }
+        if let Some(c) = ceiling.captures(l) {
+            let rule = base_rule(c.s(1)).to_string();
+            if c.s(3) == "FAIL" {
+                out.push(mk(&rule, COUNT_PATH, c.s(2).parse().unwrap_or(0)));
+                ceiling_skip = c.s(1).to_string();
+            } else {
+                ceiling_skip.clear();
+            }
+            continue;
+        }
+        if cur.is_empty() {
+            continue;
+        }
+        for p in &counts {
+            if let Some(c) = p.captures(l) {
+                out.push(mk(&cur, COUNT_PATH, c.s(1).parse().unwrap_or(0)));
+            }
+        }
+        if let Some(c) = expecting.captures(l) {
+            let (n, max): (u32, u32) = (c.s(1).parse().unwrap_or(0), c.s(2).parse().unwrap_or(0));
+            if n > max {
+                out.push(mk(&cur, COUNT_PATH, n));
+            }
+            continue;
+        }
+        if skip {
+            continue;
+        }
+        match cur.as_str() {
+            "html_tag_matching" => {
+                if let Some(c) = html_file.captures(l) {
+                    html_cur = c.s(1).replace('\\', "/");
+                } else if let Some(c) = html_line.captures(l) {
+                    out.push(mk(&cur, &html_cur, c.s(1).parse().unwrap_or(0)));
+                }
+                continue;
+            }
+            "typescript_react_files" => {
+                if l.starts_with("tgui/") && l.ends_with(".jsx") {
+                    out.push(mk(&cur, l, 0));
+                }
+                continue;
+            }
+            "changelog" => {
+                if let Some(rel) = l.strip_suffix(": FAILED") {
+                    out.push(mk(&cur, rel, 0));
+                }
+                continue;
+            }
+            "blocking_shell_toast_enabled_in_example_config" => {
+                if l.starts_with("config/example/config.txt enables") {
+                    out.push(mk(&cur, "config/example/config.txt", 0));
+                }
+                continue;
+            }
+            "test_map_included" => {
+                if dme_bare.is_match(l) {
+                    out.push(mk(&cur, DME_PATH, 0));
+                }
+                continue;
+            }
+            // `grep -R` over one file operand prints `12:text`, without the file name.
+            "separate_object_health_pools" => {
+                if let Some(c) = bare_numbered.captures(l) {
+                    out.push(mk(&cur, SINGLE_FILE_PATH, c.s(1).parse().unwrap_or(0)));
+                    continue;
+                }
+            }
+            "tgm" => {
+                if l.starts_with("maps/") && l.ends_with(".dmm") && !l.contains(':') {
+                    out.push(mk(&cur, l, 0));
+                }
+                continue;
+            }
+            _ => {}
+        }
+        if let Some(c) = lineful.captures(l) {
+            out.push(mk(&cur, c.s(1), c.s(2).parse().unwrap_or(0)));
+        } else if let Some(c) = lineless.captures(l) {
+            out.push(mk(&cur, c.s(1), 0));
+        }
+    }
+    // The script lists some checks twice; a site with a line number counts once.
+    out.sort();
+    out.dedup_by(|a, b| a.line > 0 && a == b);
+    out
 }
 
 /// How to compare one lint with its legacy script. Paths are relative to the repo root.
@@ -94,6 +288,10 @@ pub struct Finding {
 
 pub fn parse_findings(text: &str, kind: ParseKind) -> Vec<Finding> {
     let tagged = Pat::new(r"^([^:]+?):(\d+): \[([\w/.\-]+)/(\w+)\]");
+    if matches!(kind, ParseKind::CheckGrep) {
+        return parse_check_grep(text);
+    }
+    let tagged = Pat::new(r"^([^\s:]+):(\d+): \[([\w/.\-]+)/(\w+)\]");
     let plain = Pat::new(r"^([^\s:]+\.[A-Za-z]+):(\d+):");
     let report = Pat::new(r"^([^:]+?):(\d+): (\w+)\s*$");
     let bare = Pat::new(r"^\s*([^\s:]+\.[A-Za-z]+):(\d+)\s*$");
@@ -112,7 +310,7 @@ pub fn parse_findings(text: &str, kind: ParseKind) -> Vec<Finding> {
             continue;
         }
         match kind {
-            ParseKind::Tagged => {}
+            ParseKind::Tagged | ParseKind::CheckGrep => {}
             ParseKind::FileLine => {
                 if let Some(c) = plain.captures(l) {
                     out.push(mk("", c.s(1), c.s(2)));
@@ -175,7 +373,36 @@ struct Output {
     text: String,
 }
 
+/// A legacy shell script (`check_grep.sh`). It runs under bash from the repo root, as a copy
+/// without `errexit` (the script aborts at its first hit otherwise, hiding every later check), with a
+/// UTF-8 locale (`grep -P` needs one). `DQ_BASH` names the bash to use (on Windows the first `bash`
+/// that `Command` finds can be the WSL launcher).
+fn run_old_sh(root: &Path, args: &[&str]) -> Output {
+    let src = std::fs::read_to_string(root.join(args[0])).unwrap_or_default();
+    let patched = src.replace("set -euo pipefail", "set -uo pipefail");
+    let name = Path::new(args[0]).file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+    let tmp = std::env::temp_dir().join(format!("dq-analyze-old-{}-{}", std::process::id(), name));
+    let _ = std::fs::write(&tmp, patched);
+    let bash = std::env::var("DQ_BASH").unwrap_or_else(|_| "bash".to_string());
+    let out = Command::new(bash)
+        .arg(tmp.to_string_lossy().replace('\\', "/"))
+        .args(&args[1..])
+        .current_dir(root)
+        .env("LC_ALL", "C.UTF-8")
+        .env("PYTHONIOENCODING", "utf-8")
+        .env("PYTHONUTF8", "1")
+        .output()
+        .unwrap_or_else(|e| panic!("cannot run bash: {}", e));
+    let _ = std::fs::remove_file(&tmp);
+    let mut text = String::from_utf8_lossy(&out.stdout).into_owned();
+    text.push_str(&String::from_utf8_lossy(&out.stderr));
+    Output { code: out.status.code().unwrap_or(-1), text }
+}
+
 fn run_old(root: &Path, args: &[&str]) -> Output {
+    if args.first().map(|a| a.ends_with(".sh")).unwrap_or(false) {
+        return run_old_sh(root, args);
+    }
     let out = Command::new(python())
         .args(args)
         .current_dir(root)
@@ -274,6 +501,19 @@ fn multiset_diff(a: &[Finding], b: &[Finding], limit: usize) -> Vec<String> {
 
 /// Compares findings, ignoring the rule when either side has none.
 fn compare(old: &[Finding], new: &[Finding], what: &str) -> (bool, String) {
+    // An old finding with line 0 had no line number (`grep` without `-n`): it stands for "a hit in
+    // that file", so the engine's findings for the same (rule, file) compare without their lines.
+    let wild: std::collections::BTreeSet<(&str, &str)> = old.iter().filter(|f| f.line == 0).map(|f| (f.rule.as_str(), f.rel.as_str())).collect();
+    let unwilded: Vec<Finding>;
+    let new = if wild.is_empty() {
+        new
+    } else {
+        unwilded = new
+            .iter()
+            .map(|f| if wild.contains(&(f.rule.as_str(), f.rel.as_str())) { Finding { line: 0, ..f.clone() } } else { f.clone() })
+            .collect();
+        &unwilded[..]
+    };
     let strip = old.iter().any(|f| f.rule.is_empty()) || new.iter().any(|f| f.rule.is_empty());
     let (a, b): (Vec<Finding>, Vec<Finding>) = if strip {
         let mut a: Vec<Finding> = old.iter().map(|f| Finding { rule: String::new(), ..f.clone() }).collect();
@@ -301,6 +541,10 @@ fn engine_output(engine: &Engine, lint: &dyn Lint, raw: bool) -> (i32, String) {
 pub fn engine_raw_findings(engine: &Engine, lint: &dyn Lint) -> Vec<Finding> {
     let (run, _, _) = engine.scan(lint);
     let mut v: Vec<Finding> = run.sites.iter().map(|s| Finding { rule: s.rule.clone(), rel: s.rel.clone(), line: s.line }).collect();
+    v.sort();
+    let meta = lint.meta();
+    let scope = engine.scopes.for_lint(meta.name, meta.group);
+    let mut v = lint.parity_normalize(&engine.opts.root, &scope, v);
     v.sort();
     v
 }
@@ -486,7 +730,12 @@ pub fn check_fixtures(real_root: &Path, lint: &dyn Lint, spec: &Parity, bless: b
         if real_root.join("tools").join("dx").exists() {
             copy_dir(&real_root.join("tools").join("dx"), &tmp.join("tools").join("dx"), &|p| p.file_name().map(|n| n == "__pycache__").unwrap_or(false))?;
         }
-        std::fs::write(tmp.join("deepquarry.dme"), "")?;
+        if real_root.join("tools").join("TagMatcher").exists() {
+            copy_dir(&real_root.join("tools").join("TagMatcher"), &tmp.join("tools").join("TagMatcher"), &|p| p.file_name().map(|n| n == "__pycache__").unwrap_or(false))?;
+        }
+        if !tmp.join("deepquarry.dme").exists() {
+            std::fs::write(tmp.join("deepquarry.dme"), "")?;
+        }
         Ok(())
     })();
     if let Err(e) = staged {
@@ -556,5 +805,36 @@ pub fn baseline_file(lint: &dyn Lint) -> Option<&'static str> {
     match lint.meta().policy {
         Policy::Sites { baseline, .. } | Policy::Ceilings { baseline, .. } => Some(baseline),
         _ => None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn slug_collapses_punctuation() {
+        assert_eq!(slug("step_[xy]"), "step_xy");
+        assert_eq!(slug(".proc ref syntax"), slug("proc ref syntax"));
+        assert_eq!(slug("one revive path: return_from_death()"), "one_revive_path_return_from_death");
+        assert_eq!(base_rule("a_b__2"), "a_b");
+    }
+
+    #[test]
+    fn check_grep_output_is_read_per_part() {
+        let old = "\u{1b}[0;32m 01- step_[xy]\u{1b}[0m\nmaps/a.dmm:12:step_x = 1\nmaps/a.dmm:12:step_x = 1\n\u{1b}[0;32m 02- ambiguous bitwise or\u{1b}[0m\ncode/a.dm:\tif(a & B | C)\n\u{1b}[0;32m 03- ambiguous bitwise or\u{1b}[0m\ncode/a.dm:\tif(a & B | C)\n\u{1b}[0;32m 04- changelog\u{1b}[0m\nhtml/changelogs/example.yml: FAILED\n\u{1b}[0;32m 05- color macros\u{1b}[0m\n3 escapes (expecting 1 or less)\n\u{1b}[0;32m 06- tools: act\u{1b}[0m\ncode\\x\\y.dm:7:text\n";
+        let got = parse_check_grep(old);
+        let f = |r: &str, rel: &str, line: u32| Finding { rule: r.into(), rel: rel.into(), line };
+        let mut want = vec![
+            f("step_xy", "maps/a.dmm", 12),
+            f("ambiguous_bitwise_or", "code/a.dm", 0),
+            f("changelog", "html/changelogs/example.yml", 0),
+            f("color_macros", COUNT_PATH, 3),
+            f("tools_act", "code/x/y.dm", 7),
+        ];
+        want.sort();
+        assert_eq!(got, want);
+        let new = "check_grep heat_ratchet__x      9  (ceiling 6)  FAIL (rose above its ceiling 6)\ncode/a.dm:1: [check_grep/heat_ratchet__x] t -- h\ncode/b.dm:2: [check_grep/other] t -- h\n";
+        assert_eq!(parse_check_grep(new), vec![f("heat_ratchet", COUNT_PATH, 9), f("other", "code/b.dm", 2)]);
     }
 }

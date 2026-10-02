@@ -259,6 +259,20 @@ pub trait Lint: Send + Sync {
         Ok(String::new())
     }
 
+    /// Repo files outside this lint's `select` that its `scan_tree` reads (`*.dme`, a config file,
+    /// a directory listing): their content hash is mixed into the tree memo key so editing one
+    /// reruns `scan_tree`. Default: none.
+    fn extra_inputs(&self, _tree: &Tree) -> Vec<String> {
+        Vec::new()
+    }
+
+    /// Parity only: rewrites the engine's raw findings into the shape the legacy script's output
+    /// can be compared in (a script that prints counts instead of sites, merges duplicate checks,
+    /// ...). `root` is the tree that was scanned. Default: unchanged.
+    fn parity_normalize(&self, _root: &std::path::Path, _scope: &LintScope, findings: Vec<crate::parity::Finding>) -> Vec<crate::parity::Finding> {
+        findings
+    }
+
     /// Fixture tests (the old `--selftest`). Err carries the failure.
     fn selftest(&self) -> Result<String, String> {
         Ok(String::new())
