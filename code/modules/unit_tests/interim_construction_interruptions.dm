@@ -32,8 +32,11 @@
 		var/list/machines_before = turf_contents_of_type(T, /obj/machinery/autolathe)
 		stage = "10: TEST_ASSERT(wire.perform(actor, frame, cable), \"The real timed wiring interaction must start\")"
 		TEST_ASSERT(wire.perform(actor, frame, cable), "The real timed wiring interaction must start")
+		stage = "checking TEST_ASSERT(LAZYLEN(actor.do_afters)"
 		TEST_ASSERT(LAZYLEN(actor.do_afters), "Wiring must register an actual pending action")
+		stage = "checking TEST_ASSERT_EQUAL(frame.state, FRAME_FASTENED"
 		TEST_ASSERT_EQUAL(frame.state, FRAME_FASTENED, "Starting wiring must not complete the frame state change")
+		stage = "checking TEST_ASSERT_EQUAL(cable.get_amount(), 6"
 		TEST_ASSERT_EQUAL(cable.get_amount(), 6, "Starting wiring must not consume cable before completion")
 		if(drop_cable)
 			TEST_ASSERT(actor.drop_from_inventory(cable), "Dropping the held cable must succeed")
@@ -43,10 +46,20 @@
 			TEST_ASSERT_EQUAL(actor.loc, away, "The actor interruption must actually move the actor")
 		stage = "11: scheduler_advance((3 SECONDS) / SECONDS)"
 		scheduler_advance((3 SECONDS) / SECONDS)
+		stage = "11a: fixture survival after cancelled action"
+		TEST_ASSERT(!QDELETED(frame), "Cancellation must preserve the frame fixture")
+		TEST_ASSERT(!QDELETED(actor), "Cancellation must preserve the actor fixture")
+		TEST_ASSERT(!QDELETED(cable), "Cancellation must preserve the cable fixture")
+		TEST_ASSERT(!QDELETED(board), "Cancellation must preserve the board fixture")
+		stage = "checking TEST_ASSERT_EQUAL(frame.state, FRAME_FASTENED"
 		TEST_ASSERT_EQUAL(frame.state, FRAME_FASTENED, "Interrupted wiring must preserve the fastened frame")
+		stage = "checking TEST_ASSERT_EQUAL(cable.get_amount(), 6"
 		TEST_ASSERT_EQUAL(cable.get_amount(), 6, "Interrupted wiring must consume no cable")
+		stage = "checking TEST_ASSERT_EQUAL(frame.circuit, board"
 		TEST_ASSERT_EQUAL(frame.circuit, board, "Interrupted wiring must preserve the frame's board reference")
+		stage = "checking TEST_ASSERT_EQUAL(board.loc, frame"
 		TEST_ASSERT_EQUAL(board.loc, frame, "Interrupted wiring must leave the board owned by the frame")
+		stage = "checking TEST_ASSERT(!LAZYLEN(actor.do_afters)"
 		TEST_ASSERT(!LAZYLEN(actor.do_afters), "The interrupted action must release its pending-action entry")
 		stage = "12: var/list/machines_after = turf_contents_of_type(T, /obj/machinery/autolathe)"
 		var/list/machines_after = turf_contents_of_type(T, /obj/machinery/autolathe)
@@ -59,14 +72,21 @@
 		TEST_ASSERT(wire.perform(actor, frame, cable), "Retrying the interrupted edge must start a fresh timed action")
 		stage = "14: scheduler_advance((0.5 SECONDS) / SECONDS)"
 		scheduler_advance((0.5 SECONDS) / SECONDS)
+		stage = "checking TEST_ASSERT_EQUAL(frame.state, FRAME_FASTENED"
 		TEST_ASSERT_EQUAL(frame.state, FRAME_FASTENED, "The retry must still wait for the real wiring delay")
+		stage = "checking TEST_ASSERT_EQUAL(cable.get_amount(), 6"
 		TEST_ASSERT_EQUAL(cable.get_amount(), 6, "The pending retry must preserve its cable")
 		stage = "15: scheduler_advance((2 SECONDS) / SECONDS)"
 		scheduler_advance((2 SECONDS) / SECONDS)
+		stage = "checking TEST_ASSERT_EQUAL(frame.state, FRAME_WIRED"
 		TEST_ASSERT_EQUAL(frame.state, FRAME_WIRED, "An uninterrupted retry must finish wiring")
+		stage = "checking TEST_ASSERT_EQUAL(cable.get_amount(), 1"
 		TEST_ASSERT_EQUAL(cable.get_amount(), 1, "The successful retry must consume exactly five cable lengths")
+		stage = "checking TEST_ASSERT_EQUAL(frame.circuit, board"
 		TEST_ASSERT_EQUAL(frame.circuit, board, "Successful wiring must retain the original board")
+		stage = "checking TEST_ASSERT_EQUAL(board.loc, frame"
 		TEST_ASSERT_EQUAL(board.loc, frame, "Successful wiring must retain board ownership")
+		stage = "checking TEST_ASSERT(!LAZYLEN(actor.do_afters)"
 		TEST_ASSERT(!LAZYLEN(actor.do_afters), "The successful retry must release its pending-action entry")
 	catch(var/exception/e)
 		TEST_FAIL("Timed frame runtime during [stage]: [e] ([e.file]:[e.line])\n[e.desc]")
