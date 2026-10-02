@@ -10,6 +10,7 @@
 	TEST_ASSERT(!stake.density && target.density, "A pinned target must replace the stake's blocking surface")
 	qdel(target)
 	TEST_ASSERT_NULL(stake.pinned_target, "Deleting the target must clear the stake's relation")
+	rx_drain() // Deliver the stake's real relation-change reaction.
 	TEST_ASSERT(stake.density, "Deleting the pinned target must restore the stake's blocking surface")
 	TEST_ASSERT(!QDELETED(stake), "Target deletion must preserve its stake")
 

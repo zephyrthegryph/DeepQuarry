@@ -15,16 +15,6 @@
 			to_chat(O, span_warning("\The [src] breaks into tiny pieces and collapses!"))
 	return ..()
 
-// the stake it was pinned to forgets it and blocks again.
-/obj/item/target/lifecycle_prerelease()
-	// if a target is deleted and associated with a stake, force stake to forget
-	for(var/obj/structure/target_stake/T in view(3,src))
-		if(T.pinned_target == src)
-			rel_clear(T, nameof(T.pinned_target)) // the view clears anyway; the stake still blocks again
-			T.set_density(TRUE)
-			break
-	..()
-
 /obj/item/target/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
 	// After target moves, check for nearby stakes. If associated, move to target

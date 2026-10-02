@@ -72,3 +72,11 @@
 	return TRUE
 
 // pinned_target sits on the stake's turf (not in it): a one-sided REL view.
+
+/// Relation teardown clears the pinned target before the target's own hooks run.
+/obj/structure/target_stake/reactions()
+	. = ..()
+	. += on_change(list(nameof(pinned_target)), PROC_REF(pinned_target_changed))
+
+/obj/structure/target_stake/proc/pinned_target_changed(list/keys)
+	set_density(!pinned_target)
