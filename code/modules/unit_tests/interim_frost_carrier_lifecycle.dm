@@ -12,6 +12,8 @@
 	TEST_ASSERT_NULL(locate_within(T, /obj/item/projectile/bullet/frostshotgun), "the spent carrier leaves no projectile on its original turf")
 	TEST_ASSERT_EQUAL(length(contents_of(T, /obj/item/projectile/energy/frostsphere)), 0, "range expiry alone does not create shotgun submunitions")
 	var/obj/item/projectile/bullet/frostshotgun/parked = allocate(/obj/item/projectile/bullet/frostshotgun, null)
+	parked.moveToNullspace()
+	TEST_ASSERT_NULL(parked.loc, "the unlaunched fixture is actually in nullspace before range dispatch")
 	parked.range = 1
 	parked.Range()
 	TEST_ASSERT(!QDELETED(parked), "the existing nullspace range guard preserves an unlaunched carrier")
