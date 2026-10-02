@@ -331,8 +331,7 @@
 	if(!pref)
 		return
 
-	// ALLOW(cooldown): elapsed since the last area change against a per-client preference interval
-	if(world.time >= (self.lastareachange + pref MINUTES)) // Every 5 minutes (by default, set per-client), we're going to run a 35% chance (by default, also set per-client) to play ambience.
+	if(ELAPSED(self, lastareachange, CLOCK_WORLD) >= pref MINUTES) // Every 5 minutes (by default, set per-client), we're going to run a 35% chance (by default, also set per-client) to play ambience.
 		var/area/A = get_area(self)
 		if(A)
 			EXPIRY_STAMP(self, lastareachange, CLOCK_WORLD) // This will refresh the last area change to prevent this call happening LITERALLY every life tick.
