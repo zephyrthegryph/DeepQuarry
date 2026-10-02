@@ -140,7 +140,7 @@ DECLARE_EMAG(/obj/machinery/computer/looking_glass, PROC_REF(on_emag), null, nul
 
 //This could all be done better, but it works for now.
 // the looking glass unloads its program.
-/obj/machinery/computer/looking_glass/lifecycle_prerelease()
+/obj/machinery/computer/looking_glass/on_destroy(force)
 	unload_program()
 	..()
 

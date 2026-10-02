@@ -54,7 +54,7 @@
 	setEmotion(16)
 
 // the pAI dies with its card (no throwing friend pAIs into the singularity to respawn).
-/obj/item/paicard/lifecycle_prerelease()
+/obj/item/paicard/on_destroy(force)
 	if(!QDELETED(pai))
 		pai.death(0)
 	..()

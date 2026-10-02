@@ -62,7 +62,7 @@
 	register_entopic()
 
 // it is unregistered from its viewers.
-/datum/entopic/lifecycle_prerelease()
+/datum/entopic/on_destroy(force)
 	unregister_entopic()
 	..()
 

@@ -232,7 +232,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/suspension_gen, PROC_REF(on_emag), null)
 	update_icon()
 
 // its field deactivates.
-/obj/machinery/suspension_gen/lifecycle_prerelease()
+/obj/machinery/suspension_gen/on_destroy(force)
 	deactivate()
 	..()
 

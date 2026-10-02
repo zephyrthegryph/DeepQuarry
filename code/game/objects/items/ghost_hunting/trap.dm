@@ -40,7 +40,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/ghost_trap, PERIODIC_SLOW, "captured_entity")
 
 
 // a captured entity is released onto the turf.
-/obj/item/ghost_trap/lifecycle_prerelease()
+/obj/item/ghost_trap/on_destroy(force)
 	var/mob/our_entity = captured_entity
 	if(our_entity)
 		remove_trait(our_entity, TRAIT_NO_TRANSFORM, src)
