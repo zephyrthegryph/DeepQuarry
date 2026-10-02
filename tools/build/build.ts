@@ -1256,11 +1256,13 @@ function recordSweepHashes(results: Record<string, UnitTestEntry>): void {
   }
 }
 
-type TestTier = 'normal' | 'all' | 'exhaustive';
+type TestTier = 'normal' | 'all' | 'exhaustive' | 'e0';
 
 /** `--tier=`: `normal` (the default: every integration merge), `all` (normal
- * plus the exhaustive whole-type sweeps: CI and nightly) or `exhaustive`
- * (only those sweeps). The older names still work: fast = normal,
+ * plus the exhaustive whole-type sweeps: CI and nightly), `exhaustive`
+ * (only those sweeps) or `e0` (only the E0 proofs, which cannot pass until
+ * the engines land: no other tier runs them, doc/testing.md "The E0 proofs").
+ * The older names still work: fast = normal,
  * full = all, sweep = exhaustive. `--exhaustive` is shorthand for `--tier=all`.
  * The world does the filtering (the test-tier world param against each
  * test's `tier` var); a --focus run ignores the tier and runs what it names. */
@@ -1268,11 +1270,11 @@ function resolveTier(get: any): TestTier {
   if (get(ExhaustiveParameter)) return 'all';
   const raw = ((get(TierParameter) as string | null) ?? 'normal').toLowerCase();
   const aliases: Record<string, TestTier> = {
-    normal: 'normal', fast: 'normal', all: 'all', full: 'all', exhaustive: 'exhaustive', sweep: 'exhaustive',
+    normal: 'normal', fast: 'normal', all: 'all', full: 'all', exhaustive: 'exhaustive', sweep: 'exhaustive', e0: 'e0',
   };
   const tier = aliases[raw];
   if (!tier) {
-    Juke.logger.error(`--tier=${raw}: expected normal, all or exhaustive.`);
+    Juke.logger.error(`--tier=${raw}: expected normal, all, exhaustive or e0.`);
     throw new Juke.ExitCode(2);
   }
   return tier;
@@ -1324,7 +1326,15 @@ function sweepTestPredicate(): (name: string) => boolean {
   return declaredVarPredicate('is_sweep_test', (v) => v === 'TRUE' || v === '1');
 }
 
-function tierIncludes(tier: TestTier, exhaustive: boolean): boolean {
+/** Whether a unit-test type is an E0 proof (its `tier` var is TEST_TIER_E0). */
+function e0TestPredicate(): (name: string) => boolean {
+  return declaredVarPredicate('tier', (v) => v === 'TEST_TIER_E0');
+}
+
+/** The E0 proofs belong to the `e0` tier alone: `all` does not include them. */
+function tierIncludes(tier: TestTier, exhaustive: boolean, e0 = false): boolean {
+  if (e0) return tier === 'e0';
+  if (tier === 'e0') return false;
   if (tier === 'all') return true;
   return exhaustive ? tier === 'exhaustive' : tier === 'normal';
 }
@@ -1441,7 +1451,8 @@ function assignTestShards(shardCount: number, selection: Set<string> | null, tie
   }
   if (selection) for (const name of [...known]) if (!selection.has(name)) known.delete(name);
   const isExhaustive = exhaustiveTestPredicate();
-  for (const name of [...known]) if (!tierIncludes(tier, isExhaustive(name))) known.delete(name);
+  const isE0 = e0TestPredicate();
+  for (const name of [...known]) if (!tierIncludes(tier, isExhaustive(name), isE0(name))) known.delete(name);
   const DEFAULT_WEIGHT_DS = 5; // ~0.5s: most non-sweep tests are quick
   const sorted = [...known].sort(
     (a, b) => (durations.get(b) ?? DEFAULT_WEIGHT_DS) - (durations.get(a) ?? DEFAULT_WEIGHT_DS),

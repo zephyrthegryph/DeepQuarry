@@ -28,7 +28,7 @@ DECLARE_REPEAT(/obj/machinery/computer/prison_shuttle, 0.5 SECONDS, prison_proce
 
 // TGUI migration. Replaces the browse() + Topic dispatch
 // UI with PrisonShuttleConsole.tsx. Drops the `temp` "Shuttle sent"
-// notification state — the to_chat() notice already covers that flow.
+// notification state; the chat notice already covers that flow.
 /obj/machinery/computer/prison_shuttle/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/machine_hand/prison_shuttle_open_ui,
