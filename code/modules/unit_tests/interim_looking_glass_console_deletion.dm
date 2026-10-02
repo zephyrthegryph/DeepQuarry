@@ -8,7 +8,9 @@
 /// Deleting a running console must actually end its independent area's program.
 /datum/unit_test/interim_looking_glass_console_deletion/Run()
 	var/turf/T = test_floor()
-	var/area/looking_glass/interim_deletion_fixture/display_area = allocate(/area/looking_glass/interim_deletion_fixture)
+	var/area/looking_glass/interim_deletion_fixture/display_area = new /area/looking_glass/interim_deletion_fixture()
+	own(display_area)
+	TEST_ASSERT(T.loc != display_area, "the independent display-area fixture must not take ownership of the test turf")
 	var/obj/machinery/computer/looking_glass/interim_deletion_fixture/console = allocate(/obj/machinery/computer/looking_glass/interim_deletion_fixture, T)
 	TEST_ASSERT_EQUAL(console.my_area(), display_area, "The real Initialize search must bind the matched display area")
 	TEST_ASSERT(!display_area.active, "The actual independent display area must begin inactive")
