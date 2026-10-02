@@ -1,0 +1,142 @@
+/obj/machinery/autolathe/interim_wire_ui_probe
+	var/refresh_actor_ref
+	var/refresh_count = 0
+
+/obj/machinery/autolathe/interim_wire_ui_probe/update_tgui_static_data(mob/user, datum/tgui/ui)
+	refresh_actor_ref = user ? REF(user) : null
+	refresh_count++
+	return ..()
+
+/datum/unit_test/interim_autolathe_wire_actor/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)
+	var/obj/machinery/autolathe/interim_wire_ui_probe/machine = allocate(/obj/machinery/autolathe/interim_wire_ui_probe, T)
+	var/datum/wires/autolathe/wires = machine.wires
+	TEST_ASSERT(istype(wires), "the real machine initializes its owned wire controller")
+	TEST_ASSERT(!machine.hacked && !machine.disabled, "the machine starts unhacked and enabled")
+	wires.pulse(WIRE_ELECTRIFY, actor)
+	TEST_ASSERT(machine.shocked, "the autolathe electrification pulse activates its real shock flag")
+	scheduler_advance((6 SECONDS) / (1 SECOND))
+	TEST_ASSERT(!machine.shocked, "the electrification pulse expires through its scheduled reset")
+	wires.cut(WIRE_LATHE_HACK, actor)
+	TEST_ASSERT(wires.is_cut(WIRE_LATHE_HACK) && machine.hacked, "cutting the hack wire unlocks hacked designs")
+	TEST_ASSERT_EQUAL(machine.refresh_actor_ref, REF(actor), "cut refresh forwards the explicit actor")
+	wires.cut(WIRE_LATHE_HACK, actor)
+	TEST_ASSERT(!wires.is_cut(WIRE_LATHE_HACK) && !machine.hacked, "mending the hack wire removes hacked designs")
+	TEST_ASSERT_EQUAL(machine.refresh_count, 2, "cut and mend each refresh once")
+	wires.pulse(WIRE_LATHE_HACK, actor)
+	TEST_ASSERT(machine.hacked, "pulsing temporarily unlocks hacked designs")
+	TEST_ASSERT_EQUAL(machine.refresh_actor_ref, REF(actor), "pulse refresh forwards the actor")
+	scheduler_advance((6 SECONDS) / (1 SECOND))
+	TEST_ASSERT(!machine.hacked, "the real scheduled callback expires the pulse")
+	TEST_ASSERT_EQUAL(machine.refresh_count, 4, "pulse and its scheduled reset each refresh once")
+	TEST_ASSERT_EQUAL(machine.refresh_actor_ref, REF(actor), "the scheduled reset retains the initiating actor")
+	wires.pulse(WIRE_LATHE_HACK, actor)
+	wires.cut(WIRE_LATHE_HACK, actor)
+	scheduler_advance((6 SECONDS) / (1 SECOND))
+	TEST_ASSERT(machine.hacked, "cutting during the pulse prevents scheduled reset")
+	var/refresh_before = machine.refresh_count
+	wires.pulse(WIRE_LATHE_HACK, actor)
+	TEST_ASSERT_EQUAL(machine.refresh_count, refresh_before, "a cut wire refuses further pulses")
+	wires.cut(WIRE_LATHE_HACK, actor)
+	TEST_ASSERT(!machine.hacked, "mending restores the normal design gate")
+	wires.cut(WIRE_LATHE_DISABLE, actor)
+	TEST_ASSERT(machine.disabled, "cutting the disable wire disables the machine")
+	wires.cut(WIRE_LATHE_DISABLE, actor)
+	TEST_ASSERT(!machine.disabled, "mending enables the machine again")
+	wires.pulse(WIRE_LATHE_DISABLE, actor)
+	TEST_ASSERT(machine.disabled, "disable pulse disables the machine temporarily")
+	scheduler_advance((6 SECONDS) / (1 SECOND))
+	TEST_ASSERT(!machine.disabled, "the real scheduled disable reset restores operation")
+/obj/machinery/rnd/production/circuit_imprinter/interim_wire_ui_probe
+	var/refresh_actor_ref
+	var/refresh_count = 0
+
+/obj/machinery/rnd/production/circuit_imprinter/interim_wire_ui_probe/update_tgui_static_data(mob/user, datum/tgui/ui)
+	refresh_actor_ref = user ? REF(user) : null
+	refresh_count++
+	return ..()
+
+/datum/unit_test/interim_circuit_imprinter_wire_actor/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)
+	var/obj/machinery/rnd/production/circuit_imprinter/interim_wire_ui_probe/machine = allocate(/obj/machinery/rnd/production/circuit_imprinter/interim_wire_ui_probe, T)
+	var/datum/wires/circuit_imprinter/wires = machine.wires
+	TEST_ASSERT(istype(wires), "the real machine initializes its owned wire controller")
+	TEST_ASSERT(!machine.hacked && !machine.disabled, "the machine starts unhacked and enabled")
+	wires.cut(WIRE_LATHE_HACK, actor)
+	TEST_ASSERT(wires.is_cut(WIRE_LATHE_HACK) && machine.hacked, "cutting the hack wire unlocks hacked designs")
+	TEST_ASSERT_EQUAL(machine.refresh_actor_ref, REF(actor), "cut refresh forwards the explicit actor")
+	wires.cut(WIRE_LATHE_HACK, actor)
+	TEST_ASSERT(!wires.is_cut(WIRE_LATHE_HACK) && !machine.hacked, "mending the hack wire removes hacked designs")
+	TEST_ASSERT_EQUAL(machine.refresh_count, 2, "cut and mend each refresh once")
+	wires.pulse(WIRE_LATHE_HACK, actor)
+	TEST_ASSERT(machine.hacked, "pulsing temporarily unlocks hacked designs")
+	TEST_ASSERT_EQUAL(machine.refresh_actor_ref, REF(actor), "pulse refresh forwards the actor")
+	scheduler_advance((6 SECONDS) / (1 SECOND))
+	TEST_ASSERT(!machine.hacked, "the real scheduled callback expires the pulse")
+	TEST_ASSERT_EQUAL(machine.refresh_count, 4, "pulse and its scheduled reset each refresh once")
+	TEST_ASSERT_EQUAL(machine.refresh_actor_ref, REF(actor), "the scheduled reset retains the initiating actor")
+	wires.pulse(WIRE_LATHE_HACK, actor)
+	wires.cut(WIRE_LATHE_HACK, actor)
+	scheduler_advance((6 SECONDS) / (1 SECOND))
+	TEST_ASSERT(machine.hacked, "cutting during the pulse prevents scheduled reset")
+	var/refresh_before = machine.refresh_count
+	wires.pulse(WIRE_LATHE_HACK, actor)
+	TEST_ASSERT_EQUAL(machine.refresh_count, refresh_before, "a cut wire refuses further pulses")
+	wires.cut(WIRE_LATHE_HACK, actor)
+	TEST_ASSERT(!machine.hacked, "mending restores the normal design gate")
+	wires.cut(WIRE_LATHE_DISABLE, actor)
+	TEST_ASSERT(machine.disabled, "cutting the disable wire disables the machine")
+	wires.cut(WIRE_LATHE_DISABLE, actor)
+	TEST_ASSERT(!machine.disabled, "mending enables the machine again")
+	wires.pulse(WIRE_LATHE_DISABLE, actor)
+	TEST_ASSERT(machine.disabled, "disable pulse disables the machine temporarily")
+	scheduler_advance((6 SECONDS) / (1 SECOND))
+	TEST_ASSERT(!machine.disabled, "the real scheduled disable reset restores operation")
+/obj/machinery/rnd/production/protolathe/interim_wire_ui_probe
+	var/refresh_actor_ref
+	var/refresh_count = 0
+
+/obj/machinery/rnd/production/protolathe/interim_wire_ui_probe/update_tgui_static_data(mob/user, datum/tgui/ui)
+	refresh_actor_ref = user ? REF(user) : null
+	refresh_count++
+	return ..()
+
+/datum/unit_test/interim_protolathe_wire_actor/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)
+	var/obj/machinery/rnd/production/protolathe/interim_wire_ui_probe/machine = allocate(/obj/machinery/rnd/production/protolathe/interim_wire_ui_probe, T)
+	var/datum/wires/protolathe/wires = machine.wires
+	TEST_ASSERT(istype(wires), "the real machine initializes its owned wire controller")
+	TEST_ASSERT(!machine.hacked && !machine.disabled, "the machine starts unhacked and enabled")
+	wires.cut(WIRE_LATHE_HACK, actor)
+	TEST_ASSERT(wires.is_cut(WIRE_LATHE_HACK) && machine.hacked, "cutting the hack wire unlocks hacked designs")
+	TEST_ASSERT_EQUAL(machine.refresh_actor_ref, REF(actor), "cut refresh forwards the explicit actor")
+	wires.cut(WIRE_LATHE_HACK, actor)
+	TEST_ASSERT(!wires.is_cut(WIRE_LATHE_HACK) && !machine.hacked, "mending the hack wire removes hacked designs")
+	TEST_ASSERT_EQUAL(machine.refresh_count, 2, "cut and mend each refresh once")
+	wires.pulse(WIRE_LATHE_HACK, actor)
+	TEST_ASSERT(machine.hacked, "pulsing temporarily unlocks hacked designs")
+	TEST_ASSERT_EQUAL(machine.refresh_actor_ref, REF(actor), "pulse refresh forwards the actor")
+	scheduler_advance((6 SECONDS) / (1 SECOND))
+	TEST_ASSERT(!machine.hacked, "the real scheduled callback expires the pulse")
+	TEST_ASSERT_EQUAL(machine.refresh_count, 4, "pulse and its scheduled reset each refresh once")
+	TEST_ASSERT_EQUAL(machine.refresh_actor_ref, REF(actor), "the scheduled reset retains the initiating actor")
+	wires.pulse(WIRE_LATHE_HACK, actor)
+	wires.cut(WIRE_LATHE_HACK, actor)
+	scheduler_advance((6 SECONDS) / (1 SECOND))
+	TEST_ASSERT(machine.hacked, "cutting during the pulse prevents scheduled reset")
+	var/refresh_before = machine.refresh_count
+	wires.pulse(WIRE_LATHE_HACK, actor)
+	TEST_ASSERT_EQUAL(machine.refresh_count, refresh_before, "a cut wire refuses further pulses")
+	wires.cut(WIRE_LATHE_HACK, actor)
+	TEST_ASSERT(!machine.hacked, "mending restores the normal design gate")
+	wires.cut(WIRE_LATHE_DISABLE, actor)
+	TEST_ASSERT(machine.disabled, "cutting the disable wire disables the machine")
+	wires.cut(WIRE_LATHE_DISABLE, actor)
+	TEST_ASSERT(!machine.disabled, "mending enables the machine again")
+	wires.pulse(WIRE_LATHE_DISABLE, actor)
+	TEST_ASSERT(machine.disabled, "disable pulse disables the machine temporarily")
+	scheduler_advance((6 SECONDS) / (1 SECOND))
+	TEST_ASSERT(!machine.disabled, "the real scheduled disable reset restores operation")

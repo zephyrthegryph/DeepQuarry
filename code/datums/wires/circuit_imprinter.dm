@@ -22,25 +22,25 @@
 		return TRUE
 	return FALSE
 
-/datum/wires/circuit_imprinter/on_cut(wire, mend)
+/datum/wires/circuit_imprinter/on_cut(wire, mend, mob/user)
 	var/obj/machinery/rnd/production/circuit_imprinter/A = holder
 	switch(wire)
 		if(WIRE_LATHE_HACK)
 			A.hacked = !mend
-			A.update_tgui_static_data(usr)
+			A.update_tgui_static_data(user)
 		if(WIRE_LATHE_DISABLE)
 			A.disabled = !mend
 	..()
 
-/datum/wires/circuit_imprinter/on_pulse(wire)
+/datum/wires/circuit_imprinter/on_pulse(wire, mob/user)
 	if(is_cut(wire))
 		return
 	var/obj/machinery/rnd/production/circuit_imprinter/A = holder
 	switch(wire)
 		if(WIRE_LATHE_HACK)
 			A.hacked = !A.hacked
-			A.update_tgui_static_data(usr)
-			om_after(src, 5 SECONDS, PROC_REF(reset_hacked), WIRE_LATHE_HACK, usr)
+			A.update_tgui_static_data(user)
+			om_after(src, 5 SECONDS, PROC_REF(reset_hacked), WIRE_LATHE_HACK, user)
 		if(WIRE_LATHE_DISABLE)
 			A.disabled = !A.disabled
 			om_after(src, 5 SECONDS, PROC_REF(reset_disable), WIRE_LATHE_DISABLE)
