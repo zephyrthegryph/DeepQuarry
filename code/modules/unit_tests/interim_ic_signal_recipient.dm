@@ -1,4 +1,4 @@
-#include "../integrated_electronics/_defines.dm"
+#define INTERIM_IC_INPUT_SELECTOR "input"
 
 /// Observe actual audible delivery while retaining the real mob message implementation.
 /mob/living/carbon/human/interim_ic_beep_listener
@@ -18,14 +18,14 @@
 	var/obj/item/binoculars/source = allocate(/obj/item/binoculars, T)
 	var/datum/signal/packet = allocate(/datum/signal)
 	rel_set(packet, nameof(packet.source), source)
-	packet.encryption = circuit.get_pin_data(IC_INPUT, 2) + 1
+	packet.encryption = circuit.get_pin_data(INTERIM_IC_INPUT_SELECTOR, 2) + 1
 	circuit.receive_signal(packet)
 	TEST_ASSERT_EQUAL(listener.beeps_heard, 0, "incorrect encryption produces no audible receive notification")
-	packet.encryption = circuit.get_pin_data(IC_INPUT, 2)
+	packet.encryption = circuit.get_pin_data(INTERIM_IC_INPUT_SELECTOR, 2)
 	circuit.receive_signal(packet)
 	TEST_ASSERT_EQUAL(listener.beeps_heard, 1, "a real clientless recipient receives the accepted signal's beep")
 	rel_set(packet, nameof(packet.source), circuit)
 	circuit.receive_signal(packet)
 	TEST_ASSERT_EQUAL(listener.beeps_heard, 1, "the circuit ignores its own signal without another beep")
 
-#include "../integrated_electronics/~defines/~defines.dm"
+#undef INTERIM_IC_INPUT_SELECTOR
