@@ -175,8 +175,13 @@ GLOBAL_LIST_EMPTY(om_watch_registry)
 /// to walk every watch in the registry for every dirty mixture.
 GLOBAL_LIST_EMPTY(om_gas_watches_by_mixture)
 
+/// The registry key of `entity`'s watches: its OM handle ("id:gen"), which arming allocates (the watch's
+/// entity_ref) and which still names it while it is being deleted (om_handle_of()); null for an entity that
+/// never had one, so never armed anything. Not its \ref text: a datum's first \ref string is a new
+/// string, and at boot, with every machine's first wake arming in one pass, making one cost a millisecond
+/// or more (HE pipes were half a second of that pass on Southern Cross).
 /proc/om_watch_entity_key(datum/entity)
-	return REF(entity)
+	return om_handle_of(entity)
 
 /proc/om_watch_lookup(datum/entity, watch_id)
 	var/list/entity_watches = GLOB.om_watch_registry[om_watch_entity_key(entity)]
@@ -302,7 +307,10 @@ GLOBAL_LIST_EMPTY(om_gas_native_watches)
 	om_watch_dispatch_gas(mixture_id, change_mask, observation, observation_index)
 
 /proc/om_watch_register(datum/om_watch/W)
-	var/key = om_watch_entity_key(om_resolve(W.entity_ref))
+	// The watch's entity_ref is its entity's handle: the registry key (om_watch_entity_key()).
+	var/key = W.entity_ref
+	if(!key)
+		return
 	var/list/entity_watches = GLOB.om_watch_registry[key]
 	if(!entity_watches)
 		entity_watches = list()
