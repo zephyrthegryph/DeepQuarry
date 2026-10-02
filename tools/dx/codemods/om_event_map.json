@@ -891,6 +891,7 @@
   "target": "review",
   "tests": [
    "code/modules/unit_tests/dq_containment_tests.dm",
+   "code/modules/unit_tests/interim_implantchair_actor.dm",
    "code/modules/unit_tests/interim_resleever_actor.dm"
   ]
  },
