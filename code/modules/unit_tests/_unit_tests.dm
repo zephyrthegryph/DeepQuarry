@@ -485,6 +485,8 @@
 #include "interim_prerelease_consequences.dm"
 #include "interim_robobag_tag_spill.dm"
 #include "interim_heavy_cable_replacement.dm"
+#include "interim_id_cache.dm"
+#include "interim_airlock_history.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
