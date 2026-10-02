@@ -32,11 +32,34 @@ pub struct ResourceFingerprintStats {
     pub disk_records: usize,
 }
 
+/// Payload-free immutable identities captured by the real fingerprint query.
+/// Private fields prevent callers from inventing content IDs or file stamps.
+#[derive(Clone,Debug)]
+pub struct ResourceArchiveInputs {
+    requests:Vec<ResourceRequest>,
+    pub(crate) catalog:super::ResourceCatalog,
+    pub(crate) inputs:Vec<(ResourceRequest,u64,Option<FileStamp>)>,
+    canonical_stamps:BTreeMap<PathBuf,FileStamp>,
+    all_stamped:bool,
+}
+impl ResourceArchiveInputs {
+    pub fn matches(&self,requests:&[ResourceRequest])->bool {self.requests==requests}
+    pub fn fingerprint(&self)->[u8;32] {self.catalog.fingerprint}
+    pub fn resident_bytes(&self)->usize {self.requests.iter().map(|request|request.archive_name.len()+request.disk_path.as_os_str().len()*2+96).sum::<usize>()+self.canonical_stamps.keys().map(|path|path.as_os_str().len()*2+192).sum::<usize>()+self.catalog.entries.iter().map(|entry|entry.archive_name.len()+80).sum::<usize>()}
+    pub(crate) fn current(&self)->bool {
+        if !self.all_stamped {return false;}
+        if std::env::var("DM_BUILD_EXACT_INPUTS").is_ok_and(|value|value!="0") {return false;}
+        dm_work::map_ordered(&self.canonical_stamps.iter().collect::<Vec<_>>(),WorkLimits::configured(),|_|1024,
+            |(path,stamp)|capture(path).as_ref()==Some(*stamp)).is_ok_and(|results|results.into_iter().all(|current|current))
+    }
+}
+
 #[derive(Default)]
 pub struct ResourceFingerprintCache {
     store: Option<Store>,
     records: BTreeMap<PathBuf, Identity>,
     latest_stamps: BTreeMap<PathBuf, FileStamp>,
+    latest_archive_inputs:Option<std::sync::Arc<ResourceArchiveInputs>>,
     resident_bytes: usize,
     stats: ResourceFingerprintStats,
 }
@@ -120,36 +143,16 @@ impl ResourceFingerprintCache {
         super::ResourceCatalog,
         Vec<(ResourceRequest, u64, Option<FileStamp>)>,
     )> {
-        let fingerprint = self.fingerprint_requests(requests.iter().cloned())?;
-        let mut names = BTreeSet::new();
-        let mut entries = Vec::new();
-        let mut inputs = Vec::new();
-        for request in requests {
-            if !names.insert(request.archive_name.clone()) {
-                continue;
-            }
-            let path = request.disk_path.canonicalize()?;
-            let identity = self
-                .records
-                .get(&path)
-                .cloned()
-                .map(Ok)
-                .unwrap_or_else(|| read_identity(&path, capture(&path)))?;
-            entries.push(super::ResourceDescriptor {
-                archive_name: request.archive_name.clone(),
-                id: identity.id,
-                kind: super::kind_for_name(&request.archive_name).as_byte(),
-                content_digest: identity.digest,
-            });
-            inputs.push((request.clone(), identity.len, identity.stamp));
+        self.fingerprint_requests(requests.iter().cloned())?;
+        if let Some(snapshot)=&self.latest_archive_inputs {
+            return Ok((snapshot.catalog.clone(),snapshot.inputs.clone()));
         }
-        let catalog = super::ResourceCatalog {
-            fingerprint,
-            entries,
-        };
-        catalog.validate()?;
-        Ok((catalog, inputs))
+        Err(invalid("resource fingerprint query did not capture archive inputs"))
     }
+    pub fn archive_snapshot(&self,requests:&[ResourceRequest])->Option<std::sync::Arc<ResourceArchiveInputs>> {
+        self.latest_archive_inputs.as_ref().filter(|snapshot|snapshot.matches(requests)).cloned()
+    }
+
     pub fn open(root: &Path) -> Self {
         Self {
             store: Store::open(root.join("resource-inputs.redb")).ok(),
@@ -160,7 +163,7 @@ impl ResourceFingerprintCache {
         self.stats
     }
     pub fn resident_bytes(&self) -> usize {
-        self.resident_bytes
+        self.resident_bytes + self.latest_archive_inputs.as_ref().map_or(0,|snapshot|snapshot.resident_bytes())
             + self
                 .latest_stamps
                 .keys()
@@ -204,6 +207,7 @@ impl ResourceFingerprintCache {
     ) -> io::Result<[u8; 32]> {
         self.stats = ResourceFingerprintStats::default();
         self.latest_stamps.clear();
+        self.latest_archive_inputs=None;
         let mut requests: Vec<_> = requests.into_iter().collect();
         let authored_paths: Vec<_> = requests
             .iter()
@@ -303,11 +307,12 @@ impl ResourceFingerprintCache {
         }
         let mut names = HashMap::new();
         let mut ordered = Vec::new();
+        let mut snapshot_requests=Vec::new();let mut snapshot_entries=Vec::new();let mut snapshot_inputs=Vec::new();let mut canonical_stamps=BTreeMap::new();let mut all_stamped=true;
         for (request, authored) in requests.iter().zip(authored_paths) {
             let input = &identities[&request.disk_path];
-            if let Some(stamp) = &input.stamp {
-                self.latest_stamps.insert(authored, stamp.clone());
-            }
+            let authored_request=ResourceRequest{archive_name:request.archive_name.clone(),disk_path:authored.clone()};
+            snapshot_requests.push(authored_request.clone());
+            if let Some(stamp)=&input.stamp {self.latest_stamps.insert(authored.clone(),stamp.clone());canonical_stamps.insert(authored,stamp.clone());} else {all_stamped=false;}
             if let Some(previous) =
                 names.insert(request.archive_name.as_str(), (input.len, input.digest))
             {
@@ -316,8 +321,15 @@ impl ResourceFingerprintCache {
                 }
             } else {
                 ordered.push((request.archive_name.as_str(), input.len, input.digest));
+                snapshot_entries.push(super::ResourceDescriptor{archive_name:request.archive_name.clone(),id:input.id,kind:super::kind_for_name(&request.archive_name).as_byte(),content_digest:input.digest});
+                snapshot_inputs.push((authored_request,input.len,input.stamp.clone()));
             }
         }
-        Ok(fingerprint(ordered))
+        let fingerprint=fingerprint(ordered);
+        let catalog=super::ResourceCatalog{fingerprint,entries:snapshot_entries};catalog.validate()?;
+        // Without strong stamps retain no shortcut: exact mode and unsupported
+        // filesystems continue through normal content hashing.
+        if all_stamped || !snapshot_inputs.is_empty() || requests.is_empty() {self.latest_archive_inputs=Some(std::sync::Arc::new(ResourceArchiveInputs{requests:snapshot_requests,catalog,inputs:snapshot_inputs,canonical_stamps,all_stamped}));}
+        Ok(fingerprint)
     }
 }

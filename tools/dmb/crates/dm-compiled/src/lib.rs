@@ -825,6 +825,7 @@ struct BuildInputSnapshot {
     source_digests: BTreeMap<PathBuf, [u8; 32]>,
     missing_dependencies: Vec<PathBuf>,
     resource_requests: Vec<ResourceRequest>,
+    resource_archive_inputs: Option<Arc<dm_resources::ResourceArchiveInputs>>,
     source_resource_literals: Vec<String>,
     preprocessed: Arc<PreprocessedProject>,
     expansion: Arc<prepared_project::SegmentedExpansion>,
@@ -1043,7 +1044,8 @@ impl BuildInputSnapshot {
                 .map(|path| path.capacity() * 2 + std::mem::size_of::<PathBuf>()
                     + 2 * std::mem::size_of::<usize>())
                 .sum::<usize>();
-        self.source_resource_literals.capacity() * std::mem::size_of::<String>()
+        self.resource_archive_inputs.as_ref().map_or(0, |inputs| inputs.resident_bytes())
+            + self.source_resource_literals.capacity() * std::mem::size_of::<String>()
             + self
                 .source_resource_literals
                 .iter()
@@ -2733,6 +2735,7 @@ impl Coordinator {
                 map_set: maps,
                 source_digests,
                 missing_dependencies,
+                resource_archive_inputs: discovery_cache.resource_archive_inputs(&resource_requests),
                 resource_requests,
                 source_resource_literals: literals,
                 preprocessed: Arc::clone(&prepared.project),
@@ -2893,7 +2896,10 @@ impl Coordinator {
         let mut bytecode_catalog = None;
         if cached_pair.is_none() && key.build_mode != "legacy-history" {
             let archive_started = Instant::now();
-            let archive = match dm_resources::prepare_archive(&self.blobs.root, &snapshot.resource_requests) {
+            let prepared_archive = snapshot.resource_archive_inputs.as_ref().map_or_else(
+                ||dm_resources::prepare_archive(&self.blobs.root,&snapshot.resource_requests),
+                |inputs|dm_resources::prepare_archive_with_inputs(&self.blobs.root,&snapshot.resource_requests,inputs));
+            let archive = match prepared_archive {
                 Ok(archive) => archive,
                 Err(error) => return failed_internal(error),
             };
@@ -3759,6 +3765,7 @@ mod tests {
             )]
             .into(),
             missing_dependencies: vec![],
+            resource_archive_inputs: None,
             resource_requests: requests,
             source_resource_literals: vec![],
             expansion: Arc::new(prepared_project::SegmentedExpansion::default()),

@@ -2,10 +2,17 @@
 //! reuse: allocation, lookup membership, relocation and debug witnesses must
 //! also match. Records point to immutable typed/physical object pages.
 use serde::{Deserialize, Serialize};
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Default, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct AllocationCounts {
     pub strings: u32, pub variables: u32, pub lists: u32, pub procedures: u32,
     pub references: u32, pub instances: u32,
+}
+impl AllocationCounts {
+    pub fn from_dmb(image:&byond_dmb::dmb::Dmb)->Option<Self> {
+        Some(Self { strings:image.strings.len().try_into().ok()?,variables:image.variables.len().try_into().ok()?,
+            lists:image.lists.len().try_into().ok()?,procedures:image.procs.len().try_into().ok()?,
+            references:image.proc_references.len().try_into().ok()?,instances:image.instances.len().try_into().ok()? })
+    }
 }
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct SymbolAssignment { pub table: u8, pub key: String, pub id: u32 }
@@ -21,14 +28,88 @@ pub struct StringMembership {
 pub struct DebugAssignment {
     pub relative: usize, pub file: String, pub line: u32, pub file_id: u32,
 }
+/// Only allocation counts actually read by an operation constrain reuse.
+/// Symbol IDs and typed/scalar reads record the remaining explicit edges.
+#[derive(Clone, Copy, Default, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct AllocationMask(pub u8);
+impl AllocationMask {
+    pub const NONE: Self=Self(0);
+    pub const STRINGS: Self=Self(1);
+    pub const VARIABLES: Self=Self(2);
+    pub const LISTS: Self=Self(4);
+    pub const PROCEDURES: Self=Self(8);
+    pub const REFERENCES: Self=Self(16);
+    pub const INSTANCES: Self=Self(32);
+    pub const ALL: Self=Self(63);
+    pub fn union(self,other:Self)->Self {Self(self.0|other.0)}
+    pub fn matches(self,expected:&AllocationCounts,current:&AllocationCounts)->bool {
+        self.0 & !Self::ALL.0 == 0
+            && (self.0&1==0 || expected.strings==current.strings)
+            && (self.0&2==0 || expected.variables==current.variables)
+            && (self.0&4==0 || expected.lists==current.lists)
+            && (self.0&8==0 || expected.procedures==current.procedures)
+            && (self.0&16==0 || expected.references==current.references)
+            && (self.0&32==0 || expected.instances==current.instances)
+    }
+}
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ObjectWitness {
     pub semantic_identity: String,
+    /// Immutable operation recipe bytes/names must contribute to this identity.
+    /// It excludes this certificate itself, so there is no circular hash.
+    pub recipe_identity: String,
     pub start: AllocationCounts,
-    pub symbols: Vec<SymbolAssignment>,
-    pub strings: Vec<StringMembership>,
-    pub debug: Vec<DebugAssignment>,
+    pub allocation_mask: AllocationMask,
+    /// IDs are ordered by the immutable recipe's observation slots. The recipe
+    /// retains symbol names and string bytes, avoiding a duplicate payload here.
+    pub symbol_ids: Vec<u32>,
+    pub string_ids: Vec<u32>,
+    pub debug_ids: Vec<(u32,u32)>,
+    pub read_identities: Vec<String>,
+    pub scalar_reads: Vec<u64>,
     pub unresolved_debug: Vec<usize>,
+}
+pub struct WitnessObservation<'a> {
+    pub semantic_identity: &'a str,
+    pub recipe_identity: &'a str,
+    pub start: AllocationCounts,
+    pub read_identities: &'a [String],
+    pub scalar_reads: &'a [u64],
+    pub unresolved_debug: &'a [usize],
+}
+impl ObjectWitness {
+    /// All adapters use this comparison after deriving their ordered reads.
+    /// Iterator equality checks both values and full lengths; zip truncation
+    /// cannot silently omit a trailing dependency. No temporary Vec is needed.
+    pub fn matches<S,T,D>(&self,current:&WitnessObservation<'_>,symbols:S,strings:T,debug:D)->bool
+    where S:IntoIterator<Item=u32>,T:IntoIterator<Item=u32>,D:IntoIterator<Item=(u32,u32)> {
+        self.matches_optional(current,symbols.into_iter().map(Some),strings,debug)
+    }
+    /// Fallible symbol resolution records None; it cannot match a stored ID.
+    pub fn matches_optional<S,T,D>(&self,current:&WitnessObservation<'_>,symbols:S,strings:T,debug:D)->bool
+    where S:IntoIterator<Item=Option<u32>>,T:IntoIterator<Item=u32>,D:IntoIterator<Item=(u32,u32)> {
+        self.valid() && self.semantic_identity==current.semantic_identity
+            && self.recipe_identity==current.recipe_identity
+            && self.allocation_mask.matches(&self.start,&current.start)
+            && self.read_identities.as_slice()==current.read_identities
+            && self.scalar_reads.as_slice()==current.scalar_reads
+            && self.unresolved_debug.as_slice()==current.unresolved_debug
+            && self.symbol_ids.iter().copied().map(Some).eq(symbols)
+            && self.string_ids.iter().copied().eq(strings)
+            && self.debug_ids.iter().copied().eq(debug)
+    }
+    pub fn valid(&self)->bool {
+        let digest=|value:&str|value.len()==64 && value.bytes().all(|byte|byte.is_ascii_hexdigit());
+        self.allocation_mask.0 & !AllocationMask::ALL.0 == 0
+            && digest(&self.semantic_identity) && digest(&self.recipe_identity)
+            && self.read_identities.iter().all(|identity|digest(identity))
+    }
+    pub fn matches_witness(&self,current:&Self)->bool {
+        self.allocation_mask==current.allocation_mask && self.matches(&WitnessObservation {
+            semantic_identity:&current.semantic_identity,recipe_identity:&current.recipe_identity,start:current.start.clone(),
+            read_identities:&current.read_identities,scalar_reads:&current.scalar_reads,unresolved_debug:&current.unresolved_debug,
+        },current.symbol_ids.iter().copied(),current.string_ids.iter().copied(),current.debug_ids.iter().copied())
+    }
 }
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ObjectRange { pub section: u8, pub start: u32, pub count: u32 }
@@ -47,19 +128,9 @@ pub struct LinkedObject {
 impl LinkedObject {
     /// Caller derives the current witness through its single dependency path.
     /// Equality includes exact strings and symbol IDs; no hash-only shortcuts.
-    pub fn reusable(&self, current: &ObjectWitness) -> bool { self.valid_ranges() && self.witness==*current }
+    pub fn reusable(&self, current: &ObjectWitness) -> bool { self.valid_ranges() && self.witness.matches_witness(current) }
     pub fn valid_ranges(&self) -> bool {
-        let mut strings=self.witness.start.strings;
-        for event in &self.witness.strings {
-            match event.previous {
-                Some(id) if id<strings && event.assigned==id=>{},
-                None if event.assigned==strings=>{
-                    let Some(next)=strings.checked_add(1) else {return false;};strings=next;
-                }
-                _=>return false,
-            }
-        }
-        strings==self.end.strings
+        self.witness.valid()
             && self.pages.ranges.iter().all(|range|range.start.checked_add(range.count).is_some())
             && self.end.strings>=self.witness.start.strings
             && self.end.variables>=self.witness.start.variables

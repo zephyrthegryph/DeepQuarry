@@ -263,9 +263,17 @@ fn prepare_entry(
 /// Prepare a payload-free catalog and verified archive. Unchanged archives
 /// return through a strong stamp proof. An asset edit creates only missing
 /// immutable entries, then streams the active entry sequence through 64KiB.
-pub fn prepare_archive(root: &Path, requests: &[ResourceRequest]) -> io::Result<PreparedArchive> {
-    let started = std::time::Instant::now();
-    let (catalog, inputs) = ResourceFingerprintCache::open(root).archive_inputs(requests)?;
+pub fn prepare_archive(root:&Path,requests:&[ResourceRequest])->io::Result<PreparedArchive> {
+    prepare_archive_inner(root,requests,None)
+}
+pub fn prepare_archive_with_inputs(root:&Path,requests:&[ResourceRequest],inputs:&ResourceArchiveInputs)->io::Result<PreparedArchive> {
+    prepare_archive_inner(root,requests,Some(inputs))
+}
+fn prepare_archive_inner(root:&Path,requests:&[ResourceRequest],prepared:Option<&ResourceArchiveInputs>)->io::Result<PreparedArchive> {
+    let started=std::time::Instant::now();
+    let (catalog,inputs)=if let Some(prepared)=prepared.filter(|prepared|prepared.matches(requests)&&prepared.current()) {
+        (prepared.catalog.clone(),prepared.inputs.clone())
+    } else {ResourceFingerprintCache::open(root).archive_inputs(requests)?};
     if std::env::var_os("DM_BUILD_TRACE").is_some() {eprintln!("DM_BUILD_TRACE archive fingerprint inputs: {} requests, {:.3}s",requests.len(),started.elapsed().as_secs_f64());}
     let lookup_started=std::time::Instant::now();
     let identity = catalog

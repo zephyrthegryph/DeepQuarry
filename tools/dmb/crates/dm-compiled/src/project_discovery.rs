@@ -348,6 +348,10 @@ impl DiscoveryCache {
         Ok(snapshot)
     }
 
+    pub(crate) fn resource_archive_inputs(&self,requests:&[dm_resources::ResourceRequest])->Option<Arc<dm_resources::ResourceArchiveInputs>> {
+        self.resources.archive_snapshot(requests)
+    }
+
     pub(crate) fn fingerprint_resources(
         &mut self,
         requests: &[dm_resources::ResourceRequest],

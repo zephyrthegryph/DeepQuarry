@@ -23,15 +23,7 @@ pub(super) struct HelperRecipe {
     pub dedup: String,
     pub statics: std::collections::BTreeMap<String, u32>,
 }
-#[derive(Clone, Serialize, Deserialize)]
-pub(super) struct LinkedRows {
-    pub variables: usize,
-    pub lists: usize,
-    pub procs: usize,
-    pub references: usize,
-    pub assignments: Vec<u32>,
-    pub debug_ids: Vec<(u32,u32)>,
-}
+pub(super) use dm_output::object_directory::{AllocationCounts,AllocationMask,ObjectWitness,WitnessObservation};
 #[derive(Serialize, Deserialize)]
 pub(super) struct OutputFragment {
     pub body_base_relative: usize,
@@ -46,8 +38,9 @@ pub(super) struct OutputFragment {
     pub relocations: Vec<OutputRelocation>,
     pub debug: Vec<OutputDebugRelocation>,
     pub helpers: Vec<HelperRecipe>,
-    #[serde(default)] pub linked: Option<LinkedRows>,
+    #[serde(default)] pub linked: Option<ObjectWitness>,
     #[serde(default)] pub code_digest: Option<String>,
+    #[serde(default)] pub code_word_count: Option<u32>,
     #[serde(skip)]
     pub words: Arc<[u32]>,
 }
@@ -62,14 +55,22 @@ impl OutputFragment {
         if result.len() > 16 * 1024 * 1024 { return None; }
         let compressed = lz4_flex::compress_prepend_size(&result);
         let mut encoded = Vec::with_capacity(8 + compressed.len());
-        encoded.extend_from_slice(b"DMOCMP03"); encoded.extend_from_slice(&compressed);
+        encoded.extend_from_slice(b"DMOCMP04");
+        encoded.extend_from_slice(&u32::try_from(self.words.len()).ok()?.to_le_bytes());
+        encoded.extend_from_slice(&compressed);
         Some(encoded)
     }
     fn decode(encoded: &[u8]) -> Option<Self> {
-        if encoded.get(..8)? != b"DMOCMP02" && encoded.get(..8)? != b"DMOCMP03" { return None; }
-        let length = u32::from_le_bytes(encoded.get(8..12)?.try_into().ok()?) as usize;
+        let compression_start=match encoded.get(..8)? {
+            b"DMOCMP02"|b"DMOCMP03"=>8,
+            b"DMOCMP04"=>12,
+            _=>return None,
+        };
+        let declared_words=if compression_start==12 {Some(u32::from_le_bytes(encoded.get(8..12)?.try_into().ok()?))} else {None};
+        if declared_words.is_some_and(|words|words>u16::MAX as u32) {return None;}
+        let length=u32::from_le_bytes(encoded.get(compression_start..compression_start+4)?.try_into().ok()?) as usize;
         if length > 16 * 1024 * 1024 { return None; }
-        let expanded = lz4_flex::decompress_size_prepended(encoded.get(8..)?).ok()?;
+        let expanded = lz4_flex::decompress_size_prepended(encoded.get(compression_start..)?).ok()?;
         let bytes = expanded.as_slice();
         let version = bytes.get(..8)?;
         if version != b"DMOUTF01" && version != b"DMOUTF02" && version != b"DMOUTF03" { return None; }
@@ -85,7 +86,8 @@ impl OutputFragment {
         fragment.words = words.chunks_exact(4).map(|word| u32::from_le_bytes(word.try_into().unwrap()))
             .collect::<Vec<_>>().into();
         if version == b"DMOUTF03" {
-            if !words.is_empty() || !fragment.code_digest.as_ref().is_some_and(|digest|digest.len()==64) { return None; }
+            if !words.is_empty() || !fragment.code_digest.as_ref().is_some_and(|digest|digest.len()==64)
+                || declared_words.is_some_and(|words|fragment.code_word_count!=Some(words)) { return None; }
             return Some(fragment);
         }
         if !fragment.validate() { return None; }
@@ -93,6 +95,7 @@ impl OutputFragment {
     }
     fn validate(&self) -> bool {
         let fragment=self;
+        if fragment.code_word_count.is_some_and(|words|words as usize!=fragment.words.len()) {return false;}
         let valid_variable = |id: u32| id.checked_sub(fragment.old_variable_base)
             .is_some_and(|offset| (offset as usize) < fragment.variables.len());
         if fragment.locals.len() > u16::MAX as usize || fragment.arguments.len() > u16::MAX as usize
@@ -106,10 +109,10 @@ impl OutputFragment {
             || fragment.debug.iter().any(|debug| debug.file_offset as usize >= fragment.words.len()
                 || debug.line_offset as usize >= fragment.words.len()) { return false; }
         if let Some(linked)=&fragment.linked {
-            if linked.variables!=fragment.old_variable_base as usize || linked.lists>u32::MAX as usize
-                || linked.assignments.len()!=fragment.relocations.len() || linked.debug_ids.len()!=fragment.debug.len()
+            if linked.start.variables!=fragment.old_variable_base
+                || linked.symbol_ids.len()!=fragment.relocations.len() || linked.debug_ids.len()!=fragment.debug.len()
                 || !fragment.helpers.is_empty() { return false; }
-            if fragment.relocations.iter().zip(&linked.assignments).any(|(relocation,assigned)| {
+            if fragment.relocations.iter().zip(&linked.symbol_ids).any(|(relocation,assigned)| {
                 let at=relocation.offset as usize;
                 let actual=match relocation.packed_tag { None=>fragment.words[at],Some(_)=>((fragment.words[at]>>8)<<16)|fragment.words[at+1] };
                 actual!=*assigned
@@ -119,7 +122,14 @@ impl OutputFragment {
                 matches!(recipe,StringRecipe::Bytes{old_id,..} if *old_id==id));
             if fragment.variables.iter().any(|variable|!mapped_string(variable.name))
                 || fragment.record.strings.iter().any(|id|!mapped_string(*id)) { return false; }
-            let mut next=linked.lists as u32;
+                        if !linked.valid() || fragment.recipe_identity().as_deref()!=Some(linked.recipe_identity.as_str()) { return false; }
+            let mut expected_strings:Vec<_>=fragment.strings.iter().filter_map(|recipe|match recipe {
+                StringRecipe::Bytes{old_id,..}=>Some(*old_id),StringRecipe::Debug{..}=>None,
+            }).collect(); expected_strings.sort_unstable();
+            if linked.string_ids!=expected_strings || linked.unresolved_debug!=fragment.unresolved_debug { return false; }
+            let required=AllocationMask::VARIABLES.union(AllocationMask::LISTS).union(AllocationMask::PROCEDURES).union(AllocationMask::REFERENCES);
+            if linked.allocation_mask!=required { return false; }
+            let mut next=linked.start.lists;
             for actual in fragment.record.code_locals_args {
                 if next==0xffff { next+=1; }
                 if actual!=next { return false; }
@@ -127,6 +137,15 @@ impl OutputFragment {
             }
         }
         true
+    }
+    fn recipe_identity(&self)->Option<String> {
+        // The certificate is excluded; all immutable operation recipes and
+        // addressed code content contribute. Dense IDs are part of the recipe.
+        let bytes=rmp_serde::to_vec(&(self.body_base_relative,self.debug_enabled,&self.unresolved_debug,&self.strings,
+            &self.variables,self.old_variable_base,&self.locals,&self.arguments,&self.record,&self.relocations,
+            &self.debug,&self.helpers,&self.code_digest,&self.code_word_count)).ok()?;
+        let mut hash=Sha256::new();hash.update(b"procedure-output-recipe-v1");hash.update(bytes);
+        Some(format!("{:x}",hash.finalize()))
     }
     fn charge(&self) -> usize {
         self.words.len() * 4 + self.variables.capacity() * std::mem::size_of::<Variable>()
@@ -136,7 +155,8 @@ impl OutputFragment {
             + self.relocations.iter().map(|r| r.symbol.key.capacity() + 96).sum::<usize>()
             + self.debug.capacity() * std::mem::size_of::<OutputDebugRelocation>()
             + self.unresolved_debug.capacity() * std::mem::size_of::<usize>()
-            + self.linked.as_ref().map_or(0,|linked|linked.assignments.capacity()*4+linked.debug_ids.capacity()*8+128)
+            + self.linked.as_ref().map_or(0,|linked|linked.symbol_ids.capacity()*4+linked.string_ids.capacity()*4+linked.debug_ids.capacity()*8
+                +linked.semantic_identity.capacity()+linked.recipe_identity.capacity()+linked.unresolved_debug.capacity()*std::mem::size_of::<usize>()+256)
             + self.code_digest.as_ref().map_or(0,|digest|digest.capacity())
             + self.helpers.iter().map(|h| h.key.path.capacity() + h.identity.capacity() + h.dedup.capacity()
                 + h.descriptor.body_digest.capacity() + h.descriptor.frame_digest.capacity()
@@ -193,9 +213,9 @@ pub(super) struct ProcedureFragments {
 impl ProcedureFragments {
     pub fn open(root: &std::path::Path, identity: &str) -> Self {
         let store = dm_store::Store::open(root.join("output-fragments.redb")).ok();
-        Self { store, namespace: format!("output-handles-v2-{}-{}", env!("DM_EMISSION_FINGERPRINT"),
+        Self { store, namespace: format!("output-handles-v3-{}-{}", env!("DM_EMISSION_FINGERPRINT"),
             crate::incremental::digest(identity.as_bytes())),
-            blobs: format!("output-blobs-v2-{}", env!("DM_EMISSION_FINGERPRINT")),
+            blobs: format!("output-blobs-v3-{}", env!("DM_EMISSION_FINGERPRINT")),
             code_blobs: format!("output-code-v1-{}",env!("DM_EMISSION_FINGERPRINT")), ..Self::default() }
     }
     pub fn set_workers(&mut self, workers: usize) { self.workers = workers.clamp(1, 4); }
@@ -252,22 +272,28 @@ impl ProcedureFragments {
         match read {
             Ok(batch) => {
                 self.stats.batches += 1;
-                let inputs: Vec<_> = payloads.iter().cloned().zip(batch.values).collect();
+                let inputs: Vec<_> = payloads.iter().cloned().zip(batch.values).zip(batch.witnesses)
+                    .map(|((payload,bytes),witness)| {let valid=witness.value_digest.as_deref()==Some(payload.as_str());
+                        (payload,if valid {bytes}else{None})}).collect();
                 self.stats.disk_bytes += inputs.iter().filter_map(|(_, bytes)| bytes.as_ref()).map(Vec::len).sum::<usize>();
                 let decode_start = std::time::Instant::now();
                 let decode = |(payload, bytes): &(String, Option<Vec<u8>>)| {
                     let bytes = bytes.as_deref()?;
-                    if format!("{:x}", Sha256::digest(bytes)) != *payload { return None; }
                     OutputFragment::decode(bytes).map(|fragment| (payload.clone(), Arc::new(fragment)))
                 };
                 let estimate = |(_, bytes): &(String, Option<Vec<u8>>)| {
-                    bytes.as_deref().and_then(|bytes| bytes.get(8..12))
-                        .map(|bytes| u32::from_le_bytes(bytes.try_into().unwrap()) as usize)
-                        .unwrap_or(0).min(16 * 1024 * 1024).saturating_mul(3)
-                        .saturating_add(8+u16::MAX as usize*4)
+                    let Some(bytes)=bytes.as_deref() else {return 0;};
+                    let modern=bytes.get(..8)==Some(b"DMOCMP04".as_slice());
+                    let at=if modern {12}else{8};
+                    let metadata=bytes.get(at..at+4).map(|bytes|u32::from_le_bytes(bytes.try_into().unwrap()) as usize)
+                        .unwrap_or(0).min(16*1024*1024).saturating_mul(3);
+                    let code=if modern {bytes.get(8..12).map(|bytes|u32::from_le_bytes(bytes.try_into().unwrap()) as usize)
+                        .unwrap_or(u16::MAX as usize).min(u16::MAX as usize)*4} else {u16::MAX as usize*4};
+                    metadata.saturating_add(code+8)
                 };
                 // Compressed byte budgets do not bound decoded result retention.
                 // Drain bounded output windows as well as bounded active jobs.
+                let hydration_before=self.stats.code_hydration_seconds;
                 let mut start = 0;
                 while start < inputs.len() {
                     let mut end = start;
@@ -285,7 +311,8 @@ impl ProcedureFragments {
                     self.hydrate_code(store, decoded);
                     start = end;
                 }
-                self.stats.decode_seconds += decode_start.elapsed().as_secs_f64();
+                self.stats.decode_seconds += (decode_start.elapsed().as_secs_f64()
+                    -(self.stats.code_hydration_seconds-hydration_before)).max(0.0);
             }
             Err(error) if error.kind() == std::io::ErrorKind::InvalidInput && payloads.len() > 1 => {
                 let middle = payloads.len() / 2;
@@ -314,18 +341,27 @@ impl ProcedureFragments {
         if names.is_empty() { return; }
         let keys: Vec<_>=names.iter().map(|name|dm_store::Key::new(&self.code_blobs,name)).collect();
         let started=std::time::Instant::now();
-        let result=store.read_many_bounded(&keys,8+u16::MAX as usize*4,8*1024*1024,None);
+        let result=store.read_many_bounded(&keys,16+u16::MAX as usize*8,8*1024*1024,None);
         self.stats.read_seconds+=started.elapsed().as_secs_f64();
         match result {
             Ok(batch)=>{
                 self.stats.batches+=1;
-                for (name,bytes) in names.iter().zip(batch.values) {
+                for ((name,bytes),witness) in names.iter().zip(batch.values).zip(batch.witnesses) {
                     let Some(bytes)=bytes else { continue; };
                     self.stats.disk_bytes+=bytes.len();
                     self.stats.code_read_bytes+=bytes.len();
-                    if bytes.get(..8)!=Some(b"DMWORD01".as_slice()) || (bytes.len()-8)%4!=0
-                        || format!("{:x}",Sha256::digest(&bytes))!=*name { continue; }
-                    let code=bytes[8..].chunks_exact(4).map(|bytes|u32::from_le_bytes(bytes.try_into().unwrap())).collect::<Vec<_>>();
+                    // Store already verified the SHA in its envelope. Comparing
+                    // that exact digest with the addressed name avoids a second
+                    // full payload hash in this hydration layer.
+                    if witness.value_digest.as_deref()!=Some(name.as_str()) {continue;}
+                    let raw=if bytes.get(..8)==Some(b"DMWORD02".as_slice()) {
+                        let Some(length)=bytes.get(8..12) else {continue;};
+                        if u32::from_le_bytes(length.try_into().unwrap()) as usize>u16::MAX as usize*4 {continue;}
+                        let Ok(raw)=lz4_flex::decompress_size_prepended(&bytes[8..]) else {continue;}; raw
+                    } else if bytes.get(..8)==Some(b"DMWORD01".as_slice()) {bytes[8..].to_vec()}
+                    else {continue;};
+                    if raw.len()%4!=0 || raw.len()/4>u16::MAX as usize {continue;}
+                    let code=raw.chunks_exact(4).map(|bytes|u32::from_le_bytes(bytes.try_into().unwrap())).collect::<Vec<_>>();
                     words.insert(name.clone(),code.into());
                 }
             }
@@ -360,11 +396,15 @@ impl ProcedureFragments {
     }
     pub fn retain(&mut self, key: crate::ProcKey, descriptor: crate::ProcDescriptor, candidate: String, mut fragment: OutputFragment) {
         let encode_start = std::time::Instant::now();
-        let mut code = Vec::with_capacity(8+fragment.words.len()*4);
-        code.extend_from_slice(b"DMWORD01");
-        for word in fragment.words.iter() { code.extend_from_slice(&word.to_le_bytes()); }
+        let mut raw_code = Vec::with_capacity(fragment.words.len()*4);
+        for word in fragment.words.iter() { raw_code.extend_from_slice(&word.to_le_bytes()); }
+        let mut code=b"DMWORD02".to_vec();
+        code.extend(lz4_flex::compress_prepend_size(&raw_code));
         let code_digest = format!("{:x}",Sha256::digest(&code));
         fragment.code_digest=Some(code_digest.clone());
+        fragment.code_word_count=Some(fragment.words.len() as u32);
+        let Some(recipe_identity)=fragment.recipe_identity() else {return;};
+        if let Some(linked)=fragment.linked.as_mut() {linked.recipe_identity=recipe_identity;}
         let Some(bytes) = fragment.encode() else { return; };
         self.stats.encode_seconds += encode_start.elapsed().as_secs_f64();
         let payload = format!("{:x}", Sha256::digest(&bytes));

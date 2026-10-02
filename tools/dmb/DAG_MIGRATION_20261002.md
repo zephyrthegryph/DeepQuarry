@@ -213,3 +213,14 @@ missed addproc because ordinaryclass-qualified constants conservatively
 observedallprocdeclarations; nextcode uses exactabsolute target dependencies.
 Following literaldeclarationoperation replay and filename-precise journal
 namespace watches awaitbuild. No tests or runtime validation.
+
+L completed from6dade9120d, cache/output movedtoE: dueC: headroom:
+cold232.619s; unchanged0.470s; body26.950s; newproc57.582s;
+newvar89.480s; default84.263s; asset16.063s; newresource95.744s;
+freshcachedprocess0.161s; freshbody38.405s. All compilerrequests succeeded,
+no correctness/runtime tests. This is a regression. Diagnosed recorder sparse
+HashMap eviction scans, full-class operation hashing, and worstcase splitcode
+job weights causing four hydration sessions pernormalwindow. Nextprototype
+uses FIFO, typedfieldwrite projection, exactcodeword-count scheduling,
+compressedcodeobjects and one sharedObjectWitness core. Archive snapshot
+metadata reuse with freshstamp verification is implemented awaitingbuild.

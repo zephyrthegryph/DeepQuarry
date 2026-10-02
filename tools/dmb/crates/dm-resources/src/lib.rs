@@ -13,8 +13,8 @@ use std::path::{Component, Path, PathBuf};
 
 mod archive;
 mod input_cache;
-pub use archive::{prepare_archive, PreparedArchive, ArchiveLease};
-pub use input_cache::{ResourceFingerprintCache, ResourceFingerprintStats};
+pub use archive::{prepare_archive, prepare_archive_with_inputs, PreparedArchive, ArchiveLease};
+pub use input_cache::{ResourceFingerprintCache, ResourceFingerprintStats, ResourceArchiveInputs};
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ResourceRequest {

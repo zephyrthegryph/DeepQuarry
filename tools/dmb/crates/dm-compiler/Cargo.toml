@@ -15,6 +15,7 @@ dm-semantics = { path = "../dm-semantics" }
 dm-ir = { path = "../dm-ir" }
 dm-codegen-byond = { path = "../dm-codegen-byond" }
 dm-resources = { path = "../dm-resources" }
+dm-output = { path = "../dm-output" }
 dm-store = { path = "../dm-store" }
 byond-dmb = { path = "../.." }
 sha2 = "0.10"

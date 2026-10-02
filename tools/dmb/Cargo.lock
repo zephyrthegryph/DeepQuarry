@@ -195,6 +195,7 @@ dependencies = [
  "dm-analysis",
  "dm-codegen-byond",
  "dm-ir",
+ "dm-output",
  "dm-preprocess",
  "dm-resources",
  "dm-semantics",
