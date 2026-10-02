@@ -263,3 +263,21 @@
 	exact.set_amount(ARCADE_TICKETS_PER_PRIZE, TRUE)
 	TEST_ASSERT(exact.pay_tickets(), "A stack matching the prize cost must accept payment")
 	TEST_ASSERT(QDELETED(exact), "Paying the entire stack must consume it")
+
+/datum/unit_test/interim_remains_crumble_replacement/Run()
+	var/turf/floor = test_floor()
+	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human)
+	for(var/remains_type in list(/obj/effect/decal/remains/human, /obj/effect/decal/remains/robot))
+		var/obj/effect/decal/remains/remains = allocate(remains_type)
+		var/expected_debris_type = remains.crumble_into
+		var/old_handle = om_handle(remains)
+		var/list/before = turf_contents_of_type(floor, expected_debris_type)
+		TEST_ASSERT(remains.interaction_crumble_remains(actor, null, null), "Touching floor remains must complete the crumble interaction")
+		TEST_ASSERT(QDELETED(remains), "Crumbling must destroy the original remains")
+		var/list/after = turf_contents_of_type(floor, expected_debris_type)
+		var/list/created = after - before
+		TEST_ASSERT_EQUAL(length(created), 1, "Crumbling must produce exactly one declared debris object")
+		var/atom/movable/debris = own(created[1])
+		TEST_ASSERT_EQUAL(debris.loc, floor, "Replacement debris must stay on the original floor")
+		TEST_ASSERT_NULL(om_resolve(old_handle), "A remains handle must end when replacement changes its type family")
+		TEST_ASSERT(!QDELETED(debris), "Destroying the original must preserve the replacement debris")

@@ -70,6 +70,11 @@ EXTEND_INTERACTIONS(/obj/effect/decal/remains, \
 	to_chat(user, span_notice("[src] [crumble_message]."))
 	var/turf/simulated/floor/F = get_turf(src)
 	if(istype(F))
-		new crumble_into(F)
+		var/atom/movable/debris = new crumble_into(F)
+		// A floor transform has no holder slot to inherit. Contained remains
+		// still leave debris on the floor when destroyed.
+		if(loc == F)
+			replace_with(src, debris)
+			return TRUE
 	qdel(src)
 	return TRUE
