@@ -1,0 +1,4 @@
+author: "Claude"
+delete-after: true
+changes:
+  - bugfix: "The syndicate kit's TTV bombs spawn inside the box instead of on the floor under it."
