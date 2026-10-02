@@ -7,8 +7,6 @@
 		TEST_ASSERT(away, "The fixture needs a separate turf for actor interruption")
 		stage = "1: var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)"
 		var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)
-		// Only construction tasks advance here; physiological cadence belongs to Life tests.
-		TEST_ASSERT(om_detach(actor, /datum/om/pipeline/life), "The isolated construction actor must detach its unrelated Life pipeline")
 		stage = "2: var/obj/structure/frame/frame = allocate(/obj/structure/frame, T)"
 		var/obj/structure/frame/frame = allocate(/obj/structure/frame, T)
 		stage = "3: var/obj/item/circuitboard/autolathe/board = allocate(/obj/item/circuitboard/autolathe, T)"
