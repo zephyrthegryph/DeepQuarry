@@ -57,6 +57,8 @@ DECLARE_REPEAT(/datum/beam, "sleep_time", beam_tick, "beam_running")
 		target_oldloc = target_turf
 		Reset()
 		Draw()
+		if(QDELETED(src))
+			return REPEAT_STOP
 	set_beam_running(TRUE)
 
 /datum/beam/proc/End()

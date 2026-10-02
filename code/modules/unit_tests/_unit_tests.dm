@@ -397,6 +397,7 @@
 #include "interim_charger_feed.dm"
 #include "interim_construction_doors.dm"
 #include "interim_construction_interruptions.dm"
+#include "interim_construct_spell_actor.dm"
 #include "interim_device_lifecycle.dm"
 #include "interim_economy_actor.dm"
 #include "interim_ethanol_actor.dm"
