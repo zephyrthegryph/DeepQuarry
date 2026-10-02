@@ -144,3 +144,37 @@
 	wires.cut(WIRE_ELECTRIFY, actor)
 	TEST_ASSERT(!wires.is_cut(WIRE_ELECTRIFY), "Second cut action must mend the wire")
 	TEST_ASSERT(!door.isElectrified(), "Mending the electrify wire must remove electrification")
+
+/// Exercise declared requirements as well as completion: wrong boards and short cable stacks refuse.
+/datum/unit_test/interim_machine_frame_requirements/Run()
+	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human)
+	var/obj/structure/frame/frame = allocate(/obj/structure/frame)
+	var/obj/item/circuitboard/autolathe/machine_board = allocate(/obj/item/circuitboard/autolathe)
+	var/obj/item/circuitboard/computer_board = allocate(/obj/item/circuitboard)
+	var/obj/item/stack/cable_coil/cable = allocate(/obj/item/stack/cable_coil, run_loc_floor_bottom_left, 4)
+	TEST_ASSERT(interim_construction_step(frame, actor, /datum/interaction/construction/frame/anchor), "Fixture anchoring failed")
+	var/datum/construction_graph/graph = construction_graph_of(frame)
+	var/datum/interaction/construction/insert_board
+	var/datum/interaction/construction/wire
+	for(var/datum/interaction/construction/edge as anything in graph.edges)
+		if(edge.type == /datum/interaction/construction/frame/insert_board)
+			insert_board = edge
+		if(edge.type == /datum/interaction/construction/frame/wire)
+			wire = edge
+	TEST_ASSERT_NOTNULL(insert_board, "Frame graph must have a board insertion edge")
+	TEST_ASSERT_NOTNULL(wire, "Frame graph must have a wiring edge")
+	TEST_ASSERT_EQUAL(insert_board.why_not(actor, frame, computer_board), "this frame does not accept circuit boards of this type", "Machine frame must refuse a computer board through its requirement")
+	TEST_ASSERT_NULL(frame.circuit, "Checking a wrong board must leave the frame empty")
+	TEST_ASSERT_EQUAL(computer_board.loc, get_turf(frame), "Checking a wrong board must not insert it")
+	TEST_ASSERT_NULL(insert_board.why_not(actor, frame, machine_board), "Machine board must satisfy the same insertion requirement")
+	TEST_ASSERT(interim_construction_step(frame, actor, /datum/interaction/construction/frame/insert_board, machine_board), "Fixture board insertion failed")
+	TEST_ASSERT(interim_construction_step(frame, actor, /datum/interaction/construction/frame/fasten_board), "Fixture board fastening failed")
+	TEST_ASSERT_NOTNULL(wire.why_not(actor, frame, cable), "Four cable lengths must fail the declared wiring requirement")
+	TEST_ASSERT(!wire.traverse(frame, actor, cable), "Completion must recheck and refuse insufficient cable")
+	TEST_ASSERT_EQUAL(frame.state, FRAME_FASTENED, "Refused wiring must not advance construction")
+	TEST_ASSERT_EQUAL(cable.get_amount(), 4, "Refused wiring must not consume cable")
+	cable.set_amount(6)
+	TEST_ASSERT_NULL(wire.why_not(actor, frame, cable), "Sufficient cable must satisfy the wiring requirement")
+	TEST_ASSERT(wire.traverse(frame, actor, cable), "Sufficient cable must allow completed wiring")
+	TEST_ASSERT_EQUAL(frame.state, FRAME_WIRED, "Successful wiring must advance construction")
+	TEST_ASSERT_EQUAL(cable.get_amount(), 1, "Successful wiring must consume exactly five cable lengths")
