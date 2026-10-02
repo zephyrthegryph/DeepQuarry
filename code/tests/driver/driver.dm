@@ -86,8 +86,8 @@ GLOBAL_DATUM_INIT(test_driver, /datum/test_driver, new)
 	D.notice_counts = null
 	D.notice_queued = null
 	D.logs = null
-	D.recording = null // ALLOW(ownership): test-only driver state, dropped with the driver on reset
-	D.recorded_entities = null // ALLOW(ownership): test-only driver state, dropped with the driver on reset
+	D.recording = null
+	D.recorded_entities = null
 
 /// Zeroes the notice and spill counters (and nothing else): "since the last reset".
 /proc/test_counters_reset()
@@ -214,7 +214,7 @@ GLOBAL_DATUM_INIT(test_driver, /datum/test_driver, new)
 	line.actor = actor // ALLOW(ownership): a test-only record the test reads and drops
 	line.target = target // ALLOW(ownership): a test-only record the test reads and drops
 	line.text = text
-	LAZYADD(D.logs, line)
+	LAZYADD(D.logs, line) // ALLOW(ownership): the test-only log queue the test reads and clears
 	test_rec_event(TEST_EVENT_LOG, actor, key, outcome, text)
 
 #endif

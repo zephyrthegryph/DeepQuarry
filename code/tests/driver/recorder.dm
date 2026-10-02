@@ -35,8 +35,8 @@
 /// Starts recording. The entities named here are the ones whose tracked deltas are kept, and the ones rows are compared by.
 /proc/test_record(...)
 	var/datum/test_driver/D = GLOB.test_driver
-	D.recording = list() // ALLOW(ownership): test-only driver state, dropped with the driver on reset
-	D.recorded_entities = args.Copy() // ALLOW(ownership): test-only driver state, dropped with the driver on reset
+	D.recording = list()
+	D.recorded_entities = args.Copy()
 
 /// Stops the recording and returns it, in order, as /datum/test_event rows. Clears it.
 /proc/test_recorded()
@@ -44,8 +44,8 @@
 	. = D.recording || list()
 	for(var/datum/test_event/event in .)
 		event.role = D.recorded_entities.Find(event.entity) || null
-	D.recording = null // ALLOW(ownership): test-only driver state, dropped with the driver on reset
-	D.recorded_entities = null // ALLOW(ownership): test-only driver state, dropped with the driver on reset
+	D.recording = null
+	D.recorded_entities = null
 
 /// The one store write. A placeholder: E6 replaces this proc (and nothing else in this file) with its recorder.
 /proc/test_rec_event(kind, datum/entity, key, from_value, to_value)
@@ -61,7 +61,7 @@
 	event.key = key
 	event.from_value = from_value
 	event.to_value = to_value
-	D.recording += event
+	D.recording += event // ALLOW(ownership): a test-only row the test reads and drops
 
 /// A row as comparable text: its kind, its entity as a role (or its type), key, from and to, minus the `ignoring` columns
 /// ("entity", "key", "from", "to"). A datum in a from/to column is shown by role or type too.
