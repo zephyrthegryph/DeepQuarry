@@ -656,7 +656,7 @@ DECLARE_PERIODIC_WHILE(/obj/mecha, PERIODIC_SLOW, "cabin_active")
 			return
 	if(!target.Adjacent(src))
 		if(selected && selected.is_ranged())
-			selected.action(target, params, user)
+			selected.action(target, null, user)
 	else if(selected && selected.is_melee())
 		selected.action(target, params, user)
 	else
