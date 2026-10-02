@@ -166,7 +166,6 @@ qdel_src	code/game/machinery/deployable.dm	qdel(src)
 qdel_src	code/game/machinery/deployable.dm	qdel(src) //Laaaazy. Technically heals it too. Must be held together with all that paint.
 qdel_src	code/game/machinery/doors/windowdoor.dm	qdel(src)
 qdel_src	code/game/machinery/feeder.dm	qdel(src)
-qdel_src	code/game/machinery/floor_light.dm	qdel(src)
 qdel_src	code/game/machinery/machinery.dm	qdel(src)
 qdel_src	code/game/machinery/nuclear_bomb.dm	qdel(src)
 qdel_src	code/game/machinery/pipe/construction.dm	qdel(src)

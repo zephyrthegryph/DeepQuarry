@@ -14,12 +14,20 @@ MATERIAL_MIX(/obj/item/floor_light, list(MAT_STEEL = 2500, MAT_GLASS = 2750))
 	icon = 'icons/obj/machines/floor_light.dmi'
 	icon_state = "item"
 
-DECLARE_INTERACTIONS(/obj/item/floor_light, INTERACT_USE(null, PROC_REF(interaction_self), REQ_ON_TURF))
+DECLARE_INTERACTIONS(/obj/item/floor_light, INTERACT_USE(null, PROC_REF(interaction_self), REQ_ON_TURF, REQ_TARGET_STATE(/obj/item/floor_light/proc/can_install)))
+
+/// Installation must be able to consume the kit from its current holder.
+/obj/item/floor_light/proc/can_install(mob/user, atom/target, obj/item/held)
+	var/reason = loc?.release_refusal(src, user)
+	if(reason)
+		return reason
+	return TRUE
 
 /// Old attack_self.
 /obj/item/floor_light/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!consume(src, user))
+		return FALSE
 	new /obj/machinery/floor_light(get_turf(user))
-	qdel(src)
 	return TRUE
 
 /obj/machinery/floor_light
