@@ -505,6 +505,12 @@
 #include "interim_airlock_dismantle.dm"
 #include "interim_locket_keepsake.dm"
 #include "interim_tvassembly_devices.dm"
+#include "interim_chem_grenade_beaker.dm"
+#include "interim_firedoor_board_consumption.dm"
+#include "interim_guest_access_alias.dm"
+#include "interim_microscope_insertion.dm"
+#include "interim_refill_vendor_matching.dm"
+#include "interim_turret_sensor_consumption.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

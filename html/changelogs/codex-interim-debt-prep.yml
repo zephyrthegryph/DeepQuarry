@@ -23,3 +23,4 @@ changes:
   - bugfix: "Gun boxes and folded body bags preserve their contents without creating duplicate products when removal is refused."
   - bugfix: "Stasis-bag injector loading and concealed-knife assembly respect stuck ingredients and preserve inventory bookkeeping."
   - bugfix: "Locket and television assembly insertions respect stuck ingredients and preserve unrelated held items."
+  - bugfix: "Grenade and microscope sample insertion respect stuck items; turret sensors and firedoor boards advance construction only after consumption succeeds."
