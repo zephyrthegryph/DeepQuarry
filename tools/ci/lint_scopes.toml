@@ -18,3 +18,7 @@ exempt_prefixes = ["code/modules/unit_tests/"]
 [lint.latent]
 # latent_lint.py SKIP_DIRS: os.walk prunes any directory named unit_tests.
 exempt_contains = ["/unit_tests/"]
+
+[lint.registry]
+# registry_lint.py: the boilerplate macro's own definition.
+exempt_prefixes = ["code/__defines/"]

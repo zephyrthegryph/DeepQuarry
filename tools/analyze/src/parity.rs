@@ -140,6 +140,12 @@ pub fn parse_findings(text: &str, kind: ParseKind) -> Vec<Finding> {
             }
         }
     }
+    // A script run on Windows may print `os.path.relpath` unconverted (`code\modules\a.dm`).
+    for f in &mut out {
+        if f.rel.contains('\\') {
+            f.rel = f.rel.replace('\\', "/");
+        }
+    }
     out.sort();
     out
 }
