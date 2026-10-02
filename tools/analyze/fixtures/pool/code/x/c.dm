@@ -1,0 +1,5 @@
+/proc/c()
+	var/a = take(/datum/foo)
+	var/b = pool_take(/datum/decl/x)
+	x = mytake(/datum/foo)
+	// release()
