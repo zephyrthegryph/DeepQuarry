@@ -656,9 +656,9 @@ DECLARE_PERIODIC_WHILE(/obj/mecha, PERIODIC_SLOW, "cabin_active")
 			return
 	if(!target.Adjacent(src))
 		if(selected && selected.is_ranged())
-			selected.action(target)
+			selected.action(target, params, user)
 	else if(selected && selected.is_melee())
-		selected.action(target, params)
+		selected.action(target, params, user)
 	else
 		src.melee_action(target)
 	return
@@ -2020,7 +2020,7 @@ UI_ACT_PROC(/obj/mecha, ui_act_ai_use_equipment)
 	var/obj/item/mecha_parts/mecha_equipment/W = params["ref"]
 	var/atom/target = active_caller
 	if(W && (W in equipment))
-		W.action(target)
+		W.action(target, null, user)
 	tgui_subview = "main"
 	return TRUE
 // Access sub-view
