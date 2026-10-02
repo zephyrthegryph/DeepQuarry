@@ -26,15 +26,15 @@ APPEARANCE_TEMPLATE(/obj/item/flame/candle, "{icon_type}{appearance_wax_stage}{l
 	if(istype(W, /obj/item/flame/lighter))
 		var/obj/item/flame/lighter/L = W
 		if(L.lit)
-			light()
+			light(user = user)
 	else if(istype(W, /obj/item/flame/match))
 		var/obj/item/flame/match/M = W
 		if(M.lit)
-			light()
+			light(user = user)
 	else if(istype(W, /obj/item/flame/candle))
 		var/obj/item/flame/candle/C = W
 		if(C.lit)
-			light()
+			light(user = user)
 	return INTERACTION_HANDLED_PASS
 
 /obj/item/flame/candle/welder_act(mob/user, obj/item/W)
@@ -44,8 +44,10 @@ APPEARANCE_TEMPLATE(/obj/item/flame/candle, "{icon_type}{appearance_wax_stage}{l
 	return TRUE
 
 
-/obj/item/flame/candle/proc/light(flavor_text = span_notice("\The [usr] lights the [src]."))
+/obj/item/flame/candle/proc/light(flavor_text, mob/user)
 	if(!lit)
+		if(isnull(flavor_text))
+			flavor_text = user ? span_notice("\The [user] lights the [src].") : span_notice("\The [src] lights up.")
 		set_lit(TRUE)
 		visible_message(flavor_text)
 		set_light(CANDLE_LUM)
