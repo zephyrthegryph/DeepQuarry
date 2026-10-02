@@ -9,12 +9,12 @@
 		var/datum/om/prompt/choice/ask = allocate(/datum/om/prompt/choice)
 		set_var(ask, "answerer", user)
 		ask.choice = choice
-		TEST_ASSERT_EQUAL(scanner.hack_chosen(ask), 1, "a supported hack completes")
+		var/completed = scanner.hack_chosen(ask)
+		own_turf_contents(T)
+		TEST_ASSERT_EQUAL(completed, 1, "a supported hack completes")
 		TEST_ASSERT(QDELETED(scanner), "hacking consumes the original scanner")
 		var/path = options[choice]
-		var/obj/item/successor = locate(path) in T
-		if(successor)
-			rel_add(src, nameof(allocated), successor)
+		var/obj/item/successor = locate_within(T, path)
 		TEST_ASSERT_NOTNULL(successor, "hacking produces the selected successor on the floor")
 		TEST_ASSERT_EQUAL(successor.loc, T, "the hacked successor preserves the old floor placement")
 		TEST_ASSERT(!user.is_in_hands(successor), "hacking does not silently equip the replacement")
