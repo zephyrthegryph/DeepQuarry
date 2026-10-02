@@ -178,7 +178,7 @@
 		qdel(J)
 		H.icon = HI
 		H.hud_layerise()
-		usr.mapobjs += H
+		user.mapobjs += H
 #else
 
 	for(var/i = 0; i<icount; i++)
@@ -293,7 +293,7 @@
 		H.icon = I
 		qdel(I)
 		H.hud_layerise()
-		usr.mapobjs += H
+		user.mapobjs += H
 
 #endif
 

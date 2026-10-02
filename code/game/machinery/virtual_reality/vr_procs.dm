@@ -88,7 +88,7 @@
 	for(var/lang in C.prefs.read_preference(/datum/preference/alternate_languages)) // migrated
 		var/datum/language/chosen_language = GLOB.all_languages[lang]
 		if(chosen_language)
-			if(is_lang_whitelisted(usr,chosen_language) || (avatar.species && (chosen_language.name in avatar.species.secondary_langs)))
+			if(is_lang_whitelisted(avatar, chosen_language) || (avatar.species && (chosen_language.name in avatar.species.secondary_langs)))
 				avatar.add_language(lang)
 
 	OM_EMIT(avatar, /datum/om/event/human_dna_finalized)
