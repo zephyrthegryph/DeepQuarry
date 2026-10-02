@@ -80,7 +80,7 @@
 	own_turf_contents(get_turf(frame))
 	TEST_ASSERT_EQUAL(frame.state, FRAME_FASTENED, "Unwiring must return to a fastened board")
 	var/returned_cable = 0
-	for(var/obj/item/stack/cable_coil/returned in get_turf(frame))
+	for(var/obj/item/stack/cable_coil/returned as anything in turf_contents_of_type(get_turf(frame), /obj/item/stack/cable_coil))
 		returned_cable += returned.get_amount()
 	TEST_ASSERT_EQUAL(returned_cable, 6, "Unwiring must return the five consumed lengths alongside the remaining one")
 	TEST_ASSERT(interim_construction_step(frame, actor, /datum/interaction/construction/frame/unfasten_board), "Board unfastening failed")
@@ -106,3 +106,35 @@
 	TEST_ASSERT_EQUAL(wall.construction_stage, 6, "Mending must restore the intact reinforced wall")
 	TEST_ASSERT(wall.density && wall.reinf_material == steel, "Reversible construction must preserve the wall and its reinforcement")
 
+
+
+/// Dispatching a UI action directly has no ambient usr: it must use the supplied actor.
+/datum/unit_test/interim_airlock_electronics_login_actor/Run()
+	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human/consistent)
+	actor.real_name = "Explicit Electronics Configurator"
+	actor.name = actor.real_name
+	var/obj/item/airlock_electronics/electronics = allocate(/obj/item/airlock_electronics)
+	TEST_ASSERT(electronics.locked, "Electronics must initially be locked")
+	TEST_ASSERT_EQUAL(emag_target(electronics, 1, actor), 1, "Fixture must bypass access checks")
+	TEST_ASSERT(electronics.ui_act_login(actor, list()), "Login handler did not accept the explicit actor")
+	TEST_ASSERT(!electronics.locked, "Emagged electronics must unlock for the supplied actor")
+	TEST_ASSERT_EQUAL(electronics.last_configurator, actor.name, "Login attribution must identify the supplied actor")
+
+/datum/unit_test/interim_airlock_wire_electrify_actor/Run()
+	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human/consistent)
+	actor.real_name = "Explicit Wire Operator"
+	actor.name = actor.real_name
+	var/obj/machinery/door/airlock/door = allocate(/obj/machinery/door/airlock)
+	door.set_stat(0)
+	TEST_ASSERT(door.arePowerSystemsOn(), "Fixture must have working airlock power")
+	var/datum/wires/wires = wires_of(door)
+	TEST_ASSERT_NOTNULL(wires, "Airlock did not provide wires")
+	wires.pulse(WIRE_ELECTRIFY, actor)
+	TEST_ASSERT(door.isElectrified(), "Pulsing the electrify wire must electrify the door")
+	TEST_ASSERT(findtext(door.shockedby, actor.name), "Electrification history must credit the explicit wire operator")
+	wires.cut(WIRE_ELECTRIFY, actor)
+	TEST_ASSERT(wires.is_cut(WIRE_ELECTRIFY), "Cutting must sever the electrify wire")
+	TEST_ASSERT_EQUAL(door.electrified_until, -1, "Cut wire must leave permanent electrification")
+	wires.cut(WIRE_ELECTRIFY, actor)
+	TEST_ASSERT(!wires.is_cut(WIRE_ELECTRIFY), "Second cut action must mend the wire")
+	TEST_ASSERT(!door.isElectrified(), "Mending the electrify wire must remove electrification")

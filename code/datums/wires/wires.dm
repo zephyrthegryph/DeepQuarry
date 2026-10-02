@@ -193,7 +193,7 @@ UI_ACT_PROC(/datum/wires, ui_act_cut)
 		return
 
 	playsound(holder, I.usesound, 20, 1)
-	cut_color(color)
+	cut_color(color, user)
 	return TRUE
 
 // Pulse a wire.
@@ -215,7 +215,7 @@ UI_ACT_PROC(/datum/wires, ui_act_pulse)
 		return
 
 	play_sfx(holder, SFX_WEAPONS_EMPTY, 0.4)
-	pulse_color(color)
+	pulse_color(color, user)
 
 	// If they pulse the electrify wire, call interactable() and try to shock them.
 	if(get_wire(color) == WIRE_ELECTRIFY)
@@ -364,12 +364,12 @@ UI_ACT_PROC(/datum/wires, ui_act_attach)
  * Arugments:
  * * wire - a wire define, NOT a color. For example `WIRE_ELECTRIFY`.
  */
-/datum/wires/proc/cut(wire)
+/datum/wires/proc/cut(wire, mob/user)
 	if(is_cut(wire))
 		LAZYREMOVE(cut_wires, wire)
-		on_cut(wire, mend = TRUE)
+		on_cut(wire, TRUE, user)
 	else
-		cut_wire(wire)
+		cut_wire(wire, user)
 
 /**
  * Cuts an intact wire without ever mending it.
@@ -378,11 +378,11 @@ UI_ACT_PROC(/datum/wires, ui_act_attach)
  * interactive wirecutter toggle used by the wires UI. Returns TRUE only when
  * this call changed the wire's state.
  */
-/datum/wires/proc/cut_wire(wire)
+/datum/wires/proc/cut_wire(wire, mob/user)
 	if(is_cut(wire))
 		return FALSE
 	LAZYADD(cut_wires, wire)
-	on_cut(wire, mend = FALSE)
+	on_cut(wire, FALSE, user)
 	return TRUE
 
 /**
@@ -391,8 +391,8 @@ UI_ACT_PROC(/datum/wires, ui_act_attach)
  * Arugments:
  * * color - a wire color.
  */
-/datum/wires/proc/cut_color(color)
-	cut(get_wire(color))
+/datum/wires/proc/cut_color(color, mob/user)
+	cut(get_wire(color), user)
 
 /**
  * Cuts a random wire.
@@ -432,7 +432,7 @@ UI_ACT_PROC(/datum/wires, ui_act_attach)
  * * wire - a wire define, NOT color. For example 'WIRE_ELECTRIFY'.
  * * mend - TRUE if we're mending the wire. FALSE if we're cutting.
  */
-/datum/wires/proc/on_cut(wire, mend = FALSE)
+/datum/wires/proc/on_cut(wire, mend = FALSE, mob/user)
 	return
 
 /**
@@ -441,10 +441,10 @@ UI_ACT_PROC(/datum/wires, ui_act_attach)
  * Arugments:
  * * wire - a wire define, NOT a color. For example `WIRE_ELECTRIFY`.
  */
-/datum/wires/proc/pulse(wire)
+/datum/wires/proc/pulse(wire, mob/user)
 	if(is_cut(wire))
 		return
-	on_pulse(wire)
+	on_pulse(wire, user)
 
 /**
  * Pulses the wire associated with the given color.
@@ -452,8 +452,8 @@ UI_ACT_PROC(/datum/wires, ui_act_attach)
  * Arugments:
  * * wire - a wire color.
  */
-/datum/wires/proc/pulse_color(color)
-	pulse(get_wire(color))
+/datum/wires/proc/pulse_color(color, mob/user)
+	pulse(get_wire(color), user)
 
 /**
  * Proc called when any wire is pulsed.
@@ -464,7 +464,7 @@ UI_ACT_PROC(/datum/wires, ui_act_attach)
  * Arugments:
  * * wire - a wire define, NOT color. For example 'WIRE_ELECTRIFY'.
  */
-/datum/wires/proc/on_pulse(wire)
+/datum/wires/proc/on_pulse(wire, mob/user)
 	return
 
 /**
@@ -545,4 +545,3 @@ UI_ACT_PROC(/datum/wires, ui_act_attach)
 				break
 
 #undef MAXIMUM_EMP_WIRES
-

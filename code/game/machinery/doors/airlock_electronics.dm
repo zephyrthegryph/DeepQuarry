@@ -61,25 +61,25 @@ UI_DATA_REPLACE(/obj/item/airlock_electronics, "merge:ui_data_obj_item_airlock_e
 /obj/item/airlock_electronics/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
 	if(!..())
 		return FALSE
-	if(usr.stat || usr.restrained() || (!ishuman(usr) && !istype(usr, /mob/living/silicon)))
+	if(user.stat || user.restrained() || (!ishuman(user) && !istype(user, /mob/living/silicon)))
 		return FALSE
 	return TRUE
 
 UI_ACT(/obj/item/airlock_electronics, "login", ui_act_login)
 UI_ACT_PROC(/obj/item/airlock_electronics, ui_act_login)
-	if(emagged || issilicon(usr))
+	if(emagged || issilicon(user))
 		locked = 0
-		last_configurator = usr.name
-	else if(isliving(usr))
+		last_configurator = user.name
+	else if(isliving(user))
 		var/obj/item/card/id/id
-		if(ishuman(usr))
-			var/mob/living/carbon/human/H = usr
+		if(ishuman(user))
+			var/mob/living/carbon/human/H = user
 			id = H.get_idcard()
 			if(id && check_access(id))
 				locked = 0
 				last_configurator = id.registered_name
 		if(locked)
-			var/obj/item/I = usr.get_active_hand()
+			var/obj/item/I = user.get_active_hand()
 			id = I?.GetID()
 			if(id && check_access(id))
 				locked = 0
@@ -105,7 +105,7 @@ UI_ACT_PROC(/obj/item/airlock_electronics, ui_act_access_all)
 	if(locked)
 		return TRUE
 	// Clears all access requirements; only allow users who may program any access.
-	var/list/available = get_available_accesses(usr)
+	var/list/available = get_available_accesses(user)
 	if(length(available) && length(available) >= length(SSaccess.get_all_station_access()))
 		conf_access = null
 	return TRUE
@@ -116,7 +116,7 @@ UI_ACT_PROC(/obj/item/airlock_electronics, ui_act_access)
 		return TRUE
 	// Re-validate the client-supplied access against what this user may actually program.
 	var/acc = params["access"]
-	if(acc in get_available_accesses(usr))
+	if(acc in get_available_accesses(user))
 		toggle_access(acc)
 	return TRUE
 
