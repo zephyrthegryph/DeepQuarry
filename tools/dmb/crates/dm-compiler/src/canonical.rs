@@ -196,11 +196,17 @@ pub(super) fn invocation_declaration_projection(items: &[Item]) -> Vec<Item> {
 /// replay. A new declaration changes only its own signature/settings/static
 /// syntax; inherited metadata is an explicit fragment input.
 #[derive(Clone,Copy,Default)]
-pub(super) struct InvocationCounters {pub signature_hits:usize,pub signature_misses:usize,pub syntax_hits:usize,pub syntax_misses:usize,pub frame_hits:usize,pub frame_misses:usize,pub point_reads:usize,pub batch_records:usize}
+pub(super) struct InvocationCounters {pub signature_hits:usize,pub signature_misses:usize,pub syntax_hits:usize,pub syntax_misses:usize,pub frame_hits:usize,pub frame_misses:usize,pub point_reads:usize,pub batch_records:usize,pub parameter_hits:usize,pub parameter_derived:usize,pub parameter_restored:usize,pub parameter_errors:usize,pub parameter_batches:usize,pub parameter_parse_seconds:f64}
 #[derive(Default)]
 pub(super) struct InvocationFragments {
     entries: BTreeMap<String, Arc<InvocationSyntax>>,
     signatures: BTreeMap<String, Arc<(String, Vec<ParsedParameter>)>>,
+    parameters:BTreeMap<String,Arc<Vec<ParsedParameter>>>,
+    parameter_bytes:usize,
+    requested_parameters:BTreeMap<String,Arc<Vec<ParsedParameter>>>,
+    requested_parameter_bytes:usize,
+    parameter_misses:BTreeSet<String>,
+    parameter_errors:BTreeMap<String,String>,
     pending: BTreeMap<String, Vec<u8>>,
     pending_bytes: usize,
     store: Option<Store>,
@@ -254,6 +260,69 @@ impl InvocationFragments {
     fn read_record(&self,key:Key,prefix:&str)->Option<Vec<u8>> {
         let store=self.store.as_ref()?;let mut row=None;
         Self::read_records(store,self.packed.as_ref(),&[key],prefix,1024*1024,1024*1024,&mut |_,bytes|row=bytes);row
+    }
+    fn parameter_namespace()->String {format!("invocation-parameters-v1-{}",env!("DM_EMISSION_FINGERPRINT"))}
+    fn parameter_source(item:&Item)->Result<&str,String> {
+        let header=item.header.trim();
+        let (_,params)=header.split_once('(').ok_or_else(||format!("unsupported procedure header {header}"))?;
+        params.rsplit_once(") as ").map(|(params,_)|params).or_else(||params.strip_suffix(')')).ok_or_else(||format!("unsupported procedure header {header}"))
+    }
+    fn parameter_key(source:&str)->String {format!("{:x}",Sha256::digest(source.as_bytes()))}
+    fn remember_parameters(&mut self,key:String,parameters:Vec<ParsedParameter>) {
+        if let Ok(bytes)=rmp_serde::to_vec_named(&parameters) {
+            let charge=bytes.len().saturating_mul(3)+key.len()+128;
+            if !self.parameters.contains_key(&key)&&self.parameter_bytes.saturating_add(charge)<=8*1024*1024 {
+                self.parameter_bytes+=charge;self.parameters.insert(key.clone(),Arc::new(parameters));
+            }else if !self.requested_parameters.contains_key(&key)&&self.requested_parameter_bytes.saturating_add(charge)<=8*1024*1024 {
+                self.requested_parameter_bytes+=charge;self.requested_parameters.insert(key.clone(),Arc::new(parameters));
+            }
+            if bytes.len()<=1024*1024 {
+                self.queue_pending(format!("parameters:{key}"),bytes);
+                if self.pending_bytes>4*1024*1024 {self.flush();}
+            }
+        }
+    }
+    fn prefetch_parameters(&mut self,inputs:&[(&Item,&str,bool)]) {
+        self.parameter_errors.clear();self.requested_parameters.clear();self.requested_parameter_bytes=0;
+        let sources:BTreeMap<_,_>=inputs.iter().filter_map(|(item,_,_)|Self::parameter_source(item).ok().map(|source|(Self::parameter_key(source),source))).collect();
+        if let Some(store)=self.store.clone() {
+            let packed=self.packed.clone();
+            let keys:Vec<_>=sources.keys().filter(|key|!self.parameters.contains_key(*key)&&!self.parameter_misses.contains(*key)).map(|key|Key::new(Self::parameter_namespace(),key)).collect();
+            self.counters.batch_records+=keys.len();
+            Self::read_records(&store,packed.as_ref(),&keys,"parameters:",1024*1024,8*1024*1024,&mut |key,bytes| {
+                if let Some(bytes)=bytes {
+                    if let Ok(value)=rmp_serde::from_slice::<Vec<ParsedParameter>>(&bytes) {
+                        let charge=bytes.len().saturating_mul(3)+key.name.len()+128;
+                        if self.parameter_bytes.saturating_add(charge)<=8*1024*1024 {self.parameter_bytes+=charge;self.parameters.insert(key.name.clone(),Arc::new(value));self.counters.parameter_restored+=1;}
+                        else if self.requested_parameter_bytes.saturating_add(charge)<=8*1024*1024 {self.requested_parameter_bytes+=charge;self.requested_parameters.insert(key.name.clone(),Arc::new(value));self.counters.parameter_restored+=1;}
+                    }
+                }else if self.parameter_misses.len()<128_000 {self.parameter_misses.insert(key.name.clone());}
+            });
+        }
+        let missing:Vec<_>=sources.into_iter().filter(|(key,_)|!self.parameters.contains_key(key)&&!self.requested_parameters.contains_key(key)).collect();
+        let limits=crate::work::WorkLimits::configured();
+        let budget=limits.max_active_bytes.min(16*1024*1024);
+        let estimate=|input:&(String,&str)|input.1.len().saturating_mul(8).saturating_add(1024);
+        let mut start=0;
+        while start<missing.len() {
+            let mut end=start;let mut bytes=0usize;
+            while end<missing.len() {
+                let cost=estimate(&missing[end]);
+                if end>start&&bytes.saturating_add(cost)>budget {break;}
+                bytes=bytes.saturating_add(cost);end+=1;
+            }
+            // Only pure parameter parsing runs in parallel. Publication and all
+            // inherited metadata/static allocation remain source ordered.
+            let parse_started=std::time::Instant::now();
+            let result=crate::work::map_ordered(&missing[start..end],limits,estimate,|(_,source)|parse_parameters(source));
+            self.counters.parameter_parse_seconds+=parse_started.elapsed().as_secs_f64();self.counters.parameter_batches+=1;
+            if let Ok(results)=result {
+                for ((key,_),result) in missing[start..end].iter().zip(results) {
+                    match result {Ok(value)=>{self.counters.parameter_derived+=1;self.remember_parameters(key.clone(),value);},Err(reason)=>{self.counters.parameter_errors+=1;self.parameter_errors.insert(key.clone(),reason);}}
+                }
+            }
+            start=end;
+        }
     }
     fn signature_namespace() -> String {
         format!("invocation-signatures-v2-{}", env!("DM_EMISSION_FINGERPRINT"))
@@ -331,12 +400,13 @@ impl InvocationFragments {
             } else if self.syntax_misses.len()<128_000 {self.syntax_misses.insert(key.name.clone());}
         });
         let missing:Vec<_>=inputs.iter().copied().filter(|(item,_,_)|self.declaration_candidate(item).is_none()).collect();
+        self.prefetch_parameters(&missing);
         self.prefetch_signatures(&missing);
     }
     pub(super) fn prefetch_signatures(&mut self, inputs:&[(&Item,&str,bool)]) {
         let Some(store)=self.store.clone() else {return;};
         let packed=self.packed.clone();
-        let keys:Vec<_>=inputs.iter().map(|(item,owner,verb)|crate::lower_cache::shared_binding_fingerprint(&(*owner,*verb,&item.header)))
+        let keys:Vec<_>=inputs.iter().filter(|(item,_,_)|Self::parameter_source(item).ok().is_none_or(|source|!self.parameters.contains_key(&Self::parameter_key(source))&&!self.requested_parameters.contains_key(&Self::parameter_key(source)))).map(|(item,owner,verb)|crate::lower_cache::shared_binding_fingerprint(&(*owner,*verb,&item.header)))
             .collect::<BTreeSet<_>>().into_iter().filter(|key|!self.signatures.contains_key(key)&&!self.requested_signatures.contains_key(key)&&!self.signature_misses.contains(key)).map(|key|Key::new(Self::signature_namespace(),key)).collect();
         self.counters.batch_records+=keys.len();
         for keys in keys.chunks(4096) {
@@ -368,6 +438,14 @@ impl InvocationFragments {
         }
         if let Some(value)=self.requested_signatures.get(&key) {self.counters.signature_hits+=1;return Ok(value.as_ref().clone());}
         self.counters.signature_misses+=1;
+        let source=Self::parameter_source(item)?;
+        let parameter_key=Self::parameter_key(source);
+        if let Some(reason)=self.parameter_errors.get(&parameter_key){return Err(reason.clone());}
+        if let Some(parameters)=self.parameters.get(&parameter_key).or_else(||self.requested_parameters.get(&parameter_key)) {
+            self.counters.parameter_hits+=1;
+            return Ok((Self::declaration_path(item,owner,verb)?,parameters.as_ref().clone()));
+        }
+
         if !self.signature_misses.contains(&key) {
             self.counters.point_reads+=1;
             if let Some(bytes)=self.read_record(Key::new(Self::signature_namespace(),&key),"signature:") {
@@ -380,6 +458,7 @@ impl InvocationFragments {
             if self.signature_misses.len()<128_000 {self.signature_misses.insert(key.clone());}
         }
         let value = member_signature(item, owner, verb)?;
+        self.counters.parameter_derived+=1;
         let size = key.len()
             + value.0.len()
             + value
@@ -403,10 +482,7 @@ impl InvocationFragments {
         }
         // Persistence is independent of whether the optional decoded cache has
         // room. Large projects must not repeatedly derive the uncached suffix.
-        if let Ok(bytes) = rmp_serde::to_vec_named(&value) {
-            self.queue_pending(format!("signature:{key}"), bytes);
-            if self.pending_bytes>4*1024*1024 {self.flush();}
-        }
+        self.remember_parameters(parameter_key,value.1.clone());
         Ok(value)
     }
     pub(super) fn syntax(
@@ -513,6 +589,7 @@ impl InvocationFragments {
         self.flush();
         if let Some(packed)=&self.packed{packed.clear_index_cache();}
         self.entries.clear();self.signatures.clear();self.bytes=0;
+        self.parameters.clear();self.parameter_bytes=0;self.parameter_errors.clear();self.requested_parameters.clear();self.requested_parameter_bytes=0;
         self.requested_syntax.clear();self.requested_bytes=0;
         self.requested_encoded.clear();self.requested_encoded_bytes=0;
         self.requested_signatures.clear();self.requested_signature_bytes=0;
@@ -528,6 +605,7 @@ impl InvocationFragments {
     fn queue_pending(&mut self,key:String,bytes:Vec<u8>) {
         if self.pending.len()>=60_000 {self.flush();}
         if let Some(handle)=key.strip_prefix("handle:") {if let Ok(payload)=std::str::from_utf8(&bytes){self.remember_handle(handle,payload);}self.handle_misses.remove(handle);}
+        else if let Some(parameter)=key.strip_prefix("parameters:") {self.parameter_misses.remove(parameter);}
         else if let Some(signature)=key.strip_prefix("signature:") {self.signature_misses.remove(signature);}
         else {self.syntax_misses.remove(&key);}
         self.pending_bytes=self.pending_bytes.saturating_add(bytes.len());
@@ -545,7 +623,8 @@ impl InvocationFragments {
             packed.write_many(&records,None).is_ok_and(|commit|commit==dm_store::Commit::Applied)
         }else {
             let updates:Vec<_>=self.pending.iter().map(|(key,bytes)| {
-                if let Some(key)=key.strip_prefix("signature:"){Change::Put(Key::new(Self::signature_namespace(),key),bytes.clone())}
+                if let Some(key)=key.strip_prefix("parameters:"){Change::Put(Key::new(Self::parameter_namespace(),key),bytes.clone())}
+                else if let Some(key)=key.strip_prefix("signature:"){Change::Put(Key::new(Self::signature_namespace(),key),bytes.clone())}
                 else if let Some(key)=key.strip_prefix("handle:"){Change::Put(Key::new(Self::handles_namespace(),key),bytes.clone())}
                 else {Change::Put(Key::new(Self::namespace(),key),bytes.clone())}
             }).collect();
@@ -560,7 +639,9 @@ impl InvocationFragments {
         if started.elapsed().as_millis()>100&&std::env::var_os("DM_BUILD_TRACE").is_some(){eprintln!("DM_BUILD_TRACE slow invocation publication: records={records} bytes={bytes} {:.3}s",started.elapsed().as_secs_f64());}
     }
     fn resident_bytes(&self) -> usize {
-        self.bytes
+        self.bytes+self.parameter_bytes+self.requested_parameter_bytes
+            + self.parameter_errors.iter().map(|(key,reason)|key.capacity()+reason.capacity()+96).sum::<usize>()
+            + self.parameter_misses.len()*128
             + self.packed.as_ref().map_or(0,dm_store::PackedRecords::retained_index_bytes)
             + self.handles.len()*112
             + self.requested_bytes + self.requested_encoded_bytes + self.requested_signature_bytes
@@ -572,6 +653,7 @@ impl InvocationFragments {
                 .sum::<usize>()
     }
     fn release_requested(&mut self) {
+        self.requested_parameters.clear();self.requested_parameter_bytes=0;self.parameter_errors.clear();
         self.requested_syntax.clear();self.requested_bytes=0;
         self.requested_encoded.clear();self.requested_encoded_bytes=0;
         self.requested_signatures.clear();self.requested_signature_bytes=0;
@@ -1096,7 +1178,7 @@ impl CanonicalSession {
             ));
         self.invocation_fragments = InvocationFragments::open(&root);
         self.invocation_queries = InvocationQueries::open(&root);
-        self.physical_rows.clear();
+        self.physical_rows=crate::physical_rows::PhysicalRowsDirectory::open(&root,&project_identity);
         self.initializer_sources=initializer_pipeline::InitializerSources::open(&root);
         self.owner_bindings.bind(&root);
         self.owner_frames = Arc::new(Mutex::new(OwnerFrameQueries::open(&root)));

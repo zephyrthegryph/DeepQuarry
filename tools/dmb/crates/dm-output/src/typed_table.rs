@@ -148,6 +148,17 @@ impl<T:Clone+Serialize+DeserializeOwned> TypedTable<T> {
         store.lock().map_err(|_|invalid("typed store poisoned"))?.flush()?;Ok(pages)
     }
     pub fn snapshot(&mut self)->io::Result<Self> {let segments=self.segments()?;self.flush_backing()?;let mut result=Self::default().with_backing(self.backing.clone());result.append_segments(segments)?;Ok(result)}
+    pub fn address_resident_segments(&mut self)->io::Result<()> {
+        let Some(store)=self.backing.clone() else {return Err(io::Error::new(io::ErrorKind::Unsupported,"typed table backing missing"));};
+        let segments=self.segments()?;let mut addressed=Vec::new();
+        for segment in segments {match segment {
+            TableSegment::Resident(rows)=>{for chunk in rows.chunks(256) {let page=store.lock().map_err(|_|invalid("typed store poisoned"))?.stage_page(chunk)?;addressed.push(TableSegment::Addressed {store:store.clone(),page});}},
+            TableSegment::ResidentRange {rows,start,end}=>{for chunk in rows[start..end].chunks(256) {let page=store.lock().map_err(|_|invalid("typed store poisoned"))?.stage_page(chunk)?;addressed.push(TableSegment::Addressed {store:store.clone(),page});}},
+            other=>addressed.push(other),
+        }}
+        store.lock().map_err(|_|invalid("typed store poisoned"))?.flush()?;
+        self.segments=addressed;self.starts.clear();self.rows=0;self.overlays.clear();for segment in &self.segments {self.starts.push(self.rows);self.rows+=segment.len();}Ok(())
+    }
     pub fn export_page_slices(&self,start:usize,end:usize)->io::Result<Vec<PageSliceRef>> {
         let mut result=Vec::new();
         for segment in self.slice_segments(start,end)? {match segment {

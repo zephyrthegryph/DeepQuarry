@@ -4,6 +4,8 @@
 use fs2::FileExt;
 mod shared_artifacts;
 mod packed_records;
+mod immutable_records;
+pub use immutable_records::{VerifiedRecord,SharedReadBatch};
 pub use packed_records::PackedRecords;
 mod sessions;
 use redb::{Database, ReadableTable, TableDefinition};
@@ -21,7 +23,10 @@ use std::{
 
 const RECORDS: TableDefinition<&str, &[u8]> = TableDefinition::new("records");
 const SCHEMA_KEY: &str = "@schema";
-const SCHEMA: &[u8] = b"dm-store-v2-sha256";
+const LEGACY_SCHEMA: &[u8] = b"dm-store-v2-sha256";
+const SCHEMA: &[u8] = b"dm-store-v3-immutable-heads";
+const HEADS: TableDefinition<&str, &[u8]> = TableDefinition::new("named_heads_v3");
+const PAYLOADS: TableDefinition<&str, &[u8]> = TableDefinition::new("immutable_payloads_v3");
 const MAX_RECORD: usize = 256 * 1024 * 1024;
 
 fn error(e: impl std::fmt::Display) -> io::Error {
@@ -194,11 +199,12 @@ impl Store {
             }
         };
         match schema {
-            Some(value) if value != SCHEMA => return Err(invalid_data("unsupported dm-store schema")),
-            Some(_) => {},
-            None => {
+            Some(value) if value != SCHEMA && value != LEGACY_SCHEMA => return Err(invalid_data("unsupported dm-store schema")),
+            Some(value) if value == SCHEMA => {},
+            _ => {
                 let tx=db.begin_write().map_err(error)?;
                 { let mut table=tx.open_table(RECORDS).map_err(error)?; table.insert(SCHEMA_KEY,SCHEMA).map_err(error)?; }
+                {tx.open_table(HEADS).map_err(error)?;tx.open_table(PAYLOADS).map_err(error)?;}
                 tx.commit().map_err(error)?;
             }
         }
@@ -253,69 +259,8 @@ impl Store {
         max_group_bytes: usize, max_session_bytes: usize,
         cancel: Option<&AtomicBool>, prefix: bool,
     ) -> io::Result<ReadBatch> {
-        if group_records == 0 { return Err(error("read group must contain records")); }
-        if keys.len() > 64_000 {
-            return Err(error("batch exceeds 64000 records"));
-        }
-        let encoded = keys
-            .iter()
-            .map(Key::encode)
-            .collect::<io::Result<Vec<_>>>()?;
-        let raw = self.access(cancel, |db| {
-            let tx = db.begin_read().map_err(error)?;
-            let table = tx.open_table(RECORDS).map_err(error)?;
-            let mut values = Vec::with_capacity(keys.len());
-            let mut bytes = 0usize;
-            let mut group_bytes = 0usize;
-            for (ordinal, key) in encoded.iter().enumerate() {
-                if ordinal % group_records == 0 { group_bytes = 0; }
-                let stored = table.get(key.as_str()).map_err(error)?;
-                let size = stored.as_ref().map_or(0, |value| value.value().len());
-                if size.saturating_sub(32) > max_record_bytes.min(MAX_RECORD) {
-                    if prefix { break; }
-                    return Err(io::Error::new(
-                        io::ErrorKind::InvalidInput,
-                        "read record exceeds stage byte limit",
-                    ));
-                }
-                bytes = bytes
-                    .checked_add(size)
-                    .ok_or_else(|| error("read batch size overflow"))?;
-                group_bytes = group_bytes.checked_add(size).ok_or_else(||error("read group size overflow"))?;
-                if group_bytes > max_group_bytes || bytes > max_session_bytes.min(128 * 1024 * 1024) {
-                    if prefix { break; }
-                    return Err(io::Error::new(
-                        io::ErrorKind::InvalidInput,
-                        "read batch exceeds stage byte limit",
-                    ));
-                }
-                values.push(stored.map(|value| value.value().to_vec()));
-            }
-            Ok(values)
-        })?;
-        // Verify checksums and construct witnesses after releasing DB ownership.
-        let mut values = Vec::with_capacity(keys.len());
-        let mut witnesses = Vec::with_capacity(keys.len());
-        for (key, raw) in keys.iter().zip(raw) {
-            let value = raw.as_deref().map(decode_record).transpose()?;
-            // decode_record already verified the stored SHA. Reuse it for the
-            // transaction witness instead of hashing each payload a second time.
-            let value_digest = raw.as_ref().map(|bytes| {
-                const HEX: &[u8; 16] = b"0123456789abcdef";
-                let mut digest = String::with_capacity(64);
-                for byte in &bytes[..32] {
-                    digest.push(HEX[(byte >> 4) as usize] as char);
-                    digest.push(HEX[(byte & 15) as usize] as char);
-                }
-                digest
-            });
-            witnesses.push(ReadWitness {
-                key: key.clone(),
-                value_digest,
-            });
-            values.push(value);
-        }
-        Ok(ReadBatch { values, witnesses })
+        let shared=self.read_shared_grouped(keys,&BTreeMap::new(),group_records,max_record_bytes,max_group_bytes,max_session_bytes,cancel,prefix)?;
+        Ok(ReadBatch {values:shared.values.into_iter().map(|value|value.map(|value|value.bytes().to_vec())).collect(),witnesses:shared.witnesses})
     }
 
     /// All witness comparisons and writes occur in one transaction. A conflict writes nothing.
@@ -366,12 +311,13 @@ impl Store {
             let tx = db.begin_write().map_err(error)?;
             {
                 let mut table = tx.open_table(RECORDS).map_err(error)?;
+                let mut heads=tx.open_table(HEADS).map_err(error)?;
+                let mut payloads=tx.open_table(PAYLOADS).map_err(error)?;
                 for witness in witnesses {
-                    let actual = table
-                        .get(witness.key.encode()?.as_str())
-                        .map_err(error)?
-                        .map(|v| decode_record(v.value()).map(|value| digest(&value)))
-                        .transpose()?;
+                    let name=witness.key.encode()?;
+                    let actual=if let Some(head)=heads.get(name.as_str()).map_err(error)? {
+                        Some(immutable_records::decode_head(head.value())?.0)
+                    } else {table.get(name.as_str()).map_err(error)?.map(|v|decode_record(v.value()).map(|value|digest(&value))).transpose()?};
                     if actual != witness.value_digest {
                         return Ok(Commit::Conflict);
                     }
@@ -379,12 +325,16 @@ impl Store {
                 for (key, value) in encoded {
                     match value {
                         Some(value) => {
-                            table
-                                .insert(key.as_str(), value.as_slice())
-                                .map_err(error)?;
+                            let name=immutable_records::hex(&value[..32]);
+                            let already=payloads.get(name.as_str()).map_err(error)?.is_some_and(|old|old.value()==value.as_slice());
+                            if !already {payloads.insert(name.as_str(),value.as_slice()).map_err(error)?;}
+                            let head=immutable_records::encode_head(&value[..32],value.len()-32);
+                            heads.insert(key.as_str(),head.as_slice()).map_err(error)?;
+                            table.remove(key.as_str()).map_err(error)?;
                         }
                         None => {
                             table.remove(key.as_str()).map_err(error)?;
+                            heads.remove(key.as_str()).map_err(error)?;
                         }
                     }
                 }
@@ -417,45 +367,36 @@ impl Store {
             serde_json::to_string(namespace).map_err(error)?
         );
         let upper = format!("{prefix}~");
-        let mut snapshot = self.access(cancel, |db| {
-            let tx = db.begin_read().map_err(error)?;
-            let table = tx.open_table(RECORDS).map_err(error)?;
-            let mut records = Vec::new();
-            let mut bytes = 0usize;
-            for row in table
-                .range(prefix.as_str()..upper.as_str())
-                .map_err(error)?
-            {
-                if cancel.is_some_and(|flag| flag.load(Ordering::Relaxed)) {
-                    return Err(io::Error::new(
-                        io::ErrorKind::Interrupted,
-                        "store snapshot cancelled",
-                    ));
+        self.access(cancel, |db| {
+            let tx=db.begin_read().map_err(error)?;
+            let heads=tx.open_table(HEADS).map_err(error)?;
+            let legacy=tx.open_table(RECORDS).map_err(error)?;
+            let payloads=tx.open_table(PAYLOADS).map_err(error)?;
+            let mut records=BTreeMap::new();let mut bytes=0usize;let mut complete=true;
+            for use_heads in [true,false] {
+                let table=if use_heads {&heads}else{&legacy};
+                for row in table.range(prefix.as_str()..upper.as_str()).map_err(error)? {
+                    if cancel.is_some_and(|flag|flag.load(Ordering::Relaxed)){return Err(io::Error::new(io::ErrorKind::Interrupted,"store snapshot cancelled"));}
+                    let (name,raw)=row.map_err(error)?;
+                    if !use_heads&&heads.get(name.value()).map_err(error)?.is_some(){continue;}
+                    let key:Key=serde_json::from_str(name.value()).map_err(error)?;
+                    if key.namespace!=namespace{return Err(invalid_data("namespace index mismatch"));}
+                    let size=if use_heads {immutable_records::decode_head(raw.value())?.1}else{raw.value().len().saturating_sub(32)};
+                    let cost=size.saturating_add(32).saturating_add(key.namespace.len()).saturating_add(key.name.len());
+                    if records.len()==max_records||cost>max_bytes.saturating_sub(bytes){complete=false;break;}
+                    let value=if use_heads {
+                        let (identity,len)=immutable_records::decode_head(raw.value())?;
+                        let payload=payloads.get(identity.as_str()).map_err(error)?.ok_or_else(||invalid_data("snapshot immutable payload missing"))?;
+                        if payload.value().len()!=len.saturating_add(32){return Err(invalid_data("snapshot immutable payload wire length mismatch"));}
+                        let value=decode_record(payload.value())?;
+                        if value.len()!=len||immutable_records::hex(&payload.value()[..32])!=identity{return Err(invalid_data("snapshot payload/head mismatch"));}value
+                    } else {decode_record(raw.value())?};
+                    bytes+=cost;records.insert(key,value);
                 }
-                let (key, value) = row.map_err(error)?;
-                let key: Key = serde_json::from_str(key.value()).map_err(error)?;
-                if key.namespace != namespace {
-                    return Err(invalid_data("namespace index mismatch"));
-                }
-                let cost = value.value().len() + key.namespace.len() + key.name.len();
-                if records.len() == max_records || cost > max_bytes.saturating_sub(bytes) {
-                    return Ok(NamespaceSnapshot {
-                        records,
-                        complete: false,
-                    });
-                }
-                bytes += cost;
-                records.push((key, value.value().to_vec()));
+                if !complete {break;}
             }
-            Ok(NamespaceSnapshot {
-                records,
-                complete: true,
-            })
-        })?;
-        for (_, value) in &mut snapshot.records {
-            *value = decode_record(value)?;
-        }
-        Ok(snapshot)
+            Ok(NamespaceSnapshot {records:records.into_iter().collect(),complete})
+        })
     }
     pub fn put_many(
         &self,

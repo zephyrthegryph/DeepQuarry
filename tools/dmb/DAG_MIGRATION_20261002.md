@@ -370,3 +370,9 @@ Old Y recovery cache archive completed at D:/dmb-benchmark-archive/20261002-y-ca
 - Iteration benchmark reports compiler-child peak private/working memory and cumulative Windows IO counters. Timing-only native compilation; no Rust tests or DreamDaemon.
 - AB cache preserved at D:/dmb-benchmark-archive/20261002-ab-cache; active timing caches remain on E SSD.
 - Remaining explicit gaps: full procedure metadata traversal/decode and cold declaration preparation, durable physical-row directory restoration, structural-edit target, and correctness gates. No completion claim.
+
+## AD timing checkpoint, bfd07ee6c6 (regression, not completion)
+
+Cold empty SSD cache245.714s, unchanged0.328s, warmbody25.590s, revert7.298s, freshprocessunchanged0.346s, freshbody39.016s. Edits still1lowered/68410reused. All native publication completed; no tests/runtime validation.
+
+Physical directory recorded0hits. Auxiliary frontend trimming cleared it before replay (baseline804.2MiB beforetrim /683.5MiB after against512MiB limit); optional in-memory directory alone was ineffective. Durable restoration is now coded but unmeasured. Warm directory capture1.120s; metadataread.296s/decode1.920s/replay1.648s; compiler16.050s andserialization2.173s. Cold declarationallocation75.785s, template/metadata persistence4.337s (11batches). No claimed speedup; next checkpoint must show real rowhits and improved walltimes.

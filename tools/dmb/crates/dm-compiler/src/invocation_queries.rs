@@ -87,9 +87,13 @@ impl<'a,'debug> MetadataContext<'a,'debug> {
         };
         if !matches!(key,MetadataRead::Resolved(_)){self.observations.insert(key.clone(),value.clone());}value
     }
-    pub(crate) fn publish(&mut self,owner:&str,name:&str,verb:bool,metadata:&ProcMetadata,identity:&str) {
+    pub(crate) fn publish(&mut self,owner:&str,name:&str,verb:bool,metadata:&ProcMetadata) {
         let key=(owner.to_owned(),name.to_owned(),verb);
-        let record=Arc::new(MetadataRecord {reads:Vec::new(),parent_identity:String::new(),value:Some(Arc::new(metadata.clone())),identity:identity.to_owned(),semantic_identity:crate::lower_cache::shared_binding_fingerprint(&Some(metadata))});
+        let semantic_identity=crate::lower_cache::shared_binding_fingerprint(&Some(metadata));
+        let value=if semantic_identity==self.default_semantic_identity {Arc::clone(&self.default_metadata)}else{Arc::new(metadata.clone())};
+        // Published records are generation-local value overlays, never persisted
+        // as proof recipes. Downstream observations consume semantic_identity.
+        let record=Arc::new(MetadataRecord {reads:Vec::new(),parent_identity:String::new(),value:Some(value),identity:semantic_identity.clone(),semantic_identity});
         let changed=self.current.get(&key).is_some_and(|old|old.semantic_identity!=record.semantic_identity);
         self.published.insert(key.clone(),record);
         if changed {

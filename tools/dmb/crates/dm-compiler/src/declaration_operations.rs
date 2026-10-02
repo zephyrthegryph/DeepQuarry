@@ -165,7 +165,7 @@ fn scalars(witness:&Witness,dmb:Option<&Dmb>,class:u32,resource:Option<&(String,
  if witness.allocation {reads.push(dmb.map_or(witness.defining_list,|dmb|dmb.classes[class as usize].lists_and_procs[4]) as u64);reads.push(dmb.map_or(witness.footer,|dmb|dmb.variable_footer) as u64);for(id,length)in &witness.list_lengths {reads.push(*id as u64);reads.push(dmb.and_then(|dmb|dmb.lists.get(*id as usize)).map_or(*length,|words|words.len()) as u64);}}
  reads.push(resource.map_or(u64::MAX,|(_,id)|*id as u64));reads
 }
-fn recipe_identity(operations:&[Operation],variable:Option<&VariableRecipe>,property:Option<&PropertyRecipe>)->Option<String>{Some(format!("{:x}",Sha256::digest(rmp_serde::to_vec_named(&(operations,variable,property)).ok()?)))}
+fn recipe_identity(operations:&[Operation],variable:Option<&VariableRecipe>,property:Option<&PropertyRecipe>)->Option<String>{Some(crate::content_hash::text(crate::content_hash::named(b"",&(operations,variable,property))?))}
 fn decode_plan(bytes:&[u8])->Option<Plan>{let plan:Plan=rmp_serde::from_slice(bytes).ok()?;if !plan.object.valid()||(plan.variable.is_some()&&plan.property.is_some())||recipe_identity(&plan.operations,plan.variable.as_ref(),plan.property.as_ref())?!=plan.object.recipe_identity {return None;}Some(plan)}
 pub(super) fn replay(source:&str,class:u32,dmb:&mut Dmb,strings:&mut StringIndex,resources:&HashMap<String,u32>,mut metadata:Option<&mut TypeMetadataState>,pending:&mut Vec<PendingDynamic>)->bool {
  let Some(owner)=owner(dmb,class)else{return false;};let key=key(owner,source);

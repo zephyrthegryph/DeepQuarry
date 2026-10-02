@@ -24,17 +24,22 @@ impl PackedRecords {
     fn bucket_key(&self,id:u8)->Key {Key::new(&self.buckets,format!("{id:02x}"))}
     fn read_index(&self,ids:&[u8],cancel:Option<&AtomicBool>)->io::Result<(BTreeMap<u8,std::sync::Arc<VerifiedIndex>>,Vec<ReadWitness>)> {
         let keys:Vec<_>=ids.iter().map(|id|self.bucket_key(*id)).collect();
-        let batch=self.store.read_many_bounded(&keys,BUCKET_BYTES,INDEX_BYTES,cancel)?;
+        let cached_entries={
+            let mut cache=self.index_cache.lock().unwrap_or_else(|error|error.into_inner());
+            ids.iter().filter_map(|id|cache.latest(*id).map(|entry|(*id,entry))).collect::<Vec<_>>()
+        };
+        let cached=cached_entries.iter().filter_map(|(id,entry)|entry.record.clone().map(|record|(self.bucket_key(*id),record))).collect();
+        let batch=self.store.read_cached(&keys,&cached,BUCKET_BYTES,INDEX_BYTES,cancel)?;
         let mut result=BTreeMap::new();
         for ((id,bytes),witness) in ids.iter().zip(batch.values).zip(&batch.witnesses) {
             let identity=(*id,witness.value_digest.clone());
             let cached=self.index_cache.lock().unwrap_or_else(|error|error.into_inner()).get(&identity);
             let entry=if let Some(cached)=cached {cached} else {
-                let bytes=bytes.unwrap_or_default();
-                let view=IndexView::new(&bytes,*id)?;
+                let record=bytes;
+                let view=IndexView::new(record.as_ref().map_or(&[],|record|record.bytes()),*id)?;
                 let count=match view {IndexView::Binary {count,..}=>Some(count),_=>None};
-                let mut entry=VerifiedIndex {bytes,count,permit:0};
-                let charge=entry.bytes.capacity()+320;
+                let mut entry=VerifiedIndex {record,count,permit:0};
+                let charge=entry.record.as_ref().map_or(0,|record|record.bytes().len())+384;
                 if count.is_some()&&charge<=LOCAL_INDEX_CACHE&&reserve_index_bytes(charge) {
                     entry.permit=charge;
                     let entry=std::sync::Arc::new(entry);
@@ -256,17 +261,22 @@ fn reserve_index_bytes(bytes:usize)->bool {
     INDEX_RETAINED.fetch_update(Ordering::AcqRel,Ordering::Acquire,|held|held.checked_add(bytes).filter(|next|*next<=GLOBAL_INDEX_CACHE)).is_ok()
 }
 #[derive(Debug)]
-struct VerifiedIndex {bytes:Vec<u8>,count:Option<usize>,permit:usize}
+struct VerifiedIndex {record:Option<VerifiedRecord>,count:Option<usize>,permit:usize}
 impl VerifiedIndex {
     fn view(&self,id:u8)->io::Result<IndexView<'_>> {
         // Only successful full validation constructs a retained binary entry.
-        match self.count {Some(count)=>Ok(IndexView::Binary {bytes:&self.bytes,count}),None=>IndexView::new(&self.bytes,id)}
+        let bytes=self.record.as_ref().map_or(&[] as &[u8],|record|record.bytes());
+        match self.count {Some(count)=>Ok(IndexView::Binary {bytes,count}),None=>IndexView::new(bytes,id)}
     }
 }
 impl Drop for VerifiedIndex {fn drop(&mut self){if self.permit!=0 {INDEX_RETAINED.fetch_sub(self.permit,Ordering::AcqRel);}}}
 #[derive(Debug,Default)]
 struct IndexCache {entries:BTreeMap<(u8,Option<String>),(u64,std::sync::Arc<VerifiedIndex>)>,bytes:usize,clock:u64}
 impl IndexCache {
+    fn latest(&mut self,id:u8)->Option<std::sync::Arc<VerifiedIndex>> {
+        let key=self.entries.iter().filter(|(key,_)|key.0==id).max_by_key(|(_,entry)|entry.0).map(|(key,_)|key.clone())?;
+        self.get(&key)
+    }
     fn get(&mut self,key:&(u8,Option<String>))->Option<std::sync::Arc<VerifiedIndex>> {
         self.clock=self.clock.wrapping_add(1);let (touched,value)=self.entries.get_mut(key)?;*touched=self.clock;Some(value.clone())
     }

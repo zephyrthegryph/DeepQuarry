@@ -16,6 +16,7 @@ pub use dm_work as work;
 pub mod project_graph;
 pub mod shared_artifacts;
 mod observed_dependencies;
+mod content_hash;
 pub use project_graph::{ProcKey, ProcDescriptor, ProjectProcedureGraph, ProcedureArtifact,
     ProcedureMemoRef, ProcedureProbe};
 pub mod maps;

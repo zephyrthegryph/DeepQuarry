@@ -394,8 +394,8 @@ impl From<ParameterWire> for ParsedParameter {
     fn from(p: ParameterWire) -> Self { Self { name:p.0,type_flags:p.1,type_path:p.2,value_source:p.3,source_expression:p.4,default:p.5 } }
 }
 
-#[derive(Clone, serde::Serialize, serde::Deserialize)]
-#[serde(into = "ProcMetadataWire", from = "ProcMetadataWire")]
+#[derive(Clone, serde::Deserialize)]
+#[serde(from = "ProcMetadataWire")]
 struct ProcMetadata {
     name: Option<Vec<u8>>,
     description: Option<Vec<u8>>,
@@ -404,6 +404,14 @@ struct ProcMetadata {
     source_kind: u8,
     flags: u32,
     invisibility: Option<u8>,
+}
+
+// Serialize the same wire tuple by reference. Deriving `into` serialization
+// cloned every optional metadata buffer for each proof and artifact encoding.
+impl serde::Serialize for ProcMetadata {
+    fn serialize<S:serde::Serializer>(&self,serializer:S)->Result<S::Ok,S::Error> {
+        serde::Serialize::serialize(&(&self.name,&self.description,&self.category,self.source_parameter,self.source_kind,self.flags,self.invisibility),serializer)
+    }
 }
 
 type ProcMetadataWire = (Option<Vec<u8>>, Option<Vec<u8>>, Option<Vec<u8>>, u8, u8, u32, Option<u8>);
@@ -4079,8 +4087,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                     let (base_metadata,inherited_identity)=session.invocation_queries.base(&mut metadata_context,pending.owner.map(|_|pending.owner_path.as_str()),name,pending.verb)?;
                     if let Some(template)=session.invocation_queries.candidate(&declaration_identity,&inherited_identity) {
                         if template.statics.is_empty() {
-                            metadata_context.publish(&pending.owner_path,name,pending.verb,&template.metadata,
-                                &crate::lower_cache::shared_binding_fingerprint(&(&declaration_identity,&inherited_identity,&template.metadata)));
+                            metadata_context.publish(&pending.owner_path,name,pending.verb,&template.metadata);
                             invocation_plans.push(canonical::InvocationPlan {template,static_ids:HashMap::new()});
                             continue;
                         }
@@ -4099,8 +4106,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                     };
                     let params=syntax.params.clone();
                     let metadata=syntax.metadata.clone();
-                    metadata_context.publish(&pending.owner_path,name,pending.verb,&metadata,
-                        &crate::lower_cache::shared_binding_fingerprint(&(&declaration_identity,&inherited_identity,&metadata)));
+                    metadata_context.publish(&pending.owner_path,name,pending.verb,&metadata);
                     // The syntax candidate key certifies authored declarations and
                     // exact current inherited metadata. A static-free overlay has
                     // no allocation effects and can be reused directly.
@@ -4299,6 +4305,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
         session.invocation_queries.remember(Arc::clone(&template));
         invocation_plans.push(canonical::InvocationPlan {template,static_ids});
     }
+        if std::env::var_os("DM_BUILD_TRACE").is_some(){let c=session.invocation_fragments.counters;eprintln!("DM_BUILD_TRACE parameter queries: hits={} derived={} restored={} errors={} batches={} parse_seconds={:.3}",c.parameter_hits,c.parameter_derived,c.parameter_restored,c.parameter_errors,c.parameter_batches,c.parameter_parse_seconds);}
         if std::env::var_os("DM_BUILD_TRACE").is_some(){let c=session.invocation_fragments.counters;eprintln!("DM_BUILD_TRACE invocation queries: signature_hits={} signature_misses={} syntax_hits={} syntax_misses={} frame_hits={} frame_misses={} point_reads={} batch_records={}",c.signature_hits,c.signature_misses,c.syntax_hits,c.syntax_misses,c.frame_hits,c.frame_misses,c.point_reads,c.batch_records);}
         trace(&format!("invocation templates: reused={} derived={} metadata_restored={} metadata_reused={} metadata_derived={} persistence_batches={} persistence_seconds={:.3} resident_bytes={}",session.invocation_queries.hits,session.invocation_queries.misses,session.invocation_queries.metadata_restored,session.invocation_queries.metadata_reused,session.invocation_queries.metadata_derived,session.invocation_queries.persistence_batches,session.invocation_queries.persistence_seconds,session.invocation_queries.resident_bytes()));
         drop(metadata_context);
@@ -4532,6 +4539,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                         }
                         metadata_start=ordinal;
                         metadata_window=session.procedure_fragments.read_metadata_batch(&procedure_keys[ordinal..prefetched_until]);
+                        session.physical_rows.prefetch(&procedure_keys[ordinal..prefetched_until]);
                         keys.retain(|key| !session.procedure_fragments.has_handle(key));
                         let _ = session.graph.prefetch(&keys);
                     }
