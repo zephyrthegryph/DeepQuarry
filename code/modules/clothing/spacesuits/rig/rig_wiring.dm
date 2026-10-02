@@ -13,7 +13,7 @@
  * Interface lock can be pulsed to toggle whether or not the interface can be accessed.
  */
 
-/datum/wires/rig/on_cut(wire, mend)
+/datum/wires/rig/on_cut(wire, mend, mob/user)
 	var/obj/item/rig/rig = holder
 	switch(wire)
 		if(WIRE_RIG_SECURITY)
@@ -22,9 +22,9 @@
 				rig.req_one_access = initial(rig.req_one_access)
 		if(WIRE_RIG_INTERFACE_SHOCK)
 			rig.electrified = mend ? 0 : -1
-			rig.shock(usr,100)
+			rig.shock(user,100)
 
-/datum/wires/rig/on_pulse(wire)
+/datum/wires/rig/on_pulse(wire, mob/user)
 	var/obj/item/rig/rig = holder
 	switch(wire)
 		if(WIRE_RIG_SECURITY)
@@ -37,14 +37,14 @@
 			rig.malfunctioning += 10
 			if(rig.malfunction_delay <= 0)
 				rig.malfunction_delay = 20
-			rig.shock(usr,100)
+			rig.shock(user,100)
 		if(WIRE_RIG_INTERFACE_LOCK)
 			rig.interface_locked = !rig.interface_locked
 			rig.visible_message("\The [rig] clicks audibly as the software interface [rig.interface_locked?"darkens":"brightens"].")
 		if(WIRE_RIG_INTERFACE_SHOCK)
 			if(rig.electrified != -1)
 				rig.electrified = 30
-			rig.shock(usr,100)
+			rig.shock(user,100)
 
 /datum/wires/rig/interactable(mob/user)
 	var/obj/item/rig/rig = holder
