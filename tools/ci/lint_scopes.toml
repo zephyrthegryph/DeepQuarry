@@ -26,3 +26,7 @@ exempt_prefixes = ["code/__defines/"]
 [lint.deadline_polling]
 # check_deadline_polling.py: unit tests poll on purpose.
 exempt_contains = ["/unit_tests/"]
+
+[lint.verb_category]
+# verb_category_lint.py: unit tests build raw categories on purpose.
+exempt_prefixes = ["code/modules/unit_tests/"]
