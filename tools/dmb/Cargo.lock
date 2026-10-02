@@ -228,6 +228,8 @@ dependencies = [
  "byond-dmb",
  "dm-host",
  "dm-resources",
+ "dm-store",
+ "rmp-serde",
  "serde",
  "serde_json",
  "sha2",

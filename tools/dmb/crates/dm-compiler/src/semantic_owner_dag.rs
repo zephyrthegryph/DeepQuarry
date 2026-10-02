@@ -163,6 +163,8 @@ fn build_roots(roots:&[&[Item]],modified:&[Item],builtin:&Dmb,builtin_image:&[u8
     let mut groups=BTreeMap::<String,Vec<Arc<default_plans::OwnerDeclarationPlan>>>::new();
     for (item,plan) in changed_types.into_iter().zip(owner_plans) {groups.entry(item.header.trim().to_owned()).or_default().push(plan);}
     let removed:Vec<_>=recipes.keys().filter(|path|!path.is_empty()&&!next.contains_key(*path)).cloned().collect();
+    let changed_paths:BTreeSet<_>=next.iter().filter(|(path,identity)|recipes.get(*path)!=Some(*identity)).map(|(path,_)|path.clone()).chain(removed.iter().cloned()).collect();
+    let owners_changed=!changed.is_empty()||!removed.is_empty();
     for path in removed {
         recipes.remove(&path);if let Some(base)=builtins.owners.get(&path) {owners.insert(path,Arc::clone(base));} else {owners.remove(&path);}
     }
@@ -183,15 +185,22 @@ fn build_roots(roots:&[&[Item]],modified:&[Item],builtin:&Dmb,builtin_image:&[u8
         }
     }
     let removed:Vec<_>=globals.keys().filter(|name|!authored.contains_key(*name)&&!builtins.globals.contains_key(*name)).cloned().collect();
+    let mut globals_changed=!removed.is_empty();
     for name in removed {globals.remove(&name);}
     for (name,field) in &builtins.globals {
-        if !authored.contains_key(name)&&field_identity(globals.get(name))!=field_identity(Some(field)) {globals.insert(name.clone(),field.clone());}
+        if !authored.contains_key(name)&&field_identity(globals.get(name))!=field_identity(Some(field)) {globals_changed=true;globals.insert(name.clone(),field.clone());}
     }
     for (name,field) in authored {
-        if field_identity(globals.get(&name))!=field_identity(Some(&field)) {globals.insert(name,field);}
+        if field_identity(globals.get(&name))!=field_identity(Some(&field)) {globals_changed=true;globals.insert(name,field);}
+    }
+    if !owners_changed&&!globals_changed {
+        if let Some(previous)=previous {
+            if std::env::var_os("DM_BUILD_TRACE").is_some() {eprintln!("DM_BUILD_TRACE symbolic owner DAG: unchanged semantic model reused in {:.3}s",started.elapsed().as_secs_f64());}
+            return Arc::clone(previous);
+        }
     }
     let model=Arc::new(SemanticDeclarations {generation:next_model_generation(),owners,globals,recipes,builtin_identity:identity,builtins});
-    hydrate_values(&model);
+    hydrate_values(&model,previous.map(|_|&changed_paths),globals_changed||previous.is_none());
     if std::env::var_os("DM_BUILD_TRACE").is_some() {eprintln!("DM_BUILD_TRACE symbolic owner DAG: {reused} unchanged, {rebuilt} changed/imported recipes in {:.3}s",started.elapsed().as_secs_f64());}
     model
 }

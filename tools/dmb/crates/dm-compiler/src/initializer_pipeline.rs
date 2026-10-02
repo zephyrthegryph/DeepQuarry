@@ -1,6 +1,33 @@
 //! Generated initializer queries use the same semantic graph and section materializer.
 use super::*;
 
+#[derive(Clone,serde::Serialize,serde::Deserialize)]
+pub(super) struct InitializerRecipe {
+    pub key:crate::ProcKey,
+    pub descriptor:crate::ProcDescriptor,
+    pub source:Arc<str>,
+}
+pub(super) fn recipes(groups:&[(Option<u32>,Vec<PendingDynamic>)],dmb:&Dmb,strings:&StringIndex,attach:bool)->Vec<InitializerRecipe> {
+    groups.iter().map(|(owner,assignments)| {
+        let mut assignments:Vec<_>=assignments.iter().collect();
+        if owner.is_none() {assignments.sort_by_key(|assignment|!assignment.sized_array&&!literal_initializer(&assignment.expression,dmb,strings));}
+        let mut source=String::from("/proc/__initializer()\n");
+        for assignment in assignments {source.push_str(&format!("    {} = {}\n",assignment.name,assignment.expression));}
+        let owner_path=owner.and_then(|id|dmb.string(dmb.classes[id as usize].path_string_id())).map(|path|String::from_utf8_lossy(path)).unwrap_or_default();
+        let digest=crate::incremental::digest(source.as_bytes());
+        InitializerRecipe {key:crate::ProcKey {path:format!("@initializer|{owner_path}|{attach}|{digest}"),occurrence:0},
+            descriptor:crate::ProcDescriptor {body_digest:digest,frame_digest:"initializer-invocation-v2".into()},source:Arc::from(source)}
+    }).collect()
+}
+pub(super) fn group_assignments(pending:Vec<PendingDynamic>)->Vec<(Option<u32>,Vec<PendingDynamic>)> {
+    let mut groups=Vec::<(Option<u32>,Vec<PendingDynamic>)>::new();let mut indices=HashMap::new();
+    for assignment in pending {
+        let index=*indices.entry(assignment.owner).or_insert_with(||{let index=groups.len();groups.push((assignment.owner,Vec::new()));index});
+        groups[index].1.push(assignment);
+    }
+    groups
+}
+
 /// Derive generated-query identities before graph witness refresh, in exactly
 /// the same owner/assignment order as physical initializer publication.
 pub(super) fn query_keys(pending:&[PendingDynamic],dmb:&Dmb,strings:&StringIndex,attach:bool)->Vec<crate::ProcKey> {
@@ -38,19 +65,8 @@ pub(super) fn emit_dynamic_initializers_with_pool(
     pool: Option<&mut procedure_pipeline::LoweringPool>,
     session: Option<&mut canonical::CanonicalSession>,
 ) -> Result<Vec<u32>, String> {
-    let mut groups: Vec<(Option<u32>, Vec<PendingDynamic>)> = Vec::new();
-    // Index only the lookup. The vector retains first-occurrence owner order
-    // and each owner's authored assignment order for deterministic linking.
-    let mut group_indices: HashMap<Option<u32>, usize> = HashMap::new();
-    for assignment in pending {
-        let index = *group_indices.entry(assignment.owner).or_insert_with(|| {
-            let index = groups.len();
-            groups.push((assignment.owner, Vec::new()));
-            index
-        });
-        groups[index].1.push(assignment);
-    }
-    emit_initializer_groups_with_pool(dmb, groups, strings, classes, resources, globals, global_procs, project_bindings, prepared_member_globals, lowering_cache, attach, pool, session)
+    let groups=group_assignments(pending);
+    emit_initializer_groups_with_pool(dmb, groups, strings, classes, resources, globals, global_procs, project_bindings, prepared_member_globals, lowering_cache, attach, pool, session, None)
 }
 
 pub(super) fn emit_initializer_groups_with_pool(
@@ -67,6 +83,7 @@ pub(super) fn emit_initializer_groups_with_pool(
     attach: bool,
     mut pool: Option<&mut procedure_pipeline::LoweringPool>,
     mut session: Option<&mut canonical::CanonicalSession>,
+    cached_recipes:Option<&[InitializerRecipe]>,
 ) -> Result<Vec<u32>, String> {
     let mut generated = Vec::new();
     let phase_started = std::time::Instant::now();
@@ -77,10 +94,15 @@ pub(super) fn emit_initializer_groups_with_pool(
     let mut prepared_hits = 0;
     let mut lowered_groups = 0;
     let shared = Arc::clone(project_bindings);
+    let derived;
+    let plans=if let Some(plans)=cached_recipes {plans} else {
+        derived=recipes(&groups,dmb,strings,attach);&derived
+    };
+    if plans.len()!=groups.len() {return Err("initializer recipe inventory mismatch".into());}
     if let Some(session) = session.as_deref_mut() {
         // Headers were restored before declaration fact refresh. Fetch payloads
         // only for this requested group set; no stale helper inventory scan.
-        let keys=group_keys(groups.iter().map(|(owner,assignments)|(*owner,assignments.iter().collect())).collect(),dmb,strings,attach);
+        let keys:Vec<_>=plans.iter().map(|plan|plan.key.clone()).collect();
         for chunk in keys.chunks(1024) {
             let _ = session.graph.prefetch(chunk);
         }
@@ -94,46 +116,10 @@ pub(super) fn emit_initializer_groups_with_pool(
             let Some((ordinal, (owner, assignments))) = groups.next() else {
                 break;
             };
-            let assignments = if owner.is_none() {
-                let mut phased = assignments
-                    .into_iter()
-                    .map(|assignment| {
-                        let dynamic = !assignment.sized_array
-                            && !literal_initializer(&assignment.expression, dmb, strings);
-                        (dynamic, assignment)
-                    })
-                    .collect::<Vec<_>>();
-                phased.sort_by_key(|(dynamic, _)| *dynamic);
-                phased
-                    .into_iter()
-                    .map(|(_, assignment)| assignment)
-                    .collect::<Vec<_>>()
-            } else {
-                assignments
-            };
-            let mut source = String::from("/proc/__initializer()\n");
-            for assignment in &assignments {
-                source.push_str(&format!(
-                    "    {} = {}\n",
-                    assignment.name, assignment.expression
-                ));
-            }
-            let owner_path = owner
-                .and_then(|id| dmb.string(dmb.classes[id as usize].path_string_id()))
-                .map(|path| String::from_utf8_lossy(path).into_owned())
-                .unwrap_or_default();
-            let referenced_globals = referenced_initializer_globals(&source, globals);
-            let source_digest = crate::incremental::digest(source.as_bytes());
-            let key = crate::ProcKey {
-                path: format!("@initializer|{owner_path}|{attach}|{source_digest}"),
-                occurrence: 0,
-            };
-            let descriptor = crate::ProcDescriptor {
-                body_digest: source_digest,
-                // Owner is in the query key. Actual field/global facts are
-                // tracked witnesses, and fresh table IDs never enter a frame.
-                frame_digest: crate::lower_cache::shared_binding_fingerprint(&referenced_globals),
-            };
+            let plan=&plans[ordinal];
+            let source=&plan.source;
+            let key=plan.key.clone();
+            let descriptor=plan.descriptor.clone();
             let cached_envelope = session.as_deref_mut().and_then(|session| {
                 session.active_keys.insert(key.clone());
                 match session.graph.probe(&key, &descriptor) {
@@ -175,6 +161,7 @@ pub(super) fn emit_initializer_groups_with_pool(
             }
             parse_time += parse_started.elapsed();
             let bindings_started = std::time::Instant::now();
+            let referenced_globals=referenced_initializer_globals(&source,globals);
             let mut bindings = LowerBindings {
                 globals: referenced_globals,
                 shared: Some(Arc::clone(&shared)),

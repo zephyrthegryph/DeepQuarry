@@ -205,7 +205,7 @@ struct CachedUnit {
     skin_includes: Vec<PathBuf>,
     manifest_lines: Vec<(String, PathBuf, usize)>,
     output_text: String,
-    origins: Vec<DiskOrigin>,
+    origins: DiskOrigins,
     units: Vec<Unit>,
     unit_digests: Vec<[u8; 32]>,
     diagnostics: Vec<Diagnostic>,
@@ -213,7 +213,7 @@ struct CachedUnit {
     file_dir_changes: Vec<FileDirChange>,
 }
 
-const CACHE_FORMAT_VERSION: u32 = 9;
+const CACHE_FORMAT_VERSION: u32 = 10;
 const MAX_CACHED_LEAF_BYTES: usize = 512 * 1024;
 const MAX_CACHED_ORIGINS: usize = 8192;
 const MAX_CACHED_PATHS: usize = 8192;
@@ -279,7 +279,7 @@ struct DiskEntry {
     skin_includes: Vec<PathBuf>,
     manifest_lines: Vec<(String, PathBuf, usize)>,
     output_text: String,
-    origins: Vec<DiskOrigin>,
+    origins: DiskOrigins,
     units: Vec<DiskUnit>,
     unit_digests: Vec<[u8; 32]>,
     diagnostics: Vec<Diagnostic>,
@@ -292,6 +292,46 @@ struct DiskEntry {
 /// than its bounded resident size. The current path is restored on replay.
 #[derive(Clone, Serialize, Deserialize)]
 struct DiskOrigin(usize, usize, Option<PathBuf>);
+
+#[derive(Clone, Serialize, Deserialize)]
+struct DiskOriginRun { output:usize, source:usize, count:usize, stride:usize, path:Option<PathBuf> }
+#[derive(Clone, Default, Serialize, Deserialize)]
+struct DiskOrigins { runs:Vec<DiskOriginRun>, count:usize }
+impl DiskOrigins {
+    fn len(&self)->usize {self.count}
+    fn resident_bytes(&self)->usize {self.runs.capacity()*std::mem::size_of::<DiskOriginRun>() + self.runs.iter().filter_map(|run|run.path.as_ref()).map(|path|path.as_os_str().len()*2).sum::<usize>()}
+    fn valid(&self)->bool {
+        let mut count=0usize;let mut end=0usize;
+        for run in &self.runs {
+            if run.count==0 || run.stride>1 || run.output==0 || run.source==0 || run.output<end {return false;}
+            let Some(next)=count.checked_add(run.count) else {return false;};count=next;
+            if count>MAX_CACHED_ORIGINS {return false;}
+            let Some(next)=run.output.checked_add(run.count) else {return false;};end=next;
+            if run.source.checked_add(run.stride*(run.count-1)).is_none() {return false;}
+        }
+        count==self.count
+    }
+    fn iter(&self)->impl Iterator<Item=(usize,usize,Option<&PathBuf>)>+'_ {
+        self.runs.iter().flat_map(|run|(0..run.count).map(move |delta|(run.output+delta,run.source+run.stride*delta,run.path.as_ref())))
+    }
+}
+impl FromIterator<DiskOrigin> for DiskOrigins {
+    fn from_iter<T:IntoIterator<Item=DiskOrigin>>(values:T)->Self {
+        let mut result=Self::default();
+        for origin in values {
+            if let Some(last)=result.runs.last_mut() {
+                let stride=origin.1.checked_sub(last.source);
+                let compatible=if last.count==1 {stride.is_some_and(|delta|delta<=1)} else {last.source.checked_add(last.stride*last.count)==Some(origin.1)};
+                if last.output.checked_add(last.count)==Some(origin.0) && last.path==origin.2 && compatible {
+                    if last.count==1 {last.stride=stride.unwrap();}
+                    last.count+=1;result.count+=1;continue;
+                }
+            }
+            result.runs.push(DiskOriginRun{output:origin.0,source:origin.1,count:1,stride:0,path:origin.2});result.count+=1;
+        }
+        result
+    }
+}
 
 #[derive(Serialize, Deserialize)]
 struct DiskUnit {
@@ -413,12 +453,7 @@ impl CachedUnit {
                 .chain(&self.skin_includes)
                 .map(|path| path.as_os_str().len() + 32)
                 .sum::<usize>()
-            + self
-                .origins
-                .iter()
-                .filter_map(|origin| origin.2.as_ref())
-                .map(|path| path.as_os_str().len())
-                .sum::<usize>()
+
             + self.macro_dependencies.as_ref().map_or(0, |names| {
                 names
                     .iter()
@@ -438,7 +473,7 @@ impl CachedUnit {
                     FileDirChange::Pop => 1,
                 })
                 .sum::<usize>()
-            + self.origins.len() * std::mem::size_of::<DiskOrigin>()
+            + self.origins.resident_bytes()
             + self.units.len() * (std::mem::size_of::<Unit>() + 32)
             + self.diagnostics.len() * std::mem::size_of::<Diagnostic>()
             + self
@@ -541,6 +576,7 @@ impl PreprocessCache {
                 continue;
             }
             if let Ok(entry) = serde_json::from_slice::<DiskEntry>(&bytes) {
+                if !entry.origins.valid() {continue;}
                 let unit = CachedUnit::from(entry);
                 if unit.output_text.len() <= MAX_CACHED_LEAF_BYTES
                     && unit.origins.len() <= MAX_CACHED_ORIGINS
@@ -720,6 +756,7 @@ impl PreprocessCache {
                         entries
                             .into_iter()
                             .take(2)
+                            .filter(|entry|entry.origins.valid())
                             .map(CachedUnit::from)
                             .filter(CachedUnit::valid_digests)
                             .collect(),
@@ -871,6 +908,7 @@ fn preprocess_project_inner<P: SourceProvider>(
         provider,
         cache,
         output: PreprocessedProject::default(),
+        origin_builder: segmented.then(SourceMapBuilder::default),
         expanded: ExpansionWriter::default(),
         stack: Vec::new(),
         output_line: 1,
@@ -926,13 +964,14 @@ fn preprocess_project_inner<P: SourceProvider>(
     for (text, path, source_line) in std::mem::take(&mut ctx.manifest_lines) {
         ctx.expanded.push_str(&text);
         ctx.expanded.push_str("\n");
-        ctx.output.origins.push(Origin {
+        ctx.push_origin(Origin {
             output_line: ctx.output_line,
             path,
             source_line,
         });
         ctx.output_line += 1;
     }
+    if let Some(builder)=ctx.origin_builder.take() { ctx.output.origin_map=Some(Arc::new(builder.finish())); }
     let pieces = ctx.expanded.finish();
     if !segmented {
         ctx.output.text = pieces.iter().map(|piece| piece.as_ref()).collect();
@@ -1034,6 +1073,7 @@ struct Context<'a, P: SourceProvider> {
     provider: &'a P,
     cache: Option<&'a mut PreprocessCache>,
     output: PreprocessedProject,
+    origin_builder: Option<SourceMapBuilder>,
     expanded: ExpansionWriter,
     stack: Vec<PathBuf>,
     output_line: usize,
@@ -1048,6 +1088,15 @@ struct Context<'a, P: SourceProvider> {
 }
 
 impl<P: SourceProvider> Context<'_, P> {
+    fn push_origin(&mut self,origin:Origin) {
+        if let Some(builder)=&mut self.origin_builder {builder.push(origin);} else {self.output.origins.push(origin);}
+    }
+    fn origin_count(&self)->usize {self.origin_builder.as_ref().map_or(self.output.origins.len(),SourceMapBuilder::len)}
+    fn origins_from(&self,first:usize)->Box<dyn Iterator<Item=Origin>+'_> {
+        if let Some(builder)=&self.origin_builder {Box::new(builder.iter_from(first))}
+        else {Box::new(self.output.origins[first..].iter().cloned())}
+    }
+
     fn change_file_dir(&mut self, change: FileDirChange) {
         match &change {
             FileDirChange::Push(path, definition) => {
@@ -1218,19 +1267,23 @@ impl<P: SourceProvider> Context<'_, P> {
                     // A replayed subtree may contain hundreds of thousands of lines:
                     // intern its few paths once rather than allocating an Arc and
                     // joined PathBuf for each origin on every procedure edit.
-                    let mut origin_paths: BTreeMap<&PathBuf, Arc<PathBuf>> = BTreeMap::new();
-                    self.output.origins.extend(entry.origins.iter().map(|origin| {
-                        let path = origin.2.as_ref().map_or_else(
+                    let mut origin_paths: BTreeMap<PathBuf, Arc<PathBuf>> = BTreeMap::new();
+                    for origin in entry.origins.iter() {
+                        let path = origin.2.map_or_else(
                             || Arc::clone(&origin_path),
-                            |relative| Arc::clone(origin_paths.entry(relative)
-                                .or_insert_with(|| Arc::new(self.project_dir.join(relative)))),
+                            |relative| {
+                                if let Some(path)=origin_paths.get(relative) {return Arc::clone(path);}
+                                let path=Arc::new(self.project_dir.join(relative));
+                                origin_paths.insert(relative.clone(),Arc::clone(&path));path
+                            },
                         );
-                        Origin {
+                        let origin=Origin {
                             output_line: origin.0 + line_start - 1,
                             path,
                             source_line: origin.1,
-                        }
-                    }));
+                        };
+                        if let Some(builder)=&mut self.origin_builder {builder.push(origin);} else {self.output.origins.push(origin);}
+                    }
                     self.output
                         .units
                         .extend(entry.units.iter().cloned().map(|mut unit| {
@@ -1275,7 +1328,7 @@ impl<P: SourceProvider> Context<'_, P> {
         let map_start = self.output.map_includes.len();
         let skin_start = self.output.skin_includes.len();
         let manifest_start = self.manifest_lines.len();
-        let origin_start = self.output.origins.len();
+        let origin_start = self.origin_count();
         let unit_start_index = self.output.units.len();
         let diagnostic_start = self.output.diagnostics.len();
         let file_dir_change_start = self.file_dir_changes.len();
@@ -1554,7 +1607,7 @@ impl<P: SourceProvider> Context<'_, P> {
                     }
                     self.expanded.push_str(segment);
                     self.expanded.push_str("\n");
-                    self.output.origins.push(Origin {
+                    self.push_origin(Origin {
                         output_line: self.output_line,
                         path: origin_path.clone(),
                         source_line: source_line + offset,
@@ -1581,10 +1634,10 @@ impl<P: SourceProvider> Context<'_, P> {
             source_lines: line_number,
         });
         self.stack.pop();
-        if let Some(cache) = self.cache.as_deref_mut().filter(|_| cacheable) {
+        if cacheable && self.cache.is_some() {
             if (nested && self.output.diagnostics.len() != diagnostic_start)
                 || unit_end - unit_start > MAX_CACHED_LEAF_BYTES
-                || self.output.origins.len() - origin_start > MAX_CACHED_ORIGINS
+                || self.origin_count() - origin_start > MAX_CACHED_ORIGINS
                 || self.output.units.len() - unit_start_index > MAX_CACHED_ORIGINS
                 || self.reads.len() - read_start > MAX_CACHED_PATHS
             {
@@ -1636,8 +1689,7 @@ impl<P: SourceProvider> Context<'_, P> {
                     .collect(),
                 output_text: self.expanded.range(unit_start, unit_end),
                 unit_digests: self.output.unit_digests[unit_start_index..].to_vec(),
-                origins: self.output.origins[origin_start..]
-                    .iter()
+                origins: self.origins_from(origin_start)
                     .map(|origin| {
                         DiskOrigin(
                             origin.output_line - line_start + 1,
@@ -1684,6 +1736,7 @@ impl<P: SourceProvider> Context<'_, P> {
                     .collect(),
                 file_dir_changes: self.file_dir_changes[file_dir_change_start..].to_vec(),
             };
+            let Some(cache)=self.cache.as_deref_mut() else {return;};
             let key_bytes = cache_key.as_os_str().len();
             let is_new_key = !cache.entries.contains_key(&cache_key);
             cache.dirty.insert(cache_key.clone());

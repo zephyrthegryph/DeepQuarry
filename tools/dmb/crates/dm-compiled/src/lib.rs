@@ -1265,28 +1265,35 @@ impl BuildInputSnapshot {
         if self.missing_dependencies.iter().any(|path| path.exists()) {
             return false;
         }
+        // Resolution checks are independent observations. Keep the same bounded
+        // scheduler used for input stamps, rather than serially walking thousands
+        // of asset search paths during final publication.
         let mut resolved_names = BTreeSet::new();
-        if self.resource_requests.iter().any(|request| {
-            if !resolved_names.insert((&request.archive_name, &request.disk_path)) {
-                return false;
-            }
-            if proven {
-                return !proven_resource_resolution_current(
-                    project,
-                    &request.archive_name,
-                    &request.disk_path,
-                    &self.preprocessed.file_dirs,
-                );
-            }
-            resolved_resource_disk_path(
-                project,
-                &request.archive_name,
-                &self.preprocessed.file_dirs,
-            ) != request.disk_path
-        }) {
-            return false;
-        }
-        true
+        let requests: Vec<_> = self.resource_requests.iter().filter(|request| {
+            resolved_names.insert((&request.archive_name, &request.disk_path))
+        }).collect();
+        let file_dirs = &self.preprocessed.file_dirs;
+        dm_work::map_ordered(
+            &requests,
+            dm_work::WorkLimits::configured(),
+            |_| 1024,
+            |request| {
+                if proven {
+                    proven_resource_resolution_current(
+                        project,
+                        &request.archive_name,
+                        &request.disk_path,
+                        file_dirs,
+                    )
+                } else {
+                    resolved_resource_disk_path(
+                        project,
+                        &request.archive_name,
+                        file_dirs,
+                    ) == request.disk_path
+                }
+            },
+        ).is_ok_and(|results| results.into_iter().all(|current| current))
     }
 }
 

@@ -8,6 +8,8 @@ description = "Indexed BYOND output and conservative binary patch planning"
 [dependencies]
 dm-host = { path = "../dm-host" }
 dm-resources = { path = "../dm-resources" }
+dm-store = { path = "../dm-store" }
+rmp-serde = "1.3"
 byond-dmb = { path = "../.." }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

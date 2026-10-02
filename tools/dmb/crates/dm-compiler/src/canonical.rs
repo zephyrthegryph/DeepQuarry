@@ -67,6 +67,8 @@ pub(super) struct SkeletonMetadata {
     pub class_paths: HashMap<String, u32>,
     pub pending: Vec<OwnedPendingProc>,
     pub dynamic: Vec<PendingDynamic>,
+    pub initializers: Vec<initializer_pipeline::InitializerRecipe>,
+    pub modified_initializers: Vec<initializer_pipeline::InitializerRecipe>,
     pub initializer_globals: HashMap<String, u32>,
     pub global_proc_ids: HashMap<String, u32>,
     pub shared: Arc<SharedLowerBindings>,
@@ -816,6 +818,9 @@ fn skeleton_heap(image: &Dmb, metadata: &SkeletonMetadata) -> usize {
             .iter()
             .map(|p| p.name.capacity() + p.expression.capacity())
             .sum::<usize>();
+    for recipes in [&metadata.initializers,&metadata.modified_initializers] {
+        bytes+=vec_heap(recipes)+recipes.iter().map(|recipe|recipe.key.path.capacity()+recipe.descriptor.body_digest.capacity()+recipe.descriptor.frame_digest.capacity()+recipe.source.len()+64).sum::<usize>();
+    }
     bytes += vec_heap(&metadata.invocations);
     let mut overlay_seen=HashSet::new();
     for plan in &metadata.invocations {

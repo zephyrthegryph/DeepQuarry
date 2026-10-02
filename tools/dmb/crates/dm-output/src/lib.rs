@@ -9,6 +9,8 @@ pub mod generation;
 pub mod conventional;
 pub mod list_image;
 pub mod chunks;
+pub mod object_directory;
+pub mod typed_pages;
 
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};

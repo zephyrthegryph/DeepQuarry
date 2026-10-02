@@ -337,12 +337,12 @@ fn retain_value(key:(String,String),record:Arc<ResolvedValue>) {
 
 /// Bulk addressed restore in authored owner order. Entries absent from this
 /// revision are neither fetched nor decoded. The cache remains optional.
-fn hydrate_values(model:&SemanticDeclarations) {
+fn hydrate_values(model:&SemanticDeclarations,changed_owners:Option<&BTreeSet<String>>,globals_changed:bool) {
     let mut cache=value_cache().lock().unwrap_or_else(|error|error.into_inner());
     let Some(store)=cache.store.clone() else {return;};
-    let mut slots:Vec<_>=model.owners.iter().flat_map(|(owner,scope)|scope.fields.keys().map(move|name|(owner.clone(),name.clone())))
-        .chain(model.globals.keys().map(|name|(String::new(),name.clone()))).filter(|key|!cache.entries.contains_key(key)).collect();
-    for (owner,scope) in &model.owners {
+    let mut slots:Vec<_>=model.owners.iter().filter(|(owner,_)|changed_owners.is_none_or(|changed|changed.contains(*owner))).flat_map(|(owner,scope)|scope.fields.keys().map(move|name|(owner.clone(),name.clone())))
+        .chain(model.globals.keys().filter(|_|globals_changed).map(|name|(String::new(),name.clone()))).filter(|key|!cache.entries.contains_key(key)).collect();
+    for (owner,scope) in model.owners.iter().filter(|(owner,_)|changed_owners.is_none_or(|changed|changed.contains(*owner))) {
         let blocked:HashSet<_>=scope.fields.iter().filter(|(_,field)|!field.constant).map(|(name,_)|name.clone()).collect();
         for field in scope.fields.values() {
             if let Some(source)=field.expression.as_deref().filter(|source|!dependency_free_literal(source)) {
@@ -351,7 +351,7 @@ fn hydrate_values(model:&SemanticDeclarations) {
             }
         }
     }
-    for field in model.globals.values() {
+    for field in model.globals.values().filter(|_|globals_changed) {
         if let Some(source)=field.expression.as_deref().filter(|source|!dependency_free_literal(source)) {slots.push((String::new(),expression_key(source,&HashSet::new())));}
     }
     slots.sort();slots.dedup();

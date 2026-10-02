@@ -3614,6 +3614,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
     }
     trace(&format!("type default stages: ownerplans={:.3}s semanticplans={:.3}s wire={:.3}s",owner_plan_time.as_secs_f64(),default_plan_time.as_secs_f64(),default_wire_time.as_secs_f64()));
     trace("type defaults complete");
+    trace("procedure declaration collection start");
     let mut verb_owners: HashMap<String, Vec<String>> = HashMap::new();
     let mut indexed_pending = 0;
     for item in &ast.items {
@@ -3954,6 +3955,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
             assignment.expression = qualify_static_expression(&assignment.expression, scope, &dmb);
         }
     }
+    trace("procedure binding index complete; invocation plans start");
     let mut invocation_plans = Vec::with_capacity(pending.len());
     let metadata_sources: HashMap<_, _> = pending.iter().filter_map(|procedure| procedure.owner.map(|owner| (
         (owner, procedure.item.header.split('(').next().unwrap_or("").trim_end_matches('/').rsplit('/').next().unwrap_or("").to_owned(), procedure.verb), procedure.item))).collect();
@@ -4201,21 +4203,35 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
         let (bindings, frame_digest) = session.invocation_fragments.frame(&syntax, bindings.into());
         invocation_plans.push(canonical::InvocationPlan { path, params, metadata, static_ids, bindings, frame_digest });
     }
+        trace("invocation plans complete; wire metadata start");
         apply_mouse_proc_flags(&mut dmb, &pending, &invocation_plans);
         if std::env::var_os("DM_BUILD_TRACE").is_some() {
             let now=semantic_declarations::stats();
             eprintln!("DM_BUILD_TRACE declaration allocation {:.3}s, symbolic expressions {}, scoped default hits {}, misses {}",declaration_preparation_started.elapsed().as_secs_f64(),now.0-semantic_stats_before.0,now.1-semantic_stats_before.1,now.2-semantic_stats_before.2);
         }
+        trace("initializer recipe planning start");
+        let initializer_recipes=initializer_pipeline::recipes(&initializer_pipeline::group_assignments(pending_dynamic.clone()),&dmb,&strings,true);
+        let modified_groups:Vec<_>=modified.declarations.iter().filter(|declaration|!declaration.children.is_empty()).map(|declaration| {
+            let owner=class_paths[&modified.parents[declaration.header.trim()]];
+            let assignments=declaration.children.iter().map(|child| {
+                let (name,expression)=child.header.split_once('=').expect("modified assignment");
+                PendingDynamic {owner:Some(owner),name:name.trim().into(),expression:expression.trim().into(),sized_array:false}
+            }).collect();(Some(owner),assignments)
+        }).collect();
+        let modified_initializer_recipes=initializer_pipeline::recipes(&modified_groups,&dmb,&strings,false);
+        trace("initializer recipe planning complete; frozen composition start");
         let frozen = canonical::FrozenSkeleton::new(dmb, canonical::SkeletonMetadata {
             strings:strings.into(), proc_paths, class_paths,
             pending: pending.iter().map(|proc| canonical::OwnedPendingProc {
                 owner: proc.owner, owner_path: proc.owner_path.clone(), verb: proc.verb,
-            }).collect(), dynamic: pending_dynamic, initializer_globals, global_proc_ids,
+            }).collect(), dynamic: pending_dynamic, initializers:initializer_recipes,modified_initializers:modified_initializer_recipes,initializer_globals, global_proc_ids,
             shared: Arc::clone(&shared_bindings), invocations: invocation_plans,
         });
+        trace("frozen composition complete; snapshot publication start");
         if reusable { session.store(skeleton_key.clone(), frozen, lowering_cache.cache_root()) }
         else { Arc::new(frozen) }
     };
+    trace("declaration snapshot selected; output allocation start");
     session.owner_frames.lock().unwrap_or_else(|e|e.into_inner()).bind_revision(&skeleton_key);
     let mut dmb = frozen.image.clone();
     dmb.resources = current_resource_refs;
@@ -4285,15 +4301,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                 }
             }
         }
-        graph_keys.extend(initializer_pipeline::query_keys(&pending_dynamic,&dmb,&strings,true));
-        for declaration in &modified.declarations {
-            let owner=class_paths[&modified.parents[declaration.header.trim()]];
-            let assignments:Vec<_>=declaration.children.iter().map(|child| {
-                let (name,expression)=child.header.split_once('=').expect("modified assignment");
-                PendingDynamic {owner:Some(owner),name:name.trim().into(),expression:expression.trim().into(),sized_array:false}
-            }).collect();
-            graph_keys.extend(initializer_pipeline::query_keys(&assignments,&dmb,&strings,false));
-        }
+        graph_keys.extend(state.initializers.iter().chain(&state.modified_initializers).map(|recipe|recipe.key.clone()));
         let _ = session.graph.prepare_keys(&graph_keys);
         trace("procedure header preparation complete");
     }
@@ -4890,9 +4898,9 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                 session.procedure_fragments.stats.encode_seconds, session.procedure_fragments.stats.flush_seconds,
                 session.procedure_fragments.stats.write_batches));
             trace("procedure lowering complete; dynamic initializers start");
-            emit_dynamic_initializers_with_pool(
+            initializer_pipeline::emit_initializer_groups_with_pool(
                 &mut dmb,
-                pending_dynamic,
+                initializer_pipeline::group_assignments(pending_dynamic),
                 &mut strings,
                 &class_paths,
                 &resource_ids,
@@ -4904,6 +4912,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                 true,
                 Some(pool),
                 reusable.then_some(&mut *session),
+                Some(&state.initializers),
             )?;
             trace("primary dynamic initializers complete; modified initializers start");
             // Keep modified-instance groups distinct even when their base owner
@@ -4920,7 +4929,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
             let ids=initializer_pipeline::emit_initializer_groups_with_pool(
                 &mut dmb,groups,&mut strings,&class_paths,&resource_ids,&initializer_globals,
                 &global_proc_ids,&shared_bindings,&prepared_member_globals,lowering_cache,false,
-                Some(pool),reusable.then_some(&mut *session))?;
+                Some(pool),reusable.then_some(&mut *session),Some(&state.modified_initializers))?;
             for (declaration,id) in modified.declarations.iter().filter(|declaration|!declaration.children.is_empty()).zip(ids) {
                 let instance=strings.4[declaration.header.trim()] as usize;
                 dmb.instances[instance].initializer=id;

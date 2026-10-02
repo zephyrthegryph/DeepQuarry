@@ -67,7 +67,15 @@ pub(super) fn save(store: &ContentStore, snapshot: &PreparedProject) -> io::Resu
     // Previously every body edit published expanded text plus every authored
     // source as one new CAS blob. Keep immutable expansion pieces and bounded
     // source groups so a changed generation writes only changed chunks.
-    let previous = load_manifest(store, &snapshot.context).ok().flatten();
+    let inventory_started=std::time::Instant::now();
+    let previous = match load_manifest(store,&snapshot.context) {
+        Ok(previous)=>previous,
+        Err(error)=>{
+            if std::env::var_os("DM_BUILD_TRACE").is_some() {eprintln!("DM_BUILD_TRACE prepared inventory miss: {error}");}
+            None
+        }
+    };
+    trace_persistence("previous manifest inventory",inventory_started);
     let known: BTreeSet<_> = previous
         .as_ref()
         .into_iter()
@@ -105,7 +113,13 @@ pub(super) fn save(store: &ContentStore, snapshot: &PreparedProject) -> io::Resu
     let chunk_writes = dm_work::map_ordered(
         &missing_chunks,
         dm_work::WorkLimits::configured(),
-        |piece| piece.content_len.saturating_add(4096),
+        |piece| {
+            // Resident immutable input is already charged to preparation. Only
+            // lazy hydration allocates another decoded frame; CAS hashes/writes
+            // borrowed bytes with bounded scratch storage.
+            let hydration=if piece.text.len()==piece.content_len {0} else {piece.content_len.saturating_mul(2)};
+            hydration.saturating_add(64*1024)
+        },
         |piece| piece.content().and_then(|text|store.put_rebuildable("prepared-input-chunk-v2",text.as_bytes())),
     )
     .map_err(|error| io::Error::other(format!("expansion persistence work limits: {error:?}")))?;
@@ -117,17 +131,24 @@ pub(super) fn save(store: &ContentStore, snapshot: &PreparedProject) -> io::Resu
         .into_iter()
         .flat_map(|manifest| manifest.sources.iter().map(|source| source.digest))
         .collect();
+    let mut scheduled_sources=BTreeSet::new();
     let missing: Vec<_> = snapshot
         .sources
         .values()
-        .filter(|source| !known_sources.contains(&source.digest))
+        .filter(|source| !known_sources.contains(&source.digest) && scheduled_sources.insert(source.digest))
         .collect();
     trace_persistence("expanded CAS writes", expanded_started);
     let authored_started = std::time::Instant::now();
+    if std::env::var_os("DM_BUILD_TRACE").is_some() {
+        eprintln!("DM_BUILD_TRACE authored publication inventory: known={} requested={} bytes={} previous={}",known_sources.len(),missing.len(),missing.iter().map(|source|source.content_len).sum::<usize>(),previous.is_some());
+    }
     let writes = dm_work::map_ordered(
         &missing,
         dm_work::WorkLimits::configured(),
-        |source| source.content_len.saturating_add(4096),
+        |source| {
+            let hydration=if source.text.len()==source.content_len {0} else {source.content_len.saturating_mul(2)};
+            hydration.saturating_add(64*1024)
+        },
         |source| {
             source
                 .content()

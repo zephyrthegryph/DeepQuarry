@@ -601,8 +601,9 @@ impl DiscoveryCache {
             let _ = self.expansions.save_incremental(&self.path);
         }
         if let Some(store) = &self.store {
-            if crate::prepared_persistence::save(store,&snapshot).is_ok() {
-                Arc::make_mut(&mut Arc::make_mut(&mut snapshot).expansion).attach_backings(&store.root);
+            match crate::prepared_persistence::save(store,&snapshot) {
+                Ok(())=>Arc::make_mut(&mut Arc::make_mut(&mut snapshot).expansion).attach_backings(&store.root),
+                Err(error)=>if std::env::var_os("DM_BUILD_TRACE").is_some() {eprintln!("DM_BUILD_TRACE prepared persistence skipped: {error}");},
             }
         }
         trace_preparation_stage("prepared and preprocess persistence", persistence_started);

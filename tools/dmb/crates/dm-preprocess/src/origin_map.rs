@@ -46,6 +46,14 @@ impl OriginMap {
 #[derive(Default)]
 pub struct SourceMapBuilder { runs: Vec<Run>, len: usize }
 impl SourceMapBuilder {
+    pub fn len(&self)->usize {self.len}
+    pub fn iter_from(&self,first:usize)->impl Iterator<Item=Origin>+'_ {
+        let start=self.runs.partition_point(|run|run.first+run.count<=first);
+        self.runs[start..].iter().flat_map(move |run| {
+            let begin=first.saturating_sub(run.first).min(run.count);
+            (begin..run.count).map(move |delta|Origin{output_line:run.output+delta,source_line:run.source+run.stride*delta,path:Arc::clone(&run.path)})
+        })
+    }
     pub fn push(&mut self, origin: Origin) {
         if let Some(last)=self.runs.last_mut() {
             let stride=origin.source_line.checked_sub(last.source);

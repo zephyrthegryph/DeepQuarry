@@ -34,6 +34,31 @@ const QUERY_EDGE_BYTES: usize = 16;
 // Include tree nodes and retained string/Vec allocations, not just wire bytes.
 const BUFFER_ENTRY_OVERHEAD: usize = 160;
 const MAX_PENDING_RECORDS: usize = 64_000;
+const WITNESS_MEMO_BYTES: usize = 8 * 1024 * 1024;
+const COMMITTED_WITNESS_ROWS: usize = 32_768;
+
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd)]
+enum WitnessValueKey { Absent, Boolean(bool), Text(String), Bits(u32) }
+impl From<&FactValue> for WitnessValueKey {
+    fn from(value: &FactValue) -> Self {
+        match value {
+            FactValue::Absent => Self::Absent,
+            FactValue::Boolean(v) => Self::Boolean(*v),
+            FactValue::Text(v) => Self::Text(v.clone()),
+            FactValue::Bits(v) => Self::Bits(*v),
+        }
+    }
+}
+#[derive(Clone)]
+struct WitnessRow { name: String, bytes: Arc<[u8]> }
+impl WitnessRow {
+    fn encode(value: &impl Serialize) -> Option<Self> {
+        let bytes = serde_json::to_vec(value).ok()?;
+        Some(Self { name: format!("{:x}", Sha256::digest(&bytes)), bytes: bytes.into() })
+    }
+    fn charge(&self) -> usize { self.bytes.len().saturating_add(256) }
+}
+
 #[path = "project_graph_dag.rs"]
 mod dag;
 
@@ -211,6 +236,12 @@ struct Persistence {
     bulk_read_failed: bool,
     pending: BTreeMap<dm_store::Key, Vec<u8>>,
     pending_bytes: usize,
+    // Exact typed identities avoid JSON serialization and hashing for every
+    // reader of a shared fact. These accelerators never authorize query reuse.
+    fact_rows: BTreeMap<FactId, WitnessRow>,
+    value_rows: BTreeMap<WitnessValueKey, WitnessRow>,
+    witness_memo_bytes: usize,
+    committed_witnesses: BTreeSet<dm_store::Key>,
 }
 struct EncodedPayload {
     // A missing disk row is also a bounded cache observation. It does not
@@ -391,6 +422,10 @@ impl ProjectProcedureGraph {
             bulk_read_failed: false,
             pending: BTreeMap::new(),
             pending_bytes: 0,
+            fact_rows: BTreeMap::new(),
+            value_rows: BTreeMap::new(),
+            witness_memo_bytes: 0,
+            committed_witnesses: BTreeSet::new(),
         });
         // Restored inputs deliberately start unavailable. The adapter must
         // refresh against its current skeleton before any cached result is used.
@@ -576,7 +611,7 @@ impl ProjectProcedureGraph {
             .resident_bytes
             .saturating_add(self.stats.metadata_bytes)
             .saturating_add(self.stats.snapshot_bytes)
-            .saturating_add(self.persistence.as_ref().map_or(0, |p| p.pending_bytes))
+            .saturating_add(self.persistence.as_ref().map_or(0, |p| p.pending_bytes.saturating_add(p.witness_memo_bytes).saturating_add(p.committed_witnesses.len().saturating_mul(512))))
             .saturating_add((self.pending_shared.len()+self.pending_private.len()).saturating_mul(64))
     }
     pub fn release_encoded_snapshot(&mut self) {
@@ -614,6 +649,12 @@ impl ProjectProcedureGraph {
             }
         }
         self.values.clear();
+        if let Some(p) = self.persistence.as_mut() {
+            p.fact_rows.clear();
+            p.value_rows.clear();
+            p.witness_memo_bytes = 0;
+            p.committed_witnesses.clear();
+        }
         for (key, value) in &self.readsets {
             freed = freed.saturating_add(
                 key.capacity() * std::mem::size_of::<(FactId, usize)>() + 96,
@@ -716,9 +757,18 @@ impl ProjectProcedureGraph {
         persistence.pending_bytes = 0;
         // Snapshot is a bounded startup view. Successful writes not retained
         // there must remain discoverable if their resident artifact is evicted.
-        persistence
-            .store
-            .put_many(pending.into_iter().collect(), None)?;
+        // Only immutable witness rows are remembered after a successful
+        // transaction. Headers remain mutable and payload reads stay addressed.
+        let committed: Vec<_> = pending.keys().filter(|key|
+            key.namespace == persistence.facts_namespace
+                || key.namespace == persistence.values_namespace
+        ).cloned().collect();
+        persistence.store.put_many(pending.into_iter().collect(), None)?;
+        if persistence.committed_witnesses.len().saturating_add(committed.len())
+            > COMMITTED_WITNESS_ROWS {
+            persistence.committed_witnesses.clear();
+        }
+        persistence.committed_witnesses.extend(committed.into_iter().take(COMMITTED_WITNESS_ROWS));
         Ok(())
     }
 
@@ -1094,18 +1144,48 @@ impl ProjectProcedureGraph {
             return None;
         }
         let name = format!("{:x}", Sha256::digest(&payload));
-        let p = self.persistence.as_ref()?;
         let mut records = Vec::new();
         let mut witnesses = Vec::with_capacity(dependencies.len());
         for witness in dependencies {
-            let fact = serde_json::to_vec(&witness.fact).ok()?;
-            let value = serde_json::to_vec(&witness.value).ok()?;
-            let fact_name = format!("{:x}", Sha256::digest(&fact));
-            let value_name = format!("{:x}", Sha256::digest(&value));
-            records.push((dm_store::Key::new(&p.facts_namespace, &fact_name), fact));
-            records.push((dm_store::Key::new(&p.values_namespace, &value_name), value));
-            witnesses.push((fact_name, value_name));
+            let fact_id = self.intern_fact(&witness.fact);
+            let p = self.persistence.as_mut()?;
+            if p.witness_memo_bytes >= WITNESS_MEMO_BYTES {
+                p.fact_rows.clear();
+                p.value_rows.clear();
+                p.witness_memo_bytes = 0;
+            }
+            let fact = if let Some(row) = p.fact_rows.get(&fact_id) {
+                row.clone()
+            } else {
+                let row = WitnessRow::encode(&witness.fact)?;
+                if p.witness_memo_bytes.saturating_add(row.charge()) <= WITNESS_MEMO_BYTES {
+                    p.witness_memo_bytes += row.charge();
+                    p.fact_rows.insert(fact_id, row.clone());
+                }
+                row
+            };
+            let value_key = WitnessValueKey::from(&witness.value);
+            let value = if let Some(row) = p.value_rows.get(&value_key) {
+                row.clone()
+            } else {
+                let row = WitnessRow::encode(&witness.value)?;
+                let key_heap = match &value_key { WitnessValueKey::Text(v) => v.capacity(), _ => 0 };
+                let charge = row.charge().saturating_add(key_heap);
+                if p.witness_memo_bytes.saturating_add(charge) <= WITNESS_MEMO_BYTES {
+                    p.witness_memo_bytes += charge;
+                    p.value_rows.insert(value_key, row.clone());
+                }
+                row
+            };
+            for (namespace, row) in [(&p.facts_namespace, &fact), (&p.values_namespace, &value)] {
+                let key = dm_store::Key::new(namespace, &row.name);
+                if !p.pending.contains_key(&key) && !p.committed_witnesses.contains(&key) {
+                    records.push((key, row.bytes.to_vec()));
+                }
+            }
+            witnesses.push((fact.name, value.name));
         }
+        let p = self.persistence.as_ref()?;
         let readset = serde_json::to_vec(&DiskReadSet { witnesses }).ok()?;
         let readset_name = format!("{:x}", Sha256::digest(&readset));
         records.push((dm_store::Key::new(&p.readsets_namespace, &readset_name), readset));

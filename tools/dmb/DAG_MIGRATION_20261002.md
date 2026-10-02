@@ -157,3 +157,24 @@ batches these initializer groups, persists compact origin runs and compressed
 schemaV5 metadata, uses first-class COW word lists, and increases bounded
 fragment lookahead. Shared semantic cache charges and trims were corrected.
 These following changes await rebuild and benchmark I.
+
+## Run I in progress and next implementation
+
+Commit d5e778316a built the benchmark/CLI and all workspace binaries. No tests
+were run. I so far: cold188.332s; unchanged1.828s; body26.428s. All three
+requests succeeded; structural/fresh-process cases remain pending. This is
+compiler timing only. Following edits stream cold origins directly into run
+builders, compact cached subtree origins, and schedule independent resource
+resolution observations through the shared bounded work scheduler. These
+following edits are not part of the running I executable.
+
+I completed successfully: cold188.332s; unchanged1.828s; body26.428s;
+newproc71.855s; newvar67.758s; default73.067s; asset16.462s;
+newresource81.198s; freshcachedprocess0.163s; freshbody47.798s.
+No runtime tests. Body compiler10.630s; requested outputreads1.820s;
+modifiedinitializers0.108s. Addproc compiler50.771s, owner5.639s,
+defaults7.915s, declarationpreparation gap about19.6s. Following changes
+reuse frozen initializer recipes, target semantic hydration by changedowner,
+and avoid repeated per-literal lazy CAS reads during declaration preparation.
+The typed outputpage/linkdirectory APIs are foundations and are not yet an
+integrated license to skip semantic linking.

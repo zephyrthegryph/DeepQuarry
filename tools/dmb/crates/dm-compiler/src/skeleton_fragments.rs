@@ -5,12 +5,13 @@ use std::io::{self, Read, Write};
 const CHUNK: usize = 4 * 1024 * 1024;
 const MAX_COMPONENT: usize = 512 * 1024 * 1024;
 const MAX_ITEMS: usize = 2_000_000;
-const NAMESPACE: &str = "declaration-snapshot-fragments-v3";
-const MANIFESTS: &str = "declaration-snapshot-manifest-v3";
+const NAMESPACE: &str = "declaration-snapshot-fragments-v4";
+const MANIFESTS: &str = "declaration-snapshot-manifest-v4";
 #[derive(Serialize, Deserialize)]
 struct Manifest {
     image: Vec<String>, strings: Vec<String>, proc_paths: Vec<String>, class_paths: Vec<String>,
     pending: Vec<Vec<String>>, dynamic: Vec<Vec<String>>, initializer_globals: Vec<String>,
+    initializers:Vec<Vec<String>>, modified_initializers:Vec<Vec<String>>,
     global_proc_ids: Vec<String>, shared: Vec<String>, invocations: Vec<Vec<String>>,
 }
 struct Writes { store:Store, pending:Vec<Change>, bytes:usize, written:usize }
@@ -160,6 +161,7 @@ pub(super) fn store(root:&Path,key:&str,value:&FrozenSkeleton)->Option<()> {
         image:put(&mut writes,&value.image)?, strings:put(&mut writes,&metadata.strings)?,
         proc_paths:put(&mut writes,&metadata.proc_paths)?, class_paths:put(&mut writes,&metadata.class_paths)?,
         pending:put_rows(&mut writes,&metadata.pending)?, dynamic:put_rows(&mut writes,&metadata.dynamic)?,
+        initializers:put_rows(&mut writes,&metadata.initializers)?,modified_initializers:put_rows(&mut writes,&metadata.modified_initializers)?,
         initializer_globals:put(&mut writes,&metadata.initializer_globals)?,global_proc_ids:put(&mut writes,&metadata.global_proc_ids)?,
         shared:put(&mut writes,&metadata.shared)?,invocations:put_invocations(&mut writes,&metadata.invocations)?,
     };
@@ -178,6 +180,7 @@ pub(super) fn load(root:&Path,key:&str)->Option<FrozenSkeleton> {
     let metadata=SkeletonMetadata {
         strings:get(&store,&manifest.strings)?,proc_paths:get(&store,&manifest.proc_paths)?,class_paths:get(&store,&manifest.class_paths)?,
         pending:get_rows(&store,&manifest.pending)?,dynamic:get_rows(&store,&manifest.dynamic)?,
+        initializers:get_rows(&store,&manifest.initializers)?,modified_initializers:get_rows(&store,&manifest.modified_initializers)?,
         initializer_globals:get(&store,&manifest.initializer_globals)?,global_proc_ids:get(&store,&manifest.global_proc_ids)?,
         shared:get(&store,&manifest.shared)?,invocations:get_rows(&store,&manifest.invocations)?,
     };

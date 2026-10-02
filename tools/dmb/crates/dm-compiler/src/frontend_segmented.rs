@@ -131,8 +131,14 @@ impl OutlineSession {
                 self.stats.parsed_chunks += usize::from(!parsed.disk_hit);
                 self.stats.scanned_procedures += parsed.fragments.len();
             }
-            for span in &parsed.resources {
-                literals.push(source.try_slice(Span::new(job.0+span.start, job.0+span.end))?.into_owned());
+            // Canonical compilation already queried the dedicated persistent
+            // resource inventory. Re-reading every literal here would hydrate
+            // the same lazy chunk for each individual resource, even on AST hits.
+            if (capture_bodies || capture_ast) && !parsed.resources.is_empty() {
+                let text=source.try_slice(Span::new(job.0,job.0+job.1))?;
+                for span in &parsed.resources {
+                    literals.push(text.get(span.range()).ok_or("invalid cached resource span")?.to_owned());
+                }
             }
             ordered.push((job.0, parsed));
         }
@@ -149,7 +155,7 @@ impl OutlineSession {
                 procedures: BTreeMap::new(),
             }
         };
-        self.last_resource_literals = literals;
+        if capture_bodies || capture_ast { self.last_resource_literals = literals; }
         self.chunks.clear();
         self.resident_bytes = 0;
         let layout_cost = ordered.capacity() * std::mem::size_of::<(usize, Arc<ParsedChunk>)>();
