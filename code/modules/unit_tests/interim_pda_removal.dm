@@ -1,13 +1,27 @@
+/// Observe helper arguments while retaining the actual PDA removal implementation.
+/obj/item/pda/interim_removal_probe
+	var/id_actor_ref
+	var/pen_actor_ref
+
+/obj/item/pda/interim_removal_probe/remove_id(mob/user)
+	id_actor_ref = user ? REF(user) : null
+	return ..()
+
+/obj/item/pda/interim_removal_probe/remove_pen(mob/user)
+	pen_actor_ref = user ? REF(user) : null
+	return ..()
+
 /// ID removal releases ownership while preserving actual handoff and full-hand fallback.
 /datum/unit_test/interim_pda_id_removal/Run()
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)
-	var/obj/item/pda/pda = allocate(/obj/item/pda, T)
+	var/obj/item/pda/interim_removal_probe/pda = allocate(/obj/item/pda/interim_removal_probe, T)
 	var/obj/item/card/id/card = allocate(/obj/item/card/id, T)
 	TEST_ASSERT(actor.put_in_active_hand(pda), "The actor must hold the PDA")
 	TEST_ASSERT(own_set(pda, nameof(pda.id), card), "The fixture PDA must own its inserted ID")
 	TEST_ASSERT_EQUAL(card.loc, pda, "The inserted ID must reside inside the PDA")
 	TEST_ASSERT_EQUAL(pda.id_check(actor, 1), 1, "The existing ID-check removal entry must succeed")
+	TEST_ASSERT_EQUAL(pda.id_actor_ref, REF(actor), "The ID-check entry must forward the initiating actor to the real removal helper")
 	TEST_ASSERT_NULL(pda.id, "ID removal must release the PDA's declared ownership")
 	TEST_ASSERT(actor.is_in_hands(card), "An available hand must receive the removed ID")
 	TEST_ASSERT(!QDELETED(card), "Removing an ID must preserve it")
@@ -25,14 +39,16 @@
 /datum/unit_test/interim_pda_pen_removal/Run()
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)
-	var/obj/item/pda/pda = allocate(/obj/item/pda, T)
+	var/obj/item/pda/interim_removal_probe/pda = allocate(/obj/item/pda/interim_removal_probe, T)
 	var/obj/item/pen/pen = locate_within(pda, /obj/item/pen)
 	TEST_ASSERT(pen, "A real PDA must initialize with its pen")
 	own(pen)
 	TEST_ASSERT(actor.put_in_active_hand(pda), "The actor must hold the PDA")
 	actor.swap_hand()
 	TEST_ASSERT_NULL(actor.get_active_hand(), "The actor's active hand must be available")
-	pda.remove_pen(actor)
+	TEST_ASSERT(pda.can_use(actor), "The held PDA must permit the public pen-removal entry")
+	pda.pda_verb_remove_pen(actor, null, null)
+	TEST_ASSERT_EQUAL(pda.pen_actor_ref, REF(actor), "The public pen-removal entry must forward its actor to the real helper")
 	TEST_ASSERT_EQUAL(actor.get_active_hand(), pen, "An empty active hand must receive the pen")
 	TEST_ASSERT_NULL(locate_within(pda, /obj/item/pen), "Handoff must remove the pen from PDA contents")
 	TEST_ASSERT(!QDELETED(pen), "Pen removal must preserve the pen")
