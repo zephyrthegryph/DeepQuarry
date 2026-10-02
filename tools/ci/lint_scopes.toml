@@ -14,3 +14,7 @@ exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/"]
 [lint.system_boundary]
 # system_boundary_lint.py SKIP_DIRS: unit tests read private state through system_debug().
 exempt_prefixes = ["code/modules/unit_tests/"]
+
+[lint.latent]
+# latent_lint.py SKIP_DIRS: os.walk prunes any directory named unit_tests.
+exempt_contains = ["/unit_tests/"]

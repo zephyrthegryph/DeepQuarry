@@ -37,6 +37,9 @@ pub enum ParseKind {
     Report,
     /// `file:line` alone on a line (a bare site listing): compared on file and line.
     Bare,
+    /// `  file.dm:line: text`, `file.dm:line text` or `file.dm:line` (indented or colon-less output,
+    /// paths with spaces): compared on file and line.
+    FileLineAny,
     /// `B1  file.dm:line: text`, `B6  file.dm:line emits X` or `B5  free text` (a `--report` listing
     /// whose lines start with the rule name): rule, file and line; a line with no file is compared
     /// by its text (the file field), line 0.
@@ -88,8 +91,11 @@ pub struct Finding {
 }
 
 pub fn parse_findings(text: &str, kind: ParseKind) -> Vec<Finding> {
-    let tagged = Pat::new(r"^([^\s:]+):(\d+): \[([\w/.\-]+)/(\w+)\]");
+    // A path may contain spaces ("id cards"), so the file part is anything up to `:line: [`.
+    let tagged = Pat::new(r"^([^\s:][^:]*?):(\d+): \[([\w/.\-]+)/(\w+)\]");
     let plain = Pat::new(r"^([^\s:]+\.[A-Za-z]+):(\d+):");
+    // Like `plain`, for output indented or without a colon after the line, and paths with spaces.
+    let any = Pat::new(r"^\s*([^\s:][^:]*?\.[A-Za-z]+):(\d+)(?::|\s|$)");
     let report = Pat::new(r"^([^\s:]+):(\d+): (\w+)\s*$");
     let bare = Pat::new(r"^\s*([^\s:]+\.[A-Za-z]+):(\d+)\s*$");
     let prefixed = Pat::new(r"^(\w+)  (.*)$");
@@ -120,6 +126,11 @@ pub fn parse_findings(text: &str, kind: ParseKind) -> Vec<Finding> {
                         Some(p) => out.push(mk(c.s(1), p.s(1), p.s(2))),
                         None => out.push(Finding { rule: c.s(1).to_string(), rel: c.s(2).to_string(), line: 0 }),
                     }
+                }
+            }
+            ParseKind::FileLineAny => {
+                if let Some(c) = any.captures(l) {
+                    out.push(mk("", c.s(1), c.s(2)));
                 }
             }
             ParseKind::Bare => {
