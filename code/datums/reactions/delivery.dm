@@ -132,7 +132,7 @@ GLOBAL_VAR_INIT(rx_draining, FALSE)
 /**
  * Runs the change handlers queued by publish_change(): each handler once per holder however many of its
  * reads changed, with the list of those keys. Handlers that change more state queue the next pass; a loop
- * that does not settle in RX_DRAIN_PASSES passes is reported and dropped. Called at the start of every
+ * that keeps re-queueing for one holder and reaction is reported and quarantined for that drain (RX_DRAIN_PASSES deliveries); the rest drain on. Called at the start of every
  * refresh drain, and by tests.
  */
 /proc/rx_drain()
@@ -143,13 +143,11 @@ GLOBAL_VAR_INIT(rx_draining, FALSE)
 		var/list/job = GLOB.rx_cross_jobs[1]
 		GLOB.rx_cross_jobs.Cut(1, 2)
 		rx_deliver_cross(job[1], job[2], job[3], job[4], job[5])
-	var/passes = 0
+	// (holder -> (reaction or listener -> deliveries this drain)): a pair delivered more than RX_DRAIN_PASSES times is
+	// looping (its handler keeps changing what it reads) and is quarantined; every other pair keeps draining.
+	var/list/deliveries = list()
+	var/list/quarantined = list()
 	while(length(GLOB.rx_pending))
-		if(++passes > RX_DRAIN_PASSES)
-			stack_trace("rx_drain: change reactions still queued after [RX_DRAIN_PASSES] passes (a handler keeps changing what it reads?): [length(GLOB.rx_pending)] holders")
-			GLOB.rx_pending.Cut()
-			GLOB.rx_pending_listeners.Cut()
-			break
 		var/list/batch = GLOB.rx_pending
 		GLOB.rx_pending = list()
 		GLOB.rx_pending_listeners = list()
@@ -157,7 +155,18 @@ GLOBAL_VAR_INIT(rx_draining, FALSE)
 			if(QDELETED(E))
 				continue
 			var/list/per = batch[E]
+			var/list/counts = deliveries[E]
+			if(!counts)
+				counts = list()
+				deliveries[E] = counts
 			for(var/target in per)
+				var/count = (counts[target] || 0) + 1
+				counts[target] = count
+				if(count > RX_DRAIN_PASSES)
+					if(!quarantined[target] || !(E in quarantined[target]))
+						LAZYADD(quarantined[target], E)
+						rx_drain_report_loop(E, target)
+					continue
 				var/list/keys = per[target]
 				try
 					if(istype(target, /datum/reaction))
@@ -173,6 +182,19 @@ GLOBAL_VAR_INIT(rx_draining, FALSE)
 				catch(var/exception/e)
 					stack_trace("rx_drain: [E.type]: [e] ([e.file]:[e.line])")
 	GLOB.rx_draining = FALSE
+
+/// A change reaction of `E` kept re-queueing itself past RX_DRAIN_PASSES deliveries in one drain: names the pair (the rest
+/// of the drain carries on without it).
+/proc/rx_drain_report_loop(datum/E, target)
+	var/handler = istype(target, /datum/reaction) ? "[target:handler]" : "observer [target:handler]"
+	var/message = "rx_drain: [E.type] [handler] still queued after [RX_DRAIN_PASSES] deliveries in one drain (a handler keeps changing what it reads?): quarantined for this drain, other holders carry on"
+	if(GLOB.rx_drain_loop_expected)
+		log_runtime(message)
+	else
+		stack_trace(message)
+
+/// Set by a test that provokes the loop on purpose.
+GLOBAL_VAR_INIT(rx_drain_loop_expected, FALSE)
 
 /**
  * on_change(at_most =): TRUE when `R` may deliver to `E` now (its window since the last delivery is over), and then

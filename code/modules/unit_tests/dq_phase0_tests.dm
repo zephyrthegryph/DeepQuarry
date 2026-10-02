@@ -40,3 +40,41 @@ TRACKED(/datum/rx_fx_g, watched)
 	var/list/guarded = GLOB.rx_fx_g_seen[1]
 	TEST_ASSERT(guarded[1] == A && guarded[2] == "ctx-marker", "a global before_op handler gets (holder, ctx)")
 	GLOB.rx_fx_g_seen = list()
+
+// ---------------------------------------------------------------- D4: a looping handler quarantines only itself
+
+/// `loop` is read by a handler that re-dirties it forever; `calm` is read by an ordinary handler.
+/datum/rx_fx_loop
+	var/loop = 0
+	var/calm = 0
+	var/loop_runs = 0
+	var/calm_runs = 0
+
+TRACKED(/datum/rx_fx_loop, loop)
+TRACKED(/datum/rx_fx_loop, calm)
+
+/datum/rx_fx_loop/reactions()
+	. = ..()
+	. += on_change(list(nameof(loop)), PROC_REF(on_loop))
+	. += on_change(list(nameof(calm)), PROC_REF(on_calm))
+
+/datum/rx_fx_loop/proc/on_loop(list/keys)
+	loop_runs++
+	set_loop(loop + 1)
+
+/datum/rx_fx_loop/proc/on_calm(list/keys)
+	calm_runs++
+
+/datum/unit_test/dq_phase0_drain_quarantines_only_the_loop/Run()
+	var/datum/rx_fx_loop/looper = allocate(/datum/rx_fx_loop)
+	var/datum/rx_fx_loop/bystander = allocate(/datum/rx_fx_loop)
+	set_global("rx_drain_loop_expected", TRUE)
+	looper.set_loop(1)
+	looper.set_calm(1)
+	bystander.set_calm(1)
+	rx_drain()
+	set_global("rx_drain_loop_expected", FALSE)
+	TEST_ASSERT_EQUAL(looper.loop_runs, RX_DRAIN_PASSES, "the loop is cut at the limit")
+	TEST_ASSERT_EQUAL(looper.calm_runs, 1, "the same holder's other reaction still delivered")
+	TEST_ASSERT_EQUAL(bystander.calm_runs, 1, "another holder's queued change was not discarded")
+	TEST_ASSERT_EQUAL(length(GLOB.rx_pending), 0, "nothing is left queued")
