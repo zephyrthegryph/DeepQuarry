@@ -395,6 +395,7 @@
 #include "interim_armor_lifecycle.dm"
 #include "interim_autopsy_actor.dm"
 #include "interim_beam_lifecycle.dm"
+#include "interim_blueprint_actor.dm"
 #include "interim_charger_feed.dm"
 #include "interim_construction_doors.dm"
 #include "interim_construction_interruptions.dm"
