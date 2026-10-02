@@ -28,3 +28,57 @@
 	TEST_ASSERT_EQUAL(LAZYACCESS(bomb.wires_list, wire), TRUE, "the explicit actor's cutters cut the selected wire")
 	TEST_ASSERT(bomb.ui_act_wire(actor, list("wire" = wire), null, null, "wire"), "the wire action handles mending")
 	TEST_ASSERT_EQUAL(LAZYACCESS(bomb.wires_list, wire), FALSE, "the second action mends the selected wire")
+
+/// Pen insertion and removal both operate on the UI action's actor.
+/datum/unit_test/interim_clipboard_pen_actor/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)
+	var/obj/item/clipboard/board = allocate(/obj/item/clipboard, T)
+	var/obj/item/pen/pen = allocate(/obj/item/pen, T)
+	TEST_ASSERT(actor.put_in_active_hand(pen), "the explicit actor holds the pen")
+	TEST_ASSERT(board.ui_act_add_pen(actor, list(), null, null, "add_pen"), "the insertion action is handled")
+	TEST_ASSERT_EQUAL(board.haspen(), pen, "the clipboard records the actor's pen")
+	TEST_ASSERT_EQUAL(pen.loc, board, "insertion moves the pen into the clipboard")
+	TEST_ASSERT_NULL(actor.get_active_hand(), "insertion releases the actor's hand")
+	TEST_ASSERT(board.ui_act_remove_pen(actor, list(), null, null, "remove_pen"), "the removal action is handled")
+	TEST_ASSERT_NULL(board.haspen(), "removal clears the stored pen reference")
+	TEST_ASSERT_EQUAL(pen.loc, actor, "removal gives the pen to the explicit actor")
+	TEST_ASSERT_EQUAL(actor.get_active_hand(), pen, "the removed pen occupies the actor's hand")
+
+/// Retrieving from a safe checks and uses the explicit actor's position and hands.
+/datum/unit_test/interim_safe_retrieve_actor/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/obj/structure/safe/safe = allocate(/obj/structure/safe, T)
+	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)
+	var/obj/item/pen/pen = allocate(/obj/item/pen, safe)
+	safe.open = FALSE
+	TEST_ASSERT(safe.ui_act_retrieve(actor, list("ref" = pen), null, null, "retrieve"), "a closed-safe action is handled")
+	TEST_ASSERT_EQUAL(pen.loc, safe, "a closed safe retains its item")
+	safe.open = TRUE
+	TEST_ASSERT(safe.ui_act_retrieve(actor, list("ref" = pen), null, null, "retrieve"), "an open-safe action is handled")
+	TEST_ASSERT_EQUAL(pen.loc, actor, "the open safe gives its item to the explicit actor")
+	TEST_ASSERT_EQUAL(actor.get_active_hand(), pen, "the retrieved item occupies the actor's hand")
+
+/// Both player routes admit living actors; an automated forced cycle needs none.
+/datum/unit_test/interim_washing_machine_start_actor/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)
+	var/mob/observer/dead/ghost = allocate(/mob/observer/dead, T)
+	var/obj/machinery/washing_machine/washer = allocate(/obj/machinery/washing_machine, T)
+	var/obj/item/clothing/gloves/white/gloves = allocate(/obj/item/clothing/gloves/white, T)
+	TEST_ASSERT(actor.put_in_active_hand(gloves), "the actor holds the laundry")
+	TEST_ASSERT(washer.interaction_washing_machine_use_item(actor, gloves, null), "loading the laundry is handled")
+	TEST_ASSERT(gloves in washer.washing, "the washing machine records the laundry")
+	TEST_ASSERT(washer.interaction_washing_machine_use(actor, null, null), "closing the loaded machine is handled")
+	var/closed_state = washer.state
+	washer.interaction_washing_machine_start(ghost, null, null)
+	TEST_ASSERT_EQUAL(washer.state, closed_state, "a nonliving actor cannot start a cycle")
+	washer.interaction_washing_machine_start(actor, null, null)
+	TEST_ASSERT_NOTEQUAL(washer.state, closed_state, "the alternate interaction starts for its explicit living actor")
+	washer.finish_wash(0.5)
+	TEST_ASSERT_EQUAL(washer.state, closed_state, "finishing restores the closed loaded state")
+	washer.interaction_washing_machine_start_washing(actor, null, null)
+	TEST_ASSERT_NOTEQUAL(washer.state, closed_state, "the start-washing interaction also passes its actor")
+	washer.finish_wash(0.5)
+	washer.start(TRUE, 0.5)
+	TEST_ASSERT_NOTEQUAL(washer.state, closed_state, "a forced automated cycle still works without a player actor")
