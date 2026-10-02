@@ -394,6 +394,7 @@
 #include "interim_construction_doors.dm"
 #include "interim_economy_actor.dm"
 #include "interim_power_reagents.dm"
+#include "interim_reagent_pour.dm"
 #include "dq_kernel_measure_tests.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
