@@ -5642,7 +5642,11 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	// The exposure heats the paper's heat body; its ignition rule
 	// (code/datums/rules/declarations.dm) runs on the next heat frame.
 	dq_rx_flush()
-	om_test_ticks(10)
+	// The ignition rule and its wake ride the kernel; wait for the flame (or the burn-through) itself.
+	for(var/flush in 1 to 20)
+		if(QDELETED(I) || (I.resistance_flags & ON_FIRE))
+			break
+		dq_rx_flush()
 
 	// Observable consequence: a flammable item exposed to ignition-temperature
 	// air must be alight. If fire_act stopped applying heat to floor items, the

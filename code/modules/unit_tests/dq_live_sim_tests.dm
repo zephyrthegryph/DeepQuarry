@@ -164,7 +164,7 @@
 	TEST_ASSERT_EQUAL(holder.crossings, 0, "quiet while the pressure is below the level")
 	first.adjust_gas(/datum/gas/nitrogen, 200)
 	SSair.run_gas_frames(1)
-	om_test_ticks(6)
+	OM_TEST_WAIT_UNTIL(holder.crossings >= 1, 60)
 	TEST_ASSERT(holder.crossings >= 1, "the crossing called the holder ([first.return_pressure()] kPa, watch [state.watch] live [state.watch?.is_live()], armed [state.armed_id])")
 	holder.set_air(second)
 	gas_watch_rearm(holder)
