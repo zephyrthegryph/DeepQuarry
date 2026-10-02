@@ -84,6 +84,7 @@
 	B.give_target(target, TRUE)
 	var/start_dist = get_dist(hunter, target)
 	var/closest = start_dist
+	var/initial_injuries = target.injury_load(INJURY_CATEGORY_PHYSICAL)
 	// Breaks as soon as it attacks; the budget only matters on a loaded machine,
 	// where 30 rounds sometimes ran out just before the swing (also seen on
 	// unsharded merge runs), so it's 60.
@@ -92,10 +93,10 @@
 		om_tick_now(hunter, /datum/om/behaviour/ai_brain/strategic, 2)
 		om_tick_now(hunter, /datum/om/behaviour/ai_brain/tactical, 0.25)
 		closest = min(closest, get_dist(hunter, target))
-		if(B.last_attack_at)
+		if(target.injury_load(INJURY_CATEGORY_PHYSICAL) > initial_injuries)
 			break
 		om_test_ticks(3)
 	TEST_ASSERT(closest < start_dist, "the brain did not move toward its target (distance stayed [start_dist])")
-	TEST_ASSERT(B.last_attack_at, "the brain reached its target but never attacked (diag: dist=[get_dist(hunter, target)] closest=[closest] adjacent=[hunter.Adjacent(target)] threat=[B.primary_threat] target_stat=[target.stat] cooldown_ok=[hunter.checkClickCooldown()] hunter=[AREACOORD(hunter)] target=[AREACOORD(target)] behaviour=[B.active_behavior_type])")
+	TEST_ASSERT(target.injury_load(INJURY_CATEGORY_PHYSICAL) > initial_injuries, "the brain reached its target but dealt no physical injury (diag: dist=[get_dist(hunter, target)] closest=[closest] adjacent=[hunter.Adjacent(target)] threat=[B.primary_threat] target_stat=[target.stat] cooldown_ok=[hunter.checkClickCooldown()] last_attack=[B.last_attack_at] hunter=[AREACOORD(hunter)] target=[AREACOORD(target)] behaviour=[B.active_behavior_type])")
 
 #endif
