@@ -400,6 +400,7 @@
 #include "interim_food_consumption.dm"
 #include "interim_mindbinder_actor.dm"
 #include "interim_power_reagents.dm"
+#include "interim_pull_actor.dm"
 #include "interim_reagent_pour.dm"
 #include "interim_smokable_lifecycle.dm"
 #include "interim_storage_lifecycle.dm"

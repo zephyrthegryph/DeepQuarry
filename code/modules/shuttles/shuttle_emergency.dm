@@ -66,7 +66,7 @@
 			return 0
 	return ..()
 
-/datum/shuttle/autodock/ferry/emergency/launch(user)
+/datum/shuttle/autodock/ferry/emergency/launch(user, mob/actor)
 	if (!can_launch(user)) return
 
 	if (istype(user, /obj/machinery/computer/shuttle_control/emergency))	//if we were given a command by an emergency shuttle console
@@ -74,13 +74,13 @@
 			GLOB.emergency_shuttle_service.autopilot = FALSE
 			to_chat(world, span_boldnotice("Alert: The shuttle autopilot has been overridden. Launch sequence initiated!"))
 
-	if(usr)
-		log_admin("[key_name(usr)] has overridden the departure shuttle's autopilot and activated the launch sequence.")
-		message_admins("[key_name_admin(usr)] has overridden the departure shuttle's autopilot and activated the launch sequence.")
+	if(actor)
+		log_admin("[key_name(actor)] has overridden the departure shuttle's autopilot and activated the launch sequence.")
+		message_admins("[key_name_admin(actor)] has overridden the departure shuttle's autopilot and activated the launch sequence.")
 
-	..(user)
+	..(user, actor)
 
-/datum/shuttle/autodock/ferry/emergency/force_launch(user)
+/datum/shuttle/autodock/ferry/emergency/force_launch(user, mob/actor)
 	if (!can_force(user)) return
 
 	if (istype(user, /obj/machinery/computer/shuttle_control/emergency))	//if we were given a command by an emergency shuttle console
@@ -88,13 +88,13 @@
 			GLOB.emergency_shuttle_service.autopilot = FALSE
 			to_chat(world, span_boldnotice("Alert: The shuttle autopilot has been overridden. Bluespace drive engaged!"))
 
-	if(usr)
-		log_admin("[key_name(usr)] has overridden the departure shuttle's autopilot and forced immediate launch.")
-		message_admins("[key_name_admin(usr)] has overridden the departure shuttle's autopilot and forced immediate launch.")
+	if(actor)
+		log_admin("[key_name(actor)] has overridden the departure shuttle's autopilot and forced immediate launch.")
+		message_admins("[key_name_admin(actor)] has overridden the departure shuttle's autopilot and forced immediate launch.")
 
-	..(user)
+	..(user, actor)
 
-/datum/shuttle/autodock/ferry/emergency/cancel_launch(user)
+/datum/shuttle/autodock/ferry/emergency/cancel_launch(user, mob/actor)
 	if (!can_cancel(user)) return
 
 	if (istype(user, /obj/machinery/computer/shuttle_control/emergency))	//if we were given a command by an emergency shuttle console
@@ -102,11 +102,11 @@
 			GLOB.emergency_shuttle_service.autopilot = FALSE
 			to_chat(world, span_boldnotice("Alert: The shuttle autopilot has been overridden. Launch sequence aborted!"))
 
-	if(usr)
-		log_admin("[key_name(usr)] has overridden the departure shuttle's autopilot and cancelled the launch sequence.")
-		message_admins("[key_name_admin(usr)] has overridden the departure shuttle's autopilot and cancelled the launch sequence.")
+	if(actor)
+		log_admin("[key_name(actor)] has overridden the departure shuttle's autopilot and cancelled the launch sequence.")
+		message_admins("[key_name_admin(actor)] has overridden the departure shuttle's autopilot and cancelled the launch sequence.")
 
-	..(user)
+	..(user, actor)
 
 /datum/shuttle/autodock/ferry/emergency/escape
 	name = "Escape"
@@ -135,7 +135,7 @@
 	authorized = initial(authorized)
 
 //returns 1 if the ID was accepted and a new authorization was added, 0 otherwise
-/obj/machinery/computer/shuttle_control/emergency/proc/read_authorization(obj/item/ident)
+/obj/machinery/computer/shuttle_control/emergency/proc/read_authorization(obj/item/ident, mob/user)
 	if (!ident || !istype(ident))
 		return 0
 	if (authorized.len >= req_authorizations)
@@ -173,9 +173,9 @@
 	if (req_authorizations - authorized.len)
 		to_chat(world, span_boldnotice("Alert: [req_authorizations - authorized.len] authorization\s needed to override the shuttle autopilot.")) //TODO- Belsima, make this an announcement instead of magic.
 
-	if(usr)
-		log_admin("[key_name(usr)] has inserted [ID] into the shuttle control computer - [req_authorizations - authorized.len] authorisation\s needed")
-		message_admins("[key_name_admin(usr)] has inserted [ID] into the shuttle control computer - [req_authorizations - authorized.len] authorisation\s needed")
+	if(user)
+		log_admin("[key_name(user)] has inserted [ID] into the shuttle control computer - [req_authorizations - authorized.len] authorisation\s needed")
+		message_admins("[key_name_admin(user)] has inserted [ID] into the shuttle control computer - [req_authorizations - authorized.len] authorisation\s needed")
 
 	return 1
 
@@ -199,7 +199,7 @@
 	effect = /obj/machinery/computer/shuttle_control/emergency/proc/interaction_scan_id
 
 /obj/machinery/computer/shuttle_control/emergency/proc/interaction_scan_id(mob/user, obj/item/W, datum/interaction/interaction)
-	read_authorization(W)
+	read_authorization(W, user)
 	return FALSE
 
 /// Accessor for the radio_connection var.

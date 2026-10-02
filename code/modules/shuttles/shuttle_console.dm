@@ -104,20 +104,20 @@ UI_ACT(/obj/machinery/computer/shuttle_control, "move", ui_act_move)
 UI_ACT_PROC(/obj/machinery/computer/shuttle_control, ui_act_move)
 	var/datum/shuttle/autodock/shuttle = SSshuttles.shuttles[shuttle_tag]
 	if(can_move(shuttle, ui.user))
-		shuttle.launch(src)
+		shuttle.launch(src, ui.user)
 	return TRUE
 
 UI_ACT(/obj/machinery/computer/shuttle_control, "force", ui_act_force)
 UI_ACT_PROC(/obj/machinery/computer/shuttle_control, ui_act_force)
 	var/datum/shuttle/autodock/shuttle = SSshuttles.shuttles[shuttle_tag]
 	if(can_move(shuttle, ui.user))
-		shuttle.force_launch(src)
+		shuttle.force_launch(src, ui.user)
 	return TRUE
 
 UI_ACT(/obj/machinery/computer/shuttle_control, "cancel", ui_act_cancel)
 UI_ACT_PROC(/obj/machinery/computer/shuttle_control, ui_act_cancel)
 	var/datum/shuttle/autodock/shuttle = SSshuttles.shuttles[shuttle_tag]
-	shuttle.cancel_launch(src)
+	shuttle.cancel_launch(src, ui.user)
 	return TRUE
 
 UI_ACT(/obj/machinery/computer/shuttle_control, "set_codes", ui_act_set_codes)
