@@ -5009,8 +5009,8 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
             session.emission_plans.finish(&session.active_keys);
             trace(&format!("procedure parent phases complete: prepare={parent_prepare_seconds:.3}s wait={parent_wait_seconds:.3}s section={parent_section_seconds:.3}s link={parent_link_seconds:.3}s records_helpers={parent_record_seconds:.3}s fragments={parent_fragment_seconds:.3}s"));
             session.procedure_fragments.finish(&session.active_keys);
-            trace(&format!("linked output objects: typed_rows_reused={} retained_projection_hits={} code_read_bytes={} code_hydration_seconds={:.3}",
-                session.procedure_fragments.stats.linked_rows_reused,session.procedure_fragments.stats.retained_projection_hits,session.procedure_fragments.stats.code_read_bytes,
+            trace(&format!("linked output objects: typed_rows_reused={} retained_projection_hits={} shared_projection_hits={} code_read_bytes={} code_hydration_seconds={:.3}",
+                session.procedure_fragments.stats.linked_rows_reused,session.procedure_fragments.stats.retained_projection_hits,session.procedure_fragments.stats.shared_projection_hits,session.procedure_fragments.stats.code_read_bytes,
                 session.procedure_fragments.stats.code_hydration_seconds));
             trace(&format!("output DAG: reused={} relocated={} built={} refill_batches={} refill_bytes={} replay_seconds={:.3} read_seconds={:.3} decode_seconds={:.3} encode_seconds={:.3} flush_seconds={:.3} write_batches={}",
                 session.procedure_fragments.stats.reused, session.procedure_fragments.stats.relocated,
@@ -6252,7 +6252,7 @@ fn emit_class_default(item:&Item,class_id:u32,dmb:&mut Dmb,strings:&mut StringIn
     if !declaration_operations::eligible(&item.header)||strings.6.is_some() {
         return emit_class_default_uncached(item,class_id,dmb,strings,resources);
     }
-    if declaration_operations::replay(&item.header,class_id,dmb,strings,resources,None) {return Ok(());}
+    if declaration_operations::replay(&item.header,class_id,dmb,strings,resources,None,&mut Vec::new()) {return Ok(());}
     let snapshot=declaration_operations::begin(&item.header,class_id,dmb,resources);
     strings.begin_trace();
     let result=emit_class_default_uncached(item,class_id,dmb,strings,resources);
@@ -6679,7 +6679,7 @@ fn append_builtin_override(
 
 fn emit_class_var(item:&Item,class_id:u32,dmb:&mut Dmb,strings:&mut StringIndex,resources:&HashMap<String,u32>,pending_dynamic:&mut Vec<PendingDynamic>,blocked_constants:&HashSet<String>,metadata:&mut TypeMetadataState)->Result<(),String> {
     if !declaration_operations::eligible_variable(&item.header)||strings.6.is_some(){return emit_class_var_uncached(item,class_id,dmb,strings,resources,pending_dynamic,blocked_constants,metadata);}
-    if declaration_operations::replay(&item.header,class_id,dmb,strings,resources,Some(&mut *metadata)){return Ok(());}
+    if declaration_operations::replay(&item.header,class_id,dmb,strings,resources,Some(&mut *metadata),pending_dynamic){return Ok(());}
     let snapshot=declaration_operations::begin(&item.header,class_id,dmb,resources);strings.begin_trace();
     let result=emit_class_var_uncached(item,class_id,dmb,strings,resources,pending_dynamic,blocked_constants,metadata);
     let operations=strings.end_trace();if result.is_ok(){declaration_operations::record(&item.header,class_id,snapshot,dmb,operations,Some(&*metadata));}result

@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+dm-store = { path = "../dm-store" }
 dm-syntax = { path = "../dm-syntax" }
 serde = { version = "1", features = ["derive", "rc"] }
 serde_json = "1"

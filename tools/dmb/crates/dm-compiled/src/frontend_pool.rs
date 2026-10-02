@@ -304,8 +304,14 @@ impl FrontendPool {
             if self.bytes() <= budget { break; }
             self.trace_entry("before auxiliary cache trim", key);
             let before = self.bytes();
+            let excess = before.saturating_sub(budget);
             if let Some(frontend) = self.entries.get_mut(key).unwrap().frontend.as_mut() {
-                frontend.release_encoded_snapshot();
+                frontend.trim_output_recipe_bytes(excess);
+            }
+            if self.bytes() > budget {
+                if let Some(frontend) = self.entries.get_mut(key).unwrap().frontend.as_mut() {
+                    frontend.release_encoded_snapshot();
+                }
             }
             if self.bytes() != before { self.stats.snapshot_trims += 1; }
             self.trace_entry("after auxiliary cache trim", key);

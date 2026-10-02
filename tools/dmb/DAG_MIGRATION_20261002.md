@@ -248,3 +248,15 @@ inside the existing64MiB payload cap, source-edit endpoint validation,
 guarded archive composition, frame persistence independent of decoded cache
 capacity, and staged pool pressure preserving reuse handles before restorable
 PreparedProc payloads. Measurements for those changes are pending.
+
+O completed from0bb6370be6: cold168.498s; unchanged0.486s; body23.000s;
+newproc47.572s; newvar79.931s; asset14.867s; freshcachedprocess0.159s;
+freshbody32.229s. All compiler requests succeeded; no tests/runtime.
+Guarded unchanged-entry RSC composition3.146s versus earlier~7–8s.
+Retained projection hits remained0: the aggregate pressure policy discarded
+all67MiB of auxiliary payloads when only46MiB needed reclaiming.
+Next checkpoint builds successfully and trims transient/retained recipes
+partially to the actual excess, accounts a bounded2MiB weak shared artifact
+index across sessions, composes relative closed literal/arithmetic/list
+variable recipes, and stores preprocess blobs transactionally in bounded
+2MiB batches with lazy32-key/4MiB raw hydration. Timings pending.

@@ -1068,7 +1068,12 @@ impl CanonicalSession {
         self.output_validation.clear();
         self.emission_plans.clear();
         self.invocation_fragments.release_decoded();
+        self.procedure_fragments.trim_transient();
         before.saturating_sub(self.resident_bytes())
+    }
+    pub(crate) fn trim_output_recipe_bytes(&mut self, bytes: usize) -> usize {
+        let target = self.procedure_fragments.decoded_bytes().saturating_sub(bytes);
+        self.procedure_fragments.trim_to(target)
     }
     /// Output projections are expendable accelerators. Retain compact semantic
     /// owner/invocation fragments when releasing output buffers under pressure.

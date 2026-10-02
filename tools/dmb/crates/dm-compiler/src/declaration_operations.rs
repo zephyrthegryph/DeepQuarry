@@ -7,8 +7,8 @@ use std::collections::VecDeque;
 use sha2::{Digest,Sha256};
 use serde::{Serialize,Deserialize};
 use dm_store::{Store,Key,Change};
-use dm_output::object_directory::{AllocationCounts,AllocationMask,ObjectWitness,WitnessObservation};
-const NAMESPACE:&str="typed-declaration-operations-v3";
+use dm_output::object_directory::{AllocationCounts,AllocationMask,ObjectWitness,WitnessObservation,OwnedReference,OwnedTable};
+const NAMESPACE:&str="typed-declaration-operations-v5";
 const LIMIT:usize=4*1024*1024;
 #[derive(Serialize,Deserialize)]
 struct Witness {allocation:bool,defining_list:u32,variables:usize,lists:usize,footer:u32,list_lengths:Vec<(u32,usize)>,resource:Option<(String,u32)>}
@@ -21,7 +21,53 @@ impl ClassProperty {
 #[derive(Serialize,Deserialize)]
 enum Operation {Intern {bytes:Vec<u8>,id:u32},WriteProperty {property:ClassProperty,value:u64},AppendVariable(byond_dmb::dmb::Variable),AppendList(Vec<u32>),ExtendList {id:u32,words:Vec<u32>},SetFooter(u32),StaticId {name:String,id:u32}}
 #[derive(Serialize,Deserialize)]
-struct Plan {witness:Witness,object:ObjectWitness,operations:Vec<Operation>}
+struct Plan {witness:Witness,object:ObjectWitness,operations:Vec<Operation>,variable:Option<VariableRecipe>}
+/// Allocation-independent writes for closed literal declarations. Destinations
+/// are current owner/footer lists, never historical absolute row addresses.
+#[derive(Serialize,Deserialize)]
+struct VariableRecipe {name:Vec<u8>,kind:u8,value:u32,text:Option<Vec<u8>>,resource:Option<String>,flags:u32,static_name:Option<String>,dynamic:Option<String>}
+fn variable_recipe(source:&str,class:u32,snapshot:&Snapshot,dmb:&Dmb,metadata:Option<&TypeMetadataState>)->Option<VariableRecipe>{
+ if !snapshot.witness.allocation||dmb.variables.len()!=snapshot.witness.variables+1{return None;}
+ let row=&dmb.variables[snapshot.witness.variables];
+ if !matches!(row.kind,0|6|12|42){return None;}
+ let declaration=default_plans::declaration(source).ok()?;
+ // Failed nonconst evaluation can emit a null placeholder plus dynamic work.
+ // A closed recipe must never hide those side effects.
+ let dynamic=if row.kind==0&&declaration.initial.as_deref().is_some_and(|value|value.trim()!="null") {
+  if !declaration.initial.as_deref().is_some_and(closed_list){return None;}Some(declaration.dynamic.clone().ok()?)
+ }else{None};
+ let static_name=if declaration.is_static||declaration.is_const {
+  let name=class_static_symbol(dmb,class,&declaration.name);if *metadata?.static_ids.get(&name)?!=snapshot.witness.variables as u32{return None;}Some(name)
+ }else{None};
+ Some(VariableRecipe {name:dmb.string(row.name)?.to_vec(),kind:row.kind,value:row.value,
+ text:if row.kind==6 {Some(dmb.string(row.value)?.to_vec())}else{None},
+ resource:if row.kind==12 {Some(snapshot.witness.resource.as_ref()?.0.clone())}else{None},
+ flags:(if declaration.is_const {3}else if declaration.is_static {1}else{0})|if declaration.is_tmp {4}else{0},static_name,dynamic})
+}
+fn replay_variable(recipe:&VariableRecipe,class:u32,dmb:&mut Dmb,strings:&mut StringIndex,resources:&HashMap<String,u32>,mut metadata:Option<&mut TypeMetadataState>,pending:&mut Vec<PendingDynamic>)->bool{
+ if recipe.static_name.is_some()&&metadata.is_none(){return false;}
+ let defining=dmb.classes[class as usize].lists_and_procs[4];let footer=dmb.variable_footer;
+ if defining!=0xffff&&dmb.lists.get(defining as usize).is_none(){return false;}
+ if recipe.static_name.is_some()&&footer!=0xffff&&dmb.lists.get(footer as usize).is_none(){return false;}
+ let base=counts(dmb);let Some(variable)=(OwnedReference {table:OwnedTable::Variable,ordinal:0}).resolve(&base)else{return false;};
+ let value=match recipe.kind {6=>{let Some(text)=&recipe.text else{return false;};strings.intern_bytes(dmb,text)},12=>{let Some(id)=recipe.resource.as_ref().and_then(|path|resources.get(path))else{return false;};*id},_=>recipe.value};
+ if let Some(expression)=&recipe.dynamic {
+  let name=if let Some(name)=&recipe.static_name {name.clone()}else{let Some(name)=std::str::from_utf8(&recipe.name).ok()else{return false;};name.to_owned()};
+  pending.push(PendingDynamic {owner:if recipe.static_name.is_some(){None}else{Some(class)},name:name.clone(),expression:expression.clone(),sized_array:false});
+  if recipe.static_name.is_some(){metadata.as_deref_mut().unwrap().dynamic_static_scopes.insert(name,class);}
+ }
+ let name=strings.intern_bytes(dmb,&recipe.name);
+ dmb.variables.push(Variable {kind:recipe.kind,value,name});
+ let mut list_ordinal=0;
+ if let Some(name)=&recipe.static_name {
+  metadata.as_deref_mut().unwrap().static_ids.insert(name.clone(),variable);
+  if footer==0xffff {let expected=(OwnedReference {table:OwnedTable::List,ordinal:list_ordinal}).resolve(&base);let actual=append_list(dmb,vec![variable,recipe.flags]);debug_assert_eq!(expected,Some(actual));dmb.variable_footer=actual;list_ordinal+=1;}
+  else {dmb.lists[footer as usize].extend([variable,recipe.flags]);}
+ }
+ if defining==0xffff {let expected=(OwnedReference {table:OwnedTable::List,ordinal:list_ordinal}).resolve(&base);let actual=append_list(dmb,vec![variable,recipe.flags]);debug_assert_eq!(expected,Some(actual));dmb.classes[class as usize].lists_and_procs[4]=actual;}
+ else {dmb.lists[defining as usize].extend([variable,recipe.flags]);}
+ true
+}
 #[derive(Default)]
 struct Cache {root:Option<std::path::PathBuf>,store:Option<Store>,rows:HashMap<String,(Arc<Plan>,usize)>,order:VecDeque<String>,missing:HashSet<String>,bytes:usize,pending:Vec<Change>,pending_bytes:usize,hits:usize,misses:usize}
 fn cache()->&'static Mutex<Cache>{static CACHE:OnceLock<Mutex<Cache>>=OnceLock::new();CACHE.get_or_init(||Mutex::new(Cache::default()))}
@@ -29,8 +75,37 @@ fn key(owner:&str,source:&str)->String {let mut hash=Sha256::new();hash.update(e
 fn owner(dmb:&Dmb,id:u32)->Option<&str>{std::str::from_utf8(dmb.string(dmb.classes.get(id as usize)?.path_string_id())?).ok()}
 fn resource(source:&str,resources:&HashMap<String,u32>)->Option<(String,u32)>{let(name,value)=source.split_once('=')?;if name.trim()!="icon"&&!name.trim().starts_with("var/"){return None;}let path=value.trim().strip_prefix('\'')?.strip_suffix('\'')?.replace('\\',"/");Some((path.clone(),*resources.get(&path)?))}
 fn numeric(value:&str)->bool {value.bytes().any(|byte|byte.is_ascii_digit())&&value.bytes().all(|byte|byte.is_ascii_digit()||matches!(byte,b'.'|b'+'|b'-'|b'e'|b'E'))&&value.parse::<f32>().is_ok()}
-fn literal(value:&str)->bool {value=="null"||numeric(value)||(value.len()>=2&&value.starts_with('"')&&value.ends_with('"')&&!value[1..value.len()-1].contains(['[',']','\\','"']))||(value.len()>=2&&value.starts_with('\'')&&value.ends_with('\''))}
-pub(super) fn eligible_variable(source:&str)->bool {let (name,value)=source.split_once('=').unwrap_or((source,"null"));name.trim().starts_with("var/")&&!name.contains(['[',']'])&&literal(value.trim())}
+/// Purity is syntactic: no symbol lookup, calls, mutation, or type binding.
+/// Normal semantic evaluation still determines the value on the first build.
+fn closed_arithmetic(value:&str)->bool {
+ if !value.bytes().any(|byte|byte.is_ascii_digit()){return false;}
+ // Cheap rejection prevents parsing ordinary named defaults during prefetch.
+ if !value.bytes().all(|byte|byte.is_ascii_digit()||byte.is_ascii_whitespace()||matches!(byte,b'.'|b'e'|b'E'|b'+'|b'-'|b'*'|b'/'|b'%'|b'&'|b'|'|b'^'|b'~'|b'!'|b'<'|b'>'|b'='|b'('|b')'|b'?'|b':')){return false;}
+ fn closed(expr:&dm_syntax::Expr)->bool {use dm_syntax::ExprKind;match &expr.kind {
+  ExprKind::Literal(text)=>numeric(text),ExprKind::Group(value)=>closed(value),
+  ExprKind::Unary {op,value}=>matches!(op.as_str(),"+"|"-"|"~"|"!")&&closed(value),
+  ExprKind::Binary {op,lhs,rhs}=>matches!(op.as_str(),"+"|"-"|"*"|"/"|"%"|"**"|"&"|"|"|"^"|"<<"|">>"|"=="|"!="|"<"|">"|"<="|">="|"&&"|"||")&&closed(lhs)&&closed(rhs),
+  ExprKind::Conditional {condition,then_value,else_value}=>closed(condition)&&closed(then_value)&&closed(else_value),_=>false,
+ }}
+ const_eval::parsed_expression(value).is_some_and(|expr|closed(&expr))
+}
+fn closed_list(source:&str)->bool {
+ fn closed(expr:&dm_syntax::Expr,depth:usize)->bool {
+  if depth>64{return false;}use dm_syntax::ExprKind;
+  match &expr.kind {
+   ExprKind::Literal(value)=>literal_scalar(value),ExprKind::Ident(name)=>name=="null",
+   ExprKind::Group(value)=>closed(value,depth+1),
+   ExprKind::Unary {op,value}=>matches!(op.as_str(),"+"|"-"|"~"|"!")&&closed(value,depth+1),
+   ExprKind::Binary {op,lhs,rhs}=>matches!(op.as_str(),"="|"+"|"-"|"*"|"/"|"%"|"**"|"&"|"|"|"^"|"<<"|">>"|"=="|"!="|"<"|">"|"<="|">="|"&&"|"||")&&closed(lhs,depth+1)&&closed(rhs,depth+1),
+   ExprKind::Call {callee,args}=>matches!(&callee.kind,ExprKind::Ident(name) if name=="list")&&args.iter().all(|arg|closed(arg,depth+1)),_=>false,
+  }
+ }
+ if !source.trim_start().starts_with("list("){return false;}
+ const_eval::parsed_expression(source).is_some_and(|expr|closed(&expr,0))
+}
+fn literal_scalar(value:&str)->bool {value=="null"||numeric(value)||(value.len()>=2&&value.starts_with('"')&&value.ends_with('"')&&!value[1..value.len()-1].contains(['[',']','\\','"']))||(value.len()>=2&&value.starts_with('\'')&&value.ends_with('\''))}
+fn literal(value:&str)->bool {value=="null"||numeric(value)||closed_arithmetic(value)||(value.len()>=2&&value.starts_with('"')&&value.ends_with('"')&&!value[1..value.len()-1].contains(['[',']','\\','"']))||(value.len()>=2&&value.starts_with('\'')&&value.ends_with('\''))}
+pub(super) fn eligible_variable(source:&str)->bool {let (name,value)=source.split_once('=').unwrap_or((source,"null"));name.trim().starts_with("var/")&&!name.contains(['[',']'])&&(literal(value.trim())||closed_list(value.trim()))}
 pub(super) fn eligible(source:&str)->bool {
  if eligible_variable(source){return true;}
  let Some((name,value))=source.split_once('=')else{return false;};let name=name.trim();let value=value.trim();
@@ -60,11 +135,15 @@ fn scalars(witness:&Witness,dmb:Option<&Dmb>,class:u32,resource:Option<&(String,
  if witness.allocation {reads.push(dmb.map_or(witness.defining_list,|dmb|dmb.classes[class as usize].lists_and_procs[4]) as u64);reads.push(dmb.map_or(witness.footer,|dmb|dmb.variable_footer) as u64);for(id,length)in &witness.list_lengths {reads.push(*id as u64);reads.push(dmb.and_then(|dmb|dmb.lists.get(*id as usize)).map_or(*length,|words|words.len()) as u64);}}
  reads.push(resource.map_or(u64::MAX,|(_,id)|*id as u64));reads
 }
-fn recipe_identity(operations:&[Operation])->Option<String>{Some(format!("{:x}",Sha256::digest(rmp_serde::to_vec_named(operations).ok()?)))}
-fn decode_plan(bytes:&[u8])->Option<Plan>{let plan:Plan=rmp_serde::from_slice(bytes).ok()?;if !plan.object.valid()||recipe_identity(&plan.operations)?!=plan.object.recipe_identity {return None;}Some(plan)}
-pub(super) fn replay(source:&str,class:u32,dmb:&mut Dmb,strings:&mut StringIndex,resources:&HashMap<String,u32>,mut metadata:Option<&mut TypeMetadataState>)->bool {
+fn recipe_identity(operations:&[Operation],variable:Option<&VariableRecipe>)->Option<String>{Some(format!("{:x}",Sha256::digest(rmp_serde::to_vec_named(&(operations,variable)).ok()?)))}
+fn decode_plan(bytes:&[u8])->Option<Plan>{let plan:Plan=rmp_serde::from_slice(bytes).ok()?;if !plan.object.valid()||recipe_identity(&plan.operations,plan.variable.as_ref())?!=plan.object.recipe_identity {return None;}Some(plan)}
+pub(super) fn replay(source:&str,class:u32,dmb:&mut Dmb,strings:&mut StringIndex,resources:&HashMap<String,u32>,mut metadata:Option<&mut TypeMetadataState>,pending:&mut Vec<PendingDynamic>)->bool {
  let Some(owner)=owner(dmb,class)else{return false;};let key=key(owner,source);
  let plan={let mut cache=cache().lock().unwrap_or_else(|error|error.into_inner());cache.misses+=1;cache.rows.get(&key).map(|(plan,_)|Arc::clone(plan))};let Some(plan)=plan else{return false;};
+ if let Some(recipe)=&plan.variable {
+  if !replay_variable(recipe,class,dmb,strings,resources,metadata,pending){return false;}
+  let mut cache=cache().lock().unwrap_or_else(|error|error.into_inner());cache.misses=cache.misses.saturating_sub(1);cache.hits+=1;return true;
+ }
  if resource(source,resources)!=plan.witness.resource||plan.witness.list_lengths.iter().any(|(id,_)|dmb.lists.get(*id as usize).is_none()){return false;}
  let scalar_reads=scalars(&plan.witness,Some(dmb),class,resource(source,resources).as_ref());
  let observation=WitnessObservation {semantic_identity:&key,recipe_identity:&plan.object.recipe_identity,start:counts(dmb),read_identities:&plan.object.read_identities,scalar_reads:&scalar_reads,unresolved_debug:&[]};
@@ -107,11 +186,13 @@ pub(super) fn record(source:&str,class:u32,snapshot:Snapshot,dmb:&Dmb,strings:Ve
   _ if snapshot.witness.allocation=>(ClassProperty::DefiningList,row.lists_and_procs[4] as u64),_=>return,
  };
  operations.push(Operation::WriteProperty {property,value});
- let Some(recipe)=recipe_identity(&operations)else{return;};
+ let variable=variable_recipe(source,class,&snapshot,dmb,metadata);
+ if snapshot.witness.allocation&&variable.is_none(){return;}
+ let Some(recipe)=recipe_identity(&operations,variable.as_ref())else{return;};
  let scalar_reads=scalars(&snapshot.witness,None,class,snapshot.witness.resource.as_ref());
  let string_ids=operations.iter().filter_map(|operation|if let Operation::Intern {id,..}=operation{Some(*id)}else{None}).collect();
  let object=ObjectWitness {semantic_identity:key.clone(),recipe_identity:recipe,start:snapshot.start,allocation_mask:if snapshot.witness.allocation {AllocationMask::VARIABLES.union(AllocationMask::LISTS)}else{AllocationMask::NONE},symbol_ids:vec![class],string_ids,debug_ids:Vec::new(),read_identities:Vec::new(),scalar_reads,unresolved_debug:Vec::new()};
- let plan=Arc::new(Plan {witness:snapshot.witness,object,operations});let Ok(bytes)=rmp_serde::to_vec_named(plan.as_ref())else{return;};if bytes.len()>64*1024{return;}
+ let plan=Arc::new(Plan {witness:snapshot.witness,object,operations,variable});let Ok(bytes)=rmp_serde::to_vec_named(plan.as_ref())else{return;};if bytes.len()>64*1024{return;}
  let mut cache=cache().lock().unwrap_or_else(|error|error.into_inner());retain(&mut cache,key.clone(),plan,bytes.len()*2+key.len()+128);
  if cache.store.is_some(){if cache.pending_bytes.saturating_add(bytes.len())>1024*1024{flush_locked(&mut cache);}if cache.pending_bytes.saturating_add(bytes.len())>1024*1024 {cache.pending.clear();cache.pending_bytes=0;}cache.pending_bytes+=bytes.len();cache.pending.push(Change::Put(Key::new(NAMESPACE,key),bytes));}
 }

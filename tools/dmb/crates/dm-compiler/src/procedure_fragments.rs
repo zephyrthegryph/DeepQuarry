@@ -185,6 +185,7 @@ pub(super) struct FragmentStats {
     pub relocated: usize,
     pub linked_rows_reused: usize,
     pub retained_projection_hits: usize,
+    pub shared_projection_hits: usize,
     pub code_read_bytes: usize,
     pub code_hydration_seconds: f64,
     pub built: usize,
@@ -233,6 +234,7 @@ impl ProcedureFragments {
     pub fn resident_bytes(&self) -> usize {
         self.resident_bytes + self.pending_bytes + self.recency.capacity() * 96 + self.metadata_bytes
     }
+    pub fn decoded_bytes(&self)->usize {self.resident_bytes}
     fn install_handle(&mut self, key: crate::ProcKey, handle: Handle) {
         if let Some(old) = self.handles.remove(&key) {
             self.metadata_bytes = self.metadata_bytes.saturating_sub(handle_charge(&key, &old));
@@ -244,6 +246,35 @@ impl ProcedureFragments {
         self.handles.insert(key, handle);
     }
     pub fn clear_decoded(&mut self) { self.flush(); self.resident.clear(); self.recency.clear(); self.resident_bytes = 0; self.admitted_bytes = 0; }
+    /// Drop only disposable current-window projections; preserve the stable
+    /// admitted tier and compact handles until actual aggregate pressure asks
+    /// for their space too.
+    pub fn trim_transient(&mut self)->usize {
+        let before=self.resident_bytes();
+        self.resident.retain(|_,entry|entry.admitted);
+        self.resident_bytes=self.admitted_bytes;
+        self.recency.clear();self.recency.shrink_to_fit();
+        before.saturating_sub(self.resident_bytes())
+    }
+    /// Target the decoded payload bytes, preferring admitted projections.
+    /// Removal is oldest-use first within a tier, with digest ties deterministic.
+    /// Handles and persistence buffers are not part of this payload target.
+    pub fn trim_to(&mut self,limit:usize)->usize {
+        let before=self.resident_bytes();
+        let mut victims:Vec<_>=self.resident.iter().map(|(key,entry)|
+            (entry.admitted,entry.used,key.clone())).collect();
+        victims.sort_unstable();
+        for (_,_,key) in victims {
+            if self.resident_bytes<=limit {break;}
+            if let Some(entry)=self.resident.remove(&key) {
+                self.resident_bytes=self.resident_bytes.saturating_sub(entry.charge);
+                if entry.admitted {self.admitted_bytes=self.admitted_bytes.saturating_sub(entry.charge);}
+            }
+        }
+        self.recency.retain(|(key,tick)|self.resident.get(key).is_some_and(|entry|entry.used==*tick));
+        self.recency.shrink_to_fit();
+        before.saturating_sub(self.resident_bytes())
+    }
     pub fn has_handle(&self, key: &crate::ProcKey) -> bool { self.handles.contains_key(key) }
     pub fn prefetch(&mut self, keys: &[crate::ProcKey]) {
         let Some(store) = self.store.clone() else { return; };
@@ -271,7 +302,13 @@ impl ProcedureFragments {
             let payloads: Vec<_> = chunk.iter().filter_map(|key| self.handles.get(key))
                 .filter(|h| !self.resident.contains_key(&h.payload)).map(|h| h.payload.clone())
                 .collect::<std::collections::BTreeSet<_>>().into_iter().collect();
-            self.refill(&store, &payloads);
+            let mut missing=Vec::new();
+            for payload in payloads {
+                if let Some(fragment)=crate::shared_artifacts::get::<OutputFragment>("output-fragment",&payload) {
+                    self.retain_decoded(payload,fragment);self.stats.shared_projection_hits+=1;
+                } else {missing.push(payload);}
+            }
+            self.refill(&store, &missing);
         }
     }
     fn refill(&mut self, store: &dm_store::Store, payloads: &[String]) {
@@ -404,6 +441,7 @@ impl ProcedureFragments {
         self.tick += 1; self.resident_bytes += charge;
         if admitted { self.admitted_bytes += charge; }
         else { self.recency.push_back((payload.clone(), self.tick)); }
+        let fragment=crate::shared_artifacts::intern("output-fragment",&payload,fragment);
         self.resident.insert(payload, Resident { fragment, charge, used: self.tick, admitted, revision: self.revision });
     }
     pub fn get(&mut self, key: &crate::ProcKey, descriptor: &crate::ProcDescriptor, candidate: &str) -> Option<Arc<OutputFragment>> {

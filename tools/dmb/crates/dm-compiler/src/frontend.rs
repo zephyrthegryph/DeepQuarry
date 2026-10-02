@@ -399,6 +399,9 @@ impl OutlineSession {
         self.canonical.graph.release_encoded_snapshot();
         self.canonical.maps.release_encoded_snapshot();
     }
+    pub fn trim_output_recipe_bytes(&mut self, bytes: usize) -> usize {
+        self.canonical.trim_output_recipe_bytes(bytes)
+    }
     pub fn new(cache_root: Option<PathBuf>) -> Self {
         Self {
             canonical: crate::bootstrap::canonical::CanonicalSession::default(),

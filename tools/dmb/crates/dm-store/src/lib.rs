@@ -217,6 +217,24 @@ impl Store {
         max_group_bytes: usize, max_session_bytes: usize,
         cancel: Option<&AtomicBool>,
     ) -> io::Result<ReadBatch> {
+        self.read_grouped_bounded_mode(keys,group_records,max_record_bytes,max_group_bytes,max_session_bytes,cancel,false)
+    }
+
+    /// Return only the leading requested keys that fit a bounded hydration
+    /// window. Unreturned keys have no witness and must never count as misses.
+    /// This permits nearby-key prefetch under one database ownership window.
+    pub fn read_prefix_bounded(
+        &self, keys: &[Key], max_record_bytes: usize, max_batch_bytes: usize,
+        cancel: Option<&AtomicBool>,
+    ) -> io::Result<ReadBatch> {
+        self.read_grouped_bounded_mode(keys,keys.len().max(1),max_record_bytes,max_batch_bytes,max_batch_bytes,cancel,true)
+    }
+
+    fn read_grouped_bounded_mode(
+        &self, keys: &[Key], group_records: usize, max_record_bytes: usize,
+        max_group_bytes: usize, max_session_bytes: usize,
+        cancel: Option<&AtomicBool>, prefix: bool,
+    ) -> io::Result<ReadBatch> {
         if group_records == 0 { return Err(error("read group must contain records")); }
         if keys.len() > 64_000 {
             return Err(error("batch exceeds 64000 records"));
@@ -236,6 +254,7 @@ impl Store {
                 let stored = table.get(key.as_str()).map_err(error)?;
                 let size = stored.as_ref().map_or(0, |value| value.value().len());
                 if size.saturating_sub(32) > max_record_bytes.min(MAX_RECORD) {
+                    if prefix { break; }
                     return Err(io::Error::new(
                         io::ErrorKind::InvalidInput,
                         "read record exceeds stage byte limit",
@@ -246,6 +265,7 @@ impl Store {
                     .ok_or_else(|| error("read batch size overflow"))?;
                 group_bytes = group_bytes.checked_add(size).ok_or_else(||error("read group size overflow"))?;
                 if group_bytes > max_group_bytes || bytes > max_session_bytes.min(128 * 1024 * 1024) {
+                    if prefix { break; }
                     return Err(io::Error::new(
                         io::ErrorKind::InvalidInput,
                         "read batch exceeds stage byte limit",

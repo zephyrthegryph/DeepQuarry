@@ -948,9 +948,11 @@ impl ProjectProcedureGraph {
             return false;
         }
         let persisted = std::time::Instant::now();
-        let disk = self
-            .persist_prepared(&key, &descriptor, &envelope, &dependencies)
-            .or(disk);
+        let persisted_reference = self.persist_prepared(&key, &descriptor, &envelope, &dependencies);
+        let envelope = if let Some(reference)=&persisted_reference {
+            crate::shared_artifacts::intern("prepared-procedure",&reference.key,envelope)
+        } else {envelope};
+        let disk = persisted_reference.or(disk);
         self.stats.prepared_persist_seconds += persisted.elapsed().as_secs_f64();
         let installed = std::time::Instant::now();
         let result = self.install_candidate(
@@ -1282,6 +1284,9 @@ impl ProjectProcedureGraph {
         &mut self,
         reference: &ProcedureMemoRef,
     ) -> Option<Arc<PreparedProcedureEnvelope>> {
+        if let Some(envelope)=crate::shared_artifacts::get("prepared-procedure",&reference.key) {
+            return Some(envelope);
+        }
         let p = self.persistence.as_mut()?;
         let key = dm_store::Key::new(&p.payloads_namespace, &reference.key);
         if !p.pending.contains_key(&key) && !p.payloads.contains_key(&reference.key) {
@@ -1320,7 +1325,7 @@ impl ProjectProcedureGraph {
         match PreparedProcedureEnvelope::decode(bytes) {
             Ok(envelope) => {
                 self.stats.disk_decodes += 1;
-                Some(Arc::new(envelope))
+                Some(crate::shared_artifacts::intern("prepared-procedure",&reference.key,Arc::new(envelope)))
             }
             Err(_) => {
                 self.stats.corrupt_records += 1;

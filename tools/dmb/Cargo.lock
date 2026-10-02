@@ -240,6 +240,7 @@ dependencies = [
 name = "dm-preprocess"
 version = "0.1.0"
 dependencies = [
+ "dm-store",
  "dm-syntax",
  "serde",
  "serde_json",

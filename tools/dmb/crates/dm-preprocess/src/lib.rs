@@ -204,6 +204,8 @@ pub struct PreprocessCache {
     resident_bytes: usize,
     disk: Option<(PathBuf, BTreeMap<PathBuf, Vec<String>>)>,
     dirty: BTreeSet<PathBuf>,
+    raw_prefetch: BTreeMap<String, Option<Arc<[u8]>>>,
+    raw_prefetch_bytes: usize,
     pub hits: usize,
     pub misses: usize,
 }
@@ -227,7 +229,10 @@ struct CachedUnit {
     file_dir_changes: Vec<FileDirChange>,
 }
 
-const CACHE_FORMAT_VERSION: u32 = 11;
+const CACHE_FORMAT_VERSION: u32 = 12;
+const PREFETCH_BYTES: usize = 4 * 1024 * 1024;
+const PUBLICATION_BYTES: usize = 2 * 1024 * 1024;
+const BLOB_NAMESPACE: &str = "preprocess-expansion-v12";
 const MAX_CACHED_LEAF_BYTES: usize = 512 * 1024;
 const MAX_CACHED_ORIGINS: usize = 8192;
 const MAX_CACHED_PATHS: usize = 8192;
@@ -569,7 +574,7 @@ impl PreprocessCache {
             return Self::default();
         }
         Self {
-            disk: Some((path.with_extension("parts"), index.entries)),
+            disk: Some((path.with_extension("parts.redb"), index.entries)),
             ..Default::default()
         }
     }
@@ -578,24 +583,36 @@ impl PreprocessCache {
         if self.entries.contains_key(path) {
             return;
         }
-        let Some((directory, index)) = &self.disk else {
-            return;
-        };
-        let Some(keys) = index.get(path) else {
-            return;
-        };
-        let mut units = Vec::new();
-        for key in keys {
-            let chunk = directory.join(key);
-            if !fs::metadata(&chunk).is_ok_and(|metadata| metadata.len() <= 8 * 1024 * 1024) {
-                continue;
+        let Some((database, index)) = &self.disk else { return; };
+        let Some(keys) = index.get(path).cloned() else { return; };
+        if keys.iter().any(|key| !self.raw_prefetch.contains_key(key)) {
+            let mut requested = keys.clone();
+            for (_, neighbors) in index.range(path.to_path_buf()..) {
+                for key in neighbors {
+                    if requested.len() >= 32 { break; }
+                    if !requested.contains(key) { requested.push(key.clone()); }
+                }
+                if requested.len() >= 32 { break; }
             }
-            let Ok(bytes) = fs::read(&chunk) else {
-                continue;
+            let store = dm_store::Store::open(database);
+            let read = |names: &[String]| {
+                let query: Vec<_> = names.iter().map(|key| dm_store::Key::new(BLOB_NAMESPACE,key.clone())).collect();
+                store.as_ref().ok()?.read_prefix_bounded(&query, PUBLICATION_BYTES, PREFETCH_BYTES, None).ok()
             };
-            if bytes.len() > 8 * 1024 * 1024 || format!("{:x}", Sha256::digest(&bytes)) != *key {
-                continue;
+            let batch = read(&requested).or_else(|| { requested = keys.clone(); read(&requested) });
+            self.raw_prefetch.clear();
+            self.raw_prefetch_bytes = 0;
+            if let Some(batch) = batch {
+                for ((key, value), witness) in requested.into_iter().zip(batch.values).zip(batch.witnesses) {
+                    let value = value.filter(|_| witness.value_digest.as_deref() == Some(key.as_str())).map(Arc::<[u8]>::from);
+                    self.raw_prefetch_bytes += key.len() + value.as_ref().map_or(0, |bytes| bytes.len()) + 64;
+                    self.raw_prefetch.insert(key, value);
+                }
             }
+        }
+        let mut units = Vec::new();
+        for key in &keys {
+            let Some(Some(bytes)) = self.raw_prefetch.get(key) else { continue; };
             if let Ok(entry) = serde_json::from_slice::<DiskEntry>(&bytes) {
                 if !entry.origins.valid() {continue;}
                 let unit = CachedUnit::from(entry);
@@ -613,8 +630,8 @@ impl PreprocessCache {
             self.resident_bytes += path.as_os_str().len()
                 + units.iter().map(CachedUnit::resident_bytes).sum::<usize>();
             self.entries.insert(path.to_path_buf(), units);
-            self.enforce_budget(MAX_CACHE_RESIDENT_BYTES);
         }
+        self.enforce_budget(MAX_CACHE_RESIDENT_BYTES);
     }
 
     /// Publish only changed file expansion chunks, followed by an atomic small
@@ -624,8 +641,8 @@ impl PreprocessCache {
         let started=std::time::Instant::now();
         let encoding_ns=AtomicU64::new(0);
         let publication_ns=AtomicU64::new(0);
-        let directory = path.with_extension("parts");
-        fs::create_dir_all(&directory).map_err(|error| error.to_string())?;
+        let directory = path.with_extension("parts.redb");
+        let store = dm_store::Store::open(&directory).map_err(|error| error.to_string())?;
         let mut index = self
             .disk
             .as_ref()
@@ -636,12 +653,18 @@ impl PreprocessCache {
         } else {
             self.entries.keys().cloned().collect()
         };
-        // Two bounded workers overlap immutable chunk encoding and filesystem
-        // publication. Each retains only one serialized expansion at a time;
+        // Two bounded workers encode immutable chunks and publish bounded
+        // database batches. Each retains at most two MiB of serialized values;
         // the deterministic index is committed after both workers succeed.
         let entries = &self.entries;
         let publish = |files: &[PathBuf]| -> Result<BTreeMap<PathBuf, Vec<String>>, String> {
             let mut published = BTreeMap::new();
+            let mut records = Vec::new();
+            let mut record_bytes = 0usize;
+            let flush = |records: &mut Vec<(dm_store::Key,Vec<u8>)>| -> Result<(),String> {
+                if !records.is_empty() { store.put_many(std::mem::take(records), None).map_err(|error|error.to_string())?; }
+                Ok(())
+            };
             for file in files {
                 let Some(units) = entries.get(file) else {
                     continue;
@@ -652,20 +675,27 @@ impl PreprocessCache {
                     let bytes = serde_json::to_vec(&DiskEntry::from(entry))
                         .map_err(|error| error.to_string())?;
                     encoding_ns.fetch_add(encoding_started.elapsed().as_nanos().min(u64::MAX as u128) as u64, Ordering::Relaxed);
-                    if bytes.len() > 8 * 1024 * 1024 {
+                    if bytes.len() > PUBLICATION_BYTES {
                         continue;
                     }
                     let publication_started=std::time::Instant::now();
                     let key = format!("{:x}", Sha256::digest(&bytes));
-                    let chunk = directory.join(&key);
-                    if !fs::read(&chunk).is_ok_and(|old| old == bytes) {
-                        write_atomic(&chunk, &bytes, false)?;
+                    if record_bytes + bytes.len() > PUBLICATION_BYTES {
+                        let batch_started=std::time::Instant::now();
+                        flush(&mut records)?;
+                        publication_ns.fetch_add(batch_started.elapsed().as_nanos().min(u64::MAX as u128) as u64, Ordering::Relaxed);
+                        record_bytes = 0;
                     }
+                    record_bytes += bytes.len();
+                    records.push((dm_store::Key::new(BLOB_NAMESPACE,key.clone()),bytes));
                     publication_ns.fetch_add(publication_started.elapsed().as_nanos().min(u64::MAX as u128) as u64, Ordering::Relaxed);
                     keys.push(key);
                 }
                 published.insert(file.clone(), keys);
             }
+            let publication_started=std::time::Instant::now();
+            flush(&mut records)?;
+            publication_ns.fetch_add(publication_started.elapsed().as_nanos().min(u64::MAX as u128) as u64, Ordering::Relaxed);
             Ok(published)
         };
         if paths.len() < 32 {
@@ -700,7 +730,7 @@ impl PreprocessCache {
     }
 
     pub fn resident_bytes(&self) -> usize {
-        self.resident_bytes
+        self.resident_bytes + self.raw_prefetch_bytes
     }
     /// Release resident expansions while preserving the disk index for lazy
     /// replay. Coordinators budget this cache together with prepared snapshots.
@@ -708,6 +738,10 @@ impl PreprocessCache {
         self.enforce_budget(limit);
     }
     fn enforce_budget(&mut self, limit: usize) {
+        if self.resident_bytes + self.raw_prefetch_bytes > limit {
+            self.raw_prefetch.clear();
+            self.raw_prefetch_bytes = 0;
+        }
         // Remove historical variants before evicting another current file.
         if self.resident_bytes > limit {
             for entries in self.entries.values_mut() {
@@ -789,6 +823,8 @@ impl PreprocessCache {
             dirty: BTreeSet::new(),
             hits: 0,
             misses: 0,
+            raw_prefetch: BTreeMap::new(),
+            raw_prefetch_bytes: 0,
         };
         cache.resident_bytes = cache
             .entries
@@ -3594,8 +3630,9 @@ mod tests {
         let first_index: CacheIndex =
             serde_json::from_slice(&fs::read(path.with_extension("index.json")).unwrap()).unwrap();
         let b_key = first_index.entries[Path::new("b.dm")][0].clone();
-        let b_path = path.with_extension("parts").join(&b_key);
-        let b_time = fs::metadata(&b_path).unwrap().modified().unwrap();
+        let store = dm_store::Store::open(path.with_extension("parts.redb")).unwrap();
+        let b_record = dm_store::Key::new(BLOB_NAMESPACE, b_key);
+        let b_bytes = store.read_many(&[b_record.clone()], None).unwrap().values.remove(0).unwrap();
         let mut restored = PreprocessCache::load_incremental(&path);
         assert!(restored.entries.is_empty(), "load decodes only the index");
         files
@@ -3613,8 +3650,8 @@ mod tests {
         );
         assert_eq!(restored.hits, 1);
         restored.save_incremental(&path).unwrap();
-        assert_eq!(fs::metadata(&b_path).unwrap().modified().unwrap(), b_time);
-        fs::write(&b_path, b"corrupt").unwrap();
+        assert_eq!(store.read_many(&[b_record.clone()], None).unwrap().values[0].as_ref().unwrap(), &b_bytes);
+        store.put_many(vec![(b_record, b"corrupt".to_vec())], None).unwrap();
         let mut restarted = PreprocessCache::load_incremental(&path);
         let again = preprocess_project_cached(
             Path::new("game.dme"),
@@ -3627,14 +3664,13 @@ mod tests {
         restarted.save_incremental(&path).unwrap();
         let mut index: CacheIndex =
             serde_json::from_slice(&fs::read(path.with_extension("index.json")).unwrap()).unwrap();
-        let old = path
-            .with_extension("parts")
-            .join(&index.entries[Path::new("b.dm")][0]);
-        let mut chunk: serde_json::Value = serde_json::from_slice(&fs::read(old).unwrap()).unwrap();
+        let old = dm_store::Key::new(BLOB_NAMESPACE,index.entries[Path::new("b.dm")][0].clone());
+        let raw = store.read_many(&[old], None).unwrap().values.remove(0).unwrap();
+        let mut chunk: serde_json::Value = serde_json::from_slice(&raw).unwrap();
         chunk["unit_digests"][0] = serde_json::to_value([0u8; 32]).unwrap();
         let bytes = serde_json::to_vec(&chunk).unwrap();
         let changed_key = format!("{:x}", Sha256::digest(&bytes));
-        fs::write(path.with_extension("parts").join(&changed_key), bytes).unwrap();
+        store.put_many(vec![(dm_store::Key::new(BLOB_NAMESPACE,changed_key.clone()),bytes)],None).unwrap();
         index.entries.get_mut(Path::new("b.dm")).unwrap()[0] = changed_key;
         fs::write(
             path.with_extension("index.json"),

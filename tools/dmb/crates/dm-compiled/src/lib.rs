@@ -1876,6 +1876,7 @@ impl Coordinator {
         let external = self.serialization_wire.resident_bytes()
             .saturating_add(self.serialization_validation.resident_bytes())
             .saturating_add(dm_compiler::bootstrap::shared_declaration_cache_bytes())
+            .saturating_add(dm_compiler::shared_artifacts::resident_bytes())
             .saturating_add(self.asset_inventory.values().map(|x|x.resident_bytes()).sum::<usize>());
         if self.frontend_pool.stats().bytes.saturating_add(external) > self.frontend_pool.retention_budget() {
             // Recreating physical encoding indexes is cheaper than reloading a
@@ -1884,12 +1885,14 @@ impl Coordinator {
             self.serialization_wire.clear();
             self.serialization_validation.clear();
             dm_compiler::bootstrap::trim_shared_declaration_cache(0);
+            dm_compiler::shared_artifacts::trim();
         }
         self.frontend_pool.set_external_bytes(
             self.serialization_wire
                 .resident_bytes()
                 .saturating_add(self.serialization_validation.resident_bytes())
                 .saturating_add(dm_compiler::bootstrap::shared_declaration_cache_bytes())
+                .saturating_add(dm_compiler::shared_artifacts::resident_bytes())
                 .saturating_add(
                     self.asset_inventory
                         .values()
