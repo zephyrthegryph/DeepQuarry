@@ -133,7 +133,6 @@
 	if(!table)
 		table = list(
 			/datum/system/air = RXB_EVERY,
-			/datum/system/dbcore = RXB_EVERY,
 			/datum/system/garbage = RXB_EVERY,
 			/datum/system/input = RXB_EVERY,
 			/datum/system/kernel_jobs = RXB_EVERY,

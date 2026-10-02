@@ -125,24 +125,21 @@
 	set_var(M, "recording", TRUE)
 	var/key = "test/shutdown_flush_[world.time]"
 	M.gauge(key, 7, METRICS_CAT_SERVER, "test", "")
-	// As SSdbcore.Shutdown() calls it: after the database stopped taking new queries.
-	SSdbcore.shutting_down = TRUE
 	M.final_flush()
-	SSdbcore.shutting_down = FALSE
 	TEST_ASSERT(!length(M.pending_samples) && !length(M.pending_events), "the flush emptied the buffers")
-	var/datum/db_query/samples = SSdbcore.NewQuery(
+	var/list/samples = db_query_now(
 		"SELECT s.value FROM metric_sample s JOIN metric_key k ON k.id = s.key_id WHERE s.round_id = :round AND k.name = :name",
 		list("round" = text2num(GLOB.round_id), "name" = key))
-	TEST_ASSERT(samples.Execute(async = FALSE), "sample read failed: [samples.ErrorMsg()]")
-	TEST_ASSERT(samples.NextRow(), "the sample was written before the flush returned")
-	TEST_ASSERT_EQUAL(text2num(samples.item[1]), 7, "the sample's value")
-	qdel(samples)
-	var/datum/db_query/events = SSdbcore.NewQuery(
+	TEST_ASSERT(!isnull(samples), "sample read failed: [SSdbcore.ErrorMsg()]")
+	TEST_ASSERT(length(samples), "the sample was written before the flush returned")
+	var/list/sample_row = samples[1]
+	TEST_ASSERT_EQUAL(text2num(sample_row[1]), 7, "the sample's value")
+	var/list/events = db_query_now(
 		"SELECT COUNT(*) FROM metric_event WHERE round_id = :round AND kind = 'round' AND category = 'shutdown'",
 		list("round" = text2num(GLOB.round_id)))
-	TEST_ASSERT(events.Execute(async = FALSE), "event read failed: [events.ErrorMsg()]")
-	TEST_ASSERT(events.NextRow() && text2num(events.item[1]) >= 1, "the shutdown event was written before the flush returned")
-	qdel(events)
+	TEST_ASSERT(!isnull(events), "event read failed: [SSdbcore.ErrorMsg()]")
+	var/list/event_row = length(events) ? events[1] : null
+	TEST_ASSERT(event_row && text2num(event_row[1]) >= 1, "the shutdown event was written before the flush returned")
 
 /// An overrun is named after what took most of it: "Outside MC" when the time before the MC dominates,
 /// else the costliest part; a runtime keeps its proc and a trimmed call stack.

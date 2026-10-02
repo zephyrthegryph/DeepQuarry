@@ -26,7 +26,6 @@ qdel_src	code/_onclick/hud/spell_screen_objects.dm	qdel(src)
 qdel_src	code/_onclick/telekinesis.dm	qdel(src)
 qdel_src	code/_onclick/telekinesis.dm	qdel(src) // Drop TK
 qdel_src	code/controllers/admin.dm	qdel(src)
-qdel_src	code/controllers/failsafe.dm	qdel(src) //when Loop() returns, we delete ourselves and let the mc recreate us
 qdel_src	code/datums/beam.dm	qdel(src)
 qdel_src	code/datums/beam.dm	qdel(src)
 qdel_src	code/datums/chat_message.dm	qdel(src)

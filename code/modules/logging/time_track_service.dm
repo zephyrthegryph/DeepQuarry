@@ -194,13 +194,12 @@ GLOBAL_DATUM_INIT(time_track_service, /datum/world_service/time_track, new)
 			REGISTRY_COUNT(REGISTRY_MOBS),
 			om_ai_brain_cost(),
 			0, // SStimer cost: gone
-			SSdbcore.all_queries_num,
-			SSdbcore.queries_active_num,
-			SSdbcore.queries_standby_num
+			0, // all_queries: the query pump is gone (I/O lane jobs are counted by SSdb)
+			0, // queries_active
+			0 // queries_standby
 		) + send_maps_values
 	)
 
-	SSdbcore.reset_tracking()
 	return TRUE
 
 /// time_track (was SStime_track).

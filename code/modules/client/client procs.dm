@@ -523,47 +523,40 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 			disconnect_with_message("You have been banned.[ban["desc"]]")
 			return FALSE
 
-	var/datum/db_query/query = SSdbcore.NewQuery("SELECT id, datediff(Now(),firstseen) as age FROM erro_player WHERE ckey = :ckey", list("ckey" = sql_ckey))
-	if(!query.Execute())
-		qdel(query)
+	var/list/player_rows = flow_select("SELECT id, datediff(Now(),firstseen) as age FROM erro_player WHERE ckey = :ckey", list("ckey" = sql_ckey))
+	if(isnull(player_rows))
 		return TRUE
 	var/sql_id = 0
 	player_age = 0	// New players won't have an entry so knowing we have a connection we set this to zero to be updated if their is a record.
-	while(query.NextRow())
-		sql_id = query.item[1]
-		player_age = text2num(query.item[2])
-		break
+	if(length(player_rows))
+		var/list/player_row = player_rows[1]
+		sql_id = player_row[1]
+		player_age = text2num(player_row[2])
 
-	qdel(query)
 	account_join_date = findJoinDate()
 	if(account_join_date)
-		var/datum/db_query/query_datediff = SSdbcore.NewQuery("SELECT DATEDIFF(Now(), :join_date)", list("join_date" = account_join_date))
-		if(!query_datediff.Execute())
-			qdel(query_datediff)
+		var/list/datediff_rows = flow_select("SELECT DATEDIFF(Now(), :join_date)", list("join_date" = account_join_date))
+		if(isnull(datediff_rows))
 			return TRUE
-		if(query_datediff.NextRow())
-			account_age = text2num(query_datediff.item[1])
-		qdel(query_datediff)
+		if(length(datediff_rows))
+			var/list/datediff_row = datediff_rows[1]
+			account_age = text2num(datediff_row[1])
 
-	var/datum/db_query/query_ip = SSdbcore.NewQuery("SELECT ckey FROM erro_player WHERE ip = :ip", list("ip" = address))
-	if(!query_ip.Execute())
-		qdel(query_ip)
+	var/list/ip_rows = flow_select("SELECT ckey FROM erro_player WHERE ip = :ip", list("ip" = address))
+	if(isnull(ip_rows))
 		return TRUE
 	related_accounts_ip = ""
-	while(query_ip.NextRow())
-		related_accounts_ip += "[query_ip.item[1]], "
-		break
-	qdel(query_ip)
+	if(length(ip_rows))
+		var/list/ip_row = ip_rows[1]
+		related_accounts_ip += "[ip_row[1]], "
 
-	var/datum/db_query/query_cid = SSdbcore.NewQuery("SELECT ckey FROM erro_player WHERE computerid = :computerid", list("computerid" = computer_id))
-	if(!query_cid.Execute())
-		qdel(query_cid)
+	var/list/cid_rows = flow_select("SELECT ckey FROM erro_player WHERE computerid = :computerid", list("computerid" = computer_id))
+	if(isnull(cid_rows))
 		return TRUE
 	related_accounts_cid = ""
-	while(query_cid.NextRow())
-		related_accounts_cid += "[query_cid.item[1]], "
-		break
-	qdel(query_cid)
+	if(length(cid_rows))
+		var/list/cid_row = cid_rows[1]
+		related_accounts_cid += "[cid_row[1]], "
 
 	//Just the standard check to see if it's actually a number
 	if(sql_id)
@@ -613,16 +606,15 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 		else
 			log_admin("Couldn't perform IP check on [key] with [address]")
 
-	var/datum/db_query/query_hours = SSdbcore.NewQuery("SELECT department, hours, total_hours FROM vr_player_hours WHERE ckey = :ckey", list("ckey" = sql_ckey))
-	if(query_hours.Execute())
-		while(query_hours.NextRow())
-			department_hours[query_hours.item[1]] = text2num(query_hours.item[2])
-			play_hours[query_hours.item[1]] = text2num(query_hours.item[3])
+	var/list/hours_rows = flow_select("SELECT department, hours, total_hours FROM vr_player_hours WHERE ckey = :ckey", list("ckey" = sql_ckey))
+	if(!isnull(hours_rows))
+		for(var/list/hours_row as anything in hours_rows)
+			department_hours[hours_row[1]] = text2num(hours_row[2])
+			play_hours[hours_row[1]] = text2num(hours_row[3])
 	else
-		var/error_message = query_hours.ErrorMsg()
+		var/error_message = flow_sql_error()
 		log_sql("Error loading play hours for [ckey]: [error_message]")
 		tgui_alert_async(src, "The query to load your existing playtime failed. Screenshot this, give the screenshot to a developer, and reconnect, otherwise you may lose any recorded play hours (which may limit access to jobs). ERROR: [error_message]", "PROBLEMS!!")
-	qdel(query_hours)
 
 	// The writes: nothing reads them back, so they go out without holding the gate.
 	if(sql_id)
@@ -660,26 +652,23 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 			log_world("Key [ckey] cid not checked. Non-Numeric: [computer_id]")
 			failedcid = 1
 
-	var/datum/db_query/query = SSdbcore.NewQuery("SELECT ckey, ip, computerid, a_ckey, reason, expiration_time, duration, bantime, bantype FROM erro_ban WHERE (ckey = :ckeytext [ipquery] [cidquery]) AND (bantype = 'PERMABAN'  OR (bantype = 'TEMPBAN' AND expiration_time > Now())) AND isnull(unbanned)", ban_params)
-	query.Execute()
+	var/list/ban_rows = flow_select("SELECT ckey, ip, computerid, a_ckey, reason, expiration_time, duration, bantime, bantype FROM erro_ban WHERE (ckey = :ckeytext [ipquery] [cidquery]) AND (bantype = 'PERMABAN'  OR (bantype = 'TEMPBAN' AND expiration_time > Now())) AND isnull(unbanned)", ban_params)
 
-	while(query.NextRow())
-		var/pckey = query.item[1]
-		var/ackey = query.item[4]
-		var/reason = query.item[5]
-		var/expiration = query.item[6]
-		var/duration = query.item[7]
-		var/bantime = query.item[8]
-		var/bantype = query.item[9]
+	for(var/list/ban_row as anything in ban_rows)
+		var/pckey = ban_row[1]
+		var/ackey = ban_row[4]
+		var/reason = ban_row[5]
+		var/expiration = ban_row[6]
+		var/duration = ban_row[7]
+		var/bantime = ban_row[8]
+		var/bantype = ban_row[9]
 
 		var/expires = ""
 		if(text2num(duration) > 0)
 			expires = " The ban is for [duration] minutes and expires on [expiration] (server time)."
 
 		var/desc = "\nReason: You, or another user of this computer or connection ([pckey]) is banned from playing here. The ban reason is:\n[reason]\nThis ban was applied by [ackey] on [bantime], [expires]"
-		qdel(query)
 		return list("reason" = "[bantype]", "desc" = "[desc]")
-	qdel(query)
 	if (failedcid)
 		message_admins("[key] has logged in with a blank computer id in the ban check.")
 	if (failedip)

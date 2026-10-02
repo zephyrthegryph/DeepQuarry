@@ -627,6 +627,6 @@
 /// The common "someone offers you something" set: both alive, awake and adjacent.
 #define ASK_FACE_TO_FACE (ASK_CONSCIOUS | ASK_ADJACENT)
 
-/// Thrown by flow_execute() (flow_io.dm) to unwind a prompt flow whose query is in flight;
+/// Thrown by flow_io_answer() (flow_io.dm) to unwind a prompt flow whose query is in flight;
 /// prompt_flow() catches it.
 #define OM_FLOW_PENDING "om_flow_pending"

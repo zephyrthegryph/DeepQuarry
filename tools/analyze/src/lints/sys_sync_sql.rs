@@ -21,10 +21,16 @@ use crate::lint::{Registry, RuleMeta};
 use crate::pat;
 use crate::tree::SourceFile;
 
-const RULES: &[RuleMeta] = &[RuleMeta {
-    name: "sync_sql",
-    hint: "start the query with om_io(E, /datum/om/io/sql, ...) and read the rows in a callback, or run the caller as a prompt flow (code/datums/om/flow_io.dm)",
-}];
+const RULES: &[RuleMeta] = &[
+    RuleMeta {
+        name: "sync_sql",
+        hint: "open a /datum/io/sql request (code/engine/io/db.dm) and read the rows in its handler, or run the caller as a prompt flow and flow_select() (code/datums/om/flow_io.dm)",
+    },
+    RuleMeta {
+        name: "legacy_db_api",
+        hint: "the /datum/db_query API is deleted: a read is a /datum/io/sql request (or flow_select() in a prompt flow), a write is sql_write(), and only BYOND's own waits use db_query_now()",
+    },
+];
 
 /// `scan_lines`: one site per sanitized line with a call on a query that does not name sqlite.
 fn scan_lines(f: &SourceFile, out: &mut Vec<(&'static str, usize)>) {
@@ -39,7 +45,18 @@ fn scan_lines(f: &SourceFile, out: &mut Vec<(&'static str, usize)>) {
     }
 }
 
+/// `scan_legacy`: one site per sanitized line naming the deleted database query API.
+fn scan_legacy(f: &SourceFile, out: &mut Vec<(&'static str, usize)>) {
+    let legacy = pat!(r"\bNewQuery\s*\(|/datum/db_query\b|\brun_query_sync\b|\bqueue_query\b|\bqueries_(?:active|standby)\b");
+    for (number, code) in f.clean().numbered() {
+        if legacy.find(code).is_some() {
+            out.push(("legacy_db_api", number));
+        }
+    }
+}
+
 fn scan_file(f: &SourceFile, out: &mut Vec<(&'static str, usize)>) {
+    scan_legacy(f, out);
     if !f.raw().text.contains("xecute(") {
         return;
     }
@@ -64,6 +81,19 @@ fn selftest() -> Result<String, String> {
     let got: Vec<usize> = v.into_iter().map(|(_, n)| n).collect();
     if got != vec![1, 2, 3, 9] {
         return Err(format!("sync_sql selftest: got {:?}", got));
+    }
+    let legacy = [
+        "var/datum/db_query/q = SSdbcore.NewQuery(\"SELECT 1\")", // 1 bad (twice on the line: one site)
+        "SSdbcore.run_query_sync(q)",                              // 2 bad
+        "// SSdbcore.NewQuery(sql)",                               // 3 ok: a comment
+        "var/list/rows = flow_select(\"SELECT 1\")",              // 4 ok
+    ];
+    let g = SourceFile::from_text("y.dm", &legacy.join("\n"));
+    let mut w = Vec::new();
+    scan_legacy(&g, &mut w);
+    let got: Vec<usize> = w.into_iter().map(|(_, n)| n).collect();
+    if got != vec![1, 2] {
+        return Err(format!("legacy_db_api selftest: got {:?}", got));
     }
     Ok("sync_sql".to_string())
 }

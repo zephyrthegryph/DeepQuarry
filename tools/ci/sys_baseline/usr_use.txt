@@ -272,22 +272,15 @@ usr_outside_verb	code/controllers/configuration/configuration.dm	message_admins(
 usr_outside_verb	code/controllers/configuration/configuration.dm	to_chat(usr, span_warning("Another user is already reloading the config!"))
 usr_outside_verb	code/controllers/configuration/configuration.dm	log_admin("Config access of [entry_type] attempted by [key_name(usr)]")
 usr_outside_verb	code/controllers/configuration/configuration.dm	log_admin("Config rewrite of [entry_type] to [new_val] attempted by [key_name(usr)]")
-usr_outside_verb	code/controllers/failsafe.dm	usr = null
-usr_outside_verb	code/controllers/master.dm	usr = null
 usr_outside_verb	code/controllers/measure/synthetic.dm	var/mob/saved_user = usr
 usr_outside_verb	code/controllers/measure/synthetic.dm	usr = user
 usr_outside_verb	code/controllers/measure/synthetic.dm	usr = saved_user
 usr_outside_verb	code/controllers/subsystems/admin_verbs.dm	var/old_usr = usr
 usr_outside_verb	code/controllers/subsystems/admin_verbs.dm	usr = admin.mob
 usr_outside_verb	code/controllers/subsystems/admin_verbs.dm	usr = old_usr
-usr_outside_verb	code/controllers/subsystems/dbcore.dm	to_chat(usr, span_danger("A SQL error occurred during this operation, check the server logs."))
 usr_outside_verb	code/controllers/subsystems/media_tracks.dm	om_flow_start(/datum/om/flow/media_track_add, usr, null, tracks = src)
 usr_outside_verb	code/controllers/subsystems/media_tracks.dm	om_ask(usr, /datum/om/prompt/text/media_track, PROC_REF(manual_track_removal_entered), title = "Remove Track", message = "Input track title or URL to remove (must be exact)")
 usr_outside_verb	code/controllers/subsystems/ticker.dm	if(usr && !check_rights(R_SERVER, TRUE))
-usr_outside_verb	code/controllers/subsystems/verb_manager.dm	if(QDELETED(usr) && ismob(callback_target))
-usr_outside_verb	code/controllers/subsystems/verb_manager.dm	if(QDELETED(usr) || isnull(usr.client))
-usr_outside_verb	code/controllers/subsystems/verb_manager.dm	if((usr.client?.holder && !can_queue_admin_verbs) \
-usr_outside_verb	code/controllers/subsystems/verb_manager.dm	message_admins("[name] verb queuing: tick usage: [TICK_USAGE]%, proc: [incoming_callback.delegate], object: [incoming_callback.target_object()], usr: [usr]")
 usr_outside_verb	code/datums/callback.dm	if(usr)
 usr_outside_verb	code/datums/callback.dm	rel_set(src, nameof(user), usr)
 usr_outside_verb	code/datums/callback.dm	if(!usr)
@@ -304,10 +297,6 @@ usr_outside_verb	code/datums/om/prompt_helpers.dm	usr = actor
 usr_outside_verb	code/datums/om/prompt_helpers.dm	usr = actor // UI_ACT handlers may read usr, as they do when the user clicks.
 usr_outside_verb	code/datums/om/prompt_helpers.dm	usr = actor // Verbs and panel procs read usr, as they did when first run.
 usr_outside_verb	code/datums/topic/topic_dispatch.dm	return topic_dispatch(src, usr, href_list)
-usr_outside_verb	code/datums/verb_callbacks.dm	var/mob/temp = usr
-usr_outside_verb	code/datums/verb_callbacks.dm	usr = temp
-usr_outside_verb	code/datums/verb_callbacks.dm	var/mob/temp = usr
-usr_outside_verb	code/datums/verb_callbacks.dm	usr = temp
 usr_outside_verb	code/datums/wires/airlock.dm	var/new_id = act_ask(usr, action, params, ui, "k65", /datum/om/prompt/text, message = "Enter a new ID tag for [A]", title = "[A] ID Tag", default = A.id_tag, max_length = 60)
 usr_outside_verb	code/datums/wires/airlock.dm	A.shock(usr, 50)
 usr_outside_verb	code/datums/wires/airlock.dm	A.shock(usr, 50)
@@ -1013,8 +1002,6 @@ usr_outside_verb	code/modules/integrated_electronics/core/helpers.dm	wirer.wire(
 usr_outside_verb	code/modules/integrated_electronics/core/helpers.dm	debugger.write_data(pin, usr)
 usr_outside_verb	code/modules/integrated_electronics/subtypes/input.dm	O.show_message("[icon2html(src, usr.client)] *beep* *beep*", 3, "*beep* *beep*", 2)
 usr_outside_verb	code/modules/keybindings/hover.dm	usr?.client?.note_hover(src)
-usr_outside_verb	code/modules/keybindings/router.dm	if(latency.should_queue_click(usr) && latency.enqueue_click(usr, src, location, control, params))
-usr_outside_verb	code/modules/keybindings/router.dm	kernel_click_run(src, usr, location, control, params)
 usr_outside_verb	code/modules/keybindings/router.dm	usr.DblClickOn(src, params)
 usr_outside_verb	code/modules/keybindings/router.dm	usr.MouseWheelOn(src, delta_x, delta_y, params)
 usr_outside_verb	code/modules/keybindings/router.dm	GLOB.input_router.route_drag(usr, src, over, src_location, over_location, src_control, over_control, params)

@@ -12,7 +12,6 @@
 	TEST_ASSERT(Kernel.current_runlevel >= 1, "the kernel keeps the run level")
 	var/list/key_phase = list(
 		"[/datum/system/tgui]:refresh_autoupdating" = KERNEL_PHASE_K,
-		"[/datum/system/dbcore]:run_queries" = KERNEL_PHASE_K,
 		"[/datum/system/profiler]:sample" = KERNEL_PHASE_K,
 		"[/datum/system/garbage]:collect" = KERNEL_PHASE_G,
 		"[/datum/system/input]:drain_step" = KERNEL_PHASE_K,

@@ -211,7 +211,6 @@ B1:code/modules/lighting/sunlight_handler.dm:SSlighting 5
 B1:code/modules/logging/time_track_service.dm:GLOB.machine_service 7
 B1:code/modules/logging/time_track_service.dm:SSair 17
 B1:code/modules/logging/time_track_service.dm:SSbehaviours 3
-B1:code/modules/logging/time_track_service.dm:SSdbcore 3
 B1:code/modules/maps/map_resolvers.dm:SSatoms 8
 B1:code/modules/maps/map_template.dm:SSair 1
 B1:code/modules/maps/map_template.dm:SSatoms 1

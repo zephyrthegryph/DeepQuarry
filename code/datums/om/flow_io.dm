@@ -2,19 +2,20 @@
 //
 // A prompt flow (prompt_helpers.dm) is an entry proc that re-runs from the top each time an
 // answer arrives. The same works for database answers: inside a running flow,
-// `query.Execute()` (async, the default) starts the query as an om_io job and unwinds the
-// flow; when the rows arrive the entry runs again with the same arguments and the same
-// Execute() call - the flow's Nth query - returns at once with the stored result, so
-// `NextRow()`/`item` read as they always did. Nothing waits.
+// `flow_select(sql, params)` starts the query as an om_io job and unwinds the flow; when the
+// rows arrive the entry runs again with the same arguments and the same flow_select() call -
+// the flow's Nth query - returns at once with the stored rows. Nothing waits.
 //
 //	/datum/admins/proc/show_things(page)
 //		if(!GLOB.prompt_flow)
 //			return prompt_flow(src, PROC_REF(show_things), args)
 //		if(!check_rights(R_ADMIN))	// re-checked on every re-run
 //			return
-//		var/datum/db_query/Q = SSdbcore.NewQuery("SELECT ...", list(...))
-//		if(!Q.Execute())		// the first run unwinds here; the re-run gets the rows
+//		var/list/rows = flow_select("SELECT a, b FROM t WHERE c = :c", list("c" = c))
+//		if(isnull(rows))		// the first run unwinds above; the re-run gets the rows (null = the query failed)
 //			...
+//		for(var/list/row as anything in rows)
+//			var/a = row[1]
 //
 // Rules, as for flow_ask():
 // - Everything the flow does before its last query runs once per answer. Do reads first and
@@ -25,10 +26,8 @@
 //   on answers and on state it re-checks). flow_http_get() works the same way for HTTP.
 // - The re-run re-checks: an asker client that left, a datum asker that was deleted, a user
 //   that logged out, or (with `rights`) a user who lost the rights drops the answer.
-// Execute(async = TRUE) outside a flow is an error (the legacy wait, db_query/sync(), is gone):
-// use om_io(E, /datum/om/io/sql, ...) with a callback, or run the caller as a flow.
-// Execute(async = FALSE) blocks, and is kept for boot and shutdown (dbcore.dm is exempt from the sync_sql
-// lint by path; any other boot-only caller carries a justified-keep annotation for sys_sync_sql).
+// Code that is not a flow opens a /datum/io/sql request (code/engine/io/db.dm) or calls sql_write();
+// the legacy NewQuery()/Execute() API is gone.
 
 /// The stored answers (prompts and queries) of the flow re-run in progress, or null.
 /proc/om_flow_answers()
@@ -72,26 +71,21 @@
 	om_io(arglist(call_args))
 	throw OM_FLOW_PENDING
 
-/// Runs `Q` as the running flow's next query: TRUE/FALSE (success) once its result is stored,
-/// else starts it and unwinds the flow (throws OM_FLOW_PENDING).
-/datum/db_query/proc/flow_execute()
-	var/list/flow = GLOB.prompt_flow
-	if(!flow)
-		CRASH("flow_execute() outside a prompt flow")
-	LAZYADD(flow["queries"], src)
+/// The running flow's next query's rows (a list of positional row lists, empty for none), once its answer is stored; else starts
+/// it and unwinds the flow (throws OM_FLOW_PENDING). Null when the query failed (logged; `warn` also tells usr).
+/proc/flow_select(sql, list/arguments, warn = FALSE)
 	var/list/stored = flow_io_answer(/datum/om/io/sql, list(sql, arguments))
-	Close()
 	if(stored["error"])
-		last_error = stored["error"]
-		status = DB_QUERY_BROKEN
-		log_sql("[last_error] | Query used: [sql] | Arguments: [json_encode(arguments)]")
-		return FALSE
-	rows = stored["rows"]
-	affected = stored["affected"]
-	last_insert_id = stored["last_insert_id"]
-	next_row_to_take = 1
-	status = DB_QUERY_FINISHED
-	return TRUE
+		GLOB.prompt_flow["sql_error"] = "[stored["error"]]"
+		log_sql("[stored["error"]] | Query used: [sql] | Arguments: [json_encode(arguments)]")
+		if(warn)
+			to_chat(usr, span_danger("A SQL error occurred during this operation, check the server logs.")) // ALLOW(sys_usr_outside_verb): a flow re-runs as its asker did: usr is restored for it (om_flow_rerun)
+		return null
+	return stored["rows"] || list()
+
+/// The error text of the running flow's last failed flow_select().
+/proc/flow_sql_error()
+	return GLOB.prompt_flow?["sql_error"]
 
 /// The running flow's next HTTP GET: list("status", "body"), or list("error") on failure.
 /proc/flow_http_get(url)
@@ -156,12 +150,6 @@
 	if(isdatum(asker))
 		SStgui.update_uis(asker)
 
-/// prompt_flow() calls this when the flow unwound on a pending query: the queries it made this
-/// run are finished with (the re-run makes new ones).
-/proc/om_flow_unwound(list/flow)
-	for(var/datum/db_query/Q as anything in flow["queries"])
-		qdel(Q)
-
 // ---------------------------------------------------------------- panel views
 //
 // A panel whose tgui_data shows database rows can't query inside tgui_data. It fetches with
@@ -187,6 +175,4 @@
 /// and returns TRUE on success. For a write whose success the flow reads, or that a later read
 /// in the same flow must see (sql_write() jobs run concurrently and aren't ordered).
 /proc/flow_sql(sql, list/arguments)
-	var/datum/db_query/Q = SSdbcore.NewQuery(sql, arguments)
-	. = Q.Execute()
-	qdel(Q)
+	return !isnull(flow_select(sql, arguments))

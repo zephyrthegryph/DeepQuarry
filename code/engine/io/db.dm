@@ -12,15 +12,16 @@
 //         var/author
 //
 // A request kind declares its query once. Each `:field` in it binds the request's own var of that name, and an answer's `rows` is
-// a list of `row_type` datums, one per result row, each column a var of that name. A query that is expected to return rows
+// a list of `row_type` datums, one per result row, each column (by position) a var of the row type, in declaration order. A query that is expected to return rows
 // and matches nothing ends REQ_NO_RESULT, not an empty answer (`expects_rows = FALSE` marks a write). A connection that is
 // down, or a query the server refuses, ends REQ_TRANSPORT_FAILED with `last_error` set. Nothing waits: the work runs on the I/O
 // lane (datums/om/io.dm) and the answer arrives through the request's handler.
 //
-// SSdb owns the path's accounting; the connection itself is still SSdbcore's (the legacy NewQuery()/Execute() callers keep it
-// until their content converts: each is a baselined site of the sync_sql lint, and none may be added).
+// SSdb owns the path's accounting; the connection itself is SSdbcore's (connect, disconnect, query_blocking). Code that is a prompt flow
+// reads with flow_select() (datums/om/flow_io.dm).
 //
-// db_query_now() blocks its caller. It exists for the two places BYOND itself waits: world/IsBanned and the boot schema check.
+// db_query_now() blocks its caller. It exists for the places BYOND itself waits: world/IsBanned, the boot loads and schema check,
+// and the shutdown flush.
 
 SYSTEM_DEF(db)
 	name = "Database path"
@@ -63,9 +64,18 @@ SYSTEM_DEF(db)
 	SSdb.writes++
 	return om_io(null, /datum/om/io/sql, query, params, GLOBAL_PROC_REF(om_io_log_sql_error), query)
 
-/// Runs `query` and waits for it: a blocking call, for world/IsBanned and the boot schema check only (the lint allows it nowhere
-/// else and accepts no ALLOW). Returns the row lists, an empty list for no rows, or null when there is no connection or the query failed.
+/// Runs `query` and waits for it: a blocking call, for the places BYOND itself waits (world/IsBanned, the boot schema check and the
+/// boot-only loads), and for the shutdown flush once the I/O lane has stopped. The lint allows it nowhere else and accepts no ALLOW.
+/// Returns the row lists, an empty list for no rows, or null when there is no connection or the query failed.
 /proc/db_query_now(query, list/params)
+	var/list/result = db_exec_now(query, params)
+	if(!result)
+		return null
+	return result["rows"] || list()
+
+/// db_query_now()'s full answer: list("rows", "affected", "last_insert_id"), or null (logged) when there is no connection or the
+/// query failed.
+/proc/db_exec_now(query, list/params)
 	if(!SSdbcore?.IsConnected())
 		return null
 	var/raw = SSdbcore.query_blocking(query, params)
@@ -74,11 +84,11 @@ SYSTEM_DEF(db)
 	if(!result)
 		log_sql("[decoded[2]] | Query used: [query]")
 		return null
-	return result["rows"] || list()
+	return result
 
 // ---------------------------------------------------------------- the request kind
 
-/// A result row: its columns are the vars of the declared row_type. A plain datum (the row types live under /datum/io/sql by name
+/// A result row: its columns are the vars of the declared row_type, in the order the query selects them. A plain datum (the row types live under /datum/io/sql by name
 /// only), never a request.
 /datum/io/sql/row
 	parent_type = /datum
@@ -117,6 +127,19 @@ SYSTEM_DEF(db)
 			. += name
 		at = max(end, colon + 1)
 
+/// The names of the columns a result row carries, in order: the row_type's own vars in declaration order (the database returns
+/// a row's columns by position, so the query selects them in that order).
+/datum/io/sql/proc/row_columns()
+	var/static/list/base_vars
+	if(!base_vars)
+		var/datum/io/sql/row/plain = new
+		base_vars = plain.vars.Copy()
+	var/datum/io/sql/row/sample = new row_type
+	. = list()
+	for(var/name in sample.vars)
+		if(!(name in base_vars))
+			. += name
+
 /// The arguments the query binds: the request's own vars, by :field name.
 /datum/io/sql/proc/arguments()
 	. = list()
@@ -154,12 +177,12 @@ SYSTEM_DEF(db)
 		SSdb.no_result++
 		request_end(src, REQ_NO_RESULT, null)
 		return
+	var/list/names = row_columns()
 	rows = list()
 	for(var/list/columns as anything in raw_rows)
 		var/datum/io/sql/row/row = new row_type
-		for(var/column in columns)
-			if(column in row.vars)
-				row.vars[column] = columns[column] // ALLOW(api): a result column names a var of the declared row type
+		for(var/index in 1 to min(length(columns), length(names)))
+			row.vars[names[index]] = columns[index]
 		rows += row // ALLOW(ownership): the answer rows are plain datums owned by this request until it ends
 	SSdb.answered++
 	request_end(src, REQ_ANSWERED, rows)

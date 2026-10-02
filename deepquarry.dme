@@ -118,7 +118,6 @@
 #include "code\__defines\cooldowns.dm"
 #include "code\__defines\crafting.dm"
 #include "code\__defines\damage_organs.dm"
-#include "code\__defines\database.dm"
 #include "code\__defines\diseases.dm"
 #include "code\__defines\dna.dm"
 #include "code\__defines\do_afters.dm"

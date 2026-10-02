@@ -8,7 +8,7 @@
 	Execute(found)
 	// query.Execute()
 	var/x = "query.Execute()"
-	SSdbcore.NewQuery("SELECT 1").Execute()
+	SSdbcore.Query("SELECT 1").Execute()
 	arr[1].Execute()
 	query .Execute()
 	query. Execute()

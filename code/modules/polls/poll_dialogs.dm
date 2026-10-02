@@ -75,15 +75,12 @@ UI_ACT_PROC(/datum/privacy_poll_dialog, ui_act_vote)
 	if(!owner || answered)
 		return
 	var/voted = FALSE
-	var/datum/db_query/check = SSdbcore.NewQuery(
+	var/list/check_rows = flow_select(
 		"SELECT 1 FROM erro_privacy WHERE ckey = :t_ckey",
 		list("t_ckey" = owner.ckey),
 	)
-	check.Execute()
-	while(check.NextRow())
+	if(length(check_rows))
 		voted = TRUE
-		break
-	qdel(check)
 
 	if(!voted)
 		flow_sql("INSERT INTO erro_privacy VALUES (null, Now(), :t_ckey, :t_option)", list("t_ckey" = owner.ckey, "t_option" = option))
@@ -132,18 +129,16 @@ DECLARE_UI(/datum/poll_browser_dialog, "PollBrowser", UI_TITLE("Player Polls"))
 	// Adminonly clause is a static fragment of the query selected at
 	// build-time � not user input. The Now() BETWEEN comparison takes no
 	// parameters. Parameterised queries below for any user-derived value.
-	var/datum/db_query/q = SSdbcore.NewQuery(
+	var/list/question_rows = flow_select(
 		"SELECT id, question FROM erro_poll_question WHERE [(isadmin ? "" : "adminonly = false AND")] Now() BETWEEN starttime AND endtime",
 	)
-	q.Execute()
 	poll_ids.Cut()
 	poll_meta.Cut()
-	while(q.NextRow())
-		var/id_str = "[q.item[1]]"
-		var/question = q.item[2]
+	for(var/list/question_row as anything in question_rows)
+		var/id_str = "[question_row[1]]"
+		var/question = question_row[2]
 		poll_ids += id_str
 		poll_meta[id_str] = list("id" = text2num(id_str), "question" = question)
-	qdel(q)
 
 UI_DATA_REPLACE(/datum/poll_browser_dialog, "merge:ui_data_datum_poll_browser_dialog{polls:list,selected:list}")
 
@@ -178,26 +173,24 @@ UI_DATA_REPLACE(/datum/poll_browser_dialog, "merge:ui_data_datum_poll_browser_di
 		.["error"] = "Database unavailable."
 		return
 
-	var/datum/db_query/q = SSdbcore.NewQuery(
+	var/list/detail_rows = flow_select(
 		"SELECT starttime, endtime, question, polltype, multiplechoiceoptions FROM erro_poll_question WHERE id = :t_pollid",
 		list("t_pollid" = pollid),
 	)
-	q.Execute()
 	var/found = FALSE
 	var/start_time = ""
 	var/end_time = ""
 	var/question = ""
 	var/poll_type = ""
 	var/multi_max = 0
-	while(q.NextRow())
-		start_time = q.item[1]
-		end_time = q.item[2]
-		question = q.item[3]
-		poll_type = q.item[4]
-		multi_max = text2num("[q.item[5]]") || 0
+	if(length(detail_rows))
+		var/list/detail_row = detail_rows[1]
+		start_time = detail_row[1]
+		end_time = detail_row[2]
+		question = detail_row[3]
+		poll_type = detail_row[4]
+		multi_max = text2num("[detail_row[5]]") || 0
 		found = TRUE
-		break
-	qdel(q)
 	if(!found)
 		.["error"] = "Poll question details not found."
 		return
@@ -213,85 +206,74 @@ UI_DATA_REPLACE(/datum/poll_browser_dialog, "merge:ui_data_datum_poll_browser_di
 			.["voted_option_id"] = null
 			.["options"] = build_option_list(pollid)
 
-			var/datum/db_query/v = SSdbcore.NewQuery(
+			var/list/voted_rows = flow_select(
 				"SELECT optionid FROM erro_poll_vote WHERE pollid = :t_pollid AND ckey = :t_ckey",
 				list("t_pollid" = pollid, "t_ckey" = owner.ckey),
 			)
-			v.Execute()
-			while(v.NextRow())
+			if(length(voted_rows))
+				var/list/voted_row = voted_rows[1]
 				.["voted"] = TRUE
-				.["voted_option_id"] = text2num("[v.item[1]]")
-				break
-			qdel(v)
+				.["voted_option_id"] = text2num("[voted_row[1]]")
 
 		if("MULTICHOICE")
 			.["options"] = build_option_list(pollid)
 
 			var/list/voted_for = list()
-			var/datum/db_query/v = SSdbcore.NewQuery(
+			var/list/voted_rows = flow_select(
 				"SELECT optionid FROM erro_poll_vote WHERE pollid = :t_pollid AND ckey = :t_ckey",
 				list("t_pollid" = pollid, "t_ckey" = owner.ckey),
 			)
-			v.Execute()
-			while(v.NextRow())
-				voted_for += text2num("[v.item[1]]")
-			qdel(v)
+			for(var/list/voted_row as anything in voted_rows)
+				voted_for += text2num("[voted_row[1]]")
 			if(length(voted_for))
 				.["voted"] = TRUE
 			.["voted_options"] = voted_for
 
 		if("TEXT")
-			var/datum/db_query/v = SSdbcore.NewQuery(
+			var/list/reply_rows = flow_select(
 				"SELECT replytext FROM erro_poll_textreply WHERE pollid = :t_pollid AND ckey = :t_ckey",
 				list("t_pollid" = pollid, "t_ckey" = owner.ckey),
 			)
-			v.Execute()
-			while(v.NextRow())
+			if(length(reply_rows))
+				var/list/reply_row = reply_rows[1]
 				.["voted"] = TRUE
-				.["vote_text"] = "[v.item[1]]"
-				break
-			qdel(v)
+				.["vote_text"] = "[reply_row[1]]"
 
 		if("NUMVAL")
 			.["options"] = build_numval_options(pollid)
 			.["voted_ratings"] = list()
-			var/datum/db_query/v = SSdbcore.NewQuery(
+			var/list/rating_rows = flow_select(
 				"SELECT o.text, v.rating FROM erro_poll_option o, erro_poll_vote v WHERE o.pollid = :t_pollid AND v.ckey = :t_ckey AND o.id = v.optionid",
 				list("t_pollid" = pollid, "t_ckey" = owner.ckey),
 			)
-			v.Execute()
-			while(v.NextRow())
+			for(var/list/rating_row as anything in rating_rows)
 				.["voted"] = TRUE
-				.["voted_ratings"] += list(list("text" = "[v.item[1]]", "rating" = "[v.item[2]]"))
-			qdel(v)
+				.["voted_ratings"] += list(list("text" = "[rating_row[1]]", "rating" = "[rating_row[2]]"))
 
 /datum/poll_browser_dialog/proc/build_option_list(pollid)
 	var/list/out = list()
-	var/datum/db_query/q = SSdbcore.NewQuery(
+	var/list/option_rows = flow_select(
 		"SELECT id, text FROM erro_poll_option WHERE pollid = :t_pollid",
 		list("t_pollid" = pollid),
 	)
-	q.Execute()
-	while(q.NextRow())
-		out += list(list("id" = text2num("[q.item[1]]"), "text" = "[q.item[2]]"))
-	qdel(q)
+	for(var/list/option_row as anything in option_rows)
+		out += list(list("id" = text2num("[option_row[1]]"), "text" = "[option_row[2]]"))
 	return out
 
 /datum/poll_browser_dialog/proc/build_numval_options(pollid)
 	var/list/out = list()
-	var/datum/db_query/q = SSdbcore.NewQuery(
+	var/list/numval_rows = flow_select(
 		"SELECT id, text, minval, maxval, descmin, descmid, descmax FROM erro_poll_option WHERE pollid = :t_pollid",
 		list("t_pollid" = pollid),
 	)
-	q.Execute()
-	while(q.NextRow())
-		var/optionid = text2num("[q.item[1]]")
-		var/optiontext = "[q.item[2]]"
-		var/minvalue = text2num("[q.item[3]]")
-		var/maxvalue = text2num("[q.item[4]]")
-		var/descmin = "[q.item[5]]"
-		var/descmid = "[q.item[6]]"
-		var/descmax = "[q.item[7]]"
+	for(var/list/numval_row as anything in numval_rows)
+		var/optionid = text2num("[numval_row[1]]")
+		var/optiontext = "[numval_row[2]]"
+		var/minvalue = text2num("[numval_row[3]]")
+		var/maxvalue = text2num("[numval_row[4]]")
+		var/descmin = "[numval_row[5]]"
+		var/descmid = "[numval_row[6]]"
+		var/descmax = "[numval_row[7]]"
 		if(isnull(minvalue) || isnull(maxvalue) || minvalue == maxvalue)
 			continue
 		var/midvalue = round((maxvalue + minvalue) / 2)
@@ -313,7 +295,6 @@ UI_DATA_REPLACE(/datum/poll_browser_dialog, "merge:ui_data_datum_poll_browser_di
 			"max" = maxvalue,
 			"scale" = scale,
 		))
-	qdel(q)
 	return out
 
 /datum/poll_browser_dialog/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)

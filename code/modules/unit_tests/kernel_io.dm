@@ -55,7 +55,7 @@
 
 	// A round trip: the request goes out, the answer comes back as typed rows through the handler.
 	SSdb.connected_override = TRUE
-	var/datum/io/sql/e6_scores/answered = open_request(owner, /datum/io/sql/e6_scores, TYPE_PROC_REF(/datum/e6_io_owner, done), who = "alice", kind = "chess", canned = list(list("name" = "x", "score" = 3), list("name" = "y", "score" = 5)))
+	var/datum/io/sql/e6_scores/answered = open_request(owner, /datum/io/sql/e6_scores, TYPE_PROC_REF(/datum/e6_io_owner, done), who = "alice", kind = "chess", canned = list(list("x", 3), list("y", 5)))
 	TEST_ASSERT(answered.is_open(), "it is open until the backend answers")
 	test_time(2)
 	TEST_ASSERT_EQUAL(answered.outcome, REQ_ANSWERED, "the answer ends it REQ_ANSWERED")
