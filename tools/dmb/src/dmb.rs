@@ -4,6 +4,7 @@
 //! Unknown fields retain their exact numeric values. Procedure bytecode is
 //! stored as list words; semantic opcode decoding is a separate layer.
 use crate::hash::nqcrc;
+use serde::{Deserialize, Serialize};
 use crate::ids::{ResourceId, NONE};
 use std::collections::{HashMap, HashSet};
 use std::io::{self, ErrorKind};
@@ -133,7 +134,7 @@ fn compatibility_version(line: &[u8]) -> io::Result<u16> {
         .map_err(|_| invalid("invalid compatibility version"))
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Header {
     /// Optional native CGI executor prefix, including all its authored lines.
     pub executor_line: Option<Vec<u8>>,
@@ -193,7 +194,7 @@ impl Header {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GridRun {
     pub turf: u32,
     pub area: u32,
@@ -201,7 +202,7 @@ pub struct GridRun {
     pub copies: u8,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Class {
     pub initial_ids: [u32; 6],
     pub direction: u8,
@@ -507,7 +508,7 @@ impl Class {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MobType {
     pub class: u32,
     pub key: u32,
@@ -568,7 +569,7 @@ impl MobType {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DmString {
     pub data: Vec<u8>,
     /// Original count of 0xffff length chunks, kept for exact round trips.
@@ -583,7 +584,7 @@ fn crypt_string(data: &mut [u8], offset: usize) {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Proc {
     pub strings: [u32; 4],
     pub source_parameter: u8,
@@ -701,7 +702,7 @@ impl Proc {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Variable {
     pub kind: u8,
     pub value: u32,
@@ -720,7 +721,7 @@ impl Variable {
         (self.kind == 62).then_some(self.value)
     }
 }
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Instance {
     pub kind: u8,
     pub class: u32,
@@ -731,12 +732,12 @@ impl Instance {
         crate::operands::ValueKind::from_tag(self.kind)
     }
 }
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MapObject {
     pub offset: u16,
     pub instance: u32,
 }
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceRef {
     pub id: u32,
     pub kind: u8,
@@ -760,7 +761,7 @@ impl WorldViewEncoding {
         }
     }
 }
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct World {
     pub ids: [u32; 7],
     /// `world.tick_lag` expressed in integer milliseconds by Dream Maker.
@@ -967,7 +968,7 @@ impl World {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Dmb {
     pub header: Header,
     pub dimensions: [u16; 3],

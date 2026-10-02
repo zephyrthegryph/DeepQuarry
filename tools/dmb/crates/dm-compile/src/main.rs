@@ -111,27 +111,32 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     match args.next().as_deref() {
         Some("integrated-build") => integration::run(args.collect()).map_err(|error| Box::new(error) as Box<dyn std::error::Error>),
         Some("analysis-jsonl") => {
-            use sha2::{Digest, Sha256};
             let project = PathBuf::from(args.next().ok_or("usage: dm-compile analysis-jsonl PROJECT.dme [-DNAME]")?);
             let defines = parse_defines(args)?;
-            let session = ProjectSession::from_disk(project, defines);
-            let expanded = session.preprocess_incremental();
-            dm_compiler::check_source_size(expanded.text.len(), dm_compiler::check_source_limit())?;
-            let ast = dm_syntax::parse(&expanded.text);
-            let (index, index_errors) = match dm_compiler::index_ast(&ast) {
+            let key = SessionKey::new(env::current_dir()?, &project, "516.1687",
+                defines.into_iter().collect(), "analysis")?;
+            let mut coordinator = Coordinator::new(default_cache_root(&project))?;
+            let frontend = coordinator.project_frontend_snapshot(&key)?;
+            let prepared = &frontend.prepared;
+            let expanded = &prepared.project;
+            let (index, index_errors) = match frontend.declarations {
                 Ok(index) => (index, vec![]),
                 Err(errors) => (Default::default(), errors),
             };
             let mut snapshot = dm_analysis::Snapshot::from_frontend(
-                format!("{:x}", Sha256::digest(expanded.text.as_bytes())), &index, &ast, &expanded,
+                prepared.revision.clone(), &index, &frontend.ast, expanded,
             );
-            if !index_errors.is_empty() {
+            if !frontend.syntax_complete || !index_errors.is_empty() {
                 snapshot.coverage.declarations = dm_analysis::Coverage::Partial;
                 snapshot.coverage.inheritance = dm_analysis::Coverage::Unavailable;
                 snapshot.coverage.signatures = dm_analysis::Coverage::Partial;
                 for message in index_errors {
                     snapshot.facts.push(dm_analysis::Fact::Diagnostic { severity: "error".into(), category: "declaration_index".into(), message, location: None });
                 }
+            }
+            for message in frontend.syntax_errors {
+                snapshot.facts.push(dm_analysis::Fact::Diagnostic { severity: "error".into(),
+                    category: "syntax".into(), message, location: None });
             }
             snapshot.write_jsonl(std::io::stdout().lock())?;
             Ok(())
@@ -406,7 +411,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             }
             let defines = parse_defines(args)?;
             let root = env::current_dir()?;
-            let key = SessionKey::new(&root, &project, "516.1687", defines.into_iter().collect(), "legacy-history")?;
+            let key = SessionKey::new(&root, &project, "516.1687", defines.into_iter().collect(), "build")?;
             let mut stream = TcpStream::connect(address)?;
             serde_json::to_writer(&mut stream, &Request::BuildProjectPatch {
                 key, builtins, dmb, rsc, exclusive: true,
@@ -432,7 +437,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
                 return Err(usage.into());
             }
             let defines = parse_defines(args)?;
-            let key = SessionKey::new(env::current_dir()?, &project, "516.1687", defines.into_iter().collect(), "legacy-history")?;
+            let key = SessionKey::new(env::current_dir()?, &project, "516.1687", defines.into_iter().collect(), "build")?;
             let mut coordinator = Coordinator::new(default_cache_root(&project))?;
             let response = coordinator.handle(Request::BuildProjectPatch { key, builtins, dmb, rsc, exclusive: true });
             for diagnostic in &response.diagnostics { eprintln!("{diagnostic}"); }

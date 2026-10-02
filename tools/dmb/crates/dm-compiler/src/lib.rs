@@ -12,9 +12,14 @@ use std::path::{Path, PathBuf};
 
 pub mod frontend;
 pub mod lower_cache;
+pub use dm_work as work;
+pub mod project_graph;
+pub use project_graph::{ProcKey, ProcDescriptor, ProjectProcedureGraph, ProcedureArtifact,
+    ProcedureMemoRef, ProcedureProbe};
 pub mod maps;
 mod proc_parse_cache;
 mod semantic_queries;
+pub use semantic_queries::SemanticMemo as ProcedureMemo;
 mod source_debug;
 pub use maps::{load_map_set, load_map_set_from_paths, MapSet};
 
@@ -182,7 +187,7 @@ pub fn index_project(
 
 pub mod bootstrap;
 pub mod incremental;
-pub use bootstrap::{audit_initializers, InitializerAudit};
+pub use bootstrap::{audit_initializers, InitializerAudit, ArtifactReuseStats};
 pub mod declarations;
 
 /// Index an already parsed expansion without preprocessing or parsing it again.

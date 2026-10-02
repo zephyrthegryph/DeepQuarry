@@ -1,5 +1,6 @@
-//! Guarded incremental emission from an immutable linked world checkpoint.
-//! Body edits preserve table IDs; declaration or semantic-context edits fall back.
+//! Legacy linked-checkpoint compatibility, selected by `legacy-history` only.
+//! Default canonical emission uses the project graph and relocatable sections.
+//! This adapter preserves table IDs for body edits; structural edits fall back.
 use dm_codegen_byond::{LowerBindings, SharedLowerBindings, Symbol};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -56,8 +57,8 @@ struct ProcedureInput {
     cache_root: Option<PathBuf>,
 }
 
-// The portable semantic cache owns the tracked query. Attaching this outer
-// database across cache.compile would nest two independent Salsa runtimes.
+// The compatibility inputs select a body/frame. Portable memo validation uses
+// actual recorded witnesses; production semantic queries live in ProjectGraph.
 fn lower_changed(db: &dyn crate::Db, input: ProcedureInput) -> Result<SimpleProc, String> {
     let source = input.source(db);
     let item = dm_syntax::parse_proc_at_span(
@@ -292,6 +293,10 @@ pub fn try_emit_outline(
                     serial.push(crate::bootstrap::procedure_pipeline::LoweringResult {
                         ordinal,
                         internal_panic: None,
+                        memo: None,
+                        lowering_cache_hit: false,
+                        body_base: None,
+                        source_error: None,
                         compiled: session
                             .compile(path, &source.source, bindings.clone(), Arc::clone(&shared))
                             .map_err(|reason| {

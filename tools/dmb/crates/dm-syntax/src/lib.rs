@@ -4,6 +4,7 @@
 //! header and indented body are retained as tokens so later stages can diagnose unsupported
 //! syntax without discarding the original source or changing declaration order.
 
+use serde::{Deserialize, Serialize};
 use std::ops::Range;
 
 mod audit;
@@ -17,7 +18,7 @@ pub use statements::{
     StatementKind, SwitchAlternative, SwitchCase,
 };
 
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Hash)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Span {
     pub start: usize,
     pub end: usize,
@@ -353,7 +354,7 @@ pub fn visit_tokens(source: &str, mut visitor: impl FnMut(SpanToken)) -> Vec<Dia
     diagnostics
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub enum ItemKind {
     Type,
     Proc,
@@ -363,7 +364,7 @@ pub enum ItemKind {
     Unknown,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Item {
     pub kind: ItemKind,
     /// Source spelling, including whether a path was relative.

@@ -6,6 +6,7 @@ license = "GPL-3.0-only"
 description = "Incremental query engine for DM projects"
 
 [dependencies]
+dm-work = { path = "../dm-work" }
 salsa = "=0.28.5"
 dm-syntax = { path = "../dm-syntax" }
 dm-preprocess = { path = "../dm-preprocess" }
@@ -16,7 +17,7 @@ dm-resources = { path = "../dm-resources" }
 dm-store = { path = "../dm-store" }
 byond-dmb = { path = "../.." }
 sha2 = "0.10"
-serde = { version = "1", features = ["derive"] }
+serde = { version = "1", features = ["derive", "rc"] }
 serde_json = "1"
 lz4_flex = { version = "0.14", default-features = false, features = ["std", "safe-encode", "safe-decode"] }
 

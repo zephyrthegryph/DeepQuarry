@@ -4,6 +4,10 @@ See [REVISED_ARCHITECTURE.md](REVISED_ARCHITECTURE.md) for the accepted review c
 canonical output policy, transactional persistence and correctness gates. It
 supersedes conflicting output/persistence/rollout proposals below.
 
+The current integrated prototype is described in [INCREMENTAL_CORE.md](INCREMENTAL_CORE.md)
+and [INCREMENTAL_PIPELINE.md](INCREMENTAL_PIPELINE.md). They distinguish implemented
+APIs and execution paths from the remaining granularity and verification work.
+
 Status: proposed implementation architecture. This document designs the next
 performance iteration; it does not claim the structures below are implemented.
 Baseline: ac1af55d1a, October 1, 2026. Read PERFORMANCE.md for the measured
@@ -294,6 +298,70 @@ range updates can avoid discovery work only when tied to a verified source revis
 
 Do not put OS open/stat calls directly inside semantic queries. Expose immutable
 FileRevisionInput and ResolutionInput fields updated only when their values change.
+
+### Implemented prepared input prototype
+
+`dm_compiled::project_discovery::DiscoveryCache::prepare` and
+`Coordinator::prepare_project` are the common preparation entry points for builds,
+checks and `analysis-jsonl`. They return a detached `Arc<PreparedProject>` containing
+the expanded project, exact authored line origins, source/include order, decoded
+source revisions, negative include dependencies, active map/skin/FILE_DIR inputs,
+diagnostics and final macro state. The same recording provider and preprocessing
+cache produce cold, restored and retained snapshots. No separate CLI fast parser
+or serialized Salsa database participates in this path.
+
+`project_digest` preserves the existing framed project/source content identity;
+`expanded_digest` identifies expanded text. The snapshot `revision` additionally
+includes the absolute project/configuration and implementation context. Source
+digests identify UTF-8/Windows-1252 **decoded text**, not raw file bytes. Unit spans
+are expanded UTF-8 byte offsets, and origins retain authored line numbers; this
+prototype does not claim macro token/column maps or raw-to-decoded byte maps.
+`PreparationChanges` separates added/changed/removed source files and expanded
+include occurrences from shifted presentation offsets. Repeated includes use a
+path plus source-order ordinal. Signature/body equality and declaration keys
+come from the shared frontend/frozen skeleton, rather than a second preparation
+parser. Consumers associate all tool facts with the frozen snapshot revision.
+
+Supported file identity/change clocks and journal proofs can skip unchanged
+source reads. Missing includes and namespace barriers remain dependencies.
+Unknown or invalid proofs use strong per-file/exact-read validation; preserved
+modification times cannot establish a hit. A consistency retry discards supplied
+unchanged hints and rereads sources. Final publication still validates source
+and resource proofs. Restoring a prepared snapshot happens outside semantic
+queries; tracked input fields must still be read/updated by the compiler query
+graph when that data enters Salsa.
+
+Persistence uses the normal shared cache root, including
+`DM_COMPILER_CACHE_ROOT`. One immutable CAS pack stores expanded text plus decoded
+source texts without a second concatenated allocation during writing. A bounded
+manifest pools origin paths and retains source stamps/dependencies and span
+boundaries. CAS payloads publish before a transactional `prepared-project-head-v1`
+metadata pointer; a racing writer may publish either verified revision. Corrupt,
+missing, oversized or incompatible entries are misses. Preparation targets 224 MiB
+for source snapshots and resident expansions, trimming expansions while retaining
+their lazy disk index. The existing `FrontendPool` retains discovery and frontend
+components together under the full `SessionKey`, with one six-entry/512 MiB aggregate
+budget. It charges decoded sources, origins, expansion frames, resource proof
+records, semantic/lexical state and session keys. Both checked-out components reserve
+their known footprints; temporary active growth has separate compiler stage bounds.
+Pool pressure releases lexical and prepared source/expansion frames before encoded
+graph snapshots or whole idle entries. Switching among six worktrees within that
+budget preserves prepared source Arcs rather than repeatedly restoring packs. A
+trimmed input cache safely restores from the same CAS. Builds retain the same
+expanded-project Arc instead of copying or dropping its origins. Check sessions
+retain summaries rather than redundant source-owning databases.
+
+The retained unchanged path performs proof validation and Arc reuse, with no
+preprocessing. A cold restored snapshot still decodes/verifies all captured pack
+bytes. An ordinary source edit reads only dirty source files and shares unchanged
+source texts, then replays ordered preprocessing. The current prototype still
+assembles the expanded project/origin vector and publishes a whole input pack
+per changed revision. Those operations are linear in prepared bytes and are
+explicit remaining work for an expansion DAG and paged persistence; the counters
+must not be presented as range-minimal preparation or persistence. Old immutable
+packs remain shared cache artifacts; this prototype does not yet collect old
+prepared packs. GC must mark manifest/head references under the shared cache's
+reader/publication protocol before removing them.
 
 ## 7. Preprocessing: expansion graph and macro convergence
 

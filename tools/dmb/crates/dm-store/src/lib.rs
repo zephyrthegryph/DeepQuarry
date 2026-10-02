@@ -1,9 +1,11 @@
 //! Transactional metadata and immutable blobs shared by independent compiler processes.
 //! Every operation opens redb under an OS lock; callers should batch an entire stage.
 use fs2::FileExt;
+mod shared_artifacts;
 use redb::{Database, ReadableTable, TableDefinition};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
+pub use shared_artifacts::SharedArtifacts;
 use std::{
     collections::BTreeMap,
     fs::{self, File, OpenOptions},
@@ -189,6 +191,19 @@ impl Store {
     }
     /// One database open/read transaction for all requested keys, including misses.
     pub fn read_many(&self, keys: &[Key], cancel: Option<&AtomicBool>) -> io::Result<ReadBatch> {
+        self.read_many_bounded(keys, MAX_RECORD, 128 * 1024 * 1024, cancel)
+    }
+
+    /// Check stored lengths before copying payloads. Stages with small records
+    /// can enforce their own allocation budget even if a cache row is oversized.
+    /// Exceeding either bound fails the batch; omitted data never proves absence.
+    pub fn read_many_bounded(
+        &self,
+        keys: &[Key],
+        max_record_bytes: usize,
+        max_batch_bytes: usize,
+        cancel: Option<&AtomicBool>,
+    ) -> io::Result<ReadBatch> {
         if keys.len() > 64_000 {
             return Err(error("batch exceeds 64000 records"));
         }
@@ -202,17 +217,18 @@ impl Store {
             let mut values = Vec::with_capacity(keys.len());
             let mut bytes = 0usize;
             for key in &encoded {
-                let value = table
-                    .get(key.as_str())
-                    .map_err(error)?
-                    .map(|v| v.value().to_vec());
-                bytes = bytes
-                    .checked_add(value.as_ref().map_or(0, Vec::len))
-                    .ok_or_else(|| error("read batch size overflow"))?;
-                if bytes > 128 * 1024 * 1024 {
-                    return Err(error("read batch exceeds 128 MiB"));
+                let stored = table.get(key.as_str()).map_err(error)?;
+                let size = stored.as_ref().map_or(0, |value| value.value().len());
+                if size.saturating_sub(32) > max_record_bytes.min(MAX_RECORD) {
+                    return Err(error("read record exceeds stage byte limit"));
                 }
-                values.push(value);
+                bytes = bytes
+                    .checked_add(size)
+                    .ok_or_else(|| error("read batch size overflow"))?;
+                if bytes > max_batch_bytes.min(128 * 1024 * 1024) {
+                    return Err(error("read batch exceeds stage byte limit"));
+                }
+                values.push(stored.map(|value| value.value().to_vec()));
             }
             Ok(values)
         })?;
@@ -393,6 +409,32 @@ impl Store {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn stage_read_budgets_reject_oversize_without_inventing_absence() {
+        let path = temporary();
+        let store = Store::open(&path).unwrap();
+        let keys = [Key::new("stage", "first"), Key::new("stage", "second")];
+        store
+            .put_many(
+                keys.iter().map(|key| (key.clone(), vec![7; 64])).collect(),
+                None,
+            )
+            .unwrap();
+        let expected = store.read_many(&keys, None).unwrap();
+        let bounded = store.read_many_bounded(&keys, 64, 192, None).unwrap();
+        assert_eq!(bounded.values, expected.values);
+        assert_eq!(bounded.witnesses, expected.witnesses);
+        assert!(store.read_many_bounded(&keys, 63, 192, None).is_err());
+        assert!(store.read_many_bounded(&keys, 64, 191, None).is_err());
+        let missing = store
+            .read_many_bounded(&[Key::new("stage", "missing")], 1, 1, None)
+            .unwrap();
+        assert_eq!(missing.values, vec![None]);
+        assert_eq!(missing.witnesses[0].value_digest, None);
+        drop(store);
+        fs::remove_dir_all(path.parent().unwrap()).unwrap();
+    }
     fn temporary() -> PathBuf {
         std::env::temp_dir()
             .join(format!(

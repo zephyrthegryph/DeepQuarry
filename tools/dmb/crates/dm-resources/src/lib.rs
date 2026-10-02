@@ -1,15 +1,18 @@
 //! Resource inputs shared by the direct compiler, its cache key, and RSC writer.
 //! Callers resolve DM file literals to an authored archive name and a disk path.
 
-use byond_dmb::rsc::{NamedResource, ResourceKind};
 #[cfg(test)]
 use byond_dmb::rsc::Entry;
-use sha2::{Digest, Sha256};
+use byond_dmb::rsc::{NamedResource, ResourceKind};
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use std::collections::HashMap;
 use std::fs;
-use std::io::{self, Read};
+use std::io;
 use std::path::{Component, Path, PathBuf};
+
+mod input_cache;
+pub use input_cache::{ResourceFingerprintCache, ResourceFingerprintStats};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ResourceRequest {
@@ -57,27 +60,46 @@ impl ResourceCatalog {
             if names.insert(&entry.archive_name, ()).is_some() {
                 return Err(invalid("duplicate resource catalog name"));
             }
-            if identities.insert((entry.id, entry.kind), entry.content_digest)
-                .is_some_and(|previous| previous != entry.content_digest) {
+            if identities
+                .insert((entry.id, entry.kind), entry.content_digest)
+                .is_some_and(|previous| previous != entry.content_digest)
+            {
                 return Err(invalid("resource catalog ID collision"));
             }
         }
         Ok(())
     }
-    pub fn attach(&self, dmb: &mut byond_dmb::dmb::Dmb) -> io::Result<Vec<byond_dmb::ids::ResourceId>> {
+    pub fn attach(
+        &self,
+        dmb: &mut byond_dmb::dmb::Dmb,
+    ) -> io::Result<Vec<byond_dmb::ids::ResourceId>> {
         self.validate()?;
-        let mut ids: HashMap<_, _> = dmb.resources.iter().enumerate()
-            .map(|(index, entry)| ((entry.id, entry.kind), index as u32)).collect();
-        self.entries.iter().map(|entry| {
-            let key = (entry.id, entry.kind);
-            let index = if let Some(index) = ids.get(&key) { *index } else {
-                let index = u32::try_from(dmb.resources.len()).map_err(|_| invalid("resource index exceeds u32"))?;
-                dmb.resources.push(byond_dmb::dmb::ResourceRef { id: entry.id, kind: entry.kind });
-                ids.insert(key, index);
-                index
-            };
-            byond_dmb::ids::ResourceId::from_raw(index).ok_or_else(|| invalid("reserved resource index"))
-        }).collect()
+        let mut ids: HashMap<_, _> = dmb
+            .resources
+            .iter()
+            .enumerate()
+            .map(|(index, entry)| ((entry.id, entry.kind), index as u32))
+            .collect();
+        self.entries
+            .iter()
+            .map(|entry| {
+                let key = (entry.id, entry.kind);
+                let index = if let Some(index) = ids.get(&key) {
+                    *index
+                } else {
+                    let index = u32::try_from(dmb.resources.len())
+                        .map_err(|_| invalid("resource index exceeds u32"))?;
+                    dmb.resources.push(byond_dmb::dmb::ResourceRef {
+                        id: entry.id,
+                        kind: entry.kind,
+                    });
+                    ids.insert(key, index);
+                    index
+                };
+                byond_dmb::ids::ResourceId::from_raw(index)
+                    .ok_or_else(|| invalid("reserved resource index"))
+            })
+            .collect()
     }
 }
 
@@ -129,14 +151,35 @@ fn kind_for_name(name: &str) -> ResourceKind {
 
 impl ResourceSet {
     pub fn catalog(&self) -> io::Result<ResourceCatalog> {
-        let entries = self.inputs.iter().map(|input| {
-            if input.named.content_id()? != input.named.id {
-                return Err(invalid("resource content ID mismatch"));
-            }
-            Ok(ResourceDescriptor { archive_name: input.archive_name.clone(), id: input.named.id,
-                kind: input.named.kind, content_digest: input.content_digest })
-        }).collect::<io::Result<Vec<_>>>()?;
-        let catalog = ResourceCatalog { fingerprint: self.fingerprint, entries };
+        let entries = dm_work::map_ordered(
+            &self.inputs,
+            dm_work::WorkLimits::configured(),
+            |input| {
+                input
+                    .archive_name
+                    .len()
+                    .saturating_mul(2)
+                    .saturating_add(1024)
+            },
+            |input| {
+                if input.named.content_id()? != input.named.id {
+                    return Err(invalid("resource content ID mismatch"));
+                }
+                Ok(ResourceDescriptor {
+                    archive_name: input.archive_name.clone(),
+                    id: input.named.id,
+                    kind: input.named.kind,
+                    content_digest: input.content_digest,
+                })
+            },
+        )
+        .map_err(input_cache::work_error)?
+        .into_iter()
+        .collect::<io::Result<Vec<_>>>()?;
+        let catalog = ResourceCatalog {
+            fingerprint: self.fingerprint,
+            entries,
+        };
         catalog.validate()?;
         Ok(catalog)
     }
@@ -145,109 +188,113 @@ impl ResourceSet {
     pub fn fingerprint_requests(
         requests: impl IntoIterator<Item = ResourceRequest>,
     ) -> io::Result<[u8; 32]> {
-        let mut names: HashMap<String, (PathBuf, [u8; 32])> = HashMap::new();
-        let mut fingerprint = Sha256::new();
-        fingerprint.update(b"dm-resources-v1\0");
-        let mut buffer = [0u8; 64 * 1024];
-        for request in requests {
-            validate_archive_name(&request.archive_name)?;
-            if names
-                .get(&request.archive_name)
-                .is_some_and(|(path, _)| path == &request.disk_path)
-            {
-                continue;
-            }
-            let mut file = fs::File::open(&request.disk_path).map_err(|error|
-                io::Error::new(error.kind(), format!("{}: {error}", request.disk_path.display())))?;
-            let length = file.metadata()?.len();
-            let mut candidate = fingerprint.clone();
-            candidate.update((request.archive_name.len() as u64).to_le_bytes());
-            candidate.update(request.archive_name.as_bytes());
-            candidate.update(length.to_le_bytes());
-            let mut content = Sha256::new();
-            let mut read_length = 0u64;
-            loop {
-                let count = file.read(&mut buffer)?;
-                if count == 0 {
-                    break;
-                }
-                read_length += count as u64;
-                candidate.update(&buffer[..count]);
-                content.update(&buffer[..count]);
-            }
-            if read_length != length {
-                return Err(io::Error::new(
-                    io::ErrorKind::InvalidData,
-                    "resource changed while hashing",
-                ));
-            }
-            let digest: [u8; 32] = content.finalize().into();
-            if let Some((_, previous)) =
-                names.insert(request.archive_name, (request.disk_path, digest))
-            {
-                if previous != digest {
-                    return Err(invalid("resource archive name resolves to different data"));
-                }
-            } else {
-                fingerprint = candidate;
-            }
-        }
-        Ok(fingerprint.finalize().into())
+        ResourceFingerprintCache::default().fingerprint_requests(requests)
     }
 
     /// Read every referenced asset exactly once. Duplicate authored names must
     /// identify the same file; distinct names are retained as separate RSC entries.
     pub fn load(requests: impl IntoIterator<Item = ResourceRequest>) -> io::Result<Self> {
-        let mut inputs = Vec::new();
-        let mut names: HashMap<String, (PathBuf, [u8; 32])> = HashMap::new();
-        let mut fingerprint = Sha256::new();
-        fingerprint.update(b"dm-resources-v1\0");
+        Self::load_with_limits(requests, dm_work::WorkLimits::configured())
+    }
+
+    pub fn load_with_limits(
+        requests: impl IntoIterator<Item = ResourceRequest>,
+        limits: dm_work::WorkLimits,
+    ) -> io::Result<Self> {
+        use std::io::Read;
+        let mut seen = std::collections::HashSet::new();
+        let mut jobs = Vec::new();
         for request in requests {
             validate_archive_name(&request.archive_name)?;
-            if names
-                .get(&request.archive_name)
-                .is_some_and(|(path, _)| path == &request.disk_path)
-            {
-                continue;
+            if seen.insert((request.archive_name.clone(), request.disk_path.clone())) {
+                let length = usize::try_from(fs::metadata(&request.disk_path)?.len())
+                    .map_err(|_| invalid("resource size exceeds usize"))?;
+                jobs.push((request, length));
             }
-            let bytes = fs::read(&request.disk_path).map_err(|error|
-                io::Error::new(error.kind(), format!("{}: {error}", request.disk_path.display())))?;
-            let content_digest: [u8; 32] = Sha256::digest(&bytes).into();
+        }
+        let loaded = dm_work::map_ordered(
+            &jobs,
+            limits,
+            |(_, len)| len.saturating_mul(2).saturating_add(64 * 1024),
+            |(request, _)| {
+                let before = dm_host::file_stamp::capture(&request.disk_path);
+                let file = fs::File::open(&request.disk_path).map_err(|error| {
+                    io::Error::new(
+                        error.kind(),
+                        format!("{}: {error}", request.disk_path.display()),
+                    )
+                })?;
+                let length = file.metadata()?.len();
+                let limit = limits.max_active_bytes.saturating_sub(64 * 1024) / 2;
+                let mut bytes = Vec::new();
+                file.take(limit as u64 + 1).read_to_end(&mut bytes)?;
+                if bytes.len() > limit {
+                    return Err(invalid("resource exceeds work allocation budget"));
+                }
+                if bytes.len() as u64 != length
+                    || before.as_ref().is_some_and(|stamp| {
+                        dm_host::file_stamp::capture(&request.disk_path).as_ref() != Some(stamp)
+                    })
+                {
+                    return Err(io::Error::new(
+                        io::ErrorKind::InvalidData,
+                        format!(
+                            "{}: resource changed while loading",
+                            request.disk_path.display()
+                        ),
+                    ));
+                }
+                let content_digest: [u8; 32] = Sha256::digest(&bytes).into();
+                let named = NamedResource::from_data(
+                    kind_for_name(&request.archive_name).as_byte(),
+                    request.archive_name.as_bytes().to_vec(),
+                    bytes,
+                    0,
+                    0,
+                )?;
+                Ok(ResourceInput {
+                    archive_name: request.archive_name.clone(),
+                    disk_path: request.disk_path.clone(),
+                    content_digest,
+                    named,
+                })
+            },
+        )
+        .map_err(input_cache::work_error)?;
+        let mut inputs = Vec::new();
+        let mut names: HashMap<String, (PathBuf, [u8; 32])> = HashMap::new();
+        for result in loaded {
+            let input = result?;
             if let Some((_, previous)) = names.insert(
-                request.archive_name.clone(),
-                (request.disk_path.clone(), content_digest),
+                input.archive_name.clone(),
+                (input.disk_path.clone(), input.content_digest),
             ) {
-                if previous == content_digest {
+                if previous == input.content_digest {
                     continue;
                 }
                 return Err(invalid("resource archive name resolves to different data"));
             }
-            fingerprint.update((request.archive_name.len() as u64).to_le_bytes());
-            fingerprint.update(request.archive_name.as_bytes());
-            fingerprint.update((bytes.len() as u64).to_le_bytes());
-            fingerprint.update(&bytes);
-            let named = NamedResource::from_data(
-                kind_for_name(&request.archive_name).as_byte(),
-                request.archive_name.as_bytes().to_vec(),
-                bytes,
-                0,
-                0,
-            )?;
-            inputs.push(ResourceInput {
-                archive_name: request.archive_name,
-                disk_path: request.disk_path,
-                content_digest,
-                named,
-            });
+            inputs.push(input);
         }
+        let fingerprint = input_cache::fingerprint(inputs.iter().map(|input| {
+            (
+                input.archive_name.as_str(),
+                input.named.data.len() as u64,
+                input.content_digest,
+            )
+        }));
         Ok(Self {
             inputs,
-            fingerprint: fingerprint.finalize().into(),
+            fingerprint,
         })
     }
 
     pub fn rsc_bytes(&self) -> io::Result<Vec<u8>> {
-        let resources = self.inputs.iter().map(|input| &input.named).collect::<Vec<_>>();
+        let resources = self
+            .inputs
+            .iter()
+            .map(|input| &input.named)
+            .collect::<Vec<_>>();
         byond_dmb::rsc::named_archive_bytes(&resources)
     }
 }
@@ -324,5 +371,81 @@ mod tests {
         ] {
             assert!(validate_archive_name(name).is_err(), "{name}");
         }
+    }
+
+    #[test]
+    fn ordered_parallel_resources_match_and_disk_cache_reuses_proven_hashes() {
+        let root = std::env::temp_dir().join(format!(
+            "dm-resource-cache-{}-{}",
+            std::process::id(),
+            NEXT.fetch_add(1, Ordering::Relaxed)
+        ));
+        fs::create_dir_all(&root).unwrap();
+        let requests: Vec<_> = (0..6)
+            .map(|index| {
+                let path = root.join(format!("asset{index}.txt"));
+                fs::write(&path, format!("resource {index}")).unwrap();
+                ResourceRequest {
+                    archive_name: format!("data/{index}.txt"),
+                    disk_path: path,
+                }
+            })
+            .collect();
+        let serial = ResourceSet::load_with_limits(
+            requests.clone(),
+            dm_work::WorkLimits {
+                workers: 1,
+                max_active_bytes: 1024 * 1024,
+            },
+        )
+        .unwrap();
+        let parallel = ResourceSet::load_with_limits(
+            requests.clone(),
+            dm_work::WorkLimits {
+                workers: 4,
+                max_active_bytes: 1024 * 1024,
+            },
+        )
+        .unwrap();
+        assert_eq!(serial.fingerprint, parallel.fingerprint);
+        assert_eq!(serial.rsc_bytes().unwrap(), parallel.rsc_bytes().unwrap());
+        let cache_root = root.join("cache");
+        fs::create_dir_all(&cache_root).unwrap();
+        let proven = {
+            let mut cache = ResourceFingerprintCache::open(&cache_root);
+            assert_eq!(
+                cache.fingerprint_requests(requests.clone()).unwrap(),
+                parallel.fingerprint
+            );
+            assert_eq!(cache.stats().files_hashed, 6);
+            cache.verified_stamps(&requests).is_some()
+        };
+        let mut cache = ResourceFingerprintCache::open(&cache_root);
+        assert_eq!(
+            cache.fingerprint_requests(requests.clone()).unwrap(),
+            parallel.fingerprint
+        );
+        if proven {
+            assert_eq!(cache.stats().files_hashed, 0);
+            assert_eq!(cache.stats().proof_hits, 6);
+            assert_eq!(cache.stats().disk_records, 6);
+        }
+        let modified = fs::metadata(&requests[0].disk_path)
+            .unwrap()
+            .modified()
+            .unwrap();
+        fs::write(&requests[0].disk_path, b"resource X").unwrap();
+        fs::OpenOptions::new()
+            .write(true)
+            .open(&requests[0].disk_path)
+            .unwrap()
+            .set_modified(modified)
+            .unwrap();
+        let changed = cache.fingerprint_requests(requests.clone()).unwrap();
+        assert_ne!(changed, parallel.fingerprint);
+        assert!(cache.stats().files_hashed >= 1);
+        assert_eq!(changed, ResourceSet::load(requests).unwrap().fingerprint);
+        drop(cache);
+        fs::remove_dir_all(root).unwrap();
     }
 }

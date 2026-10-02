@@ -11,17 +11,19 @@ use std::fmt;
 /// from ordinary declarations and statics whose source name is `vars`.
 pub const BUILTIN_GLOBAL_VARS_SYMBOL: &str = "@builtin/global.vars";
 
-mod builtin_catalog;
 mod binding_index;
-mod simple;
+mod builtin_catalog;
 pub mod debug;
 pub mod dependencies;
-pub use dependencies::{capture_binding_reads, BindingFact, BindingWitness, FactValue};
+pub mod prepared_cache;
+pub mod relocatable;
+mod simple;
 pub use binding_index::PreparedMemberGlobals;
+pub use dependencies::{capture_binding_reads, BindingFact, BindingWitness, FactValue};
 pub use simple::{
     compile_simple_proc, compile_simple_proc_with_bindings, compile_simple_proc_with_params,
     decode_constant_string_literal, nameof_reference, ArgumentMetadata, LowerBindings, LowerError,
-    SharedLowerBindings, SimpleProc,
+    OwnerLowerBindings, SharedLowerBindings, SimpleProc,
 };
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
@@ -70,7 +72,10 @@ pub enum ValueWord {
     String(String),
     Resource(String),
     FileType,
-    ClassPath { path: String, tag: u8 },
+    ClassPath {
+        path: String,
+        tag: u8,
+    },
     ProcPath(String),
     /// A native modified-type instance, rather than a generated subtype.
     Instance(String),
@@ -424,7 +429,7 @@ pub fn link_proc(proc: &SymbolicProc, ledger: &Ledger) -> Result<LinkedProc, Lin
             "decoded instruction count differs".into(),
         ));
     }
-    let mut legal_slots = Vec::new();
+    let mut legal_slots = BTreeSet::new();
     for instruction in &decoded {
         legal_slots.extend(
             instruction
@@ -494,7 +499,11 @@ fn encode_variable(
             let id = ledger
                 .id(&symbol)
                 .ok_or_else(|| LinkError::MissingSymbol(symbol.clone()))?;
-            words.push(if matches!(variable, VariableWord::StaticVerb(_)) { 0xffe0 } else { 0xffdf });
+            words.push(if matches!(variable, VariableWord::StaticVerb(_)) {
+                0xffe0
+            } else {
+                0xffdf
+            });
             relocations.push((words.len(), symbol));
             words.push(id);
         }

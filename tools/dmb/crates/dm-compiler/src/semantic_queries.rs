@@ -1,17 +1,10 @@
-//! Lowering observes the same portable facts that Salsa tracks and disk memos
-//! validate. Frozen bindings are invocation context, never a whole-project input.
-use dm_codegen_byond::{
-    capture_binding_reads, BindingFact, BindingWitness, FactValue, LowerBindings, LowerError,
-    SimpleProc,
-};
-use dm_syntax::Item;
-use salsa::Setter;
+//! Portable semantic memo validation and bounded heap accounting.
+//! The canonical project graph is the only production Salsa dependency owner.
+use dm_codegen_byond::{BindingFact, BindingWitness, FactValue, LowerBindings, SimpleProc};
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeMap;
-use std::sync::{Arc, Mutex};
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
-pub(crate) struct SemanticMemo {
+pub struct SemanticMemo {
     pub procedure: SimpleProc,
     pub dependencies: Vec<BindingWitness>,
 }
@@ -31,106 +24,7 @@ impl SemanticMemo {
     }
 }
 
-#[salsa::input]
-struct FactInput {
-    #[returns(ref)]
-    value: FactValue,
-}
-#[salsa::input]
-struct ProcedureInput {
-    #[returns(ref)]
-    scope: String,
-    #[returns(ref)]
-    body: Vec<Item>,
-}
-
-#[derive(Default)]
-struct Context {
-    bindings: Option<Arc<LowerBindings>>,
-    candidate: Option<SemanticMemo>,
-    facts: BTreeMap<String, BTreeMap<BindingFact, FactInput>>,
-    executions: usize,
-}
-#[salsa::db]
-trait SemanticDb: salsa::Database {
-    fn context(&self) -> &Mutex<Context>;
-}
-#[salsa::db]
-#[derive(Clone, Default)]
-struct Database {
-    storage: salsa::Storage<Self>,
-    context: Arc<Mutex<Context>>,
-}
-#[salsa::db]
-impl salsa::Database for Database {}
-#[salsa::db]
-impl SemanticDb for Database {
-    fn context(&self) -> &Mutex<Context> {
-        &self.context
-    }
-}
-
-fn read_fact(db: &dyn SemanticDb, scope: &str, read: &BindingWitness) {
-    let input = {
-        let mut context = db.context().lock().unwrap();
-        *context
-            .facts
-            .entry(scope.to_owned())
-            .or_default()
-            .entry(read.fact.clone())
-            .or_insert_with(|| FactInput::new(db, read.value.clone()))
-    };
-    // The exact observation becomes an actual Salsa field dependency, including
-    // unsuccessful lookups. A mismatch is an internal snapshot consistency error.
-    assert_eq!(input.value(db), &read.value, "stale frozen skeleton fact");
-}
-
-#[salsa::tracked]
-fn lower(db: &dyn SemanticDb, input: ProcedureInput) -> Result<SemanticMemo, Vec<LowerError>> {
-    let scope = input.scope(db);
-    let body = input.body(db);
-    let (bindings, candidate) = {
-        let mut context = db.context().lock().unwrap();
-        context.executions += 1;
-        (
-            context.bindings.clone().expect("frozen lowering context"),
-            context.candidate.clone(),
-        )
-    };
-    let memo = if let Some(memo) = candidate.filter(|memo| memo.valid_for(&bindings)) {
-        memo
-    } else {
-        let (procedure, dependencies) = capture_binding_reads(|| {
-            dm_codegen_byond::compile_simple_proc_with_bindings(body, &bindings)
-        });
-        // Error outcomes also read their semantic dependencies: a newly declared
-        // member can turn an error into a valid program at the next revision.
-        for read in &dependencies {
-            read_fact(db, scope, read);
-        }
-        SemanticMemo {
-            procedure: procedure?,
-            dependencies,
-        }
-    };
-    for read in &memo.dependencies {
-        read_fact(db, scope, read);
-    }
-    Ok(memo)
-}
-
-const MAX_GRAPH_BYTES: usize = 16 * 1024 * 1024;
-const MAX_GRAPH_INPUTS: usize = 1024;
-fn syntax_heap(items: &[Item]) -> usize {
-    items.iter().fold(
-        items.len().saturating_mul(std::mem::size_of::<Item>()),
-        |n, item| {
-            n.saturating_add(item.header.capacity())
-                .saturating_add(syntax_heap(&item.children))
-        },
-    )
-}
-fn fact_heap(fact: &BindingFact) -> usize {
+pub(crate) fn fact_heap(fact: &BindingFact) -> usize {
     use BindingFact::*;
     match fact {
         Field(a)
@@ -143,14 +37,16 @@ fn fact_heap(fact: &BindingFact) -> usize {
         | StringConstant(a)
         | ModifiedInstance(a) => a.capacity(),
         GlobalProcReturnType(a) => a.capacity(),
-        MemberType(a, b) | MemberGlobal(a, b) | MemberProc(a, b) | DeclaredMemberProc(a, b)
-        | MemberProcReturnType(a, b) | ParentProcReturnType(a, b) => {
-            a.capacity().saturating_add(b.capacity())
-        }
+        MemberType(a, b)
+        | MemberGlobal(a, b)
+        | MemberProc(a, b)
+        | DeclaredMemberProc(a, b)
+        | MemberProcReturnType(a, b)
+        | ParentProcReturnType(a, b) => a.capacity().saturating_add(b.capacity()),
         SharedPresence => 0,
     }
 }
-fn value_heap(value: &FactValue) -> usize {
+pub(crate) fn value_heap(value: &FactValue) -> usize {
     match value {
         FactValue::Text(text) => text.capacity(),
         _ => 0,
@@ -187,7 +83,7 @@ fn word_heap(word: &dm_codegen_byond::Word) -> usize {
         _ => 0,
     }
 }
-fn memo_heap(memo: &SemanticMemo) -> usize {
+pub(crate) fn memo_heap(memo: &SemanticMemo) -> usize {
     use dm_codegen_byond::{Item as CodeItem, Word};
     let p = &memo.procedure;
     let mut n = std::mem::size_of::<SemanticMemo>().saturating_add(
@@ -254,109 +150,276 @@ fn memo_heap(memo: &SemanticMemo) -> usize {
     }
     n
 }
-fn graph_charge(syntax: usize, memo: usize, identity: &str) -> usize {
-    syntax
-        .saturating_add(memo)
-        .saturating_add(identity.len())
-        .saturating_add(512)
-        .saturating_mul(4)
-}
-
-/// A bounded live graph; portable memos survive query eviction and process exits.
-#[derive(Default)]
-pub(crate) struct SemanticQueries {
-    db: Database,
-    inputs: BTreeMap<String, ProcedureInput>,
-    charged_bytes: usize,
-    charges: BTreeMap<String, usize>,
-}
-impl SemanticQueries {
-    pub fn compile(
-        &mut self,
-        identity: &str,
-        body: &[Item],
-        bindings: &LowerBindings,
-        candidate: Option<SemanticMemo>,
-    ) -> Result<SemanticMemo, Vec<LowerError>> {
-        // Include symbolic results and Salsa fact copies without encoding JSON
-        // on every hit. The multiplier covers cloned query values and tree nodes.
-        let syntax = syntax_heap(body);
-        let planned = graph_charge(syntax, candidate.as_ref().map_or(0, memo_heap), identity);
-        let old = self.charges.get(identity).copied().unwrap_or(0);
-        if (!self.inputs.contains_key(identity) && self.inputs.len() >= MAX_GRAPH_INPUTS)
-            || self
-                .charged_bytes
-                .saturating_sub(old)
-                .saturating_add(planned)
-                > MAX_GRAPH_BYTES
-        {
-            *self = Self::default();
-        }
-        self.set_charge(identity, planned);
-        let known = self
-            .db
-            .context
-            .lock()
-            .unwrap()
-            .facts
-            .get(identity)
-            .cloned()
-            .unwrap_or_default();
-        for (fact, input) in known {
-            let value = bindings.binding_fact(&fact);
-            if input.value(&self.db) != &value {
-                input.set_value(&mut self.db).to(value);
-            }
-        }
-        {
-            let mut context = self.db.context.lock().unwrap();
-            context.bindings = Some(Arc::new(bindings.clone()));
-            context.candidate = candidate;
-        }
-        let input = *self
-            .inputs
-            .entry(identity.to_owned())
-            .or_insert_with(|| ProcedureInput::new(&self.db, identity.to_owned(), body.to_vec()));
-        let result = lower(&self.db, input).clone();
-        let mut context = self.db.context.lock().unwrap();
-        context.bindings = None;
-        context.candidate = None;
-        drop(context);
-        let memo = result.as_ref().map_or_else(
-            |_| {
-                let context = self.db.context.lock().unwrap();
-                context.facts.get(identity).map_or(0, |facts| {
-                    facts.iter().fold(0usize, |n, (fact, input)| {
-                        n.saturating_add(256)
-                            .saturating_add(fact_heap(fact))
-                            .saturating_add(value_heap(input.value(&self.db)))
-                    })
-                })
-            },
-            memo_heap,
-        );
-        self.set_charge(identity, graph_charge(syntax, memo, identity));
-        if self.charged_bytes > MAX_GRAPH_BYTES {
-            *self = Self::default();
-        }
-        result
-    }
-    fn set_charge(&mut self, identity: &str, bytes: usize) {
-        let previous = self.charges.insert(identity.to_owned(), bytes).unwrap_or(0);
-        self.charged_bytes = self
-            .charged_bytes
-            .saturating_sub(previous)
-            .saturating_add(bytes);
-    }
-    #[cfg(test)]
-    fn executions(&self) -> usize {
-        self.db.context.lock().unwrap().executions
-    }
-}
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    use crate::lower_cache::{QueryTiming, StageTimer};
+    use dm_codegen_byond::{capture_binding_reads, LowerError};
+    use dm_syntax::Item;
+    use salsa::Setter;
+    use std::collections::BTreeMap;
+    use std::sync::{Arc, Mutex};
+
+    #[salsa::input]
+    struct FactInput {
+        #[returns(ref)]
+        value: FactValue,
+    }
+    #[salsa::input]
+    struct ProcedureInput {
+        #[returns(ref)]
+        scope: String,
+        #[returns(ref)]
+        body: Vec<Item>,
+    }
+
+    #[derive(Default)]
+    struct Context {
+        bindings: Option<Arc<LowerBindings>>,
+        candidate: Option<SemanticMemo>,
+        facts: BTreeMap<String, BTreeMap<BindingFact, FactInput>>,
+        executions: usize,
+        profiling: bool,
+        timing: QueryTiming,
+    }
+    #[salsa::db]
+    trait SemanticDb: salsa::Database {
+        fn context(&self) -> &Mutex<Context>;
+    }
+    #[salsa::db]
+    #[derive(Clone, Default)]
+    struct Database {
+        storage: salsa::Storage<Self>,
+        context: Arc<Mutex<Context>>,
+    }
+    #[salsa::db]
+    impl salsa::Database for Database {}
+    #[salsa::db]
+    impl SemanticDb for Database {
+        fn context(&self) -> &Mutex<Context> {
+            &self.context
+        }
+    }
+
+    fn read_fact(db: &dyn SemanticDb, scope: &str, read: &BindingWitness) {
+        let input = {
+            let mut context = db.context().lock().unwrap();
+            *context
+                .facts
+                .entry(scope.to_owned())
+                .or_default()
+                .entry(read.fact.clone())
+                .or_insert_with(|| FactInput::new(db, read.value.clone()))
+        };
+        // The exact observation becomes an actual Salsa field dependency, including
+        // unsuccessful lookups. A mismatch is an internal snapshot consistency error.
+        assert_eq!(input.value(db), &read.value, "stale frozen skeleton fact");
+    }
+
+    #[salsa::tracked]
+    fn lower(db: &dyn SemanticDb, input: ProcedureInput) -> Result<SemanticMemo, Vec<LowerError>> {
+        let scope = input.scope(db);
+        let body = input.body(db);
+        let (bindings, candidate, profiling) = {
+            let mut context = db.context().lock().unwrap();
+            context.executions += 1;
+            let timer = StageTimer::start(context.profiling);
+            let candidate = context.candidate.clone();
+            timer.record(&mut context.timing.candidate_clone);
+            (
+                context.bindings.clone().expect("frozen lowering context"),
+                candidate,
+                context.profiling,
+            )
+        };
+        let timer = StageTimer::start(profiling);
+        let candidate = candidate.filter(|memo| memo.valid_for(&bindings));
+        if profiling {
+            timer.record(&mut db.context().lock().unwrap().timing.candidate_witness);
+        }
+        let memo = if let Some(memo) = candidate {
+            memo
+        } else {
+            let timer = StageTimer::start(profiling);
+            let (procedure, dependencies) = capture_binding_reads(|| {
+                dm_codegen_byond::compile_simple_proc_with_bindings(body, &bindings)
+            });
+            if profiling {
+                timer.record(&mut db.context().lock().unwrap().timing.fresh_codegen);
+            }
+            // Error outcomes also read their semantic dependencies: a newly declared
+            // member can turn an error into a valid program at the next revision.
+            for read in &dependencies {
+                read_fact(db, scope, read);
+            }
+            SemanticMemo {
+                procedure: procedure?,
+                dependencies,
+            }
+        };
+        for read in &memo.dependencies {
+            read_fact(db, scope, read);
+        }
+        Ok(memo)
+    }
+
+    const MAX_GRAPH_BYTES: usize = 16 * 1024 * 1024;
+    const MAX_GRAPH_INPUTS: usize = 1024;
+    fn syntax_heap(items: &[Item]) -> usize {
+        items.iter().fold(
+            items.len().saturating_mul(std::mem::size_of::<Item>()),
+            |n, item| {
+                n.saturating_add(item.header.capacity())
+                    .saturating_add(syntax_heap(&item.children))
+            },
+        )
+    }
+    fn graph_charge(syntax: usize, memo: usize, identity: &str) -> usize {
+        syntax
+            .saturating_add(memo)
+            .saturating_add(identity.len())
+            .saturating_add(512)
+            .saturating_mul(4)
+    }
+
+    /// A bounded live graph; portable memos survive query eviction and process exits.
+    #[derive(Default)]
+    pub(crate) struct SemanticQueries {
+        db: Database,
+        inputs: BTreeMap<String, ProcedureInput>,
+        charged_bytes: usize,
+        charges: BTreeMap<String, usize>,
+        profiling: bool,
+        timing: QueryTiming,
+    }
+    impl SemanticQueries {
+        pub(crate) fn set_profiling(&mut self, enabled: bool) {
+            self.profiling = enabled;
+        }
+        pub(crate) fn timings(&self) -> QueryTiming {
+            let mut timing = self.timing;
+            timing.accumulate(self.db.context.lock().unwrap().timing);
+            timing
+        }
+        fn reset_graph(&mut self) {
+            let timing = self.timings();
+            let profiling = self.profiling;
+            *self = Self::default();
+            self.timing = timing;
+            self.profiling = profiling;
+        }
+        pub fn compile(
+            &mut self,
+            identity: &str,
+            body: &[Item],
+            bindings: &LowerBindings,
+            candidate: Option<SemanticMemo>,
+        ) -> Result<SemanticMemo, Vec<LowerError>> {
+            let timer = StageTimer::start(self.profiling);
+            let result = self.compile_inner(identity, body, bindings, candidate);
+            timer.record(&mut self.timing.total);
+            result
+        }
+        fn compile_inner(
+            &mut self,
+            identity: &str,
+            body: &[Item],
+            bindings: &LowerBindings,
+            candidate: Option<SemanticMemo>,
+        ) -> Result<SemanticMemo, Vec<LowerError>> {
+            // Include symbolic results and Salsa fact copies without encoding JSON
+            // on every hit. The multiplier covers cloned query values and tree nodes.
+            let timer = StageTimer::start(self.profiling);
+            let syntax = syntax_heap(body);
+            let planned = graph_charge(syntax, candidate.as_ref().map_or(0, memo_heap), identity);
+            timer.record(&mut self.timing.memory_accounting);
+            let old = self.charges.get(identity).copied().unwrap_or(0);
+            if (!self.inputs.contains_key(identity) && self.inputs.len() >= MAX_GRAPH_INPUTS)
+                || self
+                    .charged_bytes
+                    .saturating_sub(old)
+                    .saturating_add(planned)
+                    > MAX_GRAPH_BYTES
+            {
+                self.reset_graph();
+            }
+            self.set_charge(identity, planned);
+            let timer = StageTimer::start(self.profiling);
+            let known = self
+                .db
+                .context
+                .lock()
+                .unwrap()
+                .facts
+                .get(identity)
+                .cloned()
+                .unwrap_or_default();
+            timer.record(&mut self.timing.preparation);
+            let timer = StageTimer::start(self.profiling);
+            for (fact, input) in known {
+                let value = bindings.binding_fact(&fact);
+                if input.value(&self.db) != &value {
+                    input.set_value(&mut self.db).to(value);
+                }
+            }
+            timer.record(&mut self.timing.fact_replay);
+            let timer = StageTimer::start(self.profiling);
+            {
+                let mut context = self.db.context.lock().unwrap();
+                context.profiling = self.profiling;
+                context.bindings = Some(Arc::new(bindings.clone()));
+                context.candidate = candidate;
+            }
+            timer.record(&mut self.timing.preparation);
+            let timer = StageTimer::start(self.profiling);
+            let input = *self.inputs.entry(identity.to_owned()).or_insert_with(|| {
+                ProcedureInput::new(&self.db, identity.to_owned(), body.to_vec())
+            });
+            timer.record(&mut self.timing.input_body_clone);
+            let lowered = lower(&self.db, input);
+            let timer = StageTimer::start(self.profiling);
+            let result = lowered.clone();
+            timer.record(&mut self.timing.result_clone);
+            let mut context = self.db.context.lock().unwrap();
+            context.bindings = None;
+            context.candidate = None;
+            drop(context);
+            let timer = StageTimer::start(self.profiling);
+            let memo = result.as_ref().map_or_else(
+                |_| {
+                    let context = self.db.context.lock().unwrap();
+                    context.facts.get(identity).map_or(0, |facts| {
+                        facts.iter().fold(0usize, |n, (fact, input)| {
+                            n.saturating_add(256)
+                                .saturating_add(fact_heap(fact))
+                                .saturating_add(value_heap(input.value(&self.db)))
+                        })
+                    })
+                },
+                memo_heap,
+            );
+            timer.record(&mut self.timing.memory_accounting);
+            self.set_charge(identity, graph_charge(syntax, memo, identity));
+            if self.charged_bytes > MAX_GRAPH_BYTES {
+                self.reset_graph();
+            }
+            result
+        }
+        fn set_charge(&mut self, identity: &str, bytes: usize) {
+            let previous = self.charges.insert(identity.to_owned(), bytes).unwrap_or(0);
+            self.charged_bytes = self
+                .charged_bytes
+                .saturating_sub(previous)
+                .saturating_add(bytes);
+        }
+        #[cfg(test)]
+        fn executions(&self) -> usize {
+            self.db.context.lock().unwrap().executions
+        }
+    }
+
     #[test]
     fn recorded_reads_and_salsa_invalidation_agree() {
         let body = dm_syntax::parse("/proc/f()\n    return value\n")
@@ -393,9 +456,11 @@ mod tests {
             .children;
         let bindings = LowerBindings::default();
         let mut queries = SemanticQueries::default();
+        queries.set_profiling(true);
         let first = queries.compile("small", &body, &bindings, None).unwrap();
         assert!(queries.charged_bytes > graph_charge(syntax_heap(&body), 0, "small"));
         let before = queries.charged_bytes;
+        let timing_before = queries.timings();
         queries
             .compile("small", &body, &bindings, Some(first.clone()))
             .unwrap();
@@ -412,6 +477,8 @@ mod tests {
         assert!(queries.inputs.is_empty());
         assert!(queries.charges.is_empty());
         assert_eq!(queries.charged_bytes, 0);
+        assert!(queries.timings().total >= timing_before.total);
+        assert!(queries.timings().fresh_codegen >= timing_before.fresh_codegen);
         assert!(queries.compile("small", &body, &bindings, None).is_ok());
     }
     #[test]
@@ -432,80 +499,128 @@ mod tests {
     #[test]
     fn proc_return_reads_invalidate_positive_and_negative_results() {
         let body = dm_syntax::parse("/proc/check()\n    return istype(fetch().payload)\n")
-            .items.remove(0).children;
+            .items
+            .remove(0)
+            .children;
         let mut bindings = LowerBindings::default();
         let mut shared = dm_codegen_byond::SharedLowerBindings::default();
         shared.global_procs.insert("fetch".into());
-        shared.member_types.insert("/datum/result".into(),
-            [("payload".into(), "/datum/first".into())].into());
+        shared.member_types.insert(
+            "/datum/result".into(),
+            [("payload".into(), "/datum/first".into())].into(),
+        );
         bindings.shared = Some(Arc::new(shared));
-        let (failure, reads) = capture_binding_reads(||
-            dm_codegen_byond::compile_simple_proc_with_bindings(&body, &bindings));
+        let (failure, reads) = capture_binding_reads(|| {
+            dm_codegen_byond::compile_simple_proc_with_bindings(&body, &bindings)
+        });
         assert!(failure.is_err());
-        assert!(reads.iter().any(|read| read.fact == BindingFact::GlobalProcReturnType("fetch".into())
+        assert!(reads.iter().any(|read| read.fact
+            == BindingFact::GlobalProcReturnType("fetch".into())
             && read.value == FactValue::Absent));
         let mut queries = SemanticQueries::default();
         assert!(queries.compile("result", &body, &bindings, None).is_err());
-        Arc::make_mut(bindings.shared.as_mut().unwrap()).global_proc_return_types
+        Arc::make_mut(bindings.shared.as_mut().unwrap())
+            .global_proc_return_types
             .insert("fetch".into(), "/datum/result".into());
         let first = queries.compile("result", &body, &bindings, None).unwrap();
         assert!(first.valid_for(&bindings));
         assert_eq!(queries.executions(), 2);
-        Arc::make_mut(bindings.shared.as_mut().unwrap()).global_proc_return_types
+        Arc::make_mut(bindings.shared.as_mut().unwrap())
+            .global_proc_return_types
             .insert("unrelated".into(), "/datum/unrelated".into());
-        assert_eq!(queries.compile("result", &body, &bindings, Some(first.clone())).unwrap(), first);
+        assert_eq!(
+            queries
+                .compile("result", &body, &bindings, Some(first.clone()))
+                .unwrap(),
+            first
+        );
         assert_eq!(queries.executions(), 2);
-        Arc::make_mut(bindings.shared.as_mut().unwrap()).member_types
-            .get_mut("/datum/result").unwrap().insert("payload".into(), "/datum/second".into());
-        let changed = queries.compile("result", &body, &bindings, Some(first.clone())).unwrap();
+        Arc::make_mut(bindings.shared.as_mut().unwrap())
+            .member_types
+            .get_mut("/datum/result")
+            .unwrap()
+            .insert("payload".into(), "/datum/second".into());
+        let changed = queries
+            .compile("result", &body, &bindings, Some(first.clone()))
+            .unwrap();
         assert_ne!(changed.procedure, first.procedure);
         assert_eq!(queries.executions(), 3);
-        Arc::make_mut(bindings.shared.as_mut().unwrap()).global_proc_return_types.remove("fetch");
+        Arc::make_mut(bindings.shared.as_mut().unwrap())
+            .global_proc_return_types
+            .remove("fetch");
         assert!(!changed.valid_for(&bindings));
-        assert!(queries.compile("result", &body, &bindings, Some(changed)).is_err());
+        assert!(queries
+            .compile("result", &body, &bindings, Some(changed))
+            .is_err());
         assert_eq!(queries.executions(), 4);
     }
 
     #[test]
     fn proc_return_member_shadowing_and_parent_changes_are_observed() {
         let body = dm_syntax::parse("/proc/check()\n    return istype(fetch().payload)\n")
-            .items.remove(0).children;
+            .items
+            .remove(0)
+            .children;
         let mut bindings = LowerBindings {
             current_type_path: Some("/datum/owner/child".into()),
             current_proc_path: Some("/datum/owner/child/proc/check".into()),
             ..Default::default()
         };
         let mut shared = dm_codegen_byond::SharedLowerBindings::default();
-        shared.parent_types.insert("/datum/owner/child".into(), "/datum/owner".into());
+        shared
+            .parent_types
+            .insert("/datum/owner/child".into(), "/datum/owner".into());
         shared.global_procs.insert("fetch".into());
-        shared.global_proc_return_types.insert("fetch".into(), "/datum/global_result".into());
-        for (owner, ty) in [("/datum/global_result", "/datum/a"), ("/datum/member_result", "/datum/b")] {
-            shared.member_types.insert(owner.into(), [("payload".into(), ty.into())].into());
+        shared
+            .global_proc_return_types
+            .insert("fetch".into(), "/datum/global_result".into());
+        for (owner, ty) in [
+            ("/datum/global_result", "/datum/a"),
+            ("/datum/member_result", "/datum/b"),
+        ] {
+            shared
+                .member_types
+                .insert(owner.into(), [("payload".into(), ty.into())].into());
         }
         bindings.shared = Some(Arc::new(shared));
         let mut queries = SemanticQueries::default();
-        let global = queries.compile("shadowing", &body, &bindings, None).unwrap();
+        let global = queries
+            .compile("shadowing", &body, &bindings, None)
+            .unwrap();
         assert!(global.dependencies.iter().any(|read| read.fact
             == BindingFact::DeclaredMemberProc("/datum/owner/child".into(), "fetch".into())
             && read.value == FactValue::Boolean(false)));
         let shared = Arc::make_mut(bindings.shared.as_mut().unwrap());
-        shared.known_member_procs.insert("/datum/owner".into(), ["fetch".into()].into());
-        shared.member_proc_return_types.insert("/datum/owner".into(),
-            [("fetch".into(), "/datum/member_result".into())].into());
-        let member = queries.compile("shadowing", &body, &bindings, Some(global.clone())).unwrap();
+        shared
+            .known_member_procs
+            .insert("/datum/owner".into(), ["fetch".into()].into());
+        shared.member_proc_return_types.insert(
+            "/datum/owner".into(),
+            [("fetch".into(), "/datum/member_result".into())].into(),
+        );
+        let member = queries
+            .compile("shadowing", &body, &bindings, Some(global.clone()))
+            .unwrap();
         assert_ne!(member.procedure, global.procedure);
         assert!(member.dependencies.iter().any(|read| read.fact
             == BindingFact::MemberProcReturnType("/datum/owner/child".into(), "fetch".into())
             && read.value == FactValue::Text("/datum/member_result".into())));
         let parent_body = dm_syntax::parse("/proc/check()\n    return istype(..().payload)\n")
-            .items.remove(0).children;
+            .items
+            .remove(0)
+            .children;
         bindings.current_proc_path = Some("/datum/owner/child/proc/fetch".into());
-        let parent = queries.compile("parent", &parent_body, &bindings, None).unwrap();
+        let parent = queries
+            .compile("parent", &parent_body, &bindings, None)
+            .unwrap();
         assert!(parent.dependencies.iter().any(|read| read.fact
             == BindingFact::ParentProcReturnType("/datum/owner/child".into(), "fetch".into())));
-        Arc::make_mut(bindings.shared.as_mut().unwrap()).parent_types
+        Arc::make_mut(bindings.shared.as_mut().unwrap())
+            .parent_types
             .insert("/datum/owner/child".into(), "/datum/missing".into());
         assert!(!parent.valid_for(&bindings));
-        assert!(queries.compile("parent", &parent_body, &bindings, Some(parent)).is_err());
+        assert!(queries
+            .compile("parent", &parent_body, &bindings, Some(parent))
+            .is_err());
     }
 }

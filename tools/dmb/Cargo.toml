@@ -59,6 +59,14 @@ opt-level = 2
 [profile.test.package.byond-dmb]
 opt-level = 0
 
+# Keep the large compiler/daemon fixture harnesses cheap to rebuild. Compiler
+# binaries retain the optimized development settings above.
+[profile.test.package.dm-compiler]
+opt-level = 0
+
+[profile.test.package.dm-compiled]
+opt-level = 0
+
 [dependencies]
 md5 = "0.7"
 serde = { version = "1", features = ["derive"] }

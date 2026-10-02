@@ -82,6 +82,13 @@ pub struct Macro {
 pub trait SourceProvider {
     fn read(&self, path: &Path) -> Result<String, String>;
 
+    /// Immutable source snapshots can share text with preprocessing without a
+    /// full file clone for every include occurrence. Existing providers retain
+    /// their ordinary read contract through this default adapter.
+    fn read_shared(&self, path: &Path) -> Result<Arc<str>, String> {
+        self.read(path).map(Arc::from)
+    }
+
     /// Identity of the exact text returned by the preceding read. Snapshot
     /// providers can reuse their recorded digest; ordinary providers hash bytes.
     fn fingerprint_read(&self, _path: &Path, source: &str) -> [u8; 32] {
@@ -602,6 +609,11 @@ impl PreprocessCache {
     pub fn resident_bytes(&self) -> usize {
         self.resident_bytes
     }
+    /// Release resident expansions while preserving the disk index for lazy
+    /// replay. Coordinators budget this cache together with prepared snapshots.
+    pub fn trim_to(&mut self, limit: usize) {
+        self.enforce_budget(limit);
+    }
     fn enforce_budget(&mut self, limit: usize) {
         // Remove historical variants before evicting another current file.
         if self.resident_bytes > limit {
@@ -998,7 +1010,7 @@ impl<P: SourceProvider> Context<'_, P> {
             return;
         }
         self.output.dependencies.insert(path.clone());
-        let source = match self.provider.read(&path) {
+        let source = match self.provider.read_shared(&path) {
             Ok(s) => s,
             Err(e) => {
                 self.error_as(
@@ -1317,7 +1329,7 @@ impl<P: SourceProvider> Context<'_, P> {
                                 .is_some_and(|ext| ext.eq_ignore_ascii_case("dmf"))
                             {
                                 self.output.dependencies.insert(child.clone());
-                                match self.provider.read(&child) {
+                                match self.provider.read_shared(&child) {
                                     Ok(text) => {
                                         self.reads.push((
                                             child.clone(),

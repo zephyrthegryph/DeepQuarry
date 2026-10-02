@@ -50,7 +50,7 @@ pub struct ProcParseCache {
     entries: HashMap<String, Located>,
     readers: HashMap<PathBuf, File>,
     store: Option<dm_store::Store>,
-    snapshot: BTreeMap<String, Vec<u8>>,
+    snapshot: std::sync::Arc<BTreeMap<String, Vec<u8>>>,
     pending: BTreeMap<String, Vec<u8>>,
     pending_bytes: usize,
     stats: ParseCacheStats,
@@ -66,7 +66,7 @@ impl ProcParseCache {
             entries: HashMap::new(),
             readers: HashMap::new(),
             store: None,
-            snapshot: BTreeMap::new(),
+            snapshot: std::sync::Arc::new(BTreeMap::new()),
             pending: BTreeMap::new(),
             pending_bytes: 0,
             stats: ParseCacheStats::default(),
@@ -92,11 +92,13 @@ impl ProcParseCache {
                                 .sum::<usize>();
                             eprintln!("DM_BUILD_TRACE parser store snapshot: {} entries, {} bytes, complete {}, {:.3}s", snapshot.records.len(), bytes, snapshot.complete, started.elapsed().as_secs_f64());
                         }
-                        cache.snapshot = snapshot
-                            .records
-                            .into_iter()
-                            .map(|(key, bytes)| (key.name, bytes))
-                            .collect();
+                        cache.snapshot = std::sync::Arc::new(
+                            snapshot
+                                .records
+                                .into_iter()
+                                .map(|(key, bytes)| (key.name, bytes))
+                                .collect(),
+                        );
                     }
                     Err(_) => cache.stats.corrupt += 1,
                 }
@@ -165,6 +167,20 @@ impl ProcParseCache {
     }
     pub fn stats(&self) -> ParseCacheStats {
         self.stats
+    }
+    /// Stage workers share one immutable startup snapshot, with private readers
+    /// and pending writes. No database opens occur during fork.
+    pub fn fork(&self) -> Self {
+        Self {
+            root: self.root.clone(),
+            entries: self.entries.clone(),
+            readers: HashMap::new(),
+            store: self.store.clone(),
+            snapshot: std::sync::Arc::clone(&self.snapshot),
+            pending: BTreeMap::new(),
+            pending_bytes: 0,
+            stats: ParseCacheStats::default(),
+        }
     }
     pub fn parse(&mut self, source: &str, span: Span) -> Result<Item, Diagnostic> {
         if self.root.is_none() {

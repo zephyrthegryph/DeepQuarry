@@ -92,6 +92,32 @@ pub fn reference_origin(
     None
 }
 
+/// Capture the first occurrence of every typed reference in one code walk.
+/// An unanchored first occurrence remains unlocated even if a later occurrence
+/// has a statement anchor, matching `reference_origin` exactly.
+pub fn reference_origins(procedure: &SimpleProc) -> Vec<(Symbol, Option<RelativeStatementSpan>)> {
+    let mut origins = std::collections::BTreeMap::new();
+    let mut marks = procedure.statement_origins.iter().peekable();
+    let mut current = None;
+    for (index, item) in procedure.code.items.iter().enumerate() {
+        while marks.peek().is_some_and(|mark| mark.code_item <= index) {
+            let mark = marks.next().expect("peeked mark");
+            current = (mark.end >= mark.start).then_some(RelativeStatementSpan {
+                start: mark.start,
+                end: mark.end,
+            });
+        }
+        if let CodeItem::Instruction(instruction) = item {
+            for operand in &instruction.operands {
+                operand.for_each_reference(&mut |table, key| {
+                    origins.entry(Symbol::new(table, key)).or_insert(current);
+                });
+            }
+        }
+    }
+    origins.into_iter().collect()
+}
+
 /// Instrument symbolic code before relocation, preserving branch labels. Resolve
 /// offsets against the current body and preprocessor origins, never cached spans.
 /// Each marked block sets both file and line, including cross-file jump targets.

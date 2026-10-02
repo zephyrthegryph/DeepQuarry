@@ -10,10 +10,12 @@ byond-dmb = { path = "../.." }
 dm-compiler = { path = "../dm-compiler" }
 dm-preprocess = { path = "../dm-preprocess" }
 dm-syntax = { path = "../dm-syntax" }
+dm-semantics = { path = "../dm-semantics" }
 dm-resources = { path = "../dm-resources" }
 dm-output = { path = "../dm-output" }
 dm-host = { path = "../dm-host" }
 dm-store = { path = "../dm-store" }
+dm-work = { path = "../dm-work" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 sha2 = "0.10"

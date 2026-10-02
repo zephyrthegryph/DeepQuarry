@@ -125,9 +125,11 @@ name = "dm-codegen-byond"
 version = "0.1.0"
 dependencies = [
  "byond-dmb",
+ "dm-store",
  "dm-syntax",
  "serde",
  "serde_json",
+ "sha2",
 ]
 
 [[package]]
@@ -157,8 +159,10 @@ dependencies = [
  "dm-output",
  "dm-preprocess",
  "dm-resources",
+ "dm-semantics",
  "dm-store",
  "dm-syntax",
+ "dm-work",
  "serde",
  "serde_json",
  "sha2",
@@ -176,6 +180,7 @@ dependencies = [
  "dm-semantics",
  "dm-store",
  "dm-syntax",
+ "dm-work",
  "lz4_flex",
  "salsa",
  "serde",
@@ -220,7 +225,11 @@ name = "dm-resources"
 version = "0.1.0"
 dependencies = [
  "byond-dmb",
+ "dm-host",
+ "dm-store",
+ "dm-work",
  "serde",
+ "serde_json",
  "sha2",
 ]
 
@@ -244,6 +253,13 @@ dependencies = [
 
 [[package]]
 name = "dm-syntax"
+version = "0.1.0"
+dependencies = [
+ "serde",
+]
+
+[[package]]
+name = "dm-work"
 version = "0.1.0"
 
 [[package]]

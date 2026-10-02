@@ -6,6 +6,10 @@ See [implementation status](IMPLEMENTATION_STATUS.md) for verified native
 frontend coverage, measured cache performance, and remaining integration work.
 See [iteration performance](PERFORMANCE.md) for cache validation and timings,
 and [parallel workers](PARALLEL.md) for bounded daemon concurrency.
+The implemented migration is described in [incremental core](INCREMENTAL_CORE.md)
+and [pipeline stages](INCREMENTAL_PIPELINE.md). These distinguish current APIs
+from remaining coarse operations; older timing reports describe their measured
+implementation, not the newly integrated graph and scheduler.
 
 See [persistent compiler architecture](ARCHITECTURE.md) for the proposed complete
 incremental query graph, reusable analysis APIs, shared disk caches, parallel
@@ -16,7 +20,13 @@ and persistence policies. [Correctness gates](CORRECTNESS.md) distinguish verifi
 fixture parity from pending real-project runtime and performance checks.
 
 Canonical output is the default: recorded semantic dependencies validate cached
-symbolic procedures, and linking uses a fixed source order. Every publication is
+prepared procedures, and materialization uses a fixed source order. Persistent
+Salsa graphs track procedure descriptors and actual positive/negative binding
+facts. Flat prepared sections reuse resolved control flow and relocate current
+table IDs; their current-source debug sidecars do not require a symbolic tree.
+Authored misses parse and lower on the same bounded persistent workers. Map
+initializers have a separate persistent graph using the same graph/store and
+work-engine implementations. Every publication is
 an immutable generation. Unchanged assets reuse the verified RSC by identity.
 Transactional redb metadata and batched procedure caches survive daemon restarts
 and share a Git-common cache across worktrees. `DM_COMPILER_CACHE_ROOT` overrides
@@ -44,8 +54,7 @@ patch API for exclusive ownership of an existing pair.
 `build-project` uses a persistent content store even without a daemon. For a
 long-lived process, `dm-compiled` accepts `BuildProject` requests through the
 `dm-compile build-project-daemon` command.
-The following patch commands are explicit legacy experiments, excluded from the
-canonical integrated build and test path. For an output pair owned exclusively
+Patch commands also use canonical assembly. For an output pair owned exclusively
 by the compiler, `build-project-patch`
 updates fixed-layout changes in place with an undo journal. It rejects layout
 changes; use `build-project` to publish a new immutable generation then.
@@ -89,7 +98,9 @@ output. Current game compilation, runtime parity and real structural-edit latenc
 remain active integration gates; unsupported source constructs are diagnosed.
 The daemon verifies source, map, and asset contents and resource search-path
 shadowing before reusing retained project inputs.
-Project builds hash source, map, and asset bytes before using a cached output. The
+Project builds require verified source, map, asset and search-path proofs before
+using cached output. Reliable unchanged-file proofs can avoid rereading bytes;
+missing or invalid proofs require the stronger fallback. The
 preprocessor separately caches leaf includes against their source and incoming
 macro state, so a changed include can reuse unaffected siblings. The leaf
 cache has bounded path, macro, and byte budgets; large macro environments
@@ -111,8 +122,9 @@ The one-shot `dm-compile check PROJECT.dme` diagnostic caps expanded source
 at 16 MiB before building a whole-project AST; set `DM_CHECK_MAX_SOURCE_BYTES`
 to an explicit byte limit when testing a larger parser input. This cap does
 not apply to project builds. Project builds have a separate 64 MiB default
-limit, configurable with `DM_BUILD_MAX_SOURCE_BYTES`. They parse procedure bodies
-individually. Daemon build-input snapshots have a separate aggregate 96 MiB
+limit, configurable with `DM_BUILD_MAX_SOURCE_BYTES`. Cache misses parse procedure
+bodies on bounded workers; prepared graph hits avoid body parsing. Daemon
+build-input snapshots have a separate aggregate 96 MiB
 budget that includes dependency tables and strong metadata proofs, so projects
 near the expanded-source limit can still retain their input snapshots.
 Both CLI and daemon additionally use a
@@ -126,8 +138,8 @@ memory ceiling also applies to that thread.
 oversized declarations explicitly. Saved expansions automatically invalidate
 when the preprocessor or lexer changes. Active DMF skins are tracked as assets,
 and mixed UTF-8/Windows-1252 source text is decoded before preprocessing.
-Project builds retain compact declarations and parse one procedure body at a
-time. The default declaration chunk budget is 1 MiB, configurable with
+Project builds retain compact declarations and prepare procedure bodies in a
+bounded job window. The default declaration chunk budget is 1 MiB, configurable with
 `DM_BUILD_MAX_PARSE_CHUNK_BYTES`; oversized declarations are reported.
 
 The whole-project audits work without producing a DMB or starting a server:
@@ -157,27 +169,40 @@ after the normal arguments to `check`, `check-project-daemon`, `build-project`,
 `-DCITESTING` to select the unit-test build. Defines participate in session
 identity, preprocessing, active map selection, and output cache keys.
 
-Project builds also persist symbolic procedure code before linking it to DMB
-table IDs. Editing one procedure reuses unchanged procedures on the next build,
-including a new CLI process or daemon restart. The portable keys cover the body,
-resolved names/types, and a fingerprint of the Rust compiler sources. Keys track
-the names used by each procedure, so adding unrelated declarations in another
-worktree preserves reuse. Member-type and inheritance changes invalidate affected
-lookups. These
-artifacts live in `<git-common-dir>/dm-compiled-cache/proc-lowering-v1/`, shared
-by worktrees; standalone projects use `.dm-cache/proc-lowering-v1/` beside the
-DME. Corrupt entries are rebuilt. The in-process procedure cache is capped at
-16 MiB. The daemon retains up to eight diagnostic sessions and bounded syntax
-summaries, while the disk artifacts remain available after eviction.
+Procedure graphs persist prepared envelopes, descriptors and observed semantic
+witnesses under the shared compiler cache. A body edit can reuse the frozen
+declaration skeleton and other valid procedure results, including after a process
+restart. A structural edit refreshes the skeleton and known semantic facts;
+procedures whose descriptors and facts remain equal can still reuse prepared
+sections. This is a conservative refresh, not yet a minimal declaration-delta
+graph. It is separate from explicit `legacy-history` builds, which alone depend
+on a previous linked checkpoint and its table-allocation history.
 
-Parsed procedures are persisted separately under
-`<cache-root>/proc-parse-v1/<compiler-fingerprint>/`. Their spans are stored
-relative to the procedure and relocated for the current source. Immutable
-packs let concurrent worktrees publish independently and reuse open readers
-without opening one file per procedure. Active packs have a combined 256 MiB
-budget, at most 32 segments and 100,000 indexed records; individual records
-are capped at 2 MiB. Checksums and structural validation reject damaged
-records and fall back to parsing. Parsed trees are consumed individually.
+The default cache root is `<git-common-dir>/dm-compiled-cache/`; standalone
+projects use `.dm-cache/` beside the DME. Worktree/configuration sessions keep
+their mutable graph state separate while sharing content-addressed disk records.
+Missing, corrupt or incompatible records recompute safely. The frontend pool
+retains discovery caches, outlines and canonical graphs together for up to six
+sessions under a default 512 MiB aggregate retained charge. Graph and lowering
+records use the coordinator/frontend cache root consistently. Successful check
+summaries are shared; diagnostic summaries are scoped to a revision. Each graph
+also has bounded retained-state charges documented in
+[incremental core](INCREMENTAL_CORE.md).
+
+Parsed procedures also use transactional store records, bounded namespace reads
+and batched writes. Their spans are relative to the procedure and relocated for
+the current source. Workers share one immutable parser startup snapshot but keep
+private readers and pending writes; graph hits do not initialize that snapshot.
+Old `proc-parse-v1` packs are read-only migration inputs, not the current writer.
+Individual parser records remain capped at 2 MiB, and checksum/structural failures
+fall back to parsing. Source tools and semantic misses do not yet share every
+typed body AST. Canonical assembly and publication still contain whole-image
+work even when semantic procedure results are reused.
+
+Map assignment helpers have a persistent graph within each canonical session.
+A separate 16 MiB/512-entry cache retains exact-content template/grid spans so
+procedure edits do not reparse unchanged maps. Grid keys use exact indexed
+lookups, with a deterministic longest match when key widths differ.
 
 The small server integration fixture can be built and executed in trusted mode:
 

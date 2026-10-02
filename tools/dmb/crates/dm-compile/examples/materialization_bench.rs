@@ -123,10 +123,14 @@ fn native(
 ) -> io::Result<f64> {
     fs::create_dir_all(logs)?;
     let mut command = Command::new(byond);
-    command.arg(project).current_dir(project.parent().unwrap());
+    let native_project = dm_host::legacy_tool_path(project);
+    let native_directory = dm_host::legacy_tool_path(project.parent().unwrap());
+    // DreamMaker stops parsing flags at the project argument.
+    command.current_dir(&native_directory);
     for (name, value) in defines {
         command.arg(format!("-D{name}={value}"));
     }
+    command.arg(&native_project);
     command.stdout(Stdio::from(fs::File::create(
         logs.join("native.stdout.log"),
     )?));
@@ -157,7 +161,21 @@ fn native(
         }
         std::thread::sleep(Duration::from_millis(10));
     }
-    // Some DreamMaker releases return success with compile errors; require artifacts.
+    // Some DreamMaker releases return success and even save a DMB with errors.
+    let log = fs::read(logs.join("native.stdout.log"))?;
+    let log = String::from_utf8_lossy(&log);
+    let clean_summary = log.lines().rev().find_map(|line| {
+        let (image, summary) = line.rsplit_once(" - ")?;
+        image
+            .ends_with(".dmb")
+            .then_some(summary.starts_with("0 errors,"))
+    });
+    if clean_summary != Some(true) {
+        return Err(err(format!(
+            "native compiler did not report zero errors; see {}",
+            logs.display()
+        )));
+    }
     if !project.with_extension("dmb").is_file() {
         return Err(err("native compiler produced no output pair"));
     }
@@ -325,7 +343,9 @@ fn run_project(
     repeat: bool,
 ) -> io::Result<Vec<Measurement>> {
     let owned = OwnedProject::new(original)?;
-    let mut frontend = OutlineSession::new(Some(out.join("frontend")));
+    let mut frontend = OutlineSession::new(Some(dm_compiler::lower_cache::default_cache_root(
+        &owned.manifest,
+    )));
     let mut results = vec![];
     for case in cases {
         let case = case.as_str();
@@ -361,6 +381,13 @@ fn run_project(
         if case == "cached-baseline" && result.symbolic_misses != 0 {
             eprintln!("cached-baseline retained {} misses; report reflects budget/history eviction or invalidated facts, not a zero-miss guarantee", result.symbolic_misses);
         }
+        // Preserve completed Rust phase measurements even if an optional native
+        // comparison later fails (for example because its asset mirror is absent).
+        let measurement_path = out.join(case).join("measurement.json");
+        fs::write(
+            &measurement_path,
+            serde_json::to_vec_pretty(&result).map_err(err)?,
+        )?;
         if let Some(byond) = byond {
             // Remove only our previous native outputs so failure cannot reuse stale files.
             for p in [
@@ -372,6 +399,10 @@ fn run_project(
                 }
             }
             result.native_s = Some(native(byond, &owned.manifest, defines, &out.join(case))?);
+            fs::write(
+                &measurement_path,
+                serde_json::to_vec_pretty(&result).map_err(err)?,
+            )?;
         }
         println!(
             "{}: total {:.6}s, materialization {:.6}s, symbolic {}/{} hits/misses, native {:?}",
@@ -393,6 +424,8 @@ fn run() -> io::Result<()> {
     let mut out = None;
     let mut byond = None;
     let mut builtins = None;
+    let mut cache_root = None;
+    let mut native_only = false;
     let mut defines = BTreeMap::new();
     let mut six = false;
     let mut repeat = true;
@@ -413,6 +446,8 @@ fn run() -> io::Result<()> {
         "--byond"=>byond=Some(PathBuf::from(args.next().ok_or_else(||err("missing native compiler"))?)),
         "--builtins"=>builtins=Some(PathBuf::from(args.next().ok_or_else(||err("missing schema"))?)),
         "--six-worktrees"=>six=true,
+        "--cache-root"=>cache_root=Some(PathBuf::from(args.next().ok_or_else(||err("missing cache root"))?)),
+        "--native-only"=>native_only=true,
         "--skip-repeat"=>repeat=false,
         "--cases"=>{cases=args.next().ok_or_else(||err("missing cases"))?.split(',').map(str::to_owned).collect(); if cases.is_empty() || cases.iter().any(|case| !["baseline","cached-baseline","add-proc","add-var","change-default"].contains(&case.as_str())) {return Err(err("unknown benchmark case"));}},
         _ if arg.starts_with("-D")=>{let d=arg.trim_start_matches("-D");let(n,v)=d.split_once('=').unwrap_or((d,"1"));defines.insert(n.to_owned(),v.to_owned());},
@@ -425,7 +460,10 @@ fn run() -> io::Result<()> {
     }
     fs::create_dir_all(&out)?;
     let out = out.canonicalize()?;
-    std::env::set_var("DM_COMPILER_CACHE_ROOT", out.join("shared-cache"));
+    std::env::set_var(
+        "DM_COMPILER_CACHE_ROOT",
+        cache_root.unwrap_or_else(|| out.join("shared-cache")),
+    );
     let bytes = if let Some(path) = builtins {
         fs::read(path)?
     } else {
@@ -453,6 +491,34 @@ fn run() -> io::Result<()> {
         return Err(err(
             "six-worktree mode requires exactly six --project arguments or default fixtures",
         ));
+    }
+    if native_only {
+        if six || projects.len() != 1 || cases.as_slice() != ["baseline"] {
+            return Err(err(
+                "--native-only requires one project and --cases baseline",
+            ));
+        }
+        let byond = byond
+            .as_deref()
+            .ok_or_else(|| err("--native-only requires --byond"))?;
+        let owned = OwnedProject::new(&projects[0])?;
+        fs::write(&owned.overlay, overlay_source("baseline"))?;
+        let target = out.join("native-only");
+        let seconds = native(byond, &owned.manifest, &defines, &target)?;
+        for extension in ["dmb", "rsc"] {
+            fs::copy(
+                owned.manifest.with_extension(extension),
+                target.join(format!("world.{extension}")),
+            )?;
+        }
+        let report = serde_json::json!({ "format_version": 1, "mode": "native-only-baseline",
+            "project": projects[0], "defines": defines, "seconds": seconds });
+        fs::write(
+            out.join("native.json"),
+            serde_json::to_vec_pretty(&report).map_err(err)?,
+        )?;
+        println!("native-only baseline: {seconds:.6}s");
+        return Ok(());
     }
     let mut measurements = vec![];
     // Two concurrent compiler jobs bound memory; six independent source roots share CAS.

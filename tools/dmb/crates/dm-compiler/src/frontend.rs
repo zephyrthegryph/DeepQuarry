@@ -246,6 +246,7 @@ struct CachedChunk {
 /// One bounded frontend session. Source order is reconstructed from the current
 /// snapshot; cache keys never contain worktree names or absolute source offsets.
 pub struct OutlineSession {
+    pub(crate) canonical: crate::bootstrap::canonical::CanonicalSession,
     db: crate::Database,
     cache_root: Option<PathBuf>,
     chunks: HashMap<String, CachedChunk>,
@@ -264,8 +265,34 @@ impl Default for OutlineSession {
 }
 
 impl OutlineSession {
+    pub fn set_project_configuration(&mut self, project: &Path, configuration: &str) {
+        self.canonical.bind_configuration(project, configuration, self.cache_root.as_deref());
+    }
+
+    pub(crate) fn cache_root(&self) -> Option<&Path> {
+        self.cache_root.as_deref()
+    }
+
+    /// Full retained state, including the canonical graph and prefix. Syntax's
+    /// local cache budget remains independent from the coordinator pool budget.
+    pub fn retained_bytes(&self) -> usize {
+        self.resident_bytes().saturating_add(self.canonical.resident_bytes())
+    }
+    pub fn release_source_frames(&mut self) {
+        self.db = crate::Database::default();
+        self.chunks.clear();
+        self.resident_bytes = 0;
+        self.last_source = None;
+        self.last_layout = Vec::new();
+        self.last_limit = 0;
+    }
+    pub fn release_encoded_snapshot(&mut self) {
+        self.canonical.graph.release_encoded_snapshot();
+        self.canonical.maps.release_encoded_snapshot();
+    }
     pub fn new(cache_root: Option<PathBuf>) -> Self {
         Self {
+            canonical: crate::bootstrap::canonical::CanonicalSession::default(),
             db: crate::Database::default(),
             cache_root,
             chunks: HashMap::new(),
@@ -306,6 +333,30 @@ impl OutlineSession {
             .map(|(ast, outline)| (ast.expect("snapshot requested"), outline))
     }
 
+    /// Exact raw procedure digests for the current compact snapshot. Spans keep
+    /// duplicate overrides distinct and follow rebased chunks after edits.
+    /// Incomplete or released lexical layouts leave callers their hash fallback.
+    pub(crate) fn procedure_digests(&self, source: &str) -> Option<HashMap<(usize, usize), String>> {
+        if self.last_source.as_deref() != Some(source) {
+            return None;
+        }
+        let mut digests = HashMap::new();
+        for (offset, chunk) in &self.last_layout {
+            for fragment in &chunk.fragments {
+                let start = offset.checked_add(fragment.descriptor.start)?;
+                let end = offset.checked_add(fragment.descriptor.end)?;
+                if source.get(start..end).is_none()
+                    || digests.insert((start, end), fragment.digest.clone()).is_some()
+                {
+                    // A malformed or ambiguous cached boundary must not select
+                    // another procedure's semantic candidate.
+                    return None;
+                }
+            }
+        }
+        Some(digests)
+    }
+
     /// Resource literals in exact source order, including nested interpolation.
     /// Reuse the same lexical declaration checkpoints as structural parsing.
     pub fn resource_literals(&mut self, source: &str) -> Result<Vec<String>, String> {
@@ -333,10 +384,9 @@ impl OutlineSession {
     ) -> Result<(Option<AstFile>, SourceOutline), String> {
         // Replacing the database releases old Salsa inputs as well as map entries.
         if self.resident_bytes() > self.cache_budget || self.chunks.len() > 8192 {
-            let root = self.cache_root.clone();
-            let budget = self.cache_budget;
-            *self = Self::new(root);
-            self.cache_budget = budget;
+            // Releasing lexical state must preserve the long-lived semantic
+            // graph and declaration prefix belonging to this worktree.
+            self.release_source_frames();
         }
         // Retained parsed chunks are owned by the content cache. Resetting this
         // query database releases old input text and query revisions, while its

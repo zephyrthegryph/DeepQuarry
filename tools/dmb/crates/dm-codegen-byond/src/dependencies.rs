@@ -25,6 +25,15 @@ pub enum BindingFact {
     SharedPresence,
 }
 
+impl BindingFact {
+    /// These resolutions depend only on the immutable declaration snapshot.
+    /// Unqualified field/global reads retain their invocation-local overlay.
+    pub fn is_shared(&self) -> bool {
+        !matches!(self, Self::Field(_) | Self::Global(_) | Self::GlobalProc(_)
+            | Self::FieldType(_) | Self::GlobalType(_))
+    }
+}
+
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub enum FactValue {
     Absent,
@@ -51,7 +60,10 @@ pub(crate) fn observe(fact: BindingFact, value: FactValue) {
     READS.with(|reads| {
         if let Some(frame) = reads.borrow_mut().last_mut() {
             if let Some(previous) = frame.insert(fact, value.clone()) {
-                assert_eq!(previous, value, "lowering observed a mutable semantic snapshot");
+                assert_eq!(
+                    previous, value,
+                    "lowering observed a mutable semantic snapshot"
+                );
             }
         }
     });
@@ -61,7 +73,9 @@ struct Scope(bool);
 impl Drop for Scope {
     fn drop(&mut self) {
         if self.0 {
-            READS.with(|reads| { reads.borrow_mut().pop(); });
+            READS.with(|reads| {
+                reads.borrow_mut().pop();
+            });
         }
     }
 }
@@ -74,7 +88,13 @@ pub fn capture_binding_reads<R>(operation: impl FnOnce() -> R) -> (R, Vec<Bindin
     let value = operation();
     let reads = READS.with(|reads| reads.borrow_mut().pop().expect("dependency frame"));
     scope.0 = false;
-    (value, reads.into_iter().map(|(fact, value)| BindingWitness { fact, value }).collect())
+    (
+        value,
+        reads
+            .into_iter()
+            .map(|(fact, value)| BindingWitness { fact, value })
+            .collect(),
+    )
 }
 
 #[cfg(test)]
@@ -83,9 +103,15 @@ mod tests {
     #[test]
     fn nested_and_panicked_recorders_do_not_leak() {
         let (_, outer) = capture_binding_reads(|| {
-            observe(BindingFact::Global("outer".into()), FactValue::Boolean(false));
+            observe(
+                BindingFact::Global("outer".into()),
+                FactValue::Boolean(false),
+            );
             let (_, inner) = capture_binding_reads(|| {
-                observe(BindingFact::Global("inner".into()), FactValue::Boolean(true));
+                observe(
+                    BindingFact::Global("inner".into()),
+                    FactValue::Boolean(true),
+                );
             });
             assert_eq!(inner.len(), 1);
             let _ = std::panic::catch_unwind(|| capture_binding_reads(|| panic!("cancel")));

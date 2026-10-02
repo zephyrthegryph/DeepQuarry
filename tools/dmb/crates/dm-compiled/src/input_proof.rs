@@ -28,10 +28,20 @@ impl InputProof {
         if exact_inputs() {
             return None;
         }
-        let files = paths
+        let paths: Vec<_> = paths
             .into_iter()
-            .map(|path| capture(&path).map(|value| (path, value)))
-            .collect::<Option<BTreeMap<_, _>>>()?;
+            .collect::<std::collections::BTreeSet<_>>()
+            .into_iter()
+            .collect();
+        let files = dm_work::map_ordered(
+            &paths,
+            dm_work::WorkLimits::configured(),
+            |_| 1024,
+            |path| capture(path).map(|value| (path.clone(), value)),
+        )
+        .ok()?
+        .into_iter()
+        .collect::<Option<BTreeMap<_, _>>>()?;
         Some(Self {
             files,
             journal: None,
@@ -52,10 +62,13 @@ impl InputProof {
             }
         }
         !self.files.is_empty()
-            && self
-                .files
-                .iter()
-                .all(|(path, expected)| capture(path).as_ref() == Some(expected))
+            && dm_work::map_ordered(
+                &self.files.iter().collect::<Vec<_>>(),
+                dm_work::WorkLimits::configured(),
+                |_| 1024,
+                |(path, expected)| capture(path).as_ref() == Some(*expected),
+            )
+            .is_ok_and(|results| results.into_iter().all(|current| current))
     }
 
     pub(super) fn resident_bytes(&self) -> usize {
@@ -153,11 +166,14 @@ impl InputProof {
                 return paths;
             }
         }
-        self.files
-            .iter()
-            .filter(|(path, stamp)| capture(path).as_ref() == Some(stamp))
-            .map(|(path, _)| path.clone())
-            .collect()
+        dm_work::map_ordered(
+            &self.files.iter().collect::<Vec<_>>(),
+            dm_work::WorkLimits::configured(),
+            |_| 1024,
+            |(path, stamp)| (capture(path).as_ref() == Some(*stamp)).then(|| (*path).clone()),
+        )
+        .map(|paths| paths.into_iter().flatten().collect())
+        .unwrap_or_default()
     }
     #[cfg(test)]
     pub(super) fn enable_journal(&mut self) {

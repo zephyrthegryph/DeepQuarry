@@ -7,8 +7,10 @@ fn main() {
     let lock_path = root.join("Cargo.lock");
     println!("cargo:rerun-if-changed={}", lock_path.display());
     let lock = fs::read_to_string(lock_path).expect("read Cargo lockfile");
-    let parse_lock =
-        fingerprints::lock_closure(&lock, &["dm-syntax", "dm-store", "serde", "serde_json", "sha2"]);
+    let parse_lock = fingerprints::lock_closure(
+        &lock,
+        &["dm-syntax", "dm-store", "serde", "serde_json", "sha2"],
+    );
     let lowering_lock = fingerprints::lock_closure(
         &lock,
         &[
@@ -17,6 +19,7 @@ fn main() {
             "dm-ir",
             "dm-semantics",
             "dm-store",
+            "dm-work",
             "salsa",
             "sha2",
             "serde_json",

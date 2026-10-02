@@ -14,6 +14,7 @@ use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::time::{Duration, Instant};
 
 const VERSION: &str = env!("DM_LOWERING_FINGERPRINT");
 const MAX_ENTRY_BYTES: usize = 4 * 1024 * 1024;
@@ -28,6 +29,94 @@ pub struct CacheStats {
     pub hits: usize,
     pub misses: usize,
     pub corrupt_entries: usize,
+    pub timing: CacheTiming,
+    pub query_timing: QueryTiming,
+    pub decoded_bytes: usize,
+    pub encoded_bytes: usize,
+}
+
+// Totals measure elapsed time inside operations, not a wall-time partition:
+// query/flush timings are nested and workers may overlap or be descheduled.
+macro_rules! duration_fields {
+    ($name:ident { $($field:ident),* $(,)? }) => {
+        #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+        pub struct $name { $(pub $field: Duration,)* }
+        impl $name {
+            fn add(&mut self, other: Self) { $(self.$field += other.$field;)* }
+            fn since(self, before: Self) -> Self {
+                Self { $($field: self.$field.saturating_sub(before.$field),)* }
+            }
+        }
+    }
+}
+duration_fields!(CacheTiming {
+    compile,
+    identity,
+    record_decode,
+    memo_decode,
+    witness,
+    query,
+    loose_read,
+    memo_encode,
+    record_encode,
+    retain,
+    flush,
+});
+duration_fields!(QueryTiming {
+    total,
+    memory_accounting,
+    preparation,
+    fact_replay,
+    candidate_clone,
+    candidate_witness,
+    fresh_codegen,
+    input_body_clone,
+    result_clone,
+});
+impl CacheStats {
+    pub(crate) fn merge(&mut self, other: Self) {
+        self.hits += other.hits;
+        self.misses += other.misses;
+        self.corrupt_entries += other.corrupt_entries;
+        self.timing.add(other.timing);
+        self.query_timing.add(other.query_timing);
+        self.decoded_bytes += other.decoded_bytes;
+        self.encoded_bytes += other.encoded_bytes;
+    }
+    pub(crate) fn since(self, before: Self) -> Self {
+        Self {
+            hits: self.hits.saturating_sub(before.hits),
+            misses: self.misses.saturating_sub(before.misses),
+            corrupt_entries: self.corrupt_entries.saturating_sub(before.corrupt_entries),
+            timing: self.timing.since(before.timing),
+            query_timing: self.query_timing.since(before.query_timing),
+            decoded_bytes: self.decoded_bytes.saturating_sub(before.decoded_bytes),
+            encoded_bytes: self.encoded_bytes.saturating_sub(before.encoded_bytes),
+        }
+    }
+    pub(crate) fn trace(self, label: &str) {
+        eprintln!("DM_BUILD_TRACE {label}: {} hits {} misses {} corrupt; decoded {} encoded {} bytes; elapsed cache {:?}; nested query {:?}",
+            self.hits, self.misses, self.corrupt_entries, self.decoded_bytes, self.encoded_bytes, self.timing, self.query_timing);
+    }
+}
+#[derive(Clone, Copy)]
+pub(crate) struct StageTimer(Option<Instant>);
+impl StageTimer {
+    pub(crate) fn start(enabled: bool) -> Self {
+        Self(enabled.then(Instant::now))
+    }
+    pub(crate) fn elapsed(self) -> Duration {
+        self.0.map_or(Duration::ZERO, |start| start.elapsed())
+    }
+    pub(crate) fn record(self, total: &mut Duration) {
+        *total += self.elapsed();
+    }
+}
+impl QueryTiming {
+    #[cfg(test)]
+    pub(crate) fn accumulate(&mut self, other: Self) {
+        self.add(other);
+    }
 }
 
 // Keep the serialized procedure bytes directly in the record. Wrapping a
@@ -70,10 +159,20 @@ fn decode_record<'a>(key: &str, bytes: &'a [u8]) -> Option<Cow<'a, [u8]>> {
         }
         Cow::Owned(decoded)
     } else {
-        if stored.len() as u64 != length { return None; }
+        if stored.len() as u64 != length {
+            return None;
+        }
         Cow::Borrowed(stored)
     };
     (&bytes[72..136] == digest(payload.as_ref()).as_bytes()).then_some(payload)
+}
+
+#[derive(Default)]
+struct SymbolicSnapshot {
+    records: BTreeMap<String, Vec<u8>>,
+    complete: bool,
+    corrupt: bool,
+    corruption_reported: std::sync::atomic::AtomicBool,
 }
 
 pub struct ProcLoweringCache {
@@ -81,12 +180,11 @@ pub struct ProcLoweringCache {
     memory: BTreeMap<String, Vec<u8>>,
     memory_bytes: usize,
     stats: CacheStats,
-    queries: crate::semantic_queries::SemanticQueries,
     store: Option<dm_store::Store>,
-    snapshot: std::sync::Arc<BTreeMap<String, Vec<u8>>>,
-    snapshot_complete: bool,
+    snapshot: std::sync::Arc<std::sync::OnceLock<SymbolicSnapshot>>,
     pending: BTreeMap<String, Vec<u8>>,
     pending_bytes: usize,
+    profiling: bool,
 }
 
 /// Put portable artifacts in Git's common directory so all worktrees share
@@ -142,12 +240,11 @@ impl ProcLoweringCache {
             memory: BTreeMap::new(),
             memory_bytes: 0,
             stats: CacheStats::default(),
-            queries: Default::default(),
             store: None,
             snapshot: Default::default(),
-            snapshot_complete: false,
             pending: BTreeMap::new(),
             pending_bytes: 0,
+            profiling: std::env::var_os("DM_BUILD_TRACE").is_some(),
         }
     }
 
@@ -157,29 +254,6 @@ impl ProcLoweringCache {
         cache.root = root;
         if let Some(root) = &cache.root {
             if let Ok(store) = dm_store::Store::open(root.join("symbolic.redb")) {
-                let snapshot_started = std::time::Instant::now();
-                match store.snapshot_namespace(&Self::namespace(), 128_000, 128 * 1024 * 1024, None)
-                {
-                    Ok(snapshot) => {
-                        if std::env::var_os("DM_BUILD_TRACE").is_some() {
-                            let bytes = snapshot
-                                .records
-                                .iter()
-                                .map(|(key, payload)| key.name.len() + payload.len())
-                                .sum::<usize>();
-                            eprintln!("DM_BUILD_TRACE symbolic store snapshot: {} entries, {} bytes, complete {}, {:.3}s",snapshot.records.len(),bytes,snapshot.complete,snapshot_started.elapsed().as_secs_f64());
-                        }
-                        cache.snapshot_complete = snapshot.complete;
-                        cache.snapshot = std::sync::Arc::new(
-                            snapshot
-                                .records
-                                .into_iter()
-                                .map(|(key, bytes)| (key.name, bytes))
-                                .collect(),
-                        );
-                    }
-                    Err(_) => cache.stats.corrupt_entries += 1,
-                }
                 cache.store = Some(store);
             }
         }
@@ -188,20 +262,60 @@ impl ProcLoweringCache {
     fn namespace() -> String {
         format!("symbolic-lowering-{VERSION}")
     }
-    /// Worker-local Salsa/overlays share one immutable stage snapshot, never a DB handle.
+    /// Worker-local portable overlays share one lazily loaded immutable stage
+    /// snapshot. Prepared graph hits do not touch the symbolic namespace.
     pub fn fork(&self) -> Self {
         let mut cache = Self::disabled();
         cache.root = self.root.clone();
         cache.store = self.store.clone();
         cache.snapshot = std::sync::Arc::clone(&self.snapshot);
-        cache.snapshot_complete = self.snapshot_complete;
+        cache.profiling = self.profiling;
         cache
     }
     pub fn snapshot_complete(&self) -> bool {
-        self.snapshot_complete
+        self.snapshot
+            .get_or_init(|| Self::load_snapshot(self.store.as_ref()))
+            .complete
+    }
+    fn load_snapshot(store: Option<&dm_store::Store>) -> SymbolicSnapshot {
+        let Some(store) = store else {
+            return SymbolicSnapshot::default();
+        };
+        let started = std::time::Instant::now();
+        match store.snapshot_namespace(&Self::namespace(), 128_000, 128 * 1024 * 1024, None) {
+            Ok(snapshot) => {
+                if std::env::var_os("DM_BUILD_TRACE").is_some() {
+                    let bytes = snapshot
+                        .records
+                        .iter()
+                        .map(|(key, payload)| key.name.len() + payload.len())
+                        .sum::<usize>();
+                    eprintln!("DM_BUILD_TRACE symbolic store snapshot: {} entries, {} bytes, complete {}, {:.3}s", snapshot.records.len(), bytes, snapshot.complete, started.elapsed().as_secs_f64());
+                }
+                SymbolicSnapshot {
+                    records: snapshot
+                        .records
+                        .into_iter()
+                        .map(|(key, bytes)| (key.name, bytes))
+                        .collect(),
+                    complete: snapshot.complete,
+                    ..Default::default()
+                }
+            }
+            Err(_) => SymbolicSnapshot {
+                corrupt: true,
+                ..Default::default()
+            },
+        }
     }
     /// Persist one bounded accumulated batch. No database is opened by `compile`.
     pub fn flush(&mut self) -> std::io::Result<()> {
+        let timer = StageTimer::start(self.profiling);
+        let result = self.flush_inner();
+        timer.record(&mut self.stats.timing.flush);
+        result
+    }
+    fn flush_inner(&mut self) -> std::io::Result<()> {
         if self.pending.is_empty() {
             return Ok(());
         }
@@ -250,9 +364,14 @@ impl ProcLoweringCache {
     }
 
     pub(crate) fn merge_stats(&mut self, stats: CacheStats) {
-        self.stats.hits += stats.hits;
-        self.stats.misses += stats.misses;
-        self.stats.corrupt_entries += stats.corrupt_entries;
+        self.stats.merge(stats);
+    }
+
+    pub(crate) fn profiling_enabled(&self) -> bool {
+        self.profiling
+    }
+    pub(crate) fn hits_count(&self) -> usize {
+        self.stats.hits
     }
 
     pub(crate) fn cache_root(&self) -> Option<&Path> {
@@ -264,70 +383,126 @@ impl ProcLoweringCache {
         body: &[Item],
         bindings: &LowerBindings,
     ) -> Result<SimpleProc, Vec<LowerError>> {
+        self.compile_memo(body, bindings).map(|memo| memo.procedure)
+    }
+
+    /// Keeps the actual positive and negative semantic reads for installation
+    /// into a long-lived project graph. Portable candidates are still validated
+    /// against the supplied immutable invocation frame before being returned.
+    pub fn compile_memo(
+        &mut self,
+        body: &[Item],
+        bindings: &LowerBindings,
+    ) -> Result<crate::ProcedureMemo, Vec<LowerError>> {
+        let timer = StageTimer::start(self.profiling);
+        let result = self.compile_inner(body, bindings);
+        timer.record(&mut self.stats.timing.compile);
+        result
+    }
+    fn compile_inner(
+        &mut self,
+        body: &[Item],
+        bindings: &LowerBindings,
+    ) -> Result<crate::ProcedureMemo, Vec<LowerError>> {
         if self.root.is_none() {
-            return compile_simple_proc_with_bindings(body, bindings);
+            self.stats.misses += 1;
+            return self.query(body, bindings);
         }
+        let timer = StageTimer::start(self.profiling);
         let key = identity_key(body, bindings);
+        timer.record(&mut self.stats.timing.identity);
         if let Some(payload) = self.memory.get(&key) {
-            if let Ok(memo) =
-                serde_json::from_slice::<crate::semantic_queries::SemanticMemo>(payload)
-            {
-                if memo.valid_for(bindings) {
-                    let memo = self.queries.compile(&key, body, bindings, Some(memo))?;
+            let timer = StageTimer::start(self.profiling);
+            let memo = serde_json::from_slice::<crate::semantic_queries::SemanticMemo>(payload);
+            self.stats.decoded_bytes += payload.len();
+            timer.record(&mut self.stats.timing.memo_decode);
+            if let Ok(memo) = memo {
+                if self.valid_memo(&memo, bindings) {
                     self.stats.hits += 1;
-                    return Ok(memo.procedure);
+                    return Ok(memo);
                 }
             }
         }
-        if let Some(record) = self.snapshot.get(&key) {
-            let cached = decode_record(&key, record).and_then(|payload| {
-                serde_json::from_slice::<crate::semantic_queries::SemanticMemo>(payload.as_ref()).ok()
+        let snapshot = std::sync::Arc::clone(&self.snapshot);
+        let snapshot = snapshot.get_or_init(|| Self::load_snapshot(self.store.as_ref()));
+        if snapshot.corrupt && !snapshot.corruption_reported.swap(true, Ordering::Relaxed) {
+            // One failed shared namespace load is one corruption observation,
+            // even when several workers request its candidate view together.
+            self.stats.corrupt_entries += 1;
+        }
+        if let Some(record) = snapshot.records.get(&key) {
+            let timer = StageTimer::start(self.profiling);
+            let payload = decode_record(&key, record);
+            timer.record(&mut self.stats.timing.record_decode);
+            let timer = StageTimer::start(self.profiling);
+            let cached = payload.and_then(|payload| {
+                self.stats.decoded_bytes += payload.len();
+                serde_json::from_slice::<crate::semantic_queries::SemanticMemo>(payload.as_ref())
+                    .ok()
             });
+            timer.record(&mut self.stats.timing.memo_decode);
             if let Some(memo) = cached {
-                if memo.valid_for(bindings) {
-                    let memo = self.queries.compile(&key, body, bindings, Some(memo))?;
+                if self.valid_memo(&memo, bindings) {
                     self.stats.hits += 1;
-                    return Ok(memo.procedure);
+                    return Ok(memo);
                 }
             } else {
                 self.stats.corrupt_entries += 1;
             }
         }
         let path = self.root.as_ref().unwrap().join(&key[..2]).join(&key);
-        if let Ok(file) = fs::File::open(&path) {
+        let timer = StageTimer::start(self.profiling);
+        let file = fs::File::open(&path);
+        if let Ok(file) = file {
             // Bound the read even for corrupt records. A separate metadata
             // request doubles filesystem operations across large projects.
             let mut bytes = Vec::new();
-            let cached = file
+            let read = file
                 .take((MAX_ENTRY_BYTES + RECORD_HEADER_BYTES + 1) as u64)
                 .read_to_end(&mut bytes)
                 .ok()
-                .filter(|_| bytes.len() <= MAX_ENTRY_BYTES + RECORD_HEADER_BYTES)
-                .and_then(|_| {
-                    let payload = decode_record(&key, &bytes)?;
-                    serde_json::from_slice::<crate::semantic_queries::SemanticMemo>(payload.as_ref())
-                        .ok()
-                        .map(|memo| (memo, payload.to_vec()))
-                });
+                .filter(|_| bytes.len() <= MAX_ENTRY_BYTES + RECORD_HEADER_BYTES);
+            timer.record(&mut self.stats.timing.loose_read);
+            let timer = StageTimer::start(self.profiling);
+            let payload = read.and_then(|_| decode_record(&key, &bytes));
+            timer.record(&mut self.stats.timing.record_decode);
+            let timer = StageTimer::start(self.profiling);
+            let cached = payload.and_then(|payload| {
+                self.stats.decoded_bytes += payload.len();
+                serde_json::from_slice::<crate::semantic_queries::SemanticMemo>(payload.as_ref())
+                    .ok()
+                    .map(|memo| (memo, payload.to_vec()))
+            });
+            timer.record(&mut self.stats.timing.memo_decode);
             if let Some((memo, payload)) = cached {
-                if memo.valid_for(bindings) {
-                    let memo = self.queries.compile(&key, body, bindings, Some(memo))?;
+                if self.valid_memo(&memo, bindings) {
                     if self.store.is_some() {
-                        self.buffer(key.clone(), encode_record(&key, &payload));
+                        let timer = StageTimer::start(self.profiling);
+                        let bytes = encode_record(&key, &payload);
+                        timer.record(&mut self.stats.timing.record_encode);
+                        self.buffer(key.clone(), bytes);
                     }
                     self.remember(key, payload);
                     self.stats.hits += 1;
-                    return Ok(memo.procedure);
+                    return Ok(memo);
                 }
             } else {
                 self.stats.corrupt_entries += 1;
             }
+        } else {
+            timer.record(&mut self.stats.timing.loose_read);
         }
         self.stats.misses += 1;
-        let memo = self.queries.compile(&key, body, bindings, None)?;
-        if let Ok(payload) = serde_json::to_vec(&memo) {
+        let memo = self.query(body, bindings)?;
+        let timer = StageTimer::start(self.profiling);
+        let payload = serde_json::to_vec(&memo);
+        timer.record(&mut self.stats.timing.memo_encode);
+        if let Ok(payload) = payload {
+            self.stats.encoded_bytes += payload.len();
             if payload.len() <= MAX_ENTRY_BYTES {
+                let timer = StageTimer::start(self.profiling);
                 let bytes = encode_record(&key, &payload);
+                timer.record(&mut self.stats.timing.record_encode);
                 if self.store.is_some() {
                     self.buffer(key.clone(), bytes);
                 } else {
@@ -336,10 +511,44 @@ impl ProcLoweringCache {
                 self.remember(key, payload);
             }
         }
-        Ok(memo.procedure)
+        Ok(memo)
+    }
+
+    fn valid_memo(
+        &mut self,
+        memo: &crate::semantic_queries::SemanticMemo,
+        bindings: &LowerBindings,
+    ) -> bool {
+        let timer = StageTimer::start(self.profiling);
+        let valid = memo.valid_for(bindings);
+        timer.record(&mut self.stats.timing.witness);
+        valid
+    }
+    /// Fresh portable production has no live dependency graph. The project
+    /// graph owns tracked inputs; this adapter returns only actual read facts.
+    fn query(
+        &mut self,
+        body: &[Item],
+        bindings: &LowerBindings,
+    ) -> Result<crate::semantic_queries::SemanticMemo, Vec<LowerError>> {
+        let timer = StageTimer::start(self.profiling);
+        let codegen = StageTimer::start(self.profiling);
+        let (result, dependencies) = dm_codegen_byond::capture_binding_reads(|| {
+            compile_simple_proc_with_bindings(body, bindings)
+        });
+        codegen.record(&mut self.stats.query_timing.fresh_codegen);
+        let result = result.map(|procedure| crate::ProcedureMemo {
+            procedure,
+            dependencies,
+        });
+        let elapsed = timer.elapsed();
+        self.stats.query_timing.total += elapsed;
+        self.stats.timing.query += elapsed;
+        result
     }
 
     fn remember(&mut self, key: String, payload: Vec<u8>) {
+        let timer = StageTimer::start(self.profiling);
         if payload.len() > MAX_MEMORY_BYTES {
             return;
         }
@@ -353,6 +562,7 @@ impl ProcLoweringCache {
         if let Some(old) = self.memory.insert(key, payload) {
             self.memory_bytes -= old.len();
         }
+        timer.record(&mut self.stats.timing.retain);
     }
 }
 
@@ -573,7 +783,8 @@ fn cache_key(body: &[Item], bindings: &LowerBindings) -> String {
         );
         hash.update([
             u8::from(
-                bindings.fields.contains(name) || shared.is_some_and(|s| s.fields.contains(name)),
+                bindings.binding_fact(&dm_codegen_byond::BindingFact::Field(name.to_owned()))
+                    == dm_codegen_byond::FactValue::Boolean(true),
             ),
             u8::from(
                 bindings.globals.contains(name) || shared.is_some_and(|s| s.globals.contains(name)),
@@ -583,13 +794,14 @@ fn cache_key(body: &[Item], bindings: &LowerBindings) -> String {
                     || shared.is_some_and(|s| s.global_procs.contains(name)),
             ),
         ]);
+        let field_type =
+            bindings.binding_fact(&dm_codegen_byond::BindingFact::FieldType(name.to_owned()));
         hash_optional_bytes(
             &mut hash,
-            bindings
-                .field_types
-                .get(name)
-                .or_else(|| shared?.field_types.get(name))
-                .map(|s| s.as_bytes()),
+            match &field_type {
+                dm_codegen_byond::FactValue::Text(value) => Some(value.as_bytes()),
+                _ => None,
+            },
         );
         hash_optional_bytes(
             &mut hash,
@@ -628,6 +840,8 @@ fn cache_key(body: &[Item], bindings: &LowerBindings) -> String {
         fields: _,
         globals: _,
         field_types: _,
+        owner: _,
+        hidden_owner_fields: _,
         global_types: _,
         global_procs: _,
         shared: _,
@@ -747,6 +961,66 @@ mod tests {
     use dm_syntax::{parse, Span};
 
     #[test]
+    fn profiling_preserves_output_and_disabled_clocks_remain_zero() {
+        let body = parse("/proc/value()\n    var/list/items = list(1, 2)\n    return items[1]\n")
+            .items
+            .remove(0)
+            .children;
+        let bindings = LowerBindings::default();
+        let mut plain = ProcLoweringCache::disabled();
+        plain.profiling = false;
+        let expected = plain.compile(&body, &bindings).unwrap();
+        assert_eq!(plain.stats().timing, CacheTiming::default());
+        assert_eq!(plain.stats().query_timing, QueryTiming::default());
+        let mut traced = ProcLoweringCache::disabled();
+        traced.profiling = true;
+        assert_eq!(traced.compile(&body, &bindings).unwrap(), expected);
+        assert!(traced.stats().timing.compile > Duration::ZERO);
+        assert!(traced.stats().query_timing.fresh_codegen > Duration::ZERO);
+    }
+
+    #[test]
+    fn portable_memo_hits_return_validated_reads_without_secondary_query_clones() {
+        let root = std::env::temp_dir().join(format!(
+            "dm-portable-only-{}-{}",
+            std::process::id(),
+            TEMP_SEQUENCE.fetch_add(1, Ordering::Relaxed)
+        ));
+        let body = parse("/proc/test()\n    return value\n")
+            .items
+            .remove(0)
+            .children;
+        let mut bindings = LowerBindings {
+            globals: ["value".into()].into(),
+            ..Default::default()
+        };
+        let mut cache = ProcLoweringCache::open(root.clone());
+        cache.profiling = true;
+        let first = cache.compile_memo(&body, &bindings).unwrap();
+        assert!(first.valid_for(&bindings));
+        let codegen = cache.stats().query_timing.fresh_codegen;
+        bindings.globals.insert("unrelated".into());
+        assert_eq!(cache.compile_memo(&body, &bindings).unwrap(), first);
+        assert_eq!(cache.stats().hits, 1);
+        assert_eq!(cache.stats().query_timing.fresh_codegen, codegen);
+        bindings.globals.remove("value");
+        bindings.fields.insert("value".into());
+        assert!(!first.valid_for(&bindings));
+        let changed = cache.compile_memo(&body, &bindings).unwrap();
+        assert!(changed.valid_for(&bindings));
+        assert_ne!(changed.procedure, first.procedure);
+        assert_eq!(cache.stats().misses, 2);
+        let timing = cache.stats().query_timing;
+        assert!(timing.fresh_codegen > codegen);
+        assert_eq!(timing.input_body_clone, Duration::ZERO);
+        assert_eq!(timing.result_clone, Duration::ZERO);
+        assert_eq!(timing.candidate_clone, Duration::ZERO);
+        assert_eq!(timing.fact_replay, Duration::ZERO);
+        drop(cache);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
     fn borrowed_names_match_owned_identifier_classification_and_order() {
         fn owned_names(text: &str) -> BTreeSet<String> {
             let mut names = BTreeSet::new();
@@ -793,7 +1067,10 @@ mod tests {
         let payload = b"{\"value\":7}";
         let bytes = encode_record(&key, payload);
         assert_eq!(bytes.len(), RECORD_HEADER_BYTES + payload.len());
-        assert_eq!(decode_record(&key, &bytes).as_deref(), Some(payload.as_slice()));
+        assert_eq!(
+            decode_record(&key, &bytes).as_deref(),
+            Some(payload.as_slice())
+        );
         assert!(decode_record(&digest(b"another procedure"), &bytes).is_none());
         assert!(decode_record(&key, &bytes[..bytes.len() - 1]).is_none());
         let mut corrupt = bytes.clone();
@@ -811,7 +1088,10 @@ mod tests {
         let bytes = encode_record(&key, &payload);
         assert_eq!(&bytes[..8], COMPRESSED_RECORD_MAGIC);
         assert!(bytes.len() * 8 < payload.len());
-        assert_eq!(decode_record(&key, &bytes).as_deref(), Some(payload.as_slice()));
+        assert_eq!(
+            decode_record(&key, &bytes).as_deref(),
+            Some(payload.as_slice())
+        );
         assert!(decode_record(&digest(b"other"), &bytes).is_none());
         let mut checksum = bytes.clone();
         checksum[72] ^= 1;
@@ -1288,9 +1568,12 @@ mod tests {
         assert!(seed.pending.is_empty());
         drop(seed);
         let parent = ProcLoweringCache::open(root.clone());
+        assert!(parent.snapshot.get().is_none());
         let mut worker = parent.fork();
         assert!(std::sync::Arc::ptr_eq(&parent.snapshot, &worker.snapshot));
+        assert!(worker.snapshot.get().is_none());
         assert!(worker.snapshot_complete());
+        assert!(parent.snapshot.get().is_some());
         worker.compile(&body, &bindings).unwrap();
         assert_eq!(worker.stats().hits, 1);
         assert!(worker.pending.is_empty());

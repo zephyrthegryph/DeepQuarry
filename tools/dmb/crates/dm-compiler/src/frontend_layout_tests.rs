@@ -1,5 +1,28 @@
 use super::{OutlineSession, OutlineStats};
 
+#[test]
+fn procedure_digests_follow_current_spans_without_path_aliases() {
+    let original = "/obj/example\n\tproc/value()\n\t\treturn 1\n/proc/repeated()\n\treturn 2\n/proc/repeated()\n\treturn 3\n";
+    let shifted = format!("// preceding edit\n{original}");
+    let edited = shifted.replace("return 2", "return 42");
+    let mut session = OutlineSession::default();
+    for source in [original, shifted.as_str(), edited.as_str()] {
+        let (ast, _) = session.compact_snapshot(source).unwrap();
+        let descriptors = crate::bootstrap::outline_descriptors(&ast).unwrap();
+        let digests = session.procedure_digests(source).unwrap();
+        assert_eq!(digests.len(), 3);
+        for descriptor in descriptors {
+            assert_eq!(
+                digests.get(&(descriptor.start, descriptor.end)),
+                Some(&crate::incremental::digest(source[descriptor.start..descriptor.end].as_bytes()))
+            );
+        }
+    }
+    assert!(session.procedure_digests(original).is_none());
+    session.release_source_frames();
+    assert!(session.procedure_digests(&edited).is_none());
+}
+
 fn fixture() -> String {
     let mut source = String::from(
         "/obj/container\n\tvar/stable = 1\n\tproc/nested_value()\n\t\treturn stable\n",

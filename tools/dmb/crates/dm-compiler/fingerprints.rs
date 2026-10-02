@@ -39,7 +39,13 @@ pub fn inputs(root: &Path) -> Inputs {
     package(root, "dm-store", &mut parse);
     parse.push(root.join("crates/dm-compiler/src/proc_parse_cache.rs"));
     let mut lowering = parse.clone();
-    for name in ["dm-codegen-byond", "dm-ir", "dm-semantics", "dm-store"] {
+    for name in [
+        "dm-codegen-byond",
+        "dm-ir",
+        "dm-semantics",
+        "dm-store",
+        "dm-work",
+    ] {
         package(root, name, &mut lowering);
     }
     let mut adapters = Vec::new();
@@ -84,6 +90,7 @@ pub fn inputs(root: &Path) -> Inputs {
         "dm-ir",
         "dm-resources",
         "dm-store",
+        "dm-work",
     ] {
         package(root, name, &mut emission);
     }
