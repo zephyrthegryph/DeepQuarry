@@ -222,22 +222,22 @@
 
 		M.adjust_bodytemperature(drink_temperature_step(M.bodytemperature, targ_temp, adj_temp) - M.bodytemperature) // B12
 
-/datum/reagent/ethanol/touch_obj(obj/O)
+/datum/reagent/ethanol/touch_obj(obj/O, amount, mob/user = null)
 	..()
 	if(istype(O, /obj/item/paper))
 		var/obj/item/paper/paperaffected = O
 		paperaffected.clearpaper()
-		to_chat(usr, "The solution dissolves the ink on the paper.")
+		to_chat(user, "The solution dissolves the ink on the paper.")
 		return
 	if(istype(O, /obj/item/book))
 		if(volume < 5)
 			return
 		if(istype(O, /obj/item/book/tome))
-			to_chat(usr, span_notice("The solution does nothing. Whatever this is, it isn't normal ink."))
+			to_chat(user, span_notice("The solution does nothing. Whatever this is, it isn't normal ink."))
 			return
 		var/obj/item/book/affectedbook = O
 		affectedbook.dat = null
-		to_chat(usr, span_notice("The solution dissolves the ink on the book."))
+		to_chat(user, span_notice("The solution dissolves the ink on the book."))
 	return
 
 /datum/reagent/ethanol/handle_addiction(mob/living/carbon/M, alien)

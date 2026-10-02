@@ -154,7 +154,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers, "volume", null)
 		balloon_alert(user, "[target] is full!")
 		return 1
 
-	var/trans = reagents.trans_to(target, amount_per_transfer_from_this)
+	var/trans = reagents.trans_to(target, amount_per_transfer_from_this, user = user)
 	balloon_alert(user, "transfered [trans] units to [target]")
 	return 1
 

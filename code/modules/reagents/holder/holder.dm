@@ -357,28 +357,28 @@
 //not directly injected into the contents. It first calls touch, then the appropriate trans_to_*() or splash_mob().
 //If for some reason touch effects are bypassed (e.g. injecting stuff directly into a reagent container or person),
 //call the appropriate trans_to_*() proc.
-/datum/reagents/proc/trans_to(atom/target, amount = 1, multiplier = 1, copy = 0, force_open_container = FALSE)
-	touch(target, amount * multiplier) //First, handle mere touch effects
+/datum/reagents/proc/trans_to(atom/target, amount = 1, multiplier = 1, copy = 0, force_open_container = FALSE, mob/user = null)
+	touch(target, amount * multiplier, user) //First, handle mere touch effects
 
 	if(ismob(target))
 		return splash_mob(target, amount * multiplier, copy) //Touch effects handled by splash_mob
 	if(isturf(target))
 		return trans_to_turf(target, amount, multiplier, copy)
 	if(isobj(target) && (target.is_open_container() || force_open_container) && !isbelly(target.loc))
-		return trans_to_obj(target, amount, multiplier, copy)
+		return trans_to_obj(target, amount, multiplier, copy, user)
 	return 0
 
 //Splashing reagents is messier than trans_to, the target's loc gets some of the reagents as well.
-/datum/reagents/proc/splash(atom/target, amount = 1, multiplier = 1, copy = 0, min_spill=0, max_spill=60)
+/datum/reagents/proc/splash(atom/target, amount = 1, multiplier = 1, copy = 0, min_spill=0, max_spill=60, mob/user = null)
 	var/spill = 0
 	if(!isturf(target) && target.loc)
 		spill = amount*(rand(min_spill, max_spill)/100)
 		amount -= spill
 	if(spill)
-		splash(target.loc, spill, multiplier, copy, min_spill, max_spill)
+		splash(target.loc, spill, multiplier, copy, min_spill, max_spill, user)
 
-	if(!trans_to(target, amount, multiplier, copy))
-		touch(target, amount)
+	if(!trans_to(target, amount, multiplier, copy, user = user))
+		touch(target, amount, user)
 
 /datum/reagents/proc/trans_type_to(target, rtype, amount = 1)
 	if (!target)
@@ -428,13 +428,13 @@
 // This does not handle transferring reagents to things.
 // For example, splashing someone with water will get them wet and extinguish them if they are on fire,
 // even if they are wearing an impermeable suit that prevents the reagents from contacting the skin.
-/datum/reagents/proc/touch(atom/target, amount)
+/datum/reagents/proc/touch(atom/target, amount, mob/user = null)
 	if(ismob(target))
 		touch_mob(target, amount)
 	if(isturf(target))
 		touch_turf(target, amount)
 	if(isobj(target))
-		touch_obj(target, amount)
+		touch_obj(target, amount, user)
 	return
 
 /datum/reagents/proc/touch_mob(mob/target)
@@ -457,12 +457,12 @@
 
 	update_total()
 
-/datum/reagents/proc/touch_obj(obj/target, amount)
+/datum/reagents/proc/touch_obj(obj/target, amount, mob/user = null)
 	if(!target || !istype(target))
 		return
 
 	for(var/datum/reagent/current in reagent_list)
-		current.touch_obj(target, amount)
+		current.touch_obj(target, amount, user)
 
 	update_total()
 
@@ -513,14 +513,14 @@
 	R.touch_turf(target, amount)
 	return
 
-/datum/reagents/proc/trans_to_obj(obj/target, amount = 1, multiplier = 1, copy = 0) // Objects may or may not; if they do, it's probably a beaker or something and we need to transfer properly; otherwise, just touch.
+/datum/reagents/proc/trans_to_obj(obj/target, amount = 1, multiplier = 1, copy = 0, mob/user = null) // Objects may or may not; if they do, it's probably a beaker or something and we need to transfer properly; otherwise, just touch.
 	if(!target)
 		return
 
 	if(!target.reagents)
 		var/datum/reagents/R = new /datum/reagents(amount * multiplier)
 		. = trans_to_holder(R, amount, multiplier, copy)
-		R.touch_obj(target, amount)
+		R.touch_obj(target, amount, user)
 		return
 
 	return trans_to_holder(target.reagents, amount, multiplier, copy)

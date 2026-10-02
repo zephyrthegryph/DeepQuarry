@@ -173,7 +173,7 @@
 /datum/reagent/proc/touch_mob(mob/M, amount)
 	return
 
-/datum/reagent/proc/touch_obj(obj/O, amount) // Acid melting, cleaner cleaning, etc
+/datum/reagent/proc/touch_obj(obj/O, amount, mob/user = null) // Acid melting, cleaner cleaning, etc
 	OM_EMIT(O, /datum/om/event/reagent_expose_obj, src, amount)
 	return
 
