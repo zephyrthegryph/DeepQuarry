@@ -17,7 +17,7 @@ struct Cached<T> {page:Arc<[T]>,charge:usize,encoded_bytes:usize,tick:u64}
 pub struct TypedPages<T> {
     store:dm_store::Store,schema:String,budget:usize,bytes:usize,clock:u64,
     cache:BTreeMap<String,Cached<T>>,lru:BTreeSet<(u64,String)>,
-    row_charge:fn(&T)->usize,
+    row_charge:fn(&T)->usize,pending:BTreeMap<String,Vec<u8>>,pending_bytes:usize,
 }
 fn invalid(message:&'static str)->io::Error {io::Error::new(io::ErrorKind::InvalidData,message)}
 fn valid_digest(digest:&str)->bool {digest.len()==64 && digest.bytes().all(|byte|byte.is_ascii_hexdigit())}
@@ -25,10 +25,10 @@ impl<T:Serialize+DeserializeOwned> TypedPages<T> {
     pub fn open(root:&Path,schema:&str,budget:usize,row_charge:fn(&T)->usize)->io::Result<Self> {
         if schema.is_empty() || schema.len()>256 {return Err(invalid("invalid typed page schema"));}
         Ok(Self {store:dm_store::Store::open(root.join("typed-output-pages.redb"))?,schema:schema.to_owned(),
-            budget,bytes:0,clock:0,cache:BTreeMap::new(),lru:BTreeSet::new(),row_charge})
+            budget,bytes:0,clock:0,cache:BTreeMap::new(),lru:BTreeSet::new(),row_charge,pending:BTreeMap::new(),pending_bytes:0})
     }
     fn namespace(&self)->String {format!("typed-page-v1-{}",format!("{:x}",Sha256::digest(self.schema.as_bytes())))}
-    pub fn resident_bytes(&self)->usize {self.bytes}
+    pub fn resident_bytes(&self)->usize {self.bytes+self.pending_bytes+self.pending.len()*128}
     pub fn clear_decoded(&mut self) {self.cache.clear();self.lru.clear();self.bytes=0;}
     fn encode_page(&self,rows:&[T])->io::Result<(PageHandle,Vec<u8>)> {
         if rows.is_empty() || rows.len()>MAX_ROWS {return Err(invalid("typed page row bound exceeded"));}
@@ -42,6 +42,18 @@ impl<T:Serialize+DeserializeOwned> TypedPages<T> {
     }
     /// One bounded transaction per caller-selected page window, never one
     /// transaction per row. Encoding and hashing occur before DB ownership.
+    pub fn stage_page(&mut self,rows:&[T])->io::Result<PageHandle> {
+        let (handle,bytes)=self.encode_page(rows)?;
+        if !self.pending.contains_key(&handle.digest) {
+            if self.pending_bytes.saturating_add(bytes.len())>8*1024*1024||self.pending.len()>=1024 {self.flush()?;}
+            self.pending_bytes+=bytes.len();self.pending.insert(handle.digest.clone(),bytes);
+        }Ok(handle)
+    }
+    pub fn flush(&mut self)->io::Result<()> {
+        if self.pending.is_empty() {return Ok(());}
+        let namespace=self.namespace();let rows=self.pending.iter().map(|(digest,bytes)|(dm_store::Key::new(&namespace,digest),bytes.clone())).collect();
+        self.store.put_many(rows,None)?;self.pending.clear();self.pending_bytes=0;Ok(())
+    }
     pub fn write_pages(&self,pages:&[&[T]])->io::Result<Vec<PageHandle>> {
         if pages.len()>128 {return Err(invalid("typed write window exceeds page bound"));}
         let mut handles=Vec::with_capacity(pages.len());let mut records=Vec::with_capacity(pages.len());
@@ -69,8 +81,8 @@ impl<T:Serialize+DeserializeOwned> TypedPages<T> {
             self.lru.insert((entry.tick,handle.digest.clone()));return Ok(Arc::clone(&entry.page));
         }
         let key=dm_store::Key::new(self.namespace(),&handle.digest);
-        let batch=self.store.read_many_bounded(&[key],MAX_ENCODED,MAX_ENCODED,None)?;
-        let bytes=batch.values.into_iter().next().flatten().ok_or_else(||invalid("missing typed page"))?;
+        let bytes=if let Some(bytes)=self.pending.get(&handle.digest) {bytes.clone()}else {
+            self.store.read_many_bounded(&[key],MAX_ENCODED,MAX_ENCODED,None)?.values.into_iter().next().flatten().ok_or_else(||invalid("missing typed page"))?};
         if bytes.len()!=handle.encoded_bytes || format!("{:x}",Sha256::digest(&bytes))!=handle.digest {
             return Err(invalid("typed page content mismatch"));
         }

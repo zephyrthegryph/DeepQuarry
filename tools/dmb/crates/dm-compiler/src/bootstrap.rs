@@ -225,7 +225,7 @@ fn collect_owner_fields(
             bindings.fields.extend(path.iter().cloned());
         } else if let Some(declarations) = dmb.class_variable_declarations(class_id as usize).map_err(|error|error.to_string())? {
             for (id, _) in declarations {
-                if let Some(name) = dmb.string(dmb.variables().get(id as usize).ok_or_else(||format!("owner variable out of range: {id}"))?.name) {
+                if let Some(name) = dmb.string(dmb.variable(id as usize).map_err(|error|format!("owner variable {id}: {error}"))?.name) {
                     bindings
                         .fields
                         .insert(String::from_utf8_lossy(name).into_owned());
@@ -1775,12 +1775,11 @@ fn bind_builtin_global_vars<I:AssemblyImage>(
         id
     } else {
         let name = strings.intern(dmb, "vars");
-        let id = u32::try_from(dmb.variables().len()).map_err(|_| "variable table exceeds u32")?;
-        dmb.variables_mut().push(Variable {
+        let id = dmb.append_variable(Variable {
             kind: 82,
             value: 0,
             name,
-        });
+        }).map_err(|error|error.to_string())?;
         strings.5 = Some(id);
         id
     };
@@ -1907,11 +1906,14 @@ fn replay_procedure_fragment<I:AssemblyImage>(
     // Exact allocation and assignment projections authorize reuse of already
     // linked typed rows. Ordered interning above proves current string IDs;
     // debug, resources and all external dense operands remain explicit edges.
+    let authored_debug_reads=[crate::source_debug::authored_debug_identity(source_debug,
+        pending.header_span().start,body_base,fragment.debug.iter().map(|mark|mark.relative),
+        fragment.unresolved_debug.iter().copied())];
     let linked_reusable=fragment.linked.as_ref().is_some_and(|linked| {
         let Some(start)=linked_start.as_ref() else {return false;};
         linked.matches_optional(&procedure_fragments::WitnessObservation {
             semantic_identity,recipe_identity:&linked.recipe_identity,start:start.clone(),
-            read_identities:&[],scalar_reads:&[],unresolved_debug:&fragment.unresolved_debug,
+            read_identities:&authored_debug_reads,scalar_reads:&[],unresolved_debug:&fragment.unresolved_debug,
         },fragment.relocations.iter().zip(&scratch.assignments).enumerate().map(|(index,(relocation,current))| {
             if relocation.symbol.table==Table::String {
                 let expected=linked.symbol_ids[index];
@@ -1923,7 +1925,7 @@ fn replay_procedure_fragment<I:AssemblyImage>(
     if let (Some(linked),Some(handle),Some(start))=(&fragment.linked,&fragment.wire_code,&linked_start) {
         if linked.matches_observation(&procedure_fragments::WitnessObservation {
             semantic_identity,recipe_identity:&linked.recipe_identity,start:start.clone(),
-            read_identities:&[],scalar_reads:&[],unresolved_debug:&fragment.unresolved_debug,
+            read_identities:&authored_debug_reads,scalar_reads:&[],unresolved_debug:&fragment.unresolved_debug,
         }) {
             let mut sites=Vec::with_capacity(fragment.relocations.len()+fragment.debug.len()*2);
             for (index,(relocation,current)) in fragment.relocations.iter().zip(&scratch.assignments).enumerate() {
@@ -1968,7 +1970,7 @@ fn replay_procedure_fragment<I:AssemblyImage>(
             if handle.object_width()!=width {return Ok(None);}
         } else if fragment.code_word_count.is_some_and(|count|count as usize!=fragment.words.len()) {return Ok(None);}
         for variable in &fragment.variables {
-            let mut variable=variable.clone();variable.name=string_id(variable.name)?;dmb.variables_mut().push(variable);
+            let mut variable=variable.clone();variable.name=string_id(variable.name)?;dmb.append_variable(variable).map_err(|error|error.to_string())?;
         }
         let (code_id,words)=if let Some(handle)=selected_handle {
             (dmb.append_code_handle(handle.clone()).map_err(|error|error.to_string())?,None)
@@ -1980,10 +1982,10 @@ fn replay_procedure_fragment<I:AssemblyImage>(
         if expected_lists!=[code_id,locals_id,args_id] {
             return Err("linked output rows disagree with allocation witness".into());
         }
-        dmb.reserve_proc_sentinel();
-        let proc_index=dmb.procs().len();
+        dmb.reserve_proc_sentinel().map_err(|error|error.to_string())?;
+        let proc_index=dmb.proc_count();
         let mut record=fragment.record.clone();record.code_locals_args=expected_lists;
-        for id in &mut record.strings {*id=string_id(*id)?;}dmb.procs_mut().push(record);
+        for id in &mut record.strings {*id=string_id(*id)?;}dmb.append_proc(record).map_err(|error|error.to_string())?;
         attach_emitted_proc(dmb,pending.owner,&pending.owner_path,pending.verb,proc_index)?;
         return Ok(Some((proc_index,words,wire_projection.as_ref().is_some_and(|(_,relocated)|*relocated),true)));
     }
@@ -2012,10 +2014,10 @@ fn replay_procedure_fragment<I:AssemblyImage>(
             output[mark.file_offset as usize] = file; output[mark.line_offset as usize] = line;
         }
     }
-    let variable_base = dmb.variables().len() as u32;
+    let variable_base = u32::try_from(dmb.variable_count()).map_err(|_|"variable table exceeds u32")?;
     for variable in &fragment.variables {
         let mut variable = variable.clone(); variable.name = string_id(variable.name)?;
-        dmb.variables_mut().push(variable);
+        dmb.append_variable(variable).map_err(|error|error.to_string())?;
     }
     let variable_id = |site:procedure_fragments::SiteKind,old: u32| -> Result<u32, String> {
         if let Some(layout)=&fragment.allocated_rows {
@@ -2051,8 +2053,8 @@ fn replay_procedure_fragment<I:AssemblyImage>(
     let mut record = fragment.record.clone();
     for id in &mut record.strings { *id = string_id(*id)?; }
     record.code_locals_args = [code_id, locals_id, args_id];
-    dmb.reserve_proc_sentinel();
-    let proc_index = dmb.procs().len(); dmb.procs_mut().push(record);
+    dmb.reserve_proc_sentinel().map_err(|error|error.to_string())?;
+    let proc_index = dmb.proc_count(); dmb.append_proc(record).map_err(|error|error.to_string())?;
     attach_emitted_proc(dmb, pending.owner, &pending.owner_path, pending.verb, proc_index)?;
     Ok(Some((proc_index, Some(words), relocated,false)))
 }
@@ -4696,7 +4698,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                     if prepared_reused { session.emission_stats.authored_prepared_reused += 1; }
                     parent_section_seconds += section_started.elapsed().as_secs_f64();
                     let link_started = std::time::Instant::now();
-                    let output_variable_base = dmb.variables().len();
+                    let output_variable_base = dmb.variable_count();
                     let output_allocation_start=dmb.allocation_counts()
                         .ok_or("output allocation count exceeds u32")?;
                     let mut output_helpers = Vec::new();
@@ -4807,7 +4809,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                         .local_names
                         .iter()
                         .map(|name| append_null_variable(&mut dmb, &mut strings, name))
-                        .collect();
+                        .collect::<Result<Vec<_>,_>>()?;
                     let locals_id = dmb.append_list(local_ids.into()).map_err(|error|error.to_string())?;
                     let mut arg_words = Vec::new();
                     let mut arguments = simple
@@ -4913,7 +4915,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                                 arg.value_source = ((reference_index as u32) << 8) | 0x40;
                             }
                             let variable_id =
-                                append_null_variable(&mut dmb, &mut strings, &arg.name);
+                                append_null_variable(&mut dmb, &mut strings, &arg.name)?;
                             arg_words.extend([
                                 arg.type_flags,
                                 arg.value_source,
@@ -4923,9 +4925,9 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                         }
                     }
                     let args_id = dmb.append_list(arg_words.into()).map_err(|error|error.to_string())?;
-                    dmb.reserve_proc_sentinel();
-                    let proc_index = dmb.procs().len();
-                    dmb.procs_mut().push(Proc {
+                    dmb.reserve_proc_sentinel().map_err(|error|error.to_string())?;
+                    let proc_index = dmb.proc_count();
+                    dmb.append_proc(Proc {
                         strings: [path_id, display_id, description_id, category_id],
                         source_parameter: metadata.source_parameter,
                         source_kind: metadata.source_kind,
@@ -4938,7 +4940,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                             || metadata.invisibility.is_some())
                         .then_some((metadata.flags | 0x80, metadata.invisibility.unwrap_or(255))),
                         code_locals_args: [code_id, locals_id, args_id],
-                    });
+                    }).map_err(|error|error.to_string())?;
                     parent_record_seconds += records_started.elapsed().as_secs_f64();
                     let fragment_started = std::time::Instant::now();
                     if reusable {
@@ -4951,7 +4953,11 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                                 let linked=output_helpers.is_empty().then(||procedure_fragments::ObjectWitness {
                                     semantic_identity:candidate.clone(),recipe_identity:String::new(),start:output_allocation_start,
                                     allocation_mask:procedure_fragments::AllocationMask::NONE,
-                                    read_identities:Vec::new(),scalar_reads:Vec::new(),
+                                    read_identities:vec![crate::source_debug::authored_debug_identity(source_debug,
+                                        pending.header_span().start,body_base,debug.iter().map(|mark|mark.relative),
+                                        simple.statement_origins.iter().filter(|mark|source_debug.is_some()
+                                            && source_debug.and_then(|source|body_base.checked_add(mark.start).and_then(|offset|source.resolve(offset))).is_none())
+                                            .map(|mark|mark.start))],scalar_reads:Vec::new(),
                                     unresolved_debug:if source_debug.is_some() {simple.statement_origins.iter()
                                         .filter(|mark|source_debug.and_then(|source|source.resolve(body_base+mark.start)).is_none())
                                         .map(|mark|mark.start).collect()} else {Vec::new()},
@@ -4964,7 +4970,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                                     }).collect(),
                                     debug_ids:debug.iter().map(|mark|(linked_words[mark.file_offset as usize],linked_words[mark.line_offset as usize])).collect(),
                                 });
-                                let variable_count=dmb.variables().len().saturating_sub(output_variable_base);
+                                let variable_count=dmb.variable_count().saturating_sub(output_variable_base);
                                 let allocated_rows=procedure_fragments::ProcedureRowLayout::new(u32::try_from(variable_count)
                                     .map_err(|_|"procedure variable allocation count exceeds u32")?);
                                 let local_offsets=dmb.list_words(locals_id).map_err(|error|error.to_string())?.iter().map(|id|id.checked_sub(output_variable_base as u32)
@@ -4972,7 +4978,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                                 let mut argument_offsets=dmb.list_words(args_id).map_err(|error|error.to_string())?.to_vec();
                                 for argument in argument_offsets.chunks_exact_mut(4) {argument[2]=argument[2].checked_sub(output_variable_base as u32)
                                     .ok_or("procedure argument allocation reference precedes object")?;}
-                                let mut relative_record=dmb.procs()[proc_index].clone();relative_record.code_locals_args=[0,1,2];
+                                let mut relative_record=dmb.proc(proc_index).map_err(|error|error.to_string())?;relative_record.code_locals_args=[0,1,2];
                                 let fragment = procedure_fragments::OutputFragment {
                                     body_base_relative: body_base.saturating_sub(pending.span().start),
                                     debug_enabled: source_debug.is_some(),
@@ -4980,7 +4986,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                                         .filter(|mark| source_debug.and_then(|source| source.resolve(body_base + mark.start)).is_none())
                                         .map(|mark| mark.start).collect() } else { Vec::new() },
                                     strings: recipes,
-                                    variables: dmb.variables()[output_variable_base..].to_vec(),
+                                    variables: collect_variable_range(&dmb,output_variable_base,dmb.variable_count())?,
                                     old_variable_base: output_variable_base as u32,
                                     locals: local_offsets.into(), arguments: argument_offsets.into(),
                                     record: relative_record, relocations, debug,
@@ -5132,24 +5138,27 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
         let code_id=if let Some(handle)=helper_wire_code {dmb.append_code_handle(handle)}
             else {dmb.append_list(words.into())}.map_err(|error|error.to_string())?;
         let empty_id = dmb.append_list(Vec::new().into()).map_err(|error|error.to_string())?;
-        dmb.reserve_proc_sentinel();
-        let proc_id = dmb.procs().len() as u32;
-        dmb.procs_mut().push(Proc {
+        dmb.reserve_proc_sentinel().map_err(|error|error.to_string())?;
+        let proc_id = dmb.append_proc(Proc {
             strings: [0xffff; 4],
             source_parameter: 255,
             source_kind: 0,
             flags: 4,
             extended_flags: None,
             code_locals_args: [code_id, empty_id, empty_id],
-        });
+        }).map_err(|error|error.to_string())?;
         dmb.proc_references_mut()[reference_index] = proc_id;
     }
     trace("argument helper linking complete; procedure constants start");
-    let procedure_ids: HashMap<&[u8], u32> = dmb.procs()
-        .iter()
-        .enumerate()
-        .filter_map(|(id, proc)| dmb.string(proc.strings[0]).map(|path| (path, id as u32)))
-        .collect();
+    let mut procedure_ids = HashMap::<&[u8],u32>::new();
+    if !strings.2.is_empty() {
+        for start in (0..dmb.proc_count()).step_by(1024) {
+            let rows=dmb.proc_range(start,(start+1024).min(dmb.proc_count())).map_err(|error|error.to_string())?;
+            for (offset,proc) in rows.iter().enumerate() {
+                if let Some(path)=dmb.string(proc.strings[0]) {procedure_ids.insert(path,(start+offset) as u32);}
+            }
+        }
+    }
     let mut resolved_procedure_values = HashMap::with_capacity(strings.2.len());
     for (path, placeholder) in &strings.2 {
         let proc_id = *procedure_ids
@@ -5158,10 +5167,18 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
         resolved_procedure_values.insert(*placeholder, proc_id);
     }
     drop(procedure_ids);
-    for variable in dmb.variables_mut() {
-        if variable.kind == 38 {
-            if let Some(id) = resolved_procedure_values.get(&variable.value) {
-                variable.value = *id;
+    if !resolved_procedure_values.is_empty() {
+        for start in (0..dmb.variable_count()).step_by(1024) {
+            let rows=dmb.variable_range(start,(start+1024).min(dmb.variable_count())).map_err(|error|error.to_string())?;
+            for (offset,mut variable) in rows.into_iter().enumerate() {
+                if variable.kind==38 {
+                    if let Some(id)=resolved_procedure_values.get(&variable.value) {
+                        if variable.value!=*id {
+                            variable.value=*id;
+                            dmb.replace_variable(start+offset,variable).map_err(|error|error.to_string())?;
+                        }
+                    }
+                }
             }
         }
     }
@@ -5245,11 +5262,11 @@ fn reorder_member_override_lists<I:AssemblyImage>(dmb: &mut I) -> Result<(),Stri
             let paths: Vec<_> = members
                 .iter()
                 .map(|id| {
-                    dmb.string(dmb.procs()[*id as usize].strings[0])
+                    Ok(dmb.string(dmb.proc(*id as usize).map_err(|error|error.to_string())?.strings[0])
                         .map(|path| String::from_utf8_lossy(path).into_owned())
-                        .unwrap_or_default()
+                        .unwrap_or_default())
                 })
-                .collect();
+                .collect::<Result<Vec<_>,String>>()?;
             // DreamDaemon selects the first matching member; reopened definitions
             // therefore precede their earlier same-path implementations.
             let mut grouped = HashMap::<String, Vec<u32>>::new();
@@ -6851,7 +6868,7 @@ fn fold_constant_scoped<I:AssemblyImage>(
                     .unwrap_or_default()
                     .iter()
                     .find(|value| {
-                        dmb.string(dmb.variables()[value.variable_id as usize].name)
+                        dmb.variable(value.variable_id as usize).ok().and_then(|row|dmb.string(row.name))
                             == Some(field.as_bytes())
                     })
                 {
@@ -6870,7 +6887,7 @@ fn fold_constant_scoped<I:AssemblyImage>(
                     .unwrap_or_default()
                     .iter()
                     .find(|(id, _)| {
-                        dmb.string(dmb.variables()[*id as usize].name) == Some(field.as_bytes())
+                        dmb.variable(*id as usize).ok().and_then(|row|dmb.string(row.name)) == Some(field.as_bytes())
                     })
                 {
                     return constant_from_variable(dmb, *variable, strings);
@@ -6887,7 +6904,7 @@ fn fold_constant_scoped<I:AssemblyImage>(
         while let Some(id) = class {
             if let Some(declarations) = dmb.class_variable_declarations(id as usize).ok().flatten() {
                 if let Some((variable, flags)) = declarations.iter().find(|(v, _)| {
-                    dmb.string(dmb.variables()[*v as usize].name) == Some(name.as_bytes())
+                    dmb.variable(*v as usize).ok().and_then(|row|dmb.string(row.name)) == Some(name.as_bytes())
                 }) {
                     return if flags & 2 != 0 {
                         constant_from_variable(dmb, *variable, strings)
@@ -6911,8 +6928,8 @@ fn constant_from_variable<I:AssemblyImage>(
     id: u32,
     strings: &StringIndex,
 ) -> Option<const_eval::Constant> {
-    let variable = &dmb.variables()[id as usize];
-    constant_from_value(dmb, variable, strings)
+    let variable = dmb.variable(id as usize).ok()?;
+    constant_from_value(dmb, &variable, strings)
 }
 
 fn constant_from_value<I:AssemblyImage>(
@@ -6933,7 +6950,7 @@ fn constant_from_value<I:AssemblyImage>(
                     .clone()
             } else {
                 String::from_utf8(
-                    dmb.string(dmb.procs().get(variable.value as usize)?.strings[0])?
+                    dmb.string(dmb.proc(variable.value as usize).ok()?.strings[0])?
                         .to_vec(),
                 )
                 .ok()?
@@ -7242,15 +7259,22 @@ fn append_list(dmb: &mut Dmb, values: Vec<u32>) -> u32 {
     id
 }
 
-fn append_null_variable<I:AssemblyImage>(dmb: &mut I, strings: &mut StringIndex, name: &str) -> u32 {
+fn append_null_variable<I:AssemblyImage>(dmb: &mut I, strings: &mut StringIndex, name: &str) -> Result<u32,String> {
     let name_id = strings.intern(dmb, name);
-    let id = dmb.variables().len() as u32;
-    dmb.variables_mut().push(Variable {
+    dmb.append_variable(Variable {
         kind: 0,
         value: 0,
         name: name_id,
-    });
-    id
+    }).map_err(|error|error.to_string())
+}
+
+fn collect_variable_range<I:AssemblyImage>(dmb:&I,start:usize,end:usize)->Result<Vec<Variable>,String> {
+    if start>end||end>dmb.variable_count() {return Err("variable range exceeds table".into());}
+    let mut rows=Vec::with_capacity(end-start);
+    for at in (start..end).step_by(1024) {
+        rows.extend(dmb.variable_range(at,(at+1024).min(end)).map_err(|error|error.to_string())?);
+    }
+    Ok(rows)
 }
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
@@ -7292,7 +7316,7 @@ mod byte_string_index {
 }
 
 impl StringIndex {
-    fn new<I:AssemblyImage>(dmb: &I) -> Self {
+    fn new(dmb: &Dmb) -> Self {
         let mut index = HashMap::with_capacity(dmb.strings().len());
         for (id, value) in dmb.strings().iter().enumerate() {
             if crate::native_reserved_string_id(id as u32) {
@@ -7309,7 +7333,7 @@ impl StringIndex {
             }
         }
         let builtin_vars = dmb
-            .variables()
+            .variables
             .iter()
             .position(|variable| variable.kind == 82 && dmb.string(variable.name) == Some(b"vars"))
             .map(|id| id as u32);

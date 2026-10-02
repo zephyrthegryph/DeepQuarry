@@ -1,9 +1,9 @@
 //! Physical images with fallible addressed list objects. No logical Dmb is
 //! exposed until all actual lists have been explicitly materialized.
-use byond_dmb::dmb::{Dmb,ListWords,ChunkedDmb,DmbWireCache,WireListSource,ReferenceValidatedImage};
+use byond_dmb::dmb::{Dmb,ListWords,ChunkedDmb,DmbWireCache,WireListSource,ReferenceValidatedImage,Proc,Variable,WireRecordSource};
 use serde::{Serialize,Deserialize};
 use sha2::{Digest,Sha256};
-use std::{collections::HashMap,io,ops::Range,path::Path,sync::{Arc,Mutex}};
+use std::{collections::HashMap,io,ops::Range,path::{Path,PathBuf},sync::{Arc,Mutex}};
 const WINDOW:usize=1024;
 const ROW_WINDOW:usize=4096;
 const BUDGET:usize=8*1024*1024;
@@ -24,10 +24,10 @@ struct ReadWindow {rows:HashMap<String,Arc<[u8]>>,bytes:usize}
 struct PendingWrites {rows:Vec<dm_store::Change>,bytes:usize}
 #[derive(Default,Clone,Copy)]
 pub struct CodeIoStats {pub windows:usize,pub bytes:usize,pub read_seconds:f64}
-pub struct CodeObjectStore {io_stats:Mutex<CodeIoStats>,store:dm_store::Store,window:Mutex<ReadWindow>,pending:Mutex<PendingWrites>,lookahead:Mutex<Vec<VerifiedCodeHandle>>}
+pub struct CodeObjectStore {root:PathBuf,io_stats:Mutex<CodeIoStats>,store:dm_store::Store,window:Mutex<ReadWindow>,pending:Mutex<PendingWrites>,lookahead:Mutex<Vec<VerifiedCodeHandle>>}
 impl CodeObjectStore {
     pub fn open(root:&Path)->io::Result<Arc<Self>> {Ok(Arc::new(Self {
-        io_stats:Mutex::new(CodeIoStats::default()),store:dm_store::Store::open(root.join("wire-list-objects.redb"))?,window:Mutex::new(ReadWindow::default()),pending:Mutex::new(PendingWrites::default()),lookahead:Mutex::new(Vec::new())}))}
+        root:root.to_owned(),io_stats:Mutex::new(CodeIoStats::default()),store:dm_store::Store::open(root.join("wire-list-objects.redb"))?,window:Mutex::new(ReadWindow::default()),pending:Mutex::new(PendingWrites::default()),lookahead:Mutex::new(Vec::new())}))}
     pub fn io_stats(&self)->CodeIoStats {*self.io_stats.lock().unwrap_or_else(|error|error.into_inner())}
     fn namespace()->&'static str {"wire-list-object-v1"}
     pub fn resident_bytes(&self)->usize {self.window.lock().unwrap_or_else(|e|e.into_inner()).bytes
@@ -223,17 +223,19 @@ impl WireListSource for PipelinedLists<'_> {
         *self.current.lock().map_err(|_|invalid("pipelined source lock poisoned"))?=next;Ok(expected)
     }
 }
-pub struct WireImage {metadata:Dmb,lists:ListObjectTable}
+pub struct WireImage {metadata:Dmb,lists:ListObjectTable,procs:crate::typed_table::TypedTable<Proc>,variables:crate::typed_table::TypedTable<Variable>}
 /// Mutable physical assembly. Actual list objects occupy every table slot;
 /// code handles never masquerade as empty logical lists.
-pub struct WireImageBuilder {pub(crate) metadata:Dmb,pub(crate) lists:ListObjectTable}
+pub struct WireImageBuilder {pub(crate) metadata:Dmb,pub(crate) lists:ListObjectTable,pub(crate) procs:crate::typed_table::TypedTable<Proc>,pub(crate) variables:crate::typed_table::TypedTable<Variable>}
 impl WireImageBuilder {
     pub fn from_native(mut image:Dmb,store:Option<Arc<CodeObjectStore>>)->Self {
         // Canonical assembly uses one fixed physical operand width, independent
         // of edit history and later table growth. Native import stays exact.
         image.header.flags|=0x4000_0000;
         let lists=std::mem::take(&mut image.lists);
-        Self {metadata:image,lists:ListObjectTable {rows:lists.into_iter().map(ListObject::Resident).collect(),store}}
+        let procs=crate::typed_table::TypedTable::from_rows(std::mem::take(&mut image.procs)).with_backing(store.as_ref().and_then(|store|crate::typed_pages::TypedPages::open(&store.root,"wire-proc-v1",1024*1024,|_|0).ok()).map(|pages|Arc::new(Mutex::new(pages))));
+        let variables=crate::typed_table::TypedTable::from_rows(std::mem::take(&mut image.variables)).with_backing(store.as_ref().and_then(|store|crate::typed_pages::TypedPages::open(&store.root,"wire-variable-v1",1024*1024,|_|0).ok()).map(|pages|Arc::new(Mutex::new(pages))));
+        Self {metadata:image,procs,variables,lists:ListObjectTable {rows:lists.into_iter().map(ListObject::Resident).collect(),store}}
     }
     pub fn append_verified_code(&mut self,handle:VerifiedCodeHandle)->io::Result<u32> {
         if self.lists.len()==0xffff {self.lists.append_resident(Vec::new());}
@@ -247,13 +249,14 @@ impl WireImageBuilder {
     }
     pub fn finish(self,cache:&mut byond_dmb::dmb::ReferenceValidationCache)->io::Result<WireImage> {
         if let Some(store)=&self.lists.store {store.flush()?;}
-        self.metadata.validate_metadata_with_lists(&self.lists,cache)?;
-        Ok(WireImage {metadata:self.metadata,lists:self.lists})
+        self.procs.flush_backing()?;self.variables.flush_backing()?;
+        self.metadata.validate_physical_sources(&self.lists,&self,cache)?;
+        Ok(WireImage {metadata:self.metadata,lists:self.lists,procs:self.procs,variables:self.variables})
     }
     pub fn materialize(&self)->io::Result<Dmb> {
         let mut native=self.metadata.clone();let mut lists=Vec::with_capacity(self.lists.len());let mut until=0;
         for id in 0..self.lists.len() {if id>=until {until=self.lists.prepare_window(id,WINDOW)?;}lists.push(self.lists.read_words(id)?);}
-        native.lists=lists.into();Ok(native)
+        native.lists=lists.into();native.procs=self.procs.materialize()?;native.variables=self.variables.materialize()?;Ok(native)
     }
 }
 impl WireImage {
@@ -262,7 +265,9 @@ impl WireImage {
         where F:for<'a> FnOnce(&'a Dmb)->io::Result<ReferenceValidatedImage<'a>> {
         {let proof=validate(&image)?;if !std::ptr::eq(proof.image(),&image) {return Err(invalid("wire image proof belongs to another image"));}}
         let lists=std::mem::take(&mut image.lists);
-        Ok(Self {metadata:image,lists:ListObjectTable {rows:lists.into_iter().map(ListObject::Resident).collect(),store:None}})
+        let procs=crate::typed_table::TypedTable::from_rows(std::mem::take(&mut image.procs));
+        let variables=crate::typed_table::TypedTable::from_rows(std::mem::take(&mut image.variables));
+        Ok(Self {metadata:image,procs,variables,lists:ListObjectTable {rows:lists.into_iter().map(ListObject::Resident).collect(),store:None}})
     }
     pub fn lists(&self)->&ListObjectTable {&self.lists}
     pub fn resources(&self)->&[byond_dmb::dmb::ResourceRef] {&self.metadata.resources}
@@ -297,7 +302,7 @@ impl WireImage {
             if index>=prepared_until {prepared_until=self.lists.prepare_window(index,WINDOW)?;}
             words.push(self.lists.read_words(index)?);
         }
-        native.lists=words.into();Ok(native)
+        native.lists=words.into();native.procs=self.procs.materialize()?;native.variables=self.variables.materialize()?;Ok(native)
     }
     pub fn serialize_stored(&self,root:&std::path::Path,cache:&mut DmbWireCache)->io::Result<crate::chunks::StoredDmb> {
         let before=self.lists.store.as_ref().map(|store|store.io_stats()).unwrap_or_default();
@@ -318,7 +323,7 @@ impl WireImage {
                 }Ok::<(),io::Error>(())
             });
             let source=PipelinedLists {lists:&self.lists,receiver:Mutex::new(receiver),current:Mutex::new((0,0,ReadWindow::default()))};
-            let encoded=self.metadata.encode_metadata_to_sink(&source,cache,encode_sink);
+            let encoded=self.metadata.encode_physical_to_sink(&source,self,cache,encode_sink);
             drop(source); // unblock a send before joining on encoder failure
             let joined=producer.join().map_err(|_|invalid("code source producer panicked"))?;
             let encoded=encoded?;joined?;Ok::<_,io::Error>(encoded)
@@ -331,6 +336,24 @@ impl WireImage {
             .into_inner().map_err(|_|invalid("page sink lock poisoned"))?.finish(len,spans)
     }
     pub fn serialize_chunks(&self,cache:&mut DmbWireCache)->io::Result<ChunkedDmb> {
-        self.metadata.encode_metadata_with_lists(&self.lists,cache)
+        self.metadata.encode_physical_chunks(&self.lists,self,cache)
     }
+}
+
+impl WireRecordSource for WireImageBuilder {
+ fn proc_count(&self)->usize {self.procs.len()} fn proc_row(&self,index:usize)->io::Result<Proc> {self.procs.get(index)}
+ fn variable_count(&self)->usize {self.variables.len()} fn variable_row(&self,index:usize)->io::Result<Variable> {self.variables.get(index)}
+}
+impl WireRecordSource for WireImage {
+ fn proc_count(&self)->usize {self.procs.len()} fn proc_row(&self,index:usize)->io::Result<Proc> {self.procs.get(index)}
+ fn variable_count(&self)->usize {self.variables.len()} fn variable_row(&self,index:usize)->io::Result<Variable> {self.variables.get(index)}
+}
+impl WireImageBuilder {
+ pub fn procedure_segments(&mut self)->io::Result<Vec<crate::typed_table::TableSegment<Proc>>> {self.procs.segments()}
+ pub fn variable_segments(&mut self)->io::Result<Vec<crate::typed_table::TableSegment<Variable>>> {self.variables.segments()}
+ pub fn append_proc_segments(&mut self,segments:Vec<crate::typed_table::TableSegment<Proc>>)->io::Result<Range<usize>> {let range=self.procs.append_segments(segments)?;crate::assembly::AssemblyImage::promote_object_ids(self);Ok(range)}
+ pub fn append_variable_segments(&mut self,segments:Vec<crate::typed_table::TableSegment<Variable>>)->io::Result<Range<usize>> {let range=self.variables.append_segments(segments)?;crate::assembly::AssemblyImage::promote_object_ids(self);Ok(range)}
+ pub fn append_proc_pages(&mut self,store:Arc<Mutex<crate::typed_pages::TypedPages<Proc>>>,pages:Vec<crate::typed_pages::PageHandle>)->io::Result<Range<usize>> {let range=self.procs.append_pages(store,pages)?;crate::assembly::AssemblyImage::promote_object_ids(self);Ok(range)}
+ pub fn append_variable_pages(&mut self,store:Arc<Mutex<crate::typed_pages::TypedPages<Variable>>>,pages:Vec<crate::typed_pages::PageHandle>)->io::Result<Range<usize>> {let range=self.variables.append_pages(store,pages)?;crate::assembly::AssemblyImage::promote_object_ids(self);Ok(range)}
+ pub fn typed_resident_bytes(&self)->usize {self.procs.resident_bytes()+self.variables.resident_bytes()}
 }

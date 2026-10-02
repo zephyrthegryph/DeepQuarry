@@ -28,6 +28,10 @@ pub(crate) struct MetadataContext<'a,'debug> {
     published: HashMap<Named, Arc<MetadataRecord>>,
     dependents: HashMap<Named, HashSet<Named>>,
     generation:u64,
+    default_metadata:Arc<ProcMetadata>,
+    default_identity:String,
+    default_semantic_identity:String,
+    absent_identity:String,
 }
 impl<'a,'debug> MetadataContext<'a,'debug> {
     pub(crate) fn new(dmb:&Dmb,pending:&[PendingProc<'a>],source_debug:Option<&'debug crate::source_debug::SourceDebugIndex<'debug>>)->Result<Self,String> {
@@ -56,9 +60,13 @@ impl<'a,'debug> MetadataContext<'a,'debug> {
             if proc.owner.is_none(){continue;}
             declarations.insert((proc.owner_path.clone(),path.rsplit('/').next().unwrap_or("").to_owned(),proc.verb),Declaration {item:proc.item,identity});
         }
+        let default_metadata=Arc::new(proc_metadata(&[],None)?.0);
+        let default_identity=crate::lower_cache::shared_binding_fingerprint(default_metadata.as_ref());
+        let default_semantic_identity=crate::lower_cache::shared_binding_fingerprint(&Some(default_metadata.as_ref()));
+        let absent_identity=crate::lower_cache::shared_binding_fingerprint(&Option::<&ProcMetadata>::None);
         static NEXT_MODEL:std::sync::atomic::AtomicU64=std::sync::atomic::AtomicU64::new(1);
         let generation=NEXT_MODEL.fetch_add(1,std::sync::atomic::Ordering::Relaxed);
-        Ok(Self {source_debug,parents,declarations,descriptors,native,observations:HashMap::new(),current:HashMap::new(),published:HashMap::new(),dependents:HashMap::new(),generation})
+        Ok(Self {source_debug,parents,declarations,descriptors,native,observations:HashMap::new(),current:HashMap::new(),published:HashMap::new(),dependents:HashMap::new(),generation,default_metadata,default_identity,default_semantic_identity,absent_identity})
     }
     fn observation_epoch(&self,key:&MetadataRead)->(u64,Option<[u8;32]>) {
         // The already authenticated semantic digest versions named outputs.
@@ -73,8 +81,8 @@ impl<'a,'debug> MetadataContext<'a,'debug> {
         if !matches!(key,MetadataRead::Resolved(_)) {if let Some(value)=self.observations.get(key){return value.clone();}}
         let value=match key {
             MetadataRead::Parent(owner)=>crate::lower_cache::shared_binding_fingerprint(&self.parents.get(owner)),
-            MetadataRead::Declaration(key)=>self.declarations.get(key).map(|d|d.identity.clone()).unwrap_or_else(||crate::lower_cache::shared_binding_fingerprint(&Option::<u8>::None)),
-            MetadataRead::Native(key)=>crate::lower_cache::shared_binding_fingerprint(&self.native.get(key)),
+            MetadataRead::Declaration(key)=>self.declarations.get(key).map(|d|d.identity.clone()).unwrap_or_else(||self.absent_identity.clone()),
+            MetadataRead::Native(key)=>self.native.get(key).map_or_else(||self.absent_identity.clone(),|value|crate::lower_cache::shared_binding_fingerprint(&Some(value))),
             MetadataRead::Resolved(key)=>self.published.get(key).or_else(||self.current.get(key)).map(|record|record.semantic_identity.clone()).unwrap_or_default(),
         };
         if !matches!(key,MetadataRead::Resolved(_)){self.observations.insert(key.clone(),value.clone());}value
@@ -103,7 +111,9 @@ pub(crate) struct InvocationQueries {
     requested_metadata:HashMap<Named,Arc<MetadataRecord>>,requested_metadata_bytes:usize,
     metadata_negative:HashSet<[u8;32]>,template_negative:HashSet<[u8;32]>,
     validity: ValidityArena,
-    store:Option<Store>, pending:Vec<Change>, pending_bytes:usize,
+    store:Option<Store>,
+    packed_metadata:Option<dm_store::PackedRecords>,
+    pending_metadata:Vec<(String,Vec<u8>)>, pending:Vec<Change>, pending_bytes:usize,
     pub hits:usize,pub misses:usize,
     pub metadata_restored:usize,pub metadata_reused:usize,pub metadata_derived:usize,
     pub persistence_batches:usize,pub persistence_seconds:f64,
@@ -112,7 +122,11 @@ impl InvocationQueries {
     const LIMIT:usize=16*1024*1024;
     const WRITE_BATCH:usize=8*1024*1024;
     fn namespace()->String {format!("invocation-templates-v1-{}",env!("DM_EMISSION_FINGERPRINT"))}
-    pub(crate) fn open(root:&Path)->Self {Self {store:Store::open(root.join("declaration-fragments.redb")).ok(),..Default::default()}}
+    pub(crate) fn open(root:&Path)->Self {
+        let store=Store::open(root.join("declaration-fragments.redb")).ok();
+        let packed_metadata=store.clone().and_then(|store|dm_store::PackedRecords::new(store,format!("invocation-metadata-packed-v1-{}",env!("DM_EMISSION_FINGERPRINT"))).ok());
+        Self {store,packed_metadata,..Default::default()}
+    }
     pub(crate) fn reset_counters(&mut self){self.hits=0;self.misses=0;self.metadata_restored=0;self.metadata_reused=0;self.metadata_derived=0;self.persistence_batches=0;self.persistence_seconds=0.0;}
     pub(crate) fn clear(&mut self){self.templates.clear();self.handles.clear();self.order.clear();self.bytes=0;self.metadata.clear();self.metadata_bytes=0;self.requested_metadata.clear();self.requested_metadata_bytes=0;self.metadata_negative.clear();self.template_negative.clear();self.validity.clear();}
     pub(crate) fn release_decoded(&mut self) {
@@ -121,7 +135,14 @@ impl InvocationQueries {
         // Weak handles continue selecting templates retained by frozen plans.
     }
     pub(crate) fn resident_bytes(&self)->usize {self.bytes+self.metadata_bytes+self.pending_bytes+self.handles.len()*96+self.validity.bytes+self.requested_metadata_bytes+(self.metadata_negative.len()+self.template_negative.len())*48}
-    pub(crate) fn flush(&mut self){if self.pending.is_empty(){return;}if let Some(store)=&self.store{let started=std::time::Instant::now();let _=store.commit(&[],&self.pending,None);self.persistence_seconds+=started.elapsed().as_secs_f64();self.persistence_batches+=1;}self.pending.clear();self.pending_bytes=0;}
+    pub(crate) fn flush(&mut self){
+        if self.pending.is_empty()&&self.pending_metadata.is_empty(){return;}
+        let started=std::time::Instant::now();
+        if !self.pending.is_empty(){if let Some(store)=&self.store{let _=store.commit(&[],&self.pending,None);}}
+        if !self.pending_metadata.is_empty(){if let Some(packed)=&self.packed_metadata{let _=packed.write_many(&self.pending_metadata,None);}}
+        self.persistence_seconds+=started.elapsed().as_secs_f64();self.persistence_batches+=1;
+        self.pending.clear();self.pending_metadata.clear();self.pending_bytes=0;
+    }
     pub(crate) fn prefetch(&mut self,keys:&[String]) {
         // Old weak pointers are selectors, never a permanently growing history.
         if self.handles.len()>=72_000 {self.handles.retain(|_,template|template.strong_count()>0);}
@@ -154,6 +175,25 @@ impl InvocationQueries {
                 }
                 if !context.declarations.contains_key(&query)&&context.native.contains_key(&query){break;}
                 parent=context.parents.get(&owner).cloned().flatten();
+            }
+        }
+        if let Some(packed)=self.packed_metadata.clone() {
+            let addresses:Vec<_>=requested.keys().cloned().collect();
+            for chunk in addresses.chunks(1024) {
+                if let Ok(rows)=packed.read_many(chunk,1024*1024,8*1024*1024,None) {
+                    for (address,bytes) in chunk.iter().zip(rows) {
+                        let Some(bytes)=bytes else{continue;};
+                        let Some(query)=requested.get(address) else{continue;};
+                        if let Some(record)=decode_metadata_record(&bytes,query) {
+                            let charge=bytes.len().saturating_mul(3)+192;
+                            if self.requested_metadata_bytes+charge<=Self::LIMIT {
+                                self.requested_metadata_bytes+=charge;self.metadata_restored+=1;
+                                self.requested_metadata.insert(query.clone(),Arc::new(record));
+                                requested.remove(address);
+                            }
+                        }
+                    }
+                }
             }
         }
         let addresses:Vec<_>=requested.keys().map(|key|Key::new(Self::metadata_addresses(),key)).collect();
@@ -208,12 +248,12 @@ impl InvocationQueries {
         if value.is_some(){self.hits+=1;}else{self.misses+=1;}value
     }
     pub(crate) fn base(&mut self,context:&mut MetadataContext,owner:Option<&str>,name:&str,verb:bool)->Result<(ProcMetadata,String),String> {
-        let Some(owner)=owner else {let value=proc_metadata(&[],None)?.0;return Ok((value.clone(),crate::lower_cache::shared_binding_fingerprint(&value)));};
+        let Some(owner)=owner else {return Ok((context.default_metadata.as_ref().clone(),context.default_identity.clone()));};
         let parent=context.parents.get(owner).cloned().flatten();
         let parent_record=if let Some(parent)=parent {Some(self.resolve(context,(parent,name.to_owned(),verb),&mut HashSet::new())?)}else{None};
         // A declared ancestor resolves against the default metadata; absent
         // ancestors can still leave an intrinsic native row on the current owner.
-        let value=parent_record.as_ref().and_then(|r|r.value.as_ref().map(Arc::clone)).or_else(||context.native.get(&(owner.to_owned(),name.to_owned(),verb)).cloned()).unwrap_or(Arc::new(proc_metadata(&[],None)?.0));
+        let value=parent_record.as_ref().and_then(|r|r.value.as_ref().map(Arc::clone)).or_else(||context.native.get(&(owner.to_owned(),name.to_owned(),verb)).cloned()).unwrap_or_else(||Arc::clone(&context.default_metadata));
         let mut reads=BTreeMap::new();
         let key=MetadataRead::Parent(owner.to_owned());let observation=context.read(&key);crate::observed_dependencies::record(&mut reads,key,observation);
         if parent_record.as_ref().is_none_or(|record|record.value.is_none()) {
@@ -249,15 +289,28 @@ impl InvocationQueries {
         let record=if let Some(record)=old{self.metadata_reused+=1;record}else {
             self.metadata_derived+=1;
             let base=parent.as_ref().and_then(|p|p.value.as_ref().map(Arc::clone));
-            let value=if let Some(item)=declaration {
-                let base=base.unwrap_or(Arc::new(proc_metadata(&[],None)?.0));
+            let (value,semantic_identity)=if let Some(item)=declaration {
+                let base=base.unwrap_or_else(||Arc::clone(&context.default_metadata));
                 let declarations=invocation_declaration_projection(&item.children);
-                Some(Arc::new(proc_metadata_from_base(&declarations,base.as_ref().clone())
-                    .map_err(|reason|source_error(context.source_debug,item.header_span.start,&item.header,&reason))?.0))
-            }else {native.or(base)};
+                if declarations.is_empty() {
+                    // Empty projections forward immutable metadata unchanged.
+                    let semantic=parent.as_ref().filter(|parent|parent.value.is_some()).map(|parent|parent.semantic_identity.clone()).unwrap_or_else(||context.default_semantic_identity.clone());
+                    (Some(base),semantic)
+                }else {
+                    let value=Some(Arc::new(proc_metadata_from_base(&declarations,base.as_ref().clone())
+                        .map_err(|reason|source_error(context.source_debug,item.header_span.start,&item.header,&reason))?.0));
+                    let semantic=crate::lower_cache::shared_binding_fingerprint(&value);
+                    (value,semantic)
+                }
+            }else if let Some(native)=native {
+                let semantic=context.read(&MetadataRead::Native(key.clone()));
+                (Some(native),semantic)
+            }else {
+                let semantic=parent.as_ref().map(|parent|parent.semantic_identity.clone()).unwrap_or_else(||context.absent_identity.clone());
+                (base,semantic)
+            };
             let reads:Vec<_>=reads.into_iter().collect();
             let identity=crate::lower_cache::shared_binding_fingerprint(&(&reads,&parent_identity,value.as_ref()));
-            let semantic_identity=crate::lower_cache::shared_binding_fingerprint(&value);
             let record=Arc::new(MetadataRecord {reads,parent_identity,value,identity,semantic_identity});
             let encoded=rmp_serde::to_vec_named(record.as_ref()).ok();
             let charge=encoded.as_ref().map_or(192,|bytes|bytes.len()*3+192);
@@ -267,17 +320,28 @@ impl InvocationQueries {
             if let Some(bytes)=encoded {
                 if bytes.len()<=1024*1024 {
                     if self.pending_bytes+bytes.len()+record.identity.len()>Self::WRITE_BATCH {self.flush();}
-                    self.pending_bytes+=bytes.len()+record.identity.len();
-                    self.pending.push(Change::Put(Key::new(Self::metadata_namespace(),&record.identity),bytes));
                     let address=crate::lower_cache::shared_binding_fingerprint(&key);
                     if let Some(digest)=InvocationFragments::digest_bytes(&address){self.metadata_negative.remove(&digest);}
-                    self.pending.push(Change::Put(Key::new(Self::metadata_addresses(),address),record.identity.as_bytes().to_vec()));
+                    self.pending_bytes+=bytes.len()+address.len();
+                    if self.packed_metadata.is_some() {
+                        self.pending_metadata.push((address,bytes));
+                    }else {
+                        self.pending.push(Change::Put(Key::new(Self::metadata_namespace(),&record.identity),bytes));
+                        self.pending.push(Change::Put(Key::new(Self::metadata_addresses(),address),record.identity.as_bytes().to_vec()));
+                    }
                 }
             }
             record
         };
         active.remove(&key);context.current.insert(key,Arc::clone(&record));Ok(record)
     }
+}
+
+fn decode_metadata_record(bytes:&[u8],query:&Named)->Option<MetadataRecord> {
+    let record=rmp_serde::from_slice::<MetadataRecord>(bytes).ok()?;
+    let identity=crate::lower_cache::shared_binding_fingerprint(&(&record.reads,&record.parent_identity,record.value.as_ref()));
+    if identity!=record.identity||record.semantic_identity!=crate::lower_cache::shared_binding_fingerprint(&record.value)||!record.reads.iter().any(|(read,_)|matches!(read,MetadataRead::Declaration(name) if name==query)){return None;}
+    Some(record)
 }
 
 // The portable observations above are also the sole Salsa dependency inputs.

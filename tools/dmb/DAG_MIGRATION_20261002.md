@@ -352,3 +352,11 @@ Captured Z executable (24cd84186e), existing Y cache with redb compression remov
 Body validation/serialization wall 2.471 s, producer code I/O 1.931 s: bounded producer overlap reduces serialization wall compared with W's 4.915 s. Initial symbolic declaration preparation 404.941 s and add-var default-plan prefetch 43.882 s expose a storage problem. dm-store creates/drops redb for every access; redb recovery and allocator shutdown are being investigated and instrumented rather than attributed to compression alone.
 
 The failed disk-full cache is being preserved intact at D:/dmb-benchmark-archive/20261002-y-cache before the next clean SSD benchmark. Source-cache paths move; existing published hardlinked generations and all benchmark receipts remain at their original output paths. No test or runtime execution.
+
+### AB bounded sessions, shared census, metadata pages
+
+Commit52d900ca6a plus initializer windows75e0a36f73; CLI and iteration example Cargo build succeeded, no tests/runtime. Captured executables tools/dmb/target/bench-executables-20261002-ab. Clean SSD cache E:/dmb-bench-20261002-ab-cache; receipts E:/dmb-bench-20261002-ab. Workers2, memory3072MiB.
+
+Cold empty-cache build172.980094s; unchanged0.258507s; one body edit15.595985s (1 lowered/68410 reused); revert4.843415s. Fresh process unchanged0.258117s; fresh process with body edit25.085319s (1 lowered/68410 reused). Benchmark success means compiler publication, not semantic/runtime parity. Cold restart now preserves exact candidate reuse. Warm body reused frozen declaration skeleton in1.089s: shared allocation census prevented its prior eviction. Metadata read0.286s, decode1.537s, replay0.928s; body bytecode validation/serialization1.205s. Some output metadata recipes still rebuilt (242 built/68169 reused) despite semantic lowering reuse; targeted range composition remains required.
+
+Old Y recovery cache archive completed at D:/dmb-benchmark-archive/20261002-y-cache; E old cache path removed by content-preserving Move-Item. SSD free space after move9.9GB, after fresh AB cache roughly4.8GB. Archive never used as active benchmark storage.

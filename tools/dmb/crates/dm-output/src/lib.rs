@@ -1101,3 +1101,5 @@ mod tests {
         fs::remove_dir_all(directory).unwrap();
     }
 }
+
+pub mod typed_table;

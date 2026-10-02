@@ -730,16 +730,15 @@ fn emit_maps_inner(
                         )?;
                         let code_id=dmb.append_list(code.into()).map_err(|error|error.to_string())?;
                         let empty_id=dmb.append_list(Vec::new().into()).map_err(|error|error.to_string())?;
-                        dmb.reserve_proc_sentinel();
-                        let proc_id = dmb.procs().len() as u32;
-                        dmb.procs_mut().push(Proc {
+                        dmb.reserve_proc_sentinel().map_err(|error|error.to_string())?;
+                        let proc_id = dmb.append_proc(Proc {
                             strings: [0xffff; 4],
                             source_parameter: 255,
                             source_kind: 0,
                             flags: 0,
                             extended_flags: None,
                             code_locals_args: [code_id, empty_id, empty_id],
-                        });
+                        }).map_err(|error|error.to_string())?;
                         proc_id
                     } else {
                         0xffff

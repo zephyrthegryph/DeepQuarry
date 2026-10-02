@@ -711,7 +711,7 @@ impl OwnerFrameQueries {
             local.fields.extend(fields.iter().cloned());
         } else if let Some(declarations) = dmb.class_variable_declarations(owner as usize).map_err(|error|error.to_string())? {
             for (id, _) in declarations {
-                if let Some(name) = dmb.string(dmb.variables().get(id as usize).ok_or_else(||format!("owner variable out of range: {id}"))?.name) {
+                if let Some(name) = dmb.string(dmb.variable(id as usize).map_err(|error|format!("owner variable {id}: {error}"))?.name) {
                     local
                         .fields
                         .insert(String::from_utf8_lossy(name).into_owned());

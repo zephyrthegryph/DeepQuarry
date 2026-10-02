@@ -3,6 +3,8 @@
 //! An idle/age reaper releases OS locks for independent compiler processes.
 use fs2::FileExt;
 mod shared_artifacts;
+mod packed_records;
+pub use packed_records::PackedRecords;
 mod sessions;
 use redb::{Database, ReadableTable, TableDefinition};
 use serde::{Deserialize, Serialize};
@@ -357,7 +359,10 @@ impl Store {
             };
             encoded.insert(key.encode()?, value);
         }
-        self.access(cancel, |db| {
+        let trace = std::env::var_os("DM_BUILD_TRACE").is_some();
+        let encoded_bytes = if trace {encoded.iter().map(|(key,value)|key.len()+value.as_ref().map_or(0,Vec::len)).sum::<usize>()} else {0};
+        let transaction_started = Instant::now();
+        let result = self.access(cancel, |db| {
             let tx = db.begin_write().map_err(error)?;
             {
                 let mut table = tx.open_table(RECORDS).map_err(error)?;
@@ -386,7 +391,12 @@ impl Store {
             }
             tx.commit().map_err(error)?;
             Ok(Commit::Applied)
-        })
+        });
+        if trace {
+            eprintln!("DM_BUILD_TRACE store transaction: {} changes={} witnesses={} encoded_bytes={} elapsed={:.3}s outcome={:?}",
+                self.path.display(),changes.len(),witnesses.len(),encoded_bytes,transaction_started.elapsed().as_secs_f64(),result.as_ref().map_err(|failure|failure.kind()));
+        }
+        result
     }
     /// Bounded stage snapshot. Omitted entries never prove semantic absence;
     /// callers can recompute or use read_many when `complete=false`.

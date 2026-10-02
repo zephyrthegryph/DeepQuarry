@@ -224,7 +224,7 @@ pub(super) fn emit_initializer_groups_with_pool(
                     }
                     if let Some(declarations) = dmb.class_variable_declarations(class_id as usize).map_err(|error|error.to_string())? {
                         for (id, _) in declarations {
-                            if let Some(name) = dmb.string(dmb.variables()[id as usize].name) {
+                            if let Some(name) = dmb.string(dmb.variable(id as usize).map_err(|error|error.to_string())?.name) {
                                 bindings
                                     .fields
                                     .insert(String::from_utf8_lossy(name).into_owned());
@@ -419,12 +419,11 @@ pub(super) fn emit_initializer_groups_with_pool(
                 .local_names
                 .iter()
                 .map(|name| append_null_variable(dmb, strings, name))
-                .collect::<Vec<_>>();
+                .collect::<Result<Vec<_>,_>>()?;
             let local_id = dmb.append_list(local_ids.into()).map_err(|error|error.to_string())?;
             let empty_args = dmb.append_list(vec![].into()).map_err(|error|error.to_string())?;
-            dmb.reserve_proc_sentinel();
-            let proc_id = dmb.procs().len() as u32;
-            dmb.procs_mut().push(Proc {
+            dmb.reserve_proc_sentinel().map_err(|error|error.to_string())?;
+            let proc_id = dmb.append_proc(Proc {
                 strings: [0xffff; 4],
                 source_parameter: 255,
                 source_kind: 0,
@@ -432,7 +431,7 @@ pub(super) fn emit_initializer_groups_with_pool(
                 flags: 4,
                 extended_flags: None,
                 code_locals_args: [code_id, local_id, empty_args],
-            });
+            }).map_err(|error|error.to_string())?;
             generated.push(proc_id);
             linking_time += linking_started.elapsed();
             if !attach {
@@ -470,9 +469,9 @@ mod tests {
         let mut strings = StringIndex::new(&dmb);
         let classes = strings.3.clone();
         if padding {
-            append_null_variable(&mut dmb, &mut strings, "padding");
+            append_null_variable(&mut dmb, &mut strings, "padding").unwrap();
         }
-        let target = append_null_variable(&mut dmb, &mut strings, "target");
+        let target = append_null_variable(&mut dmb, &mut strings, "target").unwrap();
         (
             dmb,
             strings,

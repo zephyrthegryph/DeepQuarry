@@ -91,6 +91,45 @@ impl<'a> SourceDebugIndex<'a> {
     }
 }
 
+/// The existing output witness records authored debug observations, separately
+/// from dense string IDs. Expanded offsets only select current observations;
+/// shifting an unchanged procedure in the expansion does not change identity.
+pub(crate) fn authored_debug_identity(
+    index: Option<&SourceDebugIndex<'_>>, header: usize, body_base: usize,
+    resolved: impl IntoIterator<Item=usize>, unresolved: impl IntoIterator<Item=usize>,
+) -> String {
+    use sha2::{Digest,Sha256};
+    let mut hash=Sha256::new();
+    hash.update(b"dm-authored-debug-observations-v1\0");
+    let Some(index)=index else {
+        hash.update([0]);
+        return format!("{:x}",hash.finalize());
+    };
+    hash.update([1]);
+    fn origin(hash:&mut Sha256,index:&SourceDebugIndex<'_>,offset:Option<usize>) {
+        match offset.and_then(|offset|index.resolve(offset)) {
+            Some((file,line))=>{
+                hash.update([1]);hash.update((file.len() as u64).to_le_bytes());
+                hash.update(file.as_bytes());hash.update(line.to_le_bytes());
+            }
+            None=>hash.update([0]),
+        }
+    }
+    hash.update([0]);origin(&mut hash,index,Some(header));
+    let mut count=0u64;
+    for relative in resolved {
+        hash.update([1]);hash.update((relative as u64).to_le_bytes());
+        origin(&mut hash,index,body_base.checked_add(relative));count+=1;
+    }
+    hash.update([2]);hash.update(count.to_le_bytes());count=0;
+    for relative in unresolved {
+        hash.update([3]);hash.update((relative as u64).to_le_bytes());
+        origin(&mut hash,index,body_base.checked_add(relative));count+=1;
+    }
+    hash.update([4]);hash.update(count.to_le_bytes());
+    format!("{:x}",hash.finalize())
+}
+
 fn absolute_lexical(path: &Path, directory: &Path) -> PathBuf {
     let absolute = if path.is_absolute() {
         path.to_owned()
