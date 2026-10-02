@@ -1,0 +1,25 @@
+self_add	code/modules/__defines/d.dm	1
+self_add	code/modules/a/.dot.dm	1
+self_add	code/modules/a/.hid/h.dm	1
+self_add	code/modules/a/a.dm	2
+self_add	code/modules/a/a.dm	3
+self_add	code/modules/a/a.dm	4
+self_add	code/modules/a/a.dm	5
+self_add	code/modules/a/a.dm	6
+self_add	code/modules/a/a.dm	9
+self_add	code/modules/a/a.dm	13
+self_add	code/modules/a/a.dm	15
+self_add	code/modules/a/a.dm	16
+self_add	code/modules/a/a.dm	16
+self_add	code/modules/a/a.dm	17
+self_add	code/modules/a/a.dm	18
+self_add	code/modules/a/a.dm	19
+self_add	code/modules/a/a.dm	23
+self_add	code/modules/a/a.dm	29
+self_add	code/modules/a/a.dm	30
+self_add	code/modules/a/a.dm	33
+self_add	code/modules/a/a.dm	36
+self_add	code/modules/a/a.dm	37
+self_add	code/modules/a/a.dm	37
+self_add	code/modules/sp ace/s.dm	1
+self_add	code/modules/unit_tests/t.dm	1

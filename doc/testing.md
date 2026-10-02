@@ -542,9 +542,10 @@ CI also runs these scripts, all from the repository root:
 
 | Check | Command |
 |---|---|
-| Code and map grep checks | `bash tools/ci/check_grep.sh` |
+| Code and map grep checks (the engine's `check_grep` lint) | `bash tools/ci/check_grep.sh` |
 | Committed test focus | `bash tools/ci/check_misc.sh` |
-| No `world.time` deadline polling in `process()` (use `om_after()`; allowlist in `tools/ci/deadline_polling_allowlist.txt`) | `python3 tools/ci/check_deadline_polling.py` |
+| Every rewrite lint (ratchets, ALLOW annotations, deadline polling, ...; `tools/analyze`) | `bash tools/ci/check_ratchets.sh` or `tools/build/build.sh analyze` |
+| The engine's own tests (per-lint fixtures) | `cargo test --manifest-path tools/analyze/Cargo.toml` |
 | Changelog stubs parse | `bash tools/ci/check_changelogs.sh` (compiles stubs; run on a scratch copy) |
 | Local `#define`s are `#undef`'d | `tools/bootstrap/python -m define_sanity.check` |
 | Maps are in TGM format and merge-clean | `tools/bootstrap/python -m mapmerge2.dmm_test` |
@@ -552,9 +553,8 @@ CI also runs these scripts, all from the repository root:
 | Every `.dmi` parses | `tools/bootstrap/python -m dmi.test` |
 | Rust format, lint and tests | `cd verdigris && cargo fmt --package verdigris --check && cargo clippy --package verdigris --all-targets -- -D warnings && cargo test --package verdigris` |
 
-`check_grep.sh` uses ripgrep when it is installed. Without it, it falls back to
-GNU grep in Perl-regex mode and skips the few multiline checks that need
-ripgrep; CI always runs the full set.
+`check_grep.sh` no longer needs ripgrep: its checks run inside the analyze engine
+(PCRE-style patterns included), so every part always runs.
 
 ## Continuous integration
 

@@ -1,0 +1,2 @@
+/datum/containment
+	qdel(src)

@@ -1,0 +1,6 @@
+/obj/crlf/Initialize(mapload)
+	create_reagents(1)
+	add_overlay("x")
+/obj/crlf/on_destroy(force)
+	visible_message("x")
+	qdel(owned_a)

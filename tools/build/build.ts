@@ -389,6 +389,54 @@ export const VerdigrisTarget = new Juke.Target({
 });
 // DQAdd End
 
+// DQAdd Start — the analyze lint engine (tools/analyze, doc: tools/analyze/README.md). One Rust
+// binary replaces tools/ci's Python lints and check_grep.sh. Like verdigris it is built when its
+// sources are newer than the binary (inputs/outputs dirty-check; the target dir is excluded by
+// enumerating sources). `lint`/`analyze` run it; DM-only work that has no cargo can reuse a
+// prebuilt binary (DQ_ANALYZE_NO_BUILD=1 in tools/ci/analyze.sh does the same for the shell).
+const ANALYZE_DIR = process.env.CARGO_TARGET_DIR
+  ? `${process.env.CARGO_TARGET_DIR}`
+  : 'tools/analyze/target';
+const ANALYZE_BIN = `${ANALYZE_DIR}/release/${process.platform === 'win32' ? 'analyze.exe' : 'analyze'}`;
+
+export const AnalyzeBuildTarget = new Juke.Target({
+  onlyWhen: () => {
+    const probe = spawnSync('cargo', ['--version'], { stdio: 'ignore', shell: true });
+    const cargoOk = !probe.error && probe.status === 0;
+    if (!cargoOk) {
+      if (!fs.existsSync(ANALYZE_BIN)) {
+        Juke.logger.warn(`analyze: cargo not found and ${ANALYZE_BIN} is missing; the lint engine cannot run. Install rustup (see verdigris/README.md).`);
+      }
+      return false;
+    }
+    return true;
+  },
+  inputs: [
+    'tools/analyze/Cargo.toml',
+    'tools/analyze/Cargo.lock',
+    'tools/analyze/build.rs',
+    'tools/analyze/src/**/*.rs',
+  ],
+  outputs: [ANALYZE_BIN],
+  executes: async () => {
+    await Juke.exec('cargo', ['build', '--release', '--manifest-path', 'tools/analyze/Cargo.toml']);
+  },
+});
+
+// `tools/build/build.sh analyze` runs every engine lint (what tools/ci/check_ratchets.sh and
+// tools/ci/check_grep.sh wrap); extra arguments go to `analyze check` (e.g. --lint scheduler).
+export const AnalyzeTarget = new Juke.Target({
+  dependsOn: [AnalyzeBuildTarget],
+  executes: async ({ args }) => {
+    if (!fs.existsSync(ANALYZE_BIN)) {
+      Juke.logger.warn('analyze: no binary, skipping the engine lints');
+      return;
+    }
+    await Juke.exec(ANALYZE_BIN, ['check', ...(args || [])]);
+  },
+});
+// DQAdd End
+
 // DreamDaemon security for test, bench and run worlds. -trusted makes BYOND show a
 // "Proceed with trusted mode?" dialog for any .dmb path it hasn't been told to
 // trust, which hangs headless runs in new worktrees forever. DQ_DD_SECURITY=safe
@@ -2551,7 +2599,7 @@ export const TestTarget = new Juke.Target({
 });
 
 export const LintTarget = new Juke.Target({
-  dependsOn: [TguiLintTarget, DreamCheckerTarget], // DQAdd — DM lint via SpacemanDMM if available
+  dependsOn: [TguiLintTarget, DreamCheckerTarget, AnalyzeTarget], // DQAdd — DM lint via SpacemanDMM if available; the analyze engine lints
 });
 
 export const BuildTarget = new Juke.Target({

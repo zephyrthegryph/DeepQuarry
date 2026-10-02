@@ -1,0 +1,7 @@
+emag_act	code/modules/x/emag.dm	1
+emag_act	code/modules/x/emag.dm	6
+emag_act	code/modules/x/emag.dm	7
+emag_act	code/modules/x/emag.dm	8
+emag_act	code/modules/x/emag.dm	9
+emag_act	code/modules/x/emag.dm	12
+emag_act	code/modules/x/emag.dm	14

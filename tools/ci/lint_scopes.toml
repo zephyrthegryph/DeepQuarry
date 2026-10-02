@@ -1,0 +1,283 @@
+# Where each engine lint's path exemptions and named lists live (tools/analyze, doc: tools/analyze/README.md).
+# A lint's section is found by its name (`[lint.scheduler]`), else by its group (`[lint.sys]` serves every sys/*).
+#   exempt_prefixes = rel path starts with     exempt_contains = rel path contains     exempt_files = exact path
+#   [lint.<name>.lists] = named lists a rule reads (declared in the lint's Meta::lists, validated at startup)
+
+[allow]
+# ALLOW names read by lints that are not (yet) engine lints; the engine's own lints declare theirs.
+known = ["api", "cache", "check_grep", "containment", "cooldown", "doc_snippets", "decl", "derived_reads", "init", "instance_list", "interactions", "latent", "lifecycle", "om_internal", "ownership", "organ_slots", "pollers", "radial", "registry", "scheduler", "silent_catch", "spatial", "tracked", "system_boundary", "verb_category", "subsystem_fire", "ui_actions"]
+
+[lint.sys]
+# sys_lint.py EXEMPT: tests and benchmarks build the forbidden things on purpose.
+exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/"]
+
+# A sys module with an own section of path exemptions replaces [lint.sys] for that module (the section is found
+# by lint name first), so it repeats the sys_lint.py EXEMPT prefixes above and adds the module's own.
+[lint."sys/sync_sql"]
+# sync_sql.py EXEMPT_FILES: the database layer itself (boot and shutdown queries, the flow wrapper, the local
+# SQLite database, world/IsBanned) may block.
+exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/"]
+exempt_files = [
+  "code/controllers/subsystems/dbcore.dm",
+  "code/controllers/subsystems/sqlite.dm",
+  "code/datums/om/flow_io.dm",
+  "code/modules/admin/IsBanned.dm",
+]
+
+[lint."sys/usr_use"]
+# usr_use.py SKIP_PREFIXES: a `#define` in the macro library is read in the caller's context.
+exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/__defines/"]
+
+[lint.ui_actions]
+# ui_actions_lint.py EXEMPT: tests and benchmarks build act_ procs without a TSX client on purpose.
+exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/"]
+[lint.cap_bits.lists]
+# cap_bits_lint.py: REGISTRY, WRITERS and the unit-test prefix. These files are still scanned for bit
+# definitions; the lists only decide where a cap_state write is legal.
+registry = ["code/__defines/cap_bits.dm"]
+writers = ["code/datums/capabilities/capabilities.dm"]
+write_exempt_prefixes = ["code/modules/unit_tests/"]
+
+[lint.pool.lists]
+# pool_lint.py EXEMPT_PREFIX: `new` and unreleased take() are not counted here (the files still
+# declare pooled types and release).
+exempt_prefixes = ["code/modules/unit_tests/", "code/datums/lifecycle/pool.dm"]
+
+[lint.om_internal]
+# om_internal_lint.py SKIP: the scheduler core and the macros that map the public API onto it.
+exempt_prefixes = ["code/datums/om/", "code/__defines/om.dm"]
+
+[lint.stance_examine.lists]
+# stance_examine_lint.py INPUT_STANCE_READERS: the input layer, the only readers of a mob's stance
+# (prefixes).
+input_stance_readers = [
+    "code/modules/mob/combat_mode.dm",
+    "code/datums/interactions/",
+    "code/datums/operations/actions.dm",
+    "code/datums/operations/req.dm",
+    "code/modules/keybindings/",
+    "code/modules/mob/living/living_movement.dm",
+    "code/modules/vore/eating/belly_obj_resist.dm",
+    "code/modules/combat_ai/",
+    "code/modules/unit_tests/",
+]
+
+[lint.leftovers.lists]
+# leftovers_lints.py EXEMPT["radial"]: `^code/_onclick/hud/radial[^/]*\.dm$`, as a prefix; the rest of the
+# path must hold no `/` and end in `.dm`. Applies to the radial kind only.
+radial_impl_prefixes = ["code/_onclick/hud/radial"]
+
+# allow_annotations.exempt_path(): EXEMPT_DIRS + EXEMPT_FILES. Unit tests and benchmarks build the forbidden
+# things on purpose, and the vendored tgstation-server DMAPI is kept verbatim. The old lints that import
+# exempt_path() read one constant; each engine lint keeps its own copy of the two lists here.
+[lint.ownership]
+# ownership_lint.py: the index, the usage map, unknown_var, kinds, matrix and contradiction still read these
+# files; string_name, removed, callback, handle and raw_write skip them.
+exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"]
+exempt_files = ["code/__defines/tgs.dm"]
+
+[lint.scheduler]
+# scheduler_lints.py exempt_path()
+exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"]
+exempt_files = ["code/__defines/tgs.dm"]
+
+[lint.tracked]
+# tracked_lint.py exempt_path(): the TRACKED/SETTER/derive() index still reads these files; writes in them
+# are not counted.
+exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"]
+exempt_files = ["code/__defines/tgs.dm"]
+
+[lint.cooldown]
+# cooldown_lint.py SKIP_DIRS. The EXPIRY_DECLARE name index still reads these files.
+exempt_prefixes = ["code/modules/unit_tests/", "code/controllers/", "code/datums/om/"]
+[lint.system_boundary]
+# system_boundary_lint.py SKIP_DIRS (unit tests read private state through system_debug()) and
+# GENERATED_DIRS (the generated verdigris bindings are emitted for every system, so a new binding must
+# not raise a ceiling).
+exempt_prefixes = ["code/modules/unit_tests/", "code/__defines/verdigris/"]
+
+[lint.base_vars.lists]
+# base_vars_lint.py: `list_init` takes allow_annotations.exempt_path() (EXEMPT_DIRS and EXEMPT_FILES: unit
+# tests and benchmarks build the forbidden things on purpose, the vendored tgstation-server DMAPI is kept
+# verbatim). `base_var` counts every path, so these are lists the rule reads, not whole-lint exemptions.
+list_init_exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"]
+list_init_exempt_files = ["code/__defines/tgs.dm"]
+
+[lint.decl]
+# decl_lint.py EXEMPT: tests and benchmarks build the forbidden things on purpose. (No TGS exemption here:
+# decl_lint.py never read exempt_path().) owned_vars() still reads these files (cx.all_files()).
+exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/"]
+
+[lint.init]
+# init_lint.py EXEMPT_PREFIXES: unit tests and benchmarks build worlds on purpose. This only exempts the
+# per-file rules (initialize, late_initialize, world_reads, turf_on_materialize): table_init_overrides
+# reads every file (cx.all_files()), as init_lint.py's table pass did. (No TGS exemption: init_lint.py never
+# read exempt_path().)
+exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/"]
+
+[lint.instance_list]
+# instance_list_lint.py: allow_annotations.exempt_path() (EXEMPT_DIRS and EXEMPT_FILES): unit tests and
+# benchmarks build the forbidden things on purpose, the vendored tgstation-server DMAPI is kept verbatim.
+# The GLOBAL_DATUM_INIT singleton scan still reads these files (cx.all_files()).
+exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"]
+exempt_files = ["code/__defines/tgs.dm"]
+
+[lint.latent]
+# latent_lint.py SKIP_DIRS: os.walk prunes any directory named unit_tests.
+exempt_contains = ["/unit_tests/"]
+
+[lint.lifecycle_counts.lists]
+# lifecycle_counts_lint.py: a path listed here has its qdel( sites uncounted but is still checked for
+# Destroy() overrides (banned everywhere), so these are lists, not exempt_* keys. exempt_path() (unit tests,
+# benchmarks, the vendored TGS DMAPI), the lifecycle engine itself, and the macro definitions.
+exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/", "code/__defines/"]
+exempt_files = [
+    "code/__defines/tgs.dm",
+    "code/controllers/subsystems/garbage.dm",
+    "code/datums/lifecycle/transaction.dm",
+    "code/datums/lifecycle/links.dm",
+    "code/datums/lifecycle/verbs.dm",
+    "code/datums/containment/lifecycle.dm",
+]
+
+[lint.qdel_src]
+# qdel_src_lint.py: exempt_path() (unit tests, benchmarks, the vendored TGS DMAPI), the lifecycle engine
+# (it calls qdel(src) as its mechanism) and the macro definitions.
+exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/", "code/__defines/"]
+exempt_files = [
+    "code/__defines/tgs.dm",
+    "code/controllers/subsystems/garbage.dm",
+    "code/datums/lifecycle/transaction.dm",
+    "code/datums/lifecycle/links.dm",
+    "code/datums/lifecycle/verbs.dm",
+    "code/datums/containment/lifecycle.dm",
+]
+
+[lint.spatial]
+# spatial_lint.py: exempt_path() (unit tests, benchmarks, the vendored TGS DMAPI) is skipped before the scan.
+exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"]
+exempt_files = ["code/__defines/tgs.dm"]
+[lint.spatial.lists]
+# spatial_lint.py API_DIRS / API_FILES: the files that implement the ledger and spatial API. They are scanned
+# (an ALLOW there still records as used) but their sites are not counted.
+api_prefixes = ["code/datums/containment/"]
+api_files = ["code/__defines/containment.dm"]
+
+[lint.pollers]
+# pollers_lint.py EXEMPT_PREFIXES / EXEMPT_FILES: the MC and subsystem framework, the object-model core, the
+# defines, the unit tests, and the external-I/O datums whose process() is not gameplay polling (tgui, dbcore).
+# This script does not call exempt_path(): benchmarks and the TGS DMAPI are counted.
+exempt_prefixes = ["code/controllers/", "code/datums/om/", "code/__defines/", "code/modules/unit_tests/"]
+exempt_files = ["code/modules/tgui/tgui.dm", "code/controllers/subsystems/dbcore.dm"]
+[lint.pollers.lists]
+# check_step_coverage(): unit-test probes join the machine pipeline lazily through MACHINE_WAKE(); every other
+# file (the exempt ones above included) is checked.
+step_exempt_prefixes = ["code/modules/unit_tests/"]
+
+[lint.silent_catch]
+# silent_catch_lint.py: exempt_path() (unit tests catch on purpose; benchmarks; the vendored TGS DMAPI).
+exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"]
+exempt_files = ["code/__defines/tgs.dm"]
+[lint.silent_catch.lists]
+# silent_catch_lint.py STRICT_DIRS: the object-model core, lifecycle, the controllers and the error handler (everything
+# that wraps other code's callbacks): a plain log is not enough there, the block must report, rethrow or trace.
+strict_dirs = ["code/datums/om/", "code/datums/lifecycle/", "code/controllers/", "code/modules/error_handler/"]
+
+[lint.cache]
+# cache_lint.py: exempt_path() (unit tests, benchmarks, the vendored TGS DMAPI) and the framework itself.
+exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"]
+exempt_files = ["code/__defines/tgs.dm", "code/__defines/shared_cache.dm", "code/datums/shared_cache/shared_cache.dm"]
+
+[lint.registry]
+# registry_lint.py: the boilerplate macro's own definition.
+exempt_prefixes = ["code/__defines/"]
+
+[lint.deadline_polling]
+# check_deadline_polling.py: unit tests poll on purpose.
+exempt_contains = ["/unit_tests/"]
+
+[lint.verb_category]
+# verb_category_lint.py: unit tests build raw categories on purpose.
+exempt_prefixes = ["code/modules/unit_tests/"]
+
+[lint.i7_handler]
+# i7_handler_lint.py: test fixtures record calls to the dispatchers themselves.
+exempt_prefixes = ["code/modules/unit_tests/"]
+[lint.i7_handler.lists]
+# The dispatchers, and the client's activate-held-item verb (which calls attack_self).
+allowed = [
+  "/atom/proc/attackby",
+  "/atom/proc/attack_hand",
+  "/atom/proc/click_alt",
+  "/atom/proc/MouseDrop_T",
+  "/obj/item/proc/attack_self",
+  "/client/verb/attack_self",
+]
+
+[lint.subsystem_fire.lists]
+# subsystem_fire_lint.py CORE: the kernel and the engines that own their own frame (completion_plan.md sec 3.6).
+core = [
+  "behaviours",    # the OM scheduler
+  "dbcore",        # async query pump
+  "garbage",
+  "input",         # player input must never wait on a lane budget
+  "profiler",      # MC profiling: reads subsystem diagnostics, config-driven interval
+  "tgui",
+  "verb_manager",  # and its speech_controller subtype
+]
+# check_grep.sh: the path allowlists of its `grep -v` stages. An entry is an exact file, or a
+# directory when it ends in `/`. The key is read by the part's DropPaths("<key>").
+[lint.check_grep.lists]
+call_ext_allow = [
+  "code/__defines/verdigris/_bindings.dm", "code/__defines/rust_g.dm", "code/__defines/vchatlog.dm",
+  "code/__byond_version_compat.dm", "code/modules/debugging/tracy.dm", "code/modules/debugging/debugger.dm",
+  "code/modules/tgs/", "code/modules/benchmarks/scenarios.dm",
+]
+# the dynamic R10/thermal checks read their names from these generated files
+verdigris_defines_allow = ["code/__defines/verdigris/"]
+bindings_file_allow = ["code/__defines/verdigris/_bindings.dm"]
+# only the core pipeline runner and the kernel work engine change idle/park state
+pipelines_allow = ["code/datums/om/", "code/controllers/kernel/", "code/modules/unit_tests/"]
+relation_fields_allow = ["code/datums/om/"]
+timer_handles_allow = ["code/datums/om/"]
+# creation/deletion bookkeeping for the one revive path
+revive_allow = [
+  "code/modules/unit_tests/", "code/modules/body/revival.dm", "code/modules/mob/death.dm", "code/modules/mob/mob.dm",
+  "code/_helpers/unsorted.dm", "code/modules/mob/living/carbon/human/human_species.dm",
+  "code/modules/mob/living/silicon/ai/ai.dm", "code/game/objects/items/weapons/autopsy.dm",
+]
+thermal_allow = ["code/__defines/verdigris/_bindings.dm"]
+input_ladder_allow = ["code/modules/keybindings/router.dm"]
+# type-specific tool checks and domains converted later (mecha: I5; surgery and medical machines)
+tool_istype_allow = [
+  "code/datums/wires/wires.dm", "code/datums/behaviours/omen.dm", "code/game/machinery/recharger.dm",
+  "code/game/mecha/mecha.dm", "code/game/mecha/space/shuttle.dm", "code/game/mecha/combat/fighter.dm",
+  "code/game/machinery/adv_med.dm", "code/game/machinery/cloning.dm", "code/game/machinery/computer/cloning.dm",
+]
+# verbs that are really a mob's own abilities, run through an item they carry
+i7_verb_allow = [
+  "code/modules/unit_tests/", "code/game/mecha/equipment/tools/passenger.dm", "code/game/mecha/equipment/tools/sleeper.dm",
+  "code/game/objects/items/devices/communicator/integrated.dm", "code/modules/assembly/holder.dm",
+  "code/modules/clothing/spacesuits/rig/modules/specific/ai_container.dm",
+  "code/modules/mob/living/silicon/robot/subtypes/thinktank/thinktank_module.dm", "code/modules/pda/ai.dm",
+]
+bodytemp_allow = ["code/modules/heat/heat_mobs.dm"]
+weapon_damage_type_allow = ["code/modules/medical/conditions/wounds.dm"]
+organ_damage_allow = ["code/modules/body/", "code/modules/organs/"]
+rust_state_allow = ["code/__defines/verdigris/_bindings.dm"]
+slot_flags_allow = ["code/datums/properties/"]
+# the volatile abductor RTG's asplod lifecycle; the generic machinery explosion damage itself
+machinery_qdel_allow = ["code/modules/power/port_gen.dm"]
+machinery_ex_act_allow = ["code/game/machinery/machinery.dm"]
+
+# The count ratchets of check_grep.sh: a rule over its ceiling fails (`analyze baseline --update`
+# lowers a ceiling, never raises it). The colour-macro count is MACRO_COUNT in dependencies.sh.
+[lint.check_grep.ceilings]
+admin_rights_shrink_only_baseline_one_mechanism_admin_can = 82
+admin_rights_shrink_only_baseline_one_mechanism_admin_can__holder = 327
+admin_rights_shrink_only_baseline_one_mechanism_admin_can__rights_and = 17
+heat_ratchet_on_fire_act_overrides_h3 = 6
+damage_ratchet_on_non_turf_ex_act_overrides_d5 = 64
+damage_ratchet_on_atom_break_set_broken_overrides_d4 = 18
+improper_atom_new_usage = 2
+legacy_equip_restriction_vars__slot_flags = 2

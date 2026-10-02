@@ -1,0 +1,25 @@
+DECLARE_INTERACTIONS(/obj/item, list())
+	DECLARE_INTERACTIONS(/obj/item/radio, list())
+// ALLOW(interactions): deliberate
+DECLARE_INTERACTIONS(/obj/item/radio/headset, x)
+DECLARE_INTERACTIONS(/obj/item/radio/headset/bowman, x)
+/obj/item/gun/get_interactions()
+	return 1
+/obj/machinery/get_interactions()
+/obj/machinery/foo/bar/get_interactions() // ALLOW(interactions): inline
+DECLARE_INTERACTIONS(/mob, x)
+DECLARE_INTERACTIONS(/mob/living, x)
+DECLARE_INTERACTIONS( /datum/foo , x)
+DECLARE_INTERACTIONS(/datum/foo/bar, x)
+// DECLARE_INTERACTIONS(/area/x)
+x = DECLARE_INTERACTIONS(/area/y)
+/area/get_interactions()
+/area/z/get_interactions()
+DECLARE_INTERACTIONS(/turf/a/b/c/d, x)
+DECLARE_INTERACTIONS(/turf/a, x)
+EXTEND_INTERACTIONS(/turf/a/b, x)
+/obj/item/gun/rifle/get_interactions ()
+/obj/item/pistol/get_interactions()
+/objx/get_interactions()
+/objx/y/get_interactions()
+/obj/item/gun/old/get_interactions()  // ALLOW(interactions, other): both
