@@ -8,7 +8,7 @@ struct Arena { rows:HashMap<Key,Weak<dyn Any+Send+Sync>>, order:VecDeque<Key>, b
 fn arena()->&'static Mutex<Arena> {static ARENA:OnceLock<Mutex<Arena>>=OnceLock::new();ARENA.get_or_init(||Mutex::new(Arena::default()))}
 // A Weak also keeps the Arc allocation's inline T storage alive after its
 // fields are dropped; charge that storage as part of the global index budget.
-fn charge(key:&Key)->usize {key.2.capacity()*2+192+key.3}
+fn charge(key:&Key)->usize {key.2.capacity().saturating_mul(2).saturating_add(192).saturating_add(key.3)}
 pub(crate) fn get<T:Any+Send+Sync>(stage:&'static str,digest:&str)->Option<Arc<T>> {
     let arena=arena().lock().unwrap_or_else(|error|error.into_inner());
     arena.rows.get(&(TypeId::of::<T>(),stage,digest.to_owned(),std::mem::size_of::<T>()))?.upgrade()?.downcast().ok()
@@ -22,6 +22,7 @@ pub(crate) fn intern<T:Any+Send+Sync>(stage:&'static str,digest:&str,value:Arc<T
     // Existing expired keys retain their single FIFO entry and charge.
     if !arena.rows.contains_key(&key) {
         let bytes=charge(&key);
+        if bytes>LIMIT {return value;}
         while arena.bytes.saturating_add(bytes)>LIMIT {
             let Some(old)=arena.order.pop_front() else {break;};
             arena.bytes=arena.bytes.saturating_sub(charge(&old));arena.rows.remove(&old);

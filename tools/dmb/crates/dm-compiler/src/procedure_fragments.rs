@@ -46,6 +46,45 @@ pub(super) struct OutputFragment {
     pub words: Arc<[u32]>,
 }
 impl OutputFragment {
+    /// Bounds and immutable recipe proof available without restoring code.
+    /// Operand contents are authorized by the separately verified code object
+    /// and exact linked assignment witness before physical reuse.
+    fn validate_metadata(&self)->bool {
+        let Some(words)=self.code_word_count else {return false;};
+        if words>u16::MAX as u32||self.code_digest.as_ref().is_none_or(|digest|digest.len()!=64
+            ||!digest.bytes().all(|byte|byte.is_ascii_hexdigit())) {return false;}
+        if self.allocated_rows.as_ref().is_some_and(|layout|!layout.valid()
+            ||layout.variable_count as usize!=self.variables.len()||self.record.code_locals_args!=[0,1,2]) {return false;}
+        let valid_variable=|id:u32|if self.allocated_rows.is_some() {(id as usize)<self.variables.len()}
+            else {id.checked_sub(self.old_variable_base).is_some_and(|offset|(offset as usize)<self.variables.len())};
+        if self.locals.len()>u16::MAX as usize||self.arguments.len()>u16::MAX as usize||self.arguments.len()%4!=0
+            ||self.locals.iter().any(|&id|!valid_variable(id))
+            ||self.arguments.chunks_exact(4).any(|argument|!valid_variable(argument[2]))
+            ||self.helpers.iter().any(|helper|helper.parameter>=self.arguments.len()/4)
+            ||self.relocations.iter().any(|r|r.offset>=words||(r.packed_tag.is_some()&&r.offset.checked_add(1).is_none_or(|offset|offset>=words)))
+            ||self.debug.iter().any(|mark|mark.file_offset>=words||mark.line_offset>=words)
+            ||self.strings.iter().any(|recipe|matches!(recipe,StringRecipe::Debug{index} if *index>=self.debug.len())) {return false;}
+        if let Some(linked)=&self.linked {
+            if !linked.valid()||linked.start.variables!=self.old_variable_base||!self.helpers.is_empty()
+                ||linked.symbol_ids.len()!=self.relocations.len()||linked.debug_ids.len()!=self.debug.len()
+                ||linked.unresolved_debug!=self.unresolved_debug
+                ||self.recipe_identity().as_deref()!=Some(linked.recipe_identity.as_str()) {return false;}
+            let mut strings:Vec<_>=self.strings.iter().filter_map(|recipe|match recipe {StringRecipe::Bytes{old_id,..}=>Some(*old_id),_=>None}).collect();
+            strings.sort_unstable();if strings!=linked.string_ids {return false;}
+            let mapped=|id:u32|id==0xffff||strings.binary_search(&id).is_ok();
+            if self.variables.iter().any(|variable|!mapped(variable.name))||self.record.strings.iter().any(|&id|!mapped(id)) {return false;}
+            let required=if self.allocated_rows.is_some() {AllocationMask::NONE}else {
+                AllocationMask::VARIABLES.union(AllocationMask::LISTS).union(AllocationMask::PROCEDURES).union(AllocationMask::REFERENCES)};
+            if linked.allocation_mask!=required {return false;}
+            if self.allocated_rows.is_none() {
+                let mut next=linked.start.lists;
+                for actual in self.record.code_locals_args {
+                    if next==0xffff {next+=1;}if actual!=next {return false;}
+                    let Some(value)=next.checked_add(1) else {return false;};next=value;
+                }
+            }
+        } true
+    }
     fn encode(&self) -> Option<Vec<u8>> {
         let metadata = rmp_serde::to_vec(self).ok()?;
         let mut result = Vec::with_capacity(12 + metadata.len() + self.words.len() * 4);
@@ -276,6 +315,45 @@ impl ProcedureFragments {
         before.saturating_sub(self.resident_bytes())
     }
     pub fn has_handle(&self, key: &crate::ProcKey) -> bool { self.handles.contains_key(key) }
+    /// Addressed metadata-only window for the physical object composer. The
+    /// returned selector must match current descriptor/candidate before use;
+    /// no PreparedProc or code words are decoded here. Legacy inline-code
+    /// fragments deliberately miss and take the normal hydrated fallback.
+    pub fn read_metadata_batch(&mut self,keys:&[crate::ProcKey])->Vec<Option<(crate::ProcDescriptor,String,Arc<OutputFragment>)>> {
+        if keys.len()>OBJECT_WINDOW {return keys.iter().map(|_|None).collect();}
+        let Some(store)=self.store.clone() else {return keys.iter().map(|_|None).collect();};
+        let missing:Vec<_>=keys.iter().filter(|key|!self.handles.contains_key(*key)&&!self.known_missing.contains(*key)).cloned().collect();
+        let rows:Vec<_>=missing.iter().map(|key|dm_store::Key::new(&self.namespace,crate::lower_cache::shared_binding_fingerprint(key))).collect();
+        if let Ok(batch)=store.read_many_bounded(&rows,64*1024,1024*1024,None) {
+            for (key,bytes) in missing.into_iter().zip(batch.values) {
+                if let Some(handle)=bytes.as_deref().and_then(|bytes|serde_json::from_slice::<Handle>(bytes).ok()) {self.install_handle(key,handle);}
+            }
+        }
+        let payloads:Vec<_>=keys.iter().filter_map(|key|self.handles.get(key).map(|handle|handle.payload.clone())).collect();
+        let mut decoded=HashMap::new();let mut retained=0usize;
+        self.read_metadata_payloads(&store,&payloads,&mut decoded,&mut retained);
+        keys.iter().map(|key| {let handle=self.handles.get(key)?;
+            Some((handle.descriptor.clone(),handle.candidate.clone(),Arc::clone(decoded.get(&handle.payload)?)))
+        }).collect()
+    }
+    fn read_metadata_payloads(&mut self,store:&dm_store::Store,payloads:&[String],decoded:&mut HashMap<String,Arc<OutputFragment>>,retained:&mut usize) {
+        if payloads.is_empty() {return;}
+        let rows:Vec<_>=payloads.iter().map(|payload|dm_store::Key::new(&self.blobs,payload)).collect();
+        match store.read_many_bounded(&rows,16*1024*1024,8*1024*1024,None) {
+            Ok(batch)=>for ((payload,bytes),witness) in payloads.iter().zip(batch.values).zip(batch.witnesses) {
+                if decoded.contains_key(payload)||witness.value_digest.as_deref()!=Some(payload.as_str()) {continue;}
+                let Some(bytes)=bytes else {continue;};
+                let Some(fragment)=OutputFragment::decode(&bytes) else {continue;};
+                if !fragment.words.is_empty()||!fragment.validate_metadata() {continue;}
+                let charge=fragment.charge();if retained.saturating_add(charge)>32*1024*1024 {continue;}
+                *retained+=charge;decoded.insert(payload.clone(),Arc::new(fragment));
+            },
+            Err(error) if error.kind()==std::io::ErrorKind::InvalidInput&&payloads.len()>1=>{
+                let middle=payloads.len()/2;self.read_metadata_payloads(store,&payloads[..middle],decoded,retained);
+                self.read_metadata_payloads(store,&payloads[middle..],decoded,retained);
+            },_=>{}
+        }
+    }
     pub fn prefetch(&mut self, keys: &[crate::ProcKey]) {
         let Some(store) = self.store.clone() else { return; };
         // One addressed source-order window shares database ownership. Payload

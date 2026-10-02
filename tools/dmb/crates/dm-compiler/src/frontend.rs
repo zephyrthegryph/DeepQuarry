@@ -73,7 +73,7 @@ fn parse_chunk(db: &dyn crate::Db, input: ChunkInput) -> Result<Arc<ParsedChunk>
 }
 
 fn parse_fragment(source: &str, digest: &str, cache_root: Option<&Path>) -> Result<Arc<ParsedChunk>, String> {
-    let disk = cache_root.and_then(|root| read_shard(root, digest, source).ok().flatten());
+    let disk = cache_root.and_then(|root| read_shard(root, digest, source.len()).ok().flatten());
     let disk = disk.and_then(|mut stored| {
         if !valid_descriptors(source, &stored.descriptors)
             || !valid_resource_spans(source, &stored.resources)
@@ -186,6 +186,41 @@ impl ParsedChunk {
             resident_bytes,
         }
     }
+}
+
+/// Canonical disk restoration validates local coordinates against the exact
+/// expansion sidecar. Procedure source and compatibility resource strings are
+/// absent; neither requires hydrating an unchanged source chunk.
+fn restore_fragment_segmented(source: &dm_syntax::SegmentedSource, span: Span, digest: &str, root: &Path) -> Option<Arc<ParsedChunk>> {
+    let len = span.end.checked_sub(span.start)?;
+    let mut stored = read_shard(root,digest,len).ok().flatten()?;
+    let boundary = |at: usize| at <= len && source.is_char_boundary(span.start+at);
+    let mut previous = 0;
+    if !stored.descriptors.iter().all(|descriptor| {
+        let valid=descriptor.start>=previous && descriptor.start<=descriptor.header_end && descriptor.header_end<=descriptor.end
+            && [descriptor.start,descriptor.header_end,descriptor.end].into_iter().all(boundary);
+        previous=descriptor.end;
+        valid
+    }) { return None; }
+    let mut previous_resource=0;
+    if !stored.resources.iter().all(|&[start,end]| {
+        let valid=start>=previous_resource && start<end && boundary(start) && boundary(end);
+        previous_resource=end;
+        valid
+    }) {return None;}
+    let resources:Vec<_>=stored.resources.iter().map(|&[start,end]|Span::new(start,end)).collect();
+    let ast=stored.ast().ok()?;
+    fn valid_items(items:&[Item],boundary:&impl Fn(usize)->bool)->bool {
+        items.iter().all(|item| item.span.start<=item.header_span.start && item.header_span.end<=item.span.end
+            && [item.span.start,item.span.end,item.header_span.start,item.header_span.end].into_iter().all(boundary)
+            && valid_items(&item.children,boundary))
+    }
+    if !valid_items(&ast.items,&boundary) { return None; }
+    let fragments: Vec<_>=stored.descriptors.into_iter().zip(stored.fragments).map(|(descriptor,cached)|Fragment {
+        descriptor,source:None,digest:cached.digest,locally_patchable:cached.locally_patchable,
+    }).collect();
+    let resident_bytes=item_bytes(&ast.items)+resources.capacity()*std::mem::size_of::<Span>()+fragments.iter().map(|fragment|fragment.descriptor.path.len()+fragment.digest.len()+192).sum::<usize>();
+    Some(Arc::new(ParsedChunk {source_len:len,digest:digest.to_owned(),ast:Arc::new(ast),fragments,resources,disk_hit:true,resident_bytes}))
 }
 
 fn valid_descriptors(source: &str, descriptors: &[OutlineDescriptor]) -> bool {
@@ -398,6 +433,9 @@ impl OutlineSession {
         self.canonical.release_auxiliary_caches();
         self.canonical.graph.release_encoded_snapshot();
         self.canonical.maps.release_encoded_snapshot();
+    }
+    pub fn release_declaration_replay_buffer(&mut self) -> usize {
+        self.canonical.release_declaration_replay_buffer()
     }
     pub fn trim_output_recipe_bytes(&mut self, bytes: usize) -> usize {
         self.canonical.trim_output_recipe_bytes(bytes)
@@ -860,7 +898,7 @@ fn shard_path(root: &Path, digest: &str) -> PathBuf {
         .join(format!("{digest}.json"))
 }
 
-fn read_shard(root: &Path, digest: &str, source: &str) -> Result<Option<StoredChunk>, String> {
+fn read_shard(root: &Path, digest: &str, source_len: usize) -> Result<Option<StoredChunk>, String> {
     let path = shard_path(root, digest);
     if fs::metadata(&path).map_or(true, |metadata| metadata.len() > MAX_SHARD_BYTES) {
         return Ok(None);
@@ -881,7 +919,7 @@ fn read_shard(root: &Path, digest: &str, source: &str) -> Result<Option<StoredCh
     if stored.version != 3
         || stored.compiler != env!("DM_EMISSION_FINGERPRINT")
         || stored.source_digest != digest
-        || stored.source_len != source.len()
+        || stored.source_len != source_len
         || stored.fragments.len() != stored.descriptors.len()
         || stored.fragments.iter().any(|fragment| fragment.digest.len()!=64 || !fragment.digest.bytes().all(|byte| byte.is_ascii_hexdigit()))
     {

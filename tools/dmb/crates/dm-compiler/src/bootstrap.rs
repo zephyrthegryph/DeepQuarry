@@ -1958,6 +1958,13 @@ fn class_static_symbol(dmb: &Dmb, class: u32, name: &str) -> String {
 }
 
 /// Typed global/static members belong to global storage, even for a null receiver.
+/// Binding projections borrow declaration rows; table traversal never needs a
+/// temporary vector containing every variable pair for each owner.
+fn declaration_rows(dmb:&Dmb,class_id:usize)->impl Iterator<Item=(u32,u32)>+'_ {
+    dmb.classes.get(class_id).and_then(|class|dmb.lists.get(class.lists_and_procs[4] as usize))
+        .filter(|words|words.len()%2==0).into_iter().flat_map(|words|words.chunks_exact(2)).map(|pair|(pair[0],pair[1]))
+}
+
 fn seed_member_globals(shared: &mut SharedLowerBindings, dmb: &Dmb) -> HashMap<String, u32> {
     let mut aliases = HashMap::new();
     for (class_id, class) in dmb.classes.iter().enumerate() {
@@ -1974,9 +1981,7 @@ fn seed_member_globals(shared: &mut SharedLowerBindings, dmb: &Dmb) -> HashMap<S
             .entry(owner.to_owned())
             .or_default()
             .extend(builtin_fields.fields);
-        for (variable, flags) in dmb
-            .class_variable_declarations(class_id)
-            .unwrap_or_default()
+        for (variable, flags) in declaration_rows(dmb,class_id)
         {
             if let Some(name) = dmb
                 .variables
@@ -2218,12 +2223,13 @@ fn collect_modified_types_segmented(source: &dm_syntax::SegmentedSource) -> Resu
     let limit = std::env::var("DM_BUILD_MAX_PARSE_CHUNK_BYTES").ok().and_then(|v| v.parse().ok()).unwrap_or(1024*1024);
     let mut result = ModifiedTypes::default();
     let mut failure = None;
-    let scanned = source.for_each_chunk_cached(&mut layout, 32*1024, limit, |text, base| {
+    let scanned = source.for_each_chunk_identity_cached(&mut layout, 32*1024, limit, |span, digest| {
         if failure.is_some() { return; }
-        let key = crate::incremental::digest(text.as_bytes());
+        let base = span.start;
+        let key = digest.to_owned();
         let cached = memos.lock().unwrap_or_else(|error| error.into_inner()).entries.get(&key).cloned();
         let collected = if let Some(cached) = cached { Ok((*cached).clone()) }
-            else { collect_modified_types(text).map(|found| {
+            else { source.try_slice(span).and_then(|text| collect_modified_types(&text)).map(|found| {
                 let mut cache = memos.lock().unwrap_or_else(|error| error.into_inner());
                 let bytes = modified_bytes(&found)+key.len();
                 if cache.entries.len() >= 8192 || cache.bytes+bytes > 32*1024*1024 { *cache = ModifiedMemoCache::default(); }
@@ -3944,9 +3950,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
         let Some(types) = shared_bindings.member_types.get(path) else {
             continue;
         };
-        for (variable_id, flags) in dmb
-            .class_variable_declarations(class_id)
-            .unwrap_or_default()
+        for (variable_id, flags) in declaration_rows(&dmb,class_id)
         {
             if flags & 1 == 0 {
                 continue;
@@ -3983,7 +3987,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
             }
         }
         if !proc.owner_path.is_empty() {
-            let (path, _) = member_signature(proc.item, &proc.owner_path, proc.verb)?;
+            let path = canonical::InvocationFragments::declaration_path(proc.item, &proc.owner_path, proc.verb)?;
             shared_bindings
                 .known_member_procs
                 .entry(proc.owner_path.clone())
@@ -3993,7 +3997,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
         if !proc.owner_path.is_empty()
             && has_proc_name_setting(&proc.item.children)
         {
-            let (path, _) = member_signature(proc.item, &proc.owner_path, proc.verb)?;
+            let path = canonical::InvocationFragments::declaration_path(proc.item, &proc.owner_path, proc.verb)?;
             let name = path.rsplit('/').next().unwrap().to_owned();
             shared_bindings
                 .member_procs
@@ -4077,16 +4081,6 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                         return Err(format!("duplicate procedure definition: {path}"));
                     }
                     generated_proc_paths.insert(path.clone());
-                    let mut bindings = LowerBindings {
-                        current_proc_path: Some(path.clone()),
-                        current_type_path: (!pending.owner_path.is_empty()).then(||pending.owner_path.clone()),
-                        shared: Some(Arc::clone(&shared_bindings)),
-                        prepared_member_globals: prepared_member_globals.clone(),
-                        ..LowerBindings::default()
-                    };
-                    if pending.owner_path == "/world" {
-                        seed_builtin_fields("/world", &mut bindings);
-                    }
                     let inherited = pending.owner.and_then(|owner| {
                         find_inherited_proc(
                             &dmb,
@@ -4121,6 +4115,26 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                             ),
                             metadata.clone(),
                         );
+                    }
+                    // The syntax candidate key certifies authored declarations and
+                    // exact current inherited metadata. A static-free overlay has
+                    // no allocation effects and can be reused directly.
+                    if syntax.statics.is_empty() {
+                        if let Some((frame,digest))=&syntax.frame {
+                            session.invocation_fragments.counters.frame_hits+=1;
+                            invocation_plans.push(canonical::InvocationPlan {path,params,metadata,static_ids:HashMap::new(),bindings:Arc::clone(frame),frame_digest:digest.clone()});
+                            continue;
+                        }
+                    }
+                    let mut bindings = LowerBindings {
+                        current_proc_path: Some(path.clone()),
+                        current_type_path: (!pending.owner_path.is_empty()).then(||pending.owner_path.clone()),
+                        shared: Some(Arc::clone(&shared_bindings)),
+                        prepared_member_globals: prepared_member_globals.clone(),
+                        ..LowerBindings::default()
+                    };
+                    if pending.owner_path == "/world" {
+                        seed_builtin_fields("/world", &mut bindings);
                     }
                     let static_declarations = syntax.statics.clone();
                     let mut static_ids = HashMap::new();

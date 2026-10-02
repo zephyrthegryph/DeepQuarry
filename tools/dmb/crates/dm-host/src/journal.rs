@@ -36,16 +36,24 @@ impl JournalProof {
     pub fn for_files(&self, files: &BTreeMap<PathBuf, FileStamp>) -> Option<Self> {
         #[cfg(windows)]
         {
-            let wanted = files
-                .values()
-                .map(FileStamp::file_id)
-                .collect::<Option<std::collections::BTreeSet<_>>>()?;
+            let mut wanted = BTreeMap::<u64, std::collections::BTreeSet<[u64; 2]>>::new();
+            for stamp in files.values() {
+                wanted.entry(stamp.volume_id()?).or_default().insert(stamp.file_id()?);
+            }
             let mut proof = self.clone();
             if let Some(live) = proof.live_volumes.get_mut().take() {
                 proof.volumes = live;
             }
+            // A subset may remove watched files, but cannot introduce a file
+            // that was never covered by the original cursor. Legacy proofs
+            // lacking a volume identity require ordinary stamp validation.
+            for (identity, ids) in &wanted {
+                if ids.iter().any(|id| !proof.volumes.iter().any(|volume| {
+                    volume.volume_id == Some(*identity) && volume.ids.binary_search(id).is_ok()
+                })) { return None; }
+            }
             for volume in &mut proof.volumes {
-                volume.ids.retain(|id| wanted.contains(id));
+                volume.ids.retain(|id| volume.volume_id.and_then(|identity| wanted.get(&identity)).is_some_and(|ids| ids.contains(id)));
             }
             proof
                 .volumes
@@ -66,6 +74,7 @@ impl JournalProof {
     ) -> Option<std::collections::BTreeSet<PathBuf>> {
         #[cfg(windows)]
         {
+            self.for_files(files)?;
             if !self.junctions_current() {
                 return None;
             }
@@ -132,6 +141,7 @@ impl JournalProof {
                     old.device == volume.device
                         && old.journal_id == volume.journal_id
                         && old.cursor == volume.cursor
+                        && old.volume_id == volume.volume_id
                 }) {
                     old.ids.extend(volume.ids);
                     old.ids.sort();
@@ -307,6 +317,8 @@ impl JournalProof {
 #[cfg(windows)]
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct VolumeProof {
+    #[serde(default)]
+    volume_id: Option<u64>,
     device: PathBuf,
     journal_id: u64,
     cursor: i64,
@@ -615,6 +627,7 @@ mod windows {
             ids.sort();
             ids.dedup();
             volumes.push(VolumeProof {
+                volume_id: devices.iter().find_map(|(identity, candidate)| (candidate == &device).then_some(*identity)),
                 device,
                 journal_id,
                 cursor,

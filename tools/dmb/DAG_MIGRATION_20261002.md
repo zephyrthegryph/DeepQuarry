@@ -260,3 +260,16 @@ partially to the actual excess, accounts a bounded2MiB weak shared artifact
 index across sessions, composes relative closed literal/arithmetic/list
 variable recipes, and stores preprocess blobs transactionally in bounded
 2MiB batches with lazy32-key/4MiB raw hydration. Timings pending.
+
+P completed from066ddd5a76: cold176.724s; unchanged0.481s; body24.844s;
+newproc62.441s; newvar85.166s; default68.930s;
+freshcachedprocess0.165s; freshbody40.290s. Asset/resource cases omitted.
+All compiler requests succeeded; no tests or runtime validation. These are
+regressions versus O, despite improved declaration-recipe reuse. Newvar reused
+all68,411 authored bodies, but invocation preparation still cost14.857s;
+body edits read/hydrated17.9MB of unchanged code and spent4.615s validating
+inputs. Prepared cold persistence cost7.111s. The next implementation removes
+unchanged-source content reads from identity traversal, uses direct immutable
+invocation frames, and routes publication through a first-class wire image.
+Wire-image serialization alone does not eliminate initial native hydration;
+scoped physical composition must also migrate before that claim is valid.

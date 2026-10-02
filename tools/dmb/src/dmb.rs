@@ -618,6 +618,15 @@ pub struct ChunkedDmb {
     pub list_spans: Vec<std::ops::Range<usize>>,
     pub len: usize,
 }
+/// Fallible physical list objects. A source owns actual records, never dummy
+/// logical vectors; callers authorize reference validity before composition.
+pub trait WireListSource {
+    fn len(&self)->usize;
+    fn word_count(&self,index:usize)->io::Result<usize>;
+    fn read_wire(&self,index:usize,object_width:usize)->io::Result<Arc<[u8]>>;
+    fn resident_words(&self,_index:usize)->Option<&ListWords> {None}
+    fn prepare_window(&self,start:usize,max_rows:usize)->io::Result<usize> {Ok(start.saturating_add(max_rows).min(self.len()))}
+}
 impl ChunkedDmb {
     pub fn into_bytes(self) -> (Vec<u8>, Vec<std::ops::Range<usize>>) {
         let mut bytes = Vec::with_capacity(self.len);
@@ -2189,6 +2198,18 @@ impl Dmb {
         self.serialize_chunks(references_proven, wire_cache.take()).map(ChunkedDmb::into_bytes)
     }
     fn serialize_chunks(&self, references_proven: bool, mut wire_cache: Option<&mut DmbWireCache>) -> io::Result<ChunkedDmb> {
+        self.serialize_chunks_source(references_proven,wire_cache.take(),None)
+    }
+    /// Physical encoder boundary for a separately certified list-object table.
+    /// The caller must validate the metadata together with this exact source.
+    /// Logical readers continue using Dmb; disk-backed images use a distinct
+    /// owner with explicit fallible materialization.
+    pub fn encode_metadata_with_lists(&self,lists:&dyn WireListSource,cache:&mut DmbWireCache)->io::Result<ChunkedDmb> {
+        self.serialize_chunks_source(true,Some(cache),Some(lists))
+    }
+    fn serialize_chunks_source(&self, references_proven: bool, mut wire_cache: Option<&mut DmbWireCache>, lists:Option<&dyn WireListSource>) -> io::Result<ChunkedDmb> {
+        let list_count=lists.map_or(self.lists.len(),|source|source.len());
+        let list_len=|id:usize|->io::Result<usize> {match lists {Some(source)=>source.word_count(id),None=>Ok(self.lists[id].len())}};
         if self.header.version_line != b"world bin v516\n"
             || !self
                 .header
@@ -2226,9 +2247,7 @@ impl Dmb {
         if covered != cells {
             return Err(invalid("grid runs do not cover map dimensions"));
         }
-        if (0..self.lists.len()).any(|id|self.list_words(id as u32).unwrap().len()>u16::MAX as usize) {
-            return Err(invalid("list exceeds u16 element count"));
-        }
+        for id in 0..list_count {if list_len(id)?>u16::MAX as usize {return Err(invalid("list exceeds u16 element count"));}}
         if self.world.client_script_files.len() > u16::MAX as usize {
             return Err(invalid("client script file list exceeds u16 count"));
         }
@@ -2294,7 +2313,7 @@ impl Dmb {
         reserve(self.world.client_script_files.len(), width)?;
         for string in &self.strings { reserve(1, string.data.len().checked_add(2 * (usize::from(string.long_chunks) + 1))
             .ok_or_else(|| invalid("wire string size overflow"))?)?; }
-        for id in 0..self.lists.len() { let list=self.list_words(id as u32).unwrap(); reserve(1, list.len().checked_mul(width).and_then(|n| n.checked_add(2))
+        for id in 0..list_count { reserve(1, list_len(id)?.checked_mul(width).and_then(|n| n.checked_add(2))
             .ok_or_else(|| invalid("wire list size overflow"))?)?; }
         w.bytes.try_reserve_exact(estimate.min(256 * 1024)).map_err(io::Error::other)?;
         if let Some(line) = &self.header.executor_line {
@@ -2364,9 +2383,25 @@ impl Dmb {
             w.bounded_page();
         }
         w.u32(string_hash);
-        let mut list_spans = Vec::with_capacity(self.lists.len());
-        w.object(u32::try_from(self.lists.len()).map_err(|_|invalid("list table exceeds u32"))?);
-        for id in 0..self.lists.len() {
+        let mut list_spans = Vec::with_capacity(list_count);
+        let mut prepared_until=0;
+        w.object(u32::try_from(list_count).map_err(|_|invalid("list table exceeds u32"))?);
+        for id in 0..list_count {
+            if let Some(source)=lists {
+                if id>=prepared_until {
+                    prepared_until=source.prepare_window(id,1024)?;
+                    if prepared_until<=id||prepared_until>list_count {return Err(invalid("wire list preparation made no progress"));}
+                }
+                if let (Some(cache),Some(words))=(wire_cache.as_deref_mut(),source.resident_words(id)) {
+                    let start=w.at();cache.append_list(&mut w,words);list_spans.push(start..w.at());w.bounded_page();continue;
+                }
+                let start=w.at();let bytes=source.read_wire(id,width)?;
+                let count=list_len(id)?;
+                if bytes.len()!=2+count*width || bytes.get(..2)!=Some((count as u16).to_le_bytes().as_slice()) {
+                    return Err(invalid("wire list source shape mismatch"));
+                }
+                w.shared(&bytes);list_spans.push(start..w.at());w.bounded_page();continue;
+            }
             let list=&self.lists[id];
             let start = w.at();
             let encode = |w: &mut Writer| {

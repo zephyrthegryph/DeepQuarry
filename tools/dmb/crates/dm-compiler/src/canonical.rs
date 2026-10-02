@@ -221,6 +221,21 @@ impl InvocationFragments {
     fn digest_bytes(value:&str)->Option<[u8;32]> {if value.len()!=64{return None;}let mut bytes=[0u8;32];for(index,pair)in value.as_bytes().chunks_exact(2).enumerate(){let digit=|byte:u8|match byte {b'0'..=b'9'=>Some(byte-b'0'),b'a'..=b'f'=>Some(byte-b'a'+10),b'A'..=b'F'=>Some(byte-b'A'+10),_=>None};bytes[index]=(digit(pair[0])?<<4)|digit(pair[1])?;}Some(bytes)}
     fn digest_text(value:&[u8;32])->String {use std::fmt::Write;let mut result=String::with_capacity(64);for byte in value {let _=write!(result,"{byte:02x}");}result}
     fn remember_handle(&mut self,declaration:&str,payload:&str){if let Some((declaration,payload))=Self::digest_bytes(declaration).zip(Self::digest_bytes(payload)){if self.handles.contains_key(&declaration)||self.handles.len()<72_000 {self.handles.insert(declaration,payload);}}}
+    pub(super) fn declaration_path(item:&Item,owner:&str,verb:bool)->Result<String,String> {
+        let header=item.header.trim();let (raw,params)=header.split_once('(').ok_or_else(||format!("unsupported procedure header {header}"))?;
+        if params.rsplit_once(") as ").is_none()&&!params.ends_with(')'){return Err(format!("unsupported procedure header {header}"));}
+        let raw=raw.trim_end_matches('/');
+        if owner.is_empty(){if !raw.starts_with("/proc/")||raw[6..].contains('/') {return Err(format!("bootstrap only supports global procs: {header}"));}return Ok(raw.into());}
+        let marker=if verb {"verb/"}else{"proc/"};
+        let name=raw.strip_prefix(marker).or_else(||raw.strip_prefix(&format!("{owner}/{marker}"))).or_else(||raw.strip_prefix(&format!("{owner}/"))).or_else(||(!raw.contains('/')).then_some(raw)).ok_or_else(||format!("unsupported member procedure header {header}"))?;
+        if name.is_empty()||name.contains('/'){return Err(format!("unsupported procedure name: {header}"));}
+        Ok(if raw==format!("{owner}/{name}"){raw.to_owned()}else if raw==name {format!("{owner}/{name}")}else{format!("{owner}/{marker}{name}")})
+    }
+    fn declaration_candidate(&self,item:&Item)->Option<Arc<InvocationSyntax>> {
+        let (_,declaration)=self.window_declarations.get(&(item as *const Item as usize))?;
+        let payload=Self::digest_text(self.handles.get(&Self::digest_bytes(declaration)?)?);
+        self.entries.get(&payload).or_else(||self.requested_syntax.get(&payload)).cloned()
+    }
     fn declaration_key(item:&Item,path:&str)->String {
         fn relevant(node:&Item)->bool {let header=node.header.trim();header.starts_with("set ")||["var/static/","var/global/","var/const/"].iter().any(|prefix|header.starts_with(prefix))||node.children.iter().any(relevant)}
         fn items(hash:&mut Sha256,nodes:&[Item]) {
@@ -239,12 +254,11 @@ impl InvocationFragments {
         self.requested_encoded.clear();self.requested_encoded_bytes=0;
         self.window_declarations.clear();
         self.requested_signatures.clear();self.requested_signature_bytes=0;
-        self.prefetch_signatures(inputs);
         let Some(store)=self.store.clone() else {return;};
         let mut handles=Vec::new();
         let mut payloads=BTreeSet::new();
         for (item,owner,verb) in inputs {
-            let Ok((path,_))=self.signature(item,owner,*verb) else {continue;};
+            let Ok(path)=Self::declaration_path(item,owner,*verb) else {continue;};
             let key=Self::declaration_key(item,&path);
             self.window_declarations.insert(*item as *const Item as usize,(path,key.clone()));
             if let Some(identity)=Self::digest_bytes(&key).and_then(|key|self.handles.get(&key)).map(Self::digest_text) {
@@ -271,6 +285,8 @@ impl InvocationFragments {
                 }
             } else if self.syntax_misses.len()<128_000 {self.syntax_misses.insert(key.name.clone());}
         });
+        let missing:Vec<_>=inputs.iter().copied().filter(|(item,_,_)|self.declaration_candidate(item).is_none()).collect();
+        self.prefetch_signatures(&missing);
     }
     pub(super) fn prefetch_signatures(&mut self, inputs:&[(&Item,&str,bool)]) {
         let Some(store)=self.store.clone() else {return;};
@@ -297,6 +313,9 @@ impl InvocationFragments {
         owner: &str,
         verb: bool,
     ) -> Result<(String, Vec<ParsedParameter>), String> {
+        if let Some(candidate)=self.declaration_candidate(item) {
+            self.counters.signature_hits+=1;return Ok((candidate.path.clone(),candidate.params.clone()));
+        }
         let key = crate::lower_cache::shared_binding_fingerprint(&(owner, verb, &item.header));
         if let Some(value) = self.signatures.get(&key) {
             self.counters.signature_hits+=1;return Ok(value.as_ref().clone());
@@ -1070,6 +1089,11 @@ impl CanonicalSession {
         self.invocation_fragments.release_decoded();
         self.procedure_fragments.trim_transient();
         before.saturating_sub(self.resident_bytes())
+    }
+    /// This compressed replay image is also durable on disk. It is needed only
+    /// when declarations change, while admitted procedure rows serve every edit.
+    pub(crate) fn release_declaration_replay_buffer(&mut self) -> usize {
+        self.declaration_base.take().map_or(0, |(_, bytes)| bytes.capacity())
     }
     pub(crate) fn trim_output_recipe_bytes(&mut self, bytes: usize) -> usize {
         let target = self.procedure_fragments.decoded_bytes().saturating_sub(bytes);

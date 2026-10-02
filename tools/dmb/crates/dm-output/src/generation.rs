@@ -146,6 +146,21 @@ pub struct VerifiedBytecode {
     resources: String,
 }
 impl VerifiedBytecode {
+    pub fn serialize_wire_chunks(
+        image:&crate::wire_image::WireImage,
+        cache:&mut byond_dmb::dmb::DmbWireCache,
+        root:&Path,
+    )->io::Result<(crate::chunks::StoredDmb,Self)> {
+        let stored=crate::chunks::persist(root,&image.serialize_chunks(cache)?)?;
+        let receipt=Self {digest:stored.digest().to_owned(),len:stored.len(),resources:resource_slice_digest(image.resources())};
+        Ok((stored,receipt))
+    }
+    pub fn serialize_wire_cached(image:&crate::wire_image::WireImage,cache:&mut byond_dmb::dmb::DmbWireCache)
+        ->io::Result<(Vec<u8>,Vec<std::ops::Range<usize>>,Self)> {
+        let (bytes,spans)=image.serialize_chunks(cache)?.into_bytes();
+        let receipt=Self {digest:format!("{:x}",Sha256::digest(&bytes)),len:bytes.len(),resources:resource_slice_digest(image.resources())};
+        Ok((bytes,spans,receipt))
+    }
     pub fn serialize_chunks(
         image: &byond_dmb::dmb::ReferenceValidatedImage<'_>,
         cache: &mut byond_dmb::dmb::DmbWireCache,
@@ -184,8 +199,11 @@ impl VerifiedBytecode {
 }
 
 fn resource_digest(dmb: &byond_dmb::dmb::Dmb) -> String {
+    resource_slice_digest(&dmb.resources)
+}
+fn resource_slice_digest(resources:&[byond_dmb::dmb::ResourceRef])->String {
     let mut hash = Sha256::new();
-    for resource in &dmb.resources {
+    for resource in resources {
         hash.update(resource.id.to_le_bytes());
         hash.update([resource.kind]);
     }

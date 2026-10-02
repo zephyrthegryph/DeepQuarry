@@ -4,19 +4,26 @@ use std::{borrow::Cow, sync::Arc, collections::HashMap, hash::{Hash, Hasher}};
 
 #[derive(Default)]
 pub struct SegmentedChunkSession {
-    transitions: HashMap<(usize, u64, bool, usize, usize), PieceTransition>,
+    transitions: HashMap<(PieceIdentity, u64, bool, usize, usize), PieceTransition>,
     bytes: usize,
     pub scanned_bytes: usize,
 }
+#[derive(Clone, Copy, Hash, Eq, PartialEq)]
+enum PieceIdentity {
+    Content([u8;32],usize),
+    Resident(usize),
+}
 struct PieceTransition {
-    // Weak identity does not pin previous source revisions. Carry equality and
-    // an upgraded pointer check protect hash/address reuse from false hits.
+    // Resident-only sources use weak identity to avoid pinning old revisions.
+    // Persisted pieces use exact SHA/length provenance across restored handles;
+    // exact incoming carry equality guards lexical transition reuse.
     piece: std::sync::Weak<str>,
-    disk: Option<std::sync::Weak<std::path::PathBuf>>,
     carry: Arc<str>,
     boundary: usize,
     spans: Vec<Span>,
     skipped: Vec<Span>,
+    digests: Vec<String>,
+    outgoing: Arc<str>,
 }
 impl SegmentedChunkSession {
     pub fn resident_bytes(&self) -> usize { self.bytes }
@@ -191,12 +198,11 @@ impl SegmentedSource {
         let mut total = ChunkReport::default();
         for index in 0..self.pieces.len() {
             let piece=self.content(index)?;
-            let disk=self.disk[index].as_ref();
-            let identity=disk.map_or_else(||Arc::as_ptr(&self.pieces[index]) as *const () as usize,|path|Arc::as_ptr(path) as usize);
+            let identity=self.digests[index].map_or_else(||PieceIdentity::Resident(Arc::as_ptr(&self.pieces[index]) as *const () as usize),|digest|PieceIdentity::Content(digest,self.lengths[index]));
             let mut hasher = std::collections::hash_map::DefaultHasher::new();
             carry.hash(&mut hasher);
             let key = (identity, hasher.finish(), index+1 == self.pieces.len(), target, limit);
-            let hit = session.transitions.get(&key).is_some_and(|entry| disk.map_or_else(||entry.piece.upgrade().is_some_and(|cached| Arc::ptr_eq(&cached,&self.pieces[index])),|path|entry.disk.as_ref().and_then(|weak|weak.upgrade()).is_some_and(|cached|Arc::ptr_eq(&cached,path))) && &*entry.carry == carry);
+            let hit = session.transitions.get(&key).is_some_and(|entry| (matches!(identity,PieceIdentity::Content(..)) || entry.piece.upgrade().is_some_and(|cached|Arc::ptr_eq(&cached,&self.pieces[index]))) && &*entry.carry == carry);
             if !hit {
                 let incoming: Arc<str> = Arc::from(carry.as_str());
                 let mut window = String::with_capacity(carry.len()+piece.len());
@@ -211,10 +217,13 @@ impl SegmentedSource {
                 // no successful production parse can retain skipped input.
                 let skipped = report.first_skipped_span.into_iter().collect();
                 session.scanned_bytes += window.len();
-                let charge = incoming.len()+spans.capacity()*std::mem::size_of::<Span>()+256;
+                use sha2::Digest;
+                let digests: Vec<_> = spans.iter().map(|span| format!("{:x}",sha2::Sha256::digest(window[span.range()].as_bytes()))).collect();
+                let outgoing: Arc<str> = Arc::from(&window[boundary..]);
+                let charge = incoming.len()+outgoing.len()+spans.capacity()*std::mem::size_of::<Span>()+digests.iter().map(|digest|digest.capacity()+std::mem::size_of::<String>()).sum::<usize>()+256;
                 if session.bytes+charge > 32*1024*1024 || session.transitions.len() >= 8192 { session.clear(); }
                 session.bytes += charge;
-                session.transitions.insert(key, PieceTransition { piece: Arc::downgrade(&self.pieces[index]), disk:disk.map(Arc::downgrade), carry: incoming, boundary, spans, skipped });
+                session.transitions.insert(key, PieceTransition { piece: Arc::downgrade(&self.pieces[index]), carry: incoming, boundary, spans, skipped, digests, outgoing });
             }
             let transition = &session.transitions[&key];
             let incoming_len = carry.len();
@@ -240,6 +249,60 @@ impl SegmentedSource {
                 carry.drain(..transition.boundary);
                 carry.push_str(&piece);
             }
+            base += transition.boundary;
+            if carry.len() > limit { return Err(format!("declaration at expanded offset {base} exceeds the parse chunk limit of {limit} bytes")); }
+        }
+        Ok(total)
+    }
+    /// Replay exact chunk ranges and content identities without opening unchanged
+    /// disk-backed pieces. Only cache misses hydrate source; consumers materialize
+    /// ranges solely when their semantic query misses.
+    pub fn for_each_chunk_identity_cached(&self, session: &mut SegmentedChunkSession, target: usize, limit: usize, mut visit: impl FnMut(Span, &str)) -> Result<ChunkReport, String> {
+        session.scanned_bytes = 0;
+        let limit = limit.max(1);
+        let mut carry = String::new();
+        let mut base = 0;
+        let mut total = ChunkReport::default();
+        for index in 0..self.pieces.len() {
+            let identity=self.digests[index].map_or_else(||PieceIdentity::Resident(Arc::as_ptr(&self.pieces[index]) as *const () as usize),|digest|PieceIdentity::Content(digest,self.lengths[index]));
+            let mut hasher = std::collections::hash_map::DefaultHasher::new();
+            carry.hash(&mut hasher);
+            let key = (identity, hasher.finish(), index+1 == self.pieces.len(), target, limit);
+            let hit = session.transitions.get(&key).is_some_and(|entry| (matches!(identity,PieceIdentity::Content(..)) || entry.piece.upgrade().is_some_and(|cached|Arc::ptr_eq(&cached,&self.pieces[index]))) && &*entry.carry == carry);
+            if !hit {
+                let piece=self.content(index)?;
+                let incoming: Arc<str> = Arc::from(carry.as_str());
+                let mut window = String::with_capacity(carry.len()+piece.len());
+                window.push_str(&carry);
+                window.push_str(&piece);
+                let mut boundaries = Vec::new();
+                crate::audit::for_each_top_level_boundary(&window, |at| boundaries.push(at));
+                let boundary = if key.2 { window.len() } else { boundaries.last().copied().unwrap_or(0) };
+                let mut spans = Vec::new();
+                let report = crate::audit::source_chunks_from_boundaries(&window[..boundary], target, limit, &boundaries, |text, offset| spans.push(Span::new(offset, offset+text.len())));
+                // The syntax scanner reports a count and first skipped range;
+                // no successful production parse can retain skipped input.
+                let skipped = report.first_skipped_span.into_iter().collect();
+                session.scanned_bytes += window.len();
+                use sha2::Digest;
+                let digests: Vec<_> = spans.iter().map(|span| format!("{:x}",sha2::Sha256::digest(window[span.range()].as_bytes()))).collect();
+                let outgoing: Arc<str> = Arc::from(&window[boundary..]);
+                let charge = incoming.len()+outgoing.len()+spans.capacity()*std::mem::size_of::<Span>()+digests.iter().map(|digest|digest.capacity()+std::mem::size_of::<String>()).sum::<usize>()+256;
+                if session.bytes+charge > 32*1024*1024 || session.transitions.len() >= 8192 { session.clear(); }
+                session.bytes += charge;
+                session.transitions.insert(key, PieceTransition { piece: Arc::downgrade(&self.pieces[index]), carry: incoming, boundary, spans, skipped, digests, outgoing });
+            }
+            let transition = &session.transitions[&key];
+            if let Some(span) = transition.skipped.first() {
+                return Err(format!("declaration at expanded offset {} exceeds the parse chunk limit of {limit} bytes", base+span.start));
+            }
+            for (span,digest) in transition.spans.iter().zip(&transition.digests) {
+                visit(Span::new(base+span.start,base+span.end),digest);
+                total.parsed_chunks += 1;
+                total.parsed_bytes += span.end-span.start;
+            }
+            carry.clear();
+            carry.push_str(&transition.outgoing);
             base += transition.boundary;
             if carry.len() > limit { return Err(format!("declaration at expanded offset {base} exceeds the parse chunk limit of {limit} bytes")); }
         }

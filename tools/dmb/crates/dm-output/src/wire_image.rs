@@ -1,0 +1,174 @@
+//! Physical images with fallible addressed list objects. No logical Dmb is
+//! exposed until all actual lists have been explicitly materialized.
+use byond_dmb::dmb::{Dmb,ListWords,ChunkedDmb,DmbWireCache,WireListSource,ReferenceValidatedImage};
+use serde::{Serialize,Deserialize};
+use sha2::{Digest,Sha256};
+use std::{collections::HashMap,io,ops::Range,path::Path,sync::{Arc,Mutex}};
+const WINDOW:usize=1024;
+const BUDGET:usize=8*1024*1024;
+fn invalid(message:&'static str)->io::Error {io::Error::new(io::ErrorKind::InvalidData,message)}
+#[derive(Clone,Serialize,Deserialize)]
+pub struct VerifiedCodeHandle {digest:String,words:usize,width:usize}
+impl VerifiedCodeHandle {
+    pub fn digest(&self)->&str {&self.digest}
+    pub fn word_count(&self)->usize {self.words}
+    pub fn object_width(&self)->usize {self.width}
+    fn valid(&self)->bool {self.digest.len()==64&&self.digest.bytes().all(|c|c.is_ascii_hexdigit())
+        &&self.words<=u16::MAX as usize&&matches!(self.width,2|4)}
+}
+pub enum ListObject {Resident(ListWords),Addressed(VerifiedCodeHandle)}
+#[derive(Default)]
+struct ReadWindow {rows:HashMap<String,Arc<[u8]>>,bytes:usize}
+pub struct CodeObjectStore {store:dm_store::Store,window:Mutex<ReadWindow>}
+impl CodeObjectStore {
+    pub fn open(root:&Path)->io::Result<Arc<Self>> {Ok(Arc::new(Self {
+        store:dm_store::Store::open(root.join("wire-list-objects.redb"))?,window:Mutex::new(ReadWindow::default())}))}
+    fn namespace()->&'static str {"wire-list-object-v1"}
+    pub fn resident_bytes(&self)->usize {self.window.lock().unwrap_or_else(|e|e.into_inner()).bytes}
+    pub fn clear(&self) { *self.window.lock().unwrap_or_else(|e|e.into_inner())=ReadWindow::default(); }
+    pub fn persist_batch(&self,rows:&[(&[u32],usize)])->io::Result<Vec<VerifiedCodeHandle>> {
+        if rows.len()>WINDOW {return Err(invalid("wire list write window exceeds bound"));}
+        let mut changes=Vec::new();let mut handles=Vec::new();let mut total=0usize;
+        for &(words,width) in rows {
+            let bytes=encode(words,width)?;total+=bytes.len();
+            if total>BUDGET {return Err(invalid("wire list write byte window exceeds bound"));}
+            let digest=format!("{:x}",Sha256::digest(&bytes));
+            changes.push((dm_store::Key::new(Self::namespace(),&digest),bytes));
+            handles.push(VerifiedCodeHandle {digest,words:words.len(),width});
+        }
+        self.store.put_many(changes,None)?;Ok(handles)
+    }
+    pub fn persist_words(&self,words:&[u32],width:usize)->io::Result<VerifiedCodeHandle> {
+        self.persist_batch(&[(words,width)])?.pop().ok_or_else(||invalid("empty wire list write"))
+    }
+    /// One bounded ownership session, before serial composition consumes rows.
+    pub fn prefetch(&self,handles:&[VerifiedCodeHandle])->io::Result<()> {
+        if handles.len()>WINDOW||handles.iter().any(|h|!h.valid()) {return Err(invalid("invalid wire list read window"));}
+        let keys:Vec<_>=handles.iter().map(|h|dm_store::Key::new(Self::namespace(),&h.digest)).collect();
+        let batch=self.store.read_many_bounded(&keys,2+u16::MAX as usize*4,BUDGET,None)?;
+        let mut next=ReadWindow::default();
+        for ((handle,bytes),witness) in handles.iter().zip(batch.values).zip(batch.witnesses) {
+            let bytes=bytes.ok_or_else(||invalid("missing wire list object"))?;
+            if witness.value_digest.as_deref()!=Some(handle.digest.as_str()) {return Err(invalid("wire list digest mismatch"));}
+            validate_bytes(handle,&bytes)?;
+            if !next.rows.contains_key(&handle.digest) {next.bytes+=bytes.len()+handle.digest.len()+128;next.rows.insert(handle.digest.clone(),bytes.into());}
+        }
+        if next.bytes>BUDGET+WINDOW*256 {return Err(invalid("wire list resident window exceeds bound"));}
+        *self.window.lock().unwrap_or_else(|e|e.into_inner())=next;Ok(())
+    }
+    pub fn restore(&self,handle:&VerifiedCodeHandle)->io::Result<Arc<[u8]>> {
+        if !handle.valid() {return Err(invalid("invalid wire list handle"));}
+        if let Some(bytes)=self.window.lock().unwrap_or_else(|e|e.into_inner()).rows.get(&handle.digest).cloned() {
+            validate_bytes(handle,&bytes)?;return Ok(bytes);
+        }
+        self.prefetch(std::slice::from_ref(handle))?;
+        self.window.lock().unwrap_or_else(|e|e.into_inner()).rows.get(&handle.digest).cloned().ok_or_else(||invalid("missing prefetched wire list"))
+    }
+}
+fn encode(words:&[u32],width:usize)->io::Result<Vec<u8>> {
+    if words.len()>u16::MAX as usize||!matches!(width,2|4) {return Err(invalid("wire list shape exceeds bound"));}
+    let mut bytes=Vec::with_capacity(2+words.len()*width);bytes.extend_from_slice(&(words.len() as u16).to_le_bytes());
+    for &word in words {if width==2 {bytes.extend_from_slice(&u16::try_from(word).map_err(|_|invalid("narrow list operand overflow"))?.to_le_bytes());}
+        else {bytes.extend_from_slice(&word.to_le_bytes());}}
+    Ok(bytes)
+}
+fn validate_bytes(handle:&VerifiedCodeHandle,bytes:&[u8])->io::Result<()> {
+    if !handle.valid()||bytes.len()!=2+handle.words*handle.width||bytes.get(..2)!=Some((handle.words as u16).to_le_bytes().as_slice()) {
+        return Err(invalid("wire list object shape mismatch"));
+    } Ok(())
+}
+pub struct ListObjectTable {rows:Vec<ListObject>,store:Option<Arc<CodeObjectStore>>}
+impl ListObjectTable {
+    pub fn new(store:Option<Arc<CodeObjectStore>>)->Self {Self {rows:Vec::new(),store}}
+    pub fn len(&self)->usize {self.rows.len()}
+    pub fn append_resident(&mut self,words:impl Into<ListWords>)->usize {let id=self.len();self.rows.push(ListObject::Resident(words.into()));id}
+    pub fn append_verified(&mut self,handle:VerifiedCodeHandle)->io::Result<usize> {
+        if !handle.valid()||self.store.is_none() {return Err(invalid("wire list handle lacks store"));}
+        let id=self.len();self.rows.push(ListObject::Addressed(handle));Ok(id)
+    }
+    pub fn prepare_range(&self,range:Range<usize>)->io::Result<()> {
+        if range.end>self.len()||range.start>range.end||range.len()>WINDOW {return Err(invalid("wire list preparation range exceeds bound"));}
+        let handles:Vec<_>=self.rows[range].iter().filter_map(|row|match row {ListObject::Addressed(h)=>Some(h.clone()),_=>None}).collect();
+        if handles.is_empty() {return Ok(());}
+        let store=self.store.as_ref().ok_or_else(||invalid("wire list store missing"))?;
+        if handles.iter().map(|h|2+h.words*h.width).sum::<usize>()>BUDGET {return Err(invalid("wire list preparation byte bound exceeded"));}
+        store.prefetch(&handles)
+    }
+    pub fn read_words(&self,index:usize)->io::Result<ListWords> {
+        match self.rows.get(index).ok_or_else(||invalid("wire list index out of bounds"))? {
+            ListObject::Resident(words)=>Ok(words.clone()),ListObject::Addressed(h)=>{
+                let bytes=self.store.as_ref().ok_or_else(||invalid("wire list store missing"))?.restore(h)?;
+                Ok(bytes[2..].chunks_exact(h.width).map(|b|if h.width==2 {u16::from_le_bytes(b.try_into().unwrap()) as u32}
+                    else {u32::from_le_bytes(b.try_into().unwrap())}).collect::<Vec<_>>().into())}
+        }
+    }
+}
+impl WireListSource for ListObjectTable {
+    fn len(&self)->usize {self.len()}
+    fn resident_words(&self,index:usize)->Option<&ListWords> {match self.rows.get(index)? {ListObject::Resident(words)=>Some(words),_=>None}}
+    fn word_count(&self,index:usize)->io::Result<usize> {match self.rows.get(index).ok_or_else(||invalid("wire list index out of bounds"))? {
+        ListObject::Resident(words)=>Ok(words.len()),ListObject::Addressed(h)=>Ok(h.words)}}
+    fn read_wire(&self,index:usize,width:usize)->io::Result<Arc<[u8]>> {
+        match self.rows.get(index).ok_or_else(||invalid("wire list index out of bounds"))? {
+            ListObject::Resident(words)=>Ok(encode(words,width)?.into()),ListObject::Addressed(h)=>{
+                if h.width!=width {return Err(invalid("wire list width witness mismatch"));}
+                self.store.as_ref().ok_or_else(||invalid("wire list store missing"))?.restore(h)}
+        }
+    }
+    fn prepare_window(&self,start:usize,max_rows:usize)->io::Result<usize> {
+        let mut end=start;let mut bytes=0;
+        while end<self.len()&&end-start<max_rows.min(WINDOW) {
+            let charge=match &self.rows[end] {ListObject::Resident(_)=>0,ListObject::Addressed(h)=>2+h.words*h.width};
+            if end>start&&bytes+charge>BUDGET {break;} bytes+=charge;end+=1;
+        }
+        self.prepare_range(start..end)?;Ok(end)
+    }
+}
+pub struct WireImage {metadata:Dmb,lists:ListObjectTable}
+impl WireImage {
+    pub fn from_native(image:Dmb)->io::Result<Self> {Self::from_native_with_validator(image,|image|image.reference_validated(&mut Default::default()))}
+    pub fn from_native_with_validator<F>(mut image:Dmb,validate:F)->io::Result<Self>
+        where F:for<'a> FnOnce(&'a Dmb)->io::Result<ReferenceValidatedImage<'a>> {
+        {let proof=validate(&image)?;if !std::ptr::eq(proof.image(),&image) {return Err(invalid("wire image proof belongs to another image"));}}
+        let lists=std::mem::take(&mut image.lists);
+        Ok(Self {metadata:image,lists:ListObjectTable {rows:lists.into_iter().map(ListObject::Resident).collect(),store:None}})
+    }
+    pub fn lists(&self)->&ListObjectTable {&self.lists}
+    pub fn resources(&self)->&[byond_dmb::dmb::ResourceRef] {&self.metadata.resources}
+    /// Replace already certified native list ownership with addressed exact
+    /// wire objects. No reference authorization changes during this move.
+    pub fn archive_lists(&mut self,store:Arc<CodeObjectStore>)->io::Result<()> {
+        if self.lists.rows.iter().any(|row|matches!(row,ListObject::Addressed(_)))
+            &&self.lists.store.as_ref().is_none_or(|old|!Arc::ptr_eq(old,&store)) {
+            return Err(invalid("wire list objects belong to another store"));
+        }
+        self.lists.store=Some(Arc::clone(&store));
+        let width=if self.metadata.header.flags&0x4000_0000!=0 {4}else{2};
+        let mut start=0;
+        while start<self.lists.len() {
+            let mut end=start;let mut bytes=0usize;
+            while end<self.lists.len()&&end-start<WINDOW {
+                let charge=match &self.lists.rows[end] {ListObject::Resident(words)=>2+words.len()*width,ListObject::Addressed(_)=>0};
+                if end>start&&bytes+charge>BUDGET {break;}bytes+=charge;end+=1;
+            }
+            let indices:Vec<_>=(start..end).filter(|&id|matches!(&self.lists.rows[id],ListObject::Resident(_))).collect();
+            let input:Vec<_>=indices.iter().filter_map(|&id|match &self.lists.rows[id] {ListObject::Resident(words)=>Some((words.as_slice(),width)),_=>None}).collect();
+            let handles=store.persist_batch(&input)?;
+            for (id,handle) in indices.into_iter().zip(handles) {self.lists.rows[id]=ListObject::Addressed(handle);}
+            start=end;
+        }
+        self.lists.store=Some(store);Ok(())
+    }
+    pub fn materialize(&self)->io::Result<Dmb> {
+        let mut native=self.metadata.clone();let mut words=Vec::with_capacity(self.lists.len());
+        let mut prepared_until=0;
+        for index in 0..self.lists.len() {
+            if index>=prepared_until {prepared_until=self.lists.prepare_window(index,WINDOW)?;}
+            words.push(self.lists.read_words(index)?);
+        }
+        native.lists=words.into();Ok(native)
+    }
+    pub fn serialize_chunks(&self,cache:&mut DmbWireCache)->io::Result<ChunkedDmb> {
+        self.metadata.encode_metadata_with_lists(&self.lists,cache)
+    }
+}

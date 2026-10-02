@@ -253,8 +253,17 @@ struct IncrementalRecord {
     rsc_digest: String,
     emitted_procs: usize,
 }
+enum PreparedImage {
+    Native(byond_dmb::dmb::Dmb),
+    Wire(dm_output::wire_image::WireImage),
+}
+impl PreparedImage {
+    fn materialize(self)->io::Result<byond_dmb::dmb::Dmb> {match self {
+        Self::Native(image)=>Ok(image),Self::Wire(image)=>image.materialize(),
+    }}
+}
 struct PreparedBuild {
-    dmb: byond_dmb::dmb::Dmb,
+    dmb: PreparedImage,
     serialized_dmb: Option<Vec<u8>>,
     list_spans: Option<Vec<std::ops::Range<usize>>>,
     list_image: Option<dm_output::list_image::ListImage>,
@@ -1660,7 +1669,7 @@ impl Coordinator {
                         serialized_dmb,
                         list_spans,
                         list_image,
-                        dmb: emission.dmb,
+                        dmb: PreparedImage::Native(emission.dmb),
                         rsc_bytes,
                         archive,
                         emitted_procs: record.emitted_procs,
@@ -1755,6 +1764,10 @@ impl Coordinator {
                 let _ = self.blobs.put_artifact(&catalog_key, &bytes);
             }
         }
+        let image=if canonical&&compiled.checkpoint.is_none() {
+            PreparedImage::Wire(dm_output::wire_image::WireImage::from_native_with_validator(compiled.dmb,
+                |image|image.reference_validated(&mut self.serialization_validation)).map_err(|error|error.to_string())?)
+        } else {PreparedImage::Native(compiled.dmb)};
         Ok(PreparedBuild {
             serialized_dmb: None,
             list_spans: None,
@@ -1763,7 +1776,7 @@ impl Coordinator {
             lowered_procs: compiled.artifact_reuse.authored_lowered,
             reused_procs: compiled.artifact_reuse.authored_reused(),
             artifact_reuse: compiled.artifact_reuse,
-            dmb: compiled.dmb,
+            dmb: image,
             rsc_bytes: compiled.rsc_bytes,
             archive: reused_archive,
             checkpoint: compiled.checkpoint,
@@ -3015,10 +3028,12 @@ impl Coordinator {
                 let (dmb_bytes, list_spans) = match (prepared.serialized_dmb, prepared.list_spans) {
                     (Some(bytes), Some(spans)) => (bytes, spans),
                     _ if output_root.is_some() && key.build_mode != "legacy-history" && pending_checkpoint.is_none() && reused_archive.is_some() => {
-                        let image = match dmb.reference_validated(&mut self.serialization_validation) {
-                            Ok(image) => image, Err(error) => return failed_internal(error),
+                        let serialization=match &dmb {
+                            PreparedImage::Native(image)=>image.reference_validated(&mut self.serialization_validation)
+                                .and_then(|image|VerifiedBytecode::serialize_chunks(&image,&mut self.serialization_wire,&self.blobs.root)),
+                            PreparedImage::Wire(image)=>VerifiedBytecode::serialize_wire_chunks(image,&mut self.serialization_wire,&self.blobs.root),
                         };
-                        let (stored, receipt) = match VerifiedBytecode::serialize_chunks(&image, &mut self.serialization_wire, &self.blobs.root) {
+                        let (stored, receipt) = match serialization {
                             Ok(value) => value, Err(error) => return failed_internal(error),
                         };
                         let spans = stored.manifest().list_spans.clone();
@@ -3026,11 +3041,11 @@ impl Coordinator {
                         stored_bytecode = Some(stored);
                         (Vec::new(), spans)
                     }
-                    _ => match dmb
-                        .reference_validated(&mut self.serialization_validation)
-                        .and_then(|image| {
-                            VerifiedBytecode::serialize_cached(&image, &mut self.serialization_wire)
-                        }) {
+                    _ => match match &dmb {
+                        PreparedImage::Native(image)=>image.reference_validated(&mut self.serialization_validation)
+                            .and_then(|image|VerifiedBytecode::serialize_cached(&image,&mut self.serialization_wire)),
+                        PreparedImage::Wire(image)=>VerifiedBytecode::serialize_wire_cached(image,&mut self.serialization_wire),
+                    } {
                         Ok((bytes, spans, receipt)) => {
                             verified_bytecode = Some(receipt);
                             (bytes, spans)
@@ -3101,6 +3116,9 @@ impl Coordinator {
                 if let (Some(checkpoint), Some(record), Some(checkpoint_size)) =
                     (pending_checkpoint, retained_record, checkpoint_size)
                 {
+                    // Legacy history/index consumers require actual logical
+                    // words; their compatibility boundary is explicitly fallible.
+                    let dmb=match dmb.materialize() {Ok(image)=>image,Err(error)=>return failed_internal(error)};
                     let indexed = match prepared.list_image {
                         Some(indexed) => indexed,
                         None => {

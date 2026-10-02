@@ -302,6 +302,15 @@ impl FrontendPool {
         // those independently restorable graph payloads have been reclaimed.
         for (_, key) in &ordered {
             if self.bytes() <= budget { break; }
+            if let Some(frontend) = self.entries.get_mut(key).unwrap().frontend.as_mut() {
+                if frontend.release_declaration_replay_buffer() != 0 {
+                    self.stats.snapshot_trims += 1;
+                }
+            }
+            self.trace_entry("after declaration replay buffer trim", key);
+        }
+        for (_, key) in &ordered {
+            if self.bytes() <= budget { break; }
             self.trace_entry("before auxiliary cache trim", key);
             let before = self.bytes();
             let excess = before.saturating_sub(budget);

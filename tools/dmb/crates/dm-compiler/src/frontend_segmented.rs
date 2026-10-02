@@ -97,10 +97,9 @@ impl OutlineSession {
         // borrow a single piece, allocating only a chunk crossing piece edges.
         let mut jobs = Vec::new();
         let mut transitions = std::mem::take(&mut self.segment_chunks);
-        let report = source.for_each_chunk_cached(&mut transitions, CHUNK_TARGET, limit, |text, offset| {
-            let digest = crate::incremental::digest(text.as_bytes());
-            let cached = self.chunks.get(&digest).map(|entry| Arc::clone(&entry.parsed));
-            jobs.push((offset, text.len(), digest, cached));
+        let report = source.for_each_chunk_identity_cached(&mut transitions, CHUNK_TARGET, limit, |span, digest| {
+            let cached = self.chunks.get(digest).map(|entry| Arc::clone(&entry.parsed));
+            jobs.push((span.start, span.end-span.start, digest.to_owned(), cached));
         });
         self.stats.boundary_scanned_bytes = transitions.scanned_bytes;
         self.segment_chunks = transitions;
@@ -115,7 +114,13 @@ impl OutlineSession {
             |job| if job.3.is_some() { 1 } else { job.1.saturating_mul(16).saturating_add(4096) },
             |job| {
                 if let Some(cached) = &job.3 { return Ok(Arc::clone(cached)); }
-                let text = source.try_slice(Span::new(job.0, job.0+job.1))?;
+                let span=Span::new(job.0,job.0+job.1);
+                if !capture_bodies && !capture_ast {
+                    if let Some(root)=cache_root {
+                        if let Some(restored)=restore_fragment_segmented(source,span,&job.2,root) {return Ok(restored);}
+                    }
+                }
+                let text = source.try_slice(span)?;
                 parse_fragment(&text, &job.2, cache_root)
             },
         ).map_err(|error| format!("frontend worker failure: {error:?}"))?;
@@ -137,7 +142,9 @@ impl OutlineSession {
             if (capture_bodies || capture_ast) && !parsed.resources.is_empty() {
                 let text=source.try_slice(Span::new(job.0,job.0+job.1))?;
                 for span in &parsed.resources {
-                    literals.push(text.get(span.range()).ok_or("invalid cached resource span")?.to_owned());
+                    let literal=text.get(span.range()).ok_or("invalid cached resource span")?;
+                    if literal.as_bytes().first()!=Some(&39) {return Err("invalid cached resource literal".into());}
+                    literals.push(literal.to_owned());
                 }
             }
             ordered.push((job.0, parsed));
@@ -205,8 +212,8 @@ impl OutlineSession {
         let mut jobs = Vec::new();
         let mut transitions = std::mem::take(&mut self.segment_chunks);
         let limit = std::env::var("DM_BUILD_MAX_PARSE_CHUNK_BYTES").ok().and_then(|v| v.parse().ok()).unwrap_or(1024 * 1024);
-        let result = source.for_each_chunk_cached(&mut transitions, CHUNK_TARGET, limit, |text, offset| {
-            jobs.push((offset, text.len(), crate::incremental::digest(text.as_bytes())));
+        let result = source.for_each_chunk_identity_cached(&mut transitions, CHUNK_TARGET, limit, |span, digest| {
+            jobs.push((span.start, span.end-span.start, digest.to_owned()));
         });
         self.stats.boundary_scanned_bytes = transitions.scanned_bytes;
         self.segment_chunks = transitions;
