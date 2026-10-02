@@ -3142,7 +3142,7 @@ fn reordered_arguments_keep_world_receivers_on_every_path() {
                 instruction.operands[slot] = positions[&instruction.operands[slot]];
             }
         }
-        let words = canonical
+        let words: Vec<u32> = canonical
             .into_iter()
             .flat_map(|instruction| std::iter::once(instruction.opcode).chain(instruction.operands))
             .collect();
