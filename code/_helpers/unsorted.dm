@@ -1217,12 +1217,15 @@ GLOBAL_DATUM(dview_mob, /mob/dview)
 			return "[round(number / 1e12, 0.1)] T[symbol]" // tera
 
 //ultra range (no limitations on distance, faster than range for distances > 8); including areas drastically decreases performance
-/proc/urange(dist=0, atom/center=usr, orange=0, areas=0)
+/proc/urange(dist=0, atom/center=null, orange=0, areas=0)
 	if(!dist)
 		if(!orange)
 			return list(center)
 		else
 			return list()
+
+	if(!get_turf(center))
+		return list()
 
 	var/list/turfs = RANGE_TURFS(dist, center)
 	if(orange)
@@ -1589,7 +1592,7 @@ GLOBAL_TABLE(get_fancy_list_of_datum_types, GLOBAL_PROC_REF(build_get_fancy_list
 		object.set_custom_materials(final_material_list, multiplier)
 		index += 1
 
-/proc/spiral_range(dist = 0, center = usr, orange = FALSE)
+/proc/spiral_range(dist = 0, atom/center = null, orange = FALSE)
 	var/list/atom_list = list()
 	var/turf/t_center = get_turf(center)
 	if(!t_center)

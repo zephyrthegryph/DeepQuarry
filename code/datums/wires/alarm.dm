@@ -23,7 +23,7 @@
 	. += "The Air Alarm is [(A.shorted || (A.stat & (NOPOWER|BROKEN))) ? "offline." : "working properly!"]"
 	. += "The 'AI control allowed' light is [A.aidisabled ? "off" : "on"]."
 
-/datum/wires/alarm/on_cut(wire, mend)
+/datum/wires/alarm/on_cut(wire, mend, mob/user)
 	var/obj/machinery/alarm/A = holder
 	switch(wire)
 		if(WIRE_IDSCAN)
@@ -31,7 +31,7 @@
 				A.set_locked(TRUE)
 
 		if(WIRE_MAIN_POWER1)
-			A.shock(usr, 50)
+			A.shock(user, 50)
 			A.shorted = !mend
 			A.update_icon()
 			changed(A, CHANGE_MACHINE_SETTINGS)

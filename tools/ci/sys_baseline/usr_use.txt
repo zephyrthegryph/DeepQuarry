@@ -9,11 +9,8 @@ usr_outside_verb	code/_helpers/pathfinding/pathfinder.dm	return om_pathfinder().
 usr_outside_verb	code/_helpers/pathfinding/pathfinder.dm	return graph_astar(get_turf(usr), target, TYPE_PROC_REF(/turf, CardinalTurfsWithAccess), TYPE_PROC_REF(/turf, Distance), 0, 128, 1)
 usr_outside_verb	code/_helpers/pathfinding/pathfinder.dm	/proc/pathfinding_run_all(turf/start = get_turf(usr), turf/goal)
 usr_outside_verb	code/_helpers/pathfinding/pathfinder.dm	/proc/pathfinding_run_benchmark(times = 1000, turf/source = get_turf(usr))
-usr_outside_verb	code/_helpers/turfs.dm	/proc/spiral_range_turfs(dist = 0, center = usr, orange = FALSE, list/outlist = list(), tick_checked)
-usr_outside_verb	code/_helpers/unsorted.dm	/proc/urange(dist=0, atom/center=usr, orange=0, areas=0)
 usr_outside_verb	code/_helpers/unsorted.dm	value = flow_ask(usr, "[key]:filter", /datum/om/prompt/text, message = "Enter type to find (blank for all, cancel to cancel)", title = "Search for type")
 usr_outside_verb	code/_helpers/unsorted.dm	chosen = flow_ask(usr, "[key]:pick", /datum/om/prompt/choice, message = "Select a type", title = "Pick Type", choices = matches)
-usr_outside_verb	code/_helpers/unsorted.dm	/proc/spiral_range(dist = 0, center = usr, orange = FALSE)
 usr_outside_verb	code/_onclick/click.dm	if(istype(usr, /mob/living/carbon))
 usr_outside_verb	code/_onclick/click.dm	var/mob/living/carbon/C = usr
 usr_outside_verb	code/_onclick/click.dm	var/turf/T = get_turf(usr)
@@ -287,7 +284,6 @@ usr_outside_verb	code/datums/om/prompt_helpers.dm	usr = actor
 usr_outside_verb	code/datums/om/prompt_helpers.dm	usr = actor // UI_ACT handlers may read usr, as they do when the user clicks.
 usr_outside_verb	code/datums/om/prompt_helpers.dm	usr = actor // Verbs and panel procs read usr, as they did when first run.
 usr_outside_verb	code/datums/topic/topic_dispatch.dm	return topic_dispatch(src, usr, href_list)
-usr_outside_verb	code/datums/wires/alarm.dm	A.shock(usr, 50)
 usr_outside_verb	code/datums/wires/particle_accelerator.dm	C.add_strength(usr)
 usr_outside_verb	code/defines/procs/announce.dm	log_game("[key_name(usr)] has made \a [announcement_type]: [message_title] - [message] - [announcer]")
 usr_outside_verb	code/defines/procs/announce.dm	message_admins("[key_name_admin(usr)] has made \a [announcement_type].", 1)
