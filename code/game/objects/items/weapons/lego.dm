@@ -23,7 +23,7 @@
 				MSG_BLIND(span_hear(span_bold("You hear the sound of immeasurable suffering!"))))
 			L.injure(INJURY_PAIN, 100, source = src)
 			play_sfx(src, SFX_MISC_LEGODEATH)
-			qdel(src)
+			consume(src, L)
 	..()
 
 /obj/item/lego/gib
