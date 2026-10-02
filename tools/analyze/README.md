@@ -106,7 +106,8 @@ nothing for a lint that has no sites there (a hard ban at zero): the fixtures ar
 
 `Parity` (in the lint's `parity()`): `old` = the old script's CI run; `old_raw` = its `--report` runs
 (ignore baselines) or `blank` = baseline files to blank before running it; `parse` = how to read its
-output (`Tagged` `file:line: [lbl/rule]`, `Report` `file:line: rule`, `FileLine`, `Bare`); `update`/`seed`/
+output (`Tagged` `file:line: [lbl/rule]`, `Bracketed` `file:line: [rule]`, `Report` `file:line: rule`,
+`FileLine`, `Bare`); `update`/`seed`/
 `files` = byte-for-byte baseline rewrite comparison; `selftest`.
 
 ### The `check_grep` lint (a shell script's worth of `rg`/`grep`)

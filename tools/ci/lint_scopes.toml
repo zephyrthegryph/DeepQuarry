@@ -67,6 +67,26 @@ input_stance_readers = [
 # path must hold no `/` and end in `.dm`. Applies to the radial kind only.
 radial_impl_prefixes = ["code/_onclick/hud/radial"]
 
+# allow_annotations.exempt_path(): EXEMPT_DIRS + EXEMPT_FILES. Unit tests and benchmarks build the forbidden
+# things on purpose, and the vendored tgstation-server DMAPI is kept verbatim. The old lints that import
+# exempt_path() read one constant; each engine lint keeps its own copy of the two lists here.
+[lint.ownership]
+# ownership_lint.py: the index, the usage map, unknown_var, kinds, matrix and contradiction still read these
+# files; string_name, removed, callback, handle and raw_write skip them.
+exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"]
+exempt_files = ["code/__defines/tgs.dm"]
+
+[lint.scheduler]
+# scheduler_lints.py exempt_path()
+exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"]
+exempt_files = ["code/__defines/tgs.dm"]
+
+[lint.tracked]
+# tracked_lint.py exempt_path(): the TRACKED/SETTER/derive() index still reads these files; writes in them
+# are not counted.
+exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"]
+exempt_files = ["code/__defines/tgs.dm"]
+
 [lint.cooldown]
 # cooldown_lint.py SKIP_DIRS. The EXPIRY_DECLARE name index still reads these files.
 exempt_prefixes = ["code/modules/unit_tests/", "code/controllers/", "code/datums/om/"]

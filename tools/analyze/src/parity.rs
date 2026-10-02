@@ -33,6 +33,9 @@ pub enum ParseKind {
     Tagged,
     /// `file:line: anything`: compared on file and line.
     FileLine,
+    /// `file:line: [rule] text` (the old output tagged only with the rule, no `label/`): compared on
+    /// rule, file and line. The engine's own `[label/rule]` lines are read as `Tagged`.
+    Bracketed,
     /// `file:line: rule` (a `--report` listing): compared on rule, file and line.
     Report,
     /// `file:line` alone on a line (a bare site listing): compared on file and line.
@@ -293,7 +296,8 @@ pub fn parse_findings(text: &str, kind: ParseKind) -> Vec<Finding> {
     }
     let plain = Pat::new(r"^([^\s:]+\.[A-Za-z]+):(\d+):");
     let report = Pat::new(r"^([^:]+?):(\d+): (\w+)\s*$");
-    let bare = Pat::new(r"^\s*([^\s:]+\.[A-Za-z]+):(\d+)\s*$");
+    let bracketed = Pat::new(r"^([^\s:]+):(\d+): \[(\w+)\]");
+    let bare =Pat::new(r"^\s*([^\s:]+\.[A-Za-z]+):(\d+)\s*$");
     let indented = Pat::new(r"^\s+([^\s:]+\.[A-Za-z]+):(\d+)(?:\s|$)");
     // A path may contain spaces ("id cards"), so the file part is anything up to `:line: [`.
     // Like `plain`, for output indented or without a colon after the line, and paths with spaces.
@@ -313,6 +317,11 @@ pub fn parse_findings(text: &str, kind: ParseKind) -> Vec<Finding> {
             ParseKind::FileLine => {
                 if let Some(c) = plain.captures(l) {
                     out.push(mk("", c.s(1), c.s(2)));
+                }
+            }
+            ParseKind::Bracketed => {
+                if let Some(c) = bracketed.captures(l) {
+                    out.push(mk(c.s(3), c.s(1), c.s(2)));
                 }
             }
             ParseKind::Report => {
