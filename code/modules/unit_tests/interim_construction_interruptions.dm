@@ -29,7 +29,7 @@
 	else
 		actor.forceMove(away)
 		TEST_ASSERT_EQUAL(actor.loc, away, "The actor interruption must actually move the actor")
-	scheduler_advance(3)
+	scheduler_advance((3 SECONDS) / SECONDS)
 	TEST_ASSERT_EQUAL(frame.state, FRAME_FASTENED, "Interrupted wiring must preserve the fastened frame")
 	TEST_ASSERT_EQUAL(cable.get_amount(), 6, "Interrupted wiring must consume no cable")
 	TEST_ASSERT_EQUAL(frame.circuit, board, "Interrupted wiring must preserve the frame's board reference")
@@ -42,10 +42,10 @@
 	else
 		actor.forceMove(T)
 	TEST_ASSERT(wire.perform(actor, frame, cable), "Retrying the interrupted edge must start a fresh timed action")
-	scheduler_advance(0.5)
+	scheduler_advance((0.5 SECONDS) / SECONDS)
 	TEST_ASSERT_EQUAL(frame.state, FRAME_FASTENED, "The retry must still wait for the real wiring delay")
 	TEST_ASSERT_EQUAL(cable.get_amount(), 6, "The pending retry must preserve its cable")
-	scheduler_advance(2)
+	scheduler_advance((2 SECONDS) / SECONDS)
 	TEST_ASSERT_EQUAL(frame.state, FRAME_WIRED, "An uninterrupted retry must finish wiring")
 	TEST_ASSERT_EQUAL(cable.get_amount(), 1, "The successful retry must consume exactly five cable lengths")
 	TEST_ASSERT_EQUAL(frame.circuit, board, "Successful wiring must retain the original board")
