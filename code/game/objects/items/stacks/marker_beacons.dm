@@ -148,7 +148,7 @@ DECLARE_INTERACTIONS(/obj/structure/marker_beacon, \
 	transfer_fingerprints_to(M)
 	if(user.put_in_hands(M, TRUE)) //delete the beacon if it fails
 		play_sfx(src, SFX_ITEMS_DECONSTRUCT)
-		qdel(src) //otherwise delete us
+		replace_with(src, M)
 
 /// Old attackby.
 /obj/structure/marker_beacon/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
@@ -167,7 +167,7 @@ DECLARE_INTERACTIONS(/obj/structure/marker_beacon, \
 		return
 	M.add(1)
 	play_sfx(src, SFX_ITEMS_DECONSTRUCT)
-	qdel(src)
+	consume(src)
 
 /// Requirement for picking a colour (a permanent beacon ignores it silently).
 /obj/structure/marker_beacon/proc/can_recolor(mob/living/user, atom/target, obj/item/held)
