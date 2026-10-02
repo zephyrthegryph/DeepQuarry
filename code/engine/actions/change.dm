@@ -74,7 +74,7 @@ GLOBAL_LIST_EMPTY(hook_change_pending) // holder -> list(hook -> TRUE), in the o
 	if(istext(cond) && !(cond in E.vars) && !findtext(cond, "."))
 		var/datum/act/eval/A = take(/datum/act/eval)
 		A.holder = E // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
-		. = call(E, cond)(A)
+		. = op_pure_call(E, cond, A)
 		A.release()
 		return
 	if(istext(cond) && findtext(cond, "."))

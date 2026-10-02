@@ -68,6 +68,7 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 /// someone reads it (READERS) and the outputs that read it re-derive (changed(), refresh.dm). No OM channel is raised:
 /// TRACKED_BRIDGED() raises one for a var an OM stage or om_watch() still reads by channel.
 /proc/tracked_changed(datum/E, var_name)
+	READS_FROM()
 	changed(E, 0, var_name)
 
 /// BRIDGE (removed with S4): tracked_changed() for a hand-written setter of a var an OM stage still reads by channel.

@@ -348,7 +348,7 @@ GLOBAL_VAR_INIT(hook_serial, 0)
 
 /proc/hook_call_plain(datum/run_on, handler, datum/act/A)
 	GLOB.act_depth++
-	. = call(run_on, handler)(A)
+	. = op_pure_call(run_on, handler, A)
 	GLOB.act_depth--
 
 /// Runs the parts of a hook that gate and act, in order. Returns TRUE when every gate held (the hook took over). `A` is the context.

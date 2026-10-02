@@ -106,7 +106,7 @@
 	if(istext(cond))
 		if(cond in holder.vars)
 			return !!holder.vars[cond]
-		return !!call(holder, cond)()
+		return !!op_pure_call(holder, cond)
 	return !!cond
 
 /// A numeric condition id: a capability state key (CAPKEY_ID) or, once E3 lands, a stat id. The default reads the key on the holder.

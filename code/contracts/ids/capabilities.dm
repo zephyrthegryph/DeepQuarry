@@ -18,4 +18,3 @@
 #define CAP_E0_CABINET 104
 #define CAP_E0_PUMP 105
 #define CAP_E0_LAMP 106
-#define CAP_E0_TK 107

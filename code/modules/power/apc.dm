@@ -90,7 +90,7 @@
 
 	// ── physical state ──────────────────────────────────────────────────────
 	// Cover, wire panel, ID lock and emag are capability state (cap_state): cover_is_open(),
-	// cover_removed(), panel_is_open(), is_locked(), is_emagged(). How far the frame is built (board, cable,
+	// legacy_cover_removed(), panel_is_open(), is_locked(), is_emagged(). How far the frame is built (board, cable,
 	// fastener) is the construction ladder's: built_past(src, "frame" / "board" / "wired").
 	var/shorted = 0
 	var/grid_check = FALSE
@@ -227,7 +227,7 @@ MSG_DEF(start/apc/reset, "You begin resetting the APC...", "%U% connects %I% to 
 
 /// A ruined frame (broken, emagged, its cover gone) comes apart into scrap, not a reusable frame.
 /obj/machinery/power/apc/proc/frame_ruined()
-	return is_emagged(src) || has_stat(BROKEN) || cover_removed(src)
+	return is_emagged(src) || has_stat(BROKEN) || legacy_cover_removed(src)
 
 // ---- the ladder's hooks ----
 
@@ -620,9 +620,9 @@ SETTER(/obj/machinery/power/apc, power_failed)
 /obj/machinery/power/apc/draw(datum/look/look)
 	look.part("emagged", apc_bluescreen()) // hacked, failed or emagged: the bluescreen, under the rest
 	..()
-	look.variant("cover-removed", when = cover_removed(src))
-	look.variant("cell", when = cover_removed(src) && cell)
-	look.part("maintenance", cover_is_open(src) && !cover_removed(src) && has_stat(MAINT | BROKEN))
+	look.variant("cover-removed", when = legacy_cover_removed(src))
+	look.variant("cell", when = legacy_cover_removed(src) && cell)
+	look.part("maintenance", cover_is_open(src) && !legacy_cover_removed(src) && has_stat(MAINT | BROKEN))
 	if(apc_bluescreen())
 		look.light(2, 0.25, "#0000FF")
 	else if(is_lit(src))

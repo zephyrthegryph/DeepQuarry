@@ -47,6 +47,11 @@ MSG_DEF_SELF(op/not_a_slot, "There is nowhere to put that.")
 /// A condition evaluated in an op's context. The forms are section 9's: nameof(v) (a truthy var of the holder), a stat or capability key id,
 /// cond_not/cond_all/cond_any, a PROC_REF(x) (x(datum/act/A) returns TRUE or FALSE; "cap:x" runs on the capability), a library requirement.
 /proc/op_cond(datum/act/op/A, cond)
+	op_pure_begin()
+	. = op_cond_eval(A, cond)
+	op_pure_end()
+
+/proc/op_cond_eval(datum/act/op/A, cond)
 	if(isnull(cond))
 		return TRUE
 	if(islist(cond))
@@ -128,6 +133,10 @@ MSG_DEF_SELF(op/not_a_slot, "There is nowhere to put that.")
 			return answer
 	return default_reason
 
+/// The (entity, key) reads of the requirement, as list(datum, key) rows: what a waiting op subscribes to. Default: none.
+/datum/entry/part/req/proc/read_keys(datum/act/op/A)
+	return list()
+
 /// The id a subtype can relax this requirement by: extend("cover.open", drop = "x").
 /datum/entry/part/req/proc/req_id()
 	return src.args ? src.args["id"] : null
@@ -166,6 +175,13 @@ MSG_DEF_SELF(op/not_a_slot, "There is nowhere to put that.")
 		return FALSE
 	return !!op_call(A, what)
 
+/datum/entry/part/req/generic/read_keys(datum/act/op/A)
+	. = list()
+	var/what = src.args["what"]
+	if(istext(what) && copytext(what, 1, 5) != "cap:")
+		for(var/key in change_read_keys(A.holder, what))
+			. += list(list(A.holder, key))
+
 /datum/entry/part/req/generic/refusal(datum/act/op/A)
 	if(src.args["because"])
 		return ..()
@@ -200,6 +216,13 @@ MSG_DEF_SELF(op/not_a_slot, "There is nowhere to put that.")
 		return !!current == !!wanted
 	return current == wanted
 
+/datum/entry/part/req/is/read_keys(datum/act/op/A)
+	. = list()
+	var/datum/D = op_subject(A, src.args["of"])
+	if(D)
+		for(var/key in change_read_keys(D, src.args["key"]))
+			. += list(list(D, key))
+
 /datum/entry/part/req/is/refusal(datum/act/op/A)
 	if(src.args["because"])
 		return ..()
@@ -219,6 +242,13 @@ MSG_DEF_SELF(op/not_a_slot, "There is nowhere to put that.")
 /datum/entry/part/req/at_least/holds(datum/act/op/A)
 	var/current = op_key_value(op_subject(A, src.args["of"]), src.args["key"])
 	return isnum(current) && current >= src.args["n"]
+
+/datum/entry/part/req/at_least/read_keys(datum/act/op/A)
+	. = list()
+	var/datum/D = op_subject(A, src.args["of"])
+	if(D)
+		for(var/key in change_read_keys(D, src.args["key"]))
+			. += list(list(D, key))
 
 /datum/entry/part/req/at_least/refusal(datum/act/op/A)
 	if(src.args["because"])
@@ -262,6 +292,12 @@ MSG_DEF_SELF(op/not_a_slot, "There is nowhere to put that.")
 	part_name = "req_capable"
 	default_reason = /datum/msg/req_not_capable
 
+/datum/entry/part/req/capable/read_keys(datum/act/op/A)
+	. = list()
+	if(A.actor)
+		for(var/key in change_read_keys(A.actor, STAT_CAN_ACT))
+			. += list(list(A.actor, key))
+
 /datum/entry/part/req/capable/holds(datum/act/op/A)
 	var/mob/living/L = A.actor
 	if(!istype(L))
@@ -275,6 +311,9 @@ MSG_DEF_SELF(op/not_a_slot, "There is nowhere to put that.")
 	part_name = "req_conscious"
 	default_reason = /datum/msg/req_not_capable
 
+/datum/entry/part/req/conscious/read_keys(datum/act/op/A)
+	return A.actor ? list(list(A.actor, "stat")) : list()
+
 /datum/entry/part/req/conscious/holds(datum/act/op/A)
 	var/mob/M = A.actor
 	return !istype(M) || M.stat == CONSCIOUS
@@ -285,6 +324,9 @@ MSG_DEF_SELF(op/not_a_slot, "There is nowhere to put that.")
 /datum/entry/part/req/alive
 	part_name = "req_alive"
 	default_reason = /datum/msg/req_not_capable
+
+/datum/entry/part/req/alive/read_keys(datum/act/op/A)
+	return A.actor ? list(list(A.actor, "stat")) : list()
 
 /datum/entry/part/req/alive/holds(datum/act/op/A)
 	var/mob/M = A.actor
@@ -297,6 +339,13 @@ MSG_DEF_SELF(op/not_a_slot, "There is nowhere to put that.")
 /datum/entry/part/req/adjacent
 	part_name = "req_adjacent"
 	default_reason = /datum/msg/op/unreachable
+
+/datum/entry/part/req/adjacent/read_keys(datum/act/op/A)
+	. = list()
+	if(A.actor)
+		. += list(list(A.actor, OP_KEEP_MOVED))
+	if(A.target)
+		. += list(list(A.target, OP_KEEP_MOVED))
 
 /datum/entry/part/req/adjacent/holds(datum/act/op/A)
 	var/atom/T = A.target
@@ -370,6 +419,9 @@ MSG_DEF_SELF(op/not_a_slot, "There is nowhere to put that.")
 	part_name = "req_rel"
 	default_reason = /datum/msg/req_wrong_state
 
+/datum/entry/part/req/rel_state/read_keys(datum/act/op/A)
+	return A.holder ? list(list(A.holder, src.args["var"])) : list()
+
 /datum/entry/part/req/rel_state/holds(datum/act/op/A)
 	var/datum/D = A.holder
 	var/value = (D && (src.args["var"] in D.vars)) ? D.vars[src.args["var"]] : null
@@ -382,6 +434,10 @@ MSG_DEF_SELF(op/not_a_slot, "There is nowhere to put that.")
 
 /datum/entry/part/req/negation
 	part_name = "not"
+
+/datum/entry/part/req/negation/read_keys(datum/act/op/A)
+	var/datum/entry/part/req/R = children[1]
+	return R.read_keys(A)
 
 /datum/entry/part/req/negation/holds(datum/act/op/A)
 	var/datum/entry/part/req/R = children[1]
@@ -396,6 +452,11 @@ MSG_DEF_SELF(op/not_a_slot, "There is nowhere to put that.")
 
 /datum/entry/part/req/all
 	part_name = "all_of"
+
+/datum/entry/part/req/all/read_keys(datum/act/op/A)
+	. = list()
+	for(var/datum/entry/part/req/R as anything in children)
+		. += R.read_keys(A)
 
 /datum/entry/part/req/all/holds(datum/act/op/A)
 	for(var/datum/entry/part/req/R as anything in children)
@@ -418,6 +479,11 @@ MSG_DEF_SELF(op/not_a_slot, "There is nowhere to put that.")
 
 /datum/entry/part/req/any
 	part_name = "any_of"
+
+/datum/entry/part/req/any/read_keys(datum/act/op/A)
+	. = list()
+	for(var/datum/entry/part/req/R as anything in children)
+		. += R.read_keys(A)
 
 /datum/entry/part/req/any/holds(datum/act/op/A)
 	for(var/datum/entry/part/req/R as anything in children)
@@ -446,6 +512,11 @@ MSG_DEF_SELF(op/not_a_slot, "There is nowhere to put that.")
 
 /// A requirement (new, or a legacy /datum/req that has a new-engine form) as a boolean in an op's context.
 /proc/op_req_holds(datum/act/op/A, requirement)
+	op_pure_begin()
+	. = op_req_holds_eval(A, requirement)
+	op_pure_end()
+
+/proc/op_req_holds_eval(datum/act/op/A, requirement)
 	if(istype(requirement, /datum/entry/part/req))
 		var/datum/entry/part/req/R = requirement
 		return R.holds(A)
@@ -456,6 +527,11 @@ MSG_DEF_SELF(op/not_a_slot, "There is nowhere to put that.")
 
 /// The /datum/msg type (or text) a failed requirement reports.
 /proc/op_req_refusal(datum/act/op/A, requirement)
+	op_pure_begin()
+	. = op_req_refusal_eval(A, requirement)
+	op_pure_end()
+
+/proc/op_req_refusal_eval(datum/act/op/A, requirement)
 	if(istype(requirement, /datum/entry/part/req))
 		var/datum/entry/part/req/R = requirement
 		return R.refusal(A)

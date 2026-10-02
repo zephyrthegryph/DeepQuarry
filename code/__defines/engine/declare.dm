@@ -129,6 +129,8 @@
 
 /// A graph edge that leaves from any stage.
 #define ANY_STAGE (-1)
+/// The slot a state graph keeps the parts it took in (a put_in() of a build stage): a type that builds declares the slot relation for it.
+#define SLOT_CONSTRUCTION "construction"
 
 // Entry kinds owned by E1. A kind is a text so explain_type() dumps read as the declaration does.
 #define ENTRY_BLOCK "block"

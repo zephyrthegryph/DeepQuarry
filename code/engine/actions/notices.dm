@@ -74,6 +74,7 @@ GLOBAL_VAR_INIT(notice_draining_late, FALSE)
 
 /// Publishes notice `N` from `holder` with `outcome`: delivered now, or queued when nesting is at the cap. N is released after delivery.
 /proc/notice_publish(datum/holder, datum/notice/N, outcome = ACT_COMMITTED)
+	OP_PURE_GUARD("notice [N.type] was published from [holder?.type]")
 	N.target = holder
 	var/at_cap = GLOB.act_depth >= ACT_MAX_DEPTH
 	TEST_REC_NOTICE(N.type, outcome, at_cap)

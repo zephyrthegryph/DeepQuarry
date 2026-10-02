@@ -703,7 +703,7 @@ GLOBAL_LIST_INIT(action_notice_types_tests, list(
 	/datum/act/e4_strike = /datum/notice/e4_struck
 ))
 
-/// ACTION(e0_chain) at code/tests/engine/fixtures.dm:283
+/// ACTION(e0_chain) at code/tests/engine/fixtures.dm:313
 /datum/notice/e0_chain
 	var/hop
 

@@ -158,6 +158,9 @@
 /// capability type) runs it once per member; `phase` (KERNEL_PHASE_*), `after` (owner types or item keys) and
 /// `lane` order and pay for it; `budget` caps its cost per run. The kernel schedules it (work.dm).
 /proc/every(interval, handler, when, members, phase, after, budget, lane)
+	// A capability's every(interval, then(...)): periodic work an activation owns (code/engine/actions/every.dm).
+	if(istype(handler, /datum/entry) || islist(handler))
+		return every_entry(interval, handler, when = when)
 	var/datum/reaction/R = rx_make(RXN_EVERY, null, null, handler)
 	// The declaring type is the one whose reactions() calls this: a subtype that re-declares a handler replaces the
 	// inherited declaration (rx_table_build) and owns its own work item.

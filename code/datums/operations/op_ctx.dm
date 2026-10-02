@@ -382,12 +382,17 @@ GLOBAL_LIST_EMPTY(op_watchers)
 	var/list/on = GLOB.op_watchers["[REF(E)]|[key]"]
 	if(!length(on))
 		return
-	for(var/datum/op_ctx/ctx as anything in on.Copy())
-		if(ctx.released)
+	for(var/datum/ctx as anything in on.Copy())
+		if(istype(ctx, /datum/pending_op))
+			var/datum/pending_op/pending = ctx // a wait of the part engine (code/engine/parts/run.dm)
+			pending.reads_changed()
 			continue
-		var/why = ctx.check()
+		var/datum/op_ctx/legacy = ctx
+		if(legacy.released)
+			continue
+		var/why = legacy.check()
 		if(why)
-			op_cancel(ctx, why)
+			op_cancel(legacy, why)
 
 /// Stops a waiting operation: the timer is cancelled, the actor told why, the context released.
 /proc/op_cancel(datum/op_ctx/ctx, reason_type)

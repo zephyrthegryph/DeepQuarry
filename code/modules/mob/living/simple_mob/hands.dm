@@ -2,6 +2,7 @@
 /mob/living/simple_mob/swap_hand()
 	changed(src, CHANGE_MOB_HANDS)
 	src.hand = !( src.hand )
+	op_keep_poke(src, OP_KEEP_HAND)
 	if(hud_used.l_hand_hud_object && hud_used.r_hand_hud_object)
 		if(hand)	//This being 1 means the left hand is in use
 			hud_used.l_hand_hud_object.icon_state = "l_hand_active"

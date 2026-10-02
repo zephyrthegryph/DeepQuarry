@@ -33,7 +33,7 @@
 
 /// The cell shows through the open cover (not with the cover gone: the holder draws that sprite).
 /datum/capability/slot/cell_bay/draw(atom/holder, datum/look/look)
-	draw_layer(look, when = holder.vars[slot_var] && cover_is_open(holder) && !cover_removed(holder))
+	draw_layer(look, when = holder.vars[slot_var] && cover_is_open(holder) && !legacy_cover_removed(holder))
 
 /datum/capability/slot/cell_bay/examine(atom/holder, mob/user)
 	var/obj/item/cell/C = holder.vars[slot_var]

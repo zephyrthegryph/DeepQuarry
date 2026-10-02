@@ -65,5 +65,10 @@
 #define GATE_FEEDBACK_INTERVAL (2 SECONDS)
 /// How long a menu read may spend evaluating requirements (section 8, "Resolution cost").
 #define MENU_EVAL_BUDGET (0.2 SECONDS)
-/// How often a waiting op re-checks its keeps.
-#define WAIT_RECHECK_INTERVAL (0.5 SECONDS)
+/// TRUE while a condition, a requirement or an output is being evaluated (code/engine/parts/purity.dm).
+#define OP_PURE_ACTIVE (GLOB.op_pure_depth > 0 || GLOB.derived_evaluating > 0)
+/// The check every write, publication and message makes first: a violation is reported, never silently allowed (code/engine/parts/purity.dm).
+#define OP_PURE_GUARD(what) if(OP_PURE_ACTIVE) { op_pure_violation(what) }
+/// The keys a waiting op watches for its keeps: the entity moved, the hands of the actor changed (published by the movement and inventory paths).
+#define OP_KEEP_MOVED "keep:moved"
+#define OP_KEEP_HAND "keep:hand"

@@ -51,8 +51,8 @@
 	begin_window()
 	var/cold_start = REALTIMEOFDAY
 	for(var/r in 1 to rounds)
-		GLOB.op_epoch++ // a state change since the last round: the cached menus are stale
 		for(var/atom/A as anything in atoms)
+			op_changed(A) // a state change since the last round: the cached menu of this target is stale
 			action_options(M, A, held)
 			screentip_for(M, A, held, GESTURE_CLICK)
 			hovers++

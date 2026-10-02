@@ -2,7 +2,7 @@
 // hand or with a tool. State: CAP_COVER_OPEN, and CAP_COVER_REMOVED once a removable cover is pried
 // off (the APC's "cover removed": it stays open and can't be closed). Other entries declare
 // `needs = req_set(COVER)` to be reachable only while it is open (cap_gate_reason()). Look: LOOK_COVER_OPEN.
-// Accessors: cover_is_open(), cover_removed().
+// Accessors: cover_is_open(), legacy_cover_removed().
 //
 //	. += cap_cover(open_tool = TOOL_CROWBAR, needs = req_clear(LOCK))
 //	. += cap_cover(open_tool = BY_HAND)
@@ -42,7 +42,7 @@ GLOBAL_LIST_INIT(cap_examine_cover_removed, list("Its cover has been removed."))
 GLOBAL_LIST_INIT(cap_examine_cover_open, list("Its cover is open."))
 
 /datum/capability/cover/examine(atom/holder, mob/user)
-	if(cover_removed(holder))
+	if(legacy_cover_removed(holder))
 		return GLOB.cap_examine_cover_removed
 	if(cover_is_open(holder))
 		return GLOB.cap_examine_cover_open
@@ -50,13 +50,13 @@ GLOBAL_LIST_INIT(cap_examine_cover_open, list("Its cover is open."))
 
 /datum/capability/cover/draw(atom/holder, datum/look/look)
 	// A removed cover isn't drawn open: the holder draws its coverless sprite (the APC).
-	draw_layer(look, when = cover_is_open(holder) && !cover_removed(holder))
+	draw_layer(look, when = cover_is_open(holder) && !legacy_cover_removed(holder))
 
 /datum/capability/cover/ui_data(atom/holder, mob/user, list/data)
 	data["open"] = cover_is_open(holder)
-	data["removed"] = cover_removed(holder)
+	data["removed"] = legacy_cover_removed(holder)
 
-/proc/cover_removed(atom/A)
+/proc/legacy_cover_removed(atom/A)
 	return !!(A.cap_state & CAP_COVER_REMOVED)
 
 /proc/cap_cover_name(atom/holder, mob/user)
@@ -64,7 +64,7 @@ GLOBAL_LIST_INIT(cap_examine_cover_open, list("Its cover is open."))
 
 /// needs: the cover is still there.
 /proc/cap_cover_present(mob/user, atom/holder, obj/item/held)
-	return cover_removed(holder) ? "the cover has been removed" : TRUE
+	return legacy_cover_removed(holder) ? "the cover has been removed" : TRUE
 
 /proc/cap_cover_toggle(atom/holder, mob/user, obj/item/held)
 	var/opening = !cover_is_open(holder)

@@ -556,6 +556,8 @@ GLOBAL_LIST_INIT(OP_LEGACY_REQ_FORMS, list(/datum/req/empty_hand, /datum/req/sel
 /proc/op_cond_negates(cond_a, cond_b)
 	if(islist(cond_b) && length(cond_b) == 2 && cond_b[1] == "not" && cond_b[2] == cond_a)
 		return TRUE
+	if(istype(cond_a, /datum/entry/part/req/graph_at) && istype(cond_b, /datum/entry/part/req/graph_at))
+		return graph_at_exclusive(cond_a, cond_b)
 	if(istype(cond_a, /datum/entry/part/req/is) && istype(cond_b, /datum/entry/part/req/is))
 		var/datum/entry/part/req/is/RA = cond_a
 		var/datum/entry/part/req/is/RB = cond_b

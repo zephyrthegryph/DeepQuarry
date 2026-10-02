@@ -104,6 +104,7 @@ GLOBAL_VAR(stat_dead_source) // never set: a hold whose datum source is gone kee
 
 /// The one place a hold is placed. `exact` is hold_until's replace-and-may-shorten; `override` the replace-the-composed-value flag.
 /proc/stat_hold_place(datum/E, stat, value, source, lasts, until, priority, clock, reason, bound, override, exact)
+	OP_PURE_GUARD("a hold on [E?.type] was placed")
 	var/datum/stat_def/def = stat_def_of(stat)
 	if(isnull(clock))
 		clock = HOLD_CLOCK_OWN
@@ -185,6 +186,7 @@ GLOBAL_VAR(stat_dead_source) // never set: a hold whose datum source is gone kee
 
 /// Releases `source`'s hold on a stat (SRC_ALL drops every source's). TRUE when something was released.
 /proc/release(datum/E, stat, source)
+	OP_PURE_GUARD("a hold on [E?.type] was released")
 	var/datum/stat_def/def = stat_def_of(stat)
 	if(!isdatum(E) || !def)
 		return FALSE

@@ -50,7 +50,6 @@
 	var/datum/rx_state/S = rx_of(D)
 	S.provider_gen++
 	S.act_gen++
-	GLOB.op_epoch++
 
 /// The provider set generation of an entity.
 /proc/provider_gen_of(datum/D)
@@ -60,15 +59,31 @@
 /proc/act_gen_of(datum/D)
 	return D?.rx ? D.rx.act_gen : 0
 
-/// Anything an op's requirements could read changed: every cached menu is stale. A global counter, bumped by key publication, activation
-/// attach and detach, and containment changes (see op_changed()).
-GLOBAL_VAR_INIT(op_epoch, 0)
-
-/// An entity's published state changed: its cached menus and reach walks are stale.
+/// An entity's state changed (a published key, a relation, a stat, its contents or its place): the menus cached on its generation are unreachable now.
+/// An entity nobody has asked about yet has no record and nothing cached on it.
 /proc/op_changed(datum/D)
-	GLOB.op_epoch++
 	if(D?.rx)
 		D.rx.act_gen++
+
+/// A thing entered or left a container (or a turf): it and the container have changed what an op can reach, and a wait that keeps it in place re-checks.
+/proc/op_moved(atom/movable/AM, atom/container)
+	var/datum/rx_state/moved_state = AM.rx
+	if(moved_state)
+		moved_state.act_gen++
+		if(moved_state.observed?[OP_KEEP_MOVED])
+			publish_change(AM, OP_KEEP_MOVED)
+	if(isturf(container))
+		return
+	var/datum/rx_state/container_state = container.rx
+	if(container_state)
+		container_state.act_gen++
+		if(container_state.observed?[OP_KEEP_HAND])
+			publish_change(container, OP_KEEP_HAND)
+
+/// A keep of a waiting op on `D` changed (the actor swapped hands): published when something watches it.
+/proc/op_keep_poke(datum/D, key)
+	if(D.rx?.observed?[key])
+		publish_change(D, key)
 
 /// The providers an actor holding `held` has now: its own table's, its live activations', and the held item's. Each is a /datum/prov.
 /proc/providers_for(mob/actor, obj/item/held)
@@ -269,11 +284,12 @@ GLOBAL_VAR_INIT(op_epoch, 0)
 		return 0
 	return max(abs(A.x - B.x), abs(A.y - B.y))
 
-/// Is there a clear line from the actor to the surface? (A provider with line_of_sight = TRUE: telekinesis.)
+/// Is there a clear line from the actor to the surface? (A provider with line_of_sight = TRUE: telekinesis.) The step-towards walk of can_see() asks
+/// for opaque turfs and things on the way, not for light: view() would call a dark room unseen.
 /proc/reach_line_clear(mob/actor, atom/surface)
 	if(!actor)
 		return TRUE
-	return !!(surface in view(actor.client ? actor.client.view : world.view, actor))
+	return !!can_see(actor, surface, TK_MAXRANGE)
 
 /// Is every bay between target and the touched surface exposed for `authority`? (A closed cover is part of reach: bay_exposed() is the compartment's reason.)
 /proc/reach_exposure(mob/actor, atom/target, authority)

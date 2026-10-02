@@ -93,6 +93,7 @@
 /// Resolution by key, then the run.
 /proc/op_perform_by_key(mob/actor, atom/target, obj/item/held, key, origin, authority, trace, list/arg_values = null)
 	RETURN_TYPE(/datum/op_result)
+	OP_PURE_GUARD("perform_op(\"[key]\") on [target?.type] was run")
 	var/datum/op_resolution/R = op_resolve(actor, target, held, origin, authority, null, key, FALSE)
 	if(trace)
 		op_trace_print(R, "perform_op [key]")
@@ -144,6 +145,7 @@
 /proc/op_tell(mob/actor, reason)
 	if(!actor || QDELETED(actor) || isnull(reason))
 		return
+	OP_PURE_GUARD("the actor was told something")
 	var/text = reason_text(reason)
 	if(text)
 		to_chat(actor, span_warning(text))
@@ -159,8 +161,9 @@
 	result.origin = R.origin
 	if(C.legacy)
 		return op_run_legacy(C, R, result)
-	// A second input while busy: the actor's policy decides.
-	if(actor)
+	// A second input while busy: the actor's policy decides. The game acting for itself (ORIGIN_SYSTEM) neither waits on the actor's own wait nor
+	// ends it: it is not the actor deciding something else.
+	if(actor && R.origin != ORIGIN_SYSTEM)
 		var/datum/pending_op/busy = op_pending_of(actor)
 		if(busy)
 			if(R.origin in list(ORIGIN_AI, ORIGIN_SYSTEM))
@@ -256,14 +259,8 @@
 	if(!isnull(P.cooldown_t))
 		. += RES_COOLDOWN
 
-/// Test builds run requirements and conditions under a no-write guard; production compiles it out.
-/proc/op_pure_begin()
-	return
-
-/proc/op_pure_end()
-	return
-
-/// Does the atom's bay refuse the actor's reach now? (at(BAY_X): a requirement that a bay is open.) A compartment overrides it.
+/// Does the atom's bay refuse the actor's reach now? (at(BAY_X): a requirement that a bay is open.) The compartment library answers
+/// (code/engine/library/bays.dm).
 /atom/proc/bay_reason(bay, authority)
 	return null
 
@@ -320,6 +317,8 @@ CAPABILITIES(/datum/pending_op, \
 
 /// actor ref text -> its pending op: an actor has one wait at a time.
 GLOBAL_LIST_EMPTY(op_pending_by_actor)
+/// REF(pending op) -> every pending op that is waiting, the system-origin ones too ("List Pending Ops").
+GLOBAL_LIST_EMPTY(op_pending_all)
 
 /proc/op_pending_of(mob/actor)
 	RETURN_TYPE(/datum/pending_op)
@@ -351,8 +350,10 @@ GLOBAL_LIST_EMPTY(op_pending_by_actor)
 	rel_set(P, nameof(P.held), A.held)
 	P.act = A // ALLOW(handlers, ownership): the pending op carries its act across a wait on purpose, and the act is released when the op ends (end_pending)
 	A.pending = P // ALLOW(ownership): a pooled transient: reset on release
-	if(A.actor)
+	if(A.actor && A.origin != ORIGIN_SYSTEM)
 		GLOB.op_pending_by_actor["[REF(A.actor)]"] = P
+	GLOB.op_pending_all["[REF(P)]"] = P
+	P.watch_begin(A)
 	P.suspend_act()
 	P.advance()
 	return P.result
@@ -424,7 +425,6 @@ GLOBAL_LIST_EMPTY(op_pending_by_actor)
 			suspend_act()
 			if(delay > 0)
 				after(src, delay, TYPE_PROC_REF(/datum/pending_op, step_done), key = "op_wait")
-				arm_recheck()
 				return
 			continue
 		if(istype(step_part, /datum/entry/part/asks))
@@ -443,13 +443,11 @@ GLOBAL_LIST_EMPTY(op_pending_by_actor)
 			R.waiting = result // ALLOW(ownership): the caller's plain record: the request hands it back to test_answer()
 			R.step_name = Q.args["step"]
 			suspend_act()
-			arm_recheck()
 			return
 		cursor++
 	// every step done: back into the op's context for the last checks, then Do
 	if(!resume_act())
 		return cancel(/datum/msg/op/target_gone)
-	cancel_after(src, "op_recheck")
 	finish()
 
 /// A timed wait ended.
@@ -458,7 +456,6 @@ GLOBAL_LIST_EMPTY(op_pending_by_actor)
 		return
 	if(!resume_act())
 		return cancel(/datum/msg/op/target_gone)
-	cancel_after(src, "op_recheck")
 	var/why = recheck_reason()
 	if(why)
 		suspend_act()
@@ -472,7 +469,6 @@ GLOBAL_LIST_EMPTY(op_pending_by_actor)
 		return
 	var/datum/request/R = RA.request
 	request = null // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
-	cancel_after(src, "op_recheck")
 	if(R.outcome != REQ_ANSWERED)
 		return cancel(R.outcome == REQ_TIMED_OUT ? /datum/msg/op/timed_out : (R.outcome == REQ_CANCELLED ? /datum/msg/op/answer_no : /datum/msg/op/failed))
 	if(!resume_act())
@@ -567,9 +563,6 @@ GLOBAL_LIST_EMPTY(op_pending_by_actor)
 		return /datum/msg/op/stopped
 	return null
 
-/datum/pending_op/proc/arm_recheck()
-	after(src, WAIT_RECHECK_INTERVAL, TYPE_PROC_REF(/datum/pending_op, recheck), key = "op_recheck")
-
 /// While waiting: the keeps and the requirements are checked again; the op is cancelled only if one now refuses.
 /datum/pending_op/proc/recheck()
 	if(!active)
@@ -580,7 +573,92 @@ GLOBAL_LIST_EMPTY(op_pending_by_actor)
 	suspend_act()
 	if(why)
 		return cancel(why)
-	arm_recheck()
+
+// ---- watching: a wait re-checks when something it reads is published ----
+//
+// While an op waits it subscribes to the reads of its conditions and requirements (the generated reads of the declared keys and procs) and to the
+// keeps (the hands of the actor, where it is and its stat, where the target is): the moment one is published the op re-checks and is cancelled if
+// one now refuses. Nothing polls. The subscription is the dynamic-reader count of rx_watch_adjust() plus the shared watch index of op_reads_changed().
+
+/datum/pending_op
+	/// The (entity, key) reads the op watches, as list(datum, key) rows, while it waits.
+	var/list/watching
+	/// TRUE while a re-check runs, so a read published by the re-check itself does not start another.
+	var/rechecking = FALSE
+
+/// Subscribes to everything the op plan and keeps read. Called once, when the wait begins and the act still holds its entities.
+/datum/pending_op/proc/watch_begin(datum/act/op/A)
+	if(watching)
+		return
+	watching = op_watch_reads(A)
+	for(var/list/pair as anything in watching)
+		var/datum/watched = pair[1]
+		rx_watch_adjust(watched, pair[2], 1)
+		var/index = "[REF(watched)]|[pair[2]]"
+		var/list/on = GLOB.op_watchers[index]
+		if(!on)
+			on = list()
+			GLOB.op_watchers[index] = on
+		on |= src
+
+/// Drops the subscription.
+/datum/pending_op/proc/watch_end()
+	for(var/list/pair as anything in watching)
+		var/datum/watched = pair[1]
+		if(!QDELETED(watched))
+			rx_watch_adjust(watched, pair[2], -1)
+		var/index = "[REF(watched)]|[pair[2]]"
+		var/list/on = GLOB.op_watchers[index]
+		if(!on)
+			continue
+		on -= src
+		if(!length(on))
+			GLOB.op_watchers -= index
+	watching = null
+
+/// A read the op watches was published: the keeps and requirements are asked again now.
+/datum/pending_op/proc/reads_changed()
+	if(!active || rechecking)
+		return
+	rechecking = TRUE
+	recheck()
+	rechecking = FALSE
+
+/// The (entity, key) rows an op wait watches: the reads of its conditions, requirements and resource costs, and the keeps.
+/proc/op_watch_reads(datum/act/op/A)
+	var/datum/op_plan/P = A.oplan
+	var/list/pairs = list()
+	for(var/cond in P.conds)
+		op_reads_of(A, cond, pairs)
+	for(var/requirement in P.needs)
+		op_reads_of(A, requirement, pairs)
+	for(var/id in P.cost_order)
+		var/datum/resource/RS = resource_of(text2num(id))
+		RS?.watch_reads(A, pairs)
+	if(A.actor)
+		pairs += list(list(A.actor, OP_KEEP_HAND), list(A.actor, OP_KEEP_MOVED), list(A.actor, "stat"))
+	if(A.target)
+		pairs += list(list(A.target, OP_KEEP_MOVED))
+	return pairs
+
+/// Adds the reads of one condition or requirement to `pairs`. A condition is a var name, a stat or capability key id, a proc of the holder (its
+/// generated own-var reads), a not/all/any tree or a requirement entry.
+/proc/op_reads_of(datum/act/op/A, cond, list/pairs)
+	if(isnull(cond))
+		return
+	if(islist(cond))
+		var/list/tree = cond
+		for(var/i in 2 to length(tree))
+			op_reads_of(A, tree[i], pairs)
+		return
+	if(istype(cond, /datum/entry/part/req))
+		var/datum/entry/part/req/R = cond
+		for(var/list/pair as anything in R.read_keys(A))
+			pairs += list(pair)
+		return
+	if(isnum(cond) || (istext(cond) && copytext(cond, 1, 5) != "cap:"))
+		for(var/key in change_read_keys(A.holder, cond))
+			pairs += list(list(A.holder, key))
 
 /// All steps answered: the last checks, then Do.
 /datum/pending_op/proc/finish()
@@ -614,6 +692,8 @@ GLOBAL_LIST_EMPTY(op_pending_by_actor)
 		A.pending = null // ALLOW(ownership): a pooled transient: reset on release
 	if(actor && GLOB.op_pending_by_actor["[REF(actor)]"] == src)
 		GLOB.op_pending_by_actor -= "[REF(actor)]"
+	GLOB.op_pending_all -= "[REF(src)]"
+	watch_end()
 	// what the act carried across the wait is the act's own again (or gone with it): the pending op keeps nothing of it
 	args_saved = null
 	ordered_args_saved = null
@@ -621,7 +701,6 @@ GLOBAL_LIST_EMPTY(op_pending_by_actor)
 	step_answers_saved = null
 	captured_saved = null
 	cancel_after(src, "op_wait")
-	cancel_after(src, "op_recheck")
 	if(request)
 		var/datum/request/R = request
 		request = null // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
@@ -655,6 +734,8 @@ GLOBAL_LIST_EMPTY(op_pending_by_actor)
 		active = FALSE
 		if(actor && GLOB.op_pending_by_actor["[REF(actor)]"] == src)
 			GLOB.op_pending_by_actor -= "[REF(actor)]"
+		GLOB.op_pending_all -= "[REF(src)]"
+		watch_end()
 		if(request)
 			var/datum/request/R = request
 			request = null // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
@@ -976,7 +1057,9 @@ GLOBAL_LIST_EMPTY(op_pending_by_actor)
 	if(!entity)
 		return OP_FAILED
 	var/source = op_default_source(A, entity, src.args["source"], src.args["outlives"])
-	return grant(entity, src.args["what"], source, src.args["lasts"], src.args["bound"]) ? OP_OK : OP_FAILED
+	// A grant whose source is the running activation is owned by it (X1): it ends with it, whichever way the activation ends.
+	var/datum/activation/owner = (source == A.activation && A.activation && !A.activation.dead) ? A.activation : null
+	return grant(entity, src.args["what"], source, src.args["lasts"], src.args["bound"], owner) ? OP_OK : OP_FAILED
 
 /datum/entry/part/effect/fixes/run_effect(datum/act/op/A)
 	var/obj/O = A.holder
@@ -1026,6 +1109,8 @@ GLOBAL_LIST_EMPTY(op_pending_by_actor)
 	var/obj/item/thing = A.held
 	if(!thing)
 		return null
+	if(istype(A.target, /atom) && op_var_slot(A.target, src.args["slot"]))
+		return varslot_refusal(A.target, src.args["slot"], thing)
 	var/why = slot_precheck(A.target, src.args["slot"], thing, A.actor)
 	return why || op_insert_precheck(A.target, thing, src.args["slot"])
 
@@ -1056,6 +1141,18 @@ GLOBAL_LIST_EMPTY(op_pending_by_actor)
 	if(!thing || !istype(holder))
 		return OP_FAILED
 	var/slot_id = src.args["slot"]
+	// A one-item slot over a var of the holder (a cell bay): the item goes into the holder and the var names it.
+	if(op_var_slot(holder, slot_id))
+		var/var_why = varslot_refusal(holder, slot_id, thing)
+		if(var_why)
+			A.reason = var_why
+			return OP_REFUSED
+		var/atom/var_from = thing.loc
+		if(!varslot_insert(holder, slot_id, thing, A.actor))
+			A.reason = /datum/msg/op/failed
+			return OP_REFUSED
+		TEST_REC_TRANSFER(thing, var_from, holder, slot_id)
+		return OP_OK
 	// Under a stack(T, n) binding the put splits off exactly the reserved units and moves that split.
 	var/atom/movable/moving = thing
 	var/datum/reservation/stack_units = null
@@ -1101,6 +1198,12 @@ GLOBAL_LIST_EMPTY(op_pending_by_actor)
 	if(!istype(holder))
 		return OP_FAILED
 	var/slot_id = src.args["slot"]
+	if(op_var_slot(holder, slot_id))
+		var/atom/movable/taken = varslot_take(holder, slot_id, A.actor)
+		if(!taken)
+			return OP_REFUSED
+		TEST_REC_TRANSFER(taken, holder, taken.loc, slot_id)
+		return OP_OK
 	var/list/inside = holder.slot_contents(slot_id)
 	if(!length(inside))
 		return OP_REFUSED

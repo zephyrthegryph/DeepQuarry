@@ -535,6 +535,7 @@ SETTER(/atom, density)
 
 /atom/Entered(atom/movable/AM, atom/old_loc)
 	. = ..()
+	op_moved(AM, src)
 	OM_EMIT(AM, /datum/om/event/movable_attempted_move, old_loc, AM.loc)
 	OM_EMIT(src, /datum/om/event/atom_entered, AM, old_loc)
 	OM_EMIT(AM, /datum/om/event/atom_entering, src, old_loc)
@@ -544,6 +545,7 @@ SETTER(/atom, density)
 
 /atom/Exited(atom/movable/AM, atom/new_loc)
 	. = ..()
+	op_moved(AM, src)
 	OM_EMIT(src, /datum/om/event/atom_exited, AM, new_loc)
 
 /atom/proc/interact(mob/user)

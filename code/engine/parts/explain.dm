@@ -143,21 +143,43 @@
 	var/datum/op_cand/winner = op_resolution_winner(R)
 	return !!winner && winner.oplan?.key == key
 
+/// A pending op, printed: who waits on what, at which step, under which origin.
+/proc/op_pending_line(datum/pending_op/P)
+	var/list/lines = list("[P.actor || "something"] is waiting on [P.key] (step [P.cursor - 1] of [length(P.oplan.steps)], origin [op_origin_name(P.origin)])")
+	if(P.request)
+		lines += "  open request: [P.request.type]"
+	if(length(P.watching))
+		lines += "  watching [length(P.watching)] reads"
+	return jointext(lines, "\n")
+
 /// The pending op of an actor, printed ("List Pending Ops").
 /proc/op_pending_text(mob/actor)
 	var/datum/pending_op/P = op_pending_of(actor)
 	if(!P)
 		return "[actor] has no pending op"
-	var/list/lines = list("[actor] is waiting on [P.key] (step [P.cursor - 1] of [length(P.oplan.steps)], origin [op_origin_name(P.origin)])")
-	if(P.request)
-		lines += "  open request: [P.request.type]"
-	return jointext(lines, "\n")
+	return op_pending_line(P)
 
-/// Every pending op in the world, one block each.
+/// Every pending op in the world, one block each (the system-origin ones too).
 /proc/op_pending_all_text()
 	var/list/blocks = list()
-	for(var/ref in GLOB.op_pending_by_actor)
-		var/datum/pending_op/P = GLOB.op_pending_by_actor[ref]
-		if(P && P.active && P.actor)
-			blocks += op_pending_text(P.actor)
+	for(var/ref in GLOB.op_pending_all)
+		var/datum/pending_op/P = GLOB.op_pending_all[ref]
+		if(P?.active && !QDELETED(P))
+			blocks += op_pending_line(P)
 	return length(blocks) ? jointext(blocks, "\n") : "no pending ops"
+
+// ---- the admin verbs ----
+// "Explain Type" (the merged table of a type, each entry with its file:line), "Explain Interaction" (every candidate of a click on a thing and the filter
+// that dropped each), "List Pending Ops" (every wait in the world) and, in code/engine/declare/explain.dm, "List Activations".
+
+ADMIN_VERB_AND_CONTEXT_MENU(e2_explain_type, R_DEBUG, "Explain Type", "The merged declaration table of a thing's type: every capability and entry, with the file and line that declared it.", ADMIN_CATEGORY_DEBUG, atom/target in world)
+	to_chat(user, "<b>Table of [target.type]</b><br>[replacetext(explain_type(target.type) || "no table", "\n", "<br>")]")
+
+ADMIN_VERB_AND_CONTEXT_MENU(e2_explain_interaction, R_DEBUG, "Explain Interaction", "Every candidate op of a click on a thing with what you hold, the filter that dropped each, and the winner.", ADMIN_CATEGORY_DEBUG, atom/target in view())
+	var/mob/actor = user.mob
+	if(!actor)
+		return
+	to_chat(user, "<b>Click on [target] ([target.type])</b><br>[replacetext(explain_click(actor, target, actor.get_active_hand(), GESTURE_CLICK), "\n", "<br>")]")
+
+ADMIN_VERB(e2_list_pending_ops, R_DEBUG, "List Pending Ops", "Every op that is waiting in the world: who, what, which step, and the request it is waiting on.", ADMIN_CATEGORY_DEBUG)
+	to_chat(user, "<b>Pending ops</b><br>[replacetext(op_pending_all_text(), "\n", "<br>")]")

@@ -13,6 +13,8 @@
 /// Every interned name a read uses (a var, a relation hop, an accessor key). Id = index in this list.
 GLOBAL_LIST_INIT(generated_read_names, list(
 	"night",
+	"locked",
+	"touched",
 	"apc",
 	"channel_on"
 ))
@@ -30,7 +32,13 @@ GLOBAL_LIST_INIT(generated_read_roots, list(
 GLOBAL_LIST_INIT(generated_reads_table, list(
 	"/obj/e0_fixture/lamp::lit_range" = list(0,
 		list(5, 3, 1)),
+	"/obj/e0_fixture/p1_impure::reads_only" = list(0,
+		list(1, 0, 2)),
+	"/obj/e0_fixture/p1_impure::writes_in_condition" = list(0,
+		list(1, 0, 3)),
+	"/obj/e0_fixture/p1_impure::writes_in_requirement" = list(0,
+		list(1, 0, 2)),
 	"/obj/e3_load::apc_channel" = list(0,
-		list(1, 0, 2),
-		list(1, 0, 3, 2))
+		list(1, 0, 4),
+		list(1, 0, 5, 4))
 ))

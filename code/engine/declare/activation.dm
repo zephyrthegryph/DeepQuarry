@@ -138,18 +138,20 @@ GLOBAL_LIST_EMPTY(source_ids) // id -> name, built on first use
 /**
  * Applies capability `what` to `holder` from `source`: returns the activation, or null with the reason logged when the attach fails.
  * `lasts` (deciseconds of the holder's clock) ends it at that time or with its source, whichever comes first. `bound` is accepted for
- * the hold forms and has no extra effect on a grant: a grant always ends with its source.
+ * the hold forms and has no extra effect on a grant: a grant always ends with its source. `parent` is the activation that owns the new one (a
+ * grants() effect running under an activation passes it): the child ends with its parent, however the parent ends.
  * A `what` that is not an engine capability (a verb path, a bit) is the legacy grant of code/datums/reactions/state.dm.
  */
-/proc/grant(datum/holder, what, source, lasts, bound = FALSE)
+/proc/grant(datum/holder, what, source, lasts, bound = FALSE, datum/activation/parent = null)
 	RETURN_TYPE(/datum/activation)
 	var/datum/capability/def = grant_definition(what)
 	if(!def)
 		return legacy_grant(holder, what, isnull(source) ? "grant" : source, lasts)
-	return activation_attach(holder, def, source, lasts, SCOPE_SOURCE, null, null)
+	return activation_attach(holder, def, source, lasts, SCOPE_SOURCE, null, parent)
 
 /// The one attach path. `scope` and `scope_data` say what ends it besides revoke; `parent` is the owning activation.
 /proc/activation_attach(datum/holder, datum/capability/def, source, lasts, scope, scope_data, datum/activation/parent)
+	OP_PURE_GUARD("[def?.key] was granted to [holder?.type]")
 	if(!isdatum(holder) || QDELETED(holder))
 		declare_report("grant([def?.key]): the holder is deleted or not a datum")
 		return null
@@ -387,6 +389,7 @@ GLOBAL_LIST_EMPTY(source_ids) // id -> name, built on first use
 /proc/activation_end(datum/activation/A)
 	if(!A || A.dead)
 		return FALSE
+	OP_PURE_GUARD("[A.def?.key] was revoked from [A.holder?.type]")
 	A.dead = TRUE
 	A.runs = FALSE
 	var/datum/capability/def = A.def
@@ -516,6 +519,7 @@ GLOBAL_LIST_EMPTY(source_ids) // id -> name, built on first use
 /// Something an engine may depend on changed on `holder` under `key` (a tracked var name, "capkey:<id>", a stat id): published to the
 /// readers of the key. E3 extends this with the inline recompute of the stats that read it.
 /proc/engine_key_changed(datum/holder, key)
+	OP_PURE_GUARD("[key] of [holder?.type] was published")
 	// The stat layer: a stat that reads this key (a gated contribution's condition, a capability key) is right before the writer's next line.
 	if(GLOB.stat_input_keys?[key] && key != GLOB.stat_writing)
 		stat_inputs_changed(holder, key)

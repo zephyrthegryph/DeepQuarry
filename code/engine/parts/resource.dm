@@ -87,6 +87,10 @@ GLOBAL_LIST_EMPTY(resource_adapters)
 /datum/resource/proc/release(datum/reservation/R)
 	return
 
+/// The (entity, key) reads of the amount, added to `pairs`: a waiting op re-checks when one is published. Default: none (the amount does not publish).
+/datum/resource/proc/watch_reads(datum/act/op/A, list/pairs)
+	return
+
 /// The reason shown when the reservation could not be made.
 /datum/resource/proc/refusal(datum/act/op/A, n)
 	return /datum/msg/op/no_resource
@@ -297,6 +301,10 @@ GLOBAL_LIST_EMPTY(resource_adapters)
 /datum/resource/dark_energy/available(datum/act/op/A)
 	var/n = op_var(A.actor, "dark_energy")
 	return isnum(n) ? n : 0
+
+/datum/resource/dark_energy/watch_reads(datum/act/op/A, list/pairs)
+	if(A.actor)
+		pairs += list(list(A.actor, "dark_energy"))
 
 /datum/resource/dark_energy/commit(datum/reservation/R)
 	var/datum/D = R.holder

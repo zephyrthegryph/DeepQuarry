@@ -36,10 +36,14 @@
 #define STAT_SUSPENDED 100030
 
 /// Capability ids: the CAP_X of each CAPABILITY_TYPE/DEF whose id no hand-written define gives, from 300.
-#define CAP_E1_BEACON 300
-#define CAP_E1_NESTED 301
-#define CAP_E1_SOLO 302
-#define CAP_E1_WIDGET 303
+#define CAP_CELL_BAY 300
+#define CAP_COMPARTMENT 301
+#define CAP_E1_BEACON 302
+#define CAP_E1_NESTED 303
+#define CAP_E1_SOLO 304
+#define CAP_E1_WIDGET 305
+#define CAP_P1_TICKER 306
+#define CAP_TELEKINESIS 307
 
 /// Source ids: SRC_<NAME> for each SOURCE_DEF(name).
 #define SRC_AI_CONTROL 1
@@ -58,6 +62,8 @@
 #define GRAPH_DOOR_ASSEMBLY 1
 
 /// Capability state ids: <CAPNAME>_<KEY> for each key of a cap_keys(CAP_X, KEY = ..., ...), bit 1 first.
+#define COVER_OPEN CAPKEY_ID(CAP_COVER, 1)
+#define COVER_REMOVED CAPKEY_ID(CAP_COVER, 2)
 #define E0_DOOR_OPEN CAPKEY_ID(CAP_E0_DOOR, 1)
 #define E1_SOLO_ARMED CAPKEY_ID(CAP_E1_SOLO, 1)
 #define E1_SOLO_LIT CAPKEY_ID(CAP_E1_SOLO, 2)

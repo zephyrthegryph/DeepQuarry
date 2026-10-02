@@ -208,8 +208,10 @@ GLOBAL_VAR_INIT(stat_evals, 0)
 		GLOB.stat_writing = def.name
 		changed(E, 0, def.name)
 		GLOB.stat_writing = null
-	else if(READERS(E, def.stat_key))
-		publish_change(E, def.stat_key)
+	else
+		op_changed(E)
+		if(READERS(E, def.stat_key))
+			publish_change(E, def.stat_key)
 	return TRUE
 
 /// The value a stat holds now, without computing it.
