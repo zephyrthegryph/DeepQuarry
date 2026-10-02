@@ -22,3 +22,7 @@ exempt_contains = ["/unit_tests/"]
 [lint.registry]
 # registry_lint.py: the boilerplate macro's own definition.
 exempt_prefixes = ["code/__defines/"]
+
+[lint.deadline_polling]
+# check_deadline_polling.py: unit tests poll on purpose.
+exempt_contains = ["/unit_tests/"]
