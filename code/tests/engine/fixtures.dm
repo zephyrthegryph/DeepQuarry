@@ -84,7 +84,10 @@ CAPABILITIES(/datum/e0_species/shifter, e0_phase_shift())
 	/// Written by the reflect handler of the test-only mirror capability: the winning activation source.
 	var/last_reflect_source
 
-CAPABILITIES(/mob/living/simple_mob/e0_fixture, ref_one(nameof(species), /datum/e0_species), rel_grants(nameof(species)))
+CAPABILITIES(/mob/living/simple_mob/e0_fixture, \
+	ref_one(nameof(species), /datum/e0_species), \
+	rel_grants(nameof(species)), \
+	hands())
 
 /// Delivers one beam hit to this mob as a world action: ACT_TRY(src, hit_projectile, packet), act_done(). Returns the act's
 /// outcome (null when the hit was refused or taken over). The mirror's reflect handler runs inside ACT_TRY.
@@ -112,12 +115,14 @@ CAPABILITIES(/mob/living/simple_mob/e0_fixture, ref_one(nameof(species), /datum/
 
 // ---- Proof 1 and 6: the door ----
 
-/// The door of proof 1 and, three times over, of proof 6.
-/// CAPABILITY_TYPE(e0_door, CAP_E0_DOOR, /datum/capability/e0_door, key = NONE)
-/// cap_keys(CAP_E0_DOOR, OPEN = MSG(e0_door/closed))
-/// CAPABILITIES(/obj/e0_fixture/door,
-///   e0_door(),         // op("toggle", inputs(hand(), ui_act()), toggles(DOOR_OPEN), logs(LOG_GAME)): "e0_door.toggle"
-///   when(DOOR_OPEN, contributes(STAT_DENSITY, FALSE, priority = PRIORITY_FORCE)))   // density is a TOP stat: right the moment the door opens
+/// The door of proof 1 and, three times over, of proof 6: one capability with one op that two inputs reach.
+CAPABILITY_TYPE(e0_door, CAP_E0_DOOR, /datum/capability/e0_door, key = NONE)
+cap_keys(CAP_E0_DOOR, OPEN = null)
+/datum/capability/e0_door
+
+/datum/capability/e0_door/entries()
+	return list(op("toggle", inputs(hand(), ui_act("toggle")), toggles(E0_DOOR_OPEN), logs(LOG_GAME)))
+
 /obj/e0_fixture
 	name = "e0 fixture"
 	anchored = TRUE
@@ -126,25 +131,47 @@ CAPABILITIES(/mob/living/simple_mob/e0_fixture, ref_one(nameof(species), /datum/
 	name = "e0 door"
 	density = TRUE
 
+/// density is a TOP stat: right the moment the door opens.
+CAPABILITIES(/obj/e0_fixture/door, \
+	e0_door(), \
+	when(E0_DOOR_OPEN, contributes(STAT_DENSITY, FALSE, priority = PRIORITY_FORCE)))
+
 // ---- Proof 4: the library terminal ----
 
 /// The print op of 16.13 without its database step.
-/// TRACKED(/obj/e0_fixture/library, selected_id, schema = int(0), default = 0)
-/// CAPABILITIES(/obj/e0_fixture/library,
-///   interface("E0Library"),   ui_shape(selected_id),
-///   op("select", ui_act(arg("id", int(1))), then(PROC_REF(select_row))),
-///   op("print", ui_act(), needs(req_is(nameof(selected_id), because = MSG(library/nothing_selected))),
-///      confirms("Print the selected book?"), captures(nameof(selected_id)), then(PROC_REF(print_book))))
 /obj/e0_fixture/library
 	name = "e0 library terminal"
 	var/selected_id = 0
 	/// The id the print op's then() read through A.captured(nameof(selected_id)) (written by the handler), and what it logged.
 	var/printed_id
 
+TRACKED_SCHEMA(/obj/e0_fixture/library, selected_id, int(0), default = 0)
+
+MSG_DEF_SELF(library/nothing_selected, "Nothing is selected.")
+
+CAPABILITIES(/obj/e0_fixture/library, \
+	op("select", ui_act(arg("id", int(1))), then(PROC_REF(select_row))), \
+	op("print", ui_act(), needs(req_is(nameof(selected_id), because = MSG(library/nothing_selected))), \
+		confirms("Print the selected book?"), captures(nameof(selected_id)), then(PROC_REF(print_book)), logs(LOG_GAME)))
+
+/obj/e0_fixture/library/proc/select_row(datum/act/op/A, id)
+	set_selected_id(id)
+	return OP_OK
+
+/obj/e0_fixture/library/proc/print_book(datum/act/op/A)
+	var/captured_id = A.captured(nameof(selected_id))
+	var/obj/item/e0_fixture/book/B = new(get_turf(src))
+	B.book_id = captured_id
+	printed_id = captured_id
+	act_log(A, "printed book [captured_id]")
+	return OP_OK
+
 /// The variant whose print op reads the selection with resume = CANCEL_IF_CHANGED: the op ends refused, "it changed while you were deciding".
-/// CAPABILITIES(/obj/e0_fixture/library/strict, extend("print", replaces(captures(nameof(selected_id), resume = CANCEL_IF_CHANGED))))
 /obj/e0_fixture/library/strict
 	name = "e0 strict library terminal"
+
+CAPABILITIES(/obj/e0_fixture/library/strict, \
+	extend("print", captures(nameof(selected_id), resume = CANCEL_IF_CHANGED)))
 
 /// What the print op produces: carries the id the first actor confirmed.
 /obj/item/e0_fixture/book
@@ -154,12 +181,31 @@ CAPABILITIES(/mob/living/simple_mob/e0_fixture, ref_one(nameof(species), /datum/
 // ---- Proof 5: the hopper ----
 
 /// The fabricator hopper of 16.14.
-/// CAPABILITIES(/obj/e0_fixture/hopper,
-///   slot(SLOT_HOPPER, accepts = list(/obj/item/e0_fixture/sheets), capacity = E0_HOPPER_CAPACITY),
-///   op("load", stack(/obj/item/e0_fixture/sheets, E0_SHEETS_PER_LOAD), wait(2 SECONDS), put_in(SLOT_HOPPER),
-///      says(MSG(fab/loaded)), logs(LOG_GAME)))
 /obj/e0_fixture/hopper
 	name = "e0 hopper"
+
+#define SLOT_HOPPER "hopper"
+
+MSG_DEF(fab/loaded, "You load the sheets.", "%U% loads the sheets.")
+
+CAPABILITIES(/obj/e0_fixture/hopper, \
+	slot(SLOT_HOPPER, accepts = list(/obj/item/e0_fixture/sheets), capacity = E0_HOPPER_CAPACITY), \
+	op("load", stack(/obj/item/e0_fixture/sheets, E0_SHEETS_PER_LOAD), wait(2 SECONDS), put_in(SLOT_HOPPER), \
+		says(MSG(fab/loaded)), logs(LOG_GAME)))
+
+/// The containment ledger's slot of the hopper: one slot, sheets counted in units.
+/datum/om/relation/slot/e0_hopper
+	holder = /obj/e0_fixture/hopper
+	slot_id = SLOT_HOPPER
+	name = "hopper"
+	is_default = TRUE
+	capacity_model = SLOT_CAPACITY_UNITS
+	capacity = E0_HOPPER_CAPACITY
+	drop_policy = SLOT_DROP_SPILL
+
+/datum/om/relation/slot/e0_hopper/cost(atom/holder, atom/movable/thing)
+	var/units = thing.vars["amount"]
+	return isnum(units) ? units : 1
 
 /obj/item/e0_fixture/sheets
 	name = "e0 sheets"
@@ -286,12 +332,19 @@ GLOBAL_VAR_INIT(e0_chain_handled, 0)
 
 // ---- Proof 10: the pump ----
 
-/// TRACKED(/obj/e0_fixture/pump, target_pressure, schema = num(0, MAX_PUMP_PRESSURE, step = 1), default = ONE_ATMOSPHERE)
-/// CAPABILITIES(/obj/e0_fixture/pump,
-///   interface("E0Pump", title = "Gas Pump"), ui_shape(target_pressure),
-///   op("set_pressure", ui_act(arg("pressure", from = nameof(target_pressure))), then(PROC_REF(set_pressure))))
 /obj/e0_fixture/pump
 	name = "e0 pump"
-	var/target_pressure = 101.325
+	var/target_pressure = 101
+
+TRACKED_SCHEMA(/obj/e0_fixture/pump, target_pressure, num(0, MAX_PUMP_PRESSURE, step = 1), default = 101)
+
+CAPABILITIES(/obj/e0_fixture/pump, \
+	interface("E0Pump", title = "Gas Pump"), \
+	ui_shape(target_pressure), \
+	op("set_pressure", ui_act(arg("pressure", from = nameof(target_pressure))), then(PROC_REF(set_pressure))))
+
+/obj/e0_fixture/pump/proc/set_pressure(datum/act/op/A, pressure)
+	set_target_pressure(pressure)
+	return OP_OK
 
 #endif

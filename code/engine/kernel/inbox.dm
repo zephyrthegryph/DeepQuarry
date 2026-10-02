@@ -491,30 +491,7 @@ SYSTEM_DEF(input)
 	.["queue_high_water"] = queue_high_water
 
 // ---------------------------------------------------------------- the resolver seams (E2)
-
-/// E2's resolver takes the click: the op the click runs, as a /datum/op_result. Until then a player's click is the legacy
-/// mob click, and a driver-built click reports the missing resolver.
-/proc/input_resolve_click(datum/input_event/click/E)
-	RETURN_TYPE(/datum/op_result)
-	if(E.driven)
-		ENGINE_STUB(ENGINE_E2, "resolver: a click event resolved through the action path (perform_intent on the inbox's click)")
-		return null
-	// The click event (hooks on the target see it), then the mob's click handling.
-	OM_EMIT(E.target, /datum/om/event/click, E.location, E.control, E.params, E.actor)
-	E.actor.ClickOn(E.target, E.params)
-	return null
-
-/// E2's resolver takes the menu pick (origin ORIGIN_MENU).
-/proc/input_resolve_menu(datum/input_event/menu/E)
-	RETURN_TYPE(/datum/op_result)
-	ENGINE_STUB(ENGINE_E2, "resolver: a menu pick resolved by op key (origin ORIGIN_MENU, the same gates as a click)")
-	return null
-
-/// E2's ui_act() binding takes a driver-built window action.
-/proc/input_resolve_ui(datum/input_event/ui_act/E)
-	RETURN_TYPE(/datum/op_result)
-	ENGINE_STUB(ENGINE_E2, "resolver: a window action matched to the op's ui_act() binding (args through the schema boundary)")
-	return null
+// input_resolve_click(), input_resolve_menu() and input_resolve_ui() are code/engine/parts/inputs.dm.
 
 // ---------------------------------------------------------------- the driver's entry points
 

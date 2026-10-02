@@ -420,7 +420,7 @@ GLOBAL_LIST_EMPTY(op_action_indexes)
 
 /// Runs the op `text` names (its key or name) for user on target over `route`, whatever action it answers: the Menu, the
 /// radial and the command bar reach every op this way, and an ACT_NONE op only this way. TRUE when it ran or started.
-/proc/perform_op(mob/user, atom/target, text, route = ROUTE_PHYSICAL, obj/item/held)
+/proc/legacy_perform_op(mob/user, atom/target, text, route = ROUTE_PHYSICAL, obj/item/held)
 	if(isnull(held) && user)
 		held = user.get_active_hand()
 	var/datum/interaction/capability/E = op_entry_named(user, target, text)
@@ -514,7 +514,7 @@ GLOBAL_LIST_EMPTY(op_action_indexes)
  * list(id = op key, name = its display name, action = the ACT_* it answers (ACT_NONE: no gesture reaches it), icon,
  * category, enabled, reason).
  */
-/proc/action_options(mob/user, atom/target, route = ROUTE_PHYSICAL)
+/proc/legacy_action_options(mob/user, atom/target, route = ROUTE_PHYSICAL)
 	. = list()
 	var/obj/item/held = user?.get_active_hand()
 	var/list/seen = list()
@@ -538,7 +538,7 @@ GLOBAL_LIST_EMPTY(op_action_indexes)
 			"reason" = why,
 		))
 
-/proc/screentip_for(mob/user, atom/target, gesture)
+/proc/legacy_screentip_for(mob/user, atom/target, gesture)
 	var/list/resolved = resolve_gesture(user, target, gesture)
 	if(!resolved)
 		return null
@@ -577,7 +577,7 @@ GLOBAL_LIST_EMPTY(op_action_indexes)
 	if(!isnull(action))
 		return perform_action(user, holder, action, ROUTE_UI) ? TRUE : UI_REFUSED
 	if(!isnull(text) && op_entry_named(user, holder, text))
-		return perform_op(user, holder, text, ROUTE_UI) ? TRUE : UI_REFUSED
+		return legacy_perform_op(user, holder, text, ROUTE_UI) ? TRUE : UI_REFUSED
 	return refuse(user, "That isn't something you can do.")
 
 // ---- the command bar ----
@@ -611,7 +611,7 @@ GLOBAL_LIST_EMPTY(op_action_indexes)
 				break
 	var/datum/interaction/capability/E = target ? op_entry_named(user, target, "[text]") : null
 	if(E)
-		return perform_op(user, target, "[text]", op_command_route(user, E))
+		return legacy_perform_op(user, target, "[text]", op_command_route(user, E))
 	if(user)
 		to_chat(user, span_warning("Unknown action. Try: [english_list(GLOB.action_defs, and_text = ", ")], or the name of something to do."))
 	return FALSE

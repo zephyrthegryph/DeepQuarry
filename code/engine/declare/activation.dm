@@ -516,6 +516,10 @@ GLOBAL_LIST_EMPTY(source_ids) // id -> name, built on first use
 /// Something an engine may depend on changed on `holder` under `key` (a tracked var name, "capkey:<id>", a stat id): published to the
 /// readers of the key. E3 extends this with the inline recompute of the stats that read it.
 /proc/engine_key_changed(datum/holder, key)
+	// The stat layer: a stat that reads this key (a gated contribution's condition, a capability key) is right before the writer's next line.
+	if(GLOB.stat_input_keys?[key] && key != GLOB.stat_writing)
+		stat_inputs_changed(holder, key)
+	op_changed(holder)
 	if(READERS(holder, key))
 		publish_change(holder, key)
 

@@ -1009,7 +1009,7 @@
  },
  "/datum/om/event/click": {
   "emits": [
-   "code/engine/kernel/inbox.dm"
+   "code/engine/parts/inputs.dm"
   ],
   "fields": [
    "location",

@@ -58,5 +58,6 @@
 #define GRAPH_DOOR_ASSEMBLY 1
 
 /// Capability state ids: <CAPNAME>_<KEY> for each key of a cap_keys(CAP_X, KEY = ..., ...), bit 1 first.
+#define E0_DOOR_OPEN CAPKEY_ID(CAP_E0_DOOR, 1)
 #define E1_SOLO_ARMED CAPKEY_ID(CAP_E1_SOLO, 1)
 #define E1_SOLO_LIT CAPKEY_ID(CAP_E1_SOLO, 2)

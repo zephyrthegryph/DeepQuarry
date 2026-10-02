@@ -193,3 +193,21 @@ SOURCE_DEF(status)
     assert!(dq_analyze::sem::handlers::analyzed(&engine.tree).is_none());
     let _ = std::fs::remove_dir_all(&tmp);
 }
+
+#[test]
+fn the_ui_types_generator_writes_the_typescript_of_a_declared_window() {
+    let dir = fixture("sem__ui");
+    let engine = engine_on(&dir);
+    let cx = GenCx::new(&engine.tree, &dir);
+    let g = gen::registry().into_iter().find(|g| g.name() == "ui_types").expect("generator");
+    let mut out = gen::GenOut::default();
+    let files = g.files(&cx, &mut out);
+    assert!(out.diags.is_empty(), "{:?}", out.diags);
+    assert_eq!(files.len(), 1, "one window, one file");
+    assert_eq!(files[0].0, "tgui/packages/tgui/interfaces/generated/PumpDemo.d.ts");
+    let text = &files[0].1;
+    assert!(text.contains("/** num 0..MAX_PUMP_PRESSURE step 1 */\n  target_pressure: number;"), "{}", text);
+    assert!(text.contains("mode: 'off' | 'on' | 'syphon';"), "{}", text);
+    assert!(text.contains("power: Record<string, never>;"), "{}", text);
+    assert_eq!(text, &golden_or_bless(&dir, "PumpDemo.d.ts.golden", text));
+}

@@ -111,6 +111,9 @@ pub struct HandlerRef {
     pub line: u32,
     /// The notice type of the enclosing `on_notice(/datum/notice/x, ...)` (`/datum/notice/op_done` for `on_op`), whose typed fields the handler may read.
     pub notice: String,
+    /// For a `then(...)` inside an `op(...)` that has a `ui_act(...)` or `topic(...)` binding: the names of its `arg(...)`s, in order. The
+    /// handler of such an op is x(datum/act/A, args...): the declared args arrive as typed parameters after A (section 9, "The one signature").
+    pub ui_args: Option<Vec<String>>,
 }
 
 fn is_word(b: u8) -> bool {
@@ -256,7 +259,83 @@ fn marker_handlers(m: &Marker, out: &mut Vec<HandlerRef>) {
                 }
             }
         }
-        out.push(HandlerRef { owner: ty, cap_proc, cap_type: cap_type.clone(), proc, form: f.kw, ctx, role: f.role, rel: m.rel.clone(), line: m.line_at(start), notice });
+        let ui_args = if f.kw == "then" { op_ui_args(body, start) } else { None };
+        out.push(HandlerRef { owner: ty, cap_proc, cap_type: cap_type.clone(), proc, form: f.kw, ctx, role: f.role, rel: m.rel.clone(), line: m.line_at(start), notice, ui_args });
+    }
+}
+
+/// The `arg("name", ...)` names of the `ui_act(...)` / `topic(...)` bindings of the innermost `op(...)` call around `pos` of `body`; `None` when
+/// that op has neither binding (or no op surrounds `pos`).
+fn op_ui_args(body: &str, pos: usize) -> Option<Vec<String>> {
+    let b = body.as_bytes();
+    let mut innermost: Option<(usize, usize)> = None;
+    let mut i = 0;
+    while i < b.len() {
+        if !(b[i].is_ascii_alphabetic() || b[i] == b'_') {
+            i += 1;
+            continue;
+        }
+        let start = i;
+        while i < b.len() && is_word(b[i]) {
+            i += 1;
+        }
+        if &body[start..i] != "op" || (start > 0 && (is_word(b[start - 1]) || b[start - 1] == b'.')) {
+            continue;
+        }
+        let rest = &body[i..];
+        let skip = rest.len() - rest.trim_start().len();
+        if !rest.trim_start().starts_with('(') {
+            continue;
+        }
+        let open = i + skip;
+        if let Some(close) = matching_paren(body, open) {
+            if open < pos && pos < close && innermost.map(|(o, _)| open > o).unwrap_or(true) {
+                innermost = Some((open, close));
+            }
+        }
+    }
+    let (open, close) = innermost?;
+    let text = &body[open + 1..close];
+    let tb = text.as_bytes();
+    let mut names = Vec::new();
+    let mut bound = false;
+    let mut j = 0;
+    while j < tb.len() {
+        if !(tb[j].is_ascii_alphabetic() || tb[j] == b'_') {
+            j += 1;
+            continue;
+        }
+        let start = j;
+        while j < tb.len() && is_word(tb[j]) {
+            j += 1;
+        }
+        let word = &text[start..j];
+        if start > 0 && (is_word(tb[start - 1]) || tb[start - 1] == b'.') {
+            continue;
+        }
+        let rest = &text[j..];
+        let skip = rest.len() - rest.trim_start().len();
+        if !rest.trim_start().starts_with('(') {
+            continue;
+        }
+        match word {
+            "ui_act" | "topic" => bound = true,
+            "arg" => {
+                let open_arg = j + skip;
+                if let Some(close_arg) = matching_paren(text, open_arg) {
+                    let args = super::decls::split_args(&text[open_arg + 1..close_arg]);
+                    if let Some(name) = args.first() {
+                        names.push(name.trim().trim_matches('"').to_string());
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+    if bound {
+        Some(names)
+    } else {
+        None
     }
 }
 

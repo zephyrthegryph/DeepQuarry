@@ -1,0 +1,1103 @@
+// The op engine (doc/rewrite/final_api.html, section 9 "Four stages", "Do is a commit", "Waiting and asking", "The pipeline, every time"; section 13
+// "Requests, prompts and workflows (X3)"; section 19 "E2, parts").
+//
+// An op runs through four stages, always in this order:
+//
+//   Match    is this what the actor is doing?   silent on failure: the op is not a candidate (resolve.dm).
+//   Require  is it allowed now?                 needs(), at(), the require half of costs, the pre-checks of the actions the effects will start.
+//                                               The reason is shown and the input does not fall through. Re-checked after the wait and right before Do.
+//   Wait     how long does it take?             wait(t) and every asks() and confirms(), in declaration order: the op's workflow. Cancelled when a
+//                                               keep breaks or a re-checked requirement now refuses.
+//   Do       what happens?                      reserve the costs, chance(), the effects in order (each reports OP_*), commit or release, feedback.
+//
+// Do is a commit: Require and the pre-checks of the world actions the effects start run before irreversible work; resources are reserved after the
+// last answer, committed after the effects succeed and released on refusal or failure; the outcome is the first effect that is not OK, else
+// committed; only a committed op whose roll succeeded publishes its op_done notice, its messages and its log line; there is no general rollback.
+//
+// While an op waits it holds its holder, target, held item and actor through relations (deleting one cancels it, with feedback); from the
+// reservation until it ends the act holds them strongly. perform_op() and the test driver's forms return a plain /datum/op_result that the engine fills
+// as the op ends; an op still waiting comes back with a null outcome and the same record is filled in later.
+
+/datum/act/op
+	/// The op's compiled plan and the binding it came through.
+	var/datum/op_plan/oplan
+	var/datum/entry/part/bind/binding
+	/// The /datum/op_result the engine fills as the op ends.
+	var/datum/op_result/result
+	/// Reservations made for the op, in order.
+	var/list/reservations
+	/// Extra log text effects add (act_log()).
+	var/list/log_lines
+	/// The pending op while it waits.
+	var/datum/pending_op/pending
+	/// The validated UI or topic arguments, in the order the op declared them (they follow the context into a handler).
+	var/list/ordered_args
+	/// TRUE once the op passed Match and Require and started its Wait or Do: refusals after this point are logged.
+	var/started = FALSE
+	/// The slot units a put_in() moved, and the reservation they came from.
+	var/list/moved_units
+
+/// A handler reads the value of a captured field here, never off the live holder (resume policies: CAPTURE the snapshot, LATEST the live value).
+/datum/act/op/proc/captured(name)
+	return LAZYACCESS(captured_values, name)
+
+/// The answer of the workflow step called `name` (default: the kind's last path segment): the design's A.step("name"), spelled step_answer() because `step` is a DM keyword.
+/datum/act/op/proc/step_answer(name)
+	return LAZYACCESS(step_answers, name)
+
+/datum/act/op
+	/// step name -> the answered request (a handler reads it as A.step("name")).
+	var/list/step_answers
+
+/// An effect adds a line to the op's log text.
+/proc/act_log(datum/act/op/A, text)
+	LAZYADD(A.log_lines, text)
+
+// ---- perform_op and its relatives ----
+
+/// The final perform_op(): runs the op named `key` on `target` through whichever binding accepts `origin` (default ORIGIN_AI) and returns a
+/// /datum/op_result. An op that still waits comes back with a null outcome and the same record is filled in later. `authority` is an AUTH_*
+/// (AUTH_ADMIN with an authority datum for an admin call); `trace` prints the resolution. The legacy perform_op(user, target, text, route, held)
+/// keeps its own implementation for the ops that still are legacy cap_op() entries.
+/proc/perform_op(mob/actor, datum/target, key, held_or_route = null, origin = ORIGIN_AI, authority = null, trace = FALSE)
+	// The legacy shape names a ROUTE_* text as the fourth argument.
+	if(!isnull(held_or_route) && !isobj(held_or_route))
+		return legacy_perform_op(actor, target, key, held_or_route, isobj(origin) ? origin : null)
+	var/obj/item/held = held_or_route
+	if(!isatom(target) && !isdatum(target))
+		return null
+	if(!istext(key) || !op_known_anywhere(actor, target, held, key))
+		// a legacy op named by its key or text keeps running the legacy way
+		if(isatom(target) && istext(key) && op_entry_named(actor, target, key))
+			return legacy_perform_op(actor, target, key, ROUTE_PHYSICAL, held)
+		var/datum/op_result/unknown = new
+		unknown.key = key
+		unknown.origin = origin
+		unknown.outcome = ACT_REFUSED
+		unknown.reason = /datum/msg/op/unknown
+		stack_trace("perform_op(): [target?.type] has no op \"[key]\"")
+		return unknown
+	return op_perform_by_key(actor, target, held, key, origin, authority || AUTH_PHYSICAL, trace)
+
+/// Does the target, the held item or the actor have an op of that key?
+/proc/op_known_anywhere(mob/actor, datum/target, obj/item/held, key)
+	var/list/activation_out = list()
+	if(op_plan_for(target, key, activation_out))
+		return TRUE
+	if(held && op_plan_for(held, key, activation_out))
+		return TRUE
+	if(actor && op_plan_for(actor, key, activation_out))
+		return TRUE
+	return FALSE
+
+/// Resolution by key, then the run.
+/proc/op_perform_by_key(mob/actor, atom/target, obj/item/held, key, origin, authority, trace, list/arg_values = null)
+	RETURN_TYPE(/datum/op_result)
+	var/datum/op_resolution/R = op_resolve(actor, target, held, origin, authority, null, key, FALSE)
+	if(trace)
+		op_trace_print(R, "perform_op [key]")
+	var/datum/op_cand/winner = op_resolution_winner(R)
+	if(!winner)
+		var/datum/op_result/refused = new
+		refused.key = key
+		refused.origin = origin
+		refused.outcome = ACT_REFUSED
+		refused.reason = op_resolution_refusal(R)
+		op_tell(actor, refused.reason)
+		TEST_REC_OUTCOME(key, ACT_REFUSED, refused.reason, actor)
+		return refused
+	return op_begin(winner, R, arg_values, trace)
+
+/// The refusal reason of a resolution with no runnable candidate: the best near-miss's, else why a gate dropped them.
+/proc/op_resolution_refusal(datum/op_resolution/R)
+	if(R.gate_reason)
+		return R.gate_reason
+	if(R.near_miss)
+		return R.near_miss.dropped_reason || /datum/msg/op/no_binding
+	for(var/datum/op_cand/C as anything in R.all)
+		if(C.dropped_by == GATE_MATCH && !length(C.dropped_reason))
+			continue
+		if(C.dropped_reason)
+			return C.dropped_reason
+	return /datum/msg/op/not_available
+
+/// perform_intent(actor, target, INTENT_X, held): the same path through the ops with a physical binding; returns the key of the op that ran,
+/// or null.
+/proc/perform_intent(mob/actor, atom/target, intent, obj/item/held)
+	var/datum/op_resolution/R = op_resolve(actor, target, held, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, null, null, FALSE)
+	for(var/datum/op_cand/C as anything in R.all)
+		if(C.dropped_by || !C.binding.physical())
+			continue
+		if(!(intent in op_answers(C.oplan, C.binding)))
+			continue
+		if(!op_cand_when(R, C))
+			continue
+		op_begin(C, R, null, FALSE)
+		return C.oplan.key
+	return null
+
+/// Prints a resolution's trace.
+/proc/op_trace_print(datum/op_resolution/R, header)
+	log_world("[header]: [jointext(op_explain_lines(R), "\n")]")
+
+/// Tells the actor `reason` (a /datum/msg type or text), if there is an actor that can hear.
+/proc/op_tell(mob/actor, reason)
+	if(!actor || QDELETED(actor) || isnull(reason))
+		return
+	var/text = reason_text(reason)
+	if(text)
+		to_chat(actor, span_warning(text))
+
+// ---- starting an op ----
+
+/// The act and result of a candidate that won: Require, then Wait or Do. Returns the op's /datum/op_result (null outcome while it waits).
+/proc/op_begin(datum/op_cand/C, datum/op_resolution/R, list/arg_values = null, trace = FALSE)
+	RETURN_TYPE(/datum/op_result)
+	var/mob/actor = R.actor
+	var/datum/op_result/result = new
+	result.key = C.oplan.key
+	result.origin = R.origin
+	if(C.legacy)
+		return op_run_legacy(C, R, result)
+	// A second input while busy: the actor's policy decides.
+	if(actor)
+		var/datum/pending_op/busy = op_pending_of(actor)
+		if(busy)
+			if(R.origin in list(ORIGIN_AI, ORIGIN_SYSTEM))
+				result.outcome = ACT_REFUSED
+				result.reason = /datum/msg/op/busy
+				TEST_REC_OUTCOME(C.oplan.key, ACT_REFUSED, result.reason, actor)
+				return result
+			busy.cancel(/datum/msg/op/stopped)
+	var/datum/act/op/A = op_act_for(C, actor, R.target, R.held, R.origin, R.authority)
+	A.oplan = C.oplan // ALLOW(ownership): a pooled transient: reset on release
+	A.binding = C.binding // ALLOW(ownership): a pooled transient: reset on release
+	A.result = result // ALLOW(ownership): a pooled transient: reset on release
+	A.held_name = R.held ? "[R.held]" : null
+	A.target_name = A.target ? "[A.target]" : null
+	A.actor_name = actor ? "[actor]" : null
+	// UI and topic arguments cross the schema boundary before anything else.
+	if(!isnull(arg_values))
+		A.args = arg_values
+		A.ordered_args = op_ordered_args(C.oplan, C.binding, arg_values)
+	// Match is re-checked here too (a perform_op by key meets it for the first time): a failed when() refuses by key.
+	for(var/cond in C.oplan.conds)
+		if(!op_cond(A, cond))
+			return op_end(A, ACT_REFUSED, /datum/msg/op/not_available)
+	var/why = op_require_reason(A, C.oplan, C.binding)
+	if(why)
+		return op_end(A, ACT_REFUSED, why)
+	A.started = TRUE
+	if(length(C.oplan.steps))
+		return op_wait_begin(A, C)
+	return op_do(A)
+
+/// The arguments of an op in the order its ui_act() or topic() binding declared them.
+/proc/op_ordered_args(datum/op_plan/P, datum/entry/part/bind/B, list/arg_values)
+	. = list()
+	var/list/declared = (B.bind_kind == BIND_TOPIC) ? P.topic_args : P.ui_args
+	for(var/datum/entry/part/ui_arg/arg_part as anything in declared)
+		. += list(arg_values[arg_part.args["name"]])
+
+// ---- Require ----
+
+/// The reason Require refuses the op now, or null: the implicit req_capable() of a physical binding, the bay, needs(), the require half of costs
+/// and the pre-checks of the actions the effects start. Nothing is reserved and nothing is written.
+/proc/op_require_reason(datum/act/op/A, datum/op_plan/P, datum/entry/part/bind/B)
+	op_pure_begin()
+	. = op_require_reason_inner(A, P, B)
+	op_pure_end()
+
+/proc/op_require_reason_inner(datum/act/op/A, datum/op_plan/P, datum/entry/part/bind/B)
+	if(B && B.physical() && A.origin != ORIGIN_SYSTEM && !(A.authority & AUTH_ADMIN))
+		var/mob/living/L = A.actor
+		if(istype(L) && !stat_value(L, STAT_CAN_ACT) && !LAZYACCESS(P.selects, "capable_ignoring"))
+			return stat_hold_reason(L, STAT_CAN_ACT) || /datum/msg/req_not_capable
+	if(P.bay)
+		var/atom/T = A.target
+		var/why_bay = istype(T) ? T.bay_reason(P.bay, A.authority) : null
+		if(why_bay)
+			return why_bay
+	for(var/requirement in P.needs)
+		if(!op_req_holds(A, requirement))
+			return op_req_refusal(A, requirement)
+	for(var/id in P.cost_order)
+		var/datum/resource/RS = resource_of(text2num(id))
+		var/n = op_cost_amount(P, B, text2num(id))
+		if(RS && RS.available(A) - reserved_total(RS.holder_of(A), RS.res_id) < n)
+			return RS.refusal(A, n)
+	for(var/id in op_implied_costs(P, B))
+		var/datum/resource/RS = resource_of(id)
+		var/n = op_cost_amount(P, B, id)
+		if(RS && RS.available(A) - reserved_total(RS.holder_of(A), RS.res_id) < n)
+			return RS.refusal(A, n)
+	for(var/datum/entry/part/effect/F as anything in P.effects)
+		var/why = F.precheck(A)
+		if(why)
+			return why
+	return null
+
+/// The cost an op declares for one resource (the explicit costs(), or what a binding implies).
+/proc/op_cost_amount(datum/op_plan/P, datum/entry/part/bind/B, res_id)
+	var/declared = LAZYACCESS(P.costs, "[res_id]")
+	if(!isnull(declared))
+		return declared
+	if(res_id == RES_STACK && B?.bind_kind == BIND_STACK)
+		return B.args["n"] || 1
+	return 1
+
+/// The resource ids an op's binding and parts imply beyond its costs(): stack units, the consumed item, the cooldown.
+/proc/op_implied_costs(datum/op_plan/P, datum/entry/part/bind/B)
+	. = list()
+	if(B?.bind_kind == BIND_STACK && isnull(LAZYACCESS(P.costs, "[RES_STACK]")))
+		. += RES_STACK
+	if(P.consumes)
+		. += RES_ITEM
+	if(!isnull(P.cooldown_t))
+		. += RES_COOLDOWN
+
+/// Test builds run requirements and conditions under a no-write guard; production compiles it out.
+/proc/op_pure_begin()
+	return
+
+/proc/op_pure_end()
+	return
+
+/// Does the atom's bay refuse the actor's reach now? (at(BAY_X): a requirement that a bay is open.) A compartment overrides it.
+/atom/proc/bay_reason(bay, authority)
+	return null
+
+/// Part-level pre-check of an effect (the insert action's pre-check, the resource's availability): a reason, or null.
+/datum/entry/part/effect/proc/precheck(datum/act/op/A)
+	return null
+
+// ---- Wait: the workflow ----
+
+/// The record of an op that is waiting: its act (the references nulled, the relations holding them), the step it is at, its open request.
+/datum/pending_op
+	var/datum/op_plan/oplan
+	var/datum/entry/part/bind/binding
+	var/datum/op_result/result
+	var/datum/act/op/act
+	/// The step the workflow is at (index into oplan.steps); the next one to start.
+	var/cursor = 1
+	var/origin
+	var/authority
+	var/provider_is_held = FALSE
+	var/datum/activation/activation
+	var/datum/capability/cap
+	/// The keeps the current step runs under, and where the target was when the op started.
+	var/keeps = 0
+	/// What the actor held when the op started (REF text: a keep compares it, nothing is kept alive).
+	var/start_hand_ref
+	var/turf/target_turf
+	var/steps_done = 0
+	/// The actor's pending slot, and whether the pending ended.
+	var/active = TRUE
+	var/key
+	/// The request the current asks() opened.
+	var/datum/request/request
+	var/started_at = 0
+	/// The first suspension happened: captured fields are snapshotted.
+	var/captured_taken = FALSE
+	var/list/args_saved
+	var/list/ordered_args_saved
+	var/list/log_saved
+	var/list/step_answers_saved
+	var/list/captured_saved
+
+CAPABILITIES(/datum/pending_op, \
+	ref_one(nameof(holder), /datum, on_other_deleted = OTHER_DELETE_ME), \
+	ref_one(nameof(target), /datum, on_other_deleted = OTHER_DELETE_ME), \
+	ref_one(nameof(actor), /mob, on_other_deleted = OTHER_DELETE_ME), \
+	ref_one(nameof(held), /obj/item, on_other_deleted = OTHER_DELETE_ME))
+
+/datum/pending_op
+	var/datum/holder
+	var/datum/target
+	var/mob/actor
+	var/obj/item/held
+
+/// actor ref text -> its pending op: an actor has one wait at a time.
+GLOBAL_LIST_EMPTY(op_pending_by_actor)
+
+/proc/op_pending_of(mob/actor)
+	RETURN_TYPE(/datum/pending_op)
+	var/datum/pending_op/P = GLOB.op_pending_by_actor["[REF(actor)]"]
+	if(P && P.active && !QDELETED(P))
+		return P
+	return null
+
+/// Starts the workflow of an op that has wait()/asks()/confirms() steps. The act's references go into the pending op's relations.
+/proc/op_wait_begin(datum/act/op/A, datum/op_cand/C)
+	var/datum/pending_op/P = new
+	P.oplan = A.oplan // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
+	P.binding = A.binding // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
+	P.result = A.result // ALLOW(ownership): the caller's plain record: the pending op fills it in later
+	P.origin = A.origin
+	P.authority = A.authority
+	P.activation = C.activation // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
+	P.cap = C.cap
+	P.key = A.key
+	P.provider_is_held = !isnull(A.provider) && A.provider == A.held
+	P.started_at = op_now()
+	P.keeps = op_default_keeps(A, A.binding)
+	P.start_hand_ref = REF(A.actor?.get_active_hand())
+	var/atom/T = A.target
+	P.target_turf = istype(T) ? get_turf(T) : null // ALLOW(ownership): a turf: plain location data, never deleted by the op
+	rel_set(P, nameof(P.holder), A.holder)
+	rel_set(P, nameof(P.target), A.target)
+	rel_set(P, nameof(P.actor), A.actor)
+	rel_set(P, nameof(P.held), A.held)
+	P.act = A // ALLOW(handlers, ownership): the pending op carries its act across a wait on purpose, and the act is released when the op ends (end_pending)
+	A.pending = P // ALLOW(ownership): a pooled transient: reset on release
+	if(A.actor)
+		GLOB.op_pending_by_actor["[REF(A.actor)]"] = P
+	P.suspend_act()
+	P.advance()
+	return P.result
+
+/// The keeps an op's waits run under by default: all four where they apply (no HELD without a held item, no ADJACENT without a spatial reach).
+/proc/op_default_keeps(datum/act/op/A, datum/entry/part/bind/B)
+	. = WAIT_KEEPS_DEFAULT
+	if(isnull(A.held))
+		. &= ~HELD
+	if(!B || B.reach_policy() != REACH_ADJACENT || A.origin == ORIGIN_SYSTEM || !A.actor)
+		. &= ~ADJACENT
+
+/// The act's entity references move to the relations: the act holds nothing strongly while the op waits.
+/datum/pending_op/proc/suspend_act()
+	var/datum/act/op/A = act
+	args_saved = A.args
+	ordered_args_saved = A.ordered_args
+	log_saved = A.log_lines
+	step_answers_saved = A.step_answers
+	captured_saved = A.captured_values
+	A.holder = null // ALLOW(ownership): a pooled transient: reset on release
+	A.target = null
+	A.target_atom = null // ALLOW(ownership): a pooled transient: reset on release
+	A.actor = null
+	A.held = null // ALLOW(ownership): a pooled transient: reset on release
+	A.provider = null
+	A.source = null // ALLOW(ownership): a pooled transient: reset on release
+	A.activation = null // ALLOW(ownership): a pooled transient: reset on release
+	A.cap = null
+
+/// Restores the act's references from the relations (a wait ended, an answer arrived). False when one was lost.
+/datum/pending_op/proc/resume_act()
+	var/datum/act/op/A = act
+	if(!A || !active)
+		return FALSE
+	if(QDELETED(holder) || QDELETED(target) || (!isnull(actor) && QDELETED(actor)))
+		return FALSE
+	A.holder = holder // ALLOW(ownership): a pooled transient: reset on release
+	A.target = target
+	A.actor = actor
+	A.held = held // ALLOW(ownership): a pooled transient: reset on release
+	A.cap = cap
+	A.activation = activation // ALLOW(ownership): a pooled transient: reset on release
+	A.source = activation ? activation.source : holder // ALLOW(ownership): a pooled transient: reset on release
+	A.provider = provider_is_held ? held : actor
+	if(istype(target, /atom))
+		A.target_atom = target // ALLOW(ownership): a pooled transient: reset on release
+	A.args = args_saved
+	A.ordered_args = ordered_args_saved
+	A.log_lines = log_saved
+	A.step_answers = step_answers_saved
+	A.captured_values = captured_saved
+	return TRUE
+
+/// Runs the workflow from the cursor: starts the next wait or prompt and returns, or finishes the steps and goes on to Do.
+/datum/pending_op/proc/advance()
+	if(!active)
+		return
+	var/datum/act/op/A = act
+	while(cursor <= length(oplan.steps))
+		var/step_part = oplan.steps[cursor]
+		if(istype(step_part, /datum/entry/part/wait))
+			var/datum/entry/part/wait/W = step_part
+			cursor++
+			if(!resume_act())
+				return cancel(/datum/msg/op/target_gone)
+			var/delay = W.wait_time(A)
+			keeps = W.args["keeps"] & op_default_keeps(A, binding)
+			suspend_act()
+			if(delay > 0)
+				after(src, delay, TYPE_PROC_REF(/datum/pending_op, step_done), key = "op_wait")
+				arm_recheck()
+				return
+			continue
+		if(istype(step_part, /datum/entry/part/asks))
+			var/datum/entry/part/asks/Q = step_part
+			cursor++
+			if(!resume_act())
+				return cancel(/datum/msg/op/target_gone)
+			take_capture(A)
+			keeps = Q.args["keeps"] & op_default_keeps(A, binding)
+			var/list/fields = op_request_fields(A, Q)
+			var/datum/request/R = request_open(src, Q.args["type"], TYPE_PROC_REF(/datum/pending_op, request_done), fields)
+			if(!R)
+				suspend_act()
+				return cancel(/datum/msg/op/failed)
+			request = R // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
+			R.waiting = result // ALLOW(ownership): the caller's plain record: the request hands it back to test_answer()
+			R.step_name = Q.args["step"]
+			suspend_act()
+			arm_recheck()
+			return
+		cursor++
+	// every step done: back into the op's context for the last checks, then Do
+	if(!resume_act())
+		return cancel(/datum/msg/op/target_gone)
+	cancel_after(src, "op_recheck")
+	finish()
+
+/// A timed wait ended.
+/datum/pending_op/proc/step_done()
+	if(!active)
+		return
+	if(!resume_act())
+		return cancel(/datum/msg/op/target_gone)
+	cancel_after(src, "op_recheck")
+	var/why = recheck_reason()
+	if(why)
+		suspend_act()
+		return cancel(why)
+	suspend_act()
+	advance()
+
+/// A prompt ended (answered, cancelled, timed out): the request layer calls this with the finished request.
+/datum/pending_op/proc/request_done(datum/act/request/RA)
+	if(!active)
+		return
+	var/datum/request/R = RA.request
+	request = null // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
+	cancel_after(src, "op_recheck")
+	if(R.outcome != REQ_ANSWERED)
+		return cancel(R.outcome == REQ_TIMED_OUT ? /datum/msg/op/timed_out : (R.outcome == REQ_CANCELLED ? /datum/msg/op/answer_no : /datum/msg/op/failed))
+	if(!resume_act())
+		return cancel(/datum/msg/op/target_gone)
+	var/datum/act/op/A = act
+	if(istype(R, /datum/prompt))
+		var/datum/prompt/PR = R
+		PR.value = R.answer_value // the uniform answer field every prompt kind reads
+	// A confirms() answered "no" ends the op and nothing is spent.
+	var/datum/entry/part/asks/Q = oplan.steps[cursor - 1]
+	if(Q.args["confirms"] && !R.answer_value)
+		suspend_act()
+		return cancel(/datum/msg/op/answer_no)
+	A.request = R // ALLOW(ownership): a pooled transient: reset on release
+	A.answer = R // ALLOW(ownership): a pooled transient: reset on release
+	LAZYSET(A.step_answers, R.step_name || "answer", R) // ALLOW(ownership): a pooled transient: reset on release
+	// the resume rule: restore the captured fields, then re-check when and Require
+	var/why = op_resume_captured(A)
+	if(!why)
+		why = recheck_reason()
+	if(why)
+		suspend_act()
+		return cancel(why)
+	suspend_act()
+	advance()
+
+/// The fields the op declared are restored from the capture (CAPTURE), refreshed (LATEST) or compared (CANCEL_IF_CHANGED). Returns a reason when the op ends.
+/proc/op_resume_captured(datum/act/op/A)
+	var/datum/op_plan/P = A.oplan
+	for(var/name in P.captured)
+		var/policy = P.captured[name]
+		var/live = op_key_value(A.holder, name)
+		switch(policy)
+			if(LATEST)
+				LAZYSET(A.captured_values, name, live)
+			if(CANCEL_IF_CHANGED)
+				if(A.captured_values?[name] != live)
+					return /datum/msg/op/changed
+	return null
+
+/// The first time the op suspends at an asks(): the fields it declares are snapshotted into the act.
+/datum/pending_op/proc/take_capture(datum/act/op/A)
+	if(captured_taken)
+		return
+	captured_taken = TRUE
+	var/list/names = list()
+	for(var/name in oplan.captured)
+		names |= name
+	for(var/step_part in oplan.steps)
+		if(istype(step_part, /datum/entry/part/asks))
+			var/datum/entry/part/asks/Q = step_part
+			for(var/field in Q.args["fields"])
+				var/value = Q.args["fields"][field]
+				if(istext(value) && A.holder && (value in A.holder.vars))
+					names |= value
+	for(var/name in names)
+		LAZYSET(A.captured_values, name, op_key_value(A.holder, name))
+
+/// The request's named fields for an asks(): a field whose value names a var of the holder reads the capture (nameof(v)), the rest are literals.
+/proc/op_request_fields(datum/act/op/A, datum/entry/part/asks/Q)
+	var/list/out = list()
+	var/list/declared = Q.args["fields"]
+	for(var/field in declared)
+		var/value = declared[field]
+		if(istext(value) && A.holder && (value in A.holder.vars))
+			value = A.captured_values?[value]
+		out[field] = value
+	out["answerer"] = A.actor
+	return out
+
+/// The checks after a wait or an answer: the op's when and Require are asked again, and the keeps hold. A reason when the op ends.
+/datum/pending_op/proc/recheck_reason()
+	var/datum/act/op/A = act
+	var/why = keeps_reason(A)
+	if(why)
+		return why
+	for(var/cond in oplan.conds)
+		if(!op_cond(A, cond))
+			return /datum/msg/op/not_available
+	return op_require_reason(A, oplan, binding)
+
+/// The reason a keep broke, or null: HELD, ADJACENT, TARGET_PRESENT and ALIVE.
+/datum/pending_op/proc/keeps_reason(datum/act/op/A)
+	var/mob/M = A.actor
+	if((keeps & HELD) && M && REF(M.get_active_hand()) != start_hand_ref)
+		return /datum/msg/op/stopped
+	if((keeps & ADJACENT) && M && A.target_atom && !M.Adjacent(A.target_atom))
+		return /datum/msg/op/stopped
+	if((keeps & TARGET_PRESENT) && A.target_atom && target_turf && get_turf(A.target_atom) != target_turf)
+		return /datum/msg/op/stopped
+	if((keeps & ALIVE) && M && M.stat != CONSCIOUS)
+		return /datum/msg/op/stopped
+	return null
+
+/datum/pending_op/proc/arm_recheck()
+	after(src, WAIT_RECHECK_INTERVAL, TYPE_PROC_REF(/datum/pending_op, recheck), key = "op_recheck")
+
+/// While waiting: the keeps and the requirements are checked again; the op is cancelled only if one now refuses.
+/datum/pending_op/proc/recheck()
+	if(!active)
+		return
+	if(!resume_act())
+		return cancel(/datum/msg/op/target_gone)
+	var/why = recheck_reason()
+	suspend_act()
+	if(why)
+		return cancel(why)
+	arm_recheck()
+
+/// All steps answered: the last checks, then Do.
+/datum/pending_op/proc/finish()
+	var/datum/act/op/A = act
+	var/why = recheck_reason()
+	if(why)
+		return end_with(ACT_REFUSED, why)
+	end_pending()
+	op_do(A)
+	drop_record()
+
+/// The op ends before Do: the result and the act are closed.
+/datum/pending_op/proc/end_with(outcome, reason)
+	var/datum/act/op/A = act
+	end_pending()
+	op_end(A, outcome, reason)
+	drop_record()
+
+/// The record has done its work: it is deleted (the relations it held and its own record go with it).
+/datum/pending_op/proc/drop_record()
+	if(!QDELETED(src))
+		qdel(src) // ALLOW(lifecycle): the pending op is a plain record that ends with its op: it holds nothing the op still needs
+
+/// The pending record is done: it leaves the actor's slot, its timers go, the request is closed.
+/datum/pending_op/proc/end_pending()
+	if(!active)
+		return
+	active = FALSE
+	var/datum/act/op/A = act
+	if(A)
+		A.pending = null // ALLOW(ownership): a pooled transient: reset on release
+	if(actor && GLOB.op_pending_by_actor["[REF(actor)]"] == src)
+		GLOB.op_pending_by_actor -= "[REF(actor)]"
+	// what the act carried across the wait is the act's own again (or gone with it): the pending op keeps nothing of it
+	args_saved = null
+	ordered_args_saved = null
+	log_saved = null
+	step_answers_saved = null
+	captured_saved = null
+	cancel_after(src, "op_wait")
+	cancel_after(src, "op_recheck")
+	if(request)
+		var/datum/request/R = request
+		request = null // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
+		R.waiting = null // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
+		request_end(R, REQ_CANCELLED, null)
+	// The op is over: the record lets go of the four entities (their reverse links go with the relations) and of the act; its caller deletes it.
+	rel_clear(src, nameof(holder))
+	rel_clear(src, nameof(target))
+	rel_clear(src, nameof(actor))
+	rel_clear(src, nameof(held))
+	act = null // ALLOW(ownership): a pooled act the pending op no longer carries
+
+/// Cancels the op with feedback: the actor is told, the result carries the reason, nothing was spent (costs are reserved after the last step).
+/datum/pending_op/proc/cancel(reason)
+	if(!active)
+		return
+	var/datum/act/op/A = act
+	if(!A || QDELETED(A))
+		active = FALSE
+		return
+	var/mob/M = actor
+	end_pending()
+	// the actor's relation may already be gone: the act's snapshot names carry the feedback
+	op_end(A, ACT_REFUSED, reason, M)
+	drop_record()
+
+/// The pending op is deleted: one of its four entities is gone (OTHER_DELETE_ME) or the record is dropped. Before the reservation that cancels the op.
+/datum/pending_op/on_destroy(force)
+	if(active)
+		var/datum/act/op/A = act
+		active = FALSE
+		if(actor && GLOB.op_pending_by_actor["[REF(actor)]"] == src)
+			GLOB.op_pending_by_actor -= "[REF(actor)]"
+		if(request)
+			var/datum/request/R = request
+			request = null // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
+			R.waiting = null // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
+			request_end(R, REQ_CANCELLED, null)
+		if(A && !QDELETED(A))
+			A.pending = null // ALLOW(ownership): a pooled transient: reset on release
+			op_end(A, ACT_REFUSED, /datum/msg/op/target_gone, actor)
+	..()
+
+// ---- Do ----
+
+/// Do: reserve the costs, chance, the effects in order, commit or release, feedback and the notice. Returns the op's result.
+/proc/op_do(datum/act/op/A)
+	var/datum/op_plan/P = A.oplan
+	var/why = op_reserve(A)
+	if(why)
+		return op_end(A, ACT_REFUSED, why)
+	// chance(p): a failed roll plays its else feedback, commits the reserved costs (the attempt cost them), runs no effect and ends committed.
+	if(P.chance && !TEST_ROLL(P.chance.args["percent"]))
+		A.rolled = FALSE
+		op_feedback_parts(A, P.chance.children)
+		op_commit_reservations(A)
+		return op_end(A, ACT_COMMITTED, null)
+	var/report = OP_OK
+	for(var/datum/entry/part/effect/F as anything in P.effects)
+		report = op_run_effect(A, F)
+		if(report != OP_OK)
+			break
+	if(report == OP_OK)
+		var/commit_report = op_commit_reservations(A)
+		if(commit_report != OP_OK)
+			report = commit_report
+	else
+		op_release_reservations(A)
+	switch(report)
+		if(OP_OK)
+			return op_end(A, ACT_COMMITTED, null)
+		if(OP_REPLACED)
+			return op_end(A, ACT_REPLACED, A.reason)
+		if(OP_REFUSED)
+			return op_end(A, ACT_REFUSED, A.reason || /datum/msg/op/not_available)
+	return op_end(A, ACT_REFUSED, A.reason || /datum/msg/op/failed)
+
+/// Reserves every cost the op declares or implies. A reason when one cannot be made (the ones made are released).
+/proc/op_reserve(datum/act/op/A)
+	var/datum/op_plan/P = A.oplan
+	var/list/wanted = list()
+	for(var/id in P.cost_order)
+		wanted += text2num(id)
+	for(var/id in op_implied_costs(P, A.binding))
+		wanted |= id
+	for(var/id in wanted)
+		var/datum/resource/RS = resource_of(id)
+		if(!RS)
+			continue
+		var/n = op_cost_amount(P, A.binding, id)
+		var/datum/reservation/R = RS.reserve(A, n)
+		if(!R)
+			op_release_reservations(A)
+			return RS.refusal(A, n)
+		TEST_REC_RESOURCE(TEST_EVENT_RESERVE, id, R.holder, n, A.key)
+		LAZYADD(A.reservations, R) // ALLOW(ownership): a pooled transient: reset on release
+	return null
+
+/// Commits every reservation: OP_OK, or OP_FAILED with a log line naming the resource when one cannot (the rest are released).
+/proc/op_commit_reservations(datum/act/op/A)
+	. = OP_OK
+	var/list/open = A.reservations
+	A.reservations = null
+	for(var/datum/reservation/R as anything in open)
+		if(. != OP_OK)
+			reservation_release(R)
+			continue
+		var/report = reservation_commit(R)
+		if(report != OP_OK)
+			. = OP_FAILED
+			act_log(A, "failed to commit [R.amount] of resource [R.res_id] held by [R.holder]")
+
+/proc/op_release_reservations(datum/act/op/A)
+	var/list/open = A.reservations
+	A.reservations = null
+	for(var/datum/reservation/R as anything in open)
+		reservation_release(R)
+
+/// Runs one effect: its report, with a runtime reported as OP_FAILED and logged.
+/proc/op_run_effect(datum/act/op/A, datum/entry/part/effect/F)
+	var/report = OP_OK
+	try
+		report = F.run_effect(A)
+	catch(var/exception/fault)
+		log_world("OP FAILED: [A.key] effect [F.part_name]: [fault.name] ([fault.file]:[fault.line])")
+		act_log(A, "effect [F.part_name] failed: [fault.name]")
+		return OP_FAILED
+	if(isnull(report) || report == TRUE || report == FALSE)
+		return OP_OK
+	return report
+
+/// Calls a resource adapter's proc, reporting a runtime as OP_FAILED.
+/proc/op_safe_call(datum/target, proc_name, ...)
+	var/list/rest = args.Copy(3)
+	try
+		return call(target, proc_name)(arglist(rest))
+	catch(var/exception/fault)
+		log_world("OP FAILED: [target.type].[proc_name]: [fault.name] ([fault.file]:[fault.line])")
+		return OP_FAILED
+
+/// Feedback parts (says, plays) run from a failed roll's else list.
+/proc/op_feedback_parts(datum/act/op/A, list/parts)
+	for(var/part in parts)
+		if(istype(part, /datum/entry/part/says))
+			var/datum/entry/part/says/S = part
+			S.feedback(A)
+		else if(istype(part, /datum/entry/part/plays))
+			var/datum/entry/part/plays/PL = part
+			PL.feedback(A)
+
+// ---- ending an op ----
+
+/// The op ends: the result is filled in, the unspent reservations are released, feedback and the notice go out for a committed op with a
+/// successful roll, the log line is written, and the act is released. Returns the result.
+/proc/op_end(datum/act/op/A, outcome, reason = null, mob/told = null)
+	RETURN_TYPE(/datum/op_result)
+	var/datum/op_result/result = A.result
+	var/datum/op_plan/P = A.oplan
+	var/mob/actor = A.actor || told
+	op_release_reservations(A)
+	A.outcome = outcome
+	A.reason = reason
+	if(result)
+		result.outcome = outcome
+		result.reason = reason
+		result.rolled = A.rolled
+	TEST_REC_OUTCOME(A.key, outcome, reason, actor)
+	var/committed = (outcome == ACT_COMMITTED)
+	if(committed && A.rolled && P)
+		op_feedback(A)
+	if(!committed)
+		op_tell(actor, reason)
+	op_log(A, actor, outcome, reason)
+	if(committed && A.rolled && P && !P.quiet)
+		op_publish_done(A)
+	if(committed && A.rolled && P && length(P.delayed))
+		op_schedule_delayed(A)
+	A.release()
+	return result
+
+/// The success feedback: says(), plays(), flash().
+/proc/op_feedback(datum/act/op/A)
+	var/datum/op_plan/P = A.oplan
+	if(P.says)
+		P.says.feedback(A)
+	if(P.plays)
+		P.plays.feedback(A)
+
+/datum/entry/part/says/proc/feedback(datum/act/op/A)
+	var/msg = src.args["msg"]
+	if(ispath(msg, /datum/msg) && A.actor)
+		act_message_t(A.actor, A.target_atom, msg, A.held)
+
+/datum/entry/part/plays/proc/feedback(datum/act/op/A)
+	var/atom/where = A.target_atom || A.actor
+	if(where && src.args["sfx"])
+		play_sfx(where, src.args["sfx"])
+
+/// The op's log line: committed ops that declared logs(), and every refusal after the op started or declared logs().
+/proc/op_log(datum/act/op/A, mob/actor, outcome, reason)
+	var/datum/op_plan/P = A.oplan
+	if(!P)
+		return
+	var/committed = (outcome == ACT_COMMITTED)
+	if(committed && (!P.log_type || !A.rolled))
+		if(!(P.log_type && !A.rolled))
+			return
+	if(!committed && !(A.started || P.log_type))
+		return
+	var/text = "[A.actor_name || "something"] [op_label(P)] [A.target_name || "it"]"
+	if(!committed)
+		text += " ([outcome == ACT_REPLACED ? "replaced" : "refused"]: [reason_text(reason)])"
+	else if(!A.rolled)
+		text += " (failed roll)"
+	for(var/line in A.log_lines)
+		text += "; [line]"
+	TEST_REC_LOG(A.key, outcome, A.origin, A.actor || actor, A.target, text)
+	if(P.log_type & LOG_GAME)
+		log_game(text)
+
+/// The op_done notice: only a committed op whose roll succeeded, unless quiet(). (E4's delivery replaces this seam: until then the notice is counted
+/// for the recorder.)
+/proc/op_publish_done(datum/act/op/A)
+	TEST_REC_NOTICE(/datum/notice/op_done, A.outcome, FALSE)
+
+/// delayed(t, parts...): schedules more parts on the holder's clock with only the holder and the snapshot names.
+/proc/op_schedule_delayed(datum/act/op/A)
+	var/datum/op_plan/P = A.oplan
+	if(!A.holder || QDELETED(A.holder))
+		return
+	for(var/datum/entry/part/delayed/D as anything in P.delayed)
+		after(A.holder, D.args["t"], GLOBAL_PROC_REF(op_delayed_run), with = list(A.holder, D, A.held_name, A.target_name, A.actor_name, A.actor))
+
+/// A delayed() part runs: on = ON_HOLDER and says() only.
+/proc/op_delayed_run(datum/holder, datum/entry/part/delayed/D, held_name, target_name, actor_name, mob/actor)
+	if(!holder || QDELETED(holder))
+		return
+	var/datum/act/timer/T = take(/datum/act/timer)
+	T.holder = holder // ALLOW(ownership): a pooled transient: reset on release
+	T.held_name = held_name
+	T.target_name = target_name
+	T.actor_name = actor_name
+	for(var/part in D.children)
+		if(istype(part, /datum/entry/part/says))
+			var/datum/entry/part/says/S = part
+			var/msg = S.args["msg"]
+			if(ispath(msg, /datum/msg) && istype(holder, /atom))
+				act_message_t(holder, holder, msg)
+	T.release()
+
+// ---- effects ----
+
+/// The entity an on = selector names for this act.
+/proc/op_on_entity(datum/act/op/A, on)
+	switch(on)
+		if(ON_HOLDER)
+			return A.holder
+		if(ON_ACTOR)
+			return A.actor
+		if(ON_HELD)
+			return A.held
+	return A.target
+
+/// The source a holds() or grants() uses by default: the activation when it lands on the op's own holder, else the op holder.
+/proc/op_default_source(datum/act/op/A, datum/entity, source_arg, outlives)
+	if(source_arg)
+		if(source_arg == ON_ACTOR)
+			return A.actor
+		return source_arg
+	if(entity == A.holder && A.activation && !outlives)
+		return A.activation
+	return A.holder
+
+/datum/entry/part/effect/then/run_effect(datum/act/op/A)
+	var/list/extra = list()
+	if(A.ordered_args)
+		extra = A.ordered_args
+	return op_call_list(A, src.args["handler"], extra)
+
+/datum/entry/part/effect/toggles/run_effect(datum/act/op/A)
+	var/datum/D = A.holder
+	var/key = src.args["key"]
+	if(isnum(key))
+		cap_key_set(D, key, !cap_key_get(D, key), null)
+		return OP_OK
+	if(!istext(key) || !(key in D.vars))
+		return OP_FAILED
+	op_write_key(D, key, !D.vars[key])
+	return OP_OK
+
+/datum/entry/part/effect/sets/run_effect(datum/act/op/A)
+	var/datum/D = A.holder
+	var/key = src.args["key"]
+	if(isnum(key))
+		cap_key_set(D, key, src.args["value"], null)
+		return OP_OK
+	if(!istext(key) || !(key in D.vars))
+		return OP_FAILED
+	op_write_key(D, key, src.args["value"])
+	return OP_OK
+
+/// Writes a tracked var through its setter (set_<var>) when it has one, else directly and publishes the change.
+/proc/op_write_key(datum/D, var_name, value)
+	if(hascall(D, "set_[var_name]"))
+		call(D, "set_[var_name]")(value)
+		return
+	D.vars[var_name] = value // ALLOW(api): an op's sets()/toggles() writes the tracked var it names, then publishes it
+	tracked_changed(D, var_name)
+
+/datum/entry/part/effect/holds/run_effect(datum/act/op/A)
+	var/datum/entity = op_on_entity(A, src.args["on"])
+	if(!entity)
+		return OP_FAILED
+	var/source = op_default_source(A, entity, src.args["source"], src.args["outlives"])
+	var/placed = hold(entity, src.args["stat"], src.args["value"], source, src.args["lasts"], bound = src.args["bound"])
+	return placed ? OP_OK : OP_FAILED
+
+/datum/entry/part/effect/releases/run_effect(datum/act/op/A)
+	var/datum/entity = op_on_entity(A, src.args["on"])
+	if(!entity)
+		return OP_FAILED
+	release(entity, src.args["stat"], op_default_source(A, entity, src.args["source"], FALSE))
+	return OP_OK
+
+/datum/entry/part/effect/toggles_hold/run_effect(datum/act/op/A)
+	var/datum/entity = op_on_entity(A, src.args["on"])
+	if(!entity)
+		return OP_FAILED
+	var/source = op_default_source(A, entity, src.args["source"], FALSE)
+	if(held_by_source(entity, src.args["stat"], source))
+		release(entity, src.args["stat"], source)
+		return OP_OK
+	return hold(entity, src.args["stat"], src.args["value"], source) ? OP_OK : OP_FAILED
+
+/datum/entry/part/effect/grants/run_effect(datum/act/op/A)
+	var/datum/entity = op_on_entity(A, src.args["on"])
+	if(!entity)
+		return OP_FAILED
+	var/source = op_default_source(A, entity, src.args["source"], src.args["outlives"])
+	return grant(entity, src.args["what"], source, src.args["lasts"], src.args["bound"]) ? OP_OK : OP_FAILED
+
+/datum/entry/part/effect/fixes/run_effect(datum/act/op/A)
+	var/obj/O = A.holder
+	if(istype(O) && O.max_integrity)
+		O.repair_damage(O.max_integrity)
+	return OP_OK
+
+/datum/entry/part/effect/becomes/run_effect(datum/act/op/A)
+	var/atom/movable/AM = A.holder
+	if(!istype(AM))
+		return OP_FAILED
+	return replace_with(AM, src.args["type"]) ? OP_OK : OP_FAILED
+
+/datum/entry/part/effect/spawns/run_effect(datum/act/op/A)
+	var/atom/where = A.holder
+	if(!istype(where))
+		return OP_FAILED
+	var/spawn_path = src.args["type"]
+	for(var/i in 1 to src.args["n"])
+		new spawn_path(get_turf(where))
+	return OP_OK
+
+/datum/entry/part/effect/opens_ui/run_effect(datum/act/op/A)
+	var/datum/D = A.holder
+	if(!D || !A.actor)
+		return OP_FAILED
+	D.tgui_interact(A.actor)
+	return OP_OK
+
+/datum/entry/part/effect/shares_effects/run_effect(datum/act/op/A)
+	var/datum/op_plan/other = op_plan_for(A.holder, src.args["key"], list())
+	if(!other)
+		return OP_FAILED
+	for(var/requirement in other.needs)
+		if(!op_req_holds(A, requirement))
+			A.reason = op_req_refusal(A, requirement)
+			return OP_REFUSED
+	for(var/datum/entry/part/effect/F as anything in other.effects)
+		var/report = op_run_effect(A, F)
+		if(report != OP_OK)
+			return report
+	return OP_OK
+
+// ---- put_in / take_out ----
+
+/datum/entry/part/effect/put_in/precheck(datum/act/op/A)
+	var/obj/item/thing = A.held
+	if(!thing)
+		return null
+	return slot_precheck(A.target, src.args["slot"], thing, A.actor)
+
+/datum/entry/part/effect/put_in/run_effect(datum/act/op/A)
+	var/atom/holder = A.target
+	var/obj/item/thing = A.held
+	if(!thing || !istype(holder))
+		return OP_FAILED
+	var/slot_id = src.args["slot"]
+	// Under a stack(T, n) binding the put splits off exactly the reserved units and moves that split.
+	var/atom/movable/moving = thing
+	var/datum/reservation/stack_units = null
+	for(var/datum/reservation/R as anything in A.reservations)
+		if(R.res_id == RES_STACK && R.held == thing)
+			stack_units = R
+	if(stack_units)
+		var/obj/item/split = op_split_units(thing, stack_units.amount)
+		if(!split)
+			return OP_FAILED
+		moving = split
+	var/why = slot_precheck(holder, slot_id, moving, A.actor)
+	if(why)
+		A.reason = why
+		if(moving != thing)
+			op_merge_units(thing, moving)
+		return OP_REFUSED
+	var/atom/from = moving.loc
+	if(!moving.move_into(holder, slot_id, A.actor))
+		if(moving != thing)
+			op_merge_units(thing, moving)
+		A.reason = /datum/msg/op/failed
+		return OP_REFUSED
+	TEST_REC_TRANSFER(moving, from, holder, slot_id)
+	if(stack_units)
+		stack_units.moved = TRUE
+	return OP_OK
+
+/datum/entry/part/effect/take_out/precheck(datum/act/op/A)
+	return null
+
+/datum/entry/part/effect/take_out/run_effect(datum/act/op/A)
+	var/atom/holder = A.target
+	if(!istype(holder))
+		return OP_FAILED
+	var/slot_id = src.args["slot"]
+	var/list/inside = holder.slot_contents(slot_id)
+	if(!length(inside))
+		return OP_REFUSED
+	var/atom/movable/thing = inside[1]
+	var/atom/destination = get_turf(A.actor || holder)
+	if(A.actor && istype(thing, /obj/item))
+		var/obj/item/I = thing
+		if(!A.actor.put_in_hands(I))
+			destination = get_turf(A.actor)
+		else
+			TEST_REC_TRANSFER(thing, holder, A.actor, slot_id)
+			return OP_OK
+	if(!holder.slot_remove(thing, destination, A.actor))
+		return OP_FAILED
+	TEST_REC_TRANSFER(thing, holder, destination, slot_id)
+	return OP_OK
+
+/// Splits `n` units off a stack item into a new item (the original keeps the rest).
+/proc/op_split_units(obj/item/I, n)
+	RETURN_TYPE(/obj/item)
+	if(istype(I, /obj/item/stack))
+		var/obj/item/stack/S = I
+		return S.split(n)
+	var/amount = op_var(I, "amount")
+	if(!isnum(amount) || amount < n)
+		return null
+	if(amount == n)
+		return I
+	var/obj/item/clone = new I.type(null)
+	clone.vars["amount"] = n // ALLOW(api): units moved between two items of one type: the engine's own bookkeeping
+	I.vars["amount"] = amount - n // ALLOW(api): units moved between two items of one type: the engine's own bookkeeping
+	return clone
+
+/// Puts a split's units back (an insert that was refused after the split).
+/proc/op_merge_units(obj/item/original, obj/item/split)
+	if(original == split)
+		return
+	if(istype(original, /obj/item/stack) && istype(split, /obj/item/stack))
+		var/obj/item/stack/S = original
+		S.add(split.vars["amount"])
+		qdel(split) // ALLOW(lifecycle): a split of a stack made inside an op and never placed in the world: it holds nothing to unlink
+		return
+	var/amount = op_var(original, "amount")
+	if(isnum(amount))
+		original.vars["amount"] = amount + split.vars["amount"] // ALLOW(api): units moved between two items of one type: the engine's own bookkeeping
+	qdel(split) // ALLOW(lifecycle): a split of a stack made inside an op and never placed in the world: it holds nothing to unlink

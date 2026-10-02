@@ -1,0 +1,540 @@
+// Resolution (doc/rewrite/final_api.html, section 8 "Resolution", "Resolution cost", "Explaining a resolution"; section 19 "E2, parts").
+//
+// Every client input first becomes a typed event in the input inbox (E6) and resolves here when the inbox drains it. Candidates come from three
+// places: the target's ops (its type table plus every activation on it), the held item's at_target ops, and the actor's own ops. The filters,
+// in order, are the Match stage and drop a candidate silently:
+//
+//   step 0   the actor gate: the origin the input arrived on must be in the actor's acts_via (ORIGIN_SYSTEM is exempt);
+//            one of the op's bindings accepts the origin and the authority in use;
+//   step 0.5 the providers and the reach gate;
+//   the intent the gesture means, and the binding's own input (the held item is of the type item(T) names, a tool of quality Q);
+//   the op's when conditions hold.
+//
+// Order: the bind profile's intent list, then the op's tier, then relative priority (above/below), then target before held before actor, then
+// declaration order. The first candidate runs through Require, Wait and Do. If Require refuses the player sees the reason and the input never
+// falls through; only Match failures fall through. If nothing survives and a gate dropped something, the engine shows the best near-miss's reason.
+//
+// Two passes keep the cost flat as candidates grow: pass 1 builds the ordered list with the cheap gates and runs no requirement code, pass 2
+// tests when conditions until one holds. Menus and screentips run needs() lazily for every candidate under a budget.
+
+/// One (op, binding) pair that might answer an input, and why it was dropped when it was.
+/datum/op_cand
+	var/datum/op_plan/oplan
+	var/datum/entry/part/bind/binding
+	/// The entity whose entry runs (the target, the held item, the actor), and where it sits.
+	var/datum/holder
+	var/side = CAND_TARGET
+	var/datum/activation/activation
+	var/datum/capability/cap
+	/// The matched intent's position in the gesture's list (lower first), and the intent itself.
+	var/rank = 0
+	var/intent
+	/// The provider chosen by the reach gate.
+	var/datum/prov/provider
+	/// A legacy interaction wrapped as a candidate (a /datum/interaction), or null.
+	var/datum/legacy
+	/// The filter that dropped it (GATE_*), the reason that filter gave, and the condition that was false.
+	var/dropped_by
+	var/dropped_reason
+	var/dropped_cond
+	/// The tier it sits at.
+	var/tier = OP_PRIORITY_NORMAL
+	var/seq = 0
+
+/// What one resolution found: every candidate with the filter that dropped it, the ordered survivors and the winner.
+/datum/op_resolution
+	var/mob/actor
+	var/atom/target
+	var/obj/item/held
+	var/origin
+	var/authority
+	var/gesture
+	var/list/intents
+	/// Every candidate considered, dropped or not.
+	var/list/all
+	/// The survivors in order.
+	var/list/ordered
+	/// The best near-miss when nothing survived: the highest-ranked candidate the origin, provider or reach filter dropped.
+	var/datum/op_cand/near_miss
+	/// The gate that dropped candidates before any was a candidate (the actor gate's reason), or null.
+	var/gate_reason
+
+// ---- the ops an entity has ----
+
+/// An op an entity has now: the plan, and the activation that brought it (null for a type-level op).
+/datum/op_src
+	var/datum/op_plan/oplan
+	var/datum/activation/activation
+
+/// Every op plan of an entity: its type's, and the ones of capabilities granted to it. A fresh list.
+/proc/op_plans_of(datum/D)
+	. = list()
+	for(var/datum/op_src/S as anything in op_sources_of(D))
+		. += S.oplan
+
+/// The ops an entity has with the activation that brought each. A granted capability whose activation does not run (stacking: another beat
+/// it) brings none.
+/proc/op_sources_of(datum/D)
+	. = list()
+	if(!D || QDELETED(D))
+		return
+	var/datum/type_table/T = table_of(D)
+	var/datum/op_index/index = op_index_of_table(T)
+	for(var/datum/op_plan/P as anything in index.ordered)
+		var/datum/op_src/S = new
+		S.oplan = P // ALLOW(ownership): a transient record of one resolution: dropped with it
+		. += S
+	for(var/datum/activation/A as anything in D.rx?.activations)
+		if(A.dead || !A.runs || T.caps[A.def.key])
+			continue
+		var/datum/op_index/granted = op_index_of_def(T, A.def)
+		for(var/datum/op_plan/P as anything in granted.ordered)
+			var/datum/op_src/S = new
+			S.oplan = P // ALLOW(ownership): a transient record of one resolution: dropped with it
+			S.activation = A // ALLOW(ownership): a transient record of one resolution: dropped with it
+			. += S
+
+/// The plan of `key` an entity has, or null; `activation` is set to the one that brought it.
+/proc/op_plan_for(datum/D, key, list/found_activation)
+	RETURN_TYPE(/datum/op_plan)
+	if(!D || QDELETED(D))
+		return null
+	var/datum/type_table/T = table_of(D)
+	var/datum/op_plan/P = op_index_of_table(T).by_key[key]
+	if(P)
+		return P
+	for(var/datum/activation/A as anything in D.rx?.activations)
+		if(A.dead || !A.runs || T.caps[A.def.key])
+			continue
+		P = op_index_of_def(T, A.def).by_key[key]
+		if(P)
+			found_activation += A
+			return P
+	return null
+
+// ---- intents ----
+
+/// The intents a gesture means for this actor, in order: the bind profile's intent list.
+/proc/op_intents_for(mob/actor, gesture)
+	switch(gesture)
+		if(GESTURE_CLICK, GESTURE_SELF)
+			if(actor && STANCE_IS_HOSTILE(actor.input_stance()))
+				return list(INTENT_ATTACK, INTENT_USE)
+			return list(INTENT_USE)
+		if(GESTURE_ALT)
+			return list(INTENT_TOGGLE, INTENT_OPEN, INTENT_EJECT)
+		if(GESTURE_SHIFT)
+			return list(INTENT_EXAMINE)
+		if(GESTURE_DRAG)
+			return list(INTENT_DROP_ONTO)
+	return list()
+
+/// The intents an op answers through a binding: answers() when written, else what the binding implies.
+/proc/op_answers(datum/op_plan/P, datum/entry/part/bind/B)
+	var/list/chosen = LAZYACCESS(P.selects, "answers")
+	if(length(chosen))
+		return chosen
+	switch(B.bind_kind)
+		if(BIND_MENU, BIND_UI, BIND_TOPIC, BIND_AI)
+			return list()
+	var/list/implied = list(INTENT_USE)
+	if(P.toggles && B.bind_kind == BIND_HAND)
+		implied += INTENT_TOGGLE
+	if(LAZYACCESS(P.selects, "presents"))
+		implied = list(INTENT_PRESENT)
+	return implied
+
+// ---- candidate collection ----
+
+/// The input's own match of a binding: does this (actor, target, held) fit what the binding asks for? Silent.
+/proc/op_binding_fits(datum/entry/part/bind/B, mob/actor, datum/target, obj/item/held, datum/holder, side)
+	switch(B.bind_kind)
+		if(BIND_TOOL)
+			if(!held || side != CAND_TARGET)
+				return FALSE
+			for(var/quality in B.args["quality"])
+				if(held.has_tool_quality(quality))
+					return TRUE
+			return FALSE
+		if(BIND_ITEM, BIND_STACK)
+			return side == CAND_TARGET && !isnull(held) && istype(held, B.args["type"])
+		if(BIND_IN_HAND)
+			return !isnull(held) && held == holder && target == held
+		if(BIND_AT_TARGET)
+			if(side != CAND_HELD || isnull(held) || holder != held || target == held)
+				return FALSE
+			var/filter = B.args["filter"]
+			return isnull(filter) || istype(target, filter)
+		if(BIND_INSIDE)
+			return side == CAND_TARGET
+		if(BIND_HAND, BIND_REMOTE)
+			return side == CAND_TARGET
+		if(BIND_MENU)
+			return TRUE
+	return side == CAND_TARGET
+
+/// Builds the candidate list of an input. `gesture` null means a pick by key or a menu read (no intent filter). Pass 1: cheap gates only.
+/proc/op_resolve(mob/actor, atom/target, obj/item/held, origin, authority, gesture = null, key = null, include_legacy = FALSE, keep_dropped = FALSE)
+	RETURN_TYPE(/datum/op_resolution)
+	// A resolution that names a key, or explains itself, keeps every candidate and the filter that dropped it; the rest never allocate a
+	// candidate for one the binding's own input or the intent drops silently.
+	keep_dropped ||= !isnull(key)
+	var/datum/op_resolution/R = new
+	R.actor = actor // ALLOW(ownership): a transient record of one resolution: dropped with it
+	R.target = target // ALLOW(ownership): a transient record of one resolution: dropped with it
+	R.held = held // ALLOW(ownership): a transient record of one resolution: dropped with it
+	R.origin = origin
+	R.authority = authority
+	R.gesture = gesture
+	R.intents = isnull(gesture) ? null : op_intents_for(actor, gesture)
+	R.all = list()
+	R.ordered = list()
+	R.gate_reason = actor_gate_reason(actor, origin, authority)
+	var/list/sources = list() // list of list(holder, side, /datum/op_src)
+	if(target && !QDELETED(target))
+		for(var/datum/op_src/S as anything in op_sources_of(target))
+			sources += list(list(target, CAND_TARGET, S))
+	if(held && !QDELETED(held))
+		for(var/datum/op_src/S as anything in op_sources_of(held))
+			sources += list(list(held, CAND_HELD, S))
+	if(actor && !QDELETED(actor) && actor != target)
+		for(var/datum/op_src/S as anything in op_sources_of(actor))
+			sources += list(list(actor, CAND_ACTOR, S))
+	var/seq = 0
+	for(var/list/row as anything in sources)
+		var/datum/holder = row[1]
+		var/side = row[2]
+		var/datum/op_src/S = row[3]
+		var/datum/op_plan/P = S.oplan
+		if(key && P.key != key)
+			continue
+		for(var/datum/entry/part/bind/B as anything in P.bindings)
+			seq++
+			if(!keep_dropped && !R.gate_reason && op_silently_dropped(R, P, B, holder, side, gesture))
+				continue
+			var/datum/op_cand/C = new
+			C.oplan = P // ALLOW(ownership): a transient record of one resolution: dropped with it
+			C.binding = B // ALLOW(ownership): a transient record of one resolution: dropped with it
+			C.holder = holder // ALLOW(ownership): a transient record of one resolution: dropped with it
+			C.side = side
+			C.activation = S.activation // ALLOW(ownership): a transient record of one resolution: dropped with it
+			C.cap = S.activation ? S.activation.def : P.owner_def
+			C.tier = P.tier
+			C.seq = seq
+			R.all += C // ALLOW(ownership): a transient record of one resolution: dropped with it
+			op_cand_pass1(R, C, gesture)
+			if(!C.dropped_by)
+				R.ordered += C // ALLOW(ownership): a transient record of one resolution: dropped with it
+	if(include_legacy)
+		op_legacy_candidates(R)
+	op_resolution_sort(R)
+	if(!length(R.ordered))
+		for(var/datum/op_cand/C as anything in R.all)
+			if(C.dropped_by in list(GATE_ORIGIN, GATE_PROVIDER, GATE_REACH))
+				if(!R.near_miss || op_cand_better(C, R.near_miss))
+					R.near_miss = C // ALLOW(ownership): a transient record of one resolution: dropped with it
+	return R
+
+/// Would pass 1 drop this (op, binding) at the binding's own input or the intent, which are silent and the same for every input of that kind?
+/// (Only after the origin and authority filters accepted it: those drops are kept for the near-miss reason.)
+/proc/op_silently_dropped(datum/op_resolution/R, datum/op_plan/P, datum/entry/part/bind/B, datum/holder, side, gesture)
+	if(!op_accepts_origin(P, B, R.origin))
+		return FALSE
+	if(R.origin != ORIGIN_SYSTEM && !op_accepts_authority(P, B, R.authority))
+		return FALSE
+	if(side == CAND_ACTOR && B.bind_kind != BIND_MENU && B.bind_kind != BIND_AI)
+		return TRUE
+	if((R.origin != ORIGIN_SYSTEM || !isnull(gesture)) && !op_binding_fits(B, R.actor, R.target, R.held, holder, side))
+		return TRUE
+	if(!isnull(gesture))
+		if(B.bind_kind in list(BIND_MENU, BIND_UI, BIND_TOPIC, BIND_AI))
+			return TRUE
+		var/matched = FALSE
+		var/list/answered = op_answers(P, B)
+		for(var/intent in R.intents)
+			if(intent in answered)
+				matched = TRUE
+				break
+		if(!matched)
+			return TRUE
+	return FALSE
+
+/// Pass 1 for one candidate: origin, authority, binding input, intent, then provider and reach. Sets dropped_by on the first filter that fails.
+/proc/op_cand_pass1(datum/op_resolution/R, datum/op_cand/C, gesture)
+	var/datum/op_plan/P = C.oplan
+	var/datum/entry/part/bind/B = C.binding
+	if(R.gate_reason)
+		C.dropped_by = GATE_ACTOR
+		C.dropped_reason = R.gate_reason
+		return
+	if(!op_accepts_origin(P, B, R.origin))
+		C.dropped_by = GATE_ORIGIN
+		C.dropped_reason = /datum/msg/op/no_binding
+		return
+	if(R.origin != ORIGIN_SYSTEM && !op_accepts_authority(P, B, R.authority))
+		C.dropped_by = GATE_ORIGIN
+		C.dropped_reason = /datum/msg/op/no_binding
+		return
+	if(R.origin != ORIGIN_SYSTEM && R.origin == ORIGIN_MENU && B.bind_kind == BIND_MENU && C.side == CAND_ACTOR && !isnull(R.target) && R.target != R.actor)
+		// an actor's own menu() op is the Abilities entry, not a target's menu line
+		C.dropped_by = GATE_MATCH
+		return
+	var/datum/target = (C.side == CAND_ACTOR) ? R.actor : R.target
+	if(C.side == CAND_ACTOR && B.bind_kind != BIND_MENU && B.bind_kind != BIND_AI)
+		C.dropped_by = GATE_MATCH
+		return
+	if(R.origin != ORIGIN_SYSTEM || !isnull(gesture))
+		if(!op_binding_fits(B, R.actor, R.target, R.held, C.holder, C.side))
+			C.dropped_by = GATE_MATCH
+			return
+	// the gesture's intent
+	if(!isnull(gesture))
+		if(B.bind_kind in list(BIND_MENU, BIND_UI, BIND_TOPIC, BIND_AI))
+			C.dropped_by = GATE_MATCH
+			return
+		var/list/answered = op_answers(P, B)
+		var/best = null
+		for(var/i in 1 to length(R.intents))
+			if(R.intents[i] in answered)
+				best = i
+				C.intent = R.intents[i]
+				break
+		if(isnull(best))
+			C.dropped_by = GATE_MATCH
+			return
+		C.rank = best
+		var/list/stances = LAZYACCESS(P.selects, "stance")
+		if(length(stances) && !(R.actor?.input_stance() in stances))
+			C.dropped_by = GATE_MATCH
+			return
+		var/pinned = LAZYACCESS(P.selects, "gesture")
+		if(!isnull(pinned) && pinned != gesture)
+			C.dropped_by = GATE_MATCH
+			return
+	// providers and the reach gate (not for the game acting for itself)
+	if(R.origin != ORIGIN_SYSTEM && op_reach_policy(P, B) != REACH_ANY)
+		var/atom/aim = (C.side == CAND_ACTOR) ? R.actor : R.target
+		var/list/chosen = list()
+		var/why = reach_gate(R.actor, aim, R.held, P, B, R.authority, chosen)
+		if(why)
+			C.dropped_by = (why == /datum/msg/op/no_hands) ? GATE_PROVIDER : GATE_REACH
+			C.dropped_reason = why
+			return
+		if(length(chosen))
+			C.provider = chosen[1] // ALLOW(ownership): a transient record of one resolution: dropped with it
+
+/// Pass 2 for one candidate: its when conditions, in the context the op would run in. Sets dropped_by = GATE_MATCH and dropped_cond when one is false.
+/proc/op_cand_when(datum/op_resolution/R, datum/op_cand/C)
+	if(C.legacy || !length(C.oplan.conds))
+		return TRUE
+	var/datum/act/op/A = op_act_for(C, R.actor, R.target, R.held, R.origin, R.authority)
+	var/ok = TRUE
+	for(var/cond in C.oplan.conds)
+		if(!op_cond(A, cond))
+			C.dropped_by = GATE_MATCH
+			C.dropped_cond = cond
+			ok = FALSE
+			break
+	A.release()
+	return ok
+
+/// The order candidates answer in.
+/proc/op_cand_better(datum/op_cand/A, datum/op_cand/B)
+	// the gates a candidate got past: the one that got further is the better near-miss
+	var/static/list/depth = list(GATE_ACTOR = 1, GATE_ORIGIN = 2, GATE_PROVIDER = 3, GATE_REACH = 4)
+	return (depth[A.dropped_by] || 0) > (depth[B.dropped_by] || 0)
+
+/// Sorts the survivors: intent rank, tier, then target before held before actor, then declaration order; then relative priorities.
+/proc/op_resolution_sort(datum/op_resolution/R)
+	var/list/sorted = list()
+	for(var/datum/op_cand/C as anything in R.ordered)
+		var/position = length(sorted) + 1
+		for(var/i in 1 to length(sorted))
+			if(op_cand_precedes(C, sorted[i]))
+				position = i
+				break
+		sorted.Insert(position, C)
+	// priority(above(key)) / priority(below(key)): moved next to the named candidate whatever the tiers
+	for(var/datum/op_cand/C as anything in sorted.Copy())
+		var/list/rel = C.oplan.priority_rel
+		if(!length(rel))
+			continue
+		var/datum/op_cand/anchor = null
+		for(var/datum/op_cand/O as anything in sorted)
+			if(O != C && O.oplan.key == rel[2])
+				anchor = O
+				break
+		if(!anchor)
+			continue
+		sorted -= C
+		var/at = sorted.Find(anchor)
+		sorted.Insert(rel[1] == "above" ? at : at + 1, C)
+	R.ordered = sorted
+
+/// Does candidate A come before B?
+/proc/op_cand_precedes(datum/op_cand/A, datum/op_cand/B)
+	if(A.rank != B.rank)
+		return A.rank < B.rank
+	if(A.tier != B.tier)
+		return A.tier > B.tier
+	if(A.side != B.side)
+		return A.side < B.side
+	return A.seq < B.seq
+
+// ---- the act a candidate runs in ----
+
+/// A pooled op context for candidate C and an input: the fields a requirement or a condition reads. The caller releases it.
+/proc/op_act_for(datum/op_cand/C, mob/actor, datum/target, obj/item/held, origin, authority)
+	RETURN_TYPE(/datum/act/op)
+	var/datum/act/op/A = take(/datum/act/op)
+	A.key = C.oplan.key
+	A.holder = C.holder // ALLOW(ownership): a pooled transient: reset on release
+	A.cap = C.cap
+	A.activation = C.activation // ALLOW(ownership): a pooled transient: reset on release
+	A.source = C.activation ? C.activation.source : C.holder // ALLOW(ownership): a pooled transient: reset on release
+	A.actor = actor
+	A.held = held // ALLOW(ownership): a pooled transient: reset on release
+	// An op with no target binding has A.target = A.holder (an actor's own op, a self ui_act()).
+	A.target = (C.side == CAND_ACTOR || isnull(target)) ? C.holder : target
+	if(istype(A.target, /atom))
+		A.target_atom = A.target // ALLOW(ownership): a pooled transient: reset on release
+	A.origin = origin
+	A.authority = authority
+	A.provider = C.provider?.source
+	return A
+
+// ---- pass 2 and the winner ----
+
+/// Runs pass 2 over the survivors in order and returns the candidates whose when conditions hold, best first.
+/proc/op_resolution_matches(datum/op_resolution/R)
+	. = list()
+	for(var/datum/op_cand/C as anything in R.ordered)
+		if(op_cand_when(R, C))
+			. += C
+
+/// The winner of a click: the first survivor whose conditions hold, with the candidates after it that the passes() chain would run.
+/proc/op_resolution_winner(datum/op_resolution/R)
+	RETURN_TYPE(/datum/op_cand)
+	for(var/datum/op_cand/C as anything in R.ordered)
+		if(op_cand_when(R, C))
+			return C
+	return null
+
+/// The text label of an op: label("Text"), else its key's last segment, spaced.
+/proc/op_label(datum/op_plan/P)
+	if(P.label)
+		return P.label
+	var/key = P.key
+	var/at = findlasttext(key, ".")
+	if(at)
+		key = copytext(key, at + 1)
+	var/colon = findtext(key, ":")
+	if(colon)
+		key = copytext(key, 1, colon)
+	return capitalize(replacetext(key, "_", " "))
+
+// ---- the menu and the screentip ----
+
+GLOBAL_LIST_EMPTY(op_menu_cache) // ALLOW(cache): a per-tick memo of the menu of one entity, flushed whenever the engine epoch or the kernel time moves: nothing outlives a state change
+GLOBAL_VAR_INIT(op_menu_cache_epoch, -1)
+GLOBAL_VAR_INIT(op_menu_cache_stamp, -1)
+
+/// The kernel time the cache stamps with: the injected test clock when a test drives it, else the world clock.
+/proc/op_now()
+	var/datum/controller/kernel/K = kernel()
+	return isnull(K?.test_now) ? world.time : K.test_now
+
+/// The final action_options(): every candidate op on `target` for `actor` holding `held`, as a list of assoc lists with "key", "label", "enabled"
+/// and "reason". Evaluated lazily and cached on (actor, target, held, their act generations, the actor's provider set generation); the legacy
+/// radial menu's rows keep their shape ("id", "name") beside the final ones.
+/proc/action_options(mob/actor, atom/target, held_or_route, route = null)
+	// The legacy shape action_options(user, target, route) passes a ROUTE_* text; it keeps its own implementation.
+	if(!isnull(held_or_route) && !isobj(held_or_route) && !ismob(held_or_route))
+		return legacy_action_options(actor, target, held_or_route)
+	if(isnull(held_or_route) && isnull(route) && !op_has_ops(target) && !op_has_ops(actor))
+		return legacy_action_options(actor, target)
+	var/obj/item/held = held_or_route
+	return op_menu(actor, target, held)
+
+/// Does the entity have any op of the new engine?
+/proc/op_has_ops(datum/D)
+	if(!D || QDELETED(D))
+		return FALSE
+	if(length(op_index_of_table(table_of(D)).ordered))
+		return TRUE
+	for(var/datum/activation/A as anything in D.rx?.activations)
+		if(!A.dead && A.runs && length(op_index_of_def(table_of(D), A.def).ordered))
+			return TRUE
+	return FALSE
+
+/// The menu of `target` for `actor`: every op a pick (origin ORIGIN_MENU) could reach, with whether Require would pass now and why not.
+/proc/op_menu(mob/actor, atom/target, obj/item/held)
+	var/stamp = op_now()
+	if(GLOB.op_menu_cache_epoch != GLOB.op_epoch || GLOB.op_menu_cache_stamp != stamp)
+		GLOB.op_menu_cache.Cut()
+		GLOB.op_menu_cache_epoch = GLOB.op_epoch
+		GLOB.op_menu_cache_stamp = stamp
+	var/cache_key = "[REF(actor)]|[REF(target)]|[REF(held)]|[act_gen_of(actor)]|[act_gen_of(target)]|[act_gen_of(held)]|[provider_gen_of(actor)]"
+	var/list/cached = GLOB.op_menu_cache[cache_key]
+	if(cached)
+		return cached.Copy()
+	var/datum/op_resolution/R = op_resolve(actor, target, held, ORIGIN_MENU, AUTH_PHYSICAL, null, null, FALSE)
+	var/list/rows = list()
+	var/list/seen = list()
+	for(var/datum/op_cand/C as anything in R.ordered)
+		if(seen[C.oplan.key])
+			continue
+		if(!op_cand_when(R, C))
+			continue
+		seen[C.oplan.key] = TRUE
+		var/enabled = TRUE
+		var/reason = null
+		var/why = op_cand_require_reason(R, C)
+		if(why)
+			enabled = FALSE
+			reason = reason_text(why)
+		rows += list(list("key" = C.oplan.key, "label" = op_label(C.oplan), "enabled" = enabled, "reason" = reason, "id" = C.oplan.key, "name" = op_label(C.oplan)))
+	GLOB.op_menu_cache[cache_key] = rows
+	return rows.Copy()
+
+/// The reason Require would refuse candidate C now (the requirements only, nothing reserved), or null.
+/proc/op_cand_require_reason(datum/op_resolution/R, datum/op_cand/C)
+	if(C.legacy)
+		return null
+	var/datum/act/op/A = op_act_for(C, R.actor, R.target, R.held, R.origin, R.authority)
+	var/why = op_require_reason(A, C.oplan, C.binding)
+	A.release()
+	return why
+
+/// The final screentip_for(): the text of the op a gesture would run, or null. The legacy screentip_for(user, target, gesture) keeps its shape.
+/proc/screentip_for(mob/actor, atom/target, held_or_gesture, gesture = null)
+	if(isnull(gesture))
+		if(istext(held_or_gesture))
+			return legacy_screentip_for(actor, target, held_or_gesture)
+		gesture = GESTURE_CLICK
+	var/obj/item/held = held_or_gesture
+	if(!istext(held_or_gesture) && !isnull(held_or_gesture) && !isobj(held_or_gesture))
+		return null
+	var/datum/op_resolution/R = op_resolve(actor, target, held, ORIGIN_CLICK, AUTH_PHYSICAL, gesture, null, FALSE)
+	var/datum/op_cand/winner = op_resolution_winner(R)
+	if(!winner)
+		return null
+	return "[op_gesture_label(gesture)]: [op_label(winner.oplan)]"
+
+/proc/op_gesture_label(gesture)
+	switch(gesture)
+		if(GESTURE_CLICK)
+			return "Click"
+		if(GESTURE_SELF)
+			return "Use in hand"
+		if(GESTURE_ALT)
+			return "Alt-click"
+		if(GESTURE_CTRL)
+			return "Ctrl-click"
+		if(GESTURE_SHIFT)
+			return "Shift-click"
+		if(GESTURE_DRAG)
+			return "Drag"
+		if(GESTURE_RIGHT)
+			return "Right-click"
+	return "[gesture]"
