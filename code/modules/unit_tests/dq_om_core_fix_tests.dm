@@ -17,7 +17,7 @@
 	handles = list(/datum/om/event/cf_probe)
 
 /datum/om/behaviour/test/cf_self_detach/on_cf_probe(datum/om_test_entity/E, datum/om/event/cf_probe/event)
-	E.log += "detacher"
+	LAZYADD(E.log, "detacher")
 	om_detach(E, /datum/om/behaviour/test/cf_self_detach)
 
 /datum/om/behaviour/test/cf_listener
@@ -31,7 +31,7 @@
 /datum/om/event/before/cf_outer/dispatch(datum/om/behaviour/B, datum/om_test_entity/E)
 	if(!istype(B, /datum/om/behaviour/test/cf_nesting))
 		return null
-	E.log += "outer"
+	LAZYADD(E.log, "outer")
 	// A different before-event on the same entity is allowed; its answer is ours.
 	return om_emit(E, new /datum/om/event/before/cf_inner)
 
@@ -40,7 +40,7 @@
 /datum/om/event/before/cf_inner/dispatch(datum/om/behaviour/B, datum/om_test_entity/E)
 	if(!istype(B, /datum/om/behaviour/test/cf_nesting))
 		return null
-	E.log += "inner"
+	LAZYADD(E.log, "inner")
 	return E.enabled ? null : EVENT_VETO
 
 /datum/om/behaviour/test/cf_nesting
@@ -50,10 +50,10 @@
 /datum/om/event/test/other/cf_child
 
 /datum/om_test_entity/proc/cf_hooked(datum/source, datum/om/event/event)
-	log += "hook:[event.type]"
+	LAZYADD(log, "hook:[event.type]")
 
 /proc/om_cf_global_hit(datum/om_test_entity/L)
-	L.log += "global"
+	LAZYADD(L.log, "global")
 
 // ---------------------------------------------------------------- events
 

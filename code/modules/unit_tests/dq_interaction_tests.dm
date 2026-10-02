@@ -61,7 +61,7 @@
 	)
 
 /obj/dq_interaction_probe/proc/note_interaction(mob/actor, obj/item/held, datum/interaction/interaction)
-	done += interaction.id
+	LAZYADD(done, interaction.id)
 	return TRUE
 
 /// A machine with every Maintainable flag, no waits, and a recorded dismantle.
