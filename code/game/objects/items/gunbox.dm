@@ -34,11 +34,13 @@ DECLARE_INTERACTIONS(/obj/item/gunbox, INTERACT_USE("Open", PROC_REF(interaction
 /obj/item/gunbox/proc/gun_chosen(datum/om/prompt/choice/gunbox/ask)
 	var/mob/user = ask.answerer
 	var/list/things_to_spawn = ask.choices[ask.choice]
+	var/turf/delivery_turf = get_turf(src)
+	if(!consume(src, user))
+		return
 	for(var/new_type in things_to_spawn) // Spawn all the things, the gun and the ammo.
-		var/atom/movable/AM = new new_type(get_turf(src))
+		var/atom/movable/AM = new new_type(delivery_turf)
 		if(istype(AM, /obj/item/gun))
 			to_chat(user, "You have chosen \the [AM]. [ask.greeting]")
-	consume(src, user)
 
 /*
  * Sidearm Stun

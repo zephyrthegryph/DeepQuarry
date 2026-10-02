@@ -13,12 +13,27 @@
 	var/robotic = FALSE
 	var/mass_grave = FALSE
 
-DECLARE_INTERACTIONS(/obj/item/bodybag, INTERACT_SELF("Unfold", PROC_REF(bodybag_self)))
+DECLARE_INTERACTIONS(/obj/item/bodybag, INTERACT_SELF("Unfold", PROC_REF(bodybag_self), REQ_TARGET_STATE(/obj/item/bodybag/proc/can_unfold)))
+
+/// Unfolding must leave a refused folded bag and its owned injector intact.
+/obj/item/bodybag/proc/can_unfold(mob/user, atom/target, obj/item/held)
+	var/reason = loc?.release_refusal(src, user)
+	if(reason)
+		return reason
+	return TRUE
+
+/// Release the folded item before creating the floor structure or transferring its injector.
+/obj/item/bodybag/proc/release_for_unfold(mob/user)
+	if(can_unfold(user, src, src) != TRUE)
+		return FALSE
+	return loc.release_to(src, user.loc, null, user)
 
 /// Old attack_self: unfold the bag. Mass-grave bags fall through (their subtype unfolds them).
 /obj/item/bodybag/proc/bodybag_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(mass_grave) // TODO, upport this.
 		return FALSE // TODO, upport this.
+	if(!release_for_unfold(user))
+		return FALSE
 
 	if(cryogenic)
 		var/obj/structure/closet/body_bag/cryobag/R = new /obj/structure/closet/body_bag/cryobag(user.loc)
@@ -65,10 +80,12 @@ DECLARE_INTERACTIONS(/obj/item/bodybag, INTERACT_SELF("Unfold", PROC_REF(bodybag
 	w_class = ITEMSIZE_LARGE
 	mass_grave = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/bodybag/large, INTERACT_USE("Unfold", PROC_REF(large_bodybag_self)))
+EXTEND_INTERACTIONS(/obj/item/bodybag/large, INTERACT_USE("Unfold", PROC_REF(large_bodybag_self), REQ_TARGET_STATE(/obj/item/bodybag/proc/can_unfold)))
 
 /// Old attack_self.
 /obj/item/bodybag/large/proc/large_bodybag_self(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!release_for_unfold(user))
+		return FALSE
 	var/obj/structure/closet/body_bag/large/R = new /obj/structure/closet/body_bag/large(user.loc)
 	R.add_fingerprint(user)
 	consume(src, user)

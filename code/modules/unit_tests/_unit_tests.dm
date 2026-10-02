@@ -494,6 +494,9 @@
 #include "interim_hailer_mask_lifecycle.dm"
 #include "interim_storage_hud_item_cleanup.dm"
 #include "interim_selection_kit_lifecycle.dm"
+#include "interim_pipe_meter_replacement.dm"
+#include "interim_gunbox_lifecycle.dm"
+#include "interim_bodybag_lifecycle.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
