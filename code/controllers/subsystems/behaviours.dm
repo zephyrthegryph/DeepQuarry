@@ -31,7 +31,6 @@ SUBSYSTEM_DEF(behaviours)
 
 /// TRUE (and re-armed) when the pipeline audit is due and enabled: the kernel asks once per tick.
 /datum/controller/subsystem/behaviours/proc/audit_due()
-	// ALLOW(sys_old_expiry): a polled gate re-armed by EXPIRY_SET in the same proc, not a delayed set
 	if(!EXPIRY_EXPIRED(src, next_audit, CLOCK_WORLD) || !audit_enabled())
 		return FALSE
 	EXPIRY_SET(src, next_audit, OM_AUDIT_INTERVAL, CLOCK_WORLD)

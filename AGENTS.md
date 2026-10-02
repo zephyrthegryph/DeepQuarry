@@ -162,6 +162,11 @@ it. Don't annotate new debt to get under a ceiling; use the form the lint points
 the vendored TGS DMAPI are exempt by path from the lints that call `exempt_path()` (instance_list,
 ownership, silent_catch, spatial, lifecycle, tracked, cache, scheduler): don't annotate there.
 
+No ratchet bans a §3b legacy form today. The old `dx_old_forms` sys rules were deleted because each
+named a replacement that has not landed on master (or that the design itself replaces), and
+`old_ui` contradicted the `ui` rule: a UI is `DECLARE_UI`/`UI_ACT`/`UI_DATA` and a `tgui_data()`
+override is the banned shape. The commit that lands a replacement adds its ban and converts the callers (§3b).
+
 ### 3e. Debugging and tracing
 
 Never remove existing debug or AI tracing without explicit permission, and add thorough

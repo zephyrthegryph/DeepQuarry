@@ -1472,7 +1472,7 @@ events (emitter -> handlers, no dependency):
 | Metric | Before (b17) | After (target) | Gate |
 |---|---|---|---|
 | Schedulers | MC + OM (+ 34 world lanes, 22 pipelines, 216 periodic decls) | kernel (OM engine) | `subsystem_fire_lint` CORE = kernel five |
-| Ways to repeat | 13 | 1 (cadence + `should_run`) | `kernel_timer_loop`, `dx_old_forms` |
+| Ways to repeat | 13 | 1 (cadence + `should_run`) | `kernel_timer_loop` |
 | Rust drivers | 4 | 1 (`native`, phase N) | grep lint: `vg_world_tick\|vg_heat_tick\|vg_drain_events` only in `modules/native/` |
 | Ordering vocabularies | 6 + 3 hand boots + 36 guards | 2 (`needs`; `after` within a pass) + the Rust law `after` | `system_boot_dag` test |
 | Direct system→system edges | 63 (225 sites) | about 25 declared `uses` edges, all API | B2 + B4 |
@@ -1538,8 +1538,9 @@ events (emitter -> handlers, no dependency):
 - `system_boundary_lint.py` (B1–B7, baseline from the audit, shrink-only);
 - `subsystem_fire_lint.py`, whose CORE list shrinks to the kernel five;
 - `kernel_timer_loop` (a new rule in `scheduler_lints.py`);
-- the existing `dx_old_forms`, extended with `DECLARE_PERIODIC_WHILE`, `DECLARE_REPEAT`,
-  `MACHINE_WAKE`, `om_task_periodic`, `boot_after`, `order_after` and `GLOB.*_service`.
+- a ban on `DECLARE_PERIODIC_WHILE`, `DECLARE_REPEAT`, `MACHINE_WAKE`, `om_task_periodic`, `boot_after`,
+  `order_after` and `GLOB.*_service`, switched on by the commit that lands their replacement (the old
+  `dx_old_forms` ratchet was removed as premature).
 
 **Bench scenarios** (existing): `boot_profile`, `boot_memory`, `idle`, `idle_mobs`, `life_sweep`,
 `om_dispatch`, `atmos_idle`, `atmos_large`, `major_events`, `explosion_dense`, `radiation`,

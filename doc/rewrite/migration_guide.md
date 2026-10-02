@@ -568,7 +568,7 @@ presets of `cap_op`). For new or reworked code:
 
 # Part B: the catalogue of old forms
 
-Every form that goes away is listed here with its count on `integrate/b17` and the lint that tracks it. The `dx_old_forms` ratchet (`tools/ci/sys_rules/dx_old_forms.py`) started at 18,363 sites, and each wave drives its rules to 0. **A converted folder may contain none of these.**
+Every form that goes away is listed here with its count on `integrate/b17` and the lint that tracks it. The `dx_old_forms` ratchet (`tools/ci/sys_rules/dx_old_forms.py`, started at 18,363 sites) was removed: every rule banned a form whose replacement has not landed on master (and `old_ui` contradicted the `ui` rule). The catalogue below stays as the inventory; a rule returns with the commit that lands its replacement and converts the callers. **A converted folder may contain none of these.**
 
 | # | Old form | Count | Lint rule | New form | Section |
 |---|---|---|---|---|---|
@@ -1277,7 +1277,7 @@ Gating booleans become capabilities and numbers become factors, read through `fa
 ## C3. Verify
 
 - Compile with 0 errors.
-- `tools/build/build.sh lint`: DreamChecker 0, and the `dx_old_forms` counts for your folder at 0.
+- `tools/build/build.sh lint`: DreamChecker 0, and no Part B form left in your folder (`git grep` the form).
 - Focused tests for every type you touched: `bash tools/dq_focused_test.sh ...`. Add a test for each capability entry you wrote: that it works, that it refuses when it should, and that the look and UI change.
 - The refresh sweep in test builds fails on a missed change mark. **Don't silence it; find the write.**
 

@@ -269,7 +269,7 @@ shrink-only; new code is held to 0. `// ALLOW(<lint>): <reason>` keeps a justifi
   - `dx_manual_fingerprint_log`: fingerprints or logs in an `act_` proc or a capability entry handler.
   - `dx_constructor_shadow` (H7): a type proc named like a global `cap_*` constructor or bundle.
   - `dx_manual_transfer`: a hand-rolled take-out or move next to `own_set` / `own_add` / `own_put`.
-  - `dx_old_forms`: the removed macros.
+  - `dx_old_forms` (removed): it banned forms whose replacements are themselves replaced by the final design. A legacy form is banned only by the commit that lands its replacement (AGENTS.md section 3).
 - **Foundation lints [in progress]:** take/release pairing for pooled datums; the
   `turf.temperature` mirror lint; `look_lacks()` missing-part test; round-trip conservation test for
   construction ladders.
