@@ -254,7 +254,7 @@ verdigris_defines_allow = ["code/__defines/verdigris/"]
 bindings_file_allow = ["code/__defines/verdigris/_bindings.dm"]
 # only the core pipeline runner and the kernel work engine change idle/park state
 pipelines_allow = ["code/datums/om/", "code/controllers/kernel/", "code/modules/unit_tests/"]
-relation_fields_allow = ["code/datums/om/"]
+relation_fields_allow = ["code/datums/om/", "code/engine/_generated/actions.dm"]
 timer_handles_allow = ["code/datums/om/"]
 # creation/deletion bookkeeping for the one revive path
 revive_allow = [
@@ -263,7 +263,9 @@ revive_allow = [
   "code/modules/mob/living/silicon/ai/ai.dm", "code/game/objects/items/weapons/autopsy.dm",
 ]
 thermal_allow = ["code/__defines/verdigris/_bindings.dm"]
-input_ladder_allow = ["code/modules/keybindings/router.dm"]
+input_ladder_allow = ["code/modules/keybindings/router.dm", "code/engine/parts/inputs.dm"]
+# the compiled-table golden is a raw string whose lines are indented two spaces by explain_type()
+space_indent_allow = ["code/modules/unit_tests/dq_e1_declare_tests.dm"]
 # type-specific tool checks and domains converted later (mecha: I5; surgery and medical machines)
 tool_istype_allow = [
   "code/datums/wires/wires.dm", "code/datums/behaviours/omen.dm", "code/game/machinery/recharger.dm",
@@ -290,7 +292,7 @@ machinery_ex_act_allow = ["code/game/machinery/machinery.dm"]
 # lowers a ceiling, never raises it). The colour-macro count is MACRO_COUNT in dependencies.sh.
 [lint.check_grep.ceilings]
 admin_rights_shrink_only_baseline_one_mechanism_admin_can = 78
-admin_rights_shrink_only_baseline_one_mechanism_admin_can__holder = 261
+admin_rights_shrink_only_baseline_one_mechanism_admin_can__holder = 247
 admin_rights_shrink_only_baseline_one_mechanism_admin_can__rights_and = 17
 heat_ratchet_on_fire_act_overrides_h3 = 6
 damage_ratchet_on_non_turf_ex_act_overrides_d5 = 10

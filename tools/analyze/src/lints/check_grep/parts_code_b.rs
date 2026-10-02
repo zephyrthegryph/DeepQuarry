@@ -63,6 +63,9 @@ pub fn parts() -> Vec<Part> {
         )
         .flt(vec![
             Flt::DropLit("code/modules/admin/holder"),
+            // The engine's `.holder` is the part/action holder entity, not an admin holder.
+            Flt::DropLit("code/engine/"),
+            Flt::DropLit("code/tests/engine/"),
             Flt::DropLit("proc/check_rights"),
             drop(r"ALLOW\([^)]*check_grep"),
             drop(r"nameof\([^)]*\.holder|\.holder\("),
@@ -211,7 +214,7 @@ pub fn parts() -> Vec<Part> {
             r":(/obj/item/paper/(proc/attach_contract_evidence|on_signature|on_field_written)|/mob/living/carbon/human(/proc/(refresh_contract_medical_eligibility|record_clinical_exposure|clinical_exposure_printout|medical_trial_marker_snapshot))?)($|\()",
         )]),
         // plain `grep -P`: no allow_grep
-        Part::new("space_indentation", "space indentation", "space indentation detected.", Files::Code, line_g(r"(^ {2})|(^ [^ * ])|(^    +)")),
+        Part::new("space_indentation", "space indentation", "space indentation detected.", Files::Code, line_g(r"(^ {2})|(^ [^ * ])|(^    +)")).flt(vec![Flt::DropPaths("space_indent_allow")]),
         Part::new(
             "mixed_tab_space_indentation",
             "mixed tab/space indentation",
