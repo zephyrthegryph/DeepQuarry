@@ -285,12 +285,16 @@ SYSTEM_DEF(input)
 	var/source = E.lane_key()
 	var/list/queue = inboxes[source]
 	// has_room() inlined: this is the stretch between an input's arrival stamp and its dispatch stamp, which the wait metrics count.
-	if(!length(queue) && (isnull(room_override) ? input_room(E) : room_override))
+#ifdef UNIT_TESTS
+	if(!length(queue) && (isnull(room_override) ? TRUE : room_override)) // a test world boots through ticks past 100%: only room_override decides
+#else
+	if(!length(queue) && (isnull(room_override) ? (TICK_USAGE < E.resolve_threshold) : room_override))
+#endif
 		resolved_in_place++
 		var/datum/kernel_latency/latency = Kernel.latency_state || kernel_latency()
 		latency.input_immediate++
 		latency.input_bins[1]++ // record_input(0): an input that ran on arrival waited no ticks
-		run_event(E, FALSE, latency)
+		run_event(E, FALSE, latency, TRUE)
 		return TRUE
 	enqueue(E, source, queue)
 	return FALSE
@@ -355,19 +359,21 @@ SYSTEM_DEF(input)
 		log_world("Input: dropped a [E.type] from [E.actor ? key_name(E.actor) : "nobody"]: [why] (inbox cap [INPUT_CLIENT_MAX], [dropped_cap] dropped so far).")
 
 /// Resolves one event now (from its arrival, or from the drain). `waited` events were queued: their wait is recorded.
-/datum/system/input/proc/run_event(datum/input_event/E, waited = TRUE, datum/kernel_latency/latency = null)
-	latency ||= kernel_latency()
+/// `on_arrival`: it is resolving in the call that received it, so a player's own input (not a driver-built one) cannot have gone
+/// stale since BYOND handed it over, and its gate is not asked.
+/datum/system/input/proc/run_event(datum/input_event/E, waited = TRUE, datum/kernel_latency/latency = null, on_arrival = FALSE)
+	latency ||= Kernel.latency_state || kernel_latency()
 	if(waited)
 		latency.record_input((world.time - E.arrived_time) / world.tick_lag)
 		km_meter().verb_run(E.arrived_time, E.arrived_usage)
 		resolved_queued++
-	var/reason = E.gate()
+	var/reason = (on_arrival && !E.driven) ? null : E.gate()
 	if(reason)
 		dropped_stale++
 		TEST_REC_OUTCOME(E.event_key(), ACT_REFUSED, reason, E.actor)
 		TEST_REC_LOG(E.event_key(), ACT_REFUSED, E.origin, E.actor, E.subject(), "[reason]")
 		return
-	var/datum/tick_meter/meter = km_meter()
+	var/datum/tick_meter/meter = km_holder().meter || km_meter()
 	var/entry_time = world.time
 	var/dispatch_usage = E.metered_as_click ? meter.click_dispatched(E.arrived_time, E.arrived_usage) : 0
 	try

@@ -240,7 +240,7 @@ whether each mask earns its place.
 | `world_next_tick(spec)` (`/world/Tick`) | kept for world procs only | it has to run after the MC shuts down, so it cannot be a deadline |
 | `om_task_slices`, a yielding `service_step` | a system `periodic_step()` returning `STEP_YIELD` | the kernel resumes it on the next tick, as world lanes do today (`world_lanes.dm:170-186`) |
 | `INVOKE_ASYNC` / `set waitfor` in handlers | the dispatcher (DX) | already banned outside the allowlist |
-| `om_world_at` (Rust wheel) | kept for Rust-owned conditions | a DM time uses `om_after`; the Rust wheel is for rate crossings and keys |
+| `om_world_at` (Rust wheel) | deleted in E6 | a DM time is the kernel's `after()`; the Rust wheel keeps only rate crossings |
 
 That leaves exactly two wheels:
 - the DM deadline wheel, for DM work on entity clocks;
@@ -1678,7 +1678,7 @@ Built on top of the notes above.
   is now `pass_begin / pass_deadlines / pass_borrow / pass_lanes / pass_leftovers / pass_end`; run_pass() still runs
   them all for the test harness, and the kernel runs the same pieces between its phases (`native_hosted` moves
   `world_step()` to phase N).
-- **SSbehaviours dissolved**: `SS_NO_FIRE`; its pass, pipeline audit (`audit_due()`), `bench_ms`, `cost` and `last_done`
+- **SSbehaviours dissolved**: `SS_NO_FIRE`; its pass (the scheduler's pieces are kernel work items, `controllers/kernel/sched_items.dm`), pipeline audit (SSbehaviours' `audit_step` work item), `bench_ms`, `cost` and `last_done`
   are fed by the kernel. It still boots the registry, scheduler and world lanes.
 - **native_frame** (`kernel/native.dm`) is a stub for the Rust owner: it steps the OM world wheel. `vg_world_tick`,
   `vg_entity_tick_all`, `vg_drain_events` (SSvg) and the gas phases + `vg_heat_tick` (SSair) still run where they did.
