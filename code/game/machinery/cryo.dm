@@ -212,7 +212,7 @@ UI_ACT_PROC(/obj/machinery/atmospherics/unary/cryo_cell, ui_act_ejectoccupant)
 			to_chat(user, span_warning("\The [M] has other entities attached to it. Remove them first."))
 			return TRUE
 		consume(grab, user)
-		put_mob(M)
+		put_mob(M, user)
 
 	return TRUE
 
@@ -220,7 +220,7 @@ UI_ACT_PROC(/obj/machinery/atmospherics/unary/cryo_cell, ui_act_ejectoccupant)
 /obj/machinery/atmospherics/unary/cryo_cell/proc/cryo_cell_interaction_drag(mob/user, mob/target, datum/interaction/interaction)
 	if(!ismob(target) || user.stat || user.lying || !Adjacent(user) || !target.Adjacent(user)|| !ishuman(target))
 		return FALSE
-	put_mob(target)
+	put_mob(target, user)
 	return TRUE
 
 DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/unary/cryo_cell, TYPE_PROC_REF(/atom, appearance_overlays), list())
@@ -335,22 +335,22 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/unary/cryo_cell, TYPE_PROC_R
 	SStgui.update_uis(src)
 	return
 
-/obj/machinery/atmospherics/unary/cryo_cell/proc/put_mob(mob/living/carbon/M as mob)
+/obj/machinery/atmospherics/unary/cryo_cell/proc/put_mob(mob/living/carbon/M as mob, mob/user)
 	var/mob/living/carbon/occupant = src?.slot_item(OCCUPANT_SLOT_CRYO)
 	if(!operable())
-		to_chat(usr, span_warning("The cryo cell is not functioning."))
+		to_chat(user, span_warning("The cryo cell is not functioning."))
 		return
 	if(!istype(M))
-		to_chat(usr, span_danger("The cryo cell cannot handle such a lifeform!"))
+		to_chat(user, span_danger("The cryo cell cannot handle such a lifeform!"))
 		return
 	if(occupant)
-		to_chat(usr, span_danger("The cryo cell is already occupied!"))
+		to_chat(user, span_danger("The cryo cell is already occupied!"))
 		return
 	if(M.abiotic())
-		to_chat(usr, span_warning("Subject may not have abiotic items on."))
+		to_chat(user, span_warning("Subject may not have abiotic items on."))
 		return
 	if(!node)
-		to_chat(usr, span_warning("The cell is not correctly connected to its pipe network!"))
+		to_chat(user, span_warning("The cell is not correctly connected to its pipe network!"))
 		return
 	M.stop_pulling()
 	if(!M.move_into(src, OCCUPANT_SLOT_CRYO))
@@ -363,7 +363,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/unary/cryo_cell, TYPE_PROC_R
 	vis_contents |= occupant
 	occupant.pixel_y += 19
 	set_use_power(USE_POWER_ACTIVE)
-	add_fingerprint(usr)
+	add_fingerprint(user)
 	SStgui.update_uis(src)
 	return 1
 
@@ -397,7 +397,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/unary/cryo_cell, TYPE_PROC_R
 			return
 		if(L.stat != CONSCIOUS)
 			return
-		put_mob(L)
+		put_mob(L, user)
 
 /atom/proc/return_air_for_internal_lifeform(mob/living/lifeform)
 	return return_air()
@@ -424,4 +424,3 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/unary/cryo_cell, TYPE_PROC_R
 
 #undef CRYO_BASE_RATE
 #undef CRYO_DEEP_COLD
-

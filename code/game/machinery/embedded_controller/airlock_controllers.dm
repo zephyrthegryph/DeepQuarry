@@ -66,7 +66,7 @@ UI_ACT_PROC(/obj/machinery/embedded_controller/radio/airlock, ui_act_edit_tag)
 
 	var/tag = params["tag"]
 	var/current = airlock_program.get_tag(tag)
-	om_ask(usr, /datum/om/prompt/text/airlock_tag, PROC_REF(airlock_tag_entered), message = "What would you like to set [tag] to?", title = "New [tag]?", default = current, max_length = 30, tag_name = tag)
+	om_ask(user, /datum/om/prompt/text/airlock_tag, PROC_REF(airlock_tag_entered), message = "What would you like to set [tag] to?", title = "New [tag]?", default = current, max_length = 30, tag_name = tag)
 	return TRUE
 
 UI_ACT(/obj/machinery/embedded_controller/radio/airlock, "set_frequency", ui_act_set_frequency, UI_ARG_NUM("freq"))
