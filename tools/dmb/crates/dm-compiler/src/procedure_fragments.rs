@@ -23,7 +23,7 @@ pub(super) struct HelperRecipe {
     pub dedup: String,
     pub statics: std::collections::BTreeMap<String, u32>,
 }
-pub(super) use dm_output::object_directory::{AllocationCounts,AllocationMask,ObjectWitness,WitnessObservation,ProcedureRowLayout,SiteKind};
+pub(super) use dm_output::object_directory::{AllocationMask,ObjectWitness,WitnessObservation,ProcedureRowLayout,SiteKind};
 #[derive(Serialize, Deserialize)]
 pub(super) struct OutputFragment {
     pub body_base_relative: usize,
