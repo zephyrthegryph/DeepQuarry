@@ -923,16 +923,9 @@ ADMIN_VERB(sendFax, R_ADMIN|R_MOD|R_EVENT, "Send Fax", "Sends a fax to this mach
 	else
 		to_chat(src.owner(), span_warning("Message reply failed."))
 
-	om_after(P, 10 SECONDS, TYPE_PROC_REF(/obj/item/paper/admin, expire_fax_reply), src)
+	// A sent reply goes away 10 seconds later; deleting it also empties the admin's owned faxreply var.
+	P.expire(10 SECONDS)
 	return
-
-/// A sent fax reply goes away 10 seconds after sending: the admin's held reply is cleared (and deleted),
-/// any other copy is deleted. The holder arrives as null if the admin datum is gone by then.
-/obj/item/paper/admin/proc/expire_fax_reply(datum/admins/holder)
-	if(holder?.faxreply == src)
-		own_clear(holder, nameof(/datum/admins::faxreply), OWN_DELETE)
-	else
-		qdel(src)
 
 ADMIN_VERB(set_uplink, R_ADMIN|R_DEBUG, "Set Uplink", "Allows admins to set up an uplink on a character. This will be required for a character to use telecrystals.", ADMIN_CATEGORY_DEBUG_EVENTS)
 	var/mob/living/carbon/human/traitor_human = verb_ask(user, "a18", args, /datum/om/prompt/choice, message = "Select whom to give an uplink.", title = "Set uplink", choices = REGISTRY_MEMBERS(REGISTRY_HUMANS))
