@@ -1,0 +1,225 @@
+//! Port of `tools/ci/pollers_lint.py`: the polling ratchet (roadmap S3-S5,
+//! doc/rewrite/migration_plan.md track 1d).
+//!
+//! Periodic work runs on object-model pipelines, stages, watches and parking, not on the old polling
+//! constructs this counts, each failing unless kept by `// ALLOW(pollers): <reason>`:
+//!   * `process`: a `process()` proc definition (`/type/process(` at column 0, or an indented
+//!     `process(` / `proc/process(` under a type block);
+//!   * `start`: a `START_PROCESSING(` / `START_MACHINE_PROCESSING(` call.
+//! Core files (the MC, the OM core, the defines, the external-I/O datums) are exempt by
+//! `lint_scopes.toml`. It also checks (`step_coverage`, a whole-tree scan) that every type defining
+//! `machine_step()` is covered by the machine pipeline's decl in
+//! `code/game/machinery/machine_pipeline.dm`.
+//!
+//! Quirks kept: no `exempt_path()` here (benchmarks and the TGS DMAPI are counted); the scan reads
+//! the raw text with its own `//` stripper (strings are not stripped, only a `//` outside quotes, with
+//! `\"` not toggling) and its own `/*` block tracking (a block comment line is skipped outright, type
+//! state included); `in_type` survives every indented or blank line; the ALLOW question is asked once
+//! per line that would count, and the one answer covers both a process and a start on that line;
+//! the step-coverage check reads every file, exempt ones included, except the unit-test probes, and
+//! its roots from the `of` list are NOT comment-stripped while the `lazy` list is (so a commented
+//! type in `of` still counts as covered); a missing pipeline file crashes the script, here it reports
+//! the "could not find" error.
+
+use std::borrow::Cow;
+use std::collections::HashSet;
+
+use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
+use crate::parity::{ParseKind, Parity};
+use crate::pat;
+use crate::pat_match;
+use crate::tree::{SourceFile, CODE_MAPS_DM};
+use crate::util::{is_py_space, py_lstrip, starts_with_any};
+
+const PIPELINE_FILE: &str = "code/game/machinery/machine_pipeline.dm";
+
+static META: Meta = Meta {
+    name: "pollers",
+    group: "",
+    label: "pollers",
+    legacy: "tools/ci/pollers_lint.py",
+    select: CODE_MAPS_DM,
+    scan: ScanKind::Both,
+    policy: Policy::Hard,
+    rules: &[
+        RuleMeta { name: "process", hint: "put the work on a pipeline (code/datums/om/periodic.dm)" },
+        RuleMeta { name: "start", hint: "use om_task_periodic() or a machine wake" },
+        RuleMeta { name: "step_coverage", hint: "" },
+    ],
+    allow: &["pollers"],
+    lists: &["step_exempt_prefixes"],
+};
+
+struct Pollers;
+
+/// `strip_comment`: drops a trailing `//` comment outside double quotes (a `"` after a backslash
+/// does not toggle).
+fn strip_comment(line: &str) -> Cow<'_, str> {
+    if !line.contains("//") {
+        return Cow::Borrowed(line); // nothing to cut: the loop below would copy the line
+    }
+    let chars: Vec<char> = line.chars().collect();
+    let mut out = String::new();
+    let mut in_str = false;
+    let mut i = 0;
+    while i < chars.len() {
+        let c = chars[i];
+        if c == '"' && (i == 0 || chars[i - 1] != '\\') {
+            in_str = !in_str;
+        }
+        if !in_str && c == '/' && chars.get(i + 1) == Some(&'/') {
+            break;
+        }
+        out.push(c);
+        i += 1;
+    }
+    Cow::Owned(out)
+}
+
+/// `machine_pipeline_roots`: the types the machine pipeline decl covers, or None when the decl is
+/// missing from the file text.
+fn machine_pipeline_roots(text: &str) -> Option<HashSet<String>> {
+    let decl = pat!(r"(?s)/datum/om/decl/pipeline_machines\s*\n\tof = list\((.*?)\n\t\)").captures(text)?;
+    let machinery = pat!(r"(/obj/machinery[\w/]*)");
+    let mut roots: HashSet<String> = machinery.captures_iter(decl.s(1)).iter().map(|c| c.s(1).to_string()).collect();
+    // Lazily joined types (the decl's `lazy` list): covered, they join on MACHINE_WAKE().
+    if let Some(lazy) = pat!(r"(?s)var/list/lazy = list\((.*?)\n\t\)").captures(text) {
+        let bare = pat!(r"//[^\n]*").replace_all(lazy.s(1), "");
+        roots.extend(machinery.captures_iter(&bare).iter().map(|c| c.s(1).to_string()));
+    }
+    Some(roots)
+}
+
+impl Lint for Pollers {
+    fn meta(&self) -> &Meta {
+        &META
+    }
+
+    /// `count_file`: process() definitions and START_*PROCESSING calls not kept by ALLOW(pollers).
+    fn scan_file(&self, _cx: &Cx, f: &SourceFile, out: &mut Sink) {
+        let mut in_type = false;
+        let mut in_block_comment = false;
+        for (number, raw) in f.raw().numbered() {
+            let line = raw.trim_end_matches('\r');
+            if in_block_comment {
+                if line.contains("*/") {
+                    in_block_comment = false;
+                }
+                continue;
+            }
+            if py_lstrip(line).starts_with("/*") && !line.contains("*/") {
+                in_block_comment = true;
+                continue;
+            }
+            let code = strip_comment(line);
+            let is_process = pat_match!(r"^/[\w/]+?/(?:proc/)?process\(").is_match(&code) || (in_type && pat_match!(r"^\t(?:proc/)?process\(").is_match(&code));
+            let is_start = !pat_match!(r"^\s*#\s*define\b").is_match(&code) && pat!(r"(?<![\w])START_(?:MACHINE_)?PROCESSING\(").is_match(&code);
+            // Asked only about a line that would otherwise count.
+            let kept = (is_process || is_start) && out.allowed(f, number, "pollers");
+            if is_process && !kept {
+                out.site_msg("process", number, "process() definition");
+            }
+            if pat_match!(r"^/[\w/]+\s*(?://.*)?$").is_match(&code) {
+                in_type = true;
+            } else if code.chars().next().map(|c| !is_py_space(c)).unwrap_or(false) {
+                in_type = false;
+            }
+            if is_start && !kept {
+                out.site_msg("start", number, "START_*PROCESSING call");
+            }
+        }
+    }
+
+    /// `check_step_coverage`: every `machine_step()` type is under a type of the pipeline decl.
+    fn scan_tree(&self, cx: &Cx, out: &mut Sink) {
+        let roots = cx.tree.get(PIPELINE_FILE).and_then(|f| machine_pipeline_roots(f.text()));
+        let Some(roots) = roots else {
+            out.site_in_msg("step_coverage", PIPELINE_FILE, 1, "could not find /datum/om/decl/pipeline_machines in machine_pipeline.dm");
+            return;
+        };
+        for f in cx.all_files() {
+            // Test probes join lazily through MACHINE_WAKE().
+            if starts_with_any(&f.rel, cx.list("step_exempt_prefixes")) || !f.text().contains("machine_step(") {
+                continue;
+            }
+            for (n, line) in f.raw().numbered() {
+                let Some(m) = pat_match!(r"^(/obj/machinery[\w/]*?)/machine_step\(").captures(line) else { continue };
+                let t = m.s(1);
+                // The defaults, not work.
+                if matches!(t, "/obj/machinery" | "/obj/machinery/atmospherics" | "/obj/machinery/proc") {
+                    continue;
+                }
+                let parts: Vec<&str> = t.split('/').collect();
+                if !(3..=parts.len()).any(|i| roots.contains(&parts[..i].join("/"))) {
+                    out.site_in_msg(
+                        "step_coverage",
+                        &f.rel,
+                        n,
+                        format!("{} defines machine_step() but is not under any type in /datum/om/decl/pipeline_machines", t),
+                    );
+                }
+            }
+        }
+    }
+
+    fn parity(&self) -> Option<Parity> {
+        Some(Parity {
+            old: &["tools/ci/pollers_lint.py"],
+            old_raw: &[],
+            blank: &[],
+            // `file:line: message`, and some paths hold spaces.
+            parse: ParseKind::FileLineAny,
+            update: None,
+            seed: None,
+            files: &[],
+            selftest: None,
+        })
+    }
+}
+
+pub fn register(reg: &mut Registry) {
+    reg.add(Pollers);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::scopes::LintScope;
+    use crate::tree::Tree;
+
+    fn scan(text: &str) -> Sink {
+        let tree = Tree::from_files(vec![]);
+        let scope = LintScope::default();
+        let cx = Cx { tree: &tree, meta: &META, scope: &scope };
+        let f = SourceFile::from_text("code/modules/x.dm", text);
+        let mut out = Sink::new();
+        out.cur = f.rel.clone();
+        Pollers.scan_file(&cx, &f, &mut out);
+        out
+    }
+
+    #[test]
+    fn allow_is_asked_only_for_a_line_that_would_count() {
+        let out = scan("/obj/a\n\tprocess() // ALLOW(pollers): the legacy pump has no pipeline yet\n\tvar/x = 1 // ALLOW(pollers): nothing here polls\n");
+        assert!(out.sites.is_empty(), "{:?}", out.sites);
+        assert_eq!(out.allow_used.len(), 1);
+        assert_eq!(out.allow_used[0].line, 2);
+    }
+
+    #[test]
+    fn one_answer_covers_process_and_start_on_a_line() {
+        let out = scan("/obj/a\n\tprocess() START_PROCESSING(SSobj, src)\n");
+        let rules: Vec<&str> = out.sites.iter().map(|s| s.rule.as_str()).collect();
+        assert_eq!(rules, vec!["process", "start"]);
+    }
+
+    #[test]
+    fn pipeline_roots_keep_commented_types_of_the_of_list() {
+        let text = "/datum/om/decl/pipeline_machines\n\tof = list(\n\t\t/obj/machinery/a,\n\t\t// /obj/machinery/b,\n\t)\n\tvar/list/lazy = list(\n\t\t/obj/machinery/c,\n\t\t// /obj/machinery/d,\n\t)\n";
+        let roots = machine_pipeline_roots(text).unwrap();
+        let mut got: Vec<&str> = roots.iter().map(|s| s.as_str()).collect();
+        got.sort();
+        assert_eq!(got, vec!["/obj/machinery/a", "/obj/machinery/b", "/obj/machinery/c"]);
+        assert!(machine_pipeline_roots("nothing").is_none());
+    }
+}

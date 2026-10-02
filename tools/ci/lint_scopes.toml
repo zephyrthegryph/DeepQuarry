@@ -61,6 +61,68 @@ exempt_prefixes = ["code/modules/unit_tests/"]
 # latent_lint.py SKIP_DIRS: os.walk prunes any directory named unit_tests.
 exempt_contains = ["/unit_tests/"]
 
+[lint.lifecycle_counts.lists]
+# lifecycle_counts_lint.py: a path listed here has its qdel( sites uncounted but is still checked for
+# Destroy() overrides (banned everywhere), so these are lists, not exempt_* keys. exempt_path() (unit tests,
+# benchmarks, the vendored TGS DMAPI), the lifecycle engine itself, and the macro definitions.
+exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/", "code/__defines/"]
+exempt_files = [
+    "code/__defines/tgs.dm",
+    "code/controllers/subsystems/garbage.dm",
+    "code/datums/lifecycle/transaction.dm",
+    "code/datums/lifecycle/links.dm",
+    "code/datums/lifecycle/verbs.dm",
+    "code/datums/containment/lifecycle.dm",
+]
+
+[lint.qdel_src]
+# qdel_src_lint.py: exempt_path() (unit tests, benchmarks, the vendored TGS DMAPI), the lifecycle engine
+# (it calls qdel(src) as its mechanism) and the macro definitions.
+exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/", "code/__defines/"]
+exempt_files = [
+    "code/__defines/tgs.dm",
+    "code/controllers/subsystems/garbage.dm",
+    "code/datums/lifecycle/transaction.dm",
+    "code/datums/lifecycle/links.dm",
+    "code/datums/lifecycle/verbs.dm",
+    "code/datums/containment/lifecycle.dm",
+]
+
+[lint.spatial]
+# spatial_lint.py: exempt_path() (unit tests, benchmarks, the vendored TGS DMAPI) is skipped before the scan.
+exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"]
+exempt_files = ["code/__defines/tgs.dm"]
+[lint.spatial.lists]
+# spatial_lint.py API_DIRS / API_FILES: the files that implement the ledger and spatial API. They are scanned
+# (an ALLOW there still records as used) but their sites are not counted.
+api_prefixes = ["code/datums/containment/"]
+api_files = ["code/__defines/containment.dm"]
+
+[lint.pollers]
+# pollers_lint.py EXEMPT_PREFIXES / EXEMPT_FILES: the MC and subsystem framework, the object-model core, the
+# defines, the unit tests, and the external-I/O datums whose process() is not gameplay polling (tgui, dbcore).
+# This script does not call exempt_path(): benchmarks and the TGS DMAPI are counted.
+exempt_prefixes = ["code/controllers/", "code/datums/om/", "code/__defines/", "code/modules/unit_tests/"]
+exempt_files = ["code/modules/tgui/tgui.dm", "code/controllers/subsystems/dbcore.dm"]
+[lint.pollers.lists]
+# check_step_coverage(): unit-test probes join the machine pipeline lazily through MACHINE_WAKE(); every other
+# file (the exempt ones above included) is checked.
+step_exempt_prefixes = ["code/modules/unit_tests/"]
+
+[lint.silent_catch]
+# silent_catch_lint.py: exempt_path() (unit tests catch on purpose; benchmarks; the vendored TGS DMAPI).
+exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"]
+exempt_files = ["code/__defines/tgs.dm"]
+[lint.silent_catch.lists]
+# silent_catch_lint.py STRICT_DIRS: the object-model core, lifecycle, the controllers and the error handler (everything
+# that wraps other code's callbacks): a plain log is not enough there, the block must report, rethrow or trace.
+strict_dirs = ["code/datums/om/", "code/datums/lifecycle/", "code/controllers/", "code/modules/error_handler/"]
+
+[lint.cache]
+# cache_lint.py: exempt_path() (unit tests, benchmarks, the vendored TGS DMAPI) and the framework itself.
+exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"]
+exempt_files = ["code/__defines/tgs.dm", "code/__defines/shared_cache.dm", "code/datums/shared_cache/shared_cache.dm"]
+
 [lint.registry]
 # registry_lint.py: the boilerplate macro's own definition.
 exempt_prefixes = ["code/__defines/"]

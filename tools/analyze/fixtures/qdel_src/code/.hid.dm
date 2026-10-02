@@ -1,0 +1,2 @@
+/obj/hidden
+	qdel(src)

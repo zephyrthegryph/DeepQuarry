@@ -1,0 +1,2 @@
+/datum/lifecycle
+	qdel(src)
