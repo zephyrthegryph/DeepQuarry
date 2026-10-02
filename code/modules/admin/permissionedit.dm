@@ -533,7 +533,7 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 		if(isnull(rank_in_db_rows))
 			return
 		if(length(rank_in_db_rows))
-			to_chat(usr, span_adminprefix("A rank by this name already exists in the database."), confidential = TRUE)
+			to_chat(user, span_adminprefix("A rank by this name already exists in the database."), confidential = TRUE)
 			return
 	var/datum/admin_rank/custom_rank
 	if(use_db)
@@ -621,7 +621,7 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 		if(isnull(admins_with_rank_rows))
 			return
 		if(length(admins_with_rank_rows))
-			to_chat(usr, span_danger("Error: Rank deletion attempted while db rank still used; Tell a coder, this shouldn't happen."), confidential = TRUE)
+			to_chat(user, span_danger("Error: Rank deletion attempted while db rank still used; Tell a coder, this shouldn't happen."), confidential = TRUE)
 			return
 
 	for(var/admin_name in GLOB.admin_datums)
@@ -739,7 +739,7 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 			working_exclude_rights = db_rank_info[2]
 			working_can_edit_rights = db_rank_info[3]
 		else // Couldn't find anything, no db memes then
-			to_chat(usr, span_adminprefix("Rank does not exist in database, exiting."), confidential = TRUE)
+			to_chat(user, span_adminprefix("Rank does not exist in database, exiting."), confidential = TRUE)
 			return
 	else
 		working_rights = target_rank.include_rights
