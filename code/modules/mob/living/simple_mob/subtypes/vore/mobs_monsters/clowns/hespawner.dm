@@ -12,8 +12,8 @@
 	question = "THE HONKMOTHER REQUESTS SUBJECTS. REPORT TO THE ELEMENTAL TO JOIN THE HONKENING."
 	cutoff_number = 1
 
-/obj/structure/ghost_pod/manual/clegg/trigger()
-	..(span_warning("\The [usr] places their hand on the egg!"), "is attempting to make a mistake!")
+/obj/structure/ghost_pod/manual/clegg/trigger(mob/user)
+	..(user, span_warning("\The [user] places their hand on the egg!"), "is attempting to make a mistake!")
 
 /obj/structure/ghost_pod/manual/clegg/create_occupant(mob/M)
 	lightning_strike(get_turf(src), cosmetic = TRUE)

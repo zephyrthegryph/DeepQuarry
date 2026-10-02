@@ -23,7 +23,7 @@
 	if(alert)
 		visible_message(alert)
 	if(adminalert)
-		log_and_message_admins(adminalert)
+		log_and_message_admins(adminalert, user)
 	busy = TRUE
 	own_set(src, nameof(Q), new ghost_query_type())
 	om_hook(Q, /datum/om/event/ghost_query_complete, src, PROC_REF(get_winner))
