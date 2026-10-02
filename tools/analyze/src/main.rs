@@ -139,8 +139,19 @@ fn main() -> ExitCode {
                 }
                 return ExitCode::from(2);
             }
+            // Fixture selftests first: a lint whose own fixtures fail can't be trusted to ratchet.
+            let mut failed: Vec<String> = Vec::new();
+            if args.cmd == "check" && !has("--no-selftest") {
+                for lint in run::selected(&engine.reg, &engine.opts.lints) {
+                    if let Err(e) = lint.selftest() {
+                        println!("selftest FAILED: {}: {}", lint.meta().name, e);
+                        failed.push(format!("{} --selftest", lint.meta().name));
+                    }
+                }
+            }
             let outcomes = engine.run_all();
-            let (text, failed) = run::render(&outcomes, engine.opts.ci);
+            let (text, lint_failed) = run::render(&outcomes, engine.opts.ci);
+            failed.extend(lint_failed);
             print!("{}", text);
             if has("--timing") {
                 print_timing(&engine, &outcomes, t0.elapsed());

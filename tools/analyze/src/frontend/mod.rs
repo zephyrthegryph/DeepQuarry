@@ -81,6 +81,34 @@ pub trait Frontend: Send + Sync {
     fn analyze(&self, root: &Path, tree: &Tree) -> Result<Program, String>;
 }
 
+/// Which frontend a parse-aware rule asks for.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum FrontendKind {
+    /// The engine's own line scanner: instant, approximate (what the ported lints use).
+    Text,
+    /// The SpacemanDMM parser over `deepquarry.dme`: exact, a whole-program parse (a few seconds).
+    DreamMaker,
+}
+
+impl crate::lint::Cx<'_> {
+    /// The program model from a frontend, built once per run and shared by every rule that asks.
+    /// A frontend failure yields an empty program whose `diagnostics` say why (a rule should treat
+    /// that as "no information", not as a finding).
+    pub fn program(&self, kind: FrontendKind) -> std::sync::Arc<Program> {
+        let (key, fe): (&str, Box<dyn Frontend>) = match kind {
+            FrontendKind::Text => ("program/text", Box::new(TextFrontend)),
+            FrontendKind::DreamMaker => ("program/dreammaker", Box::new(DreamMakerFrontend::default())),
+        };
+        self.tree.memo(key, || {
+            fe.analyze(&self.tree.root, self.tree).unwrap_or_else(|e| Program {
+                frontend: fe.name(),
+                diagnostics: vec![e],
+                ..Default::default()
+            })
+        })
+    }
+}
+
 // ---- text frontend -----------------------------------------------------------------------------
 
 pub struct TextFrontend;
@@ -201,13 +229,17 @@ pub fn diff(a: &Program, b: &Program, limit: usize) -> Vec<String> {
             }
         }
         for p in &tb.procs {
+            if p.file == "(builtins)" {
+                continue;
+            }
             if !ta.procs.iter().any(|q| q.name == p.name) {
                 push(format!("proc {}/{} only in {} ({}:{})", path, p.name, b.frontend, p.file, p.line));
             }
         }
     }
-    for path in b.types.keys() {
-        if !a.types.contains_key(path) {
+    for (path, tb) in &b.types {
+        let builtin_only = tb.procs.iter().all(|p| p.file == "(builtins)") && tb.vars.iter().all(|v| v.file == "(builtins)");
+        if !a.types.contains_key(path) && !builtin_only {
             push(format!("type {} only in {}", path, b.frontend));
         }
     }
@@ -228,6 +260,30 @@ mod tests {
         let p = TextFrontend.analyze(Path::new("."), &tree).unwrap();
         assert!(p.var("/obj/thing", "a").is_some());
         assert_eq!(p.proc("/obj/thing", "poke").unwrap().params, vec!["user"]);
+    }
+
+    #[test]
+    fn a_parse_aware_rule_asks_the_context_for_a_program() {
+        use crate::lint::{Cx, Meta, Policy, RuleMeta, ScanKind};
+        static META: Meta = Meta {
+            name: "probe",
+            group: "",
+            label: "probe",
+            legacy: "",
+            select: crate::tree::CODE_DM,
+            scan: ScanKind::Tree,
+            policy: Policy::Hard,
+            rules: &[RuleMeta { name: "r", hint: "" }],
+            allow: &[],
+            lists: &[],
+        };
+        let tree = Tree::from_files(vec![SourceFile::from_text("code/a.dm", "/obj/thing/proc/poke()\n\treturn\n")]);
+        let scope = crate::scopes::LintScope::default();
+        let cx = Cx { tree: &tree, meta: &META, scope: &scope };
+        let p = cx.program(FrontendKind::Text);
+        assert!(p.proc("/obj/thing", "poke").is_some());
+        // memoized: the second call is the same allocation
+        assert!(std::sync::Arc::ptr_eq(&p, &cx.program(FrontendKind::Text)));
     }
 
     #[test]
