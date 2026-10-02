@@ -57,7 +57,7 @@ impl OwnerBindingQueries {
   }
   let input_seconds=started.elapsed().as_secs_f64();
   let mut next=self.roots.clone();let present:HashSet<_>=inputs.iter().map(|(_,owner,_)|*owner).collect();
-  let removed:Vec<_>=next.keys().filter(|owner|!present.contains(owner.as_str())).cloned().collect();for owner in removed{next.remove(&owner);shared.member_types.remove(&owner);shared.member_globals.remove(&owner);shared.known_member_fields.remove(&owner);shared.member_procs.remove(&owner);shared.known_member_procs.remove(&owner);shared.member_proc_return_types.remove(&owner);shared.parent_types.remove(&owner);}
+  let removed:BTreeSet<_>=self.snapshot.member_types.keys().chain(next.keys()).filter(|owner|!present.contains(owner.as_str())).cloned().collect();for owner in removed{next.remove(&owner);shared.member_types.remove(&owner);shared.member_globals.remove(&owner);shared.known_member_fields.remove(&owner);shared.member_procs.remove(&owner);shared.known_member_procs.remove(&owner);shared.member_proc_return_types.remove(&owner);shared.parent_types.remove(&owner);}
   let mut aliases=HashMap::new();let mut writes=Vec::new();let mut write_bytes=0;let mut hits=0;let mut misses=0;
   let mut input_iter=inputs.into_iter();
   loop {

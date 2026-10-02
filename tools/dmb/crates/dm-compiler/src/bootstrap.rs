@@ -4024,12 +4024,13 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
     }
     trace("procedure binding index complete; invocation plans start");
     let mut invocation_plans = Vec::with_capacity(pending.len());
-    let mut metadata_context = canonical::MetadataContext::new(&dmb,&pending)?;
+    let mut metadata_context = canonical::MetadataContext::new(&dmb,&pending,source_debug)?;
     let mut dynamic_by_name: HashMap<String, Vec<usize>> = HashMap::new();
     for (index, assignment) in pending_dynamic.iter().enumerate() {
         dynamic_by_name.entry(assignment.name.clone()).or_default().push(index);
     }
     session.invocation_fragments.counters=Default::default();
+    session.invocation_queries.reset_counters();
     let invocation_preparation_started=std::time::Instant::now();
     let invocation_total = pending.len();
     let authored_pending=&pending;
@@ -4040,6 +4041,11 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                         let window=&authored_pending[invocation_ordinal..window_end];
                         let keys:Vec<_>=window.iter().map(|procedure|metadata_context.descriptor(procedure.item).1.clone()).collect();
                         session.invocation_queries.prefetch(&keys);
+                        let metadata_roots:Vec<_>=window.iter().map(|procedure| {
+                            let path=&metadata_context.descriptor(procedure.item).0;
+                            (procedure.owner.map(|_|procedure.owner_path.as_str()),path.rsplit('/').next().unwrap_or(""),procedure.verb)
+                        }).collect();
+                        session.invocation_queries.prefetch_metadata(&metadata_context,&metadata_roots);
                         let misses:Vec<_>=window.iter().filter(|procedure|session.invocation_queries.authored_candidate(&metadata_context.descriptor(procedure.item).1).is_none())
                             .map(|procedure|(procedure.item,procedure.owner_path.as_str(),procedure.verb)).collect();
                         session.invocation_fragments.prefetch_syntax(&misses);
@@ -4282,7 +4288,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
         invocation_plans.push(canonical::InvocationPlan {template,static_ids});
     }
         if std::env::var_os("DM_BUILD_TRACE").is_some(){let c=session.invocation_fragments.counters;eprintln!("DM_BUILD_TRACE invocation queries: signature_hits={} signature_misses={} syntax_hits={} syntax_misses={} frame_hits={} frame_misses={} point_reads={} batch_records={}",c.signature_hits,c.signature_misses,c.syntax_hits,c.syntax_misses,c.frame_hits,c.frame_misses,c.point_reads,c.batch_records);}
-        trace(&format!("invocation templates: reused={} derived={} resident_bytes={}",session.invocation_queries.hits,session.invocation_queries.misses,session.invocation_queries.resident_bytes()));
+        trace(&format!("invocation templates: reused={} derived={} metadata_restored={} metadata_reused={} metadata_derived={} resident_bytes={}",session.invocation_queries.hits,session.invocation_queries.misses,session.invocation_queries.metadata_restored,session.invocation_queries.metadata_reused,session.invocation_queries.metadata_derived,session.invocation_queries.resident_bytes()));
         drop(metadata_context);
         trace("invocation plans complete; wire metadata start");
         apply_mouse_proc_flags(&mut dmb, &pending, &invocation_plans);

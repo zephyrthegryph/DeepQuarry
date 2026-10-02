@@ -16,7 +16,8 @@ struct MetadataRecord {
 struct Declaration<'a> { item: &'a Item, identity: String }
 /// Source-order publication overlays the frozen declaration index. A previously
 /// published override has the same precedence as the original ordered resolver.
-pub(crate) struct MetadataContext<'a> {
+pub(crate) struct MetadataContext<'a,'debug> {
+    source_debug:Option<&'debug crate::source_debug::SourceDebugIndex<'debug>>,
     parents: HashMap<String, Option<String>>,
     declarations: HashMap<Named, Declaration<'a>>,
     descriptors: HashMap<usize,(String,String)>,
@@ -26,8 +27,8 @@ pub(crate) struct MetadataContext<'a> {
     published: HashMap<Named, Arc<MetadataRecord>>,
     dependents: HashMap<Named, HashSet<Named>>,
 }
-impl<'a> MetadataContext<'a> {
-    pub(crate) fn new(dmb:&Dmb,pending:&[PendingProc<'a>])->Result<Self,String> {
+impl<'a,'debug> MetadataContext<'a,'debug> {
+    pub(crate) fn new(dmb:&Dmb,pending:&[PendingProc<'a>],source_debug:Option<&'debug crate::source_debug::SourceDebugIndex<'debug>>)->Result<Self,String> {
         let mut parents=HashMap::new();let mut native=HashMap::new();
         for class in &dmb.classes {
             let Some(owner)=dmb.string(class.path_string_id()).and_then(|s|std::str::from_utf8(s).ok())else{continue;};
@@ -46,13 +47,14 @@ impl<'a> MetadataContext<'a> {
         }
         let mut declarations=HashMap::new();let mut descriptors=HashMap::new();
         for proc in pending {
-            let path=InvocationFragments::declaration_path(proc.item,&proc.owner_path,proc.verb)?;
+            let path=InvocationFragments::declaration_path(proc.item,&proc.owner_path,proc.verb)
+                .map_err(|reason|source_error(source_debug,proc.span().start,&proc.item.header,&reason))?;
             let identity=InvocationFragments::declaration_key(proc.item,&path);
             descriptors.insert(proc.item as *const Item as usize,(path.clone(),identity.clone()));
             if proc.owner.is_none(){continue;}
             declarations.insert((proc.owner_path.clone(),path.rsplit('/').next().unwrap_or("").to_owned(),proc.verb),Declaration {item:proc.item,identity});
         }
-        Ok(Self {parents,declarations,descriptors,native,observations:HashMap::new(),current:HashMap::new(),published:HashMap::new(),dependents:HashMap::new()})
+        Ok(Self {source_debug,parents,declarations,descriptors,native,observations:HashMap::new(),current:HashMap::new(),published:HashMap::new(),dependents:HashMap::new()})
     }
     pub(crate) fn descriptor(&self,item:&Item)->&(String,String) { &self.descriptors[&(item as *const Item as usize)] }
     fn read(&mut self,key:&MetadataRead)->String {
@@ -86,32 +88,86 @@ pub(crate) struct InvocationQueries {
     order: VecDeque<String>, bytes:usize,
     metadata: HashMap<Named, (Arc<MetadataRecord>,usize)>,
     metadata_bytes:usize,
+    requested_metadata:HashMap<Named,Arc<MetadataRecord>>,requested_metadata_bytes:usize,
+    metadata_negative:HashSet<[u8;32]>,template_negative:HashSet<[u8;32]>,
     validity: ValidityArena,
     store:Option<Store>, pending:Vec<Change>, pending_bytes:usize,
     pub hits:usize,pub misses:usize,
+    pub metadata_restored:usize,pub metadata_reused:usize,pub metadata_derived:usize,
 }
 impl InvocationQueries {
     const LIMIT:usize=16*1024*1024;
     fn namespace()->String {format!("invocation-templates-v1-{}",env!("DM_EMISSION_FINGERPRINT"))}
     pub(crate) fn open(root:&Path)->Self {Self {store:Store::open(root.join("declaration-fragments.redb")).ok(),..Default::default()}}
-    pub(crate) fn clear(&mut self){self.templates.clear();self.handles.clear();self.order.clear();self.bytes=0;self.metadata.clear();self.metadata_bytes=0;self.validity.clear();}
+    pub(crate) fn reset_counters(&mut self){self.hits=0;self.misses=0;self.metadata_restored=0;self.metadata_reused=0;self.metadata_derived=0;}
+    pub(crate) fn clear(&mut self){self.templates.clear();self.handles.clear();self.order.clear();self.bytes=0;self.metadata.clear();self.metadata_bytes=0;self.requested_metadata.clear();self.requested_metadata_bytes=0;self.metadata_negative.clear();self.template_negative.clear();self.validity.clear();}
     pub(crate) fn release_decoded(&mut self) {
         self.flush();self.templates.clear();self.order.clear();self.bytes=0;
-        self.metadata.clear();self.metadata_bytes=0;self.validity.clear();
+        self.metadata.clear();self.metadata_bytes=0;self.requested_metadata.clear();self.requested_metadata_bytes=0;self.validity.clear();
         // Weak handles continue selecting templates retained by frozen plans.
     }
-    pub(crate) fn resident_bytes(&self)->usize {self.bytes+self.metadata_bytes+self.pending_bytes+self.handles.len()*96+self.validity.bytes}
+    pub(crate) fn resident_bytes(&self)->usize {self.bytes+self.metadata_bytes+self.pending_bytes+self.handles.len()*96+self.validity.bytes+self.requested_metadata_bytes+(self.metadata_negative.len()+self.template_negative.len())*48}
     pub(crate) fn flush(&mut self){if self.pending.is_empty(){return;}if let Some(store)=&self.store{let _=store.commit(&[],&self.pending,None);}self.pending.clear();self.pending_bytes=0;}
     pub(crate) fn prefetch(&mut self,keys:&[String]) {
+        // Old weak pointers are selectors, never a permanently growing history.
+        if self.handles.len()>=72_000 {self.handles.retain(|_,template|template.strong_count()>0);}
         let Some(store)=self.store.clone()else{return;};
-        let keys:Vec<_>=keys.iter().filter(|key|self.authored_candidate(key).is_none()).map(|key|Key::new(Self::namespace(),key)).collect();
+        let keys:Vec<_>=keys.iter().filter(|key|self.authored_candidate(key).is_none()&&!InvocationFragments::digest_bytes(key).is_some_and(|key|self.template_negative.contains(&key))).map(|key|Key::new(Self::namespace(),key)).collect();
         default_plans::read_stage_batch(&store,&keys,1024*1024,8*1024*1024,&mut |key,bytes| {
             if let Some(bytes)=bytes {if let Ok(template)=rmp_serde::from_slice::<InvocationTemplate>(&bytes) {if template.declaration_identity==key.name {self.admit(Arc::new(template),bytes.len());}}}
+            else if self.template_negative.len()<72_000 {if let Some(digest)=InvocationFragments::digest_bytes(&key.name){self.template_negative.insert(digest);}}
+        });
+    }
+    fn metadata_namespace()->String {format!("invocation-metadata-v1-{}",env!("DM_EMISSION_FINGERPRINT"))}
+    fn metadata_addresses()->String {format!("invocation-metadata-addresses-v1-{}",env!("DM_EMISSION_FINGERPRINT"))}
+    /// Hydrate only named parent queries requested by this ordered window. Both
+    /// locator and immutable record reads are grouped; no namespace scans or
+    /// per-ancestor database opens occur during semantic resolution.
+    pub(crate) fn prefetch_metadata(&mut self,context:&MetadataContext,roots:&[(Option<&str>,&str,bool)]) {
+        self.requested_metadata.clear();self.requested_metadata_bytes=0;
+        let Some(store)=self.store.clone()else{return;};
+        let mut requested=BTreeMap::new();
+        for (owner,name,verb) in roots {
+            let Some(owner)=owner else {continue;};
+            let mut parent=context.parents.get(*owner).cloned().flatten();let mut visited=HashSet::new();
+            while let Some(owner)=parent {
+                if !visited.insert(owner.clone()){break;}
+                let query=(owner.clone(),(*name).to_owned(),*verb);
+                if context.current.contains_key(&query)||context.published.contains_key(&query){break;}
+                let address=crate::lower_cache::shared_binding_fingerprint(&query);
+                if !self.metadata.contains_key(&query)&&!InvocationFragments::digest_bytes(&address).is_some_and(|key|self.metadata_negative.contains(&key)) {
+                    requested.insert(address,query.clone());
+                }
+                if !context.declarations.contains_key(&query)&&context.native.contains_key(&query){break;}
+                parent=context.parents.get(&owner).cloned().flatten();
+            }
+        }
+        let addresses:Vec<_>=requested.keys().map(|key|Key::new(Self::metadata_addresses(),key)).collect();
+        let mut records=BTreeMap::new();
+        default_plans::read_stage_batch(&store,&addresses,128,1024*1024,&mut |key,bytes| {
+            if let Some(identity)=bytes.and_then(|bytes|String::from_utf8(bytes).ok()).filter(|identity|InvocationFragments::digest_bytes(identity).is_some()) {
+                if let Some(query)=requested.get(&key.name){records.insert(identity,query.clone());}
+            }else if self.metadata_negative.len()<128_000 {if let Some(digest)=InvocationFragments::digest_bytes(&key.name){self.metadata_negative.insert(digest);}}
+        });
+        let keys:Vec<_>=records.keys().map(|key|Key::new(Self::metadata_namespace(),key)).collect();
+        default_plans::read_stage_batch(&store,&keys,1024*1024,8*1024*1024,&mut |key,bytes| {
+            if let Some(bytes)=bytes {
+                let charge=bytes.len().saturating_mul(3)+192;
+                if self.requested_metadata_bytes+charge>Self::LIMIT{return;}
+                if let Ok(record)=rmp_serde::from_slice::<MetadataRecord>(&bytes) {
+                    // The portable witness/value checksum rejects damaged rows;
+                    // consuming queries still validate every observed input.
+                    let identity=crate::lower_cache::shared_binding_fingerprint(&(&record.reads,&record.parent_identity,record.value.as_ref()));
+                    if record.identity==key.name&&identity==key.name {
+                        if let Some(query)=records.get(&key.name){self.requested_metadata_bytes+=charge;self.metadata_restored+=1;self.requested_metadata.insert(query.clone(),Arc::new(record));}
+                    }
+                }
+            }
         });
     }
     fn admit(&mut self,template:Arc<InvocationTemplate>,wire:usize) {
         let key=template.declaration_identity.clone();
-        if let Some(digest)=InvocationFragments::digest_bytes(&key) {if self.handles.len()<72_000||self.handles.contains_key(&digest){self.handles.insert(digest,Arc::downgrade(&template));}}
+        if let Some(digest)=InvocationFragments::digest_bytes(&key) {self.template_negative.remove(&digest);if self.handles.len()<72_000||self.handles.contains_key(&digest){self.handles.insert(digest,Arc::downgrade(&template));}}
         if let Some((_,old_charge))=self.templates.remove(&key) {
             self.bytes=self.bytes.saturating_sub(old_charge);self.order.retain(|old|old!=&key);
         }
@@ -149,7 +205,8 @@ impl InvocationQueries {
         if parent_record.as_ref().is_none_or(|record|record.value.is_none()) {
             let key=MetadataRead::Native((owner.to_owned(),name.to_owned(),verb));let value=context.read(&key);crate::observed_dependencies::record(&mut reads,key,value);
         }
-        let identity=crate::lower_cache::shared_binding_fingerprint(&(reads,parent_record.as_ref().map(|r|&r.identity),value.as_ref()));
+        let observations:Vec<_>=reads.into_iter().collect();
+        let identity=crate::lower_cache::shared_binding_fingerprint(&(observations,parent_record.as_ref().map(|r|&r.identity),value.as_ref()));
         Ok((value.as_ref().clone(),identity))
     }
     fn resolve(&mut self,context:&mut MetadataContext,key:Named,active:&mut HashSet<Named>)->Result<Arc<MetadataRecord>,String> {
@@ -173,14 +230,16 @@ impl InvocationQueries {
             }else{None}
         }else{None};
         let parent_identity=parent.as_ref().map(|p|p.identity.clone()).unwrap_or_default();
-        let old=self.metadata.get(&key).map(|(record,_)|Arc::clone(record));
+        let old=self.metadata.get(&key).map(|(record,_)|Arc::clone(record)).or_else(||self.requested_metadata.get(&key).cloned());
         let old=old.filter(|old|old.parent_identity==parent_identity&&self.validity.validate(old,context));
-        let record=if let Some(record)=old{record}else {
+        let record=if let Some(record)=old{self.metadata_reused+=1;record}else {
+            self.metadata_derived+=1;
             let base=parent.as_ref().and_then(|p|p.value.as_ref().map(Arc::clone));
             let value=if let Some(item)=declaration {
                 let base=base.unwrap_or(Arc::new(proc_metadata(&[],None)?.0));
                 let declarations=invocation_declaration_projection(&item.children);
-                Some(Arc::new(proc_metadata_from_base(&declarations,base.as_ref().clone())?.0))
+                Some(Arc::new(proc_metadata_from_base(&declarations,base.as_ref().clone())
+                    .map_err(|reason|source_error(context.source_debug,item.header_span.start,&item.header,&reason))?.0))
             }else {native.or(base)};
             let reads:Vec<_>=reads.into_iter().collect();
             let identity=crate::lower_cache::shared_binding_fingerprint(&(&reads,&parent_identity,value.as_ref()));
@@ -192,7 +251,11 @@ impl InvocationQueries {
             if let Ok(bytes)=rmp_serde::to_vec_named(record.as_ref()) {
                 if bytes.len()<=1024*1024 {
                     if self.pending_bytes+bytes.len()>1024*1024 {self.flush();}
-                    self.pending_bytes+=bytes.len();self.pending.push(Change::Put(Key::new(format!("invocation-metadata-v1-{}",env!("DM_EMISSION_FINGERPRINT")),&record.identity),bytes));
+                    self.pending_bytes+=bytes.len()+record.identity.len();
+                    self.pending.push(Change::Put(Key::new(Self::metadata_namespace(),&record.identity),bytes));
+                    let address=crate::lower_cache::shared_binding_fingerprint(&key);
+                    if let Some(digest)=InvocationFragments::digest_bytes(&address){self.metadata_negative.remove(&digest);}
+                    self.pending.push(Change::Put(Key::new(Self::metadata_addresses(),address),record.identity.as_bytes().to_vec()));
                 }
             }
             record
