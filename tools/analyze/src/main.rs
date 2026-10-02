@@ -153,6 +153,7 @@ fn main() -> ExitCode {
             let (text, lint_failed) = run::render(&outcomes, engine.opts.ci);
             failed.extend(lint_failed);
             print!("{}", text);
+            write_allow_usage(&engine, &outcomes);
             if has("--timing") {
                 print_timing(&engine, &outcomes, t0.elapsed());
             }
@@ -301,4 +302,37 @@ fn print_timing(engine: &Engine, outcomes: &[run::Outcome], total: std::time::Du
         );
     }
     println!("total wall time: {:.2?}", total);
+}
+
+/// With `DQ_ALLOW_USAGE=<file>` set (check_ratchets.sh), appends one `lint<TAB>file digest<TAB>line`
+/// row per ALLOW annotation that kept a site: the format `allow_annotations.py --unused` reads, so
+/// annotations used by engine lints count as used. The digest is sha1 of the file text without
+/// trailing newlines (what the Python's `digest_of` computes).
+fn write_allow_usage(engine: &Engine, outcomes: &[run::Outcome]) {
+    use sha1::{Digest, Sha1};
+    use std::io::Write;
+    let Ok(path) = std::env::var("DQ_ALLOW_USAGE") else { return };
+    if path.is_empty() {
+        return;
+    }
+    let mut rows: std::collections::BTreeSet<(String, String, u32)> = std::collections::BTreeSet::new();
+    let mut digests: std::collections::HashMap<String, String> = std::collections::HashMap::new();
+    for o in outcomes {
+        for u in &o.allow_used {
+            let digest = digests.entry(u.rel.clone()).or_insert_with(|| match engine.tree.get(&u.rel) {
+                Some(f) => {
+                    let mut h = Sha1::new();
+                    h.update(f.text().trim_end_matches('\n').as_bytes());
+                    h.finalize().iter().map(|b| format!("{:02x}", b)).collect()
+                }
+                None => String::new(),
+            });
+            rows.insert((u.name.clone(), digest.clone(), u.line));
+        }
+    }
+    if let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open(&path) {
+        for (name, digest, line) in rows {
+            let _ = writeln!(f, "{}\t{}\t{}", name, digest, line);
+        }
+    }
 }
