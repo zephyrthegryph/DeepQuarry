@@ -786,3 +786,111 @@
 
 /// The fixture floor, rebuilt per event by Run().
 // turfs, never freed
+
+/// Compare actual research-console cache allocation before and after lazy-list changes.
+/// Run separately on each revision: bench --scenario=rdconsole_id_cache --arg=consoles=200 --arg=ids=20 --arg=lookups=100.
+/datum/benchmark/rdconsole_id_cache
+	id = "rdconsole_id_cache"
+	description = "Research consoles: untouched ID-cache allocation and actual payload deduplication"
+
+/datum/benchmark/rdconsole_id_cache/Run()
+	var/consoles_n = max(1, param("consoles", 200))
+	var/ids_n = max(1, param("ids", 20))
+	var/lookups_n = max(1, param("lookups", 100))
+	var/list/consoles = list()
+	var/list/ids = list()
+	for(var/i in 1 to ids_n)
+		ids += "benchmark-id-[i]"
+	var/turf/T = locate(10, 10, 1)
+	mark("before_consoles")
+	begin_window()
+	var/start = REALTIMEOFDAY
+	for(var/i in 1 to consoles_n)
+		consoles += new /obj/machinery/computer/rdconsole_tg(T)
+	metric("console_allocation_ms", (REALTIMEOFDAY - start) * 100, "ms")
+	end_window("console_allocation")
+	mark("untouched_consoles")
+	var/untouched_lists = 0
+	var/untouched_entries = 0
+	for(var/obj/machinery/computer/rdconsole_tg/console as anything in consoles)
+		if(islist(console.id_cache))
+			untouched_lists++
+		untouched_entries += length(console.id_cache)
+	count_metric("untouched_id_cache_lists", untouched_lists, "lists")
+	count_metric("untouched_id_cache_entries", untouched_entries, "entries")
+	begin_window()
+	start = REALTIMEOFDAY
+	var/mapping_errors = 0
+	for(var/obj/machinery/computer/rdconsole_tg/console as anything in consoles)
+		for(var/round in 1 to lookups_n)
+			for(var/i in 1 to ids_n)
+				if(console.compress_id(ids[i]) != i)
+					mapping_errors++
+	metric("deduplication_ms", (REALTIMEOFDAY - start) * 100, "ms")
+	end_window("deduplication")
+	mark("populated_consoles")
+	var/populated_lists = 0
+	var/populated_entries = 0
+	for(var/obj/machinery/computer/rdconsole_tg/console as anything in consoles)
+		if(islist(console.id_cache))
+			populated_lists++
+		populated_entries += length(console.id_cache)
+	count_metric("populated_id_cache_lists", populated_lists, "lists")
+	count_metric("populated_id_cache_entries", populated_entries, "entries")
+	count_metric("deduplication_mapping_errors", mapping_errors, "errors")
+	count_metric("consoles", consoles_n, "consoles")
+	count_metric("distinct_ids_per_console", ids_n, "IDs")
+	count_metric("compression_calls", consoles_n * lookups_n * ids_n, "calls")
+	for(var/obj/machinery/computer/rdconsole_tg/console as anything in consoles)
+		qdel(console)
+	mark("after_console_cleanup")
+
+/// Actual airlock histories before and after the lazy-list change. Run both revisions with identical parameters.
+/datum/benchmark/airlock_history_lists
+	id = "airlock_history_lists"
+	description = "Actual airlocks: untouched history-list allocation and repeated ambient electrification"
+
+/datum/benchmark/airlock_history_lists/Run()
+	var/doors_n = max(1, param("doors", 200))
+	var/entries_n = max(1, param("entries", 5))
+	var/list/doors = list()
+	var/turf/T = locate(10, 10, 1)
+	mark("before_airlocks")
+	begin_window()
+	var/start = REALTIMEOFDAY
+	for(var/i in 1 to doors_n)
+		var/obj/machinery/door/airlock/door = new(T)
+		door.set_stat(0)
+		doors += door
+	metric("airlock_allocation_ms", (REALTIMEOFDAY - start) * 100, "ms")
+	end_window("airlock_allocation")
+	mark("untouched_airlocks")
+	var/untouched_lists = 0
+	var/untouched_entries = 0
+	for(var/obj/machinery/door/airlock/door as anything in doors)
+		if(islist(door.shockedby))
+			untouched_lists++
+		untouched_entries += length(door.shockedby)
+	count_metric("untouched_history_lists", untouched_lists, "lists")
+	count_metric("untouched_history_entries", untouched_entries, "entries")
+	begin_window()
+	start = REALTIMEOFDAY
+	for(var/obj/machinery/door/airlock/door as anything in doors)
+		for(var/i in 1 to entries_n)
+			door.electrify((2 SECONDS) / (1 SECOND))
+	metric("electrification_history_ms", (REALTIMEOFDAY - start) * 100, "ms")
+	end_window("electrification_history")
+	mark("populated_airlocks")
+	var/populated_lists = 0
+	var/populated_entries = 0
+	for(var/obj/machinery/door/airlock/door as anything in doors)
+		if(islist(door.shockedby))
+			populated_lists++
+		populated_entries += length(door.shockedby)
+	count_metric("populated_history_lists", populated_lists, "lists")
+	count_metric("populated_history_entries", populated_entries, "entries")
+	count_metric("expected_history_entries", doors_n * entries_n, "entries")
+	count_metric("airlocks", doors_n, "airlocks")
+	for(var/obj/machinery/door/airlock/door as anything in doors)
+		qdel(door)
+	mark("after_airlock_cleanup")
