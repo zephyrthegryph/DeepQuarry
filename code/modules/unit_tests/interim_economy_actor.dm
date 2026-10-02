@@ -3,6 +3,7 @@
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/operator = allocate(/mob/living/carbon/human, T)
 	var/obj/item/eftpos/terminal = allocate(/obj/item/eftpos, T)
+	own_turf_contents(T)
 	var/obj/item/card/id/card = allocate(/obj/item/card/id, T)
 	terminal.access_code = 1234
 	card.access = list(ACCESS_RESEARCH)
@@ -19,6 +20,7 @@
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/operator = allocate(/mob/living/carbon/human, T)
 	var/obj/item/eftpos/terminal = allocate(/obj/item/eftpos, T)
+	own_turf_contents(T)
 	var/obj/item/card/emag/card = allocate(/obj/item/card/emag, T)
 	terminal.transaction_locked = TRUE
 	terminal.transaction_paid = FALSE
