@@ -25,9 +25,10 @@
 	// from inside the transaction).
 	if(ismob(item.loc) && isitem(item))
 		var/mob/holder = item.loc
-		holder.drop_from_inventory(item)
-		if(item.loc == holder)
-			return FALSE
+		if(holder.inventory_slot_id(item))
+			holder.drop_from_inventory(item)
+			if(item.loc == holder)
+				return FALSE
 	qdel(item)
 	return TRUE
 
