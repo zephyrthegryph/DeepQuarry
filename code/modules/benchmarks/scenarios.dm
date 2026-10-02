@@ -948,3 +948,98 @@
 	for(var/mob/living/M as anything in mobs)
 		qdel(M)
 	mark("after_mob_cleanup")
+
+/// Actual cartridges and vendors before/after optional exception-list allocation.
+/datum/benchmark/refill_exception_lists
+	id = "refill_exception_lists"
+	description = "Refill cartridges: unused exception lists and actual vendor compatibility"
+
+/datum/benchmark/refill_exception_lists/Run()
+	var/cartridges_n = max(1, param("cartridges", 200))
+	var/lookups_n = max(1, param("lookups", 100))
+	var/list/cartridges = list()
+	var/turf/T = locate(10, 10, 1)
+	mark("before_cartridges")
+	begin_window()
+	var/start = REALTIMEOFDAY
+	for(var/i in 1 to cartridges_n)
+		cartridges += new /obj/item/refill_cartridge/multitype/technical(T)
+	metric("cartridge_allocation_ms", (REALTIMEOFDAY - start) * 100, "ms")
+	end_window("cartridge_allocation")
+	mark("untouched_cartridges")
+	var/unused_lists = 0
+	for(var/obj/item/refill_cartridge/multitype/C as anything in cartridges)
+		if(islist(C.refill_exceptions))
+			unused_lists++
+	count_metric("unused_exception_lists", unused_lists, "lists")
+	var/obj/item/refill_cartridge/multitype/clothing/clothing = new(T)
+	var/obj/machinery/vending/tool/tools = new(T)
+	var/obj/machinery/vending/wardrobe/wardrobe = new(T)
+	var/obj/machinery/vending/loadout/gadget/gadget = new(T)
+	var/matching_errors = 0
+	begin_window()
+	start = REALTIMEOFDAY
+	for(var/obj/item/refill_cartridge/multitype/C as anything in cartridges)
+		for(var/i in 1 to lookups_n)
+			if(!C.can_refill(tools) || !C.can_refill(gadget) || C.can_refill(wardrobe))
+				matching_errors++
+			if(!clothing.can_refill(wardrobe) || clothing.can_refill(gadget) || clothing.can_refill(tools))
+				matching_errors++
+	metric("vendor_matching_ms", (REALTIMEOFDAY - start) * 100, "ms")
+	end_window("vendor_matching")
+	count_metric("matching_errors", matching_errors, "errors")
+	count_metric("clothing_exception_entries", length(clothing.refill_exceptions), "entries")
+	count_metric("cartridges", cartridges_n, "cartridges")
+	count_metric("compatibility_checks", cartridges_n * lookups_n * 6, "checks")
+	qdel(clothing)
+	qdel(tools)
+	qdel(wardrobe)
+	qdel(gadget)
+	for(var/obj/item/refill_cartridge/multitype/C as anything in cartridges)
+		qdel(C)
+	mark("after_cartridge_cleanup")
+
+/// Untouched actual guest passes and the public list-alias contract on first read.
+/datum/benchmark/guest_access_lists
+	id = "guest_access_lists"
+	description = "Guest passes: deferred empty access lists and stable access aliases"
+
+/datum/benchmark/guest_access_lists/Run()
+	var/passes_n = max(1, param("passes", 200))
+	var/list/passes = list()
+	var/turf/T = locate(10, 10, 1)
+	mark("before_passes")
+	begin_window()
+	var/start = REALTIMEOFDAY
+	for(var/i in 1 to passes_n)
+		passes += new /obj/item/card/id/guest(T)
+	metric("pass_allocation_ms", (REALTIMEOFDAY - start) * 100, "ms")
+	end_window("pass_allocation")
+	mark("untouched_passes")
+	var/unused_lists = 0
+	for(var/obj/item/card/id/guest/P as anything in passes)
+		if(islist(P.temp_access))
+			unused_lists++
+	count_metric("untouched_temp_access_lists", unused_lists, "lists")
+	var/alias_errors = 0
+	var/read_lists = 0
+	begin_window()
+	start = REALTIMEOFDAY
+	for(var/obj/item/card/id/guest/P as anything in passes)
+		EXPIRY_SET(P, expiration_time, 1 MINUTE, CLOCK_WORLD)
+		var/list/access = P.GetAccess()
+		if(!islist(access) || !access || length(access))
+			alias_errors++
+		access += ACCESS_ENGINE
+		if(P.GetAccess() != access || !(ACCESS_ENGINE in P.GetAccess()))
+			alias_errors++
+		if(islist(P.temp_access))
+			read_lists++
+	metric("access_alias_ms", (REALTIMEOFDAY - start) * 100, "ms")
+	end_window("access_alias")
+	count_metric("read_temp_access_lists", read_lists, "lists")
+	count_metric("access_alias_errors", alias_errors, "errors")
+	mark("after_access_reads")
+	for(var/obj/item/card/id/guest/P as anything in passes)
+		qdel(P)
+	mark("after_pass_cleanup")
