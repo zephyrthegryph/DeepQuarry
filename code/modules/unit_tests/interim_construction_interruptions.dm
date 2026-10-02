@@ -71,7 +71,7 @@
 		TEST_ASSERT_EQUAL(board.loc, frame, "Successful wiring must retain board ownership")
 		TEST_ASSERT(!LAZYLEN(actor.do_afters), "The successful retry must release its pending-action entry")
 	catch(var/exception/e)
-		TEST_FAIL("Timed frame runtime during [stage]: [e] ([e.file]:[e.line])")
+		TEST_FAIL("Timed frame runtime during [stage]: [e] ([e.file]:[e.line])\n[e.desc]")
 
 /datum/unit_test/om/interim_frame_wiring_actor_interruption/run_om(list/made)
 	interim_frame_interruption(made, FALSE)
