@@ -1,0 +1,16 @@
+/// Programmatic pulling uses the puller as actor, including its existing grabs.
+/datum/unit_test/interim_pull_actor/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/puller = allocate(/mob/living/carbon/human, T)
+	var/mob/living/carbon/human/target = allocate(/mob/living/carbon/human, T)
+	var/obj/item/grab/grab = allocate(/obj/item/grab, puller, target)
+	TEST_ASSERT(!QDELETED(grab), "the fixture creates a real grab")
+	TEST_ASSERT_EQUAL(grab.grab_assailant(), puller, "the grab actually belongs to the puller")
+	puller.start_pulling(target)
+	TEST_ASSERT(QDELETED(grab), "starting a pull releases the actor's existing grab")
+	TEST_ASSERT_EQUAL(puller.pulling_target(), target, "the actor establishes a real pulling relation")
+	TEST_ASSERT_EQUAL(target.pulled_by_mob(), puller, "the target identifies the same puller")
+	TEST_ASSERT_EQUAL(target.LAssailant, puller, "pull attribution uses the actual puller without ambient usr")
+	qdel(puller)
+	TEST_ASSERT_NULL(target.LAssailant, "deleting the puller clears its assailant relation")
+	TEST_ASSERT_NULL(target.pulled_by_mob(), "deleting the puller clears the actual pulling relation")
