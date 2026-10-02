@@ -184,6 +184,7 @@ pub(super) struct FragmentStats {
     pub reused: usize,
     pub relocated: usize,
     pub linked_rows_reused: usize,
+    pub retained_projection_hits: usize,
     pub code_read_bytes: usize,
     pub code_hydration_seconds: f64,
     pub built: usize,
@@ -196,7 +197,7 @@ pub(super) struct FragmentStats {
     pub flush_seconds: f64,
     pub write_batches: usize,
 }
-struct Resident { fragment: Arc<OutputFragment>, charge: usize, used: u64 }
+struct Resident { fragment: Arc<OutputFragment>, charge: usize, used: u64, admitted: bool, revision: u64 }
 #[derive(Default)]
 pub(super) struct ProcedureFragments {
     handles: HashMap<crate::ProcKey, Handle>,
@@ -206,8 +207,10 @@ pub(super) struct ProcedureFragments {
     pending: Vec<dm_store::Change>,
     pending_bytes: usize,
     resident_bytes: usize,
+    admitted_bytes: usize,
     metadata_bytes: usize,
     tick: u64,
+    revision: u64,
     workers: usize,
     store: Option<dm_store::Store>,
     namespace: String,
@@ -223,7 +226,10 @@ impl ProcedureFragments {
             blobs: format!("output-blobs-v3-{}", env!("DM_EMISSION_FINGERPRINT")),
             code_blobs: format!("output-code-v1-{}",env!("DM_EMISSION_FINGERPRINT")), ..Self::default() }
     }
-    pub fn set_workers(&mut self, workers: usize) { self.workers = workers.clamp(1, 4); }
+    pub fn set_workers(&mut self, workers: usize) {
+        self.workers = workers.clamp(1, 4);
+        self.revision = self.revision.wrapping_add(1);
+    }
     pub fn resident_bytes(&self) -> usize {
         self.resident_bytes + self.pending_bytes + self.recency.capacity() * 96 + self.metadata_bytes
     }
@@ -237,7 +243,7 @@ impl ProcedureFragments {
         self.metadata_bytes += handle_charge(&key, &handle);
         self.handles.insert(key, handle);
     }
-    pub fn clear_decoded(&mut self) { self.flush(); self.resident.clear(); self.recency.clear(); self.resident_bytes = 0; }
+    pub fn clear_decoded(&mut self) { self.flush(); self.resident.clear(); self.recency.clear(); self.resident_bytes = 0; self.admitted_bytes = 0; }
     pub fn has_handle(&self, key: &crate::ProcKey) -> bool { self.handles.contains_key(key) }
     pub fn prefetch(&mut self, keys: &[crate::ProcKey]) {
         let Some(store) = self.store.clone() else { return; };
@@ -382,6 +388,13 @@ impl ProcedureFragments {
         if self.resident.contains_key(&payload) { return; }
         let charge = fragment.charge();
         if charge > 64 * 1024 * 1024 { return; }
+        if charge > (64 * 1024 * 1024usize).saturating_sub(self.admitted_bytes) { return; }
+        // Reserve half the existing budget for immutable, source-order admitted
+        // projections. A whole-project sequential pass exceeds the cache and
+        // otherwise evicts every earlier projection before the next revision.
+        // Admission is stable, not an additional cache or a growing snapshot;
+        // the other half remains the bounded current replay window.
+        let admitted = self.admitted_bytes.saturating_add(charge) <= 32 * 1024 * 1024;
         while self.resident_bytes + charge > 64 * 1024 * 1024 {
             let Some((oldest, tick)) = self.recency.pop_front() else { break; };
             if self.resident.get(&oldest).is_some_and(|entry| entry.used == tick) {
@@ -389,14 +402,18 @@ impl ProcedureFragments {
             }
         }
         self.tick += 1; self.resident_bytes += charge;
-        self.recency.push_back((payload.clone(), self.tick));
-        self.resident.insert(payload, Resident { fragment, charge, used: self.tick });
+        if admitted { self.admitted_bytes += charge; }
+        else { self.recency.push_back((payload.clone(), self.tick)); }
+        self.resident.insert(payload, Resident { fragment, charge, used: self.tick, admitted, revision: self.revision });
     }
     pub fn get(&mut self, key: &crate::ProcKey, descriptor: &crate::ProcDescriptor, candidate: &str) -> Option<Arc<OutputFragment>> {
         let handle = self.handles.get(key).filter(|handle| handle.descriptor == *descriptor && handle.candidate == candidate)?;
         let entry = self.resident.get_mut(&handle.payload)?;
         self.tick += 1; entry.used = self.tick;
-        self.recency.push_back((handle.payload.clone(), self.tick));
+        if entry.admitted {
+            if entry.revision != self.revision { self.stats.retained_projection_hits += 1; }
+        }
+        else { self.recency.push_back((handle.payload.clone(), self.tick)); }
         Some(Arc::clone(&entry.fragment))
     }
     pub fn retain(&mut self, key: crate::ProcKey, descriptor: crate::ProcDescriptor, candidate: String, mut fragment: OutputFragment) {
@@ -447,6 +464,10 @@ impl ProcedureFragments {
         self.handles.retain(|key, _| active.contains(key)); self.known_missing.retain(|key| active.contains(key));
         self.metadata_bytes = self.handles.iter().map(|(key, handle)| handle_charge(key, handle)).sum::<usize>()
             + self.known_missing.iter().map(|key| key.path.capacity() + 64).sum::<usize>();
+        let payloads: HashSet<_> = self.handles.values().map(|handle| handle.payload.as_str()).collect();
+        self.resident.retain(|payload, _| payloads.contains(payload.as_str()));
+        self.resident_bytes = self.resident.values().map(|entry| entry.charge).sum();
+        self.admitted_bytes = self.resident.values().filter(|entry| entry.admitted).map(|entry| entry.charge).sum();
         self.recency.retain(|(key, tick)| self.resident.get(key).is_some_and(|entry| entry.used == *tick));
         self.flush();
     }

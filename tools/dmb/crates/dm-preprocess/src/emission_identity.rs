@@ -4,6 +4,9 @@ use dm_syntax::{SegmentedSource,Span};
 use serde::{Serialize,Deserialize};
 use sha2::{Digest,Sha256};
 use std::{path::Path,sync::Arc};
+/// Ordered physical edits authorize reuse only for bytes outside replaced spans.
+#[derive(Clone,Copy,Debug)]
+pub struct EmissionEdit {pub before:Span,pub after_len:usize}
 #[derive(Clone,Debug,Eq,PartialEq,Serialize,Deserialize)]
 pub enum EmissionPart { Literal{span:Span,digest:[u8;32]}, Child{unit:usize} }
 #[derive(Clone,Debug,Default,Eq,PartialEq,Serialize,Deserialize)]
@@ -16,7 +19,8 @@ impl SourceSemanticIdentity {
     pub fn build(project:&PreprocessedProject,source:&SegmentedSource,directory:&Path)->Result<Self,String> {
         Self::rebuild(project,source,directory,None,&[])
     }
-    pub fn rebuild(project:&PreprocessedProject,source:&SegmentedSource,directory:&Path,previous:Option<&Self>,edits:&[Span])->Result<Self,String> {
+    pub fn rebuild(project:&PreprocessedProject,source:&SegmentedSource,directory:&Path,previous:Option<&Self>,edits:&[EmissionEdit])->Result<Self,String> {
+        if edits.iter().any(|edit|edit.before.start>edit.before.end) || !edits.windows(2).all(|pair|pair[0].before.end<=pair[1].before.start) {return Err("invalid emission edits".into());}
         if project.unit_parents.len()!=project.units.len() {return Err("incomplete emission include tree".into());}
         let mut children=vec![Vec::new();project.units.len()];let mut roots=Vec::new();
         for (index,parent) in project.unit_parents.iter().enumerate() {
@@ -52,7 +56,7 @@ impl SourceSemanticIdentity {
     }
     pub fn resident_bytes(&self)->usize {self.units.capacity()*32+self.recipes.capacity()*std::mem::size_of::<Arc<EmissionRecipe>>() +self.recipes.iter().chain(std::iter::once(&self.root_recipe)).map(|recipe|recipe.key.len()+recipe.parts.capacity()*std::mem::size_of::<EmissionPart>()).sum::<usize>()}
 }
-fn recipe(key:String,span:Span,children:&[usize],project:&PreprocessedProject,source:&SegmentedSource,old:Option<&EmissionRecipe>,edits:&[Span])->Result<EmissionRecipe,String> {
+fn recipe(key:String,span:Span,children:&[usize],project:&PreprocessedProject,source:&SegmentedSource,old:Option<&EmissionRecipe>,edits:&[EmissionEdit])->Result<EmissionRecipe,String> {
     let mut result=EmissionRecipe{key,parts:Vec::new()};let mut cursor=span.start;
     for &child in children {
         let child_span=project.units[child].output_span;
@@ -62,13 +66,11 @@ fn recipe(key:String,span:Span,children:&[usize],project:&PreprocessedProject,so
     }
     literal(&mut result,cursor,span.end,source,old,edits)?;Ok(result)
 }
-fn literal(recipe:&mut EmissionRecipe,start:usize,end:usize,source:&SegmentedSource,old:Option<&EmissionRecipe>,edits:&[Span])->Result<(),String> {
+fn literal(recipe:&mut EmissionRecipe,start:usize,end:usize,source:&SegmentedSource,old:Option<&EmissionRecipe>,edits:&[EmissionEdit])->Result<(),String> {
     if start==end {return Ok(());}
     let span=Span::new(start,end);
     let reused=old.and_then(|old|old.parts.get(recipe.parts.len())).and_then(|part|match part {
-        EmissionPart::Literal{span:before,digest} if before.end-before.start==end-start && !edits.iter().any(|edit| {
-            if edit.start==edit.end {edit.start>=before.start&&edit.start<before.end} else {edit.start<before.end&&edit.end>before.start}
-        })=>Some(*digest),_=>None});
+        EmissionPart::Literal{span:before,digest} if mapped_literal(*before,span,edits)=>Some(*digest),_=>None});
     let digest=if let Some(digest)=reused {digest} else {let mut hash=Sha256::new();source.visit_range(span,|text|hash.update(text.as_bytes()))?;hash.finalize().into()};
     recipe.parts.push(EmissionPart::Literal{span,digest});Ok(())
 }
@@ -97,4 +99,23 @@ fn layout_matches(recipe:&EmissionRecipe,span:Span,children:&[usize],project:&Pr
     }
     if cursor<span.end && !matches!(parts.next(),Some(EmissionPart::Literal{span:part,..}) if part.start==cursor&&part.end==span.end) {return false;}
     parts.next().is_none()
+}
+
+fn mapped_literal(before:Span,current:Span,edits:&[EmissionEdit])->bool {
+    if edits.iter().any(|edit| {
+        let edit=edit.before;
+        if edit.start==edit.end {edit.start>=before.start&&edit.start<before.end}
+        else {edit.start<before.end&&edit.end>before.start}
+    }) {return false;}
+    let translate=|offset:usize,is_end:bool|->Option<usize> {
+        let mut mapped=offset as i128;
+        for edit in edits {
+            if edit.before.end>offset {break;}
+            // An insertion exactly after a literal must not extend its end.
+            if is_end && edit.before.start==edit.before.end && edit.before.end==offset {continue;}
+            mapped+=(edit.after_len as i128)-((edit.before.end-edit.before.start) as i128);
+        }
+        usize::try_from(mapped).ok()
+    };
+    translate(before.start,false)==Some(current.start) && translate(before.end,true)==Some(current.end)
 }

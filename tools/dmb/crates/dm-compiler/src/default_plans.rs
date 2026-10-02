@@ -412,7 +412,7 @@ pub(super) fn owner_batch(items: &[&Item], workers:usize) -> Vec<Arc<OwnerDeclar
 /// strict byte bound. Large records split the requested window, never omit rows.
 pub(super) fn read_stage_batch(store:&dm_store::Store,keys:&[dm_store::Key],max_record:usize,max_bytes:usize,visit:&mut impl FnMut(&dm_store::Key,Option<Vec<u8>>)) {
     if keys.is_empty() {return;}
-    match store.read_grouped_bounded(keys,128,max_record,max_bytes,max_bytes,None) {
+    match store.read_grouped_bounded(keys,128,max_record,max_bytes,max_bytes.saturating_mul(8).min(64*1024*1024),None) {
         Ok(read)=>for (key,bytes) in keys.iter().zip(read.values) {visit(key,bytes);},
         Err(error) if error.kind()==std::io::ErrorKind::InvalidInput && keys.len()>1=>{
             let middle=keys.len()/2;

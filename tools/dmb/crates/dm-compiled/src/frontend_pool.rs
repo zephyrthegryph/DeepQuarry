@@ -273,7 +273,7 @@ impl FrontendPool {
             self.trace_entry("before encoded snapshot trim", key);
             let before = self.bytes();
             if let Some(frontend) = self.entries.get_mut(key).unwrap().frontend.as_mut() {
-                frontend.release_encoded_snapshot();
+                frontend.release_transient_output_buffers();
             }
             if self.bytes() != before {
                 self.stats.snapshot_trims += 1;
@@ -296,6 +296,19 @@ impl FrontendPool {
                 }
             }
             self.trace_entry("after decoded payload trim", key);
+        }
+        // Valid output-fragment replay needs compact graph certificates, not
+        // decoded PreparedProc payloads. Preserve admitted output recipes until
+        // those independently restorable graph payloads have been reclaimed.
+        for (_, key) in &ordered {
+            if self.bytes() <= budget { break; }
+            self.trace_entry("before auxiliary cache trim", key);
+            let before = self.bytes();
+            if let Some(frontend) = self.entries.get_mut(key).unwrap().frontend.as_mut() {
+                frontend.release_encoded_snapshot();
+            }
+            if self.bytes() != before { self.stats.snapshot_trims += 1; }
+            self.trace_entry("after auxiliary cache trim", key);
         }
         for (_, key) in &ordered {
             if self.bytes() <= budget {

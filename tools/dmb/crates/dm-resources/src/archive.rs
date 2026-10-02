@@ -364,39 +364,35 @@ fn prepare_archive_inner(root:&Path,requests:&[ResourceRequest],prepared:Option<
     let mut hash = Sha256::new();
     let mut len = 0u64;
     let mut buffer = [0u8; 64 * 1024];
+    let mut guarded_entries=0usize;
     for entry in &entries {
-        if capture(&entry.path).as_ref() != Some(&entry.record.stamp) {
-            return Err(io::Error::other(
-                "resource entry changed before composition",
-            ));
+        let guard=open_entry_guard(&entry.path,&entry.record.stamp);
+        let guarded=guard.is_some();
+        if !guarded && capture(&entry.path).as_ref()!=Some(&entry.record.stamp) {
+            return Err(io::Error::other("resource entry changed before composition"));
         }
-        let mut reader = BufReader::with_capacity(64 * 1024, fs::File::open(&entry.path)?);
-        let mut digest = Sha256::new();
-        let mut size = 0u64;
+        let file=match guard {Some(file)=>file,None=>fs::File::open(&entry.path)?};
+        let mut reader=BufReader::with_capacity(64*1024,file);
+        let mut digest=(!guarded).then(Sha256::new);
+        let mut size=0u64;
         loop {
-            let n = reader.read(&mut buffer)?;
-            if n == 0 {
-                break;
-            }
-            let bytes = &buffer[..n];
-            writer.write_all(bytes)?;
-            hash.update(bytes);
-            digest.update(bytes);
-            size += n as u64;
+            let n=reader.read(&mut buffer)?;if n==0 {break;}
+            size=size.checked_add(n as u64).ok_or_else(||invalid("resource entry length overflow"))?;
+            if size>entry.record.len {return Err(invalid("resource entry length exceeded"));}
+            let bytes=&buffer[..n];writer.write_all(bytes)?;hash.update(bytes);
+            if let Some(digest)=&mut digest {digest.update(bytes);}
         }
-        drop(reader);
-        if size != entry.record.len
-            || format!("{:x}", digest.finalize()) != entry.record.digest
-            || capture(&entry.path).as_ref() != Some(&entry.record.stamp)
-        {
-            return Err(io::Error::other(
-                "resource entry changed during composition",
-            ));
+        let same_stamp=if guarded {
+            dm_host::file_stamp::capture_file(reader.get_ref()).as_ref()==Some(&entry.record.stamp)
+        } else {capture(&entry.path).as_ref()==Some(&entry.record.stamp)};
+        let checksum_valid=digest.is_none_or(|digest|format!("{:x}",digest.finalize())==entry.record.digest);
+        if size!=entry.record.len || !checksum_valid || !same_stamp {
+            return Err(io::Error::other("resource entry changed during composition"));
         }
-        len = len
-            .checked_add(size)
-            .ok_or_else(|| invalid("archive length overflow"))?;
+        guarded_entries+=usize::from(guarded);
+        len=len.checked_add(size).ok_or_else(||invalid("archive length overflow"))?;
     }
+    if std::env::var_os("DM_BUILD_TRACE").is_some() {eprintln!("DM_BUILD_TRACE archive guarded composition: {guarded_entries} of {} entries",entries.len());}
     writer.flush()?;
     writer.get_ref().sync_all()?;
     drop(writer);
@@ -442,4 +438,13 @@ fn prepare_archive_inner(root:&Path,requests:&[ResourceRequest],prepared:Option<
         catalog,
         receipt_store:store.clone(), receipt_key:archive_key,
     })
+}
+
+fn open_entry_guard(path:&Path,expected:&FileStamp)->Option<fs::File> {
+    #[cfg(windows)] {
+        use std::os::windows::fs::OpenOptionsExt;
+        let file=fs::OpenOptions::new().read(true).share_mode(1|4).open(path).ok()?;
+        (dm_host::file_stamp::capture_file(&file).as_ref()==Some(expected)).then_some(file)
+    }
+    #[cfg(not(windows))] {let _=(path,expected);None}
 }

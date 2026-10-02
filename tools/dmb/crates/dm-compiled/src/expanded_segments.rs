@@ -272,6 +272,10 @@ pub(crate) fn splice_source_edits(
     {
         return None;
     }
+    // Equal empty include spans have source-order identity but no unique byte
+    // endpoint ordering. Reprocess instead of assigning an insertion to the
+    // wrong include or invalidating a checksum through a false overlap test.
+    if replacements.iter().any(|replacement|replacement.0.start==replacement.0.end) {return None;}
     let pieces = pieces.splice(&replacements)?;
     let mut project = PreprocessedProject {
         text: String::new(),
@@ -314,7 +318,7 @@ pub(crate) fn splice_source_edits(
         if project.unit_digest_validity.len()!=project.units.len() {project.unit_digest_validity=vec![true;project.units.len()];}
         for &(index,_) in &changed_hashes {project.unit_digest_validity[index]=false;project.unit_digests[index]=[0;32];}
         let directory=previous.units.last()?.path.parent()?;
-        let edits:Vec<_>=replacements.iter().map(|replacement|replacement.0).collect();
+        let edits:Vec<_>=replacements.iter().map(|replacement|dm_preprocess::EmissionEdit{before:replacement.0,after_len:replacement.1.len()}).collect();
         project.semantic_identity=Some(Arc::new(dm_preprocess::SourceSemanticIdentity::rebuild(&project,&pieces.source(),directory,Some(previous_identity),&edits).ok()?));
     } else {
         for (index,digest) in pieces.digest_ranges(&changed_hashes)? {*project.unit_digests.get_mut(index)?=digest;}
@@ -386,6 +390,7 @@ fn splice_raw_units(
         .iter()
         .map(|(span, text, _)| (*span, text.clone()))
         .collect();
+    if replacements.iter().any(|replacement|replacement.0.start==replacement.0.end) {return None;}
     let pieces = pieces.splice(&edits)?;
     let mut project = PreprocessedProject {
         text: String::new(),
@@ -477,7 +482,7 @@ fn splice_raw_units(
         if project.unit_digest_validity.len()!=project.units.len() {project.unit_digest_validity=vec![true;project.units.len()];}
         for &(index,_) in &changed_hashes {project.unit_digest_validity[index]=false;project.unit_digests[index]=[0;32];}
         let directory=previous.units.last()?.path.parent()?;
-        let edits:Vec<_>=replacements.iter().map(|replacement|replacement.0).collect();
+        let edits:Vec<_>=replacements.iter().map(|replacement|dm_preprocess::EmissionEdit{before:replacement.0,after_len:replacement.1.len()}).collect();
         project.semantic_identity=Some(Arc::new(dm_preprocess::SourceSemanticIdentity::rebuild(&project,&pieces.source(),directory,Some(previous_identity),&edits).ok()?));
     } else {
         for (index,digest) in pieces.digest_ranges(&changed_hashes)? {*project.unit_digests.get_mut(index)?=digest;}

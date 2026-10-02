@@ -5,7 +5,7 @@
 //! in-memory fixtures, and the filesystem without hiding reads from the incremental engine.
 
 mod emission_identity;
-pub use emission_identity::SourceSemanticIdentity;
+pub use emission_identity::{SourceSemanticIdentity, EmissionEdit};
 mod origin_map;
 pub use origin_map::{OriginMap, SourceMapBuilder};
 

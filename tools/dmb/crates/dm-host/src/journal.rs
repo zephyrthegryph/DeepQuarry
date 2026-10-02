@@ -141,8 +141,8 @@ impl JournalProof {
                     old.directory_ids.dedup();
                     let mut names=std::collections::BTreeMap::<[u64;2],Vec<String>>::new();
                     for id in old.namespace_ids.iter().chain(&volume.namespace_ids) {
-                        let left=old.namespace_names.iter().find(|(key,_)|key==id).map(|(_,names)|names);
-                        let right=volume.namespace_names.iter().find(|(key,_)|key==id).map(|(_,names)|names);
+                        let left=old.namespace_names.binary_search_by_key(id,|(key,_)|*key).ok().map(|index|&old.namespace_names[index].1);
+                        let right=volume.namespace_names.binary_search_by_key(id,|(key,_)|*key).ok().map(|index|&volume.namespace_names[index].1);
                         if (old.namespace_ids.binary_search(id).is_ok() && left.is_none()) || (volume.namespace_ids.binary_search(id).is_ok() && right.is_none()) {continue;}
                         let values=names.entry(*id).or_default();
                         values.extend(left.into_iter().chain(right).flat_map(|names|names.iter().cloned()));values.sort();values.dedup();
@@ -559,7 +559,9 @@ mod windows {
             paths.push((path, stamp));
             for ancestor in path.ancestors().skip(1) {
                 if !ancestor.as_os_str().is_empty() {
-                    ancestors.insert(ancestor.to_path_buf());
+                    // A previously visited ancestor already contributed its
+                    // entire parent chain during this establishment.
+                    if !ancestors.insert(ancestor.to_path_buf()) { break; }
                 }
             }
         }
@@ -581,7 +583,7 @@ mod windows {
             let names=parent_names.entry(parent.to_path_buf()).or_insert_with(||Some(BTreeSet::new()));
             match (names.as_mut(),name) { (Some(names),Some(name))=>{names.insert(name);},(_,None)=>*names=None,_=>{} }
             for ancestor in parent.ancestors() {
-                if !ancestor.as_os_str().is_empty() {ancestors.insert(ancestor.to_path_buf());}
+                if !ancestor.as_os_str().is_empty() && !ancestors.insert(ancestor.to_path_buf()) {break;}
             }
         }
         // Find lexical and followed ancestor volumes before taking cursors;

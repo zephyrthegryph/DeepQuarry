@@ -191,6 +191,8 @@ pub(super) struct InvocationFragments {
     disk_syntax_ready: bool,
     requested_syntax: BTreeMap<String, Arc<InvocationSyntax>>,
     requested_bytes: usize,
+    requested_encoded: BTreeMap<String,Vec<u8>>,
+    requested_encoded_bytes: usize,
     requested_signatures: BTreeMap<String, Arc<(String, Vec<ParsedParameter>)>>,
     requested_signature_bytes: usize,
     syntax_misses: BTreeSet<String>,
@@ -234,6 +236,7 @@ impl InvocationFragments {
     /// The bounded window is consumed immediately by the ordered allocator.
     pub(super) fn prefetch_syntax(&mut self,inputs:&[(&Item,&str,bool)]) {
         self.requested_syntax.clear(); self.requested_bytes=0;
+        self.requested_encoded.clear();self.requested_encoded_bytes=0;
         self.window_declarations.clear();
         self.requested_signatures.clear();self.requested_signature_bytes=0;
         self.prefetch_signatures(inputs);
@@ -259,11 +262,12 @@ impl InvocationFragments {
         self.counters.batch_records+=payloads.len();
         default_plans::read_stage_batch(&store,&payloads,1024*1024,8*1024*1024,&mut |key,bytes| {
             if let Some(bytes)=bytes {
-                if let Ok(value)=rmp_serde::from_slice::<InvocationSyntax>(&bytes) {
-                    let charge=bytes.len().saturating_mul(3)+key.name.len()+128;
-                    if value.key==key.name && self.requested_bytes.saturating_add(charge)<=16*1024*1024 {
-                        self.requested_bytes+=charge;self.requested_syntax.insert(key.name.clone(),Arc::new(value));
-                    }
+                let charge=bytes.len().saturating_mul(3)+key.name.len()+128;
+                if self.requested_bytes.saturating_add(charge)<=16*1024*1024 {
+                    if let Ok(value)=rmp_serde::from_slice::<InvocationSyntax>(&bytes) {if value.key==key.name {self.requested_bytes+=charge;self.requested_syntax.insert(key.name.clone(),Arc::new(value));}}
+                } else {
+                    let charge=bytes.len()+key.name.len()+128;
+                    if self.requested_encoded_bytes.saturating_add(charge)<=16*1024*1024 {self.requested_encoded_bytes+=charge;self.requested_encoded.insert(key.name.clone(),bytes);}
                 }
             } else if self.syntax_misses.len()<128_000 {self.syntax_misses.insert(key.name.clone());}
         });
@@ -360,6 +364,10 @@ impl InvocationFragments {
             self.counters.syntax_hits+=1;return Ok(Arc::clone(value));
         }
         if let Some(value)=self.requested_syntax.get(&key) {self.counters.syntax_hits+=1;return Ok(Arc::clone(value));}
+        if let Some(bytes)=self.requested_encoded.remove(&key) {
+            self.requested_encoded_bytes=self.requested_encoded_bytes.saturating_sub(bytes.len()+key.len()+128);
+            if let Ok(value)=rmp_serde::from_slice::<InvocationSyntax>(&bytes) {if value.key==key {self.counters.syntax_hits+=1;return Ok(Arc::new(value));}}
+        }
         self.counters.syntax_misses+=1;
         if self.disk_syntax_ready && !self.syntax_misses.contains(&key) {
             self.counters.point_reads+=1;
@@ -409,7 +417,7 @@ impl InvocationFragments {
         // Hash the immutable semantic fragment directly, without constructing
         // and cloning a complete LowerBindings solely for serialization.
         let digest=crate::lower_cache::shared_binding_fingerprint(&(&syntax.path,&syntax.params,&overlay));
-        if self.entries.contains_key(&syntax.key)||self.requested_syntax.contains_key(&syntax.key) {
+        {
             let mut updated = syntax.as_ref().clone();
             updated.frame = Some((Arc::clone(&overlay), digest.clone()));
             if let Ok(bytes) = rmp_serde::to_vec_named(&updated) {
@@ -419,14 +427,18 @@ impl InvocationFragments {
                 let pairs=|values:&[(String,String)]|values.iter().map(|(name,value)|name.capacity()+value.capacity()+std::mem::size_of::<(String,String)>()).sum::<usize>();
                 let extra=digest.capacity()+std::mem::size_of::<InvocationOverlay>()+overlay.current_type_path.as_ref().map_or(0,String::capacity)+strings(&overlay.fields)+strings(&overlay.globals)+strings(&overlay.global_procs)+strings(&overlay.hidden_owner_fields)+pairs(&overlay.field_types)+pairs(&overlay.global_types);
                 let retained=self.entries.contains_key(&syntax.key);
+                let requested_charge=if self.requested_syntax.contains_key(&syntax.key){extra}else{bytes.len().saturating_mul(3)+syntax.key.len()+128};
                 if (retained&&self.bytes.saturating_add(extra)<=Self::LIMIT)
-                    || (!retained&&self.requested_bytes.saturating_add(extra)<=16*1024*1024) {
+                    || (!retained&&self.requested_bytes.saturating_add(requested_charge)<=16*1024*1024) {
                     if retained {self.bytes+=extra;self.entries.insert(syntax.key.clone(),Arc::new(updated));}
-                    else {self.requested_bytes+=extra;self.requested_syntax.insert(syntax.key.clone(),Arc::new(updated));}
-                    self.queue_pending(syntax.key.clone(), bytes);
-                    if self.pending_bytes > 4 * 1024 * 1024 {
-                        self.flush();
-                    }
+                    else {self.requested_bytes+=requested_charge;self.requested_syntax.insert(syntax.key.clone(),Arc::new(updated));}
+                }
+                // Portable frame artifacts must survive even when the optional
+                // decoded cache is full. Otherwise uncached suffixes repeatedly
+                // restore frame-less syntax and rederive their frame every edit.
+                if bytes.len()<=1024*1024 {
+                    self.queue_pending(syntax.key.clone(),bytes);
+                    if self.pending_bytes>4*1024*1024 {self.flush();}
                 }
             }
         }
@@ -436,6 +448,7 @@ impl InvocationFragments {
         self.flush();
         self.entries.clear();self.signatures.clear();self.bytes=0;
         self.requested_syntax.clear();self.requested_bytes=0;
+        self.requested_encoded.clear();self.requested_encoded_bytes=0;
         self.requested_signatures.clear();self.requested_signature_bytes=0;
         self.window_declarations.clear();
     }
@@ -454,6 +467,8 @@ impl InvocationFragments {
         if let Some(old)=self.pending.insert(key,bytes) {self.pending_bytes=self.pending_bytes.saturating_sub(old.len());}
     }
     fn flush(&mut self) {
+        if self.pending.is_empty(){return;}
+        let started=std::time::Instant::now();let records=self.pending.len();let bytes=self.pending_bytes;
         let Some(store) = &self.store else {
             self.pending.clear();self.pending_bytes=0;
             return;
@@ -475,11 +490,12 @@ impl InvocationFragments {
         if store.commit(&[], &updates, None).is_ok() {
             self.pending.clear();self.pending_bytes=0;
         }
+        if started.elapsed().as_millis()>100&&std::env::var_os("DM_BUILD_TRACE").is_some(){eprintln!("DM_BUILD_TRACE slow invocation publication: records={records} bytes={bytes} {:.3}s",started.elapsed().as_secs_f64());}
     }
     fn resident_bytes(&self) -> usize {
         self.bytes
             + self.handles.len()*112
-            + self.requested_bytes + self.requested_signature_bytes
+            + self.requested_bytes + self.requested_encoded_bytes + self.requested_signature_bytes
             + (self.syntax_misses.len()+self.handle_misses.len())*128
             + self
                 .pending
@@ -489,6 +505,7 @@ impl InvocationFragments {
     }
     fn release_requested(&mut self) {
         self.requested_syntax.clear();self.requested_bytes=0;
+        self.requested_encoded.clear();self.requested_encoded_bytes=0;
         self.requested_signatures.clear();self.requested_signature_bytes=0;
     }
 }
@@ -1042,6 +1059,17 @@ impl CanonicalSession {
                 self.declaration_inputs.as_ref().map_or(0,DeclarationInputs::resident_bytes),self.maps.resident_bytes());
         }
     }
+    /// Release duplicated encoding buffers before compact reuse handles and
+    /// admitted procedure recipes. The pool can apply stronger pressure later.
+    pub(crate) fn release_transient_output_buffers(&mut self) -> usize {
+        let before = self.resident_bytes();
+        let _ = self.output_projections.flush();
+        self.output_projections.clear();
+        self.output_validation.clear();
+        self.emission_plans.clear();
+        self.invocation_fragments.release_decoded();
+        before.saturating_sub(self.resident_bytes())
+    }
     /// Output projections are expendable accelerators. Retain compact semantic
     /// owner/invocation fragments when releasing output buffers under pressure.
     pub(crate) fn release_auxiliary_caches(&mut self) -> usize {
@@ -1055,6 +1083,9 @@ impl CanonicalSession {
         // These are optional duplicate decoded declaration fragments; frozen
         // plans and addressed disk handles retain the authoritative inputs.
         self.invocation_fragments.release_decoded();
+        // Compact handles are optional candidate selectors too. Release them
+        // under pressure before sacrificing the frontend dependency graph.
+        self.invocation_fragments.handles.clear();
         before.saturating_sub(self.resident_bytes())
     }
     /// Final pool-pressure fallback drops only the immutable prefix. Procedure

@@ -4057,12 +4057,15 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
     for (invocation_ordinal,pending) in authored_pending.iter().enumerate() {
                     if invocation_ordinal%1024==0 {
                         let window_end=invocation_ordinal.saturating_add(1024).min(invocation_total);
+                        let hydration_started=std::time::Instant::now();
                         session.invocation_fragments.prefetch_syntax(&authored_pending[invocation_ordinal..window_end].iter()
                             .map(|procedure|(procedure.item,procedure.owner_path.as_str(),procedure.verb)).collect::<Vec<_>>());
+                        if hydration_started.elapsed().as_millis()>100&&std::env::var_os("DM_BUILD_TRACE").is_some(){eprintln!("DM_BUILD_TRACE slow invocation hydration: window={} {:.3}s",invocation_ordinal,hydration_started.elapsed().as_secs_f64());}
                     }
                     if invocation_ordinal%1024==0 && std::env::var_os("DM_BUILD_TRACE").is_some() {
                         eprintln!("DM_BUILD_TRACE invocation preparation: {} of {}, {:.3}s", invocation_ordinal,invocation_total,invocation_preparation_started.elapsed().as_secs_f64());
                     }
+                    let query_started=std::time::Instant::now();
                     let item = pending.item;
                     let (path, params) = session.invocation_fragments.signature(item, &pending.owner_path, pending.verb)?;
                     let repeated = !proc_paths.insert(path.as_bytes().to_vec());
@@ -4288,6 +4291,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
         bindings.shared = None;
         bindings.owner = None;
         let (bindings, frame_digest) = session.invocation_fragments.frame(&syntax, bindings.into());
+        if query_started.elapsed().as_millis()>100&&std::env::var_os("DM_BUILD_TRACE").is_some(){eprintln!("DM_BUILD_TRACE slow invocation query: ordinal={} path={} statics={} {:.3}s",invocation_ordinal,path,syntax.statics.len(),query_started.elapsed().as_secs_f64());}
         invocation_plans.push(canonical::InvocationPlan { path, params, metadata, static_ids, bindings, frame_digest });
     }
         if std::env::var_os("DM_BUILD_TRACE").is_some(){let c=session.invocation_fragments.counters;eprintln!("DM_BUILD_TRACE invocation queries: signature_hits={} signature_misses={} syntax_hits={} syntax_misses={} frame_hits={} frame_misses={} point_reads={} batch_records={}",c.signature_hits,c.signature_misses,c.syntax_hits,c.syntax_misses,c.frame_hits,c.frame_misses,c.point_reads,c.batch_records);}
@@ -5005,8 +5009,8 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
             session.emission_plans.finish(&session.active_keys);
             trace(&format!("procedure parent phases complete: prepare={parent_prepare_seconds:.3}s wait={parent_wait_seconds:.3}s section={parent_section_seconds:.3}s link={parent_link_seconds:.3}s records_helpers={parent_record_seconds:.3}s fragments={parent_fragment_seconds:.3}s"));
             session.procedure_fragments.finish(&session.active_keys);
-            trace(&format!("linked output objects: typed_rows_reused={} code_read_bytes={} code_hydration_seconds={:.3}",
-                session.procedure_fragments.stats.linked_rows_reused,session.procedure_fragments.stats.code_read_bytes,
+            trace(&format!("linked output objects: typed_rows_reused={} retained_projection_hits={} code_read_bytes={} code_hydration_seconds={:.3}",
+                session.procedure_fragments.stats.linked_rows_reused,session.procedure_fragments.stats.retained_projection_hits,session.procedure_fragments.stats.code_read_bytes,
                 session.procedure_fragments.stats.code_hydration_seconds));
             trace(&format!("output DAG: reused={} relocated={} built={} refill_batches={} refill_bytes={} replay_seconds={:.3} read_seconds={:.3} decode_seconds={:.3} encode_seconds={:.3} flush_seconds={:.3} write_batches={}",
                 session.procedure_fragments.stats.reused, session.procedure_fragments.stats.relocated,

@@ -389,6 +389,11 @@ impl OutlineSession {
         // Compact ASTs, chunk identities and lexical transitions are semantic
         // indexes, not disposable body payloads. Keep them across pressure.
     }
+    pub fn release_transient_output_buffers(&mut self) {
+        self.canonical.release_transient_output_buffers();
+        self.canonical.graph.release_encoded_snapshot();
+        self.canonical.maps.release_encoded_snapshot();
+    }
     pub fn release_encoded_snapshot(&mut self) {
         self.canonical.release_auxiliary_caches();
         self.canonical.graph.release_encoded_snapshot();

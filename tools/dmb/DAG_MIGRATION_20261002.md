@@ -236,3 +236,15 @@ handles, rebases procedure-owned typed rows, and uses canonical source
 emission recipes. Its first Cargo build passed; timings remain pending.
 Packed certificates now use one publication representation, with legacy
 reads and oversized-candidate fallback retained. That change awaits build.
+
+N completed from 088ca8b935 (before packed-only publication): cold186.715s;
+unchanged0.573s; body22.734s; newproc48.600s; newvar75.454s;
+freshcachedprocess0.152s; freshbody34.933s. The focused benchmark omitted
+asset/default/resource cases. All compiler requests succeeded; correctness
+and runtime remain untested by instruction. Cold improved34s versus M;
+body edits were effectively unchanged. Next build contains packed-only
+certificates with dual-head invalidation, stable32MiB procedure projections
+inside the existing64MiB payload cap, source-edit endpoint validation,
+guarded archive composition, frame persistence independent of decoded cache
+capacity, and staged pool pressure preserving reuse handles before restorable
+PreparedProc payloads. Measurements for those changes are pending.

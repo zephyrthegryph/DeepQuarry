@@ -1190,35 +1190,40 @@ impl ProjectProcedureGraph {
                 }
                 row
             };
-            for (namespace, row) in [(&p.facts_namespace, &fact), (&p.values_namespace, &value)] {
-                let key = dm_store::Key::new(namespace, &row.name);
-                if !p.pending.contains_key(&key) && !p.committed_witnesses.contains(&key) {
-                    records.push((key, row.bytes.to_vec()));
-                }
-            }
             certificate_charge = certificate_charge.saturating_add(fact.charge()+value.charge()+128);
             packed_witnesses.push((fact.clone(),value.clone()));
             witnesses.push((fact.name, value.name));
         }
         let p = self.persistence.as_ref()?;
-        let readset = serde_json::to_vec(&DiskReadSet { witnesses }).ok()?;
-        let readset_name = format!("{:x}", Sha256::digest(&readset));
-        records.push((dm_store::Key::new(&p.readsets_namespace, &readset_name), readset));
-        let disk_header = DiskHeader {
-            key: key.clone(), descriptor: descriptor.clone(),
-            dependencies: Vec::new(), readset: Some(readset_name), payload: name.clone(),
+        let packed=certificate_charge<=8*1024*1024;
+        // A candidate has one witness representation. Keeping the entire
+        // legacy graph beside every packed page doubles locator/readset writes.
+        // Existing legacy rows remain readable; oversized candidates still use
+        // that representation, and missing derived rows always permit lowering.
+        let readset_name=if packed {None} else {
+            for (fact,value) in &packed_witnesses {
+                for (namespace,row) in [(&p.facts_namespace,fact),(&p.values_namespace,value)] {
+                    let key=dm_store::Key::new(namespace,&row.name);
+                    if !p.pending.contains_key(&key)&&!p.committed_witnesses.contains(&key) {
+                        records.push((key,row.bytes.to_vec()));
+                    }
+                }
+            }
+            let readset=serde_json::to_vec(&DiskReadSet{witnesses}).ok()?;
+            let name=format!("{:x}",Sha256::digest(&readset));
+            records.push((dm_store::Key::new(&p.readsets_namespace,&name),readset));
+            Some(name)
         };
-        let header = serde_json::to_vec(&disk_header).ok()?;
-        if header.len() > MAX_HEADER {
-            return None;
+        let disk_header = DiskHeader {
+            key:key.clone(),descriptor:descriptor.clone(),dependencies:Vec::new(),readset:readset_name,payload:name.clone(),
+        };
+        if !packed {
+            let header=serde_json::to_vec(&disk_header).ok()?;
+            if header.len()>MAX_HEADER {return None;}
+            let header_name=format!("{:x}",Sha256::digest(serde_json::to_vec(key).ok()?));
+            records.push((dm_store::Key::new(&p.headers_namespace,header_name),header));
         }
-        let p = self.persistence.as_ref()?;
-        let header_name = format!("{:x}", Sha256::digest(serde_json::to_vec(key).ok()?));
-        records.push((dm_store::Key::new(&p.payloads_namespace, &name), payload));
-        records.push((
-                dm_store::Key::new(&p.headers_namespace, header_name),
-                header,
-            ));
+        records.push((dm_store::Key::new(&p.payloads_namespace,&name),payload));
         // Shared witness rows commonly recur across thousands of procedures.
         // Budget their actual unique pending growth, rather than repeatedly
         // flushing because duplicate rows were charged as additional storage.
@@ -1262,7 +1267,7 @@ impl ProjectProcedureGraph {
         // A bounded pending certificate arena shares encoded fact/value rows.
         // Page and addressed locator publication use the very same transaction
         // as the compatibility header and prepared procedure payload.
-        if certificate_charge <= 8*1024*1024 {
+        if packed {
             if p.pending_certificate_bytes.saturating_add(certificate_charge)>8*1024*1024
                 || p.pending_certificates.len()>=1024 { pages::seal(p); }
             p.pending_certificate_bytes += certificate_charge;
@@ -1492,30 +1497,27 @@ impl ProjectProcedureGraph {
             .saturating_sub(record.witness_bytes);
         record.witness_bytes = 0;
         record.active = false;
-        let tombstone = self.persistence.as_ref().and_then(|p| {
-            let bytes = serde_json::to_vec(key).ok()?;
-            let name = format!("{:x}", Sha256::digest(bytes));
-            Some(dm_store::Key::new(&p.headers_namespace, name))
+        let tombstones = self.persistence.as_ref().and_then(|p| {
+            let bytes=serde_json::to_vec(key).ok()?;
+            let name=format!("{:x}",Sha256::digest(bytes));
+            Some([dm_store::Key::new(&p.headers_namespace,&name),dm_store::Key::new(&p.certificate_heads_namespace,name)])
         });
-        if let Some(key) = tombstone {
-            let charge = pending_record_bytes(&key, &Vec::new());
-            let needs_flush = self.persistence.as_ref().is_some_and(|p| {
-                p.pending_bytes.saturating_add(charge) > PENDING_BYTES
-                    || p.pending.len().saturating_add(1) > MAX_PENDING_RECORDS
-            });
-            if needs_flush && self.flush().is_err() {
-                return;
+        if let Some(tombstones)=tombstones {
+            // A not-yet-sealed page must not resurrect an invocation after its
+            // tombstone. Retaining the conservative byte charge until sealing
+            // is safe and avoids rescanning the shared arena for accounting.
+            if let Some(p)=self.persistence.as_mut() {p.pending_certificates.retain(|certificate|certificate.header.key!=*key);}
+            let charge=tombstones.iter().map(|key|pending_record_bytes(key,&Vec::new())).sum::<usize>();
+            let needs_flush=self.persistence.as_ref().is_some_and(|p|p.pending_bytes.saturating_add(charge)>PENDING_BYTES
+                || p.pending.len().saturating_add(2)>MAX_PENDING_RECORDS.saturating_sub(1025));
+            if needs_flush && self.flush().is_err() {return;}
+            let p=self.persistence.as_mut().unwrap();
+            for key in tombstones {
+                let charge=pending_record_bytes(&key,&Vec::new());
+                let previous_charge=p.pending.get_key_value(&key).map_or(0,|(key,bytes)|pending_record_bytes(key,bytes));
+                p.pending.insert(key,Vec::new());
+                p.pending_bytes=p.pending_bytes.saturating_sub(previous_charge).saturating_add(charge);
             }
-            let p = self.persistence.as_mut().unwrap();
-            let previous_charge = p
-                .pending
-                .get_key_value(&key)
-                .map_or(0, |(key, bytes)| pending_record_bytes(key, bytes));
-            p.pending.insert(key, Vec::new());
-            p.pending_bytes = p
-                .pending_bytes
-                .saturating_sub(previous_charge)
-                .saturating_add(charge);
         }
     }
     pub fn retain_keys(&mut self, keys: &BTreeSet<ProcKey>) {
