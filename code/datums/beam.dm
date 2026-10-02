@@ -9,7 +9,7 @@
 	var/beam_color = null // Color of the beam segments
 	var/max_distance = 0
 	EXPIRY_DECLARE(endtime)
-	var/sleep_time = 3
+	var/sleep_time = 0.3 SECONDS
 	var/finished = 0
 	var/target_oldloc = null
 	var/origin_oldloc = null
@@ -20,7 +20,7 @@
 OM_FIELD_TYPED(/datum/beam, tmp, beam_running, FALSE, CHANGE_DATUM_A)
 DECLARE_REPEAT(/datum/beam, "sleep_time", beam_tick, "beam_running")
 
-/datum/beam/New(beam_origin,beam_target,beam_icon='icons/effects/beam.dmi',beam_icon_state="b_beam",time=50,maxdistance=10,btype = /obj/effect/ebeam,beam_sleep_time=3,new_beam_color = null)
+/datum/beam/New(beam_origin,beam_target,beam_icon='icons/effects/beam.dmi',beam_icon_state="b_beam",time=5 SECONDS,maxdistance=10,btype = /obj/effect/ebeam,beam_sleep_time=0.3 SECONDS,new_beam_color = null)
 	..()
 	lifecycle_decls_init(src) // starts the declaration (a non-atom has no materialize)
 	EXPIRY_SET(src, endtime, time, CLOCK_WORLD)
@@ -41,12 +41,14 @@ DECLARE_REPEAT(/datum/beam, "sleep_time", beam_tick, "beam_running")
 
 /datum/beam/proc/Start()
 	Draw()
+	if(QDELETED(src))
+		return
 	set_beam_running(TRUE)
 
 /// Every `sleep_time`: redraw if an end moved; ends the beam when it runs out or breaks.
 /datum/beam/proc/beam_tick()
 	if(finished || !origin() || !target() || EXPIRY_EXPIRED(src, endtime, CLOCK_WORLD) || get_dist(origin(),target()) >= max_distance || origin().z != target().z)
-		qdel(src)
+		qdel(src) // ALLOW(lifecycle): non-movable beam controller ends synchronously, deleting its owned segments and repeat
 		return REPEAT_STOP
 	var/origin_turf = get_turf(origin())
 	var/target_turf = get_turf(target())
@@ -66,7 +68,7 @@ DECLARE_REPEAT(/datum/beam, "sleep_time", beam_tick, "beam_running")
 
 /datum/beam/proc/Draw()
 	if(QDELETED(target()) || QDELETED(origin()))
-		qdel(src)
+		qdel(src) // ALLOW(lifecycle): missing endpoint invalidates this non-movable controller and its owned segments immediately
 		return
 
 	var/Angle = round(Get_Angle(origin(),target()))
@@ -184,7 +186,7 @@ DECLARE_PERIODIC(/obj/effect/ebeam/reactive, PERIODIC_SLOW)
 		var/mob/living/L = AM
 		L.inflict_shock_damage(shock_amount)
 
-/atom/proc/Beam(atom/BeamTarget, icon_state="b_beam", icon='icons/effects/beam.dmi', time=50, maxdistance=10, beam_type=/obj/effect/ebeam, beam_sleep_time=3, beam_color = null)
+/atom/proc/Beam(atom/BeamTarget, icon_state="b_beam", icon='icons/effects/beam.dmi', time=5 SECONDS, maxdistance=10, beam_type=/obj/effect/ebeam, beam_sleep_time=0.3 SECONDS, beam_color = null)
 	var/datum/beam/newbeam = new(src,BeamTarget,icon,icon_state,time,maxdistance,beam_type,beam_sleep_time,beam_color)
 	newbeam.Start()
 	return newbeam
@@ -200,4 +202,3 @@ DECLARE_PERIODIC(/obj/effect/ebeam/reactive, PERIODIC_SLOW)
 /// The beam this segment belongs to (a relation view).
 /obj/effect/ebeam/proc/owner() as /datum/beam
 	return owner
-
