@@ -7,7 +7,7 @@
 	/// The owner of the panel
 	var/tmp/client/owner
 	/// The list of all search objects indexed (owned).
-	var/list/datum/search_object/searchables = list() // ALLOW(instance_list): d: loot panel state
+	var/list/datum/search_object/searchables = list() // ALLOW(instance_list): the search results are live per-panel state: always in use, so a lazy list saves nothing
 	/// The search_objects needing processed (a relation list: searchables owns them)
 	var/list/datum/search_object/to_image
 	/// We've been notified about client version

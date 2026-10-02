@@ -38,7 +38,7 @@
 /// Stamps the moment the set started recording.
 /datum/km_stats_set/proc/mark_start()
 	started_real = REALTIMEOFDAY
-	started_time = world.time
+	started_time = world.time // ALLOW(sys_world_time_write): the tick meter's own wall-clock stamp for rates and log spacing, not an entity expiry
 
 /// Seconds since the set started recording (at least 0.1, so a rate never divides by zero).
 /datum/km_stats_set/proc/elapsed_seconds()
@@ -46,20 +46,20 @@
 		return 0.1
 	return max((REALTIMEOFDAY - started_real) * 0.1, 0.1)
 
-/datum/km_stats_set/Destroy()
+/datum/km_stats_set/on_destroy(force)
 	for(var/datum/system_stats/S as anything in systems)
-		qdel(S)
+		qdel(S) // ALLOW(lifecycle): a per-system stats datum held in a fixed slot list; the lifecycle verbs only take atoms
 	systems = null
 	QDEL_NULL(input)
 	rollup_base = null
-	return ..()
+	..()
 
 /// Clears every accumulator (the profiler's reset, and the start of a fresh window).
 /datum/km_stats_set/proc/reset()
 	for(var/i in 1 to KM_MAX_SYSTEMS)
 		var/datum/system_stats/S = systems[i]
 		if(S)
-			qdel(S)
+			qdel(S) // ALLOW(lifecycle): a per-system stats datum held in a fixed slot list; the lifecycle verbs only take atoms
 			systems[i] = null
 	ticks = 0
 	overruns = 0
@@ -99,12 +99,12 @@
 	verb_wait = new
 	depth = new
 
-/datum/input_stats/Destroy()
+/datum/input_stats/on_destroy(force)
 	QDEL_NULL(wait)
 	QDEL_NULL(click_wait)
 	QDEL_NULL(verb_wait)
 	QDEL_NULL(depth)
-	return ..()
+	..()
 
 /datum/input_stats/proc/reset()
 	wait.reset()
@@ -198,12 +198,12 @@
 	live = new
 	sets = list(live)
 
-/datum/tick_meter/Destroy()
+/datum/tick_meter/on_destroy(force)
 	for(var/datum/km_stats_set/S as anything in sets)
-		qdel(S)
+		qdel(S) // ALLOW(lifecycle): a stats set is a plain datum held in a list; the lifecycle verbs only take atoms
 	sets = null
 	live = null
-	return ..()
+	..()
 
 /// Opens a stats set that records alongside the live one until close_set().
 /datum/tick_meter/proc/open_set(datum/om/scheduler/sched)
@@ -331,8 +331,26 @@
 			else
 				top3 = idx
 				ms3 = ms
+		// system_stats.record() and km_hist.add() inlined: this runs per touched system per open set every tick.
+		var/bin = KM_HIST_BIN(ms)
 		for(var/datum/km_stats_set/S as anything in sets)
-			S.stats_for(idx).record(ms, overrun, late)
+			var/datum/system_stats/stats = S.systems[idx] || S.stats_for(idx)
+			var/datum/km_hist/hist = stats.hist
+			hist.bins[bin] = hist.bins[bin] + 1
+			if(!hist.count || ms < hist.min_seen)
+				hist.min_seen = ms
+			if(ms > hist.max_seen)
+				hist.max_seen = ms
+			hist.count++
+			stats.ticks++
+			stats.ms_lo += ms
+			if(stats.ms_lo >= KM_FLUSH_MS)
+				stats.ms_lo -= KM_FLUSH_MS
+				stats.ms_hi += KM_FLUSH_MS
+			if(overrun)
+				stats.overrun_ms += ms
+			if(late > stats.late_max)
+				stats.late_max = late
 	for(var/datum/km_stats_set/S as anything in sets)
 		if(isnull(S.started_real))
 			S.mark_start()
@@ -359,7 +377,7 @@
 	if(ring_count < ring_len)
 		ring_count++
 	fr_tick[ring_pos] = round(world.time / world.tick_lag)
-	fr_time[ring_pos] = world.time
+	fr_time[ring_pos] = world.time // ALLOW(sys_world_time_write): the tick meter's own wall-clock stamp for rates and log spacing, not an entity expiry
 	fr_usage[ring_pos] = usage
 	fr_maptick[ring_pos] = maptick
 	fr_input[ring_pos] = input_ms
@@ -409,10 +427,10 @@
 	if(!log_overruns)
 		return
 	// A sustained overload would write a line every tick: after KM_LOG_FULL_STREAK overruns in a row, one per second.
-	if(streak > KM_LOG_FULL_STREAK && world.time - last_log_time < KM_LOG_MIN_GAP)
+	if(streak > KM_LOG_FULL_STREAK && world.time - last_log_time < KM_LOG_MIN_GAP) // ALLOW(sys_world_time_expiry): the tick meter's own wall-clock stamp for rates and log spacing, not an entity expiry
 		suppressed_logs++
 		return
-	last_log_time = world.time
+	last_log_time = world.time // ALLOW(sys_world_time_write): the tick meter's own wall-clock stamp for rates and log spacing, not an entity expiry
 	if(suppressed_logs)
 		line += " (+[suppressed_logs] overrun ticks not logged)"
 		suppressed_logs = 0

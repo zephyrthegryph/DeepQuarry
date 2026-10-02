@@ -116,7 +116,6 @@
 	TEST_ASSERT(perform_op(H, F, "menu_only"), "perform_op() runs it by key")
 	TEST_ASSERT(command_action(H, "menu only", F), "the command bar runs it by name")
 	var/datum/tgui/ui = ui_test_window(F)
-	// ALLOW(ownership): test fixture setup writes the framework var directly to build the state under test
 	ui.user = H
 	TEST_ASSERT(F.tgui_act("action", list("id" = "menu_only"), ui), "the UI route runs it by key")
 	TEST_ASSERT_EQUAL(jointext(F.ran, ","), "menu_only,menu_only,menu_only", "each of the three ran it")

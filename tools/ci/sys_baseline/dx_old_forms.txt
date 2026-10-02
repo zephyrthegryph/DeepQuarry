@@ -212,7 +212,6 @@ old_interaction_decl	code/game/machinery/camera/tracking.dm	EXTEND_INTERACTIONS(
 old_interaction_decl	code/game/machinery/camera/tracking.dm	EXTEND_INTERACTIONS(/mob/living/silicon/ai, INTERACT_SILICON("Camera list", PROC_REF(ai_silicon_camera_list)))
 old_interaction_decl	code/game/machinery/cell_charger.dm	/obj/machinery/cell_charger/declare_interactions(list/into)
 old_interaction_decl	code/game/machinery/cell_charger.dm	into += dq_interaction_from_spec(type, INTERACT_SILICON("Take cell", PROC_REF(cell_charger_silicon_take)))
-old_interaction_decl	code/game/machinery/cell_charger.dm	/datum/interaction/machine_item/cell_charger_part_replacement
 old_interaction_decl	code/game/machinery/cell_charger.dm	/datum/interaction/machine_item/cell_charger_insert
 old_interaction_decl	code/game/machinery/cell_charger.dm	/datum/interaction/machine_hand/ungated/cell_charger_take
 old_interaction_decl	code/game/machinery/cloning.dm	EXTEND_INTERACTIONS(/obj/machinery/clonepod, \
@@ -538,7 +537,6 @@ old_interaction_decl	code/game/machinery/teleporter.dm	/obj/machinery/computer/t
 old_interaction_decl	code/game/machinery/teleporter.dm	into += dq_interaction_from_spec(type, INTERACT_SILICON("Use", PROC_REF(teleporter_computer_silicon_use)))
 old_interaction_decl	code/game/machinery/teleporter.dm	/datum/interaction/machine_item/teleporter_computer_insert_card
 old_interaction_decl	code/game/machinery/teleporter.dm	/datum/interaction/machine_hand/ungated/teleporter_computer_use
-old_interaction_decl	code/game/machinery/transportpod.dm	/obj/machinery/transportpod/declare_interactions(list/into)
 old_interaction_decl	code/game/machinery/turret_control.dm	/obj/machinery/turretid/declare_interactions(list/into)
 old_interaction_decl	code/game/machinery/turret_control.dm	/datum/interaction/machine_item/turretid_toggle_lock
 old_interaction_decl	code/game/machinery/turret_control.dm	/datum/interaction/machine_hand/ungated/turretid_open_ui
@@ -2085,17 +2083,6 @@ old_interaction_decl	code/modules/maintenance_panels/maintenance_panel.dm	INTERA
 old_interaction_decl	code/modules/maintenance_panels/maintpanel_stack.dm	EXTEND_INTERACTIONS(/obj/item/stack/tile/maintenance_panel, INTERACT_SELF("Build panel", PROC_REF(maintenance_panel_self), REQ_ON(PRED_ACTOR, /mob/proc/IsAdvancedToolUser, "this task is too complex for your clumsy hands")))
 old_interaction_decl	code/modules/makeup/nailpolish.dm	DECLARE_INTERACTIONS(/obj/item/nailpolish, INTERACT_USE(null, PROC_REF(interaction_self)))
 old_interaction_decl	code/modules/makeup/nailpolish.dm	DECLARE_INTERACTIONS(/obj/item/nailpolish_remover, INTERACT_USE(null, PROC_REF(interaction_self)))
-old_interaction_decl	code/modules/material_science/material_machines.dm	/obj/machinery/material_furnace/declare_interactions(list/into)
-old_interaction_decl	code/modules/material_science/material_machines.dm	/datum/interaction/machine_item/material_furnace_load_stock
-old_interaction_decl	code/modules/material_science/material_machines.dm	/datum/interaction/machine_item/material_furnace_load_carbon
-old_interaction_decl	code/modules/material_science/material_machines.dm	/datum/interaction/machine_item/material_furnace_transfer_gas
-old_interaction_decl	code/modules/material_science/material_machines.dm	/datum/interaction/machine_item/material_furnace_transfer_reagents
-old_interaction_decl	code/modules/material_science/material_machines.dm	/datum/interaction/machine_hand/material_furnace_use
-old_interaction_decl	code/modules/material_science/material_machines.dm	DECLARE_INTERACTIONS(/obj/structure/material_anvil, \
-old_interaction_decl	code/modules/material_science/material_machines.dm	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-old_interaction_decl	code/modules/material_science/material_machines.dm	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-old_interaction_decl	code/modules/material_science/material_machines.dm	EXTEND_INTERACTIONS(/obj/structure/bed/bath/material_treatment, INTERACT_INSERT(/obj/item/stack/material/processed_alloy, PROC_REF(material_treatment_interaction_item), "Treat alloy", REQ_BECAUSE(REQ_TARGET_STATE(/obj/structure/bed/bath/material_treatment/proc/has_medium), "the bath contains no treatment medium")))
-old_interaction_decl	code/modules/material_science/material_machines.dm	EXTEND_INTERACTIONS(/obj/item/stack/material/processed_alloy, INTERACT_ITEM(null, PROC_REF(processed_alloy_item)))
 old_interaction_decl	code/modules/materials/material_stock_parts.dm	DECLARE_INTERACTIONS(/obj/item/stock_parts, INTERACT_ITEM(null, PROC_REF(interaction_item)))
 old_interaction_decl	code/modules/materials/sheets/_sheets.dm	EXTEND_INTERACTIONS(/obj/item/stack/material, \
 old_interaction_decl	code/modules/materials/sheets/_sheets.dm	INTERACT_USE(null, PROC_REF(material_self)), \
@@ -2237,7 +2224,6 @@ old_interaction_decl	code/modules/mob/living/silicon/robot/dogborg/dog_modules.d
 old_interaction_decl	code/modules/mob/living/silicon/robot/dogborg/dog_modules.dm	EXTEND_INTERACTIONS(/obj/item/mining_scanner/robot, INTERACT_ALT(null, PROC_REF(interaction_alt)))
 old_interaction_decl	code/modules/mob/living/silicon/robot/dogborg/dog_sleeper.dm	DECLARE_INTERACTIONS(/obj/item/dogborg/sleeper, INTERACT_USE(null, PROC_REF(interaction_self)))
 old_interaction_decl	code/modules/mob/living/silicon/robot/drone/drone.dm	EXTEND_INTERACTIONS(/mob/living/silicon/robot/drone, INTERACT_INSERT_AS(I_HELP, /obj/item/clothing/head, PROC_REF(drone_interaction_hat), "Put on hat", REQ_FIELD_NOT("hat")))
-old_interaction_decl	code/modules/mob/living/silicon/robot/drone/drone_console.dm	/obj/machinery/computer/drone_control/declare_interactions(list/into)
 old_interaction_decl	code/modules/mob/living/silicon/robot/robot.dm	EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 old_interaction_decl	code/modules/mob/living/silicon/robot/robot.dm	INTERACT_ITEM(null, PROC_REF(robot_interaction_item)), \
 old_interaction_decl	code/modules/mob/living/silicon/robot/robot.dm	INTERACT_HAND_UNGATED_AS(I_HELP, "Pet", PROC_REF(robot_interaction_hand)), \
@@ -4027,7 +4013,6 @@ old_requirement	code/game/machinery/camera/camera.dm	offered_when = list(REQ_ON(
 old_requirement	code/game/machinery/camera/camera.dm	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/camera/proc/camera_can_use, "camera non-functional"))
 old_requirement	code/game/machinery/camera/camera.dm	offered_when = list(REQ_ON(PRED_HELD, /obj/machinery/camera/proc/held_is_bashing, null))
 old_requirement	code/game/machinery/camera/camera.dm	offered_when = list(REQ_ON(PRED_ACTOR, /obj/machinery/camera/proc/actor_can_shred, null))
-old_requirement	code/game/machinery/cell_charger.dm	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/cell_charger/proc/is_working, "it isn't working"))
 old_requirement	code/game/machinery/cell_charger.dm	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/cell_charger/proc/is_working, "it isn't working"), REQ_TARGET_STATE(/obj/machinery/cell_charger/proc/can_insert_cell))
 old_requirement	code/game/machinery/cell_charger.dm	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/cell_charger/proc/is_anchored, "it isn't anchored"))
 old_requirement	code/game/machinery/computer/aifixer.dm	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/computer/aifixer/proc/can_use_card, null))
@@ -4510,12 +4495,6 @@ old_requirement	code/modules/maint_recycler/code/maint_recycler.dm	also_requires
 old_requirement	code/modules/maint_recycler/code/vendor_goodies/remote_scene_tools/remote_scene_tools.dm	EXTEND_INTERACTIONS(/obj/item/remote_scene_tool, INTERACT_VERB("Summon Counterpart", PROC_REF(remote_scene_tool_verb_summon), REQ_IN_INVENTORY))
 old_requirement	code/modules/maint_recycler/code/vendor_goodies/remote_scene_tools/voodoo.dm	EXTEND_INTERACTIONS(/obj/item/remote_scene_tool/voodoo_doll, INTERACT_VERB("Disable Special Rendering", PROC_REF(voodoo_doll_verb_toggle_fun), REQ_IN_INVENTORY))
 old_requirement	code/modules/maintenance_panels/maintpanel_stack.dm	EXTEND_INTERACTIONS(/obj/item/stack/tile/maintenance_panel, INTERACT_SELF("Build panel", PROC_REF(maintenance_panel_self), REQ_ON(PRED_ACTOR, /mob/proc/IsAdvancedToolUser, "this task is too complex for your clumsy hands")))
-old_requirement	code/modules/material_science/material_machines.dm	also_requires = list(REQ_TARGET_STATE(/obj/machinery/material_furnace/proc/can_load_stock))
-old_requirement	code/modules/material_science/material_machines.dm	also_requires = list(REQ_TARGET_STATE(/obj/machinery/material_furnace/proc/can_use_furnace))
-old_requirement	code/modules/material_science/material_machines.dm	requires = list(REQ_INTERACTION_REACH)
-old_requirement	code/modules/material_science/material_machines.dm	REQ_FIELD_NOT("firing", "the sealed furnace can't be opened while firing"),
-old_requirement	code/modules/material_science/material_machines.dm	REQ_TARGET_STATE(/obj/machinery/material_furnace/proc/can_eject_contents),
-old_requirement	code/modules/material_science/material_machines.dm	EXTEND_INTERACTIONS(/obj/structure/bed/bath/material_treatment, INTERACT_INSERT(/obj/item/stack/material/processed_alloy, PROC_REF(material_treatment_interaction_item), "Treat alloy", REQ_BECAUSE(REQ_TARGET_STATE(/obj/structure/bed/bath/material_treatment/proc/has_medium), "the bath contains no treatment medium")))
 old_requirement	code/modules/media/juke_remote.dm	INTERACT_VERB("Reset Pairing", PROC_REF(juke_remote_verb_reset), REQ_IN_INVENTORY), \
 old_requirement	code/modules/media/walkpod.dm	INTERACT_VERB("Take HeadPods", PROC_REF(walkpod_verb_take_headpods), REQ_IN_INVENTORY, REQ_FIELD_NOT("deployed_headpods", "the HeadPods are already deployed")), \
 old_requirement	code/modules/mining/drilling/drill.dm	also_requires = list(REQ_TARGET_STATE(/obj/machinery/mining/brace/proc/can_work_on))
@@ -4952,7 +4931,6 @@ old_appearance	code/game/machinery/spaceheater.dm	DECLARE_APPEARANCE(/obj/machin
 old_appearance	code/game/machinery/spaceheater.dm	DECLARE_APPEARANCE_PROC(/obj/machinery/space_heater, TYPE_PROC_REF(/atom, appearance_overlays), list())
 old_appearance	code/game/machinery/suit_storage/suit_storage.dm	APPEARANCE_TEMPLATE(/obj/machinery/suit_storage_unit, "suitstorage{appearance_helmet}{appearance_suit}{appearance_human}{isopen}{islocked}{isUV}{ispowered}{isbroken}{issuperUV}")
 old_appearance	code/game/machinery/telecomms/telecomunications.dm	APPEARANCE_TEMPLATE(/obj/machinery/telecomms, "{appearance_state}")
-old_appearance	code/game/machinery/transportpod.dm	APPEARANCE_TEMPLATE(/obj/machinery/transportpod, "borg_pod_{appearance_occupied?closed:opened}")
 old_appearance	code/game/machinery/turret_control.dm	DECLARE_APPEARANCE_PROC(/obj/machinery/turretid, TYPE_PROC_REF(/atom, appearance_overlays), list())
 old_appearance	code/game/machinery/virtual_reality/vr_console.dm	APPEARANCE_TEMPLATE(/obj/machinery/vr_sleeper, "{base_state}{appearance_occupied}")
 old_appearance	code/game/machinery/vitals_monitor.dm	DECLARE_APPEARANCE_PROC(/obj/machinery/vitals_monitor, TYPE_PROC_REF(/atom, appearance_overlays), list())
@@ -5300,7 +5278,6 @@ old_appearance	code/modules/maint_recycler/code/vendor_goodies/remote_scene_tool
 old_appearance	code/modules/maint_recycler/code/vendor_goodies/remote_scene_tools/voodoo.dm	DECLARE_APPEARANCE_PROC(/obj/item/remote_scene_tool/voodoo_doll, TYPE_PROC_REF(/atom, appearance_overlays), list())
 old_appearance	code/modules/makeup/nailpolish.dm	DECLARE_APPEARANCE_PROC(/obj/item/nailpolish, TYPE_PROC_REF(/atom, appearance_overlays), list())
 old_appearance	code/modules/makeup/nailpolish.dm	APPEARANCE_TEMPLATE(/obj/item/nailpolish_remover, "{initial(icon_state)}{open?-open:}")
-old_appearance	code/modules/material_science/processed_material.dm	DECLARE_APPEARANCE_PROC(/obj/item/stack/material/processed_alloy, TYPE_PROC_REF(/atom, appearance_overlays), list())
 old_appearance	code/modules/materials/sheets/metals/metal.dm	DECLARE_APPEARANCE_PROC(/obj/item/stack/material/plasteel/rebar, TYPE_PROC_REF(/atom, appearance_overlays), list())
 old_appearance	code/modules/materials/sheets/metals/rods.dm	DECLARE_APPEARANCE_PROC(/obj/item/stack/rods, TYPE_PROC_REF(/atom, appearance_overlays), list())
 old_appearance	code/modules/materials/sheets/organic/tanning/tanning_rack.dm	DECLARE_APPEARANCE_PROC(/obj/structure/tanning_rack, TYPE_PROC_REF(/atom, appearance_overlays), list())
@@ -6055,8 +6032,6 @@ old_manual_refresh	code/game/machinery/suit_storage/suit_storage.dm	update_icon(
 old_manual_refresh	code/game/machinery/suit_storage/suit_storage.dm	update_icon()
 old_manual_refresh	code/game/machinery/telecomms/machine_interactions.dm	P.update_icon()
 old_manual_refresh	code/game/machinery/telecomms/telecomunications.dm	update_icon()
-old_manual_refresh	code/game/machinery/transportpod.dm	update_icon()
-old_manual_refresh	code/game/machinery/transportpod.dm	update_icon()
 old_manual_refresh	code/game/machinery/turret_control.dm	update_icon()
 old_manual_refresh	code/game/machinery/virtual_reality/vr_console.dm	update_icon()
 old_manual_refresh	code/game/machinery/virtual_reality/vr_console.dm	update_icon()
@@ -7007,7 +6982,6 @@ old_manual_refresh	code/modules/makeup/nailpolish.dm	update_icon()
 old_manual_refresh	code/modules/makeup/nailpolish.dm	update_icon()
 old_manual_refresh	code/modules/makeup/nailpolish.dm	update_icon()
 old_manual_refresh	code/modules/makeup/nailpolish.dm	update_icon()
-old_manual_refresh	code/modules/material_science/material_diagnostics.dm	report.update_icon()
 old_manual_refresh	code/modules/materials/fifty_spawner.dm	M.update_icon() // Some stacks have different sprites depending on how full they are.
 old_manual_refresh	code/modules/materials/sheets/metals/rods.dm	update_icon()
 old_manual_refresh	code/modules/materials/sheets/organic/tanning/tanning_rack.dm	update_icon()
@@ -10150,25 +10124,6 @@ old_ui	code/modules/admin/player_panel_tgui.dm	UI_ACT(/datum/player_panel, "chec
 old_ui	code/modules/admin/player_panel_tgui.dm	UI_ACT_PROC(/datum/player_panel, ui_act_check_antagonists)
 old_ui	code/modules/admin/player_panel_tgui.dm	UI_ACT(/datum/player_panel, "refresh", ui_act_refresh, UI_ARG_REF("ref", null, /mob))
 old_ui	code/modules/admin/player_panel_tgui.dm	UI_ACT_PROC(/datum/player_panel, ui_act_refresh)
-old_ui	code/modules/admin/round_status_panel.dm	DECLARE_UI_STATE(/datum/round_status_panel, ADMIN_STATE(R_ADMIN))
-old_ui	code/modules/admin/round_status_panel.dm	DECLARE_UI(/datum/round_status_panel, "RoundStatusPanel", UI_TITLE("Round Status"))
-old_ui	code/modules/admin/round_status_panel.dm	UI_DATA_REPLACE(/datum/round_status_panel, "merge:ui_data_datum_round_status_panel{mode_name:unknown,round_duration:text,delay_end:unknown,shuttle:list,antag_blocks:bool}")
-old_ui	code/modules/admin/round_status_panel.dm	UI_ACT(/datum/round_status_panel, "refresh_antags", ui_act_refresh_antags)
-old_ui	code/modules/admin/round_status_panel.dm	UI_ACT_PROC(/datum/round_status_panel, ui_act_refresh_antags)
-old_ui	code/modules/admin/round_status_panel.dm	UI_ACT(/datum/round_status_panel, "call_shuttle", ui_act_call_shuttle)
-old_ui	code/modules/admin/round_status_panel.dm	UI_ACT_PROC(/datum/round_status_panel, ui_act_call_shuttle)
-old_ui	code/modules/admin/round_status_panel.dm	UI_ACT(/datum/round_status_panel, "recall_shuttle", ui_act_recall_shuttle)
-old_ui	code/modules/admin/round_status_panel.dm	UI_ACT_PROC(/datum/round_status_panel, ui_act_recall_shuttle)
-old_ui	code/modules/admin/round_status_panel.dm	UI_ACT(/datum/round_status_panel, "edit_shuttle_time", ui_act_edit_shuttle_time)
-old_ui	code/modules/admin/round_status_panel.dm	UI_ACT_PROC(/datum/round_status_panel, ui_act_edit_shuttle_time)
-old_ui	code/modules/admin/round_status_panel.dm	UI_ACT(/datum/round_status_panel, "toggle_delay_end", ui_act_toggle_delay_end)
-old_ui	code/modules/admin/round_status_panel.dm	UI_ACT_PROC(/datum/round_status_panel, ui_act_toggle_delay_end)
-old_ui	code/modules/admin/round_status_panel.dm	UI_ACT(/datum/round_status_panel, "antag_pp", ui_act_antag_pp, UI_ARG_REF("ref", null, /mob))
-old_ui	code/modules/admin/round_status_panel.dm	UI_ACT_PROC(/datum/round_status_panel, ui_act_antag_pp)
-old_ui	code/modules/admin/round_status_panel.dm	UI_ACT(/datum/round_status_panel, "antag_pm", ui_act_antag_pm, UI_ARG_REF("ref", null, /mob))
-old_ui	code/modules/admin/round_status_panel.dm	UI_ACT_PROC(/datum/round_status_panel, ui_act_antag_pm)
-old_ui	code/modules/admin/round_status_panel.dm	UI_ACT(/datum/round_status_panel, "antag_tp", ui_act_antag_tp, UI_ARG_REF("ref", null, /mob))
-old_ui	code/modules/admin/round_status_panel.dm	UI_ACT_PROC(/datum/round_status_panel, ui_act_antag_tp)
 old_ui	code/modules/admin/spawn_menu.dm	DECLARE_UI(/datum/spawn_menu, "SpawnSearch")
 old_ui	code/modules/admin/spawn_menu.dm	DECLARE_UI_STATE(/datum/spawn_menu, ADMIN_STATE(R_SPAWN))
 old_ui	code/modules/admin/spawn_menu.dm	UI_ACT(/datum/spawn_menu, "setRegexSearch", ui_act_setregexsearch, UI_ARG_BOOL("regexSearch"))
@@ -11309,10 +11264,6 @@ old_ui	code/modules/maint_recycler/code/maint_vendor.dm	UI_DATA_REPLACE(/obj/mac
 old_ui	code/modules/maps/map_report_panel.dm	DECLARE_UI_STATE(/datum/map_report, ADMIN_STATE(R_ADMIN|R_DEBUG))
 old_ui	code/modules/maps/map_report_panel.dm	DECLARE_UI(/datum/map_report, "MapReport")
 old_ui	code/modules/maps/map_report_panel.dm	UI_DATA_REPLACE(/datum/map_report, "original_path", "merge:ui_data_datum_map_report{crashed:bool,loadable:bool,bad_paths:list,bad_keys:list}")
-old_ui	code/modules/material_science/material_diagnostics.dm	DECLARE_UI(/datum/material_service, "EngineeringAssembly")
-old_ui	code/modules/material_science/material_diagnostics.dm	UI_DATA_REPLACE(/datum/material_service, "merge:ui_data_datum_material_service{status:unknown,temperature:num,buffer:num,input:num,output:num,lossEnergy:num,parts:list,limiting:unknown,configuration:num,liner:num,shell:num,fatigue:num,monitoring:bool,reading:unknown,emitter:map}")
-old_ui	code/modules/material_science/material_diagnostics.dm	UI_ACT(/datum/material_service, "emitter_setting", ui_act_emitter_setting, UI_ARG_CHOICE("setting", list("output", "cadence")), UI_ARG_NUM("value", 0.25, 3))
-old_ui	code/modules/material_science/material_diagnostics.dm	UI_ACT_PROC(/datum/material_service, ui_act_emitter_setting)
 old_ui	code/modules/media/mediamanager.dm	DECLARE_UI_STATE(/datum/media_manager, GLOB.tgui_always_state)
 old_ui	code/modules/media/mediamanager.dm	UI_DATA_REPLACE(/datum/media_manager, "merge:ui_data_datum_media_manager{url:text,start_time:num,volume:num}")
 old_ui	code/modules/media/mediamanager.dm	DECLARE_UI(/datum/media_manager, "MediaPlayer", UI_PINNED, UI_PREINITIALIZED)
@@ -14625,8 +14576,6 @@ old_prompt	code/modules/admin/player_effects.dm	var/admin_quest = act_ask(ui.use
 old_prompt	code/modules/admin/player_effects.dm	var/specific_quest = act_ask(ui.user, action, params, ui, "a37", /datum/om/prompt/text, message = "What is their quest?", title = "Quest!!!")
 old_prompt	code/modules/admin/player_effects.dm	var/message = act_ask(ui.user, action, params, ui, "a38", /datum/om/prompt/text, message = "Write a message to send to the user with a space for them to reply without using the text box:", title = "Message")
 old_prompt	code/modules/admin/player_effects.dm	om_ask(target(), /datum/om/prompt/text/admin_popup, PROC_REF(popup_replied), message = "An admin has sent you a message: [message]", admin_name = key_name(ui.user))
-old_prompt	code/modules/admin/round_status_panel.dm	var/new_time_left = act_ask(ui.user, action, params, ui, "a1", /datum/om/prompt/number, message = "Enter new shuttle launch countdown (seconds):", title = "Edit Shuttle Launch Time", default = GLOB.emergency_shuttle_service.estimate_launch_time())
-old_prompt	code/modules/admin/round_status_panel.dm	var/new_time_left = act_ask(ui.user, action, params, ui, "a2", /datum/om/prompt/number, message = "Enter new shuttle arrival time (seconds):", title = "Edit Shuttle Arrival Time", default = GLOB.emergency_shuttle_service.estimate_arrival_time())
 old_prompt	code/modules/admin/savefile_convert.dm	var/target_ckey = verb_ask(user, "a1", args, /datum/om/prompt/text, message = "Enter the ckey of the player whose save file you want to convert.", title = "Convert Player Savefile")
 old_prompt	code/modules/admin/savefile_convert.dm	var/direction = verb_ask(user, "a2", args, /datum/om/prompt/choice, message = "Select the conversion to perform for '[target_ckey]'.", title = "Convert Player Savefile", choices = options)
 old_prompt	code/modules/admin/savefile_convert.dm	var/confirm = verb_ask(user, "confirm", args, /datum/om/prompt/choice/alert, message = "WARNING: '[target_ckey]' should be logged off before this runs. Proceeding while they are online can corrupt their save.\n\nAre you sure [target_ckey] is logged off?", title = "Convert Player Savefile", choices = list("Cancel", "Yes, they are logged off"))
@@ -14752,7 +14701,6 @@ old_prompt	code/modules/admin/verbs/debug.dm	var/mob/living/carbon/human/H = ver
 old_prompt	code/modules/admin/verbs/debug.dm	var/_answer_a15 = verb_ask(user, "a15", args, /datum/om/prompt/choice, message = "Pick the NIF type", title = "Quick NIF", choices = show_NIFs)
 old_prompt	code/modules/admin/verbs/debug.dm	var/_answer_a16 = verb_ask(user, "a16", args, /datum/om/prompt/choice/alert, message = "Are you absolutely sure you want to reload the configuration from the default path on the disk, wiping any in-round modifications?", title = "Really reset?", choices = list("No", "Yes"))
 old_prompt	code/modules/admin/verbs/debug.dm	om_ask(usr, /datum/om/prompt/choice, PROC_REF(quick_authentic_nif_chosen), choices = REGISTRY_MEMBERS(REGISTRY_PLAYERS), title = "Quick Authentic NIF", message = "Pick a mob with a player", requires = PROMPT_ADMIN(R_ADMIN|R_EVENT|R_DEBUG))
-old_prompt	code/modules/admin/verbs/debug.dm	om_ask(usr, /datum/om/prompt/confirm, PROC_REF(reload_configuration_confirmed), title = "Really reset?", message = "Are you absolutely sure you want to reload the configuration from the default path on the disk, wiping any in-round modifications?", no_first = TRUE, requires = PROMPT_ADMIN(R_DEBUG))
 old_prompt	code/modules/admin/verbs/diagnostics.dm	var/job_filter = verb_ask(user, "a1", args, /datum/om/prompt/text, message = "Contains what?", title = "Job Filter")
 old_prompt	code/modules/admin/verbs/dice.dm	var/sum = verb_ask(user, "sum", args, /datum/om/prompt/number, message = "How many times should we throw?")
 old_prompt	code/modules/admin/verbs/dice.dm	var/side = verb_ask(user, "side", args, /datum/om/prompt/number, message = "Select the number of sides.")
@@ -15132,8 +15080,6 @@ old_prompt	code/modules/events/event_container.dm	om_ask(usr, /datum/om/prompt/c
 old_prompt	code/modules/examine/examine.dm	var/_answer_k218 = rerun_ask(src, "k218", VERB_REF(mob_examine), args, /datum/om/prompt/choice, message = "What would you like to examine?", title = "Examine", choices = E)
 old_prompt	code/modules/expedition/expedition_controller.dm	var/choice = rerun_ask(user, "k105", PROC_REF(plot_for_vessel), args, /datum/om/prompt/choice, message = "Select an expedition contract", title = "Flight Operations", choices = choices)
 old_prompt	code/modules/expedition/expedition_controller.dm	var/threat_band = rerun_ask(user, "k109", PROC_REF(plot_for_vessel), args, /datum/om/prompt/choice, message = "Select a threat band", title = "Flight Operations", choices = threat_bands)
-old_prompt	code/modules/expedition/expedition_debug.dm	var/mission_type = client_ask("mission", VERB_REF(generate_expedition_mission), args, R_DEBUG, /datum/om/prompt/choice, message = "Mission type?", title = "Expedition Mission", choices = mission_types)
-old_prompt	code/modules/expedition/expedition_debug.dm	var/diff = client_ask("difficulty", VERB_REF(generate_expedition_mission), args, R_DEBUG, /datum/om/prompt/choice, message = "Difficulty?", title = "Expedition Mission", choices = list(EXP_DIFF_LOW, EXP_DIFF_MED, EXP_DIFF_HIGH))
 old_prompt	code/modules/exploration/lootsafe.dm	var/input = rerun_ask(usr, "k121", PROC_REF(togglelock), args, /datum/om/prompt/text, message = "Enter [codelen] digits. All digits must be unique.", title = "Deca-Code Lock")
 old_prompt	code/modules/exploration/lootsafe.dm	var/input = rerun_ask(usr, "k223", PROC_REF(togglelock), args, /datum/om/prompt/text, message = "Enter [codelen] digits. All digits must be unique.", title = "Deca-Code Lock")
 old_prompt	code/modules/fireworks/firework_stars.dm	var/choice = rerun_ask(user, "k119", PROC_REF(interaction_self), args, /datum/om/prompt/choice/alert, message = "What setting do you want to adjust?", title = "Firework Star", choices = list("Color", "Shape", "Nothing"))
@@ -15209,9 +15155,6 @@ old_prompt	code/modules/library/lib_machines.dm	var/choice = act_ask(usr, action
 old_prompt	code/modules/library/lib_machines.dm	var/orderid = act_ask(usr, action, params, ui, "k468", /datum/om/prompt/number, message = "Enter your order:")
 old_prompt	code/modules/library/wikicomp.dm	pin = act_ask(ui.user, action, params, ui, "pin", /datum/om/prompt/number, message = "Enter pin code", title = "Donation")
 old_prompt	code/modules/maint_recycler/code/maint_recycler.dm	var/answer = rerun_ask(probable_victim, "consent", proc_name, proc_args, /datum/om/prompt/choice/alert, message = "Do you want to be put in \The [src]? Industrial machinery is pretty damn deadly, you'll probably die. to death. A fine paste.", title = "Welcome to the Hydralulic Press Prompt", choices = list("OSHA is for chumps", "what the fuck? get me outta here!"), cancel_answer = "what the fuck? get me outta here!")
-old_prompt	code/modules/material_science/material_diagnostics.dm	var/role = rerun_ask(user, "k105", PROC_REF(fit_stock), args, /datum/om/prompt/choice, message = "Which component should be replaced?", title = "Service assembly", choices = roles)
-old_prompt	code/modules/material_science/material_machines.dm	var/_answer_k597 = verb_ask(operator, "k597", args, /datum/om/prompt/choice, message = "Choose nearby alloy sheets.", title = "Material Treatment", choices = nearby_stock)
-old_prompt	code/modules/material_science/material_machines.dm	var/selection = verb_ask(operator, "k598", args, /datum/om/prompt/choice, message = "Choose a treatment to apply at full test strength.", title = "Material Treatment", choices = treatments)
 old_prompt	code/modules/materials/materials/glass.dm	var/choice = rerun_ask(user, "k39", PROC_REF(build_windows), args, /datum/om/prompt/choice, message = message, title = "Window Construction", choices = window_options)
 old_prompt	code/modules/materials/sheets/organic/animal_products.dm	var/_answer_k169 = rerun_ask(user, "k169", PROC_REF(craftable_collar_self), args, /datum/om/prompt/text, message = "What would you like to label the collar?", title = "Collar Labelling", max_length = MAX_NAME_LEN, encode = FALSE)
 old_prompt	code/modules/media/mediamanager.dm	var/value = client_ask("volume", PROC_REF(set_new_volume), args, 0, /datum/om/prompt/number, message = "Choose your Jukebox volume.", title = "Jukebox volume", default = media.volume, max = 100)
@@ -15904,7 +15847,6 @@ old_prompt	code/modules/tgui_input/matrix.dm	om_ask(ui.user, /datum/om/prompt/co
 old_prompt	code/modules/tickets/procs.dm	var/input = rerun_ask(src, "k26", VERB_REF(mentorhelp), args, /datum/om/prompt/choice/alert, message = "You already have a ticket open. Is this for the same issue?", title = "Duplicate?", choices = list("Yes","No"))
 old_prompt	code/modules/tickets/procs.dm	var/_answer_k47 = verb_ask(user, "k47", args, /datum/om/prompt/choice, message = "Display which ticket list?", title = "List Choice", choices = list("Active Tickets", "Resolved Tickets"))
 old_prompt	code/modules/tickets/procs.dm	var/mhelp = rerun_ask(src, "k72", VERB_REF(requesthelp), args, /datum/om/prompt/choice/alert, message = "Select the help you need.", title = "Request for Help", choices = list("Adminhelp","Mentorhelp"))
-old_prompt	code/modules/tickets/procs.dm	var/msg = rerun_ask(src, "k76", VERB_REF(requesthelp), args, /datum/om/prompt/text, message = "Input your request for help.", title = "Request for Help ([mhelp])", multiline = TRUE, max_length = MAX_TGUI_INPUT)
 old_prompt	code/modules/tickets/procs.dm	var/input = rerun_ask(src, "k107", VERB_REF(adminhelp), args, /datum/om/prompt/choice/alert, message = "You already have a ticket open. Is this for the same issue?", title = "Duplicate?", choices = list("Yes","No"))
 old_prompt	code/modules/tickets/procs.dm	var/_answer_k133 = client_ask("k133", PROC_REF(cmd_admin_ticket_panel), args, 0, /datum/om/prompt/choice, message = "Display which ticket list?", title = "List Choice", choices = list("Active Tickets", "Closed Tickets", "Resolved Tickets"))
 old_prompt	code/modules/tickets/procs.dm	var/_answer_k176 = rerun_ask(src, "k176", VERB_REF(adminspice), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to request the admins spice things up for you? You accept the consequences if you do.", title = "Spicy!", choices = list("Yes","No"))
@@ -16287,7 +16229,6 @@ old_expiry	code/modules/casino/board_games/nine_mens.dm	EXPIRY_STAMP(src, turn_s
 old_expiry	code/modules/casino/board_games/nine_mens.dm	EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
 old_expiry	code/modules/client/client defines.dm	EXPIRY_DECLARE(time_died_as_mouse) //when the client last died as a mouse
 old_expiry	code/modules/client/client defines.dm	EXPIRY_DECLARE(connection_time)
-old_expiry	code/modules/client/client procs.dm	fileaccess_timer = EXPIRY_AT(null, CLOCK_WORLD, 0) + FTPDELAY */
 old_expiry	code/modules/client/client procs.dm	EXPIRY_STAMP(src, connection_time, CLOCK_WORLD)
 old_expiry	code/modules/client/client procs.dm	gc_destroyed = EXPIRY_AT(null, CLOCK_WORLD, 0) // ALLOW(sys_world_time_write): gc_destroyed doubles as the QDELETED flag, a raw stamp by contract (garbage.dm)
 old_expiry	code/modules/client/spam_prevention.dm	EXPIRY_DECLARE(last_message_time)
@@ -16491,25 +16432,6 @@ old_expiry	code/modules/library/lib_machines.dm	EXPIRY_STAMP(b, getdate, CLOCK_W
 old_expiry	code/modules/library/lib_machines.dm	EXPIRY_SET(b, duedate, (checkoutperiod * 600), CLOCK_WORLD)
 old_expiry	code/modules/logging/log_holder.dm	EXPIRY_DECLARE(last_data_update)
 old_expiry	code/modules/logging/log_holder.dm	EXPIRY_STAMP(src, last_data_update, CLOCK_WORLD)
-old_expiry	code/modules/material_science/material_diagnostics.dm	EXPIRY_DECLARE(monitor_last_time)
-old_expiry	code/modules/material_science/material_diagnostics.dm	EXPIRY_DECLARE(monitor_started)
-old_expiry	code/modules/material_science/material_diagnostics.dm	EXPIRY_STAMP(src, monitor_last_time, CLOCK_WORLD)
-old_expiry	code/modules/material_science/material_diagnostics.dm	EXPIRY_STAMP(src, monitor_started, CLOCK_WORLD)
-old_expiry	code/modules/material_science/material_diagnostics.dm	EXPIRY_STAMP(src, monitor_last_time, CLOCK_WORLD)
-old_expiry	code/modules/material_science/material_diagnostics.dm	EXPIRY_STAMP(src, monitor_last_time, CLOCK_WORLD)
-old_expiry	code/modules/material_science/material_diagnostics.dm	last_reading = list("name" = owner().name, "assembly" = owner().material_assembly_id, "configuration" = monitor_configuration, "started" = monitor_started, "ended" = EXPIRY_AT(null, CLOCK_WORLD, 0), "duration" = duration, "input_joules" = input_joules - monitor_input, "output_joules" = output_joules - monitor_output, "minimum_output_watts" = monitor_minimum_output, "minimum_flow_moles" = monitor_minimum_flow, "minimum_pressure_kpa" = monitor_minimum_pressure, "maximum_temperature_k" = monitor_maximum_temperature, "efficiency" = (output_joules - monitor_output) / max(consumed, 1), "kind" = owner().material_measurement_kind(), "observer_account" = observer_account?.account_number, "observer_name" = user.real_name)
-old_expiry	code/modules/material_science/material_equipment.dm	EXPIRY_DECLARE(last_work_time)
-old_expiry	code/modules/material_science/material_equipment.dm	EXPIRY_STAMP(src, last_work_time, CLOCK_WORLD)
-old_expiry	code/modules/material_science/material_equipment.dm	EXPIRY_DECLARE(material_last_charge)
-old_expiry	code/modules/material_science/material_equipment.dm	EXPIRY_STAMP(src, material_last_charge, CLOCK_WORLD)
-old_expiry	code/modules/material_science/material_responses.dm	EXPIRY_DECLARE(last_energy_settlement)
-old_expiry	code/modules/material_science/material_responses.dm	EXPIRY_STAMP(src, last_energy_settlement, CLOCK_WORLD)
-old_expiry	code/modules/material_science/material_service.dm	EXPIRY_DECLARE(chemical_last_update)
-old_expiry	code/modules/material_science/material_service.dm	EXPIRY_STAMP(src, last_update, CLOCK_WORLD)
-old_expiry	code/modules/material_science/material_service.dm	EXPIRY_STAMP(src, chemical_last_update, CLOCK_WORLD)
-old_expiry	code/modules/material_science/material_service.dm	EXPIRY_STAMP(src, last_update, CLOCK_WORLD)
-old_expiry	code/modules/material_science/material_service.dm	EXPIRY_STAMP(src, chemical_last_update, CLOCK_WORLD)
-old_expiry	code/modules/material_science/material_service.dm	EXPIRY_STAMP(src, last_update, CLOCK_WORLD)
 old_expiry	code/modules/media/media_machinery.dm	EXPIRY_DECLARE(media_start_time) // world.time when it started playing
 old_expiry	code/modules/media/walkpod.dm	EXPIRY_DECLARE(media_start_time)
 old_expiry	code/modules/media/walkpod.dm	EXPIRY_STAMP(src, media_start_time, CLOCK_WORLD)
@@ -16533,7 +16455,6 @@ old_expiry	code/modules/mob/living/carbon/brain/brain.dm	EXPIRY_STAMP(record, la
 old_expiry	code/modules/mob/living/carbon/carbon_defense.dm	EXPIRY_SET(user, next_move, 20, CLOCK_WORLD) //also should prevent user from triggering this repeatedly
 old_expiry	code/modules/mob/living/carbon/human/human_defense.dm	EXPIRY_SET(user, next_move, 20, CLOCK_WORLD)
 old_expiry	code/modules/mob/living/carbon/human/life.dm	EXPIRY_DECLARE(hud_full_refresh_at)
-old_expiry	code/modules/mob/living/carbon/human/life.dm	EXPIRY_SET(self, hud_full_refresh_at, 1 MINUTES, CLOCK_WORLD)
 old_expiry	code/modules/mob/living/carbon/human/species/station/protean/protean_form.dm	EXPIRY_DECLARE(last_switch_time)
 old_expiry	code/modules/mob/living/carbon/human/species/station/protean/protean_form.dm	EXPIRY_STAMP(src, last_switch_time, CLOCK_WORLD)
 old_expiry	code/modules/mob/living/life/living_systems.dm	EXPIRY_STAMP(self, lastareachange, CLOCK_WORLD) // This will refresh the last area change to prevent this call happening LITERALLY every life tick.
@@ -16633,12 +16554,6 @@ old_expiry	code/modules/projectiles/targeting/targeting_overlay.dm	EXPIRY_DECLAR
 old_expiry	code/modules/projectiles/targeting/targeting_overlay.dm	if(!locked && EXPIRY_EXPIRED(src, lock_time, CLOCK_WORLD))
 old_expiry	code/modules/projectiles/targeting/targeting_overlay.dm	EXPIRY_SET(src, lock_time, 25, CLOCK_WORLD)
 old_expiry	code/modules/projectiles/targeting/targeting_triggers.dm	EXPIRY_SET(src, lock_time, 10, CLOCK_WORLD)
-old_expiry	code/modules/reagents/reagents/drugs.dm	data = EXPIRY_AT(src, CLOCK_WORLD, 0) // ALLOW(sys_world_time_write): reagent `data` is an untyped per-reagent payload slot, not a declarable var
-old_expiry	code/modules/reagents/reagents/medicine.dm	data = EXPIRY_AT(src, CLOCK_WORLD, 0) // ALLOW(sys_world_time_write): reagent `data` is an untyped per-reagent payload slot, not a declarable var
-old_expiry	code/modules/reagents/reagents/medicine.dm	data = EXPIRY_AT(src, CLOCK_WORLD, 0) // ALLOW(sys_world_time_write): reagent `data` is an untyped per-reagent payload slot, not a declarable var
-old_expiry	code/modules/reagents/reagents/medicine.dm	data = EXPIRY_AT(src, CLOCK_WORLD, 0) // ALLOW(sys_world_time_write): reagent `data` is an untyped per-reagent payload slot, not a declarable var
-old_expiry	code/modules/reagents/reagents/toxins.dm	EXPIRY_STAMP(M, timeofdeath, CLOCK_WORLD)
-old_expiry	code/modules/reagents/reagents/toxins.dm	EXPIRY_STAMP(M, timeofdeath, CLOCK_WORLD)
 old_expiry	code/modules/recycling/disposal_outlet.dm	EXPIRY_DECLARE(start_eject)
 old_expiry	code/modules/recycling/disposal_outlet.dm	EXPIRY_STAMP(src, start_eject, CLOCK_WORLD)
 old_expiry	code/modules/research/research_service.dm	EXPIRY_STAMP(techweb_list, last_income, CLOCK_WORLD)
@@ -16941,7 +16856,6 @@ old_field	code/modules/hydroponics/trays/tray.dm	OM_DERIVE_FIELD(/obj/machinery/
 old_field	code/modules/instruments/songs/_song.dm	OM_FIELD(/datum/song, playing, FALSE, CHANGE_DATUM_A)
 old_field	code/modules/integrated_electronics/core/assemblies.dm	OM_DERIVE_FIELD(/obj/item/electronic_assembly, has_power_work, list("power_relevant"))
 old_field	code/modules/integrated_electronics/subtypes/time.dm	OM_FIELD(/obj/item/integrated_circuit/time/ticker, is_running, FALSE, CHANGE_EXPLICIT)
-old_field	code/modules/material_science/processed_material.dm	OM_FIELD(/obj/item/stack/material/processed_alloy, hot, FALSE, CHANGE_EXPLICIT)
 old_field	code/modules/materials/sheets/organic/tanning/leather_wet.dm	OM_FIELD(/obj/item/stack/wetleather, wetness, 30, CHANGE_EXPLICIT)
 old_field	code/modules/materials/sheets/organic/tanning/tanning_rack.dm	OM_DERIVE_FIELD(/obj/structure/tanning_rack, has_wet_leather, list("drying", "drying.wetness"))
 old_field	code/modules/media/media_machinery.dm	OM_FIELD(/obj/machinery/media, playing, 0, CHANGE_MACHINE_SETTINGS)
@@ -17378,7 +17292,6 @@ old_periodic	code/modules/hydroponics/trays/tray_soil.dm	/obj/machinery/portable
 old_periodic	code/modules/instruments/songs/_song.dm	DECLARE_PERIODIC_WHILE(/datum/song, PERIODIC_INSTRUMENTS, "playing")
 old_periodic	code/modules/integrated_electronics/core/assemblies.dm	DECLARE_PERIODIC_WHILE(/obj/item/electronic_assembly, PERIODIC_SLOW, "has_power_work")
 old_periodic	code/modules/integrated_electronics/subtypes/time.dm	DECLARE_REPEAT(/obj/item/integrated_circuit/time/ticker, "delay", tick, "is_running")
-old_periodic	code/modules/material_science/processed_material.dm	DECLARE_PERIODIC_WHILE(/obj/item/stack/material/processed_alloy, PERIODIC_SLOW, "hot")
 old_periodic	code/modules/materials/sheets/organic/tanning/tanning_rack.dm	DECLARE_PERIODIC_WHILE(/obj/structure/tanning_rack, PERIODIC_SLOW, "has_wet_leather") // SSObj fires ~every 2s , starting from wetness 30 takes ~1m
 old_periodic	code/modules/materials/sheets/supermatter.dm	DECLARE_PERIODIC(/obj/item/stack/material/supermatter, PERIODIC_SLOW)
 old_periodic	code/modules/media/walkpod.dm	DECLARE_PERIODIC_WHILE(/obj/item/walkpod, PERIODIC_SLOW, "listener")
@@ -17764,8 +17677,6 @@ manual_fingerprint	code/game/machinery/teleporter.dm	add_fingerprint(user)
 manual_fingerprint	code/game/machinery/teleporter.dm	add_fingerprint(user)
 manual_fingerprint	code/game/machinery/teleporter.dm	add_fingerprint(user)
 manual_fingerprint	code/game/machinery/teleporter.dm	add_fingerprint(user)
-manual_fingerprint	code/game/machinery/transportpod.dm	add_fingerprint(O)
-manual_fingerprint	code/game/machinery/transportpod.dm	add_fingerprint(user)
 manual_fingerprint	code/game/machinery/virtual_reality/ar_console.dm	add_fingerprint(user)
 manual_fingerprint	code/game/machinery/virtual_reality/ar_console.dm	add_fingerprint(user)
 manual_fingerprint	code/game/machinery/virtual_reality/vr_console.dm	add_fingerprint(user)
@@ -17981,7 +17892,6 @@ manual_fingerprint	code/modules/library/wikicomp.dm	add_fingerprint(ui.user)
 manual_fingerprint	code/modules/maint_recycler/code/maint_recycler.dm	add_fingerprint(user)
 manual_fingerprint	code/modules/maint_recycler/code/maint_recycler.dm	add_fingerprint(ui.user)
 manual_fingerprint	code/modules/maint_recycler/code/maint_vendor.dm	add_fingerprint(user)
-manual_fingerprint	code/modules/materials/materials/_materials.dm	S.add_fingerprint(user)
 manual_fingerprint	code/modules/materials/sheets/metals/rods.dm	new_splint.add_fingerprint(user)
 manual_fingerprint	code/modules/mining/machinery/machine_processing.dm	add_fingerprint(ui.user)
 manual_fingerprint	code/modules/mining/machinery/machine_stacking.dm	add_fingerprint(user)

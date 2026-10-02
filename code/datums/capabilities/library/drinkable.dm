@@ -36,9 +36,11 @@
 	var/datum/interaction/capability/give = adopt_entry(lib_op("Give a drink", GLOBAL_PROC_REF(cap_drinkable_give), OP_SHAPE_HAND, key = "give_drink", action = ACT_NONE, needs = GLOBAL_PROC_REF(cap_drinkable_can_drink), works_broken = TRUE, works_unpowered = TRUE))
 	return list(drink, give)
 
+GLOBAL_LIST_INIT(cap_examine_empty, list("It's empty."))
+
 /datum/capability/drinkable/examine(atom/holder, mob/user)
 	if(!holder.reagents?.total_volume)
-		return list("It's empty.")
+		return GLOB.cap_examine_empty
 	return null
 
 /// The units one sip of I moves into drinker.

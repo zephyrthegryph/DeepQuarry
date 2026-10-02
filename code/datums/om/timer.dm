@@ -27,6 +27,9 @@
 #define OM_TIMER_GLOBAL (1<<0)
 /// A deleted captured argument is passed as null (after()) instead of dropping the call.
 #define OM_TIMER_NULLS_FOR_GONE (1<<1)
+/// A global proc that takes the timer's owner as its first argument (the keyed after() trampoline): the owner is
+/// prepended when it fires, so it is never captured (and resolved) as one of its own timer's arguments.
+#define OM_TIMER_OWNER_FIRST (1<<2)
 
 /datum/om/rec/var/list/timers
 /// The soonest due time in rec.timers (timer-clock ds), or null with no timers. Kept in step by
@@ -272,7 +275,7 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 /// deleted before the timer fires, or already deleted when it is scheduled, is passed as null and the
 /// call runs. FALSE (after_if_alive()): the call is dropped, and an already-deleted argument is
 /// refused up front (returns 0).
-/proc/om_after_list(datum/E, delay, proc_ref, list/call_args, nulls_for_gone = TRUE)
+/proc/om_after_list(datum/E, delay, proc_ref, list/call_args, nulls_for_gone = TRUE, owner_first = FALSE)
 	if(isnull(E))
 		E = om_global_owner()
 	if(!own_guard(E, null, "a timer ([proc_ref])")) // the one teardown guard (guard.dm)
@@ -291,7 +294,7 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 	var/local = om_timer_local(rec)
 	var/id = ++rec.timer_seq
 	var/due = local + max(delay, 0)
-	LAZYADD(rec.timers, list(id, due, proc_ref, captured, positions, (om_proc_is_global(proc_ref) ? OM_TIMER_GLOBAL : 0) | (nulls_for_gone ? OM_TIMER_NULLS_FOR_GONE : 0)))
+	LAZYADD(rec.timers, list(id, due, proc_ref, captured, positions, (om_proc_is_global(proc_ref) ? OM_TIMER_GLOBAL : 0) | (nulls_for_gone ? OM_TIMER_NULLS_FOR_GONE : 0) | (owner_first ? OM_TIMER_OWNER_FIRST : 0)))
 	if(isnull(rec.timer_soonest) || due < rec.timer_soonest)
 		rec.timer_soonest = due
 		om_timers_arm(rec)
@@ -329,7 +332,14 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 /// TRUE when `proc_ref` is a global proc (/proc/x), FALSE for a type proc. Decided once, when a
 /// deferred call is recorded, so firing never stringifies the proc.
 /proc/om_proc_is_global(proc_ref)
-	return copytext("[proc_ref]", 1, 7) == "/proc/"
+	// Memoized per proc ref: stringifying a proc path costs microseconds, and reaction delivery (rx_call) asks on
+	// every call. The set of proc refs is the code's, so the table is bounded.
+	var/static/list/answers = list()
+	if(isnull(proc_ref))
+		return FALSE
+	. = answers[proc_ref]
+	if(isnull(.))
+		. = answers[proc_ref] = (copytext("[proc_ref]", 1, 7) == "/proc/")
 
 /// The position in rec.timers of timer `id`, or 0. Binary search: the list is sorted by id.
 /proc/om_timer_index(datum/om/rec/rec, id)
@@ -709,6 +719,8 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 		if(GLOB.om_resolve_nulled)
 			rec.sched.timers_nulled++
 			log_qdel("OM: timer [proc_ref] on [E] ([E.type]) runs with [GLOB.om_resolve_nulled] deleted argument(s) passed as null")
+		if(timer_flags & OM_TIMER_OWNER_FIRST)
+			captured = captured ? list(E) + captured : list(E)
 		try
 			om_guarded_call(E, proc_ref, captured, is_global)
 		catch(var/exception/e)

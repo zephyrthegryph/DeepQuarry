@@ -609,7 +609,7 @@ DAMAGE_REACTION(/obj/item/robot_module, DAMAGE_EMP, PROC_REF(emp_synths))
 	// Shared recipe tables, like material.get_recipes(): never owned by one stack.
 	var/static/list/steel_recycler_recipes = list(new /datum/stack_recipe("steel sheet", /obj/item/stack/material/steel, 1, 1, 20))
 	var/static/list/glass_recycler_recipes = list(new /datum/stack_recipe("glass sheet", /obj/item/stack/material/glass, 1, 1, 20))
-	M.recipes = steel_recycler_recipes // ALLOW(ownership): a shared static recipe table (stack recipes are shared lists, cf. material.get_recipes())
+	M.recipes = steel_recycler_recipes
 	own_add(src, nameof(modules), M)
 
 	var/obj/item/stack/material/cyborg/glass/G = new (src)
@@ -617,7 +617,7 @@ DAMAGE_REACTION(/obj/item/robot_module, DAMAGE_EMP, PROC_REF(emp_synths))
 	G.desc = "A device that refines recycled glass into sheets."
 	G.material = get_material_by_name("placeholder") //Hacky shit but we want sheets, not windows.
 	rel_add(G, nameof(G.synths), glass)
-	G.recipes = glass_recycler_recipes // ALLOW(ownership): a shared static recipe table (stack recipes are shared lists, cf. material.get_recipes())
+	G.recipes = glass_recycler_recipes
 	own_add(src, nameof(modules), G)
 
 	var/obj/item/dogborg/sleeper/compactor/C = new /obj/item/dogborg/sleeper/compactor(src)

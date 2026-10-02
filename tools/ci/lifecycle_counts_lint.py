@@ -35,7 +35,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
 from state_schema_lint import code_only  # noqa: E402
-from allow_annotations import allowed, check_sites, write_sites  # noqa: E402
+from allow_annotations import allowed, check_sites, exempt_path, write_sites  # noqa: E402
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 BASELINE = os.path.join(ROOT, "tools", "ci", "lifecycle_counts_baseline.txt")
@@ -50,7 +50,9 @@ CORE_DESTROY_PREFIXES = ("/datum/controller",)
 
 def core_destroy_owner(owner):
     return owner in CORE_DESTROY_OWNERS or owner.startswith(CORE_DESTROY_PREFIXES)
-QDEL_CALL = re.compile(r"(?<![\w.])qdel\s*\(")
+# Every qdel( except `qdel(src)`, which tools/ci/qdel_src_lint.py counts (and baselines) on its own:
+# a site is in one baseline, not two.
+QDEL_CALL = re.compile(r"(?<![\w.])qdel\s*\((?!\s*src\s*[,)])")
 EXEMPT_FILES = {
     # The engine itself: qdel() can't count its own call to Destroy(), and
     # the destroy-transaction/links/verbs files call qdel() as their
@@ -73,7 +75,9 @@ def owner_of(header):
 
 def scan_file(path):
     rel = os.path.relpath(path, ROOT).replace(os.sep, "/")
-    tests = "/unit_tests/" in rel
+    # Unit tests, benchmarks and the vendored TGS DMAPI don't count their qdel( calls (a Destroy()
+    # override is banned everywhere, tests included).
+    exempt = exempt_path(rel) or rel in EXEMPT_FILES or rel.startswith(EXEMPT_DIRS)
     with open(path, encoding="utf-8", errors="replace") as handle:
         raw = handle.read()
     lines = code_only(raw).split("\n")
@@ -83,11 +87,13 @@ def scan_file(path):
     for no, raw in enumerate(lines, 1):
         text = raw.strip()
         m = DESTROY_OVERRIDE.match(text)
-        kept = allowed(raw_lines, no, "lifecycle")
         if m and not core_destroy_owner(owner_of(text[: text.index("(")])):
             destroys.append((rel, no, text[: text.index("(") + 1]))
-        if not tests and rel not in EXEMPT_FILES and not rel.startswith(EXEMPT_DIRS) and not kept:
+        if not exempt:
             for _ in QDEL_CALL.finditer(text):
+                # Asked only about a line with a qdel( that would otherwise count.
+                if allowed(raw_lines, no, "lifecycle"):
+                    break
                 qdels.append((rel, no, "qdel("))
     return rel, destroys, qdels
 

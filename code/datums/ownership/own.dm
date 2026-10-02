@@ -204,7 +204,7 @@
 		return null
 	if(entry && isdatum(value) && !own_stamp(value, holder, var_name))
 		return null
-	holder.vars[var_name] = value // ALLOW(api, ownership): the accessor
+	holder.vars[var_name] = value // ALLOW(api): this proc is the accessor: the one place allowed to write this var by name
 	own_field_changed(holder, var_name)
 	own_mark_changed(holder, var_name) // review 2 M8: every accessor write marks the holder
 	if(entry && isdatum(old))
@@ -219,7 +219,7 @@
 	var/datum/value = holder.vars[var_name]
 	if(isnull(value))
 		return null
-	holder.vars[var_name] = null // ALLOW(api, ownership): the accessor
+	holder.vars[var_name] = null // ALLOW(api): this proc is the accessor: the one place allowed to write this var by name
 	own_field_changed(holder, var_name)
 	own_mark_changed(holder, var_name)
 	holder.on_owned_release(var_name, value)
@@ -244,7 +244,7 @@
 	var/list/L = holder.vars[var_name]
 	if(!islist(L))
 		L = list()
-		holder.vars[var_name] = L // ALLOW(api, ownership): the accessor
+		holder.vars[var_name] = L // ALLOW(api): this proc is the accessor: the one place allowed to write this var by name
 		own_field_changed(holder, var_name)
 	L |= value
 	own_mark_changed(holder, var_name)
@@ -261,7 +261,7 @@
 	L -= value
 	own_mark_changed(holder, var_name)
 	if(!length(L))
-		holder.vars[var_name] = null // ALLOW(api, ownership): the accessor
+		holder.vars[var_name] = null // ALLOW(api): this proc is the accessor: the one place allowed to write this var by name
 		own_field_changed(holder, var_name)
 	if(entry)
 		own_dispose(holder, var_name, value, entry)
@@ -286,7 +286,7 @@
 		return null
 	if(!islist(L))
 		L = list()
-		holder.vars[var_name] = L // ALLOW(api, ownership): the accessor
+		holder.vars[var_name] = L // ALLOW(api): this proc is the accessor: the one place allowed to write this var by name
 		own_field_changed(holder, var_name)
 	var/old = L[key]
 	if(isnull(value))
@@ -313,7 +313,7 @@
 		value = L[value_or_key]
 		L -= value_or_key
 	if(!length(L))
-		holder.vars[var_name] = null // ALLOW(api, ownership): the accessor
+		holder.vars[var_name] = null // ALLOW(api): this proc is the accessor: the one place allowed to write this var by name
 		own_field_changed(holder, var_name)
 	if(value)
 		own_mark_changed(holder, var_name)
@@ -386,7 +386,7 @@
 		L.Cut()
 		own_list_emptied(holder, var_name)
 	else
-		holder.vars[var_name] = null // ALLOW(api, ownership): the accessor
+		holder.vars[var_name] = null // ALLOW(api): this proc is the accessor: the one place allowed to write this var by name
 	own_field_changed(holder, var_name)
 	for(var/datum/child as anything in .)
 		holder.on_owned_release(var_name, child)
@@ -398,7 +398,7 @@
 /// `= list()` stays an empty list for code that reads its length.
 /proc/own_list_emptied(datum/holder, var_name)
 	if(isnull(initial(holder.vars[var_name])))
-		holder.vars[var_name] = null // ALLOW(api, ownership): the accessor
+		holder.vars[var_name] = null // ALLOW(api): this proc is the accessor: the one place allowed to write this var by name
 
 /// Disposes of everything holder.var_name owns, by policy (or `policy` when given).
 /proc/own_clear(datum/holder, var_name, policy = null)
@@ -407,7 +407,7 @@
 	if(isnull(value))
 		return
 	if(!islist(value))
-		holder.vars[var_name] = null // ALLOW(api, ownership): the accessor
+		holder.vars[var_name] = null // ALLOW(api): this proc is the accessor: the one place allowed to write this var by name
 		own_field_changed(holder, var_name)
 		if(entry)
 			own_dispose(holder, var_name, value, entry, policy)
@@ -478,7 +478,7 @@
 		return
 	var/value = H.vars[var_name]
 	if(value == D)
-		H.vars[var_name] = null // ALLOW(api, ownership): lifecycle release
+		H.vars[var_name] = null // ALLOW(api): the ownership accessor clears the var as part of releasing the owned value
 		own_field_changed(H, var_name)
 		return
 	if(var_name == "contents")
@@ -533,7 +533,7 @@
 /proc/own_release_member(datum/holder, var_name, datum/value)
 	var/current = holder.vars[var_name]
 	if(current == value)
-		holder.vars[var_name] = null // ALLOW(api, ownership): lifecycle release
+		holder.vars[var_name] = null // ALLOW(api): the ownership accessor clears the var as part of releasing the owned value
 		own_field_changed(holder, var_name)
 	else if(var_name == "contents")
 		return // built in: a member leaves by moving (the caller moves it), never by a cut

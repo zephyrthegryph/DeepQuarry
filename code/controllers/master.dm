@@ -75,9 +75,9 @@ GLOBAL_REAL(Master, /datum/controller/master)
 	var/rolling_usage_length = 5 SECONDS
 
 	/// Bounded per-MC-tick history used by the admin performance dashboard.
-	var/list/perf_tick_usage = list() // ALLOW(instance_list): d: MC singleton, filled every tick
-	var/list/perf_tick_realtime = list() // ALLOW(instance_list): d: MC singleton, filled every tick
-	var/list/perf_outliers = list() // ALLOW(instance_list): d: MC singleton, filled every tick
+	var/list/perf_tick_usage = list() // MC singleton, filled every tick
+	var/list/perf_tick_realtime = list() // MC singleton, filled every tick
+	var/list/perf_outliers = list() // MC singleton, filled every tick
 	/// Breakdown for the highest-usage tick since the last explicit reset.
 	var/list/perf_worst_tick
 	var/perf_history_limit = 12000
@@ -158,7 +158,7 @@ GLOBAL_REAL(Master, /datum/controller/master)
 	if(!GLOB)
 		new /datum/controller/global_vars
 
-// ALLOW(lifecycle): MC singleton; asks for a hard delete.
+// MC singleton; asks for a hard delete.
 /datum/controller/master/Destroy()
 	..()
 	// Tell qdel() to Del() this object.
@@ -294,7 +294,7 @@ UI_ACT_PROC(/datum/controller/master, ui_act_view_variables)
 	return TRUE
 
 /datum/controller/master/proc/check_and_perform_fast_update()
-	set waitfor = FALSE // ALLOW(scheduler): MC code
+	set waitfor = FALSE // ALLOW(scheduler): the master controller's own loop (its startup detaches on purpose), not gameplay code
 
 	if(!overview_fast_update)
 		return
@@ -309,10 +309,10 @@ UI_ACT_PROC(/datum/controller/master, ui_act_view_variables)
 // Please don't stuff random bullshit here,
 // Make a subsystem, give it the SS_NO_FIRE flag, and do your work in its Initialize()
 /datum/controller/master/Initialize(delay, init_sss, tgs_prime)
-	set waitfor = 0 // ALLOW(scheduler): MC code
+	set waitfor = 0 // ALLOW(scheduler): the master controller's own loop (its startup detaches on purpose), not gameplay code
 
 	if(delay)
-		sleep(delay) // ALLOW(scheduler): MC
+		sleep(delay) // ALLOW(scheduler): the master controller's own loop: it sleeps between ticks, it is not gameplay code
 
 	if(init_sss)
 		init_subtypes(/datum/controller/subsystem, subsystems)
@@ -476,7 +476,7 @@ UI_ACT_PROC(/datum/controller/master, ui_act_view_variables)
 	if(post_init_sleep_offline(FALSE, CONFIG_GET(flag/resume_after_initializations)))
 		world.sleep_offline = TRUE
 	log_world("MC: post-init sleep_offline=[world.sleep_offline] (resume_after_initializations=[CONFIG_GET(flag/resume_after_initializations)])")
-	sleep(1 TICKS) // ALLOW(scheduler): MC
+	sleep(1 TICKS) // ALLOW(scheduler): the master controller's own loop: it sleeps between ticks, it is not gameplay code
 	initializations_finished_with_no_players_logged_in = initialized_tod < REALTIMEOFDAY - 10
 
 /// TRUE when the world should sleep offline once initialization completes (kept separate so a test can pin it).

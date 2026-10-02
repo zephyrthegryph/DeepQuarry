@@ -48,13 +48,13 @@ GLOBAL_REAL(Failsafe, /datum/controller/failsafe)
 				message_admins(span_boldannounce("Failsafe failed critically while trying to restart the kernel loop. Please restart it (Debug > Restart Controller > Kernel) or reboot the server. Failsafe exiting now."))
 			else if (recovery_result == -1) //Failed to restart the kernel
 				defcon--
-			// ALLOW(scheduler): failsafe
+			// ALLOW(scheduler): the failsafe is the watchdog outside the kernel: its sleeps and detached procs are its own loop
 			sleep(initial(processing_interval)) //Wait a bit until the next try
 
 	if(!QDELETED(src))
 		qdel(src) //when Loop() returns, we delete ourselves and let the mc recreate us
 
-// ALLOW(lifecycle): failsafe singleton; stops its loop and asks for a hard delete.
+// Failsafe singleton; stops its loop and asks for a hard delete.
 /datum/controller/failsafe/Destroy()
 	running = FALSE
 	..()
@@ -116,12 +116,12 @@ GLOBAL_REAL(Failsafe, /datum/controller/failsafe)
 					defcon = min(defcon + 1,5)
 					kernel_tick_seen = K.last_tick
 			if (defcon <= 1)
-				sleep(processing_interval*2) // ALLOW(scheduler): failsafe
+				sleep(processing_interval*2) // ALLOW(scheduler): the failsafe is the watchdog outside the kernel: its sleeps and detached procs are its own loop
 			else
-				sleep(processing_interval) // ALLOW(scheduler): failsafe
+				sleep(processing_interval) // ALLOW(scheduler): the failsafe is the watchdog outside the kernel: its sleeps and detached procs are its own loop
 		else
 			defcon = 5
-			sleep(initial(processing_interval)) // ALLOW(scheduler): failsafe
+			sleep(initial(processing_interval)) // ALLOW(scheduler): the failsafe is the watchdog outside the kernel: its sleeps and detached procs are its own loop
 
 //Emergency loop used when the kernel could not be restarted while Defcon == 0
 //Loop is driven externally so runtimes only cancel the current recovery attempt

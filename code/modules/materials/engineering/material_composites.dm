@@ -154,7 +154,7 @@
 			var/release_ratio = 1 - 2.718281828 ** (-0.04 * elapsed_seconds * sqrt(abs(internal_pressure - external_pressure) / max(internal_pressure, external_pressure, 0.1)))
 			var/datum/gas_mixture/leaked = source.remove_ratio(release_ratio)
 			destination.merge(leaked)
-			qdel(leaked)
+			qdel(leaked) // ALLOW(lifecycle): a gas mixture is a plain arena-handle datum with no holder slot; the lifecycle verbs only take atoms
 			var/turf/open/open_turf = get_turf(src)
 			if(istype(open_turf))
 				open_turf.air_update_turf(FALSE, FALSE)

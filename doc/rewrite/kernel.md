@@ -147,7 +147,7 @@ kernel_tick():
   phase B  borrow: rings near max_interval                                 from the whole budget
   phase L  lanes URGENT 30 / SIMULATION 30 / DERIVED 15 / PRESENTATION 15 / BACKGROUND 10
            each lane: queued wakes -> system steps -> member rings -> (PRESENTATION) refresh drain
-  phase R  leftovers, lane order
+  phase R  leftovers, lane order; then phase-L work items that ran out of their lane share with work left (p_carry)
   phase G  garbage (kernel subsystem), whatever is left, with a floor per second
 ```
 

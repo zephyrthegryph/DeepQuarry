@@ -145,7 +145,7 @@ GLOBAL_DATUM_INIT(machine_service, /datum/world_service/machines, new)
 /datum/world_service/machines/proc/queue_pump_transfer(obj/machinery/atmospherics/M, datum/gas_mixture/source, datum/gas_mixture/sink, requested_moles, specific_power, source_moles, source_volume)
 	if(!M || !source || !sink || requested_moles <= 0)
 		return FALSE
-	pending_pump_transfers += list(list(M, source, sink, requested_moles, specific_power, source_moles, source_volume)) // ALLOW(ownership): transient per-tick work queue of (machine, mixture, number) tuples, drained and Cut() by flush_pump_transfers() in the same step
+	pending_pump_transfers += list(list(M, source, sink, requested_moles, specific_power, source_moles, source_volume))
 	return TRUE
 
 /datum/world_service/machines/proc/flush_pump_transfers()

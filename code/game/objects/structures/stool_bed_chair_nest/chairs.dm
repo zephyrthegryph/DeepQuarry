@@ -25,7 +25,7 @@
 		play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 		E.set_dir(dir)
 		if(!own_set(E, nameof(E.part), SK, user = user)) // out of the hand, into the chair
-			qdel(E)
+			qdel(E) // ALLOW(lifecycle): discards the just-built chair after own_set() refused the part: it never held anything and has no holder to take it out of
 			return TRUE
 		rel_set(SK, nameof(SK.master), E)
 		replace_with(src, E)

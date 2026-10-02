@@ -74,7 +74,7 @@
 
 /// Records every wake: list(reason, source, source_kind, step tick, previous step tick, lane).
 /datum/world_test_subscriber
-	var/list/wakes = list() // ALLOW(instance_list): d: unit-test fixture; a handful of instances per test run
+	var/list/wakes = list()
 	/// Re-publish key (WORLD_KEY_TEST, key_id) this many times from the wake.
 	var/republish = 0
 	var/key_id
@@ -287,7 +287,7 @@
 	var/rejected = FALSE
 	try
 		om_world_when(hot, COND_ABOVE(WORLD_PROBE(51), 9, 1), WORLD_TEST_WAKE)
-	catch // ALLOW(silent_catch): the test asserts the call throws
+	catch
 		rejected = TRUE
 	TEST_ASSERT(rejected, "a condition on a missing channel was accepted")
 	for(var/datum/native_watch/W as anything in watches)

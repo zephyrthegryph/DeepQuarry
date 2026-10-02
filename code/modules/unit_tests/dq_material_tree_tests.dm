@@ -2,7 +2,7 @@
 /// silently overrides the first by include order, which is how the property readers once
 /// split across two trees. Scans the source for `/datum/material/proc/<name>(` definitions.
 /datum/unit_test/dq_material_proc_single_definition
-	var/list/definitions = list() // ALLOW(instance_list): a test's scratch list, one instance per run
+	var/list/definitions = list()
 
 /datum/unit_test/dq_material_proc_single_definition/Run()
 	scan_dir("code/")

@@ -257,6 +257,7 @@
 #include "dq_boot_bind_tests.dm"
 #include "dq_h4_machine_heat_tests.dm"
 #include "dq_containment_path_tests.dm"
+#include "dq_pathfinder_tests.dm"
 #include "dq_vore_slot_tests.dm"
 #include "dq_c8a_occupant_slot_tests.dm"
 #include "dq_mecha_dispatch_tests.dm"

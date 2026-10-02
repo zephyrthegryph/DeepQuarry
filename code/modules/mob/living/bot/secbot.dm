@@ -35,7 +35,7 @@
 	var/used_weapon	= /obj/item/melee/baton	//Weapon used by the bot
 
 	var/static/threat_found_sounds = SFX_VOICE_BCRIMINAL_MIX
-	var/preparing_arrest_sounds = SFX_VOICE_BGOD_MIX // ALLOW(instance_list): mob: an SFX mix key (a string), not a list; subtypes may point it at another mix
+	var/preparing_arrest_sounds = SFX_VOICE_BGOD_MIX // an SFX mix key (a string); subtypes may point it at another mix
 	var/static/fighting_sounds = SFX_VOICE_BIAMTHELAW_MIX
 // They don't like being pulled. This is going to fuck with slimesky, but meh. //Screw you. Just screw you and your 'meh'
 /datum/om/stage/life/type_post/bot/secbot

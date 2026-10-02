@@ -616,7 +616,7 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 	OM_EMIT(src, /datum/om/event/obj_deconstruct, FALSE)
 	play_sfx(src, SFX_ITEMS_CROWBAR)
 	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/I in contents) // ALLOW(latent): materialized above
+	for(var/obj/I in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 		if(istype(I,/obj/item/card/id))
 			I.forceMove(src.loc)
 

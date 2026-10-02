@@ -77,7 +77,7 @@
 	if(latency_class < LATENCY_L3 || !enabled || !shedding)
 		return TRUE
 	if(world.time - (floor_pass[key] || -1e9) >= KERNEL_SHED_FLOOR)
-		floor_pass[key] = world.time
+		floor_pass[key] = world.time // ALLOW(sys_world_time_write): the kernel clock: a scheduler timestamp of the kernel itself, not a per-entity expiry
 		return TRUE
 	shed_by_class[latency_class + 1]++
 	return FALSE
@@ -88,8 +88,12 @@
 
 /// Convenience for a scheduler lane.
 /proc/kernel_admit_lane(lane)
+	var/datum/kernel_latency/latency = kernel_latency()
+	// Every lane is admitted unless shedding: one var read on the scheduler's per-lane path, not two more calls.
+	if(!latency.shedding)
+		return TRUE
 	// A text key: a bare lane number would index floor_pass by position.
-	return kernel_latency().admit(kernel_lane_class(lane), "lane [lane]")
+	return latency.admit(kernel_lane_class(lane), "lane [lane]")
 
 /// TRUE when this system's work may run now: its own latency class, and its own floor when shedding.
 /datum/system/proc/admitted()

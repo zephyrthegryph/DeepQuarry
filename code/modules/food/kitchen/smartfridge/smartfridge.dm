@@ -163,14 +163,14 @@ EXTEND_INTERACTIONS(/obj/machinery/smartfridge, \
 		var/obj/item/storage/bag/P = O
 		var/plants_loaded = 0
 		P.latent_materialize_all() // a walk needs real things (C5)
-		for(var/obj/G in contents_of(P)) // ALLOW(latent): materialized above
+		for(var/obj/G in contents_of(P)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 			if(accept_check(G))
 				P.remove_from_storage(G) //fixes ui bug - Pull Request 5515
 				stock(G)
 				plants_loaded = 1
 		if(plants_loaded)
 			act_message(user, src, MSG_SELF(span_notice("You load %T% with %I%.")), MSG_OTHERS(span_notice("%U% loads %T% with %I%.")), item = P)
-			if(contents_count(P) > 0) // ALLOW(latent): materialized above
+			if(contents_count(P) > 0) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 				to_chat(user, span_notice("Some items are refused."))
 
 	else if(istype(O, /obj/item/gripper)) // Grippers. ~Mechoid.

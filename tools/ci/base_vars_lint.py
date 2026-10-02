@@ -10,6 +10,9 @@ Two rules, both shrink-only:
   list_init  An instance var initialised with `= list()`. That allocates one list per
              instance even when it stays empty. Use `var/list/x` with the LAZY* macros
              (code/__defines/_lists.dm), or `var/static/list/x` for a shared constant table.
+             A declaration with `// ALLOW(instance_list): <reason>`, under an exempt path
+             (allow_annotations.exempt_path()) or on a singleton type is not counted here:
+             instance_list owns it.
 
 A justified keep is `// ALLOW(base_vars): <reason>` on the line or the comment line above it
 (tools/ci/allow_annotations.py). The baseline holds each site as (file, text).
@@ -27,7 +30,8 @@ from collections import Counter
 
 sys.path.insert(0, os.path.dirname(__file__))
 from state_schema_lint import dm_files, parse  # noqa: E402
-from allow_annotations import allowed, check_sites, write_sites  # noqa: E402
+from allow_annotations import allowed, check_sites, exempt_path, write_sites  # noqa: E402
+from instance_list_lint import is_singleton, singleton_types  # noqa: E402
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 BASELINE = os.path.join(ROOT, "tools", "ci", "base_vars_baseline.txt")
@@ -44,6 +48,7 @@ def scan():
     decls, _codecs, _latent = parse(dm_files())
     base_sites, list_sites, per_type = [], [], Counter()
     raw_cache = {}
+    singletons = singleton_types()
     for owner, variables in decls.items():
         for v in variables:
             if v.mods & NO_INSTANCE_COST:
@@ -58,7 +63,11 @@ def scan():
                 base_sites.append((v.path, v.line, "%s var %s" % (owner, v.name)))
                 per_type[owner] += 1
             text = raw[v.line - 1].strip() if v.line <= len(raw) else ""
-            if LIST_INIT.search(text):
+            # list_init is instance_list's twin and takes its exemptions: a declaration under an exempt
+            # path, on a singleton type, or one that carries ALLOW(instance_list) (which already says
+            # why it is a per-instance list), is that lint's, not a second ratchet row here.
+            if (LIST_INIT.search(text) and not exempt_path(v.path) and not is_singleton(owner, singletons)
+                    and not allowed(raw, v.line, "instance_list")):
                 list_sites.append((v.path, v.line, re.sub(r"\s+", " ", text)))
     return base_sites, list_sites, per_type
 

@@ -32,9 +32,9 @@
 	/// Last id handed to a detached test grid (counts down from 0).
 	var/power_test_grid_serial = 0
 	/// Areas whose static or one-off loads changed since the last step.
-	var/list/power_dirty_areas = list() // ALLOW(instance_list): d: SSmachines singleton (M3 power); one instance
+	var/list/power_dirty_areas = list() // SSmachines singleton (M3 power); one instance
 	/// Cables with an engineered conductor; their regions run the material overlay.
-	var/list/power_material_cables = list() // ALLOW(instance_list): d: SSmachines singleton (M3 power); one instance
+	var/list/power_material_cables = list() // SSmachines singleton (M3 power); one instance
 	/// The APCs and SMES the current power step still has to poll, while a budgeted step is yielded between
 	/// ticks; null when no poll is in progress (poll_power_storage()).
 	var/list/power_poll_queue

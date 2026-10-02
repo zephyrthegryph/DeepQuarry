@@ -91,7 +91,7 @@ DECLARE_SHARED_CACHE_EX(sc_test_intern, GLOBAL_PROC_REF(sc_test_build_same), SC_
 	var/caught = FALSE
 	try
 		CACHED(sc_test_plain, "guard")
-	catch // ALLOW(silent_catch): the test expects this runtime and asserts on it
+	catch
 		caught = TRUE
 	TEST_ASSERT(caught, "writing into a shared list runtimes on the next hit")
 	TEST_ASSERT_EQUAL(v["key"], "guard", "and the entry is restored")
@@ -126,7 +126,7 @@ DECLARE_SHARED_CACHE(sc_test_obj, GLOBAL_PROC_REF(sc_test_build_obj), SC_NEVER)
 	var/caught = FALSE
 	try
 		CACHED(sc_test_images, "a")
-	catch // ALLOW(silent_catch): the test expects this runtime and asserts on it
+	catch
 		caught = TRUE
 	TEST_ASSERT(caught, "a write into a nested shared list runtimes on the next hit")
 	TEST_ASSERT_EQUAL(length(images), 2, "and the nested list is restored")
@@ -142,13 +142,13 @@ DECLARE_SHARED_CACHE(sc_test_obj, GLOBAL_PROC_REF(sc_test_build_obj), SC_NEVER)
 	var/caught = FALSE
 	try
 		CACHED(sc_test_obj, loose)
-	catch // ALLOW(silent_catch): the test expects this runtime and asserts on it
+	catch
 		caught = TRUE
 	TEST_ASSERT(caught, "an unregistered datum key runtimes")
 	caught = FALSE
 	try
 		CACHED(sc_test_obj, "k[ref(loose)]")
-	catch // ALLOW(silent_catch): the test expects this runtime and asserts on it
+	catch
 		caught = TRUE
 	TEST_ASSERT(caught, "a text key embedding a ref runtimes")
 	var/datum/material/steel = get_material_by_name(MAT_STEEL)

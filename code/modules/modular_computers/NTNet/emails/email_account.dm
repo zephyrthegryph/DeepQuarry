@@ -1,8 +1,8 @@
 /datum/computer_file/data/email_account
-	var/list/inbox = list() // ALLOW(instance_list): d: mailbox state
+	var/list/inbox = list() // ALLOW(instance_list): the mailbox list is live per-account state: always in use, so a lazy list saves nothing
 	var/list/outbox
-	var/list/spam = list() // ALLOW(instance_list): d: mailbox state
-	var/list/deleted = list() // ALLOW(instance_list): d: mailbox state
+	var/list/spam = list() // ALLOW(instance_list): the mailbox list is live per-account state: always in use, so a lazy list saves nothing
+	var/list/deleted = list() // ALLOW(instance_list): the mailbox list is live per-account state: always in use, so a lazy list saves nothing
 
 	var/login = ""
 	var/password = ""

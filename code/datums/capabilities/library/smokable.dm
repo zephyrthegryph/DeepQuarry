@@ -150,7 +150,7 @@
 	I.transfer_fingerprints_to(butt)
 	if(M)
 		M.remove_from_mob(I)
-	qdel(I)
+	consume(I, M)
 
 // ---- handlers ----
 

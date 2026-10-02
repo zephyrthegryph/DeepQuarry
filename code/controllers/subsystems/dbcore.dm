@@ -55,7 +55,7 @@ SUBSYSTEM_DEF(dbcore)
 	Connect()
 	if(IsConnected() && CONFIG_GET(flag/database_logging))
 		var/datum/db_query/query_truncate = NewQuery("TRUNCATE erro_dialog")
-		if(!query_truncate.Execute(async = FALSE)) // boot (allowlisted)
+		if(!query_truncate.Execute(async = FALSE)) // boot only (dbcore.dm is exempt from the sync_sql lint by path)
 			log_sql("ERROR TRYING TO CLEAR erro_dialog: "+query_truncate.ErrorMsg())
 		qdel(query_truncate)
 	return SS_INIT_SUCCESS

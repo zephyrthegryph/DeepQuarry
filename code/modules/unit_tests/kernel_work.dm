@@ -3,11 +3,8 @@
 
 /// The handler target for every work-item test: records its calls and answers as told.
 /datum/test_work_owner
-	// ALLOW(instance_list): test fixture, a handful of instances per test run
 	var/list/calls = list()
-	// ALLOW(instance_list): test fixture, a handful of instances per test run
 	var/list/dts = list()
-	// ALLOW(instance_list): test fixture, a handful of instances per test run
 	var/list/members_seen = list()
 	var/gate = TRUE
 	var/result
@@ -58,7 +55,6 @@
 /// Makes a fixture item; `handler` defaults to record().
 /proc/test_work_item(datum/test_work_owner/O, handler = null, interval = 10, when = null, members = null, phase = KERNEL_PHASE_P, list/after = null, lane = LANE_SIMULATION, urgent = FALSE)
 	var/datum/work_item/test_fixture/W = new(handler || TYPE_PROC_REF(/datum/test_work_owner, record), interval, when, members, phase, after, 0, lane, urgent)
-	// ALLOW(ownership): test fixture setup writes the framework var directly to build the state under test
 	W.fixture = O
 	return W
 
@@ -361,7 +357,6 @@
 	TEST_ASSERT(base.should_step(null), "a stage that is never idle should always run")
 
 /datum/test_work_owner/phases
-	// ALLOW(instance_list): test fixture, a handful of instances per test run
 	var/list/phase_log = list()
 
 /datum/test_work_owner/phases/proc/note_k(dt)
@@ -401,7 +396,6 @@
 	for(var/i in 1 to length(handlers))
 		var/datum/work_item/test_fixture/W = new(handlers[i], WORK_EVERY_TICK)
 		W.phase = phase_of[i]
-		// ALLOW(ownership): test fixture setup writes the framework var directly to build the state under test
 		W.fixture = O
 		K.register_work(/datum/test_work_owner/phases, W)
 	var/ticks_before = K.ticks

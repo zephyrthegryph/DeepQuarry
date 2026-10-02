@@ -96,7 +96,7 @@
 	var/tick_overrun = 0
 
 	/// Flat list of usage and time, every odd index is a log time, every even index is a usage
-	var/list/rolling_usage = list() // ALLOW(instance_list): d: one per subsystem; the usage ring buffer is always in use
+	var/list/rolling_usage = list() // one per subsystem; the usage ring buffer is always in use
 
 	/// How much of a tick (in percents of a tick) were we allocated last fire.
 	var/tick_allocation_last = 0
@@ -185,7 +185,7 @@
 	flags |= SS_NO_FIRE
 	CRASH("Subsystem [src]([type]) does not fire() but did not set the SS_NO_FIRE flag. Please add the SS_NO_FIRE flag to any subsystem that doesn't fire so it doesn't get added to the processing list and waste cpu.")
 
-// ALLOW(lifecycle): engine: a subsystem leaves the MC's queue and roster.
+// Engine: a subsystem leaves the MC's queue and roster.
 /datum/controller/subsystem/Destroy()
 	can_fire = 0
 	flags |= SS_NO_FIRE

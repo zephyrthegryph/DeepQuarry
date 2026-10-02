@@ -11,15 +11,23 @@ site's own line or on a comment-only line directly above it:
 
 Inside a multi-line macro, where `//` would swallow the `\` continuation, the
 block form `/* ALLOW(scheduler): reason */` works the same. The reason after the
-colon is required. Lint names are LINTS below. Ratchet
+colon is required, and must be a real reason (reason_problem() below: at least
+MIN_REASON characters and three words, no allowlist, no "see above", no plan-phase
+label). Lint names are LINTS below. Ratchet
 baselines (the *_baseline.txt files) list the unannotated legacy sites as
 fingerprints (check_sites() / write_sites() below); an annotation takes its site
 out of the ratchet for good.
 
-    python tools/ci/allow_annotations.py            # check every annotation's syntax
+An annotation must also be used: one whose target line no longer triggers its lint is an error
+(the "Usage recording" section below; check_ratchets.sh runs it after every lint).
+
+    python tools/ci/allow_annotations.py            # check every annotation's syntax and reason
     python tools/ci/allow_annotations.py --report   # count annotations per lint
+    python tools/ci/allow_annotations.py --unused FILE   # annotations no lint used (FILE: DQ_ALLOW_USAGE rows)
 """
+import atexit
 import glob
+import hashlib
 import os
 import re
 import sys
@@ -81,6 +89,18 @@ def _sys_rules():
 
 LINTS.update(_sys_rules())
 
+# Paths no ratchet lint counts (the lints that import exempt_path()): unit tests and benchmarks build
+# the forbidden things on purpose to test or measure them, and the vendored tgstation-server DMAPI is
+# kept verbatim. A site there needs no annotation.
+EXEMPT_DIRS = ("code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/")
+EXEMPT_FILES = ("code/__defines/tgs.dm",)
+
+
+def exempt_path(rel):
+    """True for a repo-relative path under EXEMPT_DIRS or EXEMPT_FILES."""
+    return rel.startswith(EXEMPT_DIRS) or rel in EXEMPT_FILES
+
+
 # `// ALLOW(a, b): reason`; the reason is checked separately so a bare one is an error.
 ALLOW = re.compile(r"(?://+|/\*)\s*ALLOW\(\s*([\w\s,]*?)\s*\)\s*(:?)\s*(.*?)\s*(?:\*/.*)?$")
 
@@ -106,12 +126,72 @@ def allowed(raw_lines, number, lint):
     newlines, comments intact) is kept for `lint`: the annotation is on the line
     itself, or on a comment-only line directly above it."""
     if 1 <= number <= len(raw_lines) and lint in names_on(raw_lines[number - 1]):
+        _record(raw_lines, number, lint)
         return True
     if number >= 2:
         above = raw_lines[number - 2]
         if above.lstrip().startswith("//") and lint in names_on(above):
+            _record(raw_lines, number - 1, lint)
             return True
     return False
+
+
+def allowed_here(raw_lines, number, lint):
+    """True if 1-based line `number` itself carries an annotation for `lint` (a lint that also
+    accepts an annotation on a neighbouring line, such as the first line of a catch block)."""
+    if 1 <= number <= len(raw_lines) and lint in names_on(raw_lines[number - 1]):
+        _record(raw_lines, number, lint)
+        return True
+    return False
+
+
+# ---------------------------------------------------------------------------------------------
+# Usage recording, for the "unused ALLOW" check (`--unused`).
+#
+# An annotation whose target line no longer triggers its lint is stale: it hides nothing and only
+# misleads. Every lint asks `allowed()` about a site it would otherwise count, so when a lint run
+# sets DQ_ALLOW_USAGE=<file>, allowed() appends one `lint<TAB>file digest<TAB>annotation line` row
+# to that file for each annotation that actually kept a site. check_ratchets.sh sets the variable
+# for the whole run and then calls `allow_annotations.py --unused <file>`, which reports every
+# annotation no lint used. The digest (not a path) names the file because the lints pass allowed()
+# the file's lines, not its name.
+#
+# A lint must therefore only ask allowed() about a site it would count: ask after the pattern
+# matched and the file/directory exemptions passed, not for every line. A lint that asks for every
+# line makes every annotation look used (a miss for this check, never a false report).
+# ---------------------------------------------------------------------------------------------
+USAGE_ENV = "DQ_ALLOW_USAGE"
+_used = set()
+_digests = {}
+_flush_registered = False
+
+
+def digest_of(lines):
+    """Content digest of a file given as its lines (CR and trailing blank lines don't matter)."""
+    text = "\n".join(line.rstrip("\r") for line in lines).rstrip("\n")
+    return hashlib.sha1(text.encode("utf-8", "replace")).hexdigest()
+
+
+def _record(raw_lines, annotation_line, lint):
+    global _flush_registered
+    if not os.environ.get(USAGE_ENV):
+        return
+    held = _digests.get(id(raw_lines))
+    if held is None or held[0] is not raw_lines:
+        held = _digests[id(raw_lines)] = (raw_lines, digest_of(raw_lines))
+    _used.add((lint, held[1], annotation_line))
+    if not _flush_registered:
+        _flush_registered = True
+        atexit.register(_flush_usage)
+
+
+def _flush_usage():
+    path = os.environ.get(USAGE_ENV)
+    if not path or not _used:
+        return
+    with open(path, "a", encoding="utf-8", newline="\n") as handle:
+        for lint, digest, number in sorted(_used):
+            handle.write("%s\t%s\t%d\n" % (lint, digest, number))
 
 
 def read_baseline(path):
@@ -260,7 +340,90 @@ def dm_files():
             yield path, os.path.relpath(path, ROOT).replace(os.sep, "/")
 
 
+# ---------------------------------------------------------------------------------------------
+# Reason quality. The reason is what a reader sees at the site, so it has to say why the site must
+# stay, in the site's own terms. These are the shapes that have stood in for one.
+# ---------------------------------------------------------------------------------------------
+MIN_REASON = 20
+MIN_REASON_WORDS = 3
+VAGUE_REASONS = (
+    (re.compile(r"\ballowlist(?:s|ed)?\b", re.I), "there is no allowlist: say why this site stays"),
+    (re.compile(r"\b(?:see|as) (?:above|below)\b", re.I), "say the reason here, not on another line"),
+    (re.compile(r"\bnot edited here\b", re.I), "a deferred conversion is not a reason: convert the site or say why it must stay"),
+    (re.compile(r"\bS\d+\b|\bwave F\d+|\bsec(?:tion)? \d|\bphase \d", re.I), "a plan-phase label names the plan, not the reason"),
+    (re.compile(r"\b[A-Z]\d{1,2}[a-z]?(?:/[A-Z]?\d{1,2}[a-z]?)*\b"), "a plan item code (M1a, C9, P3, ...) names the plan, not the reason"),
+)
+
+
+def reason_problem(reason):
+    """Why `reason` is not a reason (text), or None."""
+    text = reason.strip()
+    if len(text) < MIN_REASON or len(text.split()) < MIN_REASON_WORDS:
+        return "reason %r is too short to explain anything (at least %d characters and %d words)" % (text, MIN_REASON, MIN_REASON_WORDS)
+    for pattern, why in VAGUE_REASONS:
+        if pattern.search(text):
+            return "reason %r: %s" % (text if len(text) <= 70 else text[:67] + "...", why)
+    return None
+
+
+# Lints whose annotations the usage check cannot observe: check_grep.sh is a shell script (same
+# line only) and doc_snippets reads the design docs, not the .dm tree.
+UNOBSERVED = {"check_grep", "doc_snippets"}
+
+
+def unused(usage_path):
+    """Prints and returns the annotations no lint run used. `usage_path` holds the rows
+    allowed() appended during the run (DQ_ALLOW_USAGE)."""
+    used, seen_lints, files = set(), set(), {}
+    with open(usage_path, encoding="utf-8") as handle:
+        for row in handle:
+            parts = row.rstrip("\n").split("\t")
+            if len(parts) == 3:
+                used.add((parts[0], parts[1], int(parts[2])))
+                seen_lints.add(parts[0])
+    annotations = []
+    for path, rel in dm_files():
+        with open(path, encoding="utf-8", errors="replace") as handle:
+            text = handle.read()
+        if "ALLOW(" not in text:
+            continue
+        lines = text.split("\n")
+        digest = digest_of(lines)
+        files[digest] = rel
+        for number, line in enumerate(lines, 1):
+            got = parse(line) if "ALLOW(" in line else None
+            if got:
+                annotations.append((rel, number, digest, got[0]))
+    # Rows whose file digest names no file are lints that handed allowed() text that is not a
+    # file's content (a fixture, a doc): a lint with such rows is not trusted to be complete.
+    stray = Counter(lint for lint, digest, _n in used if digest not in files)
+    matched = Counter(lint for lint, digest, _n in used if digest in files)
+    untrusted = sorted(lint for lint in stray if not matched[lint])
+    problems, quiet = [], Counter()
+    for rel, number, digest, names in annotations:
+        for name in sorted(names & set(LINTS)):
+            if name in UNOBSERVED or name in untrusted:
+                continue
+            if name not in seen_lints:
+                quiet[name] += 1
+                continue
+            if (name, digest, number) not in used:
+                problems.append("%s:%d: ALLOW(%s) is unused: no longer triggers %s; delete the annotation (or the "
+                                "site's reason is stale)" % (rel, number, name, LINTS[name].split(" (")[0]))
+    for name, count in sorted(quiet.items()):
+        problems.append("ALLOW(%s): %d annotation%s, but no lint run used any: %s is not run by check_ratchets.sh, "
+                        "or every one of them is stale" % (name, count, "" if count == 1 else "s", LINTS[name].split(" (")[0]))
+    for name in untrusted:
+        print("allow annotations: not checking ALLOW(%s): its lint asked allowed() about text that is not a .dm file" % name)
+    for problem in problems:
+        print(problem)
+    print("allow annotations: %d used, %d unused" % (len(annotations) - len(problems), len(problems)))
+    return problems
+
+
 def main(argv):
+    if "--unused" in argv:
+        return 1 if unused(argv[argv.index("--unused") + 1]) else 0
     problems, counts = [], {name: 0 for name in LINTS}
     for path, rel in dm_files():
         with open(path, encoding="utf-8", errors="replace") as handle:
@@ -281,6 +444,10 @@ def main(argv):
                 problems.append("%s:%d: ALLOW(%s): unknown lint; known: %s" % (rel, number, name, ", ".join(sorted(LINTS))))
             if not reason:
                 problems.append("%s:%d: ALLOW(%s) has no reason after the colon" % (rel, number, ", ".join(sorted(names))))
+            else:
+                weak = reason_problem(reason)
+                if weak:
+                    problems.append("%s:%d: ALLOW(%s): %s" % (rel, number, ", ".join(sorted(names)), weak))
             for name in names & set(LINTS):
                 counts[name] += 1
     if "--report" in argv:

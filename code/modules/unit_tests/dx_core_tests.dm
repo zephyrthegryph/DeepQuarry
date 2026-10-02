@@ -483,7 +483,7 @@ TRACKED_BRIDGED(/obj/cap_fixture/dx_periodic, gating, CHANGE_EFFECTS)
 	var/caught = FALSE
 	try
 		refresh_one(F, 0)
-	catch(var/exception/e) // ALLOW(silent_catch): the test asserts that must_be(null) throws
+	catch(var/exception/e)
 		caught = !!e
 	TEST_ASSERT(caught, "the draw failure propagated")
 	TEST_ASSERT(GLOB.refresh_running != F, "refresh_running was restored after the failure")

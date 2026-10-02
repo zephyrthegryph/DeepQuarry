@@ -30,7 +30,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
 from state_schema_lint import code_only  # noqa: E402
-from allow_annotations import allowed  # noqa: E402
+from allow_annotations import allowed, exempt_path  # noqa: E402
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 LINT = "tracked"
@@ -134,7 +134,7 @@ def scan(tracked, texts):
     bare = re.compile(rf"(?<![\w.])(?:src\.)?({names})\s*{OPS}|(?:\+\+|--)\s*(?<![\w.])(?:src\.)?({names})\b")
     dotted = re.compile(rf"(?<![\w.])(\w+)\.({names})\s*{OPS}|(?:\+\+|--)\s*(\w+)\.({names})\b")
     for rel, raw in sorted(texts.items()):
-        if not any(v in raw for v in tracked):
+        if exempt_path(rel) or not any(v in raw for v in tracked):
             continue
         raw_lines = raw.split("\n")
         for owner, proc_name, args, body in parse_procs(code_only(raw)):

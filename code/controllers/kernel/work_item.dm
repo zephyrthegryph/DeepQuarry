@@ -85,6 +85,8 @@
 	/// The membership store's list for `members` (members_of(members), kept: the store never replaces a key's list),
 	/// so the engine can see an empty sweep without a call. Null for a memberless item.
 	var/list/member_list
+	/// owner()'s system singleton, kept (re-resolved if it is ever deleted).
+	var/datum/owner_cache
 
 /datum/work_item/New(handler, interval = WORK_EVERY_TICK, when = null, members = null, phase = KERNEL_PHASE_P, list/after = null, budget = 0, lane = LANE_SIMULATION, urgent = FALSE, clock = CLOCK_WORLD)
 	..()
@@ -117,7 +119,10 @@
 
 /// The datum whose handler runs: the singleton of `owner_type`. Overridden by adapters.
 /datum/work_item/proc/owner()
-	return system(owner_type)
+	if(owner_cache && !QDELETED(owner_cache))
+		return owner_cache
+	owner_cache = system(owner_type)
+	return owner_cache
 
 /// The latency class of this item's lane.
 /datum/work_item/proc/latency_class()
@@ -173,6 +178,7 @@
 	parked = FALSE
 	consecutive_faults = 0
 	next_run = 0
+	kernel().work_due_reset() // its list may be resting on an earlier walk's due date
 
 /// Telemetry for the profiler (Kernel.metrics()).
 /datum/work_item/proc/metrics()

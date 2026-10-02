@@ -88,7 +88,7 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/solargrub_larva, REGISTRY_SOLA
 			return
 		if(!M.idle_power_usage && !M.active_power_usage && !(istype(M, /obj/machinery/power/apc) || istype(M, /obj/machinery/power/smes)))
 			return
-		if(locate_in_list(M, /mob/living/simple_mob/animal/solargrub_larva)) // ALLOW(latent): mobs are never latent
+		if(locate_in_list(M, /mob/living/simple_mob/animal/solargrub_larva))
 			return
 		enter_machine(M)
 		return TRUE

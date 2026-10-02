@@ -63,7 +63,7 @@
 /// The table of registered systems, type -> instance. A static so a GLOBAL_DATUM_INIT service can
 /// register during global init regardless of GLOB var order.
 /proc/system_table()
-	var/static/list/table = list()
+	var/static/list/table = list() // ALLOW(sys_static_getter): the registry of live systems, written as systems register; a mutable static because a GLOB var may not exist yet during global init
 	return table
 
 /datum/system/New()
@@ -230,7 +230,7 @@
 /// undoes it.
 /datum/system/proc/park_periodic()
 	periodic_parked = TRUE
-	om_task_periodic_stop(src)
+	om_task_periodic_stop(src) // ALLOW(sys_periodic_toggle): the kernel parks its own system cadence and its member driver's together: this is the park/wake pair itself, not content toggling work beside a state write
 	om_cancel_timer_slot(src, "step_yield")
 	if(member_driver)
 		member_driver.periodic_parked = TRUE

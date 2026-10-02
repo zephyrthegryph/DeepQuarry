@@ -15,9 +15,9 @@ TGS_DEFINE_AND_SET_GLOBAL(tgs, null)
 	while(TRUE)
 		TGS_DEBUG_LOG("About to terminate world. Tick: [world.time], sleep_offline: [world.sleep_offline]")
 		world.sleep_offline = FALSE // https://www.byond.com/forum/post/2894866
-		del(world) // ALLOW(scheduler): vendored TGS: del(world)
+		del(world)
 		world.sleep_offline = FALSE // just in case, this is BYOND after all...
-		sleep(world.tick_lag) // ALLOW(scheduler): vendored TGS
+		sleep(world.tick_lag)
 		TGS_DEBUG_LOG("BYOND DIDN'T TERMINATE THE WORLD!!! TICK IS: [world.time], sleep_offline: [world.sleep_offline]")
 
 /datum/tgs_api/latest

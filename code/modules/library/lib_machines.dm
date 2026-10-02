@@ -641,7 +641,7 @@ UI_DATA_REPLACE(/obj/machinery/libraryscanner, "merge:ui_data_obj_machinery_libr
 UI_ACT(/obj/machinery/libraryscanner, "scan", ui_act_scan)
 UI_ACT_PROC(/obj/machinery/libraryscanner, ui_act_scan)
 	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/book/B in contents) // ALLOW(latent): materialized above
+	for(var/obj/item/book/B in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 		rel_set(src, nameof(/datum/om/edge::cache), B)
 		break
 	add_fingerprint(usr)
@@ -655,7 +655,7 @@ UI_ACT_PROC(/obj/machinery/libraryscanner, ui_act_clear)
 UI_ACT(/obj/machinery/libraryscanner, "eject", ui_act_eject)
 UI_ACT_PROC(/obj/machinery/libraryscanner, ui_act_eject)
 	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/book/B in contents) // ALLOW(latent): materialized above
+	for(var/obj/item/book/B in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 		B.forceMove(src.loc)
 	return TRUE
 

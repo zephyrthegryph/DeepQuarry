@@ -7,7 +7,7 @@
 	var/list/obj/machinery/atmospherics/normal_members
 	var/list/datum/pipeline/line_members
 
-	var/list/leaks = list() // ALLOW(instance_list): atmos area (M1a/S1): listed in memory_lists_audit.md, not edited here
+	var/list/leaks = list() // ALLOW(instance_list): the network's leaking nodes: filled and cleared in place while the network runs
 	/// Runtime reservoirs connected through portable connectors: owner -> volume.
 	var/list/external_air_volumes
 

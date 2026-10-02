@@ -61,6 +61,7 @@
 /// registration order after the ordered ones: a bad graph must not silence gameplay, it must be caught by the test.
 /datum/controller/kernel/proc/rebuild_work_graph()
 	work_dirty = FALSE
+	work_due_reset()
 	work_errors = list()
 	phase_items = new /list(KERNEL_PHASE_COUNT)
 	var/list/missing = list()
@@ -117,13 +118,22 @@
 	. = TRUE
 	if(work_dirty || !phase_items)
 		rebuild_work_graph()
+	// Nothing in this list can be due before phase_due (the last walk's earliest due date): no walk.
+	var/due_key = lane ? KERNEL_PHASE_COUNT + lane : phase
+	if(now < phase_due[due_key])
+		return
 	// Phase P runs once per lane: each pass walks only that lane's items (rebuild_work_graph() files them).
 	var/list/items = (lane && phase == KERNEL_PHASE_P) ? phase_lane_items[lane] : phase_items[phase]
+	var/soonest = INFINITY
 	for(var/datum/work_item/W as anything in items)
 		if(lane && W.lane != lane)
 			continue
+		if(W.parked)
+			continue
 		// Not due (run_item() asks the same first): most items most ticks, so they cost no call.
-		if(W.parked || (!W.cursor && !W.yielded && W.next_run > now))
+		if(!W.cursor && !W.yielded && W.next_run > now)
+			if(W.next_run < soonest)
+				soonest = W.next_run
 			continue
 		// A member sweep with nobody to sweep (most cadences most ticks: projectiles, throwing, ...) is closed
 		// here, as run_item_members() and run_item_spread() close it, without a call into the engine.
@@ -132,11 +142,32 @@
 		if(W.member_list && !W.cursor && !length(W.member_list))
 			W.next_run = now + W.interval
 			W.runs++
+			if(W.next_run < soonest)
+				soonest = W.next_run
 			continue
 		if(!run_item(W, limit_abs, now))
 			. = FALSE
+			// Out of the lane's share with work left: phase R offers it the tick's leftovers (run_leftover_phase()).
+			// A spread sweep is paced on purpose and waits for its next pass.
+			if(lane && !W.spread)
+				LAZYOR(p_carry, W)
 			if(TICK_USAGE >= limit_abs)
+				phase_due[due_key] = 0 // the walk stopped early: the next pass walks again
 				return
+		// Its next due date after the run (an open sweep or a yield: the next pass).
+		if(W.parked)
+			continue
+		var/next = (W.cursor || W.yielded) ? now : W.next_run
+		if(next < soonest)
+			soonest = next
+	phase_due[due_key] = soonest
+
+/// Forgets every phase list's earliest due date, so each is walked again on its next pass: an item was woken, added
+/// or rescheduled from outside the walk.
+/datum/controller/kernel/proc/work_due_reset()
+	phase_due = new /list(KERNEL_PHASE_COUNT + OM_LANE_COUNT)
+	for(var/i in 1 to length(phase_due))
+		phase_due[i] = 0
 
 /// Runs one item if it is due and its latency class is admitted. Returns FALSE when it ran out of budget with work left.
 // ALLOW(sys_world_time_write): the kernel clock: a per-tick timestamp of the scheduler itself, not a per-entity expiry
@@ -149,7 +180,7 @@
 		// Not in this item's run levels: it is due again next pass, and its sweep (if one was open) resumes then.
 		return TRUE
 	// The latency gate refuses only while shedding: one var read most ticks instead of three calls.
-	var/datum/kernel_latency/latency = kernel_latency()
+	var/datum/kernel_latency/latency = latency_state || (latency_state = kernel_latency())
 	if(latency.shedding && !latency.admit(W.latency_class(), W.key))
 		return TRUE
 	if(TICK_USAGE >= limit_abs)
@@ -193,7 +224,8 @@
 
 /// A memberless item: one call. Returns TRUE when done (a yield is not done).
 /datum/controller/kernel/proc/run_item_once(datum/work_item/W, datum/owner, now)
-	if(W.token_current(null, now) && !W.yielded)
+	// Only an urgent-capable item can have been run ahead of its cadence (request_urgent()); the rest skip the token read.
+	if(W.urgent && !W.yielded && W.token_current(null, now))
 		// An urgent run already covered this instant.
 		W.next_run = now + W.interval
 		return TRUE
@@ -254,7 +286,7 @@
  * (a stalled tick, a budget cut) catches up by at most KERNEL_SPREAD_CATCHUP passes' share per pass. Returns FALSE only
  * when it ran out of budget; a pass that ran its share leaves the sweep open (W.cursor) for the next pass.
  */
-// ALLOW(sys_world_time_write): the kernel clock: a per-sweep timestamp of the scheduler itself, not a per-entity expiry
+// The kernel clock: a per-sweep timestamp of the scheduler itself, not a per-entity expiry
 /datum/controller/kernel/proc/run_item_spread(datum/work_item/W, datum/owner, limit_abs, now)
 	var/list/members = members_of(W.members)
 	var/count = length(members)

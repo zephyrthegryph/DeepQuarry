@@ -8,13 +8,9 @@
 	var/watched = 0
 	var/quiet = 0
 	var/level = 0
-	// ALLOW(instance_list): test fixture, a handful of instances per test run
 	var/list/heard = list()
-	// ALLOW(instance_list): test fixture, a handful of instances per test run
 	var/list/crossings = list()
-	// ALLOW(instance_list): test fixture, a handful of instances per test run
 	var/list/seen_ops = list()
-	// ALLOW(instance_list): test fixture, a handful of instances per test run
 	var/list/notes = list()
 	var/republish = FALSE
 
@@ -61,7 +57,6 @@ TRACKED(/datum/rx_fx, level)
 
 /// A listener for observe().
 /datum/rx_fx_listener
-	// ALLOW(instance_list): test fixture, a handful of instances per test run
 	var/list/got = list()
 
 /datum/rx_fx_listener/proc/heard_quiet(datum/source, list/keys)

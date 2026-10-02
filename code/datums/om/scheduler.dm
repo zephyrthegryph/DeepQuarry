@@ -387,8 +387,9 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 		cap = 0
 		if(!run_deadlines(pass_t))
 			pass_done = FALSE
+		var/datum/kernel_latency/latency = kernel_latency()
 		for(var/lane in 1 to OM_LANE_COUNT)
-			if(kernel_latency().sheds_lane(lane))
+			if(latency.shedding && latency.sheds_lane(lane))
 				continue
 			if(!run_lane_guarded(lane, pass_t))
 				pass_done = FALSE
@@ -1090,4 +1091,4 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 /datum/om/scheduler/proc/note_slow_step(datum/om/behaviour/B, datum/E, usage, kind = "step")
 	if(slow_step && slow_step["world_time"] == world.time && slow_step["usage"] >= usage)
 		return
-	slow_step = list("kind" = kind, "behaviour" = "[B.name || B.type]", "entity" = "[E.type]", "name" = "[E]", "usage" = usage, "ms" = round(TICK_DELTA_TO_MS(usage), 0.1), "world_time" = world.time) // ALLOW(sys_world_time_write): stamps a diagnostic record, not a stored expiry
+	slow_step = list("kind" = kind, "behaviour" = "[B.name || B.type]", "entity" = (E ? "[E.type]" : "none"), "name" = "[E]", "usage" = usage, "ms" = round(TICK_DELTA_TO_MS(usage), 0.1), "world_time" = world.time)

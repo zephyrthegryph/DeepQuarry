@@ -140,6 +140,6 @@
 /datum/system_stats/proc/ms_total()
 	return ms_hi + ms_lo
 
-/datum/system_stats/Destroy()
+/datum/system_stats/on_destroy(force)
 	QDEL_NULL(hist)
-	return ..()
+	..()

@@ -132,7 +132,7 @@
 	bigshadow.plane = MOB_PLANE
 	bigshadow.layer = BELOW_MOB_LAYER
 	bigshadow.appearance_flags = RESET_COLOR|RESET_TRANSFORM
-	add_overlay(bigshadow) // ALLOW(decl): per-instance image
+	add_overlay(bigshadow) // ALLOW(decl): the overlay is an image built per instance, which a declaration cannot express
 
 DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/fennec/huge, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /mob/living/simple_mob/vore/fennec/huge/appearance_overlays()

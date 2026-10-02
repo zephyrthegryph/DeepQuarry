@@ -30,7 +30,7 @@ other types of metals and chemistry for reagents).
 	/// Bitflags indicating what machines this design is compatable with. ([IMPRINTER]|[AWAY_IMPRINTER]|[PROTOLATHE]|[AWAY_LATHE]|[AUTOLATHE]|[MECHFAB]|[BIOGENERATOR]|[LIMBGROWER]|[SMELTER])
 	var/build_type = null
 	/// List of materials required to create one unit of the product. Format is (typepath or caregory) -> amount
-	var/list/materials = list() // ALLOW(instance_list): composition rewrite: design materials are being replaced; not edited here
+	var/list/materials = list() // ALLOW(instance_list): the design's material cost table: always filled with its materials, so a lazy list saves nothing
 	/// Optional application bridge for ordinary items that do not implement set_material.
 	var/material_application = null
 	/// Blueprint (a /datum/material_template path) for this design's configurable

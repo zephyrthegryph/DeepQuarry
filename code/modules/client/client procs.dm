@@ -226,14 +226,7 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 	if(filelength > UPLOAD_LIMIT)
 		to_chat(src, span_red("Error: AllowUpload(): File Upload too large. Upload Limit: [UPLOAD_LIMIT/1024]KiB."))
 		return 0
-/*	//Don't need this at the moment. But it's here if it's needed later.
-	//Helps prevent multiple files being uploaded at once. Or right after eachother.
-	var/time_to_wait = fileaccess_timer - world.time
-	if(time_to_wait > 0)
-		to_chat(src, span_red("Error: AllowUpload(): Spam prevention. Please wait [round(time_to_wait/10)] seconds."))
-		return 0
-	// ALLOW(sys_world_time_write): inside a commented-out block, not compiled
-	fileaccess_timer = EXPIRY_AT(null, CLOCK_WORLD, 0) + FTPDELAY	*/
+	// Upload spam prevention is not needed at the moment: code/_helpers/files.dm has the timer if it is.
 	return 1
 
 	///////////
@@ -409,7 +402,7 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 		Destroy() //Clean up signals and timers.
 	return ..()
 
-// ALLOW(lifecycle): a client logs out of the directory, admins and tickets.
+// A client logs out of the directory, admins and tickets.
 /client/Destroy()
 	// A client is not a datum: it is the one owner of its panels, windows and screens by design,
 	// so they are plain vars, deleted here by hand.
@@ -430,7 +423,7 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 		fakeConversations = null // ALLOW(ownership): /client is not a datum; it holds these directly
 	// Every connection-scoped datum (panels, tgui windows, say/shock, tooltips, media, loot
 	// panel, interaction menu, keybind editor, ...) is owned by the session.
-	qdel(session)
+	qdel(session) // ALLOW(lifecycle): the connection-scoped session datum is deleted with its client; it is a plain datum, not an atom
 	session = null // ALLOW(ownership): /client is not a datum; it holds this directly
 	..()
 	return QDEL_HINT_HARDDEL_NOW
@@ -738,7 +731,7 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 
 //send resources to the client. It's here in its own proc so we can move it around easiliy if need be
 /client/proc/send_resources()
-	spawn (10) //removing this spawn causes all clients to not get verbs. // ALLOW(scheduler): client procs (asset delivery to the client)
+	spawn (10) //removing this spawn causes all clients to not get verbs. // ALLOW(scheduler): login-ordering hack: the delay lets the client's verb delivery finish first, and without it no client gets its verbs (a login hook replaces it)
 
 		//load info on what assets the client has
 		src << browse('code/modules/asset_cache/validate_assets.html', "window=asset_cache_browser")

@@ -228,7 +228,7 @@ DECLARE_REAGENTS(/obj/item/clothing/mask/chewable/candy, null, list(REAGENT_ID_S
 
 /obj/item/clothing/mask/chewable/candy/gum/Initialize(mapload)
 	. = ..()
-	reagents.add_reagent(pick(REAGENT_ID_BANANA,REAGENT_ID_BERRYJUICE,REAGENT_ID_GRAPEJUICE,REAGENT_ID_LEMONJUICE,REAGENT_ID_LIMEJUICE,REAGENT_ID_ORANGEJUICE,REAGENT_ID_WATERMELONJUICE),10) // ALLOW(decl): random flavour
+	reagents.add_reagent(pick(REAGENT_ID_BANANA,REAGENT_ID_BERRYJUICE,REAGENT_ID_GRAPEJUICE,REAGENT_ID_LEMONJUICE,REAGENT_ID_LIMEJUICE,REAGENT_ID_ORANGEJUICE,REAGENT_ID_WATERMELONJUICE),10) // ALLOW(decl): Initialize rolls a random flavour per instance; a declaration has no random form
 	color = reagents.get_color()
 	update_icon()
 
@@ -336,7 +336,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/chewable/candy/lolli, INTERACT_ITEM(
 
 /obj/item/clothing/mask/chewable/candy/lolli/Initialize(mapload)
 	. = ..()
-	reagents.add_reagent(pick(REAGENT_ID_BANANA,REAGENT_ID_BERRYJUICE,REAGENT_ID_GRAPEJUICE,REAGENT_ID_LEMONJUICE,REAGENT_ID_LIMEJUICE,REAGENT_ID_ORANGEJUICE,REAGENT_ID_WATERMELONJUICE),20) // ALLOW(decl): random flavour
+	reagents.add_reagent(pick(REAGENT_ID_BANANA,REAGENT_ID_BERRYJUICE,REAGENT_ID_GRAPEJUICE,REAGENT_ID_LEMONJUICE,REAGENT_ID_LIMEJUICE,REAGENT_ID_ORANGEJUICE,REAGENT_ID_WATERMELONJUICE),20) // ALLOW(decl): Initialize rolls a random flavour per instance; a declaration has no random form
 	color = reagents.get_color()
 	update_icon()
 

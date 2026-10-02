@@ -344,14 +344,14 @@ DECLARE_PERIODIC_WHILE(/obj/item/stack/material/processed_alloy, PERIODIC_SLOW, 
 	var/datum/material_batch/original = physical_batch()?.copy_batch()
 	var/obj/item/stack/material/processed_alloy/new_stack = ..()
 	if(!new_stack || !original)
-		qdel(original)
+		qdel(original) // ALLOW(lifecycle): a material batch is a plain datum with no holder or slot; the lifecycle verbs only take atoms
 		return new_stack
 	new_stack.set_processed_material(material.name)
 	own_clear(new_stack, nameof(new_stack.batch_state), OWN_DELETE)
 	own_set(new_stack, nameof(new_stack.batch_state), original.copy_for_amount(new_stack.get_amount()))
 	own_clear(src, nameof(batch_state), OWN_DELETE)
 	own_set(src, nameof(batch_state), original.copy_for_amount(max(old_amount - new_stack.get_amount(), 0)))
-	qdel(original)
+	qdel(original) // ALLOW(lifecycle): a material batch is a plain datum with no holder or slot; the lifecycle verbs only take atoms
 	return new_stack
 
 /obj/item/stack/material/processed_alloy/transfer_to(obj/item/stack/target, tamount = null, type_verified)
@@ -364,8 +364,8 @@ DECLARE_PERIODIC_WHILE(/obj/item/stack/material/processed_alloy, PERIODIC_SLOW, 
 	var/datum/material_batch/target_batch = processed_target.physical_batch()?.copy_batch()
 	var/transferred = ..(target, tamount, type_verified)
 	if(!transferred)
-		qdel(source_batch)
-		qdel(target_batch)
+		qdel(source_batch) // ALLOW(lifecycle): a material batch is a plain datum with no holder or slot; the lifecycle verbs only take atoms
+		qdel(target_batch) // ALLOW(lifecycle): a material batch is a plain datum with no holder or slot; the lifecycle verbs only take atoms
 		return 0
 	var/datum/material_batch/new_target = target_batch.copy_for_amount(target_before)
 	var/datum/material_batch/source_portion = source_batch.copy_for_amount(transferred)
@@ -392,9 +392,9 @@ DECLARE_PERIODIC_WHILE(/obj/item/stack/material/processed_alloy, PERIODIC_SLOW, 
 		own_clear(src, nameof(batch_state), OWN_DELETE)
 		own_set(src, nameof(batch_state), new_source)
 		update_thermal_processing()
-	qdel(source_portion)
-	qdel(source_batch)
-	qdel(target_batch)
+	qdel(source_portion) // ALLOW(lifecycle): a material batch is a plain datum with no holder or slot; the lifecycle verbs only take atoms
+	qdel(source_batch) // ALLOW(lifecycle): a material batch is a plain datum with no holder or slot; the lifecycle verbs only take atoms
+	qdel(target_batch) // ALLOW(lifecycle): a material batch is a plain datum with no holder or slot; the lifecycle verbs only take atoms
 	return transferred
 
 /// Every amount mutation on a stack (use/add/set_amount, hence split/merge/

@@ -114,10 +114,25 @@
 /datum/benchmark/idle/Run()
 	wait_for_assets()
 	begin_window()
-	// A few synthetic clicks and queued verbs every tick, so the input latency record (input_p99) has data.
-	wait_seconds_with_input(param("seconds", 60), param("clicks", 2), param("verbs", 2))
+	// Pure wait: no synthetic input, so idle compares like for like with builds from before the input record.
+	// Input latency has its own scenario (`input`).
+	wait_seconds(param("seconds", 60))
 	end_window("idle")
 	mark("idle_end")
+
+/// Input latency on a quiet round: synthetic clicks and queued verbs every tick, so the input record (input_p99,
+/// click/verb waits) has data on a world with no clients. Kept apart from `idle` so idle stays a pure wait.
+/datum/benchmark/input
+	id = "input"
+	description = "Input latency with synthetic clicks and verbs every tick on an idle round"
+	default_scenario = TRUE
+
+/datum/benchmark/input/Run()
+	wait_for_assets()
+	begin_window()
+	wait_seconds_with_input(param("seconds", 30), param("clicks", 2), param("verbs", 2))
+	end_window("input")
+	mark("input_end")
 
 /// Atmospherics baseline: 120 SSair cycles of the mapped station, recording
 /// Rust worker pressure alongside tick cost.
@@ -145,7 +160,7 @@
 	while(SSair.times_fired < start_cycle + cycles)
 		if(REALTIMEOFDAY > deadline)
 			fail("SSair ran [SSair.times_fired - start_cycle]/[cycles] cycles in 300s")
-		stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
+		stoplag()
 		maxima["events"] = max(maxima["events"], SSair.gas_events_last)
 		maxima["reactions"] = max(maxima["reactions"], SSair.gas_reactions_last)
 		maxima["visuals"] = max(maxima["visuals"], SSair.gas_visuals_last)
@@ -216,7 +231,7 @@
 			rel_add(src, nameof(event_turfs), T)
 		var/turf/corner = event_turfs[1]
 		rel_set(src, nameof(event_center), locate(33, 33, corner.z))
-		stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
+		stoplag()
 		switch(event_name)
 			if("large_explosion")
 				measure_event(event_name, om_callable(src, PROC_REF(trigger_large_explosion)))
@@ -276,7 +291,7 @@
 /datum/benchmark/generation/proc/generate(seed, list/diagnostics)
 	try
 		rel_set(src, nameof(generated_site), GLOB.expedition_service.generate_debug_station(seed, diagnostics))
-	catch(var/exception/error) // ALLOW(silent_catch): the failure is recorded in the benchmark diagnostics
+	catch(var/exception/error)
 		diagnostics["error"] = "[error]"
 	generation_done = TRUE
 
@@ -290,12 +305,12 @@
 		rel_clear(src, nameof(generated_site))
 		generation_done = FALSE
 		begin_window()
-		INVOKE_ASYNC(src, PROC_REF(generate), seed, diagnostics) // ALLOW(scheduler): expedition generation yields; harness polls a deadline
+		INVOKE_ASYNC(src, PROC_REF(generate), seed, diagnostics)
 		var/deadline = REALTIMEOFDAY + 6000
 		while(!generation_done)
 			if(REALTIMEOFDAY > deadline)
 				fail("generation did not finish within 600s on cycle [cycle]")
-			stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
+			stoplag()
 		end_window("cycle[cycle]_generate")
 		detail("cycle[cycle]_diagnostics", diagnostics)
 		if(!generated_site())
@@ -305,7 +320,7 @@
 		rel_clear(src, nameof(generated_site))
 		var/waited = 0
 		while((length(GLOB.expedition_service.teardown_z) || !length(GLOB.expedition_service.free_z)) && waited++ < world.fps * 180)
-			stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
+			stoplag()
 		if(waited >= world.fps * 180)
 			fail("expedition teardown did not return its z-level to the pool")
 		wait_fires(SSair, 60)
@@ -436,32 +451,32 @@
 	var/static/log_fn = load_ext(RUST_G, "log_write")
 	var/list/best = list()
 	for(var/round in 1 to rounds)
-		stoplag() // start each round on a fresh tick // ALLOW(scheduler): benchmark harness measures across real MC ticks
+		stoplag() // start each round on a fresh tick
 		rustg_time_reset("rustg_dispatch")
 		for(var/i in 1 to calls)
 			RUSTG_CALL(RUST_G, "hash_string")(RUSTG_HASH_XXH64, text)
 		best["hash_string_by_name_us"] = min(best["hash_string_by_name_us"] || INFINITY, rustg_time_microseconds("rustg_dispatch") / calls)
-		stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
+		stoplag()
 		rustg_time_reset("rustg_dispatch")
 		for(var/i in 1 to calls)
 			call_ext(hash_fn)(RUSTG_HASH_XXH64, text)
 		best["hash_string_cached_us"] = min(best["hash_string_cached_us"] || INFINITY, rustg_time_microseconds("rustg_dispatch") / calls)
-		stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
+		stoplag()
 		rustg_time_reset("rustg_dispatch")
 		for(var/i in 1 to calls)
 			RUSTG_CALL(RUST_G, "json_is_valid")(json)
 		best["json_is_valid_by_name_us"] = min(best["json_is_valid_by_name_us"] || INFINITY, rustg_time_microseconds("rustg_dispatch") / calls)
-		stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
+		stoplag()
 		rustg_time_reset("rustg_dispatch")
 		for(var/i in 1 to calls)
 			call_ext(json_fn)(json)
 		best["json_is_valid_cached_us"] = min(best["json_is_valid_cached_us"] || INFINITY, rustg_time_microseconds("rustg_dispatch") / calls)
-		stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
+		stoplag()
 		rustg_time_reset("rustg_dispatch")
 		for(var/i in 1 to calls)
 			RUSTG_CALL(RUST_G, "log_write")(log_file, text, "false")
 		best["log_write_by_name_us"] = min(best["log_write_by_name_us"] || INFINITY, rustg_time_microseconds("rustg_dispatch") / calls)
-		stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
+		stoplag()
 		rustg_time_reset("rustg_dispatch")
 		for(var/i in 1 to calls)
 			call_ext(log_fn)(log_file, text, "false")
@@ -591,7 +606,7 @@
 		var/mob/living/simple_mob/animal/passive/mouse/white/mouse = new(locate(3 + (i * 11) % 46, 3 + (i * 17) % 46, fixture_z))
 		mouse.ai_brain?.go_sleep()
 	var/rounds = param("rounds", 30)
-	stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
+	stoplag()
 	var/cost_before = 0
 	for(var/key in GLOB.radiation_service.profile_source_cost_ms)
 		cost_before += GLOB.radiation_service.profile_source_cost_ms[key]
@@ -604,7 +619,7 @@
 		while(length(GLOB.radiation_service.processing))
 			if(REALTIMEOFDAY > deadline)
 				fail("radiation pulses did not drain within 60s")
-			stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
+			stoplag()
 	end_window("radiation")
 	var/cost_after = 0
 	for(var/key in GLOB.radiation_service.profile_source_cost_ms)

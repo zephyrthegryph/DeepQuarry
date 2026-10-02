@@ -176,7 +176,7 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 		return null
 	var/list/entry = _rel_entry(source, var_name)
 	if(!entry)
-		source.vars[var_name] = target // ALLOW(api, ownership): undeclared view, reported above
+		source.vars[var_name] = target // ALLOW(api): undeclared view, reported above
 		own_field_changed(source, var_name)
 		return target
 	if(entry[OWNE_LIST])
@@ -253,7 +253,7 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 			var/list/E = value
 			E.Cut()
 		else
-			source.vars[var_name] = null // ALLOW(api, ownership): undeclared view
+			source.vars[var_name] = null // ALLOW(api): a view var no type declared: the accessor clears it and reports the missing declaration
 		own_field_changed(source, var_name)
 		return
 	if(islist(value))
@@ -270,12 +270,12 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 		var/list/L = source.vars[var_name]
 		if(!islist(L))
 			L = list()
-			source.vars[var_name] = L // ALLOW(api, ownership): the accessor
+			source.vars[var_name] = L // ALLOW(api): this proc is the accessor: the one place allowed to write this var by name
 			own_field_changed(source, var_name)
 		// rel_add() (the only list caller) already found `target` absent: append, don't rescan.
 		L += target
 	else
-		source.vars[var_name] = target // ALLOW(api, ownership): the accessor
+		source.vars[var_name] = target // ALLOW(api): this proc is the accessor: the one place allowed to write this var by name
 		own_field_changed(source, var_name)
 	_rel_index(target, source, var_name)
 	if(entry[OWNE_WATCH])
@@ -297,7 +297,7 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 		var/list/TL = theirs
 		if(!islist(TL))
 			TL = list()
-			target.vars[partner_var] = TL // ALLOW(api, ownership): the accessor
+			target.vars[partner_var] = TL // ALLOW(api): this proc is the accessor: the one place allowed to write this var by name
 			own_field_changed(target, partner_var)
 		TL += source // absent (checked above): a pipeline's thousands of members stay linear
 		_rel_index(source, target, partner_var)
@@ -308,7 +308,7 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 		return
 	if(theirs) // exclusive: the partner's old partner loses it
 		_rel_detach(target, partner_var, theirs, pentry)
-	target.vars[partner_var] = source // ALLOW(api, ownership): the accessor
+	target.vars[partner_var] = source // ALLOW(api): this proc is the accessor: the one place allowed to write this var by name
 	own_field_changed(target, partner_var)
 	_rel_index(source, target, partner_var)
 	if(pentry[OWNE_WATCH])
@@ -321,7 +321,7 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 		var/list/L = value
 		L -= target
 	else if(value == target)
-		source.vars[var_name] = null // ALLOW(api, ownership): the accessor
+		source.vars[var_name] = null // ALLOW(api): this proc is the accessor: the one place allowed to write this var by name
 		own_field_changed(source, var_name)
 	_rel_unindex(target, source, var_name)
 	if(entry?[OWNE_WATCH])
@@ -339,7 +339,7 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 			_rel_unindex(source, target, partner_var)
 			unlinked = TRUE
 	else if(theirs == source)
-		target.vars[partner_var] = null // ALLOW(api, ownership): the accessor
+		target.vars[partner_var] = null // ALLOW(api): this proc is the accessor: the one place allowed to write this var by name
 		own_field_changed(target, partner_var)
 		_rel_unindex(source, target, partner_var)
 		unlinked = TRUE
@@ -445,7 +445,7 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 				var/value = S.vars[name]
 				var/dropped = FALSE
 				if(value == D)
-					S.vars[name] = null // ALLOW(api, ownership): relation teardown
+					S.vars[name] = null // ALLOW(api): relation teardown clears the view var; the relation machinery is the accessor
 					own_field_changed(S, name)
 					dropped = TRUE
 				else if(islist(value))
@@ -475,7 +475,7 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 			var/list/L = value
 			for(var/datum/target as anything in L.Copy())
 				_rel_detach(D, var_name, target, entry)
-			D.vars[var_name] = null // ALLOW(api, ownership): relation teardown
+			D.vars[var_name] = null // ALLOW(api): relation teardown clears the view var; the relation machinery is the accessor
 			own_field_changed(D, var_name)
 		else
 			_rel_detach(D, var_name, value, entry)
@@ -503,7 +503,7 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 					continue
 				var/value = S.vars[name]
 				if(value == T)
-					S.vars[name] = null // ALLOW(api, ownership): z-level release
+					S.vars[name] = null // ALLOW(api): releasing a z-level clears the view var; the relation machinery is the accessor
 					own_field_changed(S, name)
 					.++
 				else if(islist(value))
@@ -631,7 +631,7 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 				if(islist(value))
 					var/list/L = value
 					value = L.Copy()
-				successor.vars[name] = value // ALLOW(api, ownership): declared forwarded state
+				successor.vars[name] = value // ALLOW(api): declared forwarded state
 				own_field_changed(successor, name)
 
 // ---------------------------------------------------------------- keyed auto-linking
@@ -754,7 +754,7 @@ GLOBAL_LIST_EMPTY(rel_key_waiters)
 		var/list/spec = T.entries[var_name][OWNE_EXTRA]
 		if(spec[2] == key_var)
 			rel_clear(D, var_name)
-	D.vars[key_var] = new_value // ALLOW(api, ownership): the keyed-link accessor writes the id var it re-keys
+	D.vars[key_var] = new_value // ALLOW(api): the keyed-link accessor writes the id var it re-keys
 	own_field_changed(D, key_var)
 	if(materialized)
 		rel_keyed_materialize(D)

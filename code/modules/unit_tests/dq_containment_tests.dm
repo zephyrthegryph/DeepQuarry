@@ -52,7 +52,7 @@
 /datum/dq_containment_listener
 	var/block_insert = FALSE
 	var/block_remove = FALSE
-	var/list/events = list() // ALLOW(instance_list): containment (C1/C4): landed on master unlisted; not edited here
+	var/list/events = list()
 
 /datum/dq_containment_listener/proc/watch(atom/holder)
 	om_hook(holder, /datum/om/event/before/slot_pre_insert, src, PROC_REF(on_pre_insert))
@@ -109,9 +109,9 @@
 	tier = TEST_TIER_EXHAUSTIVE
 	/// Random operations to run, each followed by a full conservation check.
 	var/steps = 400
-	var/list/holders = list() // ALLOW(instance_list): d: unit-test fixture; a handful of instances per test run
-	var/list/things = list() // ALLOW(instance_list): d: unit-test fixture; a handful of instances per test run
-	var/list/made = list() // ALLOW(instance_list): d: unit-test fixture; a handful of instances per test run
+	var/list/holders = list()
+	var/list/things = list()
+	var/list/made = list()
 	var/turf/floor
 	var/moves_done = 0
 	var/moves_refused = 0

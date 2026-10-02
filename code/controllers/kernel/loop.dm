@@ -20,7 +20,7 @@
 /datum/controller/kernel/proc/start_loop(delay)
 	set waitfor = 0 // ALLOW(scheduler): kernel code (the host loop)
 	if(delay)
-		sleep(delay) // ALLOW(scheduler): kernel
+		sleep(delay) // ALLOW(scheduler): the kernel's own loop: it is the scheduler, so it sleeps between ticks
 	testing("Kernel starting processing")
 	var/generation = ++loop_gen
 	var/started_stage
@@ -130,7 +130,7 @@
 		Master.olddrift = newdrift
 		if (Master.processing <= 0)
 			Master.current_ticklimit = TICK_LIMIT_RUNNING
-			sleep(1 SECONDS) // ALLOW(scheduler): kernel
+			sleep(1 SECONDS) // ALLOW(scheduler): the kernel's own loop: it is the scheduler, so it sleeps between ticks
 			continue
 
 		//Anti-tick-contention heuristics:
@@ -140,7 +140,7 @@
 			if (starting_tick_usage > TICK_LIMIT_MC) //if there isn't enough time to bother doing anything this tick, sleep a bit.
 				sleep_delta *= 2
 				Master.current_ticklimit = TICK_LIMIT_RUNNING * 0.5
-				sleep(world.tick_lag * (Master.processing * sleep_delta)) // ALLOW(scheduler): kernel
+				sleep(world.tick_lag * (Master.processing * sleep_delta)) // ALLOW(scheduler): the kernel's own loop: it is the scheduler, so it sleeps between ticks
 				continue
 
 			//Byond resumed us late. assume it might have to do the same next tick
@@ -193,4 +193,4 @@
 
 		Master.check_and_perform_fast_update()
 		Master.record_performance_tick(max(Master.perf_tick_peak_usage, TICK_USAGE))
-		sleep(world.tick_lag * (Master.processing * sleep_delta)) // ALLOW(scheduler): kernel
+		sleep(world.tick_lag * (Master.processing * sleep_delta)) // ALLOW(scheduler): the kernel's own loop: it is the scheduler, so it sleeps between ticks

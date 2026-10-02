@@ -23,9 +23,11 @@
 		return null
 	return list(adopt_entry(lib_op("Repair", GLOBAL_PROC_REF(cap_breakable_repair), OP_SHAPE_TOOL, using = repair_tool, key = "repair", kind = OP_STRUCTURAL, delay = repair_delay, needs = GLOBAL_PROC_REF(cap_breakable_is_broken), else_say = "it isn't broken", works_broken = TRUE, works_unpowered = TRUE, priority = OP_PRIORITY_PART), id = "breakable:[repair_tool]"))
 
+GLOBAL_LIST_INIT(cap_examine_broken, list("It is broken."))
+
 /datum/capability/breakable/examine(atom/holder, mob/user)
 	if(is_broken(holder))
-		return list("It is broken.")
+		return GLOB.cap_examine_broken
 	return null
 
 /datum/capability/breakable/draw(atom/holder, datum/look/look)

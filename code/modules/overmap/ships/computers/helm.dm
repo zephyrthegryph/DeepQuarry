@@ -41,7 +41,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/computer/ship/helm, MACHINE_PIPELINE, 
 	get_known_sectors()
 
 /obj/machinery/computer/ship/helm/proc/get_known_sectors()
-	// ALLOW(spatial): world search
+	// ALLOW(spatial): a deliberate whole-world search: the target is not tied to any holder or z-level index
 	var/area/overmap/map = locate() in world
 	for(var/obj/effect/overmap/visitable/S in area_contents_of_type(map, /obj/effect/overmap/visitable))
 		if(!istype(S,/obj/effect/overmap/visitable/sector) && !istype(S,/obj/effect/overmap/visitable/planet)) // let planets also be favorited via GPS

@@ -56,7 +56,7 @@
 			km_synthetic_click(clicker, floor)
 		for(var/i in 1 to verbs)
 			km_synthetic_verb()
-		stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
+		stoplag()
 	qdel(clicker)
 	count_metric("synthetic_verbs_run", GLOB.km_synthetic.verbs_run, "verbs", "none")
 

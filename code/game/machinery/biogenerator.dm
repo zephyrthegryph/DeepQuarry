@@ -239,7 +239,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/biogenerator, "biogen-{appearance_state}")
 	else if(istype(O, /obj/item/storage/bag/plants))
 		var/i = 0
 		latent_materialize_all() // a walk needs real things (C5)
-		for(var/obj/item/reagent_containers/food/snacks/grown/G in contents) // ALLOW(latent): materialized above
+		for(var/obj/item/reagent_containers/food/snacks/grown/G in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 			i++
 		if(i >= 10)
 			to_chat(user, span_notice("\The [src] is already full! Activate it."))
@@ -259,7 +259,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/biogenerator, "biogen-{appearance_state}")
 	else
 		var/i = 0
 		latent_materialize_all() // a walk needs real things (C5)
-		for(var/obj/item/reagent_containers/food/snacks/grown/G in contents) // ALLOW(latent): materialized above
+		for(var/obj/item/reagent_containers/food/snacks/grown/G in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 			i++
 		if(i >= 10)
 			to_chat(user, span_notice("\The [src] is full! Activate it."))
@@ -292,7 +292,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/biogenerator, "biogen-{appearance_state}")
 		return
 	var/S = 0
 	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/reagent_containers/food/snacks/grown/I in contents) // ALLOW(latent): materialized above
+	for(var/obj/item/reagent_containers/food/snacks/grown/I in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 		S += 5
 		if(I.reagents.get_reagent_amount(REAGENT_ID_NUTRIMENT) < 0.1)
 			points += 1

@@ -324,7 +324,7 @@ UI_ACT_PROC(/obj/machinery/atmospherics/binary/volume_pump, ui_act_set_press)
 		return CLICK_ACTION_BLOCKING
 
 	set_use_power(!use_power)
-	// ALLOW(sys_update_icon): the device state is not an appearance-watched field; the icon is refreshed procedurally
+	// The device state is not an appearance-watched field; the icon is refreshed procedurally
 	// ALLOW(sys_update_icon_call): the device state is not an appearance-watched field; the icon is refreshed procedurally
 	update_icon()
 	add_fingerprint(user)

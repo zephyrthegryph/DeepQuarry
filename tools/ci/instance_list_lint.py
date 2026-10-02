@@ -10,6 +10,8 @@ usually empty, and a shared copy-on-write list for data that is rarely written.
 Singletons are exempt without an annotation, detected structurally: a type
 under /datum/world_service or /datum/controller, or the exact type a
 GLOBAL_DATUM_INIT(name, /type, new...) creates. One instance means one list.
+Unit tests, benchmarks and the vendored TGS DMAPI are exempt by path
+(allow_annotations.exempt_path()).
 
 Declarations that really are per-instance and non-empty carry
 `// ALLOW(instance_list): <reason>` on the declaration line or the comment line
@@ -27,7 +29,7 @@ import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from allow_annotations import allowed, check_sites, write_sites  # noqa: E402
+from allow_annotations import allowed, check_sites, exempt_path, write_sites  # noqa: E402
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
 SCAN_DIRS = ["code"]
@@ -63,7 +65,9 @@ def strip_comment(text):
 
 
 def scan_file(path):
-    """Yields (type_path, var_name, line_number) for per-instance list declarations."""
+    """Yields (type_path, var_name, line_number, lines) for per-instance list declarations. The
+    caller applies the singleton exemption and then asks allowed(): an annotation only counts as
+    used when the declaration would otherwise be flagged."""
     with open(path, encoding="utf-8", errors="replace") as handle:
         lines = handle.read().split("\n")
     type_path = None
@@ -97,8 +101,8 @@ def scan_file(path):
             match = re.match(r"^(/[\w/]+?)/var/(.*)$", body)
             if match:
                 decl = INIT_RE.match("var/" + match.group(2))
-                if decl and not any(m in decl.group("mods") for m in SHARED_MODS) and not allowed(lines, number, LINT):
-                    yield match.group(1), decl.group("name"), number
+                if decl and not any(m in decl.group("mods") for m in SHARED_MODS):
+                    yield match.group(1), decl.group("name"), number, lines
                 continue
             type_path = body.rstrip("{").strip()
             continue
@@ -124,8 +128,8 @@ def scan_file(path):
         else:
             continue
         decl = INIT_RE.match(candidate)
-        if decl and not any(m in decl.group("mods").split("/") for m in SHARED_MODS) and not allowed(lines, number, LINT):
-            yield type_path, decl.group("name"), number
+        if decl and not any(m in decl.group("mods").split("/") for m in SHARED_MODS):
+            yield type_path, decl.group("name"), number, lines
 
 
 def singleton_types():
@@ -159,8 +163,10 @@ def scan():
                     continue
                 path = os.path.join(dirpath, name)
                 rel = os.path.relpath(path, ROOT).replace(os.sep, "/")
-                for type_path, var_name, number in scan_file(path):
-                    if is_singleton(type_path, globals_):
+                if exempt_path(rel):
+                    continue
+                for type_path, var_name, number, lines in scan_file(path):
+                    if is_singleton(type_path, globals_) or allowed(lines, number, LINT):
                         continue
                     found.setdefault(f"{type_path}/{var_name}", f"{rel}:{number}")
     return found

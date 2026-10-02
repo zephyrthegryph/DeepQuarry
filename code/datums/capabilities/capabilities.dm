@@ -203,7 +203,7 @@ GLOBAL_LIST_EMPTY(caps_interned)
 	return TRUE
 
 /obj/machinery/cap_powered()
-	return !(stat & NOPOWER)
+	return !has_stat(NOPOWER)
 
 // ---- lifecycle hooks ----
 
@@ -245,7 +245,7 @@ GLOBAL_LIST_EMPTY(caps_interned)
 	GLOB.type_derives_cache[A.type] = .
 
 /// A refresh of A just ran draw() and hidden_verbs(): record what its type derives (first time only).
-/proc/type_derive_record(atom/A, drew, hid)
+/proc/type_derive_record(atom/A, drew, hid, side = TRUE)
 	var/flags = GLOB.type_derives_cache[A.type]
 	if(isnull(flags) || !(flags & TYPE_DERIVES_PENDING))
 		return
@@ -254,6 +254,8 @@ GLOBAL_LIST_EMPTY(caps_interned)
 		flags |= TYPE_DERIVES_LOOK
 	if(hid)
 		flags |= TYPE_DERIVES_VERBS
+	if(side)
+		flags |= TYPE_DERIVES_SIDE
 	GLOB.type_derives_cache[A.type] = flags
 
 /// Whether A's type derives anything the refresh engine keeps up (a look or hidden verbs; unknown yet
@@ -261,7 +263,7 @@ GLOBAL_LIST_EMPTY(caps_interned)
 /proc/type_derives(atom/A)
 	return !!(type_derive_flags(A) & (TYPE_DERIVES_LOOK | TYPE_DERIVES_VERBS | TYPE_DERIVES_CAPS | TYPE_DERIVES_PENDING))
 
-GLOBAL_LIST_EMPTY(type_derives_cache)
+GLOBAL_LIST_EMPTY(type_derives_cache) // ALLOW(cache): a per-type memo of derive flags, filled on first use and written in place as a type's capabilities change; shared caches hand out read-only values
 
 /// Runs every capability's on_destroy and drops the data. Called from /atom/Destroy().
 /proc/caps_destroy(atom/holder)
@@ -278,7 +280,7 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 	for(var/key in holder.cap_data)
 		var/datum/D = holder.cap_data[key]
 		if(isdatum(D))
-			qdel(D)
+			qdel(D) // ALLOW(lifecycle): capability data is a plain datum in the holder's cap_data table with no slot of its own; the lifecycle verbs only take atoms
 	holder.cap_data = null
 
 
@@ -379,7 +381,7 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 		if(missing & CAP_COVER_OPEN)
 			return "open the cover first"
 		return "open the maintenance panel first"
-	if(entry.cooldown && A.entry_cooldowns?[entry.id] > world.time)
+	if(entry.cooldown && A.entry_cooldowns?[entry.id] > world.time) // ALLOW(sys_world_time_expiry): a keyed per-entry cooldown table on the atom (entry id to end time): one var per entry would be dozens, and keyed cooldowns have no declared form
 		return "it isn't ready yet"
 	if(entry.blocked_by & A.cap_state)
 		var/present = entry.blocked_by & A.cap_state
@@ -730,7 +732,7 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 			E.default_action = INPUT_ACTION_USE
 	E.duration = delay || 0
 	E.apply_stance_tags()
-	C.entry = E
+	C.entry = E // ALLOW(ownership): C is the capability entry wrapper being built here: its entry is set once before the wrapper is shared, not an owned relation
 	C.key = E.id
 	C.behind = behind
 	C.locked_by = locked_by

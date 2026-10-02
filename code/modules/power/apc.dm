@@ -549,7 +549,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 /// A power failure for `duration` machine service ticks (an EMP, an overload): the output stops until
 /// it runs out or someone reboots it. A longer failure already running is kept.
 /obj/machinery/power/apc/proc/energy_fail(duration)
-	timed_set(src, nameof(power_failed), TRUE, for_time = max(round(duration), 0) * max(MACHINE_SERVICE_INTERVAL, 1), keep_longer = TRUE)
+	timed_set(src, nameof(power_failed), TRUE, for_time = max(round(duration), 0) * max(MACHINE_SERVICE_INTERVAL, 1 TICK), keep_longer = TRUE)
 
 /// power_failed's setter (timed_set() writes and reverts through it): Rust and the area hear it.
 /obj/machinery/power/apc/proc/set_power_failed(value)
@@ -700,7 +700,7 @@ SETTER(/obj/machinery/power/apc, power_failed)
 // channel / breaker / nightshift and their data (data["caps"]["power"]).
 // ─────────────────────────────────────────────────────────────────────────────
 
-/obj/machinery/power/apc/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/power/apc/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state) // ALLOW(sys_tgui_data_override): the foundation UI form: tgui_data() with act_<action> procs; the sys UI_DATA declaration predates it
 	var/list/data = ..()
 	data["locked"] = is_locked(src)
 	data["normallyLocked"] = is_locked(src)
@@ -738,10 +738,7 @@ SETTER(/obj/machinery/power/apc, power_failed)
 		return FALSE
 	return !is_locked(src) || lock_exempt(user) || action == "nightshift"
 
-/obj/machinery/power/apc/ui_logged()
-	return GLOB.apc_ui_logged
-
-GLOBAL_LIST_INIT(apc_ui_logged, list("lock" = LOG_GAME, "cover" = LOG_GAME, "charge" = LOG_GAME, "reboot" = LOG_GAME, "emergency_lighting" = LOG_GAME, "overload" = LOG_GAME))
+TYPE_TABLE(/obj/machinery/power/apc, ui_logged_actions, list("lock" = LOG_GAME, "cover" = LOG_GAME, "charge" = LOG_GAME, "reboot" = LOG_GAME, "emergency_lighting" = LOG_GAME, "overload" = LOG_GAME))
 
 /obj/machinery/power/apc/proc/act_lock(mob/user)
 	if(!lock_exempt(user))

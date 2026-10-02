@@ -63,7 +63,7 @@
 	var/stasis = FALSE
 	/// Set by the status step for the steps after it (the "status_ok" condition). Null: not set this frame.
 	var/status_ok
-	// ALLOW(ownership): pooled frame cache, filled once per frame, cleared by begin() and reset()
+	// Pooled frame cache, filled once per frame, cleared by begin() and reset()
 	var/datum/gas_mixture/env
 	var/env_known = FALSE
 

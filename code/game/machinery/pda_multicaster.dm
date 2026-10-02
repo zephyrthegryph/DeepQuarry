@@ -77,7 +77,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/pda_multicaster, "{initial(icon_state)}{on?:_
 
 /obj/machinery/pda_multicaster/proc/update_PDAs(turn_off)
 	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/pda/pda in contents) // ALLOW(latent): materialized above
+	for(var/obj/item/pda/pda in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 		var/datum/data/pda/app/messenger/M = pda.find_program(/datum/data/pda/app/messenger/multicast)
 		if(M)
 			M.toff = turn_off

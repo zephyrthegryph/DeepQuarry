@@ -23,10 +23,12 @@
 	var/datum/interaction/capability/back = adopt_entry(lib_op("Put table back", TYPE_PROC_REF(/obj/structure/table, cap_flip_back), OP_SHAPE_HAND, key = "put_table_back", action = ACT_NONE, needs = TYPE_PROC_REF(/obj/structure/table, cap_flip_can_put_back), works_broken = TRUE, works_unpowered = TRUE))
 	return list(over, back)
 
+GLOBAL_LIST_INIT(cap_examine_flipped, list("It has been flipped on its side."))
+
 /datum/capability/flip/examine(atom/holder, mob/user)
 	var/obj/structure/table/T = holder
 	if(istype(T) && T.flipped == 1)
-		return list("It has been flipped on its side.")
+		return GLOB.cap_examine_flipped
 	return null
 
 /// needs: unflipped, and the run of tables beside it would go over (flip()'s own precondition).

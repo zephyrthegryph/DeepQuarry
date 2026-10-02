@@ -146,7 +146,7 @@
 	. = FALSE //errored
 	if(message_admins_on_queue)
 		message_admins("[name] verb queuing: tick usage: [TICK_USAGE]%, proc: [incoming_callback.delegate], object: [incoming_callback.target_object()], usr: [usr]")
-	incoming_callback.enqueue_time = world.time
+	incoming_callback.enqueue_time = world.time // ALLOW(sys_world_time_write): the verb queue's own enqueue stamp, read for queue latency, not an entity expiry
 	incoming_callback.enqueue_usage = TICK_USAGE
 	verb_queue += incoming_callback
 	km_meter().verb_queued(length(verb_queue))

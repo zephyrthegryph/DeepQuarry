@@ -401,11 +401,9 @@ LB_STEP(30)
 	var/datum/controller/kernel/K = new
 	var/datum/work_item/sequence/W = new(SQ)
 	W.test_runlevel = RUNLEVEL_GAME
-	// ALLOW(ownership): test/bench fixture setup writes the framework var directly to build the state under test
 	SQ.work = W
 	K.register_work(/datum/sequence/bench_life, W)
 	var/datum/seq_frame/F = take(SQ.frame_type)
-	// ALLOW(ownership): test/bench fixture setup writes the framework var directly to build the state under test
 	F.seq = SQ
 	var/idx = SQ.idx
 	// Settle: the steps without work fall asleep.
@@ -454,12 +452,9 @@ LB_STEP(30)
 	)
 	for(var/datum/life_bench_mob/E as anything in seq_mobs)
 		seq_stop(E, /datum/sequence/bench_life)
-		// ALLOW(lifecycle): bench fixtures made by the scenario, disposed of by it
 		qdel(E)
 	for(var/datum/life_bench_mob/E as anything in pipe_mobs)
-		// ALLOW(lifecycle): bench fixtures made by the scenario, disposed of by it
 		qdel(E)
-	// ALLOW(ownership): test/bench fixture setup writes the framework var directly to build the state under test
 	SQ.work = null
 	om_test_end()
 

@@ -76,7 +76,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/supplycomp, PROC_REF(on_emag), n
 
 
 // TGUI (doc/rewrite/dx_conventions.md §5): tgui_data() and one act_<action> proc per action.
-/obj/machinery/computer/supplycomp/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/computer/supplycomp/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state) // ALLOW(sys_tgui_data_override): the foundation UI form: tgui_data() with act_<action> procs; the sys UI_DATA declaration predates it
 	var/list/data = ..()
 	var/list/shuttle_status = list()
 
@@ -232,15 +232,14 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/supplycomp, PROC_REF(on_emag), n
 		return FALSE
 	return TRUE
 
-/obj/machinery/computer/supplycomp/ui_logged()
-	return list(
-		"approve_order" = LOG_GAME,
-		"deny_order" = LOG_GAME,
-		"delete_order" = LOG_GAME,
-		"clear_all_requests" = LOG_GAME,
-		"send_shuttle" = LOG_GAME,
-		"market_route" = LOG_GAME,
-	)
+TYPE_TABLE(/obj/machinery/computer/supplycomp, ui_logged_actions, list(
+	"approve_order" = LOG_GAME,
+	"deny_order" = LOG_GAME,
+	"delete_order" = LOG_GAME,
+	"clear_all_requests" = LOG_GAME,
+	"send_shuttle" = LOG_GAME,
+	"market_route" = LOG_GAME,
+))
 
 /// Whether this console may order contraband (an emag, or a contraband-authorised board).
 /obj/machinery/computer/supplycomp/proc/contraband_ok()

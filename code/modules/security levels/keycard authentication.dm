@@ -44,7 +44,7 @@
 	A.set_dir(dir)
 	A.set_anchored(TRUE)
 	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/C in contents_of(src)) // ALLOW(latent): materialized above
+	for(var/obj/C in contents_of(src)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 		if(istype(C, /obj/item/circuitboard))
 			C.forceMove(A)
 			continue

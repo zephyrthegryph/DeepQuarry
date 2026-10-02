@@ -108,7 +108,7 @@
 	if(!operable() || !use_power || !output || length(inputs) < 2) // ALLOW(derived_reads): set_use_power() and power_change() bump rust_device_rev, as do port binds and disconnect() (nodes, ports, modes)
 		return
 	var/available_power = material_pump_power(power_rating) // ALLOW(derived_reads): fixed by the material
-	var/efficiency = ATMOS_FILTER_EFFICIENCY * (material_pump_efficiency() / 0.8) // ALLOW(derived_reads): fixed by the material
+	var/efficiency = ATMOS_FILTER_EFFICIENCY * (material_pump_efficiency() / 0.8)
 	var/output_index = ports.Find(output) // ALLOW(derived_reads): set_use_power() and power_change() bump rust_device_rev, as do port binds and disconnect() (nodes, ports, modes)
 	for(var/datum/omni_port/P in inputs)
 		if(!P.concentration)

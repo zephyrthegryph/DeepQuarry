@@ -46,18 +46,20 @@ def scan_file(path):
     text = code_only(raw)
     sites = []
     for number, line in enumerate(text.split("\n"), 1):
-        if allowed(raw_lines, number, "containment"):
-            continue
         if DECLARATION.search(line):
             line = DECLARATION.sub("", line)
+        found = []
         for match in LOC_WRITE.finditer(line):
             before = line[: match.start()].rstrip()
             # A named argument inside a call: `(loc = x` or `, loc = x`.
             if before.endswith("(") or before.endswith(","):
                 continue
-            sites.append((rel, number, "loc ="))
+            found.append((rel, number, "loc ="))
         for match in CONTENTS_WRITE.finditer(line):
-            sites.append((rel, number, match.group(0).strip()))
+            found.append((rel, number, match.group(0).strip()))
+        # Asked only about a line that would otherwise count.
+        if found and not allowed(raw_lines, number, "containment"):
+            sites.extend(found)
     return rel, sites
 
 

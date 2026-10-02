@@ -19,7 +19,9 @@ the error handler -- everything that wraps other code's callbacks) a plain
 log is not enough: the block must report, rethrow or trace.
 
 Escape hatch: `// ALLOW(silent_catch): reason` on the catch line, the line
-above it, or the first line of its block. The reason is mandatory.
+above it, or the first line of its block. The reason is mandatory. Unit tests
+(which catch on purpose), benchmarks and the vendored TGS DMAPI are exempt by path
+(allow_annotations.exempt_path()).
 
 Usage:
     python tools/ci/silent_catch_lint.py            # the CI check
@@ -30,7 +32,7 @@ import re
 import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
-from allow_annotations import allowed, names_on  # noqa: E402
+from allow_annotations import allowed, allowed_here, exempt_path  # noqa: E402
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
@@ -73,6 +75,8 @@ def strip_comment(line):
 
 
 def check_file(path, rel):
+    if exempt_path(rel):
+        return [], []
     with open(path, encoding="utf-8", errors="replace") as f:
         lines = f.read().split("\n")
     strict = rel.startswith(STRICT_DIRS)
@@ -96,14 +100,15 @@ def check_file(path, rel):
                 break
             body.append(nxt)
             j += 1
-        # The one ALLOW system (allow_annotations.py): the catch line or a comment line above it;
-        # a catch also takes the annotation on the first line of its body.
-        if allowed(lines, i + 1, "silent_catch") or (i + 1 < len(lines) and "silent_catch" in names_on(lines[i + 1])):
-            seen.append((rel, i + 1, "ALLOW"))
-            continue
         text = "\n".join(strip_comment(b) for b in body)
         if ok_re.search(text):
             seen.append((rel, i + 1, "ok"))
+            continue
+        # The one ALLOW system (allow_annotations.py): the catch line or a comment line above it;
+        # a catch also takes the annotation on the first line of its body. Asked only for a catch
+        # that would otherwise be flagged, so an annotation on one that reports is seen as unused.
+        if allowed(lines, i + 1, "silent_catch") or allowed_here(lines, i + 2, "silent_catch"):
+            seen.append((rel, i + 1, "ALLOW"))
             continue
         why = "strict dir: report/rethrow/trace required" if strict else "no log/report/rethrow"
         problems.append(f"{rel}:{i + 1}: silent catch ({why}); use dq_report_caught(e, \"context\") "

@@ -68,10 +68,11 @@ GLOBAL_VAR_INIT(pool_poison, FALSE)
 /datum/pooled/proc/release()
 	pool_release(src)
 
-/datum/pooled/Destroy(force)
+/// A pooled object is only deleted by a forced qdel(); an unforced one is refused and counted.
+/datum/pooled/lifecycle_keep(force)
 	if(!force)
 		pool_refused_qdel(src)
-		return QDEL_HINT_LETMELIVE
+		return TRUE
 	return ..()
 
 /// Hook run at release, after every field went back to its initial value: anything a field can't say

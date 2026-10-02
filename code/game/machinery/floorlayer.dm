@@ -118,15 +118,15 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/floorlayer, "T", /obj/item/stack/tile/floor
 
 /obj/machinery/floorlayer/proc/TakeNewStack()
 	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/stack/tile/tile in contents) // ALLOW(latent): materialized above
+	for(var/obj/item/stack/tile/tile in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 		own_set(src, nameof(T), tile)
 		return 1
 	return 0
 
 /obj/machinery/floorlayer/proc/SortStacks()
 	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/stack/tile/tile1 in contents) // ALLOW(latent): materialized above
-		for(var/obj/item/stack/tile/tile2 in contents) // ALLOW(latent): materialized above
+	for(var/obj/item/stack/tile/tile1 in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
+		for(var/obj/item/stack/tile/tile2 in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 			tile2.transfer_to(tile1)
 
 /obj/machinery/floorlayer/proc/layFloor(turf/w_turf)

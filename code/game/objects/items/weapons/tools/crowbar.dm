@@ -98,4 +98,4 @@
 /obj/item/tool/prybar/Initialize(mapload)
 	. = ..()
 	if(random_color)
-		icon_state = "prybar[pick("","_green","_aubergine","_blue")]" // ALLOW(decl): random pick
+		icon_state = "prybar[pick("","_green","_aubergine","_blue")]" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form

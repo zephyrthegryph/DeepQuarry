@@ -11,6 +11,12 @@ set -uo pipefail
 cd "$(dirname "$0")/../.."
 PY="${PYTHON:-python3}"
 failed=()
+# Every lint (engine and legacy Python alike) appends the ALLOW annotations that kept a site to this
+# file; the unused-ALLOW check at the end reads it once all of them have run.
+allow_usage="data/allow_usage.tsv"
+mkdir -p data
+: > "$allow_usage"
+export DQ_ALLOW_USAGE="$allow_usage"
 
 bin="$(bash tools/ci/analyze.sh)" || {
 	echo "Ratchet lints failed: the analyze engine could not be built (is cargo installed?)"
@@ -62,6 +68,13 @@ fi
 echo "::endgroup::"
 
 wait
+unset DQ_ALLOW_USAGE
+echo "::group::allow_annotations.py --unused"
+if ! "$PY" tools/ci/allow_annotations.py --unused "$allow_usage"; then
+	failed+=("allow_annotations.py --unused")
+fi
+echo "::endgroup::"
+rm -f "$allow_usage"
 for name in gen_capability_varmap_check gen_capability_varmap_selftest gen_om_notices_check; do
 	echo "::group::$name"
 	cat "$gen_dir/$name.out"

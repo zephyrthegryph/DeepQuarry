@@ -103,7 +103,7 @@
 	if(probe)
 		om_run(probe, batch)
 	else
-		stoplag() // ALLOW(scheduler): map-load batches yield between chunks (sec 3.3a)
+		stoplag() // ALLOW(scheduler): map-load batches yield between chunks so a big load does not stall the tick
 	set_tracked_initalized(INITIALIZATION_INNEW_MAPLOAD, batch.source)
 	active_batch = batch
 

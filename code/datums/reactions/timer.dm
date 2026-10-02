@@ -24,7 +24,8 @@ GLOBAL_VAR_INIT(rx_timer_seq, 0)
 	if(clock == CLOCK_WORLD)
 		id = om_after_list(null, delay, GLOBAL_PROC_REF(rx_timer_fire_ref), list(REF(holder), handler, key, token, handler_args), FALSE)
 	else
-		id = om_after_list(holder, delay, GLOBAL_PROC_REF(rx_timer_fire), list(holder, handler, key, token, handler_args), nulls_for_gone)
+		// The holder is the timer's owner: passed first when it fires (OM_TIMER_OWNER_FIRST), not captured as an argument.
+		id = om_after_list(holder, delay, GLOBAL_PROC_REF(rx_timer_fire), list(handler, key, token, handler_args), nulls_for_gone, owner_first = TRUE)
 	if(id && !isnull(key))
 		rx_ledger_add(holder, RELK_TIMER, key, token)
 		var/list/ids = rx_of(holder).timer_ids
@@ -43,7 +44,7 @@ GLOBAL_VAR_INIT(rx_timer_seq, 0)
 	holder.rx.timer_ids -= key
 	if(!length(holder.rx.timer_ids))
 		holder.rx.timer_ids = null
-	rx_ledger_clear_source(holder, RELK_TIMER, pending[2])
+	rx_ledger_remove(holder, RELK_TIMER, key, pending[2]) // the key is the timer's one `what`: no scan of the ledger
 	return om_cancel_timer(pending[3] == CLOCK_WORLD ? om_global_owner() : holder, pending[1])
 
 /// TRUE while a timer of `key` is pending on `owner`.
@@ -68,7 +69,7 @@ GLOBAL_VAR_INIT(rx_timer_seq, 0)
 		holder.rx.timer_ids -= key
 		if(!length(holder.rx.timer_ids))
 			holder.rx.timer_ids = null
-		rx_ledger_clear_source(holder, RELK_TIMER, token)
+		rx_ledger_remove(holder, RELK_TIMER, key, token)
 	if(om_proc_is_global(handler))
 		call(handler)(arglist(handler_args || list()))
 	else

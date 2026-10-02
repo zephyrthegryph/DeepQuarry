@@ -193,13 +193,13 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/mask/smokable, TYPE_PROC_REF(/atom, a
 		var/datum/effect/effect/system/reagents_explosion/e = new()
 		e.set_up(round(source.reagents.get_reagent_amount(REAGENT_ID_PHORON) / 2.5, 1), get_turf(source), 0, 0)
 		e.start()
-		qdel(source)
+		qdel(source) // ALLOW(lifecycle): the item explodes and ends whether or not taking it out of a holder would be allowed (a refusable consume() would leave it burning)
 		return TRUE
 	if(source.reagents?.get_reagent_amount(REAGENT_ID_FUEL)) // the fuel explodes, too, but much less violently
 		var/datum/effect/effect/system/reagents_explosion/e = new()
 		e.set_up(round(source.reagents.get_reagent_amount(REAGENT_ID_FUEL) / 5, 1), get_turf(source), 0, 0)
 		e.start()
-		qdel(source)
+		qdel(source) // ALLOW(lifecycle): the item explodes and ends whether or not taking it out of a holder would be allowed (a refusable consume() would leave it burning)
 		return TRUE
 	source.flags &= ~NOREACT // allowing reagents to react after being lit
 	source.reagents?.handle_reactions()
@@ -670,7 +670,7 @@ OM_FIELD(/obj/item/flame/lighter, detonator_mode, 0, CHANGE_EXPLICIT)
 	. = ..()
 	var/image/I = image(icon, "lighter-[pick("trans","tall","matte")]")
 	I.color = pick(available_colors)
-	add_overlay(I) // ALLOW(decl): random pick
+	add_overlay(I) // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
 
 EXTEND_INTERACTIONS(/obj/item/flame/lighter, INTERACT_SELF(null, PROC_REF(lighter_self)))
 

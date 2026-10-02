@@ -142,7 +142,7 @@
  * Like any get_interactions() override it replaces an ancestor's specs; to add to
  * them, use EXTEND_INTERACTIONS below. tools/ci/interactions_lint.py fails on a
  * DECLARE_INTERACTIONS whose ancestor also declares, unless the site is annotated
- * `// ALLOW(interactions): reason` (a deliberate replacement).
+ * with an interactions justified-keep annotation and a reason (a deliberate replacement).
  */
 #define DECLARE_INTERACTIONS(T, specs...) ##T/get_interactions(){\
 	var/static/list/dq_interaction_specs;\

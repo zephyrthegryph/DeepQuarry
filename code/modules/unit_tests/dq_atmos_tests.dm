@@ -124,7 +124,6 @@ GLOBAL_DATUM(dq_preboot_gas_probe, /datum/gas_mixture)
 
 	// An openspace tile IS a hole: it must pass air vertically both ways. Openspace
 	// isn't guaranteed on every map, so only assert if the type exists in the world.
-	// ALLOW(spatial): world search
 	var/turf/simulated/open/hole = locate(/turf/simulated/open) in world
 	if(hole)
 		TEST_ASSERT(hole.zAirOut(DOWN, hole), "openspace should let air fall DOWN through it — zAirOut(DOWN) should be TRUE")
@@ -4386,7 +4385,6 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_idle_portables_connectors_and_displays_hibernate
 
 /datum/unit_test/dq_idle_portables_connectors_and_displays_hibernate/Run()
-	// ALLOW(spatial): world search
 	var/turf/simulated/floor/T = locate() in world
 	TEST_ASSERT_NOTNULL(T, "no floor for idle machinery hibernation test")
 	// Pump and scrubber run the OM machine pipeline too (machine_pipeline.dm), not process():
@@ -4542,7 +4540,6 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	// edge, stepped every gas tick from SSair regardless of state, so it is
 	// never a DM process() subscriber at all — there is nothing left to
 	// hibernate or wake in DM, in any state.
-	// ALLOW(spatial): world search
 	var/turf/simulated/floor/T = locate() in world
 	TEST_ASSERT_NOTNULL(T, "no floor for binary pump hibernation test")
 	var/obj/machinery/atmospherics/binary/pump/P = new(T)
@@ -4628,7 +4625,6 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_idle_recharger_hibernates
 
 /datum/unit_test/dq_idle_recharger_hibernates/Run()
-	// ALLOW(spatial): world search
 	var/turf/simulated/floor/T = locate() in world
 	TEST_ASSERT_NOTNULL(T, "no floor for recharger hibernation test")
 	var/obj/machinery/recharger/R = new(T)
@@ -4653,7 +4649,6 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_recharger_spill_refreshes_icon
 
 /datum/unit_test/dq_recharger_spill_refreshes_icon/Run()
-	// ALLOW(spatial): world search
 	var/turf/simulated/floor/T = locate() in world
 	TEST_ASSERT_NOTNULL(T, "no floor for recharger spill test")
 	var/obj/machinery/recharger/R = new(T)
@@ -4669,7 +4664,6 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_power_monitor_hibernates_until_grid_warning
 
 /datum/unit_test/dq_power_monitor_hibernates_until_grid_warning/Run()
-	// ALLOW(spatial): world search
 	var/turf/simulated/floor/T = locate() in world
 	TEST_ASSERT_NOTNULL(T, "no floor for power monitor hibernation test")
 	var/P = power_test_grid()
@@ -7728,7 +7722,6 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_pipe_device_law_push_is_generated
 
 /datum/unit_test/dq_pipe_device_law_push_is_generated/Run()
-	// ALLOW(spatial): world search
 	var/turf/simulated/floor/T = locate() in world
 	TEST_ASSERT_NOTNULL(T, "no floor for the device push test")
 	var/obj/machinery/atmospherics/binary/passive_gate/G = allocate(/obj/machinery/atmospherics/binary/passive_gate, T)

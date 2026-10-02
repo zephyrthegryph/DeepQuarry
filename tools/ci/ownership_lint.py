@@ -53,7 +53,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
 from state_schema_lint import code_only  # noqa: E402
-from allow_annotations import allowed  # noqa: E402
+from allow_annotations import allowed, exempt_path  # noqa: E402
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
@@ -93,7 +93,8 @@ OWN_FUNCS = {"own_set", "own_take", "own_add", "own_remove", "own_put", "own_tak
 REL_FUNCS = {"rel_set", "rel_add", "rel_remove", "rel_clear", "rel_link", "rel_unlink"}
 PROTO_FUNCS = {"proto_set", "proto_private"}
 
-WRITE_ASSIGN = re.compile(r"(?<![\w.])((?:\w+\??\.)*)(\w+)\s*(=(?!=)|\+=|-=|\|=|&=|\^=)")
+# A name after a `/` is a path component (`/datum/capability/wires = /datum/...` is an assoc key), not a var.
+WRITE_ASSIGN = re.compile(r"(?<![\w./])((?:\w+\??\.)*)(\w+)\s*(=(?!=)|\+=|-=|\|=|&=|\^=)")
 WRITE_INDEX = re.compile(r"(?<![\w.])((?:\w+\??\.)*)(\w+)\[[^\]\n]*\]\s*=(?!=)")
 WRITE_METHOD = re.compile(r"(?<![\w.])((?:\w+\??\.)*)(\w+)\??\.(Cut|Add|Remove|Insert|Swap|RemoveAll)\(")
 WRITE_MACRO = re.compile(r"\b(QDEL_NULL|QDEL_LIST|QDEL_LIST_ASSOC|QDEL_LIST_ASSOC_VAL|QDEL_LAZYLIST|LAZYADD|LAZYREMOVE|LAZYSET|LAZYOR|LAZYINITLIST|LAZYCLEARLIST|LAZYNULL|UNSETEMPTY|LAZYADDASSOC|LAZYREMOVEASSOC|LAZYADDASSOCLIST|LAZYDISTINCTADD|LAZYINSERT)\(\s*((?:\w+\??\.)*)(\w+)\b")
@@ -388,6 +389,8 @@ def main(argv=None):
         report("unknown_var", r, no, msg)
 
     for r, (raw, code) in idx.files.items():
+        if exempt_path(r):
+            continue
         for no, line in enumerate(code, 1):
             # code_only() blanks string contents, so match the raw line where the code line has a call
             if "(" not in line:
@@ -496,6 +499,8 @@ def main(argv=None):
         return ambiguous[name]
 
     for r, (raw, code) in idx.files.items():
+        if exempt_path(r):
+            continue
         in_core = r.startswith(CORE_DIRS)
         for no, line in enumerate(raw, 1):
             c = code[no - 1] if no - 1 < len(code) else ""

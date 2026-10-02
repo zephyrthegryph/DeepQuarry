@@ -58,7 +58,7 @@ DECLARE_REAGENTS(/obj/item/extinguisher/atmo, null, list(REAGENT_ID_FIREFOAM = 3
 /obj/item/extinguisher/Initialize(mapload)
 	if(rand_overlays)
 		var/choice = rand(1,rand_overlays)
-		add_overlay("[item_state]O[choice]") // ALLOW(decl): random overlay pick
+		add_overlay("[item_state]O[choice]") // ALLOW(decl): Initialize rolls a random overlay per instance; a declaration has no random form
 	. = ..()
 
 /obj/item/extinguisher/examine(mob/user)

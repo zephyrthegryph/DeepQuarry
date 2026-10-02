@@ -27,12 +27,15 @@
 	cap_default_var(I, nameof(I.sharp), sharp)
 	cap_default_var(I, nameof(I.edge), edge)
 
+GLOBAL_LIST_INIT(cap_examine_edge, list("It has a keen edge."))
+GLOBAL_LIST_INIT(cap_examine_point, list("It has a sharp point."))
+
 /datum/capability/sharp/examine(atom/holder, mob/user)
 	var/obj/item/I = holder
 	if(!istype(I))
 		return null
 	if(I.edge)
-		return list("It has a keen edge.")
+		return GLOB.cap_examine_edge
 	if(I.sharp)
-		return list("It has a sharp point.")
+		return GLOB.cap_examine_point
 	return null

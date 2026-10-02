@@ -309,7 +309,6 @@ CAPABILITY(/obj/item/dq_forms_flask/replaced/topped, refine(CAP_REAGENTS, add = 
 /datum/unit_test/dq_forms_ui_push_coalesced/Run()
 	var/datum/dq_forms_ui_host/host = new
 	var/datum/tgui/dq_forms_probe/probe = new
-	// ALLOW(ownership): the probe stands in for an open window; a real window links itself (/datum/tgui/New)
 	LAZYADD(host.open_tguis, probe)
 	ui_push_flush()
 	TEST_ASSERT_EQUAL(ui_push_mark(host), 1, "one window queued")

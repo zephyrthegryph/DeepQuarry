@@ -44,11 +44,11 @@
 	. = ..()
 	if(has_weapon)
 		if(ispath(active_weapon))
-			own_set(src, nameof(active_weapon), new active_weapon(src, src)) // ALLOW(decl): constructor arguments
+			own_set(src, nameof(active_weapon), new active_weapon(src, src)) // ALLOW(decl): the holder is built with constructor arguments (a size and its owner) that a bare declaration cannot pass
 			rel_set(active_weapon, nameof(active_weapon.power_supply), bcell)
 		else
-			own_set(src, nameof(active_weapon), new /obj/item/gun/energy/gun/generator(src, src)) // ALLOW(decl): constructor arguments
-			rel_set(active_weapon, nameof(active_weapon.power_supply), bcell) // ALLOW(ownership): the generator owns the cell; this gun subtype only names it (REL decl below)
+			own_set(src, nameof(active_weapon), new /obj/item/gun/energy/gun/generator(src, src)) // ALLOW(decl): the holder is built with constructor arguments (a size and its owner) that a bare declaration cannot pass
+			rel_set(active_weapon, nameof(active_weapon.power_supply), bcell)
 	update_icon()
 
 /// If the shield gen is active; it drains power while it is.
@@ -367,7 +367,7 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 /obj/item/gun/energy/gun/generator/Initialize(mapload, obj/item/personal_shield_generator/shield_gen)
 	. = ..()
 	rel_set(src, nameof(linked_generator), shield_gen)
-	rel_set(src, nameof(power_supply), shield_generator()?.bcell) // ALLOW(ownership): the generator owns the cell and this gun subtype only names it (REL below); the base energy gun owns its power_supply
+	rel_set(src, nameof(power_supply), shield_generator()?.bcell)
 
 /obj/item/gun/energy/gun/generator/proc/can_use(mob/user, mob/M)
 	if(!check_charge(charge_cost))

@@ -458,7 +458,8 @@ Juke options take `=`: write `--scenario=a,b`, not `--scenario a,b`.
 | Scenario | Measures | Options (`--arg=name=value`) |
 |---|---|---|
 | `boot_memory` (default) | Process and Rust heap memory after boot, gas mixtures, live instances by kind and top types, compiled type counts, init time. | `top` |
-| `idle` (default) | Tick cost of a quiet round: average and p95/p99/max tick usage, overruns, TPS, per-subsystem cost, and input latency from a synthetic load of real clicks and queued verbs every tick. | `seconds` (60), `clicks` (2), `verbs` (2) |
+| `idle` (default) | Tick cost of a quiet round: average and p95/p99/max tick usage, overruns, TPS and per-subsystem cost. A pure wait (no synthetic input), so it compares like for like across builds. | `seconds` (60) |
+| `input` (default) | Input latency on a quiet round from a synthetic load of real clicks and queued verbs every tick (`input_p99`, click and verb waits). | `seconds` (30), `clicks` (2), `verbs` (2) |
 | `atmos_idle` | Atmos cost of the mapped station at rest, with Rust worker maxima. | `cycles` (120) |
 | `atmos_large` | Checkerboard gas equalization on a fresh floor. | `size` (48; 0 = whole level), `cycles` |
 | `major_events` | Explosion, supermatter, mass fire and decompression on fresh fixtures. | `events` (comma list) |

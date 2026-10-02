@@ -69,7 +69,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/trinary/mixer, TYPE_PROC_REF
 		rust_unregister_device_n("in2")
 		return
 	var/available_power = material_pump_power(power_rating) // ALLOW(derived_reads): fixed by the material
-	var/efficiency = ATMOS_FILTER_EFFICIENCY * (material_pump_efficiency() / 0.8) // ALLOW(derived_reads): fixed by the material
+	var/efficiency = ATMOS_FILTER_EFFICIENCY * (material_pump_efficiency() / 0.8)
 	rust_set_budget_leg("in1", 1, 3, RUST_FLOW_MIX, 0, RUST_ROLE_OUTPUT, node1_concentration, set_flow_rate, available_power, efficiency)
 	rust_set_budget_leg("in2", 2, 3, RUST_FLOW_MIX, 0, RUST_ROLE_OUTPUT, node2_concentration, set_flow_rate, available_power, efficiency)
 

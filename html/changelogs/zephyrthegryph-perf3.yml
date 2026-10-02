@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Lighting and other backlogs drain with the tick's spare time instead of one share per tick, so lights settle in seconds after a power change instead of fifteen."
+  - code_imp: "Atoms that draw nothing skip their refreshes, and the kernel, keyed timers and reaction work cost less per tick."

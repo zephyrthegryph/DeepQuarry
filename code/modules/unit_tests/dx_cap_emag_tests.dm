@@ -12,9 +12,9 @@
 	effects++
 	last_user = user
 
-/obj/cap_fixture/emag/Destroy()
+/obj/cap_fixture/emag/on_destroy(force)
 	last_user = null
-	return ..()
+	..()
 
 /obj/cap_fixture/emag_repeatable/capabilities()
 	. = ..()
