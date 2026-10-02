@@ -718,7 +718,6 @@ usr_outside_verb	code/modules/projectiles/gun.dm	if ((src.loc == usr) && !(istyp
 usr_outside_verb	code/modules/projectiles/gun.dm	usr.put_in_r_hand(src)
 usr_outside_verb	code/modules/projectiles/gun.dm	usr.put_in_l_hand(src)
 usr_outside_verb	code/modules/projectiles/gun.dm	src.add_fingerprint(usr)
-usr_outside_verb	code/modules/projectiles/guns/magic.dm	if(checks_antimagic && locate_within(usr, /obj/item/nullrod)) return null
 usr_outside_verb	code/modules/reagents/Chemistry-Logging.dm	var/logstr = "[usr ? key_name(usr) : "EVENT"] mixed [R.name] ([R.result]) (x[multiplier]) in \the [A] at [T ? "[T.x],[T.y],[T.z]" : "*null*"]"
 usr_outside_verb	code/modules/reagents/holder/holder.dm	stack_trace("[my_atom] attempted to add a reagent called '[id]' which doesn't exist. ([usr])")
 usr_outside_verb	code/modules/research/tg/machinery/_production.dm	var/mob/user = usr

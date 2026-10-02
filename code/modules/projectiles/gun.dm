@@ -223,7 +223,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/gun, "firemode_selector", /datum/gun_firemode_se
 		to_chat(M, span_danger("Your fingers are much too large for the trigger guard!"))
 		return FALSE
 	if(CLUMSY_HARM_CHANCE(M)) //Clumsy handling
-		var/obj/P = consume_next_projectile()
+		var/obj/P = consume_next_projectile(user)
 		if(P)
 			if(process_projectile(P, user, user, pick(BP_L_FOOT, BP_R_FOOT)))
 				handle_post_fire(user, user)
@@ -554,7 +554,7 @@ DECLARE_EMAG_REPEATABLE(/obj/item/gun, PROC_REF(on_emag), null)
 	add_attack_logs(src,target,"Fired [src.name] (Unmanned)")
 
 //obtains the next projectile to fire
-/obj/item/gun/proc/consume_next_projectile()
+/obj/item/gun/proc/consume_next_projectile(mob/user)
 	return null
 
 //used by aiming code
@@ -746,7 +746,7 @@ DECLARE_EMAG_REPEATABLE(/obj/item/gun, PROC_REF(on_emag), null)
 
 /obj/item/gun/proc/suicide_trigger(mob/living/carbon/human/M)
 	var/mob/living/user = M
-	var/obj/item/projectile/in_chamber = consume_next_projectile()
+	var/obj/item/projectile/in_chamber = consume_next_projectile(user)
 	if (istype(in_chamber))
 		act_message(user, null, others = span_warning("%U% pulls the trigger."))
 		play_fire_sound(M, in_chamber)
