@@ -59,6 +59,11 @@ radial_impl_prefixes = ["code/_onclick/hud/radial"]
 exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"]
 exempt_files = ["code/__defines/tgs.dm"]
 
+[lint.scheduler]
+# scheduler_lints.py exempt_path()
+exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"]
+exempt_files = ["code/__defines/tgs.dm"]
+
 [lint.cooldown]
 # cooldown_lint.py SKIP_DIRS. The EXPIRY_DECLARE name index still reads these files.
 exempt_prefixes = ["code/modules/unit_tests/", "code/controllers/", "code/datums/om/"]
