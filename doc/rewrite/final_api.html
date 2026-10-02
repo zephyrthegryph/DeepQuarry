@@ -195,7 +195,7 @@ html { scroll-behavior: smooth; }
   </table></div>
   <h3>Precedence</h3>
   <div class="prose">
-    <p>The same order applies everywhere: library defaults (tool profiles, a capability's own parts), then the declaring type's parts, then <code>extend(tag)</code>, then <code>extend(key)</code>. At each level a subtype beats its parent. Requirements always accumulate, so no level can drop one another level added. Single values (a wait, a priority, a message) take the most specific declaration. <code>without(key)</code> applies at its position in the list.</p>
+    <p>The same order applies everywhere: library defaults (tool profiles, a capability's own parts), then the declaring type's parts, then group extends (<code>extend(CAP_X | TAG_X | action)</code>, in list order), then <code>extend("key")</code>. At each level a subtype beats its parent. Requirements always accumulate, so no level can drop one another level added. Single values (a wait, a priority, a message) take the most specific declaration. <code>without(key)</code> applies at its position in the list.</p>
   </div>
   <h3>Interning and memory</h3>
   <div class="prose">
@@ -256,6 +256,7 @@ CAPABILITIES(/datum/system/power,
           <li><code>members_of(key, role)</code>;</li>
           <li>declared statically with <code>membership(joins = ...)</code>.</li>
         </ul>
+        Roles are free-form. A join lists the entity in <code>members_of(key, role)</code> and calls the system's <code>on_member_join(E, role)</code>; leaving calls <code>on_member_leave(E, role)</code>. A static <code>membership()</code> joins at holder init and leaves at destroy, or when its <code>when()</code> stops holding. A registry is a membership key with no system. Membership takes no callbacks: systems read members through their own api (for example <code>power_draw(E)</code>). <code>powered()</code> is a bundle over <code>powered_by(system, role)</code>.
         Joins count sources, and removal is O(1). Registries (<code>REGISTRY_*</code>) are memberships of a system or a registry key.</li>
       <li><strong>Host systems.</strong> Garbage, input, tgui transport, the verb queue, the database, the ticker, air (the LINDA/Rust driver), verdigris and lighting are systems running in phase <code>K</code> or <code>N</code>. There are no subsystems and no Master Controller.</li>
     </ul>
@@ -550,6 +551,18 @@ contents_of(A, type) · locate_within(A, type) · locate_on(turf, type) · is_in
     </ul>
     <p>Both run with a typed, pooled context, and both take the same three kinds of hook: requirements, intercepts and notices.</p>
   </div>
+  <div class="note"><p><strong>Vocabulary.</strong></p>
+    <ul>
+      <li><strong>action:</strong> a <code>/datum/act</code> context (ops and world actions). "Act" means only this.</li>
+      <li><strong>op:</strong> an actor-chosen action.</li>
+      <li><strong>intent:</strong> what a gesture means (<code>INTENT_*</code>).</li>
+      <li><strong>route:</strong> how the actor reaches the target (<code>ROUTE_*</code>).</li>
+      <li><strong>affordance:</strong> what a provider gives (<code>AFF_*</code>).</li>
+      <li><strong>key:</strong> a stable id: a capability (<code>CAP_X</code>) or an op (<code>"op_key"</code>).</li>
+      <li><strong>tag:</strong> a group label on ops (<code>TAG_*</code>).</li>
+      <li><strong><code>ON_*</code>:</strong> where an effect lands (<code>ON_TARGET</code>, <code>ON_ACTOR</code>, <code>ON_SELF</code>).</li>
+    </ul>
+  </div>
   <h3>Contexts</h3>
   <pre><code>/datum/act                    <span class="c">// pooled; every trigger's context</span>
 	var/mob/actor                 <span class="c">// null for world actions without one</span>
@@ -581,22 +594,43 @@ act_done(F)                     <span class="c">// publishes /datum/notice/fall 
   <div class="tbl"><table>
     <thead><tr><th>Input</th><th>Path</th></tr></thead>
     <tbody>
-      <tr><td>Click, ctrl/alt/shift/middle click, drag-drop, clicking the held item, keybindings</td><td>A gesture (<code>GESTURE_CLICK</code>, <code>_ALT</code>, <code>_CTRL</code>, <code>_DRAG</code>, <code>_SELF</code>, ...). The actor's bind profile and current stance map it to an ordered list of actions (<code>ACT_USE</code>, <code>ACT_ATTACK</code>, <code>ACT_TOGGLE</code>, <code>ACT_EJECT</code>, <code>ACT_OPEN</code>, <code>ACT_DROP_ONTO</code>, <code>ACT_EXAMINE</code>, ...).</td></tr>
+      <tr><td>Click, ctrl/alt/shift/middle click, drag-drop, clicking the held item, keybindings</td><td>A gesture (<code>GESTURE_CLICK</code>, <code>_ALT</code>, <code>_CTRL</code>, <code>_DRAG</code>, <code>_SELF</code>, ...). The actor's bind profile and current stance map it to an ordered list of intents (<code>INTENT_USE</code>, <code>INTENT_ATTACK</code>, <code>INTENT_TOGGLE</code>, <code>INTENT_EJECT</code>, <code>INTENT_OPEN</code>, <code>INTENT_DROP_ONTO</code>, <code>INTENT_EXAMINE</code>, ...).</td></tr>
       <tr><td>Context menu, radial, command bar, screentips</td><td>The offered ops, by key, with refused ones shown with their reason (<code>action_options()</code>, <code>screentip_for()</code>)</td></tr>
       <tr><td>UI button</td><td>An op with a <code>ui_act("name", args...)</code> input, over <code>ROUTE_UI</code></td></tr>
       <tr><td>Topic link</td><td>An op with a <code>topic("key", args...)</code> input, over <code>ROUTE_TOPIC</code></td></tr>
       <tr><td>Verb</td><td>An op with <code>menu()</code> input is listed in the verb panel's "Act" verb. Client and admin commands stay native verbs and <code>ADMIN_VERB</code>.</td></tr>
       <tr><td>Silicon remote use, AI speech commands, telekinesis</td><td><code>ROUTE_INTERFACE</code>, <code>ROUTE_SPEECH</code>, <code>ROUTE_TK</code>, each with its own provider</td></tr>
       <tr><td>Acting on the container you are inside (struggling in a belly, a locker, a mech cockpit)</td><td><code>ROUTE_INSIDE</code>: the target is the actor's container</td></tr>
-      <tr><td>AI controllers, scripted actors</td><td><code>perform_op(actor, target, key, held)</code> or <code>perform_action(actor, target, ACT_X)</code>: the same path, the same requirements</td></tr>
+      <tr><td>AI controllers, scripted actors</td><td><code>perform_op(actor, target, key, held)</code> or <code>perform_intent(actor, target, INTENT_X)</code>: the same path, the same requirements</td></tr>
       <tr><td>Admin authority</td><td><code>ROUTE_AUTHORITY</code> with an authority datum; <code>needs(req_rights(R_X))</code></td></tr>
     </tbody>
   </table></div>
+  <h3>Who may act, and what they can reach</h3>
+  <div class="prose">
+    <p>Two gates run before any op is offered or performed. They apply the same way to players, AI controllers and <code>perform_op()</code>.</p>
+    <p><strong>Actor gate.</strong> Every actor has a stat <code>acts_via</code> (rule: AND of route masks; base <code>ROUTE_ALL</code>) beside the existing <code>can_act</code> (ALL). Resolution first drops every candidate whose route is not in the actor's <code>acts_via</code>. An op with a physical input (<code>hand()</code>, <code>tool()</code>, <code>item()</code>, <code>in_hand()</code>, <code>at_target()</code>) also gets an implicit <code>req_capable()</code>, unless it declares <code>req_capable(ignoring = ...)</code> (struggling ignores restraints).</p>
+    <p>Conditions hold these stats, so nothing in content checks "is absorbed":</p>
+    <ul>
+      <li>absorbed: <code>acts_via = ROUTE_NONE</code>. Prey cannot click, use a UI, use verbs or speak commands.</li>
+      <li>stunned or paralysed: hold <code>can_act</code> FALSE.</li>
+      <li>buckled or handcuffed: hold <code>acts_via</code> minus <code>ROUTE_PHYSICAL</code>. <code>ROUTE_INSIDE</code> and <code>ROUTE_UI</code> stay as their sources choose.</li>
+      <li>dead: <code>ROUTE_NONE</code>, except the ghost routes.</li>
+    </ul>
+    <p>Ending the condition releases the hold. <code>ROUTE_AUTHORITY</code> bypasses the actor gate, and only with an authority datum.</p>
+    <p><strong>Reach gate.</strong> For physical routes the target must be reachable. Resolution walks the containment ledger from the target up to the first container the actor can touch, and every slot on the way must be exposed:</p>
+    <ul>
+      <li><code>SLOT_EXPOSURE_EXTERNAL</code> is always exposed.</li>
+      <li>A slot with <code>at = BAY_X</code> is exposed only while that bay's compartment gate passes for this route. <code>compartment(BAY_X, door =, route_gate =)</code>: the door capability (for example <code>cover()</code>) closes the bay, and <code>route_gate</code> is a requirement deciding which routes pass. Default: physical routes need the door open, <code>ROUTE_TK</code> obeys it, and <code>ROUTE_INTERFACE</code> ignores physical bays.</li>
+    </ul>
+    <p>An unreachable target is not a candidate, so a closed hatch stops every op on the enclosed cell: <code>take_out</code>, the cell's own ops, using a tool on it and drag-drop. World actions <code>insert</code> and <code>remove</code> into that slot are refused with the compartment's reason. Reach applies to the held item's <code>at_target</code> ops too. Examining an unreachable thing shows only what the bay exposes. See <a href="#ex-reach">16.1a</a>.</p>
+  </div>
   <h3>Resolution</h3>
   <ol class="prose">
     <li><strong>Candidates</strong> come from three places: the target's ops that answer the action, the held item's <code>at_target</code> ops, and the actor's own ops (abilities and <code>in_hand</code> self-uses).</li>
     <li><strong>Filters</strong>, in order:
       <ul>
+        <li><strong>step 0, actor gate:</strong> candidates whose route is not in the actor's <code>acts_via</code> are dropped (see "Who may act, and what they can reach");</li>
+        <li><strong>step 0.5, reach gate:</strong> for physical routes, a target that is not reachable offers nothing;</li>
         <li>the route is accepted;</li>
         <li>a provider (a hand, a cyborg module, a mech arm, a mob's natural weapon) gives the op's affordance (<code>AFF_MANIPULATE</code>, <code>AFF_HOLD</code>, <code>AFF_CONTROL</code>, <code>AFF_INTERFACE</code>, <code>AFF_TELEKINESIS</code>);</li>
         <li>its <code>offered</code> parts hold.</li>
@@ -605,24 +639,24 @@ act_done(F)                     <span class="c">// publishes /datum/notice/fall 
     <li><strong>Order:</strong> the profile's action list, then priority, then declaration order. Priority defaults come from the parts: <code>TAKE_OUT</code> > <code>SUBVERT</code> > <code>CLAW</code> > <code>PART</code> > <code>NORMAL</code> > <code>DEFAULT</code>. A target op that names this held item's type outranks the item's own generic use.</li>
     <li><strong>Run:</strong> the first candidate runs. If its requirements refuse, the player sees the reason; the input never silently falls through. Only <code>offered</code> failures fall through. An op with a <code>passes()</code> part lets the next candidate run after it commits.</li>
   </ol>
-  <div class="note"><p><strong>Replaces:</strong> <code>attackby</code>, <code>attack_hand</code>, <code>attack_self</code>, <code>afterattack</code>, <code>attack_generic</code>, <code>*_act</code> tool procs and <code>click_alt</code> overrides as entry points; <code>INTERACTION_ENTRY_*</code>; <code>INTERACTION_HANDLED_PASS</code> (now <code>passes()</code>); the legacy interaction resolver; <code>cap_use_at</code>'s separate pass; <code>use_tool</code>; <code>/datum/ability</code> (an ability is an actor op granted to the actor); <code>guard_ctx</code>; and <code>op_ctx</code> as a separate type.</p></div>
+  <div class="note"><p><strong>Replaces:</strong> <code>incapacitated()</code>/<code>can_act</code> checks in handlers, <code>INCAPACITATED_IGNORING</code>, manual "is absorbed" checks, manual "panel open?" guards before reaching contents; <code>attackby</code>, <code>attack_hand</code>, <code>attack_self</code>, <code>afterattack</code>, <code>attack_generic</code>, <code>*_act</code> tool procs and <code>click_alt</code> overrides as entry points; <code>INTERACTION_ENTRY_*</code>; <code>INTERACTION_HANDLED_PASS</code> (now <code>passes()</code>); the legacy interaction resolver; <code>cap_use_at</code>'s separate pass; <code>use_tool</code>; <code>/datum/ability</code> (an ability is an actor op granted to the actor); <code>guard_ctx</code>; and <code>op_ctx</code> as a separate type.</p></div>
 </section>
 
 <section id="parts">
   <h2><span class="num">9</span>Ops and parts</h2>
   <div class="sig">op(key, name, parts...)           <span class="c">// key: stable id. name: menu text (null: the name comes from a part, e.g. toggles()). Nested lists flatten.</span>
-extend(key | list(keys) | TAG_X | /datum/act/x, parts...)
+extend(key | list(keys) | CAP_KEY | TAG_X | /datum/act/x, parts...)
 without(key)</div>
   <div class="prose"><p>Every behaviour is a part. A part type declares the slot it fills, its combine rule, and the phase procs it implements. The engine knows nothing else. Waits, fuel, messages and effects are ordinary library parts, written the same way you'd add a new one.</p></div>
   <div class="tbl"><table>
     <thead><tr><th>Phase</th><th>Parts</th><th>Combine</th></tr></thead>
     <tbody>
       <tr><td><strong>input</strong>: how it's reached</td><td><code>hand()</code> · <code>tool(Q)</code> · <code>any_of_tools(Q...)</code> · <code>item(T)</code> · <code>stack(T, n)</code> · <code>insert(T)</code> (construction) · <code>in_hand()</code> · <code>at_target(filter, range =)</code> · <code>menu()</code> · <code>ui_act("name", args...)</code> · <code>topic("key", args...)</code>. UI/topic args: <code>arg_num(name, min, max)</code> · <code>arg_int</code> · <code>arg_text(name, max)</code> · <code>arg_bool</code> · <code>arg_choice(name, list | PROC_REF)</code> · <code>arg_ref(name, type, from =)</code> · <code>arg_path</code> · <code>arg_list</code></td><td>exactly one input</td></tr>
-      <tr><td><strong>select</strong>: which wins</td><td><code>gesture(G)</code> · <code>hostile()</code> · <code>stance(S...)</code> · <code>via(ROUTE...)</code> · <code>by(AFF)</code> · <code>priority(P)</code> · <code>presents(T)</code> (the held item is a credential, not "used") · <code>tag(T)</code></td><td>replace; tags accumulate</td></tr>
+      <tr><td><strong>select</strong>: which wins</td><td><code>gesture(G)</code> · <code>answers(INTENT_X...)</code> · <code>hostile()</code> · <code>stance(S...)</code> · <code>via(ROUTE...)</code> · <code>by(AFF)</code> · <code>priority(P)</code> · <code>presents(T)</code> (the held item is a credential, not "used") · <code>tag(T)</code></td><td>replace; tags accumulate</td></tr>
       <tr><td><strong>offered</strong>: is it meant</td><td><code>offered(req...)</code></td><td>all</td></tr>
       <tr><td><strong>check</strong>: can it happen</td><td><code>needs(req | PROC_REF ...)</code> · <code>at(BAY)</code></td><td>all, always accumulates</td></tr>
       <tr><td><strong>pay</strong>: what it costs</td><td><code>wait(t)</code> (scaled by the held item's speed) · <code>fuel(n)</code> · <code>uses(n)</code> · <code>consumes()</code> · <code>uses_charge(n)</code> · <code>cooldown(t)</code> · <code>chance(p)</code></td><td>wait/cooldown replace; costs add</td></tr>
-      <tr><td><strong>commit</strong>: what it does</td><td><code>then(PROC_REF)</code> · <code>toggles(state)</code> · <code>sets(state, v)</code> · <code>holds(nameof(stat), v, lasts =, on =)</code> · <code>releases(nameof(stat), on =)</code> · <code>grants(what, lasts =, on =)</code> · <code>cuts_all_wires()</code> (wires library). <code>on =</code> is <code>ACT_TARGET</code> (default), <code>ACT_ACTOR</code> or <code>ACT_SELF</code>. · <code>put_in(slot)</code> · <code>take_out(slot)</code> · <code>fixes()</code> · <code>becomes(T)</code> · <code>spawns(T, n)</code> · <code>opens_ui()</code> · <code>asks(/datum/prompt/x, parts...)</code> · <code>performs(op_key)</code> · <code>passes()</code></td><td>append, in order</td></tr>
+      <tr><td><strong>commit</strong>: what it does</td><td><code>then(PROC_REF)</code> · <code>toggles(state)</code> · <code>sets(state, v)</code> · <code>holds(nameof(stat), v, lasts =, on =)</code> · <code>releases(nameof(stat), on =)</code> · <code>grants(what, lasts =, on =)</code> · <code>cuts_all_wires()</code> (wires library). <code>on =</code> is <code>ON_TARGET</code> (default), <code>ON_ACTOR</code> or <code>ON_SELF</code>. · <code>put_in(slot)</code> · <code>take_out(slot)</code> · <code>fixes()</code> · <code>becomes(T)</code> · <code>spawns(T, n)</code> · <code>opens_ui()</code> · <code>asks(/datum/prompt/x, parts...)</code> · <code>performs(op_key)</code> · <code>passes()</code></td><td>append, in order</td></tr>
       <tr><td><strong>feedback</strong></td><td><code>says(msg_type | self, others =, blind =)</code> · <code>sound(SFX)</code> · <code>flash(look_part)</code> · <code>logs(LOG_GAME | LOG_ADMIN)</code></td><td>replace</td></tr>
       <tr><td><strong>after</strong></td><td><code>then_later(delay, parts...)</code> · <code>quiet()</code> (no notice)</td><td>append</td></tr>
     </tbody>
@@ -642,6 +676,20 @@ without(key)</div>
       <tr><td>Custom</td><td><code>PROC_REF(x)</code>, where <code>x(datum/act/A)</code> returns null or a reason. Reads are generated.</td></tr>
     </tbody>
   </table></div>
+  <h3>Keys, tags, intents and UI ops</h3>
+  <div class="prose">
+    <p><strong>Keys.</strong> Op keys are unique within a type's compiled table, capability ops included; a duplicate is a build error. A capability key appears at most once per type. Keys are what <code>extend</code>, <code>configure</code>, <code>without</code>, <code>perform_op</code>, menus and logs use.</p>
+    <p><strong>Tags</strong> accumulate. Every <code>ui_act()</code> op gets <code>TAG_UI</code> and every <code>topic()</code> op gets <code>TAG_TOPIC</code>, automatically. An <code>extend</code> on a tag that matches nothing is fine.</p>
+    <p><strong>Intents.</strong> The input part implies a default intent: <code>hand()</code>, <code>tool()</code> and <code>item()</code> mean <code>INTENT_USE</code>; with <code>hostile()</code> they mean <code>INTENT_ATTACK</code>; <code>toggles()</code> with no input means <code>INTENT_TOGGLE</code>. A select part <code>answers(INTENT_X...)</code> overrides that. <code>gesture(G)</code> pins a raw gesture and is rare.</p>
+    <p><strong>UI ops.</strong> Invalid or missing args reject the press and log it; the handler never runs. Whether the actor "can use the window" (range, conscious, rights) is checked as a requirement before the op's own. Sub-actions use dotted names, <code>ui_act("tank.eject")</code>, which replace <code>UI_SUBACT</code>. An op has one input, so ops share effects through <code>performs("key")</code> or a shared <code>then()</code>.</p>
+  </div>
+  <h3>Extend targets and precedence</h3>
+  <div class="prose">
+    <p><code>extend</code> takes one of: <code>"key"</code>, <code>list(keys)</code>, <code>CAP_KEY</code> (all of that capability's ops), <code>TAG_X</code>, or <code>/datum/act/x</code> (requirement and intercept parts only).</p>
+    <p>Precedence, lowest to highest: library defaults, then the op's own parts, then group extends (<code>CAP</code>, <code>TAG</code>, action; same level, in list order), then <code>extend("key")</code>. A subtype beats its parent at each level. Requirements accumulate, single values replace, effects append and tags accumulate.</p>
+    <p>Extending a key that doesn't exist is a build error. The one exception is an inherited extend whose target a later <code>without()</code> removed: it is dropped quietly.</p>
+    <p><code>configure(CAP_X, field = v, ..., as = subtype)</code>: settings are the constructor's named args. Configures merge parent first, then each in order, and the entries are rebuilt. <code>as =</code> swaps the datum type and keeps the settings. An unknown key or field is a build error. <code>without(key)</code> takes a capability key or an op key and applies at its position; it cannot remove a requirement.</p>
+  </div>
   <h3>Bundles and tool profiles</h3>
   <pre><code>TOOL_PROFILE(TOOL_MULTITOOL,   wait(5 SECONDS), sound(SFX_MULTITOOL),   verbs("pulse", "pulses"))
 TOOL_PROFILE(TOOL_SCREWDRIVER, wait(2 SECONDS), sound(SFX_SCREWDRIVER), verbs("screw", "unscrew"))
@@ -670,7 +718,7 @@ TOOL_PROFILE(TOOL_WELDER,      wait(3 SECONDS), sound(SFX_WELDER),      verbs("w
       <li>Changing ops: <code>refine()</code>, <code>cap_require()</code>, <code>replace()</code>.</li>
       <li>Interactions: every <code>INTERACT_*</code> spec, <code>DECLARE_INTERACTIONS</code>/<code>EXTEND_INTERACTIONS</code>, <code>dq_interaction_from_spec</code>.</li>
       <li>Requirement languages: the <code>REQ_*</code>/<code>PRED_*</code>/<code>REQ_ON</code>/<code>REQ_BECAUSE</code>/<code>HOLD_*</code> macros, <code>REQ_FIELD*</code>/<code>REQ_PANEL</code>/<code>REQ_TARGET_STATE</code>, <code>/datum/predicate</code> (outside slots).</li>
-      <li>Old gating and UI forms: <code>else_say</code>, <code>works_broken</code>/<code>works_unpowered</code>, <code>behind</code>/<code>blocked_by</code>/<code>locked_by</code>, <code>UI_ACT</code>/<code>UI_ARG_*</code>/<code>UI_ACT_*</code>/<code>UI_SUBACT</code>, <code>TOPIC_ACTION</code>/<code>TOPIC_*</code> args.</li>
+      <li>Old gating and UI forms: <code>else_say</code>, <code>works_broken</code>/<code>works_unpowered</code>, <code>behind</code>/<code>blocked_by</code>/<code>locked_by</code>, <code>UI_ACT</code>/<code>UI_ARG_*</code>/<code>UI_ACT_*</code>/<code>UI_SUBACT</code> (now dotted names), <code>TOPIC_ACTION</code>/<code>TOPIC_*</code> args.</li>
       <li>Housekeeping now done by the pipeline: <code>add_fingerprint</code> in handlers, manual admin logging in handlers.</li>
     </ul></div>
 </section>
@@ -730,7 +778,7 @@ TOOL_PROFILE(TOOL_WELDER,      wait(3 SECONDS), sound(SFX_WELDER),      verbs("w
         <ul>
           <li><code>configure(CAP_X, field = v)</code> rebuilds its entries from the new settings;</li>
           <li><code>configure(CAP_X, as = subtype)</code> swaps its type;</li>
-          <li><code>extend(op_key, ...)</code> changes one of its ops;</li>
+          <li><code>extend(op_key, ...)</code> changes one of its ops, and <code>extend(CAP_X, ...)</code> all of them;</li>
           <li><code>without(CAP_X)</code> drops it.</li>
         </ul>
       </li>
@@ -956,7 +1004,7 @@ ask(ghost, /datum/prompt/yes_no/ghost_role, then(PROC_REF(role_answered)), with 
     <p>Each has <code>needs</code>, <code>every()</code> work, membership, and an <code>api.dm</code>. On-demand systems park while idle.</p>
   </div>
   <h3>Mob AI</h3>
-  <div class="prose"><p><code>ai(behaviours)</code> is a capability. Its behaviours run on <code>every()</code> or a sequence and act through <code>perform_op()</code> and <code>perform_action()</code>: the same ops, requirements and messages a player uses. Aggro, targets and stances are stats and relations.</p></div>
+  <div class="prose"><p><code>ai(behaviours)</code> is a capability. Its behaviours run on <code>every()</code> or a sequence and act through <code>perform_op()</code> and <code>perform_intent()</code>: the same ops, requirements and messages a player uses. Aggro, targets and stances are stats and relations.</p></div>
 </section>
 
 <section id="tooling">
@@ -1055,6 +1103,13 @@ CAPABILITIES(/obj/machinery/power/apc/critical,
       <li>The <code>UI_ACT</code> table and its handlers' hand-written checks.</li>
     </ul>
   </div>
+
+  <h3 id="ex-reach">16.1a Reach: a closed cover hides the cell</h3>
+  <pre><code><span class="c">// The APC above declares maintenance_hatch(...) and cell_bay(nameof(cell), at = BAY_HATCH). Nothing else:</span>
+<span class="c">// closed cover:  click the cell (from the APC's contents view)  -> no candidates, nothing offered</span>
+<span class="c">// open cover:    click the cell                                  -> "take_out" is offered</span>
+<span class="c">// The cell's slot is at = BAY_HATCH, and compartment(BAY_HATCH, door = cover) closes that bay.</span></code></pre>
+  <div class="prose"><p>The reach gate walks the containment ledger from the cell up to the APC. The cell's slot is at <code>BAY_HATCH</code>, whose compartment gate fails while the cover is closed, so the cell is not reachable and offers nothing: not <code>take_out</code>, not its own ops, not a tool used on it, not drag-drop. An <code>insert</code> into that slot is refused with the cover's reason. The APC has no code for any of this and no "is the panel open?" guard in a handler.</p></div>
 
   <h3>16.2 Airlock: bolts, electrification, AI control, wires, access, emag</h3>
   <pre><code>/obj/machinery/door/airlock
@@ -1162,8 +1217,8 @@ CAPABILITIES(/obj/item/melee/baton,
 <span class="c">// A stasis bed: a hold on the occupant's biological clock while it's buckled in.</span>
 CAPABILITIES(/obj/machinery/stasis,
 	buckle(slots = 1),
-	on_notice(/datum/notice/buckled, holds(nameof(clock_rate_bio), 0.1, on = ACT_ACTOR)),
-	on_notice(/datum/notice/unbuckled, releases(nameof(clock_rate_bio), on = ACT_ACTOR)),
+	on_notice(/datum/notice/buckled, holds(nameof(clock_rate_bio), 0.1, on = ON_ACTOR)),
+	on_notice(/datum/notice/unbuckled, releases(nameof(clock_rate_bio), on = ON_ACTOR)),
 )</code></pre>
 
   <h3>16.5 Reagents: a beaker, a syringe, a donut</h3>
@@ -1194,8 +1249,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/donut,
 	on_notice(/datum/notice/inserted, then(PROC_REF(prey_entered))),
 	extend(/datum/act/insert, needs(PROC_REF(consent_blocks))),        <span class="c">// consent clauses are requirements</span>
 )
-<span class="c">// Prey are owned contents of the interior slot. Per-prey state ("absorbed") is a hold on the prey:
-// hold(prey, nameof(suspended), TRUE, source = src). Releasing the belly releases everything it holds.</span></code></pre>
+<span class="c">// Prey are owned contents of the interior slot. Per-prey state ("absorbed") is two holds on the prey:
+// hold(prey, nameof(suspended), TRUE, source = src)
+// hold(prey, nameof(acts_via), ROUTE_NONE, source = src)     // the actor gate: absorbed prey cannot act at all
+// Releasing the belly releases everything it holds. No content checks "is absorbed".</span></code></pre>
 
   <h3>16.7 Simple mob AI: the same ops a player uses</h3>
   <pre><code>CAPABILITIES(/mob/living/simple_mob/animal/space/carp,
@@ -1207,7 +1264,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/donut,
 /datum/ai_behaviour/hunt/step(mob/living/simple_mob/M, datum/act/A)
 	var/mob/living/T = M.ai_target
 	if(T &amp;&amp; M.aggressive)
-		perform_action(M, T, ACT_ATTACK)                 <span class="c">// same resolution, requirements and messages as a player's click</span></code></pre>
+		perform_intent(M, T, INTENT_ATTACK)                 <span class="c">// same resolution, requirements and messages as a player's click</span></code></pre>
 
   <h3>16.8 A cyborg module: providers and affordances</h3>
   <pre><code>CAPABILITIES(/obj/item/gripper,
@@ -1896,7 +1953,7 @@ CAPABILITIES(/area, stat(nameof(lights_nightshift), ANY))     <span class="c">//
     <tr><td><code>REQ_PANEL</code></td><td class="n">4</td><td>replaced</td><td><code>req_set(PANEL_OPEN)</code></td></tr>
     <tr><td><code>REQ_TOOL</code></td><td class="n">4</td><td>replaced</td><td><code>tool(Q)</code></td></tr>
     <tr><td><code>display_name</code></td><td class="n">4</td><td>replaced</td><td>op name / <code>toggles()</code> names</td></tr>
-    <tr><td><code>try_interaction</code></td><td class="n">4</td><td>replaced</td><td><code>perform_action()</code></td></tr>
+    <tr><td><code>try_interaction</code></td><td class="n">4</td><td>replaced</td><td><code>perform_intent()</code></td></tr>
     <tr><td><code>INTERACTION</code></td><td class="n">3</td><td>replaced</td><td><code>op()</code></td></tr>
     <tr><td><code>REQ_AT_MOST</code></td><td class="n">3</td><td>replaced</td><td><code>req_property_at_most()</code></td></tr>
     <tr><td><code>REQ_NO_TAG</code></td><td class="n">3</td><td>replaced</td><td><code>not(req_tag(TAG))</code></td></tr>
@@ -1914,7 +1971,7 @@ CAPABILITIES(/area, stat(nameof(lights_nightshift), ANY))     <span class="c">//
     <tr><td><code>dq_bay_share</code></td><td class="n">2</td><td>internal</td><td>framework internal (kept inside the engine; no content form)</td></tr>
     <tr><td><code>feedback_for</code></td><td class="n">2</td><td>replaced</td><td><code>says()</code></td></tr>
     <tr><td><code>interaction_tool_act</code></td><td class="n">2</td><td>replaced</td><td>tool ops</td></tr>
-    <tr><td><code>perform_action</code></td><td class="n">2</td><td>kept</td><td>final API</td></tr>
+    <tr><td><code>perform_action</code></td><td class="n">2</td><td>kept</td><td>final API (renamed <code>perform_intent</code>)</td></tr>
     <tr><td><code>req_not_subverted</code></td><td class="n">2</td><td>kept</td><td>final API (§8, §9)</td></tr>
     <tr><td><code>start_feedback_for</code></td><td class="n">2</td><td>replaced</td><td><code>says()</code></td></tr>
     <tr><td><code>why_not</code></td><td class="n">2</td><td>replaced</td><td>requirements</td></tr>
@@ -2495,7 +2552,7 @@ CAPABILITIES(/area, stat(nameof(lights_nightshift), ANY))     <span class="c">//
     <tr><td><code>PROPERTY</code></td><td>Actions and ops</td><td>kept</td><td>per-type properties (kept; readable in requirements)</td></tr>
     <tr><td><code>INPUT_ADAPTER</code></td><td>Actions and ops</td><td>kept</td><td>input adapters (kept, §8)</td></tr>
     <tr><td><code>SIZE_CLASS</code></td><td>Actions and ops</td><td>kept</td><td>size units (kept)</td></tr>
-    <tr><td><code>perform_action</code></td><td>Actions and ops</td><td>kept</td><td>final API</td></tr>
+    <tr><td><code>perform_action</code></td><td>Actions and ops</td><td>kept</td><td>final API (renamed <code>perform_intent</code>)</td></tr>
     <tr><td><code>req_not_subverted</code></td><td>Actions and ops</td><td>kept</td><td>final API (§8, §9)</td></tr>
     <tr><td><code>KELVIN</code></td><td>Actions and ops</td><td>kept</td><td>unit (kept)</td></tr>
     <tr><td><code>KG</code></td><td>Actions and ops</td><td>kept</td><td>unit (kept)</td></tr>
