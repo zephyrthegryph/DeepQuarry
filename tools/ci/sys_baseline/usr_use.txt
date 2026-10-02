@@ -713,7 +713,6 @@ usr_outside_verb	code/modules/pda/cart.dm	if (hold.handle_mousedrop(usr, over_ob
 usr_outside_verb	code/modules/pda/messenger.dm	to_chat(usr, "Turn on your receiver in order to send messages.")
 usr_outside_verb	code/modules/pda/pda.dm	var/mob/M = usr
 usr_outside_verb	code/modules/pda/pda.dm	if((!istype(over_object, /atom/movable/screen)) && can_use(usr))
-usr_outside_verb	code/modules/pda/radio.dm	GLOB.lastsignalers.Add("[time] <B>:</B> [usr.key] used [src] @ location ([T.x],[T.y],[T.z]) <B>:</B> [format_frequency(frequency)]/[code]")
 usr_outside_verb	code/modules/projectiles/gun.dm	if (ishuman(usr) || issmall(usr)) //so monkeys can take off their backpacks -- Urist
 usr_outside_verb	code/modules/projectiles/gun.dm	if (istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech. why?
 usr_outside_verb	code/modules/projectiles/gun.dm	if (!(src.loc == usr) || (src.loc && src.loc.loc == usr))
