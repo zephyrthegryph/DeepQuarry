@@ -75,6 +75,19 @@ exempt_files = [
     "code/datums/containment/lifecycle.dm",
 ]
 
+[lint.qdel_src]
+# qdel_src_lint.py: exempt_path() (unit tests, benchmarks, the vendored TGS DMAPI), the lifecycle engine
+# (it calls qdel(src) as its mechanism) and the macro definitions.
+exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/", "code/__defines/"]
+exempt_files = [
+    "code/__defines/tgs.dm",
+    "code/controllers/subsystems/garbage.dm",
+    "code/datums/lifecycle/transaction.dm",
+    "code/datums/lifecycle/links.dm",
+    "code/datums/lifecycle/verbs.dm",
+    "code/datums/containment/lifecycle.dm",
+]
+
 [lint.registry]
 # registry_lint.py: the boilerplate macro's own definition.
 exempt_prefixes = ["code/__defines/"]
