@@ -12,7 +12,7 @@
 		return
 	var/voted = 0
 
-	var/datum/db_query/query = SSdbcore.NewQuery("SELECT * FROM erro_privacy WHERE ckey=:ckey", list("ckey" = src.ckey))
+	var/datum/db_query/query = SSdbcore.NewQuery("SELECT * FROM [format_table_name("erro_privacy")] WHERE ckey=:ckey", list("ckey" = src.ckey))
 	query.Execute()
 	while(query.NextRow())
 		voted = 1
@@ -63,7 +63,7 @@
 		return
 	if(SSdbcore.IsConnected())
 
-		var/datum/db_query/select_query = SSdbcore.NewQuery("SELECT starttime, endtime, question, polltype, multiplechoiceoptions FROM erro_poll_question WHERE id = [pollid] AND Now() BETWEEN starttime AND endtime")
+		var/datum/db_query/select_query = SSdbcore.NewQuery("SELECT starttime, endtime, question, polltype, multiplechoiceoptions FROM [format_table_name("erro_poll_question")] WHERE id = :pollid AND Now() BETWEEN starttime AND endtime", list("pollid" = pollid))
 		select_query.Execute()
 
 		var/validpoll = 0
@@ -81,7 +81,7 @@
 			to_chat(src, span_red("Poll is not valid."))
 			return
 
-		var/datum/db_query/select_query2 = SSdbcore.NewQuery("SELECT id FROM erro_poll_option WHERE id = [optionid] AND pollid = [pollid]")
+		var/datum/db_query/select_query2 = SSdbcore.NewQuery("SELECT id FROM [format_table_name("erro_poll_option")] WHERE id = :optionid AND pollid = :pollid", list("optionid" = optionid, "pollid" = pollid))
 		select_query2.Execute()
 
 		var/validoption = 0
@@ -97,7 +97,7 @@
 
 		var/alreadyvoted = 0
 
-		var/datum/db_query/voted_query = SSdbcore.NewQuery("SELECT id FROM erro_poll_vote WHERE pollid = :pollid AND ckey = :ckey", list("pollid" = pollid, "ckey" = src.ckey))
+		var/datum/db_query/voted_query = SSdbcore.NewQuery("SELECT id FROM [format_table_name("erro_poll_vote")] WHERE pollid = :pollid AND ckey = :ckey", list("pollid" = pollid, "ckey" = src.ckey))
 		voted_query.Execute()
 
 		while(voted_query.NextRow())
@@ -120,12 +120,12 @@
 
 		if(!client)
 			return
-		flow_sql("INSERT INTO erro_poll_vote (id ,datetime ,pollid ,optionid ,ckey ,ip ,adminrank) VALUES (null, Now(), :pollid, :optionid, :ckey, :ip, :adminrank)",
+		flow_sql("INSERT INTO [format_table_name("erro_poll_vote")] (id ,datetime ,pollid ,optionid ,ckey ,ip ,adminrank) VALUES (null, Now(), :pollid, :optionid, :ckey, :ip, :adminrank)",
 			list("pollid" = pollid, "optionid" = optionid, "ckey" = src.ckey, "ip" = client.address, "adminrank" = adminrank))
 
 		to_chat(src, span_blue("Vote successful."))
 		if(poll_browser_dialog)
-			om_after(poll_browser_dialog, 1, TYPE_PROC_REF(/datum/poll_browser_dialog, load_poll_detail), pollid)
+			om_after(poll_browser_dialog, 0.1 SECONDS, TYPE_PROC_REF(/datum/poll_browser_dialog, load_poll_detail), pollid)
 
 
 /// A prompt flow (flow_io.dm): each read re-runs it when it arrives; the write goes last.
@@ -139,7 +139,7 @@
 		return
 	if(SSdbcore.IsConnected())
 
-		var/datum/db_query/select_query = SSdbcore.NewQuery("SELECT starttime, endtime, question, polltype FROM erro_poll_question WHERE id = [pollid] AND Now() BETWEEN starttime AND endtime")
+		var/datum/db_query/select_query = SSdbcore.NewQuery("SELECT starttime, endtime, question, polltype FROM [format_table_name("erro_poll_question")] WHERE id = :pollid AND Now() BETWEEN starttime AND endtime", list("pollid" = pollid))
 		select_query.Execute()
 
 		var/validpoll = 0
@@ -156,7 +156,7 @@
 
 		var/alreadyvoted = 0
 
-		var/datum/db_query/voted_query = SSdbcore.NewQuery("SELECT id FROM erro_poll_textreply WHERE pollid = :pollid AND ckey = :ckey", list("pollid" = pollid, "ckey" = src.ckey))
+		var/datum/db_query/voted_query = SSdbcore.NewQuery("SELECT id FROM [format_table_name("erro_poll_textreply")] WHERE pollid = :pollid AND ckey = :ckey", list("pollid" = pollid, "ckey" = src.ckey))
 		voted_query.Execute()
 
 		while(voted_query.NextRow())
@@ -183,12 +183,12 @@
 
 		if(!client)
 			return
-		flow_sql("INSERT INTO erro_poll_textreply (id ,datetime ,pollid ,ckey ,ip ,replytext ,adminrank) VALUES (null, Now(), :pollid, :ckey, :ip, :replytext, :adminrank)",
+		flow_sql("INSERT INTO [format_table_name("erro_poll_textreply")] (id ,datetime ,pollid ,ckey ,ip ,replytext ,adminrank) VALUES (null, Now(), :pollid, :ckey, :ip, :replytext, :adminrank)",
 			list("pollid" = pollid, "ckey" = src.ckey, "ip" = client.address, "replytext" = replytext, "adminrank" = adminrank))
 
 		to_chat(src, span_blue("Feedback logging successful."))
 		if(poll_browser_dialog)
-			om_after(poll_browser_dialog, 1, TYPE_PROC_REF(/datum/poll_browser_dialog, load_poll_detail), pollid)
+			om_after(poll_browser_dialog, 0.1 SECONDS, TYPE_PROC_REF(/datum/poll_browser_dialog, load_poll_detail), pollid)
 
 
 /// A prompt flow (flow_io.dm): each read re-runs it when it arrives; the write goes last.
@@ -202,7 +202,7 @@
 		return
 	if(SSdbcore.IsConnected())
 
-		var/datum/db_query/select_query = SSdbcore.NewQuery("SELECT starttime, endtime, question, polltype FROM erro_poll_question WHERE id = [pollid] AND Now() BETWEEN starttime AND endtime")
+		var/datum/db_query/select_query = SSdbcore.NewQuery("SELECT starttime, endtime, question, polltype FROM [format_table_name("erro_poll_question")] WHERE id = :pollid AND Now() BETWEEN starttime AND endtime", list("pollid" = pollid))
 		select_query.Execute()
 
 		var/validpoll = 0
@@ -217,7 +217,7 @@
 			to_chat(src, span_red("Poll is not valid."))
 			return
 
-		var/datum/db_query/select_query2 = SSdbcore.NewQuery("SELECT id FROM erro_poll_option WHERE id = [optionid] AND pollid = [pollid]")
+		var/datum/db_query/select_query2 = SSdbcore.NewQuery("SELECT id FROM [format_table_name("erro_poll_option")] WHERE id = :optionid AND pollid = :pollid", list("optionid" = optionid, "pollid" = pollid))
 		select_query2.Execute()
 
 		var/validoption = 0
@@ -232,7 +232,7 @@
 
 		var/alreadyvoted = 0
 
-		var/datum/db_query/voted_query = SSdbcore.NewQuery("SELECT id FROM erro_poll_vote WHERE optionid = :optionid AND ckey = :ckey", list("optionid" = optionid, "ckey" = src.ckey))
+		var/datum/db_query/voted_query = SSdbcore.NewQuery("SELECT id FROM [format_table_name("erro_poll_vote")] WHERE optionid = :optionid AND ckey = :ckey", list("optionid" = optionid, "ckey" = src.ckey))
 		voted_query.Execute()
 
 		while(voted_query.NextRow())
@@ -250,10 +250,9 @@
 
 		if(!client)
 			return
-		flow_sql("INSERT INTO erro_poll_vote (id ,datetime ,pollid ,optionid ,ckey ,ip ,adminrank, rating) VALUES (null, Now(), :pollid, :optionid, :ckey, :ip, :adminrank, :rating)",
+		flow_sql("INSERT INTO [format_table_name("erro_poll_vote")] (id ,datetime ,pollid ,optionid ,ckey ,ip ,adminrank, rating) VALUES (null, Now(), :pollid, :optionid, :ckey, :ip, :adminrank, :rating)",
 			list("pollid" = pollid, "optionid" = optionid, "ckey" = src.ckey, "ip" = client.address, "adminrank" = adminrank, "rating" = rating))
 
 		to_chat(src, span_blue("Vote successful."))
 		if(poll_browser_dialog)
-			om_after(poll_browser_dialog, 1, TYPE_PROC_REF(/datum/poll_browser_dialog, load_poll_detail), pollid)
-
+			om_after(poll_browser_dialog, 0.1 SECONDS, TYPE_PROC_REF(/datum/poll_browser_dialog, load_poll_detail), pollid)
