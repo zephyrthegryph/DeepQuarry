@@ -57,7 +57,7 @@ GLOBAL_LIST_EMPTY(life_z_presence)
 /datum/life_z_presence
 	var/z
 	var/occupied = FALSE
-	var/list/members = list()
+	var/list/members
 
 /proc/life_z_presence(z)
 	RETURN_TYPE(/datum/life_z_presence)
