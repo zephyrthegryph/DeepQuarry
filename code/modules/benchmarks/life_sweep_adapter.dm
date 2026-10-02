@@ -12,7 +12,7 @@
 
 /// The kernel's whole N..R span: the scheduler plus the native frame and the work items of those phases.
 /proc/life_bench_pass_ms()
-	return SSbehaviours.bench_pass_ms
+	return kernel().pass_ms_total
 
 /// The life pipeline's scheduler counters since boot (runs, deferrals, breaches, lateness).
 /proc/life_bench_diag()

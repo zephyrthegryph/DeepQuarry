@@ -103,11 +103,14 @@ GLOBAL_LIST_EMPTY(rx_work_by_sig)
 /datum/work_item/reaction/perform(datum/owner, datum/member, dt)
 	if(reaction.kind == RXN_CROSS)
 		return perform_cross(member)
+	// rx_call() without its argument copy and arglist (the arity is fixed here); same calls: a global handler gets
+	// the arguments without the holder, as rx_call() passes it.
+	var/is_global = om_proc_is_global(handler)
 	if(holder_run)
-		return rx_call(member, handler, dt)
+		return is_global ? call(handler)(dt) : call(member, handler)(dt)
 	if(members)
-		return rx_call(owner, handler, member, dt)
-	return rx_call(owner, handler, dt)
+		return is_global ? call(handler)(member, dt) : call(owner, handler)(member, dt)
+	return is_global ? call(handler)(dt) : call(owner, handler)(dt)
 
 /// Delivers the crossing pending on `member`: handler(band, previous_band). A crossing that returned to where it
 /// started (its band equals the previous one) delivers nothing.

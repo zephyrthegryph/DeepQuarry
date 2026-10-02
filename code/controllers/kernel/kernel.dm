@@ -41,7 +41,11 @@
 	var/work_dirty = TRUE
 	/// Phase P items that ran out of their lane's share this tick with work left (a yielded fire(), an open sweep):
 	/// phase R gives them what is left of the tick, as the scheduler's leftovers pass does for its rings.
-	var/list/p_carry = list()
+	var/list/p_carry
+	/// The earliest world.time any item of a phase list may be due (index: phase, or KERNEL_PHASE_COUNT + lane for phase
+	/// P's lane lists), recorded by the last walk of that list: work_run_phase() skips the walk before it. 0: walk.
+	/// Reset by rebuild_work_graph() and by any wake (work_due_reset()).
+	var/list/phase_due
 	/// The loop's init stage this tick: during boot the carry is off (run_leftover_phase()), so the leftovers of a tick
 	/// go to the initializing subsystems sleeping in CHECK_TICK, not to a presentation backlog.
 	var/tick_init_stage = INITSTAGE_MAX
@@ -77,6 +81,8 @@
 	/// pass_end), without the native frame and the work items that share phases N..R. It is what SSbehaviours' run_pass
 	/// measured before the kernel, so the life benchmark compares like for like (SSbehaviours.bench_ms).
 	var/sched_ms_tick = 0
+	/// Milliseconds of the whole N..R span since boot (scheduler, native frame and those phases' work items).
+	var/pass_ms_total = 0
 	/// Caught faults (phases, work items, urgent runs), newest last, bounded. Tests that fault on purpose set expect_errors.
 	var/list/fault_log
 	var/expect_errors = FALSE
@@ -84,6 +90,7 @@
 /datum/controller/kernel/New()
 	..()
 	phase_ms_last = new /list(KERNEL_PHASE_COUNT)
+	work_due_reset()
 	phase_ms_total = new /list(KERNEL_PHASE_COUNT)
 	for(var/i in 1 to KERNEL_PHASE_COUNT)
 		phase_ms_last[i] = 0
@@ -300,12 +307,11 @@
 	work_run_phase(KERNEL_PHASE_R, tick_limit)
 	if(!length(p_carry))
 		return
+	var/list/carry = p_carry
+	p_carry = null
 	if(tick_init_stage < INITSTAGE_MAX)
 		// Boot: the rest of the tick belongs to the subsystems still initializing (they sleep in CHECK_TICK).
-		p_carry.Cut()
 		return
-	var/list/carry = p_carry
-	p_carry = list()
 	for(var/datum/work_item/W as anything in carry)
 		if(TICK_USAGE >= tick_limit)
 			break
@@ -389,12 +395,11 @@
 /// SSbehaviours stopped firing; its profiler and benchmark counters are fed from the kernel's scheduler passes.
 /// `pass_ms` is the whole N..R span (native frame and work items included); `sched_ms` only the OM scheduler's pieces.
 /datum/controller/kernel/proc/note_behaviours(pass_ms, sched_ms)
+	pass_ms_total += pass_ms
 	if(!SSbehaviours)
 		return
 	// ALLOW(system_boundary): the kernel is the scheduler core SSbehaviours delegates to: it reads and updates that subsystem own fire bookkeeping
 	SSbehaviours.bench_ms += sched_ms
-	// ALLOW(system_boundary): the kernel is the scheduler core SSbehaviours delegates to: it reads and updates that subsystem own fire bookkeeping
-	SSbehaviours.bench_pass_ms += pass_ms
 	// ALLOW(system_boundary): the kernel is the scheduler core SSbehaviours delegates to: it reads and updates that subsystem own fire bookkeeping
 	SSbehaviours.last_done = sched.pass_done
 	// ALLOW(system_boundary): the kernel is the scheduler core SSbehaviours delegates to: it reads and updates that subsystem own fire bookkeeping
