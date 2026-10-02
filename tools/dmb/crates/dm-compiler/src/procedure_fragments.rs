@@ -210,16 +210,20 @@ impl OutputFragment {
                 + h.statics.keys().map(|key| key.capacity() + 64).sum::<usize>() + 160).sum::<usize>() + 256
     }
 }
+#[derive(Clone,Serialize,Deserialize)]
+struct MetadataLocator {page:String,index:u32}
+struct PendingMetadata {key:crate::ProcKey,handle:Handle,bytes:Vec<u8>}
 #[derive(Clone, Serialize, Deserialize)]
 struct Handle {
     descriptor: crate::ProcDescriptor,
     candidate: String,
     payload: String,
+    #[serde(default)] page:Option<MetadataLocator>,
 }
 fn handle_charge(key: &crate::ProcKey, handle: &Handle) -> usize {
     key.path.capacity() + handle.descriptor.body_digest.capacity()
         + handle.descriptor.frame_digest.capacity() + handle.candidate.capacity()
-        + handle.payload.capacity() + 192
+        + handle.payload.capacity() + handle.page.as_ref().map_or(0,|locator|locator.page.capacity()+32) + 192
 }
 #[derive(Default)]
 pub(super) struct FragmentStats {
@@ -251,6 +255,9 @@ pub(super) struct ProcedureFragments {
     recency: VecDeque<(String, u64)>,
     pending: Vec<dm_store::Change>,
     pending_bytes: usize,
+    pending_metadata:Vec<PendingMetadata>,
+    pending_metadata_bytes:usize,
+    pages:String,
     resident_bytes: usize,
     admitted_bytes: usize,
     metadata_bytes: usize,
@@ -271,6 +278,7 @@ impl ProcedureFragments {
         Self { store, code_store,namespace: format!("output-handles-v3-{}-{}", env!("DM_EMISSION_FINGERPRINT"),
             crate::incremental::digest(identity.as_bytes())),
             blobs: format!("output-blobs-v3-{}", env!("DM_EMISSION_FINGERPRINT")),
+            pages:format!("output-metadata-pages-v1-{}",env!("DM_EMISSION_FINGERPRINT")),
             code_blobs: format!("output-code-v1-{}",env!("DM_EMISSION_FINGERPRINT")), ..Self::default() }
     }
     pub fn set_workers(&mut self, workers: usize) {
@@ -278,7 +286,7 @@ impl ProcedureFragments {
         self.revision = self.revision.wrapping_add(1);
     }
     pub fn resident_bytes(&self) -> usize {
-        self.resident_bytes + self.pending_bytes + self.recency.capacity() * 96 + self.metadata_bytes
+        self.resident_bytes + self.pending_bytes + self.pending_metadata_bytes + self.recency.capacity() * 96 + self.metadata_bytes
             +self.code_store.as_ref().map_or(0,|store|store.resident_bytes())
     }
     pub fn decoded_bytes(&self)->usize {self.resident_bytes}
@@ -346,6 +354,9 @@ impl ProcedureFragments {
                 if entry.admitted&&entry.revision!=self.revision {self.stats.retained_projection_hits+=1;}
             }
         }}
+        let packed:Vec<_>=keys.iter().filter_map(|key|self.handles.get(key)).filter(|handle|!decoded.contains_key(&handle.payload))
+            .filter_map(|handle|handle.page.as_ref().map(|locator|(handle.payload.clone(),locator.clone()))).collect();
+        self.read_metadata_pages(&store,&packed,&mut decoded,&mut retained);
         let missing:Vec<_>=payloads.into_iter().filter(|payload|!decoded.contains_key(payload)).collect();
         self.read_metadata_payloads(&store,&missing,&mut decoded,&mut retained);
         let output:Vec<_>=keys.iter().map(|key| {let handle=self.handles.get(key)?;
@@ -356,6 +367,46 @@ impl ProcedureFragments {
             let _=store.set_lookahead(handles);
         }
         output
+    }
+    fn read_metadata_pages(&mut self,store:&dm_store::Store,requested:&[(String,MetadataLocator)],decoded:&mut HashMap<String,Arc<OutputFragment>>,retained:&mut usize) {
+        if requested.is_empty() {return;}
+        let names:Vec<_>=requested.iter().map(|(_,locator)|locator.page.clone()).collect::<std::collections::BTreeSet<_>>().into_iter().collect();
+        let keys:Vec<_>=names.iter().map(|name|dm_store::Key::new(&self.pages,name)).collect();let started=std::time::Instant::now();
+        let result=store.read_many_bounded(&keys,8*1024*1024,8*1024*1024,None);self.stats.read_seconds+=started.elapsed().as_secs_f64();
+        match result {
+            Ok(batch)=>{self.stats.batches+=1;
+                for ((name,bytes),witness) in names.iter().zip(batch.values).zip(batch.witnesses) {
+                    if witness.value_digest.as_deref()!=Some(name.as_str()) {continue;}let Some(bytes)=bytes else {continue;};self.stats.disk_bytes+=bytes.len();
+                    let started=std::time::Instant::now();let Some(rows)=metadata_page_rows(&bytes) else {continue;};
+                    for (payload,locator) in requested.iter().filter(|(_,locator)|&locator.page==name) {
+                        if decoded.contains_key(payload) {continue;}let Some((identity,range))=rows.get(locator.index as usize) else {continue;};
+                        if identity!=payload||format!("{:x}",Sha256::digest(&bytes[range.clone()]))!=*payload {continue;}
+                        let Some(fragment)=OutputFragment::decode(&bytes[range.clone()]) else {continue;};
+                        if !fragment.words.is_empty()||!fragment.validate_metadata() {continue;}
+                        let charge=fragment.charge();if retained.saturating_add(charge)>32*1024*1024 {continue;}
+                        *retained+=charge;let fragment=Arc::new(fragment);self.retain_metadata(payload.clone(),Arc::clone(&fragment));decoded.insert(payload.clone(),fragment);
+                    }self.stats.decode_seconds+=started.elapsed().as_secs_f64();
+                }
+            },
+            Err(error) if error.kind()==std::io::ErrorKind::InvalidInput&&requested.len()>1=>{let middle=requested.len()/2;
+                self.read_metadata_pages(store,&requested[..middle],decoded,retained);self.read_metadata_pages(store,&requested[middle..],decoded,retained);},_=>{}
+        }
+    }
+    fn seal_metadata_page(&mut self) {
+        if self.pending_metadata.is_empty() {return;}
+        let started=std::time::Instant::now();
+        let rows=std::mem::take(&mut self.pending_metadata);self.pending_metadata_bytes=0;
+        let mut bytes=b"DMOMETA1".to_vec();bytes.extend_from_slice(&(rows.len() as u32).to_le_bytes());
+        for row in &rows {bytes.extend_from_slice(row.handle.payload.as_bytes());bytes.extend_from_slice(&(row.bytes.len() as u32).to_le_bytes());bytes.extend_from_slice(&row.bytes);}
+        let digest=format!("{:x}",Sha256::digest(&bytes));self.pending_bytes+=bytes.len();
+        self.pending.push(dm_store::Change::Put(dm_store::Key::new(&self.pages,&digest),bytes));
+        for (index,mut row) in rows.into_iter().enumerate() {
+            row.handle.page=Some(MetadataLocator {page:digest.clone(),index:index as u32});
+            if let Ok(bytes)=serde_json::to_vec(&row.handle) {self.pending_bytes+=bytes.len();self.pending.push(dm_store::Change::Put(
+                dm_store::Key::new(&self.namespace,crate::lower_cache::shared_binding_fingerprint(&row.key)),bytes));}
+            if self.handles.get(&row.key).is_some_and(|handle|handle.payload==row.handle.payload) {self.install_handle(row.key,row.handle);}
+        }
+        self.stats.encode_seconds+=started.elapsed().as_secs_f64();
     }
     fn read_metadata_payloads(&mut self,store:&dm_store::Store,payloads:&[String],decoded:&mut HashMap<String,Arc<OutputFragment>>,retained:&mut usize) {
         if payloads.is_empty() {return;}
@@ -611,24 +662,31 @@ impl ProcedureFragments {
         let Some(bytes) = fragment.encode() else { return; };
         self.stats.encode_seconds += encode_start.elapsed().as_secs_f64();
         let payload = format!("{:x}", Sha256::digest(&bytes));
-        let handle = Handle { descriptor, candidate, payload: payload.clone() };
-        let Ok(handle_bytes) = serde_json::to_vec(&handle) else { return; };
-        self.pending_bytes += bytes.len() + handle_bytes.len();
+        let handle = Handle { descriptor, candidate, payload: payload.clone(),page:None };
         if let Some((code_digest,code))=legacy_code {self.pending_bytes+=code.len();
             self.pending.push(dm_store::Change::Put(dm_store::Key::new(&self.code_blobs,code_digest),code));}
-        self.pending.push(dm_store::Change::Put(dm_store::Key::new(&self.blobs, &payload), bytes));
-        self.pending.push(dm_store::Change::Put(dm_store::Key::new(&self.namespace,
-            crate::lower_cache::shared_binding_fingerprint(&key)), handle_bytes));
+        if bytes.len()+80>8*1024*1024 {
+            let Ok(handle_bytes)=serde_json::to_vec(&handle) else {return;};self.pending_bytes+=bytes.len()+handle_bytes.len();
+            self.pending.push(dm_store::Change::Put(dm_store::Key::new(&self.blobs,&payload),bytes));
+            self.pending.push(dm_store::Change::Put(dm_store::Key::new(&self.namespace,crate::lower_cache::shared_binding_fingerprint(&key)),handle_bytes));
+        } else {
+            let charge=bytes.len()+handle_charge(&key,&handle)+80;
+            if self.pending_metadata.len()>=1024||self.pending_metadata_bytes.saturating_add(charge)>8*1024*1024 {self.seal_metadata_page();}
+            self.pending_metadata_bytes+=charge;self.pending_metadata.push(PendingMetadata {key:key.clone(),handle:handle.clone(),bytes});
+        }
         self.install_handle(key, handle);
         self.retain_metadata(payload, Arc::new(fragment)); self.stats.built += 1;
         // Keep the byte bound unchanged; tiny immutable fragments can share
         // larger transactions instead of paying a synchronous commit per 1024
         // procedures. Source-order emission and atomicity remain unchanged.
-        if self.pending_bytes >= 8 * 1024 * 1024 || self.pending.len() >= 8192 { self.flush(); }
+        if self.pending_bytes.saturating_add(self.pending_metadata_bytes) >= 8 * 1024 * 1024 || self.pending.len() >= 8192 { self.flush(); }
     }
     pub fn flush(&mut self) {
+        self.seal_metadata_page();
         // Never publish a recipe that points at an uncommitted code leaf.
-        if let Some(store)=&self.code_store {if store.flush().is_err() {return;}}
+        if let Some(store)=&self.code_store {if store.flush().is_err() {
+            if self.pending_bytes>=16*1024*1024 {self.pending.clear();self.pending_bytes=0;}return;
+        }}
         if self.pending.is_empty() { return; }
         if let Some(store) = &self.store {
             let started = std::time::Instant::now();
@@ -655,4 +713,17 @@ impl ProcedureFragments {
         self.recency.retain(|(key, tick)| self.resident.get(key).is_some_and(|entry| entry.used == *tick));
         self.flush();
     }
+}
+
+fn metadata_page_rows(bytes:&[u8])->Option<Vec<(String,std::ops::Range<usize>)>> {
+    if bytes.get(..8)!=Some(b"DMOMETA1".as_slice())||bytes.len()>8*1024*1024 {return None;}
+    let count=u32::from_le_bytes(bytes.get(8..12)?.try_into().ok()?) as usize;if count==0||count>1024 {return None;}
+    let mut rows=Vec::with_capacity(count);let mut at=12usize;
+    for _ in 0..count {
+        let digest=std::str::from_utf8(bytes.get(at..at.checked_add(64)?)?).ok()?;
+        if !digest.bytes().all(|byte|byte.is_ascii_hexdigit()) {return None;}at+=64;
+        let len=u32::from_le_bytes(bytes.get(at..at.checked_add(4)?)?.try_into().ok()?) as usize;at+=4;
+        let end=at.checked_add(len)?;bytes.get(at..end)?;rows.push((digest.to_owned(),at..end));at=end;
+    }
+    (at==bytes.len()).then_some(rows)
 }

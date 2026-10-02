@@ -99,3 +99,14 @@ impl<'a, T: Ord> IntoIterator for &'a CompactSet<T> {
     type IntoIter = std::collections::btree_set::Iter<'a, T>;
     fn into_iter(self) -> Self::IntoIter { self.0.iter() }
 }
+
+/// Census of live immutable heap allocations. Identities are valid only during
+/// one borrowed traversal; never persist addresses or retain them across drops.
+#[derive(Default)]
+pub struct AllocationCensus { seen:std::collections::HashSet<usize> }
+impl AllocationCensus {
+    pub fn claim(&mut self,identity:usize,bytes:usize)->usize {
+        if self.seen.insert(identity){bytes}else{0}
+    }
+    pub fn observe(&mut self,identity:usize) {self.seen.insert(identity);}
+}

@@ -14,7 +14,7 @@ pub const BUILTIN_GLOBAL_VARS_SYMBOL: &str = "@builtin/global.vars";
 mod binding_index;
 mod builtin_catalog;
 mod compact_collections;
-pub use compact_collections::{CompactMap, CompactSet};
+pub use compact_collections::{AllocationCensus, CompactMap, CompactSet};
 pub mod debug;
 pub mod dependencies;
 pub mod prepared_cache;

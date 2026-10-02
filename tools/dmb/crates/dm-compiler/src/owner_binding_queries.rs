@@ -2,7 +2,7 @@
 //! Current allocation aliases compose separately from the immutable semantic roots.
 use super::*;
 use serde::{Serialize,Deserialize};
-use dm_codegen_byond::{CompactMap,CompactSet};
+use dm_codegen_byond::{AllocationCensus,CompactMap,CompactSet};
 use sha2::{Digest,Sha256};
 #[derive(Clone,Default,Serialize,Deserialize)]
 struct Root {
@@ -14,13 +14,21 @@ struct Root {
 pub(crate) struct OwnerBindingQueries {
  roots:im::OrdMap<String,(String,Root)>,snapshot:SharedLowerBindings,store:Option<Store>,bytes:usize,
  snapshot_ready:bool,recency:HashMap<String,u64>,clock:u64,
+ overlap_cache:std::sync::Mutex<Option<(std::sync::Weak<SharedLowerBindings>,usize)>>,
 }
 impl OwnerBindingQueries {
  const LIMIT:usize=32*1024*1024;
  fn namespace()->String {format!("owner-binding-roots-v3-{}",env!("DM_EMISSION_FINGERPRINT"))}
  pub(super) fn bind(&mut self,root:&Path){*self=Self {store:Store::open(root.join("declaration-fragments.redb")).ok(),..Default::default()};}
  pub(super) fn resident_bytes(&self)->usize{self.bytes}
- pub(super) fn clear(&mut self){self.roots.clear();self.snapshot=SharedLowerBindings::default();self.bytes=0;self.snapshot_ready=false;self.recency.clear();}
+ pub(super) fn resident_bytes_excluding(&self,shared:&Arc<SharedLowerBindings>)->usize {
+  let mut cached=self.overlap_cache.lock().unwrap_or_else(|error|error.into_inner());
+  if let Some((weak,bytes))=&*cached {if weak.upgrade().is_some_and(|old|Arc::ptr_eq(&old,shared)){return *bytes;}}
+  let bytes=resident_charge_excluding(&self.roots,&self.snapshot,Some(shared))+recency_charge(&self.recency);
+  if std::env::var_os("DM_BUILD_TRACE").is_some(){eprintln!("DM_BUILD_TRACE owner binding allocation census: standalone_bytes={} unique_after_frozen_bytes={} shared_bytes={}",self.bytes,bytes,self.bytes.saturating_sub(bytes));}
+  *cached=Some((Arc::downgrade(shared),bytes));bytes
+ }
+ pub(super) fn clear(&mut self){self.roots.clear();self.snapshot=SharedLowerBindings::default();self.bytes=0;self.snapshot_ready=false;self.recency.clear();*self.overlap_cache.lock().unwrap_or_else(|error|error.into_inner())=None;}
  pub(crate) fn build(&mut self,dmb:&Dmb,mut types:HashMap<String,HashMap<String,String>>,pending:&[PendingProc<'_>],shared:&mut SharedLowerBindings,source_debug:Option<&crate::source_debug::SourceDebugIndex<'_>>)->Result<HashMap<String,u32>,String> {
   let started=std::time::Instant::now();let mut restore_seconds=0.0;
   shared.member_types=self.snapshot.member_types.clone();shared.member_globals=self.snapshot.member_globals.clone();
@@ -105,7 +113,8 @@ impl OwnerBindingQueries {
   // the same Arc through both recipe rows and the aggregate indexes.
   self.snapshot_ready=true;
   if snapshot_charge(&self.snapshot)>64*1024*1024 {self.snapshot=SharedLowerBindings::default();self.snapshot_ready=false;}
-  self.bytes=resident_charge(&self.roots,&self.snapshot);
+  self.bytes=resident_charge(&self.roots,&self.snapshot)+recency_charge(&self.recency);
+  *self.overlap_cache.lock().unwrap_or_else(|error|error.into_inner())=None;
   if std::env::var_os("DM_BUILD_TRACE").is_some(){eprintln!("DM_BUILD_TRACE owner binding roots: reused={hits} derived={misses} retained_bytes={} inputs_seconds={input_seconds:.3} restore_seconds={restore_seconds:.3} total_seconds={:.3}",self.bytes,started.elapsed().as_secs_f64());}
   Ok(aliases)
  }
@@ -155,6 +164,33 @@ fn resident_charge(roots:&im::OrdMap<String,(String,Root)>,snapshot:&SharedLower
   bytes+=owner.capacity()+key.capacity()+256+root.parent.as_ref().map_or(0,String::capacity);
   for rows in [&root.types,&root.globals,&root.procs,&root.returns,&root.static_types] {if seen.insert(rows.allocation_id()){bytes+=map_charge(rows);}}
   for rows in [&root.fields,&root.known_procs] {if seen.insert(rows.allocation_id()){bytes+=set_charge(rows);}}
+ }
+ bytes
+}
+
+fn recency_charge(recency:&HashMap<String,u64>)->usize {
+ recency.capacity()*(std::mem::size_of::<(String,u64)>()+16)+recency.keys().map(String::capacity).sum::<usize>()
+}
+fn resident_charge_excluding(roots:&im::OrdMap<String,(String,Root)>,snapshot:&SharedLowerBindings,other:Option<&SharedLowerBindings>)->usize {
+ let mut census=AllocationCensus::default();
+ if let Some(other)=other {
+  for map in [&other.member_types,&other.member_globals,&other.member_procs,&other.member_proc_return_types] {for (_,rows) in map {census.observe(rows.allocation_id());}}
+  for map in [&other.known_member_fields,&other.known_member_procs] {for (_,rows) in map {census.observe(rows.allocation_id());}}
+ }
+ let mut bytes=std::mem::size_of::<SharedLowerBindings>();
+ for (index,map) in [&snapshot.member_types,&snapshot.member_globals,&snapshot.member_procs,&snapshot.member_proc_return_types].into_iter().enumerate() {
+  let shared_root=other.is_some_and(|other|map.ptr_eq([&other.member_types,&other.member_globals,&other.member_procs,&other.member_proc_return_types][index]));
+  for (owner,rows) in map {if !shared_root{bytes+=owner.capacity()+96;}bytes+=census.claim(rows.allocation_id(),map_charge(rows));}
+ }
+ for (index,map) in [&snapshot.known_member_fields,&snapshot.known_member_procs].into_iter().enumerate() {
+  let shared_root=other.is_some_and(|other|map.ptr_eq([&other.known_member_fields,&other.known_member_procs][index]));
+  for (owner,rows) in map {if !shared_root{bytes+=owner.capacity()+96;}bytes+=census.claim(rows.allocation_id(),set_charge(rows));}
+ }
+ if !other.is_some_and(|other|snapshot.parent_types.ptr_eq(&other.parent_types)) {bytes+=snapshot.parent_types.iter().map(|(key,value)|key.capacity()+value.capacity()+96).sum::<usize>();}
+ for (owner,(key,root)) in roots {
+  bytes+=owner.capacity()+key.capacity()+256+root.parent.as_ref().map_or(0,String::capacity);
+  for rows in [&root.types,&root.globals,&root.procs,&root.returns,&root.static_types] {bytes+=census.claim(rows.allocation_id(),map_charge(rows));}
+  for rows in [&root.fields,&root.known_procs] {bytes+=census.claim(rows.allocation_id(),set_charge(rows));}
  }
  bytes
 }

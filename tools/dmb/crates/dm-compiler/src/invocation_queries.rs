@@ -27,6 +27,7 @@ pub(crate) struct MetadataContext<'a,'debug> {
     current: HashMap<Named, Arc<MetadataRecord>>,
     published: HashMap<Named, Arc<MetadataRecord>>,
     dependents: HashMap<Named, HashSet<Named>>,
+    generation:u64,
 }
 impl<'a,'debug> MetadataContext<'a,'debug> {
     pub(crate) fn new(dmb:&Dmb,pending:&[PendingProc<'a>],source_debug:Option<&'debug crate::source_debug::SourceDebugIndex<'debug>>)->Result<Self,String> {
@@ -55,7 +56,17 @@ impl<'a,'debug> MetadataContext<'a,'debug> {
             if proc.owner.is_none(){continue;}
             declarations.insert((proc.owner_path.clone(),path.rsplit('/').next().unwrap_or("").to_owned(),proc.verb),Declaration {item:proc.item,identity});
         }
-        Ok(Self {source_debug,parents,declarations,descriptors,native,observations:HashMap::new(),current:HashMap::new(),published:HashMap::new(),dependents:HashMap::new()})
+        static NEXT_MODEL:std::sync::atomic::AtomicU64=std::sync::atomic::AtomicU64::new(1);
+        let generation=NEXT_MODEL.fetch_add(1,std::sync::atomic::Ordering::Relaxed);
+        Ok(Self {source_debug,parents,declarations,descriptors,native,observations:HashMap::new(),current:HashMap::new(),published:HashMap::new(),dependents:HashMap::new(),generation})
+    }
+    fn observation_epoch(&self,key:&MetadataRead)->(u64,Option<[u8;32]>) {
+        // The already authenticated semantic digest versions named outputs.
+        // No duplicate project-sized publication/version inventory is needed.
+        let version=if let MetadataRead::Resolved(name)=key {
+            self.published.get(name).or_else(||self.current.get(name)).and_then(|record|InvocationFragments::digest_bytes(&record.semantic_identity))
+        }else{None};
+        (self.generation,version)
     }
     pub(crate) fn descriptor(&self,item:&Item)->&(String,String) { &self.descriptors[&(item as *const Item as usize)] }
     fn read(&mut self,key:&MetadataRead)->String {
@@ -294,7 +305,7 @@ fn valid(db:&dyn MetadataDb,input:ValidityInput)->bool {
 }
 #[derive(Default)]
 struct ValidityArena {
-    db:Database, observations:BTreeMap<MetadataRead,ObservationInput>,
+    db:Database, observations:BTreeMap<MetadataRead,(ObservationInput,(u64,Option<[u8;32]>))>,
     candidates:HashMap<String,ValidityInput>,bytes:usize,
 }
 impl ValidityArena {
@@ -303,12 +314,20 @@ impl ValidityArena {
         if self.bytes>8*1024*1024 {self.clear();}
         let mut inputs=Vec::with_capacity(record.reads.len());
         for (key,_) in &record.reads {
-            let current=context.read(key);
-            let input=if let Some(input)=self.observations.get(key).copied() {
-                if input.value(&self.db)!=&current {input.set_value(&mut self.db).to(current);}input
+            let epoch=context.observation_epoch(key);
+            let input=if let Some((input,refreshed))=self.observations.get(key).copied() {
+                // Each immutable input refreshes once per model. Named resolved
+                // values carry their own source-order publication version.
+                if refreshed!=epoch {
+                    let current=context.read(key);
+                    if input.value(&self.db)!=&current {input.set_value(&mut self.db).to(current);}
+                    self.observations.insert(key.clone(),(input,epoch));
+                }
+                input
             }else {
-                self.bytes+=rmp_serde::to_vec_named(key).map_or(128,|bytes|bytes.len()+128)+current.len();
-                let input=ObservationInput::new(&self.db,current);self.observations.insert(key.clone(),input);input
+                let current=context.read(key);
+                self.bytes+=rmp_serde::to_vec_named(key).map_or(192,|bytes|bytes.len()+192)+current.len();
+                let input=ObservationInput::new(&self.db,current);self.observations.insert(key.clone(),(input,epoch));input
             };
             inputs.push(input);
         }

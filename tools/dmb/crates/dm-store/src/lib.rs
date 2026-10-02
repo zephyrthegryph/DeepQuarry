@@ -1,7 +1,9 @@
 //! Transactional metadata and immutable blobs shared by independent compiler processes.
-//! Every operation opens redb under an OS lock; callers should batch an entire stage.
+//! Bounded reusable ownership windows share redb connections between batches.
+//! An idle/age reaper releases OS locks for independent compiler processes.
 use fs2::FileExt;
 mod shared_artifacts;
+mod sessions;
 use redb::{Database, ReadableTable, TableDefinition};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -92,6 +94,7 @@ pub struct Store {
     path: PathBuf,
     timeout: Duration,
     cache_bytes: usize,
+    session: std::sync::Arc<sessions::Session>,
 }
 struct Lock(File);
 impl Drop for Lock {
@@ -103,8 +106,10 @@ impl Drop for Lock {
 impl Store {
     /// `path` names the database, not a directory. Memory cache defaults to 16 MiB.
     pub fn open(path: impl AsRef<Path>) -> io::Result<Self> {
+        let path = sessions::canonical_path(path.as_ref())?;
         let store = Self {
-            path: path.as_ref().to_owned(),
+            session: sessions::session(&path),
+            path,
             timeout: Duration::from_secs(30),
             cache_bytes: 16 * 1024 * 1024,
         };
@@ -158,36 +163,47 @@ impl Store {
         cancel: Option<&AtomicBool>,
         f: impl FnOnce(&Database) -> io::Result<T>,
     ) -> io::Result<T> {
-        let _lock = self.lock(cancel)?;
+        self.session.access(self, cancel, f)
+    }
+    fn open_database(&self) -> io::Result<Database> {
+        let started=Instant::now();
         let mut builder = Database::builder();
         builder.set_cache_size(self.cache_bytes);
-        let db = builder.create(&self.path).map_err(error)?;
+        let path=self.path.clone();
+        let repair_timeout=self.timeout;
+        builder.set_repair_callback(move |repair| {
+            if std::env::var_os("DM_BUILD_TRACE").is_some() {
+                eprintln!("DM_BUILD_TRACE store recovery: {} progress={:.3} elapsed={:.3}s",path.display(),repair.progress(),started.elapsed().as_secs_f64());
+            }
+            if started.elapsed()>=repair_timeout {repair.abort();}
+        });
+        let db = builder.create(&self.path).map_err(|failure| {
+            if std::env::var_os("DM_BUILD_TRACE").is_some() {
+                eprintln!("DM_BUILD_TRACE store connection open failed: {} {:.3}s: {failure}",self.path.display(),started.elapsed().as_secs_f64());
+            }
+            error(failure)
+        })?;
         let schema = {
             let tx = db.begin_read().map_err(error)?;
             match tx.open_table(RECORDS) {
-                Ok(table) => table
-                    .get(SCHEMA_KEY)
-                    .map_err(error)?
-                    .map(|v| v.value().to_vec()),
+                Ok(table) => table.get(SCHEMA_KEY).map_err(error)?.map(|v| v.value().to_vec()),
                 Err(redb::TableError::TableDoesNotExist(_)) => None,
                 Err(e) => return Err(error(e)),
             }
         };
         match schema {
-            Some(value) if value != SCHEMA => {
-                return Err(invalid_data("unsupported dm-store schema"))
-            }
-            Some(_) => {}
+            Some(value) if value != SCHEMA => return Err(invalid_data("unsupported dm-store schema")),
+            Some(_) => {},
             None => {
-                let tx = db.begin_write().map_err(error)?;
-                {
-                    let mut table = tx.open_table(RECORDS).map_err(error)?;
-                    table.insert(SCHEMA_KEY, SCHEMA).map_err(error)?;
-                }
+                let tx=db.begin_write().map_err(error)?;
+                { let mut table=tx.open_table(RECORDS).map_err(error)?; table.insert(SCHEMA_KEY,SCHEMA).map_err(error)?; }
                 tx.commit().map_err(error)?;
             }
         }
-        f(&db)
+        if std::env::var_os("DM_BUILD_TRACE").is_some() {
+            eprintln!("DM_BUILD_TRACE store connection open: {} {:.3}s",self.path.display(),started.elapsed().as_secs_f64());
+        }
+        Ok(db)
     }
     /// One database open/read transaction for all requested keys, including misses.
     pub fn read_many(&self, keys: &[Key], cancel: Option<&AtomicBool>) -> io::Result<ReadBatch> {

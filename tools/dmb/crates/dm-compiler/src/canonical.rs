@@ -851,18 +851,18 @@ fn skeleton_heap(image: &Dmb, metadata: &SkeletonMetadata) -> usize {
             .map(|s| s.capacity() + std::mem::size_of::<String>() + 32)
             .sum()
     }
-    fn nested_map(items: &im::OrdMap<String, dm_codegen_byond::CompactMap<String, String>>) -> usize {
+    fn nested_map(items: &im::OrdMap<String, dm_codegen_byond::CompactMap<String, String>>,census:&mut dm_codegen_byond::AllocationCensus) -> usize {
         items.len()*96
             + items
                 .iter()
-                .map(|(name, members)| name.capacity() + members.storage_bytes() + members.iter().map(|(key,value)|key.capacity()+value.capacity()).sum::<usize>())
+                .map(|(name, members)| name.capacity() + census.claim(members.allocation_id(),members.storage_bytes() + members.iter().map(|(key,value)|key.capacity()+value.capacity()).sum::<usize>()))
                 .sum::<usize>()
     }
-    fn nested_set(items: &im::OrdMap<String, dm_codegen_byond::CompactSet<String>>) -> usize {
+    fn nested_set(items: &im::OrdMap<String, dm_codegen_byond::CompactSet<String>>,census:&mut dm_codegen_byond::AllocationCensus) -> usize {
         items.len()*96
             + items
                 .iter()
-                .map(|(name, members)| name.capacity() + members.storage_bytes() + members.iter().map(|value|value.capacity()).sum::<usize>())
+                .map(|(name, members)| name.capacity() + census.claim(members.allocation_id(),members.storage_bytes() + members.iter().map(|value|value.capacity()).sum::<usize>()))
                 .sum::<usize>()
     }
     let mut bytes = std::mem::size_of::<FrozenSkeleton>()
@@ -949,6 +949,7 @@ fn skeleton_heap(image: &Dmb, metadata: &SkeletonMetadata) -> usize {
     }
     let invocation_bytes=bytes-image_bytes-declaration_bytes;
     let shared = &metadata.shared;
+    let mut census=dm_codegen_byond::AllocationCensus::default();
     bytes += std::mem::size_of::<SharedLowerBindings>();
     for map in [
         &shared.member_types,
@@ -956,10 +957,10 @@ fn skeleton_heap(image: &Dmb, metadata: &SkeletonMetadata) -> usize {
         &shared.member_procs,
         &shared.member_proc_return_types,
     ] {
-        bytes += nested_map(map);
+        bytes += nested_map(map,&mut census);
     }
     for set in [&shared.known_member_fields, &shared.known_member_procs] {
-        bytes += nested_set(set);
+        bytes += nested_set(set,&mut census);
     }
     for map in [
         &shared.modified_instances,
@@ -1089,7 +1090,7 @@ impl CanonicalSession {
             .saturating_add(self.procedure_fragments.resident_bytes())
             .saturating_add(self.invocation_fragments.resident_bytes())
             .saturating_add(self.invocation_queries.resident_bytes())
-            .saturating_add(self.owner_bindings.resident_bytes())
+            .saturating_add(self.skeleton.as_ref().map_or_else(||self.owner_bindings.resident_bytes(),|(_,prefix)|self.owner_bindings.resident_bytes_excluding(&prefix.metadata.shared)))
             .saturating_add(
                 self.owner_frames
                     .lock()
