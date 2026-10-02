@@ -1043,3 +1043,44 @@
 	for(var/obj/item/card/id/guest/P as anything in passes)
 		qdel(P)
 	mark("after_pass_cleanup")
+
+/// Actual shadekin variants: distinct constant tables and real ability grants.
+/datum/benchmark/shadekin_ability_tables
+	id = "shadekin_ability_tables"
+	description = "Shadekin variant ability tables and actual source grants"
+
+/datum/benchmark/shadekin_ability_tables/Run()
+	var/mobs_n = max(1, param("mobs", 90))
+	var/list/mobs = list()
+	var/list/tables = list()
+	var/list/variants = list(/datum/shadekin, /datum/shadekin/phase_only, /datum/shadekin/full)
+	var/turf/T = locate(10, 10, 1)
+	var/grant_errors = 0
+	var/granted_entries = 0
+	mark("before_shadekin")
+	begin_window()
+	var/start = REALTIMEOFDAY
+	for(var/i in 1 to mobs_n)
+		var/mob/living/carbon/human/H = new(T)
+		mobs += H
+		var/datum/shadekin/SK = H.add_shadekin(variants[((i - 1) % length(variants)) + 1])
+		var/list/ids = SK.granted_ability_ids()
+		var/table_seen = FALSE
+		for(var/list/table as anything in tables)
+			if(table == ids)
+				table_seen = TRUE
+		if(!table_seen)
+			tables += list(ids)
+		for(var/id in ids)
+			granted_entries++
+			if(!H.has_ability(id))
+				grant_errors++
+	metric("shadekin_allocation_ms", (REALTIMEOFDAY - start) * 100, "ms")
+	end_window("shadekin_allocation")
+	mark("populated_shadekin")
+	count_metric("distinct_ability_tables", length(tables), "lists")
+	count_metric("actual_granted_entries", granted_entries, "grants")
+	count_metric("grant_errors", grant_errors, "errors")
+	for(var/mob/living/carbon/human/H as anything in mobs)
+		qdel(H)
+	mark("after_shadekin_cleanup")

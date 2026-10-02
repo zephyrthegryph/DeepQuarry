@@ -370,3 +370,7 @@ UI_ACT_PROC(/datum/shadekin, ui_act_toggle_voice)
 /datum/shadekin/relations()
 	. = ..()
 	. += rel_many(nameof(active_dark_maws))
+
+/// Ability table for this variant; callers treat it as read-only.
+/datum/shadekin/proc/granted_ability_ids()
+	return shadekin_granted_abilities
