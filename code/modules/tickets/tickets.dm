@@ -566,6 +566,8 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 
 //Kick ticket to next level
 /datum/ticket/proc/Escalate(mob/user)
+	if(level != 0)
+		return
 	if(!admin_require(user?.client, R_ADMIN|R_SERVER|R_MOD|R_MENTOR, "ticket.escalate"))
 		return
 	var/_answer_k569 = rerun_ask(user, "k569", PROC_REF(Escalate), args, /datum/om/prompt/choice/alert, message = "Really escalate this ticket to admins? No mentors will ever be able to interact with it again if you do.", title = "Escalate", choices = list("Yes","No"))
@@ -596,6 +598,9 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 		if(1)
 			if(!admin_require(user?.client, R_ADMIN|R_SERVER|R_MOD, "ticket.action"))
 				return
+		else
+			log_admin("[key_name(user)] attempted to act on ticket #[id] with invalid level [level].")
+			return
 
 	perform_action(action, user)
 

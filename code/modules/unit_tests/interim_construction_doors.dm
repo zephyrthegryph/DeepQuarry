@@ -234,3 +234,18 @@
 	TEST_ASSERT_EQUAL(emag_target(unpowered, 1), 0, "A closed unpowered door must consume no emag uses")
 	TEST_ASSERT_EQUAL(om_timer_count(unpowered), unpowered_timers, "Unpowered-door refusal must schedule no reaction")
 	TEST_ASSERT(unpowered.density, "Unpowered-door refusal must leave the door closed")
+
+/// Native clients cannot be created by unit tests. Suppress ticket's client-bound constructor;
+/// retain the actual Action and Close implementations so a malformed-level bypass changes state.
+/datum/ticket/interim_auth_fixture/New()
+	_interactions = list()
+
+/datum/unit_test/interim_ticket_invalid_level_refuses_action/Run()
+	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human)
+	var/datum/ticket/ticket = allocate(/datum/ticket/interim_auth_fixture)
+	TEST_ASSERT_EQUAL(ticket.state, AHELP_ACTIVE, "Fixture ticket must start active")
+	for(var/invalid_level in list(2, "invalid", null))
+		ticket.level = invalid_level
+		ticket.Action("close", actor)
+		TEST_ASSERT_EQUAL(ticket.state, AHELP_ACTIVE, "Malformed level [invalid_level] must not skip authorization and close a ticket")
+		TEST_ASSERT_EQUAL(length(ticket._interactions), 0, "Refused malformed-level action must leave ticket interactions unchanged")
