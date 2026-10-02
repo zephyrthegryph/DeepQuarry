@@ -36,11 +36,11 @@ TOPIC_ACTION(/datum/admins, "notes", PROC_REF(topic_notes), TOPIC_TEXT("notes"),
 
 /datum/admins/proc/topic_editrightsbrowserranks(mob/user, list/args)
 	if(args["editrightsaddrank"])
-		add_rank()
+		add_rank(user = user)
 	else if(args["editrightsremoverank"])
-		remove_rank(args["editrightsremoverank"])
+		remove_rank(args["editrightsremoverank"], user = user)
 	else if(args["editrightseditrank"])
-		change_rank(args["editrightseditrank"])
+		change_rank(args["editrightseditrank"], user = user)
 	edit_admin_permissions(PERMISSIONS_PAGE_RANKS)
 
 /datum/admins/proc/topic_editrightsbrowserlogging(mob/user, list/args)
@@ -48,15 +48,15 @@ TOPIC_ACTION(/datum/admins, "notes", PROC_REF(topic_notes), TOPIC_TEXT("notes"),
 
 /datum/admins/proc/topic_editrightsbrowserhousekeep(mob/user, list/args)
 	if(args["editrightschange"])
-		change_admin_rank(ckey(args["editrightschange"]), args["editrightschange"], TRUE)
+		change_admin_rank(ckey(args["editrightschange"]), args["editrightschange"], TRUE, user = user)
 	else if(args["editrightsremove"])
-		remove_admin(ckey(args["editrightsremove"]), args["editrightsremove"], TRUE)
+		remove_admin(ckey(args["editrightsremove"]), args["editrightsremove"], TRUE, user = user)
 	else if(args["editrightsremoverank"])
-		remove_rank(args["editrightsremoverank"])
+		remove_rank(args["editrightsremoverank"], user = user)
 	edit_admin_permissions(PERMISSIONS_PAGE_HOUSEKEEPING)
 
 /datum/admins/proc/topic_editrights(mob/user, list/args)
-	edit_rights_topic(args["editrights"], args["key"])
+	edit_rights_topic(args["editrights"], args["key"], user = user)
 
 /datum/admins/proc/topic_call_shuttle(mob/user, list/args)
 	if(SSticker.mode.name == "blob")
