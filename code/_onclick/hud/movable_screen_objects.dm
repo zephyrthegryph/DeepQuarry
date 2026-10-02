@@ -27,7 +27,7 @@
 /atom/movable/screen/movable/MouseDrop(over_object, src_location, over_location, src_control, over_control, params)
 	if(locked) // no! i am locked! begone!
 		return
-	var/position = mouse_params_to_position(params)
+	var/position = mouse_params_to_position(params, usr?.client?.view)
 	if(!position)
 		return
 
@@ -35,15 +35,14 @@
 	moved = screen_loc
 
 /// Takes mouse parmas as input, returns a string representing the appropriate mouse position
-/atom/movable/screen/movable/proc/mouse_params_to_position(params)
+/atom/movable/screen/movable/proc/mouse_params_to_position(params, view = null)
 	var/list/modifiers = params2list(params)
 
 	//No screen-loc information? abort.
 	if(!LAZYACCESS(modifiers, SCREEN_LOC))
 		return
 
-	var/client/our_client = usr.client
-	var/list/offset = screen_loc_to_offset(LAZYACCESS(modifiers, SCREEN_LOC), our_client?.view)
+	var/list/offset = screen_loc_to_offset(LAZYACCESS(modifiers, SCREEN_LOC), view)
 
 	if(snap2grid) //Discard Pixel Values
 		offset[1] = FLOOR(offset[1], ICON_SIZE_X) // drops any pixel offset
@@ -51,7 +50,7 @@
 	else //Normalise Pixel Values (So the object drops at the center of the mouse, not 16 pixels off)
 		offset[1] += x_off
 		offset[2] += y_off
-	return offset_to_screen_loc(offset[1], offset[2], our_client?.view)
+	return offset_to_screen_loc(offset[1], offset[2], view)
 
 // Must stay for now, for subtypes
 /atom/movable/screen/movable/proc/encode_screen_X(X)

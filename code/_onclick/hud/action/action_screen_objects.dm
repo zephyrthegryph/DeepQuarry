@@ -349,16 +349,17 @@ GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,
 	our_group.refresh_actions()
 	update_name()
 
-	if(!usr.client)
+	var/mob/viewer = our_hud().mymob()
+	if(!viewer?.client)
 		return
 
 	// Clients cannot be hooked: client clicks are emitted on the client's mob.
 	if(expanded)
-		om_hook(usr, /datum/om/event/client_click, src, PROC_REF(clicked_while_open))
+		om_hook(viewer, /datum/om/event/client_click, src, PROC_REF(clicked_while_open))
 	else
-		om_unhook(usr, /datum/om/event/client_click, src)
+		om_unhook(viewer, /datum/om/event/client_click, src)
 
-	closeToolTip(usr, src) //Our tooltips are now invalid, can't seem to update them in one frame, so here, just close them
+	closeToolTip(viewer, src) //Our tooltips are now invalid, can't seem to update them in one frame, so here, just close them
 
 /atom/movable/screen/palette_scroll
 	icon = 'icons/hud/screen_gen.dmi'
