@@ -391,6 +391,7 @@
 #include "dx_cap_reagent_container_tests.dm"
 #include "dx_cap_storage_tests.dm"
 #include "interim_actor_propagation.dm"
+#include "interim_apc_behavior.dm"
 #include "interim_construction_doors.dm"
 #include "interim_device_lifecycle.dm"
 #include "interim_economy_actor.dm"
