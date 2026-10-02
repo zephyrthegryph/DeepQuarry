@@ -12,7 +12,7 @@
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)
 	var/obj/item/rig/interim_wire_actor_probe/rig = allocate(/obj/item/rig/interim_wire_actor_probe, T)
-	var/datum/wires/rig/wires = wires_of(rig)
+	var/datum/wires/rig/wires = rig.wires
 	TEST_ASSERT(istype(wires), "the real RIG initializes its wire controller")
 	var/security_before = rig.security_check_enabled
 	wires.pulse(WIRE_RIG_SECURITY, actor)
