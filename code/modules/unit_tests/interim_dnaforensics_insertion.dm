@@ -1,0 +1,40 @@
+/// A saliva swab created by the actual sampling action remains intact when inserted into the real analyzer.
+/datum/unit_test/interim_dnaforensics_swab_insert/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
+	var/obj/machinery/dnaforensics/analyzer = allocate(/obj/machinery/dnaforensics, T)
+	var/obj/item/forensics/swab/swab = allocate(/obj/item/forensics/swab, T)
+	TEST_ASSERT(user.put_in_active_hand(swab), "the real sampling swab is held")
+	user.zone_sel.selecting = O_MOUTH
+	TEST_ASSERT_EQUAL(swab.attack(user, user), ITEM_INTERACT_SUCCESS, "the actual saliva sampling action succeeds")
+	TEST_ASSERT(swab.is_used(), "the actual swab records its used state")
+	TEST_ASSERT_EQUAL(swab.dna[1], user.dna.unique_enzymes, "the actual swab records the donor's DNA")
+	TEST_ASSERT_EQUAL(analyzer.interaction_insert_swab(user, swab, null), TRUE, "actual used-swab insertion succeeds")
+	TEST_ASSERT_EQUAL(analyzer.bloodsamp(), swab, "the analyzer views the actual installed swab")
+	TEST_ASSERT_EQUAL(swab.loc, analyzer, "the actual used swab is physically inside the analyzer")
+	TEST_ASSERT_NULL(user.get_active_hand(), "insertion correctly vacates the swab's hand")
+	TEST_ASSERT_EQUAL(swab.dna[1], user.dna.unique_enzymes, "insertion preserves the real donor DNA")
+	TEST_ASSERT(swab.is_used(), "insertion preserves the actual used state")
+
+/// Sticky sampled swabs refuse insertion while unused swabs retain the analyzer's existing rejection.
+/datum/unit_test/interim_dnaforensics_swab_refusal/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
+	var/obj/machinery/dnaforensics/analyzer = allocate(/obj/machinery/dnaforensics, T)
+	var/obj/item/forensics/swab/swab = allocate(/obj/item/forensics/swab, T)
+	TEST_ASSERT(user.put_in_active_hand(swab), "the real sampling swab is held")
+	analyzer.interaction_insert_swab(user, swab, null)
+	TEST_ASSERT_NULL(analyzer.bloodsamp(), "an unused swab is still rejected")
+	TEST_ASSERT_EQUAL(user.get_active_hand(), swab, "unused rejection preserves the actual hand")
+	user.zone_sel.selecting = O_MOUTH
+	TEST_ASSERT_EQUAL(swab.attack(user, user), ITEM_INTERACT_SUCCESS, "the actual saliva sampling action succeeds")
+	add_trait(swab, TRAIT_NODROP, "interim_dnaforensics_swab")
+	TEST_ASSERT(swab.loc.release_refusal(swab, user), "the actual sticky used swab refuses release")
+	TEST_ASSERT(analyzer.can_insert_swab(user, analyzer, swab) != TRUE, "the insertion requirement rejects the actual sticky swab")
+	TEST_ASSERT_EQUAL(analyzer.interaction_insert_swab(user, swab, null), FALSE, "the actual callback respects used-swab refusal")
+	TEST_ASSERT_NULL(analyzer.bloodsamp(), "refusal leaves the analyzer's sample view empty")
+	TEST_ASSERT_NULL(locate_within(analyzer, /obj/item/forensics/swab), "refusal puts no swab inside the analyzer")
+	TEST_ASSERT_EQUAL(swab.loc, user, "refusal leaves the actual swab on its holder")
+	TEST_ASSERT_EQUAL(user.get_active_hand(), swab, "refusal preserves the actual hand")
+	TEST_ASSERT_EQUAL(swab.dna[1], user.dna.unique_enzymes, "refusal preserves the real donor DNA")
+	remove_trait(swab, TRAIT_NODROP, "interim_dnaforensics_swab")

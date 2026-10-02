@@ -24,3 +24,4 @@ changes:
   - bugfix: "Stasis-bag injector loading and concealed-knife assembly respect stuck ingredients and preserve inventory bookkeeping."
   - bugfix: "Locket and television assembly insertions respect stuck ingredients and preserve unrelated held items."
   - bugfix: "Grenade and microscope sample insertion respect stuck items; turret sensors and firedoor boards advance construction only after consumption succeeds."
+  - bugfix: "DNA analyzers respect sticky sample removal without losing donor data."

@@ -35,7 +35,8 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/dnaforensics, MACHINE_PIPELINE, "scanning"
 	name = "Insert swab"
 	requires = list(REQ_INTERACTION_REACH,
 		REQ_ON(PRED_TARGET, /obj/machinery/dnaforensics/proc/no_sample_loaded, "there is a sample in the machine"),
-		REQ_ON(PRED_TARGET, /obj/machinery/dnaforensics/proc/not_currently_scanning, "it is busy scanning right now"))
+		REQ_ON(PRED_TARGET, /obj/machinery/dnaforensics/proc/not_currently_scanning, "it is busy scanning right now"),
+		REQ_TARGET_STATE(/obj/machinery/dnaforensics/proc/can_insert_swab))
 	effect = /obj/machinery/dnaforensics/proc/interaction_insert_swab
 
 /obj/machinery/dnaforensics/proc/no_sample_loaded(mob/actor, atom/target, obj/item/held)
@@ -44,12 +45,23 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/dnaforensics, MACHINE_PIPELINE, "scanning"
 /obj/machinery/dnaforensics/proc/not_currently_scanning(mob/actor, atom/target, obj/item/held)
 	return !scanning
 
+/// A used forensic swab must be releasable before the analyzer accepts it.
+/obj/machinery/dnaforensics/proc/can_insert_swab(mob/user, atom/target, obj/item/held)
+	var/obj/item/forensics/swab/swab = held
+	if(istype(swab) && swab.is_used())
+		var/reason = swab.loc?.release_refusal(swab, user)
+		if(reason)
+			return reason
+	return TRUE
+
 /obj/machinery/dnaforensics/proc/interaction_insert_swab(mob/user, obj/item/W, datum/interaction/interaction)
 	var/obj/item/forensics/swab/swab = W
 	if(istype(swab) && swab.is_used())
-		user.unEquip(W)
+		if(can_insert_swab(user, src, swab) != TRUE)
+			return FALSE
+		if(!swab.loc.release_to(swab, src, null, user))
+			return FALSE
 		rel_set(src, nameof(bloodsamp), swab)
-		swab.forceMove(src)
 		to_chat(user, span_notice("You insert [W] into [src]."))
 		update_icon()
 	else
