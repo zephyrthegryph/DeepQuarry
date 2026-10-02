@@ -2,3 +2,4 @@ author: "Claude"
 delete-after: true
 changes:
   - bugfix: "The syndicate kit's TTV bombs spawn inside the box instead of on the floor under it."
+  - bugfix: "An object cooling or warming in a large room or outdoors reports its current temperature instead of a value up to 30 seconds stale."

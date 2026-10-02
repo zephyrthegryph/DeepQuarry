@@ -112,6 +112,37 @@
 	TEST_ASSERT_NULL(I.heat_body, "release kept the handle")
 	TEST_ASSERT(abs(I.get_temperature() - I.get_ambient_temperature()) < 0.01, "a released item does not read its surroundings")
 
+/// A body coupled to a reservoir (a planet turf's air, or any air holding
+/// RELAX_CAPACITY_RATIO times its capacity) relaxes on the analytic model, whose
+/// coupling law sleeps until the model is due: up to RELAX_MAX_INTERVAL, which 60
+/// steps of the base step only just reach. Its temperature must read the model's
+/// value now, not the energy it was anchored with: the read used to stay exactly at
+/// the start for the whole 60 steps.
+/datum/unit_test/dq_heat_body_on_a_reservoir_reads_its_relaxed_temperature
+
+/datum/unit_test/dq_heat_body_on_a_reservoir_reads_its_relaxed_temperature/Run()
+	var/turf/simulated/floor/T = heat_test_turf()
+	TEST_ASSERT_NOTNULL(T, "no floor to test on")
+	// A planet turf's gas cell is a reservoir (verdigris/ffi/src/gas/mod.rs register_turf()).
+	T.planetary_atmos = TRUE
+	T.update_air_ref(0)
+	defer_cleanup(null, GLOBAL_PROC_REF(heat_test_unplanet), T)
+	var/obj/item/I = allocate(/obj/item/tool/wrench, T)
+	var/list/properties = I.thermal_properties()
+	I.add_heat(properties[THERMAL_CAPACITY] * 50)
+	var/start = I.get_temperature()
+	vg_world_run_steps(60)
+	var/later = I.get_temperature()
+	TEST_ASSERT(later < start - 0.5, "the body did not relax ([start] K -> [later] K)")
+	TEST_ASSERT(later > I.get_ambient_temperature() - 1, "the body passed its surroundings ([later] K)")
+	I.release_heat_body()
+
+/// Makes a heat test turf an ordinary floor cell again.
+/proc/heat_test_unplanet(turf/simulated/floor/T)
+	T.planetary_atmos = FALSE
+	T.update_air_ref(0)
+	heat_test_restore(T)
+
 /datum/heat_test_subscriber
 	var/wakes = 0
 	var/crossings = 0
