@@ -383,7 +383,7 @@ SYSTEM_DEF(input)
 		return STEP_DONE
 	var/started = TICK_USAGE
 	// `unlimited`, or a test owning the kernel clock: no budget, so a loaded test machine cannot change how many events a drain serves.
-	var/limit = (unlimited || !isnull(kernel().test_now)) ? WORK_TEST_LIMIT : min(Master.current_ticklimit, started + KERNEL_INPUT_CAP)
+	var/limit = (unlimited || !isnull(kernel().test_now)) ? WORK_TEST_LIMIT : min(Kernel.current_ticklimit, started + KERNEL_INPUT_CAP)
 	var/served = 0
 	// Start with the client after the last one the previous drain reached, so a budget that runs out in the middle of a round
 	// does not always shed the same clients.

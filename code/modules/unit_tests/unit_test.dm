@@ -829,7 +829,7 @@ GLOBAL_VAR(dq_test_select_names)
 /// Tick usage while a test ran: how many MC ticks it spanned, how many overran
 /// (usage above 100%) and the worst one. Recorded in data/unit_tests.json.
 /proc/unit_test_tick_stats(start_index)
-	var/list/usage = Master.perf_tick_usage
+	var/list/usage = Kernel.perf_tick_usage
 	if(start_index > usage.len)
 		return list("samples" = 0, "overruns" = 0, "max" = 0)
 	var/overruns = 0
@@ -894,7 +894,7 @@ GLOBAL_VAR(dq_test_select_names)
 			world.Profile(PROFILE_CLEAR)
 			world.Profile(PROFILE_START)
 		duration = REALTIMEOFDAY
-		tick_start_index = Master.perf_samples_total + 1
+		tick_start_index = Kernel.perf_samples_total + 1
 		INVOKE_ASYNC(test, TYPE_PROC_REF(/datum/unit_test, RunWrapped))
 		var/waited_ds = 0
 		var/limit_ds = test.timeout SECONDS
@@ -909,7 +909,7 @@ GLOBAL_VAR(dq_test_select_names)
 		duration = REALTIMEOFDAY - duration
 		if(profiling)
 			dq_test_write_profile(test_path)
-		tick_stats = unit_test_tick_stats(Master.perf_index_of(tick_start_index))
+		tick_stats = unit_test_tick_stats(Kernel.perf_index_of(tick_start_index))
 		GLOB.current_test = null
 		GLOB.failed_any_test |= !test.succeeded
 

@@ -22,9 +22,6 @@
 	var/ticks = 0
 	/// The live OM scheduler, or null before SSbehaviours initialized it.
 	var/datum/om/scheduler/sched
-	/// Subsystems the kernel runs itself, in phase order (resolved on first tick).
-	var/list/hosted_k
-	var/list/hosted_g
 	/// world.time phase G last got its floor slice (KERNEL_GARBAGE_FLOOR percent of a tick, once a second).
 	var/last_g_floor = 0
 	/// world.time of the last native frame (deciseconds elapsed feed native_frame()).
@@ -47,6 +44,10 @@
 	/// P's lane lists), recorded by the last walk of that list: work_run_phase() skips the walk before it. 0: walk.
 	/// Reset by rebuild_work_graph() and by any wake (work_due_reset()).
 	var/list/phase_due
+	/// world/New sets it: the live work (cadence and sequence sweeps) may register now, and kernel() does it once.
+	var/registration_open = FALSE
+	var/live_registered = FALSE
+
 	// ---- the test clock (code/tests/driver/kernel_clock.dm; all null/FALSE live)
 	/// The injected kernel clock, deciseconds, while a test owns it (kernel_test_begin()); null live.
 	var/test_now
@@ -115,19 +116,18 @@
 	for(var/cap in rx_boot_members())
 		cap_wanted[cap] = TRUE
 
-/// The kernel.
+/// The kernel (the `Kernel` global; world/Genesis makes it). Its periodic cadences' sweep items (datums/om/periodic.dm) and the
+/// sequences' sweep items (kernel/sequence.dm) register on the first call after world/New opened registration. A kernel a test
+/// makes with `new` starts empty.
 /proc/kernel()
 	RETURN_TYPE(/datum/controller/kernel)
-	var/static/datum/controller/kernel/K = kernel_create_live()
-	return K
-
-/// The live kernel, with the periodic cadences' sweep items (datums/om/periodic.dm) and the sequences' sweep items
-/// (kernel/sequence.dm) registered. A kernel a test makes with `new` starts empty.
-/proc/kernel_create_live()
-	var/datum/controller/kernel/K = new
-	kernel_register_cadences(K)
-	kernel_register_sequences(K)
-	return K
+	if(!Kernel)
+		Kernel = new /datum/controller/kernel
+	if(Kernel.registration_open && !Kernel.live_registered)
+		Kernel.live_registered = TRUE
+		kernel_register_cadences(Kernel)
+		kernel_register_sequences(Kernel)
+	return Kernel
 
 // ---------------------------------------------------------------- the tick
 
@@ -135,19 +135,16 @@
 #define KERNEL_PHASE_NOTE(phase, started) var/ms_##started = TICK_USAGE_TO_MS(started); phase_ms_last[phase] = ms_##started; phase_ms_total[phase] += ms_##started
 
 /// One kernel tick. `tick_limit` is the absolute tick usage the kernel's phases must stay under (K and U may pass
-/// it by their own rules); `init_stage` is the MC loop's stage: a hosted subsystem of a later stage does not run yet.
+/// it by their own rules); `init_stage` is the loop's init stage.
 /datum/controller/kernel/proc/tick(tick_limit, init_stage = INITSTAGE_MAX, light = FALSE)
 	var/tick_start = TICK_USAGE
-	var/saved_limit = Master.current_ticklimit
+	var/saved_limit = Kernel.current_ticklimit
 	// ALLOW(sys_world_time_write): the kernel clock: a per-tick timestamp of the scheduler itself, not a per-entity expiry
 	last_tick = world.time
 	ticks++
 	tick_init_stage = init_stage
 	if(!sched)
 		sched = GLOB.om_live_sched
-	if(!hosted_k)
-		hosted_k = hosts_of(KERNEL_PHASE_K)
-		hosted_g = hosts_of(KERNEL_PHASE_G)
 
 	phase_begin()
 	// The phase lists, rebuilt here when the graph changed, so the phases read them without a call each.
@@ -164,7 +161,6 @@
 			work_run_phase(KERNEL_PHASE_K, tick_limit)
 		catch(var/exception/k_e) // ALLOW(silent_catch): phase_fault() reports it through report_fault()
 			phase_fault(KERNEL_PHASE_K, k_e)
-	run_hosted_phase(hosted_k, tick_limit, init_stage)
 	if(TICK_USAGE - k_start > KERNEL_INPUT_CAP)
 		k_over_cap++
 	KERNEL_PHASE_NOTE(KERNEL_PHASE_K, k_start)
@@ -189,9 +185,10 @@
 		// ALLOW(sys_world_time_write): the kernel clock: a per-tick timestamp of the scheduler itself, not a per-entity expiry
 		last_native = world.time
 		try
-			run_native(elapsed, sched.world_budget)
+			// The phase's own systems first (the air system's atmos pass), then the one native frame.
 			if(length(items_by_phase[KERNEL_PHASE_N]))
 				work_run_phase(KERNEL_PHASE_N, tick_limit)
+			run_native(elapsed, sched.world_budget)
 		catch(var/exception/n_e) // ALLOW(silent_catch): phase_fault() reports it through report_fault()
 			phase_fault(KERNEL_PHASE_N, n_e)
 		KERNEL_PHASE_NOTE(KERNEL_PHASE_N, n_start)
@@ -240,7 +237,6 @@
 		g_limit = max(tick_limit, TICK_USAGE + KERNEL_GARBAGE_FLOOR)
 		// ALLOW(sys_world_time_write): the kernel clock: a per-tick timestamp of the scheduler itself, not a per-entity expiry
 		last_g_floor = world.time
-	run_hosted_phase(hosted_g, g_limit, init_stage)
 	if(length(items_by_phase[KERNEL_PHASE_G]))
 		try
 			work_run_phase(KERNEL_PHASE_G, g_limit)
@@ -249,7 +245,7 @@
 	KERNEL_PHASE_NOTE(KERNEL_PHASE_G, g_start)
 
 	last_tick_ms = TICK_USAGE_TO_MS(tick_start)
-	Master.current_ticklimit = saved_limit
+	Kernel.current_ticklimit = saved_limit
 
 #undef KERNEL_PHASE_NOTE
 
@@ -257,10 +253,10 @@
 /// stage, and the runlevel is one it ran in. The rule SSbehaviours' own MC entry had.
 /datum/controller/kernel/proc/sched_runs(init_stage)
 	// ALLOW(system_boundary): the kernel is the scheduler core SSbehaviours delegates to: it reads and updates that subsystem own fire bookkeeping
-	if(!SSbehaviours || SSbehaviours.init_stage > init_stage || !SSbehaviours.can_fire)
+	if(!SSbehaviours || !SSbehaviours.initialized || SSbehaviours.init_stage > init_stage || !SSbehaviours.can_fire)
 		return FALSE
 	// ALLOW(system_boundary): the kernel is the scheduler core SSbehaviours delegates to: it reads and updates that subsystem own fire bookkeeping
-	return !!(SSbehaviours.runlevels & Master.current_runlevel)
+	return SSbehaviours.periodic_runlevel_ok()
 
 /// Clears the per-tick phase accounting.
 /datum/controller/kernel/proc/phase_begin()
@@ -351,75 +347,6 @@
 /datum/controller/kernel/proc/run_work_phase(phase, tick_limit)
 	work_run_phase(phase, tick_limit)
 
-// ---------------------------------------------------------------- hosted subsystems
-
-/// Fires each host service that is due, in list order: its own runlevels, its own timing, a paused run resumed.
-/// A ticker gets the whole phase limit; a service on a longer wait (tgui, dbcore, profiler,
-/// garbage) gets KERNEL_HOST_SLICE of a tick at most, so a slow host cannot starve the phases after it.
-/datum/controller/kernel/proc/run_hosted_phase(list/subsystems, tick_limit, init_stage)
-	var/now = world.time
-	var/runlevel_bit = 1 << (Master.current_runlevel - 1)
-	for(var/datum/controller/subsystem/SS as anything in subsystems)
-		// Not due (most hosts most ticks: they run on waits of seconds) is the first and cheapest refusal.
-		var/paused = (SS?.state == SS_PAUSED)
-		// The kernel clock: compares the scheduler own timestamps, not an entity expiry
-		if(!paused && SS?.next_fire > now)
-			continue
-		if(!SS || !SS.can_fire || SS.init_stage > init_stage)
-			continue
-		if(!(SS.runlevels & runlevel_bit))
-			continue
-		if(TICK_USAGE >= tick_limit && SS.state != SS_PAUSED && !(SS.flags & SS_TICKER))
-			continue
-		var/limit = tick_limit
-		if(!(SS.flags & SS_TICKER))
-			limit = min(tick_limit, TICK_USAGE + KERNEL_HOST_SLICE)
-		run_hosted(SS, limit, paused)
-
-/datum/controller/kernel/proc/run_hosted(datum/controller/subsystem/SS, tick_limit, paused)
-	Master.current_ticklimit = tick_limit
-	SS.queued_time = world.time // ALLOW(sys_world_time_write): kernel-hosted subsystem timing
-	if(!paused)
-		SS.current_run_slices = 0
-	SS.current_run_slices++
-	SS.state = SS_RUNNING
-	var/used = TICK_USAGE
-	var/state = SS_IDLE
-	try
-		state = SS.ignite(paused)
-	catch(var/exception/e) // ALLOW(silent_catch): report_fault() reports it through dq_report_caught() unless a test expects faults
-		phase_faults++
-		report_fault(e, "host service [SS.name] runtime: [e] ([e.file]:[e.line])")
-	used = max(TICK_USAGE - used, 0)
-	LAZYSET(Master.perf_tick_breakdown, SS.name, (LAZYACCESS(Master.perf_tick_breakdown, SS.name) || 0) + used)
-	if(used > Master.perf_tick_top_usage)
-		Master.perf_tick_top_usage = used
-		Master.perf_tick_top_name = SS.name
-	if(Master.use_rolling_usage)
-		SS.prune_rolling_usage()
-		SS.rolling_usage += list(DS2TICKS(world.time), used)
-	if(state == SS_RUNNING)
-		state = SS_IDLE
-	SS.state = state
-	if(state == SS_PAUSED)
-		// A paused run resumes on the kernel's next pass.
-		SS.paused_ticks++
-		SS.paused_tick_usage += used
-		return
-	used += SS.paused_tick_usage
-	SS.ticks = MC_AVERAGE(SS.ticks, SS.paused_ticks)
-	SS.tick_usage = SS.tick_usage ? MC_AVERAGE_FAST(SS.tick_usage, used) : used
-	SS.cost = SS.cost ? MC_AVERAGE_FAST(SS.cost, TICK_DELTA_TO_MS(used)) : TICK_DELTA_TO_MS(used)
-	SS.active_cost_last = TICK_DELTA_TO_MS(used)
-	SS.paused_ticks = 0
-	SS.paused_tick_usage = 0
-	// ALLOW(sys_world_time_write): the kernel clock: a per-tick timestamp of the scheduler itself, not a per-entity expiry
-	SS.last_fire = world.time
-	SS.times_fired++
-	SS.update_nextfire()
-	SS.queued_time = 0
-	SS.tick_overrun = max(0, MC_AVG_FAST_UP_SLOW_DOWN(SS.tick_overrun, used - max(tick_limit - TICK_USAGE + used, 0)))
-
 // ---------------------------------------------------------------- SSbehaviours' remaining duties
 
 /// SSbehaviours stopped firing; its profiler and benchmark counters are fed from the kernel's scheduler passes.
@@ -433,7 +360,7 @@
 	// ALLOW(system_boundary): the kernel is the scheduler core SSbehaviours delegates to: it reads and updates that subsystem own fire bookkeeping
 	SSbehaviours.last_done = sched.pass_done
 	// ALLOW(system_boundary): the kernel is the scheduler core SSbehaviours delegates to: it reads and updates that subsystem own fire bookkeeping
-	SSbehaviours.cost = SSbehaviours.cost ? MC_AVERAGE_FAST(SSbehaviours.cost, pass_ms) : pass_ms
+	SSbehaviours.fire_cost = SSbehaviours.fire_cost ? KERNEL_AVERAGE_FAST(SSbehaviours.fire_cost, pass_ms) : pass_ms
 	// ALLOW(system_boundary): the kernel is the scheduler core SSbehaviours delegates to: it reads and updates that subsystem own fire bookkeeping
 	SSbehaviours.times_fired++
 	// ALLOW(sys_world_time_write, system_boundary): the kernel clock: a per-tick timestamp of the scheduler itself, not a per-entity expiry; the kernel is the scheduler core SSbehaviours delegates to: it reads and updates that subsystem own fire bookkeeping

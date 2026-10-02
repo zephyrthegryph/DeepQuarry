@@ -57,9 +57,9 @@ GLOBAL_LIST_INIT(registry_enum_procs, list(
 ))
 
 /proc/registry_controller(datum/controller/D)
-	if(D == Master || D == Failsafe || D == config || D == GLOB)
+	if(D == Kernel || D == config || D == GLOB)
 		return D
-	return (Master && (D in Master.subsystems)) ? D : null
+	return null
 
 /proc/registry_ntnet(datum/D)
 	return GLOB.ntnet_global

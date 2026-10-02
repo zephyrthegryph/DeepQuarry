@@ -7,9 +7,9 @@
 /// appearance work and init batches change whenever anything is created or
 /// deleted, and the test itself creates and deletes.
 GLOBAL_LIST_INIT(dq_lifecycle_snapshot_ignored, list(
-	/datum/controller/subsystem/garbage,
-	/datum/controller/subsystem/overlays,
-	/datum/controller/subsystem/atoms,
+	/datum/system/garbage,
+	/datum/system/overlays,
+	/datum/system/atoms,
 ))
 
 /// GLOB lists that are first-use caches, not registrations. The warm-up instance fills a
@@ -71,15 +71,7 @@ GLOBAL_VAR(dq_lifecycle_snapshot_var_keys)
 			continue
 		if(islist(GLOB.vars[name]))
 			keys["GLOB.[name]"] = list(GLOB, name)
-	for(var/datum/controller/subsystem/subsystem as anything in Master.subsystems)
-		if(subsystem.type in GLOB.dq_lifecycle_snapshot_ignored)
-			continue
-		for(var/name in subsystem.vars)
-			if(name == "vars")
-				continue
-			if(islist(subsystem.vars[name]))
-				keys["[subsystem.type].[name]"] = list(subsystem, name)
-	// The gameplay systems replaced subsystems that were walked here: their registries and queues are covered the same way.
+	// Every system's registries and queues are walked the same way.
 	// The native system's per-frame scratch lists churn by design, so only its entity tables count.
 	for(var/datum/system/system as anything in kernel_pure_systems())
 		var/native = istype(system, /datum/system/native)

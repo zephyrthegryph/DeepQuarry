@@ -8,8 +8,8 @@ SYSTEM_DEF(mapping)
 	//	///datum/controller/subsystem/processing/reagents
 	//)
 	needs = list(
-		/datum/controller/subsystem/garbage, // was transitive through chemistry
-		/datum/controller/subsystem/early_assets, // early assets declared mapping as a dependent when it was a subsystem
+		/datum/system/garbage, // was transitive through chemistry
+		/datum/system/early_assets, // early assets declared mapping as a dependent when it was a subsystem
 		// Chemistry and vis_overlays were dependencies; both are world services now that need no boot.
 	)
 

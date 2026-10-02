@@ -1,9 +1,9 @@
 // Kernel measurement: the tick meter.
 //
 // Every unit of work is charged to a system (systems.dm) as it finishes: OM behaviours from inside
-// SSbehaviours (slots, wakes, deadlines), each firing MC subsystem from Master.RunQueue(), and clicks from
+// SSbehaviours (slots, wakes, deadlines), each firing MC subsystem from Kernel.RunQueue(), and clicks from
 // atom/Click. The meter adds the charges up for the tick in fixed lists (nothing is allocated per tick), and
-// Master.record_performance_tick() closes the tick with end_tick(), which
+// Kernel.record_performance_tick() closes the tick with end_tick(), which
 //  - folds every touched system's ms into each active stats set (histogram, totals, lateness),
 //  - picks the tick's top KM_TOP_N systems by ms,
 //  - writes one entry of the flight recorder (a ring of the last KM_RING_LEN ticks: usage, maptick, input cost,
@@ -243,19 +243,6 @@
 		idx = KM_SYS_OTHER
 	if(late > tick_late[idx])
 		tick_late[idx] = late
-
-/// Charges an MC subsystem's slice (`usage` is the percent of a tick it took). SSbehaviours is not charged:
-/// it charges the systems it ran.
-/datum/tick_meter/proc/charge_subsystem(datum/controller/subsystem/SS, usage)
-	var/idx = SS.system_idx
-	if(!idx)
-		idx = km_bind_subsystem(SS)
-	if(idx < 0)
-		return
-	var/ms = TICK_DELTA_TO_MS(usage)
-	charge(idx, ms)
-	if(SS.counts_as_input)
-		input_ms += ms
 
 // ---------------------------------------------------------------- input
 

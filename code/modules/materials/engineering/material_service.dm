@@ -73,7 +73,7 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 		// Services admitted while the world initializes (every power cell, pipes seeing their
 		// first pressure) take their baseline sample spread over the first seconds after boot
 		// rather than all on the first tick.
-		if(!Master.current_runlevel)
+		if(!Kernel.current_runlevel)
 			first_sample = rand(0, MATERIAL_SERVICE_BOOT_SPREAD)
 	assembly.last_event = event
 	var/datum/material_service/service = assembly.service

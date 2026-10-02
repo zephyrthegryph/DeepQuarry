@@ -67,7 +67,7 @@ GLOBAL_DATUM_INIT(radio_service, /datum/world_service/radio, new)
 
 /datum/world_service/radio
 	name = "Radio"
-	needs = list(/datum/controller/subsystem/atoms)
+	needs = list(/datum/system/atoms)
 	var/list/datum/radio_frequency/frequencies = list()
 
 /// The service owns its frequencies (keyed by frequency text).

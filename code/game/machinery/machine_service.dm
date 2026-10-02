@@ -74,7 +74,7 @@ GLOBAL_DATUM_INIT(machine_service, /datum/world_service/machines, new)
 		if(!complete)
 			return FALSE
 		last_cost_machinery = current_cost_machinery
-		cost_machinery = MC_AVERAGE(cost_machinery, last_cost_machinery)
+		cost_machinery = KERNEL_AVERAGE(cost_machinery, last_cost_machinery)
 		current_cost_powernets = 0
 		var/begin_started = TICK_USAGE
 		process_power_begin()
@@ -87,7 +87,7 @@ GLOBAL_DATUM_INIT(machine_service, /datum/world_service/machines, new)
 	if(!polled)
 		return FALSE
 	last_cost_powernets = current_cost_powernets
-	cost_powernets = MC_AVERAGE(cost_powernets, last_cost_powernets)
+	cost_powernets = KERNEL_AVERAGE(cost_powernets, last_cost_powernets)
 	return TRUE
 
 /// The whole power step at once (boot and admin repair). The world lane runs it in parts instead

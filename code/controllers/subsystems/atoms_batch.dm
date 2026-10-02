@@ -51,7 +51,7 @@
 		work = new /list(BATCH_WORK_KINDS)
 	late_loaders = list()
 
-/datum/controller/subsystem/atoms
+/datum/system/atoms
 	/// The frame currently initializing atoms, or null (no batch, or its frame is yielding).
 	var/tmp/datum/materialize_batch/active_batch
 	/// Test hook: when set, every chunk boundary yields and calls this instead of stoplag().
@@ -61,14 +61,14 @@
 
 
 /// Opens a frame for one InitializeAtoms() call and makes it the active one.
-/datum/controller/subsystem/atoms/proc/batch_open(source)
+/datum/system/atoms/proc/batch_open(source)
 	var/datum/materialize_batch/batch = new(source, active_batch)
 	active_batch = batch
 	batch_trace?.Add(batch)
 	return batch
 
 /// Flushes an owner frame's deferred work, then deactivates the frame.
-/datum/controller/subsystem/atoms/proc/batch_close(datum/materialize_batch/batch)
+/datum/system/atoms/proc/batch_close(datum/materialize_batch/batch)
 	if(batch.closed)
 		return
 	batch.closed = TRUE
@@ -88,7 +88,7 @@
 
 /// A chunk boundary: yields to the MC if the tick is spent (never under unit tests, which
 /// have no clients to keep smooth) and keeps the frame isolated while it sleeps.
-/datum/controller/subsystem/atoms/proc/batch_yield_point(datum/materialize_batch/batch)
+/datum/system/atoms/proc/batch_yield_point(datum/materialize_batch/batch)
 	var/list/probe = batch_yield_probe
 	if(!probe)
 		#ifdef UNIT_TESTS
@@ -108,7 +108,7 @@
 	active_batch = batch
 
 /// Queues `thing` as `kind` work on the running frame's owner. FALSE when no frame runs.
-/datum/controller/subsystem/atoms/proc/batch_defer(kind, datum/thing)
+/datum/system/atoms/proc/batch_defer(kind, datum/thing)
 	var/datum/materialize_batch/batch = active_batch
 	if(!batch)
 		return FALSE
@@ -121,14 +121,14 @@
 	return TRUE
 
 /// Drops `thing` from every open frame's `kind` work (a cable unplaced before its bind).
-/datum/controller/subsystem/atoms/proc/batch_undefer(kind, datum/thing)
+/datum/system/atoms/proc/batch_undefer(kind, datum/thing)
 	for(var/datum/materialize_batch/batch = active_batch, batch, batch = batch.previous)
 		var/list/queued = batch.owner.work[kind]
 		queued?.Remove(thing)
 	// A frame suspended at a yield is not on the active chain; its work is filtered at flush.
 
 /// Runs one kind of deferred work. Every flusher skips deleted things.
-/datum/controller/subsystem/atoms/proc/flush_batch_work(kind, list/queued)
+/datum/system/atoms/proc/flush_batch_work(kind, list/queued)
 	switch(kind)
 		if(BATCH_WORK_WALL_SMOOTHING)
 			flush_wall_smoothing(queued)
@@ -140,7 +140,7 @@
 /// Smooths every wall the batch queued, plus the walls next to them (a template's edge
 /// touches walls that were already there), once each, now that every material is set.
 /// A neighbour another frame has not initialized yet queues itself when it does.
-/datum/controller/subsystem/atoms/proc/flush_wall_smoothing(list/queued)
+/datum/system/atoms/proc/flush_wall_smoothing(list/queued)
 	var/list/walls = queued.Copy()
 	for(var/turf/simulated/wall/W as anything in queued)
 		for(var/turf/simulated/wall/neighbour in orange(W, 1))

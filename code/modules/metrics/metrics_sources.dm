@@ -49,32 +49,25 @@
 /datum/metrics_source/server/collect(datum/world_service/server_metrics/M, dt)
 	if(first_sample)
 		first_sample = FALSE
-	else if(Master)
-		var/list/window = Master.performance_window(dt)
+	else if(Kernel)
+		var/list/window = Kernel.performance_window(dt)
 		M.gauge("server/tick/avg", window["avg"], METRICS_CAT_SERVER, "tick", "%")
 		M.gauge("server/tick/p95", window["p95"], METRICS_CAT_SERVER, "tick", "%")
 		M.gauge("server/tick/max", window["max"], METRICS_CAT_SERVER, "tick", "%")
 		M.gauge("server/tick/tps", window["tps"], METRICS_CAT_SERVER, "tick", "tps")
-		M.gauge("server/mc/tickdrift", Master.tickdrift, METRICS_CAT_SERVER, "mc", "ticks")
+		M.gauge("server/mc/tickdrift", Kernel.tickdrift, METRICS_CAT_SERVER, "mc", "ticks")
 	M.gauge("server/cpu", world.cpu, METRICS_CAT_SERVER, "cpu", "%")
 	M.gauge("server/map_cpu", world.map_cpu, METRICS_CAT_SERVER, "cpu", "%")
 	var/runtimes = GLOB.total_runtimes + GLOB.total_runtimes_skipped
 	M.gauge("errors/runtimes", isnull(last_runtimes) ? 0 : max(runtimes - last_runtimes, 0), METRICS_CAT_ERRORS, "runtime", "count")
 	last_runtimes = runtimes
 
-// ---------------------------------------------------------------- MC subsystems and systems
+// ---------------------------------------------------------------- systems
 
-/// Each MC subsystem's cost (ms per fire, smoothed) and share of the tick, and each pure
-/// kernel system's fire cost.
+/// Each system's work cost (ms per run, smoothed).
 /datum/metrics_source/mc
 
 /datum/metrics_source/mc/collect(datum/world_service/server_metrics/M, dt)
-	if(Master)
-		for(var/datum/controller/subsystem/S as anything in Master.subsystems)
-			if(!S.times_fired)
-				continue
-			M.gauge("mc/[S.name]/cost_ms", S.cost, METRICS_CAT_MC, S.name, "ms")
-			M.gauge("mc/[S.name]/tick_usage", S.tick_usage, METRICS_CAT_MC, S.name, "%")
 	for(var/datum/system/system as anything in kernel_pure_systems())
 		if(!system.times_fired)
 			continue

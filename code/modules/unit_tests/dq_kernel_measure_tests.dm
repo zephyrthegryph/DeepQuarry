@@ -491,27 +491,20 @@
 	qdel(probe)
 	return
 
-// ---------------------------------------------------------------- MC subsystems as systems
+// ---------------------------------------------------------------- the input cost
 
-/datum/unit_test/dq_km_subsystems_are_systems
+/// The input inbox's drain is charged to the input system, and counts as input cost in the tick record.
+/datum/unit_test/dq_km_inbox_drain_is_input_cost
 
-/datum/unit_test/dq_km_subsystems_are_systems/Run()
-	var/datum/tick_meter/M = new(8)
-	var/air_idx = km_bind_subsystem(SSgarbage)
-	TEST_ASSERT_EQUAL(km_systems().key_of(air_idx), "mc_[replacetext(lowertext(SSgarbage.name), " ", "_")]", "a subsystem's system is mc_<name in snake case>")
-	TEST_ASSERT_EQUAL(km_systems().kinds[air_idx], KM_KIND_MC, "of the MC kind")
-	TEST_ASSERT_EQUAL(km_bind_subsystem(SSgarbage), air_idx, "binding is stable")
-	TEST_ASSERT_EQUAL(km_bind_subsystem(SStgui), km_systems().index_by_key["mc_tgui"], "a subsystem name is snake case")
-	// SSbehaviours is decomposed: the MC charging it adds nothing.
-	TEST_ASSERT_EQUAL(SSbehaviours.system_idx, KM_SYS_DECOMPOSED, "Behaviours is charged through the systems it runs")
-	M.charge_subsystem(SSbehaviours, 30)
-	TEST_ASSERT_EQUAL(M.n_touched, 0, "so the MC's own charge for it is dropped")
-	M.charge_subsystem(SSgarbage, 10)
-	TEST_ASSERT_EQUAL(M.input_ms, 0, "an ordinary subsystem is not input")
-	TEST_ASSERT(abs(M.tick_ms[air_idx] - TICK_DELTA_TO_MS(10)) < 0.001, "the subsystem's usage percent became ms on its system")
-	TEST_ASSERT(km_systems().lane_label(air_idx) == "mc", "and its lane label is mc")
-	qdel(M)
-	return
+/datum/unit_test/dq_km_inbox_drain_is_input_cost/Run()
+	var/datum/tick_meter/live_meter = km_meter()
+	var/datum/tick_meter/probe = new(8)
+	km_holder().meter = probe
+	SSinput.charge_drain(TICK_USAGE - 5)
+	km_holder().meter = live_meter
+	TEST_ASSERT(probe.input_ms > 0, "the drain's cost is input cost")
+	TEST_ASSERT(probe.tick_ms[KM_SYS_INPUT] > 0, "and it is charged to the input system")
+	qdel(probe)
 
 // ---------------------------------------------------------------- BYOND reserve, surfaces
 

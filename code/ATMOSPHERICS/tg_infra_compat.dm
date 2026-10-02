@@ -17,27 +17,18 @@
 // restored in code/ATMOSPHERICS/ and code/game/machinery/atmoalter/ — do not
 // add machinery declarations here.
 
-// === /tg/ subsystem flags ===
-/datum/controller/subsystem
-	var/ss_flags = 0
-
-
-
-
 // === /tg/ SSblackbox telemetry — wired to CHOMP's feedback_add_details ===
-/datum/controller/subsystem/blackbox
-	// Feedback-recording compat shim only — no fire() body, so flag SS_NO_FIRE
-	// to keep the MC from adding it to the processing list (and warning each boot).
-	flags = SS_NO_FIRE | SS_NO_INIT
+SYSTEM_DEF(blackbox)
+	name = "Blackbox"
+	// Feedback-recording compat shim only: no periodic work, nothing to boot.
 	var/sealed = FALSE
 
-/datum/controller/subsystem/blackbox/proc/record_feedback(key_type, key_name, increment_by = 1, data = null)
+/datum/system/blackbox/proc/record_feedback(key_type, key_name, increment_by = 1, data = null)
 	if(!GLOB.blackbox)
 		return
 	var/value = !isnull(data) ? "[data]" : "[increment_by]"
 	feedback_add_details(key_name, "[key_type]:[value]")
 
-GLOBAL_REAL(SSblackbox, /datum/controller/subsystem/blackbox) = new()
 
 
 // === /tg/ globals SSair expects ===

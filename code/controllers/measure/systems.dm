@@ -215,11 +215,3 @@
 	var/datum/km_systems/systems = km_systems()
 	for(var/datum/om/behaviour/B as anything in behaviours)
 		B.system_idx = systems.index_for(B.system_key || km_system_key_for_path(B.type), KM_KIND_OM, B.lane)
-
-/// Binds an MC subsystem to its system on first use and returns the index (KM_SYS_DECOMPOSED for none).
-/proc/km_bind_subsystem(datum/controller/subsystem/SS)
-	if(SS.system_idx)
-		return SS.system_idx
-	var/key = "mc_[replacetext(lowertext(SS.name), " ", "_")]"
-	SS.system_idx = km_systems().index_for(key, KM_KIND_MC)
-	return SS.system_idx

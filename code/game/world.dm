@@ -40,9 +40,9 @@ GLOBAL_VAR(restart_counter)
  *     - world.init_byond_tracy()
  *     - (Start native profiling)
  *     - world.init_debugger()
- *     - Master =>
+ *     - Kernel.preboot() =>
  *       - config *unloaded
- *       - (all subsystems) PreInit()
+ *       - (all systems) preinit()
  *       - GLOB =>
  *         - make_datum_reference_lists()
  *   - (/static variable inits, reverse declaration order)
@@ -57,16 +57,16 @@ GLOBAL_VAR(restart_counter)
  *     - world.SetupLogs()
  *     - load_admins()
  *     - ...
- *   - Master.Initialize() =>
- *     - (all subsystems) Initialize()
- *     - Master.StartProcessing() =>
- *       - Master.Loop() =>
- *         - Failsafe
+ *   - Kernel.boot_systems() =>
+ *     - (all systems, in dependency order) initialize()
+ *     - Kernel.StartProcessing() =>
+ *       - Kernel.loop() =>
+ *         - the watchdog
  *   - world.RunUnattendedFunctions()
  *
  * Now listen up because I want to make something clear:
- * If something is not in this list it should almost definitely be handled by a subsystem Initialize()ing
- * If whatever it is that needs doing doesn't fit in a subsystem you probably aren't trying hard enough tbhfam
+ * If something is not in this list it should almost definitely be handled by a system initialize()ing
+ * If whatever it is that needs doing doesn't fit in a system you probably aren't trying hard enough tbhfam
  *
  * GOT IT MEMORIZED?
  * - Dominion/Cyberboss
@@ -85,7 +85,7 @@ GLOBAL_VAR(restart_counter)
  * SO HELP ME GOD IF I FIND ABSTRACTION LAYERS OVER THIS!
  */
 /world/proc/Genesis(tracy_initialized = FALSE)
-	RETURN_TYPE(/datum/controller/master)
+	RETURN_TYPE(/datum/controller/kernel)
 
 	if(!tracy_initialized)
 		Tracy = new
@@ -112,14 +112,17 @@ GLOBAL_VAR(restart_counter)
 	// Write everything to this log file until we get to SetupLogs() later
 	_initialize_log_files("data/logs/config_error.[GUID()].log")
 
-	// Init the debugger first so we can debug Master
+	// Init the debugger first so we can debug the kernel
 	Debugger = new
 
 	// Create the logger
 	logger = new
 
 	// THAT'S IT, WE'RE DONE, THE. FUCKING. END.
-	Master = new
+	// The kernel exists from here on. Its live work (the cadence and sequence sweeps) registers when world/New opens
+	// registration: the static variable inits those registrations read run between this and world/New.
+	Kernel = new /datum/controller/kernel
+	Kernel.preboot()
 
 /**
  * World creation
@@ -142,13 +145,15 @@ GLOBAL_VAR(restart_counter)
  * world/New() (You are here)
  * Once world/New() returns, client's can connect.
  * 1 second sleep
- * Master Controller initialization.
+ * Kernel initialization.
  * Subsystem initialization.
  * Non-compiled-in maps are maploaded, all atoms are new()ed
  * All atoms in both compiled and uncompiled maps are initialized()
  */
 /world/New()
 	log_world("World loaded at [time_stamp()]!")
+	Kernel.registration_open = TRUE
+	kernel()
 
 	// Verdigris (Rust FFI) bring-up and version handshake. Init must come before
 	// cleanup so the panic hook catches any failure inside cleanup itself. A DLL
@@ -245,9 +250,9 @@ GLOBAL_VAR(restart_counter)
 #endif
 
 #ifdef BENCHMARK
-	benchmark_rust_mark("world: before Master init")
+	benchmark_rust_mark("world: before kernel boot")
 #endif
-	Master.Initialize(10, FALSE, TRUE)
+	Kernel.boot_systems(10, TRUE)
 
 	RunUnattendedFunctions()
 
@@ -261,7 +266,7 @@ GLOBAL_VAR(restart_counter)
 	TgsNew(new /datum/tgs_event_handler/impl, TGS_SECURITY_TRUSTED)
 	GLOB.revdata.load_tgs_info()
 
-/// Runs after config is loaded but before Master is initialized
+/// Runs after config is loaded but before the systems boot
 /world/proc/ConfigLoaded()
 	// Everything in here is prioritized in a very specific way.
 	// If you need to add to it, ask yourself hard if what your adding is in the right spot
@@ -278,7 +283,7 @@ GLOBAL_VAR(restart_counter)
 		GLOB.restart_counter = text2num(trim(file2text(RESTART_COUNTER_PATH)))
 		fdel(RESTART_COUNTER_PATH)
 
-/// Runs after the call to Master.Initialize, but before the delay kicks in. Used to turn the world execution into some single function then exit
+/// Runs after the call to Kernel.boot_systems, but before the delay kicks in. Used to turn the world execution into some single function then exit
 /world/proc/RunUnattendedFunctions()
 	#ifdef UNIT_TESTS
 	HandleTestRun()
@@ -297,7 +302,7 @@ GLOBAL_VAR(restart_counter)
 
 /world/proc/HandleTestRun()
 	//trigger things to run the whole process
-	Master.sleep_offline_after_initializations = FALSE
+	Kernel.sleep_offline_after_initializations = FALSE
 	SSticker.start_immediately = TRUE
 	CONFIG_SET(number/round_end_countdown, 0)
 	var/after_start
@@ -381,10 +386,10 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 		var/list/d = list(
 			"world_time" = world.time, "tick_usage" = world.tick_usage, "cpu" = world.cpu, "sleep_offline" = world.sleep_offline, // ALLOW(sys_world_time_write): reports the current clock in a diagnostic reply, not a stored time
 			"kernel_ticks" = kernel().ticks, "kernel_last_tick" = kernel().last_tick, "kernel_phase_faults" = kernel().phase_faults,
-			"mc_iteration" = Master?.iteration, "mc_last_run" = Master?.last_run, "mc_sleep_delta" = Master?.sleep_delta,
-			"mc_processing" = Master?.processing, "mc_runlevel" = Master?.current_runlevel, "mc_init_stage" = Master?.init_stage_completed,
-			"mc_tickdrift" = Master?.tickdrift, "failsafe_lasttick" = Failsafe?.lasttick,
-			"ticker_state" = SSticker?.current_state, "ticker_last_fire" = SSticker?.last_fire, "profiler_next_fire" = SSprofiler?.next_fire,
+			"mc_iteration" = Kernel?.iteration, "mc_last_run" = Kernel?.last_run, "mc_sleep_delta" = Kernel?.sleep_delta,
+			"mc_processing" = Kernel?.processing, "mc_runlevel" = Kernel?.current_runlevel, "mc_init_stage" = Kernel?.init_stage_completed,
+			"mc_tickdrift" = Kernel?.tickdrift, "watchdog_lasttick" = Kernel?.watchdog?.lasttick,
+			"ticker_state" = SSticker?.current_state, "ticker_last_fire" = SSticker?.last_fire, "profiler_since_sample" = SSprofiler?.since_sample,
 		)
 		return json_encode(d)
 	// Localhost-only census of machines with step work on the machine pipeline, by type, with how
@@ -726,7 +731,7 @@ GLOBAL_LIST_EMPTY(world_next_tick_callbacks)
 		else
 			to_chat(world, span_boldannounce("Rebooting world immediately due to host request"))
 	else
-		Master.Shutdown()	//run SS shutdowns
+		Kernel.shutdown_kernel()	//run the systems' shutdowns
 		for(var/client/C in GLOB.clients)
 			if(CONFIG_GET(string/server))	//if you set a server location in config.txt, it sends you there instead of trying to reconnect to the same world address. -- NeoFite
 				C << link("byond://[CONFIG_GET(string/server)]")

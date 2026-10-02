@@ -3,15 +3,11 @@
 /// most dangerously before the atoms SS initializes.
 /// Thus, we want it to fail consistently in CI as if it would've if a player
 /// opened it up early.
-SUBSYSTEM_DEF(early_assets)
+SYSTEM_DEF(early_assets)
 	name = "Early Assets"
-	dependents = list(
-		/datum/controller/subsystem/atoms,
-	)
 	init_stage = INITSTAGE_EARLY
-	flags = SS_NO_FIRE
 
-/datum/controller/subsystem/early_assets/Initialize()
+/datum/system/early_assets/initialize()
 	var/init_source = "early assets"
 	SSatoms.set_tracked_initalized(INITIALIZATION_INNEW_REGULAR, init_source)
 
@@ -29,4 +25,4 @@ SUBSYSTEM_DEF(early_assets)
 
 	SSatoms.clear_tracked_initalize(init_source)
 
-	return SS_INIT_SUCCESS
+	return

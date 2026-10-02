@@ -362,6 +362,9 @@
 /datum/test_work_owner/phases/proc/note_k(dt)
 	phase_log += "[world.time]:K"
 
+/datum/test_work_owner/phases/proc/note_s(dt)
+	phase_log += "[world.time]:S"
+
 /datum/test_work_owner/phases/proc/note_n(dt)
 	phase_log += "[world.time]:N"
 
@@ -381,18 +384,10 @@
 
 /datum/unit_test/kernel_tick_phases/Run()
 	var/datum/controller/kernel/K = kernel()
-	TEST_ASSERT(SSbehaviours.flags & SS_NO_FIRE, "SSbehaviours dissolved: it no longer fires")
-	for(var/datum/controller/subsystem/hosted as anything in list(SSgarbage, SStgui, SSdbcore, SSprofiler))
-		TEST_ASSERT(hosted.flags & SS_KERNEL_HOSTED, "[hosted.name] is hosted by the kernel")
-		TEST_ASSERT(hosted.state != SS_QUEUED, "[hosted.name] is not in a queue")
-	// There is no MC queue: every subsystem that fires is a kernel host service.
-	for(var/datum/controller/subsystem/S as anything in Master.subsystems)
-		if(S.flags & SS_NO_FIRE)
-			continue
-		TEST_ASSERT(S.flags & SS_KERNEL_HOSTED, "[S.type] fires but is not hosted by the kernel")
+	TEST_ASSERT(SSbehaviours.initialized, "SSbehaviours is a system: it booted, and the scheduler pass runs from the kernel")
 	var/datum/test_work_owner/phases/O = new
-	var/list/handlers = list("note_k", "note_n", "note_d", "note_p", "note_r", "note_g")
-	var/list/phase_of = list(KERNEL_PHASE_K, KERNEL_PHASE_N, KERNEL_PHASE_D, KERNEL_PHASE_P, KERNEL_PHASE_R, KERNEL_PHASE_G)
+	var/list/handlers = list("note_k", "note_s", "note_n", "note_d", "note_p", "note_r", "note_g")
+	var/list/phase_of = list(KERNEL_PHASE_K, KERNEL_PHASE_S, KERNEL_PHASE_N, KERNEL_PHASE_D, KERNEL_PHASE_P, KERNEL_PHASE_R, KERNEL_PHASE_G)
 	for(var/i in 1 to length(handlers))
 		var/datum/work_item/test_fixture/W = new(handlers[i], WORK_EVERY_TICK)
 		W.phase = phase_of[i]
@@ -412,9 +407,9 @@
 	TEST_ASSERT(K.sched.runs > runs_before, "phases D, P and R are scheduler passes")
 	TEST_ASSERT_EQUAL(length(K.work_errors), 0, "the live work graph has no errors")
 	var/list/log = O.phase_log
-	TEST_ASSERT(length(log) >= 6, "work items ran")
-	// Group by tick: inside a tick the phases that ran are in K N D P R G order, and every phase ran at some tick.
-	var/order = "KNDPRG"
+	TEST_ASSERT(length(log) >= 7, "work items ran")
+	// Group by tick: inside a tick the phases that ran are in K S N D P R G order, and every phase ran at some tick.
+	var/order = "KSNDPRG"
 	var/last_time
 	var/last_index = 0
 	var/seen = ""
@@ -428,7 +423,7 @@
 		if(!findtext(seen, parts[2]))
 			seen += parts[2]
 	// R is leftovers: it runs only when the lanes left budget, which a busy test tick may not. G has its floor.
-	for(var/letter in list("K", "N", "D", "P", "G"))
+	for(var/letter in list("K", "S", "N", "D", "P", "G"))
 		TEST_ASSERT(findtext(seen, letter), "phase [letter] ran: [json_encode(log)]")
 	TEST_ASSERT(K.phase_ms_total[KERNEL_PHASE_P] >= 0, "phase cost is accounted")
 	var/list/metrics = K.metrics()

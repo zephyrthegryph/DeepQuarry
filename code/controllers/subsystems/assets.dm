@@ -1,16 +1,15 @@
-SUBSYSTEM_DEF(assets)
+SYSTEM_DEF(assets)
 	name = "Assets"
-	dependencies = list(
-		/datum/controller/subsystem/atoms,
+	needs = list(
+		/datum/system/atoms,
 		/datum/system/holomaps,
 		/datum/system/robot_sprites
 	)
-	flags = SS_NO_FIRE
 	var/list/datum/asset_cache_item/cache = list()
 	var/list/preload = list()
 	var/datum/asset_transport/transport = new()
 
-/datum/controller/subsystem/assets/OnConfigLoad()
+/datum/system/assets/OnConfigLoad()
 	var/newtransporttype = /datum/asset_transport
 	switch (CONFIG_GET(string/asset_transport))
 		if ("webroot")
@@ -24,7 +23,7 @@ SUBSYSTEM_DEF(assets)
 		transport = newtransport
 	transport.Load()
 
-/datum/controller/subsystem/assets/Initialize()
+/datum/system/assets/initialize()
 	#ifdef UNIT_TESTS
 	// Focused unit-test runs skip generating every asset and spritesheet at boot
 	// (about 2.3 s on the test map). Anything that needs one still gets it:
@@ -32,7 +31,7 @@ SUBSYSTEM_DEF(assets)
 	// spritesheets and asset tests call. The full suite still loads everything.
 	if(unit_test_is_focused_run())
 		transport.Initialize(cache)
-		return SS_INIT_SUCCESS
+		return
 	#endif
 	for(var/type in typesof(/datum/asset))
 		var/datum/asset/A = type
@@ -42,8 +41,3 @@ SUBSYSTEM_DEF(assets)
 	asset_cache_save_hashes()
 	transport.Initialize(cache)
 
-	return SS_INIT_SUCCESS
-
-/datum/controller/subsystem/assets/Recover()
-	cache = SSassets.cache
-	preload = SSassets.preload

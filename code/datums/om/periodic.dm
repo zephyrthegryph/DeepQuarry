@@ -209,7 +209,7 @@
 
 /// The cadence sweeps only in its run levels.
 /datum/work_item/cadence/admitted_now()
-	return !!(def.runlevels & (1 << (Master.current_runlevel - 1)))
+	return !!(def.runlevels & (1 << (Kernel.current_runlevel - 1)))
 
 /// The old stage's idle rule, inverted: a member runs iff its entity is started on this cadence and no yielded step
 /// is waiting to resume (periodic_step_result()).

@@ -41,6 +41,8 @@
 	var/lane = LANE_SIMULATION
 	/// TRUE when kernel_urgent() may pull one member's run forward.
 	var/urgent = FALSE
+	/// TRUE when the item's owner is a /datum/system: each memberless run is reported to it (note_run()).
+	var/system_owned = FALSE
 	/// TRUE for an item its declarer runs itself (an on_notice handler, a non-urgent crossing): it is registered for
 	/// cost accounting (metrics(), account()) and never enters a phase list.
 	var/event = FALSE
@@ -112,7 +114,7 @@
 /datum/work_item/proc/account(ms, faulted = FALSE)
 	runs++
 	total_ms += ms
-	cost = cost ? MC_AVERAGE_FAST(cost, ms) : ms
+	cost = cost ? KERNEL_AVERAGE_FAST(cost, ms) : ms
 	if(faulted)
 		faults++
 

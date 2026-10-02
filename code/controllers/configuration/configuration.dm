@@ -113,8 +113,8 @@
 
 	loaded = TRUE
 
-	if (Master)
-		Master.OnConfigLoad()
+	if (Kernel)
+		Kernel.OnConfigLoad()
 	process_config_errors()
 
 /datum/controller/configuration/proc/full_wipe()

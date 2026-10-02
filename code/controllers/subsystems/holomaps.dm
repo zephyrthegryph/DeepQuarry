@@ -6,7 +6,7 @@ SYSTEM_DEF(holomaps)
 	name = "HoloMiniMaps"
 	init_stage = INITSTAGE_MAIN
 	needs = list(
-		/datum/controller/subsystem/atoms
+		/datum/system/atoms
 	)
 	var/static/holomaps_initialized = FALSE
 	var/static/list/holoMiniMaps = list()

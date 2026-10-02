@@ -970,9 +970,9 @@ GLOBAL_DATUM_INIT(sdql2_vv_statobj, /obj/effect/statclick/SDQL2_VV_all, new(null
 			if("global")
 				v = GLOB
 			if("MC")
-				v = Master
+				v = Kernel
 			if("FS")
-				v = Failsafe
+				v = Kernel.watchdog
 			if("CFG")
 				v = config
 			else

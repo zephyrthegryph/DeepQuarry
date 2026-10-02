@@ -75,7 +75,7 @@
 	trailing_newline = TRUE,
 	confidential = FALSE
 )
-	if(isnull(Master) || !SSbehaviours?.initialized || !MC_RUNNING(INITSTAGE_LAST)) // the chat lane runs once the MC does
+	if(isnull(Kernel) || !SSbehaviours?.initialized || !KERNEL_RUNNING(INITSTAGE_LAST)) // the chat lane runs once the MC does
 		to_chat_immediate(target, html, type, text, avoid_highlighting)
 		return
 

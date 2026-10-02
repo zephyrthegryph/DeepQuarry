@@ -261,12 +261,23 @@ Prefixes: `rscadd`, `rscdel`, `bugfix`, `qol`, `balance`, `soundadd`, `sounddel`
 
 ## 9. Current state (deployment-independent)
 
-- **Scheduling.** One kernel (`code/controllers/kernel/`) runs the tick; `SSbehaviours` no longer
-  fires. Most former subsystems are world services, which the design folds into systems
-  (doc §2). A new world-level periodic is a system, not a subsystem with `fire()`.
+- **Scheduling: one kernel, no Master Controller, no subsystems.** The `Kernel` global
+  (`code/controllers/kernel/`) is the one loop. Each tick runs phases K S N U D P R G (host work and the
+  input inbox, simulation sync, native frame, urgent, deadlines, lanes, presentation, garbage). What it hosts
+  is `/datum/system`s declared with `SYSTEM_DEF(x)` (the `SSx` global): `needs`, `phase`, `roles`, and
+  `every()` items in `reactions()`. A system's periodic handler is `x(dt)`, gated by
+  `when = PROC_REF(work_ready)`; one that walks a list saves its cursor and returns `STEP_YIELD` when
+  `KERNEL_OVER_BUDGET`. There is no `SUBSYSTEM_DEF`, `fire()`, `SS_*` flag, `Recover()` or `PreInit()` (a
+  system's `preinit()` runs from `New()`). A new world-level periodic is a system.
+- **Input, requests, jobs.** Every client entry point builds a typed `/datum/input_event` and calls
+  `input_submit()` (`code/engine/kernel/inbox.dm`): it resolves on the spot while the tick has room, else
+  queues in the client's bounded inbox and drains in phase K, round-robin. Things that wait for an answer
+  are requests (`open_request()`, `request_answer()`, `requests.dm`); long work that must yield is `job()`
+  (`jobs.dm`); a call that may fail by design is `safe_call()` (`safe.dm`). Tests make time pass with
+  `test_driver_begin()` and `test_time()` (doc/testing.md "The kernel clock").
 - **Atmospherics: LINDA on a Rust backend.** `code/ATMOSPHERICS/` is the only engine (ZAS/XGM
   are gone); gas math, diffusion, decompression and heat conduction run in the auxmos arena in
-  Verdigris, driven from `SSair.fire()`. `/datum/gas_mixture` is an opaque handle: read with
+  Verdigris, driven from SSair's atmos step (phase N). `/datum/gas_mixture` is an opaque handle: read with
   `return_temperature()`/`return_volume()`, write with `set_temperature()`/`set_volume()`, and
   cache reads in hot loops (each call crosses the FFI). Atoms use `get_temperature()` /
   `add_heat()` (`code/modules/heat/heat.dm`). Requires BYOND 516.1682+. Gas reactions stay in

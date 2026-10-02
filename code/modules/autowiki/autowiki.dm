@@ -3,7 +3,7 @@
 /// when they break it immediately, rather than until CI or worse, call time.
 #if defined(AUTOWIKI) || defined(UNIT_TESTS)
 /proc/setup_autowiki()
-	Master.sleep_offline_after_initializations = FALSE
+	Kernel.sleep_offline_after_initializations = FALSE
 	SSticker.OnRoundstart(om_callable(null, GLOBAL_PROC_REF(generate_autowiki)))
 	SSticker.start_immediately = TRUE
 	CONFIG_SET(number/round_end_countdown, 0)

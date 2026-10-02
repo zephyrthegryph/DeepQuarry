@@ -367,7 +367,7 @@ The unit tests also have about 60 raw `sleep()` calls. They become one harness h
 - A tgui modal calls `waiter_resolve(W, answer)` from its `ui_submit` action. An I/O job does the same from its `on_done`.
 - `UNTIL()` and `stoplag()` leave the public API. The `scheduler` lint allowlist shrinks to the kernel folder, `unit_tests/` and vendored TGS.
 
-```dm
+```dm before
 // Before (dbcore.dm:138-142): a sync wrapper that spins the caller
 /datum/controller/subsystem/dbcore/proc/run_query_sync(datum/db_query/query)
 	run_query(query)
@@ -637,7 +637,7 @@ are abridged with `...`, but the kept lines are unchanged. The "after" blocks ar
 			continue
 ```
 
-```dm
+```dm before
 // master.dm:936-966 — CheckQueue: a second cadence model (wait/next_fire/postponed/KEEP_TIMING)
 	for (var/thing in subsystemstocheck)
 		...
@@ -717,7 +717,7 @@ Performance ring-buffer telemetry and `AttemptProfileDump` move over unchanged. 
 
 **Before:**
 
-```dm
+```dm before
 // master.dm:428-448
 	for (var/current_init_stage in 1 to INITSTAGE_MAX)
 		for (var/datum/controller/subsystem/subsystem in stage_sorted_subsystems[current_init_stage])
@@ -741,7 +741,7 @@ Performance ring-buffer telemetry and `AttemptProfileDump` move over unchanged. 
 	boot_world_service(GLOB.planet_service)
 ```
 
-```dm
+```dm before
 // ATMOSPHERICS/SSair.dm:1-8, 124-128 — a dependency that is really on a side effect, plus a hand boot
 SUBSYSTEM_DEF(air)
 	name = "Atmospherics"

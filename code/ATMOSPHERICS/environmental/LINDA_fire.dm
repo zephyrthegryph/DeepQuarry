@@ -501,7 +501,7 @@
 
 /// The run levels the burn steps in.
 /obj/effect/hotspot/proc/burn_ready()
-	return !!((RUNLEVEL_GAME | RUNLEVEL_POSTGAME) & (1 << (Master.current_runlevel - 1)))
+	return !!((RUNLEVEL_GAME | RUNLEVEL_POSTGAME) & (1 << (Kernel.current_runlevel - 1)))
 
 /// The kernel work item's handler: one burn step.
 /obj/effect/hotspot/proc/burn_tick(dt)

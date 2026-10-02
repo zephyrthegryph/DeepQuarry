@@ -316,9 +316,9 @@ GLOBAL_LIST_EMPTY(cached_maps) // ALLOW(cache): parsed-map store, needs special 
 /// Load the parsed map into the world. You probably want [/proc/load_map]. Keep the signature the same.
 /datum/parsed_map/proc/load(x_offset = 0, y_offset = 0, z_offset = 0, crop_map = FALSE, no_changeturf = FALSE, x_lower = -INFINITY, x_upper = INFINITY, y_lower = -INFINITY, y_upper = INFINITY, z_lower = -INFINITY, z_upper = INFINITY, place_on_top = FALSE, new_z = FALSE)
 	//How I wish for RAII
-	Master.StartLoadingMap()
+	Kernel.StartLoadingMap()
 	. = _load_impl(x_offset, y_offset, z_offset, crop_map, no_changeturf, x_lower, x_upper, y_lower, y_upper, z_lower, z_upper, place_on_top, new_z)
-	Master.StopLoadingMap()
+	Kernel.StopLoadingMap()
 
 // In unit-test builds the yield is compiled out: there are no clients to keep
 // the tick smooth for, and under a loaded MC these per-chunk stoplag()s turn a

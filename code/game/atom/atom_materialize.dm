@@ -20,7 +20,7 @@
 
 /// While positive, SSatoms.InitAtom() initializes atoms without materializing
 /// them. Only the sandbox helpers below change it.
-/datum/controller/subsystem/atoms
+/datum/system/atoms
 	var/materialize_suppressed = 0
 
 /// Enter the live world. Does nothing if already materialized.

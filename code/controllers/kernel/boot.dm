@@ -1,6 +1,6 @@
-/// The boot DAG over mixed nodes (doc/rewrite/kernel.md sec 1.5). Nodes are subsystems and systems; a system's
-/// `needs` names other nodes by typepath. Ordering is boot_dependency_order() (boot_dependencies.dm),
-/// which keeps the MC's newest-ready tie-break, so a system that needs subsystem X boots directly after X.
+/// The boot DAG (doc/rewrite/kernel.md sec 1.5). Nodes are systems; a system's `needs` names other systems by typepath.
+/// Ordering is boot_dependency_order() (boot_dependencies.dm), which keeps the old newest-ready tie-break, so a system
+/// that needs system X boots directly after X.
 
 /// The systems the boot DAG initializes, in a stable order.
 /proc/kernel_boot_systems()
@@ -11,8 +11,8 @@
 	// The sorter pops the newest ready node, so the reversed list boots siblings in registry order.
 	reverse_range(.)
 
-/// Resolves every system's `needs` into node instances. `type_to_node` maps a typepath to the node that
-/// is that type (subsystems and systems). A need that names no node is appended to `errors` and dropped.
+/// Resolves every system's `needs` into system instances. `type_to_node` maps a typepath to the system that is that type.
+/// A need that names no system is appended to `errors` and dropped.
 /// Returns system -> list of nodes it must follow.
 /proc/kernel_system_deps(list/systems, list/type_to_node, list/errors)
 	. = list()
@@ -27,15 +27,11 @@
 		.[S] = resolved
 	return .
 
-/// The init stage a system boots in: the latest stage among its subsystem needs, else INITSTAGE_FIRST.
+/// The init stage a system boots in: the latest stage among its needs and its own `init_stage`.
 /proc/kernel_system_stage(datum/system/S, list/deps)
 	. = S.init_stage
-	for(var/node in deps[S])
-		if(istype(node, /datum/controller/subsystem))
-			var/datum/controller/subsystem/SS = node
-			. = max(., SS.init_stage)
-		else
-			. = max(., kernel_system_stage(node, deps))
+	for(var/datum/system/need as anything in deps[S])
+		. = max(., kernel_system_stage(need, deps))
 	return .
 
 /// Boots one system: its initialize(), timed and logged. A system already initialized (a hand boot got
@@ -43,13 +39,21 @@
 /proc/kernel_boot_system(datum/system/S)
 	if(S.initialized)
 		return
-	var/started = REALTIMEOFDAY
+	rustg_time_reset(KERNEL_INIT_TIMER_KEY)
 	// The system's declared work (every() in reactions()) registers with the kernel as its reaction table is built.
 	rx_table_of(S)
 	S.initialize()
 	S.initialized = TRUE
-	S.init_time_ms = (REALTIMEOFDAY - started) * 100
-	log_world("System [S.name] initialized in [(REALTIMEOFDAY - started) / 10]s.")
+	var/ms = rustg_time_milliseconds(KERNEL_INIT_TIMER_KEY)
+	S.init_time_ms = ms
+#ifdef BENCHMARK
+	benchmark_rust_mark("init [S.name]")
+#endif
+	feedback_set_details("subsystem_initialize", "[ms] [S.name]")
+	log_world("System [S.name] initialized in [round(ms / 1000, 0.01)]s.")
+	// A slow system is worth a line in the round's debug chat.
+	if(ms >= 1000)
+		to_chat(world, span_boldannounce("Initialized [S.name] within [round(ms / 1000, 0.01)] seconds!"), MESSAGE_TYPE_DEBUG)
 
 /// Runs the bulk first-evaluation pass of every system, after the whole DAG has initialized.
 /proc/kernel_members_ready()
@@ -77,7 +81,7 @@
 			S.on_shutdown()
 
 /// Creates every pure system, so the SS<X> globals (SYSTEM_DEF) exist before anything reads them. Called once the GLOB is up
-/// (Master.New); creating a system twice is harmless, the registry keeps the first.
+/// (Kernel.preboot); creating a system twice is harmless, the registry keeps the first.
 /proc/kernel_create_systems()
 	for(var/path in subtypesof(/datum/system))
 		if(system_instantiable(path) && !ispath(path, /datum/world_service) && !system_lazy_only(path))

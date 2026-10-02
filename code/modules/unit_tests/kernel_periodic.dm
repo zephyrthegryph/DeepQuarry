@@ -65,7 +65,7 @@
 	TEST_ASSERT(run_until(CALLBACK(src, PROC_REF(steps_at_least), S, parked_steps + 2)), "wake_periodic() restarts a parked system")
 
 	// The runlevel gate: a system that excludes the current runlevel does not run.
-	var/current_bit = 1 << (Master.current_runlevel - 1)
+	var/current_bit = 1 << (Kernel.current_runlevel - 1)
 	S.periodic_runlevels = 0
 	TEST_ASSERT(S.should_run(), "no runlevel restriction: the cadence's own gate applies")
 	S.periodic_runlevels = current_bit

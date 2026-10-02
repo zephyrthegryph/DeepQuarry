@@ -212,7 +212,7 @@ GLOBAL_VAR_INIT(seq_trace, FALSE)
 	return src
 
 /datum/work_item/sequence/admitted_now()
-	var/level = test_runlevel || (Master.current_runlevel ? (1 << (Master.current_runlevel - 1)) : 0)
+	var/level = test_runlevel || (Kernel.current_runlevel ? (1 << (Kernel.current_runlevel - 1)) : 0)
 	if(!(def.runlevels & level))
 		dormant = TRUE
 		return FALSE

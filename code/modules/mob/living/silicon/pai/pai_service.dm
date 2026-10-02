@@ -10,7 +10,7 @@ GLOBAL_DATUM_INIT(pai_service, /datum/world_service/pai, new)
 
 /datum/world_service/pai
 	name = "Pai"
-	needs = list(/datum/controller/subsystem/atoms)
+	needs = list(/datum/system/atoms)
 	lane = /datum/om/behaviour/world/pai
 	VAR_PRIVATE/list/datum/pai_sprite/pai_chassis_sprites = list()
 	VAR_PRIVATE/list/current_run = list()

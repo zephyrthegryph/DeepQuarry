@@ -72,7 +72,7 @@
 /datum/world_service/server_metrics/proc/start_profile_capture(reason, duration, list/spike)
 	if(profile_capture || !wants_recording() || CONFIG_GET(flag/auto_profile))
 		return FALSE
-	if(Master?.init_stage_completed < INITSTAGE_MAX)
+	if(Kernel?.init_stage_completed < INITSTAGE_MAX)
 		return FALSE // boot is not a spike
 	profile_capture = list("reason" = reason, "from_t" = now_t(), "spike" = spike)
 	world.Profile(PROFILE_CLEAR)
@@ -189,19 +189,19 @@ GLOBAL_DATUM_INIT(tick_frame, /datum/tick_frame, new)
 	map += world.map_cpu
 	var/before
 	var/after = 0
-	if(Master?.perf_tick_end_time == world.time)
-		before = Master.perf_tick_start_usage
-		mc += max(Master.perf_tick_end_usage - before, 0)
-		after = max(usage - Master.perf_tick_end_usage, 0)
+	if(Kernel?.perf_tick_end_time == world.time)
+		before = Kernel.perf_tick_start_usage
+		mc += max(Kernel.perf_tick_end_usage - before, 0)
+		after = max(usage - Kernel.perf_tick_end_usage, 0)
 	else
 		before = usage
 	pre += before
 	post += after
 	// Boot (map load, MC init) runs outside the MC loop in ticks hundreds of times over budget: those are
 	// not overruns of a running server, and would crowd every real one out of the first flush.
-	if(Master?.init_stage_completed < INITSTAGE_MAX || Master.perf_tick_end_time < 0)
+	if(Kernel?.init_stage_completed < INITSTAGE_MAX || Kernel.perf_tick_end_time < 0)
 		return
-	if(before + after > KM_OVERRUN_USAGE && (Master.perf_tick_end_time != world.time || after > KM_OVERRUN_USAGE))
+	if(before + after > KM_OVERRUN_USAGE && (Kernel.perf_tick_end_time != world.time || after > KM_OVERRUN_USAGE))
 		outside_overrun(usage, before, after)
 
 /// A tick whose time outside the MC alone went over budget, which the MC's record of the tick does not show
@@ -209,7 +209,7 @@ GLOBAL_DATUM_INIT(tick_frame, /datum/tick_frame, new)
 /datum/tick_frame/proc/outside_overrun(usage, before, after)
 	outside_overruns++
 	var/list/breakdown = list(list("name" = PERF_OUTSIDE_MC, "usage" = before + after))
-	if(Master?.perf_tick_end_time == world.time)
+	if(Kernel?.perf_tick_end_time == world.time)
 		breakdown += list(list("name" = "MC", "usage" = max(usage - before - after, 0)))
 	GLOB.metrics_service?.note_overrun(list(
 		"world_time" = world.time, // ALLOW(sys_world_time_write): reports the clock in a diagnostic record, not a stored expiry

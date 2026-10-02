@@ -46,9 +46,9 @@
 #define SSAIR_TURFS 9
 
 // Milliseconds of tick budget still available, for binds that take a budget
-// (the Rust->DM callback queue). TICK_USAGE and Master.current_ticklimit are
+// (the Rust->DM callback queue). TICK_USAGE and Kernel.current_ticklimit are
 // percentages of a tick; clamped to a small positive floor.
-#define SSAIR_REMAINING_MS (max(TICK_DELTA_TO_MS(Master.current_ticklimit - TICK_USAGE), 1))
+#define SSAIR_REMAINING_MS (max(TICK_DELTA_TO_MS(Kernel.current_ticklimit - TICK_USAGE), 1))
 
 // Pipeline rebuild helper subtasks.
 #define SSAIR_REBUILD_PIPELINE 1

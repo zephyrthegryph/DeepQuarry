@@ -43,6 +43,7 @@ GLOBAL_LIST_EMPTY(rx_work_by_sig)
 	// Flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	reaction = R
 	holder_run = !ispath(owner_type, /datum/system)
+	system_owned = !holder_run
 	var/member_key = R.members
 	var/run_every = WORK_EVERY_TICK
 	var/run_urgent = FALSE

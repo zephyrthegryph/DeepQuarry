@@ -18,7 +18,6 @@
 	_search_references(src)
 	//restart the garbage collector
 	SSgarbage.can_fire = TRUE
-	SSgarbage.update_nextfire(reset_time = TRUE)
 #ifdef UNIT_TESTS
 	GLOB.dq_refsearch_spent_ds += REALTIMEOFDAY - search_started
 #endif

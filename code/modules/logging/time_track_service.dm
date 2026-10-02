@@ -4,7 +4,7 @@ GLOBAL_DATUM_INIT(time_track_service, /datum/world_service/time_track, new)
 /datum/world_service/time_track
 	name = "Time Tracking"
 	lane = /datum/om/behaviour/world/time_track
-	needs = list(/datum/controller/subsystem/dbcore)
+	needs = list(/datum/system/dbcore)
 
 	var/time_dilation_current = 0
 
@@ -117,9 +117,9 @@ GLOBAL_DATUM_INIT(time_track_service, /datum/world_service/time_track, new)
 
 		time_dilation_current = tick_drift / (current_tickcount - last_tick_tickcount) * 100
 
-		time_dilation_avg_fast = MC_AVERAGE_FAST(time_dilation_avg_fast, time_dilation_current)
-		time_dilation_avg = MC_AVERAGE(time_dilation_avg, time_dilation_avg_fast)
-		time_dilation_avg_slow = MC_AVERAGE_SLOW(time_dilation_avg_slow, time_dilation_avg)
+		time_dilation_avg_fast = KERNEL_AVERAGE_FAST(time_dilation_avg_fast, time_dilation_current)
+		time_dilation_avg = KERNEL_AVERAGE(time_dilation_avg, time_dilation_avg_fast)
+		time_dilation_avg_slow = KERNEL_AVERAGE_SLOW(time_dilation_avg_slow, time_dilation_avg)
 		//GLOB.glide_size_multiplier = (current_byondtime - last_tick_byond_time) / (current_realtime - last_tick_realtime)
 	else
 		first_run = FALSE
@@ -188,7 +188,7 @@ GLOBAL_DATUM_INIT(time_track_service, /datum/world_service/time_track, new)
 			0, // tick overrun: the machine service runs inside SSbehaviours' budget
 			GLOB.machine_service.gas_dirty_last,
 			GLOB.machine_service.gas_woken_last,
-			SSbehaviours.cost,
+			SSbehaviours.fire_cost,
 			SSbehaviours.ticks,
 			SSbehaviours.tick_overrun,
 			REGISTRY_COUNT(REGISTRY_MOBS),

@@ -14,5 +14,5 @@
 	TEST_ASSERT(islist(radiation["queue"]), "Radiation diagnostics omitted queue depth")
 	TEST_ASSERT(islist(radiation["top_source_cost_ms"]), "Radiation diagnostics omitted source attribution")
 	var/sequence_before = SSprofiler.diagnostic_sequence
-	SSprofiler.fire()
+	SSprofiler.sample(SSprofiler.wait)
 	TEST_ASSERT_EQUAL(SSprofiler.diagnostic_sequence, sequence_before + 1, "Compact performance snapshot did not complete")

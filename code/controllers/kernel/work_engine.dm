@@ -202,8 +202,8 @@
 	var/started = TICK_USAGE
 	var/done = TRUE
 	// A fire() body (system.dm fire_step) and CHECK_TICK read the tick budget from here.
-	var/saved_ticklimit = Master.current_ticklimit
-	Master.current_ticklimit = limit_abs
+	var/saved_ticklimit = Kernel.current_ticklimit
+	Kernel.current_ticklimit = limit_abs
 	try
 		done = W.sweep(src, owner, limit_abs, now)
 		W.consecutive_faults = 0
@@ -220,14 +220,22 @@
 			var/park_msg = "Kernel: work item [W.key] parked after [W.consecutive_faults] faults in a row."
 			log_world(park_msg)
 			message_admins(park_msg)
-	Master.current_ticklimit = saved_ticklimit
+	Kernel.current_ticklimit = saved_ticklimit
 	var/ms = TICK_USAGE_TO_MS(started)
+	if(W.system_owned)
+		// What the tick's slow-tick record shows per system (the breakdown names who took the tick).
+		var/datum/system/costly = owner
+		var/used = max(TICK_USAGE - started, 0)
+		LAZYSET(perf_tick_breakdown, costly.name, (LAZYACCESS(perf_tick_breakdown, costly.name) || 0) + used)
+		if(used > perf_tick_top_usage)
+			perf_tick_top_usage = used
+			perf_tick_top_name = costly.name
 	W.total_ms += ms
 	W.current_ms += ms
 	// A spread sweep's slices add up to one run: it is counted when the sweep closes.
 	if(done && !(W.spread && W.cursor))
 		W.runs++
-		W.cost = W.cost ? MC_AVERAGE_FAST(W.cost, W.current_ms) : W.current_ms
+		W.cost = W.cost ? KERNEL_AVERAGE_FAST(W.cost, W.current_ms) : W.current_ms
 		W.current_ms = 0
 	return done
 
@@ -244,7 +252,11 @@
 		W.yielded = FALSE
 		return TRUE
 	var/dt = W.take_dt(null, now)
+	var/started = W.system_owned ? TICK_USAGE : 0
 	var/result = W.perform(owner, null, dt)
+	if(W.system_owned)
+		var/datum/system/S = owner
+		S.note_run(TICK_USAGE_TO_MS(started), result == STEP_YIELD)
 	return read_result(W, result, now)
 
 /// Reads a memberless step result. Returns TRUE unless the step yielded.

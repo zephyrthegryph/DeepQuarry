@@ -949,7 +949,7 @@ GLOBAL_DATUM(dq_preboot_gas_probe, /datum/gas_mixture)
 	donor.set_temperature(T20C)
 	A.assume_air(donor)
 
-	// Let the real Master.Loop tick SSair so process_active_turfs walks A
+	// Let the real Kernel.Loop tick SSair so process_active_turfs walks A
 	// and shares to B naturally — no manual process_cell call.
 	dq_atmos_test_wait_real_ssair_ticks(5)
 
@@ -1922,7 +1922,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	var/initial_plasma = T.air.get_moles(/datum/gas/plasma)
 	TEST_ASSERT(initial_plasma > 150, "test setup didn't load enough plasma: [initial_plasma]")
 
-	// Real Master.Loop ticks SSair, whose Rust turf-sharing pass
+	// Real Kernel.Loop ticks SSair, whose Rust turf-sharing pass
 	// (process_turfs_auxtools) blends the turf air toward planetary_mix
 	// when T.planetary_atmos is set. Poll and break as soon as the drain
 	// target (asserted below) is reached, instead of always waiting 20 ticks.
@@ -2956,38 +2956,38 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 /datum/unit_test/dq_mc_performance_window_statistics
 
 /datum/unit_test/dq_mc_performance_window_statistics/Run()
-	var/list/old_usage = Master.perf_tick_usage
-	var/list/old_realtime = Master.perf_tick_realtime
-	Master.perf_tick_usage = list()
-	Master.perf_tick_realtime = list()
+	var/list/old_usage = Kernel.perf_tick_usage
+	var/list/old_realtime = Kernel.perf_tick_realtime
+	Kernel.perf_tick_usage = list()
+	Kernel.perf_tick_realtime = list()
 	for(var/i in 1 to 100)
-		Master.perf_tick_usage += i
-		Master.perf_tick_realtime += i * world.tick_lag
-	var/list/window = Master.performance_window(30)
+		Kernel.perf_tick_usage += i
+		Kernel.perf_tick_realtime += i * world.tick_lag
+	var/list/window = Kernel.performance_window(30)
 	TEST_ASSERT_EQUAL(window["samples"], 100, "MC performance window lost samples")
 	TEST_ASSERT_EQUAL(window["p50"], 50, "MC performance window calculated the wrong median")
 	TEST_ASSERT_EQUAL(window["p95"], 95, "MC performance window calculated the wrong p95")
 	TEST_ASSERT_EQUAL(window["p99"], 99, "MC performance window calculated the wrong p99")
 	TEST_ASSERT_EQUAL(window["max"], 100, "MC performance window calculated the wrong maximum")
 	TEST_ASSERT(abs(window["tps"] - world.fps) < 0.01, "MC performance window calculated incorrect TPS")
-	var/list/old_outliers = Master.perf_outliers
-	var/list/old_breakdown = Master.perf_tick_breakdown
-	Master.perf_outliers = list()
-	Master.perf_tick_breakdown = list("Atmospherics" = 80, "Stat Panels" = 30)
-	var/old_start_usage = Master.perf_tick_start_usage
-	Master.perf_tick_start_usage = 5
-	Master.record_performance_tick(125)
-	Master.perf_tick_start_usage = old_start_usage
-	var/list/outlier = Master.perf_outliers[1]
+	var/list/old_outliers = Kernel.perf_outliers
+	var/list/old_breakdown = Kernel.perf_tick_breakdown
+	Kernel.perf_outliers = list()
+	Kernel.perf_tick_breakdown = list("Atmospherics" = 80, "Stat Panels" = 30)
+	var/old_start_usage = Kernel.perf_tick_start_usage
+	Kernel.perf_tick_start_usage = 5
+	Kernel.record_performance_tick(125)
+	Kernel.perf_tick_start_usage = old_start_usage
+	var/list/outlier = Kernel.perf_outliers[1]
 	TEST_ASSERT_EQUAL(outlier["overrun"], 25, "MC outlier recorded an incorrect overrun")
 	var/breakdown_total = 0
 	for(var/list/part as anything in outlier["breakdown"])
 		breakdown_total += part["usage"]
 	TEST_ASSERT(abs(breakdown_total - 125) < 0.01, "MC outlier's breakdown does not add up to its usage: [json_encode(outlier["breakdown"])]")
-	Master.perf_tick_usage = old_usage
-	Master.perf_tick_realtime = old_realtime
-	Master.perf_outliers = old_outliers
-	Master.perf_tick_breakdown = old_breakdown
+	Kernel.perf_tick_usage = old_usage
+	Kernel.perf_tick_realtime = old_realtime
+	Kernel.perf_outliers = old_outliers
+	Kernel.perf_tick_breakdown = old_breakdown
 
 
 // =====================================================================
@@ -3449,7 +3449,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	donor.set_temperature(T20C)
 	A.assume_air(donor)
 
-	// Let real SSair fire — Master.Loop ticks it on schedule.
+	// Let real SSair fire — Kernel.Loop ticks it on schedule.
 	dq_atmos_test_wait_real_ssair_ticks(5)
 
 	// We expect SOME spread to have happened. Don't assert exact equilibrium
@@ -6066,7 +6066,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	while(SSair.times_fired == cycle_at_start && world.time - wait_started < DQ_ATMOS_TEST_MAX_WAIT)
 		sleep(world.tick_lag)
 	TEST_ASSERT(SSair.times_fired > cycle_at_start, \
-		"Master.Loop didn't advance SSair.times_fired during sleep — engine not ticking")
+		"Kernel.Loop didn't advance SSair.times_fired during sleep — engine not ticking")
 	var/direction = get_dir(A, B)
 	// Large pressure difference and low resistance → move_prob clamps high.
 	P.experience_pressure_difference(500, direction)
@@ -7010,7 +7010,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 
 /// Real-world integration: drop plasma onto a turf via the same path
 /// canister.process / atmos_spawn_air uses, then SLEEP and let the real
-/// Master.Loop tick SSair the same way it ticks for a connected player.
+/// Kernel.Loop tick SSair the same way it ticks for a connected player.
 /// Asserts that ticks actually advanced (so we know we're not just waiting
 /// for a frozen MC) and that plasma reached the adjacent turf.
 /datum/unit_test/dq_real_spread_via_ssair_fire
@@ -7046,7 +7046,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 		"A didn't accept the donor plasma after assume_air: [A.air.get_moles(/datum/gas/plasma)]")
 	// (turf activity is Rust-side now; the real proof is that B receives gas below.)
 
-	// Sleep to let the live Master.Loop fire SSair normally. No state hacking.
+	// Sleep to let the live Kernel.Loop fire SSair normally. No state hacking.
 	// Guard: SSair must be genuinely TICKING, not frozen/starved. The old
 	// through-floor vertical-vent bug pinned thousands of turfs perpetually active
 	// and starved background SSair down to 1-2 fires per 10s window; a healthy
@@ -7056,11 +7056,11 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	// (gas actually reaching B) is asserted below.
 	var/ticks_advanced = dq_atmos_test_wait_real_ssair_ticks(30)
 	TEST_ASSERT(ticks_advanced >= 5, \
-		"SSair only fired [ticks_advanced] times in ~10s — Master.Loop is barely ticking SSair (frozen/starved). Healthy is many fires; the perpetual-active-turf churn is back.")
+		"SSair only fired [ticks_advanced] times in ~10s — Kernel.Loop is barely ticking SSair (frozen/starved). Healthy is many fires; the perpetual-active-turf churn is back.")
 
 	var/final_b_plasma = B.air.get_moles(/datum/gas/plasma)
 	TEST_ASSERT(final_b_plasma > initial_b_plasma + 0.1, \
-		"plasma DID NOT SPREAD to adjacent turf B after [ticks_advanced] real SSair ticks: A=[A.air.get_moles(/datum/gas/plasma)] B=[final_b_plasma]. The atmos engine isn't moving gas under normal Master.Loop firing — THIS IS THE PRODUCTION BUG.")
+		"plasma DID NOT SPREAD to adjacent turf B after [ticks_advanced] real SSair ticks: A=[A.air.get_moles(/datum/gas/plasma)] B=[final_b_plasma]. The atmos engine isn't moving gas under normal Kernel.Loop firing — THIS IS THE PRODUCTION BUG.")
 
 	// Cleanup so other tests don't see leftover plasma.
 	for(var/datum/gas/g as anything in A.air.get_gases())
@@ -7070,7 +7070,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 
 
 /// True end-to-end production scenario: spawn a phoron canister on an open
-/// floor, set valve_open and a release pressure, sleep while Master.Loop
+/// floor, set valve_open and a release pressure, sleep while Kernel.Loop
 /// fires the canister's process() AND SSair's fire() naturally, and assert
 /// plasma reaches the neighboring tile. If a player opens a canister in
 /// game and gas doesn't spread, THIS test catches it.
@@ -7104,7 +7104,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/initial_a_plasma = A.air.get_moles(/datum/gas/plasma)
 	var/initial_b_plasma = B.air.get_moles(/datum/gas/plasma)
 
-	// Let the real game tick: Master.Loop runs SSbehaviours (the machine pipeline calls
+	// Let the real game tick: Kernel.Loop runs SSbehaviours (the machine pipeline calls
 	// the canister step) AND SSair (which steps the gas field). This is the one
 	// integration test that keeps the wall clock on purpose. Poll and break
 	// as soon as both conditions asserted below hold.

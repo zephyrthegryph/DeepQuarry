@@ -1,5 +1,7 @@
 SYSTEM_DEF(lighting)
 	name = "Lighting"
+	phase = KERNEL_PHASE_K
+	latency_class = LATENCY_L0
 	init_stage = INITSTAGE_MAIN
 	needs = list(
 		/datum/system/air
@@ -29,20 +31,20 @@ SYSTEM_DEF(lighting)
 		if(!planet_shandlers[planet])
 			planet_shandlers[planet] = new /datum/planet_sunlight_handler(planet)
 
-	fire(FALSE, TRUE)
+	light_step(0, TRUE)
 	sunlight_queue_active += sunlight_queue + sunlight_queue // Run through shandler's twice during lobby wait to get some initial computation out of the way. After these two, the sunlight system will run MUCH faster.
 
 
 /// The light queues drain every tick (it was SSlighting's SS_TICKER fire()).
 /datum/system/lighting/reactions()
 	. = ..()
-	. += every(WORK_EVERY_TICK, PROC_REF(fire_step), when = PROC_REF(fire_ready), lane = LANE_PRESENTATION)
+	. += every(WORK_EVERY_TICK, PROC_REF(light_step), when = PROC_REF(work_ready), phase = KERNEL_PHASE_K, lane = LANE_PRESENTATION)
 
 // Lighting folds in wave F5, after phase 4f makes it a Rust field
-/datum/system/lighting/fire(resumed, init_tick_checks)
-	MC_SPLIT_TICK_INIT(4)
+/datum/system/lighting/proc/light_step(dt, init_tick_checks)
+	KERNEL_SPLIT_TICK_INIT(4)
 	if(!init_tick_checks)
-		MC_SPLIT_TICK
+		KERNEL_SPLIT_TICK
 
 	var/list/queue = sources_queue
 	var/i = 0
@@ -63,14 +65,14 @@ SYSTEM_DEF(lighting)
 			i -= 1 // update_corners() has removed L from the list, move back so we don't overflow or skip the next element
 
 		// At init the whole queue drains in one pass (S10b: no stoplag yield); afterwards the MC budget splits it.
-		if(!init_tick_checks && MC_TICK_CHECK)
+		if(!init_tick_checks && KERNEL_OVER_BUDGET)
 			break
 	if (i)
 		queue.Cut(1, i + 1)
 		i = 0
 
 	if(!init_tick_checks)
-		MC_SPLIT_TICK
+		KERNEL_SPLIT_TICK
 
 	// UPDATE CORNERS QUEUE
 	queue = corners_queue
@@ -82,14 +84,14 @@ SYSTEM_DEF(lighting)
 		C.update_objects()
 
 		// At init the whole queue drains in one pass (S10b: no stoplag yield); afterwards the MC budget splits it.
-		if(!init_tick_checks && MC_TICK_CHECK)
+		if(!init_tick_checks && KERNEL_OVER_BUDGET)
 			break
 	if (i)
 		queue.Cut(1, i + 1)
 		i = 0
 
 	if(!init_tick_checks)
-		MC_SPLIT_TICK
+		KERNEL_SPLIT_TICK
 
 	// UPDATE OBJECTS QUEUE
 	queue = objects_queue
@@ -103,7 +105,7 @@ SYSTEM_DEF(lighting)
 		O.needs_update = FALSE
 
 		// At init the whole queue drains in one pass (S10b: no stoplag yield); afterwards the MC budget splits it.
-		if(!init_tick_checks && MC_TICK_CHECK)
+		if(!init_tick_checks && KERNEL_OVER_BUDGET)
 			break
 	if (i)
 		queue.Cut(1, i + 1)
@@ -111,7 +113,7 @@ SYSTEM_DEF(lighting)
 
 
 	if(!init_tick_checks)
-		MC_SPLIT_TICK
+		KERNEL_SPLIT_TICK
 
 	// UPDATE SUNLIGHT QUEUE
 	queue = sunlight_queue_active
@@ -124,7 +126,7 @@ SYSTEM_DEF(lighting)
 		shandler.sunlight_update()
 
 		// At init the whole queue drains in one pass (S10b: no stoplag yield); afterwards the MC budget splits it.
-		if(!init_tick_checks && MC_TICK_CHECK)
+		if(!init_tick_checks && KERNEL_OVER_BUDGET)
 			break
 	if (i)
 		queue.Cut(1, i + 1)

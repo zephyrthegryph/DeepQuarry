@@ -47,8 +47,6 @@ GLOBAL_LIST_EMPTY(benchmark_rust_marks)
 /proc/benchmark_mark_seconds(seconds)
 	// Keyed by subsystem type text: a deferred call's arguments may not hold datum assoc keys.
 	var/list/fired = list()
-	for(var/datum/controller/subsystem/S as anything in Master.subsystems)
-		fired["[S.type]"] = S.times_fired
 	for(var/datum/system/S as anything in kernel_pure_systems())
 		fired["[S.type]"] = S.times_fired
 	// A mark a second, on timers (nothing sleeps).
@@ -57,12 +55,6 @@ GLOBAL_LIST_EMPTY(benchmark_rust_marks)
 /proc/benchmark_mark_second(list/fired_box, i, seconds)
 	var/list/fired = fired_box[1]
 	var/list/names = list()
-	for(var/datum/controller/subsystem/S as anything in Master.subsystems)
-		var/key = "[S.type]"
-		var/delta = S.times_fired - fired[key]
-		if(delta > 0)
-			names += "[S.name] x[delta] ([round(S.cost, 0.1)] ms)"
-		fired[key] = S.times_fired
 	for(var/datum/system/S as anything in kernel_pure_systems())
 		var/key = "[S.type]"
 		var/delta = S.times_fired - fired[key]
@@ -255,7 +247,7 @@ GLOBAL_LIST_EMPTY(benchmark_rust_marks)
 		detail("boot_proc_profile", benchmark_profile_summary(benchmark_proc_profile(), 150))
 		SSprofiler.DumpFile(allow_yield = FALSE)
 		world.Profile(PROFILE_CLEAR)
-	metric("init_seconds", Master.initializations_seconds, "s")
+	metric("init_seconds", Kernel.initializations_seconds, "s")
 	var/list/subsystems = benchmark_subsystem_init_times()
 	for(var/name in subsystems)
 		metric("init_ms_[name]", subsystems[name], "ms")

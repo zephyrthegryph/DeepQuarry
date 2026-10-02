@@ -107,7 +107,7 @@
 	resuming = !done
 	if(done)
 		steps++
-		cost = MC_AVERAGE(cost, current_ms)
+		cost = KERNEL_AVERAGE(cost, current_ms)
 	return done
 
 /// Every world service, for the profiler and the admin readouts, in registration order. Derived from the system

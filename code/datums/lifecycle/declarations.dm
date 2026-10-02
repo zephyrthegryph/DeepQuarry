@@ -461,7 +461,7 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 
 DECLARE_SHARED_CACHE(decl_binders, GLOBAL_PROC_REF(build_decl_binder), SC_NEVER)
 
-/datum/controller/subsystem/atoms
+/datum/system/atoms
 	/// While a batch initializes: binder type -> atoms queued for it. Null outside a batch.
 	var/list/deferred_decl_binds
 
@@ -489,7 +489,7 @@ DECLARE_SHARED_CACHE(decl_binders, GLOBAL_PROC_REF(build_decl_binder), SC_NEVER)
 		decl_binder(path).unbind(D)
 
 /// Binds everything a batch queued, one bind_list() per binder.
-/datum/controller/subsystem/atoms/proc/flush_decl_binds()
+/datum/system/atoms/proc/flush_decl_binds()
 	var/list/queued = deferred_decl_binds
 	deferred_decl_binds = null
 	for(var/path in queued)

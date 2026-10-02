@@ -1,16 +1,14 @@
-SUBSYSTEM_DEF(overlays)
+SYSTEM_DEF(overlays)
 	name = "Overlay"
-	flags = SS_NO_FIRE|SS_NO_INIT
+	init_stage = INITSTAGE_MAIN
 	var/list/stats
 
-/datum/controller/subsystem/overlays/PreInit()
+/datum/system/overlays/preinit()
 	stats = list()
 
-/datum/controller/subsystem/overlays/Shutdown()
+/datum/system/overlays/on_shutdown()
 	WRITE_LOG("[GLOB.log_directory]-overlay.log", render_stats(stats))
 
-/datum/controller/subsystem/overlays/Recover()
-	stats = SSoverlays.stats
 
 /// Converts an overlay list into text for debug printing
 /// Of note: overlays aren't actually mutable appearances, they're just appearances

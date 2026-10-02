@@ -82,9 +82,9 @@ ADMIN_VERB(display_tags, R_ADMIN, "View Tags", "Display all of the tagged datums
 			else if(isatom(iter_datum))
 				var/atom/resolved_atom = iter_datum // needed for ADMIN_JMP
 				specific_info = "[AREACOORD(resolved_atom)] [ADMIN_JMP(resolved_atom)]"
-			else if(istype(iter_datum, /datum/controller/subsystem))
-				var/datum/controller/subsystem/resolved_subsystem = iter_datum
-				specific_info = "[resolved_subsystem.stat_entry()]"
+			else if(istype(iter_datum, /datum/system))
+				var/datum/system/resolved_system = iter_datum
+				specific_info = "[resolved_system.stat_entry("")]"
 			// else, it's just a /datum
 
 			dat += "\t[index]: [iter_datum] | [specific_info] | [ADMIN_VV(iter_datum)] | [TAG_DEL(iter_datum)] | [iter_datum == marked_datum ? "<b>Marked</b>" : TAG_MARK(iter_datum)] "

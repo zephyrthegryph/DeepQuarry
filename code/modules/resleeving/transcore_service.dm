@@ -53,14 +53,14 @@ GLOBAL_DATUM_INIT(transcore_service, /datum/world_service/transcore, new)
 	if(current_step == SSTRANSCORE_IMPLANTS)
 		timer = TICK_USAGE
 		var/done = process_implants(resumed)
-		cost_implants = MC_AVERAGE(cost_implants, TICK_DELTA_TO_MS(TICK_USAGE - timer))
+		cost_implants = KERNEL_AVERAGE(cost_implants, TICK_DELTA_TO_MS(TICK_USAGE - timer))
 		if(!done)
 			return FALSE
 		resumed = FALSE
 		current_step = SSTRANSCORE_BACKUPS
 	timer = TICK_USAGE
 	var/backups_done = process_backups(resumed)
-	cost_backups = MC_AVERAGE(cost_backups, TICK_DELTA_TO_MS(TICK_USAGE - timer))
+	cost_backups = KERNEL_AVERAGE(cost_backups, TICK_DELTA_TO_MS(TICK_USAGE - timer))
 	if(!backups_done)
 		return FALSE
 	current_step = SSTRANSCORE_IMPLANTS

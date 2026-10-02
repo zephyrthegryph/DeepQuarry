@@ -9,7 +9,7 @@ SYSTEM_DEF(shuttles)
 	init_stage = INITSTAGE_MAIN
 	needs = list(
 		/datum/system/air,
-		/datum/controller/subsystem/atoms
+		/datum/system/atoms
 	)
 	// Shuttles with work run their shuttle_step() on the slow periodic lane (DECLARE_PERIODIC_WHILE, shuttle.dm).
 

@@ -9,7 +9,7 @@ GLOBAL_DATUM_INIT(server_maint_service, /datum/world_service/server_maint, new)
 /datum/world_service/server_maint
 	name = "Server Tasks"
 	lane = /datum/om/behaviour/world/server_maint
-	needs = list(/datum/controller/subsystem/garbage)
+	needs = list(/datum/system/garbage)
 	var/list/currentrun
 	///Associated list of list names to lists to clear of nulls
 	var/list/lists_to_clear

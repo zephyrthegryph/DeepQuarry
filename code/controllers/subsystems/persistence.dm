@@ -3,7 +3,7 @@ SYSTEM_DEF(persistence)
 	init_stage = INITSTAGE_MAIN
 	needs = list(
 		/datum/system/mapping,
-		/datum/controller/subsystem/atoms,
+		/datum/system/atoms,
 		/datum/system/holomaps
 	)
 

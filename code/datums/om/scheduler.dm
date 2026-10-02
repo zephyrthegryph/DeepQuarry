@@ -318,7 +318,7 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 // ---------------------------------------------------------------- run
 
 /// One scheduler pass. `tick_limit` is an absolute world.tick_usage (live:
-/// Master.current_ticklimit). Returns TRUE if all due work finished.
+/// Kernel.current_ticklimit). Returns TRUE if all due work finished.
 ///
 /// The pass is a sequence of pieces (pass_begin ... pass_end). run_pass() runs them all back to back; the
 /// kernel tick (controllers/kernel/kernel.dm) runs the same pieces itself, between its own phases.
@@ -337,7 +337,7 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	pass_t = now()
 	runs++
 	if(isnull(manual_time))
-		var/level = Master.current_runlevel
+		var/level = Kernel.current_runlevel
 		runlevel = level ? (1 << (level - 1)) : 0
 	pass_avail = max(tick_limit - pass_start, 0)
 	pass_done = TRUE
@@ -1101,7 +1101,7 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	return om_registry().behaviours[behaviour_id]
 
 /// One entity's step (or wake, or deadline: `kind`) took `usage` percent of a tick (over OM_SLOW_STEP_USAGE): kept as the tick's slowest step,
-/// which the MC's overrun record reports (Master.record_performance_tick()). Rare, so it may allocate.
+/// which the MC's overrun record reports (Kernel.record_performance_tick()). Rare, so it may allocate.
 /// Adds `usage` (tick usage) to `B`'s cost for entities of E's type, while a profile capture collects type_costs.
 /datum/om/scheduler/proc/note_type_cost(datum/om/behaviour/B, datum/E, usage)
 	type_costs["[B.name || B.type]|[E?.type]"] += usage

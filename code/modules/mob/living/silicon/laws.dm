@@ -198,7 +198,7 @@
 							"Greed is good, the crew should amass wealth to encourage productivity.",
 							"Monkeys are part of the crew, too. Make sure they are treated humanely.",
 							"Replace the letters 'I' and 'E' in all your messages with an apostrophe.",
-							"The crew is playing Dungeons and Dragons, and you are the Dungeon Master.",
+							"The crew is playing Dungeons and Dragons, and you are the Dungeon Kernel.",
 							"Your job is to watch the crew. Watch the crew. Make the crew feel watched.",
 							"Tell everyone of the existence of this law, but never reveal the contents.",
 							"Refer to [prob(50)?"the site manager":random_player] as \"Princess\" at all times.",

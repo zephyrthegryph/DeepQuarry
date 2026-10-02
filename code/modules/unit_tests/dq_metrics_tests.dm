@@ -150,9 +150,9 @@
 
 /datum/unit_test/dq_metrics_overrun_cause_and_runtime_stack/Run()
 	var/list/outside = list(list("name" = "Verb Manager", "usage" = 0.04), list("name" = PERF_OUTSIDE_MC, "usage" = 7000))
-	TEST_ASSERT_EQUAL(Master.performance_tick_cause(outside, list()), PERF_OUTSIDE_MC, "time before the MC dominating is Outside MC, not the biggest subsystem")
+	TEST_ASSERT_EQUAL(Kernel.performance_tick_cause(outside, list()), PERF_OUTSIDE_MC, "time before the MC dominating is Outside MC, not the biggest subsystem")
 	var/list/om = list(list("name" = "Verb Manager", "usage" = 1), list("name" = PERF_OBJECT_MODEL, "usage" = 300))
-	TEST_ASSERT_EQUAL(Master.performance_tick_cause(om, list(list("key" = "machines", "ms" = 150))), "machines", "object-model time is named by its costliest system")
+	TEST_ASSERT_EQUAL(Kernel.performance_tick_cause(om, list(list("key" = "machines", "ms" = 150))), "machines", "object-model time is named by its costliest system")
 
 	var/desc = "proc name: foo (/datum/proc/foo)\n  usr: null\n  src: null\n  call stack:\nfoo()\nbar()\n"
 	var/list/stack = metrics_runtime_stack(desc)

@@ -7,21 +7,6 @@
 /proc/cmp_numeric_asc(a,b)
 	return a - b
 
-// Sorts subsystems alphabetically
-/proc/cmp_subsystem_display(datum/controller/subsystem/a, datum/controller/subsystem/b)
-	return sorttext(b.name, a.name)
-
-// Sorts subsystems by init_order
-/proc/cmp_subsystem_init(datum/controller/subsystem/a, datum/controller/subsystem/b)
-	return a.init_order - b.init_order
-
-/proc/cmp_subsystem_init_stage(datum/controller/subsystem/a, datum/controller/subsystem/b)
-	return initial(a.init_stage) - initial(b.init_stage)
-
-// Sorts subsystems by priority
-/proc/cmp_subsystem_priority(datum/controller/subsystem/a, datum/controller/subsystem/b)
-	return a.priority - b.priority
-
 // Sorts qdel statistics recorsd by time and count
 /proc/cmp_qdel_item_time(datum/qdel_item/A, datum/qdel_item/B)
 	. = B.hard_delete_time - A.hard_delete_time

@@ -51,7 +51,7 @@
 	var/list/types = benchmark_type_counts()
 	for(var/kind in types)
 		count_metric("types_[kind]", types[kind], "types")
-	metric("init_seconds", Master.initializations_seconds, "s")
+	metric("init_seconds", Kernel.initializations_seconds, "s")
 	metric("init_atmos_ms", SSair.init_time_ms, "ms")
 	count_metric("booted_ffi_calls", __verdigris_ffi_calls, "calls")
 	// Per-instance composition lists. Blueprints are per type; an item owns a list only

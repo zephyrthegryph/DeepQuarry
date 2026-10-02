@@ -65,7 +65,7 @@ SYSTEM_DEF(kernel_jobs)
 
 /// One kernel pass: every job runs steps inside its own budget, until the pass's limit is reached.
 /datum/system/kernel_jobs/proc/run_jobs(dt)
-	var/pass_limit = Master.current_ticklimit
+	var/pass_limit = Kernel.current_ticklimit
 	var/list/running = jobs.Copy()
 	var/at = next_job ? running.Find(next_job) : 1
 	if(at > 1)

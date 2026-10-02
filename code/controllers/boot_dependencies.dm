@@ -3,7 +3,7 @@
 /// Subsystems declare `dependencies` (and the inverse, `dependents`) as typepaths;
 /// there are no hand-numbered init orders. The MC orders them with
 /// boot_dependency_order() at boot; a cycle is a boot error: it is logged, recorded
-/// on Master.boot_dependency_cycle and fails the mc_boot_dependencies unit test.
+/// on Kernel.boot_dependency_cycle and fails the mc_boot_dependencies unit test.
 
 /// Kahn's algorithm, popping the newest ready node (the MC's historical order, kept
 /// so boot order is unchanged). `nodes` is the ordered node list; `deps` maps each
