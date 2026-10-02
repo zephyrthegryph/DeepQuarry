@@ -44,9 +44,16 @@ GLOBAL_VAR_INIT(stage_defs_built, FALSE)
 /proc/at(bay)
 	return entry_make("graph_at", null, list("bay" = bay))
 
-/// dismantle(parts..., ruined(...)): what taking the whole thing apart does; opaque parts for E2.
+/// dismantle(parts..., ruined(...)): what taking the whole thing apart does; the op compiler (code/engine/parts/graph_ops.dm) reads its parts.
 /proc/dismantle(ENTRY_SLOTS)
 	return entry_make("graph_dismantle", null, null, entry_flatten(ENTRY_SLOT_LIST))
+
+/// ruined(condition, parts...): inside dismantle(). When the condition holds at the moment of dismantling (a condition of section 9: nameof(var),
+/// a stat or capability key id, cond_not/cond_all/cond_any, or a PROC_REF / TYPE_PROC_REF of x(datum/act/A) answering TRUE or FALSE, evaluated
+/// like any op condition with the dismantle op's context), the effects of these parts run INSTEAD of the dismantle's own effects
+/// (becomes(frame) becomes becomes(scrap)). The ledger refund is not touched by it. Only effect parts belong here.
+/proc/ruined(cond, ENTRY_SLOTS)
+	return entry_make("graph_ruined", null, list("cond" = cond), entry_flatten(ENTRY_SLOT_LIST))
 
 /// The default of stage()'s undo =: "derive the way back from the input part". An explicit undo = null means no way back.
 #define UNDO_DERIVED "\[derived undo]"

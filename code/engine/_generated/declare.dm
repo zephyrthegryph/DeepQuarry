@@ -24,7 +24,7 @@
 /datum/capdef_decl/c_bay_compartment/spec()
 	return list(CAP_COMPARTMENT, /datum/capability/bay_compartment, "bay", STACK, "compartment", "bay, door, applies_to")
 
-/// CAPABILITY_TYPE(construction_graph, CAP_CONSTRUCTION) at code/engine/declare/graph.dm:217
+/// CAPABILITY_TYPE(construction_graph, CAP_CONSTRUCTION) at code/engine/declare/graph.dm:224
 /datum/capability/construction
 /proc/construction_graph(start, via)
 	RETURN_TYPE(/datum/capability/construction)
@@ -44,7 +44,7 @@
 /datum/capdef_decl/c_cover/spec()
 	return list(CAP_COVER, /datum/capability/bay_cover, "name", STACK, "cover", "name, tool, removable, starts_open")
 
-/// CAPABILITY_TYPE(deployment_graph, CAP_DEPLOYMENT) at code/engine/declare/graph.dm:218
+/// CAPABILITY_TYPE(deployment_graph, CAP_DEPLOYMENT) at code/engine/declare/graph.dm:225
 /datum/capability/construction/deployment
 /proc/deployment_graph(start, via)
 	RETURN_TYPE(/datum/capability/construction/deployment)
@@ -650,5 +650,42 @@
 	into += list(global.op("zap", global.hand(), global.cooldown(5 SECONDS), global.flash("p1"), global.says(MSG(p1/not_ready)), global.label("Zap")))
 	into += entry_line(91)
 	into += list(global.op("stash", global.item(/obj/item/e2_key), global.put_in("p1_slot"), global.menu()))
+
+/// CAPABILITIES(/obj/p2_frame) at code/tests/engine/p2_fixtures.dm:91
+/obj/p2_frame/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/p2_fixtures.dm", 91, /obj/p2_frame)
+	into += entry_line(92)
+	into += list(global.construction(global.start(STAGE_DOOR_FRAME), global.stage(STAGE_DOOR_WIRED, global.stack(/obj/item/stack/cable_coil, 5), undo = null), global.dismantle(global.tool(TOOL_CROWBAR), global.wait(0), global.becomes(/obj/item/p2_frame_item), global.ruined(TYPE_PROC_REF(/obj/p2_frame, frame_ruined), global.becomes(/obj/item/p2_scrap)))))
+
+/// CAPABILITIES(/obj/p2_hit/both) at code/tests/engine/p2_fixtures.dm:66
+/obj/p2_hit/both/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/p2_fixtures.dm", 66, /obj/p2_hit/both)
+	into += entry_line(67)
+	into += list(global.extend(/datum/act/hit/emp, global.adjusts("packet.amounts", scale = 0.5)))
+
+/// CAPABILITIES(/obj/p2_hit/halver) at code/tests/engine/p2_fixtures.dm:35
+/obj/p2_hit/halver/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/p2_fixtures.dm", 35, /obj/p2_hit/halver)
+	into += entry_line(36)
+	into += list(global.extend(/datum/act/hit, global.adjusts("packet.amounts", scale = 0.5)))
+	into += entry_line(37)
+	into += list(global.extend(/datum/act/hit/fire, global.needs(global.req(PROC_REF(never), because = MSG(p1/not_ready)))))
+
+/// CAPABILITIES(/obj/p2_hit/listener) at code/tests/engine/p2_fixtures.dm:45
+/obj/p2_hit/listener/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/p2_fixtures.dm", 45, /obj/p2_hit/listener)
+	into += entry_line(46)
+	into += list(global.on_notice(/datum/notice/hit/blob, global.then(PROC_REF(hear))))
+
+/// CAPABILITIES(/obj/p2_hit/taker) at code/tests/engine/p2_fixtures.dm:26
+/obj/p2_hit/taker/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/p2_fixtures.dm", 26, /obj/p2_hit/taker)
+	into += entry_line(27)
+	into += list(global.extend(/datum/act/hit/emp, global.instead(global.then(PROC_REF(take_over)))))
 
 #endif

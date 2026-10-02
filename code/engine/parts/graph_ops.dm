@@ -11,7 +11,8 @@
 //                                        other with a hand), or the edge's own `undo = list(parts)`; none for `undo = null`. It is available only
 //                                        while the transition on top of the instance's HISTORY is this edge, so a stage with two ways in undoes to
 //                                        the one actually taken. Its effect pops the history and REFUNDS that transition's ledger entry.
-//   construction.dismantle               dismantle(parts...): the parts, then everything the instance took in is refunded, newest first, and it ends.
+//   construction.dismantle               dismantle(parts..., ruined(cond, parts...)): everything the instance took in is refunded, newest first, then its effects run
+//                                        (or the ruined() ones when the condition holds), and it ends.
 //
 // The ledger entry is written when the edge's reservations are made (they are open while the effects run), and the commit that follows spends
 // them; a refund puts back exactly what the entry names, so what an undo returns is what that edge took, whichever path led there.
@@ -130,12 +131,51 @@
 	parts += part_make(/datum/entry/part/effect/graph_undo, list("cap" = cap_id))
 	return entry_make(ENTRY_OP, graph_edge_base_key(edge, "undo"), null, parts)
 
+/// `part` as an effect part (a then() entry is the then effect), or null for any other part.
+/proc/graph_effect_part(part)
+	if(istype(part, /datum/entry/part/effect))
+		return part
+	var/datum/entry/E = part
+	if(istype(E) && E.kind == ENTRY_THEN)
+		return part_make(/datum/entry/part/effect/then, list("handler" = E.args["handler"], "checks" = E.args["checks"]))
+	return null
+
+/// The dismantle op: its input parts (the tool, a wait), then the effects in this order: the refund of the whole ledger (while the instance still
+/// has its history), the dismantle's own effects (becomes, spawns, then, ...) or, when a ruined(condition, ...) holds, the ruined parts' effects in
+/// their place, then the instance ends unless a becomes() already replaced it.
 /proc/graph_dismantle_op(datum/state_graph/G, cap_id)
 	var/list/parts = list(label("Dismantle"))
-	parts += entry_flatten(G.dismantle_entry.children)
+	var/list/ordinary = list()
+	var/list/ruled = list()
+	for(var/part in entry_flatten(G.dismantle_entry.children))
+		var/datum/entry/E = part
+		if(istype(E) && E.kind == "graph_ruined")
+			ruled += E
+			continue
+		var/datum/entry/part/effect/F = graph_effect_part(part)
+		if(F)
+			ordinary += F
+		else
+			parts += part
+	parts += part_make(/datum/entry/part/effect/graph_dismantle, list("cap" = cap_id, "phase" = "refund"))
+	if(!length(ruled))
+		parts += ordinary
+	else
+		// One chooser effect per ruined() entry, in order: the first whose condition holds supplies the effects; none holding runs the ordinary ones.
+		var/list/choice = list()
+		for(var/datum/entry/R as anything in ruled)
+			var/list/effects = list()
+			for(var/child in entry_flatten(R.children))
+				var/datum/entry/part/effect/F = graph_effect_part(child)
+				if(F)
+					effects += F
+				else
+					declare_report("dismantle: [child] is not an effect part (a ruined() holds effects only)")
+			choice += list(list(R.args["cond"], effects))
+		parts += part_make(/datum/entry/part/effect/graph_ruled, list("ruled" = choice), ordinary)
 	if(!isnull(G.bay))
 		parts += at(G.bay)
-	parts += part_make(/datum/entry/part/effect/graph_dismantle, list("cap" = cap_id))
+	parts += part_make(/datum/entry/part/effect/graph_dismantle, list("cap" = cap_id, "phase" = "end"))
 	return entry_make(ENTRY_OP, "dismantle", null, parts)
 
 /datum/capability/construction/entries()
@@ -191,17 +231,41 @@
 		op_call(A, handler.args["handler"])
 	return OP_OK
 
-/// The whole thing is taken apart: everything the instance took in is refunded, newest first, and it ends.
+/// The whole thing is taken apart: "refund" puts back everything the instance took in, newest first (whether or not the dismantle is ruined);
+/// "end" then deletes the instance unless a becomes() already replaced it.
 /datum/entry/part/effect/graph_dismantle
 	part_name = "graph_dismantle"
 
 /datum/entry/part/effect/graph_dismantle/run_effect(datum/act/op/A)
 	var/datum/E = A.holder
-	for(var/list/ledger in graph_ledger_all(E, src.args["cap"]))
-		graph_refund(E, ledger, A.actor)
+	if(src.args["phase"] == "refund")
+		for(var/list/ledger in graph_ledger_all(E, src.args["cap"]))
+			graph_refund(E, ledger, A.actor)
+		return OP_OK
 	var/atom/movable/AM = E
-	if(istype(AM))
+	if(istype(AM) && !QDELETED(AM))
 		consume(AM, A.actor)
+	return OP_OK
+
+/// A dismantle with a ruined(): the children are the ordinary effects, args["ruled"] the rows list(condition, effects). The first row whose condition
+/// holds (evaluated like any op condition, with the op's context) runs its effects instead of the ordinary ones. Logged either way.
+/datum/entry/part/effect/graph_ruled
+	part_name = "graph_ruled"
+
+/datum/entry/part/effect/graph_ruled/run_effect(datum/act/op/A)
+	var/list/chosen = src.children
+	var/which = "ordinary"
+	for(var/list/row in src.args["ruled"])
+		if(op_cond(A, row[1]))
+			chosen = row[2]
+			which = "ruined"
+			break
+	log_world("DISMANTLE: [A.holder?.type] [A.key] takes the [which] parts ([length(chosen)])")
+	for(var/part in chosen)
+		var/datum/entry/part/effect/F = part
+		var/report = op_run_effect(A, F)
+		if(report != OP_OK)
+			return report
 	return OP_OK
 
 /// Puts back what a ledger entry names, where the holder is: stack units and consumed items as new things, the contents of a slot out of it.

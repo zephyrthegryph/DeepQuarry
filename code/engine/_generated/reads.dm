@@ -41,5 +41,6 @@ GLOBAL_LIST_INIT(generated_reads_table, list(
 		list(1, 0, 4)),
 	"/obj/e3_load::apc_channel" = list(0,
 		list(1, 0, 5),
-		list(1, 0, 6, 5))
+		list(1, 0, 6, 5)),
+	"/obj/p2_hit/halver::never" = list(0)
 ))

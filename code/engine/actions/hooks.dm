@@ -160,7 +160,10 @@ GLOBAL_VAR_INIT(hook_serial, 0)
 			return // an op key or a capability id: E2's
 		for(var/datum/entry/part in E.children)
 			var/kind
-			switch(part.kind)
+			if(istype(part, /datum/entry/part/needs))
+				// needs(req...) inside extend() is the op language's needs part: its children are the requirements (act_needs_refusal reads them).
+				kind = HOOK_NEEDS
+			else switch(part.kind)
 				if(ENTRY_INSTEAD)
 					kind = HOOK_INSTEAD
 				if(ENTRY_ADJUSTS)

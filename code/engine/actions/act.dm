@@ -116,6 +116,19 @@ MSG_DEF_SELF(act/too_deeply_nested, "too deeply nested")
 			return
 	var/field = path[length(path)]
 	var/current = walk.vars[field]
+	if(islist(current))
+		// A list of amounts (packet.amounts): scale and by apply to every positive entry, which never goes below zero.
+		var/list/amounts = current
+		for(var/i in 1 to length(amounts))
+			var/entry = amounts[i]
+			if(!isnum(entry) || entry <= 0)
+				continue
+			if(!isnull(opts["scale"]))
+				entry *= opts["scale"]
+			if(!isnull(opts["by"]))
+				entry += opts["by"]
+			amounts[i] = max(0, entry)
+		return
 	if(!isnum(current))
 		declare_report("adjusts([opts["field"]]) on [A.type]: the field is not a number ([current])")
 		return
