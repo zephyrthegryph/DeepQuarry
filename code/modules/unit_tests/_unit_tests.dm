@@ -395,6 +395,7 @@
 #include "interim_construction_doors.dm"
 #include "interim_device_lifecycle.dm"
 #include "interim_economy_actor.dm"
+#include "interim_experiment_actor.dm"
 #include "interim_food_consumption.dm"
 #include "interim_mindbinder_actor.dm"
 #include "interim_power_reagents.dm"
