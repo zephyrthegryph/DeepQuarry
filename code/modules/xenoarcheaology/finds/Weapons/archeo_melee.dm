@@ -63,7 +63,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/melee/artifact_blade, PERIODIC_SLOW, "last_touc
 			return
 
 // a charged blade punishes its wielder.
-/obj/item/melee/artifact_blade/on_destroy(force)
+/obj/item/melee/artifact_blade/lifecycle_prerelease()
 	if(stored_blood && last_touched() && last_touched().stat != DEAD) //We have been activated (have some energy), an owner and they are alive. They are going to feel pain.
 		to_chat(last_touched(), span_cult("You feel as though your mind is suddenly being torn apart at the seams as the [src] is destroyed!"))
 		last_touched().status_at_least(EFFECT_PARALYZED, 10)
