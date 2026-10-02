@@ -223,7 +223,6 @@ dx_raw_delay	code/modules/mob/living/living.dm	om_after(src, 25, TYPE_PROC_REF(/
 dx_raw_delay	code/modules/mob/living/silicon/pai/pai.dm	COOLDOWN_START(src, last_special, 100) //Let's give get_character_icon time to work
 dx_raw_delay	code/modules/mob/living/silicon/pai/pai.dm	om_after(src, 1, PROC_REF(close_up_unless_dead))
 dx_raw_delay	code/modules/mob/living/silicon/pai/pai_folding.dm	COOLDOWN_START(src, last_special, 100)
-dx_raw_delay	code/modules/mob/living/silicon/pai/pai_folding.dm	COOLDOWN_START(src, last_special, 100)
 dx_raw_delay	code/modules/mob/living/silicon/robot/dogborg/dog_modules.dm	COOLDOWN_START(src, last_special, 10)
 dx_raw_delay	code/modules/mob/living/silicon/robot/dogborg/dog_modules.dm	om_after(src, 5, PROC_REF(leap_land), T)
 dx_raw_delay	code/modules/mob/living/silicon/robot/robot_items.dm	om_after(src, 22, PROC_REF(dispense_paper))
