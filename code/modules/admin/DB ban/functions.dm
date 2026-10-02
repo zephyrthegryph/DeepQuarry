@@ -192,7 +192,7 @@
 	if(!GLOB.prompt_flow)
 		return prompt_flow(src, PROC_REF(DB_ban_edit), args)
 
-	if(!user || owner() != user || user.holder != src || !admin_require(user, R_BAN, "ban.edit"))
+	if(!user || owner() != user || user.holder != src || !admin_require(user, R_BAN, "ban.edit")) // ALLOW(check_grep): identity check that the caller holds this very admin datum
 		return
 
 	if(!isnum(banid) || !istext(param))
@@ -346,7 +346,7 @@
 	if(!user)
 		return
 
-	if(owner() != user || user.holder != src || !admin_require(user, R_BAN, "ban.panel"))
+	if(owner() != user || user.holder != src || !admin_require(user, R_BAN, "ban.panel")) // ALLOW(check_grep): identity check that the caller holds this very admin datum
 		return
 
 	if(!SSdbcore.IsConnected())

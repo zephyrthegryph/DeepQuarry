@@ -20,7 +20,7 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 
 /// Prompt replays keep the original actor; changing owner or avatar cannot inherit an answer.
 /datum/admins/proc/permission_actor_valid(mob/user)
-	if(!user || QDELETED(user) || !user.client || owner() != user.client || user.client.holder != src)
+	if(!user || QDELETED(user) || !user.client || owner() != user.client || user.client.holder != src) // ALLOW(check_grep): identity check that the caller holds this very admin datum
 		return FALSE
 	return TRUE
 
