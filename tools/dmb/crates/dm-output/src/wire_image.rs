@@ -19,13 +19,21 @@ impl VerifiedCodeHandle {
 pub enum ListObject {Resident(ListWords),Addressed(VerifiedCodeHandle)}
 #[derive(Default)]
 struct ReadWindow {rows:HashMap<String,Arc<[u8]>>,bytes:usize}
-pub struct CodeObjectStore {store:dm_store::Store,window:Mutex<ReadWindow>}
+#[derive(Default)]
+struct PendingWrites {rows:Vec<dm_store::Change>,bytes:usize}
+pub struct CodeObjectStore {store:dm_store::Store,window:Mutex<ReadWindow>,pending:Mutex<PendingWrites>,lookahead:Mutex<Vec<VerifiedCodeHandle>>}
 impl CodeObjectStore {
     pub fn open(root:&Path)->io::Result<Arc<Self>> {Ok(Arc::new(Self {
-        store:dm_store::Store::open(root.join("wire-list-objects.redb"))?,window:Mutex::new(ReadWindow::default())}))}
+        store:dm_store::Store::open(root.join("wire-list-objects.redb"))?,window:Mutex::new(ReadWindow::default()),pending:Mutex::new(PendingWrites::default()),lookahead:Mutex::new(Vec::new())}))}
     fn namespace()->&'static str {"wire-list-object-v1"}
-    pub fn resident_bytes(&self)->usize {self.window.lock().unwrap_or_else(|e|e.into_inner()).bytes}
+    pub fn resident_bytes(&self)->usize {self.window.lock().unwrap_or_else(|e|e.into_inner()).bytes
+        +self.pending.lock().unwrap_or_else(|e|e.into_inner()).bytes
+        +self.lookahead.lock().unwrap_or_else(|e|e.into_inner()).len()*128}
     pub fn clear(&self) { *self.window.lock().unwrap_or_else(|e|e.into_inner())=ReadWindow::default(); }
+    pub fn set_lookahead(&self,handles:Vec<VerifiedCodeHandle>)->io::Result<()> {
+        if handles.len()>WINDOW||handles.iter().any(|h|!h.valid()) {return Err(invalid("invalid wire code lookahead"));}
+        *self.lookahead.lock().unwrap_or_else(|e|e.into_inner())=handles;Ok(())
+    }
     pub fn persist_batch(&self,rows:&[(&[u32],usize)])->io::Result<Vec<VerifiedCodeHandle>> {
         if rows.len()>WINDOW {return Err(invalid("wire list write window exceeds bound"));}
         let mut changes=Vec::new();let mut handles=Vec::new();let mut total=0usize;
@@ -40,6 +48,30 @@ impl CodeObjectStore {
     }
     pub fn persist_words(&self,words:&[u32],width:usize)->io::Result<VerifiedCodeHandle> {
         self.persist_batch(&[(words,width)])?.pop().ok_or_else(||invalid("empty wire list write"))
+    }
+    /// Derived objects share bounded transactions, instead of committing once
+    /// for every freshly compiled procedure. Locators may safely miss after an
+    /// interrupted cache flush; final output publication still verifies bytes.
+    pub fn stage_words(&self,words:&[u32],width:usize)->io::Result<VerifiedCodeHandle> {
+        self.stage_encoded(encode(words,width)?,width)
+    }
+    /// Stage a projected raw object after checked schema relocation. Shape,
+    /// width and digest are proved here before admitting its addressed handle.
+    pub fn stage_encoded(&self,bytes:Vec<u8>,width:usize)->io::Result<VerifiedCodeHandle> {
+        let count=bytes.get(..2).ok_or_else(||invalid("wire list length missing"))?;
+        let words=u16::from_le_bytes(count.try_into().unwrap()) as usize;
+        let digest=format!("{:x}",Sha256::digest(&bytes));
+        let handle=VerifiedCodeHandle {digest:digest.clone(),words,width};
+        validate_bytes(&handle,&bytes)?;
+        let mut pending=self.pending.lock().unwrap_or_else(|e|e.into_inner());
+        if pending.bytes.saturating_add(bytes.len())>BUDGET||pending.rows.len()>=8192 {
+            self.store.commit(&[],&pending.rows,None)?;*pending=PendingWrites::default();
+        }
+        pending.bytes+=bytes.len();pending.rows.push(dm_store::Change::Put(dm_store::Key::new(Self::namespace(),digest),bytes));Ok(handle)
+    }
+    pub fn flush(&self)->io::Result<()> {
+        let mut pending=self.pending.lock().unwrap_or_else(|e|e.into_inner());
+        if !pending.rows.is_empty() {self.store.commit(&[],&pending.rows,None)?;*pending=PendingWrites::default();}Ok(())
     }
     /// One bounded ownership session, before serial composition consumes rows.
     pub fn prefetch(&self,handles:&[VerifiedCodeHandle])->io::Result<()> {
@@ -61,7 +93,14 @@ impl CodeObjectStore {
         if let Some(bytes)=self.window.lock().unwrap_or_else(|e|e.into_inner()).rows.get(&handle.digest).cloned() {
             validate_bytes(handle,&bytes)?;return Ok(bytes);
         }
-        self.prefetch(std::slice::from_ref(handle))?;
+        let nearby={let handles=self.lookahead.lock().unwrap_or_else(|e|e.into_inner());
+            if let Some(start)=handles.iter().position(|h|h.digest==handle.digest) {
+                let mut end=start;let mut bytes=0;while end<handles.len() {
+                    let charge=2+handles[end].words*handles[end].width;
+                    if end>start&&bytes+charge>BUDGET {break;}bytes+=charge;end+=1;
+                }handles[start..end].to_vec()
+            } else {vec![handle.clone()]}};
+        self.prefetch(&nearby)?;
         self.window.lock().unwrap_or_else(|e|e.into_inner()).rows.get(&handle.digest).cloned().ok_or_else(||invalid("missing prefetched wire list"))
     }
 }
@@ -102,6 +141,12 @@ impl ListObjectTable {
                     else {u32::from_le_bytes(b.try_into().unwrap())}).collect::<Vec<_>>().into())}
         }
     }
+    pub fn materialize_mut(&mut self,index:usize)->io::Result<&mut ListWords> {
+        if matches!(self.rows.get(index),Some(ListObject::Addressed(_))) {
+            let words=self.read_words(index)?;self.rows[index]=ListObject::Resident(words);
+        }
+        match self.rows.get_mut(index) {Some(ListObject::Resident(words))=>Ok(words),_=>Err(invalid("wire list index out of bounds"))}
+    }
 }
 impl WireListSource for ListObjectTable {
     fn len(&self)->usize {self.len()}
@@ -125,6 +170,38 @@ impl WireListSource for ListObjectTable {
     }
 }
 pub struct WireImage {metadata:Dmb,lists:ListObjectTable}
+/// Mutable physical assembly. Actual list objects occupy every table slot;
+/// code handles never masquerade as empty logical lists.
+pub struct WireImageBuilder {pub(crate) metadata:Dmb,pub(crate) lists:ListObjectTable}
+impl WireImageBuilder {
+    pub fn from_native(mut image:Dmb,store:Option<Arc<CodeObjectStore>>)->Self {
+        // Canonical assembly uses one fixed physical operand width, independent
+        // of edit history and later table growth. Native import stays exact.
+        image.header.flags|=0x4000_0000;
+        let lists=std::mem::take(&mut image.lists);
+        Self {metadata:image,lists:ListObjectTable {rows:lists.into_iter().map(ListObject::Resident).collect(),store}}
+    }
+    pub fn append_verified_code(&mut self,handle:VerifiedCodeHandle)->io::Result<u32> {
+        if self.lists.len()==0xffff {self.lists.append_resident(Vec::new());}
+        let id=u32::try_from(self.lists.append_verified(handle)?).map_err(io::Error::other)?;
+        crate::assembly::AssemblyImage::promote_object_ids(self);Ok(id)
+    }
+    pub fn relink_code(&self,handle:&VerifiedCodeHandle,plan:&crate::wire_relocation::RelocationPlan)->io::Result<VerifiedCodeHandle> {
+        if !plan.changed() {return Ok(handle.clone());}
+        let store=self.lists.store.as_ref().ok_or_else(||invalid("wire code store missing"))?;
+        let bytes=store.restore(handle)?;store.stage_encoded(plan.apply(handle,&bytes)?,handle.object_width())
+    }
+    pub fn finish(self,cache:&mut byond_dmb::dmb::ReferenceValidationCache)->io::Result<WireImage> {
+        if let Some(store)=&self.lists.store {store.flush()?;}
+        self.metadata.validate_metadata_with_lists(&self.lists,cache)?;
+        Ok(WireImage {metadata:self.metadata,lists:self.lists})
+    }
+    pub fn materialize(&self)->io::Result<Dmb> {
+        let mut native=self.metadata.clone();let mut lists=Vec::with_capacity(self.lists.len());let mut until=0;
+        for id in 0..self.lists.len() {if id>=until {until=self.lists.prepare_window(id,WINDOW)?;}lists.push(self.lists.read_words(id)?);}
+        native.lists=lists.into();Ok(native)
+    }
+}
 impl WireImage {
     pub fn from_native(image:Dmb)->io::Result<Self> {Self::from_native_with_validator(image,|image|image.reference_validated(&mut Default::default()))}
     pub fn from_native_with_validator<F>(mut image:Dmb,validate:F)->io::Result<Self>

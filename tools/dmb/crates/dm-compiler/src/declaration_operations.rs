@@ -8,12 +8,12 @@ use sha2::{Digest,Sha256};
 use serde::{Serialize,Deserialize};
 use dm_store::{Store,Key,Change};
 use dm_output::object_directory::{AllocationCounts,AllocationMask,ObjectWitness,WitnessObservation,OwnedReference,OwnedTable};
-const NAMESPACE:&str="typed-declaration-operations-v5";
+const NAMESPACE:&str="typed-declaration-operations-v6";
 const LIMIT:usize=4*1024*1024;
 #[derive(Serialize,Deserialize)]
 struct Witness {allocation:bool,defining_list:u32,variables:usize,lists:usize,footer:u32,list_lengths:Vec<(u32,usize)>,resource:Option<(String,u32)>}
 pub(super) struct Snapshot {witness:Witness,start:AllocationCounts}
-#[derive(Serialize,Deserialize)]
+#[derive(Clone,Serialize,Deserialize)]
 enum ClassProperty {Initial(u8),Text,Maptext,Suffix,Direction,Layer,Geometry(u8),Flags(u64),DefiningList}
 impl ClassProperty {
  fn assign(&self,row:&mut byond_dmb::dmb::Class,value:u64){match self {Self::Initial(slot)=>row.initial_ids[*slot as usize]=value as u32,Self::Text=>row.text=value as u32,Self::Maptext=>row.maptext=value as u32,Self::Suffix=>row.suffix=value as u32,Self::Direction=>row.direction=value as u8,Self::Layer=>row.layer_bits=value as u32,Self::Geometry(slot)=>row.maptext_geometry[*slot as usize]=value as u16,Self::Flags(mask)=>row.flags=(row.flags&!mask)|(value&mask),Self::DefiningList=>row.lists_and_procs[4]=value as u32}}
@@ -21,11 +21,35 @@ impl ClassProperty {
 #[derive(Serialize,Deserialize)]
 enum Operation {Intern {bytes:Vec<u8>,id:u32},WriteProperty {property:ClassProperty,value:u64},AppendVariable(byond_dmb::dmb::Variable),AppendList(Vec<u32>),ExtendList {id:u32,words:Vec<u32>},SetFooter(u32),StaticId {name:String,id:u32}}
 #[derive(Serialize,Deserialize)]
-struct Plan {witness:Witness,object:ObjectWitness,operations:Vec<Operation>,variable:Option<VariableRecipe>}
+struct Plan {witness:Witness,object:ObjectWitness,operations:Vec<Operation>,variable:Option<VariableRecipe>,property:Option<PropertyRecipe>}
+/// Closed property writes preserve interning order but bind string/resource IDs
+/// in the current image. They never inherit historical allocation prefixes.
+#[derive(Serialize,Deserialize)]
+struct PropertyRecipe {property:ClassProperty,value:PropertyValue,intern:Vec<Vec<u8>>}
+#[derive(Serialize,Deserialize)]
+enum PropertyValue {Scalar(u64),Text(Vec<u8>),Resource(String)}
+fn property_recipe(property:&ClassProperty,value:u64,operations:&[Operation],snapshot:&Snapshot,dmb:&Dmb)->Option<PropertyRecipe> {
+ if snapshot.witness.allocation||operations.iter().any(|operation|!matches!(operation,Operation::Intern {..}|Operation::WriteProperty {..})){return None;}
+ let intern=operations.iter().filter_map(|operation|match operation {Operation::Intern {bytes,..}=>Some(bytes.clone()),_=>None}).collect();
+ let value=match property {
+  ClassProperty::Initial(2|3|5)|ClassProperty::Text|ClassProperty::Maptext|ClassProperty::Suffix if value!=0xffff=>PropertyValue::Text(dmb.string(u32::try_from(value).ok()?)?.to_vec()),
+  ClassProperty::Initial(4) if value!=0xffff=>PropertyValue::Resource(snapshot.witness.resource.as_ref()?.0.clone()),
+  ClassProperty::Initial(2|3|4|5)|ClassProperty::Text|ClassProperty::Maptext|ClassProperty::Suffix|ClassProperty::Direction|ClassProperty::Layer|ClassProperty::Geometry(_)|ClassProperty::Flags(_)=>PropertyValue::Scalar(value),
+  _=>return None,
+ };
+ Some(PropertyRecipe {property:property.clone(),value,intern})
+}
+fn replay_property(recipe:&PropertyRecipe,class:u32,dmb:&mut Dmb,strings:&mut StringIndex,resources:&HashMap<String,u32>)->bool {
+ // Resolve fallible resource reads before applying any interning writes.
+ let resource=match &recipe.value {PropertyValue::Resource(path)=>match resources.get(path){Some(id)=>Some(*id),None=>return false},_=>None};
+ for bytes in &recipe.intern {strings.intern_bytes(dmb,bytes);}
+ let value=match &recipe.value {PropertyValue::Scalar(value)=>*value,PropertyValue::Text(bytes)=>strings.intern_bytes(dmb,bytes) as u64,PropertyValue::Resource(_)=>resource.unwrap() as u64};
+ recipe.property.assign(&mut dmb.classes[class as usize],value);true
+}
 /// Allocation-independent writes for closed literal declarations. Destinations
 /// are current owner/footer lists, never historical absolute row addresses.
 #[derive(Serialize,Deserialize)]
-struct VariableRecipe {name:Vec<u8>,kind:u8,value:u32,text:Option<Vec<u8>>,resource:Option<String>,flags:u32,static_name:Option<String>,dynamic:Option<String>}
+struct VariableRecipe {name:Vec<u8>,kind:u8,value:u32,text:Option<Vec<u8>>,resource:Option<String>,flags:u32,static_name:Option<String>,dynamic:Option<String>,intern:Vec<Vec<u8>>}
 fn variable_recipe(source:&str,class:u32,snapshot:&Snapshot,dmb:&Dmb,metadata:Option<&TypeMetadataState>)->Option<VariableRecipe>{
  if !snapshot.witness.allocation||dmb.variables.len()!=snapshot.witness.variables+1{return None;}
  let row=&dmb.variables[snapshot.witness.variables];
@@ -42,7 +66,7 @@ fn variable_recipe(source:&str,class:u32,snapshot:&Snapshot,dmb:&Dmb,metadata:Op
  Some(VariableRecipe {name:dmb.string(row.name)?.to_vec(),kind:row.kind,value:row.value,
  text:if row.kind==6 {Some(dmb.string(row.value)?.to_vec())}else{None},
  resource:if row.kind==12 {Some(snapshot.witness.resource.as_ref()?.0.clone())}else{None},
- flags:(if declaration.is_const {3}else if declaration.is_static {1}else{0})|if declaration.is_tmp {4}else{0},static_name,dynamic})
+ flags:(if declaration.is_const {3}else if declaration.is_static {1}else{0})|if declaration.is_tmp {4}else{0},static_name,dynamic,intern:Vec::new()})
 }
 fn replay_variable(recipe:&VariableRecipe,class:u32,dmb:&mut Dmb,strings:&mut StringIndex,resources:&HashMap<String,u32>,mut metadata:Option<&mut TypeMetadataState>,pending:&mut Vec<PendingDynamic>)->bool{
  if recipe.static_name.is_some()&&metadata.is_none(){return false;}
@@ -50,7 +74,13 @@ fn replay_variable(recipe:&VariableRecipe,class:u32,dmb:&mut Dmb,strings:&mut St
  if defining!=0xffff&&dmb.lists.get(defining as usize).is_none(){return false;}
  if recipe.static_name.is_some()&&footer!=0xffff&&dmb.lists.get(footer as usize).is_none(){return false;}
  let base=counts(dmb);let Some(variable)=(OwnedReference {table:OwnedTable::Variable,ordinal:0}).resolve(&base)else{return false;};
- let value=match recipe.kind {6=>{let Some(text)=&recipe.text else{return false;};strings.intern_bytes(dmb,text)},12=>{let Some(id)=recipe.resource.as_ref().and_then(|path|resources.get(path))else{return false;};*id},_=>recipe.value};
+ if recipe.kind==6&&recipe.text.is_none(){return false;}
+ let resource=if recipe.kind==12 {let Some(id)=recipe.resource.as_ref().and_then(|path|resources.get(path))else{return false;};Some(*id)}else{None};
+ if recipe.dynamic.is_some()&&recipe.static_name.is_none()&&std::str::from_utf8(&recipe.name).is_err(){return false;}
+ // Preserve every original intern, including intermediates produced before a
+ // dynamic initializer was selected. Physical writes are otherwise redundant.
+ for bytes in &recipe.intern {strings.intern_bytes(dmb,bytes);}
+ let value=match recipe.kind {6=>strings.intern_bytes(dmb,recipe.text.as_ref().unwrap()),12=>resource.unwrap(),_=>recipe.value};
  if let Some(expression)=&recipe.dynamic {
   let name=if let Some(name)=&recipe.static_name {name.clone()}else{let Some(name)=std::str::from_utf8(&recipe.name).ok()else{return false;};name.to_owned()};
   pending.push(PendingDynamic {owner:if recipe.static_name.is_some(){None}else{Some(class)},name:name.clone(),expression:expression.clone(),sized_array:false});
@@ -135,13 +165,18 @@ fn scalars(witness:&Witness,dmb:Option<&Dmb>,class:u32,resource:Option<&(String,
  if witness.allocation {reads.push(dmb.map_or(witness.defining_list,|dmb|dmb.classes[class as usize].lists_and_procs[4]) as u64);reads.push(dmb.map_or(witness.footer,|dmb|dmb.variable_footer) as u64);for(id,length)in &witness.list_lengths {reads.push(*id as u64);reads.push(dmb.and_then(|dmb|dmb.lists.get(*id as usize)).map_or(*length,|words|words.len()) as u64);}}
  reads.push(resource.map_or(u64::MAX,|(_,id)|*id as u64));reads
 }
-fn recipe_identity(operations:&[Operation],variable:Option<&VariableRecipe>)->Option<String>{Some(format!("{:x}",Sha256::digest(rmp_serde::to_vec_named(&(operations,variable)).ok()?)))}
-fn decode_plan(bytes:&[u8])->Option<Plan>{let plan:Plan=rmp_serde::from_slice(bytes).ok()?;if !plan.object.valid()||recipe_identity(&plan.operations,plan.variable.as_ref())?!=plan.object.recipe_identity {return None;}Some(plan)}
+fn recipe_identity(operations:&[Operation],variable:Option<&VariableRecipe>,property:Option<&PropertyRecipe>)->Option<String>{Some(format!("{:x}",Sha256::digest(rmp_serde::to_vec_named(&(operations,variable,property)).ok()?)))}
+fn decode_plan(bytes:&[u8])->Option<Plan>{let plan:Plan=rmp_serde::from_slice(bytes).ok()?;if !plan.object.valid()||(plan.variable.is_some()&&plan.property.is_some())||recipe_identity(&plan.operations,plan.variable.as_ref(),plan.property.as_ref())?!=plan.object.recipe_identity {return None;}Some(plan)}
 pub(super) fn replay(source:&str,class:u32,dmb:&mut Dmb,strings:&mut StringIndex,resources:&HashMap<String,u32>,mut metadata:Option<&mut TypeMetadataState>,pending:&mut Vec<PendingDynamic>)->bool {
  let Some(owner)=owner(dmb,class)else{return false;};let key=key(owner,source);
  let plan={let mut cache=cache().lock().unwrap_or_else(|error|error.into_inner());cache.misses+=1;cache.rows.get(&key).map(|(plan,_)|Arc::clone(plan))};let Some(plan)=plan else{return false;};
+ if plan.object.semantic_identity!=key{return false;}
  if let Some(recipe)=&plan.variable {
   if !replay_variable(recipe,class,dmb,strings,resources,metadata,pending){return false;}
+  let mut cache=cache().lock().unwrap_or_else(|error|error.into_inner());cache.misses=cache.misses.saturating_sub(1);cache.hits+=1;return true;
+ }
+ if let Some(recipe)=&plan.property {
+  if !replay_property(recipe,class,dmb,strings,resources){return false;}
   let mut cache=cache().lock().unwrap_or_else(|error|error.into_inner());cache.misses=cache.misses.saturating_sub(1);cache.hits+=1;return true;
  }
  if resource(source,resources)!=plan.witness.resource||plan.witness.list_lengths.iter().any(|(id,_)|dmb.lists.get(*id as usize).is_none()){return false;}
@@ -185,14 +220,19 @@ pub(super) fn record(source:&str,class:u32,snapshot:Snapshot,dmb:&Dmb,strings:Ve
   "density"=>(ClassProperty::Flags(2),row.flags&2),"opacity"=>(ClassProperty::Flags(1),row.flags&1),"mouse_opacity"=>(ClassProperty::Flags(0x3000),row.flags&0x3000),"animate_movement"=>(ClassProperty::Flags(0xc400),row.flags&0xc400),
   _ if snapshot.witness.allocation=>(ClassProperty::DefiningList,row.lists_and_procs[4] as u64),_=>return,
  };
+ let symbolic_property=property_recipe(&property,value,&operations,&snapshot,dmb);
  operations.push(Operation::WriteProperty {property,value});
- let variable=variable_recipe(source,class,&snapshot,dmb,metadata);
+ let property=symbolic_property;
+ let mut variable=variable_recipe(source,class,&snapshot,dmb,metadata);
+ if let Some(recipe)=&mut variable {recipe.intern=operations.iter().filter_map(|operation|match operation {Operation::Intern {bytes,..}=>Some(bytes.clone()),_=>None}).collect();}
  if snapshot.witness.allocation&&variable.is_none(){return;}
- let Some(recipe)=recipe_identity(&operations,variable.as_ref())else{return;};
+ // Symbolic plans do not need duplicate physical writes and old string IDs.
+ if variable.is_some()||property.is_some(){operations.clear();}
+ let Some(recipe)=recipe_identity(&operations,variable.as_ref(),property.as_ref())else{return;};
  let scalar_reads=scalars(&snapshot.witness,None,class,snapshot.witness.resource.as_ref());
  let string_ids=operations.iter().filter_map(|operation|if let Operation::Intern {id,..}=operation{Some(*id)}else{None}).collect();
  let object=ObjectWitness {semantic_identity:key.clone(),recipe_identity:recipe,start:snapshot.start,allocation_mask:if snapshot.witness.allocation {AllocationMask::VARIABLES.union(AllocationMask::LISTS)}else{AllocationMask::NONE},symbol_ids:vec![class],string_ids,debug_ids:Vec::new(),read_identities:Vec::new(),scalar_reads,unresolved_debug:Vec::new()};
- let plan=Arc::new(Plan {witness:snapshot.witness,object,operations,variable});let Ok(bytes)=rmp_serde::to_vec_named(plan.as_ref())else{return;};if bytes.len()>64*1024{return;}
+ let plan=Arc::new(Plan {witness:snapshot.witness,object,operations,variable,property});let Ok(bytes)=rmp_serde::to_vec_named(plan.as_ref())else{return;};if bytes.len()>64*1024{return;}
  let mut cache=cache().lock().unwrap_or_else(|error|error.into_inner());retain(&mut cache,key.clone(),plan,bytes.len()*2+key.len()+128);
  if cache.store.is_some(){if cache.pending_bytes.saturating_add(bytes.len())>1024*1024{flush_locked(&mut cache);}if cache.pending_bytes.saturating_add(bytes.len())>1024*1024 {cache.pending.clear();cache.pending_bytes=0;}cache.pending_bytes+=bytes.len();cache.pending.push(Change::Put(Key::new(NAMESPACE,key),bytes));}
 }

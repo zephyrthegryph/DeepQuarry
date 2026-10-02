@@ -88,15 +88,21 @@ impl ObjectWitness {
     /// Fallible symbol resolution records None; it cannot match a stored ID.
     pub fn matches_optional<S,T,D>(&self,current:&WitnessObservation<'_>,symbols:S,strings:T,debug:D)->bool
     where S:IntoIterator<Item=Option<u32>>,T:IntoIterator<Item=u32>,D:IntoIterator<Item=(u32,u32)> {
+        self.matches_observation(current)
+            && self.symbol_ids.iter().copied().map(Some).eq(symbols)
+            && self.string_ids.iter().copied().eq(strings)
+            && self.debug_ids.iter().copied().eq(debug)
+    }
+    /// Semantic/recipe and non-relocatable dependencies authorize relinking.
+    /// Changed physical operands must still pass typed-site preflight against
+    /// the digest-bound old code object before producing a new generation.
+    pub fn matches_observation(&self,current:&WitnessObservation<'_>)->bool {
         self.valid() && self.semantic_identity==current.semantic_identity
             && self.recipe_identity==current.recipe_identity
             && self.allocation_mask.matches(&self.start,&current.start)
             && self.read_identities.as_slice()==current.read_identities
             && self.scalar_reads.as_slice()==current.scalar_reads
             && self.unresolved_debug.as_slice()==current.unresolved_debug
-            && self.symbol_ids.iter().copied().map(Some).eq(symbols)
-            && self.string_ids.iter().copied().eq(strings)
-            && self.debug_ids.iter().copied().eq(debug)
     }
     pub fn valid(&self)->bool {
         let digest=|value:&str|value.len()==64 && value.bytes().all(|byte|byte.is_ascii_hexdigit());

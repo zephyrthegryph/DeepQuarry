@@ -7,13 +7,13 @@ pub(super) struct InitializerRecipe {
     pub descriptor:crate::ProcDescriptor,
     pub source:Arc<str>,
 }
-pub(super) fn recipes(groups:&[(Option<u32>,Vec<PendingDynamic>)],dmb:&Dmb,strings:&StringIndex,attach:bool)->Vec<InitializerRecipe> {
+pub(super) fn recipes(groups:&[(Option<u32>,Vec<PendingDynamic>)],dmb:&impl dm_output::assembly::AssemblyImage,strings:&StringIndex,attach:bool)->Vec<InitializerRecipe> {
     groups.iter().map(|(owner,assignments)| {
         let mut assignments:Vec<_>=assignments.iter().collect();
         if owner.is_none() {assignments.sort_by_key(|assignment|!assignment.sized_array&&!literal_initializer(&assignment.expression,dmb,strings));}
         let mut source=String::from("/proc/__initializer()\n");
         for assignment in assignments {source.push_str(&format!("    {} = {}\n",assignment.name,assignment.expression));}
-        let owner_path=owner.and_then(|id|dmb.string(dmb.classes[id as usize].path_string_id())).map(|path|String::from_utf8_lossy(path)).unwrap_or_default();
+        let owner_path=owner.and_then(|id|dmb.string(dmb.classes()[id as usize].path_string_id())).map(|path|String::from_utf8_lossy(path)).unwrap_or_default();
         let digest=crate::incremental::digest(source.as_bytes());
         InitializerRecipe {key:crate::ProcKey {path:format!("@initializer|{owner_path}|{attach}|{digest}"),occurrence:0},
             descriptor:crate::ProcDescriptor {body_digest:digest,frame_digest:"initializer-invocation-v2".into()},source:Arc::from(source)}
@@ -30,7 +30,7 @@ pub(super) fn group_assignments(pending:Vec<PendingDynamic>)->Vec<(Option<u32>,V
 
 #[cfg(test)]
 pub(super) fn emit_dynamic_initializers_with_pool(
-    dmb: &mut Dmb,
+    dmb: &mut impl dm_output::assembly::AssemblyImage,
     pending: Vec<PendingDynamic>,
     strings: &mut StringIndex,
     classes: &HashMap<String, u32>,
@@ -49,7 +49,7 @@ pub(super) fn emit_dynamic_initializers_with_pool(
 }
 
 pub(super) fn emit_initializer_groups_with_pool(
-    dmb: &mut Dmb,
+    dmb: &mut impl dm_output::assembly::AssemblyImage,
     groups: Vec<(Option<u32>,Vec<PendingDynamic>)>,
     strings: &mut StringIndex,
     classes: &HashMap<String, u32>,
@@ -149,7 +149,7 @@ pub(super) fn emit_initializer_groups_with_pool(
             };
             if let Some(mut class_id) = owner {
                 loop {
-                    if let Some(path) = dmb.string(dmb.classes[class_id as usize].path_string_id())
+                    if let Some(path) = dmb.string(dmb.classes()[class_id as usize].path_string_id())
                     {
                         let path = String::from_utf8_lossy(path);
                         seed_builtin_fields(&path, &mut bindings);
@@ -162,16 +162,16 @@ pub(super) fn emit_initializer_groups_with_pool(
                             }
                         }
                     }
-                    if let Some(declarations) = dmb.class_variable_declarations(class_id as usize) {
+                    if let Some(declarations) = dmb.class_variable_declarations(class_id as usize).map_err(|error|error.to_string())? {
                         for (id, _) in declarations {
-                            if let Some(name) = dmb.string(dmb.variables[id as usize].name) {
+                            if let Some(name) = dmb.string(dmb.variables()[id as usize].name) {
                                 bindings
                                     .fields
                                     .insert(String::from_utf8_lossy(name).into_owned());
                             }
                         }
                     }
-                    let parent = dmb.classes[class_id as usize].parent_class_id();
+                    let parent = dmb.classes()[class_id as usize].parent_class_id();
                     if parent == 0xffff {
                         break;
                     }
@@ -354,17 +354,17 @@ pub(super) fn emit_initializer_groups_with_pool(
                     assignments.len()
                 )
             })?;
-            let code_id = append_list(dmb, words);
+            let code_id = dmb.append_list(words.into()).map_err(|error|error.to_string())?;
             let local_ids = simple
                 .local_names
                 .iter()
                 .map(|name| append_null_variable(dmb, strings, name))
-                .collect();
-            let local_id = append_list(dmb, local_ids);
-            let empty_args = append_list(dmb, vec![]);
-            crate::reserve_proc_sentinel(dmb);
-            let proc_id = dmb.procs.len() as u32;
-            dmb.procs.push(Proc {
+                .collect::<Vec<_>>();
+            let local_id = dmb.append_list(local_ids.into()).map_err(|error|error.to_string())?;
+            let empty_args = dmb.append_list(vec![].into()).map_err(|error|error.to_string())?;
+            dmb.reserve_proc_sentinel();
+            let proc_id = dmb.procs().len() as u32;
+            dmb.procs_mut().push(Proc {
                 strings: [0xffff; 4],
                 source_parameter: 255,
                 source_kind: 0,
@@ -379,17 +379,17 @@ pub(super) fn emit_initializer_groups_with_pool(
                 continue;
             }
             if let Some(class_id) = owner {
-                if dmb.classes[class_id as usize].initializer_proc_id() != 0xffff {
+                if dmb.classes()[class_id as usize].initializer_proc_id() != 0xffff {
                     return Err(format!(
                         "class {class_id} already has an initializer procedure"
                     ));
                 }
-                dmb.classes[class_id as usize].lists_and_procs[2] = proc_id;
+                dmb.classes_mut()[class_id as usize].lists_and_procs[2] = proc_id;
             } else {
-                if dmb.world.global_initializer_proc_id() != 0xffff {
+                if dmb.world().global_initializer_proc_id() != 0xffff {
                     return Err("world already has a global initializer procedure".into());
                 }
-                dmb.world.ids[4] = proc_id;
+                dmb.world_mut().ids[4] = proc_id;
             }
         }
     }

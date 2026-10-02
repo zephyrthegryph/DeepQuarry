@@ -12,6 +12,8 @@ pub mod chunks;
 pub mod object_directory;
 pub mod typed_pages;
 pub mod wire_image;
+pub mod assembly;
+pub mod wire_relocation;
 
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};

@@ -140,36 +140,36 @@ mod tests {
 
     fn snapshot() -> Arc<SharedLowerBindings> {
         Arc::new(SharedLowerBindings {
-            member_globals: HashMap::from([
+            member_globals: ([
                 (
                     "/datum/base".into(),
-                    HashMap::from([
+                    ([
                         ("inherited".into(), "inherited_slot".into()),
                         ("same_alias".into(), "alias_slot".into()),
                         ("different_alias".into(), "first_slot".into()),
                         ("collision".into(), "collision_slot".into()),
-                    ]),
+                    ]).into_iter().collect::<im::OrdMap<_ , _>>(),
                 ),
                 (
                     "/datum/other".into(),
-                    HashMap::from([
+                    ([
                         ("same_alias".into(), "alias_slot".into()),
                         ("different_alias".into(), "second_slot".into()),
-                    ]),
+                    ]).into_iter().collect::<im::OrdMap<_ , _>>(),
                 ),
-            ]),
-            known_member_fields: HashMap::from([
-                ("/datum/child".into(), BTreeSet::from(["inherited".into()])),
+            ]).into_iter().collect::<im::OrdMap<_ , _>>(),
+            known_member_fields: ([
+                ("/datum/child".into(), (["inherited".into()]).into_iter().collect::<im::OrdSet<_>>()),
                 (
                     "/datum/modified".into(),
-                    BTreeSet::from(["inherited".into()]),
+                    (["inherited".into()]).into_iter().collect::<im::OrdSet<_>>(),
                 ),
                 (
                     "/datum/instance".into(),
-                    BTreeSet::from(["collision".into(), "instance_only".into()]),
+                    (["collision".into(), "instance_only".into()]).into_iter().collect::<im::OrdSet<_>>(),
                 ),
-            ]),
-            parent_types: HashMap::from([("/datum/child".into(), "/datum/base".into())]),
+            ]).into_iter().collect::<im::OrdMap<_ , _>>(),
+            parent_types: ([("/datum/child".into(), "/datum/base".into())]).into_iter().collect::<im::OrdMap<_ , _>>(),
             modified_instances: HashMap::from([("/datum/modified".into(), "/datum/child".into())]),
             ..Default::default()
         })
@@ -259,7 +259,7 @@ mod tests {
             .known_member_fields
             .insert(
                 "/datum/new_instance".into(),
-                BTreeSet::from(["inherited".into()]),
+                (["inherited".into()]).into_iter().collect::<im::OrdSet<_>>(),
             );
         assert_eq!(fact(&bindings, "inherited"), FactValue::Absent);
     }
@@ -273,10 +273,10 @@ mod tests {
             ..Default::default()
         };
         bindings.shared = Some(Arc::new(SharedLowerBindings {
-            member_globals: HashMap::from([(
+            member_globals: ([(
                 "/datum/replacement".into(),
-                HashMap::from([("inherited".into(), "replacement_slot".into())]),
-            )]),
+                ([("inherited".into(), "replacement_slot".into())]).into_iter().collect::<im::OrdMap<_ , _>>(),
+            )]).into_iter().collect::<im::OrdMap<_ , _>>(),
             ..Default::default()
         }));
         assert_eq!(
@@ -325,11 +325,11 @@ mod tests {
         let mut shared = SharedLowerBindings::default();
         shared.member_globals.insert(
             "/datum/base".into(),
-            HashMap::from([("bounded".into(), "bounded_slot".into())]),
+            ([("bounded".into(), "bounded_slot".into())]).into_iter().collect::<im::OrdMap<_ , _>>(),
         );
         shared
             .known_member_fields
-            .insert("/datum/cycle".into(), BTreeSet::from(["bounded".into()]));
+            .insert("/datum/cycle".into(), (["bounded".into()]).into_iter().collect::<im::OrdSet<_>>());
         shared
             .parent_types
             .insert("/datum/cycle".into(), "/datum/cycle".into());
@@ -345,7 +345,7 @@ mod tests {
         }
         shared
             .known_member_fields
-            .insert("/datum/level0".into(), BTreeSet::from(["bounded".into()]));
+            .insert("/datum/level0".into(), (["bounded".into()]).into_iter().collect::<im::OrdSet<_>>());
         let shared = Arc::new(shared);
         let bindings = LowerBindings {
             shared: Some(Arc::clone(&shared)),

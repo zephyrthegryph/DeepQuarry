@@ -1,7 +1,9 @@
 //! Small, strict DMM reader. Map files are separate compilation inputs, not DM source.
 #[cfg(test)]
 use byond_dmb::bytecode::opcode;
-use byond_dmb::dmb::{DmString, Dmb, GridRun, Instance, MapObject, Proc};
+use byond_dmb::dmb::{DmString, GridRun, Instance, MapObject, Proc};
+#[cfg(test)]
+use byond_dmb::dmb::Dmb;
 use dm_codegen_byond::prepared_cache::PreparedProcedureEnvelope;
 use dm_codegen_byond::{compile_simple_proc_with_bindings, Ledger, LowerBindings, Symbol, Table};
 use dm_resources::ResourceSet;
@@ -454,12 +456,12 @@ pub fn load_map_set_from_paths(dme_path: &Path, paths: &[PathBuf]) -> Result<Map
     })
 }
 
-pub fn emit_maps(dmb: &mut Dmb, maps: &MapSet) -> Result<(), String> {
+pub fn emit_maps(dmb: &mut impl dm_output::assembly::AssemblyImage, maps: &MapSet) -> Result<(), String> {
     emit_maps_inner(dmb, maps, None, None)
 }
 
 pub fn emit_maps_with_resources(
-    dmb: &mut Dmb,
+    dmb: &mut impl dm_output::assembly::AssemblyImage,
     maps: &MapSet,
     resources: &ResourceSet,
 ) -> Result<(), String> {
@@ -484,7 +486,7 @@ pub fn emit_maps_with_resources(
 }
 
 pub fn emit_maps_with_catalog(
-    dmb: &mut Dmb,
+    dmb: &mut impl dm_output::assembly::AssemblyImage,
     maps: &MapSet,
     resources: &dm_resources::ResourceCatalog,
 ) -> Result<(), String> {
@@ -503,7 +505,7 @@ pub fn emit_maps_with_catalog(
 }
 
 pub fn emit_maps_with_catalog_cached(
-    dmb: &mut Dmb,
+    dmb: &mut impl dm_output::assembly::AssemblyImage,
     maps: &MapSet,
     resources: &dm_resources::ResourceCatalog,
     session: &mut MapInitializerSession,
@@ -522,7 +524,7 @@ pub fn emit_maps_with_catalog_cached(
     )
 }
 pub fn emit_maps_with_resources_cached(
-    dmb: &mut Dmb,
+    dmb: &mut impl dm_output::assembly::AssemblyImage,
     maps: &MapSet,
     resources: &ResourceSet,
     session: &mut MapInitializerSession,
@@ -548,7 +550,7 @@ pub fn emit_maps_with_resources_cached(
 }
 
 fn emit_maps_inner(
-    dmb: &mut Dmb,
+    dmb: &mut impl dm_output::assembly::AssemblyImage,
     maps: &MapSet,
     resources: Option<Vec<(&str, u32, u8)>>,
     session: Option<&mut MapInitializerSession>,
@@ -556,8 +558,7 @@ fn emit_maps_inner(
     if maps.files.is_empty() {
         return Ok(());
     }
-    let class_ids: HashMap<String, u32> = dmb
-        .classes
+    let class_ids: HashMap<String, u32> = dmb.classes()
         .iter()
         .enumerate()
         .filter_map(|(id, class)| {
@@ -567,7 +568,7 @@ fn emit_maps_inner(
         .collect();
     let mut resource_ids = HashMap::new();
     let mut resource_table = HashMap::new();
-    for (index, entry) in dmb.resources.iter().enumerate() {
+    for (index, entry) in dmb.resources().iter().enumerate() {
         resource_table
             .entry((entry.id, entry.kind))
             .or_insert(index as u32);
@@ -581,7 +582,7 @@ fn emit_maps_inner(
         }
     }
     let mut instance_ids = HashMap::<(u8, u32, Option<String>), u32>::new();
-    for (id, instance) in dmb.instances.iter().enumerate() {
+    for (id, instance) in dmb.instances().iter().enumerate() {
         if instance.initializer == 0xffff {
             instance_ids
                 .entry((instance.kind, instance.class, None))
@@ -702,7 +703,7 @@ fn emit_maps_inner(
                 let kind = map_instance_kind(dmb, class)
                     .ok_or_else(|| format!("{}: unsupported map type: {atom}", path.display()))?;
                 let instance_class = if kind == 8 {
-                    dmb.mobs
+                    dmb.mobs()
                         .iter()
                         .position(|mob| mob.class == class)
                         .ok_or_else(|| {
@@ -715,7 +716,7 @@ fn emit_maps_inner(
                 let id = if let Some(id) = instance_ids.get(&descriptor) {
                     *id
                 } else {
-                    let id = checked_map_instance_id(dmb.instances.len())?;
+                    let id = checked_map_instance_id(dmb.instances().len())?;
                     let initializer = if let Some(assignments) = assignments {
                         let envelope = envelopes
                             .get(assignments)
@@ -727,19 +728,11 @@ fn emit_maps_inner(
                             &resource_ids,
                             &mut string_index,
                         )?;
-                        if dmb.lists.len() == 0xffff {
-                            dmb.lists.push(Vec::new());
-                        }
-                        let code_id = dmb.lists.len() as u32;
-                        dmb.lists.push(code);
-                        if dmb.lists.len() == 0xffff {
-                            dmb.lists.push(Vec::new());
-                        }
-                        let empty_id = dmb.lists.len() as u32;
-                        dmb.lists.push(Vec::new());
-                        crate::reserve_proc_sentinel(dmb);
-                        let proc_id = dmb.procs.len() as u32;
-                        dmb.procs.push(Proc {
+                        let code_id=dmb.append_list(code.into()).map_err(|error|error.to_string())?;
+                        let empty_id=dmb.append_list(Vec::new().into()).map_err(|error|error.to_string())?;
+                        dmb.reserve_proc_sentinel();
+                        let proc_id = dmb.procs().len() as u32;
+                        dmb.procs_mut().push(Proc {
                             strings: [0xffff; 4],
                             source_parameter: 255,
                             source_kind: 0,
@@ -751,7 +744,7 @@ fn emit_maps_inner(
                     } else {
                         0xffff
                     };
-                    dmb.instances.push(Instance {
+                    dmb.instances_mut().push(Instance {
                         kind,
                         class: instance_class,
                         initializer,
@@ -823,27 +816,27 @@ fn emit_maps_inner(
         .map(|cell| cell.0)
         .max()
         .unwrap()
-        .max(usize::from(dmb.dimensions[0]));
+        .max(usize::from(dmb.dimensions()[0]));
     let maxy = cells
         .keys()
         .map(|cell| cell.1)
         .max()
         .unwrap()
-        .max(usize::from(dmb.dimensions[1]));
+        .max(usize::from(dmb.dimensions()[1]));
     let maxz = cells
         .keys()
         .map(|cell| cell.2)
         .max()
         .unwrap()
-        .max(usize::from(dmb.dimensions[2]));
-    dmb.dimensions = [maxx, maxy, maxz]
+        .max(usize::from(dmb.dimensions()[2]));
+    *dmb.dimensions_mut() = [maxx, maxy, maxz]
         .map(|value| u16::try_from(value).map_err(|_| "map dimension exceeds 16 bits".to_owned()))
         .into_iter()
         .collect::<Result<Vec<_>, _>>()?
         .try_into()
         .unwrap();
-    dmb.grid.clear();
-    dmb.map_objects.clear();
+    dmb.grid_mut().clear();
+    dmb.map_objects_mut().clear();
     let mut offset = 0usize;
     let mut last_object_position = 0usize;
     let empty_cell = (
@@ -864,14 +857,14 @@ fn emit_maps_inner(
                         };
                         let object_offset =
                             u16::try_from(delta).map_err(|_| "map object gap exceeds 16 bits")?;
-                        dmb.map_objects.push(MapObject {
+                        dmb.map_objects_mut().push(MapObject {
                             offset: object_offset,
                             instance: *instance,
                         });
                     }
                     last_object_position = offset;
                 }
-                if let Some(last) = dmb.grid.last_mut() {
+                if let Some(last) = dmb.grid_mut().last_mut() {
                     if last.turf == *turf
                         && last.area == *area
                         && last.contents == 0xffff
@@ -882,7 +875,7 @@ fn emit_maps_inner(
                         continue;
                     }
                 }
-                dmb.grid.push(GridRun {
+                dmb.grid_mut().push(GridRun {
                     turf: *turf,
                     area: *area,
                     contents: 0xffff,
@@ -892,8 +885,8 @@ fn emit_maps_inner(
             }
         }
     }
-    crate::promote_object_ids(dmb);
-    dmb.validate_references().map_err(|error| error.to_string())
+    dmb.promote_object_ids();
+    dmb.validate_references_cached(&mut Default::default()).map_err(|error| error.to_string())
 }
 
 fn grid_cell_at<'a, T>(
@@ -1059,7 +1052,7 @@ fn split_top_level(source: &str, separator: char) -> Vec<&str> {
 
 #[cfg(test)]
 fn lower_complex_map_initializer(
-    dmb: &mut Dmb,
+    dmb: &mut impl dm_output::assembly::AssemblyImage,
     assignments: &str,
     class_ids: &HashMap<String, u32>,
     resource_ids: &HashMap<&str, u32>,
@@ -1096,7 +1089,7 @@ fn map_initializer_source(assignments: &str) -> Result<(String, LowerBindings), 
     Ok((source, bindings))
 }
 fn materialize_map_initializer(
-    dmb: &mut Dmb,
+    dmb: &mut impl dm_output::assembly::AssemblyImage,
     envelope: &PreparedProcedureEnvelope,
     class_ids: &HashMap<String, u32>,
     resource_ids: &HashMap<&str, u32>,
@@ -1121,7 +1114,7 @@ fn materialize_map_initializer(
                 .get(path)
                 .ok_or_else(|| format!("unresolved map initializer type: {path}"))?;
             if map_instance_kind(dmb, class) == Some(8) {
-                dmb.mobs
+                dmb.mobs()
                     .iter()
                     .position(|mob| mob.class == class)
                     .ok_or_else(|| format!("missing map mob descriptor: {path}"))?
@@ -1153,9 +1146,9 @@ struct MapStringIndex {
     buckets: HashMap<[u8; 32], Vec<u32>>,
 }
 impl MapStringIndex {
-    fn new(dmb: &Dmb) -> Self {
+    fn new(dmb: &impl dm_output::assembly::AssemblyImage) -> Self {
         let mut buckets = HashMap::<[u8; 32], Vec<u32>>::new();
-        for (id, string) in dmb.strings.iter().enumerate() {
+        for (id, string) in dmb.strings().iter().enumerate() {
             if !crate::native_reserved_string_id(id as u32) {
                 buckets
                     .entry(Sha256::digest(&string.data).into())
@@ -1165,24 +1158,24 @@ impl MapStringIndex {
         }
         Self { buckets }
     }
-    fn intern(&mut self, dmb: &mut Dmb, value: &[u8]) -> u32 {
+    fn intern(&mut self, dmb: &mut impl dm_output::assembly::AssemblyImage, value: &[u8]) -> u32 {
         let digest: [u8; 32] = Sha256::digest(value).into();
         if let Some(ids) = self.buckets.get(&digest) {
             if let Some(id) = ids
                 .iter()
-                .find(|id| dmb.strings[**id as usize].data == value)
+                .find(|id| dmb.strings()[**id as usize].data == value)
             {
                 return *id;
             }
         }
-        while crate::native_reserved_string_id(dmb.strings.len() as u32) {
-            dmb.strings.push(DmString {
+        while crate::native_reserved_string_id(dmb.strings().len() as u32) {
+            dmb.strings_mut().push(DmString {
                 data: Vec::new(),
                 long_chunks: 0,
             });
         }
-        let id = dmb.strings.len() as u32;
-        dmb.strings.push(DmString {
+        let id = dmb.strings().len() as u32;
+        dmb.strings_mut().push(DmString {
             data: value.to_vec(),
             long_chunks: u16::try_from(value.len() / u16::MAX as usize).unwrap_or(u16::MAX),
         });
@@ -1198,19 +1191,19 @@ fn checked_map_instance_id(count: usize) -> Result<u32, String> {
     Ok(count as u32)
 }
 
-pub(crate) fn default_map_instance(dmb: &mut Dmb, kind: u8) -> Result<u32, String> {
+pub(crate) fn default_map_instance(dmb: &mut impl dm_output::assembly::AssemblyImage, kind: u8) -> Result<u32, String> {
     let class = if kind == 10 {
-        dmb.world.turf_class_id()
+        dmb.world().turf_class_id()
     } else {
-        dmb.world.area_class_id()
+        dmb.world().area_class_id()
     };
-    if let Some(id) = dmb.instances.iter().position(|instance| {
+    if let Some(id) = dmb.instances().iter().position(|instance| {
         instance.kind == kind && instance.class == class && instance.initializer == 0xffff
     }) {
         return Ok(id as u32);
     }
-    let id = checked_map_instance_id(dmb.instances.len())?;
-    dmb.instances.push(Instance {
+    let id = checked_map_instance_id(dmb.instances().len())?;
+    dmb.instances_mut().push(Instance {
         kind,
         class,
         initializer: 0xffff,
@@ -1218,9 +1211,9 @@ pub(crate) fn default_map_instance(dmb: &mut Dmb, kind: u8) -> Result<u32, Strin
     Ok(id)
 }
 
-fn map_instance_kind(dmb: &Dmb, mut class: u32) -> Option<u8> {
+fn map_instance_kind(dmb: &impl dm_output::assembly::AssemblyImage, mut class: u32) -> Option<u8> {
     loop {
-        let record = dmb.classes.get(class as usize)?;
+        let record = dmb.classes().get(class as usize)?;
         match dmb.string(record.path_string_id())? {
             b"/turf" => return Some(10),
             b"/area" => return Some(11),

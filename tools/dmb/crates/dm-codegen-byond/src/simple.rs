@@ -169,25 +169,25 @@ pub struct SharedLowerBindings {
     /// Per-member semantic digests prepared once for portable lowering cache keys.
     #[serde(skip)]
     pub member_type_fingerprints: HashMap<String, String>,
-    pub member_types: HashMap<String, HashMap<String, String>>,
+    pub member_types: im::OrdMap<String, im::OrdMap<String, String>>,
     /// Class global/static members resolved directly to their shared variable slot.
     #[serde(default)]
-    pub member_globals: HashMap<String, HashMap<String, String>>,
+    pub member_globals: im::OrdMap<String, im::OrdMap<String, String>>,
     /// Complete declared field inventory, including untyped instance fields.
     #[serde(default)]
-    pub known_member_fields: HashMap<String, BTreeSet<String>>,
+    pub known_member_fields: im::OrdMap<String, im::OrdSet<String>>,
     /// Directly declared procedure paths by owner and source name.
-    pub member_procs: HashMap<String, HashMap<String, String>>,
+    pub member_procs: im::OrdMap<String, im::OrdMap<String, String>>,
     /// Complete declaration inventory, separate from static call selection.
     #[serde(default)]
-    pub known_member_procs: HashMap<String, BTreeSet<String>>,
+    pub known_member_procs: im::OrdMap<String, im::OrdSet<String>>,
     /// Explicit concrete source return annotations. Unannotated overrides
     /// inherit the return declaration from their parent procedure.
     #[serde(default)]
     pub global_proc_return_types: HashMap<String, String>,
     #[serde(default)]
-    pub member_proc_return_types: HashMap<String, HashMap<String, String>>,
-    pub parent_types: HashMap<String, String>,
+    pub member_proc_return_types: im::OrdMap<String, im::OrdMap<String, String>>,
+    pub parent_types: im::OrdMap<String, String>,
     pub fields: BTreeSet<String>,
     pub globals: BTreeSet<String>,
     pub field_types: HashMap<String, String>,
@@ -8326,7 +8326,7 @@ mod tests {
         let mut shared = SharedLowerBindings::default();
         shared.member_types.insert(
             "/datum/holder".into(),
-            HashMap::from([("entry".into(), "/datum/item".into())]),
+            ([("entry".into(), "/datum/item".into())]).into_iter().collect::<im::OrdMap<_ , _>>(),
         );
         shared
             .parent_types
@@ -9056,13 +9056,13 @@ mod tests {
         ))
         .unwrap();
         let shared = SharedLowerBindings {
-            member_procs: HashMap::from([(
+            member_procs: ([(
                 "/datum/override_probe".into(),
-                HashMap::from([(
+                ([(
                     "under_score".into(),
                     "/datum/override_probe/proc/under_score".into(),
-                )]),
-            )]),
+                )]).into_iter().collect::<im::OrdMap<_ , _>>(),
+            )]).into_iter().collect::<im::OrdMap<_ , _>>(),
             ..SharedLowerBindings::default()
         };
         let bindings = LowerBindings {
@@ -9896,10 +9896,10 @@ mod tests {
         let owner = "/mob/selector_probe";
         let verb = "/mob/selector_probe/verb/halt_probe";
         let shared = Arc::new(SharedLowerBindings {
-            member_procs: HashMap::from([(
+            member_procs: ([(
                 owner.into(),
-                HashMap::from([("halt_probe".into(), verb.into())]),
-            )]),
+                ([("halt_probe".into(), verb.into())]).into_iter().collect::<im::OrdMap<_ , _>>(),
+            )]).into_iter().collect::<im::OrdMap<_ , _>>(),
             ..SharedLowerBindings::default()
         });
         for (child, parameters) in [(1, vec![]), (2, vec!["M".into()])] {
@@ -9950,11 +9950,11 @@ mod tests {
         .unwrap();
         let shared = Arc::new(SharedLowerBindings {
             global_procs: BTreeSet::from(["collision".into()]),
-            known_member_procs: HashMap::from([(
+            known_member_procs: ([(
                 "/datum/shadow".into(),
-                BTreeSet::from(["collision".into()]),
-            )]),
-            parent_types: HashMap::from([("/datum/shadow/child".into(), "/datum/shadow".into())]),
+                (["collision".into()]).into_iter().collect::<im::OrdSet<_>>(),
+            )]).into_iter().collect::<im::OrdMap<_ , _>>(),
+            parent_types: ([("/datum/shadow/child".into(), "/datum/shadow".into())]).into_iter().collect::<im::OrdMap<_ , _>>(),
             ..SharedLowerBindings::default()
         });
         for (index, owner, path, expected) in [
@@ -10030,11 +10030,11 @@ mod tests {
         let bindings = LowerBindings {
             current_type_path: Some("/datum/child".into()),
             shared: Some(Arc::new(SharedLowerBindings {
-                known_member_procs: HashMap::from([(
+                known_member_procs: ([(
                     "/datum/parent".into(),
-                    BTreeSet::from(["declared_method".into()]),
-                )]),
-                parent_types: HashMap::from([("/datum/child".into(), "/datum/parent".into())]),
+                    (["declared_method".into()]).into_iter().collect::<im::OrdSet<_>>(),
+                )]).into_iter().collect::<im::OrdMap<_ , _>>(),
+                parent_types: ([("/datum/child".into(), "/datum/parent".into())]).into_iter().collect::<im::OrdMap<_ , _>>(),
                 ..SharedLowerBindings::default()
             })),
             ..LowerBindings::default()
@@ -11407,11 +11407,11 @@ mod tests {
     fn typed_null_global_member_bypasses_receiver() {
         let ast = dm_syntax::parse("/proc/test()\n    GLOB.shared = 9\n    return GLOB.shared\n");
         let shared = SharedLowerBindings {
-            member_globals: HashMap::from([(
+            member_globals: ([(
                 "/datum/base".into(),
-                HashMap::from([("shared".into(), "shared_slot".into())]),
-            )]),
-            parent_types: HashMap::from([("/datum/child".into(), "/datum/base".into())]),
+                ([("shared".into(), "shared_slot".into())]).into_iter().collect::<im::OrdMap<_ , _>>(),
+            )]).into_iter().collect::<im::OrdMap<_ , _>>(),
+            parent_types: ([("/datum/child".into(), "/datum/base".into())]).into_iter().collect::<im::OrdMap<_ , _>>(),
             ..Default::default()
         };
         let bindings = LowerBindings {
@@ -11436,20 +11436,20 @@ mod tests {
         let ast = dm_syntax::parse("/proc/test()\n    return get_holder().shared\n");
         for collision in [false, true] {
             let mut shared = SharedLowerBindings {
-                member_globals: HashMap::from([(
+                member_globals: ([(
                     "/datum/base".into(),
-                    HashMap::from([("shared".into(), "shared_slot".into())]),
-                )]),
-                known_member_fields: HashMap::from([(
+                    ([("shared".into(), "shared_slot".into())]).into_iter().collect::<im::OrdMap<_ , _>>(),
+                )]).into_iter().collect::<im::OrdMap<_ , _>>(),
+                known_member_fields: ([(
                     "/datum/base".into(),
-                    BTreeSet::from(["shared".into()]),
-                )]),
+                    (["shared".into()]).into_iter().collect::<im::OrdSet<_>>(),
+                )]).into_iter().collect::<im::OrdMap<_ , _>>(),
                 ..Default::default()
             };
             if collision {
                 shared
                     .known_member_fields
-                    .insert("/datum/other".into(), BTreeSet::from(["shared".into()]));
+                    .insert("/datum/other".into(), (["shared".into()]).into_iter().collect::<im::OrdSet<_>>());
             }
             let bindings = LowerBindings {
                 global_procs: BTreeSet::from(["get_holder".into()]),

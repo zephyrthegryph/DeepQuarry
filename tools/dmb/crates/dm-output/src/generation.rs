@@ -112,6 +112,14 @@ impl VerifiedArchive {
         artifact: &dm_resources::PreparedArchive,
         dmb: &byond_dmb::dmb::Dmb,
     ) -> io::Result<Self> {
+        Self::from_prepared_archive_resources(artifact,&dmb.resources)
+    }
+    /// Resource membership needs only the sealed image's resource section;
+    /// addressed procedure code stays on disk during archive publication.
+    pub fn from_prepared_archive_resources(
+        artifact:&dm_resources::PreparedArchive,
+        resources:&[byond_dmb::dmb::ResourceRef],
+    )->io::Result<Self> {
         artifact.catalog().validate()?;
         let lease=artifact.guarded_lease()?;
         if fs::metadata(artifact.path())?.len() != artifact.len() || lease.as_ref().map_or_else(||capture(artifact.path()),|lease|lease.current_stamp()).as_ref() != Some(artifact.stamp()) {
@@ -119,14 +127,14 @@ impl VerifiedArchive {
         }
         let entries: std::collections::HashSet<_> = artifact.catalog().entries.iter()
             .map(|resource| (resource.id, resource.kind)).collect();
-        if dmb.resources.iter().any(|resource| !entries.contains(&(resource.id, resource.kind))) {
+        if resources.iter().any(|resource| !entries.contains(&(resource.id, resource.kind))) {
             return Err(invalid("prepared archive does not contain the world's resources"));
         }
         Ok(Self {
             path: artifact.path().to_owned(), stamp: artifact.stamp().clone(), receipt_artifact:Some(artifact.clone()),
             content: ContentDigests { dmb_len: 0, dmb_digest: String::new(),
                 rsc_len: artifact.len(), rsc_digest: artifact.digest().to_owned(),
-                resources: resource_digest(dmb), pair_validated: true },
+                resources: resource_slice_digest(resources), pair_validated: true },
         })
     }
 

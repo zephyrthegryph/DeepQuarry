@@ -183,6 +183,16 @@ pub struct ContentStore {
     verified_blobs: Mutex<BTreeMap<PathBuf, (dm_host::file_stamp::FileStamp, String)>>,
 }
 
+/// Verified byte range in an immutable rebuildable CAS pack. The source digest
+/// identifies bytes independently of pack grouping or publication order.
+#[derive(Clone, Serialize, Deserialize)]
+pub(crate) struct PackedBlob {
+    pub digest: [u8;32],
+    pub pack: Option<String>,
+    pub start: usize,
+    pub len: usize,
+}
+
 /// Portable key for a pure compiler stage. Every semantic dependency that can
 /// affect the bytes must be included by the caller. Session-local Salsa IDs
 /// and worktree paths must not appear in shared artifacts.
@@ -258,6 +268,9 @@ enum PreparedImage {
     Wire(dm_output::wire_image::WireImage),
 }
 impl PreparedImage {
+    fn resources(&self)->&[byond_dmb::dmb::ResourceRef] {match self {
+        Self::Native(image)=>&image.resources,Self::Wire(image)=>image.resources(),
+    }}
     fn materialize(self)->io::Result<byond_dmb::dmb::Dmb> {match self {
         Self::Native(image)=>Ok(image),Self::Wire(image)=>image.materialize(),
     }}
@@ -317,6 +330,35 @@ fn world_resident_bytes(dmb: &byond_dmb::dmb::Dmb, image: &[u8], checkpoint_byte
         + dmb.map_objects.capacity() * std::mem::size_of::<byond_dmb::dmb::MapObject>()
         + dmb.resources.capacity() * std::mem::size_of::<byond_dmb::dmb::ResourceRef>()
         + dmb.lists.len() * std::mem::size_of::<std::ops::Range<usize>>()
+}
+
+/// Rename the exact invalid file opened by this handle. Denying writes and
+/// deletes closes the check/rename race: a concurrent valid publisher cannot
+/// replace this path between verification and quarantine.
+#[cfg(windows)]
+fn quarantine_corrupt_blob(path:&Path,digest:&str)->io::Result<bool> {
+    use std::os::windows::{fs::OpenOptionsExt,io::AsRawHandle,ffi::OsStrExt};
+    use std::io::Read;
+    let mut file=fs::OpenOptions::new().read(true).access_mode(0x8000_0000|0x0001_0000).share_mode(1).open(path)?;
+    let mut hasher=Sha256::new();let mut buffer=[0u8;64*1024];
+    loop {let read=file.read(&mut buffer)?;if read==0 {break;}hasher.update(&buffer[..read]);}
+    if format!("{:x}",hasher.finalize())==digest {return Ok(false);}
+    let parent=path.parent().ok_or_else(||io::Error::other("CAS quarantine path has no parent"))?;
+    let quarantine=parent.join(format!("{digest}.corrupt-{}-{}",std::process::id(),TEMP_SEQUENCE.fetch_add(1,Ordering::Relaxed)));
+    let absolute=std::path::absolute(&quarantine)?;
+    let name:Vec<u16>=absolute.as_os_str().encode_wide().collect();
+    let handle_offset=if std::mem::size_of::<usize>()==8 {8} else {4};
+    let length_offset=handle_offset+std::mem::size_of::<usize>();
+    let name_offset=length_offset+4;
+    let size=name_offset+name.len()*2;
+    let mut storage=vec![0u64;size.div_ceil(8)];
+    let bytes=unsafe {std::slice::from_raw_parts_mut(storage.as_mut_ptr().cast::<u8>(),storage.len()*8)};
+    bytes[length_offset..length_offset+4].copy_from_slice(&u32::try_from(name.len()*2).map_err(io::Error::other)?.to_le_bytes());
+    for (index,unit) in name.iter().enumerate() {bytes[name_offset+index*2..name_offset+index*2+2].copy_from_slice(&unit.to_le_bytes());}
+    #[link(name="Kernel32")]
+    unsafe extern "system" {fn SetFileInformationByHandle(handle:*mut std::ffi::c_void,class:u32,info:*const std::ffi::c_void,len:u32)->i32;}
+    if unsafe {SetFileInformationByHandle(file.as_raw_handle(),3,bytes.as_ptr().cast(),u32::try_from(size).map_err(io::Error::other)?)}==0 {return Err(io::Error::last_os_error());}
+    Ok(true)
 }
 
 impl ContentStore {
@@ -389,6 +431,42 @@ impl ContentStore {
         self.put_parts_inner(namespace, &[bytes], false)
     }
 
+    /// Publish one bounded immutable pack and then its transactional source
+    /// index. The caller publishes its generation head only after this returns.
+    pub(crate) fn put_rebuildable_batch(&self, namespace:&str, inputs:&[([u8;32],&[u8])]) -> io::Result<Vec<PackedBlob>> {
+        const BOUND:usize=2*1024*1024;
+        if !valid_namespace(namespace) {return Err(io::Error::other("invalid packed CAS namespace"));}
+        let total=inputs.iter().try_fold(0usize,|sum,(_,bytes)|sum.checked_add(bytes.len())).ok_or_else(||io::Error::other("CAS pack size overflow"))?;
+        if total>BOUND && inputs.len()!=1 {return Err(io::Error::other("CAS batch exceeds bounded pack size"));}
+        for (expected,bytes) in inputs {
+            if <[u8;32]>::from(Sha256::digest(bytes))!=*expected {return Err(io::Error::other("authored CAS input digest mismatch"));}
+        }
+        let pack = if total>BOUND {
+            self.put_rebuildable(namespace,inputs[0].1)?;
+            None
+        } else {
+            let parts:Vec<_>=inputs.iter().map(|(_,bytes)|*bytes).collect();
+            Some(self.put_parts_inner(&format!("{namespace}-packs-v1"),&parts,false)?)
+        };
+        let mut offset=0usize;
+        let mut locations=Vec::with_capacity(inputs.len());
+        let mut records=Vec::with_capacity(inputs.len());
+        for (digest,bytes) in inputs {
+            let location=PackedBlob {digest:*digest,pack:pack.clone(),start:offset,len:bytes.len()};
+            offset+=bytes.len();
+            records.push((dm_store::Key::new(format!("{namespace}-packed-index-v1"),digest.iter().map(|byte|format!("{byte:02x}")).collect::<String>()),serde_json::to_vec(&location).map_err(io::Error::other)?));
+            locations.push(location);
+        }
+        self.metadata.put_many(records,None)?;
+        Ok(locations)
+    }
+
+    pub(crate) fn packed_blob_path(&self,namespace:&str,location:&PackedBlob)->PathBuf {
+        let (namespace,digest)=if let Some(pack)=&location.pack {(format!("{namespace}-packs-v1"),pack.clone())}
+            else {(namespace.to_owned(),location.digest.iter().map(|byte|format!("{byte:02x}")).collect())};
+        self.root.join(namespace).join(&digest[..2]).join(digest)
+    }
+
     fn put_parts_inner(
         &self,
         namespace: &str,
@@ -434,24 +512,34 @@ impl ContentStore {
             file.sync_all()?;
         }
         drop(file);
-        match fs::rename(&temporary, &destination) {
-            Ok(()) => Ok(digest),
-            Err(_error) if destination.exists() => {
-                let _ = fs::remove_file(&temporary);
-                if self.verify_blob(&destination, &digest)? {
-                    Ok(digest)
-                } else {
-                    Err(io::Error::new(
-                        io::ErrorKind::InvalidData,
-                        "CAS hash mismatch",
-                    ))
+        let result=(|| {
+            for _ in 0..3 {
+                match fs::rename(&temporary,&destination) {
+                    Ok(())=>return Ok(digest.clone()),
+                    Err(_rename_error) if destination.exists()=>{
+                        #[cfg(windows)]
+                        {
+                            match quarantine_corrupt_blob(&destination,&digest) {
+                                Ok(false)=>return Ok(digest.clone()),
+                                Ok(true)=>continue,
+                                Err(error) if error.kind()==io::ErrorKind::NotFound=>continue,
+                                Err(error)=>return Err(error),
+                            }
+                        }
+                        #[cfg(not(windows))]
+                        {
+                            if self.verify_blob(&destination,&digest)? {return Ok(digest.clone());}
+                            return Err(_rename_error);
+                        }
+                    },
+                    Err(error)=>return Err(error),
                 }
             }
-            Err(error) => {
-                let _ = fs::remove_file(&temporary);
-                Err(error)
-            }
-        }
+            if self.verify_blob(&destination,&digest).unwrap_or(false) {Ok(digest.clone())}
+            else {Err(io::Error::other("CAS publication repair retry limit exceeded"))}
+        })();
+        let _=fs::remove_file(&temporary);
+        result
     }
 
     fn put_dmb_pages(&self, image: &dm_output::chunks::StoredDmb) -> io::Result<String> {
@@ -1716,8 +1804,9 @@ impl Coordinator {
                 .as_ref()
                 .map(|archive| archive.catalog().clone())
         });
-        let compiled = if let Some(catalog) = &catalog {
-            dm_compiler::bootstrap::compile_preprocessed_project_with_resource_catalog(
+        let (mut build,resource_fingerprint,map_fingerprint,resource_catalog) = if canonical {
+            let catalog=catalog.as_ref().ok_or("canonical resource catalog missing")?;
+            let compiled=dm_compiler::bootstrap::compile_preprocessed_project_with_resource_catalog_physical(
                 project,
                 preprocessed,
                 builtins,
@@ -1725,9 +1814,15 @@ impl Coordinator {
                 frontend,
                 prepared_maps,
                 catalog,
-            )?
+            )?;
+            (PreparedBuild {
+                dmb:PreparedImage::Wire(compiled.dmb),serialized_dmb:None,list_spans:None,list_image:None,
+                rsc_bytes:compiled.rsc_bytes,archive:None,emitted_procs:compiled.emitted.len(),
+                lowered_procs:compiled.artifact_reuse.authored_lowered,
+                reused_procs:compiled.artifact_reuse.authored_reused(),artifact_reuse:compiled.artifact_reuse,checkpoint:None,
+            },compiled.resource_fingerprint,compiled.map_fingerprint,compiled.resource_catalog)
         } else {
-            compile_preprocessed_project_with_resources_prepared_mode(
+            let compiled=compile_preprocessed_project_with_resources_prepared_mode(
                 project,
                 preprocessed,
                 builtins,
@@ -1736,16 +1831,22 @@ impl Coordinator {
                 prepared_maps,
                 prepared_resources,
                 !canonical,
-            )?
+            )?;
+            (PreparedBuild {
+                dmb:PreparedImage::Native(compiled.dmb),serialized_dmb:None,list_spans:None,list_image:None,
+                rsc_bytes:compiled.rsc_bytes,archive:None,emitted_procs:compiled.emitted.len(),
+                lowered_procs:compiled.artifact_reuse.authored_lowered,
+                reused_procs:compiled.artifact_reuse.authored_reused(),artifact_reuse:compiled.artifact_reuse,checkpoint:compiled.checkpoint,
+            },compiled.resource_fingerprint,compiled.map_fingerprint,compiled.resource_catalog)
         };
-        if hex_digest(&compiled.resource_fingerprint) != resources
-            || hex_digest(&compiled.map_fingerprint) != maps
+        if hex_digest(&resource_fingerprint) != resources
+            || hex_digest(&map_fingerprint) != maps
         {
             return Err("project map/resource inputs changed during build; retry".into());
         }
         if let Some(archive) = &prepared_archive {
             reused_archive = Some(
-                VerifiedArchive::from_prepared_archive(archive, &compiled.dmb)
+                VerifiedArchive::from_prepared_archive_resources(archive, build.dmb.resources())
                     .map_err(|error| error.to_string())?,
             );
         }
@@ -1757,30 +1858,15 @@ impl Coordinator {
                 archive_digest: reused_archive
                     .as_ref()
                     .map(|archive| archive.digest().to_owned())
-                    .unwrap_or_else(|| format!("{:x}", Sha256::digest(&compiled.rsc_bytes))),
-                catalog: compiled.resource_catalog.clone(),
+                    .unwrap_or_else(|| format!("{:x}", Sha256::digest(&build.rsc_bytes))),
+                catalog: resource_catalog,
             };
             if let Ok(bytes) = serde_json::to_vec(&record) {
                 let _ = self.blobs.put_artifact(&catalog_key, &bytes);
             }
         }
-        let image=if canonical&&compiled.checkpoint.is_none() {
-            PreparedImage::Wire(dm_output::wire_image::WireImage::from_native_with_validator(compiled.dmb,
-                |image|image.reference_validated(&mut self.serialization_validation)).map_err(|error|error.to_string())?)
-        } else {PreparedImage::Native(compiled.dmb)};
-        Ok(PreparedBuild {
-            serialized_dmb: None,
-            list_spans: None,
-            list_image: None,
-            emitted_procs: compiled.emitted.len(),
-            lowered_procs: compiled.artifact_reuse.authored_lowered,
-            reused_procs: compiled.artifact_reuse.authored_reused(),
-            artifact_reuse: compiled.artifact_reuse,
-            dmb: image,
-            rsc_bytes: compiled.rsc_bytes,
-            archive: reused_archive,
-            checkpoint: compiled.checkpoint,
-        })
+        build.archive=reused_archive;
+        Ok(build)
     }
 
     fn store_incremental_checkpoint(

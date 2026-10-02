@@ -618,6 +618,14 @@ pub struct ChunkedDmb {
     pub list_spans: Vec<std::ops::Range<usize>>,
     pub len: usize,
 }
+fn validate_tagged_keys(words:&[u32],bound:usize,message:&'static str)->io::Result<()> {
+    let mut at=0usize;
+    while at<words.len() {
+        let key=words[at];if key!=NONE&&key as usize>=bound {return Err(invalid(message));}
+        let (_,count)=crate::operands::Value::decode(&words[at+1..]).map_err(|_|invalid("malformed tagged value list"))?;
+        at=at.checked_add(count+1).ok_or_else(||invalid("tagged value list overflow"))?;
+    } Ok(())
+}
 /// Fallible physical list objects. A source owns actual records, never dummy
 /// logical vectors; callers authorize reference validity before composition.
 pub trait WireListSource {
@@ -625,6 +633,15 @@ pub trait WireListSource {
     fn word_count(&self,index:usize)->io::Result<usize>;
     fn read_wire(&self,index:usize,object_width:usize)->io::Result<Arc<[u8]>>;
     fn resident_words(&self,_index:usize)->Option<&ListWords> {None}
+    fn read_words(&self,index:usize,width:usize)->io::Result<ListWords> {
+        if let Some(words)=self.resident_words(index) {return Ok(words.clone());}
+        let bytes=self.read_wire(index,width)?;let count=self.word_count(index)?;
+        if !matches!(width,2|4)||bytes.len()!=2+count*width||bytes.get(..2)!=Some((count as u16).to_le_bytes().as_slice()) {
+            return Err(invalid("wire list logical shape mismatch"));
+        }
+        Ok(bytes[2..].chunks_exact(width).map(|b|if width==2 {u16::from_le_bytes([b[0],b[1]]) as u32}
+            else {u32::from_le_bytes([b[0],b[1],b[2],b[3]])}).collect::<Vec<_>>().into())
+    }
     fn prepare_window(&self,start:usize,max_rows:usize)->io::Result<usize> {Ok(start.saturating_add(max_rows).min(self.len()))}
 }
 impl ChunkedDmb {
@@ -780,13 +797,8 @@ impl ReferenceValidationCache {
     }
     pub fn resident_bytes(&self) -> usize { self.bytes }
     pub fn clear(&mut self) { self.procedures.clear(); self.classes.clear(); self.other.clear(); self.bytes = 0; }
-    fn remember_class(&mut self, index: usize, record: &Class, image: &Dmb, bounds: [usize; 6]) {
+    fn remember_class_rows(&mut self, index: usize, record: &Class, lists:Vec<(u32,Vec<u32>)>, bounds: [usize; 6]) {
         if let Some(old) = self.classes.remove(&index) { self.bytes = self.bytes.saturating_sub(old.charge()); }
-        let mut ids = vec![record.lists_and_procs[0], record.lists_and_procs[1],
-            record.lists_and_procs[3], record.lists_and_procs[4], record.overrides];
-        ids.sort_unstable(); ids.dedup();
-        let lists: Vec<_> = ids.into_iter().filter(|id| *id != NONE)
-            .filter_map(|id| image.lists.get(id as usize).map(|words| (id, words.to_vec()))).collect();
         let proof = ClassReferenceProof { record: record.clone(), lists, bounds };
         let charge = proof.charge();
         if self.bytes.saturating_add(charge) > 32 * 1024 * 1024 { return; }
@@ -1595,18 +1607,33 @@ impl Dmb {
         self.validate_references_impl(Some(cache))
     }
     fn validate_references_impl(&self, mut cache: Option<&mut ReferenceValidationCache>) -> io::Result<()> {
+        self.validate_references_source(cache.take(),None)
+    }
+    /// Check actual metadata and non-code list rows without reading procedure
+    /// instructions. The native validator also treats code as an opaque list.
+    pub fn validate_metadata_with_lists(&self,source:&dyn WireListSource,cache:&mut ReferenceValidationCache)->io::Result<()> {
+        cache.procedures.retain(|index,_|*index<self.procs.len());
+        cache.classes.retain(|index,_|*index<self.classes.len());
+        self.validate_references_source(Some(cache),Some(source))
+    }
+    fn validate_references_source(&self, mut cache: Option<&mut ReferenceValidationCache>,source:Option<&dyn WireListSource>) -> io::Result<()> {
+        let list_count=source.map_or(self.lists.len(),|source|source.len());
+        let width=if self.header.flags&0x4000_0000!=0 {4}else{2};
+        let get_words=|id:usize|->io::Result<Option<ListWords>> {if id>=list_count {return Ok(None);}match source {
+            Some(source)=>source.read_words(id,width).map(Some),None=>Ok(self.lists.get(id).cloned())
+        }};
         fn in_table(id: u32, len: usize) -> bool {
             id == NONE || (id as usize) < len
         }
-        let other_bounds = [self.strings.len(), self.classes.len(), self.mobs.len(), self.lists.len(),
+        let other_bounds = [self.strings.len(), self.classes.len(), self.mobs.len(), list_count,
             self.procs.len(), self.instances.len(), self.resources.len()];
         for (class_index, class) in self.classes.iter().enumerate() {
-            let bounds = [self.strings.len(), self.classes.len(), self.resources.len(), self.lists.len(),
+            let bounds = [self.strings.len(), self.classes.len(), self.resources.len(), list_count,
                 self.procs.len(), self.variables.len()];
             if cache.as_ref().and_then(|cache| cache.classes.get(&class_index)).is_some_and(|proof|
                 proof.record == *class
                 && proof.bounds.iter().zip(bounds).all(|(old, current)| *old <= current)
-                && proof.lists.iter().all(|(id, words)| self.lists.get(*id as usize)
+                && proof.lists.iter().all(|(id, words)| get_words(*id as usize).ok().flatten()
                     .is_some_and(|actual|actual.as_slice()==words.as_slice()))) {
                 continue;
             }
@@ -1619,18 +1646,18 @@ impl Dmb {
                 || !in_table(class.text, self.strings.len())
                 || !in_table(class.maptext, self.strings.len())
                 || !in_table(class.suffix, self.strings.len())
-                || !in_table(class.lists_and_procs[0], self.lists.len())
-                || !in_table(class.lists_and_procs[1], self.lists.len())
+                || !in_table(class.lists_and_procs[0], list_count)
+                || !in_table(class.lists_and_procs[1], list_count)
                 || !in_table(class.lists_and_procs[2], self.procs.len())
-                || !in_table(class.lists_and_procs[3], self.lists.len())
-                || !in_table(class.lists_and_procs[4], self.lists.len())
-                || !in_table(class.overrides, self.lists.len())
+                || !in_table(class.lists_and_procs[3], list_count)
+                || !in_table(class.lists_and_procs[4], list_count)
+                || !in_table(class.overrides, list_count)
             {
                 return Err(invalid("class cross-table reference out of range"));
             }
             for list_id in [class.verb_list_id(), class.proc_list_id()] {
                 if list_id != NONE
-                    && self.lists[list_id as usize]
+                    && get_words(list_id as usize)?.ok_or_else(||invalid("class procedure list missing"))?
                         .iter()
                         .any(|&id| !in_table(id, self.procs.len()))
                 {
@@ -1638,37 +1665,27 @@ impl Dmb {
                 }
             }
             if class.initialized_variable_list_id() != NONE {
-                let values = self
-                    .class_initial_values(class_index)
-                    .ok_or_else(|| invalid("malformed class initial value list"))?;
-                if values
-                    .iter()
-                    .any(|v| !in_table(v.variable_id, self.variables.len()))
-                {
-                    return Err(invalid("class initial value has invalid VarID"));
-                }
+                let words=get_words(class.initialized_variable_list_id() as usize)?.ok_or_else(||invalid("class initial value list missing"))?;
+                validate_tagged_keys(&words,self.variables.len(),"class initial value has invalid VarID")?;
             }
             if class.defining_variable_list_id() != NONE {
-                let values = self
-                    .class_variable_declarations(class_index)
-                    .ok_or_else(|| invalid("malformed class declaration list"))?;
-                if values.iter().any(|v| !in_table(v.0, self.variables.len())) {
+                let values=get_words(class.defining_variable_list_id() as usize)?.ok_or_else(||invalid("class declaration list missing"))?;
+                if values.len()%2!=0 {return Err(invalid("malformed class declaration list"));}
+                if values.chunks_exact(2).any(|v| !in_table(v[0], self.variables.len())) {
                     return Err(invalid("class declaration has invalid VarID"));
                 }
             }
             if class.overriding_variable_list_id() != NONE {
-                let values = self
-                    .class_builtin_overrides(class_index)
-                    .ok_or_else(|| invalid("malformed class builtin override list"))?;
-                if values
-                    .iter()
-                    .any(|v| !in_table(v.name_string_id, self.strings.len()))
-                {
-                    return Err(invalid("class builtin override has invalid StringID"));
-                }
+                let words=get_words(class.overriding_variable_list_id() as usize)?.ok_or_else(||invalid("class builtin override list missing"))?;
+                validate_tagged_keys(&words,self.strings.len(),"class builtin override has invalid StringID")?;
             }
             if let Some(cache) = cache.as_deref_mut() {
-                cache.remember_class(class_index, class, self, bounds);
+                let mut ids=vec![class.lists_and_procs[0],class.lists_and_procs[1],class.lists_and_procs[3],class.lists_and_procs[4],class.overrides];
+                ids.sort_unstable();ids.dedup();
+                let mut rows=Vec::new();for id in ids.into_iter().filter(|&id|id!=NONE) {
+                    if let Some(words)=get_words(id as usize)? {rows.push((id,words.to_vec()));}
+                }
+                cache.remember_class_rows(class_index,class,rows,bounds);
             }
         }
         for mob in &self.mobs {
@@ -1685,14 +1702,14 @@ impl Dmb {
             if self.is_reserved_proc_slot(proc_index) {
                 continue;
             }
-            let bounds = [self.strings.len(), self.lists.len(), self.variables.len(), self.proc_references.len()];
-            let locals_words = self.lists.get(proc.code_locals_args[1] as usize);
-            let argument_words = self.lists.get(proc.code_locals_args[2] as usize);
+            let bounds = [self.strings.len(), list_count, self.variables.len(), self.proc_references.len()];
+            let locals_words = get_words(proc.code_locals_args[1] as usize)?;
+            let argument_words = get_words(proc.code_locals_args[2] as usize)?;
             if cache.as_ref().and_then(|cache| cache.procedures.get(&proc_index)).is_some_and(|proof|
                 proof.record == *proc
                 && proof.bounds.iter().zip(bounds).all(|(old, current)| *old <= current)
-                && locals_words.is_some_and(|words| words == &proof.locals)
-                && argument_words.is_some_and(|words| words == &proof.arguments)) {
+                && locals_words.as_ref().is_some_and(|words| words == &proof.locals)
+                && argument_words.as_ref().is_some_and(|words| words == &proof.arguments)) {
                 continue;
             }
             if proc_index == NONE as usize
@@ -1707,20 +1724,18 @@ impl Dmb {
                 || proc
                     .code_locals_args
                     .iter()
-                    .any(|&id| !in_table(id, self.lists.len()))
+                    .any(|&id| !in_table(id, list_count))
             {
                 return Err(invalid("proc cross-table reference out of range"));
             }
-            let locals = self
-                .lists
-                .get(proc.code_locals_args[1] as usize)
+            let locals = locals_words.as_ref()
                 .ok_or_else(|| invalid("proc locals list missing"))?;
             if locals.iter().any(|&id| !in_table(id, self.variables.len())) {
                 return Err(invalid("proc locals list contains invalid VarID"));
             }
-            let arguments = self
-                .proc_arguments(proc_index)
-                .ok_or_else(|| invalid("malformed proc argument list"))?;
+            let argument_words=argument_words.as_ref().ok_or_else(||invalid("proc argument list missing"))?;
+            if argument_words.len()%4!=0 {return Err(invalid("malformed proc argument list"));}
+            let arguments:Vec<_>=argument_words.chunks_exact(4).map(|arg|ProcArgument {type_flags:arg[0],value_source:arg[1],variable_id:arg[2],reserved:arg[3]}).collect();
             if arguments
                 .iter()
                 .any(|arg| !in_table(arg.variable_id, self.variables.len()))
@@ -1733,7 +1748,7 @@ impl Dmb {
             }) {
                 return Err(invalid("proc argument expression reference out of range"));
             }
-            if let (Some(cache), Some(argument_words)) = (cache.as_deref_mut(), argument_words) {
+            if let Some(cache) = cache.as_deref_mut() {
                 cache.remember(proc_index, proc, locals, argument_words, bounds);
             }
         }
@@ -1765,7 +1780,7 @@ impl Dmb {
             if cache.as_ref().is_some_and(|cache| cache.accepts_record(&proof_record, other_bounds)) { continue; }
             if !in_table(run.turf, self.instances.len())
                 || !in_table(run.area, self.instances.len())
-                || !in_table(run.contents, self.lists.len())
+                || !in_table(run.contents, list_count)
             {
                 return Err(invalid("grid cross-table reference out of range"));
             }
@@ -1787,14 +1802,14 @@ impl Dmb {
             }
             if let Some(cache) = cache.as_deref_mut() { cache.remember_record(proof_record, other_bounds); }
         }
-        if !in_table(self.variable_footer, self.lists.len()) {
+        if !in_table(self.variable_footer, list_count) {
             return Err(invalid("global declaration list out of range"));
         }
         let w = &self.world;
         if !in_table(w.ids[0], self.mobs.len())
             || !in_table(w.ids[1], self.classes.len())
             || !in_table(w.ids[2], self.classes.len())
-            || !in_table(w.ids[3], self.lists.len())
+            || !in_table(w.ids[3], list_count)
             || !in_table(w.ids[4], self.procs.len())
             || !in_table(w.ids[5], self.strings.len())
             || !in_table(w.ids[6], self.strings.len())

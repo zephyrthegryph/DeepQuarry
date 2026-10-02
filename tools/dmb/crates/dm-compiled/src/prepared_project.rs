@@ -19,6 +19,8 @@ pub struct PreparedSource {
     pub text: Arc<str>,
     pub content_len: usize,
     pub(crate) blob: Option<PathBuf>,
+    pub(crate) blob_offset: usize,
+    pub(crate) blob_packed: bool,
     /// Content identity after the compiler's UTF-8/Windows-1252 decoding.
     pub digest: [u8; 32],
     pub(crate) stamp: Option<FileStamp>,
@@ -33,11 +35,14 @@ impl PreparedSource {
         let Some(blob) = &self.blob else {
             return Ok(Arc::clone(&self.text));
         };
-        use std::io::Read;
+        use std::io::{Read,Seek,SeekFrom};
         let mut bytes = Vec::new();
-        std::fs::File::open(blob)?
-            .take(self.content_len as u64 + 1)
-            .read_to_end(&mut bytes)?;
+        let mut file=std::fs::File::open(blob)?;
+        let end=self.blob_offset.checked_add(self.content_len).ok_or_else(||std::io::Error::other("authored range overflow"))?;
+        let actual_len=file.metadata()?.len();
+        if actual_len<end as u64 || (!self.blob_packed && actual_len!=end as u64) {return Err(std::io::Error::other("invalid authored source backing length"));}
+        file.seek(SeekFrom::Start(self.blob_offset as u64))?;
+        file.take(self.content_len as u64).read_to_end(&mut bytes)?;
         if bytes.len() != self.content_len
             || <[u8; 32]>::from(Sha256::digest(&bytes)) != self.digest
         {

@@ -42,6 +42,7 @@ pub(super) struct OutputFragment {
     #[serde(default)] pub code_digest: Option<String>,
     #[serde(default)] pub code_word_count: Option<u32>,
     #[serde(default)] pub allocated_rows: Option<ProcedureRowLayout>,
+    #[serde(default)] pub wire_code:Option<dm_output::wire_image::VerifiedCodeHandle>,
     #[serde(skip)]
     pub words: Arc<[u32]>,
 }
@@ -53,6 +54,7 @@ impl OutputFragment {
         let Some(words)=self.code_word_count else {return false;};
         if words>u16::MAX as u32||self.code_digest.as_ref().is_none_or(|digest|digest.len()!=64
             ||!digest.bytes().all(|byte|byte.is_ascii_hexdigit())) {return false;}
+        if self.wire_code.as_ref().is_some_and(|handle|handle.word_count()!=words as usize) {return false;}
         if self.allocated_rows.as_ref().is_some_and(|layout|!layout.valid()
             ||layout.variable_count as usize!=self.variables.len()||self.record.code_locals_args!=[0,1,2]) {return false;}
         let valid_variable=|id:u32|if self.allocated_rows.is_some() {(id as usize)<self.variables.len()}
@@ -186,7 +188,7 @@ impl OutputFragment {
         // addressed code content contribute. Dense IDs are part of the recipe.
         let bytes=rmp_serde::to_vec(&(self.body_base_relative,self.debug_enabled,&self.unresolved_debug,&self.strings,
             &self.variables,self.old_variable_base,&self.locals,&self.arguments,&self.record,&self.relocations,
-            &self.debug,&self.helpers,&self.code_digest,&self.code_word_count,&self.allocated_rows)).ok()?;
+            &self.debug,&self.helpers,&self.code_digest,&self.code_word_count,&self.allocated_rows,&self.wire_code)).ok()?;
         let mut hash=Sha256::new();hash.update(b"procedure-output-recipe-v1");hash.update(bytes);
         Some(format!("{:x}",hash.finalize()))
     }
@@ -202,6 +204,7 @@ impl OutputFragment {
                 +linked.semantic_identity.capacity()+linked.recipe_identity.capacity()+linked.unresolved_debug.capacity()*std::mem::size_of::<usize>()+256)
             + self.code_digest.as_ref().map_or(0,|digest|digest.capacity())
             + self.allocated_rows.as_ref().map_or(0,|_|64)
+            + self.wire_code.as_ref().map_or(0,|handle|handle.digest().len()+96)
             + self.helpers.iter().map(|h| h.key.path.capacity() + h.identity.capacity() + h.dedup.capacity()
                 + h.descriptor.body_digest.capacity() + h.descriptor.frame_digest.capacity()
                 + h.statics.keys().map(|key| key.capacity() + 64).sum::<usize>() + 160).sum::<usize>() + 256
@@ -225,6 +228,8 @@ pub(super) struct FragmentStats {
     pub linked_rows_reused: usize,
     pub retained_projection_hits: usize,
     pub shared_projection_hits: usize,
+    pub metadata_only_reused:usize,
+    pub wire_relinked:usize,
     pub code_read_bytes: usize,
     pub code_hydration_seconds: f64,
     pub built: usize,
@@ -256,12 +261,14 @@ pub(super) struct ProcedureFragments {
     namespace: String,
     blobs: String,
     code_blobs: String,
+    code_store:Option<Arc<dm_output::wire_image::CodeObjectStore>>,
     pub stats: FragmentStats,
 }
 impl ProcedureFragments {
     pub fn open(root: &std::path::Path, identity: &str) -> Self {
         let store = dm_store::Store::open(root.join("output-fragments.redb")).ok();
-        Self { store, namespace: format!("output-handles-v3-{}-{}", env!("DM_EMISSION_FINGERPRINT"),
+        let code_store=dm_output::wire_image::CodeObjectStore::open(root).ok();
+        Self { store, code_store,namespace: format!("output-handles-v3-{}-{}", env!("DM_EMISSION_FINGERPRINT"),
             crate::incremental::digest(identity.as_bytes())),
             blobs: format!("output-blobs-v3-{}", env!("DM_EMISSION_FINGERPRINT")),
             code_blobs: format!("output-code-v1-{}",env!("DM_EMISSION_FINGERPRINT")), ..Self::default() }
@@ -272,8 +279,10 @@ impl ProcedureFragments {
     }
     pub fn resident_bytes(&self) -> usize {
         self.resident_bytes + self.pending_bytes + self.recency.capacity() * 96 + self.metadata_bytes
+            +self.code_store.as_ref().map_or(0,|store|store.resident_bytes())
     }
     pub fn decoded_bytes(&self)->usize {self.resident_bytes}
+    pub fn code_store(&self)->Option<Arc<dm_output::wire_image::CodeObjectStore>> {self.code_store.clone()}
     fn install_handle(&mut self, key: crate::ProcKey, handle: Handle) {
         if let Some(old) = self.handles.remove(&key) {
             self.metadata_bytes = self.metadata_bytes.saturating_sub(handle_charge(&key, &old));
@@ -331,23 +340,41 @@ impl ProcedureFragments {
         }
         let payloads:Vec<_>=keys.iter().filter_map(|key|self.handles.get(key).map(|handle|handle.payload.clone())).collect();
         let mut decoded=HashMap::new();let mut retained=0usize;
-        self.read_metadata_payloads(&store,&payloads,&mut decoded,&mut retained);
-        keys.iter().map(|key| {let handle=self.handles.get(key)?;
+        for payload in &payloads {if let Some(entry)=self.resident.get(payload) {
+            let charge=entry.fragment.charge();if retained+charge<=32*1024*1024 {
+                retained+=charge;decoded.insert(payload.clone(),Arc::clone(&entry.fragment));
+                if entry.admitted&&entry.revision!=self.revision {self.stats.retained_projection_hits+=1;}
+            }
+        }}
+        let missing:Vec<_>=payloads.into_iter().filter(|payload|!decoded.contains_key(payload)).collect();
+        self.read_metadata_payloads(&store,&missing,&mut decoded,&mut retained);
+        let output:Vec<_>=keys.iter().map(|key| {let handle=self.handles.get(key)?;
             Some((handle.descriptor.clone(),handle.candidate.clone(),Arc::clone(decoded.get(&handle.payload)?)))
-        }).collect()
+        }).collect();
+        if let Some(store)=&self.code_store {
+            let handles=output.iter().filter_map(|entry|entry.as_ref().and_then(|(_,_,fragment)|fragment.wire_code.clone())).collect();
+            let _=store.set_lookahead(handles);
+        }
+        output
     }
     fn read_metadata_payloads(&mut self,store:&dm_store::Store,payloads:&[String],decoded:&mut HashMap<String,Arc<OutputFragment>>,retained:&mut usize) {
         if payloads.is_empty() {return;}
         let rows:Vec<_>=payloads.iter().map(|payload|dm_store::Key::new(&self.blobs,payload)).collect();
-        match store.read_many_bounded(&rows,16*1024*1024,8*1024*1024,None) {
-            Ok(batch)=>for ((payload,bytes),witness) in payloads.iter().zip(batch.values).zip(batch.witnesses) {
+        let started=std::time::Instant::now();
+        let result=store.read_many_bounded(&rows,16*1024*1024,8*1024*1024,None);
+        self.stats.read_seconds+=started.elapsed().as_secs_f64();
+        match result {
+            Ok(batch)=>{self.stats.batches+=1;for ((payload,bytes),witness) in payloads.iter().zip(batch.values).zip(batch.witnesses) {
                 if decoded.contains_key(payload)||witness.value_digest.as_deref()!=Some(payload.as_str()) {continue;}
                 let Some(bytes)=bytes else {continue;};
+                self.stats.disk_bytes+=bytes.len();
+                let started=std::time::Instant::now();
                 let Some(fragment)=OutputFragment::decode(&bytes) else {continue;};
                 if !fragment.words.is_empty()||!fragment.validate_metadata() {continue;}
+                self.stats.decode_seconds+=started.elapsed().as_secs_f64();
                 let charge=fragment.charge();if retained.saturating_add(charge)>32*1024*1024 {continue;}
                 *retained+=charge;decoded.insert(payload.clone(),Arc::new(fragment));
-            },
+            }},
             Err(error) if error.kind()==std::io::ErrorKind::InvalidInput&&payloads.len()>1=>{
                 let middle=payloads.len()/2;self.read_metadata_payloads(store,&payloads[..middle],decoded,retained);
                 self.read_metadata_payloads(store,&payloads[middle..],decoded,retained);
@@ -541,6 +568,7 @@ impl ProcedureFragments {
         let code_digest = format!("{:x}",Sha256::digest(&code));
         fragment.code_digest=Some(code_digest.clone());
         fragment.code_word_count=Some(fragment.words.len() as u32);
+        fragment.wire_code=self.code_store.as_ref().and_then(|store|store.stage_words(&fragment.words,4).ok());
         let Some(recipe_identity)=fragment.recipe_identity() else {return;};
         if let Some(linked)=fragment.linked.as_mut() {linked.recipe_identity=recipe_identity;}
         let Some(bytes) = fragment.encode() else { return; };
@@ -561,6 +589,8 @@ impl ProcedureFragments {
         if self.pending_bytes >= 8 * 1024 * 1024 || self.pending.len() >= 8192 { self.flush(); }
     }
     pub fn flush(&mut self) {
+        // Never publish a recipe that points at an uncommitted code leaf.
+        if let Some(store)=&self.code_store {if store.flush().is_err() {return;}}
         if self.pending.is_empty() { return; }
         if let Some(store) = &self.store {
             let started = std::time::Instant::now();

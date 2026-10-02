@@ -126,18 +126,19 @@ impl InputProof {
         let left_coverage=self.journal_files.clone().unwrap_or_else(||self.files.keys().cloned().collect());
         let right_coverage=other.journal_files.clone().unwrap_or_else(||other.files.keys().cloned().collect());
         let merged=self.journal.as_ref().zip(other.journal.as_ref()).and_then(|(left,right)|left.merged(right));
-        let (journal,coverage)=if let Some(merged)=merged {
-            let mut coverage=left_coverage;coverage.extend(right_coverage);(Some(merged),Some(coverage))
-        } else if let Some(left)=&self.journal {(Some(left.clone()),Some(left_coverage))}
-        else if let Some(right)=&other.journal {(Some(right.clone()),Some(right_coverage))}
-        else {(None,None)};
-        self.namespace_covered &= other.namespace_covered;
-        self.namespace_digest = match (&self.namespace_digest, &other.namespace_digest) {
-            (Some(a), Some(b)) if a == b => Some(a.clone()),
-            (Some(a), None) => Some(a.clone()),
-            (None, Some(b)) => Some(b.clone()),
-            _ => None,
-        };
+        // Namespace identity belongs to the journal selected below, never to
+        // an unrelated side of a failed merge. File-only proofs contribute no
+        // namespace identity; legacy empty-candidate hashes are normalized out.
+        let left_namespace=self.retained_namespace_digest();
+        let right_namespace=other.retained_namespace_digest();
+        let (journal,coverage,namespace)=if let Some(merged)=merged {
+            let mut coverage=left_coverage;coverage.extend(right_coverage);
+            (Some(merged),Some(coverage),left_namespace.or(right_namespace))
+        } else if let Some(left)=&self.journal {(Some(left.clone()),Some(left_coverage),left_namespace)}
+        else if let Some(right)=&other.journal {(Some(right.clone()),Some(right_coverage),right_namespace)}
+        else {(None,None,None)};
+        self.namespace_covered=namespace.is_some();
+        self.namespace_digest=namespace;
         self.journal = journal;
         self.journal_files=coverage;
         for (path, stamp) in &other.files {
@@ -215,22 +216,43 @@ impl InputProof {
     /// Reuse only an already-established proof for this exact search namespace.
     /// This does not establish a new cursor or perform filesystem discovery.
     pub(super) fn reuse_namespace(&mut self, candidates: &[PathBuf]) -> bool {
-        if !candidates.is_empty()
-            && !exact_inputs()
-            && self.journal_files.as_ref().map_or(true,|covered|self.files.keys().all(|path|covered.contains(path)))
-            && self.namespace_digest.as_ref() == Some(&Self::namespace_digest(candidates))
-            && self
-                .journal
-                .as_ref()
-                .is_some_and(|journal| journal.current())
-        {
+        let eligible=!candidates.is_empty() && !exact_inputs();
+        let covered=self.journal_files.as_ref().map_or(true,|covered|self.files.keys().all(|path|covered.contains(path)));
+        let same_namespace=eligible && self.namespace_digest.as_ref()==Some(&Self::namespace_digest(candidates));
+        let observed=eligible && covered && same_namespace;
+        let current=observed && self.journal.as_ref().is_some_and(|journal|journal.current());
+        if current {
             self.namespace_covered = true;
             true
         } else {
+            if std::env::var_os("DM_BUILD_TRACE").is_some() {
+                eprintln!("DM_BUILD_TRACE namespace reuse miss: files={} candidates={} eligible={eligible} file_coverage={covered} retained_namespace={} same_namespace={same_namespace} journal_present={} journal_observed={observed}",
+                    self.files.len(),candidates.len(),self.namespace_digest.is_some(),self.journal.is_some());
+            }
             false
         }
     }
+    fn retained_namespace_digest(&self)->Option<String> {
+        self.journal.as_ref()?;
+        self.namespace_digest.as_ref().filter(|digest|**digest!=Self::namespace_digest(&[])).cloned()
+    }
+
     pub(super) fn enable_namespace_journal(&mut self, candidates: &[PathBuf]) {
+        if candidates.is_empty() {
+            if exact_inputs() {
+                self.journal=None;self.journal_files=None;self.namespace_digest=None;self.namespace_covered=false;
+                return;
+            }
+            let coverage=self.journal_files.as_ref().map_or(true,|covered|self.files.keys().all(|path|covered.contains(path)));
+            let retained=self.journal.as_ref().filter(|_|coverage).filter(|journal|journal.current()).cloned();
+            let namespace=retained.as_ref().and_then(|_|self.retained_namespace_digest());
+            self.journal=retained.or_else(||dm_host::journal::JournalProof::establish(&self.files));
+            self.journal_files=None;
+            self.namespace_digest=self.journal.as_ref().and(namespace);
+            self.namespace_covered=self.namespace_digest.is_some();
+            if std::env::var_os("DM_BUILD_TRACE").is_some() {eprintln!("DM_BUILD_TRACE input journal proof: {} files, enabled {}, retained namespace {}",self.files.len(),self.journal.is_some(),self.namespace_covered);}
+            return;
+        }
         let digest = Self::namespace_digest(candidates);
         if self.reuse_namespace(candidates) {
             return;

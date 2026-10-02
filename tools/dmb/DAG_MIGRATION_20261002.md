@@ -273,3 +273,22 @@ unchanged-source content reads from identity traversal, uses direct immutable
 invocation frames, and routes publication through a first-class wire image.
 Wire-image serialization alone does not eliminate initial native hydration;
 scoped physical composition must also migrate before that claim is valid.
+
+Q completed from4aa4fc6325: cold230.110s; unchanged0.736s; body28.146s;
+newproc66.786s; newvar89.180s; default64.187s;
+freshcachedprocess0.167s; freshbody39.835s. Asset/resource cases omitted.
+All compiler requests succeeded; no Rust/DM tests or runtime validation.
+This does not meet the targets. Other unrelated builds and DreamDaemon worlds
+were active on this shared machine; these measurements are not an isolated
+performance comparison. No unrelated processes were stopped. Current native
+compile output still hydrates code before converting to WireImage. The next
+checkpoint implements actual physical assembly, persistent per-owner symbolic
+binding roots, immutable bounded authored-source packs with transactional
+range descriptors, and symbolic class-property writes across changed IDs.
+
+## Addressed assembly checkpoint (implementation, pending build)
+
+Canonical production now returns a physical WireImage directly. Procedure replay can append verified disk code handles, and indexed raw relocation checks digest, layout and old operands before rewriting changed references. Native Dmb consumers explicitly materialize at the compatibility boundary. Noncode list validation uses the same typed assembly interface.
+
+Owner binding maps use persistent owner roots. Authored source persistence groups immutable blobs into bounded packs with range descriptors. Declaration replay stores compact symbolic variable and class-property recipes, binding current allocation IDs on replay. No Rust tests or DM/runtime tests were run; the next compiler benchmark must determine whether these migrations improve actual DeepQuarry timings. Q measurements remained far above the iteration target.
+Addressed assembly checkpoint Cargo CLI/example build passed with -j1. Integration fixes covered assembly decoding errors, persistent delta signatures and compatibility early-return conversion. Namespace composition now preserves covered candidate proofs through file-only proof merges. No tests or runtime checks were run; R benchmark is next.

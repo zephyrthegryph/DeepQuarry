@@ -10,7 +10,7 @@ use std::io;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-const VERSION: u32 = 6;
+const VERSION: u32 = 7;
 const MAX_PACK: usize = 128 * 1024 * 1024;
 const MAX_EXPANDED_BYTES: usize = 1024 * 1024 * 1024;
 const MAX_MANIFEST: usize = 64 * 1024 * 1024;
@@ -21,6 +21,7 @@ struct Source {
     start: usize,
     end: usize,
     digest: [u8; 32],
+    pack: Option<String>,
     stamp: Option<dm_host::file_stamp::FileStamp>,
 }
 #[derive(Serialize, Deserialize)]
@@ -59,7 +60,7 @@ struct Head {
     manifest: String,
 }
 
-pub(super) fn save(store: &ContentStore, snapshot: &PreparedProject) -> io::Result<()> {
+pub(super) fn save(store: &ContentStore, snapshot: &PreparedProject) -> io::Result<BTreeMap<[u8;32],crate::PackedBlob>> {
     let persist_started = std::time::Instant::now();
     let mut paths = BTreeMap::new();
     fn path_id(paths: &mut BTreeMap<PathBuf, usize>, path: &std::path::Path) -> usize {
@@ -145,32 +146,38 @@ pub(super) fn save(store: &ContentStore, snapshot: &PreparedProject) -> io::Resu
     if std::env::var_os("DM_BUILD_TRACE").is_some() {
         eprintln!("DM_BUILD_TRACE authored publication inventory: known={} requested={} bytes={} previous={}",known_sources.len(),missing.len(),missing.iter().map(|source|source.content_len).sum::<usize>(),previous.is_some());
     }
-    let writes = dm_work::map_ordered(
-        &missing,
-        dm_work::WorkLimits::configured(),
-        |source| {
-            let hydration=if source.text.len()==source.content_len {0} else {source.content_len.saturating_mul(2)};
-            hydration.saturating_add(64*1024)
-        },
-        |source| {
-            source
-                .content()
-                .and_then(|text| store.put_rebuildable("prepared-source-v3", text.as_bytes()))
-        },
-    )
-    .map_err(|error| io::Error::other(format!("source persistence work limits: {error:?}")))?;
-    for write in writes {
-        write?;
+    let mut backings:BTreeMap<_,_>=previous.as_ref().into_iter().flat_map(|manifest|manifest.sources.iter()).map(|source| {
+        (source.digest,crate::PackedBlob {digest:source.digest,pack:source.pack.clone(),start:source.start,len:source.end-source.start})
+    }).collect();
+    let mut groups:Vec<Vec<&PreparedSource>>=Vec::new();
+    let mut group=Vec::new();let mut bytes=0usize;
+    for source in missing {
+        if !group.is_empty() && (bytes.saturating_add(source.content_len)>2*1024*1024 || group.len()>=512) {
+            groups.push(std::mem::take(&mut group));bytes=0;
+        }
+        bytes=bytes.saturating_add(source.content_len);group.push(source);
     }
+    if !group.is_empty() {groups.push(group);}
+    if std::env::var_os("DM_BUILD_TRACE").is_some() {eprintln!("DM_BUILD_TRACE authored pack publication: {} bounded groups",groups.len());}
+    let writes=dm_work::map_ordered(&groups,dm_work::WorkLimits::configured(),
+        |group|group.iter().map(|source|if source.text.len()==source.content_len {0} else {source.content_len.saturating_mul(2)}).sum::<usize>().saturating_add(64*1024).saturating_add(group.len()*512),
+        |group| {
+            let contents=group.iter().map(|source|source.content()).collect::<io::Result<Vec<_>>>()?;
+            let inputs:Vec<_>=group.iter().zip(&contents).map(|(source,text)|(source.digest,text.as_bytes())).collect();
+            store.put_rebuildable_batch("prepared-source-v3",&inputs)
+        }).map_err(|error|io::Error::other(format!("source pack work limits: {error:?}")))?;
+    for write in writes {for backing in write? {backings.insert(backing.digest,backing);}}
     trace_persistence("authored CAS writes", authored_started);
     let manifest_started = std::time::Instant::now();
     let mut sources = Vec::with_capacity(snapshot.sources.len());
     for (path, source) in snapshot.sources.iter() {
+        let backing=backings.get(&source.digest).ok_or_else(||io::Error::other("authored source backing missing after publication"))?;
         sources.push(Source {
             path: path_id(&mut paths, path),
-            start: 0,
-            end: source.content_len,
+            start: backing.start,
+            end: backing.start+backing.len,
             digest: source.digest,
+            pack:backing.pack.clone(),
             stamp: source.stamp.clone(),
         });
     }
@@ -248,7 +255,7 @@ pub(super) fn save(store: &ContentStore, snapshot: &PreparedProject) -> io::Resu
     let bytes = encode_snapshot(&manifest)?;
     trace_persistence("manifest encoding", encode_started);
     if bytes.len() > MAX_MANIFEST {
-        return Ok(());
+        return Ok(backings);
     }
     let digest = store.put("prepared-input-manifest-v2", &bytes)?;
     let head = Head {
@@ -268,7 +275,7 @@ pub(super) fn save(store: &ContentStore, snapshot: &PreparedProject) -> io::Resu
         .map(|_| ());
     trace_persistence("origin and manifest publication", manifest_started);
     trace_persistence("total", persist_started);
-    result
+    result.map(|()|backings)
 }
 
 fn load_manifest(store: &ContentStore, context: &str) -> io::Result<Option<Manifest>> {
@@ -283,10 +290,20 @@ fn load_manifest(store: &ContentStore, context: &str) -> io::Result<Option<Manif
     if head.version != VERSION || head.context != context {
         return Ok(None);
     }
-    let manifest = decode_snapshot(&store.get_bounded(
+    let manifest:Manifest = decode_snapshot(&store.get_bounded(
         "prepared-input-manifest-v2", &head.manifest, MAX_MANIFEST,
     )?)?;
+    if manifest.sources.len()>64_000 || manifest.sources.iter().any(|source|!valid_source_range(source)) {
+        return Err(io::Error::other("invalid prepared source range metadata"));
+    }
     Ok(Some(manifest))
+}
+
+fn valid_source_range(source:&Source)->bool {
+    source.start<=source.end && source.end-source.start<=MAX_PACK
+        && source.pack.as_ref().is_none_or(|digest|digest.len()==64 && digest.bytes().all(|byte|byte.is_ascii_hexdigit()))
+        && (source.pack.is_some() || source.start==0)
+        && (source.pack.is_none() || source.end<=2*1024*1024)
 }
 
 pub(super) fn load(store: &ContentStore, context: &str) -> io::Result<Option<PreparedProject>> {
@@ -343,30 +360,20 @@ pub(super) fn load(store: &ContentStore, context: &str) -> io::Result<Option<Pre
     };
     let mut sources = BTreeMap::new();
     for source in &manifest.sources {
-        if source.start != 0 || source.end > MAX_PACK {
-            return Err(io::Error::other("invalid source artifact length"));
-        }
-        let digest = source
-            .digest
-            .iter()
-            .map(|byte| format!("{byte:02x}"))
-            .collect::<String>();
-        let blob = store
-            .root
-            .join("prepared-source-v3")
-            .join(&digest[..2])
-            .join(&digest);
-        if !blob.is_file() {
-            return Ok(None);
-        }
+        if !valid_source_range(source) {return Err(io::Error::other("invalid source artifact range"));}
+        let location=crate::PackedBlob {digest:source.digest,pack:source.pack.clone(),start:source.start,len:source.end-source.start};
+        let blob=store.packed_blob_path("prepared-source-v3",&location);
+        if !fs_metadata_has_range(&blob,source.end) {return Ok(None);}
         let key = (*path(source.path)?).clone();
         if sources
             .insert(
                 key,
                 PreparedSource {
                     text: Arc::from(""),
-                    content_len: source.end,
+                    content_len: source.end-source.start,
                     blob: Some(blob),
+                    blob_offset:source.start,
+                    blob_packed:source.pack.is_some(),
                     digest: source.digest,
                     stamp: source.stamp.clone(),
                 },
@@ -463,3 +470,5 @@ fn decode_snapshot<T:serde::de::DeserializeOwned>(bytes:&[u8])->io::Result<T> {
     let bytes=lz4_flex::decompress_size_prepended(bytes).map_err(io::Error::other)?;
     rmp_serde::from_slice(&bytes).map_err(io::Error::other)
 }
+
+fn fs_metadata_has_range(path:&std::path::Path,end:usize)->bool {std::fs::metadata(path).is_ok_and(|metadata|metadata.is_file() && metadata.len()>=end as u64)}

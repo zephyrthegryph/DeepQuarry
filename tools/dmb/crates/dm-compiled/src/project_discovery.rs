@@ -137,6 +137,8 @@ pub(crate) fn read_prepared_source(
         Ok(PreparedSource {
             content_len: text.len(),
             blob: None,
+            blob_offset: 0,
+            blob_packed: false,
             text,
             digest,
             stamp,
@@ -506,6 +508,8 @@ impl DiscoveryCache {
                     .unwrap_or_else(|| PreparedSource {
                         content_len: text.len(),
                         blob: None,
+                        blob_offset: 0,
+                        blob_packed: false,
                         text,
                         digest: digests[&path],
                         stamp: stamps.get(&path).cloned(),
@@ -608,7 +612,17 @@ impl DiscoveryCache {
         }
         if let Some(store) = &self.store {
             match crate::prepared_persistence::save(store,&snapshot) {
-                Ok(())=>Arc::make_mut(&mut Arc::make_mut(&mut snapshot).expansion).attach_backings(&store.root),
+                Ok(backings)=>{
+                    let snapshot=Arc::make_mut(&mut snapshot);
+                    Arc::make_mut(&mut snapshot.expansion).attach_backings(&store.root);
+                    for source in Arc::make_mut(&mut snapshot.sources).values_mut() {
+                        if let Some(backing)=backings.get(&source.digest) {
+                            source.blob=Some(store.packed_blob_path("prepared-source-v3",backing));
+                            source.blob_offset=backing.start;
+                            source.blob_packed=backing.pack.is_some();
+                        }
+                    }
+                },
                 Err(error)=>if std::env::var_os("DM_BUILD_TRACE").is_some() {eprintln!("DM_BUILD_TRACE prepared persistence skipped: {error}");},
             }
         }

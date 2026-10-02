@@ -16,6 +16,9 @@ mod declaration_base;
 pub(super) use declaration_base::{DeclarationBase, declaration_base_key};
 #[path = "declaration_delta.rs"]
 mod declaration_delta;
+#[path = "owner_binding_queries.rs"]
+mod owner_binding_queries;
+pub(super) use owner_binding_queries::OwnerBindingQueries;
 pub(super) use declaration_delta::DeclarationInputs;
 
 
@@ -644,31 +647,30 @@ impl OwnerFrameQueries {
     pub(super) fn resolve(
         &mut self,
         owner: u32,
-        dmb: &Dmb,
+        dmb: &impl dm_output::assembly::AssemblyImage,
         shared: &SharedLowerBindings,
-    ) -> Arc<dm_codegen_byond::OwnerLowerBindings> {
-        self.resolve_inner(owner, dmb, shared, &mut HashSet::new())
-            .1
+    ) -> Result<Arc<dm_codegen_byond::OwnerLowerBindings>,String> {
+        self.resolve_inner(owner, dmb, shared, &mut HashSet::new()).map(|(_,frame)|frame)
     }
     fn resolve_inner(
         &mut self,
         owner: u32,
-        dmb: &Dmb,
+        dmb: &impl dm_output::assembly::AssemblyImage,
         shared: &SharedLowerBindings,
         visited: &mut HashSet<u32>,
-    ) -> (String, Arc<dm_codegen_byond::OwnerLowerBindings>) {
+    ) -> Result<(String, Arc<dm_codegen_byond::OwnerLowerBindings>),String> {
         if let Some(value) = self.current.get(&owner) {
-            return (value.0.clone(),Arc::clone(&value.1));
+            return Ok((value.0.clone(),Arc::clone(&value.1)));
         }
         if !visited.insert(owner) {
-            return (String::new(), Arc::new(Default::default()));
+            return Ok((String::new(), Arc::new(Default::default())));
         }
-        let class = &dmb.classes[owner as usize];
+        let class = dmb.classes().get(owner as usize).ok_or_else(||format!("owner class out of range: {owner}"))?;
         let path = String::from_utf8_lossy(dmb.string(class.path_string_id()).unwrap_or_default())
             .into_owned();
         let parent = class.parent_class_id();
         let inherited = if parent != 0xffff {
-            Some(self.resolve_inner(parent, dmb, shared, visited))
+            Some(self.resolve_inner(parent, dmb, shared, visited)?)
         } else {
             None
         };
@@ -682,9 +684,11 @@ impl OwnerFrameQueries {
                     .or_insert_with(|| ty.clone());
             }
         }
-        if let Some(declarations) = dmb.class_variable_declarations(owner as usize) {
+        if let Some(fields)=shared.known_member_fields.get(&path) {
+            local.fields.extend(fields.iter().cloned());
+        } else if let Some(declarations) = dmb.class_variable_declarations(owner as usize).map_err(|error|error.to_string())? {
             for (id, _) in declarations {
-                if let Some(name) = dmb.string(dmb.variables[id as usize].name) {
+                if let Some(name) = dmb.string(dmb.variables().get(id as usize).ok_or_else(||format!("owner variable out of range: {id}"))?.name) {
                     local
                         .fields
                         .insert(String::from_utf8_lossy(name).into_owned());
@@ -715,7 +719,7 @@ impl OwnerFrameQueries {
                 let frame = Arc::clone(frame);
                 self.retain_current(owner, &identity, &frame,charge);
                 visited.remove(&owner);
-                return (identity, frame);
+                return Ok((identity, frame));
             }
         }
         let local=dm_codegen_byond::OwnerLowerBindings {
@@ -757,7 +761,7 @@ impl OwnerFrameQueries {
         }
         self.retain_current(owner, &identity, &frame,charge);
         visited.remove(&owner);
-        (identity, frame)
+        Ok((identity, frame))
     }
 }
 
@@ -823,18 +827,18 @@ fn skeleton_heap(image: &Dmb, metadata: &SkeletonMetadata) -> usize {
             .map(|s| s.capacity() + std::mem::size_of::<String>() + 32)
             .sum()
     }
-    fn nested_map(items: &HashMap<String, HashMap<String, String>>) -> usize {
-        map_heap(items)
+    fn nested_map(items: &im::OrdMap<String, im::OrdMap<String, String>>) -> usize {
+        items.len()*96
             + items
                 .iter()
-                .map(|(name, members)| name.capacity() + text_map(members))
+                .map(|(name, members)| name.capacity() + members.len()*96 + members.iter().map(|(key,value)|key.capacity()+value.capacity()).sum::<usize>())
                 .sum::<usize>()
     }
-    fn nested_set(items: &HashMap<String, BTreeSet<String>>) -> usize {
-        map_heap(items)
+    fn nested_set(items: &im::OrdMap<String, im::OrdSet<String>>) -> usize {
+        items.len()*96
             + items
                 .iter()
-                .map(|(name, members)| name.capacity() + text_set(members))
+                .map(|(name, members)| name.capacity() + members.iter().map(|value|value.capacity()+64).sum::<usize>())
                 .sum::<usize>()
     }
     let mut bytes = std::mem::size_of::<FrozenSkeleton>()
@@ -929,7 +933,6 @@ fn skeleton_heap(image: &Dmb, metadata: &SkeletonMetadata) -> usize {
         &shared.modified_instances,
         &shared.member_type_fingerprints,
         &shared.global_proc_return_types,
-        &shared.parent_types,
         &shared.field_types,
         &shared.global_types,
         &shared.string_constants,
@@ -939,6 +942,7 @@ fn skeleton_heap(image: &Dmb, metadata: &SkeletonMetadata) -> usize {
     for set in [&shared.fields, &shared.globals, &shared.global_procs] {
         bytes += text_set(set);
     }
+    bytes += shared.parent_types.iter().map(|(key,value)|key.capacity()+value.capacity()+96).sum::<usize>();
     bytes += id_map(&shared.numeric_constants) + shared.fingerprint.capacity();
     bytes
 }
@@ -958,6 +962,7 @@ pub(crate) struct CanonicalSession {
     pub(super) emission_plans: super::emission_plans::EmissionPlans,
     pub(super) procedure_fragments: super::procedure_fragments::ProcedureFragments,
     pub(super) invocation_fragments: InvocationFragments,
+    pub(super) owner_bindings:OwnerBindingQueries,
     pub(super) owner_frames: Arc<Mutex<OwnerFrameQueries>>,
     pub maps: crate::maps::MapInitializerSession,
     pub active_keys: BTreeSet<crate::ProcKey>,
@@ -1019,6 +1024,7 @@ impl CanonicalSession {
                 env!("DM_EMISSION_FINGERPRINT"),
             ));
         self.invocation_fragments = InvocationFragments::open(&root);
+        self.owner_bindings.bind(&root);
         self.owner_frames = Arc::new(Mutex::new(OwnerFrameQueries::open(&root)));
         const_eval::bind_cache(&root);
         semantic_declarations::bind_cache(&root);
@@ -1042,6 +1048,7 @@ impl CanonicalSession {
             .saturating_add(self.emission_plans.resident_bytes())
             .saturating_add(self.procedure_fragments.resident_bytes())
             .saturating_add(self.invocation_fragments.resident_bytes())
+            .saturating_add(self.owner_bindings.resident_bytes())
             .saturating_add(
                 self.owner_frames
                     .lock()
@@ -1115,6 +1122,7 @@ impl CanonicalSession {
         // Compact handles are optional candidate selectors too. Release them
         // under pressure before sacrificing the frontend dependency graph.
         self.invocation_fragments.handles.clear();
+        self.owner_bindings.clear();
         before.saturating_sub(self.resident_bytes())
     }
     /// Final pool-pressure fallback drops only the immutable prefix. Procedure
@@ -1147,6 +1155,7 @@ impl CanonicalSession {
                 env!("DM_EMISSION_FINGERPRINT"),
             ));
         self.invocation_fragments = InvocationFragments::open(cache_root);
+        self.owner_bindings.bind(cache_root);
         self.owner_frames = Arc::new(Mutex::new(OwnerFrameQueries::open(cache_root)));
         const_eval::bind_cache(cache_root);
         semantic_declarations::bind_cache(cache_root);

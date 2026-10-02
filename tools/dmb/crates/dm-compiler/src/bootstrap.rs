@@ -36,6 +36,7 @@ use dm_codegen_byond::{
 };
 use dm_preprocess::PreprocessedProject;
 use dm_resources::{ResourceRequest, ResourceSet};
+use dm_output::assembly::AssemblyImage;
 #[cfg(test)]
 use dm_syntax::lex;
 use dm_syntax::{parse, Item, ItemKind, TokenKind};
@@ -150,17 +151,17 @@ impl OwnerBindingCache {
     fn populate(
         &mut self,
         owner: u32,
-        dmb: &Dmb,
+        dmb: &impl dm_output::assembly::AssemblyImage,
         shared: &SharedLowerBindings,
         bindings: &mut LowerBindings,
-    ) {
+    ) -> Result<(),String> {
         if let Some(frame) = self.frames.get(&owner) {
             bindings.owner = Some(Arc::clone(frame));
-            return;
+            return Ok(());
         }
         let mut frame = LowerBindings::default();
         if let Some(queries)=&self.queries {
-            let resolved=queries.lock().unwrap_or_else(|e|e.into_inner()).resolve(owner,dmb,shared);
+            let resolved=queries.lock().unwrap_or_else(|e|e.into_inner()).resolve(owner,dmb,shared)?;
             // This request-local owner cache holds Arc values; inherited sets
             // are re-derived only when a declaration query's inputs change.
             let bytes=resolved.fields.iter().map(|name|name.len()+64).sum::<usize>()+
@@ -169,9 +170,9 @@ impl OwnerBindingCache {
                 if self.frames.len()>=self.entry_limit || self.bytes.saturating_add(bytes)>self.byte_limit {self.frames.clear();self.bytes=0;}
                 self.bytes+=bytes;self.frames.insert(owner,Arc::clone(&resolved));
             }
-            bindings.owner=Some(resolved);return;
+            bindings.owner=Some(resolved);return Ok(());
         }
-        collect_owner_fields(owner, dmb, shared, &mut frame);
+        collect_owner_fields(owner, dmb, shared, &mut frame)?;
         let bytes = frame
             .fields
             .iter()
@@ -192,17 +193,21 @@ impl OwnerBindingCache {
             self.frames.insert(owner, Arc::clone(&frame));
         }
         bindings.owner = Some(frame);
+        Ok(())
     }
 }
 
 fn collect_owner_fields(
     mut class_id: u32,
-    dmb: &Dmb,
+    dmb: &impl dm_output::assembly::AssemblyImage,
     shared: &SharedLowerBindings,
     bindings: &mut LowerBindings,
-) {
+) -> Result<(),String> {
+    let mut visited=HashSet::new();
     loop {
-        if let Some(path) = dmb.string(dmb.classes[class_id as usize].path_string_id()) {
+        if !visited.insert(class_id){return Err(format!("cycle in owner inheritance at {class_id}"));}
+        let class=dmb.classes().get(class_id as usize).ok_or_else(||format!("owner class out of range: {class_id}"))?;
+        if let Some(path) = dmb.string(class.path_string_id()) {
             seed_builtin_fields(&String::from_utf8_lossy(path), bindings);
             if let Some(types) = shared
                 .member_types
@@ -216,21 +221,24 @@ fn collect_owner_fields(
                 }
             }
         }
-        if let Some(declarations) = dmb.class_variable_declarations(class_id as usize) {
+        if let Some(path)=dmb.string(class.path_string_id()).and_then(|bytes|std::str::from_utf8(bytes).ok()).and_then(|path|shared.known_member_fields.get(path)){
+            bindings.fields.extend(path.iter().cloned());
+        } else if let Some(declarations) = dmb.class_variable_declarations(class_id as usize).map_err(|error|error.to_string())? {
             for (id, _) in declarations {
-                if let Some(name) = dmb.string(dmb.variables[id as usize].name) {
+                if let Some(name) = dmb.string(dmb.variables().get(id as usize).ok_or_else(||format!("owner variable out of range: {id}"))?.name) {
                     bindings
                         .fields
                         .insert(String::from_utf8_lossy(name).into_owned());
                 }
             }
         }
-        let parent = dmb.classes[class_id as usize].parent_class_id();
+        let parent = class.parent_class_id();
         if parent == 0xffff {
             break;
         }
         class_id = parent;
     }
+    Ok(())
 }
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
@@ -584,6 +592,17 @@ pub struct CompiledProject {
     pub artifact_reuse: ArtifactReuseStats,
     pub checkpoint: Option<crate::incremental::EmissionCheckpoint>,
 }
+pub struct PhysicalEmittedProc {pub path:String,pub proc_index:usize}
+pub struct PhysicalCompiledProject {
+    pub dmb:dm_output::wire_image::WireImage,
+    pub emitted:Vec<PhysicalEmittedProc>,
+    pub rsc_bytes:Vec<u8>,
+    pub resource_fingerprint:[u8;32],
+    pub resource_catalog:dm_resources::ResourceCatalog,
+    pub map_fingerprint:[u8;32],
+    pub lowering_cache_stats:crate::lower_cache::CacheStats,
+    pub artifact_reuse:ArtifactReuseStats,
+}
 
 fn bounded_project_snapshot(
     project: &crate::ProjectSession,
@@ -823,6 +842,23 @@ pub fn compile_preprocessed_project_with_resource_catalog(
     frontend: &mut crate::frontend::OutlineSession, maps: &crate::maps::MapSet,
     resources: &dm_resources::ResourceCatalog,
 ) -> Result<CompiledProject, String> {
+    let compiled=compile_preprocessed_project_with_resource_catalog_physical(dme_path,preprocessed,builtin_image,world_name,frontend,maps,resources)?;
+    let dmb=compiled.dmb.materialize().map_err(|error|error.to_string())?;
+    let emitted=compiled.emitted.into_iter().map(|record| {
+        let proc=dmb.procs.get(record.proc_index).ok_or("emitted procedure missing")?;
+        let words=dmb.lists.get(proc.code_locals_args[0] as usize).ok_or("emitted procedure code missing")?;
+        Ok(EmittedProc {path:record.path,proc_index:record.proc_index,words:words.as_slice().to_vec().into()})
+    }).collect::<Result<Vec<_>,String>>()?;
+    Ok(CompiledProject {dmb,emitted,rsc_bytes:compiled.rsc_bytes,resource_fingerprint:compiled.resource_fingerprint,
+        resource_catalog:compiled.resource_catalog,map_fingerprint:compiled.map_fingerprint,
+        lowering_cache_stats:compiled.lowering_cache_stats,artifact_reuse:compiled.artifact_reuse,checkpoint:None})
+}
+/// Canonical physical assembly keeps unchanged procedure code addressed until
+/// ordered output composition. Logical consumers use the compatibility entry.
+pub fn compile_preprocessed_project_with_resource_catalog_physical(
+    dme_path:&Path,preprocessed:&PreprocessedProject,builtin_image:&[u8],world_name:&str,
+    frontend:&mut crate::frontend::OutlineSession,maps:&crate::maps::MapSet,resources:&dm_resources::ResourceCatalog,
+)->Result<PhysicalCompiledProject,String> {
     let cache_root = frontend.cache_root().map(Path::to_path_buf)
         .unwrap_or_else(|| crate::lower_cache::default_cache_root(dme_path));
     frontend.canonical.bind_project(dme_path, &cache_root);
@@ -833,7 +869,7 @@ pub fn compile_preprocessed_project_with_resource_catalog(
     let source_debug = (preprocessed.origin_count() != 0).then(||
         if let Some(source) = &segmented { crate::source_debug::SourceDebugIndex::new_segmented(preprocessed, dme_path.parent().unwrap_or_else(|| Path::new(".")), source) }
         else { crate::source_debug::SourceDebugIndex::new(preprocessed, dme_path.parent().unwrap_or_else(|| Path::new("."))) });
-    let (mut dmb, emitted, rsc_bytes) = emit_global_procs_mode_with_frontend_catalog(
+    let (mut dmb, emitted, rsc_bytes) = emit_global_procs_mode_with_frontend_catalog_physical(
         &preprocessed.text, builtin_image, world_name, None, &mut lowering_cache, None, None,
         procedure_pipeline::worker_count(), Some(&mut *frontend), Some(resources), source_debug.as_ref(), None)?;
     if let Some(skin) = preprocessed.skin_includes.last() {
@@ -841,14 +877,16 @@ pub fn compile_preprocessed_project_with_resource_catalog(
         let name = skin_archive_name(root, skin)?;
         let resource = resources.entries.iter().find(|entry| entry.archive_name == name)
             .ok_or_else(|| format!("selected skin missing from resource catalog: {name}"))?;
-        dmb.world.hub_channel_skin[2] = dmb.resources.iter()
+        let skin_id = dmb.resources().iter()
             .position(|entry| entry.id == resource.id && entry.kind == resource.kind)
             .ok_or_else(|| format!("selected skin not attached: {name}"))? as u32;
+        dmb.world_mut().hub_channel_skin[2]=skin_id;
     }
     crate::maps::emit_maps_with_catalog_cached(&mut dmb, maps, resources, &mut frontend.canonical.maps)?;
-    Ok(CompiledProject { dmb, emitted, rsc_bytes, resource_fingerprint: resources.fingerprint,
+    let dmb=dmb.finish(&mut frontend.canonical.output_validation).map_err(|error|error.to_string())?;
+    Ok(PhysicalCompiledProject { dmb, emitted, rsc_bytes, resource_fingerprint: resources.fingerprint,
         resource_catalog: resources.clone(), map_fingerprint: maps.fingerprint,
-        lowering_cache_stats: lowering_cache.stats(), artifact_reuse: frontend.canonical.emission_stats, checkpoint: None })
+        lowering_cache_stats: lowering_cache.stats(), artifact_reuse: frontend.canonical.emission_stats })
 }
 
 /// Resolve and hash literal resources before a daemon cache lookup.
@@ -1680,8 +1718,8 @@ fn seed_builtin_constants(bindings: &mut SharedLowerBindings) {
     );
 }
 
-fn bind_builtin_global_vars(
-    dmb: &mut Dmb,
+fn bind_builtin_global_vars<I:AssemblyImage>(
+    dmb: &mut I,
     strings: &mut StringIndex,
     ledger: &mut Ledger,
 ) -> Result<(), String> {
@@ -1689,8 +1727,8 @@ fn bind_builtin_global_vars(
         id
     } else {
         let name = strings.intern(dmb, "vars");
-        let id = u32::try_from(dmb.variables.len()).map_err(|_| "variable table exceeds u32")?;
-        dmb.variables.push(Variable {
+        let id = u32::try_from(dmb.variables().len()).map_err(|_| "variable table exceeds u32")?;
+        dmb.variables_mut().push(Variable {
             kind: 82,
             value: 0,
             name,
@@ -1749,13 +1787,13 @@ struct ReplayScratch {
 /// Recompose a cached authored node using only its explicit output dependencies.
 /// No signature parsing, lower frame, symbolic body, or metadata reconstruction
 /// enters this path. Dense IDs patch flat external slots and small record fields.
-fn replay_procedure_fragment(
+fn replay_procedure_fragment<I:AssemblyImage>(
     fragment: &procedure_fragments::OutputFragment,
     semantic_identity:&str,
     scratch: &mut ReplayScratch,
     pending: &PendingProc<'_>,
     plan: &canonical::InvocationPlan,
-    dmb: &mut Dmb,
+    dmb: &mut I,
     strings: &mut StringIndex,
     class_paths: &HashMap<String, u32>,
     resources: &HashMap<String, u32>,
@@ -1766,9 +1804,9 @@ fn replay_procedure_fragment(
     active: &mut BTreeSet<crate::ProcKey>,
     argument_indices: &mut HashMap<String, usize>,
     argument_sources: &mut Vec<(usize, Arc<dm_codegen_byond::prepared_cache::PreparedProcedureEnvelope>, HashMap<String, u32>)>,
-) -> Result<Option<(usize, Arc<[u32]>, bool, bool)>, String> {
+) -> Result<Option<(usize, Option<Arc<[u32]>>, bool, bool)>, String> {
     if fragment.debug_enabled != source_debug.is_some() { return Ok(None); }
-    let linked_start=procedure_fragments::AllocationCounts::from_dmb(dmb);
+    let linked_start=dmb.allocation_counts();
     let body_base = pending.span().start + fragment.body_base_relative;
     scratch.debug.clear(); scratch.debug_ids.clear(); scratch.strings.clear(); scratch.assignments.clear();
     if fragment.unresolved_debug.iter().any(|relative| source_debug
@@ -1826,15 +1864,40 @@ fn replay_procedure_fragment(
         linked.matches_optional(&procedure_fragments::WitnessObservation {
             semantic_identity,recipe_identity:&linked.recipe_identity,start:start.clone(),
             read_identities:&[],scalar_reads:&[],unresolved_debug:&fragment.unresolved_debug,
-        },fragment.relocations.iter().zip(&scratch.assignments).map(|(relocation,current)| {
+        },fragment.relocations.iter().zip(&scratch.assignments).enumerate().map(|(index,(relocation,current))| {
             if relocation.symbol.table==Table::String {
-                let at=relocation.offset as usize;
-                let expected=match relocation.packed_tag {None=>fragment.words[at],Some(_)=>((fragment.words[at]>>8)<<16)|fragment.words[at+1]};
+                let expected=linked.symbol_ids[index];
                 string_id(expected).ok()
             } else {*current}
         }),scratch.strings.iter().map(|(_,current)|*current),scratch.debug_ids.iter().copied())
     });
-    if linked_reusable {
+    let mut wire_projection=None;
+    if let (Some(linked),Some(handle),Some(start))=(&fragment.linked,&fragment.wire_code,&linked_start) {
+        if linked.matches_observation(&procedure_fragments::WitnessObservation {
+            semantic_identity,recipe_identity:&linked.recipe_identity,start:start.clone(),
+            read_identities:&[],scalar_reads:&[],unresolved_debug:&fragment.unresolved_debug,
+        }) {
+            let mut sites=Vec::with_capacity(fragment.relocations.len()+fragment.debug.len()*2);
+            for (index,(relocation,current)) in fragment.relocations.iter().zip(&scratch.assignments).enumerate() {
+                let expected=linked.symbol_ids[index];
+                let current=if relocation.symbol.table==Table::String {string_id(expected)?} else {current.ok_or("wire symbol assignment missing")?};
+                sites.push(match relocation.packed_tag {
+                    None=>dm_output::wire_relocation::RelocationSite::Direct {offset:relocation.offset,expected,current},
+                    Some(tag)=>dm_output::wire_relocation::RelocationSite::Tagged {offset:relocation.offset,tag,expected,current},
+                });
+            }
+            for (index,mark) in fragment.debug.iter().enumerate() {
+                let (old_file,old_line)=linked.debug_ids[index];let (file,line)=scratch.debug_ids[index];
+                sites.push(dm_output::wire_relocation::RelocationSite::Direct {offset:mark.file_offset,expected:old_file,current:file});
+                sites.push(dm_output::wire_relocation::RelocationSite::Direct {offset:mark.line_offset,expected:old_line,current:line});
+            }
+            let projection=dm_output::wire_relocation::RelocationPlan::new(handle,sites).map_err(|error|error.to_string())?;
+            let relocated=projection.changed()||scratch.strings.iter().any(|(old,current)|old!=current);
+            let handle=match dmb.relink_code_handle(handle,&projection) {Ok(handle)=>handle,Err(_)=>return Ok(None)};
+            wire_projection=Some((handle,relocated));
+        }
+    }
+    if linked_reusable||wire_projection.is_some() {
         let (locals,arguments,expected_lists)=if let Some(layout)=&fragment.allocated_rows {
             let base=linked_start.as_ref().ok_or("linked output allocation base exceeds u32")?;
             let locals=fragment.locals.iter().enumerate().map(|(index,&relative)|
@@ -1851,19 +1914,32 @@ fn replay_procedure_fragment(
             let [Some(code),Some(local),Some(args)]=expected else {return Err("linked list allocation overflow".into());};
             (Arc::<[u32]>::from(locals),Arc::<[u32]>::from(arguments),[code,local,args])
         } else {(Arc::clone(&fragment.locals),Arc::clone(&fragment.arguments),fragment.record.code_locals_args)};
-        dmb.variables.extend(fragment.variables.iter().cloned());
-        let code_id=dmb.append_shared_list(Arc::clone(&fragment.words)).map_err(|error|error.to_string())?;
+        let selected_handle=wire_projection.as_ref().map(|(handle,_)|handle).or(fragment.wire_code.as_ref());
+        if let Some(handle)=selected_handle {
+            let width=if dmb.header().flags&0x4000_0000!=0 {4}else{2};
+            if handle.object_width()!=width {return Ok(None);}
+        } else if fragment.code_word_count.is_some_and(|count|count as usize!=fragment.words.len()) {return Ok(None);}
+        for variable in &fragment.variables {
+            let mut variable=variable.clone();variable.name=string_id(variable.name)?;dmb.variables_mut().push(variable);
+        }
+        let (code_id,words)=if let Some(handle)=selected_handle {
+            (dmb.append_code_handle(handle.clone()).map_err(|error|error.to_string())?,None)
+        } else {
+            (dmb.append_shared_list(Arc::clone(&fragment.words)).map_err(|error|error.to_string())?,Some(Arc::clone(&fragment.words)))
+        };
         let locals_id=dmb.append_shared_list(locals).map_err(|error|error.to_string())?;
         let args_id=dmb.append_shared_list(arguments).map_err(|error|error.to_string())?;
         if expected_lists!=[code_id,locals_id,args_id] {
             return Err("linked output rows disagree with allocation witness".into());
         }
-        crate::reserve_proc_sentinel(dmb);
-        let proc_index=dmb.procs.len();
-        let mut record=fragment.record.clone();record.code_locals_args=expected_lists;dmb.procs.push(record);
-        attach_emitted_proc(dmb,pending.owner,&pending.owner_path,pending.verb,proc_index);
-        return Ok(Some((proc_index,Arc::clone(&fragment.words),false,true)));
+        dmb.reserve_proc_sentinel();
+        let proc_index=dmb.procs().len();
+        let mut record=fragment.record.clone();record.code_locals_args=expected_lists;
+        for id in &mut record.strings {*id=string_id(*id)?;}dmb.procs_mut().push(record);
+        attach_emitted_proc(dmb,pending.owner,&pending.owner_path,pending.verb,proc_index)?;
+        return Ok(Some((proc_index,words,wire_projection.as_ref().is_some_and(|(_,relocated)|*relocated),true)));
     }
+    if fragment.code_word_count.is_some_and(|count|count as usize!=fragment.words.len()) {return Ok(None);}
     let mut words = Arc::clone(&fragment.words);
     let mut relocated = false;
     for (relocation, assigned) in fragment.relocations.iter().zip(scratch.assignments.iter().copied()) {
@@ -1888,10 +1964,10 @@ fn replay_procedure_fragment(
             output[mark.file_offset as usize] = file; output[mark.line_offset as usize] = line;
         }
     }
-    let variable_base = dmb.variables.len() as u32;
+    let variable_base = dmb.variables().len() as u32;
     for variable in &fragment.variables {
         let mut variable = variable.clone(); variable.name = string_id(variable.name)?;
-        dmb.variables.push(variable);
+        dmb.variables_mut().push(variable);
     }
     let variable_id = |site:procedure_fragments::SiteKind,old: u32| -> Result<u32, String> {
         if let Some(layout)=&fragment.allocated_rows {
@@ -1903,7 +1979,7 @@ fn replay_procedure_fragment(
     };
     let code_id = dmb.append_shared_list(Arc::clone(&words)).map_err(|error|error.to_string())?;
     let locals = fragment.locals.iter().enumerate().map(|(index,&id)| variable_id(procedure_fragments::SiteKind::LocalVariable(index as u32),id)).collect::<Result<Vec<_>, _>>()?;
-    let locals_id = append_list(dmb, locals);
+    let locals_id = dmb.append_list(locals.into()).map_err(|error|error.to_string())?;
     let mut arguments = fragment.arguments.to_vec();
     for (index,argument) in arguments.chunks_exact_mut(4).enumerate() { argument[2] = variable_id(procedure_fragments::SiteKind::ArgumentVariable(index as u32),argument[2])?; }
     for (helper, envelope) in helpers {
@@ -1914,38 +1990,39 @@ fn replay_procedure_fragment(
             crate::lower_cache::shared_binding_fingerprint(&(envelope.section.encode().map_err(|e| e.to_string())?, current_statics))
         };
         let index = if let Some(&index) = argument_indices.get(&dedup) { index } else {
-            let index = dmb.proc_references.len();
+            let index = dmb.proc_references().len();
             if index > u8::MAX as usize { return Err("too many distinct argument source procedures".into()); }
-            dmb.proc_references.push(0xffff);
+            dmb.proc_references_mut().push(0xffff);
             argument_sources.push((index, envelope, plan.static_ids.clone()));
             argument_indices.insert(dedup, index); index
         };
         let word = arguments.get_mut(helper.parameter * 4 + 1).ok_or("output DAG helper argument missing")?;
         *word = ((index as u32) << 8) | 0x40;
     }
-    let args_id = append_list(dmb, arguments);
+    let args_id = dmb.append_list(arguments.into()).map_err(|error|error.to_string())?;
     let mut record = fragment.record.clone();
     for id in &mut record.strings { *id = string_id(*id)?; }
     record.code_locals_args = [code_id, locals_id, args_id];
-    crate::reserve_proc_sentinel(dmb);
-    let proc_index = dmb.procs.len(); dmb.procs.push(record);
-    attach_emitted_proc(dmb, pending.owner, &pending.owner_path, pending.verb, proc_index);
-    Ok(Some((proc_index, words, relocated,false)))
+    dmb.reserve_proc_sentinel();
+    let proc_index = dmb.procs().len(); dmb.procs_mut().push(record);
+    attach_emitted_proc(dmb, pending.owner, &pending.owner_path, pending.verb, proc_index)?;
+    Ok(Some((proc_index, Some(words), relocated,false)))
 }
 
-fn attach_emitted_proc(dmb: &mut Dmb, owner: Option<u32>, owner_path: &str, verb: bool, proc_index: usize) {
+fn attach_emitted_proc<I:AssemblyImage>(dmb: &mut I, owner: Option<u32>, owner_path: &str, verb: bool, proc_index: usize) -> Result<(),String> {
     if let Some(class_id) = owner {
         let slot = if verb { 0 } else { 1 };
-        let list_id = dmb.classes[class_id as usize].lists_and_procs[slot];
+        let list_id = dmb.classes()[class_id as usize].lists_and_procs[slot];
         if list_id == 0xffff {
-            let list = append_list(dmb, vec![proc_index as u32]);
-            dmb.classes[class_id as usize].lists_and_procs[slot] = list;
-        } else { dmb.lists[list_id as usize].push(proc_index as u32); }
+            let list = dmb.append_list(vec![proc_index as u32].into()).map_err(|error|error.to_string())?;
+            dmb.classes_mut()[class_id as usize].lists_and_procs[slot] = list;
+        } else { dmb.list_mut(list_id).map_err(|error|error.to_string())?.push(proc_index as u32); }
     } else if owner_path == "/world" {
-        let list_id = dmb.world.ids[3];
-        if list_id == 0xffff { dmb.world.ids[3] = append_list(dmb, vec![proc_index as u32]); }
-        else { dmb.lists[list_id as usize].insert(0, proc_index as u32); }
+        let list_id = dmb.world().ids[3];
+        if list_id == 0xffff { let list=dmb.append_list(vec![proc_index as u32].into()).map_err(|error|error.to_string())?; dmb.world_mut().ids[3] = list; }
+        else { dmb.list_mut(list_id).map_err(|error|error.to_string())?.insert(0, proc_index as u32); }
     }
+    Ok(())
 }
 
 fn static_symbol(prefix: &str, owner: &str, name: &str) -> String {
@@ -1963,103 +2040,6 @@ fn class_static_symbol(dmb: &Dmb, class: u32, name: &str) -> String {
 fn declaration_rows(dmb:&Dmb,class_id:usize)->impl Iterator<Item=(u32,u32)>+'_ {
     dmb.classes.get(class_id).and_then(|class|dmb.lists.get(class.lists_and_procs[4] as usize))
         .filter(|words|words.len()%2==0).into_iter().flat_map(|words|words.chunks_exact(2)).map(|pair|(pair[0],pair[1]))
-}
-
-fn seed_member_globals(shared: &mut SharedLowerBindings, dmb: &Dmb) -> HashMap<String, u32> {
-    let mut aliases = HashMap::new();
-    for (class_id, class) in dmb.classes.iter().enumerate() {
-        let Some(owner) = dmb
-            .string(class.path_string_id())
-            .and_then(|path| std::str::from_utf8(path).ok())
-        else {
-            continue;
-        };
-        let mut builtin_fields = LowerBindings::default();
-        seed_builtin_fields(owner, &mut builtin_fields);
-        shared
-            .known_member_fields
-            .entry(owner.to_owned())
-            .or_default()
-            .extend(builtin_fields.fields);
-        for (variable, flags) in declaration_rows(dmb,class_id)
-        {
-            if let Some(name) = dmb
-                .variables
-                .get(variable as usize)
-                .and_then(|var| dmb.string(var.name))
-                .and_then(|name| std::str::from_utf8(name).ok())
-            {
-                shared
-                    .known_member_fields
-                    .entry(owner.to_owned())
-                    .or_default()
-                    .insert(name.to_owned());
-            }
-            if flags & 1 == 0 {
-                continue;
-            }
-            let Some(name) = dmb
-                .variables
-                .get(variable as usize)
-                .and_then(|var| dmb.string(var.name))
-                .and_then(|name| std::str::from_utf8(name).ok())
-            else {
-                continue;
-            };
-            let alias = static_symbol("__dm_class_static_", owner, name);
-            shared
-                .member_globals
-                .entry(owner.to_owned())
-                .or_default()
-                .insert(name.to_owned(), alias.clone());
-            shared.globals.insert(alias.clone());
-            aliases.insert(alias, variable);
-        }
-    }
-    aliases
-}
-
-fn seed_native_member_procs(shared: &mut SharedLowerBindings, dmb: &Dmb) {
-    for class in &dmb.classes {
-        let Some(owner) = dmb
-            .string(class.path_string_id())
-            .and_then(|value| std::str::from_utf8(value).ok())
-        else {
-            continue;
-        };
-        for slot in 0..2 {
-            let Some(list) = dmb.lists.get(class.lists_and_procs[slot] as usize) else {
-                continue;
-            };
-            for id in list {
-                let Some(path) = dmb
-                    .procs
-                    .get(*id as usize)
-                    .and_then(|proc| dmb.string(proc.strings[0]))
-                    .and_then(|value| std::str::from_utf8(value).ok())
-                else {
-                    continue;
-                };
-                if let Some(name) = path.rsplit('/').next() {
-                    shared
-                        .known_member_procs
-                        .entry(owner.to_owned())
-                        .or_default()
-                        .insert(name.to_owned());
-                    let default_name = name.replace('_', " ");
-                    if dmb.string(dmb.procs[*id as usize].strings[1])
-                        != Some(default_name.as_bytes())
-                    {
-                        shared
-                            .member_procs
-                            .entry(owner.to_owned())
-                            .or_default()
-                            .insert(name.to_owned(), path.to_owned());
-                    }
-                }
-            }
-        }
-    }
 }
 
 fn builtin_constant(name: &str) -> Option<const_eval::Constant> {
@@ -2948,8 +2928,8 @@ pub fn audit_lowering(
     let mut shared = SharedLowerBindings::default();
     shared.modified_instances = modified.parents.clone();
     seed_builtin_constants(&mut shared);
-    seed_native_member_procs(&mut shared, &builtin);
-    seed_member_globals(&mut shared, &builtin);
+    let mut native_binding_queries=canonical::OwnerBindingQueries::default();
+    native_binding_queries.build(&builtin,HashMap::new(),&[],&mut shared,None)?;
     for ty in &index.types {
         seed_builtin_fields(
             ty.path.as_str(),
@@ -3052,9 +3032,9 @@ pub fn audit_lowering(
     }
     shared.member_types = fields
         .iter()
-        .map(|(path, scope)| (path.clone(), scope.field_types.clone()))
+        .map(|(path, scope)| (path.clone(), scope.field_types.iter().map(|(name,ty)|(name.clone(),ty.clone())).collect::<im::OrdMap<_,_>>()))
         .collect();
-    shared.parent_types = parent_paths.clone();
+    shared.parent_types = parent_paths.iter().map(|(path,parent)|(path.clone(),parent.clone())).collect();
     for (owner, name) in return_annotations {
         if inherited_return_annotation_error(&shared, &owner, &name) {
             return Err(format!("{owner}/{name}: proc return type cannot be redefined from parent"));
@@ -3321,6 +3301,23 @@ fn emit_global_procs_mode_with_frontend_catalog(
     source_debug: Option<&crate::source_debug::SourceDebugIndex<'_>>,
     lowering_audit: Option<&mut CanonicalLoweringAudit>,
 ) -> Result<(Dmb, Vec<EmittedProc>, Vec<u8>), String> {
+    let (image,records,archive)=emit_global_procs_mode_with_frontend_catalog_physical(source,builtin_image,world_name,
+        resources,lowering_cache,audit,capture,workers,frontend,catalog,source_debug,lowering_audit)?;
+    let native=image.materialize().map_err(|error|error.to_string())?;
+    let emitted=records.into_iter().map(|record| {
+        let proc=native.procs.get(record.proc_index).ok_or("emitted procedure missing")?;
+        let words=native.lists.get(proc.code_locals_args[0] as usize).ok_or("emitted code list missing")?;
+        Ok(EmittedProc {path:record.path,proc_index:record.proc_index,words:words.as_slice().to_vec().into()})
+    }).collect::<Result<Vec<_>,String>>()?;
+    Ok((native,emitted,archive))
+}
+fn emit_global_procs_mode_with_frontend_catalog_physical(
+    source:&str,builtin_image:&[u8],world_name:&str,resources:Option<&ResourceSet>,
+    lowering_cache:&mut crate::lower_cache::ProcLoweringCache,audit:Option<&mut InitializerAudit>,
+    capture:Option<&mut Option<crate::incremental::EmissionCheckpoint>>,workers:usize,
+    mut frontend:Option<&mut crate::frontend::OutlineSession>,catalog:Option<&dm_resources::ResourceCatalog>,
+    source_debug:Option<&crate::source_debug::SourceDebugIndex<'_>>,lowering_audit:Option<&mut CanonicalLoweringAudit>,
+) ->Result<(dm_output::wire_image::WireImageBuilder,Vec<PhysicalEmittedProc>,Vec<u8>),String> {
     let mut session = frontend.as_deref_mut().map(|frontend| std::mem::take(&mut frontend.canonical)).unwrap_or_default();
     session.emission_stats = ArtifactReuseStats::default();
     let result = emit_global_procs_mode_with_frontend_catalog_inner(source, builtin_image, world_name,
@@ -3345,7 +3342,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
     source_debug: Option<&crate::source_debug::SourceDebugIndex<'_>>,
     mut lowering_audit: Option<&mut CanonicalLoweringAudit>,
     session: &mut canonical::CanonicalSession,
-) -> Result<(Dmb, Vec<EmittedProc>, Vec<u8>), String> {
+) -> Result<(dm_output::wire_image::WireImageBuilder, Vec<PhysicalEmittedProc>, Vec<u8>), String> {
     let build_started = std::time::Instant::now();
     let trace = |stage: &str| {
         if std::env::var_os("DM_BUILD_TRACE").is_some() {
@@ -3662,6 +3659,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
     let mut owner_plan_time=std::time::Duration::ZERO;
     let mut default_plan_time=std::time::Duration::ZERO;
     let mut default_wire_time=std::time::Duration::ZERO;
+    let mut operation_prefetch_time=std::time::Duration::ZERO;
     for window in type_items.chunks(1024) {
     let started=std::time::Instant::now();
     let owner_plans=default_plans::owner_batch(window,workers);
@@ -3669,7 +3667,9 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
     let started=std::time::Instant::now();
     semantic_declarations::prefetch_owner_defaults(window,&owner_plans,workers);
     default_plan_time+=started.elapsed();
+    let started=std::time::Instant::now();
     declaration_operations::prefetch(window);
+    operation_prefetch_time+=started.elapsed();
     let wire_started=std::time::Instant::now();
     for (item,owner_plan) in window.iter().zip(&owner_plans) {
         let result = emit_type(
@@ -3694,7 +3694,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
     }
     default_wire_time+=wire_started.elapsed();
     }
-    trace(&format!("type default stages: ownerplans={:.3}s semanticplans={:.3}s wire={:.3}s",owner_plan_time.as_secs_f64(),default_plan_time.as_secs_f64(),default_wire_time.as_secs_f64()));
+    trace(&format!("type default stages: ownerplans={:.3}s semanticplans={:.3}s operation_prefetch={:.3}s wire={:.3}s",owner_plan_time.as_secs_f64(),default_plan_time.as_secs_f64(),operation_prefetch_time.as_secs_f64(),default_wire_time.as_secs_f64()));
     if std::env::var_os("DM_BUILD_TRACE").is_some(){let(hits,misses)=declaration_operations::stats();eprintln!("DM_BUILD_TRACE typed declaration operations: reused={} derived={}",hits.saturating_sub(operation_stats_before.0),misses.saturating_sub(operation_stats_before.1));}
     trace("type defaults complete");
     let source_handles:HashMap<usize,usize>=source_types.iter().enumerate().map(|(index,item)|(*item as *const Item as usize,index)).collect();
@@ -3836,7 +3836,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
     refresh_remaining_implicit_class_headers(&mut dmb, &mut type_metadata)?;
     if audit.is_some() {
         trace("initializer audit complete; no procedure lowering or output");
-        return Ok((dmb, Vec::new(), Vec::new()));
+        return Ok((dm_output::wire_image::WireImageBuilder::from_native(dmb,session.procedure_fragments.code_store()), Vec::new(), Vec::new()));
     }
     for class_id in 0..dmb.classes.len() as u32 {
         if class_inherits(&dmb, class_id, b"/mob") {
@@ -3936,100 +3936,16 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
         ..SharedLowerBindings::default()
     };
     shared_bindings.modified_instances = modified.parents.clone();
-    shared_bindings.member_types = class_field_types;
-    initializer_globals.extend(seed_member_globals(&mut shared_bindings, &dmb));
-    // Static fields are addressed as private global aliases during startup.
-    // Preserve their declared types for inferred istype/new member operations.
-    for (class_id, class) in dmb.classes.iter().enumerate() {
-        let Some(path) = dmb
-            .string(class.path_string_id())
-            .and_then(|path| std::str::from_utf8(path).ok())
-        else {
-            continue;
-        };
-        let Some(types) = shared_bindings.member_types.get(path) else {
-            continue;
-        };
-        for (variable_id, flags) in declaration_rows(&dmb,class_id)
-        {
-            if flags & 1 == 0 {
-                continue;
-            }
-            let Some(name) = dmb
-                .string(dmb.variables[variable_id as usize].name)
-                .and_then(|name| std::str::from_utf8(name).ok())
-            else {
-                continue;
-            };
-            if let Some(ty) = types.get(name) {
-                shared_bindings
-                    .global_types
-                    .insert(static_symbol("__dm_class_static_", path, name), ty.clone());
-            }
-        }
-    }
-    seed_native_member_procs(&mut shared_bindings, &dmb);
-    let mut return_annotations = Vec::new();
-    for proc in &pending {
-        let name = proc.item.header.split('(').next().unwrap_or("")
-            .trim_end_matches('/').rsplit('/').next().unwrap_or("").to_owned();
-        let annotation = declared_proc_return_type(&proc.item.header).map_err(|reason|
-            source_error(source_debug, proc.item.span.start, &proc.item.header, &reason))?;
-        if annotation.is_some() && !proc.owner_path.is_empty() {
-            return_annotations.push((proc.owner_path.clone(), name.clone(), proc.item.span.start));
-        }
-        if let Some(Some(return_type)) = annotation {
-            if proc.owner_path.is_empty() {
-                shared_bindings.global_proc_return_types.insert(name, return_type);
-            } else {
-                shared_bindings.member_proc_return_types.entry(proc.owner_path.clone()).or_default()
-                    .insert(name, return_type);
-            }
-        }
-        if !proc.owner_path.is_empty() {
-            let path = canonical::InvocationFragments::declaration_path(proc.item, &proc.owner_path, proc.verb)?;
-            shared_bindings
-                .known_member_procs
-                .entry(proc.owner_path.clone())
-                .or_default()
-                .insert(path.rsplit('/').next().unwrap().to_owned());
-        }
-        if !proc.owner_path.is_empty()
-            && has_proc_name_setting(&proc.item.children)
-        {
-            let path = canonical::InvocationFragments::declaration_path(proc.item, &proc.owner_path, proc.verb)?;
-            let name = path.rsplit('/').next().unwrap().to_owned();
-            shared_bindings
-                .member_procs
-                .entry(proc.owner_path.clone())
-                .or_default()
-                .insert(name, path);
-        }
-    }
-    for class in &dmb.classes {
-        let Some(path) = dmb.string(class.path_string_id()) else {
-            continue;
-        };
-        let path = String::from_utf8_lossy(path).into_owned();
-        let mut builtin_fields = LowerBindings::default();
-        seed_builtin_fields(&path, &mut builtin_fields);
-        let fields = shared_bindings
-            .member_types
-            .entry(path.clone())
-            .or_default();
-        for (name, ty) in builtin_fields.field_types {
-            fields.entry(name).or_insert(ty);
-        }
-        if let Some(parent) = dmb
-            .classes
-            .get(class.parent_class_id() as usize)
-            .and_then(|parent| dmb.string(parent.path_string_id()))
-        {
-            let parent = String::from_utf8_lossy(parent).into_owned();
-            if parent != path {
-                shared_bindings.parent_types.insert(path, parent);
-            }
-        }
+    initializer_globals.extend(session.owner_bindings.build(&dmb,class_field_types,&pending,&mut shared_bindings,source_debug)?);
+    let mut return_annotations=Vec::new();
+    // Owner-local annotations are cached in immutable roots. Only diagnostics'
+    // current locations and global declarations belong to this publication.
+    for procedure in &pending {
+        if procedure.item.header.rsplit_once(')').is_none_or(|(_,suffix)|suffix.trim().is_empty()){continue;}
+        let name=procedure.item.header.split('(').next().unwrap_or("").trim_end_matches('/').rsplit('/').next().unwrap_or("").to_owned();
+        let annotation=declared_proc_return_type(&procedure.item.header).map_err(|reason|source_error(source_debug,procedure.item.span.start,&procedure.item.header,&reason))?;
+        if !procedure.owner_path.is_empty()&&annotation.is_some(){return_annotations.push((procedure.owner_path.clone(),name,procedure.item.span.start));}
+        else if let Some(Some(return_type))=annotation{shared_bindings.global_proc_return_types.insert(name,return_type);}
     }
     for (owner, name, offset) in return_annotations {
         if inherited_return_annotation_error(&shared_bindings, &owner, &name) {
@@ -4380,6 +4296,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
         &resource_ids.iter().collect::<BTreeMap<_, _>>());
     if let Some(report) = lowering_audit.as_deref_mut() { report.expected_procedures = procedure_count; }
     session.active_keys.clear();
+    let mut dmb=dm_output::wire_image::WireImageBuilder::from_native(dmb,session.procedure_fragments.code_store());
     session.procedure_fragments.stats = Default::default();
     session.procedure_fragments.set_workers(workers);
     let mut occurrences = HashMap::<String, u32>::new();
@@ -4419,6 +4336,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
         ..LowerBindings::default()
     };
     let mut shared_fact_values = BTreeMap::new();
+    let mut fact_resolve_error=None;
     let changed_facts = session.declaration_inputs.as_ref().map(|previous|
         previous.changes(&skeleton_key, &shared_bindings, &procedure_keys, invocations,
             initializer_globals, session.graph.observed_facts()));
@@ -4453,7 +4371,9 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
             } else { return dm_codegen_byond::FactValue::Absent; }
             bindings.shared = Some(Arc::clone(&shared_bindings));
             bindings.prepared_member_globals = prepared_member_globals.clone();
-            if let Some(owner) = owner { fact_frames.populate(owner, &dmb, &shared_bindings, &mut bindings); }
+            if let Some(owner) = owner {if let Err(error)=fact_frames.populate(owner, &dmb, &shared_bindings, &mut bindings) {
+                fact_resolve_error=Some(error);return dm_codegen_byond::FactValue::Absent;
+            }}
             resolved_frame = Some((key.clone(), bindings));
         }
         resolved_frame.as_ref().unwrap().1.binding_fact(fact)
@@ -4465,6 +4385,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
         session.graph.refresh_facts(&skeleton_key, &mut resolve_fact);
     }
     trace("procedure fact refresh complete");
+    if let Some(error)=fact_resolve_error {return Err(error);}
     if !session.declaration_inputs.as_ref().is_some_and(|inputs|inputs.has_revision(&skeleton_key)) {
         session.declaration_inputs = Some(canonical::DeclarationInputs::snapshot(
             &skeleton_key, Arc::clone(&shared_bindings), &procedure_keys, invocations, initializer_globals));
@@ -4480,6 +4401,8 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
         workers,
         |pool| -> Result<(), String> {
             let mut prefetched_until = 0;
+            let mut metadata_start=0usize;
+            let mut metadata_window=Vec::new();
             let mut parser_prefetched_until = 0;
             let mut replay_scratch = ReplayScratch::default();
             let output_started = std::time::Instant::now();
@@ -4522,7 +4445,8 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                                 }
                             }
                         }
-                        session.procedure_fragments.prefetch(&procedure_keys[ordinal..prefetched_until]);
+                        metadata_start=ordinal;
+                        metadata_window=session.procedure_fragments.read_metadata_batch(&procedure_keys[ordinal..prefetched_until]);
                         keys.retain(|key| !session.procedure_fragments.has_handle(key));
                         let _ = session.graph.prefetch(&keys);
                     }
@@ -4563,7 +4487,10 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                         frame_digest: plan.frame_digest.clone(),
                     };
                     if let Some(candidate) = session.graph.probe_validity(key, &descriptor) {
-                        if let Some(fragment) = session.procedure_fragments.get(key, &descriptor, &candidate) {
+                        let fragment=metadata_window.get(ordinal.saturating_sub(metadata_start)).and_then(|entry|entry.as_ref())
+                            .filter(|(saved,identity,_)|*saved==descriptor&&identity==&candidate).map(|(_,_,fragment)|Arc::clone(fragment))
+                            .or_else(||session.procedure_fragments.get(key,&descriptor,&candidate));
+                        if let Some(fragment) = fragment {
                             let started = std::time::Instant::now();
                             if let Some((proc_index, words, relocated, linked_rows)) = replay_procedure_fragment(&fragment, &candidate, &mut replay_scratch, next, plan,
                                 &mut dmb, &mut strings, class_paths, &resource_ids, initializer_globals, global_proc_ids,
@@ -4574,8 +4501,10 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                                 session.procedure_fragments.stats.reused += 1;
                                 session.procedure_fragments.stats.relocated += usize::from(relocated);
                                 session.procedure_fragments.stats.linked_rows_reused += usize::from(linked_rows);
+                                session.procedure_fragments.stats.metadata_only_reused+=usize::from(words.is_none());
+                                session.procedure_fragments.stats.wire_relinked+=usize::from(words.is_none()&&relocated);
                                 session.procedure_fragments.stats.replay_seconds += started.elapsed().as_secs_f64();
-                                emitted.push(EmittedProc { path: plan.path.clone(), proc_index, words: words.into() });
+                                emitted.push(PhysicalEmittedProc { path: plan.path.clone(), proc_index });
                                 pending.next();
                                 continue;
                             }
@@ -4586,6 +4515,10 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                 // static-slot allocation and ordered linking produce identical
                 // table IDs regardless of worker count. AST jobs are bounded.
                 let mut prepared = Vec::with_capacity(procedure_pipeline::LOWERING_WINDOW);
+                if reusable {
+                    let end=ordinal.saturating_add(procedure_pipeline::LOWERING_WINDOW).min(procedure_keys.len());
+                    let _=session.graph.prefetch(&procedure_keys[ordinal..end]);
+                }
                 let mut cached_results = Vec::new();
                 let mut submitted = 0;
                 let prepare_started = std::time::Instant::now();
@@ -4626,7 +4559,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                         bindings.shared = Some(Arc::clone(&shared_bindings));
                         bindings.prepared_member_globals = prepared_member_globals.clone();
                         if let Some(owner) = pending.owner {
-                            owner_bindings.populate(owner, &dmb, &shared_bindings, &mut bindings);
+                            owner_bindings.populate(owner, &dmb, &shared_bindings, &mut bindings)?;
                         }
                         bindings
                     } else {
@@ -4691,8 +4624,8 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                     if prepared_reused { session.emission_stats.authored_prepared_reused += 1; }
                     parent_section_seconds += section_started.elapsed().as_secs_f64();
                     let link_started = std::time::Instant::now();
-                    let output_variable_base = dmb.variables.len();
-                    let output_allocation_start=procedure_fragments::AllocationCounts::from_dmb(&dmb)
+                    let output_variable_base = dmb.variables().len();
+                    let output_allocation_start=dmb.allocation_counts()
                         .ok_or("output allocation count exceeds u32")?;
                     let mut output_helpers = Vec::new();
                     let mut output_helper_proofs = HashMap::new();
@@ -4793,12 +4726,12 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                         .as_ref()
                         .map_or(0xffff, |category| strings.intern_bytes(&mut dmb, category));
                     let code_id = dmb.append_shared_list(Arc::clone(&linked_words)).map_err(|error|error.to_string())?;
-                    let local_ids = simple
+                    let local_ids:Vec<u32> = simple
                         .local_names
                         .iter()
                         .map(|name| append_null_variable(&mut dmb, &mut strings, name))
                         .collect();
-                    let locals_id = append_list(&mut dmb, local_ids);
+                    let locals_id = dmb.append_list(local_ids.into()).map_err(|error|error.to_string())?;
                     let mut arg_words = Vec::new();
                     let mut arguments = simple
                         .argument_metadata()
@@ -4885,13 +4818,13 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                                 {
                                     *id
                                 } else {
-                                    let reference_index = dmb.proc_references.len();
+                                    let reference_index = dmb.proc_references().len();
                                     if reference_index > u8::MAX as usize {
                                         return Err(
                                             "too many distinct argument source procedures".into()
                                         );
                                     }
-                                    dmb.proc_references.push(0xffff);
+                                    dmb.proc_references_mut().push(0xffff);
                                     pending_argument_sources.push((
                                         reference_index,
                                         helper,
@@ -4912,10 +4845,10 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                             ]);
                         }
                     }
-                    let args_id = append_list(&mut dmb, arg_words);
-                    crate::reserve_proc_sentinel(&mut dmb);
-                    let proc_index = dmb.procs.len();
-                    dmb.procs.push(Proc {
+                    let args_id = dmb.append_list(arg_words.into()).map_err(|error|error.to_string())?;
+                    dmb.reserve_proc_sentinel();
+                    let proc_index = dmb.procs().len();
+                    dmb.procs_mut().push(Proc {
                         strings: [path_id, display_id, description_id, category_id],
                         source_parameter: metadata.source_parameter,
                         source_kind: metadata.source_kind,
@@ -4954,15 +4887,15 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                                     }).collect(),
                                     debug_ids:debug.iter().map(|mark|(linked_words[mark.file_offset as usize],linked_words[mark.line_offset as usize])).collect(),
                                 });
-                                let variable_count=dmb.variables.len().saturating_sub(output_variable_base);
+                                let variable_count=dmb.variables().len().saturating_sub(output_variable_base);
                                 let allocated_rows=procedure_fragments::ProcedureRowLayout::new(u32::try_from(variable_count)
                                     .map_err(|_|"procedure variable allocation count exceeds u32")?);
-                                let local_offsets=dmb.lists[locals_id as usize].iter().map(|id|id.checked_sub(output_variable_base as u32)
+                                let local_offsets=dmb.list_words(locals_id).map_err(|error|error.to_string())?.iter().map(|id|id.checked_sub(output_variable_base as u32)
                                     .ok_or("procedure local allocation reference precedes object")).collect::<Result<Vec<_>,_>>()?;
-                                let mut argument_offsets=dmb.lists[args_id as usize].to_vec();
+                                let mut argument_offsets=dmb.list_words(args_id).map_err(|error|error.to_string())?.to_vec();
                                 for argument in argument_offsets.chunks_exact_mut(4) {argument[2]=argument[2].checked_sub(output_variable_base as u32)
                                     .ok_or("procedure argument allocation reference precedes object")?;}
-                                let mut relative_record=dmb.procs[proc_index].clone();relative_record.code_locals_args=[0,1,2];
+                                let mut relative_record=dmb.procs()[proc_index].clone();relative_record.code_locals_args=[0,1,2];
                                 let fragment = procedure_fragments::OutputFragment {
                                     body_base_relative: body_base.saturating_sub(pending.span().start),
                                     debug_enabled: source_debug.is_some(),
@@ -4970,17 +4903,17 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                                         .filter(|mark| source_debug.and_then(|source| source.resolve(body_base + mark.start)).is_none())
                                         .map(|mark| mark.start).collect() } else { Vec::new() },
                                     strings: recipes,
-                                    variables: dmb.variables[output_variable_base..].to_vec(),
+                                    variables: dmb.variables()[output_variable_base..].to_vec(),
                                     old_variable_base: output_variable_base as u32,
                                     locals: local_offsets.into(), arguments: argument_offsets.into(),
                                     record: relative_record, relocations, debug,
-                                    helpers: output_helpers, linked, code_digest:None, code_word_count:None, allocated_rows:Some(allocated_rows), words: Arc::clone(&linked_words),
+                                    helpers: output_helpers, linked, code_digest:None, code_word_count:None, allocated_rows:Some(allocated_rows),wire_code:None, words: Arc::clone(&linked_words),
                                 };
                                 session.procedure_fragments.retain(key.clone(), descriptor.clone(), candidate, fragment);
                             }
                         }
                     }
-                    attach_emitted_proc(&mut dmb, pending.owner, &pending.owner_path, pending.verb, proc_index);
+                    attach_emitted_proc(&mut dmb, pending.owner, &pending.owner_path, pending.verb, proc_index)?;
                     parent_fragment_seconds += fragment_started.elapsed().as_secs_f64();
                     if let Some(outline) = &outline {
                         if let Some(entry) = outline.procedures.get(&path) {
@@ -5009,10 +4942,9 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                             );
                         }
                     }
-                    emitted.push(EmittedProc {
+                    emitted.push(PhysicalEmittedProc {
                         path,
                         proc_index,
-                        words: linked_words.into(),
                     });
                 }
             }
@@ -5023,8 +4955,8 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
             session.emission_plans.finish(&session.active_keys);
             trace(&format!("procedure parent phases complete: prepare={parent_prepare_seconds:.3}s wait={parent_wait_seconds:.3}s section={parent_section_seconds:.3}s link={parent_link_seconds:.3}s records_helpers={parent_record_seconds:.3}s fragments={parent_fragment_seconds:.3}s"));
             session.procedure_fragments.finish(&session.active_keys);
-            trace(&format!("linked output objects: typed_rows_reused={} retained_projection_hits={} shared_projection_hits={} code_read_bytes={} code_hydration_seconds={:.3}",
-                session.procedure_fragments.stats.linked_rows_reused,session.procedure_fragments.stats.retained_projection_hits,session.procedure_fragments.stats.shared_projection_hits,session.procedure_fragments.stats.code_read_bytes,
+            trace(&format!("linked output objects: typed_rows_reused={} metadata_only_reused={} wire_relinked={} retained_projection_hits={} shared_projection_hits={} code_read_bytes={} code_hydration_seconds={:.3}",
+                session.procedure_fragments.stats.linked_rows_reused,session.procedure_fragments.stats.metadata_only_reused,session.procedure_fragments.stats.wire_relinked,session.procedure_fragments.stats.retained_projection_hits,session.procedure_fragments.stats.shared_projection_hits,session.procedure_fragments.stats.code_read_bytes,
                 session.procedure_fragments.stats.code_hydration_seconds));
             trace(&format!("output DAG: reused={} relocated={} built={} refill_batches={} refill_bytes={} replay_seconds={:.3} read_seconds={:.3} decode_seconds={:.3} encode_seconds={:.3} flush_seconds={:.3} write_batches={}",
                 session.procedure_fragments.stats.reused, session.procedure_fragments.stats.relocated,
@@ -5068,7 +5000,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                 Some(pool),reusable.then_some(&mut *session),Some(&state.modified_initializers))?;
             for (declaration,id) in modified.declarations.iter().filter(|declaration|!declaration.children.is_empty()).zip(ids) {
                 let instance=strings.4[declaration.header.trim()] as usize;
-                dmb.instances[instance].initializer=id;
+                dmb.instances_mut()[instance].initializer=id;
             }
             trace("dynamic initializers complete; worker finalization start");
             Ok(())
@@ -5088,9 +5020,9 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
         .iter()
         .any(|p| p.path == "/client/Import" || p.path == "/client/proc/Import")
     {
-        dmb.world.set_client_import_handler(true);
+        dmb.world_mut().set_client_import_handler(true);
     }
-    reorder_member_override_lists(&mut dmb);
+    reorder_member_override_lists(&mut dmb)?;
     trace("member override order finalized; argument helper linking start");
     for (reference_index, envelope, static_ids) in pending_argument_sources {
         let simple = &envelope.metadata;
@@ -5119,11 +5051,11 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
             &initializer_globals, Some(&static_ids), &global_proc_ids)?;
         envelope.section.attach_projection_cache(Arc::clone(&session.output_projections));
         let words = envelope.section.materialize(&ledger).map_err(|error| error.to_string())?;
-        let code_id = append_list(&mut dmb, words);
-        let empty_id = append_list(&mut dmb, vec![]);
-        crate::reserve_proc_sentinel(&mut dmb);
-        let proc_id = dmb.procs.len() as u32;
-        dmb.procs.push(Proc {
+        let code_id = dmb.append_list(words.into()).map_err(|error|error.to_string())?;
+        let empty_id = dmb.append_list(Vec::new().into()).map_err(|error|error.to_string())?;
+        dmb.reserve_proc_sentinel();
+        let proc_id = dmb.procs().len() as u32;
+        dmb.procs_mut().push(Proc {
             strings: [0xffff; 4],
             source_parameter: 255,
             source_kind: 0,
@@ -5131,11 +5063,10 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
             extended_flags: None,
             code_locals_args: [code_id, empty_id, empty_id],
         });
-        dmb.proc_references[reference_index] = proc_id;
+        dmb.proc_references_mut()[reference_index] = proc_id;
     }
     trace("argument helper linking complete; procedure constants start");
-    let procedure_ids: HashMap<&[u8], u32> = dmb
-        .procs
+    let procedure_ids: HashMap<&[u8], u32> = dmb.procs()
         .iter()
         .enumerate()
         .filter_map(|(id, proc)| dmb.string(proc.strings[0]).map(|path| (path, id as u32)))
@@ -5148,23 +5079,20 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
         resolved_procedure_values.insert(*placeholder, proc_id);
     }
     drop(procedure_ids);
-    for variable in &mut dmb.variables {
+    for variable in dmb.variables_mut() {
         if variable.kind == 38 {
             if let Some(id) = resolved_procedure_values.get(&variable.value) {
                 variable.value = *id;
             }
         }
     }
-    let value_lists: HashSet<u32> = dmb
-        .classes
+    let value_lists: HashSet<u32> = dmb.classes()
         .iter()
         .flat_map(|class| [class.lists_and_procs[3], class.overrides])
         .filter(|id| *id != 0xffff)
         .collect();
     for id in value_lists {
-        let Some(values) = dmb.lists.get_mut(id as usize) else {
-            continue;
-        };
+        let values = dmb.list_mut(id).map_err(|error|error.to_string())?;
         let mut cursor = 0;
         while cursor + 2 < values.len() {
             let kind = values[cursor + 1] & 0xff;
@@ -5178,9 +5106,9 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
         }
     }
     trace("procedure constants complete; object ID promotion start");
-    crate::promote_object_ids(&mut dmb);
+    dmb.promote_object_ids();
     trace("object ID promotion complete; reference validation start");
-    dmb.validate_references_incremental(&mut session.output_validation)
+    dmb.validate_references_cached(&mut session.output_validation)
         .map_err(|error| error.to_string())?;
     let _ = session.output_projections.flush();
     trace("reference validation complete; resource archive serialization start");
@@ -5307,24 +5235,24 @@ fn find_inherited_proc<'a>(
     }
 }
 
-fn reorder_member_override_lists(dmb: &mut Dmb) {
-    for class_id in 0..dmb.classes.len() {
+fn reorder_member_override_lists<I:AssemblyImage>(dmb: &mut I) -> Result<(),String> {
+    for class_id in 0..dmb.classes().len() {
         let Some(owner) = dmb
-            .string(dmb.classes[class_id].path_string_id())
+            .string(dmb.classes()[class_id].path_string_id())
             .map(|path| String::from_utf8_lossy(path).into_owned())
         else {
             continue;
         };
         for slot in [0, 1] {
-            let list_id = dmb.classes[class_id].lists_and_procs[slot];
+            let list_id = dmb.classes()[class_id].lists_and_procs[slot];
             if list_id == 0xffff {
                 continue;
             }
-            let members = dmb.lists[list_id as usize].to_vec();
+            let members = dmb.list_words(list_id).map_err(|error|error.to_string())?.to_vec();
             let paths: Vec<_> = members
                 .iter()
                 .map(|id| {
-                    dmb.string(dmb.procs[*id as usize].strings[0])
+                    dmb.string(dmb.procs()[*id as usize].strings[0])
                         .map(|path| String::from_utf8_lossy(path).into_owned())
                         .unwrap_or_default()
                 })
@@ -5348,7 +5276,7 @@ fn reorder_member_override_lists(dmb: &mut Dmb) {
                 })
                 .collect();
             if implicit.is_empty() {
-                dmb.lists[list_id as usize] = (members).into();
+                *dmb.list_mut(list_id).map_err(|error|error.to_string())? = members.into();
                 continue;
             }
             let mut active = Vec::new();
@@ -5374,9 +5302,10 @@ fn reorder_member_override_lists(dmb: &mut Dmb) {
             }
             active.extend(other);
             active.extend(shadowed);
-            dmb.lists[list_id as usize] = (active).into();
+            *dmb.list_mut(list_id).map_err(|error|error.to_string())? = active.into();
         }
     }
+    Ok(())
 }
 
 fn referenced_initializer_globals(
@@ -5422,8 +5351,8 @@ fn is_sized_array_declaration(header: &str) -> bool {
 /// Native materializes literal lists before running dynamic initializer calls.
 /// Allocating a datum, alist, matrix or regex can execute runtime work and belongs
 /// to the later phase, even when its arguments are constants.
-fn literal_initializer(expression: &str, dmb: &Dmb, strings: &StringIndex) -> bool {
-    fn literal(expr: &dm_syntax::Expr, dmb: &Dmb, strings: &StringIndex) -> bool {
+fn literal_initializer<I:AssemblyImage>(expression: &str, dmb: &I, strings: &StringIndex) -> bool {
+    fn literal<I:AssemblyImage>(expr: &dm_syntax::Expr, dmb: &I, strings: &StringIndex) -> bool {
         use dm_syntax::ExprKind;
         match &expr.kind {
             ExprKind::Literal(raw) => {
@@ -5651,9 +5580,9 @@ fn encode_world_view(value: &str) -> Result<u16, String> {
     })
 }
 
-fn class_inherits(dmb: &Dmb, mut class: u32, path: &[u8]) -> bool {
-    for _ in 0..dmb.classes.len() {
-        let Some(record) = dmb.classes.get(class as usize) else {
+fn class_inherits<I:AssemblyImage>(dmb: &I, mut class: u32, path: &[u8]) -> bool {
+    for _ in 0..dmb.classes().len() {
+        let Some(record) = dmb.classes().get(class as usize) else {
             return false;
         };
         if dmb.string(record.path_string_id()) == Some(path) {
@@ -6905,22 +6834,22 @@ fn encode_constant(
     })
 }
 
-fn fold_constant(
+fn fold_constant<I:AssemblyImage>(
     source: &str,
-    dmb: &Dmb,
+    dmb: &I,
     owner: Option<u32>,
     strings: &StringIndex,
 ) -> Option<const_eval::Constant> {
     fold_constant_scoped(source, dmb, owner, &HashSet::new(), strings)
 }
-fn fold_constant_scoped(
+fn fold_constant_scoped<I:AssemblyImage>(
     source: &str,
-    dmb: &Dmb,
+    dmb: &I,
     owner: Option<u32>,
     blocked: &HashSet<String>,
     strings: &StringIndex,
 ) -> Option<const_eval::Constant> {
-    let owner_path = owner.and_then(|id|dmb.classes.get(id as usize))
+    let owner_path = owner.and_then(|id|dmb.classes().get(id as usize))
         .and_then(|class|dmb.string(class.path_string_id()))
         .and_then(|path|std::str::from_utf8(path).ok());
     if let Some(value) = semantic_declarations::evaluate(source, owner_path, blocked) { return value; }
@@ -6932,11 +6861,11 @@ fn fold_constant_scoped(
             let mut visited = HashSet::new();
             while class != 0xffff && visited.insert(class) {
                 if let Some(value) = dmb
-                    .class_initial_values(class as usize)
+                    .class_initial_values(class as usize).ok().flatten()
                     .unwrap_or_default()
                     .iter()
                     .find(|value| {
-                        dmb.string(dmb.variables[value.variable_id as usize].name)
+                        dmb.string(dmb.variables()[value.variable_id as usize].name)
                             == Some(field.as_bytes())
                     })
                 {
@@ -6951,16 +6880,16 @@ fn fold_constant_scoped(
                     return constant_from_value(dmb, &variable, strings);
                 }
                 if let Some((variable, _)) = dmb
-                    .class_variable_declarations(class as usize)
+                    .class_variable_declarations(class as usize).ok().flatten()
                     .unwrap_or_default()
                     .iter()
                     .find(|(id, _)| {
-                        dmb.string(dmb.variables[*id as usize].name) == Some(field.as_bytes())
+                        dmb.string(dmb.variables()[*id as usize].name) == Some(field.as_bytes())
                     })
                 {
                     return constant_from_variable(dmb, *variable, strings);
                 }
-                class = dmb.classes[class as usize].parent_class_id();
+                class = dmb.classes()[class as usize].parent_class_id();
             }
             return None;
         }
@@ -6970,9 +6899,9 @@ fn fold_constant_scoped(
 
         let mut class = owner;
         while let Some(id) = class {
-            if let Some(declarations) = dmb.class_variable_declarations(id as usize) {
+            if let Some(declarations) = dmb.class_variable_declarations(id as usize).ok().flatten() {
                 if let Some((variable, flags)) = declarations.iter().find(|(v, _)| {
-                    dmb.string(dmb.variables[*v as usize].name) == Some(name.as_bytes())
+                    dmb.string(dmb.variables()[*v as usize].name) == Some(name.as_bytes())
                 }) {
                     return if flags & 2 != 0 {
                         constant_from_variable(dmb, *variable, strings)
@@ -6981,7 +6910,7 @@ fn fold_constant_scoped(
                     };
                 }
             }
-            let parent = dmb.classes[id as usize].parent_class_id();
+            let parent = dmb.classes()[id as usize].parent_class_id();
             class = (parent != 0xffff).then_some(parent);
         }
         strings
@@ -6991,17 +6920,17 @@ fn fold_constant_scoped(
             .or_else(|| builtin_constant(name))
     })
 }
-fn constant_from_variable(
-    dmb: &Dmb,
+fn constant_from_variable<I:AssemblyImage>(
+    dmb: &I,
     id: u32,
     strings: &StringIndex,
 ) -> Option<const_eval::Constant> {
-    let variable = &dmb.variables[id as usize];
+    let variable = &dmb.variables()[id as usize];
     constant_from_value(dmb, variable, strings)
 }
 
-fn constant_from_value(
-    dmb: &Dmb,
+fn constant_from_value<I:AssemblyImage>(
+    dmb: &I,
     variable: &Variable,
     strings: &StringIndex,
 ) -> Option<const_eval::Constant> {
@@ -7018,7 +6947,7 @@ fn constant_from_value(
                     .clone()
             } else {
                 String::from_utf8(
-                    dmb.string(dmb.procs.get(variable.value as usize)?.strings[0])?
+                    dmb.string(dmb.procs().get(variable.value as usize)?.strings[0])?
                         .to_vec(),
                 )
                 .ok()?
@@ -7033,13 +6962,13 @@ fn constant_from_value(
         ),
         8 | 9 | 10 | 11 | 32 | 63 | 89 => {
             let class = if variable.kind == 8 {
-                dmb.mobs.get(variable.value as usize)?.class
+                dmb.mobs().get(variable.value as usize)?.class
             } else {
                 variable.value
             };
             Some(const_eval::Constant::TypePath(
                 String::from_utf8(
-                    dmb.string(dmb.classes.get(class as usize)?.path_string_id())?
+                    dmb.string(dmb.classes().get(class as usize)?.path_string_id())?
                         .to_vec(),
                 )
                 .ok()?,
@@ -7155,7 +7084,7 @@ fn bind_class_link(ledger: &mut Ledger, path: &str, id: u32) -> Result<(), Strin
     .map_err(|error| error.to_string())
 }
 
-fn class_link_id(dmb: &Dmb, classes: &HashMap<String, u32>, path: &str) -> Option<u32> {
+fn class_link_id<I:AssemblyImage>(dmb: &I, classes: &HashMap<String, u32>, path: &str) -> Option<u32> {
     if ["/list", "/savefile", "/file", "/client"]
         .iter()
         .any(|base| path == *base || path.starts_with(&format!("{base}/")))
@@ -7164,7 +7093,7 @@ fn class_link_id(dmb: &Dmb, classes: &HashMap<String, u32>, path: &str) -> Optio
     } else {
         let class = *classes.get(path)?;
         if class_inherits(dmb, class, b"/mob") {
-            dmb.mobs
+            dmb.mobs()
                 .iter()
                 .position(|mob| mob.class == class)
                 .map(|id| id as u32)
@@ -7327,10 +7256,10 @@ fn append_list(dmb: &mut Dmb, values: Vec<u32>) -> u32 {
     id
 }
 
-fn append_null_variable(dmb: &mut Dmb, strings: &mut StringIndex, name: &str) -> u32 {
+fn append_null_variable<I:AssemblyImage>(dmb: &mut I, strings: &mut StringIndex, name: &str) -> u32 {
     let name_id = strings.intern(dmb, name);
-    let id = dmb.variables.len() as u32;
-    dmb.variables.push(Variable {
+    let id = dmb.variables().len() as u32;
+    dmb.variables_mut().push(Variable {
         kind: 0,
         value: 0,
         name: name_id,
@@ -7377,16 +7306,16 @@ mod byte_string_index {
 }
 
 impl StringIndex {
-    fn new(dmb: &Dmb) -> Self {
-        let mut index = HashMap::with_capacity(dmb.strings.len());
-        for (id, value) in dmb.strings.iter().enumerate() {
+    fn new<I:AssemblyImage>(dmb: &I) -> Self {
+        let mut index = HashMap::with_capacity(dmb.strings().len());
+        for (id, value) in dmb.strings().iter().enumerate() {
             if crate::native_reserved_string_id(id as u32) {
                 continue;
             }
             index.entry(value.data.clone()).or_insert(id as u32);
         }
-        let mut classes = HashMap::with_capacity(dmb.classes.len());
-        for (id, class) in dmb.classes.iter().enumerate() {
+        let mut classes = HashMap::with_capacity(dmb.classes().len());
+        for (id, class) in dmb.classes().iter().enumerate() {
             if let Some(path) = dmb.string(class.path_string_id()) {
                 classes
                     .entry(String::from_utf8_lossy(path).into_owned())
@@ -7394,7 +7323,7 @@ impl StringIndex {
             }
         }
         let builtin_vars = dmb
-            .variables
+            .variables()
             .iter()
             .position(|variable| variable.kind == 82 && dmb.string(variable.name) == Some(b"vars"))
             .map(|id| id as u32);
@@ -7409,7 +7338,7 @@ impl StringIndex {
         )
     }
 
-    fn intern(&mut self, dmb: &mut Dmb, value: &str) -> u32 {
+    fn intern<I:AssemblyImage>(&mut self, dmb: &mut I, value: &str) -> u32 {
         self.intern_bytes(dmb, value.as_bytes())
     }
 
@@ -7417,7 +7346,7 @@ impl StringIndex {
     fn end_trace(&mut self) -> Vec<procedure_fragments::StringRecipe> {
         self.6.take().map_or_else(Vec::new, |trace| trace.recipes)
     }
-    fn intern_debug(&mut self, dmb: &mut Dmb, file: &str, _relative: usize) -> u32 {
+    fn intern_debug<I:AssemblyImage>(&mut self, dmb: &mut I, file: &str, _relative: usize) -> u32 {
         let trace = self.6.take();
         let id = self.intern_bytes(dmb, file.as_bytes());
         self.6 = trace;
@@ -7427,14 +7356,14 @@ impl StringIndex {
         }
         id
     }
-    fn intern_bytes(&mut self, dmb: &mut Dmb, value: &[u8]) -> u32 {
+    fn intern_bytes<I:AssemblyImage>(&mut self, dmb: &mut I, value: &[u8]) -> u32 {
         let id = if let Some(&id) = self.0.get(value) { id } else {
-            while crate::native_reserved_string_id(dmb.strings.len() as u32) {
-                dmb.strings.push(DmString { data: Vec::new(), long_chunks: 0 });
+            while crate::native_reserved_string_id(dmb.strings().len() as u32) {
+                dmb.strings_mut().push(DmString { data: Vec::new(), long_chunks: 0 });
             }
-            let id = dmb.strings.len() as u32;
+            let id = dmb.strings().len() as u32;
             let bytes = value.to_vec();
-            dmb.strings.push(DmString {
+            dmb.strings_mut().push(DmString {
                 long_chunks: u16::try_from(bytes.len() / u16::MAX as usize).unwrap_or(u16::MAX),
                 data: bytes.clone(),
             });

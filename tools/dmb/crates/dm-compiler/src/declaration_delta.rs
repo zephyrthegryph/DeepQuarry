@@ -12,27 +12,24 @@ fn changed_set<T:Ord+Clone>(old:&BTreeSet<T>,new:&BTreeSet<T>)->BTreeSet<T> {old
 fn changed_map<T:PartialEq>(old:&HashMap<String,T>,new:&HashMap<String,T>)->BTreeSet<String> {
     old.keys().chain(new.keys()).filter(|key|old.get(*key)!=new.get(*key)).cloned().collect()
 }
-fn changed_members<T:PartialEq>(old:&HashMap<String,HashMap<String,T>>,new:&HashMap<String,HashMap<String,T>>)->BTreeSet<String> {
-    let owners:BTreeSet<_>=old.keys().chain(new.keys()).collect();let mut names=BTreeSet::new();
-    for owner in owners {
-        match (old.get(owner),new.get(owner)) {
-            (Some(old),Some(new))=>names.extend(changed_map(old,new)),
-            (Some(members),None)|(None,Some(members))=>names.extend(members.keys().cloned()),
-            _=>{}
-        }
-    }
-    names
+fn changed_persistent_map<T:PartialEq+Clone>(old:&im::OrdMap<String,T>,new:&im::OrdMap<String,T>)->BTreeSet<String> {
+    use im::ordmap::DiffItem;
+    old.diff(new).map(|change|match change {DiffItem::Add(key,_)|DiffItem::Remove(key,_)=>key.clone(),DiffItem::Update {new:(key,_),..}=>key.clone()}).collect()
 }
-fn changed_inventories(old:&HashMap<String,BTreeSet<String>>,new:&HashMap<String,BTreeSet<String>>)->BTreeSet<String> {
-    let owners:BTreeSet<_>=old.keys().chain(new.keys()).collect();let mut names=BTreeSet::new();
-    for owner in owners {
-        match (old.get(owner),new.get(owner)) {
-            (Some(old),Some(new))=>names.extend(changed_set(old,new)),
-            (Some(names_here),None)|(None,Some(names_here))=>names.extend(names_here.iter().cloned()),
-            _=>{}
-        }
-    }
-    names
+fn changed_members<T:PartialEq+Clone>(old:&im::OrdMap<String,im::OrdMap<String,T>>,new:&im::OrdMap<String,im::OrdMap<String,T>>)->BTreeSet<String> {
+    use im::ordmap::DiffItem;let mut names=BTreeSet::new();
+    // Shared persistent subtrees are skipped by the diff iterator.
+    for change in old.diff(new) {match change {
+        DiffItem::Update {old:(_,old),new:(_,new)}=>names.extend(changed_persistent_map(old,new)),
+        DiffItem::Add(_,members)|DiffItem::Remove(_,members)=>names.extend(members.keys().cloned()),
+    }}names
+}
+fn changed_inventories(old:&im::OrdMap<String,im::OrdSet<String>>,new:&im::OrdMap<String,im::OrdSet<String>>)->BTreeSet<String> {
+    use im::ordmap::DiffItem;let mut names=BTreeSet::new();
+    for change in old.diff(new) {match change {
+        DiffItem::Update {old:(_,old),new:(_,new)}=>for change in old.diff(new) {use im::ordset::DiffItem as SetDiff;match change {SetDiff::Add(name)|SetDiff::Remove(name)=>{names.insert(name.clone());},SetDiff::Update {new:name,..}=>{names.insert(name.clone());}}},
+        DiffItem::Add(_,members)|DiffItem::Remove(_,members)=>names.extend(members.iter().cloned()),
+    }}names
 }
 impl DeclarationInputs {
     pub(crate) fn snapshot(revision:&str,shared:Arc<SharedLowerBindings>,keys:&[crate::ProcKey],plans:&[InvocationPlan],initializers:&HashMap<String,u32>)->Self {
@@ -53,7 +50,7 @@ impl DeclarationInputs {
         let names:BTreeSet<_>=initializers.keys().cloned().collect();globals.extend(changed_set(&self.initializer_names,&names));
         let mut global_types=changed_map(&old.global_types,&current.global_types);
         let mut global_procs=changed_set(&old.global_procs,&current.global_procs);
-        let edges=changed_map(&old.parent_types,&current.parent_types);
+        let edges=changed_persistent_map(&old.parent_types,&current.parent_types);
         let aliases=changed_map(&old.modified_instances,&current.modified_instances);
         let mut ancestry_field_change=false;
         for (key,plan) in keys.iter().zip(plans) {
