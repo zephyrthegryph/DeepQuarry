@@ -93,8 +93,16 @@ impl Engine {
                 plan.add(dir, ext);
             }
         }
+        let t_prior = t0.elapsed();
         let (tree, meta) = Tree::load(&opts.root, &plan, &prior, opts.rehash);
-        cache.save_meta(&meta);
+        let t_tree = t0.elapsed();
+        // Persist the file table only when something changed (a rewrite costs more than a walk).
+        if prior.len() != meta.len() || meta.iter().any(|(k, v)| prior.get(k) != Some(v)) {
+            cache.save_meta(&meta);
+        }
+        if std::env::var("DQ_ANALYZE_TRACE").is_ok() {
+            eprintln!("analyze: scopes+meta load {:.1?}, walk+hash {:.1?}, save {:.1?}", t_prior, t_tree - t_prior, t0.elapsed() - t_tree);
+        }
         let changed = if opts.changed_only { Some(changed_files(&opts.root)) } else { None };
         let load_time = t0.elapsed();
         let files_read = tree.files.len();

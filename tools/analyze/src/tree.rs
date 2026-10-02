@@ -217,7 +217,7 @@ pub const CODE_DM: Select = Select::dm(&[("code", "dm")]);
 /// `code/**/*.dm` and `maps/**/*.dm`.
 pub const CODE_MAPS_DM: Select = Select::dm(&[("code", "dm"), ("maps", "dm")]);
 
-#[derive(Serialize, Deserialize, Default, Clone)]
+#[derive(Serialize, Deserialize, Default, Clone, PartialEq)]
 pub struct FileMeta {
     pub size: u64,
     pub mtime_ns: i128,

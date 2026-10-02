@@ -41,6 +41,11 @@ jobs:
         with:
           workspaces: verdigris -> target
           shared-key: verdigris-lint
+      - name: Restore analyze build cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: tools/analyze -> target
+          shared-key: analyze-lint
       # End Caches
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v5.2.0
@@ -68,6 +73,8 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
+      - name: Build the analyze lint engine
+        run: cargo build --release --manifest-path tools/analyze/Cargo.toml
       - name: Build DM health analyzer
         run: cargo build --release --manifest-path tools/dm-health/Cargo.toml
       - name: Run DM health and CI checks
@@ -82,8 +89,10 @@ jobs:
       # dm-health's ci-suite is DM/map/misc checks (replaces the old individual
       # steps this job used to list one by one). The Rust-side checks below are
       # not part of it and stay their own steps.
-      - name: Ratcheted rewrite lints (scheduler, declared refs, lifecycle, containment, ...)
+      - name: Ratcheted rewrite lints (the analyze engine: scheduler, declared refs, lifecycle, containment, check_grep, ...)
         run: bash tools/ci/check_ratchets.sh
+      - name: Analyze engine tests (per-lint fixtures)
+        run: cargo test --release --manifest-path tools/analyze/Cargo.toml
       - name: Check Rust core consolidation
         run: python3 tools/ci/check_rust_core_consolidation.py
       # Linting is scoped to the host-buildable, non-vendored crates (not the
