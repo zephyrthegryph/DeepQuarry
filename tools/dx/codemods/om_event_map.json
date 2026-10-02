@@ -1756,7 +1756,7 @@
  },
  "/datum/om/event/mob_handle_vision": {
   "emits": [
-   "code/modules/mob/living/life/life_om.dm",
+   "code/modules/mob/dead/observer/observer.dm",
    "code/modules/mob/living/life/living_systems.dm"
   ],
   "fields": [],
