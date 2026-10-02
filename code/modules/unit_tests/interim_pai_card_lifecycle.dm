@@ -9,6 +9,7 @@
 	TEST_ASSERT_EQUAL(personality.loc, T, "The real unfolding verb must place the personality on the floor")
 	TEST_ASSERT_EQUAL(card.loc, personality, "The unfolded personality must carry its actual card")
 	personality.close_up(TRUE)
+	own_turf_contents(T)
 	TEST_ASSERT_EQUAL(personality.loc, card, "Normal close_up must still fold into the surviving card")
 	TEST_ASSERT_EQUAL(card.loc, T, "Normal close_up must return the card to the actual floor")
 	TEST_ASSERT_EQUAL(personality.card, card, "Normal folding must preserve the actual card relation")
