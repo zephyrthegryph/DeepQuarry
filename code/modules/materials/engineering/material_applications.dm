@@ -1,15 +1,6 @@
-/// Compatibility fields retained for save data and older callers. New
-/// fabrication records every functional part in the object's material blueprint.
-/obj/item
-	var/engineered_material_id
-	var/engineered_material_profile
-	var/material_surgery_cleanliness_bonus = 0
-	var/material_tool_quality_bonus = 0
-	/// Effective physical values consumed by integrity, throwing, power and examination.
-	var/material_effective_density = 0
-	var/material_effective_electrical_resistance = 0
-	var/material_accuracy_delta = 0
-	var/material_recoil_delta = 0
+// Compatibility fields retained for save data and older callers (the engineered id and profile, the surgery and
+// tool bonuses, effective density and resistance, the gun deltas) are the item's /datum/material_build
+// (material_state.dm). New fabrication records every functional part in the object's material blueprint.
 
 /obj/item/proc/apply_engineered_material(datum/material/material, application_profile)
 	if(!istype(material) || !application_profile)
@@ -25,8 +16,9 @@
 	var/datum/material/primary = primary_construction_material()
 	if(!primary)
 		return FALSE
-	engineered_material_id = primary.name
-	engineered_material_profile = application_profile
+	var/datum/material_build/build = material_build(src)
+	build.engineered_id = primary.name
+	build.profile = application_profile
 	var/total_amount = 0
 	var/weighted_density = 0
 	var/weighted_dielectric = 0
@@ -41,13 +33,13 @@
 		weighted_density += part_material.density * part_amount
 		weighted_dielectric += part_material.dielectric_strength * part_amount
 	if(total_amount > 0)
-		material_effective_density = weighted_density / total_amount
-		material_effective_electrical_resistance = weighted_dielectric / total_amount
+		build.effective_density = weighted_density / total_amount
+		build.effective_electrical_resistance = weighted_dielectric / total_amount
 		// Density changes the physical handling of every manufactured object;
 		// dielectric performance changes its real electrical coupling.
-		throw_speed = max(1, round(initial(throw_speed) * clamp(100 / max(material_effective_density, 10), 0.5, 1.5)))
-		throw_range = max(1, round(initial(throw_range) * clamp(100 / max(material_effective_density, 10), 0.5, 1.5)))
-		siemens_coefficient = clamp(initial(siemens_coefficient) * (1.25 - material_effective_electrical_resistance / 125), 0.05, 2)
+		throw_speed = max(1, round(initial(throw_speed) * clamp(100 / max(build.effective_density, 10), 0.5, 1.5)))
+		throw_range = max(1, round(initial(throw_range) * clamp(100 / max(build.effective_density, 10), 0.5, 1.5)))
+		siemens_coefficient = clamp(initial(siemens_coefficient) * (1.25 - build.effective_electrical_resistance / 125), 0.05, 2)
 		worn_protection_changed()
 	var/datum/material/structure = material_for_role(MATERIAL_ROLE_STRUCTURE) || material_for_role(MATERIAL_ROLE_FRAME) || material_for_role(MATERIAL_ROLE_BODY) || primary
 	if(max_integrity > 0 && total_amount > 0)
@@ -77,8 +69,8 @@
 			var/datum/material/grip = material_for_role(MATERIAL_ROLE_GRIP) || primary
 			force = max(initial(force), round(working.hardness / 8))
 			toolspeed = clamp(1.15 - (working.hardness + working.elasticity + working.corrosion_resistance + grip.elasticity * 0.4 + grip.dielectric_strength * 0.2) / 390, 0.3, 1.15)
-			material_surgery_cleanliness_bonus = clamp(round((working.corrosion_resistance + working.heat_resistance + working.reactivity * -0.5) / 3), 0, 35)
-			material_tool_quality_bonus = clamp(round((working.hardness + working.elasticity + working.purity_equivalent()) / 20), 0, 15)
+			build.surgery_cleanliness_bonus = clamp(round((working.corrosion_resistance + working.heat_resistance + working.reactivity * -0.5) / 3), 0, 35)
+			build.tool_quality_bonus = clamp(round((working.hardness + working.elasticity + working.purity_equivalent()) / 20), 0, 15)
 		if(MATERIAL_APPLICATION_CELL)
 			if(istype(src, /obj/item/cell))
 				var/obj/item/cell/cell = src
@@ -120,12 +112,12 @@
 				var/datum/material/barrel = material_for_role(MATERIAL_ROLE_BARREL) || primary
 				var/datum/material/receiver = material_for_role(MATERIAL_ROLE_STRUCTURE) || primary
 				var/datum/material/grip = material_for_role(MATERIAL_ROLE_GRIP) || receiver
-				gun.accuracy -= material_accuracy_delta
-				gun.recoil -= material_recoil_delta
-				material_accuracy_delta = clamp(round((barrel.hardness + barrel.heat_resistance + barrel.fracture_toughness - barrel.brittleness) / 35) - 4, -8, 8)
-				material_recoil_delta = clamp(round((receiver.brittleness - receiver.fracture_toughness - grip.elasticity * 0.5) / 35), -3, 3)
-				gun.accuracy += material_accuracy_delta
-				gun.recoil = max(0, gun.recoil + material_recoil_delta)
+				gun.accuracy -= build.accuracy_delta
+				gun.recoil -= build.recoil_delta
+				build.accuracy_delta = clamp(round((barrel.hardness + barrel.heat_resistance + barrel.fracture_toughness - barrel.brittleness) / 35) - 4, -8, 8)
+				build.recoil_delta = clamp(round((receiver.brittleness - receiver.fracture_toughness - grip.elasticity * 0.5) / 35), -3, 3)
+				gun.accuracy += build.accuracy_delta
+				gun.recoil = max(0, gun.recoil + build.recoil_delta)
 		if(MATERIAL_APPLICATION_PROJECTILE)
 			var/datum/material/projectile_material = material_for_role(MATERIAL_ROLE_WORKING) || primary
 			if(istype(src, /obj/item/ammo_magazine))
@@ -144,9 +136,9 @@
 				var/obj/item/gun/gun = src
 				var/datum/material/emitter = material_for_role(MATERIAL_ROLE_EMITTER) || primary
 				var/datum/material/optics = material_for_role(MATERIAL_ROLE_OPTICAL) || emitter
-				gun.accuracy -= material_accuracy_delta
-				material_accuracy_delta = clamp(round((emitter.heat_resistance + optics.purity_equivalent() + optics.hardness - optics.brittleness) / 45) - 4, -8, 8)
-				gun.accuracy += material_accuracy_delta
+				gun.accuracy -= build.accuracy_delta
+				build.accuracy_delta = clamp(round((emitter.heat_resistance + optics.purity_equivalent() + optics.hardness - optics.brittleness) / 45) - 4, -8, 8)
+				gun.accuracy += build.accuracy_delta
 				if(istype(gun, /obj/item/gun/energy))
 					var/obj/item/gun/energy/energy_gun = gun
 					var/datum/material/conductor = material_for_role(MATERIAL_ROLE_CONDUCTOR) || primary
@@ -162,7 +154,7 @@
 				clothing.permeability_coefficient = clamp(initial(clothing.permeability_coefficient) * (1.15 - reinforcement.corrosion_resistance / 150), 0.05, 2)
 		if(MATERIAL_APPLICATION_CABLE)
 			var/datum/material/conductor = material_for_role(MATERIAL_ROLE_CONDUCTOR) || primary
-			engineered_material_id = conductor.name
+			build.engineered_id = conductor.name
 		if(MATERIAL_APPLICATION_LIGHT)
 			if(istype(src, /obj/item/light))
 				var/obj/item/light/light = src
@@ -193,16 +185,18 @@
 	var/datum/material/constructed = primary_construction_material()
 	if(constructed)
 		return constructed
-	if(engineered_material_id)
-		return get_material_by_name(engineered_material_id)
+	var/engineered_id = material_build_view(src).engineered_id
+	if(engineered_id)
+		return get_material_by_name(engineered_id)
 	return ..()
 
 /obj/item/examine(mob/user)
 	. = ..()
-	if(engineered_material_id && !has_functional_construction())
-		var/datum/material/material = get_material_by_name(engineered_material_id)
+	var/datum/material_build/build = material_build_view(src)
+	if(build.engineered_id && !has_functional_construction())
+		var/datum/material/material = get_material_by_name(build.engineered_id)
 		if(material)
-			. += span_notice("Engineered from <b>[material.display_name]</b> for [engineered_material_profile].")
+			. += span_notice("Engineered from <b>[material.display_name]</b> for [build.profile].")
 
 /obj/machinery/portable_atmospherics/canister
 	var/pressure_liner_material_id

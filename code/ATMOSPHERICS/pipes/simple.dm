@@ -47,9 +47,9 @@
 	var/now = world.time
 	var/elapsed_seconds = material_last_exposure ? clamp((now - material_last_exposure) / 10, 0, 30) : 0
 	material_last_exposure = now
-	material_service?.schedule(0)
+	material_service_of(src)?.schedule(0)
 	var/active = FALSE
-	material_liner_integrity = material_environment_liner_integrity
+	material_liner_integrity = material_assembly_view(src).liner_integrity
 	if(QDELETED(src))
 		return FALSE
 	var/datum/material/material = material_for_role(MATERIAL_ROLE_LINER) || engineered_material()

@@ -6,7 +6,7 @@
 /datum/material/proc/dq_apply_material_responses(obj/item/item)
 	if(!item)
 		return
-	var/profile = item.engineered_material_profile
+	var/profile = material_build_view(item).profile
 	var/electrical_form = istype(item, /obj/item/cell)
 	var/medical_form = profile == MATERIAL_APPLICATION_SURGICAL || istype(item, /obj/item/surgical)
 	var/armor_form = profile == MATERIAL_APPLICATION_ARMOR || istype(item, /obj/item/clothing) || istype(item, /obj/item/material/armor_plating)
@@ -16,7 +16,7 @@
 		(medical_form && (antimicrobial_activity || hemostatic_activity || biocompatibility || reagent_porosity)) || \
 		(armor_form && (reactive_energy_capacity || shape_recovery_rate || phase_change_capacity)) || \
 		(tool_form && (shape_recovery_rate || piezoelectric_coefficient || reagent_porosity))
-	var/datum/material_response/existing = item.material_response
+	var/datum/material_response/existing = material_build_view(item).response
 	if(existing)
 		// Reconfiguration changes the source material without replacing the
 		// response state and refilling its stored energy reservoirs.
@@ -33,9 +33,8 @@
 		new /datum/material_response(item, src, electrical_form, medical_form, armor_form, tool_form)
 
 /// The physical-response state of an item made of an engineered material (was the
-/// material_response component). Owned by the item; hooks its events with om_hook().
-/obj/item/var/datum/material_response/material_response
-/// Pinned in the saved state (code/datums/state/codecs.dm, /datum/state_codec/pinned).
+/// material_response component). Owned by the item's build record (material_build_view(item).response);
+/// hooks its events with om_hook(). It pins its holder materialised (material_state.dm, state_refusal()).
 
 /datum/material_response
 	/// The item this state belongs to.
@@ -56,12 +55,13 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 
 /datum/material_response/New(obj/item/new_parent, datum/material/material, _electrical_form, _medical_form, _armor_form, _tool_form)
 	. = ..()
-	if(!isitem(new_parent) || !istype(material) || new_parent.material_response)
+	if(!isitem(new_parent) || !istype(material) || material_build_view(new_parent).response)
 		log_runtime("material_response: cannot attach to [new_parent] ([material]); discarded")
 		qdel(src) // ALLOW(lifecycle): a response that cannot attach discards itself in New()
 		return
 	rel_set(src, nameof(parent), new_parent)
-	own_set(new_parent, nameof(new_parent.material_response), src)
+	var/datum/material_build/build = material_build(new_parent)
+	own_set(build, nameof(build.response), src)
 	material_id = material.name
 	electrical_form = !!_electrical_form
 	medical_form = !!_medical_form
@@ -95,9 +95,9 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 	return get_material_by_name(material_id)
 
 /datum/material_response/proc/ambient_temperature()
-	var/obj/assembly = parent
-	if(assembly.material_service)
-		return assembly.material_service.temperature
+	var/datum/material_service/service = material_service_of(parent)
+	if(service)
+		return service.temperature
 	var/turf/turf = get_turf(parent)
 	var/datum/gas_mixture/air = turf?.return_air()
 	return air ? air.return_temperature() : T20C
@@ -288,13 +288,13 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 	return result
 
 /obj/item/proc/material_response_impact(turf/where, atom/cause)
-	material_response?.respond_to_impact(cause)
+	material_build_of(src)?.response?.respond_to_impact(cause)
 
 /obj/item/proc/material_reactive_absorb(damage)
-	return material_response?.absorb_reactive_hit(damage) || FALSE
+	return material_build_of(src)?.response?.absorb_reactive_hit(damage) || FALSE
 
 /obj/item/proc/material_cell_use_cost(amount)
-	material_response?.settle_cell_energy()
+	material_build_of(src)?.response?.settle_cell_energy()
 	// Superconductors eliminate conductor loss; they do not multiply stored
 	// energy. Throughput and heat are handled by the cell's conductor role.
 	return amount

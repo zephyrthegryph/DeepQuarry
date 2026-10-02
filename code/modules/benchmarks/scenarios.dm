@@ -55,25 +55,27 @@
 	metric("init_atmos_ms", SSair.init_time_ms, "ms")
 	count_metric("booted_ffi_calls", __verdigris_ffi_calls, "calls")
 	// Per-instance composition lists. Blueprints are per type; an item owns a list only
-	// for an arbitrary mix (material_mix). Override lists are interned and shared.
+	// for an arbitrary mix (its build record's mix). Override lists are interned and shared.
 	var/items = 0
 	var/matter_lists = 0
 	var/matter_entries = 0
 	var/list/matter_owners = list()
 	for(var/obj/item/I in world)
 		items++
-		if(I.material_mix)
+		var/list/mix = material_build_of(I)?.mix
+		if(mix)
 			matter_lists++
-			matter_entries += length(I.material_mix)
+			matter_entries += length(mix)
 			matter_owners["[I.type]"]++
 		CHECK_TICK
 	var/override_refs = 0
 	var/list/override_lists = list()
 	for(var/obj/O in world)
-		if(O.material_overrides)
+		var/list/overrides = material_build_of(O)?.overrides
+		if(overrides)
 			override_refs++
-			if(!(O.material_overrides in override_lists))
-				override_lists += list(O.material_overrides)
+			if(!(overrides in override_lists))
+				override_lists += list(overrides)
 		CHECK_TICK
 	count_metric("items_total", items, "instances")
 	count_metric("item_matter_lists", matter_lists, "lists")

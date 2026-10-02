@@ -73,7 +73,7 @@
 	equipment_vertices = alist()
 	var/list/adjacency = list()
 	for(var/obj/structure/cable/cable as anything in cables)
-		if(cable.material_custom_assembly || cable.engineered_material_id)
+		if(material_assembly_view(cable).custom || cable.engineered_material_id)
 			has_custom_conductors = TRUE
 		var/list/neighbors = list()
 		var/has_attachment = FALSE
@@ -150,7 +150,7 @@
 			if(!cable)
 				continue
 			var/length_factor = (i == 1 || i == length(run)) ? 0.5 : 1
-			var/temperature = cable.material_service?.temperature || T20C
+			var/temperature = material_service_of(cable)?.temperature || T20C
 			if(cable.material_for_role(MATERIAL_ROLE_CONDUCTOR)?.critical_temperature)
 				has_superconductors = TRUE
 				edge[MATERIAL_POWER_EDGE_CRITICAL] = TRUE
@@ -466,9 +466,10 @@
 		var/obj/structure/cable/cable = material_power_cable(entity)
 		if(cable && !(cable in cable_current))
 			cable.material_current = 0
-			if(cable.material_service)
-				cable.material_service.last_input_watts = 0
-				cable.material_service.last_output_watts = 0
+			var/datum/material_service/idle_service = material_service_of(cable)
+			if(idle_service)
+				idle_service.last_input_watts = 0
+				idle_service.last_output_watts = 0
 	energized_cables = list()
 	for(var/obj/structure/cable/cable as anything in cable_current)
 		energized_cables += cable.power_entity
@@ -476,7 +477,7 @@
 		cable.material_current = cable_current[cable]
 		var/heat = cable_heat[cable]
 		cable.material_service_event(MATERIAL_EVENT_WORK, 1)
-		var/datum/material_service/service = cable.material_service
+		var/datum/material_service/service = material_service_of(cable)
 		if(!service)
 			continue
 		var/input = max(heat, cable.material_current * MATERIAL_SERVICE_NOMINAL_VOLTAGE * elapsed)

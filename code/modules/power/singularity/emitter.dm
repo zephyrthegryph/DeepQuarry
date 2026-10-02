@@ -131,11 +131,12 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/power/emitter, MACHINE_PIPELINE, list(
 		fire_delay = max(1, round(fire_delay / material_cadence_setting))
 		material_stored_energy -= required_energy
 		material_beam_joules += desired_beam
-		material_service.output_joules += desired_beam
-		material_service.loss_joules += required_energy - desired_beam
-		material_service.last_output_watts = desired_beam / max(fire_delay / 10, 0.1)
-		EXPIRY_STAMP(material_service, last_work_time, CLOCK_WORLD)
-		material_service.add_heat(required_energy - desired_beam)
+		var/datum/material_service/service = material_service_of(src)
+		service.output_joules += desired_beam
+		service.loss_joules += required_energy - desired_beam
+		service.last_output_watts = desired_beam / max(fire_delay / 10, 0.1)
+		EXPIRY_STAMP(service, last_work_time, CLOCK_WORLD)
+		service.add_heat(required_energy - desired_beam)
 
 		play_sfx(src, SFX_WEAPONS_EMITTER)
 		if(prob(35))

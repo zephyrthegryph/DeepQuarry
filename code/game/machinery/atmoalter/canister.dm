@@ -38,11 +38,11 @@
 
 /// Returns TRUE while continued chemical exposure needs another sample.
 /obj/machinery/portable_atmospherics/canister/proc/process_material_vessel()
-	material_liner_integrity = material_environment_liner_integrity
+	material_liner_integrity = material_assembly_view(src).liner_integrity
 	return FALSE // Independent material service owns exposure and leak updates.
 
 /obj/machinery/portable_atmospherics/canister/material_environment_begin_leak()
-	if(!material_environment_leaking)
+	if(!material_assembly_view(src).leaking)
 		visible_message(span_warning("Gas begins hissing through [src]'s compromised vessel wall."))
 	return ..()
 
@@ -268,7 +268,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/canister, TYPE_PROC
 	stock.use(2)
 	set_construction_material(MATERIAL_ROLE_LINER, liner.name)
 	material_liner_integrity = 100
-	material_environment_liner_integrity = 100
+	material_assembly(src).liner_integrity = 100
 	name = "[liner.display_name]-lined [initial(name)]"
 	color = liner.icon_colour
 	to_chat(user, span_notice("You install a [liner.display_name] pressure liner in [src]."))

@@ -4274,6 +4274,7 @@
 #include "code\modules\generated_station\generated_station_materializer.dm"
 #include "code\modules\generated_station\generated_station_architecture_validation.dm"
 #include "code\modules\generated_station\generated_station_objectives.dm"
+#include "code\modules\materials\engineering\material_state.dm"
 #include "code\modules\materials\engineering\material_batch.dm"
 #include "code\modules\materials\engineering\processed_material.dm"
 #include "code\modules\materials\engineering\material_composites.dm"

@@ -134,10 +134,10 @@ GLOBAL_PROTECT(surgical_steps)
 			return 0
 	for(var/tool_type in allowed_tools)
 		if(istype(tool, tool_type))
-			return clamp(allowed_tools[tool_type] + tool.material_tool_quality_bonus, 0, 100)
+			return clamp(allowed_tools[tool_type] + material_build_view(tool).tool_quality_bonus, 0, 100)
 	for(var/quality in allowed_tool_qualities)
 		if(tool.has_tool_quality(quality))
-			return clamp(allowed_tool_qualities[quality] + tool.material_tool_quality_bonus, 0, 100)
+			return clamp(allowed_tool_qualities[quality] + material_build_view(tool).tool_quality_bonus, 0, 100)
 	return 0
 
 // --- Validity -------------------------------------------------------------------------
@@ -375,7 +375,7 @@ GLOBAL_PROTECT(surgical_steps)
 	var/cleanliness = target.get_surgery_cleanliness(user)
 	if(isnull(cleanliness)) // standing up
 		return FALSE
-	cleanliness = clamp(cleanliness + material_surgery_cleanliness_bonus, 0, 100)
+	cleanliness = clamp(cleanliness + material_build_view(src).surgery_cleanliness_bonus, 0, 100)
 
 	var/list/available = available_surgical_steps(user, target, zone, src)
 	if(!length(available))

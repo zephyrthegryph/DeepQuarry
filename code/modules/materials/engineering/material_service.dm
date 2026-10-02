@@ -38,29 +38,24 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 
 GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_gases))
 
-/obj
-	var/datum/material_service/material_service
-	var/material_configuration_revision = 0
-	var/material_assembly_id
-	/// TRUE for player-fabricated or deliberately reconfigured assemblies. Map
-	/// defaults remain inspectable without enrolling every machine in exposure.
-	var/material_custom_assembly = FALSE
-	var/tmp/material_last_service_event
+// An object's service, diagnostics identity, wear and fabricated flag are its /datum/material_assembly
+// (material_state.dm); material_service_of() reads the service.
 
 /// Single admission point for material simulation. Callers report a physical
 /// event and normalized severity; they never decide lifecycle from their type.
 /obj/proc/material_service_event(event, severity = 0, observed_temperature)
 	if(!has_functional_construction())
 		return
-	var/admit = !!material_service || material_custom_assembly
+	var/datum/material_assembly/state = material_assembly_view(src)
+	var/admit = !!state.service || state.custom
 	if(!admit)
 		switch(event)
 			if(MATERIAL_EVENT_CONFIGURATION)
-				admit = material_custom_assembly
+				admit = state.custom
 			if(MATERIAL_EVENT_MONITORING)
 				admit = TRUE
 			if(MATERIAL_EVENT_PRESSURE)
-				admit = severity >= MATERIAL_PRESSURE_STRESS_RATIO || material_environment_fatigue > 0 || material_environment_leaking
+				admit = severity >= MATERIAL_PRESSURE_STRESS_RATIO || state.fatigue > 0 || state.leaking
 			if(MATERIAL_EVENT_TEMPERATURE)
 				admit = severity >= 0.8
 			if(MATERIAL_EVENT_CORROSION)
@@ -72,19 +67,21 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 	if(!admit)
 		return
 	var/first_sample = 0
-	if(!material_service)
-		own_set(src, nameof(material_service), new /datum/material_service(src))
+	var/datum/material_assembly/assembly = material_assembly(src)
+	if(!assembly.service)
+		own_set(assembly, nameof(assembly.service), new /datum/material_service(src))
 		// Services admitted while the world initializes (every power cell, pipes seeing their
 		// first pressure) take their baseline sample spread over the first seconds after boot
 		// rather than all on the first tick.
 		if(!Master.current_runlevel)
 			first_sample = rand(0, MATERIAL_SERVICE_BOOT_SPREAD)
-	material_last_service_event = event
-	material_service.last_admission_event = event
-	if(isnum(observed_temperature) && observed_temperature > material_service.temperature)
-		material_service.temperature = observed_temperature
-	material_service.schedule(first_sample)
-	return material_service
+	assembly.last_event = event
+	var/datum/material_service/service = assembly.service
+	service.last_admission_event = event
+	if(isnum(observed_temperature) && observed_temperature > service.temperature)
+		service.temperature = observed_temperature
+	service.schedule(first_sample)
+	return service
 
 /// Compatibility entry for explicit test/debug callers. Gameplay integrations
 /// must publish a material_service_event() with a physical reason.
@@ -95,7 +92,7 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 /// pipe, canister, and machine. Composition and thermal hazards share it too.
 /obj/proc/material_observe_gases(datum/gas_mixture/internal, datum/gas_mixture/external)
 	if(!internal || !has_functional_construction())
-		return material_service
+		return material_service_of(src)
 	var/internal_temperature = internal.return_temperature()
 	var/external_temperature = external?.return_temperature() || TCMB
 	var/rating = material_service_rating()
@@ -110,12 +107,13 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 	var/datum/material/structure = material_for_role(MATERIAL_ROLE_STRUCTURE) || primary_construction_material()
 	if(structure)
 		material_service_event(MATERIAL_EVENT_TEMPERATURE, max(internal_temperature, external_temperature) / max(structure.melting_point, 1), max(internal_temperature, external_temperature))
-	return material_service
+	return material_service_of(src)
 
 /obj/proc/material_service_can_retire(datum/material_service/service)
-	if(!service || material_custom_assembly || service.monitor_tool || service.maintenance_open || service.chemical_rate > 0)
+	var/datum/material_assembly/state = material_assembly_view(src)
+	if(!service || state.custom || service.monitor_tool || service.maintenance_open || service.chemical_rate > 0)
 		return FALSE
-	if(material_environment_leaking || material_environment_fatigue > 0 || material_environment_liner_integrity < 100 || material_environment_exterior_integrity < 100)
+	if(state.leaking || state.fatigue > 0 || state.liner_integrity < 100 || state.exterior_integrity < 100)
 		return FALSE
 	var/turf/location = get_turf(src)
 	var/datum/gas_mixture/ambient = location?.return_air()
@@ -215,11 +213,12 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 	var/has_sampled = FALSE
 	var/last_admission_event
 
-/datum/material_service/New(obj/assembly)
+/datum/material_service/New(obj/holder)
 	..()
-	rel_set(src, nameof(owner), assembly)
-	if(!owner().material_assembly_id)
-		owner().material_assembly_id = "ME-[++GLOB.next_material_assembly_id]"
+	rel_set(src, nameof(owner), holder)
+	var/datum/material_assembly/assembly = material_assembly(holder)
+	if(!assembly.assembly_id)
+		assembly.assembly_id = "ME-[++GLOB.next_material_assembly_id]"
 	EXPIRY_STAMP(src, last_update, CLOCK_WORLD)
 	EXPIRY_STAMP(src, chemical_last_update, CLOCK_WORLD)
 	initialize_thermal_stock()
@@ -350,7 +349,7 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 		lowest = min(lowest, pressure)
 		highest = max(highest, pressure)
 	var/limit = owner().material_environment_pressure_limit(rating, owner().material_service_radius(), owner().material_service_thickness(), temperature)
-	return owner().material_environment_leaking || (highest - lowest) / max(limit, ONE_ATMOSPHERE) >= MATERIAL_PRESSURE_STRESS_RATIO
+	return material_assembly_view(owner()).leaking || (highest - lowest) / max(limit, ONE_ATMOSPHERE) >= MATERIAL_PRESSURE_STRESS_RATIO
 
 /datum/material_service/proc/rebind()
 	watches_dirty = FALSE
@@ -417,8 +416,9 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 	var/elapsed = max(0, (world.time - chemical_last_update) / 10)
 	EXPIRY_STAMP(src, chemical_last_update, CLOCK_WORLD)
 	if(chemical_rate && elapsed)
-		owner().material_environment_liner_integrity = max(0, owner().material_environment_liner_integrity - chemical_rate * elapsed)
-		if(owner().material_environment_liner_integrity <= 0)
+		var/datum/material_assembly/wear = material_assembly(owner())
+		wear.liner_integrity = max(0, wear.liner_integrity - chemical_rate * elapsed)
+		if(wear.liner_integrity <= 0)
 			chemical_rate = 0
 			owner().material_environment_rupture()
 
@@ -564,7 +564,7 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 				active = TRUE
 	var/datum/material/structure = owner().material_for_role(MATERIAL_ROLE_STRUCTURE) || owner().primary_construction_material()
 	last_stress = structure ? temperature / max(structure.melting_point, 1) : 0
-	status = owner().material_environment_leaking ? "Leaking" : (last_stress >= 1 ? "Overheated" : (last_pressure_load >= MATERIAL_PRESSURE_FATIGUE_RATIO ? "Pressure fatigue" : (last_pressure_load >= MATERIAL_PRESSURE_STRESS_RATIO ? "Pressure stress" : (last_stress > 0.8 ? "Thermal stress" : "Nominal"))))
+	status = material_assembly_view(owner()).leaking ? "Leaking" : (last_stress >= 1 ? "Overheated" : (last_pressure_load >= MATERIAL_PRESSURE_FATIGUE_RATIO ? "Pressure fatigue" : (last_pressure_load >= MATERIAL_PRESSURE_STRESS_RATIO ? "Pressure stress" : (last_stress > 0.8 ? "Thermal stress" : "Nominal"))))
 	if(last_stress >= 1 && elapsed > 0)
 		owner().take_damage((last_stress - 0.9) * 5 * elapsed, BURN, FIRE)
 		active = TRUE
@@ -614,10 +614,11 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 	return cell.give(converted * CELLRATE) / CELLRATE
 
 /datum/material_service/proc/summary()
-	return "[status]. Assembly [round(temperature, 0.1)] K; pressure load [round(last_pressure_load * 100, 0.1)]%; thermal buffer [round(buffer_energy)] J. Liner [round(owner().material_environment_liner_integrity)]%, exterior [round(owner().material_environment_exterior_integrity)]%. Fatigue [round(owner().material_environment_fatigue)]%."
+	var/datum/material_assembly/wear = material_assembly_view(owner())
+	return "[status]. Assembly [round(temperature, 0.1)] K; pressure load [round(last_pressure_load * 100, 0.1)]%; thermal buffer [round(buffer_energy)] J. Liner [round(wear.liner_integrity)]%, exterior [round(wear.exterior_integrity)]%. Fatigue [round(wear.fatigue)]%."
 
 /obj/proc/material_service_changed()
-	material_configuration_revision++
+	material_assembly(src).configuration_revision++
 	if(istype(src, /obj/structure/cable))
 		var/obj/structure/cable/cable = src
 		cable.material_overlay?.material_graph?.invalidate_cable(cable)
@@ -632,10 +633,11 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 	// objects with a physical pressure, chemical, electrical, or energy-storage
 	// role need a continuously observable material assembly.
 	material_service_event(MATERIAL_EVENT_CONFIGURATION)
-	material_service?.initialize_thermal_stock()
-	if(material_service)
-		material_service.watches_dirty = TRUE
-	material_service?.schedule(0)
+	var/datum/material_service/service = material_service_of(src)
+	service?.initialize_thermal_stock()
+	if(service)
+		service.watches_dirty = TRUE
+	service?.schedule(0)
 
 
 /// the watched_turf this refers to (a relation view: null once it is deleted).
