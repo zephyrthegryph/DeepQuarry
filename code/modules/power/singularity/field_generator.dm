@@ -194,7 +194,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/field_generator, TYPE_PROC_REF(/atom, app
 	return ..()
 
 // its field comes down.
-/obj/machinery/field_generator/lifecycle_prerelease()
+/obj/machinery/field_generator/on_destroy(force)
 	src.cleanup()
 	..()
 

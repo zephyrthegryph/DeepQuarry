@@ -413,7 +413,7 @@
 	M.status_set(EFFECT_PARALYZED, max(M.status_units(EFFECT_PARALYZED), 10))
 
 // its mob wakes from fake death.
-/datum/reagent/toxin/zombiepowder/lifecycle_prerelease()
+/datum/reagent/toxin/zombiepowder/on_destroy(force)
 	if(holder && holder.my_atom && ismob(holder.my_atom))
 		var/mob/M = holder.my_atom
 		M.set_status_flags(M.status_flags & ~FAKEDEATH)
@@ -449,7 +449,7 @@
 		M.adjust_bodytemperature(-(10 * TEMPERATURE_DAMAGE_COEFFICIENT), min_temp = T0C - 10)
 
 // its mob wakes from fake death.
-/datum/reagent/lichpowder/lifecycle_prerelease()
+/datum/reagent/lichpowder/on_destroy(force)
 	if(holder && holder.my_atom && ismob(holder.my_atom))
 		var/mob/M = holder.my_atom
 		M.set_status_flags(M.status_flags & ~FAKEDEATH)

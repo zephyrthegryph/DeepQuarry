@@ -153,7 +153,7 @@
 		generation_stage = "Awaiting departure"
 
 // its leases are released.
-/datum/flight_plan/lifecycle_prerelease()
+/datum/flight_plan/on_destroy(force)
 	release_leases(state != FLIGHT_PLAN_ARRIVED)
 	..()
 
