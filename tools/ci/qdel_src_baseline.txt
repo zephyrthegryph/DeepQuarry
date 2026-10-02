@@ -582,7 +582,6 @@ qdel_src	code/modules/power/tesla/tesla_act.dm	qdel(src)
 qdel_src	code/modules/power/tesla/tesla_act.dm	qdel(src)
 qdel_src	code/modules/power/tesla/tesla_act.dm	qdel(src)//like the singulo, tesla deletes it. stops it from exploding over and over
 qdel_src	code/modules/projectiles/broken.dm	qdel(src)
-qdel_src	code/modules/projectiles/guns/launcher/crossbow.dm	qdel(src)
 qdel_src	code/modules/projectiles/guns/magnetic/magnetic.dm	qdel(src)
 qdel_src	code/modules/projectiles/guns/magnetic/magnetic.dm	qdel(src)
 qdel_src	code/modules/projectiles/guns/magnetic/magnetic.dm	qdel(src)
