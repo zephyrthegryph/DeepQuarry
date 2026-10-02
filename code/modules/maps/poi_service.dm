@@ -154,7 +154,6 @@ GLOBAL_DATUM_INIT(poi_service, /datum/world_service/pois, new)
 	var/datum/map_template/template_to_use = prepare_poi(poi_to_load)
 	if(!template_to_use)
 		return FALSE
-	// The loader is gone before the load starts (annihilate_bounds() removes it with the rest of its tile anyway).
-	qdel(poi_to_load)
+	// The loader is already gone: annihilate_bounds() removed it with the rest of its tile.
 	template_to_use.load_async(T, FALSE, om_callable(src, PROC_REF(poi_loaded)))
 	return TRUE

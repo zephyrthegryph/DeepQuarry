@@ -39,6 +39,10 @@
 GLOBAL_LIST_EMPTY(map_load_queue)
 GLOBAL_VAR(map_load_active)
 
+/// Queues a load behind the running one.
+/proc/map_load_enqueue(datum/map_load/M)
+	GLOB.map_load_queue += M
+
 /datum/map_load
 	// The load's inputs. Plain references: the load is a short-lived job and the template outlives it
 	// (a template is a long-lived singleton; a deleted one fails the load at its next step).
@@ -85,7 +89,7 @@ GLOBAL_VAR(map_load_active)
 /// Runs the load as a job, or queues it behind the one running.
 /datum/map_load/proc/submit()
 	if(GLOB.map_load_active)
-		GLOB.map_load_queue += src
+		map_load_enqueue(src)
 		return src
 	start_job()
 	return src
