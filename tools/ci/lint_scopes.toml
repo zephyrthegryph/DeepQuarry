@@ -30,3 +30,17 @@ exempt_contains = ["/unit_tests/"]
 [lint.verb_category]
 # verb_category_lint.py: unit tests build raw categories on purpose.
 exempt_prefixes = ["code/modules/unit_tests/"]
+
+[lint.i7_handler]
+# i7_handler_lint.py: test fixtures record calls to the dispatchers themselves.
+exempt_prefixes = ["code/modules/unit_tests/"]
+[lint.i7_handler.lists]
+# The dispatchers, and the client's activate-held-item verb (which calls attack_self).
+allowed = [
+  "/atom/proc/attackby",
+  "/atom/proc/attack_hand",
+  "/atom/proc/click_alt",
+  "/atom/proc/MouseDrop_T",
+  "/obj/item/proc/attack_self",
+  "/client/verb/attack_self",
+]
