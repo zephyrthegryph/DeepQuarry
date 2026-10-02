@@ -138,7 +138,7 @@ pub fn parse_check_grep(text: &str) -> Vec<Finding> {
         }
         if let Some(c) = tagged.captures(l) {
             let rule = base_rule(c.s(3)).to_string();
-            if rule == ceiling_skip {
+            if c.s(3) == ceiling_skip {
                 continue;
             }
             let rel = if rule == "test_map_included" { DME_PATH } else { c.s(1) };
@@ -765,5 +765,36 @@ pub fn baseline_file(lint: &dyn Lint) -> Option<&'static str> {
     match lint.meta().policy {
         Policy::Sites { baseline, .. } | Policy::Ceilings { baseline, .. } => Some(baseline),
         _ => None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn slug_collapses_punctuation() {
+        assert_eq!(slug("step_[xy]"), "step_xy");
+        assert_eq!(slug(".proc ref syntax"), slug("proc ref syntax"));
+        assert_eq!(slug("one revive path: return_from_death()"), "one_revive_path_return_from_death");
+        assert_eq!(base_rule("a_b__2"), "a_b");
+    }
+
+    #[test]
+    fn check_grep_output_is_read_per_part() {
+        let old = "\u{1b}[0;32m 01- step_[xy]\u{1b}[0m\nmaps/a.dmm:12:step_x = 1\nmaps/a.dmm:12:step_x = 1\n\u{1b}[0;32m 02- ambiguous bitwise or\u{1b}[0m\ncode/a.dm:\tif(a & B | C)\n\u{1b}[0;32m 03- ambiguous bitwise or\u{1b}[0m\ncode/a.dm:\tif(a & B | C)\n\u{1b}[0;32m 04- changelog\u{1b}[0m\nhtml/changelogs/example.yml: FAILED\n\u{1b}[0;32m 05- color macros\u{1b}[0m\n3 escapes (expecting 1 or less)\n\u{1b}[0;32m 06- tools: act\u{1b}[0m\ncode\\x\\y.dm:7:text\n";
+        let got = parse_check_grep(old);
+        let f = |r: &str, rel: &str, line: u32| Finding { rule: r.into(), rel: rel.into(), line };
+        let mut want = vec![
+            f("step_xy", "maps/a.dmm", 12),
+            f("ambiguous_bitwise_or", "code/a.dm", 0),
+            f("changelog", "html/changelogs/example.yml", 0),
+            f("color_macros", COUNT_PATH, 3),
+            f("tools_act", "code/x/y.dm", 7),
+        ];
+        want.sort();
+        assert_eq!(got, want);
+        let new = "check_grep heat_ratchet__x      9  (ceiling 6)  FAIL (rose above its ceiling 6)\ncode/a.dm:1: [check_grep/heat_ratchet__x] t -- h\ncode/b.dm:2: [check_grep/other] t -- h\n";
+        assert_eq!(parse_check_grep(new), vec![f("heat_ratchet", COUNT_PATH, 9), f("other", "code/b.dm", 2)]);
     }
 }
