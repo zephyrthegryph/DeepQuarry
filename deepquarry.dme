@@ -5655,6 +5655,8 @@
 #include "code\engine\kernel\stubs.dm"
 #include "code\engine\parts\stubs.dm"
 #include "code\engine\stats\stubs.dm"
+#include "code\engine\_generated\reads.dm"
+#include "code\engine\_generated\system_accessors.dm"
 #include "code\_generated\om_notices.dm"
 #include "code\_generated\reads.dm"
 // END DQ MODULAR INCLUDES

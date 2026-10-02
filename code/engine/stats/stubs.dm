@@ -41,9 +41,3 @@
 /proc/hold_left(datum/E, stat, source)
 	ENGINE_STUB(ENGINE_E3, "stat layer: hold_left")
 	return null
-
-/// The generated reactive accessor behind SYSTEM_ACCESSOR(nightshift, night_shift_active, nameof(night)) in the contracts. E5 emits
-/// the real proc into code/engine/_generated/ and deletes this one.
-/proc/night_shift_active()
-	ENGINE_STUB(ENGINE_E5, "generators: the SYSTEM_ACCESSOR proc night_shift_active()")
-	return FALSE

@@ -37,3 +37,12 @@
 #define SOURCE_DEF(name)
 /// A list of entries or parts under a name, kept in its own file (section 11).
 #define BUNDLE(name, entries...)
+
+/// An accessor proc that stands for a producer key rather than a var: READS_AS(proc, KEY) or, through a relation,
+/// READS_AS(pad_occupied, OCCUPANTS_KEY, via = nameof(pad)). Generated reads do not follow the proc; readers subscribe to KEY
+/// (published with PUBLISH_CHANGE(E, KEY)). The analysis engine (tools/analyze, sem/reads) checks the accessor's own reads are covered.
+#define READS_AS(proc, key, args...)
+/// First line of a global helper that a condition, requirement or output calls: the helper is followed through the arguments
+/// it names. READS_FROM(C) follows C; READS_FROM() says the helper reads no entity state. An unannotated global call in a handler
+/// is a build error (sem/reads, unannotated_global).
+#define READS_FROM(args...)
