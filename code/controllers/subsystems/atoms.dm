@@ -63,8 +63,19 @@ SYSTEM_DEF(atoms)
 	own_validate_boot()
 
 /datum/system/atoms/proc/InitializeAtoms(list/atoms, list/atoms_to_return)
-	if(atom_initialized == INITIALIZATION_INSSATOMS)
+	var/list/run = initialize_atoms_begin(atoms_to_return)
+	if(!run)
 		return
+	// This may look a bit odd, but if the actual atom creation runtimes for some reason, we absolutely need to set initialized BACK
+	CreateAtoms(run[ATOM_RUN_BATCH], atoms)
+	initialize_atoms_finish(run, atoms_to_return)
+
+/// Opens the frame for one InitializeAtoms() run and returns its context list (ATOM_RUN_*), or null when
+/// atoms are not being initialized yet. The sync InitializeAtoms() and the chunked atom_init_job (below) share
+/// this, so a chunked run does exactly what the sync one does.
+/datum/system/atoms/proc/initialize_atoms_begin(list/atoms_to_return)
+	if(atom_initialized == INITIALIZATION_INSSATOMS)
+		return null
 
 	// Generate a unique mapload source for this run of InitializeAtoms
 	var/static/uid = 0
@@ -87,8 +98,22 @@ SYSTEM_DEF(atoms)
 		deferred_decl_binds = list()
 	// Heat bodies created by the batch take pre-reserved handles and configure in one call (heat_bind_batch.dm).
 	dq_heat_bind_begin()
-	// This may look a bit odd, but if the actual atom creation runtimes for some reason, we absolutely need to set initialized BACK
-	CreateAtoms(batch, atoms)
+	var/list/run = new /list(ATOM_RUN_FIELDS)
+	run[ATOM_RUN_SOURCE] = source
+	run[ATOM_RUN_BATCH] = batch
+	run[ATOM_RUN_OUTER_CREATED] = outer_created
+	run[ATOM_RUN_MACHINE_OWNER] = machine_owner
+	run[ATOM_RUN_DECL_OWNER] = decl_bind_owner
+	return run
+
+/// Closes the frame `initialize_atoms_begin()` opened: deferred resolvers, the frame's deferred work, binds,
+/// late loaders and the queued deletions.
+/datum/system/atoms/proc/initialize_atoms_finish(list/run, list/atoms_to_return)
+	var/source = run[ATOM_RUN_SOURCE]
+	var/datum/materialize_batch/batch = run[ATOM_RUN_BATCH]
+	var/list/outer_created = run[ATOM_RUN_OUTER_CREATED]
+	var/machine_owner = run[ATOM_RUN_MACHINE_OWNER]
+	var/decl_bind_owner = run[ATOM_RUN_DECL_OWNER]
 	// Deferred map resolvers run once the outermost load's atoms exist, still inside its frame
 	// (what they create initializes as mapload and joins the batch).
 	if(initialize_depth == 1 && (deferred_resolvers || length(GLOB.map_resolve_scratch)))

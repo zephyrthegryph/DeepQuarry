@@ -111,6 +111,62 @@ GLOBAL_LIST_EMPTY(cached_maps) // ALLOW(cache): parsed-map store, needs special 
 	/// If we are currently loading this map
 	var/loading = FALSE
 
+	// The cursor of a chunked load and of a chunked model-cache build (load_begin(), load_chunk(), build_cache()):
+	// what the old per-cell loops kept in locals, so a load can stop between two cells and carry on.
+	var/tmp/ps_text
+	var/tmp/ps_index = 1
+	var/tmp/ps_x_lower = -INFINITY
+	var/tmp/ps_x_upper = INFINITY
+	var/tmp/ps_y_lower = -INFINITY
+	var/tmp/ps_y_upper = INFINITY
+	var/tmp/ps_z_lower = -INFINITY
+	var/tmp/ps_z_upper = INFINITY
+	var/tmp/ps_measure_only = FALSE
+	var/tmp/cache_building = FALSE
+	var/tmp/cache_at = 0
+	var/tmp/cache_space_set = FALSE
+	var/tmp/pl_paused = FALSE
+	var/tmp/pl_result = TRUE
+	var/tmp/pl_no_changeturf = FALSE
+	var/tmp/pl_place_on_top = FALSE
+	var/tmp/pl_new_z = FALSE
+	var/tmp/pl_crop_map = FALSE
+	var/tmp/pl_in_set = FALSE
+	var/tmp/pl_first_found = FALSE
+	var/tmp/pl_no_afterchange = FALSE
+	var/tmp/pl_i = 0
+	var/tmp/pl_row = 0
+	var/tmp/pl_row_end = 0
+	var/tmp/pl_tpos = 0
+	var/tmp/pl_space_key
+	var/tmp/pl_z_lower = 0
+	var/tmp/pl_z_upper = 0
+	var/tmp/pl_z_offset = 0
+	var/tmp/pl_z_threshold = 0
+	var/tmp/pl_grid_z_offset = 0
+	var/tmp/pl_x_rel = 0
+	var/tmp/pl_y_rel = 0
+	var/tmp/pl_x_lower = 0
+	var/tmp/pl_x_upper = 0
+	var/tmp/pl_y_lower = 0
+	var/tmp/pl_y_upper = 0
+	var/tmp/pl_x_starting_skip = 0
+	var/tmp/pl_x_target = 0
+	var/tmp/pl_y_starting_skip = 0
+	var/tmp/pl_y_ending_skip = 0
+	var/tmp/pl_highest_y = 0
+	var/tmp/pl_line_count = 0
+	var/tmp/pl_final_x = 0
+	var/tmp/pl_lowest_x = 0
+	var/tmp/pl_true_x = 0
+	var/tmp/pl_xcrd = 0
+	var/tmp/pl_y = 0
+	var/tmp/pl_zcrd = 0
+	var/tmp/pl_first_x = 0
+	var/tmp/pl_first_y = 0
+	var/tmp/pl_last_x = 0
+	var/tmp/pl_last_y = 0
+
 	#ifdef TESTING
 	var/turfsSkipped = 0
 	#endif
@@ -188,12 +244,21 @@ GLOBAL_LIST_EMPTY(cached_maps) // ALLOW(cache): parsed-map store, needs special 
 	// This proc sleeps for like 6 seconds. why?
 	// Is it file accesses? if so, can those be done ahead of time, async to save on time here? I wonder.
 	// Love ya :)
+	if(!parse_begin(tfile, x_lower, x_upper, y_lower, y_upper, z_lower, z_upper, measureOnly))
+		return
+	// A sync parse yields between matches, as it always has; a map_load job parses a few matches per step instead.
+	while(parse_step(INFINITY, TRUE))
+		continue
+	parse_finish()
+
+/// Starts parsing `tfile` (a file or the map text). FALSE when there is nothing to parse (no text: a blank datum).
+/datum/parsed_map/proc/parse_begin(tfile, x_lower = -INFINITY, x_upper = INFINITY, y_lower = -INFINITY, y_upper=INFINITY, z_lower = -INFINITY, z_upper=INFINITY, measureOnly=FALSE)
 	if(isfile(tfile))
 		original_path = "[tfile]"
 		tfile = file2text(tfile)
 	else if(isnull(tfile))
 		// create a new datum without loading a map
-		return
+		return FALSE
 
 	src.bounds = parsed_bounds = list(1.#INF, 1.#INF, 1.#INF, -1.#INF, -1.#INF, -1.#INF)
 
@@ -202,16 +267,39 @@ GLOBAL_LIST_EMPTY(cached_maps) // ALLOW(cache): parsed-map store, needs special 
 	else
 		map_format = MAP_DMM // Fallback
 
+	ps_text = tfile
+	ps_index = 1
+	ps_x_lower = x_lower
+	ps_x_upper = x_upper
+	ps_y_lower = y_lower
+	ps_y_upper = y_upper
+	ps_z_lower = z_lower
+	ps_z_upper = z_upper
+	ps_measure_only = measureOnly
+	return TRUE
+
+/// Parses up to `matches` more models and coordinate blocks (`yield`: CHECK_TICK between them, for a sync parse).
+/// TRUE while text remains.
+/datum/parsed_map/proc/parse_step(matches, yield = FALSE)
 	// lists are structs don't you know :)
 	var/list/bounds = src.bounds
 	var/list/grid_models = src.grid_models
 	var/key_len = src.key_len
 	var/line_len = src.line_len
+	var/x_lower = ps_x_lower
+	var/x_upper = ps_x_upper
+	var/y_lower = ps_y_lower
+	var/y_upper = ps_y_upper
+	var/z_lower = ps_z_lower
+	var/z_upper = ps_z_upper
+	var/measureOnly = ps_measure_only
 
-	var/stored_index = 1
+	var/stored_index = ps_index
 	var/list/regexOutput
 	//multiz lool
-	while(dmm_regex.Find(tfile, stored_index))
+	while(matches-- > 0)
+		if(!dmm_regex.Find(ps_text, stored_index))
+			break
 		stored_index = dmm_regex.next
 		// Datum var lookup is expensive, this isn't
 		regexOutput = dmm_regex.group
@@ -284,12 +372,29 @@ GLOBAL_LIST_EMPTY(cached_maps) // ALLOW(cache): parsed-map store, needs special 
 				maxx = max(maxx, curr_x + line_len / key_len - 1)
 
 			bounds[MAP_MAXX] = max(bounds[MAP_MAXX], maxx)
-		CHECK_TICK
+		if(yield)
+			CHECK_TICK
+	src.key_len = key_len
+	src.line_len = line_len
+	ps_index = stored_index
+	// Another match may remain: only the text past the last one proves otherwise, so look once more.
+	if(matches > 0)
+		return FALSE
+	return TRUE
 
+/// The parse is over: nulls the bounds when no coordinates parsed, else clamps them to the limits.
+/datum/parsed_map/proc/parse_finish()
+	var/list/bounds = src.bounds
 	// Indicate failure to parse any coordinates by nulling bounds
 	if(bounds[1] == 1.#INF)
 		src.bounds = null
 	else
+		var/x_lower = ps_x_lower
+		var/x_upper = ps_x_upper
+		var/y_lower = ps_y_lower
+		var/y_upper = ps_y_upper
+		var/z_lower = ps_z_lower
+		var/z_upper = ps_z_upper
 		// Clamp all our mins and maxes down to the proscribed limits
 		bounds[MAP_MINX] = clamp(bounds[MAP_MINX], x_lower, x_upper)
 		bounds[MAP_MAXX] = clamp(bounds[MAP_MAXX], x_lower, x_upper)
@@ -299,8 +404,7 @@ GLOBAL_LIST_EMPTY(cached_maps) // ALLOW(cache): parsed-map store, needs special 
 		bounds[MAP_MAXZ] = clamp(bounds[MAP_MAXZ], z_lower, z_upper)
 
 	parsed_bounds = src.bounds
-	src.key_len = key_len
-	src.line_len = line_len
+	ps_text = null
 
 /// Iterates over all grid sets and returns ones with z values within the given bounds. Inclusive
 /datum/parsed_map/proc/filter_grid_sets_based_on_z_bounds(lower_z, upper_z)
@@ -313,83 +417,89 @@ GLOBAL_LIST_EMPTY(cached_maps) // ALLOW(cache): parsed-map store, needs special 
 		filtered_sets += grid_set
 	return filtered_sets
 
-/// Load the parsed map into the world. You probably want [/proc/load_map]. Keep the signature the same.
+/// Cells one chunk of a placing load builds before it hands the tick back (a skipped space cell counts as one).
+#define MAPLOAD_CHUNK_CELLS 48
+
+/// Load the parsed map into the world, to completion, without yielding. You probably want [/proc/load_map].
+/// Keep the signature the same. Boot, nested and test loads use this; a load that runs while players are on
+/// is a job (/datum/map_load, map_template.dm), which drives the same begin/chunk/finish below.
 /datum/parsed_map/proc/load(x_offset = 0, y_offset = 0, z_offset = 0, crop_map = FALSE, no_changeturf = FALSE, x_lower = -INFINITY, x_upper = INFINITY, y_lower = -INFINITY, y_upper = INFINITY, z_lower = -INFINITY, z_upper = INFINITY, place_on_top = FALSE, new_z = FALSE)
 	//How I wish for RAII
 	Kernel.StartLoadingMap()
-	. = _load_impl(x_offset, y_offset, z_offset, crop_map, no_changeturf, x_lower, x_upper, y_lower, y_upper, z_lower, z_upper, place_on_top, new_z)
+	load_begin(TRUE, x_offset, y_offset, z_offset, crop_map, no_changeturf, x_lower, x_upper, y_lower, y_upper, z_lower, z_upper, place_on_top, new_z)
+	while(load_chunk(TRUE) == JOB_MORE)
+		continue
+	. = load_finish()
 	Kernel.StopLoadingMap()
 
-// In unit-test builds the yield is compiled out: there are no clients to keep
-// the tick smooth for, and under a loaded MC these per-chunk stoplag()s turn a
-// 65k-turf runtime template load (expedition z-alloc) into ~9 minutes of sleeps.
-#ifdef UNIT_TESTS
-#define MAPLOADING_CHECK_TICK
-#else
-#define MAPLOADING_CHECK_TICK \
-	if(TICK_CHECK) { \
-		if(loading) { \
-			SSatoms.map_loader_stop(REF(src)); \
-			stoplag(); /* ALLOW(scheduler): map loading yields per chunk (lane-work conversion pending) */ \
-			SSatoms.map_loader_begin(REF(src)); \
-		} else { \
-			stoplag(); /* ALLOW(scheduler): map loading yields per chunk (lane-work conversion pending) */ \
-		} \
-	}
-#endif
-
-// Do not call except via load() above.
-/datum/parsed_map/proc/_load_impl(x_offset, y_offset, z_offset, crop_map, no_changeturf, x_lower, x_upper, y_lower, y_upper, z_lower, z_upper, place_on_top, new_z)
-	PRIVATE_PROC(TRUE)
+/// Starts a load: tells SSatoms we are map loading and builds the placing cursor. With `sync` FALSE the
+/// load is left paused (SSatoms not told), as it is between the chunks of a job.
+/datum/parsed_map/proc/load_begin(sync, x_offset, y_offset, z_offset, crop_map, no_changeturf, x_lower, x_upper, y_lower, y_upper, z_lower, z_upper, place_on_top, new_z)
 	// Tell ss atoms that we're doing maploading
 	// We'll have to account for this in the following tick_checks so it doesn't overflow
 	loading = TRUE
 	SSatoms.map_loader_begin(REF(src))
-
-	// Loading used to be done in this proc
-	// We make the assumption that if the inner procs runtime, we WANT to do cleanup on them, but we should stil tell our parents we failed
-	// Since well, we did
-	var/sucessful = FALSE
+	pl_no_changeturf = no_changeturf
+	pl_place_on_top = place_on_top
+	pl_new_z = new_z
+	pl_z_lower = z_lower
+	pl_z_upper = z_upper
+	pl_i = 0
+	pl_in_set = FALSE
+	pl_result = TRUE
 	switch(map_format)
 		if(MAP_TGM)
-			sucessful = _tgm_load(x_offset, y_offset, z_offset, crop_map, no_changeturf, x_lower, x_upper, y_lower, y_upper, z_lower, z_upper, place_on_top, new_z)
+			tgm_place_begin(x_offset, y_offset, z_offset, crop_map, no_changeturf, x_lower, x_upper, y_lower, y_upper, z_lower, z_upper, place_on_top, new_z)
 		else
-			sucessful = _dmm_load(x_offset, y_offset, z_offset, crop_map, no_changeturf, x_lower, x_upper, y_lower, y_upper, z_lower, z_upper, place_on_top, new_z)
+			dmm_place_begin(x_offset, y_offset, z_offset, crop_map, no_changeturf, x_lower, x_upper, y_lower, y_upper, z_lower, z_upper, place_on_top, new_z)
+	if(!sync)
+		SSatoms.map_loader_stop(REF(src))
+		pl_paused = TRUE
 
-	// And we are done lads, call it off
+/// Builds up to a chunk of cells. JOB_MORE when cells remain, JOB_DONE when the map is placed. `sync` builds them all.
+/datum/parsed_map/proc/load_chunk(sync)
+	if(pl_paused)
+		SSatoms.map_loader_begin(REF(src))
+		pl_paused = FALSE
+	var/result
+	if(map_format == MAP_TGM)
+		result = tgm_place_chunk(sync)
+	else
+		result = dmm_place_chunk(sync)
+	if(result == JOB_MORE && !sync)
+		SSatoms.map_loader_stop(REF(src))
+		pl_paused = TRUE
+	return result
+
+/// Ends a load (or abandons it after a runtime): SSatoms stops treating it as a map load. Returns whether it placed.
+/datum/parsed_map/proc/load_finish()
 	SSatoms.map_loader_stop(REF(src))
+	pl_paused = FALSE
 	loading = FALSE
-
-	// if(!no_changeturf)
-	// 	var/list/turfs = block(
-	// 		bounds[MAP_MINX], bounds[MAP_MINY], bounds[MAP_MINZ],
-	// 		bounds[MAP_MAXX], bounds[MAP_MAXY], bounds[MAP_MAXZ]
-	// 	)
-	// 	for(var/turf/T as anything in turfs)
-	// 		//we do this after we load everything in. if we don't, we'll have weird atmos bugs regarding atmos adjacent turfs
-	// 		T.AfterChange(CHANGETURF_IGNORE_AIR)
+	pl_in_set = FALSE
 
 	#ifdef TESTING
 	if(turfsSkipped)
 		testing("Skipped loading [turfsSkipped] default turfs")
 	#endif
 
-	return sucessful
+	return pl_result
 
 // Wanna clear something up about maps, talking in 255x255 here
 // In the tgm format, each gridset contains 255 lines, each line representing one tile, with 255 total gridsets
 // In the dmm format, each gridset contains 255 lines, each line representing one row of tiles, containing 255 * line length characters, with one gridset per z
 // You can think of dmm as storing maps in rows, whereas tgm stores them in columns
-/datum/parsed_map/proc/_tgm_load(x_offset, y_offset, z_offset, crop_map, no_changeturf, x_lower, x_upper, y_lower, y_upper, z_lower, z_upper, place_on_top, new_z)
+/datum/parsed_map/proc/tgm_place_begin(x_offset, y_offset, z_offset, crop_map, no_changeturf, x_lower, x_upper, y_lower, y_upper, z_lower, z_upper, place_on_top, new_z)
 	// setup
 	var/list/modelCache = build_cache(no_changeturf)
-	var/space_key = modelCache[SPACE_KEY]
+	pl_space_key = modelCache[SPACE_KEY]
 	var/list/bounds
 	src.bounds = bounds = list(1.#INF, 1.#INF, 1.#INF, -1.#INF, -1.#INF, -1.#INF)
 
 	// Building y coordinate ranges
 	var/y_relative_to_absolute = y_offset - 1
 	var/x_relative_to_absolute = x_offset - 1
+	pl_x_rel = x_relative_to_absolute
 
 	// Ok so like. something important
 	// We talk in "relative" coords here, so the coordinate system of the map datum
@@ -413,13 +523,14 @@ GLOBAL_LIST_EMPTY(cached_maps) // ALLOW(cache): parsed-map store, needs special 
 	// So maxy and y_upper get to act as thresholds, and relative_y can play
 	var/y_skip_above = min(world.maxy - y_relative_to_absolute, y_upper, relative_y)
 	// How many lines to skip because they'd be above the y cuttoff line
-	var/y_starting_skip = relative_y - y_skip_above
-	highest_y -= y_starting_skip
+	pl_y_starting_skip = relative_y - y_skip_above
+	highest_y -= pl_y_starting_skip
+	pl_highest_y = highest_y
 
 	// Y is the LOWEST it will ever be here, so we can easily set a threshold for how low to go
-	var/line_count = length(first_column.gridLines)
-	var/lowest_y = relative_y - (line_count - 1) // -1 because we decrement at the end of the loop, not the start
-	var/y_ending_skip = max(max(y_lower, 1 - y_relative_to_absolute) - lowest_y, 0)
+	pl_line_count = length(first_column.gridLines)
+	var/lowest_y = relative_y - (pl_line_count - 1) // -1 because we decrement at the end of the loop, not the start
+	pl_y_ending_skip = max(max(y_lower, 1 - y_relative_to_absolute) - lowest_y, 0)
 
 	// X setup
 	var/x_delta_with = x_upper
@@ -444,8 +555,8 @@ GLOBAL_LIST_EMPTY(cached_maps) // ALLOW(cache): parsed-map store, needs special 
 		else
 			world.increase_max_x(final_x)
 		expanded_x = TRUE
-
-	var/lowest_x = max(x_lower, 1 - x_relative_to_absolute)
+	pl_final_x = final_x
+	pl_lowest_x = max(x_lower, 1 - x_relative_to_absolute)
 
 	// Amount we offset the grid zcrd to get the true zcrd
 	var/grid_z_offset = z_offset - 1
@@ -462,87 +573,107 @@ GLOBAL_LIST_EMPTY(cached_maps) // ALLOW(cache): parsed-map store, needs special 
 		var/offset_amount = z_lower - 1
 		z_upper_parsed -= offset_amount
 		grid_z_offset -= offset_amount
+	pl_grid_z_offset = grid_z_offset
 
-	var/list/target_grid_sets = gridSets
-	if(z_lower_set || z_upper_set) // bounds are set, filter out gridsets for z levels we don't want
-		target_grid_sets = filter_grid_sets_based_on_z_bounds(z_lower, z_upper)
-
-	var/z_threshold = world.maxz
-	if(z_upper_parsed > z_threshold && crop_map)
-		for(var/i in z_threshold + 1 to z_upper_parsed) //create a new z_level if needed
+	pl_z_threshold = world.maxz
+	if(z_upper_parsed > pl_z_threshold && crop_map)
+		for(var/i in pl_z_threshold + 1 to z_upper_parsed) //create a new z_level if needed
 			world.increment_max_z()
 		if(!no_changeturf)
 			WARNING("Z-level expansion occurred without no_changeturf set, this may cause problems when /turf/AfterChange is called")
 
-	for(var/datum/grid_set/gset as anything in target_grid_sets)
-		var/true_xcrd = gset.xcrd + x_relative_to_absolute
-
-		// any cutoff of x means we just shouldn't iterate this gridset
-		if(final_x < true_xcrd || lowest_x > gset.xcrd)
+/// Picks the next grid set that is inside the load's bounds and readies its cursor. FALSE when none remain.
+/datum/parsed_map/proc/tgm_place_next_set()
+	while(pl_i < length(gridSets))
+		var/datum/grid_set/gset = gridSets[++pl_i]
+		// bounds are set, skip the gridsets for z levels we don't want
+		if(gset.zcrd < pl_z_lower || gset.zcrd > pl_z_upper)
 			continue
-
-		var/zcrd = gset.zcrd + grid_z_offset
+		var/true_xcrd = gset.xcrd + pl_x_rel
+		// any cutoff of x means we just shouldn't iterate this gridset
+		if(pl_final_x < true_xcrd || pl_lowest_x > gset.xcrd)
+			continue
+		pl_true_x = true_xcrd
+		pl_zcrd = gset.zcrd + pl_grid_z_offset
 		// If we're using changeturf, we disable it if we load into a z level we JUST created
-		var/no_afterchange = no_changeturf || zcrd > z_threshold
-
+		pl_no_afterchange = pl_no_changeturf || pl_zcrd > pl_z_threshold
 		// We're gonna track the first and last pairs of coords we find
 		// Since x is always incremented in steps of 1, we only need to deal in y
 		// The first x is guarenteed to be the lowest, the first y the highest, and vis versa
 		// This is faster then doing mins and maxes inside the hot loop below
-		var/first_found = FALSE
-		var/first_y = 0
-		var/last_y = 0
+		pl_first_found = FALSE
+		pl_first_y = 0
+		pl_last_y = 0
+		pl_y = pl_highest_y
+		pl_row = 1 + pl_y_starting_skip
+		pl_row_end = pl_line_count - pl_y_ending_skip
+		pl_in_set = TRUE
+		return TRUE
+	return FALSE
 
-		var/ycrd = highest_y
+/// One chunk of a tgm load. Everything the old loop kept in locals is in the pl_* cursor.
+/datum/parsed_map/proc/tgm_place_chunk(sync)
+	var/cells = MAPLOAD_CHUNK_CELLS
+	var/list/bounds = src.bounds
+	while(TRUE)
+		if(!pl_in_set && !tgm_place_next_set())
+			return JOB_DONE
+		var/datum/grid_set/gset = gridSets[pl_i]
+		var/space_key = pl_space_key
 		// Everything following this line is VERY hot.
-		for(var/i in 1 + y_starting_skip to line_count - y_ending_skip)
-			if(gset.gridLines[i] == space_key && no_afterchange)
+		while(pl_row <= pl_row_end)
+			var/line = gset.gridLines[pl_row]
+			if(line == space_key && pl_no_afterchange)
 				#ifdef TESTING
 				++turfsSkipped
 				#endif
-				ycrd--
-				MAPLOADING_CHECK_TICK
-				continue
+				pl_y--
+				pl_row++
+			else
+				var/list/cache = modelCache[line]
+				if(!cache)
+					SSatoms.map_loader_stop(REF(src))
+					CRASH("Undefined model key in DMM: [line]")
+				build_coordinate(cache, locate(pl_true_x, pl_y, pl_zcrd), pl_no_afterchange, pl_place_on_top, pl_new_z)
 
-			var/list/cache = modelCache[gset.gridLines[i]]
-			if(!cache)
-				SSatoms.map_loader_stop(REF(src))
-				CRASH("Undefined model key in DMM: [gset.gridLines[i]]")
-			build_coordinate(cache, locate(true_xcrd, ycrd, zcrd), no_afterchange, place_on_top, new_z)
-
-			// only bother with bounds that actually exist
-			if(!first_found)
-				first_found = TRUE
-				first_y = ycrd
-			last_y = ycrd
-			ycrd--
-			MAPLOADING_CHECK_TICK
+				// only bother with bounds that actually exist
+				if(!pl_first_found)
+					pl_first_found = TRUE
+					pl_first_y = pl_y
+				pl_last_y = pl_y
+				pl_y--
+				pl_row++
+			if(!sync && --cells <= 0)
+				return JOB_MORE
 
 		// The x coord never changes, so not tracking first x is safe
 		// If no ycrd is found, we assume this row is totally empty and just continue on
-		if(first_found)
-			bounds[MAP_MINX] = min(bounds[MAP_MINX], true_xcrd)
-			bounds[MAP_MINY] = min(bounds[MAP_MINY], last_y)
-			bounds[MAP_MINZ] = min(bounds[MAP_MINZ], zcrd)
-			bounds[MAP_MAXX] = max(bounds[MAP_MAXX], true_xcrd)
-			bounds[MAP_MAXY] = max(bounds[MAP_MAXY], first_y)
-			bounds[MAP_MAXZ] = max(bounds[MAP_MAXZ], zcrd)
-	return TRUE
+		if(pl_first_found)
+			bounds[MAP_MINX] = min(bounds[MAP_MINX], pl_true_x)
+			bounds[MAP_MINY] = min(bounds[MAP_MINY], pl_last_y)
+			bounds[MAP_MINZ] = min(bounds[MAP_MINZ], pl_zcrd)
+			bounds[MAP_MAXX] = max(bounds[MAP_MAXX], pl_true_x)
+			bounds[MAP_MAXY] = max(bounds[MAP_MAXY], pl_first_y)
+			bounds[MAP_MAXZ] = max(bounds[MAP_MAXZ], pl_zcrd)
+		pl_in_set = FALSE
 
 /// Stanrdard loading, not used in production
 /// Doesn't take advantage of any tgm optimizations, which makes it slower but also more general
 /// Use this if for some reason your map format is messy
-/datum/parsed_map/proc/_dmm_load(x_offset, y_offset, z_offset, crop_map, no_changeturf, x_lower, x_upper, y_lower, y_upper, z_lower, z_upper, place_on_top, new_z)
+/datum/parsed_map/proc/dmm_place_begin(x_offset, y_offset, z_offset, crop_map, no_changeturf, x_lower, x_upper, y_lower, y_upper, z_lower, z_upper, place_on_top, new_z)
 	// setup
 	var/list/modelCache = build_cache(no_changeturf)
-	var/space_key = modelCache[SPACE_KEY]
-	var/list/bounds
-	var/key_len = src.key_len
-	src.bounds = bounds = list(1.#INF, 1.#INF, 1.#INF, -1.#INF, -1.#INF, -1.#INF)
+	pl_space_key = modelCache[SPACE_KEY]
+	src.bounds = list(1.#INF, 1.#INF, 1.#INF, -1.#INF, -1.#INF, -1.#INF)
 
-	var/y_relative_to_absolute = y_offset - 1
-	var/x_relative_to_absolute = x_offset - 1
-	var/line_len = src.line_len
+	pl_y_rel = y_offset - 1
+	pl_x_rel = x_offset - 1
+	pl_crop_map = crop_map
+	pl_x_lower = x_lower
+	pl_x_upper = x_upper
+	pl_y_lower = y_lower
+	pl_y_upper = y_upper
+	pl_z_offset = z_offset
 
 	// Amount we offset the grid zcrd to get the true zcrd
 	var/grid_z_offset = z_offset - 1
@@ -561,33 +692,39 @@ GLOBAL_LIST_EMPTY(cached_maps) // ALLOW(cache): parsed-map store, needs special 
 		var/offset_amount = z_lower - 1
 		z_upper_parsed -= offset_amount
 		grid_z_offset -= offset_amount
+	pl_grid_z_offset = grid_z_offset
 
-	var/list/target_grid_sets = gridSets
-	if(z_lower_set || z_upper_set) // bounds are set, filter out gridsets for z levels we don't want
-		target_grid_sets = filter_grid_sets_based_on_z_bounds(z_lower, z_upper)
-
-	for(var/datum/grid_set/gset as anything in target_grid_sets)
+/// Picks the next grid set inside the load's bounds, expands the world for it and readies its cursor.
+/// FALSE when none remain.
+/datum/parsed_map/proc/dmm_place_next_set()
+	var/key_len = src.key_len
+	var/line_len = src.line_len
+	while(pl_i < length(gridSets))
+		var/datum/grid_set/gset = gridSets[++pl_i]
+		// bounds are set, skip the gridsets for z levels we don't want
+		if(gset.zcrd < pl_z_lower || gset.zcrd > pl_z_upper)
+			continue
 		var/relative_x = gset.xcrd
 		var/relative_y = gset.ycrd
-		var/true_xcrd = relative_x + x_relative_to_absolute
-		var/ycrd = relative_y + y_relative_to_absolute
-		var/zcrd = gset.zcrd + grid_z_offset
-		if(!crop_map && ycrd > world.maxy)
-			if(new_z)
+		var/true_xcrd = relative_x + pl_x_rel
+		var/ycrd = relative_y + pl_y_rel
+		var/zcrd = gset.zcrd + pl_grid_z_offset
+		if(!pl_crop_map && ycrd > world.maxy)
+			if(pl_new_z)
 				// Need to avoid improperly loaded area/turf_contents
-				world.increase_max_y(ycrd, map_load_z_cutoff = z_offset - 1)
+				world.increase_max_y(ycrd, map_load_z_cutoff = pl_z_offset - 1)
 			else
 				world.increase_max_y(ycrd)
 			expanded_y = TRUE
 		var/zexpansion = zcrd > world.maxz
-		var/no_afterchange = no_changeturf
+		var/no_afterchange = pl_no_changeturf
 		if(zexpansion)
-			if(crop_map)
+			if(pl_crop_map)
 				continue
 			else
 				while (zcrd > world.maxz) //create a new z_level if needed
 					world.increment_max_z()
-			if(!no_changeturf)
+			if(!pl_no_changeturf)
 				WARNING("Z-level expansion occurred without no_changeturf set, this may cause problems when /turf/AfterChange is called")
 				no_afterchange = TRUE
 		// Ok so like. something important
@@ -597,7 +734,7 @@ GLOBAL_LIST_EMPTY(cached_maps) // ALLOW(cache): parsed-map store, needs special 
 
 		// Skip Y coords that are above the smallest of the three params
 		// So maxy and y_upper get to act as thresholds, and relative_y can play
-		var/y_skip_above = min(world.maxy - y_relative_to_absolute, y_upper, relative_y)
+		var/y_skip_above = min(world.maxy - pl_y_rel, pl_y_upper, relative_y)
 		// How many lines to skip because they'd be above the y cuttoff line
 		var/y_starting_skip = relative_y - y_skip_above
 		ycrd += y_starting_skip
@@ -605,21 +742,21 @@ GLOBAL_LIST_EMPTY(cached_maps) // ALLOW(cache): parsed-map store, needs special 
 		// Y is the LOWEST it will ever be here, so we can easily set a threshold for how low to go
 		var/line_count = length(gset.gridLines)
 		var/lowest_y = relative_y - (line_count - 1) // -1 because we decrement at the end of the loop, not the start
-		var/y_ending_skip = max(max(y_lower, 1 - y_relative_to_absolute) - lowest_y, 0)
+		var/y_ending_skip = max(max(pl_y_lower, 1 - pl_y_rel) - lowest_y, 0)
 
 		// Now we're gonna precompute the x thresholds
 		// We skip all the entries below the lower x, or 1
-		var/starting_x_delta = max(max(x_lower, 1 - x_relative_to_absolute) - relative_x, 0)
+		var/starting_x_delta = max(max(pl_x_lower, 1 - pl_x_rel) - relative_x, 0)
 		// The x loop counts by key length, so we gotta multiply here
-		var/x_starting_skip = starting_x_delta * key_len
+		pl_x_starting_skip = starting_x_delta * key_len
 		true_xcrd += starting_x_delta
 
 		// We're gonna skip all the entries above the upper x, or maxx if cropMap is set
 		var/x_target = line_len - key_len + 1
 		var/x_step_count = ROUND_UP(x_target / key_len)
 		var/final_x = relative_x + (x_step_count - 1)
-		var/x_delta_with = x_upper
-		if(crop_map)
+		var/x_delta_with = pl_x_upper
+		if(pl_crop_map)
 			// Take our smaller crop threshold yes?
 			x_delta_with = min(x_delta_with, world.maxx)
 		if(final_x > x_delta_with)
@@ -628,77 +765,111 @@ GLOBAL_LIST_EMPTY(cached_maps) // ALLOW(cache): parsed-map store, needs special 
 			x_step_count -= delta
 			final_x -= delta
 			x_target = x_step_count * key_len
-		if(final_x > world.maxx && !crop_map)
-			if(new_z)
+		if(final_x > world.maxx && !pl_crop_map)
+			if(pl_new_z)
 				// Need to avoid improperly loaded area/turf_contents
-				world.increase_max_x(final_x, map_load_z_cutoff = z_offset - 1)
+				world.increase_max_x(final_x, map_load_z_cutoff = pl_z_offset - 1)
 			else
 				world.increase_max_x(final_x)
 			expanded_x = TRUE
 
+		pl_true_x = true_xcrd
+		pl_y = ycrd
+		pl_zcrd = zcrd
+		pl_no_afterchange = no_afterchange
+		pl_x_target = x_target
+		pl_row = 1 + y_starting_skip
+		pl_row_end = line_count - y_ending_skip
+		pl_tpos = 0
 		// We're gonna track the first and last pairs of coords we find
 		// The first x is guarenteed to be the lowest, the first y the highest, and vis versa
 		// This is faster then doing mins and maxes inside the hot loop below
-		var/first_found = FALSE
-		var/first_x = 0
-		var/first_y = 0
-		var/last_x = 0
-		var/last_y = 0
+		pl_first_found = FALSE
+		pl_first_x = 0
+		pl_first_y = 0
+		pl_last_x = 0
+		pl_last_y = 0
+		pl_in_set = TRUE
+		return TRUE
+	return FALSE
 
+/// One chunk of a dmm load (cursor in the pl_* vars, as the tgm one).
+/datum/parsed_map/proc/dmm_place_chunk(sync)
+	var/cells = MAPLOAD_CHUNK_CELLS
+	var/list/bounds = src.bounds
+	var/key_len = src.key_len
+	while(TRUE)
+		if(!pl_in_set && !dmm_place_next_set())
+			return JOB_DONE
+		var/datum/grid_set/gset = gridSets[pl_i]
+		var/space_key = pl_space_key
 		// Everything following this line is VERY hot. How hot depends on the map format
 		// (Yes this does mean dmm is technically faster to parse. shut up)
-		for(var/i in 1 + y_starting_skip to line_count - y_ending_skip)
-			var/line = gset.gridLines[i]
-
-			var/xcrd = true_xcrd
-			for(var/tpos in 1 + x_starting_skip to x_target step key_len)
-				var/model_key = copytext(line, tpos, tpos + key_len)
-				if(model_key == space_key && no_afterchange)
+		while(pl_row <= pl_row_end)
+			var/line = gset.gridLines[pl_row]
+			if(!pl_tpos)
+				pl_tpos = 1 + pl_x_starting_skip
+				pl_xcrd = pl_true_x
+			while(pl_tpos <= pl_x_target)
+				var/model_key = copytext(line, pl_tpos, pl_tpos + key_len)
+				if(model_key == space_key && pl_no_afterchange)
 					#ifdef TESTING
 					++turfsSkipped
 					#endif
-					MAPLOADING_CHECK_TICK
-					++xcrd
-					continue
-				var/list/cache = modelCache[model_key]
-				if(!cache)
-					SSatoms.map_loader_stop(REF(src))
-					CRASH("Undefined model key in DMM: [model_key]")
-				build_coordinate(cache, locate(xcrd, ycrd, zcrd), no_afterchange, place_on_top, new_z)
+					++pl_xcrd
+					pl_tpos += key_len
+				else
+					var/list/cache = modelCache[model_key]
+					if(!cache)
+						SSatoms.map_loader_stop(REF(src))
+						CRASH("Undefined model key in DMM: [model_key]")
+					build_coordinate(cache, locate(pl_xcrd, pl_y, pl_zcrd), pl_no_afterchange, pl_place_on_top, pl_new_z)
 
-				// only bother with bounds that actually exist
-				if(!first_found)
-					first_found = TRUE
-					first_x = xcrd
-					first_y = ycrd
-				last_x = xcrd
-				last_y = ycrd
-				MAPLOADING_CHECK_TICK
-				++xcrd
-			ycrd--
-			MAPLOADING_CHECK_TICK
-		bounds[MAP_MINX] = min(bounds[MAP_MINX], first_x)
-		bounds[MAP_MINY] = min(bounds[MAP_MINY], last_y)
-		bounds[MAP_MINZ] = min(bounds[MAP_MINZ], zcrd)
-		bounds[MAP_MAXX] = max(bounds[MAP_MAXX], last_x)
-		bounds[MAP_MAXY] = max(bounds[MAP_MAXY], first_y)
-		bounds[MAP_MAXZ] = max(bounds[MAP_MAXZ], zcrd)
+					// only bother with bounds that actually exist
+					if(!pl_first_found)
+						pl_first_found = TRUE
+						pl_first_x = pl_xcrd
+						pl_first_y = pl_y
+					pl_last_x = pl_xcrd
+					pl_last_y = pl_y
+					++pl_xcrd
+					pl_tpos += key_len
+				if(!sync && --cells <= 0)
+					return JOB_MORE
+			pl_y--
+			pl_row++
+			pl_tpos = 0
+			if(!sync && --cells <= 0)
+				return JOB_MORE
+		bounds[MAP_MINX] = min(bounds[MAP_MINX], pl_first_x)
+		bounds[MAP_MINY] = min(bounds[MAP_MINY], pl_last_y)
+		bounds[MAP_MINZ] = min(bounds[MAP_MINZ], pl_zcrd)
+		bounds[MAP_MAXX] = max(bounds[MAP_MAXX], pl_last_x)
+		bounds[MAP_MAXY] = max(bounds[MAP_MAXY], pl_first_y)
+		bounds[MAP_MAXZ] = max(bounds[MAP_MAXZ], pl_zcrd)
+		pl_in_set = FALSE
 
-	return TRUE
 
 GLOBAL_LIST_EMPTY(map_model_default)
 
-/datum/parsed_map/proc/build_cache(no_changeturf, bad_paths)
+/datum/parsed_map/proc/build_cache(no_changeturf, bad_paths, models = INFINITY)
 	if(map_format == MAP_TGM)
-		return tgm_build_cache(no_changeturf, bad_paths)
+		return tgm_build_cache(no_changeturf, bad_paths, models)
 	return dmm_build_cache(no_changeturf, bad_paths)
 
-/datum/parsed_map/proc/tgm_build_cache(no_changeturf, bad_paths=null)
-	if(modelCache && !bad_paths)
-		return modelCache
-	. = modelCache = list()
+/// Builds the model cache, at most `models` entries per call: a chunked load keeps calling build_cache()
+/// until cache_building clears, and the cache is only complete then. Callers that want the whole cache pass
+/// no limit.
+/datum/parsed_map/proc/tgm_build_cache(no_changeturf, bad_paths=null, models = INFINITY)
+	if(!cache_building)
+		if(modelCache && !bad_paths)
+			return modelCache
+		modelCache = list()
+		cache_at = 0
+		cache_space_set = FALSE
+		cache_building = TRUE
+	. = modelCache
 	var/list/grid_models = src.grid_models
-	var/set_space = FALSE
 	// Use where a list is needed, but where it will not be modified
 	// Used here to remove the cost of needing to make a new list for each fields entry when it's set manually later
 	var/static/list/default_list = GLOB.map_model_default // It's stupid, but it saves += list(list)
@@ -710,7 +881,11 @@ GLOBAL_LIST_EMPTY(map_model_default)
 	var/list/current_attributes
 	// If we are currently editing a path or not
 	var/editing = FALSE
-	for(var/model_key in grid_models)
+	for(var/cache_index in cache_at + 1 to length(grid_models))
+		if(models-- <= 0)
+			return modelCache
+		cache_at = cache_index
+		var/model_key = grid_models[cache_index]
 		// We're going to split models by newline
 		// This guarentees that each entry will be of interest to us
 		// Then we'll process them step by step
@@ -730,9 +905,6 @@ GLOBAL_LIST_EMPTY(map_model_default)
 		////////////////////////////////////////////////////////
 		// string representation of the path to init
 		for(var/line in lines)
-			// We do this here to avoid needing to check at each return statement
-			// No harm in it anyway
-			MAPLOADING_CHECK_TICK
 
 			switch(line[length(line)])
 				if(";") // Var edit, we'll apply it
@@ -799,7 +971,7 @@ GLOBAL_LIST_EMPTY(map_model_default)
 		// 5. and the members are world.turf and world.area
 		// Basically, if we find an entry like this: "XXX" = (/turf/default, /area/default)
 		// We can skip calling this proc every time we see XXX
-		if(!set_space \
+		if(!cache_space_set \
 			&& no_changeturf \
 			&& members_attributes.len == 2 \
 			&& members.len == 2 \
@@ -808,11 +980,12 @@ GLOBAL_LIST_EMPTY(map_model_default)
 			&& members[2] == world.area \
 			&& members[1] == world.turf
 		)
-			set_space = TRUE
+			cache_space_set = TRUE
 			.[SPACE_KEY] = model_key
 			continue
 
 		.[model_key] = list(members, members_attributes)
+	cache_building = FALSE
 	return .
 
 /// Builds key caches for general formats
@@ -871,7 +1044,6 @@ GLOBAL_LIST_EMPTY(map_model_default)
 
 			//then fill the members_attributes list with the corresponding variables
 			members_attributes += fields
-			MAPLOADING_CHECK_TICK
 
 		//check and see if we can just skip this turf
 		//So you don't have to understand this horrid statement, we can do this if
@@ -962,7 +1134,6 @@ GLOBAL_LIST_EMPTY(map_model_default)
 	// else if(!no_changeturf && old_area)
 	// 	// Don't do contain/uncontain stuff, this happens a few lines up when the area actally changes
 	// 	crds.on_change_area(old_area, crds.loc)
-	MAPLOADING_CHECK_TICK
 
 	//finally instance all remainings objects/mobs
 	for(var/atom_index in 1 to index-1)
@@ -978,7 +1149,6 @@ GLOBAL_LIST_EMPTY(map_model_default)
 
 		if(GLOB.use_preloader && instance)//second preloader pass, for those atoms that don't ..() in New()
 			world.preloader_load(instance)
-		MAPLOADING_CHECK_TICK
 
 ////////////////
 //Helpers procs
@@ -1121,7 +1291,7 @@ GLOBAL_LIST_EMPTY(map_model_default)
 #undef MAP_DMM
 #undef MAP_TGM
 #undef MAP_UNKNOWN
-#undef MAPLOADING_CHECK_TICK
+#undef MAPLOAD_CHUNK_CELLS
 
 
 // Area instances outlive the parse (areas are never deleted with the map datum).

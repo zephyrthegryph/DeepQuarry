@@ -3136,6 +3136,7 @@
 #include "code\modules\maintenance_panels\maintenance_panel.dm"
 #include "code\modules\maintenance_panels\maintpanel_stack.dm"
 #include "code\modules\makeup\nailpolish.dm"
+#include "code\modules\maps\map_load.dm"
 #include "code\modules\maps\map_template.dm"
 #include "code\modules\maps\map_resolvers.dm"
 #include "code\modules\maps\merge_conflicts.dm"

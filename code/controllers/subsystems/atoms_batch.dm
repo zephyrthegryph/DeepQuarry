@@ -54,7 +54,7 @@
 /datum/system/atoms
 	/// The frame currently initializing atoms, or null (no batch, or its frame is yielding).
 	var/tmp/datum/materialize_batch/active_batch
-	/// Test hook: when set, every chunk boundary yields and calls this instead of stoplag().
+	/// Test hook: when set, every chunk boundary suspends the frame and calls this.
 	var/tmp/list/batch_yield_probe
 	/// Every frame that opened, in order, when a test is recording (else null).
 	var/list/batch_trace
@@ -86,26 +86,81 @@
 	if(batch.owner == batch)
 		batch.owner = null
 
-/// A chunk boundary: yields to the MC if the tick is spent (never under unit tests, which
-/// have no clients to keep smooth) and keeps the frame isolated while it sleeps.
+/// A chunk boundary of a sync InitializeAtoms(): it never yields (a sync run is boot, a nested frame or a
+/// test, where nothing needs the tick back); a chunked run is an atom_init_job below. Only the test probe
+/// sees the boundary, as a suspended frame.
 /datum/system/atoms/proc/batch_yield_point(datum/materialize_batch/batch)
-	var/list/probe = batch_yield_probe
-	if(!probe)
-		#ifdef UNIT_TESTS
+	if(!batch_yield_probe)
 		return
-		#else
-		if(!length(GLOB.clients) || !TICK_CHECK)
-			return
-		#endif
+	batch_suspend(batch)
+	batch_resume(batch)
+
+/// Suspends a frame at a chunk boundary: while it is suspended no frame is active (rule 5 above).
+/datum/system/atoms/proc/batch_suspend(datum/materialize_batch/batch)
+	var/list/probe = batch_yield_probe
 	batch.yields++
 	active_batch = null
 	clear_tracked_initalize(batch.source)
 	if(probe)
 		om_run(probe, batch)
-	else
-		stoplag() // ALLOW(scheduler): map-load batches yield between chunks so a big load does not stall the tick
+
+/// Resumes a suspended frame.
+/datum/system/atoms/proc/batch_resume(datum/materialize_batch/batch)
 	set_tracked_initalized(INITIALIZATION_INNEW_MAPLOAD, batch.source)
 	active_batch = batch
+
+// A chunked InitializeAtoms() over a list of atoms, as a job(): one chunk of MATERIALIZE_CHUNK_SIZE atoms per
+// step, the frame suspended between steps, then the frame closes exactly as the sync run closes it.
+
+/datum/atom_init_job
+	/// The frame's context (ATOM_RUN_*) once begun.
+	var/list/run
+	var/list/atoms
+	/// InitializeAtoms()' second argument: filled with the movables the run created.
+	var/list/atoms_to_return
+	var/index = 1
+	var/begun = FALSE
+
+/// One step of the run: opens the frame the first time, resumes it otherwise, then initializes a chunk (with
+/// `sync`, every chunk) and suspends the frame (JOB_MORE) or closes it (JOB_DONE).
+/datum/atom_init_job/proc/run_step(datum/act/timer/A, sync = FALSE)
+	var/datum/system/atoms/S = SSatoms
+	if(!begun)
+		begun = TRUE
+		run = S.initialize_atoms_begin(atoms_to_return)
+		if(!run)
+			return JOB_DONE // atoms are not being initialized yet: let proper initialisation handle them later
+	else
+		S.batch_resume(run[ATOM_RUN_BATCH])
+	return S.initialize_atoms_chunk(src, sync)
+
+/// Initializes the next atoms of an atom_init_job (every remaining chunk with `sync`), then suspends the
+/// frame (JOB_MORE) or closes it (JOB_DONE).
+/datum/system/atoms/proc/initialize_atoms_chunk(datum/atom_init_job/I, sync)
+	var/datum/materialize_batch/batch = I.run[ATOM_RUN_BATCH]
+	var/list/atoms = I.atoms
+	var/total = length(atoms)
+	var/list/mapload_arg = list(TRUE)
+	while(I.index <= total)
+		// A runtime in the creation logic must not leave the frame open, or initialized would stay broken.
+		try
+			var/chunk_end = min(total, I.index + MATERIALIZE_CHUNK_SIZE - 1)
+			for(var/J in I.index to chunk_end)
+				var/atom/A = atoms[J]
+				if(!(A.flags & ATOM_INITIALIZED))
+					PROFILE_INIT_ATOM_BEGIN()
+					InitAtom(A, TRUE, mapload_arg)
+					PROFILE_INIT_ATOM_END(A)
+			batch.chunks++
+			I.index = chunk_end + 1
+		catch(var/exception/e)
+			dq_report_caught(e, "atom init job")
+			I.index = total + 1
+		if(I.index <= total && !sync)
+			batch_suspend(batch)
+			return JOB_MORE
+	initialize_atoms_finish(I.run, I.atoms_to_return)
+	return JOB_DONE
 
 /// Queues `thing` as `kind` work on the running frame's owner. FALSE when no frame runs.
 /datum/system/atoms/proc/batch_defer(kind, datum/thing)

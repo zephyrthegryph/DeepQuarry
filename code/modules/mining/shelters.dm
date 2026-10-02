@@ -446,6 +446,12 @@
 			qdel(AM)
 	admin_notice(span_danger("Annihilated [deleted_atoms] plants."), R_DEBUG)
 
+/// A deployed shelter finished loading around (x, y, z): its lighting is built.
+/datum/map_template/shelter/proc/shelter_loaded(x, y, z, ok)
+	var/turf/deploy_location = locate(x, y, z)
+	if(ok && deploy_location)
+		update_lighting(deploy_location)
+
 /datum/map_template/shelter/proc/update_lighting(turf/deploy_location)
 	var/affected = get_affected_turfs(deploy_location, centered=TRUE)
 	for(var/turf/T in affected)

@@ -38,6 +38,14 @@
 /// chunk boundary, never inside one (doc/rewrite/init_and_turfs.md sec 3.3a).
 #define MATERIALIZE_CHUNK_SIZE 512
 
+// The context list of one InitializeAtoms() run (SSatoms.initialize_atoms_begin()).
+#define ATOM_RUN_SOURCE 1
+#define ATOM_RUN_BATCH 2
+#define ATOM_RUN_OUTER_CREATED 3
+#define ATOM_RUN_MACHINE_OWNER 4
+#define ATOM_RUN_DECL_OWNER 5
+#define ATOM_RUN_FIELDS 5
+
 /// Deferred batch work, flushed once at the end of the batch that owns it, in this order.
 /// Walls smooth once each, with their neighbours.
 #define BATCH_WORK_WALL_SMOOTHING 1

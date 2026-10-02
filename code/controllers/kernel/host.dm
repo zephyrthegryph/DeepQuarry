@@ -41,6 +41,8 @@ GLOBAL_REAL(Kernel, /datum/controller/kernel)
 	var/initializations_finished_with_no_players_logged_in //I wonder what this could be?
 
 	var/map_loading = FALSE //!Are we loading in a new map?
+	/// Map loads placing right now (a sync load can run while a job load is between chunks).
+	var/map_loading_depth = 0
 
 	var/current_runlevel //!for scheduling different systems for different stages of the round
 	var/sleep_offline_after_initializations = TRUE
@@ -508,15 +510,20 @@ GLOBAL_LIST_INIT(empty_performance_window, list("samples" = 0, "avg" = 0, "p50" 
 	msg = "(TickRate:[Kernel.processing]) (Iteration:[Kernel.iteration]) (TickLimit: [round(Kernel.current_ticklimit, 0.1)])"
 	return msg
 
+/// A map load begins placing. Loads do not wait on one another here: the loads that can overlap are jobs,
+/// and /datum/map_load (map_load.dm) runs them one at a time through its queue, so this only counts.
 /datum/controller/kernel/StartLoadingMap()
-	//disallow more than one map to load at once, multithreading it will just cause race conditions
-	while(map_loading)
-		stoplag() // ALLOW(scheduler): kernel code (map-load mutex)
+	map_loading_depth++
+	if(map_loading_depth > 1)
+		return
 	for(var/datum/system/system as anything in kernel_pure_systems())
 		system.StartLoadingMap()
 	map_loading = TRUE
 
 /datum/controller/kernel/StopLoadingMap(bounds = null)
+	map_loading_depth = max(0, map_loading_depth - 1)
+	if(map_loading_depth > 0)
+		return
 	map_loading = FALSE
 	for(var/datum/system/system as anything in kernel_pure_systems())
 		system.StopLoadingMap()
