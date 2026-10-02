@@ -14,7 +14,7 @@
 		var/path = options[choice]
 		var/obj/item/successor = locate(path) in T
 		if(successor)
-			own_add(src, nameof(allocated), successor)
+			rel_add(src, nameof(allocated), successor)
 		TEST_ASSERT_NOTNULL(successor, "hacking produces the selected successor on the floor")
 		TEST_ASSERT_EQUAL(successor.loc, T, "the hacked successor preserves the old floor placement")
 		TEST_ASSERT(!user.is_in_hands(successor), "hacking does not silently equip the replacement")
