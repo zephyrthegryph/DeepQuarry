@@ -88,11 +88,10 @@ REGISTRY_MEMBERSHIP(/obj/machinery/photocopier/faxmachine, REGISTRY_FAXES)
 	effect = /obj/machinery/photocopier/faxmachine/proc/interaction_request_roles
 
 /obj/machinery/photocopier/faxmachine/proc/interaction_request_roles(mob/user, obj/item/held, datum/interaction/interaction)
-	request_roles()
+	request_roles(user)
 	return TRUE
 
-/obj/machinery/photocopier/faxmachine/proc/request_roles()
-	var/mob/living/L = usr
+/obj/machinery/photocopier/faxmachine/proc/request_roles(mob/living/L)
 
 	if(!L || !isturf(L.loc) || !isliving(L))
 		return
@@ -254,7 +253,7 @@ UI_ACT_OVERRIDE(/obj/machinery/photocopier/faxmachine, ui_act_remove)
 
 UI_ACT(/obj/machinery/photocopier/faxmachine, "send_automated_staff_request", ui_act_send_automated_staff_request)
 UI_ACT_PROC(/obj/machinery/photocopier/faxmachine, ui_act_send_automated_staff_request)
-	request_roles()
+	request_roles(ui.user)
 	return TRUE
 
 UI_ACT(/obj/machinery/photocopier/faxmachine, "rename", ui_act_rename)
