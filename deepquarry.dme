@@ -323,6 +323,18 @@
 #include "code\__defines\properties.dm"
 #include "code\__defines\rules.dm"
 #include "code\__defines\vital_state.dm"
+#include "code\__defines\engine\markers.dm"
+#include "code\__defines\engine\vocabulary.dm"
+#include "code\__defines\engine\test_hooks.dm"
+// The contracts layer (doc/rewrite/final_api.html section 22): ids, act types and accessor declarations, no procs.
+#include "code\contracts\ids\capabilities.dm"
+#include "code\contracts\ids\resources.dm"
+#include "code\contracts\ids\sources_tags.dm"
+#include "code\contracts\ids\stages.dm"
+#include "code\contracts\ids\stats.dm"
+#include "code\contracts\acts\context.dm"
+#include "code\contracts\acts\world_actions.dm"
+#include "code\contracts\accessors\accessors.dm"
 // Medical symptom/audience #defines — kept in the early defines block so
 // SYMPTOM_AUDIENCE_* etc. are available to every consumer (incl. unit tests,
 // which are included before the medical module under CIBUILDING).
@@ -4716,6 +4728,7 @@
 #include "code\modules\turbolift\turbolift_floor.dm"
 #include "code\modules\turbolift\turbolift_map.dm"
 #include "code\modules\turbolift\turbolift_turfs.dm"
+#include "code\tests\_tests.dm"
 #include "code\modules\unit_tests\_unit_tests.dm"
 #include "code\modules\vehicles\bike.dm"
 #include "code\modules\vehicles\boat.dm"
@@ -5636,6 +5649,11 @@
 #include "code\modules\combat_ai\ports\solargrub.dm"
 #include "code\modules\combat_ai\ports\three_phases.dm"
 #include "code\modules\combat_ai\ports\ysbryd.dm"
+#include "code\engine\actions\stubs.dm"
+#include "code\engine\declare\stubs.dm"
+#include "code\engine\kernel\stubs.dm"
+#include "code\engine\parts\stubs.dm"
+#include "code\engine\stats\stubs.dm"
 #include "code\_generated\om_notices.dm"
 #include "code\_generated\reads.dm"
 // END DQ MODULAR INCLUDES
