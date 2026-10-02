@@ -105,10 +105,10 @@ MSG_DEF_SELF(act/too_deeply_nested, "too deeply nested")
 
 /// One adjusts(): scale first, then by, on the named field of the act ("packet.amount" walks through the packet).
 /proc/act_apply_adjust(datum/act/A, datum/hook/H)
-	var/list/args = H.entry.args
-	if(args["when"] && !hook_gate(H, A, args["when"]))
+	var/list/opts = H.entry.args
+	if(opts["when"] && !hook_gate(H, A, opts["when"]))
 		return
-	var/list/path = splittext(args["field"], ".")
+	var/list/path = splittext(opts["field"], ".")
 	var/datum/walk = A
 	for(var/i in 1 to length(path) - 1)
 		walk = walk.vars[path[i]] // ALLOW(api): adjusts() names a typed field of the action by its declared path
@@ -117,12 +117,12 @@ MSG_DEF_SELF(act/too_deeply_nested, "too deeply nested")
 	var/field = path[length(path)]
 	var/current = walk.vars[field] // ALLOW(api): adjusts() names a typed field of the action by its declared path
 	if(!isnum(current))
-		declare_report("adjusts([args["field"]]) on [A.type]: the field is not a number ([current])")
+		declare_report("adjusts([opts["field"]]) on [A.type]: the field is not a number ([current])")
 		return
-	if(!isnull(args["scale"]))
-		current *= args["scale"]
-	if(!isnull(args["by"]))
-		current += args["by"]
+	if(!isnull(opts["scale"]))
+		current *= opts["scale"]
+	if(!isnull(opts["by"]))
+		current += opts["by"]
 	walk.vars[field] = current // ALLOW(api): adjusts() names a typed field of the action by its declared path
 
 /// Ends the act with `outcome`, delivers its notice to the listeners that asked for that outcome, and releases it.

@@ -171,6 +171,9 @@ GLOBAL_VAR_INIT(hook_serial, 0)
 			H.order = part.args?["order"] || ORDER_NORMAL
 			. += H
 		return
+	if(E.kind == ENTRY_ON_CHANGE)
+		. += hook_make(HOOK_CHANGE, null, E, E, C, A, serial)
+		return
 	if(E.kind == ENTRY_ON_NOTICE)
 		var/datum/hook/H = hook_make(HOOK_NOTICE, E.args["notice"], E, E, C, A, serial)
 		H.outcomes = E.args["outcome"] || ACT_COMMITTED
@@ -204,7 +207,7 @@ GLOBAL_VAR_INIT(hook_serial, 0)
 	var/list/hooks = list()
 	for(var/datum/centry/C as anything in T.items)
 		var/datum/entry/E = C.item
-		if(!istype(E) || (E.kind != ENTRY_EXTEND && E.kind != ENTRY_ON_NOTICE))
+		if(!istype(E) || (E.kind != ENTRY_EXTEND && E.kind != ENTRY_ON_NOTICE && E.kind != ENTRY_ON_CHANGE))
 			continue
 		hooks += hooks_from_entry(E, C, null)
 	GLOB.hook_tables[T] = hooks
@@ -212,7 +215,11 @@ GLOBAL_VAR_INIT(hook_serial, 0)
 
 /// The notice type an action's notice is, or null for a type that is no action.
 /proc/act_notice_type(act_type)
-	return GLOB.action_notice_types[act_type]
+	. = GLOB.action_notice_types[act_type]
+#if defined(UNIT_TESTS)
+	if(!.)
+		. = GLOB.action_notice_types_tests[act_type]
+#endif
 
 /// Does hook H apply to action type `act_type`?
 /proc/hook_applies(datum/hook/H, act_type)

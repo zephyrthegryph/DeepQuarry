@@ -13,7 +13,6 @@
 // readers (rx_watch_adjust()) and end with the activation. The baseline (the value before the first change) is taken when the holder initializes
 // or the activation attaches, silently.
 
-#define HOOK_CHANGE "on_change"
 
 GLOBAL_LIST_EMPTY(change_index_by_type) // instance type -> (key -> list of /datum/hook), or FALSE for a type with no on_change
 GLOBAL_LIST_EMPTY(hook_change_pending) // holder -> list(hook -> TRUE), in the order first marked
@@ -100,8 +99,11 @@ GLOBAL_LIST_EMPTY(hook_change_pending) // holder -> list(hook -> TRUE), in the o
 	var/known = GLOB.change_index_by_type[E.type]
 	if(!isnull(known))
 		return known
+	var/datum/type_table/T = table_of(E)
+	if(T == table_empty())
+		return FALSE // the globals are still being built: nothing is declared yet, nothing is cached
 	var/list/index = list()
-	for(var/datum/hook/H as anything in hook_table_of(table_of(E)))
+	for(var/datum/hook/H as anything in hook_table_of(T))
 		if(H.kind != HOOK_CHANGE)
 			continue
 		H.reads = change_read_keys(E, H.entry.args["cond"]) // ALLOW(ownership): compiled once per type and never rewritten
@@ -116,15 +118,13 @@ GLOBAL_LIST_EMPTY(hook_change_pending) // holder -> list(hook -> TRUE), in the o
 		return FALSE
 	var/index = GLOB.change_index_by_type[E.type]
 	if(isnull(index))
-		if(!islist(GLOB?.type_table_of_type) || isnull(GLOB.type_table_of_type[E.type]))
-			return FALSE // the table is not built yet: nothing is declared for the type
 		index = change_index_of(E)
 	return index ? !!index[key] : FALSE
 
 /// `key` of E was published: the on_change hooks that read it are marked for the next drain point.
 /proc/hooks_change_published(datum/E, key)
 	var/index = GLOB.change_index_by_type[E.type]
-	if(isnull(index) && islist(GLOB?.type_table_of_type) && !isnull(GLOB.type_table_of_type[E.type]))
+	if(isnull(index))
 		index = change_index_of(E)
 	if(index)
 		for(var/datum/hook/H as anything in index[key])

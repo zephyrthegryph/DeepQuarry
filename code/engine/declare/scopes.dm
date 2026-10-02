@@ -115,16 +115,14 @@
 		var/datum/entry/E = C.item
 		if(E.args["on"] != ON_HOLDER || !slot_matches(E.args["slot"], slot_id))
 			continue
-		for(var/child in E.children)
-			if(istype(child, /datum/capability))
-				activation_attach(holder, child, item, null, SCOPE_SLOT, slot_id, null)
+		for(var/datum/capability/child as anything in slot_scope_capabilities(E))
+			activation_attach(holder, child, item, null, SCOPE_SLOT, slot_id, null)
 	for(var/datum/centry/C as anything in compiled_entries(table_of(holder), ENTRY_WHILE_SLOTTED))
 		var/datum/entry/E = C.item
 		if(E.args["on"] != ON_CONTENTS || !slot_matches(E.args["slot"], slot_id))
 			continue
-		for(var/child in E.children)
-			if(istype(child, /datum/capability))
-				activation_attach(item, child, holder, null, SCOPE_SLOT, slot_id, null)
+		for(var/datum/capability/child as anything in slot_scope_capabilities(E))
+			activation_attach(item, child, holder, null, SCOPE_SLOT, slot_id, null)
 
 /// `item` left `holder`'s slot `slot_id`, however it left: everything the slot scoped goes at once.
 /proc/activations_slot_exit(datum/item, datum/holder, slot_id)
@@ -140,3 +138,16 @@
 	if(islist(entry_slot))
 		return slot_id in entry_slot
 	return entry_slot == slot_id
+
+/// The capabilities a while_slotted entry applies: each capability child as it is, and every other entry (a hook, a contribution) together in one
+/// capability of triggers only (hook_capability()), so the slot scopes them like any grant and one teardown path ends them.
+/proc/slot_scope_capabilities(datum/entry/E)
+	. = list()
+	var/list/loose = list()
+	for(var/child in E.children)
+		if(istype(child, /datum/capability))
+			. += child
+		else
+			loose += child
+	if(length(loose))
+		. += hook_capability_of(loose, FALSE)

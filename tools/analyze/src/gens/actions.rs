@@ -179,11 +179,11 @@ impl Generator for Actions {
             acts.get_mut(n).unwrap().fields = all;
         }
         let (tests, content): (Vec<&Action>, Vec<&Action>) = acts.values().partition(|a| a.rel.starts_with("code/tests/"));
-        emit(cx, out, &content, &acts);
+        emit(cx, out, &content, &acts, "action_notice_types");
         if !tests.is_empty() {
             out.line("#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)");
             out.blank();
-            emit(cx, out, &tests, &acts);
+            emit(cx, out, &tests, &acts, "action_notice_types_tests");
             out.line("#endif");
         }
     }
@@ -197,7 +197,7 @@ fn proc_name(name: &str) -> String {
     name.replace('/', "_")
 }
 
-fn emit(cx: &GenCx, out: &mut GenOut, list: &[&Action], all: &BTreeMap<String, Action>) {
+fn emit(cx: &GenCx, out: &mut GenOut, list: &[&Action], all: &BTreeMap<String, Action>, registry_name: &str) {
     // The act -> notice registry.
     let mut registry: Vec<(String, String)> = Vec::new();
     for a in list {
@@ -206,7 +206,7 @@ fn emit(cx: &GenCx, out: &mut GenOut, list: &[&Action], all: &BTreeMap<String, A
         }
     }
     if !registry.is_empty() {
-        out.line("GLOBAL_LIST_INIT(action_notice_types, list(");
+        out.line(format!("GLOBAL_LIST_INIT({}, list(", registry_name));
         for (i, (act, notice)) in registry.iter().enumerate() {
             out.line(format!("	{} = {}{}", act, notice, if i + 1 == registry.len() { "" } else { "," }));
         }

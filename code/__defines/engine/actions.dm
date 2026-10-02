@@ -45,6 +45,7 @@
 #define HOOK_INSTEAD "instead"
 #define HOOK_ADJUSTS "adjusts"
 #define HOOK_NOTICE "on_notice"
+#define HOOK_CHANGE "on_change"
 
 /// The entry kinds E4 owns.
 #define ENTRY_ON_NOTICE "on_notice"

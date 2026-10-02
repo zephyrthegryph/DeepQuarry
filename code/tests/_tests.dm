@@ -10,4 +10,5 @@
 #include "engine\fixtures.dm"
 #include "engine\e1_fixtures.dm"
 #include "engine\e3_fixtures.dm"
+#include "engine\e4_fixtures.dm"
 #endif

@@ -421,6 +421,7 @@
 #include "dq_e0_unalias.dm"
 #include "dq_e1_declare_tests.dm"
 #include "dq_e3_stats_tests.dm"
+#include "dq_e4_actions_tests.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

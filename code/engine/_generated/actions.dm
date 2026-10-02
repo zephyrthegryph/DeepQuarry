@@ -696,6 +696,13 @@ GLOBAL_LIST_INIT(action_notice_types, list(
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
+GLOBAL_LIST_INIT(action_notice_types_tests, list(
+	/datum/act/e4_nest = /datum/notice/e4_nested,
+	/datum/act/e4_plain = /datum/notice/e4_plained,
+	/datum/act/e4_quiet = /datum/notice/e4_hushed,
+	/datum/act/e4_strike = /datum/notice/e4_struck
+))
+
 /// ACTION(e0_chain) at code/tests/engine/fixtures.dm:237
 /datum/notice/e0_chain
 	var/hop
@@ -706,5 +713,89 @@ GLOBAL_LIST_INIT(action_notice_types, list(
 	var/datum/notice/e0_chain/N = notice_take(/datum/notice/e0_chain)
 	N.hop = hop
 	notice_publish(holder, N, ACT_COMMITTED)
+
+/// ACTION(e4_nest) at code/tests/engine/e4_fixtures.dm:16
+/datum/act/e4_nest
+	parent_type = /datum/act/action
+/datum/notice/e4_nested
+
+/datum/act/e4_nest/make_notice()
+	RETURN_TYPE(/datum/notice/e4_nested)
+	var/datum/notice/e4_nested/N = notice_take(/datum/notice/e4_nested)
+	return N
+
+/proc/act_e4_nest(datum/holder)
+	RETURN_TYPE(/datum/act/e4_nest)
+	if(!act_wanted(holder, /datum/act/e4_nest))
+		return ACT_PASS
+	var/datum/act/e4_nest/A = act_begin(/datum/act/e4_nest, holder)
+	if(!A)
+		return null
+	return act_resolve(A)
+
+/// ACTION(e4_plain) at code/tests/engine/e4_fixtures.dm:12
+/datum/act/e4_plain
+	parent_type = /datum/act/action
+	var/amount
+/datum/notice/e4_plained
+	var/amount
+
+/datum/act/e4_plain/make_notice()
+	RETURN_TYPE(/datum/notice/e4_plained)
+	var/datum/notice/e4_plained/N = notice_take(/datum/notice/e4_plained)
+	N.amount = amount
+	return N
+
+/proc/act_e4_plain(datum/holder, amount)
+	RETURN_TYPE(/datum/act/e4_plain)
+	if(!act_wanted(holder, /datum/act/e4_plain))
+		return ACT_PASS
+	var/datum/act/e4_plain/A = act_begin(/datum/act/e4_plain, holder)
+	if(!A)
+		return null
+	A.amount = amount
+	return act_resolve(A)
+
+/// ACTION(e4_quiet) at code/tests/engine/e4_fixtures.dm:14
+/datum/act/e4_quiet
+	parent_type = /datum/act/action
+/datum/notice/e4_hushed
+
+/datum/act/e4_quiet/make_notice()
+	RETURN_TYPE(/datum/notice/e4_hushed)
+	var/datum/notice/e4_hushed/N = notice_take(/datum/notice/e4_hushed)
+	return N
+
+/proc/act_e4_quiet(datum/holder)
+	RETURN_TYPE(/datum/act/e4_quiet)
+	if(!act_wanted(holder, /datum/act/e4_quiet))
+		return ACT_PASS
+	var/datum/act/e4_quiet/A = act_begin(/datum/act/e4_quiet, holder)
+	if(!A)
+		return null
+	return act_resolve(A)
+
+/// ACTION(e4_strike) at code/tests/engine/e4_fixtures.dm:10
+/datum/act/e4_strike
+	parent_type = /datum/act/action
+	var/amount
+/datum/notice/e4_struck
+	var/amount
+
+/datum/act/e4_strike/make_notice()
+	RETURN_TYPE(/datum/notice/e4_struck)
+	var/datum/notice/e4_struck/N = notice_take(/datum/notice/e4_struck)
+	N.amount = amount
+	return N
+
+/proc/act_e4_strike(datum/holder, amount)
+	RETURN_TYPE(/datum/act/e4_strike)
+	if(!act_wanted(holder, /datum/act/e4_strike))
+		return ACT_PASS
+	var/datum/act/e4_strike/A = act_begin(/datum/act/e4_strike, holder)
+	if(!A)
+		return null
+	A.amount = amount
+	return act_resolve(A)
 
 #endif
