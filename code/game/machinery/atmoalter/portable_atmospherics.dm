@@ -238,7 +238,7 @@ DAMAGE_REACTION(/obj/machinery/portable_atmospherics, DAMAGE_BLOB, TYPE_PROC_REF
 	power_change()
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/portable_atmospherics/proc/log_open()
+/obj/machinery/portable_atmospherics/proc/log_open(mob/user)
 	// was iterating XGM `air_contents.gas` (string-id dict).
 	// gas_ids() returns the same string IDs under LINDA.
 	var/list/gas_id_list = air_contents.gas_ids()
@@ -251,8 +251,8 @@ DAMAGE_REACTION(/obj/machinery/portable_atmospherics, DAMAGE_BLOB, TYPE_PROC_REF
 			gases += ", [gas]"
 		else
 			gases = gas
-	log_admin("[usr] ([usr.ckey]) opened '[src.name]' containing [gases].")
-	message_admins("[usr] ([usr.ckey]) opened '[src.name]' containing [gases].")
+	log_admin("[user] ([user.ckey]) opened '[src.name]' containing [gases].")
+	message_admins("[user] ([user.ckey]) opened '[src.name]' containing [gases].")
 
 /obj/machinery/portable_atmospherics/powered/ownership()
 	. = ..()
