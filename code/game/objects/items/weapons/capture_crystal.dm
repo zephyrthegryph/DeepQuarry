@@ -28,7 +28,7 @@
 
 //Let's make sure we clean up our references and things if the crystal goes away (such as when it's digested)
 // the bound mob is unleashed and freed of its command.
-/obj/item/capture_crystal/on_destroy(force)
+/obj/item/capture_crystal/lifecycle_prerelease()
 	if(bound_mob)
 		if(bound_mob in contents)
 			unleash()
@@ -120,8 +120,11 @@
 	if(M != owner)
 		to_chat(M, span_notice("\The [src] is too hard for you to break."))
 	else
-		act_message(M, src, MSG_SELF("%T% cracks and disintegrates in your hand."), MSG_OTHERS("%U% crushes %T% into dust..."))
-		qdel(src)
+		// Render labels while the crystal exists; announce only an accepted consumption.
+		var/self_message = msg_fill("%T% cracks and disintegrates in your hand.", M, src)
+		var/others_message = msg_fill("%U% crushes %T% into dust...", M, src)
+		if(consume(src, user))
+			M.visible_message(others_message, self_message)
 
 //If you catch something/someone and want to give it to someone else though, that's fine.
 /obj/item/capture_crystal/proc/release_ownership_effect(mob/user, obj/item/held, datum/interaction/interaction)
