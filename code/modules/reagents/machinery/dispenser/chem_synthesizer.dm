@@ -348,7 +348,7 @@ UI_DATA_REPLACE(/obj/machinery/chemical_synthesizer, "busy:num", "production_mod
 /obj/machinery/chemical_synthesizer/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
 	if(!..())
 		return FALSE
-	add_fingerprint(usr)
+	add_fingerprint(user)
 	return TRUE
 
 UI_ACT(/obj/machinery/chemical_synthesizer, "start_queue", ui_act_start_queue)
@@ -356,7 +356,7 @@ UI_ACT_PROC(/obj/machinery/chemical_synthesizer, ui_act_start_queue)
 	. = TRUE
 	// Start up the queue.
 	if(!busy)
-		start_queue(usr)
+		start_queue(user)
 
 UI_ACT(/obj/machinery/chemical_synthesizer, "rem_queue", ui_act_rem_queue, UI_ARG_NUM("q_index"))
 UI_ACT_PROC(/obj/machinery/chemical_synthesizer, ui_act_rem_queue)
@@ -371,7 +371,7 @@ UI_ACT(/obj/machinery/chemical_synthesizer, "clear_queue", ui_act_clear_queue)
 UI_ACT_PROC(/obj/machinery/chemical_synthesizer, ui_act_clear_queue)
 	. = TRUE
 	// Remove all entries from the queue except the currently processing recipe.
-	var/confirm = act_ask(usr, action, params, ui, "a1", /datum/om/prompt/choice/alert, message = "Are you sure you want to clear the running queue?", title = "Confirm", choices = list("No", "Yes"))
+	var/confirm = act_ask(user, action, params, ui, "a1", /datum/om/prompt/choice/alert, message = "Are you sure you want to clear the running queue?", title = "Confirm", choices = list("No", "Yes"))
 	if(isnull(confirm))
 		return
 	if(confirm == "Yes")
@@ -403,7 +403,7 @@ UI_ACT_PROC(/obj/machinery/chemical_synthesizer, ui_act_emergency_stop)
 	. = TRUE
 	// Stops everything if that's desirable for some reason.
 	if(busy)
-		var/confirm = act_ask(usr, action, params, ui, "a2", /datum/om/prompt/choice/alert, message = "Are you sure you want to stall the machine?", title = "Confirm", choices = list("Yes", "No"))
+		var/confirm = act_ask(user, action, params, ui, "a2", /datum/om/prompt/choice/alert, message = "Are you sure you want to stall the machine?", title = "Confirm", choices = list("Yes", "No"))
 		if(isnull(confirm))
 			return
 		if(confirm == "Yes")
@@ -434,19 +434,19 @@ UI_ACT_PROC(/obj/machinery/chemical_synthesizer, ui_act_add_recipe)
 	. = TRUE
 	// Allows the user to add a recipe. Kinda vital for this machine to do anything useful.
 	if(recipes.len >= SYNTHESIZER_MAX_RECIPES)
-		to_chat(usr, span_warning("Maximum recipes exceeded!"))
+		to_chat(user, span_warning("Maximum recipes exceeded!"))
 		return
 	if(!production_mode)
-		babystep_recipe(usr)
+		babystep_recipe(user)
 	else
-		import_recipe(usr)
+		import_recipe(user)
 
 UI_ACT(/obj/machinery/chemical_synthesizer, "rem_recipe", ui_act_rem_recipe, UI_ARG_TEXT("rm_index"))
 UI_ACT_PROC(/obj/machinery/chemical_synthesizer, ui_act_rem_recipe)
 	. = TRUE
 	// Allows the user to remove recipes while the machine is idle.
 	if(!busy)
-		var/confirm = act_ask(usr, action, params, ui, "a3", /datum/om/prompt/choice/alert, message = "Are you sure you want to remove this recipe?", title = "Confirm", choices = list("No", "Yes"))
+		var/confirm = act_ask(user, action, params, ui, "a3", /datum/om/prompt/choice/alert, message = "Are you sure you want to remove this recipe?", title = "Confirm", choices = list("No", "Yes"))
 		if(isnull(confirm))
 			return
 		if(confirm == "Yes")
@@ -454,21 +454,21 @@ UI_ACT_PROC(/obj/machinery/chemical_synthesizer, ui_act_rem_recipe)
 			if(index in recipes)
 				recipes.Remove(list(index)) // Fuck off Byond.
 	else
-		to_chat(usr, span_warning("You cannot remove recipes while the machine is running!"))
+		to_chat(user, span_warning("You cannot remove recipes while the machine is running!"))
 
 UI_ACT(/obj/machinery/chemical_synthesizer, "exp_recipe", ui_act_exp_recipe, UI_ARG_TEXT("exp_index"))
 UI_ACT_PROC(/obj/machinery/chemical_synthesizer, ui_act_exp_recipe)
 	. = TRUE
 	// Allows the user to export recipes to chat formatted for easy importing.
 	var/index = params["exp_index"]
-	export_recipe(usr, index)
+	export_recipe(user, index)
 
 UI_ACT(/obj/machinery/chemical_synthesizer, "add_queue", ui_act_add_queue, UI_ARG_TEXT("qa_index"))
 UI_ACT_PROC(/obj/machinery/chemical_synthesizer, ui_act_add_queue)
 	. = TRUE
 	// Adds recipes to the queue.
 	if(queue.len >= SYNTHESIZER_MAX_QUEUE)
-		to_chat(usr, span_warning("Synthesizer queue full!"))
+		to_chat(user, span_warning("Synthesizer queue full!"))
 		return
 	var/index = params["qa_index"]
 	// If you forgot, this is a string returned by the user pressing the "add to queue" button on a recipe.

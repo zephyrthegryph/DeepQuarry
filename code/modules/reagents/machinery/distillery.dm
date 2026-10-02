@@ -115,7 +115,7 @@ DECLARE_REAGENTS_TYPED(/obj/machinery/portable_atmospherics/powered/reagent_dist
 			else
 				. += span_notice("\The [src]'s output beaker is empty!")
 
-/obj/machinery/portable_atmospherics/powered/reagent_distillery/proc/toggle_power(mob/user = usr)
+/obj/machinery/portable_atmospherics/powered/reagent_distillery/proc/toggle_power(mob/user)
 	if(powered())
 		// set_on() raises CHANGE_MACHINE_SETTINGS, which wakes the distillery's power/step stage.
 		set_on(!on)
@@ -123,7 +123,7 @@ DECLARE_REAGENTS_TYPED(/obj/machinery/portable_atmospherics/powered/reagent_dist
 	else
 		to_chat(user, span_notice(" Nothing happens."))
 
-/obj/machinery/portable_atmospherics/powered/reagent_distillery/proc/toggle_mixing(mob/user = usr)
+/obj/machinery/portable_atmospherics/powered/reagent_distillery/proc/toggle_mixing(mob/user)
 	to_chat(user, span_notice("You press \the [src]'s chamber agitator button."))
 	if(on)
 		visible_message(span_infoplain(span_bold("\The [src]") + " rattles to life."))

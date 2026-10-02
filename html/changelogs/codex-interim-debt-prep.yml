@@ -1,0 +1,4 @@
+author: "Codex"
+delete-after: true
+changes:
+  - bugfix: "Chemical synthesizer actions, reagent pour feedback, assembly prompts and microwave disposal now use the acting player consistently."

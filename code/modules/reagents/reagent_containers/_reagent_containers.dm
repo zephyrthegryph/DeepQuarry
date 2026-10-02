@@ -147,11 +147,11 @@ DECLARE_REAGENTS(/obj/item/reagent_containers, "volume", null)
 		return 0
 
 	if(!reagents || !reagents.total_volume)
-		balloon_alert(usr, "[src] is empty!")
+		balloon_alert(user, "[src] is empty!")
 		return 1
 
 	if(!target.reagents.get_free_space())
-		balloon_alert(usr, "[target] is full!")
+		balloon_alert(user, "[target] is full!")
 		return 1
 
 	var/trans = reagents.trans_to(target, amount_per_transfer_from_this)
