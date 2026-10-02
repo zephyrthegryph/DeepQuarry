@@ -112,7 +112,7 @@
 			var/mob/living/carbon/human/H = nif().human
 			if(H && istype(H))
 				H.recalculate_vis()
-				H.refresh_vision() // the soft's sight flags and darkness view are read by life_vision()
+				PUBLISH_CHANGE(H, MOB_KEY_VIEW) // the soft's sight flags and darkness view are read by life_vision()
 
 	return nif_result
 
@@ -141,7 +141,7 @@
 			var/mob/living/carbon/human/H = nif().human
 			if(H && istype(H))
 				H.recalculate_vis()
-				H.refresh_vision()
+				PUBLISH_CHANGE(H, MOB_KEY_VIEW)
 
 	return nif_result
 

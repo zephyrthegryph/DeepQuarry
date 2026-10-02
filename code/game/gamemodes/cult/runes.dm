@@ -322,18 +322,18 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 			to_chat(user, span_danger("The world beyond fades from your vision."))
 			user.see_invisible = SEE_INVISIBLE_LIVING
 			user.seer = 0
-			user.refresh_vision()
+			PUBLISH_CHANGE(user, MOB_KEY_VIEW)
 		else if(user.see_invisible!=SEE_INVISIBLE_LIVING)
 			to_chat(user, span_warning("The world beyond flashes your eyes but disappears quickly, as if something is disrupting your vision."))
 			user.see_invisible = SEE_INVISIBLE_CULT
 			user.seer = 0
-			user.refresh_vision()
+			PUBLISH_CHANGE(user, MOB_KEY_VIEW)
 		else
 			user.say("Rash'tla sektath mal[pick("'","`")]zua. Zasan therium vivira. Itonis al'ra matum!")
 			to_chat(user, span_warning("The world beyond opens to your eyes."))
 			user.see_invisible = SEE_INVISIBLE_CULT
 			user.seer = 1
-			user.refresh_vision()
+			PUBLISH_CHANGE(user, MOB_KEY_VIEW)
 		return
 	return fizzle(user)
 
