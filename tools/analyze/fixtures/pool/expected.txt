@@ -1,0 +1,12 @@
+new_pooled	code/x/b.dm	2
+new_pooled	code/x/b.dm	3
+new_pooled	code/x/b.dm	5
+new_pooled	code/x/b.dm	6
+new_pooled	code/x/b.dm	12
+new_pooled	code/x/b.dm	13
+new_pooled	code/x/b.dm	14
+new_pooled	code/x/b.dm	14
+new_pooled	code/x/b.dm	15
+take_leak	code/x/c.dm	2
+take_leak	code/x/e.dm	2
+take_leak	code/x/i.dm	2

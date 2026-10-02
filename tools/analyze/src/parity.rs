@@ -37,6 +37,8 @@ pub enum ParseKind {
     Report,
     /// `file:line` alone on a line (a bare site listing): compared on file and line.
     Bare,
+    /// `  file:line text` (an indented listing with no colon after the line): compared on file and line.
+    Indented,
 }
 
 /// How to compare one lint with its legacy script. Paths are relative to the repo root.
@@ -88,6 +90,7 @@ pub fn parse_findings(text: &str, kind: ParseKind) -> Vec<Finding> {
     let plain = Pat::new(r"^([^\s:]+\.[A-Za-z]+):(\d+):");
     let report = Pat::new(r"^([^\s:]+):(\d+): (\w+)\s*$");
     let bare = Pat::new(r"^\s*([^\s:]+\.[A-Za-z]+):(\d+)\s*$");
+    let indented = Pat::new(r"^\s+([^\s:]+\.[A-Za-z]+):(\d+)(?:\s|$)");
     let mut out = Vec::new();
     for l in text.lines() {
         let l = l.trim_end();
@@ -110,6 +113,11 @@ pub fn parse_findings(text: &str, kind: ParseKind) -> Vec<Finding> {
             }
             ParseKind::Bare => {
                 if let Some(c) = bare.captures(l) {
+                    out.push(mk("", c.s(1), c.s(2)));
+                }
+            }
+            ParseKind::Indented => {
+                if let Some(c) = indented.captures(l) {
                     out.push(mk("", c.s(1), c.s(2)));
                 }
             }

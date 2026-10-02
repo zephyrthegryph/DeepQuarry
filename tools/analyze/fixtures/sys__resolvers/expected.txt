@@ -1,0 +1,12 @@
+init_qdel	code/x/a.dm	4
+init_qdel	code/x/a.dm	6
+init_qdel	code/x/a.dm	20
+init_qdel	code/x/a.dm	22
+init_qdel	code/x/a.dm	24
+init_qdel	code/x/a.dm	37
+init_qdel	maps/m/a.dm	3
+init_self_delete	code/x/a.dm	7
+init_self_delete	code/x/a.dm	11
+init_self_delete	code/x/a.dm	12
+init_self_delete	code/x/a.dm	14
+init_self_delete	code/x/a.dm	30
