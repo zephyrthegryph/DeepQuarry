@@ -359,7 +359,7 @@ EXTEND_INTERACTIONS(/obj/item/material/armor_plating/insert, INTERACT_ITEM(null,
 		user.drop_from_inventory(src)
 		var/obj/item/clothing/accessory/material/makeshift/light/new_armor = new(null, src.material.name)
 		user.put_in_hands(new_armor)
-		qdel(src)
+		replace_with(src, new_armor)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/material/armor_plating/insert/wirecutter_act(mob/user, obj/item/tool)
@@ -367,7 +367,7 @@ EXTEND_INTERACTIONS(/obj/item/material/armor_plating/insert, INTERACT_ITEM(null,
 	user.drop_from_inventory(src)
 	var/obj/item/clothing/accessory/material/makeshift/armguards/new_armor = new(null, src.material.name)
 	user.put_in_hands(new_armor)
-	qdel(src)
+	replace_with(src, new_armor)
 	return ITEM_INTERACT_SUCCESS
 
 // Used to craft the makeshift helmet

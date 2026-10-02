@@ -1,0 +1,55 @@
+/// Cutting a held insert retains the compulsory drop even when ordinary slot removal refuses.
+/datum/unit_test/interim_armor_insert_cut_lifecycle/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
+	var/obj/item/material/armor_plating/insert/plate = allocate(/obj/item/material/armor_plating/insert, T, MAT_DURASTEEL)
+	var/obj/item/tool/wirecutters/tool = allocate(/obj/item/tool/wirecutters, T)
+	TEST_ASSERT(user.put_in_active_hand(plate), "the actor holds the original insert")
+	var/datum/dq_containment_listener/refusal = allocate(/datum/dq_containment_listener)
+	refusal.watch(user)
+	refusal.block_remove = TRUE
+	TEST_ASSERT(dq_ledger_removal_refusal(plate, user), "ordinary removal actually refuses the original insert")
+	var/datum/material/material = plate.material
+	var/handle = om_handle(plate)
+	TEST_ASSERT_EQUAL(plate.wirecutter_act(user, tool), ITEM_INTERACT_SUCCESS, "cutting the insert succeeds")
+	TEST_ASSERT(QDELETED(plate), "cutting deletes the original despite ordinary removal refusal")
+	var/obj/item/clothing/accessory/material/makeshift/armguards/armor = user.get_active_hand()
+	TEST_ASSERT(istype(armor), "cutting puts the prepared arm guards into the released hand")
+	TEST_ASSERT_EQUAL(armor.material, material, "the prepared armor keeps the original material")
+	TEST_ASSERT_NULL(om_resolve(handle), "the original material-item identity ends across the clothing family")
+
+/// A floor insert never forces its prepared successor into either occupied hand.
+/datum/unit_test/interim_armor_insert_full_hands/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
+	var/obj/item/pen/left = allocate(/obj/item/pen, T)
+	var/obj/item/pen/right = allocate(/obj/item/pen, T)
+	TEST_ASSERT(user.put_in_l_hand(left), "the actor's left hand is occupied")
+	TEST_ASSERT(user.put_in_r_hand(right), "the actor's right hand is occupied")
+	var/obj/item/material/armor_plating/insert/plate = allocate(/obj/item/material/armor_plating/insert, T, MAT_DURASTEEL)
+	var/obj/item/tool/wirecutters/tool = allocate(/obj/item/tool/wirecutters, T)
+	plate.wirecutter_act(user, tool)
+	own_turf_contents(T)
+	TEST_ASSERT(QDELETED(plate), "cutting consumes the floor insert")
+	var/obj/item/clothing/accessory/material/makeshift/armguards/armor = locate_within(T, /obj/item/clothing/accessory/material/makeshift/armguards)
+	TEST_ASSERT(armor, "the prepared arm guards fall to the floor when both hands are full")
+	TEST_ASSERT_EQUAL(armor.material, get_material_by_name(MAT_DURASTEEL), "floor placement preserves the engineered material")
+	TEST_ASSERT_EQUAL(user.get_equipped_item(SLOT_ID_HAND_L), left, "the left hand keeps its original item")
+	TEST_ASSERT_EQUAL(user.get_equipped_item(SLOT_ID_HAND_R), right, "the right hand keeps its original item")
+
+/// An unlit welder preserves the insert; a lit welder produces its material-specific armor.
+/datum/unit_test/interim_armor_insert_weld_lifecycle/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
+	var/obj/item/material/armor_plating/insert/plate = allocate(/obj/item/material/armor_plating/insert, T, MAT_DURASTEEL)
+	var/obj/item/weldingtool/tool = allocate(/obj/item/weldingtool, T)
+	TEST_ASSERT(user.put_in_active_hand(plate), "the actor holds the insert before welding")
+	plate.welder_act(user, tool)
+	TEST_ASSERT(!QDELETED(plate), "an unlit welder does not consume the insert")
+	TEST_ASSERT_EQUAL(user.get_active_hand(), plate, "the refused weld leaves the insert in the actor's hand")
+	tool.set_welding(TRUE)
+	plate.welder_act(user, tool)
+	TEST_ASSERT(QDELETED(plate), "a lit welder consumes the insert")
+	var/obj/item/clothing/accessory/material/makeshift/light/armor = user.get_active_hand()
+	TEST_ASSERT(istype(armor), "welding puts the prepared light armor into the released hand")
+	TEST_ASSERT_EQUAL(armor.material, get_material_by_name(MAT_DURASTEEL), "welding preserves the insert's material")
