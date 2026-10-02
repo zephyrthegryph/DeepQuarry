@@ -235,7 +235,7 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 		// watches disarm in one pass when the batch flushes, and no hook is unhooked one by one --
 		// this service's own OM teardown (lifecycle phase 5, om_teardown_hooks()) drops every hook
 		// it holds, on the doomed owner and on its turf and holders alike.
-		var/watch_key = om_watch_entity_key(src) // ref text: plain data, not an entity
+		var/watch_key = om_watch_entity_key(src) // handle text: plain data, not an entity
 		batch.material_service_watch_keys += watch_key
 		rel_clear(src, nameof(monitor_tool))
 		rel_clear(src, nameof(monitor_user))
@@ -268,9 +268,8 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 	if(watched_turf())
 		om_unhook(watched_turf(), /datum/om/event/turf_change, src)
 		rel_clear(src, nameof(watched_turf))
-	// om_watch_disarm() keys off this datum's own ref string (code/datums/om/watch.dm), not a
-	// handle, so unlike the old subscribe_gas_dependency() transport there's no QDELETED race
-	// to work around here.
+	// om_watch_disarm() keys off this datum's handle as om_handle_of() reads it, which still names it
+	// while it is being deleted (code/datums/om/watch.dm), so there's no QDELETED race to work around.
 	for(var/id in mixture_ids)
 		om_watch_disarm(src, "gas[id]")
 	mixture_ids = null

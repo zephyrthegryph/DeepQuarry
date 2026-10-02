@@ -626,7 +626,9 @@ pub(crate) fn pace(seconds: f64, force: bool) -> Result<Vec<f32>> {
     // and loads its mixture, so a frame that only advances the pacer (most of them: the step is PIPE_DEVICE_PERIOD,
     // the frame a tick) skips it.
     let due = force || with_world(|w| Ok(w.step_due(Seconds(seconds))))?;
+    let mut lap = PaceLaps::start();
     let probes = due.then(crate::heat::mixture_probes);
+    lap.lap("pace_probes");
     with_world(|w| {
         if let Some(probes) = probes {
             w.set_global(probes).map_err(|e| eyre!("{e}"))?;
@@ -634,17 +636,40 @@ pub(crate) fn pace(seconds: f64, force: bool) -> Result<Vec<f32>> {
         if due {
             crate::pipes::stage_devices(w)?;
         }
+        lap.lap("pace_stage");
         if force {
             w.step_blocking();
         } else {
             let _ = w.tick(Seconds(seconds));
         }
-        Ok(if due {
+        lap.lap(if due { "pace_step" } else { "pace_tick" });
+        let applied = if due {
             crate::pipes::apply_devices(w)
         } else {
             Vec::new()
-        })
+        };
+        lap.lap("pace_apply");
+        Ok(applied)
     })
+}
+
+/// Cumulative wall time of the parts of [`pace`] (`frame.us.pace_*`): the world's tick bookkeeping on frames that
+/// step nothing, the step itself, and the per-step staging around it.
+struct PaceLaps(std::time::Instant);
+
+impl PaceLaps {
+    fn start() -> Self {
+        Self(std::time::Instant::now())
+    }
+
+    fn lap(&mut self, part: &'static str) {
+        let now = std::time::Instant::now();
+        #[allow(clippy::cast_possible_truncation)]
+        crate::metrics::registry()
+            .counter(&format!("frame.us.{part}"))
+            .add((now - self.0).as_micros() as u64);
+        self.0 = now;
+    }
 }
 
 /// Changes the world's step length (the gas publication cadence: a rupture asks

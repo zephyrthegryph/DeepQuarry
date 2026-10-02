@@ -962,8 +962,28 @@ fn heat_body_temperature(h: ByondValue) -> Result<ByondValue> {
     let Some(e) = body(&h)? else {
         return Ok(ByondValue::null());
     };
-    let t = with_world(|w| Ok(w.read::<HeatBody>(e).map(|b| b.temperature())))?;
+    let t = with_world(|w| Ok(w.read::<HeatBody>(e).map(|b| body_temperature_now(w, e, &b))))?;
     Ok(t.map_or_else(ByondValue::null, |t| ByondValue::from(t as f32)))
+}
+
+/// A body's temperature now. A relaxing body's stored energy is its analytic
+/// model's anchor (the coupling law sleeps until the model is due, up to
+/// `RELAX_MAX_INTERVAL` later), so its temperature is the model's value at
+/// the world's time, read without settling it.
+fn body_temperature_now(w: &vg_core::world::World, e: vg_core::entity::EntityId, body: &HeatBody) -> f64 {
+    if !body.relax {
+        return body.temperature();
+    }
+    let Some((kind, coupling_e)) = COUPLINGS.with(|c| c.borrow().get(&(e.index(), 0)).copied()) else {
+        return body.temperature();
+    };
+    let conductance = match kind {
+        0 => w.read::<SolidCoupling>(coupling_e).map(|c| c.conductance),
+        1 => w.read::<GasCoupling>(coupling_e).map(|c| c.conductance),
+        2 => w.read::<BodyCoupling>(coupling_e).map(|c| c.conductance),
+        _ => None,
+    };
+    conductance.map_or_else(|| body.temperature(), |g| vg_heat::laws::relax_temperature_at(body, g, w.now()))
 }
 
 #[auxmacros::bind("/proc/heat_body_add")]

@@ -144,3 +144,15 @@ DECLARE_LOOT(/loot/unit_test/parent/child, LOOT_ALL(/obj/item/tool/crowbar))
 /// Takes a test turf back out of the blobstart registry.
 /proc/dq_test_drop_blobstart(turf/T)
 	GLOB.blobstart -= T
+
+/// A TTV bomb spawner made inside a container (the syndicate "screwed" kit) fills
+/// that container; it used to drop the bomb on the floor under it.
+/datum/unit_test/dq_sys_resolver_ttv_bomb_fills_container
+
+/datum/unit_test/dq_sys_resolver_ttv_bomb_fills_container/Run()
+	var/turf/T = test_floor()
+	var/obj/item/storage/box/B = allocate(/obj/item/storage/box, T)
+	new /obj/effect/spawner/newbomb/timer/syndicate(B)
+	var/obj/item/transfer_valve/V = locate() in B
+	TEST_ASSERT(V, "the bomb is inside the box")
+	TEST_ASSERT(!(locate(/obj/item/transfer_valve) in T), "no bomb landed on the floor")

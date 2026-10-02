@@ -246,20 +246,23 @@ APPEARANCE_LEVEL(/obj/item/cell, "appearance_charge_level", 4, "{initial(icon_st
 /obj/item/cell/proc/amount_missing()
 	return max(maxcharge - charge, 0)
 
-// use power from a cell, returns the amount actually used
-/obj/item/cell/proc/use(amount, update_appearance = TRUE)
+// use power from a cell, returns the amount actually used. `seconds`: the draw was a steady load over that long,
+// settled in one batch (an emergency light's discharge): its rate, not its total, is what the cell's discharge
+// limit, efficiency and heating see.
+/obj/item/cell/proc/use(amount, update_appearance = TRUE, seconds = 0)
 	if(rigged && amount > 0)
 		explode()
 		return 0
 	refresh_material_discharge()
+	var/span = seconds > 1 ? seconds : 1
 	if(amount > 0)
-		material_service_event(MATERIAL_EVENT_ELECTRICAL, amount / max(material_discharge_limit, 1))
+		material_service_event(MATERIAL_EVENT_ELECTRICAL, amount / span / max(material_discharge_limit, 1))
 	material_service_of(src)?.advance()
 	if(QDELETED(src))
 		return 0
 	amount = material_cell_use_cost(amount)
-	amount = clamp(amount, 0, material_discharge_credit)
-	var/efficiency = material_delivery_efficiency(amount)
+	amount = clamp(amount, 0, span > 1 ? material_discharge_limit * span : material_discharge_credit)
+	var/efficiency = material_delivery_efficiency(amount / span)
 	var/used = min(charge * efficiency, amount)
 	var/debited = used / efficiency
 	var/charge_before = charge
@@ -274,7 +277,8 @@ APPEARANCE_LEVEL(/obj/item/cell, "appearance_charge_level", 4, "{initial(icon_st
 		charge = max(0, charge - max(charge_before * MATERIAL_CHARGE_FLOAT_EPSILON, MATERIAL_CHARGE_FLOAT_EPSILON))
 		debited = charge_before - charge
 	used = min(used, debited)
-	material_discharge_credit -= used
+	if(span <= 1)
+		material_discharge_credit -= used
 	var/datum/material_service/service = material_service_of(src)
 	if(service)
 		service.input_joules += debited / CELLRATE
@@ -282,7 +286,7 @@ APPEARANCE_LEVEL(/obj/item/cell, "appearance_charge_level", 4, "{initial(icon_st
 		service.loss_joules += (debited - used) / CELLRATE
 		service.add_heat((debited - used) / CELLRATE)
 		run_material_heat_pump(used)
-	update_superconducting_state(amount)
+	update_superconducting_state(amount / span)
 	COOLDOWN_START(src, charge_cooldown, charge_delay)
 	if(used && self_recharge)
 		// ALLOW(sys_periodic_toggle): wake, not a toggle: the declared state (self_recharge) already holds; the self-recharge body parks itself once full (work of its own that ran out) and this restarts it after a discharge. `charge` has 200+ writers across the tree, so it is not a field.

@@ -56,10 +56,12 @@ ADMIN_VERB(spawn_tanktransferbomb, R_SPAWN, "Instant TTV", "Spawn a tank transfe
 MAP_RESOLVER(/obj/effect/spawner/newbomb, GLOBAL_PROC_REF(resolve_newbomb))
 MAP_RESOLVER_VARS(/obj/effect/spawner/newbomb, "carbon_amt;oxygen_amt;phoron_amt")
 
-/// MAP_RESOLVER for mapped TTV bombs.
+/// MAP_RESOLVER for mapped TTV bombs. The bomb goes where the spawner was: a
+/// spawner created inside a container (the syndicate "screwed" kit box) fills
+/// that container, not the floor under it.
 /proc/resolve_newbomb(atom/loc, path, list/varedits)
 	var/obj/effect/spawner/newbomb/P = path
-	spawn_ttv_bomb(get_turf(loc), path, MAP_VAR(P, varedits, phoron_amt), MAP_VAR(P, varedits, oxygen_amt), MAP_VAR(P, varedits, carbon_amt))
+	spawn_ttv_bomb(loc, path, MAP_VAR(P, varedits, phoron_amt), MAP_VAR(P, varedits, oxygen_amt), MAP_VAR(P, varedits, carbon_amt))
 	return TRUE
 
 /// Builds a welded tank transfer valve bomb of spawner type `path` (its assembly) at `loc`.
