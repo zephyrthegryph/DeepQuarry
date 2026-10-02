@@ -73,9 +73,12 @@ stages for isolated reference builds. Cache corruption or absence permits recomp
 
 Transactional metadata uses redb. Large DMB/RSC payloads remain immutable files,
 addressed by SHA-256. Database access is batched at stage boundaries; a lowering
-worker never opens the database for each procedure. Workers share one bounded
-immutable namespace snapshot and keep bounded local overlays and Salsa graphs.
-An incomplete snapshot is an eviction/miss, never evidence for a cache hit.
+workers consume bounded requested-key cache views and keep bounded local overlays
+and Salsa graphs. Bulk requested reads share one short database ownership window;
+locks are released before decoding and compiler work. A missing or evicted record
+is a cache miss, never evidence for a cache hit. Symbolic lowering no longer scans
+its entire namespace. Source fallback can still make an addressed read after parsing;
+procedure graph and output-fragment hits bypass it.
 
 Separate compiler processes coordinate short database operations through an OS
 lock. Pure artifact publication uses read witnesses and a conditional transaction;

@@ -223,10 +223,11 @@ impl FrontendPool {
         }
     }
     fn trim(&mut self, active_bytes: usize) {
-        let budget = self
-            .limits
-            .max_bytes
-            .saturating_sub(self.active_bytes().saturating_add(active_bytes).saturating_add(self.external_bytes));
+        let budget = self.limits.max_bytes.saturating_sub(
+            self.active_bytes()
+                .saturating_add(active_bytes)
+                .saturating_add(self.external_bytes),
+        );
         let mut ordered: Vec<_> = self
             .entries
             .iter()
@@ -299,7 +300,16 @@ impl FrontendPool {
             if self.bytes() <= budget {
                 break;
             }
+            self.trace_entry("before authored payload trim", key);
+            if let Some(discovery) = self.entries.get_mut(key).unwrap().discovery.as_mut() {
+                discovery.trim_authored_payloads();
+            }
+            self.trace_entry("after authored payload trim", key);
+            if self.bytes() <= budget {
+                break;
+            }
             self.trace_entry("before expanded input trim", key);
+            if let Some(frontend)=self.entries.get_mut(key).unwrap().frontend.as_mut() {frontend.evict_segmented_payloads();}
             if let Some(discovery) = self.entries.get_mut(key).unwrap().discovery.as_mut() {
                 if discovery.release_prepared_snapshot() != 0 {
                     self.stats.prepared_trims += 1;
@@ -341,13 +351,23 @@ impl FrontendPool {
             }
             self.trace_entry("after source release", key);
         }
-        while self.entries.len() > self.limits.max_sessions || self.bytes() > budget {
-            let Some(key) = self.oldest(|entry| !entry.active()) else {
-                break;
-            };
-            self.trace_entry("whole idle entry eviction", &key);
+        // Preserve compact input/layout handles while reclaiming a cold
+        // frontend's larger semantic indexes. Those indexes restore by exact
+        // disk keys; discovery can still directly splice the next source edit.
+        while self.bytes()>budget {
+            let Some(key)=self.oldest(|entry|!entry.active() && entry.frontend.is_some()) else {break;};
+            self.trace_entry("idle semantic frontend eviction",&key);
+            self.entries.get_mut(&key).unwrap().frontend=None;
+            self.stats.evictions+=1;
+        }
+        // The aggregate bound remains hard for retained idle state. If even
+        // compact discovery metadata does not fit, its persisted manifest is
+        // the bounded fallback; never retain arbitrarily many oversized roots.
+        while self.entries.len()>self.limits.max_sessions || self.bytes()>budget {
+            let Some(key)=self.oldest(|entry|!entry.active()) else {break;};
+            self.trace_entry("whole idle entry eviction",&key);
             self.entries.remove(&key);
-            self.stats.evictions += 1;
+            self.stats.evictions+=1;
         }
     }
 }

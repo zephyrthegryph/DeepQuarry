@@ -6,6 +6,7 @@ license = "GPL-3.0-only"
 description = "Multi-worktree daemon for the incremental DM compiler"
 
 [dependencies]
+dm-analysis = { path = "../dm-analysis" }
 byond-dmb = { path = "../.." }
 dm-compiler = { path = "../dm-compiler" }
 dm-preprocess = { path = "../dm-preprocess" }

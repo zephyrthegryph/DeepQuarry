@@ -11,7 +11,7 @@ use std::fs;
 use std::io::{self, Read};
 use std::path::{Path, PathBuf};
 
-const NAMESPACE: &str = "resource-source-sha-v2";
+const NAMESPACE: &str = "resource-source-sha-v3";
 const MAX_RECORDS: usize = 64_000;
 const MAX_CACHE_BYTES: usize = 32 * 1024 * 1024;
 
@@ -20,6 +20,7 @@ struct Identity {
     path: PathBuf,
     len: u64,
     digest: [u8; 32],
+    id: u32,
     stamp: Option<FileStamp>,
 }
 
@@ -76,6 +77,7 @@ fn read_identity(path: &Path, expected: Option<FileStamp>) -> io::Result<Identit
         .map_err(|error| io::Error::new(error.kind(), format!("{}: {error}", path.display())))?;
     let len = file.metadata()?.len();
     let mut hash = Sha256::new();
+    let mut id = u32::MAX;
     let mut read = 0u64;
     let mut buffer = [0u8; 64 * 1024];
     loop {
@@ -87,6 +89,7 @@ fn read_identity(path: &Path, expected: Option<FileStamp>) -> io::Result<Identit
             .checked_add(count as u64)
             .ok_or_else(|| invalid("resource size overflow"))?;
         hash.update(&buffer[..count]);
+        id = byond_dmb::hash::nqcrc(id, &buffer[..count]);
     }
     drop(file);
     let after = capture(path);
@@ -104,11 +107,49 @@ fn read_identity(path: &Path, expected: Option<FileStamp>) -> io::Result<Identit
         path: path.to_owned(),
         len,
         digest: hash.finalize().into(),
+        id,
         stamp: expected.filter(|stamp| after.as_ref() == Some(stamp)),
     })
 }
 
 impl ResourceFingerprintCache {
+    pub(crate) fn archive_inputs(
+        &mut self,
+        requests: &[ResourceRequest],
+    ) -> io::Result<(
+        super::ResourceCatalog,
+        Vec<(ResourceRequest, u64, Option<FileStamp>)>,
+    )> {
+        let fingerprint = self.fingerprint_requests(requests.iter().cloned())?;
+        let mut names = BTreeSet::new();
+        let mut entries = Vec::new();
+        let mut inputs = Vec::new();
+        for request in requests {
+            if !names.insert(request.archive_name.clone()) {
+                continue;
+            }
+            let path = request.disk_path.canonicalize()?;
+            let identity = self
+                .records
+                .get(&path)
+                .cloned()
+                .map(Ok)
+                .unwrap_or_else(|| read_identity(&path, capture(&path)))?;
+            entries.push(super::ResourceDescriptor {
+                archive_name: request.archive_name.clone(),
+                id: identity.id,
+                kind: super::kind_for_name(&request.archive_name).as_byte(),
+                content_digest: identity.digest,
+            });
+            inputs.push((request.clone(), identity.len, identity.stamp));
+        }
+        let catalog = super::ResourceCatalog {
+            fingerprint,
+            entries,
+        };
+        catalog.validate()?;
+        Ok((catalog, inputs))
+    }
     pub fn open(root: &Path) -> Self {
         Self {
             store: Store::open(root.join("resource-inputs.redb")).ok(),

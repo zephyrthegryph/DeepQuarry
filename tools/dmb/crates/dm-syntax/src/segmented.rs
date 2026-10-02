@@ -12,6 +12,7 @@ struct PieceTransition {
     // Weak identity does not pin previous source revisions. Carry equality and
     // an upgraded pointer check protect hash/address reuse from false hits.
     piece: std::sync::Weak<str>,
+    disk: Option<std::sync::Weak<std::path::PathBuf>>,
     carry: Arc<str>,
     boundary: usize,
     spans: Vec<Span>,
@@ -29,6 +30,10 @@ pub struct SegmentedSource {
     bytes: usize,
     lines: Arc<[Arc<[usize]>]>,
     preceding_lines: Arc<[usize]>,
+    disk: Arc<[Option<Arc<std::path::PathBuf>>]>,
+    lengths: Arc<[usize]>,
+    digests: Arc<[Option<[u8;32]>]>,
+    non_boundaries: Arc<[Arc<[usize]>]>,
 }
 impl SegmentedSource {
     pub fn new(pieces: impl IntoIterator<Item = Arc<str>>) -> Self {
@@ -47,7 +52,50 @@ impl SegmentedSource {
         }).collect();
         let mut count = 0;
         let preceding_lines: Vec<_> = lines.iter().map(|lines| { let before = count; count += lines.len(); before }).collect();
-        Self { pieces: pieces.into(), offsets: offsets.into(), bytes, lines: lines.into(), preceding_lines: preceding_lines.into() }
+        let lengths=pieces.iter().map(|piece|piece.len()).collect::<Vec<_>>().into();
+        let non_boundaries=pieces.iter().map(|piece|piece.bytes().enumerate().filter_map(|(at,byte)|((byte&0xc0)==0x80).then_some(at)).collect::<Vec<_>>().into()).collect::<Vec<Arc<[usize]>>>().into();
+        let disk=vec![None;pieces.len()].into();
+        let digests=vec![None;pieces.len()].into();
+        Self { pieces: pieces.into(), offsets: offsets.into(), bytes, lines: lines.into(), preceding_lines: preceding_lines.into(),disk,lengths,digests,non_boundaries }
+    }
+    /// Immutable disk handles retain source layout while decoded payloads can
+    /// be evicted. Each visitor or range request loads only its bounded pieces.
+    pub fn with_backings(pieces:impl IntoIterator<Item=(Arc<str>,usize,Arc<[usize]>,Arc<[usize]>,Option<Arc<std::path::PathBuf>>,[u8;32])>) -> Self {
+        let mut source=Self::default();let mut text=Vec::new();let mut offsets=Vec::new();let mut lines=Vec::new();let mut preceding=Vec::new();let mut disk=Vec::new();let mut lengths=Vec::new();let mut non_boundaries=Vec::new();let mut count=0;let mut digests=Vec::new();
+        for (piece,len,piece_lines,utf8,blob,digest) in pieces {
+            offsets.push(source.bytes);source.bytes+=len;preceding.push(count);count+=piece_lines.len();
+            text.push(piece);lengths.push(len);lines.push(piece_lines);disk.push(blob);non_boundaries.push(utf8);digests.push(Some(digest));
+        }
+        source.pieces=text.into();source.offsets=offsets.into();source.lines=lines.into();source.preceding_lines=preceding.into();source.disk=disk.into();source.lengths=lengths.into();source.digests=digests.into();source.non_boundaries=non_boundaries.into();source
+    }
+    fn content(&self,index:usize)->Result<Arc<str>,String> {
+        if self.pieces[index].len()==self.lengths[index] {return Ok(Arc::clone(&self.pieces[index]));}
+        let path=self.disk[index].as_ref().ok_or("source piece has no disk backing")?;
+        let mut bytes=Vec::new();use std::io::Read;
+        std::fs::File::open(path.as_ref()).map_err(|error|format!("expanded-cache: {error}"))?.take(self.lengths[index] as u64+1).read_to_end(&mut bytes).map_err(|error|format!("expanded-cache: {error}"))?;
+        if bytes.len()!=self.lengths[index] {return Err("expanded-cache: invalid expanded piece length".into());}
+        use sha2::Digest;
+        if self.digests[index].is_some_and(|expected|<[u8;32]>::from(sha2::Sha256::digest(&bytes))!=expected) {return Err("expanded-cache: invalid expanded piece digest".into());}
+        String::from_utf8(bytes).map(Arc::from).map_err(|error|format!("expanded-cache: {error}"))
+    }
+    pub fn visit_range(&self,span:Span,mut visit:impl FnMut(&str))->Result<(),String> {
+        if span.start>span.end || !self.is_char_boundary(span.start) || !self.is_char_boundary(span.end) {return Err("invalid expanded range".into());}
+        if span.start==span.end {return Ok(());}
+        let first=self.offsets.partition_point(|offset|*offset<=span.start).saturating_sub(1);
+        for index in first..self.pieces.len() {
+            let offset=self.offsets[index];if offset>=span.end {break;}
+            let piece=self.content(index)?;
+            visit(&piece[span.start.saturating_sub(offset)..(span.end-offset).min(piece.len())]);
+        }
+        Ok(())
+    }
+    pub fn evict_payloads(&mut self) {
+        let mut pieces=self.pieces.to_vec();
+        for (index,piece) in pieces.iter_mut().enumerate() {if self.disk[index].is_some() {*piece=Arc::from("");}}
+        self.pieces=pieces.into();
+    }
+    pub fn visit_pieces(&self,mut visit:impl FnMut(&str))->Result<(),String> {
+        for index in 0..self.pieces.len() {let piece=self.content(index)?;visit(&piece);}Ok(())
     }
     pub fn len(&self) -> usize { self.bytes }
     pub fn is_empty(&self) -> bool { self.bytes == 0 }
@@ -55,24 +103,23 @@ impl SegmentedSource {
         if offset == self.bytes { return true; }
         if offset > self.bytes { return false; }
         self.offsets.partition_point(|at| *at <= offset).checked_sub(1)
-            .is_some_and(|index| self.pieces[index].is_char_boundary(offset-self.offsets[index]))
+            .is_some_and(|index| self.non_boundaries[index].binary_search(&(offset-self.offsets[index])).is_err())
     }
-    pub fn pieces(&self) -> &[Arc<str>] { &self.pieces }
+    pub fn resident_pieces(&self) -> &[Arc<str>] { &self.pieces }
     pub fn piece_offsets(&self) -> &[usize] { &self.offsets }
     pub fn slice(&self, span: Span) -> Option<Cow<'_, str>> {
         if span.start > span.end || !self.is_char_boundary(span.start) || !self.is_char_boundary(span.end) { return None; }
         if span.start == span.end { return Some(Cow::Borrowed("")); }
         let index = self.offsets.partition_point(|offset| *offset <= span.start).checked_sub(1)?;
         let first = self.offsets[index];
-        if span.end <= first + self.pieces[index].len() {
+        if span.end <= first+self.lengths[index] && self.pieces[index].len()==self.lengths[index] {
             return self.pieces[index].get(span.start-first..span.end-first).map(Cow::Borrowed);
         }
-        let mut result = String::with_capacity(span.end-span.start);
-        for (piece, offset) in self.pieces[index..].iter().zip(&self.offsets[index..]) {
-            if *offset >= span.end { break; }
-            let a = span.start.saturating_sub(*offset);
-            let b = (span.end-*offset).min(piece.len());
-            result.push_str(piece.get(a..b)?);
+        let mut result=String::with_capacity(span.end-span.start);
+        for index in index..self.pieces.len() {
+            let offset=self.offsets[index];if offset>=span.end {break;}
+            let piece=self.content(index).ok()?;
+            let a=span.start.saturating_sub(offset);let b=(span.end-offset).min(piece.len());result.push_str(piece.get(a..b)?);
         }
         Some(Cow::Owned(result))
     }
@@ -101,8 +148,9 @@ impl SegmentedSource {
         let mut carry = String::new();
         let mut base = 0usize;
         let mut total = ChunkReport::default();
-        for (index, piece) in self.pieces.iter().enumerate() {
-            carry.push_str(piece);
+        for index in 0..self.pieces.len() {
+            let piece=self.content(index)?;
+            carry.push_str(&piece);
             let final_piece = index+1 == self.pieces.len();
             let mut boundary = 0;
             if final_piece { boundary = carry.len(); }
@@ -132,29 +180,32 @@ impl SegmentedSource {
         let mut carry = String::new();
         let mut base = 0;
         let mut total = ChunkReport::default();
-        for (index, piece) in self.pieces.iter().enumerate() {
+        for index in 0..self.pieces.len() {
+            let piece=self.content(index)?;
+            let disk=self.disk[index].as_ref();
+            let identity=disk.map_or_else(||Arc::as_ptr(&self.pieces[index]) as *const () as usize,|path|Arc::as_ptr(path) as usize);
             let mut hasher = std::collections::hash_map::DefaultHasher::new();
             carry.hash(&mut hasher);
-            let key = (Arc::as_ptr(piece) as *const () as usize, hasher.finish(), index+1 == self.pieces.len(), target, limit);
-            let hit = session.transitions.get(&key).is_some_and(|entry| entry.piece.upgrade().is_some_and(|cached| Arc::ptr_eq(&cached, piece)) && &*entry.carry == carry);
+            let key = (identity, hasher.finish(), index+1 == self.pieces.len(), target, limit);
+            let hit = session.transitions.get(&key).is_some_and(|entry| disk.map_or_else(||entry.piece.upgrade().is_some_and(|cached| Arc::ptr_eq(&cached,&self.pieces[index])),|path|entry.disk.as_ref().and_then(|weak|weak.upgrade()).is_some_and(|cached|Arc::ptr_eq(&cached,path))) && &*entry.carry == carry);
             if !hit {
                 let incoming: Arc<str> = Arc::from(carry.as_str());
                 let mut window = String::with_capacity(carry.len()+piece.len());
                 window.push_str(&carry);
-                window.push_str(piece);
-                let mut boundary = 0;
-                if key.2 { boundary = window.len(); }
-                else { crate::audit::for_each_top_level_boundary(&window, |at| boundary = at); }
+                window.push_str(&piece);
+                let mut boundaries = Vec::new();
+                crate::audit::for_each_top_level_boundary(&window, |at| boundaries.push(at));
+                let boundary = if key.2 { window.len() } else { boundaries.last().copied().unwrap_or(0) };
                 let mut spans = Vec::new();
-                let report = crate::for_each_source_chunk_with_limits(&window[..boundary], target, limit, |text, offset| spans.push(Span::new(offset, offset+text.len())));
+                let report = crate::audit::source_chunks_from_boundaries(&window[..boundary], target, limit, &boundaries, |text, offset| spans.push(Span::new(offset, offset+text.len())));
                 // The syntax scanner reports a count and first skipped range;
                 // no successful production parse can retain skipped input.
                 let skipped = report.first_skipped_span.into_iter().collect();
-                session.scanned_bytes += window.len()+boundary;
+                session.scanned_bytes += window.len();
                 let charge = incoming.len()+spans.capacity()*std::mem::size_of::<Span>()+256;
                 if session.bytes+charge > 32*1024*1024 || session.transitions.len() >= 8192 { session.clear(); }
                 session.bytes += charge;
-                session.transitions.insert(key, PieceTransition { piece: Arc::downgrade(piece), carry: incoming, boundary, spans, skipped });
+                session.transitions.insert(key, PieceTransition { piece: Arc::downgrade(&self.pieces[index]), disk:disk.map(Arc::downgrade), carry: incoming, boundary, spans, skipped });
             }
             let transition = &session.transitions[&key];
             let incoming_len = carry.len();
@@ -178,7 +229,7 @@ impl SegmentedSource {
                 carry.push_str(&piece[transition.boundary-incoming_len..]);
             } else {
                 carry.drain(..transition.boundary);
-                carry.push_str(piece);
+                carry.push_str(&piece);
             }
             base += transition.boundary;
             if carry.len() > limit { return Err(format!("declaration at expanded offset {base} exceeds the parse chunk limit of {limit} bytes")); }

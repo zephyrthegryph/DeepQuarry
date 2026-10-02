@@ -17,9 +17,35 @@ use std::sync::Arc;
 #[derive(Clone, Debug)]
 pub struct PreparedSource {
     pub text: Arc<str>,
+    pub content_len: usize,
+    pub(crate) blob: Option<PathBuf>,
     /// Content identity after the compiler's UTF-8/Windows-1252 decoding.
     pub digest: [u8; 32],
     pub(crate) stamp: Option<FileStamp>,
+}
+
+impl PreparedSource {
+    /// Decode only the authored file requested by preprocessing or a direct splice.
+    pub(crate) fn content(&self) -> std::io::Result<Arc<str>> {
+        if self.text.len() == self.content_len {
+            return Ok(Arc::clone(&self.text));
+        }
+        let Some(blob) = &self.blob else {
+            return Ok(Arc::clone(&self.text));
+        };
+        use std::io::Read;
+        let mut bytes = Vec::new();
+        std::fs::File::open(blob)?
+            .take(self.content_len as u64 + 1)
+            .read_to_end(&mut bytes)?;
+        if bytes.len() != self.content_len
+            || <[u8; 32]>::from(Sha256::digest(&bytes)) != self.digest
+        {
+            return Err(std::io::Error::other("invalid authored source artifact"));
+        }
+        let text = String::from_utf8(bytes).map_err(std::io::Error::other)?;
+        Ok(Arc::from(text))
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
@@ -121,7 +147,9 @@ impl PreparedProject {
                 .expansion
                 .segments
                 .iter()
-                .map(|piece| piece.text.len() + piece.lines.len()*std::mem::size_of::<usize>() + 96)
+                .map(|piece| {
+                    piece.text.len() + (piece.lines.len()+piece.non_boundaries.len()) * std::mem::size_of::<usize>() + piece.blob.as_ref().map_or(0,|path|path.as_os_str().len()*2)+128
+                })
                 .sum::<usize>()
             + self.project.text.capacity()
             + self.project.origins.capacity() * std::mem::size_of::<dm_preprocess::Origin>()
@@ -143,7 +171,12 @@ impl PreparedProject {
             + self
                 .sources
                 .iter()
-                .map(|(path, source)| path.as_os_str().len() * 2 + source.text.len() + 192)
+                .map(|(path, source)| {
+                    path.as_os_str().len() * 2
+                        + source.text.len()
+                        + source.blob.as_ref().map_or(0, |x| x.as_os_str().len() * 2)
+                        + 192
+                })
                 .sum::<usize>()
             + self.proof.as_ref().map_or(0, InputProof::resident_bytes)
             + self
@@ -181,7 +214,7 @@ pub(crate) fn project_digest(root: &Path, sources: &BTreeMap<PathBuf, PreparedSo
             .to_string_lossy();
         hash.update((name.len() as u64).to_le_bytes());
         hash.update(name.as_bytes());
-        hash.update((source.text.len() as u64).to_le_bytes());
+        hash.update((source.content_len as u64).to_le_bytes());
         hash.update(source.digest);
     }
     format!("{:x}", hash.finalize())

@@ -114,9 +114,15 @@ pub(crate) struct LoweringPool<'a> {
     profiling: bool,
     submit_elapsed: Duration,
     receive_elapsed: Duration,
+    parser: &'a std::sync::OnceLock<ProcParseCache>,
+    parse_root: Option<&'a Path>,
 }
 
 impl LoweringPool<'_> {
+    pub(super) fn prefetch_source_keys(&self, keys: &[String]) {
+        if keys.is_empty() { return; }
+        self.parser.get_or_init(|| ProcParseCache::open(self.parse_root)).prefetch_keys(keys);
+    }
     pub fn submit(&mut self, ordinal: usize, body: Vec<Item>, bindings: LowerBindings) {
         self.submit_for_phase(LoweringPhase::Procedure, ordinal, body, bindings);
     }
@@ -364,6 +370,8 @@ pub(crate) fn with_lowering_cache<R>(
         |inner| {
             let mut pool = LoweringPool {
                 inner,
+                parser: &parser,
+                parse_root: parse_root.as_deref(),
                 profiling: parent.profiling_enabled(),
                 submit_elapsed: Duration::ZERO,
                 receive_elapsed: Duration::ZERO,

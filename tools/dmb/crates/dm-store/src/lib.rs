@@ -204,6 +204,20 @@ impl Store {
         max_batch_bytes: usize,
         cancel: Option<&AtomicBool>,
     ) -> io::Result<ReadBatch> {
+        self.read_grouped_bounded(keys, keys.len().max(1), max_record_bytes,
+            max_batch_bytes, max_batch_bytes, cancel)
+    }
+
+    /// Hydrate several allocation groups under one short database ownership
+    /// window. All bytes are copied before releasing the lock; decoding and
+    /// compiler work happen after this returns. Never holds a database between
+    /// stages or across independent compiler processes.
+    pub fn read_grouped_bounded(
+        &self, keys: &[Key], group_records: usize, max_record_bytes: usize,
+        max_group_bytes: usize, max_session_bytes: usize,
+        cancel: Option<&AtomicBool>,
+    ) -> io::Result<ReadBatch> {
+        if group_records == 0 { return Err(error("read group must contain records")); }
         if keys.len() > 64_000 {
             return Err(error("batch exceeds 64000 records"));
         }
@@ -216,7 +230,9 @@ impl Store {
             let table = tx.open_table(RECORDS).map_err(error)?;
             let mut values = Vec::with_capacity(keys.len());
             let mut bytes = 0usize;
-            for key in &encoded {
+            let mut group_bytes = 0usize;
+            for (ordinal, key) in encoded.iter().enumerate() {
+                if ordinal % group_records == 0 { group_bytes = 0; }
                 let stored = table.get(key.as_str()).map_err(error)?;
                 let size = stored.as_ref().map_or(0, |value| value.value().len());
                 if size.saturating_sub(32) > max_record_bytes.min(MAX_RECORD) {
@@ -228,7 +244,8 @@ impl Store {
                 bytes = bytes
                     .checked_add(size)
                     .ok_or_else(|| error("read batch size overflow"))?;
-                if bytes > max_batch_bytes.min(128 * 1024 * 1024) {
+                group_bytes = group_bytes.checked_add(size).ok_or_else(||error("read group size overflow"))?;
+                if group_bytes > max_group_bytes || bytes > max_session_bytes.min(128 * 1024 * 1024) {
                     return Err(io::Error::new(
                         io::ErrorKind::InvalidInput,
                         "read batch exceeds stage byte limit",
@@ -243,9 +260,13 @@ impl Store {
         let mut witnesses = Vec::with_capacity(keys.len());
         for (key, raw) in keys.iter().zip(raw) {
             let value = raw.as_deref().map(decode_record).transpose()?;
+            // decode_record already verified the stored SHA. Reuse it for the
+            // transaction witness instead of hashing each payload a second time.
+            let value_digest = raw.as_ref().map(|bytes| bytes[..32].iter()
+                .map(|byte| format!("{byte:02x}")).collect());
             witnesses.push(ReadWitness {
                 key: key.clone(),
-                value_digest: value.as_deref().map(digest),
+                value_digest,
             });
             values.push(value);
         }

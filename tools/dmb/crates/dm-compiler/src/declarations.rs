@@ -5,7 +5,7 @@ use dm_syntax::{AstFile, Item, ItemKind};
 pub fn lower_declarations(ast: &AstFile) -> Result<Vec<Declaration>, Vec<String>> {
     let mut declarations = Vec::new();
     let mut diagnostics = Vec::new();
-    walk(&ast.items, "/", &mut declarations, &mut diagnostics);
+    walk(&ast.items, "/", 0, &mut declarations, &mut diagnostics);
     if diagnostics.is_empty() {
         Ok(declarations)
     } else {
@@ -13,17 +13,24 @@ pub fn lower_declarations(ast: &AstFile) -> Result<Vec<Declaration>, Vec<String>
     }
 }
 
+pub fn lower_fragment_declarations(fragments:&[dm_analysis::FrontendFragment]) -> Result<Vec<Declaration>,Vec<String>> {
+    let mut declarations=Vec::new();let mut diagnostics=Vec::new();
+    for fragment in fragments {walk(&fragment.ast.items,"/",fragment.source_offset,&mut declarations,&mut diagnostics);}
+    if diagnostics.is_empty(){Ok(declarations)}else{Err(diagnostics)}
+}
+
 fn walk(
     items: &[Item],
     owner: &str,
+    source_offset: usize,
     declarations: &mut Vec<Declaration>,
     diagnostics: &mut Vec<String>,
 ) {
     for item in items {
         let span = Span {
             file: FileId(0),
-            start: item.span.start as u32,
-            end: item.span.end as u32,
+            start: (source_offset+item.span.start) as u32,
+            end: (source_offset+item.span.end) as u32,
         };
         let header = item.header.trim();
         match item.kind {
@@ -53,6 +60,7 @@ fn walk(
                         walk(
                             &item.children,
                             &path_to_owner(&path),
+                            source_offset,
                             declarations,
                             diagnostics,
                         );

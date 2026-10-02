@@ -10,8 +10,9 @@ use std::io;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-const VERSION: u32 = 2;
+const VERSION: u32 = 4;
 const MAX_PACK: usize = 128 * 1024 * 1024;
+const MAX_EXPANDED_BYTES: usize = 1024 * 1024 * 1024;
 const MAX_MANIFEST: usize = 64 * 1024 * 1024;
 
 #[derive(Serialize, Deserialize)]
@@ -28,6 +29,8 @@ struct Manifest {
     context: String,
     pack: Vec<(String, usize)>,
     expanded_end: usize,
+    segment_lines: Vec<Vec<usize>>,
+    segment_utf8: Vec<Vec<usize>>,
     project_digest: String,
     expanded_digest: String,
     revision: String,
@@ -75,41 +78,72 @@ pub(super) fn save(store: &ContentStore, snapshot: &PreparedProject) -> io::Resu
                 .chain(std::iter::once(manifest.origins.clone()))
         })
         .collect();
-    let mut pack = Vec::new();
-    for piece in &snapshot.expansion.segments {
-        let digest = format!("{:x}", Sha256::digest(piece.text.as_bytes()));
-        if !known.contains(&digest) {
-            store.put("prepared-input-chunk-v2", piece.text.as_bytes())?;
-        }
-        pack.push((digest, piece.text.len()));
+    let pack: Vec<_> = snapshot
+        .expansion
+        .segments
+        .iter()
+        .map(|piece| {
+            let digest = piece
+                .digest
+                .iter()
+                .map(|byte| format!("{byte:02x}"))
+                .collect::<String>();
+            (digest, piece.content_len)
+        })
+        .collect();
+    let mut scheduled = BTreeSet::new();
+    let missing_chunks: Vec<_> = snapshot
+        .expansion
+        .segments
+        .iter()
+        .zip(&pack)
+        .filter(|(_, (digest, _))| !known.contains(digest) && scheduled.insert(digest.clone()))
+        .map(|(piece, _)| piece)
+        .collect();
+    let chunk_writes = dm_work::map_ordered(
+        &missing_chunks,
+        dm_work::WorkLimits::configured(),
+        |piece| piece.content_len.saturating_add(4096),
+        |piece| piece.content().and_then(|text|store.put_rebuildable("prepared-input-chunk-v2",text.as_bytes())),
+    )
+    .map_err(|error| io::Error::other(format!("expansion persistence work limits: {error:?}")))?;
+    for write in chunk_writes {
+        write?;
     }
-    let mut parts = Vec::new();
-    let mut source_group_bytes = 0;
-    let mut end = snapshot.expansion.bytes;
+    let known_sources: BTreeSet<_> = previous
+        .as_ref()
+        .into_iter()
+        .flat_map(|manifest| manifest.sources.iter().map(|source| source.digest))
+        .collect();
+    let missing: Vec<_> = snapshot
+        .sources
+        .values()
+        .filter(|source| !known_sources.contains(&source.digest))
+        .collect();
+    let writes = dm_work::map_ordered(
+        &missing,
+        dm_work::WorkLimits::configured(),
+        |source| source.content_len.saturating_add(4096),
+        |source| {
+            source
+                .content()
+                .and_then(|text| store.put_rebuildable("prepared-source-v3", text.as_bytes()))
+        },
+    )
+    .map_err(|error| io::Error::other(format!("source persistence work limits: {error:?}")))?;
+    for write in writes {
+        write?;
+    }
     let mut sources = Vec::with_capacity(snapshot.sources.len());
     for (path, source) in snapshot.sources.iter() {
-        let start = end;
-        end = end
-            .checked_add(source.text.len())
-            .ok_or_else(|| io::Error::other("prepared input size overflow"))?;
-        if end > MAX_PACK {
-            return Ok(());
-        }
-        parts.push(source.text.as_bytes());
-        source_group_bytes += source.text.len();
-        if source_group_bytes >= 1024 * 1024 {
-            publish_group(store, &mut pack, &mut parts, &known)?;
-            source_group_bytes = 0;
-        }
         sources.push(Source {
             path: path_id(&mut paths, path),
-            start,
-            end,
+            start: 0,
+            end: source.content_len,
             digest: source.digest,
             stamp: source.stamp.clone(),
         });
     }
-    publish_group(store, &mut pack, &mut parts, &known)?;
     let mut origin_bytes = Vec::with_capacity(project.origins.len() * 5);
     for origin in &project.origins {
         write_varint(&mut origin_bytes, origin.output_line);
@@ -118,7 +152,7 @@ pub(super) fn save(store: &ContentStore, snapshot: &PreparedProject) -> io::Resu
     }
     let origins = format!("{:x}", Sha256::digest(&origin_bytes));
     if !known.contains(&origins) {
-        store.put("prepared-input-chunk-v2", &origin_bytes)?;
+        store.put_rebuildable("prepared-input-chunk-v2", &origin_bytes)?;
     }
     let units = project
         .units
@@ -161,6 +195,8 @@ pub(super) fn save(store: &ContentStore, snapshot: &PreparedProject) -> io::Resu
         context: snapshot.context.clone(),
         pack,
         expanded_end: snapshot.expansion.bytes,
+        segment_lines:snapshot.expansion.segments.iter().map(|piece|piece.lines.to_vec()).collect(),
+        segment_utf8:snapshot.expansion.segments.iter().map(|piece|piece.non_boundaries.to_vec()).collect(),
         project_digest: snapshot.project_digest.clone(),
         expanded_digest: snapshot.expanded_digest.clone(),
         revision: snapshot.revision.clone(),
@@ -240,40 +276,30 @@ pub(super) fn load(store: &ContentStore, context: &str) -> io::Result<Option<Pre
         .pack
         .iter()
         .try_fold(0usize, |total, (_, len)| total.checked_add(*len))
-        .filter(|total| *total <= MAX_PACK)
+        .filter(|total| *total <= MAX_EXPANDED_BYTES)
         .ok_or_else(|| io::Error::other("prepared chunk pack exceeds limit"))?;
     if manifest.pack.len() > 16_384 {
         return Err(io::Error::other("too many prepared chunks"));
     }
-    let mut pack = Vec::with_capacity(total.saturating_sub(manifest.expanded_end));
+
     let mut position = 0;
     let mut expansion_segments = Vec::new();
-    for (digest, len) in &manifest.pack {
-        let bytes = store.get_bounded("prepared-input-chunk-v2", digest, *len)?;
-        if bytes.len() != *len {
-            return Err(io::Error::other("prepared chunk length mismatch"));
-        }
-        if position < manifest.expanded_end {
-            if position + bytes.len() > manifest.expanded_end {
-                return Err(io::Error::other(
-                    "prepared chunk crosses expansion boundary",
-                ));
-            }
-            let text = std::str::from_utf8(&bytes).map_err(io::Error::other)?;
-            expansion_segments.push(Arc::new(ExpandedSegment {
-                text: Arc::from(text),
-                digest: Sha256::digest(&bytes).into(),
-                lines: text.match_indices('\n').map(|(at, _)| at+1).collect::<Vec<_>>().into(),
-            }));
-        } else { pack.extend_from_slice(&bytes); }
-        position += bytes.len();
+    if manifest.segment_lines.len()!=manifest.pack.len() || manifest.segment_utf8.len()!=manifest.pack.len() {return Err(io::Error::other("invalid expanded segment indexes"));}
+    for (index,(digest,len)) in manifest.pack.iter().enumerate() {
+        if digest.len()!=64 || !digest.bytes().all(|byte|byte.is_ascii_hexdigit()) || position+len>manifest.expanded_end {return Err(io::Error::other("invalid expansion disk handle"));}
+        let mut identity=[0u8;32];for (at,byte) in identity.iter_mut().enumerate() {*byte=u8::from_str_radix(&digest[at*2..at*2+2],16).map_err(io::Error::other)?;}
+        let lines=&manifest.segment_lines[index];let utf8=&manifest.segment_utf8[index];
+        if !lines.windows(2).all(|pair|pair[0]<pair[1]) || lines.iter().any(|at|*at>*len) || !utf8.windows(2).all(|pair|pair[0]<pair[1]) || utf8.iter().any(|at|*at>=*len) {return Err(io::Error::other("invalid expansion line/UTF8 index"));}
+        expansion_segments.push(Arc::new(ExpandedSegment {text:Arc::from(""),content_len:*len,blob:Some(Arc::new(store.root.join("prepared-input-chunk-v2").join(&digest[..2]).join(digest))),digest:identity,lines:lines.clone().into(),non_boundaries:utf8.clone().into()}));
+        position+=len;
     }
     let expansion = Arc::new(SegmentedExpansion {
         segments: expansion_segments,
         bytes: manifest.expanded_end,
     });
-    let text = std::str::from_utf8(&pack).map_err(io::Error::other)?;
-    if position != total || expansion.bytes > total { return Err(io::Error::other("invalid prepared expansion boundary")); }
+    if position != total || expansion.bytes > total {
+        return Err(io::Error::other("invalid prepared expansion boundary"));
+    }
     let expanded = expansion.source();
     let paths: Vec<Arc<PathBuf>> = manifest.paths.into_iter().map(Arc::new).collect();
     let path = |index: usize| {
@@ -283,54 +309,39 @@ pub(super) fn load(store: &ContentStore, context: &str) -> io::Result<Option<Pre
             .ok_or_else(|| io::Error::other("invalid prepared path index"))
     };
     let mut sources = BTreeMap::new();
-    let mut cursor = manifest.expanded_end;
     for source in &manifest.sources {
-        if source.start != cursor {
-            return Err(io::Error::other("invalid prepared source order"));
+        if source.start != 0 || source.end > MAX_PACK {
+            return Err(io::Error::other("invalid source artifact length"));
         }
-        cursor = source.end;
-    }
-    let loaded = dm_work::map_ordered(
-        &manifest.sources,
-        dm_work::WorkLimits::configured(),
-        |source| {
-            source
-                .end
-                .saturating_sub(source.start)
-                .saturating_mul(2)
-                .saturating_add(8192)
-        },
-        |source| {
-            let content = text
-                .get(source.start.checked_sub(manifest.expanded_end).ok_or_else(|| io::Error::other("invalid prepared source start"))?..source.end.checked_sub(manifest.expanded_end).ok_or_else(|| io::Error::other("invalid prepared source end"))?)
-                .ok_or_else(|| io::Error::other("invalid prepared source boundary"))?;
-            if <[u8; 32]>::from(sha2::Sha256::digest(content.as_bytes())) != source.digest {
-                return Err(io::Error::other("prepared source digest mismatch"));
-            }
-            Ok((
-                (*path(source.path)?).clone(),
+        let digest = source
+            .digest
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect::<String>();
+        let blob = store
+            .root
+            .join("prepared-source-v3")
+            .join(&digest[..2])
+            .join(&digest);
+        if !blob.is_file() {
+            return Ok(None);
+        }
+        let key = (*path(source.path)?).clone();
+        if sources
+            .insert(
+                key,
                 PreparedSource {
-                    text: Arc::from(content),
+                    text: Arc::from(""),
+                    content_len: source.end,
+                    blob: Some(blob),
                     digest: source.digest,
                     stamp: source.stamp.clone(),
                 },
-            ))
-        },
-    )
-    .map_err(|error| match error {
-        dm_work::WorkError::Panic { job, message } => {
-            panic!("prepared input worker {job}: {message}")
-        }
-        other => io::Error::other(format!("prepared input work limits: {other:?}")),
-    })?;
-    for source in loaded {
-        let (path, source) = source?;
-        if sources.insert(path, source).is_some() {
+            )
+            .is_some()
+        {
             return Err(io::Error::other("duplicate prepared source"));
         }
-    }
-    if cursor != text.len()+manifest.expanded_end {
-        return Err(io::Error::other("trailing prepared input bytes"));
     }
     let origin_bytes =
         store.get_bounded("prepared-input-chunk-v2", &manifest.origins, MAX_MANIFEST)?;
@@ -403,29 +414,6 @@ pub(super) fn load(store: &ContentStore, context: &str) -> io::Result<Option<Pre
 }
 use sha2::{Digest, Sha256};
 
-fn publish_group(
-    store: &ContentStore,
-    pack: &mut Vec<(String, usize)>,
-    parts: &mut Vec<&[u8]>,
-    known: &BTreeSet<String>,
-) -> io::Result<()> {
-    if parts.is_empty() {
-        return Ok(());
-    }
-    let mut hash = Sha256::new();
-    let mut bytes = 0;
-    for part in parts.iter() {
-        hash.update(part);
-        bytes += part.len();
-    }
-    let digest = format!("{:x}", hash.finalize());
-    if !known.contains(&digest) {
-        store.put_parts("prepared-input-chunk-v2", parts)?;
-    }
-    pack.push((digest, bytes));
-    parts.clear();
-    Ok(())
-}
 fn write_varint(bytes: &mut Vec<u8>, mut value: usize) {
     while value >= 128 {
         bytes.push((value as u8 & 127) | 128);

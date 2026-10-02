@@ -9,7 +9,7 @@ use std::{
     io::{self, BufRead, Write},
 };
 
-pub const SCHEMA_VERSION: u32 = 1;
+pub const SCHEMA_VERSION: u32 = 2;
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Location {
     pub file: String,
@@ -37,6 +37,20 @@ pub struct CoverageReport {
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(tag = "record", rename_all = "snake_case")]
 pub enum Fact {
+    Fragment {
+        id: String,
+        expanded_start: usize,
+        expanded_end: usize,
+    },
+    ProcedureFragment {
+        symbol: String,
+        occurrence: u32,
+        fragment_id: String,
+        body_digest: String,
+        location: Option<Location>,
+    },
+    ResolvedOwner { owner: String, parent: Option<String> },
+    ResolvedField { owner: String, name: String, constant: bool, override_only: bool, expression: Option<String> },
     Snapshot {
         schema: u32,
         input_digest: String,
@@ -86,6 +100,73 @@ pub struct Snapshot {
     pub input_digest: String,
     pub coverage: CoverageReport,
     pub facts: Vec<Fact>,
+}
+
+#[derive(Clone)]
+pub struct FrontendFragment {
+    /// Content identity excludes absolute offsets and worktree lineage.
+    pub id: String,
+    pub source_offset: usize,
+    pub source_len: usize,
+    pub ast: std::sync::Arc<AstFile>,
+    pub procedures: std::sync::Arc<[ProcedureFragment]>,
+}
+#[derive(Clone, Debug)]
+pub struct ProcedureFragment {
+    pub symbol: String,
+    pub local_span: dm_syntax::Span,
+    pub body_digest: String,
+}
+#[derive(Clone, Copy)]
+pub struct ItemRef<'a> { pub item: &'a Item, pub source_offset: usize }
+impl ItemRef<'_> {
+    pub fn span(&self) -> dm_syntax::Span { dm_syntax::Span::new(self.source_offset+self.item.span.start,self.source_offset+self.item.span.end) }
+    pub fn header_span(&self) -> dm_syntax::Span { dm_syntax::Span::new(self.source_offset+self.item.header_span.start,self.source_offset+self.item.header_span.end) }
+    pub fn children(&self) -> impl Iterator<Item=ItemRef<'_>> { self.item.children.iter().map(move |item|ItemRef { item,source_offset:self.source_offset }) }
+}
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ResolvedOwner { pub owner: String, pub parent: Option<String> }
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ResolvedField { pub owner: String, pub name: String, pub constant: bool, pub override_only: bool, pub expression: Option<String> }
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ResolvedValue {
+    pub value: Option<serde_json::Value>,
+    /// Exact positive and negative semantic reads from the compiler resolver.
+    pub witnesses: Vec<(String,String)>,
+}
+/// Read-only access to the native compiler's allocation-independent model.
+/// Implementations reuse its dependency recording and value caches.
+pub trait ResolvedModel: Send+Sync {
+    fn owners(&self) -> Vec<ResolvedOwner>;
+    fn fields(&self,owner:&str) -> Vec<ResolvedField>;
+    fn resolve_value(&self,owner:&str,name:&str) -> ResolvedValue;
+}
+#[derive(Clone)]
+pub struct FrontendView {
+    pub fragments: std::sync::Arc<[FrontendFragment]>,
+    pub declarations: std::sync::Arc<DeclarationIndex>,
+    pub resolved: Option<std::sync::Arc<dyn ResolvedModel>>,
+}
+impl FrontendView {
+    pub fn items(&self) -> impl Iterator<Item=ItemRef<'_>> {
+        self.fragments.iter().flat_map(|fragment|fragment.ast.items.iter().map(move |item|ItemRef {item,source_offset:fragment.source_offset}))
+    }
+    /// Resolve inheritance through the compiler's canonical declaration index.
+    pub fn resolve_field(&self,owner:&str,name:&str) -> Option<&dm_semantics::VarDef> {
+        let path=dm_ir::TypePath::parse(owner).ok()?;
+        let owner=self.declarations.type_id(&path)?;
+        self.declarations.resolve_var(owner,name).and_then(|id|self.declarations.vars.get(id.index()))
+    }
+    pub fn resolve_procedure(&self,owner:&str,name:&str,kind:ProcKind) -> Option<&dm_semantics::ProcDef> {
+        let path=dm_ir::TypePath::parse(owner).ok()?;
+        let owner=self.declarations.type_id(&path)?;
+        self.declarations.resolve_proc(owner,name,kind).and_then(|id|self.declarations.procs.get(id.index()))
+    }
+    pub fn fragment_at(&self,offset:usize) -> Option<&FrontendFragment> {
+        let index=self.fragments.partition_point(|fragment|fragment.source_offset<=offset).checked_sub(1)?;
+        let fragment=&self.fragments[index];
+        (offset<fragment.source_offset+fragment.source_len).then_some(fragment)
+    }
 }
 
 fn proc_path(owner: &str, name: &str, kind: ProcKind) -> String {
@@ -223,6 +304,33 @@ impl Snapshot {
         input_digest: impl Into<String>, index: &DeclarationIndex, ast: &AstFile,
         project: &PreprocessedProject, source: Option<&SegmentedSource>,
     ) -> Self {
+        Self::from_fragment_sources(input_digest,index,&[(0,ast)],project,source)
+    }
+    pub fn from_shared_frontend(input_digest: impl Into<String>,view:&FrontendView,project:&PreprocessedProject,source:&SegmentedSource) -> Self {
+        let fragments: Vec<_>=view.fragments.iter().map(|fragment|(fragment.source_offset,fragment.ast.as_ref())).collect();
+        let mut snapshot=Self::from_fragment_sources(input_digest,&view.declarations,&fragments,project,Some(source));
+        let locations=Locations::segmented(project,source);
+        let mut occurrences=BTreeMap::<&str,u32>::new();
+        for fragment in view.fragments.iter() {
+            snapshot.facts.push(Fact::Fragment {id:fragment.id.clone(),expanded_start:fragment.source_offset,expanded_end:fragment.source_offset+fragment.source_len});
+            for procedure in fragment.procedures.iter() {
+                let occurrence=occurrences.entry(&procedure.symbol).or_default();
+                snapshot.facts.push(Fact::ProcedureFragment {symbol:procedure.symbol.clone(),occurrence:*occurrence,fragment_id:fragment.id.clone(),body_digest:procedure.body_digest.clone(),location:locations.get(Span {file:dm_ir::FileId(0),start:(fragment.source_offset+procedure.local_span.start) as u32,end:(fragment.source_offset+procedure.local_span.end) as u32})});
+                *occurrence+=1;
+            }
+        }
+        if let Some(model)=&view.resolved {
+            let mut owners=model.owners();owners.insert(0,ResolvedOwner {owner:String::new(),parent:None});
+            for owner in owners {
+                snapshot.facts.push(Fact::ResolvedOwner {owner:owner.owner.clone(),parent:owner.parent});
+                for field in model.fields(&owner.owner) {
+                    snapshot.facts.push(Fact::ResolvedField {owner:field.owner,name:field.name,constant:field.constant,override_only:field.override_only,expression:field.expression});
+                }
+            }
+        }
+        snapshot
+    }
+    fn from_fragment_sources(input_digest:impl Into<String>,index:&DeclarationIndex,fragments:&[(usize,&AstFile)],project:&PreprocessedProject,source:Option<&SegmentedSource>) -> Self {
         let locations = source.map_or_else(|| Locations::new(project), |source| Locations::segmented(project, source));
         let mut origin_cursor = 0;
         let mut line_number = 0;
@@ -240,7 +348,7 @@ impl Snapshot {
             // Expansion pieces end at newlines; retain a carry for general callers.
             let mut carry = String::new();
             let mut complete = true;
-            for piece in source.pieces() {
+            let scanned=source.visit_pieces(|piece| {
                 for part in piece.split_inclusive('\n') {
                     carry.push_str(part);
                     if part.ends_with('\n') {
@@ -248,16 +356,16 @@ impl Snapshot {
                         carry.clear();
                     }
                 }
-            }
+            });
             if !carry.is_empty() { complete &= line_present(&carry); }
-            complete
+            complete && scanned.is_ok()
         } else { project.text.lines().all(&mut line_present) };
         let origin_coverage = if project.origins.is_empty() { Coverage::Unavailable }
             else if complete { Coverage::Complete } else { Coverage::Partial };
         let mut result = Self {
             input_digest: input_digest.into(),
             coverage: CoverageReport {
-                declarations: if incomplete(&ast.items) || !ast.diagnostics.is_empty() {
+                declarations: if fragments.iter().any(|(_,ast)|incomplete(&ast.items) || !ast.diagnostics.is_empty()) {
                     Coverage::Partial
                 } else {
                     Coverage::Complete
@@ -271,7 +379,10 @@ impl Snapshot {
             facts: vec![],
         };
         let mut proc_headers = BTreeMap::new();
-        headers(&ast.items, &mut proc_headers);
+        for (offset,ast) in fragments {
+            let mut local=BTreeMap::new();headers(&ast.items,&mut local);
+            proc_headers.extend(local.into_iter().map(|(start,header)|(start+offset,header)));
+        }
         for ty in &index.types {
             if ty.declarations.is_empty() {
                 result.facts.push(Fact::Declaration {
@@ -362,17 +473,18 @@ impl Snapshot {
                 }),
             });
         }
-        for d in &ast.diagnostics {
+        for (offset,ast) in fragments { for d in &ast.diagnostics {
             result.facts.push(Fact::Diagnostic {
                 severity: "error".into(),
                 category: format!("syntax::{:?}", d.kind),
                 message: d.message.clone(),
                 location: locations.get(Span {
                     file: dm_ir::FileId(0),
-                    start: d.span.start as u32,
-                    end: d.span.end as u32,
+                    start: (offset+d.span.start) as u32,
+                    end: (offset+d.span.end) as u32,
                 }),
             });
+        }
         }
         result
     }
@@ -419,7 +531,7 @@ impl Snapshot {
         else {
             return Err(io::Error::other("first record must be snapshot"));
         };
-        if schema != SCHEMA_VERSION {
+        if schema != SCHEMA_VERSION && schema != 1 {
             return Err(io::Error::other("unsupported analysis schema"));
         }
         let mut facts = vec![];

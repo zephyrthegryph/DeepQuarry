@@ -170,9 +170,8 @@ fn decode_record<'a>(key: &str, bytes: &'a [u8]) -> Option<Cow<'a, [u8]>> {
 #[derive(Default)]
 struct SymbolicSnapshot {
     records: BTreeMap<String, Vec<u8>>,
-    complete: bool,
-    corrupt: bool,
-    corruption_reported: std::sync::atomic::AtomicBool,
+    missing: std::collections::BTreeSet<String>,
+    bytes: usize,
 }
 
 pub struct ProcLoweringCache {
@@ -181,10 +180,12 @@ pub struct ProcLoweringCache {
     memory_bytes: usize,
     stats: CacheStats,
     store: Option<dm_store::Store>,
-    snapshot: std::sync::Arc<std::sync::OnceLock<SymbolicSnapshot>>,
+    snapshot: std::sync::Arc<std::sync::OnceLock<std::sync::Mutex<SymbolicSnapshot>>>,
     pending: BTreeMap<String, Vec<u8>>,
     pending_bytes: usize,
     profiling: bool,
+    legacy_loose: bool,
+    disk_ready: bool,
 }
 
 /// Put portable artifacts in Git's common directory so all worktrees share
@@ -245,15 +246,22 @@ impl ProcLoweringCache {
             pending: BTreeMap::new(),
             pending_bytes: 0,
             profiling: std::env::var_os("DM_BUILD_TRACE").is_some(),
+            legacy_loose: false,
+            disk_ready: false,
         }
     }
 
     pub fn open(root: PathBuf) -> Self {
         let root = fs::create_dir_all(&root).ok().map(|()| root);
         let mut cache = Self::disabled();
+        cache.legacy_loose = root.as_ref().is_some_and(|root| fs::read_dir(root).ok().is_some_and(|entries| entries.flatten().any(|entry| {
+            let name=entry.file_name();let name=name.to_string_lossy();
+            name.len()==2 && name.bytes().all(|byte|byte.is_ascii_hexdigit()) && entry.file_type().is_ok_and(|kind|kind.is_dir())
+        })));
         cache.root = root;
         if let Some(root) = &cache.root {
             if let Ok(store) = dm_store::Store::open(root.join("symbolic.redb")) {
+                cache.disk_ready=store.read_many(&[dm_store::Key::new("symbolic-requested-ready",VERSION)],None).ok().is_some_and(|read|read.values.first().is_some_and(Option::is_some));
                 cache.store = Some(store);
             }
         }
@@ -270,42 +278,33 @@ impl ProcLoweringCache {
         cache.store = self.store.clone();
         cache.snapshot = std::sync::Arc::clone(&self.snapshot);
         cache.profiling = self.profiling;
+        cache.legacy_loose = self.legacy_loose;
+        cache.disk_ready = self.disk_ready;
         cache
     }
+    /// Compatibility signal: reads now use requested-key snapshots only.
     pub fn snapshot_complete(&self) -> bool {
-        self.snapshot
-            .get_or_init(|| Self::load_snapshot(self.store.as_ref()))
-            .complete
+        self.snapshot.get_or_init(||std::sync::Mutex::new(SymbolicSnapshot::default()));
+        self.store.is_some()
     }
-    fn load_snapshot(store: Option<&dm_store::Store>) -> SymbolicSnapshot {
-        let Some(store) = store else {
-            return SymbolicSnapshot::default();
-        };
-        let started = std::time::Instant::now();
-        match store.snapshot_namespace(&Self::namespace(), 128_000, 128 * 1024 * 1024, None) {
-            Ok(snapshot) => {
-                if std::env::var_os("DM_BUILD_TRACE").is_some() {
-                    let bytes = snapshot
-                        .records
-                        .iter()
-                        .map(|(key, payload)| key.name.len() + payload.len())
-                        .sum::<usize>();
-                    eprintln!("DM_BUILD_TRACE symbolic store snapshot: {} entries, {} bytes, complete {}, {:.3}s", snapshot.records.len(), bytes, snapshot.complete, started.elapsed().as_secs_f64());
-                }
-                SymbolicSnapshot {
-                    records: snapshot
-                        .records
-                        .into_iter()
-                        .map(|(key, bytes)| (key.name, bytes))
-                        .collect(),
-                    complete: snapshot.complete,
-                    ..Default::default()
-                }
+    pub(crate) fn prefetch_keys(&self, keys:&[String]) {
+        let Some(store)=&self.store else {return;};
+        if !self.disk_ready {return;}
+        let mut requested=self.snapshot.get_or_init(||std::sync::Mutex::new(SymbolicSnapshot::default()))
+            .lock().unwrap_or_else(|error|error.into_inner());
+        let keys:Vec<_>=keys.iter().filter(|key|!requested.records.contains_key(*key)&&!requested.missing.contains(*key))
+            .map(|key|dm_store::Key::new(Self::namespace(),key)).collect();
+        for keys in keys.chunks(4096) {
+            let Ok(read)=store.read_grouped_bounded(keys,128,MAX_ENTRY_BYTES+RECORD_HEADER_BYTES,16*1024*1024,64*1024*1024,None) else {continue;};
+            for (key,bytes) in keys.iter().zip(read.values) {
+                if let Some(bytes)=bytes {
+                    while requested.bytes.saturating_add(bytes.len())>64*1024*1024 {
+                        let Some(old)=requested.records.keys().next().cloned() else {break;};
+                        if let Some(bytes)=requested.records.remove(&old) {requested.bytes=requested.bytes.saturating_sub(bytes.len());}
+                    }
+                    if bytes.len()<=64*1024*1024 {requested.bytes+=bytes.len();requested.records.insert(key.name.clone(),bytes);}
+                } else if requested.missing.len()<128_000 {requested.missing.insert(key.name.clone());}
             }
-            Err(_) => SymbolicSnapshot {
-                corrupt: true,
-                ..Default::default()
-            },
         }
     }
     /// Persist one bounded accumulated batch. No database is opened by `compile`.
@@ -322,13 +321,14 @@ impl ProcLoweringCache {
         let Some(store) = &self.store else {
             return Ok(());
         };
-        let changes = self
+        let mut changes = self
             .pending
             .iter()
             .map(|(key, bytes)| {
                 dm_store::Change::Put(dm_store::Key::new(Self::namespace(), key), bytes.clone())
             })
             .collect::<Vec<_>>();
+        changes.push(dm_store::Change::Put(dm_store::Key::new("symbolic-requested-ready",VERSION),vec![1]));
         match store.commit(&[], &changes, None)? {
             dm_store::Commit::Applied => {
                 self.pending.clear();
@@ -423,14 +423,10 @@ impl ProcLoweringCache {
                 }
             }
         }
-        let snapshot = std::sync::Arc::clone(&self.snapshot);
-        let snapshot = snapshot.get_or_init(|| Self::load_snapshot(self.store.as_ref()));
-        if snapshot.corrupt && !snapshot.corruption_reported.swap(true, Ordering::Relaxed) {
-            // One failed shared namespace load is one corruption observation,
-            // even when several workers request its candidate view together.
-            self.stats.corrupt_entries += 1;
-        }
-        if let Some(record) = snapshot.records.get(&key) {
+        self.prefetch_keys(std::slice::from_ref(&key));
+        let record=self.snapshot.get().and_then(|snapshot|snapshot.lock().ok())
+            .and_then(|snapshot|snapshot.records.get(&key).cloned());
+        if let Some(record) = record.as_ref() {
             let timer = StageTimer::start(self.profiling);
             let payload = decode_record(&key, record);
             timer.record(&mut self.stats.timing.record_decode);
@@ -452,7 +448,7 @@ impl ProcLoweringCache {
         }
         let path = self.root.as_ref().unwrap().join(&key[..2]).join(&key);
         let timer = StageTimer::start(self.profiling);
-        let file = fs::File::open(&path);
+        let file = if self.legacy_loose {fs::File::open(&path)} else {Err(std::io::Error::from(std::io::ErrorKind::NotFound))};
         if let Ok(file) = file {
             // Bound the read even for corrupt records. A separate metadata
             // request doubles filesystem operations across large projects.

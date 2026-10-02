@@ -53,19 +53,21 @@ impl SourceProvider for RecordingFileSystem<'_> {
             && self.unchanged.is_some_and(|paths| paths.contains(path))
         {
             if let Some(previous) = self.retained.and_then(|sources| sources.get(path)) {
-                self.texts
-                    .borrow_mut()
-                    .insert(path.to_path_buf(), previous.text.clone());
-                self.digests
-                    .borrow_mut()
-                    .insert(path.to_path_buf(), previous.digest);
-                if let Some(stamp) = &previous.stamp {
-                    self.stamps
+                if let Ok(text) = previous.content() {
+                    self.texts
                         .borrow_mut()
-                        .insert(path.to_path_buf(), stamp.clone());
+                        .insert(path.to_path_buf(), Arc::clone(&text));
+                    self.digests
+                        .borrow_mut()
+                        .insert(path.to_path_buf(), previous.digest);
+                    if let Some(stamp) = &previous.stamp {
+                        self.stamps
+                            .borrow_mut()
+                            .insert(path.to_path_buf(), stamp.clone());
+                    }
+                    self.reused.set(self.reused.get() + 1);
+                    return Ok(text);
                 }
-                self.reused.set(self.reused.get() + 1);
-                return Ok(Arc::clone(&previous.text));
             }
         }
         // Retain the stamp taken before these exact source bytes were read.
@@ -127,6 +129,8 @@ pub(crate) fn read_prepared_source(
         let text: Arc<str> = dm_preprocess::decode_source_bytes(&bytes).into();
         let digest = Sha256::digest(text.as_bytes()).into();
         Ok(PreparedSource {
+            content_len: text.len(),
+            blob: None,
             text,
             digest,
             stamp,
@@ -227,15 +231,35 @@ impl DiscoveryCache {
         before.saturating_sub(self.expansions.resident_bytes())
     }
 
-    /// Drop expanded text/origins while keeping decoded source Arcs and their
-    /// proof/context. An edit replays from these sources, without reloading an
-    /// oversized old prepared pack before discovering the dirty include.
-    pub(crate) fn release_prepared_snapshot(&mut self) -> usize {
+    /// Keep the expansion and dependency index while evicting authored payloads.
+    /// A later requested file reads its verified CAS node; missing nodes fall
+    /// back to the actual source provider rather than invalidating the graph.
+    pub(crate) fn trim_authored_payloads(&mut self) -> usize {
         let before = self.resident_bytes();
-        if let Some(prepared) = self.prepared.take() {
-            self.released_context = Some(prepared.context.clone());
-            self.released_proof = prepared.proof.clone();
-            self.prepared_bytes = 0;
+        for source in self.sources.values_mut() {
+            if source.blob.is_some() {
+                source.text = Arc::from("");
+            }
+        }
+        if let Some(prepared) = self.prepared.as_mut() {
+            let prepared = Arc::make_mut(prepared);
+            for source in Arc::make_mut(&mut prepared.sources).values_mut() {
+                if source.blob.is_some() {
+                    source.text = Arc::from("");
+                }
+            }
+            self.prepared_bytes = prepared.resident_bytes();
+        }
+        before.saturating_sub(self.resident_bytes())
+    }
+
+    /// Evict decoded expanded text while retaining origins, unit layout,
+    /// dependency proofs and disk handles needed for direct body-edit splices.
+    pub(crate) fn release_prepared_snapshot(&mut self) -> usize {
+        let before=self.resident_bytes();
+        if let Some(prepared)=self.prepared.as_mut() {
+            let prepared=Arc::make_mut(prepared);Arc::make_mut(&mut prepared.expansion).evict_payloads();
+            self.prepared_bytes=prepared.resident_bytes();
         }
         before.saturating_sub(self.resident_bytes())
     }
@@ -271,11 +295,14 @@ impl DiscoveryCache {
     }
 
     pub(crate) fn release_source_frames(&mut self) {
-        self.prepared = None;
-        self.prepared_bytes = 0;
-        self.released_context = None;
-        self.released_proof = None;
-        self.sources.clear();
+        self.release_prepared_snapshot();
+        // Evict decoded payloads, retaining the source dependency index and CAS
+        // handles. Memory pressure must not become a whole-project invalidation.
+        for source in self.sources.values_mut() {
+            if source.blob.as_ref().is_some_and(|path| path.is_file()) {
+                source.text = Arc::from("");
+            }
+        }
         self.expansions.trim_to(0);
     }
 
@@ -287,6 +314,30 @@ impl DiscoveryCache {
         defines: &BTreeMap<String, String>,
     ) -> io::Result<Arc<PreparedProject>> {
         self.prepare_with_previous(root, defines, &BTreeSet::new(), None)
+    }
+
+    /// A lazy expanded CAS failure is a rebuildable cache miss. The caller
+    /// retries once, then reports infrastructure failure if repair also fails.
+    pub fn rebuild_expansion(&mut self,root:&Path,defines:&BTreeMap<String,String>) -> io::Result<Arc<PreparedProject>> {
+        let mut damaged=BTreeSet::new();
+        if let Some(previous)=self.prepared.take() {
+            self.released_context=Some(previous.context.clone());self.released_proof=previous.proof.clone();
+            for piece in &previous.expansion.segments {
+                if piece.blob.is_some() && piece.content().is_err() {
+                    let blob=piece.blob.as_ref().unwrap();
+                    match std::fs::remove_file(blob.as_ref()) {Ok(())=>{},Err(error) if error.kind()==io::ErrorKind::NotFound=>{},Err(error)=>return Err(error)}
+                    damaged.insert(piece.digest);
+                }
+            }
+        }
+        self.prepared_bytes=0;
+        let snapshot=self.prepare(root,defines)?;
+        if let Some(store)=&self.store {
+            for piece in &snapshot.expansion.segments {
+                if damaged.contains(&piece.digest) {store.put_rebuildable("prepared-input-chunk-v2",piece.content()?.as_bytes())?;}
+            }
+        }
+        Ok(snapshot)
     }
 
     pub(crate) fn fingerprint_resources(
@@ -351,13 +402,16 @@ impl DiscoveryCache {
         // Observe source stamps once. A failed whole-snapshot check followed
         // by unchanged_paths used to open the entire source set twice per edit
         // on filesystems where the journal is unavailable.
-        let observed_unchanged = self
-            .prepared
-            .as_ref()
-            .filter(|snapshot| snapshot.context == context)
-            .and_then(|snapshot| snapshot.proof.as_ref())
-            .filter(|_| !crate::input_proof::exact_inputs())
-            .map(InputProof::unchanged_paths);
+        let observed_unchanged = (!supplied_unchanged.is_empty())
+            .then(|| supplied_unchanged.clone())
+            .or_else(|| {
+                self.prepared
+                    .as_ref()
+                    .filter(|snapshot| snapshot.context == context)
+                    .and_then(|snapshot| snapshot.proof.as_ref())
+                    .filter(|_| !crate::input_proof::exact_inputs())
+                    .map(InputProof::unchanged_paths)
+            });
         if let Some(snapshot) = self.prepared.as_ref().filter(|snapshot| {
             snapshot.context == context
                 && observed_unchanged.as_ref().map_or_else(
@@ -405,14 +459,19 @@ impl DiscoveryCache {
             (discovered, Some(expansion))
         } else {
             let (project, sources, proof, digests, stamps, stats, pieces) = discover_with_retained(
-                    root,
-                    defines,
-                    &mut self.expansions,
-                    &self.sources,
-                    &unchanged,
-                    previous,
-                )?;
-            ((project, sources, proof, digests, stamps, stats), Some(crate::prepared_project::SegmentedExpansion::from_pieces(pieces)))
+                root,
+                defines,
+                &mut self.expansions,
+                &self.sources,
+                &unchanged,
+                previous,
+            )?;
+            (
+                (project, sources, proof, digests, stamps, stats),
+                Some(crate::prepared_project::SegmentedExpansion::from_pieces(
+                    pieces,
+                )),
+            )
         };
         let (project, sources, proof, digests, stamps, mut stats) = discovered;
         let expansion = Arc::new(expansion.unwrap_or_else(|| {
@@ -421,11 +480,36 @@ impl DiscoveryCache {
         let sources: BTreeMap<_, _> = sources
             .into_iter()
             .map(|(path, text)| {
-                let source = PreparedSource {
-                    text,
-                    digest: digests[&path],
-                    stamp: stamps.get(&path).cloned(),
-                };
+                let source = old
+                    .as_ref()
+                    .and_then(|old| old.sources.get(&path))
+                    .filter(|source| source.digest == digests[&path])
+                    .cloned()
+                    .unwrap_or_else(|| PreparedSource {
+                        content_len: text.len(),
+                        blob: None,
+                        text,
+                        digest: digests[&path],
+                        stamp: stamps.get(&path).cloned(),
+                    });
+                let mut source = source;
+                source.stamp = stamps.get(&path).cloned();
+                if source.blob.is_none() {
+                    if let Some(store) = &self.store {
+                        let digest = source
+                            .digest
+                            .iter()
+                            .map(|byte| format!("{byte:02x}"))
+                            .collect::<String>();
+                        source.blob = Some(
+                            store
+                                .root
+                                .join("prepared-source-v3")
+                                .join(&digest[..2])
+                                .join(digest),
+                        );
+                    }
+                }
                 (path, source)
             })
             .collect();
@@ -457,7 +541,10 @@ impl DiscoveryCache {
         }
         let project_digest = crate::prepared_project::project_digest(root, &sources);
         let mut expanded_hash = Sha256::new();
-        for piece in &expansion.segments { expanded_hash.update(piece.text.as_bytes()); }
+        for piece in &expansion.segments {
+            expanded_hash.update((piece.content_len as u64).to_le_bytes());
+            expanded_hash.update(piece.digest);
+        }
         let expanded_digest = format!("{:x}", expanded_hash.finalize());
         let revision = format!(
             "{:x}",
@@ -465,9 +552,12 @@ impl DiscoveryCache {
         );
         stats.disk_restored = disk_restored;
         let mut macro_names = crate::prepared_project::macro_namespace(&project, &sources);
+        if let Some(old) = &old {
+            macro_names.extend(old.macro_names.iter().cloned());
+        }
         macro_names.extend(defines.keys().cloned());
         let macro_names = Arc::new(macro_names);
-        let snapshot = Arc::new(PreparedProject {
+        let mut snapshot = Arc::new(PreparedProject {
             project: Arc::new(project),
             macro_names,
             expansion,
@@ -484,7 +574,9 @@ impl DiscoveryCache {
             let _ = self.expansions.save_incremental(&self.path);
         }
         if let Some(store) = &self.store {
-            let _ = crate::prepared_persistence::save(store, &snapshot);
+            if crate::prepared_persistence::save(store,&snapshot).is_ok() {
+                Arc::make_mut(&mut Arc::make_mut(&mut snapshot).expansion).attach_backings(&store.root);
+            }
         }
         self.sources = (*snapshot.sources).clone();
         self.released_context = None;
@@ -497,9 +589,10 @@ impl DiscoveryCache {
                 .saturating_sub(prepared_bytes)
                 .saturating_sub(self.resources.resident_bytes()),
         );
-        self.prepared = (prepared_bytes <= 224 * 1024 * 1024).then(|| Arc::clone(&snapshot));
+        self.prepared = Some(Arc::clone(&snapshot));
+        if prepared_bytes>224*1024*1024 {self.release_prepared_snapshot();}
         self.prepared_bytes = if self.prepared.is_some() {
-            prepared_bytes
+            self.prepared.as_ref().map_or(prepared_bytes,|prepared|prepared.resident_bytes())
         } else {
             0
         };
@@ -709,7 +802,13 @@ fn try_splice_sources(
         if before.digest != source.digest {
             changed.insert(
                 path.clone(),
-                (Arc::clone(&before.text), Arc::clone(&source.text)),
+                (
+                    match before.content() {
+                        Ok(text) => text,
+                        Err(_) => return Ok(None),
+                    },
+                    Arc::clone(&source.text),
+                ),
             );
         }
         sources.insert(path.clone(), source);
@@ -834,7 +933,8 @@ fn discover_with_retained(
             bytes_read: std::cell::Cell::new(prefetched_bytes),
             ..Default::default()
         };
-        let (discovery, pieces) = dm_preprocess::preprocess_project_cached_segmented(root, &provider, defines, cache);
+        let (discovery, pieces) =
+            dm_preprocess::preprocess_project_cached_segmented(root, &provider, defines, cache);
         let stats = PreparationStats {
             preprocessed: true,
             source_files_read: provider.files_read.get(),

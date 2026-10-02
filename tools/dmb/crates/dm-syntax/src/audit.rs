@@ -50,6 +50,18 @@ pub fn for_each_source_chunk_with_limits(
     source: &str,
     target_chunk_bytes: usize,
     max_declaration_bytes: usize,
+    visit: impl FnMut(&str, usize),
+) -> ChunkReport {
+    let mut boundaries = Vec::new();
+    for_each_top_level_boundary(source, |at| boundaries.push(at));
+    source_chunks_from_boundaries(source, target_chunk_bytes, max_declaration_bytes, &boundaries, visit)
+}
+
+pub(crate) fn source_chunks_from_boundaries(
+    source: &str,
+    target_chunk_bytes: usize,
+    max_declaration_bytes: usize,
+    boundaries: &[usize],
     mut visit: impl FnMut(&str, usize),
 ) -> ChunkReport {
     let limit = max_declaration_bytes.max(1);
@@ -91,7 +103,7 @@ pub fn for_each_source_chunk_with_limits(
         }
         declaration_start = boundary;
     };
-    for_each_top_level_boundary(source, &mut on_boundary);
+    for &boundary in boundaries { on_boundary(boundary); }
     on_boundary(source.len());
     if chunk_end > chunk_start {
         parse_chunk(chunk_start, chunk_end, &mut report);

@@ -8,6 +8,9 @@ use std::{collections::BTreeMap, path::PathBuf, sync::Arc};
 #[derive(Clone, Debug)]
 pub struct ExpandedSegment {
     pub text: Arc<str>,
+    pub content_len: usize,
+    pub blob: Option<Arc<PathBuf>>,
+    pub non_boundaries: Arc<[usize]>,
     pub digest: [u8; 32],
     pub lines: Arc<[usize]>,
 }
@@ -22,11 +25,11 @@ impl SegmentedExpansion {
         Self { segments: pieces.into_iter().map(|text| {
             let digest = Sha256::digest(text.as_bytes()).into();
             let lines = text.match_indices('\n').map(|(at, _)| at+1).collect::<Vec<_>>().into();
-            Arc::new(ExpandedSegment { text, digest, lines })
+            Arc::new(ExpandedSegment { content_len:text.len(),non_boundaries:utf8_boundaries(&text),blob:None,text,digest,lines })
         }).collect(), bytes }
     }
     pub fn source(&self) -> dm_syntax::SegmentedSource {
-        dm_syntax::SegmentedSource::with_lines(self.segments.iter().map(|piece| (Arc::clone(&piece.text), Arc::clone(&piece.lines))))
+        dm_syntax::SegmentedSource::with_backings(self.segments.iter().map(|piece| (Arc::clone(&piece.text),piece.content_len,Arc::clone(&piece.lines),Arc::clone(&piece.non_boundaries),piece.blob.clone(),piece.digest)))
     }
     pub fn from_text(text: &str) -> Self {
         let mut segments = Vec::new();
@@ -45,12 +48,10 @@ impl SegmentedExpansion {
             bytes: text.len(),
         }
     }
-    pub fn materialize(&self) -> String {
-        let mut text = String::with_capacity(self.bytes);
-        for piece in &self.segments {
-            text.push_str(&piece.text);
-        }
-        text
+    pub fn materialize(&self) -> Result<String,String> {
+        let mut text=String::with_capacity(self.bytes);
+        self.source().visit_pieces(|piece|text.push_str(piece))?;
+        Ok(text)
     }
     /// Non-overlapping replacements in the previous generation's coordinates.
     /// Whole untouched pieces retain both their allocation and content identity.
@@ -68,7 +69,7 @@ impl SegmentedExpansion {
             cursor = span.end;
         }
         self.append_range(cursor, self.bytes, &mut output)?;
-        let bytes = output.iter().map(|piece| piece.text.len()).sum();
+        let bytes = output.iter().map(|piece| piece.content_len).sum();
         Some(Self {
             segments: output,
             bytes,
@@ -82,17 +83,17 @@ impl SegmentedExpansion {
     ) -> Option<()> {
         let mut position = 0;
         for piece in &self.segments {
-            let next = position + piece.text.len();
+            let next = position + piece.content_len;
             if position >= end {
                 break;
             }
             if next > start {
                 let a = start.saturating_sub(position);
                 let b = end.min(next) - position;
-                if a == 0 && b == piece.text.len() {
+                if a == 0 && b == piece.content_len {
                     output.push(Arc::clone(piece));
                 } else if a < b {
-                    output.push(segment(piece.text.get(a..b)?));
+                    let text=piece.content().ok()?;output.push(segment(text.get(a..b)?));
                 }
             }
             position = next;
@@ -100,9 +101,35 @@ impl SegmentedExpansion {
         Some(())
     }
 }
+fn utf8_boundaries(text:&str)->Arc<[usize]> {text.bytes().enumerate().filter_map(|(at,byte)|((byte&0xc0)==0x80).then_some(at)).collect::<Vec<_>>().into()}
+impl ExpandedSegment {
+    pub fn content(&self)->std::io::Result<Arc<str>> {
+        if self.text.len()==self.content_len {return Ok(Arc::clone(&self.text));}
+        let blob=self.blob.as_ref().ok_or_else(||std::io::Error::other("expanded source has no backing"))?;
+        use std::io::Read;let mut bytes=Vec::new();
+        std::fs::File::open(blob.as_ref())?.take(self.content_len as u64+1).read_to_end(&mut bytes)?;
+        if bytes.len()!=self.content_len || <[u8;32]>::from(Sha256::digest(&bytes))!=self.digest {return Err(std::io::Error::other("invalid expanded source artifact"));}
+        String::from_utf8(bytes).map(Arc::from).map_err(std::io::Error::other)
+    }
+}
+impl SegmentedExpansion {
+    fn digest_range(&self,span:Span)->Option<[u8;32]> {
+        let mut hash=Sha256::new();self.source().visit_range(span,|text|hash.update(text.as_bytes())).ok()?;Some(hash.finalize().into())
+    }
+    pub(crate) fn attach_backings(&mut self,root:&std::path::Path) {
+        for piece in &mut self.segments {
+            if piece.blob.is_some() {continue;}
+            let piece=Arc::make_mut(piece);let digest=piece.digest.iter().map(|byte|format!("{byte:02x}")).collect::<String>();
+            piece.blob=Some(Arc::new(root.join("prepared-input-chunk-v2").join(&digest[..2]).join(digest)));
+        }
+    }
+    pub(crate) fn evict_payloads(&mut self) {
+        for piece in &mut self.segments {if piece.blob.is_some() {Arc::make_mut(piece).text=Arc::from("");}}
+    }
+}
 fn segment(text: &str) -> Arc<ExpandedSegment> {
     Arc::new(ExpandedSegment {
-        text: Arc::from(text),
+        text: Arc::from(text),content_len:text.len(),blob:None,non_boundaries:utf8_boundaries(text),
         digest: Sha256::digest(text.as_bytes()).into(),
         lines: text.match_indices('\n').map(|(at, _)| at+1).collect::<Vec<_>>().into(),
     })
@@ -230,7 +257,7 @@ pub(crate) fn splice_source_edits(
             .any(|(span, _)| span.start < old.end && span.end > old.start)
         {
             *project.unit_digests.get_mut(index)? =
-                Sha256::digest(pieces.source().slice(unit.output_span)?.as_bytes()).into();
+                pieces.digest_range(unit.output_span)?;
         }
     }
     Some((project, pieces))
@@ -378,7 +405,7 @@ fn splice_raw_units(
             .any(|(span, _, _)| span.start < old.end && span.end > old.start)
         {
             *project.unit_digests.get_mut(index)? =
-                Sha256::digest(pieces.source().slice(unit.output_span)?.as_bytes()).into();
+                pieces.digest_range(unit.output_span)?;
         }
     }
     Some((project, pieces))

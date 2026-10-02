@@ -14,6 +14,7 @@ pub mod frontend;
 pub mod lower_cache;
 pub use dm_work as work;
 pub mod project_graph;
+mod observed_dependencies;
 pub use project_graph::{ProcKey, ProcDescriptor, ProjectProcedureGraph, ProcedureArtifact,
     ProcedureMemoRef, ProcedureProbe};
 pub mod maps;

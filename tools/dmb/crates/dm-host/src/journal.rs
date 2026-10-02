@@ -25,6 +25,7 @@ struct DirectoryProof {
     followed: FileStamp,
 }
 
+#[derive(Clone,Copy,Debug,Eq,PartialEq)]
 pub enum Validation {
     Current,
     Changed,
@@ -646,6 +647,17 @@ mod windows {
             traced(None, "journal validation", &proof.volumes[0].device)
         }
     }
+    fn scan_pages()->usize {
+        // The fixed 16 MiB limit forced per-file fallback during ordinary
+        // compiler/temp-file churn. Stream a bounded configurable window with
+        // the same 64 KiB buffer; memory use does not grow with this allowance.
+        std::env::var("DM_JOURNAL_SCAN_MIB").ok().and_then(|value|value.parse::<usize>().ok()).unwrap_or(64).clamp(16,256)*16
+    }
+    fn scan_trace(proof:&VolumeProof,reason:&str,start:i64,end:i64,pages:usize) {
+        if std::env::var_os("DM_BUILD_TRACE").is_some() {
+            eprintln!("DM_BUILD_TRACE journal scan: {} {reason}, cursor {start}..{end}, {pages} pages, {} files, {} namespace barriers",proof.device.display(),proof.ids.len(),proof.namespace_ids.len());
+        }
+    }
     pub(super) fn changed_ids(proof: &mut VolumeProof) -> Option<BTreeSet<[u64; 2]>> {
         let file = open(&proof.device)?;
         let (journal_id, first, end, lowest) = query(&file)?;
@@ -659,11 +671,12 @@ mod windows {
         let mut cursor = proof.cursor;
         let mut buffer = vec![0u8; 64 * 1024];
         let mut changed = BTreeSet::new();
-        for _ in 0..256 {
+        for page in 0..scan_pages() {
             if cursor >= end {
                 if changed.is_empty() {
                     proof.cursor = end;
                 }
+                scan_trace(proof,"changed-ids complete",proof.cursor,end,page);
                 return Some(changed);
             }
             let mut request = [0u8; 48];
@@ -696,6 +709,7 @@ mod windows {
             }
             cursor = next;
         }
+        scan_trace(proof,"changed-ids scan cap",proof.cursor,end,scan_pages());
         None
     }
     pub(super) fn validate(proof: &mut VolumeProof) -> Validation {
@@ -714,9 +728,11 @@ mod windows {
         }
         let mut cursor = proof.cursor;
         let mut buffer = vec![0u8; 64 * 1024];
-        // At most 16 MiB per validation; volume churn causes a metadata fallback.
-        for _ in 0..256 {
+        // Stream journal pages through one fixed-size buffer. A bounded window
+        // is enforced independently from the amount of source metadata.
+        for page in 0..scan_pages() {
             if cursor >= end {
+                scan_trace(proof,"validation current",proof.cursor,end,page);
                 proof.cursor = end;
                 return Validation::Current;
             }
@@ -740,6 +756,7 @@ mod windows {
                 return Validation::Unavailable;
             };
             if changed {
+                scan_trace(proof,"validation relevant change",proof.cursor,end,page+1);
                 return Validation::Changed;
             }
             if next <= cursor {
@@ -747,6 +764,7 @@ mod windows {
             }
             cursor = next;
         }
+        scan_trace(proof,"validation scan cap",proof.cursor,end,scan_pages());
         Validation::Unavailable
     }
 }

@@ -11,10 +11,12 @@ use std::fs;
 use std::io;
 use std::path::{Component, Path, PathBuf};
 
+mod archive;
 mod input_cache;
+pub use archive::{prepare_archive, PreparedArchive};
 pub use input_cache::{ResourceFingerprintCache, ResourceFingerprintStats};
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ResourceRequest {
     /// Project-relative name serialized in the RSC, with `/` separators.
     pub archive_name: String,

@@ -154,28 +154,11 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
                 env::var("DM_ANALYSIS_MAX_SOURCE_BYTES").ok(),
                 env::var("DM_CHECK_MAX_SOURCE_BYTES").ok(),
             )?;
-            let frontend = coordinator.project_frontend_snapshot_bounded(&key, max_source_bytes)?;
-            let prepared = &frontend.prepared;
-            let expanded = &prepared.project;
-            let (index, index_errors) = match frontend.declarations {
-                Ok(index) => (index, vec![]),
-                Err(errors) => (Default::default(), errors),
-            };
-            let mut snapshot = dm_analysis::Snapshot::from_frontend_segmented(
-                prepared.revision.clone(), &index, &frontend.ast, expanded, &prepared.expansion.source(),
-            );
-            if !frontend.syntax_complete || !index_errors.is_empty() {
-                snapshot.coverage.declarations = dm_analysis::Coverage::Partial;
-                snapshot.coverage.inheritance = dm_analysis::Coverage::Unavailable;
-                snapshot.coverage.signatures = dm_analysis::Coverage::Partial;
-                for message in index_errors {
-                    snapshot.facts.push(dm_analysis::Fact::Diagnostic { severity: "error".into(), category: "declaration_index".into(), message, location: None });
-                }
-            }
-            for message in frontend.syntax_errors {
-                snapshot.facts.push(dm_analysis::Fact::Diagnostic { severity: "error".into(),
-                    category: "syntax".into(), message, location: None });
-            }
+            let frontend = coordinator.project_analysis_view(&key,max_source_bytes,
+                include_bytes!("../../../fixtures/native_template.bin"))?;
+            let prepared=&frontend.prepared;
+            let snapshot=dm_analysis::Snapshot::from_shared_frontend(
+                prepared.revision.clone(),&frontend.view,&prepared.project,&prepared.expansion.source());
             snapshot.write_jsonl(std::io::stdout().lock())?;
             Ok(())
         }

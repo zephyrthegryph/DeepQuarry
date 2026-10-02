@@ -250,8 +250,10 @@ pub fn materialize_generation(
     let dmb = project.with_extension("dmb");
     let rsc = project.with_extension("rsc");
     recover(&state, &dmb, &rsc)?;
-    let expected_dmb = digest_file(&generation.dmb)?;
-    let expected_rsc = verified_archive(&root, &generation)?.digest().to_owned();
+    let archive = verified_archive(&root, &generation)?;
+    let expected_dmb = archive.paired_bytecode_digest()
+        .ok_or_else(|| invalid("verified generation bytecode digest missing"))?.to_owned();
+    let expected_rsc = archive.digest().to_owned();
     let receipt: Option<Receipt> = load(&state.join("receipt.json")).ok();
     let same_dmb = receipt.as_ref().is_some_and(|receipt| {
         receipt.dmb_digest == expected_dmb

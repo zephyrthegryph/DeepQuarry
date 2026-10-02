@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::{
     cell::RefCell,
-    collections::BTreeMap,
+    collections::{BTreeMap, BTreeSet},
     sync::{Arc, Mutex, OnceLock},
 };
 
@@ -18,6 +18,8 @@ struct ConstantMemo {
 #[derive(Default)]
 struct ConstantCache {
     values: BTreeMap<String, (u64, Arc<ConstantMemo>)>,
+    recency: BTreeSet<(u64, String)>,
+    evictions: usize,
     clock: u64,
     bytes: usize,
     store: Option<dm_store::Store>,
@@ -57,7 +59,7 @@ pub(super) fn bind_cache(root: &std::path::Path) {
             let Ok(record) = serde_json::from_slice::<ConstantRecord>(&bytes) else {
                 continue;
             };
-            let charge = 192
+            let charge = 264 + record.source.len()
                 + record.source.capacity()
                 + constant_bytes(&record.result)
                 + record
@@ -79,6 +81,7 @@ pub(super) fn bind_cache(root: &std::path::Path) {
             };
             cache.bytes += charge;
             let clock = cache.clock;
+            cache.recency.insert((clock, record.source.clone()));
             cache.values.insert(record.source, (clock, Arc::new(memo)));
         }
     }
@@ -104,6 +107,10 @@ pub(super) fn flush_cache() {
 fn constant_cache() -> &'static Mutex<ConstantCache> {
     static CACHE: OnceLock<Mutex<ConstantCache>> = OnceLock::new();
     CACHE.get_or_init(|| Mutex::new(ConstantCache::default()))
+}
+pub(super) fn cache_stats() -> (usize, usize) {
+    let cache=constant_cache().lock().unwrap_or_else(|e|e.into_inner());
+    (cache.values.len(),cache.evictions)
 }
 fn constant_bytes(value: &Option<Constant>) -> usize {
     std::mem::size_of::<Option<Constant>>()
@@ -252,10 +259,13 @@ pub(super) fn evaluate(
         let mut cache = constant_cache().lock().unwrap_or_else(|e| e.into_inner());
         cache.clock = cache.clock.wrapping_add(1);
         let clock = cache.clock;
-        cache.values.get_mut(source).map(|(used, memo)| {
-            *used = clock;
-            Arc::clone(memo)
-        })
+        let previous=cache.values.get(source).map(|(used,memo)|(*used,Arc::clone(memo)));
+        if let Some((used,_))=&previous {
+            cache.recency.remove(&(*used,source.to_owned()));
+            cache.recency.insert((clock,source.to_owned()));
+            cache.values.get_mut(source).unwrap().0=clock;
+        }
+        previous.map(|(_,memo)|memo)
     };
     if let Some(memo) = &previous {
         if memo
@@ -281,7 +291,8 @@ pub(super) fn evaluate(
         })
     });
     let observations = observations.into_inner();
-    let charge = 192usize
+    let charge = 264usize
+        .saturating_add(source.len())
         .saturating_add(source.len())
         .saturating_add(parsed.as_ref().map_or(0, |expr| expression_bytes(expr)))
         .saturating_add(constant_bytes(&result))
@@ -310,23 +321,21 @@ pub(super) fn evaluate(
             charge,
         });
         let mut cache = constant_cache().lock().unwrap_or_else(|e| e.into_inner());
-        if let Some((_, old)) = cache.values.remove(source) {
+        if let Some((used, old)) = cache.values.remove(source) {
             cache.bytes -= old.charge;
+            cache.recency.remove(&(used,source.to_owned()));
         }
         while cache.bytes.saturating_add(charge) > CONSTANT_CACHE_BYTES {
-            let oldest = cache
-                .values
-                .iter()
-                .min_by_key(|(_, (used, _))| *used)
-                .map(|(source, _)| source.clone());
-            let Some(oldest) = oldest else {
+            let Some((_, oldest)) = cache.recency.pop_first() else {
                 break;
             };
             if let Some((_, old)) = cache.values.remove(&oldest) {
                 cache.bytes -= old.charge;
+                cache.evictions += 1;
             }
         }
         let clock = cache.clock;
+        cache.recency.insert((clock,source.to_owned()));
         cache.values.insert(source.to_owned(), (clock, memo));
         cache.bytes += charge;
         if cache.store.is_some() {

@@ -45,6 +45,9 @@ struct Cache {
     store: Option<dm_store::Store>,
     root: Option<std::path::PathBuf>,
     pending: BTreeMap<String, Vec<u8>>,
+    pending_bytes: usize,
+    disk_ready: bool,
+    missing: HashSet<String>,
 }
 fn cache() -> &'static Mutex<Cache> {
     static CACHE: OnceLock<Mutex<Cache>> = OnceLock::new();
@@ -94,40 +97,27 @@ pub(super) fn bind_cache(root: &std::path::Path) {
         store: dm_store::Store::open(root.join("declaration-fragments.redb")).ok(),
         ..Default::default()
     };
-    let snapshot = next.store.as_ref().and_then(|store| {
-        store
-            .snapshot_namespace(&namespace(), 128_000, LIMIT / 2, None)
-            .ok()
-    });
-    if let Some(snapshot) = snapshot {
-        for (key, bytes) in snapshot.records {
-            if let Ok(plan) = serde_json::from_slice::<DeclarationDefaultPlan>(&bytes) {
-                let size = charge(&key.name, &plan);
-                if next.bytes.saturating_add(size) <= LIMIT {
-                    next.bytes += size;
-                    next.entries.insert(key.name, Arc::new(plan));
-                }
-            }
-        }
-    }
+    next.disk_ready=next.store.as_ref().and_then(|store|store.read_many(&[dm_store::Key::new("declaration-fragment-ready",namespace())],None).ok())
+        .is_some_and(|read|read.values.first().is_some_and(Option::is_some));
     *cache = next;
 }
 pub(super) fn flush_cache() {
     flush_owner_cache();
     let mut cache = cache().lock().unwrap_or_else(|e| e.into_inner());
     let Some(store) = &cache.store else {
-        cache.pending.clear();
+        cache.pending.clear();cache.pending_bytes=0;
         return;
     };
-    let changes: Vec<_> = cache
+    let mut changes: Vec<_> = cache
         .pending
         .iter()
         .map(|(key, bytes)| {
             dm_store::Change::Put(dm_store::Key::new(namespace(), key), bytes.clone())
         })
         .collect();
+    changes.push(dm_store::Change::Put(dm_store::Key::new("declaration-fragment-ready",namespace()),vec![1]));
     if store.commit(&[], &changes, None).is_ok() {
-        cache.pending.clear();
+        cache.pending.clear();cache.pending_bytes=0;
     }
 }
 /// Warm pure authored fragments using the workspace's one bounded scheduler.
@@ -147,6 +137,7 @@ pub(super) fn prefetch(items: &[Item], workers: usize) {
         .into_iter()
         .filter(|source| source.len().saturating_mul(8) + 512 <= 8 * 1024 * 1024)
         .collect();
+    hydrate_defaults(&inputs);
     let limits = dm_work::WorkLimits {
         workers: workers.clamp(1, 4),
         max_active_bytes: 8 * 1024 * 1024,
@@ -173,6 +164,7 @@ pub(super) fn declaration(source: &str) -> Result<Arc<DeclarationDefaultPlan>, S
     {
         return Ok(value);
     }
+    if let Some(plan)=restore_default(&key) {return Ok(plan);}
     let raw = source
         .strip_prefix("/var/")
         .or_else(|| source.strip_prefix("var/"))
@@ -260,7 +252,8 @@ pub(super) fn declaration(source: &str) -> Result<Arc<DeclarationDefaultPlan>, S
             }
         }
         if let Ok(bytes) = serde_json::to_vec(plan.as_ref()) {
-            cache.pending.insert(key.clone(), bytes);
+            cache.pending_bytes+=bytes.len();
+            if let Some(old)=cache.pending.insert(key.clone(), bytes) {cache.pending_bytes=cache.pending_bytes.saturating_sub(old.len());}
         }
         if let Some(old) = cache.entries.remove(&key) {
             cache.bytes = cache.bytes.saturating_sub(charge(&key, &old));
@@ -268,7 +261,7 @@ pub(super) fn declaration(source: &str) -> Result<Arc<DeclarationDefaultPlan>, S
         cache.bytes += size;
         cache.entries.insert(key, Arc::clone(&plan));
     }
-    let flush = cache.pending.values().map(Vec::len).sum::<usize>() > 1024 * 1024;
+    let flush = cache.pending_bytes > 1024 * 1024;
     drop(cache);
     if flush {
         flush_cache();
@@ -290,6 +283,7 @@ pub(super) struct OwnerFieldExpression {
 #[derive(Clone, Serialize, Deserialize)]
 pub(super) struct OwnerDeclarationPlan {
     pub identity: String,
+    pub semantic_identity: String,
     pub expressions: Vec<OwnerFieldExpression>,
     pub explicit_parent: Option<String>,
     pub const_indexes: Vec<usize>,
@@ -303,6 +297,9 @@ struct OwnerCache {
     root: Option<std::path::PathBuf>,
     store: Option<dm_store::Store>,
     pending: BTreeMap<String, Vec<u8>>,
+    pending_bytes:usize,
+    disk_ready:bool,
+    missing:HashSet<String>,
 }
 fn owner_cache() -> &'static Mutex<OwnerCache> {
     static CACHE: OnceLock<Mutex<OwnerCache>> = OnceLock::new();
@@ -311,7 +308,7 @@ fn owner_cache() -> &'static Mutex<OwnerCache> {
 fn owner_namespace() -> String {
     format!("owner-declarations-v2-{}", env!("DM_EMISSION_FINGERPRINT"))
 }
-pub(super) fn owner(item: &Item) -> Arc<OwnerDeclarationPlan> {
+fn owner_key(item:&Item)->String {
     let mut hash = Sha256::new();
     hash.update(item.header.as_bytes());
     // Index is part of the fragment: edits which move declarations must update
@@ -324,9 +321,14 @@ pub(super) fn owner(item: &Item) -> Arc<OwnerDeclarationPlan> {
             hash.update(child.header.as_bytes());
         }
     }
-    let key = format!("{:x}", hash.finalize());
+    format!("{:x}", hash.finalize())
+
+}
+pub(super) fn owner(item: &Item) -> Arc<OwnerDeclarationPlan> {
+    let key=owner_key(item);
     if let Some(plan) = owner_cache().lock().unwrap_or_else(|e|e.into_inner()).entries.get(&key).cloned() { return plan; }
-    let mut plan = OwnerDeclarationPlan { identity:key.clone(), expressions:Vec::new(), explicit_parent: None, const_indexes: Vec::new(), mutable_names: HashSet::new(), field_types: HashMap::new() };
+    if let Some(plan)=restore_owner(&key) {return plan;}
+    let mut plan = OwnerDeclarationPlan { identity:key.clone(), semantic_identity:String::new(), expressions:Vec::new(), explicit_parent: None, const_indexes: Vec::new(), mutable_names: HashSet::new(), field_types: HashMap::new() };
     for (index, child) in item.children.iter().enumerate() {
         if plan.explicit_parent.is_none() {
             plan.explicit_parent = child.header.trim().strip_prefix("parent_type")
@@ -353,6 +355,9 @@ pub(super) fn owner(item: &Item) -> Arc<OwnerDeclarationPlan> {
         if is_const { plan.const_indexes.push(index); }
         else if let Some(name) = child.header.split('=').next().and_then(|header|header.trim().rsplit('/').next()) { plan.mutable_names.insert(name.to_owned()); }
     }
+    let mut semantic=Sha256::new();
+    semantic.update(serde_json::to_vec(&(&plan.explicit_parent,&plan.expressions)).unwrap_or_default());
+    plan.semantic_identity=format!("{:x}",semantic.finalize());
     let plan = Arc::new(plan);
     if let Ok(bytes) = serde_json::to_vec(plan.as_ref()) {
         let charge = bytes.len().saturating_mul(3) + key.len() + 128;
@@ -365,9 +370,10 @@ pub(super) fn owner(item: &Item) -> Arc<OwnerDeclarationPlan> {
                 }
             }
             if cache.entries.insert(key.clone(), Arc::clone(&plan)).is_none() {cache.bytes+=charge;}
-            cache.pending.insert(key, bytes);
+            cache.pending_bytes+=bytes.len();
+            if let Some(old)=cache.pending.insert(key, bytes) {cache.pending_bytes=cache.pending_bytes.saturating_sub(old.len());}
         }
-        let flush = cache.pending.values().map(Vec::len).sum::<usize>() > 1024 * 1024;
+        let flush = cache.pending_bytes > 1024 * 1024;
         drop(cache);
         if flush { flush_owner_cache(); }
     }
@@ -377,25 +383,44 @@ pub(super) fn bind_owner_cache(root: &std::path::Path) {
     let mut cache = owner_cache().lock().unwrap_or_else(|e|e.into_inner());
     if cache.root.as_deref()==Some(root) {return;}
     let mut next = OwnerCache { root:Some(root.to_owned()), store:dm_store::Store::open(root.join("declaration-fragments.redb")).ok(), ..Default::default() };
-    if let Some(snapshot) = next.store.as_ref().and_then(|store|store.snapshot_namespace(&owner_namespace(),128_000,4*1024*1024,None).ok()) {
-        for (key,bytes) in snapshot.records {
-            if let Ok(plan)=serde_json::from_slice::<OwnerDeclarationPlan>(&bytes) {
-                let charge=bytes.len()*3+key.name.len()+128;
-                if next.bytes+charge<=16*1024*1024 {next.bytes+=charge;next.entries.insert(key.name,Arc::new(plan));}
-            }
-        }
-    }
+    next.disk_ready=next.store.as_ref().and_then(|store|store.read_many(&[dm_store::Key::new("declaration-fragment-ready",owner_namespace())],None).ok())
+        .is_some_and(|read|read.values.first().is_some_and(Option::is_some));
     *cache=next;
 }
 pub(super) fn flush_owner_cache() {
     let mut cache=owner_cache().lock().unwrap_or_else(|e|e.into_inner());
-    let Some(store)=cache.store.as_ref() else {cache.pending.clear();return};
-    let changes:Vec<_>=cache.pending.iter().map(|(key,bytes)|dm_store::Change::Put(dm_store::Key::new(owner_namespace(),key),bytes.clone())).collect();
-    if store.commit(&[],&changes,None).is_ok() {cache.pending.clear();}
+    let Some(store)=cache.store.as_ref() else {cache.pending.clear();cache.pending_bytes=0;return};
+    let mut changes:Vec<_>=cache.pending.iter().map(|(key,bytes)|dm_store::Change::Put(dm_store::Key::new(owner_namespace(),key),bytes.clone())).collect();
+    changes.push(dm_store::Change::Put(dm_store::Key::new("declaration-fragment-ready",owner_namespace()),vec![1]));
+    if store.commit(&[],&changes,None).is_ok() {cache.pending.clear();cache.pending_bytes=0;}
 }
-pub(super) fn prefetch_owners(items: &[&Item], workers:usize) {
+/// Consume the ordered results directly instead of warming a bounded cache and
+/// looking up/rebuilding all owners again after that cache has evicted them.
+pub(super) fn owner_batch(items: &[&Item], workers:usize) -> Vec<Arc<OwnerDeclarationPlan>> {
     let limits=dm_work::WorkLimits {workers:workers.clamp(1,4),max_active_bytes:8*1024*1024};
-    let _=dm_work::map_ordered(items,limits,|item|item.header.len()+item.children.iter().map(|child|child.header.len()+128).sum::<usize>(),|item|{let _=owner(item);});
+    let mut output=Vec::with_capacity(items.len());
+    for chunk in items.chunks(4096) {
+        hydrate_owners(chunk);
+        let plans=dm_work::map_ordered(chunk,limits,|item|item.header.len()+item.children.iter().map(|child|child.header.len()+128).sum::<usize>(),|item|owner(item))
+            .unwrap_or_else(|_|chunk.iter().map(|item|owner(item)).collect());
+        output.extend(plans);
+    }
+    output
+}
+
+/// Amortize database ownership over many small records while keeping the same
+/// strict byte bound. Large records split the requested window, never omit rows.
+pub(super) fn read_stage_batch(store:&dm_store::Store,keys:&[dm_store::Key],max_record:usize,max_bytes:usize,visit:&mut impl FnMut(&dm_store::Key,Option<Vec<u8>>)) {
+    if keys.is_empty() {return;}
+    match store.read_grouped_bounded(keys,128,max_record,max_bytes,max_bytes,None) {
+        Ok(read)=>for (key,bytes) in keys.iter().zip(read.values) {visit(key,bytes);},
+        Err(error) if error.kind()==std::io::ErrorKind::InvalidInput && keys.len()>1=>{
+            let middle=keys.len()/2;
+            read_stage_batch(store,&keys[..middle],max_record,max_bytes,visit);
+            read_stage_batch(store,&keys[middle..],max_record,max_bytes,visit);
+        }
+        _=>{}
+    }
 }
 
 /// Semantic defaults contain no generation-local IDs. Constant query witnesses
@@ -414,6 +439,14 @@ pub(super) fn resolve_value(
     owner: Option<u32>,
     blocked: &HashSet<String>,
 ) -> Result<SymbolicDefaultValue, String> {
+    // Literal recipes carry no semantic dependencies and never enter the
+    // scoped resolver or Salsa. Their physical payload is allocated later.
+    match initial {
+        None|Some("null")=>return Ok(SymbolicDefaultValue::Constant(const_eval::Constant::Null)),
+        Some(source) if source.parse::<f32>().is_ok()=>return Ok(SymbolicDefaultValue::Constant(const_eval::Constant::Number(source.parse().unwrap()))),
+        Some(source) if source.starts_with('\'')&&source.ends_with('\'')&&source.len()>=2=>return Ok(SymbolicDefaultValue::Resource(source[1..source.len()-1].replace('\\',"/"))),
+        _=>{}
+    }
     if let Some(value) = initial.and_then(|source|fold_constant_scoped(source,dmb,owner,blocked,strings)) {
         return Ok(SymbolicDefaultValue::Constant(value));
     }
@@ -441,4 +474,62 @@ fn declaration_plan_shape(initial: Option<&str>, source: &str) -> Option<Symboli
         DefaultShape::Resource(name) => SymbolicDefaultValue::Resource(name.clone()),
         DefaultShape::Path(_) | DefaultShape::Runtime(_) => return None,
     })
+}
+
+fn hydrate_defaults(sources:&[&str]) {
+    let mut cache=cache().lock().unwrap_or_else(|error|error.into_inner());
+    let Some(store)=cache.store.clone() else {return;};
+    let keys:Vec<_>=sources.iter().map(|source|format!("{:x}",Sha256::digest(source.as_bytes()))).filter(|key|!cache.entries.contains_key(key)&&!cache.missing.contains(key)).map(|key|dm_store::Key::new(namespace(),key)).collect();
+    for keys in keys.chunks(4096) {
+        read_stage_batch(&store,keys,1024*1024,8*1024*1024,&mut |key,bytes| {
+            if let Some(plan)=bytes.as_deref().and_then(|bytes|serde_json::from_slice::<DeclarationDefaultPlan>(bytes).ok()) {
+                retain_default(&mut cache,key.name.clone(),Arc::new(plan));
+            } else if cache.missing.len()<128_000 {cache.missing.insert(key.name.clone());}
+        });
+    }
+}
+fn retain_default(cache:&mut Cache,key:String,plan:Arc<DeclarationDefaultPlan>) {
+    let size=charge(&key,&plan);if size>LIMIT {return;}
+    if let Some(old)=cache.entries.remove(&key) {cache.bytes=cache.bytes.saturating_sub(charge(&key,&old));}
+    while cache.bytes.saturating_add(size)>LIMIT {
+        let Some(key)=cache.entries.keys().next().cloned() else {break;};
+        if let Some(old)=cache.entries.remove(&key) {cache.bytes=cache.bytes.saturating_sub(charge(&key,&old));}
+    }
+    cache.bytes+=size;cache.entries.insert(key,plan);
+}
+fn restore_default(key:&str)->Option<Arc<DeclarationDefaultPlan>> {
+    let mut cache=cache().lock().unwrap_or_else(|error|error.into_inner());
+    if !cache.disk_ready || cache.missing.contains(key) {return None;}
+    let read=cache.store.as_ref()?.read_many_bounded(&[dm_store::Key::new(namespace(),key)],1024*1024,1024*1024,None).ok()?;
+    let plan=Arc::new(serde_json::from_slice::<DeclarationDefaultPlan>(read.values.first()?.as_deref()?).ok()?);
+    retain_default(&mut cache,key.to_owned(),Arc::clone(&plan));Some(plan)
+}
+fn retain_owner(cache:&mut OwnerCache,key:String,plan:Arc<OwnerDeclarationPlan>,wire_size:usize) {
+    let size=wire_size*3+key.len()+128;if size>16*1024*1024 {return;}
+    if let Some(old)=cache.entries.remove(&key) {cache.bytes=cache.bytes.saturating_sub(serde_json::to_vec(old.as_ref()).map_or(0,|bytes|bytes.len()*3)+key.len()+128);}
+    while cache.bytes.saturating_add(size)>16*1024*1024 {
+        let Some(key)=cache.entries.keys().next().cloned() else {break;};
+        if let Some(old)=cache.entries.remove(&key) {cache.bytes=cache.bytes.saturating_sub(serde_json::to_vec(old.as_ref()).map_or(0,|bytes|bytes.len()*3)+key.len()+128);}
+    }
+    cache.bytes+=size;cache.entries.insert(key,plan);
+}
+fn hydrate_owners(items:&[&Item]) {
+    let mut cache=owner_cache().lock().unwrap_or_else(|error|error.into_inner());
+    let Some(store)=cache.store.clone() else {return;};
+    let keys:Vec<_>=items.iter().map(|item|owner_key(item)).collect::<BTreeSet<_>>().into_iter().filter(|key|!cache.entries.contains_key(key)&&!cache.missing.contains(key)).map(|key|dm_store::Key::new(owner_namespace(),key)).collect();
+    for keys in keys.chunks(4096) {
+        read_stage_batch(&store,keys,1024*1024,8*1024*1024,&mut |key,bytes| {
+            if let Some(bytes)=bytes {
+                if let Ok(plan)=serde_json::from_slice::<OwnerDeclarationPlan>(&bytes) {retain_owner(&mut cache,key.name.clone(),Arc::new(plan),bytes.len());}
+            } else if cache.missing.len()<128_000 {cache.missing.insert(key.name.clone());}
+        });
+    }
+}
+fn restore_owner(key:&str)->Option<Arc<OwnerDeclarationPlan>> {
+    let mut cache=owner_cache().lock().unwrap_or_else(|error|error.into_inner());
+    if !cache.disk_ready || cache.missing.contains(key) {return None;}
+    let read=cache.store.as_ref()?.read_many_bounded(&[dm_store::Key::new(owner_namespace(),key)],1024*1024,1024*1024,None).ok()?;
+    let bytes=read.values.first()?.as_deref()?;
+    let plan=Arc::new(serde_json::from_slice::<OwnerDeclarationPlan>(bytes).ok()?);
+    retain_owner(&mut cache,key.to_owned(),Arc::clone(&plan),bytes.len());Some(plan)
 }

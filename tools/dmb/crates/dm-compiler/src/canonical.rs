@@ -9,7 +9,12 @@ use std::sync::{
     Mutex, OnceLock,
 };
 
-const MAX_SKELETON: usize = 96 * 1024 * 1024;
+#[path = "skeleton_fragments.rs"]
+mod skeleton_fragments;
+#[path = "declaration_delta.rs"]
+mod declaration_delta;
+pub(super) use declaration_delta::DeclarationInputs;
+
 
 #[derive(Clone, Serialize, Deserialize)]
 pub(super) struct OwnedPendingProc {
@@ -135,41 +140,26 @@ pub(super) struct InvocationFragments {
     entries: BTreeMap<String, Arc<InvocationSyntax>>,
     signatures: BTreeMap<String, Arc<(String, Vec<ParsedParameter>)>>,
     pending: BTreeMap<String, Vec<u8>>,
+    pending_bytes: usize,
     store: Option<Store>,
     bytes: usize,
+    signature_misses: BTreeSet<String>,
+    disk_syntax_ready: bool,
+    requested_syntax: BTreeMap<String, Arc<InvocationSyntax>>,
+    requested_bytes: usize,
+    requested_signatures: BTreeMap<String, Arc<(String, Vec<ParsedParameter>)>>,
+    requested_signature_bytes: usize,
+    syntax_misses: BTreeSet<String>,
+    handle_misses: BTreeSet<String>,
 }
 impl InvocationFragments {
     const LIMIT: usize = 32 * 1024 * 1024;
     fn open(root: &Path) -> Self {
         let mut cache = Self::default();
         cache.store = Store::open(root.join("declaration-fragments.redb")).ok();
-        // One bounded startup transaction; misses compile the small fragment
-        // rather than opening a redb read for every procedure during a rebuild.
-        let snapshot = cache.store.as_ref().and_then(|store| {
-            store
-                .snapshot_namespace(&Self::namespace(), 128_000, Self::LIMIT / 2, None)
-                .ok()
-        });
-        if let Some(snapshot) = snapshot {
-            for (key, bytes) in snapshot.records {
-                if let Ok(value) = serde_json::from_slice::<InvocationSyntax>(&bytes) {
-                    cache.retain(key.name, Arc::new(value), bytes.len());
-                }
-            }
-        }
-        if let Some(snapshot) = cache.store.as_ref().and_then(|store| {
-            store.snapshot_namespace(&Self::signature_namespace(), 128_000, Self::LIMIT / 4, None).ok()
-        }) {
-            for (key, bytes) in snapshot.records {
-                if let Ok(value) = serde_json::from_slice::<(String, Vec<ParsedParameter>)>(&bytes) {
-                    let size = bytes.len().saturating_mul(3) + key.name.len() + 128;
-                    if cache.bytes.saturating_add(size) <= Self::LIMIT {
-                        cache.bytes += size;
-                        cache.signatures.insert(key.name, Arc::new(value));
-                    }
-                }
-            }
-        }
+        cache.disk_syntax_ready = cache.store.as_ref().and_then(|store|
+            store.read_many(&[Key::new("declaration-fragment-ready", Self::namespace())],None).ok())
+            .is_some_and(|record|record.values.first().is_some_and(Option::is_some));
         cache
     }
     fn signature_namespace() -> String {
@@ -177,6 +167,66 @@ impl InvocationFragments {
     }
     fn namespace() -> String {
         format!("invocation-syntax-v2-{}", env!("DM_EMISSION_FINGERPRINT"))
+    }
+    fn handles_namespace() -> String { format!("invocation-syntax-handles-v1-{}",env!("DM_EMISSION_FINGERPRINT")) }
+    fn declaration_key(item:&Item,path:&str)->String {
+        fn items(hash:&mut Sha256,nodes:&[Item]) {
+            hash.update((nodes.len() as u64).to_le_bytes());
+            for item in nodes {hash.update([item.kind as u8]);hash.update((item.header.len() as u64).to_le_bytes());hash.update(item.header.as_bytes());items(hash,&item.children);}
+        }
+        let mut hash=Sha256::new();hash.update(path.as_bytes());hash.update(item.header.as_bytes());
+        items(&mut hash,&invocation_declaration_projection(&item.children));
+        format!("{:x}",hash.finalize())
+    }
+    /// A declaration handle selects a candidate, never certifies inherited
+    /// settings. `syntax` checks the complete current key, including its base.
+    /// The bounded window is consumed immediately by the ordered allocator.
+    pub(super) fn prefetch_syntax(&mut self,inputs:&[(&Item,&str,bool)]) {
+        self.requested_syntax.clear(); self.requested_bytes=0;
+        self.requested_signatures.clear();self.requested_signature_bytes=0;
+        self.prefetch_signatures(inputs);
+        let Some(store)=self.store.clone() else {return;};
+        let mut handles=Vec::new();
+        for (item,owner,verb) in inputs {
+            let Ok((path,_))=self.signature(item,owner,*verb) else {continue;};
+            let key=Self::declaration_key(item,&path);
+            if !self.handle_misses.contains(&key) {handles.push(Key::new(Self::handles_namespace(),key));}
+        }
+        let mut payloads=BTreeSet::new();
+        default_plans::read_stage_batch(&store,&handles,128,1024*1024,&mut |key,bytes| {
+            if let Some(identity)=bytes.and_then(|bytes|String::from_utf8(bytes).ok()).filter(|identity|identity.len()==64&&identity.bytes().all(|b|b.is_ascii_hexdigit())) {
+                if !self.entries.contains_key(&identity)&&!self.syntax_misses.contains(&identity) {payloads.insert(Key::new(Self::namespace(),identity));}
+            } else if self.handle_misses.len()<128_000 {self.handle_misses.insert(key.name.clone());}
+        });
+        let payloads:Vec<_>=payloads.into_iter().collect();
+        default_plans::read_stage_batch(&store,&payloads,1024*1024,8*1024*1024,&mut |key,bytes| {
+            if let Some(bytes)=bytes {
+                if let Ok(value)=serde_json::from_slice::<InvocationSyntax>(&bytes) {
+                    let charge=bytes.len().saturating_mul(3)+key.name.len()+128;
+                    if value.key==key.name && self.requested_bytes.saturating_add(charge)<=16*1024*1024 {
+                        self.requested_bytes+=charge;self.requested_syntax.insert(key.name.clone(),Arc::new(value));
+                    }
+                }
+            } else if self.syntax_misses.len()<128_000 {self.syntax_misses.insert(key.name.clone());}
+        });
+    }
+    pub(super) fn prefetch_signatures(&mut self, inputs:&[(&Item,&str,bool)]) {
+        let Some(store)=self.store.clone() else {return;};
+        let keys:Vec<_>=inputs.iter().map(|(item,owner,verb)|crate::lower_cache::shared_binding_fingerprint(&(*owner,*verb,&item.header)))
+            .collect::<BTreeSet<_>>().into_iter().filter(|key|!self.signatures.contains_key(key)&&!self.requested_signatures.contains_key(key)&&!self.signature_misses.contains(key)).map(|key|Key::new(Self::signature_namespace(),key)).collect();
+        for keys in keys.chunks(4096) {
+            default_plans::read_stage_batch(&store,keys,1024*1024,8*1024*1024,&mut |key,bytes| {
+                if let Some(bytes)=bytes {
+                    if let Ok(value)=serde_json::from_slice::<(String,Vec<ParsedParameter>)>(&bytes) {
+                        let size=bytes.len()*3+key.name.len()+128;
+                        if self.bytes.saturating_add(size)<=Self::LIMIT {self.bytes+=size;self.signatures.insert(key.name.clone(),Arc::new(value));}
+                        else if self.requested_signature_bytes.saturating_add(size)<=16*1024*1024 {
+                            self.requested_signature_bytes+=size;self.requested_signatures.insert(key.name.clone(),Arc::new(value));
+                        }
+                    }
+                } else if self.signature_misses.len()<128_000 {self.signature_misses.insert(key.name.clone());}
+            });
+        }
     }
     pub(super) fn signature(
         &mut self,
@@ -187,6 +237,17 @@ impl InvocationFragments {
         let key = crate::lower_cache::shared_binding_fingerprint(&(owner, verb, &item.header));
         if let Some(value) = self.signatures.get(&key) {
             return Ok(value.as_ref().clone());
+        }
+        if let Some(value)=self.requested_signatures.get(&key) {return Ok(value.as_ref().clone());}
+        if !self.signature_misses.contains(&key) {
+            if let Some(bytes)=self.store.as_ref().and_then(|store|store.read_many_bounded(&[Key::new(Self::signature_namespace(),&key)],1024*1024,1024*1024,None).ok()).and_then(|read|read.values.into_iter().next().flatten()) {
+                if let Ok(value)=serde_json::from_slice::<(String,Vec<ParsedParameter>)>(&bytes) {
+                    let size=bytes.len()*3+key.len()+128;
+                    if self.bytes.saturating_add(size)<=Self::LIMIT {self.bytes+=size;self.signatures.insert(key.clone(),Arc::new(value.clone()));}
+                    return Ok(value);
+                }
+            }
+            if self.signature_misses.len()<128_000 {self.signature_misses.insert(key.clone());}
         }
         let value = member_signature(item, owner, verb)?;
         let size = key.len()
@@ -206,10 +267,15 @@ impl InvocationFragments {
         if self.bytes + size <= Self::LIMIT {
             self.bytes += size;
             self.signatures.insert(key.clone(), Arc::new(value.clone()));
-            if let Ok(bytes) = serde_json::to_vec(&value) {
-                // Prefix separates wire shapes within one bounded pending queue.
-                self.pending.insert(format!("signature:{key}"), bytes);
-            }
+        } else if self.requested_signature_bytes.saturating_add(size)<=16*1024*1024 {
+            self.requested_signature_bytes+=size;
+            self.requested_signatures.insert(key.clone(),Arc::new(value.clone()));
+        }
+        // Persistence is independent of whether the optional decoded cache has
+        // room. Large projects must not repeatedly derive the uncached suffix.
+        if let Ok(bytes) = serde_json::to_vec(&value) {
+            self.queue_pending(format!("signature:{key}"), bytes);
+            if self.pending_bytes>4*1024*1024 {self.flush();}
         }
         Ok(value)
     }
@@ -239,8 +305,17 @@ impl InvocationFragments {
         hash_items(&mut hash, &declarations);
         hash.update(serde_json::to_vec(&base).map_err(|e| e.to_string())?);
         let key = format!("{:x}", hash.finalize());
+        let declaration_key=Self::declaration_key(item,path);
         if let Some(value) = self.entries.get(&key) {
             return Ok(Arc::clone(value));
+        }
+        if let Some(value)=self.requested_syntax.get(&key) {return Ok(Arc::clone(value));}
+        if self.disk_syntax_ready && !self.syntax_misses.contains(&key) {
+            if let Some(bytes)=self.store.as_ref().and_then(|store|store.read_many_bounded(&[Key::new(Self::namespace(),&key)],1024*1024,1024*1024,None).ok()).and_then(|read|read.values.into_iter().next().flatten()) {
+                if let Ok(value)=serde_json::from_slice::<InvocationSyntax>(&bytes) {
+                    let value=Arc::new(value);self.queue_pending(format!("handle:{declaration_key}"),key.as_bytes().to_vec());self.retain(key,Arc::clone(&value),bytes.len());return Ok(value);
+                }
+            }
         }
         let (metadata, mut body) = proc_metadata_from_base(&declarations, base)?;
         let mut statics = Vec::new();
@@ -255,10 +330,11 @@ impl InvocationFragments {
         });
         if let Ok(bytes) = serde_json::to_vec(value.as_ref()) {
             let size = bytes.len();
-            if size <= 1024 * 1024 && self.bytes + size * 2 + key.len() + 128 <= Self::LIMIT {
-                self.pending.insert(key.clone(), bytes);
+            if size <= 1024 * 1024 {
+                self.queue_pending(key.clone(), bytes);
+                self.queue_pending(format!("handle:{declaration_key}"),key.as_bytes().to_vec());
                 self.retain(key, Arc::clone(&value), size);
-                if self.pending.values().map(Vec::len).sum::<usize>() > 4 * 1024 * 1024 {
+                if self.pending_bytes > 4 * 1024 * 1024 {
                     self.flush();
                 }
             }
@@ -298,8 +374,8 @@ impl InvocationFragments {
                 if self.bytes.saturating_add(extra) <= Self::LIMIT {
                     self.bytes += extra;
                     self.entries.insert(syntax.key.clone(), Arc::new(updated));
-                    self.pending.insert(syntax.key.clone(), bytes);
-                    if self.pending.values().map(Vec::len).sum::<usize>() > 4 * 1024 * 1024 {
+                    self.queue_pending(syntax.key.clone(), bytes);
+                    if self.pending_bytes > 4 * 1024 * 1024 {
                         self.flush();
                     }
                 }
@@ -314,56 +390,80 @@ impl InvocationFragments {
             self.entries.insert(key, value);
         }
     }
+    fn queue_pending(&mut self,key:String,bytes:Vec<u8>) {
+        if let Some(handle)=key.strip_prefix("handle:") {self.handle_misses.remove(handle);}
+        else if let Some(signature)=key.strip_prefix("signature:") {self.signature_misses.remove(signature);}
+        else {self.syntax_misses.remove(&key);}
+        self.pending_bytes=self.pending_bytes.saturating_add(bytes.len());
+        if let Some(old)=self.pending.insert(key,bytes) {self.pending_bytes=self.pending_bytes.saturating_sub(old.len());}
+    }
     fn flush(&mut self) {
         let Some(store) = &self.store else {
-            self.pending.clear();
+            self.pending.clear();self.pending_bytes=0;
             return;
         };
-        let updates: Vec<_> = self
+        let mut updates: Vec<_> = self
             .pending
             .iter()
             .map(|(key, bytes)| {
                 if let Some(key) = key.strip_prefix("signature:") {
                     Change::Put(Key::new(Self::signature_namespace(), key), bytes.clone())
+                } else if let Some(key) = key.strip_prefix("handle:") {
+                    Change::Put(Key::new(Self::handles_namespace(), key), bytes.clone())
                 } else {
                     Change::Put(Key::new(Self::namespace(), key), bytes.clone())
                 }
             })
             .collect();
+        updates.push(Change::Put(Key::new("declaration-fragment-ready",Self::namespace()),vec![1]));
         if store.commit(&[], &updates, None).is_ok() {
-            self.pending.clear();
+            self.pending.clear();self.pending_bytes=0;
         }
     }
     fn resident_bytes(&self) -> usize {
         self.bytes
+            + self.requested_bytes + self.requested_signature_bytes
+            + (self.syntax_misses.len()+self.handle_misses.len())*128
             + self
                 .pending
                 .iter()
                 .map(|(key, bytes)| key.capacity() + bytes.capacity() + 128)
                 .sum::<usize>()
     }
+    fn release_requested(&mut self) {
+        self.requested_syntax.clear();self.requested_bytes=0;
+        self.requested_signatures.clear();self.requested_signature_bytes=0;
+    }
 }
 
 #[derive(Default)]
 pub(super) struct OwnerFrameQueries {
     snapshot_revision: String,
-    current: HashMap<u32, (String, Arc<dm_codegen_byond::OwnerLowerBindings>)>,
+    current: HashMap<u32, (String, Arc<dm_codegen_byond::OwnerLowerBindings>,usize)>,
     current_bytes: usize,
     records: BTreeMap<String, (String, Arc<dm_codegen_byond::OwnerLowerBindings>, usize)>,
     bytes: usize,
     store: Option<Store>,
     pending: BTreeMap<String, Vec<u8>>,
+    pending_bytes: usize,
 }
 #[derive(Serialize, Deserialize)]
 struct OwnerFrameWire {
     path: String,
     identity: String,
-    frame: Arc<dm_codegen_byond::OwnerLowerBindings>,
+    parent_identity: Option<String>,
+    local: dm_codegen_byond::OwnerLowerBindings,
 }
 impl OwnerFrameQueries {
     const LIMIT: usize = 16 * 1024 * 1024;
     fn namespace() -> String {
-        format!("owner-frames-v1-{}", env!("DM_EMISSION_FINGERPRINT"))
+        format!("owner-frame-recipes-v2-{}", env!("DM_EMISSION_FINGERPRINT"))
+    }
+    fn compose(parent:Option<&Arc<dm_codegen_byond::OwnerLowerBindings>>,local:&dm_codegen_byond::OwnerLowerBindings)->Arc<dm_codegen_byond::OwnerLowerBindings> {
+        let mut frame=parent.map(|frame|frame.as_ref().clone()).unwrap_or_default();
+        for name in &local.fields {frame.fields.insert(name.clone());}
+        for (name,ty) in &local.field_types {frame.field_types.insert(name.clone(),ty.clone());}
+        Arc::new(frame)
     }
     fn charge(path: &str, identity: &str, frame: &dm_codegen_byond::OwnerLowerBindings) -> usize {
         path.len()
@@ -383,32 +483,12 @@ impl OwnerFrameQueries {
     fn open(root: &Path) -> Self {
         let mut queries = Self::default();
         queries.store = Store::open(root.join("declaration-fragments.redb")).ok();
-        let snapshot = queries.store.as_ref().and_then(|store| {
-            store
-                .snapshot_namespace(&Self::namespace(), 128_000, Self::LIMIT / 2, None)
-                .ok()
-        });
-        if let Some(snapshot) = snapshot {
-            for (_, bytes) in snapshot.records {
-                if let Ok(wire) = serde_json::from_slice::<OwnerFrameWire>(&bytes) {
-                    let charge = Self::charge(&wire.path, &wire.identity, &wire.frame);
-                    if queries.bytes.saturating_add(charge) <= Self::LIMIT {
-                        if let Some((_, _, old)) = queries.records.remove(&wire.path) {
-                            queries.bytes = queries.bytes.saturating_sub(old);
-                        }
-                        queries.bytes += charge;
-                        queries
-                            .records
-                            .insert(wire.path, (wire.identity, wire.frame, charge));
-                    }
-                }
-            }
-        }
         queries
     }
     fn flush(&mut self) {
         let Some(store) = &self.store else {
             self.pending.clear();
+            self.pending_bytes = 0;
             return;
         };
         let changes: Vec<_> = self
@@ -418,16 +498,28 @@ impl OwnerFrameQueries {
             .collect();
         if store.commit(&[], &changes, None).is_ok() {
             self.pending.clear();
+            self.pending_bytes = 0;
         }
     }
     fn resident_bytes(&self) -> usize {
-        self.bytes
-            + self.current_bytes
-            + self
-                .pending
-                .iter()
-                .map(|(key, bytes)| key.capacity() + bytes.capacity() + 128)
-                .sum::<usize>()
+        // Current and cross-revision indexes borrow the same immutable frames.
+        // Charge their payload once, while charging each index entry separately.
+        let mut seen=HashSet::new();
+        let mut bytes=self.pending.iter().map(|(key,bytes)|key.capacity()+bytes.capacity()+128).sum::<usize>();
+        for (path,(identity,frame,charge)) in &self.records {
+            bytes+=path.capacity()+identity.capacity()+128;
+            if seen.insert(Arc::as_ptr(frame) as usize) {bytes+=*charge;}
+        }
+        for (identity,frame,charge) in self.current.values() {
+            bytes+=identity.capacity()+96;
+            if seen.insert(Arc::as_ptr(frame) as usize) {bytes+=*charge;}
+        }
+        bytes
+    }
+    /// Resolved ancestor memoization is needed during a generation, but its
+    /// unbounded inventory must not survive publication and evict the frontend.
+    pub(super) fn release_generation(&mut self) {
+        self.current.clear();self.current.shrink_to_fit();self.current_bytes=0;
     }
     pub(super) fn bind_revision(&mut self, revision: &str) {
         if self.snapshot_revision != revision {
@@ -441,14 +533,16 @@ impl OwnerFrameQueries {
         owner: u32,
         identity: &str,
         frame: &Arc<dm_codegen_byond::OwnerLowerBindings>,
+        charge:usize,
     ) {
-        let charge = Self::charge("", identity, frame);
-        if self.current_bytes.saturating_add(charge) <= 4 * 1024 * 1024
-            && !self.current.contains_key(&owner)
+        // A generation must memoize every resolved owner. Capping this map
+        // repeats ancestry resolution for every procedure after saturation.
+
+        if !self.current.contains_key(&owner)
         {
             self.current_bytes += charge;
             self.current
-                .insert(owner, (identity.to_owned(), Arc::clone(frame)));
+                .insert(owner, (identity.to_owned(), Arc::clone(frame),charge));
         }
     }
     /// A frame depends only on its local field inventory/type annotations and
@@ -471,7 +565,7 @@ impl OwnerFrameQueries {
         visited: &mut HashSet<u32>,
     ) -> (String, Arc<dm_codegen_byond::OwnerLowerBindings>) {
         if let Some(value) = self.current.get(&owner) {
-            return value.clone();
+            return (value.0.clone(),Arc::clone(&value.1));
         }
         if !visited.insert(owner) {
             return (String::new(), Arc::new(Default::default()));
@@ -504,6 +598,13 @@ impl OwnerFrameQueries {
                 }
             }
         }
+        // Physical class declarations can repeat inherited inventories. Keep
+        // only semantic additions/overrides, so descendant roots share the
+        // parent allocation rather than replacing it with identical strings.
+        if let Some((_,parent))=&inherited {
+            local.fields.retain(|name|!parent.fields.contains(name));
+            local.field_types.retain(|name,ty|parent.field_types.get(name)!=Some(ty));
+        }
         let mut ordered_types: Vec<_> = local.field_types.iter().collect();
         ordered_types.sort_by(|a, b| a.0.cmp(b.0));
         let identity = crate::lower_cache::shared_binding_fingerprint(&(
@@ -512,28 +613,23 @@ impl OwnerFrameQueries {
             &ordered_types,
             inherited.as_ref().map(|(digest, _)| digest),
         ));
-        if let Some((stored, frame, _)) = self.records.get(&path) {
+        // Local rows and inherited identity are already derived and validated.
+        // A per-owner disk read only repeats these inputs and costs a redb open;
+        // persistent root composition is cheaper than restoring a recipe here.
+        if let Some((stored, frame, charge)) = self.records.get(&path) {
             if stored == &identity {
+                let charge=*charge;
                 let frame = Arc::clone(frame);
-                self.retain_current(owner, &identity, &frame);
+                self.retain_current(owner, &identity, &frame,charge);
                 visited.remove(&owner);
                 return (identity, frame);
             }
         }
-        if let Some((_, frame)) = inherited {
-            local.fields.extend(frame.fields.iter().cloned());
-            for (name, ty) in &frame.field_types {
-                local
-                    .field_types
-                    .entry(name.clone())
-                    .or_insert_with(|| ty.clone());
-            }
-        }
-        let frame = Arc::new(dm_codegen_byond::OwnerLowerBindings {
-            fields: local.fields,
-            field_types: local.field_types,
-        });
-        let charge = Self::charge(&path, &identity, &frame);
+        let local=dm_codegen_byond::OwnerLowerBindings {
+            fields:local.fields.into_iter().collect(),field_types:local.field_types.into_iter().collect(),
+        };
+        let charge=Self::charge(&path,&identity,&local);
+        let frame=Self::compose(inherited.as_ref().map(|(_,frame)|frame),&local);
         if let Some((_, _, old)) = self.records.remove(&path) {
             self.bytes = self.bytes.saturating_sub(old);
         }
@@ -549,12 +645,16 @@ impl OwnerFrameQueries {
             if let Ok(bytes) = serde_json::to_vec(&OwnerFrameWire {
                 path: path.clone(),
                 identity: identity.clone(),
-                frame: Arc::clone(&frame),
+                parent_identity: inherited.as_ref().map(|(identity,_)|identity.clone()),
+                local,
             }) {
                 if bytes.len() <= Self::LIMIT / 4 {
-                    self.pending.insert(identity.clone(), bytes);
+                    self.pending_bytes = self.pending_bytes.saturating_add(bytes.len());
+                    if let Some(old) = self.pending.insert(identity.clone(), bytes) {
+                        self.pending_bytes = self.pending_bytes.saturating_sub(old.len());
+                    }
                 }
-                if self.pending.values().map(Vec::len).sum::<usize>() > 4 * 1024 * 1024 {
+                if self.pending_bytes > 4 * 1024 * 1024 {
                     self.flush();
                 }
             }
@@ -562,7 +662,7 @@ impl OwnerFrameQueries {
             self.records
                 .insert(path, (identity.clone(), Arc::clone(&frame), charge));
         }
-        self.retain_current(owner, &identity, &frame);
+        self.retain_current(owner, &identity, &frame,charge);
         visited.remove(&owner);
         (identity, frame)
     }
@@ -583,50 +683,7 @@ impl FrozenSkeleton {
             resident_charge: AtomicUsize::new(charge),
         }
     }
-    fn encode(&self) -> Option<Vec<u8>> {
-        // One serialization buffer: the prefix can be large, and two temporary
-        // JSON buffers followed by concatenation unnecessarily duplicate it.
-        let mut bytes = b"DMSKEL03".to_vec();
-        bytes.extend_from_slice(&0_u64.to_le_bytes());
-        serde_json::to_writer(&mut bytes, &self.image).ok()?;
-        let image_size = bytes.len().checked_sub(16)?;
-        bytes[8..16].copy_from_slice(&(image_size as u64).to_le_bytes());
-        serde_json::to_writer(&mut bytes, &self.metadata).ok()?;
-        let decoded_size = bytes.len();
-        if std::env::var_os("DM_BUILD_TRACE").is_some() {
-            eprintln!("DM_BUILD_TRACE declaration skeleton: image {} bytes, metadata {} bytes, retained charge {} bytes, persistence cap {} bytes", image_size, decoded_size - image_size - 16, self.resident_charge.load(Ordering::Relaxed), MAX_SKELETON);
-        }
-        if decoded_size > MAX_SKELETON {
-            return None;
-        }
-        Some(lz4_flex::compress_prepend_size(&bytes))
-    }
 
-    fn decode(bytes: &[u8]) -> Option<Self> {
-        if bytes.len() < 4 || bytes.len() > MAX_SKELETON {
-            return None;
-        }
-        let size = u32::from_le_bytes(bytes[..4].try_into().ok()?) as usize;
-        if size > MAX_SKELETON {
-            return None;
-        }
-        let mut decoded = vec![0; size];
-        if lz4_flex::decompress_into(&bytes[4..], &mut decoded).ok()? != size {
-            return None;
-        }
-        if decoded.len() < 16 || &decoded[..8] != b"DMSKEL03" {
-            return None;
-        }
-        let image_size =
-            usize::try_from(u64::from_le_bytes(decoded[8..16].try_into().ok()?)).ok()?;
-        let end = 16usize.checked_add(image_size)?;
-        let image = serde_json::from_slice(decoded.get(16..end)?).ok()?;
-        let metadata: SkeletonMetadata = serde_json::from_slice(decoded.get(end..)?).ok()?;
-        // This is a pre-procedure image; reject corrupt cached wire allocations.
-        // Procedure-valued defaults still contain unresolved placeholders at
-        // this stage. Full reference validation belongs to the final image.
-        Some(Self::new(image, metadata))
-    }
 }
 
 /// Estimate owned heap allocations from decoded structures. JSON duplicates
@@ -804,6 +861,7 @@ pub(crate) struct CanonicalSession {
     pub output_validation: byond_dmb::dmb::ReferenceValidationCache,
     pub output_projections: Arc<dm_codegen_byond::relocatable::OutputProjectionCache>,
     pub(super) emission_plans: super::emission_plans::EmissionPlans,
+    pub(super) procedure_fragments: super::procedure_fragments::ProcedureFragments,
     pub(super) invocation_fragments: InvocationFragments,
     pub(super) owner_frames: Arc<Mutex<OwnerFrameQueries>>,
     pub maps: crate::maps::MapInitializerSession,
@@ -811,6 +869,8 @@ pub(crate) struct CanonicalSession {
     project: Option<std::path::PathBuf>,
     configuration: Option<String>,
     skeleton: Option<(String, Arc<FrozenSkeleton>)>,
+    pub(super) declaration_inputs: Option<DeclarationInputs>,
+    pub(super) semantic_declarations: Option<Arc<semantic_declarations::SemanticDeclarations>>,
     pub skeleton_revision: String,
     pub skeleton_hits: usize,
     pub skeleton_misses: usize,
@@ -835,10 +895,13 @@ impl CanonicalSession {
             .unwrap_or_else(|| crate::lower_cache::default_cache_root(project));
         let project_identity = format!("{}\0{configuration}", identity.display());
         self.graph = crate::ProjectProcedureGraph::open(&root, &project_identity);
+        self.declaration_inputs = None;
+        self.semantic_declarations = None;
         self.maps = crate::maps::MapInitializerSession::open(&root, &project_identity);
         self.skeleton = None;
         self.output_validation = Default::default();
         self.emission_plans = super::emission_plans::EmissionPlans::open(&root, &project_identity);
+        self.procedure_fragments = super::procedure_fragments::ProcedureFragments::open(&root, &project_identity);
         self.output_projections =
             Arc::new(dm_codegen_byond::relocatable::OutputProjectionCache::open(
                 &root,
@@ -847,6 +910,7 @@ impl CanonicalSession {
         self.invocation_fragments = InvocationFragments::open(&root);
         self.owner_frames = Arc::new(Mutex::new(OwnerFrameQueries::open(&root)));
         const_eval::bind_cache(&root);
+        semantic_declarations::bind_cache(&root);
         default_plans::bind_cache(&root);
         self.project = Some(identity);
         self.configuration = Some(configuration.to_owned());
@@ -858,9 +922,12 @@ impl CanonicalSession {
         self.graph
             .resident_bytes()
             .saturating_add(self.maps.resident_bytes())
+            .saturating_add(self.declaration_inputs.as_ref().map_or(0,DeclarationInputs::resident_bytes))
+            .saturating_add(self.semantic_declarations.as_ref().map_or(0,|model|model.resident_bytes().div_ceil(Arc::strong_count(model).max(1))))
             .saturating_add(self.output_validation.resident_bytes())
             .saturating_add(self.output_projections.resident_bytes())
             .saturating_add(self.emission_plans.resident_bytes())
+            .saturating_add(self.procedure_fragments.resident_bytes())
             .saturating_add(self.invocation_fragments.resident_bytes())
             .saturating_add(
                 self.owner_frames
@@ -877,12 +944,16 @@ impl CanonicalSession {
     }
     pub(crate) fn flush_derived(&mut self) {
         self.emission_plans.flush();
+        self.procedure_fragments.flush();
         self.invocation_fragments.flush();
-        self.owner_frames
-            .lock()
-            .unwrap_or_else(|e| e.into_inner())
-            .flush();
+        self.invocation_fragments.release_requested();
+        {
+            let mut owners = self.owner_frames.lock().unwrap_or_else(|e| e.into_inner());
+            owners.flush();
+            owners.release_generation();
+        }
         const_eval::flush_cache();
+        semantic_declarations::flush_cache();
         default_plans::flush_cache();
     }
     /// Output projections are expendable accelerators. Retain compact semantic
@@ -893,6 +964,7 @@ impl CanonicalSession {
         self.output_projections.clear();
         self.output_validation.clear();
         self.emission_plans.clear();
+        self.procedure_fragments.clear_decoded();
         before.saturating_sub(self.resident_bytes())
     }
     /// Final pool-pressure fallback drops only the immutable prefix. Procedure
@@ -908,11 +980,14 @@ impl CanonicalSession {
             return;
         }
         self.graph = crate::ProjectProcedureGraph::open(cache_root, &identity.to_string_lossy());
+        self.declaration_inputs = None;
+        self.semantic_declarations = None;
         self.maps =
             crate::maps::MapInitializerSession::open(cache_root, &identity.to_string_lossy());
         self.skeleton = None;
         self.output_validation = Default::default();
         self.emission_plans = super::emission_plans::EmissionPlans::open(cache_root, &identity.to_string_lossy());
+        self.procedure_fragments = super::procedure_fragments::ProcedureFragments::open(cache_root, &identity.to_string_lossy());
         self.output_projections =
             Arc::new(dm_codegen_byond::relocatable::OutputProjectionCache::open(
                 cache_root,
@@ -921,6 +996,7 @@ impl CanonicalSession {
         self.invocation_fragments = InvocationFragments::open(cache_root);
         self.owner_frames = Arc::new(Mutex::new(OwnerFrameQueries::open(cache_root)));
         const_eval::bind_cache(cache_root);
+        semantic_declarations::bind_cache(cache_root);
         default_plans::bind_cache(cache_root);
         self.project = Some(identity);
         self.configuration = None;
@@ -936,6 +1012,10 @@ impl CanonicalSession {
                 return Some(Arc::clone(skeleton));
             }
         }
+        // Keep semantic map roots/dependency indexes, but release the obsolete
+        // physical image before composing a structural generation. Otherwise
+        // old and new declaration table buffers coexist until store() replaces it.
+        self.skeleton = None;
         if let Some(value) = shared_skeletons()
             .lock()
             .unwrap_or_else(|e| e.into_inner())
@@ -946,11 +1026,7 @@ impl CanonicalSession {
             self.skeleton_hits += 1;
             return Some(value);
         }
-        let store = Store::open(root?.join("skeleton.redb")).ok()?;
-        let record = store
-            .read_many(&[Key::new("frozen-skeleton-v2", key)], None)
-            .ok()?;
-        let value = FrozenSkeleton::decode(record.values.first()?.as_deref()?)?;
+        let value = skeleton_fragments::load(root?, key)?;
         let value = shared_skeletons()
             .lock()
             .unwrap_or_else(|e| e.into_inner())
@@ -973,16 +1049,9 @@ impl CanonicalSession {
             .unwrap_or_else(|e| e.into_inner())
             .flush();
         const_eval::flush_cache();
+        semantic_declarations::flush_cache();
         default_plans::flush_cache();
-        if let (Some(root), Some(bytes)) = (root, value.encode()) {
-            if let Ok(store) = Store::open(root.join("skeleton.redb")) {
-                let _ = store.commit(
-                    &[],
-                    &[Change::Put(Key::new("frozen-skeleton-v2", &key), bytes)],
-                    None,
-                );
-            }
-        }
+        if let Some(root) = root { let _ = skeleton_fragments::store(root, &key, &value); }
         let value = shared_skeletons()
             .lock()
             .unwrap_or_else(|e| e.into_inner())
@@ -995,21 +1064,41 @@ impl CanonicalSession {
 }
 
 pub(super) fn skeleton_key(
-    ast: &dm_syntax::AstFile,
-    modified: &ModifiedTypes,
-    builtins: &[u8],
-    world: &str,
-    resource_ids: &HashMap<String, u32>,
-    debug: bool,
+    ast: &dm_syntax::AstFile, modified: &ModifiedTypes, builtins: &[u8], world: &str,
+    resource_ids: &HashMap<String,u32>, debug: bool,
 ) -> String {
-    fn items(hash: &mut Sha256, nodes: &[Item]) {
-        hash.update((nodes.len() as u64).to_le_bytes());
-        for node in nodes {
-            hash.update([node.kind as u8]);
-            hash.update((node.header.len() as u64).to_le_bytes());
-            hash.update(node.header.as_bytes());
-            items(hash, &node.children);
+    skeleton_key_roots(&[&ast.items],modified,builtins,world,resource_ids,debug,false)
+}
+
+pub(super) fn skeleton_key_fragments(
+    fragments: &[(usize,Arc<dm_syntax::AstFile>)], modified: &ModifiedTypes,
+    builtins: &[u8], world: &str, resource_ids: &HashMap<String,u32>, debug: bool,
+) -> String {
+    let roots: Vec<&[Item]> = fragments.iter().map(|(_,ast)|ast.items.as_slice()).collect();
+    skeleton_key_roots(&roots,modified,builtins,world,resource_ids,debug,true)
+}
+
+fn skeleton_key_roots(
+    roots: &[&[Item]], modified: &ModifiedTypes, builtins: &[u8], world: &str,
+    resource_ids: &HashMap<String,u32>, debug: bool, virtual_aliases: bool,
+) -> String {
+    fn node_hash(hash: &mut Sha256,node: &Item,modified: Option<&ModifiedTypes>) {
+        let mut header = std::borrow::Cow::Borrowed(node.header.as_str());
+        if let Some(modified) = modified.filter(|modified|!modified.aliases.is_empty()) {
+            let mut edits=Vec::new();
+            for span in modified_spans(&node.header) {
+                if let Some(path)=modified.aliases.get(&modified_key(&node.header[span.range()])) { edits.push((span,path)); }
+            }
+            if !edits.is_empty() { for (span,path) in edits.into_iter().rev() { header.to_mut().replace_range(span.range(),path); } }
         }
+        hash.update([node.kind as u8]);
+        hash.update((header.len() as u64).to_le_bytes());
+        hash.update(header.as_bytes());
+        items(hash,&node.children,modified);
+    }
+    fn items(hash: &mut Sha256,nodes: &[Item],modified: Option<&ModifiedTypes>) {
+        hash.update((nodes.len() as u64).to_le_bytes());
+        for node in nodes { node_hash(hash,node,modified); }
     }
     let mut hash = Sha256::new();
     hash.update(b"canonical-skeleton-v3\0");
@@ -1017,8 +1106,10 @@ pub(super) fn skeleton_key(
     hash.update(Sha256::digest(builtins));
     hash.update(world.as_bytes());
     hash.update([u8::from(debug)]);
-    items(&mut hash, &ast.items);
-    items(&mut hash, &modified.declarations);
+    let count: usize = roots.iter().map(|nodes| nodes.len()).sum();
+    hash.update((count as u64).to_le_bytes());
+    for nodes in roots { for node in *nodes { node_hash(&mut hash,node,virtual_aliases.then_some(modified)); } }
+    items(&mut hash, &modified.declarations, None);
     // Declaration defaults contain physical resource slots, not payload IDs.
     // A content edit can reuse the skeleton while replacing its archive refs;
     // changes to ordering/deduplication still invalidate the allocation plan.

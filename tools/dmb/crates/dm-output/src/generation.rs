@@ -22,6 +22,20 @@ fn invalid(message: &'static str) -> io::Error {
     io::Error::new(io::ErrorKind::InvalidData, message)
 }
 
+fn file_matches_bytes(path: &Path, expected: &[u8]) -> io::Result<bool> {
+    let mut file = File::open(path)?;
+    if file.metadata()?.len() != expected.len() as u64 { return Ok(false); }
+    let mut offset = 0;
+    let mut buffer = [0u8; 64 * 1024];
+    loop {
+        let count = file.read(&mut buffer)?;
+        if count == 0 { return Ok(offset == expected.len()); }
+        let Some(bytes) = expected.get(offset..offset + count) else { return Ok(false); };
+        if buffer[..count] != *bytes { return Ok(false); }
+        offset += count;
+    }
+}
+
 fn generation(root: &Path, id: String) -> Generation {
     let directory = root.join("generations").join(&id);
     Generation {
@@ -83,6 +97,34 @@ impl VerifiedArchive {
     pub fn digest(&self) -> &str {
         &self.content.rsc_digest
     }
+    /// Digest of the bytecode paired with this archive's verified generation.
+    /// Conventional publication can reuse this proof instead of rehashing it.
+    pub fn paired_bytecode_digest(&self) -> Option<&str> {
+        valid_id(&self.content.dmb_digest).then_some(self.content.dmb_digest.as_str())
+    }
+    /// Bind a resource builder's immutable archive proof to this world's actual
+    /// resource table. No resource payload is read or decoded in this adapter.
+    pub fn from_prepared_archive(
+        artifact: &dm_resources::PreparedArchive,
+        dmb: &byond_dmb::dmb::Dmb,
+    ) -> io::Result<Self> {
+        artifact.catalog().validate()?;
+        if fs::metadata(artifact.path())?.len() != artifact.len() || capture(artifact.path()).as_ref() != Some(artifact.stamp()) {
+            return Err(invalid("prepared archive changed before publication"));
+        }
+        let entries: std::collections::HashSet<_> = artifact.catalog().entries.iter()
+            .map(|resource| (resource.id, resource.kind)).collect();
+        if dmb.resources.iter().any(|resource| !entries.contains(&(resource.id, resource.kind))) {
+            return Err(invalid("prepared archive does not contain the world's resources"));
+        }
+        Ok(Self {
+            path: artifact.path().to_owned(), stamp: artifact.stamp().clone(),
+            content: ContentDigests { dmb_len: 0, dmb_digest: String::new(),
+                rsc_len: artifact.len(), rsc_digest: artifact.digest().to_owned(),
+                resources: resource_digest(dmb), pair_validated: true },
+        })
+    }
+
     pub fn len(&self) -> u64 {
         self.content.rsc_len
     }
@@ -597,7 +639,7 @@ fn publish_verified_archive_inner(
     if created {
         let dmb_stamp =
             capture(&published.dmb).ok_or_else(|| invalid("published DMB stamp unavailable"))?;
-        if fs::read(&published.dmb)? != dmb {
+        if !file_matches_bytes(&published.dmb, dmb)? {
             return Err(invalid("published DMB bytes changed"));
         }
         if capture(&published.dmb).as_ref() != Some(&dmb_stamp) {

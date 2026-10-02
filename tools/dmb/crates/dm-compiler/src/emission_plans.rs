@@ -29,14 +29,7 @@ impl EmissionPlans {
         let Ok(store) = dm_store::Store::open(root.join("emission-plans.redb")) else { return Self::default(); };
         let namespace = format!("emission-plans-v1-{}-{}", env!("DM_EMISSION_FINGERPRINT"),
             crate::incremental::digest(identity.as_bytes()));
-        let mut cache = Self { store: Some(store.clone()), namespace: namespace.clone(), ..Self::default() };
-        if let Ok(snapshot) = store.snapshot_namespace(&namespace, 70_000, 32 * 1024 * 1024, None) {
-            for (_, bytes) in snapshot.records {
-                let Ok((key, plan)) = serde_json::from_slice::<(crate::ProcKey, Plan)>(&bytes) else { continue; };
-                cache.retain(key, plan.descriptor, &plan.skeleton, &plan.resources, plan.strings, plan.ledger);
-            }
-            cache.dirty.clear();
-        }
+        let cache = Self { store: Some(store.clone()), namespace: namespace.clone(), ..Self::default() };
         cache
     }
     pub fn flush(&mut self) {

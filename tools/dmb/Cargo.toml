@@ -54,6 +54,32 @@ opt-level = 2
 [profile.dev.package.dm-ir]
 opt-level = 2
 
+# Query storage and persistent-map operations are production hot paths too.
+# Keep prototype executable measurements representative without optimizing tests.
+[profile.dev.package.redb]
+opt-level = 2
+
+[profile.dev.package.salsa]
+opt-level = 2
+
+[profile.dev.package.im]
+opt-level = 2
+
+[profile.dev.package.rmp-serde]
+opt-level = 2
+
+[profile.dev.package.dm-store]
+opt-level = 2
+
+[profile.dev.package.dm-work]
+opt-level = 2
+
+[profile.dev.package.dm-host]
+opt-level = 2
+
+[profile.dev.package.dm-analysis]
+opt-level = 2
+
 # Optimizing the large fixture test harness costs gigabytes and minutes in LLVM.
 # Production compiler binaries keep the optimized binary-format dependency.
 [profile.test.package.byond-dmb]

@@ -4,7 +4,7 @@
 //! silently interpreted as false. The source provider makes this usable with Salsa inputs,
 //! in-memory fixtures, and the filesystem without hiding reads from the incremental engine.
 
-use dm_syntax::{lex, lex_spans, quoted_end, Span, SpanToken, TokenKind};
+use dm_syntax::{lex, lex_spans, visit_tokens, quoted_end, Span, SpanToken, TokenKind};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::borrow::Cow;
@@ -1685,7 +1685,8 @@ fn macro_dependencies(source: &str, macros: &BTreeMap<String, Macro>) -> Option<
                         break;
                     }
                 }
-                names.insert(text[start..end].to_owned());
+                let name=&text[start..end];
+                if !names.contains(name) {names.insert(name.to_owned());}
             }
         }
         true
@@ -1771,105 +1772,58 @@ struct LogicalLine {
     source_lines: usize,
 }
 
+#[derive(Default)]
+struct LogicalState { open_literal: bool, open_block: bool, open_expression: bool }
+fn logical_state(source:&str)->LogicalState {
+    let mut last=None;
+    let mut depth=0isize;
+    let diagnostics=visit_tokens(source,|token| {
+        match token.text(source) {"("|"["=>depth+=1,")"|"]"=>depth-=1,_=>{}}
+        last=Some(token);
+    });
+    let open_literal=last.is_some_and(|token|token.kind==TokenKind::String && diagnostics.iter().any(|diagnostic|diagnostic.span.start==token.span.start));
+    let open_block=last.is_some_and(|token|token.kind==TokenKind::String && token.text(source).starts_with("{\"") && token.span.end==source.len() && !token.text(source).ends_with("\"}"));
+    LogicalState {open_literal,open_block,open_expression:depth>0}
+}
 fn logical_lines(source: &str) -> Vec<LogicalLine> {
     let mut lines = Vec::new();
     let mut joined = String::new();
     let mut source_lines = 0;
+    let mut state=LogicalState::default();
     for physical in source.split_inclusive('\n') {
-        if physical.trim_start().starts_with('#')
-            && !joined.trim_start().starts_with("#define ")
-            && !joined.is_empty()
-            && !has_open_literal(&joined)
-        {
-            lines.push(LogicalLine {
-                text: std::mem::take(&mut joined),
-                source_lines,
-            });
-            source_lines = 0;
+        if physical.trim_start().starts_with('#') && !joined.trim_start().starts_with("#define ") && !joined.is_empty() && !state.open_literal {
+            lines.push(LogicalLine {text:std::mem::take(&mut joined),source_lines});
+            source_lines=0;state=LogicalState::default();
         }
-        source_lines += 1;
-        let content = physical.trim_end_matches(['\r', '\n']);
-        if !has_open_block_string(&joined) {
-            if let Some(prefix) = content.trim_end().strip_suffix('\\') {
-                joined.push_str(prefix);
-                continue;
+        source_lines+=1;
+        let content=physical.trim_end_matches(['\r','\n']);
+        if !state.open_block {
+            if let Some(prefix)=content.trim_end().strip_suffix('\\') {
+                joined.push_str(prefix);state=logical_state(&joined);continue;
             }
         }
         joined.push_str(physical);
-        if has_open_literal(&joined)
-            || (!joined.trim_start().starts_with('#') && has_open_expression(&joined))
-        {
-            continue;
-        }
-        lines.push(LogicalLine {
-            text: std::mem::take(&mut joined),
-            source_lines,
-        });
-        source_lines = 0;
+        // One streaming lexical traversal answers all three continuation
+        // questions. Ordinary lines previously built up to three token Vecs.
+        state=logical_state(&joined);
+        if state.open_literal || (!joined.trim_start().starts_with('#') && state.open_expression) {continue;}
+        lines.push(LogicalLine {text:std::mem::take(&mut joined),source_lines});
+        source_lines=0;state=LogicalState::default();
     }
-    if !joined.is_empty() {
-        lines.push(LogicalLine {
-            text: joined,
-            source_lines,
-        });
-    }
+    if !joined.is_empty() {lines.push(LogicalLine {text:joined,source_lines});}
     lines
 }
 
-/// Remove comments before line-oriented preprocessing. Keep every newline and
-/// byte position so directives inside a block comment cannot become active.
+/// Remove comments with a span visitor; allocate a byte mask only when a
+/// comment exists, without retaining tokens for an entire source file.
 fn strip_source_comments(source: &str) -> Cow<'_, str> {
-    let lexed = lex_spans(source);
-    let comments: Vec<_> = lexed
-        .tokens
-        .into_iter()
-        .filter(|token| token.kind == TokenKind::Comment)
-        .collect();
-    if comments.is_empty() {
-        return Cow::Borrowed(source);
-    }
-    let mut bytes = source.as_bytes().to_vec();
-    for token in comments {
-        for byte in &mut bytes[token.span.range()] {
-            if !matches!(*byte, b'\r' | b'\n') {
-                *byte = b' ';
-            }
-        }
-    }
-    Cow::Owned(String::from_utf8(bytes).expect("comment removal preserves UTF-8"))
-}
-
-fn has_open_literal(source: &str) -> bool {
-    let lexed = lex_spans(source);
-    lexed.tokens.last().is_some_and(|token| {
-        token.kind == TokenKind::String
-            && lexed
-                .diagnostics
-                .iter()
-                .any(|diagnostic| diagnostic.span.start == token.span.start)
-    })
-}
-
-fn has_open_expression(source: &str) -> bool {
-    let mut depth = 0isize;
-    for token in lex_spans(source).tokens {
-        match token.text(source) {
-            "(" | "[" => depth += 1,
-            ")" | "]" => depth -= 1,
-            _ => {}
-        }
-    }
-    depth > 0
-}
-
-fn has_open_block_string(source: &str) -> bool {
-    let lexed = lex_spans(source);
-    lexed.tokens.last().is_some_and(|token| {
-        token.kind == TokenKind::String
-            && token.text(source).starts_with("{\"")
-            && token.span.end == source.len()
-            && !token.text(source).ends_with("\"}")
-    })
+    let mut bytes:Option<Vec<u8>>=None;
+    visit_tokens(source,|token| {
+        if token.kind!=TokenKind::Comment {return;}
+        let bytes=bytes.get_or_insert_with(||source.as_bytes().to_vec());
+        for byte in &mut bytes[token.span.range()] {if !matches!(*byte,b'\r'|b'\n') {*byte=b' ';}}
+    });
+    bytes.map_or(Cow::Borrowed(source),|bytes|Cow::Owned(String::from_utf8(bytes).expect("comment removal preserves UTF-8")))
 }
 
 fn split_word(input: &str) -> (&str, &str) {

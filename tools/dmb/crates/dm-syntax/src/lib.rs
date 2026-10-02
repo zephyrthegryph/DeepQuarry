@@ -1288,6 +1288,63 @@ pub fn parse(source: &str) -> AstFile {
     }
 }
 
+/// Structural declaration projection. Lexical spans preserve the same masks,
+/// boundaries and diagnostics as the lossless parser, but procedure statements
+/// are not allocated unless they contain declaration metadata/static storage.
+pub fn parse_declarations(source: &str) -> AstFile {
+    parse_declarations_with_sensitive_offsets(source).0
+}
+
+/// Declaration projection plus tokens that affect procedure patchability.
+/// The frontend reuses this lexical pass instead of lexing every body again.
+pub fn parse_declarations_with_sensitive_offsets(source:&str) -> (AstFile,Vec<usize>) {
+    let mut visible = source.as_bytes().to_vec();
+    let mut delimiters = source.as_bytes().to_vec();
+    let mut multiline = Vec::new();
+    let mut sensitive = Vec::new();
+    // Stream source-backed token spans directly into masks; neither owned
+    // tokens nor a full procedure-body token vector survives this projection.
+    let mut diagnostics = visit_tokens(source, |token| {
+        if token.kind==TokenKind::Resource || matches!(token.text(source),"static"|"const"|"set"|"global"|"{") {sensitive.push(token.span.start);}
+        let block = token.kind == TokenKind::String && token.text(source).contains('\n');
+        if block { multiline.push(token.span); }
+        if token.kind == TokenKind::Comment || block {
+            for byte in &mut visible[token.span.range()] { if !matches!(*byte,b'\r'|b'\n') { *byte=b' '; } }
+        }
+        if matches!(token.kind,TokenKind::Comment|TokenKind::String|TokenKind::Resource) {
+            for byte in &mut delimiters[token.span.range()] { if !matches!(*byte,b'\r'|b'\n') { *byte=b' '; } }
+        }
+    });
+    let visible = String::from_utf8(visible).expect("lexical mask preserves UTF-8");
+    let lines = split_inline_blocks(source, &structural_lines(&visible, &delimiters, &multiline), &delimiters);
+    let (items, _, _) = parse_declaration_level(source, &lines, 0, 0, false, &mut diagnostics);
+    (AstFile { items, diagnostics, tokens: Vec::new() },sensitive)
+}
+
+fn parse_declaration_level(source: &str, lines: &[Line], mut index: usize, indent: usize, in_body: bool, diagnostics: &mut Vec<Diagnostic>) -> (Vec<Item>, usize, usize) {
+    let mut items = Vec::new();
+    let mut seen = false;
+    let mut final_end = 0;
+    while index < lines.len() {
+        let line = &lines[index];
+        if line.indent < indent || (line.indent > indent && seen) { break; }
+        if line.indent > indent { diagnostics.push(Diagnostic { span:Span::new(line.header_start,line.header_end),kind:DiagnosticKind::Indentation,message:"unexpected indentation".into() }); }
+        seen = true;
+        let header = &source[line.header_start..line.header_end];
+        let has_children = index+1 < lines.len() && lines[index+1].indent>line.indent;
+        let kind = if in_body { ItemKind::Statement } else { classify(header, has_children) };
+        let (children, next, child_end) = if has_children {
+            parse_declaration_level(source,lines,index+1,lines[index+1].indent,in_body||matches!(kind,ItemKind::Proc|ItemKind::Verb|ItemKind::Statement),diagnostics)
+        } else { (Vec::new(),index+1,line.end) };
+        let end = line.end.max(child_end);
+        final_end = end;
+        let retained = !in_body || header.trim_start().starts_with("set ") || ["var/static/","var/global/","var/const/"].iter().any(|prefix|header.trim_start().starts_with(prefix)) || !children.is_empty();
+        if retained { items.push(Item { kind,header:header.to_owned(),span:Span::new(line.header_start,end),header_span:Span::new(line.header_start,line.header_end),indent:line.indent,children }); }
+        index=next;
+    }
+    (items,index,final_end)
+}
+
 fn structural_lines(visible: &str, delimiters: &[u8], multiline_literals: &[Span]) -> Vec<Line> {
     let mut lines = Vec::new();
     let mut offset = 0;

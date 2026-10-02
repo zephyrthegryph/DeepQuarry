@@ -1,6 +1,25 @@
 //! Generated initializer queries use the same semantic graph and section materializer.
 use super::*;
 
+/// Derive generated-query identities before graph witness refresh, in exactly
+/// the same owner/assignment order as physical initializer publication.
+pub(super) fn query_keys(pending:&[PendingDynamic],dmb:&Dmb,strings:&StringIndex,attach:bool)->Vec<crate::ProcKey> {
+    let mut groups:Vec<(Option<u32>,Vec<&PendingDynamic>)>=Vec::new();
+    let mut indices=HashMap::new();
+    for assignment in pending {
+        let index=*indices.entry(assignment.owner).or_insert_with(||{let index=groups.len();groups.push((assignment.owner,Vec::new()));index});
+        groups[index].1.push(assignment);
+    }
+    groups.into_iter().map(|(owner,mut assignments)| {
+        if owner.is_none() {assignments.sort_by_key(|assignment|!assignment.sized_array&&!literal_initializer(&assignment.expression,dmb,strings));}
+        let mut source=String::from("/proc/__initializer()\n");
+        for assignment in assignments {source.push_str(&format!("    {} = {}\n",assignment.name,assignment.expression));}
+        let owner_path=owner.and_then(|id|dmb.string(dmb.classes[id as usize].path_string_id()))
+            .map(|path|String::from_utf8_lossy(path)).unwrap_or_default();
+        crate::ProcKey {path:format!("@initializer|{owner_path}|{attach}|{}",crate::incremental::digest(source.as_bytes())),occurrence:0}
+    }).collect()
+}
+
 pub(super) fn emit_dynamic_initializers_with_pool(
     dmb: &mut Dmb,
     pending: Vec<PendingDynamic>,
@@ -38,10 +57,10 @@ pub(super) fn emit_dynamic_initializers_with_pool(
         groups[index].1.push(assignment);
     }
     if let Some(session) = session.as_deref_mut() {
-        let keys: Vec<_> = session.graph.known_keys()
-            .filter(|key| key.path.starts_with("@initializer|"))
-            .cloned()
-            .collect();
+        // Headers were restored before declaration fact refresh. Fetch payloads
+        // only for this requested group set; no stale helper inventory scan.
+        let requested:Vec<_>=groups.iter().flat_map(|(_,assignments)|assignments.iter().cloned()).collect();
+        let keys=query_keys(&requested,dmb,strings,attach);
         for chunk in keys.chunks(1024) {
             let _ = session.graph.prefetch(chunk);
         }

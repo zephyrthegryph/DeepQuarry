@@ -34,6 +34,8 @@ const QUERY_EDGE_BYTES: usize = 16;
 // Include tree nodes and retained string/Vec allocations, not just wire bytes.
 const BUFFER_ENTRY_OVERHEAD: usize = 160;
 const MAX_PENDING_RECORDS: usize = 64_000;
+#[path = "project_graph_dag.rs"]
+mod dag;
 
 fn pending_record_bytes(key: &dm_store::Key, bytes: &Vec<u8>) -> usize {
     BUFFER_ENTRY_OVERHEAD
@@ -145,6 +147,16 @@ impl Default for ProjectGraphLimits {
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct ProjectGraphStats {
+    pub invalidated_procedures: usize,
+    pub metadata_nodes_rebuilt: usize,
+    pub metadata_bytes_rebuilt: usize,
+    pub header_read_batches: usize,
+    pub identity_probes: usize,
+    pub prepared_header_seconds: f64,
+    pub fact_refresh_seconds: f64,
+    pub identity_probe_seconds: f64,
+    pub prepared_persist_seconds: f64,
+    pub candidate_install_seconds: f64,
     pub resident_hits: usize,
     pub disk_hits: usize,
     pub misses: usize,
@@ -171,13 +183,28 @@ pub struct ProjectGraphStats {
 struct DiskHeader {
     key: ProcKey,
     descriptor: ProcDescriptor,
+    #[serde(default)]
     dependencies: Vec<BindingWitness>,
+    #[serde(default)]
+    readset: Option<String>,
     payload: String,
+}
+#[derive(Serialize, Deserialize)]
+struct DiskReadSet { witnesses: Vec<(String, String)> }
+#[derive(Default)]
+struct DecodedDagNodes {
+    facts: BTreeMap<String, FactId>,
+    values: BTreeMap<String, Arc<FactValue>>,
+    bytes: usize,
 }
 struct Persistence {
     store: dm_store::Store,
     headers_namespace: String,
     payloads_namespace: String,
+    readsets_namespace: String,
+    facts_namespace: String,
+    values_namespace: String,
+    headers_seen: BTreeSet<ProcKey>,
     payloads: BTreeMap<String, EncodedPayload>,
     payload_lru: BTreeSet<(u64, String)>,
     payload_clock: u64,
@@ -201,13 +228,16 @@ fn encoded_payload_bytes(name: &str, bytes: &Option<Vec<u8>>) -> usize {
 #[salsa::input]
 struct FactInput {
     #[returns(ref)]
-    value: Option<FactValue>,
+    value: Option<Arc<FactValue>>,
 }
+type FactId = u32;
+#[derive(Clone, Eq, PartialEq)]
+struct CompactWitness { fact: FactId, value: Arc<FactValue> }
 #[derive(Clone, Eq, PartialEq)]
 struct Candidate {
     generation: u64,
     descriptor: ProcDescriptor,
-    dependencies: Arc<[BindingWitness]>,
+    dependencies: Arc<[CompactWitness]>,
     disk: Option<ProcedureMemoRef>,
 }
 struct DecodedArtifact {
@@ -259,9 +289,10 @@ struct ObservedFact {
     value_bytes: usize,
 }
 struct Record {
+    id: u32,
     input: ProcedureInput,
     descriptor: ProcDescriptor,
-    facts: BTreeMap<BindingFact, ObservedFact>,
+    facts: BTreeMap<FactId, ObservedFact>,
     witness_bytes: usize,
     resident_bytes: usize,
     artifact: Option<DecodedArtifact>,
@@ -276,7 +307,17 @@ pub struct ProjectProcedureGraph {
     db: Database,
     records: BTreeMap<ProcKey, Record>,
     /// Declaration-scoped observations have one Salsa input across all procedures.
-    shared_facts: BTreeMap<BindingFact, ObservedFact>,
+    shared_facts: BTreeMap<FactId, ObservedFact>,
+    fact_ids: BTreeMap<Arc<BindingFact>, FactId>,
+    fact_names: Vec<Arc<BindingFact>>,
+    values: BTreeMap<Vec<u8>, Arc<FactValue>>,
+    reverse: BTreeMap<FactId, BTreeSet<u32>>,
+    procedure_names: Vec<ProcKey>,
+    readsets: BTreeMap<Vec<(FactId, usize)>, std::sync::Weak<[CompactWitness]>>,
+    decoded_nodes: DecodedDagNodes,
+    dirty: BTreeSet<ProcKey>,
+    pending_shared: BTreeSet<FactId>,
+    pending_private: BTreeSet<(u32, FactId)>,
     lru: BTreeSet<(u64, ProcKey)>,
     revision: Option<String>,
     clock: u64,
@@ -296,6 +337,9 @@ impl ProjectProcedureGraph {
             db: Database::default(),
             records: BTreeMap::new(),
             shared_facts: BTreeMap::new(),
+            fact_ids: BTreeMap::new(), fact_names: Vec::new(), values: BTreeMap::new(),
+            reverse: BTreeMap::new(), dirty: BTreeSet::new(), procedure_names: Vec::new(), readsets: BTreeMap::new(), decoded_nodes: DecodedDagNodes::default(),
+            pending_shared: BTreeSet::new(), pending_private: BTreeSet::new(),
             lru: BTreeSet::new(),
             revision: None,
             clock: 0,
@@ -321,13 +365,14 @@ impl ProjectProcedureGraph {
         let identity = format!("{:x}", Sha256::digest(project_identity.as_bytes()));
         let headers_namespace = format!("graph-headers-v1-{DISK_STAGE}-{identity}");
         let payloads_namespace = format!("graph-payloads-v1-{DISK_STAGE}");
-        let headers = store
-            .snapshot_namespace(&headers_namespace, 128_000, 64 * 1024 * 1024, None)
-            .ok();
         graph.persistence = Some(Persistence {
             store,
             headers_namespace,
             payloads_namespace,
+            readsets_namespace: format!("graph-readsets-v2-{DISK_STAGE}"),
+            facts_namespace: format!("graph-facts-v2-{DISK_STAGE}"),
+            values_namespace: format!("graph-values-v2-{DISK_STAGE}"),
+            headers_seen: BTreeSet::new(),
             payloads: BTreeMap::new(),
             payload_lru: BTreeSet::new(),
             payload_clock: 0,
@@ -335,33 +380,6 @@ impl ProjectProcedureGraph {
             pending: BTreeMap::new(),
             pending_bytes: 0,
         });
-        if let Some(headers) = headers {
-            for (_, bytes) in headers.records {
-                if bytes.is_empty() {
-                    continue;
-                } // Removed authored procedure.
-                if bytes.len() > MAX_HEADER {
-                    graph.stats.corrupt_records += 1;
-                    continue;
-                }
-                let Ok(header) = serde_json::from_slice::<DiskHeader>(&bytes) else {
-                    graph.stats.corrupt_records += 1;
-                    continue;
-                };
-                if graph.install_candidate(
-                    header.key,
-                    header.descriptor,
-                    header.dependencies.into(),
-                    None,
-                    Some(ProcedureMemoRef {
-                        key: header.payload,
-                    }),
-                    true,
-                ) {
-                    graph.stats.restored_procedures += 1;
-                }
-            }
-        }
         // Restored inputs deliberately start unavailable. The adapter must
         // refresh against its current skeleton before any cached result is used.
         graph.revision = None;
@@ -373,6 +391,11 @@ impl ProjectProcedureGraph {
 
     pub fn known_keys(&self) -> impl Iterator<Item = &ProcKey> {
         self.records.keys()
+    }
+    pub fn observed_facts(&self) -> impl Iterator<Item = &BindingFact> {
+        self.reverse.iter().filter(|(_, readers)| readers.iter().any(|id| {
+            self.records.get(&self.procedure_names[*id as usize]).is_some_and(|record| record.active)
+        })).map(|(id, _)| self.fact_names[*id as usize].as_ref())
     }
 
     /// Read nearby portable payloads in caller-supplied emission order. This
@@ -533,6 +556,7 @@ impl ProjectProcedureGraph {
             .saturating_add(self.stats.metadata_bytes)
             .saturating_add(self.stats.snapshot_bytes)
             .saturating_add(self.persistence.as_ref().map_or(0, |p| p.pending_bytes))
+            .saturating_add((self.pending_shared.len()+self.pending_private.len()).saturating_mul(64))
     }
     pub fn release_encoded_snapshot(&mut self) {
         let _ = self.flush();
@@ -561,7 +585,10 @@ impl ProjectProcedureGraph {
             .input
             .candidate(&self.db)
             .as_ref()
-            .map(|c| Arc::clone(&c.dependencies))
+            .map(|c| c.dependencies.iter().map(|w| BindingWitness {
+                fact: (*self.fact_names[w.fact as usize]).clone(),
+                value: (*w.value).clone(),
+            }).collect::<Vec<_>>().into())
     }
 
     pub fn flush(&mut self) -> io::Result<()> {
@@ -597,10 +624,9 @@ impl ProjectProcedureGraph {
             if record.descriptor != *descriptor {
                 let bytes = (descriptor.body_digest.len() + descriptor.frame_digest.len()) * 4;
                 let growth = bytes.saturating_sub(record.descriptor_bytes);
-                if self.stats.metadata_bytes.saturating_add(growth) > self.limits.metadata_bytes {
-                    return false;
-                }
                 self.stats.metadata_bytes += growth;
+                self.stats.metadata_nodes_rebuilt += 1;
+                self.stats.metadata_bytes_rebuilt += descriptor.body_digest.len()+descriptor.frame_digest.len();
                 record.descriptor_bytes = record.descriptor_bytes.max(bytes);
                 // Old outputs must cease to be observable immediately, even
                 // when lowering the replacement later fails.
@@ -616,15 +642,16 @@ impl ProjectProcedureGraph {
             .saturating_add(key.path.len() * 2)
             .saturating_add(descriptor.body_digest.len() * 4)
             .saturating_add(descriptor.frame_digest.len() * 4);
-        if self.stats.procedures >= self.limits.procedures
-            || self.stats.metadata_bytes.saturating_add(bytes) > self.limits.metadata_bytes
-        {
+        if self.stats.procedures >= self.limits.procedures {
             return false;
         }
         let input = ProcedureInput::new(&self.db, descriptor.clone(), None, Vec::new());
+        let id = u32::try_from(self.procedure_names.len()).expect("procedure index exceeds address space");
+        self.procedure_names.push(key.clone());
         self.records.insert(
             key.clone(),
             Record {
+                id,
                 input,
                 descriptor: descriptor.clone(),
                 facts: BTreeMap::new(),
@@ -639,6 +666,8 @@ impl ProjectProcedureGraph {
         );
         self.stats.procedures += 1;
         self.stats.metadata_bytes += bytes;
+        self.stats.metadata_nodes_rebuilt += 1;
+        self.stats.metadata_bytes_rebuilt += bytes;
         true
     }
 
@@ -662,17 +691,18 @@ impl ProjectProcedureGraph {
             }
             if let Some(disk) = &candidate.disk {
                 let disk = disk.clone();
-                let dependencies = Arc::clone(&candidate.dependencies);
+                let generation = candidate.generation;
                 if let Some(envelope) = self.load_payload(&disk) {
                     let artifact = ProcedureArtifact::Prepared(Arc::clone(&envelope));
-                    let _ = self.install_candidate(
-                        key.clone(),
-                        descriptor.clone(),
-                        dependencies,
-                        Some(artifact.clone()),
-                        Some(disk.clone()),
-                        false,
-                    );
+                    // Residency never mutates semantic candidates or rebuilds
+                    // a portable readset. Its exact candidate was just checked.
+                    let record = self.records.get_mut(key).unwrap();
+                    self.stats.resident_bytes = self.stats.resident_bytes.saturating_sub(record.resident_bytes);
+                    record.resident_bytes = artifact.resident_bytes();
+                    self.stats.resident_bytes += record.resident_bytes;
+                    record.artifact = Some(DecodedArtifact { generation, artifact: artifact.clone() });
+                    self.touch(key);
+                    self.trim();
                     self.stats.disk_hits += 1;
                     return ProcedureProbe::Resident(artifact);
                 }
@@ -724,17 +754,22 @@ impl ProjectProcedureGraph {
         {
             return false;
         }
+        let persisted = std::time::Instant::now();
         let disk = self
             .persist_prepared(&key, &descriptor, &envelope, &dependencies)
             .or(disk);
-        self.install_candidate(
+        self.stats.prepared_persist_seconds += persisted.elapsed().as_secs_f64();
+        let installed = std::time::Instant::now();
+        let result = self.install_candidate(
             key,
             descriptor,
             dependencies,
             Some(ProcedureArtifact::Prepared(envelope)),
             disk,
             false,
-        )
+        );
+        self.stats.candidate_install_seconds += installed.elapsed().as_secs_f64();
+        result
     }
 
     /// Restore only a compact witness/reference record on cold start. Resolve
@@ -757,188 +792,140 @@ impl ProjectProcedureGraph {
         self.install_candidate(key, descriptor, dependencies, None, Some(disk), false)
     }
 
+    fn intern_fact(&mut self, fact: &BindingFact) -> FactId {
+        if let Some(id) = self.fact_ids.get(fact) { return *id; }
+        let id = u32::try_from(self.fact_names.len()).expect("semantic fact index exceeds address space");
+        let fact = Arc::new(fact.clone());
+        self.stats.metadata_bytes += fact_heap(&fact)+96;
+        self.stats.metadata_nodes_rebuilt += 1;
+        self.stats.metadata_bytes_rebuilt += fact_heap(&fact)+96;
+        self.fact_ids.insert(Arc::clone(&fact), id);
+        self.fact_names.push(fact);
+        id
+    }
+    fn intern_value(&mut self, value: &FactValue) -> Arc<FactValue> {
+        let key = serde_json::to_vec(value).expect("semantic value serialization");
+        if let Some(value) = self.values.get(&key) { return Arc::clone(value); }
+        let value = Arc::new(value.clone());
+        self.stats.metadata_bytes += key.capacity()+value_heap(&value)+96;
+        self.stats.metadata_nodes_rebuilt += 1;
+        self.stats.metadata_bytes_rebuilt += key.capacity()+value_heap(&value)+96;
+        self.values.insert(key, Arc::clone(&value));
+        value
+    }
+
     fn install_candidate(
-        &mut self,
-        key: ProcKey,
-        descriptor: ProcDescriptor,
-        dependencies: Arc<[BindingWitness]>,
-        artifact: Option<ProcedureArtifact>,
-        disk: Option<ProcedureMemoRef>,
-        untrusted: bool,
+        &mut self, key: ProcKey, descriptor: ProcDescriptor,
+        dependencies: Arc<[BindingWitness]>, artifact: Option<ProcedureArtifact>,
+        disk: Option<ProcedureMemoRef>, untrusted: bool,
     ) -> bool {
-        let coherent = dependencies
-            .iter()
-            .any(|w| w.fact == BindingFact::SharedPresence)
+        let coherent = dependencies.iter().any(|w| w.fact == BindingFact::SharedPresence)
             && dependencies.windows(2).all(|p| p[0].fact < p[1].fact);
-        if !coherent
-            || disk
-                .as_ref()
-                .is_some_and(|r| r.key.is_empty() || r.key.len() > 1024)
-            || self
-                .records
-                .get(&key)
-                .is_some_and(|r| r.descriptor != descriptor)
-            || !self.ensure_record(&key, &descriptor)
-        {
+        if !coherent || disk.as_ref().is_some_and(|r| r.key.is_empty() || r.key.len()>1024)
+            || self.records.get(&key).is_some_and(|r| r.descriptor != descriptor)
+            || !self.ensure_record(&key, &descriptor) {
             self.stats.refused_installs += 1;
             return false;
         }
-        let record = &self.records[&key];
-        let new_facts: Vec<_> = dependencies
-            .iter()
-            .filter(|w| {
-                !(if w.fact.is_shared() {
-                    self.shared_facts.contains_key(&w.fact)
-                } else {
-                    record.facts.contains_key(&w.fact)
-                })
-            })
-            .collect();
-        let fact_bytes = new_facts.iter().fold(0usize, |n, w| {
-            n.saturating_add(192)
-                .saturating_add(fact_heap(&w.fact))
-                .saturating_add(if untrusted { 0 } else { value_heap(&w.value) })
-        });
-        let witness_bytes = dependencies
-            .iter()
-            .fold(
-                dependencies.len() * std::mem::size_of::<BindingWitness>() + 128,
-                |n, w| {
-                    n.saturating_add(fact_heap(&w.fact))
-                        .saturating_add(value_heap(&w.value))
-                },
-            )
-            .saturating_add(dependencies.len().saturating_add(3) * QUERY_EDGE_BYTES)
-            .saturating_add(disk.as_ref().map_or(0, |r| r.key.len() + 64));
-        let mut planned = self
-            .stats
-            .metadata_bytes
-            .saturating_sub(record.witness_bytes)
-            .saturating_add(fact_bytes)
-            .saturating_add(witness_bytes);
-        if !untrusted {
-            for w in dependencies.iter() {
-                if let Some(fact) = if w.fact.is_shared() {
-                    self.shared_facts.get(&w.fact)
-                } else {
-                    record.facts.get(&w.fact)
-                } {
-                    if fact.input.value(&self.db).is_none() {
-                        planned = planned
-                            .saturating_sub(fact.value_bytes)
-                            .saturating_add(value_heap(&w.value));
-                    }
+        let compact: Vec<CompactWitness> = dependencies.iter().map(|w| {
+            CompactWitness { fact: self.intern_fact(&w.fact), value: self.intern_value(&w.value) }
+        }).collect();
+        let readset_key: Vec<_> = compact.iter().map(|w| (w.fact, Arc::as_ptr(&w.value) as usize)).collect();
+        let dependencies: Arc<[CompactWitness]> = if let Some(shared) = self.readsets.get(&readset_key).and_then(std::sync::Weak::upgrade) { shared }
+            else {
+                if let Some((old_key, _)) = self.readsets.remove_entry(&readset_key) {
+                    self.stats.metadata_bytes = self.stats.metadata_bytes.saturating_sub(old_key.capacity()*std::mem::size_of::<(FactId,usize)>()+old_key.len()*std::mem::size_of::<CompactWitness>()+96);
                 }
-            }
-        }
-        if self.stats.facts.saturating_add(new_facts.len()) > self.limits.facts
-            || planned > self.limits.metadata_bytes
-            || (!untrusted
-                && dependencies.iter().any(|w| {
-                    (if w.fact.is_shared() {
-                        self.shared_facts.get(&w.fact)
-                    } else {
-                        record.facts.get(&w.fact)
-                    })
-                    .is_some_and(|f| {
-                        f.input
-                            .value(&self.db)
-                            .as_ref()
-                            .is_some_and(|value| value != &w.value)
-                    })
-                }))
-        {
+                let shared: Arc<[CompactWitness]> = compact.into();
+                self.stats.metadata_bytes += readset_key.capacity()*std::mem::size_of::<(FactId,usize)>()+shared.len()*std::mem::size_of::<CompactWitness>()+96;
+                self.readsets.insert(readset_key, Arc::downgrade(&shared)); shared
+            };
+        // Available facts certify the current revision. An asynchronous lowering
+        // result cannot overwrite a conflicting positive OR negative observation.
+        if !untrusted && dependencies.iter().any(|w| {
+            let facts = if self.fact_names[w.fact as usize].is_shared() { &self.shared_facts } else { &self.records[&key].facts };
+            facts.get(&w.fact).is_some_and(|f| f.input.value(&self.db).as_ref().is_some_and(|value| value != &w.value))
+        }) {
             self.stats.refused_installs += 1;
-            if self.stats.refused_installs == 1 || self.stats.refused_installs % 5_000 == 0 {
-                self.trace_memory("refused install");
-            }
             return false;
         }
-        let input = record.input;
-        let old_bytes = record.resident_bytes;
-        let old_touch = record.touched;
-        self.stats.metadata_bytes = planned;
-        self.stats.facts += new_facts.len();
-        let record = self.records.get_mut(&key).unwrap();
+        let input = self.records[&key].input;
+        let procedure_id = self.records[&key].id;
+        self.clear_pending_private(procedure_id);
+        let old_candidate = input.candidate(&self.db).as_ref().cloned();
         let mut inputs = Vec::with_capacity(dependencies.len());
         for witness in dependencies.iter() {
-            let fact = if witness.fact.is_shared() {
-                &mut self.shared_facts
-            } else {
-                &mut record.facts
-            }
-            .entry(witness.fact.clone())
-            .or_insert_with(|| ObservedFact {
-                input: FactInput::new(&self.db, (!untrusted).then(|| witness.value.clone())),
-                value_bytes: if untrusted {
-                    0
-                } else {
-                    value_heap(&witness.value)
-                },
+            let facts = if self.fact_names[witness.fact as usize].is_shared() { &mut self.shared_facts }
+                else { &mut self.records.get_mut(&key).unwrap().facts };
+            let fact = facts.entry(witness.fact).or_insert_with(|| {
+                self.stats.facts += 1;
+                self.stats.metadata_bytes += 64;
+                ObservedFact { input: FactInput::new(&self.db, (!untrusted).then(|| Arc::clone(&witness.value))), value_bytes: 0 }
             });
             if !untrusted && fact.input.value(&self.db).is_none() {
-                fact.input
-                    .set_value(&mut self.db)
-                    .to(Some(witness.value.clone()));
-                fact.value_bytes = value_heap(&witness.value);
+                fact.input.set_value(&mut self.db).to(Some(Arc::clone(&witness.value)));
+            }
+            if fact.input.value(&self.db).is_none() {
+                if self.fact_names[witness.fact as usize].is_shared() { self.pending_shared.insert(witness.fact); }
+                else { self.pending_private.insert((procedure_id,witness.fact)); }
+            } else {
+                if self.fact_names[witness.fact as usize].is_shared() { self.pending_shared.remove(&witness.fact); }
+                else { self.pending_private.remove(&(procedure_id,witness.fact)); }
             }
             inputs.push(fact.input);
         }
-        record.witness_bytes = witness_bytes;
-        record.resident_bytes = artifact
-            .as_ref()
-            .map_or(0, ProcedureArtifact::resident_bytes);
-        self.stats.resident_bytes = self
-            .stats
-            .resident_bytes
-            .saturating_sub(old_bytes)
-            .saturating_add(record.resident_bytes);
-        self.lru.remove(&(old_touch, key.clone()));
-        // Re-decoding a valid disk payload changes residency only. Keep the
-        // tracked identity and fact inputs unchanged so other procedure queries
-        // do not need validation merely because code entered/left the LRU.
-        let old_candidate = input.candidate(&self.db).as_ref().cloned();
-        let candidate = if let Some(old) = old_candidate.as_ref().filter(|old| {
-            old.descriptor == descriptor
-                && old.dependencies.as_ref() == dependencies.as_ref()
-                && old.disk == disk
-        }) {
+        let candidate = if let Some(old) = old_candidate.as_ref().filter(|old| old.descriptor == descriptor && old.dependencies == dependencies && old.disk == disk) {
             Arc::clone(old)
         } else {
-            Arc::new(Candidate {
-                generation: old_candidate.as_ref().map_or(1, |old| {
-                    old.generation
-                        .checked_add(1)
-                        .expect("procedure candidate generation overflow")
-                }),
-                descriptor,
-                dependencies,
-                disk,
-            })
+            if let Some(old) = &old_candidate { for witness in old.dependencies.iter() {
+                if let Some(readers) = self.reverse.get_mut(&witness.fact) { readers.remove(&procedure_id); }
+            } }
+            for witness in dependencies.iter() { self.reverse.entry(witness.fact).or_default().insert(procedure_id); }
+            self.stats.metadata_nodes_rebuilt += 1;
+            self.stats.metadata_bytes_rebuilt += std::mem::size_of::<Candidate>()+descriptor.body_digest.len()+descriptor.frame_digest.len();
+            Arc::new(Candidate { generation: old_candidate.as_ref().map_or(1, |old| old.generation.checked_add(1).expect("candidate generation overflow")), descriptor, dependencies, disk })
         };
-        if input.facts(&self.db) != &inputs {
-            input.set_facts(&mut self.db).to(inputs);
+        let witness_bytes = candidate.dependencies.len()*(std::mem::size_of::<FactInput>()+QUERY_EDGE_BYTES+32)+128
+            +candidate.disk.as_ref().map_or(0, |r| r.key.len()+64);
+        let record = self.records.get_mut(&key).unwrap();
+        self.stats.metadata_bytes = self.stats.metadata_bytes.saturating_sub(record.witness_bytes)+witness_bytes;
+        record.witness_bytes = witness_bytes;
+        self.stats.resident_bytes = self.stats.resident_bytes.saturating_sub(record.resident_bytes);
+        record.resident_bytes = artifact.as_ref().map_or(0, ProcedureArtifact::resident_bytes);
+        self.stats.resident_bytes += record.resident_bytes;
+        self.lru.remove(&(record.touched, key.clone()));
+        if input.facts(&self.db) != &inputs { input.set_facts(&mut self.db).to(inputs); }
+        if old_candidate.as_ref().is_none_or(|old| !Arc::ptr_eq(old, &candidate)) {
+            input.set_candidate(&mut self.db).to(Some(Arc::clone(&candidate)));
         }
-        if old_candidate
-            .as_ref()
-            .is_none_or(|old| !Arc::ptr_eq(old, &candidate))
-        {
-            input
-                .set_candidate(&mut self.db)
-                .to(Some(Arc::clone(&candidate)));
-        }
-        self.records.get_mut(&key).unwrap().artifact = artifact.map(|artifact| DecodedArtifact {
-            generation: candidate.generation,
-            artifact,
-        });
+        record.artifact = artifact.map(|artifact| DecodedArtifact { generation: candidate.generation, artifact });
+        self.dirty.remove(&key);
         let _ = current_candidate(&self.db, input);
         self.stats.installs += 1;
+        // Full interner collection is linear in the graph. Geometric cold
+        // thresholds keep total collection work linear rather than rescanning
+        // a growing project once every 64 installed procedures.
+        if self.stats.installs.is_power_of_two() && self.stats.installs >= 1024 {
+            self.collect_unused_interns();
+        }
         self.touch(&key);
         self.trim();
-        if self.stats.installs % 5_000 == 0 {
-            self.trace_memory("install");
-        }
         true
+    }
+
+    fn collect_unused_interns(&mut self) {
+        let mut freed = 0usize;
+        self.readsets.retain(|key, value| {
+            let live = value.strong_count() != 0;
+            if !live { freed += key.capacity()*std::mem::size_of::<(FactId,usize)>()+key.len()*std::mem::size_of::<CompactWitness>()+96; }
+            live
+        });
+        self.values.retain(|key, value| {
+            let live = Arc::strong_count(value)>1;
+            if !live { freed += key.capacity()+value_heap(value)+96; }
+            live
+        });
+        self.stats.metadata_bytes = self.stats.metadata_bytes.saturating_sub(freed);
     }
 
     fn trace_memory(&self, stage: &str) {
@@ -975,10 +962,26 @@ impl ProjectProcedureGraph {
             return None;
         }
         let name = format!("{:x}", Sha256::digest(&payload));
+        let p = self.persistence.as_ref()?;
+        let mut records = Vec::new();
+        let mut witnesses = Vec::with_capacity(dependencies.len());
+        for witness in dependencies {
+            let fact = serde_json::to_vec(&witness.fact).ok()?;
+            let value = serde_json::to_vec(&witness.value).ok()?;
+            let fact_name = format!("{:x}", Sha256::digest(&fact));
+            let value_name = format!("{:x}", Sha256::digest(&value));
+            records.push((dm_store::Key::new(&p.facts_namespace, &fact_name), fact));
+            records.push((dm_store::Key::new(&p.values_namespace, &value_name), value));
+            witnesses.push((fact_name, value_name));
+        }
+        let readset = serde_json::to_vec(&DiskReadSet { witnesses }).ok()?;
+        let readset_name = format!("{:x}", Sha256::digest(&readset));
+        records.push((dm_store::Key::new(&p.readsets_namespace, &readset_name), readset));
         let header = serde_json::to_vec(&DiskHeader {
             key: key.clone(),
             descriptor: descriptor.clone(),
-            dependencies: dependencies.to_vec(),
+            dependencies: Vec::new(),
+            readset: Some(readset_name),
             payload: name.clone(),
         })
         .ok()?;
@@ -987,13 +990,11 @@ impl ProjectProcedureGraph {
         }
         let p = self.persistence.as_ref()?;
         let header_name = format!("{:x}", Sha256::digest(serde_json::to_vec(key).ok()?));
-        let records = [
-            (dm_store::Key::new(&p.payloads_namespace, &name), payload),
-            (
+        records.push((dm_store::Key::new(&p.payloads_namespace, &name), payload));
+        records.push((
                 dm_store::Key::new(&p.headers_namespace, header_name),
                 header,
-            ),
-        ];
+            ));
         let incoming_bytes = records.iter().fold(0usize, |total, (key, bytes)| {
             total.saturating_add(pending_record_bytes(key, bytes))
         });
@@ -1082,97 +1083,93 @@ impl ProjectProcedureGraph {
     /// Call once per changed skeleton, before probing procedures. Body-only
     /// edits reuse the same revision and perform no semantic fact replay.
     /// The resolver must include each procedure's owner/static overlays.
-    pub fn refresh_facts(
-        &mut self,
-        revision: &str,
-        mut resolve: impl FnMut(&ProcKey, &BindingFact) -> FactValue,
-    ) -> usize {
-        if self.revision.as_deref() == Some(revision) {
-            return 0;
-        }
-        let mut changed = 0;
-        // Choose an active invocation merely as the adapter's route to the shared
-        // snapshot. The fact itself is explicitly declaration-scoped; no local
-        // parameter/static overlay may affect these resolutions.
-        let mut representatives = BTreeMap::new();
-        for (key, record) in &self.records {
-            if !record.active {
-                continue;
-            }
-            if let Some(candidate) = record.input.candidate(&self.db).as_ref() {
-                for witness in candidate.dependencies.iter().filter(|w| w.fact.is_shared()) {
-                    representatives
-                        .entry(witness.fact.clone())
-                        .or_insert_with(|| key.clone());
-                }
-            }
-        }
-        for (fact, observed) in &mut self.shared_facts {
-            let Some(key) = representatives.get(fact) else {
-                continue;
-            };
-            self.stats.fact_refreshes += 1;
-            let value = resolve(key, fact);
-            if observed.input.value(&self.db).as_ref() == Some(&value) {
-                continue;
-            }
-            let bytes = value_heap(&value);
-            let total = self
-                .stats
-                .metadata_bytes
-                .saturating_sub(observed.value_bytes)
-                .saturating_add(bytes);
-            let value = if total <= self.limits.metadata_bytes {
-                self.stats.metadata_bytes = total;
-                observed.value_bytes = bytes;
-                Some(value)
-            } else {
-                self.stats.metadata_bytes = self
-                    .stats
-                    .metadata_bytes
-                    .saturating_sub(observed.value_bytes);
-                observed.value_bytes = 0;
-                None
-            };
-            observed.input.set_value(&mut self.db).to(value);
-            changed += 1;
-        }
-        for (key, record) in &mut self.records {
-            if !record.active {
-                continue;
-            }
-            for (fact, observed) in &mut record.facts {
-                self.stats.fact_refreshes += 1;
-                let value = resolve(key, fact);
-                if observed.input.value(&self.db).as_ref() == Some(&value) {
-                    continue;
-                }
-                let bytes = value_heap(&value);
-                let total = self
-                    .stats
-                    .metadata_bytes
-                    .saturating_sub(observed.value_bytes)
-                    .saturating_add(bytes);
-                // An over-budget fact becomes unavailable, forcing a miss;
-                // never leave an old value observable as a cache hit.
-                let value = if total <= self.limits.metadata_bytes {
-                    self.stats.metadata_bytes = total;
-                    observed.value_bytes = bytes;
-                    Some(value)
-                } else {
-                    self.stats.metadata_bytes = self
-                        .stats
-                        .metadata_bytes
-                        .saturating_sub(observed.value_bytes);
-                    observed.value_bytes = 0;
-                    None
-                };
-                observed.input.set_value(&mut self.db).to(value);
-                changed += 1;
-            }
-        }
+    pub fn refresh_facts(&mut self, revision: &str, mut resolve: impl FnMut(&ProcKey, &BindingFact) -> FactValue) -> usize {
+        if self.revision.as_deref() == Some(revision) { return self.refresh_pending(&mut resolve); }
+        let ids: BTreeSet<_> = self.reverse.keys().copied().collect();
+        let changed = self.refresh_fact_ids(&ids, &mut resolve);
+        self.pending_shared.clear(); self.pending_private.clear();
         self.revision = Some(revision.to_owned());
+        changed
+    }
+
+    /// Declaration deltas identify the exact observed keys, including absent
+    /// names that became present. Only readers of these keys enter the closure.
+    pub fn refresh_changed_facts(&mut self, revision: &str, facts: &BTreeSet<BindingFact>, mut resolve: impl FnMut(&ProcKey, &BindingFact)->FactValue) -> BTreeSet<ProcKey> {
+        let ids: BTreeSet<_> = facts.iter().filter_map(|fact| self.fact_ids.get(fact).copied()).collect();
+        self.refresh_fact_ids(&ids, &mut resolve);
+        self.refresh_pending(&mut resolve);
+        self.revision = Some(revision.to_owned());
+        self.dirty.clone()
+    }
+    pub fn dirty_keys(&self) -> impl Iterator<Item=&ProcKey> { self.dirty.iter() }
+    pub fn has_pending_validation(&self) -> bool { !self.pending_shared.is_empty() || !self.pending_private.is_empty() }
+    fn clear_pending_private(&mut self,procedure:u32) {
+        let edges:Vec<_>=self.pending_private.range((procedure,0)..=(procedure,u32::MAX)).copied().collect();
+        for edge in edges {self.pending_private.remove(&edge);}
+    }
+
+    /// Disk candidates add unknown edges, independently of declaration changes.
+    /// Replay only those private edges in authored procedure order; shared facts
+    /// use one input and one resolution regardless of their reader count.
+    fn refresh_pending(&mut self, resolve:&mut impl FnMut(&ProcKey,&BindingFact)->FactValue) -> usize {
+        let started=std::time::Instant::now();
+        let mut changed=0;
+        for id in std::mem::take(&mut self.pending_shared) {
+            if self.shared_facts.get(&id).is_none_or(|fact|fact.input.value(&self.db).is_some()) {continue;}
+            let readers:Vec<_>=self.reverse.get(&id).into_iter().flatten()
+                .map(|id|&self.procedure_names[*id as usize])
+                .filter(|key|self.records.get(*key).is_some_and(|record|record.active)).cloned().collect();
+            let Some(key)=readers.first() else {continue;};
+            let fact=Arc::clone(&self.fact_names[id as usize]);
+            let value=self.intern_value(&resolve(key,&fact));
+            self.shared_facts[&id].input.set_value(&mut self.db).to(Some(value));
+            self.dirty.extend(readers); self.stats.fact_refreshes+=1; changed+=1;
+        }
+        for (procedure,id) in std::mem::take(&mut self.pending_private) {
+            let key=self.procedure_names[procedure as usize].clone();
+            let Some(record)=self.records.get(&key).filter(|record|record.active) else {continue;};
+            let Some(input)=record.facts.get(&id).filter(|fact|fact.input.value(&self.db).is_none()).map(|fact|fact.input) else {continue;};
+            let fact=Arc::clone(&self.fact_names[id as usize]);
+            let value=self.intern_value(&resolve(&key,&fact));
+            input.set_value(&mut self.db).to(Some(value));
+            self.dirty.insert(key); self.stats.fact_refreshes+=1; changed+=1;
+        }
+        self.stats.changed_facts+=changed;
+        self.stats.invalidated_procedures=self.dirty.len();
+        self.stats.fact_refresh_seconds+=started.elapsed().as_secs_f64();
+        changed
+    }
+
+    fn refresh_fact_ids(&mut self, ids: &BTreeSet<FactId>, resolve: &mut impl FnMut(&ProcKey,&BindingFact)->FactValue) -> usize {
+        let started = std::time::Instant::now();
+        let mut changed = 0;
+        for id in ids {
+            let fact = Arc::clone(&self.fact_names[*id as usize]);
+            let readers: Vec<_> = self.reverse.get(id).into_iter().flatten().map(|id| &self.procedure_names[*id as usize]).filter(|key| self.records.get(*key).is_some_and(|record| record.active)).cloned().collect();
+            if fact.is_shared() {
+                let Some(key) = readers.first() else { continue; };
+                self.stats.fact_refreshes += 1;
+                let value = self.intern_value(&resolve(key, &fact));
+                let Some(observed) = self.shared_facts.get_mut(id) else { continue; };
+                if observed.input.value(&self.db).as_ref() != Some(&value) {
+                    observed.input.set_value(&mut self.db).to(Some(value));
+                    self.dirty.extend(readers); changed += 1;
+                }
+            } else {
+                for key in readers {
+                    self.stats.fact_refreshes += 1;
+                    let value = self.intern_value(&resolve(&key, &fact));
+                    let Some(observed) = self.records.get_mut(&key).and_then(|record| record.facts.get_mut(id)) else { continue; };
+                    if observed.input.value(&self.db).as_ref() != Some(&value) {
+                        observed.input.set_value(&mut self.db).to(Some(value));
+                        self.dirty.insert(key); changed += 1;
+                    }
+                }
+            }
+        }
         self.stats.changed_facts += changed;
+        self.stats.invalidated_procedures = self.dirty.len();
+        self.stats.fact_refresh_seconds += started.elapsed().as_secs_f64();
         changed
     }
 
@@ -1215,7 +1212,15 @@ impl ProjectProcedureGraph {
             return;
         }
         self.evict_artifact(key);
+        let id=self.records[key].id;
+        self.clear_pending_private(id);
         let record = self.records.get_mut(key).unwrap();
+        if let Some(candidate) = record.input.candidate(&self.db).as_ref() {
+            for witness in candidate.dependencies.iter() {
+                if let Some(readers) = self.reverse.get_mut(&witness.fact) { readers.remove(&record.id); }
+            }
+        }
+        self.dirty.remove(key);
         record.input.set_candidate(&mut self.db).to(None);
         record.input.set_facts(&mut self.db).to(Vec::new());
         let _ = current_candidate(&self.db, record.input);

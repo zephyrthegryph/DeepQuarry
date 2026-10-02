@@ -2212,6 +2212,33 @@ impl Dmb {
             },
             compatibility_version(&self.header.compatibility_line)?,
         );
+        // Reserve once for the mandatory new dense generation. The upper bound
+        // avoids geometric reallocations/copies while remaining close to the
+        // actual image (only optional fixed-size record fields are overestimated).
+        let width = w.object_size;
+        let mut estimate = self.header.executor_line.as_ref().map_or(0, Vec::len)
+            .checked_add(self.header.version_line.len()).and_then(|n| n.checked_add(self.header.compatibility_line.len()))
+            .and_then(|n| n.checked_add(512)).ok_or_else(|| invalid("wire image size overflow"))?;
+        let mut reserve = |count: usize, record: usize| -> io::Result<()> {
+            estimate = count.checked_mul(record).and_then(|n| estimate.checked_add(n))
+                .ok_or_else(|| invalid("wire image size overflow"))?;
+            Ok(())
+        };
+        reserve(self.grid.len(), 3 * width + 1)?;
+        reserve(self.classes.len(), 16 * width + 132)?;
+        reserve(self.mobs.len(), 2 * width + 7)?;
+        reserve(self.procs.len(), 7 * width + 8)?;
+        reserve(self.variables.len(), 5 + width)?;
+        reserve(self.proc_references.len(), width)?;
+        reserve(self.instances.len(), 5 + width)?;
+        reserve(self.map_objects.len(), 2 + width)?;
+        reserve(self.resources.len(), 5)?;
+        reserve(self.world.client_script_files.len(), width)?;
+        for string in &self.strings { reserve(1, string.data.len().checked_add(2 * (usize::from(string.long_chunks) + 1))
+            .ok_or_else(|| invalid("wire string size overflow"))?)?; }
+        for list in &self.lists { reserve(1, list.len().checked_mul(width).and_then(|n| n.checked_add(2))
+            .ok_or_else(|| invalid("wire list size overflow"))?)?; }
+        w.bytes.try_reserve_exact(estimate).map_err(io::Error::other)?;
         if let Some(line) = &self.header.executor_line {
             // Native world.executor text may contain newlines. The reader stops
             // at a version line followed by a compatibility line, so reject
@@ -2270,9 +2297,9 @@ impl Dmb {
             let offset = w.at() - string_origin;
             w.u16((remaining as u16) ^ offset as u16);
             let offset = w.at() - string_origin;
-            let mut encrypted = string.data.clone();
-            crypt_string(&mut encrypted, offset);
-            w.raw(&encrypted);
+            let encrypted_start = w.at();
+            w.raw(&string.data);
+            crypt_string(&mut w.bytes[encrypted_start..], offset);
             string_hash = nqcrc(string_hash, &string.data);
             string_hash = nqcrc(string_hash, &[0]);
         }

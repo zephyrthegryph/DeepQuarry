@@ -82,8 +82,8 @@ impl SimpleProc {
 /// Names resolved by the declaration index before bytecode lowering.
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
 pub struct OwnerLowerBindings {
-    pub fields: BTreeSet<String>,
-    pub field_types: HashMap<String, String>,
+    pub fields: im::OrdSet<String>,
+    pub field_types: im::OrdMap<String, String>,
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
@@ -151,8 +151,8 @@ mod binding_codec_tests {
             globals: BTreeSet::from(["value".into()]),
             hidden_owner_fields: BTreeSet::from(["value".into()]),
             owner: Some(Arc::new(OwnerLowerBindings {
-                fields: BTreeSet::from(["value".into()]),
-                field_types: HashMap::new(),
+                fields: ["value".into()].into_iter().collect(),
+                field_types: Default::default(),
             })),
             ..LowerBindings::default()
         };

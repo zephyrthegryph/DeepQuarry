@@ -69,6 +69,15 @@ impl OwnedProject {
             .open(&owned.overlay)?;
         owned.created.push(owned.overlay.clone());
         overlay.write_all(overlay_source(&owned.prefix, "baseline").as_bytes())?;
+        // Fixtures share the unique owned prefix and are never game assets.
+        // Create both eagerly so the add case measures discovery/reference work,
+        // while the baseline archive contains only the first referenced file.
+        for (suffix, bytes) in [("asset.txt", BASE_ASSET), ("added.txt", ADDED_ASSET)] {
+            let path = directory.join(format!("{}_{suffix}", owned.prefix));
+            let mut file = OpenOptions::new().write(true).create_new(true).open(&path)?;
+            owned.created.push(path);
+            file.write_all(bytes)?;
+        }
         Ok(owned)
     }
 }
@@ -79,6 +88,9 @@ impl Drop for OwnedProject {
         }
     }
 }
+const BASE_ASSET: &[u8] = b"iteration resource baseline\n";
+const EDITED_ASSET: &[u8] = b"iteration resource edited!!\n";
+const ADDED_ASSET: &[u8] = b"iteration additional resource\n";
 fn overlay_source(prefix: &str, case: &str) -> String {
     let default = if case == "change-default" { 2 } else { 1 };
     let body = match case {
@@ -86,7 +98,10 @@ fn overlay_source(prefix: &str, case: &str) -> String {
         "cold-body-edit" => 303,
         _ => 1,
     };
-    let mut source = format!("/datum/{prefix}\n    var/value = {default}\n");
+    let mut source = format!("/datum/{prefix}\n    var/value = {default}\n    var/fixture_asset = '{prefix}_asset.txt'\n");
+    if case == "add-resource" {
+        source.push_str(&format!("    var/additional_asset = '{prefix}_added.txt'\n"));
+    }
     if case == "add-var" {
         source.push_str("    var/additional = 7\n");
     }
@@ -105,6 +120,15 @@ fn write_overlay(path: &Path, prefix: &str, case: &str) -> io::Result<()> {
         return Ok(());
     }
     fs::write(path, source)
+}
+fn write_fixture(config: &Configuration, case: &str) -> io::Result<()> {
+    let directory = config.manifest.parent().ok_or_else(|| error("fixture has no parent"))?;
+    let path = directory.join(format!("{}_asset.txt", config.prefix));
+    let expected = if case == "asset-edit" { EDITED_ASSET } else { BASE_ASSET };
+    if !fs::read(&path).is_ok_and(|existing| existing == expected) {
+        fs::write(path, expected)?;
+    }
+    write_overlay(&config.overlay, &config.prefix, case)
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -129,6 +153,8 @@ struct Measurement {
     response: Response,
     dmb_sha256: Option<String>,
     rsc_sha256: Option<String>,
+    #[serde(default)]
+    rsc_matches_baseline: Option<bool>,
     #[serde(default)]
     trace: Vec<String>,
     #[serde(default)]
@@ -208,6 +234,7 @@ fn measure(
         response,
         dmb_sha256,
         rsc_sha256,
+        rsc_matches_baseline: None,
         trace: Vec::new(),
         stages: Vec::new(),
     })
@@ -228,6 +255,7 @@ fn child(config_file: &Path, phase: &str, results_file: &Path) -> io::Result<()>
     )?;
     let mut coordinator = Coordinator::new(config.cache.clone())?;
     let mut measurements = Vec::new();
+    let mut baseline_rsc = None;
     let cases = match phase {
         "retained" => config.cases.clone(),
         "cold-cached" => vec!["cold-process-cached".into()],
@@ -236,9 +264,13 @@ fn child(config_file: &Path, phase: &str, results_file: &Path) -> io::Result<()>
     };
     for case in &cases {
         if case != "unchanged" && case != "cold-process-cached" {
-            write_overlay(&config.overlay, &config.prefix, case)?;
+            write_fixture(&config, case)?;
         }
-        let result = measure(&mut coordinator, &config, &key, case)?;
+        let mut result = measure(&mut coordinator, &config, &key, case)?;
+        if case == "baseline" { baseline_rsc = result.rsc_sha256.clone(); }
+        result.rsc_matches_baseline = baseline_rsc.as_ref().zip(result.rsc_sha256.as_ref()).map(|(a, b)| a == b);
+        let expects_changed_archive = matches!(case.as_str(), "asset-edit" | "add-resource");
+        let archive_valid = result.rsc_matches_baseline.is_none_or(|same| same == !expects_changed_archive);
         let success = result.response.ok;
         measurements.push(result);
         write_json(results_file, &measurements)?;
@@ -247,17 +279,21 @@ fn child(config_file: &Path, phase: &str, results_file: &Path) -> io::Result<()>
                 "native build failed: {case}; see typed response"
             )));
         }
+        if !archive_valid { return Err(error(format!("resource archive identity mismatch for {case}; see recorded SHA-256 receipts"))); }
         if phase == "retained" && case != "baseline" && case != "unchanged" {
             // Each edit starts from the same baseline. Record the real revert
             // request rather than hiding extra compilation between measurements.
-            write_overlay(&config.overlay, &config.prefix, "baseline")?;
-            let result = measure(&mut coordinator, &config, &key, &format!("revert-{case}"))?;
+            write_fixture(&config, "baseline")?;
+            let mut result = measure(&mut coordinator, &config, &key, &format!("revert-{case}"))?;
+            result.rsc_matches_baseline = baseline_rsc.as_ref().zip(result.rsc_sha256.as_ref()).map(|(a, b)| a == b);
+            let archive_valid = result.rsc_matches_baseline != Some(false);
             let success = result.response.ok;
             measurements.push(result);
             write_json(results_file, &measurements)?;
             if !success {
                 return Err(error(format!("baseline revert failed after {case}")));
             }
+            if !archive_valid { return Err(error(format!("baseline archive identity changed after reverting {case}"))); }
         }
     }
     Ok(())
@@ -395,6 +431,8 @@ fn run() -> io::Result<()> {
         "add-proc",
         "add-var",
         "change-default",
+        "asset-edit",
+        "add-resource",
     ]
     .into_iter()
     .map(str::to_owned)
@@ -424,7 +462,7 @@ fn run() -> io::Result<()> {
                     return Err(error("invalid or duplicate build define"));
                 }
             }
-            _ => return Err(error("usage: iteration_bench --project REAL.dme --output NEW_DIR [--builtins SCHEMA.bin] [--cache-root DIR] [-DNAME] [--cases baseline,unchanged,body-edit,add-proc,add-var,change-default] [--skip-cold] [--cold-body-edit]")),
+            _ => return Err(error("usage: iteration_bench --project REAL.dme --output NEW_DIR [--builtins SCHEMA.bin] [--cache-root DIR] [-DNAME] [--cases baseline,unchanged,body-edit,add-proc,add-var,change-default,asset-edit,add-resource] [--skip-cold] [--cold-body-edit]")),
         }
     }
     if !(1..=4).contains(&workers)
@@ -444,6 +482,8 @@ fn run() -> io::Result<()> {
                 "add-proc",
                 "add-var",
                 "change-default",
+                "asset-edit",
+                "add-resource",
             ]
             .contains(&case.as_str())
         })
@@ -513,7 +553,7 @@ fn run() -> io::Result<()> {
     for phase in phases {
         // Ensure cold probes start from the baseline and run without a resident
         // compiler beside them. The body probe uses a previously unseen body.
-        write_overlay(&owned.overlay, &owned.prefix, "baseline")?;
+        write_fixture(&report.configuration, "baseline")?;
         let result = run_phase(
             &executable,
             &config_file,

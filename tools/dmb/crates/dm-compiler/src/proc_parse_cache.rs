@@ -45,15 +45,20 @@ pub struct ParseCacheStats {
     pub parse_time: Duration,
 }
 
+#[derive(Default)]
+struct RequestedSyntax {
+    records:BTreeMap<String,Vec<u8>>, missing:std::collections::BTreeSet<String>, bytes:usize,
+}
 pub struct ProcParseCache {
     root: Option<PathBuf>,
     entries: HashMap<String, Located>,
     readers: HashMap<PathBuf, File>,
     store: Option<dm_store::Store>,
-    snapshot: std::sync::Arc<BTreeMap<String, Vec<u8>>>,
+    snapshot: std::sync::Arc<std::sync::Mutex<RequestedSyntax>>,
     pending: BTreeMap<String, Vec<u8>>,
     pending_bytes: usize,
     stats: ParseCacheStats,
+    disk_ready: bool,
 }
 impl ProcParseCache {
     pub fn open(cache_root: Option<&Path>) -> Self {
@@ -66,10 +71,11 @@ impl ProcParseCache {
             entries: HashMap::new(),
             readers: HashMap::new(),
             store: None,
-            snapshot: std::sync::Arc::new(BTreeMap::new()),
+            snapshot: Default::default(),
             pending: BTreeMap::new(),
             pending_bytes: 0,
             stats: ParseCacheStats::default(),
+            disk_ready: false,
         };
         let Some(root) = cache.root.as_ref() else {
             return cache;
@@ -80,28 +86,8 @@ impl ProcParseCache {
         }
         if let Some(base) = cache_root {
             if let Ok(store) = dm_store::Store::open(base.join("proc-parse.redb")) {
-                let started = Instant::now();
-                match store.snapshot_namespace(&Self::namespace(), 64_000, 128 * 1024 * 1024, None)
-                {
-                    Ok(snapshot) => {
-                        if std::env::var_os("DM_BUILD_TRACE").is_some() {
-                            let bytes = snapshot
-                                .records
-                                .iter()
-                                .map(|(key, value)| key.name.len() + value.len())
-                                .sum::<usize>();
-                            eprintln!("DM_BUILD_TRACE parser store snapshot: {} entries, {} bytes, complete {}, {:.3}s", snapshot.records.len(), bytes, snapshot.complete, started.elapsed().as_secs_f64());
-                        }
-                        cache.snapshot = std::sync::Arc::new(
-                            snapshot
-                                .records
-                                .into_iter()
-                                .map(|(key, bytes)| (key.name, bytes))
-                                .collect(),
-                        );
-                    }
-                    Err(_) => cache.stats.corrupt += 1,
-                }
+                cache.disk_ready=store.read_many(&[dm_store::Key::new("procedure-syntax-ready",Self::namespace())],None)
+                    .ok().is_some_and(|read|read.values.first().is_some_and(Option::is_some));
                 cache.store = Some(store);
             }
         }
@@ -177,9 +163,31 @@ impl ProcParseCache {
             readers: HashMap::new(),
             store: self.store.clone(),
             snapshot: std::sync::Arc::clone(&self.snapshot),
+            disk_ready:self.disk_ready,
             pending: BTreeMap::new(),
             pending_bytes: 0,
             stats: ParseCacheStats::default(),
+        }
+    }
+    /// Requested source identities share a bounded byte cache and negative
+    /// inventory across workers, without loading unrelated namespace rows.
+    pub(crate) fn prefetch_keys(&self,keys:&[String]) {
+        if !self.disk_ready {return;}
+        let Some(store)=&self.store else {return;};
+        let mut requested=self.snapshot.lock().unwrap_or_else(|error|error.into_inner());
+        let keys:Vec<_>=keys.iter().filter(|key|!requested.records.contains_key(*key)&&!requested.missing.contains(*key))
+            .map(|key|dm_store::Key::new(Self::namespace(),key)).collect();
+        for keys in keys.chunks(4096) {
+            let Ok(read)=store.read_grouped_bounded(keys,128,MAX_ENTRY as usize,8*1024*1024,64*1024*1024,None) else {continue;};
+            for (key,bytes) in keys.iter().zip(read.values) {
+                if let Some(bytes)=bytes {
+                    while requested.bytes.saturating_add(bytes.len())>64*1024*1024 {
+                        let Some(old)=requested.records.keys().next().cloned() else {break;};
+                        if let Some(bytes)=requested.records.remove(&old) {requested.bytes=requested.bytes.saturating_sub(bytes.len());}
+                    }
+                    requested.bytes+=bytes.len();requested.records.insert(key.name.clone(),bytes);
+                } else if requested.missing.len()<128_000 {requested.missing.insert(key.name.clone());}
+            }
         }
     }
     pub fn parse(&mut self, source: &str, span: Span) -> Result<Item, Diagnostic> {
@@ -189,7 +197,9 @@ impl ProcParseCache {
         let raw = &source[span.range()];
         let key = format!("{:x}", Sha256::digest(raw.as_bytes()));
         let started = Instant::now();
-        if let Some(bytes) = self.pending.get(&key).or_else(|| self.snapshot.get(&key)) {
+        self.prefetch_keys(std::slice::from_ref(&key));
+        let restored=self.snapshot.lock().ok().and_then(|snapshot|snapshot.records.get(&key).cloned());
+        if let Some(bytes) = self.pending.get(&key).or(restored.as_ref()) {
             let result = decode(bytes, span.start, raw.len());
             self.stats.read_time += started.elapsed();
             if let Some(item) = result {
@@ -261,13 +271,14 @@ impl ProcParseCache {
         let Some(store) = &self.store else {
             return Ok(());
         };
-        let changes = self
+        let mut changes = self
             .pending
             .iter()
             .map(|(key, bytes)| {
                 dm_store::Change::Put(dm_store::Key::new(Self::namespace(), key), bytes.clone())
             })
             .collect::<Vec<_>>();
+        changes.push(dm_store::Change::Put(dm_store::Key::new("procedure-syntax-ready",Self::namespace()),vec![1]));
         match store.commit(&[], &changes, None)? {
             dm_store::Commit::Applied => {
                 self.pending.clear();

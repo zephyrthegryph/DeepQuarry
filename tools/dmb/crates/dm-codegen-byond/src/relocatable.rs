@@ -63,26 +63,9 @@ impl OutputProjectionCache {
             return Self::default();
         };
         let namespace = format!("{PROJECTION_NAMESPACE}-{implementation}");
-        let mut state = ProjectionCacheState::default();
-        if let Ok(snapshot) = store.snapshot_namespace(&namespace, 60_000, PROJECTION_BUDGET, None)
-        {
-            for (key, bytes) in snapshot.records {
-                if bytes.len() % 4 != 0 || bytes.len() / 4 > MAX_WORDS {
-                    continue;
-                }
-                let words: Arc<[u32]> = bytes
-                    .chunks_exact(4)
-                    .map(|word| u32::from_le_bytes(word.try_into().unwrap()))
-                    .collect::<Vec<_>>()
-                    .into();
-                let charge = words.len() * 4 + key.name.len() + 128;
-                if state.bytes.saturating_add(charge) > PROJECTION_BUDGET {
-                    break;
-                }
-                state.bytes += charge;
-                state.words.insert(key.name, words);
-            }
-        }
+        let state = ProjectionCacheState::default();
+        // Output fragments are fetched through the source-order output DAG.
+        // A fresh session must not eagerly decode an entire historical namespace.
         Self {
             state: Mutex::new(state),
             store: Some(store),
@@ -162,6 +145,20 @@ struct Relocation {
     encoding: Encoding,
 }
 
+/// Thin output relocation. Local branches were already fixed when the fragment
+/// was built; changing dense table IDs only patches these external words.
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct OutputRelocation {
+    pub offset: u32,
+    pub symbol: Symbol,
+    pub packed_tag: Option<u8>,
+}
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct OutputDebugRelocation {
+    pub file_offset: u32,
+    pub line_offset: u32,
+    pub relative: usize,
+}
 /// Private fields prevent an unvalidated section entering the materializer.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct PreparedProc {
@@ -174,6 +171,31 @@ pub struct PreparedProc {
 }
 
 impl PreparedProc {
+    pub fn output_relocations(
+        &self,
+        marks: &[crate::debug::StatementOrigin],
+        mut resolves: impl FnMut(usize) -> bool,
+    ) -> Result<(Vec<OutputRelocation>, Vec<OutputDebugRelocation>), LinkError> {
+        let mut debug = BTreeMap::new();
+        for mark in marks {
+            let offset = *self.item_offsets.get(mark.code_item)
+                .ok_or_else(|| invalid("statement anchor outside section"))?;
+            if offset == u32::MAX { return Err(invalid("statement anchor targets label")); }
+            if resolves(mark.start) { debug.insert(offset as usize, mark.start); }
+        }
+        let debug_offsets: Vec<_> = debug.keys().copied().collect();
+        let shifted = |offset: usize| offset + debug_offsets.partition_point(|&at| at <= offset) * 4;
+        let relocations = self.relocations.iter().map(|relocation| OutputRelocation {
+            offset: shifted(relocation.offset as usize) as u32,
+            symbol: self.symbols[relocation.symbol as usize].clone(),
+            packed_tag: match relocation.encoding { Encoding::Plain => None, Encoding::Packed(tag) => Some(tag) },
+        }).collect();
+        let debug = debug.into_iter().enumerate().map(|(index, (offset, relative))| {
+            let at = offset + index * 4;
+            OutputDebugRelocation { file_offset: (at + 1) as u32, line_offset: (at + 3) as u32, relative }
+        }).collect();
+        Ok((relocations, debug))
+    }
     pub fn attach_projection_cache(&self, cache: Arc<OutputProjectionCache>) {
         *self
             .projection
